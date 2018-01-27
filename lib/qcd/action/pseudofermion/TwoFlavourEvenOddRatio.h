@@ -109,7 +109,7 @@ public:
 
     // Odd det factors
     Mpc.MpcDag(etaOdd,PhiOdd);
-    tmp=zero;
+    tmp=Zero();
     ActionSolver(Vpc,PhiOdd,tmp);
     Vpc.Mpc(tmp,PhiOdd);            
 
@@ -137,7 +137,7 @@ public:
     FermionField Y(NumOp.FermionRedBlackGrid());
 
     Vpc.MpcDag(PhiOdd,Y);           // Y= Vdag phi
-    X=zero;
+    X=Zero();
     ActionSolver(Mpc,Y,X);          // X= (MdagM)^-1 Vdag phi
     //Mpc.Mpc(X,Y);                   // Y=  Mdag^-1 Vdag phi
     // Multiply by Ydag
@@ -145,7 +145,7 @@ public:
 
     //RealD action = norm2(Y);
 
-    // The EE factorised block; normally can replace with zero if det is constant (gauge field indept)
+    // The EE factorised block; normally can replace with Zero() if det is constant (gauge field indept)
     // Only really clover term that creates this. Leave the EE portion as a future to do to make most
     // rapid progresss on DWF for now.
     //
@@ -179,7 +179,7 @@ public:
     //X = (Mdag M)^-1 V^dag phi
     //Y = (Mdag)^-1 V^dag  phi
     Vpc.MpcDag(PhiOdd,Y);          // Y= Vdag phi
-    X=zero;
+    X=Zero();
     DerivativeSolver(Mpc,Y,X);     // X= (MdagM)^-1 Vdag phi
     Mpc.Mpc(X,Y);                  // Y=  Mdag^-1 Vdag phi
 

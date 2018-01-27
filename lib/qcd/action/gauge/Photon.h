@@ -108,7 +108,7 @@ void Photon<Gimpl>::invKHatSquared(GaugeLinkField &out)
   TComplex           Tzero= Complex(0.0,0.0);
     
   one = Complex(1.0,0.0);
-  out = zero;
+  out = Zero();
   for(int mu = 0; mu < nd; mu++)
     {
       Real twoPiL = M_PI*2./l[mu];
@@ -144,7 +144,7 @@ void Photon<Gimpl>::zmSub(GaugeLinkField &out)
         LatticeInteger spNrm(grid), coor(grid);
         GaugeLinkField z(grid);
         
-        spNrm = zero;
+        spNrm = Zero();
         for(int d = 0; d < grid->_ndimension - 1; d++)
 	  {
 	    LatticeCoordinate(coor,d);
@@ -252,7 +252,7 @@ void Photon<Gimpl>::StochasticField(GaugeField &out, GridParallelRNG &rng,
 //    
 //    std::vector<int> latt_size   = grid->_fdimensions;
 //    
-//    LatComplex denom(grid); denom= zero;
+//    LatComplex denom(grid); denom= Zero();
 //    LatComplex   one(grid); one = ScalComplex(1.0,0.0);
 //    LatComplex   kmu(grid);
 //    
@@ -278,7 +278,7 @@ void Photon<Gimpl>::StochasticField(GaugeField &out, GridParallelRNG &rng,
 //    
 //    pokeSite(Tzero,denom,zero_mode);
 //    
-//    out = zero;
+//    out = Zero();
 //    out = in*denom;
 //  };
   

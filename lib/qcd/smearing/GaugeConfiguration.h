@@ -64,7 +64,7 @@ private:
     if (smearingLevels > 0) {
       std::cout << GridLogDebug
                 << "[SmearedConfiguration] Filling SmearedSet\n";
-      GaugeField previous_u(ThinLinks->_grid);
+      GaugeField previous_u(ThinLinks->Grid());
 
       previous_u = *ThinLinks;
       for (int smearLvl = 0; smearLvl < smearingLevels; ++smearLvl) {
@@ -89,8 +89,8 @@ private:
     GaugeLinkField GaugeKmu(grid), Cmu(grid);
 
     StoutSmearing.BaseSmear(C, GaugeK);
-    SigmaK = zero;
-    iLambda = zero;
+    SigmaK = Zero();
+    iLambda = Zero();
 
     for (int mu = 0; mu < Nd; mu++) {
       Cmu = peekLorentz(C, mu);

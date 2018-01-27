@@ -46,7 +46,7 @@ public:
     }
   }
   static void DmuAmu(const std::vector<GaugeMat> &A,GaugeMat &dmuAmu) {
-    dmuAmu=zero;
+    dmuAmu=Zero();
     for(int mu=0;mu<Nd;mu++){
       dmuAmu = dmuAmu + A[mu] - Cshift(A[mu],mu,-1);
     }
@@ -123,7 +123,7 @@ public:
     FFT theFFT((GridCartesian *)grid);
 
     LatticeComplex  Fp(grid);
-    LatticeComplex  psq(grid); psq=zero;
+    LatticeComplex  psq(grid); psq=Zero();
     LatticeComplex  pmu(grid); 
     LatticeComplex   one(grid); one = Complex(1.0,0.0);
 

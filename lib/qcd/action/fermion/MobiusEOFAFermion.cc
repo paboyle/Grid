@@ -87,7 +87,7 @@ void MobiusEOFAFermion<Impl>::Omega(const FermionField& psi, FermionField& Din, 
   int Ls = this->Ls;
   RealD alpha = this->alpha;
 
-  Din = zero;
+  Din = Zero();
   if((sign == 1) && (dag == 0)) { // \Omega_{+}
     for(int s=0; s<Ls; ++s){
       axpby_ssp(Din, 0.0, psi, 2.0*std::pow(1.0-alpha,Ls-s-1)/std::pow(1.0+alpha,Ls-s), psi, s, 0);

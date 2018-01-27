@@ -152,11 +152,11 @@ void WilsonFermion<Impl>::MomentumSpacePropagator(FermionField &out, const Fermi
   
   std::vector<int> latt_size   = _grid->_fdimensions;
   
-  FermionField   num  (_grid); num  = zero;
-  LatComplex    wilson(_grid); wilson= zero;
+  FermionField   num  (_grid); num  = Zero();
+  LatComplex    wilson(_grid); wilson= Zero();
   LatComplex     one  (_grid); one = ScalComplex(1.0,0.0);
   
-  LatComplex denom(_grid); denom= zero;
+  LatComplex denom(_grid); denom= Zero();
   LatComplex kmu(_grid); 
   ScalComplex ci(0.0,1.0);
   // momphase = n * 2pi / L
@@ -360,7 +360,7 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
   conformable(_grid, q_in_2.Grid());
   conformable(_grid, q_out.Grid());
   PropagatorField tmp1(_grid), tmp2(_grid);
-  q_out = zero;
+  q_out = Zero();
 
   // Forward, need q1(x + mu), q2(x). Backward, need q1(x), q2(x + mu).
   // Inefficient comms method but not performance critical.
@@ -397,7 +397,7 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   unsigned int LLt    = GridDefaultLatt()[Tp];
 
   // Momentum projection
-  ph = zero;
+  ph = Zero();
   for(unsigned int mu = 0; mu < Nd - 1; mu++)
     {
       LatticeCoordinate(coor, mu);
@@ -405,7 +405,7 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
     }
   ph = exp((Real)(2*M_PI)*i*ph);
 
-  q_out = zero;
+  q_out = Zero();
   LatticeInteger coords(_grid);
   LatticeCoordinate(coords, Tp);
 

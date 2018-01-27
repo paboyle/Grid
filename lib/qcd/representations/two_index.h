@@ -39,7 +39,7 @@ public:
     // get the U in TwoIndexRep
     // (U)_{(ij)(lk)} = tr [ adj(e^(ij)) U e^(lk) transpose(U) ]
     conformable(U, Uin);
-    U = zero;
+    U = Zero();
     LatticeColourMatrix tmp(Uin.Grid());
 
     Vector<typename SU<ncolour>::Matrix> eij(Dimension);
@@ -62,13 +62,13 @@ public:
   LatticeGaugeField RtoFundamentalProject(const LatticeField &in,
                                           Real scale = 1.0) const {
     LatticeGaugeField out(in.Grid());
-    out = zero;
+    out = Zero();
 
     for (int mu = 0; mu < Nd; mu++) {
       LatticeColourMatrix out_mu(in.Grid());  // fundamental representation
       LatticeMatrix in_mu = peekLorentz(in, mu);
 
-      out_mu = zero;
+      out_mu = Zero();
 
       typename SU<ncolour>::LatticeAlgebraVector h(in.Grid());
       projectOnAlgebra(h, in_mu, double(Nc + 2 * S));  // factor T(r)/T(fund)

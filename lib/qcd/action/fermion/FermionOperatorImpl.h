@@ -266,7 +266,7 @@ public:
       
     int Ls=Btilde.Grid()->_fdimensions[0];
     GaugeLinkField tmp(mat.Grid());
-    tmp = zero;
+    tmp = Zero();
       
     parallel_for(int sss=0;sss<tmp.Grid()->oSites();sss++){
       int sU=sss;
@@ -406,7 +406,7 @@ public:
       unsigned int dimU = grid->Nd();
       unsigned int dimF = Bgrid->Nd();
       GaugeLinkField tmp(grid); 
-      tmp = zero;
+      tmp = Zero();
     
       // FIXME 
       // Current implementation works, thread safe, probably suboptimal
@@ -417,7 +417,7 @@ public:
       std::vector<typename result_type::scalar_object> vres(Bgrid->Nsimd());
       std::vector<int> ocoor;  grid->oCoorFromOindex(ocoor,so); 
       for (int si = 0; si < tmp.Grid()->iSites(); si++){
-      typename result_type::scalar_object scalar_object; scalar_object = zero;
+      typename result_type::scalar_object scalar_object; scalar_object = Zero();
       std::vector<int> local_coor;      
       std::vector<int> icoor; grid->iCoorFromIindex(icoor,si);
       grid->InOutCoorToLocalCoor(ocoor, icoor, local_coor);
@@ -639,7 +639,7 @@ public:
     int Ls = Btilde.Grid()->_fdimensions[0];
         
     GaugeLinkField tmp(mat.Grid());
-    tmp = zero;
+    tmp = Zero();
     parallel_for(int ss = 0; ss < tmp.Grid()->oSites(); ss++) {
       for (int s = 0; s < Ls; s++) {
 	int sF = s + Ls * ss;

@@ -86,7 +86,7 @@ public:
   static void sitePlaquette(ComplexField &Plaq,
                             const std::vector<GaugeMat> &U) {
     ComplexField sitePlaq(U[0].Grid());
-    Plaq = zero;
+    Plaq = Zero();
     for (int mu = 1; mu < Nd; mu++) {
       for (int nu = 0; nu < mu; nu++) {
         traceDirPlaquette(sitePlaq, U, mu, nu);
@@ -130,7 +130,7 @@ public:
     std::vector<GaugeMat> U(Nd, Umu.Grid());
 
     ComplexField Tr(Umu.Grid());
-    Tr = zero;
+    Tr = Zero();
     for (int mu = 0; mu < Nd; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
       Tr = Tr + trace(U[mu]);
@@ -156,7 +156,7 @@ public:
     for (int d = 0; d < Nd; d++) {
       U[d] = PeekIndex<LorentzIndex>(Umu, d);
     }
-    staple = zero;
+    staple = Zero();
 
     if (nu != mu) {
 
@@ -197,7 +197,7 @@ public:
       // this operation is taking too much time
       U[d] = PeekIndex<LorentzIndex>(Umu, d);
     }
-    staple = zero;
+    staple = Zero();
     GaugeMat tmp1(grid);
     GaugeMat tmp2(grid);
 
@@ -225,7 +225,7 @@ public:
     for (int d = 0; d < Nd; d++) {
       U[d] = PeekIndex<LorentzIndex>(Umu, d);
     }
-    staple = zero;
+    staple = Zero();
 
     for (int nu = 0; nu < Nd; nu++) {
 
@@ -385,7 +385,7 @@ public:
   static void siteRectangle(ComplexField &Rect,
                             const std::vector<GaugeMat> &U) {
     ComplexField siteRect(U[0].Grid());
-    Rect = zero;
+    Rect = Zero();
     for (int mu = 1; mu < Nd; mu++) {
       for (int nu = 0; nu < mu; nu++) {
         traceDirRectangle(siteRect, U, mu, nu);
@@ -443,7 +443,7 @@ public:
   static void RectStapleOptimised(GaugeMat &Stap, std::vector<GaugeMat> &U2,
                                   std::vector<GaugeMat> &U, int mu) {
 
-    Stap = zero;
+    Stap = Zero();
 
     GridBase *grid = U[0].Grid();
 
@@ -529,7 +529,7 @@ public:
       U[d] = PeekIndex<LorentzIndex>(Umu, d);
     }
 
-    Stap = zero;
+    Stap = Zero();
 
     for (int nu = 0; nu < Nd; nu++) {
       if (nu != mu) {

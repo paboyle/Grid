@@ -159,15 +159,15 @@ template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void spProj
   //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
   rfspin(0)=fspin(0);
   rfspin(1)=fspin(1);
-  rfspin(2)=zero;
-  rfspin(3)=zero;
+  rfspin(2)=Zero();
+  rfspin(3)=Zero();
 }
 //  template<class vtype> strong_inline void fspProj5m (iVector<vtype,Ns> &rfspin,const iVector<vtype,Ns> &fspin)
 template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void spProj5m (iVector<vtype,Ns> &rfspin,const iVector<vtype,Ns> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
-  rfspin(0)=zero;
-  rfspin(1)=zero;
+  rfspin(0)=Zero();
+  rfspin(1)=Zero();
   rfspin(2)=fspin(2);
   rfspin(3)=fspin(3);
 }
@@ -339,14 +339,14 @@ template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void spReco
   //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
   fspin(0)=hspin(0)+hspin(0); // add is lower latency than mul
   fspin(1)=hspin(1)+hspin(1); // probably no measurable diffence though
-  fspin(2)=zero;
-  fspin(3)=zero;
+  fspin(2)=Zero();
+  fspin(3)=Zero();
 }
 template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void spRecon5m (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
-  fspin(0)=zero;
-  fspin(1)=zero;
+  fspin(0)=Zero();
+  fspin(1)=Zero();
   fspin(2)=hspin(0)+hspin(0);
   fspin(3)=hspin(1)+hspin(1);
 }

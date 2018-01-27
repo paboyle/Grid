@@ -63,10 +63,10 @@ public:
     // do nothing
   }
   virtual void MDeriv(const Field& in, Field& out){
-    out = zero;
+    out = Zero();
   }
   virtual void MDeriv(const Field& left, const Field& right, Field& out){
-    out = zero;
+    out = Zero();
   }
 
 };
@@ -119,10 +119,10 @@ public:
   // Correct
   RealD MomentaAction(){
     MomentaField inv(Mom.Grid());
-    inv = zero;
+    inv = Zero();
     M.Minv(Mom, inv);
     LatticeComplex Hloc(Mom.Grid());
-    Hloc = zero;
+    Hloc = Zero();
     for (int mu = 0; mu < Nd; mu++) {
       // This is not very general
       // hide in the metric
@@ -157,7 +157,7 @@ public:
     // with respect to the gauge field
     MomentaField MDer(in.Grid());
     MomentaField X(in.Grid());
-    X = zero;
+    X = Zero();
     M.Minv(in, X);  // X = G in
     M.MDeriv(X, MDer);  // MDer = U * dS/dU
     der = Implementation::projectForce(MDer);  // Ta if gauge fields
@@ -165,12 +165,12 @@ public:
   }
 
   void AuxiliaryFieldsDerivative(MomentaField& der){
-    der = zero;
+    der = Zero();
     if (1){
       // Auxiliary fields
       MomentaField der_temp(der.Grid());
       MomentaField X(der.Grid());
-      X=zero;
+      X=Zero();
       //M.M(AuxMom, X); // X = M Aux
       // Two derivative terms
       // the Mderiv need separation of left and right terms
@@ -185,7 +185,7 @@ public:
   }
 
   void DerivativeP(MomentaField& der){
-    der = zero;
+    der = Zero();
     M.Minv(Mom, der);
     // is the projection necessary here?
     // no for fields in the algebra

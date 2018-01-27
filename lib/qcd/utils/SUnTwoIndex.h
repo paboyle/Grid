@@ -71,7 +71,7 @@ public:
   static void base(int Index, iSUnMatrix<cplx> &eij) {
     // returns (e)^(ij)_{kl} necessary for change of base U_F -> U_R
     assert(Index < NumGenerators);
-    eij = zero;
+    eij = Zero();
 
     // for the linearisation of the 2 indexes 
     static int a[ncolour * (ncolour - 1) / 2][2]; // store the a <-> i,j
@@ -97,14 +97,14 @@ public:
 
   template <class cplx>
   static void baseDiagonal(int Index, iSUnMatrix<cplx> &eij) {
-    eij = zero;
+    eij = Zero();
     eij()()(Index - ncolour * (ncolour - 1) / 2,
             Index - ncolour * (ncolour - 1) / 2) = 1.0;
   }
 
   template <class cplx>
   static void baseOffDiagonal(int i, int j, iSUnMatrix<cplx> &eij) {
-    eij = zero;
+    eij = Zero();
     for (int k = 0; k < ncolour; k++)
       for (int l = 0; l < ncolour; l++)
         eij()()(l, k) = delta(i, k) * delta(j, l) +
@@ -130,7 +130,7 @@ public:
 								ncolour * ncolour - 1);
     Vector<typename SU<ncolour>::template iSUnMatrix<cplx> > eij(Dimension);
     typename SU<ncolour>::template iSUnMatrix<cplx> tmp;
-    i2indTa = zero;
+    i2indTa = Zero();
     
     for (int a = 0; a < ncolour * ncolour - 1; a++)
       SU<ncolour>::generator(a, ta[a]);
@@ -203,7 +203,7 @@ public:
     LatticeTwoIndexMatrix la(grid);
     TIMatrix i2indTa;
 
-    out = zero;
+    out = Zero();
     for (int a = 0; a < ncolour * ncolour - 1; a++) {
       generator(a, i2indTa);
       la = peekColour(h, a) * i2indTa;
@@ -218,7 +218,7 @@ public:
 			       typename SU<ncolour>::LatticeAlgebraVector &h_out,
 			       const LatticeTwoIndexMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
-    h_out = zero;
+    h_out = Zero();
     TIMatrix i2indTa;
     Real coefficient = -2.0 / (ncolour + 2 * S) * scale;
     // 2/(Nc +/- 2) for the normalization of the trace in the two index rep
@@ -236,7 +236,7 @@ public:
     conformable(h_out, in);
     // to store the generators
     static std::vector<TIMatrix> i2indTa(ncolour * ncolour -1); 
-    h_out = zero;
+    h_out = Zero();
     static bool precalculated = false;
     if (!precalculated) {
       precalculated = true;

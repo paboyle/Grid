@@ -113,7 +113,7 @@ public:
     GaugeLinkField sum(in.Grid());
 
     for (int nu = 0; nu < Nd; nu++) {
-      sum = zero;
+      sum = Zero();
       GaugeLinkField in_nu = PeekIndex<LorentzIndex>(in, nu);
       GaugeLinkField out_nu(out.Grid());
       for (int mu = 0; mu < Nd; mu++) {
@@ -132,7 +132,7 @@ public:
     
     for (int mu = 0; mu < Nd; mu++){
       GaugeLinkField der_mu(der.Grid());
-      der_mu = zero;
+      der_mu = Zero();
       for (int nu = 0; nu < Nd; nu++){
         GaugeLinkField in_nu = PeekIndex<LorentzIndex>(in, nu);
         der_mu += U[mu] * Cshift(in_nu, mu, 1) * adj(U[mu]) * in_nu;
@@ -151,7 +151,7 @@ public:
 
     for (int mu = 0; mu < Nd; mu++) {
       GaugeLinkField der_mu(der.Grid());
-      der_mu = zero;
+      der_mu = Zero();
       for (int nu = 0; nu < Nd; nu++) {
         GaugeLinkField left_nu = PeekIndex<LorentzIndex>(left, nu);
         GaugeLinkField right_nu = PeekIndex<LorentzIndex>(right, nu);

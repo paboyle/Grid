@@ -111,7 +111,7 @@ public:
     FermionField Y(FermOp.FermionGrid());
 
     MdagMLinearOperator<FermionOperator<Impl>, FermionField> MdagMOp(FermOp);
-    X = zero;
+    X = Zero();
     ActionSolver(MdagMOp, Phi, X);
     MdagMOp.Op(X, Y);
 
@@ -138,7 +138,7 @@ public:
 
     MdagMLinearOperator<FermionOperator<Impl>, FermionField> MdagMOp(FermOp);
 
-    X = zero;
+    X = Zero();
     DerivativeSolver(MdagMOp, Phi, X); // X = (MdagM)^-1 phi    
     MdagMOp.Op(X, Y);                  // Y = M X = (Mdag)^-1 phi
 

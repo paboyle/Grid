@@ -229,7 +229,7 @@ public:
     Field Ufg(U.Grid());
     Field Pfg(U.Grid());
     Ufg = U;
-    Pfg = zero;
+    Pfg = Zero();
     std::cout << GridLogIntegrator << "FG update " << fg_dt << " " << ep
               << std::endl;
     // prepare_fg; no prediction/result cache for now

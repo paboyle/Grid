@@ -544,18 +544,18 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   Simd U_21;
 
 #define ZERO_RESULT				\
-  result_00=zero;				\
-  result_01=zero;				\
-  result_02=zero;				\
-  result_10=zero;				\
-  result_11=zero;				\
-  result_12=zero;				\
-  result_20=zero;				\
-  result_21=zero;				\
-  result_22=zero;				\
-  result_30=zero;				\
-  result_31=zero;				\
-  result_32=zero;			
+  result_00=Zero();				\
+  result_01=Zero();				\
+  result_02=Zero();				\
+  result_10=Zero();				\
+  result_11=Zero();				\
+  result_12=Zero();				\
+  result_20=Zero();				\
+  result_21=Zero();				\
+  result_22=Zero();				\
+  result_30=Zero();				\
+  result_31=Zero();				\
+  result_32=Zero();			
 
 #define Chimu_00 Chi_00
 #define Chimu_01 Chi_01

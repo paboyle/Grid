@@ -96,15 +96,14 @@ void CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField 
   }
 
   // For the non-vectorised s-direction this is simple
-  
-  for(auto site=0;site<vol;site++){
+  thread_loop( (auto site=0;site<vol;site++), {
     
     SiteSpinor     SiteChi;
     SiteHalfSpinor SitePplus;
     SiteHalfSpinor SitePminus;
     
     for(int s1=0;s1<Ls;s1++){
-      SiteChi =zero;
+      SiteChi =Zero();
       for(int s2=0;s2<Ls;s2++){
 	int lex2 = s2+Ls*site;
 	
@@ -120,7 +119,7 @@ void CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField 
       }
       chi[s1+Ls*site] = SiteChi*0.5;
     }
-  }
+  });
 }
 
 #ifdef CAYLEY_DPERP_DENSE

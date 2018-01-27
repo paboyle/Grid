@@ -360,8 +360,8 @@ void CayleyFermion5D<Impl>::MooeeInternalAsm(const FermionField &psi, FermionFie
 	  int lex=s2+LLs*site;
 	
 	  if ( s2==0 && l==0) {
-	    SiteChiP=zero;
-	    SiteChiM=zero;
+	    SiteChiP=Zero();
+	    SiteChiM=Zero();
 	  }
 	
 	  for(int sp=0;sp<2;sp++){
@@ -532,8 +532,8 @@ void CayleyFermion5D<Impl>::MooeeInternalZAsm(const FermionField &psi, FermionFi
 	  int lex=s2+LLs*site;
 	
 	  if ( s2==0 && l==0) {
-	    SiteChiP=zero;
-	    SiteChiM=zero;
+	    SiteChiP=Zero();
+	    SiteChiM=Zero();
 	  }
 	
 	  for(int sp=0;sp<2;sp++){

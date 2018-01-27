@@ -61,7 +61,7 @@ public:
   static void generator(int Index, iSUnAdjointMatrix<cplx> &iAdjTa) {
     // returns i(T_Adj)^index necessary for the projectors
     // see definitions above
-    iAdjTa = zero;
+    iAdjTa = Zero();
     Vector<typename SU<ncolour>::template iSUnMatrix<cplx> > ta(ncolour * ncolour - 1);
     typename SU<ncolour>::template iSUnMatrix<cplx> tmp;
 
@@ -118,7 +118,7 @@ public:
     LatticeAdjMatrix la(grid);
     AMatrix iTa;
 
-    out = zero;
+    out = Zero();
     for (int a = 0; a < Dimension; a++) {
       generator(a, iTa);
       la = peekColour(h, a) * iTa;
@@ -130,7 +130,7 @@ public:
   // Projects the algebra components a lattice matrix (of dimension ncol*ncol -1 )
   static void projectOnAlgebra(typename SU<ncolour>::LatticeAlgebraVector &h_out, const LatticeAdjMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
-    h_out = zero;
+    h_out = Zero();
     AMatrix iTa;
     Real coefficient = - 1.0/(ncolour) * scale;// 1/Nc for the normalization of the trace in the adj rep
 
@@ -145,7 +145,7 @@ public:
   static void projector(typename SU<ncolour>::LatticeAlgebraVector &h_out, const LatticeAdjMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
     static std::vector<AMatrix> iTa(Dimension);  // to store the generators
-    h_out = zero;
+    h_out = Zero();
     static bool precalculated = false; 
     if (!precalculated){
       precalculated = true;

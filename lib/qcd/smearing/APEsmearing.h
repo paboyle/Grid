@@ -66,10 +66,10 @@ public:
     GridBase *grid = U.Grid();
     GaugeLinkField Cup(grid), tmp_stpl(grid);
     WilsonLoops<Gimpl> WL;
-    u_smr = zero;
+    u_smr = Zero();
 
     for(int mu=0; mu<Nd; ++mu){
-      Cup = zero;
+      Cup = Zero();
       for(int nu=0; nu<Nd; ++nu){
 	if (nu != mu) {
 	  // get the staple in direction mu, nu
@@ -132,7 +132,7 @@ public:
 	//-r_munu*U_nu(x+mu)*Udag_mu(x+nu)*Lambda_mu(x+nu)*Udag_nu(x)
 	Gimpl::AddLink(SigmaTerm, temp_Sigma, mu);
 
-	staple = zero;
+	staple = Zero();
 	sh_field = Cshift(U_nu, mu, 1);
 
 	temp_Sigma = -rho_munu*adj(sh_field)*adj(U_mu)*iLambda_mu*U_nu;

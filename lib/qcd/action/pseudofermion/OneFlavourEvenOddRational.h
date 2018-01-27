@@ -138,7 +138,7 @@ public:
     //////////////////////////////////////////////////////
 
     assert(FermOp.ConstEE() == 1);
-    PhiEven = zero;
+    PhiEven = Zero();
   };
 
   //////////////////////////////////////////////////////
@@ -205,7 +205,7 @@ public:
 
     msCG(Mpc, PhiOdd, MPhi_k);
 
-    dSdU = zero;
+    dSdU = Zero();
     for (int k = 0; k < Npole; k++) {
       RealD ak = PowerNegHalf.residues[k];
 

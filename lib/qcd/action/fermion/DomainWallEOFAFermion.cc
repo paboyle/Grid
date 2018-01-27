@@ -69,7 +69,7 @@ void DomainWallEOFAFermion<Impl>::Omega(const FermionField& psi, FermionField& D
 {
   int Ls = this->Ls;
 
-  Din = zero;
+  Din = Zero();
   if((sign == 1) && (dag == 0)){ axpby_ssp(Din, 0.0, psi, 1.0, psi, Ls-1, 0); }
   else if((sign == -1) && (dag == 0)){ axpby_ssp(Din, 0.0, psi, 1.0, psi, 0, 0); }
   else if((sign == 1 ) && (dag == 1)){ axpby_ssp(Din, 0.0, psi, 1.0, psi, 0, Ls-1); }

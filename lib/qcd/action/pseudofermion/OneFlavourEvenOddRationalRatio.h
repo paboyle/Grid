@@ -144,7 +144,7 @@ public:
 
     assert(NumOp.ConstEE() == 1);
     assert(DenOp.ConstEE() == 1);
-    PhiEven = zero;
+    PhiEven = Zero();
 	
   };
 
@@ -236,7 +236,7 @@ public:
 
     RealD ak;
 
-    dSdU = zero;
+    dSdU = Zero();
 
     // With these building blocks  
     //  

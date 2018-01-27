@@ -106,7 +106,7 @@ void DomainWallEOFAFermion<Impl>::MooeeInternal(const FermionField& psi, Fermion
     SiteHalfSpinor SitePminus;
 
     for(int s1=0; s1<Ls; s1++){
-      SiteChi = zero;
+      SiteChi = Zero();
       for(int s2=0; s2<Ls; s2++){
 	int lex2 = s2 + Ls*site;
 	if(PplusMat(s1,s2) != 0.0){

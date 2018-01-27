@@ -175,7 +175,7 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField &psi, const Fermio
   this->M5Dtime -= usecond();
 
   parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){
-    chi[ss+Ls-1] = zero;
+    chi[ss+Ls-1] = Zero();
     auto tmp = psi[0];
     for(int s=0; s<Ls; s++){
       if(s==0) {

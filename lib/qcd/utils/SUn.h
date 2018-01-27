@@ -162,7 +162,7 @@ public:
   
   template <class cplx>
   static void generatorSigmaY(int su2Index, iSUnMatrix<cplx> &ta) {
-    ta = zero;
+    ta = Zero();
     int i1, i2;
     su2SubGroupIndex(i1, i2, su2Index);
     ta()()(i1, i2) = 1.0;
@@ -172,7 +172,7 @@ public:
   
   template <class cplx>
   static void generatorSigmaX(int su2Index, iSUnMatrix<cplx> &ta) {
-    ta = zero;
+    ta = Zero();
     cplx i(0.0, 1.0);
     int i1, i2;
     su2SubGroupIndex(i1, i2, su2Index);
@@ -184,7 +184,7 @@ public:
   template <class cplx>
   static void generatorDiagonal(int diagIndex, iSUnMatrix<cplx> &ta) {
     // diag ({1, 1, ..., 1}(k-times), -k, 0, 0, ...)
-    ta = zero;
+    ta = Zero();
     int k = diagIndex + 1;                  // diagIndex starts from 0
     for (int i = 0; i <= diagIndex; i++) {  // k iterations
       ta()()(i, i) = 1.0;
@@ -299,11 +299,11 @@ public:
     LatticeComplex ones(grid);
     ones = 1.0;
     LatticeComplex zeros(grid);
-    zeros = zero;
+    zeros = Zero();
     LatticeReal rones(grid);
     rones = 1.0;
     LatticeReal rzeros(grid);
-    rzeros = zero;
+    rzeros = Zero();
     LatticeComplex udet(grid);  // determinant of real(staple)
     LatticeInteger mask_true(grid);
     mask_true = 1;
@@ -432,13 +432,13 @@ public:
     RealD numSites = sum(rtmp);
     RealD numAccepted;
     LatticeInteger Accepted(grid);
-    Accepted = zero;
+    Accepted = Zero();
     LatticeInteger newlyAccepted(grid);
 
     std::vector<LatticeReal> xr(4, grid);
     std::vector<LatticeReal> a(4, grid);
     LatticeReal d(grid);
-    d = zero;
+    d = Zero();
     LatticeReal alpha(grid);
 
     //    std::cout<<GridLogMessage<<"xi "<<xi <<std::endl;
@@ -475,7 +475,7 @@ public:
       LatticeInteger ione(grid);
       ione = 1;
       LatticeInteger izero(grid);
-      izero = zero;
+      izero = Zero();
 
       newlyAccepted = where(xrsq < thresh, ione, izero);
       Accepted = where(newlyAccepted, newlyAccepted, Accepted);
@@ -490,7 +490,7 @@ public:
     } while ((numAccepted < numSites) && (hit < nheatbath));
 
     // G. Set a0 = 1 - d;
-    a[0] = zero;
+    a[0] = Zero();
     a[0] = where(wheremask, 1.0 - d, a[0]);
 
     //////////////////////////////////////////
@@ -528,7 +528,7 @@ public:
     // Debug Checks
     // SU2 check
     LatticeSU2Matrix check(grid);  // rotated matrix after hb
-    u = zero;
+    u = Zero();
     check = ua * adj(ua) - 1.0;
     check = where(Accepted, check, u);
     assert(norm2(check) < 1.0e-4);
@@ -538,7 +538,7 @@ public:
     assert(norm2(check) < 1.0e-4);
 
     LatticeMatrix Vcheck(grid);
-    Vcheck = zero;
+    Vcheck = Zero();
     Vcheck = where(Accepted, V * adj(V) - 1.0, Vcheck);
     //    std::cout<<GridLogMessage << "SU3 check " <<norm2(Vcheck)<<std::endl;
     assert(norm2(Vcheck) < 1.0e-4);
@@ -622,7 +622,7 @@ public:
     ComplexD cone(1.0, 0.0);
     MatrixType ta;
 
-    lie = zero;
+    lie = Zero();
     for (int a = 0; a < AdjointDimension; a++) {
       random(pRNG, ca);
 
@@ -647,7 +647,7 @@ public:
     Complex ci(0.0, scale);
     Matrix ta;
 
-    out = zero;
+    out = Zero();
     for (int a = 0; a < AdjointDimension; a++) {
       gaussian(pRNG, ca);
       generator(a, ta);
@@ -665,7 +665,7 @@ public:
     LatticeMatrix la(grid);
     Matrix ta;
 
-    out = zero;
+    out = Zero();
     for (int a = 0; a < AdjointDimension; a++) {
       generator(a, ta);
       la = peekColour(h, a) * timesI(ta) * scale;
@@ -708,7 +708,7 @@ public:
   // inverse operation: FundamentalLieAlgebraMatrix
   static void projectOnAlgebra(LatticeAlgebraVector &h_out, const LatticeMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
-    h_out = zero;
+    h_out = Zero();
     Matrix Ta;
 
     for (int a = 0; a < AdjointDimension; a++) {

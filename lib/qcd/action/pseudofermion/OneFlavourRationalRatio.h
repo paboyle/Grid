@@ -222,7 +222,7 @@ public:
 
     RealD ak;
 
-    dSdU = zero;
+    dSdU = Zero();
 
     // With these building blocks  
     //  

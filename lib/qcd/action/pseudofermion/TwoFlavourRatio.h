@@ -94,7 +94,7 @@ public:
     MdagMLinearOperator<FermionOperator<Impl> ,FermionField> MdagMOp(NumOp);
 
     DenOp.Mdag(eta,Phi);            // Mdag eta
-    tmp = zero;
+    tmp = Zero();
     ActionSolver(MdagMOp,Phi,tmp);  // (VdagV)^-1 Mdag eta = V^-1 Vdag^-1 Mdag eta
     NumOp.M(tmp,Phi);               // Vdag^-1 Mdag eta
 
@@ -116,7 +116,7 @@ public:
     MdagMLinearOperator<FermionOperator<Impl> ,FermionField> MdagMOp(DenOp);
 
     NumOp.Mdag(Phi,Y);              // Y= Vdag phi
-    X=zero;
+    X=Zero();
     ActionSolver(MdagMOp,Y,X);      // X= (MdagM)^-1 Vdag phi
     DenOp.M(X,Y);                  // Y=  Mdag^-1 Vdag phi
 
@@ -147,7 +147,7 @@ public:
     //X = (Mdag M)^-1 V^dag phi
     //Y = (Mdag)^-1 V^dag  phi
     NumOp.Mdag(Phi,Y);              // Y= Vdag phi
-    X=zero;
+    X=Zero();
     DerivativeSolver(MdagMOp,Y,X);      // X= (MdagM)^-1 Vdag phi
     DenOp.M(X,Y);                  // Y=  Mdag^-1 Vdag phi
 

@@ -130,7 +130,7 @@ public:
   }
 
   static inline void ColdConfiguration(GridParallelRNG &pRNG, Field &U) {
-    U = zero;
+    U = Zero();
   }
 
 };

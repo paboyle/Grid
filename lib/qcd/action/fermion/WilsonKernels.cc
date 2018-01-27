@@ -36,7 +36,7 @@ int WilsonKernelsStatic::Opt   = WilsonKernelsStatic::OptGeneric;
 int WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsAndCompute;
 
 template <class Impl>
-WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
+accelerator WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
 
 ////////////////////////////////////////////
 // Generic implementation; move to different file?
@@ -103,9 +103,9 @@ WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
   // All legs kernels ; comms then compute
   ////////////////////////////////////////////////////////////////////
 template <class Impl>
-void WilsonKernels<Impl>::GenericDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-					     SiteHalfSpinor *buf, int sF,
-					     int sU, const FermionField &in, FermionField &out)
+accelerator void WilsonKernels<Impl>::GenericDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+							 SiteHalfSpinor *buf, int sF,
+							 int sU, const FermionField &in, FermionField &out)
 {
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
@@ -127,9 +127,9 @@ void WilsonKernels<Impl>::GenericDhopSiteDag(StencilImpl &st, LebesgueOrder &lo,
 };
 
 template <class Impl>
-void WilsonKernels<Impl>::GenericDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-					  SiteHalfSpinor *buf, int sF,
-					  int sU, const FermionField &in, FermionField &out) 
+accelerator void WilsonKernels<Impl>::GenericDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+						      SiteHalfSpinor *buf, int sF,
+						      int sU, const FermionField &in, FermionField &out) 
 {
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
@@ -153,7 +153,7 @@ void WilsonKernels<Impl>::GenericDhopSite(StencilImpl &st, LebesgueOrder &lo, Do
   // Interior kernels
   ////////////////////////////////////////////////////////////////////
 template <class Impl>
-void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+accelerator void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
 						SiteHalfSpinor *buf, int sF,
 						int sU, const FermionField &in, FermionField &out)
 {
@@ -165,7 +165,7 @@ void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilImpl &st, LebesgueOrder &
   StencilEntry *SE;
   int ptype;
 
-  result=zero;
+  result=Zero();
   GENERIC_STENCIL_LEG_INT(Xp,spProjXp,accumReconXp);
   GENERIC_STENCIL_LEG_INT(Yp,spProjYp,accumReconYp);
   GENERIC_STENCIL_LEG_INT(Zp,spProjZp,accumReconZp);
@@ -178,9 +178,9 @@ void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilImpl &st, LebesgueOrder &
 };
 
 template <class Impl>
-void WilsonKernels<Impl>::GenericDhopSiteInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-					     SiteHalfSpinor *buf, int sF,
-					     int sU, const FermionField &in, FermionField &out) 
+accelerator void WilsonKernels<Impl>::GenericDhopSiteInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+							 SiteHalfSpinor *buf, int sF,
+							 int sU, const FermionField &in, FermionField &out) 
 {
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
@@ -189,7 +189,7 @@ void WilsonKernels<Impl>::GenericDhopSiteInt(StencilImpl &st, LebesgueOrder &lo,
   SiteSpinor result;
   StencilEntry *SE;
   int ptype;
-  result=zero;
+  result=Zero();
   GENERIC_STENCIL_LEG_INT(Xm,spProjXp,accumReconXp);
   GENERIC_STENCIL_LEG_INT(Ym,spProjYp,accumReconYp);
   GENERIC_STENCIL_LEG_INT(Zm,spProjZp,accumReconZp);
@@ -204,7 +204,7 @@ void WilsonKernels<Impl>::GenericDhopSiteInt(StencilImpl &st, LebesgueOrder &lo,
 // Exterior kernels
 ////////////////////////////////////////////////////////////////////
 template <class Impl>
-void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+accelerator void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
 						SiteHalfSpinor *buf, int sF,
 						int sU, const FermionField &in, FermionField &out)
 {
@@ -216,7 +216,7 @@ void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilImpl &st, LebesgueOrder &
   StencilEntry *SE;
   int ptype;
   int nmu=0;
-  result=zero;
+  result=Zero();
   GENERIC_STENCIL_LEG_EXT(Xp,spProjXp,accumReconXp);
   GENERIC_STENCIL_LEG_EXT(Yp,spProjYp,accumReconYp);
   GENERIC_STENCIL_LEG_EXT(Zp,spProjZp,accumReconZp);
@@ -231,7 +231,7 @@ void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilImpl &st, LebesgueOrder &
 };
 
 template <class Impl>
-void WilsonKernels<Impl>::GenericDhopSiteExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+accelerator void WilsonKernels<Impl>::GenericDhopSiteExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
 					     SiteHalfSpinor *buf, int sF,
 					     int sU, const FermionField &in, FermionField &out) 
 {
@@ -243,7 +243,7 @@ void WilsonKernels<Impl>::GenericDhopSiteExt(StencilImpl &st, LebesgueOrder &lo,
   StencilEntry *SE;
   int ptype;
   int nmu=0;
-  result=zero;
+  result=Zero();
   GENERIC_STENCIL_LEG_EXT(Xm,spProjXp,accumReconXp);
   GENERIC_STENCIL_LEG_EXT(Ym,spProjYp,accumReconYp);
   GENERIC_STENCIL_LEG_EXT(Zm,spProjZp,accumReconZp);
@@ -258,8 +258,8 @@ void WilsonKernels<Impl>::GenericDhopSiteExt(StencilImpl &st, LebesgueOrder &lo,
 };
 
 template <class Impl>
-void WilsonKernels<Impl>::DhopDirK( StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor *buf, int sF,
-					   int sU, const FermionField &in, FermionField &out, int dir, int gamma) {
+accelerator void WilsonKernels<Impl>::DhopDirK( StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor *buf, int sF,
+						int sU, const FermionField &in, FermionField &out, int dir, int gamma) {
 
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;

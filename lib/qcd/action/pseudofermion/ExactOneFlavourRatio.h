@@ -131,7 +131,7 @@ public:
     spProj(eta, tmp[0], -1, Lop.Ls);
     Lop.Omega(tmp[0], tmp[1], -1, 0);
     G5R5(CG_src, tmp[1]);
-    tmp[1] = zero;
+    tmp[1] = Zero();
     for(int k=0; k<param.degree; ++k){
       gamma_l = 1.0 / ( 1.0 + PowerNegHalf.poles[k] );
       Lop.RefreshShiftCoefficients(-gamma_l);
@@ -141,7 +141,7 @@ public:
 	Solver(Lop, CG_src, CG_soln);
 	prev_solns.push_back(CG_soln);
       } else {
-	CG_soln = zero; // Just use zero as the initial guess
+	CG_soln = Zero(); // Just use zero as the initial guess
 	Solver(Lop, CG_src, CG_soln);
       }
       Lop.Dtilde(CG_soln, tmp[0]); // We actually solved Cayley preconditioned system: transform back
@@ -157,7 +157,7 @@ public:
     spProj(eta, tmp[0], 1, Rop.Ls);
     Rop.Omega(tmp[0], tmp[1], 1, 0);
     G5R5(CG_src, tmp[1]);
-    tmp[1] = zero;
+    tmp[1] = Zero();
     if(use_heatbath_forecasting){ prev_solns.clear(); } // empirically, LH solns don't help for RH solves
     for(int k=0; k<param.degree; ++k){
       gamma_l = 1.0 / ( 1.0 + PowerNegHalf.poles[k] );
@@ -168,7 +168,7 @@ public:
 	Solver(Rop, CG_src, CG_soln);
 	prev_solns.push_back(CG_soln);
       } else {
-	CG_soln = zero;
+	CG_soln = Zero();
 	Solver(Rop, CG_src, CG_soln);
       }
       Rop.Dtilde(CG_soln, tmp[0]); // We actually solved Cayley preconditioned system: transform back
@@ -199,7 +199,7 @@ public:
     spProj(Phi, spProj_Phi, -1, Lop.Ls);
     Lop.Omega(spProj_Phi, tmp[0], -1, 0);
     G5R5(tmp[1], tmp[0]);
-    tmp[0] = zero;
+    tmp[0] = Zero();
     Solver(Lop, tmp[1], tmp[0]);
     Lop.Dtilde(tmp[0], tmp[1]); // We actually solved Cayley preconditioned system: transform back
     Lop.Omega(tmp[1], tmp[0], -1, 1);
@@ -210,7 +210,7 @@ public:
     spProj(Phi, spProj_Phi, 1, Rop.Ls);
     Rop.Omega(spProj_Phi, tmp[0], 1, 0);
     G5R5(tmp[1], tmp[0]);
-    tmp[0] = zero;
+    tmp[0] = Zero();
     Solver(Rop, tmp[1], tmp[0]);
     Rop.Dtilde(tmp[0], tmp[1]);
     Rop.Omega(tmp[1], tmp[0], 1, 1);
@@ -238,7 +238,7 @@ public:
     spProj(Phi, spProj_Phi, -1, Lop.Ls);
     Lop.Omega(spProj_Phi, Omega_spProj_Phi, -1, 0);
     G5R5(CG_src, Omega_spProj_Phi);
-    spProj_Phi = zero;
+    spProj_Phi = Zero();
     Solver(Lop, CG_src, spProj_Phi);
     Lop.Dtilde(spProj_Phi, Chi);
     G5R5(g5_R5_Chi, Chi);
@@ -250,7 +250,7 @@ public:
     spProj(Phi, spProj_Phi, 1, Rop.Ls);
     Rop.Omega(spProj_Phi, Omega_spProj_Phi, 1, 0);
     G5R5(CG_src, Omega_spProj_Phi);
-    spProj_Phi = zero;
+    spProj_Phi = Zero();
     Solver(Rop, CG_src, spProj_Phi);
     Rop.Dtilde(spProj_Phi, Chi);
     G5R5(g5_R5_Chi, Chi);

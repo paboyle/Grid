@@ -121,7 +121,7 @@ public:
 	
     SchurDifferentiableOperator<Impl> PCop(FermOp);
 
-    X=zero;
+    X=Zero();
     ActionSolver(PCop,PhiOdd,X);
     PCop.Op(X,Y);
     RealD action = norm2(Y);
@@ -155,7 +155,7 @@ public:
     // Our conventions really make this UdSdU; We do not differentiate wrt Udag here.
     // So must take dSdU - adj(dSdU) and left multiply by mom to get dS/dt.
 
-    X=zero;
+    X=Zero();
     DerivativeSolver(Mpc,PhiOdd,X);
     Mpc.Mpc(X,Y);
     Mpc.MpcDeriv(tmp , Y, X );    dSdU=tmp;

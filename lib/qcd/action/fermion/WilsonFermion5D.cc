@@ -583,14 +583,14 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const Fe
   std::vector<int> latt_size   = _grid->_fdimensions;
 
   
-  FermionField   num  (_grid); num  = zero;
+  FermionField   num  (_grid); num  = Zero();
 
-  LatComplex    sk(_grid);  sk = zero;
-  LatComplex    sk2(_grid); sk2= zero;
-  LatComplex    W(_grid); W= zero;
-  LatComplex    a(_grid); a= zero;
+  LatComplex    sk(_grid);  sk = Zero();
+  LatComplex    sk2(_grid); sk2= Zero();
+  LatComplex    W(_grid); W= Zero();
+  LatComplex    a(_grid); a= Zero();
   LatComplex    one  (_grid); one = ScalComplex(1.0,0.0);
-  LatComplex denom(_grid); denom= zero;
+  LatComplex denom(_grid); denom= Zero();
   LatComplex cosha(_grid); 
   LatComplex kmu(_grid); 
   LatComplex Wea(_grid); 
@@ -661,16 +661,16 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const Fe
 
   std::vector<int> latt_size   = _grid->_fdimensions;
 
-  LatComplex    sk(_grid);  sk = zero;
-  LatComplex    sk2(_grid); sk2= zero;
+  LatComplex    sk(_grid);  sk = Zero();
+  LatComplex    sk2(_grid); sk2= Zero();
 
-  LatComplex    w_k(_grid); w_k= zero;
-  LatComplex    b_k(_grid); b_k= zero;
+  LatComplex    w_k(_grid); w_k= Zero();
+  LatComplex    b_k(_grid); b_k= Zero();
 
   LatComplex     one  (_grid); one = ScalComplex(1.0,0.0);
 
-  FermionField   num  (_grid); num  = zero;
-  LatComplex denom(_grid); denom= zero;
+  FermionField   num  (_grid); num  = Zero();
+  LatComplex denom(_grid); denom= Zero();
   LatComplex kmu(_grid); 
   ScalComplex ci(0.0,1.0);
 
@@ -733,7 +733,7 @@ void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
   conformable(_FourDimGrid, q_out.Grid());
   PropagatorField tmp1(FermionGrid()), tmp2(FermionGrid());
   unsigned int LLs = q_in_1.Grid()->_rdimensions[0];
-  q_out = zero;
+  q_out = Zero();
 
   // Forward, need q1(x + mu, s), q2(x, Ls - 1 - s). Backward, need q1(x, s), 
   // q2(x + mu, Ls - 1 - s). 5D lattice so shift 4D coordinate mu by one.
@@ -797,7 +797,7 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   unsigned int LLt    = GridDefaultLatt()[Tp];
 
   // Momentum projection.
-  ph = zero;
+  ph = Zero();
   for(unsigned int nu = 0; nu < Nd - 1; nu++)
     {
       // Shift coordinate lattice index by 1 to account for 5th dimension.
@@ -806,7 +806,7 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
     }
   ph = exp((Real)(2*M_PI)*i*ph);
 
-  q_out = zero;
+  q_out = Zero();
   LatticeInteger coords(_FourDimGrid);
   LatticeCoordinate(coords, Tp);
 

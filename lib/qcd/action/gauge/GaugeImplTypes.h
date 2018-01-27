@@ -88,7 +88,7 @@ public:
   static inline void generate_momenta(Field &P, GridParallelRNG &pRNG) {
     // specific for SU gauge fields
     LinkField Pmu(P.Grid());
-    Pmu = zero;
+    Pmu = Zero();
     for (int mu = 0; mu < Nd; mu++) {
       SU<Nrepresentation>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
       PokeIndex<LorentzIndex>(P, Pmu, mu);
@@ -113,7 +113,7 @@ public:
 
   static inline RealD FieldSquareNorm(Field& U){
     LatticeComplex Hloc(U.Grid());
-    Hloc = zero;
+    Hloc = Zero();
     for (int mu = 0; mu < Nd; mu++) {
       auto Umu = PeekIndex<LorentzIndex>(U, mu);
       Hloc += trace(Umu * Umu);
