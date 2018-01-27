@@ -80,11 +80,11 @@ int main (int argc, char ** argv)
 
   LatticeFermion src   (FGrid); random(RNG5,src);
 #if 0
-  src = zero;
+  src = Zero();
   {
     std::vector<int> origin({0,0,0,latt4[2]-1,0});
     SpinColourVectorF tmp;
-    tmp=zero;
+    tmp=Zero();
     tmp()(0)(0)=Complex(-2.0,0.0);
     std::cout << " source site 0 " << tmp<<std::endl;
     pokeSite(tmp,src,origin);
@@ -95,8 +95,8 @@ int main (int argc, char ** argv)
 #endif
 
 
-  LatticeFermion result(FGrid); result=zero;
-  LatticeFermion    ref(FGrid);    ref=zero;
+  LatticeFermion result(FGrid); result=Zero();
+  LatticeFermion    ref(FGrid);    ref=Zero();
   LatticeFermion    tmp(FGrid);
   LatticeFermion    err(FGrid);
 
@@ -134,7 +134,7 @@ int main (int argc, char ** argv)
 
   if (1)
   {
-    ref = zero;
+    ref = Zero();
     for(int mu=0;mu<Nd;mu++){
 
       tmp = U[mu]*Cshift(src,mu+1,1);
@@ -287,7 +287,7 @@ int main (int argc, char ** argv)
     sDw.Report();
     RealD sum=0;
 
-    err=zero;
+    err=Zero();
     localConvert(sresult,err);
     err = err - ref;
     sum = norm2(err);
@@ -298,7 +298,7 @@ int main (int argc, char ** argv)
     }
     //    assert(sum < 1.0e-4);
 
-    err=zero;
+    err=Zero();
     localConvert(sresult,err);
     err = err - result;
     sum = norm2(err);
@@ -339,8 +339,8 @@ int main (int argc, char ** argv)
       //      setCheckerboard(sr_eo,ssrc_o);
       //      setCheckerboard(sr_eo,ssrc_e);
 
-      sr_e = zero;
-      sr_o = zero;
+      sr_e = Zero();
+      sr_o = Zero();
 
       FGrid->Barrier();
       sDw.DhopEO(ssrc_o, sr_e, DaggerNo);
@@ -407,7 +407,7 @@ int main (int argc, char ** argv)
 
   if (1)
   { // Naive wilson dag implementation
-    ref = zero;
+    ref = Zero();
     for(int mu=0;mu<Nd;mu++){
 
       //    ref =  src - Gamma(Gamma::Algebra::GammaX)* src ; // 1+gamma_x

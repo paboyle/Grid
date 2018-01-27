@@ -57,10 +57,10 @@ int main (int argc, char ** argv)
   typename ImprovedStaggeredFermionR::ImplParams params; 
 
   FermionField src   (&Grid); random(pRNG,src);
-  FermionField result(&Grid); result=zero;
-  FermionField    ref(&Grid);    ref=zero;
-  FermionField    tmp(&Grid);    tmp=zero;
-  FermionField    err(&Grid);    tmp=zero;
+  FermionField result(&Grid); result=Zero();
+  FermionField    ref(&Grid);    ref=Zero();
+  FermionField    tmp(&Grid);    tmp=Zero();
+  FermionField    err(&Grid);    tmp=Zero();
   LatticeGaugeField Umu(&Grid); random(pRNG,Umu);
   std::vector<LatticeColourMatrix> U(4,&Grid);
 
@@ -71,12 +71,12 @@ int main (int argc, char ** argv)
 
   // Only one non-zero (y)
 #if 0
-  Umu=zero;
+  Umu=Zero();
   Complex cone(1.0,0.0);
   for(int nn=0;nn<Nd;nn++){
     random(pRNG,U[nn]);
     if(1) {
-      if (nn!=2) { U[nn]=zero; std::cout<<GridLogMessage << "zeroing gauge field in dir "<<nn<<std::endl; }
+      if (nn!=2) { U[nn]=Zero(); std::cout<<GridLogMessage << "zeroing gauge field in dir "<<nn<<std::endl; }
       //      else       { U[nn]= cone;std::cout<<GridLogMessage << "unit gauge field in dir "<<nn<<std::endl; }
       else       { std::cout<<GridLogMessage << "random gauge field in dir "<<nn<<std::endl; }
     }
@@ -87,10 +87,10 @@ int main (int argc, char ** argv)
   for(int mu=0;mu<Nd;mu++){
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
   }
-  ref = zero;
+  ref = Zero();
   /*  
   { // Naive wilson implementation
-    ref = zero;
+    ref = Zero();
     for(int mu=0;mu<Nd;mu++){
       //    ref =  src + Gamma(Gamma::GammaX)* src ; // 1-gamma_x
       tmp = U[mu]*Cshift(src,mu,1);

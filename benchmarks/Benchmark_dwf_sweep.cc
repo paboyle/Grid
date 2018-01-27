@@ -118,12 +118,12 @@ void benchDw(std::vector<int> & latt4, int Ls, int threads,int report )
   LatticeGaugeField Umu(UGrid); 
   random(RNG4,Umu);
 #else 
-  LatticeFermion src   (FGrid); src=zero;
-  LatticeGaugeField Umu(UGrid); Umu=zero;
+  LatticeFermion src   (FGrid); src=Zero();
+  LatticeGaugeField Umu(UGrid); Umu=Zero();
 #endif
 
-  LatticeFermion result(FGrid); result=zero;
-  LatticeFermion    ref(FGrid);    ref=zero;
+  LatticeFermion result(FGrid); result=Zero();
+  LatticeFermion    ref(FGrid);    ref=Zero();
   LatticeFermion    tmp(FGrid);
   LatticeFermion    err(FGrid);
 
@@ -149,7 +149,7 @@ void benchDw(std::vector<int> & latt4, int Ls, int threads,int report )
 #ifdef CHECK
   if (1) {
 
-    ref = zero;
+    ref = Zero();
     for(int mu=0;mu<Nd;mu++){
       tmp = U[mu]*Cshift(src,mu+1,1);
       ref=ref + tmp - Gamma(Gmu[mu])*tmp;
@@ -258,12 +258,12 @@ void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
   LatticeGaugeField Umu(UGrid); 
   random(RNG4,Umu);
 #else 
-  LatticeFermion src   (FGrid); src=zero;
-  LatticeGaugeField Umu(UGrid); Umu=zero;
+  LatticeFermion src   (FGrid); src=Zero();
+  LatticeGaugeField Umu(UGrid); Umu=Zero();
 #endif
 
-  LatticeFermion result(FGrid); result=zero;
-  LatticeFermion    ref(FGrid);    ref=zero;
+  LatticeFermion result(FGrid); result=Zero();
+  LatticeFermion    ref(FGrid);    ref=Zero();
   LatticeFermion    tmp(FGrid);
   LatticeFermion    err(FGrid);
 
@@ -339,8 +339,8 @@ void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
   setCheckerboard(sr_eo,ssrc_o);
   setCheckerboard(sr_eo,ssrc_e);
     
-  sr_e = zero;
-  sr_o = zero;
+  sr_e = Zero();
+  sr_o = Zero();
   
   sDw.DhopEO(ssrc_o,sr_e,DaggerNo);
   PerformanceCounter CounterSdw(8);

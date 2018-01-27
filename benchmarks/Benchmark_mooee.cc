@@ -95,8 +95,8 @@ int main (int argc, char ** argv)
     setCheckerboard(r_eo,src_o);
     setCheckerboard(r_eo,src_e);
     
-    r_e = zero;
-    r_o = zero;
+    r_e = Zero();
+    r_o = Zero();
 
 
 #define BENCH_DW(A,in,out)			\
@@ -204,8 +204,8 @@ int main (int argc, char ** argv)
     setCheckerboard(r_eo,src_o);
     setCheckerboard(r_eo,src_e);
     
-    r_e = zero;
-    r_o = zero;
+    r_e = Zero();
+    r_o = Zero();
 
     BENCH_DW_MEO(Dhop    ,src,result);
     BENCH_DW_MEO(DhopEO  ,src_o,r_e);

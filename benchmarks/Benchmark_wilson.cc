@@ -72,10 +72,10 @@ int main (int argc, char ** argv)
   //  pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
 
   LatticeFermion src   (&Grid); random(pRNG,src);
-  LatticeFermion result(&Grid); result=zero;
-  LatticeFermion    ref(&Grid);    ref=zero;
-  LatticeFermion    tmp(&Grid);    tmp=zero;
-  LatticeFermion    err(&Grid);    tmp=zero;
+  LatticeFermion result(&Grid); result=Zero();
+  LatticeFermion    ref(&Grid);    ref=Zero();
+  LatticeFermion    tmp(&Grid);    tmp=Zero();
+  LatticeFermion    err(&Grid);    tmp=Zero();
   LatticeGaugeField Umu(&Grid); random(pRNG,Umu);
   std::vector<LatticeColourMatrix> U(4,&Grid);
 
@@ -86,12 +86,12 @@ int main (int argc, char ** argv)
 
   // Only one non-zero (y)
 #if 0
-  Umu=zero;
+  Umu=Zero();
   Complex cone(1.0,0.0);
   for(int nn=0;nn<Nd;nn++){
     random(pRNG,U[nn]);
     if(1) {
-      if (nn!=2) { U[nn]=zero; std::cout<<GridLogMessage << "zeroing gauge field in dir "<<nn<<std::endl; }
+      if (nn!=2) { U[nn]=Zero(); std::cout<<GridLogMessage << "zeroing gauge field in dir "<<nn<<std::endl; }
       //      else       { U[nn]= cone;std::cout<<GridLogMessage << "unit gauge field in dir "<<nn<<std::endl; }
       else       { std::cout<<GridLogMessage << "random gauge field in dir "<<nn<<std::endl; }
     }
@@ -104,7 +104,7 @@ int main (int argc, char ** argv)
   }
   
   { // Naive wilson implementation
-    ref = zero;
+    ref = Zero();
     for(int mu=0;mu<Nd;mu++){
       //    ref =  src + Gamma(Gamma::Algebra::GammaX)* src ; // 1-gamma_x
       tmp = U[mu]*Cshift(src,mu,1);
@@ -156,7 +156,7 @@ int main (int argc, char ** argv)
   }
 
   { // Naive wilson dag implementation
-    ref = zero;
+    ref = Zero();
     for(int mu=0;mu<Nd;mu++){
 
       //    ref =  src - Gamma(Gamma::Algebra::GammaX)* src ; // 1+gamma_x

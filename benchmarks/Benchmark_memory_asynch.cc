@@ -64,7 +64,7 @@ int main (int argc, char ** argv)
 
     int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3]*threads;
 
-    Vec tsum; tsum = zero;
+    Vec tsum; tsum = Zero();
 
     GridParallelRNG          pRNG(&Grid);      
     pRNG.SeedFixedIntegers(std::vector<int>({56,17,89,101}));

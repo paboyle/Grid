@@ -543,7 +543,7 @@ public:
 	  Umu5d[Ls*ss+s] = Umu[ss];
 	}
       }
-      ref = zero;
+      ref = Zero();
       for(int mu=0;mu<Nd;mu++){
 	U[mu] = PeekIndex<LorentzIndex>(Umu5d,mu);
       }

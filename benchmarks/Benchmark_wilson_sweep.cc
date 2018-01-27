@@ -98,7 +98,7 @@ int main (int argc, char ** argv)
 	  GridParallelRNG  pRNG(&Grid); pRNG.SeedFixedIntegers(seeds);
 	  LatticeGaugeField Umu(&Grid); random(pRNG,Umu);
 	  LatticeFermion    src(&Grid); random(pRNG,src);
-	  LatticeFermion result(&Grid); result=zero;
+	  LatticeFermion result(&Grid); result=Zero();
 
 	  double volume = std::accumulate(latt_size.begin(),latt_size.end(),1,std::multiplies<int>());
 

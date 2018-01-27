@@ -41,7 +41,7 @@ int main (int argc, char ** argv)
   typedef iVector<vReal,Nvec> Vec;
 
 
-  Vec rn = zero;
+  Vec rn = Zero();
 
   std::vector<int> simd_layout = GridDefaultSimd(Nd,vReal::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
