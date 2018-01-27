@@ -102,7 +102,7 @@ public:
   
   template<class obj> static void ThreadSum( std::vector<obj> &sum_array,obj &val,int me){
     sum_array[me] = val;
-    val=zero;
+    val=Zero();
     ThreadBarrier();
     for(int i=0;i<_threads;i++) val+= sum_array[i];
     ThreadBarrier();

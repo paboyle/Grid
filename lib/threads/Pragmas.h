@@ -35,8 +35,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #define strong_inline     __attribute__((always_inline)) inline
 
-#define COMMA_SAFE(...) __VA_ARGS__
-
 #ifdef _OPENMP
 #define GRID_OMP
 #include <omp.h>
@@ -52,15 +50,15 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 // New primitives; explicit host thread calls, and accelerator data parallel calls
 //////////////////////////////////////////////////////////////////////////////////
 #ifdef GRID_OMP
-#define thread_loop( range , body )           _Pragma("omp parallel for schedule(static)") for range { body ; };
-#define thread_loop_in_region( range , body ) _Pragma("omp for schedule(static)")          for range  { body ; };
-#define thread_loop_collapse( range , body )  _Pragma("omp parallel for collapse(2)")      for range  { body };
+#define thread_loop( range , ... )           _Pragma("omp parallel for schedule(static)") for range { __VA_ARGS__ ; };
+#define thread_loop_in_region( range , ... ) _Pragma("omp for schedule(static)")          for range  { __VA_ARGS__ ; };
+#define thread_loop_collapse( range , ... )  _Pragma("omp parallel for collapse(2)")      for range  { __VA_ARGS__ };
 #define thread_region                         _Pragma("omp parallel")
 #define thread_critical                       _Pragma("omp critical")
 #else
-#define thread_loop( range , body )            for range { body ; };
-#define thread_loop_in_region( range , body )  for range { body ; };
-#define thread_loop_collapse( range , body )   for range { body ; };
+#define thread_loop( range , ... )            for range { __VA_ARGS__ ; };
+#define thread_loop_in_region( range , ... )  for range { __VA_ARGS__ ; };
+#define thread_loop_collapse( range , ... )   for range { __VA_ARGS__ ; };
 #define thread_region                           
 #define thread_critical                         
 #endif
@@ -88,20 +86,20 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define accelerator __host__ __device__
 #define accelerator_inline __host__ __device__ inline
 // FIXME ; need to make this a CUDA kernel call
-#define accelerator_loop( iterator, range, body )		\
+#define accelerator_loop( iterator, range, ... )		\
   typedef decltype(range.begin()) Iterator;			\
   auto lambda = [&] (Iterator iterator) {			\
-    body;							\
+    __VA_ARGS__;							\
   };								\
   for(auto it=range.begin();it<range.end();it++){		\
     lambda(it);							\
   }
-#define cpu_loop( iterator, range, body )   thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { body });
+#define cpu_loop( iterator, range, ... )   thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
 #else
 #define accelerator 
 #define accelerator_inline strong_inline
-#define accelerator_loop( iterator, range, body )			\
-  thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { body });
-#define cpu_loop( iterator, range, body )				\
-  thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { body });
+#define accelerator_loop( iterator, range, ... )			\
+  thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
+#define cpu_loop( iterator, range, ... )				\
+  thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
 #endif
