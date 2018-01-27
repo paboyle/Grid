@@ -75,7 +75,7 @@ template<class vtype,class ltype,class rtype, int N> accelerator_inline void sub
 	sub(&ret->_internal[c1][c2],&lhs->_internal,&rhs->_internal[c1][c2]);
       } else {
 	// Fails -- need unary minus. Catalogue other unops?
-	ret->_internal[c1][c2]=zero;
+	ret->_internal[c1][c2]=Zero();
 	ret->_internal[c1][c2]=ret->_internal[c1][c2]-rhs->_internal[c1][c2];
 
       }

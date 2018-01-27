@@ -272,7 +272,7 @@ public:
   static auto traceIndex(const iVector<vtype,N> arg) ->  iScalar<RemoveCRV(arg._internal[0])>
   {
     iScalar<RemoveCRV(arg._internal[0])> ret;
-    ret._internal=zero;
+    ret._internal=Zero();
     for(int i=0;i<N;i++){
       ret._internal = ret._internal+ arg._internal[i];
     }
@@ -302,7 +302,7 @@ public:
   static auto transposeIndex(const iMatrix<vtype,N> arg)  ->  iMatrix<vtype,N> 
   {
     iMatrix<vtype,N> ret;
-    ret=zero;
+    ret=Zero();
     for(int i=0;i<N;i++){
       for(int j=0;j<N;j++){
 	ret._internal[i][j] = ret._internal[i][j]+arg._internal[i][j];
