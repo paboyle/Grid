@@ -44,7 +44,7 @@ NAMESPACE_BEGIN(Grid);
 template<int Index,class vobj> 
 auto PeekIndex(const Lattice<vobj> &lhs,int i) -> Lattice<decltype(peekIndex<Index>(lhs[0],i))>
 {
-  Lattice<decltype(peekIndex<Index>(lhs[0],i))> ret(lhs._grid);
+  Lattice<decltype(peekIndex<Index>(lhs[0],i))> ret(lhs.Grid());
   ret.Checkerboard()=lhs.Checkerboard();
   cpu_loop( ss, lhs, {
     ret[ss] = peekIndex<Index>(lhs[ss],i);
@@ -54,7 +54,7 @@ auto PeekIndex(const Lattice<vobj> &lhs,int i) -> Lattice<decltype(peekIndex<Ind
 template<int Index,class vobj> 
 auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekIndex<Index>(lhs[0],i,j))>
 {
-  Lattice<decltype(peekIndex<Index>(lhs[0],i,j))> ret(lhs._grid);
+  Lattice<decltype(peekIndex<Index>(lhs[0],i,j))> ret(lhs.Grid());
   ret.Checkerboard()=lhs.Checkerboard();
   cpu_loop( ss, lhs, {
     ret[ss] = peekIndex<Index>(lhs[ss],i,j);
@@ -86,14 +86,14 @@ void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs[0]
 template<class vobj,class sobj> 
 void pokeSite(const sobj &s,Lattice<vobj> &l,const std::vector<int> &site){
 
-  GridBase *grid=l._grid;
+  GridBase *grid=l.Grid();
 
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
   int Nsimd = grid->Nsimd();
 
-  assert( l.Checkerboard()== l._grid->CheckerBoard(site));
+  assert( l.Checkerboard()== l.Grid()->CheckerBoard(site));
   assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
   int rank,odx,idx;
@@ -120,14 +120,14 @@ void pokeSite(const sobj &s,Lattice<vobj> &l,const std::vector<int> &site){
 template<class vobj,class sobj>
 void peekSite(sobj &s,const Lattice<vobj> &l,const std::vector<int> &site){
         
-  GridBase *grid=l._grid;
+  GridBase *grid=l.Grid();
 
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
   int Nsimd = grid->Nsimd();
 
-  assert( l.Checkerboard() == l._grid->CheckerBoard(site));
+  assert( l.Checkerboard() == l.Grid()->CheckerBoard(site));
 
   int rank,odx,idx;
   grid->GlobalCoorToRankIndex(rank,odx,idx,site);
@@ -149,14 +149,14 @@ void peekSite(sobj &s,const Lattice<vobj> &l,const std::vector<int> &site){
 template<class vobj,class sobj>
 void peekLocalSite(sobj &s,const Lattice<vobj> &l,std::vector<int> &site){
         
-  GridBase *grid = l._grid;
+  GridBase *grid = l.Grid();
 
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
   int Nsimd = grid->Nsimd();
 
-  assert( l.Checkerboard()== l._grid->CheckerBoard(site));
+  assert( l.Checkerboard()== l.Grid()->CheckerBoard(site));
   assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
   static const int words=sizeof(vobj)/sizeof(vector_type);
@@ -177,14 +177,14 @@ void peekLocalSite(sobj &s,const Lattice<vobj> &l,std::vector<int> &site){
 template<class vobj,class sobj>
 void pokeLocalSite(const sobj &s,Lattice<vobj> &l,std::vector<int> &site){
 
-  GridBase *grid=l._grid;
+  GridBase *grid=l.Grid();
 
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
   int Nsimd = grid->Nsimd();
 
-  assert( l.Checkerboard()== l._grid->CheckerBoard(site));
+  assert( l.Checkerboard()== l.Grid()->CheckerBoard(site));
   assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
   static const int words=sizeof(vobj)/sizeof(vector_type);

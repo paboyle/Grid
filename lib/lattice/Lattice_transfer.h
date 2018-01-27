@@ -51,29 +51,29 @@ inline void subdivides(GridBase *coarse,GridBase *fine)
 template<class vobj> inline void pickCheckerboard(int cb,Lattice<vobj> &half,const Lattice<vobj> &full){
   half.Checkerboard() = cb;
 
-  thread_loop( (int ss=0;ss<full._grid->oSites();ss++),{
+  thread_loop( (int ss=0;ss<full.Grid()->oSites();ss++),{
     int cbos;
     std::vector<int> coor;
-    full._grid->oCoorFromOindex(coor,ss);
-    cbos=half._grid->CheckerBoard(coor);
+    full.Grid()->oCoorFromOindex(coor,ss);
+    cbos=half.Grid()->CheckerBoard(coor);
       
     if (cbos==cb) {
-      int ssh=half._grid->oIndex(coor);
+      int ssh=half.Grid()->oIndex(coor);
       half[ssh] = full[ss];
     }
   });
 }
 template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Lattice<vobj> &half){
   int cb = half.Checkerboard();
-  thread_loop( (int ss=0;ss<full._grid->oSites();ss++), {
+  thread_loop( (int ss=0;ss<full.Grid()->oSites();ss++), {
     std::vector<int> coor;
     int cbos;
 
-    full._grid->oCoorFromOindex(coor,ss);
-    cbos=half._grid->CheckerBoard(coor);
+    full.Grid()->oCoorFromOindex(coor,ss);
+    cbos=half.Grid()->CheckerBoard(coor);
       
     if (cbos==cb) {
-      int ssh=half._grid->oIndex(coor);
+      int ssh=half.Grid()->oIndex(coor);
       full[ss]=half[ssh];
     }
   });
@@ -85,8 +85,8 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
 			 const             Lattice<vobj>   &fineData,
 			 const std::vector<Lattice<vobj> > &Basis)
 {
-  GridBase * fine  = fineData._grid;
-  GridBase * coarse= coarseData._grid;
+  GridBase * fine  = fineData.Grid();
+  GridBase * coarse= coarseData.Grid();
   int  _ndimension = coarse->_ndimension;
 
   // checks
@@ -132,8 +132,8 @@ inline void blockZAXPY(Lattice<vobj> &fineZ,
 		       const Lattice<vobj> &fineX,
 		       const Lattice<vobj> &fineY)
 {
-  GridBase * fine  = fineZ._grid;
-  GridBase * coarse= coarseA._grid;
+  GridBase * fine  = fineZ.Grid();
+  GridBase * coarse= coarseA.Grid();
 
   fineZ.Checkerboard()=fineX.Checkerboard();
   assert(fineX.Checkerboard()==fineY.Checkerboard());
@@ -175,8 +175,8 @@ inline void blockInnerProduct(Lattice<CComplex> &CoarseInner,
 {
   typedef decltype(innerProduct(fineX[0],fineY[0])) dotp;
 
-  GridBase *coarse(CoarseInner._grid);
-  GridBase *fine  (fineX._grid);
+  GridBase *coarse(CoarseInner.Grid());
+  GridBase *fine  (fineX.Grid());
 
   Lattice<dotp> fine_inner(fine); fine_inner.Checkerboard() = fineX.Checkerboard();
   Lattice<dotp> coarse_inner(coarse);
@@ -191,8 +191,8 @@ inline void blockInnerProduct(Lattice<CComplex> &CoarseInner,
 template<class vobj,class CComplex>
 inline void blockNormalise(Lattice<CComplex> &ip,Lattice<vobj> &fineX)
 {
-  GridBase *coarse = ip._grid;
-  Lattice<vobj> zz(fineX._grid); zz=zero; zz.Checkerboard()=fineX.Checkerboard();
+  GridBase *coarse = ip.Grid();
+  Lattice<vobj> zz(fineX.Grid()); zz=zero; zz.Checkerboard()=fineX.Checkerboard();
   blockInnerProduct(ip,fineX,fineX);
   ip = pow(ip,-0.5);
   blockZAXPY(fineX,ip,fineX,zz);
@@ -202,8 +202,8 @@ inline void blockNormalise(Lattice<CComplex> &ip,Lattice<vobj> &fineX)
 template<class vobj>
 inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
 {
-  GridBase * fine  = fineData._grid;
-  GridBase * coarse= coarseData._grid;
+  GridBase * fine  = fineData.Grid();
+  GridBase * coarse= coarseData.Grid();
 
   subdivides(coarse,fine); // require they map
 
@@ -242,7 +242,7 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
 template<class vobj>
 inline void blockPick(GridBase *coarse,const Lattice<vobj> &unpicked,Lattice<vobj> &picked,std::vector<int> coor)
 {
-  GridBase * fine = unpicked._grid;
+  GridBase * fine = unpicked.Grid();
 
   Lattice<vobj> zz(fine); zz.Checkerboard() = unpicked.Checkerboard();
   Lattice<iScalar<vInteger> > fcoor(fine);
@@ -263,15 +263,15 @@ inline void blockPick(GridBase *coarse,const Lattice<vobj> &unpicked,Lattice<vob
 template<class vobj,class CComplex>
 inline void blockOrthogonalise(Lattice<CComplex> &ip,std::vector<Lattice<vobj> > &Basis)
 {
-  GridBase *coarse = ip._grid;
-  GridBase *fine   = Basis[0]._grid;
+  GridBase *coarse = ip.Grid();
+  GridBase *fine   = Basis[0].Grid();
 
   int       nbasis = Basis.size() ;
 
   // checks
   subdivides(coarse,fine); 
   for(int i=0;i<nbasis;i++){
-    conformable(Basis[i]._grid,fine);
+    conformable(Basis[i].Grid(),fine);
   }
 
   for(int v=0;v<nbasis;v++) {
@@ -290,15 +290,15 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
 			 Lattice<vobj>   &fineData,
 			 const std::vector<Lattice<vobj> > &Basis)
 {
-  GridBase * fine  = fineData._grid;
-  GridBase * coarse= coarseData._grid;
+  GridBase * fine  = fineData.Grid();
+  GridBase * coarse= coarseData.Grid();
   int  _ndimension = coarse->_ndimension;
 
   // checks
   assert( nbasis == Basis.size() );
   subdivides(coarse,fine); 
   for(int i=0;i<nbasis;i++){
-    conformable(Basis[i]._grid,fine);
+    conformable(Basis[i].Grid(),fine);
   }
 
   std::vector<int>  block_r      (_ndimension);
@@ -337,8 +337,8 @@ void localConvert(const Lattice<vobj> &in,Lattice<vvobj> &out)
   typedef typename vobj::scalar_object sobj;
   typedef typename vvobj::scalar_object ssobj;
 
-  GridBase *ig = in._grid;
-  GridBase *og = out._grid;
+  GridBase *ig = in.Grid();
+  GridBase *og = out.Grid();
 
   int ni = ig->_ndimension;
   int no = og->_ndimension;
@@ -369,8 +369,8 @@ void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice
 {
   typedef typename vobj::scalar_object sobj;
 
-  GridBase *lg = lowDim._grid;
-  GridBase *hg = higherDim._grid;
+  GridBase *lg = lowDim.Grid();
+  GridBase *hg = higherDim.Grid();
   int nl = lg->_ndimension;
   int nh = hg->_ndimension;
 
@@ -411,8 +411,8 @@ void ExtractSlice(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slic
 {
   typedef typename vobj::scalar_object sobj;
 
-  GridBase *lg = lowDim._grid;
-  GridBase *hg = higherDim._grid;
+  GridBase *lg = lowDim.Grid();
+  GridBase *hg = higherDim.Grid();
   int nl = lg->_ndimension;
   int nh = hg->_ndimension;
 
@@ -454,8 +454,8 @@ void InsertSliceLocal(const Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int
 {
   typedef typename vobj::scalar_object sobj;
 
-  GridBase *lg = lowDim._grid;
-  GridBase *hg = higherDim._grid;
+  GridBase *lg = lowDim.Grid();
+  GridBase *hg = higherDim.Grid();
   int nl = lg->_ndimension;
   int nh = hg->_ndimension;
 
@@ -489,8 +489,8 @@ void ExtractSliceLocal(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slic
 {
   typedef typename vobj::scalar_object sobj;
 
-  GridBase *lg = lowDim._grid;
-  GridBase *hg = higherDim._grid;
+  GridBase *lg = lowDim.Grid();
+  GridBase *hg = higherDim.Grid();
   int nl = lg->_ndimension;
   int nh = hg->_ndimension;
 
@@ -524,8 +524,8 @@ void Replicate(Lattice<vobj> &coarse,Lattice<vobj> & fine)
 {
   typedef typename vobj::scalar_object sobj;
 
-  GridBase *cg = coarse._grid;
-  GridBase *fg =   fine._grid;
+  GridBase *cg = coarse.Grid();
+  GridBase *fg =   fine.Grid();
 
   int nd = cg->_ndimension;
 
@@ -563,7 +563,7 @@ unvectorizeToLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in)
 
   typedef typename vobj::vector_type vtype;
   
-  GridBase* in_grid = in._grid;
+  GridBase* in_grid = in.Grid();
   out.resize(in_grid->lSites());
   
   int ndim = in_grid->Nd();
@@ -609,7 +609,7 @@ vectorizeFromLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
 
   typedef typename vobj::vector_type vtype;
   
-  GridBase* grid = out._grid;
+  GridBase* grid = out.Grid();
   assert(in.size()==grid->lSites());
   
   int ndim     = grid->Nd();
@@ -653,15 +653,15 @@ vectorizeFromLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
 template<class VobjOut, class VobjIn>
 void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
 
-  assert(out._grid->Nd() == in._grid->Nd());
+  assert(out.Grid()->Nd() == in.Grid()->Nd());
   out.Checkerboard() = in.Checkerboard();
-  GridBase *in_grid=in._grid;
-  GridBase *out_grid = out._grid;
+  GridBase *in_grid=in.Grid();
+  GridBase *out_grid = out.Grid();
 
   typedef typename VobjOut::scalar_object SobjOut;
   typedef typename VobjIn::scalar_object SobjIn;
 
-  int ndim = out._grid->Nd();
+  int ndim = out.Grid()->Nd();
   int out_nsimd = out_grid->Nsimd();
     
   std::vector<std::vector<int> > out_icoor(out_nsimd);
@@ -749,8 +749,8 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 
   assert(full_vecs>=1);
 
-  GridBase * full_grid = full[0]._grid;
-  GridBase *split_grid = split._grid;
+  GridBase * full_grid = full[0].Grid();
+  GridBase *split_grid = split.Grid();
 
   int       ndim  = full_grid->_ndimension;
   int  full_nproc = full_grid->_Nprocessors;
@@ -769,8 +769,8 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
   for(int n=0;n<full_vecs;n++){
     assert(full[n].Checkerboard() == cb);
     for(int d=0;d<ndim;d++){
-      assert(full[n]._grid->_gdimensions[d]==split._grid->_gdimensions[d]);
-      assert(full[n]._grid->_fdimensions[d]==split._grid->_fdimensions[d]);
+      assert(full[n].Grid()->_gdimensions[d]==split.Grid()->_gdimensions[d]);
+      assert(full[n].Grid()->_fdimensions[d]==split.Grid()->_fdimensions[d]);
     }
   }
 
@@ -858,8 +858,8 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 template<class Vobj>
 void Grid_split(Lattice<Vobj> &full,Lattice<Vobj>   & split)
 {
-  int nvector = full._grid->_Nprocessors / split._grid->_Nprocessors;
-  std::vector<Lattice<Vobj> > full_v(nvector,full._grid);
+  int nvector = full.Grid()->_Nprocessors / split.Grid()->_Nprocessors;
+  std::vector<Lattice<Vobj> > full_v(nvector,full.Grid());
   for(int n=0;n<nvector;n++){
     full_v[n] = full;
   }
@@ -875,8 +875,8 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 
   assert(full_vecs>=1);
 
-  GridBase * full_grid = full[0]._grid;
-  GridBase *split_grid = split._grid;
+  GridBase * full_grid = full[0].Grid();
+  GridBase *split_grid = split.Grid();
 
   int       ndim  = full_grid->_ndimension;
   int  full_nproc = full_grid->_Nprocessors;
@@ -895,8 +895,8 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
   for(int n=0;n<full_vecs;n++){
     assert(full[n].Checkerboard() == cb);
     for(int d=0;d<ndim;d++){
-      assert(full[n]._grid->_gdimensions[d]==split._grid->_gdimensions[d]);
-      assert(full[n]._grid->_fdimensions[d]==split._grid->_fdimensions[d]);
+      assert(full[n].Grid()->_gdimensions[d]==split.Grid()->_gdimensions[d]);
+      assert(full[n].Grid()->_fdimensions[d]==split.Grid()->_fdimensions[d]);
     }
   }
 

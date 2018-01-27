@@ -34,7 +34,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 template<class obj> Lattice<obj> pow(const Lattice<obj> &rhs,RealD y){
-  Lattice<obj> ret(rhs._grid);
+  Lattice<obj> ret(rhs.Grid());
   ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
   accelerator_loop(ss,rhs,{
@@ -43,7 +43,7 @@ template<class obj> Lattice<obj> pow(const Lattice<obj> &rhs,RealD y){
   return ret;
 }
 template<class obj> Lattice<obj> mod(const Lattice<obj> &rhs,Integer y){
-  Lattice<obj> ret(rhs._grid);
+  Lattice<obj> ret(rhs.Grid());
   ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
   accelerator_loop(ss,rhs,{
@@ -53,7 +53,7 @@ template<class obj> Lattice<obj> mod(const Lattice<obj> &rhs,Integer y){
 }
 
 template<class obj> Lattice<obj> div(const Lattice<obj> &rhs,Integer y){
-  Lattice<obj> ret(rhs._grid);
+  Lattice<obj> ret(rhs.Grid());
   ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
   accelerator_loop(ss,rhs,{
@@ -63,7 +63,7 @@ template<class obj> Lattice<obj> div(const Lattice<obj> &rhs,Integer y){
 }
 
 template<class obj> Lattice<obj> expMat(const Lattice<obj> &rhs, RealD alpha, Integer Nexp = DEFAULT_MAT_EXP){
-  Lattice<obj> ret(rhs._grid);
+  Lattice<obj> ret(rhs.Grid());
   ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
   accelerator_loop(ss,rhs,{

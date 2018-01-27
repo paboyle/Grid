@@ -34,7 +34,7 @@ public:
   static void traceDirPlaquette(LatticeComplex &plaq,
                                 const std::vector<GaugeMat> &U, const int mu,
                                 const int nu) {
-    GaugeMat sp(U[0]._grid);
+    GaugeMat sp(U[0].Grid());
     dirPlaquette(sp, U, mu, nu);
     plaq = trace(sp);
   }
@@ -43,9 +43,9 @@ public:
   //////////////////////////////////////////////////
   static void sitePlaquette(LatticeComplex &Plaq,
                             const std::vector<GaugeMat> &U) {
-    LatticeComplex sitePlaq(U[0]._grid);
+    LatticeComplex sitePlaq(U[0].Grid());
     Plaq = zero;
-    for (int mu = 1; mu < U[0]._grid->_ndimension; mu++) {
+    for (int mu = 1; mu < U[0].Grid()->_ndimension; mu++) {
       for (int nu = 0; nu < mu; nu++) {
         traceDirPlaquette(sitePlaq, U, mu, nu);
         Plaq = Plaq + sitePlaq;
@@ -56,13 +56,13 @@ public:
   // sum over all x,y,z,t and over all planes of plaquette
   //////////////////////////////////////////////////
   static Real sumPlaquette(const GaugeLorentz &Umu) {
-    std::vector<GaugeMat> U(4, Umu._grid);
+    std::vector<GaugeMat> U(4, Umu.Grid());
 
-    for (int mu = 0; mu < Umu._grid->_ndimension; mu++) {
+    for (int mu = 0; mu < Umu.Grid()->_ndimension; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
     }
 
-    LatticeComplex Plaq(Umu._grid);
+    LatticeComplex Plaq(Umu.Grid());
 
     sitePlaquette(Plaq, U);
 
@@ -74,9 +74,9 @@ public:
   // average over all x,y,z,t and over all planes of plaquette
   //////////////////////////////////////////////////
   static Real avgPlaquette(const GaugeLorentz &Umu) {
-    int ndim = Umu._grid->_ndimension;
+    int ndim = Umu.Grid()->_ndimension;
     Real sumplaq = sumPlaquette(Umu);
-    Real vol = Umu._grid->gSites();
+    Real vol = Umu.Grid()->gSites();
     Real faces = (1.0 * ndim * (ndim - 1)) / 2.0;
     return sumplaq / vol / faces / Nc; // Nc dependent... FIXME
   }
@@ -112,7 +112,7 @@ public:
                                 const std::vector<GaugeMat> &U,
                                 const int Rmu, const int Rnu,
                                 const int mu, const int nu) {
-    GaugeMat sp(U[0]._grid);
+    GaugeMat sp(U[0].Grid());
     wilsonLoop(sp, U, Rmu, Rnu, mu, nu);
     wl = trace(sp);
   }
@@ -122,9 +122,9 @@ public:
   static void siteWilsonLoop(LatticeComplex &Wl,
                             const std::vector<GaugeMat> &U,
                             const int R1, const int R2) {
-    LatticeComplex siteWl(U[0]._grid);
+    LatticeComplex siteWl(U[0].Grid());
     Wl = zero;
-    for (int mu = 1; mu < U[0]._grid->_ndimension; mu++) {
+    for (int mu = 1; mu < U[0].Grid()->_ndimension; mu++) {
       for (int nu = 0; nu < mu; nu++) {
         traceWilsonLoop(siteWl, U, R1, R2, mu, nu);
         Wl = Wl + siteWl;
@@ -140,9 +140,9 @@ public:
   static void siteTimelikeWilsonLoop(LatticeComplex &Wl,
                             const std::vector<GaugeMat> &U,
                             const int R1, const int R2) {
-    LatticeComplex siteWl(U[0]._grid);
+    LatticeComplex siteWl(U[0].Grid());
 
-    int ndim = U[0]._grid->_ndimension;
+    int ndim = U[0].Grid()->_ndimension;
 
     Wl = zero;
     for (int nu = 0; nu < ndim - 1; nu++) {
@@ -156,10 +156,10 @@ public:
   static void siteSpatialWilsonLoop(LatticeComplex &Wl,
                             const std::vector<GaugeMat> &U,
                             const int R1, const int R2) {
-    LatticeComplex siteWl(U[0]._grid);
+    LatticeComplex siteWl(U[0].Grid());
 
     Wl = zero;
-    for (int mu = 1; mu < U[0]._grid->_ndimension - 1; mu++) {
+    for (int mu = 1; mu < U[0].Grid()->_ndimension - 1; mu++) {
       for (int nu = 0; nu < mu; nu++) {
         traceWilsonLoop(siteWl, U, R1, R2, mu, nu);
         Wl = Wl + siteWl;
@@ -173,13 +173,13 @@ public:
   //////////////////////////////////////////////////
   static Real sumWilsonLoop(const GaugeLorentz &Umu,
                             const int R1, const int R2) {
-    std::vector<GaugeMat> U(4, Umu._grid);
+    std::vector<GaugeMat> U(4, Umu.Grid());
 
-    for (int mu = 0; mu < Umu._grid->_ndimension; mu++) {
+    for (int mu = 0; mu < Umu.Grid()->_ndimension; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
     }
 
-    LatticeComplex Wl(Umu._grid);
+    LatticeComplex Wl(Umu.Grid());
 
     siteWilsonLoop(Wl, U, R1, R2);
 
@@ -192,13 +192,13 @@ public:
   //////////////////////////////////////////////////
   static Real sumTimelikeWilsonLoop(const GaugeLorentz &Umu,
                             const int R1, const int R2) {
-    std::vector<GaugeMat> U(4, Umu._grid);
+    std::vector<GaugeMat> U(4, Umu.Grid());
 
-    for (int mu = 0; mu < Umu._grid->_ndimension; mu++) {
+    for (int mu = 0; mu < Umu.Grid()->_ndimension; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
     }
 
-    LatticeComplex Wl(Umu._grid);
+    LatticeComplex Wl(Umu.Grid());
 
     siteTimelikeWilsonLoop(Wl, U, R1, R2);
 
@@ -211,13 +211,13 @@ public:
   //////////////////////////////////////////////////
   static Real sumSpatialWilsonLoop(const GaugeLorentz &Umu,
                             const int R1, const int R2) {
-    std::vector<GaugeMat> U(4, Umu._grid);
+    std::vector<GaugeMat> U(4, Umu.Grid());
 
-    for (int mu = 0; mu < Umu._grid->_ndimension; mu++) {
+    for (int mu = 0; mu < Umu.Grid()->_ndimension; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
     }
 
-    LatticeComplex Wl(Umu._grid);
+    LatticeComplex Wl(Umu.Grid());
 
     siteSpatialWilsonLoop(Wl, U, R1, R2);
 
@@ -230,9 +230,9 @@ public:
   //////////////////////////////////////////////////
   static Real avgWilsonLoop(const GaugeLorentz &Umu,
                             const int R1, const int R2) {
-    int ndim = Umu._grid->_ndimension;
+    int ndim = Umu.Grid()->_ndimension;
     Real sumWl = sumWilsonLoop(Umu, R1, R2);
-    Real vol = Umu._grid->gSites();
+    Real vol = Umu.Grid()->gSites();
     Real faces = 1.0 * ndim * (ndim - 1);
     return sumWl / vol / faces / Nc; // Nc dependent... FIXME
   }
@@ -241,9 +241,9 @@ public:
   //////////////////////////////////////////////////
   static Real avgTimelikeWilsonLoop(const GaugeLorentz &Umu,
                             const int R1, const int R2) {
-    int ndim = Umu._grid->_ndimension;
+    int ndim = Umu.Grid()->_ndimension;
     Real sumWl = sumTimelikeWilsonLoop(Umu, R1, R2);
-    Real vol = Umu._grid->gSites();
+    Real vol = Umu.Grid()->gSites();
     Real faces = 1.0 * (ndim - 1);
     return sumWl / vol / faces / Nc; // Nc dependent... FIXME
   }
@@ -252,9 +252,9 @@ public:
   //////////////////////////////////////////////////
   static Real avgSpatialWilsonLoop(const GaugeLorentz &Umu,
                             const int R1, const int R2) {
-    int ndim = Umu._grid->_ndimension;
+    int ndim = Umu.Grid()->_ndimension;
     Real sumWl = sumSpatialWilsonLoop(Umu, R1, R2);
-    Real vol = Umu._grid->gSites();
+    Real vol = Umu.Grid()->gSites();
     Real faces = 1.0 * (ndim - 1) * (ndim - 2);
     return sumWl / vol / faces / Nc; // Nc dependent... FIXME
   }

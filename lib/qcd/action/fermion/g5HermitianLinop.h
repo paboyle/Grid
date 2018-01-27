@@ -45,12 +45,12 @@ public:
     HermOp(in,out);
   }
   void OpDiag (const Field &in, Field &out) {
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
     _Mat.Mdiag(in,tmp);
     G5R5(out,tmp);
   }
   void OpDir  (const Field &in, Field &out,int dir,int disp) {
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
     _Mat.Mdir(in,tmp,dir,disp);
     G5R5(out,tmp);
   }
@@ -67,7 +67,7 @@ public:
     n2=real(dot);
   }
   void HermOp(const Field &in, Field &out){
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
     _Mat.M(in,tmp);
     G5R5(out,tmp);
   }
@@ -87,12 +87,12 @@ public:
     HermOp(in,out);
   }
   void OpDiag (const Field &in, Field &out) {
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
     _Mat.Mdiag(in,tmp);
     out=g5*tmp;
   }
   void OpDir  (const Field &in, Field &out,int dir,int disp) {
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
     _Mat.Mdir(in,tmp,dir,disp);
     out=g5*tmp;
   }
@@ -109,7 +109,7 @@ public:
     n2=real(dot);
   }
   void HermOp(const Field &in, Field &out){
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
     _Mat.M(in,tmp);
     out=g5*tmp;
   }

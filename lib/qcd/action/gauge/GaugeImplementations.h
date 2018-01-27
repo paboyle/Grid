@@ -96,7 +96,7 @@ public:
 
   static inline GaugeLinkField
   CovShiftIdentityBackward(const GaugeLinkField &Link, int mu) {
-    GridBase *grid = Link._grid;
+    GridBase *grid = Link.Grid();
     int Lmu = grid->GlobalDimensions()[mu] - 1;
 
     Lattice<iScalar<vInteger>> coor(grid);
@@ -113,7 +113,7 @@ public:
   }
 
   static inline GaugeLinkField ShiftStaple(const GaugeLinkField &Link, int mu) {
-    GridBase *grid = Link._grid;
+    GridBase *grid = Link.Grid();
     int Lmu = grid->GlobalDimensions()[mu] - 1;
 
     Lattice<iScalar<vInteger>> coor(grid);

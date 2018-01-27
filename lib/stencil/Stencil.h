@@ -82,7 +82,7 @@ void Gather_plane_exchange_table(std::vector<std::pair<int,int> >& table,const L
 {
   assert( (table.size()&0x1)==0);
   int num=table.size()/2;
-  int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+  int so  = plane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane 
   parallel_for(int j=0;j<num;j++){
     compress.CompressExchange(&pointers[0][0],&pointers[1][0],&rhs[0],
 			      j,so+table[2*j].second,so+table[2*j+1].second,type);
@@ -141,8 +141,10 @@ public:
   
   int                               _checkerboard;
   int                               _npoints; // Move to template param?
+protected:
   GridBase *                        _grid;
-  
+public: 
+  GridBase *Grid(void) const { return _grid; }
   // npoints of these
   std::vector<int>                  _directions;
   std::vector<int>                  _distances;
@@ -436,8 +438,8 @@ public:
     _grid->StencilBarrier();// Synch shared memory on a single nodes
     mpi3synctime_g+=usecond();
 
-    // conformable(source._grid,_grid);
-    assert(source._grid==_grid);
+    // conformable(source.Grid(),_grid);
+    assert(source.Grid()==_grid);
     halogtime-=usecond();
     
     u_comm_offset=0;
@@ -864,8 +866,8 @@ public:
     typedef typename cobj::vector_type vector_type;
     typedef typename cobj::scalar_type scalar_type;
     
-    assert(rhs._grid==_grid);
-    //	  conformable(_grid,rhs._grid);
+    assert(rhs.Grid()==_grid);
+    //	  conformable(_grid,rhs.Grid());
     
     int fd              = _grid->_fdimensions[dimension];
     int rd              = _grid->_rdimensions[dimension];
@@ -895,7 +897,7 @@ public:
 	
 	int bytes =  words * compress.CommDatumSize();
 	
-	int so  = sx*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+	int so  = sx*rhs.Grid()->_ostride[dimension]; // base offset for start of plane 
 	if ( !face_table_computed ) {
 	  face_table.resize(face_idx+1);
 	  Gather_plane_table_compute ((GridBase *)_grid,dimension,sx,cbmask,u_comm_offset,face_table[face_idx]);

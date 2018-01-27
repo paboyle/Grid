@@ -59,7 +59,7 @@ public:
 
   virtual RealD S(const GaugeField &U) {
     RealD plaq = WilsonLoops<Gimpl>::avgPlaquette(U);
-    RealD vol = U._grid->gSites();
+    RealD vol = U.Grid()->gSites();
     RealD action = beta * (1.0 - plaq) * (Nd * (Nd - 1.0)) * vol * 0.5;
     return action;
   };
@@ -70,8 +70,8 @@ public:
 
     RealD factor = 0.5 * beta / RealD(Nc);
 
-    //GaugeLinkField Umu(U._grid);
-    GaugeLinkField dSdU_mu(U._grid);
+    //GaugeLinkField Umu(U.Grid());
+    GaugeLinkField dSdU_mu(U.Grid());
     for (int mu = 0; mu < Nd; mu++) {
       //Umu = PeekIndex<LorentzIndex>(U, mu);
 

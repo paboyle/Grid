@@ -189,7 +189,7 @@ public:
     if (_apply_actual++ >= _max_apply) {
       std::cout << GridLogMessage << "Maximum application of operator reached, checkpoint and finish in future job" << std::endl;
       if (_f) { fclose(_f); _f=0; }
-      in._grid->Barrier();
+      in.Grid()->Barrier();
       Grid_finalize();
       exit(3);
     }
@@ -207,10 +207,10 @@ public:
   }
 
   void operator()(const CoarseField& in, CoarseField& out) {
-    assert(_pr._bgrid._o_blocks == in._grid->oSites());
+    assert(_pr._bgrid._o_blocks == in.Grid()->oSites());
 
-    Field fin(_pr._bgrid._grid);
-    Field fout(_pr._bgrid._grid);
+    Field fin(_pr._bgrid.Grid());
+    Field fout(_pr._bgrid.Grid());
 
     GridStopWatch gsw1,gsw2,gsw3;
     // fill fin
@@ -245,9 +245,9 @@ public:
   }
 
   void operator()(const CoarseField& in, CoarseField& out) {
-    assert(_pr._bgrid._o_blocks == in._grid->oSites());
-    Field fin(_pr._bgrid._grid);
-    Field fout(_pr._bgrid._grid);
+    assert(_pr._bgrid._o_blocks == in.Grid()->oSites());
+    Field fin(_pr._bgrid.Grid());
+    Field fout(_pr._bgrid.Grid());
     _pr.coarseToFine(in,fin);
     _Linop.HermOp(fin,fout);
     _pr.fineToCoarse(fout,out);
@@ -276,8 +276,8 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
 
   std::vector<int> coarseFourDimLatt;
   for (int i=0;i<4;i++)
-    coarseFourDimLatt.push_back(bgrid._nb[1+i] * bgrid._grid->_processors[1+i]);
-  assert(bgrid._grid->_processors[0] == 1);
+    coarseFourDimLatt.push_back(bgrid._nb[1+i] * bgrid.Grid()->_processors[1+i]);
+  assert(bgrid.Grid()->_processors[0] == 1);
 
   std::cout << GridLogMessage << "CoarseGrid = " << coarseFourDimLatt << " with basis = " << Nstop1 << std::endl;
   GridCartesian         * UCoarseGrid   = SpaceTimeGrid::makeFourDimGrid(coarseFourDimLatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
@@ -292,7 +292,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
   BasisFieldVector<CoarseLatticeFermion<Nstop1> > coef(Nm2,FCoarseGrid);
 
   ProjectedFunctionHermOp<CoarseLatticeFermion<Nstop1>,LatticeFermion> Op2plain(pr,Cheb2,HermOp);
-  CheckpointedLinearFunction<CoarseLatticeFermion<Nstop1> > Op2ckpt(src_coarse._grid,Op2plain,"checkpoint",MaxApply2);
+  CheckpointedLinearFunction<CoarseLatticeFermion<Nstop1> > Op2ckpt(src_coarse.Grid(),Op2plain,"checkpoint",MaxApply2);
   LinearFunction< CoarseLatticeFermion<Nstop1> >* Op2;
   if (MaxApply2) {
     Op2 = &Op2ckpt;
@@ -307,7 +307,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
   
   // Precision test
   {
-    Field tmp(bgrid._grid);
+    Field tmp(bgrid.Grid());
     CoarseLatticeFermion<Nstop1> tmp2(FCoarseGrid);
     CoarseLatticeFermion<Nstop1> tmp3(FCoarseGrid);
     tmp2 = 1.0;
@@ -319,7 +319,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
     tmp2 -= tmp3;
     std::cout << GridLogMessage << "Precision Test c->f->c: " << norm2(tmp2) / norm2(tmp3) << std::endl;
 
-    //bgrid._grid->Barrier();
+    //bgrid.Grid()->Barrier();
     //return;
   }
 
@@ -366,7 +366,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
     // write
     mkdir("lanczos.output",ACCESSPERMS);
     FieldVectorIO::write_compressed_vectors("lanczos.output",pr,coef,nsingle);
-    if (bgrid._grid->IsBoss()) {
+    if (bgrid.Grid()->IsBoss()) {
       write_evals((char *)"lanczos.output/eigen-values.txt",eval3);
       write_evals((char *)"lanczos.output/eigen-values.txt.linear",eval1);
       write_evals((char *)"lanczos.output/eigen-values.txt.poly",eval2);
@@ -379,7 +379,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
 
     ConjugateGradient<LatticeFermion> CG(smoothed_eval_inner_resid, smoothed_eval_inner, false);
 
-    LatticeFermion v_i(basis[0]._grid);
+    LatticeFermion v_i(basis[0].Grid());
     auto tmp = v_i;
     auto tmp2 = v_i;
 
@@ -415,7 +415,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
       eval3[i] = ev;
     }
 
-    if (bgrid._grid->IsBoss()) {
+    if (bgrid.Grid()->IsBoss()) {
       write_evals((char *)"lanczos.output/eigen-values.txt.smoothed",eval3);
       write_evals((char *)"lanczos.output/eigen-values.txt",eval3); // also reset this to the best ones we have available
     }
@@ -424,7 +424,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
   // do CG test with and without deflation
   if (cg_test_enabled) {
     ConjugateGradient<LatticeFermion> CG(1.0e-8, cg_test_maxiter, false);
-    LatticeFermion src_orig(bgrid._grid);
+    LatticeFermion src_orig(bgrid.Grid());
     src_orig.Checkerboard() = Odd;
     src_orig = 1.0;
     src_orig = src_orig * (1.0 / ::sqrt(norm2(src_orig)) );

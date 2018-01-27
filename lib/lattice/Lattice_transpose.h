@@ -40,7 +40,7 @@ NAMESPACE_BEGIN(Grid);
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class vobj>
 inline Lattice<vobj> transpose(const Lattice<vobj> &lhs){
-  Lattice<vobj> ret(lhs._grid);
+  Lattice<vobj> ret(lhs.Grid());
   accelerator_loop(ss,lhs,{
     ret[ss] = transpose(lhs[ss]);
   });
@@ -53,7 +53,7 @@ inline Lattice<vobj> transpose(const Lattice<vobj> &lhs){
 template<int Index,class vobj>
 inline auto TransposeIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(transposeIndex<Index>(lhs[0]))>
 {
-  Lattice<decltype(transposeIndex<Index>(lhs[0]))> ret(lhs._grid);
+  Lattice<decltype(transposeIndex<Index>(lhs[0]))> ret(lhs.Grid());
   accelerator_loop(ss,lhs,{
     ret[ss] = transposeIndex<Index>(lhs[ss]);
   });

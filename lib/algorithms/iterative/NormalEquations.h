@@ -48,7 +48,7 @@ public:
 
   void operator() (const Field &in, Field &out){
  
-    Field src(in._grid);
+    Field src(in.Grid());
 
     _Matrix.Mdag(in,src);
     _HermitianSolver(src,out);  // Mdag M out = Mdag in

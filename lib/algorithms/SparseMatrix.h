@@ -41,7 +41,7 @@ public:
   virtual RealD M    (const Field &in, Field &out)=0;
   virtual RealD Mdag (const Field &in, Field &out)=0;
   virtual void  MdagM(const Field &in, Field &out,RealD &ni,RealD &no) {
-    Field tmp (in._grid);
+    Field tmp (in.Grid());
     ni=M(in,tmp);
     no=Mdag(tmp,out);
   }

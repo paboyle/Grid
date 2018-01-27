@@ -35,9 +35,9 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
-  int Nblock = X._grid->GlobalDimensions()[Orthog];
+  int Nblock = X.Grid()->GlobalDimensions()[Orthog];
 
-  GridBase *FullGrid  = X._grid;
+  GridBase *FullGrid  = X.Grid();
   //  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
 
   //  Lattice<vobj> Xslice(SliceGrid);
@@ -83,9 +83,9 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
-  int Nblock = X._grid->GlobalDimensions()[Orthog];
+  int Nblock = X.Grid()->GlobalDimensions()[Orthog];
 
-  GridBase *FullGrid  = X._grid;
+  GridBase *FullGrid  = X.Grid();
   //  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
   //  Lattice<vobj> Xslice(SliceGrid);
   //  Lattice<vobj> Rslice(SliceGrid);
@@ -135,7 +135,7 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
   
-  GridBase *FullGrid  = lhs._grid;
+  GridBase *FullGrid  = lhs.Grid();
   //  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
   
   int Nblock = FullGrid->GlobalDimensions()[Orthog];

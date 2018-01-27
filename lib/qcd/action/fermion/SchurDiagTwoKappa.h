@@ -50,7 +50,7 @@ public:
 
   template<typename vobj>
   void sscale(const Lattice<vobj>& in, Lattice<vobj>& out, Coeff_t* s) {
-    GridBase *grid=out._grid;
+    GridBase *grid=out.Grid();
     out.Checkerboard() = in.Checkerboard();
     assert(grid->_simd_layout[0] == 1); // should be fine for ZMobius for now
     int Ls = grid->_rdimensions[0];
@@ -81,7 +81,7 @@ public:
   SchurDiagTwoKappaOperator (Matrix &Mat): _S(Mat), _Mat(Mat) {};
 
   virtual  RealD Mpc      (const Field &in, Field &out) {
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
 
     _S.MInv(in,out);
     _Mat.Mpc(out,tmp);
@@ -89,7 +89,7 @@ public:
 
   }
   virtual  RealD MpcDag   (const Field &in, Field &out){
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
 
     _S.MDag(in,out);
     _Mat.MpcDag(out,tmp);

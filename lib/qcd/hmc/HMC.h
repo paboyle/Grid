@@ -189,7 +189,7 @@ public:
   void evolve(void) {
     Real DeltaH;
 
-    Field Ucopy(Ucur._grid);
+    Field Ucopy(Ucur.Grid());
 
     Params.print_parameters();
     TheIntegrator.print_actions();

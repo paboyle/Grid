@@ -39,7 +39,7 @@ Author: neo <cossu@post.kek.jp>
 NAMESPACE_BEGIN(Grid);
 
 template<class vobj> inline Lattice<vobj> adj(const Lattice<vobj> &lhs){
-  Lattice<vobj> ret(lhs._grid);
+  Lattice<vobj> ret(lhs.Grid());
   accelerator_loop( ss, lhs, {
     ret[ss] = adj(lhs[ss]);
   });
@@ -47,7 +47,7 @@ template<class vobj> inline Lattice<vobj> adj(const Lattice<vobj> &lhs){
 };
 
 template<class vobj> inline Lattice<vobj> conjugate(const Lattice<vobj> &lhs){
-  Lattice<vobj> ret(lhs._grid);
+  Lattice<vobj> ret(lhs.Grid());
   accelerator_loop( ss, lhs, {
     ret[ss] = conjugate(lhs[ss]);
   });

@@ -91,7 +91,7 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
   void operator() (const Field &src, Field &psi){
 
     psi.Checkerboard() = src.Checkerboard();
-    grid             = src._grid;
+    grid             = src.Grid();
 
     RealD f;
     RealD rtzp,rtz,a,d,b;

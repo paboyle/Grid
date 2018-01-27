@@ -63,7 +63,7 @@ public:
 
   ///////////////////////////////////////////////////////////////////////////////
   void smear(GaugeField& u_smr, const GaugeField& U)const{
-    GridBase *grid = U._grid;
+    GridBase *grid = U.Grid();
     GaugeLinkField Cup(grid), tmp_stpl(grid);
     WilsonLoops<Gimpl> WL;
     u_smr = zero;
@@ -93,7 +93,7 @@ public:
     // Computing Sigma_mu, derivative of S[fat links] with respect to the thin links
     // Output SigmaTerm
 
-    GridBase *grid = U._grid;
+    GridBase *grid = U.Grid();
 
     WilsonLoops<Gimpl> WL;
     GaugeLinkField staple(grid), u_tmp(grid);

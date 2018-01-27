@@ -40,7 +40,7 @@ using namespace Hadrons;
 template<class vobj>
 inline void make_4D_with_gammas(Lattice<vobj> &in_5d, Lattice<vobj> &out_4d, int Ls)
 {
-    GridBase *_grid(out_4d._grid);
+    GridBase *_grid(out_4d.Grid());
     Lattice<vobj> tmp(_grid);
     Gamma G5(Gamma::Algebra::Gamma5);
 
@@ -55,7 +55,7 @@ inline void make_5D_with_gammas(Lattice<vobj> &in_4d, Lattice<vobj> &out_5d, int
 {
     out_5d = zero;
     Gamma G5(Gamma::Algebra::Gamma5);
-    GridBase *_grid(in_4d._grid);
+    GridBase *_grid(in_4d.Grid());
     Lattice<vobj> tmp(_grid);
 
     tmp = 0.5 * (in_4d + G5*in_4d);

@@ -52,7 +52,7 @@ public:
     }
   }  
   static void SteepestDescentGaugeFix(GaugeLorentz &Umu,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false) {
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
 
     Real org_plaq      =WilsonLoops<Gimpl>::avgPlaquette(Umu);
     Real org_link_trace=WilsonLoops<Gimpl>::linkTrace(Umu); 
@@ -97,7 +97,7 @@ public:
     }
   };
   static Real SteepestDescentStep(std::vector<GaugeMat> &U,Real & alpha, GaugeMat & dmuAmu) {
-    GridBase *grid = U[0]._grid;
+    GridBase *grid = U[0].Grid();
 
     std::vector<GaugeMat> A(Nd,grid);
     GaugeMat g(grid);
@@ -116,7 +116,7 @@ public:
 
   static Real FourierAccelSteepestDescentStep(std::vector<GaugeMat> &U,Real & alpha, GaugeMat & dmuAmu) {
 
-    GridBase *grid = U[0]._grid;
+    GridBase *grid = U[0].Grid();
 
     Real vol = grid->gSites();
 
@@ -179,7 +179,7 @@ public:
   }
 
   static void ExpiAlphaDmuAmu(const std::vector<GaugeMat> &A,GaugeMat &g,Real & alpha, GaugeMat &dmuAmu) {
-    GridBase *grid = g._grid;
+    GridBase *grid = g.Grid();
     Complex cialpha(0.0,-alpha);
     GaugeMat ciadmam(grid);
     DmuAmu(A,dmuAmu);

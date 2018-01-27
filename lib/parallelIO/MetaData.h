@@ -167,7 +167,7 @@ inline void MachineCharacteristics(FieldMetaData &header)
 
 template<class vobj> inline void PrepareMetaData(Lattice<vobj> & field, FieldMetaData &header)
 {
-  GridBase *grid = field._grid;
+  GridBase *grid = field.Grid();
   std::string format = getFormatString<vobj>();
   header.floating_point = format;
   header.checksum = 0x0; // Nersc checksum unused in ILDG, Scidac
@@ -189,7 +189,7 @@ inline void GaugeStatistics(Lattice<vLorentzColourMatrixD> & data,FieldMetaData 
 template<> inline void PrepareMetaData<vLorentzColourMatrixF>(Lattice<vLorentzColourMatrixF> & field, FieldMetaData &header)
 {
    
-  GridBase *grid = field._grid;
+  GridBase *grid = field.Grid();
   std::string format = getFormatString<vLorentzColourMatrixF>();
   header.floating_point = format;
   header.checksum = 0x0; // Nersc checksum unused in ILDG, Scidac
@@ -199,7 +199,7 @@ template<> inline void PrepareMetaData<vLorentzColourMatrixF>(Lattice<vLorentzCo
 }
 template<> inline void PrepareMetaData<vLorentzColourMatrixD>(Lattice<vLorentzColourMatrixD> & field, FieldMetaData &header)
 {
-  GridBase *grid = field._grid;
+  GridBase *grid = field.Grid();
   std::string format = getFormatString<vLorentzColourMatrixD>();
   header.floating_point = format;
   header.checksum = 0x0; // Nersc checksum unused in ILDG, Scidac

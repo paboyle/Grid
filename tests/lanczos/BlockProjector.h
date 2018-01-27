@@ -96,7 +96,7 @@ public:
     assert(Nbasis == _evec._Nm);
 
 
-    Field tmp(_bgrid._grid);
+    Field tmp(_bgrid.Grid());
     tmp = in;
     
 #pragma omp parallel for
@@ -115,7 +115,7 @@ public:
     void deflateFine(BasisFieldVector<CoarseField>& _coef,const std::vector<RealD>& eval,int N,const Field& src_orig,Field& result) {
     result = zero;
     for (int i=0;i<N;i++) {
-      Field tmp(result._grid);
+      Field tmp(result.Grid());
       coarseToFine(_coef._v[i],tmp);
       axpy(result,TensorRemove(innerProduct(tmp,src_orig)) / eval[i],tmp,result);
     }
@@ -123,7 +123,7 @@ public:
 
   template<typename CoarseField>
     void deflateCoarse(BasisFieldVector<CoarseField>& _coef,const std::vector<RealD>& eval,int N,const Field& src_orig,Field& result) {
-    CoarseField src_coarse(_coef._v[0]._grid);
+    CoarseField src_coarse(_coef._v[0].Grid());
     CoarseField result_coarse = src_coarse;
     result_coarse = zero;
     fineToCoarse(src_orig,src_coarse);

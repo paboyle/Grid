@@ -107,7 +107,7 @@ public:
     if (1) {
       // Auxiliary momenta
       // do nothing if trivial, so hide in the metric
-      MomentaField AuxMomTemp(Mom._grid);
+      MomentaField AuxMomTemp(Mom.Grid());
       Implementation::generate_momenta(AuxMom, pRNG);
       Implementation::generate_momenta(AuxField, pRNG);
       // Modify the distribution with the metric
@@ -118,10 +118,10 @@ public:
 
   // Correct
   RealD MomentaAction(){
-    MomentaField inv(Mom._grid);
+    MomentaField inv(Mom.Grid());
     inv = zero;
     M.Minv(Mom, inv);
-    LatticeComplex Hloc(Mom._grid);
+    LatticeComplex Hloc(Mom.Grid());
     Hloc = zero;
     for (int mu = 0; mu < Nd; mu++) {
       // This is not very general
@@ -155,8 +155,8 @@ public:
 
     // Compute the derivative of the kinetic term
     // with respect to the gauge field
-    MomentaField MDer(in._grid);
-    MomentaField X(in._grid);
+    MomentaField MDer(in.Grid());
+    MomentaField X(in.Grid());
     X = zero;
     M.Minv(in, X);  // X = G in
     M.MDeriv(X, MDer);  // MDer = U * dS/dU
@@ -168,8 +168,8 @@ public:
     der = zero;
     if (1){
       // Auxiliary fields
-      MomentaField der_temp(der._grid);
-      MomentaField X(der._grid);
+      MomentaField der_temp(der.Grid());
+      MomentaField X(der.Grid());
       X=zero;
       //M.M(AuxMom, X); // X = M Aux
       // Two derivative terms
@@ -200,8 +200,8 @@ public:
 
   void update_auxiliary_fields(RealD ep){
     if (1) {
-      MomentaField tmp(AuxMom._grid);
-      MomentaField tmp2(AuxMom._grid);
+      MomentaField tmp(AuxMom.Grid());
+      MomentaField tmp2(AuxMom.Grid());
       M.M(AuxMom, tmp);
       // M.M(tmp, tmp2);
       AuxField += ep * tmp;  // M^2 AuxMom

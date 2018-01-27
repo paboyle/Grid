@@ -48,7 +48,7 @@ namespace PeriodicBC {
 									    int mu,
 									    const Lattice<covariant> &field)
   {
-    Lattice<covariant> tmp(field._grid);
+    Lattice<covariant> tmp(field.Grid());
     tmp = adj(Link)*field;
     return Cshift(tmp,mu,-1);// moves towards positive mu
   }
@@ -87,7 +87,7 @@ namespace ConjugateBC {
 									   int mu,
 									   const Lattice<covariant> &field)
   {
-    GridBase * grid = Link._grid;
+    GridBase * grid = Link.Grid();
 
     int Lmu = grid->GlobalDimensions()[mu]-1;
 
@@ -106,7 +106,7 @@ namespace ConjugateBC {
 									    int mu,
 									    const Lattice<covariant> &field)
   {
-    GridBase * grid = field._grid;
+    GridBase * grid = field.Grid();
 
     int Lmu = grid->GlobalDimensions()[mu]-1;
 

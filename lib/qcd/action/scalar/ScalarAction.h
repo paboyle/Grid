@@ -65,8 +65,8 @@ public:
 
   virtual void deriv(const Field &p,
 		     Field &force) {
-    Field tmp(p._grid);
-    Field p2(p._grid);
+    Field tmp(p.Grid());
+    Field p2(p.Grid());
     ScalarObs<Impl>::phisquared(p2, p);
     tmp = -(Cshift(p, 0, -1) + Cshift(p, 0, 1));
     for (int mu = 1; mu < Nd; mu++) tmp -= Cshift(p, mu, -1) + Cshift(p, mu, 1);

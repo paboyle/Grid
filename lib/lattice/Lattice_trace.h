@@ -41,7 +41,7 @@ template<class vobj>
 inline auto trace(const Lattice<vobj> &lhs)
   -> Lattice<decltype(trace(lhs[0]))>
 {
-  Lattice<decltype(trace(lhs[0]))> ret(lhs._grid);
+  Lattice<decltype(trace(lhs[0]))> ret(lhs.Grid());
   accelerator_loop( ss, lhs, {
     ret[ss] = trace(lhs[ss]);
   });
@@ -54,7 +54,7 @@ inline auto trace(const Lattice<vobj> &lhs)
 template<int Index,class vobj>
 inline auto TraceIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<Index>(lhs[0]))>
 {
-  Lattice<decltype(traceIndex<Index>(lhs[0]))> ret(lhs._grid);
+  Lattice<decltype(traceIndex<Index>(lhs[0]))> ret(lhs.Grid());
   accelerator_loop( ss, lhs, {
     ret[ss] = traceIndex<Index>(lhs[ss]);
   });

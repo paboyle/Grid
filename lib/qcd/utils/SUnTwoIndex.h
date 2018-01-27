@@ -199,7 +199,7 @@ public:
 				       const typename SU<ncolour>::LatticeAlgebraVector &h,
 				       LatticeTwoIndexMatrix &out, Real scale = 1.0) {
     conformable(h, out);
-    GridBase *grid = out._grid;
+    GridBase *grid = out.Grid();
     LatticeTwoIndexMatrix la(grid);
     TIMatrix i2indTa;
 

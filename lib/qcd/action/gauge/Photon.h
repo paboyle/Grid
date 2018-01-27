@@ -86,10 +86,10 @@ Photon<Gimpl>::Photon(Gauge gauge, ZmScheme zmScheme)
 template<class Gimpl>
 void Photon<Gimpl>::FreePropagator (const GaugeField &in,GaugeField &out)
 {
-  FFT theFFT(in._grid);
+  FFT theFFT(in.Grid());
     
-  GaugeField in_k(in._grid);
-  GaugeField prop_k(in._grid);
+  GaugeField in_k(in.Grid());
+  GaugeField prop_k(in.Grid());
     
   theFFT.FFT_all_dim(in_k,in,FFT::forward);
   MomentumSpacePropagator(prop_k,in_k);
@@ -99,7 +99,7 @@ void Photon<Gimpl>::FreePropagator (const GaugeField &in,GaugeField &out)
 template<class Gimpl>
 void Photon<Gimpl>::invKHatSquared(GaugeLinkField &out)
 {
-  GridBase           *grid = out._grid;
+  GridBase           *grid = out.Grid();
   GaugeLinkField     kmu(grid), one(grid);
   const unsigned int nd    = grid->_ndimension;
   std::vector<int>   &l    = grid->_fdimensions;
@@ -125,7 +125,7 @@ void Photon<Gimpl>::invKHatSquared(GaugeLinkField &out)
 template<class Gimpl>
 void Photon<Gimpl>::zmSub(GaugeLinkField &out)
 {
-  GridBase           *grid = out._grid;
+  GridBase           *grid = out.Grid();
   const unsigned int nd    = grid->_ndimension;
     
   switch (zmScheme_)
@@ -163,7 +163,7 @@ template<class Gimpl>
 void Photon<Gimpl>::MomentumSpacePropagator(const GaugeField &in,
 					    GaugeField &out)
 {
-  GridBase           *grid = out._grid;
+  GridBase           *grid = out.Grid();
   LatticeComplex     k2Inv(grid);
     
   invKHatSquared(k2Inv);
@@ -175,7 +175,7 @@ void Photon<Gimpl>::MomentumSpacePropagator(const GaugeField &in,
 template<class Gimpl>
 void Photon<Gimpl>::StochasticWeight(GaugeLinkField &weight)
 {
-  auto               *grid     = dynamic_cast<GridCartesian *>(weight._grid);
+  auto               *grid     = dynamic_cast<GridCartesian *>(weight.Grid());
   const unsigned int nd        = grid->_ndimension;
   std::vector<int>   latt_size = grid->_fdimensions;
     
@@ -192,7 +192,7 @@ void Photon<Gimpl>::StochasticWeight(GaugeLinkField &weight)
 template<class Gimpl>
 void Photon<Gimpl>::StochasticField(GaugeField &out, GridParallelRNG &rng)
 {
-  auto           *grid = dynamic_cast<GridCartesian *>(out._grid);
+  auto           *grid = dynamic_cast<GridCartesian *>(out.Grid());
   GaugeLinkField weight(grid);
     
   StochasticWeight(weight);
@@ -203,7 +203,7 @@ template<class Gimpl>
 void Photon<Gimpl>::StochasticField(GaugeField &out, GridParallelRNG &rng,
 				    const GaugeLinkField &weight)
 {
-  auto               *grid = dynamic_cast<GridCartesian *>(out._grid);
+  auto               *grid = dynamic_cast<GridCartesian *>(out.Grid());
   const unsigned int nd = grid->_ndimension;
   GaugeLinkField     r(grid);
   GaugeField         aTilde(grid);
@@ -226,7 +226,7 @@ void Photon<Gimpl>::StochasticField(GaugeField &out, GridParallelRNG &rng,
 //    
 //    FeynmanGaugeMomentumSpacePropagator_TL(out,in);
 //    
-//    GridBase *grid = out._grid;
+//    GridBase *grid = out.Grid();
 //    LatticeInteger     coor(grid);
 //    GaugeField zz(grid); zz=zero;
 //    
@@ -243,7 +243,7 @@ void Photon<Gimpl>::StochasticField(GaugeField &out, GridParallelRNG &rng,
 //  {
 //    
 //    // what type LatticeComplex
-//    GridBase *grid = out._grid;
+//    GridBase *grid = out.Grid();
 //    int nd = grid->_ndimension;
 //    
 //    typedef typename GaugeField::vector_type vector_type;

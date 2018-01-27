@@ -81,7 +81,7 @@ public:
 
     std::vector<int> x(4);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr._grid->GlobalDimensions();
+    std::vector<int> gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -124,7 +124,7 @@ public:
 
     std::vector<int> x(5);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr._grid->GlobalDimensions();
+    std::vector<int> gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -166,7 +166,7 @@ public:
 
     std::vector<int> x(5);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr._grid->GlobalDimensions();
+    std::vector<int> gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -491,8 +491,8 @@ void calc_grid(ChromaAction action,Grid::QCD::LatticeGaugeField & Umu, Grid::QCD
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
 
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu._grid;
-  Grid::GridCartesian         * FGrid   = (Grid::GridCartesian *) src._grid;
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu.Grid();
+  Grid::GridCartesian         * FGrid   = (Grid::GridCartesian *) src.Grid();
   Grid::GridRedBlackCartesian * UrbGrid = Grid::QCD::SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   Grid::GridRedBlackCartesian * FrbGrid = Grid::QCD::SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 

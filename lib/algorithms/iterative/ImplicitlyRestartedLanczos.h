@@ -53,7 +53,7 @@ template<class Field>
 void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, int k0,int k1,int Nm) 
 {
   typedef typename Field::vector_object vobj;
-  GridBase* grid = basis[0]._grid;
+  GridBase* grid = basis[0].Grid();
       
   parallel_region
   {
@@ -79,7 +79,7 @@ template<class Field>
 void basisRotateJ(Field &result,std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j, int k0,int k1,int Nm) 
 {
   typedef typename Field::vector_object vobj;
-  GridBase* grid = basis[0]._grid;
+  GridBase* grid = basis[0].Grid();
 
   result.Checkerboard() = basis[0].Checkerboard();
   parallel_for(int ss=0;ss < grid->oSites();ss++){
@@ -331,8 +331,8 @@ until convergence
 */
   void calc(std::vector<RealD>& eval, std::vector<Field>& evec,  const Field& src, int& Nconv, bool reverse=false)
   {
-    GridBase *grid = src._grid;
-    assert(grid == evec[0]._grid);
+    GridBase *grid = src.Grid();
+    assert(grid == evec[0].Grid());
     
     GridLogIRL.TimingMode(1);
     std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;

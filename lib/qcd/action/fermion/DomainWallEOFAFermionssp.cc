@@ -86,7 +86,7 @@ void DomainWallEOFAFermion<Impl>::MooeeInv(const FermionField& psi, FermionField
   chi.Checkerboard() = psi.Checkerboard();
   int Ls = this->Ls;
 
-  FermionField tmp(psi._grid);
+  FermionField tmp(psi.Grid());
 
   // Apply (L^{\prime})^{-1}
   axpby_ssp(chi, one, psi, czero, psi, 0, 0);      // chi[0]=psi[0]
@@ -120,7 +120,7 @@ void DomainWallEOFAFermion<Impl>::MooeeInvDag(const FermionField& psi, FermionFi
   chi.Checkerboard() = psi.Checkerboard();
   int Ls = this->Ls;
 
-  FermionField tmp(psi._grid);
+  FermionField tmp(psi.Grid());
 
   // Apply (U^{\prime})^{-dagger}
   axpby_ssp(chi, one, psi, czero, psi, 0, 0);      // chi[0]=psi[0]

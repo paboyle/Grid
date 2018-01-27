@@ -103,7 +103,7 @@ int main(int argc, char ** argv) {
 	Bar = Cshift(Foo,dir,disp);
 
 	// Implement a stencil code that should agree with cshift!
-	for(int i=0;i<Check._grid->oSites();i++){
+	for(int i=0;i<Check.Grid()->oSites();i++){
 	  
 	  int permute_type;
 	  StencilEntry *SE;
@@ -200,7 +200,7 @@ int main(int argc, char ** argv) {
 
 	// Implement a stencil code that should agree with that darn cshift!
 	EStencil.HaloExchange(EFoo,compress);
-	for(int i=0;i<OCheck._grid->oSites();i++){
+	for(int i=0;i<OCheck.Grid()->oSites();i++){
 	  int permute_type;
 	  StencilEntry *SE;
 	  SE = EStencil.GetEntry(permute_type,0,i);
@@ -214,7 +214,7 @@ int main(int argc, char ** argv) {
 	    OCheck[i] = EStencil.CommBuf()[SE->_offset];
 	}
 	OStencil.HaloExchange(OFoo,compress);
-	for(int i=0;i<ECheck._grid->oSites();i++){
+	for(int i=0;i<ECheck.Grid()->oSites();i++){
 	  int permute_type;
 	  StencilEntry *SE;
 	  SE = OStencil.GetEntry(permute_type,0,i);

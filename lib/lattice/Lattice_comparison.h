@@ -46,7 +46,7 @@ NAMESPACE_BEGIN(Grid);
 template<class vfunctor,class lobj,class robj>  
 inline Lattice<vInteger> LLComparison(vfunctor op,const Lattice<lobj> &lhs,const Lattice<robj> &rhs)
 {
-  Lattice<vInteger> ret(rhs._grid);
+  Lattice<vInteger> ret(rhs.Grid());
   accelerator_loop( ss, rhs, {
     ret[ss]=op(lhs[ss],rhs[ss]);
   });
@@ -58,7 +58,7 @@ inline Lattice<vInteger> LLComparison(vfunctor op,const Lattice<lobj> &lhs,const
 template<class vfunctor,class lobj,class robj> 
 inline Lattice<vInteger> LSComparison(vfunctor op,const Lattice<lobj> &lhs,const robj &rhs)
 {
-  Lattice<vInteger> ret(lhs._grid);
+  Lattice<vInteger> ret(lhs.Grid());
   accelerator_loop( ss, lhs, {
     ret[ss]=op(lhs[ss],rhs);
   });
@@ -70,7 +70,7 @@ inline Lattice<vInteger> LSComparison(vfunctor op,const Lattice<lobj> &lhs,const
 template<class vfunctor,class lobj,class robj> 
 inline Lattice<vInteger> SLComparison(vfunctor op,const lobj &lhs,const Lattice<robj> &rhs)
 {
-  Lattice<vInteger> ret(rhs._grid);
+  Lattice<vInteger> ret(rhs.Grid());
   accelerator_loop( ss, rhs, {
     ret[ss]=op(lhs[ss],rhs);
   });

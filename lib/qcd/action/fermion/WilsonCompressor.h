@@ -343,7 +343,7 @@ public:
     this->_grid->StencilBarrier();
     this->mpi3synctime_g+=usecond();
 
-    assert(source._grid==this->_grid);
+    assert(source.Grid()==this->_grid);
     this->halogtime-=usecond();
     
     this->u_comm_offset=0;

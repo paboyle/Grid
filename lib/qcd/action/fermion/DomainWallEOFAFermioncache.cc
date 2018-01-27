@@ -44,7 +44,7 @@ void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi, const FermionFiel
 				      FermionField& chi, std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper)
 {
   int Ls = this->Ls;
-  GridBase* grid = psi._grid;
+  GridBase* grid = psi.Grid();
 
   assert(phi.Checkerboard() == psi.Checkerboard());
   chi.Checkerboard() = psi.Checkerboard();
@@ -82,7 +82,7 @@ void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi, const FermionF
 					 FermionField& chi, std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper)
 {
   int Ls = this->Ls;
-  GridBase* grid = psi._grid;
+  GridBase* grid = psi.Grid();
   assert(phi.Checkerboard() == psi.Checkerboard());
   chi.Checkerboard()=psi.Checkerboard();
 
@@ -118,7 +118,7 @@ void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi, const FermionF
 template<class Impl>
 void DomainWallEOFAFermion<Impl>::MooeeInv(const FermionField& psi, FermionField& chi)
 {
-  GridBase* grid = psi._grid;
+  GridBase* grid = psi.Grid();
   int Ls = this->Ls;
 
   chi.Checkerboard() = psi.Checkerboard();
@@ -166,7 +166,7 @@ void DomainWallEOFAFermion<Impl>::MooeeInv(const FermionField& psi, FermionField
 template<class Impl>
 void DomainWallEOFAFermion<Impl>::MooeeInvDag(const FermionField& psi, FermionField& chi)
 {
-  GridBase* grid = psi._grid;
+  GridBase* grid = psi.Grid();
   int Ls = this->Ls;
 
   assert(psi.Checkerboard() == psi.Checkerboard());

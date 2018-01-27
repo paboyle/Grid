@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
   gaussian(RNG5, src);
   std::vector<FermionField> evec(Nm, FGrid);
   for (int i = 0; i < 1; i++) {
-    std::cout << i << " / " << Nm << " grid pointer " << evec[i]._grid
+    std::cout << i << " / " << Nm << " grid pointer " << evec[i].Grid()
               << std::endl;
   };
 

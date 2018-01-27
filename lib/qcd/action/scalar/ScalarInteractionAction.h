@@ -74,15 +74,15 @@ public:
   virtual void refresh(const Field &U, GridParallelRNG &pRNG) {}
 
   virtual RealD S(const Field &p) {
-    assert(p._grid->Nd() == Ndim);
-    static Stencil phiStencil(p._grid, npoint, 0, directions, displacements);
+    assert(p.Grid()->Nd() == Ndim);
+    static Stencil phiStencil(p.Grid(), npoint, 0, directions, displacements);
     phiStencil.HaloExchange(p, compressor);
-    Field action(p._grid), pshift(p._grid), phisquared(p._grid);
+    Field action(p.Grid()), pshift(p.Grid()), phisquared(p.Grid());
     phisquared = p*p;
     action = (2.0*Ndim + mass_square)*phisquared - lambda/24.*phisquared*phisquared;
     for (int mu = 0; mu < Ndim; mu++) {
       //  pshift = Cshift(p, mu, +1);  // not efficient, implement with stencils
-      parallel_for (int i = 0; i < p._grid->oSites(); i++) {
+      parallel_for (int i = 0; i < p.Grid()->oSites(); i++) {
 	int permute_type;
 	StencilEntry *SE;
 	vobj temp2;
@@ -110,15 +110,15 @@ public:
   };
 
   virtual void deriv(const Field &p, Field &force) {
-    assert(p._grid->Nd() == Ndim);
+    assert(p.Grid()->Nd() == Ndim);
     force = (2.0*Ndim + mass_square)*p - lambda/12.*p*p*p;
     // move this outside
-    static Stencil phiStencil(p._grid, npoint, 0, directions, displacements);
+    static Stencil phiStencil(p.Grid(), npoint, 0, directions, displacements);
     phiStencil.HaloExchange(p, compressor);
       
     //for (int mu = 0; mu < Nd; mu++) force -= Cshift(p, mu, -1) + Cshift(p, mu, 1);
     for (int point = 0; point < npoint; point++) {
-      parallel_for (int i = 0; i < p._grid->oSites(); i++) {
+      parallel_for (int i = 0; i < p.Grid()->oSites(); i++) {
 	const vobj *temp;
 	vobj temp2;
 	int permute_type;

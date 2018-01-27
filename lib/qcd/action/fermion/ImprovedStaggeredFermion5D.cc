@@ -172,7 +172,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopDir(const FermionField &in, FermionFi
   Compressor compressor;
   Stencil.HaloExchange(in,compressor);
 
-  parallel_for(int ss=0;ss<Umu._grid->oSites();ss++){
+  parallel_for(int ss=0;ss<Umu.Grid()->oSites();ss++){
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
@@ -228,7 +228,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOr
 						    const FermionField &in, FermionField &out,int dag)
 {
   Compressor compressor;
-  int LLs = in._grid->_rdimensions[0];
+  int LLs = in.Grid()->_rdimensions[0];
 
 
 
@@ -240,12 +240,12 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOr
   DhopComputeTime -= usecond();
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
   if (dag == DaggerYes) {
-    parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
+    parallel_for (int ss = 0; ss < U.Grid()->oSites(); ss++) {
       int sU=ss;
       Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), LLs, sU,in, out);
     }
   } else {
-    parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
+    parallel_for (int ss = 0; ss < U.Grid()->oSites(); ss++) {
       int sU=ss;
       Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),LLs,sU,in,out);
     }
@@ -259,8 +259,8 @@ template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int dag)
 {
   DhopCalls+=1;
-  conformable(in._grid,FermionRedBlackGrid());    // verifies half grid
-  conformable(in._grid,out._grid); // drops the cb check
+  conformable(in.Grid(),FermionRedBlackGrid());    // verifies half grid
+  conformable(in.Grid(),out.Grid()); // drops the cb check
 
   assert(in.Checkerboard()==Even);
   out.Checkerboard() = Odd;
@@ -271,8 +271,8 @@ template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag)
 {
   DhopCalls+=1;
-  conformable(in._grid,FermionRedBlackGrid());    // verifies half grid
-  conformable(in._grid,out._grid); // drops the cb check
+  conformable(in.Grid(),FermionRedBlackGrid());    // verifies half grid
+  conformable(in.Grid(),out.Grid()); // drops the cb check
 
   assert(in.Checkerboard()==Odd);
   out.Checkerboard() = Even;
@@ -283,8 +283,8 @@ template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::Dhop(const FermionField &in, FermionField &out,int dag)
 {
   DhopCalls+=2;
-  conformable(in._grid,FermionGrid()); // verifies full grid
-  conformable(in._grid,out._grid);
+  conformable(in.Grid(),FermionGrid()); // verifies full grid
+  conformable(in.Grid(),out.Grid());
 
   out.Checkerboard() = in.Checkerboard();
 

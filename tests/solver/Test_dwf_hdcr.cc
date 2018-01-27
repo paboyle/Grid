@@ -93,8 +93,8 @@ public:
 
   void PowerMethod(const FineField &in) {
 
-    FineField p1(in._grid);
-    FineField p2(in._grid);
+    FineField p1(in.Grid());
+    FineField p2(in.Grid());
 
     MdagMLinearOperator<Matrix,FineField>   fMdagMOp(_FineMatrix);
 
@@ -137,9 +137,9 @@ public:
     MdagMLinearOperator<CoarseOperator,CoarseVector>     MdagMOp(_CoarseOperator);
     MdagMLinearOperator<Matrix,FineField>               fMdagMOp(_FineMatrix);
 
-    FineField tmp(in._grid);
-    FineField res(in._grid);
-    FineField Min(in._grid);
+    FineField tmp(in.Grid());
+    FineField res(in.Grid());
+    FineField Min(in.Grid());
 
     // Monitor completeness of low mode space
     _Aggregates.ProjectToSubspace  (Csrc,in);
@@ -202,9 +202,9 @@ public:
     MdagMLinearOperator<CoarseOperator,CoarseVector>     MdagMOp(_CoarseOperator);
     ShiftedMdagMLinearOperator<Matrix,FineField>        fMdagMOp(_FineMatrix,0.1);
 
-    FineField tmp(in._grid);
-    FineField res(in._grid);
-    FineField Qin(in._grid);
+    FineField tmp(in.Grid());
+    FineField res(in.Grid());
+    FineField Qin(in.Grid());
 
     // Monitor completeness of low mode space
     //    _Aggregates.ProjectToSubspace  (Csrc,in);
@@ -235,13 +235,13 @@ public:
 
   void SAP (const FineField & src,FineField & psi){
 
-    Lattice<iScalar<vInteger> > coor(src._grid);
-    Lattice<iScalar<vInteger> > subset(src._grid);
+    Lattice<iScalar<vInteger> > coor(src.Grid());
+    Lattice<iScalar<vInteger> > subset(src.Grid());
     
-    FineField r(src._grid);
-    FineField zz(src._grid); zz=zero;
-    FineField vec1(src._grid);
-    FineField vec2(src._grid);
+    FineField r(src.Grid());
+    FineField zz(src.Grid()); zz=zero;
+    FineField vec1(src.Grid());
+    FineField vec2(src.Grid());
 
     const Integer block=params.domainsize;
 
@@ -295,8 +295,8 @@ public:
 
   void SmootherTest (const FineField & in){
     
-    FineField vec1(in._grid);
-    FineField vec2(in._grid);
+    FineField vec1(in.Grid());
+    FineField vec2(in.Grid());
     RealD lo[3] = { 0.5, 1.0, 2.0};
 
     //    MdagMLinearOperator<Matrix,FineField>        fMdagMOp(_FineMatrix);
@@ -337,8 +337,8 @@ public:
     //    MdagMLinearOperator<Matrix,FineField>        fMdagMOp(_FineMatrix);
     ShiftedMdagMLinearOperator<Matrix,FineField> fMdagMOp(_SmootherMatrix,0.0);
 
-    FineField vec1(in._grid);
-    FineField vec2(in._grid);
+    FineField vec1(in.Grid());
+    FineField vec2(in.Grid());
 
     //    Chebyshev<FineField> Cheby    (0.5,70.0,30,InverseApproximation);
     //    Chebyshev<FineField> ChebyAccu(0.5,70.0,30,InverseApproximation);
@@ -414,8 +414,8 @@ public:
     HermitianLinearOperator<CoarseOperator,CoarseVector>  HermOp(_CoarseOperator);
     MdagMLinearOperator<CoarseOperator,CoarseVector>     MdagMOp(_CoarseOperator);
 
-    FineField vec1(in._grid);
-    FineField vec2(in._grid);
+    FineField vec1(in.Grid());
+    FineField vec2(in.Grid());
 
     _Aggregates.ProjectToSubspace  (Csrc,in);
     _Aggregates.PromoteFromSubspace(Csrc,out);

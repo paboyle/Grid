@@ -212,9 +212,9 @@ public:
   // Implement the required interface
   void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) {
 
-    GridBase *grid=in._grid;
+    GridBase *grid=in.Grid();
 
-    // std::cout << "Chevyshef(): in._grid="<<in._grid<<std::endl;
+    // std::cout << "Chevyshef(): in.Grid()="<<in.Grid()<<std::endl;
     //std::cout <<" Linop.Grid()="<<Linop.Grid()<<"Linop.RedBlackGrid()="<<Linop.RedBlackGrid()<<std::endl;
 
     int vol=grid->gSites();
@@ -321,7 +321,7 @@ public:
   // shift_Multiply in Rudy's code
   void AminusMuSq(LinearOperatorBase<Field> &Linop, const Field &in, Field &out) 
   {
-    GridBase *grid=in._grid;
+    GridBase *grid=in.Grid();
     Field tmp(grid);
 
     RealD aa= alpha*alpha;
@@ -338,7 +338,7 @@ public:
   // Implement the required interface
   void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) {
 
-    GridBase *grid=in._grid;
+    GridBase *grid=in.Grid();
 
     int vol=grid->gSites();
 

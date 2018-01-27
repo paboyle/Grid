@@ -55,7 +55,7 @@ public:
 
   void operator() (LinearOperatorBase<Field> &Linop, const Field &src, Field &psi)
   {
-    GridBase *grid = src._grid;
+    GridBase *grid = src.Grid();
     int nshift = shifts.order;
     std::vector<Field> results(nshift,grid);
     (*this)(Linop,src,results,psi);
@@ -77,7 +77,7 @@ public:
   void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector<Field> &psi)
   {
   
-    GridBase *grid = src._grid;
+    GridBase *grid = src.Grid();
   
     ////////////////////////////////////////////////////////////////////////
     // Convenience references to the info stored in "MultiShiftFunction"

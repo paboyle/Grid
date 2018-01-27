@@ -48,7 +48,7 @@ public:
     
   static void MomentumSpacePropagator(Field &out, RealD m)
   {
-    GridBase           *grid = out._grid;
+    GridBase           *grid = out.Grid();
     Field              kmu(grid), one(grid);
     const unsigned int nd    = grid->_ndimension;
     std::vector<int>   &l    = grid->_fdimensions;
@@ -69,8 +69,8 @@ public:
   static void FreePropagator(const Field &in, Field &out,
 			     const Field &momKernel)
   {
-    FFT   fft((GridCartesian *)in._grid);
-    Field inFT(in._grid);
+    FFT   fft((GridCartesian *)in.Grid());
+    Field inFT(in.Grid());
       
     fft.FFT_all_dim(inFT, in, FFT::forward);
     inFT = inFT*momKernel;
@@ -79,7 +79,7 @@ public:
     
   static void FreePropagator(const Field &in, Field &out, RealD m)
   {
-    Field momKernel(in._grid);
+    Field momKernel(in.Grid());
       
     MomentumSpacePropagator(momKernel, m);
     FreePropagator(in, out, momKernel);

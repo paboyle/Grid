@@ -105,7 +105,7 @@ void   PartialFractionFermion5D<Impl>::MooeeInv_internal(const FermionField &psi
   int sign = dag ? (-1) : 1;
   int Ls = this->Ls;
 
-  FermionField tmp(psi._grid);
+  FermionField tmp(psi.Grid());
       
   ///////////////////////////////////////////////////////////////////////////////////////
   //Linv
@@ -164,7 +164,7 @@ void   PartialFractionFermion5D<Impl>::MooeeInv_internal(const FermionField &psi
 template<class Impl>
 void   PartialFractionFermion5D<Impl>::M_internal(const FermionField &psi, FermionField &chi,int dag)
 {
-  FermionField D(psi._grid);
+  FermionField D(psi.Grid());
   
   int Ls = this->Ls;
   int sign = dag ? (-1) : 1;
@@ -303,7 +303,7 @@ void PartialFractionFermion5D<Impl>::MDeriv  (GaugeField &mat,const FermionField
 {
   int Ls = this->Ls;
 
-  FermionField D(V._grid);
+  FermionField D(V.Grid());
 
   int nblock=(Ls-1)/2;
   for(int b=0;b<nblock;b++){
@@ -320,7 +320,7 @@ void PartialFractionFermion5D<Impl>::MoeDeriv(GaugeField &mat,const FermionField
 {
   int Ls = this->Ls;
 
-  FermionField D(V._grid);
+  FermionField D(V.Grid());
 
   int nblock=(Ls-1)/2;
   for(int b=0;b<nblock;b++){
@@ -337,7 +337,7 @@ void PartialFractionFermion5D<Impl>::MeoDeriv(GaugeField &mat,const FermionField
 {
   int Ls = this->Ls;
 
-  FermionField D(V._grid);
+  FermionField D(V.Grid());
 
   int nblock=(Ls-1)/2;
   for(int b=0;b<nblock;b++){

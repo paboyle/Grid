@@ -59,12 +59,12 @@ class BasisFieldVector {
     if (n > _Nm)
       _v.reserve(n);
     
-    _v.resize(n,_v[0]._grid);
+    _v.resize(n,_v[0].Grid());
 
     if (n < _Nm)
       _v.shrink_to_fit();
 
-    report(n - _Nm,_v[0]._grid);
+    report(n - _Nm,_v[0].Grid());
 
     _Nm = n;
   }

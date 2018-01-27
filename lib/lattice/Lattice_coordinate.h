@@ -35,7 +35,7 @@ template<class iobj> inline void LatticeCoordinate(Lattice<iobj> &l,int mu)
   typedef typename iobj::scalar_type scalar_type;
   typedef typename iobj::vector_type vector_type;
 
-  GridBase *grid = l._grid;
+  GridBase *grid = l.Grid();
   int Nsimd = grid->iSites();
 
   std::vector<int> gcoor;
@@ -56,7 +56,7 @@ template<class iobj> inline void LatticeCoordinate(Lattice<iobj> &l,int mu)
 // FIXME for debug; deprecate this; made obscelete by 
 template<class vobj> void lex_sites(Lattice<vobj> &l){
   Real *v_ptr = (Real *)&l[0];
-  size_t o_len = l._grid->oSites();
+  size_t o_len = l.Grid()->oSites();
   size_t v_len = sizeof(vobj)/sizeof(vRealF);
   size_t vec_len = vRealF::Nsimd();
 

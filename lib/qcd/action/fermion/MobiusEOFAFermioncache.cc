@@ -41,7 +41,7 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi, const FermionField &p
 				  std::vector<Coeff_t> &lower, std::vector<Coeff_t> &diag, std::vector<Coeff_t> &upper)
 {
   int Ls = this->Ls;
-  GridBase *grid = psi._grid;
+  GridBase *grid = psi.Grid();
 
   assert(phi.Checkerboard() == psi.Checkerboard());
   chi.Checkerboard() = psi.Checkerboard();
@@ -82,7 +82,7 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField &psi, const FermionFi
 {
   int Ls = this->Ls;
   int shift_s = (this->pm == 1) ? (Ls-1) : 0; // s-component modified by shift operator
-  GridBase *grid = psi._grid;
+  GridBase *grid = psi.Grid();
 
   assert(phi.Checkerboard() == psi.Checkerboard());
   chi.Checkerboard() = psi.Checkerboard();
@@ -124,7 +124,7 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField &psi, const FermionField
 				     std::vector<Coeff_t> &lower, std::vector<Coeff_t> &diag, std::vector<Coeff_t> &upper)
 {
   int Ls = this->Ls;
-  GridBase *grid = psi._grid;
+  GridBase *grid = psi.Grid();
 
   assert(phi.Checkerboard() == psi.Checkerboard());
   chi.Checkerboard() = psi.Checkerboard();
@@ -165,7 +165,7 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField &psi, const Fermio
 {
   int Ls = this->Ls;
   int shift_s = (this->pm == 1) ? (Ls-1) : 0; // s-component modified by shift operator
-  GridBase *grid = psi._grid;
+  GridBase *grid = psi.Grid();
 
   assert(phi.Checkerboard() == psi.Checkerboard());
   chi.Checkerboard() = psi.Checkerboard();
@@ -208,7 +208,7 @@ void MobiusEOFAFermion<Impl>::MooeeInv(const FermionField &psi, FermionField &ch
 {
   if(this->shift != 0.0){ MooeeInv_shift(psi,chi); return; }
 
-  GridBase *grid = psi._grid;
+  GridBase *grid = psi.Grid();
   int Ls = this->Ls;
 
   chi.Checkerboard() = psi.Checkerboard();
@@ -253,7 +253,7 @@ void MobiusEOFAFermion<Impl>::MooeeInv(const FermionField &psi, FermionField &ch
 template<class Impl>
 void MobiusEOFAFermion<Impl>::MooeeInv_shift(const FermionField &psi, FermionField &chi)
 {
-  GridBase *grid = psi._grid;
+  GridBase *grid = psi.Grid();
   int Ls = this->Ls;
 
   chi.Checkerboard() = psi.Checkerboard();
@@ -310,7 +310,7 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag(const FermionField &psi, FermionField 
 {
   if(this->shift != 0.0){ MooeeInvDag_shift(psi,chi); return; }
 
-  GridBase *grid = psi._grid;
+  GridBase *grid = psi.Grid();
   int Ls = this->Ls;
 
   chi.Checkerboard() = psi.Checkerboard();
@@ -355,7 +355,7 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag(const FermionField &psi, FermionField 
 template<class Impl>
 void MobiusEOFAFermion<Impl>::MooeeInvDag_shift(const FermionField &psi, FermionField &chi)
 {
-  GridBase *grid = psi._grid;
+  GridBase *grid = psi.Grid();
   int Ls = this->Ls;
 
   chi.Checkerboard() = psi.Checkerboard();

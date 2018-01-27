@@ -136,7 +136,7 @@ public:
   {
     typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
 
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
     int offset = readHeader(file,grid,header);
 
     FieldMetaData clone(header);
@@ -227,7 +227,7 @@ public:
     typedef LorentzColourMatrixD fobj3D;
     typedef LorentzColour2x3D    fobj2D;
   
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
 
     GridMetaData(grid,header);
     assert(header.nd==4);
@@ -268,7 +268,7 @@ public:
     header.ensemble_id     = "UKQCD";
     header.ensemble_label  = "DWF";
 
-    GridBase *grid = parallel._grid;
+    GridBase *grid = parallel.Grid();
 
     GridMetaData(grid,header);
     assert(header.nd==4);
@@ -309,7 +309,7 @@ public:
   {
     typedef typename GridParallelRNG::RngStateType RngStateType;
 
-    GridBase *grid = parallel._grid;
+    GridBase *grid = parallel.Grid();
 
     int offset = readHeader(file,grid,header);
 

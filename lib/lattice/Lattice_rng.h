@@ -311,13 +311,13 @@ public:
 };
 
 class GridParallelRNG : public GridRNGbase {
-
+private:
   double _time_counter;
-
-public:
   GridBase *_grid;
   unsigned int _vol;
 
+public:
+  GridBase *Grid(void) const { return _grid; }
   int generator_idx(int os,int is) {
     return is*_grid->oSites()+os;
   }
@@ -341,9 +341,9 @@ public:
 
     double inner_time_counter = usecond();
 
-    int multiplicity = RNGfillable_general(_grid, l._grid); // l has finer or same grid
-    int Nsimd  = _grid->Nsimd();  // guaranteed to be the same for l._grid too
-    int osites = _grid->oSites();  // guaranteed to be <= l._grid->oSites() by a factor multiplicity
+    int multiplicity = RNGfillable_general(_grid, l.Grid()); // l has finer or same grid
+    int Nsimd  = _grid->Nsimd();  // guaranteed to be the same for l.Grid() too
+    int osites = _grid->oSites();  // guaranteed to be <= l.Grid()->oSites() by a factor multiplicity
     int words  = sizeof(scalar_object) / sizeof(scalar_type);
 
     thread_loop( (int ss=0;ss<osites;ss++), {

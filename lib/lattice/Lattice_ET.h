@@ -141,9 +141,9 @@ template <class T1,
 inline void GridFromExpression(GridBase *&grid, const T1 &lat)  // Lattice leaf
 {
   if (grid) {
-    conformable(grid, lat._grid);
+    conformable(grid, lat.Grid());
   }
-  grid = lat._grid;
+  grid = lat.Grid();
 }
 template <class T1,
           typename std::enable_if<!is_lattice<T1>::value, T1>::type * = nullptr>

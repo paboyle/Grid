@@ -139,7 +139,7 @@ public:
   void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X) 
   {
     int Orthog = blockDim; // First dimension is block dim; this is an assumption
-    Nblock = B._grid->_fdimensions[Orthog];
+    Nblock = B.Grid()->_fdimensions[Orthog];
 
     std::cout<<GridLogMessage<<" Block Conjugate Gradient : Orthog "<<Orthog<<" Nblock "<<Nblock<<std::endl;
 
@@ -323,7 +323,7 @@ public:
   void BlockCGsolve(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi) 
   {
     int Orthog = blockDim; // First dimension is block dim; this is an assumption
-    Nblock = Src._grid->_fdimensions[Orthog];
+    Nblock = Src.Grid()->_fdimensions[Orthog];
 
     std::cout<<GridLogMessage<<" Block Conjugate Gradient : Orthog "<<Orthog<<" Nblock "<<Nblock<<std::endl;
 
@@ -470,7 +470,7 @@ public:
   void CGmultiRHSsolve(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi) 
   {
     int Orthog = blockDim; // First dimension is block dim
-    Nblock = Src._grid->_fdimensions[Orthog];
+    Nblock = Src.Grid()->_fdimensions[Orthog];
 
     std::cout<<GridLogMessage<<"MultiRHS Conjugate Gradient : Orthog "<<Orthog<<" Nblock "<<Nblock<<std::endl;
 

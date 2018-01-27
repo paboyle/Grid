@@ -45,7 +45,7 @@ void axpibg5x(Lattice<vobj> &z,const Lattice<vobj> &x,Coeff a,Coeff b)
   z.Checkerboard() = x.Checkerboard();
   conformable(x,z);
 
-  GridBase *grid=x._grid;
+  GridBase *grid=x.Grid();
 
   Gamma G5(Gamma::Algebra::Gamma5);
   parallel_for(int ss=0;ss<grid->oSites();ss++){
@@ -62,7 +62,7 @@ void axpby_ssp(Lattice<vobj> &z, Coeff a,const Lattice<vobj> &x,Coeff b,const La
   z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
-  GridBase *grid=x._grid;
+  GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
   parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     vobj tmp = a*x[ss+s]+b*y[ss+sp];
@@ -76,7 +76,7 @@ void ag5xpby_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const L
   z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
-  GridBase *grid=x._grid;
+  GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
 
   Gamma G5(Gamma::Algebra::Gamma5);
@@ -94,7 +94,7 @@ void axpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const L
   z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
-  GridBase *grid=x._grid;
+  GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
   Gamma G5(Gamma::Algebra::Gamma5);
   parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
@@ -111,7 +111,7 @@ void ag5xpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const
   z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
-  GridBase *grid=x._grid;
+  GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
 
   Gamma G5(Gamma::Algebra::Gamma5);
@@ -130,7 +130,7 @@ void axpby_ssp_pminus(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,co
   z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
-  GridBase *grid=x._grid;
+  GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
   parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     vobj tmp;
@@ -146,7 +146,7 @@ void axpby_ssp_pplus(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,con
   z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
-  GridBase *grid=x._grid;
+  GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
   parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     vobj tmp;
@@ -159,7 +159,7 @@ void axpby_ssp_pplus(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,con
 template<class vobj> 
 void G5R5(Lattice<vobj> &z,const Lattice<vobj> &x)
 {
-  GridBase *grid=x._grid;
+  GridBase *grid=x.Grid();
   z.Checkerboard() = x.Checkerboard();
   conformable(x,z);
   int Ls = grid->_rdimensions[0];

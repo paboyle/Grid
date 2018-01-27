@@ -173,7 +173,7 @@ public:
     FermionField  Y(NumOp.FermionRedBlackGrid());
 
     // This assignment is necessary to be compliant with the HMC grids
-    GaugeField force(dSdU._grid);
+    GaugeField force(dSdU.Grid());
 
     //Y=Vdag phi
     //X = (Mdag M)^-1 V^dag phi

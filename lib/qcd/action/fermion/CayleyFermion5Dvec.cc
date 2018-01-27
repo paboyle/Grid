@@ -58,7 +58,7 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
 				std::vector<Coeff_t> &diag,
 				std::vector<Coeff_t> &upper)
 {
-  GridBase *grid=psi._grid;
+  GridBase *grid=psi.Grid();
   int Ls   = this->Ls;
   int LLs  = grid->_rdimensions[0];
   const int nsimd= Simd::Nsimd();
@@ -202,7 +202,7 @@ void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
 				   std::vector<Coeff_t> &diag,
 				   std::vector<Coeff_t> &upper)
 {
-  GridBase *grid=psi._grid;
+  GridBase *grid=psi.Grid();
   int Ls   = this->Ls;
   int LLs  = grid->_rdimensions[0];
   int nsimd= Simd::Nsimd();
@@ -762,8 +762,8 @@ template<class Impl>
 void CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv)
 {
   int Ls=this->Ls;
-  int LLs = psi._grid->_rdimensions[0];
-  int vol = psi._grid->oSites()/LLs;
+  int LLs = psi.Grid()->_rdimensions[0];
+  int vol = psi.Grid()->oSites()/LLs;
 
   chi.Checkerboard()=psi.Checkerboard();
   

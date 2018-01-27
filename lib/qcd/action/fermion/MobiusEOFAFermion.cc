@@ -167,7 +167,7 @@ void MobiusEOFAFermion<Impl>::DtildeInv(const FermionField& psi, FermionField& c
 template<class Impl>
 RealD MobiusEOFAFermion<Impl>::M(const FermionField& psi, FermionField& chi)
 {
-  FermionField Din(psi._grid);
+  FermionField Din(psi.Grid());
 
   this->Meooe5D(psi, Din);
   this->DW(Din, chi, DaggerNo);
@@ -179,7 +179,7 @@ RealD MobiusEOFAFermion<Impl>::M(const FermionField& psi, FermionField& chi)
 template<class Impl>
 RealD MobiusEOFAFermion<Impl>::Mdag(const FermionField& psi, FermionField& chi)
 {
-  FermionField Din(psi._grid);
+  FermionField Din(psi.Grid());
 
   this->DW(psi, Din, DaggerYes);
   this->MeooeDag5D(Din, chi);

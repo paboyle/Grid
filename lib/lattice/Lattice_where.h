@@ -45,7 +45,7 @@ inline void whereWolf(Lattice<vobj> &ret,const Lattice<iobj> &predicate,Lattice<
   conformable(iftrue,predicate);
   conformable(iftrue,ret);
 
-  GridBase *grid=iftrue._grid;
+  GridBase *grid=iftrue.Grid();
 
   typedef typename vobj::scalar_object scalar_object;
   typedef typename vobj::scalar_type scalar_type;
@@ -79,7 +79,7 @@ inline Lattice<vobj> whereWolf(const Lattice<iobj> &predicate,Lattice<vobj> &ift
   conformable(iftrue,iffalse);
   conformable(iftrue,predicate);
 
-  Lattice<vobj> ret(iftrue._grid);
+  Lattice<vobj> ret(iftrue.Grid());
 
   where(ret,predicate,iftrue,iffalse);
 

@@ -73,7 +73,7 @@ public:
     RealD src_norm = norm2(src_d_in);
     RealD stop = src_norm * Tolerance*Tolerance;
 
-    GridBase* DoublePrecGrid = src_d_in._grid;
+    GridBase* DoublePrecGrid = src_d_in.Grid();
     FieldD tmp_d(DoublePrecGrid);
     tmp_d.Checkerboard() = cb;
     

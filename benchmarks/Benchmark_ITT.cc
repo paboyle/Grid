@@ -538,7 +538,7 @@ public:
     {
       LatticeGaugeField Umu5d(FGrid); 
       std::vector<LatticeColourMatrix> U(4,FGrid);
-      for(int ss=0;ss<Umu._grid->oSites();ss++){
+      for(int ss=0;ss<Umu.Grid()->oSites();ss++){
 	for(int s=0;s<Ls;s++){
 	  Umu5d[Ls*ss+s] = Umu[ss];
 	}

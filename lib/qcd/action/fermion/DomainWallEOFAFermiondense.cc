@@ -55,8 +55,8 @@ template<class Impl>
 void DomainWallEOFAFermion<Impl>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv)
 {
   int Ls = this->Ls;
-  int LLs = psi._grid->_rdimensions[0];
-  int vol = psi._grid->oSites()/LLs;
+  int LLs = psi.Grid()->_rdimensions[0];
+  int vol = psi.Grid()->oSites()/LLs;
 
   chi.Checkerboard() = psi.Checkerboard();
 

@@ -89,7 +89,7 @@ int main (int argc, char ** argv)
   // replicate across fifth dimension
   ////////////////////////////////////
   LatticeGaugeField Umu5d(FGrid); 
-  for(int ss=0;ss<Umu._grid->oSites();ss++){
+  for(int ss=0;ss<Umu.Grid()->oSites();ss++){
     for(int s=0;s<Ls;s++){
       Umu5d[Ls*ss+s] = Umu[ss];
     }

@@ -81,7 +81,7 @@ private:
   //====================================================================
   GaugeField AnalyticSmearedForce(const GaugeField& SigmaKPrime,
                                   const GaugeField& GaugeK) const {
-    GridBase* grid = GaugeK._grid;
+    GridBase* grid = GaugeK.Grid();
     GaugeField C(grid), SigmaK(grid), iLambda(grid);
     GaugeLinkField iLambda_mu(grid);
     GaugeLinkField iQ(grid), e_iQ(grid);
@@ -115,7 +115,7 @@ private:
   void set_iLambda(GaugeLinkField& iLambda, GaugeLinkField& e_iQ,
                    const GaugeLinkField& iQ, const GaugeLinkField& Sigmap,
                    const GaugeLinkField& GaugeK) const {
-    GridBase* grid = iQ._grid;
+    GridBase* grid = iQ.Grid();
     GaugeLinkField iQ2(grid), iQ3(grid), B1(grid), B2(grid), USigmap(grid);
     GaugeLinkField unity(grid);
     unity = 1.0;
@@ -230,7 +230,7 @@ public:
   void smeared_force(GaugeField& SigmaTilde) const {
     if (smearingLevels > 0) {
       GaugeField force = SigmaTilde; // actually = U*SigmaTilde
-      GaugeLinkField tmp_mu(SigmaTilde._grid);
+      GaugeLinkField tmp_mu(SigmaTilde.Grid());
 
       for (int mu = 0; mu < Nd; mu++) {
         // to get just SigmaTilde

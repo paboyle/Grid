@@ -57,8 +57,8 @@ public:
     FermionField tmp1(fcbgrid);
     FermionField tmp2(fcbgrid);
 
-    conformable(fcbgrid,U._grid);
-    conformable(fcbgrid,V._grid);
+    conformable(fcbgrid,U.Grid());
+    conformable(fcbgrid,V.Grid());
 
     // Assert the checkerboard?? or code for either
     assert(U.Checkerboard()==Odd);
@@ -68,7 +68,7 @@ public:
     // it is not conformable with the HMC force field
     // Case: Ls vectorised fields
     // INHERIT FROM THE Force field instead
-    GridRedBlackCartesian* forcecb = new GridRedBlackCartesian(Force._grid);
+    GridRedBlackCartesian* forcecb = new GridRedBlackCartesian(Force.Grid());
     GaugeField ForceO(forcecb);
     GaugeField ForceE(forcecb);
 
@@ -102,8 +102,8 @@ public:
     FermionField tmp1(fcbgrid);
     FermionField tmp2(fcbgrid);
 
-    conformable(fcbgrid,U._grid);
-    conformable(fcbgrid,V._grid);
+    conformable(fcbgrid,U.Grid());
+    conformable(fcbgrid,V.Grid());
 
     // Assert the checkerboard?? or code for either
     assert(V.Checkerboard()==Odd);
@@ -112,7 +112,7 @@ public:
     // NOTE Guido: WE DO NOT WANT TO USE THE ucbgrid GRID FOR THE FORCE
     // it is not conformable with the HMC force field
     // INHERIT FROM THE Force field instead
-    GridRedBlackCartesian* forcecb = new GridRedBlackCartesian(Force._grid);
+    GridRedBlackCartesian* forcecb = new GridRedBlackCartesian(Force.Grid());
     GaugeField ForceO(forcecb);
     GaugeField ForceE(forcecb);
 

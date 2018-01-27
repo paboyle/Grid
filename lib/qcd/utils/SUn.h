@@ -217,7 +217,7 @@ public:
                          Lattice<iSU2Matrix<vcplx> > &subgroup,
                          const Lattice<iSUnMatrix<vcplx> > &source,
                          int su2_index) {
-    GridBase *grid(source._grid);
+    GridBase *grid(source.Grid());
     conformable(subgroup, source);
     conformable(subgroup, Determinant);
     int i0, i1;
@@ -247,7 +247,7 @@ public:
   template <class vcplx>
   static void su2Insert(const Lattice<iSU2Matrix<vcplx> > &subgroup,
                         Lattice<iSUnMatrix<vcplx> > &dest, int su2_index) {
-    GridBase *grid(dest._grid);
+    GridBase *grid(dest.Grid());
     conformable(subgroup, dest);
     int i0, i1;
     su2SubGroupIndex(i0, i1, su2_index);
@@ -277,7 +277,7 @@ public:
 			       LatticeMatrix &link,
 			       const LatticeMatrix &barestaple,  // multiplied by action coeffs so th
 			       int su2_subgroup, int nheatbath, LatticeInteger &wheremask) {
-    GridBase *grid = link._grid;
+    GridBase *grid = link.Grid();
 
     const RealD twopi = 2.0 * M_PI;
 
@@ -604,7 +604,7 @@ public:
   template <typename LatticeMatrixType>
   static void LieRandomize(GridParallelRNG &pRNG, LatticeMatrixType &out,
                            double scale = 1.0) {
-    GridBase *grid = out._grid;
+    GridBase *grid = out.Grid();
 
     typedef typename LatticeMatrixType::vector_type vector_type;
     typedef typename LatticeMatrixType::scalar_type scalar_type;
@@ -641,7 +641,7 @@ public:
   static void GaussianFundamentalLieAlgebraMatrix(GridParallelRNG &pRNG,
                                                   LatticeMatrix &out,
                                                   Real scale = 1.0) {
-    GridBase *grid = out._grid;
+    GridBase *grid = out.Grid();
     LatticeReal ca(grid);
     LatticeMatrix la(grid);
     Complex ci(0.0, scale);
@@ -661,7 +661,7 @@ public:
                                           LatticeMatrix &out,
                                           Real scale = 1.0) {
     conformable(h, out);
-    GridBase *grid = out._grid;
+    GridBase *grid = out.Grid();
     LatticeMatrix la(grid);
     Matrix ta;
 
@@ -678,8 +678,8 @@ public:
 
   template<typename GaugeField,typename GaugeMat>
   static void GaugeTransform( GaugeField &Umu, GaugeMat &g){
-    GridBase *grid = Umu._grid;
-    conformable(grid,g._grid);
+    GridBase *grid = Umu.Grid();
+    conformable(grid,g.Grid());
 
     GaugeMat U(grid);
     GaugeMat ag(grid); ag = adj(g);
@@ -692,7 +692,7 @@ public:
   }
   template<typename GaugeMat>
   static void GaugeTransform( std::vector<GaugeMat> &U, GaugeMat &g){
-    GridBase *grid = g._grid;
+    GridBase *grid = g.Grid();
     GaugeMat ag(grid); ag = adj(g);
     for(int mu=0;mu<Nd;mu++){
       U[mu] = g*U[mu]*Cshift(ag, mu, 1);
@@ -724,7 +724,7 @@ public:
     typedef iSUnMatrix<vector_type> vMatrixType;
     typedef Lattice<vMatrixType> LatticeMatrixType;
 
-    LatticeMatrixType Umu(out._grid);
+    LatticeMatrixType Umu(out.Grid());
     for (int mu = 0; mu < Nd; mu++) {
       LieRandomize(pRNG, Umu, 1.0);
       PokeIndex<LorentzIndex>(out, Umu, mu);
@@ -736,7 +736,7 @@ public:
     typedef iSUnMatrix<vector_type> vMatrixType;
     typedef Lattice<vMatrixType> LatticeMatrixType;
 
-    LatticeMatrixType Umu(out._grid);
+    LatticeMatrixType Umu(out.Grid());
     for(int mu=0;mu<Nd;mu++){
       LieRandomize(pRNG,Umu,0.01);
       PokeIndex<LorentzIndex>(out,Umu,mu);
@@ -748,7 +748,7 @@ public:
     typedef iSUnMatrix<vector_type> vMatrixType;
     typedef Lattice<vMatrixType> LatticeMatrixType;
 
-    LatticeMatrixType Umu(out._grid);
+    LatticeMatrixType Umu(out.Grid());
     Umu=1.0;
     for(int mu=0;mu<Nd;mu++){
       PokeIndex<LorentzIndex>(out,Umu,mu);
@@ -767,7 +767,7 @@ public:
   static void taExp(const LatticeMatrixType &x, LatticeMatrixType &ex) {
     typedef typename LatticeMatrixType::scalar_type ComplexType;
 
-    LatticeMatrixType xn(x._grid);
+    LatticeMatrixType xn(x.Grid());
     RealD nfac = 1.0;
 
     xn = x;

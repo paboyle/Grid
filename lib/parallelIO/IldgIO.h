@@ -133,7 +133,7 @@ template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
   /////////////////////////////////////
   // Scidac Private File structure
   /////////////////////////////////////
-  _scidacFile              = scidacFile(field._grid);
+  _scidacFile              = scidacFile(field.Grid());
 
   /////////////////////////////////////
   // Scidac Private Record structure
@@ -214,10 +214,10 @@ public:
 
 	//	std::cout << GridLogMessage<< " readLimeLatticeBinaryObject matches ! " <<std::endl;
 
-	uint64_t PayloadSize = sizeof(sobj) * field._grid->_gsites;
+	uint64_t PayloadSize = sizeof(sobj) * field.Grid()->_gsites;
 
 	//	std::cout << "R sizeof(sobj)= " <<sizeof(sobj)<<std::endl;
-	//	std::cout << "R Gsites " <<field._grid->_gsites<<std::endl;
+	//	std::cout << "R Gsites " <<field.Grid()->_gsites<<std::endl;
 	//	std::cout << "R Payload expected " <<PayloadSize<<std::endl;
 	//	std::cout << "R file size " <<file_bytes <<std::endl;
 
@@ -342,11 +342,11 @@ public:
     typedef typename vobj::scalar_object sobj;
     int err;
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
-    uint64_t PayloadSize = sizeof(sobj) * field._grid->_gsites;
+    uint64_t PayloadSize = sizeof(sobj) * field.Grid()->_gsites;
     createLimeRecordHeader(record_name, 0, 0, PayloadSize);
 
     //    std::cout << "W sizeof(sobj)"      <<sizeof(sobj)<<std::endl;
-    //    std::cout << "W Gsites "           <<field._grid->_gsites<<std::endl;
+    //    std::cout << "W Gsites "           <<field.Grid()->_gsites<<std::endl;
     //    std::cout << "W Payload expected " <<PayloadSize<<std::endl;
 
     ////////////////////////////////////////////////////////////////////
@@ -400,7 +400,7 @@ public:
   template <class vobj, class userRecord>
   void writeScidacFieldRecord(Lattice<vobj> &field,userRecord _userRecord) 
   {
-    GridBase * grid = field._grid;
+    GridBase * grid = field.Grid();
 
     ////////////////////////////////////////
     // fill the Grid header
@@ -439,7 +439,7 @@ public:
   void readScidacFieldRecord(Lattice<vobj> &field,userRecord &_userRecord) 
   {
     typedef typename vobj::scalar_object sobj;
-    GridBase * grid = field._grid;
+    GridBase * grid = field.Grid();
 
     ////////////////////////////////////////
     // fill the Grid header
@@ -504,7 +504,7 @@ public:
   template <class vsimd>
   void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,int sequence,std::string LFN,std::string description) 
   {
-    GridBase * grid = Umu._grid;
+    GridBase * grid = Umu.Grid();
     typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
     typedef iLorentzColourMatrix<vsimd> vobj;
     typedef typename vobj::scalar_object sobj;
@@ -591,9 +591,9 @@ public:
     typedef LorentzColourMatrixF fobj;
     typedef LorentzColourMatrixD dobj;
 
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
 
-    std::vector<int> dims = Umu._grid->FullDimensions();
+    std::vector<int> dims = Umu.Grid()->FullDimensions();
 
     assert(dims.size()==4);
 

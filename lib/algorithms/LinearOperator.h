@@ -183,7 +183,7 @@ public:
   virtual  RealD Mpc      (const Field &in, Field &out) =0;
   virtual  RealD MpcDag   (const Field &in, Field &out) =0;
   virtual void MpcDagMpc(const Field &in, Field &out,RealD &ni,RealD &no) {
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
     ni=Mpc(in,tmp);
     no=MpcDag(tmp,out);
   }
@@ -215,8 +215,8 @@ protected:
 public:
   SchurDiagMooeeOperator (Matrix &Mat): _Mat(Mat){};
   virtual  RealD Mpc      (const Field &in, Field &out) {
-    Field tmp(in._grid);
-    //	std::cout <<"grid pointers: in._grid="<< in._grid << " out._grid=" << out._grid << "  _Mat.Grid=" << _Mat.Grid() << " _Mat.RedBlackGrid=" << _Mat.RedBlackGrid() << std::endl;
+    Field tmp(in.Grid());
+    //	std::cout <<"grid pointers: in.Grid()="<< in.Grid() << " out.Grid()=" << out.Grid() << "  _Mat.Grid=" << _Mat.Grid() << " _Mat.RedBlackGrid=" << _Mat.RedBlackGrid() << std::endl;
 
     _Mat.Meooe(in,tmp);
     _Mat.MooeeInv(tmp,out);
@@ -226,7 +226,7 @@ public:
     return axpy_norm(out,-1.0,tmp,out);
   }
   virtual  RealD MpcDag   (const Field &in, Field &out){
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
 
     _Mat.MeooeDag(in,tmp);
     _Mat.MooeeInvDag(tmp,out);
@@ -244,7 +244,7 @@ public:
   SchurDiagOneOperator (Matrix &Mat): _Mat(Mat){};
 
   virtual  RealD Mpc      (const Field &in, Field &out) {
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
 
     _Mat.Meooe(in,out);
     _Mat.MooeeInv(out,tmp);
@@ -254,7 +254,7 @@ public:
     return axpy_norm(out,-1.0,tmp,in);
   }
   virtual  RealD MpcDag   (const Field &in, Field &out){
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
 
     _Mat.MooeeInvDag(in,out);
     _Mat.MeooeDag(out,tmp);
@@ -272,7 +272,7 @@ public:
   SchurDiagTwoOperator (Matrix &Mat): _Mat(Mat){};
 
   virtual  RealD Mpc      (const Field &in, Field &out) {
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
 
     _Mat.MooeeInv(in,out);
     _Mat.Meooe(out,tmp);
@@ -282,7 +282,7 @@ public:
     return axpy_norm(out,-1.0,tmp,in);
   }
   virtual  RealD MpcDag   (const Field &in, Field &out){
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
 
     _Mat.MeooeDag(in,out);
     _Mat.MooeeInvDag(out,tmp);
@@ -321,8 +321,8 @@ public:
     Mpc(in,out);
   }
   virtual  RealD Mpc      (const Field &in, Field &out) {
-    Field tmp(in._grid);
-    Field tmp2(in._grid);
+    Field tmp(in.Grid());
+    Field tmp2(in.Grid());
 
     std::cout << GridLogIterative << " HermOp.Mpc "<<std::endl;
     _Mat.Mooee(in,out);
@@ -437,8 +437,8 @@ public:
   // Implement the required interface
   void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) {
 
-    Field AtoN(in._grid);
-    Field Mtmp(in._grid);
+    Field AtoN(in.Grid());
+    Field Mtmp(in.Grid());
     AtoN = in;
     out = AtoN*Coeffs[0];
     for(int n=1;n<Coeffs.size();n++){

@@ -165,7 +165,7 @@ void MobiusEOFAFermion<Impl>::MooeeInv_shift(const FermionField& psi, FermionFie
   chi.Checkerboard() = psi.Checkerboard();
   int Ls = this->Ls;
 
-  FermionField tmp(psi._grid);
+  FermionField tmp(psi.Grid());
 
   // Apply (L^{\prime})^{-1}
   axpby_ssp(chi, one, psi, czero, psi, 0, 0);      // chi[0]=psi[0]
@@ -237,7 +237,7 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag_shift(const FermionField& psi, Fermion
   chi.Checkerboard() = psi.Checkerboard();
   int Ls = this->Ls;
 
-  FermionField tmp(psi._grid);
+  FermionField tmp(psi.Grid());
 
   // Apply (U^{\prime})^{-dagger} and accumulate (MooeeInvDag_shift_lc)_{j} \psi_{j} in tmp[0]
   axpby_ssp(chi, one, psi, czero, psi, 0, 0);      // chi[0]=psi[0]

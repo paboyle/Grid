@@ -108,14 +108,14 @@ public:
     //GaugeField herm = in + adj(in);
     //std::cout << "AHermiticity: " << norm2(herm) << std::endl;
 
-    GaugeLinkField tmp(in._grid);
-    GaugeLinkField tmp2(in._grid);
-    GaugeLinkField sum(in._grid);
+    GaugeLinkField tmp(in.Grid());
+    GaugeLinkField tmp2(in.Grid());
+    GaugeLinkField sum(in.Grid());
 
     for (int nu = 0; nu < Nd; nu++) {
       sum = zero;
       GaugeLinkField in_nu = PeekIndex<LorentzIndex>(in, nu);
-      GaugeLinkField out_nu(out._grid);
+      GaugeLinkField out_nu(out.Grid());
       for (int mu = 0; mu < Nd; mu++) {
         tmp = U[mu] * Cshift(in_nu, mu, +1) * adj(U[mu]);
         tmp2 = adj(U[mu]) * in_nu * U[mu];
@@ -131,7 +131,7 @@ public:
     RealD factor = -kappa / (double(4 * Nd));
     
     for (int mu = 0; mu < Nd; mu++){
-      GaugeLinkField der_mu(der._grid);
+      GaugeLinkField der_mu(der.Grid());
       der_mu = zero;
       for (int nu = 0; nu < Nd; nu++){
         GaugeLinkField in_nu = PeekIndex<LorentzIndex>(in, nu);
@@ -150,7 +150,7 @@ public:
     RealD factor = -kappa / (double(4 * Nd));
 
     for (int mu = 0; mu < Nd; mu++) {
-      GaugeLinkField der_mu(der._grid);
+      GaugeLinkField der_mu(der.Grid());
       der_mu = zero;
       for (int nu = 0; nu < Nd; nu++) {
         GaugeLinkField left_nu = PeekIndex<LorentzIndex>(left, nu);
@@ -168,7 +168,7 @@ public:
   }
 
   void MSquareRoot(GaugeField& P){
-    GaugeField Gp(P._grid);
+    GaugeField Gp(P.Grid());
     HermitianLinearOperator<LaplacianAdjointField<Impl>,GaugeField> HermOp(*this);
     ConjugateGradientMultiShift<GaugeField> msCG(param.MaxIter,PowerHalf);
     msCG(HermOp,P,Gp);
@@ -176,7 +176,7 @@ public:
   }
 
   void MInvSquareRoot(GaugeField& P){
-    GaugeField Gp(P._grid);
+    GaugeField Gp(P.Grid());
     HermitianLinearOperator<LaplacianAdjointField<Impl>,GaugeField> HermOp(*this);
     ConjugateGradientMultiShift<GaugeField> msCG(param.MaxIter,PowerInvHalf);
     msCG(HermOp,P,Gp);

@@ -96,10 +96,10 @@ public:
   virtual void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m) { assert(0);};
 
   virtual void  FreePropagator(const FermionField &in,FermionField &out,RealD mass) { 
-    FFT theFFT((GridCartesian *) in._grid);
+    FFT theFFT((GridCartesian *) in.Grid());
 
-    FermionField in_k(in._grid);
-    FermionField prop_k(in._grid);
+    FermionField in_k(in.Grid());
+    FermionField prop_k(in.Grid());
 
     theFFT.FFT_all_dim(in_k,in,FFT::forward);
     this->MomentumSpacePropagator(prop_k,in_k,mass);

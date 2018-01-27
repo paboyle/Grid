@@ -60,7 +60,7 @@ public:
 
 
   virtual RealD S(const GaugeField &U) {
-    RealD vol = U._grid->gSites();
+    RealD vol = U.Grid()->gSites();
 
     RealD plaq = WilsonLoops<Gimpl>::avgPlaquette(U);
     RealD rect = WilsonLoops<Gimpl>::avgRectangle(U);
@@ -76,7 +76,7 @@ public:
     RealD factor_p = c_plaq/RealD(Nc)*0.5;
     RealD factor_r =   c_rect/RealD(Nc)*0.5;
 
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
 
     std::vector<GaugeLinkField> U (Nd,grid);
     std::vector<GaugeLinkField> U2(Nd,grid);

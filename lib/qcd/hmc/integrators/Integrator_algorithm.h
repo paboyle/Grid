@@ -226,8 +226,8 @@ public:
   std::string integrator_name(){return "ForceGradient";}
   
   void FG_update_P(Field& U, int level, double fg_dt, double ep) {
-    Field Ufg(U._grid);
-    Field Pfg(U._grid);
+    Field Ufg(U.Grid());
+    Field Pfg(U.Grid());
     Ufg = U;
     Pfg = zero;
     std::cout << GridLogIntegrator << "FG update " << fg_dt << " " << ep

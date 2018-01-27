@@ -148,8 +148,8 @@ public:
   template<class vobj>
   void FFT_dim_mask(Lattice<vobj> &result,const Lattice<vobj> &source,std::vector<int> mask,int sign){
 
-    conformable(result._grid,vgrid);
-    conformable(source._grid,vgrid);
+    conformable(result.Grid(),vgrid);
+    conformable(source.Grid(),vgrid);
     Lattice<vobj> tmp(vgrid);
     tmp = source;
     for(int d=0;d<Nd;d++){
@@ -172,8 +172,8 @@ public:
 #ifndef HAVE_FFTW
     assert(0);
 #else
-    conformable(result._grid,vgrid);
-    conformable(source._grid,vgrid);
+    conformable(result.Grid(),vgrid);
+    conformable(source.Grid(),vgrid);
 
     int L = vgrid->_ldimensions[dim];
     int G = vgrid->_fdimensions[dim];

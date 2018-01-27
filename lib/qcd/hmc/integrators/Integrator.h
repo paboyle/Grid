@@ -98,11 +98,11 @@ protected:
     void operator()(std::vector<Action<FieldType>*> repr_set, Repr& Rep,
                     GF& Mom, GF& U, double ep) {
       for (int a = 0; a < repr_set.size(); ++a) {
-        FieldType forceR(U._grid);
+        FieldType forceR(U.Grid());
         // Implement smearing only for the fundamental representation now
         repr_set.at(a)->deriv(Rep.U, forceR);
         GF force = Rep.RtoFundamentalProject(forceR);  // Ta for the fundamental rep
-        Real force_abs = std::sqrt(norm2(force)/(U._grid->gSites()));
+        Real force_abs = std::sqrt(norm2(force)/(U.Grid()->gSites()));
         std::cout << GridLogIntegrator << "Hirep Force average: " << force_abs << std::endl;
         Mom -= force * ep ;
       }
@@ -114,15 +114,15 @@ protected:
     // Fundamental updates, include smearing
 
     for (int a = 0; a < as[level].actions.size(); ++a) {
-      Field force(U._grid);
-      conformable(U._grid, Mom._grid);
+      Field force(U.Grid());
+      conformable(U.Grid(), Mom.Grid());
       Field& Us = Smearer.get_U(as[level].actions.at(a)->is_smeared);
       as[level].actions.at(a)->deriv(Us, force);  // deriv should NOT include Ta
 
       std::cout << GridLogIntegrator << "Smearing (on/off): " << as[level].actions.at(a)->is_smeared << std::endl;
       if (as[level].actions.at(a)->is_smeared) Smearer.smeared_force(force);
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
-      Real force_abs = std::sqrt(norm2(force)/U._grid->gSites());
+      Real force_abs = std::sqrt(norm2(force)/U.Grid()->gSites());
       std::cout << GridLogIntegrator << "Force average: " << force_abs << std::endl;
       Mom -= force * ep; 
     }
@@ -210,7 +210,7 @@ public:
 
   // Initialization of momenta and actions
   void refresh(Field& U, GridParallelRNG& pRNG) {
-    assert(P._grid == U._grid);
+    assert(P.Grid() == U.Grid());
     std::cout << GridLogIntegrator << "Integrator refresh\n";
 
     FieldImplementation::generate_momenta(P, pRNG);

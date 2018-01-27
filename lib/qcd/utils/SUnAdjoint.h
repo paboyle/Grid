@@ -114,7 +114,7 @@ public:
 				      const typename SU<ncolour>::LatticeAlgebraVector &h,
 				      LatticeAdjMatrix &out, Real scale = 1.0) {
     conformable(h, out);
-    GridBase *grid = out._grid;
+    GridBase *grid = out.Grid();
     LatticeAdjMatrix la(grid);
     AMatrix iTa;
 

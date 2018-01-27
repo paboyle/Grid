@@ -76,7 +76,7 @@ public:
   static void traceDirPlaquette(ComplexField &plaq,
                                 const std::vector<GaugeMat> &U, const int mu,
                                 const int nu) {
-    GaugeMat sp(U[0]._grid);
+    GaugeMat sp(U[0].Grid());
     dirPlaquette(sp, U, mu, nu);
     plaq = trace(sp);
   }
@@ -85,7 +85,7 @@ public:
   //////////////////////////////////////////////////
   static void sitePlaquette(ComplexField &Plaq,
                             const std::vector<GaugeMat> &U) {
-    ComplexField sitePlaq(U[0]._grid);
+    ComplexField sitePlaq(U[0].Grid());
     Plaq = zero;
     for (int mu = 1; mu < Nd; mu++) {
       for (int nu = 0; nu < mu; nu++) {
@@ -98,13 +98,13 @@ public:
   // sum over all x,y,z,t and over all planes of plaquette
   //////////////////////////////////////////////////
   static RealD sumPlaquette(const GaugeLorentz &Umu) {
-    std::vector<GaugeMat> U(Nd, Umu._grid);
+    std::vector<GaugeMat> U(Nd, Umu.Grid());
     // inefficient here
     for (int mu = 0; mu < Nd; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
     }
 
-    ComplexField Plaq(Umu._grid);
+    ComplexField Plaq(Umu.Grid());
 
     sitePlaquette(Plaq, U);
     auto Tp = sum(Plaq);
@@ -118,7 +118,7 @@ public:
   //////////////////////////////////////////////////
   static RealD avgPlaquette(const GaugeLorentz &Umu) {
     RealD sumplaq = sumPlaquette(Umu);
-    double vol = Umu._grid->gSites();
+    double vol = Umu.Grid()->gSites();
     double faces = (1.0 * Nd * (Nd - 1)) / 2.0;
     return sumplaq / vol / faces / Nc; // Nd , Nc dependent... FIXME
   }
@@ -127,9 +127,9 @@ public:
   // average over traced single links
   //////////////////////////////////////////////////
   static RealD linkTrace(const GaugeLorentz &Umu) {
-    std::vector<GaugeMat> U(Nd, Umu._grid);
+    std::vector<GaugeMat> U(Nd, Umu.Grid());
 
-    ComplexField Tr(Umu._grid);
+    ComplexField Tr(Umu.Grid());
     Tr = zero;
     for (int mu = 0; mu < Nd; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
@@ -139,7 +139,7 @@ public:
     auto Tp = sum(Tr);
     auto p = TensorRemove(Tp);
 
-    double vol = Umu._grid->gSites();
+    double vol = Umu.Grid()->gSites();
 
     return p.real() / vol / 4.0 / 3.0;
   };
@@ -150,7 +150,7 @@ public:
   static void Staple(GaugeMat &staple, const GaugeLorentz &Umu, int mu,
                      int nu) {
 
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
 
     std::vector<GaugeMat> U(Nd, grid);
     for (int d = 0; d < Nd; d++) {
@@ -191,7 +191,7 @@ public:
 
   // For the force term
   static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
     std::vector<GaugeMat> U(Nd, grid);
     for (int d = 0; d < Nd; d++) {
       // this operation is taking too much time
@@ -219,7 +219,7 @@ public:
   //////////////////////////////////////////////////
   static void Staple(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
 
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
 
     std::vector<GaugeMat> U(Nd, grid);
     for (int d = 0; d < Nd; d++) {
@@ -266,7 +266,7 @@ public:
   static void StapleUpper(GaugeMat &staple, const GaugeLorentz &Umu, int mu,
                           int nu) {
     if (nu != mu) {
-      GridBase *grid = Umu._grid;
+      GridBase *grid = Umu.Grid();
 
       std::vector<GaugeMat> U(Nd, grid);
       for (int d = 0; d < Nd; d++) {
@@ -297,7 +297,7 @@ public:
   static void StapleLower(GaugeMat &staple, const GaugeLorentz &Umu, int mu,
                           int nu) {
     if (nu != mu) {
-      GridBase *grid = Umu._grid;
+      GridBase *grid = Umu.Grid();
 
       std::vector<GaugeMat> U(Nd, grid);
       for (int d = 0; d < Nd; d++) {
@@ -329,7 +329,7 @@ public:
     //     |     |     |     |
     //     +--<--+     +--<--+
 
-    GaugeMat Vup(Umu._grid), Vdn(Umu._grid);
+    GaugeMat Vup(Umu.Grid()), Vdn(Umu.Grid());
     StapleUpper(Vup, Umu, mu, nu);
     StapleLower(Vdn, Umu, mu, nu);
     GaugeMat v = Vup - Vdn;
@@ -342,13 +342,13 @@ public:
     // 4d topological charge
     assert(Nd==4);
     // Bx = -iF(y,z), By = -iF(z,y), Bz = -iF(x,y)
-    GaugeMat Bx(U._grid), By(U._grid), Bz(U._grid);
+    GaugeMat Bx(U.Grid()), By(U.Grid()), Bz(U.Grid());
     FieldStrength(Bx, U, Ydir, Zdir);
     FieldStrength(By, U, Zdir, Xdir);
     FieldStrength(Bz, U, Xdir, Ydir);
 
     // Ex = -iF(t,x), Ey = -iF(t,y), Ez = -iF(t,z)
-    GaugeMat Ex(U._grid), Ey(U._grid), Ez(U._grid);
+    GaugeMat Ex(U.Grid()), Ey(U.Grid()), Ez(U.Grid());
     FieldStrength(Ex, U, Tdir, Xdir);
     FieldStrength(Ey, U, Tdir, Ydir);
     FieldStrength(Ez, U, Tdir, Zdir);
@@ -378,13 +378,13 @@ public:
   static void traceDirRectangle(ComplexField &rect,
                                 const std::vector<GaugeMat> &U, const int mu,
                                 const int nu) {
-    GaugeMat sp(U[0]._grid);
+    GaugeMat sp(U[0].Grid());
     dirRectangle(sp, U, mu, nu);
     rect = trace(sp);
   }
   static void siteRectangle(ComplexField &Rect,
                             const std::vector<GaugeMat> &U) {
-    ComplexField siteRect(U[0]._grid);
+    ComplexField siteRect(U[0].Grid());
     Rect = zero;
     for (int mu = 1; mu < Nd; mu++) {
       for (int nu = 0; nu < mu; nu++) {
@@ -398,13 +398,13 @@ public:
   // sum over all x,y,z,t and over all planes of plaquette
   //////////////////////////////////////////////////
   static RealD sumRectangle(const GaugeLorentz &Umu) {
-    std::vector<GaugeMat> U(Nd, Umu._grid);
+    std::vector<GaugeMat> U(Nd, Umu.Grid());
 
     for (int mu = 0; mu < Nd; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
     }
 
-    ComplexField Rect(Umu._grid);
+    ComplexField Rect(Umu.Grid());
 
     siteRectangle(Rect, U);
 
@@ -419,7 +419,7 @@ public:
 
     RealD sumrect = sumRectangle(Umu);
 
-    double vol = Umu._grid->gSites();
+    double vol = Umu.Grid()->gSites();
 
     double faces = (1.0 * Nd * (Nd - 1)); // 2 distinct orientations summed
 
@@ -445,7 +445,7 @@ public:
 
     Stap = zero;
 
-    GridBase *grid = U[0]._grid;
+    GridBase *grid = U[0].Grid();
 
     GaugeMat Staple2x1(grid);
     GaugeMat tmp(grid);
@@ -522,7 +522,7 @@ public:
 
   static void RectStapleUnoptimised(GaugeMat &Stap, const GaugeLorentz &Umu,
                                     int mu) {
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
 
     std::vector<GaugeMat> U(Nd, grid);
     for (int d = 0; d < Nd; d++) {

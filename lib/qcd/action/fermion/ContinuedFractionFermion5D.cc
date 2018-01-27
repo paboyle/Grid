@@ -96,7 +96,7 @@ RealD  ContinuedFractionFermion5D<Impl>::M           (const FermionField &psi, F
 {
   int Ls = this->Ls;
 
-  FermionField D(psi._grid);
+  FermionField D(psi.Grid());
 
   this->DW(psi,D,DaggerNo); 
 
@@ -226,7 +226,7 @@ void ContinuedFractionFermion5D<Impl>::MDeriv  (GaugeField &mat,const FermionFie
 {
   int Ls = this->Ls;
 
-  FermionField D(V._grid);
+  FermionField D(V.Grid());
 
   int sign=1;
   for(int s=0;s<Ls;s++){
@@ -244,7 +244,7 @@ void ContinuedFractionFermion5D<Impl>::MoeDeriv(GaugeField &mat,const FermionFie
 {
   int Ls = this->Ls;
 
-  FermionField D(V._grid);
+  FermionField D(V.Grid());
 
   int sign=1;
   for(int s=0;s<Ls;s++){
@@ -262,7 +262,7 @@ void ContinuedFractionFermion5D<Impl>::MeoDeriv(GaugeField &mat,const FermionFie
 {
   int Ls = this->Ls;
 
-  FermionField D(V._grid);
+  FermionField D(V.Grid());
 
   int sign=1;
   for(int s=0;s<Ls;s++){

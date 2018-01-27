@@ -44,13 +44,13 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
   typedef typename vobj::vector_typeD vector_type;
   scalar_type  nrm;
   
-  GridBase *grid = left._grid;
+  GridBase *grid = left.Grid();
   
   std::vector<vector_type,alignedAllocator<vector_type> > sumarray(grid->SumArraySize());
   
   parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
     int mywork, myoff;
-    GridThread::GetWork(left._grid->oSites(),thr,mywork,myoff);
+    GridThread::GetWork(left.Grid()->oSites(),thr,mywork,myoff);
     
     decltype(innerProductD(left[0],right[0])) vnrm=zero; // private to thread; sub summation
     for(int ss=myoff;ss<mywork+myoff; ss++){
@@ -64,7 +64,7 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
     vvnrm = vvnrm+sumarray[i];
   } 
   nrm = Reduce(vvnrm);// sum across simd
-  right._grid->GlobalSum(nrm);
+  right.Grid()->GlobalSum(nrm);
   return nrm;
 }
  
@@ -96,7 +96,7 @@ inline auto sum(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr)
 template<class vobj>
 inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
 {
-  GridBase *grid=arg._grid;
+  GridBase *grid=arg.Grid();
   int Nsimd = grid->Nsimd();
   
   std::vector<vobj,alignedAllocator<vobj> > sumarray(grid->SumArraySize());
@@ -127,7 +127,7 @@ inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
   extract(vsum,buf);
   
   for(int i=0;i<Nsimd;i++) ssum = ssum + buf[i];
-  arg._grid->GlobalSum(ssum);
+  arg.Grid()->GlobalSum(ssum);
   
   return ssum;
 }
@@ -145,7 +145,7 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   // But easily avoided by using double precision fields
   ///////////////////////////////////////////////////////
   typedef typename vobj::scalar_object sobj;
-  GridBase  *grid = Data._grid;
+  GridBase  *grid = Data.Grid();
   assert(grid!=NULL);
 
   const int    Nd = grid->_ndimension;
@@ -225,9 +225,9 @@ static void sliceInnerProductVector( std::vector<ComplexD> & result, const Latti
 {
   typedef typename vobj::vector_type   vector_type;
   typedef typename vobj::scalar_type   scalar_type;
-  GridBase  *grid = lhs._grid;
+  GridBase  *grid = lhs.Grid();
   assert(grid!=NULL);
-  conformable(grid,rhs._grid);
+  conformable(grid,rhs.Grid());
 
   const int    Nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
@@ -307,7 +307,7 @@ static void sliceNorm (std::vector<RealD> &sn,const Lattice<vobj> &rhs,int Ortho
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
   
-  int Nblock = rhs._grid->GlobalDimensions()[Orthog];
+  int Nblock = rhs.Grid()->GlobalDimensions()[Orthog];
   std::vector<ComplexD> ip(Nblock);
   sn.resize(Nblock);
   
@@ -329,7 +329,7 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
   
   scalar_type zscale(scale);
 
-  GridBase *grid  = X._grid;
+  GridBase *grid  = X.Grid();
 
   int Nsimd  =grid->Nsimd();
   int Nblock =grid->GlobalDimensions()[orthogdim];

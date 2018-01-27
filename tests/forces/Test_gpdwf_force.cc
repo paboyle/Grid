@@ -172,7 +172,7 @@ int main (int argc, char ** argv)
   //	}
   //
   //
-  //    GridBase *grid = out._grid;
+  //    GridBase *grid = out.Grid();
   //    LatticeReal ca (grid);
   //    LatticeMatrix  la (grid);
   //    Complex ci(0.0,scale);

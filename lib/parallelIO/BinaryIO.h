@@ -89,7 +89,7 @@ public:
   {
     typedef typename vobj::scalar_object sobj;
 
-    GridBase *grid = lat._grid;
+    GridBase *grid = lat.Grid();
     int lsites = grid->lSites();
 
     std::vector<sobj> scalardata(lsites); 
@@ -522,7 +522,7 @@ public:
     typedef typename vobj::scalar_object sobj;
     typedef typename vobj::Realified::scalar_type word;    word w=0;
 
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
     int lsites = grid->lSites();
 
     std::vector<sobj> scalardata(lsites); 
@@ -558,7 +558,7 @@ public:
   {
     typedef typename vobj::scalar_object sobj;
     typedef typename vobj::Realified::scalar_type word;    word w=0;
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
     int lsites = grid->lSites();
 
     std::vector<sobj> scalardata(lsites); 
@@ -599,7 +599,7 @@ public:
 
     std::string format = "IEEE32BIG";
 
-    GridBase *grid = parallel._grid;
+    GridBase *grid = parallel.Grid();
     int gsites = grid->gSites();
     int lsites = grid->lSites();
 
@@ -659,7 +659,7 @@ public:
     const int RngStateCount = GridSerialRNG::RngStateCount;
     typedef std::array<RngStateType,RngStateCount> RNGstate;
 
-    GridBase *grid = parallel._grid;
+    GridBase *grid = parallel.Grid();
     int gsites = grid->gSites();
     int lsites = grid->lSites();
 

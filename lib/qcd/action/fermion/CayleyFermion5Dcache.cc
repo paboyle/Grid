@@ -46,7 +46,7 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
 				std::vector<Coeff_t> &upper)
 {
   int Ls =this->Ls;
-  GridBase *grid=psi._grid;
+  GridBase *grid=psi.Grid();
   assert(phi.Checkerboard() == psi.Checkerboard());
   chi.Checkerboard()=psi.Checkerboard();
   // Flops = 6.0*(Nc*Ns) *Ls*vol
@@ -89,7 +89,7 @@ void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
 				   std::vector<Coeff_t> &upper)
 {
   int Ls =this->Ls;
-  GridBase *grid=psi._grid;
+  GridBase *grid=psi.Grid();
   assert(phi.Checkerboard() == psi.Checkerboard());
   chi.Checkerboard()=psi.Checkerboard();
 
@@ -127,7 +127,7 @@ void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
 template<class Impl>
 void CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi, FermionField &chi)
 {
-  GridBase *grid=psi._grid;
+  GridBase *grid=psi.Grid();
   int Ls=this->Ls;
 
   chi.Checkerboard()=psi.Checkerboard();
@@ -172,7 +172,7 @@ void CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi, FermionField &
 template<class Impl>
 void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &chi)
 {
-  GridBase *grid=psi._grid;
+  GridBase *grid=psi.Grid();
   int Ls=this->Ls;
 
   assert(psi.Checkerboard() == psi.Checkerboard());

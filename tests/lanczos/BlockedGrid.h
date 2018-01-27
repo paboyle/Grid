@@ -282,7 +282,7 @@ public:
 
     void pokeBlockOfVectorCanonical(int cb,Field& v,const std::vector<float>& buf) {
       std::vector<int> _bsc = { _bs[1], _bs[2], _bs[3], _bs[4], _bs[0] };
-      std::vector<int> ldim = v._grid->LocalDimensions();
+      std::vector<int> ldim = v.Grid()->LocalDimensions();
       std::vector<int> cldim = { ldim[1], ldim[2], ldim[3], ldim[4], ldim[0] };
       const int _nbsc = _bs_cb[0]*_bs_cb[1]*_bs_cb[2]*_bs_cb[3]*_bs_cb[4];
       // take canonical block cb of v and put it in canonical ordering in buf
@@ -301,8 +301,8 @@ public:
 	    cl0[j] = cx0[j] + co0[j];
 	  
 	  std::vector<int> l0 = { cl0[4], cl0[0], cl0[1], cl0[2], cl0[3] };
-	  int oi = v._grid->oIndex(l0);
-	  int ii = v._grid->iIndex(l0);
+	  int oi = v.Grid()->oIndex(l0);
+	  int ii = v.Grid()->iIndex(l0);
 	  int lti = i;
 
 	  //if (cb < 2 && i<2)
@@ -320,7 +320,7 @@ public:
 
     void peekBlockOfVectorCanonical(int cb,const Field& v,std::vector<float>& buf) {
       std::vector<int> _bsc = { _bs[1], _bs[2], _bs[3], _bs[4], _bs[0] };
-      std::vector<int> ldim = v._grid->LocalDimensions();
+      std::vector<int> ldim = v.Grid()->LocalDimensions();
       std::vector<int> cldim = { ldim[1], ldim[2], ldim[3], ldim[4], ldim[0] };
       const int _nbsc = _bs_cb[0]*_bs_cb[1]*_bs_cb[2]*_bs_cb[3]*_bs_cb[4];
       // take canonical block cb of v and put it in canonical ordering in buf
@@ -341,8 +341,8 @@ public:
 	    cl0[j] = cx0[j] + co0[j];
 	  
 	  std::vector<int> l0 = { cl0[4], cl0[0], cl0[1], cl0[2], cl0[3] };
-	  int oi = v._grid->oIndex(l0);
-	  int ii = v._grid->iIndex(l0);
+	  int oi = v.Grid()->oIndex(l0);
+	  int ii = v.Grid()->iIndex(l0);
 	  int lti = i;
 	  
 	  //if (cb < 2 && i<2)

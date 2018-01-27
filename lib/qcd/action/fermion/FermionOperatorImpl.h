@@ -230,8 +230,8 @@ public:
   {
     typedef typename Simd::scalar_type scalar_type;
 
-    conformable(Uds._grid, GaugeGrid);
-    conformable(Umu._grid, GaugeGrid);
+    conformable(Uds.Grid(), GaugeGrid);
+    conformable(Umu.Grid(), GaugeGrid);
 
     GaugeLinkField U(GaugeGrid);
     GaugeLinkField tmp(GaugeGrid);
@@ -257,18 +257,18 @@ public:
   }
 
   inline void InsertForce4D(GaugeField &mat, FermionField &Btilde, FermionField &A,int mu){
-    GaugeLinkField link(mat._grid);
+    GaugeLinkField link(mat.Grid());
     link = TraceIndex<SpinIndex>(outerProduct(Btilde,A)); 
     PokeIndex<LorentzIndex>(mat,link,mu);
   }   
       
   inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu){
       
-    int Ls=Btilde._grid->_fdimensions[0];
-    GaugeLinkField tmp(mat._grid);
+    int Ls=Btilde.Grid()->_fdimensions[0];
+    GaugeLinkField tmp(mat.Grid());
     tmp = zero;
       
-    parallel_for(int sss=0;sss<tmp._grid->oSites();sss++){
+    parallel_for(int sss=0;sss<tmp.Grid()->oSites();sss++){
       int sU=sss;
       for(int s=0;s<Ls;s++){
 	int sF = s+Ls*sU;
@@ -365,8 +365,8 @@ public:
     SiteScalarGaugeField  ScalarUmu;
     SiteDoubledGaugeField ScalarUds;
     
-    GaugeLinkField U(Umu._grid);
-    GaugeField  Uadj(Umu._grid);
+    GaugeLinkField U(Umu.Grid());
+    GaugeField  Uadj(Umu.Grid());
     for (int mu = 0; mu < Nd; mu++) {
       U = PeekIndex<LorentzIndex>(Umu, mu);
       U = adj(Cshift(U, mu, -1));
@@ -399,10 +399,10 @@ public:
     // missing put lane...
     /*
       typedef decltype(traceIndex<SpinIndex>(outerProduct(Btilde[0], Atilde[0]))) result_type;
-      unsigned int LLs = Btilde._grid->_rdimensions[0];
-      conformable(Atilde._grid,Btilde._grid);
-      GridBase* grid = mat._grid;
-      GridBase* Bgrid = Btilde._grid;
+      unsigned int LLs = Btilde.Grid()->_rdimensions[0];
+      conformable(Atilde.Grid(),Btilde.Grid());
+      GridBase* grid = mat.Grid();
+      GridBase* Bgrid = Btilde.Grid();
       unsigned int dimU = grid->Nd();
       unsigned int dimF = Bgrid->Nd();
       GaugeLinkField tmp(grid); 
@@ -416,7 +416,7 @@ public:
       for (int so = 0; so < grid->oSites(); so++) {
       std::vector<typename result_type::scalar_object> vres(Bgrid->Nsimd());
       std::vector<int> ocoor;  grid->oCoorFromOindex(ocoor,so); 
-      for (int si = 0; si < tmp._grid->iSites(); si++){
+      for (int si = 0; si < tmp.Grid()->iSites(); si++){
       typename result_type::scalar_object scalar_object; scalar_object = zero;
       std::vector<int> local_coor;      
       std::vector<int> icoor; grid->iCoorFromIindex(icoor,si);
@@ -496,14 +496,14 @@ public:
     vobj vtmp;
     sobj stmp;
         
-    GridBase *grid = St._grid;
+    GridBase *grid = St.Grid();
         
     const int Nsimd = grid->Nsimd();
         
     int direction = St._directions[mu];
     int distance = St._distances[mu];
     int ptype = St._permute_type[mu];
-    int sl = St._grid->_simd_layout[direction];
+    int sl = St.Grid()->_simd_layout[direction];
    
     // Fixme X.Y.Z.T hardcode in stencil
     int mmu = mu % Nd;
@@ -569,8 +569,8 @@ public:
 
   inline void DoubleStore(GridBase *GaugeGrid,DoubledGaugeField &Uds,const GaugeField &Umu)
   {
-    conformable(Uds._grid,GaugeGrid);
-    conformable(Umu._grid,GaugeGrid);
+    conformable(Uds.Grid(),GaugeGrid);
+    conformable(Umu.Grid(),GaugeGrid);
    
     GaugeLinkField Utmp (GaugeGrid);
     GaugeLinkField U    (GaugeGrid);
@@ -624,7 +624,7 @@ public:
   inline void InsertForce4D(GaugeField &mat, FermionField &Btilde, FermionField &A, int mu) {
 
     // DhopDir provides U or Uconj depending on coor/flavour.
-    GaugeLinkField link(mat._grid);
+    GaugeLinkField link(mat.Grid());
     // use lorentz for flavour as hack.
     auto tmp = TraceIndex<SpinIndex>(outerProduct(Btilde, A));
     parallel_for(auto ss = tmp.begin(); ss < tmp.end(); ss++) {
@@ -636,11 +636,11 @@ public:
       
   inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde, int mu) {
 
-    int Ls = Btilde._grid->_fdimensions[0];
+    int Ls = Btilde.Grid()->_fdimensions[0];
         
-    GaugeLinkField tmp(mat._grid);
+    GaugeLinkField tmp(mat.Grid());
     tmp = zero;
-    parallel_for(int ss = 0; ss < tmp._grid->oSites(); ss++) {
+    parallel_for(int ss = 0; ss < tmp.Grid()->oSites(); ss++) {
       for (int s = 0; s < Ls; s++) {
 	int sF = s + Ls * ss;
 	auto ttmp = traceIndex<SpinIndex>(outerProduct(Btilde[sF], Atilde[sF]));
@@ -718,9 +718,9 @@ public:
 			  DoubledGaugeField &Uds,
 			  const GaugeField &Uthin,
 			  const GaugeField &Ufat) {
-    conformable(Uds._grid, GaugeGrid);
-    conformable(Uthin._grid, GaugeGrid);
-    conformable(Ufat._grid, GaugeGrid);
+    conformable(Uds.Grid(), GaugeGrid);
+    conformable(Uthin.Grid(), GaugeGrid);
+    conformable(Ufat.Grid(), GaugeGrid);
     GaugeLinkField U(GaugeGrid);
     GaugeLinkField UU(GaugeGrid);
     GaugeLinkField UUU(GaugeGrid);
@@ -771,7 +771,7 @@ public:
   }
 
   inline void InsertForce4D(GaugeField &mat, FermionField &Btilde, FermionField &A,int mu){
-    GaugeLinkField link(mat._grid);
+    GaugeLinkField link(mat.Grid());
     link = TraceIndex<SpinIndex>(outerProduct(Btilde,A)); 
     PokeIndex<LorentzIndex>(mat,link,mu);
   }   
@@ -864,8 +864,8 @@ public:
 			  const GaugeField &Ufat) 
   {
 
-    GridBase * InputGrid = Uthin._grid;
-    conformable(InputGrid,Ufat._grid);
+    GridBase * InputGrid = Uthin.Grid();
+    conformable(InputGrid,Ufat.Grid());
 
     GaugeLinkField U(InputGrid);
     GaugeLinkField UU(InputGrid);

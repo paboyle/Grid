@@ -182,7 +182,7 @@ int main (int argc, char ** argv)
 	Bar = Cshift(Foo,dir,disp);
 
 	// Implement a stencil code that should agree with cshift!
-	for(int i=0;i<Check._grid->oSites();i++){
+	for(int i=0;i<Check.Grid()->oSites();i++){
 
 	  int offset = myStencil._offsets [0][i];
 	  int  local = myStencil._is_local[0][i];

@@ -36,17 +36,17 @@ NAMESPACE_BEGIN(Grid);
 template<class vobj> void 
 Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimension,int plane,int cbmask, int off=0)
 {
-  int rd = rhs._grid->_rdimensions[dimension];
+  int rd = rhs.Grid()->_rdimensions[dimension];
 
-  if ( !rhs._grid->CheckerBoarded(dimension) ) {
+  if ( !rhs.Grid()->CheckerBoarded(dimension) ) {
     cbmask = 0x3;
   }
   
-  int so=plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-  int e1=rhs._grid->_slice_nblock[dimension];
-  int e2=rhs._grid->_slice_block[dimension];
+  int so=plane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane 
+  int e1=rhs.Grid()->_slice_nblock[dimension];
+  int e2=rhs.Grid()->_slice_block[dimension];
 
-  int stride=rhs._grid->_slice_stride[dimension];
+  int stride=rhs.Grid()->_slice_stride[dimension];
   if ( cbmask == 0x3 ) { 
     thread_loop_collapse( (int n=0;n<e1;n++) , 
       for(int b=0;b<e2;b++){
@@ -61,7 +61,7 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimen
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int o  = n*stride;
-	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
+	int ocb=1<<rhs.Grid()->CheckerBoardFromOindex(o+b);
 	if ( ocb &cbmask ) {
 	  table.push_back(std::pair<int,int> (bo++,o+b));
 	}
@@ -79,17 +79,17 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimen
 template<class vobj> void 
 Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename vobj::scalar_object *> pointers,int dimension,int plane,int cbmask)
 {
-  int rd = rhs._grid->_rdimensions[dimension];
+  int rd = rhs.Grid()->_rdimensions[dimension];
 
-  if ( !rhs._grid->CheckerBoarded(dimension) ) {
+  if ( !rhs.Grid()->CheckerBoarded(dimension) ) {
     cbmask = 0x3;
   }
 
-  int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+  int so  = plane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane 
 
-  int e1=rhs._grid->_slice_nblock[dimension];
-  int e2=rhs._grid->_slice_block[dimension];
-  int n1=rhs._grid->_slice_stride[dimension];
+  int e1=rhs.Grid()->_slice_nblock[dimension];
+  int e2=rhs.Grid()->_slice_block[dimension];
+  int n1=rhs.Grid()->_slice_stride[dimension];
 
   if ( cbmask ==0x3){
     thread_loop_collapse( (int n=0;n<e1;n++), {
@@ -112,7 +112,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename vobj::scalar_
       for(int b=0;b<e2;b++){
 
 	int o=n*n1;
-	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
+	int ocb=1<<rhs.Grid()->CheckerBoardFromOindex(o+b);
 	int offset = b+n*e2;
 
 	if ( ocb & cbmask ) {
@@ -129,23 +129,23 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename vobj::scalar_
 //////////////////////////////////////////////////////
 template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vobj> &buffer, int dimension,int plane,int cbmask)
 {
-  int rd = rhs._grid->_rdimensions[dimension];
+  int rd = rhs.Grid()->_rdimensions[dimension];
 
-  if ( !rhs._grid->CheckerBoarded(dimension) ) {
+  if ( !rhs.Grid()->CheckerBoarded(dimension) ) {
     cbmask=0x3;
   }
 
-  int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+  int so  = plane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane 
     
-  int e1=rhs._grid->_slice_nblock[dimension];
-  int e2=rhs._grid->_slice_block[dimension];
-  int stride=rhs._grid->_slice_stride[dimension];
+  int e1=rhs.Grid()->_slice_nblock[dimension];
+  int e2=rhs.Grid()->_slice_block[dimension];
+  int stride=rhs.Grid()->_slice_stride[dimension];
   
   if ( cbmask ==0x3 ) {
     thread_loop_collapse( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
-	int o   =n*rhs._grid->_slice_stride[dimension];
-	int bo  =n*rhs._grid->_slice_block[dimension];
+	int o   =n*rhs.Grid()->_slice_stride[dimension];
+	int bo  =n*rhs.Grid()->_slice_block[dimension];
 	rhs[so+o+b]=buffer[bo+b];
       }
     });
@@ -154,8 +154,8 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
     int bo=0;
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
-	int o   =n*rhs._grid->_slice_stride[dimension];
-	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
+	int o   =n*rhs.Grid()->_slice_stride[dimension];
+	int ocb=1<<rhs.Grid()->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
 	if ( ocb & cbmask ) {
 	  table.push_back(std::pair<int,int> (so+o+b,bo++));
 	}
@@ -172,22 +172,22 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
 //////////////////////////////////////////////////////
 template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,std::vector<typename vobj::scalar_object *> pointers,int dimension,int plane,int cbmask)
 {
-  int rd = rhs._grid->_rdimensions[dimension];
+  int rd = rhs.Grid()->_rdimensions[dimension];
 
-  if ( !rhs._grid->CheckerBoarded(dimension) ) {
+  if ( !rhs.Grid()->CheckerBoarded(dimension) ) {
     cbmask=0x3;
   }
 
-  int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+  int so  = plane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane 
     
-  int e1=rhs._grid->_slice_nblock[dimension];
-  int e2=rhs._grid->_slice_block[dimension];
+  int e1=rhs.Grid()->_slice_nblock[dimension];
+  int e2=rhs.Grid()->_slice_block[dimension];
 
   if(cbmask ==0x3 ) {
     thread_loop_collapse( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
-	int o      = n*rhs._grid->_slice_stride[dimension];
-	int offset = b+n*rhs._grid->_slice_block[dimension];
+	int o      = n*rhs.Grid()->_slice_stride[dimension];
+	int offset = b+n*rhs.Grid()->_slice_block[dimension];
 	merge(rhs[so+o+b],pointers,offset);
       }
     });
@@ -199,9 +199,9 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,std::vector<typ
     std::cout<<" Unthreaded warning -- buffer is not densely packed ??"<<std::endl;
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
-	int o      = n*rhs._grid->_slice_stride[dimension];
-	int offset = b+n*rhs._grid->_slice_block[dimension];
-	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
+	int o      = n*rhs.Grid()->_slice_stride[dimension];
+	int offset = b+n*rhs.Grid()->_slice_block[dimension];
+	int ocb=1<<rhs.Grid()->CheckerBoardFromOindex(o+b);
 	if ( ocb&cbmask ) {
 	  merge(rhs[so+o+b],pointers,offset);
 	}
@@ -215,18 +215,18 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,std::vector<typ
 //////////////////////////////////////////////////////
 template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask)
 {
-  int rd = rhs._grid->_rdimensions[dimension];
+  int rd = rhs.Grid()->_rdimensions[dimension];
 
-  if ( !rhs._grid->CheckerBoarded(dimension) ) {
+  if ( !rhs.Grid()->CheckerBoarded(dimension) ) {
     cbmask=0x3;
   }
 
-  int ro  = rplane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-  int lo  = lplane*lhs._grid->_ostride[dimension]; // base offset for start of plane 
+  int ro  = rplane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane 
+  int lo  = lplane*lhs.Grid()->_ostride[dimension]; // base offset for start of plane 
 
-  int e1=rhs._grid->_slice_nblock[dimension]; // clearly loop invariant for icpc
-  int e2=rhs._grid->_slice_block[dimension];
-  int stride = rhs._grid->_slice_stride[dimension];
+  int e1=rhs.Grid()->_slice_nblock[dimension]; // clearly loop invariant for icpc
+  int e2=rhs.Grid()->_slice_block[dimension];
+  int stride = rhs.Grid()->_slice_stride[dimension];
   if(cbmask == 0x3 ){
     thread_loop_collapse( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
@@ -239,7 +239,7 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
     thread_loop_collapse( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
         int o =n*stride+b;
-        int ocb=1<<lhs._grid->CheckerBoardFromOindex(o);
+        int ocb=1<<lhs.Grid()->CheckerBoardFromOindex(o);
         if ( ocb&cbmask ) {
 	  //lhs[lo+o]=rhs[ro+o];
 	  vstream(lhs[lo+o],rhs[ro+o]);
@@ -253,24 +253,24 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
 template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask,int permute_type)
 {
  
-  int rd = rhs._grid->_rdimensions[dimension];
+  int rd = rhs.Grid()->_rdimensions[dimension];
 
-  if ( !rhs._grid->CheckerBoarded(dimension) ) {
+  if ( !rhs.Grid()->CheckerBoarded(dimension) ) {
     cbmask=0x3;
   }
 
-  int ro  = rplane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-  int lo  = lplane*lhs._grid->_ostride[dimension]; // base offset for start of plane 
+  int ro  = rplane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane 
+  int lo  = lplane*lhs.Grid()->_ostride[dimension]; // base offset for start of plane 
 
-  int e1=rhs._grid->_slice_nblock[dimension];
-  int e2=rhs._grid->_slice_block [dimension];
-  int stride = rhs._grid->_slice_stride[dimension];
+  int e1=rhs.Grid()->_slice_nblock[dimension];
+  int e2=rhs.Grid()->_slice_block [dimension];
+  int stride = rhs.Grid()->_slice_stride[dimension];
 
   thread_loop_collapse( (int n=0;n<e1;n++),{
     for(int b=0;b<e2;b++){
 
       int o  =n*stride;
-      int ocb=1<<lhs._grid->CheckerBoardFromOindex(o+b);
+      int ocb=1<<lhs.Grid()->CheckerBoardFromOindex(o+b);
       if ( ocb&cbmask ) {
 	permute(lhs[lo+o+b],rhs[ro+o+b],permute_type);
       }
@@ -285,8 +285,8 @@ template<class vobj> void Cshift_local(Lattice<vobj>& ret,const Lattice<vobj> &r
 {
   int sshift[2];
 
-  sshift[0] = rhs._grid->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Even);
-  sshift[1] = rhs._grid->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Odd);
+  sshift[0] = rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Even);
+  sshift[1] = rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Odd);
 
   if ( sshift[0] == sshift[1] ) {
     Cshift_local(ret,rhs,dimension,shift,0x3);
@@ -298,7 +298,7 @@ template<class vobj> void Cshift_local(Lattice<vobj>& ret,const Lattice<vobj> &r
 
 template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
 {
-  GridBase *grid = rhs._grid;
+  GridBase *grid = rhs.Grid();
   int fd = grid->_fdimensions[dimension];
   int rd = grid->_rdimensions[dimension];
   int ld = grid->_ldimensions[dimension];

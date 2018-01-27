@@ -70,7 +70,7 @@ public:
     ssq=norm2(src);
     rsq=Tolerance*Tolerance*ssq;
       
-    Field r(src._grid);
+    Field r(src.Grid());
 
     PrecTimer.Reset();
     MatTimer.Reset();
@@ -117,7 +117,7 @@ public:
     RealD zAz, zAAz;
     RealD rAq, rq;
 
-    GridBase *grid = src._grid;
+    GridBase *grid = src.Grid();
 
     Field r(grid);
     Field z(grid);

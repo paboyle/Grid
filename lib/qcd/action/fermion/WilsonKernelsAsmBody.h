@@ -134,7 +134,7 @@
 
   COMPLEX_SIGNS(isigns);
   MASK_REGS;
-  int nmax=U._grid->oSites();
+  int nmax=U.Grid()->oSites();
   for(int site=0;site<Ns;site++) {
 #ifndef EXTERIOR
     int sU =lo.Reorder(ssU);

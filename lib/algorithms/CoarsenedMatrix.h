@@ -266,8 +266,8 @@ public:
 
   RealD M (const CoarseVector &in, CoarseVector &out){
 
-    conformable(_grid,in._grid);
-    conformable(in._grid,out._grid);
+    conformable(_grid,in.Grid());
+    conformable(in.Grid(),out.Grid());
 
     SimpleCompressor<siteVector> compressor;
     Stencil.HaloExchange(in,compressor);

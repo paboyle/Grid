@@ -66,7 +66,7 @@ WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
 
 template <class Impl>
 void WilsonFermion<Impl>::ImportGauge(const GaugeField &_Umu) {
-  GaugeField HUmu(_Umu._grid);
+  GaugeField HUmu(_Umu.Grid());
   HUmu = _Umu * (-0.5);
   Impl::DoubleStore(GaugeGrid(), Umu, HUmu);
   pickCheckerboard(Even, UmuEven, Umu);
@@ -141,7 +141,7 @@ void WilsonFermion<Impl>::MomentumSpacePropagator(FermionField &out, const Fermi
   typedef Lattice<iSinglet<vector_type> > LatComplex;
   
   // what type LatticeComplex 
-  conformable(_grid,out._grid);
+  conformable(_grid,out.Grid());
   
   Gamma::Algebra Gmu [] = {
     Gamma::Algebra::GammaX,
@@ -200,8 +200,8 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
 
   Compressor compressor(dag);
 
-  FermionField Btilde(B._grid);
-  FermionField Atilde(B._grid);
+  FermionField Btilde(B.Grid());
+  FermionField Atilde(B.Grid());
   Atilde = A;
 
   st.HaloExchange(B, compressor);
@@ -216,7 +216,7 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
     ////////////////////////
     // Call the single hop
     ////////////////////////
-    parallel_for (int sss = 0; sss < B._grid->oSites(); sss++) {
+    parallel_for (int sss = 0; sss < B.Grid()->oSites(); sss++) {
       Kernels::DhopDirK(st, U, st.CommBuf(), sss, sss, B, Btilde, mu, gamma);
     }
 
@@ -229,9 +229,9 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
 
 template <class Impl>
 void WilsonFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
-  conformable(U._grid, _grid);
-  conformable(U._grid, V._grid);
-  conformable(U._grid, mat._grid);
+  conformable(U.Grid(), _grid);
+  conformable(U.Grid(), V.Grid());
+  conformable(U.Grid(), mat.Grid());
 
   mat.Checkerboard() = U.Checkerboard();
 
@@ -240,9 +240,9 @@ void WilsonFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U, cons
 
 template <class Impl>
 void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
-  conformable(U._grid, _cbgrid);
-  conformable(U._grid, V._grid);
-  //conformable(U._grid, mat._grid); not general, leaving as a comment (Guido)
+  conformable(U.Grid(), _cbgrid);
+  conformable(U.Grid(), V.Grid());
+  //conformable(U.Grid(), mat.Grid()); not general, leaving as a comment (Guido)
   // Motivation: look at the SchurDiff operator
   
   assert(V.Checkerboard() == Even);
@@ -254,9 +254,9 @@ void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U, co
 
 template <class Impl>
 void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
-  conformable(U._grid, _cbgrid);
-  conformable(U._grid, V._grid);
-  //conformable(U._grid, mat._grid);
+  conformable(U.Grid(), _cbgrid);
+  conformable(U.Grid(), V.Grid());
+  //conformable(U.Grid(), mat.Grid());
 
   assert(V.Checkerboard() == Odd);
   assert(U.Checkerboard() == Even);
@@ -267,8 +267,8 @@ void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, co
 
 template <class Impl>
 void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int dag) {
-  conformable(in._grid, _grid);  // verifies full grid
-  conformable(in._grid, out._grid);
+  conformable(in.Grid(), _grid);  // verifies full grid
+  conformable(in.Grid(), out.Grid());
 
   out.Checkerboard() = in.Checkerboard();
 
@@ -277,8 +277,8 @@ void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int da
 
 template <class Impl>
 void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int dag) {
-  conformable(in._grid, _cbgrid);    // verifies half grid
-  conformable(in._grid, out._grid);  // drops the cb check
+  conformable(in.Grid(), _cbgrid);    // verifies half grid
+  conformable(in.Grid(), out.Grid());  // drops the cb check
 
   assert(in.Checkerboard() == Even);
   out.Checkerboard() = Odd;
@@ -288,8 +288,8 @@ void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int 
 
 template <class Impl>
 void WilsonFermion<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag) {
-  conformable(in._grid, _cbgrid);    // verifies half grid
-  conformable(in._grid, out._grid);  // drops the cb check
+  conformable(in.Grid(), _cbgrid);    // verifies half grid
+  conformable(in.Grid(), out.Grid());  // drops the cb check
 
   assert(in.Checkerboard() == Odd);
   out.Checkerboard() = Even;
@@ -317,7 +317,7 @@ void WilsonFermion<Impl>::DhopDirDisp(const FermionField &in, FermionField &out,
 
   Stencil.HaloExchange(in, compressor);
 
-  parallel_for (int sss = 0; sss < in._grid->oSites(); sss++) {
+  parallel_for (int sss = 0; sss < in.Grid()->oSites(); sss++) {
     Kernels::DhopDirK(Stencil, Umu, Stencil.CommBuf(), sss, sss, in, out, dirdisp, gamma);
   }
 };
@@ -333,11 +333,11 @@ void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
   st.HaloExchange(in, compressor);
 
   if (dag == DaggerYes) {
-    parallel_for (int sss = 0; sss < in._grid->oSites(); sss++) {
+    parallel_for (int sss = 0; sss < in.Grid()->oSites(); sss++) {
       Kernels::DhopSiteDag(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
     }
   } else {
-    parallel_for (int sss = 0; sss < in._grid->oSites(); sss++) {
+    parallel_for (int sss = 0; sss < in.Grid()->oSites(); sss++) {
       Kernels::DhopSite(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
     }
   }
@@ -356,9 +356,9 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
                                                    unsigned int mu)
 {
   Gamma g5(Gamma::Algebra::Gamma5);
-  conformable(_grid, q_in_1._grid);
-  conformable(_grid, q_in_2._grid);
-  conformable(_grid, q_out._grid);
+  conformable(_grid, q_in_1.Grid());
+  conformable(_grid, q_in_2.Grid());
+  conformable(_grid, q_out.Grid());
   PropagatorField tmp1(_grid), tmp2(_grid);
   q_out = zero;
 
@@ -366,7 +366,7 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
   // Inefficient comms method but not performance critical.
   tmp1 = Cshift(q_in_1, mu, 1);
   tmp2 = Cshift(q_in_2, mu, 1);
-  parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
+  parallel_for (unsigned int sU = 0; sU < Umu.Grid()->oSites(); ++sU)
     {
       Kernels::ContractConservedCurrentSiteFwd(tmp1[sU],
 					       q_in_2[sU],
@@ -388,8 +388,8 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                                               unsigned int tmin, 
                                               unsigned int tmax)
 {
-  conformable(_grid, q_in._grid);
-  conformable(_grid, q_out._grid);
+  conformable(_grid, q_in.Grid());
+  conformable(_grid, q_out.Grid());
   Lattice<iSinglet<Simd>> ph(_grid), coor(_grid);
   Complex i(0.0,1.0);
   PropagatorField tmpFwd(_grid), tmpBwd(_grid), tmp(_grid);
@@ -415,7 +415,7 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   tmp = ph*q_in;
   tmpBwd = Cshift(tmp, mu, -1);
 
-  parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
+  parallel_for (unsigned int sU = 0; sU < Umu.Grid()->oSites(); ++sU)
     {
       // Compute the sequential conserved current insertion only if our simd
       // object contains a timeslice we need.

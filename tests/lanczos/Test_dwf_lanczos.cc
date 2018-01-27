@@ -97,7 +97,7 @@ int main (int argc, char ** argv)
   gaussian(RNG5rb,src);
   std::vector<FermionField> evec(Nm,FrbGrid);
   for(int i=0;i<1;i++){
-    std::cout << GridLogMessage <<i<<" / "<< Nm<< " grid pointer "<<evec[i]._grid<<std::endl;
+    std::cout << GridLogMessage <<i<<" / "<< Nm<< " grid pointer "<<evec[i].Grid()<<std::endl;
   };
 
   int Nconv;

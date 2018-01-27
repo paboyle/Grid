@@ -106,9 +106,10 @@ void inline conformable(GridBase *lhs,GridBase *rhs)
 template<class vobj>
 class Lattice : public LatticeAccelerator<vobj>
 {
-public: // Move to private and fix
+protected: // Move to private and fix
   GridBase *_grid;
 public:
+  GridBase *Grid(void) const { return _grid; }
   ///////////////////////////////////////////////////
   // Member types
   ///////////////////////////////////////////////////
@@ -328,7 +329,7 @@ public:
   }
   Lattice(const Lattice& r){ // copy constructor
     //    std::cout << "Lattice constructor(const Lattice &) "<<this<<std::endl; 
-    _grid = r._grid;
+    _grid = r.Grid();
     resize(r._odata_size);
     this->checkerboard = r.Checkerboard();
     accelerator_loop(ss,(*this),{
@@ -337,7 +338,7 @@ public:
   }
   Lattice(Lattice && r){ // move constructor
     //    std::cout << "Lattice move constructor(Lattice &) "<<this<<std::endl; 
-    _grid = r._grid;
+    _grid = r.Grid();
     this->_odata      = r._odata;
     this->_odata_size = r._odata_size;
     this->checkerboard= r.Checkerboard();
@@ -370,7 +371,7 @@ public:
     //    std::cout << "Lattice = (Lattice &&)"<<std::endl; 
     resize(0); // delete if appropriate
 
-    this->_grid        = r._grid;
+    this->_grid        = r.Grid();
     this->checkerboard = r.Checkerboard();
 
     this->_odata      = r._odata;
@@ -403,8 +404,8 @@ template<class vobj> std::ostream& operator<< (std::ostream& stream, const Latti
   std::vector<int> gcoor;
   typedef typename vobj::scalar_object sobj;
   sobj ss;
-  for(int g=0;g<o._grid->_gsites;g++){
-    o._grid->GlobalIndexToGlobalCoor(g,gcoor);
+  for(int g=0;g<o.Grid()->_gsites;g++){
+    o.Grid()->GlobalIndexToGlobalCoor(g,gcoor);
     peekSite(ss,o,gcoor);
     stream<<"[";
     for(int d=0;d<gcoor.size();d++){

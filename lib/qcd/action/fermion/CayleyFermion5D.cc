@@ -238,7 +238,7 @@ void CayleyFermion5D<Impl>::MeooeDag5D    (const FermionField &psi, FermionField
 template<class Impl>
 RealD CayleyFermion5D<Impl>::M    (const FermionField &psi, FermionField &chi)
 {
-  FermionField Din(psi._grid);
+  FermionField Din(psi.Grid());
   
   // Assemble Din
   Meooe5D(psi,Din);
@@ -258,7 +258,7 @@ RealD CayleyFermion5D<Impl>::Mdag (const FermionField &psi, FermionField &chi)
   //D1+        D1- P-    ->   D1+^dag   P+ D2-^dag
   //D2- P+     D2+            P-D1-^dag D2+dag
   
-  FermionField Din(psi._grid);
+  FermionField Din(psi.Grid());
   // Apply Dw
   this->DW(psi,Din,DaggerYes); 
   
@@ -305,7 +305,7 @@ void  CayleyFermion5D<Impl>::Mdir (const FermionField &psi, FermionField &chi,in
 template<class Impl>
 void CayleyFermion5D<Impl>::MDeriv  (GaugeField &mat,const FermionField &U,const FermionField &V,int dag)
 {
-  FermionField Din(V._grid);
+  FermionField Din(V.Grid());
   
   if ( dag == DaggerNo ) {
     //      U d/du [D_w D5] V = U d/du DW D5 V
@@ -320,7 +320,7 @@ void CayleyFermion5D<Impl>::MDeriv  (GaugeField &mat,const FermionField &U,const
 template<class Impl>
 void CayleyFermion5D<Impl>::MoeDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag)
 {
-  FermionField Din(V._grid);
+  FermionField Din(V.Grid());
   
   if ( dag == DaggerNo ) {
     //      U d/du [D_w D5] V = U d/du DW D5 V
@@ -335,7 +335,7 @@ void CayleyFermion5D<Impl>::MoeDeriv(GaugeField &mat,const FermionField &U,const
 template<class Impl>
 void CayleyFermion5D<Impl>::MeoDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag)
 {
-  FermionField Din(V._grid);
+  FermionField Din(V.Grid());
   
   if ( dag == DaggerNo ) {
     //      U d/du [D_w D5] V = U d/du DW D5 V

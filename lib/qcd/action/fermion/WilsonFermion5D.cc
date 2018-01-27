@@ -219,7 +219,7 @@ void WilsonFermion5D<Impl>::ZeroCounters(void) {
 template<class Impl>
 void WilsonFermion5D<Impl>::ImportGauge(const GaugeField &_Umu)
 {
-  GaugeField HUmu(_Umu._grid);
+  GaugeField HUmu(_Umu.Grid());
   HUmu = _Umu*(-0.5);
   Impl::DoubleStore(GaugeGrid(),Umu,HUmu);
   pickCheckerboard(Even,UmuEven,Umu);
@@ -244,7 +244,7 @@ void WilsonFermion5D<Impl>::DhopDir(const FermionField &in, FermionField &out,in
   assert(dirdisp<=7);
   assert(dirdisp>=0);
 
-  parallel_for(int ss=0;ss<Umu._grid->oSites();ss++){
+  parallel_for(int ss=0;ss<Umu.Grid()->oSites();ss++){
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
@@ -264,20 +264,20 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
   DerivCalls++;
   assert((dag==DaggerNo) ||(dag==DaggerYes));
 
-  conformable(st._grid,A._grid);
-  conformable(st._grid,B._grid);
+  conformable(st.Grid(),A.Grid());
+  conformable(st.Grid(),B.Grid());
 
   Compressor compressor(dag);
   
-  FermionField Btilde(B._grid);
-  FermionField Atilde(B._grid);
+  FermionField Btilde(B.Grid());
+  FermionField Atilde(B.Grid());
 
   DerivCommTime-=usecond();
   st.HaloExchange(B,compressor);
   DerivCommTime+=usecond();
 
   Atilde=A;
-  int LLs = B._grid->_rdimensions[0];
+  int LLs = B.Grid()->_rdimensions[0];
 
 
   DerivComputeTime-=usecond();
@@ -293,13 +293,13 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
     ////////////////////////
 
     DerivDhopComputeTime -= usecond();
-    parallel_for (int sss = 0; sss < U._grid->oSites(); sss++) {
+    parallel_for (int sss = 0; sss < U.Grid()->oSites(); sss++) {
       for (int s = 0; s < Ls; s++) {
         int sU = sss;
         int sF = s + Ls * sU;
 
-        assert(sF < B._grid->oSites());
-        assert(sU < U._grid->oSites());
+        assert(sF < B.Grid()->oSites());
+        assert(sU < U.Grid()->oSites());
 
         Kernels::DhopDirK(st, U, st.CommBuf(), sF, sU, B, Btilde, mu, gamma);
 
@@ -323,10 +323,10 @@ void WilsonFermion5D<Impl>::DhopDeriv(GaugeField &mat,
                                       const FermionField &B,
                                       int dag)
 {
-  conformable(A._grid,FermionGrid());  
-  conformable(A._grid,B._grid);
+  conformable(A.Grid(),FermionGrid());  
+  conformable(A.Grid(),B.Grid());
 
-  //conformable(GaugeGrid(),mat._grid);// this is not general! leaving as a comment
+  //conformable(GaugeGrid(),mat.Grid());// this is not general! leaving as a comment
 
   mat.Checkerboard() = A.Checkerboard();
 
@@ -339,8 +339,8 @@ void WilsonFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
                                         const FermionField &B,
                                         int dag)
 {
-  conformable(A._grid,FermionRedBlackGrid());
-  conformable(A._grid,B._grid);
+  conformable(A.Grid(),FermionRedBlackGrid());
+  conformable(A.Grid(),B.Grid());
 
   assert(B.Checkerboard()==Odd);
   assert(A.Checkerboard()==Even);
@@ -356,8 +356,8 @@ void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
                                         const FermionField &B,
                                         int dag)
 {
-  conformable(A._grid,FermionRedBlackGrid());
-  conformable(A._grid,B._grid);
+  conformable(A.Grid(),FermionRedBlackGrid());
+  conformable(A.Grid(),B.Grid());
 
   assert(B.Checkerboard()==Even);
   assert(A.Checkerboard()==Odd);
@@ -392,8 +392,8 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 
   Compressor compressor(dag);
 
-  int LLs = in._grid->_rdimensions[0];
-  int len =  U._grid->oSites();
+  int LLs = in.Grid()->_rdimensions[0];
+  int len =  U.Grid()->oSites();
 
   DhopFaceTime-=usecond();
   st.HaloExchangeOptGather(in,compressor);
@@ -417,7 +417,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
       double start = usecond();
       nthreads -= ncomms;
       int ttid = tid - ncomms;
-      int n = U._grid->oSites();
+      int n = U.Grid()->oSites();
       int chunk = n / nthreads;
       int rem = n % nthreads;
       int myblock, myn;
@@ -492,7 +492,7 @@ void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOr
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
   Compressor compressor(dag);
 
-  int LLs = in._grid->_rdimensions[0];
+  int LLs = in.Grid()->_rdimensions[0];
   
   DhopCommTime-=usecond();
   st.HaloExchangeOpt(in,compressor);
@@ -502,13 +502,13 @@ void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOr
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
 
   if (dag == DaggerYes) {
-    parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
+    parallel_for (int ss = 0; ss < U.Grid()->oSites(); ss++) {
       int sU = ss;
       int sF = LLs * sU;
       Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
     }
   } else {
-    parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
+    parallel_for (int ss = 0; ss < U.Grid()->oSites(); ss++) {
       int sU = ss;
       int sF = LLs * sU;
       Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
@@ -522,8 +522,8 @@ template<class Impl>
 void WilsonFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int dag)
 {
   DhopCalls++;
-  conformable(in._grid,FermionRedBlackGrid());    // verifies half grid
-  conformable(in._grid,out._grid); // drops the cb check
+  conformable(in.Grid(),FermionRedBlackGrid());    // verifies half grid
+  conformable(in.Grid(),out.Grid()); // drops the cb check
 
   assert(in.Checkerboard()==Even);
   out.Checkerboard() = Odd;
@@ -534,8 +534,8 @@ template<class Impl>
 void WilsonFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag)
 {
   DhopCalls++;
-  conformable(in._grid,FermionRedBlackGrid());    // verifies half grid
-  conformable(in._grid,out._grid); // drops the cb check
+  conformable(in.Grid(),FermionRedBlackGrid());    // verifies half grid
+  conformable(in.Grid(),out.Grid()); // drops the cb check
 
   assert(in.Checkerboard()==Odd);
   out.Checkerboard() = Even;
@@ -546,8 +546,8 @@ template<class Impl>
 void WilsonFermion5D<Impl>::Dhop(const FermionField &in, FermionField &out,int dag)
 {
   DhopCalls+=2;
-  conformable(in._grid,FermionGrid()); // verifies full grid
-  conformable(in._grid,out._grid);
+  conformable(in.Grid(),FermionGrid()); // verifies full grid
+  conformable(in.Grid(),out.Grid());
 
   out.Checkerboard() = in.Checkerboard();
 
@@ -566,7 +566,7 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const Fe
 {
   // what type LatticeComplex 
   GridBase *_grid = _FourDimGrid;
-  conformable(_grid,out._grid);
+  conformable(_grid,out.Grid());
   
   typedef typename FermionField::vector_type vector_type;
   typedef typename FermionField::scalar_type ScalComplex;
@@ -651,7 +651,7 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const Fe
   };
 
   GridBase *_grid = _FourDimGrid;
-  conformable(_grid,out._grid);
+  conformable(_grid,out.Grid());
 
   typedef typename FermionField::vector_type vector_type;
   typedef typename FermionField::scalar_type ScalComplex;
@@ -728,18 +728,18 @@ void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
                                                      Current curr_type,
                                                      unsigned int mu)
 {
-  conformable(q_in_1._grid, FermionGrid());
-  conformable(q_in_1._grid, q_in_2._grid);
-  conformable(_FourDimGrid, q_out._grid);
+  conformable(q_in_1.Grid(), FermionGrid());
+  conformable(q_in_1.Grid(), q_in_2.Grid());
+  conformable(_FourDimGrid, q_out.Grid());
   PropagatorField tmp1(FermionGrid()), tmp2(FermionGrid());
-  unsigned int LLs = q_in_1._grid->_rdimensions[0];
+  unsigned int LLs = q_in_1.Grid()->_rdimensions[0];
   q_out = zero;
 
   // Forward, need q1(x + mu, s), q2(x, Ls - 1 - s). Backward, need q1(x, s), 
   // q2(x + mu, Ls - 1 - s). 5D lattice so shift 4D coordinate mu by one.
   tmp1 = Cshift(q_in_1, mu + 1, 1);
   tmp2 = Cshift(q_in_2, mu + 1, 1);
-  parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
+  parallel_for (unsigned int sU = 0; sU < Umu.Grid()->oSites(); ++sU)
     {
       unsigned int sF1 = sU * LLs;
       unsigned int sF2 = (sU + 1) * LLs - 1;
@@ -786,14 +786,14 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                                                 unsigned int tmin, 
                                                 unsigned int tmax)
 {
-  conformable(q_in._grid, FermionGrid());
-  conformable(q_in._grid, q_out._grid);
+  conformable(q_in.Grid(), FermionGrid());
+  conformable(q_in.Grid(), q_out.Grid());
   Lattice<iSinglet<Simd>> ph(FermionGrid()), coor(FermionGrid());
   PropagatorField tmpFwd(FermionGrid()), tmpBwd(FermionGrid()),
     tmp(FermionGrid());
   Complex i(0.0, 1.0);
   unsigned int tshift = (mu == Tp) ? 1 : 0;
-  unsigned int LLs = q_in._grid->_rdimensions[0];
+  unsigned int LLs = q_in.Grid()->_rdimensions[0];
   unsigned int LLt    = GridDefaultLatt()[Tp];
 
   // Momentum projection.
@@ -817,7 +817,7 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   tmp = ph*q_in;
   tmpBwd = Cshift(tmp, mu + 1, -1);
 
-  parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
+  parallel_for (unsigned int sU = 0; sU < Umu.Grid()->oSites(); ++sU)
     {
       // Compute the sequential conserved current insertion only if our simd
       // object contains a timeslice we need.

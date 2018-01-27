@@ -90,7 +90,7 @@ namespace Grid {
     template<typename Field>
      static bool read_argonne(BasisFieldVector<Field>& ret,const char* dir, const std::vector<int>& cnodes) {
 
-     GridBase* _grid = ret._v[0]._grid;
+     GridBase* _grid = ret._v[0].Grid();
 
      std::map<int, std::vector<int> > slots;
      std::vector<int> slot_lvol, lvol;
@@ -230,7 +230,7 @@ namespace Grid {
      static bool read_argonne(BasisFieldVector<Field>& ret,const char* dir) {
 
 
-     GridBase* _grid = ret._v[0]._grid;
+     GridBase* _grid = ret._v[0].Grid();
 
      char buf[4096];
      sprintf(buf,"%s/nodes.txt",dir);
@@ -463,7 +463,7 @@ namespace Grid {
      static bool read_compressed_vectors(const char* dir,BlockProjector<Field>& pr,BasisFieldVector<CoarseField>& coef, int ngroups = 1) {
 
      const BasisFieldVector<Field>& basis = pr._evec;
-     GridBase* _grid = basis._v[0]._grid;
+     GridBase* _grid = basis._v[0].Grid();
 
      // for error messages
      char hostname[1024];
@@ -699,7 +699,7 @@ namespace Grid {
 		 int ii,oi;
 		 int mnb = pr._bgrid.globalToLocalCanonicalBlock(slot,_nn,nb);
 		 if (mnb != -1)
-		   canonical_block_to_coarse_coordinates(coef._v[0]._grid,mnb,ii,oi);
+		   canonical_block_to_coarse_coordinates(coef._v[0].Grid(),mnb,ii,oi);
 		 
 		 char* lptr = ptr + (4*buf1.size() + FP_16_SIZE(buf2.size(), _FP16_COEF_EXP_SHARE_FLOATS))*(nb + j*blocks);
 		 int l;
@@ -752,7 +752,7 @@ namespace Grid {
      GridStopWatch gsw;
      
      const BasisFieldVector<Field>& basis = pr._evec;
-     GridBase* _grid = basis._v[0]._grid;
+     GridBase* _grid = basis._v[0].Grid();
      std::vector<int> _l = _grid->FullDimensions();
      for (int i=0;i<(int)_l.size();i++)
        _l[i] /= _grid->_processors[i];
@@ -854,7 +854,7 @@ namespace Grid {
 	 }
 
 	 gsw2.Stop();
-	 assert(coef._v[0]._grid->_isites*coef._v[0]._grid->_osites == pr._bgrid._blocks);
+	 assert(coef._v[0].Grid()->_isites*coef._v[0].Grid()->_osites == pr._bgrid._blocks);
 
 	 gsw3.Start();
 	 for (int j=0;j<(int)coef.size();j++) {
@@ -870,7 +870,7 @@ namespace Grid {
 	   for (int nb=0;nb<pr._bgrid._blocks;nb++) {
 	     // get local coordinate on coarse grid
 	     int ii, oi;
-	     canonical_block_to_coarse_coordinates(coef._v[0]._grid,nb,ii,oi);
+	     canonical_block_to_coarse_coordinates(coef._v[0].Grid(),nb,ii,oi);
 	     
 	     gsw4.Start();
 	     gsw5.Start();
@@ -949,7 +949,7 @@ namespace Grid {
    template<typename Field>
      static void write_argonne(const BasisFieldVector<Field>& ret,const char* dir) {
      
-     GridBase* _grid = ret._v[0]._grid;
+     GridBase* _grid = ret._v[0].Grid();
      std::vector<int> _l = _grid->FullDimensions();
      for (int i=0;i<(int)_l.size();i++)
        _l[i] /= _grid->_processors[i];

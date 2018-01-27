@@ -67,7 +67,7 @@ public:
   //////////////////////////////////////////////////
 
   static RealD sumphider(const typename Impl::Field &f) {
-    typename Impl::Field tmp(f._grid);
+    typename Impl::Field tmp(f.Grid());
     tmp = Cshift(f, 0, -1) * f;
     for (int mu = 1; mu < Nd; mu++) {
       tmp += Cshift(f, mu, -1) * f;
@@ -76,13 +76,13 @@ public:
   }
 
   static RealD sumphisquared(const typename Impl::Field &f) {
-    typename Impl::Field tmp(f._grid);
+    typename Impl::Field tmp(f.Grid());
     tmp = f * f;
     return sum(trace(tmp));
   }
 
   static RealD sumphifourth(const typename Impl::Field &f) {
-    typename Impl::Field tmp(f._grid);
+    typename Impl::Field tmp(f.Grid());
     phifourth(tmp, f);
     return sum(trace(tmp));
   }

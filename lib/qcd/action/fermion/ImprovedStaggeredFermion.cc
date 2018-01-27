@@ -238,8 +238,8 @@ void ImprovedStaggeredFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGauge
 
   Compressor compressor;
 
-  FermionField Btilde(B._grid);
-  FermionField Atilde(B._grid);
+  FermionField Btilde(B.Grid());
+  FermionField Atilde(B.Grid());
   Atilde = A;
 
   st.HaloExchange(B, compressor);
@@ -249,7 +249,7 @@ void ImprovedStaggeredFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGauge
     ////////////////////////
     // Call the single hop
     ////////////////////////
-    thread_loop( (int sss = 0; sss < B._grid->oSites(); sss++), {
+    thread_loop( (int sss = 0; sss < B.Grid()->oSites(); sss++), {
 	Kernels::DhopDirK(st, U, UUU, st.CommBuf(), sss, sss, B, Btilde, mu,1);
     });
 
@@ -281,9 +281,9 @@ void ImprovedStaggeredFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGauge
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
 
-  conformable(U._grid, _grid);
-  conformable(U._grid, V._grid);
-  conformable(U._grid, mat._grid);
+  conformable(U.Grid(), _grid);
+  conformable(U.Grid(), V.Grid());
+  conformable(U.Grid(), mat.Grid());
 
   mat.Checkerboard() = U.Checkerboard();
 
@@ -293,9 +293,9 @@ void ImprovedStaggeredFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionFie
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
 
-  conformable(U._grid, _cbgrid);
-  conformable(U._grid, V._grid);
-  conformable(U._grid, mat._grid);
+  conformable(U.Grid(), _cbgrid);
+  conformable(U.Grid(), V.Grid());
+  conformable(U.Grid(), mat.Grid());
 
   assert(V.Checkerboard() == Even);
   assert(U.Checkerboard() == Odd);
@@ -307,9 +307,9 @@ void ImprovedStaggeredFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionF
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
 
-  conformable(U._grid, _cbgrid);
-  conformable(U._grid, V._grid);
-  conformable(U._grid, mat._grid);
+  conformable(U.Grid(), _cbgrid);
+  conformable(U.Grid(), V.Grid());
+  conformable(U.Grid(), mat.Grid());
 
   assert(V.Checkerboard() == Odd);
   assert(U.Checkerboard() == Even);
@@ -320,8 +320,8 @@ void ImprovedStaggeredFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionF
 
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int dag) {
-  conformable(in._grid, _grid);  // verifies full grid
-  conformable(in._grid, out._grid);
+  conformable(in.Grid(), _grid);  // verifies full grid
+  conformable(in.Grid(), out.Grid());
 
   out.Checkerboard() = in.Checkerboard();
 
@@ -330,8 +330,8 @@ void ImprovedStaggeredFermion<Impl>::Dhop(const FermionField &in, FermionField &
 
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int dag) {
-  conformable(in._grid, _cbgrid);    // verifies half grid
-  conformable(in._grid, out._grid);  // drops the cb check
+  conformable(in.Grid(), _cbgrid);    // verifies half grid
+  conformable(in.Grid(), out.Grid());  // drops the cb check
 
   assert(in.Checkerboard() == Even);
   out.Checkerboard() = Odd;
@@ -341,8 +341,8 @@ void ImprovedStaggeredFermion<Impl>::DhopOE(const FermionField &in, FermionField
 
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::DhopEO(const FermionField &in, FermionField &out, int dag) {
-  conformable(in._grid, _cbgrid);    // verifies half grid
-  conformable(in._grid, out._grid);  // drops the cb check
+  conformable(in.Grid(), _cbgrid);    // verifies half grid
+  conformable(in.Grid(), out.Grid());  // drops the cb check
 
   assert(in.Checkerboard() == Odd);
   out.Checkerboard() = Even;
@@ -361,7 +361,7 @@ void ImprovedStaggeredFermion<Impl>::DhopDir(const FermionField &in, FermionFiel
   Compressor compressor;
   Stencil.HaloExchange(in, compressor);
 
-  thread_loop( (int sss = 0; sss < in._grid->oSites(); sss++) , {
+  thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++) , {
       Kernels::DhopDirK(Stencil, Umu, UUUmu, Stencil.CommBuf(), sss, sss, in, out, dir, disp);
   });
 };
@@ -378,11 +378,11 @@ void ImprovedStaggeredFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder
   st.HaloExchange(in, compressor);
 
   if (dag == DaggerYes) {
-    thread_loop( (int sss = 0; sss < in._grid->oSites(); sss++), {
+    thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++), {
 	Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), 1, sss, in, out);
     });
   } else {
-    thread_loop( (int sss = 0; sss < in._grid->oSites(); sss++), {
+    thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++), {
 	Kernels::DhopSite(st, lo, U, UUU, st.CommBuf(), 1, sss, in, out);
     });
   }

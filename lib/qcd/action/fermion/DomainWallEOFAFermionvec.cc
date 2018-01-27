@@ -55,7 +55,7 @@ template<class Impl>
 void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi, const FermionField& phi,
 				      FermionField& chi, std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper)
 {
-  GridBase* grid = psi._grid;
+  GridBase* grid = psi.Grid();
   int Ls  = this->Ls;
   int LLs = grid->_rdimensions[0];
   const int nsimd = Simd::Nsimd();
@@ -200,7 +200,7 @@ template<class Impl>
 void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi, const FermionField& phi,
 					 FermionField& chi, std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper)
 {
-  GridBase* grid = psi._grid;
+  GridBase* grid = psi.Grid();
   int Ls  = this->Ls;
   int LLs = grid->_rdimensions[0];
   int nsimd = Simd::Nsimd();
@@ -533,8 +533,8 @@ template<class Impl>
 void DomainWallEOFAFermion<Impl>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv)
 {
   int Ls  = this->Ls;
-  int LLs = psi._grid->_rdimensions[0];
-  int vol = psi._grid->oSites()/LLs;
+  int LLs = psi.Grid()->_rdimensions[0];
+  int vol = psi.Grid()->oSites()/LLs;
 
   chi.Checkerboard() = psi.Checkerboard();
 

@@ -85,8 +85,8 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 template <class Gimpl>
 void WilsonFlow<Gimpl>::evolve_step(typename Gimpl::GaugeField &U) const{
-  GaugeField Z(U._grid);
-  GaugeField tmp(U._grid);
+  GaugeField Z(U.Grid());
+  GaugeField tmp(U.Grid());
   SG.deriv(U, Z);
   Z *= 0.25;                                  // Z0 = 1/4 * F(U)
   Gimpl::update_field(Z, U, -2.0*epsilon);    // U = W1 = exp(ep*Z0)*W0
@@ -108,9 +108,9 @@ void WilsonFlow<Gimpl>::evolve_step_adaptive(typename Gimpl::GaugeField &U, Real
     epsilon = maxTau-taus;
   }
   //std::cout << GridLogMessage << "Integration epsilon : " << epsilon << std::endl;
-  GaugeField Z(U._grid);
-  GaugeField Zprime(U._grid);
-  GaugeField tmp(U._grid), Uprime(U._grid);
+  GaugeField Z(U.Grid());
+  GaugeField Zprime(U.Grid());
+  GaugeField tmp(U.Grid()), Uprime(U.Grid());
   Uprime = U;
   SG.deriv(U, Z);
   Zprime = -Z;
@@ -147,12 +147,12 @@ void WilsonFlow<Gimpl>::evolve_step_adaptive(typename Gimpl::GaugeField &U, Real
 template <class Gimpl>
 RealD WilsonFlow<Gimpl>::energyDensityPlaquette(unsigned int step, const GaugeField& U) const {
   RealD td = tau(step);
-  return 2.0 * td * td * SG.S(U)/U._grid->gSites();
+  return 2.0 * td * td * SG.S(U)/U.Grid()->gSites();
 }
 
 template <class Gimpl>
 RealD WilsonFlow<Gimpl>::energyDensityPlaquette(const GaugeField& U) const {
-  return 2.0 * taus * taus * SG.S(U)/U._grid->gSites();
+  return 2.0 * taus * taus * SG.S(U)/U.Grid()->gSites();
 }
 
 
