@@ -52,14 +52,14 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
     int mywork, myoff;
     GridThread::GetWork(left.Grid()->oSites(),thr,mywork,myoff);
     
-    decltype(innerProductD(left[0],right[0])) vnrm=zero; // private to thread; sub summation
+    decltype(innerProductD(left[0],right[0])) vnrm=Zero(); // private to thread; sub summation
     for(int ss=myoff;ss<mywork+myoff; ss++){
       vnrm = vnrm + innerProductD(left[ss],right[ss]);
     }
     sumarray[thr]=TensorRemove(vnrm) ;
   }
   
-  vector_type vvnrm; vvnrm=zero;  // sum across threads
+  vector_type vvnrm; vvnrm=Zero();  // sum across threads
   for(int i=0;i<grid->SumArraySize();i++){
     vvnrm = vvnrm+sumarray[i];
   } 
@@ -101,21 +101,21 @@ inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
   
   std::vector<vobj,alignedAllocator<vobj> > sumarray(grid->SumArraySize());
   for(int i=0;i<grid->SumArraySize();i++){
-    sumarray[i]=zero;
+    sumarray[i]=Zero();
   }
   
   parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
     int mywork, myoff;
     GridThread::GetWork(grid->oSites(),thr,mywork,myoff);
     
-    vobj vvsum=zero;
+    vobj vvsum=Zero();
     for(int ss=myoff;ss<mywork+myoff; ss++){
       vvsum = vvsum + arg[ss];
     }
     sumarray[thr]=vvsum;
   }
   
-  vobj vsum=zero;  // sum across threads
+  vobj vsum=Zero();  // sum across threads
   for(int i=0;i<grid->SumArraySize();i++){
     vsum = vsum+sumarray[i];
   } 
@@ -159,12 +159,12 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   int rd=grid->_rdimensions[orthogdim];
 
   std::vector<vobj,alignedAllocator<vobj> > lvSum(rd); // will locally sum vectors first
-  std::vector<sobj> lsSum(ld,zero);                    // sum across these down to scalars
+  std::vector<sobj> lsSum(ld,Zero());                    // sum across these down to scalars
   std::vector<sobj> extracted(Nsimd);                  // splitting the SIMD
 
   result.resize(fd); // And then global sum to return the same vector to every node 
   for(int r=0;r<rd;r++){
-    lvSum[r]=zero;
+    lvSum[r]=Zero();
   }
 
   int e1=    grid->_slice_nblock[orthogdim];
@@ -211,7 +211,7 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
     if ( pt == grid->_processor_coor[orthogdim] ) {
       gsum=lsSum[lt];
     } else {
-      gsum=zero;
+      gsum=Zero();
     }
 
     grid->GlobalSum(gsum);
@@ -245,7 +245,7 @@ static void sliceInnerProductVector( std::vector<ComplexD> & result, const Latti
 
   result.resize(fd); // And then global sum to return the same vector to every node for IO to file
   for(int r=0;r<rd;r++){
-    lvSum[r]=zero;
+    lvSum[r]=Zero();
   }
 
   int e1=    grid->_slice_nblock[orthogdim];

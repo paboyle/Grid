@@ -76,6 +76,7 @@ public:
   accelerator_inline uint64_t size(void)   const { return _odata_size; };
   accelerator_inline vobj & operator[](size_t i)             { return _odata[i]; };
   accelerator_inline const vobj & operator[](size_t i) const { return _odata[i]; };
+
 };
     
 class LatticeExpressionBase {};
@@ -398,6 +399,16 @@ public:
     *this = (*this)+r;
     return *this;
   }
+
+  friend inline void swap(Lattice &l, Lattice &r) { 
+    conformable(l,r);
+    LatticeAccelerator<vobj> tmp;
+    LatticeAccelerator<vobj> *lp = (LatticeAccelerator<vobj> *)&l;
+    LatticeAccelerator<vobj> *rp = (LatticeAccelerator<vobj> *)&r;
+    tmp = *lp;    *lp=*rp;    *rp=tmp;
+  }
+
+
 }; // class Lattice
 
 template<class vobj> std::ostream& operator<< (std::ostream& stream, const Lattice<vobj> &o){

@@ -103,7 +103,7 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
     assert(block_r[d]*coarse->_rdimensions[d] == fine->_rdimensions[d]);
   }
 
-  coarseData=zero;
+  coarseData=Zero();
 
   // Loop over coars parallel, and then loop over fine associated with coarse.
   thread_loop( (int sf=0;sf<fine->oSites();sf++),{
@@ -192,7 +192,7 @@ template<class vobj,class CComplex>
 inline void blockNormalise(Lattice<CComplex> &ip,Lattice<vobj> &fineX)
 {
   GridBase *coarse = ip.Grid();
-  Lattice<vobj> zz(fineX.Grid()); zz=zero; zz.Checkerboard()=fineX.Checkerboard();
+  Lattice<vobj> zz(fineX.Grid()); zz=Zero(); zz.Checkerboard()=fineX.Checkerboard();
   blockInnerProduct(ip,fineX,fineX);
   ip = pow(ip,-0.5);
   blockZAXPY(fineX,ip,fineX,zz);
@@ -217,7 +217,7 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
 
   // Turn this around to loop threaded over sc and interior loop 
   // over sf would thread better
-  coarseData=zero;
+  coarseData=Zero();
   thread_region {
 
     int sc;
@@ -247,7 +247,7 @@ inline void blockPick(GridBase *coarse,const Lattice<vobj> &unpicked,Lattice<vob
   Lattice<vobj> zz(fine); zz.Checkerboard() = unpicked.Checkerboard();
   Lattice<iScalar<vInteger> > fcoor(fine);
 
-  zz = zero;
+  zz = Zero();
 
   picked = unpicked;
   for(int d=0;d<fine->_ndimension;d++){

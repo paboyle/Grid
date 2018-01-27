@@ -58,7 +58,7 @@ inline void whereWolf(Lattice<vobj> &ret,const Lattice<iobj> &predicate,Lattice<
   std::vector<scalar_object> truevals (Nsimd);
   std::vector<scalar_object> falsevals(Nsimd);
 
-  thread_loop( (int ss=iftrue.begin(); ss<iftrue.end();ss++) , COMMA_SAFE({
+  thread_loop( (int ss=iftrue.begin(); ss<iftrue.end();ss++) , {
 
     extract(iftrue[ss]   ,truevals);
     extract(iffalse[ss]  ,falsevals);
@@ -69,7 +69,7 @@ inline void whereWolf(Lattice<vobj> &ret,const Lattice<iobj> &predicate,Lattice<
     }
 
     merge(ret[ss],falsevals);
-  }) 
+  } 
   );
 }
 
