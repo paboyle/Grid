@@ -83,7 +83,7 @@ void basisRotateJ(Field &result,std::vector<Field> &basis,Eigen::MatrixXd& Qt,in
 
   result.Checkerboard() = basis[0].Checkerboard();
   parallel_for(int ss=0;ss < grid->oSites();ss++){
-    vobj B = zero;
+    vobj B = Zero();
     for(int k=k0; k<k1; ++k){
       B +=Qt(j,k) * basis[k][ss];
     }
@@ -118,7 +118,7 @@ void basisReorderInPlace(std::vector<Field> &_v,std::vector<RealD>& sort_vals, s
 
       assert(idx[i] > i);     assert(j!=idx.size());      assert(idx[j]==i);
 
-      std::swap(_v[i]._odata,_v[idx[i]]._odata); // should use vector move constructor, no data copy
+      swap(_v[i],_v[idx[i]]); // should use vector move constructor, no data copy
       std::swap(sort_vals[i],sort_vals[idx[i]]);
 
       idx[j] = idx[i];
@@ -153,7 +153,7 @@ void basisSortInPlace(std::vector<Field> & _v,std::vector<RealD>& sort_vals, boo
 // If performance critical can improve.
 template<class Field>
 void basisDeflate(const std::vector<Field> &_v,const std::vector<RealD>& eval,const Field& src_orig,Field& result) {
-  result = zero;
+  result = Zero();
   assert(_v.size()==eval.size());
   int N = (int)_v.size();
   for (int i=0;i<N;i++) {

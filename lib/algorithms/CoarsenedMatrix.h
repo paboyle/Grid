@@ -104,7 +104,7 @@ public:
   GridBase *FineGrid;
   std::vector<Lattice<Fobj> > subspace;
   int checkerboard;
-
+  int Checkerboard(void){return checkerboard;}
   Aggregation(GridBase *_CoarseGrid,GridBase *_FineGrid,int _checkerboard) : 
     CoarseGrid(_CoarseGrid),
     FineGrid(_FineGrid),
@@ -127,7 +127,7 @@ public:
     CoarseVector eProj(CoarseGrid); 
     for(int i=0;i<nbasis;i++){
       blockProject(iProj,subspace[i],subspace);
-      eProj=zero; 
+      eProj=Zero(); 
       parallel_for(int ss=0;ss<CoarseGrid->oSites();ss++){
 	eProj[ss](i)=CComplex(1.0);
       }
@@ -273,7 +273,7 @@ public:
     Stencil.HaloExchange(in,compressor);
 
     parallel_for(int ss=0;ss<Grid()->oSites();ss++){
-      siteVector res = zero;
+      siteVector res = Zero();
       siteVector nbr;
       int ptype;
       StencilEntry *SE;
@@ -320,7 +320,7 @@ public:
 
     FineField     phi(FineGrid);
     FineField     tmp(FineGrid);
-    FineField     zz(FineGrid); zz=zero;
+    FineField     zz(FineGrid); zz=Zero();
     FineField    Mphi(FineGrid);
 
     Lattice<iScalar<vInteger> > coor(FineGrid);
@@ -336,7 +336,7 @@ public:
     // set of vectors.
     int self_stencil=-1;
     for(int p=0;p<geom.npoint;p++){ 
-      A[p]=zero;
+      A[p]=Zero();
       if( geom.displacements[p]==0){
 	self_stencil=p;
       }
@@ -369,7 +369,7 @@ public:
 	////////////////////////////////////////////////////////////////////////
 	if ( disp==0 ) {
 	  iblock = Mphi;
-	  oblock = zero;
+	  oblock = Zero();
 	} else if ( disp==1 ) {
 	  oblock = where(mod(coor,block)==(block-1),Mphi,zz);
 	  iblock = where(mod(coor,block)!=(block-1),Mphi,zz);
@@ -427,7 +427,7 @@ public:
     std::cout<<GridLogMessage<<"****   Forcing coarse operator to be diagonal ****"<<std::endl;
     std::cout<<GridLogMessage<<"**************************************************"<<std::endl;
     for(int p=0;p<8;p++){
-      A[p]=zero;
+      A[p]=Zero();
     }
 
     GridParallelRNG  RNG(Grid()); RNG.SeedFixedIntegers(std::vector<int>({55,72,19,17,34}));

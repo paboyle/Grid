@@ -65,7 +65,7 @@ public:
 
   void operator() (LinearOperatorBase<Field> &Linop,const Field &src, Field &psi){
 
-    psi=zero;
+    psi=Zero();
     RealD cp, ssq,rsq;
     ssq=norm2(src);
     rsq=Tolerance*Tolerance*ssq;

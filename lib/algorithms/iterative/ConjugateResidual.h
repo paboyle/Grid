@@ -56,7 +56,7 @@ public:
     RealD pAp, pAAp;
 
     GridBase *grid = src.Grid();
-    psi=zero;
+    psi=Zero();
     Field r(grid),  p(grid), Ap(grid), Ar(grid);
       
     r=src;

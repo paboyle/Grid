@@ -120,7 +120,7 @@ public:
     precisionChange(r_f, r);
 
     FieldF psi_f(r_f);
-    psi_f = zero;
+    psi_f = Zero();
 
     FieldF p_f(r_f);
     FieldF mmp_f(r_f);
@@ -219,7 +219,7 @@ public:
 	Linop_d.HermOpAndNorm(psi, mmp, d, qq);
 	r = src - mmp;
 
-	psi_f = zero;
+	psi_f = Zero();
 	precisionChange(r_f, r);
 	cp = norm2(r);
 	MaxResidSinceLastRelUp = cp;

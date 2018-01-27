@@ -57,7 +57,7 @@ public:
     Field chi(phi); // forecasted solution
 
     // Trivial cases
-    if(degree == 0){ chi = zero; return chi; }
+    if(degree == 0){ chi = Zero(); return chi; }
     else if(degree == 1){ return prev_solns[0]; }
 
     //    RealD dot;
@@ -121,7 +121,7 @@ public:
     }
 
     // Use Gaussian elimination to solve equations and calculate initial guess
-    chi = zero;
+    chi = Zero();
     r = phi;
     for(int i=degree-1; i>=0; i--){
       a[i] = 0.0;
