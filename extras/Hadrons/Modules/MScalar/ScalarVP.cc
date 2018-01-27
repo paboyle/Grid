@@ -270,17 +270,19 @@ void TScalarVP::execute(void)
             tmpProp = Cshift(prop0, nu, -1);     // S_0(0|x-a\hat{\nu})
                                                  // = S_0(a\hat{\nu}|x)
             Usrc    = Complex(1.0,0.0);
-            vpContraction(buf, prop0, tmpProp, Usrc, mu);
-            *vpTensor[mu][nu] = buf;
+            vpContraction(result, prop0, tmpProp, Usrc, mu);
+            *vpTensor[mu][nu] = result;
             // Output if necessary
             if (!par().output.empty())
             {
-                writeVP(writer, buf,
+                writeVP(writer, result,
                         "Pi_free_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
+            tmpProp = result; // Just using tmpProp as a temporary ScalarField
+                              // here (buf is modified by calls to writeVP())
 
             // srcT
-            result = buf * (-0.5)*q*q*Anu0*Anu0;
+            result = tmpProp * (-0.5)*q*q*Anu0*Anu0;
             *vpTensor[mu][nu] += result;
             // Output if necessary
             if (!par().output.empty())
@@ -290,7 +292,7 @@ void TScalarVP::execute(void)
             }
 
             // snkT
-            result = buf * (-0.5)*q*q*Amu*Amu;
+            result = tmpProp * (-0.5)*q*q*Amu*Amu;
             *vpTensor[mu][nu] += result;
             // Output if necessary
             if (!par().output.empty())
