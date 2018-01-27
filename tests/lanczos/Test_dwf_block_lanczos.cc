@@ -31,7 +31,8 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-typedef typename GparityDomainWallFermionR::FermionField FermionField;
+//typedef typename GparityDomainWallFermionR::FermionField FermionField;
+typedef typename ZMobiusFermionR::FermionField FermionField;
 
 RealD AllZero(RealD x){ return 0.;}
 
@@ -44,6 +45,8 @@ class CmdJobParams
     double mass;
     double M5;
     double mob_b;
+    std::vector<ComplexD> omega;
+    std::vector<ComplexD> boundary_phase;
     
     int Nu;
     int Nk;
@@ -57,7 +60,7 @@ class CmdJobParams
     int order;
 
     CmdJobParams()
-      : gaugefile("Hot"), 
+      : gaugefile("Hot"),
         Ls(8), mass(0.01), M5(1.8), mob_b(1.5), 
         Nu(4), Nk(200), Np(200), Nstop(100), MaxIter(10), resid(1.0e-8), 
         low(0.2), high(5.5), order(11)
@@ -71,14 +74,62 @@ void CmdJobParams::Parse(char **argv,int argc)
 {
   std::string arg;
   std::vector<int> vi;
+  double re,im;
+  int expect, idx;
+  std::string vstr;
+  std::ifstream pfile;
   
   if( GridCmdOptionExists(argv,argv+argc,"--gconf") ){
     gaugefile = GridCmdOptionPayload(argv,argv+argc,"--gconf");
   }
   
-  if( GridCmdOptionExists(argv,argv+argc,"--Ls") ){
-    arg = GridCmdOptionPayload(argv,argv+argc,"--Ls");
-    GridCmdOptionInt(arg,Ls);
+  if( GridCmdOptionExists(argv,argv+argc,"--phase") ){
+    arg = GridCmdOptionPayload(argv,argv+argc,"--phase");
+    pfile.open(arg);
+    assert(pfile);
+    expect = 0;
+    while( pfile >> vstr ) {
+      if ( vstr.compare("boundary_phase") == 0 ) {
+        pfile >> vstr;
+        GridCmdOptionInt(vstr,idx);
+        assert(expect==idx);
+        pfile >> vstr;
+        GridCmdOptionFloat(vstr,re);
+        pfile >> vstr;
+        GridCmdOptionFloat(vstr,im);
+        boundary_phase.push_back({re,im});
+        expect++;
+      }
+    }
+    pfile.close();
+  } else {
+    for (int i=0; i<4; ++i) boundary_phase.push_back({1.,0.});
+  }
+  
+  if( GridCmdOptionExists(argv,argv+argc,"--omega") ){
+    arg = GridCmdOptionPayload(argv,argv+argc,"--omega");
+    pfile.open(arg);
+    assert(pfile);
+    Ls = 0;
+    while( pfile >> vstr ) {
+      if ( vstr.compare("omega") == 0 ) {
+        pfile >> vstr;
+        GridCmdOptionInt(vstr,idx);
+        assert(Ls==idx);
+        pfile >> vstr;
+        GridCmdOptionFloat(vstr,re);
+        pfile >> vstr;
+        GridCmdOptionFloat(vstr,im);
+        omega.push_back({re,im});
+        Ls++;
+      }
+    }
+    pfile.close();
+  } else {
+    if( GridCmdOptionExists(argv,argv+argc,"--Ls") ){
+      arg = GridCmdOptionPayload(argv,argv+argc,"--Ls");
+      GridCmdOptionInt(arg,Ls);
+    }
   }
   
   if( GridCmdOptionExists(argv,argv+argc,"--mass") ){
@@ -127,18 +178,25 @@ void CmdJobParams::Parse(char **argv,int argc)
   }
   
   if ( CartesianCommunicator::RankWorld() == 0 ) {
-    clog <<" Gauge Configuration "<< gaugefile << '\n';
-    clog <<" Ls "<< Ls << '\n';
-    clog <<" mass "<< mass << '\n';
-    clog <<" M5 "<< M5 << '\n';
-    clog <<" mob_b "<< mob_b << '\n';
-    clog <<" Nu "<< Nu << '\n'; 
-    clog <<" Nk "<< Nk << '\n'; 
-    clog <<" Np "<< Np << '\n'; 
-    clog <<" Nstop "<< Nstop << '\n'; 
-    clog <<" MaxIter "<< MaxIter << '\n'; 
-    clog <<" resid "<< resid << '\n'; 
-    clog <<" Cheby Poly "<< low << "," << high << "," << order << std::endl; 
+    std::streamsize ss = std::cout.precision();
+    std::cout << GridLogMessage <<" Gauge Configuration "<< gaugefile << '\n';
+    std::cout.precision(15);
+    for ( int i=0; i<4; ++i ) std::cout << GridLogMessage <<" boundary_phase["<< i << "] = " << boundary_phase[i] << '\n';
+    std::cout.precision(ss);
+    std::cout << GridLogMessage <<" Ls "<< Ls << '\n';
+    std::cout << GridLogMessage <<" mass "<< mass << '\n';
+    std::cout << GridLogMessage <<" M5 "<< M5 << '\n';
+    std::cout << GridLogMessage <<" mob_b "<< mob_b << '\n';
+    std::cout.precision(15);
+    for ( int i=0; i<Ls; ++i ) std::cout << GridLogMessage <<" omega["<< i << "] = " << omega[i] << '\n';
+    std::cout.precision(ss);
+    std::cout << GridLogMessage <<" Nu "<< Nu << '\n'; 
+    std::cout << GridLogMessage <<" Nk "<< Nk << '\n'; 
+    std::cout << GridLogMessage <<" Np "<< Np << '\n'; 
+    std::cout << GridLogMessage <<" Nstop "<< Nstop << '\n'; 
+    std::cout << GridLogMessage <<" MaxIter "<< MaxIter << '\n'; 
+    std::cout << GridLogMessage <<" resid "<< resid << '\n'; 
+    std::cout << GridLogMessage <<" Cheby Poly "<< low << "," << high << "," << order << std::endl; 
   }
 }
 
@@ -180,17 +238,21 @@ int main (int argc, char ** argv)
   
   RealD mass = JP.mass;
   RealD M5 = JP.M5;
-  RealD mob_b = JP.mob_b;
-//  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  GparityMobiusFermionD ::ImplParams params;
-  std::vector<int> twists({1,1,1,0});
-  params.twists = twists;
-  GparityMobiusFermionR  Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,mob_b,mob_b-1.,params);
+//  RealD mob_b = JP.mob_b;      // Gparity
+//  std::vector<ComplexD> omega; // ZMobius
+  
+//  GparityMobiusFermionD ::ImplParams params;
+//  std::vector<int> twists({1,1,1,0});
+//  params.twists = twists;
+//  GparityMobiusFermionR  Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,mob_b,mob_b-1.,params);
+//  SchurDiagTwoOperator<GparityMobiusFermionR,FermionField> HermOp(Ddwf);
 
-//  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
-//  SchurDiagTwoOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
-  SchurDiagTwoOperator<GparityMobiusFermionR,FermionField> HermOp(Ddwf);
-//  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
+  //WilsonFermionR::ImplParams params;
+  ZMobiusFermionR::ImplParams params;
+  params.overlapCommsCompute = true;
+  params.boundary_phases = JP.boundary_phase;
+  ZMobiusFermionR  Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,JP.omega,1.,0.,params);
+  SchurDiagTwoOperator<ZMobiusFermionR,FermionField> HermOp(Ddwf);
 
   int Nu = JP.Nu;
   int Nk = JP.Nk;
@@ -217,7 +279,7 @@ int main (int argc, char ** argv)
   
   std::vector<FermionField> evec(Nm,FrbGrid);
   for(int i=0;i<1;++i){
-    clog << i <<" / "<< Nm <<" grid pointer "<< evec[i]._grid << std::endl;
+    std::cout << GridLogMessage << i <<" / "<< Nm <<" grid pointer "<< evec[i]._grid << std::endl;
   };
 
   int Nconv;
