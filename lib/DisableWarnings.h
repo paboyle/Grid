@@ -33,6 +33,7 @@ directory
  //disables and intel compiler specific warning (in json.hpp)
 #pragma warning disable 488  
 
+#ifdef __NVCC__
  //disables nvcc specific warning in json.hpp
 #pragma diag_suppress unsigned_compare_with_zero
 #pragma diag_suppress cast_to_qualified_type
@@ -41,5 +42,6 @@ directory
 #pragma diag_suppress esa_on_defaulted_function_ignored
 #pragma diag_suppress extra_semicolon
 //Eigen only
+#endif
 
 #endif
