@@ -53,7 +53,7 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
   M5Dcalls++;
   M5Dtime-=usecond();
 
-  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
+  thread_loop( (int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
     for(int s=0;s<Ls;s++){
       auto tmp = psi[0];
       if ( s==0 ) {
@@ -76,7 +76,7 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
 	chi[ss+s]=chi[ss+s]+lower[s]*tmp;
       }
     }
-  }
+  });
   M5Dtime+=usecond();
 }
 
@@ -97,7 +97,7 @@ void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
   M5Dcalls++;
   M5Dtime-=usecond();
 
-  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
+  thread_loop( (int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
     auto tmp = psi[0];
     for(int s=0;s<Ls;s++){
       if ( s==0 ) {
@@ -120,7 +120,7 @@ void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
 	chi[ss+s]=chi[ss+s]+lower[s]*tmp;
       }
     }
-  }
+  });
   M5Dtime+=usecond();
 }
 
@@ -135,7 +135,7 @@ void CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi, FermionField &
   MooeeInvCalls++;
   MooeeInvTime-=usecond();
 
-  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
+  thread_loop((int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
     auto tmp = psi[0];
 
     // flops = 12*2*Ls + 12*2*Ls + 3*12*Ls + 12*2*Ls  = 12*Ls * (9) = 108*Ls flops
@@ -163,7 +163,7 @@ void CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi, FermionField &
       spProj5m(tmp,chi[ss+s+1]);  
       chi[ss+s] = chi[ss+s] - uee[s]*tmp;
     }
-  }
+  });
 
   MooeeInvTime+=usecond();
 
@@ -193,7 +193,7 @@ void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &
   MooeeInvCalls++;
   MooeeInvTime-=usecond();
 
-  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
+  thread_loop((int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
 
     auto tmp = psi[0];
 
@@ -221,7 +221,7 @@ void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &
       spProj5p(tmp,chi[ss+s+1]);
       chi[ss+s] = chi[ss+s] - leec[s]*tmp;
     }
-  }
+  });
 
   MooeeInvTime+=usecond();
 

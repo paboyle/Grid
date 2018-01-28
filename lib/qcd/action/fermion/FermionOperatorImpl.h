@@ -268,13 +268,13 @@ public:
     GaugeLinkField tmp(mat.Grid());
     tmp = Zero();
       
-    parallel_for(int sss=0;sss<tmp.Grid()->oSites();sss++){
+    thread_loop( (int sss=0;sss<tmp.Grid()->oSites();sss++),{
       int sU=sss;
       for(int s=0;s<Ls;s++){
 	int sF = s+Ls*sU;
 	tmp[sU] = tmp[sU]+ traceIndex<SpinIndex>(outerProduct(Btilde[sF],Atilde[sF])); // ordering here
       }
-    }
+    });
     PokeIndex<LorentzIndex>(mat,tmp,mu);
       
   }
@@ -591,10 +591,10 @@ public:
 	Uconj = where(coor==neglink,-Uconj,Uconj);
       }
 	  
-      parallel_for(auto ss=U.begin();ss<U.end();ss++){
+      thread_loop( (auto ss=U.begin();ss<U.end();ss++),{
 	Uds[ss](0)(mu) = U[ss]();
 	Uds[ss](1)(mu) = Uconj[ss]();
-      }
+      });
           
       U     = adj(Cshift(U    ,mu,-1));      // correct except for spanning the boundary
       Uconj = adj(Cshift(Uconj,mu,-1));
@@ -605,18 +605,18 @@ public:
       }
 
 	  
-      parallel_for(auto ss=U.begin();ss<U.end();ss++){
+      thread_loop((auto ss=U.begin();ss<U.end();ss++),{
 	Uds[ss](0)(mu+4) = Utmp[ss]();
-      }
+      });
           
       Utmp = Uconj;
       if ( Params.twists[mu] ) { 
 	Utmp = where(coor==0,U,Utmp);
       }
 	  
-      parallel_for(auto ss=U.begin();ss<U.end();ss++){
-	Uds[ss](1)(mu+4) = Utmp[ss]();
-      }
+      thread_loop((auto ss=U.begin();ss<U.end();ss++),{
+        Uds[ss](1)(mu+4) = Utmp[ss]();
+      });
           
     }
   }
@@ -627,9 +627,9 @@ public:
     GaugeLinkField link(mat.Grid());
     // use lorentz for flavour as hack.
     auto tmp = TraceIndex<SpinIndex>(outerProduct(Btilde, A));
-    parallel_for(auto ss = tmp.begin(); ss < tmp.end(); ss++) {
+    thread_loop((auto ss = tmp.begin(); ss < tmp.end(); ss++), {
       link[ss]() = tmp[ss](0, 0) + conjugate(tmp[ss](1, 1));
-    }
+    });
     PokeIndex<LorentzIndex>(mat, link, mu);
     return;
   }
@@ -640,13 +640,13 @@ public:
         
     GaugeLinkField tmp(mat.Grid());
     tmp = Zero();
-    parallel_for(int ss = 0; ss < tmp.Grid()->oSites(); ss++) {
+    thread_loop((int ss = 0; ss < tmp.Grid()->oSites(); ss++) ,{
       for (int s = 0; s < Ls; s++) {
 	int sF = s + Ls * ss;
 	auto ttmp = traceIndex<SpinIndex>(outerProduct(Btilde[sF], Atilde[sF]));
 	tmp[ss]() = tmp[ss]() + ttmp(0, 0) + conjugate(ttmp(1, 1));
       }
-    }
+    });
     PokeIndex<LorentzIndex>(mat, tmp, mu);
     return;
   }

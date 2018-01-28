@@ -82,7 +82,7 @@ public:
     action = (2.0*Ndim + mass_square)*phisquared - lambda/24.*phisquared*phisquared;
     for (int mu = 0; mu < Ndim; mu++) {
       //  pshift = Cshift(p, mu, +1);  // not efficient, implement with stencils
-      parallel_for (int i = 0; i < p.Grid()->oSites(); i++) {
+      thread_loop( (int i = 0; i < p.Grid()->oSites(); i++) ,{
 	int permute_type;
 	StencilEntry *SE;
 	vobj temp2;
@@ -101,7 +101,7 @@ public:
 	} else {
 	  action[i] -= phiStencil.CommBuf()[SE->_offset]*(*t_p) + (*t_p)*phiStencil.CommBuf()[SE->_offset];
 	}
-      }
+      });
       //  action -= pshift*p + p*pshift;
     }
     // NB the trace in the algebra is normalised to 1/2
@@ -118,7 +118,7 @@ public:
       
     //for (int mu = 0; mu < Nd; mu++) force -= Cshift(p, mu, -1) + Cshift(p, mu, 1);
     for (int point = 0; point < npoint; point++) {
-      parallel_for (int i = 0; i < p.Grid()->oSites(); i++) {
+      thread_loop( (int i = 0; i < p.Grid()->oSites(); i++) ,{
 	const vobj *temp;
 	vobj temp2;
 	int permute_type;
@@ -136,7 +136,7 @@ public:
 	} else {
 	  force[i] -= phiStencil.CommBuf()[SE->_offset];
 	}
-      }
+      });
     }
   }
 };

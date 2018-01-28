@@ -89,7 +89,7 @@ void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi, const FermionFiel
 
   assert(Nc == 3);
 
-  parallel_for(int ss=0; ss<grid->oSites(); ss+=LLs){ // adds LLs
+  thread_loop( (int ss=0; ss<grid->oSites(); ss+=LLs),{ // adds LLs
 
 #if 0
 
@@ -191,7 +191,7 @@ void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi, const FermionFiel
     }
 
 #endif
-  }
+  });
 
   this->M5Dtime += usecond();
 }
@@ -232,7 +232,7 @@ void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi, const FermionF
   this->M5Dcalls++;
   this->M5Dtime -= usecond();
 
-  parallel_for(int ss=0; ss<grid->oSites(); ss+=LLs){ // adds LLs
+  thread_loop((int ss=0; ss<grid->oSites(); ss+=LLs),{ // adds LLs
 
 #if 0
 
@@ -330,7 +330,7 @@ void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi, const FermionF
     }
 #endif
 
-  }
+  });
 
   this->M5Dtime += usecond();
 }
@@ -566,13 +566,13 @@ void DomainWallEOFAFermion<Impl>::MooeeInternal(const FermionField& psi, Fermion
   this->MooeeInvTime -= usecond();
 
   if(switcheroo<Coeff_t>::iscomplex()){
-    parallel_for(auto site=0; site<vol; site++){
+    thread_loop((auto site=0; site<vol; site++),{
       MooeeInternalZAsm(psi, chi, LLs, site, *_Matp, *_Matm);
-    }
+    });
   } else {
-    parallel_for(auto site=0; site<vol; site++){
+    thread_loop((auto site=0; site<vol; site++){
       MooeeInternalAsm(psi, chi, LLs, site, *_Matp, *_Matm);
-    }
+    });
   }
 
   this->MooeeInvTime += usecond();

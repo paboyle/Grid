@@ -48,7 +48,7 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
   
   std::vector<vector_type,alignedAllocator<vector_type> > sumarray(grid->SumArraySize());
   
-  parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
+  thread_loop( (int thr=0;thr<grid->SumArraySize();thr++),{
     int mywork, myoff;
     GridThread::GetWork(left.Grid()->oSites(),thr,mywork,myoff);
     
@@ -57,7 +57,7 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
       vnrm = vnrm + innerProductD(left[ss],right[ss]);
     }
     sumarray[thr]=TensorRemove(vnrm) ;
-  }
+  });
   
   vector_type vvnrm; vvnrm=Zero();  // sum across threads
   for(int i=0;i<grid->SumArraySize();i++){
@@ -104,7 +104,7 @@ inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
     sumarray[i]=Zero();
   }
   
-  parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
+  thread_loop( (int thr=0;thr<grid->SumArraySize();thr++),{
     int mywork, myoff;
     GridThread::GetWork(grid->oSites(),thr,mywork,myoff);
     
@@ -113,7 +113,7 @@ inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
       vvsum = vvsum + arg[ss];
     }
     sumarray[thr]=vvsum;
-  }
+  });
   
   vobj vsum=Zero();  // sum across threads
   for(int i=0;i<grid->SumArraySize();i++){
@@ -172,8 +172,7 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   int stride=grid->_slice_stride[orthogdim];
 
   // sum over reduced dimension planes, breaking out orthog dir
-  // Parallel over orthog direction
-  parallel_for(int r=0;r<rd;r++){
+  thread_loop( (int r=0;r<rd;r++),{
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
 
@@ -183,7 +182,7 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
 	lvSum[r]=lvSum[r]+Data[ss];
       }
     }
-  }
+  });
 
   // Sum across simd lanes in the plane, breaking out orthog dir.
   std::vector<int> icoor(Nd);
@@ -252,7 +251,7 @@ static void sliceInnerProductVector( std::vector<ComplexD> & result, const Latti
   int e2=    grid->_slice_block [orthogdim];
   int stride=grid->_slice_stride[orthogdim];
 
-  parallel_for(int r=0;r<rd;r++){
+  thread_loop( (int r=0;r<rd;r++),{
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
 
@@ -263,7 +262,7 @@ static void sliceInnerProductVector( std::vector<ComplexD> & result, const Latti
 	lvSum[r]=lvSum[r]+vv;
       }
     }
-  }
+  });
 
   // Sum across simd lanes in the plane, breaking out orthog dir.
   std::vector<int> icoor(Nd);
@@ -359,12 +358,12 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
 
     tensor_reduced at; at=av;
 
-    parallel_for_nest2(int n=0;n<e1;n++){
+    thread_loop_collapse(2, (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
 	R[ss] = at*X[ss]+Y[ss];
       }
-    }
+    });
   }
 };
 

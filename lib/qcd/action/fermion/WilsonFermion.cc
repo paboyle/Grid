@@ -216,9 +216,9 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
     ////////////////////////
     // Call the single hop
     ////////////////////////
-    parallel_for (int sss = 0; sss < B.Grid()->oSites(); sss++) {
+    thread_loop( (int sss = 0; sss < B.Grid()->oSites(); sss++) ,{
       Kernels::DhopDirK(st, U, st.CommBuf(), sss, sss, B, Btilde, mu, gamma);
-    }
+    });
 
     //////////////////////////////////////////////////
     // spin trace outer product
@@ -317,9 +317,9 @@ void WilsonFermion<Impl>::DhopDirDisp(const FermionField &in, FermionField &out,
 
   Stencil.HaloExchange(in, compressor);
 
-  parallel_for (int sss = 0; sss < in.Grid()->oSites(); sss++) {
+  thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++) ,{
     Kernels::DhopDirK(Stencil, Umu, Stencil.CommBuf(), sss, sss, in, out, dirdisp, gamma);
-  }
+  });
 };
 
 template <class Impl>
@@ -333,13 +333,13 @@ void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
   st.HaloExchange(in, compressor);
 
   if (dag == DaggerYes) {
-    parallel_for (int sss = 0; sss < in.Grid()->oSites(); sss++) {
+    thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++) ,{
       Kernels::DhopSiteDag(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
-    }
+    });
   } else {
-    parallel_for (int sss = 0; sss < in.Grid()->oSites(); sss++) {
+    thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++) ,{
       Kernels::DhopSite(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
-    }
+    });
   }
 };
 
@@ -366,8 +366,7 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
   // Inefficient comms method but not performance critical.
   tmp1 = Cshift(q_in_1, mu, 1);
   tmp2 = Cshift(q_in_2, mu, 1);
-  parallel_for (unsigned int sU = 0; sU < Umu.Grid()->oSites(); ++sU)
-    {
+  thread_loop( (unsigned int sU = 0; sU < Umu.Grid()->oSites(); ++sU), {
       Kernels::ContractConservedCurrentSiteFwd(tmp1[sU],
 					       q_in_2[sU],
 					       q_out[sU],
@@ -376,7 +375,7 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
 					       tmp2[sU],
 					       q_out[sU],
 					       Umu, sU, mu);
-    }
+  });
 }
 
 template <class Impl>
@@ -415,38 +414,36 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   tmp = ph*q_in;
   tmpBwd = Cshift(tmp, mu, -1);
 
-  parallel_for (unsigned int sU = 0; sU < Umu.Grid()->oSites(); ++sU)
-    {
-      // Compute the sequential conserved current insertion only if our simd
-      // object contains a timeslice we need.
-      vInteger t_mask   = ((coords[sU] >= tmin) &&
-			   (coords[sU] <= tmax));
-      Integer timeSlices = Reduce(t_mask);
+  thread_loop( (unsigned int sU = 0; sU < Umu.Grid()->oSites(); ++sU), {
 
-      if (timeSlices > 0)
-        {
-	  Kernels::SeqConservedCurrentSiteFwd(tmpFwd[sU], 
-					      q_out[sU], 
-					      Umu, sU, mu, t_mask);
-        }
+    // Compute the sequential conserved current insertion only if our simd
+    // object contains a timeslice we need.
+    vInteger t_mask   = ((coords[sU] >= tmin) &&
+			 (coords[sU] <= tmax));
+    Integer timeSlices = Reduce(t_mask);
 
-      // Repeat for backward direction.
-      t_mask     = ((coords[sU] >= (tmin + tshift)) && 
-		    (coords[sU] <= (tmax + tshift)));
-
-      //if tmax = LLt-1 (last timeslice) include timeslice 0 if the time is shifted (mu=3)	
-      unsigned int t0 = 0;
-      if((tmax==LLt-1) && (tshift==1)) t_mask = (t_mask || (coords[sU] == t0 ));
-
-      timeSlices = Reduce(t_mask);
-
-      if (timeSlices > 0)
-        {
-	  Kernels::SeqConservedCurrentSiteBwd(tmpBwd[sU], 
-					      q_out[sU], 
-					      Umu, sU, mu, t_mask);
-        }
+    if (timeSlices > 0) {
+      Kernels::SeqConservedCurrentSiteFwd(tmpFwd[sU], 
+					  q_out[sU], 
+					  Umu, sU, mu, t_mask);
     }
+
+    // Repeat for backward direction.
+    t_mask     = ((coords[sU] >= (tmin + tshift)) && 
+		  (coords[sU] <= (tmax + tshift)));
+    
+    //if tmax = LLt-1 (last timeslice) include timeslice 0 if the time is shifted (mu=3)	
+    unsigned int t0 = 0;
+    if((tmax==LLt-1) && (tshift==1)) t_mask = (t_mask || (coords[sU] == t0 ));
+    
+    timeSlices = Reduce(t_mask);
+
+    if (timeSlices > 0) {
+      Kernels::SeqConservedCurrentSiteBwd(tmpBwd[sU], 
+					  q_out[sU], 
+					  Umu, sU, mu, t_mask);
+    }
+  });
 }
 
 FermOpTemplateInstantiate(WilsonFermion);

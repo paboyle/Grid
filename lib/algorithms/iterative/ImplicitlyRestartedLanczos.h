@@ -55,11 +55,11 @@ void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, i
   typedef typename Field::vector_object vobj;
   GridBase* grid = basis[0].Grid();
       
-  parallel_region
+  thread_region
   {
     std::vector < vobj > B(Nm); // Thread private
         
-    parallel_for_internal(int ss=0;ss < grid->oSites();ss++){
+    thread_loop_in_region( (int ss=0;ss < grid->oSites();ss++),{
       for(int j=j0; j<j1; ++j) B[j]=0.;
       
       for(int j=j0; j<j1; ++j){
@@ -70,7 +70,7 @@ void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, i
       for(int j=j0; j<j1; ++j){
 	  basis[j][ss] = B[j];
       }
-    }
+    });
   }
 }
 
@@ -82,13 +82,13 @@ void basisRotateJ(Field &result,std::vector<Field> &basis,Eigen::MatrixXd& Qt,in
   GridBase* grid = basis[0].Grid();
 
   result.Checkerboard() = basis[0].Checkerboard();
-  parallel_for(int ss=0;ss < grid->oSites();ss++){
+  thread_loop( (int ss=0;ss < grid->oSites();ss++),{
     vobj B = Zero();
     for(int k=k0; k<k1; ++k){
       B +=Qt(j,k) * basis[k][ss];
     }
     result[ss] = B;
-  }
+  });
 }
 
 template<class Field>

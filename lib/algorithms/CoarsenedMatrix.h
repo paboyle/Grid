@@ -128,9 +128,9 @@ public:
     for(int i=0;i<nbasis;i++){
       blockProject(iProj,subspace[i],subspace);
       eProj=Zero(); 
-      parallel_for(int ss=0;ss<CoarseGrid->oSites();ss++){
+      thread_loop( (int ss=0;ss<CoarseGrid->oSites();ss++),{
 	eProj[ss](i)=CComplex(1.0);
-      }
+      });
       eProj=eProj - iProj;
       std::cout<<GridLogMessage<<"Orthog check error "<<i<<" " << norm2(eProj)<<std::endl;
     }
@@ -272,7 +272,7 @@ public:
     SimpleCompressor<siteVector> compressor;
     Stencil.HaloExchange(in,compressor);
 
-    parallel_for(int ss=0;ss<Grid()->oSites();ss++){
+    thread_loop( (int ss=0;ss<Grid()->oSites();ss++),{
       siteVector res = Zero();
       siteVector nbr;
       int ptype;
@@ -291,7 +291,7 @@ public:
 	res = res + A[point][ss]*nbr;
       }
       vstream(out[ss],res);
-    }
+    });
     return norm2(out);
   };
 
@@ -384,14 +384,14 @@ public:
 	Subspace.ProjectToSubspace(oProj,oblock);
 	//	  blockProject(iProj,iblock,Subspace.subspace);
 	//	  blockProject(oProj,oblock,Subspace.subspace);
-	parallel_for(int ss=0;ss<Grid()->oSites();ss++){
+	thread_loop( (int ss=0;ss<Grid()->oSites();ss++),{
 	  for(int j=0;j<nbasis;j++){
 	    if( disp!= 0 ) {
 	      A[p][ss](j,i) = oProj[ss](j);
 	    }
 	    A[self_stencil][ss](j,i) =	A[self_stencil][ss](j,i) + iProj[ss](j);
 	  }
-	}
+	});
       }
     }
 

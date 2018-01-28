@@ -52,32 +52,21 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifdef GRID_OMP
 #define thread_loop( range , ... )           _Pragma("omp parallel for schedule(static)") for range { __VA_ARGS__ ; };
 #define thread_loop_in_region( range , ... ) _Pragma("omp for schedule(static)")          for range  { __VA_ARGS__ ; };
-#define thread_loop_collapse( range , ... )  _Pragma("omp parallel for collapse(2)")      for range  { __VA_ARGS__ };
+#define thread_loop_collapse( n, range , ... )  _Pragma("omp parallel for collapse(" #n ")")      for range  { __VA_ARGS__ };
 #define thread_region                         _Pragma("omp parallel")
 #define thread_critical                       _Pragma("omp critical")
+#define thread_num(a) omp_get_thread_num()
+#define thread_max(a) omp_get_max_threads()
 #else
 #define thread_loop( range , ... )            for range { __VA_ARGS__ ; };
 #define thread_loop_in_region( range , ... )  for range { __VA_ARGS__ ; };
-#define thread_loop_collapse( range , ... )   for range { __VA_ARGS__ ; };
+#define thread_loop_collapse( n, range , ... )   for range { __VA_ARGS__ ; };
 #define thread_region                           
 #define thread_critical                         
+#define thread_num(a) (0)
+#define thread_max(a) (1)
 #endif
 
-//////////////////////////////////////////////////////////////////////////////////
-// Deprecated primitives; to eridicate when done delete and fix errors.
-//////////////////////////////////////////////////////////////////////////////////
-
-#ifdef GRID_OMP
-#define parallel_for  _Pragma("omp parallel for schedule(static)") for
-#define parallel_for_internal  _Pragma("omp for schedule(static)") for
-#define parallel_region    thread_region
-#define parallel_for_nest2 for
-#else
-#define parallel_for           for
-#define parallel_for_internal  for
-#define parallel_region    
-#define parallel_for_nest2     for
-#endif
 
 //////////////////////////////////////////////////////////////////////////////////
 // Accelerator primitives; fall back to threading

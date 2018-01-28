@@ -101,10 +101,10 @@ public:
     //static std::chrono::duration<double> diff;
 
     //auto start = std::chrono::high_resolution_clock::now();
-    parallel_for(int ss=0;ss<P.Grid()->oSites();ss++){
+    thread_loop( (int ss=0;ss<P.Grid()->oSites();ss++),{
       for (int mu = 0; mu < Nd; mu++) 
         U[ss]._internal[mu] = ProjectOnGroup(Exponentiate(P[ss]._internal[mu], ep, Nexp) * U[ss]._internal[mu]);
-    }
+    });
     
     //auto end = std::chrono::high_resolution_clock::now();
    // diff += end - start;

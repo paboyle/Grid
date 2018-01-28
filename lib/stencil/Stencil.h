@@ -63,9 +63,9 @@ template<class vobj,class cobj,class compressor>
 void Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)
 {
   int num=table.size();
-  parallel_for(int i=0;i<num;i++){
+  thread_loop( (int i=0;i<num;i++), {
     compress.Compress(&buffer[off],table[i].first,rhs[so+table[i].second]);
-  }
+  });
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -83,10 +83,10 @@ void Gather_plane_exchange_table(std::vector<std::pair<int,int> >& table,const L
   assert( (table.size()&0x1)==0);
   int num=table.size()/2;
   int so  = plane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane 
-  parallel_for(int j=0;j<num;j++){
+  thread_loop( (int j=0;j<num;j++), {
     compress.CompressExchange(&pointers[0][0],&pointers[1][0],&rhs[0],
 			      j,so+table[2*j].second,so+table[2*j+1].second,type);
-  }
+  });
 }
 
 struct StencilEntry { 
@@ -330,20 +330,14 @@ public:
   }
   void Communicate(void)
   {
-#ifdef GRID_OMP
-#pragma omp parallel 
+    thread_region
     {
       // must be called in parallel region
-      int mythread  = omp_get_thread_num();
-      int maxthreads= omp_get_max_threads();
+      int mythread  = thread_num();
+      int maxthreads= thread_max();
       int nthreads = CartesianCommunicator::nCommThreads;
       assert(nthreads <= maxthreads);
-
       if (nthreads == -1) nthreads = 1;
-#else
-      int mythread = 0;
-      int nthreads = 1;
-#endif
       if (mythread < nthreads) {
 	for (int i = mythread; i < Packets.size(); i += nthreads) {
 	  double start = usecond();
@@ -355,9 +349,7 @@ public:
 	  comm_time_thr[mythread] += usecond() - start;
 	}
       }
-#ifdef GRID_OMP
     }
-#endif
   }
   
   template<class compressor> void HaloExchange(const Lattice<vobj> &source,compressor &compress) 
@@ -509,20 +501,20 @@ public:
 
     for(int i=0;i<mm.size();i++){	
       mergetime-=usecond();
-      parallel_for(int o=0;o<mm[i].buffer_size/2;o++){
+      thread_loop( (int o=0;o<mm[i].buffer_size/2;o++), {
 	decompress.Exchange(mm[i].mpointer,
 			    mm[i].vpointers[0],
 			    mm[i].vpointers[1],
 			    mm[i].type,o);
-      }
+      });
       mergetime+=usecond();
     }
 
     for(int i=0;i<dd.size();i++){	
       decompresstime-=usecond();
-      parallel_for(int o=0;o<dd[i].buffer_size;o++){
+      thread_loop( (int o=0;o<dd[i].buffer_size;o++),{
 	decompress.Decompress(dd[i].kernel_p,dd[i].mpi_p,o);
-      }      
+      });
       decompresstime+=usecond();
     }
 

@@ -54,10 +54,10 @@ public:
     out.Checkerboard() = in.Checkerboard();
     assert(grid->_simd_layout[0] == 1); // should be fine for ZMobius for now
     int Ls = grid->_rdimensions[0];
-    parallel_for(int ss=0;ss<grid->oSites();ss++){
+    thread_loop( (int ss=0;ss<grid->oSites();ss++),{
       vobj tmp = s[ss % Ls]*in[ss];
       vstream(out[ss],tmp);
-    }
+    });
   }
 
   RealD sscale_norm(const Field& in, Field& out, Coeff_t* s) {

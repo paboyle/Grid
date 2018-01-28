@@ -50,7 +50,7 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi, const FermionField &p
   this->M5Dcalls++;
   this->M5Dtime -= usecond();
 
-  parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){
+  thread_loop( (int ss=0; ss<grid->oSites(); ss+=Ls),{
     for(int s=0; s<Ls; s++){
       auto tmp = psi[0];
       if(s==0){
@@ -70,7 +70,7 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi, const FermionField &p
 	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
       }
     }
-  }
+  });
 
   this->M5Dtime += usecond();
 }
@@ -91,7 +91,7 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField &psi, const FermionFi
   this->M5Dcalls++;
   this->M5Dtime -= usecond();
 
-  parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){
+  thread_loop( (int ss=0; ss<grid->oSites(); ss+=Ls),{
     for(int s=0; s<Ls; s++){
       auto tmp = psi[0];
       if(s==0){
@@ -114,7 +114,7 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField &psi, const FermionFi
       else{ spProj5m(tmp, psi[ss+shift_s]); }
       chi[ss+s] = chi[ss+s] + shift_coeffs[s]*tmp;
     }
-  }
+  });
 
   this->M5Dtime += usecond();
 }
@@ -133,7 +133,7 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField &psi, const FermionField
   this->M5Dcalls++;
   this->M5Dtime -= usecond();
 
-  parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){
+  thread_loop( (int ss=0; ss<grid->oSites(); ss+=Ls),{
     auto tmp = psi[0];
     for(int s=0; s<Ls; s++){
       if(s==0) {
@@ -153,7 +153,7 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField &psi, const FermionField
 	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
       }
     }
-  }
+  });
 
   this->M5Dtime += usecond();
 }
@@ -174,7 +174,7 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField &psi, const Fermio
   this->M5Dcalls++;
   this->M5Dtime -= usecond();
 
-  parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){
+  thread_loop( (int ss=0; ss<grid->oSites(); ss+=Ls),{
     chi[ss+Ls-1] = Zero();
     auto tmp = psi[0];
     for(int s=0; s<Ls; s++){
@@ -198,7 +198,7 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField &psi, const Fermio
       else{ spProj5m(tmp, psi[ss+s]); }
       chi[ss+shift_s] = chi[ss+shift_s] + shift_coeffs[s]*tmp;
     }
-  }
+  });
 
   this->M5Dtime += usecond();
 }
@@ -216,7 +216,7 @@ void MobiusEOFAFermion<Impl>::MooeeInv(const FermionField &psi, FermionField &ch
   this->MooeeInvCalls++;
   this->MooeeInvTime -= usecond();
 
-  parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){
+  thread_loop( (int ss=0; ss<grid->oSites(); ss+=Ls),{
 
     auto tmp = psi[0];
 
@@ -245,7 +245,7 @@ void MobiusEOFAFermion<Impl>::MooeeInv(const FermionField &psi, FermionField &ch
       spProj5m(tmp, chi[ss+s+1]);
       chi[ss+s] = chi[ss+s] - this->uee[s]*tmp;
     }
-  }
+  });
 
   this->MooeeInvTime += usecond();
 }
@@ -261,7 +261,7 @@ void MobiusEOFAFermion<Impl>::MooeeInv_shift(const FermionField &psi, FermionFie
   this->MooeeInvCalls++;
   this->MooeeInvTime -= usecond();
 
-  parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){
+  thread_loop( (int ss=0; ss<grid->oSites(); ss+=Ls),{
 
     auto tmp1        = psi[0];
     auto tmp2        = psi[0];
@@ -300,7 +300,7 @@ void MobiusEOFAFermion<Impl>::MooeeInv_shift(const FermionField &psi, FermionFie
       spProj5m(tmp1, chi[ss+s]);
       chi[ss+s] = chi[ss+s] + MooeeInv_shift_norm[s]*tmp2_spProj;
     }
-  }
+  });
 
   this->MooeeInvTime += usecond();
 }
@@ -318,7 +318,7 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag(const FermionField &psi, FermionField 
   this->MooeeInvCalls++;
   this->MooeeInvTime -= usecond();
 
-  parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){
+  thread_loop( (int ss=0; ss<grid->oSites(); ss+=Ls),{
 
     auto tmp = psi[0];
 
@@ -347,7 +347,7 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag(const FermionField &psi, FermionField 
       spProj5p(tmp, chi[ss+s+1]);
       chi[ss+s] = chi[ss+s] - this->lee[s]*tmp;
     }
-  }
+  });
 
   this->MooeeInvTime += usecond();
 }
@@ -363,7 +363,7 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag_shift(const FermionField &psi, Fermion
   this->MooeeInvCalls++;
   this->MooeeInvTime -= usecond();
 
-  parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){
+  thread_loop( (int ss=0; ss<grid->oSites(); ss+=Ls),{
 
     auto tmp1        = psi[0];
     auto tmp2        = psi[0];
@@ -401,7 +401,7 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag_shift(const FermionField &psi, Fermion
       spProj5p(tmp1, chi[ss+s]);
       chi[ss+s] = chi[ss+s] + MooeeInvDag_shift_norm[s]*tmp2_spProj;
     }
-  }
+  });
 
   this->MooeeInvTime += usecond();
 }

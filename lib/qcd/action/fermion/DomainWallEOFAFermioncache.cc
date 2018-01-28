@@ -52,7 +52,7 @@ void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi, const FermionFiel
   this->M5Dcalls++;
   this->M5Dtime -= usecond();
 
-  parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){ // adds Ls
+  thread_loop( (int ss=0; ss<grid->oSites(); ss+=Ls),{ // adds Ls
     for(int s=0; s<Ls; s++){
       auto tmp = psi[0];
       if(s==0) {
@@ -72,7 +72,7 @@ void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi, const FermionFiel
 	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
       }
     }
-  }
+  });
 
   this->M5Dtime += usecond();
 }
@@ -90,7 +90,7 @@ void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi, const FermionF
   this->M5Dcalls++;
   this->M5Dtime -= usecond();
 
-  parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){ // adds Ls
+  thread_loop((int ss=0; ss<grid->oSites(); ss+=Ls),{ // adds Ls
     auto tmp = psi[0];
     for(int s=0; s<Ls; s++){
       if(s==0) {
@@ -110,7 +110,7 @@ void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi, const FermionF
 	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
       }
     }
-  }
+  });
 
   this->M5Dtime += usecond();
 }
@@ -126,7 +126,7 @@ void DomainWallEOFAFermion<Impl>::MooeeInv(const FermionField& psi, FermionField
   this->MooeeInvCalls++;
   this->MooeeInvTime -= usecond();
 
-  parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){ // adds Ls
+  thread_loop((int ss=0; ss<grid->oSites(); ss+=Ls),{ // adds Ls
 
     auto tmp1 = psi[0];
     auto tmp2 = psi[0];
@@ -158,7 +158,7 @@ void DomainWallEOFAFermion<Impl>::MooeeInv(const FermionField& psi, FermionField
       spProj5m(tmp1, chi[ss+s+1]);
       chi[ss+s] = chi[ss+s] - this->uee[s]*tmp1;
     }
-  }
+  });
 
   this->MooeeInvTime += usecond();
 }
@@ -190,7 +190,7 @@ void DomainWallEOFAFermion<Impl>::MooeeInvDag(const FermionField& psi, FermionFi
   this->MooeeInvCalls++;
   this->MooeeInvTime -= usecond();
 
-  parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){ // adds Ls
+  thread_loop((int ss=0; ss<grid->oSites(); ss+=Ls),{ // adds Ls
 
     auto tmp1 = psi[0];
     auto tmp2 = psi[0];
@@ -221,7 +221,7 @@ void DomainWallEOFAFermion<Impl>::MooeeInvDag(const FermionField& psi, FermionFi
       spProj5p(tmp1, chi[ss+s+1]);
       chi[ss+s] = chi[ss+s] - leec[s]*tmp1;
     }
-  }
+  });
 
   this->MooeeInvTime += usecond();
 }

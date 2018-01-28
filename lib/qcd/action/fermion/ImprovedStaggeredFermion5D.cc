@@ -172,13 +172,13 @@ void ImprovedStaggeredFermion5D<Impl>::DhopDir(const FermionField &in, FermionFi
   Compressor compressor;
   Stencil.HaloExchange(in,compressor);
 
-  parallel_for(int ss=0;ss<Umu.Grid()->oSites();ss++){
+  thread_loop( (int ss=0;ss<Umu.Grid()->oSites();ss++),{
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
       Kernels::DhopDirK(Stencil, Umu, UUUmu, Stencil.CommBuf(), sF, sU, in, out, dir, disp);
     }
-  }
+  });
 };
 
 template<class Impl>
@@ -240,15 +240,15 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOr
   DhopComputeTime -= usecond();
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
   if (dag == DaggerYes) {
-    parallel_for (int ss = 0; ss < U.Grid()->oSites(); ss++) {
+    thread_loop(  (int ss = 0; ss < U.Grid()->oSites(); ss++), {
       int sU=ss;
       Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), LLs, sU,in, out);
-    }
+    });
   } else {
-    parallel_for (int ss = 0; ss < U.Grid()->oSites(); ss++) {
+    thread_loop(  (int ss = 0; ss < U.Grid()->oSites(); ss++) ,{
       int sU=ss;
       Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),LLs,sU,in,out);
-    }
+    });
   }
   DhopComputeTime += usecond();
   DhopTotalTime   += usecond();
