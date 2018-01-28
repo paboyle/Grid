@@ -156,7 +156,7 @@ public:
 	  dbytes=0;
 	  ncomm=0;
 
-	  parallel_for(int dir=0;dir<8;dir++){
+	  thread_loop( (int dir=0;dir<8;dir++),{
 
 	    double tbytes;
 	    int mu =dir % 4;
@@ -175,18 +175,12 @@ public:
 	      tbytes= Grid.StencilSendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,
 						 (void *)&rbuf[dir][0], recv_from_rank,
 						 bytes,dir);
-	  
-#ifdef GRID_OMP
-#pragma omp atomic
-#endif
-	      ncomm++;
-
-#ifdef GRID_OMP
-#pragma omp atomic
-#endif
-	      dbytes+=tbytes;
+	      thread_critical {
+		ncomm++;
+		dbytes+=tbytes;
+	      }
 	    }
-	  }
+          });
 	  Grid.Barrier();
 	  double stop=usecond();
 	  t_time[i] = stop-start; // microseconds

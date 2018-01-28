@@ -78,7 +78,7 @@ int main (int argc, char ** argv)
     }
 
     double start=usecond();
-    parallel_for(int t=0;t<threads;t++){
+    thread_loop( (int t=0;t<threads;t++),{
 
       sum[t] = x[t][0];
       for(int i=0;i<Nloop;i++){
@@ -87,7 +87,7 @@ int main (int argc, char ** argv)
 	}
       }
       stop[t]=usecond();
-    }
+    });
 
     double max_stop=stop[0];
     double min_stop=stop[0];
