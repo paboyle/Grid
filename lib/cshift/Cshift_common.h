@@ -48,7 +48,7 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimen
 
   int stride=rhs.Grid()->_slice_stride[dimension];
   if ( cbmask == 0x3 ) { 
-    thread_loop_collapse( 2, (int n=0;n<e1;n++) , 
+    thread_loop_collapse2( (int n=0;n<e1;n++) , 
       for(int b=0;b<e2;b++){
 	int o  = n*stride;
 	int bo = n*e2;
@@ -92,7 +92,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename vobj::scalar_
   int n1=rhs.Grid()->_slice_stride[dimension];
 
   if ( cbmask ==0x3){
-    thread_loop_collapse( 2, (int n=0;n<e1;n++), {
+    thread_loop_collapse2( (int n=0;n<e1;n++), {
       for(int b=0;b<e2;b++){
 
 	int o      =   n*n1;
@@ -108,7 +108,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename vobj::scalar_
     // Case of SIMD split AND checker dim cannot currently be hit, except in 
     // Test_cshift_red_black code.
     std::cout << " Dense packed buffer WARNING " <<std::endl;
-    thread_loop_collapse( 2, (int n=0;n<e1;n++),{
+    thread_loop_collapse2( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
 
 	int o=n*n1;
@@ -142,7 +142,7 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
   int stride=rhs.Grid()->_slice_stride[dimension];
   
   if ( cbmask ==0x3 ) {
-    thread_loop_collapse( 2, (int n=0;n<e1;n++),{
+    thread_loop_collapse2( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
 	int o   =n*rhs.Grid()->_slice_stride[dimension];
 	int bo  =n*rhs.Grid()->_slice_block[dimension];
@@ -184,7 +184,7 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,std::vector<typ
   int e2=rhs.Grid()->_slice_block[dimension];
 
   if(cbmask ==0x3 ) {
-    thread_loop_collapse(2, (int n=0;n<e1;n++),{
+    thread_loop_collapse2( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
 	int o      = n*rhs.Grid()->_slice_stride[dimension];
 	int offset = b+n*rhs.Grid()->_slice_block[dimension];
@@ -228,7 +228,7 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
   int e2=rhs.Grid()->_slice_block[dimension];
   int stride = rhs.Grid()->_slice_stride[dimension];
   if(cbmask == 0x3 ){
-    thread_loop_collapse( 2,(int n=0;n<e1;n++),{
+    thread_loop_collapse2((int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
         int o =n*stride+b;
   	//lhs[lo+o]=rhs[ro+o];
@@ -236,7 +236,7 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
       }
     });
   } else { 
-    thread_loop_collapse(2, (int n=0;n<e1;n++),{
+    thread_loop_collapse2( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
         int o =n*stride+b;
         int ocb=1<<lhs.Grid()->CheckerBoardFromOindex(o);
@@ -266,7 +266,7 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
   int e2=rhs.Grid()->_slice_block [dimension];
   int stride = rhs.Grid()->_slice_stride[dimension];
 
-  thread_loop_collapse(2, (int n=0;n<e1;n++),{
+  thread_loop_collapse2( (int n=0;n<e1;n++),{
     for(int b=0;b<e2;b++){
 
       int o  =n*stride;

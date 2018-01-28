@@ -358,7 +358,7 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
 
     tensor_reduced at; at=av;
 
-    thread_loop_collapse(2, (int n=0;n<e1;n++),{
+    thread_loop_collapse2( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
 	R[ss] = at*X[ss]+Y[ss];

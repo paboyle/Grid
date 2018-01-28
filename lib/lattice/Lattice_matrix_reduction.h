@@ -51,12 +51,11 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
   int block =FullGrid->_slice_block [Orthog];
   int nblock=FullGrid->_slice_nblock[Orthog];
   int ostride=FullGrid->_ostride[Orthog];
-#pragma omp parallel 
+  thread_region
   {
     std::vector<vobj> s_x(Nblock);
 
-#pragma omp for collapse(2)
-    for(int n=0;n<nblock;n++){
+    thread_loop_collapse2( (int n=0;n<nblock;n++),{
       for(int b=0;b<block;b++){
 	int o  = n*stride + b;
 
@@ -72,7 +71,7 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
 	  }
 	  R[o+i*ostride]=dot;
 	}
-      }}
+      }});
   }
 };
 
@@ -101,12 +100,11 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
   int block =FullGrid->_slice_block [Orthog];
   int nblock=FullGrid->_slice_nblock[Orthog];
   int ostride=FullGrid->_ostride[Orthog];
-#pragma omp parallel 
+  thread_region
   {
     std::vector<vobj> s_x(Nblock);
 
-#pragma omp for collapse(2)
-    for(int n=0;n<nblock;n++){
+    thread_loop_collapse2( (int n=0;n<nblock;n++),{
       for(int b=0;b<block;b++){
 	int o  = n*stride + b;
 
@@ -122,7 +120,7 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
 	  }
 	  R[o+i*ostride]=dot;
 	}
-      }}
+    }});
   }
 
 };
@@ -159,14 +157,12 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
 
   typedef typename vobj::vector_typeD vector_typeD;
 
-#pragma omp parallel 
-  {
+  thread_region {
     std::vector<vobj> Left(Nblock);
     std::vector<vobj> Right(Nblock);
     Eigen::MatrixXcd  mat_thread = Eigen::MatrixXcd::Zero(Nblock,Nblock);
 
-#pragma omp for collapse(2)
-    for(int n=0;n<nblock;n++){
+    thread_loop_collapse2((int n=0;n<nblock;n++),{
       for(int b=0;b<block;b++){
 
 	int o  = n*stride + b;
@@ -182,9 +178,8 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
 	    auto rtmp = TensorRemove(tmp);
 	    mat_thread(i,j) += Reduce(rtmp);
 	  }}
-      }}
-#pragma omp critical
-    {
+    }});
+    thread_critical {
       mat += mat_thread;
     }  
   }

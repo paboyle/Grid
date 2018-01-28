@@ -52,7 +52,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifdef GRID_OMP
 #define thread_loop( range , ... )           _Pragma("omp parallel for schedule(static)") for range { __VA_ARGS__ ; };
 #define thread_loop_in_region( range , ... ) _Pragma("omp for schedule(static)")          for range  { __VA_ARGS__ ; };
-#define thread_loop_collapse( n, range , ... )  _Pragma("omp parallel for collapse(" #n ")")      for range  { __VA_ARGS__ };
+#define thread_loop_collapse2( range , ... )  _Pragma("omp parallel for collapse(2)")     for range  { __VA_ARGS__ };
+#define thread_loop_collapse3( range , ... )  _Pragma("omp parallel for collapse(3)")     for range  { __VA_ARGS__ };
+#define thread_loop_collapse4( range , ... )  _Pragma("omp parallel for collapse(4)")     for range  { __VA_ARGS__ };
 #define thread_region                         _Pragma("omp parallel")
 #define thread_critical                       _Pragma("omp critical")
 #define thread_num(a) omp_get_thread_num()
@@ -60,7 +62,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #else
 #define thread_loop( range , ... )            for range { __VA_ARGS__ ; };
 #define thread_loop_in_region( range , ... )  for range { __VA_ARGS__ ; };
-#define thread_loop_collapse( n, range , ... )   for range { __VA_ARGS__ ; };
+#define thread_loop_collapse2( range , ... )  for range { __VA_ARGS__ ; };
+#define thread_loop_collapse3( range , ... )  for range { __VA_ARGS__ ; };
+#define thread_loop_collapse4( range , ... )  for range { __VA_ARGS__ ; };
 #define thread_region                           
 #define thread_critical                         
 #define thread_num(a) (0)
