@@ -90,6 +90,7 @@ accelerator_inline ComplexF pow(const ComplexF& r,RealF y){ return(std::pow(r,y)
 // Calls either Grid::pow for complex, or std::pow for real
 // Problem is CUDA math_functions is exposing ::pow, and I can't define
 
+using std::abs;
 using std::pow;
 using std::sqrt;
 
