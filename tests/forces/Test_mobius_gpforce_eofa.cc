@@ -117,13 +117,13 @@ int main (int argc, char** argv)
     PokeIndex<LorentzIndex>(mom, mommu, mu);
 
     // fourth order exponential approx
-    parallel_for(auto i=mom.begin(); i<mom.end(); i++){
+    thread_loop( (auto i=mom.begin(); i<mom.end(); i++),{
       Uprime[i](mu) = U[i](mu) + mom[i](mu)*U[i](mu)*dt + mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt/2.0)
                         + mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt/6.0)
                         + mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt/24.0)
                         + mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt/120.0)
                         + mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt*dt/720.0);
-    }
+    });
   }
 
   /*Ddwf.ImportGauge(Uprime);

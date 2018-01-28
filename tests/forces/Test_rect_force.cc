@@ -86,9 +86,9 @@ int main (int argc, char ** argv)
     PokeIndex<LorentzIndex>(mom,mommu,mu);
 
     // fourth order exponential approx
-    parallel_for(auto i=mom.begin();i<mom.end();i++){ // exp(pmu dt) * Umu
+    thread_loop( (auto i=mom.begin();i<mom.end();i++),{ // exp(pmu dt) * Umu
       Uprime[i](mu) = U[i](mu) + mom[i](mu)*U[i](mu)*dt ;
-    }
+    });
   }
 
   ComplexD Sprime    = Action.S(Uprime);
