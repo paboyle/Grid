@@ -334,10 +334,9 @@ namespace Grid {
 
       CoarseVector iProj(Grid()); 
       CoarseVector oProj(Grid()); 
-      CoarseScalar InnerProd(Grid()); 
 
       // Orthogonalise the subblocks over the basis
-      blockOrthogonalise(InnerProd,Subspace.subspace);
+      Subspace.Orthogonalise();
 
       // Compute the matrix elements of linop between this orthonormal
       // set of vectors.
