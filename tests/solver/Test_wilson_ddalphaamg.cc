@@ -2,9 +2,9 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/Test_dwf_hdcr.cc
+    Source file: ./tests/solver/Test_wilson_ddalphaamg.cc
 
-    Copyright (C) 2015
+    Copyright (C) 2017
 
     Author: Daniel Richtmann <daniel.richtmann@ur.de>
 
@@ -28,7 +28,6 @@
 
 #include <Grid/Grid.h>
 #include <Grid/algorithms/iterative/PrecGeneralisedConjugateResidual.h>
-//#include <algorithms/iterative/PrecConjugateResidual.h>
 
 using namespace std;
 using namespace Grid;
@@ -37,12 +36,10 @@ using namespace Grid::QCD;
 template<class Field, int nbasis> class TestVectorAnalyzer {
 public:
   void operator()(LinearOperatorBase<Field> &Linop, std::vector<Field> const &vectors, int nn = nbasis) {
-    // this function corresponds to testvector_analysis_PRECISION from the
-    // DD-αAMG codebase
 
     auto positiveOnes = 0;
 
-    std::vector<Field> tmp(4, vectors[0]._grid); // bit hacky?
+    std::vector<Field> tmp(4, vectors[0]._grid);
     Gamma              g5(Gamma::Algebra::Gamma5);
 
     std::cout << GridLogMessage << "Test vector analysis:" << std::endl;
@@ -51,7 +48,7 @@ public:
 
       Linop.Op(vectors[i], tmp[3]);
 
-      tmp[0] = g5 * tmp[3]; // is this the same as coarse_gamma5_PRECISION?
+      tmp[0] = g5 * tmp[3];
 
       auto lambda = innerProduct(vectors[i], tmp[0]) / innerProduct(vectors[i], vectors[i]);
 
@@ -96,11 +93,6 @@ RealD InverseApproximation(RealD x) {
 
 template<int nbasis> struct CoarseGrids {
 public:
-  // typedef Aggregation<vSpinColourVector,vTComplex,nbasis>     Subspace;
-  // typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>
-  // CoarseOperator; typedef typename CoarseOperator::CoarseVector
-  // CoarseVector;
-
   std::vector<std::vector<int>> LattSizes;
   std::vector<std::vector<int>> Seeds;
   std::vector<GridCartesian *>  Grids;
@@ -645,17 +637,6 @@ public:
   }
 };
 
-struct MGParams {
-  std::vector<std::vector<int>> blockSizes;
-  const int                     nbasis;
-
-  MGParams()
-    : blockSizes({{1, 1, 1, 2}})
-    // : blockSizes({{1,1,1,2}, {1,1,1,2}})
-    // : blockSizes({{1,1,1,2}, {1,1,1,2}, {1,1,1,2}})
-    , nbasis(20) {}
-};
-
 int main(int argc, char **argv) {
 
   Grid_init(&argc, &argv);
@@ -670,8 +651,6 @@ int main(int argc, char **argv) {
   params.lo    = 0.5;
   params.hi    = 70.0;
   params.steps = 1;
-
-  auto mgp = MGParams{};
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;
   std::cout << GridLogMessage << "Params: " << std::endl;
@@ -730,33 +709,8 @@ int main(int argc, char **argv) {
   const int nbasis = 20; // we fix the number of test vector to the same
                          // number on every level for now
 
-  // // some stuff we need for every coarser lattice
-  // std::vector<std::vector<int>> cLattSizes({GridDefaultLatt()});;
-  // std::vector<GridCartesian *> cGrids(params.coarsegrids);
-  // std::vector<std::vector<int>> cSeeds({ {5,6,7,8} });
-  // std::vector<GridParallelRNG> cPRNGs;(params.coarsegrids);
-
-  // assert(cLattSizes.size() == params.coarsegrids);
-  // assert(    cGrids.size() == params.coarsegrids);
-  // assert(    cSeeds.size() == params.coarsegrids);
-  // assert(    cPRNGs.size() == params.coarsegrids);
-
-  // for(int cl=0;cl<cLattSizes.size();cl++){
-  //   for(int d=0;d<cLattSizes[cl].size();d++){
-  //     // std::cout << cl << " " << d << " " << cLattSizes[cl][d] << " " <<
-  //     blockSizes[cl][d] << std::endl; cLattSizes[cl][d] =
-  //     cLattSizes[cl][d]/blockSizes[cl][d];
-  //   }
-  //   cGrids[cl] = SpaceTimeGrid::makeFourDimGrid(cLattSizes[cl],
-  //   GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());;
-  //   // std::cout << cLattSizes[cl] << std::endl;
-  // }
-
-  // GridParallelRNG cPRNG(CGrid); cPRNG.SeedFixedIntegers(cSeeds);
 
   CoarseGrids<nbasis> cGrids(blockSizes);
-
-  // assert(0);
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;
   std::cout << GridLogMessage << "Building the wilson operator on the fine grid" << std::endl;
@@ -782,43 +736,11 @@ int main(int argc, char **argv) {
   // CoarseG5PVector; // P = preserving typedef
   // CoarseOperator::CoarseG5PMatrix CoarseG5PMatrix;
 
-#if 0
-  // clang-format off
-  std::cout << std::endl;
-  std::cout << "type_name<decltype(vTComplex{})>()                      = " << type_name<decltype(vTComplex{})>()                      << std::endl;
-  std::cout << "type_name<GridTypeMapper<vTComplex>::scalar_type>()     = " << type_name<GridTypeMapper<vTComplex>::scalar_type>()     << std::endl;
-  std::cout << "type_name<GridTypeMapper<vTComplex>::vector_type>()     = " << type_name<GridTypeMapper<vTComplex>::vector_type>()     << std::endl;
-  std::cout << "type_name<GridTypeMapper<vTComplex>::vector_typeD>()    = " << type_name<GridTypeMapper<vTComplex>::vector_typeD>()    << std::endl;
-  std::cout << "type_name<GridTypeMapper<vTComplex>::tensor_reduced>()  = " << type_name<GridTypeMapper<vTComplex>::tensor_reduced>()  << std::endl;
-  std::cout << "type_name<GridTypeMapper<vTComplex>::scalar_object>()   = " << type_name<GridTypeMapper<vTComplex>::scalar_object>()   << std::endl;
-  std::cout << "type_name<GridTypeMapper<vTComplex>::Complexified>()    = " << type_name<GridTypeMapper<vTComplex>::Complexified>()    << std::endl;
-  std::cout << "type_name<GridTypeMapper<vTComplex>::Realified>()       = " << type_name<GridTypeMapper<vTComplex>::Realified>()       << std::endl;
-  std::cout << "type_name<GridTypeMapper<vTComplex>::DoublePrecision>() = " << type_name<GridTypeMapper<vTComplex>::DoublePrecision>() << std::endl;
-  std::cout << std::endl;
-
-  std::cout << std::endl;
-  std::cout << "type_name<decltype(TComplex{})>()                      = " << type_name<decltype(TComplex{})>()                      << std::endl;
-  std::cout << "type_name<GridTypeMapper<TComplex>::scalar_type>()     = " << type_name<GridTypeMapper<TComplex>::scalar_type>()     << std::endl;
-  std::cout << "type_name<GridTypeMapper<TComplex>::vector_type>()     = " << type_name<GridTypeMapper<TComplex>::vector_type>()     << std::endl;
-  std::cout << "type_name<GridTypeMapper<TComplex>::vector_typeD>()    = " << type_name<GridTypeMapper<TComplex>::vector_typeD>()    << std::endl;
-  std::cout << "type_name<GridTypeMapper<TComplex>::tensor_reduced>()  = " << type_name<GridTypeMapper<TComplex>::tensor_reduced>()  << std::endl;
-  std::cout << "type_name<GridTypeMapper<TComplex>::scalar_object>()   = " << type_name<GridTypeMapper<TComplex>::scalar_object>()   << std::endl;
-  std::cout << "type_name<GridTypeMapper<TComplex>::Complexified>()    = " << type_name<GridTypeMapper<TComplex>::Complexified>()    << std::endl;
-  std::cout << "type_name<GridTypeMapper<TComplex>::Realified>()       = " << type_name<GridTypeMapper<TComplex>::Realified>()       << std::endl;
-  std::cout << "type_name<GridTypeMapper<TComplex>::DoublePrecision>() = " << type_name<GridTypeMapper<TComplex>::DoublePrecision>() << std::endl;
-  std::cout << std::endl;
-  // clang-format on
-#endif
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;
   std::cout << GridLogMessage << "Calling Aggregation class to build subspaces" << std::endl;
   std::cout << GridLogMessage << "**************************************************" << std::endl;
 
-  // • TODO: need some way to run the smoother on the "test vectors" for a few
-  //   times before constructing the subspace from them
-  // • Maybe an application for an mrhs (true mrhs, no block) smoother?
-  // • In WMG, the vectors are normalized but not orthogonalized, but here they
-  //   are constructed randomly and then orthogonalized (rather orthonormalized) against each other
   MdagMLinearOperator<WilsonFermionR, LatticeFermion> HermOp(Dw);
   Subspace                                            Aggregates(cGrids.Grids[0], FGrid, 0);
   assert((nbasis & 0x1) == 0);
@@ -864,9 +786,6 @@ int main(int argc, char **argv) {
   gaussian(cGrids.PRNGs[0], c_src);
   c_res = zero;
 
-  std::cout << "type_name<decltype(c_src)>() = " << type_name<decltype(c_src)>() << std::endl;
-
-  // c_res = g5 * c_src;
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;
   std::cout << GridLogMessage << "Solving posdef-MR on coarse space " << std::endl;
