@@ -164,6 +164,7 @@ namespace QCD {
     public:
 
     static const int Dimension = Representation::Dimension;
+    static const bool isFundamental = Representation::isFundamental;
     static const bool LsVectorised=false;
     static const int Nhcs = Options::Nhcs;
 
@@ -261,8 +262,22 @@ namespace QCD {
       GaugeLinkField link(mat._grid);
       link = TraceIndex<SpinIndex>(outerProduct(Btilde,A)); 
       PokeIndex<LorentzIndex>(mat,link,mu);
-    }   
+    }  
+    
+    inline void outerProductImpl(PropagatorField &mat, const FermionField &B, const FermionField &A){
+      mat = outerProduct(B,A); 
+    }  
+
+    inline void TraceSpinImpl(GaugeLinkField &mat, PropagatorField&P) {
+      mat = TraceIndex<SpinIndex>(P); 
+    }
       
+    inline void extractLinkField(std::vector<GaugeLinkField> &mat, DoubledGaugeField &Uds){
+      for (int mu = 0; mu < Nd; mu++)
+      mat[mu] = PeekIndex<LorentzIndex>(Uds, mu);
+    }
+
+
     inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu){
       
       int Ls=Btilde._grid->_fdimensions[0];
@@ -284,27 +299,28 @@ namespace QCD {
   ////////////////////////////////////////////////////////////////////////////////////
   // Single flavour four spinors with colour index, 5d redblack
   ////////////////////////////////////////////////////////////////////////////////////
-template<class S,int Nrepresentation=Nc, class Options=CoeffReal>
-class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepresentation> > { 
+template<class S,class Representation = FundamentalRepresentation, class Options=CoeffReal>
+class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Representation::Dimension> > { 
   public:
 
-  typedef PeriodicGaugeImpl<GaugeImplTypes<S, Nrepresentation> > Gimpl;
+  typedef PeriodicGaugeImpl<GaugeImplTypes<S, Representation::Dimension> > Gimpl;
   INHERIT_GIMPL_TYPES(Gimpl);
 
-  static const int Dimension = Nrepresentation;
+  static const int Dimension = Representation::Dimension;
+  static const bool isFundamental = Representation::isFundamental;
   static const bool LsVectorised=true;
   static const int Nhcs = Options::Nhcs;
       
   typedef typename Options::_Coeff_t Coeff_t;      
   typedef typename Options::template PrecisionMapper<Simd>::LowerPrecVector SimdL;
   
-  template <typename vtype> using iImplSpinor            = iScalar<iVector<iVector<vtype, Nrepresentation>, Ns> >;
-  template <typename vtype> using iImplPropagator        = iScalar<iMatrix<iMatrix<vtype, Nrepresentation>, Ns> >;
-  template <typename vtype> using iImplHalfSpinor        = iScalar<iVector<iVector<vtype, Nrepresentation>, Nhs> >;
-  template <typename vtype> using iImplHalfCommSpinor    = iScalar<iVector<iVector<vtype, Nrepresentation>, Nhcs> >;
-  template <typename vtype> using iImplDoubledGaugeField = iVector<iScalar<iMatrix<vtype, Nrepresentation> >, Nds>;
-  template <typename vtype> using iImplGaugeField        = iVector<iScalar<iMatrix<vtype, Nrepresentation> >, Nd>;
-  template <typename vtype> using iImplGaugeLink         = iScalar<iScalar<iMatrix<vtype, Nrepresentation> > >;
+  template <typename vtype> using iImplSpinor            = iScalar<iVector<iVector<vtype, Dimension>, Ns> >;
+  template <typename vtype> using iImplPropagator        = iScalar<iMatrix<iMatrix<vtype, Dimension>, Ns> >;
+  template <typename vtype> using iImplHalfSpinor        = iScalar<iVector<iVector<vtype, Dimension>, Nhs> >;
+  template <typename vtype> using iImplHalfCommSpinor    = iScalar<iVector<iVector<vtype, Dimension>, Nhcs> >;
+  template <typename vtype> using iImplDoubledGaugeField = iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>;
+  template <typename vtype> using iImplGaugeField        = iVector<iScalar<iMatrix<vtype, Dimension> >, Nd>;
+  template <typename vtype> using iImplGaugeLink         = iScalar<iScalar<iMatrix<vtype, Dimension> > >;
   
   typedef iImplSpinor<Simd>            SiteSpinor;
   typedef iImplPropagator<Simd>        SitePropagator;
@@ -340,8 +356,8 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
                        const SiteHalfSpinor &chi, int mu, StencilEntry *SE,
                        StencilImpl &St) {
     SiteGaugeLink UU;
-    for (int i = 0; i < Nrepresentation; i++) {
-      for (int j = 0; j < Nrepresentation; j++) {
+    for (int i = 0; i < Dimension; i++) {
+      for (int j = 0; j < Dimension; j++) {
         vsplat(UU()()(i, j), U(mu)()(i, j));
       }
     }
@@ -353,8 +369,8 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
                            const SitePropagator &chi,
                            int mu) {
     SiteGaugeLink UU;
-    for (int i = 0; i < Nrepresentation; i++) {
-      for (int j = 0; j < Nrepresentation; j++) {
+    for (int i = 0; i < Dimension; i++) {
+      for (int j = 0; j < Dimension; j++) {
         vsplat(UU()()(i, j), U(mu)()(i, j));
       }
     }
@@ -392,6 +408,19 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
   {
     assert(0);
   }
+
+  inline void outerProductImpl(PropagatorField &mat, const FermionField &Btilde, const FermionField &A){
+    assert(0);
+  } 
+
+  inline void TraceSpinImpl(GaugeLinkField &mat, PropagatorField&P) {
+    assert(0);
+  }
+
+  inline void extractLinkField(std::vector<GaugeLinkField> &mat, DoubledGaugeField &Uds){
+    assert(0);
+  }
+
 
   inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde, int mu) {
 
@@ -445,25 +474,26 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
     ////////////////////////////////////////////////////////////////////////////////////////
     // Flavour doubled spinors; is Gparity the only? what about C*?
     ////////////////////////////////////////////////////////////////////////////////////////
-template <class S, int Nrepresentation, class Options=CoeffReal>
-class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresentation> > {
+template <class S, class Representation = FundamentalRepresentation, class Options=CoeffReal>
+class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Representation::Dimension> > {
  public:
 
- static const int Dimension = Nrepresentation;
+ static const int Dimension = Representation::Dimension;
+ static const bool isFundamental = Representation::isFundamental;
  static const int Nhcs = Options::Nhcs;
  static const bool LsVectorised=false;
 
- typedef ConjugateGaugeImpl< GaugeImplTypes<S,Nrepresentation> > Gimpl;
+ typedef ConjugateGaugeImpl< GaugeImplTypes<S,Dimension> > Gimpl;
  INHERIT_GIMPL_TYPES(Gimpl);
 
  typedef typename Options::_Coeff_t Coeff_t;
  typedef typename Options::template PrecisionMapper<Simd>::LowerPrecVector SimdL;
       
- template <typename vtype> using iImplSpinor            = iVector<iVector<iVector<vtype, Nrepresentation>, Ns>,   Ngp>;
- template <typename vtype> using iImplPropagator        = iVector<iMatrix<iMatrix<vtype, Nrepresentation>, Ns>,   Ngp>;
- template <typename vtype> using iImplHalfSpinor        = iVector<iVector<iVector<vtype, Nrepresentation>, Nhs>,  Ngp>;
- template <typename vtype> using iImplHalfCommSpinor    = iVector<iVector<iVector<vtype, Nrepresentation>, Nhcs>, Ngp>;
- template <typename vtype> using iImplDoubledGaugeField = iVector<iVector<iScalar<iMatrix<vtype, Nrepresentation> >, Nds>, Ngp>;
+ template <typename vtype> using iImplSpinor            = iVector<iVector<iVector<vtype, Dimension>, Ns>,   Ngp>;
+ template <typename vtype> using iImplPropagator        = iVector<iMatrix<iMatrix<vtype, Dimension>, Ns>,   Ngp>;
+ template <typename vtype> using iImplHalfSpinor        = iVector<iVector<iVector<vtype, Dimension>, Nhs>,  Ngp>;
+ template <typename vtype> using iImplHalfCommSpinor    = iVector<iVector<iVector<vtype, Dimension>, Nhcs>, Ngp>;
+ template <typename vtype> using iImplDoubledGaugeField = iVector<iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>, Ngp>;
 
  typedef iImplSpinor<Simd>            SiteSpinor;
  typedef iImplPropagator<Simd>        SitePropagator;
@@ -636,6 +666,25 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
    return;
  }
       
+ inline void outerProductImpl(PropagatorField &mat, const FermionField &Btilde, const FermionField &A){
+   //mat = outerProduct(Btilde, A);
+   assert(0);
+  }
+
+  inline void TraceSpinImpl(GaugeLinkField &mat, PropagatorField&P) {
+    assert(0);
+    /*
+    auto tmp = TraceIndex<SpinIndex>(P);
+    parallel_for(auto ss = tmp.begin(); ss < tmp.end(); ss++) {
+      mat[ss]() = tmp[ss](0, 0) + conjugate(tmp[ss](1, 1));
+    }
+    */
+  }
+
+  inline void extractLinkField(std::vector<GaugeLinkField> &mat, DoubledGaugeField &Uds){
+    assert(0);
+  }
+  
  inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde, int mu) {
 
    int Ls = Btilde._grid->_fdimensions[0];
@@ -665,6 +714,7 @@ class StaggeredImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation:
 
     typedef RealD  _Coeff_t ;
     static const int Dimension = Representation::Dimension;
+    static const bool isFundamental = Representation::isFundamental;
     static const bool LsVectorised=false;
     typedef PeriodicGaugeImpl<GaugeImplTypes<S, Dimension > > Gimpl;
       
@@ -776,8 +826,8 @@ class StaggeredImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation:
       GaugeLinkField link(mat._grid);
       link = TraceIndex<SpinIndex>(outerProduct(Btilde,A)); 
       PokeIndex<LorentzIndex>(mat,link,mu);
-    }   
-      
+    } 
+          
     inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu){
       assert (0); 
       // Must never hit
@@ -793,6 +843,7 @@ class StaggeredImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation:
     public:
 
     static const int Dimension = Representation::Dimension;
+    static const bool isFundamental = Representation::isFundamental;
     static const bool LsVectorised=true;
     typedef RealD   Coeff_t ;
     typedef PeriodicGaugeImpl<GaugeImplTypes<S, Dimension > > Gimpl;
@@ -983,29 +1034,33 @@ typedef WilsonImpl<vComplex,  TwoIndexSymmetricRepresentation, CoeffReal > Wilso
 typedef WilsonImpl<vComplexF, TwoIndexSymmetricRepresentation, CoeffReal > WilsonTwoIndexSymmetricImplF;  // Float
 typedef WilsonImpl<vComplexD, TwoIndexSymmetricRepresentation, CoeffReal > WilsonTwoIndexSymmetricImplD;  // Double
  
-typedef DomainWallVec5dImpl<vComplex ,Nc, CoeffReal> DomainWallVec5dImplR; // Real.. whichever prec
-typedef DomainWallVec5dImpl<vComplexF,Nc, CoeffReal> DomainWallVec5dImplF; // Float
-typedef DomainWallVec5dImpl<vComplexD,Nc, CoeffReal> DomainWallVec5dImplD; // Double
+typedef WilsonImpl<vComplex,  TwoIndexAntiSymmetricRepresentation, CoeffReal > WilsonTwoIndexAntiSymmetricImplR;   // Real.. whichever prec
+typedef WilsonImpl<vComplexF, TwoIndexAntiSymmetricRepresentation, CoeffReal > WilsonTwoIndexAntiSymmetricImplF;  // Float
+typedef WilsonImpl<vComplexD, TwoIndexAntiSymmetricRepresentation, CoeffReal > WilsonTwoIndexAntiSymmetricImplD;  // Double
+
+typedef DomainWallVec5dImpl<vComplex ,FundamentalRepresentation, CoeffReal> DomainWallVec5dImplR; // Real.. whichever prec
+typedef DomainWallVec5dImpl<vComplexF,FundamentalRepresentation, CoeffReal> DomainWallVec5dImplF; // Float
+typedef DomainWallVec5dImpl<vComplexD,FundamentalRepresentation, CoeffReal> DomainWallVec5dImplD; // Double
  
-typedef DomainWallVec5dImpl<vComplex ,Nc, CoeffRealHalfComms> DomainWallVec5dImplRL; // Real.. whichever prec
-typedef DomainWallVec5dImpl<vComplexF,Nc, CoeffRealHalfComms> DomainWallVec5dImplFH; // Float
-typedef DomainWallVec5dImpl<vComplexD,Nc, CoeffRealHalfComms> DomainWallVec5dImplDF; // Double
+typedef DomainWallVec5dImpl<vComplex ,FundamentalRepresentation, CoeffRealHalfComms> DomainWallVec5dImplRL; // Real.. whichever prec
+typedef DomainWallVec5dImpl<vComplexF,FundamentalRepresentation, CoeffRealHalfComms> DomainWallVec5dImplFH; // Float
+typedef DomainWallVec5dImpl<vComplexD,FundamentalRepresentation, CoeffRealHalfComms> DomainWallVec5dImplDF; // Double
  
-typedef DomainWallVec5dImpl<vComplex ,Nc,CoeffComplex> ZDomainWallVec5dImplR; // Real.. whichever prec
-typedef DomainWallVec5dImpl<vComplexF,Nc,CoeffComplex> ZDomainWallVec5dImplF; // Float
-typedef DomainWallVec5dImpl<vComplexD,Nc,CoeffComplex> ZDomainWallVec5dImplD; // Double
+typedef DomainWallVec5dImpl<vComplex ,FundamentalRepresentation,CoeffComplex> ZDomainWallVec5dImplR; // Real.. whichever prec
+typedef DomainWallVec5dImpl<vComplexF,FundamentalRepresentation,CoeffComplex> ZDomainWallVec5dImplF; // Float
+typedef DomainWallVec5dImpl<vComplexD,FundamentalRepresentation,CoeffComplex> ZDomainWallVec5dImplD; // Double
  
-typedef DomainWallVec5dImpl<vComplex ,Nc,CoeffComplexHalfComms> ZDomainWallVec5dImplRL; // Real.. whichever prec
-typedef DomainWallVec5dImpl<vComplexF,Nc,CoeffComplexHalfComms> ZDomainWallVec5dImplFH; // Float
-typedef DomainWallVec5dImpl<vComplexD,Nc,CoeffComplexHalfComms> ZDomainWallVec5dImplDF; // Double
+typedef DomainWallVec5dImpl<vComplex ,FundamentalRepresentation,CoeffComplexHalfComms> ZDomainWallVec5dImplRL; // Real.. whichever prec
+typedef DomainWallVec5dImpl<vComplexF,FundamentalRepresentation,CoeffComplexHalfComms> ZDomainWallVec5dImplFH; // Float
+typedef DomainWallVec5dImpl<vComplexD,FundamentalRepresentation,CoeffComplexHalfComms> ZDomainWallVec5dImplDF; // Double
  
-typedef GparityWilsonImpl<vComplex , Nc,CoeffReal> GparityWilsonImplR;  // Real.. whichever prec
-typedef GparityWilsonImpl<vComplexF, Nc,CoeffReal> GparityWilsonImplF;  // Float
-typedef GparityWilsonImpl<vComplexD, Nc,CoeffReal> GparityWilsonImplD;  // Double
+typedef GparityWilsonImpl<vComplex , FundamentalRepresentation,CoeffReal> GparityWilsonImplR;  // Real.. whichever prec
+typedef GparityWilsonImpl<vComplexF, FundamentalRepresentation,CoeffReal> GparityWilsonImplF;  // Float
+typedef GparityWilsonImpl<vComplexD, FundamentalRepresentation,CoeffReal> GparityWilsonImplD;  // Double
  
-typedef GparityWilsonImpl<vComplex , Nc,CoeffRealHalfComms> GparityWilsonImplRL;  // Real.. whichever prec
-typedef GparityWilsonImpl<vComplexF, Nc,CoeffRealHalfComms> GparityWilsonImplFH;  // Float
-typedef GparityWilsonImpl<vComplexD, Nc,CoeffRealHalfComms> GparityWilsonImplDF;  // Double
+typedef GparityWilsonImpl<vComplex , FundamentalRepresentation,CoeffRealHalfComms> GparityWilsonImplRL;  // Real.. whichever prec
+typedef GparityWilsonImpl<vComplexF, FundamentalRepresentation,CoeffRealHalfComms> GparityWilsonImplFH;  // Float
+typedef GparityWilsonImpl<vComplexD, FundamentalRepresentation,CoeffRealHalfComms> GparityWilsonImplDF;  // Double
 
 typedef StaggeredImpl<vComplex,  FundamentalRepresentation > StaggeredImplR;   // Real.. whichever prec
 typedef StaggeredImpl<vComplexF, FundamentalRepresentation > StaggeredImplF;  // Float

@@ -86,6 +86,7 @@ protected:
   Colours &Painter;
   int active;
   int timing_mode;
+  int topWidth{-1};
   static int timestamp;
   std::string name, topName;
   std::string COLOUR;
@@ -124,11 +125,17 @@ public:
       Reset(); 
     }
   }
+  void setTopWidth(const int w) {topWidth = w;}
 
   friend std::ostream& operator<< (std::ostream& stream, Logger& log){
 
     if ( log.active ) {
-      stream << log.background()<<  std::left << log.topName << log.background()<< " : ";
+      stream << log.background()<<  std::left;
+      if (log.topWidth > 0)
+      {
+        stream << std::setw(log.topWidth);
+      }
+      stream << log.topName << log.background()<< " : ";
       stream << log.colour() <<  std::left << log.name << log.background() << " : ";
       if ( log.timestamp ) {
 	log.StopWatch->Stop();

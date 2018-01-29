@@ -211,7 +211,7 @@ typedef HMCWrapperTemplate<ScalarAdjImplR, MinimumNorm2, ScalarMatrixFields>
     ScalarAdjGenericHMCRunner;
 
 template <int Colours> 
-using ScalarNxNAdjGenericHMCRunner = HMCWrapperTemplate < ScalarNxNAdjImplR<Colours>, MinimumNorm2, ScalarNxNMatrixFields<Colours> >;
+using ScalarNxNAdjGenericHMCRunner = HMCWrapperTemplate < ScalarNxNAdjImplR<Colours>, ForceGradient, ScalarNxNMatrixFields<Colours> >;
 
 }  // namespace QCD
 }  // namespace Grid

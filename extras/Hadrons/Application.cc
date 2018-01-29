@@ -4,8 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Application.cc
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -43,12 +42,7 @@ using namespace Hadrons;
 // constructors ////////////////////////////////////////////////////////////////
 Application::Application(void)
 {
-    LOG(Message) << "Modules available:" << std::endl;
-    auto list = ModuleFactory::getInstance().getBuilderList();
-    for (auto &m: list)
-    {
-        LOG(Message) << "  " << m << std::endl;
-    }
+    initLogger();
     auto dim = GridDefaultLatt(), mpi = GridDefaultMpi(), loc(dim);
     locVol_ = 1;
     for (unsigned int d = 0; d < dim.size(); ++d)

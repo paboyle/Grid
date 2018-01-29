@@ -45,5 +45,7 @@ class HmcObservable {
 
 #include "plaquette.h"
 #include "topological_charge.h"
+#include "polyakov_loop.h"
+
 
 #endif  //  HMC_OBSERVABLE_H
