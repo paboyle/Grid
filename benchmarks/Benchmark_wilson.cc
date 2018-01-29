@@ -4,7 +4,7 @@
 
     Source file: ./benchmarks/Benchmark_wilson.cc
 
-    Copyright (C) 2015
+    Copyright (C) 2018
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
@@ -32,6 +32,9 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
+
+#include "Grid/util/Profiling.h"
+
 template<class d>
 struct scal {
   d internal;
@@ -45,6 +48,7 @@ struct scal {
   };
 
 bool overlapComms = false;
+bool perfProfiling = false;
 
 int main (int argc, char ** argv)
 {
@@ -52,6 +56,9 @@ int main (int argc, char ** argv)
 
   if( GridCmdOptionExists(argv,argv+argc,"--asynch") ){
     overlapComms = true;
+  }
+  if( GridCmdOptionExists(argv,argv+argc,"--perf") ){
+    perfProfiling = true;
   }
 
   long unsigned int single_site_flops = 8*QCD::Nc*(7+16*QCD::Nc);
@@ -144,6 +151,21 @@ int main (int argc, char ** argv)
   double t1=usecond();
   double flops=single_site_flops*volume*ncall;
   
+  if (perfProfiling){
+  std::cout<<GridLogMessage << "Profiling Dw with perf"<<std::endl;
+    
+  System::profile("kernel", [&]() {
+    for(int i=0;i<ncall;i++){
+      Dw.Dhop(src,result,0);
+    }
+  });
+
+  std::cout<<GridLogMessage << "Generated kernel.data"<<std::endl;
+  std::cout<<GridLogMessage << "Use with: perf report -i kernel.data"<<std::endl;
+
+  }
+
+
   std::cout<<GridLogMessage << "Called Dw"<<std::endl;
   std::cout<<GridLogMessage << "flops per site " << single_site_flops << std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
