@@ -148,8 +148,6 @@ public:
   inline int PermuteType(int dimension){
     int permute_type=0;
     //
-    // FIXME:
-    //
     // Best way to encode this would be to present a mask 
     // for which simd dimensions are rotated, and the rotation
     // size. If there is only one simd dimension rotated, this is just 

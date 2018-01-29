@@ -990,7 +990,7 @@ public:
     //    int words = sizeof(cobj)/sizeof(vector_type);
     
     assert(cbmask==0x3); // Fixme think there is a latent bug if not true
-    
+                         // This assert will trap it if ever hit. Not hit normally so far
     int reduced_buffer_size = buffer_size;
     if (cbmask != 0x3) reduced_buffer_size=buffer_size>>1;
 
