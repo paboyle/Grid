@@ -539,7 +539,7 @@ public:
     std::cout << GridLogMessage << "SAP resid(post) " << std::sqrt(r / Ni) << " " << r << " " << Ni << std::endl;
   }
 
-  void runChecks(CoarseGrids<nbasis> &cGrids) {
+  void runChecks(CoarseGrids<nbasis> &cGrids, int whichCoarseGrid) {
 
     /////////////////////////////////////////////
     // Some stuff we need for the checks below //
@@ -578,7 +578,7 @@ public:
     std::cout << GridLogMessage << "MG correctness check: 0 == (1 - R P) v_c" << std::endl;
     std::cout << GridLogMessage << "**************************************************" << std::endl;
 
-    random(cGrids.PRNGs[0], cTmps[0]);
+    random(cGrids.PRNGs[whichCoarseGrid], cTmps[0]);
 
     _Aggregates.PromoteFromSubspace(cTmps[0], fTmps[0]); //   P v_c
     _Aggregates.ProjectToSubspace(cTmps[1], fTmps[0]);   // R P v_c
@@ -599,7 +599,7 @@ public:
     std::cout << GridLogMessage << "MG correctness check: 0 == (R D P - D_c) v_c" << std::endl;
     std::cout << GridLogMessage << "**************************************************" << std::endl;
 
-    random(cGrids.PRNGs[0], cTmps[0]);
+    random(cGrids.PRNGs[whichCoarseGrid], cTmps[0]);
 
     _Aggregates.PromoteFromSubspace(cTmps[0], fTmps[0]); //     P v_c
     _FineOperator.Op(fTmps[0], fTmps[1]);                //   D P v_c
@@ -623,7 +623,7 @@ public:
     std::cout << GridLogMessage << "MG correctness check: 0 == |(Im(v_c^dag D_c^dag D_c v_c)|" << std::endl;
     std::cout << GridLogMessage << "**************************************************" << std::endl;
 
-    random(cGrids.PRNGs[0], cTmps[0]);
+    random(cGrids.PRNGs[whichCoarseGrid], cTmps[0]);
 
     MdagMOp.Op(cTmps[0], cTmps[1]);    //         D_c v_c
     MdagMOp.AdjOp(cTmps[1], cTmps[2]); // D_c^dag D_c v_c
@@ -923,7 +923,7 @@ int main(int argc, char **argv) {
   //                         FineOperator &Smooth,Matrix &SmootherMatrix)
   TrivialPrecon<LatticeFermion> Simple;
 
-  Precon.runChecks(cGrids);
+  Precon.runChecks(cGrids, 0);
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;
   std::cout << GridLogMessage << "Building two level VPGCR and FGMRES solvers" << std::endl;
