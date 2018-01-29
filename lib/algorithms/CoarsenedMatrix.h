@@ -119,12 +119,12 @@ namespace Grid {
   
     void Orthogonalise(void){
       CoarseScalar InnerProd(CoarseGrid); 
-      std::cout << GridLogMessage <<" Gramm-Schmidt pass 1"<<std::endl;
+      std::cout << GridLogMessage <<"Gram-Schmidt pass 1"<<std::endl;
       blockOrthogonalise(InnerProd,subspace);
-      std::cout << GridLogMessage <<" Gramm-Schmidt pass 2"<<std::endl;
+      std::cout << GridLogMessage <<"Gram-Schmidt pass 2"<<std::endl;
       blockOrthogonalise(InnerProd,subspace);
-      //      std::cout << GridLogMessage <<" Gramm-Schmidt checking orthogonality"<<std::endl;
-      //      CheckOrthogonal();
+      std::cout << GridLogMessage <<"Gram-Schmidt checking orthogonality"<<std::endl;
+      CheckOrthogonal();
     } 
     void CheckOrthogonal(void){
       CoarseVector iProj(CoarseGrid); 
