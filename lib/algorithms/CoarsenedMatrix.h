@@ -221,7 +221,7 @@ namespace Grid {
 
 	hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<b<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
 
-	for(int i=0;i<1;i++){
+	for(int i=0;i<3;i++){
 
 	  CG(hermop,noise,subspace[b]);
 
