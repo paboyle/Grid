@@ -23,6 +23,7 @@ Author: Christopher Kelly <ckelly@phys.columbia.edu>
 #define GRID_MATH_TRAITS_H
 
 #include <type_traits>
+#include <cxxabi.h>
 
 namespace Grid {
 
@@ -288,6 +289,25 @@ namespace Grid {
 
     enum { value = sizeof(real_scalar_type)/sizeof(float) };
   };
+
+  template<typename T> std::string getTypename() {
+
+    typedef typename std::remove_reference<T>::type TWoRef;
+
+    std::unique_ptr<char, void (*)(void *)> own(abi::__cxa_demangle(typeid(TWoRef).name(), nullptr, nullptr, nullptr), std::free);
+
+    std::string r = own != nullptr ? own.get() : typeid(TWoRef).name();
+
+    if(std::is_const<TWoRef>::value)
+      r += " const";
+    if(std::is_volatile<TWoRef>::value)
+      r += " volatile";
+    if(std::is_lvalue_reference<T>::value)
+      r += "&";
+    else if(std::is_rvalue_reference<T>::value)
+      r += "&&";
+    return r;
+  }
 }
 
 #endif
