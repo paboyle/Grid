@@ -166,6 +166,7 @@ until convergence
     std::vector<std::vector<ComplexD>> lmd2(Nu,std::vector<ComplexD>(Nm,0.0));  
     std::vector<std::vector<ComplexD>> lme2(Nu,std::vector<ComplexD>(Nm,0.0));  
     std::vector<RealD> eval2(Nm);
+    std::vector<RealD> resid(Nk);
 
     Eigen::MatrixXcd    Qt = Eigen::MatrixXcd::Zero(Nm,Nm);
     Eigen::MatrixXcd    Q = Eigen::MatrixXcd::Zero(Nm,Nm);
@@ -267,6 +268,7 @@ until convergence
 	eval2[i] = vnum/vden;
 	v -= eval2[i]*B[i];
 	RealD vv = norm2(v);
+        resid[i] = vv;
 	
 	std::cout.precision(13);
 	clog << "[" << std::setw(3)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
@@ -274,7 +276,8 @@ until convergence
 	std::cout << " |H B[i] - eval[i]B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< vv<< std::endl;
 	
 	// change the criteria as evals are supposed to be sorted, all evals smaller(larger) than Nstop should have converged
-	if( (vv<eresid*eresid) && (i == Nconv) ){
+	//if( (vv<eresid*eresid) && (i == Nconv) ){
+	if (vv<eresid*eresid) {
 	  Iconv[Nconv] = i;
 	  ++Nconv;
 	}
@@ -286,6 +289,13 @@ until convergence
       if( Nconv>=Nstop ){
 	goto converged;
       }
+      
+      for(int i=0; i<Nconv; ++i){
+	std::cout.precision(13);
+	clog << "[" << std::setw(3)<< std::setiosflags(std::ios_base::right) <<Iconv[i]<<"] ";
+	std::cout << "eval_conv = "<<std::setw(25)<< std::setiosflags(std::ios_base::left)<< eval2[Iconv[i]];
+	std::cout << " |H B[i] - eval_conv[i]B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< resid[Iconv[i]]<< std::endl;
+      } 
       
       if ( iter < MaxIter-1 ) {
         if ( Nu == 1 ) {
