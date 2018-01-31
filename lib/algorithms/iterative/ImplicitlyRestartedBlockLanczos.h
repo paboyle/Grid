@@ -285,10 +285,6 @@ until convergence
       }  // i-loop end
       
       clog <<" #modes converged: "<<Nconv<<std::endl;
-
-      if( Nconv>=Nstop ){
-	goto converged;
-      }
       
       for(int i=0; i<Nconv; ++i){
 	std::cout.precision(13);
@@ -296,6 +292,10 @@ until convergence
 	std::cout << "eval_conv = "<<std::setw(25)<< std::setiosflags(std::ios_base::left)<< eval2[Iconv[i]];
 	std::cout << " |H B[i] - eval_conv[i]B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< resid[Iconv[i]]<< std::endl;
       } 
+
+      if( Nconv>=Nstop ){
+	goto converged;
+      }
       
       if ( iter < MaxIter-1 ) {
         if ( Nu == 1 ) {
