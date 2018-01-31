@@ -126,6 +126,40 @@ public:
   }
 };
 
+template<class Field> void testOperator(LinearOperatorBase<Field> &LinOp, GridBase *Grid) {
+
+  std::vector<int> seeds({1, 2, 3, 4});
+  GridParallelRNG  RNG(Grid);
+  RNG.SeedFixedIntegers(seeds);
+
+  // clang-format off
+  Field src(Grid);    random(RNG, src);
+  Field result(Grid); result = zero;
+  Field ref(Grid);    ref    = zero;
+  Field tmp(Grid);
+  Field err(Grid);
+  // clang-format on
+
+  LinOp.Op(src, ref);
+
+  LinOp.OpDiag(src, result);
+  std::cout << GridLogMessage << "diag:  norm2(result) = " << norm2(result) << std::endl;
+
+  for(int d = 0; d < 4; d++) {
+    LinOp.OpDir(src, tmp, d, +1);
+    std::cout << GridLogMessage << "dir + " << d << ": norm2(tmp) = " << norm2(tmp) << std::endl;
+    result = result + tmp;
+
+    LinOp.OpDir(src, tmp, d, -1);
+    std::cout << GridLogMessage << "dir - " << d << ": norm2(tmp) = " << norm2(tmp) << std::endl;
+    result = result + tmp;
+  }
+
+  err = result - ref;
+
+  std::cout << GridLogMessage << "Error: absolute = " << norm2(err) << " relative = " << norm2(err) / norm2(ref) << std::endl;
+}
+
 // template < class Fobj, class CComplex, int coarseSpins, int nbasis, class Matrix >
 // class MultiGridPreconditioner : public LinearFunction< Lattice< Fobj > > {
 template<class Fobj, class CComplex, int nbasis, class Matrix> class MultiGridPreconditioner : public LinearFunction<Lattice<Fobj>> {
@@ -814,6 +848,19 @@ int main(int argc, char **argv) {
   gaussian(coarseGrids.PRNGs[0], coarseSource);
   coarseResult = zero;
   CoarseCG(CoarsePosDefHermOp, coarseSource, coarseResult);
+
+  std::cout << GridLogMessage << "**************************************************" << std::endl;
+  std::cout << GridLogMessage << "Testing the operators" << std::endl;
+  std::cout << GridLogMessage << "**************************************************" << std::endl;
+
+  std::cout << GridLogMessage << "MdagMLinearOperator<WilsonFermionR, LatticeFermion> FineHermOp(Dw);" << std::endl;
+  testOperator(FineHermOp, FGrid);
+  std::cout << GridLogMessage << "Gamma5HermitianLinearOperator<WilsonFermionR, LatticeFermion> FineHermIndefOp(Dw);" << std::endl;
+  testOperator(FineHermIndefOp, FGrid);
+  std::cout << GridLogMessage << "Gamma5HermitianLinearOperator<WilsonFermionR, LatticeFermion> FineHermIndefOpDD(DwDD);" << std::endl;
+  testOperator(FineHermIndefOpDD, FGrid);
+  std::cout << GridLogMessage << "MdagMLinearOperator<CoarseOperator, CoarseVector> CoarsePosDefHermOp(Dc);" << std::endl;
+  testOperator(CoarsePosDefHermOp, coarseGrids.Grids[0]);
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;
   std::cout << GridLogMessage << "Building deflation preconditioner " << std::endl;
