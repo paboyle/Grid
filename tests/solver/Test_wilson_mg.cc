@@ -836,18 +836,20 @@ int main(int argc, char **argv) {
   coarseResult = zero;
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;
-  std::cout << GridLogMessage << "Solving posdef-MR on coarse space " << std::endl;
+  std::cout << GridLogMessage << "Testing some coarse space solvers" << std::endl;
   std::cout << GridLogMessage << "**************************************************" << std::endl;
 
   MdagMLinearOperator<CoarseOperator, CoarseVector> CoarsePosDefHermOp(Dc);
-  MinimalResidual<CoarseVector>                     CoarseMR(5.0e-2, 100, false);
-  ConjugateGradient<CoarseVector>                   CoarseCG(5.0e-2, 100, false);
 
-  CoarseMR(CoarsePosDefHermOp, coarseSource, coarseResult);
+  std::vector<std::unique_ptr<OperatorFunction<CoarseVector>>> coarseSolvers;
+  coarseSolvers.emplace_back(new GeneralisedMinimalResidual<CoarseVector>(5.0e-2, 100, 8, false));
+  coarseSolvers.emplace_back(new MinimalResidual<CoarseVector>(5.0e-2, 100, false));
+  coarseSolvers.emplace_back(new ConjugateGradient<CoarseVector>(5.0e-2, 100, false));
 
-  gaussian(coarseGrids.PRNGs[0], coarseSource);
-  coarseResult = zero;
-  CoarseCG(CoarsePosDefHermOp, coarseSource, coarseResult);
+  for(auto const &solver : coarseSolvers) {
+    coarseResult = zero;
+    (*solver)(CoarsePosDefHermOp, coarseSource, coarseResult);
+  }
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;
   std::cout << GridLogMessage << "Testing the operators" << std::endl;
@@ -917,12 +919,16 @@ int main(int argc, char **argv) {
     coarseCoarseResult = zero;
 
     MdagMLinearOperator<CoarseCoarseOperator, CoarseCoarseVector> CoarseCoarsePosDefHermOp(Dcc);
-    MinimalResidual<CoarseCoarseVector>                           CoarseCoarseMR(5.0e-2, 100, false);
-    ConjugateGradient<CoarseCoarseVector>                         CoarseCoarseCG(5.0e-2, 100, false);
-    CoarseCoarseMR(CoarseCoarsePosDefHermOp, coarseCoarseSource, coarseCoarseResult);
-    gaussian(coarseGrids.PRNGs[1], coarseCoarseSource);
-    coarseCoarseResult = zero;
-    CoarseCoarseCG(CoarseCoarsePosDefHermOp, coarseCoarseSource, coarseCoarseResult);
+
+    std::vector<std::unique_ptr<OperatorFunction<CoarseCoarseVector>>> coarseCoarseSolvers;
+    coarseSolvers.emplace_back(new GeneralisedMinimalResidual<CoarseCoarseVector>(5.0e-2, 100, 8, false));
+    coarseSolvers.emplace_back(new MinimalResidual<CoarseCoarseVector>(5.0e-2, 100, false));
+    coarseSolvers.emplace_back(new ConjugateGradient<CoarseCoarseVector>(5.0e-2, 100, false));
+
+    for(auto const &solver : coarseCoarseSolvers) {
+      coarseCoarseResult = zero;
+      (*solver)(CoarseCoarsePosDefHermOp, coarseCoarseSource, coarseCoarseResult);
+    }
 
     CoarseMGPreconditioner CoarseMGPrecon(CoarseAggregates, Dcc, CoarsePosDefHermOp, Dc, CoarsePosDefHermOp, Dc);
 
@@ -933,34 +939,24 @@ int main(int argc, char **argv) {
   }
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;
-  std::cout << GridLogMessage << "Building two level VPGCR and FGMRES solvers" << std::endl;
+  std::cout << GridLogMessage << "Building VPGCR and FGMRES solvers w/ & w/o MG Preconditioner" << std::endl;
   std::cout << GridLogMessage << "**************************************************" << std::endl;
 
-  PrecGeneralisedConjugateResidual<LatticeFermion>   VPGCRMG(1.0e-12, 100, FineMGPrecon, 8, 8);
-  FlexibleGeneralisedMinimalResidual<LatticeFermion> FGMRESMG(1.0e-12, 100, FineMGPrecon, 8);
+  std::vector<std::unique_ptr<OperatorFunction<LatticeFermion>>> solvers;
+  solvers.emplace_back(new PrecGeneralisedConjugateResidual<LatticeFermion>(1.0e-12, 100, FineMGPrecon, 8, 8));
+  solvers.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 100, FineMGPrecon, 8));
+  solvers.emplace_back(new PrecGeneralisedConjugateResidual<LatticeFermion>(1.0e-12, 4000000, FineSimplePrecon, 8, 8));
+  solvers.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 4000000, FineSimplePrecon, 8));
+
+  std::cout << GridLogMessage << "**************************************************" << std::endl;
+  std::cout << GridLogMessage << "Testing the solvers" << std::endl;
+  std::cout << GridLogMessage << "**************************************************" << std::endl;
 
   std::cout << GridLogMessage << "checking norm src " << norm2(src) << std::endl;
 
-  std::cout << GridLogMessage << "**************************************************" << std::endl;
-  std::cout << GridLogMessage << "Building unpreconditioned VPGCR and FGMRES solvers" << std::endl;
-  std::cout << GridLogMessage << "**************************************************" << std::endl;
-
-  PrecGeneralisedConjugateResidual<LatticeFermion>   VPGCRT(1.0e-12, 4000000, FineSimplePrecon, 8, 8);
-  FlexibleGeneralisedMinimalResidual<LatticeFermion> FGMREST(1.0e-12, 4000000, FineSimplePrecon, 8);
-
-  std::cout << GridLogMessage << "**************************************************" << std::endl;
-  std::cout << GridLogMessage << "Testing the four solvers" << std::endl;
-  std::cout << GridLogMessage << "**************************************************" << std::endl;
-
-  std::vector<OperatorFunction<LatticeFermion> *> solvers;
-  solvers.push_back(&VPGCRMG);
-  solvers.push_back(&FGMRESMG);
-  solvers.push_back(&VPGCRT);
-  solvers.push_back(&FGMREST);
-
-  for(auto elem : solvers) {
+  for(auto const &solver : solvers) {
     result = zero;
-    (*elem)(FineHermIndefOp, src, result);
+    (*solver)(FineHermIndefOp, src, result);
   }
 
   Grid_finalize();
