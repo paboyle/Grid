@@ -159,8 +159,8 @@ public:\
     undefname = -1\
   };\
 public:\
-  name(void): value_(undefname) {};\
-  name(int value): value_(value) {};\
+  accelerator name(void)     : value_(undefname) {};		\
+  accelerator name(int value): value_(value) {};			\
   template <typename T>\
   static inline void write(Grid::Writer<T> &WR,const std::string &s, const name &obj)\
   {\
@@ -180,7 +180,7 @@ public:\
     GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_ENUMTEST,__VA_ARGS__))\
     else {obj = name::undefname;}\
   }\
-  inline operator int(void) const\
+  accelerator_inline operator int(void) const\
   {\
     return value_;\
   }\
