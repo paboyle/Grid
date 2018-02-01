@@ -33,49 +33,49 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define GRID_QCD_BASE_H
 NAMESPACE_BEGIN(Grid);
 
-static const int Xdir = 0;
-static const int Ydir = 1;
-static const int Zdir = 2;
-static const int Tdir = 3;
+static constexpr int Xdir = 0;
+static constexpr int Ydir = 1;
+static constexpr int Zdir = 2;
+static constexpr int Tdir = 3;
 
-static const int Xp = 0;
-static const int Yp = 1;
-static const int Zp = 2;
-static const int Tp = 3;
-static const int Xm = 4;
-static const int Ym = 5;
-static const int Zm = 6;
-static const int Tm = 7;
+static constexpr int Xp = 0;
+static constexpr int Yp = 1;
+static constexpr int Zp = 2;
+static constexpr int Tp = 3;
+static constexpr int Xm = 4;
+static constexpr int Ym = 5;
+static constexpr int Zm = 6;
+static constexpr int Tm = 7;
 
-static const int Nc=3;
-static const int Ns=4;
-static const int Nd=4;
-static const int Nhs=2; // half spinor
-static const int Nds=8; // double stored gauge field
-static const int Ngp=2; // gparity index range
+static constexpr int Nc=3;
+static constexpr int Ns=4;
+static constexpr int Nd=4;
+static constexpr int Nhs=2; // half spinor
+static constexpr int Nds=8; // double stored gauge field
+static constexpr int Ngp=2; // gparity index range
 
 //////////////////////////////////////////////////////////////////////////////
 // QCD iMatrix types
 // Index conventions:                            Lorentz x Spin x Colour
-// note: static const int or constexpr will work for type deductions
+// note: static constexpr int or constexpr will work for type deductions
 //       with the intel compiler (up to version 17)
 //////////////////////////////////////////////////////////////////////////////
-#define ColourIndex  2
-#define SpinIndex    1
-#define LorentzIndex 0
+static constexpr int ColourIndex = 2;
+static constexpr int SpinIndex   = 1;
+static constexpr int LorentzIndex= 0;
 
 // Also should make these a named enum type
-static const int DaggerNo=0;
-static const int DaggerYes=1;
-static const int InverseNo=0;
-static const int InverseYes=1;
+static constexpr int DaggerNo=0;
+static constexpr int DaggerYes=1;
+static constexpr int InverseNo=0;
+static constexpr int InverseYes=1;
 
 // Useful traits is this a spin index
 //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
 
 const int SpinorIndex = 2;
 template<typename T> struct isSpinor {
-  static const bool value = (SpinorIndex==T::TensorLevel);
+  static constexpr bool value = (SpinorIndex==T::TensorLevel);
 };
 template <typename T> using IfSpinor    = Invoke<std::enable_if< isSpinor<T>::value,int> > ;
 template <typename T> using IfNotSpinor = Invoke<std::enable_if<!isSpinor<T>::value,int> > ;
