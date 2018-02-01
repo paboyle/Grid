@@ -88,6 +88,15 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     lambda(it);							\
   }
 #define cpu_loop( iterator, range, ... )   thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
+
+#define NVCC_DECLARE_VECTOR_ACCESSOR(Type) \
+template <> accelerator_inline typename Grid::Vector<Type>::reference       Grid::Vector<Type>::operator[](Grid::Vector<Type>::size_type __n)       { return this->__begin_[__n]; } \
+template <> accelerator_inline typename Grid::Vector<Type>::const_reference Grid::Vector<Type>::operator[](Grid::Vector<Type>::size_type __n) const { return this->__begin_[__n]; }
+
+#define NVCC_DECLARE_STD_VECTOR_ACCESSOR(Type) \
+template <> accelerator_inline typename std::vector<Type>::reference       std::vector<Type>::operator[](std::vector<Type>::size_type __n)       { return this->__begin_[__n]; } \
+template <> accelerator_inline typename std::vector<Type>::const_reference std::vector<Type>::operator[](std::vector<Type>::size_type __n) const { return this->__begin_[__n]; }
+
 #else
 #define accelerator 
 #define accelerator_inline strong_inline
@@ -95,4 +104,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
 #define cpu_loop( iterator, range, ... )				\
   thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
+
+#define NVCC_DECLARE_STD_VECTOR_ACCESSOR(Type) 
+#define NVCC_DECLARE_VECTOR_ACCESSOR(Type) 
+
 #endif
+
+NVCC_DECLARE_STD_VECTOR_ACCESSOR(int);
