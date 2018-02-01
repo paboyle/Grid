@@ -40,7 +40,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 NAMESPACE_BEGIN(Grid);
 
 // Dirac algebra adjoint operator (not in  to overload other adj)
-inline Gamma adj(const Gamma &g)
+accelerator_inline Gamma adj(const Gamma &g)
 {
   return Gamma (Gamma::adj[g.g]);
 }
@@ -48,14 +48,14 @@ inline Gamma adj(const Gamma &g)
 
 
 // Dirac algebra mutliplication operator
-inline Gamma operator*(const Gamma &g1, const Gamma &g2)
+accelerator_inline Gamma operator*(const Gamma &g1, const Gamma &g2)
 {
   return Gamma (Gamma::mul[g1.g][g2.g]);
 }
 
 // general left multiply
 template<class vtype> 
-inline auto operator*(const Gamma &G, const iScalar<vtype> &arg)
+accelerator_inline auto operator*(const Gamma &G, const iScalar<vtype> &arg)
   ->typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype>>::type 
 {
   iScalar<vtype> ret;
@@ -64,7 +64,7 @@ inline auto operator*(const Gamma &G, const iScalar<vtype> &arg)
 }
 
 template<class vtype,int N>
-inline auto operator*(const Gamma &G, const iVector<vtype, N> &arg)
+accelerator_inline auto operator*(const Gamma &G, const iVector<vtype, N> &arg)
   ->typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N>>::type 
 {
   iVector<vtype,N> ret;
@@ -75,7 +75,7 @@ inline auto operator*(const Gamma &G, const iVector<vtype, N> &arg)
 }
 
 template<class vtype, int N>
-inline auto operator*(const Gamma &G, const iMatrix<vtype, N> &arg) 
+accelerator_inline auto operator*(const Gamma &G, const iMatrix<vtype, N> &arg) 
   ->typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N>>::type 
 {
   iMatrix<vtype,N> ret;
@@ -88,7 +88,7 @@ inline auto operator*(const Gamma &G, const iMatrix<vtype, N> &arg)
 
 // general right multiply
 template<class vtype>
-inline auto operator*(const iScalar<vtype> &arg, const Gamma &G)
+accelerator_inline auto operator*(const iScalar<vtype> &arg, const Gamma &G)
   ->typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype>>::type 
 {
   iScalar<vtype> ret;
@@ -97,7 +97,7 @@ inline auto operator*(const iScalar<vtype> &arg, const Gamma &G)
 }
 
 template<class vtype, int N>
-inline auto operator * (const iMatrix<vtype, N> &arg, const Gamma &G) 
+accelerator_inline auto operator * (const iMatrix<vtype, N> &arg, const Gamma &G) 
   ->typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N>>::type 
 {
   iMatrix<vtype,N> ret;
@@ -122,7 +122,7 @@ public:
 
 // vector multiply
 template<class vtype> 
-inline auto operator*(const GammaL &gl, const iVector<vtype, Ns> &arg)
+accelerator_inline auto operator*(const GammaL &gl, const iVector<vtype, Ns> &arg)
   ->typename std::enable_if<matchGridTensorIndex<iVector<vtype, Ns>, SpinorIndex>::value, iVector<vtype, Ns>>::type
 {
   iVector<vtype, Ns> buf;
@@ -137,7 +137,7 @@ inline auto operator*(const GammaL &gl, const iVector<vtype, Ns> &arg)
 
 // matrix left multiply
 template<class vtype> 
-inline auto operator*(const GammaL &gl, const iMatrix<vtype, Ns> &arg)
+accelerator_inline auto operator*(const GammaL &gl, const iMatrix<vtype, Ns> &arg)
   ->typename std::enable_if<matchGridTensorIndex<iMatrix<vtype, Ns>, SpinorIndex>::value, iMatrix<vtype, Ns>>::type
 {
   iMatrix<vtype, Ns> buf;
@@ -155,7 +155,7 @@ inline auto operator*(const GammaL &gl, const iMatrix<vtype, Ns> &arg)
 
 // matrix right multiply
 template<class vtype> 
-inline auto operator*(const iMatrix<vtype, Ns> &arg, const GammaL &gl)
+accelerator_inline auto operator*(const iMatrix<vtype, Ns> &arg, const GammaL &gl)
   ->typename std::enable_if<matchGridTensorIndex<iMatrix<vtype, Ns>, SpinorIndex>::value, iMatrix<vtype, Ns>>::type
 {
   iMatrix<vtype, Ns> buf;
@@ -174,7 +174,7 @@ inline auto operator*(const iMatrix<vtype, Ns> &arg, const GammaL &gl)
 
 //general left multiply
 template<class vtype> 
-inline auto operator*(const GammaL &gl, const iScalar<vtype> &arg)
+accelerator_inline auto operator*(const GammaL &gl, const iScalar<vtype> &arg)
   ->typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype>>::type 
 {
   iScalar<vtype> ret;
@@ -183,7 +183,7 @@ inline auto operator*(const GammaL &gl, const iScalar<vtype> &arg)
 }
 
 template<class vtype,int N>
-inline auto operator*(const GammaL &gl, const iVector<vtype, N> &arg)
+accelerator_inline auto operator*(const GammaL &gl, const iVector<vtype, N> &arg)
   ->typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N>>::type 
 {
   iVector<vtype,N> ret;
@@ -194,7 +194,7 @@ inline auto operator*(const GammaL &gl, const iVector<vtype, N> &arg)
 }
 
 template<class vtype, int N>
-inline auto operator*(const GammaL &gl, const iMatrix<vtype, N> &arg) 
+accelerator_inline auto operator*(const GammaL &gl, const iMatrix<vtype, N> &arg) 
   ->typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N>>::type 
 {
   iMatrix<vtype,N> ret;
@@ -207,7 +207,7 @@ inline auto operator*(const GammaL &gl, const iMatrix<vtype, N> &arg)
 
 //general right multiply
 template<class vtype>
-inline auto operator*(const iScalar<vtype> &arg, const GammaL &gl)
+accelerator_inline auto operator*(const iScalar<vtype> &arg, const GammaL &gl)
   ->typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype>>::type 
 {
   iScalar<vtype> ret;
@@ -216,7 +216,7 @@ inline auto operator*(const iScalar<vtype> &arg, const GammaL &gl)
 }
 
 template<class vtype, int N>
-inline auto operator * (const iMatrix<vtype, N> &arg, const GammaL &gl) 
+accelerator_inline auto operator * (const iMatrix<vtype, N> &arg, const GammaL &gl) 
   ->typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N>>::type 
 {
   iMatrix<vtype,N> ret;
