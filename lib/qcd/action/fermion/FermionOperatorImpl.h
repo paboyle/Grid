@@ -203,24 +203,24 @@ public:
       
   bool overlapCommsCompute(void) { return Params.overlapCommsCompute; };
       
-  inline void multLink(SiteHalfSpinor &phi,
-		       const SiteDoubledGaugeField &U,
-		       const SiteHalfSpinor &chi,
-		       int mu,
-		       StencilEntry *SE,
-		       StencilImpl &St) {
+  accelerator_inline void multLink(SiteHalfSpinor &phi,
+				   const SiteDoubledGaugeField &U,
+				   const SiteHalfSpinor &chi,
+				   int mu,
+				   StencilEntry *SE,
+				   StencilImpl &St) {
     mult(&phi(), &U(mu), &chi());
   }
     
-  inline void multLinkProp(SitePropagator &phi,
-			   const SiteDoubledGaugeField &U,
-			   const SitePropagator &chi,
-			   int mu) {
+  accelerator_inline void multLinkProp(SitePropagator &phi,
+				       const SiteDoubledGaugeField &U,
+				       const SitePropagator &chi,
+				       int mu) {
     mult(&phi(), &U(mu), &chi());
   }
       
   template <class ref>
-  inline void loadLinkElement(Simd &reg, ref &memory) {
+  accelerator_inline void loadLinkElement(Simd &reg, ref &memory) {
     reg = memory;
   }
       
@@ -331,13 +331,13 @@ public:
   bool overlapCommsCompute(void) { return false; };
       
   template <class ref>
-  inline void loadLinkElement(Simd &reg, ref &memory) {
+  accelerator_inline void loadLinkElement(Simd &reg, ref &memory) {
     vsplat(reg, memory);
   }
 
-  inline void multLink(SiteHalfSpinor &phi, const SiteDoubledGaugeField &U,
-                       const SiteHalfSpinor &chi, int mu, StencilEntry *SE,
-                       StencilImpl &St) {
+  accelerator_inline void multLink(SiteHalfSpinor &phi, const SiteDoubledGaugeField &U,
+				   const SiteHalfSpinor &chi, int mu, StencilEntry *SE,
+				   StencilImpl &St) {
     SiteGaugeLink UU;
     for (int i = 0; i < Nrepresentation; i++) {
       for (int j = 0; j < Nrepresentation; j++) {
@@ -347,10 +347,10 @@ public:
     mult(&phi(), &UU(), &chi());
   }
 
-  inline void multLinkProp(SitePropagator &phi,
-                           const SiteDoubledGaugeField &U,
-                           const SitePropagator &chi,
-                           int mu) {
+  accelerator_inline void multLinkProp(SitePropagator &phi,
+				       const SiteDoubledGaugeField &U,
+				       const SitePropagator &chi,
+				       int mu) {
     SiteGaugeLink UU;
     for (int i = 0; i < Nrepresentation; i++) {
       for (int j = 0; j < Nrepresentation; j++) {
@@ -486,25 +486,27 @@ public:
 
   // provide the multiply by link that is differentiated between Gparity (with
   // flavour index) and non-Gparity
-  inline void multLink(SiteHalfSpinor &phi, const SiteDoubledGaugeField &U,
-		       const SiteHalfSpinor &chi, int mu, StencilEntry *SE,
-		       StencilImpl &St) {
+  accelerator_inline void multLink(SiteHalfSpinor &phi, const SiteDoubledGaugeField &U,
+				   const SiteHalfSpinor &chi, int mu, StencilEntry *SE,
+				   StencilImpl &St) {
 
     typedef SiteHalfSpinor vobj;
     typedef typename SiteHalfSpinor::scalar_object sobj;
+    typedef typename SiteHalfSpinor::vector_type   vector_type;
 	
     vobj vtmp;
     sobj stmp;
         
-    GridBase *grid = St.Grid();
         
-    const int Nsimd = grid->Nsimd();
+    const int Nsimd =vector_type::Nsimd();
+    //    const int Nsimd = grid->Nsimd();
         
+    GridBase *grid= St.Grid();
     int direction = St._directions[mu];
-    int distance = St._distances[mu];
-    int ptype = St._permute_type[mu];
-    int sl = St.Grid()->_simd_layout[direction];
-   
+    int distance  = St._distances[mu];
+    int ptype     = St._permute_type[mu];
+    int sl        = grid->_simd_layout[direction];
+    
     // Fixme X.Y.Z.T hardcode in stencil
     int mmu = mu % Nd;
         
@@ -556,14 +558,14 @@ public:
    
   }
   // Fixme: Gparity prop * link
-  inline void multLinkProp(SitePropagator &phi, const SiteDoubledGaugeField &U,
-			   const SitePropagator &chi, int mu)
+  accelerator_inline void multLinkProp(SitePropagator &phi, const SiteDoubledGaugeField &U,
+				       const SitePropagator &chi, int mu)
   {
     assert(0);
   }
 
   template <class ref>
-  inline void loadLinkElement(Simd &reg, ref &memory) {
+  accelerator_inline void loadLinkElement(Simd &reg, ref &memory) {
     reg = memory;
   }
 
@@ -695,13 +697,13 @@ public:
     
   StaggeredImpl(const ImplParams &p = ImplParams()) : Params(p){};
       
-  inline void multLink(SiteSpinor &phi,
+  accelerator_inline void multLink(SiteSpinor &phi,
 		       const SiteDoubledGaugeField &U,
 		       const SiteSpinor &chi,
 		       int mu){
     mult(&phi(), &U(mu), &chi());
   }
-  inline void multLinkAdd(SiteSpinor &phi,
+  accelerator_inline void multLinkAdd(SiteSpinor &phi,
 			  const SiteDoubledGaugeField &U,
 			  const SiteSpinor &chi,
 			  int mu){
@@ -709,7 +711,7 @@ public:
   }
       
   template <class ref>
-  inline void loadLinkElement(Simd &reg, ref &memory) {
+  accelerator_inline void loadLinkElement(Simd &reg, ref &memory) {
     reg = memory;
   }
       
@@ -832,12 +834,12 @@ public:
   StaggeredVec5dImpl(const ImplParams &p = ImplParams()) : Params(p){};
 
   template <class ref>
-  inline void loadLinkElement(Simd &reg, ref &memory) {
+  accelerator_inline void loadLinkElement(Simd &reg, ref &memory) {
     vsplat(reg, memory);
   }
 
-  inline void multLink(SiteHalfSpinor &phi, const SiteDoubledGaugeField &U,
-		       const SiteHalfSpinor &chi, int mu) {
+  accelerator_inline void multLink(SiteHalfSpinor &phi, const SiteDoubledGaugeField &U,
+				   const SiteHalfSpinor &chi, int mu) {
     SiteGaugeLink UU;
     for (int i = 0; i < Dimension; i++) {
       for (int j = 0; j < Dimension; j++) {
@@ -846,8 +848,8 @@ public:
     }
     mult(&phi(), &UU(), &chi());
   }
-  inline void multLinkAdd(SiteHalfSpinor &phi, const SiteDoubledGaugeField &U,
-			  const SiteHalfSpinor &chi, int mu) {
+  accelerator_inline void multLinkAdd(SiteHalfSpinor &phi, const SiteDoubledGaugeField &U,
+				      const SiteHalfSpinor &chi, int mu) {
     SiteGaugeLink UU;
     for (int i = 0; i < Dimension; i++) {
       for (int j = 0; j < Dimension; j++) {
