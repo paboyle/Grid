@@ -114,7 +114,7 @@ void TChargedProp::execute(void)
     auto   &G       = envGet(ScalarField, freeMomPropName_);
     auto   &fft     = envGet(FFT, fftName_);
     double q        = par().charge;
-    envGetTmp(ScalarField, buf); 
+    envGetTmp(ScalarField, buf);
 
     // -G*momD1*G*F*Src (momD1 = F*D1*Finv)
     propQ = GFSrc;
@@ -141,62 +141,52 @@ void TChargedProp::execute(void)
     // OUTPUT IF NECESSARY
     if (!par().output.empty())
     {
+        Result result;
+        TComplex            site;
+        std::vector<int>    siteCoor;
+
+        LOG(Message) << "Saving momentum-projected propagator to '"
+                     << RESULT_FILE_NAME(par().output) << "'..."
+                     << std::endl;
+        result.projection.resize(par().outputMom.size());
+        result.lattice_size = env().getGrid()->_fdimensions;
+        result.mass = par().mass;
+        result.charge = q;
+        siteCoor.resize(env().getNd());
         for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
         {
-            std::vector<int> mom = strToVec<int>(par().outputMom[i_p]);
-            std::string           filename = par().output + "_"
-                                             + std::to_string(mom[0])
-                                             + std::to_string(mom[1])
-                                             + std::to_string(mom[2]);
+            result.projection[i_p].momentum = strToVec<int>(par().outputMom[i_p]);
 
-            LOG(Message) << "Saving (" << par().outputMom[i_p]
-                         << ") momentum projection to '" << filename << "'..."
-                         << std::endl;
+            LOG(Message) << "Calculating (" << par().outputMom[i_p]
+                         << ") momentum projection" << std::endl;
 
-            std::vector<Complex> result, result0, resultQ, resultSun, resultTad;
-            result.resize(env().getGrid()->_fdimensions[env().getNd()-1]);
-            result0.resize(result.size());
-            resultQ.resize(result.size());
-            resultSun.resize(result.size());
-            resultTad.resize(result.size());
-
-            TComplex site;
-            std::vector<int>   whichmom;
-            whichmom.resize(env().getNd());
+            result.projection[i_p].corr_0.resize(env().getGrid()->_fdimensions[env().getNd()-1]);
+            result.projection[i_p].corr.resize(env().getGrid()->_fdimensions[env().getNd()-1]);
+            result.projection[i_p].corr_Q.resize(env().getGrid()->_fdimensions[env().getNd()-1]);
+            result.projection[i_p].corr_Sun.resize(env().getGrid()->_fdimensions[env().getNd()-1]);
+            result.projection[i_p].corr_Tad.resize(env().getGrid()->_fdimensions[env().getNd()-1]);
 
             for (unsigned int j = 0; j < env().getNd()-1; ++j)
             {
-                whichmom[j] = mom[j];
+                siteCoor[j] = result.projection[i_p].momentum[j];
             }
 
-            for (unsigned int t = 0; t < result.size(); ++t)
+            for (unsigned int t = 0; t < result.projection[i_p].corr.size(); ++t)
             {
-                whichmom[env().getNd()-1] = t;
-                // Write full propagator
-                peekSite(site, prop, whichmom);
-                result[t]=TensorRemove(site);
-                // Write free propagator
-                peekSite(site, buf, whichmom);
-                result0[t]=TensorRemove(site);
-                // Write propagator O(q) term
-                peekSite(site, propQ, whichmom);
-                resultQ[t]=TensorRemove(site);
-                // Write propagator sunset term
-                peekSite(site, propSun, whichmom);
-                resultSun[t]=TensorRemove(site);
-                // Write propagator tadpole term
-                peekSite(site, propTad, whichmom);
-                resultTad[t]=TensorRemove(site);
+                siteCoor[env().getNd()-1] = t;
+                peekSite(site, prop, siteCoor);
+                result.projection[i_p].corr[t]=TensorRemove(site);
+                peekSite(site, buf, siteCoor);
+                result.projection[i_p].corr_0[t]=TensorRemove(site);
+                peekSite(site, propQ, siteCoor);
+                result.projection[i_p].corr_Q[t]=TensorRemove(site);
+                peekSite(site, propSun, siteCoor);
+                result.projection[i_p].corr_Sun[t]=TensorRemove(site);
+                peekSite(site, propTad, siteCoor);
+                result.projection[i_p].corr_Tad[t]=TensorRemove(site);
             }
-            ResultWriter writer(RESULT_FILE_NAME(filename));
-			write(writer, "charge", q);
-			write(writer, "mass", par().mass);
-        	write(writer, "prop", result);
-        	write(writer, "prop_0", result0);
-        	write(writer, "prop_Q", resultQ);
-        	write(writer, "prop_Sun", resultSun);
-        	write(writer, "prop_Tad", resultTad);
         }
+        saveResult(par().output, "prop", result);
     }
 
     std::vector<int> mask(env().getNd(),1);
@@ -222,9 +212,8 @@ void TChargedProp::makeCaches(void)
     }
     if (!GFSrcDone_)
     {   
-        FFT  fft(env().getGrid());
         auto &source = envGet(ScalarField, par().source);
-
+        
         LOG(Message) << "Caching G*F*src..." << std::endl;
         fft.FFT_all_dim(GFSrc, source, FFT::forward);
         GFSrc = freeMomProp*GFSrc;

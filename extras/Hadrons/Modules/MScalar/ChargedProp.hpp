@@ -57,6 +57,26 @@ public:
     SCALAR_TYPE_ALIASES(SIMPL,);
     typedef PhotonR::GaugeField     EmField;
     typedef PhotonR::GaugeLinkField EmComp;
+    class Projection: Serializable
+    {
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Projection,
+                                        std::vector<int>,     momentum,
+                                        std::vector<Complex>, corr,
+                                        std::vector<Complex>, corr_0,
+                                        std::vector<Complex>, corr_Q,
+                                        std::vector<Complex>, corr_Sun,
+                                        std::vector<Complex>, corr_Tad);
+    };
+    class Result: Serializable
+    {
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
+                                        std::vector<int>,        lattice_size,
+                                        double,                  mass,
+                                        double,                  charge,
+                                        std::vector<Projection>, projection);
+    };
 public:
     // constructor
     TChargedProp(const std::string name);
