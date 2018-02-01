@@ -788,18 +788,18 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Calling Aggregation class to build subspaces" << std::endl;
   std::cout << GridLogMessage << "**************************************************" << std::endl;
 
-  MdagMLinearOperator<WilsonFermionR, LatticeFermion> FineHermOp(Dw);
+  MdagMLinearOperator<WilsonFermionR, LatticeFermion> FineHermPosdefOp(Dw);
   Subspace                                            FineAggregates(coarseGrids.Grids[0], FGrid, 0);
 
   assert((nbasis & 0x1) == 0);
   int nb = nbasis / 2;
   std::cout << GridLogMessage << " nbasis/2 = " << nb << std::endl;
 
-  FineAggregates.CreateSubspace(fPRNG, FineHermOp /*, nb */); // Don't specify nb to see the orthogonalization check
+  FineAggregates.CreateSubspace(fPRNG, FineHermPosdefOp /*, nb */); // Don't specify nb to see the orthogonalization check
 
   std::cout << GridLogMessage << "Test vector analysis after initial creation of MG test vectors" << std::endl;
   FineTVA fineTVA;
-  fineTVA(FineHermOp, FineAggregates.subspace, nb);
+  fineTVA(FineHermPosdefOp, FineAggregates.subspace, nb);
 
   for(int n = 0; n < nb; n++) {
     FineAggregates.subspace[n + nb] = g5 * FineAggregates.subspace[n];
@@ -824,7 +824,7 @@ int main(int argc, char **argv) {
   Dc.CoarsenOperator(FGrid, FineHermIndefOp, FineAggregates); // uses only linop.OpDiag & linop.OpDir
 
   std::cout << GridLogMessage << "Test vector analysis after construction of D_c" << std::endl;
-  fineTVA(FineHermOp, FineAggregates.subspace, nb);
+  fineTVA(FineHermPosdefOp, FineAggregates.subspace, nb);
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;
   std::cout << GridLogMessage << "Building coarse vectors" << std::endl;
@@ -839,7 +839,7 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Testing some coarse space solvers" << std::endl;
   std::cout << GridLogMessage << "**************************************************" << std::endl;
 
-  MdagMLinearOperator<CoarseOperator, CoarseVector> CoarsePosDefHermOp(Dc);
+  MdagMLinearOperator<CoarseOperator, CoarseVector> CoarseHermPosdefOp(Dc);
 
   std::vector<std::unique_ptr<OperatorFunction<CoarseVector>>> coarseSolvers;
   coarseSolvers.emplace_back(new GeneralisedMinimalResidual<CoarseVector>(5.0e-2, 100, 8, false));
@@ -848,21 +848,21 @@ int main(int argc, char **argv) {
 
   for(auto const &solver : coarseSolvers) {
     coarseResult = zero;
-    (*solver)(CoarsePosDefHermOp, coarseSource, coarseResult);
+    (*solver)(CoarseHermPosdefOp, coarseSource, coarseResult);
   }
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;
   std::cout << GridLogMessage << "Testing the operators" << std::endl;
   std::cout << GridLogMessage << "**************************************************" << std::endl;
 
-  std::cout << GridLogMessage << "MdagMLinearOperator<WilsonFermionR, LatticeFermion> FineHermOp(Dw);" << std::endl;
-  testOperator(FineHermOp, FGrid);
+  std::cout << GridLogMessage << "MdagMLinearOperator<WilsonFermionR, LatticeFermion> FineHermPosdefOp(Dw);" << std::endl;
+  testOperator(FineHermPosdefOp, FGrid);
   std::cout << GridLogMessage << "Gamma5HermitianLinearOperator<WilsonFermionR, LatticeFermion> FineHermIndefOp(Dw);" << std::endl;
   testOperator(FineHermIndefOp, FGrid);
   std::cout << GridLogMessage << "Gamma5HermitianLinearOperator<WilsonFermionR, LatticeFermion> FineHermIndefOpDD(DwDD);" << std::endl;
   testOperator(FineHermIndefOpDD, FGrid);
-  std::cout << GridLogMessage << "MdagMLinearOperator<CoarseOperator, CoarseVector> CoarsePosDefHermOp(Dc);" << std::endl;
-  testOperator(CoarsePosDefHermOp, coarseGrids.Grids[0]);
+  std::cout << GridLogMessage << "MdagMLinearOperator<CoarseOperator, CoarseVector> CoarseHermPosdefOp(Dc);" << std::endl;
+  testOperator(CoarseHermPosdefOp, coarseGrids.Grids[0]);
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;
   std::cout << GridLogMessage << "Building deflation preconditioner " << std::endl;
@@ -883,12 +883,12 @@ int main(int argc, char **argv) {
     std::cout << GridLogMessage << "**************************************************" << std::endl;
 
     SubSubSpace CoarseAggregates(coarseGrids.Grids[1], coarseGrids.Grids[0], 0);
-    CoarseAggregates.CreateSubspace(coarseGrids.PRNGs[0], CoarsePosDefHermOp);
+    CoarseAggregates.CreateSubspace(coarseGrids.PRNGs[0], CoarseHermPosdefOp);
 
     // // this doesn't work because this function applies g5 to a vector, which
     // // doesn't work for coarse vectors atm -> FIXME
     // CoarseTVA coarseTVA;
-    // coarseTVA(CoarsePosDefHermOp, CoarseAggregates.subspace, nb);
+    // coarseTVA(CoarseHermPosdefOp, CoarseAggregates.subspace, nb);
 
     // // cannot apply g5 to coarse vectors atm -> FIXME
     // for(int n=0;n<nb;n++){
@@ -906,19 +906,19 @@ int main(int argc, char **argv) {
     }
 
     CoarseCoarseOperator Dcc(*coarseGrids.Grids[1]);
-    Dcc.CoarsenOperator(coarseGrids.Grids[0], CoarsePosDefHermOp, CoarseAggregates); // uses only linop.OpDiag & linop.OpDir
+    Dcc.CoarsenOperator(coarseGrids.Grids[0], CoarseHermPosdefOp, CoarseAggregates); // uses only linop.OpDiag & linop.OpDir
 
     // // this doesn't work because this function applies g5 to a vector, which
     // // doesn't work for coarse vectors atm -> FIXME
     // std::cout << GridLogMessage << "Test vector analysis after construction of D_c_c" << std::endl;
-    // coarseTVA(CoarsePosDefHermOp, CoarseAggregates.subspace, nb);
+    // coarseTVA(CoarseHermPosdefOp, CoarseAggregates.subspace, nb);
 
     CoarseCoarseVector coarseCoarseSource(coarseGrids.Grids[1]);
     CoarseCoarseVector coarseCoarseResult(coarseGrids.Grids[1]);
     gaussian(coarseGrids.PRNGs[1], coarseCoarseSource);
     coarseCoarseResult = zero;
 
-    MdagMLinearOperator<CoarseCoarseOperator, CoarseCoarseVector> CoarseCoarsePosDefHermOp(Dcc);
+    MdagMLinearOperator<CoarseCoarseOperator, CoarseCoarseVector> CoarseCoarseHermPosdefOp(Dcc);
 
     std::vector<std::unique_ptr<OperatorFunction<CoarseCoarseVector>>> coarseCoarseSolvers;
     coarseSolvers.emplace_back(new GeneralisedMinimalResidual<CoarseCoarseVector>(5.0e-2, 100, 8, false));
@@ -927,10 +927,10 @@ int main(int argc, char **argv) {
 
     for(auto const &solver : coarseCoarseSolvers) {
       coarseCoarseResult = zero;
-      (*solver)(CoarseCoarsePosDefHermOp, coarseCoarseSource, coarseCoarseResult);
+      (*solver)(CoarseCoarseHermPosdefOp, coarseCoarseSource, coarseCoarseResult);
     }
 
-    CoarseMGPreconditioner CoarseMGPrecon(CoarseAggregates, Dcc, CoarsePosDefHermOp, Dc, CoarsePosDefHermOp, Dc);
+    CoarseMGPreconditioner      CoarseMGPrecon(CoarseAggregates, Dcc, CoarseHermPosdefOp, Dc, CoarseHermPosdefOp, Dc);
 
     CoarseMGPrecon.runChecks(coarseGrids, 1);
 
