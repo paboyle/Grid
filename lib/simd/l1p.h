@@ -1,7 +1,7 @@
 #pragma once
 NAMESPACE_BEGIN(Grid);
 // L1p optimisation 
-inline void bgq_l1p_optimisation(int mode)
+accelerator_inline void bgq_l1p_optimisation(int mode)
 {
 #ifdef QPX
 #undef L1P_CFG_PF_USR
