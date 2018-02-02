@@ -92,7 +92,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   g = F;								\
   direction = st._directions[DIR];				\
   distance = st._distances[DIR];				\
-  sl = st.Grid()->_simd_layout[direction];			\
+  sl = st._simd_layout[direction];			        \
   inplace_twist = 0;						\
   if(SE->_around_the_world && this->Params.twists[DIR % 4]){		\
     if(sl == 1){							\
