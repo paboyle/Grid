@@ -76,13 +76,19 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 // Accelerator primitives; fall back to threading
 //////////////////////////////////////////////////////////////////////////////////
 #ifdef GRID_NVCC
+#define accelerator_exec( ... )					\
+  auto lambda = [=] accelerator (void) {					\
+    __VA_ARGS__;						\
+  };								\
+  lambda();							
+
 #define accelerator __host__ __device__
 #define accelerator_inline __host__ __device__ inline
 // FIXME ; need to make this a CUDA kernel call
 #define accelerator_loop( iterator, range, ... )		\
   typedef decltype(range.begin()) Iterator;			\
-  auto lambda = [&] (Iterator iterator) {			\
-    __VA_ARGS__;							\
+  auto lambda = [=] accelerator (Iterator iterator) mutable {	\
+    __VA_ARGS__;						\
   };								\
   for(auto it=range.begin();it<range.end();it++){		\
     lambda(it);							\
