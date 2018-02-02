@@ -74,9 +74,6 @@ public:
   accelerator_inline uint64_t begin(void) const { return 0;};
   accelerator_inline uint64_t end(void)   const { return _odata_size; };
   accelerator_inline uint64_t size(void)   const { return _odata_size; };
-  accelerator_inline vobj & operator[](size_t i)             { return _odata[i]; };
-  accelerator_inline const vobj & operator[](size_t i) const { return _odata[i]; };
-
 };
     
 class LatticeExpressionBase {};
@@ -153,6 +150,8 @@ private:
     //    std::cout << " copied lattice "<<this->_odata<<" size "<<this->_odata_size<<std::endl;
   }
 public:
+  accelerator_inline vobj       & operator[](size_t i)       { return this->_odata[i]; };
+  accelerator_inline const vobj & operator[](size_t i) const { return this->_odata[i]; };
   ~Lattice() { 
     if ( this->_odata_size ) {
       //      std::cout << " deleting lattice this"<<this << " odata " <<this->_odata<<" size "<<this->_odata_size<<std::endl;
@@ -249,38 +248,23 @@ public:
     this->checkerboard=cb;
 
     resize(_grid->oSites());
-#ifdef STREAMING_STORES
-    accelerator_loop(ss,(*this),{
-      vstream(this->_odata[ss] ,eval(ss,expr));
-    });
-#else
-    accelerator_loop(ss,(*this),{
-      this->_odata[ss]=eval(ss,expr);
-    });
-#endif
+
+    *this = expr;
   }
   template<class Op,class T1, class T2>
   Lattice(const LatticeBinaryExpression<Op,T1,T2> & expr) {
     _grid = nullptr;
     GridFromExpression(_grid,expr);
     assert(_grid!=nullptr);
-    resize(_grid->oSites());
 
     int cb=-1;
     CBFromExpression(cb,expr);
     assert( (cb==Odd) || (cb==Even));
     this->checkerboard=cb;
-    
-#ifdef STREAMING_STORES
-    accelerator_loop(ss,(*this),{
-      vobj tmp = eval(ss,expr);
-      vstream(this->_odata[ss] ,tmp);
-    });
-#else
-    accelerator_loop(ss,(*this),{
-      this->_odata[ss]=eval(ss,expr);
-    });
-#endif
+
+    resize(_grid->oSites());
+
+    *this = expr;
   }
   template<class Op,class T1, class T2, class T3>
   Lattice(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr) {
@@ -294,21 +278,9 @@ public:
     this->checkerboard=cb;
 
     resize(_grid->oSites());
-    accelerator_loop(ss,(*this),{
-      vstream(this->_odata[ss] ,eval(ss,expr));
-    });
-  }
 
-  //  virtual ~Lattice(void) = default;
-  /*
-  void reset(GridBase* grid) {
-    if (_grid != grid) {
-      _grid = grid;
-      resize(grid->oSites());
-      this->checkerboard = 0;
-    }
+    *this = expr;
   }
-  */  
 
   template<class sobj> inline Lattice<vobj> & operator = (const sobj & r){
     accelerator_loop(ss,(*this),{
@@ -333,9 +305,7 @@ public:
     _grid = r.Grid();
     resize(r._odata_size);
     this->checkerboard = r.Checkerboard();
-    accelerator_loop(ss,(*this),{
-      this->_odata[ss]=r[ss];
-    });
+    *this = r;
   }
   Lattice(Lattice && r){ // move constructor
     //    std::cout << "Lattice move constructor(Lattice &) "<<this<<std::endl; 
