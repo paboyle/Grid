@@ -118,23 +118,6 @@ public:
     normalize(w);
   }
 
-/* Rudy Arthur's thesis pp.137
-------------------------
-Require: M > K P = M − K †
-Compute the factorization AVM = VM HM + fM eM 
-repeat
-  Q=I
-  for i = 1,...,P do
-    QiRi =HM −θiI Q = QQi
-    H M = Q †i H M Q i
-  end for
-  βK =HM(K+1,K) σK =Q(M,K)
-  r=vK+1βK +rσK
-  VK =VM(1:M)Q(1:M,1:K)
-  HK =HM(1:K,1:K)
-  →AVK =VKHK +fKe†K † Extend to an M = K + P step factorization AVM = VMHM + fMeM
-until convergence
-*/
   void calc(std::vector<RealD>& eval,  
             std::vector<Field>& evec, 
             const std::vector<Field>& src, int& Nconv)
@@ -197,10 +180,7 @@ until convergence
     int iter;
     for(iter = 0; iter<MaxIter; ++iter){
       
-      clog <<" **********************"<< std::endl;
-      clog <<" Restart iteration = "<< iter << std::endl;
-      clog <<" **********************"<< std::endl;
-      
+      clog <<"#Restart iteration = "<< iter << std::endl;
       // additional (Nblock_m - Nblock_k) steps
       for(int b=Nblock_k; b<Nblock_m; ++b) blockwiseStep(lmd,lme,evec,f,f_copy,b);
       
@@ -213,43 +193,64 @@ until convergence
       }
       Qt = Eigen::MatrixXcd::Identity(Nm,Nm);
       diagonalize(eval2,lmd2,lme2,Nu,Nm,Nm,Qt,grid);
-      
-      // sorting
       _sort.push(eval2,Nm);
-      
-      // Implicitly shifted QR transformations
-      Eigen::MatrixXcd BTDM = Eigen::MatrixXcd::Identity(Nm,Nm);
-      Q = Eigen::MatrixXcd::Identity(Nm,Nm);
-      
-      unpackHermitBlockTriDiagMatToEigen(lmd,lme,Nu,Nblock_m,Nm,Nm,BTDM);
-
-      for(int ip=Nk; ip<Nm; ++ip){ 
-        shiftedQRDecompEigen(BTDM,Nu,Nm,eval2[ip],Q);
+      clog << "#Ritz value before shift: "<< std::endl;
+      for(int i=0; i<Nm; ++i){
+        std::cout.precision(13);
+        std::cout << "[" << std::setw(4)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
+        std::cout << "Rval = "<<std::setw(20)<< std::setiosflags(std::ios_base::left)<< eval2[i] << std::endl;
       }
       
-      packHermitBlockTriDiagMatfromEigen(lmd,lme,Nu,Nblock_m,Nm,Nm,BTDM);
+      //----------------------------------------------------------------------
+      if ( Nm>Nk ) {
+        clog <<" #Apply shifted QR transformations "<<std::endl;
+        //int k2 = Nk+Nu;
+        int k2 = Nk;
       
-      //int k2 = Nk+Nu;
-      int k2 = Nk;
-      for(int i=0; i<k2; ++i) B[i] = 0.0;
-      for(int j=0; j<k2; ++j){
-	for(int k=0; k<Nm; ++k){
-	  B[j].checkerboard = evec[k].checkerboard;
-	  B[j] += evec[k]*Q(k,j);
-	}
-      }
-      for(int i=0; i<k2; ++i) evec[i] = B[i];
+        Eigen::MatrixXcd BTDM = Eigen::MatrixXcd::Identity(Nm,Nm);
+        Q = Eigen::MatrixXcd::Identity(Nm,Nm);
+        
+        unpackHermitBlockTriDiagMatToEigen(lmd,lme,Nu,Nblock_m,Nm,Nm,BTDM);
 
-      // Convergence test
-      for(int u=0; u<Nu; ++u){
-        for(int k=0; k<Nm; ++k){
-          lmd2[u][k] = lmd[u][k];
-          lme2[u][k] = lme[u][k];
+        for(int ip=Nk; ip<Nm; ++ip){ 
+          shiftedQRDecompEigen(BTDM,Nu,Nm,eval2[ip],Q);
+        }
+        
+        packHermitBlockTriDiagMatfromEigen(lmd,lme,Nu,Nblock_m,Nm,Nm,BTDM);
+
+        for(int i=0; i<k2; ++i) B[i] = 0.0;
+        for(int j=0; j<k2; ++j){
+          for(int k=0; k<Nm; ++k){
+            B[j].checkerboard = evec[k].checkerboard;
+            B[j] += evec[k]*Q(k,j);
+          }
+        }
+        for(int i=0; i<k2; ++i) evec[i] = B[i];
+
+        // reconstruct initial vector for additional pole space
+        blockwiseStep(lmd,lme,evec,f,f_copy,Nblock_k-1);
+
+        // getting eigenvalues
+        for(int u=0; u<Nu; ++u){
+          for(int k=0; k<Nm; ++k){
+            lmd2[u][k] = lmd[u][k];
+            lme2[u][k] = lme[u][k];
+          }
+        }
+        Qt = Eigen::MatrixXcd::Identity(Nm,Nm);
+        diagonalize(eval2,lmd2,lme2,Nu,Nk,Nm,Qt,grid);
+        _sort.push(eval2,Nk);
+        clog << "#Ritz value after shift: "<< std::endl;
+        for(int i=0; i<Nk; ++i){
+          std::cout.precision(13);
+          std::cout << "[" << std::setw(4)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
+          std::cout << "Rval = "<<std::setw(20)<< std::setiosflags(std::ios_base::left)<< eval2[i] << std::endl;
         }
       }
-      Qt = Eigen::MatrixXcd::Identity(Nm,Nm);
-      diagonalize(eval2,lmd2,lme2,Nu,Nk,Nm,Qt,grid);
-      
+      //----------------------------------------------------------------------
+
+      // Convergence test
+      clog <<" #Convergence test: "<<std::endl;
       for(int k = 0; k<Nk; ++k) B[k]=0.0;
       for(int j = 0; j<Nk; ++j){
 	for(int k = 0; k<Nk; ++k){
@@ -261,8 +262,7 @@ until convergence
       Nconv = 0;
       for(int i=0; i<Nk; ++i){
 	
-	_Linop.HermOp(B[i],v);
-	    
+        _Linop.HermOp(B[i],v);
 	RealD vnum = real(innerProduct(B[i],v)); // HermOp.
 	RealD vden = norm2(B[i]);
 	eval2[i] = vnum/vden;
@@ -271,9 +271,9 @@ until convergence
         resid[i] = vv;
 	
 	std::cout.precision(13);
-	clog << "[" << std::setw(3)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
-	std::cout << "eval = "<<std::setw(25)<< std::setiosflags(std::ios_base::left)<< eval2[i];
-	std::cout << " |H B[i] - eval[i]B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< vv<< std::endl;
+        std::cout << "[" << std::setw(4)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
+	std::cout << "eval = "<<std::setw(20)<< std::setiosflags(std::ios_base::left)<< eval2[i];
+	std::cout << "   resid^2 = "<< std::setw(20)<< std::setiosflags(std::ios_base::right)<< vv<< std::endl;
 	
 	// change the criteria as evals are supposed to be sorted, all evals smaller(larger) than Nstop should have converged
 	//if( (vv<eresid*eresid) && (i == Nconv) ){
@@ -285,71 +285,40 @@ until convergence
       }  // i-loop end
       
       clog <<" #modes converged: "<<Nconv<<std::endl;
-      
       for(int i=0; i<Nconv; ++i){
 	std::cout.precision(13);
-	clog << "[" << std::setw(3)<< std::setiosflags(std::ios_base::right) <<Iconv[i]<<"] ";
-	std::cout << "eval_conv = "<<std::setw(25)<< std::setiosflags(std::ios_base::left)<< eval2[Iconv[i]];
-	std::cout << " |H B[i] - eval_conv[i]B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< resid[Iconv[i]]<< std::endl;
+        std::cout << "[" << std::setw(4)<< std::setiosflags(std::ios_base::right) <<Iconv[i]<<"] ";
+	std::cout << "eval_conv = "<<std::setw(20)<< std::setiosflags(std::ios_base::left)<< eval2[Iconv[i]];
+	std::cout << "   resid^2 = "<< std::setw(20)<< std::setiosflags(std::ios_base::right)<< resid[Iconv[i]]<< std::endl;
       } 
 
-      if( Nconv>=Nstop ){
-	goto converged;
-      }
-      
-      if ( iter < MaxIter-1 ) {
-        if ( Nu == 1 ) {
-          // reconstruct initial vector for additional pole space
-          blockwiseStep(lmd,lme,evec,f,f_copy,Nblock_k-1);
-        }
-        else {
-          // update the first block
-          for (int i=0; i<Nu; ++i) {
-            //evec[i] = B[i];
-            orthogonalize(evec[i],evec,i);
-          }
-          // restart Nblock_k steps from the first block
-          for(int b=0; b<Nblock_k; ++b) blockwiseStep(lmd,lme,evec,f,f_copy,b);
-        }
-      }
+      if ( Nconv>=Nstop ) break;
 
     } // end of iter loop
     
-    clog <<"**************************************************************************"<< std::endl;
-    std::cout<< GridLogError    << fname + " NOT converged.";
-    clog <<"**************************************************************************"<< std::endl;
-    abort();
-	
-  converged:
-    // Sorting
-    eval.resize(Nconv);
-    evec.resize(Nconv,grid);
-    for(int i=0; i<Nconv; ++i){
-      eval[i] = eval2[Iconv[i]];
-      evec[i] = B[Iconv[i]];
+    clog << std::string(74,'*') << std::endl;
+    if ( Nconv<Nstop ) {
+      clog << fname + " NOT converged ; Summary :\n";
+    } else {
+      clog << fname + " CONVERGED ; Summary :\n";
+      // Sort convered eigenpairs.
+      eval.resize(Nconv);
+      evec.resize(Nconv,grid);
+      for(int i=0; i<Nconv; ++i){
+        eval[i] = eval2[Iconv[i]];
+        evec[i] = B[Iconv[i]];
+      }
+      _sort.push(eval,evec,Nconv);
     }
-    _sort.push(eval,evec,Nconv);
-    
-    clog <<"**************************************************************************"<< std::endl;
-    clog << fname + " CONVERGED ; Summary :\n";
-    clog <<"**************************************************************************"<< std::endl;
+    clog << std::string(74,'*') << std::endl;
     clog << " -- Iterations  = "<< iter   << "\n";
     //clog << " -- beta(k)     = "<< beta_k << "\n";
     clog << " -- Nconv       = "<< Nconv  << "\n";
-    clog <<"**************************************************************************"<< std::endl;
+    clog << std::string(74,'*') << std::endl;
+  
   }
 
 private:
-/* Saad PP. 195
-1. Choose an initial vector v1 of 2-norm unity. Set β1 ≡ 0, v0 ≡ 0
-2. For k = 1,2,...,m Do:
-3. wk:=Avk−βkv_{k−1}      
-4. αk:=(wk,vk)       // 
-5. wk:=wk−αkvk       // wk orthog vk 
-6. βk+1 := ∥wk∥2. If βk+1 = 0 then Stop
-7. vk+1 := wk/βk+1
-8. EndDo
- */
   void blockwiseStep(std::vector<std::vector<ComplexD>>& lmd,
 	             std::vector<std::vector<ComplexD>>& lme, 
 	             std::vector<Field>& evec,
