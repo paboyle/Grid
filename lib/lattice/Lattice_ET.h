@@ -42,7 +42,7 @@ NAMESPACE_BEGIN(Grid);
 // Predicated where support
 ////////////////////////////////////////////////////
 template <class iobj, class vobj, class robj>
-inline vobj predicatedWhere(const iobj &predicate, const vobj &iftrue,
+accelerator_inline vobj predicatedWhere(const iobj &predicate, const vobj &iftrue,
                             const robj &iffalse) {
   typename std::remove_const<vobj>::type ret;
 
