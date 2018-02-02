@@ -430,17 +430,18 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
       }
       
       // do the compute
+      int Opt = WilsonKernelsStatic::Opt;
       if (dag == DaggerYes) {
 	for (int ss = myblock; ss < myblock+myn; ++ss) {
 	  int sU = ss;
 	  int sF = LLs * sU;
-	  Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,1,0);
+	  Kernels::DhopSiteDag(Opt,st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,1,0);
 	}
       } else {
 	for (int ss = myblock; ss < myblock+myn; ++ss) {
 	  int sU = ss;
 	  int sF = LLs * sU;
-	  Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,1,0);
+	  Kernels::DhopSite(Opt,st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,1,0);
 	}
       }
       ptime = usecond() - start;
@@ -462,19 +463,21 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   DhopFaceTime+=usecond();
 
   DhopComputeTime2-=usecond();
+  int Opt = WilsonKernelsStatic::Opt;
   if (dag == DaggerYes) {
     int sz=st.surface_list.size();
+    int Opt = WilsonKernelsStatic::Opt;
     thread_loop( (int ss = 0; ss < sz; ss++) ,{
       int sU = st.surface_list[ss];
       int sF = LLs * sU;
-      Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
+      Kernels::DhopSiteDag(Opt,st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
     });
   } else {
     int sz=st.surface_list.size();
     thread_loop( (int ss = 0; ss < sz; ss++) ,{
       int sU = st.surface_list[ss];
       int sF = LLs * sU;
-      Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
+      Kernels::DhopSite(Opt,st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
     });
   }
   DhopComputeTime2+=usecond();
@@ -501,17 +504,18 @@ void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOr
   DhopComputeTime-=usecond();
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
 
+  int Opt = WilsonKernelsStatic::Opt;
   if (dag == DaggerYes) {
-    thread_loop( (int ss = 0; ss < U.Grid()->oSites(); ss++) ,{
+    accelerator_loop( ss, U, {
       int sU = ss;
       int sF = LLs * sU;
-      Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
+      Kernels::DhopSiteDag(Opt,st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
     });
   } else {
-    thread_loop( (int ss = 0; ss < U.Grid()->oSites(); ss++) ,{
+    accelerator_loop( ss, U , {
       int sU = ss;
       int sF = LLs * sU;
-      Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
+      Kernels::DhopSite(Opt,st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
     });
   }
   DhopComputeTime+=usecond();
