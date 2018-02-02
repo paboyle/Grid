@@ -60,7 +60,7 @@ namespace QCD{
     GRID_SERIALIZABLE_ENUM(Gauge, undef, feynman, 1, coulomb, 2, landau, 3);
     GRID_SERIALIZABLE_ENUM(ZmScheme, undef, qedL, 1, qedTL, 2);
   public:
-    Photon(Gauge gauge, ZmScheme zmScheme, Integer improvement);
+    Photon(Gauge gauge, ZmScheme zmScheme, std::vector<Real> improvements);
     virtual ~Photon(void) = default;
     void FreePropagator(const GaugeField &in, GaugeField &out);
     void MomentumSpacePropagator(const GaugeField &in, GaugeField &out);
@@ -75,14 +75,14 @@ namespace QCD{
   private:
     Gauge    gauge_;
     ZmScheme zmScheme_;
-    Integer  improvement_;
+    std::vector<Real>  improvement_;
   };
 
   typedef Photon<QedGimplR>  PhotonR;
   
   template<class Gimpl>
-  Photon<Gimpl>::Photon(Gauge gauge, ZmScheme zmScheme, Integer improvement)
-  : gauge_(gauge), zmScheme_(zmScheme), improvement_(improvement)
+  Photon<Gimpl>::Photon(Gauge gauge, ZmScheme zmScheme, std::vector<Real> improvements)
+  : gauge_(gauge), zmScheme_(zmScheme), improvement_(improvements)
   {}
   
   template<class Gimpl>
@@ -157,29 +157,11 @@ namespace QCD{
         out = where(spNrm == Integer(0), 0.*out, out);
 
         // IR improvement
-        switch (improvement_)
+        for(int i = 0; i < improvement_.size(); i++)
         {
-          case 0:
-            break;
-          case 1:
-          {
-            Real f1 = sqrt(2.48560548);
-            out = where(spNrm == Integer(1), f1*out, out);
-            break;
-          }
-          case 2:
-          {
-            Real f1 = sqrt(4.93053406);
-            Real f2 = sqrt(-1.44492857);
-            out = where(spNrm == Integer(1), f1*out, out);
-            out = where(spNrm == Integer(2), f2*out, out);
-            break;
-          }
-          default:
-            break;
+          Real f = sqrt(improvement_[i]+1);
+          out = where(spNrm == Integer(i+1), f*out, out);
         }
-        
-        break;
       }
       default:
         break;
