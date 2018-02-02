@@ -145,13 +145,15 @@ protected:
   GridBase *                        _grid;
 public: 
   GridBase *Grid(void) const { return _grid; }
-  // npoints of these
+  // npoints of these; make it a template param and std::array
   std::vector<int>                  _directions;
   std::vector<int>                  _distances;
   std::vector<int>                  _comm_buf_size;
   std::vector<int>                  _permute_type;
+  std::vector<int>                  _simd_layout;
   
-  Vector<StencilEntry>  _entries;
+  Vector<StencilEntry>  _entries; // Resident in managed memory
+  StencilEntry*  _entries_p;
   std::vector<Packet> Packets;
   std::vector<Merge> Mergers;
   std::vector<Merge> MergersSHM;
@@ -227,30 +229,30 @@ public:
 
     return 1;
   }
-  inline int GetNodeLocal(int osite,int point) { 
-    return _entries[point+_npoints*osite]._is_local;
+  accelerator_inline int GetNodeLocal(int osite,int point) { 
+    return _entries_p[point+_npoints*osite]._is_local;
   }
-  inline StencilEntry * GetEntry(int &ptype,int point,int osite) { 
-    ptype = _permute_type[point]; return & _entries[point+_npoints*osite]; 
+  accelerator_inline StencilEntry * GetEntry(int &ptype,int point,int osite) { 
+    ptype = _permute_type[point]; return & _entries_p[point+_npoints*osite]; 
   }
 
-  inline uint64_t GetInfo(int &ptype,int &local,int &perm,int point,int ent,uint64_t base) {
+  accelerator_inline uint64_t GetInfo(int &ptype,int &local,int &perm,int point,int ent,uint64_t base) {
     uint64_t cbase = (uint64_t)&u_recv_buf_p[0];
-    local = _entries[ent]._is_local;
-    perm  = _entries[ent]._permute;
+    local = _entries_p[ent]._is_local;
+    perm  = _entries_p[ent]._permute;
     if (perm)  ptype = _permute_type[point]; 
     if (local) {
-      return  base + _entries[ent]._byte_offset;
+      return  base + _entries_p[ent]._byte_offset;
     } else {
-      return cbase + _entries[ent]._byte_offset;
+      return cbase + _entries_p[ent]._byte_offset;
     }
   }
 
-  inline uint64_t GetPFInfo(int ent,uint64_t base) {
+  accelerator_inline uint64_t GetPFInfo(int ent,uint64_t base) {
     uint64_t cbase = (uint64_t)&u_recv_buf_p[0];
-    int local = _entries[ent]._is_local;
-    if (local) return  base + _entries[ent]._byte_offset;
-    else       return cbase + _entries[ent]._byte_offset;
+    int local = _entries_p[ent]._is_local;
+    if (local) return  base + _entries_p[ent]._byte_offset;
+    else       return cbase + _entries_p[ent]._byte_offset;
   }
 
   //////////////////////////////////////////
@@ -550,10 +552,12 @@ public:
     _directions = directions;
     _distances  = distances;
     _unified_buffer_size=0;
+    _simd_layout = _grid->_simd_layout; // copy simd_layout to give access to Accelerator Kernels
 
     int osites  = _grid->oSites();
     
     _entries.resize(_npoints* osites);
+    _entries_p = &_entries[0];
     for(int ii=0;ii<npoints;ii++){
       
       int i = ii; // reverse direction to get SIMD comms done first
