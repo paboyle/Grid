@@ -332,13 +332,14 @@ void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
   Compressor compressor(dag);
   st.HaloExchange(in, compressor);
 
+  int Opt = WilsonKernelsStatic::Opt;
   if (dag == DaggerYes) {
     thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++) ,{
-      Kernels::DhopSiteDag(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
+      Kernels::DhopSiteDag(Opt,st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
     });
   } else {
     thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++) ,{
-      Kernels::DhopSite(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
+      Kernels::DhopSite(Opt,st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
     });
   }
 };
