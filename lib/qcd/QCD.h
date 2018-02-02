@@ -60,9 +60,9 @@ static constexpr int Ngp=2; // gparity index range
 // note: static constexpr int or constexpr will work for type deductions
 //       with the intel compiler (up to version 17)
 //////////////////////////////////////////////////////////////////////////////
-static constexpr int ColourIndex = 2;
-static constexpr int SpinIndex   = 1;
-static constexpr int LorentzIndex= 0;
+#define ColourIndex  (2)
+#define SpinIndex    (1)
+#define LorentzIndex (0)
 
 // Also should make these a named enum type
 static constexpr int DaggerNo=0;
