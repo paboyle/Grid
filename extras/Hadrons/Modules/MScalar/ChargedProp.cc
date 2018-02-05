@@ -240,6 +240,14 @@ void TChargedProp::makeCaches(void)
             phase_.push_back(&phmu);
         }
     }
+    else
+    {
+        phase_.clear();
+        for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+        {
+            phase_.push_back(env().getObject<ScalarField>(phaseName_[mu]));
+        }
+    }
 }
 
 void TChargedProp::momD1(ScalarField &s, FFT &fft)
