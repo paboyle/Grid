@@ -73,7 +73,7 @@ void CayleyFermion5D<Impl>::DminusDag(const FermionField &psi, FermionField &chi
   this->DW(psi,tmp_f,DaggerYes);
 
   for(int s=0;s<Ls;s++){
-    axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],tmp_f,s,s);// chi = (1-c[s] D_W) psi
+    axpby_ssp(chi,Coeff_t(1.0),psi,conjugate(-cs[s]),tmp_f,s,s);// chi = (1-c[s] D_W)^\dagger psi (fixed) --dsh
   }
 }
 
