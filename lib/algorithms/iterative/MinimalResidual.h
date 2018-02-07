@@ -72,7 +72,7 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
 
     RealD cp = norm2(r); //  Cp = |r[0]|^2 // 2 Nc Ns  flops // flopcount.addSiteFlops(4*Nc*Ns, s);
 
-    std::cout << std::setprecision(4) << std::scientific << std::endl;
+    std::cout << std::setprecision(4) << std::scientific;
     std::cout << GridLogIterative << "MinimalResidual: guess " << guess << std::endl;
     std::cout << GridLogIterative << "MinimalResidual:   src " << ssq << std::endl;
     std::cout << GridLogIterative << "MinimalResidual:    mp " << d << std::endl;

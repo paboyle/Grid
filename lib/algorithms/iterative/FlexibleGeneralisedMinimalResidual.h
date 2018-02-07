@@ -89,7 +89,7 @@ class FlexibleGeneralisedMinimalResidual : public OperatorFunction<Field> {
 
     Field r(src._grid);
 
-    std::cout << std::setprecision(4) << std::scientific << std::endl;
+    std::cout << std::setprecision(4) << std::scientific;
     std::cout << GridLogIterative << "FlexibleGeneralisedMinimalResidual: guess " << guess << std::endl;
     std::cout << GridLogIterative << "FlexibleGeneralisedMinimalResidual:   src " << ssq   << std::endl;
 

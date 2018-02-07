@@ -89,7 +89,7 @@ class FlexibleCommunicationAvoidingGeneralisedMinimalResidual : public OperatorF
 
     Field r(src._grid);
 
-    std::cout << std::setprecision(4) << std::scientific << std::endl;
+    std::cout << std::setprecision(4) << std::scientific;
     std::cout << GridLogIterative << "FlexibleCommunicationAvoidingGeneralisedMinimalResidual: guess " << guess << std::endl;
     std::cout << GridLogIterative << "FlexibleCommunicationAvoidingGeneralisedMinimalResidual:   src " << ssq   << std::endl;
 

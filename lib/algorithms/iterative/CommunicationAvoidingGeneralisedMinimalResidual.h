@@ -84,7 +84,7 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
 
     Field r(src._grid);
 
-    std::cout << std::setprecision(4) << std::scientific << std::endl;
+    std::cout << std::setprecision(4) << std::scientific;
     std::cout << GridLogIterative << "CommunicationAvoidingGeneralisedMinimalResidual: guess " << guess << std::endl;
     std::cout << GridLogIterative << "CommunicationAvoidingGeneralisedMinimalResidual:   src " << ssq   << std::endl;
 
