@@ -79,7 +79,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define ZEND2f(Criir,Ciirr, tmp)  "vshufps $0xb1," #Ciirr "," #Ciirr "," #tmp   ";\n"\
                                   "vsubps  " #tmp "," #Ciirr "," #Criir"{%k7}"  ";\n"
 
-#define ZEND1d(Criir,Ciirr, tmp)  "vshufpd $0x55," #Criir "," #Criir "," #tmp  ";\n"\ 
+#define ZEND1d(Criir,Ciirr, tmp)  "vshufpd $0x55," #Criir "," #Criir "," #tmp  ";\n"\
                                   "vaddps  " #tmp "," #Criir "," #Criir"{%k6}"  ";\n"
 
 #define ZEND2d(Criir,Ciirr, tmp)  "vshufpd $0x55," #Ciirr "," #Ciirr "," #tmp   ";\n"\

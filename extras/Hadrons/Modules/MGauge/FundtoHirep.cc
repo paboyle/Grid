@@ -57,7 +57,7 @@ std::vector<std::string> TFundtoHirep<Rep>::getOutput(void)
 template <typename Rep>
 void TFundtoHirep<Rep>::setup(void)
 {
-    env().template registerLattice<typename Rep::LatticeField>(getName());
+    envCreateLat(typename Rep::LatticeField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -70,6 +70,6 @@ void TFundtoHirep<Rep>::execute(void)
     Rep TargetRepresentation(U._grid);
     TargetRepresentation.update_representation(U);
 
-   typename Rep::LatticeField &URep = *env().template createLattice<typename Rep::LatticeField>(getName());
+    auto &URep = envGet(typename Rep::LatticeField, getName());
     URep = TargetRepresentation.U;
 }
