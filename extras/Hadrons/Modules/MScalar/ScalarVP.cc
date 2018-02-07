@@ -236,22 +236,38 @@ void TScalarVP::execute(void)
         vpTensor.push_back(vpTensor_mu);
     }
 
-    // Open output files if necessary
-    std::vector<ResultWriter *> writer;
+    // Prepare output data structure if necessary
+    Result outputData;
     if (!par().output.empty())
     {
-        LOG(Message) << "Preparing output files..." << std::endl;
+        outputData.projection.resize(par().outputMom.size());
+        outputData.lattice_size = env().getGrid()->_fdimensions;
+        outputData.mass = static_cast<TChargedProp *>(vm().getModule(par().scalarProp))->par().mass;
+        outputData.charge = q;
         for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
         {
-            std::vector<int> mom = strToVec<int>(par().outputMom[i_p]);
-            std::string filename = par().output + "_"
-                                   + std::to_string(mom[0])
-                                   + std::to_string(mom[1])
-                                   + std::to_string(mom[2]);
-            ResultWriter *writer_i = new ResultWriter(RESULT_FILE_NAME(filename));
-            writer.push_back(writer_i);
-            write(*writer_i, "charge", q);
-            write(*writer_i, "mass", static_cast<TChargedProp *>(vm().getModule(par().scalarProp))->par().mass);
+            outputData.projection[i_p].momentum = strToVec<int>(par().outputMom[i_p]);
+            outputData.projection[i_p].pi.resize(env().getNd());
+            outputData.projection[i_p].pi_free.resize(env().getNd());
+            outputData.projection[i_p].pi_2E.resize(env().getNd());
+            outputData.projection[i_p].pi_2T.resize(env().getNd());
+            outputData.projection[i_p].pi_S.resize(env().getNd());
+            outputData.projection[i_p].pi_4C.resize(env().getNd());
+            outputData.projection[i_p].pi_X.resize(env().getNd());
+            outputData.projection[i_p].pi_srcT.resize(env().getNd());
+            outputData.projection[i_p].pi_snkT.resize(env().getNd());
+            for (unsigned int nu = 0; nu < env().getNd(); ++nu)
+            {
+                outputData.projection[i_p].pi[nu].resize(env().getNd());
+                outputData.projection[i_p].pi_free[nu].resize(env().getNd());
+                outputData.projection[i_p].pi_2E[nu].resize(env().getNd());
+                outputData.projection[i_p].pi_2T[nu].resize(env().getNd());
+                outputData.projection[i_p].pi_S[nu].resize(env().getNd());
+                outputData.projection[i_p].pi_4C[nu].resize(env().getNd());
+                outputData.projection[i_p].pi_X[nu].resize(env().getNd());
+                outputData.projection[i_p].pi_srcT[nu].resize(env().getNd());
+                outputData.projection[i_p].pi_snkT[nu].resize(env().getNd());
+            }
         }
     }
 
@@ -272,33 +288,42 @@ void TScalarVP::execute(void)
             Usrc    = Complex(1.0,0.0);
             vpContraction(result, prop0, tmpProp, Usrc, mu);
             *vpTensor[mu][nu] = result;
-            // Output if necessary
+            // Do momentum projections if necessary
             if (!par().output.empty())
             {
-                writeVP(writer, result,
-                        "Pi_free_"+std::to_string(mu)+"_"+std::to_string(nu));
+                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+                {
+                    project(outputData.projection[i_p].pi_free[mu][nu], result,
+                            i_p);
+                }
             }
             tmpProp = result; // Just using tmpProp as a temporary ScalarField
                               // here (buf is modified by calls to writeVP())
 
             // srcT
-            result = tmpProp * (-0.5)*q*q*Anu0*Anu0;
-            *vpTensor[mu][nu] += result;
-            // Output if necessary
+            result = tmpProp * (-0.5)*Anu0*Anu0;
+            *vpTensor[mu][nu] += q*q*result;
+            // Do momentum projections if necessary
             if (!par().output.empty())
             {
-                writeVP(writer, result,
-                        "Pi_srcT_"+std::to_string(mu)+"_"+std::to_string(nu));
+                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+                {
+                    project(outputData.projection[i_p].pi_srcT[mu][nu], result,
+                            i_p);
+                }
             }
 
             // snkT
-            result = tmpProp * (-0.5)*q*q*Amu*Amu;
-            *vpTensor[mu][nu] += result;
-            // Output if necessary
+            result = tmpProp * (-0.5)*Amu*Amu;
+            *vpTensor[mu][nu] += q*q*result;
+            // Do momentum projections if necessary
             if (!par().output.empty())
             {
-                writeVP(writer, result,
-                        "Pi_snkT_"+std::to_string(mu)+"_"+std::to_string(nu));
+                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+                {
+                    project(outputData.projection[i_p].pi_snkT[mu][nu], result,
+                            i_p);
+                }
             }
 
             // S
@@ -306,13 +331,15 @@ void TScalarVP::execute(void)
             Usrc    = ci*Anu0;
             Usnk    = ci*Amu;
             vpContraction(result, prop0, tmpProp, Usrc, Usnk, mu);
-            result = q*q*result;
-            *vpTensor[mu][nu] += result;
-            // Output if necessary
+            *vpTensor[mu][nu] += q*q*result;
+            // Do momentum projections if necessary
             if (!par().output.empty())
             {
-                writeVP(writer, result,
-                        "Pi_S_"+std::to_string(mu)+"_"+std::to_string(nu));
+                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+                {
+                    project(outputData.projection[i_p].pi_S[mu][nu], result,
+                            i_p);
+                }
             }
 
             // 4C
@@ -329,25 +356,29 @@ void TScalarVP::execute(void)
             Usnk = ci*Amu;
             vpContraction(buf, prop0, *muPropQ[nu], Usrc, Usnk, mu);
             result += buf;
-            result = q*q*result;
-            *vpTensor[mu][nu] += result;
-            // Output if necessary
+            *vpTensor[mu][nu] += q*q*result;
+            // Do momentum projections if necessary
             if (!par().output.empty())
             {
-                writeVP(writer, result,
-                        "Pi_4C_"+std::to_string(mu)+"_"+std::to_string(nu));
+                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+                {
+                    project(outputData.projection[i_p].pi_4C[mu][nu], result,
+                            i_p);
+                }
             }
 
             // X
             Usrc = Complex(1.0,0.0);
             vpContraction(result, propQ, *muPropQ[nu], Usrc, mu);
-            result = q*q*result;
-            *vpTensor[mu][nu] += result;
-            // Output if necessary
+            *vpTensor[mu][nu] += q*q*result;
+            // Do momentum projections if necessary
             if (!par().output.empty())
             {
-                writeVP(writer, result,
-                        "Pi_X_"+std::to_string(mu)+"_"+std::to_string(nu));
+                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+                {
+                    project(outputData.projection[i_p].pi_X[mu][nu], result,
+                            i_p);
+                }
             }
 
             // 2E
@@ -358,13 +389,15 @@ void TScalarVP::execute(void)
                                //(Note: <S(0|x-a\hat{\nu})> = <S(a\hat{\nu}|x)>)
             vpContraction(buf, prop0, tmpProp, Usrc, mu);
             result += buf;
-            result = q*q*result;
-            *vpTensor[mu][nu] += result;
-            // Output if necessary
+            *vpTensor[mu][nu] += q*q*result;
+            // Do momentum projections if necessary
             if (!par().output.empty())
             {
-                writeVP(writer, result,
-                        "Pi_2E_"+std::to_string(mu)+"_"+std::to_string(nu));
+                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+                {
+                    project(outputData.projection[i_p].pi_2E[mu][nu], result,
+                            i_p);
+                }
             }
 
             // 2T
@@ -374,29 +407,36 @@ void TScalarVP::execute(void)
             tmpProp = Cshift(propTad, nu, -1);     // S_T(0|x-a\hat{\nu})
             vpContraction(buf, prop0, tmpProp, Usrc, mu);
             result += buf;
-            result = q*q*result;
-            *vpTensor[mu][nu] += result;
-            // Output if necessary
+            *vpTensor[mu][nu] += q*q*result;
+            // Do momentum projections if necessary
             if (!par().output.empty())
             {
-                writeVP(writer, result,
-                        "Pi_2T_"+std::to_string(mu)+"_"+std::to_string(nu));
+                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+                {
+                    project(outputData.projection[i_p].pi_2T[mu][nu], result,
+                            i_p);
+                }
             }
 
-            // Output full VP if necessary
+            // Do momentum projections of full VP if necessary
             if (!par().output.empty())
             {
-                writeVP(writer, *vpTensor[mu][nu],
-                        "Pi_"+std::to_string(mu)+"_"+std::to_string(nu));
+                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+                {
+                    project(outputData.projection[i_p].pi[mu][nu],
+                            *vpTensor[mu][nu], i_p);
+                }
             }
         }
     }
+
+    // OUTPUT IF NECESSARY
     if (!par().output.empty())
     {
-        for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
-        {
-            delete writer[i_p];
-        }
+        LOG(Message) << "Saving momentum-projected HVP to '"
+                     << RESULT_FILE_NAME(par().output) << "'..."
+                     << std::endl;
+        saveResult(par().output, "HVP", outputData);
     }
 }
 
@@ -450,22 +490,17 @@ void TScalarVP::vpContraction(ScalarField &vp,
     vp = 2.0*real(vp);
 }
 
-void TScalarVP::writeVP(std::vector<ResultWriter *> &writer, const ScalarField &vp, std::string dsetName)
+void TScalarVP::project(std::vector<Complex> &projection, const ScalarField &vp, int i_p)
 {
     std::vector<TComplex>   vecBuf;
-    std::vector<Complex>    result;
     envGetTmp(ScalarField, buf);
 
-    for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+    buf = vp*(*momPhase_[i_p]);
+    sliceSum(buf, vecBuf, Tp);
+    projection.resize(vecBuf.size());
+    for (unsigned int t = 0; t < vecBuf.size(); ++t)
     {
-        buf = vp*(*momPhase_[i_p]);
-        sliceSum(buf, vecBuf, Tp);
-        result.resize(vecBuf.size());
-        for (unsigned int t = 0; t < vecBuf.size(); ++t)
-        {
-            result[t] = TensorRemove(vecBuf[t]);
-        }
-        write(*writer[i_p], dsetName, result);
+        projection[t] = TensorRemove(vecBuf[t]);
     }
 }
 

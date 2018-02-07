@@ -28,6 +28,30 @@ public:
     SCALAR_TYPE_ALIASES(SIMPL,);
     typedef PhotonR::GaugeField     EmField;
     typedef PhotonR::GaugeLinkField EmComp;
+    class Result: Serializable
+    {
+    public:
+        class Projection: Serializable
+        {
+        public:
+            GRID_SERIALIZABLE_CLASS_MEMBERS(Projection,
+                                            std::vector<int>,     momentum,
+                                            std::vector<std::vector<std::vector<Complex>>>, pi,
+                                            std::vector<std::vector<std::vector<Complex>>>, pi_free,
+                                            std::vector<std::vector<std::vector<Complex>>>, pi_2E,
+                                            std::vector<std::vector<std::vector<Complex>>>, pi_2T,
+                                            std::vector<std::vector<std::vector<Complex>>>, pi_S,
+                                            std::vector<std::vector<std::vector<Complex>>>, pi_4C,
+                                            std::vector<std::vector<std::vector<Complex>>>, pi_X,
+                                            std::vector<std::vector<std::vector<Complex>>>, pi_srcT,
+                                            std::vector<std::vector<std::vector<Complex>>>, pi_snkT);
+        };
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
+                                        std::vector<int>,        lattice_size,
+                                        double,                  mass,
+                                        double,                  charge,
+                                        std::vector<Projection>, projection);
+    };
 public:
     // constructor
     TScalarVP(const std::string name);
@@ -52,8 +76,8 @@ private:
                        ScalarField &prop_0_x, ScalarField &prop_nu_x,
                        TComplex u_src, int mu);
     // write momentum-projected vacuum polarisation to file(s)
-    void writeVP(std::vector<ResultWriter *> &writer, const ScalarField &vp,
-                 std::string dsetName);
+    void project(std::vector<Complex> &projection, const ScalarField &vp,
+                 int i_p);
     // momentum-space Delta_1 insertion
     void momD1(ScalarField &s, FFT &fft);
 private:
@@ -65,10 +89,7 @@ private:
     std::vector<std::string>                    phaseName_, muPropQName_,
                                                 momPhaseName_;
     std::vector<std::vector<std::string> >      vpTensorName_;
-    // ScalarField                                 *freeMomProp_, *GFSrc_,
-    //                                             *prop0_;
     std::vector<ScalarField *>                  phase_, momPhase_;
-    // EmField                                     *A;
 };
 
 MODULE_REGISTER_NS(ScalarVP, TScalarVP, MScalar);
