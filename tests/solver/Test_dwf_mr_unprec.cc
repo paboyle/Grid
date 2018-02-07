@@ -61,7 +61,7 @@ int main (int argc, char ** argv)
   DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
   MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
-  MinimalResidual<LatticeFermion> MR(1.0e-6,10000);
+  MinimalResidual<LatticeFermion> MR(1.0e-6,10000,0.8);
   MR(HermOp,src,result);
 
   Grid_finalize();

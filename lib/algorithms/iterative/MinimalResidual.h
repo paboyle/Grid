@@ -42,11 +42,12 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
                           // Defaults true.
   RealD   Tolerance;
   Integer MaxIterations;
+  RealD   overRelaxParam;
   Integer IterationsToComplete; // Number of iterations the MR took to finish.
                                 // Filled in upon completion
 
-  MinimalResidual(RealD tol, Integer maxit, bool err_on_no_conv = true)
-    : Tolerance(tol), MaxIterations(maxit), ErrorOnNoConverge(err_on_no_conv){};
+  MinimalResidual(RealD tol, Integer maxit, Real ovrelparam = 1.0, bool err_on_no_conv = true)
+    : Tolerance(tol), MaxIterations(maxit), overRelaxParam(ovrelparam), ErrorOnNoConverge(err_on_no_conv){};
 
   void operator()(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi) {
 
@@ -104,7 +105,7 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
 
       a = c / d;
 
-      // a = a * MRovpar; //  a[k-1] *= MRovpar // from chroma code. TODO: check what to do with this
+      a = a * overRelaxParam; //  a[k-1] *= MRovpar
 
       psi = psi + r * a; //  Psi[k] += a[k-1] r[k-1] ; // flopcount.addSiteFlops(4*Nc*Ns,s);
 

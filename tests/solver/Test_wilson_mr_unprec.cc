@@ -58,7 +58,7 @@ int main (int argc, char ** argv)
   WilsonFermionR Dw(Umu,Grid,RBGrid,mass);
 
   MdagMLinearOperator<WilsonFermionR,LatticeFermion> HermOp(Dw);
-  MinimalResidual<LatticeFermion> MR(1.0e-8,10000);
+  MinimalResidual<LatticeFermion> MR(1.0e-8,10000,0.8);
   MR(HermOp,src,result);
 
   Grid_finalize();

@@ -62,7 +62,7 @@ int main (int argc, char ** argv)
   ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass);
 
   MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> HermOp(Ds);
-  MinimalResidual<FermionField> MR(1.0e-6,10000);
+  MinimalResidual<FermionField> MR(1.0e-6,10000,0.8);
   MR(HermOp,src,result);
 
   Grid_finalize();
