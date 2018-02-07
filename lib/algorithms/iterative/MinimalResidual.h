@@ -31,11 +31,6 @@ directory
 
 namespace Grid {
 
-/////////////////////////////////////////////////////////////
-// Base classes for iterative processes based on operators
-// single input vec, single output vec.
-/////////////////////////////////////////////////////////////
-
 template<class Field> class MinimalResidual : public OperatorFunction<Field> {
  public:
   bool ErrorOnNoConverge; // throw an assert when the MR fails to converge.
@@ -64,14 +59,14 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
     RealD guess = norm2(psi);
     assert(std::isnan(guess) == 0);
 
-    RealD ssq = norm2(src); // flopcount.addSiteFlops(4*Nc*Ns,s);
-    RealD rsq = Tolerance * Tolerance * ssq; // flopcount.addSiteFlops(4*Nc*Ns,s);
+    RealD ssq = norm2(src);
+    RealD rsq = Tolerance * Tolerance * ssq;
 
-    Linop.Op(psi, Mr); // flopcount.addFlops(M.nFlops());
+    Linop.Op(psi, Mr);
 
-    r = src - Mr; // flopcount.addSiteFlops(2*Nc*Ns,s);
+    r = src - Mr;
 
-    RealD cp = norm2(r); //  Cp = |r[0]|^2 // 2 Nc Ns  flops // flopcount.addSiteFlops(4*Nc*Ns, s);
+    RealD cp = norm2(r);
 
     std::cout << std::setprecision(4) << std::scientific;
     std::cout << GridLogIterative << "MinimalResidual: guess " << guess << std::endl;
@@ -91,27 +86,27 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
 
     SolverTimer.Start();
     int k;
-    for (k = 1; k <= MaxIterations; k++) { //  a[k-1] := < M.r[k-1], r[k-1] >/ < M.r[k-1], M.r[k-1] >
+    for (k = 1; k <= MaxIterations; k++) {
 
       MatrixTimer.Start();
-      Linop.Op(r, Mr); //  Mr = M * r // flopcount.addFlops(M.nFlops());
+      Linop.Op(r, Mr);
       MatrixTimer.Stop();
 
       LinalgTimer.Start();
 
-      c = innerProduct(Mr, r); //  c = < M.r, r > // // flopcount.addSiteFlops(4*Nc*Ns,s);
+      c = innerProduct(Mr, r);
 
-      d = norm2(Mr); //  d = | M.r | ** 2  // // flopcount.addSiteFlops(4*Nc*Ns,s);
+      d = norm2(Mr);
 
       a = c / d;
 
-      a = a * overRelaxParam; //  a[k-1] *= MRovpar
+      a = a * overRelaxParam;
 
-      psi = psi + r * a; //  Psi[k] += a[k-1] r[k-1] ; // flopcount.addSiteFlops(4*Nc*Ns,s);
+      psi = psi + r * a;
 
-      r = r - Mr * a; //  r[k] -= a[k-1] M . r[k-1] ; // flopcount.addSiteFlops(4*Nc*Ns,s);
+      r = r - Mr * a;
 
-      cp = norm2(r); //  cp  =  | r[k] |**2 // flopcount.addSiteFlops(4*Nc*Ns,s);
+      cp = norm2(r);
 
       LinalgTimer.Stop();
 
