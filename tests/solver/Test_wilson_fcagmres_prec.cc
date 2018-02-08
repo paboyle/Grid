@@ -61,7 +61,7 @@ int main (int argc, char ** argv)
 
   TrivialPrecon<LatticeFermion> simple;
 
-  FlexibleCommunicationAvoidingGeneralisedMinimalResidual<LatticeFermion> FCAGMRES(1.0e-8, 50, simple, 25);
+  FlexibleCommunicationAvoidingGeneralisedMinimalResidual<LatticeFermion> FCAGMRES(1.0e-8, 10000, simple, 25);
   FCAGMRES(HermOp,src,result);
 
   Grid_finalize();

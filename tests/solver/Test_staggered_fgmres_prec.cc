@@ -58,14 +58,14 @@ int main (int argc, char ** argv)
     volume=volume*latt_size[mu];
   }
 
-  RealD mass=0.1;
+  RealD mass=0.5;
   ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass);
 
   MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> HermOp(Ds);
 
   TrivialPrecon<FermionField> simple;
 
-  FlexibleGeneralisedMinimalResidual<FermionField> FGMRES(1.0e-6, 50, simple, 25);
+  FlexibleGeneralisedMinimalResidual<FermionField> FGMRES(1.0e-8, 10000, simple, 25);
   FGMRES(HermOp,src,result);
 
   Grid_finalize();
