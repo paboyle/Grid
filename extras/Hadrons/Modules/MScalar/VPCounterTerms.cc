@@ -41,7 +41,6 @@ void TVPCounterTerms::setup(void)
     phatsqName_ = getName() + "_pHatSquared";
     prop0Name_ = getName() + "_freeProp";
     twoscalarName_ = getName() + "_2scalarProp";
-    twoscalarVertexName_ = getName() + "_2scalarProp_withvertex";
     psquaredName_ = getName() + "_psquaredProp";
     if (!par().output.empty())
     {
@@ -60,7 +59,6 @@ void TVPCounterTerms::setup(void)
     envCreateLat(ScalarField, GFSrcName_);
     envCreateLat(ScalarField, prop0Name_);
     envCreateLat(ScalarField, twoscalarName_);
-    envCreateLat(ScalarField, twoscalarVertexName_);
     envCreateLat(ScalarField, psquaredName_);
     if (!par().output.empty())
     {
@@ -117,49 +115,44 @@ void TVPCounterTerms::execute(void)
 
     // Propagators for counter-terms
     auto &twoscalarProp        = envGet(ScalarField, twoscalarName_);
-    auto &twoscalarVertexProp  = envGet(ScalarField, twoscalarVertexName_);
     auto &psquaredProp         = envGet(ScalarField, psquaredName_);
 
     twoscalarProp = G*GFSrc;
     fft.FFT_all_dim(twoscalarProp, twoscalarProp, FFT::backward);
 
-    twoscalarVertexProp = zero;
-    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-    {
-        buf = GFSrc;
-        twoscalarVertexProp = twoscalarVertexProp + .5*((*phase_[mu]) + adj(*phase_[mu]))*buf;
-    }
-    twoscalarVertexProp = G*twoscalarVertexProp;
-    fft.FFT_all_dim(twoscalarVertexProp, twoscalarVertexProp, FFT::backward);
-
     psquaredProp = G*phatsq*GFSrc;
     fft.FFT_all_dim(psquaredProp, psquaredProp, FFT::backward);
 
-    // Prepare output files if necessary
+    // Prepare output data structure if necessary
+    Result outputData;
     if (!par().output.empty())
     {
-        LOG(Message) << "Preparing output files..." << std::endl;
+        outputData.projection.resize(par().outputMom.size());
+        outputData.lattice_size = env().getGrid()->_fdimensions;
+        outputData.mass = par().mass;
         for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
         {
-            std::vector<int> mom = strToVec<int>(par().outputMom[i_p]);
-
-            // Open output files
-            std::string           filename = par().output + "_" + std::to_string(mom[0])
-                                                          + std::to_string(mom[1])
-                                                          + std::to_string(mom[2]);
-            saveResult(filename, "mass", par().mass);
-
+            outputData.projection[i_p].momentum = strToVec<int>(par().outputMom[i_p]);
+            outputData.projection[i_p].twoScalar.resize(env().getNd());
+            outputData.projection[i_p].threeScalar.resize(env().getNd());
+            outputData.projection[i_p].pSquaredInsertion.resize(env().getNd());
+            for (unsigned int nu = 0; nu < env().getNd(); ++nu)
+            {
+                outputData.projection[i_p].twoScalar[nu].resize(env().getNd());
+                outputData.projection[i_p].threeScalar[nu].resize(env().getNd());
+                outputData.projection[i_p].pSquaredInsertion[nu].resize(env().getNd());
+            }
             // Calculate phase factors
             auto &momph_ip = envGet(ScalarField, momPhaseName_[i_p]);
-            momph_ip = Complex(1.0,0.0);
+            momph_ip = zero;
             for (unsigned int j = 0; j < env().getNd()-1; ++j)
             {
-                for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
-                {
-                    momph_ip = momph_ip*(*phase_[j]);
-                }
+                Real twoPiL = M_PI*2./l[j];
+                LatticeCoordinate(buf, j);
+                buf = outputData.projection[i_p].momentum[j]*twoPiL*buf;
+                momph_ip = momph_ip + buf;
             }
-            momph_ip = adj(momph_ip);
+            momph_ip = exp(-ci*momph_ip);
             momPhase_.push_back(&momph_ip);
         }
     }
@@ -170,62 +163,70 @@ void TVPCounterTerms::execute(void)
     	buf = adj(Cshift(prop0, nu, -1));
         for (unsigned int mu = 0; mu < env().getNd(); ++mu)
         {
+            // Two-scalar loop
+            tmp_vp = buf * Cshift(prop0, mu, 1);
+            tmp_vp -= Cshift(buf, mu, 1) * prop0;
+            tmp_vp = 2.0*real(tmp_vp);
+            // Output if necessary
+            if (!par().output.empty())
+            {
+                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+                {
+                    project(outputData.projection[i_p].twoScalar[mu][nu],
+                            tmp_vp, i_p);
+                }
+            }
+
         	// Three-scalar loop (no vertex)
     		tmp_vp = buf * Cshift(twoscalarProp, mu, 1);
             tmp_vp -= Cshift(buf, mu, 1) * twoscalarProp;
             tmp_vp = 2.0*real(tmp_vp);
-
             // Output if necessary
             if (!par().output.empty())
             {
-                writeVP(tmp_vp, "NoVertex_"+std::to_string(mu)+"_"+std::to_string(nu));
-            }
-
-            // Three-scalar loop (tadpole vertex)
-    		tmp_vp = buf * Cshift(twoscalarVertexProp, mu, 1);
-            tmp_vp -= Cshift(buf, mu, 1) * twoscalarVertexProp;
-            tmp_vp = 2.0*real(tmp_vp);
-
-            // Output if necessary
-            if (!par().output.empty())
-            {
-                writeVP(tmp_vp, "TadVertex_"+std::to_string(mu)+"_"+std::to_string(nu));
+                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+                {
+                    project(outputData.projection[i_p].threeScalar[mu][nu],
+                            tmp_vp, i_p);
+                }
             }
 
             // Three-scalar loop (hat{p}^2 insertion)
     		tmp_vp = buf * Cshift(psquaredProp, mu, 1);
             tmp_vp -= Cshift(buf, mu, 1) * psquaredProp;
             tmp_vp = 2.0*real(tmp_vp);
-
             // Output if necessary
             if (!par().output.empty())
             {
-                writeVP(tmp_vp, "pSquaredInsertion_"+std::to_string(mu)+"_"+std::to_string(nu));
+                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+                {
+                    project(outputData.projection[i_p].pSquaredInsertion[mu][nu],
+                            tmp_vp, i_p);
+                }
             }
         }
     }
+
+    // OUTPUT IF NECESSARY
+    if (!par().output.empty())
+    {
+        LOG(Message) << "Saving momentum-projected correlators to '"
+                     << RESULT_FILE_NAME(par().output) << "'..."
+                     << std::endl;
+        saveResult(par().output, "scalar_loops", outputData);
+    }
 }
 
-void TVPCounterTerms::writeVP(const ScalarField &vp, std::string dsetName)
+void TVPCounterTerms::project(std::vector<Complex> &projection, const ScalarField &vp, int i_p)
 {
     std::vector<TComplex>   vecBuf;
-    std::vector<Complex>    result;
     envGetTmp(ScalarField, vpPhase);
 
-    for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+    vpPhase = vp*(*momPhase_[i_p]);
+    sliceSum(vpPhase, vecBuf, Tp);
+    projection.resize(vecBuf.size());
+    for (unsigned int t = 0; t < vecBuf.size(); ++t)
     {
-        std::vector<int> mom = strToVec<int>(par().outputMom[i_p]);
-        std::string filename = par().output + "_"
-                               + std::to_string(mom[0])
-                               + std::to_string(mom[1])
-                               + std::to_string(mom[2]);
-        vpPhase = vp*(*momPhase_[i_p]);
-        sliceSum(vpPhase, vecBuf, Tp);
-        result.resize(vecBuf.size());
-        for (unsigned int t = 0; t < vecBuf.size(); ++t)
-        {
-            result[t] = TensorRemove(vecBuf[t]);
-        }
-        saveResult(filename, dsetName, result);
+        projection[t] = TensorRemove(vecBuf[t]);
     }
 }

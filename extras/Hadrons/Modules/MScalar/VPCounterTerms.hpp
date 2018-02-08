@@ -26,6 +26,23 @@ class TVPCounterTerms: public Module<VPCounterTermsPar>
 {
 public:
     SCALAR_TYPE_ALIASES(SIMPL,);
+    class Result: Serializable
+    {
+    public:
+        class Projection: Serializable
+        {
+        public:
+            GRID_SERIALIZABLE_CLASS_MEMBERS(Projection,
+                                            std::vector<int>,     momentum,
+                                            std::vector<std::vector<std::vector<Complex>>>, twoScalar,
+                                            std::vector<std::vector<std::vector<Complex>>>, threeScalar,
+                                            std::vector<std::vector<std::vector<Complex>>>, pSquaredInsertion);
+        };
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
+                                        std::vector<int>,        lattice_size,
+                                        double,                  mass,
+                                        std::vector<Projection>, projection);
+    };
 public:
     // constructor
     TVPCounterTerms(const std::string name);
@@ -40,7 +57,7 @@ protected:
     // execution
     virtual void execute(void);
 private:
-    void writeVP(const ScalarField &vp, std::string dsetName);
+    void project(std::vector<Complex> &projection, const ScalarField &vp, int i_p);
 private:
     std::string                freeMomPropName_, GFSrcName_, phatsqName_, prop0Name_,
                                twoscalarName_, twoscalarVertexName_,
