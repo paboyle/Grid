@@ -103,7 +103,9 @@ class FlexibleCommunicationAvoidingGeneralisedMinimalResidual : public OperatorF
     SolverTimer.Start();
 
     IterationCount = 0;
-    for (int k=0; k<MaxIterations; k++) {
+    auto outerLoopMax = MaxIterations/RestartLength + ((MaxIterations%RestartLength == 0) ? 0 : 1);
+
+    for (int k=0; k<outerLoopMax; k++) {
 
       cp = outerLoopBody(LinOp, src, psi, rsq);
 
@@ -179,7 +181,7 @@ class FlexibleCommunicationAvoidingGeneralisedMinimalResidual : public OperatorF
       std::cout << GridLogIterative << "FlexibleCommunicationAvoidingGeneralisedMinimalResidual: Iteration " << IterationCount
                 << " residual " << cp << " target " << rsq << std::endl;
 
-      if ((i == RestartLength - 1) || (cp <= rsq)) {
+      if ((i == RestartLength - 1) || (IterationCount == MaxIterations) || (cp <= rsq)) {
 
         computeSolution(v, psi, i);
 
