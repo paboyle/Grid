@@ -77,6 +77,8 @@ class FlexibleCommunicationAvoidingGeneralisedMinimalResidual : public OperatorF
 
   void operator()(LinearOperatorBase<Field> &LinOp, const Field &src, Field &psi) {
 
+    std::cout << GridLogWarning << "This algorithm currently doesn't differ from regular FGMRES" << std::endl;
+
     psi.checkerboard = src.checkerboard;
     conformable(psi, src);
 
