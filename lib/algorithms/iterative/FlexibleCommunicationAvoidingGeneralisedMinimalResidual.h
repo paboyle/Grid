@@ -148,17 +148,13 @@ class FlexibleCommunicationAvoidingGeneralisedMinimalResidual : public OperatorF
 
     Field w(src._grid);
     Field r(src._grid);
-    Field z(src._grid);
 
     std::vector<Field> v(RestartLength + 1, src._grid);
+    std::vector<Field> z(RestartLength + 1, src._grid);
 
     MatrixTimer.Start();
-    LinOp.Op(psi, z);
+    LinOp.Op(psi, w);
     MatrixTimer.Stop();
-
-    PrecTimer.Start();
-    Preconditioner(z, w);
-    PrecTimer.Stop();
 
     LinalgTimer.Start();
     r = src - w;
@@ -183,7 +179,7 @@ class FlexibleCommunicationAvoidingGeneralisedMinimalResidual : public OperatorF
 
       if ((i == RestartLength - 1) || (IterationCount == MaxIterations) || (cp <= rsq)) {
 
-        computeSolution(v, psi, i);
+        computeSolution(z, psi, i);
 
         return cp;
       }
@@ -193,15 +189,15 @@ class FlexibleCommunicationAvoidingGeneralisedMinimalResidual : public OperatorF
     return cp;
   }
 
-  void arnoldiStep(LinearOperatorBase<Field> &LinOp, std::vector<Field> &v, Field &z, Field &w, int iter) {
-
-    MatrixTimer.Start();
-    LinOp.Op(v[iter], z);
-    MatrixTimer.Stop();
+  void arnoldiStep(LinearOperatorBase<Field> &LinOp, std::vector<Field> &v, std::vector<Field> &z, Field &w, int iter) {
 
     PrecTimer.Start();
-    Preconditioner(z, w);
+    Preconditioner(v[iter], z[iter]);
     PrecTimer.Stop();
+
+    MatrixTimer.Start();
+    LinOp.Op(z[iter], w);
+    MatrixTimer.Stop();
 
     LinalgTimer.Start();
     for (int i = 0; i <= iter; ++i) {
@@ -237,7 +233,7 @@ class FlexibleCommunicationAvoidingGeneralisedMinimalResidual : public OperatorF
     QrTimer.Stop();
   }
 
-  void computeSolution(std::vector<Field> const &v, Field &psi, int iter) {
+  void computeSolution(std::vector<Field> const &z, Field &psi, int iter) {
 
     CompSolutionTimer.Start();
     for (int i = iter; i >= 0; i--) {
@@ -249,12 +245,12 @@ class FlexibleCommunicationAvoidingGeneralisedMinimalResidual : public OperatorF
 
     if (true) {
       for (int i = 0; i <= iter; i++)
-        psi = psi + v[i] * y[i];
+        psi = psi + z[i] * y[i];
     }
     else {
-      psi = y[0] * v[0];
+      psi = y[0] * z[0];
       for (int i = 1; i <= iter; i++)
-        psi = psi + v[i] * y[i];
+        psi = psi + z[i] * y[i];
     }
     CompSolutionTimer.Stop();
   }
