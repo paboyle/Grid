@@ -423,7 +423,7 @@ namespace Grid {
       std::cout<<GridLogMessage<<"Computed Coarse Operator"<<std::endl;
 #endif
       //      ForceHermitian();
-      AssertHermitian();
+      // AssertHermitian();
       // ForceDiagonal();
     }
     void ForceDiagonal(void) {
