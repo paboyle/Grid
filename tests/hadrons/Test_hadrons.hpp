@@ -263,7 +263,8 @@ inline void makeConservedSequentialSource(Application &application,
         seqPar.tA        = tS;
         seqPar.tB        = tS;
         seqPar.curr_type = curr;
-        seqPar.mu        = mu;
+        seqPar.mu_min    = mu;
+        seqPar.mu_min    = mu;
         seqPar.mom       = mom;
         application.createModule<MSource::SeqConserved>(srcName, seqPar);
     }

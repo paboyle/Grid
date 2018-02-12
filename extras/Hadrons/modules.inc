@@ -20,7 +20,6 @@ modules_hpp =\
   Modules/MContraction/WardIdentity.hpp \
   Modules/MContraction/WeakHamiltonianEye.hpp \
   Modules/MFermion/GaugeProp.hpp \
-  Modules/MSource/SeqConservedSummed.hpp \
   Modules/MSource/SeqGamma.hpp \
   Modules/MSource/Point.hpp \
   Modules/MSource/Wall.hpp \

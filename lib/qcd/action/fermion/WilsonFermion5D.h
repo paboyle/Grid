@@ -222,13 +222,13 @@ namespace QCD {
                                   PropagatorField &q_out,
                                   Current curr_type, 
                                   unsigned int mu);
-    void SeqConservedCurrent(PropagatorField &q_in,
+    void SeqConservedCurrent(PropagatorField &q_in, 
                              PropagatorField &q_out,
-                             Current curr_type,
+                             Current curr_type, 
                              unsigned int mu,
-                             std::vector<Real> mom,
-                             unsigned int tmin,
-                             unsigned int tmax);
+                             unsigned int tmin, 
+                             unsigned int tmax,
+			     Lattice<iSinglet<Simd>> &lattice_cmplx);
   };
 
 }}

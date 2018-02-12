@@ -419,15 +419,16 @@ void ImprovedStaggeredFermion5D<Impl>::ContractConservedCurrent(PropagatorField 
 }
 
 template <class Impl>
-void ImprovedStaggeredFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
-                                                          PropagatorField &q_out,
-                                                          Current curr_type,
-                                                          unsigned int mu, 
-                                                          std::vector<Real> mom,
-                                                          unsigned int tmin,
-                                                          unsigned int tmax)
+void ImprovedStaggeredFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in, 
+                                              PropagatorField &q_out,
+                                              Current curr_type,
+                                              unsigned int mu,
+                                              unsigned int tmin, 
+                                              unsigned int tmax,
+					      Lattice<iSinglet<Simd>> &lattice_cmplx)
 {
     assert(0);
+
 }
 
 FermOpStaggeredTemplateInstantiate(ImprovedStaggeredFermion5D);
