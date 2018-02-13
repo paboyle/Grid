@@ -182,12 +182,6 @@ template<class Field> class ImplicitlyRestartedLanczosHermOpTester  : public Imp
 {
  public:
 
-  static void Deflate(const std::vector<Field> &_v,
-		      const std::vector<RealD>& eval,
-		      const Field& src_orig,Field& result) {
-    basisDeflate(_v,eval,src_orig,result);
-  }
-
   LinearFunction<Field>       &_HermOp;
   ImplicitlyRestartedLanczosHermOpTester(LinearFunction<Field> &HermOp) : _HermOp(HermOp)  {  };
   int ReconstructEval(int j,RealD resid,Field &B, RealD &eval,RealD evalMaxApprox)
@@ -250,6 +244,13 @@ class ImplicitlyRestartedLanczos {
   /////////////////////////
   
 public:       
+
+  static void Deflate(const std::vector<Field> &_v,
+		      const std::vector<RealD>& eval,
+		      const Field& src_orig,Field& result) {
+    basisDeflate(_v,eval,src_orig,result);
+  }
+
   //////////////////////////////////////////////////////////////////
   // PAB:
   //////////////////////////////////////////////////////////////////
