@@ -28,7 +28,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #ifndef GRID_LOCAL_COHERENCE_IRL_H
 #define GRID_LOCAL_COHERENCE_IRL_H
+
 namespace Grid { 
+
 struct LanczosParams : Serializable {
  public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(LanczosParams,
