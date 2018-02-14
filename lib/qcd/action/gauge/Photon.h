@@ -117,7 +117,8 @@ namespace QCD{
     for(int mu = 0; mu < nd; mu++)
     {
       LatticeCoordinate(xmu,mu);
-      xmu = where(xmu < l[mu]/2.0, xmu, xmu-double(l[mu]));
+      Real lo2 = l[mu]/2.0;
+      xmu = where(xmu < lo2, xmu, xmu-double(l[mu]));
       out = out + toComplex(4*M_PI*M_PI*xmu*xmu);
     }
     pokeSite(Tone, out, x0);
