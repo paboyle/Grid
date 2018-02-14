@@ -109,7 +109,7 @@ namespace QCD{
     std::vector<int>   &l    = grid->_fdimensions;
     std::vector<int>   x0(nd,0);
     TComplex           Tone  = Complex(1.0,0.0);
-    TComplex           Tzero = Complex(0.0,0.0);
+    // TComplex           Tzero = Complex(0.0,0.0);
     FFT                fft(grid);
     
     one = Complex(1.0,0.0);
@@ -122,7 +122,7 @@ namespace QCD{
     }
     pokeSite(Tone, out, x0);
     out = one/out;
-    pokeSite(Tzero, out, x0);
+    // pokeSite(Tzero, out, x0);
     fft.FFT_all_dim(out, out, FFT::forward);
   }
   
