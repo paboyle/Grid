@@ -884,7 +884,6 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
     conformable(q_in._grid, FermionGrid());
     conformable(q_in._grid, q_out._grid);
     PropagatorField tmp(GaugeGrid()),tmp2(GaugeGrid());
-    Complex i(0.0, 1.0);
     unsigned int tshift = (mu == Tp) ? 1 : 0;
     unsigned int LLs = q_in._grid->_rdimensions[0];
     unsigned int LLt    = GridDefaultLatt()[Tp];

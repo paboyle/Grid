@@ -104,7 +104,6 @@ void TWeakHamiltonianEye::execute(void)
                  << par().q2 << ", '" << par().q3 << "' and '" << par().q4 
                  << "'." << std::endl;
 
-    ResultWriter           writer(RESULT_FILE_NAME(par().output));
     auto                   &q1 = envGet(SlicedPropagator, par().q1);
     auto                   &q2 = envGet(PropagatorField, par().q2);
     auto                   &q3 = envGet(PropagatorField, par().q3);
@@ -147,5 +146,6 @@ void TWeakHamiltonianEye::execute(void)
     SUM_MU(expbuf, E_body[mu]*E_loop[mu])
     MAKE_DIAG(expbuf, corrbuf, result[E_diag], "HW_E")
 
-    write(writer, "HW_Eye", result);
+    // IO
+    saveResult(par().output, "HW_Eye", result);
 }

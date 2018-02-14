@@ -50,11 +50,13 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 ////////////////////////////////////////////
 
 #include <Grid/qcd/action/fermion/WilsonFermion.h>       // 4d wilson like
-#include <Grid/qcd/action/fermion/WilsonTMFermion.h>       // 4d wilson like
+#include <Grid/qcd/action/fermion/WilsonTMFermion.h>     // 4d wilson like
+#include <Grid/qcd/action/fermion/WilsonCloverFermion.h> // 4d wilson clover fermions
 #include <Grid/qcd/action/fermion/WilsonFermion5D.h>     // 5d base used by all 5d overlap types
-//#include <Grid/qcd/action/fermion/CloverFermion.h>
+
 #include <Grid/qcd/action/fermion/ImprovedStaggeredFermion.h>
 #include <Grid/qcd/action/fermion/ImprovedStaggeredFermion5D.h>
+
 #include <Grid/qcd/action/fermion/CayleyFermion5D.h>     // Cayley types
 #include <Grid/qcd/action/fermion/DomainWallFermion.h>
 #include <Grid/qcd/action/fermion/DomainWallEOFAFermion.h>
@@ -104,10 +106,33 @@ typedef WilsonFermion<WilsonTwoIndexSymmetricImplR> WilsonTwoIndexSymmetricFermi
 typedef WilsonFermion<WilsonTwoIndexSymmetricImplF> WilsonTwoIndexSymmetricFermionF;
 typedef WilsonFermion<WilsonTwoIndexSymmetricImplD> WilsonTwoIndexSymmetricFermionD;
 
+typedef WilsonFermion<WilsonTwoIndexAntiSymmetricImplR> WilsonTwoIndexAntiSymmetricFermionR;
+typedef WilsonFermion<WilsonTwoIndexAntiSymmetricImplF> WilsonTwoIndexAntiSymmetricFermionF;
+typedef WilsonFermion<WilsonTwoIndexAntiSymmetricImplD> WilsonTwoIndexAntiSymmetricFermionD;
+
+// Twisted mass fermion
 typedef WilsonTMFermion<WilsonImplR> WilsonTMFermionR;
 typedef WilsonTMFermion<WilsonImplF> WilsonTMFermionF;
 typedef WilsonTMFermion<WilsonImplD> WilsonTMFermionD;
 
+// Clover fermions
+typedef WilsonCloverFermion<WilsonImplR> WilsonCloverFermionR;
+typedef WilsonCloverFermion<WilsonImplF> WilsonCloverFermionF;
+typedef WilsonCloverFermion<WilsonImplD> WilsonCloverFermionD;
+
+typedef WilsonCloverFermion<WilsonAdjImplR> WilsonCloverAdjFermionR;
+typedef WilsonCloverFermion<WilsonAdjImplF> WilsonCloverAdjFermionF;
+typedef WilsonCloverFermion<WilsonAdjImplD> WilsonCloverAdjFermionD;
+
+typedef WilsonCloverFermion<WilsonTwoIndexSymmetricImplR> WilsonCloverTwoIndexSymmetricFermionR;
+typedef WilsonCloverFermion<WilsonTwoIndexSymmetricImplF> WilsonCloverTwoIndexSymmetricFermionF;
+typedef WilsonCloverFermion<WilsonTwoIndexSymmetricImplD> WilsonCloverTwoIndexSymmetricFermionD;
+
+typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplR> WilsonCloverTwoIndexAntiSymmetricFermionR;
+typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplF> WilsonCloverTwoIndexAntiSymmetricFermionF;
+typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplD> WilsonCloverTwoIndexAntiSymmetricFermionD;
+
+// Domain Wall fermions
 typedef DomainWallFermion<WilsonImplR> DomainWallFermionR;
 typedef DomainWallFermion<WilsonImplF> DomainWallFermionF;
 typedef DomainWallFermion<WilsonImplD> DomainWallFermionD;

@@ -104,7 +104,6 @@ void TWeakNeutral4ptDisc::execute(void)
                  << par().q2 << ", '" << par().q3 << "' and '" << par().q4 
                  << "'." << std::endl;
 
-    ResultWriter          writer(RESULT_FILE_NAME(par().output));
     auto                  &q1 = envGet(PropagatorField, par().q1);
     auto                  &q2 = envGet(PropagatorField, par().q2);
     auto                  &q3 = envGet(PropagatorField, par().q3);
@@ -138,5 +137,6 @@ void TWeakNeutral4ptDisc::execute(void)
     expbuf *= curr;
     MAKE_DIAG(expbuf, corrbuf, result[neut_disc_2_diag], "HW_disc0_2")
 
-    write(writer, "HW_disc0", result);
+    // IO
+    saveResult(par().output, "HW_disc0", result);
 }

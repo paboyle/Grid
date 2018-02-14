@@ -29,6 +29,7 @@ class TwoIndexRep {
   typedef typename SU_TwoIndex<ncolour, S>::LatticeTwoIndexMatrix LatticeMatrix;
   typedef typename SU_TwoIndex<ncolour, S>::LatticeTwoIndexField LatticeField;
   static const int Dimension = ncolour * (ncolour + S) / 2;
+  static const bool isFundamental = false;
 
   LatticeField U;
 

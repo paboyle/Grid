@@ -183,11 +183,13 @@ namespace Grid {
       virtual  RealD Mpc      (const Field &in, Field &out) =0;
       virtual  RealD MpcDag   (const Field &in, Field &out) =0;
       virtual void MpcDagMpc(const Field &in, Field &out,RealD &ni,RealD &no) {
-	Field tmp(in._grid);
+      Field tmp(in._grid);
+      tmp.checkerboard = in.checkerboard;
 	ni=Mpc(in,tmp);
 	no=MpcDag(tmp,out);
       }
       virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
+      out.checkerboard = in.checkerboard;
 	MpcDagMpc(in,out,n1,n2);
       }
       virtual void HermOp(const Field &in, Field &out){
@@ -215,13 +217,15 @@ namespace Grid {
     public:
       SchurDiagMooeeOperator (Matrix &Mat): _Mat(Mat){};
       virtual  RealD Mpc      (const Field &in, Field &out) {
-	Field tmp(in._grid);
-//	std::cout <<"grid pointers: in._grid="<< in._grid << " out._grid=" << out._grid << "  _Mat.Grid=" << _Mat.Grid() << " _Mat.RedBlackGrid=" << _Mat.RedBlackGrid() << std::endl;
+      Field tmp(in._grid);
+      tmp.checkerboard = !in.checkerboard;
+	//std::cout <<"grid pointers: in._grid="<< in._grid << " out._grid=" << out._grid << "  _Mat.Grid=" << _Mat.Grid() << " _Mat.RedBlackGrid=" << _Mat.RedBlackGrid() << std::endl;
 
 	_Mat.Meooe(in,tmp);
 	_Mat.MooeeInv(tmp,out);
 	_Mat.Meooe(out,tmp);
 
+      //std::cout << "cb in " << in.checkerboard << "  cb out " << out.checkerboard << std::endl;
 	_Mat.Mooee(in,out);
 	return axpy_norm(out,-1.0,tmp,out);
       }

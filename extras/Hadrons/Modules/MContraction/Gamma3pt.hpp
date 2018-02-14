@@ -153,7 +153,6 @@ void TGamma3pt<FImpl1, FImpl2, FImpl3>::execute(void)
 
     // Initialise variables. q2 and q3 are normal propagators, q1 may be 
     // sink smeared.
-    ResultWriter          writer(RESULT_FILE_NAME(par().output));
     auto                  &q1 = envGet(SlicedPropagator1, par().q1);
     auto                  &q2 = envGet(PropagatorField2, par().q2);
     auto                  &q3 = envGet(PropagatorField2, par().q3);
@@ -175,8 +174,7 @@ void TGamma3pt<FImpl1, FImpl2, FImpl3>::execute(void)
     {
         result.corr[t] = TensorRemove(buf[t]);
     }
-
-    write(writer, "gamma3pt", result);
+    saveResult(par().output, "gamma3pt", result);
 }
 
 END_MODULE_NAMESPACE

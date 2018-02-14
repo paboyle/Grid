@@ -129,7 +129,6 @@ void TTwoPoint<SImpl>::execute(void)
         LOG(Message) << "  '" << o << "'" << std::endl;
     }
 
-    ResultWriter        writer(RESULT_FILE_NAME(par().output));
     const unsigned int  nd = env().getDim().size();
     std::vector<Result> result;
     
@@ -150,7 +149,7 @@ void TTwoPoint<SImpl>::execute(void)
         r.data   = makeTwoPoint(slicedOp[i], slicedOp[j]);
         result.push_back(r);
     }
-    write(writer, "twopt", result);
+    saveResult(par().output, "twopt", result);
 }
 
 // make 2-pt function //////////////////////////////////////////////////////////
