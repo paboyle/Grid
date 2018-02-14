@@ -111,6 +111,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"Error "<<norm2(err)<<std::endl;
 
   const int nbasis = 2;
+  const int cb = 0 ;
   LatticeFermion prom(FGrid);
 
   std::vector<LatticeFermion> subspace(nbasis,FGrid);
@@ -119,7 +120,7 @@ int main (int argc, char ** argv)
 
   MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermDefOp(Ddwf);
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis> Subspace;
-  Subspace Aggregates(Coarse5d,FGrid);
+  Subspace Aggregates(Coarse5d,FGrid,cb);
   Aggregates.CreateSubspaceRandom(RNG5);
 
   subspace=Aggregates.subspace;

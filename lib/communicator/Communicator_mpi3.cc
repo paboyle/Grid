@@ -49,6 +49,7 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
 
   Grid_quiesce_nodes();
 
+  // Never clean up as done once.
   MPI_Comm_dup (MPI_COMM_WORLD,&communicator_world);
 
   GlobalSharedMemory::Init(communicator_world);
@@ -88,6 +89,8 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
   GlobalSharedMemory::OptimalCommunicator    (processors,optimal_comm); // Remap using the shared memory optimising routine
   InitFromMPICommunicator(processors,optimal_comm);
   SetCommunicator(optimal_comm);
+  // Free the temp communicator
+  MPI_Comm_free(&optimal_comm);
 }
 
 //////////////////////////////////
@@ -183,8 +186,8 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
 
   } else {
     srank = 0;
-    comm_split    = parent.communicator;
-    //    std::cout << " Inherited communicator " <<comm_split <<std::endl;
+    int ierr = MPI_Comm_dup (parent.communicator,&comm_split);
+    assert(ierr==0);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -196,6 +199,9 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   // Take the right SHM buffers
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   SetCommunicator(comm_split);
+
+  // Free the temp communicator 
+  MPI_Comm_free(&comm_split);
 
   if(0){ 
     std::cout << " ndim " <<_ndimension<<" " << parent._ndimension << std::endl;
@@ -210,6 +216,9 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
 
 void CartesianCommunicator::InitFromMPICommunicator(const std::vector<int> &processors, MPI_Comm communicator_base)
 {
+  ////////////////////////////////////////////////////
+  // Creates communicator, and the communicator_halo
+  ////////////////////////////////////////////////////
   _ndimension = processors.size();
   _processor_coor.resize(_ndimension);
 
