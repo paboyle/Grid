@@ -44,7 +44,10 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
   MPI_Initialized(&flag); // needed to coexist with other libs apparently
   if ( !flag ) {
     MPI_Init_thread(argc,argv,MPI_THREAD_MULTIPLE,&provided);
-    assert (provided == MPI_THREAD_MULTIPLE);
+    //If only 1 comms thread we require any threading mode other than SINGLE, but for multiple comms threads we need MULTIPLE
+    if( (nCommThreads == 1 && provided == MPI_THREAD_SINGLE) ||
+        (nCommThreads > 1 && provided != MPI_THREAD_MULTIPLE) )
+      assert(0);
   }
 
   Grid_quiesce_nodes();
