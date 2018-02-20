@@ -89,10 +89,16 @@ void  CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &c
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors) 
 {
   MPI_Comm optimal_comm;
-  GlobalSharedMemory::OptimalCommunicator    (processors,optimal_comm); // Remap using the shared memory optimising routine
+  ////////////////////////////////////////////////////
+  // Remap using the shared memory optimising routine
+  // The remap creates a comm which must be freed
+  ////////////////////////////////////////////////////
+  GlobalSharedMemory::OptimalCommunicator    (processors,optimal_comm);
   InitFromMPICommunicator(processors,optimal_comm);
   SetCommunicator(optimal_comm);
+  ///////////////////////////////////////////////////
   // Free the temp communicator
+  ///////////////////////////////////////////////////
   MPI_Comm_free(&optimal_comm);
 }
 
@@ -202,8 +208,10 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   // Take the right SHM buffers
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   SetCommunicator(comm_split);
-
+  
+  ///////////////////////////////////////////////
   // Free the temp communicator 
+  ///////////////////////////////////////////////
   MPI_Comm_free(&comm_split);
 
   if(0){ 
