@@ -399,5 +399,9 @@ void *SharedMemory::ShmBufferTranslate(int rank,void * local_p)
     return (void *) remote;
   }
 }
+SharedMemory::~SharedMemory()
+{
+  MPI_Comm_free(&ShmComm);
+};
 
 }

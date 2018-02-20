@@ -44,7 +44,10 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
   MPI_Initialized(&flag); // needed to coexist with other libs apparently
   if ( !flag ) {
     MPI_Init_thread(argc,argv,MPI_THREAD_MULTIPLE,&provided);
-    assert (provided == MPI_THREAD_MULTIPLE);
+    //If only 1 comms thread we require any threading mode other than SINGLE, but for multiple comms threads we need MULTIPLE
+    if( (nCommThreads == 1 && provided == MPI_THREAD_SINGLE) ||
+        (nCommThreads > 1 && provided != MPI_THREAD_MULTIPLE) )
+      assert(0);
   }
 
   Grid_quiesce_nodes();
@@ -86,10 +89,16 @@ void  CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &c
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors) 
 {
   MPI_Comm optimal_comm;
-  GlobalSharedMemory::OptimalCommunicator    (processors,optimal_comm); // Remap using the shared memory optimising routine
+  ////////////////////////////////////////////////////
+  // Remap using the shared memory optimising routine
+  // The remap creates a comm which must be freed
+  ////////////////////////////////////////////////////
+  GlobalSharedMemory::OptimalCommunicator    (processors,optimal_comm);
   InitFromMPICommunicator(processors,optimal_comm);
   SetCommunicator(optimal_comm);
+  ///////////////////////////////////////////////////
   // Free the temp communicator
+  ///////////////////////////////////////////////////
   MPI_Comm_free(&optimal_comm);
 }
 
@@ -199,8 +208,10 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   // Take the right SHM buffers
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   SetCommunicator(comm_split);
-
+  
+  ///////////////////////////////////////////////
   // Free the temp communicator 
+  ///////////////////////////////////////////////
   MPI_Comm_free(&comm_split);
 
   if(0){ 
