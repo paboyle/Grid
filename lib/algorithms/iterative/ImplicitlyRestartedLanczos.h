@@ -149,19 +149,6 @@ void basisSortInPlace(std::vector<Field> & _v,std::vector<RealD>& sort_vals, boo
   basisReorderInPlace(_v,sort_vals,idx);
 }
 
-// PAB: faster to compute the inner products first then fuse loops.
-// If performance critical can improve.
-template<class Field>
-void basisDeflate(const std::vector<Field> &_v,const std::vector<RealD>& eval,const Field& src_orig,Field& result) {
-  result = zero;
-  assert(_v.size()==eval.size());
-  int N = (int)_v.size();
-  for (int i=0;i<N;i++) {
-    Field& tmp = _v[i];
-    axpy(result,TensorRemove(innerProduct(tmp,src_orig)) / eval[i],tmp,result);
-  }
-}
-
 /////////////////////////////////////////////////////////////
 // Implicitly restarted lanczos
 /////////////////////////////////////////////////////////////
@@ -244,12 +231,6 @@ class ImplicitlyRestartedLanczos {
   /////////////////////////
   
 public:       
-
-  static void Deflate(const std::vector<Field> &_v,
-		      const std::vector<RealD>& eval,
-		      const Field& src_orig,Field& result) {
-    basisDeflate(_v,eval,src_orig,result);
-  }
 
   //////////////////////////////////////////////////////////////////
   // PAB:
