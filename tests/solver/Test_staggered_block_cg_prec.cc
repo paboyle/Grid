@@ -75,7 +75,10 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
 
   RealD mass=0.003;
-  ImprovedStaggeredFermion5DR Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass); 
+  RealD c1=9.0/8.0;
+  RealD c2=-1.0/24.0;
+  RealD u0=1.0;
+  ImprovedStaggeredFermion5DR Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,c1,c2,u0); 
   SchurStaggeredOperator<ImprovedStaggeredFermion5DR,FermionField> HermOp(Ds);
 
   ConjugateGradient<FermionField> CG(1.0e-8,10000);

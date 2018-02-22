@@ -54,6 +54,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
 
   void operator()(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi) {
 
+
     psi.checkerboard = src.checkerboard;
     conformable(psi, src);
 
@@ -101,7 +102,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
 
     SolverTimer.Start();
     int k;
-    for (k = 1; k <= MaxIterations; k++) {
+    for (k = 1; k <= MaxIterations*1000; k++) {
       c = cp;
 
       MatrixTimer.Start();
@@ -109,8 +110,9 @@ class ConjugateGradient : public OperatorFunction<Field> {
       MatrixTimer.Stop();
 
       LinalgTimer.Start();
-      //  RealD    qqck = norm2(mmp);
-      //  ComplexD dck  = innerProduct(p,mmp);
+      // AA 
+      // RealD    qqck = norm2(mmp);
+      // ComplexD dck  = innerProduct(p,mmp);
 
       a = c / d;
       b_pred = a * (a * qq - d) / c;

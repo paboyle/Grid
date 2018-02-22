@@ -689,7 +689,12 @@ class StaggeredImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation:
     inline void loadLinkElement(Simd &reg, ref &memory) {
       reg = memory;
     }
-      
+
+    inline void InsertGaugeField(DoubledGaugeField &U_ds,
+				 const GaugeLinkField &U,int mu)
+    {
+      PokeIndex<LorentzIndex>(U_ds, U, mu);
+    }
     inline void DoubleStore(GridBase *GaugeGrid,
 			    DoubledGaugeField &UUUds, // for Naik term
 			    DoubledGaugeField &Uds,
@@ -728,8 +733,10 @@ class StaggeredImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation:
 	U    = U    *phases;
 	Udag = Udag *phases;
 
-	PokeIndex<LorentzIndex>(Uds, U, mu);
-	PokeIndex<LorentzIndex>(Uds, Udag, mu + 4);
+	InsertGaugeField(Uds,U,mu);
+	InsertGaugeField(Uds,Udag,mu+4);
+	//	PokeIndex<LorentzIndex>(Uds, U, mu);
+	//	PokeIndex<LorentzIndex>(Uds, Udag, mu + 4);
 
 	// 3 hop based on thin links. Crazy huh ?
 	U  = PeekIndex<LorentzIndex>(Uthin, mu);
@@ -741,8 +748,8 @@ class StaggeredImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation:
 	UUU    = UUU    *phases;
 	UUUdag = UUUdag *phases;
 
-	PokeIndex<LorentzIndex>(UUUds, UUU, mu);
-	PokeIndex<LorentzIndex>(UUUds, UUUdag, mu+4);
+	InsertGaugeField(UUUds,UUU,mu);
+	InsertGaugeField(UUUds,UUUdag,mu+4);
 
       }
     }
@@ -834,6 +841,23 @@ class StaggeredImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation:
       mac(&phi(), &UU(), &chi());
     }
       
+    inline void InsertGaugeField(DoubledGaugeField &U_ds,const GaugeLinkField &U,int mu)
+    {
+      GridBase *GaugeGrid = U_ds._grid;
+      parallel_for (int lidx = 0; lidx < GaugeGrid->lSites(); lidx++) {
+
+	SiteScalarGaugeLink   ScalarU;
+	SiteDoubledGaugeField ScalarUds;
+	
+	std::vector<int> lcoor;
+	GaugeGrid->LocalIndexToLocalCoor(lidx, lcoor);
+	peekLocalSite(ScalarUds, U_ds, lcoor);
+	
+	peekLocalSite(ScalarU, U, lcoor);
+	ScalarUds(mu) = ScalarU();
+	
+      }
+    }
     inline void DoubleStore(GridBase *GaugeGrid,
 			    DoubledGaugeField &UUUds, // for Naik term
 			    DoubledGaugeField &Uds,
@@ -875,23 +899,8 @@ class StaggeredImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation:
 	U    = U    *phases;
 	Udag = Udag *phases;
 
-
-	for (int lidx = 0; lidx < GaugeGrid->lSites(); lidx++) {
-	  SiteScalarGaugeLink   ScalarU;
-	  SiteDoubledGaugeField ScalarUds;
-	  
-	  std::vector<int> lcoor;
-	  GaugeGrid->LocalIndexToLocalCoor(lidx, lcoor);
-	  peekLocalSite(ScalarUds, Uds, lcoor);
-
-	  peekLocalSite(ScalarU, U, lcoor);
-	  ScalarUds(mu) = ScalarU();
-
-	  peekLocalSite(ScalarU, Udag, lcoor);
-	  ScalarUds(mu + 4) = ScalarU();
-
-	  pokeLocalSite(ScalarUds, Uds, lcoor);
-	}
+	InsertGaugeField(Uds,U,mu);
+	InsertGaugeField(Uds,Udag,mu+4);
 
 	// 3 hop based on thin links. Crazy huh ?
 	U  = PeekIndex<LorentzIndex>(Uthin, mu);
@@ -903,24 +912,8 @@ class StaggeredImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation:
 	UUU    = UUU    *phases;
 	UUUdag = UUUdag *phases;
 
-	for (int lidx = 0; lidx < GaugeGrid->lSites(); lidx++) {
-
-	  SiteScalarGaugeLink  ScalarU;
-	  SiteDoubledGaugeField ScalarUds;
-	  
-	  std::vector<int> lcoor;
-	  GaugeGrid->LocalIndexToLocalCoor(lidx, lcoor);
-      
-	  peekLocalSite(ScalarUds, UUUds, lcoor);
-
-	  peekLocalSite(ScalarU, UUU, lcoor);
-	  ScalarUds(mu) = ScalarU();
-
-	  peekLocalSite(ScalarU, UUUdag, lcoor);
-	  ScalarUds(mu + 4) = ScalarU();
-	  
-	  pokeLocalSite(ScalarUds, UUUds, lcoor);
-	}
+	InsertGaugeField(UUUds,UUU,mu);
+	InsertGaugeField(UUUds,UUUdag,mu+4);
 
       }
     }

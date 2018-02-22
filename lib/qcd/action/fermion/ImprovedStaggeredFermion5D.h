@@ -139,6 +139,15 @@ namespace QCD {
     
     
     // Constructors
+    // -- No Gauge field 
+    ImprovedStaggeredFermion5D(GridCartesian         &FiveDimGrid,
+			       GridRedBlackCartesian &FiveDimRedBlackGrid,
+			       GridCartesian         &FourDimGrid,
+			       GridRedBlackCartesian &FourDimRedBlackGrid,
+			       double _mass,
+			       RealD _c1, RealD _c2,RealD _u0,
+			       const ImplParams &p= ImplParams());
+    // -- Thin link and fat link, with coefficients
     ImprovedStaggeredFermion5D(GaugeField &_Uthin,
 			       GaugeField &_Ufat,
 			       GridCartesian         &FiveDimGrid,
@@ -146,12 +155,24 @@ namespace QCD {
 			       GridCartesian         &FourDimGrid,
 			       GridRedBlackCartesian &FourDimRedBlackGrid,
 			       double _mass,
-			       RealD _c1=9.0/8.0, RealD _c2=-1.0/24.0,RealD _u0=1.0,
+			       RealD _c1, RealD _c2,RealD _u0,
+			       const ImplParams &p= ImplParams());
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // MILC constructor ; triple links, no rescale factors; must be externally pre multiplied
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    ImprovedStaggeredFermion5D(GaugeField &_Utriple,
+			       GaugeField &_Ufat,
+			       GridCartesian         &FiveDimGrid,
+			       GridRedBlackCartesian &FiveDimRedBlackGrid,
+			       GridCartesian         &FourDimGrid,
+			       GridRedBlackCartesian &FourDimRedBlackGrid,
+			       double _mass,
 			       const ImplParams &p= ImplParams());
     
     // DoubleStore
     void ImportGauge(const GaugeField &_U);
     void ImportGauge(const GaugeField &_Uthin,const GaugeField &_Ufat);
+    void ImportGaugeSimple(const GaugeField &_Uthin,const GaugeField &_Ufat);
     
     ///////////////////////////////////////////////////////////////
     // Data members require to support the functionality

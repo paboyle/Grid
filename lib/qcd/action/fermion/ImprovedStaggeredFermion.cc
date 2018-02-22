@@ -44,6 +44,7 @@ ImprovedStaggeredFermionStatic::displacements({1, 1, 1, 1, -1, -1, -1, -1, 3, 3,
 template <class Impl>
 ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GridCartesian &Fgrid, GridRedBlackCartesian &Hgrid, 
 							 RealD _mass,
+							 RealD _c1, RealD _c2,RealD _u0,
 							 const ImplParams &p)
     : Kernels(p),
       _grid(&Fgrid),
@@ -62,6 +63,16 @@ ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GridCartesian &Fgrid, G
       UUUmuOdd(&Hgrid) ,
       _tmp(&Hgrid)
 {
+  int vol4;
+  int LLs=1;
+  c1=_c1;
+  c2=_c2;
+  u0=_u0;
+  vol4= _grid->oSites();
+  Stencil.BuildSurfaceList(LLs,vol4);
+  vol4= _cbgrid->oSites();
+  StencilEven.BuildSurfaceList(LLs,vol4);
+  StencilOdd.BuildSurfaceList(LLs,vol4);
 }
 
 template <class Impl>
@@ -69,18 +80,15 @@ ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Uthin, Gau
 							 GridRedBlackCartesian &Hgrid, RealD _mass,
 							 RealD _c1, RealD _c2,RealD _u0,
 							 const ImplParams &p)
-  : ImprovedStaggeredFermion(Fgrid,Hgrid,_mass,p)
+  : ImprovedStaggeredFermion(Fgrid,Hgrid,_mass,_c1,_c2,_u0,p)
 {
-  c1=_c1;
-  c2=_c2;
-  u0=_u0;
   ImportGauge(_Uthin,_Ufat);
 }
 template <class Impl>
-ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Uthin,GaugeField &_Utriple, GaugeField &_Ufat, GridCartesian &Fgrid,
+ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Utriple, GaugeField &_Ufat, GridCartesian &Fgrid,
 							 GridRedBlackCartesian &Hgrid, RealD _mass,
 							 const ImplParams &p)
-  : ImprovedStaggeredFermion(Fgrid,Hgrid,_mass,p)
+  : ImprovedStaggeredFermion(Fgrid,Hgrid,_mass,1.0,1.0,1.0,p)
 {
   ImportGaugeSimple(_Utriple,_Ufat);
 }
@@ -374,20 +382,116 @@ void ImprovedStaggeredFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder
 						  DoubledGaugeField &U,
 						  DoubledGaugeField &UUU,
 						  const FermionField &in,
-						  FermionField &out, int dag) {
+						  FermionField &out, int dag) 
+{
+#ifdef GRID_OMP
+  if ( StaggeredKernelsStatic::Comms == StaggeredKernelsStatic::CommsAndCompute )
+    DhopInternalOverlappedComms(st,lo,U,UUU,in,out,dag);
+  else
+#endif
+    DhopInternalSerialComms(st,lo,U,UUU,in,out,dag);
+}
+template <class Impl>
+void ImprovedStaggeredFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, LebesgueOrder &lo,
+								 DoubledGaugeField &U,
+								 DoubledGaugeField &UUU,
+								 const FermionField &in,
+								 FermionField &out, int dag) 
+{
+#ifdef GRID_OMP
+  Compressor compressor; 
+  int len =  U._grid->oSites();
+  const int LLs =  1;
+
+  st.Prepare();
+  st.HaloGather(in,compressor);
+  st.CommsMergeSHM(compressor);
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Ugly explicit thread mapping introduced for OPA reasons.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+#pragma omp parallel 
+  {
+    int tid = omp_get_thread_num();
+    int nthreads = omp_get_num_threads();
+    int ncomms = CartesianCommunicator::nCommThreads;
+    if (ncomms == -1) ncomms = 1;
+    assert(nthreads > ncomms);
+
+    if (tid >= ncomms) {
+      nthreads -= ncomms;
+      int ttid  = tid - ncomms;
+      int n     = len;
+      int chunk = n / nthreads;
+      int rem   = n % nthreads;
+      int myblock, myn;
+      if (ttid < rem) {
+        myblock = ttid * chunk + ttid;
+        myn = chunk+1;
+      } else {
+        myblock = ttid*chunk + rem;
+        myn = chunk;
+      }
+
+      // do the compute
+      if (dag == DaggerYes) {
+        for (int ss = myblock; ss < myblock+myn; ++ss) {
+          int sU = ss;
+	  // Interior = 1; Exterior = 0; must implement for staggered
+          Kernels::DhopSiteDag(st,lo,U,UUU,st.CommBuf(),1,sU,in,out,1,0); 
+        }
+      } else {
+        for (int ss = myblock; ss < myblock+myn; ++ss) {
+	  // Interior = 1; Exterior = 0;
+          int sU = ss;
+          Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),1,sU,in,out,1,0);
+        }
+      }
+    } else {
+      st.CommunicateThreaded();
+    }
+  }
+
+  // First to enter, last to leave timing
+  st.CommsMerge(compressor);
+
+  if (dag == DaggerYes) {
+    int sz=st.surface_list.size();
+    parallel_for (int ss = 0; ss < sz; ss++) {
+      int sU = st.surface_list[ss];
+      Kernels::DhopSiteDag(st,lo,U,UUU,st.CommBuf(),1,sU,in,out,0,1);
+    }
+  } else {
+    int sz=st.surface_list.size();
+    parallel_for (int ss = 0; ss < sz; ss++) {
+      int sU = st.surface_list[ss];
+      Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),1,sU,in,out,0,1);
+    }
+  }
+#else
+  assert(0);
+#endif
+}
+
+
+template <class Impl>
+void ImprovedStaggeredFermion<Impl>::DhopInternalSerialComms(StencilImpl &st, LebesgueOrder &lo,
+							     DoubledGaugeField &U,
+							     DoubledGaugeField &UUU,
+							     const FermionField &in,
+							     FermionField &out, int dag) 
+{
   assert((dag == DaggerNo) || (dag == DaggerYes));
 
   Compressor compressor;
   st.HaloExchange(in, compressor);
 
   if (dag == DaggerYes) {
-    PARALLEL_FOR_LOOP
-    for (int sss = 0; sss < in._grid->oSites(); sss++) {
+    parallel_for (int sss = 0; sss < in._grid->oSites(); sss++) {
       Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), 1, sss, in, out);
     }
   } else {
-    PARALLEL_FOR_LOOP
-    for (int sss = 0; sss < in._grid->oSites(); sss++) {
+    parallel_for (int sss = 0; sss < in._grid->oSites(); sss++) {
       Kernels::DhopSite(st, lo, U, UUU, st.CommBuf(), 1, sss, in, out);
     }
   }

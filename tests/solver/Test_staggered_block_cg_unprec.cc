@@ -74,7 +74,10 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
 
   RealD mass=0.003;
-  ImprovedStaggeredFermion5DR Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass); 
+  RealD c1=9.0/8.0;
+  RealD c2=-1.0/24.0;
+  RealD u0=1.0;
+  ImprovedStaggeredFermion5DR Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,c1,c2,u0); 
   MdagMLinearOperator<ImprovedStaggeredFermion5DR,FermionField> HermOp(Ds);
 
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
@@ -86,7 +89,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   std::cout << GridLogMessage << " Calling 4d CG "<<std::endl;
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-  ImprovedStaggeredFermionR Ds4d(Umu,Umu,*UGrid,*UrbGrid,mass);
+  ImprovedStaggeredFermionR Ds4d(Umu,Umu,*UGrid,*UrbGrid,mass,c1,c2,u0);
   MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> HermOp4d(Ds4d);
   FermionField src4d(UGrid); random(pRNG,src4d);
   FermionField result4d(UGrid); result4d=zero;

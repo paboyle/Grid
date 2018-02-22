@@ -105,20 +105,30 @@ class ImprovedStaggeredFermion : public StaggeredKernels<Impl>, public ImprovedS
 
   void DhopInternal(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU,
                     const FermionField &in, FermionField &out, int dag);
+  void DhopInternalSerialComms(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU,
+                    const FermionField &in, FermionField &out, int dag);
+  void DhopInternalOverlappedComms(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU,
+                    const FermionField &in, FermionField &out, int dag);
 
   // Constructor
   ImprovedStaggeredFermion(GaugeField &_Uthin, GaugeField &_Ufat, GridCartesian &Fgrid,
 			   GridRedBlackCartesian &Hgrid, RealD _mass,
-			   RealD _c1=9.0/8.0, RealD _c2=-1.0/24.0,RealD _u0=1.0,
+			   RealD _c1, RealD _c2,RealD _u0,
 			   const ImplParams &p = ImplParams());
 
-  ImprovedStaggeredFermion(GaugeField &_Uthin, GaugeField &_Utriple, GaugeField &_Ufat, GridCartesian &Fgrid,
+  //////////////////////////////////////////////////////////////////////////
+  // MILC constructor no coefficients; premultiply links by desired scaling
+  //////////////////////////////////////////////////////////////////////////
+  ImprovedStaggeredFermion(GaugeField &_Utriple, GaugeField &_Ufat, GridCartesian &Fgrid,
 			   GridRedBlackCartesian &Hgrid, RealD _mass,
 			   const ImplParams &p = ImplParams());
 
+  //////////////////////////////////////////////////////////////////////////
+  // A don't initialise the gauge field constructor; largely internal
+  //////////////////////////////////////////////////////////////////////////
   ImprovedStaggeredFermion(GridCartesian &Fgrid, GridRedBlackCartesian &Hgrid, RealD _mass,
+			   RealD _c1, RealD _c2,RealD _u0,
 			   const ImplParams &p = ImplParams());
-
 
   // DoubleStore impl dependent
   void ImportGaugeSimple(const GaugeField &_Utriple, const GaugeField &_Ufat);

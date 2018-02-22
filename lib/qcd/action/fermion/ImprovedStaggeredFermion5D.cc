@@ -41,8 +41,7 @@ ImprovedStaggeredFermion5DStatic::displacements({1, 1, 1, 1, -1, -1, -1, -1, 3, 
 
   // 5d lattice for DWF.
 template<class Impl>
-ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GaugeField &_Uthin,GaugeField &_Ufat,
-							     GridCartesian         &FiveDimGrid,
+ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GridCartesian         &FiveDimGrid,
 							     GridRedBlackCartesian &FiveDimRedBlackGrid,
 							     GridCartesian         &FourDimGrid,
 							     GridRedBlackCartesian &FourDimRedBlackGrid,
@@ -121,18 +120,43 @@ ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GaugeField &_Uthin,
     assert(FiveDimGrid._simd_layout[0]        ==1);
 
   }
-
-  // Allocate the required comms buffer
-  ImportGauge(_Uthin,_Ufat);
-
   int LLs = FiveDimGrid._rdimensions[0];
   int vol4= FourDimGrid.oSites();
   Stencil.BuildSurfaceList(LLs,vol4);
 
   vol4=FourDimRedBlackGrid.oSites();
   StencilEven.BuildSurfaceList(LLs,vol4);
-   StencilOdd.BuildSurfaceList(LLs,vol4);
+  StencilOdd.BuildSurfaceList(LLs,vol4);
+}
 
+template<class Impl>
+ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GaugeField &_Uthin,GaugeField &_Ufat,
+							     GridCartesian         &FiveDimGrid,
+							     GridRedBlackCartesian &FiveDimRedBlackGrid,
+							     GridCartesian         &FourDimGrid,
+							     GridRedBlackCartesian &FourDimRedBlackGrid,
+							     RealD _mass,
+							     RealD _c1,RealD _c2, RealD _u0,
+							     const ImplParams &p) :
+  ImprovedStaggeredFermion5D(FiveDimGrid,FiveDimRedBlackGrid,
+			     FourDimGrid,FourDimRedBlackGrid,
+			     _mass,_c1,_c2,_u0,p)
+{
+  ImportGauge(_Uthin,_Ufat);
+}
+template<class Impl>
+ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GaugeField &_Utriple,GaugeField &_Ufat,
+							     GridCartesian         &FiveDimGrid,
+							     GridRedBlackCartesian &FiveDimRedBlackGrid,
+							     GridCartesian         &FourDimGrid,
+							     GridRedBlackCartesian &FourDimRedBlackGrid,
+							     RealD _mass,
+							     const ImplParams &p) :
+  ImprovedStaggeredFermion5D(FiveDimGrid,FiveDimRedBlackGrid,
+			     FourDimGrid,FourDimRedBlackGrid,
+			     _mass,1.0,1.0,1.0,p)
+{
+  ImportGaugeSimple(_Utriple,_Ufat);
 }
 
 template <class Impl>
@@ -140,6 +164,35 @@ void ImprovedStaggeredFermion5D<Impl>::ImportGauge(const GaugeField &_Uthin)
 {
   ImportGauge(_Uthin,_Uthin);
 };
+///////////////////////////////////////////////////
+// For MILC use; pass three link U's and 1 link U
+///////////////////////////////////////////////////
+template <class Impl>
+void ImprovedStaggeredFermion5D<Impl>::ImportGaugeSimple(const GaugeField &_Utriple,const GaugeField &_Ufat) 
+{
+  /////////////////////////////////////////////////////////////////
+  // Trivial import; phases and fattening and such like preapplied
+  /////////////////////////////////////////////////////////////////
+  for (int mu = 0; mu < Nd; mu++) {
+
+    auto U = PeekIndex<LorentzIndex>(_Utriple, mu);
+    Impl::InsertGaugeField(UUUmu,U,mu);
+
+    U = adj( Cshift(U, mu, -3));
+    Impl::InsertGaugeField(UUUmu,-U,mu+4);
+
+    U = PeekIndex<LorentzIndex>(_Ufat, mu);
+    Impl::InsertGaugeField(Umu,U,mu);
+
+    U = adj( Cshift(U, mu, -1));
+    Impl::InsertGaugeField(Umu,-U,mu+4);
+
+  }
+  pickCheckerboard(Even, UmuEven,  Umu);
+  pickCheckerboard(Odd,  UmuOdd ,  Umu);
+  pickCheckerboard(Even, UUUmuEven,UUUmu);
+  pickCheckerboard(Odd,  UUUmuOdd, UUUmu);
+}
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::ImportGauge(const GaugeField &_Uthin,const GaugeField &_Ufat)
 {
