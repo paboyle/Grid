@@ -60,7 +60,7 @@ namespace QCD{
     GRID_SERIALIZABLE_ENUM(Gauge, undef, feynman, 1, coulomb, 2, landau, 3);
     GRID_SERIALIZABLE_ENUM(ZmScheme, undef, qedL, 1, qedTL, 2, qedInf, 3);
   public:
-    Photon(Gauge gauge, ZmScheme zmScheme, std::vector<Real> improvements);
+    Photon(Gauge gauge, ZmScheme zmScheme, std::vector<Real> improvements, Real G0);
     virtual ~Photon(void) = default;
     void FreePropagator(const GaugeField &in, GaugeField &out);
     void MomentumSpacePropagator(const GaugeField &in, GaugeField &out);
@@ -77,13 +77,15 @@ namespace QCD{
     Gauge    gauge_;
     ZmScheme zmScheme_;
     std::vector<Real>  improvement_;
+    Real     G0_;
   };
 
   typedef Photon<QedGimplR>  PhotonR;
   
   template<class Gimpl>
-  Photon<Gimpl>::Photon(Gauge gauge, ZmScheme zmScheme, std::vector<Real> improvements)
-  : gauge_(gauge), zmScheme_(zmScheme), improvement_(improvements)
+  Photon<Gimpl>::Photon(Gauge gauge, ZmScheme zmScheme,
+                        std::vector<Real> improvements, Real G0)
+  : gauge_(gauge), zmScheme_(zmScheme), improvement_(improvements), G0_(G0)
   {}
   
   template<class Gimpl>
@@ -109,7 +111,7 @@ namespace QCD{
     std::vector<int>   &l    = grid->_fdimensions;
     std::vector<int>   x0(nd,0);
     TComplex           Tone  = Complex(1.0,0.0);
-    // TComplex           Tzero = Complex(0.0,0.0);
+    TComplex           Tzero = Complex(G0_,0.0);
     FFT                fft(grid);
     
     one = Complex(1.0,0.0);
@@ -123,7 +125,7 @@ namespace QCD{
     }
     pokeSite(Tone, out, x0);
     out = one/out;
-    // pokeSite(Tzero, out, x0);
+    pokeSite(Tzero, out, x0);
     fft.FFT_all_dim(out, out, FFT::forward);
   }
   

@@ -68,7 +68,7 @@ void TStochEm::execute(void)
     LOG(Message) << "Generating stochastic EM potential..." << std::endl;
 
     std::vector<Real> improvements = strToVec<Real>(par().improvement);
-    PhotonR photon(par().gauge, par().zmScheme, improvements);
+    PhotonR photon(par().gauge, par().zmScheme, improvements, par().G0_qedInf);
     auto    &a = envGet(EmField, getName());
     auto    &w = envGet(EmComp, "_" + getName() + "_weight");
     
