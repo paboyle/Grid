@@ -48,7 +48,7 @@ public:
   virtual int CheckerBoarded(int dim){
     return 0;
   }
-  virtual int CheckerBoard(const std::vector<int> &site){
+  virtual int CheckerBoard(const Coordinate &site){
     return 0;
   }
   virtual int CheckerBoardDestination(int cb,int shift,int dim){
@@ -63,16 +63,16 @@ public:
   /////////////////////////////////////////////////////////////////////////
   // Constructor takes a parent grid and possibly subdivides communicator.
   /////////////////////////////////////////////////////////////////////////
-  GridCartesian(const std::vector<int> &dimensions,
-		const std::vector<int> &simd_layout,
-		const std::vector<int> &processor_grid,
+  GridCartesian(const Coordinate &dimensions,
+		const Coordinate &simd_layout,
+		const Coordinate &processor_grid,
 		const GridCartesian &parent) : GridBase(processor_grid,parent,dummy)
   {
     Init(dimensions,simd_layout,processor_grid);
   }
-  GridCartesian(const std::vector<int> &dimensions,
-		const std::vector<int> &simd_layout,
-		const std::vector<int> &processor_grid,
+  GridCartesian(const Coordinate &dimensions,
+		const Coordinate &simd_layout,
+		const Coordinate &processor_grid,
 		const GridCartesian &parent,int &split_rank) : GridBase(processor_grid,parent,split_rank)
   {
     Init(dimensions,simd_layout,processor_grid);
@@ -80,18 +80,18 @@ public:
   /////////////////////////////////////////////////////////////////////////
   // Construct from comm world
   /////////////////////////////////////////////////////////////////////////
-  GridCartesian(const std::vector<int> &dimensions,
-		const std::vector<int> &simd_layout,
-		const std::vector<int> &processor_grid) : GridBase(processor_grid)
+  GridCartesian(const Coordinate &dimensions,
+		const Coordinate &simd_layout,
+		const Coordinate &processor_grid) : GridBase(processor_grid)
   {
     Init(dimensions,simd_layout,processor_grid);
   }
 
   virtual ~GridCartesian() = default;
 
-  void Init(const std::vector<int> &dimensions,
-	    const std::vector<int> &simd_layout,
-	    const std::vector<int> &processor_grid)
+  void Init(const Coordinate &dimensions,
+	    const Coordinate &simd_layout,
+	    const Coordinate &processor_grid)
   {
     ///////////////////////
     // Grid information

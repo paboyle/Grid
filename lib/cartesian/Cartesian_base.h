@@ -36,9 +36,9 @@ NAMESPACE_BEGIN(Grid);
 // Commicator provides information on the processor grid
 //////////////////////////////////////////////////////////////////////
 //    unsigned long _ndimension;
-//    std::vector<int> _processors; // processor grid
+//    Coordinate _processors; // processor grid
 //    int              _processor;  // linear processor rank
-//    std::vector<int> _processor_coor;  // linear processor rank
+//    Coordinate _processor_coor;  // linear processor rank
 //////////////////////////////////////////////////////////////////////
 class GridBase : public CartesianCommunicator , public GridThread {
 
@@ -47,35 +47,37 @@ public:
   // Give Lattice access
   template<class object> friend class Lattice;
 
-  GridBase(const std::vector<int> & processor_grid) : CartesianCommunicator(processor_grid) {};
-  GridBase(const std::vector<int> & processor_grid,
+  GridBase(const Coordinate & processor_grid) : CartesianCommunicator(processor_grid) {}; 
+
+  GridBase(const Coordinate & processor_grid,
 	   const CartesianCommunicator &parent,
 	   int &split_rank) 
     : CartesianCommunicator(processor_grid,parent,split_rank) {};
-  GridBase(const std::vector<int> & processor_grid,
+
+  GridBase(const Coordinate & processor_grid,
 	   const CartesianCommunicator &parent) 
     : CartesianCommunicator(processor_grid,parent,dummy) {};
 
   virtual ~GridBase() = default;
 
   // Physics Grid information.
-  std::vector<int> _simd_layout;// Which dimensions get relayed out over simd lanes.
-  std::vector<int> _fdimensions;// (full) Global dimensions of array prior to cb removal
-  std::vector<int> _gdimensions;// Global dimensions of array after cb removal
-  std::vector<int> _ldimensions;// local dimensions of array with processor images removed
-  std::vector<int> _rdimensions;// Reduced local dimensions with simd lane images and processor images removed 
-  std::vector<int> _ostride;    // Outer stride for each dimension
-  std::vector<int> _istride;    // Inner stride i.e. within simd lane
+  Coordinate _simd_layout;// Which dimensions get relayed out over simd lanes.
+  Coordinate _fdimensions;// (full) Global dimensions of array prior to cb removal
+  Coordinate _gdimensions;// Global dimensions of array after cb removal
+  Coordinate _ldimensions;// local dimensions of array with processor images removed
+  Coordinate _rdimensions;// Reduced local dimensions with simd lane images and processor images removed 
+  Coordinate _ostride;    // Outer stride for each dimension
+  Coordinate _istride;    // Inner stride i.e. within simd lane
   int _osites;                  // _isites*_osites = product(dimensions).
   int _isites;
   int _fsites;                  // _isites*_osites = product(dimensions).
   int _gsites;
-  std::vector<int> _slice_block;// subslice information
-  std::vector<int> _slice_stride;
-  std::vector<int> _slice_nblock;
+  Coordinate _slice_block;// subslice information
+  Coordinate _slice_stride;
+  Coordinate _slice_nblock;
 
-  std::vector<int> _lstart;     // local start of array in gcoors _processor_coor[d]*_ldimensions[d]
-  std::vector<int> _lend  ;     // local end of array in gcoors   _processor_coor[d]*_ldimensions[d]+_ldimensions_[d]-1
+  Coordinate _lstart;     // local start of array in gcoors _processor_coor[d]*_ldimensions[d]
+  Coordinate _lend  ;     // local end of array in gcoors   _processor_coor[d]*_ldimensions[d]+_ldimensions_[d]-1
 
 public:
 
@@ -84,7 +86,7 @@ public:
   // GridCartesian / GridRedBlackCartesian
   ////////////////////////////////////////////////////////////////
   virtual int CheckerBoarded(int dim)=0;
-  virtual int CheckerBoard(const std::vector<int> &site)=0;
+  virtual int CheckerBoard(const Coordinate &site)=0;
   virtual int CheckerBoardDestination(int source_cb,int shift,int dim)=0;
   virtual int CheckerBoardShift(int source_cb,int dim,int shift,int osite)=0;
   virtual int CheckerBoardShiftForCB(int source_cb,int dim,int shift,int cb)=0;
@@ -103,20 +105,20 @@ public:
   // coordinate. Note, however, for data parallel operations the "inner" indexing cost is not paid and all
   // lanes are operated upon simultaneously.
   
-  virtual int oIndex(std::vector<int> &coor)
+  virtual int oIndex(Coordinate &coor)
   {
     int idx=0;
     // Works with either global or local coordinates
     for(int d=0;d<_ndimension;d++) idx+=_ostride[d]*(coor[d]%_rdimensions[d]);
     return idx;
   }
-  virtual int iIndex(std::vector<int> &lcoor)
+  virtual int iIndex(Coordinate &lcoor)
   {
     int idx=0;
     for(int d=0;d<_ndimension;d++) idx+=_istride[d]*(lcoor[d]/_rdimensions[d]);
     return idx;
   }
-  inline int oIndexReduced(std::vector<int> &ocoor)
+  inline int oIndexReduced(Coordinate &ocoor)
   {
     int idx=0; 
     // ocoor is already reduced so can eliminate the modulo operation
@@ -124,11 +126,11 @@ public:
     for(int d=0;d<_ndimension;d++) idx+=_ostride[d]*ocoor[d];
     return idx;
   }
-  inline void oCoorFromOindex (std::vector<int>& coor,int Oindex){
+  inline void oCoorFromOindex (Coordinate& coor,int Oindex){
     Lexicographic::CoorFromIndex(coor,Oindex,_rdimensions);
   }
 
-  inline void InOutCoorToLocalCoor (std::vector<int> &ocoor, std::vector<int> &icoor, std::vector<int> &lcoor) {
+  inline void InOutCoorToLocalCoor (Coordinate &ocoor, Coordinate &icoor, Coordinate &lcoor) {
     lcoor.resize(_ndimension);
     for (int d = 0; d < _ndimension; d++)
       lcoor[d] = ocoor[d] + _rdimensions[d] * icoor[d];
@@ -137,7 +139,7 @@ public:
   //////////////////////////////////////////////////////////
   // SIMD lane addressing
   //////////////////////////////////////////////////////////
-  inline void iCoorFromIindex(std::vector<int> &coor,int lane)
+  inline void iCoorFromIindex(Coordinate &coor,int lane)
   {
     Lexicographic::CoorFromIndex(coor,lane,_simd_layout);
   }
@@ -180,11 +182,11 @@ public:
   inline int gSites(void) const { return _isites*_osites*_Nprocessors; }; 
   inline int Nd    (void) const { return _ndimension;};
 
-  inline const std::vector<int> LocalStarts(void)             { return _lstart;    };
-  inline const std::vector<int> &FullDimensions(void)         { return _fdimensions;};
-  inline const std::vector<int> &GlobalDimensions(void)       { return _gdimensions;};
-  inline const std::vector<int> &LocalDimensions(void)        { return _ldimensions;};
-  inline const std::vector<int> &VirtualLocalDimensions(void) { return _ldimensions;};
+  inline const Coordinate LocalStarts(void)             { return _lstart;    };
+  inline const Coordinate &FullDimensions(void)         { return _fdimensions;};
+  inline const Coordinate &GlobalDimensions(void)       { return _gdimensions;};
+  inline const Coordinate &LocalDimensions(void)        { return _ldimensions;};
+  inline const Coordinate &VirtualLocalDimensions(void) { return _ldimensions;};
 
   ////////////////////////////////////////////////////////////////
   // Utility to print the full decomposition details 
@@ -208,15 +210,15 @@ public:
   ////////////////////////////////////////////////////////////////
   // Global addressing
   ////////////////////////////////////////////////////////////////
-  void GlobalIndexToGlobalCoor(int gidx,std::vector<int> &gcoor){
+  void GlobalIndexToGlobalCoor(int gidx,Coordinate &gcoor){
     assert(gidx< gSites());
     Lexicographic::CoorFromIndex(gcoor,gidx,_gdimensions);
   }
-  void LocalIndexToLocalCoor(int lidx,std::vector<int> &lcoor){
+  void LocalIndexToLocalCoor(int lidx,Coordinate &lcoor){
     assert(lidx<lSites());
     Lexicographic::CoorFromIndex(lcoor,lidx,_ldimensions);
   }
-  void GlobalCoorToGlobalIndex(const std::vector<int> & gcoor,int & gidx){
+  void GlobalCoorToGlobalIndex(const Coordinate & gcoor,int & gidx){
     gidx=0;
     int mult=1;
     for(int mu=0;mu<_ndimension;mu++) {
@@ -224,7 +226,7 @@ public:
       mult*=_gdimensions[mu];
     }
   }
-  void GlobalCoorToProcessorCoorLocalCoor(std::vector<int> &pcoor,std::vector<int> &lcoor,const std::vector<int> &gcoor)
+  void GlobalCoorToProcessorCoorLocalCoor(Coordinate &pcoor,Coordinate &lcoor,const Coordinate &gcoor)
   {
     pcoor.resize(_ndimension);
     lcoor.resize(_ndimension);
@@ -234,14 +236,14 @@ public:
       lcoor[mu] = gcoor[mu]%_fld;
     }
   }
-  void GlobalCoorToRankIndex(int &rank, int &o_idx, int &i_idx ,const std::vector<int> &gcoor)
+  void GlobalCoorToRankIndex(int &rank, int &o_idx, int &i_idx ,const Coordinate &gcoor)
   {
-    std::vector<int> pcoor;
-    std::vector<int> lcoor;
+    Coordinate pcoor;
+    Coordinate lcoor;
     GlobalCoorToProcessorCoorLocalCoor(pcoor,lcoor,gcoor);
     rank = RankFromProcessorCoor(pcoor);
     /*
-      std::vector<int> cblcoor(lcoor);
+      Coordinate cblcoor(lcoor);
       for(int d=0;d<cblcoor.size();d++){
       if( this->CheckerBoarded(d) ) {
       cblcoor[d] = lcoor[d]/2;
@@ -252,10 +254,10 @@ public:
     o_idx= oIndex(lcoor);
   }
 
-  void RankIndexToGlobalCoor(int rank, int o_idx, int i_idx , std::vector<int> &gcoor)
+  void RankIndexToGlobalCoor(int rank, int o_idx, int i_idx , Coordinate &gcoor)
   {
     gcoor.resize(_ndimension);
-    std::vector<int> coor(_ndimension);
+    Coordinate coor(_ndimension);
 
     ProcessorCoorFromRank(rank,coor);
     for(int mu=0;mu<_ndimension;mu++) gcoor[mu] = _ldimensions[mu]*coor[mu];
@@ -267,14 +269,14 @@ public:
     for(int mu=0;mu<_ndimension;mu++) gcoor[mu] += coor[mu];
       
   }
-  void RankIndexCbToFullGlobalCoor(int rank, int o_idx, int i_idx, int cb,std::vector<int> &fcoor)
+  void RankIndexCbToFullGlobalCoor(int rank, int o_idx, int i_idx, int cb,Coordinate &fcoor)
   {
     RankIndexToGlobalCoor(rank,o_idx,i_idx ,fcoor);
     if(CheckerBoarded(0)){
       fcoor[0] = fcoor[0]*2+cb;
     }
   }
-  void ProcessorCoorLocalCoorToGlobalCoor(std::vector<int> &Pcoor,std::vector<int> &Lcoor,std::vector<int> &gcoor)
+  void ProcessorCoorLocalCoorToGlobalCoor(Coordinate &Pcoor,Coordinate &Lcoor,Coordinate &gcoor)
   {
     gcoor.resize(_ndimension);
     for(int mu=0;mu<_ndimension;mu++) gcoor[mu] = Pcoor[mu]*_ldimensions[mu]+Lcoor[mu];

@@ -40,7 +40,7 @@ static const int Odd    =CbBlack;
 class GridRedBlackCartesian : public GridBase
 {
 public:
-  std::vector<int> _checker_dim_mask;
+  Coordinate _checker_dim_mask;
   int              _checker_dim;
   std::vector<int> _checker_board;
 
@@ -48,7 +48,7 @@ public:
     if( dim==_checker_dim) return 1;
     else return 0;
   }
-  virtual int CheckerBoard(const std::vector<int> &site){
+  virtual int CheckerBoard(const Coordinate &site){
     int linear=0;
     assert(site.size()==_ndimension);
     for(int d=0;d<_ndimension;d++){ 
@@ -81,7 +81,7 @@ public:
   }
   virtual int  CheckerBoardFromOindex (int Oindex)
   {
-    std::vector<int> ocoor;
+    Coordinate ocoor;
     oCoorFromOindex(ocoor,Oindex);
     return CheckerBoard(ocoor);
   }
@@ -116,7 +116,7 @@ public:
   GridRedBlackCartesian(const GridBase *base) : GridBase(base->_processors,*base)
   {
     int dims = base->_ndimension;
-    std::vector<int> checker_dim_mask(dims,1);
+    Coordinate checker_dim_mask(dims,1);
     int checker_dim = 0;
     Init(base->_fdimensions,base->_simd_layout,base->_processors,checker_dim_mask,checker_dim);
   };
@@ -125,7 +125,7 @@ public:
   // Create redblack from original grid, with non-trivial checker dim mask
   ////////////////////////////////////////////////////////////
   GridRedBlackCartesian(const GridBase *base,
-			const std::vector<int> &checker_dim_mask,
+			const Coordinate &checker_dim_mask,
 			int checker_dim
 			) :  GridBase(base->_processors,*base) 
   {
@@ -134,10 +134,10 @@ public:
 
   virtual ~GridRedBlackCartesian() = default;
 
-  void Init(const std::vector<int> &dimensions,
-	    const std::vector<int> &simd_layout,
-	    const std::vector<int> &processor_grid,
-	    const std::vector<int> &checker_dim_mask,
+  void Init(const Coordinate &dimensions,
+	    const Coordinate &simd_layout,
+	    const Coordinate &processor_grid,
+	    const Coordinate &checker_dim_mask,
 	    int checker_dim)
   {
     ///////////////////////
@@ -252,7 +252,7 @@ public:
   };
 
 protected:
-  virtual int oIndex(std::vector<int> &coor)
+  virtual int oIndex(Coordinate &coor)
   {
     int idx = 0;
     for (int d = 0; d < _ndimension; d++)
@@ -269,7 +269,7 @@ protected:
     return idx;
   };
 
-  virtual int iIndex(std::vector<int> &lcoor)
+  virtual int iIndex(Coordinate &lcoor)
   {
     int idx = 0;
     for (int d = 0; d < _ndimension; d++)
