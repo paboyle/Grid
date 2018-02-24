@@ -36,7 +36,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
   std::cout<<GridLogMessage << "Ls = " << Ls << std::endl;
 
-  std::vector<int> latt4 = GridDefaultLatt();
+  Coordinate latt4 = GridDefaultLatt();
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);

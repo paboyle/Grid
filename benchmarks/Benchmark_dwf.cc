@@ -50,7 +50,7 @@ int main (int argc, char ** argv)
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
-  std::vector<int> latt4 = GridDefaultLatt();
+  Coordinate latt4 = GridDefaultLatt();
   int Ls=16;
   for(int i=0;i<argc;i++)
     if(std::string(argv[i]) == "-Ls"){
@@ -82,7 +82,7 @@ int main (int argc, char ** argv)
 #if 0
   src = Zero();
   {
-    std::vector<int> origin({0,0,0,latt4[2]-1,0});
+    Coordinate origin({0,0,0,latt4[2]-1,0});
     SpinColourVectorF tmp;
     tmp=Zero();
     tmp()(0)(0)=Complex(-2.0,0.0);

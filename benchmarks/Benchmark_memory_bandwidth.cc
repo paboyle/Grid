@@ -43,8 +43,8 @@ int main (int argc, char ** argv)
 
   Vec rn = Zero();
 
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vReal::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vReal::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
@@ -59,7 +59,7 @@ int main (int argc, char ** argv)
 #define NLOOP (10*lmax*lmax*lmax*lmax/vol)
   for(int lat=8;lat<=lmax;lat+=8){
 
-      std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
+      Coordinate latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
       int64_t vol= latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
@@ -96,7 +96,7 @@ int main (int argc, char ** argv)
   
   for(int lat=8;lat<=lmax;lat+=8){
 
-      std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
+      Coordinate latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
       int64_t vol= latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
@@ -132,7 +132,7 @@ int main (int argc, char ** argv)
   for(int lat=8;lat<=lmax;lat+=8){
 
 
-      std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
+      Coordinate latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
       int64_t vol= latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       uint64_t Nloop=NLOOP;
 
@@ -168,7 +168,7 @@ int main (int argc, char ** argv)
 
   for(int lat=8;lat<=lmax;lat+=8){
 
-      std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
+      Coordinate latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
       int64_t vol= latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       uint64_t Nloop=NLOOP;
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);

@@ -53,8 +53,8 @@ int main (int argc, char ** argv)
   typename WilsonFermionR::ImplParams params;
   params.overlapCommsCompute = overlapComms;
 
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
   std::vector<int> seeds({1,2,3,4});
   RealD mass = 0.1;
 
@@ -83,14 +83,13 @@ int main (int argc, char ** argv)
   if ( getenv("DMIN") ) dmin=atoi(getenv("DMIN"));
   for (int L=8; L<=Lmax; L*=2)
     {
-      std::vector<int> latt_size = std::vector<int>(4,L);
+      Coordinate latt_size = Coordinate(4,L);
       for(int d=4; d>dmin; d--)
 	{
 	  if ( d<=3 ) { latt_size[d] *= 2; }
 
 	  std::cout << GridLogMessage;
-	  std::copy( latt_size.begin(), --latt_size.end(), std::ostream_iterator<int>( std::cout, std::string("x").c_str() ) );
-	  std::cout << latt_size.back() << "\t\t";
+	  std::cout << latt_size;
 
 	  GridCartesian           Grid(latt_size,simd_layout,mpi_layout);
 	  GridRedBlackCartesian RBGrid(&Grid);

@@ -41,8 +41,8 @@ int main (int argc, char ** argv)
   typedef iVector<vReal,Nvec> Vec;
 
 
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vReal::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vReal::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
@@ -58,7 +58,7 @@ int main (int argc, char ** argv)
 
     int Nloop=lmax*4/lat;
 
-    std::vector<int> latt_size  ({2*mpi_layout[0],2*mpi_layout[1],4*mpi_layout[2],lat*mpi_layout[3]});
+    Coordinate latt_size  ({2*mpi_layout[0],2*mpi_layout[1],4*mpi_layout[2],lat*mpi_layout[3]});
 
     GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 

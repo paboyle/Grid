@@ -109,8 +109,8 @@ public:
     int nmu=0;
     int maxlat=32;
 
-    std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
-    std::vector<int> mpi_layout  = GridDefaultMpi();
+    Coordinate simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
+    Coordinate mpi_layout  = GridDefaultMpi();
 
     for(int mu=0;mu<Nd;mu++) if (mpi_layout[mu]>1) nmu++;
 
@@ -125,7 +125,7 @@ public:
     for(int lat=4;lat<=maxlat;lat+=4){
       for(int Ls=8;Ls<=8;Ls*=2){
 
-	std::vector<int> latt_size  ({lat*mpi_layout[0],
+	Coordinate latt_size  ({lat*mpi_layout[0],
 	      lat*mpi_layout[1],
 	      lat*mpi_layout[2],
 	      lat*mpi_layout[3]});
@@ -217,8 +217,8 @@ public:
     typedef Lattice< iVector< vReal,Nvec> > LatticeVec;
     typedef iVector<vReal,Nvec> Vec;
 
-    std::vector<int> simd_layout = GridDefaultSimd(Nd,vReal::Nsimd());
-    std::vector<int> mpi_layout  = GridDefaultMpi();
+    Coordinate simd_layout = GridDefaultSimd(Nd,vReal::Nsimd());
+    Coordinate mpi_layout  = GridDefaultMpi();
 
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << "= Benchmarking a*x + y bandwidth"<<std::endl;
@@ -236,7 +236,7 @@ public:
     GridSerialRNG          sRNG;      sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
     for(int lat=8;lat<=lmax;lat+=4){
 
-      std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
+      Coordinate latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
       int64_t vol= latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
@@ -284,25 +284,25 @@ public:
     // Set/Get the layout & grid size
     ///////////////////////////////////////////////////////
     int threads = GridThread::GetThreads();
-    std::vector<int> mpi = GridDefaultMpi(); assert(mpi.size()==4);
-    std::vector<int> local({L,L,L,L});
+    Coordinate mpi = GridDefaultMpi(); assert(mpi.size()==4);
+    Coordinate local({L,L,L,L});
 
-    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(std::vector<int>({64,64,64,64}), 
+    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(Coordinate({64,64,64,64}), 
 								       GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
     uint64_t NP = TmpGrid->RankCount();
     uint64_t NN = TmpGrid->NodeCount();
     NN_global=NN;
     uint64_t SHM=NP/NN;
 
-    std::vector<int> internal;
-    if      ( SHM == 1 )   internal = std::vector<int>({1,1,1,1});
-    else if ( SHM == 2 )   internal = std::vector<int>({2,1,1,1});
-    else if ( SHM == 4 )   internal = std::vector<int>({2,2,1,1});
-    else if ( SHM == 8 )   internal = std::vector<int>({2,2,2,1});
+    Coordinate internal;
+    if      ( SHM == 1 )   internal = Coordinate({1,1,1,1});
+    else if ( SHM == 2 )   internal = Coordinate({2,1,1,1});
+    else if ( SHM == 4 )   internal = Coordinate({2,2,1,1});
+    else if ( SHM == 8 )   internal = Coordinate({2,2,2,1});
     else assert(0);
 
-    std::vector<int> nodes({mpi[0]/internal[0],mpi[1]/internal[1],mpi[2]/internal[2],mpi[3]/internal[3]});
-    std::vector<int> latt4({local[0]*nodes[0],local[1]*nodes[1],local[2]*nodes[2],local[3]*nodes[3]});
+    Coordinate nodes({mpi[0]/internal[0],mpi[1]/internal[1],mpi[2]/internal[2],mpi[3]/internal[3]});
+    Coordinate latt4({local[0]*nodes[0],local[1]*nodes[1],local[2]*nodes[2],local[3]*nodes[3]});
 
     ///////// Welcome message ////////////
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
@@ -466,25 +466,25 @@ public:
     // Set/Get the layout & grid size
     ///////////////////////////////////////////////////////
     int threads = GridThread::GetThreads();
-    std::vector<int> mpi = GridDefaultMpi(); assert(mpi.size()==4);
-    std::vector<int> local({L,L,L,L});
+    Coordinate mpi = GridDefaultMpi(); assert(mpi.size()==4);
+    Coordinate local({L,L,L,L});
 
-    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(std::vector<int>({64,64,64,64}), 
+    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(Coordinate({64,64,64,64}), 
 								       GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
     uint64_t NP = TmpGrid->RankCount();
     uint64_t NN = TmpGrid->NodeCount();
     NN_global=NN;
     uint64_t SHM=NP/NN;
 
-    std::vector<int> internal;
-    if      ( SHM == 1 )   internal = std::vector<int>({1,1,1,1});
-    else if ( SHM == 2 )   internal = std::vector<int>({2,1,1,1});
-    else if ( SHM == 4 )   internal = std::vector<int>({2,2,1,1});
-    else if ( SHM == 8 )   internal = std::vector<int>({2,2,2,1});
+    Coordinate internal;
+    if      ( SHM == 1 )   internal = Coordinate({1,1,1,1});
+    else if ( SHM == 2 )   internal = Coordinate({2,1,1,1});
+    else if ( SHM == 4 )   internal = Coordinate({2,2,1,1});
+    else if ( SHM == 8 )   internal = Coordinate({2,2,2,1});
     else assert(0);
 
-    std::vector<int> nodes({mpi[0]/internal[0],mpi[1]/internal[1],mpi[2]/internal[2],mpi[3]/internal[3]});
-    std::vector<int> latt4({local[0]*nodes[0],local[1]*nodes[1],local[2]*nodes[2],local[3]*nodes[3]});
+    Coordinate nodes({mpi[0]/internal[0],mpi[1]/internal[1],mpi[2]/internal[2],mpi[3]/internal[3]});
+    Coordinate latt4({local[0]*nodes[0],local[1]*nodes[1],local[2]*nodes[2],local[3]*nodes[3]});
 
     ///////// Welcome message ////////////
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
@@ -701,10 +701,10 @@ int main (int argc, char ** argv)
   }
 #if 1
   int sel=2;
-  std::vector<int> L_list({8,12,16,24});
+  Coordinate L_list({8,12,16,24});
 #else
   int sel=1;
-  std::vector<int> L_list({8,12});
+  Coordinate L_list({8,12});
 #endif
   int selm1=sel-1;
   std::vector<double> robust_list;
