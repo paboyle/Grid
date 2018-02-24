@@ -115,9 +115,9 @@ private:
   double flops_call;
   uint64_t usec;
     
-  std::vector<int> dimensions;
-  std::vector<int> processors;
-  std::vector<int> processor_coor;
+  Coordinate dimensions;
+  Coordinate processors;
+  Coordinate processor_coor;
     
 public:
     
@@ -137,7 +137,7 @@ public:
   {
     flops=0;
     usec =0;
-    std::vector<int> layout(Nd,1);
+    Coordinate layout(Nd,1);
     sgrid = new GridCartesian(dimensions,layout,processors);
   };
     
@@ -146,7 +146,7 @@ public:
   }
     
   template<class vobj>
-  void FFT_dim_mask(Lattice<vobj> &result,const Lattice<vobj> &source,std::vector<int> mask,int sign){
+  void FFT_dim_mask(Lattice<vobj> &result,const Lattice<vobj> &source,Coordinate mask,int sign){
 
     conformable(result.Grid(),vgrid);
     conformable(source.Grid(),vgrid);
@@ -162,7 +162,7 @@ public:
 
   template<class vobj>
   void FFT_all_dim(Lattice<vobj> &result,const Lattice<vobj> &source,int sign){
-    std::vector<int> mask(Nd,1);
+    Coordinate mask(Nd,1);
     FFT_dim_mask(result,source,mask,sign);
   }
 
@@ -178,8 +178,8 @@ public:
     int L = vgrid->_ldimensions[dim];
     int G = vgrid->_fdimensions[dim];
       
-    std::vector<int> layout(Nd,1);
-    std::vector<int> pencil_gd(vgrid->_fdimensions);
+    Coordinate layout(Nd,1);
+    Coordinate pencil_gd(vgrid->_fdimensions);
       
     pencil_gd[dim] = G*processors[dim];
       
@@ -228,45 +228,37 @@ public:
     }
       
     // Barrel shift and collect global pencil
-    std::vector<int> lcoor(Nd), gcoor(Nd);
+    Coordinate lcoor(Nd), gcoor(Nd);
     result = source;
     int pc = processor_coor[dim];
     for(int p=0;p<processors[dim];p++) {
-      thread_region {
-          std::vector<int> cbuf(Nd);
+      thread_loop( (int idx=0;idx<sgrid->lSites();idx++), {
+          Coordinate cbuf(Nd);
           sobj s;
-          
-          thread_loop_in_region( (int idx=0;idx<sgrid->lSites();idx++), {
-	      sgrid->LocalIndexToLocalCoor(idx,cbuf);
-	      peekLocalSite(s,result,cbuf);
-	      cbuf[dim]+=((pc+p) % processors[dim])*L;
-	      //            cbuf[dim]+=p*L;
-	      pokeLocalSite(s,pgbuf,cbuf);
-	    } );
-        }
-      if (p != processors[dim] - 1)
-        {
-          result = Cshift(result,dim,L);
-        }
+	  sgrid->LocalIndexToLocalCoor(idx,cbuf);
+	  peekLocalSite(s,result,cbuf);
+	  cbuf[dim]+=((pc+p) % processors[dim])*L;
+	  //            cbuf[dim]+=p*L;
+	  pokeLocalSite(s,pgbuf,cbuf);
+      });
+      if (p != processors[dim] - 1) {
+	result = Cshift(result,dim,L);
+      }
     }
       
     // Loop over orthog coords
     int NN=pencil_g.lSites();
     GridStopWatch timer;
     timer.Start();
-    thread_region {
-
-        std::vector<int> cbuf(Nd);
-        
-        thread_loop_in_region( (int idx=0;idx<NN;idx++), {
-	    pencil_g.LocalIndexToLocalCoor(idx, cbuf);
-	    if ( cbuf[dim] == 0 ) {  // restricts loop to plane at lcoor[dim]==0
-	      FFTW_scalar *in = (FFTW_scalar *)&pgbuf[idx];
-	      FFTW_scalar *out= (FFTW_scalar *)&pgbuf[idx];
-	      FFTW<scalar>::fftw_execute_dft(p,in,out);
-	    }
-	  });
-      }
+    thread_loop( (int idx=0;idx<NN;idx++), {
+        Coordinate cbuf(Nd);
+	pencil_g.LocalIndexToLocalCoor(idx, cbuf);
+	if ( cbuf[dim] == 0 ) {  // restricts loop to plane at lcoor[dim]==0
+	  FFTW_scalar *in = (FFTW_scalar *)&pgbuf[idx];
+	  FFTW_scalar *out= (FFTW_scalar *)&pgbuf[idx];
+	  FFTW<scalar>::fftw_execute_dft(p,in,out);
+	}
+    });
     timer.Stop();
       
     // performance counting
@@ -277,19 +269,15 @@ public:
     flops+= flops_call*NN;
       
     // writing out result
-    thread_region {
-
-        std::vector<int> clbuf(Nd), cgbuf(Nd);
-        sobj s;
-        
-        thread_loop_in_region( (int idx=0;idx<sgrid->lSites();idx++), {
-	    sgrid->LocalIndexToLocalCoor(idx,clbuf);
-	    cgbuf = clbuf;
-	    cgbuf[dim] = clbuf[dim]+L*pc;
-	    peekLocalSite(s,pgbuf,cgbuf);
-	    pokeLocalSite(s,result,clbuf);
-	});
-      }
+    thread_loop( (int idx=0;idx<sgrid->lSites();idx++), {
+	Coordinate clbuf(Nd), cgbuf(Nd);
+	sobj s;
+	sgrid->LocalIndexToLocalCoor(idx,clbuf);
+	cgbuf = clbuf;
+	cgbuf[dim] = clbuf[dim]+L*pc;
+	peekLocalSite(s,pgbuf,cgbuf);
+	pokeLocalSite(s,result,clbuf);
+    });
     result = result*div;
       
     // destroying plan
