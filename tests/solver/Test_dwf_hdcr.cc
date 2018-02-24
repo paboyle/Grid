@@ -490,7 +490,7 @@ int main (int argc, char ** argv)
   std::vector<int> block ({2,2,2,2});
   const int nbasis= 32;
 
-  std::vector<int> clatt = GridDefaultLatt();
+  auto clatt = GridDefaultLatt();
   for(int d=0;d<clatt.size();d++){
     clatt[d] = clatt[d]/block[d];
   }
