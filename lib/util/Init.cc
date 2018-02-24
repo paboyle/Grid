@@ -79,18 +79,18 @@ NAMESPACE_BEGIN(Grid);
 // Convenience functions to access stadard command line arg
 // driven parallelism controls
 //////////////////////////////////////////////////////
-static std::vector<int> Grid_default_latt;
-static std::vector<int> Grid_default_mpi;
+static Coordinate Grid_default_latt;
+static Coordinate Grid_default_mpi;
 
 int GridThread::_threads =1;
 int GridThread::_hyperthreads=1;
 int GridThread::_cores=1;
 
-const std::vector<int> &GridDefaultLatt(void)     {return Grid_default_latt;};
-const std::vector<int> &GridDefaultMpi(void)      {return Grid_default_mpi;};
-const std::vector<int> GridDefaultSimd(int dims,int nsimd)
+const Coordinate &GridDefaultLatt(void)     {return Grid_default_latt;};
+const Coordinate &GridDefaultMpi(void)      {return Grid_default_mpi;};
+const Coordinate GridDefaultSimd(int dims,int nsimd)
 {
-  std::vector<int> layout(dims);
+  Coordinate layout(dims);
   int nn=nsimd;
   for(int d=dims-1;d>=0;d--){
     if ( nn>=2) {
@@ -138,7 +138,8 @@ void GridCmdOptionCSL(std::string str,std::vector<std::string> & vec)
   return;
 }
 
-void GridCmdOptionIntVector(std::string &str,std::vector<int> & vec)
+template<class VectorInt>
+void GridCmdOptionIntVector(std::string &str,VectorInt & vec)
 {
   vec.resize(0);
   std::stringstream ss(str);
@@ -160,11 +161,11 @@ void GridCmdOptionInt(std::string &str,int & val)
 
 
 void GridParseLayout(char **argv,int argc,
-		     std::vector<int> &latt,
-		     std::vector<int> &mpi)
+		     Coordinate &latt_c,
+		     Coordinate &mpi_c)
 {
-  mpi =std::vector<int>({1,1,1,1});
-  latt=std::vector<int>({8,8,8,8});
+  auto mpi =std::vector<int>({1,1,1,1});
+  auto latt=std::vector<int>({8,8,8,8});
 
   GridThread::SetMaxThreads();
 
@@ -194,9 +195,22 @@ void GridParseLayout(char **argv,int argc,
     GridCmdOptionInt(arg,cores);
     GridThread::SetCores(cores);
   }
+  // Copy back into coordinate format
+  int nd = mpi.size();
+  assert(latt.size()==nd);
+  latt_c.resize(nd);
+   mpi_c.resize(nd);
+  for(int d=0;d<nd;d++){
+    latt_c[d] = latt[d];
+     mpi_c[d] = mpi[d];
+  } 
 }
 
-std::string GridCmdVectorIntToString(const std::vector<int> & vec){
+template<class VectorInt>
+std::string GridCmdVectorIntToString(const VectorInt & vec_in){
+  int sz = vec_in.size();
+  std::vector<int> vec(sz);
+  for(int s=0;s<sz;s++) vec[s] = vec_in[s];
   std::ostringstream oss;
   std::copy(vec.begin(), vec.end(),std::ostream_iterator<int>(oss, " "));
   return oss.str();

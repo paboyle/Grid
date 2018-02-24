@@ -40,26 +40,22 @@ void Grid_debug_handler_init(void);
 void Grid_quiesce_nodes(void);
 void Grid_unquiesce_nodes(void);
 
-const std::vector<int> GridDefaultSimd(int dims,int nsimd);
-const std::vector<int> &GridDefaultLatt(void);
-const std::vector<int> &GridDefaultMpi(void);
-const int              &GridThreads(void)  ;
-void                    GridSetThreads(int t) ;
+const Coordinate  GridDefaultSimd(int dims,int nsimd);
+const Coordinate &GridDefaultLatt(void);
+const Coordinate &GridDefaultMpi(void);
+const int        &GridThreads(void)  ;
+void              GridSetThreads(int t) ;
 void GridLogTimestamp(int);
 void GridLogLayout();
 
 // Common parsing chores
 std::string GridCmdOptionPayload(char ** begin, char ** end, const std::string & option);
 bool        GridCmdOptionExists(char** begin, char** end, const std::string& option);
-std::string GridCmdVectorIntToString(const std::vector<int> & vec);
+template<class VectorInt>
+std::string GridCmdVectorIntToString(const VectorInt & vec);
 void GridCmdOptionCSL(std::string str,std::vector<std::string> & vec);
-void GridCmdOptionIntVector(std::string &str,std::vector<int> & vec);
-
-
-void GridParseLayout(char **argv,int argc,
-		     std::vector<int> &latt,
-		     std::vector<int> &simd,
-		     std::vector<int> &mpi);
+template<class VectorInt>
+void GridCmdOptionIntVector(std::string &str,VectorInt & vec);
 
 NAMESPACE_END(Grid);
 
