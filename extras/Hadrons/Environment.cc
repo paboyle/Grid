@@ -44,7 +44,7 @@ HADRON_ERROR(Definition, "no object with address " + std::to_string(address));
 // constructor /////////////////////////////////////////////////////////////////
 Environment::Environment(void)
 {
-    dim_ = GridDefaultLatt();
+    dim_ = GridDefaultLatt().toVector();
     nd_  = dim_.size();
     grid4d_.reset(SpaceTimeGrid::makeFourDimGrid(
         dim_, GridDefaultSimd(nd_, vComplex::Nsimd()),

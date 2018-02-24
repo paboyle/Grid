@@ -143,7 +143,7 @@ void TChargedProp::makeCaches(void)
     }
     if (!phasesDone_)
     {
-        std::vector<int> &l = env().getGrid()->_fdimensions;
+        Coordinate &l = env().getGrid()->_fdimensions;
         Complex          ci(0.0,1.0);
         
         LOG(Message) << "Caching shift phases..." << std::endl;
