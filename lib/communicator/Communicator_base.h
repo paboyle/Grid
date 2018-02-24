@@ -52,9 +52,9 @@ public:
   // Communicator should know nothing of the physics grid, only processor grid.
   ////////////////////////////////////////////
   int              _Nprocessors;     // How many in all
-  std::vector<int> _processors;      // Which dimensions get relayed out over processors lanes.
+  Coordinate _processors;      // Which dimensions get relayed out over processors lanes.
   int              _processor;       // linear processor rank
-  std::vector<int> _processor_coor;  // linear processor coordinate
+  Coordinate _processor_coor;  // linear processor coordinate
   unsigned long    _ndimension;
   static Grid_MPI_Comm      communicator_world;
   Grid_MPI_Comm             communicator;
@@ -69,8 +69,8 @@ public:
   // Constructors to sub-divide a parent communicator
   // and default to comm world
   ////////////////////////////////////////////////
-  CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent,int &srank);
-  CartesianCommunicator(const std::vector<int> &pdimensions_in);
+  CartesianCommunicator(const Coordinate &processors,const CartesianCommunicator &parent,int &srank);
+  CartesianCommunicator(const Coordinate &pdimensions_in);
   virtual ~CartesianCommunicator();
 
 private:
@@ -79,7 +79,7 @@ private:
   // Private initialise from an MPI communicator
   // Can use after an MPI_Comm_split, but hidden from user so private
   ////////////////////////////////////////////////
-  void InitFromMPICommunicator(const std::vector<int> &processors, Grid_MPI_Comm communicator_base);
+  void InitFromMPICommunicator(const Coordinate &processors, Grid_MPI_Comm communicator_base);
 
 public:
   
@@ -87,15 +87,15 @@ public:
   // Wraps MPI_Cart routines, or implements equivalent on other impls
   ////////////////////////////////////////////////////////////////////////////////////////
   void ShiftedRanks(int dim,int shift,int & source, int & dest);
-  int  RankFromProcessorCoor(std::vector<int> &coor);
-  void ProcessorCoorFromRank(int rank,std::vector<int> &coor);
+  int  RankFromProcessorCoor(Coordinate &coor);
+  void ProcessorCoorFromRank(int rank,Coordinate &coor);
   
   int                      Dimensions(void)        ;
   int                      IsBoss(void)            ;
   int                      BossRank(void)          ;
   int                      ThisRank(void)          ;
-  const std::vector<int> & ThisProcessorCoor(void) ;
-  const std::vector<int> & ProcessorGrid(void)     ;
+  const Coordinate & ThisProcessorCoor(void) ;
+  const Coordinate & ProcessorGrid(void)     ;
   int                      ProcessorCount(void)    ;
 
   ////////////////////////////////////////////////////////////////////////////////

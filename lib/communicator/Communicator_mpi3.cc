@@ -65,14 +65,14 @@ void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest
   int ierr=MPI_Cart_shift(communicator,dim,shift,&source,&dest);
   assert(ierr==0);
 }
-int CartesianCommunicator::RankFromProcessorCoor(std::vector<int> &coor)
+int CartesianCommunicator::RankFromProcessorCoor(Coordinate &coor)
 {
   int rank;
   int ierr=MPI_Cart_rank  (communicator, &coor[0], &rank);
   assert(ierr==0);
   return rank;
 }
-void  CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &coor)
+void  CartesianCommunicator::ProcessorCoorFromRank(int rank, Coordinate &coor)
 {
   coor.resize(_ndimension);
   int ierr=MPI_Cart_coords  (communicator, rank, _ndimension,&coor[0]);
@@ -82,7 +82,7 @@ void  CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &c
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Initialises from communicator_world
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors) 
+CartesianCommunicator::CartesianCommunicator(const Coordinate &processors) 
 {
   MPI_Comm optimal_comm;
   GlobalSharedMemory::OptimalCommunicator    (processors,optimal_comm); // Remap using the shared memory optimising routine
@@ -93,13 +93,13 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 //////////////////////////////////
 // Try to subdivide communicator
 //////////////////////////////////
-CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent,int &srank)    
+CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const CartesianCommunicator &parent,int &srank)    
 {
   _ndimension = processors.size();
 
   int parent_ndimension = parent._ndimension; assert(_ndimension >= parent._ndimension);
-  std::vector<int> parent_processor_coor(_ndimension,0);
-  std::vector<int> parent_processors    (_ndimension,1);
+  Coordinate parent_processor_coor(_ndimension,0);
+  Coordinate parent_processors    (_ndimension,1);
 
   // Can make 5d grid from 4d etc...
   int pad = _ndimension-parent_ndimension;
@@ -126,9 +126,9 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
 
   //  std::cout << " child size  "<<childsize <<std::endl;
 
-  std::vector<int> ccoor(_ndimension); // coor within subcommunicator
-  std::vector<int> scoor(_ndimension); // coor of split within parent
-  std::vector<int> ssize(_ndimension); // coor of split within parent
+  Coordinate ccoor(_ndimension); // coor within subcommunicator
+  Coordinate scoor(_ndimension); // coor of split within parent
+  Coordinate ssize(_ndimension); // coor of split within parent
 
   for(int d=0;d<_ndimension;d++){
     ccoor[d] = parent_processor_coor[d] % processors[d];
@@ -208,7 +208,7 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   }
 }
 
-void CartesianCommunicator::InitFromMPICommunicator(const std::vector<int> &processors, MPI_Comm communicator_base)
+void CartesianCommunicator::InitFromMPICommunicator(const Coordinate &processors, MPI_Comm communicator_base)
 {
   _ndimension = processors.size();
   _processor_coor.resize(_ndimension);
@@ -222,7 +222,7 @@ void CartesianCommunicator::InitFromMPICommunicator(const std::vector<int> &proc
     _Nprocessors*=_processors[i];
   }
 
-  std::vector<int> periodic(_ndimension,1);
+  Coordinate periodic(_ndimension,1);
   MPI_Cart_create(communicator_base, _ndimension,&_processors[0],&periodic[0],0,&communicator);
   MPI_Comm_rank(communicator,&_processor);
   MPI_Cart_coords(communicator,_processor,_ndimension,&_processor_coor[0]);
@@ -459,7 +459,7 @@ void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
 
 void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,uint64_t words,uint64_t bytes)
 {
-  std::vector<int> row(_ndimension,1);
+  Coordinate row(_ndimension,1);
   assert(dim>=0 && dim<_ndimension);
 
   //  Split the communicator

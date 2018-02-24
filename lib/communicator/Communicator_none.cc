@@ -42,14 +42,14 @@ void CartesianCommunicator::Init(int *argc, char *** arv)
 					   GlobalSharedMemory::Hugepages);
 }
 
-CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent,int &srank) 
+CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const CartesianCommunicator &parent,int &srank) 
   : CartesianCommunicator(processors) 
 {
   srank=0;
   SetCommunicator(communicator_world);
 }
 
-CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
+CartesianCommunicator::CartesianCommunicator(const Coordinate &processors)
 {
   _processors = processors;
   _ndimension = processors.size();
@@ -122,8 +122,8 @@ int  CartesianCommunicator::RankWorld(void){return 0;}
 void CartesianCommunicator::Barrier(void){}
 void CartesianCommunicator::Broadcast(int root,void* data, int bytes) {}
 void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes) { }
-int  CartesianCommunicator::RankFromProcessorCoor(std::vector<int> &coor) {  return 0;}
-void CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &coor){  coor = _processor_coor; }
+int  CartesianCommunicator::RankFromProcessorCoor(Coordinate &coor) {  return 0;}
+void CartesianCommunicator::ProcessorCoorFromRank(int rank, Coordinate &coor){  coor = _processor_coor; }
 void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest)
 {
   source =0;

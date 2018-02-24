@@ -114,7 +114,7 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
   _ShmSetup=1;
 }
 
-void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,Grid_MPI_Comm & optimal_comm)
+void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
 {
   ////////////////////////////////////////////////////////////////
   // Assert power of two shm_size.
@@ -133,9 +133,9 @@ void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,
   // in a maximally symmetrical way
   ////////////////////////////////////////////////////////////////
   int ndimension              = processors.size();
-  std::vector<int> processor_coor(ndimension);
-  std::vector<int> WorldDims = processors;   std::vector<int> ShmDims  (ndimension,1);  std::vector<int> NodeDims (ndimension);
-  std::vector<int> ShmCoor  (ndimension);    std::vector<int> NodeCoor (ndimension);    std::vector<int> WorldCoor(ndimension);
+  Coordinate processor_coor(ndimension);
+  Coordinate WorldDims = processors; Coordinate ShmDims(ndimension,1);  Coordinate NodeDims (ndimension);
+  Coordinate ShmCoor(ndimension);    Coordinate NodeCoor(ndimension);   Coordinate WorldCoor(ndimension);
   int dim = 0;
   for(int l2=0;l2<log2size;l2++){
     while ( (WorldDims[dim] / ShmDims[dim]) <= 1 ) dim=(dim+1)%ndimension;

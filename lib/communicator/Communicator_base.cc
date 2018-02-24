@@ -47,8 +47,8 @@ int                      CartesianCommunicator::Dimensions(void)        { return
 int                      CartesianCommunicator::IsBoss(void)            { return _processor==0; };
 int                      CartesianCommunicator::BossRank(void)          { return 0; };
 int                      CartesianCommunicator::ThisRank(void)          { return _processor; };
-const std::vector<int> & CartesianCommunicator::ThisProcessorCoor(void) { return _processor_coor; };
-const std::vector<int> & CartesianCommunicator::ProcessorGrid(void)     { return _processors; };
+const Coordinate & CartesianCommunicator::ThisProcessorCoor(void) { return _processor_coor; };
+const Coordinate & CartesianCommunicator::ProcessorGrid(void)     { return _processors; };
 int                      CartesianCommunicator::ProcessorCount(void)    { return _Nprocessors; };
 
 ////////////////////////////////////////////////////////////////////////////////

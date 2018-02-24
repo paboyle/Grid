@@ -90,7 +90,7 @@ public:
   // Create an optimal reordered communicator that makes MPI_Cart_create get it right
   //////////////////////////////////////////////////////////////////////////////////////
   static void Init(Grid_MPI_Comm comm); // Typically MPI_COMM_WORLD
-  static void OptimalCommunicator(const std::vector<int> &processors,Grid_MPI_Comm & optimal_comm);  // Turns MPI_COMM_WORLD into right layout for Cartesian
+  static void OptimalCommunicator(const Coordinate &processors,Grid_MPI_Comm & optimal_comm);  // Turns MPI_COMM_WORLD into right layout for Cartesian
   ///////////////////////////////////////////////////
   // Provide shared memory facilities off comm world
   ///////////////////////////////////////////////////
