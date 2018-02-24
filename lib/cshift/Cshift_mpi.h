@@ -193,8 +193,8 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
 
   int bytes = buffer_size*sizeof(scalar_object);
 
-  std::vector<scalar_object *>  pointers(Nsimd); // 
-  std::vector<scalar_object *> rpointers(Nsimd); // received pointers
+  ExtractPointerArray<scalar_object>  pointers(Nsimd); // 
+  ExtractPointerArray<scalar_object> rpointers(Nsimd); // received pointers
 
   ///////////////////////////////////////////
   // Work out what to send where

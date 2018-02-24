@@ -77,7 +77,7 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimen
 // Gather for when there *is* need to SIMD split 
 ///////////////////////////////////////////////////////////////////
 template<class vobj> void 
-Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename vobj::scalar_object *> pointers,int dimension,int plane,int cbmask)
+Gather_plane_extract(const Lattice<vobj> &rhs,ExtractPointerArray<typename vobj::scalar_object> pointers,int dimension,int plane,int cbmask)
 {
   int rd = rhs.Grid()->_rdimensions[dimension];
 
@@ -170,7 +170,7 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
 //////////////////////////////////////////////////////
 // Scatter for when there *is* need to SIMD split
 //////////////////////////////////////////////////////
-template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,std::vector<typename vobj::scalar_object *> pointers,int dimension,int plane,int cbmask)
+template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerArray<typename vobj::scalar_object> pointers,int dimension,int plane,int cbmask)
 {
   int rd = rhs.Grid()->_rdimensions[dimension];
 
