@@ -140,8 +140,8 @@ public:
     //////////////////////////////////
     // Work out Fp = psq_max/ psq...
     //////////////////////////////////
-    std::vector<int> latt_size = grid->GlobalDimensions();
-    std::vector<int> coor(grid->_ndimension,0);
+    Coordinate latt_size = grid->GlobalDimensions();
+    Coordinate coor(grid->_ndimension,0);
     for(int mu=0;mu<Nd;mu++) {
 
       Real TwoPiL =  M_PI * 2.0/ latt_size[mu];

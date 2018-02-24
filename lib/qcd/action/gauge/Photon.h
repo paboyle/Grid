@@ -102,8 +102,8 @@ void Photon<Gimpl>::invKHatSquared(GaugeLinkField &out)
   GridBase           *grid = out.Grid();
   GaugeLinkField     kmu(grid), one(grid);
   const unsigned int nd    = grid->_ndimension;
-  std::vector<int>   &l    = grid->_fdimensions;
-  std::vector<int>   zm(nd,0);
+  Coordinate   &l    = grid->_fdimensions;
+  Coordinate   zm(nd,0);
   TComplex           Tone = Complex(1.0,0.0);
   TComplex           Tzero= Complex(0.0,0.0);
     
@@ -132,7 +132,7 @@ void Photon<Gimpl>::zmSub(GaugeLinkField &out)
     {
     case ZmScheme::qedTL:
       {
-        std::vector<int> zm(nd,0);
+        Coordinate zm(nd,0);
         TComplex         Tzero = Complex(0.0,0.0);
         
         pokeSite(Tzero, out, zm);
@@ -177,7 +177,7 @@ void Photon<Gimpl>::StochasticWeight(GaugeLinkField &weight)
 {
   auto               *grid     = dynamic_cast<GridCartesian *>(weight.Grid());
   const unsigned int nd        = grid->_ndimension;
-  std::vector<int>   latt_size = grid->_fdimensions;
+  Coordinate   latt_size = grid->_fdimensions;
     
   Integer vol = 1;
   for(int d = 0; d < nd; d++)
@@ -250,7 +250,7 @@ void Photon<Gimpl>::StochasticField(GaugeField &out, GridParallelRNG &rng,
 //    typedef typename GaugeField::scalar_type ScalComplex;
 //    typedef Lattice<iSinglet<vector_type> > LatComplex;
 //    
-//    std::vector<int> latt_size   = grid->_fdimensions;
+//    Coordinate latt_size   = grid->_fdimensions;
 //    
 //    LatComplex denom(grid); denom= Zero();
 //    LatComplex   one(grid); one = ScalComplex(1.0,0.0);
@@ -268,7 +268,7 @@ void Photon<Gimpl>::StochasticField(GaugeField &out, GridParallelRNG &rng,
 //      
 //      denom = denom + 4.0*sin(kmu*0.5)*sin(kmu*0.5); // Wilson term
 //    }
-//    std::vector<int> zero_mode(nd,0);
+//    Coordinate zero_mode(nd,0);
 //    TComplexD Tone = ComplexD(1.0,0.0);
 //    TComplexD Tzero= ComplexD(0.0,0.0);
 //    

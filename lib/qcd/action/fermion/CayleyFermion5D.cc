@@ -79,7 +79,7 @@ void CayleyFermion5D<Impl>::DminusDag(const FermionField &psi, FermionField &chi
 template<class Impl> void CayleyFermion5D<Impl>::CayleyReport(void)
 {
   this->Report();
-  std::vector<int> latt = GridDefaultLatt();          
+  Coordinate latt = GridDefaultLatt();          
   RealD volume = this->Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt[mu];
   RealD NP     = this->_FourDimGrid->_Nprocessors;
   if ( M5Dcalls > 0 ) {

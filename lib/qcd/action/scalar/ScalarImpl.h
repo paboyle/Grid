@@ -51,7 +51,7 @@ public:
     GridBase           *grid = out.Grid();
     Field              kmu(grid), one(grid);
     const unsigned int nd    = grid->_ndimension;
-    std::vector<int>   &l    = grid->_fdimensions;
+    Coordinate         &l    = grid->_fdimensions;
       
     one = Complex(1.0,0.0);
     out = m*m;

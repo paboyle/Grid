@@ -33,7 +33,7 @@ NAMESPACE_BEGIN(Grid);
 /////////////////////////////////////////////////////////////////
 // Public interface
 /////////////////////////////////////////////////////////////////
-GridCartesian *SpaceTimeGrid::makeFourDimGrid(const std::vector<int> & latt,const std::vector<int> &simd,const std::vector<int> &mpi)
+GridCartesian *SpaceTimeGrid::makeFourDimGrid(const Coordinate & latt,const Coordinate &simd,const Coordinate &mpi)
 {
   return new GridCartesian(latt,simd,mpi); 
 }
@@ -41,18 +41,18 @@ GridRedBlackCartesian *SpaceTimeGrid::makeFourDimRedBlackGrid(const GridCartesia
 {
   return new GridRedBlackCartesian(FourDimGrid); 
 }
-GridCartesian *SpaceTimeGrid::makeFourDimDWFGrid(const std::vector<int> & latt,const std::vector<int> &mpi)
+GridCartesian *SpaceTimeGrid::makeFourDimDWFGrid(const Coordinate & latt,const Coordinate &mpi)
 {
-  std::vector<int> simd(4,1);
+  Coordinate simd(4,1);
   return makeFourDimGrid(latt,simd,mpi);
 }
 GridCartesian         *SpaceTimeGrid::makeFiveDimGrid(int Ls,const GridCartesian *FourDimGrid)
 {
   int N4=FourDimGrid->_ndimension;
 
-  std::vector<int> latt5(1,Ls);
-  std::vector<int> simd5(1,1);
-  std::vector<int>  mpi5(1,1);
+  Coordinate latt5(1,Ls);
+  Coordinate simd5(1,1);
+  Coordinate  mpi5(1,1);
   
   for(int d=0;d<N4;d++){
     latt5.push_back(FourDimGrid->_fdimensions[d]);
@@ -67,7 +67,7 @@ GridRedBlackCartesian *SpaceTimeGrid::makeFiveDimRedBlackGrid(int Ls,const GridC
 {
   int N4=FourDimGrid->_ndimension;
   int cbd=1;
-  std::vector<int>   cb5(1,0);
+  Coordinate   cb5(1,0);
   for(int d=0;d<N4;d++){
     cb5.push_back(  1);
   }
@@ -83,9 +83,9 @@ GridCartesian         *SpaceTimeGrid::makeFiveDimDWFGrid(int Ls,const GridCartes
   int N4    = FourDimGrid->_ndimension;
   int nsimd = FourDimGrid->Nsimd();
 
-  std::vector<int> latt5(1,Ls);
-  std::vector<int> simd5(1,nsimd);
-  std::vector<int>  mpi5(1,1);
+  Coordinate latt5(1,Ls);
+  Coordinate simd5(1,nsimd);
+  Coordinate  mpi5(1,1);
   
   for(int d=0;d<N4;d++){
     latt5.push_back(FourDimGrid->_fdimensions[d]);
@@ -102,7 +102,7 @@ GridRedBlackCartesian *SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(int Ls,const Gr
 {
   int N4=FourDimGrid->_ndimension;
   int cbd=1;
-  std::vector<int>   cb5(1,0);
+  Coordinate   cb5(1,0);
   for(int d=0;d<N4;d++){
     cb5.push_back(1);
   }

@@ -374,7 +374,7 @@ public:
     }
     
     for (int lidx = 0; lidx < GaugeGrid->lSites(); lidx++) {
-      std::vector<int> lcoor;
+      Coordinate lcoor;
       GaugeGrid->LocalIndexToLocalCoor(lidx, lcoor);
       
       peekLocalSite(ScalarUmu, Umu, lcoor);
@@ -514,13 +514,12 @@ public:
     assert((distance == 1) || (distance == -1));  // nearest neighbour stencil hard code
     assert((sl == 1) || (sl == 2));
    
-    std::vector<int> icoor;
-        
+    Coordinate icoor;
     if ( SE->_around_the_world && Params.twists[mmu] ) {
 
       if ( sl == 2 ) {
        
-	std::vector<sobj> vals(Nsimd);
+	ExtractBuffer<sobj> vals(Nsimd);
 
 	extract(chi,vals);
 	for(int s=0;s<Nsimd;s++){
@@ -905,7 +904,7 @@ public:
 	SiteScalarGaugeLink   ScalarU;
 	SiteDoubledGaugeField ScalarUds;
 	  
-	std::vector<int> lcoor;
+	Coordinate lcoor;
 	GaugeGrid->LocalIndexToLocalCoor(lidx, lcoor);
 	peekLocalSite(ScalarUds, Uds, lcoor);
 
@@ -933,7 +932,7 @@ public:
 	SiteScalarGaugeLink  ScalarU;
 	SiteDoubledGaugeField ScalarUds;
 	  
-	std::vector<int> lcoor;
+	Coordinate lcoor;
 	GaugeGrid->LocalIndexToLocalCoor(lidx, lcoor);
       
 	peekLocalSite(ScalarUds, UUUds, lcoor);

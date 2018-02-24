@@ -294,7 +294,7 @@ void ImprovedStaggeredFermion5D<Impl>::Dhop(const FermionField &in, FermionField
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::Report(void) 
 {
-  std::vector<int> latt = GridDefaultLatt();          
+  Coordinate latt = GridDefaultLatt();          
   RealD volume = Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt[mu];
   RealD NP = _FourDimGrid->_Nprocessors;
   RealD NN = _FourDimGrid->NodeCount();

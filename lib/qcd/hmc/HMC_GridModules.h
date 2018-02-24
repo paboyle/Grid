@@ -113,6 +113,7 @@ public:
 
   GridFourDimModule(const std::vector<int> tweak_simd)
   {
+    Coordinate _tweak_simd(tweak_simd);
     if (tweak_simd.size() != 4)
       {
 	std::cout << GridLogError
@@ -131,7 +132,7 @@ public:
       {
 	set_full(SpaceTimeGrid::makeFourDimGrid(
 						GridDefaultLatt(), 
-						tweak_simd, 
+						_tweak_simd, 
 						GridDefaultMpi()));
 	set_rb(SpaceTimeGrid::makeFourDimRedBlackGrid(grid_.get()));
       }

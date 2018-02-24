@@ -150,7 +150,7 @@ void WilsonFermion<Impl>::MomentumSpacePropagator(FermionField &out, const Fermi
     Gamma::Algebra::GammaT
   };
   
-  std::vector<int> latt_size   = _grid->_fdimensions;
+  Coordinate latt_size   = _grid->_fdimensions;
   
   FermionField   num  (_grid); num  = Zero();
   LatComplex    wilson(_grid); wilson= Zero();

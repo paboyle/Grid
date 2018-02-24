@@ -139,7 +139,7 @@ void WilsonFermion5D<Impl>::Report(void)
   RealD NP     = _FourDimGrid->_Nprocessors;
   RealD NN     = _FourDimGrid->NodeCount();
   RealD volume = Ls;  
-  std::vector<int> latt = _FourDimGrid->GlobalDimensions();
+  Coordinate latt = _FourDimGrid->GlobalDimensions();
   for(int mu=0;mu<Nd;mu++) volume=volume*latt[mu];
 
   if ( DhopCalls > 0 ) {
@@ -584,8 +584,7 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const Fe
     Gamma::Algebra::GammaT
   };
 
-  std::vector<int> latt_size   = _grid->_fdimensions;
-
+  Coordinate latt_size   = _grid->FullDimensions();
   
   FermionField   num  (_grid); num  = Zero();
 
@@ -626,7 +625,7 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const Fe
 
   // FIXME Need a Lattice acosh
   for(int idx=0;idx<_grid->lSites();idx++){
-    std::vector<int> lcoor(Nd);
+    Coordinate lcoor(Nd);
     Tcomplex cc;
     _grid->LocalIndexToLocalCoor(idx,lcoor);
     peekLocalSite(cc,cosha,lcoor);
@@ -663,7 +662,7 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const Fe
   typedef Lattice<iSinglet<vector_type> > LatComplex;
 
 
-  std::vector<int> latt_size   = _grid->_fdimensions;
+  Coordinate latt_size   = _grid->FullDimensions();
 
   LatComplex    sk(_grid);  sk = Zero();
   LatComplex    sk2(_grid); sk2= Zero();
@@ -714,7 +713,7 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const Fe
 // Helper macro to reverse Simd vector. Fixme: slow, generic implementation.
 #define REVERSE_LS(qSite, qSiteRev, Nsimd)				\
   {									\
-    std::vector<typename SitePropagator::scalar_object> qSiteVec(Nsimd); \
+    ExtractBuffer<typename SitePropagator::scalar_object> qSiteVec(Nsimd); \
     extract(qSite, qSiteVec);						\
     for (int i = 0; i < Nsimd / 2; ++i)					\
       {									\
