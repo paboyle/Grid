@@ -593,7 +593,7 @@ public:
 
     GridBase *grid = Umu.Grid();
 
-    std::vector<int> dims = Umu.Grid()->FullDimensions();
+    auto dims = Umu.Grid()->FullDimensions();
 
     assert(dims.size()==4);
 

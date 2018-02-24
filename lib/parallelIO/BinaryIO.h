@@ -133,13 +133,13 @@ public:
     if (fbuf.size()==1) {
       lsites=1;
     }
-    std::vector<int> local_vol   =grid->LocalDimensions();
-    std::vector<int> local_start =grid->LocalStarts();
-    std::vector<int> global_vol  =grid->FullDimensions();
+    Coordinate local_vol   =grid->LocalDimensions();
+    Coordinate local_start =grid->LocalStarts();
+    Coordinate global_vol  =grid->FullDimensions();
 
     thread_region { 
 
-      std::vector<int> coor(nd);
+      Coordinate coor(nd);
       uint32_t scidac_csuma_thr=0;
       uint32_t scidac_csumb_thr=0;
       uint32_t site_crc=0;
@@ -269,13 +269,13 @@ public:
     int nrank                = grid->ProcessorCount();
     int myrank               = grid->ThisRank();
 
-    std::vector<int>  psizes = grid->ProcessorGrid(); 
-    std::vector<int>  pcoor  = grid->ThisProcessorCoor();
-    std::vector<int> gLattice= grid->GlobalDimensions();
-    std::vector<int> lLattice= grid->LocalDimensions();
+    Coordinate  psizes = grid->ProcessorGrid(); 
+    Coordinate  pcoor  = grid->ThisProcessorCoor();
+    Coordinate gLattice= grid->GlobalDimensions();
+    Coordinate lLattice= grid->LocalDimensions();
 
-    std::vector<int> lStart(ndim);
-    std::vector<int> gStart(ndim);
+    Coordinate lStart(ndim);
+    Coordinate gStart(ndim);
 
     // Flatten the file
     uint64_t lsites = grid->lSites();

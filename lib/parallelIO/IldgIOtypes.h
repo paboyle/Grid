@@ -91,7 +91,7 @@ public:
     return dimensions;
   }
 
-  void setDimensions(std::vector<int> dimensions) { 
+  void setDimensions(Coordinate dimensions) { 
     char delimiter = ' ';
     std::stringstream stream;
     for(int i=0;i<dimensions.size();i++){ 
