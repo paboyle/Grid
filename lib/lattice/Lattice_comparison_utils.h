@@ -136,9 +136,9 @@ template<class sfunctor, class vsimd,IfNotComplex<vsimd> = 0>
 inline vInteger Comparison(sfunctor sop,const vsimd & lhs, const vsimd & rhs)
 {
   typedef typename vsimd::scalar_type scalar;
-  std::vector<scalar> vlhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
-  std::vector<scalar> vrhs(vsimd::Nsimd());
-  std::vector<Integer> vpred(vsimd::Nsimd());
+  ExtractBuffer<scalar> vlhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
+  ExtractBuffer<scalar> vrhs(vsimd::Nsimd());
+  ExtractBuffer<Integer> vpred(vsimd::Nsimd());
   vInteger ret;
   extract<vsimd,scalar>(lhs,vlhs);
   extract<vsimd,scalar>(rhs,vrhs);
@@ -153,8 +153,8 @@ template<class sfunctor, class vsimd,IfNotComplex<vsimd> = 0>
 inline vInteger Comparison(sfunctor sop,const vsimd & lhs, const typename vsimd::scalar_type & rhs)
 {
   typedef typename vsimd::scalar_type scalar;
-  std::vector<scalar> vlhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
-  std::vector<Integer> vpred(vsimd::Nsimd());
+  ExtractBuffer<scalar>  vlhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
+  ExtractBuffer<Integer> vpred(vsimd::Nsimd());
   vInteger ret;
   extract<vsimd,scalar>(lhs,vlhs);
   for(int s=0;s<vsimd::Nsimd();s++){
@@ -168,8 +168,8 @@ template<class sfunctor, class vsimd,IfNotComplex<vsimd> = 0>
 inline vInteger Comparison(sfunctor sop,const typename vsimd::scalar_type & lhs, const vsimd & rhs)
 {
   typedef typename vsimd::scalar_type scalar;
-  std::vector<scalar> vrhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
-  std::vector<Integer> vpred(vsimd::Nsimd());
+  ExtractBuffer<scalar> vrhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
+  ExtractBuffer<Integer> vpred(vsimd::Nsimd());
   vInteger ret;
   extract<vsimd,scalar>(rhs,vrhs);
   for(int s=0;s<vsimd::Nsimd();s++){

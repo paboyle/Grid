@@ -52,9 +52,9 @@ accelerator_inline vobj predicatedWhere(const iobj &predicate, const vobj &iftru
 
   const int Nsimd = vobj::vector_type::Nsimd();
 
-  std::vector<Integer> mask(Nsimd);
-  std::vector<scalar_object> truevals(Nsimd);
-  std::vector<scalar_object> falsevals(Nsimd);
+  ExtractBuffer<Integer> mask(Nsimd);
+  ExtractBuffer<scalar_object> truevals(Nsimd);
+  ExtractBuffer<scalar_object> falsevals(Nsimd);
 
   extract(iftrue, truevals);
   extract(iffalse, falsevals);

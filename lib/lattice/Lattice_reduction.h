@@ -123,7 +123,7 @@ inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
   typedef typename vobj::scalar_object sobj;
   sobj ssum; zeroit(ssum);
   
-  std::vector<sobj>               buf(Nsimd);
+  ExtractBuffer<sobj>               buf(Nsimd);
   extract(vsum,buf);
   
   for(int i=0;i<Nsimd;i++) ssum = ssum + buf[i];
@@ -160,7 +160,7 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
 
   std::vector<vobj,alignedAllocator<vobj> > lvSum(rd); // will locally sum vectors first
   std::vector<sobj> lsSum(ld,Zero());                    // sum across these down to scalars
-  std::vector<sobj> extracted(Nsimd);                  // splitting the SIMD
+  ExtractBuffer<sobj> extracted(Nsimd);                  // splitting the SIMD
 
   result.resize(fd); // And then global sum to return the same vector to every node 
   for(int r=0;r<rd;r++){
@@ -185,7 +185,7 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   });
 
   // Sum across simd lanes in the plane, breaking out orthog dir.
-  std::vector<int> icoor(Nd);
+  Coordinate icoor(Nd);
 
   for(int rt=0;rt<rd;rt++){
 
@@ -240,7 +240,7 @@ static void sliceInnerProductVector( std::vector<ComplexD> & result, const Latti
 
   std::vector<vector_type,alignedAllocator<vector_type> > lvSum(rd); // will locally sum vectors first
   std::vector<scalar_type > lsSum(ld,scalar_type(0.0));                    // sum across these down to scalars
-  std::vector<iScalar<scalar_type> > extracted(Nsimd);                  // splitting the SIMD
+  ExtractBuffer<iScalar<scalar_type> > extracted(Nsimd);                  // splitting the SIMD
 
   result.resize(fd); // And then global sum to return the same vector to every node for IO to file
   for(int r=0;r<rd;r++){
@@ -265,7 +265,7 @@ static void sliceInnerProductVector( std::vector<ComplexD> & result, const Latti
   });
 
   // Sum across simd lanes in the plane, breaking out orthog dir.
-  std::vector<int> icoor(Nd);
+  Coordinate icoor(Nd);
   for(int rt=0;rt<rd;rt++){
 
     iScalar<vector_type> temp; 
@@ -341,7 +341,7 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
   int e2     =grid->_slice_block [orthogdim];
   int stride =grid->_slice_stride[orthogdim];
 
-  std::vector<int> icoor;
+  Coordinate icoor;
 
   for(int r=0;r<rd;r++){
 

@@ -347,7 +347,7 @@ public:
     int words  = sizeof(scalar_object) / sizeof(scalar_type);
 
     thread_loop( (int ss=0;ss<osites;ss++), {
-      std::vector<scalar_object> buf(Nsimd);
+      ExtractBuffer<scalar_object> buf(Nsimd);
       for (int m = 0; m < multiplicity; m++) {  // Draw from same generator multiplicity times
 
 	int sm = multiplicity * ss + m;  // Maps the generator site to the fine site
@@ -392,8 +392,8 @@ public:
 	int rank;
 	int o_idx;
 	int i_idx;
-	std::vector<int> gcoor;
 
+	Coordinate gcoor;
 	_grid->GlobalIndexToGlobalCoor(gidx,gcoor);
 	_grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
 	
@@ -456,8 +456,8 @@ public:
 
     uint32_t the_number;
     // who
-    std::vector<int> gcoor;
     int rank,o_idx,i_idx;
+    Coordinate gcoor;
     _grid->GlobalIndexToGlobalCoor(gsite,gcoor);
     _grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
 

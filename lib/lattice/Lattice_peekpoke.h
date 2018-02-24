@@ -84,7 +84,7 @@ void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs[0]
 // Poke a scalar object into the SIMD array
 //////////////////////////////////////////////////////
 template<class vobj,class sobj> 
-void pokeSite(const sobj &s,Lattice<vobj> &l,const std::vector<int> &site){
+void pokeSite(const sobj &s,Lattice<vobj> &l,const Coordinate &site){
 
   GridBase *grid=l.Grid();
 
@@ -101,9 +101,8 @@ void pokeSite(const sobj &s,Lattice<vobj> &l,const std::vector<int> &site){
   grid->GlobalCoorToRankIndex(rank,odx,idx,site);
   grid->Broadcast(grid->BossRank(),s);
 
-  std::vector<sobj> buf(Nsimd);
-
   // extract-modify-merge cycle is easiest way and this is not perf critical
+  ExtractBuffer<sobj> buf(Nsimd);
   if ( rank == grid->ThisRank() ) {
     extract(l[odx],buf);
     buf[idx] = s;
@@ -118,7 +117,7 @@ void pokeSite(const sobj &s,Lattice<vobj> &l,const std::vector<int> &site){
 // Peek a scalar object from the SIMD array
 //////////////////////////////////////////////////////////
 template<class vobj,class sobj>
-void peekSite(sobj &s,const Lattice<vobj> &l,const std::vector<int> &site){
+void peekSite(sobj &s,const Lattice<vobj> &l,const Coordinate &site){
         
   GridBase *grid=l.Grid();
 
@@ -132,7 +131,7 @@ void peekSite(sobj &s,const Lattice<vobj> &l,const std::vector<int> &site){
   int rank,odx,idx;
   grid->GlobalCoorToRankIndex(rank,odx,idx,site);
 
-  std::vector<sobj> buf(Nsimd);
+  ExtractBuffer<sobj> buf(Nsimd);
   extract(l[odx],buf);
 
   s = buf[idx];
@@ -147,7 +146,7 @@ void peekSite(sobj &s,const Lattice<vobj> &l,const std::vector<int> &site){
 // Peek a scalar object from the SIMD array
 //////////////////////////////////////////////////////////
 template<class vobj,class sobj>
-void peekLocalSite(sobj &s,const Lattice<vobj> &l,std::vector<int> &site){
+void peekLocalSite(sobj &s,const Lattice<vobj> &l,Coordinate &site){
         
   GridBase *grid = l.Grid();
 
@@ -175,7 +174,7 @@ void peekLocalSite(sobj &s,const Lattice<vobj> &l,std::vector<int> &site){
 };
 
 template<class vobj,class sobj>
-void pokeLocalSite(const sobj &s,Lattice<vobj> &l,std::vector<int> &site){
+void pokeLocalSite(const sobj &s,Lattice<vobj> &l,Coordinate &site){
 
   GridBase *grid=l.Grid();
 

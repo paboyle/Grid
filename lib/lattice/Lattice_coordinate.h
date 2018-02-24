@@ -38,8 +38,8 @@ template<class iobj> inline void LatticeCoordinate(Lattice<iobj> &l,int mu)
   GridBase *grid = l.Grid();
   int Nsimd = grid->iSites();
 
-  std::vector<int> gcoor;
-  std::vector<scalar_type> mergebuf(Nsimd);
+  Coordinate gcoor;
+  ExtractBuffer<scalar_type> mergebuf(Nsimd);
 
   vector_type vI;
   for(int o=0;o<grid->oSites();o++){

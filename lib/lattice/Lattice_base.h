@@ -382,11 +382,13 @@ public:
 }; // class Lattice
 
 template<class vobj> std::ostream& operator<< (std::ostream& stream, const Lattice<vobj> &o){
-  std::vector<int> gcoor;
   typedef typename vobj::scalar_object sobj;
-  sobj ss;
   for(int g=0;g<o.Grid()->_gsites;g++){
+
+    Coordinate gcoor;
     o.Grid()->GlobalIndexToGlobalCoor(g,gcoor);
+
+    sobj ss;
     peekSite(ss,o,gcoor);
     stream<<"[";
     for(int d=0;d<gcoor.size();d++){
