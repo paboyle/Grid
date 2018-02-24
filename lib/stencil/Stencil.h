@@ -150,7 +150,7 @@ public:
   std::vector<int>                  _distances;
   std::vector<int>                  _comm_buf_size;
   std::vector<int>                  _permute_type;
-  std::vector<int>                  _simd_layout;
+  Coordinate                        _simd_layout;
   
   Vector<StencilEntry>  _entries; // Resident in managed memory
   StencilEntry*  _entries_p;

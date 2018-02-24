@@ -100,9 +100,9 @@ void LebesgueOrder::CartesianBlocking(void)
   assert(ND==4);
   assert(ND==Block.size());
 
-  std::vector<IndexInteger> dims(ND);
-  std::vector<IndexInteger> xo(ND,0);
-  std::vector<IndexInteger> xi(ND,0);
+  Coordinate dims(ND);
+  Coordinate xo(ND,0);
+  Coordinate xi(ND,0);
 
   for(IndexInteger mu=0;mu<ND;mu++){
     dims[mu] = grid->_rdimensions[mu];
@@ -112,9 +112,9 @@ void LebesgueOrder::CartesianBlocking(void)
 };
 
 void LebesgueOrder::IterateO(int ND,int dim,
-			     std::vector<IndexInteger> & xo,
-			     std::vector<IndexInteger> & xi,
-			     std::vector<IndexInteger> &dims)
+			     Coordinate & xo,
+			     Coordinate & xi,
+			     Coordinate &dims)
 {
   for(xo[dim]=0;xo[dim]<dims[dim];xo[dim]+=Block[dim]){
     if ( dim > 0 ) {
@@ -127,11 +127,11 @@ void LebesgueOrder::IterateO(int ND,int dim,
 
 void LebesgueOrder::IterateI(int ND,
 			     int dim,
-			     std::vector<IndexInteger> & xo,
-			     std::vector<IndexInteger> & xi,
-			     std::vector<IndexInteger> &dims)
+			     Coordinate & xo,
+			     Coordinate & xi,
+			     Coordinate &dims)
 {
-  std::vector<IndexInteger> x(ND);
+  Coordinate x(ND);
   for(xi[dim]=0;xi[dim]<std::min(dims[dim]-xo[dim],Block[dim]);xi[dim]++){
     if ( dim > 0 ) {
       IterateI(ND,dim-1,xo,xi,dims);
@@ -157,8 +157,8 @@ void LebesgueOrder::ZGraph(void)
   const IndexInteger one=1;
 
   IndexInteger ND = grid->_ndimension;
-  std::vector<IndexInteger> dims(ND);
-  std::vector<IndexInteger> adims(ND);
+  Coordinate dims(ND);
+  Coordinate adims(ND);
   std::vector<std::vector<IndexInteger> > bitlist(ND);
   
   for(IndexInteger mu=0;mu<ND;mu++){

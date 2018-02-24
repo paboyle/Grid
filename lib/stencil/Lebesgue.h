@@ -38,7 +38,6 @@ class LebesgueOrder {
 public:
 
   typedef int32_t IndexInteger;
-    
   static int UseLebesgueOrder;
   GridBase *grid;
 
@@ -62,13 +61,13 @@ public:
   void NoBlocking(void);
   void CartesianBlocking(void);
   void IterateO(int ND,int dim,
-		std::vector<IndexInteger> & xo,
-		std::vector<IndexInteger> & xi,
-		std::vector<IndexInteger> &dims);
+		Coordinate & xo,
+		Coordinate & xi,
+		Coordinate &dims);
   void IterateI(int ND,int dim,
-		std::vector<IndexInteger> & xo,
-		std::vector<IndexInteger> & xi,
-		std::vector<IndexInteger> &dims);
+		Coordinate & xo,
+		Coordinate & xi,
+		Coordinate &dims);
 
   void ThreadInterleave(void);
 
