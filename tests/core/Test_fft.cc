@@ -38,9 +38,9 @@ int main (int argc, char ** argv)
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout( { vComplexD::Nsimd(),1,1,1});
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout( { vComplexD::Nsimd(),1,1,1});
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   int vol = 1;
   for(int d=0;d<latt_size.size();d++){
@@ -60,7 +60,7 @@ int main (int argc, char ** argv)
   LatticeSpinMatrixD    S(&GRID);
   LatticeSpinMatrixD    Stilde(&GRID);
   
-  std::vector<int> p({1,3,2,3});
+  Coordinate p({1,3,2,3});
 
   one = ComplexD(1.0,0.0);
   zz  = ComplexD(0.0,0.0);
@@ -294,7 +294,7 @@ int main (int argc, char ** argv)
     LatticeFermionD    ref(&GRID);
     LatticeFermionD    diff(&GRID);
 
-    std::vector<int> point(4,0);
+    Coordinate point(4,0);
     src=Zero();
     SpinColourVectorD ferm; gaussian(sRNG,ferm);
     pokeSite(ferm,src,point);
@@ -373,7 +373,7 @@ int main (int argc, char ** argv)
     LatticeFermionD    ref(&GRID);
     LatticeFermionD    diff(&GRID);
 
-    std::vector<int> point(4,0);
+    Coordinate point(4,0);
     src=Zero();
     SpinColourVectorD ferm; gaussian(sRNG,ferm);
     pokeSite(ferm,src,point);

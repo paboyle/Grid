@@ -35,9 +35,9 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout( { vComplex::Nsimd(),1,1,1});
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout( { vComplex::Nsimd(),1,1,1});
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   GridCartesian        Fine(latt_size,simd_layout,mpi_layout);
 
@@ -76,7 +76,7 @@ int main (int argc, char ** argv)
 	std::cout << "ShiftU[0]" << ShiftU[0]<<std::endl;
 	std::cout << "ShiftU[1]" << ShiftU[1]<<std::endl;
 	*/
-	std::vector<int> coor(4);
+	Coordinate coor(4);
 
 	for(coor[3]=0;coor[3]<latt_size[3];coor[3]++){
 	for(coor[2]=0;coor[2]<latt_size[2];coor[2]++){
@@ -87,7 +87,7 @@ int main (int argc, char ** argv)
 
 	  double nrm=norm2(U);
 
-	  std::vector<int> scoor(coor);
+	  Coordinate scoor(coor);
 	  scoor[dir] = (scoor[dir]+shift)%latt_size[dir];
 	  
 	  Integer slex = scoor[0]
@@ -98,7 +98,7 @@ int main (int argc, char ** argv)
 	  Complex scm(slex);
 	  
 	  nrm = abs(scm-cm()()());
-	  std::vector<int> peer(4);
+	  Coordinate peer(4);
 	  Complex tmp  =cm;
 	  Integer index=real(tmp);
 	  Lexicographic::CoorFromIndex(peer,index,latt_size);

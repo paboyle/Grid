@@ -38,9 +38,9 @@ int main (int argc, char ** argv)
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout( { vComplexF::Nsimd(),1,1,1});
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout( { vComplexF::Nsimd(),1,1,1});
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   int vol = 1;
   for(int d=0;d<latt_size.size();d++){
@@ -57,7 +57,7 @@ int main (int argc, char ** argv)
   LatticeSpinMatrixF    S(&Fine);
   LatticeSpinMatrixF    Stilde(&Fine);
   
-  std::vector<int> p({1,2,3,2});
+  Coordinate p({1,2,3,2});
 
   one = ComplexF(1.0,0.0);
   zz  = ComplexF(0.0,0.0);

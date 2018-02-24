@@ -29,7 +29,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
 template<class d>
 struct scal {

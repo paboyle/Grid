@@ -71,7 +71,7 @@ int main (int argc, char ** argv)
 
   const int Ls=16;
 
-  std::vector<int> latt4  =GridDefaultLatt();
+  auto latt4  =GridDefaultLatt();
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(latt4, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);

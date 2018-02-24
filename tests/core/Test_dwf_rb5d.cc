@@ -113,7 +113,7 @@ int main (int argc, char ** argv)
   
   
   for(int lidx=0;lidx<FGrid->lSites();lidx++){
-    std::vector<int> lcoor;
+    Coordinate lcoor;
     FGrid->LocalIndexToLocalCoor(lidx,lcoor);
     
     SpinColourVector siteSrc;

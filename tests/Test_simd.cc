@@ -127,10 +127,10 @@ void Tester(const functor &func)
   
   int Nsimd = vec::Nsimd();
 
-  std::vector<scal> input1(Nsimd);
-  std::vector<scal> input2(Nsimd);
-  std::vector<scal> result(Nsimd);
-  std::vector<scal> reference(Nsimd);
+  ExtractBuffer<scal> input1(Nsimd);
+  ExtractBuffer<scal> input2(Nsimd);
+  ExtractBuffer<scal> result(Nsimd);
+  ExtractBuffer<scal> reference(Nsimd);
 
   std::vector<vec,alignedAllocator<vec> > buf(3);
   vec & v_input1 = buf[0];
@@ -184,10 +184,10 @@ void IntTester(const functor &func)
 
   int Nsimd = vec::Nsimd();
 
-  std::vector<scal> input1(Nsimd);
-  std::vector<scal> input2(Nsimd);
-  std::vector<scal> result(Nsimd);
-  std::vector<scal> reference(Nsimd);
+  ExtractBuffer<scal> input1(Nsimd);
+  ExtractBuffer<scal> input2(Nsimd);
+  ExtractBuffer<scal> result(Nsimd);
+  ExtractBuffer<scal> reference(Nsimd);
 
   std::vector<vec,alignedAllocator<vec> > buf(3);
   vec & v_input1 = buf[0];
@@ -242,8 +242,8 @@ void ReductionTester(const functor &func)
   
   int Nsimd = vec::Nsimd();
 
-  std::vector<scal> input1(Nsimd);
-  std::vector<scal> input2(Nsimd);
+  ExtractBuffer<scal> input1(Nsimd);
+  ExtractBuffer<scal> input2(Nsimd);
   reduced result(0);
   reduced reference(0);
   reduced tmp;
@@ -288,8 +288,8 @@ void IntReductionTester(const functor &func)
 {
   int Nsimd = vec::Nsimd();
 
-  std::vector<scal> input1(Nsimd);
-  std::vector<scal> input2(Nsimd);
+  ExtractBuffer<scal> input1(Nsimd);
+  ExtractBuffer<scal> input2(Nsimd);
   reduced result(0);
   reduced reference(0);
   reduced tmp;
@@ -333,7 +333,7 @@ public:
   int n;
   funcPermute(int _n) { n=_n;};
   template<class vec>    void operator()(vec &rr,vec &i1,vec &i2) const { permute(rr,i1,n);}
-  template<class scal>   void apply(std::vector<scal> &rr,std::vector<scal> &in)  const { 
+  template<class scal>   void apply(ExtractBuffer<scal> &rr,ExtractBuffer<scal> &in)  const { 
     int sz=in.size();
     int msk = sz>>(n+1);
     for(int i=0;i<sz;i++){
@@ -348,10 +348,10 @@ public:
   int n;
   funcExchange(int _n) { n=_n;};
   template<class vec>    void operator()(vec &r1,vec &r2,vec &i1,vec &i2) const { exchange(r1,r2,i1,i2,n);}
-  template<class scal>   void apply(std::vector<scal> &r1,
-				    std::vector<scal> &r2,
-				    std::vector<scal> &in1,
-				    std::vector<scal> &in2)  const 
+  template<class scal>   void apply(ExtractBuffer<scal> &r1,
+				    ExtractBuffer<scal> &r2,
+				    ExtractBuffer<scal> &in1,
+				    ExtractBuffer<scal> &in2)  const 
   { 
     int sz=in1.size();
     int msk = sz>>(n+1);
@@ -374,7 +374,7 @@ public:
   int n;
   funcRotate(int _n) { n=_n;};
   template<class vec>    void operator()(vec &rr,vec &i1,vec &i2) const { rr=rotate(i1,n);}
-  template<class scal>   void apply(std::vector<scal> &rr,std::vector<scal> &in)  const { 
+  template<class scal>   void apply(ExtractBuffer<scal> &rr,ExtractBuffer<scal> &in)  const { 
     int sz = in.size();
     for(int i=0;i<sz;i++){
       rr[i] = in[(i+n)%sz];
@@ -392,10 +392,10 @@ void PermTester(const functor &func)
   
   int Nsimd = vec::Nsimd();
 
-  std::vector<scal> input1(Nsimd);
-  std::vector<scal> input2(Nsimd);
-  std::vector<scal> result(Nsimd);
-  std::vector<scal> reference(Nsimd);
+  ExtractBuffer<scal> input1(Nsimd);
+  ExtractBuffer<scal> input2(Nsimd);
+  ExtractBuffer<scal> result(Nsimd);
+  ExtractBuffer<scal> reference(Nsimd);
 
   std::vector<vec,alignedAllocator<vec> > buf(3);
   vec & v_input1 = buf[0];
@@ -458,14 +458,14 @@ void ExchangeTester(const functor &func)
   
   int Nsimd = vec::Nsimd();
 
-  std::vector<scal> input1(Nsimd);
-  std::vector<scal> input2(Nsimd);
-  std::vector<scal> result1(Nsimd);
-  std::vector<scal> result2(Nsimd);
-  std::vector<scal> reference1(Nsimd);
-  std::vector<scal> reference2(Nsimd);
-  std::vector<scal> test1(Nsimd);
-  std::vector<scal> test2(Nsimd);
+  ExtractBuffer<scal> input1(Nsimd);
+  ExtractBuffer<scal> input2(Nsimd);
+  ExtractBuffer<scal> result1(Nsimd);
+  ExtractBuffer<scal> result2(Nsimd);
+  ExtractBuffer<scal> reference1(Nsimd);
+  ExtractBuffer<scal> reference2(Nsimd);
+  ExtractBuffer<scal> test1(Nsimd);
+  ExtractBuffer<scal> test2(Nsimd);
 
   std::vector<vec,alignedAllocator<vec> > buf(6);
   vec & v_input1 = buf[0];
@@ -547,9 +547,25 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  auto latt_size   = GridDefaultLatt();
+  auto simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
+  auto mpi_layout  = GridDefaultMpi();
+
+  {
+    std::cout << " Constructing Test({1,2,3,4,5,6}) " << std::endl;
+    Coordinate Test({1,2,3,4,5,6});
+    std::cout << " Test({1,2,3,4,5,6}) = " << Test <<std::endl;
+  }
+  /*
+  {
+    Coordinate Test =  {1,2,3,4} ;
+    std::cout << " Test = {1,2,3,4} " << Test <<std::endl;
+  }
+  {
+    Coordinate Test {1,2,3,4};
+    std::cout << " Test {1,2,3,4} " << Test <<std::endl;
+  }
+  */
     
   GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
   std::vector<int> seeds({1,2,3,4});

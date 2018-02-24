@@ -41,12 +41,12 @@ int main (int argc, char ** argv)
 
   std::cout <<GridLogMessage<< " main "<<std::endl;
 
-  std::vector<int> simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  auto simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
+  auto mpi_layout  = GridDefaultMpi();
   //std::vector<int> latt_size  ({48,48,48,96});
   //std::vector<int> latt_size  ({32,32,32,32});
-  std::vector<int> latt_size  ({16,16,16,32});
-  std::vector<int> clatt_size  ({4,4,4,8});
+  Coordinate latt_size  ({16,16,16,32});
+  Coordinate clatt_size  ({4,4,4,8});
   int orthodir=3;
   int orthosz =latt_size[orthodir];
     

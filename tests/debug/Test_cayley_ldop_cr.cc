@@ -46,7 +46,7 @@ int main (int argc, char ** argv)
   ///////////////////////////////////////////////////
   // Construct a coarsened grid; utility for this?
   ///////////////////////////////////////////////////
-  std::vector<int> clatt = GridDefaultLatt();
+  Coordinate clatt = GridDefaultLatt();
   for(int d=0;d<clatt.size();d++){
     clatt[d] = clatt[d]/2;
   }

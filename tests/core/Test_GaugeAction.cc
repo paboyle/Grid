@@ -59,10 +59,10 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
 
-  std::vector<int> simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
-  std::vector<int> latt_size  ({16,16,16,32});
-  std::vector<int> clatt_size  ({4,4,4,8});
+  Coordinate simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size  ({16,16,16,32});
+  Coordinate clatt_size  ({4,4,4,8});
   int orthodir=3;
   int orthosz =latt_size[orthodir];
     

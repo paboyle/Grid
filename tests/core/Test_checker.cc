@@ -56,7 +56,7 @@ int main (int argc, char ** argv)
 
   assert(argc >= 5);
   
-  std::vector<int> latt(4,0);
+  Coordinate latt(4,0);
   latt[0] = toint(argv[1]);
   latt[1] = toint(argv[2]);
   latt[2] = toint(argv[3]);
@@ -65,7 +65,7 @@ int main (int argc, char ** argv)
   const int Ls= toint(argv[5]);
   
   std::cout << "Lattice size (" << latt[0] << "," << latt[1] << "," << latt[2] << "," << latt[3] << ") Ls=" << Ls << std::endl;
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
   std::cout << "SIMD layout (" << simd_layout[0] << "," << simd_layout[1] << "," << simd_layout[2] << "," << simd_layout[3] << ")" << std::endl;
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(latt, simd_layout,GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
@@ -85,8 +85,8 @@ int main (int argc, char ** argv)
   LatticeType src_o(FrbGrid);
   pickCheckerboard(Odd,src_o,src);
 
-  std::vector<int> site(5);
-  std::vector<int> cbsite(5);
+  Coordinate site(5);
+  Coordinate cbsite(5);
   typedef typename GridTypeMapper<LatticeType::vector_object>::scalar_object sobj;
 
   // std::cout << "sizeof(vobj) " << sizeof(LatticeType::vector_object) << std::endl;

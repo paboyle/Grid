@@ -39,9 +39,9 @@ int main (int argc, char ** argv)
 
   int threads = GridThread::GetThreads();
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout( { vComplex::Nsimd(),1,1,1});
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout( { vComplex::Nsimd(),1,1,1});
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   int vol = 1;
   for(int d=0;d<latt_size.size();d++){

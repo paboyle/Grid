@@ -30,7 +30,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
 template<class d>
 struct scal {
@@ -51,7 +50,6 @@ int main (int argc, char ** argv)
 
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
-
 
   const int Ls=10;
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());

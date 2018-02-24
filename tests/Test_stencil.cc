@@ -41,9 +41,9 @@ int main(int argc, char ** argv) {
   typedef typename Field::vector_object vobj;
   typedef typename vobj::scalar_object sobj;
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  auto latt_size   = GridDefaultLatt();
+  auto simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  auto mpi_layout  = GridDefaultMpi();
 
   double volume = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
 
@@ -91,7 +91,7 @@ int main(int argc, char ** argv) {
 	std::vector<int> displacements(npoint,disp);
 
 	Stencil myStencil(&Fine,npoint,0,directions,displacements);
-	std::vector<int> ocoor(4);
+	Coordinate ocoor(4);
 	for(int o=0;o<Fine.oSites();o++){
 	  Fine.oCoorFromOindex(ocoor,o);
 	  ocoor[dir]=(ocoor[dir]+disp)%Fine._rdimensions[dir];
@@ -126,7 +126,7 @@ int main(int argc, char ** argv) {
 	Real nrm  = norm2(Diff);
 	std::cout<<GridLogMessage<<"N2diff ="<<nrm<<" "<<nrmC<<" " <<nrmB<<std::endl;
 
-	std::vector<int> coor(4);
+	Coordinate coor(4);
 	for(coor[3]=0;coor[3]<latt_size[3]/mpi_layout[3];coor[3]++){
 	for(coor[2]=0;coor[2]<latt_size[2]/mpi_layout[2];coor[2]++){
 	for(coor[1]=0;coor[1]<latt_size[1]/mpi_layout[1];coor[1]++){
@@ -180,7 +180,7 @@ int main(int argc, char ** argv) {
 	Stencil EStencil(&rbFine,npoint,Even,directions,displacements);
 	Stencil OStencil(&rbFine,npoint,Odd,directions,displacements);
 
-	std::vector<int> ocoor(4);
+	Coordinate ocoor(4);
 	for(int o=0;o<Fine.oSites();o++){
 	  Fine.oCoorFromOindex(ocoor,o);
 	  ocoor[dir]=(ocoor[dir]+disp)%Fine._rdimensions[dir];
@@ -237,7 +237,7 @@ int main(int argc, char ** argv) {
 	Real nrm  = norm2(Diff);
 	std::cout<<GridLogMessage<<"RB N2diff ="<<nrm<<" "<<nrmC<<" " <<nrmB<<std::endl;
 
-	std::vector<int> coor(4);
+	Coordinate coor(4);
 	for(coor[3]=0;coor[3]<latt_size[3]/mpi_layout[3];coor[3]++){
 	for(coor[2]=0;coor[2]<latt_size[2]/mpi_layout[2];coor[2]++){
 	for(coor[1]=0;coor[1]<latt_size[1]/mpi_layout[1];coor[1]++){

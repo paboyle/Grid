@@ -32,7 +32,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 using namespace std;
 using namespace Grid;
- ;
 
 /*
  Grid_main.cc(232): error: no suitable user-defined conversion from
@@ -58,9 +57,9 @@ auto peekDumKopf(const vobj &rhs, int i) -> decltype(peekIndex<3>(rhs, 0)) {
 int main(int argc, char **argv) {
   Grid_init(&argc, &argv);
 
-  std::vector<int> latt_size = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(4, vComplex::Nsimd());
-  std::vector<int> mpi_layout = GridDefaultMpi();
+  Coordinate latt_size = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(4, vComplex::Nsimd());
+  Coordinate mpi_layout = GridDefaultMpi();
 
   latt_size.resize(4);
 

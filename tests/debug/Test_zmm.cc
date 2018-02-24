@@ -55,7 +55,7 @@ int main(int argc,char **argv)
   Grid_init(&argc,&argv);
 
   
-  std::vector<int> latt4 = GridDefaultLatt();
+  auto latt4 = GridDefaultLatt();
   const int Ls=16;
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(latt4, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
@@ -63,8 +63,8 @@ int main(int argc,char **argv)
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  auto simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  auto mpi_layout  = GridDefaultMpi();
   int threads = GridThread::GetThreads();
 
   std::vector<int> seeds4({1,2,3,4});

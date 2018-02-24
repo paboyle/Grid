@@ -84,18 +84,18 @@ int main (int argc, char ** argv)
   //const int L =4;
   //std::vector<int> latt_2f(Nd,L);
 
-  std::vector<int> latt_2f = GridDefaultLatt();
-  std::vector<int> latt_1f(latt_2f); latt_1f[nu] = 2*latt_2f[nu];
+  Coordinate latt_2f = GridDefaultLatt();
+  Coordinate latt_1f(latt_2f); latt_1f[nu] = 2*latt_2f[nu];
   int L = latt_2f[nu];
 
 
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexType::Nsimd());
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplexType::Nsimd());
 
   std::cout << GridLogMessage << "SIMD layout: ";
   for(int i=0;i<simd_layout.size();i++) std::cout << simd_layout[i] << " ";
   std::cout << std::endl;
   
-  std::vector<int> mpi_layout  = GridDefaultMpi(); //node layout
+  Coordinate mpi_layout  = GridDefaultMpi(); //node layout
 
   GridCartesian         * UGrid_1f   = SpaceTimeGrid::makeFourDimGrid(latt_1f, simd_layout, mpi_layout);
   GridRedBlackCartesian * UrbGrid_1f = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid_1f);

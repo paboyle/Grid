@@ -58,7 +58,7 @@ int main (int argc, char ** argv)
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
   // Construct a coarsened grid
-  std::vector<int> clatt = GridDefaultLatt();
+  Coordinate clatt = GridDefaultLatt();
   for(int d=0;d<clatt.size();d++){
     clatt[d] = clatt[d]/2;
   }

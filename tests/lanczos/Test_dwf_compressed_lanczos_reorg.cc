@@ -160,11 +160,11 @@ int main (int argc, char ** argv) {
   GridCartesian         * FGrid     = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid   = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
-  std::vector<int> fineLatt     = GridDefaultLatt();
+  Coordinate fineLatt     = GridDefaultLatt();
   int dims=fineLatt.size();
   assert(blockSize.size()==dims+1);
-  std::vector<int> coarseLatt(dims);
-  std::vector<int> coarseLatt5d ;
+  Coordinate coarseLatt(dims);
+  Coordinate coarseLatt5d ;
 
   for (int d=0;d<coarseLatt.size();d++){
     coarseLatt[d] = fineLatt[d]/blockSize[d];    assert(coarseLatt[d]*blockSize[d]==fineLatt[d]);

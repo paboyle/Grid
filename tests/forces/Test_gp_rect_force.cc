@@ -37,9 +37,9 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian     RBGrid(&Grid);
