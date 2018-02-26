@@ -270,7 +270,7 @@ int Environment::getObjectModule(const std::string name) const
 
 unsigned int Environment::getObjectLs(const unsigned int address) const
 {
-    if (hasObject(address))
+    if (hasCreatedObject(address))
     {
         return object_[address].Ls;
     }
