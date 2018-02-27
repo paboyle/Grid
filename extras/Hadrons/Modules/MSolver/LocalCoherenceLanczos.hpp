@@ -31,11 +31,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
-#include <Grid/algorithms/iterative/LocalCoherenceLanczos.h>
-
-#ifndef DEFAULT_LANCZOS_NBASIS
-#define DEFAULT_LANCZOS_NBASIS 60
-#endif
+#include <Grid/Hadrons/LanczosUtils.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -55,7 +51,8 @@ public:
                                     LanczosParams,    coarseParams,
                                     ChebyParams,      smoother,
                                     RealD,            coarseRelaxTol,
-                                    std::string,      blockSize);
+                                    std::string,      blockSize,
+                                    std::string,      output);
 };
 
 template <typename FImpl, int nBasis>
@@ -63,9 +60,9 @@ class TLocalCoherenceLanczos: public Module<LocalCoherenceLanczosPar>
 {
 public:
     FERM_TYPE_ALIASES(FImpl,);
-    typedef LocalCoherenceLanczos<vSpinColourVector, vTComplex, nBasis> LCL;
-    typedef typename LCL::FineField                             FineField;
-    typedef typename LCL::CoarseField                           CoarseField;
+    typedef LCL<FImpl, nBasis>                         LCL;
+    typedef FineEigenPack<FImpl>                       FineEigenPack;
+    typedef CoarseEigenPack<FImpl, nBasis>             CoarseEigenPack; 
     typedef SchurDiagMooeeOperator<FMat, FermionField> SchurFMat;
 public:
     // constructor
@@ -88,12 +85,12 @@ private:
     std::unique_ptr<GridCartesian>         coarseGrid_{nullptr};
     std::unique_ptr<GridRedBlackCartesian> coarseGrid4Rb_{nullptr};
     std::unique_ptr<GridRedBlackCartesian> coarseGridRb_{nullptr};
-    std::string fevecName_, cevecName_, fevalName_, cevalName_;
+    std::string                            fineName_, coarseName_;
 };
 
 MODULE_REGISTER_NS(LocalCoherenceLanczos, 
-                   ARG(TLocalCoherenceLanczos<FIMPL, DEFAULT_LANCZOS_NBASIS>), 
-                   MSolver);
+    ARG(TLocalCoherenceLanczos<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), 
+    MSolver);
 
 /******************************************************************************
  *                 TLocalCoherenceLanczos implementation                             *
@@ -103,10 +100,8 @@ template <typename FImpl, int nBasis>
 TLocalCoherenceLanczos<FImpl, nBasis>::TLocalCoherenceLanczos(const std::string name)
 : Module<LocalCoherenceLanczosPar>(name)
 {
-    fevecName_ = getName() + "_fineEvec";
-    cevecName_ = getName() + "_coarseEvec";
-    fevalName_ = getName() + "_fineEval";
-    cevalName_ = getName() + "_coarseEval";
+    fineName_   = getName() + "_fine";
+    coarseName_ = getName() + "_coarse";
 }
 
 // dependencies/products ///////////////////////////////////////////////////////
@@ -121,7 +116,7 @@ std::vector<std::string> TLocalCoherenceLanczos<FImpl, nBasis>::getInput(void)
 template <typename FImpl, int nBasis>
 std::vector<std::string> TLocalCoherenceLanczos<FImpl, nBasis>::getOutput(void)
 {
-    std::vector<std::string> out = {fevecName_, cevecName_, fevalName_, cevalName_};
+    std::vector<std::string> out = {fineName_, coarseName_};
     
     return out;
 }
@@ -187,47 +182,56 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::setup(void)
     {
         makeCoarseGrid();
     }
-    envCreate(std::vector<FineField>, fevecName_, Ls_, par().fineParams.Nm,
+    envCreate(FineEigenPack, fineName_, Ls_, par().fineParams.Nm,
               env().getRbGrid(Ls_));
-    envCreate(std::vector<CoarseField>, cevecName_, Ls_, par().coarseParams.Nm, 
+    envCreate(CoarseEigenPack, coarseName_, Ls_, par().coarseParams.Nm, 
               coarseGridRb_.get());
-    envCreate(std::vector<RealD>, fevalName_, Ls_, par().fineParams.Nm);
-    envCreate(std::vector<RealD>, cevalName_, Ls_, par().coarseParams.Nm);
+    auto &fine   = envGet(FineEigenPack, fineName_);
+    auto &coarse = envGet(CoarseEigenPack, coarseName_);
     envTmp(SchurFMat, "mat", Ls_, envGet(FMat, par().action));
     envGetTmp(SchurFMat, mat);
-    envTmp(LCL, "solver", Ls_, env().getRbGrid(Ls_), coarseGridRb_.get(), mat, Odd, 
-           envGet(std::vector<FineField>, fevecName_),
-           envGet(std::vector<CoarseField>, cevecName_),
-           envGet(std::vector<RealD>, fevalName_),
-           envGet(std::vector<RealD>, cevalName_));
+    envTmp(LCL, "solver", Ls_, env().getRbGrid(Ls_), coarseGridRb_.get(), mat, 
+           Odd, fine.evec, coarse.evec, fine.eval, coarse.eval);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl, int nBasis>
 void TLocalCoherenceLanczos<FImpl, nBasis>::execute(void)
 {
-    auto &fine   = par().fineParams;
-    auto &coarse = par().coarseParams;
-    
+    auto &finePar   = par().fineParams;
+    auto &coarsePar = par().coarseParams;
+    auto &fine      = envGet(FineEigenPack, fineName_);
+    auto &coarse    = envGet(CoarseEigenPack, coarseName_);
+
     envGetTmp(LCL, solver);
     if (par().doFine)
     {
         LOG(Message) << "Performing fine grid IRL -- Nstop= " 
-                     << fine.Nstop << ", Nk= " << fine.Nk << ", Nm= " 
-                     << fine.Nm << std::endl;
-        solver.calcFine(fine.Cheby, fine.Nstop, fine.Nk, fine.Nm, fine.resid,
-                        fine.MaxIt, fine.betastp, fine.MinRes);
+                     << finePar.Nstop << ", Nk= " << finePar.Nk << ", Nm= " 
+                     << finePar.Nm << std::endl;
+        solver.calcFine(finePar.Cheby, finePar.Nstop, finePar.Nk, finePar.Nm,
+                        finePar.resid,finePar.MaxIt, finePar.betastp, 
+                        finePar.MinRes);
         LOG(Message) << "Orthogonalising" << std::endl;
         solver.Orthogonalise();
+        if (!par().output.empty())
+        {
+            fine.write(par().output + "_fine");
+        }
     }
     if (par().doCoarse)
     {
         LOG(Message) << "Performing coarse grid IRL -- Nstop= " 
-                     << fine.Nstop << ", Nk= " << fine.Nk << ", Nm= " 
-                     << fine.Nm << std::endl;
-        solver.calcCoarse(coarse.Cheby, par().smoother, par().coarseRelaxTol,
-			              coarse.Nstop, coarse.Nk, coarse.Nm, coarse.resid, 
-                          coarse.MaxIt, coarse.betastp, coarse.MinRes);
+                     << coarsePar.Nstop << ", Nk= " << coarsePar.Nk << ", Nm= " 
+                     << coarsePar.Nm << std::endl;
+        solver.calcCoarse(coarsePar.Cheby, par().smoother, par().coarseRelaxTol,
+			              coarsePar.Nstop, coarsePar.Nk, coarsePar.Nm, 
+                          coarsePar.resid, coarsePar.MaxIt, coarsePar.betastp, 
+                          coarsePar.MinRes);
+        if (!par().output.empty())
+        {
+            coarse.write(par().output + "_coarse");
+        }
     }
 }
 

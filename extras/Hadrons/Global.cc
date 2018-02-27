@@ -37,6 +37,7 @@ HadronsLogger Hadrons::HadronsLogWarning(1,"Warning");
 HadronsLogger Hadrons::HadronsLogMessage(1,"Message");
 HadronsLogger Hadrons::HadronsLogIterative(1,"Iterative");
 HadronsLogger Hadrons::HadronsLogDebug(1,"Debug");
+HadronsLogger Hadrons::HadronsLogIRL(1,"IRL");
 
 void Hadrons::initLogger(void)
 {
@@ -46,11 +47,13 @@ void Hadrons::initLogger(void)
     GridLogMessage.setTopWidth(w);
     GridLogIterative.setTopWidth(w);
     GridLogDebug.setTopWidth(w);
+    GridLogIRL.setTopWidth(w);
     HadronsLogError.Active(GridLogError.isActive());
     HadronsLogWarning.Active(GridLogWarning.isActive());
     HadronsLogMessage.Active(GridLogMessage.isActive());
     HadronsLogIterative.Active(GridLogIterative.isActive());
     HadronsLogDebug.Active(GridLogDebug.isActive());
+    HadronsLogIRL.Active(GridLogIRL.isActive());
 }
 
 // type utilities //////////////////////////////////////////////////////////////

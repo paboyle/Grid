@@ -111,6 +111,7 @@ extern HadronsLogger HadronsLogWarning;
 extern HadronsLogger HadronsLogMessage;
 extern HadronsLogger HadronsLogIterative;
 extern HadronsLogger HadronsLogDebug;
+extern HadronsLogger HadronsLogIRL;
 
 void initLogger(void);
 
