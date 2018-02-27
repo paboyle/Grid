@@ -60,10 +60,10 @@ class TLocalCoherenceLanczos: public Module<LocalCoherenceLanczosPar>
 {
 public:
     FERM_TYPE_ALIASES(FImpl,);
-    typedef LCL<FImpl, nBasis>                         LCL;
-    typedef FineEigenPack<FImpl>                       FineEigenPack;
-    typedef CoarseEigenPack<FImpl, nBasis>             CoarseEigenPack; 
-    typedef SchurDiagMooeeOperator<FMat, FermionField> SchurFMat;
+    typedef LCL<FImpl, nBasis>                           LCL;
+    typedef FineEigenPack<FImpl>                         FineEigenPack;
+    typedef CoarseEigenPack<FImpl, nBasis>               CoarseEigenPack; 
+    typedef HADRONS_DEFAULT_SCHUR_OP<FMat, FermionField> SchurFMat;
 public:
     // constructor
     TLocalCoherenceLanczos(const std::string name);
