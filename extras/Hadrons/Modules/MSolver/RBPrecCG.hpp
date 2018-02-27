@@ -70,7 +70,8 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(RBPrecCG, TRBPrecCG<FIMPL>, MSolver);
+MODULE_REGISTER_NS(RBPrecCG,  TRBPrecCG<FIMPL>, MSolver);
+MODULE_REGISTER_NS(ZRBPrecCG, TRBPrecCG<ZFIMPL>, MSolver);
 
 /******************************************************************************
  *                      TRBPrecCG template implementation                     *

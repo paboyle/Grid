@@ -58,6 +58,9 @@ using Grid::operator<<;
 #ifndef FIMPL
 #define FIMPL WilsonImplR
 #endif
+#ifndef ZFIMPL
+#define ZFIMPL ZWilsonImplR
+#endif
 #ifndef SIMPL
 #define SIMPL ScalarImplCR
 #endif
