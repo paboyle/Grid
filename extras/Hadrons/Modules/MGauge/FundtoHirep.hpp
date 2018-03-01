@@ -6,6 +6,7 @@ Source file: extras/Hadrons/Modules/MGauge/FundtoHirep.hpp
 
 Copyright (C) 2015-2018
 
+Author: Antonin Portelli <antonin.portelli@me.com>
 Author: pretidav <david.preti@csic.es>
 
 This program is free software; you can redistribute it and/or modify

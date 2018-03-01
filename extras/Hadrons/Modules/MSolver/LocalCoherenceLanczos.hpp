@@ -44,15 +44,15 @@ class LocalCoherenceLanczosPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(LocalCoherenceLanczosPar,
-                                    std::string,      action,
-                                    int,              doFine,
-                                    int,              doCoarse,
-                                    LanczosParams,    fineParams,
-                                    LanczosParams,    coarseParams,
-                                    ChebyParams,      smoother,
-                                    RealD,            coarseRelaxTol,
-                                    std::string,      blockSize,
-                                    std::string,      output);
+                                    std::string,   action,
+                                    int,           doFine,
+                                    int,           doCoarse,
+                                    LanczosParams, fineParams,
+                                    LanczosParams, coarseParams,
+                                    ChebyParams,   smoother,
+                                    RealD,         coarseRelaxTol,
+                                    std::string,   blockSize,
+                                    std::string,   output);
 };
 
 template <typename FImpl, int nBasis>

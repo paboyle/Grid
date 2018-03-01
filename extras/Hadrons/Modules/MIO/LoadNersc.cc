@@ -71,6 +71,4 @@ void TLoadNersc::execute(void)
 
     auto &U = envGet(LatticeGaugeField, getName());
     NerscIO::readConfiguration(U, header, fileName);
-    LOG(Message) << "NERSC header:" << std::endl;
-    dump_meta_data(header, LOG(Message));
 }

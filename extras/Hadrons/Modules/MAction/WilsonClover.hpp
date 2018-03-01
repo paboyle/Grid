@@ -6,6 +6,7 @@ Source file: extras/Hadrons/Modules/MAction/WilsonClover.hpp
 
 Copyright (C) 2015-2018
 
+Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Guido Cossu <guido.cossu@ed.ac.uk>
 Author: pretidav <david.preti@csic.es>
 
