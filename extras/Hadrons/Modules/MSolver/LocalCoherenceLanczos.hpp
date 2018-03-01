@@ -60,9 +60,11 @@ class TLocalCoherenceLanczos: public Module<LocalCoherenceLanczosPar>
 {
 public:
     FERM_TYPE_ALIASES(FImpl,);
-    typedef LCL<FImpl, nBasis>                           LCL;
-    typedef FineEigenPack<FImpl>                         FineEigenPack;
-    typedef CoarseEigenPack<FImpl, nBasis>               CoarseEigenPack; 
+    typedef LocalCoherenceLanczos<typename FImpl::SiteSpinor, 
+                                  typename FImpl::SiteComplex, 
+                                  nBasis>                LCL;
+    typedef FineEigenPack<FImpl>                         FinePack;
+    typedef CoarseEigenPack<FImpl, nBasis>               CoarsePack; 
     typedef HADRONS_DEFAULT_SCHUR_OP<FMat, FermionField> SchurFMat;
 public:
     // constructor
@@ -185,12 +187,10 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::setup(void)
     {
         makeCoarseGrid();
     }
-    envCreate(FineEigenPack, fineName_, Ls_, par().fineParams.Nm,
-              env().getRbGrid(Ls_));
-    envCreate(CoarseEigenPack, coarseName_, Ls_, par().coarseParams.Nm, 
-              coarseGridRb_.get());
-    auto &fine   = envGet(FineEigenPack, fineName_);
-    auto &coarse = envGet(CoarseEigenPack, coarseName_);
+    envCreate(FinePack, fineName_, Ls_, par().fineParams.Nm, env().getRbGrid(Ls_));
+    envCreate(CoarsePack, coarseName_, Ls_, par().coarseParams.Nm, coarseGridRb_.get());
+    auto &fine   = envGet(FinePack, fineName_);
+    auto &coarse = envGet(CoarsePack, coarseName_);
     envTmp(SchurFMat, "mat", Ls_, envGet(FMat, par().action));
     envGetTmp(SchurFMat, mat);
     envTmp(LCL, "solver", Ls_, env().getRbGrid(Ls_), coarseGridRb_.get(), mat, 
@@ -203,8 +203,8 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::execute(void)
 {
     auto &finePar   = par().fineParams;
     auto &coarsePar = par().coarseParams;
-    auto &fine      = envGet(FineEigenPack, fineName_);
-    auto &coarse    = envGet(CoarseEigenPack, coarseName_);
+    auto &fine      = envGet(FinePack, fineName_);
+    auto &coarse    = envGet(CoarsePack, coarseName_);
 
     envGetTmp(LCL, solver);
     if (par().doFine)

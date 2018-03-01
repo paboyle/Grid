@@ -11,16 +11,13 @@ BEGIN_HADRONS_NAMESPACE
 #define HADRONS_DEFAULT_LANCZOS_NBASIS 60
 #endif
 
-template <typename FImpl, int nBasis>
-using LCL = LocalCoherenceLanczos<typename FImpl::SiteSpinor, 
-                                  typename FImpl::SiteComplex, nBasis>;
-
 template <typename T>
 struct EigenPack
 {
+    typedef T VectorType;
     std::vector<RealD> eval;
     std::vector<T>     evec;
-
+    
     EigenPack(void) = default;
 
     EigenPack(const size_t size, GridBase *grid)
@@ -81,7 +78,10 @@ template <typename FImpl>
 using FineEigenPack = EigenPack<typename FImpl::FermionField>;
 
 template <typename FImpl, int nBasis>
-using CoarseEigenPack = EigenPack<typename LCL<FImpl, nBasis>::CoarseField>;
+using CoarseEigenPack = EigenPack<
+    typename LocalCoherenceLanczos<typename FImpl::SiteSpinor, 
+                                   typename FImpl::SiteComplex, 
+                                   nBasis>::CoarseField>;
 
 END_HADRONS_NAMESPACE
 
