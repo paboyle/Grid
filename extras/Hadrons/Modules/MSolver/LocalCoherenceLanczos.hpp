@@ -215,6 +215,7 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::execute(void)
         solver.calcFine(finePar.Cheby, finePar.Nstop, finePar.Nk, finePar.Nm,
                         finePar.resid,finePar.MaxIt, finePar.betastp, 
                         finePar.MinRes);
+        solver.testFine(finePar.resid*100.0);
         LOG(Message) << "Orthogonalising" << std::endl;
         solver.Orthogonalise();
         if (!par().output.empty())
