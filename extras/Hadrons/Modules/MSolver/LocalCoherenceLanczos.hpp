@@ -233,7 +233,6 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::execute(void)
                           coarsePar.resid, coarsePar.MaxIt, coarsePar.betastp, 
                           coarsePar.MinRes);
         LOG(Message) << "Orthogonalising" << std::endl;
-        solver.Orthogonalise();
         if (!par().output.empty())
         {
             coarse.write(par().output + "_coarse");
