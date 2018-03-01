@@ -105,9 +105,9 @@ template <typename FImpl>
 void TZMobiusDWF<FImpl>::setup(void)
 {
     LOG(Message) << "Setting up z-Mobius domain wall fermion matrix with m= "
-                 << par().mass << ", M5= " << par().M5 << ", Ls= "
+                 << par().mass << ", M5= " << par().M5 << ", Ls= " << par().Ls 
                  << ", b= " << par().b << ", c= " << par().c
-                 << par().Ls << " using gauge field '" << par().gauge << "'"
+                 << " using gauge field '" << par().gauge << "'"
                  << std::endl;
     LOG(Message) << "Omegas: " << std::endl;
     for (unsigned int i = 0; i < par().omega.size(); ++i)
