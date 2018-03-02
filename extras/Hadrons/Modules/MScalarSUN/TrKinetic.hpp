@@ -35,7 +35,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         TrKinetic                                 *
+ *                         Trace of kinetic term                              *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MScalarSUN)
 
@@ -86,7 +86,7 @@ MODULE_REGISTER_NS(TrKineticSU5, TTrKinetic<ScalarNxNAdjImplR<5>>, MScalarSUN);
 MODULE_REGISTER_NS(TrKineticSU6, TTrKinetic<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
- *                 TTrKinetic implementation                             *
+ *                      TTrKinetic implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename SImpl>
