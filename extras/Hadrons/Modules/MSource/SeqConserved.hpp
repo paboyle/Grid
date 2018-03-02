@@ -7,8 +7,8 @@ Source file: extras/Hadrons/Modules/MSource/SeqConserved.hpp
 Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
-Author: Andrew Lawson    <andrew.lawson1991@gmail.com>
-Author: Vera Guelpers    <v.m.guelpers@soton.ac.uk>
+Author: Lanny91 <andrew.lawson@gmail.com>
+Author: Vera Guelpers <vmg1n14@soton.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
