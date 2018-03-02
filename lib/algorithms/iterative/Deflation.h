@@ -59,7 +59,7 @@ public:
     assert(evec.size()==eval.size());
     auto N = evec.size();
     for (int i=0;i<N;i++) {
-      Field& tmp = evec[i];
+      const Field& tmp = evec[i];
       axpy(guess,TensorRemove(innerProduct(tmp,src)) / eval[i],tmp,guess);
     }
   }
@@ -86,9 +86,9 @@ public:
     int N = (int)evec_coarse.size();
     CoarseField src_coarse(evec_coarse[0]._grid);
     CoarseField guess_coarse(evec_coarse[0]._grid);    guess_coarse = zero;
-    blockProject(src,src_coarse,subspace);    
+    blockProject(src_coarse,src,subspace);    
     for (int i=0;i<N;i++) {
-      CoarseField & tmp = evec_coarse[i];
+      const CoarseField & tmp = evec_coarse[i];
       axpy(guess_coarse,TensorRemove(innerProduct(tmp,src_coarse)) / eval_coarse[i],tmp,guess_coarse);
     }
     blockPromote(guess_coarse,guess,subspace);
