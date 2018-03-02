@@ -46,6 +46,7 @@ modules_hpp =\
   Modules/MAction/ZMobiusDWF.hpp \
   Modules/MScalarSUN/Div.hpp \
   Modules/MScalarSUN/TrMag.hpp \
+  Modules/MScalarSUN/EMT.hpp \
   Modules/MScalarSUN/TwoPoint.hpp \
   Modules/MScalarSUN/TrPhi.hpp \
   Modules/MScalarSUN/Utils.hpp \

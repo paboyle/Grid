@@ -63,6 +63,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MAction/ZMobiusDWF.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/Div.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TrMag.hpp>
+#include <Grid/Hadrons/Modules/MScalarSUN/EMT.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TwoPoint.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TrPhi.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/Utils.hpp>
