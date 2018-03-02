@@ -49,5 +49,5 @@ modules_hpp =\
   Modules/MScalarSUN/TwoPoint.hpp \
   Modules/MScalarSUN/TrPhi.hpp \
   Modules/MIO/LoadNersc.hpp \
-Modules/MIO/LoadBinary.hpp
+  Modules/MIO/LoadBinary.hpp
 

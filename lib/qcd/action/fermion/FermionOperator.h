@@ -127,7 +127,7 @@ namespace Grid {
                                        unsigned int mu,
                                        unsigned int tmin, 
                                        unsigned int tmax,
-				       Lattice<iSinglet<Simd>> &lattice_cmplx)=0;
+				       ComplexField &lattice_cmplx)=0;
     };
 
   }

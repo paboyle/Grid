@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MContraction/SeqConserved.hpp
+Source file: extras/Hadrons/Modules/MSource/SeqConserved.hpp
 
 Copyright (C) 2015-2018
 
@@ -34,8 +34,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
-
-#include <Grid/qcd/action/gauge/GaugeImplTypes.h>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -100,6 +98,9 @@ protected:
     virtual void setup(void);
     // execution
     virtual void execute(void);
+private:
+    bool        SeqhasPhase_{false}; 
+    std::string SeqmomphName_;
 };
 
 MODULE_REGISTER_NS(SeqConserved, TSeqConserved<FIMPL>, MSource);
@@ -112,6 +113,7 @@ MODULE_REGISTER_NS(SeqConserved, TSeqConserved<FIMPL>, MSource);
 template <typename FImpl>
 TSeqConserved<FImpl>::TSeqConserved(const std::string name)
 : Module<SeqConservedPar>(name)
+, SeqmomphName_ (name + "_Seqmomph")
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
@@ -139,7 +141,7 @@ void TSeqConserved<FImpl>::setup(void)
     auto Ls_ = env().getObjectLs(par().action);
     envCreateLat(PropagatorField, getName(), Ls_);
     envTmpLat(PropagatorField, "src_tmp");
-    envTmpLat(LatticeComplex, "mom_phase");
+    envCacheLat(LatticeComplex, SeqmomphName_);
     envTmpLat(LatticeComplex, "coor");
     envTmpLat(LatticeComplex, "latt_compl");
 }
@@ -152,37 +154,45 @@ void TSeqConserved<FImpl>::execute(void)
     {
         LOG(Message) << "Generating sequential source with conserved "
                      << par().curr_type << " current at " 
-		     << "t = " << par().tA << std::endl;
+		     << "t = " << par().tA << " summed over the indices " 
+		     << par().mu_min << " <= mu <= " << par().mu_max 
+		     << std::endl;
     }
     else
     {
         LOG(Message) << "Generating sequential source with conserved "
                      << par().curr_type << " current for " 
                      << par().tA << " <= t <= " 
-                     << par().tB << std::endl;
+                     << par().tB << " summed over the indices " 
+		     << par().mu_min << " <= mu <= " << par().mu_max
+	             << std::endl;
     }
     auto &src = envGet(PropagatorField, getName());
     envGetTmp(PropagatorField, src_tmp);
     src_tmp = src;
     auto &q   = envGet(PropagatorField, par().q);
     auto &mat = envGet(FMat, par().action);
-    envGetTmp(LatticeComplex, mom_phase);
-    envGetTmp(LatticeComplex, coor);
     envGetTmp(LatticeComplex, latt_compl);
 
     src = zero;
 
     //exp(ipx)
-    std::vector<Real> mom = strToVec<Real>(par().mom);
-    mom_phase = zero;
-    Complex           i(0.0,1.0);
-    for(unsigned int mu = 0; mu < env().getNd(); mu++)
-    {
-        LatticeCoordinate(coor, mu);
-        mom_phase = mom_phase + (mom[mu]/env().getGrid()->_fdimensions[mu])*coor;
+    auto &mom_phase = envGet(LatticeComplex, SeqmomphName_);
+    if (!SeqhasPhase_)
+    {    
+        std::vector<Real> mom = strToVec<Real>(par().mom);
+        mom_phase = zero;
+        Complex           i(0.0,1.0);
+        envGetTmp(LatticeComplex, coor);
+        for(unsigned int mu = 0; mu < env().getNd(); mu++)
+        {
+            LatticeCoordinate(coor, mu);
+            mom_phase = mom_phase + (mom[mu]/env().getGrid()->_fdimensions[mu])*coor;
+        }
+        mom_phase = exp((Real)(2*M_PI)*i*mom_phase);
+        SeqhasPhase_ = true;
     }
-    mom_phase = exp((Real)(2*M_PI)*i*mom_phase);
-    LOG(Message) << "Inserting momentum " << mom << std::endl;
+    LOG(Message) << "Inserting momentum " << strToVec<Real>(par().mom) << std::endl;
 
 
 

@@ -174,13 +174,13 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
                                 PropagatorField &q_out,
                                 Current curr_type,
                                 unsigned int mu);
-    void SeqConservedCurrent(PropagatorField &q_in, 
+  void SeqConservedCurrent(PropagatorField &q_in, 
                              PropagatorField &q_out,
                              Current curr_type, 
                              unsigned int mu,
                              unsigned int tmin, 
                              unsigned int tmax,
-			     Lattice<iSinglet<Simd>> &lattice_cmplx);
+			     ComplexField &lattice_cmplx);
 };
 
 typedef WilsonFermion<WilsonImplF> WilsonFermionF;

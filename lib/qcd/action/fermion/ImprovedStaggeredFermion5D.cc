@@ -425,7 +425,7 @@ void ImprovedStaggeredFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in
                                               unsigned int mu,
                                               unsigned int tmin, 
                                               unsigned int tmax,
-					      Lattice<iSinglet<Simd>> &lattice_cmplx)
+					      ComplexField &lattice_cmplx)
 {
     assert(0);
 

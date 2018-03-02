@@ -172,7 +172,7 @@ class ImprovedStaggeredFermion : public StaggeredKernels<Impl>, public ImprovedS
                            unsigned int mu,
                            unsigned int tmin, 
                            unsigned int tmax,
-			   Lattice<iSinglet<Simd>> &lattice_cmplx);
+			   ComplexField &lattice_cmplx);
 };
 
 typedef ImprovedStaggeredFermion<StaggeredImplF> ImprovedStaggeredFermionF;

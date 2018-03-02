@@ -407,75 +407,6 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
     }
 }
 
-//template <class Impl>
-//void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in, 
-//                                              PropagatorField &q_out,
-//                                              Current curr_type,
-//                                              unsigned int mu,
-//                                              std::vector<Real> mom,
-//                                              unsigned int tmin, 
-//                                              unsigned int tmax)
-//{
-//    conformable(_grid, q_in._grid);
-//    conformable(_grid, q_out._grid);
-//    Lattice<iSinglet<Simd>> ph(_grid), coor(_grid);
-//    Complex i(0.0,1.0);
-//    PropagatorField tmpFwd(_grid), tmpBwd(_grid), tmp(_grid);
-//    unsigned int tshift = (mu == Tp) ? 1 : 0;
-//    unsigned int LLt    = GridDefaultLatt()[Tp];
-//
-//    // Momentum projection
-//    ph = zero;
-//    for(unsigned int mu = 0; mu < Nd - 1; mu++)
-//    {
-//        LatticeCoordinate(coor, mu);
-//        ph = ph + mom[mu]*coor*((1./(_grid->_fdimensions[mu])));
-//    }
-//    ph = exp((Real)(2*M_PI)*i*ph);
-//
-//    q_out = zero;
-//    LatticeInteger coords(_grid);
-//    LatticeCoordinate(coords, Tp);
-//
-//    // Need q(x + mu) and q(x - mu).
-//    tmp = Cshift(q_in, mu, 1);
-//    tmpFwd = tmp*ph;
-//    tmp = ph*q_in;
-//    tmpBwd = Cshift(tmp, mu, -1);
-//
-//    parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
-//    {
-//        // Compute the sequential conserved current insertion only if our simd
-//        // object contains a timeslice we need.
-//        vInteger t_mask   = ((coords._odata[sU] >= tmin) &&
-//                             (coords._odata[sU] <= tmax));
-//        Integer timeSlices = Reduce(t_mask);
-//
-//        if (timeSlices > 0)
-//        {
-//            Kernels::SeqConservedCurrentSiteFwd(tmpFwd._odata[sU], 
-//                                                q_out._odata[sU], 
-//                                                Umu, sU, mu, t_mask);
-//        }
-//
-//        // Repeat for backward direction.
-//        t_mask     = ((coords._odata[sU] >= (tmin + tshift)) && 
-//                      (coords._odata[sU] <= (tmax + tshift)));
-//
-//	//if tmax = LLt-1 (last timeslice) include timeslice 0 if the time is shifted (mu=3)	
-//	unsigned int t0 = 0;
-//	if((tmax==LLt-1) && (tshift==1)) t_mask = (t_mask || (coords._odata[sU] == t0 ));
-//
-//        timeSlices = Reduce(t_mask);
-//
-//        if (timeSlices > 0)
-//        {
-//            Kernels::SeqConservedCurrentSiteBwd(tmpBwd._odata[sU], 
-//                                                q_out._odata[sU], 
-//                                                Umu, sU, mu, t_mask);
-//        }
-//    }
-//}
 
 template <class Impl>
 void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in, 
@@ -484,7 +415,7 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                                               unsigned int mu,
                                               unsigned int tmin, 
                                               unsigned int tmax,
-					      Lattice<iSinglet<Simd>> &lattice_cmplx)
+					      ComplexField &lattice_cmplx)
 {
     conformable(_grid, q_in._grid);
     conformable(_grid, q_out._grid);

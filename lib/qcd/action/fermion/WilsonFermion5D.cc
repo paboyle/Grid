@@ -779,98 +779,6 @@ void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
 }
 
 
-//template <class Impl>
-//void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in, 
-//                                                PropagatorField &q_out,
-//                                                Current curr_type, 
-//                                                unsigned int mu,
-//                                                std::vector<Real> mom,
-//                                                unsigned int tmin, 
-//                                                unsigned int tmax)
-//{
-//    conformable(q_in._grid, FermionGrid());
-//    conformable(q_in._grid, q_out._grid);
-//    Lattice<iSinglet<Simd>> ph(FermionGrid()), coor(FermionGrid());
-//    PropagatorField tmpFwd(FermionGrid()), tmpBwd(FermionGrid()),
-//                    tmp(FermionGrid());
-//    Complex i(0.0, 1.0);
-//    unsigned int tshift = (mu == Tp) ? 1 : 0;
-//    unsigned int LLs = q_in._grid->_rdimensions[0];
-//    unsigned int LLt    = GridDefaultLatt()[Tp];
-//
-//    // Momentum projection.
-//    ph = zero;
-//    for(unsigned int nu = 0; nu < Nd - 1; nu++)
-//    {
-//        // Shift coordinate lattice index by 1 to account for 5th dimension.
-//        LatticeCoordinate(coor, nu + 1);
-//        ph = ph + mom[nu]*coor*((1./(_FourDimGrid->_fdimensions[nu])));
-//    }
-//    ph = exp((Real)(2*M_PI)*i*ph);
-//
-//    q_out = zero;
-//    LatticeInteger coords(_FourDimGrid);
-//    LatticeCoordinate(coords, Tp);
-//
-//
-//    // Need q(x + mu, s) and q(x - mu, s). 5D lattice so shift 4D coordinate mu
-//    // by one.
-//    tmp = Cshift(q_in, mu + 1, 1);
-//    tmpFwd = tmp*ph;
-//    tmp = ph*q_in;
-//    tmpBwd = Cshift(tmp, mu + 1, -1);
-//
-//    parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
-//    {
-//        // Compute the sequential conserved current insertion only if our simd
-//        // object contains a timeslice we need.
-//        vInteger t_mask   = ((coords._odata[sU] >= tmin) &&
-//                             (coords._odata[sU] <= tmax));
-//        Integer timeSlices = Reduce(t_mask);
-//
-//        if (timeSlices > 0)
-//        {
-//            unsigned int sF = sU * LLs;
-//            for (unsigned int s = 0; s < LLs; ++s)
-//            {
-//                bool axial_sign = ((curr_type == Current::Axial) && (s < (LLs / 2)));
-//		bool tadpole_sign = (curr_type == Current::Tadpole);
-//		bool switch_sgn = tadpole_sign || axial_sign;
-//
-//                Kernels::SeqConservedCurrentSiteFwd(tmpFwd._odata[sF], 
-//                                                    q_out._odata[sF], Umu, sU,
-//                                                    mu, t_mask, switch_sgn);
-//                ++sF;
-//            }
-//        }
-//
-//        // Repeat for backward direction.
-//        t_mask     = ((coords._odata[sU] >= (tmin + tshift)) && 
-//                      (coords._odata[sU] <= (tmax + tshift)));
-//
-//	//if tmax = LLt-1 (last timeslice) include timeslice 0 if the time is shifted (mu=3)	
-//	unsigned int t0 = 0;
-//	if((tmax==LLt-1) && (tshift==1)) t_mask = (t_mask || (coords._odata[sU] == t0 ));
-//
-//        timeSlices = Reduce(t_mask);
-//
-//        if (timeSlices > 0)
-//        {
-//            unsigned int sF = sU * LLs;
-//            for (unsigned int s = 0; s < LLs; ++s)
-//            {
-//                bool axial_sign = ((curr_type == Current::Axial) && (s < (LLs / 2)));
-//                Kernels::SeqConservedCurrentSiteBwd(tmpBwd._odata[sF], 
-//                                                    q_out._odata[sF], Umu, sU,
-//                                                    mu, t_mask, axial_sign);
-//                ++sF;
-//            }
-//        }
-//    }
-//}
-
-
-
 
 template <class Impl>
 void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in, 
@@ -879,7 +787,7 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                                                 unsigned int mu,
                                                 unsigned int tmin, 
                                                 unsigned int tmax,
-						Lattice<iSinglet<Simd>> &lattice_cmplx)
+						ComplexField &lattice_cmplx)
 {
     conformable(q_in._grid, FermionGrid());
     conformable(q_in._grid, q_out._grid);
