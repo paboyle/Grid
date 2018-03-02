@@ -174,6 +174,7 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::makeCoarseGrid(void)
             GridDefaultMpi()));
         coarseGridRb_.reset(SpaceTimeGrid::makeFourDimRedBlackGrid(coarseGrid_.get()));
     }
+    LOG(Message) << "Coarse grid: " << coarseGrid_->GlobalDimensions() << std::endl;
 }
 
 template <typename FImpl, int nBasis>
@@ -232,7 +233,8 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::execute(void)
 			              coarsePar.Nstop, coarsePar.Nk, coarsePar.Nm, 
                           coarsePar.resid, coarsePar.MaxIt, coarsePar.betastp, 
                           coarsePar.MinRes);
-        LOG(Message) << "Orthogonalising" << std::endl;
+        solver.testCoarse(coarsePar.resid*100.0, par().smoother, 
+                          par().coarseRelaxTol);
         if (!par().output.empty())
         {
             coarse.write(par().output + "_coarse");
