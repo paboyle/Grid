@@ -57,9 +57,11 @@ std::vector<std::string> TStochEm::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void TStochEm::setup(void)
 {
+    create_weight = false; 
     if (!env().hasCreatedObject("_" + getName() + "_weight"))
     {
         envCacheLat(EmComp, "_" + getName() + "_weight");
+        create_weight = true;
     }
     envCreateLat(EmField, getName());
 }
@@ -67,13 +69,13 @@ void TStochEm::setup(void)
 // execution ///////////////////////////////////////////////////////////////////
 void TStochEm::execute(void)
 {
-    LOG(Message) << "Generating stochatic EM potential..." << std::endl;
+    LOG(Message) << "Generating stochastic EM potential..." << std::endl;
 
     PhotonR photon(par().gauge, par().zmScheme);
     auto    &a = envGet(EmField, getName());
     auto    &w = envGet(EmComp, "_" + getName() + "_weight");
     
-    if (!env().hasCreatedObject("_" + getName() + "_weight"))
+    if (create_weight)
     {
         LOG(Message) << "Caching stochatic EM potential weight (gauge: "
                      << par().gauge << ", zero-mode scheme: "
