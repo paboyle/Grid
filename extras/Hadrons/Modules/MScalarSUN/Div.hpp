@@ -35,7 +35,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         Div                                 *
+ *                       Divergence of a vector field                         *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MScalarSUN)
 
@@ -83,7 +83,7 @@ MODULE_REGISTER_NS(DivSU5, TDiv<ScalarNxNAdjImplR<5>>, MScalarSUN);
 MODULE_REGISTER_NS(DivSU6, TDiv<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
- *                 TDiv implementation                             *
+ *                           TDiv implementation                              *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename SImpl>

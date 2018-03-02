@@ -424,11 +424,17 @@ void VirtualMachine::memoryProfile(const unsigned int address)
         cleanEnvironment();
         for (auto &in: m->getInput())
         {
-            memoryProfile(env().getObjectModule(in));
+            if (!env().hasCreatedObject(in))
+            {
+                memoryProfile(env().getObjectModule(in));
+            }
         }
         for (auto &ref: m->getReference())
         {
-            memoryProfile(env().getObjectModule(ref));
+            if (!env().hasCreatedObject(ref))
+            {
+                memoryProfile(env().getObjectModule(ref));
+            }
         }
         m->setup();
         updateProfile(address);

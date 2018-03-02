@@ -182,6 +182,7 @@ void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,
 #ifdef GRID_MPI3_SHMMMAP
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
+  std::cout << "SharedMemoryAllocate "<< bytes<< " MMAP implementation "<<std::endl;
   assert(_ShmSetup==1);
   assert(_ShmAlloc==0);
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -218,6 +219,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     assert(((uint64_t)ptr&0x3F)==0);
     close(fd);
     WorldShmCommBufs[r] =ptr;
+    std::cout << "Set WorldShmCommBufs["<<r<<"]="<<ptr<< "("<< bytes<< "bytes)"<<std::endl;
   }
   _ShmAlloc=1;
   _ShmAllocBytes  = bytes;
@@ -232,6 +234,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 ////////////////////////////////////////////////////////////////////////////////////////////
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 { 
+  std::cout << "SharedMemoryAllocate "<< bytes<< " SHMOPEN implementation "<<std::endl;
   assert(_ShmSetup==1);
   assert(_ShmAlloc==0); 
   MPI_Barrier(WorldShmComm);
@@ -259,7 +262,11 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 #endif
       void * ptr =  mmap(NULL,size, PROT_READ | PROT_WRITE, mmap_flag, fd, 0);
       
-      if ( ptr == (void * )MAP_FAILED ) {       perror("failed mmap");      assert(0);    }
+      std::cout << "Set WorldShmCommBufs["<<r<<"]="<<ptr<< "("<< size<< "bytes)"<<std::endl;
+      if ( ptr == (void * )MAP_FAILED ) {       
+	perror("failed mmap");     
+	assert(0);    
+      }
       assert(((uint64_t)ptr&0x3F)==0);
       
       WorldShmCommBufs[r] =ptr;
@@ -318,11 +325,12 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
   heap_size = GlobalSharedMemory::ShmAllocBytes();
   for(int r=0;r<ShmSize;r++){
 
-    uint32_t sr = (r==ShmRank) ? GlobalSharedMemory::WorldRank : 0 ;
+    uint32_t wsr = (r==ShmRank) ? GlobalSharedMemory::WorldShmRank : 0 ;
 
-    MPI_Allreduce(MPI_IN_PLACE,&sr,1,MPI_UINT32_T,MPI_SUM,comm);
+    MPI_Allreduce(MPI_IN_PLACE,&wsr,1,MPI_UINT32_T,MPI_SUM,ShmComm);
 
-    ShmCommBufs[r] = GlobalSharedMemory::WorldShmCommBufs[sr];
+    ShmCommBufs[r] = GlobalSharedMemory::WorldShmCommBufs[wsr];
+    //    std::cout << "SetCommunicator ShmCommBufs ["<< r<< "] = "<< ShmCommBufs[r]<< "  wsr = "<<wsr<<std::endl;
   }
   ShmBufferFreeAll();
 
@@ -391,5 +399,9 @@ void *SharedMemory::ShmBufferTranslate(int rank,void * local_p)
     return (void *) remote;
   }
 }
+SharedMemory::~SharedMemory()
+{
+  MPI_Comm_free(&ShmComm);
+};
 
 }

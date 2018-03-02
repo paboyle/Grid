@@ -87,7 +87,7 @@ MODULE_REGISTER_NS(TwoPointSU5, TTwoPoint<ScalarNxNAdjImplR<5>>, MScalarSUN);
 MODULE_REGISTER_NS(TwoPointSU6, TTwoPoint<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
- *                 TTwoPoint implementation                             *
+ *                       TTwoPoint implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename SImpl>

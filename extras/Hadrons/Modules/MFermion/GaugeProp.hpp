@@ -7,7 +7,9 @@ Source file: extras/Hadrons/Modules/MFermion/GaugeProp.hpp
 Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 Author: Lanny91 <andrew.lawson@gmail.com>
+Author: pretidav <david.preti@csic.es>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

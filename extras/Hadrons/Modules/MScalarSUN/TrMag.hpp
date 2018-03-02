@@ -35,7 +35,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                       Module to compute tr(mag^n)                          *
+ *                     Trace of powers of the magnetisation                   *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MScalarSUN)
 
@@ -117,7 +117,7 @@ template <typename SImpl>
 void TTrMag<SImpl>::execute(void)
 {
     LOG(Message) << "Computing tr(mag^n) for n even up to " << par().maxPow
-                 << "..." << std::endl;
+                 << std::endl;
 
     std::vector<Result> result;
     auto                &phi = envGet(Field, par().field);
