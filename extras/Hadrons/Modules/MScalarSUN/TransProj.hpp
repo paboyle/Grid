@@ -104,7 +104,7 @@ std::vector<std::string> TTransProj<SImpl>::getInput(void)
 template <typename SImpl>
 std::vector<std::string> TTransProj<SImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out;
     
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     for (unsigned int nu = mu; nu < env().getNd(); ++nu)

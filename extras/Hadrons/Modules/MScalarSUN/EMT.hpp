@@ -110,7 +110,7 @@ std::vector<std::string> TEMT<SImpl>::getInput(void)
 template <typename SImpl>
 std::vector<std::string> TEMT<SImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out;
     
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     for (unsigned int nu = mu; nu < env().getNd(); ++nu)
@@ -125,7 +125,11 @@ std::vector<std::string> TEMT<SImpl>::getOutput(void)
 template <typename SImpl>
 void TEMT<SImpl>::setup(void)
 {
-    envCreateLat(ComplexField, getName());
+    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    for (unsigned int nu = mu; nu < env().getNd(); ++nu)
+    {
+        envCreateLat(ComplexField, varName(getName(), mu, nu));
+    }
     envTmpLat(ComplexField, "sumkin");
 }
 
