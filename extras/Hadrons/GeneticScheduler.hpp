@@ -130,7 +130,7 @@ void GeneticScheduler<V, T>::nextGeneration(void)
     {
         initPopulation();
     }
-    LOG(Debug) << "Starting population:\n" << *this << std::endl;
+    //LOG(Debug) << "Starting population:\n" << *this << std::endl;
     
     // random mutations
     //PARALLEL_FOR_LOOP
@@ -138,7 +138,7 @@ void GeneticScheduler<V, T>::nextGeneration(void)
     {
         doMutation();
     }
-    LOG(Debug) << "After mutations:\n" << *this << std::endl;
+    //LOG(Debug) << "After mutations:\n" << *this << std::endl;
     
     // mating
     //PARALLEL_FOR_LOOP
@@ -146,14 +146,14 @@ void GeneticScheduler<V, T>::nextGeneration(void)
     {
         doCrossover();
     }
-    LOG(Debug) << "After mating:\n" << *this << std::endl;
+    //LOG(Debug) << "After mating:\n" << *this << std::endl;
     
     // grim reaper
     auto it = population_.begin();
     
     std::advance(it, par_.popSize);
     population_.erase(it, population_.end());
-    LOG(Debug) << "After grim reaper:\n" << *this << std::endl;
+    //LOG(Debug) << "After grim reaper:\n" << *this << std::endl;
 }
 
 // evolution steps /////////////////////////////////////////////////////////////

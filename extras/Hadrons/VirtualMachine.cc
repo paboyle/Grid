@@ -549,7 +549,7 @@ VirtualMachine::Program VirtualMachine::schedule(const GeneticPar &par)
     gen = 0;
     do
     {
-        LOG(Debug) << "Generation " << gen << ":" << std::endl;
+        //LOG(Debug) << "Generation " << gen << ":" << std::endl;
         scheduler.nextGeneration();
         if (gen != 0)
         {
