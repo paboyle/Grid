@@ -36,8 +36,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         LocalCoherenceLanczos                                 *
- ******************************************************************************/
+ *                    Local coherence Lanczos eigensolver                     *
+ *****************************************************************************/
 BEGIN_MODULE_NAMESPACE(MSolver)
 
 class LocalCoherenceLanczosPar: Serializable
@@ -98,7 +98,7 @@ MODULE_REGISTER_NS(ZLocalCoherenceLanczos,
     MSolver);
 
 /******************************************************************************
- *                 TLocalCoherenceLanczos implementation                             *
+ *                 TLocalCoherenceLanczos implementation                      *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl, int nBasis>

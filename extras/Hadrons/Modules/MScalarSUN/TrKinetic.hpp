@@ -6,6 +6,7 @@ Source file: extras/Hadrons/Modules/MScalarSUN/TrKinetic.hpp
 
 Copyright (C) 2015-2018
 
+Author: Antonin Portelli <antonin.portelli@me.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

@@ -35,7 +35,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         Module to compute tr(phi^n)                        *
+ *                      Trace of powers of a scalar field                     *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MScalarSUN)
 
@@ -136,7 +136,7 @@ template <typename SImpl>
 void TTrPhi<SImpl>::execute(void)
 {
     LOG(Message) << "Computing tr(phi^n) for n even up to " << par().maxPow
-                 << "..." << std::endl; 
+                 << std::endl; 
 
     std::vector<Result> result;
     auto                &phi = envGet(Field, par().field);
