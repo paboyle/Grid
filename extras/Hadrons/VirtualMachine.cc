@@ -296,7 +296,18 @@ void VirtualMachine::makeModuleGraph(void)
     {
         for (auto &in: module_[m].input)
         {
-            graph.addEdge(env().getObjectModule(in), m);
+            int min = env().getObjectModule(in);
+
+            if (min < 0)
+            {
+                HADRON_ERROR(Definition, "object with address " 
+                             + std::to_string(in) 
+                             + " is not produced by any module");
+            }
+            else
+            {
+                graph.addEdge(min, m);
+            }
         }
     }
     graph_ = graph;
