@@ -60,6 +60,8 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+private:
+    bool create_weight;
 protected:
     // setup
     virtual void setup(void);
