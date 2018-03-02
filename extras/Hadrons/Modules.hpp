@@ -65,6 +65,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MScalarSUN/TrMag.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TwoPoint.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TrPhi.hpp>
+#include <Grid/Hadrons/Modules/MScalarSUN/Utils.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TrKinetic.hpp>
 #include <Grid/Hadrons/Modules/MIO/LoadNersc.hpp>
 #include <Grid/Hadrons/Modules/MIO/LoadBinary.hpp>

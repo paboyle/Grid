@@ -31,6 +31,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
+#include <Grid/Hadrons/Modules/MScalarSUN/Utils.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -42,7 +43,6 @@ BEGIN_MODULE_NAMESPACE(MScalarSUN)
 class TrKineticPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_ENUM(DiffType, undef, forward, 1, backward, 2, central, 3);
     GRID_SERIALIZABLE_CLASS_MEMBERS(TrKineticPar,
                                     std::string,  field,
                                     DiffType,     type,
@@ -74,9 +74,6 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
-private:
-    std::string outName(const unsigned int mu, const unsigned int nu);
-    std::string bufName(const unsigned int mu);
 };
 
 MODULE_REGISTER_NS(TrKineticSU2, TTrKinetic<ScalarNxNAdjImplR<2>>, MScalarSUN);
@@ -111,7 +108,7 @@ std::vector<std::string> TTrKinetic<SImpl>::getOutput(void)
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     for (unsigned int nu = mu; nu < env().getNd(); ++nu)
     {
-        out.push_back(outName(mu, nu));
+        out.push_back(varName(getName(), mu, nu));
     }
     
     return out;
@@ -124,7 +121,7 @@ void TTrKinetic<SImpl>::setup(void)
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     for (unsigned int nu = mu; nu < env().getNd(); ++nu)
     {
-        envCreateLat(ComplexField, outName(mu, nu));
+        envCreateLat(ComplexField, varName(getName(), mu, nu));
     }
     envTmp(std::vector<Field>, "der", 1, env().getNd(), env().getGrid());
 }
@@ -142,23 +139,12 @@ void TTrKinetic<SImpl>::execute(void)
     envGetTmp(std::vector<Field>, der);
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
-        switch(par().type)
-        {
-            case TrKineticPar::DiffType::backward:
-                der[mu] = phi - Cshift(phi, mu, -1);
-                break;
-            case TrKineticPar::DiffType::forward:
-                der[mu] = Cshift(phi, mu, 1) - phi;
-                break;
-            case TrKineticPar::DiffType::central:
-                der[mu] = 0.5*(Cshift(phi, mu, 1) - Cshift(phi, mu, -1));
-                break;
-        }
+        dmu(der[mu], phi, mu, par().type);
     }
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     for (unsigned int nu = mu; nu < env().getNd(); ++nu)
     {
-        auto &out = envGet(ComplexField, outName(mu, nu));
+        auto &out = envGet(ComplexField, varName(getName(), mu, nu));
 
         out = -trace(der[mu]*der[nu]);
         if (!par().output.empty())
@@ -176,21 +162,6 @@ void TTrKinetic<SImpl>::execute(void)
         saveResult(par().output, "trkinetic", result);
     }
 }
-
-// variable name generators ////////////////////////////////////////////////////
-template <typename SImpl>
-std::string TTrKinetic<SImpl>::outName(const unsigned int mu, 
-                                       const unsigned int nu)
-{
-    return getName() + "_" + std::to_string(mu) + "_" + std::to_string(nu);
-}
-
-template <typename SImpl>
-std::string TTrKinetic<SImpl>::bufName(const unsigned int mu)
-{
-    return "d_" + std::to_string(mu);
-}
-
 
 END_MODULE_NAMESPACE
 
