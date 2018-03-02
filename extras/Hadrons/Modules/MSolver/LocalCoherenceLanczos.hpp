@@ -174,7 +174,6 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::makeCoarseGrid(void)
             GridDefaultMpi()));
         coarseGridRb_.reset(SpaceTimeGrid::makeFourDimRedBlackGrid(coarseGrid_.get()));
     }
-    LOG(Message) << "Coarse grid: " << coarseGrid_->GlobalDimensions() << std::endl;
 }
 
 template <typename FImpl, int nBasis>
@@ -188,6 +187,7 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::setup(void)
     {
         makeCoarseGrid();
     }
+    LOG(Message) << "Coarse grid: " << coarseGrid_->GlobalDimensions() << std::endl;
     envCreate(FinePack, fineName_, Ls_, par().fineParams.Nm, env().getRbGrid(Ls_));
     envCreate(CoarsePack, coarseName_, Ls_, par().coarseParams.Nm, coarseGridRb_.get());
     auto &fine   = envGet(FinePack, fineName_);
