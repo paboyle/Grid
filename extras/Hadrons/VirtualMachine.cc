@@ -111,6 +111,7 @@ void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
             {
                 // output does not exists, add it
                 env().addObject(out, address);
+                module_[address].output.push_back(env().getObjectAddress(out));
             }
             else
             {
@@ -311,6 +312,48 @@ void VirtualMachine::makeModuleGraph(void)
         }
     }
     graph_ = graph;
+}
+
+// dump GraphViz graph /////////////////////////////////////////////////////////
+void VirtualMachine::dumpModuleGraph(std::ostream &out)
+{
+    makeModuleGraph();
+    out << "digraph hadrons {" << std::endl;
+    out << "node [shape=record, fontname=\"Courier\", fontsize=\"11\"];" << std::endl;
+    out << "graph [fontname = \"Courier\", fontsize=\"11\"];" << std::endl;
+    out << "edge [fontname = \"Courier\", fontsize=\"11\"];"<< std::endl;
+    for (unsigned int m = 0; m < module_.size(); ++m)
+    {
+
+    }
+    for (unsigned int m = 0; m < module_.size(); ++m)
+    {
+        for (auto &in: module_[m].input)
+        {
+            int min = env().getObjectModule(in);
+
+            out << min << " -> " << m << " [ label = \""
+                << env().getObjectName(in) << "\" ];" << std::endl;
+        }
+    }
+    for (unsigned int m = 0; m < module_.size(); ++m)
+    {
+        out <<  m << " [ label = \"{<f0> " << getModule(m)->getRegisteredName()
+            << " |<f1> " << getModuleName(m) << "}\" ];" << std::endl;
+    }
+    out << "}\n" << std::endl;
+}
+
+void VirtualMachine::dumpModuleGraph(void)
+{
+    dumpModuleGraph(std::cout);
+}
+
+void VirtualMachine::dumpModuleGraph(const std::string filename)
+{
+    std::ofstream f(filename);
+
+    dumpModuleGraph(f);
 }
 
 // memory profile //////////////////////////////////////////////////////////////
