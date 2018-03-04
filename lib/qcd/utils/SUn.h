@@ -222,21 +222,23 @@ public:
     conformable(subgroup, Determinant);
     int i0, i1;
     su2SubGroupIndex(i0, i1, su2_index);
-
+    auto subgroup_v = subgroup.View();
+    auto source_v   = source.View();
+    auto Determinant_v = Determinant.View();
     thread_loop( (int ss = 0; ss < grid->oSites(); ss++) ,{
-      subgroup[ss]()()(0, 0) = source[ss]()()(i0, i0);
-      subgroup[ss]()()(0, 1) = source[ss]()()(i0, i1);
-      subgroup[ss]()()(1, 0) = source[ss]()()(i1, i0);
-      subgroup[ss]()()(1, 1) = source[ss]()()(i1, i1);
+      subgroup_v[ss]()()(0, 0) = source_v[ss]()()(i0, i0);
+      subgroup_v[ss]()()(0, 1) = source_v[ss]()()(i0, i1);
+      subgroup_v[ss]()()(1, 0) = source_v[ss]()()(i1, i0);
+      subgroup_v[ss]()()(1, 1) = source_v[ss]()()(i1, i1);
 
-      iSU2Matrix<vcplx> Sigma = subgroup[ss];
+      iSU2Matrix<vcplx> Sigma = subgroup_v[ss];
 
       Sigma = Sigma - adj(Sigma) + trace(adj(Sigma));
 
-      subgroup[ss] = Sigma;
+      subgroup_v[ss] = Sigma;
 
       // this should be purely real
-      Determinant[ss] =
+      Determinant_v[ss] =
 	Sigma()()(0, 0) * Sigma()()(1, 1) - Sigma()()(0, 1) * Sigma()()(1, 0);
     });
   }
@@ -253,11 +255,13 @@ public:
     su2SubGroupIndex(i0, i1, su2_index);
 
     dest = 1.0;  // start out with identity
+    auto dest_v = dest.View();
+    auto subgroup_v = subgroup.View();
     thread_loop( (int ss = 0; ss < grid->oSites(); ss++) ,{
-      dest[ss]()()(i0, i0) = subgroup[ss]()()(0, 0);
-      dest[ss]()()(i0, i1) = subgroup[ss]()()(0, 1);
-      dest[ss]()()(i1, i0) = subgroup[ss]()()(1, 0);
-      dest[ss]()()(i1, i1) = subgroup[ss]()()(1, 1);
+      dest_v[ss]()()(i0, i0) = subgroup_v[ss]()()(0, 0);
+      dest_v[ss]()()(i0, i1) = subgroup_v[ss]()()(0, 1);
+      dest_v[ss]()()(i1, i0) = subgroup_v[ss]()()(1, 0);
+      dest_v[ss]()()(i1, i1) = subgroup_v[ss]()()(1, 1);
     });
   }
 
@@ -271,12 +275,12 @@ public:
   // in action.
   //
   ///////////////////////////////////////////////
-  static void SubGroupHeatBath(
-			       GridSerialRNG &sRNG, GridParallelRNG &pRNG,
+  static void SubGroupHeatBath(GridSerialRNG &sRNG, GridParallelRNG &pRNG,
 			       RealD beta,  // coeff multiplying staple in action (with no 1/Nc)
 			       LatticeMatrix &link,
 			       const LatticeMatrix &barestaple,  // multiplied by action coeffs so th
-			       int su2_subgroup, int nheatbath, LatticeInteger &wheremask) {
+			       int su2_subgroup, int nheatbath, LatticeInteger &wheremask) 
+  {
     GridBase *grid = link.Grid();
 
     const RealD twopi = 2.0 * M_PI;
@@ -289,8 +293,7 @@ public:
     V = link * staple;
 
     // Subgroup manipulation in the lie algebra space
-    LatticeSU2Matrix u(
-		       grid);  // Kennedy pendleton "u" real projected normalised Sigma
+    LatticeSU2Matrix u(grid);  // Kennedy pendleton "u" real projected normalised Sigma
     LatticeSU2Matrix uinv(grid);
     LatticeSU2Matrix ua(grid);  // a in pauli form
     LatticeSU2Matrix b(grid);   // rotated matrix after hb
