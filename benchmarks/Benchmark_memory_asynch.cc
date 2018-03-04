@@ -79,11 +79,11 @@ int main (int argc, char ** argv)
 
     double start=usecond();
     thread_loop( (int t=0;t<threads;t++),{
-
-      sum[t] = x[t][0];
+      auto x_t = x[t].View();
+      sum[t] = x_t[0];
       for(int i=0;i<Nloop;i++){
-	for(auto ss=x[t].begin();ss<x[t].end();ss++){
-	  sum[t] = sum[t]+x[t][ss];
+	for(auto ss=x_t.begin();ss<x_t.end();ss++){
+	  sum[t] = sum[t]+x_t[ss];
 	}
       }
       stop[t]=usecond();

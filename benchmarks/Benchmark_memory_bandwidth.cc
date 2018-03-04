@@ -75,9 +75,12 @@ int main (int argc, char ** argv)
 
       double start=usecond();
       for(int i=0;i<Nloop;i++){
+	auto x_v = x.View();
+	auto y_v = y.View();
+	auto z_v = z.View();
 	axpy(z,a,x,y);
-        x[0]=z[0]; // serial loop dependence to prevent optimise
-        y[4]=z[4];
+        x_v[0]=z_v[0]; // serial loop dependence to prevent optimise
+        y_v[4]=z_v[4];
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
@@ -111,9 +114,12 @@ int main (int argc, char ** argv)
 
       double start=usecond();
       for(int i=0;i<Nloop;i++){
+	auto x_v = x.View();
+	auto y_v = y.View();
+	auto z_v = z.View();
 	z=a*x-y;
-        x[0]=z[0]; // force serial dependency to prevent optimise away
-        y[4]=z[4];
+        x_v[0]=z_v[0]; // force serial dependency to prevent optimise away
+        y_v[4]=z_v[4];
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
@@ -145,11 +151,12 @@ int main (int argc, char ** argv)
       LatticeVec y(&Grid);// random(pRNG,y);
       RealD a=2.0;
 
-
       double start=usecond();
       for(int i=0;i<Nloop;i++){
+	auto x_v = x.View();
+	auto z_v = z.View();
 	z=a*x;
-        x[0]=z[0]*2.0;
+        x_v[0]=z_v[0]*2.0;
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
@@ -181,8 +188,9 @@ int main (int argc, char ** argv)
       Real nn;      
       double start=usecond();
       for(int i=0;i<Nloop;i++){
+	auto x_v = x.View();
 	nn=norm2(x);
-	vsplat(x[0]._internal[0],nn);
+	vsplat(x_v[0]._internal[0],nn);
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;

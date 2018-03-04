@@ -108,14 +108,22 @@ int main (int argc, char ** argv)
     for(int mu=0;mu<Nd;mu++){
       //    ref =  src + Gamma(Gamma::Algebra::GammaX)* src ; // 1-gamma_x
       tmp = U[mu]*Cshift(src,mu,1);
-      for(int i=0;i<ref.size();i++){
-	ref[i]+= tmp[i] - Gamma(Gmu[mu])*tmp[i]; ;
+      {
+	auto ref_v = ref.View();
+	auto tmp_v = tmp.View();
+	for(int i=0;i<ref_v.size();i++){
+	  ref_v[i]+= tmp_v[i] - Gamma(Gmu[mu])*tmp_v[i]; ;
+	}
       }
 
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu,-1);
-      for(int i=0;i<ref.size();i++){
-	ref[i]+= tmp[i] + Gamma(Gmu[mu])*tmp[i]; ;
+      {
+	auto ref_v = ref.View();
+	auto tmp_v = tmp.View();
+	for(int i=0;i<ref_v.size();i++){
+	  ref_v[i]+= tmp_v[i] + Gamma(Gmu[mu])*tmp_v[i]; ;
+	}
       }
     }
   }
@@ -148,8 +156,10 @@ int main (int argc, char ** argv)
   for(int ss=0;ss<0;ss++ ){
     for(int i=0;i<Ns;i++){
       for(int j=0;j<Nc;j++){
-	ComplexF * ref_p = (ComplexF *)&ref[ss]()(i)(j);
-	ComplexF * res_p = (ComplexF *)&result[ss]()(i)(j);
+	auto ref_v = ref.View();
+	auto result_v = result.View();
+	ComplexF * ref_p = (ComplexF *)&ref_v[ss]()(i)(j);
+	ComplexF * res_p = (ComplexF *)&result_v[ss]()(i)(j);
 	std::cout<<GridLogMessage << ss<< " "<<i<<" "<<j<<" "<< (*ref_p)<<" " <<(*res_p)<<std::endl;
       }
     }
@@ -159,16 +169,25 @@ int main (int argc, char ** argv)
     ref = Zero();
     for(int mu=0;mu<Nd;mu++){
 
+
       //    ref =  src - Gamma(Gamma::Algebra::GammaX)* src ; // 1+gamma_x
       tmp = U[mu]*Cshift(src,mu,1);
-      for(int i=0;i<ref.size();i++){
-	ref[i]+= tmp[i] + Gamma(Gmu[mu])*tmp[i]; ;
+      {
+	auto ref_v = ref.View();
+	auto tmp_v = tmp.View();
+	for(int i=0;i<ref_v.size();i++){
+	  ref_v[i]+= tmp_v[i] + Gamma(Gmu[mu])*tmp_v[i]; ;
+	}
       }
 
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu,-1);
-      for(int i=0;i<ref.size();i++){
-	ref[i]+= tmp[i] - Gamma(Gmu[mu])*tmp[i]; ;
+      {
+	auto ref_v = ref.View();
+	auto tmp_v = tmp.View();
+	for(int i=0;i<ref_v.size();i++){
+	  ref_v[i]+= tmp_v[i] - Gamma(Gmu[mu])*tmp_v[i]; ;
+	}
       }
     }
   }

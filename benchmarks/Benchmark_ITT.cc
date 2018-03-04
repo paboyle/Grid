@@ -255,8 +255,11 @@ public:
       double start=usecond();
       for(int i=0;i<Nloop;i++){
 	z=a*x-y;
-        x[0]=z[0]; // force serial dependency to prevent optimise away
-        y[4]=z[4];
+	auto x_v = x.View();
+	auto y_v = y.View();
+	auto z_v = z.View();
+        x_v[0]=z_v[0]; // force serial dependency to prevent optimise away
+        y_v[4]=z_v[4];
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
@@ -532,9 +535,11 @@ public:
     {
       LatticeGaugeField Umu5d(FGrid); 
       std::vector<LatticeColourMatrix> U(4,FGrid);
+      auto Umu_v = Umu.View();
+      auto Umu5d_v = Umu5d.View();
       for(int ss=0;ss<Umu.Grid()->oSites();ss++){
 	for(int s=0;s<Ls;s++){
-	  Umu5d[Ls*ss+s] = Umu[ss];
+	  Umu5d_v[Ls*ss+s] = Umu_v[ss];
 	}
       }
       ref = Zero();
@@ -583,9 +588,9 @@ public:
       }; 
 
       for(int c=0;c<num_cases;c++) {
-
-	 WilsonKernelsStatic::Comms = Cases[c].CommsOverlap;
-	 WilsonKernelsStatic::Opt   = Cases[c].Opt;
+	
+	WilsonKernelsStatic::Comms = Cases[c].CommsOverlap;
+	WilsonKernelsStatic::Opt   = Cases[c].Opt;
 	CartesianCommunicator::SetCommunicatorPolicy(Cases[c].CommsAsynch);
 
 	std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
