@@ -188,8 +188,6 @@ public:
 
     if ( fabs(clone.plaquette -header.plaquette ) >=  1.0e-5 ) { 
       std::cout << " Plaquette mismatch "<<std::endl;
-      std::cout << Umu[0]<<std::endl;
-      std::cout << Umu[1]<<std::endl;
     }
     if ( nersc_csum != header.checksum ) { 
       std::cerr << " checksum mismatch " << std::endl;
