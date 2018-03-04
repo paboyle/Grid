@@ -51,6 +51,9 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
   int block =FullGrid->_slice_block [Orthog];
   int nblock=FullGrid->_slice_nblock[Orthog];
   int ostride=FullGrid->_ostride[Orthog];
+  auto X_v = X.View();
+  auto Y_v = Y.View();
+  auto R_v = R.View();
   thread_region
   {
     std::vector<vobj> s_x(Nblock);
@@ -60,16 +63,16 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
 	int o  = n*stride + b;
 
 	for(int i=0;i<Nblock;i++){
-	  s_x[i] = X[o+i*ostride];
+	  s_x[i] = X_v[o+i*ostride];
 	}
 
 	vobj dot;
 	for(int i=0;i<Nblock;i++){
-	  dot = Y[o+i*ostride];
+	  dot = Y_v[o+i*ostride];
 	  for(int j=0;j<Nblock;j++){
 	    dot = dot + s_x[j]*(scale*aa(j,i));
 	  }
-	  R[o+i*ostride]=dot;
+	  R_v[o+i*ostride]=dot;
 	}
       }});
   }
@@ -85,14 +88,7 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
   int Nblock = X.Grid()->GlobalDimensions()[Orthog];
 
   GridBase *FullGrid  = X.Grid();
-  //  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
-  //  Lattice<vobj> Xslice(SliceGrid);
-  //  Lattice<vobj> Rslice(SliceGrid);
-
   assert( FullGrid->_simd_layout[Orthog]==1);
-  //  int nh =  FullGrid->_ndimension;
-  //  int nl = SliceGrid->_ndimension;
-  //  int nl=1;
 
   //FIXME package in a convenient iterator
   //Should loop over a plane orthogonal to direction "Orthog"
@@ -100,16 +96,20 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
   int block =FullGrid->_slice_block [Orthog];
   int nblock=FullGrid->_slice_nblock[Orthog];
   int ostride=FullGrid->_ostride[Orthog];
+
+  auto X_v = X.View();
+  auto R_v = R.View();
+
   thread_region
   {
     std::vector<vobj> s_x(Nblock);
-
+    
     thread_loop_collapse2( (int n=0;n<nblock;n++),{
       for(int b=0;b<block;b++){
 	int o  = n*stride + b;
 
 	for(int i=0;i<Nblock;i++){
-	  s_x[i] = X[o+i*ostride];
+	  s_x[i] = X_v[o+i*ostride];
 	}
 
 	vobj dot;
@@ -118,7 +118,7 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
 	  for(int j=1;j<Nblock;j++){
 	    dot = dot + s_x[j]*(scale*aa(j,i));
 	  }
-	  R[o+i*ostride]=dot;
+	  R_v[o+i*ostride]=dot;
 	}
     }});
   }
@@ -156,7 +156,8 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
   int ostride=FullGrid->_ostride[Orthog];
 
   typedef typename vobj::vector_typeD vector_typeD;
-
+  auto lhs_v = lhs.View();
+  auto rhs_v = rhs.View();
   thread_region {
     std::vector<vobj> Left(Nblock);
     std::vector<vobj> Right(Nblock);
@@ -168,8 +169,8 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
 	int o  = n*stride + b;
 
 	for(int i=0;i<Nblock;i++){
-	  Left [i] = lhs[o+i*ostride];
-	  Right[i] = rhs[o+i*ostride];
+	  Left [i] = lhs_v[o+i*ostride];
+	  Right[i] = rhs_v[o+i*ostride];
 	}
 
 	for(int i=0;i<Nblock;i++){

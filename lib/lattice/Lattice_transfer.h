@@ -51,20 +51,24 @@ inline void subdivides(GridBase *coarse,GridBase *fine)
 template<class vobj> inline void pickCheckerboard(int cb,Lattice<vobj> &half,const Lattice<vobj> &full){
   half.Checkerboard() = cb;
 
+  auto half_v = half.View();
+  auto full_v = full.View();
   thread_loop( (int ss=0;ss<full.Grid()->oSites();ss++),{
     int cbos;
     Coordinate coor;
     full.Grid()->oCoorFromOindex(coor,ss);
     cbos=half.Grid()->CheckerBoard(coor);
-      
+
     if (cbos==cb) {
       int ssh=half.Grid()->oIndex(coor);
-      half[ssh] = full[ss];
+      half_v[ssh] = full_v[ss];
     }
   });
 }
 template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Lattice<vobj> &half){
   int cb = half.Checkerboard();
+  auto half_v = half.View();
+  auto full_v = full.View();
   thread_loop( (int ss=0;ss<full.Grid()->oSites();ss++), {
     Coordinate coor;
     int cbos;
@@ -74,7 +78,7 @@ template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Latti
       
     if (cbos==cb) {
       int ssh=half.Grid()->oIndex(coor);
-      full[ss]=half[ssh];
+      full_v[ss]=half_v[ssh];
     }
   });
 }
@@ -105,6 +109,8 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
 
   coarseData=Zero();
 
+  auto fineData_   = fineData.View();
+  auto coarseData_ = coarseData.View();
   // Loop over coars parallel, and then loop over fine associated with coarse.
   thread_loop( (int sf=0;sf<fine->oSites();sf++),{
 
@@ -117,9 +123,8 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
 
     thread_critical {
       for(int i=0;i<nbasis;i++) {
-	coarseData[sc](i)=coarseData[sc](i)
-	  + innerProduct(Basis[i][sf],fineData[sf]);
-
+	auto Basis_      = Basis[i].View();
+	coarseData_[sc](i)=coarseData_[sc](i) + innerProduct(Basis_[sf],fineData_[sf]);
       }
     }
   });
@@ -151,6 +156,11 @@ inline void blockZAXPY(Lattice<vobj> &fineZ,
     assert(block_r[d]*coarse->_rdimensions[d]==fine->_rdimensions[d]);
   }
 
+  auto fineZ_  = fineZ.View();
+  auto fineX_  = fineX.View();
+  auto fineY_  = fineY.View();
+  auto coarseA_= coarseA.View();
+
   thread_loop( (int sf=0;sf<fine->oSites();sf++),{
     
     int sc;
@@ -162,7 +172,7 @@ inline void blockZAXPY(Lattice<vobj> &fineZ,
     Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
     // z = A x + y
-    fineZ[sf]=coarseA[sc]*fineX[sf]+fineY[sf];
+    fineZ_[sf]=coarseA_[sc]*fineX_[sf]+fineY_[sf];
 
   });
 
@@ -173,7 +183,7 @@ inline void blockInnerProduct(Lattice<CComplex> &CoarseInner,
 			      const Lattice<vobj> &fineX,
 			      const Lattice<vobj> &fineY)
 {
-  typedef decltype(innerProduct(fineX[0],fineY[0])) dotp;
+  typedef decltype(innerProduct(vobj(),vobj())) dotp;
 
   GridBase *coarse(CoarseInner.Grid());
   GridBase *fine  (fineX.Grid());
@@ -182,10 +192,13 @@ inline void blockInnerProduct(Lattice<CComplex> &CoarseInner,
   Lattice<dotp> coarse_inner(coarse);
 
   // Precision promotion?
+  auto CoarseInner_  = CoarseInner.View();
+  auto coarse_inner_ = coarse_inner.View();
+
   fine_inner = localInnerProduct(fineX,fineY);
   blockSum(coarse_inner,fine_inner);
   thread_loop( (int ss=0;ss<coarse->oSites();ss++),{
-    CoarseInner[ss] = coarse_inner[ss];
+    CoarseInner_[ss] = coarse_inner_[ss];
   });
 }
 template<class vobj,class CComplex>
@@ -218,24 +231,23 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
   // Turn this around to loop threaded over sc and interior loop 
   // over sf would thread better
   coarseData=Zero();
-  thread_region {
+  auto coarseData_ = coarseData.View();
+  auto fineData_   = fineData.View();
 
+  thread_loop( (int sf=0;sf<fine->oSites();sf++),{
     int sc;
     Coordinate coor_c(_ndimension);
     Coordinate coor_f(_ndimension);
-
-    thread_loop_in_region( (int sf=0;sf<fine->oSites();sf++),{
     
-      Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
-      for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-      Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
-      
-      thread_critical { 
-	coarseData[sc]=coarseData[sc]+fineData[sf];
-      }
+    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+    for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
+    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+    
+    thread_critical { 
+      coarseData_[sc]=coarseData_[sc]+fineData_[sf];
+    }
 
-    });
-  }
+  });
   return;
 }
 
@@ -306,25 +318,25 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
   for(int d=0 ; d<_ndimension;d++){
     block_r[d] = fine->_rdimensions[d] / coarse->_rdimensions[d];
   }
+  auto fineData_   = fineData.View();
+  auto coarseData_ = coarseData.View();
 
   // Loop with a cache friendly loop ordering
-  thread_region {
+  thread_loop( (int sf=0;sf<fine->oSites();sf++),{
     int sc;
     Coordinate coor_c(_ndimension);
     Coordinate coor_f(_ndimension);
 
-    thread_loop_in_region( (int sf=0;sf<fine->oSites();sf++),{
+    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+    for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
+    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
-      Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
-      for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-      Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
-      
-      for(int i=0;i<nbasis;i++) {
-	if(i==0) fineData[sf]=coarseData[sc](i) * Basis[i][sf];
-	else     fineData[sf]=fineData[sf]+coarseData[sc](i)*Basis[i][sf];
-      }
-    });
-  }
+    for(int i=0;i<nbasis;i++) {
+      auto basis_ = Basis[i].View();
+      if(i==0) fineData_[sf]=coarseData_[sc](i) *basis_[sf];
+      else     fineData_[sf]=fineData_[sf]+coarseData_[sc](i)*basis_[sf];
+    }
+  });
   return;
   
 }
@@ -577,6 +589,7 @@ unvectorizeToLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in)
   }
 
   //loop over outer index
+  auto in_v  = in.View();
   thread_loop( (int in_oidx = 0; in_oidx < in_grid->oSites(); in_oidx++),{ 
     //Assemble vector of pointers to output elements
     ExtractPointerArray<sobj> out_ptrs(in_nsimd);
@@ -587,16 +600,19 @@ unvectorizeToLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in)
     Coordinate lcoor(in_grid->Nd());
       
     for(int lane=0; lane < in_nsimd; lane++){
-      for(int mu=0;mu<ndim;mu++)
+
+      for(int mu=0;mu<ndim;mu++){
 	lcoor[mu] = in_ocoor[mu] + in_grid->_rdimensions[mu]*in_icoor[lane][mu];
+      }
 
       int lex;
       Lexicographic::IndexFromCoor(lcoor, lex, in_grid->_ldimensions);
+      assert(lex < out.size());
       out_ptrs[lane] = &out[lex];
     }
     
     //Unpack into those ptrs
-    const vobj & in_vobj = in[in_oidx];
+    const vobj & in_vobj = in_v[in_oidx];
     extract(in_vobj, out_ptrs, 0);
   });
 }
@@ -621,7 +637,7 @@ vectorizeFromLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
     icoor[lane].resize(ndim);
     grid->iCoorFromIindex(icoor[lane],lane);
   }
-  
+  auto out_v = out.View();
   thread_loop( (uint64_t oidx = 0; oidx < grid->oSites(); oidx++),{
     //Assemble vector of pointers to output elements
     ExtractPointerArray<sobj> ptrs(nsimd);
@@ -644,7 +660,7 @@ vectorizeFromLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
     //pack from those ptrs
     vobj vecobj;
     merge(vecobj, ptrs, 0);
-    out[oidx] = vecobj; 
+    out_v[oidx] = vecobj; 
   });
 }
 
@@ -673,6 +689,7 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
   std::vector<SobjOut> in_slex_conv(in_grid->lSites());
   unvectorizeToLexOrdArray(in_slex_conv, in);
     
+  auto out_v = out.View();
   thread_loop( (uint64_t out_oidx=0;out_oidx<out_grid->oSites();out_oidx++),{
     Coordinate out_ocoor(ndim);
     out_grid->oCoorFromOindex(out_ocoor, out_oidx);
@@ -688,7 +705,7 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
       int llex; Lexicographic::IndexFromCoor(lcoor, llex, out_grid->_ldimensions);
       ptrs[lane] = &in_slex_conv[llex];
     }
-    merge(out[out_oidx], ptrs, 0);
+    merge(out_v[out_oidx], ptrs, 0);
   });
 }
 

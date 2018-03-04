@@ -38,12 +38,13 @@ NAMESPACE_BEGIN(Grid);
 // Trace
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class vobj>
-inline auto trace(const Lattice<vobj> &lhs)
-  -> Lattice<decltype(trace(lhs[0]))>
+inline auto trace(const Lattice<vobj> &lhs)  -> Lattice<decltype(trace(vobj()))>
 {
-  Lattice<decltype(trace(lhs[0]))> ret(lhs.Grid());
-  accelerator_loop( ss, lhs, {
-    ret[ss] = trace(lhs[ss]);
+  Lattice<decltype(trace(vobj()))> ret(lhs.Grid());
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  accelerator_loop( ss, lhs_v, {
+    ret_v[ss] = trace(lhs_v[ss]);
   });
   return ret;
 };
@@ -52,11 +53,13 @@ inline auto trace(const Lattice<vobj> &lhs)
 // Trace Index level dependent operation
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<int Index,class vobj>
-inline auto TraceIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<Index>(lhs[0]))>
+inline auto TraceIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<Index>(vobj()))>
 {
-  Lattice<decltype(traceIndex<Index>(lhs[0]))> ret(lhs.Grid());
-  accelerator_loop( ss, lhs, {
-    ret[ss] = traceIndex<Index>(lhs[ss]);
+  Lattice<decltype(traceIndex<Index>(vobj()))> ret(lhs.Grid());
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  accelerator_loop( ss, lhs_v, {
+    ret_v[ss] = traceIndex<Index>(lhs_v[ss]);
   });
   return ret;
 };

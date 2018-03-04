@@ -36,17 +36,20 @@ NAMESPACE_BEGIN(Grid);
 template<class obj1,class obj2,class obj3> inline
 void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   ret.Checkerboard() = lhs.Checkerboard();
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  auto rhs_v = rhs.View();
   conformable(ret,rhs);
   conformable(lhs,rhs);
 #ifdef STREAMING_STORES
-  accelerator_loop(ss,lhs,{
+  accelerator_loop(ss,lhs_v,{
     obj1 tmp;
-    mult(&tmp,&lhs[ss],&rhs[ss]);
-    vstream(ret[ss],tmp);
+    mult(&tmp,&lhs_v[ss],&rhs_v[ss]);
+    vstream(ret_v[ss],tmp);
   });
 #else
-  accelerator_loop(ss,lhs,{
-    mult(&ret[ss],&lhs[ss],&rhs[ss]);
+  accelerator_loop(ss,lhs_v,{
+    mult(&ret_v[ss],&lhs_v[ss],&rhs_v[ss]);
   });
 #endif
 }
@@ -56,15 +59,18 @@ void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,rhs);
   conformable(lhs,rhs);
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  auto rhs_v = rhs.View();
 #ifdef STREAMING_STORES
-  accelerator_loop(ss,lhs,{
+  accelerator_loop(ss,lhs_v,{
     obj1 tmp;
-    mac(&tmp,&lhs[ss],&rhs[ss]);
-    vstream(ret[ss],tmp);
+    mac(&tmp,&lhs_v[ss],&rhs_v[ss]);
+    vstream(ret_v[ss],tmp);
   });
 #else
-  accelerator_loop(ss,lhs,{
-    mac(&ret[ss],&lhs[ss],&rhs[ss]);
+  accelerator_loop(ss,lhs_v,{
+    mac(&ret_v[ss],&lhs_v[ss],&rhs_v[ss]);
   });
 #endif
 }
@@ -74,15 +80,18 @@ void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,rhs);
   conformable(lhs,rhs);
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  auto rhs_v = rhs.View();
 #ifdef STREAMING_STORES
-  accelerator_loop(ss,lhs,{
+  accelerator_loop(ss,lhs_v,{
     obj1 tmp;
-    sub(&tmp,&lhs[ss],&rhs[ss]);
-    vstream(ret[ss],tmp);
+    sub(&tmp,&lhs_v[ss],&rhs_v[ss]);
+    vstream(ret_v[ss],tmp);
   });
 #else
-  accelerator_loop(ss,lhs,{
-    sub(&ret[ss],&lhs[ss],&rhs[ss]);
+  accelerator_loop(ss,lhs_v,{
+    sub(&ret[ss],&lhs_v[ss],&rhs_v[ss]);
   });
 #endif
 }
@@ -91,15 +100,18 @@ void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,rhs);
   conformable(lhs,rhs);
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  auto rhs_v = rhs.View();
 #ifdef STREAMING_STORES
-  accelerator_loop(ss,lhs,{
+  accelerator_loop(ss,lhs_v,{
     obj1 tmp;
-    add(&tmp,&lhs[ss],&rhs[ss]);
-    vstream(ret[ss],tmp);
+    add(&tmp,&lhs_v[ss],&rhs_v[ss]);
+    vstream(ret_v[ss],tmp);
   });
 #else
-  accelerator_loop(ss,lhs,{
-    add(&ret[ss],&lhs[ss],&rhs[ss]);
+  accelerator_loop(ss,lhs_v,{
+    add(&ret_v[ss],&lhs_v[ss],&rhs_v[ss]);
   });
 #endif
 }
@@ -111,10 +123,12 @@ template<class obj1,class obj2,class obj3> inline
 void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(lhs,ret);
-  accelerator_loop(ss,lhs,{
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  accelerator_loop(ss,lhs_v,{
     obj1 tmp;
-    mult(&tmp,&lhs[ss],&rhs);
-    vstream(ret[ss],tmp);
+    mult(&tmp,&lhs_v[ss],&rhs);
+    vstream(ret_v[ss],tmp);
   });
 }
   
@@ -122,10 +136,12 @@ template<class obj1,class obj2,class obj3> inline
 void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,lhs);
-  accelerator_loop(ss,lhs,{
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  accelerator_loop(ss,lhs_v,{
     obj1 tmp;
-    mac(&tmp,&lhs[ss],&rhs);
-    vstream(ret[ss],tmp);
+    mac(&tmp,&lhs_v[ss],&rhs);
+    vstream(ret_v[ss],tmp);
   });
 }
   
@@ -133,15 +149,17 @@ template<class obj1,class obj2,class obj3> inline
 void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,lhs);
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
 #ifdef STREAMING_STORES
-  accelerator_loop(ss,lhs,{
+  accelerator_loop(ss,lhs_v,{
     obj1 tmp;
-    sub(&tmp,&lhs[ss],&rhs);
-    vstream(ret[ss],tmp);
+    sub(&tmp,&lhs_v[ss],&rhs);
+    vstream(ret_v[ss],tmp);
   });
 #else 
-  accelerator_loop(ss,lhs,{
-    sub(&ret[ss],&lhs[ss],&rhs);
+  accelerator_loop(ss,lhs_v,{
+    sub(&ret_v[ss],&lhs_v[ss],&rhs);
   });
 #endif
 }
@@ -149,15 +167,17 @@ template<class obj1,class obj2,class obj3> inline
 void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(lhs,ret);
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
 #ifdef STREAMING_STORES
-  accelerator_loop(ss,lhs,{
+  accelerator_loop(ss,lhs_v,{
     obj1 tmp;
-    add(&tmp,&lhs[ss],&rhs);
-    vstream(ret[ss],tmp);
+    add(&tmp,&lhs_v[ss],&rhs);
+    vstream(ret_v[ss],tmp);
   });
 #else 
-  accelerator_loop(ss,lhs,{
-    add(&ret[ss],&lhs[ss],&rhs);
+  accelerator_loop(ss,lhs_v,{
+    add(&ret_v[ss],&lhs_v[ss],&rhs);
   });
 #endif
 }
@@ -169,15 +189,17 @@ template<class obj1,class obj2,class obj3> inline
 void mult(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
+  auto ret_v = ret.View();
+  auto rhs_v = lhs.View();
 #ifdef STREAMING_STORES
-  accelerator_loop(ss,rhs,{
+  accelerator_loop(ss,rhs_v,{
     obj1 tmp;
-    mult(&tmp,&lhs,&rhs[ss]);
-    vstream(ret[ss],tmp);
+    mult(&tmp,&lhs,&rhs_v[ss]);
+    vstream(ret_v[ss],tmp);
   });
 #else 
-  accelerator_loop(ss,rhs,{
-    mult(&ret[ss],&lhs,&rhs[ss]);
+  accelerator_loop(ss,rhs_v,{
+    mult(&ret_v[ss],&lhs,&rhs_v[ss]);
   });
 #endif
 }
@@ -186,15 +208,17 @@ template<class obj1,class obj2,class obj3> inline
 void mac(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
+  auto ret_v = ret.View();
+  auto rhs_v = lhs.View();
 #ifdef STREAMING_STORES
-  accelerator_loop(ss,rhs,{
+  accelerator_loop(ss,rhs_v,{
     obj1 tmp;
-    mac(&tmp,&lhs,&rhs[ss]);
-    vstream(ret[ss],tmp);
+    mac(&tmp,&lhs,&rhs_v[ss]);
+    vstream(ret_v[ss],tmp);
   });
 #else 
-  accelerator_loop(ss,rhs,{
-    mac(&ret[ss],&lhs,&rhs[ss]);
+  accelerator_loop(ss,rhs_v,{
+    mac(&ret_v[ss],&lhs,&rhs_v[ss]);
   });
 #endif
 }
@@ -203,15 +227,17 @@ template<class obj1,class obj2,class obj3> inline
 void sub(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
+  auto ret_v = ret.View();
+  auto rhs_v = lhs.View();
 #ifdef STREAMING_STORES
-  accelerator_loop(ss,rhs,{
+  accelerator_loop(ss,rhs_v,{
     obj1 tmp;
-    sub(&tmp,&lhs,&rhs[ss]);
-    vstream(ret[ss],tmp);
+    sub(&tmp,&lhs,&rhs_v[ss]);
+    vstream(ret_v[ss],tmp);
   });
 #else 
-  accelerator_loop(ss,rhs,{
-    sub(&ret[ss],&lhs,&rhs[ss]);
+  accelerator_loop(ss,rhs_v,{
+    sub(&ret_v[ss],&lhs,&rhs_v[ss]);
   });
 #endif
 }
@@ -219,15 +245,17 @@ template<class obj1,class obj2,class obj3> inline
 void add(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
+  auto ret_v = ret.View();
+  auto rhs_v = lhs.View();
 #ifdef STREAMING_STORES
-  accelerator_loop(ss,rhs,{
+  accelerator_loop(ss,rhs_v,{
     obj1 tmp;
-    add(&tmp,&lhs,&rhs[ss]);
-    vstream(ret[ss],tmp);
+    add(&tmp,&lhs,&rhs_v[ss]);
+    vstream(ret_v[ss],tmp);
   });
 #else 
-  accelerator_loop(ss,rhs,{
-    add(&ret[ss],&lhs,&rhs[ss]);
+  accelerator_loop(ss,rhs_v,{
+    add(&ret_v[ss],&lhs,&rhs_v[ss]);
   });
 #endif
 }
@@ -237,14 +265,17 @@ void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &
   ret.Checkerboard() = x.Checkerboard();
   conformable(ret,x);
   conformable(x,y);
+  auto ret_v = ret.View();
+  auto x_v = x.View();
+  auto y_v = y.View();
 #ifdef STREAMING_STORES
-  accelerator_loop(ss,x,{
-    vobj tmp = a*x[ss]+y[ss];
-    vstream(ret[ss],tmp);
+  accelerator_loop(ss,x_v,{
+    vobj tmp = a*x_v[ss]+y_v[ss];
+    vstream(ret_v[ss],tmp);
   });
 #else
-  accelerator_loop(ss,x,{
-    ret[ss]=a*x[ss]+y[ss];
+  accelerator_loop(ss,x_v,{
+    ret_v[ss]=a*x_v[ss]+y_v[ss];
   });
 #endif
 }
@@ -253,14 +284,17 @@ void axpby(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice
   ret.Checkerboard() = x.Checkerboard();
   conformable(ret,x);
   conformable(x,y);
+  auto ret_v = ret.View();
+  auto x_v = x.View();
+  auto y_v = y.View();
 #ifdef STREAMING_STORES
-  accelerator_loop(ss,x,{
-    vobj tmp = a*x[ss]+b*y[ss];
-    vstream(ret[ss],tmp);
+  accelerator_loop(ss,x_v,{
+    vobj tmp = a*x_v[ss]+b*y_v[ss];
+    vstream(ret_v[ss],tmp);
   });
 #else
-  accelerator_loop(ss,x,{
-    ret[ss]=a*x[ss]+b*y[ss];
+  accelerator_loop(ss,x_v,{
+    ret_v[ss]=a*x_v[ss]+b*y_v[ss];
   });
 #endif
 }

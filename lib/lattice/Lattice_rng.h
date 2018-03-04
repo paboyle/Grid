@@ -346,7 +346,9 @@ public:
     int osites = _grid->oSites();  // guaranteed to be <= l.Grid()->oSites() by a factor multiplicity
     int words  = sizeof(scalar_object) / sizeof(scalar_type);
 
-    thread_loop( (int ss=0;ss<osites;ss++), {
+    auto l_v = l.View();
+    //    thread_loop( (int ss=0;ss<osites;ss++), {
+    for (int ss=0;ss<osites;ss++) {
       ExtractBuffer<scalar_object> buf(Nsimd);
       for (int m = 0; m < multiplicity; m++) {  // Draw from same generator multiplicity times
 
@@ -361,9 +363,10 @@ public:
 	    fillScalar(pointer[idx], dist[gdx], _generators[gdx]);
 	}
 	// merge into SIMD lanes, FIXME suboptimal implementation
-	merge(l[sm], buf);
+	merge(l_v[sm], buf);
       }
-    });
+    }
+    //    });
 
     _time_counter += usecond()- inner_time_counter;
   }

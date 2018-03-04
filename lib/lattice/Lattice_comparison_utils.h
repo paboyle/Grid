@@ -44,42 +44,42 @@ NAMESPACE_BEGIN(Grid);
 //
 template<class lobj,class robj> class veq {
 public:
-  vInteger operator()(const lobj &lhs, const robj &rhs)
+  accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
   { 
     return (lhs) == (rhs);
   }
 };
 template<class lobj,class robj> class vne {
 public:
-  vInteger operator()(const lobj &lhs, const robj &rhs)
+  accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
   { 
     return (lhs) != (rhs);
   }
 };
 template<class lobj,class robj> class vlt {
 public:
-  vInteger operator()(const lobj &lhs, const robj &rhs)
+  accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
   { 
     return (lhs) < (rhs);
   }
 };
 template<class lobj,class robj> class vle {
 public:
-  vInteger operator()(const lobj &lhs, const robj &rhs)
+  accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
   { 
     return (lhs) <= (rhs);
   }
 };
 template<class lobj,class robj> class vgt {
 public:
-  vInteger operator()(const lobj &lhs, const robj &rhs)
+  accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
   { 
     return (lhs) > (rhs);
   }
 };
 template<class lobj,class robj> class vge {
 public:
-  vInteger operator()(const lobj &lhs, const robj &rhs)
+  accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
   { 
     return (lhs) >= (rhs);
   }
@@ -88,42 +88,42 @@ public:
 // Generic list of functors
 template<class lobj,class robj> class seq {
 public:
-  Integer operator()(const lobj &lhs, const robj &rhs)
+  accelerator Integer operator()(const lobj &lhs, const robj &rhs)
   { 
     return (lhs) == (rhs);
   }
 };
 template<class lobj,class robj> class sne {
 public:
-  Integer operator()(const lobj &lhs, const robj &rhs)
+  accelerator Integer operator()(const lobj &lhs, const robj &rhs)
   { 
     return (lhs) != (rhs);
   }
 };
 template<class lobj,class robj> class slt {
 public:
-  Integer operator()(const lobj &lhs, const robj &rhs)
+  accelerator Integer operator()(const lobj &lhs, const robj &rhs)
   { 
     return (lhs) < (rhs);
   }
 };
 template<class lobj,class robj> class sle {
 public:
-  Integer operator()(const lobj &lhs, const robj &rhs)
+  accelerator Integer operator()(const lobj &lhs, const robj &rhs)
   { 
     return (lhs) <= (rhs);
   }
 };
 template<class lobj,class robj> class sgt {
 public:
-  Integer operator()(const lobj &lhs, const robj &rhs)
+  accelerator Integer operator()(const lobj &lhs, const robj &rhs)
   { 
     return (lhs) > (rhs);
   }
 };
 template<class lobj,class robj> class sge {
 public:
-  Integer operator()(const lobj &lhs, const robj &rhs)
+  accelerator Integer operator()(const lobj &lhs, const robj &rhs)
   { 
     return (lhs) >= (rhs);
   }
@@ -133,7 +133,7 @@ public:
 // Integer and real get extra relational functions.
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class sfunctor, class vsimd,IfNotComplex<vsimd> = 0> 
-inline vInteger Comparison(sfunctor sop,const vsimd & lhs, const vsimd & rhs)
+accelerator_inline vInteger Comparison(sfunctor sop,const vsimd & lhs, const vsimd & rhs)
 {
   typedef typename vsimd::scalar_type scalar;
   ExtractBuffer<scalar> vlhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
@@ -150,7 +150,7 @@ inline vInteger Comparison(sfunctor sop,const vsimd & lhs, const vsimd & rhs)
 }
 
 template<class sfunctor, class vsimd,IfNotComplex<vsimd> = 0> 
-inline vInteger Comparison(sfunctor sop,const vsimd & lhs, const typename vsimd::scalar_type & rhs)
+accelerator_inline vInteger Comparison(sfunctor sop,const vsimd & lhs, const typename vsimd::scalar_type & rhs)
 {
   typedef typename vsimd::scalar_type scalar;
   ExtractBuffer<scalar>  vlhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
@@ -165,7 +165,7 @@ inline vInteger Comparison(sfunctor sop,const vsimd & lhs, const typename vsimd:
 }
 
 template<class sfunctor, class vsimd,IfNotComplex<vsimd> = 0> 
-inline vInteger Comparison(sfunctor sop,const typename vsimd::scalar_type & lhs, const vsimd & rhs)
+accelerator_inline vInteger Comparison(sfunctor sop,const typename vsimd::scalar_type & lhs, const vsimd & rhs)
 {
   typedef typename vsimd::scalar_type scalar;
   ExtractBuffer<scalar> vrhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
@@ -181,35 +181,35 @@ inline vInteger Comparison(sfunctor sop,const typename vsimd::scalar_type & lhs,
 
 #define DECLARE_RELATIONAL(op,functor)					\
   template<class vsimd,IfSimd<vsimd> = 0>				\
-  inline vInteger operator op (const vsimd & lhs, const vsimd & rhs)	\
+  accelerator_inline vInteger operator op (const vsimd & lhs, const vsimd & rhs)	\
   {									\
     typedef typename vsimd::scalar_type scalar;				\
     return Comparison(functor<scalar,scalar>(),lhs,rhs);		\
   }									\
   template<class vsimd,IfSimd<vsimd> = 0>				\
-  inline vInteger operator op (const vsimd & lhs, const typename vsimd::scalar_type & rhs) \
+  accelerator_inline vInteger operator op (const vsimd & lhs, const typename vsimd::scalar_type & rhs) \
   {									\
     typedef typename vsimd::scalar_type scalar;				\
     return Comparison(functor<scalar,scalar>(),lhs,rhs);		\
   }									\
   template<class vsimd,IfSimd<vsimd> = 0>				\
-  inline vInteger operator op (const typename vsimd::scalar_type & lhs, const vsimd & rhs) \
+  accelerator_inline vInteger operator op (const typename vsimd::scalar_type & lhs, const vsimd & rhs) \
   {									\
     typedef typename vsimd::scalar_type scalar;				\
     return Comparison(functor<scalar,scalar>(),lhs,rhs);		\
   }									\
   template<class vsimd>							\
-  inline vInteger operator op(const iScalar<vsimd> &lhs,const iScalar<vsimd> &rhs) \
+  accelerator_inline vInteger operator op(const iScalar<vsimd> &lhs,const iScalar<vsimd> &rhs) \
   {									\
     return lhs._internal op rhs._internal;				\
   }									\
   template<class vsimd>							\
-  inline vInteger operator op(const iScalar<vsimd> &lhs,const typename vsimd::scalar_type &rhs) \
+  accelerator_inline vInteger operator op(const iScalar<vsimd> &lhs,const typename vsimd::scalar_type &rhs) \
   {									\
     return lhs._internal op rhs;					\
   }									\
   template<class vsimd>							\
-  inline vInteger operator op(const typename vsimd::scalar_type &lhs,const iScalar<vsimd> &rhs) \
+  accelerator_inline vInteger operator op(const typename vsimd::scalar_type &lhs,const iScalar<vsimd> &rhs) \
   {									\
     return lhs op rhs._internal;					\
   }									

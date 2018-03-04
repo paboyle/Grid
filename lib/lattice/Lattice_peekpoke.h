@@ -42,22 +42,26 @@ NAMESPACE_BEGIN(Grid);
 // Peek internal indices of a Lattice object
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<int Index,class vobj> 
-auto PeekIndex(const Lattice<vobj> &lhs,int i) -> Lattice<decltype(peekIndex<Index>(lhs[0],i))>
+auto PeekIndex(const Lattice<vobj> &lhs,int i) -> Lattice<decltype(peekIndex<Index>(vobj(),i))>
 {
-  Lattice<decltype(peekIndex<Index>(lhs[0],i))> ret(lhs.Grid());
+  Lattice<decltype(peekIndex<Index>(vobj(),i))> ret(lhs.Grid());
   ret.Checkerboard()=lhs.Checkerboard();
-  cpu_loop( ss, lhs, {
-    ret[ss] = peekIndex<Index>(lhs[ss],i);
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  cpu_loop( ss, lhs_v, {
+      ret_v[ss] = peekIndex<Index>(lhs_v[ss],i);
   });
   return ret;
 };
 template<int Index,class vobj> 
-auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekIndex<Index>(lhs[0],i,j))>
+auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekIndex<Index>(vobj(),i,j))>
 {
-  Lattice<decltype(peekIndex<Index>(lhs[0],i,j))> ret(lhs.Grid());
+  Lattice<decltype(peekIndex<Index>(vobj(),i,j))> ret(lhs.Grid());
   ret.Checkerboard()=lhs.Checkerboard();
-  cpu_loop( ss, lhs, {
-    ret[ss] = peekIndex<Index>(lhs[ss],i,j);
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  cpu_loop( ss, lhs_v, {
+    ret_v[ss] = peekIndex<Index>(lhs_v[ss],i,j);
   });
   return ret;
 };
@@ -66,17 +70,21 @@ auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekInd
 // Poke internal indices of a Lattice object
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<int Index,class vobj>  
-void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs[0],0))> & rhs,int i)
+void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(vobj(),0))> & rhs,int i)
 {
-  cpu_loop( ss, lhs, {
-    pokeIndex<Index>(lhs[ss],rhs[ss],i);
+  auto rhs_v = rhs.View();
+  auto lhs_v = lhs.View();
+  cpu_loop( ss, lhs_v, {
+    pokeIndex<Index>(lhs_v[ss],rhs_v[ss],i);
   });
 }
 template<int Index,class vobj> 
-void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs[0],0,0))> & rhs,int i,int j)
+void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(vobj(),0,0))> & rhs,int i,int j)
 {
-  cpu_loop( ss, lhs, {
-    pokeIndex<Index>(lhs[ss],rhs[ss],i,j);
+  auto rhs_v = rhs.View();
+  auto lhs_v = lhs.View();
+  cpu_loop( ss, lhs_v, {
+    pokeIndex<Index>(lhs_v[ss],rhs_v[ss],i,j);
   });
 }
 
@@ -103,10 +111,11 @@ void pokeSite(const sobj &s,Lattice<vobj> &l,const Coordinate &site){
 
   // extract-modify-merge cycle is easiest way and this is not perf critical
   ExtractBuffer<sobj> buf(Nsimd);
+  auto l_v = l.View();
   if ( rank == grid->ThisRank() ) {
-    extract(l[odx],buf);
+    extract(l_v[odx],buf);
     buf[idx] = s;
-    merge(l[odx],buf);
+    merge(l_v[odx],buf);
   }
 
   return;
@@ -132,7 +141,8 @@ void peekSite(sobj &s,const Lattice<vobj> &l,const Coordinate &site){
   grid->GlobalCoorToRankIndex(rank,odx,idx,site);
 
   ExtractBuffer<sobj> buf(Nsimd);
-  extract(l[odx],buf);
+  auto l_v = l.View();
+  extract(l_v[odx],buf);
 
   s = buf[idx];
 
@@ -162,8 +172,9 @@ void peekLocalSite(sobj &s,const Lattice<vobj> &l,Coordinate &site){
   int odx,idx;
   idx= grid->iIndex(site);
   odx= grid->oIndex(site);
-
-  scalar_type * vp = (scalar_type *)&l[odx];
+  
+  auto l_v = l.View();
+  scalar_type * vp = (scalar_type *)&l_v[odx];
   scalar_type * pt = (scalar_type *)&s;
       
   for(int w=0;w<words;w++){
@@ -191,9 +202,9 @@ void pokeLocalSite(const sobj &s,Lattice<vobj> &l,Coordinate &site){
   idx= grid->iIndex(site);
   odx= grid->oIndex(site);
 
-  scalar_type * vp = (scalar_type *)&l[odx];
+  auto l_v = l.View();
+  scalar_type * vp = (scalar_type *)&l_v[odx];
   scalar_type * pt = (scalar_type *)&s;
-      
   for(int w=0;w<words;w++){
     vp[idx+w*Nsimd] = pt[w];
   }

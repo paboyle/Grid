@@ -47,14 +47,17 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
   GridBase *grid = left.Grid();
   
   std::vector<vector_type,alignedAllocator<vector_type> > sumarray(grid->SumArraySize());
-  
+
+  auto left_v = left.View();
+  auto right_v=right.View();
+
   thread_loop( (int thr=0;thr<grid->SumArraySize();thr++),{
     int mywork, myoff;
     GridThread::GetWork(left.Grid()->oSites(),thr,mywork,myoff);
     
-    decltype(innerProductD(left[0],right[0])) vnrm=Zero(); // private to thread; sub summation
+    decltype(innerProductD(left_v[0],right_v[0])) vnrm=Zero(); // private to thread; sub summation
     for(int ss=myoff;ss<mywork+myoff; ss++){
-      vnrm = vnrm + innerProductD(left[ss],right[ss]);
+      vnrm = vnrm + innerProductD(left_v[ss],right_v[ss]);
     }
     sumarray[thr]=TensorRemove(vnrm) ;
   });
@@ -70,14 +73,14 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
  
 template<class Op,class T1>
 inline auto sum(const LatticeUnaryExpression<Op,T1> & expr)
-  ->typename decltype(expr.first.func(eval(0,std::get<0>(expr.second))))::scalar_object
+  ->typename decltype(expr.op.func(eval(0,expr.arg1)))::scalar_object
 {
   return sum(closure(expr));
 }
 
 template<class Op,class T1,class T2>
 inline auto sum(const LatticeBinaryExpression<Op,T1,T2> & expr)
-  ->typename decltype(expr.first.func(eval(0,std::get<0>(expr.second)),eval(0,std::get<1>(expr.second))))::scalar_object
+  ->typename decltype(expr.op.func(eval(0,expr.arg1,eval(0,expr.arg2))))::scalar_object
 {
   return sum(closure(expr));
 }
@@ -85,10 +88,10 @@ inline auto sum(const LatticeBinaryExpression<Op,T1,T2> & expr)
 
 template<class Op,class T1,class T2,class T3>
 inline auto sum(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr)
-  ->typename decltype(expr.first.func(eval(0,std::get<0>(expr.second)),
-				      eval(0,std::get<1>(expr.second)),
-				      eval(0,std::get<2>(expr.second))
-				      ))::scalar_object
+  ->typename decltype(expr.op.func(eval(0,expr.arg1),
+				   eval(0,expr.arg2),
+				   eval(0,expr.arg3)
+				   ))::scalar_object
 {
   return sum(closure(expr));
 }
@@ -103,14 +106,14 @@ inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
   for(int i=0;i<grid->SumArraySize();i++){
     sumarray[i]=Zero();
   }
-  
+  auto arg_v = arg.View();
   thread_loop( (int thr=0;thr<grid->SumArraySize();thr++),{
     int mywork, myoff;
     GridThread::GetWork(grid->oSites(),thr,mywork,myoff);
     
     vobj vvsum=Zero();
     for(int ss=myoff;ss<mywork+myoff; ss++){
-      vvsum = vvsum + arg[ss];
+      vvsum = vvsum + arg_v[ss];
     }
     sumarray[thr]=vvsum;
   });
@@ -172,6 +175,7 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   int stride=grid->_slice_stride[orthogdim];
 
   // sum over reduced dimension planes, breaking out orthog dir
+  auto Data_v = Data.View();
   thread_loop( (int r=0;r<rd;r++),{
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
@@ -179,7 +183,7 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
-	lvSum[r]=lvSum[r]+Data[ss];
+	lvSum[r]=lvSum[r]+Data_v[ss];
       }
     }
   });
@@ -251,6 +255,8 @@ static void sliceInnerProductVector( std::vector<ComplexD> & result, const Latti
   int e2=    grid->_slice_block [orthogdim];
   int stride=grid->_slice_stride[orthogdim];
 
+  auto lhs_v = lhs.View();
+  auto rhs_v = rhs.View();
   thread_loop( (int r=0;r<rd;r++),{
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
@@ -258,7 +264,7 @@ static void sliceInnerProductVector( std::vector<ComplexD> & result, const Latti
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
-	vector_type vv = TensorRemove(innerProduct(lhs[ss],rhs[ss]));
+	vector_type vv = TensorRemove(innerProduct(lhs_v[ss],rhs_v[ss]));
 	lvSum[r]=lvSum[r]+vv;
       }
     }
@@ -358,10 +364,13 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
 
     tensor_reduced at; at=av;
 
+    auto X_v = X.View();
+    auto Y_v = Y.View();
+    auto R_v = R.View();
     thread_loop_collapse2( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
-	R[ss] = at*X[ss]+Y[ss];
+	R_v[ss] = at*X_v[ss]+Y_v[ss];
       }
     });
   }

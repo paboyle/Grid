@@ -41,8 +41,10 @@ NAMESPACE_BEGIN(Grid);
 template<class vobj>
 inline Lattice<vobj> transpose(const Lattice<vobj> &lhs){
   Lattice<vobj> ret(lhs.Grid());
-  accelerator_loop(ss,lhs,{
-    ret[ss] = transpose(lhs[ss]);
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  accelerator_loop(ss,lhs_v,{
+    ret_v[ss] = transpose(lhs_v[ss]);
   });
   return ret;
 };
@@ -51,11 +53,13 @@ inline Lattice<vobj> transpose(const Lattice<vobj> &lhs){
 // Index level dependent transpose
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<int Index,class vobj>
-inline auto TransposeIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(transposeIndex<Index>(lhs[0]))>
+inline auto TransposeIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(transposeIndex<Index>(vobj()))>
 {
-  Lattice<decltype(transposeIndex<Index>(lhs[0]))> ret(lhs.Grid());
-  accelerator_loop(ss,lhs,{
-    ret[ss] = transposeIndex<Index>(lhs[ss]);
+  Lattice<decltype(transposeIndex<Index>(vobj()))> ret(lhs.Grid());
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  accelerator_loop(ss,lhs_v,{
+      ret_v[ss] = transposeIndex<Index>(lhs_v[ss]);
   });
   return ret;
 };

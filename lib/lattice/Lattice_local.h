@@ -43,8 +43,10 @@ template<class vobj>
 inline auto localNorm2 (const Lattice<vobj> &rhs)-> Lattice<typename vobj::tensor_reduced>
 {
   Lattice<typename vobj::tensor_reduced> ret(rhs.Grid());
-  accelerator_loop(ss,rhs,{
-    ret[ss]=innerProduct(rhs[ss],rhs[ss]);
+  auto rhs_v = rhs.View();
+  auto ret_v = ret.View();
+  accelerator_loop(ss,rhs_v,{
+    ret_v[ss]=innerProduct(rhs_v[ss],rhs_v[ss]);
   });
   return ret;
 }
@@ -54,8 +56,11 @@ template<class vobj>
 inline auto localInnerProduct (const Lattice<vobj> &lhs,const Lattice<vobj> &rhs) -> Lattice<typename vobj::tensor_reduced>
 {
   Lattice<typename vobj::tensor_reduced> ret(rhs.Grid());
-  accelerator_loop(ss,rhs,{
-    ret[ss]=innerProduct(lhs[ss],rhs[ss]);
+  auto lhs_v = lhs.View();
+  auto rhs_v = rhs.View();
+  auto ret_v = ret.View();
+  accelerator_loop(ss,rhs_v,{
+    ret_v[ss]=innerProduct(lhs_v[ss],rhs_v[ss]);
   });
   return ret;
 }
@@ -63,11 +68,14 @@ inline auto localInnerProduct (const Lattice<vobj> &lhs,const Lattice<vobj> &rhs
 // outerProduct Scalar x Scalar -> Scalar
 //              Vector x Vector -> Matrix
 template<class ll,class rr>
-inline auto outerProduct (const Lattice<ll> &lhs,const Lattice<rr> &rhs) -> Lattice<decltype(outerProduct(lhs[0],rhs[0]))>
+inline auto outerProduct (const Lattice<ll> &lhs,const Lattice<rr> &rhs) -> Lattice<decltype(outerProduct(ll(),rr()))>
 {
-  Lattice<decltype(outerProduct(lhs[0],rhs[0]))> ret(rhs.Grid());
-  accelerator_loop(ss,rhs,{
-    ret[ss]=outerProduct(lhs[ss],rhs[ss]);
+  Lattice<decltype(outerProduct(ll(),rr()))> ret(rhs.Grid());
+  auto lhs_v = lhs.View();
+  auto rhs_v = rhs.View();
+  auto ret_v = ret.View();
+  accelerator_loop(ss,rhs_v,{
+    ret_v[ss]=outerProduct(lhs_v[ss],rhs_v[ss]);
   });
   return ret;
 }

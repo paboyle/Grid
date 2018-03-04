@@ -42,20 +42,22 @@ template<class iobj> inline void LatticeCoordinate(Lattice<iobj> &l,int mu)
   ExtractBuffer<scalar_type> mergebuf(Nsimd);
 
   vector_type vI;
+  auto l_v = l.View();
   for(int o=0;o<grid->oSites();o++){
     for(int i=0;i<grid->iSites();i++){
       grid->RankIndexToGlobalCoor(grid->ThisRank(),o,i,gcoor);
       mergebuf[i]=(Integer)gcoor[mu];
     }
     merge<vector_type,scalar_type>(vI,mergebuf);
-    l[o]=vI;
+    l_v[o]=vI;
   }
 };
 
 // LatticeCoordinate();
 // FIXME for debug; deprecate this; made obscelete by 
 template<class vobj> void lex_sites(Lattice<vobj> &l){
-  Real *v_ptr = (Real *)&l[0];
+  auto l_v = l.View();
+  Real *v_ptr = (Real *)&l_v[0];
   size_t o_len = l.Grid()->oSites();
   size_t v_len = sizeof(vobj)/sizeof(vRealF);
   size_t vec_len = vRealF::Nsimd();

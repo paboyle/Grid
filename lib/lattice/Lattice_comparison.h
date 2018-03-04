@@ -47,8 +47,11 @@ template<class vfunctor,class lobj,class robj>
 inline Lattice<vInteger> LLComparison(vfunctor op,const Lattice<lobj> &lhs,const Lattice<robj> &rhs)
 {
   Lattice<vInteger> ret(rhs.Grid());
-  accelerator_loop( ss, rhs, {
-    ret[ss]=op(lhs[ss],rhs[ss]);
+  auto lhs_v = lhs.View();
+  auto rhs_v = rhs.View();
+  auto ret_v = ret.View();
+  accelerator_loop( ss, rhs_v, {
+    ret_v[ss]=op(lhs_v[ss],rhs_v[ss]);
   });
   return ret;
 }
@@ -59,8 +62,10 @@ template<class vfunctor,class lobj,class robj>
 inline Lattice<vInteger> LSComparison(vfunctor op,const Lattice<lobj> &lhs,const robj &rhs)
 {
   Lattice<vInteger> ret(lhs.Grid());
-  accelerator_loop( ss, lhs, {
-    ret[ss]=op(lhs[ss],rhs);
+  auto lhs_v = lhs.View();
+  auto ret_v = ret.View();
+  accelerator_loop( ss, lhs_v, {
+    ret_v[ss]=op(lhs_v[ss],rhs);
   });
   return ret;
 }
@@ -71,8 +76,10 @@ template<class vfunctor,class lobj,class robj>
 inline Lattice<vInteger> SLComparison(vfunctor op,const lobj &lhs,const Lattice<robj> &rhs)
 {
   Lattice<vInteger> ret(rhs.Grid());
-  accelerator_loop( ss, rhs, {
-    ret[ss]=op(lhs[ss],rhs);
+  auto rhs_v = rhs.View();
+  auto ret_v = ret.View();
+  accelerator_loop( ss, rhs_v, {
+    ret_v[ss]=op(lhs,rhs_v[ss]);
   });
   return ret;
 }
