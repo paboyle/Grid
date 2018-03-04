@@ -78,10 +78,12 @@ public:
     static Stencil phiStencil(p.Grid(), npoint, 0, directions, displacements);
     phiStencil.HaloExchange(p, compressor);
     Field action(p.Grid()), pshift(p.Grid()), phisquared(p.Grid());
+    auto action_v = action.View();
     phisquared = p*p;
     action = (2.0*Ndim + mass_square)*phisquared - lambda/24.*phisquared*phisquared;
     for (int mu = 0; mu < Ndim; mu++) {
       //  pshift = Cshift(p, mu, +1);  // not efficient, implement with stencils
+      auto p_v = p.View();
       thread_loop( (int i = 0; i < p.Grid()->oSites(); i++) ,{
 	int permute_type;
 	StencilEntry *SE;
@@ -89,17 +91,17 @@ public:
 	const vobj *temp, *t_p;
 	    
 	SE = phiStencil.GetEntry(permute_type, mu, i);
-	t_p  = &p[i];
+	t_p  = &p_v[i];
 	if ( SE->_is_local ) {
-	  temp = &p[SE->_offset];
+	  temp = &p_v[SE->_offset];
 	  if ( SE->_permute ) {
 	    permute(temp2, *temp, permute_type);
-	    action[i] -= temp2*(*t_p) + (*t_p)*temp2;
+	    action_v[i] -= temp2*(*t_p) + (*t_p)*temp2;
 	  } else {
-	    action[i] -= (*temp)*(*t_p) + (*t_p)*(*temp);
+	    action_v[i] -= (*temp)*(*t_p) + (*t_p)*(*temp);
 	  }
 	} else {
-	  action[i] -= phiStencil.CommBuf()[SE->_offset]*(*t_p) + (*t_p)*phiStencil.CommBuf()[SE->_offset];
+	  action_v[i] -= phiStencil.CommBuf()[SE->_offset]*(*t_p) + (*t_p)*phiStencil.CommBuf()[SE->_offset];
 	}
       });
       //  action -= pshift*p + p*pshift;
@@ -118,6 +120,8 @@ public:
       
     //for (int mu = 0; mu < Nd; mu++) force -= Cshift(p, mu, -1) + Cshift(p, mu, 1);
     for (int point = 0; point < npoint; point++) {
+      auto force_v = force.View();
+      auto p_v     = p.View();
       thread_loop( (int i = 0; i < p.Grid()->oSites(); i++) ,{
 	const vobj *temp;
 	vobj temp2;
@@ -126,15 +130,15 @@ public:
 	SE = phiStencil.GetEntry(permute_type, point, i);
 	  
 	if ( SE->_is_local ) {
-	  temp = &p[SE->_offset];
+	  temp = &p_v[SE->_offset];
 	  if ( SE->_permute ) {
 	    permute(temp2, *temp, permute_type);
-	    force[i] -= temp2;
+	    force_v[i] -= temp2;
 	  } else {
-	    force[i] -= *temp;
+	    force_v[i] -= *temp;
 	  }
 	} else {
-	  force[i] -= phiStencil.CommBuf()[SE->_offset];
+	  force_v[i] -= phiStencil.CommBuf()[SE->_offset];
 	}
       });
     }
