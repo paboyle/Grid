@@ -58,17 +58,18 @@ void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, i
   thread_region
   {
     std::vector < vobj > B(Nm); // Thread private
-        
     thread_loop_in_region( (int ss=0;ss < grid->oSites();ss++),{
       for(int j=j0; j<j1; ++j) B[j]=0.;
       
       for(int j=j0; j<j1; ++j){
 	for(int k=k0; k<k1; ++k){
-	  B[j] +=Qt(j,k) * basis[k][ss];
+	  auto basis_k = basis[k].View();
+	  B[j] +=Qt(j,k) * basis_k[ss];
 	}
       }
       for(int j=j0; j<j1; ++j){
-	  basis[j][ss] = B[j];
+	auto basis_j = basis[j].View();
+	basis_j[ss] = B[j];
       }
     });
   }
@@ -82,12 +83,14 @@ void basisRotateJ(Field &result,std::vector<Field> &basis,Eigen::MatrixXd& Qt,in
   GridBase* grid = basis[0].Grid();
 
   result.Checkerboard() = basis[0].Checkerboard();
+  auto result_v=result.View();
   thread_loop( (int ss=0;ss < grid->oSites();ss++),{
     vobj B = Zero();
     for(int k=k0; k<k1; ++k){
-      B +=Qt(j,k) * basis[k][ss];
+      auto basis_k = basis[k].View();
+      B +=Qt(j,k) * basis_k[ss];
     }
-    result[ss] = B;
+    result_v[ss] = B;
   });
 }
 

@@ -191,7 +191,7 @@ public:
     typedef typename sobj::scalar_type   scalar;
       
     Lattice<sobj> pgbuf(&pencil_g);
-      
+    auto pgbuf_v = pgbuf.View();
 
     typedef typename FFTW<scalar>::FFTW_scalar FFTW_scalar;
     typedef typename FFTW<scalar>::FFTW_plan   FFTW_plan;
@@ -217,8 +217,8 @@ public:
       
     FFTW_plan p;
     {
-      FFTW_scalar *in = (FFTW_scalar *)&pgbuf[0];
-      FFTW_scalar *out= (FFTW_scalar *)&pgbuf[0];
+      FFTW_scalar *in = (FFTW_scalar *)&pgbuf_v[0];
+      FFTW_scalar *out= (FFTW_scalar *)&pgbuf_v[0];
       p = FFTW<scalar>::fftw_plan_many_dft(rank,n,howmany,
 					   in,inembed,
 					   istride,idist,
@@ -254,8 +254,8 @@ public:
         Coordinate cbuf(Nd);
 	pencil_g.LocalIndexToLocalCoor(idx, cbuf);
 	if ( cbuf[dim] == 0 ) {  // restricts loop to plane at lcoor[dim]==0
-	  FFTW_scalar *in = (FFTW_scalar *)&pgbuf[idx];
-	  FFTW_scalar *out= (FFTW_scalar *)&pgbuf[idx];
+	  FFTW_scalar *in = (FFTW_scalar *)&pgbuf_v[idx];
+	  FFTW_scalar *out= (FFTW_scalar *)&pgbuf_v[idx];
 	  FFTW<scalar>::fftw_execute_dft(p,in,out);
 	}
     });

@@ -271,7 +271,8 @@ public:
 
     SimpleCompressor<siteVector> compressor;
     Stencil.HaloExchange(in,compressor);
-
+    auto in_v = in.View();
+    auto out_v = in.View();
     thread_loop( (int ss=0;ss<Grid()->oSites();ss++),{
       siteVector res = Zero();
       siteVector nbr;
@@ -282,15 +283,16 @@ public:
 	SE=Stencil.GetEntry(ptype,point,ss);
 	  
 	if(SE->_is_local&&SE->_permute) { 
-	  permute(nbr,in[SE->_offset],ptype);
+	  permute(nbr,in_v[SE->_offset],ptype);
 	} else if(SE->_is_local) { 
-	  nbr = in[SE->_offset];
+	  nbr = in_v[SE->_offset];
 	} else {
 	  nbr = Stencil.CommBuf()[SE->_offset];
 	}
-	res = res + A[point][ss]*nbr;
+	auto A_point = A[point].View();
+	res = res + A_point[ss]*nbr;
       }
-      vstream(out[ss],res);
+      vstream(out_v[ss],res);
     });
     return norm2(out);
   };
@@ -384,12 +386,16 @@ public:
 	Subspace.ProjectToSubspace(oProj,oblock);
 	//	  blockProject(iProj,iblock,Subspace.subspace);
 	//	  blockProject(oProj,oblock,Subspace.subspace);
+	auto iProj_v = iProj.View() ;
+	auto oProj_v = oProj.View() ;
+	auto A_p     =  A[p].View();
+	auto A_self  = A[self_stencil].View();
 	thread_loop( (int ss=0;ss<Grid()->oSites();ss++),{
 	  for(int j=0;j<nbasis;j++){
 	    if( disp!= 0 ) {
-	      A[p][ss](j,i) = oProj[ss](j);
+	      A_p[ss](j,i) = oProj_v[ss](j);
 	    }
-	    A[self_stencil][ss](j,i) =	A[self_stencil][ss](j,i) + iProj[ss](j);
+	    A_self[ss](j,i) =	A_self[ss](j,i) + iProj_v[ss](j);
 	  }
 	});
       }
