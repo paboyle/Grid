@@ -356,35 +356,35 @@ template<class vobj> auto peekLorentz(const Lattice<vobj> &rhs,int i) -> decltyp
 //////////////////////////////////////////////
 template<class vobj> 
 void pokeColour(Lattice<vobj> &lhs,
-		const Lattice<decltype(peekIndex<ColourIndex>(lhs[0],0))> & rhs,
+		const Lattice<decltype(peekIndex<ColourIndex>(vobj(),0))> & rhs,
 		int i)
 {
   PokeIndex<ColourIndex>(lhs,rhs,i);
 }
 template<class vobj> 
 void pokeColour(Lattice<vobj> &lhs,
-		const Lattice<decltype(peekIndex<ColourIndex>(lhs[0],0,0))> & rhs,
+		const Lattice<decltype(peekIndex<ColourIndex>(vobj(),0,0))> & rhs,
 		int i,int j)
 {
   PokeIndex<ColourIndex>(lhs,rhs,i,j);
 }
 template<class vobj> 
 void pokeSpin(Lattice<vobj> &lhs,
-              const Lattice<decltype(peekIndex<SpinIndex>(lhs[0],0))> & rhs,
+              const Lattice<decltype(peekIndex<SpinIndex>(vobj(),0))> & rhs,
               int i)
 {
   PokeIndex<SpinIndex>(lhs,rhs,i);
 }
 template<class vobj> 
 void pokeSpin(Lattice<vobj> &lhs,
-              const Lattice<decltype(peekIndex<SpinIndex>(lhs[0],0,0))> & rhs,
+              const Lattice<decltype(peekIndex<SpinIndex>(vobj(),0,0))> & rhs,
               int i,int j)
 {
   PokeIndex<SpinIndex>(lhs,rhs,i,j);
 }
 template<class vobj> 
 void pokeLorentz(Lattice<vobj> &lhs,
-		 const Lattice<decltype(peekIndex<LorentzIndex>(lhs[0],0))> & rhs,
+		 const Lattice<decltype(peekIndex<LorentzIndex>(vobj(),0))> & rhs,
 		 int i)
 {
   PokeIndex<LorentzIndex>(lhs,rhs,i);
@@ -471,12 +471,12 @@ template<int Index,class vobj> inline vobj transposeColour(const vobj &lhs){
 // Trace lattice and non-lattice
 //////////////////////////////////////////
 template<int Index,class vobj>
-inline auto traceSpin(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<SpinIndex>(lhs[0]))>
+inline auto traceSpin(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<SpinIndex>(vobj()))>
 {
   return traceIndex<SpinIndex>(lhs);
 }
 template<int Index,class vobj>
-inline auto traceColour(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<ColourIndex>(lhs[0]))>
+inline auto traceColour(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<ColourIndex>(vobj()))>
 {
   return traceIndex<ColourIndex>(lhs);
 }
