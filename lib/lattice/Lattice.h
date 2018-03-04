@@ -39,7 +39,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/lattice/Lattice_comparison_utils.h>
 #include <Grid/lattice/Lattice_comparison.h>
 #include <Grid/lattice/Lattice_coordinate.h>
-#include <Grid/lattice/Lattice_where.h>
+//#include <Grid/lattice/Lattice_where.h>
 #include <Grid/lattice/Lattice_rng.h>
 #include <Grid/lattice/Lattice_unary.h>
 #include <Grid/lattice/Lattice_transfer.h>
