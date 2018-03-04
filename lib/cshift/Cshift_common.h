@@ -221,6 +221,9 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
     cbmask=0x3;
   }
 
+  auto lhs_v = lhs.View();
+  auto rhs_v = rhs.View();
+
   int ro  = rplane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane 
   int lo  = lplane*lhs.Grid()->_ostride[dimension]; // base offset for start of plane 
 
@@ -231,8 +234,7 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
     thread_loop_collapse2((int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
         int o =n*stride+b;
-  	//lhs[lo+o]=rhs[ro+o];
-	vstream(lhs[lo+o],rhs[ro+o]);
+	vstream(lhs_v[lo+o],rhs_v[ro+o]);
       }
     });
   } else { 
@@ -241,8 +243,7 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
         int o =n*stride+b;
         int ocb=1<<lhs.Grid()->CheckerBoardFromOindex(o);
         if ( ocb&cbmask ) {
-	  //lhs[lo+o]=rhs[ro+o];
-	  vstream(lhs[lo+o],rhs[ro+o]);
+	  vstream(lhs_v[lo+o],rhs_v[ro+o]);
 	}
       }
     });
@@ -252,6 +253,8 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
 
 template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask,int permute_type)
 {
+  auto lhs_v = lhs.View();
+  auto rhs_v = rhs.View();
  
   int rd = rhs.Grid()->_rdimensions[dimension];
 
@@ -272,7 +275,7 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
       int o  =n*stride;
       int ocb=1<<lhs.Grid()->CheckerBoardFromOindex(o+b);
       if ( ocb&cbmask ) {
-	permute(lhs[lo+o+b],rhs[ro+o+b],permute_type);
+	permute(lhs_v[lo+o+b],rhs_v[ro+o+b],permute_type);
       }
     }
   });
@@ -296,7 +299,7 @@ template<class vobj> void Cshift_local(Lattice<vobj>& ret,const Lattice<vobj> &r
   }
 }
 
-template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
+template<class vobj> void Cshift_local(Lattice<vobj> &ret,const Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
 {
   GridBase *grid = rhs.Grid();
   int fd = grid->_fdimensions[dimension];
@@ -365,7 +368,6 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice
 
   
   }
-  return ret;
 }
 
 NAMESPACE_END(Grid);
