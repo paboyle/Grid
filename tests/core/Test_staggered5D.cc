@@ -89,9 +89,11 @@ int main (int argc, char ** argv)
   // replicate across fifth dimension
   ////////////////////////////////////
   LatticeGaugeField Umu5d(FGrid); 
+  auto umu5d = Umu5d.View();
+  auto umu   = Umu.View();
   for(int ss=0;ss<Umu.Grid()->oSites();ss++){
     for(int s=0;s<Ls;s++){
-      Umu5d[Ls*ss+s] = Umu[ss];
+      umu5d[Ls*ss+s] = umu[ss];
     }
   }
 

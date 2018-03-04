@@ -30,7 +30,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Grid.h>
 
 using namespace Grid;
- ;
 
 #define POWER10
 
@@ -84,9 +83,10 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd,Uo,U);
 
   //  std::cout<<GridLogMessage << U<<std::endl;
+  std::cout<<GridLogMessage<< U <<std::endl;
+  std::cout<<GridLogMessage << "U " <<norm2(U)<<std::endl;
   std::cout<<GridLogMessage << "Ue " <<norm2(Ue)<<std::endl;
   std::cout<<GridLogMessage << "Uo " <<norm2(Uo)<<std::endl;
-
 
   TComplex cm;
   TComplex cmeo;

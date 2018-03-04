@@ -30,9 +30,9 @@ directory
 /*  END LEGAL */
 #include <Grid/Grid.h>
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv) 
+{
   using namespace Grid;
-   ;
 
   Grid_init(&argc, &argv);
   GridLogLayout();

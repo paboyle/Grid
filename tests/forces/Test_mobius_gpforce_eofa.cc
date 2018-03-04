@@ -115,14 +115,16 @@ int main (int argc, char** argv)
     SU3::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu); // Traceless antihermitian momentum; gaussian in lie alg
 
     PokeIndex<LorentzIndex>(mom, mommu, mu);
-
+    auto U_v      = U.View();
+    auto mom_v    = mom.View();
+    auto Uprime_v = Uprime.View();
     // fourth order exponential approx
-    thread_loop( (auto i=mom.begin(); i<mom.end(); i++),{
-      Uprime[i](mu) = U[i](mu) + mom[i](mu)*U[i](mu)*dt + mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt/2.0)
-                        + mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt/6.0)
-                        + mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt/24.0)
-                        + mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt/120.0)
-                        + mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt*dt/720.0);
+    thread_loop( (auto i=mom_v.begin(); i<mom_v.end(); i++),{
+      Uprime_v[i](mu) = U_v[i](mu) + mom_v[i](mu)*U_v[i](mu)*dt + mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt/2.0)
+                        + mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt/6.0)
+                        + mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt/24.0)
+                        + mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt*dt/120.0)
+                        + mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt*dt*dt/720.0);
     });
   }
 

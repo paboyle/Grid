@@ -547,7 +547,7 @@ int main(int argc, char **argv) {
                    coor[1]++) {
                 for (coor[0] = 0; coor[0] < latt_size[0] / mpi_layout[0];
                      coor[0]++) {
-                  std::complex<Grid::Real> diff;
+                  Complex diff;
 
                   std::vector<int> shiftcoor = coor;
                   shiftcoor[dir] = (shiftcoor[dir] + shift + latt_size[dir]) %
