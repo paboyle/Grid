@@ -63,8 +63,9 @@ template<class vobj,class cobj,class compressor>
 void Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)
 {
   int num=table.size();
+  auto rhs_v = rhs.View();
   thread_loop( (int i=0;i<num;i++), {
-    compress.Compress(&buffer[off],table[i].first,rhs[so+table[i].second]);
+    compress.Compress(&buffer[off],table[i].first,rhs_v[so+table[i].second]);
   });
 }
 
@@ -83,8 +84,9 @@ void Gather_plane_exchange_table(std::vector<std::pair<int,int> >& table,const L
   assert( (table.size()&0x1)==0);
   int num=table.size()/2;
   int so  = plane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane 
+  auto rhs_v = rhs.View();
   thread_loop( (int j=0;j<num;j++), {
-    compress.CompressExchange(&pointers[0][0],&pointers[1][0],&rhs[0],
+    compress.CompressExchange(&pointers[0][0],&pointers[1][0],&rhs_v[0],
 			      j,so+table[2*j].second,so+table[2*j+1].second,type);
   });
 }
@@ -151,7 +153,12 @@ public:
   std::vector<int>                  _comm_buf_size;
   std::vector<int>                  _permute_type;
   Coordinate                        _simd_layout;
-  
+
+  accelerator_inline void iCoorFromIindex(Coordinate &coor,int lane) 
+  {
+    Lexicographic::CoorFromIndex(coor,lane,_simd_layout);
+  }
+
   Vector<StencilEntry>  _entries; // Resident in managed memory
   StencilEntry*  _entries_p;
   std::vector<Packet> Packets;
