@@ -15,8 +15,20 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 ################ Set flags
 # do not move!
-#CXXFLAGS="-g $CXXFLAGS"
-CXXFLAGS="-O3 $CXXFLAGS"
+AC_ARG_ENABLE([debug],[AC_HELP_STRING([--enable-debug=yes|no], [enable debug compilation ])],
+    [ac_DEBUG=${enable_debug}], [ac_DEBUG=no])
+case ${ac_DEBUG} in
+    yes)
+    CXXFLAGS="-g $CXXFLAGS"
+        ;;
+    no)
+    CXXFLAGS="-O3 $CXXFLAGS"
+        ;;
+    *)
+    CXXFLAGS="-O3 $CXXFLAGS"
+        ;;
+esac
+
 
 ############### Checks for programs
 AC_PROG_CXX
