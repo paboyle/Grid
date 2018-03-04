@@ -48,11 +48,13 @@ void axpibg5x(Lattice<vobj> &z,const Lattice<vobj> &x,Coeff a,Coeff b)
   GridBase *grid=x.Grid();
 
   Gamma G5(Gamma::Algebra::Gamma5);
-  thread_loop( (int ss=0;ss<grid->oSites();ss++),{
+  auto x_v = x.View();
+  auto z_v = z.View();
+  accelerator_loop( ss, x_v,{
     vobj tmp;
-    tmp = a*x[ss];
-    tmp = tmp + G5*(b*timesI(x[ss]));
-    vstream(z[ss],tmp);
+    tmp = a*x_v[ss];
+    tmp = tmp + G5*(b*timesI(x_v[ss]));
+    vstream(z_v[ss],tmp);
   });
 }
 
@@ -64,9 +66,13 @@ void axpby_ssp(Lattice<vobj> &z, Coeff a,const Lattice<vobj> &x,Coeff b,const La
   conformable(x,z);
   GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
+  auto x_v = x.View();
+  auto y_v = y.View();
+  auto z_v = z.View();
+  // FIXME -- need a new class of accelerator_loop to implement this
   thread_loop( (int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
-    vobj tmp = a*x[ss+s]+b*y[ss+sp];
-    vstream(z[ss+s],tmp);
+    vobj tmp = a*x_v[ss+s]+b*y_v[ss+sp];
+    vstream(z_v[ss+s],tmp);
   });
 }
 
@@ -78,13 +84,15 @@ void ag5xpby_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const L
   conformable(x,z);
   GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
-
   Gamma G5(Gamma::Algebra::Gamma5);
+  auto x_v = x.View();
+  auto y_v = y.View();
+  auto z_v = z.View();
   thread_loop((int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
     vobj tmp;
-    tmp = G5*x[ss+s]*a;
-    tmp = tmp + b*y[ss+sp];
-    vstream(z[ss+s],tmp);
+    tmp = G5*x_v[ss+s]*a;
+    tmp = tmp + b*y_v[ss+sp];
+    vstream(z_v[ss+s],tmp);
   });
 }
 
@@ -96,12 +104,15 @@ void axpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const L
   conformable(x,z);
   GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
+  auto x_v = x.View();
+  auto y_v = y.View();
+  auto z_v = z.View();
   Gamma G5(Gamma::Algebra::Gamma5);
   thread_loop((int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
     vobj tmp;
-    tmp = G5*y[ss+sp]*b;
-    tmp = tmp + a*x[ss+s];
-    vstream(z[ss+s],tmp);
+    tmp = G5*y_v[ss+sp]*b;
+    tmp = tmp + a*x_v[ss+s];
+    vstream(z_v[ss+s],tmp);
   });
 }
 
@@ -114,13 +125,16 @@ void ag5xpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const
   GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
 
+  auto x_v = x.View();
+  auto y_v = y.View();
+  auto z_v = z.View();
   Gamma G5(Gamma::Algebra::Gamma5);
   thread_loop((int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
     vobj tmp1;
     vobj tmp2;
-    tmp1 = a*x[ss+s]+b*y[ss+sp];
+    tmp1 = a*x_v[ss+s]+b*y_v[ss+sp];
     tmp2 = G5*tmp1;
-    vstream(z[ss+s],tmp2);
+    vstream(z_v[ss+s],tmp2);
   });
 }
 
@@ -132,11 +146,15 @@ void axpby_ssp_pminus(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,co
   conformable(x,z);
   GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
+
+  auto x_v = x.View();
+  auto y_v = y.View();
+  auto z_v = z.View();
   thread_loop((int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
     vobj tmp;
-    spProj5m(tmp,y[ss+sp]);
-    tmp = a*x[ss+s]+b*tmp;
-    vstream(z[ss+s],tmp);
+    spProj5m(tmp,y_v[ss+sp]);
+    tmp = a*x_v[ss+s]+b*tmp;
+    vstream(z_v[ss+s],tmp);
   });
 }
 
@@ -148,11 +166,14 @@ void axpby_ssp_pplus(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,con
   conformable(x,z);
   GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
+  auto x_v = x.View();
+  auto y_v = y.View();
+  auto z_v = z.View();
   thread_loop((int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
     vobj tmp;
-    spProj5p(tmp,y[ss+sp]);
-    tmp = a*x[ss+s]+b*tmp;
-    vstream(z[ss+s],tmp);
+    spProj5p(tmp,y_v[ss+sp]);
+    tmp = a*x_v[ss+s]+b*tmp;
+    vstream(z_v[ss+s],tmp);
   });
 }
 
@@ -164,12 +185,14 @@ void G5R5(Lattice<vobj> &z,const Lattice<vobj> &x)
   conformable(x,z);
   int Ls = grid->_rdimensions[0];
   Gamma G5(Gamma::Algebra::Gamma5);
+  auto x_v = x.View();
+  auto z_v = z.View();
   thread_loop((int ss=0;ss<grid->oSites();ss+=Ls) {
     vobj tmp;
     for(int s=0;s<Ls;s++){
       int sp = Ls-1-s;
-      tmp = G5*x[ss+s];
-      vstream(z[ss+sp],tmp);
+      tmp = G5*x_v[ss+s];
+      vstream(z_v[ss+sp],tmp);
     }
   });
 }
