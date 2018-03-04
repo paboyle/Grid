@@ -38,17 +38,20 @@ NAMESPACE_BEGIN(Grid);
 // Pminus fowards
 // Pplus  backwards..
 template<class Impl>  
-void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
-				const FermionField &phi, 
-				FermionField &chi,
+void CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
+				const FermionField &phi_i, 
+				FermionField &chi_i,
 				std::vector<Coeff_t> &lower,
 				std::vector<Coeff_t> &diag,
 				std::vector<Coeff_t> &upper)
 {
+  chi_i.Checkerboard()=psi_i.Checkerboard();
+  GridBase *grid=psi_i.Grid();
+  auto psi = psi_i.View();
+  auto phi = phi_i.View();
+  auto chi = chi_i.View();
   int Ls =this->Ls;
-  GridBase *grid=psi.Grid();
   assert(phi.Checkerboard() == psi.Checkerboard());
-  chi.Checkerboard()=psi.Checkerboard();
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   M5Dcalls++;
   M5Dtime-=usecond();
@@ -81,17 +84,20 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
 }
 
 template<class Impl>  
-void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
-				   const FermionField &phi, 
-				   FermionField &chi,
+void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
+				   const FermionField &phi_i, 
+				   FermionField &chi_i,
 				   std::vector<Coeff_t> &lower,
 				   std::vector<Coeff_t> &diag,
 				   std::vector<Coeff_t> &upper)
 {
+  chi_i.Checkerboard()=psi_i.Checkerboard();
+  GridBase *grid=psi_i.Grid();
+  auto psi = psi_i.View();
+  auto phi = phi_i.View();
+  auto chi = chi_i.View();
   int Ls =this->Ls;
-  GridBase *grid=psi.Grid();
   assert(phi.Checkerboard() == psi.Checkerboard());
-  chi.Checkerboard()=psi.Checkerboard();
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   M5Dcalls++;
@@ -125,12 +131,14 @@ void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
 }
 
 template<class Impl>
-void CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi, FermionField &chi)
+void CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi_i, FermionField &chi_i)
 {
-  GridBase *grid=psi.Grid();
-  int Ls=this->Ls;
+  chi_i.Checkerboard()=psi_i.Checkerboard();
+  GridBase *grid=psi_i.Grid();
+  auto psi = psi_i.View();
+  auto chi = chi_i.View();
 
-  chi.Checkerboard()=psi.Checkerboard();
+  int Ls=this->Ls;
 
   MooeeInvCalls++;
   MooeeInvTime-=usecond();
@@ -170,13 +178,15 @@ void CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi, FermionField &
 }
 
 template<class Impl>
-void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &chi)
+void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi_i, FermionField &chi_i)
 {
-  GridBase *grid=psi.Grid();
+  chi_i.Checkerboard()=psi_i.Checkerboard();
+  GridBase *grid=psi_i.Grid();
   int Ls=this->Ls;
+  auto psi = psi_i.View();
+  auto chi = chi_i.View();
 
   assert(psi.Checkerboard() == psi.Checkerboard());
-  chi.Checkerboard()=psi.Checkerboard();
 
   std::vector<Coeff_t> ueec(Ls);
   std::vector<Coeff_t> deec(Ls);

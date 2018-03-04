@@ -50,13 +50,16 @@ public:
 
   INHERIT_IMPL_TYPES(Impl);
   typedef FermionOperator<Impl> Base;
+
+  typedef typename ViewMap<FermionField>::Type      FermionFieldView;
+  typedef typename ViewMap<DoubledGaugeField>::Type DoubledGaugeFieldView;
    
 public:
    
   template <bool EnableBool = true> accelerator
   typename std::enable_if<Impl::Dimension == 3 && Nc == 3 &&EnableBool, void>::type
-  DhopSite(int Opt,StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-	   int sF, int sU, int Ls, int Nsite, const FermionField &in, FermionField &out,int interior=1,int exterior=1) 
+  DhopSite(int Opt,StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+	   int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out,int interior=1,int exterior=1) 
   {
     bgq_l1p_optimisation(1);
     switch(Opt) {
@@ -99,8 +102,8 @@ public:
      
   template <bool EnableBool = true> accelerator
   typename std::enable_if<(Impl::Dimension != 3 || (Impl::Dimension == 3 && Nc != 3)) && EnableBool, void>::type
-  DhopSite(int Opt, StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-	   int sF, int sU, int Ls, int Nsite, const FermionField &in, FermionField &out,int interior=1,int exterior=1 ) {
+  DhopSite(int Opt, StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+	   int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out,int interior=1,int exterior=1 ) {
     // no kernel choice  
     for (int site = 0; site < Nsite; site++) {
       for (int s = 0; s < Ls; s++) {
@@ -116,8 +119,8 @@ public:
      
   template <bool EnableBool = true> accelerator
   typename std::enable_if<Impl::Dimension == 3 && Nc == 3 && EnableBool,void>::type
-  DhopSiteDag(int Opt, StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-	      int sF, int sU, int Ls, int Nsite, const FermionField &in, FermionField &out,int interior=1,int exterior=1) 
+  DhopSiteDag(int Opt, StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+	      int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out,int interior=1,int exterior=1) 
   {
     bgq_l1p_optimisation(1);
     switch(Opt) {
@@ -161,8 +164,8 @@ public:
 
   template <bool EnableBool = true> accelerator
   typename std::enable_if<(Impl::Dimension != 3 || (Impl::Dimension == 3 && Nc != 3)) && EnableBool,void>::type
-  DhopSiteDag(int Opt,StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,SiteHalfSpinor * buf,
-	      int sF, int sU, int Ls, int Nsite, const FermionField &in, FermionField &out,int interior=1,int exterior=1) {
+  DhopSiteDag(int Opt,StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,SiteHalfSpinor * buf,
+	      int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out,int interior=1,int exterior=1) {
 
     for (int site = 0; site < Nsite; site++) {
       for (int s = 0; s < Ls; s++) {
@@ -176,8 +179,8 @@ public:
     }
   }
 
-  accelerator void DhopDirK(StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor * buf,
-			   int sF, int sU, const FermionField &in, FermionField &out, int dirdisp, int gamma);
+  accelerator void DhopDirK(StencilImpl &st, DoubledGaugeFieldView &U,SiteHalfSpinor * buf,
+			   int sF, int sU, const FermionFieldView &in, FermionFieldView &out, int dirdisp, int gamma);
       
   //////////////////////////////////////////////////////////////////////////////
   // Utilities for inserting Wilson conserved current.
@@ -185,27 +188,27 @@ public:
   void ContractConservedCurrentSiteFwd(const SitePropagator &q_in_1,
                                        const SitePropagator &q_in_2,
                                        SitePropagator &q_out,
-                                       DoubledGaugeField &U,
+                                       DoubledGaugeFieldView &U,
                                        unsigned int sU,
                                        unsigned int mu,
                                        bool switch_sign = false);
   void ContractConservedCurrentSiteBwd(const SitePropagator &q_in_1,
                                        const SitePropagator &q_in_2,
                                        SitePropagator &q_out,
-                                       DoubledGaugeField &U,
+                                       DoubledGaugeFieldView &U,
                                        unsigned int sU,
                                        unsigned int mu,
                                        bool switch_sign = false);
   void SeqConservedCurrentSiteFwd(const SitePropagator &q_in, 
                                   SitePropagator &q_out,
-                                  DoubledGaugeField &U,
+                                  DoubledGaugeFieldView &U,
                                   unsigned int sU,
                                   unsigned int mu,
                                   vInteger t_mask,
                                   bool switch_sign = false);
   void SeqConservedCurrentSiteBwd(const SitePropagator &q_in,
                                   SitePropagator &q_out,
-                                  DoubledGaugeField &U,
+                                  DoubledGaugeFieldView &U,
                                   unsigned int sU,
                                   unsigned int mu,
                                   vInteger t_mask,
@@ -213,60 +216,60 @@ public:
 
 private:
   // Specialised variants
-  accelerator void GenericDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-				   int sF, int sU, const FermionField &in, FermionField &out);
+  accelerator void GenericDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				   int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
       
-  accelerator void GenericDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-				      int sF, int sU, const FermionField &in, FermionField &out);
+  accelerator void GenericDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				      int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  accelerator void GenericDhopSiteInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-				      int sF, int sU, const FermionField &in, FermionField &out);
+  accelerator void GenericDhopSiteInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				      int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
       
-  accelerator void GenericDhopSiteDagInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-					 int sF, int sU, const FermionField &in, FermionField &out);
+  accelerator void GenericDhopSiteDagInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					 int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  accelerator void GenericDhopSiteExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-				      int sF, int sU, const FermionField &in, FermionField &out);
+  accelerator void GenericDhopSiteExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				      int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
       
-  accelerator void GenericDhopSiteDagExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-					 int sF, int sU, const FermionField &in, FermionField &out);
+  accelerator void GenericDhopSiteDagExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					 int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  accelerator void AsmDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			       int sF, int sU, int Ls, int Nsite, const FermionField &in,FermionField &out);
+  accelerator void AsmDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+			       int sF, int sU, int Ls, int Nsite, const FermionFieldView &in,FermionFieldView &out);
   
-  accelerator void AsmDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-				  int sF, int sU, int Ls, int Nsite, const FermionField &in, FermionField &out);
+  accelerator void AsmDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				  int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out);
   
-  accelerator void AsmDhopSiteInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-				  int sF, int sU, int Ls, int Nsite, const FermionField &in,FermionField &out);
+  accelerator void AsmDhopSiteInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				  int sF, int sU, int Ls, int Nsite, const FermionFieldView &in,FermionFieldView &out);
   
-  accelerator void AsmDhopSiteDagInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-				     int sF, int sU, int Ls, int Nsite, const FermionField &in, FermionField &out);
+  accelerator void AsmDhopSiteDagInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				     int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out);
   
-  accelerator void AsmDhopSiteExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-				  int sF, int sU, int Ls, int Nsite, const FermionField &in,FermionField &out);
+  accelerator void AsmDhopSiteExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				  int sF, int sU, int Ls, int Nsite, const FermionFieldView &in,FermionFieldView &out);
   
-  accelerator void AsmDhopSiteDagExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-				     int sF, int sU, int Ls, int Nsite, const FermionField &in, FermionField &out);
+  accelerator void AsmDhopSiteDagExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				     int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out);
   
 
-  accelerator void HandDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-				int sF, int sU, const FermionField &in, FermionField &out);
+  accelerator void HandDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  accelerator void HandDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-				   int sF, int sU, const FermionField &in, FermionField &out);
+  accelerator void HandDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				   int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  accelerator void HandDhopSiteInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-				   int sF, int sU, const FermionField &in, FermionField &out);
+  accelerator void HandDhopSiteInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				   int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  accelerator void HandDhopSiteDagInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-				      int sF, int sU, const FermionField &in, FermionField &out);
+  accelerator void HandDhopSiteDagInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				      int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  accelerator void HandDhopSiteExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-				   int sF, int sU, const FermionField &in, FermionField &out);
+  accelerator void HandDhopSiteExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				   int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  accelerator void HandDhopSiteDagExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-				      int sF, int sU, const FermionField &in, FermionField &out);
+  accelerator void HandDhopSiteDagExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				      int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
 public:
   

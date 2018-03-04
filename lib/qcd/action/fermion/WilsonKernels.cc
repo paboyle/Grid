@@ -36,7 +36,7 @@ int WilsonKernelsStatic::Opt   = WilsonKernelsStatic::OptGeneric;
 int WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsAndCompute;
 
 template <class Impl>
-accelerator WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
+WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
 
 ////////////////////////////////////////////
 // Generic implementation; move to different file?
@@ -103,9 +103,9 @@ accelerator WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
   // All legs kernels ; comms then compute
   ////////////////////////////////////////////////////////////////////
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+accelerator void WilsonKernels<Impl>::GenericDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
 							 SiteHalfSpinor *buf, int sF,
-							 int sU, const FermionField &in, FermionField &out)
+							 int sU, const FermionFieldView &in, FermionFieldView &out)
 {
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
@@ -127,9 +127,9 @@ accelerator void WilsonKernels<Impl>::GenericDhopSiteDag(StencilImpl &st, Lebesg
 };
 
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+accelerator void WilsonKernels<Impl>::GenericDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
 						      SiteHalfSpinor *buf, int sF,
-						      int sU, const FermionField &in, FermionField &out) 
+						      int sU, const FermionFieldView &in, FermionFieldView &out) 
 {
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
@@ -153,9 +153,9 @@ accelerator void WilsonKernels<Impl>::GenericDhopSite(StencilImpl &st, LebesgueO
   // Interior kernels
   ////////////////////////////////////////////////////////////////////
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+accelerator void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
 						SiteHalfSpinor *buf, int sF,
-						int sU, const FermionField &in, FermionField &out)
+						int sU, const FermionFieldView &in, FermionFieldView &out)
 {
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
@@ -178,9 +178,9 @@ accelerator void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilImpl &st, Leb
 };
 
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSiteInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+accelerator void WilsonKernels<Impl>::GenericDhopSiteInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
 							 SiteHalfSpinor *buf, int sF,
-							 int sU, const FermionField &in, FermionField &out) 
+							 int sU, const FermionFieldView &in, FermionFieldView &out) 
 {
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
@@ -204,9 +204,9 @@ accelerator void WilsonKernels<Impl>::GenericDhopSiteInt(StencilImpl &st, Lebesg
 // Exterior kernels
 ////////////////////////////////////////////////////////////////////
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+accelerator void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
 						SiteHalfSpinor *buf, int sF,
-						int sU, const FermionField &in, FermionField &out)
+						int sU, const FermionFieldView &in, FermionFieldView &out)
 {
   //  SiteHalfSpinor tmp;
   //  SiteHalfSpinor chi;
@@ -231,9 +231,9 @@ accelerator void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilImpl &st, Leb
 };
 
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSiteExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+accelerator void WilsonKernels<Impl>::GenericDhopSiteExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
 					     SiteHalfSpinor *buf, int sF,
-					     int sU, const FermionField &in, FermionField &out) 
+					     int sU, const FermionFieldView &in, FermionFieldView &out) 
 {
   //  SiteHalfSpinor tmp;
   //  SiteHalfSpinor chi;
@@ -258,9 +258,9 @@ accelerator void WilsonKernels<Impl>::GenericDhopSiteExt(StencilImpl &st, Lebesg
 };
 
 template <class Impl>
-accelerator void WilsonKernels<Impl>::DhopDirK( StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor *buf, int sF,
-						int sU, const FermionField &in, FermionField &out, int dir, int gamma) {
-
+accelerator void WilsonKernels<Impl>::DhopDirK( StencilImpl &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf, int sF,
+						int sU, const FermionFieldView &in, FermionFieldView &out, int dir, int gamma) 
+{
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
   SiteSpinor result;
@@ -300,23 +300,23 @@ void WilsonKernels<Impl>::ContractConservedCurrentSiteFwd(
                                                   const SitePropagator &q_in_1,
                                                   const SitePropagator &q_in_2,
                                                   SitePropagator &q_out,
-                                                  DoubledGaugeField &U,
+                                                  DoubledGaugeFieldView &U,
                                                   unsigned int sU,
                                                   unsigned int mu,
                                                   bool switch_sign)
 {
-    SitePropagator result, tmp;
-    Gamma g5(Gamma::Algebra::Gamma5);
-    Impl::multLinkProp(tmp, U[sU], q_in_1, mu);
-    result = g5 * adj(q_in_2) * g5 * WilsonCurrentFwd(tmp, mu);
-    if (switch_sign)
-    {
-        q_out -= result;
-    }
-    else
-    {
-        q_out += result;
-    }
+  SitePropagator result, tmp;
+  Gamma g5(Gamma::Algebra::Gamma5);
+
+  Impl::multLinkProp(tmp, U[sU], q_in_1, mu);
+
+  result = g5 * adj(q_in_2) * g5 * WilsonCurrentFwd(tmp, mu);
+
+  if (switch_sign) {
+    q_out -= result;
+  } else {
+    q_out += result;
+  }
 }
 
 /*******************************************************************************
@@ -330,23 +330,22 @@ void WilsonKernels<Impl>::ContractConservedCurrentSiteBwd(
                                                   const SitePropagator &q_in_1,
                                                   const SitePropagator &q_in_2,
                                                   SitePropagator &q_out,
-                                                  DoubledGaugeField &U,
+                                                  DoubledGaugeFieldView &U,
                                                   unsigned int sU,
                                                   unsigned int mu,
                                                   bool switch_sign)
 {
-    SitePropagator result, tmp;
-    Gamma g5(Gamma::Algebra::Gamma5);
-    Impl::multLinkProp(tmp, U[sU], q_in_1, mu + Nd);
-    result = g5 * adj(q_in_2) * g5 * WilsonCurrentBwd(tmp, mu);
-    if (switch_sign)
-    {
-        q_out += result;
-    }
-    else
-    {
-        q_out -= result;
-    }
+  SitePropagator result, tmp;
+  Gamma g5(Gamma::Algebra::Gamma5);
+
+  Impl::multLinkProp(tmp, U[sU], q_in_1, mu + Nd);
+
+  result = g5 * adj(q_in_2) * g5 * WilsonCurrentBwd(tmp, mu);
+  if (switch_sign) {
+    q_out += result;
+  } else {
+    q_out -= result;
+  }
 }
 
 // G-parity requires more specialised implementation.
@@ -356,7 +355,7 @@ void WilsonKernels<Impl>::ContractConservedCurrentSiteFwd( \
                                                   const SitePropagator &q_in_1, \
                                                   const SitePropagator &q_in_2, \
                                                   SitePropagator &q_out,        \
-                                                  DoubledGaugeField &U,         \
+                                                  DoubledGaugeFieldView &U,         \
                                                   unsigned int sU,              \
                                                   unsigned int mu,              \
                                                   bool switch_sign)             \
@@ -368,7 +367,7 @@ void WilsonKernels<Impl>::ContractConservedCurrentSiteBwd( \
                                                   const SitePropagator &q_in_1, \
                                                   const SitePropagator &q_in_2, \
                                                   SitePropagator &q_out,        \
-                                                  DoubledGaugeField &U,         \
+                                                  DoubledGaugeFieldView &U,         \
                                                   unsigned int mu,              \
                                                   unsigned int sU,              \
                                                   bool switch_sign)             \
@@ -391,27 +390,25 @@ NO_CURR_SITE(GparityWilsonImplDF);
 template<class Impl>
 void WilsonKernels<Impl>::SeqConservedCurrentSiteFwd(const SitePropagator &q_in,
                                                      SitePropagator &q_out,
-                                                     DoubledGaugeField &U,
+                                                     DoubledGaugeFieldView &U,
                                                      unsigned int sU,
                                                      unsigned int mu,
                                                      vInteger t_mask,
                                                      bool switch_sign)
 {
-    SitePropagator result;
-    Impl::multLinkProp(result, U[sU], q_in, mu);
-    result = WilsonCurrentFwd(result, mu);
+  SitePropagator result;
+  
+  Impl::multLinkProp(result, U[sU], q_in, mu);
+  result = WilsonCurrentFwd(result, mu);
 
-    // Zero any unwanted timeslice entries.
-    result = predicatedWhere(t_mask, result, 0.*result);
-
-    if (switch_sign)
-    {
-        q_out -= result;
-    }
-    else
-    {
-        q_out += result;
-    }
+  // Zero any unwanted timeslice entries.
+  result = predicatedWhere(t_mask, result, 0.*result);
+  
+  if (switch_sign) {
+    q_out -= result;
+  } else {
+    q_out += result;
+  }
 }
 
 /*******************************************************************************
@@ -423,27 +420,24 @@ void WilsonKernels<Impl>::SeqConservedCurrentSiteFwd(const SitePropagator &q_in,
 template<class Impl>
 void WilsonKernels<Impl>::SeqConservedCurrentSiteBwd(const SitePropagator &q_in, 
                                                      SitePropagator &q_out,
-                                                     DoubledGaugeField &U,
+                                                     DoubledGaugeFieldView &U,
                                                      unsigned int sU,
                                                      unsigned int mu,
                                                      vInteger t_mask,
                                                      bool switch_sign)
 {
-    SitePropagator result;
-    Impl::multLinkProp(result, U[sU], q_in, mu + Nd);
-    result = WilsonCurrentBwd(result, mu);
+  SitePropagator result;
+  Impl::multLinkProp(result, U[sU], q_in, mu + Nd);
+  result = WilsonCurrentBwd(result, mu);
 
-    // Zero any unwanted timeslice entries.
-    result = predicatedWhere(t_mask, result, 0.*result);
-
-    if (switch_sign)
-    {
-        q_out += result;
-    }
-    else
-    {
-        q_out -= result;
-    }
+  // Zero any unwanted timeslice entries.
+  result = predicatedWhere(t_mask, result, 0.*result);
+  
+  if (switch_sign) {
+    q_out += result;
+  } else {
+    q_out -= result;
+  }
 }
 
 FermOpTemplateInstantiate(WilsonKernels);

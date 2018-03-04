@@ -249,8 +249,12 @@ void ImprovedStaggeredFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGauge
     ////////////////////////
     // Call the single hop
     ////////////////////////
+    auto U_v   = U.View();
+    auto UUU_v = UUU.View();
+    auto B_v   = B.View();
+    auto Btilde_v   = Btilde.View();
     thread_loop( (int sss = 0; sss < B.Grid()->oSites(); sss++), {
-	Kernels::DhopDirK(st, U, UUU, st.CommBuf(), sss, sss, B, Btilde, mu,1);
+      Kernels::DhopDirK(st, U_v, UUU_v, st.CommBuf(), sss, sss, B_v, Btilde_v, mu,1);
     });
 
     // Force in three link terms
@@ -360,9 +364,12 @@ void ImprovedStaggeredFermion<Impl>::DhopDir(const FermionField &in, FermionFiel
 
   Compressor compressor;
   Stencil.HaloExchange(in, compressor);
-
+  auto Umu_v   =   Umu.View();
+  auto UUUmu_v = UUUmu.View();
+  auto in_v    =  in.View();
+  auto out_v   = out.View();
   thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++) , {
-      Kernels::DhopDirK(Stencil, Umu, UUUmu, Stencil.CommBuf(), sss, sss, in, out, dir, disp);
+      Kernels::DhopDirK(Stencil, Umu_v, UUUmu_v, Stencil.CommBuf(), sss, sss, in_v, out_v, dir, disp);
   });
 };
 
@@ -377,13 +384,17 @@ void ImprovedStaggeredFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder
   Compressor compressor;
   st.HaloExchange(in, compressor);
 
+  auto U_v   =   U.View();
+  auto UUU_v = UUU.View();
+  auto in_v  =  in.View();
+  auto out_v = out.View();
   if (dag == DaggerYes) {
     thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++), {
-	Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), 1, sss, in, out);
+      Kernels::DhopSiteDag(st, lo, U_v, UUU_v, st.CommBuf(), 1, sss, in_v, out_v);
     });
   } else {
     thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++), {
-	Kernels::DhopSite(st, lo, U, UUU, st.CommBuf(), 1, sss, in, out);
+      Kernels::DhopSite(st, lo, U_v, UUU_v, st.CommBuf(), 1, sss, in_v, out_v);
     });
   }
 };

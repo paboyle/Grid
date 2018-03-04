@@ -63,10 +63,14 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag_shift(const FermionField& psi, Fermion
 }
 
 template<class Impl>
-void MobiusEOFAFermion<Impl>::M5D(const FermionField& psi, const FermionField& phi,
-				  FermionField& chi, std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper)
+void MobiusEOFAFermion<Impl>::M5D(const FermionField& psi_i, const FermionField& phi_i,FermionField& chi_i, 
+				  std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper)
 {
-  GridBase* grid  = psi.Grid();
+  chi_i.Checkerboard() = psi_i.Checkerboard();
+  GridBase* grid  = psi_i.Grid();
+  auto psi        = psi_i.View();
+  auto phi        = phi_i.View();
+  auto chi        = chi_i.View();
   int Ls          = this->Ls;
   int LLs         = grid->_rdimensions[0];
   const int nsimd = Simd::Nsimd();
@@ -77,8 +81,6 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField& psi, const FermionField& p
 
   assert(Ls/LLs == nsimd);
   assert(phi.Checkerboard() == psi.Checkerboard());
-
-  chi.Checkerboard() = psi.Checkerboard();
 
   // just directly address via type pun
   typedef typename Simd::scalar_type scalar_type;
@@ -208,11 +210,14 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField& psi, const FermionField& p
 }
 
 template<class Impl>
-void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField& psi, const FermionField& phi,
-					FermionField& chi, std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper,
+void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField& psi_i, const FermionField& phi_i,
+					FermionField& chi_i, std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper,
 					std::vector<Coeff_t>& shift_coeffs)
 {
 #if 0
+  auto & psi = psi_i;
+  auto & phi = phi_i;
+  auto & chi = chi_i;
 
   this->M5D(psi, phi, chi, lower, diag, upper);
 
@@ -225,8 +230,11 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField& psi, const FermionFi
   }
 
 #else
-
-  GridBase* grid  = psi.Grid();
+  chi_i.Checkerboard() = psi_i.Checkerboard();
+  GridBase* grid  = psi_i.Grid();
+  auto psi        = psi_i.View();
+  auto phi        = phi_i.View();
+  auto chi        = chi_i.View();
   int Ls          = this->Ls;
   int LLs         = grid->_rdimensions[0];
   const int nsimd = Simd::Nsimd();
@@ -239,7 +247,6 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField& psi, const FermionFi
   assert(Ls/LLs == nsimd);
   assert(phi.Checkerboard() == psi.Checkerboard());
 
-  chi.Checkerboard() = psi.Checkerboard();
 
   // just directly address via type pun
   typedef typename Simd::scalar_type scalar_type;
@@ -389,10 +396,14 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField& psi, const FermionFi
 }
 
 template<class Impl>
-void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField& psi, const FermionField& phi,
-				     FermionField& chi, std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper)
+void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField& psi_i, const FermionField& phi_i,FermionField& chi_i, 
+				     std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper)
 {
-  GridBase* grid = psi.Grid();
+  chi_i.Checkerboard() = psi_i.Checkerboard();
+  GridBase* grid = psi_i.Grid();
+  auto psi = psi_i.View();
+  auto phi = phi_i.View();
+  auto chi = chi_i.View();
   int Ls  = this->Ls;
   int LLs = grid->_rdimensions[0];
   int nsimd = Simd::Nsimd();
@@ -404,7 +415,6 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField& psi, const FermionField
   assert(Ls/LLs == nsimd);
   assert(phi.Checkerboard() == psi.Checkerboard());
 
-  chi.Checkerboard() = psi.Checkerboard();
 
   // just directly address via type pun
   typedef typename Simd::scalar_type scalar_type;
@@ -531,12 +541,14 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField& psi, const FermionField
 }
 
 template<class Impl>
-void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField& psi, const FermionField& phi,
-					   FermionField& chi, std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper,
+void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField& psi_i, const FermionField& phi_i, FermionField& chi_i, 
+					   std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper,
 					   std::vector<Coeff_t>& shift_coeffs)
 {
 #if 0
-
+  auto & psi = psi_i;
+  auto & phi = phi_i;
+  auto & chi = chi_i;
   this->M5Ddag(psi, phi, chi, lower, diag, upper);
 
   // FIXME: possible gain from vectorizing shift operation as well?
@@ -548,8 +560,11 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField& psi, const Fermio
   }
 
 #else
-
-  GridBase* grid = psi.Grid();
+  chi_i.Checkerboard() = psi_i.Checkerboard();
+  GridBase* grid = psi_i.Grid();
+  auto psi = psi_i.View();
+  auto phi = phi_i.View();
+  auto chi = chi_i.View();
   int Ls  = this->Ls;
   int LLs = grid->_rdimensions[0];
   int nsimd = Simd::Nsimd();
@@ -562,7 +577,6 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField& psi, const Fermio
   assert(Ls/LLs == nsimd);
   assert(phi.Checkerboard() == psi.Checkerboard());
 
-  chi.Checkerboard() = psi.Checkerboard();
 
   // just directly address via type pun
   typedef typename Simd::scalar_type scalar_type;
@@ -717,9 +731,11 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField& psi, const Fermio
 #endif
 
 template<class Impl>
-void MobiusEOFAFermion<Impl>::MooeeInternalAsm(const FermionField& psi, FermionField& chi,
+void MobiusEOFAFermion<Impl>::MooeeInternalAsm(const FermionField& psi_i, FermionField& chi_i,
 					       int LLs, int site, Vector<iSinglet<Simd> >& Matp, Vector<iSinglet<Simd> >& Matm)
 {
+  auto psi = psi_i.View();
+  auto chi = chi_i.View();
 #ifndef AVX512
   {
     SiteHalfSpinor BcastP;
@@ -909,11 +925,11 @@ void MobiusEOFAFermion<Impl>::MooeeInternalZAsm(const FermionField& psi, Fermion
 template<class Impl>
 void MobiusEOFAFermion<Impl>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv)
 {
+  chi.Checkerboard() = psi.Checkerboard();
+
   int Ls  = this->Ls;
   int LLs = psi.Grid()->_rdimensions[0];
   int vol = psi.Grid()->oSites()/LLs;
-
-  chi.Checkerboard() = psi.Checkerboard();
 
   Vector<iSinglet<Simd>>   Matp;
   Vector<iSinglet<Simd>>   Matm;

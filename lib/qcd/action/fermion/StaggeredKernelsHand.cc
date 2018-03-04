@@ -89,9 +89,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 template <class Impl>
-void StaggeredKernels<Impl>::DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU,
+void StaggeredKernels<Impl>::DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU,
 					  SiteSpinor *buf, int LLs,
-					  int sU, const FermionField &in, FermionField &out, int dag) 
+					  int sU, const FermionFieldView &in, FermionFieldView &out, int dag) 
 {
   SiteSpinor naik; 
   SiteSpinor naive;
@@ -110,9 +110,9 @@ void StaggeredKernels<Impl>::DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, Do
 }
 
 template <class Impl>
-void StaggeredKernels<Impl>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+void StaggeredKernels<Impl>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
 					       SiteSpinor *buf, int sF,
-					       int sU, const FermionField &in, SiteSpinor &out,int threeLink) 
+					       int sU, const FermionFieldView &in, SiteSpinor &out,int threeLink) 
 {
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -298,14 +298,14 @@ void StaggeredKernels<Impl>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &l
 
 #define DHOP_SITE_HAND_INSTANTIATE(IMPL)				\
   template void StaggeredKernels<IMPL>::DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, \
-						     DoubledGaugeField &U,DoubledGaugeField &UUU, \
+						     DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, \
 						     SiteSpinor *buf, int LLs, \
-						     int sU, const FermionField &in, FermionField &out, int dag);
+						     int sU, const FermionFieldView &in, FermionFieldView &out, int dag);
 
 #define DHOP_SITE_DEPTH_HAND_INSTANTIATE(IMPL)				\
-  template void StaggeredKernels<IMPL>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, \
+  template void StaggeredKernels<IMPL>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, \
 							  SiteSpinor *buf, int sF, \
-							  int sU, const FermionField &in, SiteSpinor &out,int threeLink) ;
+							  int sU, const FermionFieldView &in, SiteSpinor &out,int threeLink) ;
 DHOP_SITE_HAND_INSTANTIATE(StaggeredImplD);
 DHOP_SITE_HAND_INSTANTIATE(StaggeredImplF);
 DHOP_SITE_HAND_INSTANTIATE(StaggeredVec5dImplD);

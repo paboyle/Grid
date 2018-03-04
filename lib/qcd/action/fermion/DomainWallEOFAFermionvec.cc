@@ -52,10 +52,15 @@ void DomainWallEOFAFermion<Impl>::MooeeInv(const FermionField& psi, FermionField
 }
 
 template<class Impl>
-void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi, const FermionField& phi,
-				      FermionField& chi, std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper)
+void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi_i, const FermionField& phi_i, FermionField& chi_i, 
+				      std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper)
 {
-  GridBase* grid = psi.Grid();
+  chi_i.Checkerboard() = psi_i.Checkerboard();
+  GridBase* grid = psi_i.Grid();
+  auto psi = psi_i.View();
+  auto phi = phi_i.View();
+  auto chi = chi_i.View();
+
   int Ls  = this->Ls;
   int LLs = grid->_rdimensions[0];
   const int nsimd = Simd::Nsimd();
@@ -66,8 +71,6 @@ void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi, const FermionFiel
 
   assert(Ls/LLs == nsimd);
   assert(phi.Checkerboard() == psi.Checkerboard());
-
-  chi.Checkerboard() = psi.Checkerboard();
 
   // just directly address via type pun
   typedef typename Simd::scalar_type scalar_type;
@@ -197,10 +200,15 @@ void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi, const FermionFiel
 }
 
 template<class Impl>
-void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi, const FermionField& phi,
-					 FermionField& chi, std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper)
+void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi_i, const FermionField& phi_i,FermionField& chi_i, 
+					 std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper)
 {
-  GridBase* grid = psi.Grid();
+  chi_i.Checkerboard() = psi_i.Checkerboard();
+  GridBase* grid = psi_i.Grid();
+  auto psi = psi_i.View();
+  auto phi = phi_i.View();
+  auto chi = chi_i.View();
+
   int Ls  = this->Ls;
   int LLs = grid->_rdimensions[0];
   int nsimd = Simd::Nsimd();
@@ -211,8 +219,6 @@ void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi, const FermionF
 
   assert(Ls/LLs == nsimd);
   assert(phi.Checkerboard() == psi.Checkerboard());
-
-  chi.Checkerboard() = psi.Checkerboard();
 
   // just directly address via type pun
   typedef typename Simd::scalar_type scalar_type;
@@ -342,9 +348,12 @@ void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi, const FermionF
 #endif
 
 template<class Impl>
-void DomainWallEOFAFermion<Impl>::MooeeInternalAsm(const FermionField& psi, FermionField& chi,
+void DomainWallEOFAFermion<Impl>::MooeeInternalAsm(const FermionField& psi_i, FermionField& chi_i,
 						   int LLs, int site, Vector<iSinglet<Simd> >& Matp, Vector<iSinglet<Simd> >& Matm)
 {
+  GridBase* grid = psi_i.Grid();
+  auto psi = psi_i.View();
+  auto chi = chi_i.View();
 #ifndef AVX512
   {
     SiteHalfSpinor BcastP;
@@ -532,11 +541,10 @@ void DomainWallEOFAFermion<Impl>::MooeeInternalZAsm(const FermionField& psi, Fer
 template<class Impl>
 void DomainWallEOFAFermion<Impl>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv)
 {
+  chi.Checkerboard() = psi.Checkerboard();
   int Ls  = this->Ls;
   int LLs = psi.Grid()->_rdimensions[0];
   int vol = psi.Grid()->oSites()/LLs;
-
-  chi.Checkerboard() = psi.Checkerboard();
 
   Vector<iSinglet<Simd> > Matp;
   Vector<iSinglet<Simd> > Matm;

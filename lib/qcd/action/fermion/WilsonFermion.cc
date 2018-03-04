@@ -216,8 +216,11 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
     ////////////////////////
     // Call the single hop
     ////////////////////////
+    auto U_v = U.View();
+    auto B_v = B.View();
+    auto Btilde_v = Btilde.View();
     thread_loop( (int sss = 0; sss < B.Grid()->oSites(); sss++) ,{
-      Kernels::DhopDirK(st, U, st.CommBuf(), sss, sss, B, Btilde, mu, gamma);
+      Kernels::DhopDirK(st, U_v, st.CommBuf(), sss, sss, B_v, Btilde_v, mu, gamma);
     });
 
     //////////////////////////////////////////////////
@@ -316,9 +319,11 @@ void WilsonFermion<Impl>::DhopDirDisp(const FermionField &in, FermionField &out,
   Compressor compressor(dag);
 
   Stencil.HaloExchange(in, compressor);
-
+  auto in_v = in.View();
+  auto out_v = in.View();
+  auto Umu_v = Umu.View();
   thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++) ,{
-    Kernels::DhopDirK(Stencil, Umu, Stencil.CommBuf(), sss, sss, in, out, dirdisp, gamma);
+    Kernels::DhopDirK(Stencil, Umu_v, Stencil.CommBuf(), sss, sss, in_v, out_v, dirdisp, gamma);
   });
 };
 
@@ -333,13 +338,16 @@ void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
   st.HaloExchange(in, compressor);
 
   int Opt = WilsonKernelsStatic::Opt;
+  auto U_v  = U.View();
+  auto in_v = in.View();
+  auto out_v= out.View();
   if (dag == DaggerYes) {
-    accelerator_loop( sss,in, {
-      Kernels::DhopSiteDag(Opt,st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
+    accelerator_loop( sss,in_v, {
+      Kernels::DhopSiteDag(Opt,st, lo, U_v, st.CommBuf(), sss, sss, 1, 1, in_v, out_v);
     });
   } else {
-    accelerator_loop( sss,in, {
-      Kernels::DhopSite(Opt,st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
+    accelerator_loop( sss,in_v, {
+      Kernels::DhopSite(Opt,st, lo, U_v, st.CommBuf(), sss, sss, 1, 1, in_v, out_v);
     });
   }
 };
@@ -367,15 +375,21 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
   // Inefficient comms method but not performance critical.
   tmp1 = Cshift(q_in_1, mu, 1);
   tmp2 = Cshift(q_in_2, mu, 1);
+  auto tmp1_v  =  tmp1.View();
+  auto tmp2_v  =  tmp2.View();
+  auto q_in_1_v=q_in_1.View();
+  auto q_in_2_v=q_in_2.View();
+  auto q_out_v = q_out.View();
+  auto Umu_v   =   Umu.View();
   thread_loop( (unsigned int sU = 0; sU < Umu.Grid()->oSites(); ++sU), {
-      Kernels::ContractConservedCurrentSiteFwd(tmp1[sU],
-					       q_in_2[sU],
-					       q_out[sU],
-					       Umu, sU, mu);
-      Kernels::ContractConservedCurrentSiteBwd(q_in_1[sU],
-					       tmp2[sU],
-					       q_out[sU],
-					       Umu, sU, mu);
+      Kernels::ContractConservedCurrentSiteFwd(tmp1_v[sU],
+					       q_in_2_v[sU],
+					       q_out_v[sU],
+					       Umu_v, sU, mu);
+      Kernels::ContractConservedCurrentSiteBwd(q_in_1_v[sU],
+					       tmp2_v[sU],
+					       q_out_v[sU],
+					       Umu_v, sU, mu);
   });
 }
 
@@ -415,34 +429,40 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   tmp = ph*q_in;
   tmpBwd = Cshift(tmp, mu, -1);
 
+  auto coords_v = coords.View();
+  auto tmpFwd_v = tmpFwd.View();
+  auto tmpBwd_v = tmpBwd.View();
+  auto Umu_v    = Umu.View();
+  auto q_out_v  = q_out.View();
+
   thread_loop( (unsigned int sU = 0; sU < Umu.Grid()->oSites(); ++sU), {
 
     // Compute the sequential conserved current insertion only if our simd
     // object contains a timeslice we need.
-    vInteger t_mask   = ((coords[sU] >= tmin) &&
-			 (coords[sU] <= tmax));
+    vInteger t_mask   = ((coords_v[sU] >= tmin) &&
+			 (coords_v[sU] <= tmax));
     Integer timeSlices = Reduce(t_mask);
 
     if (timeSlices > 0) {
-      Kernels::SeqConservedCurrentSiteFwd(tmpFwd[sU], 
-					  q_out[sU], 
-					  Umu, sU, mu, t_mask);
+      Kernels::SeqConservedCurrentSiteFwd(tmpFwd_v[sU], 
+					  q_out_v[sU], 
+					  Umu_v, sU, mu, t_mask);
     }
 
     // Repeat for backward direction.
-    t_mask     = ((coords[sU] >= (tmin + tshift)) && 
-		  (coords[sU] <= (tmax + tshift)));
+    t_mask     = ((coords_v[sU] >= (tmin + tshift)) && 
+		  (coords_v[sU] <= (tmax + tshift)));
     
     //if tmax = LLt-1 (last timeslice) include timeslice 0 if the time is shifted (mu=3)	
     unsigned int t0 = 0;
-    if((tmax==LLt-1) && (tshift==1)) t_mask = (t_mask || (coords[sU] == t0 ));
+    if((tmax==LLt-1) && (tshift==1)) t_mask = (t_mask || (coords_v[sU] == t0 ));
     
     timeSlices = Reduce(t_mask);
 
     if (timeSlices > 0) {
-      Kernels::SeqConservedCurrentSiteBwd(tmpBwd[sU], 
-					  q_out[sU], 
-					  Umu, sU, mu, t_mask);
+      Kernels::SeqConservedCurrentSiteBwd(tmpBwd_v[sU], 
+					  q_out_v[sU], 
+					  Umu_v, sU, mu, t_mask);
     }
   });
 }

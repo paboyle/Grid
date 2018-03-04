@@ -244,11 +244,14 @@ void WilsonFermion5D<Impl>::DhopDir(const FermionField &in, FermionField &out,in
   assert(dirdisp<=7);
   assert(dirdisp>=0);
 
+  auto Umu_v = Umu.View();
+  auto in_v  = in.View();
+  auto out_v = out.View();
   thread_loop( (int ss=0;ss<Umu.Grid()->oSites();ss++),{
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
-      Kernels::DhopDirK(Stencil,Umu,Stencil.CommBuf(),sF,sU,in,out,dirdisp,gamma);
+      Kernels::DhopDirK(Stencil,Umu_v,Stencil.CommBuf(),sF,sU,in_v,out_v,dirdisp,gamma);
     }
   });
 };
@@ -279,7 +282,6 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
   Atilde=A;
   int LLs = B.Grid()->_rdimensions[0];
 
-
   DerivComputeTime-=usecond();
   for (int mu = 0; mu < Nd; mu++) {
     ////////////////////////////////////////////////////////////////////////
@@ -293,15 +295,20 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
     ////////////////////////
 
     DerivDhopComputeTime -= usecond();
+    auto U_v = U.View();
+    auto Btilde_v = Btilde.View();
+    auto B_v = B.View();
+    int Bsites = B.Grid()->oSites();
+    int Usites = U.Grid()->oSites();
     thread_loop( (int sss = 0; sss < U.Grid()->oSites(); sss++) ,{
       for (int s = 0; s < Ls; s++) {
         int sU = sss;
         int sF = s + Ls * sU;
 
-        assert(sF < B.Grid()->oSites());
-        assert(sU < U.Grid()->oSites());
+        assert(sF < Bsites);
+        assert(sU < Usites);
 
-        Kernels::DhopDirK(st, U, st.CommBuf(), sF, sU, B, Btilde, mu, gamma);
+        Kernels::DhopDirK(st, U_v, st.CommBuf(), sF, sU, B_v, Btilde_v, mu, gamma);
 
         ////////////////////////////
         // spin trace outer product
@@ -406,6 +413,9 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   // Ugly explicit thread mapping introduced for OPA reasons.
   //////////////////////////////////////////////////////////////////////////////////////////////////////
+  auto U_v   = U.View();
+  auto in_v  = in.View();
+  auto out_v = out.View();
 #pragma omp parallel reduction(max:ctime) reduction(max:ptime)
   { 
     int tid = omp_get_thread_num();
@@ -435,13 +445,13 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 	for (int ss = myblock; ss < myblock+myn; ++ss) {
 	  int sU = ss;
 	  int sF = LLs * sU;
-	  Kernels::DhopSiteDag(Opt,st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,1,0);
+	  Kernels::DhopSiteDag(Opt,st,lo,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v,1,0);
 	}
       } else {
 	for (int ss = myblock; ss < myblock+myn; ++ss) {
 	  int sU = ss;
 	  int sF = LLs * sU;
-	  Kernels::DhopSite(Opt,st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,1,0);
+	  Kernels::DhopSite(Opt,st,lo,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v,1,0);
 	}
       }
       ptime = usecond() - start;
@@ -470,14 +480,14 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
     thread_loop( (int ss = 0; ss < sz; ss++) ,{
       int sU = st.surface_list[ss];
       int sF = LLs * sU;
-      Kernels::DhopSiteDag(Opt,st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
+      Kernels::DhopSiteDag(Opt,st,lo,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v,0,1);
     });
   } else {
     int sz=st.surface_list.size();
     thread_loop( (int ss = 0; ss < sz; ss++) ,{
       int sU = st.surface_list[ss];
       int sF = LLs * sU;
-      Kernels::DhopSite(Opt,st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
+      Kernels::DhopSite(Opt,st,lo,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v,0,1);
     });
   }
   DhopComputeTime2+=usecond();
@@ -505,17 +515,20 @@ void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOr
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
 
   int Opt = WilsonKernelsStatic::Opt;
+  auto U_v   = U.View();
+  auto in_v  = in.View();
+  auto out_v = out.View();
   if (dag == DaggerYes) {
-    accelerator_loop( ss, U, {
+    accelerator_loop( ss, U_v, {
       int sU = ss;
       int sF = LLs * sU;
-      Kernels::DhopSiteDag(Opt,st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
+      Kernels::DhopSiteDag(Opt,st,lo,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v);
     });
   } else {
-    accelerator_loop( ss, U , {
+    accelerator_loop( ss, U_v , {
       int sU = ss;
       int sF = LLs * sU;
-      Kernels::DhopSite(Opt,st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
+      Kernels::DhopSite(Opt,st,lo,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v);
     });
   }
   DhopComputeTime+=usecond();
@@ -738,10 +751,17 @@ void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
   unsigned int LLs = q_in_1.Grid()->_rdimensions[0];
   q_out = Zero();
 
+  auto q_in_1_v = q_in_1.View();
+  auto q_in_2_v = q_in_2.View();
+  auto tmp1_v   = tmp1.View();
+  auto tmp2_v   = tmp2.View();
+  auto q_out_v  = q_out.View();
+  auto Umu_v    = Umu.View();
   // Forward, need q1(x + mu, s), q2(x, Ls - 1 - s). Backward, need q1(x, s), 
   // q2(x + mu, Ls - 1 - s). 5D lattice so shift 4D coordinate mu by one.
   tmp1 = Cshift(q_in_1, mu + 1, 1);
   tmp2 = Cshift(q_in_2, mu + 1, 1);
+
   thread_loop( (unsigned int sU = 0; sU < Umu.Grid()->oSites(); ++sU), {
     unsigned int sF1 = sU * LLs;
     unsigned int sF2 = (sU + 1) * LLs - 1;
@@ -755,20 +775,20 @@ void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
       // If vectorised in 5th dimension, reverse q2 vector to match up
       // sites correctly.
       if (Impl::LsVectorised) {
-	REVERSE_LS(q_in_2[sF2], qSite2, Ls / LLs);
-	REVERSE_LS(tmp2[sF2], qmuSite2, Ls / LLs);
+	REVERSE_LS(q_in_2_v[sF2], qSite2, Ls / LLs);
+	REVERSE_LS(tmp2_v[sF2], qmuSite2, Ls / LLs);
       } else {
-	qSite2   = q_in_2[sF2];
-	qmuSite2 = tmp2[sF2];
+	qSite2   = q_in_2_v[sF2];
+	qmuSite2 = tmp2_v[sF2];
       }
-      Kernels::ContractConservedCurrentSiteFwd(tmp1[sF1], 
+      Kernels::ContractConservedCurrentSiteFwd(tmp1_v[sF1], 
 					       qSite2, 
-					       q_out[sU],
-					       Umu, sU, mu, axial_sign);
-      Kernels::ContractConservedCurrentSiteBwd(q_in_1[sF1],
+					       q_out_v[sU],
+					       Umu_v, sU, mu, axial_sign);
+      Kernels::ContractConservedCurrentSiteBwd(q_in_1_v[sF1],
 					       qmuSite2,
-					       q_out[sU],
-					       Umu, sU, mu, axial_sign);
+					       q_out_v[sU],
+					       Umu_v, sU, mu, axial_sign);
       sF1++;
       sF2--;
     }
@@ -808,7 +828,7 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   q_out = Zero();
   LatticeInteger coords(_FourDimGrid);
   LatticeCoordinate(coords, Tp);
-
+  auto coords_v = coords.View();
   // Need q(x + mu, s) and q(x - mu, s). 5D lattice so shift 4D coordinate mu
   // by one.
   tmp = Cshift(q_in, mu + 1, 1);
@@ -816,11 +836,15 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   tmp = ph*q_in;
   tmpBwd = Cshift(tmp, mu + 1, -1);
 
+  auto tmpBwd_v = tmpBwd.View();
+  auto tmpFwd_v = tmpFwd.View();
+  auto q_out_v  = q_out.View();
+  auto Umu_v    = Umu.View();
   thread_loop( (unsigned int sU = 0; sU < Umu.Grid()->oSites(); ++sU) ,{
     // Compute the sequential conserved current insertion only if our simd
     // object contains a timeslice we need.
-    vInteger t_mask   = ((coords[sU] >= tmin) &&
-			 (coords[sU] <= tmax));
+    vInteger t_mask   = ((coords_v[sU] >= tmin) &&
+			 (coords_v[sU] <= tmax));
     Integer timeSlices = Reduce(t_mask);
       
     if (timeSlices > 0) {
@@ -828,20 +852,20 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
       unsigned int sF = sU * LLs;
       for (unsigned int s = 0; s < LLs; ++s) {
 	bool axial_sign = ((curr_type == Current::Axial) && (s < (LLs / 2)));
-	Kernels::SeqConservedCurrentSiteFwd(tmpFwd[sF], 
-					    q_out[sF], Umu, sU,
+	Kernels::SeqConservedCurrentSiteFwd(tmpFwd_v[sF], 
+					    q_out_v[sF], Umu_v, sU,
 					    mu, t_mask, axial_sign);
 	++sF;
       }
     }
 
     // Repeat for backward direction.
-    t_mask     = ((coords[sU] >= (tmin + tshift)) && 
-		  (coords[sU] <= (tmax + tshift)));
+    t_mask     = ((coords_v[sU] >= (tmin + tshift)) && 
+		  (coords_v[sU] <= (tmax + tshift)));
 
     //if tmax = LLt-1 (last timeslice) include timeslice 0 if the time is shifted (mu=3)	
     unsigned int t0 = 0;
-    if((tmax==LLt-1) && (tshift==1)) t_mask = (t_mask || (coords[sU] == t0 ));
+    if((tmax==LLt-1) && (tshift==1)) t_mask = (t_mask || (coords_v[sU] == t0 ));
     
     timeSlices = Reduce(t_mask);
 
@@ -849,8 +873,8 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
       unsigned int sF = sU * LLs;
       for (unsigned int s = 0; s < LLs; ++s) {
 	bool axial_sign = ((curr_type == Current::Axial) && (s < (LLs / 2)));
-	Kernels::SeqConservedCurrentSiteBwd(tmpBwd[sF], 
-					    q_out[sF], Umu, sU,
+	Kernels::SeqConservedCurrentSiteBwd(tmpBwd_v[sF], 
+					    q_out_v[sF], Umu_v, sU,
 					    mu, t_mask, axial_sign);
 	++sF;
       }

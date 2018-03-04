@@ -149,8 +149,8 @@ public:
   typedef typename Impl::Compressor               Compressor;		\
   typedef typename Impl::StencilImpl             StencilImpl;		\
   typedef typename Impl::ImplParams               ImplParams;	        \
-  typedef typename Impl::Coeff_t                     Coeff_t;           \
-  
+  typedef typename Impl::Coeff_t                     Coeff_t;           
+
 #define INHERIT_IMPL_TYPES(Base)		\
   INHERIT_GIMPL_TYPES(Base)			\
   INHERIT_FIMPL_TYPES(Base)
@@ -267,12 +267,14 @@ public:
     int Ls=Btilde.Grid()->_fdimensions[0];
     GaugeLinkField tmp(mat.Grid());
     tmp = Zero();
-      
+    auto tmp_v = tmp.View();
+    auto Btilde_v = Btilde.View();
+    auto Atilde_v = Atilde.View();
     thread_loop( (int sss=0;sss<tmp.Grid()->oSites();sss++),{
       int sU=sss;
       for(int s=0;s<Ls;s++){
 	int sF = s+Ls*sU;
-	tmp[sU] = tmp[sU]+ traceIndex<SpinIndex>(outerProduct(Btilde[sF],Atilde[sF])); // ordering here
+	tmp_v[sU] = tmp_v[sU]+ traceIndex<SpinIndex>(outerProduct(Btilde_v[sF],Atilde_v[sF])); // ordering here
       }
     });
     PokeIndex<LorentzIndex>(mat,tmp,mu);
@@ -499,13 +501,10 @@ public:
         
         
     const int Nsimd =vector_type::Nsimd();
-    //    const int Nsimd = grid->Nsimd();
-        
-    GridBase *grid= St.Grid();
     int direction = St._directions[mu];
     int distance  = St._distances[mu];
     int ptype     = St._permute_type[mu];
-    int sl        = grid->_simd_layout[direction];
+    int sl        = St._simd_layout[direction];
     
     // Fixme X.Y.Z.T hardcode in stencil
     int mmu = mu % Nd;
@@ -524,7 +523,7 @@ public:
 	extract(chi,vals);
 	for(int s=0;s<Nsimd;s++){
 
-	  grid->iCoorFromIindex(icoor,s);
+	  St.iCoorFromIindex(icoor,s);
               
 	  assert((icoor[direction]==0)||(icoor[direction]==1));
               
@@ -592,9 +591,13 @@ public:
 	Uconj = where(coor==neglink,-Uconj,Uconj);
       }
 	  
-      thread_loop( (auto ss=U.begin();ss<U.end();ss++),{
-	Uds[ss](0)(mu) = U[ss]();
-	Uds[ss](1)(mu) = Uconj[ss]();
+      auto U_v = U.View();
+      auto Uds_v = Uds.View();
+      auto Uconj_v = Uconj.View();
+      auto Utmp_v= Utmp.View();
+      thread_loop( (auto ss=U_v.begin();ss<U_v.end();ss++),{
+	Uds_v[ss](0)(mu) = U_v[ss]();
+	Uds_v[ss](1)(mu) = Uconj_v[ss]();
       });
           
       U     = adj(Cshift(U    ,mu,-1));      // correct except for spanning the boundary
@@ -605,9 +608,8 @@ public:
 	Utmp = where(coor==0,Uconj,Utmp);
       }
 
-	  
-      thread_loop((auto ss=U.begin();ss<U.end();ss++),{
-	Uds[ss](0)(mu+4) = Utmp[ss]();
+      thread_loop((auto ss=Utmp_v.begin();ss<Utmp_v.end();ss++),{
+	Uds_v[ss](0)(mu+4) = Utmp_v[ss]();
       });
           
       Utmp = Uconj;
@@ -615,8 +617,8 @@ public:
 	Utmp = where(coor==0,U,Utmp);
       }
 	  
-      thread_loop((auto ss=U.begin();ss<U.end();ss++),{
-        Uds[ss](1)(mu+4) = Utmp[ss]();
+      thread_loop((auto ss=Utmp_v.begin();ss<Utmp_v.end();ss++),{
+        Uds_v[ss](1)(mu+4) = Utmp_v[ss]();
       });
           
     }
@@ -628,8 +630,10 @@ public:
     GaugeLinkField link(mat.Grid());
     // use lorentz for flavour as hack.
     auto tmp = TraceIndex<SpinIndex>(outerProduct(Btilde, A));
-    thread_loop((auto ss = tmp.begin(); ss < tmp.end(); ss++), {
-      link[ss]() = tmp[ss](0, 0) + conjugate(tmp[ss](1, 1));
+    auto link_v = link.View();
+    auto tmp_v = tmp.View();
+    thread_loop((auto ss = tmp_v.begin(); ss < tmp_v.end(); ss++), {
+      link_v[ss]() = tmp_v[ss](0, 0) + conjugate(tmp_v[ss](1, 1));
     });
     PokeIndex<LorentzIndex>(mat, link, mu);
     return;
@@ -641,11 +645,14 @@ public:
         
     GaugeLinkField tmp(mat.Grid());
     tmp = Zero();
+    auto tmp_v = tmp.View();
+    auto Atilde_v = Atilde.View();
+    auto Btilde_v = Btilde.View();
     thread_loop((int ss = 0; ss < tmp.Grid()->oSites(); ss++) ,{
       for (int s = 0; s < Ls; s++) {
 	int sF = s + Ls * ss;
-	auto ttmp = traceIndex<SpinIndex>(outerProduct(Btilde[sF], Atilde[sF]));
-	tmp[ss]() = tmp[ss]() + ttmp(0, 0) + conjugate(ttmp(1, 1));
+	auto ttmp = traceIndex<SpinIndex>(outerProduct(Btilde_v[sF], Atilde_v[sF]));
+	tmp_v[ss]() = tmp_v[ss]() + ttmp(0, 0) + conjugate(ttmp(1, 1));
       }
     });
     PokeIndex<LorentzIndex>(mat, tmp, mu);

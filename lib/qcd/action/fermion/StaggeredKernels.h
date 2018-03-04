@@ -46,30 +46,34 @@ public:
    
   INHERIT_IMPL_TYPES(Impl);
   typedef FermionOperator<Impl> Base;
+
+  typedef typename ViewMap<FermionField>::Type      FermionFieldView;
+  typedef typename ViewMap<DoubledGaugeField>::Type DoubledGaugeFieldView;
+   
    
 public:
     
-  void DhopDirK(StencilImpl &st, DoubledGaugeField &U, DoubledGaugeField &UUU, SiteSpinor * buf,
-	       int sF, int sU, const FermionField &in, FermionField &out, int dir,int disp);
+  void DhopDirK(StencilImpl &st, DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, SiteSpinor * buf,
+	       int sF, int sU, const FermionFieldView &in, FermionFieldView &out, int dir,int disp);
 
-  void DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteSpinor * buf,
-		     int sF, int sU, const FermionField &in, SiteSpinor &out,int threeLink);
+  void DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteSpinor * buf,
+		     int sF, int sU, const FermionFieldView &in, SiteSpinor &out,int threeLink);
 
 
-  void DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteSpinor * buf,
-			 int sF, int sU, const FermionField &in, SiteSpinor&out,int threeLink);
+  void DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, SiteSpinor * buf,
+			 int sF, int sU, const FermionFieldView &in, SiteSpinor&out,int threeLink);
 
-  void DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU,SiteSpinor * buf,
-		    int LLs, int sU, const FermionField &in, FermionField &out, int dag);
+  void DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,SiteSpinor * buf,
+		    int LLs, int sU, const FermionFieldView &in, FermionFieldView &out, int dag);
 
-  void DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU, SiteSpinor * buf,
-		   int LLs, int sU, const FermionField &in, FermionField &out);
+  void DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, SiteSpinor * buf,
+		   int LLs, int sU, const FermionFieldView &in, FermionFieldView &out);
       
-  void DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU, SiteSpinor * buf,
-		int sF, int sU, const FermionField &in, FermionField &out);
+  void DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, SiteSpinor * buf,
+		int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
 
-  void DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU, SiteSpinor *buf, 
-                   int LLs, int sU, const FermionField &in, FermionField &out);
+  void DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, SiteSpinor *buf, 
+                   int LLs, int sU, const FermionFieldView &in, FermionFieldView &out);
   
 public:
 

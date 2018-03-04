@@ -51,14 +51,18 @@ void CayleyFermion5D<Impl>::MooeeInv(const FermionField &psi, FermionField &chi)
   this->MooeeInternal(psi,chi,DaggerNo,InverseYes);
 }
 template<class Impl>  
-void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
-				const FermionField &phi, 
-				FermionField &chi,
+void CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
+				const FermionField &phi_i, 
+				FermionField &chi_i,
 				std::vector<Coeff_t> &lower,
 				std::vector<Coeff_t> &diag,
 				std::vector<Coeff_t> &upper)
 {
-  GridBase *grid=psi.Grid();
+  chi_i.Checkerboard()=psi_i.Checkerboard();
+  GridBase *grid=psi_i.Grid();
+  auto psi = psi_i.View();
+  auto phi = phi_i.View();
+  auto chi = chi_i.View();
   int Ls   = this->Ls;
   int LLs  = grid->_rdimensions[0];
   const int nsimd= Simd::Nsimd();
@@ -69,8 +73,6 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
 
   assert(Ls/LLs==nsimd);
   assert(phi.Checkerboard() == psi.Checkerboard());
-
-  chi.Checkerboard()=psi.Checkerboard();
 
   // just directly address via type pun
   typedef typename Simd::scalar_type scalar_type;
@@ -124,7 +126,7 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
     }
 #else
     for(int v=0;v<LLs;v++){
-
+      
       vprefetch(psi[ss+v+LLs]);
 
       int vp= (v==LLs-1) ? 0     : v+1;
@@ -195,14 +197,18 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
 }
 
 template<class Impl>  
-void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
-				   const FermionField &phi, 
-				   FermionField &chi,
+void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
+				   const FermionField &phi_i, 
+				   FermionField &chi_i,
 				   std::vector<Coeff_t> &lower,
 				   std::vector<Coeff_t> &diag,
 				   std::vector<Coeff_t> &upper)
 {
-  GridBase *grid=psi.Grid();
+  chi_i.Checkerboard()=psi_i.Checkerboard();
+  GridBase *grid=psi_i.Grid();
+  auto psi=psi_i.View();
+  auto phi=phi_i.View();
+  auto chi=chi_i.View();
   int Ls   = this->Ls;
   int LLs  = grid->_rdimensions[0];
   int nsimd= Simd::Nsimd();
@@ -213,8 +219,6 @@ void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
 
   assert(Ls/LLs==nsimd);
   assert(phi.Checkerboard() == psi.Checkerboard());
-
-  chi.Checkerboard()=psi.Checkerboard();
 
   // just directly address via type pun
   typedef typename Simd::scalar_type scalar_type;
@@ -339,11 +343,13 @@ void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
 #endif 
 
 template<class Impl>
-void CayleyFermion5D<Impl>::MooeeInternalAsm(const FermionField &psi, FermionField &chi,
+void CayleyFermion5D<Impl>::MooeeInternalAsm(const FermionField &psi_i, FermionField &chi_i,
 					     int LLs, int site,
 					     Vector<iSinglet<Simd> > &Matp,
 					     Vector<iSinglet<Simd> > &Matm)
 {
+  auto psi = psi_i.View();
+  auto chi = chi_i.View();
 #ifndef AVX512
   {
     SiteHalfSpinor BcastP;
@@ -513,11 +519,14 @@ void CayleyFermion5D<Impl>::MooeeInternalAsm(const FermionField &psi, FermionFie
 
 // Z-mobius version
 template<class Impl>
-void CayleyFermion5D<Impl>::MooeeInternalZAsm(const FermionField &psi, FermionField &chi,
+void CayleyFermion5D<Impl>::MooeeInternalZAsm(const FermionField &psi_i, FermionField &chi_i,
 					      int LLs, int site, Vector<iSinglet<Simd> > &Matp, Vector<iSinglet<Simd> > &Matm)
 {
 #ifndef AVX512
   {
+    auto psi = psi_i.View();
+    auto chi = chi_i.View();
+
     SiteHalfSpinor BcastP;
     SiteHalfSpinor BcastM;
     SiteHalfSpinor SiteChiP;
@@ -761,11 +770,12 @@ void CayleyFermion5D<Impl>::MooeeInternalZAsm(const FermionField &psi, FermionFi
 template<class Impl>
 void CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv)
 {
+  chi.Checkerboard()=psi.Checkerboard();
+
   int Ls=this->Ls;
   int LLs = psi.Grid()->_rdimensions[0];
   int vol = psi.Grid()->oSites()/LLs;
 
-  chi.Checkerboard()=psi.Checkerboard();
   
   Vector<iSinglet<Simd> >  Matp;
   Vector<iSinglet<Simd> >  Matm;

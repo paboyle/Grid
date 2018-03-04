@@ -573,8 +573,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 template<class Impl> void 
-WilsonKernels<Impl>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf,
-					  int ss,int sU,const FermionField &in, FermionField &out)
+WilsonKernels<Impl>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
+				  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
@@ -600,8 +600,8 @@ WilsonKernels<Impl>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGauge
 }
 
 template<class Impl>
-void WilsonKernels<Impl>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-						  int ss,int sU,const FermionField &in, FermionField &out)
+void WilsonKernels<Impl>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+						  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -626,8 +626,8 @@ void WilsonKernels<Impl>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,Doub
 }
 
 template<class Impl> void 
-WilsonKernels<Impl>::HandDhopSiteInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf,
-					  int ss,int sU,const FermionField &in, FermionField &out)
+WilsonKernels<Impl>::HandDhopSiteInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
+					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
@@ -654,8 +654,8 @@ WilsonKernels<Impl>::HandDhopSiteInt(StencilImpl &st,LebesgueOrder &lo,DoubledGa
 }
 
 template<class Impl>
-void WilsonKernels<Impl>::HandDhopSiteDagInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-						  int ss,int sU,const FermionField &in, FermionField &out)
+void WilsonKernels<Impl>::HandDhopSiteDagInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+						  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -681,8 +681,8 @@ void WilsonKernels<Impl>::HandDhopSiteDagInt(StencilImpl &st,LebesgueOrder &lo,D
 }
 
 template<class Impl> void 
-WilsonKernels<Impl>::HandDhopSiteExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf,
-					  int ss,int sU,const FermionField &in, FermionField &out)
+WilsonKernels<Impl>::HandDhopSiteExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
+					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
@@ -711,8 +711,8 @@ WilsonKernels<Impl>::HandDhopSiteExt(StencilImpl &st,LebesgueOrder &lo,DoubledGa
 }
 
 template<class Impl>
-void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-						  int ss,int sU,const FermionField &in, FermionField &out)
+void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+						  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -746,58 +746,58 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
   template<> void							\
   WilsonKernels<IMPL>::HandDhopSite(StencilImpl &st,			\
 				    LebesgueOrder &lo,			\
-				    DoubledGaugeField &U,		\
+				    DoubledGaugeFieldView &U,		\
 				    SiteHalfSpinor *buf,		\
 				    int sF,int sU,			\
-				    const FermionField &in,		\
-				    FermionField &out){ assert(0); }	\
+				    const FermionFieldView &in,		\
+				    FermionFieldView &out){ assert(0); }	\
   template<> void							\
   WilsonKernels<IMPL>::HandDhopSiteDag(StencilImpl &st,			\
 				    LebesgueOrder &lo,			\
-				    DoubledGaugeField &U,		\
+				    DoubledGaugeFieldView &U,		\
 				    SiteHalfSpinor *buf,		\
 				    int sF,int sU,			\
-				    const FermionField &in,		\
-				    FermionField &out){ assert(0); }	\
+				    const FermionFieldView &in,		\
+				    FermionFieldView &out){ assert(0); }	\
   template<> void							\
   WilsonKernels<IMPL>::HandDhopSiteInt(StencilImpl &st,			\
 				    LebesgueOrder &lo,			\
-				    DoubledGaugeField &U,		\
+				    DoubledGaugeFieldView &U,		\
 				    SiteHalfSpinor *buf,		\
 				    int sF,int sU,			\
-				    const FermionField &in,		\
-				    FermionField &out){ assert(0); }	\
+				    const FermionFieldView &in,		\
+				    FermionFieldView &out){ assert(0); }	\
   template<> void							\
   WilsonKernels<IMPL>::HandDhopSiteExt(StencilImpl &st,			\
 				    LebesgueOrder &lo,			\
-				    DoubledGaugeField &U,		\
+				    DoubledGaugeFieldView &U,		\
 				    SiteHalfSpinor *buf,		\
 				    int sF,int sU,			\
-				    const FermionField &in,		\
-				    FermionField &out){ assert(0); }	\
+				    const FermionFieldView &in,		\
+				    FermionFieldView &out){ assert(0); }	\
   template<> void							\
   WilsonKernels<IMPL>::HandDhopSiteDagInt(StencilImpl &st,	       	\
 				    LebesgueOrder &lo,			\
-				    DoubledGaugeField &U,		\
+				    DoubledGaugeFieldView &U,		\
 				    SiteHalfSpinor *buf,		\
 				    int sF,int sU,			\
-				    const FermionField &in,		\
-				    FermionField &out){ assert(0); }	\
+				    const FermionFieldView &in,		\
+				    FermionFieldView &out){ assert(0); }	\
   template<> void							\
   WilsonKernels<IMPL>::HandDhopSiteDagExt(StencilImpl &st,	       	\
 				    LebesgueOrder &lo,			\
-				    DoubledGaugeField &U,		\
+				    DoubledGaugeFieldView &U,		\
 				    SiteHalfSpinor *buf,		\
 				    int sF,int sU,			\
-				    const FermionField &in,		\
-				    FermionField &out){ assert(0); }	\
+				    const FermionFieldView &in,		\
+				    FermionFieldView &out){ assert(0); }	\
 
 
 
 #define HAND_SPECIALISE_GPARITY(IMPL)					\
   template<> void							\
-  WilsonKernels<IMPL>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf, \
-				    int ss,int sU,const FermionField &in, FermionField &out) \
+  WilsonKernels<IMPL>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor  *buf, \
+				    int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
   {									\
     typedef IMPL Impl;							\
     typedef typename Simd::scalar_type S;				\
@@ -812,8 +812,8 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
   }									\
 									\
   template<>								\
-  void WilsonKernels<IMPL>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf, \
-					    int ss,int sU,const FermionField &in, FermionField &out) \
+  void WilsonKernels<IMPL>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
+					    int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
   {									\
     typedef IMPL Impl;							\
     typedef typename Simd::scalar_type S;				\
@@ -828,8 +828,8 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
   }									\
 									\
   template<> void							\
-  WilsonKernels<IMPL>::HandDhopSiteInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf, \
-						     int ss,int sU,const FermionField &in, FermionField &out) \
+  WilsonKernels<IMPL>::HandDhopSiteInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor  *buf, \
+						     int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
   {									\
     typedef IMPL Impl;							\
     typedef typename Simd::scalar_type S;				\
@@ -844,8 +844,8 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
   }									\
 									\
   template<>								\
-  void WilsonKernels<IMPL>::HandDhopSiteDagInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf, \
-							     int ss,int sU,const FermionField &in, FermionField &out) \
+  void WilsonKernels<IMPL>::HandDhopSiteDagInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
+							     int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
   {									\
     typedef IMPL Impl;							\
     typedef typename Simd::scalar_type S;				\
@@ -860,8 +860,8 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
   }									\
 									\
   template<> void							\
-  WilsonKernels<IMPL>::HandDhopSiteExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf, \
-						     int ss,int sU,const FermionField &in, FermionField &out) \
+  WilsonKernels<IMPL>::HandDhopSiteExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor  *buf, \
+						     int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
   {									\
     typedef IMPL Impl;							\
     typedef typename Simd::scalar_type S;				\
@@ -877,8 +877,8 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
     HAND_DOP_SITE_EXT(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
   }									\
   template<>								\
-  void WilsonKernels<IMPL>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf, \
-							     int ss,int sU,const FermionField &in, FermionField &out) \
+  void WilsonKernels<IMPL>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
+							     int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
   {									\
     typedef IMPL Impl;							\
     typedef typename Simd::scalar_type S;				\
@@ -904,18 +904,18 @@ HAND_SPECIALISE_GPARITY(GparityWilsonImplDF);
 ////////////// Wilson ; uses this implementation /////////////////////
 
 #define INSTANTIATE_THEM(A) \
-template void WilsonKernels<A>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,\
-					     int ss,int sU,const FermionField &in, FermionField &out); \
-template void WilsonKernels<A>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf, \
-						int ss,int sU,const FermionField &in, FermionField &out);\
-template void WilsonKernels<A>::HandDhopSiteInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,\
-						int ss,int sU,const FermionField &in, FermionField &out); \
-template void WilsonKernels<A>::HandDhopSiteDagInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf, \
-						   int ss,int sU,const FermionField &in, FermionField &out); \
-template void WilsonKernels<A>::HandDhopSiteExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,\
-						int ss,int sU,const FermionField &in, FermionField &out); \
-template void WilsonKernels<A>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf, \
-						   int ss,int sU,const FermionField &in, FermionField &out); 
+template void WilsonKernels<A>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,\
+					     int ss,int sU,const FermionFieldView &in, FermionFieldView &out); \
+template void WilsonKernels<A>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
+						int ss,int sU,const FermionFieldView &in, FermionFieldView &out);\
+template void WilsonKernels<A>::HandDhopSiteInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,\
+						int ss,int sU,const FermionFieldView &in, FermionFieldView &out); \
+template void WilsonKernels<A>::HandDhopSiteDagInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
+						   int ss,int sU,const FermionFieldView &in, FermionFieldView &out); \
+template void WilsonKernels<A>::HandDhopSiteExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,\
+						int ss,int sU,const FermionFieldView &in, FermionFieldView &out); \
+template void WilsonKernels<A>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
+						   int ss,int sU,const FermionFieldView &in, FermionFieldView &out); 
 
 INSTANTIATE_THEM(WilsonImplF);
 INSTANTIATE_THEM(WilsonImplD);
