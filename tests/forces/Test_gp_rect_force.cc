@@ -57,9 +57,9 @@ int main (int argc, char ** argv)
   SU3::HotConfiguration(pRNG,U);
   
   double beta = 1.0;
-
-  //GparityPlaqPlusRectangleActionR Action(beta,c1);
-  ConjugateWilsonGaugeActionR Action(beta);
+  double c1   = -1.0/12.0;
+  ConjugatePlaqPlusRectangleActionR Action(beta,c1);
+  //ConjugateWilsonGaugeActionR Action(beta);
   //WilsonGaugeActionR Action(beta);
 
   ComplexD S    = Action.S(U);
@@ -72,7 +72,7 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   // Modify the gauge field a little 
   ////////////////////////////////////
-  RealD dt = 0.0001;
+  RealD dt = 0.001;
 
   LatticeColourMatrix mommu(&Grid); 
   LatticeColourMatrix forcemu(&Grid); 

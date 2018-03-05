@@ -73,17 +73,19 @@ public:
     //GaugeLinkField Umu(U.Grid());
     GaugeLinkField dSdU_mu(U.Grid());
     for (int mu = 0; mu < Nd; mu++) {
-      //Umu = PeekIndex<LorentzIndex>(U, mu);
 
-      // Staple in direction mu
-      //WilsonLoops<Gimpl>::Staple(dSdU_mu, U, mu);
-      //dSdU_mu = Ta(Umu * dSdU_mu) * factor;
+      GaugeLinkField Umu(U.Grid());
+      GaugeLinkField dSdU_mu(U.Grid());
+      for (int mu = 0; mu < Nd; mu++) {
+	Umu = PeekIndex<LorentzIndex>(U, mu);
+ 
+	// Staple in direction mu
+	WilsonLoops<Gimpl>::Staple(dSdU_mu, U, mu);
+	dSdU_mu = Ta(Umu * dSdU_mu) * factor;
+ 
+	PokeIndex<LorentzIndex>(dSdU, dSdU_mu, mu);
 
-  
-      WilsonLoops<Gimpl>::StapleMult(dSdU_mu, U, mu);
-      dSdU_mu = Ta(dSdU_mu) * factor;
-
-      PokeIndex<LorentzIndex>(dSdU, dSdU_mu, mu);
+      }
     }
   }
 private:
