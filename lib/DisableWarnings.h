@@ -30,6 +30,10 @@ directory
 #ifndef DISABLE_WARNINGS_H
 #define DISABLE_WARNINGS_H
 
+#if defined __GNUC__ && __GNUC__>=6
+#pragma GCC diagnostic ignored "-Wignored-attributes"
+#endif
+
  //disables and intel compiler specific warning (in json.hpp)
 #pragma warning disable 488  
 
