@@ -212,6 +212,7 @@ public:
 
 
 // For the force term
+/*
 static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
     GridBase *grid = Umu._grid;
     std::vector<GaugeMat> U(Nd, grid);
@@ -225,7 +226,7 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
 
     for (int nu = 0; nu < Nd; nu++) {
       if (nu != mu) {
-        // this is ~10% faster than the Staple
+        // this is ~10% faster than the Staple  -- PAB: so what it gives the WRONG answers for other BC's!
         tmp1 = Cshift(U[nu], mu, 1);
         tmp2 = Cshift(U[mu], nu, 1);
         staple += tmp1* adj(U[nu]*tmp2);
@@ -235,7 +236,7 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
     }
     staple = U[mu]*staple;
 }
-
+*/
   //////////////////////////////////////////////////
   // the sum over all staples on each site
   //////////////////////////////////////////////////
