@@ -33,42 +33,6 @@ Author: Guido Cossu <guido.cossu@ed.ac.uk>
 #include <type_traits>
 
 namespace Grid {
-  // Vector IO utilities ///////////////////////////////////////////////////////
-  // helper function to read space-separated values
-  template <typename T>
-  std::vector<T> strToVec(const std::string s)
-  {
-    std::istringstream sstr(s);
-    T                  buf;
-    std::vector<T>     v;
-    
-    while(!sstr.eof())
-    {
-      sstr >> buf;
-      v.push_back(buf);
-    }
-    
-    return v;
-  }
-  
-  // output to streams for vectors
-  template < class T >
-  inline std::ostream & operator<<(std::ostream &os, const std::vector<T> &v)
-  {
-    os << "[";
-    for (auto &x: v)
-    {
-      os << x << " ";
-    }
-    if (v.size() > 0)
-    {
-      os << "\b";
-    }
-    os << "]";
-    
-    return os;
-  }
-  
   // Vector element trait //////////////////////////////////////////////////////  
   template <typename T>
   struct element
@@ -151,15 +115,15 @@ namespace Grid {
     do
     {
       is.get(c);
-    } while (c != '<' && !is.eof());
-    if (c == '<')
+    } while (c != '{' && !is.eof());
+    if (c == '{')
     {
       int start = is.tellg();
       do
       {
         is.get(c);
-      } while (c != '>' && !is.eof());
-      if (c == '>')
+      } while (c != '}' && !is.eof());
+      if (c == '}')
       {
         int end = is.tellg();
         int psize = end - start - 1;
@@ -182,7 +146,43 @@ namespace Grid {
   template <class T1, class T2>
   inline std::ostream & operator<<(std::ostream &os, const std::pair<T1, T2> &p)
   {
-    os << "<" << p.first << " " << p.second << ">";
+    os << "{" << p.first << " " << p.second << "}";
+    return os;
+  }
+
+  // Vector IO utilities ///////////////////////////////////////////////////////
+  // helper function to read space-separated values
+  template <typename T>
+  std::vector<T> strToVec(const std::string s)
+  {
+    std::istringstream sstr(s);
+    T                  buf;
+    std::vector<T>     v;
+    
+    while(!sstr.eof())
+    {
+      sstr >> buf;
+      v.push_back(buf);
+    }
+    
+    return v;
+  }
+  
+  // output to streams for vectors
+  template < class T >
+  inline std::ostream & operator<<(std::ostream &os, const std::vector<T> &v)
+  {
+    os << "[";
+    for (auto &x: v)
+    {
+      os << x << " ";
+    }
+    if (v.size() > 0)
+    {
+      os << "\b";
+    }
+    os << "]";
+    
     return os;
   }
 

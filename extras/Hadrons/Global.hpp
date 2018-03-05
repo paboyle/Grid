@@ -43,12 +43,15 @@ See the full license in the file "LICENSE" in the top level distribution directo
 namespace Grid {\
 using namespace QCD;\
 namespace Hadrons {\
-using Grid::operator<<;
+using Grid::operator<<;\
+using Grid::operator>>;
 #define END_HADRONS_NAMESPACE }}
 
 #define BEGIN_MODULE_NAMESPACE(name)\
 namespace name {\
-using Grid::operator<<;
+using Grid::operator<<;\
+using Grid::operator>>;
+
 #define END_MODULE_NAMESPACE }
 
 /* the 'using Grid::operator<<;' statement prevents a very nasty compilation
