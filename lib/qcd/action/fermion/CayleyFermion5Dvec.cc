@@ -575,6 +575,8 @@ void CayleyFermion5D<Impl>::MooeeInternalZAsm(const FermionField &psi_i, Fermion
   }
 #else
   {
+    auto psi = psi_i.View();
+    auto chi = chi_i.View();
     // pointers
     //  MASK_REGS;
 #define Chi_00 %zmm0
