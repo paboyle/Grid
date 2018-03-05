@@ -113,9 +113,9 @@ public:
   RealD GCRnStep(LinearOperatorBase<Field> &Linop,const Field &src, Field &psi,RealD rsq){
 
     RealD cp;
-    RealD a, b, c, d;
+    RealD a, b;
     RealD zAz, zAAz;
-    RealD rAq, rq;
+    RealD rq;
 
     GridBase *grid = src.Grid();
 

@@ -177,7 +177,8 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
 	  for(int j=0;j<Nblock;j++){
 	    auto tmp = innerProduct(Left[i],Right[j]);
 	    auto rtmp = TensorRemove(tmp);
-	    mat_thread(i,j) += Reduce(rtmp);
+	    ComplexD z = Reduce(rtmp);
+	    mat_thread(i,j) += std::complex<double>(real(z),imag(z));
 	  }}
     }});
     thread_critical {

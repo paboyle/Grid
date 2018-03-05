@@ -71,8 +71,6 @@ int main(int argc, char** argv) {
 */
 
   RealD mass = -0.1;
-  RealD M5 = 1.8;
-  RealD mob_b = 1.5;
   FermionOp WilsonOperator(Umu,*FGrid,*FrbGrid,mass);
   MdagMLinearOperator<FermionOp,LatticeFermion> HermOp(WilsonOperator); /// <-----
   //SchurDiagTwoOperator<FermionOp,FermionField> HermOp(WilsonOperator);

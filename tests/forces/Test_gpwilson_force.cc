@@ -29,9 +29,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
-
- 
 
 int main (int argc, char ** argv)
 {
@@ -41,14 +38,11 @@ int main (int argc, char ** argv)
   Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   Coordinate mpi_layout  = GridDefaultMpi();
 
-  const int Ls=8;
-
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), 
 								   GridDefaultSimd(Nd,vComplex::Nsimd()),
 								   GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = UGrid;
-  GridRedBlackCartesian * FrbGrid = UrbGrid;
 
   std::vector<int> seeds4({1,2,3,4});
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
@@ -69,7 +63,6 @@ int main (int argc, char ** argv)
   // Unmodified matrix element
   ////////////////////////////////////
   RealD mass=0.01; 
-  RealD M5=1.8; 
 
   const int nu = 3;
   std::vector<int> twists(Nd,0);  twists[nu] = 1;

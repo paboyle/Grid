@@ -133,7 +133,7 @@ auto eval(const unsigned int ss, const LatticeTrinaryExpression<Op, T1, T2, T3> 
 // Perhaps a conformable method.
 //////////////////////////////////////////////////////////////////////////
 template <class T1,typename std::enable_if<is_lattice<T1>::value, T1>::type * = nullptr>
-inline void GridFromExpression(GridBase *&grid, const T1 &lat)  // Lattice leaf
+accelerator_inline void GridFromExpression(GridBase *&grid, const T1 &lat)  // Lattice leaf
 {
   lat.Conformable(grid);
 }
@@ -209,7 +209,7 @@ inline void CBFromExpression(int &cb, const LatticeTrinaryExpression<Op, T1, T2,
 #define GridUnopClass(name, ret)					\
   template <class arg>							\
   struct name {								\
-    static auto inline func(const arg a) -> decltype(ret) { return ret; } \
+    static auto accelerator_inline func(const arg a) -> decltype(ret) { return ret; } \
   };
 
 GridUnopClass(UnarySub, -a);
@@ -242,7 +242,8 @@ GridUnopClass(UnaryExp, exp(a));
 #define GridBinOpClass(name, combination)			\
   template <class left, class right>				\
   struct name {							\
-    static auto inline func(const left &lhs, const right &rhs)	\
+    static auto accelerator_inline				\
+    func(const left &lhs, const right &rhs)			\
       -> decltype(combination) const				\
     {								\
       return combination;					\
@@ -264,7 +265,8 @@ GridBinOpClass(BinaryOrOr, lhs || rhs);
 #define GridTrinOpClass(name, combination)				\
   template <class predicate, class left, class right>			\
   struct name {								\
-    static auto inline func(const predicate &pred, const left &lhs, const right &rhs) \
+    static auto accelerator_inline					\
+    func(const predicate &pred, const left &lhs, const right &rhs)	\
       -> decltype(combination) const					\
     {									\
       return combination;						\

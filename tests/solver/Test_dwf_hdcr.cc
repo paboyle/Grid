@@ -99,7 +99,6 @@ public:
     MdagMLinearOperator<Matrix,FineField>   fMdagMOp(_FineMatrix);
 
     p1=in;
-    RealD absp2;
     for(int i=0;i<20;i++){
       RealD absp1=std::sqrt(norm2(p1));
       fMdagMOp.HermOp(p1,p2);// this is the G5 herm bit      

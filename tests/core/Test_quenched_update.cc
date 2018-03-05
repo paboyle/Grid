@@ -58,7 +58,6 @@ int main (int argc, char ** argv)
   // SU3 colour operatoions
   LatticeColourMatrix link(grid);
   LatticeColourMatrix staple(grid);
-  int mu=0;
 
   // Apply heatbath to the link
   RealD beta=6.0;

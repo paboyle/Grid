@@ -63,7 +63,6 @@ int main (int argc, char ** argv)
   lex=Zero();
   Integer stride =1;
   {
-    double nrm;
     LatticeComplex coor(&Fine);
 
     for(int d=0;d<Nd;d++){

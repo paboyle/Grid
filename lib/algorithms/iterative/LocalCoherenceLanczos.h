@@ -57,7 +57,7 @@ public:
 				  RealD        , coarse_relax_tol,
 				  std::vector<int>, blockSize,
 				  std::string, config,
-				  std::vector < std::complex<double>  >, omega,
+				  std::vector < ComplexD  >, omega,
 				  RealD, mass,
 				  RealD, M5);
 };

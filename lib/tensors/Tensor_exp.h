@@ -66,14 +66,13 @@ accelerator_inline iMatrix<vtype,3> Exponentiate(const iMatrix<vtype,3> &arg, Re
   typedef iMatrix<vtype,3> mat;
   typedef iScalar<vtype> scalar;
   mat unit(1.0);
-  mat temp(unit);
   const Complex one_over_three = 1.0 / 3.0;
   const Complex one_over_two = 1.0 / 2.0;
 
   scalar c0, c1, tmp, c0max, theta, u, w;
   scalar xi0, u2, w2, cosw;
   scalar fden, h0, h1, h2;
-  scalar e2iu, emiu, ixi0, qt;
+  scalar e2iu, emiu, ixi0;
   scalar f0, f1, f2;
   scalar unity(1.0);
       

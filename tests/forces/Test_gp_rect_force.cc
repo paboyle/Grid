@@ -57,7 +57,6 @@ int main (int argc, char ** argv)
   SU3::HotConfiguration(pRNG,U);
   
   double beta = 1.0;
-  double c1   = 0.331;
 
   //GparityPlaqPlusRectangleActionR Action(beta,c1);
   ConjugateWilsonGaugeActionR Action(beta);

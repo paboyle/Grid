@@ -93,7 +93,6 @@ int main (int argc, char ** argv)
   }
   */
 
-  RealD mass=0.1;
   RealD M5  =1.8;
   typename WilsonFermion5DR::ImplParams params;
 

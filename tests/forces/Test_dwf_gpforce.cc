@@ -105,7 +105,6 @@ int main (int argc, char ** argv)
   RealD dt = 0.0001;
   RealD Hmom = 0.0;
   RealD Hmomprime = 0.0;
-  RealD Hmompp    = 0.0;
   LatticeColourMatrix mommu(UGrid); 
   LatticeColourMatrix forcemu(UGrid); 
   LatticeGaugeField mom(UGrid); 

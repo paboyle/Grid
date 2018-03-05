@@ -229,7 +229,7 @@ struct CompressedLanczosParams : Serializable {
 				  LanczosParams, CoarseParams,
 				  std::vector<int>, blockSize,
 				  std::string, config,
-				  std::vector < std::complex<double>  >, omega,
+				  std::vector < ComplexD  >, omega,
 				  RealD, mass,
 				  RealD, M5
 				  );

@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
 
   RealD mass = 0.01;
   RealD M5 = 1.8;
-  std::vector < std::complex<double>  > omegas;
+  std::vector < ComplexD  > omegas;
 #if 0
   for(int i=0;i<Ls;i++){
     double imag = 0.;

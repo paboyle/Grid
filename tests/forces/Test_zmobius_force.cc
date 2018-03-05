@@ -29,7 +29,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
 int main (int argc, char ** argv)
 {
@@ -70,7 +69,7 @@ int main (int argc, char ** argv)
   RealD b=0.5;
   RealD c=0.5;
 
-  std::vector < std::complex<double>  > omegas;
+  std::vector < ComplexD  > omegas;
   omegas.push_back( std::complex<double>(1.45806438985048,-0) );
   omegas.push_back( std::complex<double>(1.18231318389348,-0) );
   omegas.push_back( std::complex<double>(0.830951166685955,-0) );

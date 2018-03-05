@@ -84,7 +84,7 @@ int main (int argc, char ** argv)
 
   RealD mass=0.1;
   RealD M5  =1.8;
-  std::vector < std::complex<double>  > omegas;
+  std::vector < ComplexD  > omegas;
 #if 0
   for(int i=0;i<Ls;i++){
     double imag = 0.;
@@ -105,9 +105,25 @@ int main (int argc, char ** argv)
   omegas.push_back( std::complex<double>(0.0686324988446592,0.0550658530827402) );
   omegas.push_back( std::complex<double>(0.0686324988446592,-0.0550658530827402) );
 #endif
-
-  ZMobiusFermionR Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, omegas,1.,0.);
-//  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  /*
+  argument types are: (Grid::LatticeGaugeField, 
+		       Grid::GridCartesian, 
+		       Grid::GridRedBlackCartesian, 
+		       Grid::GridCartesian, 
+		       Grid::GridRedBlackCartesian, 
+		       Grid::RealD, 
+		       Grid::RealD, 
+		       std::__1::vector<std::__1::complex<double>, 
+		       std::__1::allocator<std::__1::complex<double>>>, double, double)
+  ZMobiusFermion(GaugeField &_Umu,
+		 GridCartesian         &FiveDimGrid,
+		 GridRedBlackCartesian &FiveDimRedBlackGrid,
+		 GridCartesian         &FourDimGrid,
+		 GridRedBlackCartesian &FourDimRedBlackGrid,
+		 RealD _mass,RealD _M5,
+		 std::vector<ComplexD> &gamma, RealD b,RealD c,const ImplParams &p= ImplParams()) : 
+  */
+  ZMobiusFermionR Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, omegas,RealD(1.),RealD(0.));
 
   LatticeFermion src_e (FrbGrid);
   LatticeFermion src_o (FrbGrid);

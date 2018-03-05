@@ -515,7 +515,6 @@ int main(int argc, char **argv) {
       double nrm = 0;
 
       LatticeColourMatrix deriv(&Fine);
-      double half = 0.5;
       deriv = 0.5 * Cshift(Foo, 0, 1) - 0.5 * Cshift(Foo, 0, -1);
 
       for (int dir = 0; dir < 4; dir++) {

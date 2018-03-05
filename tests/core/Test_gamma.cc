@@ -140,7 +140,6 @@ void checkGamma(const Gamma::Algebra a, GridSerialRNG &rng)
   SpinVector v;
   SpinMatrix m, &testg = testAlgebra[a];
   Gamma      g(a);
-  bool       pass = true;
   
   random(rng, v);
   random(rng, m);
@@ -159,7 +158,6 @@ void checkProd(const Gamma::Algebra a, const Gamma::Algebra b)
 {
   SpinMatrix gm, testg = testAlgebra[a]*testAlgebra[b];
   Gamma      g = Gamma(a)*Gamma(b);
-  bool       pass = true;
   
   std::cout << GridLogMessage << "Checking " << Gamma::name[a] << " * "
             << Gamma::name[b] << ": ";
@@ -173,7 +171,6 @@ void checkAdj(const Gamma::Algebra a)
 {
   SpinMatrix gm, testg = adj(testAlgebra[a]);
   Gamma      g(adj(Gamma(a)));
-  bool       pass = true;
   
   std::cout << GridLogMessage << "Checking adj(" << Gamma::name[a] << "): ";
   gm = 1.0;
@@ -215,7 +212,6 @@ void checkGammaL(const Gamma::Algebra a, GridSerialRNG &rng)
   SpinVector v;
   SpinMatrix m, &testg = testAlgebra[a], pl;
   GammaL     gl(a);
-  bool       pass = true;
   
   random(rng, v);
   random(rng, m);

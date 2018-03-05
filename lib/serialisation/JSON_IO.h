@@ -54,6 +54,18 @@ namespace Grid
     void pop(void);
     template <typename U>
     void writeDefault(const std::string &s, const U &x);
+#ifdef __NVCC__
+    void writeDefault(const std::string &s, const Grid::ComplexD &x) 
+    { 
+      std::complex<double> z(real(x),imag(x));
+      writeDefault(s,z);
+    }
+    void writeDefault(const std::string &s, const Grid::ComplexF &x) 
+    { 
+      std::complex<float> z(real(x),imag(x));
+      writeDefault(s,z);
+    }
+#endif
     template <typename U>
     void writeDefault(const std::string &s, const std::complex<U> &x);
     template <typename U>
@@ -89,6 +101,21 @@ namespace Grid
     void readDefault(const std::string &s, std::vector<U> &output);
     template <typename U, typename P>
     void readDefault(const std::string &s, std::pair<U,P> &output);
+#ifdef __NVCC__
+    void readDefault(const std::string &s, ComplexD &output)
+    { 
+      std::complex<double> z;
+      readDefault(s,z);
+      output = ComplexD(real(z),imag(z));
+    }
+    void readDefault(const std::string &s, ComplexF &output)
+    { 
+      std::complex<float> z;
+      readDefault(s,z);
+      output = ComplexD(real(z),imag(z));
+    }
+#endif
+
   private:
     json                jobject_; // main object
     json                jcur_;  // current json object
