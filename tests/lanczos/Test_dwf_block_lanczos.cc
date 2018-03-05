@@ -48,10 +48,13 @@ class CmdJobParams
     std::vector<ComplexD> omega;
     std::vector<ComplexD> boundary_phase;
     
+    LanczosType Impl;
     int Nu;
     int Nk;
     int Np;
+    int Nm;
     int Nstop;
+    int Ntest;
     int MaxIter;
     double resid;
     
@@ -61,10 +64,11 @@ class CmdJobParams
 
     CmdJobParams()
       : gaugefile("Hot"),
-        Ls(8), mass(0.01), M5(1.8), mob_b(1.5), 
-        Nu(4), Nk(200), Np(200), Nstop(100), MaxIter(10), resid(1.0e-8), 
+        Ls(8), mass(0.01), M5(1.8), mob_b(1.5),
+        Impl(LanczosType::irbl),
+        Nu(4), Nk(200), Np(200), Nstop(100), Ntest(1), MaxIter(10), resid(1.0e-8), 
         low(0.2), high(5.5), order(11)
-    {};
+    {Nm=Nk+Np;};
     
     void Parse(char **argv, int argc);
 };
@@ -155,6 +159,28 @@ void CmdJobParams::Parse(char **argv,int argc)
     Np = vi[2];
     Nstop = vi[3];
     MaxIter = vi[4];
+    // ypj[fixme] mode overriding message is needed.
+    Impl = LanczosType::irbl;
+    Nm = Nk+Np;
+  }
+  
+  // block Lanczos with explicit extension of its dimensions
+  if( GridCmdOptionExists(argv,argv+argc,"--rbl") ){
+    arg = GridCmdOptionPayload(argv,argv+argc,"--rbl");
+    GridCmdOptionIntVector(arg,vi);
+    Nu = vi[0];
+    Nk = vi[1];
+    Np = vi[2]; // vector space is enlarged by adding Np vectors
+    Nstop = vi[3];
+    MaxIter = vi[4];
+    // ypj[fixme] mode overriding message is needed.
+    Impl = LanczosType::rbl;
+    Nm = Nk+Np*MaxIter;
+  }
+  
+  if( GridCmdOptionExists(argv,argv+argc,"--check_int") ){
+    arg = GridCmdOptionPayload(argv,argv+argc,"--check_int");
+    GridCmdOptionInt(arg,Ntest);
   }
   
   if( GridCmdOptionExists(argv,argv+argc,"--resid") ){
@@ -193,7 +219,9 @@ void CmdJobParams::Parse(char **argv,int argc)
     std::cout << GridLogMessage <<" Nu "<< Nu << '\n'; 
     std::cout << GridLogMessage <<" Nk "<< Nk << '\n'; 
     std::cout << GridLogMessage <<" Np "<< Np << '\n'; 
+    std::cout << GridLogMessage <<" Nm "<< Nm << '\n'; 
     std::cout << GridLogMessage <<" Nstop "<< Nstop << '\n'; 
+    std::cout << GridLogMessage <<" Ntest "<< Ntest << '\n'; 
     std::cout << GridLogMessage <<" MaxIter "<< MaxIter << '\n'; 
     std::cout << GridLogMessage <<" resid "<< resid << '\n'; 
     std::cout << GridLogMessage <<" Cheby Poly "<< low << "," << high << "," << order << std::endl; 
@@ -230,6 +258,7 @@ int main (int argc, char ** argv)
   } else {
     FieldMetaData header;
     NerscIO::readConfiguration(Umu,header,JP.gaugefile);
+    // ypj [fixme] additional checks for the loaded configuration?
   }
   
   for(int mu=0;mu<Nd;mu++){
@@ -238,6 +267,8 @@ int main (int argc, char ** argv)
   
   RealD mass = JP.mass;
   RealD M5 = JP.M5;
+
+// ypj [fixme] flexible support for a various Fermions
 //  RealD mob_b = JP.mob_b;      // Gparity
 //  std::vector<ComplexD> omega; // ZMobius
   
@@ -254,10 +285,6 @@ int main (int argc, char ** argv)
   ZMobiusFermionR  Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,JP.omega,1.,0.,params);
   SchurDiagTwoOperator<ZMobiusFermionR,FermionField> HermOp(Ddwf);
 
-  int Nu = JP.Nu;
-  int Nk = JP.Nk;
-  int Nm = Nk+JP.Np;
-
   //std::vector<double> Coeffs { 0.,-1.}; 
   // ypj [note] this may not be supported by some compilers
   std::vector<double> Coeffs({ 0.,-1.}); 
@@ -267,23 +294,23 @@ int main (int argc, char ** argv)
 //  Cheb.csv(std::cout);
   ImplicitlyRestartedBlockLanczos<FermionField> IRBL(HermOp,
                                                      Cheb,
-                                                     JP.Nstop,
-                                                     Nu,Nk,Nm,
+                                                     JP.Nstop, JP.Ntest,
+                                                     JP.Nu, JP.Nk, JP.Nm,
                                                      JP.resid,
                                                      JP.MaxIter);
   
-  std::vector<RealD> eval(Nm);
+  std::vector<RealD> eval(JP.Nm);
   
-  std::vector<FermionField> src(Nu,FrbGrid);
-  for ( int i=0; i<Nu; ++i ) gaussian(RNG5rb,src[i]);
+  std::vector<FermionField> src(JP.Nu,FrbGrid);
+  for ( int i=0; i<JP.Nu; ++i ) gaussian(RNG5rb,src[i]);
   
-  std::vector<FermionField> evec(Nm,FrbGrid);
+  std::vector<FermionField> evec(JP.Nm,FrbGrid);
   for(int i=0;i<1;++i){
-    std::cout << GridLogMessage << i <<" / "<< Nm <<" grid pointer "<< evec[i]._grid << std::endl;
+    std::cout << GridLogMessage << i <<" / "<< JP.Nm <<" grid pointer "<< evec[i]._grid << std::endl;
   };
 
   int Nconv;
-  IRBL.calc(eval,evec,src,Nconv);
+  IRBL.calc(eval,evec,src,Nconv,JP.Impl);
 
 
   Grid_finalize();
