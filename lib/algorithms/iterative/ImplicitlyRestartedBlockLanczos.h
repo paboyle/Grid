@@ -440,41 +440,41 @@ public:
       
       // Convergence test
       Glog <<" #Convergence test: "<<std::endl;
+      Nconv = 0;
       for(int k = 0; k<Nr; ++k) B[k]=0.0;
       for(int j = 0; j<Nr; j+=Nconv_test_interval){
-        Glog <<" #rotation for evec" 
-             << std::setw(4)<< std::setiosflags(std::ios_base::right) 
-             << "["<< j <<"]" <<std::endl;
-	for(int k = 0; k<Nr; ++k){
-	  B[j].checkerboard = evec[k].checkerboard;
-	  B[j] += evec[k]*Qt(k,j);
-	}
-      }
-      
-      Nconv = 0;
-      for(int i=0; i<Nr; i+=Nconv_test_interval){
-	
-        _Linop.HermOp(B[i],v);
-	RealD vnum = real(innerProduct(B[i],v)); // HermOp.
-	RealD vden = norm2(B[i]);
-	eval2[i] = vnum/vden;
-	v -= eval2[i]*B[i];
-	RealD vv = norm2(v);
-        resid[i] = vv;
-	
-	std::cout.precision(13);
-        std::cout << "[" << std::setw(4)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
-	std::cout << "eval = "<<std::setw(20)<< std::setiosflags(std::ios_base::left)<< eval2[i];
-	std::cout << "   resid^2 = "<< std::setw(20)<< std::setiosflags(std::ios_base::right)<< vv<< std::endl;
-	
-	// change the criteria as evals are supposed to be sorted, all evals smaller(larger) than Nstop should have converged
-	//if( (vv<eresid*eresid) && (i == Nconv) ){
-	if (vv<eresid*eresid) {
-	  Iconv[Nconv] = i;
-	  ++Nconv;
-	}
-	
-      }  // i-loop end
+        if ( j/Nconv_test_interval == Nconv ) {
+          Glog <<" #rotation for next check point evec" 
+               << std::setw(4)<< std::setiosflags(std::ios_base::right) 
+               << "["<< j <<"]" <<std::endl;
+          for(int k = 0; k<Nr; ++k){
+            B[j].checkerboard = evec[k].checkerboard;
+            B[j] += evec[k]*Qt(k,j);
+          }
+          
+          _Linop.HermOp(B[j],v);
+          RealD vnum = real(innerProduct(B[j],v)); // HermOp.
+          RealD vden = norm2(B[j]);
+          eval2[j] = vnum/vden;
+          v -= eval2[j]*B[j];
+          RealD vv = norm2(v);
+          resid[j] = vv;
+          
+          std::cout.precision(13);
+          std::cout << "[" << std::setw(4)<< std::setiosflags(std::ios_base::right) <<j<<"] ";
+          std::cout << "eval = "<<std::setw(20)<< std::setiosflags(std::ios_base::left)<< eval2[j];
+          std::cout << "   resid^2 = "<< std::setw(20)<< std::setiosflags(std::ios_base::right)<< vv<< std::endl;
+          
+          // change the criteria as evals are supposed to be sorted, all evals smaller(larger) than Nstop should have converged
+          //if( (vv<eresid*eresid) && (i == Nconv) ){
+          if (vv<eresid*eresid) {
+            Iconv[Nconv] = j;
+            ++Nconv;
+          }
+        } else {
+          break;
+        }
+      }  // j-loop end
       
       Glog <<" #modes converged: "<<Nconv<<std::endl;
       for(int i=0; i<Nconv; ++i){
