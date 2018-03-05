@@ -49,9 +49,10 @@ template<class __T> using ExtractBuffer       = AcceleratorVector<__T  ,GRID_MAX
 ////////////////////////////////////////////////////////////////////////
 // Extract to contiguous array scalar object
 ////////////////////////////////////////////////////////////////////////
-template<class vobj,class sobj> accelerator_inline 
+template<class vobj,class sobj> accelerator
 void extract(const vobj &vec,ExtractBuffer<sobj> &extracted)
 {
+  typedef typename GridTypeMapper<sobj>::scalar_type sobj_scalar_type;
   typedef typename GridTypeMapper<vobj>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vobj>::vector_type vector_type;
 
@@ -60,21 +61,23 @@ void extract(const vobj &vec,ExtractBuffer<sobj> &extracted)
   const int Nextr=extracted.size();
   const int s=Nsimd/Nextr;
 
-  scalar_type *sp = (scalar_type *)&extracted[0];
+  sobj_scalar_type *sp = (sobj_scalar_type *)&extracted[0];
   scalar_type *vp = (scalar_type *)&vec;
   for(int w=0;w<words;w++){
     for(int i=0;i<Nextr;i++){
       sp[i*words+w] = vp[w*Nsimd+i*s] ;
     }
   }
+  return;
 }
 
 ////////////////////////////////////////////////////////////////////////
 // Merge a contiguous array of scalar objects
 ////////////////////////////////////////////////////////////////////////
-template<class vobj,class sobj> accelerator_inline 
+template<class vobj,class sobj> accelerator
 void   merge(vobj &vec,ExtractBuffer<sobj> &extracted)
 {
+  typedef typename GridTypeMapper<sobj>::scalar_type sobj_scalar_type;
   typedef typename GridTypeMapper<vobj>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vobj>::vector_type vector_type;
 
@@ -83,7 +86,7 @@ void   merge(vobj &vec,ExtractBuffer<sobj> &extracted)
   const int Nextr = extracted.size();
   const int s=Nsimd/Nextr;
 
-  scalar_type *sp = (scalar_type *)&extracted[0];
+  sobj_scalar_type *sp = (sobj_scalar_type *)&extracted[0];
   scalar_type *vp = (scalar_type *)&vec;
   for(int w=0;w<words;w++){
     for(int i=0;i<Nextr;i++){
@@ -97,7 +100,7 @@ void   merge(vobj &vec,ExtractBuffer<sobj> &extracted)
 ////////////////////////////////////////////////////////////////////////
 // Extract to a bunch of scalar object pointers of different scalar type, with offset. Useful for precision change
 ////////////////////////////////////////////////////////////////////////
-template<class vobj, class sobj> accelerator_inline 
+template<class vobj, class sobj> accelerator
 void extract(const vobj &vec,ExtractPointerArray<sobj> &extracted, int offset)
 {
   typedef typename GridTypeMapper<sobj>::scalar_type sobj_scalar_type;
@@ -115,7 +118,7 @@ void extract(const vobj &vec,ExtractPointerArray<sobj> &extracted, int offset)
     for(int i=0;i<Nextr;i++){
       sobj_scalar_type * pointer = (sobj_scalar_type *)& extracted[i][offset];
       scalar_type tmp =vp[w*Nsimd+i*s];
-      assert(w*sizeof(sobj_scalar_type)<sizeof(sobj));
+      //      assert(w*sizeof(sobj_scalar_type)<sizeof(sobj));
       pointer[w] = tmp; // may do a precision conversion
     }
   }
@@ -124,9 +127,10 @@ void extract(const vobj &vec,ExtractPointerArray<sobj> &extracted, int offset)
 ////////////////////////////////////////////////////////////////////////
 // Merge bunch of scalar object pointers of different scalar type, with offset. Useful for precision change
 ////////////////////////////////////////////////////////////////////////
-template<class vobj, class sobj> accelerator_inline 
+template<class vobj, class sobj> accelerator
 void merge(vobj &vec,ExtractPointerArray<sobj> &extracted, int offset)
 {
+  typedef typename GridTypeMapper<sobj>::scalar_type sobj_scalar_type;
   typedef typename GridTypeMapper<vobj>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vobj>::vector_type vector_type;
 
@@ -136,10 +140,9 @@ void merge(vobj &vec,ExtractPointerArray<sobj> &extracted, int offset)
   const int s = Nsimd/Nextr;
 
   scalar_type * vp = (scalar_type *)&vec;
-
   for(int w=0;w<words;w++){
     for(int i=0;i<Nextr;i++){
-      scalar_type * pointer = (scalar_type *)& extracted[i][offset];
+      sobj_scalar_type * pointer = (sobj_scalar_type *)& extracted[i][offset];
       for(int ii=0;ii<s;ii++){
 	vp[w*Nsimd+i*s+ii] = pointer[w] ;
       }
