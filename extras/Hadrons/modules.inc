@@ -44,6 +44,7 @@ modules_hpp =\
   Modules/MAction/Wilson.hpp \
   Modules/MAction/WilsonClover.hpp \
   Modules/MAction/ZMobiusDWF.hpp \
+  Modules/MScalarSUN/ShiftProbe.hpp \
   Modules/MScalarSUN/Div.hpp \
   Modules/MScalarSUN/TrMag.hpp \
   Modules/MScalarSUN/EMT.hpp \

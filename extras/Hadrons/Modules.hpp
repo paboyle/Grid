@@ -61,6 +61,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MAction/Wilson.hpp>
 #include <Grid/Hadrons/Modules/MAction/WilsonClover.hpp>
 #include <Grid/Hadrons/Modules/MAction/ZMobiusDWF.hpp>
+#include <Grid/Hadrons/Modules/MScalarSUN/ShiftProbe.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/Div.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TrMag.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/EMT.hpp>
