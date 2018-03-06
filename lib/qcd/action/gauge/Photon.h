@@ -60,6 +60,9 @@ namespace QCD{
     GRID_SERIALIZABLE_ENUM(Gauge, undef, feynman, 1, coulomb, 2, landau, 3);
     GRID_SERIALIZABLE_ENUM(ZmScheme, undef, qedL, 1, qedTL, 2, qedInf, 3);
   public:
+    Photon(Gauge gauge, ZmScheme zmScheme);
+    Photon(Gauge gauge, ZmScheme zmScheme, std::vector<Real> improvements);
+    Photon(Gauge gauge, ZmScheme zmScheme, Real G0);
     Photon(Gauge gauge, ZmScheme zmScheme, std::vector<Real> improvements, Real G0);
     virtual ~Photon(void) = default;
     void FreePropagator(const GaugeField &in, GaugeField &out);
@@ -83,11 +86,29 @@ namespace QCD{
   typedef Photon<QedGimplR>  PhotonR;
   
   template<class Gimpl>
+  Photon<Gimpl>::Photon(Gauge gauge, ZmScheme zmScheme)
+  : gauge_(gauge), zmScheme_(zmScheme), improvement_(std::vector<Real>()),
+    G0_(0.15493339023106021408483720810737508876916113364521)
+  {}
+
+  template<class Gimpl>
+  Photon<Gimpl>::Photon(Gauge gauge, ZmScheme zmScheme,
+                        std::vector<Real> improvements)
+  : gauge_(gauge), zmScheme_(zmScheme), improvement_(improvements),
+    G0_(0.15493339023106021408483720810737508876916113364521)
+  {}
+
+  template<class Gimpl>
+  Photon<Gimpl>::Photon(Gauge gauge, ZmScheme zmScheme, Real G0)
+  : gauge_(gauge), zmScheme_(zmScheme), improvement_(std::vector<Real>()), G0_(G0)
+  {}
+
+  template<class Gimpl>
   Photon<Gimpl>::Photon(Gauge gauge, ZmScheme zmScheme,
                         std::vector<Real> improvements, Real G0)
   : gauge_(gauge), zmScheme_(zmScheme), improvement_(improvements), G0_(G0)
   {}
-  
+
   template<class Gimpl>
   void Photon<Gimpl>::FreePropagator (const GaugeField &in,GaugeField &out)
   {
