@@ -31,8 +31,43 @@ Author: Guido Cossu <guido.cossu@ed.ac.uk>
 #define GRID_SERIALISATION_ABSTRACT_READER_H
 
 #include <type_traits>
+#include <Grid/tensors/Tensors.h>
 
 namespace Grid {
+  // Grid scalar tensors to nested std::vectors //////////////////////////////////
+  template <typename T, typename V>
+  void tensorToVec(V &v, const T& t)
+  {
+    v = t;
+  }
+
+  template <typename T, typename V>
+  void tensorToVec(V &v, const iScalar<T>& t)
+  {
+    tensorToVec(v, t._internal);
+  }
+
+  template <typename T, typename V, int N>
+  void tensorToVec(std::vector<V> &v, const iVector<T, N>& t)
+  {
+    v.resize(N);
+    for (unsigned int i = 0; i < N; i++) 
+    {
+      tensorToVec(v[i], t._internal[i]);
+    }
+  }
+
+  template <typename T, typename V, int N>
+  void tensorToVec(std::vector<std::vector<V>> &v, const iMatrix<T, N>& t)
+  {
+    v.resize(N, std::vector<V>(N));
+    for (unsigned int i = 0; i < N; i++)
+    for (unsigned int j = 0; j < N; j++) 
+    {
+      tensorToVec(v[i][j], t._internal[i][j]);
+    }
+  }
+
   // Vector element trait //////////////////////////////////////////////////////  
   template <typename T>
   struct element
