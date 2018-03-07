@@ -34,74 +34,73 @@ Author: Guido Cossu <guido.cossu@ed.ac.uk>
 #include <Grid/tensors/Tensors.h>
 
 namespace Grid {
-  // Vector IO utilities ///////////////////////////////////////////////////////
-  // helper function to read space-separated values
+  // Grid scalar tensors to nested std::vectors //////////////////////////////////
   template <typename T>
-  std::vector<T> strToVec(const std::string s)
+  struct TensorToVec
   {
-    std::istringstream sstr(s);
-    T                  buf;
-    std::vector<T>     v;
-    
-    while(!sstr.eof())
-    {
-      sstr >> buf;
-      v.push_back(buf);
-    }
-    
-    return v;
-  }
-  
-  // output to streams for vectors
-  template < class T >
-  inline std::ostream & operator<<(std::ostream &os, const std::vector<T> &v)
+    typedef T type;
+  };
+
+  template <typename T>
+  struct TensorToVec<iScalar<T>>
   {
-    os << "[";
-    for (auto &x: v)
-    {
-      os << x << " ";
-    }
-    if (v.size() > 0)
-    {
-      os << "\b";
-    }
-    os << "]";
-    
-    return os;
-  }
-  
-  // convert Grid scalar tensors to std::vectors
-  template <typename T, typename V>
-  void tensorToVec(V &v, const T& t)
+    typedef typename TensorToVec<T>::type type;
+  };
+
+  template <typename T, int N>
+  struct TensorToVec<iVector<T, N>>
   {
-    v = t;
+    typedef typename std::vector<typename TensorToVec<T>::type> type;
+  };
+
+  template <typename T, int N>
+  struct TensorToVec<iMatrix<T, N>>
+  {
+    typedef typename std::vector<std::vector<typename TensorToVec<T>::type>> type;
+  };
+
+  template <typename T>
+  typename TensorToVec<T>::type tensorToVec(const T &t)
+  {
+    return t;
   }
 
-  template <typename T, typename V>
-  void tensorToVec(V &v, const iScalar<T>& t)
+  template <typename T>
+  typename TensorToVec<iScalar<T>>::type tensorToVec(const iScalar<T>& t)
   {
-    tensorToVec(v, t._internal);
+    return tensorToVec(t._internal);
   }
 
-  template <typename T, typename V, int N>
-  void tensorToVec(std::vector<V> &v, const iVector<T, N>& t)
+  template <typename T, int N>
+  typename TensorToVec<iVector<T, N>>::type tensorToVec(const iVector<T, N>& t)
   {
+    typename TensorToVec<iVector<T, N>>::type v;
+
     v.resize(N);
     for (unsigned int i = 0; i < N; i++) 
     {
-      tensorToVec(v[i], t._internal[i]);
+      v[i] = tensorToVec(t._internal[i]);
     }
+
+    return v;
   }
 
-  template <typename T, typename V, int N>
-  void tensorToVec(std::vector<std::vector<V>> &v, const iMatrix<T, N>& t)
+  template <typename T, int N>
+  typename TensorToVec<iMatrix<T, N>>::type tensorToVec(const iMatrix<T, N>& t)
   {
-    v.resize(N, std::vector<V>(N));
+    typename TensorToVec<iMatrix<T, N>>::type v;
+
+    v.resize(N);
     for (unsigned int i = 0; i < N; i++)
-    for (unsigned int j = 0; j < N; j++) 
     {
-      tensorToVec(v[i][j], t._internal[i][j]);
+      v[i].resize(N);
+      for (unsigned int j = 0; j < N; j++) 
+      {
+        v[i][j] = tensorToVec(t._internal[i][j]);
+      }
     }
+
+    return v;
   }
 
   // Vector element trait //////////////////////////////////////////////////////  
@@ -186,15 +185,15 @@ namespace Grid {
     do
     {
       is.get(c);
-    } while (c != '<' && !is.eof());
-    if (c == '<')
+    } while (c != '(' && !is.eof());
+    if (c == '(')
     {
       int start = is.tellg();
       do
       {
         is.get(c);
-      } while (c != '>' && !is.eof());
-      if (c == '>')
+      } while (c != ')' && !is.eof());
+      if (c == ')')
       {
         int end = is.tellg();
         int psize = end - start - 1;
@@ -217,7 +216,43 @@ namespace Grid {
   template <class T1, class T2>
   inline std::ostream & operator<<(std::ostream &os, const std::pair<T1, T2> &p)
   {
-    os << "<" << p.first << " " << p.second << ">";
+    os << "(" << p.first << " " << p.second << ")";
+    return os;
+  }
+
+  // Vector IO utilities ///////////////////////////////////////////////////////
+  // helper function to read space-separated values
+  template <typename T>
+  std::vector<T> strToVec(const std::string s)
+  {
+    std::istringstream sstr(s);
+    T                  buf;
+    std::vector<T>     v;
+    
+    while(!sstr.eof())
+    {
+      sstr >> buf;
+      v.push_back(buf);
+    }
+    
+    return v;
+  }
+  
+  // output to streams for vectors
+  template < class T >
+  inline std::ostream & operator<<(std::ostream &os, const std::vector<T> &v)
+  {
+    os << "[";
+    for (auto &x: v)
+    {
+      os << x << " ";
+    }
+    if (v.size() > 0)
+    {
+      os << "\b";
+    }
+    os << "]";
+    
     return os;
   }
 

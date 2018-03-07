@@ -202,8 +202,6 @@ int main(int argc,char **argv)
   GridSerialRNG    rng;
   SpinColourMatrix scm;
   SpinColourVector scv;
-  std::vector<std::vector<std::vector<std::vector<ComplexD>>>> scmv;
-  std::vector<std::vector<ComplexD>> scvv;
 
   rng.SeedFixedIntegers(std::vector<int>({42,10,81,9}));
   random(rng, scm);
@@ -211,8 +209,8 @@ int main(int argc,char **argv)
   std::cout << "Test spin-color matrix: " << scm << std::endl;
   std::cout << "Test spin-color vector: " << scv << std::endl;
   std::cout << "Converting to std::vector" << std::endl;
-  tensorToVec(scmv, scm);
-  tensorToVec(scvv, scv);
+  auto scmv = tensorToVec(scm);
+  auto scvv = tensorToVec(scv);
   std::cout << "Spin-color matrix: " << scmv << std::endl;
   std::cout << "Spin-color vector: " << scvv << std::endl;
 }
