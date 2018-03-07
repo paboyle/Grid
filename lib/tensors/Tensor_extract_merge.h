@@ -31,6 +31,10 @@ Author: Christopher Kelly <ckelly@phys.columbia.edu>
 /*  END LEGAL */
 #pragma once 
 
+#include <string.h>
+
+//#pragma GCC optimize("no-strict-aliasing")
+
 NAMESPACE_BEGIN(Grid);
 
 /////////////////////////////////////////////////////////////////
@@ -44,7 +48,6 @@ template<class __T> using ExtractBuffer       = AcceleratorVector<__T  ,GRID_MAX
 //void extract(const vobj &vec,ExtractPointerArray<sobj> &extracted, int offset);
 //void   merge(vobj &vec,ExtractBuffer<typename vobj::scalar_object> &extracted)
 //void   merge(vobj &vec,ExtractPointerArray<typename vobj::scalar_object> &extracted)
-//
 
 ////////////////////////////////////////////////////////////////////////
 // Extract to contiguous array scalar object
@@ -60,12 +63,15 @@ void extract(const vobj &vec,ExtractBuffer<sobj> &extracted)
   const int Nsimd=vector_type::Nsimd();
   const int Nextr=extracted.size();
   const int s=Nsimd/Nextr;
-
-  sobj_scalar_type *sp = (sobj_scalar_type *)&extracted[0];
+  sobj_scalar_type *sp = (sobj_scalar_type *) &extracted[0];
   scalar_type *vp = (scalar_type *)&vec;
+  scalar_type      vtmp;
+  sobj_scalar_type stmp;
   for(int w=0;w<words;w++){
     for(int i=0;i<Nextr;i++){
-      sp[i*words+w] = vp[w*Nsimd+i*s] ;
+      memcpy((char *)&vtmp,(char *)&vp[w*Nsimd+i*s],sizeof(vtmp));
+      stmp = vtmp;
+      memcpy((char *)&sp[i*words+w],(char *)&stmp,sizeof(stmp));
     }
   }
   return;
@@ -88,10 +94,14 @@ void   merge(vobj &vec,ExtractBuffer<sobj> &extracted)
 
   sobj_scalar_type *sp = (sobj_scalar_type *)&extracted[0];
   scalar_type *vp = (scalar_type *)&vec;
+  scalar_type      vtmp;
+  sobj_scalar_type stmp;
   for(int w=0;w<words;w++){
     for(int i=0;i<Nextr;i++){
       for(int ii=0;ii<s;ii++){
-	vp[w*Nsimd+i*s+ii] = sp[i*words+w] ;
+	memcpy((char *)&stmp,(char *)&sp[i*words+w],sizeof(stmp));
+	vtmp = stmp;
+	memcpy((char *)&vp[w*Nsimd+i*s+ii],(char *)&vtmp,sizeof(vtmp));
       }
     }
   }
@@ -113,13 +123,14 @@ void extract(const vobj &vec,ExtractPointerArray<sobj> &extracted, int offset)
   const int s = Nsimd/Nextr;
 
   scalar_type * vp = (scalar_type *)&vec;
-  
+  scalar_type      vtmp;
+  sobj_scalar_type stmp;
   for(int w=0;w<words;w++){
     for(int i=0;i<Nextr;i++){
       sobj_scalar_type * pointer = (sobj_scalar_type *)& extracted[i][offset];
-      scalar_type tmp =vp[w*Nsimd+i*s];
-      //      assert(w*sizeof(sobj_scalar_type)<sizeof(sobj));
-      pointer[w] = tmp; // may do a precision conversion
+      memcpy((char *)&vtmp,(char *)&vp[w*Nsimd+i*s],sizeof(vtmp));
+      stmp = vtmp;
+      memcpy((char *)&pointer[w],(char *)&stmp,sizeof(stmp)); // may do a precision conversion
     }
   }
 }
@@ -140,11 +151,15 @@ void merge(vobj &vec,ExtractPointerArray<sobj> &extracted, int offset)
   const int s = Nsimd/Nextr;
 
   scalar_type * vp = (scalar_type *)&vec;
+  scalar_type      vtmp;
+  sobj_scalar_type stmp;
   for(int w=0;w<words;w++){
     for(int i=0;i<Nextr;i++){
       sobj_scalar_type * pointer = (sobj_scalar_type *)& extracted[i][offset];
       for(int ii=0;ii<s;ii++){
-	vp[w*Nsimd+i*s+ii] = pointer[w] ;
+	memcpy((char *)&stmp,(char *)&pointer[w],sizeof(stmp));
+	vtmp=stmp;
+	memcpy((char *)&vp[w*Nsimd+i*s+ii],(char *)&vtmp,sizeof(vtmp));
       }
     }
   }
