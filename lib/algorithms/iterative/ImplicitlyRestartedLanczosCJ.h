@@ -32,6 +32,8 @@ Author: Chulwoo Jung <chulwoo@bnl.gov>
 
 #include <string.h> //memset
 
+#include<Grid/algorithms/densematrix/DenseMatrix.h>
+
 #ifdef USE_LAPACK
 #ifdef USE_MKL
 #include<mkl_lapack.h>
