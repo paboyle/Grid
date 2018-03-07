@@ -95,13 +95,11 @@ namespace ConjugateBC {
 
     Lattice<iScalar<vInteger> > coor(grid);    LatticeCoordinate(coor,mu);
 
-    Lattice<covariant> tmp1(grid);
-    Lattice<covariant> tmp2(grid);
+    Lattice<covariant> field_bc = Cshift(field,mu,1);// moves towards negative mu;
 
-    tmp1 = Cshift(field,mu,1);// moves towards negative mu;
-    tmp2 = where(coor==Lmu,conjugate(tmp1),tmp1);
-
-    return Link*tmp2;
+    field_bc = where(coor==Lmu,conjugate(field_bc),field_bc);
+    //    std::cout<<"Gparity::CovCshiftForward mu="<<mu<<std::endl;
+    return Link*field_bc;
   }
 
   template<class covariant,class gauge> Lattice<covariant> CovShiftBackward(const Lattice<gauge> &Link, 
@@ -116,13 +114,12 @@ namespace ConjugateBC {
 
     Lattice<iScalar<vInteger> > coor(grid);    LatticeCoordinate(coor,mu);
 
-    Lattice<covariant> tmp1(grid);
-    Lattice<covariant> tmp2(grid);
+    Lattice<covariant> tmp(grid);
 
-    tmp1 = adj(Link)*field;
-    tmp2 = where(coor==Lmu,conjugate(tmp1),tmp1);
-
-    return Cshift(tmp2,mu,-1);// moves towards positive mu
+    tmp = adj(Link)*field;
+    tmp = where(coor==Lmu,conjugate(tmp),tmp);
+    //    std::cout<<"Gparity::CovCshiftBackward mu="<<mu<<std::endl;
+    return Cshift(tmp,mu,-1);// moves towards positive mu
   }
 
 }
