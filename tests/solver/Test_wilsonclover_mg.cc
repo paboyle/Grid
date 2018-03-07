@@ -64,8 +64,8 @@ public:
       std::cout << GridLogMessage << std::scientific << std::setprecision(2) << std::setw(2) << std::showpos << "vector " << i << ": "
                 << "singular value: " << lambda << ", singular vector precision: " << mu << ", norm: " << nrm << std::endl;
     }
-    std::cout << GridLogMessage << std::scientific << std::setprecision(2) << std::setw(2) << std::showpos << positiveOnes << " out of " << nn
-              << " vectors were positive" << std::endl;
+    std::cout << GridLogMessage << std::scientific << std::setprecision(2) << std::setw(2) << std::showpos << positiveOnes << " out of "
+              << nn << " vectors were positive" << std::endl;
   }
 };
 
@@ -141,26 +141,31 @@ template<class Field> void testLinearOperator(LinearOperatorBase<Field> &LinOp, 
     Field err(Grid);
     // clang-format on
 
-    LinOp.Op(src, ref);
-    std::cout << GridLogMessage << " norm2(M * src)            = " << norm2(ref) << std::endl;
+    std::cout << setprecision(9);
+
+    std::cout << GridLogMessage << " norm2(src)\t\t\t\t= " << norm2(src) << std::endl;
 
     LinOp.OpDiag(src, diag);
-    std::cout << GridLogMessage << " norm2(Mdiag * src)        = " << norm2(diag) << std::endl;
+    std::cout << GridLogMessage << " norm2(Mdiag * src)\t\t\t= " << norm2(diag) << std::endl;
 
     for(int dir = 0; dir < 4; dir++) {
       for(auto disp : {+1, -1}) {
         LinOp.OpDir(src, tmp, dir, disp);
-        std::cout << GridLogMessage << " norm2(Mdir_{" << dir << "," << disp << "} * src) = " << norm2(tmp) << std::endl;
+        std::cout << GridLogMessage << " norm2(Mdir_{" << dir << "," << disp << "} * src)\t\t= " << norm2(tmp) << std::endl;
         sumDir = sumDir + tmp;
       }
     }
-    std::cout << GridLogMessage << " norm2(Σ_μ Mdir_μ * src)   = " << norm2(sumDir) << std::endl;
+    std::cout << GridLogMessage << " norm2(Σ_μ Mdir_μ * src)\t\t= " << norm2(sumDir) << std::endl;
 
     result = diag + sumDir;
-    err    = ref - result;
+    std::cout << GridLogMessage << " norm2((Mdiag + Σ_μ Mdir_μ) * src)\t= " << norm2(result) << std::endl;
 
-    std::cout << GridLogMessage << " Absolute deviation        = " << norm2(err) << std::endl;
-    std::cout << GridLogMessage << " Relative deviation        = " << norm2(err) / norm2(ref) << std::endl;
+    LinOp.Op(src, ref);
+    std::cout << GridLogMessage << " norm2(M * src)\t\t\t= " << norm2(ref) << std::endl;
+
+    err = ref - result;
+    std::cout << GridLogMessage << " Absolute deviation\t\t\t= " << norm2(err) << std::endl;
+    std::cout << GridLogMessage << " Relative deviation\t\t\t= " << norm2(err) / norm2(ref) << std::endl;
   }
 
   {
@@ -182,10 +187,11 @@ template<class Field> void testLinearOperator(LinearOperatorBase<Field> &LinOp, 
     ComplexD phiMPhi    = innerProduct(phi, MPhi);
     ComplexD chiMdagChi = innerProduct(chi, MdagChi);
 
-    std::cout << GridLogMessage << " chiMPhi = " << chiMPhi << " phiMdagChi = " << phiMdagChi << " difference = " << chiMPhi - conjugate(phiMdagChi)
-              << std::endl;
+    std::cout << GridLogMessage << " chiMPhi = " << chiMPhi << " phiMdagChi = " << phiMdagChi
+              << " difference = " << chiMPhi - conjugate(phiMdagChi) << std::endl;
 
-    std::cout << GridLogMessage << " phiMPhi = " << phiMPhi << " chiMdagChi = " << chiMdagChi << " <- should be real if hermitian" << std::endl;
+    std::cout << GridLogMessage << " phiMPhi = " << phiMPhi << " chiMdagChi = " << chiMdagChi << " <- should be real if hermitian"
+              << std::endl;
   }
 
   {
@@ -323,8 +329,9 @@ public:
       fTmps[1]       = _Aggregates.subspace[i] - fTmps[0]; // v_i - P R v_i
       auto deviation = std::sqrt(norm2(fTmps[1]) / norm2(_Aggregates.subspace[i]));
 
-      std::cout << GridLogMessage << "Vector " << i << ": norm2(v_i) = " << norm2(_Aggregates.subspace[i]) << " | norm2(R v_i) = " << norm2(cTmps[0])
-                << " | norm2(P R v_i) = " << norm2(fTmps[0]) << " | relative deviation = " << deviation;
+      std::cout << GridLogMessage << "Vector " << i << ": norm2(v_i) = " << norm2(_Aggregates.subspace[i])
+                << " | norm2(R v_i) = " << norm2(cTmps[0]) << " | norm2(P R v_i) = " << norm2(fTmps[0])
+                << " | relative deviation = " << deviation;
 
       if(deviation > tolerance) {
         std::cout << " > " << tolerance << " -> check failed" << std::endl;
@@ -433,7 +440,7 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Set up some fine level stuff: " << std::endl;
   std::cout << GridLogMessage << "**************************************************" << std::endl;
 
-  GridCartesian *        FGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd, vComplex::Nsimd()), GridDefaultMpi());
+  GridCartesian *FGrid = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd, vComplex::Nsimd()), GridDefaultMpi());
   GridRedBlackCartesian *FrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(FGrid);
 
   std::vector<int> fSeeds({1, 2, 3, 4});
@@ -443,9 +450,9 @@ int main(int argc, char **argv) {
   Gamma g5(Gamma::Algebra::Gamma5);
 
   // clang-format off
-  FermionField        src(FGrid); gaussian(fPRNG, src);
-  FermionField     result(FGrid); result = zero;
-  LatticeGaugeField     Umu(FGrid); SU3::HotConfiguration(fPRNG, Umu);
+  FermionField      src(FGrid); gaussian(fPRNG, src);
+  FermionField   result(FGrid); result = zero;
+  LatticeGaugeField Umu(FGrid); SU3::HotConfiguration(fPRNG, Umu);
   // clang-format on
 
   RealD mass = params.mq;
@@ -759,15 +766,3 @@ int main(int argc, char **argv) {
 
   Grid_finalize();
 }
-
-// Ideas compiled during discussions with the others during lunchtime:
-//
-// • set the gauge fields to 0
-//   -> the hopping term is zero -> M is the same as Mdiag
-// • set the mass to minus 4
-//   -> the self coupling term is zero -> M is the same as Σ_u Mdir_μ
-//
-// In both cases it's probably a good idea to set the source fermion to 1
-
-// I just put this here to have it out of the way in main
-// This code is intended to be put after the creation of the first MG Preconditioner object for the fine grid.
