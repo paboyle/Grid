@@ -11,8 +11,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: $1
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
 EOF
 
@@ -60,4 +59,4 @@ shift
 
 done
 
-
+rm message tmp.fil

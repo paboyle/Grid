@@ -197,68 +197,20 @@ int main(int argc,char **argv)
   std::cout << flatdv.getVector() << std::endl;
   std::cout << std::endl;
 
+  std::cout << "==== Grid tensor to vector test" << std::endl;
 
-  std::cout << ".:::::: Testing JSON classes "<< std::endl;
+  GridSerialRNG    rng;
+  SpinColourMatrix scm;
+  SpinColourVector scv;
 
-
-  {
-    JSONWriter JW("bother.json");
-
-    // test basic type writing
-    myenum a = myenum::red;
-    push(JW,"BasicTypes");
-    write(JW,std::string("i16"),i16);
-    write(JW,"myenum",a);
-    write(JW,"u16",u16);
-    write(JW,"i32",i32);
-    write(JW,"u32",u32);
-    write(JW,"i64",i64);
-    write(JW,"u64",u64);
-    write(JW,"f",f);
-    write(JW,"d",d);
-    write(JW,"b",b);
-    pop(JW);
-
-
-    // test serializable class writing
-    myclass obj(1234); // non-trivial constructor
-    std::cout << obj << std::endl;
-    std::cout << "-- serialisable class writing to 'bother.json'..." << std::endl;
-    write(JW,"obj",obj);
-    JW.write("obj2", obj);
-
-
-    std::vector<myclass> vec;
-    vec.push_back(myclass(1234));
-    vec.push_back(myclass(5678));
-    vec.push_back(myclass(3838));
-    write(JW, "objvec", vec);
-
-  }
-
-
-  {
-    JSONReader RD("bother.json");
-    myclass jcopy1;
-    std::vector<myclass> jveccopy1;
-    read(RD,"obj",jcopy1);
-    read(RD,"objvec", jveccopy1);
-    std::cout << "Loaded (JSON) -----------------" << std::endl;
-    std::cout << jcopy1 << std::endl << jveccopy1 << std::endl;
-  }
- 
-
-/*
-  // This is still work in progress
-  {
-    // Testing the next element function
-    JSONReader RD("test.json");
-    RD.push("grid");
-    RD.push("Observable");
-    std::string name;
-    read(RD,"name", name);
-  }
-*/
-
-
+  rng.SeedFixedIntegers(std::vector<int>({42,10,81,9}));
+  random(rng, scm);
+  random(rng, scv);
+  std::cout << "Test spin-color matrix: " << scm << std::endl;
+  std::cout << "Test spin-color vector: " << scv << std::endl;
+  std::cout << "Converting to std::vector" << std::endl;
+  auto scmv = tensorToVec(scm);
+  auto scvv = tensorToVec(scv);
+  std::cout << "Spin-color matrix: " << scmv << std::endl;
+  std::cout << "Spin-color vector: " << scvv << std::endl;
 }

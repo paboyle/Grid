@@ -4,8 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MSolver/RBPrecCG.hpp
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -61,7 +60,9 @@ public:
     virtual ~TRBPrecCG(void) = default;
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getReference(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
@@ -83,9 +84,17 @@ TRBPrecCG<FImpl>::TRBPrecCG(const std::string name)
 template <typename FImpl>
 std::vector<std::string> TRBPrecCG<FImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().action};
+    std::vector<std::string> in = {};
     
     return in;
+}
+
+template <typename FImpl>
+std::vector<std::string> TRBPrecCG<FImpl>::getReference(void)
+{
+    std::vector<std::string> ref = {par().action};
+    
+    return ref;
 }
 
 template <typename FImpl>
@@ -100,17 +109,12 @@ std::vector<std::string> TRBPrecCG<FImpl>::getOutput(void)
 template <typename FImpl>
 void TRBPrecCG<FImpl>::setup(void)
 {
-    auto Ls = env().getObjectLs(par().action);
-    
-    env().registerObject(getName(), 0, Ls);
-    env().addOwnership(getName(), par().action);
-}
+    LOG(Message) << "setting up Schur red-black preconditioned CG for"
+                 << " action '" << par().action << "' with residual "
+                 << par().residual << std::endl;
 
-// execution ///////////////////////////////////////////////////////////////////
-template <typename FImpl>
-void TRBPrecCG<FImpl>::execute(void)
-{
-    auto &mat   = *(env().template getObject<FMat>(par().action));
+    auto Ls     = env().getObjectLs(par().action);
+    auto &mat   = envGet(FMat, par().action);
     auto solver = [&mat, this](FermionField &sol, const FermionField &source)
     {
         ConjugateGradient<FermionField>           cg(par().residual, 10000);
@@ -118,12 +122,13 @@ void TRBPrecCG<FImpl>::execute(void)
         
         schurSolver(mat, source, sol);
     };
-    
-    LOG(Message) << "setting up Schur red-black preconditioned CG for"
-                 << " action '" << par().action << "' with residual "
-                 << par().residual << std::endl;
-    env().setObject(getName(), new SolverFn(solver));
+    envCreate(SolverFn, getName(), Ls, solver);
 }
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TRBPrecCG<FImpl>::execute(void)
+{}
 
 END_MODULE_NAMESPACE
 

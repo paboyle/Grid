@@ -39,10 +39,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/approx/MultiShiftFunction.h>
 #include <Grid/algorithms/approx/Forecast.h>
 
-#include <Grid/algorithms/densematrix/DenseMatrix.h>
-#include <Grid/algorithms/densematrix/Francis.h>
-#include <Grid/algorithms/densematrix/Householder.h>
-
+#include <Grid/algorithms/iterative/Deflation.h>
 #include <Grid/algorithms/iterative/ConjugateGradient.h>
 #include <Grid/algorithms/iterative/ConjugateResidual.h>
 #include <Grid/algorithms/iterative/NormalEquations.h>

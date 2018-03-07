@@ -113,6 +113,21 @@ namespace Grid {
       ///////////////////////////////////////////////
       virtual void ImportGauge(const GaugeField & _U)=0;
 
+      //////////////////////////////////////////////////////////////////////
+      // Conserved currents, either contract at sink or insert sequentially.
+      //////////////////////////////////////////////////////////////////////
+      virtual void ContractConservedCurrent(PropagatorField &q_in_1,
+                                            PropagatorField &q_in_2,
+                                            PropagatorField &q_out,
+                                            Current curr_type,
+                                            unsigned int mu)=0;
+      virtual void SeqConservedCurrent(PropagatorField &q_in, 
+                                       PropagatorField &q_out,
+                                       Current curr_type,
+                                       unsigned int mu,
+                                       std::vector<Real> mom,
+                                       unsigned int tmin, 
+                                       unsigned int tmax)=0;
     };
 
   }
