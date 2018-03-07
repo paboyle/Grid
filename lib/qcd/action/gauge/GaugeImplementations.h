@@ -102,13 +102,11 @@ public:
     Lattice<iScalar<vInteger>> coor(grid);
     LatticeCoordinate(coor, mu);
 
-    GaugeLinkField tmp1(grid);
-    GaugeLinkField tmp2(grid);
-    tmp1 = adj(Link);
-    tmp2 = where(coor == Lmu, conjugate(tmp1), tmp1);
-    return Cshift(tmp2, mu, -1); // moves towards positive mu
+    GaugeLinkField tmp(grid);
+    tmp = adj(Link);
+    tmp = where(coor == Lmu, conjugate(tmp), tmp);
+    return Cshift(tmp, mu, -1); // moves towards positive mu
   }
-
   static inline GaugeLinkField
   CovShiftIdentityForward(const GaugeLinkField &Link, int mu) {
     return Link;
@@ -121,11 +119,10 @@ public:
     Lattice<iScalar<vInteger>> coor(grid);
     LatticeCoordinate(coor, mu);
 
-    GaugeLinkField tmp1(grid);
-    GaugeLinkField tmp2(grid);
-    tmp1 = Cshift(Link, mu, 1);
-    tmp2 = where(coor == Lmu, conjugate(tmp1), tmp1);
-    return tmp2;
+    GaugeLinkField tmp(grid);
+    tmp = Cshift(Link, mu, 1);
+    tmp = where(coor == Lmu, conjugate(tmp), tmp);
+    return tmp;
   }
 
   static inline bool isPeriodicGaugeField(void) { return false; }
