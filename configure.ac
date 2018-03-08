@@ -19,13 +19,13 @@ AC_ARG_ENABLE([debug],[AC_HELP_STRING([--enable-debug=yes|no], [enable debug com
     [ac_DEBUG=${enable_debug}], [ac_DEBUG=no])
 case ${ac_DEBUG} in
     yes)
-    CXXFLAGS="-g $CXXFLAGS"
+    CXXFLAGS="-g $CXXFLAGS "
         ;;
     no)
-    CXXFLAGS="-O3 $CXXFLAGS"
+    CXXFLAGS="-O3 $CXXFLAGS "
         ;;
     *)
-    CXXFLAGS="-O3 $CXXFLAGS"
+    CXXFLAGS="-O3 $CXXFLAGS "
         ;;
 esac
 
@@ -237,11 +237,13 @@ AC_ARG_ENABLE([gen-simd-width],
 ##################### Compiler dependent choices
 case ${CXX} in 
   nvcc) 
-    CXX="nvcc -x cu"
+    CXX="nvcc -x cu "
     CXXLD="nvcc -link"
+    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing"
     ;;
   *)
     CXXLD=${CXX}
+    CXXFLAGS="$CXXFLAGS -fno-strict-aliasing"
     ;;
 esac
 
