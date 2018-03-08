@@ -110,30 +110,29 @@ class ImprovedStaggeredFermion : public StaggeredKernels<Impl>, public ImprovedS
   void DhopInternalOverlappedComms(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU,
                     const FermionField &in, FermionField &out, int dag);
 
-  // Constructor
+  //////////////////////////////////////////////////////////////////////////
+  // Grid own interface Constructor
+  //////////////////////////////////////////////////////////////////////////
   ImprovedStaggeredFermion(GaugeField &_Uthin, GaugeField &_Ufat, GridCartesian &Fgrid,
 			   GridRedBlackCartesian &Hgrid, RealD _mass,
 			   RealD _c1, RealD _c2,RealD _u0,
 			   const ImplParams &p = ImplParams());
 
   //////////////////////////////////////////////////////////////////////////
-  // MILC constructor no coefficients; premultiply links by desired scaling
-  //////////////////////////////////////////////////////////////////////////
-  ImprovedStaggeredFermion(GaugeField &_Utriple, GaugeField &_Ufat, GridCartesian &Fgrid,
-			   GridRedBlackCartesian &Hgrid, RealD _mass,
-			   const ImplParams &p = ImplParams());
-
-  //////////////////////////////////////////////////////////////////////////
-  // A don't initialise the gauge field constructor; largely internal
+  // MILC constructor no gauge fields
   //////////////////////////////////////////////////////////////////////////
   ImprovedStaggeredFermion(GridCartesian &Fgrid, GridRedBlackCartesian &Hgrid, RealD _mass,
-			   RealD _c1, RealD _c2,RealD _u0,
+			   RealD _c1=1.0, RealD _c2=1.0,RealD _u0=1.0,
 			   const ImplParams &p = ImplParams());
 
   // DoubleStore impl dependent
-  void ImportGaugeSimple(const GaugeField &_Utriple, const GaugeField &_Ufat);
-  void ImportGauge(const GaugeField &_Uthin, const GaugeField &_Ufat);
-  void ImportGauge(const GaugeField &_Uthin);
+  void ImportGauge      (const GaugeField &_Uthin ) { assert(0); }
+  void ImportGauge      (const GaugeField &_Uthin  ,const GaugeField &_Ufat);
+  void ImportGaugeSimple(const GaugeField &_UUU    ,const GaugeField &_U);
+  void ImportGaugeSimple(const DoubledGaugeField &_UUU,const DoubledGaugeField &_U);
+  DoubledGaugeField &GetU(void)   { return Umu ; } ;
+  DoubledGaugeField &GetUUU(void) { return UUUmu; };
+  void CopyGaugeCheckerboards(void);
 
   ///////////////////////////////////////////////////////////////
   // Data members require to support the functionality

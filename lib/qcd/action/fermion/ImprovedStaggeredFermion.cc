@@ -84,15 +84,6 @@ ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Uthin, Gau
 {
   ImportGauge(_Uthin,_Ufat);
 }
-template <class Impl>
-ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Utriple, GaugeField &_Ufat, GridCartesian &Fgrid,
-							 GridRedBlackCartesian &Hgrid, RealD _mass,
-							 const ImplParams &p)
-  : ImprovedStaggeredFermion(Fgrid,Hgrid,_mass,1.0,1.0,1.0,p)
-{
-  ImportGaugeSimple(_Utriple,_Ufat);
-}
-
 
   ////////////////////////////////////////////////////////////
   // Momentum space propagator should be 
@@ -105,11 +96,6 @@ ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Utriple, G
   // turn to free propagator for the one component chi field, a la page 4/5
   // of above link to implmement fourier based solver.
   ////////////////////////////////////////////////////////////
-template <class Impl>
-void ImprovedStaggeredFermion<Impl>::ImportGauge(const GaugeField &_Uthin) 
-{
-  ImportGauge(_Uthin,_Uthin);
-};
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::ImportGaugeSimple(const GaugeField &_Utriple,const GaugeField &_Ufat) 
 {
@@ -133,6 +119,20 @@ void ImprovedStaggeredFermion<Impl>::ImportGaugeSimple(const GaugeField &_Utripl
     PokeIndex<LorentzIndex>(Umu, -U, mu+4);
 
   }
+  CopyGaugeCheckerboards();
+}
+template <class Impl>
+void ImprovedStaggeredFermion<Impl>::ImportGaugeSimple(const DoubledGaugeField &_UUU,const DoubledGaugeField &_U) 
+{
+
+  Umu   = _U;
+  UUUmu = _UUU;
+  CopyGaugeCheckerboards();
+}
+
+template <class Impl>
+void ImprovedStaggeredFermion<Impl>::CopyGaugeCheckerboards(void)
+{
   pickCheckerboard(Even, UmuEven,  Umu);
   pickCheckerboard(Odd,  UmuOdd ,  Umu);
   pickCheckerboard(Even, UUUmuEven,UUUmu);
@@ -168,10 +168,7 @@ void ImprovedStaggeredFermion<Impl>::ImportGauge(const GaugeField &_Uthin,const 
     PokeIndex<LorentzIndex>(UUUmu, U*(-0.5*c2/u0/u0/u0), mu+4);
   }
 
-  pickCheckerboard(Even, UmuEven, Umu);
-  pickCheckerboard(Odd,  UmuOdd , Umu);
-  pickCheckerboard(Even, UUUmuEven, UUUmu);
-  pickCheckerboard(Odd,   UUUmuOdd, UUUmu);
+  CopyGaugeCheckerboards();
 }
 
 /////////////////////////////
