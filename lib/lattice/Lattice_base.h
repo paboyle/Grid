@@ -67,6 +67,7 @@ protected:
   uint64_t _odata_size;    
 public:
   accelerator_inline LatticeAccelerator() : checkerboard(0), _odata(nullptr), _odata_size(0), _grid(nullptr) { }; 
+  accelerator_inline uint64_t oSites(void) const { return _odata_size; };
   accelerator_inline int  Checkerboard(void) const { return checkerboard; };
   accelerator_inline int &Checkerboard(void) { return this->checkerboard; }; // can assign checkerboard on a container, not a view
   accelerator_inline void Conformable(GridBase * &grid) const
