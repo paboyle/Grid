@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <H5Cpp.h>
+#include <Grid/tensors/Tensors.h>
 #include "Hdf5Type.h"
 
 #ifndef H5_NO_NAMESPACE
@@ -37,6 +38,12 @@ namespace Grid
     template <typename U>
     typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
     writeDefault(const std::string &s, const std::vector<U> &x);
+    template <typename T>
+    void writeDefault(const std::string &s, const iScalar<T> &t);
+    template <typename T, int N>
+    void writeDefault(const std::string &s, const iVector<T, N> &t);
+    template <typename T, int N>
+    void writeDefault(const std::string &s, const iMatrix<T, N> &t);
   private:
     template <typename U>
     void writeSingleAttribute(const U &x, const std::string &name,
@@ -146,6 +153,24 @@ namespace Grid
       write(s + "_" + std::to_string(i), x[i]);
     }
     pop();
+  }
+
+  template <typename T>
+  void Hdf5Writer::writeDefault(const std::string &s, const iScalar<T> &t)
+  {
+    writeDefault(s, tensorToVec(t));
+  }
+
+  template <typename T, int N>
+  void Hdf5Writer::writeDefault(const std::string &s, const iVector<T, N> &t)
+  {
+    writeDefault(s, tensorToVec(t));
+  }
+
+  template <typename T, int N>
+  void Hdf5Writer::writeDefault(const std::string &s, const iMatrix<T, N> &t)
+  {
+    writeDefault(s, tensorToVec(t));
   }
   
   // Reader template implementation ////////////////////////////////////////////
