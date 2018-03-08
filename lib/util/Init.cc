@@ -49,6 +49,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Grid.h>
 
 #include <Grid/util/CompilerCompatible.h>
+#include <version.h>
 
 
 #include <fenv.h>
@@ -296,6 +297,12 @@ void Grid_init(int *argc,char ***argv)
     std::cout << "but WITHOUT ANY WARRANTY; without even the implied warranty of"<<std::endl;
     std::cout << "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"<<std::endl;
     std::cout << "GNU General Public License for more details."<<std::endl;
+#ifdef GITHASH
+    std::cout << "Current Grid git commit hash=" << GITHASH << std::endl;
+#else
+    std::cout << "Current Grid git commit hash is undefined. Check makefile." << std::endl;
+#endif
+#undef GITHASH
     std::cout << std::endl;
   }
 
