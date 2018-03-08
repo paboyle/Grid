@@ -50,6 +50,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/iterative/ConjugateGradientReliableUpdate.h>
 #include <Grid/algorithms/iterative/ImplicitlyRestartedLanczos.h>
 #include <Grid/algorithms/iterative/ImplicitlyRestartedLanczosCJ.h>
+#include <Grid/algorithms/iterative/ImplicitlyRestartedBlockLanczos.h>
 #include <Grid/algorithms/CoarsenedMatrix.h>
 #include <Grid/algorithms/FFT.h>
 

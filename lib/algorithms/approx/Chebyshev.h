@@ -54,10 +54,16 @@ struct ChebyParams : Serializable {
 
   public:
     void csv(std::ostream &out){
-      RealD diff = hi-lo;
+
+#if 0
       RealD delta = (hi-lo)*1.0e-9;
       for (RealD x=lo; x<hi; x+=delta) {
 	delta*=1.1;
+#else
+	RealD diff = hi-lo;
+      //for (RealD x=lo-0.2*diff; x<hi+0.2*diff; x+=(hi-lo)/1000) {
+      for (RealD x=lo-0.2*diff; x<hi+0.2*diff; x+=diff/1000.0) { // ypj [note] divide by float
+#endif
 	RealD f = approx(x);
 	out<< x<<" "<<f<<std::endl;
       }
@@ -89,7 +95,7 @@ struct ChebyParams : Serializable {
       
       if(order < 2) exit(-1);
       Coeffs.resize(order);
-      Coeffs.assign(order,0.);
+      Coeffs.assign(order,0.);  
       Coeffs[order-1] = 1.;
     };
 

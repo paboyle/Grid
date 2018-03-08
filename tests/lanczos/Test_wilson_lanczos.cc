@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
   GridParallelRNG RNG4(UGrid);
   RNG4.SeedFixedIntegers(seeds4);
   GridParallelRNG RNG5rb(FrbGrid);
-  RNG5.SeedFixedIntegers(seeds5);
+  RNG5.SeedFixedIntegers(seeds5); // ypj [note] Does it mean RNG5rb? RNG5rb is never used.
 
   LatticeGaugeField Umu(UGrid);
   SU3::HotConfiguration(RNG4, Umu);

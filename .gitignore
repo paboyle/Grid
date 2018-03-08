@@ -88,12 +88,18 @@ Thumbs.db
 ###################
 build*/*
 
+# bootstrap #
+#############
+*.tar.bz2*
+
 # IDE related files #
 #####################
 *.xcodeproj/*
 build.sh
 .vscode
 *.code-workspace
+.ctags
+tags
 
 # Eigen source #
 ################
