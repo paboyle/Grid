@@ -45,7 +45,8 @@ public:
                           bool , b,
                           std::vector<double>, array,
                           std::vector<std::vector<double> >, twodimarray,
-                          std::vector<std::vector<std::vector<Complex> > >, cmplx3darray
+                          std::vector<std::vector<std::vector<Complex> > >, cmplx3darray,
+                          SpinColourMatrix, scm
                           );
   myclass() {}
   myclass(int i)
@@ -59,6 +60,12 @@ public:
     y=2*i;
     b=true;
     name="bother said pooh";
+    scm()(0, 1)(2, 1) = 2.356;
+    scm()(3, 0)(1, 1) = 1.323;
+    scm()(2, 1)(0, 1) = 5.3336;
+    scm()(0, 2)(1, 1) = 6.336;
+    scm()(2, 1)(2, 2) = 7.344;
+    scm()(1, 1)(2, 0) = 8.3534;
   }
 };
 
@@ -113,6 +120,10 @@ void tensorConvTestFn(GridSerialRNG &rng, const std::string label)
 
 int main(int argc,char **argv)
 {
+  GridSerialRNG    rng;
+
+  rng.SeedFixedIntegers(std::vector<int>({42,10,81,9}));
+  
   std::cout << "==== basic IO" << std::endl;
   XmlWriter WR("bother.xml");
 
@@ -138,7 +149,7 @@ int main(int argc,char **argv)
   std::cout << "-- serialisable class writing to 'bother.xml'..." << std::endl;
   write(WR,"obj",obj);
   WR.write("obj2", obj);
-  vec.push_back(myclass(1234));
+  vec.push_back(obj);
   vec.push_back(myclass(5678));
   vec.push_back(myclass(3838));
   pair = std::make_pair(myenum::red, myenum::blue);
@@ -149,8 +160,6 @@ int main(int argc,char **argv)
   std::cout << "-- serialisable class comparison:" << std::endl;
   std::cout << "vec[0] == obj: " << ((vec[0] == obj) ? "true" : "false") << std::endl;
   std::cout << "vec[1] == obj: " << ((vec[1] == obj) ? "true" : "false") << std::endl;
-
-  write(WR, "objpair", pair);
   std::cout << "-- pair writing to std::cout:" << std::endl;
   std::cout << pair << std::endl;
 
@@ -159,26 +168,20 @@ int main(int argc,char **argv)
   //// XML
   ioTest<XmlWriter, XmlReader>("iotest.xml", obj, "XML    (object)           ");
   ioTest<XmlWriter, XmlReader>("iotest.xml", vec, "XML    (vector of objects)");
-  ioTest<XmlWriter, XmlReader>("iotest.xml", pair, "XML    (pair of objects)");
   //// binary
   ioTest<BinaryWriter, BinaryReader>("iotest.bin", obj, "binary (object)           ");
   ioTest<BinaryWriter, BinaryReader>("iotest.bin", vec, "binary (vector of objects)");
-  ioTest<BinaryWriter, BinaryReader>("iotest.bin", pair, "binary (pair of objects)");
   //// text
   ioTest<TextWriter, TextReader>("iotest.dat", obj, "text   (object)           ");
   ioTest<TextWriter, TextReader>("iotest.dat", vec, "text   (vector of objects)");
-  ioTest<TextWriter, TextReader>("iotest.dat", pair, "text   (pair of objects)");
   //// text
   ioTest<JSONWriter, JSONReader>("iotest.json", obj,  "JSON   (object)           ");
   ioTest<JSONWriter, JSONReader>("iotest.json", vec,  "JSON   (vector of objects)");
-  ioTest<JSONWriter, JSONReader>("iotest.json", pair, "JSON   (pair of objects)");
 
   //// HDF5
-#undef HAVE_HDF5
 #ifdef HAVE_HDF5
   ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", obj, "HDF5   (object)           ");
   ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", vec, "HDF5   (vector of objects)");
-  ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", pair, "HDF5   (pair of objects)");
 #endif
 
   std::cout << "\n==== vector flattening/reconstruction" << std::endl;
@@ -216,10 +219,6 @@ int main(int argc,char **argv)
   std::cout << std::endl;
 
   std::cout << "==== Grid tensor to vector test" << std::endl;
-
-  GridSerialRNG    rng;
-
-  rng.SeedFixedIntegers(std::vector<int>({42,10,81,9}));
   tensorConvTest(rng, SpinColourMatrix);
   tensorConvTest(rng, SpinColourVector);
   tensorConvTest(rng, ColourMatrix);
