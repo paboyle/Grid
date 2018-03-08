@@ -62,46 +62,46 @@ static Vector<vComplexF> signsF;
 #undef INTERIOR
 #undef EXTERIOR
 template<> void 
-WilsonKernels<WilsonImplF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<ZWilsonImplF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<WilsonImplFH>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplFH>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<ZWilsonImplFH>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplFH>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 #undef INTERIOR_AND_EXTERIOR
 #define INTERIOR
 #undef EXTERIOR
 template<> void 
-WilsonKernels<WilsonImplF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<ZWilsonImplF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<WilsonImplFH>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplFH>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<ZWilsonImplFH>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplFH>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 
@@ -109,23 +109,23 @@ WilsonKernels<ZWilsonImplFH>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,
 #undef INTERIOR
 #define EXTERIOR
 template<> void 
-WilsonKernels<WilsonImplF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<ZWilsonImplF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<WilsonImplFH>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplFH>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<ZWilsonImplFH>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplFH>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
       
 /////////////////////////////////////////////////////////////////
@@ -136,69 +136,69 @@ WilsonKernels<ZWilsonImplFH>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,
 #undef INTERIOR
 #undef EXTERIOR
 template<> void 
-WilsonKernels<WilsonImplF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<ZWilsonImplF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<WilsonImplFH>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplFH>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<ZWilsonImplFH>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplFH>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 #undef INTERIOR_AND_EXTERIOR
 #define INTERIOR
 #undef EXTERIOR
 template<> void 
-WilsonKernels<WilsonImplF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<ZWilsonImplF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<WilsonImplFH>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplFH>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<ZWilsonImplFH>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplFH>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 #undef INTERIOR_AND_EXTERIOR
 #undef INTERIOR
 #define EXTERIOR
 template<> void 
-WilsonKernels<WilsonImplF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 template<> void 
-WilsonKernels<ZWilsonImplF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 template<> void 
-WilsonKernels<WilsonImplFH>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplFH>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 template<> void 
-WilsonKernels<ZWilsonImplFH>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplFH>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 #undef MAYBEPERM
@@ -214,42 +214,42 @@ WilsonKernels<ZWilsonImplFH>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & 
 #undef INTERIOR
 #undef EXTERIOR
 template<> void 
-WilsonKernels<DomainWallVec5dImplF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<DomainWallVec5dImplFH>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplFH>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 #undef INTERIOR_AND_EXTERIOR
 #define INTERIOR
 #undef EXTERIOR
 template<> void 
-WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<DomainWallVec5dImplFH>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplFH>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 #undef INTERIOR_AND_EXTERIOR
@@ -258,23 +258,23 @@ WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSiteInt(StencilImpl &st,LebesgueOr
 #undef  MULT_2SPIN
 #define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN_LSNOPF(ptr,pf)
 template<> void 
-WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 template<> void 
-WilsonKernels<DomainWallVec5dImplFH>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplFH>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 /////////////////////////////////////////////////////////////////
@@ -285,63 +285,63 @@ WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSiteExt(StencilImpl &st,LebesgueOr
 #undef INTERIOR
 #undef EXTERIOR
 template<> void 
-WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<DomainWallVec5dImplFH>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplFH>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 #undef INTERIOR_AND_EXTERIOR
 #define INTERIOR
 #undef EXTERIOR
 template<> void 
-WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<DomainWallVec5dImplFH>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplFH>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 #undef INTERIOR_AND_EXTERIOR
 #undef INTERIOR
 #define EXTERIOR
 template<> void 
-WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<DomainWallVec5dImplFH>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplFH>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 #undef COMPLEX_SIGNS
@@ -376,63 +376,63 @@ static int signInitD = setupSigns(signsD);
 #undef INTERIOR
 #undef EXTERIOR
 template<> void 
-WilsonKernels<WilsonImplD>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplD>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZWilsonImplD>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplD>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<WilsonImplDF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplDF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZWilsonImplDF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplDF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 #undef INTERIOR_AND_EXTERIOR
 #define INTERIOR
 #undef EXTERIOR
 template<> void 
-WilsonKernels<WilsonImplD>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplD>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZWilsonImplD>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplD>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<WilsonImplDF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplDF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZWilsonImplDF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplDF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 #undef INTERIOR_AND_EXTERIOR
 #undef INTERIOR
 #define EXTERIOR
 template<> void 
-WilsonKernels<WilsonImplD>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplD>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZWilsonImplD>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplD>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
       
 template<> void 
-WilsonKernels<WilsonImplDF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplDF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZWilsonImplDF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplDF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
       
 /////////////////////////////////////////////////////////////////
@@ -443,63 +443,63 @@ WilsonKernels<ZWilsonImplDF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,
 #undef INTERIOR
 #undef EXTERIOR
 template<> void 
-WilsonKernels<WilsonImplD>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplD>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZWilsonImplD>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplD>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<WilsonImplDF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplDF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZWilsonImplDF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplDF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 #undef INTERIOR_AND_EXTERIOR
 #define INTERIOR
 #undef EXTERIOR
 template<> void 
-WilsonKernels<WilsonImplD>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplD>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZWilsonImplD>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplD>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<WilsonImplDF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplDF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZWilsonImplDF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplDF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 #undef INTERIOR_AND_EXTERIOR
 #undef INTERIOR
 #define EXTERIOR
 template<> void 
-WilsonKernels<WilsonImplD>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplD>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZWilsonImplD>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplD>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 template<> void 
-WilsonKernels<WilsonImplDF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplDF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZWilsonImplDF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZWilsonImplDF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 #undef MAYBEPERM
@@ -515,42 +515,42 @@ WilsonKernels<ZWilsonImplDF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & 
 #undef INTERIOR
 #undef EXTERIOR
 template<> void 
-WilsonKernels<DomainWallVec5dImplD>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplD>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplD>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplD>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<DomainWallVec5dImplDF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplDF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplDF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplDF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 #undef INTERIOR_AND_EXTERIOR
 #define INTERIOR
 #undef EXTERIOR
 template<> void 
-WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplD>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplD>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<DomainWallVec5dImplDF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplDF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplDF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplDF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 #undef INTERIOR_AND_EXTERIOR
@@ -559,21 +559,21 @@ WilsonKernels<ZDomainWallVec5dImplDF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOr
 #undef  MULT_2SPIN
 #define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN_LSNOPF(ptr,pf)
 template<> void 
-WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplD>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplD>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 template<> void 
-WilsonKernels<DomainWallVec5dImplDF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplDF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplDF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplDF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 /////////////////////////////////////////////////////////////////
@@ -584,63 +584,63 @@ WilsonKernels<ZDomainWallVec5dImplDF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOr
 #undef INTERIOR
 #undef EXTERIOR
 template<> void 
-WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplD>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplD>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<DomainWallVec5dImplDF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplDF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplDF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplDF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 #undef INTERIOR_AND_EXTERIOR
 #define INTERIOR
 #undef EXTERIOR
 template<> void 
-WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplD>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplD>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<DomainWallVec5dImplDF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplDF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplDF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplDF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 #undef INTERIOR_AND_EXTERIOR
 #undef INTERIOR
 #define EXTERIOR
 template<> void 
-WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplD>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplD>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 template<> void 
-WilsonKernels<DomainWallVec5dImplDF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<DomainWallVec5dImplDF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 template<> void 
-WilsonKernels<ZDomainWallVec5dImplDF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<ZDomainWallVec5dImplDF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
 #undef COMPLEX_SIGNS
