@@ -5,6 +5,10 @@ include $(top_srcdir)/doxygen.inc
 
 bin_SCRIPTS=grid-config
 
+BUILT_SOURCES = version.h
+
+version.h:
+	echo "`git log -n 1 --format=format:"#define GITHASH \\"%H:%d\\"%n" HEAD`" > $(srcdir)/lib/version.h
 
 .PHONY: bench check tests doxygen-run doxygen-doc $(DX_PS_GOAL) $(DX_PDF_GOAL)
 
