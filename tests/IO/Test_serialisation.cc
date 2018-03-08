@@ -93,6 +93,24 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
   if (!good) exit(EXIT_FAILURE);
 }
 
+template <typename T>
+void tensorConvTestFn(GridSerialRNG &rng, const std::string label)
+{
+  T    t, ft;
+  Real n;
+  bool good;
+
+  random(rng, t);
+  auto tv = tensorToVec(t);
+  vecToTensor(ft, tv);
+  n    = norm2(t - ft);
+  good = (n == 0);
+  std::cout << label << " norm 2 diff: " << n << " -- " 
+            << (good ? "success" : "failure") << std::endl;
+}
+
+#define tensorConvTest(rng, type) tensorConvTestFn<type>(rng, #type)
+
 int main(int argc,char **argv)
 {
   std::cout << "==== basic IO" << std::endl;
@@ -200,17 +218,12 @@ int main(int argc,char **argv)
   std::cout << "==== Grid tensor to vector test" << std::endl;
 
   GridSerialRNG    rng;
-  SpinColourMatrix scm;
-  SpinColourVector scv;
 
   rng.SeedFixedIntegers(std::vector<int>({42,10,81,9}));
-  random(rng, scm);
-  random(rng, scv);
-  std::cout << "Test spin-color matrix: " << scm << std::endl;
-  std::cout << "Test spin-color vector: " << scv << std::endl;
-  std::cout << "Converting to std::vector" << std::endl;
-  auto scmv = tensorToVec(scm);
-  auto scvv = tensorToVec(scv);
-  std::cout << "Spin-color matrix: " << scmv << std::endl;
-  std::cout << "Spin-color vector: " << scvv << std::endl;
+  tensorConvTest(rng, SpinColourMatrix);
+  tensorConvTest(rng, SpinColourVector);
+  tensorConvTest(rng, ColourMatrix);
+  tensorConvTest(rng, ColourVector);
+  tensorConvTest(rng, SpinMatrix);
+  tensorConvTest(rng, SpinVector);
 }

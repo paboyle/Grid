@@ -103,6 +103,38 @@ namespace Grid {
     return v;
   }
 
+  template <typename T>
+  void vecToTensor(T &t, const typename TensorToVec<T>::type &v)
+  {
+    t = v;
+  }
+
+
+  template <typename T>
+  void vecToTensor(iScalar<T> &t, const typename TensorToVec<iScalar<T>>::type &v)
+  {
+    vecToTensor(t._internal, v);
+  }
+
+  template <typename T, int N>
+  void vecToTensor(iVector<T, N> &t, const typename TensorToVec<iVector<T, N>>::type &v)
+  {
+    for (unsigned int i = 0; i < N; i++) 
+    {
+      vecToTensor(t._internal[i], v[i]);
+    }
+  }
+
+  template <typename T, int N>
+  void vecToTensor(iMatrix<T, N> &t, const typename TensorToVec<iMatrix<T, N>>::type &v)
+  {
+    for (unsigned int i = 0; i < N; i++)
+    for (unsigned int j = 0; j < N; j++)
+    {
+      vecToTensor(t._internal[i][j], v[i][j]);
+    }
+  }
+
   // Vector element trait //////////////////////////////////////////////////////  
   template <typename T>
   struct element
