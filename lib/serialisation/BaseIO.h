@@ -31,113 +31,10 @@ Author: Guido Cossu <guido.cossu@ed.ac.uk>
 #define GRID_SERIALISATION_ABSTRACT_READER_H
 
 #include <type_traits>
+#include <Grid/tensors/Tensors.h>
+#include <Grid/serialisation/VectorUtils.h>
 
 namespace Grid {
-  // Vector IO utilities ///////////////////////////////////////////////////////
-  // helper function to read space-separated values
-  template <typename T>
-  std::vector<T> strToVec(const std::string s)
-  {
-    std::istringstream sstr(s);
-    T                  buf;
-    std::vector<T>     v;
-    
-    while(!sstr.eof())
-    {
-      sstr >> buf;
-      v.push_back(buf);
-    }
-    
-    return v;
-  }
-  
-  // output to streams for vectors
-  template < class T >
-  inline std::ostream & operator<<(std::ostream &os, const std::vector<T> &v)
-  {
-    os << "[";
-    for (auto &x: v)
-    {
-      os << x << " ";
-    }
-    if (v.size() > 0)
-    {
-      os << "\b";
-    }
-    os << "]";
-    
-    return os;
-  }
-  
-  // Vector element trait //////////////////////////////////////////////////////  
-  template <typename T>
-  struct element
-  {
-    typedef T type;
-    static constexpr bool is_number = false;
-  };
-  
-  template <typename T>
-  struct element<std::vector<T>>
-  {
-    typedef typename element<T>::type type;
-    static constexpr bool is_number = std::is_arithmetic<T>::value
-                                      or is_complex<T>::value
-                                      or element<T>::is_number;
-  };
-  
-  // Vector flattening utility class ////////////////////////////////////////////
-  // Class to flatten a multidimensional std::vector
-  template <typename V>
-  class Flatten
-  {
-  public:
-    typedef typename element<V>::type Element;
-  public:
-    explicit                     Flatten(const V &vector);
-    const V &                    getVector(void);
-    const std::vector<Element> & getFlatVector(void);
-    const std::vector<size_t>  & getDim(void);
-  private:
-    void accumulate(const Element &e);
-    template <typename W>
-    void accumulate(const W &v);
-    void accumulateDim(const Element &e);
-    template <typename W>
-    void accumulateDim(const W &v);
-  private:
-    const V              &vector_;
-    std::vector<Element> flatVector_;
-    std::vector<size_t>  dim_;
-  };
-  
-  // Class to reconstruct a multidimensional std::vector
-  template <typename V>
-  class Reconstruct
-  {
-  public:
-    typedef typename element<V>::type Element;
-  public:
-    Reconstruct(const std::vector<Element> &flatVector,
-                const std::vector<size_t> &dim);
-    const V &                    getVector(void);
-    const std::vector<Element> & getFlatVector(void);
-    const std::vector<size_t>  & getDim(void);
-  private:
-    void fill(std::vector<Element> &v);
-    template <typename W>
-    void fill(W &v);
-    void resize(std::vector<Element> &v, const unsigned int dim);
-    template <typename W>
-    void resize(W &v, const unsigned int dim);
-  private:
-    V                          vector_;
-    const std::vector<Element> &flatVector_;
-    std::vector<size_t>        dim_;
-    size_t                     ind_{0};
-    unsigned int               dimInd_{0};
-  };
-  
   // Pair IO utilities /////////////////////////////////////////////////////////
   // helper function to parse input in the format "<obj1 obj2>"
   template <typename T1, typename T2>
@@ -151,15 +48,15 @@ namespace Grid {
     do
     {
       is.get(c);
-    } while (c != '<' && !is.eof());
-    if (c == '<')
+    } while (c != '(' && !is.eof());
+    if (c == '(')
     {
       int start = is.tellg();
       do
       {
         is.get(c);
-      } while (c != '>' && !is.eof());
-      if (c == '>')
+      } while (c != ')' && !is.eof());
+      if (c == ')')
       {
         int end = is.tellg();
         int psize = end - start - 1;
@@ -182,7 +79,7 @@ namespace Grid {
   template <class T1, class T2>
   inline std::ostream & operator<<(std::ostream &os, const std::pair<T1, T2> &p)
   {
-    os << "<" << p.first << " " << p.second << ">";
+    os << "(" << p.first << " " << p.second << ")";
     return os;
   }
 
@@ -205,6 +102,12 @@ namespace Grid {
     template <typename U>
     typename std::enable_if<!std::is_base_of<Serializable, U>::value, void>::type
     write(const std::string& s, const U &output);
+    template <typename U>
+    void write(const std::string &s, const iScalar<U> &output);
+    template <typename U, int N>
+    void write(const std::string &s, const iVector<U, N> &output);
+    template <typename U, int N>
+    void write(const std::string &s, const iMatrix<U, N> &output);
   private:
     T *upcast;
   };
@@ -224,6 +127,12 @@ namespace Grid {
     template <typename U>
     typename std::enable_if<!std::is_base_of<Serializable, U>::value, void>::type
     read(const std::string& s, U &output);
+    template <typename U>
+    void read(const std::string &s, iScalar<U> &output);
+    template <typename U, int N>
+    void read(const std::string &s, iVector<U, N> &output);
+    template <typename U, int N>
+    void read(const std::string &s, iMatrix<U, N> &output);
   protected:
     template <typename U>
     void fromString(U &output, const std::string &s);
@@ -237,203 +146,9 @@ namespace Grid {
   };
   template<typename T> struct isWriter {
     static const bool value = false;
-  }; 
-
-
-
-  // Generic writer interface
-  // serializable base class
-  class Serializable
-  {
-  public:
-    template <typename T>
-    static inline void write(Writer<T> &WR,const std::string &s,
-                             const Serializable &obj)
-    {}
-    
-    template <typename T>
-    static inline void read(Reader<T> &RD,const std::string &s,
-                            Serializable &obj)
-    {}
-    
-    friend inline std::ostream & operator<<(std::ostream &os,
-                                            const Serializable &obj)
-    {
-      return os;
-    }
   };
-  
-  // Flatten class template implementation /////////////////////////////////////
-  template <typename V>
-  void Flatten<V>::accumulate(const Element &e)
-  {
-    flatVector_.push_back(e);
-  }
-  
-  template <typename V>
-  template <typename W>
-  void Flatten<V>::accumulate(const W &v)
-  {
-    for (auto &e: v)
-    {
-      accumulate(e);
-    }
-  }
-  
-  template <typename V>
-  void Flatten<V>::accumulateDim(const Element &e) {};
-  
-  template <typename V>
-  template <typename W>
-  void Flatten<V>::accumulateDim(const W &v)
-  {
-    dim_.push_back(v.size());
-    accumulateDim(v[0]);
-  }
-  
-  template <typename V>
-  Flatten<V>::Flatten(const V &vector)
-  : vector_(vector)
-  {
-    accumulate(vector_);
-    accumulateDim(vector_);
-  }
-  
-  template <typename V>
-  const V & Flatten<V>::getVector(void)
-  {
-    return vector_;
-  }
-  
-  template <typename V>
-  const std::vector<typename Flatten<V>::Element> &
-  Flatten<V>::getFlatVector(void)
-  {
-    return flatVector_;
-  }
-  
-  template <typename V>
-  const std::vector<size_t> & Flatten<V>::getDim(void)
-  {
-    return dim_;
-  }
-  
-  // Reconstruct class template implementation /////////////////////////////////
-  template <typename V>
-  void Reconstruct<V>::fill(std::vector<Element> &v)
-  {
-    for (auto &e: v)
-    {
-      e = flatVector_[ind_++];
-    }
-  }
-  
-  template <typename V>
-  template <typename W>
-  void Reconstruct<V>::fill(W &v)
-  {
-    for (auto &e: v)
-    {
-      fill(e);
-    }
-  }
-  
-  template <typename V>
-  void Reconstruct<V>::resize(std::vector<Element> &v, const unsigned int dim)
-  {
-    v.resize(dim_[dim]);
-  }
-  
-  template <typename V>
-  template <typename W>
-  void Reconstruct<V>::resize(W &v, const unsigned int dim)
-  {
-    v.resize(dim_[dim]);
-    for (auto &e: v)
-    {
-      resize(e, dim + 1);
-    }
-  }
-  
-  template <typename V>
-  Reconstruct<V>::Reconstruct(const std::vector<Element> &flatVector,
-                              const std::vector<size_t> &dim)
-  : flatVector_(flatVector)
-  , dim_(dim)
-  {
-    resize(vector_, 0);
-    fill(vector_);
-  }
-  
-  template <typename V>
-  const V & Reconstruct<V>::getVector(void)
-  {
-    return vector_;
-  }
-  
-  template <typename V>
-  const std::vector<typename Reconstruct<V>::Element> &
-  Reconstruct<V>::getFlatVector(void)
-  {
-    return flatVector_;
-  }
-  
-  template <typename V>
-  const std::vector<size_t> & Reconstruct<V>::getDim(void)
-  {
-    return dim_;
-  }
-  
-  // Generic writer interface //////////////////////////////////////////////////
-  template <typename T>
-  inline void push(Writer<T> &w, const std::string &s) {
-    w.push(s);
-  }
-  
-  template <typename T>
-  inline void push(Writer<T> &w, const char *s)
-  {
-    w.push(std::string(s));
-  }
-  
-  template <typename T>
-  inline void pop(Writer<T> &w)
-  {
-    w.pop();
-  }
-  
-  template <typename T, typename U>
-  inline void write(Writer<T> &w, const std::string& s, const U &output)
-  {
-    w.write(s, output);
-  }
-  
-  // Generic reader interface
-  template <typename T>
-  inline bool push(Reader<T> &r, const std::string &s)
-  {
-    return r.push(s);
-  }
-  
-  template <typename T>
-  inline bool push(Reader<T> &r, const char *s)
-  {
-    return r.push(std::string(s));
-  }
-  
-  template <typename T>
-  inline void pop(Reader<T> &r)
-  {
-    r.pop();
-  }
-  
-  template <typename T, typename U>
-  inline void read(Reader<T> &r, const std::string &s, U &output)
-  {
-    r.read(s, output);
-  }
-  
-  // Writer template implementation ////////////////////////////////////////////
+
+  // Writer template implementation
   template <typename T>
   Writer<T>::Writer(void)
   {
@@ -466,6 +181,27 @@ namespace Grid {
   Writer<T>::write(const std::string &s, const U &output)
   {
     upcast->writeDefault(s, output);
+  }
+
+  template <typename T>
+  template <typename U>
+  void Writer<T>::write(const std::string &s, const iScalar<U> &output)
+  {
+    upcast->writeDefault(s, tensorToVec(output));
+  }
+
+  template <typename T>
+  template <typename U, int N>
+  void Writer<T>::write(const std::string &s, const iVector<U, N> &output)
+  {
+    upcast->writeDefault(s, tensorToVec(output));
+  }
+
+  template <typename T>
+  template <typename U, int N>
+  void Writer<T>::write(const std::string &s, const iMatrix<U, N> &output)
+  {
+    upcast->writeDefault(s, tensorToVec(output));
   }
   
   // Reader template implementation
@@ -502,7 +238,37 @@ namespace Grid {
   {
     upcast->readDefault(s, output);
   }
+
+  template <typename T>
+  template <typename U>
+  void Reader<T>::read(const std::string &s, iScalar<U> &output)
+  {
+    typename TensorToVec<iScalar<U>>::type v;
+
+    upcast->readDefault(s, v);
+    vecToTensor(output, v);
+  }
+
+  template <typename T>
+  template <typename U, int N>
+  void Reader<T>::read(const std::string &s, iVector<U, N> &output)
+  {
+    typename TensorToVec<iVector<U, N>>::type v;
+    
+    upcast->readDefault(s, v);
+    vecToTensor(output, v);
+  }
   
+  template <typename T>
+  template <typename U, int N>
+  void Reader<T>::read(const std::string &s, iMatrix<U, N> &output)
+  {
+    typename TensorToVec<iMatrix<U, N>>::type v;
+    
+    upcast->readDefault(s, v);
+    vecToTensor(output, v);
+  }
+
   template <typename T>
   template <typename U>
   void Reader<T>::fromString(U &output, const std::string &s)
@@ -520,6 +286,76 @@ namespace Grid {
       std::cerr << "(typeid: " << typeid(U).name() << ")" << std::endl;
       abort();
     }
+  }
+
+  // serializable base class ///////////////////////////////////////////////////
+  class Serializable
+  {
+  public:
+    template <typename T>
+    static inline void write(Writer<T> &WR,const std::string &s,
+                             const Serializable &obj)
+    {}
+    
+    template <typename T>
+    static inline void read(Reader<T> &RD,const std::string &s,
+                            Serializable &obj)
+    {}
+    
+    friend inline std::ostream & operator<<(std::ostream &os,
+                                            const Serializable &obj)
+    {
+      return os;
+    }
+  };
+  
+  // Generic writer interface //////////////////////////////////////////////////
+  template <typename T>
+  inline void push(Writer<T> &w, const std::string &s) {
+    w.push(s);
+  }
+  
+  template <typename T>
+  inline void push(Writer<T> &w, const char *s)
+  {
+    w.push(std::string(s));
+  }
+  
+  template <typename T>
+  inline void pop(Writer<T> &w)
+  {
+    w.pop();
+  }
+  
+  template <typename T, typename U>
+  inline void write(Writer<T> &w, const std::string& s, const U &output)
+  {
+    w.write(s, output);
+  }
+  
+  // Generic reader interface //////////////////////////////////////////////////
+  template <typename T>
+  inline bool push(Reader<T> &r, const std::string &s)
+  {
+    return r.push(s);
+  }
+  
+  template <typename T>
+  inline bool push(Reader<T> &r, const char *s)
+  {
+    return r.push(std::string(s));
+  }
+  
+  template <typename T>
+  inline void pop(Reader<T> &r)
+  {
+    r.pop();
+  }
+  
+  template <typename T, typename U>
+  inline void read(Reader<T> &r, const std::string &s, U &output)
+  {
+    r.read(s, output);
   }
 }
 
