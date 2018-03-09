@@ -632,6 +632,15 @@ void VirtualMachine::executeProgram(const Program &p) const
     // build garbage collection schedule
     LOG(Debug) << "Building garbage collection schedule..." << std::endl;
     freeProg = makeGarbageSchedule(p);
+    for (unsigned int i = 0; i < freeProg.size(); ++i)
+    {
+        LOG(Debug) << std::setw(4) << i + 1 << ": [";
+        for (auto &a: freeProg[i])
+        {
+            std::cout << env().getObjectName(a) << " ";
+        }
+        std::cout << "]" << std::endl;
+    }
 
     // program execution
     LOG(Debug) << "Executing program..." << std::endl;
