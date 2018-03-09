@@ -718,7 +718,7 @@ int main(int argc, char **argv) {
 
     std::vector<std::unique_ptr<OperatorFunction<CoarseCoarseVector>>> dummyCoarseCoarseSolvers;
     dummyCoarseCoarseSolvers.emplace_back(new GeneralisedMinimalResidual<CoarseCoarseVector>(5.0e-2, 100, 8, false));
-    dummyCoarseCoarseSolvers.emplace_back(new MinimalResidual<CoarseCoarseVector>(5.0e-2, 100, false));
+    dummyCoarseCoarseSolvers.emplace_back(new MinimalResidual<CoarseCoarseVector>(5.0e-2, 100, 0.8, false));
     dummyCoarseCoarseSolvers.emplace_back(new ConjugateGradient<CoarseCoarseVector>(5.0e-2, 100, false));
 
     // std::cout << GridLogMessage << "**************************************************" << std::endl;
