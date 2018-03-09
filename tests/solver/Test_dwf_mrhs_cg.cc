@@ -26,17 +26,18 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
+#include <Grid/parallelIO/IldgIOtypes.h>
 #include <Grid/algorithms/iterative/BlockConjugateGradient.h>
 
-using namespace std;
+//using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
 int main (int argc, char ** argv)
 {
-  typedef typename DomainWallFermionR::FermionField FermionField; 
-  typedef typename DomainWallFermionR::ComplexField ComplexField; 
-  typename DomainWallFermionR::ImplParams params; 
+  typedef typename Grid::QCD::DomainWallFermionR::FermionField FermionField; 
+  typedef typename Grid::QCD::DomainWallFermionR::ComplexField ComplexField; 
+  typename Grid::QCD::DomainWallFermionR::ImplParams params; 
 
   const int Ls=4;
 
@@ -102,7 +103,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   std::cout << GridLogMessage << " Writing out in parallel view "<<std::endl;
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-  emptyUserRecord record;
+//  Grid::emptyUserRecord record;
   std::string file("./scratch.scidac");
   std::string filef("./scratch.scidac.ferm");
 
@@ -114,21 +115,21 @@ int main (int argc, char ** argv)
 
   {
     FGrid->Barrier();
-    ScidacWriter _ScidacWriter;
-    _ScidacWriter.open(file);
+//    ScidacWriter _ScidacWriter;
+//    _ScidacWriter.open(file);
     std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
     std::cout << GridLogMessage << " Writing out gauge field "<<std::endl;
     std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-    _ScidacWriter.writeScidacFieldRecord(Umu,record);
-    _ScidacWriter.close();
+//    _ScidacWriter.writeScidacFieldRecord(Umu,record);
+//    _ScidacWriter.close();
     FGrid->Barrier();
     std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
     std::cout << GridLogMessage << " Reading in gauge field "<<std::endl;
     std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-    ScidacReader  _ScidacReader;
-    _ScidacReader.open(file);
-    _ScidacReader.readScidacFieldRecord(s_Umu,record);
-    _ScidacReader.close();
+//    ScidacReader  _ScidacReader;
+//    _ScidacReader.open(file);
+//    _ScidacReader.readScidacFieldRecord(s_Umu,record);
+//    _ScidacReader.close();
     FGrid->Barrier();
     std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
     std::cout << GridLogMessage << " Read in gauge field "<<std::endl;
@@ -144,10 +145,10 @@ int main (int argc, char ** argv)
       std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
 
       std::stringstream filefn;      filefn << filef << "."<< n;
-      ScidacWriter _ScidacWriter;
-      _ScidacWriter.open(filefn.str());
-      _ScidacWriter.writeScidacFieldRecord(src[n],record);
-      _ScidacWriter.close();
+//      ScidacWriter _ScidacWriter;
+//      _ScidacWriter.open(filefn.str());
+//      _ScidacWriter.writeScidacFieldRecord(src[n],record);
+//      _ScidacWriter.close();
     }
       
     FGrid->Barrier();
@@ -159,10 +160,10 @@ int main (int argc, char ** argv)
     for(int n=0;n<nrhs;n++){
       if ( n==me ) { 
 	std::stringstream filefn;	filefn << filef << "."<< n;
-	ScidacReader  _ScidacReader;
-	_ScidacReader.open(filefn.str());
-	_ScidacReader.readScidacFieldRecord(s_src,record);
-	_ScidacReader.close();
+//	ScidacReader  _ScidacReader;
+//	_ScidacReader.open(filefn.str());
+//	_ScidacReader.readScidacFieldRecord(s_src,record);
+//	_ScidacReader.close();
       }
     }
     FGrid->Barrier();

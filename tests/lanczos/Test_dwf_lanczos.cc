@@ -84,7 +84,7 @@ int main (int argc, char ** argv)
 
   std::vector<double> Coeffs { 0.,-1.};
   Polynomial<FermionField> PolyX(Coeffs);
-  Chebyshev<FermionField> Cheb(0.2,5.5,11);
+  Chebyshev<FermionField> Cheby(0.2,5.5,11);
 
   FunctionHermOp<FermionField> OpCheby(Cheby,HermOp);
      PlainHermOp<FermionField> Op     (HermOp);

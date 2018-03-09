@@ -22,6 +22,7 @@
 */
 #include <Grid/Grid.h>
 #include <Grid/algorithms/iterative/ImplicitlyRestartedLanczos.h>
+#include <Grid/parallelIO/IldgIO.h>
 /////////////////////////////////////////////////////////////////////////////
 // The following are now decoupled from the Lanczos and deal with grids.
 // Safe to replace functionality

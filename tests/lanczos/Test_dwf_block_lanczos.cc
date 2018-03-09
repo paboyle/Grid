@@ -46,7 +46,7 @@ class CmdJobParams
     double M5;
     double mob_b;
     std::vector<ComplexD> omega;
-    std::vector<ComplexD> boundary_phase;
+    std::vector<Complex> boundary_phase;
     
     LanczosType Impl;
     int Nu;
