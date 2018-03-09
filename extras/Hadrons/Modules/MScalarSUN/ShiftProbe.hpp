@@ -116,7 +116,7 @@ template <typename SImpl>
 void TShiftProbe<SImpl>::setup(void)
 {
     envTmpLat(Field, "acc");
-    envCacheLat(ComplexField, getName());
+    envCreateLat(ComplexField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
