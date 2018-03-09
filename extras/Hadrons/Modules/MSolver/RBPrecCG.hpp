@@ -111,9 +111,15 @@ std::vector<std::string> TRBPrecCG<FImpl>::getOutput(void)
 template <typename FImpl>
 void TRBPrecCG<FImpl>::setup(void)
 {
+    if (par().maxIteration == 0)
+    {
+        HADRON_ERROR(Argument, "zero maximum iteration");
+    }
+
     LOG(Message) << "setting up Schur red-black preconditioned CG for"
                  << " action '" << par().action << "' with residual "
-                 << par().residual << std::endl;
+                 << par().residual << ", maximum iteration " 
+                 << par().maxIteration << std::endl;
 
     auto Ls     = env().getObjectLs(par().action);
     auto &mat   = envGet(FMat, par().action);

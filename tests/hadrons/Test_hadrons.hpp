@@ -176,8 +176,9 @@ inline void makeRBPrecCGSolver(Application &application, std::string &solverName
     if (!(VirtualMachine::getInstance().hasModule(solverName)))
     {
         MSolver::RBPrecCG::Par solverPar;
-        solverPar.action   = actionName;
-        solverPar.residual = residual;
+        solverPar.action       = actionName;
+        solverPar.residual     = residual;
+        solverPar.maxIteration = 10000;
         application.createModule<MSolver::RBPrecCG>(solverName,
                                                     solverPar);
     }
