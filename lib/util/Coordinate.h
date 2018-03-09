@@ -58,7 +58,7 @@ public:
   }
   accelerator_inline void  resize(size_type sz,const value &val) {
     assert(sz>=0);
-    assert(sz<MaxEntries);
+    assert(sz<=MaxEntries);
     _size = sz;
     for(int s=0;s<sz;s++) _data[s]=val;
   }
