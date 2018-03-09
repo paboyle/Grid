@@ -35,8 +35,6 @@ Author: Christoph Lehner <clehner@bnl.gov>
 //#include <zlib.h>
 #include <sys/stat.h>
 
-#define clog std::cout << GridLogMessage 
-
 namespace Grid { 
 
   ////////////////////////////////////////////////////////
@@ -403,16 +401,7 @@ until convergence
 
       std::cout<<GridLogIRL <<" running "<<Nm-Nk <<" steps: "<<std::endl;
       for(int k=Nk; k<Nm; ++k) step(eval,lme,evec,f,Nm,k);
-      for(int k=0; k<Nm; ++k) {
-        clog << "ckpt A1: lme[" << k << "] = " << lme[k] << '\n';
-      }
-      for(int k=0; k<Nm; ++k) {
-        clog << "ckpt A2: lmd[" << k << "] = " << eval[k] << '\n';
-      }
-      
       f *= lme[Nm-1];
-      //clog << "ckpt C " << '\n';
-      //clog << "norm2(f) = " << norm2(f) << std::endl;
 
       std::cout<<GridLogIRL <<" "<<Nm-Nk <<" steps done "<<std::endl;
       std::cout<<GridLogIRL <<"Initial steps:OrthoTime "<<OrthoTime<< "seconds"<<std::endl;
@@ -427,12 +416,8 @@ until convergence
       Qt = Eigen::MatrixXd::Identity(Nm,Nm);
       diagonalize(eval2,lme2,Nm,Nm,Qt,grid);
       std::cout<<GridLogIRL <<" diagonalized "<<std::endl;
-      
-      //////////////////////////////////
-      //  clog << "ckpt D " << '\n';
-      //  clog << "eval2 [" << k << "] = " << eval2[k] << std::endl;
-      //}
 
+      //////////////////////////////////
       // sorting
       //////////////////////////////////
       eval2_copy = eval2;
@@ -449,44 +434,24 @@ until convergence
       }
 
       //////////////////////////////////
-      //  clog << "ckpt E " << '\n';
-      //  clog << "eval2 [" << k << "] = " << eval2[k] << std::endl;
-      //}
-      
       // Implicitly shifted QR transformations
       //////////////////////////////////
       Qt = Eigen::MatrixXd::Identity(Nm,Nm);
       for(int ip=k2; ip<Nm; ++ip){ 
 	QR_decomp(eval,lme,Nm,Nm,Qt,eval2[ip],k1,Nm);
-        clog << "ckpt B1: shift[" << ip << "] = " << eval2[ip] << std::endl;
       }
       std::cout<<GridLogIRL <<"QR decomposed "<<std::endl;
 
       assert(k2<Nm);      assert(k2<Nm);      assert(k1>0);
-      //  for (int j=0; j<Nm; ++j) {
-      //    clog << "ckpt G2: Q[" << i << "," << j << "] = " << Qt(j,i) << '\n';
-      //  }
-      //}
-      for (int i=0; i<Nm; ++i) {
-        clog << "ckpt C1: lme[" << i << "] = " << lme[i] << '\n';
-      }
-      for (int i=0; i<Nm; ++i) {
-        clog << "ckpt C2: lmd[" << i << "] = " << eval[i] << '\n';
-      }
-    
 
       basisRotate(evec,Qt,k1-1,k2+1,0,Nm,Nm); /// big constraint on the basis
       std::cout<<GridLogIRL <<"basisRotated  by Qt"<<std::endl;
-        evec[j] = B[j];
-        //clog << "ckpt F: norm2_evec[ " << j << "]" << norm2(evec[j]) << std::endl;
-      }
       
       ////////////////////////////////////////////////////
       // Compressed vector f and beta(k2)
       ////////////////////////////////////////////////////
       f *= Qt(k2-1,Nm-1);
-      f += lme[k2-1] * evec[k2]; // was commented out
-      std::cout<< GridLogMessage<<"ckpt D1: Q[Nm-1,Nk-1] = "<<Qt(Nk-1,Nm-1)<<std::endl;
+      f += lme[k2-1] * evec[k2];
       beta_k = norm2(f);
       beta_k = sqrt(beta_k);
       std::cout<<GridLogIRL<<" beta(k) = "<<beta_k<<std::endl;
@@ -506,19 +471,6 @@ until convergence
       diagonalize(eval2,lme2,Nk,Nm,Qt,grid);
       std::cout<<GridLogIRL <<" Diagonalized "<<std::endl;
 	  
-      //for (int i=0; i<Nk; ++i) {
-      //  for (int j=0; j<Nk; ++j) {
-      //    clog << "ckpt H1: R[" << i << "," << j << "] = " << Qt(j,i) << '\n';
-      //  }
-      //}
-      //for (int i=0; i<Nk; ++i) {
-      //  clog << "ckpt H2: eval2[" << i << "] = " << eval2[i] << '\n';
-      //}
-      
-      //for(int j=0; j<Nk; ++j) {
-      //  clog << "ckpt I: norm2_B[ " << j << "]" << norm2(B[j]) << std::endl;
-      //}
-
       Nconv = 0;
       if (iter >= MinRestart) {
 
@@ -622,17 +574,10 @@ until convergence
 
     _PolyOp(evec_k,w);    std::cout<<GridLogIRL << "PolyOp" <<std::endl;
 
-    if(k>0) { 
-      w -= lme[k-1] * evec[k-1];
-      //clog << "ckpt A (k= " << k << ")" << '\n';
-      //clog << "lme = " << lme[k-1] << '\n';
-      //clog << "norm(w) = " << norm2(w) << std::endl;
-    }
+    if(k>0) w -= lme[k-1] * evec[k-1];
 
     ComplexD zalph = innerProduct(evec_k,w); // 4. αk:=(wk,vk)
     RealD     alph = real(zalph);
-    //clog << "ckpt B (k= " << k << ")" << '\n';
-    //clog << "lmd = " << alph << std::endl;
 
     w = w - alph * evec_k;// 5. wk:=wk−αkvk
 
@@ -893,5 +838,4 @@ void diagonalize_QR(std::vector<RealD>& lmd, std::vector<RealD>& lme,
 }
 };
 }
-#undef clog
 #endif
