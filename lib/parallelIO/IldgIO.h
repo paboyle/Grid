@@ -568,7 +568,6 @@ class IldgWriter : public ScidacWriter {
     writeLimeIldgLFN(header.ildg_lfn);                                                 // rec
     writeLimeLatticeBinaryObject(Umu,std::string(ILDG_BINARY_DATA));      // Closes message with checksum
     //    limeDestroyWriter(LimeW);
-    fclose(File);
   }
 };
 
