@@ -306,9 +306,46 @@ namespace Grid {
       return M(in,out);
     };
 
-    // Defer support for further coarsening for now
-    void Mdiag    (const CoarseVector &in,  CoarseVector &out){};
-    void Mdir     (const CoarseVector &in,  CoarseVector &out,int dir, int disp){};
+    void Mdir(const CoarseVector &in, CoarseVector &out, int dir, int disp) {
+
+      conformable(_grid,in._grid);
+      conformable(in._grid,out._grid);
+
+      SimpleCompressor<siteVector> compressor;
+      Stencil.HaloExchange(in,compressor);
+
+      auto point = [dir, disp](){
+        if(dir == 0 and disp == 0)
+          return 8;
+        else
+          return (4 * dir + 1 - disp) / 2;
+      }();
+
+      parallel_for(int ss=0;ss<Grid()->oSites();ss++){
+        siteVector res = zero;
+        siteVector nbr;
+        int ptype;
+        StencilEntry *SE;
+
+        SE=Stencil.GetEntry(ptype,point,ss);
+
+        if(SE->_is_local&&SE->_permute) {
+          permute(nbr,in._odata[SE->_offset],ptype);
+        } else if(SE->_is_local) {
+          nbr = in._odata[SE->_offset];
+        } else {
+          nbr = Stencil.CommBuf()[SE->_offset];
+        }
+
+        res = res + A[point]._odata[ss]*nbr;
+
+        vstream(out._odata[ss],res);
+      }
+    };
+
+    void Mdiag(const CoarseVector &in, CoarseVector &out) {
+      Mdir(in, out, 0, 0); // use the self coupling (= last) point of the stencil
+    };
 
     CoarsenedMatrix(GridCartesian &CoarseGrid) 	: 
 
