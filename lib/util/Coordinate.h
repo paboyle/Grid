@@ -53,7 +53,7 @@ public:
   accelerator_inline void  clear(void) { resize(0);}
   accelerator_inline void  resize(size_type sz) {
     assert(sz>=0);
-    assert(sz<MaxEntries);
+    assert(sz<=MaxEntries);
     _size = sz;
   }
   accelerator_inline void  resize(size_type sz,const value &val) {
