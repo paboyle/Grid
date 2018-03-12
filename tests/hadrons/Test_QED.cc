@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
         mesPar.output  = "QED/pt_" + flavour[i] + flavour[j];
         mesPar.q1      = "Qpt_" + flavour[i];
         mesPar.q2      = "Qpt_" + flavour[j];
-        mesPar.gammas  = "<Gamma5 Gamma5>";
+        mesPar.gammas  = "(Gamma5 Gamma5)";
         mesPar.sink    = "sink";
         application.createModule<MContraction::Meson>("meson_pt_"
                                                       + flavour[i] + flavour[j],
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
 					+ flavour[i] + "__" + flavour[j];
         mesPar_seq_T.q1      = "Qpt_" + flavour[i] + "_seq_T" + flavour[i];
         mesPar_seq_T.q2      = "Qpt_" + flavour[j];
-        mesPar_seq_T.gammas  = "<Gamma5 Gamma5>";
+        mesPar_seq_T.gammas  = "(Gamma5 Gamma5)";
         mesPar_seq_T.sink    = "sink";
         application.createModule<MContraction::Meson>("meson_tadpole_pt_" +
                                                       flavour[i] + "_seq_T" 
@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
 				+ flavour[j];
         mesPar_seq_E.q1      = "Qpt_" + flavour[i] + "_seq_V_ph_" + flavour[i];
         mesPar_seq_E.q2      = "Qpt_" + flavour[j] + "_seq_V_ph_" + flavour[j];
-        mesPar_seq_E.gammas  = "<Gamma5 Gamma5>";
+        mesPar_seq_E.gammas  = "(Gamma5 Gamma5)";
         mesPar_seq_E.sink    = "sink";
         application.createModule<MContraction::Meson>("meson_exchange_pt_" 
 					+ flavour[i] + "_seq_V_ph_" + flavour[i] 
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
         mesPar_seq_S.q1      = "Qpt_" + flavour[i] + "_seq_V_ph_" + flavour[i] 
 				+ "_seq_V_ph_" + flavour[i];
         mesPar_seq_S.q2      = "Qpt_" + flavour[j];
-        mesPar_seq_S.gammas  = "<Gamma5 Gamma5>";
+        mesPar_seq_S.gammas  = "(Gamma5 Gamma5)";
         mesPar_seq_S.sink    = "sink";
         application.createModule<MContraction::Meson>("meson_selfenergy_pt_" 
 						    + flavour[i] + "_seq_V_ph_" 
