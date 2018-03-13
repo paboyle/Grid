@@ -77,8 +77,6 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
-private:
-    std::string      fineName_, coarseName_;
 };
 
 MODULE_REGISTER_NS(LocalCoherenceLanczos, 
@@ -95,10 +93,7 @@ MODULE_REGISTER_NS(ZLocalCoherenceLanczos,
 template <typename FImpl, int nBasis>
 TLocalCoherenceLanczos<FImpl, nBasis>::TLocalCoherenceLanczos(const std::string name)
 : Module<LocalCoherenceLanczosPar>(name)
-{
-    fineName_   = getName() + "_fine";
-    coarseName_ = getName() + "_coarse";
-}
+{}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl, int nBasis>
@@ -112,7 +107,7 @@ std::vector<std::string> TLocalCoherenceLanczos<FImpl, nBasis>::getInput(void)
 template <typename FImpl, int nBasis>
 std::vector<std::string> TLocalCoherenceLanczos<FImpl, nBasis>::getOutput(void)
 {
-    std::vector<std::string> out = {fineName_, coarseName_};
+    std::vector<std::string> out = {getName()};
     
     return out;
 }
@@ -138,7 +133,7 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::setup(void)
     envCreateDerived(BasePack, CoarsePack, getName(), Ls,
                      par().fineParams.Nm, cNm, env().getRbGrid(Ls), cgrb);
 
-    auto &epack = envGet(CoarsePack, getName());
+    auto &epack = envGetDerived(BasePack, CoarsePack, getName());
 
     envTmp(SchurFMat, "mat", Ls, envGet(FMat, par().action));
     envGetTmp(SchurFMat, mat);
@@ -152,7 +147,7 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::execute(void)
 {
     auto &finePar   = par().fineParams;
     auto &coarsePar = par().coarseParams;
-    auto &epack     = envGet(CoarsePack, getName());
+    auto &epack     = envGetDerived(BasePack, CoarsePack, getName());
 
     envGetTmp(LCL, solver);
     LOG(Message) << "Performing fine grid IRL -- Nstop= " 
