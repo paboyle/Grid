@@ -116,6 +116,10 @@ public:
                                          Ts && ... args);
     void                    setObjectModule(const unsigned int objAddress,
                                             const int modAddress);
+    template <typename B, typename T>
+    T *                     getDerivedObject(const unsigned int address) const;
+    template <typename B, typename T>
+    T *                     getDerivedObject(const std::string name) const;
     template <typename T>
     T *                     getObject(const unsigned int address) const;
     template <typename T>
@@ -186,7 +190,7 @@ Holder<T>::Holder(T *pt)
 template <typename T>
 T & Holder<T>::get(void) const
 {
-    return &objPt_.get();
+    return *objPt_.get();
 }
 
 template <typename T>
@@ -231,7 +235,7 @@ void Environment::createDerivedObject(const std::string name,
         object_[address].Ls      = Ls;
         object_[address].data.reset(new Holder<B>(new T(std::forward<Ts>(args)...)));
         object_[address].size    = MemoryProfiler::stats->maxAllocated - initMem;
-        object_[address].type    = &typeid(T);
+        object_[address].type    = &typeid(B);
         if (MemoryProfiler::stats == &memStats)
         {
             MemoryProfiler::stats = nullptr;
@@ -241,7 +245,7 @@ void Environment::createDerivedObject(const std::string name,
     else if ((object_[address].storage != Storage::cache) or 
              (object_[address].storage != storage)        or
              (object_[address].name    != name)           or
-             (object_[address].type    != &typeid(T)))
+             (object_[address].type    != &typeid(B)))
     {
         HADRON_ERROR(Definition, "object '" + name + "' already allocated");
     }
@@ -256,21 +260,37 @@ void Environment::createObject(const std::string name,
     createDerivedObject<T, T>(name, storage, Ls, std::forward<Ts>(args)...);
 }
 
-template <typename T>
-T * Environment::getObject(const unsigned int address) const
+template <typename B, typename T>
+T * Environment::getDerivedObject(const unsigned int address) const
 {
     if (hasObject(address))
     {
         if (hasCreatedObject(address))
         {
-            if (auto h = dynamic_cast<Holder<T> *>(object_[address].data.get()))
+            if (auto h = dynamic_cast<Holder<B> *>(object_[address].data.get()))
             {
-                return h->getPt();
+                if (&typeid(T) == &typeid(B))
+                {
+                    return dynamic_cast<T *>(h->getPt());
+                }
+                else
+                {
+                    if (auto hder = dynamic_cast<T *>(h->getPt()))
+                    {
+                        return hder;
+                    }
+                    else
+                    {
+                        HADRON_ERROR(Definition, "object with address " + std::to_string(address) +
+                            " cannot be casted to '" + typeName(&typeid(T)) +
+                            "' (has type '" + typeName(&typeid(h->get())) + "')");
+                    }
+                }
             }
             else
             {
                 HADRON_ERROR(Definition, "object with address " + std::to_string(address) +
-                            " does not have type '" + typeName(&typeid(T)) +
+                            " does not have type '" + typeName(&typeid(B)) +
                             "' (has type '" + getObjectType(address) + "')");
             }
         }
@@ -284,6 +304,18 @@ T * Environment::getObject(const unsigned int address) const
     {
         HADRON_ERROR(Definition, "no object with address " + std::to_string(address));
     }
+}
+
+template <typename B, typename T>
+T * Environment::getDerivedObject(const std::string name) const
+{
+    return getDerivedObject<B, T>(getObjectAddress(name));
+}
+
+template <typename T>
+T * Environment::getObject(const unsigned int address) const
+{
+    return getDerivedObject<T, T>(address);
 }
 
 template <typename T>
