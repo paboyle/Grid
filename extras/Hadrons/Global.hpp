@@ -190,7 +190,7 @@ name + "." + std::to_string(vm().getTrajectory()) + "." + resultFileExt
 // default Schur convention
 
 #ifndef HADRONS_DEFAULT_SCHUR 
-#define HADRONS_DEFAULT_SCHUR DiagMooee
+#define HADRONS_DEFAULT_SCHUR DiagTwo
 #endif
 #define _HADRONS_SCHUR_OP_(conv) Schur##conv##Operator
 #define HADRONS_SCHUR_OP(conv) _HADRONS_SCHUR_OP_(conv)
