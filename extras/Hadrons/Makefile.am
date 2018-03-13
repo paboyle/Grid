@@ -21,7 +21,7 @@ nobase_libHadrons_a_HEADERS = \
 	GeneticScheduler.hpp      \
 	Global.hpp                \
 	Graph.hpp                 \
-	LanczosUtils.hpp          \
+	EigenPack.hpp          \
 	Module.hpp                \
 	Modules.hpp               \
 	ModuleFactory.hpp         \

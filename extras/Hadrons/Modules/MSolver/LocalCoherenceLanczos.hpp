@@ -31,7 +31,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
-#include <Grid/Hadrons/LanczosUtils.hpp>
+#include <Grid/Hadrons/EigenPack.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -45,8 +45,7 @@ class LocalCoherenceLanczosPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(LocalCoherenceLanczosPar,
                                     std::string,   action,
-                                    int,           doFine,
-                                    int,           doCoarse,
+                                    bool,          doCoarse,
                                     LanczosParams, fineParams,
                                     LanczosParams, coarseParams,
                                     ChebyParams,   smoother,
@@ -63,8 +62,8 @@ public:
     typedef LocalCoherenceLanczos<typename FImpl::SiteSpinor, 
                                   typename FImpl::SiteComplex, 
                                   nBasis>                LCL;
-    typedef FineEigenPack<FImpl>                         FinePack;
-    typedef CoarseEigenPack<FImpl, nBasis>               CoarsePack; 
+    typedef FermionEigenPack<FImpl>                      BasePack;
+    typedef CoarseFermionEigenPack<FImpl, nBasis>        CoarsePack;
     typedef HADRONS_DEFAULT_SCHUR_OP<FMat, FermionField> SchurFMat;
 public:
     // constructor
@@ -79,15 +78,7 @@ public:
     // execution
     virtual void execute(void);
 private:
-    void makeCoarseGrid(void);
-private:
-    std::vector<int>                       coarseDim_;
-    int                                    Ls_, cLs_{1};
-    std::unique_ptr<GridCartesian>         coarseGrid4_{nullptr};
-    std::unique_ptr<GridCartesian>         coarseGrid_{nullptr};
-    std::unique_ptr<GridRedBlackCartesian> coarseGrid4Rb_{nullptr};
-    std::unique_ptr<GridRedBlackCartesian> coarseGridRb_{nullptr};
-    std::string                            fineName_, coarseName_;
+    std::string      fineName_, coarseName_;
 };
 
 MODULE_REGISTER_NS(LocalCoherenceLanczos, 
@@ -128,74 +119,31 @@ std::vector<std::string> TLocalCoherenceLanczos<FImpl, nBasis>::getOutput(void)
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl, int nBasis>
-void TLocalCoherenceLanczos<FImpl, nBasis>::makeCoarseGrid(void)
-{
-    int              nd        = env().getNd();
-    std::vector<int> blockSize = strToVec<int>(par().blockSize);
-    auto             fineDim   = env().getDim();
-
-    Ls_ = env().getObjectLs(par().action);
-    env().createGrid(Ls_);
-    coarseDim_.resize(nd);
-    for (int d = 0; d < coarseDim_.size(); d++)
-    {
-        coarseDim_[d] = fineDim[d]/blockSize[d];
-        if (coarseDim_[d]*blockSize[d] != fineDim[d])
-        {
-            HADRON_ERROR(Size, "Fine dimension " + std::to_string(d) 
-                         + " (" + std::to_string(fineDim[d]) 
-                         + ") not divisible by coarse dimension ("
-                         + std::to_string(coarseDim_[d]) + ")"); 
-        }
-    }
-    if (blockSize.size() > nd)
-    {
-        cLs_ = Ls_/blockSize[nd];
-        if (cLs_*blockSize[nd] != Ls_)
-        {
-            HADRON_ERROR(Size, "Fine Ls (" + std::to_string(Ls_) 
-                         + ") not divisible by coarse Ls ("
-                         + std::to_string(cLs_) + ")");
-        }
-    }
-    if (Ls_ > 1)
-    {
-        coarseGrid4_.reset(SpaceTimeGrid::makeFourDimGrid(
-            coarseDim_, GridDefaultSimd(nd, vComplex::Nsimd()),
-            GridDefaultMpi()));
-        coarseGrid4Rb_.reset(SpaceTimeGrid::makeFourDimRedBlackGrid(coarseGrid4_.get()));
-        coarseGrid_.reset(SpaceTimeGrid::makeFiveDimGrid(cLs_, coarseGrid4_.get()));
-        coarseGridRb_.reset(SpaceTimeGrid::makeFiveDimRedBlackGrid(cLs_, coarseGrid4_.get()));
-    }
-    else
-    {
-        coarseGrid_.reset(SpaceTimeGrid::makeFourDimGrid(
-            coarseDim_, GridDefaultSimd(nd, vComplex::Nsimd()),
-            GridDefaultMpi()));
-        coarseGridRb_.reset(SpaceTimeGrid::makeFourDimRedBlackGrid(coarseGrid_.get()));
-    }
-}
-
-template <typename FImpl, int nBasis>
 void TLocalCoherenceLanczos<FImpl, nBasis>::setup(void)
 {
     LOG(Message) << "Setting up local coherence Lanczos eigensolver for"
                  << " action '" << par().action << "' (" << nBasis
                  << " eigenvectors)..." << std::endl;
     
-    if (!coarseGrid_)
-    {
-        makeCoarseGrid();
-    }
-    LOG(Message) << "Coarse grid: " << coarseGrid_->GlobalDimensions() << std::endl;
-    envCreate(FinePack, fineName_, Ls_, par().fineParams.Nm, env().getRbGrid(Ls_));
-    envCreate(CoarsePack, coarseName_, Ls_, par().coarseParams.Nm, coarseGridRb_.get());
-    auto &fine   = envGet(FinePack, fineName_);
-    auto &coarse = envGet(CoarsePack, coarseName_);
-    envTmp(SchurFMat, "mat", Ls_, envGet(FMat, par().action));
+    unsigned int Ls        = env().getObjectLs(par().action);
+    auto         blockSize = strToVec<int>(par().blockSize);
+
+    env().createCoarseGrid(blockSize, Ls);
+
+    auto cg   = env().getCoarseGrid(blockSize, Ls);
+    auto cgrb = env().getRbCoarseGrid(blockSize, Ls);
+    int  cNm  = (par().doCoarse) ? par().coarseParams.Nm : 0;
+
+    LOG(Message) << "Coarse grid: " << cg->GlobalDimensions() << std::endl;
+    envCreateDerived(BasePack, CoarsePack, getName(), Ls,
+                     par().fineParams.Nm, cNm, env().getRbGrid(Ls), cgrb);
+
+    auto &epack = envGet(CoarsePack, getName());
+
+    envTmp(SchurFMat, "mat", Ls, envGet(FMat, par().action));
     envGetTmp(SchurFMat, mat);
-    envTmp(LCL, "solver", Ls_, env().getRbGrid(Ls_), coarseGridRb_.get(), mat, 
-           Odd, fine.evec, coarse.evec, fine.eval, coarse.eval);
+    envTmp(LCL, "solver", Ls, env().getRbGrid(Ls), cgrb, mat, 
+           Odd, epack.evec, epack.evecCoarse, epack.eval, epack.evalCoarse);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -204,41 +152,33 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::execute(void)
 {
     auto &finePar   = par().fineParams;
     auto &coarsePar = par().coarseParams;
-    auto &fine      = envGet(FinePack, fineName_);
-    auto &coarse    = envGet(CoarsePack, coarseName_);
+    auto &epack     = envGet(CoarsePack, getName());
 
     envGetTmp(LCL, solver);
-    if (par().doFine)
-    {
-        LOG(Message) << "Performing fine grid IRL -- Nstop= " 
-                     << finePar.Nstop << ", Nk= " << finePar.Nk << ", Nm= " 
-                     << finePar.Nm << std::endl;
-        solver.calcFine(finePar.Cheby, finePar.Nstop, finePar.Nk, finePar.Nm,
-                        finePar.resid,finePar.MaxIt, finePar.betastp, 
-                        finePar.MinRes);
-        solver.testFine(finePar.resid*100.0);
-        LOG(Message) << "Orthogonalising" << std::endl;
-        solver.Orthogonalise();
-        if (!par().output.empty())
-        {
-            fine.write(par().output + "_fine");
-        }
-    }
+    LOG(Message) << "Performing fine grid IRL -- Nstop= " 
+                 << finePar.Nstop << ", Nk= " << finePar.Nk << ", Nm= " 
+                 << finePar.Nm << std::endl;
+    solver.calcFine(finePar.Cheby, finePar.Nstop, finePar.Nk, finePar.Nm,
+                    finePar.resid,finePar.MaxIt, finePar.betastp, 
+                    finePar.MinRes);
+    solver.testFine(finePar.resid*100.0);
     if (par().doCoarse)
     {
+        LOG(Message) << "Orthogonalising" << std::endl;
+        solver.Orthogonalise();
         LOG(Message) << "Performing coarse grid IRL -- Nstop= " 
-                     << coarsePar.Nstop << ", Nk= " << coarsePar.Nk << ", Nm= " 
-                     << coarsePar.Nm << std::endl;
+                    << coarsePar.Nstop << ", Nk= " << coarsePar.Nk << ", Nm= " 
+                    << coarsePar.Nm << std::endl;
         solver.calcCoarse(coarsePar.Cheby, par().smoother, par().coarseRelaxTol,
-			              coarsePar.Nstop, coarsePar.Nk, coarsePar.Nm, 
+                          coarsePar.Nstop, coarsePar.Nk, coarsePar.Nm, 
                           coarsePar.resid, coarsePar.MaxIt, coarsePar.betastp, 
                           coarsePar.MinRes);
         solver.testCoarse(coarsePar.resid*100.0, par().smoother, 
-                          par().coarseRelaxTol);
-        if (!par().output.empty())
-        {
-            coarse.write(par().output + "_coarse");
-        }
+                        par().coarseRelaxTol);
+    }
+    if (!par().output.empty())
+    {
+        epack.write(par().output, vm().getTrajectory());
     }
 }
 
