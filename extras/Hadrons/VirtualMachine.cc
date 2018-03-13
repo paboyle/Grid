@@ -381,7 +381,6 @@ void VirtualMachine::makeMemoryProfile(void)
     env().protectObjects(false);
     GridLogMessage.Active(false);
     HadronsLogMessage.Active(false);
-    HadronsLogError.Active(false);
     for (auto it = program.rbegin(); it != program.rend(); ++it) 
     {
         auto a = *it;
@@ -397,7 +396,6 @@ void VirtualMachine::makeMemoryProfile(void)
     env().protectObjects(protect);
     GridLogMessage.Active(gmsg);
     HadronsLogMessage.Active(hmsg);
-    HadronsLogError.Active(err);
     LOG(Debug) << "Memory profile:" << std::endl;
     LOG(Debug) << "----------------" << std::endl;
     for (unsigned int a = 0; a < profile_.module.size(); ++a)
