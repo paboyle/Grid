@@ -53,6 +53,8 @@ modules_hpp =\
   Modules/MScalarSUN/Utils.hpp \
   Modules/MScalarSUN/TransProj.hpp \
   Modules/MScalarSUN/TrKinetic.hpp \
+  Modules/MIO/LoadEigenPack.hpp \
   Modules/MIO/LoadNersc.hpp \
+  Modules/MIO/LoadCoarseEigenPack.hpp \
   Modules/MIO/LoadBinary.hpp
 

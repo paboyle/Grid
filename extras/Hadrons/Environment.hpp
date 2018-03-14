@@ -78,7 +78,7 @@ private:
         Size                    size{0};
         Storage                 storage{Storage::object};
         unsigned int            Ls{0};
-        const std::type_info    *type{nullptr};
+        const std::type_info    *type{nullptr}, *derivedType{nullptr};
         std::string             name;
         int                     module{-1};
         std::unique_ptr<Object> data{nullptr};
@@ -230,22 +230,24 @@ void Environment::createDerivedObject(const std::string name,
         {
             MemoryProfiler::stats = &memStats;
         }
-        size_t initMem           = MemoryProfiler::stats->currentlyAllocated;
-        object_[address].storage = storage;
-        object_[address].Ls      = Ls;
+        size_t initMem               = MemoryProfiler::stats->currentlyAllocated;
+        object_[address].storage     = storage;
+        object_[address].Ls          = Ls;
         object_[address].data.reset(new Holder<B>(new T(std::forward<Ts>(args)...)));
-        object_[address].size    = MemoryProfiler::stats->maxAllocated - initMem;
-        object_[address].type    = &typeid(B);
+        object_[address].size        = MemoryProfiler::stats->maxAllocated - initMem;
+        object_[address].type        = &typeid(B);
+        object_[address].derivedType = &typeid(T);
         if (MemoryProfiler::stats == &memStats)
         {
             MemoryProfiler::stats = nullptr;
         }
     }
     // object already exists, no error if it is a cache, error otherwise
-    else if ((object_[address].storage != Storage::cache) or 
-             (object_[address].storage != storage)        or
-             (object_[address].name    != name)           or
-             (object_[address].type    != &typeid(B)))
+    else if ((object_[address].storage     != Storage::cache) or 
+             (object_[address].storage     != storage)        or
+             (object_[address].name        != name)           or
+             (object_[address].type        != &typeid(B))     or
+             (object_[address].derivedType != &typeid(T)))
     {
         HADRON_ERROR(Definition, "object '" + name + "' already allocated");
     }

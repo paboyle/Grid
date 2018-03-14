@@ -108,7 +108,7 @@ namespace Grid {
 
     template<class Matrix>
     void operator() (Matrix & _Matrix,const Field &in, Field &out){
-      ZeroGuesser guess;
+      ZeroGuesser<Field> guess;
       (*this)(_Matrix,in,out,guess);
     }
     template<class Matrix, class Guesser>
@@ -195,7 +195,7 @@ namespace Grid {
   };
     template<class Matrix>
     void operator() (Matrix & _Matrix,const Field &in, Field &out){
-      ZeroGuesser guess;
+      ZeroGuesser<Field> guess;
       (*this)(_Matrix,in,out,guess);
     }
     template<class Matrix, class Guesser>
@@ -280,7 +280,7 @@ namespace Grid {
 
     template<class Matrix>
     void operator() (Matrix & _Matrix,const Field &in, Field &out){
-      ZeroGuesser guess;
+      ZeroGuesser<Field> guess;
       (*this)(_Matrix,in,out,guess);
     }
     template<class Matrix,class Guesser>
@@ -365,7 +365,7 @@ namespace Grid {
 
     template<class Matrix>
     void operator() (Matrix & _Matrix,const Field &in, Field &out){
-      ZeroGuesser guess;
+      ZeroGuesser<Field> guess;
       (*this)(_Matrix,in,out,guess);
     }
     template<class Matrix, class Guesser>

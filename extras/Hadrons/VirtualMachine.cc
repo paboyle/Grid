@@ -632,12 +632,14 @@ void VirtualMachine::executeProgram(const Program &p) const
     freeProg = makeGarbageSchedule(p);
     for (unsigned int i = 0; i < freeProg.size(); ++i)
     {
-        LOG(Debug) << std::setw(4) << i + 1 << ": [";
+        std::string msg = "";
+
         for (auto &a: freeProg[i])
         {
-            std::cout << env().getObjectName(a) << " ";
+            msg += env().getObjectName(a) + " ";
         }
-        std::cout << "]" << std::endl;
+        msg += "]";
+        LOG(Debug) << std::setw(4) << i + 1 << ": [" << msg << std::endl;
     }
 
     // program execution

@@ -29,6 +29,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define Hadrons_EigenPack_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
+#include <Grid/algorithms/iterative/Deflation.h>
 #include <Grid/algorithms/iterative/LocalCoherenceLanczos.h>
 
 BEGIN_HADRONS_NAMESPACE
@@ -38,12 +39,14 @@ BEGIN_HADRONS_NAMESPACE
 #define HADRONS_DEFAULT_LANCZOS_NBASIS 60
 #endif
 
-template <typename Field>
+template <typename F>
 class EigenPack
 {
 public:
+    typedef F Field;
+public:
     std::vector<RealD> eval;
-    std::vector<Field> evec;
+    std::vector<F>     evec;
 public:
     EigenPack(void)          = default;
     virtual ~EigenPack(void) = default;
@@ -123,12 +126,14 @@ protected:
     }
 };
 
-template <typename FineField, typename CoarseField>
-class CoarseEigenPack: public EigenPack<FineField>
+template <typename FineF, typename CoarseF>
+class CoarseEigenPack: public EigenPack<FineF>
 {
 public:
-    std::vector<RealD>       evalCoarse;
-    std::vector<CoarseField> evecCoarse;
+    typedef CoarseF CoarseField;
+public:
+    std::vector<RealD>   evalCoarse;
+    std::vector<CoarseF> evecCoarse;
 public:
     CoarseEigenPack(void)          = default;
     virtual ~CoarseEigenPack(void) = default;
@@ -142,7 +147,7 @@ public:
     void resize(const size_t sizeFine, const size_t sizeCoarse, 
                 GridBase *gridFine, GridBase *gridCoarse)
     {
-        EigenPack<FineField>::resize(sizeFine, gridFine);
+        EigenPack<FineF>::resize(sizeFine, gridFine);
         evalCoarse.resize(sizeCoarse);
         evecCoarse.resize(sizeCoarse, gridCoarse);
     }

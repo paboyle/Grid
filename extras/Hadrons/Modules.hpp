@@ -70,5 +70,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MScalarSUN/Utils.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TransProj.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TrKinetic.hpp>
+#include <Grid/Hadrons/Modules/MIO/LoadEigenPack.hpp>
 #include <Grid/Hadrons/Modules/MIO/LoadNersc.hpp>
+#include <Grid/Hadrons/Modules/MIO/LoadCoarseEigenPack.hpp>
 #include <Grid/Hadrons/Modules/MIO/LoadBinary.hpp>
