@@ -1,0 +1,210 @@
+
+/*body.print .container {max-width: 650px;}*/
+
+body {
+    font-size:11px;
+    text-align: justify;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+p {
+    margin-top: 3px;
+    margin-bottom: 0px;
+}
+.nav ul li a {
+    list-style-type: none;
+    border-top:0px; 
+    background-color:transparent; 
+    color: #808080; 
+    text-decoration: none;
+}
+#navig a[href] {
+    color: #595959 !important;
+    text-decoration: none;
+}
+table .table {max-width:650px;}
+
+#navig h1 {
+    font-weight: initial; 
+    font-size: 30px; 
+}
+
+#navig li.sectionHead {
+    font-weight: initial; 
+    font-size: 16px; 
+    color: #595959 !important; 
+}
+#navig li {font-weight: normal; }
+
+#navig a[href]::after { content: leader(".") target-counter(attr(href), page); }
+
+a[href]::after {
+    content: " (see page " target-counter(attr(href), page) ")"
+}
+
+a[href^="http:"]::after, a[href^="https:"]::after {
+    content: "";
+}
+
+a[href] {
+    color: rgb(0, 89, 255) !important;
+    text-decoration: none;
+}
+a[href*="mailto"]::after, a[data-toggle="tooltip"]::after, a[href].noCrossRef::after {
+    content: "";
+}
+
+
+@page {
+    margin: 60pt 90pt 60pt 90pt;
+    font-family: sans-serif;
+    font-style:none;
+    color: gray;
+
+}
+
+.printTitle {
+    line-height:30pt;
+    font-size:28pt;
+    font-weight: bold;
+    letter-spacing: -.5px;
+    margin-bottom:25px;
+    text-align: right;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    color: #3a6e9e;
+}
+
+.printAuthors {
+    font-size:13pt;
+    font-weight: bold;
+    letter-spacing: -.5px;
+    margin-left: auto;
+    margin-bottom:25px;
+    text-align: right;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    color: #3a6e9e;
+}
+
+.printSubtitle {
+    font-size: 18pt;
+    color: #539bdf !important;
+    font-style: italic;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    line-height: 22pt;
+    letter-spacing: -.5px;
+    margin-bottom:-20px;
+    text-align: right;
+}
+.printTitleArea hr {
+    color: #999999 !important;
+    height: 2px;
+    width: 100%;
+}
+
+.printTitleImage {
+    display: block;
+    width: 40%;
+    margin-left: auto;
+    margin-bottom:100px;
+}
+
+
+.printTitleImage {
+    max-width: 250px;
+}
+
+
+#navig {
+    /*page-break-before: always;*/
+}
+
+.copyrightBoilerplate {
+    page-break-before:always;
+    text-align: justify;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    font-size:13px;
+}
+
+.lastGeneratedDate {
+    font-style: italic;
+    font-size:13px;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    color: gray;
+}
+
+.alert a {
+    text-decoration: none !important;
+}
+
+
+body.title { page: title }
+
+@page title {
+    @top-left {
+        content: " ";
+    }
+    @top-right {
+        content: " "
+    }
+    @bottom-right {
+        content: " ";
+    }
+    @bottom-left {
+        content: " ";
+    }
+}
+
+body.frontmatter { 
+    page: frontmatter;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+body.frontmatter {counter-reset: page 1}
+
+
+@page frontmatter {
+    @top-left {
+        content: prince-script(guideName);
+    }
+    @top-right {
+        content: prince-script(datestamp);
+    }
+    @bottom-right {
+        content: counter(page, lower-roman);
+    }
+    @bottom-left {
+        content: "youremail@domain.com";   }
+}
+
+body.first_page {counter-reset: page 1}
+
+h1 { string-set: doctitle content() }
+
+@page {
+    @top-left {
+        content: string(doctitle);
+        font-size: 11px;
+        font-style: italic;
+    }
+    @top-right {
+        content: prince-script(datestamp);
+        font-size: 11px;
+    }
+
+    @bottom-right {
+        content: "Page " counter(page);
+        font-size: 11px;
+    }
+    @bottom-left {
+        content: prince-script(guideName);
+        font-size: 11px;
+    }
+}
+.alert {
+    background-color: #fafafa !important;
+    border-color: #dedede !important;
+    color: black;
+}
+
+pre {
+    background-color: #fafafa;
+}
+

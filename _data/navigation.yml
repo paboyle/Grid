@@ -1,4 +1,5 @@
 # main links links
+
 main:
   - title: "Documentation"
     icon: "octicon octicon-book vertical-middle"
@@ -15,54 +16,107 @@ main:
 
 
 docs:
+
+  - title: 
+    output: pdf
+    type: frontmatter
+    children:
+    - title:
+      url: /titlepage.html
+      output: pdf
+      type: frontmatter
+    - title:
+      url: /tocpage.html
+      output: pdf
+      type: frontmatter
+
+  - title: "Introduction"
+    output: pdf
+    children: 
+      - title: "GRID"
+        url: /docs/
+        output: pdf
+
   - title: Getting Started
+    output: pdf
     children:
       - title: "Quick-Start Guide"
         url: /docs/quick-start-guide/
+        output: web, pdf
       - title: "Communication interfaces"
         url: /docs/comm_interfaces/
+        output: web, pdf
       - title: "Architecture targets"
         url: /docs/simd_targets/
-      - title: "Building on KNL"
-        url: /docs/knl_build/
+        output: web, pdf
+      - title: "Building on Intel and AMD targets"
+        url: /docs/general_build/
+        output: web, pdf
 
   - title: Using GRID
+    output: pdf
     children:
       - title: "Running on KNL"
         url: /docs/running_knl/
+        output: web, pdf
 
   - title: Development
+    output: pdf
     children:
+      - title: "Execution model"
+        url: /docs/execution-model/
+        output: web, pdf
       - title: "Reporting an issue"
         url: /docs/bug_report/
+        output: web, pdf
       - title: "Continuous integration"
         url: /docs/travis/
+        output: web, pdf
 
   - title: API description
+    output: pdf
     children:
-      - title: "Structure"
-        url: /docs/structure/
-        disable: "yes"
-      - title: "SIMD classes"
-        url: /docs/simd/
-        disable: "yes"
-      - title: "Grid classes"
-        url: /docs/grid/
-        disable: "yes"
+      - title: "Introduction"
+        url: /docs/API/introduction.html
+        output: web, pdf
+        disable: "no"
       - title: "Tensor classes"
-        url: /docs/tensor/
-        disable: "yes"
+        url: /docs/API/tensor_classes.html
+        output: web, pdf
+        disable: "no"
+      - title: "Vectorisation"
+        url: /docs/API/vectorisation.html
+        output: web, pdf
+        disable: "no"    
+      - title: "Coordinates"
+        url: /docs/API/coordinates.html
+        output: web, pdf
+        disable: "no"       
+      - title: "Grids"
+        url: /docs/API/grids.html
+        output: web, pdf
+        disable: "no"    
+      - title: "Lattice containers"
+        url: /docs/API/lattice_containers.html
+        output: web, pdf
+        disable: "no"  
+      - title: "Random number generators"
+        url: /docs/API/random_number_generators.html
+        output: web, pdf
+        disable: "no"        
       - title: "Lattice classes"
         url: /docs/lattice/
         disable: "yes"
 
   
   - title: "Lattice theories"
+    output: pdf
     children:
       - title : "Theories"
         url: /docs/theories/
         disable: "yes"
+        output: web
       - title: "HMC"
         url: /docs/theories/hmc/
         disable: "no"
-        
+        output: web,pdf

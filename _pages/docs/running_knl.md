@@ -1,5 +1,4 @@
 ---
-layout: single
 title : "Documentation"
 author_profile: false
 excerpt: "Running on a Intel Knights Landing"

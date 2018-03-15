@@ -1,0 +1,38 @@
+{% include base_path %}
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="{% if page.summary %}{{ page.summary | strip_html | strip_newlines | truncate: 160 }}{% endif %}">
+<meta name="keywords" content="{{page.tags}}{% if page.tags %}, {% endif %} {{page.keywords}}">
+<title>{% if page.homepage == true %} {{site.title}} {% elsif page.title %}{{ page.title }}{% endif %}</title>
+
+
+<link rel="stylesheet" href="{{ "/css/customstyles.css" | prepend: site.baseurl | prepend: site.url }}">
+<link rel="stylesheet" href="{{ "/css/printstyles.css" | prepend: site.baseurl | prepend: site.url }}">
+<link rel="stylesheet" href="{{ "/css/font-awesome.min.css" | prepend: site.baseurl | prepend: site.url }}">
+<link rel="stylesheet" href="{{site.url}}/{{site.baseurl}}/css/pygments/{{site.pygments-css}}.css">
+
+<!--
+<link rel="stylesheet" href="{{ "/css/bootstrap.min.css" | prepend: site.baseurl | prepend: site.url }}">
+<link rel="stylesheet" href="{{ "/css/modern-business.css" | prepend: site.baseurl | prepend: site.url }}">
+<link rel="stylesheet" href="{{ "/css/theme-blue.css" | prepend: site.baseurl | prepend: site.url }}">
+<link rel="stylesheet" href="{{ "/css/syntax.css" | prepend: site.baseurl | prepend: site.url }}">
+/-->
+
+<script>
+    Prince.addScriptFunc("datestamp", function() {
+        return "PDF last generated: {{ site.time | date: '%B %d, %Y' }}";
+    });
+</script>
+
+<script>
+    Prince.addScriptFunc("guideName", function() {
+        return "{{site.title}} User Guide";
+    });
+</script>
+
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+<script type="text/javascript" src="{{ base_path }}/assets/js/ConfigMathJax.js"></script> 
+

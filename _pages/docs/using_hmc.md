@@ -1,5 +1,4 @@
 ---
-layout: single
 title : "Documentation"
 author_profile: false
 excerpt: "Using HMC"
@@ -10,18 +9,22 @@ sidebar:
   nav : docs
 ---
 
-
-### Using HMC
-
 Using HMC in Grid version 0.7.0
 
 These are the instructions to use the Generalised HMC on Grid version 0.7.0.
 Disclaimer: GRID is still under active development so any information provided here can be changed in future releases.
 
+General
+=======
+
+$$ \mathbf{X}\_{n,p} = \mathbf{A}\_{n,k} \mathbf{B}\_{k,p} $$
+
+$$ \langle O \rangle = \int O e^{-S(\psi)} d\psi $$ 
 
 Command line options
-===================
-(relevant file GenericHMCrunner.h)
+====================
+
+(relevant file `GenericHMCrunner.h`)
 List of command line options, specific for HMC
 
 * ```--StartingType  <string>```  

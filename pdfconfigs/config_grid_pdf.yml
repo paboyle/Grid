@@ -1,0 +1,22 @@
+destination: _site/
+url: "http://127.0.0.1:4010"
+baseurl: "/grid-pdf"
+port: 4010
+output: pdf
+product: grid
+print_title: GRID Data parallel API documentation
+print_subtitle: version 0.7
+output: pdf
+defaults:
+  -
+    scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "page_print"
+      comments: false
+      search: true
+
+pdf_sidebar: navigation
+
+pygments-css: monokai

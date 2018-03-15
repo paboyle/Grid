@@ -1,0 +1,29 @@
+---
+type: frontmatter
+search: exclude
+permalink: /tocpage.html
+---
+
+<!-- new page -->
+<div id="navig">
+    <h1>Table of Contents</h1>
+
+    {% assign sidebar = site.data.navigation.docs %}
+    <ul id="mysidebar" class="nav">
+        {% for entry in sidebar %}
+        {% if entry.output contains "pdf" and entry.type != "frontmatter" %}
+        <li class="sectionHead">
+            {{ entry.title }}
+            <ul>
+                {% for child in entry.children %}
+                {% if child.output contains "pdf" and child.type != "frontmatter"%}
+                <li><a href="{{child.url | prepend: site.baseurl}}">{{child.title}}</a>
+                {% endif %}
+                {% endfor %}
+                </li>
+            </ul>
+        </li>
+        {% endif %}
+        {% endfor %}
+    </ul>
+</div>

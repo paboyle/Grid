@@ -1,5 +1,4 @@
 ---
-layout: single
 title : "Documentation"
 author_profile: false
 excerpt: "Travis Continous Integration framework"

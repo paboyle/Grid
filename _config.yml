@@ -9,7 +9,8 @@
 locale                   : "en"
 title                    : "GRID"
 title_separator          : "|"
-name                     : "Our team"
+name                     : "University of Edinburgh"
+authors                  : "Peter Boyle, Guido Cossu, Antonin Portelli, Azusa Yamaguchi"
 description              : "Data parallel C++ mathematical object library."
 url                      : 'https://paboyle.github.io' # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
 baseurl                  : '/Grid' # the subpath of your site, e.g. "/blog"
@@ -79,7 +80,7 @@ analytics:
 author:
   name             : "PPT Group"
   avatar           : "bio-photo.jpg"
-  bio              : "Our group is amazing."
+  bio              : "Some info"
   location         : "Edinburgh"
   email            : "guido.cossu@ed.ac.uk"
   uri              :
@@ -229,3 +230,15 @@ compress_html:
   clippings: all
   ignore:
     envs: development
+
+
+output: web
+defaults:
+  -
+    scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "single"
+      comments: false
+      search: true
