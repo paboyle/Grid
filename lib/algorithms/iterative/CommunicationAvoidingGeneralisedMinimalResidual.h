@@ -41,6 +41,7 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
 
   Integer MaxIterations;
   Integer RestartLength;
+  Integer MaxNumberOfRestarts;
   Integer IterationCount; // Number of iterations the CAGMRES took to finish,
                           // filled in upon completion
 
@@ -63,6 +64,7 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
       : Tolerance(tol)
       , MaxIterations(maxit)
       , RestartLength(restart_length)
+      , MaxNumberOfRestarts(MaxIterations/RestartLength + ((MaxIterations%RestartLength == 0) ? 0 : 1))
       , ErrorOnNoConverge(err_on_no_conv)
       , H(Eigen::MatrixXcd::Zero(RestartLength, RestartLength + 1)) // sizes taken from DD-αAMG code base
       , y(RestartLength + 1, 0.)
@@ -99,9 +101,8 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
     SolverTimer.Start();
 
     IterationCount = 0;
-    auto outerLoopMax = MaxIterations/RestartLength + ((MaxIterations%RestartLength == 0) ? 0 : 1);
 
-    for (int k=0; k<outerLoopMax; k++) {
+    for (int k=0; k<MaxNumberOfRestarts; k++) {
 
       cp = outerLoopBody(LinOp, src, psi, rsq);
 
@@ -233,15 +234,8 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
       y[i] = y[i] / H(i, i);
     }
 
-    if (true) {
-      for (int i = 0; i <= iter; i++)
-        psi = psi + v[i] * y[i];
-    }
-    else {
-      psi = y[0] * v[0];
-      for (int i = 1; i <= iter; i++)
-        psi = psi + v[i] * y[i];
-    }
+    for (int i = 0; i <= iter; i++)
+      psi = psi + v[i] * y[i];
     CompSolutionTimer.Stop();
   }
 };
