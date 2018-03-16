@@ -378,7 +378,7 @@ class GridLimeWriter : public BinaryIO {
     // Wind forward and close the record
     ///////////////////////////////////////////
     fseek(File,0,SEEK_END);             
-    unt64_t offset2 = ftello(File);     //    std::cout << " now at offset "<<offset2 << std::endl;
+    uint64_t offset2 = ftello(File);     //    std::cout << " now at offset "<<offset2 << std::endl;
 
     assert((offset2-offset1) == PayloadSize);
 
