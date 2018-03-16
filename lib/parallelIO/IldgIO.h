@@ -337,6 +337,20 @@ class GridLimeWriter : public BinaryIO {
   template<class vobj>
   void writeLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name)
   {
+    ////////////////////////////////////////////////////////////////////
+    // NB: FILE and iostream are jointly writing disjoint sequences in the
+    // the same file through different file handles (integer units).
+    // 
+    // These are both buffered, so why I think this code is right is as follows.
+    //
+    // i)  write record header to FILE *File, telegraphing the size; flush
+    // ii) ftello reads the offset from FILE *File . 
+    // iii) iostream / MPI Open independently seek this offset. Write sequence direct to disk.
+    //      Closes iostream and flushes.
+    // iv) fseek on FILE * to end of this disjoint section.
+    //  v) Continue writing scidac record.
+    ////////////////////////////////////////////////////////////////////
+
     ////////////////////////////////////////////
     // Create record header
     ////////////////////////////////////////////
@@ -350,25 +364,24 @@ class GridLimeWriter : public BinaryIO {
     //    std::cout << "W Gsites "           <<field._grid->_gsites<<std::endl;
     //    std::cout << "W Payload expected " <<PayloadSize<<std::endl;
 
-    ////////////////////////////////////////////////////////////////////
-    // NB: FILE and iostream are jointly writing disjoint sequences in the
-    // the same file through different file handles (integer units).
-    // 
-    // These are both buffered, so why I think this code is right is as follows.
-    //
-    // i)  write record header to FILE *File, telegraphing the size. 
-    // ii) ftello reads the offset from FILE *File .
-    // iii) iostream / MPI Open independently seek this offset. Write sequence direct to disk.
-    //      Closes iostream and flushes.
-    // iv) fseek on FILE * to end of this disjoint section.
-    //  v) Continue writing scidac record.
-    ////////////////////////////////////////////////////////////////////
-    uint64_t offset = ftello(File);
-    //    std::cout << " Writing to offset "<<offset << std::endl;
+    fflush(File);
+
+    ///////////////////////////////////////////
+    // Write by other means into the binary record
+    ///////////////////////////////////////////
+    uint64_t offset1 = ftello(File);    //    std::cout << " Writing to offset "<<offset1 << std::endl;
     std::string format = getFormatString<vobj>();
     BinarySimpleMunger<sobj,sobj> munge;
-    BinaryIO::writeLatticeObject<vobj,sobj>(field, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
-    //    fseek(File,0,SEEK_END);    offset = ftello(File);std::cout << " offset now "<<offset << std::endl;
+    BinaryIO::writeLatticeObject<vobj,sobj>(field, filename, munge, offset1, format,nersc_csum,scidac_csuma,scidac_csumb);
+
+    ///////////////////////////////////////////
+    // Wind forward and close the record
+    ///////////////////////////////////////////
+    fseek(File,0,SEEK_END);             
+    unt64_t offset2 = ftello(File);     //    std::cout << " now at offset "<<offset2 << std::endl;
+
+    assert((offset2-offset1) == PayloadSize);
+
     err=limeWriterCloseRecord(LimeW);  assert(err>=0);
 
     ////////////////////////////////////////
