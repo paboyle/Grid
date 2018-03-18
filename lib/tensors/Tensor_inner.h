@@ -87,7 +87,7 @@ auto innerProductD (const iMatrix<l,N>& lhs,const iMatrix<r,N>& rhs) -> iScalar<
   for(int c1=0;c1<N;c1++){
     for(int c2=0;c2<N;c2++){
       ret._internal+=innerProductD(lhs._internal[c1][c2],rhs._internal[c1][c2]);
-    }}
+  }}
   return ret;
 }
 template<class l,class r> accelerator_inline
