@@ -30,12 +30,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Grid.h>
 
 using namespace Grid;
- ;
 
 GRID_SERIALIZABLE_ENUM(myenum, undef, red, 1, blue, 2, green, 3);
 
 class myclass: Serializable {
 public:
+
   GRID_SERIALIZABLE_CLASS_MEMBERS(myclass,
                           myenum, e,
                           std::vector<myenum>, ve,
