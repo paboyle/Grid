@@ -76,15 +76,26 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 // Accelerator primitives; fall back to threading
 //////////////////////////////////////////////////////////////////////////////////
 #ifdef GRID_NVCC
+
+template<typename lambda>  __global__
+void LambdaApply(int Num, lambda &Lambda)
+{
+  int ss = blockIdx.x;
+  if ( ss < Num ) {
+    Lambda(ss);
+  }
+}
+
 #define accelerator_exec( ... )					\
-  auto lambda = [=] accelerator (void) {					\
+  auto lambda = [=] accelerator (void) mutable {		\
     __VA_ARGS__;						\
   };								\
   lambda();							
 
 #define accelerator __host__ __device__
 #define accelerator_inline __host__ __device__ inline
-// FIXME ; need to make this a CUDA kernel call
+
+#if 0 
 #define accelerator_loop( iterator, range, ... )		\
   typedef decltype(range.begin()) Iterator;			\
   auto lambda = [=] accelerator (Iterator iterator) mutable {	\
@@ -93,6 +104,16 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   for(auto it=range.begin();it<range.end();it++){		\
     lambda(it);							\
   }
+#else
+#define accelerator_loop( iterator, range, ... )		\
+  typedef decltype(range.begin()) Iterator;			\
+  auto lambda = [=] accelerator (Iterator iterator) mutable {	\
+    __VA_ARGS__;						\
+  };								\
+  Iterator num = range.end();					\
+  LambdaApply<<<num,1>>>(num,lambda);
+#endif
+
 #define cpu_loop( iterator, range, ... )   thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
 
 #define NVCC_DECLARE_VECTOR_ACCESSOR(Type) \
