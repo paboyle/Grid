@@ -52,9 +52,15 @@ void basisOrthogonalize(std::vector<Field> &basis,Field &w,int k)
 template<class Field>
 void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, int k0,int k1,int Nm) 
 {
+  typedef decltype(Field.View()) View;
+  std::vector<View> basis_v(basis.size());
   typedef typename Field::vector_object vobj;
   GridBase* grid = basis[0].Grid();
       
+  for(int k=0;k<basis.size();k++){
+    basis_v[k] = basis[k].View();
+  }
+
   thread_region
   {
     std::vector < vobj > B(Nm); // Thread private
@@ -63,13 +69,11 @@ void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, i
       
       for(int j=j0; j<j1; ++j){
 	for(int k=k0; k<k1; ++k){
-	  auto basis_k = basis[k].View();
-	  B[j] +=Qt(j,k) * basis_k[ss];
+	  B[j] +=Qt(j,k) * basis_v[k][ss];
 	}
       }
       for(int j=j0; j<j1; ++j){
-	auto basis_j = basis[j].View();
-	basis_j[ss] = B[j];
+	basis_v[j][ss] = B[j];
       }
     });
   }
@@ -459,7 +463,7 @@ until convergence
       assert(k2<Nm);      assert(k2<Nm);      assert(k1>0);
 
       basisRotate(evec,Qt,k1-1,k2+1,0,Nm,Nm); /// big constraint on the basis
-      std::cout<<GridLogIRL <<"basisRotated  by Qt"<<std::endl;
+      std::cout<<GridLogIRL <<"basisRotated  by Qt *"<<k1-1<<","<<k2+1<<")"<<std::endl;
       
       ////////////////////////////////////////////////////
       // Compressed vector f and beta(k2)
