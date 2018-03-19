@@ -103,7 +103,7 @@ WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
   // All legs kernels ; comms then compute
   ////////////////////////////////////////////////////////////////////
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
+accelerator void WilsonKernels<Impl>::GenericDhopSiteDag(typename StencilImpl::View_type &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
 							 SiteHalfSpinor *buf, int sF,
 							 int sU, const FermionFieldView &in, FermionFieldView &out)
 {
@@ -127,7 +127,7 @@ accelerator void WilsonKernels<Impl>::GenericDhopSiteDag(StencilImpl &st, Lebesg
 };
 
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
+accelerator void WilsonKernels<Impl>::GenericDhopSite(typename StencilImpl::View_type &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
 						      SiteHalfSpinor *buf, int sF,
 						      int sU, const FermionFieldView &in, FermionFieldView &out) 
 {
@@ -153,7 +153,7 @@ accelerator void WilsonKernels<Impl>::GenericDhopSite(StencilImpl &st, LebesgueO
   // Interior kernels
   ////////////////////////////////////////////////////////////////////
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
+accelerator void WilsonKernels<Impl>::GenericDhopSiteDagInt(typename StencilImpl::View_type &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
 						SiteHalfSpinor *buf, int sF,
 						int sU, const FermionFieldView &in, FermionFieldView &out)
 {
@@ -178,7 +178,7 @@ accelerator void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilImpl &st, Leb
 };
 
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSiteInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
+accelerator void WilsonKernels<Impl>::GenericDhopSiteInt(typename StencilImpl::View_type &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
 							 SiteHalfSpinor *buf, int sF,
 							 int sU, const FermionFieldView &in, FermionFieldView &out) 
 {
@@ -204,7 +204,7 @@ accelerator void WilsonKernels<Impl>::GenericDhopSiteInt(StencilImpl &st, Lebesg
 // Exterior kernels
 ////////////////////////////////////////////////////////////////////
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
+accelerator void WilsonKernels<Impl>::GenericDhopSiteDagExt(typename StencilImpl::View_type &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
 						SiteHalfSpinor *buf, int sF,
 						int sU, const FermionFieldView &in, FermionFieldView &out)
 {
@@ -231,7 +231,7 @@ accelerator void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilImpl &st, Leb
 };
 
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSiteExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
+accelerator void WilsonKernels<Impl>::GenericDhopSiteExt(typename StencilImpl::View_type &st, LebesgueOrder &lo, DoubledGaugeFieldView &U,
 					     SiteHalfSpinor *buf, int sF,
 					     int sU, const FermionFieldView &in, FermionFieldView &out) 
 {
@@ -258,7 +258,7 @@ accelerator void WilsonKernels<Impl>::GenericDhopSiteExt(StencilImpl &st, Lebesg
 };
 
 template <class Impl>
-accelerator void WilsonKernels<Impl>::DhopDirK( StencilImpl &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf, int sF,
+accelerator void WilsonKernels<Impl>::DhopDirK( typename StencilImpl::View_type &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf, int sF,
 						int sU, const FermionFieldView &in, FermionFieldView &out, int dir, int gamma) 
 {
   SiteHalfSpinor tmp;

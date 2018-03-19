@@ -219,8 +219,9 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
     auto U_v = U.View();
     auto B_v = B.View();
     auto Btilde_v = Btilde.View();
+    auto st_v = st.View();
     thread_loop( (int sss = 0; sss < B.Grid()->oSites(); sss++) ,{
-      Kernels::DhopDirK(st, U_v, st.CommBuf(), sss, sss, B_v, Btilde_v, mu, gamma);
+      Kernels::DhopDirK(st_v, U_v, st.CommBuf(), sss, sss, B_v, Btilde_v, mu, gamma);
     });
 
     //////////////////////////////////////////////////
@@ -322,8 +323,9 @@ void WilsonFermion<Impl>::DhopDirDisp(const FermionField &in, FermionField &out,
   auto in_v = in.View();
   auto out_v = in.View();
   auto Umu_v = Umu.View();
+  auto Stencil_v = Stencil.View();
   thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++) ,{
-    Kernels::DhopDirK(Stencil, Umu_v, Stencil.CommBuf(), sss, sss, in_v, out_v, dirdisp, gamma);
+    Kernels::DhopDirK(Stencil_v, Umu_v, Stencil.CommBuf(), sss, sss, in_v, out_v, dirdisp, gamma);
   });
 };
 
@@ -341,13 +343,14 @@ void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
   auto U_v  = U.View();
   auto in_v = in.View();
   auto out_v= out.View();
+  auto st_v = st.View();
   if (dag == DaggerYes) {
     accelerator_loop( sss,in_v, {
-      Kernels::DhopSiteDag(Opt,st, lo, U_v, st.CommBuf(), sss, sss, 1, 1, in_v, out_v);
+      Kernels::DhopSiteDag(Opt,st_v, lo, U_v, st.CommBuf(), sss, sss, 1, 1, in_v, out_v);
     });
   } else {
     accelerator_loop( sss,in_v, {
-      Kernels::DhopSite(Opt,st, lo, U_v, st.CommBuf(), sss, sss, 1, 1, in_v, out_v);
+      Kernels::DhopSite(Opt,st_v, lo, U_v, st.CommBuf(), sss, sss, 1, 1, in_v, out_v);
     });
   }
 };

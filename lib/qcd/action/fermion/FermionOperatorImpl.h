@@ -56,7 +56,7 @@ NAMESPACE_BEGIN(Grid);
 // and Methods:
 //    void ImportGauge(GridBase *GaugeGrid,DoubledGaugeField &Uds,const GaugeField &Umu)
 //    void DoubleStore(GridBase *GaugeGrid,DoubledGaugeField &Uds,const GaugeField &Umu)
-//    void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE,StencilImpl &St)
+//    void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE,StencilImpl::View_type &St)
 //    void InsertForce4D(GaugeField &mat,const FermionField &Btilde,const FermionField &A,int mu)
 //    void InsertForce5D(GaugeField &mat,const FermionField &Btilde,const FermionField &A,int mu)
 //
@@ -208,7 +208,7 @@ public:
 				   const SiteHalfSpinor &chi,
 				   int mu,
 				   StencilEntry *SE,
-				   StencilImpl &St) {
+				   typename StencilImpl::View_type &St) {
     mult(&phi(), &U(mu), &chi());
   }
     
@@ -339,7 +339,7 @@ public:
 
   accelerator_inline void multLink(SiteHalfSpinor &phi, const SiteDoubledGaugeField &U,
 				   const SiteHalfSpinor &chi, int mu, StencilEntry *SE,
-				   StencilImpl &St) {
+				   typename StencilImpl::View_type &St) {
     SiteGaugeLink UU;
     for (int i = 0; i < Nrepresentation; i++) {
       for (int j = 0; j < Nrepresentation; j++) {
@@ -490,7 +490,7 @@ public:
   // flavour index) and non-Gparity
   accelerator_inline void multLink(SiteHalfSpinor &phi, const SiteDoubledGaugeField &U,
 				   const SiteHalfSpinor &chi, int mu, StencilEntry *SE,
-				   StencilImpl &St) {
+				   typename StencilImpl::View_type &St) {
 
     typedef SiteHalfSpinor vobj;
     typedef typename SiteHalfSpinor::scalar_object sobj;
@@ -514,7 +514,7 @@ public:
     assert((sl == 1) || (sl == 2));
    
     Coordinate icoor;
-    if ( SE->_around_the_world && Params.twists[mmu] ) {
+    if ( SE->_around_the_world && St.twists[mmu] ) {
 
       if ( sl == 2 ) {
        

@@ -237,6 +237,11 @@ template<typename HCS,typename HS,typename S> using WilsonCompressor = WilsonCom
 template<class vobj,class cobj>
 class WilsonStencil : public CartesianStencil<vobj,cobj> {
 public:
+
+  typedef CartesianStencil<vobj,cobj> Base;
+  typedef typename Base::View_type View_type;
+  typedef typename Base::StencilVector StencilVector;
+
   double timer0;
   double timer1;
   double timer2;
@@ -265,7 +270,6 @@ public:
     if ( timer4 ) std::cout << GridLogMessage << " timer4 " <<timer4 <<std::endl;
   }
 
-  std::vector<int> same_node;
   std::vector<int> surface_list;
 
   WilsonStencil(GridBase *grid,
@@ -273,11 +277,11 @@ public:
 		int checkerboard,
 		const std::vector<int> &directions,
 		const std::vector<int> &distances)  
-    : CartesianStencil<vobj,cobj> (grid,npoints,checkerboard,directions,distances) ,
-      same_node(npoints)
+    : CartesianStencil<vobj,cobj> (grid,npoints,checkerboard,directions,distances) 
   { 
     ZeroCountersi();
     surface_list.resize(0);
+    this->same_node.resize(npoints);
   };
 
   void BuildSurfaceList(int Ls,int vol4){
@@ -285,13 +289,13 @@ public:
     // find same node for SHM
     // Here we know the distance is 1 for WilsonStencil
     for(int point=0;point<this->_npoints;point++){
-      same_node[point] = this->SameNode(point);
+      this->same_node[point] = this->SameNode(point);
     }
     
     for(int site = 0 ;site< vol4;site++){
       int local = 1;
       for(int point=0;point<this->_npoints;point++){
-	if( (!this->GetNodeLocal(site*Ls,point)) && (!same_node[point]) ){ 
+	if( (!this->GetNodeLocal(site*Ls,point)) && (!this->same_node[point]) ){ 
 	  local = 0;
 	}
       }
@@ -360,23 +364,23 @@ public:
     int dag = compress.dag;
     int face_idx=0;
     if ( dag ) { 
-      assert(same_node[Xp]==this->HaloGatherDir(source,XpCompress,Xp,face_idx));
-      assert(same_node[Yp]==this->HaloGatherDir(source,YpCompress,Yp,face_idx));
-      assert(same_node[Zp]==this->HaloGatherDir(source,ZpCompress,Zp,face_idx));
-      assert(same_node[Tp]==this->HaloGatherDir(source,TpCompress,Tp,face_idx));
-      assert(same_node[Xm]==this->HaloGatherDir(source,XmCompress,Xm,face_idx));
-      assert(same_node[Ym]==this->HaloGatherDir(source,YmCompress,Ym,face_idx));
-      assert(same_node[Zm]==this->HaloGatherDir(source,ZmCompress,Zm,face_idx));
-      assert(same_node[Tm]==this->HaloGatherDir(source,TmCompress,Tm,face_idx));
+      assert(this->same_node[Xp]==this->HaloGatherDir(source,XpCompress,Xp,face_idx));
+      assert(this->same_node[Yp]==this->HaloGatherDir(source,YpCompress,Yp,face_idx));
+      assert(this->same_node[Zp]==this->HaloGatherDir(source,ZpCompress,Zp,face_idx));
+      assert(this->same_node[Tp]==this->HaloGatherDir(source,TpCompress,Tp,face_idx));
+      assert(this->same_node[Xm]==this->HaloGatherDir(source,XmCompress,Xm,face_idx));
+      assert(this->same_node[Ym]==this->HaloGatherDir(source,YmCompress,Ym,face_idx));
+      assert(this->same_node[Zm]==this->HaloGatherDir(source,ZmCompress,Zm,face_idx));
+      assert(this->same_node[Tm]==this->HaloGatherDir(source,TmCompress,Tm,face_idx));
     } else {
-      assert(same_node[Xp]==this->HaloGatherDir(source,XmCompress,Xp,face_idx));
-      assert(same_node[Yp]==this->HaloGatherDir(source,YmCompress,Yp,face_idx));
-      assert(same_node[Zp]==this->HaloGatherDir(source,ZmCompress,Zp,face_idx));
-      assert(same_node[Tp]==this->HaloGatherDir(source,TmCompress,Tp,face_idx));
-      assert(same_node[Xm]==this->HaloGatherDir(source,XpCompress,Xm,face_idx));
-      assert(same_node[Ym]==this->HaloGatherDir(source,YpCompress,Ym,face_idx));
-      assert(same_node[Zm]==this->HaloGatherDir(source,ZpCompress,Zm,face_idx));
-      assert(same_node[Tm]==this->HaloGatherDir(source,TpCompress,Tm,face_idx));
+      assert(this->same_node[Xp]==this->HaloGatherDir(source,XmCompress,Xp,face_idx));
+      assert(this->same_node[Yp]==this->HaloGatherDir(source,YmCompress,Yp,face_idx));
+      assert(this->same_node[Zp]==this->HaloGatherDir(source,ZmCompress,Zp,face_idx));
+      assert(this->same_node[Tp]==this->HaloGatherDir(source,TmCompress,Tp,face_idx));
+      assert(this->same_node[Xm]==this->HaloGatherDir(source,XpCompress,Xm,face_idx));
+      assert(this->same_node[Ym]==this->HaloGatherDir(source,YpCompress,Ym,face_idx));
+      assert(this->same_node[Zm]==this->HaloGatherDir(source,ZpCompress,Zm,face_idx));
+      assert(this->same_node[Tm]==this->HaloGatherDir(source,TpCompress,Tm,face_idx));
     }
     this->face_table_computed=1;
     assert(this->u_comm_offset==this->_unified_buffer_size);
