@@ -37,7 +37,7 @@ NAMESPACE_BEGIN(Grid);
 // These can move into a params header and be given MacroMagic serialisation
 struct GparityWilsonImplParams {
   bool overlapCommsCompute;
-  std::vector<int> twists;
+  Coordinate twists;
   GparityWilsonImplParams() : twists(Nd, 0), overlapCommsCompute(false){};
 };
   
