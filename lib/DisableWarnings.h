@@ -30,6 +30,8 @@ directory
 #ifndef DISABLE_WARNINGS_H
 #define DISABLE_WARNINGS_H
 
+
+
 #if defined __GNUC__ && __GNUC__>=6
 #pragma GCC diagnostic ignored "-Wignored-attributes"
 #endif
@@ -39,13 +41,16 @@ directory
 
 #ifdef __NVCC__
  //disables nvcc specific warning in json.hpp
+#pragma clang diagnostic ignored "-Wdeprecated-register"
 #pragma diag_suppress unsigned_compare_with_zero
 #pragma diag_suppress cast_to_qualified_type
 
  //disables nvcc specific warning in many files
 #pragma diag_suppress esa_on_defaulted_function_ignored
 #pragma diag_suppress extra_semicolon
+
 //Eigen only
+#define EIGEN_DONT_VECTORIZE
 #endif
 
 #endif
