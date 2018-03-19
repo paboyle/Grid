@@ -55,13 +55,14 @@ template <typename FImpl, int nBasis>
 class TRBPrecCG: public Module<RBPrecCGPar>
 {
 public:
+    FGS_TYPE_ALIASES(FImpl,);
     typedef FermionEigenPack<FImpl>                       EPack;
     typedef CoarseFermionEigenPack<FImpl, nBasis>         CoarseEPack;
+    typedef std::shared_ptr<Guesser<FermionField>>        GuesserPt;
     typedef DeflatedGuesser<typename FImpl::FermionField> FineGuesser;
     typedef LocalCoherenceDeflatedGuesser<
         typename FImpl::FermionField,
         typename CoarseEPack::CoarseField> CoarseGuesser;
-    FGS_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TRBPrecCG(const std::string name);
@@ -131,41 +132,39 @@ void TRBPrecCG<FImpl, nBasis>::setup(void)
                  << par().residual << ", maximum iteration " 
                  << par().maxIteration << std::endl;
 
-    auto Ls                 = env().getObjectLs(par().action);
-    auto &mat               = envGet(FMat, par().action);
+    auto        Ls          = env().getObjectLs(par().action);
+    auto        &mat        = envGet(FMat, par().action);
     std::string guesserName = getName() + "_guesser";
+    GuesserPt   guesser{nullptr};
 
     if (par().eigenPack.empty())
     {
-        env().template createDerivedObject<Guesser<FermionField>, ZeroGuesser<FermionField>>
-            (guesserName, Environment::Storage::object, Ls);
+        guesser.reset(new ZeroGuesser<FermionField>());
     }
     else
     {
         try
         {
             auto &epack = envGetDerived(EPack, CoarseEPack, par().eigenPack);
-
-            envCreateDerived(Guesser<FermionField>, CoarseGuesser,
-                             guesserName, Ls, epack.evec, epack.evecCoarse,
-                             epack.evalCoarse);
+            
+            guesser.reset(new CoarseGuesser(epack.evec, epack.evecCoarse,
+                                            epack.evalCoarse));
         }
         catch (Exceptions::Definition &e)
         {
             auto &epack = envGet(EPack, par().eigenPack);
 
-            envCreateDerived(Guesser<FermionField>, FineGuesser,
-                             guesserName, Ls, epack.evec, epack.eval);
+            guesser.reset(new FineGuesser(epack.evec, epack.eval));
         }
     }
-    auto &guesser = envGet(Guesser<FermionField>, guesserName);
-    auto solver = [&mat, &guesser, this](FermionField &sol, const FermionField &source)
+    auto solver = [&mat, guesser, this](FermionField &sol, 
+                                        const FermionField &source)
     {
         ConjugateGradient<FermionField>           cg(par().residual, 
                                                      par().maxIteration);
         HADRONS_DEFAULT_SCHUR_SOLVE<FermionField> schurSolver(cg);
         
-        schurSolver(mat, source, sol, guesser);
+        schurSolver(mat, source, sol, *guesser);
     };
     envCreate(SolverFn, getName(), Ls, solver);
 }
