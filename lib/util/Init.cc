@@ -221,6 +221,47 @@ std::string GridCmdVectorIntToString(const VectorInt & vec_in){
 static MemoryStats dbgMemStats;
 static int Grid_is_initialised;
 
+/////////////////////////////////////////////////////////
+// Reinit guard
+/////////////////////////////////////////////////////////
+#ifdef GRID_NVCC
+void GridGpuInit(void)
+{
+  int nDevices;
+
+  cudaGetDeviceCount(&nDevices);
+  for (int i = 0; i < nDevices; i++) {
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, i);
+    printf("Device Number: %d\n", i);
+    printf("  Device name: %s\n", prop.name);
+    printf("  Memory Clock Rate (KHz): %d\n",
+           prop.memoryClockRate);
+    printf("  Memory Bus Width (bits): %d\n",
+           prop.memoryBusWidth);
+    printf("  Peak Memory Bandwidth (GB/s): %f\n\n",
+           2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6);
+
+#define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("  " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
+#define GPU_PROP(canMapHostMemory)     printf("  " #canMapHostMemory ": %d \n",prop.canMapHostMemory);
+    GPU_PROP(canMapHostMemory);
+    GPU_PROP(canUseHostPointerForRegisteredMem);
+    GPU_PROP(globalL1CacheSupported);
+    GPU_PROP(isMultiGpuBoard);
+    GPU_PROP(kernelExecTimeoutEnabled);
+    GPU_PROP(l2CacheSize);
+    GPU_PROP(managedMemory);
+    GPU_PROP(pageableMemoryAccess);
+    GPU_PROP(regsPerMultiprocessor);
+    GPU_PROP_FMT(sharedMemPerBlock,"%lx");
+    GPU_PROP_FMT(sharedMemPerMultiprocessor,"%lx");
+    GPU_PROP(singleToDoublePrecisionPerfRatio);
+    GPU_PROP(unifiedAddressing);
+    GPU_PROP(warpSize);
+  }
+}
+#endif
+
 void Grid_init(int *argc,char ***argv)
 {
   assert(Grid_is_initialised == 0);
@@ -308,6 +349,9 @@ void Grid_init(int *argc,char ***argv)
     std::cout << std::endl;
   }
 
+#ifdef GRID_NVCC
+  GridGpuInit();
+#endif
 
   ////////////////////////////////////
   // Logging
