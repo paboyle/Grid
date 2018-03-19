@@ -1,5 +1,5 @@
 lib_LIBRARIES = libHadrons.a
-bin_PROGRAMS  = HadronsXmlRun HadronsXmlSchedule
+bin_PROGRAMS  = HadronsXmlRun
 
 include modules.inc
 
@@ -21,6 +21,7 @@ nobase_libHadrons_a_HEADERS = \
 	GeneticScheduler.hpp      \
 	Global.hpp                \
 	Graph.hpp                 \
+	EigenPack.hpp          \
 	Module.hpp                \
 	Modules.hpp               \
 	ModuleFactory.hpp         \
@@ -28,6 +29,3 @@ nobase_libHadrons_a_HEADERS = \
 
 HadronsXmlRun_SOURCES = HadronsXmlRun.cc
 HadronsXmlRun_LDADD   = libHadrons.a -lGrid
-
-HadronsXmlSchedule_SOURCES = HadronsXmlSchedule.cc
-HadronsXmlSchedule_LDADD   = libHadrons.a -lGrid

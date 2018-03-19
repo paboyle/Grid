@@ -31,11 +31,12 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
+#include <Grid/Hadrons/Modules/MScalarSUN/Utils.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                       Module to compute tr(mag^n)                          *
+ *                     Trace of powers of the magnetisation                   *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MScalarSUN)
 
@@ -117,10 +118,9 @@ template <typename SImpl>
 void TTrMag<SImpl>::execute(void)
 {
     LOG(Message) << "Computing tr(mag^n) for n even up to " << par().maxPow
-                 << "..." << std::endl;
+                 << std::endl;
 
     std::vector<Result> result;
-    ResultWriter        writer(RESULT_FILE_NAME(par().output));
     auto                &phi = envGet(Field, par().field);
 
     auto m2 = sum(phi), mn = m2;
@@ -136,7 +136,7 @@ void TTrMag<SImpl>::execute(void)
         r.value = TensorRemove(trace(mn)).real();
         result.push_back(r);
     }
-    write(writer, "trmag", result);
+    saveResult(par().output, "trmag", result);
 }
 
 END_MODULE_NAMESPACE

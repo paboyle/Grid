@@ -56,12 +56,12 @@ public:
 
   void checkpointFine(std::string evecs_file,std::string evals_file)
   {
-    assert(this->_Aggregate.subspace.size()==nbasis);
+    assert(this->subspace.size()==nbasis);
     emptyUserRecord record;
     Grid::QCD::ScidacWriter WR;
     WR.open(evecs_file);
     for(int k=0;k<nbasis;k++) {
-      WR.writeScidacFieldRecord(this->_Aggregate.subspace[k],record);
+      WR.writeScidacFieldRecord(this->subspace[k],record);
     }
     WR.close();
     
@@ -72,7 +72,7 @@ public:
   void checkpointFineRestore(std::string evecs_file,std::string evals_file)
   {
     this->evals_fine.resize(nbasis);
-    this->_Aggregate.subspace.resize(nbasis,this->_FineGrid);
+    this->subspace.resize(nbasis,this->_FineGrid);
     
     std::cout << GridLogIRL<< "checkpointFineRestore:  Reading evals from "<<evals_file<<std::endl;
     XmlReader RDx(evals_file);
@@ -85,8 +85,8 @@ public:
     Grid::QCD::ScidacReader RD ;
     RD.open(evecs_file);
     for(int k=0;k<nbasis;k++) {
-      this->_Aggregate.subspace[k].checkerboard=this->_checkerboard;
-      RD.readScidacFieldRecord(this->_Aggregate.subspace[k],record);
+      this->subspace[k].checkerboard=this->_checkerboard;
+      RD.readScidacFieldRecord(this->subspace[k],record);
       
     }
     RD.close();
@@ -180,7 +180,6 @@ int main (int argc, char ** argv) {
   GridCartesian         * CoarseGrid4    = SpaceTimeGrid::makeFourDimGrid(coarseLatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * CoarseGrid4rb  = SpaceTimeGrid::makeFourDimRedBlackGrid(CoarseGrid4);
   GridCartesian         * CoarseGrid5    = SpaceTimeGrid::makeFiveDimGrid(cLs,CoarseGrid4);
-  GridRedBlackCartesian * CoarseGrid5rb  = SpaceTimeGrid::makeFourDimRedBlackGrid(CoarseGrid5);
 
   // Gauge field
   LatticeGaugeField Umu(UGrid);
@@ -206,7 +205,7 @@ int main (int argc, char ** argv) {
 
   const int nbasis= 60;
   assert(nbasis==Ns1);
-  LocalCoherenceLanczosScidac<vSpinColourVector,vTComplex,nbasis> _LocalCoherenceLanczos(FrbGrid,CoarseGrid5rb,HermOp,Odd);
+  LocalCoherenceLanczosScidac<vSpinColourVector,vTComplex,nbasis> _LocalCoherenceLanczos(FrbGrid,CoarseGrid5,HermOp,Odd);
   std::cout << GridLogMessage << "Constructed LocalCoherenceLanczos" << std::endl;
 
   assert( (Params.doFine)||(Params.doFineRead));
@@ -221,7 +220,9 @@ int main (int argc, char ** argv) {
     std::cout << GridLogIRL<<"Checkpointing Fine evecs"<<std::endl;
     _LocalCoherenceLanczos.checkpointFine(std::string("evecs.scidac"),std::string("evals.xml"));
     _LocalCoherenceLanczos.testFine(fine.resid*100.0); // Coarse check
+    std::cout << GridLogIRL<<"Orthogonalising"<<std::endl;
     _LocalCoherenceLanczos.Orthogonalise();
+    std::cout << GridLogIRL<<"Orthogonaled"<<std::endl;
   }
 
   if ( Params.doFineRead ) { 
@@ -231,8 +232,6 @@ int main (int argc, char ** argv) {
   }
 
   if ( Params.doCoarse ) {
-    std::cout << GridLogMessage << "Orthogonalising " << nbasis<<" Nm "<<Nm2<< std::endl;
-    
     std::cout << GridLogMessage << "Performing coarse grid IRL Nstop "<< Ns2<< " Nk "<<Nk2<<" Nm "<<Nm2<< std::endl;
     _LocalCoherenceLanczos.calcCoarse(coarse.Cheby,Params.Smoother,Params.coarse_relax_tol,
 			      coarse.Nstop, coarse.Nk,coarse.Nm,

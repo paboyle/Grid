@@ -79,6 +79,8 @@ public:
     std::vector<int> _lstart;     // local start of array in gcoors _processor_coor[d]*_ldimensions[d]
     std::vector<int> _lend  ;     // local end of array in gcoors   _processor_coor[d]*_ldimensions[d]+_ldimensions_[d]-1
 
+    bool _isCheckerBoarded; 
+
 public:
 
     ////////////////////////////////////////////////////////////////

@@ -7,6 +7,7 @@ Source file: extras/Hadrons/Modules/MGauge/StochEm.hpp
 Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Vera Guelpers <vmg1n14@soton.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -60,6 +61,8 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+private:
+    bool create_weight;
 protected:
     // setup
     virtual void setup(void);

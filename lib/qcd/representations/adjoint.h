@@ -23,6 +23,7 @@ class AdjointRep {
   typedef typename SU_Adjoint<ncolour>::LatticeAdjMatrix LatticeMatrix;
   typedef typename SU_Adjoint<ncolour>::LatticeAdjField LatticeField;
   static const int Dimension = ncolour * ncolour - 1;
+  static const bool isFundamental = false;
 
   LatticeField U;
 

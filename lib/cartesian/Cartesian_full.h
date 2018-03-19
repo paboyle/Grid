@@ -97,6 +97,7 @@ public:
       ///////////////////////
       // Grid information
       ///////////////////////
+      _isCheckerBoarded = false;
       _ndimension = dimensions.size();
 
       _fdimensions.resize(_ndimension);

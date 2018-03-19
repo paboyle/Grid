@@ -43,12 +43,15 @@ See the full license in the file "LICENSE" in the top level distribution directo
 namespace Grid {\
 using namespace QCD;\
 namespace Hadrons {\
-using Grid::operator<<;
+using Grid::operator<<;\
+using Grid::operator>>;
 #define END_HADRONS_NAMESPACE }}
 
 #define BEGIN_MODULE_NAMESPACE(name)\
 namespace name {\
-using Grid::operator<<;
+using Grid::operator<<;\
+using Grid::operator>>;
+
 #define END_MODULE_NAMESPACE }
 
 /* the 'using Grid::operator<<;' statement prevents a very nasty compilation
@@ -57,6 +60,9 @@ using Grid::operator<<;
 
 #ifndef FIMPL
 #define FIMPL WilsonImplR
+#endif
+#ifndef ZFIMPL
+#define ZFIMPL ZWilsonImplR
 #endif
 #ifndef SIMPL
 #define SIMPL ScalarImplCR
@@ -111,6 +117,7 @@ extern HadronsLogger HadronsLogWarning;
 extern HadronsLogger HadronsLogMessage;
 extern HadronsLogger HadronsLogIterative;
 extern HadronsLogger HadronsLogDebug;
+extern HadronsLogger HadronsLogIRL;
 
 void initLogger(void);
 
@@ -179,6 +186,18 @@ typedef XmlWriter ResultWriter;
 
 #define RESULT_FILE_NAME(name) \
 name + "." + std::to_string(vm().getTrajectory()) + "." + resultFileExt
+
+// default Schur convention
+
+#ifndef HADRONS_DEFAULT_SCHUR 
+#define HADRONS_DEFAULT_SCHUR DiagTwo
+#endif
+#define _HADRONS_SCHUR_OP_(conv) Schur##conv##Operator
+#define HADRONS_SCHUR_OP(conv) _HADRONS_SCHUR_OP_(conv)
+#define HADRONS_DEFAULT_SCHUR_OP HADRONS_SCHUR_OP(HADRONS_DEFAULT_SCHUR)
+#define _HADRONS_SCHUR_SOLVE_(conv) SchurRedBlack##conv##Solve
+#define HADRONS_SCHUR_SOLVE(conv) _HADRONS_SCHUR_SOLVE_(conv)
+#define HADRONS_DEFAULT_SCHUR_SOLVE HADRONS_SCHUR_SOLVE(HADRONS_DEFAULT_SCHUR)
 
 END_HADRONS_NAMESPACE
 

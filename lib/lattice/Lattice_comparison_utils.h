@@ -198,7 +198,7 @@ namespace Grid {
       typedef typename vsimd::scalar_type scalar;\
       return Comparison(functor<scalar,scalar>(),lhs,rhs);\
     }\
-  template<class vsimd>\
+  template<class vsimd,IfSimd<vsimd> = 0>\
     inline vInteger operator op(const iScalar<vsimd> &lhs,const iScalar<vsimd> &rhs)\
     {									\
       return lhs._internal op rhs._internal;				\

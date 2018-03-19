@@ -91,6 +91,9 @@ static ns##mod##ModuleRegistrar ns##mod##ModuleRegistrarInstance;
 #define envGet(type, name)\
 *env().template getObject<type>(name)
 
+#define envGetDerived(base, type, name)\
+*env().template getDerivedObject<base, type>(name)
+
 #define envGetTmp(type, var)\
 type &var = *env().template getObject<type>(getName() + "_tmp_" + #var)
 
@@ -136,6 +139,13 @@ envTmp(type, name, Ls, env().getGrid(Ls))
 
 #define envTmpLat(...)\
 MACRO_REDIRECT(__VA_ARGS__, envTmpLat5, envTmpLat4)(__VA_ARGS__)
+
+#define saveResult(ioStem, name, result)\
+if (env().getGrid()->IsBoss())\
+{\
+    ResultWriter _writer(RESULT_FILE_NAME(ioStem));\
+    write(_writer, name, result);\
+}
 
 /******************************************************************************
  *                            Module class                                    *

@@ -125,9 +125,9 @@ namespace Grid {
                                        PropagatorField &q_out,
                                        Current curr_type,
                                        unsigned int mu,
-                                       std::vector<Real> mom,
                                        unsigned int tmin, 
-                                       unsigned int tmax)=0;
+                                       unsigned int tmax,
+				       ComplexField &lattice_cmplx)=0;
     };
 
   }

@@ -249,6 +249,9 @@ case ${ax_cv_cxx_compiler_vendor} in
       AVX512)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-mavx512f -mavx512pf -mavx512er -mavx512cd';;
+      SKL)
+        AC_DEFINE([AVX512],[1],[AVX512 intrinsics for SkyLake Xeon])
+        SIMD_FLAGS='-march=skylake-avx512';;
       KNC)
         AC_DEFINE([IMCI],[1],[IMCI intrinsics for Knights Corner])
         SIMD_FLAGS='';;
@@ -337,13 +340,17 @@ case ${ac_PRECISION} in
 esac
 
 ######################  Shared memory allocation technique under MPI3
-AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmopen|hugetlbfs],
+AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmopen|hugetlbfs|shmnone],
               [Select SHM allocation technique])],[ac_SHM=${enable_shm}],[ac_SHM=shmopen])
 
 case ${ac_SHM} in
 
      shmopen)
      AC_DEFINE([GRID_MPI3_SHMOPEN],[1],[GRID_MPI3_SHMOPEN] )
+     ;;
+
+     shmnone)
+     AC_DEFINE([GRID_MPI3_SHM_NONE],[1],[GRID_MPI3_SHM_NONE] )
      ;;
 
      hugetlbfs)

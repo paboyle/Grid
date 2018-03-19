@@ -31,6 +31,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
+#include <Grid/Hadrons/Modules/MScalarSUN/Utils.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -87,7 +88,7 @@ MODULE_REGISTER_NS(TwoPointSU5, TTwoPoint<ScalarNxNAdjImplR<5>>, MScalarSUN);
 MODULE_REGISTER_NS(TwoPointSU6, TTwoPoint<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
- *                 TTwoPoint implementation                             *
+ *                       TTwoPoint implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename SImpl>
@@ -129,7 +130,6 @@ void TTwoPoint<SImpl>::execute(void)
         LOG(Message) << "  '" << o << "'" << std::endl;
     }
 
-    ResultWriter        writer(RESULT_FILE_NAME(par().output));
     const unsigned int  nd = env().getDim().size();
     std::vector<Result> result;
     
@@ -150,7 +150,7 @@ void TTwoPoint<SImpl>::execute(void)
         r.data   = makeTwoPoint(slicedOp[i], slicedOp[j]);
         result.push_back(r);
     }
-    write(writer, "twopt", result);
+    saveResult(par().output, "twopt", result);
 }
 
 // make 2-pt function //////////////////////////////////////////////////////////

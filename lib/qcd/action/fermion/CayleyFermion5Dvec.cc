@@ -469,7 +469,7 @@ void CayleyFermion5D<Impl>::MooeeInternalAsm(const FermionField &psi, FermionFie
 	}
 	a0 = a0+incr;
 	a1 = a1+incr;
-	a2 = a2+sizeof(Simd::scalar_type);
+	a2 = a2+sizeof(typename Simd::scalar_type);
       }}
     {
       int lexa = s1+LLs*site;
@@ -701,7 +701,7 @@ void CayleyFermion5D<Impl>::MooeeInternalZAsm(const FermionField &psi, FermionFi
 	}
 	a0 = a0+incr;
 	a1 = a1+incr;
-	a2 = a2+sizeof(Simd::scalar_type);
+	a2 = a2+sizeof(typename Simd::scalar_type);
       }}
     {
       int lexa = s1+LLs*site;

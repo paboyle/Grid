@@ -31,11 +31,12 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
+#include <Grid/Hadrons/Modules/MScalarSUN/Utils.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         Module to compute tr(phi^n)                        *
+ *                      Trace of powers of a scalar field                     *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MScalarSUN)
 
@@ -73,9 +74,6 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
-private:
-    // output name generator
-    std::string outName(const unsigned int n);
 };
 
 MODULE_REGISTER_NS(TrPhiSU2, TTrPhi<ScalarNxNAdjImplR<2>>, MScalarSUN);
@@ -109,7 +107,7 @@ std::vector<std::string> TTrPhi<SImpl>::getOutput(void)
 
     for (unsigned int n = 2; n <= par().maxPow; n += 2)
     {
-        out.push_back(outName(n));
+        out.push_back(varName(getName(), n));
     }
     
     return out;
@@ -127,7 +125,7 @@ void TTrPhi<SImpl>::setup(void)
     envTmpLat(Field, "buf");
     for (unsigned int n = 2; n <= par().maxPow; n += 2)
     {
-        envCreateLat(ComplexField, outName(n));
+        envCreateLat(ComplexField, varName(getName(), n));
     }
 }
 
@@ -136,7 +134,7 @@ template <typename SImpl>
 void TTrPhi<SImpl>::execute(void)
 {
     LOG(Message) << "Computing tr(phi^n) for n even up to " << par().maxPow
-                 << "..." << std::endl; 
+                 << std::endl; 
 
     std::vector<Result> result;
     auto                &phi = envGet(Field, par().field);
@@ -147,7 +145,7 @@ void TTrPhi<SImpl>::execute(void)
     phi2 = -phi*phi; 
     for (unsigned int n = 2; n <= par().maxPow; n += 2)
     {
-        auto &phin = envGet(ComplexField, outName(n));
+        auto &phin = envGet(ComplexField, varName(getName(), n));
 
         buf  = buf*phi2;
         phin = trace(buf);
@@ -162,17 +160,8 @@ void TTrPhi<SImpl>::execute(void)
     }
     if (result.size() > 0)
     {
-        ResultWriter writer(RESULT_FILE_NAME(par().output));
-
-        write(writer, "trphi", result);
+        saveResult(par().output, "trphi", result);
     }
-}
-
-// output name generator ///////////////////////////////////////////////////////
-template <typename SImpl>
-std::string TTrPhi<SImpl>::outName(const unsigned int n)
-{
-    return getName() + "_" + std::to_string(n);
 }
 
 END_MODULE_NAMESPACE

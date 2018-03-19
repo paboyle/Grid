@@ -47,7 +47,8 @@ int WilsonFermionStatic::HandOptDslash;
 template <class Impl>
 WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
                                    GridRedBlackCartesian &Hgrid, RealD _mass,
-                                   const ImplParams &p)
+                                   const ImplParams &p,
+                                   const WilsonAnisotropyCoefficients &anis)
     : Kernels(p),
       _grid(&Fgrid),
       _cbgrid(&Hgrid),
@@ -60,16 +61,41 @@ WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
       Umu(&Fgrid),
       UmuEven(&Hgrid),
       UmuOdd(&Hgrid),
-      _tmp(&Hgrid)
+      _tmp(&Hgrid),
+      anisotropyCoeff(anis)
 {
   // Allocate the required comms buffer
   ImportGauge(_Umu);
+  if  (anisotropyCoeff.isAnisotropic){
+    diag_mass = mass + 1.0 + (Nd-1)*(anisotropyCoeff.nu / anisotropyCoeff.xi_0);
+  } else {
+    diag_mass = 4.0 + mass;
+  }
+
+
 }
 
 template <class Impl>
 void WilsonFermion<Impl>::ImportGauge(const GaugeField &_Umu) {
   GaugeField HUmu(_Umu._grid);
-  HUmu = _Umu * (-0.5);
+
+  //Here multiply the anisotropy coefficients
+  if (anisotropyCoeff.isAnisotropic)
+  {
+
+    for (int mu = 0; mu < Nd; mu++)
+    {
+      GaugeLinkField U_dir = (-0.5)*PeekIndex<LorentzIndex>(_Umu, mu);
+      if (mu != anisotropyCoeff.t_direction)
+        U_dir *= (anisotropyCoeff.nu / anisotropyCoeff.xi_0);
+
+      PokeIndex<LorentzIndex>(HUmu, U_dir, mu);
+    }
+  }
+  else
+  {
+    HUmu = _Umu * (-0.5);
+  }
   Impl::DoubleStore(GaugeGrid(), Umu, HUmu);
   pickCheckerboard(Even, UmuEven, Umu);
   pickCheckerboard(Odd, UmuOdd, Umu);
@@ -83,14 +109,14 @@ template <class Impl>
 RealD WilsonFermion<Impl>::M(const FermionField &in, FermionField &out) {
   out.checkerboard = in.checkerboard;
   Dhop(in, out, DaggerNo);
-  return axpy_norm(out, 4 + mass, in, out);
+  return axpy_norm(out, diag_mass, in, out);
 }
 
 template <class Impl>
 RealD WilsonFermion<Impl>::Mdag(const FermionField &in, FermionField &out) {
   out.checkerboard = in.checkerboard;
   Dhop(in, out, DaggerYes);
-  return axpy_norm(out, 4 + mass, in, out);
+  return axpy_norm(out, diag_mass, in, out);
 }
 
 template <class Impl>
@@ -114,7 +140,7 @@ void WilsonFermion<Impl>::MeooeDag(const FermionField &in, FermionField &out) {
 template <class Impl>
 void WilsonFermion<Impl>::Mooee(const FermionField &in, FermionField &out) {
   out.checkerboard = in.checkerboard;
-  typename FermionField::scalar_type scal(4.0 + mass);
+  typename FermionField::scalar_type scal(diag_mass);
   out = scal * in;
 }
 
@@ -127,7 +153,7 @@ void WilsonFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out) {
 template<class Impl>
 void WilsonFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out) {
   out.checkerboard = in.checkerboard;
-  out = (1.0/(4.0+mass))*in;
+  out = (1.0/(diag_mass))*in;
 }
   
 template<class Impl>
@@ -204,7 +230,7 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
 
   FermionField Btilde(B._grid);
   FermionField Atilde(B._grid);
-  Atilde = A;
+  Atilde = A;//redundant
 
   st.HaloExchange(B, compressor);
 
@@ -381,31 +407,21 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
     }
 }
 
+
 template <class Impl>
 void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in, 
                                               PropagatorField &q_out,
                                               Current curr_type,
                                               unsigned int mu,
-                                              std::vector<Real> mom,
                                               unsigned int tmin, 
-                                              unsigned int tmax)
+                                              unsigned int tmax,
+					      ComplexField &lattice_cmplx)
 {
     conformable(_grid, q_in._grid);
     conformable(_grid, q_out._grid);
-    Lattice<iSinglet<Simd>> ph(_grid), coor(_grid);
-    Complex i(0.0,1.0);
     PropagatorField tmpFwd(_grid), tmpBwd(_grid), tmp(_grid);
     unsigned int tshift = (mu == Tp) ? 1 : 0;
     unsigned int LLt    = GridDefaultLatt()[Tp];
-
-    // Momentum projection
-    ph = zero;
-    for(unsigned int mu = 0; mu < Nd - 1; mu++)
-    {
-        LatticeCoordinate(coor, mu);
-        ph = ph + mom[mu]*coor*((1./(_grid->_fdimensions[mu])));
-    }
-    ph = exp((Real)(2*M_PI)*i*ph);
 
     q_out = zero;
     LatticeInteger coords(_grid);
@@ -413,8 +429,8 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 
     // Need q(x + mu) and q(x - mu).
     tmp = Cshift(q_in, mu, 1);
-    tmpFwd = tmp*ph;
-    tmp = ph*q_in;
+    tmpFwd = tmp*lattice_cmplx;
+    tmp = lattice_cmplx*q_in;
     tmpBwd = Cshift(tmp, mu, -1);
 
     parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
@@ -449,6 +465,8 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                                                 Umu, sU, mu, t_mask);
         }
     }
+
+
 }
 
 FermOpTemplateInstantiate(WilsonFermion);
