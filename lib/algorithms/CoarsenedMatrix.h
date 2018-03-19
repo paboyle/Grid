@@ -94,7 +94,7 @@ namespace Grid {
   class Aggregation   {
   public:
 
-    typedef typename GridTypeMapper<CComplex>::vector_type     innerType;
+    typedef typename CComplex::vector_type                     innerType;
     typedef iScalar<iScalar<iScalar<innerType         >    > > siteScalar; // used for inner products on fine field
     typedef iScalar<iVector<iVector<innerType, nbasis >, 1 > > siteVector;
     typedef iScalar<iMatrix<iMatrix<innerType, nbasis >, 1 > > siteMatrix;
@@ -243,10 +243,10 @@ namespace Grid {
   // Fine Object == (per site) type of fine field
   // nbasis      == number of deflation vectors
   template<class Fobj,class CComplex,int nbasis>
-  class CoarsenedMatrix : public SparseMatrixBase<Lattice<iScalar<iVector<iVector<typename GridTypeMapper<CComplex>::vector_type, nbasis >, 1 > > > >  {
+  class CoarsenedMatrix : public SparseMatrixBase<Lattice<iScalar<iVector<iVector<typename CComplex::vector_type, nbasis >, 1 > > > >  {
   public:
-    
-    typedef typename GridTypeMapper<CComplex>::vector_type     innerType;
+
+    typedef typename CComplex::vector_type                     innerType;
     typedef iScalar<iScalar<iScalar<innerType         >    > > siteScalar;
     typedef iScalar<iVector<iVector<innerType, nbasis >, 1 > > siteVector;
     typedef iScalar<iMatrix<iMatrix<innerType, nbasis >, 1 > > siteMatrix;
