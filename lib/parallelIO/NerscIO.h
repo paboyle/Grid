@@ -57,7 +57,7 @@ namespace Grid {
       // for the header-reader
       static inline int readHeader(std::string file,GridBase *grid,  FieldMetaData &field)
       {
-      int offset=0;
+      uint64_t offset=0;
       std::map<std::string,std::string> header;
       std::string line;
 
@@ -139,7 +139,7 @@ namespace Grid {
       typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
 
       GridBase *grid = Umu._grid;
-      int offset = readHeader(file,Umu._grid,header);
+      uint64_t offset = readHeader(file,Umu._grid,header);
 
       FieldMetaData clone(header);
 
@@ -236,7 +236,7 @@ namespace Grid {
 	GaugeStatistics(Umu,header);
 	MachineCharacteristics(header);
 
-	int offset;
+	uint64_t offset;
   
 	truncate(file);
 
@@ -278,7 +278,7 @@ namespace Grid {
 	header.plaquette=0.0;
 	MachineCharacteristics(header);
 
-	int offset;
+	uint64_t offset;
   
 #ifdef RNG_RANLUX
 	header.floating_point = std::string("UINT64");
@@ -313,7 +313,7 @@ namespace Grid {
 
 	GridBase *grid = parallel._grid;
 
-	int offset = readHeader(file,grid,header);
+	uint64_t offset = readHeader(file,grid,header);
 
 	FieldMetaData clone(header);
 
