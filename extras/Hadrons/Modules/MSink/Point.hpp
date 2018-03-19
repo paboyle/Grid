@@ -128,7 +128,7 @@ void TPoint<FImpl>::execute(void)
         envGetTmp(LatticeComplex, coor);
         p  = strToVec<Real>(par().mom);
         ph = zero;
-        for(unsigned int mu = 0; mu < env().getNd(); mu++)
+        for(unsigned int mu = 0; mu < p.size(); mu++)
         {
             LatticeCoordinate(coor, mu);
             ph = ph + (p[mu]/env().getGrid()->_fdimensions[mu])*coor;
