@@ -52,7 +52,7 @@ void basisOrthogonalize(std::vector<Field> &basis,Field &w,int k)
 template<class Field>
 void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, int k0,int k1,int Nm) 
 {
-  typedef decltype(Field.View()) View;
+  typedef decltype(basis[0].View()) View;
   std::vector<View> basis_v(basis.size());
   typedef typename Field::vector_object vobj;
   GridBase* grid = basis[0].Grid();
