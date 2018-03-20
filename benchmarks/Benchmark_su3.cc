@@ -35,9 +35,12 @@ using namespace Grid;
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
-#define LMAX (64)
 
-  int64_t Nloop=20;
+#define LMAX (24)
+#define LMIN (4)
+#define LADD (4)
+
+  int64_t Nloop=50;
 
   Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   Coordinate mpi_layout  = GridDefaultMpi();
@@ -51,7 +54,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GFlop/s"<<std::endl;
   std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
-  for(int lat=2;lat<=LMAX;lat+=2){
+  for(int lat=LMIN;lat<=LMAX;lat+=LADD){
 
       Coordinate latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
       int64_t vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
@@ -62,6 +65,9 @@ int main (int argc, char ** argv)
       LatticeColourMatrix x(&Grid); random(pRNG,x);
       LatticeColourMatrix y(&Grid); random(pRNG,y);
 
+      for(int64_t i=0;i<Nloop;i++){
+	x=x*y;
+      }
       double start=usecond();
       for(int64_t i=0;i<Nloop;i++){
 	x=x*y;
@@ -83,7 +89,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GFlop/s"<<std::endl;
   std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
-  for(int lat=2;lat<=LMAX;lat+=2){
+  for(int lat=LMIN;lat<=LMAX;lat+=LADD){
 
       Coordinate latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
       int64_t vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
@@ -95,6 +101,9 @@ int main (int argc, char ** argv)
       LatticeColourMatrix x(&Grid); random(pRNG,x);
       LatticeColourMatrix y(&Grid); random(pRNG,y);
 
+      for(int64_t i=0;i<Nloop;i++){
+	z=x*y;
+      }
       double start=usecond();
       for(int64_t i=0;i<Nloop;i++){
 	z=x*y;
@@ -114,7 +123,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GFlop/s"<<std::endl;
   std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
-  for(int lat=2;lat<=LMAX;lat+=2){
+  for(int lat=LMIN;lat<=LMAX;lat+=LADD){
 
       Coordinate latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
       int64_t vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
@@ -126,6 +135,9 @@ int main (int argc, char ** argv)
       LatticeColourMatrix x(&Grid); random(pRNG,x);
       LatticeColourMatrix y(&Grid); random(pRNG,y);
 
+      for(int64_t i=0;i<Nloop;i++){
+	mult(z,x,y);
+      }
       double start=usecond();
       for(int64_t i=0;i<Nloop;i++){
 	mult(z,x,y);
@@ -145,7 +157,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GFlop/s"<<std::endl;
   std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
-  for(int lat=2;lat<=LMAX;lat+=2){
+  for(int lat=LMIN;lat<=LMAX;lat+=LADD){
 
       Coordinate latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
       int64_t vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
@@ -157,6 +169,9 @@ int main (int argc, char ** argv)
       LatticeColourMatrix x(&Grid); random(pRNG,x);
       LatticeColourMatrix y(&Grid); random(pRNG,y);
 
+      for(int64_t i=0;i<Nloop;i++){
+	mac(z,x,y);
+      }
       double start=usecond();
       for(int64_t i=0;i<Nloop;i++){
 	mac(z,x,y);
