@@ -165,10 +165,10 @@ public:
     pointer ptr = nullptr;
 #endif
 
-    //////////////////
-    // Hack 2MB align; could make option probably doesn't need configurability
-    //////////////////
 #ifdef GRID_NVCC
+    ////////////////////////////////////
+    // Unified (managed) memory
+    ////////////////////////////////////
     if ( ptr == (_Tp *) NULL ) {
       if( cudaMallocManaged((void **)&ptr,bytes) != cudaSuccess ) {
 	ptr = (_Tp *) NULL;
@@ -176,6 +176,9 @@ public:
       }
     }
 #else 
+    //////////////////////////////////////////////////////////////////////////////////////////
+    // 2MB align; could make option probably doesn't need configurability
+    //////////////////////////////////////////////////////////////////////////////////////////
   #ifdef HAVE_MM_MALLOC_H
     if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) _mm_malloc(bytes,GRID_ALLOC_ALIGN);
   #else
@@ -183,6 +186,7 @@ public:
   #endif
 #endif
     assert( ptr != (_Tp *)NULL);
+
     /////////////////////////////////////////
     // First touch optimise in threaded loop
     /////////////////////////////////////////
