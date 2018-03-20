@@ -81,18 +81,18 @@ struct getVectorType<Lattice<T> >{
 // handle leaves of syntax tree
 ///////////////////////////////////////////////////
 template<class sobj> accelerator_inline 
-sobj eval(const unsigned int ss, const sobj &arg)
+sobj eval(const uint64_t ss, const sobj &arg)
 {
   return arg;
 }
 
 template <class lobj> accelerator_inline 
-const lobj & eval(const unsigned int ss, const LatticeView<lobj> &arg) 
+const lobj & eval(const uint64_t ss, const LatticeView<lobj> &arg) 
 {
   return arg[ss];
 }
 template <class lobj> accelerator_inline 
-const lobj & eval(const unsigned int ss, const Lattice<lobj> &arg) 
+const lobj & eval(const uint64_t ss, const Lattice<lobj> &arg) 
 {
   auto view = arg.View();
   return view[ss];
@@ -102,7 +102,7 @@ const lobj & eval(const unsigned int ss, const Lattice<lobj> &arg)
 // handle nodes in syntax tree- eval one operand
 ///////////////////////////////////////////////////
 template <typename Op, typename T1> accelerator_inline 
-auto eval(const unsigned int ss, const LatticeUnaryExpression<Op, T1> &expr)  
+auto eval(const uint64_t ss, const LatticeUnaryExpression<Op, T1> &expr)  
   -> decltype(expr.op.func( eval(ss, expr.arg1)))
 {
   return expr.op.func( eval(ss, expr.arg1) );
@@ -111,7 +111,7 @@ auto eval(const unsigned int ss, const LatticeUnaryExpression<Op, T1> &expr)
 // eval two operands
 ///////////////////////
 template <typename Op, typename T1, typename T2> accelerator_inline
-auto eval(const unsigned int ss, const LatticeBinaryExpression<Op, T1, T2> &expr)  
+auto eval(const uint64_t ss, const LatticeBinaryExpression<Op, T1, T2> &expr)  
   -> decltype(expr.op.func( eval(ss,expr.arg1),eval(ss,expr.arg2)))
 {
   return expr.op.func( eval(ss,expr.arg1), eval(ss,expr.arg2) );
@@ -120,7 +120,7 @@ auto eval(const unsigned int ss, const LatticeBinaryExpression<Op, T1, T2> &expr
 // eval three operands
 ///////////////////////
 template <typename Op, typename T1, typename T2, typename T3> accelerator_inline
-auto eval(const unsigned int ss, const LatticeTrinaryExpression<Op, T1, T2, T3> &expr)  
+auto eval(const uint64_t ss, const LatticeTrinaryExpression<Op, T1, T2, T3> &expr)  
   -> decltype(expr.op.func(eval(ss, expr.arg1), eval(ss, expr.arg2), eval(ss, expr.arg3)))
 {
   return expr.op.func(eval(ss, expr.arg1), eval(ss, expr.arg2), eval(ss, expr.arg3));
