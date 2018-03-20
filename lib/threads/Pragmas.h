@@ -78,53 +78,30 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifdef GRID_NVCC
 
 template<typename lambda>  __global__
-void LambdaApply(int Num, lambda &Lambda)
+void LambdaApply(uint64_t Num, lambda Lambda)
 {
-  int ss = blockIdx.x;
+  uint64_t ss = blockIdx.x;
   if ( ss < Num ) {
     Lambda(ss);
   }
 }
 
-#define accelerator_exec( ... )					\
-  auto lambda = [=] accelerator (void) mutable {		\
-    __VA_ARGS__;						\
-  };								\
-  lambda();							
-
 #define accelerator __host__ __device__
 #define accelerator_inline __host__ __device__ inline
 
-#if 0 
-#define accelerator_loop( iterator, range, ... )		\
-  typedef decltype(range.begin()) Iterator;			\
-  auto lambda = [=] accelerator (Iterator iterator) mutable {	\
-    __VA_ARGS__;						\
-  };								\
-  for(auto it=range.begin();it<range.end();it++){		\
-    lambda(it);							\
-  }
-#else
-#define accelerator_loop( iterator, range, ... )		\
-  typedef decltype(range.begin()) Iterator;			\
-  auto lambda = [=] accelerator (Iterator iterator) mutable {	\
-    __VA_ARGS__;						\
-  };								\
-  Iterator num = range.end();					\
-  LambdaApply<<<num,1>>>(num,lambda);
-#endif
+#define accelerator_loop( iterator, range, ... )			\
+  typedef decltype(range.begin()) Iterator;				\
+  auto lambda = [=] accelerator (Iterator iterator) mutable {		\
+    __VA_ARGS__;							\
+  };									\
+  Iterator num = range.end();						\
+  LambdaApply<<<num,1>>>(num,lambda);					\
+  cudaDeviceSynchronize();
 
 #define cpu_loop( iterator, range, ... )   thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
 
-#define NVCC_DECLARE_VECTOR_ACCESSOR(Type) \
-template <> accelerator_inline typename Grid::Vector<Type>::reference       Grid::Vector<Type>::operator[](Grid::Vector<Type>::size_type __n)       { return this->__begin_[__n]; } \
-template <> accelerator_inline typename Grid::Vector<Type>::const_reference Grid::Vector<Type>::operator[](Grid::Vector<Type>::size_type __n) const { return this->__begin_[__n]; }
-
-#define NVCC_DECLARE_STD_VECTOR_ACCESSOR(Type) \
-template <> accelerator_inline typename std::vector<Type>::reference       std::vector<Type>::operator[](std::vector<Type>::size_type __n)       { return this->__begin_[__n]; } \
-template <> accelerator_inline typename std::vector<Type>::const_reference std::vector<Type>::operator[](std::vector<Type>::size_type __n) const { return this->__begin_[__n]; }
-
 #else
+
 #define accelerator 
 #define accelerator_inline strong_inline
 #define accelerator_loop( iterator, range, ... )			\
@@ -132,9 +109,4 @@ template <> accelerator_inline typename std::vector<Type>::const_reference std::
 #define cpu_loop( iterator, range, ... )				\
   thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
 
-#define NVCC_DECLARE_STD_VECTOR_ACCESSOR(Type) 
-#define NVCC_DECLARE_VECTOR_ACCESSOR(Type) 
-
 #endif
-
-NVCC_DECLARE_STD_VECTOR_ACCESSOR(int);
