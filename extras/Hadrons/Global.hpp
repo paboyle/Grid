@@ -43,12 +43,15 @@ See the full license in the file "LICENSE" in the top level distribution directo
 namespace Grid {\
 using namespace QCD;\
 namespace Hadrons {\
-using Grid::operator<<;
+using Grid::operator<<;\
+using Grid::operator>>;
 #define END_HADRONS_NAMESPACE }}
 
 #define BEGIN_MODULE_NAMESPACE(name)\
 namespace name {\
-using Grid::operator<<;
+using Grid::operator<<;\
+using Grid::operator>>;
+
 #define END_MODULE_NAMESPACE }
 
 /* the 'using Grid::operator<<;' statement prevents a very nasty compilation
@@ -187,7 +190,7 @@ name + "." + std::to_string(vm().getTrajectory()) + "." + resultFileExt
 // default Schur convention
 
 #ifndef HADRONS_DEFAULT_SCHUR 
-#define HADRONS_DEFAULT_SCHUR DiagMooee
+#define HADRONS_DEFAULT_SCHUR DiagTwo
 #endif
 #define _HADRONS_SCHUR_OP_(conv) Schur##conv##Operator
 #define HADRONS_SCHUR_OP(conv) _HADRONS_SCHUR_OP_(conv)

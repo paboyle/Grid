@@ -50,6 +50,7 @@ modules_hpp =\
   Modules/MAction/Wilson.hpp \
   Modules/MAction/WilsonClover.hpp \
   Modules/MAction/ZMobiusDWF.hpp \
+  Modules/MScalarSUN/ShiftProbe.hpp \
   Modules/MScalarSUN/Div.hpp \
   Modules/MScalarSUN/TrMag.hpp \
   Modules/MScalarSUN/EMT.hpp \
@@ -58,6 +59,8 @@ modules_hpp =\
   Modules/MScalarSUN/Utils.hpp \
   Modules/MScalarSUN/TransProj.hpp \
   Modules/MScalarSUN/TrKinetic.hpp \
+  Modules/MIO/LoadEigenPack.hpp \
   Modules/MIO/LoadNersc.hpp \
+  Modules/MIO/LoadCoarseEigenPack.hpp \
   Modules/MIO/LoadBinary.hpp
 

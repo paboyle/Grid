@@ -64,6 +64,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MAction/Wilson.hpp>
 #include <Grid/Hadrons/Modules/MAction/WilsonClover.hpp>
 #include <Grid/Hadrons/Modules/MAction/ZMobiusDWF.hpp>
+#include <Grid/Hadrons/Modules/MScalarSUN/ShiftProbe.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/Div.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TrMag.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/EMT.hpp>
@@ -72,5 +73,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MScalarSUN/Utils.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TransProj.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TrKinetic.hpp>
+#include <Grid/Hadrons/Modules/MIO/LoadEigenPack.hpp>
 #include <Grid/Hadrons/Modules/MIO/LoadNersc.hpp>
+#include <Grid/Hadrons/Modules/MIO/LoadCoarseEigenPack.hpp>
 #include <Grid/Hadrons/Modules/MIO/LoadBinary.hpp>

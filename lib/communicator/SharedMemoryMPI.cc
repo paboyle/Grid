@@ -226,6 +226,48 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 };
 #endif // MMAP
 
+#ifdef GRID_MPI3_SHM_NONE
+void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
+{
+  std::cout << "SharedMemoryAllocate "<< bytes<< " MMAP anonymous implementation "<<std::endl;
+  assert(_ShmSetup==1);
+  assert(_ShmAlloc==0);
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // allocate the shared windows for our group
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////
+  MPI_Barrier(WorldShmComm);
+  WorldShmCommBufs.resize(WorldShmSize);
+  
+  ////////////////////////////////////////////////////////////////////////////////////////////
+  // Hugetlbf and others map filesystems as mappable huge pages
+  ////////////////////////////////////////////////////////////////////////////////////////////
+  char shm_name [NAME_MAX];
+  assert(WorldShmSize == 1);
+  for(int r=0;r<WorldShmSize;r++){
+    
+    int fd=-1;
+    int mmap_flag = MAP_SHARED |MAP_ANONYMOUS ;
+#ifdef MAP_POPULATE    
+    mmap_flag|=MAP_POPULATE;
+#endif
+#ifdef MAP_HUGETLB
+    if ( flags ) mmap_flag |= MAP_HUGETLB;
+#endif
+    void *ptr = (void *) mmap(NULL, bytes, PROT_READ | PROT_WRITE, mmap_flag,fd, 0); 
+    if ( ptr == (void *)MAP_FAILED ) {    
+      printf("mmap %s failed\n",shm_name);
+      perror("failed mmap");      assert(0);    
+    }
+    assert(((uint64_t)ptr&0x3F)==0);
+    close(fd);
+    WorldShmCommBufs[r] =ptr;
+    std::cout << "Set WorldShmCommBufs["<<r<<"]="<<ptr<< "("<< bytes<< "bytes)"<<std::endl;
+  }
+  _ShmAlloc=1;
+  _ShmAllocBytes  = bytes;
+};
+#endif // MMAP
+
 #ifdef GRID_MPI3_SHMOPEN
 ////////////////////////////////////////////////////////////////////////////////////////////
 // POSIX SHMOPEN ; as far as I know Linux does not allow EXPLICIT HugePages with this case
@@ -246,7 +288,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 	
       size_t size = bytes;
       
-      sprintf(shm_name,"/Grid_mpi3_shm_%d_%d",WorldNode,r);
+      sprintf(shm_name,"/myGrid_mpi3_shm_%d_%d",WorldNode,r);
       
       shm_unlink(shm_name);
       int fd=shm_open(shm_name,O_RDWR|O_CREAT,0666);
@@ -401,7 +443,10 @@ void *SharedMemory::ShmBufferTranslate(int rank,void * local_p)
 }
 SharedMemory::~SharedMemory()
 {
-  MPI_Comm_free(&ShmComm);
+  int MPI_is_finalised;  MPI_Finalized(&MPI_is_finalised);
+  if ( !MPI_is_finalised ) { 
+    MPI_Comm_free(&ShmComm);
+  }
 };
 
 }

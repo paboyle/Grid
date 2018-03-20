@@ -2,12 +2,11 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MSink/Point.hpp
+Source file: extras/Hadrons/Modules/MIO/LoadCoarseEigenPack.hpp
 
 Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
-Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,76 +25,74 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-
-#ifndef Hadrons_MSink_Point_hpp_
-#define Hadrons_MSink_Point_hpp_
+#ifndef Hadrons_MIO_LoadCoarseEigenPack_hpp_
+#define Hadrons_MIO_LoadCoarseEigenPack_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
+#include <Grid/Hadrons/EigenPack.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                                   Point                                    *
+ *              Load local coherence eigen vectors/values package             *
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MSink)
+BEGIN_MODULE_NAMESPACE(MIO)
 
-class PointPar: Serializable
+class LoadCoarseEigenPackPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(PointPar,
-                                    std::string, mom);
+    GRID_SERIALIZABLE_CLASS_MEMBERS(LoadCoarseEigenPackPar,
+                                    std::string, filestem,
+                                    unsigned int, sizeFine,
+                                    unsigned int, sizeCoarse,
+                                    unsigned int, Ls,
+                                    std::vector<int>, blockSize);
 };
 
-template <typename FImpl>
-class TPoint: public Module<PointPar>
+template <typename Pack>
+class TLoadCoarseEigenPack: public Module<LoadCoarseEigenPackPar>
 {
 public:
-    FERM_TYPE_ALIASES(FImpl,);
-    SINK_TYPE_ALIASES();
+    typedef CoarseEigenPack<typename Pack::Field, typename Pack::CoarseField> BasePack;
 public:
     // constructor
-    TPoint(const std::string name);
+    TLoadCoarseEigenPack(const std::string name);
     // destructor
-    virtual ~TPoint(void) = default;
+    virtual ~TLoadCoarseEigenPack(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
-protected:
     // setup
     virtual void setup(void);
     // execution
     virtual void execute(void);
-private:
-    bool        hasPhase_{false}; 
-    std::string momphName_;
 };
 
-MODULE_REGISTER_NS(Point,       TPoint<FIMPL>,        MSink);
-MODULE_REGISTER_NS(ScalarPoint, TPoint<ScalarImplCR>, MSink);
+MODULE_REGISTER_NS(LoadCoarseFermionEigenPack, 
+    ARG(TLoadCoarseEigenPack<CoarseFermionEigenPack<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>>), MIO);
 
 /******************************************************************************
- *                          TPoint implementation                             *
+ *                 TLoadCoarseEigenPack implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-template <typename FImpl>
-TPoint<FImpl>::TPoint(const std::string name)
-: Module<PointPar>(name)
-, momphName_ (name + "_momph")
+template <typename Pack>
+TLoadCoarseEigenPack<Pack>::TLoadCoarseEigenPack(const std::string name)
+: Module<LoadCoarseEigenPackPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-template <typename FImpl>
-std::vector<std::string> TPoint<FImpl>::getInput(void)
+template <typename Pack>
+std::vector<std::string> TLoadCoarseEigenPack<Pack>::getInput(void)
 {
     std::vector<std::string> in;
     
     return in;
 }
 
-template <typename FImpl>
-std::vector<std::string> TPoint<FImpl>::getOutput(void)
+template <typename Pack>
+std::vector<std::string> TLoadCoarseEigenPack<Pack>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -103,53 +100,27 @@ std::vector<std::string> TPoint<FImpl>::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-template <typename FImpl>
-void TPoint<FImpl>::setup(void)
+template <typename Pack>
+void TLoadCoarseEigenPack<Pack>::setup(void)
 {
-    envTmpLat(LatticeComplex, "coor");
-    envCacheLat(LatticeComplex, momphName_);
-    envCreate(SinkFn, getName(), 1, nullptr);
+    env().createGrid(par().Ls);
+    env().createCoarseGrid(par().blockSize, par().Ls);
+    envCreateDerived(BasePack, Pack, getName(), par().Ls, par().sizeFine,
+                     par().sizeCoarse, env().getRbGrid(par().Ls), 
+                     env().getCoarseGrid(par().blockSize, par().Ls));
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-template <typename FImpl>
-void TPoint<FImpl>::execute(void)
-{   
-    LOG(Message) << "Setting up point sink function for momentum ["
-                 << par().mom << "]" << std::endl;
+template <typename Pack>
+void TLoadCoarseEigenPack<Pack>::execute(void)
+{
+    auto &epack = envGetDerived(BasePack, Pack, getName());
 
-    auto &ph = envGet(LatticeComplex, momphName_);
-    
-    if (!hasPhase_)
-    {
-        Complex           i(0.0,1.0);
-        std::vector<Real> p;
-
-        envGetTmp(LatticeComplex, coor);
-        p  = strToVec<Real>(par().mom);
-        ph = zero;
-        for(unsigned int mu = 0; mu < p.size(); mu++)
-        {
-            LatticeCoordinate(coor, mu);
-            ph = ph + (p[mu]/env().getGrid()->_fdimensions[mu])*coor;
-        }
-        ph = exp((Real)(2*M_PI)*i*ph);
-        hasPhase_ = true;
-    }
-    auto sink = [&ph](const PropagatorField &field)
-    {
-        SlicedPropagator res;
-        PropagatorField  tmp = ph*field;
-        
-        sliceSum(tmp, res, Tp);
-        
-        return res;
-    };
-    envGet(SinkFn, getName()) = sink;
+    epack.read(par().filestem, vm().getTrajectory());
 }
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MSink_Point_hpp_
+#endif // Hadrons_MIO_LoadCoarseEigenPack_hpp_

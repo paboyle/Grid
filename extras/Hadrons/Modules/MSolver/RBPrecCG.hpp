@@ -32,6 +32,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
+#include <Grid/Hadrons/EigenPack.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -44,16 +45,24 @@ class RBPrecCGPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(RBPrecCGPar ,
-                                    std::string    , action,
-                                    unsigned int   , maxIteration,
-                                    double         , residual);
+                                    std::string , action,
+                                    unsigned int, maxIteration,
+                                    double      , residual,
+                                    std::string , eigenPack);
 };
 
-template <typename FImpl>
+template <typename FImpl, int nBasis>
 class TRBPrecCG: public Module<RBPrecCGPar>
 {
 public:
     FGS_TYPE_ALIASES(FImpl,);
+    typedef FermionEigenPack<FImpl>                       EPack;
+    typedef CoarseFermionEigenPack<FImpl, nBasis>         CoarseEPack;
+    typedef std::shared_ptr<Guesser<FermionField>>        GuesserPt;
+    typedef DeflatedGuesser<typename FImpl::FermionField> FineGuesser;
+    typedef LocalCoherenceDeflatedGuesser<
+        typename FImpl::FermionField,
+        typename CoarseEPack::CoarseField> CoarseGuesser;
 public:
     // constructor
     TRBPrecCG(const std::string name);
@@ -70,37 +79,39 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(RBPrecCG,  TRBPrecCG<FIMPL>, MSolver);
-MODULE_REGISTER_NS(ZRBPrecCG, TRBPrecCG<ZFIMPL>, MSolver);
+MODULE_REGISTER_NS(RBPrecCG,  
+    ARG(TRBPrecCG<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
+MODULE_REGISTER_NS(ZRBPrecCG, 
+    ARG(TRBPrecCG<ZFIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
 
 /******************************************************************************
  *                      TRBPrecCG template implementation                     *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-template <typename FImpl>
-TRBPrecCG<FImpl>::TRBPrecCG(const std::string name)
+template <typename FImpl, int nBasis>
+TRBPrecCG<FImpl, nBasis>::TRBPrecCG(const std::string name)
 : Module(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-template <typename FImpl>
-std::vector<std::string> TRBPrecCG<FImpl>::getInput(void)
+template <typename FImpl, int nBasis>
+std::vector<std::string> TRBPrecCG<FImpl, nBasis>::getInput(void)
 {
     std::vector<std::string> in = {};
     
     return in;
 }
 
-template <typename FImpl>
-std::vector<std::string> TRBPrecCG<FImpl>::getReference(void)
+template <typename FImpl, int nBasis>
+std::vector<std::string> TRBPrecCG<FImpl, nBasis>::getReference(void)
 {
     std::vector<std::string> ref = {par().action};
     
     return ref;
 }
 
-template <typename FImpl>
-std::vector<std::string> TRBPrecCG<FImpl>::getOutput(void)
+template <typename FImpl, int nBasis>
+std::vector<std::string> TRBPrecCG<FImpl, nBasis>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -108,30 +119,60 @@ std::vector<std::string> TRBPrecCG<FImpl>::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-template <typename FImpl>
-void TRBPrecCG<FImpl>::setup(void)
+template <typename FImpl, int nBasis>
+void TRBPrecCG<FImpl, nBasis>::setup(void)
 {
+    if (par().maxIteration == 0)
+    {
+        HADRON_ERROR(Argument, "zero maximum iteration");
+    }
+
     LOG(Message) << "setting up Schur red-black preconditioned CG for"
                  << " action '" << par().action << "' with residual "
-                 << par().residual << std::endl;
+                 << par().residual << ", maximum iteration " 
+                 << par().maxIteration << std::endl;
 
-    auto Ls     = env().getObjectLs(par().action);
-    auto &mat   = envGet(FMat, par().action);
-    auto solver = [&mat, this](FermionField &sol, const FermionField &source)
+    auto        Ls          = env().getObjectLs(par().action);
+    auto        &mat        = envGet(FMat, par().action);
+    std::string guesserName = getName() + "_guesser";
+    GuesserPt   guesser{nullptr};
+
+    if (par().eigenPack.empty())
+    {
+        guesser.reset(new ZeroGuesser<FermionField>());
+    }
+    else
+    {
+        try
+        {
+            auto &epack = envGetDerived(EPack, CoarseEPack, par().eigenPack);
+            
+            guesser.reset(new CoarseGuesser(epack.evec, epack.evecCoarse,
+                                            epack.evalCoarse));
+        }
+        catch (Exceptions::Definition &e)
+        {
+            auto &epack = envGet(EPack, par().eigenPack);
+
+            guesser.reset(new FineGuesser(epack.evec, epack.eval));
+        }
+    }
+    auto solver = [&mat, guesser, this](FermionField &sol, 
+                                        const FermionField &source)
     {
         ConjugateGradient<FermionField>           cg(par().residual, 
                                                      par().maxIteration);
         HADRONS_DEFAULT_SCHUR_SOLVE<FermionField> schurSolver(cg);
         
-        schurSolver(mat, source, sol);
+        schurSolver(mat, source, sol, *guesser);
     };
     envCreate(SolverFn, getName(), Ls, solver);
 }
 
 
 // execution ///////////////////////////////////////////////////////////////////
-template <typename FImpl>
-void TRBPrecCG<FImpl>::execute(void)
+template <typename FImpl, int nBasis>
+void TRBPrecCG<FImpl, nBasis>::execute(void)
 {}
 
 END_MODULE_NAMESPACE

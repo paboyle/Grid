@@ -30,22 +30,31 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid { 
 
-struct ZeroGuesser {
+template<class Field>
+class Guesser {
 public:
-  template<class Field> 
-  void operator()(const Field &src,Field &guess) { guess = Zero(); };
+  Guesser(void) = default;
+  virtual ~Guesser(void) = default;
+  virtual void operator()(const Field &src, Field &guess) = 0;
 };
-struct SourceGuesser {
+
+template<class Field>
+class ZeroGuesser: public Guesser<Field> {
 public:
-  template<class Field> 
-  void operator()(const Field &src,Field &guess) { guess = src; };
+  virtual void operator()(const Field &src, Field &guess) { guess = zero; };
+};
+
+template<class Field>
+class SourceGuesser: public Guesser<Field> {
+public:
+  virtual void operator()(const Field &src, Field &guess) { guess = src; };
 };
 
 ////////////////////////////////
 // Fine grid deflation
 ////////////////////////////////
 template<class Field>
-struct DeflatedGuesser {
+class DeflatedGuesser: public Guesser<Field> {
 private:
   const std::vector<Field> &evec;
   const std::vector<RealD> &eval;
@@ -54,7 +63,7 @@ public:
 
   DeflatedGuesser(const std::vector<Field> & _evec,const std::vector<RealD> & _eval) : evec(_evec), eval(_eval) {};
 
-  void operator()(const Field &src,Field &guess) { 
+  virtual void operator()(const Field &src,Field &guess) { 
     guess = zero;
     assert(evec.size()==eval.size());
     auto N = evec.size();
@@ -66,7 +75,7 @@ public:
 };
 
 template<class FineField, class CoarseField>
-class LocalCoherenceDeflatedGuesser {
+class LocalCoherenceDeflatedGuesser: public Guesser<FineField> {
 private:
   const std::vector<FineField>   &subspace;
   const std::vector<CoarseField> &evec_coarse;
