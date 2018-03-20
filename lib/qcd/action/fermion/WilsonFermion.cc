@@ -407,31 +407,21 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
     }
 }
 
+
 template <class Impl>
 void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in, 
                                               PropagatorField &q_out,
                                               Current curr_type,
                                               unsigned int mu,
-                                              std::vector<Real> mom,
                                               unsigned int tmin, 
-                                              unsigned int tmax)
+                                              unsigned int tmax,
+					      ComplexField &lattice_cmplx)
 {
     conformable(_grid, q_in._grid);
     conformable(_grid, q_out._grid);
-    Lattice<iSinglet<Simd>> ph(_grid), coor(_grid);
-    ComplexD i(0.0,1.0);
     PropagatorField tmpFwd(_grid), tmpBwd(_grid), tmp(_grid);
     unsigned int tshift = (mu == Tp) ? 1 : 0;
     unsigned int LLt    = GridDefaultLatt()[Tp];
-
-    // Momentum projection
-    ph = zero;
-    for(unsigned int mu = 0; mu < Nd - 1; mu++)
-    {
-        LatticeCoordinate(coor, mu);
-        ph = ph + mom[mu]*coor*((1./(_grid->_fdimensions[mu])));
-    }
-    ph = exp((RealD)(2*M_PI)*i*ph);
 
     q_out = zero;
     LatticeInteger coords(_grid);
@@ -439,8 +429,8 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 
     // Need q(x + mu) and q(x - mu).
     tmp = Cshift(q_in, mu, 1);
-    tmpFwd = tmp*ph;
-    tmp = ph*q_in;
+    tmpFwd = tmp*lattice_cmplx;
+    tmp = lattice_cmplx*q_in;
     tmpBwd = Cshift(tmp, mu, -1);
 
     parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
@@ -475,6 +465,8 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                                                 Umu, sU, mu, t_mask);
         }
     }
+
+
 }
 
 FermOpTemplateInstantiate(WilsonFermion);

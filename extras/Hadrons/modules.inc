@@ -31,12 +31,13 @@ modules_hpp =\
   Modules/MSource/SeqConserved.hpp \
   Modules/MSink/Smear.hpp \
   Modules/MSink/Point.hpp \
+  Modules/MSolver/LocalCoherenceLanczos.hpp \
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MGauge/Random.hpp \
+  Modules/MGauge/FundtoHirep.hpp \
   Modules/MGauge/StochEm.hpp \
   Modules/MGauge/Unit.hpp \
   Modules/MGauge/UnitEm.hpp \
-  Modules/MGauge/FundtoHirep.hpp \
   Modules/MUtilities/TestSeqGamma.hpp \
   Modules/MUtilities/TestSeqConserved.hpp \
   Modules/MLoop/NoiseLoop.hpp \
@@ -48,10 +49,15 @@ modules_hpp =\
   Modules/MAction/DWF.hpp \
   Modules/MAction/Wilson.hpp \
   Modules/MAction/WilsonClover.hpp \
+  Modules/MAction/ZMobiusDWF.hpp \
   Modules/MScalarSUN/Div.hpp \
   Modules/MScalarSUN/TrMag.hpp \
+  Modules/MScalarSUN/EMT.hpp \
   Modules/MScalarSUN/TwoPoint.hpp \
   Modules/MScalarSUN/TrPhi.hpp \
+  Modules/MScalarSUN/Utils.hpp \
+  Modules/MScalarSUN/TransProj.hpp \
+  Modules/MScalarSUN/TrKinetic.hpp \
   Modules/MIO/LoadNersc.hpp \
   Modules/MIO/LoadBinary.hpp
 

@@ -86,7 +86,7 @@ protected:
   Colours &Painter;
   int active;
   int timing_mode;
-  int topWidth{-1};
+  int topWidth{-1}, chanWidth{-1};
   static int timestamp;
   std::string name, topName;
   std::string COLOUR;
@@ -126,6 +126,7 @@ public:
     }
   }
   void setTopWidth(const int w) {topWidth = w;}
+  void setChanWidth(const int w) {chanWidth = w;}
 
   friend std::ostream& operator<< (std::ostream& stream, Logger& log){
 
@@ -136,7 +137,12 @@ public:
         stream << std::setw(log.topWidth);
       }
       stream << log.topName << log.background()<< " : ";
-      stream << log.colour() <<  std::left << log.name << log.background() << " : ";
+      stream << log.colour() <<  std::left;
+      if (log.chanWidth > 0)
+      {
+        stream << std::setw(log.chanWidth);
+      }
+      stream << log.name << log.background() << " : ";
       if ( log.timestamp ) {
 	log.StopWatch->Stop();
 	GridTime now = log.StopWatch->Elapsed();

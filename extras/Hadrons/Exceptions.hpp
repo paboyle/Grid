@@ -37,7 +37,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define SRC_LOC std::string(__FUNCTION__) + " at " + std::string(__FILE__) + ":"\
                 + std::to_string(__LINE__)
 #define HADRON_ERROR(exc, msg)\
-LOG(Error) << msg << std::endl;\
 throw(Exceptions::exc(msg, SRC_LOC));
 
 #define DECL_EXC(name, base) \

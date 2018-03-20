@@ -31,18 +31,18 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
+#include <Grid/Hadrons/Modules/MScalarSUN/Utils.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         Div                                 *
+ *                       Divergence of a vector field                         *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MScalarSUN)
 
 class DivPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_ENUM(DiffType, undef, forward, 1, backward, 2, central, 3);
     GRID_SERIALIZABLE_CLASS_MEMBERS(DivPar,
                                     std::vector<std::string>, op,
                                     DiffType,                 type,
@@ -59,8 +59,8 @@ public:
     {
     public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        DivPar::DiffType, type,
-                                        Complex,          value);
+                                        DiffType, type,
+                                        Complex,  value);
     };
 public:
     // constructor
@@ -83,7 +83,7 @@ MODULE_REGISTER_NS(DivSU5, TDiv<ScalarNxNAdjImplR<5>>, MScalarSUN);
 MODULE_REGISTER_NS(DivSU6, TDiv<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
- *                 TDiv implementation                             *
+ *                           TDiv implementation                              *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename SImpl>
@@ -135,18 +135,7 @@ void TDiv<SImpl>::execute(void)
     for (unsigned int mu = 0; mu < nd; ++mu)
     {
         auto &op = envGet(ComplexField, par().op[mu]);
-        switch(par().type)
-        {
-            case DivPar::DiffType::backward:
-                div += op - Cshift(op, mu, -1);
-                break;
-            case DivPar::DiffType::forward:
-                div += Cshift(op, mu, 1) - op;
-                break;
-            case DivPar::DiffType::central:
-                div += 0.5*(Cshift(op, mu, 1) - Cshift(op, mu, -1));
-                break;
-        }
+        dmuAcc(div, op, mu, par().type);
     }
     if (!par().output.empty())
     {

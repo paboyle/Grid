@@ -332,7 +332,7 @@ public:
     // create a smoother and see if we can get a cheap convergence test and smooth inside the IRL
     //////////////////////////////////////////////////////////////////////////////////////////////////
     Chebyshev<FineField>                          ChebySmooth(cheby_smooth);
-    ProjectedFunctionHermOp<Fobj,CComplex,nbasis> ChebyOp (ChebySmooth,_FineOp,_subspace);
+    ProjectedFunctionHermOp<Fobj,CComplex,nbasis> ChebyOp (ChebySmooth,_FineOp,subspace);
     ImplicitlyRestartedLanczosSmoothedTester<Fobj,CComplex,nbasis> ChebySmoothTester(ChebyOp,ChebySmooth,_FineOp,subspace,relax);
 
     for(int k=0;k<evec_coarse.size();k++){
@@ -373,14 +373,14 @@ public:
 		  RealD MaxIt, RealD betastp, int MinRes)
   {
     Chebyshev<FineField>                          Cheby(cheby_op);
-    ProjectedHermOp<Fobj,CComplex,nbasis>         Op(_FineOp,_subspace);
-    ProjectedFunctionHermOp<Fobj,CComplex,nbasis> ChebyOp (Cheby,_FineOp,_subspace);
+    ProjectedHermOp<Fobj,CComplex,nbasis>         Op(_FineOp,subspace);
+    ProjectedFunctionHermOp<Fobj,CComplex,nbasis> ChebyOp (Cheby,_FineOp,subspace);
     //////////////////////////////////////////////////////////////////////////////////////////////////
     // create a smoother and see if we can get a cheap convergence test and smooth inside the IRL
     //////////////////////////////////////////////////////////////////////////////////////////////////
 
     Chebyshev<FineField>                                           ChebySmooth(cheby_smooth);
-    ImplicitlyRestartedLanczosSmoothedTester<Fobj,CComplex,nbasis> ChebySmoothTester(ChebyOp,ChebySmooth,_FineOp,_subspace,relax);
+    ImplicitlyRestartedLanczosSmoothedTester<Fobj,CComplex,nbasis> ChebySmoothTester(ChebyOp,ChebySmooth,_FineOp,subspace,relax);
 
     evals_coarse.resize(Nm);
     evec_coarse.resize(Nm,_CoarseGrid);

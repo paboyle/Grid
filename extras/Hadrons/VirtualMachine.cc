@@ -111,6 +111,7 @@ void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
             {
                 // output does not exists, add it
                 env().addObject(out, address);
+                module_[address].output.push_back(env().getObjectAddress(out));
             }
             else
             {
@@ -296,10 +297,63 @@ void VirtualMachine::makeModuleGraph(void)
     {
         for (auto &in: module_[m].input)
         {
-            graph.addEdge(env().getObjectModule(in), m);
+            int min = env().getObjectModule(in);
+
+            if (min < 0)
+            {
+                HADRON_ERROR(Definition, "object with address " 
+                             + std::to_string(in) 
+                             + " is not produced by any module");
+            }
+            else
+            {
+                graph.addEdge(min, m);
+            }
         }
     }
     graph_ = graph;
+}
+
+// dump GraphViz graph /////////////////////////////////////////////////////////
+void VirtualMachine::dumpModuleGraph(std::ostream &out)
+{
+    makeModuleGraph();
+    out << "digraph hadrons {" << std::endl;
+    out << "node [shape=record, fontname=\"Courier\", fontsize=\"11\"];" << std::endl;
+    out << "graph [fontname = \"Courier\", fontsize=\"11\"];" << std::endl;
+    out << "edge [fontname = \"Courier\", fontsize=\"11\"];"<< std::endl;
+    for (unsigned int m = 0; m < module_.size(); ++m)
+    {
+
+    }
+    for (unsigned int m = 0; m < module_.size(); ++m)
+    {
+        for (auto &in: module_[m].input)
+        {
+            int min = env().getObjectModule(in);
+
+            out << min << " -> " << m << " [ label = \""
+                << env().getObjectName(in) << "\" ];" << std::endl;
+        }
+    }
+    for (unsigned int m = 0; m < module_.size(); ++m)
+    {
+        out <<  m << " [ label = \"{<f0> " << getModule(m)->getRegisteredName()
+            << " |<f1> " << getModuleName(m) << "}\" ];" << std::endl;
+    }
+    out << "}\n" << std::endl;
+}
+
+void VirtualMachine::dumpModuleGraph(void)
+{
+    dumpModuleGraph(std::cout);
+}
+
+void VirtualMachine::dumpModuleGraph(const std::string filename)
+{
+    std::ofstream f(filename);
+
+    dumpModuleGraph(f);
 }
 
 // memory profile //////////////////////////////////////////////////////////////
@@ -424,11 +478,17 @@ void VirtualMachine::memoryProfile(const unsigned int address)
         cleanEnvironment();
         for (auto &in: m->getInput())
         {
-            memoryProfile(env().getObjectModule(in));
+            if (!env().hasCreatedObject(in))
+            {
+                memoryProfile(env().getObjectModule(in));
+            }
         }
         for (auto &ref: m->getReference())
         {
-            memoryProfile(env().getObjectModule(ref));
+            if (!env().hasCreatedObject(ref))
+            {
+                memoryProfile(env().getObjectModule(ref));
+            }
         }
         m->setup();
         updateProfile(address);
@@ -532,7 +592,7 @@ VirtualMachine::Program VirtualMachine::schedule(const GeneticPar &par)
     gen = 0;
     do
     {
-        LOG(Debug) << "Generation " << gen << ":" << std::endl;
+        //LOG(Debug) << "Generation " << gen << ":" << std::endl;
         scheduler.nextGeneration();
         if (gen != 0)
         {

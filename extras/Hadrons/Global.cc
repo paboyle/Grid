@@ -37,20 +37,38 @@ HadronsLogger Hadrons::HadronsLogWarning(1,"Warning");
 HadronsLogger Hadrons::HadronsLogMessage(1,"Message");
 HadronsLogger Hadrons::HadronsLogIterative(1,"Iterative");
 HadronsLogger Hadrons::HadronsLogDebug(1,"Debug");
+HadronsLogger Hadrons::HadronsLogIRL(1,"IRL");
 
 void Hadrons::initLogger(void)
 {
-    auto w = std::string("Hadrons").length();
+    auto w  = std::string("Hadrons").length();
+    int  cw = 8;
+
+
     GridLogError.setTopWidth(w);
     GridLogWarning.setTopWidth(w);
     GridLogMessage.setTopWidth(w);
     GridLogIterative.setTopWidth(w);
     GridLogDebug.setTopWidth(w);
+    GridLogIRL.setTopWidth(w);
+    GridLogError.setChanWidth(cw);
+    GridLogWarning.setChanWidth(cw);
+    GridLogMessage.setChanWidth(cw);
+    GridLogIterative.setChanWidth(cw);
+    GridLogDebug.setChanWidth(cw);
+    GridLogIRL.setChanWidth(cw);
     HadronsLogError.Active(GridLogError.isActive());
     HadronsLogWarning.Active(GridLogWarning.isActive());
     HadronsLogMessage.Active(GridLogMessage.isActive());
     HadronsLogIterative.Active(GridLogIterative.isActive());
     HadronsLogDebug.Active(GridLogDebug.isActive());
+    HadronsLogIRL.Active(GridLogIRL.isActive());
+    HadronsLogError.setChanWidth(cw);
+    HadronsLogWarning.setChanWidth(cw);
+    HadronsLogMessage.setChanWidth(cw);
+    HadronsLogIterative.setChanWidth(cw);
+    HadronsLogDebug.setChanWidth(cw);
+    HadronsLogIRL.setChanWidth(cw);
 }
 
 // type utilities //////////////////////////////////////////////////////////////

@@ -7,7 +7,9 @@ Source file: extras/Hadrons/Modules.hpp
 Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 Author: Lanny91 <andrew.lawson@gmail.com>
+Author: pretidav <david.preti@csic.es>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -43,12 +45,13 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MSource/SeqConserved.hpp>
 #include <Grid/Hadrons/Modules/MSink/Smear.hpp>
 #include <Grid/Hadrons/Modules/MSink/Point.hpp>
+#include <Grid/Hadrons/Modules/MSolver/LocalCoherenceLanczos.hpp>
 #include <Grid/Hadrons/Modules/MSolver/RBPrecCG.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Unit.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Random.hpp>
+#include <Grid/Hadrons/Modules/MGauge/FundtoHirep.hpp>
 #include <Grid/Hadrons/Modules/MGauge/StochEm.hpp>
 #include <Grid/Hadrons/Modules/MGauge/UnitEm.hpp>
-#include <Grid/Hadrons/Modules/MGauge/FundtoHirep.hpp>
 #include <Grid/Hadrons/Modules/MUtilities/TestSeqGamma.hpp>
 #include <Grid/Hadrons/Modules/MUtilities/TestSeqConserved.hpp>
 #include <Grid/Hadrons/Modules/MLoop/NoiseLoop.hpp>
@@ -60,9 +63,14 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MAction/DWF.hpp>
 #include <Grid/Hadrons/Modules/MAction/Wilson.hpp>
 #include <Grid/Hadrons/Modules/MAction/WilsonClover.hpp>
+#include <Grid/Hadrons/Modules/MAction/ZMobiusDWF.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/Div.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TrMag.hpp>
+#include <Grid/Hadrons/Modules/MScalarSUN/EMT.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TwoPoint.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TrPhi.hpp>
+#include <Grid/Hadrons/Modules/MScalarSUN/Utils.hpp>
+#include <Grid/Hadrons/Modules/MScalarSUN/TransProj.hpp>
+#include <Grid/Hadrons/Modules/MScalarSUN/TrKinetic.hpp>
 #include <Grid/Hadrons/Modules/MIO/LoadNersc.hpp>
 #include <Grid/Hadrons/Modules/MIO/LoadBinary.hpp>

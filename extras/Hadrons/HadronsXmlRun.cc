@@ -56,14 +56,26 @@ int main(int argc, char *argv[])
     Grid_init(&argc, &argv);
     
     // execution
-    Application application(parameterFileName);
-    
-    application.parseParameterFile(parameterFileName);
-    if (!scheduleFileName.empty())
+    try
     {
-        application.loadSchedule(scheduleFileName);
+        Application application(parameterFileName);
+        
+        application.parseParameterFile(parameterFileName);
+        if (!scheduleFileName.empty())
+        {
+            application.loadSchedule(scheduleFileName);
+        }
+        application.run();
     }
-    application.run();
+    catch (const std::exception& e)
+    {
+        LOG(Error) << "FATAL ERROR -- Exception " << typeName(&typeid(e)) << std::endl;
+        LOG(Error) << e.what() << std::endl;
+        LOG(Error) << "Aborting program" << std::endl;
+        Grid_finalize();
+
+        return EXIT_FAILURE;
+    }
     
     // epilogue
     LOG(Message) << "Grid is finalizing now" << std::endl;

@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MScalarSUN/TrMag.hpp
+Source file: extras/Hadrons/Modules/MScalarSUN/TrKinetic.hpp
 
 Copyright (C) 2015-2018
 
@@ -25,8 +25,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef Hadrons_MScalarSUN_TrMag_hpp_
-#define Hadrons_MScalarSUN_TrMag_hpp_
+#ifndef Hadrons_MScalarSUN_TrKinetic_hpp_
+#define Hadrons_MScalarSUN_TrKinetic_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -36,21 +36,21 @@ See the full license in the file "LICENSE" in the top level distribution directo
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                     Trace of powers of the magnetisation                   *
+ *                         Trace of kinetic term                              *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MScalarSUN)
 
-class TrMagPar: Serializable
+class TrKineticPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(TrMagPar,
+    GRID_SERIALIZABLE_CLASS_MEMBERS(TrKineticPar,
                                     std::string,  field,
-                                    unsigned int, maxPow,
+                                    DiffType,     type,
                                     std::string,  output);
 };
 
 template <typename SImpl>
-class TTrMag: public Module<TrMagPar>
+class TTrKinetic: public Module<TrKineticPar>
 {
 public:
     typedef typename SImpl::Field        Field;
@@ -60,13 +60,13 @@ public:
     public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
                                         std::string, op,
-                                        Real,        value);
+                                        Complex    , value);
     };
 public:
     // constructor
-    TTrMag(const std::string name);
+    TTrKinetic(const std::string name);
     // destructor
-    virtual ~TTrMag(void) = default;
+    virtual ~TTrKinetic(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -76,24 +76,24 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(TrMagSU2, TTrMag<ScalarNxNAdjImplR<2>>, MScalarSUN);
-MODULE_REGISTER_NS(TrMagSU3, TTrMag<ScalarNxNAdjImplR<3>>, MScalarSUN);
-MODULE_REGISTER_NS(TrMagSU4, TTrMag<ScalarNxNAdjImplR<4>>, MScalarSUN);
-MODULE_REGISTER_NS(TrMagSU5, TTrMag<ScalarNxNAdjImplR<5>>, MScalarSUN);
-MODULE_REGISTER_NS(TrMagSU6, TTrMag<ScalarNxNAdjImplR<6>>, MScalarSUN);
+MODULE_REGISTER_NS(TrKineticSU2, TTrKinetic<ScalarNxNAdjImplR<2>>, MScalarSUN);
+MODULE_REGISTER_NS(TrKineticSU3, TTrKinetic<ScalarNxNAdjImplR<3>>, MScalarSUN);
+MODULE_REGISTER_NS(TrKineticSU4, TTrKinetic<ScalarNxNAdjImplR<4>>, MScalarSUN);
+MODULE_REGISTER_NS(TrKineticSU5, TTrKinetic<ScalarNxNAdjImplR<5>>, MScalarSUN);
+MODULE_REGISTER_NS(TrKineticSU6, TTrKinetic<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
- *                         TTrMag implementation                              *
+ *                      TTrKinetic implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename SImpl>
-TTrMag<SImpl>::TTrMag(const std::string name)
-: Module<TrMagPar>(name)
+TTrKinetic<SImpl>::TTrKinetic(const std::string name)
+: Module<TrKineticPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename SImpl>
-std::vector<std::string> TTrMag<SImpl>::getInput(void)
+std::vector<std::string> TTrKinetic<SImpl>::getInput(void)
 {
     std::vector<std::string> in = {par().field};
     
@@ -101,46 +101,70 @@ std::vector<std::string> TTrMag<SImpl>::getInput(void)
 }
 
 template <typename SImpl>
-std::vector<std::string> TTrMag<SImpl>::getOutput(void)
+std::vector<std::string> TTrKinetic<SImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {};
+    std::vector<std::string> out ;
+
+    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    for (unsigned int nu = mu; nu < env().getNd(); ++nu)
+    {
+        out.push_back(varName(getName(), mu, nu));
+    }
     
     return out;
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename SImpl>
-void TTrMag<SImpl>::setup(void)
-{}
+void TTrKinetic<SImpl>::setup(void)
+{
+    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    for (unsigned int nu = mu; nu < env().getNd(); ++nu)
+    {
+        envCreateLat(ComplexField, varName(getName(), mu, nu));
+    }
+    envTmp(std::vector<Field>, "der", 1, env().getNd(), env().getGrid());
+}
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename SImpl>
-void TTrMag<SImpl>::execute(void)
+void TTrKinetic<SImpl>::execute(void)
 {
-    LOG(Message) << "Computing tr(mag^n) for n even up to " << par().maxPow
-                 << std::endl;
+    LOG(Message) << "Computing tr(d_mu phi*d_nu phi) using " << par().type
+                 << " derivative" << std::endl; 
 
     std::vector<Result> result;
     auto                &phi = envGet(Field, par().field);
 
-    auto m2 = sum(phi), mn = m2;
-
-    m2 = -m2*m2;
-    mn = 1.;
-    for (unsigned int n = 2; n <= par().maxPow; n += 2)
+    envGetTmp(std::vector<Field>, der);
+    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
-        Result r;
-
-        mn = mn*m2;
-        r.op    = "tr(mag^" + std::to_string(n) + ")";
-        r.value = TensorRemove(trace(mn)).real();
-        result.push_back(r);
+        dmu(der[mu], phi, mu, par().type);
     }
-    saveResult(par().output, "trmag", result);
+    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    for (unsigned int nu = mu; nu < env().getNd(); ++nu)
+    {
+        auto &out = envGet(ComplexField, varName(getName(), mu, nu));
+
+        out = -trace(der[mu]*der[nu]);
+        if (!par().output.empty())
+        {
+            Result r;
+
+            r.op    = "tr(d_" + std::to_string(mu) + "phi*d_" 
+                      + std::to_string(nu) + "phi)";
+            r.value = TensorRemove(sum(out));
+            result.push_back(r);
+        }
+    }
+    if (result.size() > 0)
+    {
+        saveResult(par().output, "trkinetic", result);
+    }
 }
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MScalarSUN_TrMag_hpp_
+#endif // Hadrons_MScalarSUN_TrKinetic_hpp_

@@ -43,9 +43,10 @@ BEGIN_MODULE_NAMESPACE(MSolver)
 class RBPrecCGPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(RBPrecCGPar,
-                                    std::string, action,
-                                    double     , residual);
+    GRID_SERIALIZABLE_CLASS_MEMBERS(RBPrecCGPar ,
+                                    std::string    , action,
+                                    unsigned int   , maxIteration,
+                                    double         , residual);
 };
 
 template <typename FImpl>
@@ -69,7 +70,8 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(RBPrecCG, TRBPrecCG<FIMPL>, MSolver);
+MODULE_REGISTER_NS(RBPrecCG,  TRBPrecCG<FIMPL>, MSolver);
+MODULE_REGISTER_NS(ZRBPrecCG, TRBPrecCG<ZFIMPL>, MSolver);
 
 /******************************************************************************
  *                      TRBPrecCG template implementation                     *
@@ -117,13 +119,15 @@ void TRBPrecCG<FImpl>::setup(void)
     auto &mat   = envGet(FMat, par().action);
     auto solver = [&mat, this](FermionField &sol, const FermionField &source)
     {
-        ConjugateGradient<FermionField>           cg(par().residual, 10000);
-        SchurRedBlackDiagMooeeSolve<FermionField> schurSolver(cg);
+        ConjugateGradient<FermionField>           cg(par().residual, 
+                                                     par().maxIteration);
+        HADRONS_DEFAULT_SCHUR_SOLVE<FermionField> schurSolver(cg);
         
         schurSolver(mat, source, sol);
     };
     envCreate(SolverFn, getName(), Ls, solver);
 }
+
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>

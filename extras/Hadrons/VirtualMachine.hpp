@@ -84,7 +84,7 @@ private:
         const std::type_info      *type{nullptr};
         std::string               name;
         ModPt                     data{nullptr};
-        std::vector<unsigned int> input;
+        std::vector<unsigned int> input, output;
         size_t                    maxAllocated;
     };
 public:
@@ -120,6 +120,10 @@ public:
     void                printContent(void) const;
     // module graph (could be a const reference if topoSort was const)
     Graph<unsigned int> getModuleGraph(void);
+    // dump GraphViz graph
+    void                dumpModuleGraph(std::ostream &out);
+    void                dumpModuleGraph(void);
+    void                dumpModuleGraph(const std::string filename);
     // memory profile
     const MemoryProfile &getMemoryProfile(void);
     // garbage collector
