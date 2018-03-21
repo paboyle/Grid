@@ -10,7 +10,7 @@ sidebar:
 ---
 {% include base_path %}
 
-The following options can be use with the `--enable-comms=` option to target different communication interfaces:
+The following options can be used with the `--enable-comms=` option to target different communication interfaces:
 
 | `<comm>`      | Description                                  |
 | ------------- | -------------------------------------------- |
@@ -22,11 +22,17 @@ For the MPI interfaces the optional `-auto` suffix instructs the `configure` scr
 
 ### Shared memory communications support
 
+The following options can be use with the `--enable-shm=` option to target different shared memory behaviours (default `shmopen`):
+
 | `<shm>`       | Description                                                       |
 | ------------- | ----------------------------------------------------------------- |
 | `shmnone`     | uses anonymous spaces, use only for 1 MPI rank per node           |
 | `shmopen`     | uses `shm_open` to allocate a shared memory space for inter socket communications. It used a unique file name in `/dev/shm` associated to the user. |
 | `hugetlbfs`   | optional [libhugetlbfs](https://github.com/libhugetlbfs/libhugetlbfs) support to map the shared memory allocation into huge 2M pages                |
 
+
+### Other flags
+
+`--enable-shmpath=<path>`  to select the sharem memory map base path for [libhugetlbfs](https://github.com/libhugetlbfs/libhugetlbfs).
 
 {% include paginator.html %}
