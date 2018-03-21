@@ -143,6 +143,12 @@ A full list of configurations options is available with the `./configure --help`
 
 * `--with-fftw=<path>`: look for FFTW in the UNIX prefix `<path>`
 
+* `--with-hdf5=<path>`: look for HDF5 in the UNIX prefix `<path>`
+
+* `--with-lime=<path>`: look for the C-LIME library in the UNIX prefix `<path>`
+
+* `--enable-sfw-fp16=<yes|no`: Enable software FP16 communications support (default `yes`)
+
 * `--enable-lapack[=<path>]`: enable LAPACK support in Lanczos eigensolver. A UNIX prefix containing the library can be specified (optional).
 
 * `--enable-mkl[=<path>]`: use Intel MKL for FFT (and LAPACK if enabled) routines. A UNIX prefix containing the library can be specified (optional).
@@ -155,7 +161,11 @@ A full list of configurations options is available with the `./configure --help`
 
 * `--enable-precision={single|double}`: set the default precision (default: `double`).
 
-* `--enable-precision=<comm>`: Use `<comm>` for message passing (default: `none`). [List of possible comm targets](/Grid/docs/comm_interfaces/). 
+* `--enable-comms=<comm>`: Use `<comm>` for message passing (default: `none`). [List of possible comm targets](/Grid/docs/comm_interfaces/). 
+
+* `--enable-shm=<shm>`: Use `<shm>` for shared memory behaviour (default: `shmopen`). [List of possible shm targets](/Grid/docs/comm_interfaces/). 
+
+* `--enable-shmpath=<path>`: Select `<path>` for the shared memory mmap base path for libhugetlbfs. 
 
 * `--enable-rng={sitmo|ranlux48|mt19937}` choose the RNG (default: `sitmo`).
 
