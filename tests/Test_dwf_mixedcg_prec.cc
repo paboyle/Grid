@@ -103,6 +103,27 @@ int main (int argc, char ** argv)
 
   std::cout << "Diff between mixed and regular CG: " << diff << std::endl;
 
+  std::string file1("./Propagator1");
+  std::string file2("./Propagator2");
+  emptyUserRecord record;
+  uint32_t nersc_csum;
+  uint32_t scidac_csuma;
+  uint32_t scidac_csumb;
+  typedef SpinColourVectorD   FermionD;
+  typedef vSpinColourVectorD vFermionD;
+
+  BinarySimpleMunger<FermionD,FermionD> munge;
+  std::string format = getFormatString<vFermionD>();
   
+  BinaryIO::writeLatticeObject<vFermionD,FermionD>(result_o,file1,munge, 0, format,
+						   nersc_csum,scidac_csuma,scidac_csumb);
+
+  std::cout << " Mixed checksums "<<std::hex << scidac_csuma << " "<<scidac_csumb<<std::endl;
+
+  BinaryIO::writeLatticeObject<vFermionD,FermionD>(result_o_2,file1,munge, 0, format,
+						   nersc_csum,scidac_csuma,scidac_csumb);
+
+  std::cout << " CG checksums "<<std::hex << scidac_csuma << " "<<scidac_csumb<<std::endl;
+
   Grid_finalize();
 }
