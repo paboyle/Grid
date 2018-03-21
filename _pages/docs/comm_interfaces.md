@@ -26,7 +26,7 @@ For the MPI interfaces the optional `-auto` suffix instructs the `configure` scr
 | ------------- | ----------------------------------------------------------------- |
 | `shmnone`     | uses anonymous spaces, use only for 1 MPI rank per node           |
 | `shmopen`     | uses `shm_open` to allocate a shared memory space for inter socket communications. It used a unique file name in `/dev/shm` associated to the user. |
-| `hugetlb`     | optional [libhugetlbfs](https://github.com/libhugetlbfs/libhugetlbfs) support to map the shared memory allocation into huge 2M pages                |
+| `hugetlbfs`   | optional [libhugetlbfs](https://github.com/libhugetlbfs/libhugetlbfs) support to map the shared memory allocation into huge 2M pages                |
 
 
 {% include paginator.html %}
