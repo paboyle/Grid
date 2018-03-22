@@ -60,8 +60,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include "Grid_qpx.h"
 #endif
 
-#include "l1p.h"
-
 NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////
