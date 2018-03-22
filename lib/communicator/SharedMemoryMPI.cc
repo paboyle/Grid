@@ -27,6 +27,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 /*  END LEGAL */
 
 #include <Grid/GridCore.h>
+#include <pwd.h>
 
 namespace Grid { 
 
@@ -288,7 +289,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 	
       size_t size = bytes;
       
-      sprintf(shm_name,"/myGrid_mpi3_shm_%d_%d",WorldNode,r);
+      struct passwd *pw = getpwuid (getuid());
+      sprintf(shm_name,"/Grid_%s_mpi3_shm_%d_%d",pw->pw_name,WorldNode,r);
       
       shm_unlink(shm_name);
       int fd=shm_open(shm_name,O_RDWR|O_CREAT,0666);
@@ -323,7 +325,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 
       size_t size = bytes ;
       
-      sprintf(shm_name,"/Grid_mpi3_shm_%d_%d",WorldNode,r);
+      struct passwd *pw = getpwuid (getuid());
+      sprintf(shm_name,"/Grid_%s_mpi3_shm_%d_%d",pw->pw_name,WorldNode,r);
       
       int fd=shm_open(shm_name,O_RDWR,0666);
       if ( fd<0 ) {	perror("failed shm_open");	assert(0);      }
