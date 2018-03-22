@@ -445,13 +445,13 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 	for (int ss = myblock; ss < myblock+myn; ++ss) {
 	  int sU = ss;
 	  int sF = LLs * sU;
-	  Kernels::DhopSiteDag(Opt,st,lo,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v,1,0);
+	  Kernels::DhopSiteDag(Opt,st,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v,1,0);
 	}
       } else {
 	for (int ss = myblock; ss < myblock+myn; ++ss) {
 	  int sU = ss;
 	  int sF = LLs * sU;
-	  Kernels::DhopSite(Opt,st,lo,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v,1,0);
+	  Kernels::DhopSite(Opt,st,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v,1,0);
 	}
       }
       ptime = usecond() - start;
@@ -480,14 +480,14 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
     thread_loop( (int ss = 0; ss < sz; ss++) ,{
       int sU = st.surface_list[ss];
       int sF = LLs * sU;
-      Kernels::DhopSiteDag(Opt,st,lo,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v,0,1);
+      Kernels::DhopSiteDag(Opt,st,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v,0,1);
     });
   } else {
     int sz=st.surface_list.size();
     thread_loop( (int ss = 0; ss < sz; ss++) ,{
       int sU = st.surface_list[ss];
       int sF = LLs * sU;
-      Kernels::DhopSite(Opt,st,lo,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v,0,1);
+      Kernels::DhopSite(Opt,st,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v,0,1);
     });
   }
   DhopComputeTime2+=usecond();
@@ -522,13 +522,13 @@ void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOr
     accelerator_loop( ss, U_v, {
       int sU = ss;
       int sF = LLs * sU;
-      Kernels::DhopSiteDag(Opt,st,lo,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v);
+      Kernels::DhopSiteDag(Opt,st,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v);
     });
   } else {
     accelerator_loop( ss, U_v , {
       int sU = ss;
       int sF = LLs * sU;
-      Kernels::DhopSite(Opt,st,lo,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v);
+      Kernels::DhopSite(Opt,st,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v);
     });
   }
   DhopComputeTime+=usecond();
