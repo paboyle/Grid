@@ -61,6 +61,7 @@ namespace Grid {
 		       std::vector<int> &simd,
 		       std::vector<int> &mpi);
 
+  void printHash(void);
 
 };
 #endif
