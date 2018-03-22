@@ -30,17 +30,17 @@ Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
 
 using namespace std;
 using namespace Grid;
- ;
 
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-#define LMAX (24)
+#define LMAX (32)
 #define LMIN (4)
 #define LADD (4)
 
-  int64_t Nloop=50;
+  int64_t Nwarm=5;
+  int64_t Nloop=25;
 
   Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   Coordinate mpi_layout  = GridDefaultMpi();
@@ -65,7 +65,7 @@ int main (int argc, char ** argv)
       LatticeColourMatrix x(&Grid); random(pRNG,x);
       LatticeColourMatrix y(&Grid); random(pRNG,y);
 
-      for(int64_t i=0;i<Nloop;i++){
+      for(int64_t i=0;i<Nwarm;i++){
 	x=x*y;
       }
       double start=usecond();
@@ -101,7 +101,7 @@ int main (int argc, char ** argv)
       LatticeColourMatrix x(&Grid); random(pRNG,x);
       LatticeColourMatrix y(&Grid); random(pRNG,y);
 
-      for(int64_t i=0;i<Nloop;i++){
+      for(int64_t i=0;i<Nwarm;i++){
 	z=x*y;
       }
       double start=usecond();
@@ -135,7 +135,7 @@ int main (int argc, char ** argv)
       LatticeColourMatrix x(&Grid); random(pRNG,x);
       LatticeColourMatrix y(&Grid); random(pRNG,y);
 
-      for(int64_t i=0;i<Nloop;i++){
+      for(int64_t i=0;i<Nwarm;i++){
 	mult(z,x,y);
       }
       double start=usecond();
@@ -169,7 +169,7 @@ int main (int argc, char ** argv)
       LatticeColourMatrix x(&Grid); random(pRNG,x);
       LatticeColourMatrix y(&Grid); random(pRNG,y);
 
-      for(int64_t i=0;i<Nloop;i++){
+      for(int64_t i=0;i<Nwarm;i++){
 	mac(z,x,y);
       }
       double start=usecond();
