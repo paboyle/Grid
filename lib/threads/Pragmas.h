@@ -77,26 +77,33 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 //////////////////////////////////////////////////////////////////////////////////
 #ifdef GRID_NVCC
 
+constexpr uint32_t gpu_threads = 8;
+
 template<typename lambda>  __global__
 void LambdaApply(uint64_t Num, lambda Lambda)
 {
-  uint64_t ss = blockIdx.x;
+  uint64_t ss = blockIdx.x*blockDim.x + threadIdx.x;
   if ( ss < Num ) {
     Lambda(ss);
   }
 }
 
-#define accelerator __host__ __device__
+#define accelerator        __host__ __device__
 #define accelerator_inline __host__ __device__ inline
-
 #define accelerator_loop( iterator, range, ... )			\
   typedef decltype(range.begin()) Iterator;				\
   auto lambda = [=] accelerator (Iterator iterator) mutable {		\
     __VA_ARGS__;							\
   };									\
   Iterator num = range.end();						\
-  LambdaApply<<<num,1>>>(num,lambda);					\
-  cudaDeviceSynchronize();
+  Iterator num_block = (num + gpu_threads - 1)/gpu_threads;		\
+  LambdaApply<<<num_block,gpu_threads>>>(num,lambda);			\
+  cudaError err = cudaGetLastError();					\
+  cudaDeviceSynchronize();						\
+  if ( cudaSuccess != err ) {						\
+    printf("Cuda error %s\n",cudaGetErrorString( err ));		\
+    exit(0);								\
+  }									\
 
 #define cpu_loop( iterator, range, ... )   thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
 
