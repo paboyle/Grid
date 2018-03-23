@@ -14,12 +14,18 @@ Using HMC in Grid version 0.7.0
 These are the instructions to use the Generalised HMC on Grid version 0.7.0.
 Disclaimer: GRID is still under active development so any information provided here can be changed in future releases.
 
-General
+Introduction
 =======
 
-$$ \mathbf{X}\_{n,p} = \mathbf{A}\_{n,k} \mathbf{B}\_{k,p} $$
+The general problem is to generate a Markov Chain distributed according to the action $$S(\psi)$$ in order to compute observables expectaction values.
 
-$$ \langle O \rangle = \int O e^{-S(\psi)} d\psi $$ 
+$$ \langle O \rangle = \frac{1}{Z} \int O e^{-S(\psi)} D\psi $$ 
+
+The Hybrid Monte Carlo approach is to introduce ficticious random momenta to construct an Hamiltonian $$H(\psi)$$ and generate 
+new configurations by integrating the corresponding Hamilton equations.
+
+$$H(\psi) = \frac{1}{2} P^2 + S(\psi)$$
+
 
 Command line options
 ====================

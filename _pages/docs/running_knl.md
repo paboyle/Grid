@@ -65,8 +65,8 @@ Beside the generic implementation using stencils, GRID has optimised version of 
 
 Flags at runtime can be used for the optimised paths
 
-| Flag    | Description                            |
-| ----------- | -------------------------------------- |
+| Flag                  | Description                                                           |
+| --------------------- | --------------------------------------------------------------------- |
 | `--dslash-generic`  	| This is the default option and used the implementation with stencils 	|
 | `--dslash-unroll`   	| This explicitly unroll the colour loops. It is tied to `Nc=3`        	|
 | `--dslash-asm`      	| This is specific for AVX512-F architectures and `Nc=3`               	|
