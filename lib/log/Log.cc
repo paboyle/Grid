@@ -59,6 +59,7 @@ void GridLogTimestamp(int on){
 }
 
 Colours GridLogColours(0);
+GridLogger GridLogMG     (1, "MG"    , GridLogColours, "NORMAL");
 GridLogger GridLogIRL    (1, "IRL"   , GridLogColours, "NORMAL");
 GridLogger GridLogSolver (1, "Solver", GridLogColours, "NORMAL");
 GridLogger GridLogError  (1, "Error" , GridLogColours, "RED");
