@@ -103,6 +103,7 @@ int main (int argc, char ** argv)
 
   std::cout << "Diff between mixed and regular CG: " << diff << std::endl;
 
+  #ifdef HAVE_LIME
   std::string file1("./Propagator1");
   std::string file2("./Propagator2");
   emptyUserRecord record;
@@ -124,6 +125,8 @@ int main (int argc, char ** argv)
 						   nersc_csum,scidac_csuma,scidac_csumb);
 
   std::cout << " CG checksums "<<std::hex << scidac_csuma << " "<<scidac_csumb<<std::endl;
+  #endif
+
 
   Grid_finalize();
 }
