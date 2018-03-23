@@ -91,7 +91,7 @@ class BinaryIO {
     typedef typename vobj::scalar_object sobj;
 
     GridBase *grid = lat._grid;
-    int lsites = grid->lSites();
+    uint64_t lsites = grid->lSites();
 
     std::vector<sobj> scalardata(lsites); 
     unvectorizeToLexOrdArray(scalardata,lat);    
@@ -160,7 +160,9 @@ class BinaryIO {
 
 	/* 
 	 * Scidac csum  is rather more heavyweight
+	 * FIXME -- 128^3 x 256 x 16 will overflow.
 	 */
+	
 	int global_site;
 
 	Lexicographic::CoorFromIndex(coor,local_site,local_vol);
@@ -261,7 +263,7 @@ class BinaryIO {
 			      GridBase *grid,
 			      std::vector<fobj> &iodata,
 			      std::string file,
-			      Integer offset,
+			      uint64_t offset,
 			      const std::string &format, int control,
 			      uint32_t &nersc_csum,
 			      uint32_t &scidac_csuma,
@@ -523,7 +525,7 @@ class BinaryIO {
   static inline void readLatticeObject(Lattice<vobj> &Umu,
 				       std::string file,
 				       munger munge,
-				       Integer offset,
+				       uint64_t offset,
 				       const std::string &format,
 				       uint32_t &nersc_csum,
 				       uint32_t &scidac_csuma,
@@ -533,7 +535,7 @@ class BinaryIO {
     typedef typename vobj::Realified::scalar_type word;    word w=0;
 
     GridBase *grid = Umu._grid;
-    int lsites = grid->lSites();
+    uint64_t lsites = grid->lSites();
 
     std::vector<sobj> scalardata(lsites); 
     std::vector<fobj>     iodata(lsites); // Munge, checksum, byte order in here
@@ -544,7 +546,7 @@ class BinaryIO {
     GridStopWatch timer; 
     timer.Start();
 
-    parallel_for(int x=0;x<lsites;x++) munge(iodata[x], scalardata[x]);
+    parallel_for(uint64_t x=0;x<lsites;x++) munge(iodata[x], scalardata[x]);
 
     vectorizeFromLexOrdArray(scalardata,Umu);    
     grid->Barrier();
@@ -560,7 +562,7 @@ class BinaryIO {
     static inline void writeLatticeObject(Lattice<vobj> &Umu,
 					  std::string file,
 					  munger munge,
-					  Integer offset,
+					  uint64_t offset,
 					  const std::string &format,
 					  uint32_t &nersc_csum,
 					  uint32_t &scidac_csuma,
@@ -569,7 +571,7 @@ class BinaryIO {
     typedef typename vobj::scalar_object sobj;
     typedef typename vobj::Realified::scalar_type word;    word w=0;
     GridBase *grid = Umu._grid;
-    int lsites = grid->lSites();
+    uint64_t lsites = grid->lSites();
 
     std::vector<sobj> scalardata(lsites); 
     std::vector<fobj>     iodata(lsites); // Munge, checksum, byte order in here
@@ -580,7 +582,7 @@ class BinaryIO {
     GridStopWatch timer; timer.Start();
     unvectorizeToLexOrdArray(scalardata,Umu);    
 
-    parallel_for(int x=0;x<lsites;x++) munge(scalardata[x],iodata[x]);
+    parallel_for(uint64_t x=0;x<lsites;x++) munge(scalardata[x],iodata[x]);
 
     grid->Barrier();
     timer.Stop();
@@ -597,7 +599,7 @@ class BinaryIO {
   static inline void readRNG(GridSerialRNG &serial,
 			     GridParallelRNG &parallel,
 			     std::string file,
-			     Integer offset,
+			     uint64_t offset,
 			     uint32_t &nersc_csum,
 			     uint32_t &scidac_csuma,
 			     uint32_t &scidac_csumb)
@@ -610,8 +612,8 @@ class BinaryIO {
     std::string format = "IEEE32BIG";
 
     GridBase *grid = parallel._grid;
-    int gsites = grid->gSites();
-    int lsites = grid->lSites();
+    uint64_t gsites = grid->gSites();
+    uint64_t lsites = grid->lSites();
 
     uint32_t nersc_csum_tmp   = 0;
     uint32_t scidac_csuma_tmp = 0;
@@ -626,7 +628,7 @@ class BinaryIO {
 	     nersc_csum,scidac_csuma,scidac_csumb);
 
     timer.Start();
-    parallel_for(int lidx=0;lidx<lsites;lidx++){
+    parallel_for(uint64_t lidx=0;lidx<lsites;lidx++){
       std::vector<RngStateType> tmp(RngStateCount);
       std::copy(iodata[lidx].begin(),iodata[lidx].end(),tmp.begin());
       parallel.SetState(tmp,lidx);
@@ -659,7 +661,7 @@ class BinaryIO {
   static inline void writeRNG(GridSerialRNG &serial,
 			      GridParallelRNG &parallel,
 			      std::string file,
-			      Integer offset,
+			      uint64_t offset,
 			      uint32_t &nersc_csum,
 			      uint32_t &scidac_csuma,
 			      uint32_t &scidac_csumb)
@@ -670,8 +672,8 @@ class BinaryIO {
     typedef std::array<RngStateType,RngStateCount> RNGstate;
 
     GridBase *grid = parallel._grid;
-    int gsites = grid->gSites();
-    int lsites = grid->lSites();
+    uint64_t gsites = grid->gSites();
+    uint64_t lsites = grid->lSites();
 
     uint32_t nersc_csum_tmp;
     uint32_t scidac_csuma_tmp;
@@ -684,7 +686,7 @@ class BinaryIO {
 
     timer.Start();
     std::vector<RNGstate> iodata(lsites);
-    parallel_for(int lidx=0;lidx<lsites;lidx++){
+    parallel_for(uint64_t lidx=0;lidx<lsites;lidx++){
       std::vector<RngStateType> tmp(RngStateCount);
       parallel.GetState(tmp,lidx);
       std::copy(tmp.begin(),tmp.end(),iodata[lidx].begin());

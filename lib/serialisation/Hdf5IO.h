@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <H5Cpp.h>
+#include <Grid/tensors/Tensors.h>
 #include "Hdf5Type.h"
 
 #ifndef H5_NO_NAMESPACE

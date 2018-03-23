@@ -659,6 +659,7 @@ vectorizeFromLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
 template<class VobjOut, class VobjIn>
 void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
   assert(out._grid->Nd() == in._grid->Nd());
+  assert(out._grid->FullDimensions() == in._grid->FullDimensions());
   out.checkerboard = in.checkerboard;
   GridBase *in_grid=in._grid;
   GridBase *out_grid = out._grid;

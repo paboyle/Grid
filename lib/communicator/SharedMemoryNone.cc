@@ -122,5 +122,7 @@ void *SharedMemory::ShmBufferTranslate(int rank,void * local_p)
 {
   return NULL;
 }
+SharedMemory::~SharedMemory()
+{};
 
 }

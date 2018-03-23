@@ -31,8 +31,6 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
- 
-
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
@@ -59,8 +57,8 @@ int main (int argc, char ** argv)
   double beta = 1.0;
   double c1   = 0.331;
 
-  ConjugatePlaqPlusRectangleActionR Action(beta,c1);
-  //  ConjugateWilsonGaugeActionR Action(beta);
+  //ConjugatePlaqPlusRectangleActionR Action(beta,c1);
+  ConjugateWilsonGaugeActionR Action(beta);
   //WilsonGaugeActionR Action(beta);
 
   ComplexD S    = Action.S(U);
