@@ -209,7 +209,8 @@ namespace Grid {
 
       RealD scale;
 
-      ConjugateGradient<FineField> CG(1.0e-2,10000);
+      TrivialPrecon<FineField> TrivialPrec;
+      FlexibleGeneralisedMinimalResidual<FineField> FGMRES(1.0e-14,1,TrivialPrec,1,false); // TODO: need to use GMRES as long as Mdag doesn't work on coarser levels (i.e., MdagM isn't hermitian)
       FineField noise(FineGrid);
       FineField Mn(FineGrid);
 
@@ -223,7 +224,7 @@ namespace Grid {
 
 	for(int i=0;i<3;i++){
 
-	  CG(hermop,noise,subspace[b]);
+	  FGMRES(hermop,noise,subspace[b]);
 
 	  noise = subspace[b];
 	  scale = std::pow(norm2(noise),-0.5); 
@@ -302,7 +303,7 @@ namespace Grid {
       return norm2(out);
     };
 
-    RealD Mdag (const CoarseVector &in, CoarseVector &out){ 
+    RealD Mdag (const CoarseVector &in, CoarseVector &out){ // TODO: get this correct
       return M(in,out);
     };
 
