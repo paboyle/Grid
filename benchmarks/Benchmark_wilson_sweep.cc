@@ -37,8 +37,6 @@ Gamma::Algebra Gmu [] = {
     Gamma::Algebra::GammaT
 };
 
-bool overlapComms = false;
-
 void bench_wilson (
 		   LatticeFermion &    src,
 		   LatticeFermion & result,
@@ -49,9 +47,7 @@ void bench_wilson (
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
-  if( GridCmdOptionExists(argv,argv+argc,"--asynch") ){ overlapComms = true; }
   typename WilsonFermionR::ImplParams params;
-  params.overlapCommsCompute = overlapComms;
 
   Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   Coordinate mpi_layout  = GridDefaultMpi();
