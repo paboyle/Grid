@@ -49,7 +49,7 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
 				       GridCartesian         &FourDimGrid,
 				       GridRedBlackCartesian &FourDimRedBlackGrid,
 				       RealD _M5,const ImplParams &p) :
-  Kernels(p),
+  Impl(p),
   _FiveDimGrid        (&FiveDimGrid),
   _FiveDimRedBlackGrid(&FiveDimRedBlackGrid),
   _FourDimGrid        (&FourDimGrid),
