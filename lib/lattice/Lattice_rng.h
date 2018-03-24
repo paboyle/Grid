@@ -347,8 +347,7 @@ public:
     int words  = sizeof(scalar_object) / sizeof(scalar_type);
 
     auto l_v = l.View();
-    //    thread_loop( (int ss=0;ss<osites;ss++), {
-    for (int ss=0;ss<osites;ss++) {
+    thread_loop( (int ss=0;ss<osites;ss++), {
       ExtractBuffer<scalar_object> buf(Nsimd);
       for (int m = 0; m < multiplicity; m++) {  // Draw from same generator multiplicity times
 
@@ -365,7 +364,7 @@ public:
 	// merge into SIMD lanes, FIXME suboptimal implementation
 	merge(l_v[sm], buf);
       }
-    }
+      });
     //    });
 
     _time_counter += usecond()- inner_time_counter;
