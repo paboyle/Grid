@@ -66,7 +66,7 @@ public:
 };
 
 template<class Impl>
-class WilsonFermion5D : public WilsonKernels<Impl>, public WilsonFermion5DStatic
+class WilsonFermion5D : public WilsonFermion5DStatic, public Impl
 {
 public:
   INHERIT_IMPL_TYPES(Impl);

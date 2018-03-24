@@ -52,7 +52,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 /////////////////////////////////////////////////////////////////
 #undef KERNEL_DAG
 template<> void 
-WilsonKernels<WilsonImplF>::AsmDhopSite(typename StencilImpl::View_type &st, DoubledGaugeField &U, SiteHalfSpinor *buf,
+WilsonKernels<WilsonImplF>::AsmDhopSite(StencilView &st, DoubledGaugeField &U, SiteHalfSpinor *buf,
 						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
       
@@ -61,7 +61,7 @@ WilsonKernels<WilsonImplF>::AsmDhopSite(typename StencilImpl::View_type &st, Dou
 /////////////////////////////////////////////////////////////////
 #define KERNEL_DAG
 template<> void 
-WilsonKernels<WilsonImplF>::AsmDhopSiteDag(typename StencilImpl::View_type &st, DoubledGaugeField &U,SiteHalfSpinor *buf,
+WilsonKernels<WilsonImplF>::AsmDhopSiteDag(StencilView &st, DoubledGaugeField &U,SiteHalfSpinor *buf,
 						   int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
@@ -75,7 +75,7 @@ WilsonKernels<WilsonImplF>::AsmDhopSiteDag(typename StencilImpl::View_type &st, 
 /////////////////////////////////////////////////////////////////
 #undef KERNEL_DAG
 template<> void 
-WilsonKernels<DomainWallVec5dImplF>::AsmDhopSite(typename StencilImpl::View_type &st, DoubledGaugeField &U, SiteHalfSpinor *buf,
+WilsonKernels<DomainWallVec5dImplF>::AsmDhopSite(StencilView &st, DoubledGaugeField &U, SiteHalfSpinor *buf,
 							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
@@ -84,7 +84,7 @@ WilsonKernels<DomainWallVec5dImplF>::AsmDhopSite(typename StencilImpl::View_type
 /////////////////////////////////////////////////////////////////
 #define KERNEL_DAG
 template<> void 
-WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteDag(typename StencilImpl::View_type &st, DoubledGaugeField &U,SiteHalfSpinor *buf,
+WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteDag(StencilView &st, DoubledGaugeField &U,SiteHalfSpinor *buf,
 							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 #undef MAYBEPERM
@@ -104,7 +104,7 @@ WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteDag(typename StencilImpl::View_t
 /////////////////////////////////////////////////////////////////
 #undef KERNEL_DAG
 template<> void 
-WilsonKernels<WilsonImplD>::AsmDhopSite(typename StencilImpl::View_type &st, DoubledGaugeField &U, SiteHalfSpinor *buf,
+WilsonKernels<WilsonImplD>::AsmDhopSite(StencilView &st, DoubledGaugeField &U, SiteHalfSpinor *buf,
 						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 /////////////////////////////////////////////////////////////////
@@ -115,7 +115,7 @@ WilsonKernels<WilsonImplD>::AsmDhopSite(typename StencilImpl::View_type &st, Dou
 /////////////////////////////////////////////////////////////////
 #define KERNEL_DAG
 template<> void 
-WilsonKernels<WilsonImplD>::AsmDhopSiteDag(typename StencilImpl::View_type &st, DoubledGaugeField &U,SiteHalfSpinor *buf,
+WilsonKernels<WilsonImplD>::AsmDhopSiteDag(StencilView &st, DoubledGaugeField &U,SiteHalfSpinor *buf,
 						   int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 /////////////////////////////////////////////////////////////////
@@ -129,7 +129,7 @@ WilsonKernels<WilsonImplD>::AsmDhopSiteDag(typename StencilImpl::View_type &st, 
 /////////////////////////////////////////////////////////////////
 #undef KERNEL_DAG
 template<> void 
-WilsonKernels<DomainWallVec5dImplD>::AsmDhopSite(typename StencilImpl::View_type &st, DoubledGaugeField &U, SiteHalfSpinor *buf,
+WilsonKernels<DomainWallVec5dImplD>::AsmDhopSite(StencilView &st, DoubledGaugeField &U, SiteHalfSpinor *buf,
 							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 /////////////////////////////////////////////////////////////////
@@ -139,7 +139,7 @@ WilsonKernels<DomainWallVec5dImplD>::AsmDhopSite(typename StencilImpl::View_type
 /////////////////////////////////////////////////////////////////
 #define KERNEL_DAG
 template<> void 
-WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteDag(typename StencilImpl::View_type &st, DoubledGaugeField &U,SiteHalfSpinor *buf,
+WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteDag(StencilView &st, DoubledGaugeField &U,SiteHalfSpinor *buf,
 							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 /////////////////////////////////////////////////////////////////

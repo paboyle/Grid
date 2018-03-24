@@ -38,42 +38,42 @@ NAMESPACE_BEGIN(Grid);
 // Default to no assembler implementation
 ///////////////////////////////////////////////////////////
 template<class Impl> void 
-WilsonKernels<Impl >::AsmDhopSite(typename StencilImpl::View_type &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+WilsonKernels<Impl >::AsmDhopSite(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 					  int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 {
   assert(0);
 }
 
 template<class Impl> void 
-WilsonKernels<Impl >::AsmDhopSiteDag(typename StencilImpl::View_type &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+WilsonKernels<Impl >::AsmDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 					     int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 {
   assert(0);
 }
 
 template<class Impl> void 
-WilsonKernels<Impl >::AsmDhopSiteInt(typename StencilImpl::View_type &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+WilsonKernels<Impl >::AsmDhopSiteInt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 					  int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 {
   assert(0);
 }
 
 template<class Impl> void 
-WilsonKernels<Impl >::AsmDhopSiteDagInt(typename StencilImpl::View_type &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+WilsonKernels<Impl >::AsmDhopSiteDagInt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 					     int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 {
   assert(0);
 }
 
 template<class Impl> void 
-WilsonKernels<Impl >::AsmDhopSiteExt(typename StencilImpl::View_type &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+WilsonKernels<Impl >::AsmDhopSiteExt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 					  int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 {
   assert(0);
 }
 
 template<class Impl> void 
-WilsonKernels<Impl >::AsmDhopSiteDagExt(typename StencilImpl::View_type &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+WilsonKernels<Impl >::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 					     int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 {
   assert(0);
@@ -83,20 +83,20 @@ WilsonKernels<Impl >::AsmDhopSiteDagExt(typename StencilImpl::View_type &st, Dou
 #include <qcd/action/fermion/WilsonKernelsAsmQPX.h>
 
 #define INSTANTIATE_ASM(A)\
-template void WilsonKernels<A>::AsmDhopSite(typename StencilImpl::View_type &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,\
+template void WilsonKernels<A>::AsmDhopSite(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,\
                                   int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out);\
  \
-template void WilsonKernels<A>::AsmDhopSiteDag(typename StencilImpl::View_type &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,\
+template void WilsonKernels<A>::AsmDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,\
                                   int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out);\
-template void WilsonKernels<A>::AsmDhopSiteInt(typename StencilImpl::View_type &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,\
-                                  int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out);\
- \
-template void WilsonKernels<A>::AsmDhopSiteDagInt(typename StencilImpl::View_type &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,\
-                                  int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out);\
-template void WilsonKernels<A>::AsmDhopSiteExt(typename StencilImpl::View_type &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,\
+template void WilsonKernels<A>::AsmDhopSiteInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,\
                                   int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out);\
  \
-template void WilsonKernels<A>::AsmDhopSiteDagExt(typename StencilImpl::View_type &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,\
+template void WilsonKernels<A>::AsmDhopSiteDagInt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,\
+                                  int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out);\
+template void WilsonKernels<A>::AsmDhopSiteExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,\
+                                  int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out);\
+ \
+template void WilsonKernels<A>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U, SiteHalfSpinor *buf,\
                                   int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out);\
 
 INSTANTIATE_ASM(WilsonImplF);

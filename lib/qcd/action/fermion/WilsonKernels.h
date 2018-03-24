@@ -45,23 +45,19 @@ public:
   static int Comms;
 };
  
-template<class Impl> class WilsonKernels : public FermionOperator<Impl> { 
+template<class Impl> class WilsonKernels { 
 public:
 
   INHERIT_IMPL_TYPES(Impl);
-  typedef FermionOperator<Impl> Base;
-
-  typedef typename ViewMap<FermionField>::Type      FermionFieldView;
-  typedef typename ViewMap<DoubledGaugeField>::Type DoubledGaugeFieldView;
    
 public:
    
   template <bool EnableBool = true> static accelerator
   typename std::enable_if<Impl::Dimension == 3 && Nc == 3 &&EnableBool, void>::type
-  DhopSite(int Opt,typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  DhopSite(int Opt,StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 	   int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out,int interior=1,int exterior=1) 
   {
-    bgq_l1p_optimisation(1);
+    //bgq_l1p_optimisation(1);
     switch(Opt) {
 #if defined(AVX512) || defined (QPX)
     case WilsonKernelsStatic::OptInlineAsm:
@@ -97,12 +93,12 @@ public:
     default:
       assert(0);
     }
-    bgq_l1p_optimisation(0);
+    //bgq_l1p_optimisation(0);
   }
      
   template <bool EnableBool = true> static accelerator
   typename std::enable_if<(Impl::Dimension != 3 || (Impl::Dimension == 3 && Nc != 3)) && EnableBool, void>::type
-  DhopSite(int Opt, typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  DhopSite(int Opt, StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 	   int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out,int interior=1,int exterior=1 ) {
     // no kernel choice  
     for (int site = 0; site < Nsite; site++) {
@@ -119,10 +115,10 @@ public:
      
   template <bool EnableBool = true> static accelerator
   typename std::enable_if<Impl::Dimension == 3 && Nc == 3 && EnableBool,void>::type
-  DhopSiteDag(int Opt, typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  DhopSiteDag(int Opt, StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 	      int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out,int interior=1,int exterior=1) 
   {
-    bgq_l1p_optimisation(1);
+    //bgq_l1p_optimisation(1);
     switch(Opt) {
 #if defined(AVX512) || defined (QPX)
     case WilsonKernelsStatic::OptInlineAsm:
@@ -159,12 +155,12 @@ public:
     default:
       assert(0);
     }
-    bgq_l1p_optimisation(0);
+    //bgq_l1p_optimisation(0);
   }
 
   template <bool EnableBool = true> static accelerator
   typename std::enable_if<(Impl::Dimension != 3 || (Impl::Dimension == 3 && Nc != 3)) && EnableBool,void>::type
-  DhopSiteDag(int Opt,typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U,SiteHalfSpinor * buf,
+  DhopSiteDag(int Opt,StencilView &st,  DoubledGaugeFieldView &U,SiteHalfSpinor * buf,
 	      int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out,int interior=1,int exterior=1) {
 
     for (int site = 0; site < Nsite; site++) {
@@ -179,7 +175,7 @@ public:
     }
   }
 
-  static accelerator void DhopDirK(typename StencilImpl::View_type &st, DoubledGaugeFieldView &U,SiteHalfSpinor * buf,
+  static accelerator void DhopDirK(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor * buf,
 				   int sF, int sU, const FermionFieldView &in, FermionFieldView &out, int dirdisp, int gamma);
       
   //////////////////////////////////////////////////////////////////////////////
@@ -192,6 +188,7 @@ public:
                                        unsigned int sU,
                                        unsigned int mu,
                                        bool switch_sign = false);
+
   static void ContractConservedCurrentSiteBwd(const SitePropagator &q_in_1,
                                        const SitePropagator &q_in_2,
                                        SitePropagator &q_out,
@@ -199,6 +196,7 @@ public:
                                        unsigned int sU,
                                        unsigned int mu,
                                        bool switch_sign = false);
+
   static void SeqConservedCurrentSiteFwd(const SitePropagator &q_in, 
                                   SitePropagator &q_out,
                                   DoubledGaugeFieldView &U,
@@ -206,6 +204,7 @@ public:
                                   unsigned int mu,
                                   vInteger t_mask,
                                   bool switch_sign = false);
+
   static void SeqConservedCurrentSiteBwd(const SitePropagator &q_in,
                                   SitePropagator &q_out,
                                   DoubledGaugeFieldView &U,
@@ -216,64 +215,60 @@ public:
 
 private:
   // Specialised variants
-  static accelerator void GenericDhopSite(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-				   int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  static accelerator void GenericDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
       
-  static accelerator void GenericDhopSiteDag(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-				      int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  static accelerator void GenericDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					     int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void GenericDhopSiteInt(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-				      int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  static accelerator void GenericDhopSiteInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					     int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
       
-  static accelerator void GenericDhopSiteDagInt(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-					 int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  static accelerator void GenericDhopSiteDagInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+						int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void GenericDhopSiteExt(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-				      int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  static accelerator void GenericDhopSiteExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					     int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
       
-  static accelerator void GenericDhopSiteDagExt(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-					 int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  static accelerator void GenericDhopSiteDagExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+						int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void AsmDhopSite(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-			       int sF, int sU, int Ls, int Nsite, const FermionFieldView &in,FermionFieldView &out);
+  static accelerator void AsmDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				      int sF, int sU, int Ls, int Nsite, const FermionFieldView &in,FermionFieldView &out);
   
-  static accelerator void AsmDhopSiteDag(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-				  int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out);
+  static accelerator void AsmDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					 int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void AsmDhopSiteInt(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-				  int sF, int sU, int Ls, int Nsite, const FermionFieldView &in,FermionFieldView &out);
+  static accelerator void AsmDhopSiteInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					 int sF, int sU, int Ls, int Nsite, const FermionFieldView &in,FermionFieldView &out);
   
-  static accelerator void AsmDhopSiteDagInt(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-				     int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out);
+  static accelerator void AsmDhopSiteDagInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					    int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void AsmDhopSiteExt(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-				  int sF, int sU, int Ls, int Nsite, const FermionFieldView &in,FermionFieldView &out);
+  static accelerator void AsmDhopSiteExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					 int sF, int sU, int Ls, int Nsite, const FermionFieldView &in,FermionFieldView &out);
   
-  static accelerator void AsmDhopSiteDagExt(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-				     int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out);
+  static accelerator void AsmDhopSiteDagExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					    int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out);
   
 
-  static accelerator void HandDhopSite(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-				int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  static accelerator void HandDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				       int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void HandDhopSiteDag(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-				   int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  static accelerator void HandDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void HandDhopSiteInt(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-				   int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  static accelerator void HandDhopSiteInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void HandDhopSiteDagInt(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-				      int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  static accelerator void HandDhopSiteDagInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					     int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void HandDhopSiteExt(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-				   int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  static accelerator void HandDhopSiteExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void HandDhopSiteDagExt(typename StencilImpl::View_type &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-				      int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
-  
-public:
-  
-  WilsonKernels(const ImplParams &p = ImplParams());
+  static accelerator void HandDhopSiteDagExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					     int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
 
 };
     
