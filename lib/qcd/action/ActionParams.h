@@ -36,19 +36,17 @@ NAMESPACE_BEGIN(Grid);
 
 // These can move into a params header and be given MacroMagic serialisation
 struct GparityWilsonImplParams {
-  bool overlapCommsCompute;
   Coordinate twists;
-  GparityWilsonImplParams() : twists(Nd, 0), overlapCommsCompute(false){};
+  GparityWilsonImplParams() : twists(Nd, 0) {};
 };
   
 struct WilsonImplParams {
-  bool overlapCommsCompute;
   std::vector<Complex> boundary_phases;
-  WilsonImplParams() : overlapCommsCompute(false) {
+  WilsonImplParams()  {
     boundary_phases.resize(Nd, 1.0);
   };
   WilsonImplParams(const std::vector<Complex> phi)
-    : boundary_phases(phi), overlapCommsCompute(false) {}
+    : boundary_phases(phi) {}
 };
 
 struct StaggeredImplParams {
