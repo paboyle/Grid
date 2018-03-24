@@ -80,11 +80,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 constexpr uint32_t gpu_threads = 8;
 
 template<typename lambda>  __global__
-void LambdaApply(uint64_t Num, lambda Lambda)
+void LambdaApply(uint64_t base, uint64_t Num, lambda Lambda)
 {
   uint64_t ss = blockIdx.x*blockDim.x + threadIdx.x;
   if ( ss < Num ) {
-    Lambda(ss);
+    Lambda(ss+base);
   }
 }
 
@@ -95,15 +95,16 @@ void LambdaApply(uint64_t Num, lambda Lambda)
   auto lambda = [=] accelerator (Iterator iterator) mutable {		\
     __VA_ARGS__;							\
   };									\
-  Iterator num = range.end();						\
+  Iterator num  = range.end();						\
+  Iterator base = range.begin();					\
   Iterator num_block = (num + gpu_threads - 1)/gpu_threads;		\
-  LambdaApply<<<num_block,gpu_threads>>>(num,lambda);			\
-  cudaError err = cudaGetLastError();					\
+  LambdaApply<<<num_block,gpu_threads>>>(base,num_,lambda);		\
   cudaDeviceSynchronize();						\
+  cudaError err = cudaGetLastError();					\
   if ( cudaSuccess != err ) {						\
     printf("Cuda error %s\n",cudaGetErrorString( err ));		\
     exit(0);								\
-  }									\
+  }									
 
 #define cpu_loop( iterator, range, ... )   thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
 
