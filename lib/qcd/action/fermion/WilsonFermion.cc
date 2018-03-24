@@ -46,7 +46,7 @@ template <class Impl>
 WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
                                    GridRedBlackCartesian &Hgrid, RealD _mass,
                                    const ImplParams &p)
-  : Kernels(p),
+  : Impl(p),
     _grid(&Fgrid),
     _cbgrid(&Hgrid),
     Stencil(&Fgrid, npoint, Even, directions, displacements),
@@ -346,11 +346,11 @@ void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
   auto st_v = st.View();
   if (dag == DaggerYes) {
     accelerator_loop( sss,in_v, {
-      Kernels::DhopSiteDag(Opt,st_v, lo, U_v, st.CommBuf(), sss, sss, 1, 1, in_v, out_v);
+      Kernels::DhopSiteDag(Opt,st_v, U_v, st.CommBuf(), sss, sss, 1, 1, in_v, out_v);
     });
   } else {
     accelerator_loop( sss,in_v, {
-      Kernels::DhopSite(Opt,st_v, lo, U_v, st.CommBuf(), sss, sss, 1, 1, in_v, out_v);
+      Kernels::DhopSite(Opt,st_v, U_v, st.CommBuf(), sss, sss, 1, 1, in_v, out_v);
     });
   }
 };
