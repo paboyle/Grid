@@ -46,10 +46,6 @@ public:
    
   INHERIT_IMPL_TYPES(Impl);
   typedef FermionOperator<Impl> Base;
-
-  typedef typename ViewMap<FermionField>::Type      FermionFieldView;
-  typedef typename ViewMap<DoubledGaugeField>::Type DoubledGaugeFieldView;
-   
    
 public:
     
