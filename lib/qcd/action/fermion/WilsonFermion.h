@@ -43,7 +43,7 @@ public:
 };
 
 template <class Impl>
-class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
+class WilsonFermion : public WilsonFermionStatic, public Impl {
 public:
   INHERIT_IMPL_TYPES(Impl);
   typedef WilsonKernels<Impl> Kernels;
