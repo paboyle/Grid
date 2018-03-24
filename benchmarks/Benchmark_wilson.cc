@@ -44,15 +44,9 @@ struct scal {
     Gamma::Algebra::GammaT
   };
 
-bool overlapComms = false;
-
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
-
-  if( GridCmdOptionExists(argv,argv+argc,"--asynch") ){
-    overlapComms = true;
-  }
 
   Coordinate latt_size   = GridDefaultLatt();
   Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
@@ -131,7 +125,6 @@ int main (int argc, char ** argv)
   RealD mass=0.1;
 
   typename WilsonFermionR::ImplParams params; 
-  params.overlapCommsCompute = overlapComms;
 
   WilsonFermionR Dw(Umu,Grid,RBGrid,mass,params);
   
