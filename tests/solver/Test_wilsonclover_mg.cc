@@ -74,7 +74,8 @@ struct MultiGridParams : Serializable {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(MultiGridParams,
                                   int, nLevels,
-                                  std::vector<std::vector<int>>, blockSizes);
+                                  std::vector<std::vector<int>>, blockSizes,
+                                  bool, kCycle);
   MultiGridParams(){};
 };
 MultiGridParams mgParams;
@@ -253,6 +254,7 @@ public:
   // Member Data
   /////////////////////////////////////////////
 
+  MultiGridParams &                        _MultiGridParams;
   LevelInfo &                              _LevelInfo;
   FineMatrix &                             _FineMatrix;
   FineMatrix &                             _SmootherMatrix;
@@ -264,14 +266,15 @@ public:
   // Member Functions
   /////////////////////////////////////////////
 
-  MultiGridPreconditioner(LevelInfo &LvlInfo, FineMatrix &FineMat, FineMatrix &SmootherMat)
-    : _LevelInfo(LvlInfo)
+  MultiGridPreconditioner(MultiGridParams &mgParams, LevelInfo &LvlInfo, FineMatrix &FineMat, FineMatrix &SmootherMat)
+    : _MultiGridParams(mgParams)
+    , _LevelInfo(LvlInfo)
     , _FineMatrix(FineMat)
     , _SmootherMatrix(SmootherMat)
     , _Aggregates(_LevelInfo.Grids[level - 1], _LevelInfo.Grids[level], 0)
     , _CoarseMatrix(*_LevelInfo.Grids[level - 1]) {
     _NextPreconditionerLevel
-      = std::unique_ptr<NextPreconditionerLevel>(new NextPreconditionerLevel(_LevelInfo, _CoarseMatrix, _CoarseMatrix));
+      = std::unique_ptr<NextPreconditionerLevel>(new NextPreconditionerLevel(_MultiGridParams, _LevelInfo, _CoarseMatrix, _CoarseMatrix));
   }
 
   void setup() {
@@ -299,9 +302,11 @@ public:
 
   virtual void operator()(Lattice<Fobj> const &in, Lattice<Fobj> &out) {
 
-    // TODO: implement a W-cycle and a toggle to switch between the cycling strategies
-    vCycle(in, out);
-    // kCycle(in, out);
+    // TODO: implement a W-cycle
+    if(_MultiGridParams.kCycle)
+      kCycle(in, out);
+    else
+      vCycle(in, out);
   }
 
   void vCycle(Lattice<Fobj> const &in, Lattice<Fobj> &out) {
@@ -504,16 +509,17 @@ public:
   // Member Data
   /////////////////////////////////////////////
 
-  LevelInfo & _LevelInfo;
-  FineMatrix &_FineMatrix;
-  FineMatrix &_SmootherMatrix;
+  MultiGridParams &_MultiGridParams;
+  LevelInfo &      _LevelInfo;
+  FineMatrix &     _FineMatrix;
+  FineMatrix &     _SmootherMatrix;
 
   /////////////////////////////////////////////
   // Member Functions
   /////////////////////////////////////////////
 
-  MultiGridPreconditioner(LevelInfo &LvlInfo, FineMatrix &FineMat, FineMatrix &SmootherMat)
-    : _LevelInfo(LvlInfo), _FineMatrix(FineMat), _SmootherMatrix(SmootherMat) {}
+  MultiGridPreconditioner(MultiGridParams &mgParams, LevelInfo &LvlInfo, FineMatrix &FineMat, FineMatrix &SmootherMat)
+    : _MultiGridParams(mgParams), _LevelInfo(LvlInfo), _FineMatrix(FineMat), _SmootherMatrix(SmootherMat) {}
 
   void setup() {}
 
@@ -577,6 +583,7 @@ int main(int argc, char **argv) {
   // mgParams.blockSizes = {{2, 2, 2, 2}, {2, 2, 1, 1}};
   mgParams.blockSizes = {{2, 2, 2, 2}};
   mgParams.nLevels    = mgParams.blockSizes.size() + 1;
+  mgParams.kCycle     = true;
 
   std::cout << mgParams << std::endl;
 
@@ -593,7 +600,7 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "**************************************************" << std::endl;
 
   TrivialPrecon<LatticeFermion>                                                     TrivialPrecon;
-  TwoLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, WilsonFermionR> TwoLevelMGPreconDw(levelInfo, Dw, Dw);
+  TwoLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, WilsonFermionR> TwoLevelMGPreconDw(mgParams, levelInfo, Dw, Dw);
   // ThreeLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, WilsonFermionR> ThreeLevelMGPreconDw(levelInfo, Dw, Dw);
   // FourLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, WilsonFermionR> FourLevelMGPreconDw(levelInfo, Dw, Dw);
   // NLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, 4, WilsonFermionR> NLevelMGPreconDw(levelInfo, Dw, Dw);
@@ -629,7 +636,8 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Testing Multigrid for Wilson Clover" << std::endl;
   std::cout << GridLogMessage << "**************************************************" << std::endl;
 
-  TwoLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, WilsonCloverFermionR> TwoLevelMGPreconDwc(levelInfo, Dwc, Dwc);
+  TwoLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, WilsonCloverFermionR> TwoLevelMGPreconDwc(
+    mgParams, levelInfo, Dwc, Dwc);
   // ThreeLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, WilsonCloverFermionR> ThreeLevelMGPreconDwc(levelInfo, Dwc, Dwc);
   // FourLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, WilsonCloverFermionR> FourLevelMGPreconDwc(levelInfo, Dwc, Dwc);
   // NLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, 4, WilsonCloverFermionR> NLevelMGPreconDwc(levelInfo, Dwc, Dwc);
