@@ -27,7 +27,6 @@
 /*  END LEGAL */
 
 #include <Grid/Grid.h>
-#include <Grid/algorithms/iterative/PrecGeneralisedConjugateResidual.h>
 
 using namespace std;
 using namespace Grid;
