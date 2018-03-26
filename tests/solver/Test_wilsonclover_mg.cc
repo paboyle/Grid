@@ -70,14 +70,14 @@ public:
 };
 
 // clang-format off
-struct MultigridParams : Serializable {
+struct MultiGridParams : Serializable {
 public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(MultigridParams,
+  GRID_SERIALIZABLE_CLASS_MEMBERS(MultiGridParams,
                                   int, nLevels,
                                   std::vector<std::vector<int>>, blockSizes);
-  MultigridParams(){};
+  MultiGridParams(){};
 };
-MultigridParams mgParams;
+MultiGridParams mgParams;
 // clang-format on
 
 struct LevelInfo {
@@ -86,11 +86,11 @@ public:
   std::vector<GridCartesian *>  Grids;
   std::vector<GridParallelRNG>  PRNGs;
 
-  LevelInfo(GridCartesian *FineGrid, MultigridParams const &Params) {
+  LevelInfo(GridCartesian *FineGrid, MultiGridParams const &mgParams) {
 
-    auto nCoarseLevels = Params.blockSizes.size();
+    auto nCoarseLevels = mgParams.blockSizes.size();
 
-    assert(nCoarseLevels == Params.nLevels - 1);
+    assert(nCoarseLevels == mgParams.nLevels - 1);
 
     // set up values for finest grid
     Grids.push_back(FineGrid);
@@ -99,7 +99,7 @@ public:
     PRNGs.back().SeedFixedIntegers(Seeds.back());
 
     // set up values for coarser grids
-    for(int level = 1; level < Params.nLevels; ++level) {
+    for(int level = 1; level < mgParams.nLevels; ++level) {
       auto Nd  = Grids[level - 1]->_ndimension;
       auto tmp = Grids[level - 1]->_fdimensions;
       assert(tmp.size() == Nd);
@@ -107,7 +107,7 @@ public:
       Seeds.push_back(std::vector<int>(Nd));
 
       for(int d = 0; d < Nd; ++d) {
-        tmp[d] /= Params.blockSizes[level - 1][d];
+        tmp[d] /= mgParams.blockSizes[level - 1][d];
         Seeds[level][d] = (level)*Nd + d + 1;
       }
 
@@ -117,7 +117,7 @@ public:
       PRNGs[level].SeedFixedIntegers(Seeds[level]);
     }
 
-    std::cout << GridLogMessage << "Constructed " << Params.nLevels << " levels" << std::endl;
+    std::cout << GridLogMessage << "Constructed " << mgParams.nLevels << " levels" << std::endl;
 
     // The construction above corresponds to the finest level having level == 0
     // (simply because it's not as ugly to implement), but we need it the
@@ -128,7 +128,7 @@ public:
     std::reverse(Grids.begin(), Grids.end());
     std::reverse(PRNGs.begin(), PRNGs.end());
 
-    for(int level = 0; level < Params.nLevels; ++level) {
+    for(int level = 0; level < mgParams.nLevels; ++level) {
       std::cout << GridLogMessage << "level = " << level << ":" << std::endl;
       Grids[level]->show_decomposition();
     }
