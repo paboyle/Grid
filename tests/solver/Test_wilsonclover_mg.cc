@@ -287,9 +287,8 @@ public:
     static_assert((nBasis & 0x1) == 0, "MG Preconditioner only supports an even number of basis vectors");
     int nb = nBasis / 2;
 
-    for(
-      int n = 0; n < nb;
-      n++) { // TODO: to get this to work for more than two levels, I would need to either implement coarse spins or have a template specialization of this class also for the finest level
+    // TODO: to get this to work for more than two levels, I would need to either implement coarse spins or have a template specialization of this class also for the finest level
+    for(int n = 0; n < nb; n++) {
       _Aggregates.subspace[n + nb] = g5 * _Aggregates.subspace[n];
     }
 
