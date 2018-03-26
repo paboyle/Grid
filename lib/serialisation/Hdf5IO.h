@@ -22,6 +22,8 @@
 
 namespace Grid
 {
+  template<class vobj> class Lattice;
+
   class Hdf5Writer: public Writer<Hdf5Writer>
   {
   public:
@@ -32,6 +34,8 @@ namespace Grid
     void writeDefault(const std::string &s, const char *x);
     template <typename U>
     void writeDefault(const std::string &s, const U &x);
+    template <typename U>
+    void writeDefault(const std::string &s, const Lattice<U> &field);
     template <typename U>
     typename std::enable_if<element<std::vector<U>>::is_number, void>::type
     writeDefault(const std::string &s, const std::vector<U> &x);
@@ -59,6 +63,8 @@ namespace Grid
     void pop(void);
     template <typename U>
     void readDefault(const std::string &s, U &output);
+    template <typename U>
+    void readDefault(const std::string &s, Lattice<U> &field);
     template <typename U>
     typename std::enable_if<element<std::vector<U>>::is_number, void>::type
     readDefault(const std::string &s, std::vector<U> &x);
@@ -98,7 +104,40 @@ namespace Grid
   
   template <>
   void Hdf5Writer::writeDefault(const std::string &s, const std::string &x);
-  
+
+
+  template <typename U>
+  void Hdf5Writer::writeDefault(const std::string &s, const Lattice<U> &field)
+  {
+    // alias scalar types
+    typedef std::vector<typename U::scalar_object> ScalarLattice;
+    typedef typename U::scalar_type                ScalarType;
+
+    ScalarLattice scalField;
+
+    unvectorizeToRevLexOrdArray(scalField, field);
+
+    std::vector<hsize_t> dim;
+    std::vector<size_t>  tDim;
+
+    tensorDim(tDim, scalField[0]);
+    for (auto &d: field._grid->GlobalDimensions())
+    {
+      dim.push_back(d);
+    }
+    for (auto &d: tDim)
+    {
+      dim.push_back(d);
+    }
+
+    // write to file
+    H5NS::DataSpace dataSpace(dim.size(), dim.data());
+    H5NS::DataSet dataSet;
+      
+    dataSet = group_.createDataSet(s, Hdf5Type<ScalarType>::type(), dataSpace);
+    dataSet.write(scalField.data(), Hdf5Type<ScalarType>::type());
+  }
+
   template <typename U>
   typename std::enable_if<element<std::vector<U>>::is_number, void>::type
   Hdf5Writer::writeDefault(const std::string &s, const std::vector<U> &x)
@@ -169,6 +208,29 @@ namespace Grid
   template <>
   void Hdf5Reader::readDefault(const std::string &s, std::string &x);
   
+  template <typename U>
+  void Hdf5Reader::readDefault(const std::string &s, Lattice<U> &field)
+  {
+    // alias scalar types
+    typedef std::vector<typename U::scalar_object> ScalarLattice;
+    typedef typename U::scalar_type                ScalarType;
+
+    ScalarLattice        scalField;
+    H5NS::DataSet        dataSet;
+    std::vector<hsize_t> dim;
+    hsize_t              size = 1;
+   
+    dataSet = group_.openDataSet(s);
+    for (auto &d: field._grid->GlobalDimensions())
+    {
+      dim.push_back(d);
+      size *= d;
+    }
+    scalField.resize(size);
+    dataSet.read(scalField.data(), Hdf5Type<ScalarType>::type());
+    vectorizeFromRevLexOrdArray(scalField, field);
+  }
+
   template <typename U>
   typename std::enable_if<element<std::vector<U>>::is_number, void>::type
   Hdf5Reader::readDefault(const std::string &s, std::vector<U> &x)
