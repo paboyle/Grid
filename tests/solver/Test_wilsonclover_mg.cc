@@ -68,17 +68,43 @@ public:
   }
 };
 
+// TODO: Can think about having one parameter struct per level and then a
+// vector of these structs. How well would that work together with the
+// serialization strategy of Grid?
+
 // clang-format off
 struct MultiGridParams : Serializable {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(MultiGridParams,
-                                  int, nLevels,
-                                  std::vector<std::vector<int>>, blockSizes,
-                                  bool, kCycle);
+                                  int,                           nLevels,
+                                  std::vector<std::vector<int>>, blockSizes,           // size == nLevels - 1
+                                  std::vector<double>,           smootherTol,          // size == nLevels - 1
+                                  std::vector<int>,              smootherMaxOuterIter, // size == nLevels - 1
+                                  std::vector<int>,              smootherMaxInnerIter, // size == nLevels - 1
+                                  bool,                          kCycle,
+                                  std::vector<double>,           kCycleTol,            // size == nLevels - 1
+                                  std::vector<int>,              kCycleMaxOuterIter,   // size == nLevels - 1
+                                  std::vector<int>,              kCycleMaxInnerIter,   // size == nLevels - 1
+                                  double,                        coarseSolverTol,
+                                  int,                           coarseSolverMaxOuterIter,
+                                  int,                           coarseSolverMaxInnerIter);
   MultiGridParams(){};
 };
 MultiGridParams mgParams;
 // clang-format on
+
+void checkParameterValidity(MultiGridParams const &params) {
+
+  auto correctSize = mgParams.nLevels - 1;
+
+  assert(correctSize == params.blockSizes.size());
+  assert(correctSize == params.smootherTol.size());
+  assert(correctSize == params.smootherMaxOuterIter.size());
+  assert(correctSize == params.smootherMaxInnerIter.size());
+  assert(correctSize == params.kCycleTol.size());
+  assert(correctSize == params.kCycleMaxOuterIter.size());
+  assert(correctSize == params.kCycleMaxInnerIter.size());
+}
 
 struct LevelInfo {
 public:
@@ -316,8 +342,14 @@ public:
 
     FineVector fineTmp(in._grid);
 
+    auto maxSmootherIter = _MultiGridParams.smootherMaxOuterIter[_CurrentLevel] * _MultiGridParams.smootherMaxInnerIter[_CurrentLevel];
+
     TrivialPrecon<FineVector>                      fineTrivialPreconditioner;
-    FlexibleGeneralisedMinimalResidual<FineVector> fineFGMRES(1.0e-14, 1, fineTrivialPreconditioner, 1, false);
+    FlexibleGeneralisedMinimalResidual<FineVector> fineFGMRES(_MultiGridParams.smootherTol[_CurrentLevel],
+                                                              maxSmootherIter,
+                                                              fineTrivialPreconditioner,
+                                                              _MultiGridParams.smootherMaxInnerIter[_CurrentLevel],
+                                                              false);
 
     MdagMLinearOperator<FineMatrix, FineVector> fineMdagMOp(_FineMatrix);
     MdagMLinearOperator<FineMatrix, FineVector> fineSmootherMdagMOp(_SmootherMatrix);
@@ -353,9 +385,20 @@ public:
 
     FineVector fineTmp(in._grid);
 
+    auto smootherMaxIter = _MultiGridParams.smootherMaxOuterIter[_CurrentLevel] * _MultiGridParams.smootherMaxInnerIter[_CurrentLevel];
+    auto kCycleMaxIter   = _MultiGridParams.kCycleMaxOuterIter[_CurrentLevel] * _MultiGridParams.kCycleMaxInnerIter[_CurrentLevel];
+
     TrivialPrecon<FineVector>                        fineTrivialPreconditioner;
-    FlexibleGeneralisedMinimalResidual<FineVector>   fineFGMRES(1.0e-14, 1, fineTrivialPreconditioner, 1, false);
-    FlexibleGeneralisedMinimalResidual<CoarseVector> coarseFGMRES(1.0e-14, 1, *_NextPreconditionerLevel, 1, false);
+    FlexibleGeneralisedMinimalResidual<FineVector>   fineFGMRES(_MultiGridParams.smootherTol[_CurrentLevel],
+                                                              smootherMaxIter,
+                                                              fineTrivialPreconditioner,
+                                                              _MultiGridParams.smootherMaxInnerIter[_CurrentLevel],
+                                                              false);
+    FlexibleGeneralisedMinimalResidual<CoarseVector> coarseFGMRES(_MultiGridParams.kCycleTol[_CurrentLevel],
+                                                                  kCycleMaxIter,
+                                                                  *_NextPreconditionerLevel,
+                                                                  _MultiGridParams.kCycleMaxInnerIter[_CurrentLevel],
+                                                                  false);
 
     MdagMLinearOperator<FineMatrix, FineVector>     fineMdagMOp(_FineMatrix);
     MdagMLinearOperator<FineMatrix, FineVector>     fineSmootherMdagMOp(_SmootherMatrix);
@@ -521,8 +564,12 @@ public:
 
   virtual void operator()(Lattice<Fobj> const &in, Lattice<Fobj> &out) {
 
+    auto coarseSolverMaxIter = _MultiGridParams.coarseSolverMaxOuterIter * _MultiGridParams.coarseSolverMaxInnerIter;
+
+    // On the coarsest level we only have a fine what I above call the fine level, no coarse one
     TrivialPrecon<FineVector>                      fineTrivialPreconditioner;
-    FlexibleGeneralisedMinimalResidual<FineVector> fineFGMRES(1.0e-14, 1, fineTrivialPreconditioner, 1, false);
+    FlexibleGeneralisedMinimalResidual<FineVector> fineFGMRES(
+      _MultiGridParams.coarseSolverTol, coarseSolverMaxIter, fineTrivialPreconditioner, _MultiGridParams.coarseSolverMaxInnerIter, false);
 
     MdagMLinearOperator<FineMatrix, FineVector> fineMdagMOp(_FineMatrix);
 
@@ -532,17 +579,8 @@ public:
   void runChecks() {}
 };
 
-template<class Fobj, class CoarseScalar, int nCoarseSpins, int nbasis, class Matrix>
-using FourLevelMGPreconditioner = MultiGridPreconditioner<Fobj, CoarseScalar, nCoarseSpins, nbasis, 4 - 1, Matrix>;
-
-template<class Fobj, class CoarseScalar, int nCoarseSpins, int nbasis, class Matrix>
-using ThreeLevelMGPreconditioner = MultiGridPreconditioner<Fobj, CoarseScalar, nCoarseSpins, nbasis, 3 - 1, Matrix>;
-
-template<class Fobj, class CoarseScalar, int nCoarseSpins, int nbasis, class Matrix>
-using TwoLevelMGPreconditioner = MultiGridPreconditioner<Fobj, CoarseScalar, nCoarseSpins, nbasis, 2 - 1, Matrix>;
-
-template<class Fobj, class CoarseScalar, int nCoarseSpins, int nbasis, int nlevel, class Matrix>
-using NLevelMGPreconditioner = MultiGridPreconditioner<Fobj, CoarseScalar, nCoarseSpins, nbasis, nlevel - 1, Matrix>;
+template<class Fobj, class CoarseScalar, int nCoarseSpins, int nbasis, int nLevels, class Matrix>
+using NLevelMGPreconditioner = MultiGridPreconditioner<Fobj, CoarseScalar, nCoarseSpins, nbasis, nLevels - 1, Matrix>;
 
 int main(int argc, char **argv) {
 
@@ -575,11 +613,49 @@ int main(int argc, char **argv) {
   WilsonFermionR       Dw(Umu, *FGrid, *FrbGrid, mass);
   WilsonCloverFermionR Dwc(Umu, *FGrid, *FrbGrid, mass, csw_r, csw_t, wilsonAnisCoeff, wcImplparams);
 
-  // mgParams.blockSizes = {{2, 2, 2, 2}, {2, 2, 1, 1}, {1, 1, 2, 1}};
-  // mgParams.blockSizes = {{2, 2, 2, 2}, {2, 2, 1, 1}};
-  mgParams.blockSizes = {{2, 2, 2, 2}};
-  mgParams.nLevels    = mgParams.blockSizes.size() + 1;
-  mgParams.kCycle     = true;
+  // Params for two-level MG preconditioner
+  mgParams.nLevels                  = 2;
+  mgParams.blockSizes               = {{2, 2, 2, 2}};
+  mgParams.smootherTol              = {1e-14};
+  mgParams.smootherMaxOuterIter     = {1};
+  mgParams.smootherMaxInnerIter     = {1};
+  mgParams.kCycle                   = true;
+  mgParams.kCycleTol                = {1e-14};
+  mgParams.kCycleMaxOuterIter       = {1};
+  mgParams.kCycleMaxInnerIter       = {1};
+  mgParams.coarseSolverTol          = 1e-14;
+  mgParams.coarseSolverMaxOuterIter = 1;
+  mgParams.coarseSolverMaxInnerIter = 1;
+
+  // // Params for three-level MG preconditioner
+  // mgParams.nLevels                  = 3;
+  // mgParams.blockSizes               = {{2, 2, 2, 2}, {2, 2, 1, 1}};
+  // mgParams.smootherTol              = {1e-14, 1e-14};
+  // mgParams.smootherMaxOuterIter     = {1, 1};
+  // mgParams.smootherMaxInnerIter     = {1, 1};
+  // mgParams.kCycle                   = true;
+  // mgParams.kCycleTol                = {1e-14, 1e-14};
+  // mgParams.kCycleMaxOuterIter       = {1, 1};
+  // mgParams.kCycleMaxInnerIter       = {1, 1};
+  // mgParams.coarseSolverTol          = 1e-14;
+  // mgParams.coarseSolverMaxOuterIter = 1;
+  // mgParams.coarseSolverMaxInnerIter = 1;
+
+  // // // Params for four-level MG preconditioner
+  // mgParams.nLevels                  = 4;
+  // mgParams.blockSizes               = {{2, 2, 2, 2}, {2, 2, 1, 1}, {1, 1, 2, 1}};
+  // mgParams.smootherTol              = {1e-14, 1e-14, 1e-14};
+  // mgParams.smootherMaxOuterIter     = {1, 1, 1};
+  // mgParams.smootherMaxInnerIter     = {1, 1, 1};
+  // mgParams.kCycle                   = true;
+  // mgParams.kCycleTol                = {1e-14, 1e-14, 1e-14};
+  // mgParams.kCycleMaxOuterIter       = {1, 1, 1};
+  // mgParams.kCycleMaxInnerIter       = {1, 1, 1};
+  // mgParams.coarseSolverTol          = 1e-14;
+  // mgParams.coarseSolverMaxOuterIter = 1;
+  // mgParams.coarseSolverMaxInnerIter = 1;
+
+  checkParameterValidity(mgParams);
 
   std::cout << mgParams << std::endl;
 
@@ -595,11 +671,10 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Testing Multigrid for Wilson" << std::endl;
   std::cout << GridLogMessage << "**************************************************" << std::endl;
 
-  TrivialPrecon<LatticeFermion>                                                     TrivialPrecon;
-  TwoLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, WilsonFermionR> TwoLevelMGPreconDw(mgParams, levelInfo, Dw, Dw);
-  // ThreeLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, WilsonFermionR> ThreeLevelMGPreconDw(levelInfo, Dw, Dw);
-  // FourLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, WilsonFermionR> FourLevelMGPreconDw(levelInfo, Dw, Dw);
-  // NLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, 4, WilsonFermionR> NLevelMGPreconDw(levelInfo, Dw, Dw);
+  TrivialPrecon<LatticeFermion>                                                      TrivialPrecon;
+  NLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, 2, WilsonFermionR> TwoLevelMGPreconDw(mgParams, levelInfo, Dw, Dw);
+  // NLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, 3, WilsonFermionR> ThreeLevelMGPreconDw(mgParams, levelInfo, Dw, Dw);
+  // NLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, 4, WilsonFermionR> FourLevelMGPreconDw(mgParams, levelInfo, Dw, Dw);
 
   TwoLevelMGPreconDw.setup();
   TwoLevelMGPreconDw.runChecks();
@@ -615,11 +690,10 @@ int main(int argc, char **argv) {
 
   std::vector<std::unique_ptr<OperatorFunction<LatticeFermion>>> solversDw;
 
-  solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, TrivialPrecon, 1000, false));
-  solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, TwoLevelMGPreconDw, 1000, false));
-  // solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, ThreeLevelMGPreconDw, 1000, false));
-  // solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, FourLevelMGPreconDw, 1000, false));
-  // solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, NLevelMGPreconDw, 1000, false));
+  solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, TrivialPrecon, 100, false));
+  solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, TwoLevelMGPreconDw, 100, false));
+  // solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, ThreeLevelMGPreconDw, 100, false));
+  // solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, FourLevelMGPreconDw, 100, false));
 
   for(auto const &solver : solversDw) {
     std::cout << "Starting with a new solver" << std::endl;
@@ -632,11 +706,10 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Testing Multigrid for Wilson Clover" << std::endl;
   std::cout << GridLogMessage << "**************************************************" << std::endl;
 
-  TwoLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, WilsonCloverFermionR> TwoLevelMGPreconDwc(
+  NLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, 2, WilsonCloverFermionR> TwoLevelMGPreconDwc(
     mgParams, levelInfo, Dwc, Dwc);
-  // ThreeLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, WilsonCloverFermionR> ThreeLevelMGPreconDwc(levelInfo, Dwc, Dwc);
-  // FourLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, WilsonCloverFermionR> FourLevelMGPreconDwc(levelInfo, Dwc, Dwc);
-  // NLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, 4, WilsonCloverFermionR> NLevelMGPreconDwc(levelInfo, Dwc, Dwc);
+  // NLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, 3, WilsonCloverFermionR> ThreeLevelMGPreconDwc(mgParams, velInfo, Dwc, Dwc);
+  // NLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, 4, WilsonCloverFermionR> FourLevelMGPreconDwc(lelevelInfo, Dwc, Dwc);
 
   TwoLevelMGPreconDwc.setup();
   TwoLevelMGPreconDwc.runChecks();
@@ -652,11 +725,10 @@ int main(int argc, char **argv) {
 
   std::vector<std::unique_ptr<OperatorFunction<LatticeFermion>>> solversDwc;
 
-  solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, TrivialPrecon, 1000, false));
-  solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, TwoLevelMGPreconDwc, 1000, false));
-  // solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, ThreeLevelMGPreconDwc, 1000, false));
-  // solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, FourLevelMGPreconDwc, 1000, false));
-  // solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, NLevelMGPreconDwc, 1000, false));
+  solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, TrivialPrecon, 100, false));
+  solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, TwoLevelMGPreconDwc, 100, false));
+  // solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, ThreeLevelMGPreconDwc, 100, false));
+  // solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, FourLevelMGPreconDwc, 100, false));
 
   for(auto const &solver : solversDwc) {
     std::cout << "Starting with a new solver" << std::endl;
