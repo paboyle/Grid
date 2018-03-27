@@ -119,15 +119,6 @@ public:
 
     std::cout << GridLogMessage << "Constructed " << mgParams.nLevels << " levels" << std::endl;
 
-    // The construction above corresponds to the finest level having level == 0
-    // (simply because it's not as ugly to implement), but we need it the
-    // other way round (i.e., the coarsest level to have level == 0) for the MG
-    // Preconditioner -> reverse the vectors
-
-    std::reverse(Seeds.begin(), Seeds.end());
-    std::reverse(Grids.begin(), Grids.end());
-    std::reverse(PRNGs.begin(), PRNGs.end());
-
     for(int level = 0; level < mgParams.nLevels; ++level) {
       std::cout << GridLogMessage << "level = " << level << ":" << std::endl;
       Grids[level]->show_decomposition();
@@ -234,25 +225,29 @@ template<class Field> void testLinearOperator(LinearOperatorBase<Field> &LinOp, 
   }
 }
 
-template<class Fobj, class CoarseScalar, int nCoarseSpins, int nBasis, int level, class Matrix>
+template<class Fobj, class CoarseScalar, int nCoarseSpins, int nBasis, int nCoarserLevels, class Matrix>
 class MultiGridPreconditioner : public LinearFunction<Lattice<Fobj>> {
 public:
   /////////////////////////////////////////////
   // Type Definitions
   /////////////////////////////////////////////
 
-  typedef Aggregation<Fobj, CoarseScalar, nBasis>                                                                Aggregates;
-  typedef CoarsenedMatrix<Fobj, CoarseScalar, nBasis>                                                            CoarseMatrix;
-  typedef typename Aggregates::CoarseVector                                                                      CoarseVector;
-  typedef typename Aggregates::siteVector                                                                        CoarseSiteVector;
-  typedef Matrix                                                                                                 FineMatrix;
-  typedef typename Aggregates::FineField                                                                         FineVector;
-  typedef MultiGridPreconditioner<CoarseSiteVector, CoarseScalar, nCoarseSpins, nBasis, level - 1, CoarseMatrix> NextPreconditionerLevel;
+  // clang-format off
+  typedef Aggregation<Fobj, CoarseScalar, nBasis>                                                                         Aggregates;
+  typedef CoarsenedMatrix<Fobj, CoarseScalar, nBasis>                                                                     CoarseMatrix;
+  typedef typename Aggregates::CoarseVector                                                                               CoarseVector;
+  typedef typename Aggregates::siteVector                                                                                 CoarseSiteVector;
+  typedef Matrix                                                                                                          FineMatrix;
+  typedef typename Aggregates::FineField                                                                                  FineVector;
+  typedef MultiGridPreconditioner<CoarseSiteVector, CoarseScalar, nCoarseSpins, nBasis, nCoarserLevels - 1, CoarseMatrix> NextPreconditionerLevel;
+  // clang-format on
 
   /////////////////////////////////////////////
   // Member Data
   /////////////////////////////////////////////
 
+  int                                      _CurrentLevel;
+  int                                      _NextCoarserLevel;
   MultiGridParams &                        _MultiGridParams;
   LevelInfo &                              _LevelInfo;
   FineMatrix &                             _FineMatrix;
@@ -266,12 +261,14 @@ public:
   /////////////////////////////////////////////
 
   MultiGridPreconditioner(MultiGridParams &mgParams, LevelInfo &LvlInfo, FineMatrix &FineMat, FineMatrix &SmootherMat)
-    : _MultiGridParams(mgParams)
+    : _CurrentLevel(mgParams.nLevels - (nCoarserLevels + 1)) // _Level = 0 corresponds to finest
+    , _NextCoarserLevel(_CurrentLevel + 1)                   // incremented for instances on coarser levels
+    , _MultiGridParams(mgParams)
     , _LevelInfo(LvlInfo)
     , _FineMatrix(FineMat)
     , _SmootherMatrix(SmootherMat)
-    , _Aggregates(_LevelInfo.Grids[level - 1], _LevelInfo.Grids[level], 0)
-    , _CoarseMatrix(*_LevelInfo.Grids[level - 1]) {
+    , _Aggregates(_LevelInfo.Grids[_NextCoarserLevel], _LevelInfo.Grids[_CurrentLevel], 0)
+    , _CoarseMatrix(*_LevelInfo.Grids[_NextCoarserLevel]) {
     _NextPreconditionerLevel
       = std::unique_ptr<NextPreconditionerLevel>(new NextPreconditionerLevel(_MultiGridParams, _LevelInfo, _CoarseMatrix, _CoarseMatrix));
   }
@@ -281,7 +278,8 @@ public:
     Gamma                                       g5(Gamma::Algebra::Gamma5);
     MdagMLinearOperator<FineMatrix, FineVector> fineMdagMOp(_FineMatrix);
 
-    _Aggregates.CreateSubspace(_LevelInfo.PRNGs[level], fineMdagMOp /*, nb */); // NOTE: Don't specify nb to see the orthogonalization check
+    // NOTE: Don't specify nb here to see the orthogonalization check
+    _Aggregates.CreateSubspace(_LevelInfo.PRNGs[_CurrentLevel], fineMdagMOp /*, nb */);
 
     // TestVectorAnalyzer<FineVector, nbasis> fineTVA;
     // fineTVA(fineMdagMOp, _Aggregates.subspace);
@@ -294,7 +292,7 @@ public:
       _Aggregates.subspace[n + nb] = g5 * _Aggregates.subspace[n];
     }
 
-    _CoarseMatrix.CoarsenOperator(_LevelInfo.Grids[level], fineMdagMOp, _Aggregates);
+    _CoarseMatrix.CoarsenOperator(_LevelInfo.Grids[_CurrentLevel], fineMdagMOp, _Aggregates);
 
     _NextPreconditionerLevel->setup();
   }
@@ -312,8 +310,8 @@ public:
 
     RealD inputNorm = norm2(in);
 
-    CoarseVector coarseSrc(_LevelInfo.Grids[level - 1]);
-    CoarseVector coarseSol(_LevelInfo.Grids[level - 1]);
+    CoarseVector coarseSrc(_LevelInfo.Grids[_NextCoarserLevel]);
+    CoarseVector coarseSol(_LevelInfo.Grids[_NextCoarserLevel]);
     coarseSol = zero;
 
     FineVector fineTmp(in._grid);
@@ -340,7 +338,7 @@ public:
     r                              = norm2(fineTmp);
     auto residualAfterPostSmoother = std::sqrt(r / inputNorm);
 
-    std::cout << GridLogMG << " Level " << level << ": V-cycle: Input norm = " << std::sqrt(inputNorm)
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": V-cycle: Input norm = " << std::sqrt(inputNorm)
               << " Coarse residual = " << residualAfterCoarseGridCorrection << " Post-Smoother residual = " << residualAfterPostSmoother
               << std::endl;
   }
@@ -349,8 +347,8 @@ public:
 
     RealD inputNorm = norm2(in);
 
-    CoarseVector coarseSrc(_LevelInfo.Grids[level - 1]);
-    CoarseVector coarseSol(_LevelInfo.Grids[level - 1]);
+    CoarseVector coarseSrc(_LevelInfo.Grids[_NextCoarserLevel]);
+    CoarseVector coarseSol(_LevelInfo.Grids[_NextCoarserLevel]);
     coarseSol = zero;
 
     FineVector fineTmp(in._grid);
@@ -379,25 +377,24 @@ public:
     r                              = norm2(fineTmp);
     auto residualAfterPostSmoother = std::sqrt(r / inputNorm);
 
-    std::cout << GridLogMG << " Level " << level << ": K-cycle: Input norm = " << std::sqrt(inputNorm)
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": K-cycle: Input norm = " << std::sqrt(inputNorm)
               << " Coarse residual = " << residualAfterCoarseGridCorrection << " Post-Smoother residual = " << residualAfterPostSmoother
               << std::endl;
   }
 
   void runChecks() {
 
-    auto tolerance   = 1e-13; // TODO: this obviously depends on the precision we use, current value is for double
-    auto coarseLevel = level - 1;
+    auto tolerance = 1e-13; // TODO: this obviously depends on the precision we use, current value is for double
 
-    std::vector<FineVector>   fineTmps(2, _LevelInfo.Grids[level]);
-    std::vector<CoarseVector> coarseTmps(4, _LevelInfo.Grids[level - 1]);
+    std::vector<FineVector>   fineTmps(2, _LevelInfo.Grids[_CurrentLevel]);
+    std::vector<CoarseVector> coarseTmps(4, _LevelInfo.Grids[_NextCoarserLevel]);
 
     MdagMLinearOperator<FineMatrix, FineVector>     fineMdagMOp(_FineMatrix);
     MdagMLinearOperator<CoarseMatrix, CoarseVector> coarseMdagMOp(_CoarseMatrix);
 
-    std::cout << GridLogMG << " Level " << level << ": **************************************************" << std::endl;
-    std::cout << GridLogMG << " Level " << level << ": MG correctness check: 0 == (1 - P R) v" << std::endl;
-    std::cout << GridLogMG << " Level " << level << ": **************************************************" << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": **************************************************" << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": MG correctness check: 0 == (1 - P R) v" << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": **************************************************" << std::endl;
 
     for(auto i = 0; i < _Aggregates.subspace.size(); ++i) {
       _Aggregates.ProjectToSubspace(coarseTmps[0], _Aggregates.subspace[i]); //   R v_i
@@ -406,7 +403,7 @@ public:
       fineTmps[1]    = _Aggregates.subspace[i] - fineTmps[0]; // v_i - P R v_i
       auto deviation = std::sqrt(norm2(fineTmps[1]) / norm2(_Aggregates.subspace[i]));
 
-      std::cout << GridLogMG << " Level " << level << ": Vector " << i << ": norm2(v_i) = " << norm2(_Aggregates.subspace[i])
+      std::cout << GridLogMG << " Level " << _CurrentLevel << ": Vector " << i << ": norm2(v_i) = " << norm2(_Aggregates.subspace[i])
                 << " | norm2(R v_i) = " << norm2(coarseTmps[0]) << " | norm2(P R v_i) = " << norm2(fineTmps[0])
                 << " | relative deviation = " << deviation;
 
@@ -418,11 +415,11 @@ public:
       }
     }
 
-    std::cout << GridLogMG << " Level " << level << ": **************************************************" << std::endl;
-    std::cout << GridLogMG << " Level " << level << ": MG correctness check: 0 == (1 - R P) v_c" << std::endl;
-    std::cout << GridLogMG << " Level " << level << ": **************************************************" << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": **************************************************" << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": MG correctness check: 0 == (1 - R P) v_c" << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": **************************************************" << std::endl;
 
-    random(_LevelInfo.PRNGs[coarseLevel], coarseTmps[0]);
+    random(_LevelInfo.PRNGs[_NextCoarserLevel], coarseTmps[0]);
 
     _Aggregates.PromoteFromSubspace(coarseTmps[0], fineTmps[0]); //   P v_c
     _Aggregates.ProjectToSubspace(coarseTmps[1], fineTmps[0]);   // R P v_c
@@ -430,7 +427,7 @@ public:
     coarseTmps[2]  = coarseTmps[0] - coarseTmps[1]; // v_c - R P v_c
     auto deviation = std::sqrt(norm2(coarseTmps[2]) / norm2(coarseTmps[0]));
 
-    std::cout << GridLogMG << " Level " << level << ": norm2(v_c) = " << norm2(coarseTmps[0])
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": norm2(v_c) = " << norm2(coarseTmps[0])
               << " | norm2(R P v_c) = " << norm2(coarseTmps[1]) << " | norm2(P v_c) = " << norm2(fineTmps[0])
               << " | relative deviation = " << deviation;
 
@@ -441,11 +438,11 @@ public:
       std::cout << " < " << tolerance << " -> check passed" << std::endl;
     }
 
-    std::cout << GridLogMG << " Level " << level << ": **************************************************" << std::endl;
-    std::cout << GridLogMG << " Level " << level << ": MG correctness check: 0 == (R D P - D_c) v_c" << std::endl;
-    std::cout << GridLogMG << " Level " << level << ": **************************************************" << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": **************************************************" << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": MG correctness check: 0 == (R D P - D_c) v_c" << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": **************************************************" << std::endl;
 
-    random(_LevelInfo.PRNGs[coarseLevel], coarseTmps[0]);
+    random(_LevelInfo.PRNGs[_NextCoarserLevel], coarseTmps[0]);
 
     _Aggregates.PromoteFromSubspace(coarseTmps[0], fineTmps[0]); //     P v_c
     fineMdagMOp.Op(fineTmps[0], fineTmps[1]);                    //   D P v_c
@@ -456,7 +453,7 @@ public:
     coarseTmps[3] = coarseTmps[1] - coarseTmps[2]; // R D P v_c - D_c v_c
     deviation     = std::sqrt(norm2(coarseTmps[3]) / norm2(coarseTmps[1]));
 
-    std::cout << GridLogMG << " Level " << level << ": norm2(R D P v_c) = " << norm2(coarseTmps[1])
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": norm2(R D P v_c) = " << norm2(coarseTmps[1])
               << " | norm2(D_c v_c) = " << norm2(coarseTmps[2]) << " | relative deviation = " << deviation;
 
     if(deviation > tolerance) {
@@ -466,11 +463,11 @@ public:
       std::cout << " < " << tolerance << " -> check passed" << std::endl;
     }
 
-    std::cout << GridLogMG << " Level " << level << ": **************************************************" << std::endl;
-    std::cout << GridLogMG << " Level " << level << ": MG correctness check: 0 == |(Im(v_c^dag D_c^dag D_c v_c)|" << std::endl;
-    std::cout << GridLogMG << " Level " << level << ": **************************************************" << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": **************************************************" << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": MG correctness check: 0 == |(Im(v_c^dag D_c^dag D_c v_c)|" << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": **************************************************" << std::endl;
 
-    random(_LevelInfo.PRNGs[coarseLevel], coarseTmps[0]);
+    random(_LevelInfo.PRNGs[_NextCoarserLevel], coarseTmps[0]);
 
     coarseMdagMOp.Op(coarseTmps[0], coarseTmps[1]);    //         D_c v_c
     coarseMdagMOp.AdjOp(coarseTmps[1], coarseTmps[2]); // D_c^dag D_c v_c
@@ -478,7 +475,7 @@ public:
     auto dot  = innerProduct(coarseTmps[0], coarseTmps[2]); //v_c^dag D_c^dag D_c v_c
     deviation = abs(imag(dot)) / abs(real(dot));
 
-    std::cout << GridLogMG << " Level " << level << ": Re(v_c^dag D_c^dag D_c v_c) = " << real(dot)
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Re(v_c^dag D_c^dag D_c v_c) = " << real(dot)
               << " | Im(v_c^dag D_c^dag D_c v_c) = " << imag(dot) << " | relative deviation = " << deviation;
 
     if(deviation > tolerance) {
@@ -493,7 +490,7 @@ public:
   }
 };
 
-// Specialize the coarsest level, this corresponds to counting downwards with level: coarsest = 0, finest = N
+// Specialization for the coarsest level
 template<class Fobj, class CoarseScalar, int nCoarseSpins, int nbasis, class Matrix>
 class MultiGridPreconditioner<Fobj, CoarseScalar, nCoarseSpins, nbasis, 0, Matrix> : public LinearFunction<Lattice<Fobj>> {
 public:
