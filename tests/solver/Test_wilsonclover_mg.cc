@@ -152,105 +152,6 @@ public:
   }
 };
 
-template<class Field> void testLinearOperator(LinearOperatorBase<Field> &LinOp, GridBase *Grid, std::string const &name = "") {
-
-  std::vector<int> seeds({1, 2, 3, 4});
-  GridParallelRNG  RNG(Grid);
-  RNG.SeedFixedIntegers(seeds);
-
-  {
-    std::cout << GridLogMessage << "Testing that Mdiag + Σ_μ Mdir_μ == M for operator " << name << ":" << std::endl;
-
-    // clang-format off
-    Field src(Grid);    random(RNG, src);
-    Field ref(Grid);    ref    = zero;
-    Field result(Grid); result = zero;
-    Field diag(Grid);   diag   = zero;
-    Field sumDir(Grid); sumDir = zero;
-    Field tmp(Grid);
-    Field err(Grid);
-    // clang-format on
-
-    std::cout << setprecision(9);
-
-    std::cout << GridLogMessage << " norm2(src)\t\t\t\t= " << norm2(src) << std::endl;
-
-    LinOp.OpDiag(src, diag);
-    std::cout << GridLogMessage << " norm2(Mdiag * src)\t\t\t= " << norm2(diag) << std::endl;
-
-    for(int dir = 0; dir < 4; dir++) {
-      for(auto disp : {+1, -1}) {
-        LinOp.OpDir(src, tmp, dir, disp);
-        std::cout << GridLogMessage << " norm2(Mdir_{" << dir << "," << disp << "} * src)\t\t= " << norm2(tmp) << std::endl;
-        sumDir = sumDir + tmp;
-      }
-    }
-    std::cout << GridLogMessage << " norm2(Σ_μ Mdir_μ * src)\t\t= " << norm2(sumDir) << std::endl;
-
-    result = diag + sumDir;
-    std::cout << GridLogMessage << " norm2((Mdiag + Σ_μ Mdir_μ) * src)\t= " << norm2(result) << std::endl;
-
-    LinOp.Op(src, ref);
-    std::cout << GridLogMessage << " norm2(M * src)\t\t\t= " << norm2(ref) << std::endl;
-
-    err = ref - result;
-    std::cout << GridLogMessage << " Absolute deviation\t\t\t= " << norm2(err) << std::endl;
-    std::cout << GridLogMessage << " Relative deviation\t\t\t= " << norm2(err) / norm2(ref) << std::endl;
-  }
-
-  {
-    std::cout << GridLogMessage << "Testing hermiticity stochastically for operator " << name << ":" << std::endl;
-
-    // clang-format off
-    Field phi(Grid); random(RNG, phi);
-    Field chi(Grid); random(RNG, chi);
-    Field MPhi(Grid);
-    Field MdagChi(Grid);
-    // clang-format on
-
-    LinOp.Op(phi, MPhi);
-    LinOp.AdjOp(chi, MdagChi);
-
-    ComplexD chiMPhi    = innerProduct(chi, MPhi);
-    ComplexD phiMdagChi = innerProduct(phi, MdagChi);
-
-    ComplexD phiMPhi    = innerProduct(phi, MPhi);
-    ComplexD chiMdagChi = innerProduct(chi, MdagChi);
-
-    std::cout << GridLogMessage << " chiMPhi = " << chiMPhi << " phiMdagChi = " << phiMdagChi
-              << " difference = " << chiMPhi - conjugate(phiMdagChi) << std::endl;
-
-    std::cout << GridLogMessage << " phiMPhi = " << phiMPhi << " chiMdagChi = " << chiMdagChi << " <- should be real if hermitian"
-              << std::endl;
-  }
-
-  {
-    std::cout << GridLogMessage << "Testing linearity for operator " << name << ":" << std::endl;
-
-    // clang-format off
-    Field phi(Grid); random(RNG, phi);
-    Field chi(Grid); random(RNG, chi);
-    Field phiPlusChi(Grid);
-    Field MPhi(Grid);
-    Field MChi(Grid);
-    Field MPhiPlusChi(Grid);
-    Field linearityError(Grid);
-    // clang-format on
-
-    LinOp.Op(phi, MPhi);
-    LinOp.Op(chi, MChi);
-
-    phiPlusChi = phi + chi;
-
-    LinOp.Op(phiPlusChi, MPhiPlusChi);
-
-    linearityError = MPhiPlusChi - MPhi;
-    linearityError = linearityError - MChi;
-
-    std::cout << GridLogMessage << " norm2(linearityError) = " << norm2(linearityError) << std::endl;
-  }
-}
-
 template<class Fobj, class CoarseScalar, int nCoarseSpins, int nBasis, int nCoarserLevels, class Matrix>
 class MultiGridPreconditioner : public LinearFunction<Lattice<Fobj>> {
 public:
@@ -429,11 +330,46 @@ public:
 
     auto tolerance = 1e-13; // TODO: this obviously depends on the precision we use, current value is for double
 
-    std::vector<FineVector>   fineTmps(2, _LevelInfo.Grids[_CurrentLevel]);
+    std::vector<FineVector>   fineTmps(7, _LevelInfo.Grids[_CurrentLevel]);
     std::vector<CoarseVector> coarseTmps(4, _LevelInfo.Grids[_NextCoarserLevel]);
 
     MdagMLinearOperator<FineMatrix, FineVector>     fineMdagMOp(_FineMatrix);
     MdagMLinearOperator<CoarseMatrix, CoarseVector> coarseMdagMOp(_CoarseMatrix);
+
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": **************************************************" << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": MG correctness check: 0 == (M - (Mdiag + Σ_μ Mdir_μ)) * v" << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": **************************************************" << std::endl;
+
+    random(_LevelInfo.PRNGs[_CurrentLevel], fineTmps[0]);
+
+    fineMdagMOp.Op(fineTmps[0], fineTmps[1]);     //     M * v
+    fineMdagMOp.OpDiag(fineTmps[0], fineTmps[2]); // Mdiag * v
+
+    fineTmps[4] = zero;
+    for(int dir = 0; dir < 4; dir++) { //       Σ_μ Mdir_μ * v
+      for(auto disp : {+1, -1}) {
+        fineMdagMOp.OpDir(fineTmps[0], fineTmps[3], dir, disp);
+        fineTmps[4] = fineTmps[4] + fineTmps[3];
+      }
+    }
+
+    fineTmps[5] = fineTmps[2] + fineTmps[4]; // (Mdiag + Σ_μ Mdir_μ) * v
+
+    fineTmps[6]    = fineTmps[1] - fineTmps[5];
+    auto deviation = std::sqrt(norm2(fineTmps[6]) / norm2(fineTmps[1]));
+
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": norm2(M * v)                    = " << norm2(fineTmps[1]) << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": norm2(Mdiag * v)                = " << norm2(fineTmps[2]) << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": norm2(Σ_μ Mdir_μ * v)           = " << norm2(fineTmps[4]) << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": norm2((Mdiag + Σ_μ Mdir_μ) * v) = " << norm2(fineTmps[5]) << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": relative deviation              = " << deviation;
+
+    if(deviation > tolerance) {
+      std::cout << " > " << tolerance << " -> check failed" << std::endl;
+      // abort();
+    } else {
+      std::cout << " < " << tolerance << " -> check passed" << std::endl;
+    }
 
     std::cout << GridLogMG << " Level " << _CurrentLevel << ": **************************************************" << std::endl;
     std::cout << GridLogMG << " Level " << _CurrentLevel << ": MG correctness check: 0 == (1 - P R) v" << std::endl;
@@ -443,8 +379,8 @@ public:
       _Aggregates.ProjectToSubspace(coarseTmps[0], _Aggregates.subspace[i]); //   R v_i
       _Aggregates.PromoteFromSubspace(coarseTmps[0], fineTmps[0]);           // P R v_i
 
-      fineTmps[1]    = _Aggregates.subspace[i] - fineTmps[0]; // v_i - P R v_i
-      auto deviation = std::sqrt(norm2(fineTmps[1]) / norm2(_Aggregates.subspace[i]));
+      fineTmps[1] = _Aggregates.subspace[i] - fineTmps[0]; // v_i - P R v_i
+      deviation   = std::sqrt(norm2(fineTmps[1]) / norm2(_Aggregates.subspace[i]));
 
       std::cout << GridLogMG << " Level " << _CurrentLevel << ": Vector " << i << ": norm2(v_i) = " << norm2(_Aggregates.subspace[i])
                 << " | norm2(R v_i) = " << norm2(coarseTmps[0]) << " | norm2(P R v_i) = " << norm2(fineTmps[0])
@@ -467,8 +403,8 @@ public:
     _Aggregates.PromoteFromSubspace(coarseTmps[0], fineTmps[0]); //   P v_c
     _Aggregates.ProjectToSubspace(coarseTmps[1], fineTmps[0]);   // R P v_c
 
-    coarseTmps[2]  = coarseTmps[0] - coarseTmps[1]; // v_c - R P v_c
-    auto deviation = std::sqrt(norm2(coarseTmps[2]) / norm2(coarseTmps[0]));
+    coarseTmps[2] = coarseTmps[0] - coarseTmps[1]; // v_c - R P v_c
+    deviation     = std::sqrt(norm2(coarseTmps[2]) / norm2(coarseTmps[0]));
 
     std::cout << GridLogMG << " Level " << _CurrentLevel << ": norm2(v_c) = " << norm2(coarseTmps[0])
               << " | norm2(R P v_c) = " << norm2(coarseTmps[1]) << " | norm2(P v_c) = " << norm2(fineTmps[0])
