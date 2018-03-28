@@ -226,6 +226,9 @@ public:
 
   virtual void operator()(Lattice<Fobj> const &in, Lattice<Fobj> &out) {
 
+    conformable(_LevelInfo.Grids[_CurrentLevel], in._grid);
+    conformable(in, out);
+
     // TODO: implement a W-cycle
     if(_MultiGridParams.kCycle)
       kCycle(in, out);
@@ -484,6 +487,7 @@ public:
   // Member Data
   /////////////////////////////////////////////
 
+  int              _CurrentLevel;
   MultiGridParams &_MultiGridParams;
   LevelInfo &      _LevelInfo;
   FineMatrix &     _FineMatrix;
@@ -494,11 +498,18 @@ public:
   /////////////////////////////////////////////
 
   MultiGridPreconditioner(MultiGridParams &mgParams, LevelInfo &LvlInfo, FineMatrix &FineMat, FineMatrix &SmootherMat)
-    : _MultiGridParams(mgParams), _LevelInfo(LvlInfo), _FineMatrix(FineMat), _SmootherMatrix(SmootherMat) {}
+    : _CurrentLevel(mgParams.nLevels - (0 + 1))
+    , _MultiGridParams(mgParams)
+    , _LevelInfo(LvlInfo)
+    , _FineMatrix(FineMat)
+    , _SmootherMatrix(SmootherMat) {}
 
   void setup() {}
 
   virtual void operator()(Lattice<Fobj> const &in, Lattice<Fobj> &out) {
+
+    conformable(_LevelInfo.Grids[_CurrentLevel], in._grid);
+    conformable(in, out);
 
     auto coarseSolverMaxIter = _MultiGridParams.coarseSolverMaxOuterIter * _MultiGridParams.coarseSolverMaxInnerIter;
 
