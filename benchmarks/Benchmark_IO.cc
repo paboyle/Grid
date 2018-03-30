@@ -1,3 +1,4 @@
+#ifdef HAVE_LIME
 #include <Grid/Grid.h>
 
 using namespace std;
@@ -99,3 +100,10 @@ int main (int argc, char ** argv)
 
   return EXIT_SUCCESS;
 }
+#else
+#include <Grid/Grid.h>
+int main (int argc, char ** argv)
+{
+  return EXIT_SUCCESS;
+}
+#endif
