@@ -1,5 +1,5 @@
-#ifdef HAVE_LIME
 #include <Grid/Grid.h>
+#ifdef HAVE_LIME
 
 using namespace std;
 using namespace Grid;
@@ -23,7 +23,7 @@ string filestem(const int l)
 void limeWrite(const string filestem, LatticeFermion &vec)
 {
   emptyUserRecord record;
-  ScidacWriter    binWriter;
+  ScidacWriter    binWriter(vec._grid->IsBoss());
 
   binWriter.open(filestem + ".bin");
   binWriter.writeScidacFieldRecord(vec, record);
@@ -50,7 +50,7 @@ void writeBenchmark(const int l, const WriterFn &write)
   GridParallelRNG           rng(g);
   LatticeFermion            vec(g);
   emptyUserRecord           record;
-  ScidacWriter              binWriter;
+  ScidacWriter              binWriter(g->IsBoss());
 
   cout << "-- Local volume " << l << "^4" << endl;
   random(rng, vec);
@@ -101,7 +101,6 @@ int main (int argc, char ** argv)
   return EXIT_SUCCESS;
 }
 #else
-#include <Grid/Grid.h>
 int main (int argc, char ** argv)
 {
   return EXIT_SUCCESS;
