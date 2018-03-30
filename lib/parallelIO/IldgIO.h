@@ -350,26 +350,36 @@ class GridLimeWriter : public BinaryIO {
     // iv) fseek on FILE * to end of this disjoint section.
     //  v) Continue writing scidac record.
     ////////////////////////////////////////////////////////////////////
-
+    
+    GridBase *grid = field._grid;
     ////////////////////////////////////////////
     // Create record header
     ////////////////////////////////////////////
     typedef typename vobj::scalar_object sobj;
     int err;
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
-    uint64_t PayloadSize = sizeof(sobj) * field._grid->_gsites;
+    uint64_t PayloadSize = sizeof(sobj) * grid->_gsites;
     createLimeRecordHeader(record_name, 0, 0, PayloadSize);
-
+    fflush(File);
+    
     //    std::cout << "W sizeof(sobj)"      <<sizeof(sobj)<<std::endl;
     //    std::cout << "W Gsites "           <<field._grid->_gsites<<std::endl;
     //    std::cout << "W Payload expected " <<PayloadSize<<std::endl;
 
-    fflush(File);
+    ////////////////////////////////////////////////
+    // Check all nodes agree on file position
+    ////////////////////////////////////////////////
+    uint64_t offset1 = ftello(File);    
+
+    uint64_t compare = offset1;
+    grid->Broadcast(0,(void *)&compare,sizeof(compare));
+
+    assert(compare == offset1 ); 
 
     ///////////////////////////////////////////
     // Write by other means into the binary record
     ///////////////////////////////////////////
-    uint64_t offset1 = ftello(File);    //    std::cout << " Writing to offset "<<offset1 << std::endl;
+
     std::string format = getFormatString<vobj>();
     BinarySimpleMunger<sobj,sobj> munge;
     BinaryIO::writeLatticeObject<vobj,sobj>(field, filename, munge, offset1, format,nersc_csum,scidac_csuma,scidac_csumb);
@@ -380,7 +390,15 @@ class GridLimeWriter : public BinaryIO {
     fseek(File,0,SEEK_END);             
     uint64_t offset2 = ftello(File);     //    std::cout << " now at offset "<<offset2 << std::endl;
 
-    assert((offset2-offset1) == PayloadSize);
+    /////////////////////////////////////////////////////////////
+    // Must synchronise the nodes so no race between nodes
+    /////////////////////////////////////////////////////////////
+    grid->Barrier();
+
+    /////////////////////////////////////////////////////////////
+    // Check MPI-2 I/O did what we expect to file
+    /////////////////////////////////////////////////////////////
+    assert( (offset2-offset1) == PayloadSize);
 
     err=limeWriterCloseRecord(LimeW);  assert(err>=0);
 
