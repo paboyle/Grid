@@ -92,8 +92,6 @@ public:
     GridRedBlackCartesian * getRbGrid(const unsigned int Ls = 1) const;
     GridCartesian *         getCoarseGrid(const std::vector<int> &blockSize,
                                           const unsigned int Ls = 1) const;
-    GridRedBlackCartesian * getRbCoarseGrid(const std::vector<int> &blockSize,
-                                            const unsigned int Ls = 1) const;
     std::vector<int>        getDim(void) const;
     int                     getDim(const unsigned int mu) const;
     unsigned long int       getLocalVolume(void) const;
@@ -166,9 +164,7 @@ private:
     GridRbPt                               gridRb4d_;
     std::map<unsigned int, GridRbPt>       gridRb5d_;
     std::map<std::vector<int>, GridPt>     gridCoarse4d_;
-    std::map<std::vector<int>, GridRbPt>   gridCoarseRb4d_;
     std::map<std::vector<int>, GridPt>     gridCoarse5d_;
-    std::map<std::vector<int>, GridRbPt>   gridCoarseRb5d_;
     unsigned int                           nd_;
     // random number generator
     RngPt                                  rng4d_;

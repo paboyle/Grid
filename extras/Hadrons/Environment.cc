@@ -106,14 +106,10 @@ void Environment::createCoarseGrid(const std::vector<int> &blockSize,
     gridCoarse4d_[key4d].reset(
         SpaceTimeGrid::makeFourDimGrid(coarseDim, 
             GridDefaultSimd(nd, vComplex::Nsimd()), GridDefaultMpi()));
-    gridCoarseRb4d_[key4d].reset(
-        SpaceTimeGrid::makeFourDimRedBlackGrid(gridCoarse4d_[key4d].get()));
     if (Ls > 1)
     {
         gridCoarse5d_[key5d].reset(
             SpaceTimeGrid::makeFiveDimGrid(cLs, gridCoarse4d_[key4d].get()));
-        gridCoarseRb5d_[key5d].reset(
-            SpaceTimeGrid::makeFiveDimRedBlackGrid(cLs, gridCoarse4d_[key4d].get()));
     }
 }
 
@@ -176,30 +172,6 @@ GridCartesian * Environment::getCoarseGrid(
     catch(std::out_of_range &)
     {
         HADRON_ERROR(Definition, "no coarse grid with Ls= " + std::to_string(Ls));
-    }
-}
-
-GridRedBlackCartesian * Environment::getRbCoarseGrid(
-    const std::vector<int> &blockSize, const unsigned int Ls) const
-{
-    auto key = blockSize;
-
-    try
-    {
-        if (Ls == 1)
-        {
-            key.resize(getNd());
-            return gridCoarseRb4d_.at(key).get();
-        }
-        else
-        {
-            key.push_back(Ls);
-            return gridCoarseRb5d_.at(key).get();
-        }
-    }
-    catch(std::out_of_range &)
-    {
-        HADRON_ERROR(Definition, "no coarse red-black grid with Ls= " + std::to_string(Ls));
     }
 }
 
