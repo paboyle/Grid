@@ -157,6 +157,7 @@ public:
   virtual void setup()                                 = 0;
   virtual void operator()(Field const &in, Field &out) = 0;
   virtual void runChecks()                             = 0;
+  virtual void reportTimings()                         = 0;
 };
 
 template<class Fobj, class CoarseScalar, int nCoarseSpins, int nBasis, int nCoarserLevels, class Matrix>
@@ -180,15 +181,26 @@ public:
   // Member Data
   /////////////////////////////////////////////
 
-  int                                      _CurrentLevel;
-  int                                      _NextCoarserLevel;
-  MultiGridParams &                        _MultiGridParams;
-  LevelInfo &                              _LevelInfo;
-  FineMatrix &                             _FineMatrix;
-  FineMatrix &                             _SmootherMatrix;
-  Aggregates                               _Aggregates;
-  CoarseMatrix                             _CoarseMatrix;
+  int _CurrentLevel;
+  int _NextCoarserLevel;
+
+  MultiGridParams &_MultiGridParams;
+  LevelInfo &      _LevelInfo;
+
+  FineMatrix & _FineMatrix;
+  FineMatrix & _SmootherMatrix;
+  Aggregates   _Aggregates;
+  CoarseMatrix _CoarseMatrix;
+
   std::unique_ptr<NextPreconditionerLevel> _NextPreconditionerLevel;
+
+  GridStopWatch _SetupTotalTimer;
+  GridStopWatch _SetupNextLevelTimer;
+  GridStopWatch _SolveTotalTimer;
+  GridStopWatch _SolveRestrictionTimer;
+  GridStopWatch _SolveProlongationTimer;
+  GridStopWatch _SolveSmootherTimer;
+  GridStopWatch _SolveNextLevelTimer;
 
   /////////////////////////////////////////////
   // Member Functions
@@ -203,11 +215,16 @@ public:
     , _SmootherMatrix(SmootherMat)
     , _Aggregates(_LevelInfo.Grids[_NextCoarserLevel], _LevelInfo.Grids[_CurrentLevel], 0)
     , _CoarseMatrix(*_LevelInfo.Grids[_NextCoarserLevel]) {
+
     _NextPreconditionerLevel
       = std::unique_ptr<NextPreconditionerLevel>(new NextPreconditionerLevel(_MultiGridParams, _LevelInfo, _CoarseMatrix, _CoarseMatrix));
+
+    resetTimers();
   }
 
   void setup() {
+
+    _SetupTotalTimer.Start();
 
     Gamma                                       g5(Gamma::Algebra::Gamma5);
     MdagMLinearOperator<FineMatrix, FineVector> fineMdagMOp(_FineMatrix);
@@ -228,7 +245,11 @@ public:
 
     _CoarseMatrix.CoarsenOperator(_LevelInfo.Grids[_CurrentLevel], fineMdagMOp, _Aggregates);
 
+    _SetupNextLevelTimer.Start();
     _NextPreconditionerLevel->setup();
+    _SetupNextLevelTimer.Stop();
+
+    _SetupTotalTimer.Stop();
   }
 
   virtual void operator()(Lattice<Fobj> const &in, Lattice<Fobj> &out) {
@@ -244,6 +265,8 @@ public:
   }
 
   void vCycle(Lattice<Fobj> const &in, Lattice<Fobj> &out) {
+
+    _SolveTotalTimer.Start();
 
     RealD inputNorm = norm2(in);
 
@@ -265,16 +288,26 @@ public:
     MdagMLinearOperator<FineMatrix, FineVector> fineMdagMOp(_FineMatrix);
     MdagMLinearOperator<FineMatrix, FineVector> fineSmootherMdagMOp(_SmootherMatrix);
 
+    _SolveRestrictionTimer.Start();
     _Aggregates.ProjectToSubspace(coarseSrc, in);
+    _SolveRestrictionTimer.Stop();
+
+    _SolveNextLevelTimer.Start();
     (*_NextPreconditionerLevel)(coarseSrc, coarseSol);
+    _SolveNextLevelTimer.Stop();
+
+    _SolveProlongationTimer.Start();
     _Aggregates.PromoteFromSubspace(coarseSol, out);
+    _SolveProlongationTimer.Stop();
 
     fineMdagMOp.Op(out, fineTmp);
     fineTmp                                = in - fineTmp;
     auto r                                 = norm2(fineTmp);
     auto residualAfterCoarseGridCorrection = std::sqrt(r / inputNorm);
 
+    _SolveSmootherTimer.Start();
     fineFGMRES(fineSmootherMdagMOp, in, out);
+    _SolveSmootherTimer.Stop();
 
     fineMdagMOp.Op(out, fineTmp);
     fineTmp                        = in - fineTmp;
@@ -284,9 +317,13 @@ public:
     std::cout << GridLogMG << " Level " << _CurrentLevel << ": V-cycle: Input norm = " << std::sqrt(inputNorm)
               << " Coarse residual = " << residualAfterCoarseGridCorrection << " Post-Smoother residual = " << residualAfterPostSmoother
               << std::endl;
+
+    _SolveTotalTimer.Stop();
   }
 
   void kCycle(Lattice<Fobj> const &in, Lattice<Fobj> &out) {
+
+    _SolveTotalTimer.Start();
 
     RealD inputNorm = norm2(in);
 
@@ -315,16 +352,26 @@ public:
     MdagMLinearOperator<FineMatrix, FineVector>     fineSmootherMdagMOp(_SmootherMatrix);
     MdagMLinearOperator<CoarseMatrix, CoarseVector> coarseMdagMOp(_CoarseMatrix);
 
+    _SolveRestrictionTimer.Start();
     _Aggregates.ProjectToSubspace(coarseSrc, in);
+    _SolveRestrictionTimer.Stop();
+
+    _SolveNextLevelTimer.Start();
     coarseFGMRES(coarseMdagMOp, coarseSrc, coarseSol);
+    _SolveNextLevelTimer.Stop();
+
+    _SolveProlongationTimer.Start();
     _Aggregates.PromoteFromSubspace(coarseSol, out);
+    _SolveProlongationTimer.Stop();
 
     fineMdagMOp.Op(out, fineTmp);
     fineTmp                                = in - fineTmp;
     auto r                                 = norm2(fineTmp);
     auto residualAfterCoarseGridCorrection = std::sqrt(r / inputNorm);
 
+    _SolveSmootherTimer.Start();
     fineFGMRES(fineSmootherMdagMOp, in, out);
+    _SolveSmootherTimer.Stop();
 
     fineMdagMOp.Op(out, fineTmp);
     fineTmp                        = in - fineTmp;
@@ -334,6 +381,8 @@ public:
     std::cout << GridLogMG << " Level " << _CurrentLevel << ": K-cycle: Input norm = " << std::sqrt(inputNorm)
               << " Coarse residual = " << residualAfterCoarseGridCorrection << " Post-Smoother residual = " << residualAfterPostSmoother
               << std::endl;
+
+    _SolveTotalTimer.Stop();
   }
 
   void runChecks() {
@@ -477,6 +526,34 @@ public:
 
     _NextPreconditionerLevel->runChecks();
   }
+
+  void reportTimings() {
+
+    // clang-format off
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Setup total        " <<        _SetupTotalTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Setup next level   " <<    _SetupNextLevelTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve total        " <<        _SolveTotalTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve restriction  " <<  _SolveRestrictionTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve prolongation " << _SolveProlongationTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve smoother     " <<     _SolveSmootherTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve next level   " <<    _SolveNextLevelTimer.Elapsed() << std::endl;
+    // clang-format on
+
+    _NextPreconditionerLevel->reportTimings();
+  }
+
+  void resetTimers() {
+
+    _SetupTotalTimer.Reset();
+    _SetupNextLevelTimer.Reset();
+    _SolveTotalTimer.Reset();
+    _SolveRestrictionTimer.Reset();
+    _SolveProlongationTimer.Reset();
+    _SolveSmootherTimer.Reset();
+    _SolveNextLevelTimer.Reset();
+
+    _NextPreconditionerLevel->resetTimers();
+  }
 };
 
 // Specialization for the coarsest level
@@ -494,11 +571,16 @@ public:
   // Member Data
   /////////////////////////////////////////////
 
-  int              _CurrentLevel;
+  int _CurrentLevel;
+
   MultiGridParams &_MultiGridParams;
   LevelInfo &      _LevelInfo;
-  FineMatrix &     _FineMatrix;
-  FineMatrix &     _SmootherMatrix;
+
+  FineMatrix &_FineMatrix;
+  FineMatrix &_SmootherMatrix;
+
+  GridStopWatch _SolveTotalTimer;
+  GridStopWatch _SolveSmootherTimer;
 
   /////////////////////////////////////////////
   // Member Functions
@@ -509,11 +591,16 @@ public:
     , _MultiGridParams(mgParams)
     , _LevelInfo(LvlInfo)
     , _FineMatrix(FineMat)
-    , _SmootherMatrix(SmootherMat) {}
+    , _SmootherMatrix(SmootherMat) {
+
+    resetTimers();
+  }
 
   void setup() {}
 
   virtual void operator()(Lattice<Fobj> const &in, Lattice<Fobj> &out) {
+
+    _SolveTotalTimer.Start();
 
     conformable(_LevelInfo.Grids[_CurrentLevel], in._grid);
     conformable(in, out);
@@ -527,10 +614,28 @@ public:
 
     MdagMLinearOperator<FineMatrix, FineVector> fineMdagMOp(_FineMatrix);
 
+    _SolveSmootherTimer.Start();
     fineFGMRES(fineMdagMOp, in, out);
+    _SolveSmootherTimer.Stop();
+
+    _SolveTotalTimer.Stop();
   }
 
   void runChecks() {}
+
+  void reportTimings() {
+
+    // clang-format off
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve total        " <<    _SolveTotalTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve smoother     " << _SolveSmootherTimer.Elapsed() << std::endl;
+    // clang-format on
+  }
+
+  void resetTimers() {
+
+    _SolveTotalTimer.Reset();
+    _SolveSmootherTimer.Reset();
+  }
 };
 
 template<class Fobj, class CoarseScalar, int nCoarseSpins, int nbasis, int nLevels, class Matrix>
@@ -680,6 +785,8 @@ int main(int argc, char **argv) {
     std::cout << std::endl;
   }
 
+  MGPreconDw->reportTimings();
+
   std::cout << GridLogMessage << "**************************************************" << std::endl;
   std::cout << GridLogMessage << "Testing Multigrid for Wilson Clover" << std::endl;
   std::cout << GridLogMessage << "**************************************************" << std::endl;
@@ -700,6 +807,8 @@ int main(int argc, char **argv) {
     (*solver)(MdagMOpDwc, src, result);
     std::cout << std::endl;
   }
+
+  MGPreconDwc->reportTimings();
 
   Grid_finalize();
 }
