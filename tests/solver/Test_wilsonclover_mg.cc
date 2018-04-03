@@ -90,12 +90,11 @@ public:
                                   int,                           coarseSolverMaxInnerIter);
   MultiGridParams(){};
 };
-MultiGridParams mgParams;
 // clang-format on
 
 void checkParameterValidity(MultiGridParams const &params) {
 
-  auto correctSize = mgParams.nLevels - 1;
+  auto correctSize = params.nLevels - 1;
 
   assert(correctSize == params.blockSizes.size());
   assert(correctSize == params.smootherTol.size());
@@ -532,6 +531,8 @@ using NLevelMGPreconditioner = MultiGridPreconditioner<Fobj, CoarseScalar, nCoar
 int main(int argc, char **argv) {
 
   Grid_init(&argc, &argv);
+
+  MultiGridParams mgParams;
 
   typename WilsonCloverFermionR::ImplParams wcImplparams;
   WilsonAnisotropyCoefficients              wilsonAnisCoeff;
