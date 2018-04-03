@@ -115,7 +115,7 @@ protected:
                            const unsigned int size)
     {
         emptyUserRecord record;
-        ScidacWriter    binWriter;
+        ScidacWriter    binWriter(evec[0]._grid->IsBoss());
 
         binWriter.open(filename);
         for(int k = 0; k < size; ++k) 
