@@ -372,7 +372,7 @@ class BinaryIO {
 	std::cout << GridLogMessage <<"IOobject: C++ read I/O " << file << " : "
                   << iodata.size() * sizeof(fobj) << " bytes" << std::endl;
         std::ifstream fin;
-        fin.open(file, std::ios::binary | std::ios::in);
+	fin.open(file, std::ios::binary | std::ios::in);
         if (control & BINARYIO_MASTER_APPEND)
         {
           fin.seekg(-sizeof(fobj), fin.end);
@@ -453,11 +453,15 @@ class BinaryIO {
 	std::ofstream fout; 
 	fout.exceptions ( std::fstream::failbit | std::fstream::badbit );
 	try {
-	  fout.open(file,std::ios::binary|std::ios::out|std::ios::in);
+	  if (offset) { // Must already exist and contain data
+	    fout.open(file,std::ios::binary|std::ios::out|std::ios::in);
+	  } else {     // Allow create
+	    fout.open(file,std::ios::binary|std::ios::out);
+	  }
 	} catch (const std::fstream::failure& exc) {
 	  std::cout << GridLogError << "Error in opening the file " << file << " for output" <<std::endl;
 	  std::cout << GridLogError << "Exception description: " << exc.what() << std::endl;
-	  std::cout << GridLogError << "Probable cause: wrong path, inaccessible location "<< std::endl;
+	  //	  std::cout << GridLogError << "Probable cause: wrong path, inaccessible location "<< std::endl;
 #ifdef USE_MPI_IO
 	  MPI_Abort(MPI_COMM_WORLD,1);
 #else
