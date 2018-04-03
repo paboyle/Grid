@@ -151,8 +151,16 @@ public:
   }
 };
 
+template<class Field> class MultiGridPreconditionerBase : public LinearFunction<Field> {
+public:
+  virtual ~MultiGridPreconditionerBase()               = default;
+  virtual void setup()                                 = 0;
+  virtual void operator()(Field const &in, Field &out) = 0;
+  virtual void runChecks()                             = 0;
+};
+
 template<class Fobj, class CoarseScalar, int nCoarseSpins, int nBasis, int nCoarserLevels, class Matrix>
-class MultiGridPreconditioner : public LinearFunction<Lattice<Fobj>> {
+class MultiGridPreconditioner : public MultiGridPreconditionerBase<Lattice<Fobj>> {
 public:
   /////////////////////////////////////////////
   // Type Definitions
@@ -213,10 +221,10 @@ public:
     static_assert((nBasis & 0x1) == 0, "MG Preconditioner only supports an even number of basis vectors");
     int nb = nBasis / 2;
 
-    // TODO: to get this to work for more than two levels, I would need to either implement coarse spins or have a template specialization of this class also for the finest level
-    for(int n = 0; n < nb; n++) {
-      _Aggregates.subspace[n + nb] = g5 * _Aggregates.subspace[n];
-    }
+    // // TODO: to get this to work for more than two levels, I would need to either implement coarse spins or have a template specialization of this class also for the finest level
+    // for(int n = 0; n < nb; n++) {
+    //   _Aggregates.subspace[n + nb] = g5 * _Aggregates.subspace[n];
+    // }
 
     _CoarseMatrix.CoarsenOperator(_LevelInfo.Grids[_CurrentLevel], fineMdagMOp, _Aggregates);
 
@@ -473,7 +481,7 @@ public:
 
 // Specialization for the coarsest level
 template<class Fobj, class CoarseScalar, int nCoarseSpins, int nbasis, class Matrix>
-class MultiGridPreconditioner<Fobj, CoarseScalar, nCoarseSpins, nbasis, 0, Matrix> : public LinearFunction<Lattice<Fobj>> {
+class MultiGridPreconditioner<Fobj, CoarseScalar, nCoarseSpins, nbasis, 0, Matrix> : public MultiGridPreconditionerBase<Lattice<Fobj>> {
 public:
   /////////////////////////////////////////////
   // Type Definitions
@@ -527,6 +535,29 @@ public:
 
 template<class Fobj, class CoarseScalar, int nCoarseSpins, int nbasis, int nLevels, class Matrix>
 using NLevelMGPreconditioner = MultiGridPreconditioner<Fobj, CoarseScalar, nCoarseSpins, nbasis, nLevels - 1, Matrix>;
+
+template<class Fobj, class CoarseScalar, int nCoarseSpins, int nbasis, class Matrix>
+std::unique_ptr<MultiGridPreconditionerBase<Lattice<Fobj>>>
+createMGInstance(MultiGridParams &mgParams, LevelInfo &levelInfo, Matrix &FineMat, Matrix &SmootherMat) {
+
+  // clang-format off
+  #define CASE_FOR_N_LEVELS(nLevels)                                                                                                       \
+    case nLevels:                                                                                                                          \
+      return std::unique_ptr<NLevelMGPreconditioner<Fobj, CoarseScalar, nCoarseSpins, nbasis, nLevels, Matrix>>(                           \
+        new NLevelMGPreconditioner<Fobj, CoarseScalar, nCoarseSpins, nbasis, nLevels, Matrix>(mgParams, levelInfo, FineMat, SmootherMat)); \
+      break;
+  // clang-format on
+
+  switch(mgParams.nLevels) {
+    CASE_FOR_N_LEVELS(2);
+    CASE_FOR_N_LEVELS(3);
+    CASE_FOR_N_LEVELS(4);
+    default:
+      std::cout << GridLogError << "We currently only support nLevels ∈ {2, 3, 4}" << std::endl;
+      exit(EXIT_FAILURE);
+      break;
+  }
+}
 
 int main(int argc, char **argv) {
 
@@ -619,29 +650,16 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Testing Multigrid for Wilson" << std::endl;
   std::cout << GridLogMessage << "**************************************************" << std::endl;
 
-  TrivialPrecon<LatticeFermion>                                                      TrivialPrecon;
-  NLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, 2, WilsonFermionR> TwoLevelMGPreconDw(mgParams, levelInfo, Dw, Dw);
-  // NLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, 3, WilsonFermionR> ThreeLevelMGPreconDw(mgParams, levelInfo, Dw, Dw);
-  // NLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, 4, WilsonFermionR> FourLevelMGPreconDw(mgParams, levelInfo, Dw, Dw);
+  TrivialPrecon<LatticeFermion> TrivialPrecon;
+  auto MGPreconDw = createMGInstance<vSpinColourVector, vTComplex, 1, nbasis, WilsonFermionR>(mgParams, levelInfo, Dw, Dw);
 
-  TwoLevelMGPreconDw.setup();
-  TwoLevelMGPreconDw.runChecks();
-
-  // ThreeLevelMGPreconDw.setup();
-  // ThreeLevelMGPreconDw.runChecks();
-
-  // FourLevelMGPreconDw.setup();
-  // FourLevelMGPreconDw.runChecks();
-
-  // NLevelMGPreconDw.setup();
-  // NLevelMGPreconDw.runChecks();
+  MGPreconDw->setup();
+  MGPreconDw->runChecks();
 
   std::vector<std::unique_ptr<OperatorFunction<LatticeFermion>>> solversDw;
 
   solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, TrivialPrecon, 100, false));
-  solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, TwoLevelMGPreconDw, 100, false));
-  // solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, ThreeLevelMGPreconDw, 100, false));
-  // solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, FourLevelMGPreconDw, 100, false));
+  solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, *MGPreconDw, 100, false));
 
   for(auto const &solver : solversDw) {
     std::cout << "Starting with a new solver" << std::endl;
@@ -654,32 +672,18 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Testing Multigrid for Wilson Clover" << std::endl;
   std::cout << GridLogMessage << "**************************************************" << std::endl;
 
-  NLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, 2, WilsonCloverFermionR> TwoLevelMGPreconDwc(
-    mgParams, levelInfo, Dwc, Dwc);
-  // NLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, 3, WilsonCloverFermionR> ThreeLevelMGPreconDwc(mgParams, velInfo, Dwc, Dwc);
-  // NLevelMGPreconditioner<vSpinColourVector, vTComplex, 1, nbasis, 4, WilsonCloverFermionR> FourLevelMGPreconDwc(lelevelInfo, Dwc, Dwc);
+  auto MGPreconDwc = createMGInstance<vSpinColourVector, vTComplex, 1, nbasis, WilsonCloverFermionR>(mgParams, levelInfo, Dwc, Dwc);
 
-  TwoLevelMGPreconDwc.setup();
-  TwoLevelMGPreconDwc.runChecks();
-
-  // ThreeLevelMGPreconDwc.setup();
-  // ThreeLevelMGPreconDwc.runChecks();
-
-  // FourLevelMGPreconDwc.setup();
-  // FourLevelMGPreconDwc.runChecks();
-
-  // NLevelMGPreconDwc.setup();
-  // NLevelMGPreconDwc.runChecks();
+  MGPreconDwc->setup();
+  MGPreconDwc->runChecks();
 
   std::vector<std::unique_ptr<OperatorFunction<LatticeFermion>>> solversDwc;
 
   solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, TrivialPrecon, 100, false));
-  solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, TwoLevelMGPreconDwc, 100, false));
-  // solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, ThreeLevelMGPreconDwc, 100, false));
-  // solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, FourLevelMGPreconDwc, 100, false));
+  solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, *MGPreconDwc, 100, false));
 
   for(auto const &solver : solversDwc) {
-    std::cout << "Starting with a new solver" << std::endl;
+    std::cout << std::endl << "Starting with a new solver" << std::endl;
     result = zero;
     (*solver)(MdagMOpDwc, src, result);
     std::cout << std::endl;
