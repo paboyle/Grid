@@ -284,9 +284,11 @@ public:
   };
 
   void Orthogonalise(void ) {
-    CoarseScalar InnerProd(_CoarseGrid); 
-    blockOrthogonalise(InnerProd,subspace);std::cout << GridLogMessage <<" Gramm-Schmidt pass 1"<<std::endl;
-    blockOrthogonalise(InnerProd,subspace);std::cout << GridLogMessage <<" Gramm-Schmidt pass 2"<<std::endl;
+    CoarseScalar InnerProd(_CoarseGrid);
+    std::cout << GridLogMessage <<" Gramm-Schmidt pass 1"<<std::endl;
+    blockOrthogonalise(InnerProd,subspace);
+    std::cout << GridLogMessage <<" Gramm-Schmidt pass 2"<<std::endl;
+    blockOrthogonalise(InnerProd,subspace);
   };
 
   template<typename T>  static RealD normalise(T& v) 

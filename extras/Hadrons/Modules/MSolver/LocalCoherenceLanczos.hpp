@@ -125,19 +125,18 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::setup(void)
 
     env().createCoarseGrid(blockSize, Ls);
 
-    auto cg   = env().getCoarseGrid(blockSize, Ls);
-    auto cgrb = env().getRbCoarseGrid(blockSize, Ls);
-    int  cNm  = (par().doCoarse) ? par().coarseParams.Nm : 0;
+    auto cg  = env().getCoarseGrid(blockSize, Ls);
+    int  cNm = (par().doCoarse) ? par().coarseParams.Nm : 0;
 
     LOG(Message) << "Coarse grid: " << cg->GlobalDimensions() << std::endl;
     envCreateDerived(BasePack, CoarsePack, getName(), Ls,
-                     par().fineParams.Nm, cNm, env().getRbGrid(Ls), cgrb);
+                     par().fineParams.Nm, cNm, env().getRbGrid(Ls), cg);
 
     auto &epack = envGetDerived(BasePack, CoarsePack, getName());
 
     envTmp(SchurFMat, "mat", Ls, envGet(FMat, par().action));
     envGetTmp(SchurFMat, mat);
-    envTmp(LCL, "solver", Ls, env().getRbGrid(Ls), cgrb, mat, 
+    envTmp(LCL, "solver", Ls, env().getRbGrid(Ls), cg, mat, 
            Odd, epack.evec, epack.evecCoarse, epack.eval, epack.evalCoarse);
 }
 
@@ -157,6 +156,10 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::execute(void)
                     finePar.resid,finePar.MaxIt, finePar.betastp, 
                     finePar.MinRes);
     solver.testFine(finePar.resid*100.0);
+    if (!par().output.empty())
+    {
+        epack.writeFine(par().output, vm().getTrajectory());
+    }
     if (par().doCoarse)
     {
         LOG(Message) << "Orthogonalising" << std::endl;
@@ -173,7 +176,7 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::execute(void)
     }
     if (!par().output.empty())
     {
-        epack.write(par().output, vm().getTrajectory());
+        epack.writeCoarse(par().output, vm().getTrajectory());
     }
 }
 

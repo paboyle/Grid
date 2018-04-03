@@ -152,54 +152,77 @@ public:
         evecCoarse.resize(sizeCoarse, gridCoarse);
     }
 
-    virtual void read(const std::string fileStem, const int traj = -1)
+    void readFine(const std::string fileStem, const int traj = -1)
     {
         std::string evecFineFilename, evalFineFilename;
         std::string evecCoarseFilename, evalCoarseFilename;
 
         this->makeFilenames(evecFineFilename, evalFineFilename, 
                             fileStem + "_fine", traj);
-        this->makeFilenames(evecCoarseFilename, evalCoarseFilename, 
-                            fileStem + "_coarse", traj);
         XmlReader xmlFineReader(evalFineFilename);
-        XmlReader xmlCoarseReader(evalCoarseFilename);
         LOG(Message) << "Reading " << this->evec.size() << " fine eigenvectors from '" 
                      << evecFineFilename << "'" << std::endl;
         this->basicRead(this->evec, evecFineFilename, this->evec.size());
-        LOG(Message) << "Reading " << evecCoarse.size() << " coarse eigenvectors from '" 
-                     << evecCoarseFilename << "'" << std::endl;
-        this->basicRead(evecCoarse, evecCoarseFilename, evecCoarse.size());
         LOG(Message) << "Reading " << this->eval.size() << " fine eigenvalues from '" 
                      << evalFineFilename << "'" << std::endl;
         Grid::read(xmlFineReader, "evals", this->eval);
+    }
+
+    void readCoarse(const std::string fileStem, const int traj = -1)
+    {
+        std::string evecCoarseFilename, evalCoarseFilename;
+
+        this->makeFilenames(evecCoarseFilename, evalCoarseFilename, 
+                            fileStem + "_coarse", traj);
+        XmlReader xmlCoarseReader(evalCoarseFilename);
+        LOG(Message) << "Reading " << evecCoarse.size() << " coarse eigenvectors from '" 
+                     << evecCoarseFilename << "'" << std::endl;
+        this->basicRead(evecCoarse, evecCoarseFilename, evecCoarse.size());
         LOG(Message) << "Reading " << evalCoarse.size() << " coarse eigenvalues from '" 
                      << evalCoarseFilename << "'" << std::endl;
         Grid::read(xmlCoarseReader, "evals", evalCoarse);
     }
 
-    virtual void write(const std::string fileStem, const int traj = -1)
+    virtual void read(const std::string fileStem, const int traj = -1)
+    {
+        readFine(fileStem, traj);
+        readCoarse(fileStem, traj);
+    }
+
+    void writeFine(const std::string fileStem, const int traj = -1)
     {
         std::string evecFineFilename, evalFineFilename;
-        std::string evecCoarseFilename, evalCoarseFilename;
 
         this->makeFilenames(evecFineFilename, evalFineFilename, 
                             fileStem + "_fine", traj);
-        this->makeFilenames(evecCoarseFilename, evalCoarseFilename,
-                            fileStem + "_coarse", traj);
         XmlWriter xmlFineWriter(evalFineFilename);
-        XmlWriter xmlCoarseWriter(evalCoarseFilename);
         LOG(Message) << "Writing " << this->evec.size() << " fine eigenvectors to '" 
                      << evecFineFilename << "'" << std::endl;
         this->basicWrite(evecFineFilename, this->evec, this->evec.size());
-        LOG(Message) << "Writing " << evecCoarse.size() << " coarse eigenvectors to '" 
-                     << evecCoarseFilename << "'" << std::endl;
-        this->basicWrite(evecCoarseFilename, evecCoarse, evecCoarse.size());
         LOG(Message) << "Writing " << this->eval.size() << " fine eigenvalues to '" 
                      << evalFineFilename << "'" << std::endl;
         Grid::write(xmlFineWriter, "evals", this->eval);
+    }
+
+    void writeCoarse(const std::string fileStem, const int traj = -1)
+    {
+        std::string evecCoarseFilename, evalCoarseFilename;
+
+        this->makeFilenames(evecCoarseFilename, evalCoarseFilename,
+                            fileStem + "_coarse", traj);
+        XmlWriter xmlCoarseWriter(evalCoarseFilename);
+        LOG(Message) << "Writing " << evecCoarse.size() << " coarse eigenvectors to '" 
+                     << evecCoarseFilename << "'" << std::endl;
+        this->basicWrite(evecCoarseFilename, evecCoarse, evecCoarse.size());
         LOG(Message) << "Writing " << evalCoarse.size() << " coarse eigenvalues to '" 
                      << evalCoarseFilename << "'" << std::endl;
         Grid::write(xmlCoarseWriter, "evals", evalCoarse);
+    }
+    
+    virtual void write(const std::string fileStem, const int traj = -1)
+    {
+        writeFine(fileStem, traj);
+        writeCoarse(fileStem, traj);
     }
 };
 
