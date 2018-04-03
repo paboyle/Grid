@@ -520,7 +520,7 @@ public:
 
     auto coarseSolverMaxIter = _MultiGridParams.coarseSolverMaxOuterIter * _MultiGridParams.coarseSolverMaxInnerIter;
 
-    // On the coarsest level we only have a fine what I above call the fine level, no coarse one
+    // On the coarsest level we only have what I above call the fine level, no coarse one
     TrivialPrecon<FineVector>                      fineTrivialPreconditioner;
     FlexibleGeneralisedMinimalResidual<FineVector> fineFGMRES(
       _MultiGridParams.coarseSolverTol, coarseSolverMaxIter, fineTrivialPreconditioner, _MultiGridParams.coarseSolverMaxInnerIter, false);
@@ -592,7 +592,7 @@ int main(int argc, char **argv) {
   WilsonFermionR       Dw(Umu, *FGrid, *FrbGrid, mass);
   WilsonCloverFermionR Dwc(Umu, *FGrid, *FrbGrid, mass, csw_r, csw_t, wilsonAnisCoeff, wcImplparams);
 
-  // Params for two-level MG preconditioner
+  // Default params for two-level MG preconditioner (TODO: use sensible ones)
   mgParams.nLevels                  = 2;
   mgParams.blockSizes               = {{2, 2, 2, 2}};
   mgParams.smootherTol              = {1e-14};
@@ -606,7 +606,7 @@ int main(int argc, char **argv) {
   mgParams.coarseSolverMaxOuterIter = 1;
   mgParams.coarseSolverMaxInnerIter = 1;
 
-  // // Params for three-level MG preconditioner
+  // // Default params for three-level MG preconditioner (TODO: use sensible ones)
   // mgParams.nLevels                  = 3;
   // mgParams.blockSizes               = {{2, 2, 2, 2}, {2, 2, 1, 1}};
   // mgParams.smootherTol              = {1e-14, 1e-14};
@@ -620,7 +620,7 @@ int main(int argc, char **argv) {
   // mgParams.coarseSolverMaxOuterIter = 1;
   // mgParams.coarseSolverMaxInnerIter = 1;
 
-  // // // Params for four-level MG preconditioner
+  // // Default params for four-level MG preconditioner (TODO: use sensible ones)
   // mgParams.nLevels                  = 4;
   // mgParams.blockSizes               = {{2, 2, 2, 2}, {2, 2, 1, 1}, {1, 1, 2, 1}};
   // mgParams.smootherTol              = {1e-14, 1e-14, 1e-14};
@@ -633,6 +633,18 @@ int main(int argc, char **argv) {
   // mgParams.coarseSolverTol          = 1e-14;
   // mgParams.coarseSolverMaxOuterIter = 1;
   // mgParams.coarseSolverMaxInnerIter = 1;
+
+  {
+    XmlWriter writer("mg_params_template.xml");
+    write(writer, "Params", mgParams);
+    std::cout << GridLogMessage << " Written mg_params_template.xml" << std::endl;
+  }
+
+  {
+    std::string paramFileName{"./mg_params.xml"};
+    XmlReader   reader(paramFileName);
+    read(reader, "Params", mgParams);
+  }
 
   checkParameterValidity(mgParams);
 
