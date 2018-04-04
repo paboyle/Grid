@@ -367,13 +367,13 @@ namespace Grid {
   inline std::ostream & operator<<(std::ostream &os, const std::vector<T> &v)
   {
     os << "[";
-    for (auto &x: v)
+    for (unsigned int i = 0; i < v.size(); ++i)
     {
-      os << x << " ";
-    }
-    if (v.size() > 0)
-    {
-      os << "\b";
+      os << v[i];
+      if (i < v.size() - 1)
+      {
+        os << " ";
+      }
     }
     os << "]";
     
