@@ -328,7 +328,7 @@ class GridLimeWriter : public BinaryIO
       {
 	XmlWriter WR("","");
 	write(WR,object_name,object);
-	xmlstring = WR.XmlString();
+	xmlstring = WR.docString();
       }
       //    std::cout << "WriteLimeObject" << record_name <<std::endl;
       uint64_t nbytes = xmlstring.size();

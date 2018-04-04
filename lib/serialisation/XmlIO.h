@@ -55,8 +55,10 @@ namespace Grid
     void writeDefault(const std::string &s, const U &x);
     template <typename U>
     void writeDefault(const std::string &s, const std::vector<U> &x);
-    std::string XmlString(void);
+    std::string docString(void);
+    std::string string(void);
   private:
+    const std::string  indent_{"  "};
     pugi::xml_document doc_;
     pugi::xml_node     node_;
     std::string        fileName_;

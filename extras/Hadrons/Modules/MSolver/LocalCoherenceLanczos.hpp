@@ -148,6 +148,8 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::execute(void)
     auto &coarsePar = par().coarseParams;
     auto &epack     = envGetDerived(BasePack, CoarsePack, getName());
 
+    epack.record.operatorPar = vm().getModule(par().action)->parString();
+    epack.record.solverPar   = parString();
     envGetTmp(LCL, solver);
     LOG(Message) << "Performing fine grid IRL -- Nstop= " 
                  << finePar.Nstop << ", Nk= " << finePar.Nk << ", Nm= " 
@@ -173,10 +175,10 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::execute(void)
                           coarsePar.MinRes);
         solver.testCoarse(coarsePar.resid*100.0, par().smoother, 
                         par().coarseRelaxTol);
-    }
-    if (!par().output.empty())
-    {
-        epack.writeCoarse(par().output, vm().getTrajectory());
+        if (!par().output.empty())
+        {
+            epack.writeCoarse(par().output, vm().getTrajectory());
+        }
     }
 }
 

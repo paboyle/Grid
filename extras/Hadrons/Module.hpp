@@ -172,6 +172,8 @@ public:
     // parse parameters
     virtual void parseParameters(XmlReader &reader, const std::string name) = 0;
     virtual void saveParameters(XmlWriter &writer, const std::string name) = 0;
+    // parameter string
+    virtual std::string parString(void) const = 0;
     // setup
     virtual void setup(void) {};
     virtual void execute(void) = 0;
@@ -200,9 +202,11 @@ public:
     // parse parameters
     virtual void parseParameters(XmlReader &reader, const std::string name);
     virtual void saveParameters(XmlWriter &writer, const std::string name);
+    // parameter string
+    virtual std::string parString(void) const;
     // parameter access
-    const P & par(void) const;
-    void      setPar(const P &par);
+    const P &   par(void) const;
+    void        setPar(const P &par);
 private:
     P par_;
 };
@@ -225,6 +229,8 @@ public:
         push(writer, "options");
         pop(writer);
     };
+    // parameter string (empty)
+    virtual std::string parString(void) const {return "";};
 };
 
 /******************************************************************************
@@ -245,6 +251,17 @@ template <typename P>
 void Module<P>::saveParameters(XmlWriter &writer, const std::string name)
 {
     write(writer, name, par_);
+}
+
+template <typename P>
+std::string Module<P>::parString(void) const
+{
+    std::string xmlstring;
+	XmlWriter   writer("","");
+
+	write(writer, par_.SerialisableClassName(), par_);
+
+	return writer.string();
 }
 
 template <typename P>

@@ -44,7 +44,7 @@ XmlWriter::XmlWriter(const std::string &fileName, std::string toplev) : fileName
 XmlWriter::~XmlWriter(void)
 {
   if ( fileName_ != std::string("") ) { 
-    doc_.save_file(fileName_.c_str(), "  ");
+    doc_.save_file(fileName_.c_str(), indent_.c_str());
   }
 }
 
@@ -57,10 +57,18 @@ void XmlWriter::pop(void)
 {
   node_ = node_.parent();
 }
-std::string XmlWriter::XmlString(void)
+
+std::string XmlWriter::docString(void)
 {
   std::ostringstream oss; 
-  doc_.save(oss);
+  doc_.save(oss, indent_.c_str());
+  return oss.str();
+}
+
+std::string XmlWriter::string(void)
+{
+  std::ostringstream oss; 
+  doc_.save(oss, indent_.c_str(), pugi::format_default | pugi::format_no_declaration);
   return oss.str();
 }
 
