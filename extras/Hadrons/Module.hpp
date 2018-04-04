@@ -256,12 +256,11 @@ void Module<P>::saveParameters(XmlWriter &writer, const std::string name)
 template <typename P>
 std::string Module<P>::parString(void) const
 {
-    std::string xmlstring;
-	XmlWriter   writer("","");
+    std::ostringstream s;
 
-	write(writer, par_.SerialisableClassName(), par_);
+    s << par();
 
-	return writer.string();
+    return s.str();
 }
 
 template <typename P>
