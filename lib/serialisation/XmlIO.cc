@@ -95,22 +95,6 @@ std::string XmlWriter::string(void)
   return oss.str();
 }
 
-XmlReader::XmlReader(const char *xmlstring,std::string toplev) : fileName_("")
-{
-  pugi::xml_parse_result result;
-  result = doc_.load_string(xmlstring);
-  if ( !result ) {
-    std::cerr << "XML error description (from char *): " << result.description() << "\nXML\n"<< xmlstring << "\n";
-    std::cerr << "XML error offset      (from char *) " << result.offset         << "\nXML\n"<< xmlstring <<"\n";
-    abort();
-  }
-  if ( toplev == std::string("") ) {
-    node_ = doc_;
-  } else { 
-    node_ = doc_.child(toplev.c_str());
-  }
-}
-
 // Reader implementation ///////////////////////////////////////////////////////
 XmlReader::XmlReader(const std::string &s,  const bool isBuffer, 
                      std::string toplev) 
