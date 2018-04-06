@@ -44,11 +44,9 @@ class EigenPack
 {
 public:
     typedef F Field;
-    struct PackRecord: Serializable
+    struct PackRecord
     {
-        GRID_SERIALIZABLE_CLASS_MEMBERS(PackRecord,
-                                        std::string, operatorPar,
-                                        std::string, solverPar);
+        std::string operatorXml, solverXml;
     };
     struct VecRecord: Serializable
     {
@@ -116,7 +114,7 @@ protected:
         ScidacReader    binReader;
 
         binReader.open(filename);
-        binReader.readScidacFileRecord(evec[0]._grid, record);
+        binReader.skipPastObjectRecord(SCIDAC_FILE_XML);
         for(int k = 0; k < size; ++k) 
         {
             VecRecord vecRecord;
@@ -136,10 +134,13 @@ protected:
     void basicWrite(const std::string filename, std::vector<T> &evec, 
                     const unsigned int size)
     {
-        ScidacWriter    binWriter(evec[0]._grid->IsBoss());
+        ScidacWriter binWriter(evec[0]._grid->IsBoss());
+        XmlWriter    xmlWriter("", "");   
 
+        xmlWriter.pushXmlString(record.operatorXml);
+        xmlWriter.pushXmlString(record.solverXml);
+        binWriter.writeLimeObject(1, 1, xmlWriter, "parameters", SCIDAC_FILE_XML);
         binWriter.open(filename);
-        binWriter.writeScidacFileRecord(evec[0]._grid, record);
         for(int k = 0; k < size; ++k) 
         {
             VecRecord vecRecord;

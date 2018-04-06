@@ -320,16 +320,11 @@ class GridLimeWriter : public BinaryIO
   ////////////////////////////////////////////
   // Write a generic serialisable object
   ////////////////////////////////////////////
-  template<class serialisable_object>
-  void writeLimeObject(int MB,int ME,serialisable_object &object,std::string object_name,std::string record_name)
+  void writeLimeObject(int MB,int ME,XmlWriter &writer,std::string object_name,std::string record_name)
   {
     if ( boss_node ) {
-      std::string xmlstring;
-      {
-	XmlWriter WR("","");
-	write(WR,object_name,object);
-	xmlstring = WR.docString();
-      }
+      std::string xmlstring = writer.docString();
+
       //    std::cout << "WriteLimeObject" << record_name <<std::endl;
       uint64_t nbytes = xmlstring.size();
       //    std::cout << " xmlstring "<< nbytes<< " " << xmlstring <<std::endl;
@@ -342,6 +337,15 @@ class GridLimeWriter : public BinaryIO
       err=limeWriterCloseRecord(LimeW);                       assert(err>=0);
       limeDestroyHeader(h);
     }
+  }
+
+  template<class serialisable_object>
+  void writeLimeObject(int MB,int ME,serialisable_object &object,std::string object_name,std::string record_name)
+  {
+    XmlWriter WR("","");
+
+    write(WR,object_name,object);
+    writeLimeObject(MB, ME, WR, object_name, record_name);
   }
   ////////////////////////////////////////////////////
   // Write a generic lattice field and csum
