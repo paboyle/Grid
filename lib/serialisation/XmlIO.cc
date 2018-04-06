@@ -75,6 +75,7 @@ void XmlWriter::pushXmlString(const std::string &s)
   {
       node_ = node_.append_copy(child);
   }
+  pop();
 }
 
 void XmlWriter::pop(void)
