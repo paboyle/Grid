@@ -152,6 +152,9 @@ void TRBPrecCG<FImpl, nBasis>::setup(void)
         {
             auto &epack = envGetDerived(EPack, CoarseEPack, par().eigenPack);
             
+            LOG(Message) << "using low-mode deflation with coarse eigenpack '"
+                         << par().eigenPack << "' (" 
+                         << epack.evecCoarse.size() << " modes)" << std::endl;
             guesser.reset(new CoarseGuesser(epack.evec, epack.evecCoarse,
                                             epack.evalCoarse));
         }
@@ -159,6 +162,9 @@ void TRBPrecCG<FImpl, nBasis>::setup(void)
         {
             auto &epack = envGet(EPack, par().eigenPack);
 
+            LOG(Message) << "using low-mode deflation with eigenpack '"
+                         << par().eigenPack << "' (" 
+                         << epack.evec.size() << " modes)" << std::endl;
             guesser.reset(new FineGuesser(epack.evec, epack.eval));
         }
     }

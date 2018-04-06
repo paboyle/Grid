@@ -119,6 +119,7 @@ protected:
         {
             VecRecord vecRecord;
 
+            LOG(Message) << "Reading eigenvector " << k << std::endl;
             binReader.readScidacFieldRecord(evec[k], vecRecord);
             if (vecRecord.index != k)
             {
@@ -147,6 +148,7 @@ protected:
 
             vecRecord.index = k;
             vecRecord.eval  = eval[k];
+            LOG(Message) << "Writing eigenvector " << k << std::endl;
             binWriter.writeScidacFieldRecord(evec[k], vecRecord);
         }
         binWriter.close();
