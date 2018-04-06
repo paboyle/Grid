@@ -135,7 +135,7 @@ protected:
                     const unsigned int size)
     {
         ScidacWriter binWriter(evec[0]._grid->IsBoss());
-        XmlWriter    xmlWriter("", "");   
+        XmlWriter    xmlWriter("", "eigenPackPar");   
 
         xmlWriter.pushXmlString(record.operatorXml);
         xmlWriter.pushXmlString(record.solverXml);
