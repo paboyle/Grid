@@ -30,6 +30,17 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace Grid;
 
+void Grid::xmlCheckParse(const pugi::xml_parse_result &result, const std::string name)
+{
+  if (!result) 
+  {
+    std::cerr << "XML parsing error for " << name << std::endl;
+    std::cerr << "XML error description: " << result.description() << std::endl;
+    std::cerr << "XML error offset     : " << result.offset << std::endl;
+    abort();
+  }
+}
+
 // Writer implementation ///////////////////////////////////////////////////////
 XmlWriter::XmlWriter(const std::string &fileName, std::string toplev) : fileName_(fileName)
 {
@@ -51,6 +62,18 @@ XmlWriter::~XmlWriter(void)
 void XmlWriter::push(const std::string &s)
 {
   node_ = node_.append_child(s.c_str());
+}
+
+void XmlWriter::pushXmlString(const std::string &s)
+{
+  pugi::xml_document doc;
+  auto               result = doc.load_buffer(s.c_str(), s.size());
+
+  xmlCheckParse(result, "fragment\n'" + s +"'");
+  for (pugi::xml_node child = doc.first_child(); child; child = child.next_sibling())
+  {
+      node_ = node_.append_copy(child);
+  }
 }
 
 void XmlWriter::pop(void)
@@ -89,17 +112,25 @@ XmlReader::XmlReader(const char *xmlstring,std::string toplev) : fileName_("")
 }
 
 // Reader implementation ///////////////////////////////////////////////////////
-XmlReader::XmlReader(const std::string &fileName,std::string toplev) : fileName_(fileName)
+XmlReader::XmlReader(const std::string &s,  const bool isBuffer, 
+                     std::string toplev) 
 {
   pugi::xml_parse_result result;
-  result = doc_.load_file(fileName_.c_str());
-  if ( !result ) {
-    std::cerr << "XML error description: " << result.description() <<" "<< fileName_ <<"\n";
-    std::cerr << "XML error offset     : " << result.offset        <<" "<< fileName_ <<"\n";
-    abort();
+  
+  if (isBuffer)
+  {
+    fileName_ = "<string>";
+    result    = doc_.load_string(s.c_str());
+    xmlCheckParse(result, "string\n'" + s + "'");
+  }
+  else
+  {
+    fileName_ = s;
+    result    = doc_.load_file(s.c_str());
+    xmlCheckParse(result, "file '" + fileName_ + "'");
   }
   if ( toplev == std::string("") ) {
-    node_ = doc_;
+  node_ = doc_;
   } else { 
     node_ = doc_.child(toplev.c_str());
   }
@@ -136,7 +167,6 @@ bool XmlReader::nextElement(const std::string &s)
   {
     return false;
   }
-
 }
 
 template <>
