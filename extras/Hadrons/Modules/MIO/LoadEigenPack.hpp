@@ -112,6 +112,7 @@ void TLoadEigenPack<Pack>::execute(void)
     auto &epack = envGetDerived(BasePack, Pack, getName());
 
     epack.read(par().filestem, vm().getTrajectory());
+    epack.eval.resize(par().size);
 }
 
 END_MODULE_NAMESPACE
