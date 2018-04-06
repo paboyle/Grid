@@ -57,7 +57,7 @@ public:
     virtual ~GeneticScheduler(void) = default;
     // access
     const Gene & getMinSchedule(void);
-    int          getMinValue(void);
+    V            getMinValue(void);
     // breed a new generation
     void nextGeneration(void);
     // heuristic benchmarks
@@ -116,7 +116,7 @@ GeneticScheduler<V, T>::getMinSchedule(void)
 }
 
 template <typename V, typename T>
-int GeneticScheduler<V, T>::getMinValue(void)
+V GeneticScheduler<V, T>::getMinValue(void)
 {
     return population_.begin()->first;
 }
