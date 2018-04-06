@@ -248,7 +248,6 @@ class GridLimeReader : public BinaryIO {
   template<class serialisable_object>
   void readLimeObject(serialisable_object &object,std::string object_name,std::string record_name)
   {
-    std::string xmlstring;
     // should this be a do while; can we miss a first record??
     while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
 
@@ -262,7 +261,8 @@ class GridLimeReader : public BinaryIO {
 	limeReaderReadData((void *)&xmlc[0], &nbytes, LimeR);    
 	//	std::cout << GridLogMessage<< " readLimeObject matches XML " << &xmlc[0] <<std::endl;
 
-	XmlReader RD(&xmlc[0],"");
+  std::string xmlstring(&xmlc[0]);
+	XmlReader RD(xmlstring, true, "");
 	read(RD,object_name,object);
 	return;
       }
@@ -698,9 +698,11 @@ class IldgReader : public GridLimeReader {
 
 	//////////////////////////////////
 	// ILDG format record
+
+  std::string xmlstring(&xmlc[0]);
 	if ( !strncmp(limeReaderType(LimeR), ILDG_FORMAT,strlen(ILDG_FORMAT)) ) { 
 
-	  XmlReader RD(&xmlc[0],"");
+	  XmlReader RD(xmlstring, true, "");
 	  read(RD,"ildgFormat",ildgFormat_);
 
 	  if ( ildgFormat_.precision == 64 ) format = std::string("IEEE64BIG");
@@ -715,13 +717,13 @@ class IldgReader : public GridLimeReader {
 	}
 
 	if ( !strncmp(limeReaderType(LimeR), ILDG_DATA_LFN,strlen(ILDG_DATA_LFN)) ) {
-	  FieldMetaData_.ildg_lfn = std::string(&xmlc[0]);
+	  FieldMetaData_.ildg_lfn = xmlstring;
 	  found_ildgLFN = 1;
 	}
 
 	if ( !strncmp(limeReaderType(LimeR), GRID_FORMAT,strlen(ILDG_FORMAT)) ) { 
 
-	  XmlReader RD(&xmlc[0],"");
+	  XmlReader RD(xmlstring, true, "");
 	  read(RD,"FieldMetaData",FieldMetaData_);
 
 	  format = FieldMetaData_.floating_point;
@@ -735,18 +737,17 @@ class IldgReader : public GridLimeReader {
 	}
 
 	if ( !strncmp(limeReaderType(LimeR), SCIDAC_RECORD_XML,strlen(SCIDAC_RECORD_XML)) ) { 
-	  std::string xmls(&xmlc[0]);
 	  // is it a USQCD info field
-	  if ( xmls.find(std::string("usqcdInfo")) != std::string::npos ) { 
+	  if ( xmlstring.find(std::string("usqcdInfo")) != std::string::npos ) { 
 	    //	    std::cout << GridLogMessage<<"...found a usqcdInfo field"<<std::endl;
-	    XmlReader RD(&xmlc[0],"");
+	    XmlReader RD(xmlstring, true, "");
 	    read(RD,"usqcdInfo",usqcdInfo_);
 	    found_usqcdInfo = 1;
 	  }
 	}
 
 	if ( !strncmp(limeReaderType(LimeR), SCIDAC_CHECKSUM,strlen(SCIDAC_CHECKSUM)) ) { 
-	  XmlReader RD(&xmlc[0],"");
+	  XmlReader RD(xmlstring, true, "");
 	  read(RD,"scidacChecksum",scidacChecksum_);
 	  found_scidacChecksum = 1;
 	}

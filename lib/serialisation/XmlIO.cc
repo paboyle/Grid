@@ -31,6 +31,17 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 using namespace Grid;
 using namespace std;
 
+void Grid::xmlCheckParse(const pugi::xml_parse_result &result, const std::string name)
+{
+  if (!result) 
+  {
+    std::cerr << "XML parsing error for " << name << std::endl;
+    std::cerr << "XML error description: " << result.description() << std::endl;
+    std::cerr << "XML error offset     : " << result.offset << std::endl;
+    abort();
+  }
+}
+
 // Writer implementation ///////////////////////////////////////////////////////
 XmlWriter::XmlWriter(const string &fileName, string toplev) : fileName_(fileName)
 {
@@ -56,7 +67,14 @@ void XmlWriter::push(const string &s)
 
 void XmlWriter::pushXmlString(const std::string &s)
 {
+  pugi::xml_document doc;
+  auto               result = doc.load_buffer(s.c_str(), s.size());
 
+  xmlCheckParse(result, "fragment\n'" + s +"'");
+  for (pugi::xml_node child = doc.first_child(); child; child = child.next_sibling())
+  {
+      node_ = node_.append_copy(child);
+  }
 }
 
 void XmlWriter::pop(void)
@@ -71,43 +89,28 @@ std::string XmlWriter::XmlString(void)
 }
 
 // Reader implementation ///////////////////////////////////////////////////////
-void XmlReader::initDoc(const std::string &toplev)
+XmlReader::XmlReader(const std::string &s,  const bool isBuffer, 
+                     std::string toplev) 
 {
+  pugi::xml_parse_result result;
+  
+  if (isBuffer)
+  {
+    fileName_ = "<string>";
+    result    = doc_.load_string(s.c_str());
+    xmlCheckParse(result, "string\n'" + s + "'");
+  }
+  else
+  {
+    fileName_ = s;
+    result    = doc_.load_file(s.c_str());
+    xmlCheckParse(result, "file '" + fileName_ + "'");
+  }
   if ( toplev == std::string("") ) {
   node_ = doc_;
   } else { 
     node_ = doc_.child(toplev.c_str());
   }
-}
-
-XmlReader::XmlReader(const char *xmlstring, const std::string toplev) 
-: fileName_("")
-{
-  auto result = doc_.load_string(xmlstring);
-
-  if ( !result ) {
-    std::cerr << "XML error description (from char *): " 
-              << result.description() << "\nXML\n"<< xmlstring << "\n";
-    std::cerr << "XML error offset      (from char *) " 
-              << result.offset         << "\nXML\n"<< xmlstring << std::endl;
-    abort();
-  }
-  initDoc(toplev);
-}
-
-XmlReader::XmlReader(const std::string &fileName, std::string toplev) 
-: fileName_(fileName)
-{
-  auto result = doc_.load_file(fileName_.c_str());
-
-  if ( !result ) {
-    std::cerr << "XML error description: " 
-              << result.description() <<" "<< fileName_ <<"\n";
-    std::cerr << "XML error offset     : " 
-              << result.offset        <<" "<< fileName_ << std::endl;
-    abort();
-  }
-  initDoc(toplev);
 }
 
 bool XmlReader::push(const std::string &s)
