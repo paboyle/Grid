@@ -107,6 +107,11 @@ std::vector<std::string> TRBPrecCG<FImpl, nBasis>::getReference(void)
 {
     std::vector<std::string> ref = {par().action};
     
+    if (!par().eigenPack.empty())
+    {
+        ref.push_back(par().eigenPack);
+    }
+
     return ref;
 }
 
