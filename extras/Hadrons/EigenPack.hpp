@@ -140,8 +140,8 @@ protected:
 
         xmlWriter.pushXmlString(record.operatorXml);
         xmlWriter.pushXmlString(record.solverXml);
-        binWriter.writeLimeObject(1, 1, xmlWriter, "parameters", SCIDAC_FILE_XML);
         binWriter.open(filename);
+        binWriter.writeLimeObject(1, 1, xmlWriter, "parameters", SCIDAC_FILE_XML);
         for(int k = 0; k < size; ++k) 
         {
             VecRecord vecRecord;
