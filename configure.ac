@@ -234,6 +234,20 @@ AC_ARG_ENABLE([gen-simd-width],
             [ac_gen_simd_width=$enable_gen_simd_width],
             [ac_gen_simd_width=32])
 
+AC_ARG_ENABLE([gen-scalar],
+            [AS_HELP_STRING([--enable-gen-scalar=yes|no],
+            [enable generic scalar implementation])],
+            [ac_gen_scalar=$enable_gen_scalar],
+            [ac_gen_scalar=no])
+
+case ${ac_gen_scalar} in
+  yes)
+    AC_DEFINE([GENERIC_SCALAR],[1],[Use scalar data parallel loops])
+  ;;
+  *)
+  ;;
+esac
+
 ##################### Compiler dependent choices
 case ${CXX} in 
   nvcc) 

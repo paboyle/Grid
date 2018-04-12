@@ -138,6 +138,7 @@ public:
   Vector_type v;
 
   static accelerator_inline constexpr int Nsimd(void) {
+    static_assert( (sizeof(Vector_type) / sizeof(Scalar_type) >= 1), " size mismatch " );
     return sizeof(Vector_type) / sizeof(Scalar_type);
   }
 
@@ -831,12 +832,15 @@ accelerator_inline void precisionChange(vComplexD *out,vComplexH *in,int nvec){ 
 accelerator_inline void precisionChange(vComplexF *out,vComplexH *in,int nvec){ precisionChange((vRealF *)out,(vRealH *)in,nvec);}
 
 // Check our vector types are of an appropriate size.
+
 #if defined QPX
 static_assert(2*sizeof(SIMD_Ftype) == sizeof(SIMD_Dtype), "SIMD vector lengths incorrect");
 static_assert(2*sizeof(SIMD_Ftype) == sizeof(SIMD_Itype), "SIMD vector lengths incorrect");
 #else
+#ifndef GENERIC_SCALAR
 static_assert(sizeof(SIMD_Ftype) == sizeof(SIMD_Dtype), "SIMD vector lengths incorrect");
 static_assert(sizeof(SIMD_Ftype) == sizeof(SIMD_Itype), "SIMD vector lengths incorrect");
+#endif
 #endif
 
 /////////////////////////////////////////

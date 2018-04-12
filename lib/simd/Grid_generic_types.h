@@ -29,9 +29,10 @@ Author: Antonin Portelli <antonin.portelli@me.com>
 
 static_assert(GEN_SIMD_WIDTH % 16u == 0, "SIMD vector size is not an integer multiple of 16 bytes");
 
-//#define VECTOR_LOOPS
+#undef VECTOR_LOOPS
 
 // playing with compiler pragmas
+
 #ifdef VECTOR_LOOPS
 #ifdef __clang__
 #define VECTOR_FOR(i, w, inc)						\
@@ -53,6 +54,31 @@ static_assert(GEN_SIMD_WIDTH % 16u == 0, "SIMD vector size is not an integer mul
 NAMESPACE_BEGIN(Grid);
 NAMESPACE_BEGIN(Optimization);
 
+#ifdef GENERIC_SCALAR
+
+// type traits giving the number of elements for each vector type
+template <typename T> struct W;
+template <> struct W<double> {
+  constexpr static unsigned int c = 1;
+  constexpr static unsigned int r = 2;
+};
+template <> struct W<float> {
+  constexpr static unsigned int c = 1;
+  constexpr static unsigned int r = 2;
+};
+template <> struct W<Integer> {
+  constexpr static unsigned int r = 1;
+};
+template <> struct W<uint16_t> {
+  constexpr static unsigned int c = 1;
+  constexpr static unsigned int r = 2;
+};
+// SIMD vector types
+template <typename T>
+struct vec {
+  T v[W<T>::r];
+};
+#else 
 // type traits giving the number of elements for each vector type
 template <typename T> struct W;
 template <> struct W<double> {
@@ -70,12 +96,12 @@ template <> struct W<uint16_t> {
   constexpr static unsigned int c = GEN_SIMD_WIDTH/4u;
   constexpr static unsigned int r = GEN_SIMD_WIDTH/2u;
 };
-  
 // SIMD vector types
 template <typename T>
 struct vec {
   alignas(GEN_SIMD_WIDTH) T v[W<T>::r];
 };
+#endif
 
 typedef vec<float>     vecf;
 typedef vec<double>    vecd;
