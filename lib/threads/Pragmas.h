@@ -77,7 +77,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 //////////////////////////////////////////////////////////////////////////////////
 #ifdef GRID_NVCC
 
-constexpr uint32_t gpu_threads = 8;
+constexpr uint32_t gpu_threads = 32;
 
 template<typename lambda>  __global__
 void LambdaApply(uint64_t base, uint64_t Num, lambda Lambda)
@@ -98,7 +98,7 @@ void LambdaApply(uint64_t base, uint64_t Num, lambda Lambda)
   Iterator num  = range.end();						\
   Iterator base = range.begin();					\
   Iterator num_block = (num + gpu_threads - 1)/gpu_threads;		\
-  LambdaApply<<<num_block,gpu_threads>>>(base,num_,lambda);		\
+  LambdaApply<<<num_block,gpu_threads>>>(base,num,lambda);		\
   cudaDeviceSynchronize();						\
   cudaError err = cudaGetLastError();					\
   if ( cudaSuccess != err ) {						\
