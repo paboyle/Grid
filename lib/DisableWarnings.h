@@ -50,7 +50,14 @@ directory
 #pragma diag_suppress extra_semicolon
 
 //Eigen only
-#define EIGEN_DONT_VECTORIZE
+#endif
+
+// Disable vectorisation in Eigen on the Power8/9 and PowerPC
+#ifdef  __ALTIVEC__
+#define  EIGEN_DONT_VECTORIZE
+#endif
+#ifdef  __VSX__
+#define  EIGEN_DONT_VECTORIZE
 #endif
 
 #endif
