@@ -28,6 +28,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 #include <Grid/Hadrons/Application.hpp>
 #include <Grid/Hadrons/GeneticScheduler.hpp>
+#include <Grid/Hadrons/Modules.hpp>
 
 using namespace Grid;
 using namespace QCD;
