@@ -45,6 +45,7 @@ class TwoPointPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(TwoPointPar,
                                     std::vector<std::string>, op,
+                                    std::vector<std::string>, mom,
                                     std::string,              output);
 };
 
@@ -52,14 +53,17 @@ template <typename SImpl>
 class TTwoPoint: public Module<TwoPointPar>
 {
 public:
-    typedef typename SImpl::Field        Field;
-    typedef typename SImpl::ComplexField ComplexField;
+    typedef typename SImpl::Field          Field;
+    typedef typename SImpl::ComplexField   ComplexField;
+    typedef          std::vector<TComplex> SlicedOp;
+
     class Result: Serializable
     {
     public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
                                         std::string, sink,
                                         std::string, source,
+                                        std::vector<int>, mom,
                                         std::vector<Complex>, data);
     };
 public:
@@ -79,6 +83,8 @@ private:
     template <class SinkSite, class SourceSite>
     std::vector<Complex> makeTwoPoint(const std::vector<SinkSite>   &sink,
                                       const std::vector<SourceSite> &source);
+private:
+    std::vector<std::vector<int>> mom_;
 };
 
 MODULE_REGISTER_NS(TwoPointSU2, TTwoPoint<ScalarNxNAdjImplR<2>>, MScalarSUN);
@@ -115,9 +121,19 @@ std::vector<std::string> TTwoPoint<SImpl>::getOutput(void)
 template <typename SImpl>
 void TTwoPoint<SImpl>::setup(void)
 {
-    const unsigned int nt = env().getDim().back();
-    envTmp(std::vector<std::vector<TComplex>>, "slicedOp", 1, par().op.size(), 
-           std::vector<TComplex>(nt));
+    const unsigned int nd = env().getDim().size();
+
+    mom_.resize(par().mom.size());
+    for (unsigned int i = 0; i < mom_.size(); ++i)
+    {
+        mom_[i] = strToVec<int>(par().mom[i]);
+        if (mom_[i].size() != nd - 1)
+        {
+            HADRON_ERROR(Size, "momentum number of components different from " 
+                               + std::to_string(nd-1));
+        }
+    }
+    envTmpLat(ComplexField, "ftBuf");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -130,24 +146,48 @@ void TTwoPoint<SImpl>::execute(void)
         LOG(Message) << "  '" << o << "'" << std::endl;
     }
 
-    const unsigned int  nd = env().getDim().size();
-    std::vector<Result> result;
-    
-    envGetTmp(std::vector<std::vector<TComplex>>, slicedOp);
-    for (unsigned int i = 0; i < par().op.size(); ++i)
+    const unsigned int                 nd   = env().getDim().size();
+    const unsigned int                 nt   = env().getDim().back();
+    const unsigned int                 nop  = par().op.size();
+    const unsigned int                 nmom = mom_.size();
+    std::vector<int>                   dMask(nd, 1);
+    std::vector<Result>                result;
+    std::vector<std::vector<SlicedOp>> slicedOp(nop);
+    FFT                                fft(env().getGrid());
+
+    envGetTmp(ComplexField, ftBuf);
+    dMask[nd - 1] = 0;
+    for (unsigned int i = 0; i < nop; ++i)
     {
         auto &op = envGet(ComplexField, par().op[i]);
 
-        sliceSum(op, slicedOp[i], nd - 1);
+        slicedOp[i].resize(nmom);
+        LOG(Message) << "Operator '" << par().op[i] << "' FFT" << std::endl;
+        fft.FFT_dim_mask(ftBuf, op, dMask, FFT::forward);
+        for (unsigned int m = 0; m < nmom; ++m)
+        {
+            auto qt = mom_[m];
+
+            qt.resize(nd);
+            slicedOp[i][m].resize(nt);
+            for (unsigned int t = 0; t < nt; ++t)
+            {
+                qt[nd - 1] = t;
+                peekSite(slicedOp[i][m][t], ftBuf, qt);
+            }
+        }
     }
-    for (unsigned int i = 0; i < par().op.size(); ++i)
-    for (unsigned int j = 0; j < par().op.size(); ++j)
+    LOG(Message) << "Making contractions" << std::endl;
+    for (unsigned int m = 0; m < nmom; ++m)
+    for (unsigned int i = 0; i < nop; ++i)
+    for (unsigned int j = 0; j < nop; ++j)
     {
         Result r;
 
         r.sink   = par().op[i];
         r.source = par().op[j];
-        r.data   = makeTwoPoint(slicedOp[i], slicedOp[j]);
+        r.mom    = mom_[m];
+        r.data   = makeTwoPoint(slicedOp[i][m], slicedOp[j][m]);
         result.push_back(r);
     }
     saveResult(par().output, "twopt", result);
@@ -169,7 +209,7 @@ std::vector<Complex> TTwoPoint<SImpl>::makeTwoPoint(
     {
         for (unsigned int t  = 0; t < nt; ++t)
         {
-            res[dt] += TensorRemove(trace(sink[(t+dt)%nt]*source[t]));
+            res[dt] += TensorRemove(trace(sink[(t+dt)%nt]*adj(source[t])));
         }
         res[dt] *= 1./static_cast<double>(nt);
     }
