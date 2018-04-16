@@ -6,7 +6,7 @@ echo "-- deploying Eigen source..."
 cd lib
 rm -rf Eigen
 git clone https://github.com/eigenteam/eigen-git-mirror.git
-ln -s eigen-git-mirror/Eigen .
+mv eigen-git-mirror/Eigen .
 echo 'eigen_files =\' > Eigen.inc
 find Eigen -type f -print | sed 's/^/  /;$q;s/$/ \\/' >> Eigen.inc
 cd ..
