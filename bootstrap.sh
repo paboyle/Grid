@@ -7,6 +7,7 @@ cd lib
 rm -rf Eigen
 git clone https://github.com/eigenteam/eigen-git-mirror.git
 mv eigen-git-mirror/Eigen .
+rm -rf eigen-git-mirror
 echo 'eigen_files =\' > Eigen.inc
 find Eigen -type f -print | sed 's/^/  /;$q;s/$/ \\/' >> Eigen.inc
 cd ..
