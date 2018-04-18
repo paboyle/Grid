@@ -396,6 +396,27 @@ namespace Grid {
       amax=zolo_hi;
     }
 
+    template<class Impl>
+    void PartialFractionFermion5D<Impl>::ExportPhysicalFermionSolution(const FermionField &solution5d,FermionField &exported4d)
+    {
+      int Ls = this->Ls;
+      conformable(solution5d._grid,this->FermionGrid());
+      conformable(exported4d._grid,this->GaugeGrid());
+      ExtractSlice(exported4d, solution5d, Ls-1, Ls-1);
+    }
+    template<class Impl>
+    void PartialFractionFermion5D<Impl>::ImportPhysicalFermionSource(const FermionField &input4d,FermionField &imported5d)
+    {
+      int Ls = this->Ls;
+      conformable(imported5d._grid,this->FermionGrid());
+      conformable(input4d._grid   ,this->GaugeGrid());
+      FermionField tmp(this->FermionGrid());
+      tmp=zero;
+      InsertSlice(input4d, tmp, Ls-1, Ls-1);
+      tmp=Gamma(Gamma::Algebra::Gamma5)*tmp;
+      this->Dminus(tmp,imported5d);
+    }
+
       // Constructors
     template<class Impl>
     PartialFractionFermion5D<Impl>::PartialFractionFermion5D(GaugeField &_Umu,
