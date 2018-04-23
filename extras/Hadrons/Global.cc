@@ -57,8 +57,8 @@ void Hadrons::initLogger(void)
     GridLogIterative.setChanWidth(cw);
     GridLogDebug.setChanWidth(cw);
     GridLogIRL.setChanWidth(cw);
-    HadronsLogError.Active(GridLogError.isActive());
-    HadronsLogWarning.Active(GridLogWarning.isActive());
+    HadronsLogError.Active(true);
+    HadronsLogWarning.Active(true);
     HadronsLogMessage.Active(GridLogMessage.isActive());
     HadronsLogIterative.Active(GridLogIterative.isActive());
     HadronsLogDebug.Active(GridLogDebug.isActive());
