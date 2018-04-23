@@ -72,8 +72,8 @@ private:
     std::string momphName_;
 };
 
-MODULE_REGISTER_NS(Point,       TPoint<FIMPL>,        MSink);
-MODULE_REGISTER_NS(ScalarPoint, TPoint<ScalarImplCR>, MSink);
+MODULE_REGISTER_TMP(Point,       TPoint<FIMPL>,        MSink);
+MODULE_REGISTER_TMP(ScalarPoint, TPoint<ScalarImplCR>, MSink);
 
 /******************************************************************************
  *                          TPoint implementation                             *

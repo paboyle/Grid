@@ -79,8 +79,8 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Point,       TPoint<FIMPL>,        MSource);
-MODULE_REGISTER_NS(ScalarPoint, TPoint<ScalarImplCR>, MSource);
+MODULE_REGISTER_TMP(Point,       TPoint<FIMPL>,        MSource);
+MODULE_REGISTER_TMP(ScalarPoint, TPoint<ScalarImplCR>, MSource);
 
 /******************************************************************************
  *                       TPoint template implementation                       *

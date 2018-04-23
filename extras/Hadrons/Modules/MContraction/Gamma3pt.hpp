@@ -107,7 +107,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Gamma3pt, ARG(TGamma3pt<FIMPL, FIMPL, FIMPL>), MContraction);
+MODULE_REGISTER_TMP(Gamma3pt, ARG(TGamma3pt<FIMPL, FIMPL, FIMPL>), MContraction);
 
 /******************************************************************************
  *                       TGamma3pt implementation                             *

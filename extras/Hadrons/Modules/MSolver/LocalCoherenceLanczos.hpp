@@ -79,12 +79,8 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(LocalCoherenceLanczos, 
-    ARG(TLocalCoherenceLanczos<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), 
-    MSolver);
-MODULE_REGISTER_NS(ZLocalCoherenceLanczos, 
-    ARG(TLocalCoherenceLanczos<ZFIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), 
-    MSolver);
+MODULE_REGISTER_TMP(LocalCoherenceLanczos, ARG(TLocalCoherenceLanczos<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
+MODULE_REGISTER_TMP(ZLocalCoherenceLanczos, ARG(TLocalCoherenceLanczos<ZFIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
 
 /******************************************************************************
  *                 TLocalCoherenceLanczos implementation                      *

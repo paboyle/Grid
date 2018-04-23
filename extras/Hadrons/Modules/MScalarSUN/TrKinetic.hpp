@@ -76,11 +76,11 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(TrKineticSU2, TTrKinetic<ScalarNxNAdjImplR<2>>, MScalarSUN);
-MODULE_REGISTER_NS(TrKineticSU3, TTrKinetic<ScalarNxNAdjImplR<3>>, MScalarSUN);
-MODULE_REGISTER_NS(TrKineticSU4, TTrKinetic<ScalarNxNAdjImplR<4>>, MScalarSUN);
-MODULE_REGISTER_NS(TrKineticSU5, TTrKinetic<ScalarNxNAdjImplR<5>>, MScalarSUN);
-MODULE_REGISTER_NS(TrKineticSU6, TTrKinetic<ScalarNxNAdjImplR<6>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrKineticSU2, TTrKinetic<ScalarNxNAdjImplR<2>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrKineticSU3, TTrKinetic<ScalarNxNAdjImplR<3>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrKineticSU4, TTrKinetic<ScalarNxNAdjImplR<4>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrKineticSU5, TTrKinetic<ScalarNxNAdjImplR<5>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrKineticSU6, TTrKinetic<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
  *                      TTrKinetic implementation                             *

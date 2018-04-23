@@ -74,7 +74,7 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(WilsonClover, TWilsonClover<FIMPL>, MAction);
+MODULE_REGISTER_TMP(WilsonClover, TWilsonClover<FIMPL>, MAction);
 
 /******************************************************************************
  *                     TWilsonClover template implementation                        *

@@ -87,11 +87,11 @@ private:
     std::vector<std::vector<int>> mom_;
 };
 
-MODULE_REGISTER_NS(TwoPointSU2, TTwoPoint<ScalarNxNAdjImplR<2>>, MScalarSUN);
-MODULE_REGISTER_NS(TwoPointSU3, TTwoPoint<ScalarNxNAdjImplR<3>>, MScalarSUN);
-MODULE_REGISTER_NS(TwoPointSU4, TTwoPoint<ScalarNxNAdjImplR<4>>, MScalarSUN);
-MODULE_REGISTER_NS(TwoPointSU5, TTwoPoint<ScalarNxNAdjImplR<5>>, MScalarSUN);
-MODULE_REGISTER_NS(TwoPointSU6, TTwoPoint<ScalarNxNAdjImplR<6>>, MScalarSUN);
+MODULE_REGISTER_TMP(TwoPointSU2, TTwoPoint<ScalarNxNAdjImplR<2>>, MScalarSUN);
+MODULE_REGISTER_TMP(TwoPointSU3, TTwoPoint<ScalarNxNAdjImplR<3>>, MScalarSUN);
+MODULE_REGISTER_TMP(TwoPointSU4, TTwoPoint<ScalarNxNAdjImplR<4>>, MScalarSUN);
+MODULE_REGISTER_TMP(TwoPointSU5, TTwoPoint<ScalarNxNAdjImplR<5>>, MScalarSUN);
+MODULE_REGISTER_TMP(TwoPointSU6, TTwoPoint<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
  *                       TTwoPoint implementation                             *

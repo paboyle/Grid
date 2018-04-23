@@ -95,7 +95,7 @@ private:
     SolverFn     *solver_{nullptr};
 };
 
-MODULE_REGISTER_NS(GaugeProp, TGaugeProp<FIMPL>, MFermion);
+MODULE_REGISTER_TMP(GaugeProp, TGaugeProp<FIMPL>, MFermion);
 /******************************************************************************
  *                      TGaugeProp implementation                             *
  ******************************************************************************/

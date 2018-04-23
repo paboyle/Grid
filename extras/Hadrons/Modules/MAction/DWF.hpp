@@ -72,7 +72,8 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(DWF, TDWF<FIMPL>, MAction);
+extern template class TDWF<FIMPL>;
+MODULE_REGISTER_TMP(DWF, TDWF<FIMPL>, MAction);
 
 /******************************************************************************
  *                        DWF template implementation                         *

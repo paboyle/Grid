@@ -70,7 +70,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Smear, TSmear<FIMPL>, MSink);
+MODULE_REGISTER_TMP(Smear, TSmear<FIMPL>, MSink);
 
 /******************************************************************************
  *                          TSmear implementation                             *

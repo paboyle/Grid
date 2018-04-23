@@ -103,7 +103,7 @@ private:
     std::string SeqmomphName_;
 };
 
-MODULE_REGISTER_NS(SeqConserved, TSeqConserved<FIMPL>, MSource);
+MODULE_REGISTER_TMP(SeqConserved, TSeqConserved<FIMPL>, MSource);
 
 
 /******************************************************************************

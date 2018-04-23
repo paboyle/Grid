@@ -65,9 +65,9 @@ public:
     void execute(void);
 };
 
-//MODULE_REGISTER_NS(FundtoAdjoint,   TFundtoHirep<AdjointRepresentation>, MGauge);
-//MODULE_REGISTER_NS(FundtoTwoIndexSym, TFundtoHirep<TwoIndexSymmetricRepresentation>, MGauge);
-//MODULE_REGISTER_NS(FundtoTwoIndexAsym, TFundtoHirep<TwoIndexAntiSymmetricRepresentation>, MGauge);
+//MODULE_REGISTER_TMP(FundtoAdjoint,   TFundtoHirep<AdjointRepresentation>, MGauge);
+//MODULE_REGISTER_TMP(FundtoTwoIndexSym, TFundtoHirep<TwoIndexSymmetricRepresentation>, MGauge);
+//MODULE_REGISTER_TMP(FundtoTwoIndexAsym, TFundtoHirep<TwoIndexAntiSymmetricRepresentation>, MGauge);
 
 END_MODULE_NAMESPACE
 

@@ -73,8 +73,7 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(LoadCoarseFermionEigenPack, 
-    ARG(TLoadCoarseEigenPack<CoarseFermionEigenPack<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>>), MIO);
+MODULE_REGISTER_TMP(LoadCoarseFermionEigenPack, ARG(TLoadCoarseEigenPack<CoarseFermionEigenPack<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>>), MIO);
 
 /******************************************************************************
  *                 TLoadCoarseEigenPack implementation                             *

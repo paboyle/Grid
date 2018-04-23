@@ -82,7 +82,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(NoiseLoop, TNoiseLoop<FIMPL>, MLoop);
+MODULE_REGISTER_TMP(NoiseLoop, TNoiseLoop<FIMPL>, MLoop);
 
 /******************************************************************************
  *                 TNoiseLoop implementation                                  *

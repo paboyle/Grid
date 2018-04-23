@@ -109,7 +109,7 @@ protected:\
     /* execution */ \
     virtual void execute(void);\
 };\
-MODULE_REGISTER_NS(modname, T##modname, MContraction);
+MODULE_REGISTER(modname, T##modname, MContraction);
 
 END_MODULE_NAMESPACE
 

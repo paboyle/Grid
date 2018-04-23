@@ -62,7 +62,7 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(LoadNersc, TLoadNersc, MIO);
+MODULE_REGISTER(LoadNersc, TLoadNersc, MIO);
 
 END_MODULE_NAMESPACE
 

@@ -1,14 +1,47 @@
 modules_cc =\
   Modules/MContraction/WeakHamiltonianEye.cc \
+  Modules/MContraction/Baryon.cc \
+  Modules/MContraction/Meson.cc \
   Modules/MContraction/WeakNeutral4ptDisc.cc \
   Modules/MContraction/WeakHamiltonianNonEye.cc \
+  Modules/MContraction/WardIdentity.cc \
+  Modules/MContraction/DiscLoop.cc \
+  Modules/MContraction/Gamma3pt.cc \
+  Modules/MFermion/GaugeProp.cc \
+  Modules/MSource/Point.cc \
+  Modules/MSource/Wall.cc \
+  Modules/MSource/SeqConserved.cc \
+  Modules/MSource/SeqGamma.cc \
+  Modules/MSource/Z2.cc \
+  Modules/MSink/Point.cc \
+  Modules/MSink/Smear.cc \
+  Modules/MSolver/RBPrecCG.cc \
+  Modules/MSolver/LocalCoherenceLanczos.cc \
   Modules/MGauge/Unit.cc \
   Modules/MGauge/StochEm.cc \
   Modules/MGauge/Random.cc \
   Modules/MGauge/FundtoHirep.cc \
+  Modules/MUtilities/TestSeqGamma.cc \
+  Modules/MUtilities/TestSeqConserved.cc \
+  Modules/MLoop/NoiseLoop.cc \
   Modules/MScalar/FreeProp.cc \
   Modules/MScalar/ChargedProp.cc \
-  Modules/MIO/LoadNersc.cc
+  Modules/MAction/Wilson.cc \
+  Modules/MAction/ZMobiusDWF.cc \
+  Modules/MAction/WilsonClover.cc \
+  Modules/MAction/DWF.cc \
+  Modules/MScalarSUN/TrPhi.cc \
+  Modules/MScalarSUN/TrMag.cc \
+  Modules/MScalarSUN/TrKinetic.cc \
+  Modules/MScalarSUN/EMT.cc \
+  Modules/MScalarSUN/ShiftProbe.cc \
+  Modules/MScalarSUN/TransProj.cc \
+  Modules/MScalarSUN/TwoPoint.cc \
+  Modules/MScalarSUN/Div.cc \
+  Modules/MIO/LoadEigenPack.cc \
+  Modules/MIO/LoadBinary.cc \
+  Modules/MIO/LoadNersc.cc \
+  Modules/MIO/LoadCoarseEigenPack.cc
 
 modules_hpp =\
   Modules/MContraction/Baryon.hpp \

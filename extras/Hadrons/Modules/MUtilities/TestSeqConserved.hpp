@@ -88,7 +88,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(TestSeqConserved, TTestSeqConserved<FIMPL>, MUtilities);
+MODULE_REGISTER_TMP(TestSeqConserved, TTestSeqConserved<FIMPL>, MUtilities);
 
 /******************************************************************************
  *                     TTestSeqConserved implementation                       *

@@ -57,7 +57,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Random, TRandom, MGauge);
+MODULE_REGISTER(Random, TRandom, MGauge);
 
 END_MODULE_NAMESPACE
 

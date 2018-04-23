@@ -72,7 +72,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(TestSeqGamma, TTestSeqGamma<FIMPL>, MUtilities);
+MODULE_REGISTER_TMP(TestSeqGamma, TTestSeqGamma<FIMPL>, MUtilities);
 
 /******************************************************************************
  *                      TTestSeqGamma implementation                          *

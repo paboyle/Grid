@@ -85,8 +85,8 @@ private:
     std::string tName_;
 };
 
-MODULE_REGISTER_NS(Z2,       TZ2<FIMPL>,        MSource);
-MODULE_REGISTER_NS(ScalarZ2, TZ2<ScalarImplCR>, MSource);
+MODULE_REGISTER_TMP(Z2,       TZ2<FIMPL>,        MSource);
+MODULE_REGISTER_TMP(ScalarZ2, TZ2<ScalarImplCR>, MSource);
 
 /******************************************************************************
  *                       TZ2 template implementation                          *

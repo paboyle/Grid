@@ -31,7 +31,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/VirtualMachine.hpp>
-#include <Grid/Hadrons/Module.hpp>
+#include <Grid/Hadrons/Modules.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 

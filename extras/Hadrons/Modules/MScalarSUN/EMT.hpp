@@ -74,11 +74,11 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(EMTSU2, TEMT<ScalarNxNAdjImplR<2>>, MScalarSUN);
-MODULE_REGISTER_NS(EMTSU3, TEMT<ScalarNxNAdjImplR<3>>, MScalarSUN);
-MODULE_REGISTER_NS(EMTSU4, TEMT<ScalarNxNAdjImplR<4>>, MScalarSUN);
-MODULE_REGISTER_NS(EMTSU5, TEMT<ScalarNxNAdjImplR<5>>, MScalarSUN);
-MODULE_REGISTER_NS(EMTSU6, TEMT<ScalarNxNAdjImplR<6>>, MScalarSUN);
+MODULE_REGISTER_TMP(EMTSU2, TEMT<ScalarNxNAdjImplR<2>>, MScalarSUN);
+MODULE_REGISTER_TMP(EMTSU3, TEMT<ScalarNxNAdjImplR<3>>, MScalarSUN);
+MODULE_REGISTER_TMP(EMTSU4, TEMT<ScalarNxNAdjImplR<4>>, MScalarSUN);
+MODULE_REGISTER_TMP(EMTSU5, TEMT<ScalarNxNAdjImplR<5>>, MScalarSUN);
+MODULE_REGISTER_TMP(EMTSU6, TEMT<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
  *                           TEMT implementation                              *

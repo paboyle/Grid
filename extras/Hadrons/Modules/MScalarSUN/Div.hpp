@@ -76,11 +76,11 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(DivSU2, TDiv<ScalarNxNAdjImplR<2>>, MScalarSUN);
-MODULE_REGISTER_NS(DivSU3, TDiv<ScalarNxNAdjImplR<3>>, MScalarSUN);
-MODULE_REGISTER_NS(DivSU4, TDiv<ScalarNxNAdjImplR<4>>, MScalarSUN);
-MODULE_REGISTER_NS(DivSU5, TDiv<ScalarNxNAdjImplR<5>>, MScalarSUN);
-MODULE_REGISTER_NS(DivSU6, TDiv<ScalarNxNAdjImplR<6>>, MScalarSUN);
+MODULE_REGISTER_TMP(DivSU2, TDiv<ScalarNxNAdjImplR<2>>, MScalarSUN);
+MODULE_REGISTER_TMP(DivSU3, TDiv<ScalarNxNAdjImplR<3>>, MScalarSUN);
+MODULE_REGISTER_TMP(DivSU4, TDiv<ScalarNxNAdjImplR<4>>, MScalarSUN);
+MODULE_REGISTER_TMP(DivSU5, TDiv<ScalarNxNAdjImplR<5>>, MScalarSUN);
+MODULE_REGISTER_TMP(DivSU6, TDiv<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
  *                           TDiv implementation                              *

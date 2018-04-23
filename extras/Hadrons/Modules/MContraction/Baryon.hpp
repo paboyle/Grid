@@ -79,7 +79,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Baryon, ARG(TBaryon<FIMPL, FIMPL, FIMPL>), MContraction);
+MODULE_REGISTER_TMP(Baryon, ARG(TBaryon<FIMPL, FIMPL, FIMPL>), MContraction);
 
 /******************************************************************************
  *                         TBaryon implementation                             *

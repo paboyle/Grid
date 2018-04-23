@@ -70,7 +70,7 @@ private:
     bool        freePropDone_;
 };
 
-MODULE_REGISTER_NS(FreeProp, TFreeProp, MScalar);
+MODULE_REGISTER(FreeProp, TFreeProp, MScalar);
 
 END_MODULE_NAMESPACE
 

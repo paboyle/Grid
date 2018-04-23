@@ -70,7 +70,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(StochEm, TStochEm, MGauge);
+MODULE_REGISTER(StochEm, TStochEm, MGauge);
 
 END_MODULE_NAMESPACE
 

@@ -35,32 +35,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 BEGIN_HADRONS_NAMESPACE
 
 // module registration macros
-#define MODULE_REGISTER(mod, base)\
-class mod: public base\
-{\
-public:\
-    typedef base Base;\
-    using Base::Base;\
-    virtual std::string getRegisteredName(void)\
-    {\
-        return std::string(#mod);\
-    }\
-};\
-class mod##ModuleRegistrar\
-{\
-public:\
-    mod##ModuleRegistrar(void)\
-    {\
-        ModuleFactory &modFac = ModuleFactory::getInstance();\
-        modFac.registerBuilder(#mod, [&](const std::string name)\
-                              {\
-                                  return std::unique_ptr<mod>(new mod(name));\
-                              });\
-    }\
-};\
-static mod##ModuleRegistrar mod##ModuleRegistrarInstance;
-
-#define MODULE_REGISTER_NS(mod, base, ns)\
+#define MODULE_REGISTER(mod, base, ns)\
 class mod: public base\
 {\
 public:\
@@ -84,6 +59,10 @@ public:\
     }\
 };\
 static ns##mod##ModuleRegistrar ns##mod##ModuleRegistrarInstance;
+
+#define MODULE_REGISTER_TMP(mod, base, ns)\
+extern template class base;\
+MODULE_REGISTER(mod, ARG(base), ns);
 
 #define ARG(...) __VA_ARGS__
 #define MACRO_REDIRECT(arg1, arg2, arg3, macro, ...) macro
@@ -144,6 +123,12 @@ MACRO_REDIRECT(__VA_ARGS__, envTmpLat5, envTmpLat4)(__VA_ARGS__)
 if (env().getGrid()->IsBoss())\
 {\
     ResultWriter _writer(RESULT_FILE_NAME(ioStem));\
+    std::string  _basename = basename(ioStem);\
+    \
+    if (!mkdir(_basename))\
+    {\
+        HADRON_ERROR(Io, "cannot create directory '" + _basename + "'");\
+    }\
     write(_writer, name, result);\
 }
 

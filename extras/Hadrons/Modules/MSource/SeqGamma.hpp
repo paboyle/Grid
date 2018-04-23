@@ -90,7 +90,7 @@ private:
     std::string momphName_, tName_;
 };
 
-MODULE_REGISTER_NS(SeqGamma, TSeqGamma<FIMPL>, MSource);
+MODULE_REGISTER_TMP(SeqGamma, TSeqGamma<FIMPL>, MSource);
 
 /******************************************************************************
  *                         TSeqGamma implementation                           *

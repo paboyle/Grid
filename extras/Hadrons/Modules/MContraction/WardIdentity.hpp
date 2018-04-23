@@ -84,7 +84,7 @@ private:
     unsigned int Ls_;
 };
 
-MODULE_REGISTER_NS(WardIdentity, TWardIdentity<FIMPL>, MContraction);
+MODULE_REGISTER_TMP(WardIdentity, TWardIdentity<FIMPL>, MContraction);
 
 /******************************************************************************
  *                     TWardIdentity implementation                           *

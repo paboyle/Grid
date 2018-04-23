@@ -76,11 +76,11 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(TrMagSU2, TTrMag<ScalarNxNAdjImplR<2>>, MScalarSUN);
-MODULE_REGISTER_NS(TrMagSU3, TTrMag<ScalarNxNAdjImplR<3>>, MScalarSUN);
-MODULE_REGISTER_NS(TrMagSU4, TTrMag<ScalarNxNAdjImplR<4>>, MScalarSUN);
-MODULE_REGISTER_NS(TrMagSU5, TTrMag<ScalarNxNAdjImplR<5>>, MScalarSUN);
-MODULE_REGISTER_NS(TrMagSU6, TTrMag<ScalarNxNAdjImplR<6>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrMagSU2, TTrMag<ScalarNxNAdjImplR<2>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrMagSU3, TTrMag<ScalarNxNAdjImplR<3>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrMagSU4, TTrMag<ScalarNxNAdjImplR<4>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrMagSU5, TTrMag<ScalarNxNAdjImplR<5>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrMagSU6, TTrMag<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
  *                         TTrMag implementation                              *

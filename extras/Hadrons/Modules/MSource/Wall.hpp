@@ -84,7 +84,7 @@ private:
     std::string momphName_, tName_;
 };
 
-MODULE_REGISTER_NS(Wall, TWall<FIMPL>, MSource);
+MODULE_REGISTER_TMP(Wall, TWall<FIMPL>, MSource);
 
 /******************************************************************************
  *                 TWall implementation                                       *

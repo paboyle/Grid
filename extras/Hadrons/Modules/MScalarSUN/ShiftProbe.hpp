@@ -79,11 +79,11 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(ShiftProbeSU2, TShiftProbe<ScalarNxNAdjImplR<2>>, MScalarSUN);
-MODULE_REGISTER_NS(ShiftProbeSU3, TShiftProbe<ScalarNxNAdjImplR<3>>, MScalarSUN);
-MODULE_REGISTER_NS(ShiftProbeSU4, TShiftProbe<ScalarNxNAdjImplR<4>>, MScalarSUN);
-MODULE_REGISTER_NS(ShiftProbeSU5, TShiftProbe<ScalarNxNAdjImplR<5>>, MScalarSUN);
-MODULE_REGISTER_NS(ShiftProbeSU6, TShiftProbe<ScalarNxNAdjImplR<6>>, MScalarSUN);
+MODULE_REGISTER_TMP(ShiftProbeSU2, TShiftProbe<ScalarNxNAdjImplR<2>>, MScalarSUN);
+MODULE_REGISTER_TMP(ShiftProbeSU3, TShiftProbe<ScalarNxNAdjImplR<3>>, MScalarSUN);
+MODULE_REGISTER_TMP(ShiftProbeSU4, TShiftProbe<ScalarNxNAdjImplR<4>>, MScalarSUN);
+MODULE_REGISTER_TMP(ShiftProbeSU5, TShiftProbe<ScalarNxNAdjImplR<5>>, MScalarSUN);
+MODULE_REGISTER_TMP(ShiftProbeSU6, TShiftProbe<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
  *                        TShiftProbe implementation                          *

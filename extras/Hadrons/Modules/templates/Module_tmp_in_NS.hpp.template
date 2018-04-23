@@ -36,7 +36,7 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(___FILEBASENAME___, T___FILEBASENAME___<FIMPL>, ___NAMESPACE___);
+MODULE_REGISTER_TMP(___FILEBASENAME___, T___FILEBASENAME___<FIMPL>, ___NAMESPACE___);
 
 /******************************************************************************
  *                 T___FILEBASENAME___ implementation                             *

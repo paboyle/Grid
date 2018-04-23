@@ -68,7 +68,7 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(LoadFermionEigenPack, TLoadEigenPack<FermionEigenPack<FIMPL>>, MIO);
+MODULE_REGISTER_TMP(LoadFermionEigenPack, TLoadEigenPack<FermionEigenPack<FIMPL>>, MIO);
 
 /******************************************************************************
  *                    TLoadEigenPack implementation                           *

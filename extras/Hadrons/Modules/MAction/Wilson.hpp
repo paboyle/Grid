@@ -70,7 +70,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Wilson, TWilson<FIMPL>, MAction);
+MODULE_REGISTER_TMP(Wilson, TWilson<FIMPL>, MAction);
 
 /******************************************************************************
  *                     TWilson template implementation                        *

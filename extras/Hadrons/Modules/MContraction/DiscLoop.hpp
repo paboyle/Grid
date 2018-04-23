@@ -76,7 +76,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(DiscLoop, TDiscLoop<FIMPL>, MContraction);
+MODULE_REGISTER_TMP(DiscLoop, TDiscLoop<FIMPL>, MContraction);
 
 /******************************************************************************
  *                       TDiscLoop implementation                             *

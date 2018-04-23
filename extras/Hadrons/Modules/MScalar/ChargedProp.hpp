@@ -80,7 +80,7 @@ private:
     std::vector<ScalarField *> phase_;
 };
 
-MODULE_REGISTER_NS(ChargedProp, TChargedProp, MScalar);
+MODULE_REGISTER(ChargedProp, TChargedProp, MScalar);
 
 END_MODULE_NAMESPACE
 

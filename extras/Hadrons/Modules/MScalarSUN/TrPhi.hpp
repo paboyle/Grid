@@ -76,11 +76,11 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(TrPhiSU2, TTrPhi<ScalarNxNAdjImplR<2>>, MScalarSUN);
-MODULE_REGISTER_NS(TrPhiSU3, TTrPhi<ScalarNxNAdjImplR<3>>, MScalarSUN);
-MODULE_REGISTER_NS(TrPhiSU4, TTrPhi<ScalarNxNAdjImplR<4>>, MScalarSUN);
-MODULE_REGISTER_NS(TrPhiSU5, TTrPhi<ScalarNxNAdjImplR<5>>, MScalarSUN);
-MODULE_REGISTER_NS(TrPhiSU6, TTrPhi<ScalarNxNAdjImplR<6>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrPhiSU2, TTrPhi<ScalarNxNAdjImplR<2>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrPhiSU3, TTrPhi<ScalarNxNAdjImplR<3>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrPhiSU4, TTrPhi<ScalarNxNAdjImplR<4>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrPhiSU5, TTrPhi<ScalarNxNAdjImplR<5>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrPhiSU6, TTrPhi<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
  *                          TTrPhi implementation                             *

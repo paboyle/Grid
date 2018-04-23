@@ -35,7 +35,7 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(___FILEBASENAME___, T___FILEBASENAME___, ___NAMESPACE___);
+MODULE_REGISTER(___FILEBASENAME___, T___FILEBASENAME___, ___NAMESPACE___);
 
 END_MODULE_NAMESPACE
 
