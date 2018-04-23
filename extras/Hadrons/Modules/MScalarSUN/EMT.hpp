@@ -99,7 +99,10 @@ std::vector<std::string> TEMT<SImpl>::getInput(void)
     for (unsigned int nu = mu; nu < env().getNd(); ++nu)
     {
         in.push_back(varName(par().kinetic, mu, nu));
-        in.push_back(varName(par().improvement, mu, nu));
+        if (!par().improvement.empty())
+        {
+            in.push_back(varName(par().improvement, mu, nu));
+        }
     }
     in.push_back(varName(par().phiPow, 2));
     in.push_back(varName(par().phiPow, 4));
@@ -140,11 +143,17 @@ void TEMT<SImpl>::execute(void)
     LOG(Message) << "Computing energy-momentum tensor" << std::endl;
     LOG(Message) << "  kinetic terms: '" << par().kinetic << "'" << std::endl;
     LOG(Message) << "      tr(phi^n): '" << par().phiPow << "'" << std::endl;
-    LOG(Message) << "    improvement: '" << par().improvement << "'" << std::endl;
+    if (!par().improvement.empty())
+    {
+        LOG(Message) << "    improvement: '" << par().improvement << "'" << std::endl;
+    }
     LOG(Message) << "            m^2= " << par().m2 << std::endl;
     LOG(Message) << "         lambda= " << par().lambda << std::endl;
     LOG(Message) << "              g= " << par().g << std::endl;
-    LOG(Message) << "             xi= " << par().xi << std::endl;
+    if (!par().improvement.empty())
+    {
+        LOG(Message) << "             xi= " << par().xi << std::endl;
+    }
 
     const unsigned int N       = SImpl::Group::Dimension;
     auto               &trphi2 = envGet(ComplexField, varName(par().phiPow, 2));
@@ -163,9 +172,14 @@ void TEMT<SImpl>::execute(void)
     {
         auto &out   = envGet(ComplexField, varName(getName(), mu, nu));
         auto &trkin = envGet(ComplexField, varName(par().kinetic, mu, nu));
-        auto &imp   = envGet(ComplexField, varName(par().improvement, mu, nu));
+        
+        out = 2.*trkin;
+        if (!par().improvement.empty())
+        {
+            auto &imp = envGet(ComplexField, varName(par().improvement, mu, nu));
 
-        out = 2.*trkin + par().xi*imp;
+            out += par().xi*imp;
+        }
         if (mu == nu)
         {
             out -= sumkin + par().m2*trphi2 + par().lambda*trphi4;
