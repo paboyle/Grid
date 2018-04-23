@@ -8,7 +8,7 @@ bin_SCRIPTS=grid-config
 BUILT_SOURCES = version.h
 
 version.h:
-	echo "`git log -n 1 --format=format:"#define GITHASH \\"%H:%d\\"%n" HEAD`" > $(srcdir)/lib/version.h
+	if [ `git status --porcelain | wc -l` -gt 0 ]; then a="unstaged stanges"; else a="no unstaged changes"; fi; echo "`git log -n 1 --format=format:"#define GITHASH \\"%H:%d $$a\\"%n" HEAD`" > $(srcdir)/lib/version.h
 
 .PHONY: bench check tests doxygen-run doxygen-doc $(DX_PS_GOAL) $(DX_PDF_GOAL)
 
