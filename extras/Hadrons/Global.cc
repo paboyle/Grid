@@ -96,7 +96,7 @@ const std::string Hadrons::resultFileExt = "xml";
 // recursive mkdir /////////////////////////////////////////////////////////////
 int Hadrons::mkdir(const std::string dirName)
 {
-    if (access(dirName.c_str(), R_OK|W_OK|X_OK))
+    if (!dirName.empty() and access(dirName.c_str(), R_OK|W_OK|X_OK))
     {
         mode_t mode755;
         char   tmp[MAX_PATH_LENGTH];
@@ -141,5 +141,20 @@ std::string Hadrons::basename(const std::string &s)
     else
     {
         return s;
+    }
+}
+
+std::string Hadrons::dirname(const std::string &s)
+{
+    constexpr char sep = '/';
+    size_t         i   = s.rfind(sep, s.length());
+    
+    if (i != std::string::npos)
+    {
+        return s.substr(0, i);
+    }
+    else
+    {
+        return "";
     }
 }

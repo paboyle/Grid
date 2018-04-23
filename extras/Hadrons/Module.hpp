@@ -122,14 +122,16 @@ MACRO_REDIRECT(__VA_ARGS__, envTmpLat5, envTmpLat4)(__VA_ARGS__)
 #define saveResult(ioStem, name, result)\
 if (env().getGrid()->IsBoss())\
 {\
-    ResultWriter _writer(RESULT_FILE_NAME(ioStem));\
-    std::string  _basename = basename(ioStem);\
+    std::string _dirname = dirname(ioStem);\
     \
-    if (!mkdir(_basename))\
+    if (mkdir(_dirname))\
     {\
-        HADRON_ERROR(Io, "cannot create directory '" + _basename + "'");\
+        HADRON_ERROR(Io, "cannot create directory '" + _dirname + "'");\
     }\
-    write(_writer, name, result);\
+    {\
+        ResultWriter _writer(RESULT_FILE_NAME(ioStem));\
+        write(_writer, name, result);\
+    }\
 }
 
 /******************************************************************************

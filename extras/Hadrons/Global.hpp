@@ -191,6 +191,7 @@ name + "." + std::to_string(vm().getTrajectory()) + "." + resultFileExt
 #define MAX_PATH_LENGTH 512u
 int         mkdir(const std::string dirName);
 std::string basename(const std::string &s);
+std::string dirname(const std::string &s);
 
 // default Schur convention
 #ifndef HADRONS_DEFAULT_SCHUR 
