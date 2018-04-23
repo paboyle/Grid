@@ -7,6 +7,7 @@ Source file: extras/Hadrons/Modules/MSink/Point.hpp
 Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
