@@ -306,9 +306,10 @@ void VirtualMachine::makeModuleGraph(void)
 
             if (min < 0)
             {
-                HADRON_ERROR(Definition, "object with address " 
-                             + std::to_string(in) 
-                             + " is not produced by any module");
+                HADRON_ERROR(Definition, "dependency '" 
+                             + env().getObjectName(in) + "' (address " 
+                             + std::to_string(in)
+                             + ") is not produced by any module");
             }
             else
             {
