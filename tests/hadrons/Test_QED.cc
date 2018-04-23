@@ -27,6 +27,7 @@
  *******************************************************************************/
 
 #include <Grid/Hadrons/Application.hpp>
+#include <Grid/Hadrons/Modules.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
