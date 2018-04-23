@@ -69,22 +69,7 @@ int main(int argc, char *argv[])
     }
     catch (const std::exception& e)
     {
-        auto &vm = VirtualMachine::getInstance();
-        int  mod = vm.getCurrentModule();
-
-        LOG(Error) << "FATAL ERROR -- Exception " << typeName(&typeid(e)) 
-                   << std::endl;
-                if (mod >= 0)
-        {
-            LOG(Error) << "During execution of module '"
-                       << vm.getModuleName(mod) << "' (address " << mod << ")"
-                       << std::endl;
-        }
-        LOG(Error) << e.what() << std::endl;
-        LOG(Error) << "Aborting program" << std::endl;
-        Grid_finalize();
-
-        return EXIT_FAILURE;
+        Exceptions::abort(e);
     }
     
     // epilogue
