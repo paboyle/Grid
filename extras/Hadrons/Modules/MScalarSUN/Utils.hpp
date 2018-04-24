@@ -89,15 +89,20 @@ inline void dmuAcc(Field &out, const Field &in, const unsigned int mu, const Dif
     }
 }
 
+inline std::string varName(const std::string name, const std::string suf)
+{
+    return name + "_" + suf;
+}
+
 inline std::string varName(const std::string name, const unsigned int mu)
 {
-    return name + "_" + std::to_string(mu);
+    return varName(name, std::to_string(mu));
 }
 
 inline std::string varName(const std::string name, const unsigned int mu, 
                            const unsigned int nu)
 {
-    return name + "_" + std::to_string(mu) + "_" + std::to_string(nu);
+    return varName(name, std::to_string(mu) + "_" + std::to_string(nu));
 }
 
 END_MODULE_NAMESPACE
