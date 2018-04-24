@@ -104,6 +104,7 @@ std::vector<std::string> TEMT<SImpl>::getInput(void)
             in.push_back(varName(par().improvement, mu, nu));
         }
     }
+    in.push_back(varName(par().kinetic, "sum"));
     in.push_back(varName(par().phiPow, 2));
     in.push_back(varName(par().phiPow, 4));
 
@@ -133,7 +134,6 @@ void TEMT<SImpl>::setup(void)
     {
         envCreateLat(ComplexField, varName(getName(), mu, nu));
     }
-    envTmpLat(ComplexField, "sumkin");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -158,15 +158,8 @@ void TEMT<SImpl>::execute(void)
     const unsigned int N       = SImpl::Group::Dimension;
     auto               &trphi2 = envGet(ComplexField, varName(par().phiPow, 2));
     auto               &trphi4 = envGet(ComplexField, varName(par().phiPow, 4));
+    auto               &sumkin = envGet(ComplexField, varName(par().kinetic, "sum"));
 
-    envGetTmp(ComplexField, sumkin);
-    sumkin = zero;
-    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-    {
-        auto &trkin = envGet(ComplexField, varName(par().kinetic, mu, mu));
-
-        sumkin += trkin;
-    }
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     for (unsigned int nu = mu; nu < env().getNd(); ++nu)
     {
