@@ -166,7 +166,7 @@ int main (int argc, char ** argv)
       double time = (stop-start)/Nloop*1000.0;
       
       double bytes=3*vol*Nc*Nc*sizeof(Complex);
-      double flops=Nc*Nc*(8+8+8)*vol;
+      double flops=Nc*Nc*(6+8+8)*vol;
       std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
 
     }
@@ -199,7 +199,7 @@ int main (int argc, char ** argv)
 	double time = (stop-start)/Nloop*1000.0;
 	
 	double bytes=3*vol*Nc*Nc*sizeof(Complex);
-	double flops=Nc*Nc*(8+8+8)*vol;
+	double flops=Nc*Nc*(6+8+8)*vol;
 	std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
       }
     }
