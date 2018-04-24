@@ -596,6 +596,9 @@ VirtualMachine::Program VirtualMachine::schedule(const GeneticPar &par)
     };
     Scheduler scheduler(graph, memPeak, gpar);
     gen = 0;
+    scheduler.initPopulation();
+    LOG(Iterative) << "Start: " << sizeString(scheduler.getMinValue()) 
+                   << std::endl;
     do
     {
         //LOG(Debug) << "Generation " << gen << ":" << std::endl;
