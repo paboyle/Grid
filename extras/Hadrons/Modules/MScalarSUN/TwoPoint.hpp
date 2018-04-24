@@ -43,8 +43,9 @@ BEGIN_MODULE_NAMESPACE(MScalarSUN)
 class TwoPointPar: Serializable
 {
 public:
+    typedef std::pair<std::string, std::string> OpPair;
     GRID_SERIALIZABLE_CLASS_MEMBERS(TwoPointPar,
-                                    std::vector<std::string>, op,
+                                    std::vector<OpPair>,      op,
                                     std::vector<std::string>, mom,
                                     std::string,              output);
 };
@@ -106,7 +107,20 @@ TTwoPoint<SImpl>::TTwoPoint(const std::string name)
 template <typename SImpl>
 std::vector<std::string> TTwoPoint<SImpl>::getInput(void)
 {   
-    return par().op;
+    std::vector<std::string> in;
+    std::set<std::string>    ops;
+
+    for (auto &p: par().op)
+    {
+        ops.insert(p.first);
+        ops.insert(p.second);
+    }
+    for (auto &o: ops)
+    {
+        in.push_back(o);
+    }
+
+    return in;
 }
 
 template <typename SImpl>
@@ -140,54 +154,59 @@ void TTwoPoint<SImpl>::setup(void)
 template <typename SImpl>
 void TTwoPoint<SImpl>::execute(void)
 {
-    LOG(Message) << "Computing 2-point functions for operators:" << std::endl;
-    for (auto &o: par().op)
+    LOG(Message) << "Computing 2-point functions" << std::endl;
+    for (auto &p: par().op)
     {
-        LOG(Message) << "  '" << o << "'" << std::endl;
+        LOG(Message) << "  <" << p.first << " " << p.second << ">" << std::endl;
     }
 
-    const unsigned int                 nd   = env().getDim().size();
-    const unsigned int                 nt   = env().getDim().back();
-    const unsigned int                 nop  = par().op.size();
-    const unsigned int                 nmom = mom_.size();
-    std::vector<int>                   dMask(nd, 1);
-    std::vector<Result>                result;
-    std::vector<std::vector<SlicedOp>> slicedOp(nop);
-    FFT                                fft(env().getGrid());
+    const unsigned int                           nd   = env().getDim().size();
+    const unsigned int                           nt   = env().getDim().back();
+    const unsigned int                           nop  = par().op.size();
+    const unsigned int                           nmom = mom_.size();
+    std::vector<int>                             dMask(nd, 1);
+    std::set<std::string>                        ops;
+    std::vector<Result>                          result;
+    std::map<std::string, std::vector<SlicedOp>> slicedOp;
+    FFT                                          fft(env().getGrid());
 
     envGetTmp(ComplexField, ftBuf);
     dMask[nd - 1] = 0;
-    for (unsigned int i = 0; i < nop; ++i)
+    for (auto &p: par().op)
     {
-        auto &op = envGet(ComplexField, par().op[i]);
+        ops.insert(p.first);
+        ops.insert(p.second);
+    }
+    for (auto &o: ops)
+    {
+        auto &op = envGet(ComplexField, o);
 
-        slicedOp[i].resize(nmom);
-        LOG(Message) << "Operator '" << par().op[i] << "' FFT" << std::endl;
-        fft.FFT_dim_mask(ftBuf, op, dMask, FFT::forward);
+        slicedOp[o].resize(nmom);
+        LOG(Message) << "Operator '" << o << "' FFT" << std::endl;
+        fft.FFT_dim_mask(ftBuf, op, dMask, FFT::backward);
         for (unsigned int m = 0; m < nmom; ++m)
         {
             auto qt = mom_[m];
 
             qt.resize(nd);
-            slicedOp[i][m].resize(nt);
+            slicedOp[o][m].resize(nt);
             for (unsigned int t = 0; t < nt; ++t)
             {
                 qt[nd - 1] = t;
-                peekSite(slicedOp[i][m][t], ftBuf, qt);
+                peekSite(slicedOp[o][m][t], ftBuf, qt);
             }
         }
     }
     LOG(Message) << "Making contractions" << std::endl;
     for (unsigned int m = 0; m < nmom; ++m)
-    for (unsigned int i = 0; i < nop; ++i)
-    for (unsigned int j = 0; j < nop; ++j)
+    for (auto &p: par().op)
     {
         Result r;
 
-        r.sink   = par().op[i];
-        r.source = par().op[j];
+        r.sink   = p.first;
+        r.source = p.second;
         r.mom    = mom_[m];
-        r.data   = makeTwoPoint(slicedOp[i][m], slicedOp[j][m]);
+        r.data   = makeTwoPoint(slicedOp[p.first][m], slicedOp[p.second][m]);
         result.push_back(r);
     }
     saveResult(par().output, "twopt", result);
