@@ -31,6 +31,7 @@ modules_cc =\
   Modules/MAction/WilsonClover.cc \
   Modules/MAction/DWF.cc \
   Modules/MScalarSUN/TrPhi.cc \
+  Modules/MScalarSUN/Grad.cc \
   Modules/MScalarSUN/TrMag.cc \
   Modules/MScalarSUN/TrKinetic.cc \
   Modules/MScalarSUN/EMT.cc \
@@ -85,6 +86,7 @@ modules_hpp =\
   Modules/MScalarSUN/TrPhi.hpp \
   Modules/MScalarSUN/Utils.hpp \
   Modules/MScalarSUN/TransProj.hpp \
+  Modules/MScalarSUN/Grad.hpp \
   Modules/MScalarSUN/TrKinetic.hpp \
   Modules/MIO/LoadEigenPack.hpp \
   Modules/MIO/LoadNersc.hpp \
