@@ -52,7 +52,7 @@ public:
     // constructor
     TLoadNersc(const std::string name);
     // destructor
-    virtual ~TLoadNersc(void) = default;
+    virtual ~TLoadNersc(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

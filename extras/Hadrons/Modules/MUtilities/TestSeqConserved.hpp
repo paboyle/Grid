@@ -77,7 +77,7 @@ public:
     // constructor
     TTestSeqConserved(const std::string name);
     // destructor
-    virtual ~TTestSeqConserved(void) = default;
+    virtual ~TTestSeqConserved(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

@@ -70,7 +70,7 @@ public:
     // constructor
     TWall(const std::string name);
     // destructor
-    virtual ~TWall(void) = default;
+    virtual ~TWall(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

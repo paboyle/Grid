@@ -59,7 +59,7 @@ public:
     // constructor
     TWilson(const std::string name);
     // destructor
-    virtual ~TWilson(void) = default;
+    virtual ~TWilson(void) {};
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

@@ -69,7 +69,7 @@ public:
     // constructor
     TShiftProbe(const std::string name);
     // destructor
-    virtual ~TShiftProbe(void) = default;
+    virtual ~TShiftProbe(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -159,7 +159,7 @@ void TShiftProbe<SImpl>::execute(void)
             acc *= Cshift(phi, shift[i].first, shift[i].second);
         }
     }
-    probe = sign*trace(acc);
+    probe = real(sign*trace(acc));
 }
 
 END_MODULE_NAMESPACE

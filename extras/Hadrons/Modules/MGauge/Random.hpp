@@ -46,7 +46,7 @@ public:
     // constructor
     TRandom(const std::string name);
     // destructor
-    virtual ~TRandom(void) = default;
+    virtual ~TRandom(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

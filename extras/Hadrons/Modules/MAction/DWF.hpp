@@ -61,7 +61,7 @@ public:
     // constructor
     TDWF(const std::string name);
     // destructor
-    virtual ~TDWF(void) = default;
+    virtual ~TDWF(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

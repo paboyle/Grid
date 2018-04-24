@@ -81,7 +81,7 @@ public:
     // constructor
     TGaugeProp(const std::string name);
     // destructor
-    virtual ~TGaugeProp(void) = default;
+    virtual ~TGaugeProp(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

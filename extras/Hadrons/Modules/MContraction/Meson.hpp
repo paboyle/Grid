@@ -90,7 +90,7 @@ public:
     // constructor
     TMeson(const std::string name);
     // destructor
-    virtual ~TMeson(void) = default;
+    virtual ~TMeson(void) {};
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

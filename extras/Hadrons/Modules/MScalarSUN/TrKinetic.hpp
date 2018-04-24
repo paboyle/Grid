@@ -66,7 +66,7 @@ public:
     // constructor
     TTrKinetic(const std::string name);
     // destructor
-    virtual ~TTrKinetic(void) = default;
+    virtual ~TTrKinetic(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

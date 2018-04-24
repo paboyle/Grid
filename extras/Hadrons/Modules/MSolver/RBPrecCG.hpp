@@ -67,7 +67,7 @@ public:
     // constructor
     TRBPrecCG(const std::string name);
     // destructor
-    virtual ~TRBPrecCG(void) = default;
+    virtual ~TRBPrecCG(void) {};
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getReference(void);

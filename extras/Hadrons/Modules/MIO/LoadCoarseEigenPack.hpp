@@ -63,7 +63,7 @@ public:
     // constructor
     TLoadCoarseEigenPack(const std::string name);
     // destructor
-    virtual ~TLoadCoarseEigenPack(void) = default;
+    virtual ~TLoadCoarseEigenPack(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

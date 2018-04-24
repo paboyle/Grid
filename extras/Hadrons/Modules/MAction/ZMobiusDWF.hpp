@@ -62,7 +62,7 @@ public:
     // constructor
     TZMobiusDWF(const std::string name);
     // destructor
-    virtual ~TZMobiusDWF(void) = default;
+    virtual ~TZMobiusDWF(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

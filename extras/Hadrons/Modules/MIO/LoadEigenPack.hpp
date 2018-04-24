@@ -58,7 +58,7 @@ public:
     // constructor
     TLoadEigenPack(const std::string name);
     // destructor
-    virtual ~TLoadEigenPack(void) = default;
+    virtual ~TLoadEigenPack(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

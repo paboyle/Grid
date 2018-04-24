@@ -65,7 +65,7 @@ public:
     // constructor
     TDiscLoop(const std::string name);
     // destructor
-    virtual ~TDiscLoop(void) = default;
+    virtual ~TDiscLoop(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

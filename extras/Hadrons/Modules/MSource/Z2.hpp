@@ -71,7 +71,7 @@ public:
     // constructor
     TZ2(const std::string name);
     // destructor
-    virtual ~TZ2(void) = default;
+    virtual ~TZ2(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

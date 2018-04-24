@@ -57,7 +57,7 @@ public:
     // constructor
     TStochEm(const std::string name);
     // destructor
-    virtual ~TStochEm(void) = default;
+    virtual ~TStochEm(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

@@ -76,7 +76,7 @@ public:
     // constructor
     TSeqGamma(const std::string name);
     // destructor
-    virtual ~TSeqGamma(void) = default;
+    virtual ~TSeqGamma(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

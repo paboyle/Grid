@@ -89,7 +89,7 @@ public:
     // constructor
     TSeqConserved(const std::string name);
     // destructor
-    virtual ~TSeqConserved(void) = default;
+    virtual ~TSeqConserved(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

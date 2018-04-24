@@ -64,7 +64,7 @@ public:
     // constructor
     TEMT(const std::string name);
     // destructor
-    virtual ~TEMT(void) = default;
+    virtual ~TEMT(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

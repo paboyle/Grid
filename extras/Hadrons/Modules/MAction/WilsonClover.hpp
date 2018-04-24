@@ -64,7 +64,7 @@ public:
     // constructor
     TWilsonClover(const std::string name);
     // destructor
-    virtual ~TWilsonClover(void) = default;
+    virtual ~TWilsonClover(void) {};
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

@@ -96,7 +96,7 @@ public:
     // constructor
     TGamma3pt(const std::string name);
     // destructor
-    virtual ~TGamma3pt(void) = default;
+    virtual ~TGamma3pt(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

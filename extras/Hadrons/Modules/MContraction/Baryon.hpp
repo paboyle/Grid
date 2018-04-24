@@ -68,7 +68,7 @@ public:
     // constructor
     TBaryon(const std::string name);
     // destructor
-    virtual ~TBaryon(void) = default;
+    virtual ~TBaryon(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

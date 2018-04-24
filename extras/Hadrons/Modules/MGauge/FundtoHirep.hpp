@@ -55,7 +55,7 @@ public:
     // constructor
     TFundtoHirep(const std::string name);
     // destructor
-    virtual ~TFundtoHirep(void) = default;
+    virtual ~TFundtoHirep(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

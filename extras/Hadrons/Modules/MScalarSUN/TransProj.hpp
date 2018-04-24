@@ -66,7 +66,7 @@ public:
     // constructor
     TTransProj(const std::string name);
     // destructor
-    virtual ~TTransProj(void) = default;
+    virtual ~TTransProj(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

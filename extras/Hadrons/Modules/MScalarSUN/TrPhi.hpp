@@ -66,7 +66,7 @@ public:
     // constructor
     TTrPhi(const std::string name);
     // destructor
-    virtual ~TTrPhi(void) = default;
+    virtual ~TTrPhi(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

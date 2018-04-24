@@ -46,7 +46,7 @@ public:
     // constructor
     TUnit(const std::string name);
     // destructor
-    virtual ~TUnit(void) = default;
+    virtual ~TUnit(void) {};
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

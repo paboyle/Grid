@@ -61,7 +61,7 @@ public:
     // constructor
     TLoadBinary(const std::string name);
     // destructor
-    virtual ~TLoadBinary(void) = default;
+    virtual ~TLoadBinary(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

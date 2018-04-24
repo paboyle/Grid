@@ -70,7 +70,7 @@ public:
     // constructor
     TTwoPoint(const std::string name);
     // destructor
-    virtual ~TTwoPoint(void) = default;
+    virtual ~TTwoPoint(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

@@ -71,7 +71,7 @@ public:
     // constructor
     TWardIdentity(const std::string name);
     // destructor
-    virtual ~TWardIdentity(void) = default;
+    virtual ~TWardIdentity(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

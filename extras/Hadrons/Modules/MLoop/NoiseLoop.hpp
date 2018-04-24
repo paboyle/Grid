@@ -71,7 +71,7 @@ public:
     // constructor
     TNoiseLoop(const std::string name);
     // destructor
-    virtual ~TNoiseLoop(void) = default;
+    virtual ~TNoiseLoop(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
