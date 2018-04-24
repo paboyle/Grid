@@ -52,7 +52,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GFlop/s"<<std::endl;
   std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
-  for(int lat=2;lat<=LMAX;lat+=LINC){
+  for(int lat=4;lat<=LMAX;lat+=LINC){
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
       int64_t vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
@@ -147,30 +147,30 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
   for(int lat=2;lat<=LMAX;lat+=LINC){
-
-      std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
-      int64_t vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
-
-      GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
-      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
-
-      LatticeColourMatrix z(&Grid); random(pRNG,z);
-      LatticeColourMatrix x(&Grid); random(pRNG,x);
-      LatticeColourMatrix y(&Grid); random(pRNG,y);
-
-      double start=usecond();
-      for(int64_t i=0;i<Nloop;i++){
-	mac(z,x,y);
-      }
-      double stop=usecond();
-      double time = (stop-start)/Nloop*1000.0;
-      
-      double bytes=3*vol*Nc*Nc*sizeof(Complex);
-      double flops=Nc*Nc*(6+8+8)*vol;
-      std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
-
+    
+    std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
+    int64_t vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
+    
+    GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
+    GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
+    
+    LatticeColourMatrix z(&Grid); random(pRNG,z);
+    LatticeColourMatrix x(&Grid); random(pRNG,x);
+    LatticeColourMatrix y(&Grid); random(pRNG,y);
+    
+    double start=usecond();
+    for(int64_t i=0;i<Nloop;i++){
+      mac(z,x,y);
     }
-
+    double stop=usecond();
+    double time = (stop-start)/Nloop*1000.0;
+    
+    double bytes=3*vol*Nc*Nc*sizeof(Complex);
+    double flops=Nc*Nc*(6+8+8)*vol;
+    std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
+    
+  }
+  
 
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking SU3xSU3  CovShiftForward(z,x,y)"<<std::endl;
@@ -179,7 +179,6 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
   for(int lat=2;lat<=LMAX;lat+=LINC){
-
       std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
       int64_t vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
 
@@ -190,13 +189,14 @@ int main (int argc, char ** argv)
       LatticeColourMatrix x(&Grid); random(pRNG,x);
       LatticeColourMatrix y(&Grid); random(pRNG,y);
 
-      for(int mu=0;mu<=4;mu++){
+      for(int mu=0;mu<4;mu++){
 	double start=usecond();
 	for(int64_t i=0;i<Nloop;i++){
 	  z = PeriodicBC::CovShiftForward(x,mu,y);
 	}
 	double stop=usecond();
 	double time = (stop-start)/Nloop*1000.0;
+	
 	
 	double bytes=3*vol*Nc*Nc*sizeof(Complex);
 	double flops=Nc*Nc*(6+8+8)*vol;
