@@ -35,17 +35,18 @@ using namespace Grid::QCD;
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
-#define LMAX (40)
+#define LMAX (16)
+#define LMIN (16)
 #define LINC (4)
 
-  int64_t Nloop=20;
+  int64_t Nloop=2000;
 
   std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
   int64_t threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
-
+#if 1
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking SU3xSU3  x= x*y"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
@@ -171,14 +172,14 @@ int main (int argc, char ** argv)
 
     }
 
-
+#endif
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking SU3xSU3  CovShiftForward(z,x,y)"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GFlop/s"<<std::endl;
   std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
-  for(int lat=2;lat<=LMAX;lat+=LINC){
+  for(int lat=LMIN;lat<=LMAX;lat+=LINC){
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
       int64_t vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
@@ -190,7 +191,7 @@ int main (int argc, char ** argv)
       LatticeColourMatrix x(&Grid); random(pRNG,x);
       LatticeColourMatrix y(&Grid); random(pRNG,y);
 
-      for(int mu=0;mu<=4;mu++){
+      for(int mu=0;mu<4;mu++){
 	double start=usecond();
 	for(int64_t i=0;i<Nloop;i++){
 	  z = PeriodicBC::CovShiftForward(x,mu,y);
@@ -202,7 +203,7 @@ int main (int argc, char ** argv)
 	double flops=Nc*Nc*(8+8+8)*vol;
 	std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
       }
-    }
+  }
 
   Grid_finalize();
 }
