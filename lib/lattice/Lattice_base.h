@@ -257,7 +257,11 @@ public:
     }  	
   }
   
-  
+  Lattice(Lattice&& r){ // move constructor
+    _grid = r._grid;
+    checkerboard = r.checkerboard;
+    _odata=std::move(r._odata);
+  }
   
   virtual ~Lattice(void) = default;
     
@@ -284,6 +288,24 @@ public:
     parallel_for(int ss=0;ss<_grid->oSites();ss++){
       this->_odata[ss]=r._odata[ss];
     }
+    return *this;
+  }
+
+  strong_inline Lattice<vobj> & operator = (const Lattice<vobj> & r){
+    _grid        = r._grid;
+    checkerboard = r.checkerboard;
+    _odata.resize(_grid->oSites());// essential
+    
+    parallel_for(int ss=0;ss<_grid->oSites();ss++){
+      _odata[ss]=r._odata[ss];
+    }  	
+    return *this;
+  }
+  strong_inline Lattice<vobj> & operator = (Lattice<vobj> && r)
+  {
+    _grid        = r._grid;
+    checkerboard = r.checkerboard;
+    _odata       =std::move(r._odata);
     return *this;
   }
   
