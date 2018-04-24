@@ -599,6 +599,51 @@ unvectorizeToLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in)
     extract1(in_vobj, out_ptrs, 0);
   }
 }
+
+template<typename vobj, typename sobj>
+typename std::enable_if<isSIMDvectorized<vobj>::value && !isSIMDvectorized<sobj>::value, void>::type 
+unvectorizeToRevLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in)
+{
+
+  typedef typename vobj::vector_type vtype;
+  
+  GridBase* in_grid = in._grid;
+  out.resize(in_grid->lSites());
+  
+  int ndim = in_grid->Nd();
+  int in_nsimd = vtype::Nsimd();
+
+  std::vector<std::vector<int> > in_icoor(in_nsimd);
+      
+  for(int lane=0; lane < in_nsimd; lane++){
+    in_icoor[lane].resize(ndim);
+    in_grid->iCoorFromIindex(in_icoor[lane], lane);
+  }
+  
+  parallel_for(int in_oidx = 0; in_oidx < in_grid->oSites(); in_oidx++){ //loop over outer index
+    //Assemble vector of pointers to output elements
+    std::vector<sobj*> out_ptrs(in_nsimd);
+
+    std::vector<int> in_ocoor(ndim);
+    in_grid->oCoorFromOindex(in_ocoor, in_oidx);
+
+    std::vector<int> lcoor(in_grid->Nd());
+      
+    for(int lane=0; lane < in_nsimd; lane++){
+      for(int mu=0;mu<ndim;mu++)
+	lcoor[mu] = in_ocoor[mu] + in_grid->_rdimensions[mu]*in_icoor[lane][mu];
+
+      int lex;
+      Lexicographic::IndexFromCoorReversed(lcoor, lex, in_grid->_ldimensions);
+      out_ptrs[lane] = &out[lex];
+    }
+    
+    //Unpack into those ptrs
+    const vobj & in_vobj = in._odata[in_oidx];
+    extract1(in_vobj, out_ptrs, 0);
+  }
+}
+
 //Copy SIMD-vectorized lattice to array of scalar objects in lexicographic order
 template<typename vobj, typename sobj>
 typename std::enable_if<isSIMDvectorized<vobj>::value 
@@ -638,6 +683,54 @@ vectorizeFromLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
 
       int lex;
       Lexicographic::IndexFromCoor(lcoor, lex, grid->_ldimensions);
+      ptrs[lane] = &in[lex];
+    }
+    
+    //pack from those ptrs
+    vobj vecobj;
+    merge1(vecobj, ptrs, 0);
+    out._odata[oidx] = vecobj; 
+  }
+}
+
+template<typename vobj, typename sobj>
+typename std::enable_if<isSIMDvectorized<vobj>::value 
+                    && !isSIMDvectorized<sobj>::value, void>::type 
+vectorizeFromRevLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
+{
+
+  typedef typename vobj::vector_type vtype;
+  
+  GridBase* grid = out._grid;
+  assert(in.size()==grid->lSites());
+  
+  int ndim     = grid->Nd();
+  int nsimd    = vtype::Nsimd();
+
+  std::vector<std::vector<int> > icoor(nsimd);
+      
+  for(int lane=0; lane < nsimd; lane++){
+    icoor[lane].resize(ndim);
+    grid->iCoorFromIindex(icoor[lane],lane);
+  }
+  
+  parallel_for(uint64_t oidx = 0; oidx < grid->oSites(); oidx++){ //loop over outer index
+    //Assemble vector of pointers to output elements
+    std::vector<sobj*> ptrs(nsimd);
+
+    std::vector<int> ocoor(ndim);
+    grid->oCoorFromOindex(ocoor, oidx);
+
+    std::vector<int> lcoor(grid->Nd());
+      
+    for(int lane=0; lane < nsimd; lane++){
+
+      for(int mu=0;mu<ndim;mu++){
+	lcoor[mu] = ocoor[mu] + grid->_rdimensions[mu]*icoor[lane][mu];
+      }
+
+      int lex;
+      Lexicographic::IndexFromCoorReversed(lcoor, lex, grid->_ldimensions);
       ptrs[lane] = &in[lex];
     }
     
