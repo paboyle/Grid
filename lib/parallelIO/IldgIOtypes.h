@@ -136,8 +136,9 @@ struct scidacRecord : Serializable {
 				  int, typesize,
 				  int, datacount);
 
-  scidacRecord() { version =1.0; }
-
+  scidacRecord()
+  : version(1.0), recordtype(0), colors(0), spins(0), typesize(0), datacount(0)
+  {}
 };
 
 ////////////////////////

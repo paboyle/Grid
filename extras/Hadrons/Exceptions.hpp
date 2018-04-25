@@ -56,6 +56,7 @@ namespace Exceptions
     DECL_EXC(Implementation, Logic);
     DECL_EXC(Range, Logic);
     DECL_EXC(Size, Logic);
+
     // runtime errors
     DECL_EXC(Runtime, std::runtime_error);
     DECL_EXC(Argument, Runtime);
@@ -64,6 +65,9 @@ namespace Exceptions
     DECL_EXC(Parsing, Runtime);
     DECL_EXC(Program, Runtime);
     DECL_EXC(System, Runtime);
+
+    // abort functions
+    void abort(const std::exception& e);
 }
 
 END_HADRONS_NAMESPACE

@@ -58,7 +58,7 @@ public:
   {
     assert(this->subspace.size()==nbasis);
     emptyUserRecord record;
-    Grid::QCD::ScidacWriter WR;
+    Grid::QCD::ScidacWriter WR(this->_FineGrid->IsBoss());
     WR.open(evecs_file);
     for(int k=0;k<nbasis;k++) {
       WR.writeScidacFieldRecord(this->subspace[k],record);
@@ -96,7 +96,7 @@ public:
   {
     int n = this->evec_coarse.size();
     emptyUserRecord record;
-    Grid::QCD::ScidacWriter WR;
+    Grid::QCD::ScidacWriter WR(this->_CoarseGrid->IsBoss());
     WR.open(evecs_file);
     for(int k=0;k<n;k++) {
       WR.writeScidacFieldRecord(this->evec_coarse[k],record);
@@ -180,7 +180,6 @@ int main (int argc, char ** argv) {
   GridCartesian         * CoarseGrid4    = SpaceTimeGrid::makeFourDimGrid(coarseLatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * CoarseGrid4rb  = SpaceTimeGrid::makeFourDimRedBlackGrid(CoarseGrid4);
   GridCartesian         * CoarseGrid5    = SpaceTimeGrid::makeFiveDimGrid(cLs,CoarseGrid4);
-  GridRedBlackCartesian * CoarseGrid5rb  = SpaceTimeGrid::makeFourDimRedBlackGrid(CoarseGrid5);
 
   // Gauge field
   LatticeGaugeField Umu(UGrid);
@@ -206,7 +205,7 @@ int main (int argc, char ** argv) {
 
   const int nbasis= 60;
   assert(nbasis==Ns1);
-  LocalCoherenceLanczosScidac<vSpinColourVector,vTComplex,nbasis> _LocalCoherenceLanczos(FrbGrid,CoarseGrid5rb,HermOp,Odd);
+  LocalCoherenceLanczosScidac<vSpinColourVector,vTComplex,nbasis> _LocalCoherenceLanczos(FrbGrid,CoarseGrid5,HermOp,Odd);
   std::cout << GridLogMessage << "Constructed LocalCoherenceLanczos" << std::endl;
 
   assert( (Params.doFine)||(Params.doFineRead));

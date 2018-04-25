@@ -26,7 +26,7 @@ public:
     // constructor
     T___FILEBASENAME___(const std::string name);
     // destructor
-    virtual ~T___FILEBASENAME___(void) = default;
+    virtual ~T___FILEBASENAME___(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -36,7 +36,7 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(___FILEBASENAME___, T___FILEBASENAME___<FIMPL>, ___NAMESPACE___);
+MODULE_REGISTER_TMP(___FILEBASENAME___, T___FILEBASENAME___<FIMPL>, ___NAMESPACE___);
 
 /******************************************************************************
  *                 T___FILEBASENAME___ implementation                             *

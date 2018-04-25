@@ -29,15 +29,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/GridCore.h>
 
 using namespace Grid;
-using namespace std;
 
 // Writer implementation ///////////////////////////////////////////////////////
-BinaryWriter::BinaryWriter(const string &fileName)
-: file_(fileName, ios::binary|ios::out)
+BinaryWriter::BinaryWriter(const std::string &fileName)
+: file_(fileName, std::ios::binary|std::ios::out)
 {}
 
 template <>
-void BinaryWriter::writeDefault(const string &s, const string &x)
+void BinaryWriter::writeDefault(const std::string &s, const std::string &x)
 {
     uint64_t sz = x.size();
     
@@ -48,20 +47,20 @@ void BinaryWriter::writeDefault(const string &s, const string &x)
     }
 }
 
-void BinaryWriter::writeDefault(const string &s, const char *x)
+void BinaryWriter::writeDefault(const std::string &s, const char *x)
 {
-  string sx(x);
+  std::string sx(x);
   
   writeDefault(s, sx);
 }
 
 // Reader implementation ///////////////////////////////////////////////////////
-BinaryReader::BinaryReader(const string &fileName)
-: file_(fileName, ios::binary|ios::in)
+BinaryReader::BinaryReader(const std::string &fileName)
+: file_(fileName, std::ios::binary|std::ios::in)
 {}
 
 template <>
-void BinaryReader::readDefault(const string &s, string &output)
+void BinaryReader::readDefault(const std::string &s, std::string &output)
 {
     uint64_t sz;
   

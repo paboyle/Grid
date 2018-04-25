@@ -66,7 +66,7 @@ public:
     // constructor
     TTransProj(const std::string name);
     // destructor
-    virtual ~TTransProj(void) = default;
+    virtual ~TTransProj(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -77,11 +77,11 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(TransProjSU2, TTransProj<ScalarNxNAdjImplR<2>>, MScalarSUN);
-MODULE_REGISTER_NS(TransProjSU3, TTransProj<ScalarNxNAdjImplR<3>>, MScalarSUN);
-MODULE_REGISTER_NS(TransProjSU4, TTransProj<ScalarNxNAdjImplR<4>>, MScalarSUN);
-MODULE_REGISTER_NS(TransProjSU5, TTransProj<ScalarNxNAdjImplR<5>>, MScalarSUN);
-MODULE_REGISTER_NS(TransProjSU6, TTransProj<ScalarNxNAdjImplR<6>>, MScalarSUN);
+MODULE_REGISTER_TMP(TransProjSU2, TTransProj<ScalarNxNAdjImplR<2>>, MScalarSUN);
+MODULE_REGISTER_TMP(TransProjSU3, TTransProj<ScalarNxNAdjImplR<3>>, MScalarSUN);
+MODULE_REGISTER_TMP(TransProjSU4, TTransProj<ScalarNxNAdjImplR<4>>, MScalarSUN);
+MODULE_REGISTER_TMP(TransProjSU5, TTransProj<ScalarNxNAdjImplR<5>>, MScalarSUN);
+MODULE_REGISTER_TMP(TransProjSU6, TTransProj<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
  *                        TTransProj implementation                           *

@@ -232,7 +232,7 @@ namespace Grid {
     {
       is >> std::boolalpha >> output;
     }
-    catch(std::istringstream::failure &e)
+    catch(std::ios_base::failure &e)
     {
       std::cerr << "numerical conversion failure on '" << s << "' ";
       std::cerr << "(typeid: " << typeid(U).name() << ")" << std::endl;

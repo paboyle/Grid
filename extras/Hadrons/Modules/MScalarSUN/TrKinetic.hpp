@@ -66,7 +66,7 @@ public:
     // constructor
     TTrKinetic(const std::string name);
     // destructor
-    virtual ~TTrKinetic(void) = default;
+    virtual ~TTrKinetic(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -76,11 +76,11 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(TrKineticSU2, TTrKinetic<ScalarNxNAdjImplR<2>>, MScalarSUN);
-MODULE_REGISTER_NS(TrKineticSU3, TTrKinetic<ScalarNxNAdjImplR<3>>, MScalarSUN);
-MODULE_REGISTER_NS(TrKineticSU4, TTrKinetic<ScalarNxNAdjImplR<4>>, MScalarSUN);
-MODULE_REGISTER_NS(TrKineticSU5, TTrKinetic<ScalarNxNAdjImplR<5>>, MScalarSUN);
-MODULE_REGISTER_NS(TrKineticSU6, TTrKinetic<ScalarNxNAdjImplR<6>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrKineticSU2, TTrKinetic<ScalarNxNAdjImplR<2>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrKineticSU3, TTrKinetic<ScalarNxNAdjImplR<3>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrKineticSU4, TTrKinetic<ScalarNxNAdjImplR<4>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrKineticSU5, TTrKinetic<ScalarNxNAdjImplR<5>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrKineticSU6, TTrKinetic<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
  *                      TTrKinetic implementation                             *
@@ -110,6 +110,7 @@ std::vector<std::string> TTrKinetic<SImpl>::getOutput(void)
     {
         out.push_back(varName(getName(), mu, nu));
     }
+    out.push_back(varName(getName(), "sum"));
     
     return out;
 }
@@ -123,6 +124,7 @@ void TTrKinetic<SImpl>::setup(void)
     {
         envCreateLat(ComplexField, varName(getName(), mu, nu));
     }
+    envCreateLat(ComplexField, varName(getName(), "sum"));
     envTmp(std::vector<Field>, "der", 1, env().getNd(), env().getGrid());
 }
 
@@ -134,9 +136,11 @@ void TTrKinetic<SImpl>::execute(void)
                  << " derivative" << std::endl; 
 
     std::vector<Result> result;
-    auto                &phi = envGet(Field, par().field);
+    auto                &phi    = envGet(Field, par().field);
+    auto                &sumkin = envGet(ComplexField, varName(getName(), "sum"));
 
     envGetTmp(std::vector<Field>, der);
+    sumkin = zero;
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         dmu(der[mu], phi, mu, par().type);
@@ -147,13 +151,29 @@ void TTrKinetic<SImpl>::execute(void)
         auto &out = envGet(ComplexField, varName(getName(), mu, nu));
 
         out = -trace(der[mu]*der[nu]);
-        if (!par().output.empty())
+        if (mu == nu)
         {
+            sumkin += out;
+        }
+    }
+    if (!par().output.empty())
+    {
+        for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+        for (unsigned int nu = mu; nu < env().getNd(); ++nu)
+        {
+            auto &out = envGet(ComplexField, varName(getName(), mu, nu));
             Result r;
 
             r.op    = "tr(d_" + std::to_string(mu) + "phi*d_" 
                       + std::to_string(nu) + "phi)";
             r.value = TensorRemove(sum(out));
+            result.push_back(r);
+        }
+        {
+            Result r;
+
+            r.op    = "sum_mu tr(d_mu phi*d_mu phi)";
+            r.value = TensorRemove(sum(sumkin));
             result.push_back(r);
         }
     }

@@ -78,7 +78,7 @@ private:
         Size                    size{0};
         Storage                 storage{Storage::object};
         unsigned int            Ls{0};
-        const std::type_info    *type{nullptr};
+        const std::type_info    *type{nullptr}, *derivedType{nullptr};
         std::string             name;
         int                     module{-1};
         std::unique_ptr<Object> data{nullptr};
@@ -86,8 +86,12 @@ private:
 public:
     // grids
     void                    createGrid(const unsigned int Ls);
+    void                    createCoarseGrid(const std::vector<int> &blockSize,
+                                             const unsigned int Ls = 1);
     GridCartesian *         getGrid(const unsigned int Ls = 1) const;
     GridRedBlackCartesian * getRbGrid(const unsigned int Ls = 1) const;
+    GridCartesian *         getCoarseGrid(const std::vector<int> &blockSize,
+                                          const unsigned int Ls = 1) const;
     std::vector<int>        getDim(void) const;
     int                     getDim(const unsigned int mu) const;
     unsigned long int       getLocalVolume(void) const;
@@ -110,6 +114,10 @@ public:
                                          Ts && ... args);
     void                    setObjectModule(const unsigned int objAddress,
                                             const int modAddress);
+    template <typename B, typename T>
+    T *                     getDerivedObject(const unsigned int address) const;
+    template <typename B, typename T>
+    T *                     getDerivedObject(const std::string name) const;
     template <typename T>
     T *                     getObject(const unsigned int address) const;
     template <typename T>
@@ -155,6 +163,8 @@ private:
     std::map<unsigned int, GridPt>         grid5d_;
     GridRbPt                               gridRb4d_;
     std::map<unsigned int, GridRbPt>       gridRb5d_;
+    std::map<std::vector<int>, GridPt>     gridCoarse4d_;
+    std::map<std::vector<int>, GridPt>     gridCoarse5d_;
     unsigned int                           nd_;
     // random number generator
     RngPt                                  rng4d_;
@@ -176,7 +186,7 @@ Holder<T>::Holder(T *pt)
 template <typename T>
 T & Holder<T>::get(void) const
 {
-    return &objPt_.get();
+    return *objPt_.get();
 }
 
 template <typename T>
@@ -216,22 +226,24 @@ void Environment::createDerivedObject(const std::string name,
         {
             MemoryProfiler::stats = &memStats;
         }
-        size_t initMem           = MemoryProfiler::stats->currentlyAllocated;
-        object_[address].storage = storage;
-        object_[address].Ls      = Ls;
+        size_t initMem               = MemoryProfiler::stats->currentlyAllocated;
+        object_[address].storage     = storage;
+        object_[address].Ls          = Ls;
         object_[address].data.reset(new Holder<B>(new T(std::forward<Ts>(args)...)));
-        object_[address].size    = MemoryProfiler::stats->maxAllocated - initMem;
-        object_[address].type    = &typeid(T);
+        object_[address].size        = MemoryProfiler::stats->maxAllocated - initMem;
+        object_[address].type        = &typeid(B);
+        object_[address].derivedType = &typeid(T);
         if (MemoryProfiler::stats == &memStats)
         {
             MemoryProfiler::stats = nullptr;
         }
     }
     // object already exists, no error if it is a cache, error otherwise
-    else if ((object_[address].storage != Storage::cache) or 
-             (object_[address].storage != storage)        or
-             (object_[address].name    != name)           or
-             (object_[address].type    != &typeid(T)))
+    else if ((object_[address].storage     != Storage::cache) or 
+             (object_[address].storage     != storage)        or
+             (object_[address].name        != name)           or
+             (object_[address].type        != &typeid(B))     or
+             (object_[address].derivedType != &typeid(T)))
     {
         HADRON_ERROR(Definition, "object '" + name + "' already allocated");
     }
@@ -246,21 +258,37 @@ void Environment::createObject(const std::string name,
     createDerivedObject<T, T>(name, storage, Ls, std::forward<Ts>(args)...);
 }
 
-template <typename T>
-T * Environment::getObject(const unsigned int address) const
+template <typename B, typename T>
+T * Environment::getDerivedObject(const unsigned int address) const
 {
     if (hasObject(address))
     {
         if (hasCreatedObject(address))
         {
-            if (auto h = dynamic_cast<Holder<T> *>(object_[address].data.get()))
+            if (auto h = dynamic_cast<Holder<B> *>(object_[address].data.get()))
             {
-                return h->getPt();
+                if (&typeid(T) == &typeid(B))
+                {
+                    return dynamic_cast<T *>(h->getPt());
+                }
+                else
+                {
+                    if (auto hder = dynamic_cast<T *>(h->getPt()))
+                    {
+                        return hder;
+                    }
+                    else
+                    {
+                        HADRON_ERROR(Definition, "object with address " + std::to_string(address) +
+                            " cannot be casted to '" + typeName(&typeid(T)) +
+                            "' (has type '" + typeName(&typeid(h->get())) + "')");
+                    }
+                }
             }
             else
             {
                 HADRON_ERROR(Definition, "object with address " + std::to_string(address) +
-                            " does not have type '" + typeName(&typeid(T)) +
+                            " does not have type '" + typeName(&typeid(B)) +
                             "' (has type '" + getObjectType(address) + "')");
             }
         }
@@ -274,6 +302,18 @@ T * Environment::getObject(const unsigned int address) const
     {
         HADRON_ERROR(Definition, "no object with address " + std::to_string(address));
     }
+}
+
+template <typename B, typename T>
+T * Environment::getDerivedObject(const std::string name) const
+{
+    return getDerivedObject<B, T>(getObjectAddress(name));
+}
+
+template <typename T>
+T * Environment::getObject(const unsigned int address) const
+{
+    return getDerivedObject<T, T>(address);
 }
 
 template <typename T>

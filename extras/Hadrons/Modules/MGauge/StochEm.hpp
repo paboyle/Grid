@@ -57,7 +57,7 @@ public:
     // constructor
     TStochEm(const std::string name);
     // destructor
-    virtual ~TStochEm(void) = default;
+    virtual ~TStochEm(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -70,7 +70,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(StochEm, TStochEm, MGauge);
+MODULE_REGISTER(StochEm, TStochEm, MGauge);
 
 END_MODULE_NAMESPACE
 

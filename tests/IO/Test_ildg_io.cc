@@ -79,7 +79,7 @@ int main (int argc, char ** argv)
   std::cout <<GridLogMessage<<"** Writing out  ILDG conf    *********"<<std::endl;
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
   std::string file("./ckpoint_ildg.4000");
-  IldgWriter _IldgWriter;
+  IldgWriter _IldgWriter(Fine.IsBoss());
   _IldgWriter.open(file);
   _IldgWriter.writeConfiguration(Umu,4000,std::string("dummy_ildg_LFN"),std::string("dummy_config"));
   _IldgWriter.close();

@@ -90,7 +90,7 @@ public:
     // constructor
     TMeson(const std::string name);
     // destructor
-    virtual ~TMeson(void) = default;
+    virtual ~TMeson(void) {};
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -102,7 +102,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Meson, ARG(TMeson<FIMPL, FIMPL>), MContraction);
+MODULE_REGISTER_TMP(Meson, ARG(TMeson<FIMPL, FIMPL>), MContraction);
 
 /******************************************************************************
  *                           TMeson implementation                            *

@@ -187,10 +187,15 @@ typedef XmlWriter ResultWriter;
 #define RESULT_FILE_NAME(name) \
 name + "." + std::to_string(vm().getTrajectory()) + "." + resultFileExt
 
-// default Schur convention
+// recursive mkdir
+#define MAX_PATH_LENGTH 512u
+int         mkdir(const std::string dirName);
+std::string basename(const std::string &s);
+std::string dirname(const std::string &s);
 
+// default Schur convention
 #ifndef HADRONS_DEFAULT_SCHUR 
-#define HADRONS_DEFAULT_SCHUR DiagMooee
+#define HADRONS_DEFAULT_SCHUR DiagTwo
 #endif
 #define _HADRONS_SCHUR_OP_(conv) Schur##conv##Operator
 #define HADRONS_SCHUR_OP(conv) _HADRONS_SCHUR_OP_(conv)

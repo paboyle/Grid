@@ -81,7 +81,7 @@ public:
     // constructor
     TGaugeProp(const std::string name);
     // destructor
-    virtual ~TGaugeProp(void) = default;
+    virtual ~TGaugeProp(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -95,7 +95,7 @@ private:
     SolverFn     *solver_{nullptr};
 };
 
-MODULE_REGISTER_NS(GaugeProp, TGaugeProp<FIMPL>, MFermion);
+MODULE_REGISTER_TMP(GaugeProp, TGaugeProp<FIMPL>, MFermion);
 /******************************************************************************
  *                      TGaugeProp implementation                             *
  ******************************************************************************/

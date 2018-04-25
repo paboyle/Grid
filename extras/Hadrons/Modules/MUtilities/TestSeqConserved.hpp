@@ -77,7 +77,7 @@ public:
     // constructor
     TTestSeqConserved(const std::string name);
     // destructor
-    virtual ~TTestSeqConserved(void) = default;
+    virtual ~TTestSeqConserved(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -88,7 +88,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(TestSeqConserved, TTestSeqConserved<FIMPL>, MUtilities);
+MODULE_REGISTER_TMP(TestSeqConserved, TTestSeqConserved<FIMPL>, MUtilities);
 
 /******************************************************************************
  *                     TTestSeqConserved implementation                       *

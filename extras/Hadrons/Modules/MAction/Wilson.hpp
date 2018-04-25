@@ -59,7 +59,7 @@ public:
     // constructor
     TWilson(const std::string name);
     // destructor
-    virtual ~TWilson(void) = default;
+    virtual ~TWilson(void) {};
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -70,7 +70,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Wilson, TWilson<FIMPL>, MAction);
+MODULE_REGISTER_TMP(Wilson, TWilson<FIMPL>, MAction);
 
 /******************************************************************************
  *                     TWilson template implementation                        *

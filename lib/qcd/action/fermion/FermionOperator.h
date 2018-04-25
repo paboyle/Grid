@@ -127,7 +127,20 @@ namespace Grid {
                                        unsigned int mu,
                                        unsigned int tmin, 
                                        unsigned int tmax,
-				       ComplexField &lattice_cmplx)=0;
+                                       ComplexField &lattice_cmplx)=0;
+      ///////////////////////////////////////////////
+      // Physical field import/export
+      ///////////////////////////////////////////////
+      virtual void Dminus(const FermionField &psi, FermionField &chi)    { chi=psi; }
+      virtual void DminusDag(const FermionField &psi, FermionField &chi) { chi=psi; }
+      virtual void ImportPhysicalFermionSource(const FermionField &input,FermionField &imported)
+      {
+	imported = input;
+      };
+      virtual void ExportPhysicalFermionSolution(const FermionField &solution,FermionField &exported)
+      {
+	exported=solution;
+      };
     };
 
   }

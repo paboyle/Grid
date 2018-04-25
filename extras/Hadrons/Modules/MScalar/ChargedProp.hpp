@@ -60,7 +60,7 @@ public:
     // constructor
     TChargedProp(const std::string name);
     // destructor
-    virtual ~TChargedProp(void) = default;
+    virtual ~TChargedProp(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -80,7 +80,7 @@ private:
     std::vector<ScalarField *> phase_;
 };
 
-MODULE_REGISTER_NS(ChargedProp, TChargedProp, MScalar);
+MODULE_REGISTER(ChargedProp, TChargedProp, MScalar);
 
 END_MODULE_NAMESPACE
 

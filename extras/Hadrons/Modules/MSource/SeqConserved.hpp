@@ -89,7 +89,7 @@ public:
     // constructor
     TSeqConserved(const std::string name);
     // destructor
-    virtual ~TSeqConserved(void) = default;
+    virtual ~TSeqConserved(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -103,7 +103,7 @@ private:
     std::string SeqmomphName_;
 };
 
-MODULE_REGISTER_NS(SeqConserved, TSeqConserved<FIMPL>, MSource);
+MODULE_REGISTER_TMP(SeqConserved, TSeqConserved<FIMPL>, MSource);
 
 
 /******************************************************************************

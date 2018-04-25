@@ -7,6 +7,7 @@ Source file: extras/Hadrons/Modules/MSink/Point.hpp
 Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
@@ -58,7 +59,7 @@ public:
     // constructor
     TPoint(const std::string name);
     // destructor
-    virtual ~TPoint(void) = default;
+    virtual ~TPoint(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -72,8 +73,8 @@ private:
     std::string momphName_;
 };
 
-MODULE_REGISTER_NS(Point,       TPoint<FIMPL>,        MSink);
-MODULE_REGISTER_NS(ScalarPoint, TPoint<ScalarImplCR>, MSink);
+MODULE_REGISTER_TMP(Point,       TPoint<FIMPL>,        MSink);
+MODULE_REGISTER_TMP(ScalarPoint, TPoint<ScalarImplCR>, MSink);
 
 /******************************************************************************
  *                          TPoint implementation                             *
@@ -128,7 +129,7 @@ void TPoint<FImpl>::execute(void)
         envGetTmp(LatticeComplex, coor);
         p  = strToVec<Real>(par().mom);
         ph = zero;
-        for(unsigned int mu = 0; mu < env().getNd(); mu++)
+        for(unsigned int mu = 0; mu < p.size(); mu++)
         {
             LatticeCoordinate(coor, mu);
             ph = ph + (p[mu]/env().getGrid()->_fdimensions[mu])*coor;

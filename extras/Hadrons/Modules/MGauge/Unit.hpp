@@ -46,7 +46,7 @@ public:
     // constructor
     TUnit(const std::string name);
     // destructor
-    virtual ~TUnit(void) = default;
+    virtual ~TUnit(void) {};
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -57,7 +57,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Unit, TUnit, MGauge);
+MODULE_REGISTER(Unit, TUnit, MGauge);
 
 END_MODULE_NAMESPACE
 

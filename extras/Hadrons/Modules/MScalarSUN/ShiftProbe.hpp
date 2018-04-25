@@ -69,7 +69,7 @@ public:
     // constructor
     TShiftProbe(const std::string name);
     // destructor
-    virtual ~TShiftProbe(void) = default;
+    virtual ~TShiftProbe(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -79,11 +79,11 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(ShiftProbeSU2, TShiftProbe<ScalarNxNAdjImplR<2>>, MScalarSUN);
-MODULE_REGISTER_NS(ShiftProbeSU3, TShiftProbe<ScalarNxNAdjImplR<3>>, MScalarSUN);
-MODULE_REGISTER_NS(ShiftProbeSU4, TShiftProbe<ScalarNxNAdjImplR<4>>, MScalarSUN);
-MODULE_REGISTER_NS(ShiftProbeSU5, TShiftProbe<ScalarNxNAdjImplR<5>>, MScalarSUN);
-MODULE_REGISTER_NS(ShiftProbeSU6, TShiftProbe<ScalarNxNAdjImplR<6>>, MScalarSUN);
+MODULE_REGISTER_TMP(ShiftProbeSU2, TShiftProbe<ScalarNxNAdjImplR<2>>, MScalarSUN);
+MODULE_REGISTER_TMP(ShiftProbeSU3, TShiftProbe<ScalarNxNAdjImplR<3>>, MScalarSUN);
+MODULE_REGISTER_TMP(ShiftProbeSU4, TShiftProbe<ScalarNxNAdjImplR<4>>, MScalarSUN);
+MODULE_REGISTER_TMP(ShiftProbeSU5, TShiftProbe<ScalarNxNAdjImplR<5>>, MScalarSUN);
+MODULE_REGISTER_TMP(ShiftProbeSU6, TShiftProbe<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
  *                        TShiftProbe implementation                          *
@@ -116,7 +116,7 @@ template <typename SImpl>
 void TShiftProbe<SImpl>::setup(void)
 {
     envTmpLat(Field, "acc");
-    envCacheLat(ComplexField, getName());
+    envCreateLat(ComplexField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -159,7 +159,7 @@ void TShiftProbe<SImpl>::execute(void)
             acc *= Cshift(phi, shift[i].first, shift[i].second);
         }
     }
-    probe = sign*trace(acc);
+    probe = real(sign*trace(acc));
 }
 
 END_MODULE_NAMESPACE

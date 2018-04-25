@@ -64,7 +64,7 @@ public:
     // constructor
     TEMT(const std::string name);
     // destructor
-    virtual ~TEMT(void) = default;
+    virtual ~TEMT(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -74,11 +74,11 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(EMTSU2, TEMT<ScalarNxNAdjImplR<2>>, MScalarSUN);
-MODULE_REGISTER_NS(EMTSU3, TEMT<ScalarNxNAdjImplR<3>>, MScalarSUN);
-MODULE_REGISTER_NS(EMTSU4, TEMT<ScalarNxNAdjImplR<4>>, MScalarSUN);
-MODULE_REGISTER_NS(EMTSU5, TEMT<ScalarNxNAdjImplR<5>>, MScalarSUN);
-MODULE_REGISTER_NS(EMTSU6, TEMT<ScalarNxNAdjImplR<6>>, MScalarSUN);
+MODULE_REGISTER_TMP(EMTSU2, TEMT<ScalarNxNAdjImplR<2>>, MScalarSUN);
+MODULE_REGISTER_TMP(EMTSU3, TEMT<ScalarNxNAdjImplR<3>>, MScalarSUN);
+MODULE_REGISTER_TMP(EMTSU4, TEMT<ScalarNxNAdjImplR<4>>, MScalarSUN);
+MODULE_REGISTER_TMP(EMTSU5, TEMT<ScalarNxNAdjImplR<5>>, MScalarSUN);
+MODULE_REGISTER_TMP(EMTSU6, TEMT<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
  *                           TEMT implementation                              *
@@ -99,8 +99,12 @@ std::vector<std::string> TEMT<SImpl>::getInput(void)
     for (unsigned int nu = mu; nu < env().getNd(); ++nu)
     {
         in.push_back(varName(par().kinetic, mu, nu));
-        in.push_back(varName(par().improvement, mu, nu));
+        if (!par().improvement.empty())
+        {
+            in.push_back(varName(par().improvement, mu, nu));
+        }
     }
+    in.push_back(varName(par().kinetic, "sum"));
     in.push_back(varName(par().phiPow, 2));
     in.push_back(varName(par().phiPow, 4));
 
@@ -130,7 +134,6 @@ void TEMT<SImpl>::setup(void)
     {
         envCreateLat(ComplexField, varName(getName(), mu, nu));
     }
-    envTmpLat(ComplexField, "sumkin");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -140,32 +143,36 @@ void TEMT<SImpl>::execute(void)
     LOG(Message) << "Computing energy-momentum tensor" << std::endl;
     LOG(Message) << "  kinetic terms: '" << par().kinetic << "'" << std::endl;
     LOG(Message) << "      tr(phi^n): '" << par().phiPow << "'" << std::endl;
-    LOG(Message) << "    improvement: '" << par().improvement << "'" << std::endl;
+    if (!par().improvement.empty())
+    {
+        LOG(Message) << "    improvement: '" << par().improvement << "'" << std::endl;
+    }
     LOG(Message) << "            m^2= " << par().m2 << std::endl;
     LOG(Message) << "         lambda= " << par().lambda << std::endl;
     LOG(Message) << "              g= " << par().g << std::endl;
-    LOG(Message) << "             xi= " << par().xi << std::endl;
+    if (!par().improvement.empty())
+    {
+        LOG(Message) << "             xi= " << par().xi << std::endl;
+    }
 
     const unsigned int N       = SImpl::Group::Dimension;
     auto               &trphi2 = envGet(ComplexField, varName(par().phiPow, 2));
     auto               &trphi4 = envGet(ComplexField, varName(par().phiPow, 4));
+    auto               &sumkin = envGet(ComplexField, varName(par().kinetic, "sum"));
 
-    envGetTmp(ComplexField, sumkin);
-    sumkin = zero;
-    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-    {
-        auto &trkin = envGet(ComplexField, varName(par().kinetic, mu, mu));
-
-        sumkin += trkin;
-    }
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     for (unsigned int nu = mu; nu < env().getNd(); ++nu)
     {
         auto &out   = envGet(ComplexField, varName(getName(), mu, nu));
         auto &trkin = envGet(ComplexField, varName(par().kinetic, mu, nu));
-        auto &imp   = envGet(ComplexField, varName(par().improvement, mu, nu));
+        
+        out = 2.*trkin;
+        if (!par().improvement.empty())
+        {
+            auto &imp = envGet(ComplexField, varName(par().improvement, mu, nu));
 
-        out = 2.*trkin + par().xi*imp;
+            out += par().xi*imp;
+        }
         if (mu == nu)
         {
             out -= sumkin + par().m2*trphi2 + par().lambda*trphi4;

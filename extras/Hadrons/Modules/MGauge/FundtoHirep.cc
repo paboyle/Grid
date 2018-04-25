@@ -4,9 +4,11 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MGauge/FundtoHirep.cc
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
+Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
+Author: pretidav <david.preti@csic.es>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -42,7 +44,8 @@ TFundtoHirep<Rep>::TFundtoHirep(const std::string name)
 template <class Rep>
 std::vector<std::string> TFundtoHirep<Rep>::getInput(void)
 {
-    std::vector<std::string> in;
+    std::vector<std::string> in = {par().gaugeconf};
+
     return in;
 }
 
@@ -50,6 +53,7 @@ template <class Rep>
 std::vector<std::string> TFundtoHirep<Rep>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
+
     return out;
 }
 
@@ -57,19 +61,19 @@ std::vector<std::string> TFundtoHirep<Rep>::getOutput(void)
 template <typename Rep>
 void TFundtoHirep<Rep>::setup(void)
 {
-    envCreateLat(typename Rep::LatticeField, getName());
+    envCreateLat(Rep::LatticeField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <class Rep>
 void TFundtoHirep<Rep>::execute(void)
 {
-    auto &U      = *env().template getObject<LatticeGaugeField>(par().gaugeconf);
     LOG(Message) << "Transforming Representation" << std::endl;
+
+    auto &U    = envGet(LatticeGaugeField, par().gaugeconf);
+    auto &URep = envGet(Rep::LatticeField, getName());
 
     Rep TargetRepresentation(U._grid);
     TargetRepresentation.update_representation(U);
-
-    auto &URep = envGet(typename Rep::LatticeField, getName());
     URep = TargetRepresentation.U;
 }

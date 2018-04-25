@@ -62,7 +62,7 @@ public:
     // constructor
     TZMobiusDWF(const std::string name);
     // destructor
-    virtual ~TZMobiusDWF(void) = default;
+    virtual ~TZMobiusDWF(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -72,7 +72,7 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(ZMobiusDWF, TZMobiusDWF<ZFIMPL>, MAction);
+MODULE_REGISTER_TMP(ZMobiusDWF, TZMobiusDWF<ZFIMPL>, MAction);
 
 /******************************************************************************
  *                 TZMobiusDWF implementation                             *

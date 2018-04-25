@@ -70,7 +70,7 @@ public:
     // constructor
     TWall(const std::string name);
     // destructor
-    virtual ~TWall(void) = default;
+    virtual ~TWall(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -84,7 +84,7 @@ private:
     std::string momphName_, tName_;
 };
 
-MODULE_REGISTER_NS(Wall, TWall<FIMPL>, MSource);
+MODULE_REGISTER_TMP(Wall, TWall<FIMPL>, MSource);
 
 /******************************************************************************
  *                 TWall implementation                                       *

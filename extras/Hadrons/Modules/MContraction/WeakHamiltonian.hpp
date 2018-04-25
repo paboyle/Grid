@@ -97,7 +97,7 @@ public:\
     /* constructor */ \
     T##modname(const std::string name);\
     /* destructor */ \
-    virtual ~T##modname(void) = default;\
+    virtual ~T##modname(void) {};\
     /* dependency relation */ \
     virtual std::vector<std::string> getInput(void);\
     virtual std::vector<std::string> getOutput(void);\
@@ -109,7 +109,7 @@ protected:\
     /* execution */ \
     virtual void execute(void);\
 };\
-MODULE_REGISTER_NS(modname, T##modname, MContraction);
+MODULE_REGISTER(modname, T##modname, MContraction);
 
 END_MODULE_NAMESPACE
 

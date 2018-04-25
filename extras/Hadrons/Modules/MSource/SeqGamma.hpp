@@ -76,7 +76,7 @@ public:
     // constructor
     TSeqGamma(const std::string name);
     // destructor
-    virtual ~TSeqGamma(void) = default;
+    virtual ~TSeqGamma(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -90,7 +90,7 @@ private:
     std::string momphName_, tName_;
 };
 
-MODULE_REGISTER_NS(SeqGamma, TSeqGamma<FIMPL>, MSource);
+MODULE_REGISTER_TMP(SeqGamma, TSeqGamma<FIMPL>, MSource);
 
 /******************************************************************************
  *                         TSeqGamma implementation                           *

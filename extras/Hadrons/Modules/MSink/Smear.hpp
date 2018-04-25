@@ -59,7 +59,7 @@ public:
     // constructor
     TSmear(const std::string name);
     // destructor
-    virtual ~TSmear(void) = default;
+    virtual ~TSmear(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -70,7 +70,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Smear, TSmear<FIMPL>, MSink);
+MODULE_REGISTER_TMP(Smear, TSmear<FIMPL>, MSink);
 
 /******************************************************************************
  *                          TSmear implementation                             *

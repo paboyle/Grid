@@ -52,7 +52,7 @@ public:
     // constructor
     TLoadNersc(const std::string name);
     // destructor
-    virtual ~TLoadNersc(void) = default;
+    virtual ~TLoadNersc(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -62,7 +62,7 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(LoadNersc, TLoadNersc, MIO);
+MODULE_REGISTER(LoadNersc, TLoadNersc, MIO);
 
 END_MODULE_NAMESPACE
 
