@@ -95,7 +95,7 @@ std::unique_ptr<T> Factory<T, CreatorInput>::create(const std::string type,
     }
     catch (std::out_of_range &)
     {
-      //HADRON_ERROR("object of type '" + type + "' unknown");
+      //HADRONS_ERROR("object of type '" + type + "' unknown");
     	std::cout << GridLogError << "Error" << std::endl;
     	std::cout << GridLogError << obj_type() << " object of name [" << type << "] unknown" << std::endl;
     	exit(1);

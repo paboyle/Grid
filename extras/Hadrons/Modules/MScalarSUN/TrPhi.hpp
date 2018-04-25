@@ -119,7 +119,7 @@ void TTrPhi<SImpl>::setup(void)
 {
     if (par().maxPow < 2)
     {
-        HADRON_ERROR(Size, "'maxPow' should be at least equal to 2");
+        HADRONS_ERROR(Size, "'maxPow' should be at least equal to 2");
     }
     envTmpLat(Field, "phi2");
     envTmpLat(Field, "buf");

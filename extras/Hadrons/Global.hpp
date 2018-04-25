@@ -110,7 +110,7 @@ public:
 };
 
 #define LOG(channel) std::cout << HadronsLog##channel
-#define DEBUG_VAR(var) LOG(Debug) << #var << "= " << (var) << std::endl;
+#define HADRONS_DEBUG_VAR(var) LOG(Debug) << #var << "= " << (var) << std::endl;
 
 extern HadronsLogger HadronsLogError;
 extern HadronsLogger HadronsLogWarning;

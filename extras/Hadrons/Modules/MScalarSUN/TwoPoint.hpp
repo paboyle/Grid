@@ -143,7 +143,7 @@ void TTwoPoint<SImpl>::setup(void)
         mom_[i] = strToVec<int>(par().mom[i]);
         if (mom_[i].size() != nd - 1)
         {
-            HADRON_ERROR(Size, "momentum number of components different from " 
+            HADRONS_ERROR(Size, "momentum number of components different from " 
                                + std::to_string(nd-1));
         }
     }

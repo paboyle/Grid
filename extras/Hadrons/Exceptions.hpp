@@ -34,10 +34,10 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Global.hpp>
 #endif
 
-#define SRC_LOC std::string(__FUNCTION__) + " at " + std::string(__FILE__) + ":"\
-                + std::to_string(__LINE__)
-#define HADRON_ERROR(exc, msg)\
-throw(Exceptions::exc(msg, SRC_LOC));
+#define HADRONS_SRC_LOC std::string(__FUNCTION__) + " at " \
+                        + std::string(__FILE__) + ":" + std::to_string(__LINE__)
+#define HADRONS_ERROR(exc, msg)\
+throw(Exceptions::exc(msg, HADRONS_SRC_LOC));
 
 #define DECL_EXC(name, base) \
 class name: public base\

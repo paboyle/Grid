@@ -134,14 +134,14 @@ void TShiftProbe<SImpl>::execute(void)
     shift = strToVec<ShiftPair>(par().shifts);
     if (shift.size() % 2 != 0)
     {
-        HADRON_ERROR(Size, "the number of shifts is odd");
+        HADRONS_ERROR(Size, "the number of shifts is odd");
     }
     sign = (shift.size() % 4 == 0) ? 1 : -1;
     for (auto &s: shift)
     {
         if (s.first >= env().getNd())
         {
-            HADRON_ERROR(Size, "dimension to large for shift <" 
+            HADRONS_ERROR(Size, "dimension to large for shift <" 
                                + std::to_string(s.first) + " " 
                                + std::to_string(s.second) + ">" );
         }

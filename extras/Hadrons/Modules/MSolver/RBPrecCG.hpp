@@ -127,7 +127,7 @@ void TRBPrecCG<FImpl, nBasis>::setup(void)
 {
     if (par().maxIteration == 0)
     {
-        HADRON_ERROR(Argument, "zero maximum iteration");
+        HADRONS_ERROR(Argument, "zero maximum iteration");
     }
 
     LOG(Message) << "setting up Schur red-black preconditioned CG for"

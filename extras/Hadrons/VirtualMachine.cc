@@ -123,7 +123,7 @@ void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
                 else
                 {
                     // output already fully registered, error
-                    HADRON_ERROR(Definition, "object '" + out
+                    HADRONS_ERROR(Definition, "object '" + out
                                  + "' is already produced by module '"
                                  + module_[env().getObjectModule(out)].name
                                  + "' (while pushing module '" + name + "')");
@@ -158,7 +158,7 @@ void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
     }
     else
     {
-        HADRON_ERROR(Definition, "module '" + name + "' already exists");
+        HADRONS_ERROR(Definition, "module '" + name + "' already exists");
     }
 }
 
@@ -185,7 +185,7 @@ ModuleBase * VirtualMachine::getModule(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR(Definition, "no module with address " + std::to_string(address));
+        HADRONS_ERROR(Definition, "no module with address " + std::to_string(address));
     }
 }
 
@@ -202,7 +202,7 @@ unsigned int VirtualMachine::getModuleAddress(const std::string name) const
     }
     else
     {
-        HADRON_ERROR(Definition, "no module with name '" + name + "'");
+        HADRONS_ERROR(Definition, "no module with name '" + name + "'");
     }
 }
 
@@ -214,7 +214,7 @@ std::string VirtualMachine::getModuleName(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR(Definition, "no module with address " + std::to_string(address));
+        HADRONS_ERROR(Definition, "no module with address " + std::to_string(address));
     }
 }
 
@@ -226,7 +226,7 @@ std::string VirtualMachine::getModuleType(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR(Definition, "no module with address " + std::to_string(address));
+        HADRONS_ERROR(Definition, "no module with address " + std::to_string(address));
     }
 }
 
@@ -306,7 +306,7 @@ void VirtualMachine::makeModuleGraph(void)
 
             if (min < 0)
             {
-                HADRON_ERROR(Definition, "dependency '" 
+                HADRONS_ERROR(Definition, "dependency '" 
                              + env().getObjectName(in) + "' (address " 
                              + std::to_string(in)
                              + ") is not produced by any module");

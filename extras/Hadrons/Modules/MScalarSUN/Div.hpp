@@ -112,7 +112,7 @@ void TDiv<SImpl>::setup(void)
 {
     if (par().op.size() != env().getNd())
     {
-        HADRON_ERROR(Size, "the number of components differs from number of dimensions");
+        HADRONS_ERROR(Size, "the number of components differs from number of dimensions");
     }
     envCreateLat(ComplexField, getName());
 }

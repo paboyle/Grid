@@ -126,7 +126,7 @@ if (env().getGrid()->IsBoss())\
     \
     if (mkdir(_dirname))\
     {\
-        HADRON_ERROR(Io, "cannot create directory '" + _dirname + "'");\
+        HADRONS_ERROR(Io, "cannot create directory '" + _dirname + "'");\
     }\
     {\
         ResultWriter _writer(RESULT_FILE_NAME(ioStem));\
