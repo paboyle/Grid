@@ -36,7 +36,7 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 #define LMAX (32)
-#define LMIN (4)
+#define LMIN (16)
 #define LINC (4)
 
   int64_t Nloop=2000;
@@ -204,7 +204,7 @@ int main (int argc, char ** argv)
 	    std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
       }
   }
-
+#if 1
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking SU3xSU3  z= x * Cshift(y)"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
@@ -248,6 +248,6 @@ int main (int argc, char ** argv)
 	std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
       }
     }
-
+#endif
   Grid_finalize();
 }

@@ -256,7 +256,7 @@ public:
       _odata[ss]=r._odata[ss];
     }  	
   }
-  
+
   Lattice(Lattice&& r){ // move constructor
     _grid = r._grid;
     checkerboard = r.checkerboard;
@@ -270,6 +270,7 @@ public:
     _odata       =std::move(r._odata);
     return *this;
   }
+
   inline Lattice<vobj> & operator = (const Lattice<vobj> & r){
     _grid        = r._grid;
     checkerboard = r.checkerboard;
