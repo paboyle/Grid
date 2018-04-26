@@ -128,7 +128,14 @@ ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GridCartesian      
   StencilEven.BuildSurfaceList(LLs,vol4);
   StencilOdd.BuildSurfaceList(LLs,vol4);
 }
-
+template <class Impl>
+void ImprovedStaggeredFermion5D<Impl>::CopyGaugeCheckerboards(void)
+{
+  pickCheckerboard(Even, UmuEven,  Umu);
+  pickCheckerboard(Odd,  UmuOdd ,  Umu);
+  pickCheckerboard(Even, UUUmuEven,UUUmu);
+  pickCheckerboard(Odd,  UUUmuOdd, UUUmu);
+}
 template<class Impl>
 ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GaugeField &_Uthin,GaugeField &_Ufat,
 							     GridCartesian         &FiveDimGrid,
@@ -144,26 +151,7 @@ ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GaugeField &_Uthin,
 {
   ImportGauge(_Uthin,_Ufat);
 }
-template<class Impl>
-ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GaugeField &_Utriple,GaugeField &_Ufat,
-							     GridCartesian         &FiveDimGrid,
-							     GridRedBlackCartesian &FiveDimRedBlackGrid,
-							     GridCartesian         &FourDimGrid,
-							     GridRedBlackCartesian &FourDimRedBlackGrid,
-							     RealD _mass,
-							     const ImplParams &p) :
-  ImprovedStaggeredFermion5D(FiveDimGrid,FiveDimRedBlackGrid,
-			     FourDimGrid,FourDimRedBlackGrid,
-			     _mass,1.0,1.0,1.0,p)
-{
-  ImportGaugeSimple(_Utriple,_Ufat);
-}
 
-template <class Impl>
-void ImprovedStaggeredFermion5D<Impl>::ImportGauge(const GaugeField &_Uthin) 
-{
-  ImportGauge(_Uthin,_Uthin);
-};
 ///////////////////////////////////////////////////
 // For MILC use; pass three link U's and 1 link U
 ///////////////////////////////////////////////////
@@ -188,10 +176,17 @@ void ImprovedStaggeredFermion5D<Impl>::ImportGaugeSimple(const GaugeField &_Utri
     Impl::InsertGaugeField(Umu,-U,mu+4);
 
   }
-  pickCheckerboard(Even, UmuEven,  Umu);
-  pickCheckerboard(Odd,  UmuOdd ,  Umu);
-  pickCheckerboard(Even, UUUmuEven,UUUmu);
-  pickCheckerboard(Odd,  UUUmuOdd, UUUmu);
+  CopyGaugeCheckerboards();
+}
+template <class Impl>
+void ImprovedStaggeredFermion5D<Impl>::ImportGaugeSimple(const DoubledGaugeField &_UUU,const DoubledGaugeField &_U) 
+{
+  /////////////////////////////////////////////////////////////////
+  // Trivial import; phases and fattening and such like preapplied
+  /////////////////////////////////////////////////////////////////
+  Umu   = _U;
+  UUUmu = _UUU;
+  CopyGaugeCheckerboards();
 }
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::ImportGauge(const GaugeField &_Uthin,const GaugeField &_Ufat)
@@ -221,10 +216,7 @@ void ImprovedStaggeredFermion5D<Impl>::ImportGauge(const GaugeField &_Uthin,cons
     PokeIndex<LorentzIndex>(UUUmu, U*(-0.5*c2/u0/u0/u0), mu+4);
   }
 
-  pickCheckerboard(Even, UmuEven, Umu);
-  pickCheckerboard(Odd,  UmuOdd , Umu);
-  pickCheckerboard(Even, UUUmuEven, UUUmu);
-  pickCheckerboard(Odd,  UUUmuOdd, UUUmu);
+  CopyGaugeCheckerboards();
 }
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::DhopDir(const FermionField &in, FermionField &out,int dir5,int disp)
