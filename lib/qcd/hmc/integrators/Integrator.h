@@ -114,18 +114,26 @@ class Integrator {
     // input U actually not used in the fundamental case
     // Fundamental updates, include smearing
 
-   for (int a = 0; a < as[level].actions.size(); ++a) {
+    for (int a = 0; a < as[level].actions.size(); ++a) {
+      double start_full = usecond();
       Field force(U._grid);
       conformable(U._grid, Mom._grid);
+
       Field& Us = Smearer.get_U(as[level].actions.at(a)->is_smeared);
+      double start_force = usecond();
       as[level].actions.at(a)->deriv(Us, force);  // deriv should NOT include Ta
 
       std::cout << GridLogIntegrator << "Smearing (on/off): " << as[level].actions.at(a)->is_smeared << std::endl;
       if (as[level].actions.at(a)->is_smeared) Smearer.smeared_force(force);
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
+      double end_force = usecond();
       Real force_abs = std::sqrt(norm2(force)/U._grid->gSites());
-      std::cout << GridLogIntegrator << "Force average: " << force_abs << std::endl;
+      std::cout << GridLogIntegrator << "["<<level<<"]["<<a<<"] Force average: " << force_abs << std::endl;
       Mom -= force * ep; 
+      double end_full = usecond();
+      double time_full  = (end_full - start_full) / 1e3;
+      double time_force = (end_force - start_force) / 1e3;
+      std::cout << GridLogIntegrator << "["<<level<<"]["<<a<<"] P update elapsed time: " << time_full << " ms (force: " << time_force << " ms)"  << std::endl;
     }
 
     // Force from the other representations
