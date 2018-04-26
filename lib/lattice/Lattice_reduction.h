@@ -33,7 +33,7 @@ namespace Grid {
   // Deterministic Reduction operations
   ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
-  ComplexD nrm = innerProduct(arg,arg);
+  auto nrm = innerProduct(arg,arg);
   return std::real(nrm); 
 }
 
@@ -43,12 +43,12 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
 {
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_typeD vector_type;
-  scalar_type  nrm;
-  
   GridBase *grid = left._grid;
-  
-  std::vector<vector_type,alignedAllocator<vector_type> > sumarray(grid->SumArraySize());
-  
+  const int pad = 8;
+
+  scalar_type  nrm;
+  std::vector<scalar_type,alignedAllocator<vector_type> > sumarray(grid->SumArraySize()*pad);
+
   parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
     int nwork, mywork, myoff;
     GridThread::GetWork(left._grid->oSites(),thr,mywork,myoff);
@@ -57,17 +57,69 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
     for(int ss=myoff;ss<mywork+myoff; ss++){
       vnrm = vnrm + innerProductD(left._odata[ss],right._odata[ss]);
     }
-    sumarray[thr]=TensorRemove(vnrm) ;
+    // All threads sum across SIMD; reduce serial work at end
+    // one write per cacheline with streaming store
+    vstream(sumarray[thr*pad],Reduce(TensorRemove(vnrm))) ;
   }
   
-  vector_type vvnrm; vvnrm=zero;  // sum across threads
+  nrm=0.0;
   for(int i=0;i<grid->SumArraySize();i++){
-    vvnrm = vvnrm+sumarray[i];
+    nrm = nrm+sumarray[i*pad];
   } 
-  nrm = Reduce(vvnrm);// sum across simd
   right._grid->GlobalSum(nrm);
   return nrm;
 }
+
+/////////////////////////
+// Fast axpby_norm
+// z = a x + b y
+// return norm z
+/////////////////////////
+template<class sobj,class vobj> strong_inline RealD 
+axpy_norm_fast(Lattice<vobj> &z,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y) 
+{
+  sobj one(1.0);
+  return axpby_norm_fast(z,a,one,x,y);
+}
+
+template<class sobj,class vobj> strong_inline RealD 
+axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y) 
+{
+  const int pad = 8;
+  z.checkerboard = x.checkerboard;
+  conformable(z,x);
+  conformable(x,y);
+
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_typeD vector_type;
+  RealD  nrm;
+  
+  GridBase *grid = x._grid;
+  
+  Vector<RealD> sumarray(grid->SumArraySize()*pad);
+  
+  parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
+    int nwork, mywork, myoff;
+    GridThread::GetWork(x._grid->oSites(),thr,mywork,myoff);
+    
+    // private to thread; sub summation
+    decltype(innerProductD(z._odata[0],z._odata[0])) vnrm=zero; 
+    for(int ss=myoff;ss<mywork+myoff; ss++){
+      vobj tmp = a*x._odata[ss]+b*y._odata[ss];
+      vnrm = vnrm + innerProductD(tmp,tmp);
+      vstream(z._odata[ss],tmp);
+    }
+    vstream(sumarray[thr*pad],real(Reduce(TensorRemove(vnrm)))) ;
+  }
+  
+  nrm = 0.0; // sum across threads; linear in thread count but fast
+  for(int i=0;i<grid->SumArraySize();i++){
+    nrm = nrm+sumarray[i*pad];
+  } 
+  z._grid->GlobalSum(nrm);
+  return nrm; 
+}
+
  
 template<class Op,class T1>
 inline auto sum(const LatticeUnaryExpression<Op,T1> & expr)
