@@ -50,6 +50,16 @@ public:
                                     std::string,              output);
 };
 
+class TwoPointResult: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(TwoPointResult,
+                                    std::string, sink,
+                                    std::string, source,
+                                    std::vector<int>, mom,
+                                    std::vector<Complex>, data);
+};
+
 template <typename SImpl>
 class TTwoPoint: public Module<TwoPointPar>
 {
@@ -57,16 +67,6 @@ public:
     typedef typename SImpl::Field          Field;
     typedef typename SImpl::ComplexField   ComplexField;
     typedef          std::vector<TComplex> SlicedOp;
-
-    class Result: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        std::string, sink,
-                                        std::string, source,
-                                        std::vector<int>, mom,
-                                        std::vector<Complex>, data);
-    };
 public:
     // constructor
     TTwoPoint(const std::string name);
@@ -166,7 +166,7 @@ void TTwoPoint<SImpl>::execute(void)
     const unsigned int                           nmom = mom_.size();
     std::vector<int>                             dMask(nd, 1);
     std::set<std::string>                        ops;
-    std::vector<Result>                          result;
+    std::vector<TwoPointResult>                  result;
     std::map<std::string, std::vector<SlicedOp>> slicedOp;
     FFT                                          fft(env().getGrid());
 
@@ -201,7 +201,7 @@ void TTwoPoint<SImpl>::execute(void)
     for (unsigned int m = 0; m < nmom; ++m)
     for (auto &p: par().op)
     {
-        Result r;
+        TwoPointResult r;
 
         r.sink   = p.first;
         r.source = p.second;

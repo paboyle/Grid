@@ -49,19 +49,20 @@ public:
                                     std::string,  output);
 };
 
+class TrMagResult: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(TrMagResult,
+                                    std::string, op,
+                                    Real,        value);
+};
+
 template <typename SImpl>
 class TTrMag: public Module<TrMagPar>
 {
 public:
     typedef typename SImpl::Field        Field;
     typedef typename SImpl::ComplexField ComplexField;
-    class Result: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        std::string, op,
-                                        Real,        value);
-    };
 public:
     // constructor
     TTrMag(const std::string name);
@@ -120,8 +121,8 @@ void TTrMag<SImpl>::execute(void)
     LOG(Message) << "Computing tr(mag^n) for n even up to " << par().maxPow
                  << std::endl;
 
-    std::vector<Result> result;
-    auto                &phi = envGet(Field, par().field);
+    std::vector<TrMagResult> result;
+    auto                     &phi = envGet(Field, par().field);
 
     auto m2 = sum(phi), mn = m2;
 
@@ -129,7 +130,7 @@ void TTrMag<SImpl>::execute(void)
     mn = 1.;
     for (unsigned int n = 2; n <= par().maxPow; n += 2)
     {
-        Result r;
+        TrMagResult r;
 
         mn = mn*m2;
         r.op    = "tr(mag^" + std::to_string(n) + ")";

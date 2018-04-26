@@ -49,19 +49,20 @@ public:
                                     std::string,              output);
 };
 
+class DivResult: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(DivResult,
+                                    DiffType, type,
+                                    Complex,  value);
+};
+
 template <typename SImpl>
 class TDiv: public Module<DivPar>
 {
 public:
     typedef typename SImpl::Field        Field;
     typedef typename SImpl::ComplexField ComplexField;
-    class Result: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        DiffType, type,
-                                        Complex,  value);
-    };
 public:
     // constructor
     TDiv(const std::string name);
@@ -139,7 +140,7 @@ void TDiv<SImpl>::execute(void)
     }
     if (!par().output.empty())
     {
-        Result       r;
+        DivResult r;
 
         r.type  = par().type;
         r.value = TensorRemove(sum(div));

@@ -49,19 +49,21 @@ public:
                                     std::string,  output);
 };
 
+class TrPhiResult: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(TrPhiResult,
+                                    std::string, op,
+                                    Real,        value);
+};
+
 template <typename SImpl>
 class TTrPhi: public Module<TrPhiPar>
 {
 public:
     typedef typename SImpl::Field        Field;
     typedef typename SImpl::ComplexField ComplexField;
-    class Result: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        std::string, op,
-                                        Real,        value);
-    };
+
 public:
     // constructor
     TTrPhi(const std::string name);
@@ -136,8 +138,8 @@ void TTrPhi<SImpl>::execute(void)
     LOG(Message) << "Computing tr(phi^n) for n even up to " << par().maxPow
                  << std::endl; 
 
-    std::vector<Result> result;
-    auto                &phi = envGet(Field, par().field);
+    std::vector<TrPhiResult> result;
+    auto                     &phi = envGet(Field, par().field);
 
     envGetTmp(Field, phi2);
     envGetTmp(Field, buf);
@@ -151,7 +153,7 @@ void TTrPhi<SImpl>::execute(void)
         phin = trace(buf);
         if (!par().output.empty())
         {
-            Result r;
+            TrPhiResult r;
 
             r.op    = "tr(phi^" + std::to_string(n) + ")";
             r.value = TensorRemove(sum(phin)).real();

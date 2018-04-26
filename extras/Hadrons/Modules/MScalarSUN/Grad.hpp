@@ -49,19 +49,20 @@ public:
                                     std::string, output);
 };
 
+class GradResult: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(GradResult,
+                                    DiffType,              type,
+                                    std::vector<Complex>,  value);
+};
+
 template <typename SImpl>
 class TGrad: public Module<GradPar>
 {
 public:
     typedef typename SImpl::Field        Field;
     typedef typename SImpl::ComplexField ComplexField;
-    class Result: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        DiffType, type,
-                                        Complex,  value);
-    };
 public:
     // constructor
     TGrad(const std::string name);
@@ -130,14 +131,18 @@ void TGrad<SImpl>::setup(void)
 template <typename SImpl>
 void TGrad<SImpl>::execute(void)
 {
-    const auto nd = env().getNd();
-
     LOG(Message) << "Computing the " << par().type << " gradient of '"
                  << par().op << "'" << std::endl;
 
-    std::vector<Result> result;
-    auto                &op = envGet(ComplexField, par().op);
+    const unsigned int nd = env().getNd();
+    GradResult         result;
+    auto               &op = envGet(ComplexField, par().op);
 
+    if (!par().output.empty())
+    {
+        result.type = par().type;
+        result.value.resize(nd);
+    }
     for (unsigned int mu = 0; mu < nd; ++mu)
     {
         auto &der = envGet(ComplexField, varName(getName(), mu));
@@ -145,14 +150,10 @@ void TGrad<SImpl>::execute(void)
         dmu(der, op, mu, par().type);
         if (!par().output.empty())
         {
-            Result r;
-
-            r.type  = par().type;
-            r.value = TensorRemove(sum(der));
-            result.push_back(r);
+            result.value[mu] = TensorRemove(sum(der));
         }
     }
-    if (result.size() > 0)
+    if (!par().output.empty())
     {
         saveResult(par().output, "grad", result);
     }

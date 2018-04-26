@@ -49,19 +49,20 @@ public:
                                     std::string,  output);
 };
 
+class TransProjResult: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(TransProjResult,
+                                    std::vector<std::vector<Complex>>, value,
+                                    DiffType,                          type);
+};
+
 template <typename SImpl>
 class TTransProj: public Module<TransProjPar>
 {
 public:
     typedef typename SImpl::Field        Field;
     typedef typename SImpl::ComplexField ComplexField;
-    class Result: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        std::string, op,
-                                        Complex    , value);
-    };
 public:
     // constructor
     TTransProj(const std::string name);
@@ -137,21 +138,27 @@ void TTransProj<SImpl>::execute(void)
                  << par().type << " derivatives and op= '" << par().op 
                  << "'" << std::endl; 
 
-    std::vector<Result> result;
-    auto                &op = envGet(ComplexField, par().op);
+    const unsigned int nd = env().getNd();
+    TransProjResult    result;
+    auto               &op = envGet(ComplexField, par().op);
 
     envGetTmp(ComplexField, buf1);
     envGetTmp(ComplexField, buf2);
     envGetTmp(ComplexField, lap);
     lap = zero;
-    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    if (!par().output.empty())
+    {
+        result.type = par().type;
+        result.value.resize(nd, std::vector<Complex>(nd));
+    }
+    for (unsigned int mu = 0; mu < nd; ++mu)
     {
         dmu(buf1, op, mu, par().type);
         dmu(buf2, buf1, mu, par().type);
         lap += buf2;
     }
-    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-    for (unsigned int nu = mu; nu < env().getNd(); ++nu)
+    for (unsigned int mu = 0; mu < nd; ++mu)
+    for (unsigned int nu = mu; nu < nd; ++nu)
     {
         auto &out = envGet(ComplexField, varName(getName(), mu, nu));
         dmu(buf1, op, mu, par().type);
@@ -163,16 +170,11 @@ void TTransProj<SImpl>::execute(void)
         }
         if (!par().output.empty())
         {
-            Result r;
-
-            r.op    = "(delta_" + std::to_string(mu) + "," + std::to_string(nu)
-                      + " d^2 - d_" + std::to_string(mu) + "*d_" 
-                      + std::to_string(nu) + ")*op";
-            r.value = TensorRemove(sum(out));
-            result.push_back(r);
+            result.value[mu][nu] = TensorRemove(sum(out));
+            result.value[mu][nu] = result.value[nu][mu];
         }
     }
-    if (result.size() > 0)
+    if (!par().output.empty())
     {
         saveResult(par().output, "transproj", result);
     }
