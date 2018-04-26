@@ -178,6 +178,9 @@ namespace QCD {
     // Data members require to support the functionality
     ///////////////////////////////////////////////////////////////
   public:
+
+    virtual int   isTrivialEE(void) { return 1; };
+    virtual RealD Mass(void) { return mass; }
     
     GridBase *_FourDimGrid;
     GridBase *_FourDimRedBlackGrid;

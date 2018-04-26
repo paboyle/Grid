@@ -291,14 +291,12 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOr
 						    DoubledGaugeField & U,DoubledGaugeField & UUU,
 						    const FermionField &in, FermionField &out,int dag)
 {
-  DhopTotalTime-=usecond();
 #ifdef GRID_OMP
   if ( StaggeredKernelsStatic::Comms == StaggeredKernelsStatic::CommsAndCompute )
     DhopInternalOverlappedComms(st,lo,U,UUU,in,out,dag);
   else
 #endif
     DhopInternalSerialComms(st,lo,U,UUU,in,out,dag);
-  DhopTotalTime+=usecond();
 }
 
 template<class Impl>
@@ -412,6 +410,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st,
 
 
 
+ //double t1=usecond();
   DhopTotalTime -= usecond();
   DhopCommTime -= usecond();
   st.HaloExchange(in,compressor);
@@ -432,6 +431,12 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st,
   }
   DhopComputeTime += usecond();
   DhopTotalTime   += usecond();
+ //double t2=usecond();
+ //std::cout << __FILE__ << " " << __func__  << " Total Time " << DhopTotalTime << std::endl;
+ //std::cout << __FILE__ << " " << __func__  << " Total Time Org " << t2-t1 << std::endl;
+ //std::cout << __FILE__ << " " << __func__  << " Comml Time " << DhopCommTime << std::endl;
+ //std::cout << __FILE__ << " " << __func__  << " Compute Time " << DhopComputeTime << std::endl;
+
 }
 /*CHANGE END*/
 
