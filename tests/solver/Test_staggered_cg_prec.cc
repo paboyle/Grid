@@ -83,7 +83,19 @@ int main (int argc, char ** argv)
 
   SchurStaggeredOperator<ImprovedStaggeredFermionR,FermionField> HermOpEO(Ds);
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
+  double t1=usecond();
   CG(HermOpEO,src_o,res_o);
+  double t2=usecond();
+
+  // Schur solver: uses DeoDoe => volume * 1146
+  double ncall=CG.IterationsToComplete;
+  double flops=(16*(3*(6+8+8)) + 15*3*2)*volume*ncall; // == 66*16 +  == 1146
+
+  std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+  std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+  std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
+
+
 
   FermionField tmp(&RBGrid);
 
