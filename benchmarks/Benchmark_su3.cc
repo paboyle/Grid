@@ -35,8 +35,8 @@ using namespace Grid::QCD;
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
-#define LMAX (16)
-#define LMIN (16)
+#define LMAX (32)
+#define LMIN (4)
 #define LINC (4)
 
   int64_t Nloop=2000;
@@ -193,17 +193,17 @@ int main (int argc, char ** argv)
       LatticeColourMatrix y(&Grid); random(pRNG,y);
 
       for(int mu=0;mu<4;mu++){
-	double start=usecond();
-	for(int64_t i=0;i<Nloop;i++){
-	  z = PeriodicBC::CovShiftForward(x,mu,y);
-	}
-	double stop=usecond();
-	double time = (stop-start)/Nloop*1000.0;
+	      double start=usecond();
+	      for(int64_t i=0;i<Nloop;i++){
+	        z = PeriodicBC::CovShiftForward(x,mu,y);
+	    }
+	    double stop=usecond();
+	    double time = (stop-start)/Nloop*1000.0;
 	
 	
-	double bytes=3*vol*Nc*Nc*sizeof(Complex);
-	double flops=Nc*Nc*(6+8+8)*vol;
-	std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
+	    double bytes=3*vol*Nc*Nc*sizeof(Complex);
+	    double flops=Nc*Nc*(6+8+8)*vol;
+	    std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
       }
   }
 
