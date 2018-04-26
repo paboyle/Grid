@@ -51,7 +51,7 @@ namespace Grid {
 
       virtual void Op     (const Field &in, Field &out) = 0; // Abstract base
       virtual void AdjOp  (const Field &in, Field &out) = 0; // Abstract base
-      virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2)=0;
+      virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2);
       virtual void HermOp(const Field &in, Field &out)=0;
     };
 
@@ -305,36 +305,59 @@ namespace Grid {
       class SchurStaggeredOperator :  public SchurOperatorBase<Field> {
     protected:
       Matrix &_Mat;
+      Field tmp;
+      RealD mass;
+      double tMpc;
+      double tIP;
+      double tMeo;
+      double taxpby_norm;
+      uint64_t ncall;
     public:
-      SchurStaggeredOperator (Matrix &Mat): _Mat(Mat){};
+      void Report(void)
+      {
+	std::cout << GridLogMessage << " HermOpAndNorm.Mpc "<< tMpc/ncall<<" usec "<<std::endl;
+	std::cout << GridLogMessage << " HermOpAndNorm.IP  "<< tIP /ncall<<" usec "<<std::endl;
+	std::cout << GridLogMessage << " Mpc.MeoMoe        "<< tMeo/ncall<<" usec "<<std::endl;
+	std::cout << GridLogMessage << " Mpc.axpby_norm    "<< taxpby_norm/ncall<<" usec "<<std::endl;
+      }
+      SchurStaggeredOperator (Matrix &Mat): _Mat(Mat), tmp(_Mat.RedBlackGrid()) 
+      { 
+	assert( _Mat.isTrivialEE() );
+	mass = _Mat.Mass();
+	tMpc=0;
+	tIP =0;
+        tMeo=0;
+        taxpby_norm=0;
+	ncall=0;
+      }
       virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
-	GridLogIterative.TimingMode(1);
-	std::cout << GridLogIterative << " HermOpAndNorm "<<std::endl;
+	ncall++;
+	tMpc-=usecond();
 	n2 = Mpc(in,out);
-	std::cout << GridLogIterative << " HermOpAndNorm.Mpc "<<std::endl;
+	tMpc+=usecond();
+	tIP-=usecond();
 	ComplexD dot= innerProduct(in,out);
-	std::cout << GridLogIterative << " HermOpAndNorm.innerProduct "<<std::endl;
+	tIP+=usecond();
 	n1 = real(dot);
       }
       virtual void HermOp(const Field &in, Field &out){
-	std::cout << GridLogIterative << " HermOp "<<std::endl;
-	Mpc(in,out);
+	ncall++;
+	tMpc-=usecond();
+	_Mat.Meooe(in,out);
+	_Mat.Meooe(out,tmp);
+	tMpc+=usecond();
+	taxpby_norm-=usecond();
+	axpby(out,-1.0,mass*mass,tmp,in);
+	taxpby_norm+=usecond();
       }
       virtual  RealD Mpc      (const Field &in, Field &out) {
-	Field tmp(in._grid);
-	Field tmp2(in._grid);
-
-	std::cout << GridLogIterative << " HermOp.Mpc "<<std::endl;
-	_Mat.Mooee(in,out);
-	_Mat.Mooee(out,tmp);
-	std::cout << GridLogIterative << " HermOp.MooeeMooee "<<std::endl;
-
+	tMeo-=usecond();
 	_Mat.Meooe(in,out);
-	_Mat.Meooe(out,tmp2);
-	std::cout << GridLogIterative << " HermOp.MeooeMeooe "<<std::endl;
-
-	RealD nn=axpy_norm(out,-1.0,tmp2,tmp);
-	std::cout << GridLogIterative << " HermOp.axpy_norm "<<std::endl;
+	_Mat.Meooe(out,tmp);
+	tMeo+=usecond();
+	taxpby_norm-=usecond();
+	RealD nn=axpby_norm(out,-1.0,mass*mass,tmp,in);
+	taxpby_norm+=usecond();
 	return nn;
       }
       virtual  RealD MpcDag   (const Field &in, Field &out){
