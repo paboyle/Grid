@@ -240,7 +240,7 @@ public:
     double start = usecond();
     fill_smearedSet(U);
     double end = usecond();
-    double time = (stop - start)/ 1e3;
+    double time = (end - start)/ 1e3;
     std::cout << GridLogMessage << "Smearing in " << time << " ms" << std::endl;  
   }
 
@@ -271,7 +271,7 @@ public:
         pokeLorentz(SigmaTilde, tmp_mu, mu);
       }
       double end = usecond();
-      double time = (stop - start)/ 1e3;
+      double time = (end - start)/ 1e3;
       std::cout << GridLogMessage << "Smearing force in " << time << " ms" << std::endl;  
     } // if smearingLevels = 0 do nothing
   }
