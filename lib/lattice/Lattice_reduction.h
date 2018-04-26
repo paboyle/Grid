@@ -46,28 +46,29 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
   GridBase *grid = left._grid;
   const int pad = 8;
 
-  scalar_type  nrm;
-  std::vector<scalar_type,alignedAllocator<vector_type> > sumarray(grid->SumArraySize()*pad);
+  ComplexD  inner;
+  Vector<ComplexD> sumarray(grid->SumArraySize()*pad);
 
   parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
     int nwork, mywork, myoff;
     GridThread::GetWork(left._grid->oSites(),thr,mywork,myoff);
     
-    decltype(innerProductD(left._odata[0],right._odata[0])) vnrm=zero; // private to thread; sub summation
+    decltype(innerProductD(left._odata[0],right._odata[0])) vinner=zero; // private to thread; sub summation
     for(int ss=myoff;ss<mywork+myoff; ss++){
-      vnrm = vnrm + innerProductD(left._odata[ss],right._odata[ss]);
+      vinner = vinner + innerProductD(left._odata[ss],right._odata[ss]);
     }
     // All threads sum across SIMD; reduce serial work at end
     // one write per cacheline with streaming store
-    vstream(sumarray[thr*pad],Reduce(TensorRemove(vnrm))) ;
+    ComplexD tmp = Reduce(TensorRemove(vinner)) ;
+    vstream(sumarray[thr*pad],tmp);
   }
   
-  nrm=0.0;
+  inner=0.0;
   for(int i=0;i<grid->SumArraySize();i++){
-    nrm = nrm+sumarray[i*pad];
+    inner = inner+sumarray[i*pad];
   } 
-  right._grid->GlobalSum(nrm);
-  return nrm;
+  right._grid->GlobalSum(inner);
+  return inner;
 }
 
 /////////////////////////
