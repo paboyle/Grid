@@ -112,33 +112,67 @@ public:
       }
     };
 
-    GridRedBlackCartesian(const GridBase *base) : GridRedBlackCartesian(base->_fdimensions,base->_simd_layout,base->_processors)  {};
+    ////////////////////////////////////////////////////////////
+    // Create Redblack from original grid; require full grid pointer ?
+    ////////////////////////////////////////////////////////////
+    GridRedBlackCartesian(const GridBase *base) : GridBase(base->_processors,*base)
+    {
+      int dims = base->_ndimension;
+      std::vector<int> checker_dim_mask(dims,1);
+      int checker_dim = 0;
+      Init(base->_fdimensions,base->_simd_layout,base->_processors,checker_dim_mask,checker_dim);
+    };
 
-    GridRedBlackCartesian(const std::vector<int> &dimensions,
+    ////////////////////////////////////////////////////////////
+    // Create redblack from original grid, with non-trivial checker dim mask
+    ////////////////////////////////////////////////////////////
+    GridRedBlackCartesian(const GridBase *base,
+			  const std::vector<int> &checker_dim_mask,
+			  int checker_dim
+			  ) :  GridBase(base->_processors,*base) 
+    {
+      Init(base->_fdimensions,base->_simd_layout,base->_processors,checker_dim_mask,checker_dim)  ;
+    }
+
+    virtual ~GridRedBlackCartesian() = default;
+#if 0
+    ////////////////////////////////////////////////////////////
+    // Create redblack grid ;; deprecate these. Should not
+    // need direct creation of redblack without a full grid to base on
+    ////////////////////////////////////////////////////////////
+    GridRedBlackCartesian(const GridBase *base,
+			  const std::vector<int> &dimensions,
 			  const std::vector<int> &simd_layout,
 			  const std::vector<int> &processor_grid,
 			  const std::vector<int> &checker_dim_mask,
 			  int checker_dim
-			  ) :  GridBase(processor_grid) 
+			  ) :  GridBase(processor_grid,*base) 
     {
       Init(dimensions,simd_layout,processor_grid,checker_dim_mask,checker_dim);
     }
-    GridRedBlackCartesian(const std::vector<int> &dimensions,
+
+    ////////////////////////////////////////////////////////////
+    // Create redblack grid
+    ////////////////////////////////////////////////////////////
+    GridRedBlackCartesian(const GridBase *base,
+			  const std::vector<int> &dimensions,
 			  const std::vector<int> &simd_layout,
-			  const std::vector<int> &processor_grid) : GridBase(processor_grid) 
+			  const std::vector<int> &processor_grid) : GridBase(processor_grid,*base) 
     {
       std::vector<int> checker_dim_mask(dimensions.size(),1);
-      Init(dimensions,simd_layout,processor_grid,checker_dim_mask,0);
+      int checker_dim = 0;
+      Init(dimensions,simd_layout,processor_grid,checker_dim_mask,checker_dim);
     }
+#endif
+
     void Init(const std::vector<int> &dimensions,
               const std::vector<int> &simd_layout,
               const std::vector<int> &processor_grid,
               const std::vector<int> &checker_dim_mask,
               int checker_dim)
     {
-      ///////////////////////
-      // Grid information
-      ///////////////////////
+
+      _isCheckerBoarded = true;
       _checker_dim = checker_dim;
       assert(checker_dim_mask[checker_dim] == 1);
       _ndimension = dimensions.size();
@@ -172,6 +206,7 @@ public:
         {
           assert((_gdimensions[d] & 0x1) == 0);
           _gdimensions[d] = _gdimensions[d] / 2; // Remove a checkerboard
+	  _gsites /= 2;
         }
         _ldimensions[d] = _gdimensions[d] / _processors[d];
         assert(_ldimensions[d] * _processors[d] == _gdimensions[d]);

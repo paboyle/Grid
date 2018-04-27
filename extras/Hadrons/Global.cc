@@ -4,8 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Global.cc
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -39,31 +38,19 @@ HadronsLogger Hadrons::HadronsLogMessage(1,"Message");
 HadronsLogger Hadrons::HadronsLogIterative(1,"Iterative");
 HadronsLogger Hadrons::HadronsLogDebug(1,"Debug");
 
-// pretty size formatting //////////////////////////////////////////////////////
-std::string Hadrons::sizeString(long unsigned int bytes)
-
+void Hadrons::initLogger(void)
 {
-    constexpr unsigned int bufSize = 256;
-    const char             *suffixes[7] = {"", "K", "M", "G", "T", "P", "E"};
-    char                   buf[256];
-    long unsigned int      s     = 0;
-    double                 count = bytes;
-    
-    while (count >= 1024 && s < 7)
-    {
-        s++;
-        count /= 1024;
-    }
-    if (count - floor(count) == 0.0)
-    {
-        snprintf(buf, bufSize, "%d %sB", (int)count, suffixes[s]);
-    }
-    else
-    {
-        snprintf(buf, bufSize, "%.1f %sB", count, suffixes[s]);
-    }
-    
-    return std::string(buf);
+    auto w = std::string("Hadrons").length();
+    GridLogError.setTopWidth(w);
+    GridLogWarning.setTopWidth(w);
+    GridLogMessage.setTopWidth(w);
+    GridLogIterative.setTopWidth(w);
+    GridLogDebug.setTopWidth(w);
+    HadronsLogError.Active(GridLogError.isActive());
+    HadronsLogWarning.Active(GridLogWarning.isActive());
+    HadronsLogMessage.Active(GridLogMessage.isActive());
+    HadronsLogIterative.Active(GridLogIterative.isActive());
+    HadronsLogDebug.Active(GridLogDebug.isActive());
 }
 
 // type utilities //////////////////////////////////////////////////////////////
@@ -80,3 +67,10 @@ std::string Hadrons::typeName(const std::type_info *info)
     
     return name;
 }
+
+// default writers/readers /////////////////////////////////////////////////////
+#ifdef HAVE_HDF5
+const std::string Hadrons::resultFileExt = "h5";
+#else
+const std::string Hadrons::resultFileExt = "xml";
+#endif

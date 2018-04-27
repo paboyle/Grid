@@ -32,10 +32,21 @@ namespace Grid {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Info that is setup once and indept of cartesian layout
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+Grid_MPI_Comm       CartesianCommunicator::communicator_world;
 
 void CartesianCommunicator::Init(int *argc, char *** arv)
 {
-  ShmInitGeneric();
+  GlobalSharedMemory::Init(communicator_world);
+  GlobalSharedMemory::SharedMemoryAllocate(
+		   GlobalSharedMemory::MAX_MPI_SHM_BYTES,
+		   GlobalSharedMemory::Hugepages);
+}
+
+CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent,int &srank) 
+  : CartesianCommunicator(processors) 
+{
+  srank=0;
+  SetCommunicator(communicator_world);
 }
 
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
@@ -51,7 +62,10 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
     assert(_processors[d]==1);
     _processor_coor[d] = 0;
   }
+  SetCommunicator(communicator_world);
 }
+
+CartesianCommunicator::~CartesianCommunicator(){}
 
 void CartesianCommunicator::GlobalSum(float &){}
 void CartesianCommunicator::GlobalSumVector(float *,int N){}
@@ -95,6 +109,14 @@ void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &
 {
   assert(0);
 }
+void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,uint64_t words,uint64_t bytes)
+{
+  bcopy(in,out,bytes*words);
+}
+void CartesianCommunicator::AllToAll(void  *in,void *out,uint64_t words,uint64_t bytes)
+{
+  bcopy(in,out,bytes*words);
+}
 
 int  CartesianCommunicator::RankWorld(void){return 0;}
 void CartesianCommunicator::Barrier(void){}
@@ -107,6 +129,36 @@ void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest
   source =0;
   dest=0;
 }
+
+double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
+						     int xmit_to_rank,
+						     void *recv,
+						     int recv_from_rank,
+						     int bytes, int dir)
+{
+  std::vector<CommsRequest_t> list;
+  // Discard the "dir"
+  SendToRecvFromBegin   (list,xmit,xmit_to_rank,recv,recv_from_rank,bytes);
+  SendToRecvFromComplete(list);
+  return 2.0*bytes;
+}
+double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+							 void *xmit,
+							 int xmit_to_rank,
+							 void *recv,
+							 int recv_from_rank,
+							 int bytes, int dir)
+{
+  // Discard the "dir"
+  SendToRecvFromBegin(list,xmit,xmit_to_rank,recv,recv_from_rank,bytes);
+  return 2.0*bytes;
+}
+void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int dir)
+{
+  SendToRecvFromComplete(waitall);
+}
+
+void CartesianCommunicator::StencilBarrier(void){};
 
 
 }

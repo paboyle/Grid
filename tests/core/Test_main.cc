@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
       double volume = latt_size[0] * latt_size[1] * latt_size[2] * latt_size[3];
 
       GridCartesian Fine(latt_size, simd_layout, mpi_layout);
-      GridRedBlackCartesian rbFine(latt_size, simd_layout, mpi_layout);
+      GridRedBlackCartesian rbFine(&Fine);
       GridParallelRNG FineRNG(&Fine);
       GridSerialRNG SerialRNG;
       GridSerialRNG SerialRNG1;
@@ -393,7 +393,6 @@ int main(int argc, char **argv) {
       }
       random(Foo);
       */
-      lex_sites(Foo);
 
       Integer mm[4];
       mm[0] = 1;

@@ -38,7 +38,7 @@ namespace Grid{
 class GridCartesian: public GridBase {
 
 public:
-
+    int dummy;
     virtual int  CheckerBoardFromOindexTable (int Oindex) {
       return 0;
     }
@@ -61,13 +61,43 @@ public:
     virtual int CheckerBoardShift(int source_cb,int dim,int shift, int osite){
       return shift;
     }
+    /////////////////////////////////////////////////////////////////////////
+    // Constructor takes a parent grid and possibly subdivides communicator.
+    /////////////////////////////////////////////////////////////////////////
     GridCartesian(const std::vector<int> &dimensions,
-                  const std::vector<int> &simd_layout,
-                  const std::vector<int> &processor_grid) : GridBase(processor_grid)
+		  const std::vector<int> &simd_layout,
+		  const std::vector<int> &processor_grid,
+		  const GridCartesian &parent) : GridBase(processor_grid,parent,dummy)
+    {
+      Init(dimensions,simd_layout,processor_grid);
+    }
+    GridCartesian(const std::vector<int> &dimensions,
+		  const std::vector<int> &simd_layout,
+		  const std::vector<int> &processor_grid,
+		  const GridCartesian &parent,int &split_rank) : GridBase(processor_grid,parent,split_rank)
+    {
+      Init(dimensions,simd_layout,processor_grid);
+    }
+    /////////////////////////////////////////////////////////////////////////
+    // Construct from comm world
+    /////////////////////////////////////////////////////////////////////////
+    GridCartesian(const std::vector<int> &dimensions,
+		  const std::vector<int> &simd_layout,
+		  const std::vector<int> &processor_grid) : GridBase(processor_grid)
+    {
+      Init(dimensions,simd_layout,processor_grid);
+    }
+
+    virtual ~GridCartesian() = default;
+
+    void Init(const std::vector<int> &dimensions,
+	      const std::vector<int> &simd_layout,
+	      const std::vector<int> &processor_grid)
     {
       ///////////////////////
       // Grid information
       ///////////////////////
+      _isCheckerBoarded = false;
       _ndimension = dimensions.size();
 
       _fdimensions.resize(_ndimension);
@@ -93,6 +123,7 @@ public:
 
         // Use a reduced simd grid
         _ldimensions[d] = _gdimensions[d] / _processors[d]; //local dimensions
+        //std::cout << _ldimensions[d] << "  " << _gdimensions[d] << "  " << _processors[d] << std::endl;
         assert(_ldimensions[d] * _processors[d] == _gdimensions[d]);
 
         _rdimensions[d] = _ldimensions[d] / _simd_layout[d]; //overdecomposition
@@ -137,6 +168,7 @@ public:
         block = block * _rdimensions[d];
       }
     };
+
 };
 }
 #endif

@@ -81,14 +81,15 @@ namespace Grid {
 				      std::string, creation_date,
 				      std::string, archive_date,
 				      std::string, floating_point);
-      FieldMetaData(void) { 
-	nd=4;
-	dimension.resize(4);
-	boundary.resize(4);
-      }
+      // WARNING: non-initialised values might lead to twisted parallel IO
+      // issues, std::string are fine because they initliase to size 0
+      // as per C++ standard.
+      FieldMetaData(void) 
+      : nd(4), dimension(4,0), boundary(4, ""), data_start(0),
+      link_trace(0.), plaquette(0.), checksum(0),
+      scidac_checksuma(0), scidac_checksumb(0), sequence_number(0)
+      {}
     };
-
-
 
   namespace QCD {
 
@@ -104,6 +105,7 @@ namespace Grid {
       header.nd = nd;
       header.dimension.resize(nd);
       header.boundary.resize(nd);
+      header.data_start = 0;
       for(int d=0;d<nd;d++) {
 	header.dimension[d] = grid->_fdimensions[d];
       }

@@ -52,8 +52,8 @@ class ConjugateGradient : public OperatorFunction<Field> {
         MaxIterations(maxit),
         ErrorOnNoConverge(err_on_no_conv){};
 
-  void operator()(LinearOperatorBase<Field> &Linop, const Field &src,
-                  Field &psi) {
+  void operator()(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi) {
+
     psi.checkerboard = src.checkerboard;
     conformable(psi, src);
 
@@ -78,12 +78,12 @@ class ConjugateGradient : public OperatorFunction<Field> {
     cp = a;
     ssq = norm2(src);
 
-    std::cout << GridLogIterative << std::setprecision(4) << "ConjugateGradient: guess " << guess << std::endl;
-    std::cout << GridLogIterative << std::setprecision(4) << "ConjugateGradient:   src " << ssq << std::endl;
-    std::cout << GridLogIterative << std::setprecision(4) << "ConjugateGradient:    mp " << d << std::endl;
-    std::cout << GridLogIterative << std::setprecision(4) << "ConjugateGradient:   mmp " << b << std::endl;
-    std::cout << GridLogIterative << std::setprecision(4) << "ConjugateGradient:  cp,r " << cp << std::endl;
-    std::cout << GridLogIterative << std::setprecision(4) << "ConjugateGradient:     p " << a << std::endl;
+    std::cout << GridLogIterative << std::setprecision(8) << "ConjugateGradient: guess " << guess << std::endl;
+    std::cout << GridLogIterative << std::setprecision(8) << "ConjugateGradient:   src " << ssq << std::endl;
+    std::cout << GridLogIterative << std::setprecision(8) << "ConjugateGradient:    mp " << d << std::endl;
+    std::cout << GridLogIterative << std::setprecision(8) << "ConjugateGradient:   mmp " << b << std::endl;
+    std::cout << GridLogIterative << std::setprecision(8) << "ConjugateGradient:  cp,r " << cp << std::endl;
+    std::cout << GridLogIterative << std::setprecision(8) << "ConjugateGradient:     p " << a << std::endl;
 
     RealD rsq = Tolerance * Tolerance * ssq;
 
@@ -92,7 +92,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
       return;
     }
 
-    std::cout << GridLogIterative << std::setprecision(4)
+    std::cout << GridLogIterative << std::setprecision(8)
               << "ConjugateGradient: k=0 residual " << cp << " target " << rsq << std::endl;
 
     GridStopWatch LinalgTimer;

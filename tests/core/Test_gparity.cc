@@ -33,22 +33,68 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-typedef typename GparityDomainWallFermionR::FermionField FermionField;
+//typedef GparityDomainWallFermionD GparityDiracOp;
+//typedef DomainWallFermionD StandardDiracOp;
+//#define DOP_PARAMS
 
+typedef GparityMobiusFermionD GparityDiracOp;
+typedef MobiusFermionD StandardDiracOp;
+#define DOP_PARAMS ,1.5, 0.5
+
+
+typedef typename GparityDiracOp::FermionField GparityFermionField;
+typedef typename GparityDiracOp::GaugeField GparityGaugeField;
+typedef typename GparityFermionField::vector_type vComplexType;
+
+typedef typename StandardDiracOp::FermionField StandardFermionField;
+typedef typename StandardDiracOp::GaugeField StandardGaugeField;
+
+enum{ same_vComplex = std::is_same<vComplexType, typename StandardFermionField::vector_type>::value };
+static_assert(same_vComplex == 1, "Dirac Operators must have same underlying SIMD complex type");
 
 int main (int argc, char ** argv)
 {
-  const int nu = 3;
+  int nu = 0;
 
   Grid_init(&argc,&argv);
 
+  for(int i=1;i<argc;i++){
+    if(std::string(argv[i]) == "--Gparity-dir"){
+      std::stringstream ss; ss << argv[i+1]; ss >> nu;
+      std::cout << GridLogMessage << "Set Gparity direction to " << nu << std::endl;
+    }
+  }
+
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
+  std::cout << GridLogMessage<< "* Kernel options --dslash-generic, --dslash-unroll, --dslash-asm" <<std::endl;
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
+  std::cout << GridLogMessage<< "* Testing Gparity Dirac operator                  "<<std::endl;
+  std::cout << GridLogMessage<< "* Vectorising space-time by "<<vComplexType::Nsimd()<<std::endl;
+#ifdef GRID_OMP
+  if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute ) std::cout << GridLogMessage<< "* Using Overlapped Comms/Compute" <<std::endl;
+  if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsThenCompute) std::cout << GridLogMessage<< "* Using sequential comms compute" <<std::endl;
+#endif
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using UNROLLED Nc=3       WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
 
   const int Ls=4;
-  const int L =4;
-  std::vector<int> latt_2f(Nd,L);
-  std::vector<int> latt_1f(Nd,L); latt_1f[nu] = 2*L;
+  //const int L =4;
+  //std::vector<int> latt_2f(Nd,L);
 
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  std::vector<int> latt_2f = GridDefaultLatt();
+  std::vector<int> latt_1f(latt_2f); latt_1f[nu] = 2*latt_2f[nu];
+  int L = latt_2f[nu];
+
+
+  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexType::Nsimd());
+
+  std::cout << GridLogMessage << "SIMD layout: ";
+  for(int i=0;i<simd_layout.size();i++) std::cout << simd_layout[i] << " ";
+  std::cout << std::endl;
+  
   std::vector<int> mpi_layout  = GridDefaultMpi(); //node layout
 
   GridCartesian         * UGrid_1f   = SpaceTimeGrid::makeFourDimGrid(latt_1f, simd_layout, mpi_layout);
@@ -67,13 +113,13 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG5_2f(FGrid_2f);  RNG5_2f.SeedFixedIntegers(seeds5);
   GridParallelRNG          RNG4_2f(UGrid_2f);  RNG4_2f.SeedFixedIntegers(seeds4);
 
-  LatticeGaugeField Umu_2f(UGrid_2f);
+  GparityGaugeField Umu_2f(UGrid_2f);
   SU3::HotConfiguration(RNG4_2f,Umu_2f);
 
-  LatticeFermion    src   (FGrid_2f); 
-  LatticeFermion    tmpsrc(FGrid_2f); 
-  FermionField      src_2f(FGrid_2f); 
-  LatticeFermion    src_1f(FGrid_1f); 
+  StandardFermionField    src   (FGrid_2f); 
+  StandardFermionField    tmpsrc(FGrid_2f); 
+  GparityFermionField      src_2f(FGrid_2f); 
+  StandardFermionField    src_1f(FGrid_1f); 
 
   // Replicate fermion source
   random(RNG5_2f,src);
@@ -81,8 +127,8 @@ int main (int argc, char ** argv)
   tmpsrc=src*2.0;
   PokeIndex<0>(src_2f,tmpsrc,1);
 
-  LatticeFermion result_1f(FGrid_1f); result_1f=zero;
-  LatticeGaugeField Umu_1f(UGrid_1f); 
+  StandardFermionField result_1f(FGrid_1f); result_1f=zero;
+  StandardGaugeField Umu_1f(UGrid_1f); 
   Replicate(Umu_2f,Umu_1f);
 
   //Coordinate grid for reference
@@ -92,7 +138,7 @@ int main (int argc, char ** argv)
   //Copy-conjugate the gauge field
   //First C-shift the lattice by Lx/2
   {
-    LatticeGaugeField Umu_shift = conjugate( Cshift(Umu_1f,nu,L) );
+    StandardGaugeField Umu_shift = conjugate( Cshift(Umu_1f,nu,L) );
     Umu_1f = where( xcoor_1f >= Integer(L), Umu_shift, Umu_1f );
 
     // hack test to check the same
@@ -101,7 +147,7 @@ int main (int argc, char ** argv)
     cout << GridLogMessage << "Umu diff " << norm2(Umu_shift)<<std::endl;
 
     //Make the gauge field antiperiodic in nu-direction
-    LatticeColourMatrix Unu(UGrid_1f);
+    decltype(PeekIndex<LorentzIndex>(Umu_1f,nu)) Unu(UGrid_1f);
     Unu = PeekIndex<LorentzIndex>(Umu_1f,nu);
     Unu = where(xcoor_1f == Integer(2*L-1), -Unu, Unu);
     PokeIndex<LorentzIndex>(Umu_1f,Unu,nu);
@@ -115,33 +161,33 @@ int main (int argc, char ** argv)
 
   RealD mass=0.0;
   RealD M5=1.8;
-  DomainWallFermionR Ddwf(Umu_1f,*FGrid_1f,*FrbGrid_1f,*UGrid_1f,*UrbGrid_1f,mass,M5);
+  StandardDiracOp Ddwf(Umu_1f,*FGrid_1f,*FrbGrid_1f,*UGrid_1f,*UrbGrid_1f,mass,M5 DOP_PARAMS);
 
-  LatticeFermion    src_o_1f(FrbGrid_1f);
-  LatticeFermion result_o_1f(FrbGrid_1f);
+  StandardFermionField    src_o_1f(FrbGrid_1f);
+  StandardFermionField result_o_1f(FrbGrid_1f);
   pickCheckerboard(Odd,src_o_1f,src_1f);
   result_o_1f=zero;
 
-  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOpEO(Ddwf);
-  ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
+  SchurDiagMooeeOperator<StandardDiracOp,StandardFermionField> HermOpEO(Ddwf);
+  ConjugateGradient<StandardFermionField> CG(1.0e-8,10000);
   CG(HermOpEO,src_o_1f,result_o_1f);
   
   //  const int nu = 3;
   std::vector<int> twists(Nd,0);
   twists[nu] = 1;
-  GparityDomainWallFermionR::ImplParams params;
+  GparityDiracOp::ImplParams params;
   params.twists = twists;
-  GparityDomainWallFermionR GPDdwf(Umu_2f,*FGrid_2f,*FrbGrid_2f,*UGrid_2f,*UrbGrid_2f,mass,M5,params);
+  GparityDiracOp GPDdwf(Umu_2f,*FGrid_2f,*FrbGrid_2f,*UGrid_2f,*UrbGrid_2f,mass,M5 DOP_PARAMS,params);
 
   for(int disp=-1;disp<=1;disp+=2)
   for(int mu=0;mu<5;mu++)
   { 
-    FermionField Dsrc_2f(FGrid_2f);
+    GparityFermionField Dsrc_2f(FGrid_2f);
 
-    LatticeFermion Dsrc_1f(FGrid_1f);
-    LatticeFermion Dsrc_2freplica(FGrid_1f);
-    LatticeFermion Dsrc_2freplica0(FGrid_1f);
-    LatticeFermion Dsrc_2freplica1(FGrid_1f);
+    StandardFermionField Dsrc_1f(FGrid_1f);
+    StandardFermionField Dsrc_2freplica(FGrid_1f);
+    StandardFermionField Dsrc_2freplica0(FGrid_1f);
+    StandardFermionField Dsrc_2freplica1(FGrid_1f);
 
     if ( mu ==0 ) {
       std::cout << GridLogMessage<< " Cross checking entire hopping term"<<std::endl;
@@ -156,8 +202,8 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage << "S norms "<< norm2(src_2f) << " " << norm2(src_1f)  <<std::endl;
     std::cout << GridLogMessage << "D norms "<< norm2(Dsrc_2f)<< " " << norm2(Dsrc_1f) <<std::endl;
 
-    LatticeFermion Dsrc_2f0(FGrid_2f); Dsrc_2f0 = PeekIndex<0>(Dsrc_2f,0);
-    LatticeFermion Dsrc_2f1(FGrid_2f); Dsrc_2f1 = PeekIndex<0>(Dsrc_2f,1);
+    StandardFermionField Dsrc_2f0(FGrid_2f); Dsrc_2f0 = PeekIndex<0>(Dsrc_2f,0);
+    StandardFermionField Dsrc_2f1(FGrid_2f); Dsrc_2f1 = PeekIndex<0>(Dsrc_2f,1);
 
     //    Dsrc_2f1 = Dsrc_2f1 - Dsrc_2f0;
     //    std::cout << GridLogMessage << " Cross check two halves " <<norm2(Dsrc_2f1)<<std::endl;
@@ -174,20 +220,20 @@ int main (int argc, char ** argv)
   }
 
   {
-    FermionField chi   (FGrid_2f); gaussian(RNG5_2f,chi);
-    FermionField phi   (FGrid_2f); gaussian(RNG5_2f,phi);
+    GparityFermionField chi   (FGrid_2f); gaussian(RNG5_2f,chi);
+    GparityFermionField phi   (FGrid_2f); gaussian(RNG5_2f,phi);
   
-    FermionField chi_e   (FrbGrid_2f);
-    FermionField chi_o   (FrbGrid_2f);
+    GparityFermionField chi_e   (FrbGrid_2f);
+    GparityFermionField chi_o   (FrbGrid_2f);
     
-    FermionField dchi_e  (FrbGrid_2f);
-    FermionField dchi_o  (FrbGrid_2f);
+    GparityFermionField dchi_e  (FrbGrid_2f);
+    GparityFermionField dchi_o  (FrbGrid_2f);
     
-    FermionField phi_e   (FrbGrid_2f);
-    FermionField phi_o   (FrbGrid_2f);
+    GparityFermionField phi_e   (FrbGrid_2f);
+    GparityFermionField phi_o   (FrbGrid_2f);
     
-    FermionField dphi_e  (FrbGrid_2f);
-    FermionField dphi_o  (FrbGrid_2f);
+    GparityFermionField dphi_e  (FrbGrid_2f);
+    GparityFermionField dphi_o  (FrbGrid_2f);
 
     pickCheckerboard(Even,chi_e,chi);
     pickCheckerboard(Odd ,chi_o,chi);
@@ -212,14 +258,14 @@ int main (int argc, char ** argv)
 
   }
 
-  FermionField result_2f(FGrid_2f); result_2f=zero;
-  FermionField    src_o_2f(FrbGrid_2f);
-  FermionField result_o_2f(FrbGrid_2f);
+  GparityFermionField result_2f(FGrid_2f); result_2f=zero;
+  GparityFermionField    src_o_2f(FrbGrid_2f);
+  GparityFermionField result_o_2f(FrbGrid_2f);
   pickCheckerboard(Odd,src_o_2f,src_2f);
   result_o_2f=zero;
 
-  ConjugateGradient<FermionField> CG2f(1.0e-8,10000);
-  SchurDiagMooeeOperator<GparityDomainWallFermionR,FermionField> HermOpEO2f(GPDdwf);
+  ConjugateGradient<GparityFermionField> CG2f(1.0e-8,10000);
+  SchurDiagMooeeOperator<GparityDiracOp,GparityFermionField> HermOpEO2f(GPDdwf);
   CG2f(HermOpEO2f,src_o_2f,result_o_2f);
 
   std::cout << "2f cb "<<result_o_2f.checkerboard<<std::endl;
@@ -227,10 +273,10 @@ int main (int argc, char ** argv)
 
   std::cout << " result norms " <<norm2(result_o_2f)<<" " <<norm2(result_o_1f)<<std::endl;
 
-  LatticeFermion    res0o  (FrbGrid_2f); 
-  LatticeFermion    res1o  (FrbGrid_2f); 
-  LatticeFermion    res0  (FGrid_2f); 
-  LatticeFermion    res1  (FGrid_2f); 
+  StandardFermionField    res0o  (FrbGrid_2f); 
+  StandardFermionField    res1o  (FrbGrid_2f); 
+  StandardFermionField    res0  (FGrid_2f); 
+  StandardFermionField    res1  (FGrid_2f); 
 
   res0=zero;
   res1=zero;
@@ -244,9 +290,9 @@ int main (int argc, char ** argv)
   setCheckerboard(res0,res0o);
   setCheckerboard(res1,res1o);
 
-  LatticeFermion replica (FGrid_1f);
-  LatticeFermion replica0(FGrid_1f);
-  LatticeFermion replica1(FGrid_1f);
+  StandardFermionField replica (FGrid_1f);
+  StandardFermionField replica0(FGrid_1f);
+  StandardFermionField replica1(FGrid_1f);
   Replicate(res0,replica0);
   Replicate(res1,replica1);
 

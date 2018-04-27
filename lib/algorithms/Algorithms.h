@@ -1,6 +1,6 @@
     /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./lib/Algorithms.h
 
@@ -37,37 +37,25 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/approx/Chebyshev.h>
 #include <Grid/algorithms/approx/Remez.h>
 #include <Grid/algorithms/approx/MultiShiftFunction.h>
+#include <Grid/algorithms/approx/Forecast.h>
 
+#include <Grid/algorithms/iterative/Deflation.h>
 #include <Grid/algorithms/iterative/ConjugateGradient.h>
 #include <Grid/algorithms/iterative/ConjugateResidual.h>
 #include <Grid/algorithms/iterative/NormalEquations.h>
 #include <Grid/algorithms/iterative/SchurRedBlack.h>
 #include <Grid/algorithms/iterative/ConjugateGradientMultiShift.h>
 #include <Grid/algorithms/iterative/ConjugateGradientMixedPrec.h>
-
-// Lanczos support
-//#include <Grid/algorithms/iterative/MatrixUtils.h>
+#include <Grid/algorithms/iterative/BlockConjugateGradient.h>
+#include <Grid/algorithms/iterative/ConjugateGradientReliableUpdate.h>
 #include <Grid/algorithms/iterative/ImplicitlyRestartedLanczos.h>
 #include <Grid/algorithms/CoarsenedMatrix.h>
 #include <Grid/algorithms/FFT.h>
 
-// Eigen/lanczos
 // EigCg
-// MCR
 // Pcg
-// Multishift CG
 // Hdcg
 // GCR
 // etc..
-
-// integrator/Leapfrog
-// integrator/Omelyan
-// integrator/ForceGradient
-
-// montecarlo/hmc
-// montecarlo/rhmc
-// montecarlo/metropolis
-// etc...
-
 
 #endif

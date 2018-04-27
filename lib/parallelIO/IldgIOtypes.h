@@ -64,6 +64,11 @@ namespace Grid {
 // file compatability, so should be correct to assume the undocumented but defacto file structure.
 /////////////////////////////////////////////////////////////////////////////////
 
+struct emptyUserRecord : Serializable { 
+  GRID_SERIALIZABLE_CLASS_MEMBERS(emptyUserRecord,int,dummy);
+  emptyUserRecord() { dummy=0; };
+};
+
 ////////////////////////
 // Scidac private file xml
 // <?xml version="1.0" encoding="UTF-8"?><scidacFile><version>1.1</version><spacetime>4</spacetime><dims>16 16 16 32 </dims><volfmt>0</volfmt></scidacFile>
@@ -131,8 +136,9 @@ struct scidacRecord : Serializable {
 				  int, typesize,
 				  int, datacount);
 
-  scidacRecord() { version =1.0; }
-
+  scidacRecord()
+  : version(1.0), recordtype(0), colors(0), spins(0), typesize(0), datacount(0)
+  {}
 };
 
 ////////////////////////

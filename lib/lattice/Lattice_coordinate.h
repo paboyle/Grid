@@ -52,23 +52,5 @@ namespace Grid {
       }
     };
 
-    // LatticeCoordinate();
-    // FIXME for debug; deprecate this; made obscelete by 
-    template<class vobj> void lex_sites(Lattice<vobj> &l){
-      Real *v_ptr = (Real *)&l._odata[0];
-      size_t o_len = l._grid->oSites();
-      size_t v_len = sizeof(vobj)/sizeof(vRealF);
-      size_t vec_len = vRealF::Nsimd();
-
-      for(int i=0;i<o_len;i++){
-	for(int j=0;j<v_len;j++){
-          for(int vv=0;vv<vec_len;vv+=2){
-	    v_ptr[i*v_len*vec_len+j*vec_len+vv  ]= i+vv*500;
-	    v_ptr[i*v_len*vec_len+j*vec_len+vv+1]= i+vv*500;
-	  }
-	}}
-    }
-
-
 }
 #endif

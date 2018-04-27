@@ -52,6 +52,35 @@ namespace QCD {
  { 
  }
 
+///////////////////////////////////////////////////////////////
+// Physical surface field utilities
+///////////////////////////////////////////////////////////////
+template<class Impl>  
+void CayleyFermion5D<Impl>::ExportPhysicalFermionSolution(const FermionField &solution5d,FermionField &exported4d)
+{
+  int Ls = this->Ls;
+  FermionField tmp(this->FermionGrid());
+  tmp = solution5d;
+  conformable(solution5d._grid,this->FermionGrid());
+  conformable(exported4d._grid,this->GaugeGrid());
+  axpby_ssp_pminus(tmp, 0., solution5d, 1., solution5d, 0, 0);
+  axpby_ssp_pplus (tmp, 1., tmp       , 1., solution5d, 0, Ls-1);
+  ExtractSlice(exported4d, tmp, 0, 0);
+}
+template<class Impl>  
+void CayleyFermion5D<Impl>::ImportPhysicalFermionSource(const FermionField &input4d,FermionField &imported5d)
+{
+  int Ls = this->Ls;
+  FermionField tmp(this->FermionGrid());
+  conformable(imported5d._grid,this->FermionGrid());
+  conformable(input4d._grid   ,this->GaugeGrid());
+  tmp = zero;
+  InsertSlice(input4d, tmp, 0   , 0);
+  InsertSlice(input4d, tmp, Ls-1, 0);
+  axpby_ssp_pplus (tmp, 0., tmp, 1., tmp, 0, 0);
+  axpby_ssp_pminus(tmp, 0., tmp, 1., tmp, Ls-1, Ls-1);
+  Dminus(tmp,imported5d);
+}
 template<class Impl>  
 void CayleyFermion5D<Impl>::Dminus(const FermionField &psi, FermionField &chi)
 {
@@ -73,10 +102,9 @@ void CayleyFermion5D<Impl>::DminusDag(const FermionField &psi, FermionField &chi
   this->DW(psi,tmp_f,DaggerYes);
 
   for(int s=0;s<Ls;s++){
-    axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],tmp_f,s,s);// chi = (1-c[s] D_W) psi
+    axpby_ssp(chi,Coeff_t(1.0),psi,conjugate(-cs[s]),tmp_f,s,s);// chi = (1-c[s] D_W) psi
   }
 }
-
 
 template<class Impl> void CayleyFermion5D<Impl>::CayleyReport(void)
 {
@@ -118,7 +146,6 @@ template<class Impl> void CayleyFermion5D<Impl>::CayleyZeroCounters(void)
   MooeeInvCalls=0;
   MooeeInvTime=0;
 }
-
 
 template<class Impl>  
 void CayleyFermion5D<Impl>::M5D   (const FermionField &psi, FermionField &chi)

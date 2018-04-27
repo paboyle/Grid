@@ -1,21 +1,37 @@
 TODO:
 ---------------
 
-Large item work list:
+Code item work list
 
-1)- BG/Q port and check
-2)- Christoph's local basis expansion Lanczos
-3)- Precision conversion and sort out localConvert      <-- partial
+a) namespaces & indentation
+ GRID_BEGIN_NAMESPACE();
+ GRID_END_NAMESPACE();
+-- delete QCD namespace
 
-  - Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
-4)- Physical propagator interface
-5)- Conserved currents
-6)- Multigrid Wilson and DWF, compare to other Multigrid implementations
-7)- HDCR resume
+b) GPU branch
+- start branch
+- Increase Macro use in core library support; prepare for change
+- Audit volume of "device" code
+- Virtual function audit
+- Start port once Nvidia box is up
+- Cut down volume of code for first port? How?
 
+Physics item work list:
+
+1)- BG/Q port and check ; Andrew says ok.
+2)- Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
+3)- Physical propagator interface
+4)- Multigrid Wilson and DWF, compare to other Multigrid implementations
+5)- HDCR resume
+
+----------------------------
 Recent DONE 
-
--- MultiRHS with spread out extra dim -- Go through filesystem with SciDAC I/O.  <--- DONE
+-- RNG I/O in ILDG/SciDAC (minor) 
+-- Precision conversion and sort out localConvert      <-- partial/easy
+-- Conserved currents (Andrew)
+-- Split grid
+-- Christoph's local basis expansion Lanczos
+-- MultiRHS with spread out extra dim -- Go through filesystem with SciDAC I/O ; <-- DONE ; bmark cori
 -- Lanczos Remove DenseVector, DenseMatrix; Use Eigen instead. <-- DONE
 -- GaugeFix into central location                      <-- DONE
 -- Scidac and Ildg metadata handling                   <-- DONE

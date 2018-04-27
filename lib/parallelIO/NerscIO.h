@@ -57,7 +57,7 @@ namespace Grid {
       // for the header-reader
       static inline int readHeader(std::string file,GridBase *grid,  FieldMetaData &field)
       {
-      int offset=0;
+      uint64_t offset=0;
       std::map<std::string,std::string> header;
       std::string line;
 
@@ -139,7 +139,7 @@ namespace Grid {
       typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
 
       GridBase *grid = Umu._grid;
-      int offset = readHeader(file,Umu._grid,header);
+      uint64_t offset = readHeader(file,Umu._grid,header);
 
       FieldMetaData clone(header);
 
@@ -236,21 +236,25 @@ namespace Grid {
 	GaugeStatistics(Umu,header);
 	MachineCharacteristics(header);
 
-	int offset;
-  
-	truncate(file);
+	uint64_t offset;
 
 	// Sod it -- always write 3x3 double
 	header.floating_point = std::string("IEEE64BIG");
 	header.data_type      = std::string("4D_SU3_GAUGE_3x3");
 	GaugeSimpleUnmunger<fobj3D,sobj> munge;
-	offset = writeHeader(header,file);
+	if ( grid->IsBoss() ) { 
+	  truncate(file);
+	  offset = writeHeader(header,file);
+	}
+	grid->Broadcast(0,(void *)&offset,sizeof(offset));
 
 	uint32_t nersc_csum,scidac_csuma,scidac_csumb;
 	BinaryIO::writeLatticeObject<vobj,fobj3D>(Umu,file,munge,offset,header.floating_point,
 								  nersc_csum,scidac_csuma,scidac_csumb);
 	header.checksum = nersc_csum;
-	writeHeader(header,file);
+	if ( grid->IsBoss() ) { 
+	  writeHeader(header,file);
+	}
 
 	std::cout<<GridLogMessage <<"Written NERSC Configuration on "<< file << " checksum "
 		 <<std::hex<<header.checksum
@@ -278,7 +282,7 @@ namespace Grid {
 	header.plaquette=0.0;
 	MachineCharacteristics(header);
 
-	int offset;
+	uint64_t offset;
   
 #ifdef RNG_RANLUX
 	header.floating_point = std::string("UINT64");
@@ -293,12 +297,18 @@ namespace Grid {
 	header.data_type      = std::string("SITMO");
 #endif
 
-	truncate(file);
-	offset = writeHeader(header,file);
+	if ( grid->IsBoss() ) { 
+	  truncate(file);
+	  offset = writeHeader(header,file);
+	}
+	grid->Broadcast(0,(void *)&offset,sizeof(offset));
+	
 	uint32_t nersc_csum,scidac_csuma,scidac_csumb;
 	BinaryIO::writeRNG(serial,parallel,file,offset,nersc_csum,scidac_csuma,scidac_csumb);
 	header.checksum = nersc_csum;
-	offset = writeHeader(header,file);
+	if ( grid->IsBoss() ) { 
+	  offset = writeHeader(header,file);
+	}
 
 	std::cout<<GridLogMessage 
 		 <<"Written NERSC RNG STATE "<<file<< " checksum "
@@ -313,7 +323,7 @@ namespace Grid {
 
 	GridBase *grid = parallel._grid;
 
-	int offset = readHeader(file,grid,header);
+	uint64_t offset = readHeader(file,grid,header);
 
 	FieldMetaData clone(header);
 

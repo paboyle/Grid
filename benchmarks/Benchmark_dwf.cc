@@ -48,10 +48,19 @@ int main (int argc, char ** argv)
 
 
   int threads = GridThread::GetThreads();
-  std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   std::vector<int> latt4 = GridDefaultLatt();
-  const int Ls=16;
+  int Ls=16;
+  for(int i=0;i<argc;i++)
+    if(std::string(argv[i]) == "-Ls"){
+      std::stringstream ss(argv[i+1]); ss >> Ls;
+    }
+
+  GridLogLayout();
+
+  long unsigned int single_site_flops = 8*QCD::Nc*(7+16*QCD::Nc);
+
+
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
@@ -181,7 +190,7 @@ int main (int argc, char ** argv)
     FGrid->Barrier();
     
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-    double flops=1344*volume*ncall;
+    double flops=single_site_flops*volume*ncall;
 
     std::cout<<GridLogMessage << "Called Dw "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
     //    std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
@@ -220,7 +229,7 @@ int main (int argc, char ** argv)
     FGrid->Barrier();
     
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-    double flops=1344*volume*ncall;
+    double flops=single_site_flops*volume*ncall;
 
     std::cout<<GridLogMessage << "Called half prec comms Dw "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
@@ -271,7 +280,7 @@ int main (int argc, char ** argv)
     double t1=usecond();
     FGrid->Barrier();
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-    double flops=1344*volume*ncall;
+    double flops=single_site_flops*volume*ncall;
 
     std::cout<<GridLogMessage << "Called Dw s_inner "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
@@ -349,7 +358,7 @@ int main (int argc, char ** argv)
       //      sDw.stat.print();
 
       double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-      double flops=(1344.0*volume*ncall)/2;
+      double flops=(single_site_flops*volume*ncall)/2.0;
 
       std::cout<<GridLogMessage << "sDeo mflop/s =   "<< flops/(t1-t0)<<std::endl;
       std::cout<<GridLogMessage << "sDeo mflop/s per rank   "<< flops/(t1-t0)/NP<<std::endl;
@@ -472,7 +481,7 @@ int main (int argc, char ** argv)
     FGrid->Barrier();
     
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-    double flops=(1344.0*volume*ncall)/2;
+    double flops=(single_site_flops*volume*ncall)/2.0;
 
     std::cout<<GridLogMessage << "Deo mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "Deo mflop/s per rank   "<< flops/(t1-t0)/NP<<std::endl;

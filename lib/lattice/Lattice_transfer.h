@@ -50,26 +50,22 @@ inline void subdivides(GridBase *coarse,GridBase *fine)
   ////////////////////////////////////////////////////////////////////////////////////////////
   template<class vobj> inline void pickCheckerboard(int cb,Lattice<vobj> &half,const Lattice<vobj> &full){
     half.checkerboard = cb;
-    int ssh=0;
-    //parallel_for
-    for(int ss=0;ss<full._grid->oSites();ss++){
-      std::vector<int> coor;
+
+    parallel_for(int ss=0;ss<full._grid->oSites();ss++){
       int cbos;
-      
+      std::vector<int> coor;
       full._grid->oCoorFromOindex(coor,ss);
       cbos=half._grid->CheckerBoard(coor);
       
       if (cbos==cb) {
+	int ssh=half._grid->oIndex(coor);
 	half._odata[ssh] = full._odata[ss];
-	ssh++;
       }
     }
   }
   template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Lattice<vobj> &half){
     int cb = half.checkerboard;
-    int ssh=0;
-    //parallel_for
-    for(int ss=0;ss<full._grid->oSites();ss++){
+    parallel_for(int ss=0;ss<full._grid->oSites();ss++){
       std::vector<int> coor;
       int cbos;
 
@@ -77,8 +73,8 @@ inline void subdivides(GridBase *coarse,GridBase *fine)
       cbos=half._grid->CheckerBoard(coor);
       
       if (cbos==cb) {
+	int ssh=half._grid->oIndex(coor);
 	full._odata[ss]=half._odata[ssh];
-	ssh++;
       }
     }
   }
@@ -109,8 +105,8 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
 
   coarseData=zero;
 
-  // Loop with a cache friendly loop ordering
-  for(int sf=0;sf<fine->oSites();sf++){
+  // Loop over coars parallel, and then loop over fine associated with coarse.
+  parallel_for(int sf=0;sf<fine->oSites();sf++){
 
     int sc;
     std::vector<int> coor_c(_ndimension);
@@ -119,8 +115,9 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
     for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
     Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
+PARALLEL_CRITICAL
     for(int i=0;i<nbasis;i++) {
-      
+
       coarseData._odata[sc](i)=coarseData._odata[sc](i)
 	+ innerProduct(Basis[i]._odata[sf],fineData._odata[sf]);
 
@@ -139,6 +136,7 @@ inline void blockZAXPY(Lattice<vobj> &fineZ,
   GridBase * coarse= coarseA._grid;
 
   fineZ.checkerboard=fineX.checkerboard;
+  assert(fineX.checkerboard==fineY.checkerboard);
   subdivides(coarse,fine); // require they map
   conformable(fineX,fineY);
   conformable(fineX,fineZ);
@@ -180,9 +178,10 @@ template<class vobj,class CComplex>
   GridBase *coarse(CoarseInner._grid);
   GridBase *fine  (fineX._grid);
 
-  Lattice<dotp> fine_inner(fine);
+  Lattice<dotp> fine_inner(fine); fine_inner.checkerboard = fineX.checkerboard;
   Lattice<dotp> coarse_inner(coarse);
 
+  // Precision promotion?
   fine_inner = localInnerProduct(fineX,fineY);
   blockSum(coarse_inner,fine_inner);
   parallel_for(int ss=0;ss<coarse->oSites();ss++){
@@ -193,7 +192,7 @@ template<class vobj,class CComplex>
 inline void blockNormalise(Lattice<CComplex> &ip,Lattice<vobj> &fineX)
 {
   GridBase *coarse = ip._grid;
-  Lattice<vobj> zz(fineX._grid); zz=zero;
+  Lattice<vobj> zz(fineX._grid); zz=zero; zz.checkerboard=fineX.checkerboard;
   blockInnerProduct(ip,fineX,fineX);
   ip = pow(ip,-0.5);
   blockZAXPY(fineX,ip,fineX,zz);
@@ -216,19 +215,25 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
     block_r[d] = fine->_rdimensions[d] / coarse->_rdimensions[d];
   }
 
+  // Turn this around to loop threaded over sc and interior loop 
+  // over sf would thread better
   coarseData=zero;
-  for(int sf=0;sf<fine->oSites();sf++){
-    
+  parallel_region {
+
     int sc;
     std::vector<int> coor_c(_ndimension);
     std::vector<int> coor_f(_ndimension);
 
-    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
-    for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+    parallel_for_internal(int sf=0;sf<fine->oSites();sf++){
+    
+      Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+      for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
+      Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+      
+PARALLEL_CRITICAL
+      coarseData._odata[sc]=coarseData._odata[sc]+fineData._odata[sf];
 
-    coarseData._odata[sc]=coarseData._odata[sc]+fineData._odata[sf];
-
+    }
   }
   return;
 }
@@ -238,7 +243,7 @@ inline void blockPick(GridBase *coarse,const Lattice<vobj> &unpicked,Lattice<vob
 {
   GridBase * fine = unpicked._grid;
 
-  Lattice<vobj> zz(fine);
+  Lattice<vobj> zz(fine); zz.checkerboard = unpicked.checkerboard;
   Lattice<iScalar<vInteger> > fcoor(fine);
 
   zz = zero;
@@ -303,20 +308,21 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
   }
 
   // Loop with a cache friendly loop ordering
-  for(int sf=0;sf<fine->oSites();sf++){
-
+  parallel_region {
     int sc;
     std::vector<int> coor_c(_ndimension);
     std::vector<int> coor_f(_ndimension);
 
-    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
-    for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+    parallel_for_internal(int sf=0;sf<fine->oSites();sf++){
 
-    for(int i=0;i<nbasis;i++) {
-      if(i==0) fineData._odata[sf]=coarseData._odata[sc](i) * Basis[i]._odata[sf];
-      else     fineData._odata[sf]=fineData._odata[sf]+coarseData._odata[sc](i)*Basis[i]._odata[sf];
-
+      Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+      for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
+      Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+      
+      for(int i=0;i<nbasis;i++) {
+	if(i==0) fineData._odata[sf]=coarseData._odata[sc](i) * Basis[i]._odata[sf];
+	else     fineData._odata[sf]=fineData._odata[sf]+coarseData._odata[sc](i)*Basis[i]._odata[sf];
+      }
     }
   }
   return;
@@ -593,6 +599,51 @@ unvectorizeToLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in)
     extract1(in_vobj, out_ptrs, 0);
   }
 }
+
+template<typename vobj, typename sobj>
+typename std::enable_if<isSIMDvectorized<vobj>::value && !isSIMDvectorized<sobj>::value, void>::type 
+unvectorizeToRevLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in)
+{
+
+  typedef typename vobj::vector_type vtype;
+  
+  GridBase* in_grid = in._grid;
+  out.resize(in_grid->lSites());
+  
+  int ndim = in_grid->Nd();
+  int in_nsimd = vtype::Nsimd();
+
+  std::vector<std::vector<int> > in_icoor(in_nsimd);
+      
+  for(int lane=0; lane < in_nsimd; lane++){
+    in_icoor[lane].resize(ndim);
+    in_grid->iCoorFromIindex(in_icoor[lane], lane);
+  }
+  
+  parallel_for(int in_oidx = 0; in_oidx < in_grid->oSites(); in_oidx++){ //loop over outer index
+    //Assemble vector of pointers to output elements
+    std::vector<sobj*> out_ptrs(in_nsimd);
+
+    std::vector<int> in_ocoor(ndim);
+    in_grid->oCoorFromOindex(in_ocoor, in_oidx);
+
+    std::vector<int> lcoor(in_grid->Nd());
+      
+    for(int lane=0; lane < in_nsimd; lane++){
+      for(int mu=0;mu<ndim;mu++)
+	lcoor[mu] = in_ocoor[mu] + in_grid->_rdimensions[mu]*in_icoor[lane][mu];
+
+      int lex;
+      Lexicographic::IndexFromCoorReversed(lcoor, lex, in_grid->_ldimensions);
+      out_ptrs[lane] = &out[lex];
+    }
+    
+    //Unpack into those ptrs
+    const vobj & in_vobj = in._odata[in_oidx];
+    extract1(in_vobj, out_ptrs, 0);
+  }
+}
+
 //Copy SIMD-vectorized lattice to array of scalar objects in lexicographic order
 template<typename vobj, typename sobj>
 typename std::enable_if<isSIMDvectorized<vobj>::value 
@@ -642,10 +693,59 @@ vectorizeFromLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
   }
 }
 
+template<typename vobj, typename sobj>
+typename std::enable_if<isSIMDvectorized<vobj>::value 
+                    && !isSIMDvectorized<sobj>::value, void>::type 
+vectorizeFromRevLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
+{
+
+  typedef typename vobj::vector_type vtype;
+  
+  GridBase* grid = out._grid;
+  assert(in.size()==grid->lSites());
+  
+  int ndim     = grid->Nd();
+  int nsimd    = vtype::Nsimd();
+
+  std::vector<std::vector<int> > icoor(nsimd);
+      
+  for(int lane=0; lane < nsimd; lane++){
+    icoor[lane].resize(ndim);
+    grid->iCoorFromIindex(icoor[lane],lane);
+  }
+  
+  parallel_for(uint64_t oidx = 0; oidx < grid->oSites(); oidx++){ //loop over outer index
+    //Assemble vector of pointers to output elements
+    std::vector<sobj*> ptrs(nsimd);
+
+    std::vector<int> ocoor(ndim);
+    grid->oCoorFromOindex(ocoor, oidx);
+
+    std::vector<int> lcoor(grid->Nd());
+      
+    for(int lane=0; lane < nsimd; lane++){
+
+      for(int mu=0;mu<ndim;mu++){
+	lcoor[mu] = ocoor[mu] + grid->_rdimensions[mu]*icoor[lane][mu];
+      }
+
+      int lex;
+      Lexicographic::IndexFromCoorReversed(lcoor, lex, grid->_ldimensions);
+      ptrs[lane] = &in[lex];
+    }
+    
+    //pack from those ptrs
+    vobj vecobj;
+    merge1(vecobj, ptrs, 0);
+    out._odata[oidx] = vecobj; 
+  }
+}
+
 //Convert a Lattice from one precision to another
 template<class VobjOut, class VobjIn>
 void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
   assert(out._grid->Nd() == in._grid->Nd());
+  assert(out._grid->FullDimensions() == in._grid->FullDimensions());
   out.checkerboard = in.checkerboard;
   GridBase *in_grid=in._grid;
   GridBase *out_grid = out._grid;
@@ -684,6 +784,302 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
     merge(out._odata[out_oidx], ptrs, 0);
   }
 }
- 
+
+////////////////////////////////////////////////////////////////////////////////
+// Communicate between grids
+////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+// SIMPLE CASE:
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Mesh of nodes (2x2) ; subdivide to  1x1 subdivisions
+//
+// Lex ord:   
+//          N0 va0 vb0 vc0 vd0       N1 va1 vb1 vc1 vd1  
+//          N2 va2 vb2 vc2 vd2       N3 va3 vb3 vc3 vd3 
+//
+// Ratio = full[dim] / split[dim]
+//
+// For each dimension do an all to all; get Nvec -> Nvec / ratio
+//                                          Ldim -> Ldim * ratio
+//                                          LocalVol -> LocalVol * ratio
+// full AllToAll(0)
+//          N0 va0 vb0 va1 vb1       N1 vc0 vd0 vc1 vd1   
+//          N2 va2 vb2 va3 vb3       N3 vc2 vd2 vc3 vd3 
+//
+// REARRANGE
+//          N0 va01 vb01      N1 vc01 vd01
+//          N2 va23 vb23      N3 vc23 vd23
+//
+// full AllToAll(1)           // Not what is wanted. FIXME
+//          N0 va01 va23      N1 vc01 vc23 
+//          N2 vb01 vb23      N3 vd01 vd23
+// 
+// REARRANGE
+//          N0 va0123      N1 vc0123
+//          N2 vb0123      N3 vd0123
+//
+// Must also rearrange data to get into the NEW lex order of grid at each stage. Some kind of "insert/extract".
+// NB: Easiest to programme if keep in lex order.
+/*
+ *  Let chunk = (fvol*nvec)/sP be size of a chunk.         ( Divide lexico vol * nvec into fP/sP = M chunks )
+ *  
+ *  2nd A2A (over sP nodes; subdivide the fP into sP chunks of M)
+ * 
+ *     node 0     1st chunk of node 0M..(1M-1); 2nd chunk of node 0M..(1M-1)..   data chunk x M x sP = fL / sP * M * sP = fL * M growth
+ *     node 1     1st chunk of node 1M..(2M-1); 2nd chunk of node 1M..(2M-1)..
+ *     node 2     1st chunk of node 2M..(3M-1); 2nd chunk of node 2M..(3M-1)..
+ *     node 3     1st chunk of node 3M..(3M-1); 2nd chunk of node 2M..(3M-1)..
+ *  etc...
+ */
+template<class Vobj>
+void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
+{
+  typedef typename Vobj::scalar_object Sobj;
+
+  int full_vecs   = full.size();
+
+  assert(full_vecs>=1);
+
+  GridBase * full_grid = full[0]._grid;
+  GridBase *split_grid = split._grid;
+
+  int       ndim  = full_grid->_ndimension;
+  int  full_nproc = full_grid->_Nprocessors;
+  int split_nproc =split_grid->_Nprocessors;
+
+  ////////////////////////////////
+  // Checkerboard management
+  ////////////////////////////////
+  int cb = full[0].checkerboard;
+  split.checkerboard = cb;
+
+  //////////////////////////////
+  // Checks
+  //////////////////////////////
+  assert(full_grid->_ndimension==split_grid->_ndimension);
+  for(int n=0;n<full_vecs;n++){
+    assert(full[n].checkerboard == cb);
+    for(int d=0;d<ndim;d++){
+      assert(full[n]._grid->_gdimensions[d]==split._grid->_gdimensions[d]);
+      assert(full[n]._grid->_fdimensions[d]==split._grid->_fdimensions[d]);
+    }
+  }
+
+  int   nvector   =full_nproc/split_nproc; 
+  assert(nvector*split_nproc==full_nproc);
+  assert(nvector == full_vecs);
+
+  std::vector<int> ratio(ndim);
+  for(int d=0;d<ndim;d++){
+    ratio[d] = full_grid->_processors[d]/ split_grid->_processors[d];
+  }
+
+  uint64_t lsites = full_grid->lSites();
+  uint64_t     sz = lsites * nvector;
+  std::vector<Sobj> tmpdata(sz);
+  std::vector<Sobj> alldata(sz);
+  std::vector<Sobj> scalardata(lsites); 
+
+  for(int v=0;v<nvector;v++){
+    unvectorizeToLexOrdArray(scalardata,full[v]);    
+    parallel_for(int site=0;site<lsites;site++){
+      alldata[v*lsites+site] = scalardata[site];
+    }
+  }
+
+  int nvec = nvector; // Counts down to 1 as we collapse dims
+  std::vector<int> ldims = full_grid->_ldimensions;
+
+  for(int d=ndim-1;d>=0;d--){
+
+    if ( ratio[d] != 1 ) {
+
+      full_grid ->AllToAll(d,alldata,tmpdata);
+      if ( split_grid->_processors[d] > 1 ) {
+	alldata=tmpdata;
+	split_grid->AllToAll(d,alldata,tmpdata);
+      }
+
+      auto rdims = ldims; 
+      auto     M = ratio[d];
+      auto rsites= lsites*M;// increases rsites by M
+      nvec      /= M;       // Reduce nvec by subdivision factor
+      rdims[d]  *= M;       // increase local dim by same factor
+
+      int sP =   split_grid->_processors[d];
+      int fP =    full_grid->_processors[d];
+
+      int fvol   = lsites;
+      
+      int chunk  = (nvec*fvol)/sP;          assert(chunk*sP == nvec*fvol);
+
+      // Loop over reordered data post A2A
+      parallel_for(int c=0;c<chunk;c++){
+	std::vector<int> coor(ndim);
+	for(int m=0;m<M;m++){
+	  for(int s=0;s<sP;s++){
+	    
+	    // addressing; use lexico
+	    int lex_r;
+	    uint64_t lex_c        = c+chunk*m+chunk*M*s;
+	    uint64_t lex_fvol_vec = c+chunk*s;
+	    uint64_t lex_fvol     = lex_fvol_vec%fvol;
+	    uint64_t lex_vec      = lex_fvol_vec/fvol;
+
+	    // which node sets an adder to the coordinate
+	    Lexicographic::CoorFromIndex(coor, lex_fvol, ldims);	  
+	    coor[d] += m*ldims[d];
+	    Lexicographic::IndexFromCoor(coor, lex_r, rdims);	  
+	    lex_r += lex_vec * rsites;
+
+	    // LexicoFind coordinate & vector number within split lattice
+	    alldata[lex_r] = tmpdata[lex_c];
+
+	  }
+	}
+      }
+      ldims[d]*= ratio[d];
+      lsites  *= ratio[d];
+
+    }
+  }
+  vectorizeFromLexOrdArray(alldata,split);    
+}
+
+template<class Vobj>
+void Grid_split(Lattice<Vobj> &full,Lattice<Vobj>   & split)
+{
+  int nvector = full._grid->_Nprocessors / split._grid->_Nprocessors;
+  std::vector<Lattice<Vobj> > full_v(nvector,full._grid);
+  for(int n=0;n<nvector;n++){
+    full_v[n] = full;
+  }
+  Grid_split(full_v,split);
+}
+
+template<class Vobj>
+void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
+{
+  typedef typename Vobj::scalar_object Sobj;
+
+  int full_vecs   = full.size();
+
+  assert(full_vecs>=1);
+
+  GridBase * full_grid = full[0]._grid;
+  GridBase *split_grid = split._grid;
+
+  int       ndim  = full_grid->_ndimension;
+  int  full_nproc = full_grid->_Nprocessors;
+  int split_nproc =split_grid->_Nprocessors;
+
+  ////////////////////////////////
+  // Checkerboard management
+  ////////////////////////////////
+  int cb = full[0].checkerboard;
+  split.checkerboard = cb;
+
+  //////////////////////////////
+  // Checks
+  //////////////////////////////
+  assert(full_grid->_ndimension==split_grid->_ndimension);
+  for(int n=0;n<full_vecs;n++){
+    assert(full[n].checkerboard == cb);
+    for(int d=0;d<ndim;d++){
+      assert(full[n]._grid->_gdimensions[d]==split._grid->_gdimensions[d]);
+      assert(full[n]._grid->_fdimensions[d]==split._grid->_fdimensions[d]);
+    }
+  }
+
+  int   nvector   =full_nproc/split_nproc; 
+  assert(nvector*split_nproc==full_nproc);
+  assert(nvector == full_vecs);
+
+  std::vector<int> ratio(ndim);
+  for(int d=0;d<ndim;d++){
+    ratio[d] = full_grid->_processors[d]/ split_grid->_processors[d];
+  }
+
+  uint64_t lsites = full_grid->lSites();
+  uint64_t     sz = lsites * nvector;
+  std::vector<Sobj> tmpdata(sz);
+  std::vector<Sobj> alldata(sz);
+  std::vector<Sobj> scalardata(lsites); 
+
+  unvectorizeToLexOrdArray(alldata,split);    
+
+  /////////////////////////////////////////////////////////////////
+  // Start from split grid and work towards full grid
+  /////////////////////////////////////////////////////////////////
+
+  int nvec = 1;
+  uint64_t rsites        = split_grid->lSites();
+  std::vector<int> rdims = split_grid->_ldimensions;
+
+  for(int d=0;d<ndim;d++){
+
+    if ( ratio[d] != 1 ) {
+
+      auto     M = ratio[d];
+
+      int sP =   split_grid->_processors[d];
+      int fP =    full_grid->_processors[d];
+      
+      auto ldims = rdims;  ldims[d]  /= M;  // Decrease local dims by same factor
+      auto lsites= rsites/M;                // Decreases rsites by M
+      
+      int fvol   = lsites;
+      int chunk  = (nvec*fvol)/sP;          assert(chunk*sP == nvec*fvol);
+	
+      {
+	// Loop over reordered data post A2A
+	parallel_for(int c=0;c<chunk;c++){
+	  std::vector<int> coor(ndim);
+	  for(int m=0;m<M;m++){
+	    for(int s=0;s<sP;s++){
+
+	      // addressing; use lexico
+	      int lex_r;
+	      uint64_t lex_c = c+chunk*m+chunk*M*s;
+	      uint64_t lex_fvol_vec = c+chunk*s;
+	      uint64_t lex_fvol     = lex_fvol_vec%fvol;
+	      uint64_t lex_vec      = lex_fvol_vec/fvol;
+	      
+	      // which node sets an adder to the coordinate
+	      Lexicographic::CoorFromIndex(coor, lex_fvol, ldims);	  
+	      coor[d] += m*ldims[d];
+	      Lexicographic::IndexFromCoor(coor, lex_r, rdims);	  
+	      lex_r += lex_vec * rsites;
+	      
+	      // LexicoFind coordinate & vector number within split lattice
+	      tmpdata[lex_c] = alldata[lex_r];
+	    }
+	  }
+	}
+      }
+
+      if ( split_grid->_processors[d] > 1 ) {
+	split_grid->AllToAll(d,tmpdata,alldata);
+	tmpdata=alldata;
+      }
+      full_grid ->AllToAll(d,tmpdata,alldata);
+      rdims[d]/= M;
+      rsites  /= M;
+      nvec    *= M;       // Increase nvec by subdivision factor
+    }
+  }
+
+  lsites = full_grid->lSites();
+  for(int v=0;v<nvector;v++){
+    //    assert(v<full.size());
+    parallel_for(int site=0;site<lsites;site++){
+      //      assert(v*lsites+site < alldata.size());
+      scalardata[site] = alldata[v*lsites+site];
+    }
+    vectorizeFromLexOrdArray(scalardata,full[v]);    
+  }
+}
+
 }
 #endif

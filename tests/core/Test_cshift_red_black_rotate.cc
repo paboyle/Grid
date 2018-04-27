@@ -47,7 +47,7 @@ int main (int argc, char ** argv)
   mask[0]=0;
 
   GridCartesian         Fine  (latt_size,simd_layout,mpi_layout);
-  GridRedBlackCartesian RBFine(latt_size,simd_layout,mpi_layout,mask,1);
+  GridRedBlackCartesian RBFine(&Fine,mask,1);
 
   GridParallelRNG      FineRNG(&Fine);  FineRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 

@@ -42,7 +42,7 @@ int main (int argc, char ** argv)
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
-  GridRedBlackCartesian     RBGrid(latt_size,simd_layout,mpi_layout);
+  GridRedBlackCartesian     RBGrid(&Grid);
 
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
@@ -59,8 +59,8 @@ int main (int argc, char ** argv)
   double beta = 1.0;
   double c1   = 0.331;
 
-  //GparityPlaqPlusRectangleActionR Action(beta,c1);
-  ConjugateWilsonGaugeActionR Action(beta);
+  ConjugatePlaqPlusRectangleActionR Action(beta,c1);
+  //  ConjugateWilsonGaugeActionR Action(beta);
   //WilsonGaugeActionR Action(beta);
 
   ComplexD S    = Action.S(U);

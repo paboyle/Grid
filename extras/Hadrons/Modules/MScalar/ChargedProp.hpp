@@ -1,3 +1,30 @@
+/*************************************************************************************
+
+Grid physics library, www.github.com/paboyle/Grid 
+
+Source file: extras/Hadrons/Modules/MScalar/ChargedProp.hpp
+
+Copyright (C) 2015-2018
+
+Author: Antonin Portelli <antonin.portelli@me.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+See the full license in the file "LICENSE" in the top level distribution directory
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef Hadrons_MScalar_ChargedProp_hpp_
 #define Hadrons_MScalar_ChargedProp_hpp_
 
@@ -37,19 +64,20 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
     virtual void execute(void);
 private:
+    void makeCaches(void);
     void momD1(ScalarField &s, FFT &fft);
     void momD2(ScalarField &s, FFT &fft);
 private:
-    std::string                freeMomPropName_, GFSrcName_;
+    bool                       freeMomPropDone_, GFSrcDone_, phasesDone_;
+    std::string                freeMomPropName_, GFSrcName_, fftName_;
     std::vector<std::string>   phaseName_;
-    ScalarField                *freeMomProp_, *GFSrc_;
     std::vector<ScalarField *> phase_;
-    EmField                    *A;
 };
 
 MODULE_REGISTER_NS(ChargedProp, TChargedProp, MScalar);

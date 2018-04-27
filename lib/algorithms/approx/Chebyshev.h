@@ -8,6 +8,7 @@
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Christoph Lehner <clehner@bnl.gov>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,41 +34,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid {
 
-  ////////////////////////////////////////////////////////////////////////////////////////////
-  // Simple general polynomial with user supplied coefficients
-  ////////////////////////////////////////////////////////////////////////////////////////////
-  template<class Field>
-  class HermOpOperatorFunction : public OperatorFunction<Field> {
-    void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) {
-      Linop.HermOp(in,out);
-    };
-  };
-
-  template<class Field>
-  class Polynomial : public OperatorFunction<Field> {
-  private:
-    std::vector<RealD> Coeffs;
-  public:
-    Polynomial(std::vector<RealD> &_Coeffs) : Coeffs(_Coeffs) { };
-
-    // Implement the required interface
-    void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) {
-
-      Field AtoN(in._grid);
-      Field Mtmp(in._grid);
-      AtoN = in;
-      out = AtoN*Coeffs[0];
-//            std::cout <<"Poly in " <<norm2(in)<<" size "<< Coeffs.size()<<std::endl;
-//            std::cout <<"Coeffs[0]= "<<Coeffs[0]<< " 0 " <<norm2(out)<<std::endl;
-      for(int n=1;n<Coeffs.size();n++){
-	Mtmp = AtoN;
-	Linop.HermOp(Mtmp,AtoN);
-	out=out+AtoN*Coeffs[n];
-//            std::cout <<"Coeffs "<<n<<"= "<< Coeffs[n]<< " 0 " <<std::endl;
-//		std::cout << n<<" " <<norm2(out)<<std::endl;
-      }
-    };
-  };
+struct ChebyParams : Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(ChebyParams,
+				  RealD, alpha,  
+				  RealD, beta,   
+				  int, Npoly);
+};
 
   ////////////////////////////////////////////////////////////////////////////////////////////
   // Generic Chebyshev approximations
@@ -82,8 +54,10 @@ namespace Grid {
 
   public:
     void csv(std::ostream &out){
-	RealD diff = hi-lo;
-      for (RealD x=lo-0.2*diff; x<hi+0.2*diff; x+=(hi-lo)/1000) {
+      RealD diff = hi-lo;
+      RealD delta = (hi-lo)*1.0e-9;
+      for (RealD x=lo; x<hi; x+=delta) {
+	delta*=1.1;
 	RealD f = approx(x);
 	out<< x<<" "<<f<<std::endl;
       }
@@ -99,6 +73,7 @@ namespace Grid {
     };
 
     Chebyshev(){};
+    Chebyshev(ChebyParams p){ Init(p.alpha,p.beta,p.Npoly);};
     Chebyshev(RealD _lo,RealD _hi,int _order, RealD (* func)(RealD) ) {Init(_lo,_hi,_order,func);};
     Chebyshev(RealD _lo,RealD _hi,int _order) {Init(_lo,_hi,_order);};
 
@@ -193,6 +168,47 @@ namespace Grid {
       return sum;
     };
 
+    RealD approxD(RealD x)
+    {
+      RealD Un;
+      RealD Unm;
+      RealD Unp;
+      
+      RealD y=( x-0.5*(hi+lo))/(0.5*(hi-lo));
+      
+      RealD U0=1;
+      RealD U1=2*y;
+      
+      RealD sum;
+      sum = Coeffs[1]*U0;
+      sum+= Coeffs[2]*U1*2.0;
+      
+      Un =U1;
+      Unm=U0;
+      for(int i=2;i<order-1;i++){
+	Unp=2*y*Un-Unm;
+	Unm=Un;
+	Un =Unp;
+	sum+= Un*Coeffs[i+1]*(i+1.0);
+      }
+      return sum/(0.5*(hi-lo));
+    };
+    
+    RealD approxInv(RealD z, RealD x0, int maxiter, RealD resid) {
+      RealD x = x0;
+      RealD eps;
+      
+      int i;
+      for (i=0;i<maxiter;i++) {
+	eps = approx(x) - z;
+	if (fabs(eps / z) < resid)
+	  return x;
+	x = x - eps / approxD(x);
+      }
+      
+      return std::numeric_limits<double>::quiet_NaN();
+    }
+    
     // Implement the required interface
     void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) {
 

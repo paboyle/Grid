@@ -4,8 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MSource/Z2.hpp
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -76,10 +75,14 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
     virtual void execute(void);
+private:
+    bool        hasT_{false};
+    std::string tName_;
 };
 
 MODULE_REGISTER_NS(Z2,       TZ2<FIMPL>,        MSource);
@@ -92,6 +95,7 @@ MODULE_REGISTER_NS(ScalarZ2, TZ2<ScalarImplCR>, MSource);
 template <typename FImpl>
 TZ2<FImpl>::TZ2(const std::string name)
 : Module<Z2Par>(name)
+, tName_ (name + "_t")
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
@@ -115,29 +119,36 @@ std::vector<std::string> TZ2<FImpl>::getOutput(void)
 template <typename FImpl>
 void TZ2<FImpl>::setup(void)
 {
-    env().template registerLattice<PropagatorField>(getName());
+    envCreateLat(PropagatorField, getName());
+    envCacheLat(Lattice<iScalar<vInteger>>, tName_);
+    envTmpLat(LatticeComplex, "eta");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TZ2<FImpl>::execute(void)
 {
-    Lattice<iScalar<vInteger>> t(env().getGrid());
-    LatticeComplex             eta(env().getGrid());
-    Complex                    shift(1., 1.);
-    
     if (par().tA == par().tB)
     {
         LOG(Message) << "Generating Z_2 wall source at t= " << par().tA
-        << std::endl;
+                     << std::endl;
     }
     else
     {
         LOG(Message) << "Generating Z_2 band for " << par().tA << " <= t <= "
-        << par().tB << std::endl;
+                     << par().tB << std::endl;
     }
-    PropagatorField &src = *env().template createLattice<PropagatorField>(getName());
-    LatticeCoordinate(t, Tp);
+    
+    auto    &src = envGet(PropagatorField, getName());
+    auto    &t   = envGet(Lattice<iScalar<vInteger>>, tName_);
+    Complex shift(1., 1.);
+
+    if (!hasT_)
+    {
+        LatticeCoordinate(t, Tp);
+        hasT_ = true;
+    }
+    envGetTmp(LatticeComplex, eta);
     bernoulli(*env().get4dRng(), eta);
     eta = (2.*eta - shift)*(1./::sqrt(2.));
     eta = where((t >= par().tA) and (t <= par().tB), eta, 0.*eta);

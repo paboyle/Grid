@@ -26,567 +26,257 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/GridCore.h>
-
-#include <mpi.h>
-
-#include <semaphore.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <limits.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/mman.h>
-#include <zlib.h>
-#ifdef HAVE_NUMAIF_H
-#include <numaif.h>
-#endif
-
+#include <Grid/communicator/SharedMemory.h>
 
 namespace Grid {
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Info that is setup once and indept of cartesian layout
-///////////////////////////////////////////////////////////////////////////////////////////////////
-int CartesianCommunicator::ShmSetup = 0;
+Grid_MPI_Comm       CartesianCommunicator::communicator_world;
 
-int CartesianCommunicator::ShmRank;
-int CartesianCommunicator::ShmSize;
-int CartesianCommunicator::GroupRank;
-int CartesianCommunicator::GroupSize;
-int CartesianCommunicator::WorldRank;
-int CartesianCommunicator::WorldSize;
-
-MPI_Comm CartesianCommunicator::communicator_world;
-MPI_Comm CartesianCommunicator::ShmComm;
-MPI_Win  CartesianCommunicator::ShmWindow;
-
-std::vector<int> CartesianCommunicator::GroupRanks;  
-std::vector<int> CartesianCommunicator::MyGroup;
-std::vector<void *> CartesianCommunicator::ShmCommBufs;
-
-int CartesianCommunicator::NodeCount(void)    { return GroupSize;};
-int CartesianCommunicator::RankCount(void)    { return WorldSize;};
-
-
-#undef FORCE_COMMS
-void *CartesianCommunicator::ShmBufferSelf(void)
+////////////////////////////////////////////
+// First initialise of comms system
+////////////////////////////////////////////
+void CartesianCommunicator::Init(int *argc, char ***argv) 
 {
-  return ShmCommBufs[ShmRank];
-}
-void *CartesianCommunicator::ShmBuffer(int rank)
-{
-  int gpeer = GroupRanks[rank];
-#ifdef FORCE_COMMS
-  return NULL;
-#endif
-  if (gpeer == MPI_UNDEFINED){
-    return NULL;
-  } else { 
-    return ShmCommBufs[gpeer];
-  }
-}
-void *CartesianCommunicator::ShmBufferTranslate(int rank,void * local_p)
-{
-  static int count =0;
-  int gpeer = GroupRanks[rank];
-  assert(gpeer!=ShmRank); // never send to self
-  assert(rank!=WorldRank);// never send to self
-#ifdef FORCE_COMMS
-  return NULL;
-#endif
-  if (gpeer == MPI_UNDEFINED){
-    return NULL;
-  } else { 
-    uint64_t offset = (uint64_t)local_p - (uint64_t)ShmCommBufs[ShmRank];
-    uint64_t remote = (uint64_t)ShmCommBufs[gpeer]+offset;
-    return (void *) remote;
-  }
-}
-
-void CartesianCommunicator::Init(int *argc, char ***argv) {
 
   int flag;
   int provided;
-  //  mtrace();
 
   MPI_Initialized(&flag); // needed to coexist with other libs apparently
   if ( !flag ) {
     MPI_Init_thread(argc,argv,MPI_THREAD_MULTIPLE,&provided);
-    assert (provided == MPI_THREAD_MULTIPLE);
+    //If only 1 comms thread we require any threading mode other than SINGLE, but for multiple comms threads we need MULTIPLE
+    if( (nCommThreads == 1 && provided == MPI_THREAD_SINGLE) ||
+        (nCommThreads > 1 && provided != MPI_THREAD_MULTIPLE) )
+      assert(0);
   }
 
   Grid_quiesce_nodes();
 
+  // Never clean up as done once.
   MPI_Comm_dup (MPI_COMM_WORLD,&communicator_world);
-  MPI_Comm_rank(communicator_world,&WorldRank);
-  MPI_Comm_size(communicator_world,&WorldSize);
 
-  if ( WorldRank == 0 ) {
-    std::cout << GridLogMessage<< "Initialising MPI "<< WorldRank <<"/"<<WorldSize <<std::endl;
-  }
-
-  /////////////////////////////////////////////////////////////////////
-  // Split into groups that can share memory
-  /////////////////////////////////////////////////////////////////////
-  MPI_Comm_split_type(communicator_world, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,&ShmComm);
-  MPI_Comm_rank(ShmComm     ,&ShmRank);
-  MPI_Comm_size(ShmComm     ,&ShmSize);
-  GroupSize = WorldSize/ShmSize;
-
-  /////////////////////////////////////////////////////////////////////
-  // find world ranks in our SHM group (i.e. which ranks are on our node)
-  /////////////////////////////////////////////////////////////////////
-  MPI_Group WorldGroup, ShmGroup;
-  MPI_Comm_group (communicator_world, &WorldGroup); 
-  MPI_Comm_group (ShmComm, &ShmGroup);
-  
-  std::vector<int> world_ranks(WorldSize); 
-  GroupRanks.resize(WorldSize); 
-  for(int r=0;r<WorldSize;r++) world_ranks[r]=r;
-  
-  MPI_Group_translate_ranks (WorldGroup,WorldSize,&world_ranks[0],ShmGroup, &GroupRanks[0]); 
-
-  ///////////////////////////////////////////////////////////////////
-  // Identify who is in my group and noninate the leader
-  ///////////////////////////////////////////////////////////////////
-  int g=0;
-  MyGroup.resize(ShmSize);
-  for(int rank=0;rank<WorldSize;rank++){
-    if(GroupRanks[rank]!=MPI_UNDEFINED){
-      assert(g<ShmSize);
-      MyGroup[g++] = rank;
-    }
-  }
-  
-  std::sort(MyGroup.begin(),MyGroup.end(),std::less<int>());
-  int myleader = MyGroup[0];
-  
-  std::vector<int> leaders_1hot(WorldSize,0);
-  std::vector<int> leaders_group(GroupSize,0);
-  leaders_1hot [ myleader ] = 1;
-    
-  ///////////////////////////////////////////////////////////////////
-  // global sum leaders over comm world
-  ///////////////////////////////////////////////////////////////////
-  int ierr=MPI_Allreduce(MPI_IN_PLACE,&leaders_1hot[0],WorldSize,MPI_INT,MPI_SUM,communicator_world);
-  assert(ierr==0);
-  ///////////////////////////////////////////////////////////////////
-  // find the group leaders world rank
-  ///////////////////////////////////////////////////////////////////
-  int group=0;
-  for(int l=0;l<WorldSize;l++){
-    if(leaders_1hot[l]){
-      leaders_group[group++] = l;
-    }
-  }
-  ///////////////////////////////////////////////////////////////////
-  // Identify the rank of the group in which I (and my leader) live
-  ///////////////////////////////////////////////////////////////////
-  GroupRank=-1;
-  for(int g=0;g<GroupSize;g++){
-    if (myleader == leaders_group[g]){
-      GroupRank=g;
-    }
-  }
-  assert(GroupRank!=-1);
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // allocate the shared window for our group
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////
-  MPI_Barrier(ShmComm);
-
-  ShmCommBuf = 0;
-  ShmCommBufs.resize(ShmSize);
-
-  ////////////////////////////////////////////////////////////////////////////////////////////
-  // Hugetlbf and others map filesystems as mappable huge pages
-  ////////////////////////////////////////////////////////////////////////////////////////////
-#ifdef GRID_MPI3_SHMMMAP
-  char shm_name [NAME_MAX];
-  for(int r=0;r<ShmSize;r++){
-    
-    size_t size = CartesianCommunicator::MAX_MPI_SHM_BYTES;
-    sprintf(shm_name,GRID_SHM_PATH "/Grid_mpi3_shm_%d_%d",GroupRank,r);
-    //sprintf(shm_name,"/var/lib/hugetlbfs/group/wheel/pagesize-2MB/" "Grid_mpi3_shm_%d_%d",GroupRank,r);
-    //    printf("Opening file %s \n",shm_name);
-    int fd=open(shm_name,O_RDWR|O_CREAT,0666);
-    if ( fd == -1) { 
-      printf("open %s failed\n",shm_name);
-      perror("open hugetlbfs");
-      exit(0);
-    }
-    int mmap_flag = MAP_SHARED ;
-#ifdef MAP_POPULATE    
-    mmap_flag|=MAP_POPULATE;
-#endif
-#ifdef MAP_HUGETLB
-    if ( Hugepages ) mmap_flag |= MAP_HUGETLB;
-#endif
-    void *ptr = (void *) mmap(NULL, MAX_MPI_SHM_BYTES, PROT_READ | PROT_WRITE, mmap_flag,fd, 0); 
-    if ( ptr == (void *)MAP_FAILED ) {    
-      printf("mmap %s failed\n",shm_name);
-      perror("failed mmap");      assert(0);    
-    }
-    assert(((uint64_t)ptr&0x3F)==0);
-    ShmCommBufs[r] =ptr;
-    
-  }
-#endif
-  ////////////////////////////////////////////////////////////////////////////////////////////
-  // POSIX SHMOPEN ; as far as I know Linux does not allow EXPLICIT HugePages with this case
-  // tmpfs (Larry Meadows says) does not support explicit huge page, and this is used for 
-  // the posix shm virtual file system
-  ////////////////////////////////////////////////////////////////////////////////////////////
-#ifdef GRID_MPI3_SHMOPEN
-  char shm_name [NAME_MAX];
-  if ( ShmRank == 0 ) {
-    for(int r=0;r<ShmSize;r++){
-
-      size_t size = CartesianCommunicator::MAX_MPI_SHM_BYTES;
-
-      sprintf(shm_name,"/Grid_mpi3_shm_%d_%d",GroupRank,r);
-
-      shm_unlink(shm_name);
-      int fd=shm_open(shm_name,O_RDWR|O_CREAT,0666);
-      if ( fd < 0 ) {	perror("failed shm_open");	assert(0);      }
-      ftruncate(fd, size);
-      
-      int mmap_flag = MAP_SHARED;
-#ifdef MAP_POPULATE 
-      mmap_flag |= MAP_POPULATE;
-#endif
-#ifdef MAP_HUGETLB
-      if (Hugepages) mmap_flag |= MAP_HUGETLB;
-#endif
-      void * ptr =  mmap(NULL,size, PROT_READ | PROT_WRITE, mmap_flag, fd, 0);
-
-      if ( ptr == (void * )MAP_FAILED ) {       perror("failed mmap");      assert(0);    }
-      assert(((uint64_t)ptr&0x3F)==0);
-
-// Experiments; Experiments; Try to force numa domain on the shm segment if we have numaif.h
-#if 0
-//#ifdef HAVE_NUMAIF_H
-	int status;
-	int flags=MPOL_MF_MOVE;
-#ifdef KNL
-	int nodes=1; // numa domain == MCDRAM
-	// Find out if in SNC2,SNC4 mode ?
-#else
-	int nodes=r; // numa domain == MPI ID
-#endif
-	unsigned long count=1;
-	for(uint64_t page=0;page<size;page+=4096){
-	  void *pages = (void *) ( page + (uint64_t)ptr );
-	  uint64_t *cow_it = (uint64_t *)pages;	*cow_it = 1;
-	  ierr= move_pages(0,count, &pages,&nodes,&status,flags);
-	  if (ierr && (page==0)) perror("numa relocate command failed");
-	}
-#endif
-	ShmCommBufs[r] =ptr;
-      
-    }
-  }
-
-  MPI_Barrier(ShmComm);
-
-  if ( ShmRank != 0 ) { 
-    for(int r=0;r<ShmSize;r++){
-      size_t size = CartesianCommunicator::MAX_MPI_SHM_BYTES ;
-    
-      sprintf(shm_name,"/Grid_mpi3_shm_%d_%d",GroupRank,r);
-
-      int fd=shm_open(shm_name,O_RDWR,0666);
-      if ( fd<0 ) {	perror("failed shm_open");	assert(0);      }
-
-      void * ptr =  mmap(NULL,size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-      if ( ptr == MAP_FAILED ) {       perror("failed mmap");      assert(0);    }
-      assert(((uint64_t)ptr&0x3F)==0);
-      ShmCommBufs[r] =ptr;
-    }
-  }
-#endif
-  ////////////////////////////////////////////////////////////////////////////////////////////
-  // SHMGET SHMAT and SHM_HUGETLB flag
-  ////////////////////////////////////////////////////////////////////////////////////////////
-#ifdef GRID_MPI3_SHMGET
-  std::vector<int> shmids(ShmSize);
-
-  if ( ShmRank == 0 ) {
-    for(int r=0;r<ShmSize;r++){
-      size_t size = CartesianCommunicator::MAX_MPI_SHM_BYTES;
-      key_t key   = IPC_PRIVATE;
-      int flags = IPC_CREAT | SHM_R | SHM_W;
-#ifdef SHM_HUGETLB
-      if (Hugepages) flags|=SHM_HUGETLB;
-#endif
-      if ((shmids[r]= shmget(key,size, flags)) ==-1) {
-	int errsv = errno;
-	printf("Errno %d\n",errsv);
-	printf("key   %d\n",key);
-	printf("size  %lld\n",size);
-	printf("flags %d\n",flags);
-	perror("shmget");
-	exit(1);
-      } else { 
-	printf("shmid: 0x%x\n", shmids[r]);
-      }
-    }
-  }
-  MPI_Barrier(ShmComm);
-  MPI_Bcast(&shmids[0],ShmSize*sizeof(int),MPI_BYTE,0,ShmComm);
-  MPI_Barrier(ShmComm);
-
-  for(int r=0;r<ShmSize;r++){
-    ShmCommBufs[r] = (uint64_t *)shmat(shmids[r], NULL,0);
-    if (ShmCommBufs[r] == (uint64_t *)-1) {
-      perror("Shared memory attach failure");
-      shmctl(shmids[r], IPC_RMID, NULL);
-      exit(2);
-    }
-    printf("shmaddr: %p\n", ShmCommBufs[r]);
-  }
-  MPI_Barrier(ShmComm);
-  // Mark for clean up
-  for(int r=0;r<ShmSize;r++){
-    shmctl(shmids[r], IPC_RMID,(struct shmid_ds *)NULL);
-  }
-  MPI_Barrier(ShmComm);
-
-#endif
-  ShmCommBuf         = ShmCommBufs[ShmRank];
-
-  MPI_Barrier(ShmComm);
-  if ( ShmRank == 0 ) {
-    for(int r=0;r<ShmSize;r++){
-      uint64_t * check = (uint64_t *) ShmCommBufs[r];
-      check[0] = GroupRank;
-      check[1] = r;
-      check[2] = 0x5A5A5A;
-    }
-  }
-
-  MPI_Barrier(ShmComm);
-  for(int r=0;r<ShmSize;r++){
-    uint64_t * check = (uint64_t *) ShmCommBufs[r];
-    
-    assert(check[0]==GroupRank);
-    assert(check[1]==r);
-    assert(check[2]==0x5A5A5A);
-
-  }
-  MPI_Barrier(ShmComm);
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Verbose for now
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////
-  if (WorldRank == 0){
-    std::cout<<GridLogMessage<< "Grid MPI-3 configuration: detected ";
-    std::cout<< WorldSize << " Ranks " ;
-    std::cout<< GroupSize << " Nodes " ;
-    std::cout<< " with "<< ShmSize  << " ranks-per-node "<<std::endl;
-    
-    std::cout<<GridLogMessage     <<"Grid MPI-3 configuration: allocated shared memory region of size ";
-    std::cout<<std::hex << MAX_MPI_SHM_BYTES <<" ShmCommBuf address = "<<ShmCommBuf << std::dec<<std::endl;
-
-    for(int g=0;g<GroupSize;g++){
-      std::cout<<GridLogMessage<<" Node "<<g<<" led by MPI rank "<<leaders_group[g]<<std::endl;
-    }
-
-    std::cout<<GridLogMessage<<" Boss Node Shm Pointers are {";
-    for(int g=0;g<ShmSize;g++){
-      std::cout<<std::hex<<ShmCommBufs[g]<<std::dec;
-      if(g!=ShmSize-1) std::cout<<",";
-      else std::cout<<"}"<<std::endl;
-    }
-  }
-  
-  for(int g=0;g<GroupSize;g++){
-    if ( (ShmRank == 0) && (GroupRank==g) )  std::cout<<GridLogMessage<<"["<<g<<"] Node Group "<<g<<" is ranks {";
-    for(int r=0;r<ShmSize;r++){
-      if ( (ShmRank == 0) && (GroupRank==g) ) {
-	std::cout<<MyGroup[r];
-	if(r<ShmSize-1) std::cout<<",";
-	else std::cout<<"}"<<std::endl<<std::flush;
-      }
-      MPI_Barrier(communicator_world);
-    }
-  }
-
-  assert(ShmSetup==0);  ShmSetup=1;
+  GlobalSharedMemory::Init(communicator_world);
+  GlobalSharedMemory::SharedMemoryAllocate(
+		   GlobalSharedMemory::MAX_MPI_SHM_BYTES,
+		   GlobalSharedMemory::Hugepages);
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Want to implement some magic ... Group sub-cubes into those on same node
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &dest,int &source)
+///////////////////////////////////////////////////////////////////////////
+// Use cartesian communicators now even in MPI3
+///////////////////////////////////////////////////////////////////////////
+void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest)
 {
-  std::vector<int> coor = _processor_coor; // my coord
-  assert(std::abs(shift) <_processors[dim]);
-
-  coor[dim] = (_processor_coor[dim] + shift + _processors[dim])%_processors[dim];
-  Lexicographic::IndexFromCoor(coor,source,_processors);
-  source = LexicographicToWorldRank[source];
-
-  coor[dim] = (_processor_coor[dim] - shift + _processors[dim])%_processors[dim];
-  Lexicographic::IndexFromCoor(coor,dest,_processors);
-  dest = LexicographicToWorldRank[dest];
-
-}// rank is world rank.
-
+  int ierr=MPI_Cart_shift(communicator,dim,shift,&source,&dest);
+  assert(ierr==0);
+}
 int CartesianCommunicator::RankFromProcessorCoor(std::vector<int> &coor)
 {
   int rank;
-  Lexicographic::IndexFromCoor(coor,rank,_processors);
-  rank = LexicographicToWorldRank[rank];
+  int ierr=MPI_Cart_rank  (communicator, &coor[0], &rank);
+  assert(ierr==0);
   return rank;
-}// rank is world rank
-
+}
 void  CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &coor)
 {
-  int lr=-1;
-  for(int r=0;r<WorldSize;r++){// map world Rank to lexico and then to coor
-    if( LexicographicToWorldRank[r]==rank) lr = r;
-  }
-  assert(lr!=-1);
-  Lexicographic::CoorFromIndex(coor,lr,_processors);
+  coor.resize(_ndimension);
+  int ierr=MPI_Cart_coords  (communicator, rank, _ndimension,&coor[0]);
+  assert(ierr==0);
 }
-CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
-{ 
-  int ierr;
-  communicator=communicator_world;
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Initialises from communicator_world
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors) 
+{
+  MPI_Comm optimal_comm;
+  ////////////////////////////////////////////////////
+  // Remap using the shared memory optimising routine
+  // The remap creates a comm which must be freed
+  ////////////////////////////////////////////////////
+  GlobalSharedMemory::OptimalCommunicator    (processors,optimal_comm);
+  InitFromMPICommunicator(processors,optimal_comm);
+  SetCommunicator(optimal_comm);
+  ///////////////////////////////////////////////////
+  // Free the temp communicator
+  ///////////////////////////////////////////////////
+  MPI_Comm_free(&optimal_comm);
+}
+
+//////////////////////////////////
+// Try to subdivide communicator
+//////////////////////////////////
+CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent,int &srank)    
+{
   _ndimension = processors.size();
+
+  int parent_ndimension = parent._ndimension; assert(_ndimension >= parent._ndimension);
+  std::vector<int> parent_processor_coor(_ndimension,0);
+  std::vector<int> parent_processors    (_ndimension,1);
+
+  // Can make 5d grid from 4d etc...
+  int pad = _ndimension-parent_ndimension;
+  for(int d=0;d<parent_ndimension;d++){
+    parent_processor_coor[pad+d]=parent._processor_coor[d];
+    parent_processors    [pad+d]=parent._processors[d];
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // split the communicator
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  //  int Nparent = parent._processors ; 
+  //  std::cout << " splitting from communicator "<<parent.communicator <<std::endl;
+  int Nparent;
+  MPI_Comm_size(parent.communicator,&Nparent);
+  //  std::cout << " Parent size  "<<Nparent <<std::endl;
+
+  int childsize=1;
+  for(int d=0;d<processors.size();d++) {
+    childsize *= processors[d];
+  }
+  int Nchild = Nparent/childsize;
+  assert (childsize * Nchild == Nparent);
+
+  //  std::cout << " child size  "<<childsize <<std::endl;
+
+  std::vector<int> ccoor(_ndimension); // coor within subcommunicator
+  std::vector<int> scoor(_ndimension); // coor of split within parent
+  std::vector<int> ssize(_ndimension); // coor of split within parent
+
+  for(int d=0;d<_ndimension;d++){
+    ccoor[d] = parent_processor_coor[d] % processors[d];
+    scoor[d] = parent_processor_coor[d] / processors[d];
+    ssize[d] = parent_processors[d]     / processors[d];
+  }
+
+  // rank within subcomm ; srank is rank of subcomm within blocks of subcomms
+  int crank;  
+  // Mpi uses the reverse Lexico convention to us; so reversed routines called
+  Lexicographic::IndexFromCoorReversed(ccoor,crank,processors); // processors is the split grid dimensions
+  Lexicographic::IndexFromCoorReversed(scoor,srank,ssize);      // ssize is the number of split grids
+
+  MPI_Comm comm_split;
+  if ( Nchild > 1 ) { 
+
+    if(0){
+      std::cout << GridLogMessage<<"Child communicator of "<< std::hex << parent.communicator << std::dec<<std::endl;
+      std::cout << GridLogMessage<<" parent grid["<< parent._ndimension<<"]    ";
+      for(int d=0;d<parent._ndimension;d++)  std::cout << parent._processors[d] << " ";
+      std::cout<<std::endl;
+      
+      std::cout << GridLogMessage<<" child grid["<< _ndimension <<"]    ";
+      for(int d=0;d<processors.size();d++)  std::cout << processors[d] << " ";
+      std::cout<<std::endl;
+      
+      std::cout << GridLogMessage<<" old rank "<< parent._processor<<" coor ["<< parent._ndimension <<"]    ";
+      for(int d=0;d<parent._ndimension;d++)  std::cout << parent._processor_coor[d] << " ";
+      std::cout<<std::endl;
+      
+      std::cout << GridLogMessage<<" new split "<< srank<<" scoor ["<< _ndimension <<"]    ";
+      for(int d=0;d<processors.size();d++)  std::cout << scoor[d] << " ";
+      std::cout<<std::endl;
+      
+      std::cout << GridLogMessage<<" new rank "<< crank<<" coor ["<< _ndimension <<"]    ";
+      for(int d=0;d<processors.size();d++)  std::cout << ccoor[d] << " ";
+      std::cout<<std::endl;
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////
+      // Declare victory
+      //////////////////////////////////////////////////////////////////////////////////////////////////////
+      std::cout << GridLogMessage<<"Divided communicator "<< parent._Nprocessors<<" into "
+		<< Nchild <<" communicators with " << childsize << " ranks"<<std::endl;
+      std::cout << " Split communicator " <<comm_split <<std::endl;
+    }
+
+    ////////////////////////////////////////////////////////////////
+    // Split the communicator
+    ////////////////////////////////////////////////////////////////
+    int ierr= MPI_Comm_split(parent.communicator,srank,crank,&comm_split);
+    assert(ierr==0);
+
+  } else {
+    srank = 0;
+    int ierr = MPI_Comm_dup (parent.communicator,&comm_split);
+    assert(ierr==0);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Set up from the new split communicator
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  InitFromMPICommunicator(processors,comm_split);
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Take the right SHM buffers
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  SetCommunicator(comm_split);
+  
+  ///////////////////////////////////////////////
+  // Free the temp communicator 
+  ///////////////////////////////////////////////
+  MPI_Comm_free(&comm_split);
+
+  if(0){ 
+    std::cout << " ndim " <<_ndimension<<" " << parent._ndimension << std::endl;
+    for(int d=0;d<processors.size();d++){
+      std::cout << d<< " " << _processor_coor[d] <<" " <<  ccoor[d]<<std::endl;
+    }
+  }
+  for(int d=0;d<processors.size();d++){
+    assert(_processor_coor[d] == ccoor[d] );
+  }
+}
+
+void CartesianCommunicator::InitFromMPICommunicator(const std::vector<int> &processors, MPI_Comm communicator_base)
+{
+  ////////////////////////////////////////////////////
+  // Creates communicator, and the communicator_halo
+  ////////////////////////////////////////////////////
+  _ndimension = processors.size();
+  _processor_coor.resize(_ndimension);
+
+  /////////////////////////////////
+  // Count the requested nodes
+  /////////////////////////////////
+  _Nprocessors=1;
+  _processors = processors;
+  for(int i=0;i<_ndimension;i++){
+    _Nprocessors*=_processors[i];
+  }
+
+  std::vector<int> periodic(_ndimension,1);
+  MPI_Cart_create(communicator_base, _ndimension,&_processors[0],&periodic[0],0,&communicator);
+  MPI_Comm_rank(communicator,&_processor);
+  MPI_Cart_coords(communicator,_processor,_ndimension,&_processor_coor[0]);
+
+  if ( 0 && (communicator_base != communicator_world) ) {
+    std::cout << "InitFromMPICommunicator Cartesian communicator created with a non-world communicator"<<std::endl;
+    std::cout << " new communicator rank "<<_processor<< " coor ["<<_ndimension<<"] ";
+    for(int d=0;d<_processors.size();d++){
+      std::cout << _processor_coor[d]<<" ";
+    }
+    std::cout << std::endl;
+  }
+
+  int Size;
+  MPI_Comm_size(communicator,&Size);
 
   communicator_halo.resize (2*_ndimension);
   for(int i=0;i<_ndimension*2;i++){
     MPI_Comm_dup(communicator,&communicator_halo[i]);
   }
+  assert(Size==_Nprocessors);
+}
 
-  ////////////////////////////////////////////////////////////////
-  // Assert power of two shm_size.
-  ////////////////////////////////////////////////////////////////
-  int log2size = -1;
-  for(int i=0;i<=MAXLOG2RANKSPERNODE;i++){  
-    if ( (0x1<<i) == ShmSize ) {
-      log2size = i;
-      break;
+CartesianCommunicator::~CartesianCommunicator()
+{
+  int MPI_is_finalised;
+  MPI_Finalized(&MPI_is_finalised);
+  if (communicator && !MPI_is_finalised) {
+    MPI_Comm_free(&communicator);
+    for(int i=0;i<communicator_halo.size();i++){
+      MPI_Comm_free(&communicator_halo[i]);
     }
-  }
-  assert(log2size != -1);
-
-  ////////////////////////////////////////////////////////////////
-  // Identify subblock of ranks on node spreading across dims
-  // in a maximally symmetrical way
-  ////////////////////////////////////////////////////////////////
-  std::vector<int> WorldDims = processors;
-
-  ShmDims.resize  (_ndimension,1);
-  GroupDims.resize(_ndimension);
-  ShmCoor.resize  (_ndimension);
-  GroupCoor.resize(_ndimension);
-  WorldCoor.resize(_ndimension);
-
-  int dim = 0;
-  for(int l2=0;l2<log2size;l2++){
-    while ( (WorldDims[dim] / ShmDims[dim]) <= 1 ) dim=(dim+1)%_ndimension;
-    ShmDims[dim]*=2;
-    dim=(dim+1)%_ndimension;
-  }
-
-  ////////////////////////////////////////////////////////////////
-  // Establish torus of processes and nodes with sub-blockings
-  ////////////////////////////////////////////////////////////////
-  for(int d=0;d<_ndimension;d++){
-    GroupDims[d] = WorldDims[d]/ShmDims[d];
-  }
-
-  ////////////////////////////////////////////////////////////////
-  // Verbose
-  ////////////////////////////////////////////////////////////////
-#if 0
-  std::cout<< GridLogMessage << "MPI-3 usage "<<std::endl;
-  std::cout<< GridLogMessage << "SHM   ";
-  for(int d=0;d<_ndimension;d++){
-    std::cout<< ShmDims[d] <<" ";
-  }
-  std::cout<< std::endl;
-
-  std::cout<< GridLogMessage << "Group ";
-  for(int d=0;d<_ndimension;d++){
-    std::cout<< GroupDims[d] <<" ";
-  }
-  std::cout<< std::endl;
-
-  std::cout<< GridLogMessage<<"World ";
-  for(int d=0;d<_ndimension;d++){
-    std::cout<< WorldDims[d] <<" ";
-  }
-  std::cout<< std::endl;
-#endif
-  ////////////////////////////////////////////////////////////////
-  // Check processor counts match
-  ////////////////////////////////////////////////////////////////
-  _Nprocessors=1;
-  _processors = processors;
-  _processor_coor.resize(_ndimension);
-  for(int i=0;i<_ndimension;i++){
-    _Nprocessors*=_processors[i];
-  }
-  assert(WorldSize==_Nprocessors);
-      
-  ////////////////////////////////////////////////////////////////
-  // Establish mapping between lexico physics coord and WorldRank
-  ////////////////////////////////////////////////////////////////
-  Lexicographic::CoorFromIndex(GroupCoor,GroupRank,GroupDims);
-  Lexicographic::CoorFromIndex(ShmCoor,ShmRank,ShmDims);
-  for(int d=0;d<_ndimension;d++){
-    WorldCoor[d] = GroupCoor[d]*ShmDims[d]+ShmCoor[d];
-  }
-  _processor_coor = WorldCoor;
-  _processor      = WorldRank;
-
-  ///////////////////////////////////////////////////////////////////
-  // global sum Lexico to World mapping
-  ///////////////////////////////////////////////////////////////////
-  int lexico;
-  LexicographicToWorldRank.resize(WorldSize,0);
-  Lexicographic::IndexFromCoor(WorldCoor,lexico,WorldDims);
-  LexicographicToWorldRank[lexico] = WorldRank;
-  ierr=MPI_Allreduce(MPI_IN_PLACE,&LexicographicToWorldRank[0],WorldSize,MPI_INT,MPI_SUM,communicator);
-  assert(ierr==0);
-
-  for(int i=0;i<WorldSize;i++){
-
-    int wr = LexicographicToWorldRank[i];
-    //    int wr = i;
-
-    std::vector<int> coor(_ndimension);
-    ProcessorCoorFromRank(wr,coor); // from world rank
-    int ck = RankFromProcessorCoor(coor);
-    assert(ck==wr);
-
-    if ( wr == WorldRank ) { 
-      for(int j=0;j<coor.size();j++) {
-	assert(coor[j] == _processor_coor[j]);
-      }
-    }
-    /*
-    std::cout << GridLogMessage<< " Lexicographic "<<i;
-    std::cout << " MPI rank      "<<wr;
-    std::cout << " Coor          ";
-    for(int j=0;j<coor.size();j++) std::cout << coor[j];
-    std::cout<< std::endl;
-    */
-    /////////////////////////////////////////////////////
-    // Check everyone agrees on everyone elses coords
-    /////////////////////////////////////////////////////
-    std::vector<int> mcoor = coor;
-    this->Broadcast(0,(void *)&mcoor[0],mcoor.size()*sizeof(int));
-    for(int d = 0 ; d< _ndimension; d++) {
-      assert(coor[d] == mcoor[d]);
-    }
-  }
-};
+  }  
+}
 void CartesianCommunicator::GlobalSum(uint32_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_SUM,communicator);
   assert(ierr==0);
@@ -703,34 +393,31 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 							 int from,
 							 int bytes,int dir)
 {
-  assert(dir < communicator_halo.size());
+  int ncomm  =communicator_halo.size(); 
+  int commdir=dir%ncomm;
 
   MPI_Request xrq;
   MPI_Request rrq;
 
   int ierr;
-  int gdest = GroupRanks[dest];
-  int gfrom = GroupRanks[from];
-  int gme   = GroupRanks[_processor];
+  int gdest = ShmRanks[dest];
+  int gfrom = ShmRanks[from];
+  int gme   = ShmRanks[_processor];
 
   assert(dest != _processor);
   assert(from != _processor);
   assert(gme  == ShmRank);
   double off_node_bytes=0.0;
 
-#ifdef FORCE_COMMS
-  gdest = MPI_UNDEFINED;
-  gfrom = MPI_UNDEFINED;
-#endif
   if ( gfrom ==MPI_UNDEFINED) {
-    ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator_halo[dir],&rrq);
+    ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator_halo[commdir],&rrq);
     assert(ierr==0);
     list.push_back(rrq);
     off_node_bytes+=bytes;
   }
 
   if ( gdest == MPI_UNDEFINED ) {
-    ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator_halo[dir],&xrq);
+    ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator_halo[commdir],&xrq);
     assert(ierr==0);
     list.push_back(xrq);
     off_node_bytes+=bytes;
@@ -789,6 +476,39 @@ void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
 		      communicator_world);
   assert(ierr==0);
 }
+
+void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,uint64_t words,uint64_t bytes)
+{
+  std::vector<int> row(_ndimension,1);
+  assert(dim>=0 && dim<_ndimension);
+
+  //  Split the communicator
+  row[dim] = _processors[dim];
+
+  int me;
+  CartesianCommunicator Comm(row,*this,me);
+  Comm.AllToAll(in,out,words,bytes);
+}
+void CartesianCommunicator::AllToAll(void  *in,void *out,uint64_t words,uint64_t bytes)
+{
+  // MPI is a pain and uses "int" arguments
+  // 64*64*64*128*16 == 500Million elements of data.
+  // When 24*4 bytes multiples get 50x 10^9 >>> 2x10^9 Y2K bug.
+  // (Turns up on 32^3 x 64 Gparity too)
+  MPI_Datatype object;
+  int iwords; 
+  int ibytes;
+  iwords = words;
+  ibytes = bytes;
+  assert(words == iwords); // safe to cast to int ?
+  assert(bytes == ibytes); // safe to cast to int ?
+  MPI_Type_contiguous(ibytes,MPI_BYTE,&object);
+  MPI_Type_commit(&object);
+  MPI_Alltoall(in,iwords,object,out,iwords,object,communicator);
+  MPI_Type_free(&object);
+}
+
+
 
 }
 
