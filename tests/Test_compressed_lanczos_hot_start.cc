@@ -56,6 +56,7 @@ public:
 
   void checkpointFine(std::string evecs_file,std::string evals_file)
   {
+#ifdef HAVE_LIME
     assert(this->subspace.size()==nbasis);
     emptyUserRecord record;
     Grid::QCD::ScidacWriter WR(this->_FineGrid->IsBoss());
@@ -67,10 +68,14 @@ public:
     
     XmlWriter WRx(evals_file);
     write(WRx,"evals",this->evals_fine);
+#else
+    assert(0);
+#endif
   }
 
   void checkpointFineRestore(std::string evecs_file,std::string evals_file)
   {
+#ifdef HAVE_LIME
     this->evals_fine.resize(nbasis);
     this->subspace.resize(nbasis,this->_FineGrid);
     
@@ -90,10 +95,14 @@ public:
       
     }
     RD.close();
+#else
+    assert(0);
+#endif 
   }
 
   void checkpointCoarse(std::string evecs_file,std::string evals_file)
   {
+#ifdef HAVE_LIME
     int n = this->evec_coarse.size();
     emptyUserRecord record;
     Grid::QCD::ScidacWriter WR(this->_CoarseGrid->IsBoss());
@@ -105,10 +114,14 @@ public:
     
     XmlWriter WRx(evals_file);
     write(WRx,"evals",this->evals_coarse);
+#else
+    assert(0);
+#endif
   }
 
   void checkpointCoarseRestore(std::string evecs_file,std::string evals_file,int nvec)
   {
+#ifdef HAVE_LIME
     std::cout << "resizing coarse vecs to " << nvec<< std::endl;
     this->evals_coarse.resize(nvec);
     this->evec_coarse.resize(nvec,this->_CoarseGrid);
@@ -125,6 +138,9 @@ public:
       RD.readScidacFieldRecord(this->evec_coarse[k],record);
     }
     RD.close();
+#else 
+    assert(0);
+#endif
   }
 };
 
