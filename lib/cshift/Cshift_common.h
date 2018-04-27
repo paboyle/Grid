@@ -150,9 +150,9 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
 
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
-	int o   =n*rhs._grid->_slice_stride[dimension];
-	int bo  =n*rhs._grid->_slice_block[dimension];
-	table[ent++] = std::pair<int,int>(so+o+b,bo);
+        int o   =n*rhs._grid->_slice_stride[dimension];
+        int bo  =n*rhs._grid->_slice_block[dimension];
+        table[ent++] = std::pair<int,int>(so+o+b,bo+b);
       }
     }
 
