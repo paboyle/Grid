@@ -340,13 +340,17 @@ case ${ac_PRECISION} in
 esac
 
 ######################  Shared memory allocation technique under MPI3
-AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmopen|hugetlbfs|shmnone],
+AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmopen|shmget|hugetlbfs|shmnone],
               [Select SHM allocation technique])],[ac_SHM=${enable_shm}],[ac_SHM=shmopen])
 
 case ${ac_SHM} in
 
      shmopen)
      AC_DEFINE([GRID_MPI3_SHMOPEN],[1],[GRID_MPI3_SHMOPEN] )
+     ;;
+
+     shmget)
+     AC_DEFINE([GRID_MPI3_SHMGET],[1],[GRID_MPI3_SHMGET] )
      ;;
 
      shmnone)

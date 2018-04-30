@@ -114,19 +114,169 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
   assert(WorldNode!=-1);
   _ShmSetup=1;
 }
-
-void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,Grid_MPI_Comm & optimal_comm)
+// Gray encode support 
+int BinaryToGray (int  binary) {
+  int gray = (binary>>1)^binary;
+  return gray;
+}
+int Log2Size(int TwoToPower,int MAXLOG2)
 {
-  ////////////////////////////////////////////////////////////////
-  // Assert power of two shm_size.
-  ////////////////////////////////////////////////////////////////
   int log2size = -1;
-  for(int i=0;i<=MAXLOG2RANKSPERNODE;i++){  
-    if ( (0x1<<i) == WorldShmSize ) {
+  for(int i=0;i<=MAXLOG2;i++){
+    if ( (0x1<<i) == TwoToPower ) {
       log2size = i;
       break;
     }
   }
+  return log2size;
+}
+void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,Grid_MPI_Comm & optimal_comm)
+{
+#undef HYPERCUBE 
+#ifdef HYPERCUBE
+  ////////////////////////////////////////////////////////////////
+  // Assert power of two shm_size.
+  ////////////////////////////////////////////////////////////////
+  int log2size = Log2Size(WorldShmSize,MAXLOG2RANKSPERNODE);
+  assert(log2size != -1);
+
+  ////////////////////////////////////////////////////////////////
+  // Identify the hypercube coordinate of this node using hostname
+  ////////////////////////////////////////////////////////////////
+  // n runs 0...7 9...16 18...25 27...34     (8*4)  5 bits
+  // i runs 0..7                                    3 bits
+  // r runs 0..3                                    2 bits
+  // 2^10 = 1024 nodes
+  const int maxhdim = 10; 
+  std::vector<int> HyperCubeCoords(maxhdim,0);
+  std::vector<int> RootHyperCubeCoords(maxhdim,0);
+  int R;
+  int I;
+  int N;
+  const int namelen = _POSIX_HOST_NAME_MAX;
+  char name[namelen];
+
+  // Parse ICE-XA hostname to get hypercube location
+  gethostname(name,namelen);
+  int nscan = sscanf(name,"r%di%dn%d",&R,&I,&N) ;
+  assert(nscan==3);
+
+  int nlo = N%9;
+  int nhi = N/9;
+  uint32_t hypercoor = (R<<8)|(I<<5)|(nhi<<3)|nlo ;
+  uint32_t rootcoor  = hypercoor;
+
+  //////////////////////////////////////////////////////////////////
+  // Print debug info
+  //////////////////////////////////////////////////////////////////
+  for(int d=0;d<maxhdim;d++){
+    HyperCubeCoords[d] = (hypercoor>>d)&0x1;
+  }
+
+  std::cerr << " Hcoor (" ;
+  for(int d=0;d<maxhdim;d++){
+    std::cerr << " "<< HyperCubeCoords[d] ;
+  }
+  std::cerr << " )"<<std::endl;
+
+  std::string hname(name);
+  std::cerr << "hostname "<<hname<<std::endl;
+  std::cerr << "R " << R << " I " << I << " N "<< N<<" nhi "<<nhi<<" nlo "<<nlo
+            << " hypercoor 0x"<<std::hex<<hypercoor<<std::dec<<std::endl;
+
+  //////////////////////////////////////////////////////////////////
+  // broadcast node 0's base coordinate for this partition.
+  //////////////////////////////////////////////////////////////////
+  MPI_Bcast(&rootcoor, sizeof(rootcoor), MPI_BYTE, 0, WorldComm); 
+  hypercoor=hypercoor-rootcoor;
+  assert(hypercoor<WorldSize);
+  assert(hypercoor>=0);
+  std::cerr << " WorldRank "<<WorldRank << " relative hypercoor " << std::hex << hypercoor <<std::dec<<std::endl;
+  //////////////////////////////////////
+  // Printing
+  //////////////////////////////////////
+  for(int d=0;d<maxhdim;d++){
+    HyperCubeCoords[d] = (hypercoor>>d)&0x1;
+  }
+
+  std::cerr << " rel Hcoor (";
+  for(int d=0;d<maxhdim;d++){
+    std::cerr << " "<< HyperCubeCoords[d] ;
+  }
+  std::cerr << " )"<<std::endl;
+
+  ////////////////////////////////////////////////////////////////
+  // Identify subblock of ranks on node spreading across dims
+  // in a maximally symmetrical way
+  ////////////////////////////////////////////////////////////////
+  int ndimension              = processors.size();
+  std::vector<int> processor_coor(ndimension);
+  std::vector<int> WorldDims = processors;   std::vector<int> ShmDims  (ndimension,1);  std::vector<int> NodeDims (ndimension);
+  std::vector<int> ShmCoor  (ndimension);    std::vector<int> NodeCoor (ndimension);    std::vector<int> WorldCoor(ndimension);
+  std::vector<int> HyperCoor(ndimension);
+  int dim = 0;
+  for(int l2=0;l2<log2size;l2++){
+    while ( (WorldDims[dim] / ShmDims[dim]) <= 1 ) dim=(dim+1)%ndimension;
+    ShmDims[dim]*=2;
+    dim=(dim+1)%ndimension;
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // Establish torus of processes and nodes with sub-blockings
+  ////////////////////////////////////////////////////////////////
+  for(int d=0;d<ndimension;d++){
+    NodeDims[d] = WorldDims[d]/ShmDims[d];
+  }
+  ////////////////////////////////////////////////////////////////
+  // Map Hcube according to physical lattice 
+  // must partition. Loop over dims and find out who would join.
+  ////////////////////////////////////////////////////////////////
+  int hcoor = hypercoor;
+  for(int d=0;d<ndimension;d++){
+     int bits = Log2Size(NodeDims[d],MAXLOG2RANKSPERNODE);
+     int msk  = (0x1<<bits)-1;
+     HyperCoor[d]=hcoor & msk;  
+     HyperCoor[d]=BinaryToGray(HyperCoor[d]); // Space filling curve magic
+     hcoor = hcoor >> bits;
+  } 
+  ////////////////////////////////////////////////////////////////
+  // Check processor counts match
+  ////////////////////////////////////////////////////////////////
+  int Nprocessors=1;
+  for(int i=0;i<ndimension;i++){
+    Nprocessors*=processors[i];
+  }
+  assert(WorldSize==Nprocessors);
+
+  ////////////////////////////////////////////////////////////////
+  // Establish mapping between lexico physics coord and WorldRank
+  ////////////////////////////////////////////////////////////////
+  int rank;
+
+  Lexicographic::CoorFromIndexReversed(NodeCoor,WorldNode   ,NodeDims);
+  std::cerr << "NodeCoor "; 
+  for(int d=0;d<ndimension;d++) std::cerr << NodeCoor[d]<<" ";
+  std::cerr << std::endl;
+  std::cerr << "HyperCoor "; 
+  for(int d=0;d<ndimension;d++) std::cerr << HyperCoor[d]<<" ";
+  std::cerr << std::endl;
+
+  for(int d=0;d<ndimension;d++) NodeCoor[d]=HyperCoor[d];
+
+  Lexicographic::CoorFromIndexReversed(ShmCoor ,WorldShmRank,ShmDims);
+  for(int d=0;d<ndimension;d++) WorldCoor[d] = NodeCoor[d]*ShmDims[d]+ShmCoor[d];
+  Lexicographic::IndexFromCoorReversed(WorldCoor,rank,WorldDims);
+
+  /////////////////////////////////////////////////////////////////
+  // Build the new communicator
+  /////////////////////////////////////////////////////////////////
+  int ierr= MPI_Comm_split(WorldComm,0,rank,&optimal_comm);
+  assert(ierr==0);
+#else 
+  ////////////////////////////////////////////////////////////////
+  // Assert power of two shm_size.
+  ////////////////////////////////////////////////////////////////
+  int log2size = Log2Size(WorldShmSize,MAXLOG2RANKSPERNODE);
   assert(log2size != -1);
 
   ////////////////////////////////////////////////////////////////
@@ -175,8 +325,70 @@ void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,
   /////////////////////////////////////////////////////////////////
   int ierr= MPI_Comm_split(WorldComm,0,rank,&optimal_comm);
   assert(ierr==0);
+#endif
 }
+////////////////////////////////////////////////////////////////////////////////////////////
+// SHMGET
+////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef GRID_MPI3_SHMGET
+void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
+{
+  std::cout << "SharedMemoryAllocate "<< bytes<< " shmget implementation "<<std::endl;
+  assert(_ShmSetup==1);
+  assert(_ShmAlloc==0);
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // allocate the shared windows for our group
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////
+  MPI_Barrier(WorldShmComm);
+  WorldShmCommBufs.resize(WorldShmSize);
+  std::vector<int> shmids(WorldShmSize);
+
+  if ( WorldShmRank == 0 ) {
+    for(int r=0;r<WorldShmSize;r++){
+      size_t size = bytes;
+      key_t key   = IPC_PRIVATE;
+      int flags = IPC_CREAT | SHM_R | SHM_W;
+#ifdef SHM_HUGETLB
+      if (Hugepages) flags|=SHM_HUGETLB;
+#endif
+      if ((shmids[r]= shmget(key,size, flags)) ==-1) {
+        int errsv = errno;
+        printf("Errno %d\n",errsv);
+        printf("key   %d\n",key);
+        printf("size  %lld\n",size);
+        printf("flags %d\n",flags);
+        perror("shmget");
+        exit(1);
+      }
+    }
+  }
+  MPI_Barrier(WorldShmComm);
+  MPI_Bcast(&shmids[0],WorldShmSize*sizeof(int),MPI_BYTE,0,WorldShmComm);
+  MPI_Barrier(WorldShmComm);
+
+  for(int r=0;r<WorldShmSize;r++){
+    WorldShmCommBufs[r] = (uint64_t *)shmat(shmids[r], NULL,0);
+    if (WorldShmCommBufs[r] == (uint64_t *)-1) {
+      perror("Shared memory attach failure");
+      shmctl(shmids[r], IPC_RMID, NULL);
+      exit(2);
+    }
+  }
+  MPI_Barrier(WorldShmComm);
+  ///////////////////////////////////
+  // Mark for clean up
+  ///////////////////////////////////
+  for(int r=0;r<WorldShmSize;r++){
+    shmctl(shmids[r], IPC_RMID,(struct shmid_ds *)NULL);
+  }
+  MPI_Barrier(WorldShmComm);
+
+  _ShmAlloc=1;
+  _ShmAllocBytes  = bytes;
+}
+#endif
+ 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Hugetlbfs mapping intended
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -343,6 +555,9 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   _ShmAllocBytes = bytes;
 }
 #endif
+
+
+
 
   ////////////////////////////////////////////////////////
   // Global shared functionality finished

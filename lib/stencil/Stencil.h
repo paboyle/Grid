@@ -66,6 +66,8 @@ void Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const La
   parallel_for(int i=0;i<num;i++){
     compress.Compress(&buffer[off],table[i].first,rhs._odata[so+table[i].second]);
   }
+// Further optimisatoin: i) streaming store the result
+//                       ii) software prefetch the first element of the next table entry
 }
 
 ///////////////////////////////////////////////////////////////////
