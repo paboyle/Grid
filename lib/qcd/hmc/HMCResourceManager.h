@@ -48,6 +48,22 @@ with this program; if not, write to the Free Software Foundation, Inc.,
     }                                                                    \
   }
 
+#define RegisterLoadCheckPointerMetadataFunction(NAME)                   \
+  template < class Metadata >                                            \
+  void Load##NAME##Checkpointer(const CheckpointerParameters& Params_, const Metadata& M_) { \
+    if (!have_CheckPointer) {                                            \
+      std::cout << GridLogDebug << "Loading Metadata Checkpointer " << #NAME      \
+                << std::endl;                                            \
+      CP = std::unique_ptr<CheckpointerBaseModule>(                      \
+        new NAME##CPModule<ImplementationPolicy, Metadata >(Params_, M_));   \
+      have_CheckPointer = true;                                          \
+    } else {                                                             \
+      std::cout << GridLogError << "Checkpointer already loaded "        \
+                << std::endl;                                            \
+      exit(1);                                                           \
+    }                                                                    \
+  }
+
 namespace Grid {
 namespace QCD {
 
@@ -77,7 +93,7 @@ class HMCResourceManager {
   bool have_CheckPointer;
 
   // NOTE: operator << is not overloaded for std::vector<string> 
-  // so thsi function is necessary
+  // so this function is necessary
   void output_vector_string(const std::vector<std::string> &vs){
     for (auto &i: vs)
       std::cout << i << " ";
@@ -254,6 +270,7 @@ class HMCResourceManager {
   RegisterLoadCheckPointerFunction(Nersc);
   #ifdef HAVE_LIME
   RegisterLoadCheckPointerFunction(ILDG);
+  RegisterLoadCheckPointerMetadataFunction(Scidac);
   #endif
 
   ////////////////////////////////////////////////////////

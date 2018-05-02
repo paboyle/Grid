@@ -2,9 +2,9 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./lib/qcd/hmc/ILDGCheckpointer.h
+Source file: ./lib/qcd/hmc/ScidacCheckpointer.h
 
-Copyright (C) 2016
+Copyright (C) 2018
 
 Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
@@ -26,8 +26,8 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef ILDG_CHECKPOINTER
-#define ILDG_CHECKPOINTER
+#ifndef SCIDAC_CHECKPOINTER
+#define SCIDAC_CHECKPOINTER
 
 #ifdef HAVE_LIME
 
@@ -38,16 +38,20 @@ directory
 namespace Grid {
 namespace QCD {
 
-// Only for Gauge fields
-template <class Implementation>
-class ILDGHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
+// For generic fields
+template <class Implementation, class Metadata>
+class ScidacHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
  private:
   CheckpointerParameters Params;
+  Metadata MData;
+
+  typedef typename Implementation::Field Field;
 
  public:
-  INHERIT_GIMPL_TYPES(Implementation);
+  //INHERIT_GIMPL_TYPES(Implementation);
 
-  ILDGHmcCheckpointer(const CheckpointerParameters &Params_) { initialize(Params_); }
+  ScidacHmcCheckpointer(const CheckpointerParameters &Params_) { initialize(Params_); }
+  ScidacHmcCheckpointer(const CheckpointerParameters &Params_, const Metadata& M_):MData(M_) { initialize(Params_); }
 
   void initialize(const CheckpointerParameters &Params_) {
     Params = Params_;
@@ -69,7 +73,7 @@ class ILDGHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
     }
   }
 
-  void TrajectoryComplete(int traj, GaugeField &U, GridSerialRNG &sRNG,
+  void TrajectoryComplete(int traj, Field &U, GridSerialRNG &sRNG,
                           GridParallelRNG &pRNG) {
     if ((traj % Params.saveInterval) == 0) {
       std::string config, rng;
@@ -77,39 +81,36 @@ class ILDGHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
       GridBase *grid = U._grid;
       uint32_t nersc_csum,scidac_csuma,scidac_csumb;
       BinaryIO::writeRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
-      IldgWriter _IldgWriter(grid->IsBoss());
-      _IldgWriter.open(config);
-      _IldgWriter.writeConfiguration(U, traj, config, config);
-      _IldgWriter.close();
+      ScidacWriter _ScidacWriter(grid->IsBoss());
+      _ScidacWriter.open(config);
+      _ScidacWriter.writeScidacFieldRecord(U, MData);
+      _ScidacWriter.close();
 
-      std::cout << GridLogMessage << "Written ILDG Configuration on " << config
-                << " checksum " << std::hex 
-		<< nersc_csum<<"/"
-		<< scidac_csuma<<"/"
-		<< scidac_csumb
-		<< std::dec << std::endl;
+      std::cout << GridLogMessage << "Written Scidac Configuration on " << config
+                << " checksum " << std::hex << nersc_csum<<"/"
+		            << scidac_csuma<<"/" << scidac_csumb
+		            << std::dec << std::endl;
     }
   };
 
-  void CheckpointRestore(int traj, GaugeField &U, GridSerialRNG &sRNG,
+  void CheckpointRestore(int traj, Field &U, GridSerialRNG &sRNG,
                          GridParallelRNG &pRNG) {
     std::string config, rng;
     this->build_filenames(traj, Params, config, rng);
     this->check_filename(rng);
     this->check_filename(config);
 
-    
 
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
     BinaryIO::readRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
 
-    FieldMetaData header;
-    IldgReader _IldgReader;
-    _IldgReader.open(config);
-    _IldgReader.readConfiguration(U,header);  // format from the header
-    _IldgReader.close();
+    Metadata md_content;
+    ScidacReader _ScidacReader;
+    _ScidacReader.open(config);
+    _ScidacReader.readScidacFieldRecord(U,md_content);  // format from the header
+    _ScidacReader.close();
 
-    std::cout << GridLogMessage << "Read ILDG Configuration from " << config
+    std::cout << GridLogMessage << "Read Scidac Configuration from " << config
               << " checksum " << std::hex 
 	      << nersc_csum<<"/"
 	      << scidac_csuma<<"/"

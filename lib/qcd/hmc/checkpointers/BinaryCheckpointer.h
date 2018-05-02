@@ -93,6 +93,9 @@ class BinaryHmcCheckpointer : public BaseHmcCheckpointer<Impl> {
   void CheckpointRestore(int traj, Field &U, GridSerialRNG &sRNG, GridParallelRNG &pRNG) {
     std::string config, rng;
     this->build_filenames(traj, Params, config, rng);
+    this->check_filename(rng);
+    this->check_filename(config);
+
 
     BinarySimpleMunger<sobj_double, sobj> munge;
 
