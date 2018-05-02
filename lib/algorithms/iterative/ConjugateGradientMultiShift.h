@@ -43,6 +43,7 @@ namespace Grid {
 public:                                                
     RealD   Tolerance;
     Integer MaxIterations;
+    Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
     int verbose;
     MultiShiftFunction shifts;
 
@@ -269,6 +270,9 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
 	RealD cn = norm2(src);
 	std::cout<<GridLogMessage<<"CGMultiShift: shift["<<s<<"] true residual "<<std::sqrt(rn/cn)<<std::endl;
       }
+
+      IterationsToComplete = k;	
+
       return;
     }
   }
