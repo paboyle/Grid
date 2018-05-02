@@ -173,15 +173,9 @@ void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,
     HyperCubeCoords[d] = (hypercoor>>d)&0x1;
   }
 
-  std::cerr << " Hcoor (" ;
-  for(int d=0;d<maxhdim;d++){
-    std::cerr << " "<< HyperCubeCoords[d] ;
-  }
-  std::cerr << " )"<<std::endl;
-
   std::string hname(name);
-  std::cerr << "hostname "<<hname<<std::endl;
-  std::cerr << "R " << R << " I " << I << " N "<< N<<" nhi "<<nhi<<" nlo "<<nlo
+  std::cout << "hostname "<<hname<<std::endl;
+  std::cout << "R " << R << " I " << I << " N "<< N<<
             << " hypercoor 0x"<<std::hex<<hypercoor<<std::dec<<std::endl;
 
   //////////////////////////////////////////////////////////////////
@@ -191,19 +185,13 @@ void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,
   hypercoor=hypercoor-rootcoor;
   assert(hypercoor<WorldSize);
   assert(hypercoor>=0);
-  std::cerr << " WorldRank "<<WorldRank << " relative hypercoor " << std::hex << hypercoor <<std::dec<<std::endl;
+
   //////////////////////////////////////
   // Printing
   //////////////////////////////////////
   for(int d=0;d<maxhdim;d++){
     HyperCubeCoords[d] = (hypercoor>>d)&0x1;
   }
-
-  std::cerr << " rel Hcoor (";
-  for(int d=0;d<maxhdim;d++){
-    std::cerr << " "<< HyperCubeCoords[d] ;
-  }
-  std::cerr << " )"<<std::endl;
 
   ////////////////////////////////////////////////////////////////
   // Identify subblock of ranks on node spreading across dims
@@ -254,12 +242,6 @@ void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,
   int rank;
 
   Lexicographic::CoorFromIndexReversed(NodeCoor,WorldNode   ,NodeDims);
-  std::cerr << "NodeCoor "; 
-  for(int d=0;d<ndimension;d++) std::cerr << NodeCoor[d]<<" ";
-  std::cerr << std::endl;
-  std::cerr << "HyperCoor "; 
-  for(int d=0;d<ndimension;d++) std::cerr << HyperCoor[d]<<" ";
-  std::cerr << std::endl;
 
   for(int d=0;d<ndimension;d++) NodeCoor[d]=HyperCoor[d];
 
@@ -395,7 +377,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 #ifdef GRID_MPI3_SHMMMAP
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
-  std::cout << "SharedMemoryAllocate "<< bytes<< " MMAP implementation "<<std::endl;
+  std::cout << "SharedMemoryAllocate "<< bytes<< " MMAP implementation "<< GRID_SHM_PATH <<std::endl;
   assert(_ShmSetup==1);
   assert(_ShmAlloc==0);
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -405,7 +387,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   WorldShmCommBufs.resize(WorldShmSize);
   
   ////////////////////////////////////////////////////////////////////////////////////////////
-  // Hugetlbf and others map filesystems as mappable huge pages
+  // Hugetlbfs and others map filesystems as mappable huge pages
   ////////////////////////////////////////////////////////////////////////////////////////////
   char shm_name [NAME_MAX];
   for(int r=0;r<WorldShmSize;r++){
