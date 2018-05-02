@@ -91,6 +91,12 @@ int main(int argc, char **argv) {
   RNGModuleParameters RNGpar(Reader);
   TheHMC.Resources.SetRNGSeeds(RNGpar);
 
+  // Some online observable measurements
+  typedef ExpScalarMod<HMCWrapper::ImplPolicy> ExpObs;
+  ExpScalarParameters ExpParams(Reader);
+  TheHMC.Resources.AddObservable<ExpObs>(ExpParams);
+  ///////////////////////////////////////////
+
   // Real Scalar sh-Gordon action
   ScalarActionParameters SPar(Reader);
   shGordonActionR Saction(SPar.mass_squared, SPar.g);

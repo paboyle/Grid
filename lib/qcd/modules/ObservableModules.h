@@ -93,6 +93,20 @@ class PlaquetteMod: public ObservableModule<PlaquetteLogger<Impl>, NoParameters>
 };
 
 template < class Impl >
+class ExpScalarMod: public ObservableModule<ExpScalarLogger<Impl>, ExpScalarParameters>{
+  typedef ObservableModule<ExpScalarLogger<Impl>, ExpScalarParameters> ObsBase;
+  using ObsBase::ObsBase; // for constructors
+
+  // acquire resource
+  virtual void initialize(){
+    this->ObservablePtr.reset(new ExpScalarLogger<Impl>(this->Par_));
+  }
+  public:
+  ExpScalarMod(ExpScalarParameters P): ObsBase(P){}
+  ExpScalarMod():ObsBase(){};
+};
+
+template < class Impl >
 class PolyakovMod: public ObservableModule<PolyakovLogger<Impl>, NoParameters>{
   typedef ObservableModule<PolyakovLogger<Impl>, NoParameters> ObsBase;
   using ObsBase::ObsBase; // for constructors
