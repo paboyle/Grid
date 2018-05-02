@@ -141,8 +141,6 @@ class ScidacCPModule: public CheckPointerModule< ImplementationPolicy> {
   typedef CheckPointerModule< ImplementationPolicy> CPBase;
   Metadata M;
 
-  //using CPBase::CPBase; // for constructors
-
   // acquire resource
   virtual void initialize(){
      this->CheckPointPtr.reset(new ScidacHmcCheckpointer<ImplementationPolicy, Metadata>(this->Par_, M));
@@ -150,7 +148,7 @@ class ScidacCPModule: public CheckPointerModule< ImplementationPolicy> {
 public:
   ScidacCPModule(typename CPBase::APar Par, Metadata M_):M(M_), CPBase(Par) {}
   template <class ReaderClass>
-  ScidacCPModule(Reader<ReaderClass>& Reader) : Parametrized<typename CPBase::APar>(Reader){};
+  ScidacCPModule(Reader<ReaderClass>& Reader) : Parametrized<typename CPBase::APar>(Reader), M(Reader){};
 };
 #endif
 
