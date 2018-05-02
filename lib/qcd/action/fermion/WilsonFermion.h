@@ -135,6 +135,8 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
 
   //    protected:
  public:
+  virtual RealD Mass(void) { return mass; }
+  virtual int   isTrivialEE(void) { return 1; };
   RealD mass;
 
   GridBase *_grid;

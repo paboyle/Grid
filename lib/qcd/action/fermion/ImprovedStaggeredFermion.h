@@ -49,6 +49,18 @@ class ImprovedStaggeredFermion : public StaggeredKernels<Impl>, public ImprovedS
   FermionField _tmp;
   FermionField &tmp(void) { return _tmp; }
 
+  ////////////////////////////////////////
+  // Performance monitoring
+  ////////////////////////////////////////
+  void Report(void);
+  void ZeroCounters(void);
+  double DhopTotalTime;
+  double DhopCalls;
+  double DhopCommTime;
+  double DhopComputeTime;
+  double DhopComputeTime2;
+  double DhopFaceTime;
+
   ///////////////////////////////////////////////////////////////
   // Implement the abstract base
   ///////////////////////////////////////////////////////////////
@@ -141,7 +153,8 @@ class ImprovedStaggeredFermion : public StaggeredKernels<Impl>, public ImprovedS
   //    protected:
  public:
   // any other parameters of action ???
-
+  virtual int   isTrivialEE(void) { return 1; };
+  virtual RealD Mass(void) { return mass; }
   RealD mass;
   RealD u0;
   RealD c1;

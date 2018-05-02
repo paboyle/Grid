@@ -77,6 +77,12 @@ int main (int argc, char ** argv)
   RealD c1=9.0/8.0;
   RealD c2=-1.0/24.0;
   RealD u0=1.0;
+
+  double volume=1;
+  for(int mu=0;mu<Nd;mu++){
+    volume=volume*latt_size[mu];
+  }
+
   ImprovedStaggeredFermion5DR Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,c1,c2,u0); 
   MdagMLinearOperator<ImprovedStaggeredFermion5DR,FermionField> HermOp(Ds);
 
@@ -93,7 +99,19 @@ int main (int argc, char ** argv)
   MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> HermOp4d(Ds4d);
   FermionField src4d(UGrid); random(pRNG,src4d);
   FermionField result4d(UGrid); result4d=zero;
-  CG(HermOp4d,src4d,result4d);
+
+  double deodoe_flops=(16*(3*(6+8+8)) + 15*3*2)*volume; // == 66*16 +  == 1146
+  {
+    double t1=usecond();
+    CG(HermOp4d,src4d,result4d);
+    double t2=usecond();
+    double ncall=CG.IterationsToComplete;
+    double flops = deodoe_flops * ncall;
+    std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+    std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
+   }
+
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
 
@@ -101,9 +119,18 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Calling 5d CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   result=zero;
+{
   Ds.ZeroCounters();
+  double t1=usecond();
   CG(HermOp,src,result);
+  double t2=usecond();
+  double ncall=CG.IterationsToComplete;
+  double flops = deodoe_flops * ncall;
+  std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+    std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
   Ds.Report();
+}
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
@@ -111,7 +138,16 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   result=zero;
   Ds.ZeroCounters();
+{
+  double t1=usecond();
   mCG(HermOp,src,result);
+  double t2=usecond();
+  double ncall=CG.IterationsToComplete;
+  double flops = deodoe_flops * ncall;
+  std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+  std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+  std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
+}
   Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
@@ -120,7 +156,16 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   result=zero;
   Ds.ZeroCounters();
+{
+  double t1=usecond();
   BCGrQ(HermOp,src,result);
+  double t2=usecond();
+  double ncall=CG.IterationsToComplete;
+  double flops = deodoe_flops * ncall;
+  std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+  std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+  std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
+}
   Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 

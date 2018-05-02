@@ -74,6 +74,11 @@ int main (int argc, char ** argv)
 
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
 
+  double volume=1;
+  for(int mu=0;mu<Nd;mu++){
+    volume=volume*latt_size[mu];
+  }  
+
   RealD mass=0.003;
   RealD c1=9.0/8.0;
   RealD c2=-1.0/24.0;
@@ -90,14 +95,26 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   std::cout << GridLogMessage << " Calling 4d CG "<<std::endl;
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-  ImprovedStaggeredFermionR Ds4d(Umu,Umu,*UGrid,*UrbGrid,mass);
+  ImprovedStaggeredFermionR Ds4d(Umu,Umu,*UGrid,*UrbGrid,mass,c1,c2,u0);
   SchurStaggeredOperator<ImprovedStaggeredFermionR,FermionField> HermOp4d(Ds4d);
   FermionField src4d(UGrid); random(pRNG,src4d);
   FermionField src4d_o(UrbGrid);   pickCheckerboard(Odd,src4d_o,src4d);
   FermionField result4d_o(UrbGrid); 
 
+  double deodoe_flops=(16*(3*(6+8+8)) + 15*3*2)*volume; // == 66*16 +  == 1146
   result4d_o=zero;
-  CG(HermOp4d,src4d_o,result4d_o);
+  {
+    double t1=usecond();
+    CG(HermOp4d,src4d_o,result4d_o);
+    double t2=usecond();
+    double ncall=CG.IterationsToComplete;
+    double flops = deodoe_flops * ncall;
+    std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+    std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
+    HermOp4d.Report();
+  }
+  Ds4d.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
 
@@ -106,7 +123,17 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   Ds.ZeroCounters();
   result_o=zero;
-  CG(HermOp,src_o,result_o);
+  {
+    double t1=usecond();
+    CG(HermOp,src_o,result_o);
+    double t2=usecond();
+    double ncall=CG.IterationsToComplete*Ls;
+    double flops = deodoe_flops * ncall;
+    std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+    std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
+    HermOp.Report();
+  }
   Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
@@ -115,7 +142,18 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   Ds.ZeroCounters();
   result_o=zero;
-  mCG(HermOp,src_o,result_o);
+  {
+    double t1=usecond();
+    mCG(HermOp,src_o,result_o);
+    double t2=usecond();
+    double ncall=mCG.IterationsToComplete*Ls;
+    double flops = deodoe_flops * ncall;
+    std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+    std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
+    HermOp.Report();
+  }
+
   Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
@@ -124,7 +162,17 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   Ds.ZeroCounters();
   result_o=zero;
-  BCGrQ(HermOp,src_o,result_o);
+  {
+    double t1=usecond();
+    BCGrQ(HermOp,src_o,result_o);
+    double t2=usecond();
+    double ncall=BCGrQ.IterationsToComplete*Ls;
+    double flops = deodoe_flops * ncall;
+    std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+    std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
+    HermOp.Report();
+  }
   Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
