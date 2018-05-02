@@ -51,7 +51,7 @@ namespace QCD {
 
     static const int Nc=3;
     static const int Ns=4;
-    static const int Nd=2;
+    static const int Nd=4;
     static const int Nhs=2; // half spinor
     static const int Nds=8; // double stored gauge field
     static const int Ngp=2; // gparity index range
