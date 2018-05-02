@@ -370,7 +370,7 @@ esac
 AC_ARG_ENABLE([shmpath],[AC_HELP_STRING([--enable-shmpath=path],
               [Select SHM mmap base path for hugetlbfs])],
 	      [ac_SHMPATH=${enable_shmpath}],
-	      [ac_SHMPATH=/var/lib/hugetlbfs/pagesize-2MB/])
+	      [ac_SHMPATH=/var/lib/hugetlbfs/global/pagesize-2MB/])
 AC_DEFINE_UNQUOTED([GRID_SHM_PATH],["$ac_SHMPATH"],[Path to a hugetlbfs filesystem for MMAPing])
 
 ############### communication type selection
