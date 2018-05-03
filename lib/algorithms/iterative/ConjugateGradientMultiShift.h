@@ -164,7 +164,16 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
   for(int s=0;s<nshift;s++) {
     axpby(psi[s],0.,-bs[s]*alpha[s],src,src);
   }
-  
+ 
+  ///////////////////////////////////////
+  // Timers
+  ///////////////////////////////////////
+  GridStopWatch AXPYTimer;
+  GridStopWatch ShiftTimer;
+  GridStopWatch QRTimer;
+  GridStopWatch MatrixTimer;
+  GridStopWatch SolverTimer;
+  SolverTimer.Start();
   
   // Iteration loop
   int k;
@@ -172,7 +181,9 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
   for (k=1;k<=MaxIterations;k++){
     
     a = c /cp;
+    AXPYTimer.Start();
     axpy(p,a,p,r);
+    AXPYTimer.Stop();
     
     // Note to self - direction ps is iterated seperately
     // for each shift. Does not appear to have any scope
@@ -181,6 +192,7 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
     // However SAME r is used. Could load "r" and update
     // ALL ps[s]. 2/3 Bandwidth saving
     // New Kernel: Load r, vector of coeffs, vector of pointers ps
+    AXPYTimer.Start();
     for(int s=0;s<nshift;s++){
       if ( ! converged[s] ) { 
 	if (s==0){
@@ -191,22 +203,30 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
 	}
       }
     }
+    AXPYTimer.Stop();
     
     cp=c;
-    
+    MatrixTimer.Start();  
     Linop.HermOpAndNorm(p,mmp,d,qq);
+    MatrixTimer.Stop();  
+
+    AXPYTimer.Start();
     axpy(mmp,mass[0],p,mmp);
+    AXPYTimer.Stop();
     RealD rn = norm2(p);
     d += rn*mass[0];
     
     bp=b;
     b=-cp/d;
     
+    AXPYTimer.Start();
     c=axpy_norm(r,b,mmp,r);
+    AXPYTimer.Stop();
 
     // Toggle the recurrence history
     bs[0] = b;
     iz = 1-iz;
+    ShiftTimer.Start();
     for(int s=1;s<nshift;s++){
       if((!converged[s])){
 	RealD z0 = z[s][1-iz];
@@ -216,6 +236,7 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
 	bs[s] = b*z[s][iz]/z0; // NB sign  rel to Mike
       }
     }
+    ShiftTimer.Stop();
     
     for(int s=0;s<nshift;s++){
       int ss = s;
@@ -232,9 +253,11 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
       // Before:  3 x npole  + 3 x npole
       // After :  2 x npole (ps[s])        => 3x speed up of multishift CG.
       
+      AXPYTimer.Start();
       if( (!converged[s]) ) { 
 	axpy(psi[ss],-bs[s]*alpha[s],ps[s],psi[ss]);
       }
+      AXPYTimer.Stop();
     }
     
     // Convergence checks
@@ -258,6 +281,9 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
     
     if ( all_converged ){
 
+    SolverTimer.Stop();
+
+
       std::cout<<GridLogMessage<< "CGMultiShift: All shifts have converged iteration "<<k<<std::endl;
       std::cout<<GridLogMessage<< "CGMultiShift: Checking solutions"<<std::endl;
       
@@ -271,10 +297,18 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
 	std::cout<<GridLogMessage<<"CGMultiShift: shift["<<s<<"] true residual "<<std::sqrt(rn/cn)<<std::endl;
       }
 
+      std::cout << GridLogMessage << "Time Breakdown "<<std::endl;
+      std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed()     <<std::endl;
+      std::cout << GridLogMessage << "\tAXPY    " << AXPYTimer.Elapsed()     <<std::endl;
+      std::cout << GridLogMessage << "\tMarix    " << MatrixTimer.Elapsed()     <<std::endl;
+      std::cout << GridLogMessage << "\tShift    " << ShiftTimer.Elapsed()     <<std::endl;
+
       IterationsToComplete = k;	
 
       return;
     }
+
+   
   }
   // ugly hack
   std::cout<<GridLogMessage<<"CG multi shift did not converge"<<std::endl;
