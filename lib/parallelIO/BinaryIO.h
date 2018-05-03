@@ -263,7 +263,7 @@ PARALLEL_CRITICAL
 			      GridBase *grid,
 			      std::vector<fobj> &iodata,
 			      std::string file,
-			      uint64_t offset,
+			      uint64_t& offset,
 			      const std::string &format, int control,
 			      uint32_t &nersc_csum,
 			      uint32_t &scidac_csuma,
@@ -495,6 +495,7 @@ PARALLEL_CRITICAL
 	  exit(1);
 #endif
 	}
+  offset  = fout.tellp();
 	fout.close();
       }
       timer.Stop();
@@ -699,7 +700,6 @@ PARALLEL_CRITICAL
 
     IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_LEXICOGRAPHIC,
 	     nersc_csum,scidac_csuma,scidac_csumb);
-
     iodata.resize(1);
     {
       std::vector<RngStateType> tmp(RngStateCount);
