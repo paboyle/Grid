@@ -63,7 +63,7 @@ namespace Grid {
           LatticeCoordinate(coor, nu + shift);
 	  ph = ph + twist[nu]*coor*((1./(in._grid->_fdimensions[nu+shift])));
 	}
-	in_buf = exp((RealD)(2.0*M_PI)*ci*ph*(-1.0))*in;
+	in_buf = exp((Real)(2.0*M_PI)*ci*ph*(-1.0))*in;
 
 	if(fiveD){//FFT only on temporal and spatial dimensions
           std::vector<int> mask(Nd+1,1); mask[0] = 0;
@@ -78,7 +78,7 @@ namespace Grid {
         }
 
 	//phase for boundary condition
-	out = out * exp((RealD)(2.0*M_PI)*ci*ph);
+	out = out * exp((Real)(2.0*M_PI)*ci*ph);
       };
 
       virtual void FreePropagator(const FermionField &in,FermionField &out,RealD mass,std::vector<double> twist) {

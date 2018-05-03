@@ -115,14 +115,14 @@ namespace Grid {
           LatticeCoordinate(coor, nu);
 	  ph = ph + twist[nu]*coor*((1./(in._grid->_fdimensions[nu])));
 	}
-	in_buf = exp((RealD)(2.0*M_PI)*ci*ph*(-1.0))*in;
+	in_buf = exp((Real)(2.0*M_PI)*ci*ph*(-1.0))*in;
 
 	theFFT.FFT_all_dim(in_k,in_buf,FFT::forward);
         this->MomentumSpacePropagator(prop_k,in_k,mass,twist);
 	theFFT.FFT_all_dim(out,prop_k,FFT::backward);
 
 	//phase for boundary condition
-	out = out * exp((RealD)(2.0*M_PI)*ci*ph);
+	out = out * exp((Real)(2.0*M_PI)*ci*ph);
 
       };
       virtual void FreePropagator(const FermionField &in,FermionField &out,RealD mass) {
