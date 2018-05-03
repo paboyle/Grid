@@ -162,7 +162,7 @@ void WilsonFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out)
   MooeeInv(in,out);
 }
 template<class Impl>
-void WilsonFermion<Impl>::MomentumSpacePropagator(FermionField &out, const FermionField &in,RealD _m) 
+void WilsonFermion<Impl>::MomentumSpacePropagator(FermionField &out, const FermionField &in,RealD _m,std::vector<double> twist)
 {  
   typedef typename FermionField::vector_type vector_type;
   typedef typename FermionField::scalar_type ScalComplex;
@@ -195,6 +195,7 @@ void WilsonFermion<Impl>::MomentumSpacePropagator(FermionField &out, const Fermi
     RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
     
     kmu = TwoPiL * kmu;
+    kmu = kmu + TwoPiL * one * twist[mu];//momentum for twisted boundary conditions
     
     wilson = wilson + 2.0*sin(kmu*0.5)*sin(kmu*0.5); // Wilson term
     
