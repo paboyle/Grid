@@ -44,7 +44,7 @@ inline void dmu(Field &out, const Field &in, const unsigned int mu, const DiffTy
 
     if (mu >= env.getNd())
     {
-        HADRON_ERROR(Range, "Derivative direction out of range");
+        HADRONS_ERROR(Range, "Derivative direction out of range");
     }
     switch(type)
     {
@@ -58,7 +58,7 @@ inline void dmu(Field &out, const Field &in, const unsigned int mu, const DiffTy
             out = 0.5*(Cshift(in, mu, 1) - Cshift(in, mu, -1));
             break;
         default:
-            HADRON_ERROR(Argument, "Derivative type invalid");
+            HADRONS_ERROR(Argument, "Derivative type invalid");
             break;
     }
 }
@@ -70,7 +70,7 @@ inline void dmuAcc(Field &out, const Field &in, const unsigned int mu, const Dif
 
     if (mu >= env.getNd())
     {
-        HADRON_ERROR(Range, "Derivative direction out of range");
+        HADRONS_ERROR(Range, "Derivative direction out of range");
     }
     switch(type)
     {
@@ -84,7 +84,7 @@ inline void dmuAcc(Field &out, const Field &in, const unsigned int mu, const Dif
             out += 0.5*(Cshift(in, mu, 1) - Cshift(in, mu, -1));
             break;
         default:
-            HADRON_ERROR(Argument, "Derivative type invalid");
+            HADRONS_ERROR(Argument, "Derivative type invalid");
             break;
     }
 }

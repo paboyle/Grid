@@ -51,20 +51,20 @@ public:
                                     std::string, output);
 };
 
+class ShiftProbeResult: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(ShiftProbeResult,
+                                    std::string, shifts,
+                                    Complex,     value);
+};
+
 template <typename SImpl>
 class TShiftProbe: public Module<ShiftProbePar>
 {
 public:
-    
     typedef typename SImpl::Field                          Field;
     typedef typename SImpl::ComplexField                   ComplexField;
-    class Result: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        std::string, op,
-                                        Complex    , value);
-    };
 public:
     // constructor
     TShiftProbe(const std::string name);
@@ -134,14 +134,14 @@ void TShiftProbe<SImpl>::execute(void)
     shift = strToVec<ShiftPair>(par().shifts);
     if (shift.size() % 2 != 0)
     {
-        HADRON_ERROR(Size, "the number of shifts is odd");
+        HADRONS_ERROR(Size, "the number of shifts is odd");
     }
     sign = (shift.size() % 4 == 0) ? 1 : -1;
     for (auto &s: shift)
     {
         if (s.first >= env().getNd())
         {
-            HADRON_ERROR(Size, "dimension to large for shift <" 
+            HADRONS_ERROR(Size, "dimension to large for shift <" 
                                + std::to_string(s.first) + " " 
                                + std::to_string(s.second) + ">" );
         }
@@ -160,6 +160,14 @@ void TShiftProbe<SImpl>::execute(void)
         }
     }
     probe = real(sign*trace(acc));
+    if (!par().output.empty())
+    {
+        ShiftProbeResult r;
+
+        r.shifts = par().shifts;
+        r.value  = TensorRemove(sum(probe));
+        saveResult(par().output, "probe", r);
+    }
 }
 
 END_MODULE_NAMESPACE

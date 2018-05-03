@@ -49,19 +49,20 @@ public:
                                     std::string,  output);
 };
 
+class TrKineticResult: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(TrKineticResult,
+                                    std::vector<std::vector<Complex>>, value,
+                                    DiffType,                          type);
+};
+
 template <typename SImpl>
 class TTrKinetic: public Module<TrKineticPar>
 {
 public:
     typedef typename SImpl::Field        Field;
     typedef typename SImpl::ComplexField ComplexField;
-    class Result: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        std::string, op,
-                                        Complex    , value);
-    };
 public:
     // constructor
     TTrKinetic(const std::string name);
@@ -135,18 +136,24 @@ void TTrKinetic<SImpl>::execute(void)
     LOG(Message) << "Computing tr(d_mu phi*d_nu phi) using " << par().type
                  << " derivative" << std::endl; 
 
-    std::vector<Result> result;
-    auto                &phi    = envGet(Field, par().field);
-    auto                &sumkin = envGet(ComplexField, varName(getName(), "sum"));
+    const unsigned int nd = env().getNd();
+    TrKineticResult    result;
+    auto               &phi    = envGet(Field, par().field);
+    auto               &sumkin = envGet(ComplexField, varName(getName(), "sum"));
 
     envGetTmp(std::vector<Field>, der);
     sumkin = zero;
-    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    if (!par().output.empty())
+    {
+        result.type = par().type;
+        result.value.resize(nd, std::vector<Complex>(nd));
+    }
+    for (unsigned int mu = 0; mu < nd; ++mu)
     {
         dmu(der[mu], phi, mu, par().type);
     }
-    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-    for (unsigned int nu = mu; nu < env().getNd(); ++nu)
+    for (unsigned int mu = 0; mu < nd; ++mu)
+    for (unsigned int nu = mu; nu < nd; ++nu)
     {
         auto &out = envGet(ComplexField, varName(getName(), mu, nu));
 
@@ -155,32 +162,13 @@ void TTrKinetic<SImpl>::execute(void)
         {
             sumkin += out;
         }
-    }
-    if (!par().output.empty())
-    {
-        for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-        for (unsigned int nu = mu; nu < env().getNd(); ++nu)
+        if (!par().output.empty())
         {
-            auto &out = envGet(ComplexField, varName(getName(), mu, nu));
-            Result r;
-
-            r.op    = "tr(d_" + std::to_string(mu) + "phi*d_" 
-                      + std::to_string(nu) + "phi)";
-            r.value = TensorRemove(sum(out));
-            result.push_back(r);
-        }
-        {
-            Result r;
-
-            r.op    = "sum_mu tr(d_mu phi*d_mu phi)";
-            r.value = TensorRemove(sum(sumkin));
-            result.push_back(r);
+            result.value[mu][nu] = TensorRemove(sum(out));
+            result.value[mu][nu] = result.value[nu][mu];
         }
     }
-    if (result.size() > 0)
-    {
-        saveResult(par().output, "trkinetic", result);
-    }
+    saveResult(par().output, "trkinetic", result);
 }
 
 END_MODULE_NAMESPACE

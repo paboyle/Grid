@@ -123,7 +123,7 @@ void TTestSeqConserved<FImpl>::setup(void)
     auto Ls = env().getObjectLs(par().q);
     if (Ls != env().getObjectLs(par().action))
     {
-        HADRON_ERROR(Size, "Ls mismatch between quark action and propagator");
+        HADRONS_ERROR(Size, "Ls mismatch between quark action and propagator");
     }
     envTmpLat(PropagatorField, "tmp");
     envTmpLat(LatticeComplex, "c");

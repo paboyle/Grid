@@ -169,7 +169,11 @@ int main (int argc, char ** argv)
   for(int lat=4;lat<=maxlat;lat+=4){
     for(int Ls=8;Ls<=8;Ls*=2){
 
-      std::vector<int> latt_size  ({lat,lat,lat,lat});
+      std::vector<int> latt_size  ({lat*mpi_layout[0],
+                                    lat*mpi_layout[1],
+                                    lat*mpi_layout[2],
+                                    lat*mpi_layout[3]});
+
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
       RealD Nrank = Grid._Nprocessors;
@@ -485,7 +489,8 @@ int main (int argc, char ** argv)
 	dbytes=0;
 	ncomm=0;
 
-	parallel_for(int dir=0;dir<8;dir++){
+#pragma omp parallel for num_threads(Grid::CartesianCommunicator::nCommThreads)
+	for(int dir=0;dir<8;dir++){
 
 	  double tbytes;
 	  int mu =dir % 4;
@@ -502,9 +507,9 @@ int main (int argc, char ** argv)
 	      int comm_proc = mpi_layout[mu]-1;
 	      Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
 	    }
-
+            int tid = omp_get_thread_num();
 	    tbytes= Grid.StencilSendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,
-					       (void *)&rbuf[dir][0], recv_from_rank, bytes,dir);
+					       (void *)&rbuf[dir][0], recv_from_rank, bytes,tid);
 
 #pragma omp atomic
 	    dbytes+=tbytes;

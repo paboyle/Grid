@@ -110,11 +110,11 @@ class BinaryIO {
       lsites = 1;
     }
 
-    #pragma omp parallel
+PARALLEL_REGION
     {
       uint32_t nersc_csum_thr = 0;
 
-      #pragma omp for
+PARALLEL_FOR_LOOP_INTERN
       for (uint64_t local_site = 0; local_site < lsites; local_site++)
       {
         uint32_t *site_buf = (uint32_t *)&fbuf[local_site];
@@ -124,7 +124,7 @@ class BinaryIO {
         }
       }
 
-      #pragma omp critical
+PARALLEL_CRITICAL
       {
         nersc_csum += nersc_csum_thr;
       }
@@ -146,14 +146,14 @@ class BinaryIO {
     std::vector<int> local_start =grid->LocalStarts();
     std::vector<int> global_vol  =grid->FullDimensions();
 
-#pragma omp parallel
+PARALLEL_REGION
     { 
       std::vector<int> coor(nd);
       uint32_t scidac_csuma_thr=0;
       uint32_t scidac_csumb_thr=0;
       uint32_t site_crc=0;
 
-#pragma omp for
+PARALLEL_FOR_LOOP_INTERN
       for(uint64_t local_site=0;local_site<lsites;local_site++){
 
 	uint32_t * site_buf = (uint32_t *)&fbuf[local_site];
@@ -183,7 +183,7 @@ class BinaryIO {
 	scidac_csumb_thr ^= site_crc<<gsite31 | site_crc>>(32-gsite31);
       }
 
-#pragma omp critical
+PARALLEL_CRITICAL
       {
 	scidac_csuma^= scidac_csuma_thr;
 	scidac_csumb^= scidac_csumb_thr;

@@ -54,6 +54,17 @@ public:
                                     std::string, output);
 };
 
+class EMTResult: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(EMTResult,
+                                    std::vector<std::vector<Complex>>, value,
+                                    double,                            m2,
+                                    double,                            lambda,
+                                    double,                            g,
+                                    double,                            xi);
+};
+
 template <typename SImpl>
 class TEMT: public Module<EMTPar>
 {
@@ -155,13 +166,22 @@ void TEMT<SImpl>::execute(void)
         LOG(Message) << "             xi= " << par().xi << std::endl;
     }
 
-    const unsigned int N       = SImpl::Group::Dimension;
+    const unsigned int N = SImpl::Group::Dimension, nd = env().getNd();
     auto               &trphi2 = envGet(ComplexField, varName(par().phiPow, 2));
     auto               &trphi4 = envGet(ComplexField, varName(par().phiPow, 4));
     auto               &sumkin = envGet(ComplexField, varName(par().kinetic, "sum"));
+    EMTResult          result;
 
-    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-    for (unsigned int nu = mu; nu < env().getNd(); ++nu)
+    if (!par().output.empty())
+    {
+        result.m2     = par().m2;
+        result.g      = par().g;
+        result.lambda = par().lambda;
+        result.xi     = par().xi;
+        result.value.resize(nd, std::vector<Complex>(nd));
+    }
+    for (unsigned int mu = 0; mu < nd; ++mu)
+    for (unsigned int nu = mu; nu < nd; ++nu)
     {
         auto &out   = envGet(ComplexField, varName(getName(), mu, nu));
         auto &trkin = envGet(ComplexField, varName(par().kinetic, mu, nu));
@@ -178,6 +198,15 @@ void TEMT<SImpl>::execute(void)
             out -= sumkin + par().m2*trphi2 + par().lambda*trphi4;
         }
         out *= N/par().g;
+        if (!par().output.empty())
+        {
+            result.value[mu][nu] = TensorRemove(sum(out));
+            result.value[mu][nu] = result.value[nu][mu];
+        }
+    }
+    if (!par().output.empty())
+    {
+        saveResult(par().output, "emt", result);
     }
 }
 

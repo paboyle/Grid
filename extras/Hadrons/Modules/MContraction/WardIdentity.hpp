@@ -119,7 +119,7 @@ void TWardIdentity<FImpl>::setup(void)
     Ls_ = env().getObjectLs(par().q);
     if (Ls_ != env().getObjectLs(par().action))
     {
-        HADRON_ERROR(Size, "Ls mismatch between quark action and propagator");
+        HADRONS_ERROR(Size, "Ls mismatch between quark action and propagator");
     }
     envTmpLat(PropagatorField, "tmp");
     envTmpLat(PropagatorField, "vector_WI");

@@ -123,7 +123,7 @@ protected:
             binReader.readScidacFieldRecord(evec[k], vecRecord);
             if (vecRecord.index != k)
             {
-                HADRON_ERROR(Io, "Eigenvector " + std::to_string(k) + " has a"
+                HADRONS_ERROR(Io, "Eigenvector " + std::to_string(k) + " has a"
                              + " wrong index (expected " + std::to_string(vecRecord.index) 
                              + ") in file '" + filename + "'");
             }

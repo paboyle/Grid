@@ -50,23 +50,23 @@ public:
                                     std::string,              output);
 };
 
+class TwoPointResult: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(TwoPointResult,
+                                    std::string, sink,
+                                    std::string, source,
+                                    std::vector<int>, mom,
+                                    std::vector<Complex>, data);
+};
+
 template <typename SImpl>
 class TTwoPoint: public Module<TwoPointPar>
 {
 public:
-    typedef typename SImpl::Field          Field;
-    typedef typename SImpl::ComplexField   ComplexField;
-    typedef          std::vector<TComplex> SlicedOp;
-
-    class Result: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        std::string, sink,
-                                        std::string, source,
-                                        std::vector<int>, mom,
-                                        std::vector<Complex>, data);
-    };
+    typedef typename SImpl::Field         Field;
+    typedef typename SImpl::ComplexField  ComplexField;
+    typedef          std::vector<Complex> SlicedOp;
 public:
     // constructor
     TTwoPoint(const std::string name);
@@ -143,7 +143,7 @@ void TTwoPoint<SImpl>::setup(void)
         mom_[i] = strToVec<int>(par().mom[i]);
         if (mom_[i].size() != nd - 1)
         {
-            HADRON_ERROR(Size, "momentum number of components different from " 
+            HADRONS_ERROR(Size, "momentum number of components different from " 
                                + std::to_string(nd-1));
         }
     }
@@ -160,18 +160,24 @@ void TTwoPoint<SImpl>::execute(void)
         LOG(Message) << "  <" << p.first << " " << p.second << ">" << std::endl;
     }
 
-    const unsigned int                           nd   = env().getDim().size();
-    const unsigned int                           nt   = env().getDim().back();
-    const unsigned int                           nop  = par().op.size();
-    const unsigned int                           nmom = mom_.size();
+    const unsigned int                           nd      = env().getNd();
+    const unsigned int                           nt      = env().getDim().back();
+    const unsigned int                           nop     = par().op.size();
+    const unsigned int                           nmom    = mom_.size();
+    double                                       partVol = 1.;
     std::vector<int>                             dMask(nd, 1);
     std::set<std::string>                        ops;
-    std::vector<Result>                          result;
+    std::vector<TwoPointResult>                  result;
     std::map<std::string, std::vector<SlicedOp>> slicedOp;
     FFT                                          fft(env().getGrid());
+    TComplex                                     buf;
 
     envGetTmp(ComplexField, ftBuf);
     dMask[nd - 1] = 0;
+    for (unsigned int mu = 0; mu < nd - 1; ++mu)
+    {
+        partVol *= env().getDim()[mu];
+    }
     for (auto &p: par().op)
     {
         ops.insert(p.first);
@@ -183,7 +189,7 @@ void TTwoPoint<SImpl>::execute(void)
 
         slicedOp[o].resize(nmom);
         LOG(Message) << "Operator '" << o << "' FFT" << std::endl;
-        fft.FFT_dim_mask(ftBuf, op, dMask, FFT::backward);
+        fft.FFT_dim_mask(ftBuf, op, dMask, FFT::forward);
         for (unsigned int m = 0; m < nmom; ++m)
         {
             auto qt = mom_[m];
@@ -193,7 +199,8 @@ void TTwoPoint<SImpl>::execute(void)
             for (unsigned int t = 0; t < nt; ++t)
             {
                 qt[nd - 1] = t;
-                peekSite(slicedOp[o][m][t], ftBuf, qt);
+                peekSite(buf, ftBuf, qt);
+                slicedOp[o][m][t] = TensorRemove(buf)/partVol;
             }
         }
     }
@@ -201,7 +208,7 @@ void TTwoPoint<SImpl>::execute(void)
     for (unsigned int m = 0; m < nmom; ++m)
     for (auto &p: par().op)
     {
-        Result r;
+        TwoPointResult r;
 
         r.sink   = p.first;
         r.source = p.second;
@@ -228,7 +235,7 @@ std::vector<Complex> TTwoPoint<SImpl>::makeTwoPoint(
     {
         for (unsigned int t  = 0; t < nt; ++t)
         {
-            res[dt] += TensorRemove(trace(sink[(t+dt)%nt]*adj(source[t])));
+            res[dt] += sink[(t+dt)%nt]*adj(source[t]);
         }
         res[dt] *= 1./static_cast<double>(nt);
     }
