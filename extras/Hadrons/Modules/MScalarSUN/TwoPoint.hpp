@@ -83,7 +83,8 @@ private:
     // make 2-pt function
     template <class SinkSite, class SourceSite>
     std::vector<Complex> makeTwoPoint(const std::vector<SinkSite>   &sink,
-                                      const std::vector<SourceSite> &source);
+                                      const std::vector<SourceSite> &source,
+                                      const double factor = 1.);
 private:
     std::vector<std::vector<int>> mom_;
 };
@@ -200,7 +201,7 @@ void TTwoPoint<SImpl>::execute(void)
             {
                 qt[nd - 1] = t;
                 peekSite(buf, ftBuf, qt);
-                slicedOp[o][m][t] = TensorRemove(buf)/partVol;
+                slicedOp[o][m][t] = TensorRemove(buf);
             }
         }
     }
@@ -213,7 +214,8 @@ void TTwoPoint<SImpl>::execute(void)
         r.sink   = p.first;
         r.source = p.second;
         r.mom    = mom_[m];
-        r.data   = makeTwoPoint(slicedOp[p.first][m], slicedOp[p.second][m]);
+        r.data   = makeTwoPoint(slicedOp[p.first][m], slicedOp[p.second][m], 
+                                1./partVol);
         result.push_back(r);
     }
     saveResult(par().output, "twopt", result);
@@ -224,7 +226,8 @@ template <class SImpl>
 template <class SinkSite, class SourceSite>
 std::vector<Complex> TTwoPoint<SImpl>::makeTwoPoint(
                                   const std::vector<SinkSite>   &sink,
-                                  const std::vector<SourceSite> &source)
+                                  const std::vector<SourceSite> &source,
+                                  const double factor)
 {
     assert(sink.size() == source.size());
     
@@ -237,7 +240,7 @@ std::vector<Complex> TTwoPoint<SImpl>::makeTwoPoint(
         {
             res[dt] += sink[(t+dt)%nt]*adj(source[t]);
         }
-        res[dt] *= 1./static_cast<double>(nt);
+        res[dt] *= factor/static_cast<double>(nt);
     }
     
     return res;
