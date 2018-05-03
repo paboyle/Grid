@@ -37,6 +37,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MContraction/Gamma3pt.hpp>
 #include <Grid/Hadrons/Modules/MContraction/WardIdentity.hpp>
 #include <Grid/Hadrons/Modules/MContraction/WeakHamiltonianEye.hpp>
+#include <Grid/Hadrons/Modules/MFermion/FreeProp.hpp>
 #include <Grid/Hadrons/Modules/MFermion/GaugeProp.hpp>
 #include <Grid/Hadrons/Modules/MSource/SeqGamma.hpp>
 #include <Grid/Hadrons/Modules/MSource/Point.hpp>
