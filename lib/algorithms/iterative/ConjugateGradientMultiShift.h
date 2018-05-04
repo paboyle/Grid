@@ -207,7 +207,10 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
     
     cp=c;
     MatrixTimer.Start();  
-    Linop.HermOpAndNorm(p,mmp,d,qq);
+    //Linop.HermOpAndNorm(p,mmp,d,qq); // d is used
+    Linop.HermOp(p,mmp); 
+    d=real(innerProduct(p,mmp));
+    
     MatrixTimer.Stop();  
 
     AXPYTimer.Start();
@@ -253,11 +256,9 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
       // Before:  3 x npole  + 3 x npole
       // After :  2 x npole (ps[s])        => 3x speed up of multishift CG.
       
-      AXPYTimer.Start();
       if( (!converged[s]) ) { 
 	axpy(psi[ss],-bs[s]*alpha[s],ps[s],psi[ss]);
       }
-      AXPYTimer.Stop();
     }
     
     // Convergence checks
