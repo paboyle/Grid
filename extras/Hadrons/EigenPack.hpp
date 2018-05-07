@@ -107,9 +107,15 @@ protected:
     std::string evecFilename(const std::string stem, const int vec, const int traj)
     {
         std::string t = (traj < 0) ? "" : ("." + std::to_string(traj));
-        std::string v = (traj < 0) ? "" : (".v" + std::to_string(vec));
 
-        return stem + "_evec" + t + v + ".bin";
+        if (vec == -1)
+        {
+            return stem + t + ".bin";
+        }
+        else
+        {
+            return stem + t + "/v" + std::to_string(vec) + ".bin";
+        }
     }
 
     template <typename T>
@@ -163,8 +169,13 @@ protected:
                     const std::vector<double> &eval, const unsigned int size)
     {
         ScidacWriter binWriter(evec[0]._grid->IsBoss());
-        XmlWriter    xmlWriter("", "eigenPackPar");   
+        XmlWriter    xmlWriter("", "eigenPackPar");
+        std::string  d = dirname(filename);
 
+        if (mkdir(d))
+        {
+            HADRONS_ERROR(Io, "cannot create directory '" + d + "'");\
+        }
         xmlWriter.pushXmlString(record.operatorXml);
         xmlWriter.pushXmlString(record.solverXml);
         binWriter.open(filename);
@@ -188,7 +199,12 @@ protected:
         ScidacWriter binWriter(evec._grid->IsBoss());
         XmlWriter    xmlWriter("", "eigenPackPar");
         VecRecord    vecRecord;
+        std::string  d = dirname(filename);
 
+        if (mkdir(d))
+        {
+            HADRONS_ERROR(Io, "cannot create directory '" + d + "'");\
+        }
         xmlWriter.pushXmlString(record.operatorXml);
         xmlWriter.pushXmlString(record.solverXml);
         binWriter.open(filename);
