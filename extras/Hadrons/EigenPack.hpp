@@ -170,11 +170,13 @@ protected:
     {
         ScidacWriter binWriter(evec[0]._grid->IsBoss());
         XmlWriter    xmlWriter("", "eigenPackPar");
-        std::string  d = dirname(filename);
+        std::string  d      = dirname(filename);
+        int          status = mkdir(d);
 
-        if (mkdir(d))
+        if (status)
         {
-            HADRONS_ERROR(Io, "cannot create directory '" + d + "'");\
+            HADRONS_ERROR(Io, "cannot create directory '" + d      
+                           + "' (status " + std::to_string(status) + ")");
         }
         xmlWriter.pushXmlString(record.operatorXml);
         xmlWriter.pushXmlString(record.solverXml);
@@ -199,11 +201,13 @@ protected:
         ScidacWriter binWriter(evec._grid->IsBoss());
         XmlWriter    xmlWriter("", "eigenPackPar");
         VecRecord    vecRecord;
-        std::string  d = dirname(filename);
+        std::string  d      = dirname(filename);
+        int          status = mkdir(d);
 
-        if (mkdir(d))
+        if (status)
         {
-            HADRONS_ERROR(Io, "cannot create directory '" + d + "'");\
+            HADRONS_ERROR(Io, "cannot create directory '" + d      
+                          + "' (status " + std::to_string(status) + ")");
         }
         xmlWriter.pushXmlString(record.operatorXml);
         xmlWriter.pushXmlString(record.solverXml);

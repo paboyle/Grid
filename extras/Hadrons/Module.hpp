@@ -123,10 +123,12 @@ MACRO_REDIRECT(__VA_ARGS__, envTmpLat5, envTmpLat4)(__VA_ARGS__)
 if (env().getGrid()->IsBoss())\
 {\
     std::string _dirname = dirname(ioStem);\
+    int         _status  = mkdir(_dirname);\
     \
-    if (mkdir(_dirname))\
+    if (_status)\
     {\
-        HADRONS_ERROR(Io, "cannot create directory '" + _dirname + "'");\
+        HADRONS_ERROR(Io, "cannot create directory '" + _dirname      \
+                      + "' (status " + std::to_string(_status) + ")");\
     }\
     {\
         ResultWriter _writer(RESULT_FILE_NAME(ioStem));\
