@@ -167,7 +167,7 @@ int main (int argc, char ** argv) {
   RealD mass = Params.mass;
   RealD M5   = Params.M5;
   std::vector<int> blockSize = Params.blockSize;
-  std::vector<int> latt({16,16,16,16});
+  std::vector<int> latt({32,32,32,32});
   uint64_t     vol = Ls*latt[0]*latt[1]*latt[2]*latt[3];
   double   mat_flop= 2.0*1320.0*vol;    
   // Grids
