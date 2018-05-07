@@ -385,6 +385,7 @@ void Grid_init(int *argc,char ***argv)
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-threads") ){
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--comms-threads");
     GridCmdOptionInt(arg,CartesianCommunicator::nCommThreads);
+    assert(CartesianCommunicator::nCommThreads > 0);
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--cacheblocking") ){
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--cacheblocking");
