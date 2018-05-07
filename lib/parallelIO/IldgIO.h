@@ -340,10 +340,15 @@ class GridLimeWriter : public BinaryIO
   }
 
   template<class serialisable_object>
-  void writeLimeObject(int MB,int ME,serialisable_object &object,std::string object_name,std::string record_name)
+  void writeLimeObject(int MB,int ME,serialisable_object &object,std::string object_name,std::string record_name, const unsigned int scientificPrec = 0)
   {
     XmlWriter WR("","");
 
+    if (scientificPrec)
+    {
+      WR.scientificFormat(true);
+      WR.setPrecision(scientificPrec);
+    }
     write(WR,object_name,object);
     writeLimeObject(MB, ME, WR, object_name, record_name);
   }
@@ -453,7 +458,8 @@ class ScidacWriter : public GridLimeWriter {
   // Write generic lattice field in scidac format
   ////////////////////////////////////////////////
   template <class vobj, class userRecord>
-  void writeScidacFieldRecord(Lattice<vobj> &field,userRecord _userRecord) 
+  void writeScidacFieldRecord(Lattice<vobj> &field,userRecord _userRecord,
+                              const unsigned int recordScientificPrec = 0) 
   {
     GridBase * grid = field._grid;
 
@@ -471,7 +477,7 @@ class ScidacWriter : public GridLimeWriter {
     //////////////////////////////////////////////
     if ( this->boss_node ) {
       writeLimeObject(1,0,header ,std::string("FieldMetaData"),std::string(GRID_FORMAT)); // Open message 
-      writeLimeObject(0,0,_userRecord,_userRecord.SerialisableClassName(),std::string(SCIDAC_RECORD_XML));
+      writeLimeObject(0,0,_userRecord,_userRecord.SerialisableClassName(),std::string(SCIDAC_RECORD_XML), recordScientificPrec);
       writeLimeObject(0,0,_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML));
     }
     // Collective call

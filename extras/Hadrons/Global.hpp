@@ -39,6 +39,10 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define SITE_SIZE_TYPE size_t
 #endif
 
+#ifndef DEFAULT_ASCII_PREC
+#define DEFAULT_ASCII_PREC 16
+#endif
+
 #define BEGIN_HADRONS_NAMESPACE \
 namespace Grid {\
 using namespace QCD;\

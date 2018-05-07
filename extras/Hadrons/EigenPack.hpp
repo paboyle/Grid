@@ -204,7 +204,7 @@ protected:
         vecRecord.index = index;
         vecRecord.eval  = eval;
         LOG(Message) << "Writing eigenvector " << index << std::endl;
-        binWriter.writeScidacFieldRecord(evec, vecRecord);
+        binWriter.writeScidacFieldRecord(evec, vecRecord, DEFAULT_ASCII_PREC);
         binWriter.close();
     }
 };
@@ -237,18 +237,6 @@ public:
 
     void readFine(const std::string fileStem, const bool multiFile, const int traj = -1)
     {
-        // std::string evecFineFilename, evalFineFilename;
-        // std::string evecCoarseFilename, evalCoarseFilename;
-
-        // this->makeFilenames(evecFineFilename, evalFineFilename, 
-        //                     fileStem + "_fine", traj);
-        // XmlReader xmlFineReader(evalFineFilename);
-        // LOG(Message) << "Reading " << this->eval.size() << " fine eigenvalues from '" 
-        //              << evalFineFilename << "'" << std::endl;
-        // Grid::read(xmlFineReader, "evals", this->eval);
-        // LOG(Message) << "Reading " << this->evec.size() << " fine eigenvectors from '" 
-        //              << evecFineFilename << "'" << std::endl;
-        // this->basicRead(this->evec, evecFineFilename, this->evec.size());
         if (multiFile)
         {
             for(int k = 0; k < this->evec.size(); ++k)
@@ -264,17 +252,6 @@ public:
 
     void readCoarse(const std::string fileStem, const bool multiFile, const int traj = -1)
     {
-        // std::string evecCoarseFilename, evalCoarseFilename;
-
-        // this->makeFilenames(evecCoarseFilename, evalCoarseFilename, 
-        //                     fileStem + "_coarse", traj);
-        // XmlReader xmlCoarseReader(evalCoarseFilename);
-        // LOG(Message) << "Reading " << evalCoarse.size() << " coarse eigenvalues from '" 
-        //              << evalCoarseFilename << "'" << std::endl;
-        // Grid::read(xmlCoarseReader, "evals", evalCoarse);
-        // LOG(Message) << "Reading " << evecCoarse.size() << " coarse eigenvectors from '" 
-        //              << evecCoarseFilename << "'" << std::endl;
-        // this->basicRead(evecCoarse, evecCoarseFilename, evecCoarse.size());
         if (multiFile)
         {
             for(int k = 0; k < evecCoarse.size(); ++k)
@@ -296,17 +273,6 @@ public:
 
     void writeFine(const std::string fileStem, const bool multiFile, const int traj = -1)
     {
-        // std::string evecFineFilename, evalFineFilename;
-
-        // this->makeFilenames(evecFineFilename, evalFineFilename, 
-        //                     fileStem + "_fine", traj);
-        // XmlWriter xmlFineWriter(evalFineFilename);
-        // LOG(Message) << "Writing " << this->eval.size() << " fine eigenvalues to '" 
-        //              << evalFineFilename << "'" << std::endl;
-        // Grid::write(xmlFineWriter, "evals", this->eval);
-        // LOG(Message) << "Writing " << this->evec.size() << " fine eigenvectors to '" 
-        //              << evecFineFilename << "'" << std::endl;
-        // this->basicWrite(evecFineFilename, this->evec, this->evec.size());
         if (multiFile)
         {
             for(int k = 0; k < this->evec.size(); ++k)
@@ -322,17 +288,6 @@ public:
 
     void writeCoarse(const std::string fileStem, const bool multiFile, const int traj = -1)
     {
-        // std::string evecCoarseFilename, evalCoarseFilename;
-
-        // this->makeFilenames(evecCoarseFilename, evalCoarseFilename,
-        //                     fileStem + "_coarse", traj);
-        // XmlWriter xmlCoarseWriter(evalCoarseFilename);
-        // LOG(Message) << "Writing " << evalCoarse.size() << " coarse eigenvalues to '" 
-        //              << evalCoarseFilename << "'" << std::endl;
-        // Grid::write(xmlCoarseWriter, "evals", evalCoarse);
-        // LOG(Message) << "Writing " << evecCoarse.size() << " coarse eigenvectors to '" 
-        //              << evecCoarseFilename << "'" << std::endl;
-        // this->basicWrite(evecCoarseFilename, evecCoarse, evecCoarse.size());
         if (multiFile)
         {
             for(int k = 0; k < evecCoarse.size(); ++k)
