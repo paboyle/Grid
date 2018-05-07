@@ -183,7 +183,7 @@ protected:
             vecRecord.index = k;
             vecRecord.eval  = eval[k];
             LOG(Message) << "Writing eigenvector " << k << std::endl;
-            binWriter.writeScidacFieldRecord(evec[k], vecRecord);
+            binWriter.writeScidacFieldRecord(evec[k], vecRecord, DEFAULT_ASCII_PREC);
         }
         binWriter.close();
     }
