@@ -51,7 +51,8 @@ public:
                                     ChebyParams,   smoother,
                                     RealD,         coarseRelaxTol,
                                     std::string,   blockSize,
-                                    std::string,   output);
+                                    std::string,   output,
+                                    bool,          multiFile);
 };
 
 template <typename FImpl, int nBasis>
@@ -156,7 +157,7 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::execute(void)
     solver.testFine(finePar.resid*100.0);
     if (!par().output.empty())
     {
-        epack.writeFine(par().output, vm().getTrajectory());
+        epack.writeFine(par().output, par().multiFile, vm().getTrajectory());
     }
     if (par().doCoarse)
     {
@@ -173,7 +174,7 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::execute(void)
                         par().coarseRelaxTol);
         if (!par().output.empty())
         {
-            epack.writeCoarse(par().output, vm().getTrajectory());
+            epack.writeCoarse(par().output, par().multiFile, vm().getTrajectory());
         }
     }
 }

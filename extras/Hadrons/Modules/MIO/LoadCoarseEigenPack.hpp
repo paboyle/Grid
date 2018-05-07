@@ -45,6 +45,7 @@ class LoadCoarseEigenPackPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(LoadCoarseEigenPackPar,
                                     std::string, filestem,
+                                    bool,         multiFile,
                                     unsigned int, sizeFine,
                                     unsigned int, sizeCoarse,
                                     unsigned int, Ls,
@@ -120,7 +121,7 @@ void TLoadCoarseEigenPack<Pack>::execute(void)
     auto                 &epack = envGetDerived(BasePack, Pack, getName());
     Lattice<SiteComplex> dummy(cg);
 
-    epack.read(par().filestem, vm().getTrajectory());
+    epack.read(par().filestem, par().multiFile, vm().getTrajectory());
     LOG(Message) << "Block Gramm-Schmidt pass 1"<< std::endl;
     blockOrthogonalise(dummy, epack.evec);
     LOG(Message) << "Block Gramm-Schmidt pass 2"<< std::endl;

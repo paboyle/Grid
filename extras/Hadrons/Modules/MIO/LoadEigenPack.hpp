@@ -45,6 +45,7 @@ class LoadEigenPackPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(LoadEigenPackPar,
                                     std::string, filestem,
+                                    bool, multiFile,
                                     unsigned int, size,
                                     unsigned int, Ls);
 };
@@ -111,7 +112,7 @@ void TLoadEigenPack<Pack>::execute(void)
 {
     auto &epack = envGetDerived(BasePack, Pack, getName());
 
-    epack.read(par().filestem, vm().getTrajectory());
+    epack.read(par().filestem, par().multiFile, vm().getTrajectory());
     epack.eval.resize(par().size);
 }
 
