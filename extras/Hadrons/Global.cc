@@ -158,3 +158,18 @@ std::string Hadrons::dirname(const std::string &s)
         return "";
     }
 }
+
+void Hadrons::makeFileDir(const std::string filename, GridBase *g)
+{
+    if (g->IsBoss())
+    {
+        std::string dir    = dirname(filename);
+        int         status = mkdir(dir);
+
+        if (status)
+        {
+            HADRONS_ERROR(Io, "cannot create directory '" + dir
+                          + "' ( " + std::strerror(errno) + ")");
+        }
+    }
+}

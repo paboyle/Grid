@@ -192,6 +192,7 @@ name + "." + std::to_string(vm().getTrajectory()) + "." + resultFileExt
 int         mkdir(const std::string dirName);
 std::string basename(const std::string &s);
 std::string dirname(const std::string &s);
+void        makeFileDir(const std::string filename, GridBase *g);
 
 // default Schur convention
 #ifndef HADRONS_DEFAULT_SCHUR 
