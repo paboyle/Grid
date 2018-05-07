@@ -60,8 +60,14 @@ namespace Grid {
     void write(const std::string &s, const iVector<U, N> &output);
     template <typename U, int N>
     void write(const std::string &s, const iMatrix<U, N> &output);
+    void         scientificFormat(const bool set);
+    bool         isScientific(void);
+    void         setPrecision(const unsigned int prec);
+    unsigned int getPrecision(void);
   private:
-    T *upcast;
+    T            *upcast;
+    bool         scientific_{false};
+    unsigned int prec_{0};
   };
   
   // Static abstract reader
@@ -154,6 +160,30 @@ namespace Grid {
   void Writer<T>::write(const std::string &s, const iMatrix<U, N> &output)
   {
     upcast->writeDefault(s, tensorToVec(output));
+  }
+
+  template <typename T>
+  void Writer<T>::scientificFormat(const bool set)
+  {
+    scientific_ = set;
+  }
+
+  template <typename T>
+  bool Writer<T>::isScientific(void)
+  {
+    return scientific_;
+  }
+
+  template <typename T>
+  void Writer<T>::setPrecision(const unsigned int prec)
+  {
+    prec_ = prec;
+  }
+
+  template <typename T>
+  unsigned int Writer<T>::getPrecision(void)
+  {
+    return prec_;
   }
   
   // Reader template implementation

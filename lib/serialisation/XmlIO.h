@@ -103,8 +103,15 @@ namespace Grid
   {
     std::ostringstream os;
     
-    os.precision(16);
-    os << std::scientific << std::boolalpha << x;
+    if (getPrecision())
+    {
+      os.precision(getPrecision());
+    }
+    if (isScientific())
+    {
+      os << std::scientific;
+    }
+    os << std::boolalpha << x;
     pugi::xml_node leaf = node_.append_child(s.c_str());
     leaf.append_child(pugi::node_pcdata).set_value(os.str().c_str());
   }
