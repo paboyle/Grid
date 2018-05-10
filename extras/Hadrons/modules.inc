@@ -37,6 +37,7 @@ modules_cc =\
   Modules/MScalarSUN/EMT.cc \
   Modules/MScalarSUN/ShiftProbe.cc \
   Modules/MScalarSUN/TransProj.cc \
+  Modules/MScalarSUN/StochFreeField.cc \
   Modules/MScalarSUN/TwoPoint.cc \
   Modules/MScalarSUN/Div.cc \
   Modules/MIO/LoadEigenPack.cc \
@@ -78,6 +79,7 @@ modules_hpp =\
   Modules/MAction/Wilson.hpp \
   Modules/MAction/WilsonClover.hpp \
   Modules/MAction/ZMobiusDWF.hpp \
+  Modules/MScalarSUN/StochFreeField.hpp \
   Modules/MScalarSUN/ShiftProbe.hpp \
   Modules/MScalarSUN/Div.hpp \
   Modules/MScalarSUN/TrMag.hpp \
