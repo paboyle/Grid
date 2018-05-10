@@ -238,7 +238,49 @@ class GridLimeReader : public BinaryIO {
 	// Verify checksums
 	/////////////////////////////////////////////
 	assert(scidacChecksumVerify(scidacChecksum_,scidac_csuma,scidac_csumb)==1);
+  std::cout << GridLogMessage<< " readLimeLatticeBinaryObject checksums match ! " <<std::endl;
 	return;
+      }
+    }
+  }
+
+  ////////////////////////////////////////////
+  // Read an RNG object and verify checksum
+  ////////////////////////////////////////////
+  void readLimeRNGObject(GridSerialRNG &sRNG, GridParallelRNG &pRNG,std::string record_name)
+  {
+    scidacChecksum scidacChecksum_;
+    uint32_t nersc_csum,scidac_csuma,scidac_csumb;
+
+    while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
+      uint64_t file_bytes =limeReaderBytes(LimeR);
+
+      //      std::cout << GridLogMessage << limeReaderType(LimeR) << " "<< file_bytes <<" bytes "<<std::endl;
+      //      std::cout << GridLogMessage<< " readLimeObject seeking "<<  record_name <<" found record :" <<limeReaderType(LimeR) <<std::endl;
+
+      if ( !strncmp(limeReaderType(LimeR), record_name.c_str(),strlen(record_name.c_str()) )  ) {
+
+        const int RngStateCount = GridSerialRNG::RngStateCount;
+        typedef std::array<typename GridSerialRNG::RngStateType,RngStateCount> RNGstate;
+
+	      uint64_t PayloadSize = sizeof(RNGstate) * (pRNG._grid->_gsites+1);
+
+    	  assert(PayloadSize == file_bytes);// Must match or user error
+        uint64_t offset= ftello(File);
+	    	std::cout << GridLogDebug << " ReadLatticeObject from offset "<<offset << std::endl;
+	      BinaryIO::readRNG(sRNG, pRNG, filename, offset, nersc_csum,scidac_csuma,scidac_csumb);
+
+	      /////////////////////////////////////////////
+	      // Insist checksum is next record
+	      /////////////////////////////////////////////
+	      readLimeObject(scidacChecksum_,std::string("scidacChecksum"),std::string(SCIDAC_CHECKSUM));
+
+	      /////////////////////////////////////////////
+	      // Verify checksums
+	      /////////////////////////////////////////////
+	      assert(scidacChecksumVerify(scidacChecksum_,scidac_csuma,scidac_csumb)==1);
+        std::cout << GridLogMessage<< " readLimeRNGObject checksums match ! " <<std::endl;
+	      return;
       }
     }
   }
@@ -429,6 +471,78 @@ class GridLimeWriter : public BinaryIO
       writeLimeObject(0,1,checksum,std::string("scidacChecksum"),std::string(SCIDAC_CHECKSUM));
     }
   }
+
+
+  ////////////////////////////////////////////////////
+  // Write an rng object and csum
+  // This routine is Collectively called by all nodes
+  // in communicator used by the field._grid
+  ////////////////////////////////////////////////////
+  void writeLimeRNGObject(GridSerialRNG &sRNG, GridParallelRNG &pRNG, std::string record_name)
+  {
+    GridBase *grid = pRNG._grid;
+    assert(boss_node == pRNG._grid->IsBoss() );
+
+    const int RngStateCount = GridSerialRNG::RngStateCount;
+    typedef std::array<typename GridSerialRNG::RngStateType,RngStateCount> RNGstate;
+
+    ////////////////////////////////////////////
+    // Create record header
+    ////////////////////////////////////////////
+    int err;
+    uint32_t nersc_csum,scidac_csuma,scidac_csumb;
+    uint64_t PayloadSize = sizeof(RNGstate) * (grid->_gsites+1);
+    std::cout << GridLogDebug << "Computed payload size " << PayloadSize << std::endl;
+    if ( boss_node ) {
+      createLimeRecordHeader(record_name, 0, 0, PayloadSize);
+      fflush(File);
+    }
+    
+    ////////////////////////////////////////////////
+    // Check all nodes agree on file position
+    ////////////////////////////////////////////////
+    uint64_t offset1;
+    if ( boss_node ) {
+      offset1 = ftello(File);    
+    }
+    grid->Broadcast(0,(void *)&offset1,sizeof(offset1));
+
+    ///////////////////////////////////////////
+    // The above is collective. Write by other means into the binary record
+    ///////////////////////////////////////////
+    uint64_t offset = offset1;
+    BinaryIO::writeRNG(sRNG, pRNG,filename, offset, nersc_csum,scidac_csuma,scidac_csumb);
+
+    ///////////////////////////////////////////
+    // Wind forward and close the record
+    ///////////////////////////////////////////
+    if ( boss_node ) {
+      fseek(File,0,SEEK_END);             
+      uint64_t offset2 = ftello(File);    
+      std::cout << GridLogDebug << " now at offset "<<offset2 << std::endl;
+      assert( (offset2-offset1) == PayloadSize);
+    }
+
+    /////////////////////////////////////////////////////////////
+    // Check MPI-2 I/O did what we expect to file
+    /////////////////////////////////////////////////////////////
+
+    if ( boss_node ) { 
+      err=limeWriterCloseRecord(LimeW);  assert(err>=0);
+    }
+    ////////////////////////////////////////
+    // Write checksum element, propagaing forward from the BinaryIO
+    // Always pair a checksum with a binary object, and close message
+    ////////////////////////////////////////
+    scidacChecksum checksum;
+    std::stringstream streama; streama << std::hex << scidac_csuma;
+    std::stringstream streamb; streamb << std::hex << scidac_csumb;
+    checksum.suma= streama.str();
+    checksum.sumb= streamb.str();
+    if ( boss_node ) { 
+      writeLimeObject(0,1,checksum,std::string("scidacChecksum"),std::string(SCIDAC_CHECKSUM));
+    }
+  }
 };
 
 class ScidacWriter : public GridLimeWriter {
@@ -445,6 +559,27 @@ class ScidacWriter : public GridLimeWriter {
       writeLimeObject(0,1,_userFile,_userFile.SerialisableClassName(),std::string(SCIDAC_FILE_XML));
     }
   }
+
+  void writeScidacRNGRecord(GridSerialRNG &sRNG, GridParallelRNG &pRNG) 
+  {
+    GridBase *grid = pRNG._grid;
+    FieldMetaData header;
+
+    header.floating_point = "IEEE64BIG";
+    header.checksum = 0x0; // Nersc checksum unused in ILDG, Scidac
+    GridMetaData(grid,header); 
+    MachineCharacteristics(header);
+    
+    //////////////////////////////////////////////
+    // Fill the Lime file record by record
+    //////////////////////////////////////////////
+    if ( this->boss_node ) {
+      writeLimeObject(1,0,header ,std::string("FieldMetaData"),std::string(GRID_FORMAT)); // Open message 
+    }
+    // Collective call
+    writeLimeRNGObject(sRNG, pRNG,std::string(ILDG_BINARY_DATA));      // Closes message with checksum
+  }
+  
   ////////////////////////////////////////////////
   // Write generic lattice field in scidac format
   ////////////////////////////////////////////////
@@ -473,6 +608,7 @@ class ScidacWriter : public GridLimeWriter {
     // Collective call
     writeLimeLatticeBinaryObject(field,std::string(ILDG_BINARY_DATA));      // Closes message with checksum
   }
+  
 };
 
 
@@ -486,8 +622,27 @@ class ScidacReader : public GridLimeReader {
      readLimeObject(_scidacFile,_scidacFile.SerialisableClassName(),std::string(SCIDAC_PRIVATE_FILE_XML));
      readLimeObject(_userFile,_userFile.SerialisableClassName(),std::string(SCIDAC_FILE_XML));
    }
+
   ////////////////////////////////////////////////
-  // Write generic lattice field in scidac format
+  // Read RNGobject in scidac format
+  ////////////////////////////////////////////////
+  void readScidacRNGRecord(GridSerialRNG &sRNG, GridParallelRNG &pRNG) 
+  {
+    GridBase * grid = pRNG._grid;
+
+    ////////////////////////////////////////
+    // fill the Grid header
+    ////////////////////////////////////////
+    FieldMetaData header;
+ 
+    //////////////////////////////////////////////
+    // Fill the Lime file record by record
+    //////////////////////////////////////////////
+    readLimeObject(header ,std::string("FieldMetaData"),std::string(GRID_FORMAT)); // Open message 
+    readLimeRNGObject(sRNG, pRNG, std::string(ILDG_BINARY_DATA));
+  }
+  ////////////////////////////////////////////////
+  // Read generic lattice field in scidac format
   ////////////////////////////////////////////////
   template <class vobj, class userRecord>
   void readScidacFieldRecord(Lattice<vobj> &field,userRecord &_userRecord) 

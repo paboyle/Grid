@@ -80,8 +80,12 @@ class ScidacHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
       this->build_filenames(traj, Params, config, rng);
       GridBase *grid = U._grid;
       uint32_t nersc_csum,scidac_csuma,scidac_csumb;
-      BinaryIO::writeRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
       ScidacWriter _ScidacWriter(grid->IsBoss());
+      _ScidacWriter.open(rng);
+      _ScidacWriter.writeScidacRNGRecord(sRNG, pRNG);
+      _ScidacWriter.close();   
+      
+      //BinaryIO::writeRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
       _ScidacWriter.open(config);
       _ScidacWriter.writeScidacFieldRecord(U, MData);
       _ScidacWriter.close();
@@ -102,10 +106,12 @@ class ScidacHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
 
 
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
-    BinaryIO::readRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
-
-    Metadata md_content;
     ScidacReader _ScidacReader;
+    //BinaryIO::readRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
+    _ScidacReader.open(rng);
+    _ScidacReader.readScidacRNGRecord(sRNG, pRNG);  
+    _ScidacReader.close();
+    Metadata md_content;
     _ScidacReader.open(config);
     _ScidacReader.readScidacFieldRecord(U,md_content);  // format from the header
     _ScidacReader.close();

@@ -362,6 +362,13 @@ PARALLEL_CRITICAL
 	ierr=MPI_File_open(grid->communicator,(char *) file.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);    assert(ierr==0);
 	ierr=MPI_File_set_view(fh, disp, mpiObject, fileArray, "native", MPI_INFO_NULL);    assert(ierr==0);
 	ierr=MPI_File_read_all(fh, &iodata[0], 1, localArray, &status);    assert(ierr==0);
+
+  MPI_Offset os;
+  MPI_File_get_position(fh, &os);
+  MPI_File_get_byte_offset(fh, os, &disp);
+  offset = disp;
+
+
 	MPI_File_close(&fh);
 	MPI_Type_free(&fileArray);
 	MPI_Type_free(&localArray);
@@ -370,11 +377,13 @@ PARALLEL_CRITICAL
 #endif
       } else {
 	std::cout << GridLogMessage <<"IOobject: C++ read I/O " << file << " : "
-                  << iodata.size() * sizeof(fobj) << " bytes" << std::endl;
+                  << iodata.size() * sizeof(fobj) << " bytes and offset " << offset << std::endl;
         std::ifstream fin;
-	fin.open(file, std::ios::binary | std::ios::in);
-        if (control & BINARYIO_MASTER_APPEND)
+	      fin.open(file, std::ios::binary | std::ios::in);
+        if (0)//control & BINARYIO_MASTER_APPEND)
         {
+          // Note Guido. Crosscheck this for the RNG case
+          // why the negative offset?
           fin.seekg(-sizeof(fobj), fin.end);
         }
         else
@@ -382,6 +391,7 @@ PARALLEL_CRITICAL
           fin.seekg(offset + myrank * lsites * sizeof(fobj));
         }
         fin.read((char *)&iodata[0], iodata.size() * sizeof(fobj));
+        offset = fin.tellg();
         assert(fin.fail() == 0);
         fin.close();
       }
@@ -638,6 +648,11 @@ PARALLEL_CRITICAL
     IOobject(w,grid,iodata,file,offset,format,BINARYIO_READ|BINARYIO_LEXICOGRAPHIC,
 	     nersc_csum,scidac_csuma,scidac_csumb);
 
+    std::cout << GridLogMessage << "RNG file nersc_checksum   " << std::hex << nersc_csum << std::dec << std::endl;
+    std::cout << GridLogMessage << "RNG file scidac_checksuma " << std::hex << scidac_csuma << std::dec << std::endl;
+    std::cout << GridLogMessage << "RNG file scidac_checksumb " << std::hex << scidac_csumb << std::dec << std::endl;
+
+
     timer.Start();
     parallel_for(uint64_t lidx=0;lidx<lsites;lidx++){
       std::vector<RngStateType> tmp(RngStateCount);
@@ -655,6 +670,11 @@ PARALLEL_CRITICAL
       std::copy(iodata[0].begin(),iodata[0].end(),tmp.begin());
       serial.SetState(tmp,0);
     }
+
+    std::cout << GridLogMessage << "RNG file checksum t " << std::hex << nersc_csum_tmp    << std::dec << std::endl;
+    std::cout << GridLogMessage << "RNG file checksuma t " << std::hex << scidac_csuma_tmp << std::dec << std::endl;
+    std::cout << GridLogMessage << "RNG file checksumb t " << std::hex << scidac_csumb_tmp << std::dec << std::endl;
+
 
     nersc_csum   = nersc_csum   + nersc_csum_tmp;
     scidac_csuma = scidac_csuma ^ scidac_csuma_tmp;
@@ -706,6 +726,11 @@ PARALLEL_CRITICAL
 
     IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_LEXICOGRAPHIC,
 	     nersc_csum,scidac_csuma,scidac_csumb);
+
+    std::cout << GridLogMessage << "RNG file checksum " << std::hex << nersc_csum    << std::dec << std::endl;
+    std::cout << GridLogMessage << "RNG file checksuma " << std::hex << scidac_csuma << std::dec << std::endl;
+    std::cout << GridLogMessage << "RNG file checksumb " << std::hex << scidac_csumb << std::dec << std::endl;
+   
     iodata.resize(1);
     {
       std::vector<RngStateType> tmp(RngStateCount);
@@ -714,6 +739,11 @@ PARALLEL_CRITICAL
     }
     IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_MASTER_APPEND,
 	     nersc_csum_tmp,scidac_csuma_tmp,scidac_csumb_tmp);
+
+    std::cout << GridLogMessage << "RNG file checksum t " << std::hex << nersc_csum_tmp    << std::dec << std::endl;
+    std::cout << GridLogMessage << "RNG file checksuma t " << std::hex << scidac_csuma_tmp << std::dec << std::endl;
+    std::cout << GridLogMessage << "RNG file checksumb t " << std::hex << scidac_csumb_tmp << std::dec << std::endl;
+ 
 
     nersc_csum   = nersc_csum   + nersc_csum_tmp;
     scidac_csuma = scidac_csuma ^ scidac_csuma_tmp;
