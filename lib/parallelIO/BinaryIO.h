@@ -358,15 +358,15 @@ PARALLEL_CRITICAL
 
       if ( (control & BINARYIO_LEXICOGRAPHIC) && (nrank > 1) ) {
 #ifdef USE_MPI_IO
-	std::cout<< GridLogMessage<<"IOobject: MPI read I/O "<< file<< std::endl;
+	std::cout<< GridLogMessage<<"IOobject: MPI read I/O "<< file<< " and offset " << offset << std::endl;
 	ierr=MPI_File_open(grid->communicator,(char *) file.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);    assert(ierr==0);
 	ierr=MPI_File_set_view(fh, disp, mpiObject, fileArray, "native", MPI_INFO_NULL);    assert(ierr==0);
 	ierr=MPI_File_read_all(fh, &iodata[0], 1, localArray, &status);    assert(ierr==0);
 
-  MPI_Offset os;
-  MPI_File_get_position(fh, &os);
-  MPI_File_get_byte_offset(fh, os, &disp);
-  offset = disp;
+	MPI_Offset os;
+	MPI_File_get_position(fh, &os);
+	MPI_File_get_byte_offset(fh, os, &disp);
+	offset = disp;
 
 
 	MPI_File_close(&fh);
@@ -379,21 +379,20 @@ PARALLEL_CRITICAL
 	std::cout << GridLogMessage <<"IOobject: C++ read I/O " << file << " : "
                   << iodata.size() * sizeof(fobj) << " bytes and offset " << offset << std::endl;
         std::ifstream fin;
-	      fin.open(file, std::ios::binary | std::ios::in);
-        if (0)//control & BINARYIO_MASTER_APPEND)
-        {
-          // Note Guido. Crosscheck this for the RNG case
-          // why the negative offset?
-          fin.seekg(-sizeof(fobj), fin.end);
-        }
+	fin.open(file, std::ios::binary | std::ios::in);
+        if (control & BINARYIO_MASTER_APPEND)
+	  {
+	    fin.seekg(-sizeof(fobj), fin.end);
+	  }
         else
-        {
-          fin.seekg(offset + myrank * lsites * sizeof(fobj));
-        }
+	  {
+	    fin.seekg(offset + myrank * lsites * sizeof(fobj));
+	  }
         fin.read((char *)&iodata[0], iodata.size() * sizeof(fobj));
-        offset = fin.tellg();
+        
         assert(fin.fail() == 0);
-        fin.close();
+        offset = fin.tellg();
+	fin.close();
       }
       timer.Stop();
 
