@@ -108,6 +108,43 @@ void   merge(vobj &vec,ExtractBuffer<sobj> &extracted)
 }
 
 ////////////////////////////////////////////////////////////////////////
+// Extract/Insert a single lane  
+////////////////////////////////////////////////////////////////////////
+template<class vobj> accelerator_inline
+typename vobj::scalar_object extractLane(int lane, const vobj & __restrict__ vec)
+{
+  typedef typename vobj::scalar_object scalar_object;
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+
+  constexpr int words=sizeof(vobj)/sizeof(vector_type);
+  constexpr int Nsimd=vector_type::Nsimd();
+
+  scalar_object extracted;
+  scalar_type * __restrict__  sp = (scalar_type *)&extracted; // Type pun
+  scalar_type * __restrict__  vp = (scalar_type *)&vec;
+  for(int w=0;w<words;w++){
+    sp[w]=vp[w*Nsimd+lane];
+  }
+  return extracted;
+}
+template<class vobj> accelerator_inline
+void insertLane(int lane, vobj & __restrict__ vec,const typename vobj::scalar_object & __restrict__ extracted)
+{
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+
+  constexpr int words=sizeof(vobj)/sizeof(vector_type);
+  constexpr int Nsimd=vector_type::Nsimd();
+
+  scalar_type * __restrict__ sp = (scalar_type *)&extracted;
+  scalar_type * __restrict__ vp = (scalar_type *)&vec;
+  for(int w=0;w<words;w++){
+    vp[w*Nsimd+lane]=sp[w];
+  }
+}
+
+////////////////////////////////////////////////////////////////////////
 // Extract to a bunch of scalar object pointers of different scalar type, with offset. Useful for precision change
 ////////////////////////////////////////////////////////////////////////
 template<class vobj, class sobj> accelerator
