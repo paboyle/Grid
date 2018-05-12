@@ -73,6 +73,8 @@ feenableexcept (unsigned int excepts)
 }
 #endif
 
+uint32_t gpu_threads=8;
+
 NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////////////
@@ -85,6 +87,7 @@ static Coordinate Grid_default_mpi;
 int GridThread::_threads =1;
 int GridThread::_hyperthreads=1;
 int GridThread::_cores=1;
+
 
 const Coordinate &GridDefaultLatt(void)     {return Grid_default_latt;};
 const Coordinate &GridDefaultMpi(void)      {return Grid_default_mpi;};
@@ -189,6 +192,18 @@ void GridParseLayout(char **argv,int argc,
     assert(ompthreads.size()==1);
     GridThread::SetThreads(ompthreads[0]);
   }
+  if( GridCmdOptionExists(argv,argv+argc,"--gpu-threads") ){
+    std::vector<int> gputhreads(0);
+#ifndef GRID_NVCC
+    std::cout << GridLogWarning << "'--gpu-threads' option used but Grid was"
+              << " not compiled with GPU support" << std::endl;
+#endif
+    arg= GridCmdOptionPayload(argv,argv+argc,"--gpu-threads");
+    GridCmdOptionIntVector(arg,gputhreads);
+    assert(gputhreads.size()==1);
+    gpu_threads=gputhreads[0];
+  }
+
   if( GridCmdOptionExists(argv,argv+argc,"--cores") ){
     int cores;
     arg= GridCmdOptionPayload(argv,argv+argc,"--cores");
