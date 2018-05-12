@@ -30,7 +30,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
 template<class d>
 struct scal {
@@ -60,7 +59,7 @@ int main (int argc, char ** argv)
   if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
 
-  const int Ls=8;
+  const int Ls=12;
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
   std::cout<<GridLogMessage << "=========================================================================="<<std::endl;
@@ -88,6 +87,7 @@ int main (int argc, char ** argv)
     }
   }
   std::cout<<GridLogMessage << "=========================================================================="<<std::endl;
+#ifdef PERFCOUNT
   {
     std::vector<int> latt4(4,16);
     std::cout<<GridLogMessage << "16^4 Dw miss rate"<<std::endl;
@@ -95,7 +95,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "16^4 sDw miss rate"<<std::endl;
     benchsDw(latt4,Ls,threads,1);
   }
-
+#endif
   Grid_finalize();
 }
 
@@ -183,19 +183,21 @@ void benchDw(std::vector<int> & latt4, int Ls, int threads,int report )
   if (ncall < 5 ) exit(0);
 
   Dw.Dhop(src,result,0);
-
+#ifdef PERFCOUNT
   PerformanceCounter Counter(8);
   Counter.Start();
+#endif
   t0=usecond();
   for(int i=0;i<ncall;i++){
     Dw.Dhop(src,result,0);
   }
   t1=usecond();
+#ifdef PERFCOUNT
   Counter.Stop();
   if ( report ) {
     Counter.Report();
   }
-  
+#endif  
   if ( ! report ) {
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=1344*volume*ncall;
@@ -312,18 +314,24 @@ void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
   int ncall =1+(int) ((5.0*1000*1000)/(t1-t0));
 #endif
 
+#ifdef PERFCOUNT
   PerformanceCounter Counter(8);
   Counter.Start();
+#endif
   t0=usecond();
   for(int i=0;i<ncall;i++){
     sDw.Dhop(ssrc,sresult,0);
   }
   t1=usecond();
+
+#ifdef PERFCOUNT 
   Counter.Stop();
-  
   if ( report ) {
     Counter.Report();
-  } else { 
+  } 
+#endif
+
+  if ( !report){
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=1344*volume*ncall;
     std::cout<<"\t"<< flops/(t1-t0);
@@ -347,8 +355,10 @@ void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
   sr_o = Zero();
   
   sDw.DhopEO(ssrc_o,sr_e,DaggerNo);
+#ifdef PERFCOUNT
   PerformanceCounter CounterSdw(8);
   CounterSdw.Start();
+#endif
   t0=usecond();
   for(int i=0;i<ncall;i++){
     __SSC_START;
@@ -356,11 +366,14 @@ void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
     __SSC_STOP;
   }
   t1=usecond();
+#ifdef PERFCOUNT
   CounterSdw.Stop();
-
   if ( report ) { 
     CounterSdw.Report();
-  } else {
+  }
+#endif
+
+  if ( ! report ) {
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=(1344.0*volume*ncall)/2;
     std::cout<<"\t"<< flops/(t1-t0);
