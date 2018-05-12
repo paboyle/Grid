@@ -77,7 +77,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 //////////////////////////////////////////////////////////////////////////////////
 #ifdef GRID_NVCC
 
-constexpr uint32_t gpu_threads = 32;
+extern uint32_t gpu_threads;
 
 template<typename lambda>  __global__
 void LambdaApply(uint64_t base, uint64_t Num, lambda Lambda)
