@@ -142,7 +142,7 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
 
       Gather_plane_simple (rhs,send_buf,dimension,sx,cbmask);
 
-      int rank           = grid->_processor;
+      //      int rank           = grid->_processor;
       int recv_from_rank;
       int xmit_to_rank;
       grid->ShiftedRanks(dimension,comm_proc,xmit_to_rank,recv_from_rank);
@@ -186,7 +186,7 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
   // Simd direction uses an extract/merge pair
   ///////////////////////////////////////////////
   int buffer_size = grid->_slice_nblock[dimension]*grid->_slice_block[dimension];
-  int words = sizeof(vobj)/sizeof(vector_type);
+  //  int words = sizeof(vobj)/sizeof(vector_type);
 
   std::vector<commVector<scalar_object> >   send_buf_extract(Nsimd,commVector<scalar_object>(buffer_size) );
   std::vector<commVector<scalar_object> >   recv_buf_extract(Nsimd,commVector<scalar_object>(buffer_size) );

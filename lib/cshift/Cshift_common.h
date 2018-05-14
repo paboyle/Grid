@@ -47,12 +47,13 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimen
   int e2=rhs.Grid()->_slice_block[dimension];
 
   int stride=rhs.Grid()->_slice_stride[dimension];
+  auto rhs_v = rhs.View();
   if ( cbmask == 0x3 ) { 
     thread_loop_collapse2( (int n=0;n<e1;n++) , 
       for(int b=0;b<e2;b++){
 	int o  = n*stride;
 	int bo = n*e2;
-	buffer[off+bo+b]=rhs[so+o+b];
+	buffer[off+bo+b]=rhs_v[so+o+b];
       }
     );
   } else { 
@@ -68,7 +69,7 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimen
       }
     }
     thread_loop( (int i=0;i<table.size();i++),{
-      buffer[off+table[i].first]=rhs[so+table[i].second];
+      buffer[off+table[i].first]=rhs_v[so+table[i].second];
     });
   }
 }
@@ -91,6 +92,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,ExtractPointerArray<typename vobj:
   int e2=rhs.Grid()->_slice_block[dimension];
   int n1=rhs.Grid()->_slice_stride[dimension];
 
+  auto rhs_v = rhs.View();
   if ( cbmask ==0x3){
     thread_loop_collapse2( (int n=0;n<e1;n++), {
       for(int b=0;b<e2;b++){
@@ -98,7 +100,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,ExtractPointerArray<typename vobj:
 	int o      =   n*n1;
 	int offset = b+n*e2;
 	
-	vobj temp =rhs[so+o+b];
+	vobj temp =rhs_v[so+o+b];
 	extract<vobj>(temp,pointers,offset);
 
       }
@@ -116,7 +118,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,ExtractPointerArray<typename vobj:
 	int offset = b+n*e2;
 
 	if ( ocb & cbmask ) {
-	  vobj temp =rhs[so+o+b];
+	  vobj temp =rhs_v[so+o+b];
 	  extract<vobj>(temp,pointers,offset);
 	}
       }
@@ -140,13 +142,13 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
   int e1=rhs.Grid()->_slice_nblock[dimension];
   int e2=rhs.Grid()->_slice_block[dimension];
   int stride=rhs.Grid()->_slice_stride[dimension];
-  
+  auto rhs_v = rhs.View();
   if ( cbmask ==0x3 ) {
     thread_loop_collapse2( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
 	int o   =n*rhs.Grid()->_slice_stride[dimension];
 	int bo  =n*rhs.Grid()->_slice_block[dimension];
-	rhs[so+o+b]=buffer[bo+b];
+	rhs_v[so+o+b]=buffer[bo+b];
       }
     });
   } else { 
@@ -162,7 +164,7 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
       }
     }
     thread_loop( (int i=0;i<table.size();i++),{
-      rhs[table[i].first]=buffer[table[i].second];
+      rhs_v[table[i].first]=buffer[table[i].second];
     });
   }
 }
@@ -183,19 +185,21 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
   int e1=rhs.Grid()->_slice_nblock[dimension];
   int e2=rhs.Grid()->_slice_block[dimension];
 
+  auto rhs_v = rhs.View();
   if(cbmask ==0x3 ) {
     thread_loop_collapse2( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
 	int o      = n*rhs.Grid()->_slice_stride[dimension];
 	int offset = b+n*rhs.Grid()->_slice_block[dimension];
-	merge(rhs[so+o+b],pointers,offset);
+	merge(rhs_v[so+o+b],pointers,offset);
       }
     });
   } else { 
 
     // Case of SIMD split AND checker dim cannot currently be hit, except in 
     // Test_cshift_red_black code.
-    //    std::cout << "Scatter_plane merge assert(0); think this is buggy FIXME "<< std::endl;// think this is buggy FIXME
+    //    std::cout << "Scatter_plane merge assert(0); think this is buggy FIXME "<< std::endl;
+    // think this is buggy FIXME
     std::cout<<" Unthreaded warning -- buffer is not densely packed ??"<<std::endl;
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
@@ -203,7 +207,7 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
 	int offset = b+n*rhs.Grid()->_slice_block[dimension];
 	int ocb=1<<rhs.Grid()->CheckerBoardFromOindex(o+b);
 	if ( ocb&cbmask ) {
-	  merge(rhs[so+o+b],pointers,offset);
+	  merge(rhs_v[so+o+b],pointers,offset);
 	}
       }
     }
