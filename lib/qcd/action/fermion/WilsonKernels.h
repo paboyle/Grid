@@ -39,7 +39,7 @@ NAMESPACE_BEGIN(Grid);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class WilsonKernelsStatic { 
 public:
-  enum { OptGeneric, OptHandUnroll, OptInlineAsm };
+  enum { OptGeneric, OptHandUnroll, OptInlineAsm, OptGpu };
   enum { CommsAndCompute, CommsThenCompute };
   static int Opt;  
   static int Comms;
@@ -59,6 +59,7 @@ public:
   {
     //bgq_l1p_optimisation(1);
     switch(Opt) {
+
 #if defined(AVX512) || defined (QPX)
     case WilsonKernelsStatic::OptInlineAsm:
       if(interior&&exterior) WilsonKernels<Impl>::AsmDhopSite   (st,U,buf,sF,sU,Ls,Nsite,in,out);
@@ -67,6 +68,18 @@ public:
       else assert(0);
       break;
 #endif
+    case WilsonKernelsStatic::OptGpu:
+      for (int site = 0; site < Nsite; site++) {
+	for (int s = 0; s < Ls; s++) {
+	  if(interior&&exterior) WilsonKernels<Impl>::GpuDhopSite(st,U,buf,sF,sU,in,out);
+	  else if (interior)     WilsonKernels<Impl>::GenericDhopSiteInt(st,U,buf,sF,sU,in,out);
+	  else if (exterior)     WilsonKernels<Impl>::GenericDhopSiteExt(st,U,buf,sF,sU,in,out);
+	  else assert(0);
+	  sF++;
+	}
+	sU++;
+      }
+      break;
     case WilsonKernelsStatic::OptHandUnroll:
       for (int site = 0; site < Nsite; site++) {
 	for (int s = 0; s < Ls; s++) {
@@ -128,6 +141,18 @@ public:
       else assert(0);
       break;
 #endif
+    case WilsonKernelsStatic::OptGpu:
+      for (int site = 0; site < Nsite; site++) {
+	for (int s = 0; s < Ls; s++) {
+	  if(interior&&exterior) WilsonKernels<Impl>::GenericDhopSiteDag(st,U,buf,sF,sU,in,out);
+	  else if (interior)     WilsonKernels<Impl>::GenericDhopSiteDagInt(st,U,buf,sF,sU,in,out);
+	  else if (exterior)     WilsonKernels<Impl>::GenericDhopSiteDagExt(st,U,buf,sF,sU,in,out);
+	  else assert(0);
+	  sF++;
+	}
+	sU++;
+      }
+      break;
     case WilsonKernelsStatic::OptHandUnroll:
       for (int site = 0; site < Nsite; site++) {
 	for (int s = 0; s < Ls; s++) {
@@ -215,6 +240,12 @@ public:
 
 private:
   // Specialised variants
+  static accelerator void GpuDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				      int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  
+  static accelerator void GpuDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					 int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+
   static accelerator void GenericDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
       
