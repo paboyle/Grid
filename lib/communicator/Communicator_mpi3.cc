@@ -52,8 +52,7 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
   MPI_Comm_dup (MPI_COMM_WORLD,&communicator_world);
 
   GlobalSharedMemory::Init(communicator_world);
-  GlobalSharedMemory::SharedMemoryAllocate(
-					   GlobalSharedMemory::MAX_MPI_SHM_BYTES,
+  GlobalSharedMemory::SharedMemoryAllocate(GlobalSharedMemory::MAX_MPI_SHM_BYTES,
 					   GlobalSharedMemory::Hugepages);
 }
 
@@ -144,36 +143,6 @@ CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const 
 
   MPI_Comm comm_split;
   if ( Nchild > 1 ) { 
-
-    if(0){
-      std::cout << GridLogMessage<<"Child communicator of "<< std::hex << parent.communicator << std::dec<<std::endl;
-      std::cout << GridLogMessage<<" parent grid["<< parent._ndimension<<"]    ";
-      for(int d=0;d<parent._ndimension;d++)  std::cout << parent._processors[d] << " ";
-      std::cout<<std::endl;
-      
-      std::cout << GridLogMessage<<" child grid["<< _ndimension <<"]    ";
-      for(int d=0;d<processors.size();d++)  std::cout << processors[d] << " ";
-      std::cout<<std::endl;
-      
-      std::cout << GridLogMessage<<" old rank "<< parent._processor<<" coor ["<< parent._ndimension <<"]    ";
-      for(int d=0;d<parent._ndimension;d++)  std::cout << parent._processor_coor[d] << " ";
-      std::cout<<std::endl;
-      
-      std::cout << GridLogMessage<<" new split "<< srank<<" scoor ["<< _ndimension <<"]    ";
-      for(int d=0;d<processors.size();d++)  std::cout << scoor[d] << " ";
-      std::cout<<std::endl;
-      
-      std::cout << GridLogMessage<<" new rank "<< crank<<" coor ["<< _ndimension <<"]    ";
-      for(int d=0;d<processors.size();d++)  std::cout << ccoor[d] << " ";
-      std::cout<<std::endl;
-
-      //////////////////////////////////////////////////////////////////////////////////////////////////////
-      // Declare victory
-      //////////////////////////////////////////////////////////////////////////////////////////////////////
-      std::cout << GridLogMessage<<"Divided communicator "<< parent._Nprocessors<<" into "
-		<< Nchild <<" communicators with " << childsize << " ranks"<<std::endl;
-      std::cout << " Split communicator " <<comm_split <<std::endl;
-    }
 
     ////////////////////////////////////////////////////////////////
     // Split the communicator
