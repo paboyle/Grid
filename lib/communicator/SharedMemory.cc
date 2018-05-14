@@ -76,6 +76,7 @@ void *SharedMemory::ShmBufferMalloc(size_t bytes){
     std::cout<< " Current value is " << (heap_size/(1024*1024)) <<std::endl;
     assert(heap_bytes<heap_size);
   }
+  //std::cerr << "ShmBufferMalloc "<<std::hex<< ptr<<" - "<<((uint64_t)ptr+bytes)<<std::dec<<std::endl;
   return ptr;
 }
 void SharedMemory::ShmBufferFreeAll(void) { 
@@ -84,6 +85,7 @@ void SharedMemory::ShmBufferFreeAll(void) {
 }
 void *SharedMemory::ShmBufferSelf(void)
 {
+  //std::cerr << "ShmBufferSelf "<<ShmRank<<" "<<std::hex<< ShmCommBufs[ShmRank] <<std::dec<<std::endl;
   return ShmCommBufs[ShmRank];
 }
 
