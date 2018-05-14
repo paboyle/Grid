@@ -116,7 +116,7 @@ void TStochFreeField<SImpl>::execute(void)
         
         SImpl::MomentumSpacePropagator(w, sqrt(par().m2));
         w *= par().g/N;
-        w  = sqrt(vol*real(w));
+        w  = sqrt(vol)*sqrt(w);
     }
     LOG(Message) << "Generating random momentum-space field" << std::endl;
     envGetTmp(Field, phift);

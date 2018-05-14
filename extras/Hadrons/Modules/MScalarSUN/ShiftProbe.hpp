@@ -40,7 +40,7 @@ BEGIN_HADRONS_NAMESPACE
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MScalarSUN)
 
-typedef std::pair<unsigned int, unsigned int> ShiftPair;
+typedef std::pair<int, int> ShiftPair;
 
 class ShiftProbePar: Serializable
 {
@@ -127,7 +127,7 @@ void TShiftProbe<SImpl>::execute(void)
                  << std::endl;
 
     std::vector<ShiftPair> shift;
-    unsigned int           sign;
+    double                 sign;
     auto                   &phi   = envGet(Field, par().field);
     auto                   &probe = envGet(ComplexField, getName());
 
@@ -136,7 +136,7 @@ void TShiftProbe<SImpl>::execute(void)
     {
         HADRONS_ERROR(Size, "the number of shifts is odd");
     }
-    sign = (shift.size() % 4 == 0) ? 1 : -1;
+    sign = (shift.size() % 4 == 0) ? 1. : -1.;
     for (auto &s: shift)
     {
         if (s.first >= env().getNd())
@@ -147,7 +147,7 @@ void TShiftProbe<SImpl>::execute(void)
         }
     }
     envGetTmp(Field, acc);
-    acc   = 1.;
+    acc = 1.;
     for (unsigned int i = 0; i < shift.size(); ++i)
     {
         if (shift[i].second == 0)
@@ -159,7 +159,7 @@ void TShiftProbe<SImpl>::execute(void)
             acc *= Cshift(phi, shift[i].first, shift[i].second);
         }
     }
-    probe = real(sign*trace(acc));
+    probe = sign*trace(acc);
     if (!par().output.empty())
     {
         ShiftProbeResult r;
