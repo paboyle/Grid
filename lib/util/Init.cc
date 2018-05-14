@@ -432,6 +432,9 @@ void Grid_init(int *argc,char ***argv)
     WilsonKernelsStatic::Opt=WilsonKernelsStatic::OptHandUnroll;
     StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptHandUnroll;
   }
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-gpu") ){
+    WilsonKernelsStatic::Opt=WilsonKernelsStatic::OptGpu;
+  }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-asm") ){
     WilsonKernelsStatic::Opt=WilsonKernelsStatic::OptInlineAsm;
     StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptInlineAsm;
