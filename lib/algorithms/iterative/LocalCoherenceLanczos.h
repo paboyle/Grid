@@ -48,6 +48,7 @@ struct LanczosParams : Serializable {
 struct LocalCoherenceLanczosParams : Serializable {
  public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(LocalCoherenceLanczosParams,
+				  bool, saveEvecs,
 				  bool, doFine,
 				  bool, doFineRead,
 				  bool, doCoarse,

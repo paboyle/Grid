@@ -43,13 +43,15 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid
 {
+  void xmlCheckParse(const pugi::xml_parse_result &result, const std::string name);
   
   class XmlWriter: public Writer<XmlWriter>
   {    
   public:
-    XmlWriter(const std::string &fileName,std::string toplev = std::string("grid") );
+    XmlWriter(const std::string &fileName, std::string toplev = std::string("grid") );
     virtual ~XmlWriter(void);
     void push(const std::string &s);
+    void pushXmlString(const std::string &s);
     void pop(void);
     template <typename U>
     void writeDefault(const std::string &s, const U &x);
@@ -65,8 +67,8 @@ namespace Grid
   class XmlReader: public Reader<XmlReader>
   {
   public:
-    XmlReader(const char *xmlstring,std::string toplev = std::string("grid") );
-    XmlReader(const std::string &fileName,std::string toplev = std::string("grid") );
+    XmlReader(const std::string &fileName, const bool isBuffer = false, 
+              std::string toplev = std::string("grid") );
     virtual ~XmlReader(void) = default;
     bool push(const std::string &s);
     void pop(void);
@@ -75,6 +77,8 @@ namespace Grid
     void readDefault(const std::string &s, U &output);
     template <typename U>
     void readDefault(const std::string &s, std::vector<U> &output);
+  private:
+    void checkParse(const pugi::xml_parse_result &result, const std::string name);
   private:
     pugi::xml_document doc_;
     pugi::xml_node     node_;

@@ -55,6 +55,11 @@ void Hdf5Writer::writeDefault(const std::string &s, const char *x)
   writeDefault(s, sx);
 }
 
+Group & Hdf5Writer::getGroup(void)
+{
+  return group_;
+}
+
 // Reader implementation ///////////////////////////////////////////////////////
 Hdf5Reader::Hdf5Reader(const std::string &fileName)
 : fileName_(fileName)
@@ -102,4 +107,9 @@ void Hdf5Reader::readDefault(const std::string &s, std::string &x)
   
   x.resize(strType.getSize());
   attribute.read(strType, &(x[0]));
+}
+
+Group & Hdf5Reader::getGroup(void)
+{
+  return group_;
 }

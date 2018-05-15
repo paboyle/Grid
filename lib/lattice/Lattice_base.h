@@ -256,9 +256,42 @@ public:
       _odata[ss]=r._odata[ss];
     }  	
   }
+
+  Lattice(Lattice&& r){ // move constructor
+    _grid = r._grid;
+    checkerboard = r.checkerboard;
+    _odata=std::move(r._odata);
+  }
   
-  
-  
+  inline Lattice<vobj> & operator = (Lattice<vobj> && r)
+  {
+    _grid        = r._grid;
+    checkerboard = r.checkerboard;
+    _odata       =std::move(r._odata);
+    return *this;
+  }
+
+  inline Lattice<vobj> & operator = (const Lattice<vobj> & r){
+    _grid        = r._grid;
+    checkerboard = r.checkerboard;
+    _odata.resize(_grid->oSites());// essential
+    
+    parallel_for(int ss=0;ss<_grid->oSites();ss++){
+      _odata[ss]=r._odata[ss];
+    }  	
+    return *this;
+  }
+
+  template<class robj> strong_inline Lattice<vobj> & operator = (const Lattice<robj> & r){
+    this->checkerboard = r.checkerboard;
+    conformable(*this,r);
+    
+    parallel_for(int ss=0;ss<_grid->oSites();ss++){
+      this->_odata[ss]=r._odata[ss];
+    }
+    return *this;
+  }
+
   virtual ~Lattice(void) = default;
     
   void reset(GridBase* grid) {
@@ -277,15 +310,6 @@ public:
     return *this;
   }
   
-  template<class robj> strong_inline Lattice<vobj> & operator = (const Lattice<robj> & r){
-    this->checkerboard = r.checkerboard;
-    conformable(*this,r);
-    
-    parallel_for(int ss=0;ss<_grid->oSites();ss++){
-      this->_odata[ss]=r._odata[ss];
-    }
-    return *this;
-  }
   
   // *=,+=,-= operators inherit behvour from correspond */+/- operation
   template<class T> strong_inline Lattice<vobj> &operator *=(const T &r) {

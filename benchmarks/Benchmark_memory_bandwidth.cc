@@ -55,7 +55,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<"\t\t seconds"<<std::endl;
   std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
-  uint64_t lmax=96;
+  uint64_t lmax=64;
 #define NLOOP (10*lmax*lmax*lmax*lmax/vol)
   for(int lat=8;lat<=lmax;lat+=8){
 

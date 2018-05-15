@@ -237,20 +237,24 @@ namespace Grid {
 	MachineCharacteristics(header);
 
 	uint64_t offset;
-  
-	truncate(file);
 
 	// Sod it -- always write 3x3 double
 	header.floating_point = std::string("IEEE64BIG");
 	header.data_type      = std::string("4D_SU3_GAUGE_3x3");
 	GaugeSimpleUnmunger<fobj3D,sobj> munge;
-	offset = writeHeader(header,file);
+	if ( grid->IsBoss() ) { 
+	  truncate(file);
+	  offset = writeHeader(header,file);
+	}
+	grid->Broadcast(0,(void *)&offset,sizeof(offset));
 
 	uint32_t nersc_csum,scidac_csuma,scidac_csumb;
 	BinaryIO::writeLatticeObject<vobj,fobj3D>(Umu,file,munge,offset,header.floating_point,
 								  nersc_csum,scidac_csuma,scidac_csumb);
 	header.checksum = nersc_csum;
-	writeHeader(header,file);
+	if ( grid->IsBoss() ) { 
+	  writeHeader(header,file);
+	}
 
 	std::cout<<GridLogMessage <<"Written NERSC Configuration on "<< file << " checksum "
 		 <<std::hex<<header.checksum
@@ -293,12 +297,18 @@ namespace Grid {
 	header.data_type      = std::string("SITMO");
 #endif
 
-	truncate(file);
-	offset = writeHeader(header,file);
+	if ( grid->IsBoss() ) { 
+	  truncate(file);
+	  offset = writeHeader(header,file);
+	}
+	grid->Broadcast(0,(void *)&offset,sizeof(offset));
+	
 	uint32_t nersc_csum,scidac_csuma,scidac_csumb;
 	BinaryIO::writeRNG(serial,parallel,file,offset,nersc_csum,scidac_csuma,scidac_csumb);
 	header.checksum = nersc_csum;
-	offset = writeHeader(header,file);
+	if ( grid->IsBoss() ) { 
+	  offset = writeHeader(header,file);
+	}
 
 	std::cout<<GridLogMessage 
 		 <<"Written NERSC RNG STATE "<<file<< " checksum "
