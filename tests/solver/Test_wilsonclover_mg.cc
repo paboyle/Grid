@@ -676,47 +676,47 @@ int main(int argc, char **argv) {
   WilsonFermionR       Dw(Umu, *FGrid, *FrbGrid, mass);
   WilsonCloverFermionR Dwc(Umu, *FGrid, *FrbGrid, mass, csw_r, csw_t, wilsonAnisCoeff, wcImplparams);
 
-  // Default params for two-level MG preconditioner (TODO: use sensible ones)
-  mgParams.nLevels                  = 2;
-  mgParams.blockSizes               = {{2, 2, 2, 2}};
-  mgParams.smootherTol              = {1e-14};
-  mgParams.smootherMaxOuterIter     = {1};
-  mgParams.smootherMaxInnerIter     = {1};
+  // // Default params for two-level MG preconditioner
+  // mgParams.nLevels                  = 2;
+  // mgParams.blockSizes               = {{4, 4, 4, 4}};
+  // mgParams.smootherTol              = {1e-14};
+  // mgParams.smootherMaxOuterIter     = {4};
+  // mgParams.smootherMaxInnerIter     = {4};
+  // mgParams.kCycle                   = true;
+  // mgParams.kCycleTol                = {1e-1};
+  // mgParams.kCycleMaxOuterIter       = {2};
+  // mgParams.kCycleMaxInnerIter       = {5};
+  // mgParams.coarseSolverTol          = 5e-2;
+  // mgParams.coarseSolverMaxOuterIter = 10;
+  // mgParams.coarseSolverMaxInnerIter = 500;
+
+  // Default params for three-level MG preconditioner
+  mgParams.nLevels                  = 3;
+  mgParams.blockSizes               = {{4, 4, 4, 4}, {2, 2, 2, 2}};
+  mgParams.smootherTol              = {1e-14, 1e-14};
+  mgParams.smootherMaxOuterIter     = {4, 4};
+  mgParams.smootherMaxInnerIter     = {4, 4};
   mgParams.kCycle                   = true;
-  mgParams.kCycleTol                = {1e-14};
-  mgParams.kCycleMaxOuterIter       = {1};
-  mgParams.kCycleMaxInnerIter       = {1};
-  mgParams.coarseSolverTol          = 1e-14;
-  mgParams.coarseSolverMaxOuterIter = 1;
-  mgParams.coarseSolverMaxInnerIter = 1;
+  mgParams.kCycleTol                = {1e-1, 1e-1};
+  mgParams.kCycleMaxOuterIter       = {2, 2};
+  mgParams.kCycleMaxInnerIter       = {5, 5};
+  mgParams.coarseSolverTol          = 5e-2;
+  mgParams.coarseSolverMaxOuterIter = 10;
+  mgParams.coarseSolverMaxInnerIter = 500;
 
-  // // Default params for three-level MG preconditioner (TODO: use sensible ones)
-  // mgParams.nLevels                  = 3;
-  // mgParams.blockSizes               = {{2, 2, 2, 2}, {2, 2, 1, 1}};
-  // mgParams.smootherTol              = {1e-14, 1e-14};
-  // mgParams.smootherMaxOuterIter     = {1, 1};
-  // mgParams.smootherMaxInnerIter     = {1, 1};
-  // mgParams.kCycle                   = true;
-  // mgParams.kCycleTol                = {1e-14, 1e-14};
-  // mgParams.kCycleMaxOuterIter       = {1, 1};
-  // mgParams.kCycleMaxInnerIter       = {1, 1};
-  // mgParams.coarseSolverTol          = 1e-14;
-  // mgParams.coarseSolverMaxOuterIter = 1;
-  // mgParams.coarseSolverMaxInnerIter = 1;
-
-  // // Default params for four-level MG preconditioner (TODO: use sensible ones)
+  // // Default params for four-level MG preconditioner
   // mgParams.nLevels                  = 4;
-  // mgParams.blockSizes               = {{2, 2, 2, 2}, {2, 2, 1, 1}, {1, 1, 2, 1}};
+  // mgParams.blockSizes               = {{4, 4, 4, 4}, {2, 2, 2, 2}, {2, 2, 2, 2}};
   // mgParams.smootherTol              = {1e-14, 1e-14, 1e-14};
-  // mgParams.smootherMaxOuterIter     = {1, 1, 1};
-  // mgParams.smootherMaxInnerIter     = {1, 1, 1};
+  // mgParams.smootherMaxOuterIter     = {4, 4, 4};
+  // mgParams.smootherMaxInnerIter     = {4, 4, 4};
   // mgParams.kCycle                   = true;
-  // mgParams.kCycleTol                = {1e-14, 1e-14, 1e-14};
-  // mgParams.kCycleMaxOuterIter       = {1, 1, 1};
-  // mgParams.kCycleMaxInnerIter       = {1, 1, 1};
-  // mgParams.coarseSolverTol          = 1e-14;
-  // mgParams.coarseSolverMaxOuterIter = 1;
-  // mgParams.coarseSolverMaxInnerIter = 1;
+  // mgParams.kCycleTol                = {1e-1, 1e-1, 1e-1};
+  // mgParams.kCycleMaxOuterIter       = {2, 2, 2};
+  // mgParams.kCycleMaxInnerIter       = {5, 5, 5};
+  // mgParams.coarseSolverTol          = 5e-2;
+  // mgParams.coarseSolverMaxOuterIter = 10;
+  // mgParams.coarseSolverMaxInnerIter = 500;
 
   {
     XmlWriter writer("mg_params_template.xml");
