@@ -173,6 +173,39 @@ void G5R5(Lattice<vobj> &z,const Lattice<vobj> &x)
     }
   }
 }
+}
 
-}}
+// I explicitly need these outside the QCD namespace
+template<typename vobj>
+void G5C(Lattice<vobj> &z, const Lattice<vobj> &x)
+{
+  GridBase *grid = x._grid;
+  z.checkerboard = x.checkerboard;
+  conformable(x, z);
+
+  QCD::Gamma G5(QCD::Gamma::Algebra::Gamma5);
+  z = G5 * x;
+}
+
+template<class CComplex, int nbasis>
+void G5C(Lattice<iVector<CComplex, nbasis>> &z, const Lattice<iVector<CComplex, nbasis>> &x)
+{
+  GridBase *grid = x._grid;
+  z.checkerboard = x.checkerboard;
+  conformable(x, z);
+
+  static_assert(nbasis % 2 == 0, "");
+  int nb = nbasis / 2;
+
+  parallel_for(int ss = 0; ss < grid->oSites(); ss++) {
+    for(int n = 0; n < nb; ++n) {
+      z._odata[ss](n) = x._odata[ss](n);
+    }
+    for(int n = nb; n < nbasis; ++n) {
+      z._odata[ss](n) = -x._odata[ss](n);
+    }
+  }
+}
+
+}
 #endif 
