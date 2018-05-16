@@ -80,8 +80,8 @@ inline void subdivides(GridBase *coarse,GridBase *fine)
   }
   
 
-template<class vobj,class vobjC>
-inline void blockProject(Lattice<vobjC>                    &coarseData,
+template<class vobj,class CComplex,int nbasis>
+inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
 			 const             Lattice<vobj>   &fineData,
 			 const std::vector<Lattice<vobj> > &Basis)
 {
@@ -90,8 +90,7 @@ inline void blockProject(Lattice<vobjC>                    &coarseData,
   int  _ndimension = coarse->_ndimension;
 
   // checks
-  assert((Basis.size() != 0) && ((Basis.size() & 0x1) == 0));
-  auto nbasis = Basis.size();
+  assert( nbasis == Basis.size() );
   subdivides(coarse,fine); 
   for(int i=0;i<nbasis;i++){
     conformable(Basis[i],fineData);
@@ -119,8 +118,8 @@ inline void blockProject(Lattice<vobjC>                    &coarseData,
 PARALLEL_CRITICAL
     for(int i=0;i<nbasis;i++) {
 
-      coarseData._odata[sc]()(0)(i)=coarseData._odata[sc]()(0)(i)
-        + TensorRemove(innerProduct(Basis[i]._odata[sf],fineData._odata[sf]));
+      coarseData._odata[sc](i)=coarseData._odata[sc](i)
+	+ innerProduct(Basis[i]._odata[sf],fineData._odata[sf]);
 
     }
   }
@@ -286,9 +285,9 @@ inline void blockOrthogonalise(Lattice<CComplex> &ip,std::vector<Lattice<vobj> >
   }
 }
 
-template<class vobj,class vobjC>
-inline void blockPromote(const Lattice<vobjC>              &coarseData,
-			 Lattice<vobj>                     &fineData,
+template<class vobj,class CComplex,int nbasis>
+inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
+			 Lattice<vobj>   &fineData,
 			 const std::vector<Lattice<vobj> > &Basis)
 {
   GridBase * fine  = fineData._grid;
@@ -296,9 +295,7 @@ inline void blockPromote(const Lattice<vobjC>              &coarseData,
   int  _ndimension = coarse->_ndimension;
 
   // checks
-  assert((Basis.size() != 0) && ((Basis.size() & 0x1) == 0));
-  auto nbasis = Basis.size();
-
+  assert( nbasis == Basis.size() );
   subdivides(coarse,fine); 
   for(int i=0;i<nbasis;i++){
     conformable(Basis[i]._grid,fine);
@@ -322,13 +319,9 @@ inline void blockPromote(const Lattice<vobjC>              &coarseData,
       for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
       Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
       
-      // The temporary is necessary, since a pure instance of Grid::simd<...> is
-      // not a valid argument to operator+ with an iVector, we need an an iScalar
-      typename vobjC::tensor_reduced tmp; // iScalar<iVector<iVector<...>>> -> iScalar<iScalar<iScalar<...>>>
       for(int i=0;i<nbasis;i++) {
-        tmp = coarseData._odata[sc]()(0)(i);
-        if(i==0) fineData._odata[sf] = tmp * Basis[i]._odata[sf];
-        else     fineData._odata[sf]=fineData._odata[sf]+tmp*Basis[i]._odata[sf];
+	if(i==0) fineData._odata[sf]=coarseData._odata[sc](i) * Basis[i]._odata[sf];
+	else     fineData._odata[sf]=fineData._odata[sf]+coarseData._odata[sc](i)*Basis[i]._odata[sf];
       }
     }
   }

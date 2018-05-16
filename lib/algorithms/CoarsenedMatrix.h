@@ -93,16 +93,12 @@ namespace Grid {
   template<class Fobj,class CComplex,int nbasis>
   class Aggregation   {
   public:
+    typedef iVector<CComplex,nbasis >             siteVector;
+    typedef Lattice<siteVector>                 CoarseVector;
+    typedef Lattice<iMatrix<CComplex,nbasis > > CoarseMatrix;
 
-    typedef typename CComplex::vector_type                     innerType;
-    typedef iScalar<iScalar<iScalar<innerType         >    > > siteScalar; // used for inner products on fine field
-    typedef iScalar<iVector<iVector<innerType, nbasis >, 1 > > siteVector;
-    typedef iScalar<iMatrix<iMatrix<innerType, nbasis >, 1 > > siteMatrix;
-    typedef Lattice<siteScalar> CoarseScalar; // used for inner products on fine field
-    typedef Lattice<siteVector> CoarseVector;
-    typedef Lattice<siteMatrix> CoarseMatrix;
-
-    typedef Lattice<Fobj>       FineField;
+    typedef Lattice< CComplex >   CoarseScalar; // used for inner products on fine field
+    typedef Lattice<Fobj >        FineField;
 
     GridBase *CoarseGrid;
     GridBase *FineGrid;
@@ -119,12 +115,12 @@ namespace Grid {
   
     void Orthogonalise(void){
       CoarseScalar InnerProd(CoarseGrid); 
-      std::cout << GridLogMessage <<"Gram-Schmidt pass 1"<<std::endl;
+      std::cout << GridLogMessage <<" Gramm-Schmidt pass 1"<<std::endl;
       blockOrthogonalise(InnerProd,subspace);
-      std::cout << GridLogMessage <<"Gram-Schmidt pass 2"<<std::endl;
+      std::cout << GridLogMessage <<" Gramm-Schmidt pass 2"<<std::endl;
       blockOrthogonalise(InnerProd,subspace);
-      std::cout << GridLogMessage <<"Gram-Schmidt checking orthogonality"<<std::endl;
-      CheckOrthogonal();
+      //      std::cout << GridLogMessage <<" Gramm-Schmidt checking orthogonality"<<std::endl;
+      //      CheckOrthogonal();
     } 
     void CheckOrthogonal(void){
       CoarseVector iProj(CoarseGrid); 
@@ -133,7 +129,7 @@ namespace Grid {
 	blockProject(iProj,subspace[i],subspace);
 	eProj=zero; 
 	parallel_for(int ss=0;ss<CoarseGrid->oSites();ss++){
-	  eProj._odata[ss]()(0)(i)=innerType(1.0);
+	  eProj._odata[ss](i)=CComplex(1.0);
 	}
 	eProj=eProj - iProj;
 	std::cout<<GridLogMessage<<"Orthog check error "<<i<<" " << norm2(eProj)<<std::endl;
@@ -209,8 +205,7 @@ namespace Grid {
 
       RealD scale;
 
-      TrivialPrecon<FineField> TrivialPrec;
-      FlexibleGeneralisedMinimalResidual<FineField> FGMRES(1.0e-14,1,TrivialPrec,1,false); // TODO: need to use GMRES as long as Mdag doesn't work on coarser levels (i.e., MdagM isn't hermitian)
+      ConjugateGradient<FineField> CG(1.0e-2,10000);
       FineField noise(FineGrid);
       FineField Mn(FineGrid);
 
@@ -222,9 +217,9 @@ namespace Grid {
 
 	hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<b<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
 
-	for(int i=0;i<3;i++){
+	for(int i=0;i<1;i++){
 
-	  FGMRES(hermop,noise,subspace[b]);
+	  CG(hermop,noise,subspace[b]);
 
 	  noise = subspace[b];
 	  scale = std::pow(norm2(noise),-0.5); 
@@ -244,18 +239,15 @@ namespace Grid {
   // Fine Object == (per site) type of fine field
   // nbasis      == number of deflation vectors
   template<class Fobj,class CComplex,int nbasis>
-  class CoarsenedMatrix : public SparseMatrixBase<Lattice<iScalar<iVector<iVector<typename CComplex::vector_type, nbasis >, 1 > > > >  {
+  class CoarsenedMatrix : public SparseMatrixBase<Lattice<iVector<CComplex,nbasis > > >  {
   public:
+    
+    typedef iVector<CComplex,nbasis >             siteVector;
+    typedef Lattice<siteVector>                 CoarseVector;
+    typedef Lattice<iMatrix<CComplex,nbasis > > CoarseMatrix;
 
-    typedef typename CComplex::vector_type                     innerType;
-    typedef iScalar<iScalar<iScalar<innerType         >    > > siteScalar;
-    typedef iScalar<iVector<iVector<innerType, nbasis >, 1 > > siteVector;
-    typedef iScalar<iMatrix<iMatrix<innerType, nbasis >, 1 > > siteMatrix;
-    typedef Lattice<siteScalar> CoarseScalar; // used for inner products on fine field
-    typedef Lattice<siteVector> CoarseVector;
-    typedef Lattice<siteMatrix> CoarseMatrix;
-
-    typedef Lattice<Fobj>       FineField;
+    typedef Lattice< CComplex >   CoarseScalar; // used for inner products on fine field
+    typedef Lattice<Fobj >        FineField;
 
     ////////////////////
     // Data members
@@ -303,50 +295,13 @@ namespace Grid {
       return norm2(out);
     };
 
-    RealD Mdag (const CoarseVector &in, CoarseVector &out){ // TODO: get this correct
+    RealD Mdag (const CoarseVector &in, CoarseVector &out){ 
       return M(in,out);
     };
 
-    void Mdir(const CoarseVector &in, CoarseVector &out, int dir, int disp) {
-
-      conformable(_grid,in._grid);
-      conformable(in._grid,out._grid);
-
-      SimpleCompressor<siteVector> compressor;
-      Stencil.HaloExchange(in,compressor);
-
-      auto point = [dir, disp](){
-        if(dir == 0 and disp == 0)
-          return 8;
-        else
-          return (4 * dir + 1 - disp) / 2;
-      }();
-
-      parallel_for(int ss=0;ss<Grid()->oSites();ss++){
-        siteVector res = zero;
-        siteVector nbr;
-        int ptype;
-        StencilEntry *SE;
-
-        SE=Stencil.GetEntry(ptype,point,ss);
-
-        if(SE->_is_local&&SE->_permute) {
-          permute(nbr,in._odata[SE->_offset],ptype);
-        } else if(SE->_is_local) {
-          nbr = in._odata[SE->_offset];
-        } else {
-          nbr = Stencil.CommBuf()[SE->_offset];
-        }
-
-        res = res + A[point]._odata[ss]*nbr;
-
-        vstream(out._odata[ss],res);
-      }
-    };
-
-    void Mdiag(const CoarseVector &in, CoarseVector &out) {
-      Mdir(in, out, 0, 0); // use the self coupling (= last) point of the stencil
-    };
+    // Defer support for further coarsening for now
+    void Mdiag    (const CoarseVector &in,  CoarseVector &out){};
+    void Mdir     (const CoarseVector &in,  CoarseVector &out,int dir, int disp){};
 
     CoarsenedMatrix(GridCartesian &CoarseGrid) 	: 
 
@@ -372,9 +327,10 @@ namespace Grid {
 
       CoarseVector iProj(Grid()); 
       CoarseVector oProj(Grid()); 
+      CoarseScalar InnerProd(Grid()); 
 
       // Orthogonalise the subblocks over the basis
-      Subspace.Orthogonalise();
+      blockOrthogonalise(InnerProd,Subspace.subspace);
 
       // Compute the matrix elements of linop between this orthonormal
       // set of vectors.
@@ -431,9 +387,9 @@ namespace Grid {
 	  parallel_for(int ss=0;ss<Grid()->oSites();ss++){
 	    for(int j=0;j<nbasis;j++){
 	      if( disp!= 0 ) {
-		A[p]._odata[ss]()(0,0)(j,i) = oProj._odata[ss]()(0)(j);
+		A[p]._odata[ss](j,i) = oProj._odata[ss](j);
 	      }
-	      A[self_stencil]._odata[ss]()(0,0)(j,i) =	A[self_stencil]._odata[ss]()(0,0)(j,i) + iProj._odata[ss]()(0)(j);
+	      A[self_stencil]._odata[ss](j,i) =	A[self_stencil]._odata[ss](j,i) + iProj._odata[ss](j);
 	    }
 	  }
 	}
@@ -461,7 +417,7 @@ namespace Grid {
       std::cout<<GridLogMessage<<"Computed Coarse Operator"<<std::endl;
 #endif
       //      ForceHermitian();
-      // AssertHermitian();
+      AssertHermitian();
       // ForceDiagonal();
     }
     void ForceDiagonal(void) {
