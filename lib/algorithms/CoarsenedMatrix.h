@@ -295,8 +295,17 @@ namespace Grid {
       return norm2(out);
     };
 
-    RealD Mdag (const CoarseVector &in, CoarseVector &out){ 
-      return M(in,out);
+    RealD Mdag (const CoarseVector &in, CoarseVector &out){
+      // // corresponds to Petrov-Galerkin coarsening
+      // return M(in,out);
+
+      // corresponds to Galerkin coarsening
+      CoarseVector tmp(Grid());
+      G5C(tmp, in);
+      M(tmp, out);
+      G5C(out, out);
+      return norm2(out);
+    };
 
     void Mdir(const CoarseVector &in, CoarseVector &out, int dir, int disp){
 
@@ -453,7 +462,7 @@ namespace Grid {
       std::cout<<GridLogMessage<<"Computed Coarse Operator"<<std::endl;
 #endif
       //      ForceHermitian();
-      AssertHermitian();
+      // AssertHermitian();
       // ForceDiagonal();
     }
     void ForceDiagonal(void) {
