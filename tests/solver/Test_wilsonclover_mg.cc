@@ -32,42 +32,6 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-template<class Field, int nbasis> class TestVectorAnalyzer {
-public:
-  void operator()(LinearOperatorBase<Field> &Linop, std::vector<Field> const &vectors, int nn = nbasis) {
-
-    auto positiveOnes = 0;
-
-    std::vector<Field> tmp(4, vectors[0]._grid);
-    Gamma              g5(Gamma::Algebra::Gamma5);
-
-    std::cout << GridLogMessage << "Test vector analysis:" << std::endl;
-
-    for(auto i = 0; i < nn; ++i) {
-
-      Linop.Op(vectors[i], tmp[3]);
-
-      tmp[0] = g5 * tmp[3];
-
-      auto lambda = innerProduct(vectors[i], tmp[0]) / innerProduct(vectors[i], vectors[i]);
-
-      tmp[1] = tmp[0] - lambda * vectors[i];
-
-      auto mu = ::sqrt(norm2(tmp[1]) / norm2(vectors[i]));
-
-      auto nrm = ::sqrt(norm2(vectors[i]));
-
-      if(real(lambda) > 0)
-        positiveOnes++;
-
-      std::cout << GridLogMessage << std::scientific << std::setprecision(2) << std::setw(2) << std::showpos << "vector " << i << ": "
-                << "singular value: " << lambda << ", singular vector precision: " << mu << ", norm: " << nrm << std::endl;
-    }
-    std::cout << GridLogMessage << std::scientific << std::setprecision(2) << std::setw(2) << std::showpos << positiveOnes << " out of "
-              << nn << " vectors were positive" << std::endl;
-  }
-};
-
 // TODO: Can think about having one parameter struct per level and then a
 // vector of these structs. How well would that work together with the
 // serialization strategy of Grid?
@@ -156,11 +120,11 @@ public:
   virtual ~MultiGridPreconditionerBase()               = default;
   virtual void setup()                                 = 0;
   virtual void operator()(Field const &in, Field &out) = 0;
-  virtual void runChecks()                             = 0;
+  virtual void runChecks(RealD tolerance)              = 0;
   virtual void reportTimings()                         = 0;
 };
 
-template<class Fobj, class CoarseScalar, int nCoarseSpins, int nBasis, int nCoarserLevels, class Matrix>
+template<class Fobj, class CComplex, int nBasis, int nCoarserLevels, class Matrix>
 class MultiGridPreconditioner : public MultiGridPreconditionerBase<Lattice<Fobj>> {
 public:
   /////////////////////////////////////////////
@@ -168,13 +132,13 @@ public:
   /////////////////////////////////////////////
 
   // clang-format off
-  typedef Aggregation<Fobj, CoarseScalar, nBasis>                                                                         Aggregates;
-  typedef CoarsenedMatrix<Fobj, CoarseScalar, nBasis>                                                                     CoarseMatrix;
-  typedef typename Aggregates::CoarseVector                                                                               CoarseVector;
-  typedef typename Aggregates::siteVector                                                                                 CoarseSiteVector;
-  typedef Matrix                                                                                                          FineMatrix;
-  typedef typename Aggregates::FineField                                                                                  FineVector;
-  typedef MultiGridPreconditioner<CoarseSiteVector, CoarseScalar, nCoarseSpins, nBasis, nCoarserLevels - 1, CoarseMatrix> NextPreconditionerLevel;
+  typedef Aggregation<Fobj, CComplex, nBasis>                                                                         Aggregates;
+  typedef CoarsenedMatrix<Fobj, CComplex, nBasis>                                                                     CoarseDiracMatrix;
+  typedef typename Aggregates::CoarseVector                                                                           CoarseVector;
+  typedef typename Aggregates::siteVector                                                                             CoarseSiteVector;
+  typedef Matrix                                                                                                      FineDiracMatrix;
+  typedef typename Aggregates::FineField                                                                              FineVector;
+  typedef MultiGridPreconditioner<CoarseSiteVector, iScalar<CComplex>, nBasis, nCoarserLevels - 1, CoarseDiracMatrix> NextPreconditionerLevel;
   // clang-format on
 
   /////////////////////////////////////////////
@@ -187,14 +151,17 @@ public:
   MultiGridParams &_MultiGridParams;
   LevelInfo &      _LevelInfo;
 
-  FineMatrix & _FineMatrix;
-  FineMatrix & _SmootherMatrix;
-  Aggregates   _Aggregates;
-  CoarseMatrix _CoarseMatrix;
+  FineDiracMatrix & _FineMatrix;
+  FineDiracMatrix & _SmootherMatrix;
+  Aggregates        _Aggregates;
+  CoarseDiracMatrix _CoarseMatrix;
 
   std::unique_ptr<NextPreconditionerLevel> _NextPreconditionerLevel;
 
   GridStopWatch _SetupTotalTimer;
+  GridStopWatch _SetupCreateSubspaceTimer;
+  GridStopWatch _SetupProjectToChiralitiesTimer;
+  GridStopWatch _SetupCoarsenOperatorTimer;
   GridStopWatch _SetupNextLevelTimer;
   GridStopWatch _SolveTotalTimer;
   GridStopWatch _SolveRestrictionTimer;
@@ -206,7 +173,7 @@ public:
   // Member Functions
   /////////////////////////////////////////////
 
-  MultiGridPreconditioner(MultiGridParams &mgParams, LevelInfo &LvlInfo, FineMatrix &FineMat, FineMatrix &SmootherMat)
+  MultiGridPreconditioner(MultiGridParams &mgParams, LevelInfo &LvlInfo, FineDiracMatrix &FineMat, FineDiracMatrix &SmootherMat)
     : _CurrentLevel(mgParams.nLevels - (nCoarserLevels + 1)) // _Level = 0 corresponds to finest
     , _NextCoarserLevel(_CurrentLevel + 1)                   // incremented for instances on coarser levels
     , _MultiGridParams(mgParams)
@@ -226,24 +193,32 @@ public:
 
     _SetupTotalTimer.Start();
 
-    Gamma                                       g5(Gamma::Algebra::Gamma5);
-    MdagMLinearOperator<FineMatrix, FineVector> fineMdagMOp(_FineMatrix);
-
-    // NOTE: Don't specify nb here to see the orthogonalization check
-    _Aggregates.CreateSubspace(_LevelInfo.PRNGs[_CurrentLevel], fineMdagMOp /*, nb */);
-
-    // TestVectorAnalyzer<FineVector, nbasis> fineTVA;
-    // fineTVA(fineMdagMOp, _Aggregates.subspace);
-
     static_assert((nBasis & 0x1) == 0, "MG Preconditioner only supports an even number of basis vectors");
     int nb = nBasis / 2;
 
-    // // TODO: to get this to work for more than two levels, I would need to either implement coarse spins or have a template specialization of this class also for the finest level
-    // for(int n = 0; n < nb; n++) {
-    //   _Aggregates.subspace[n + nb] = g5 * _Aggregates.subspace[n];
-    // }
+    MdagMLinearOperator<FineDiracMatrix, FineVector> fineMdagMOp(_FineMatrix);
 
+    _SetupCreateSubspaceTimer.Start();
+    _Aggregates.CreateSubspace(_LevelInfo.PRNGs[_CurrentLevel], fineMdagMOp, nb);
+    _SetupCreateSubspaceTimer.Stop();
+
+    _SetupProjectToChiralitiesTimer.Start();
+    FineVector tmp1(_Aggregates.subspace[0]._grid);
+    FineVector tmp2(_Aggregates.subspace[0]._grid);
+    for(int n = 0; n < nb; n++) {
+      auto tmp1 = _Aggregates.subspace[n];
+      G5C(tmp2, _Aggregates.subspace[n]);
+      axpby(_Aggregates.subspace[n], 0.5, 0.5, tmp1, tmp2);
+      axpby(_Aggregates.subspace[n + nb], 0.5, -0.5, tmp1, tmp2);
+      std::cout << GridLogMG << " Level " << _CurrentLevel << ": Chirally doubled vector " << n << ". "
+                << "norm2(vec[" << n << "]) = " << norm2(_Aggregates.subspace[n]) << ". "
+                << "norm2(vec[" << n + nb << "]) = " << norm2(_Aggregates.subspace[n + nb]) << std::endl;
+    }
+    _SetupProjectToChiralitiesTimer.Stop();
+
+    _SetupCoarsenOperatorTimer.Start();
     _CoarseMatrix.CoarsenOperator(_LevelInfo.Grids[_CurrentLevel], fineMdagMOp, _Aggregates);
+    _SetupCoarsenOperatorTimer.Stop();
 
     _SetupNextLevelTimer.Start();
     _NextPreconditionerLevel->setup();
@@ -252,7 +227,7 @@ public:
     _SetupTotalTimer.Stop();
   }
 
-  virtual void operator()(Lattice<Fobj> const &in, Lattice<Fobj> &out) {
+  virtual void operator()(FineVector const &in, FineVector &out) {
 
     conformable(_LevelInfo.Grids[_CurrentLevel], in._grid);
     conformable(in, out);
@@ -264,7 +239,7 @@ public:
       vCycle(in, out);
   }
 
-  void vCycle(Lattice<Fobj> const &in, Lattice<Fobj> &out) {
+  void vCycle(FineVector const &in, FineVector &out) {
 
     _SolveTotalTimer.Start();
 
@@ -285,8 +260,8 @@ public:
                                                               _MultiGridParams.smootherMaxInnerIter[_CurrentLevel],
                                                               false);
 
-    MdagMLinearOperator<FineMatrix, FineVector> fineMdagMOp(_FineMatrix);
-    MdagMLinearOperator<FineMatrix, FineVector> fineSmootherMdagMOp(_SmootherMatrix);
+    MdagMLinearOperator<FineDiracMatrix, FineVector> fineMdagMOp(_FineMatrix);
+    MdagMLinearOperator<FineDiracMatrix, FineVector> fineSmootherMdagMOp(_SmootherMatrix);
 
     _SolveRestrictionTimer.Start();
     _Aggregates.ProjectToSubspace(coarseSrc, in);
@@ -321,7 +296,7 @@ public:
     _SolveTotalTimer.Stop();
   }
 
-  void kCycle(Lattice<Fobj> const &in, Lattice<Fobj> &out) {
+  void kCycle(FineVector const &in, FineVector &out) {
 
     _SolveTotalTimer.Start();
 
@@ -348,9 +323,9 @@ public:
                                                                   _MultiGridParams.kCycleMaxInnerIter[_CurrentLevel],
                                                                   false);
 
-    MdagMLinearOperator<FineMatrix, FineVector>     fineMdagMOp(_FineMatrix);
-    MdagMLinearOperator<FineMatrix, FineVector>     fineSmootherMdagMOp(_SmootherMatrix);
-    MdagMLinearOperator<CoarseMatrix, CoarseVector> coarseMdagMOp(_CoarseMatrix);
+    MdagMLinearOperator<FineDiracMatrix, FineVector>     fineMdagMOp(_FineMatrix);
+    MdagMLinearOperator<FineDiracMatrix, FineVector>     fineSmootherMdagMOp(_SmootherMatrix);
+    MdagMLinearOperator<CoarseDiracMatrix, CoarseVector> coarseMdagMOp(_CoarseMatrix);
 
     _SolveRestrictionTimer.Start();
     _Aggregates.ProjectToSubspace(coarseSrc, in);
@@ -385,15 +360,13 @@ public:
     _SolveTotalTimer.Stop();
   }
 
-  void runChecks() {
-
-    auto tolerance = 1e-13; // TODO: this obviously depends on the precision we use, current value is for double
+  void runChecks(RealD tolerance) {
 
     std::vector<FineVector>   fineTmps(7, _LevelInfo.Grids[_CurrentLevel]);
     std::vector<CoarseVector> coarseTmps(4, _LevelInfo.Grids[_NextCoarserLevel]);
 
-    MdagMLinearOperator<FineMatrix, FineVector>     fineMdagMOp(_FineMatrix);
-    MdagMLinearOperator<CoarseMatrix, CoarseVector> coarseMdagMOp(_CoarseMatrix);
+    MdagMLinearOperator<FineDiracMatrix, FineVector>     fineMdagMOp(_FineMatrix);
+    MdagMLinearOperator<CoarseDiracMatrix, CoarseVector> coarseMdagMOp(_CoarseMatrix);
 
     std::cout << GridLogMG << " Level " << _CurrentLevel << ": **************************************************" << std::endl;
     std::cout << GridLogMG << " Level " << _CurrentLevel << ": MG correctness check: 0 == (M - (Mdiag + Σ_μ Mdir_μ)) * v" << std::endl;
@@ -520,23 +493,26 @@ public:
       std::cout << " > " << tolerance << " -> check failed" << std::endl;
       // abort();
     } else {
-      std::cout << " < " << tolerance << " -> check passed"
-                << std::endl; // TODO: this check will work only when I got Mdag in CoarsenedMatrix to work
+      std::cout << " < " << tolerance << " -> check passed" << std::endl;
     }
 
-    _NextPreconditionerLevel->runChecks();
+    _NextPreconditionerLevel->runChecks(tolerance);
   }
 
   void reportTimings() {
 
     // clang-format off
-    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Setup total        " <<        _SetupTotalTimer.Elapsed() << std::endl;
-    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Setup next level   " <<    _SetupNextLevelTimer.Elapsed() << std::endl;
-    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve total        " <<        _SolveTotalTimer.Elapsed() << std::endl;
-    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve restriction  " <<  _SolveRestrictionTimer.Elapsed() << std::endl;
-    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve prolongation " << _SolveProlongationTimer.Elapsed() << std::endl;
-    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve smoother     " <<     _SolveSmootherTimer.Elapsed() << std::endl;
-    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve next level   " <<    _SolveNextLevelTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Sum   total            " <<                _SetupTotalTimer.Elapsed() + _SolveTotalTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Setup total            " <<                _SetupTotalTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Setup create subspace  " <<       _SetupCreateSubspaceTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Setup project chiral   " << _SetupProjectToChiralitiesTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Setup coarsen operator " <<      _SetupCoarsenOperatorTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Setup next level       " <<            _SetupNextLevelTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve total            " <<                _SolveTotalTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve restriction      " <<          _SolveRestrictionTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve prolongation     " <<         _SolveProlongationTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve smoother         " <<             _SolveSmootherTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve next level       " <<            _SolveNextLevelTimer.Elapsed() << std::endl;
     // clang-format on
 
     _NextPreconditionerLevel->reportTimings();
@@ -545,6 +521,9 @@ public:
   void resetTimers() {
 
     _SetupTotalTimer.Reset();
+    _SetupCreateSubspaceTimer.Reset();
+    _SetupProjectToChiralitiesTimer.Reset();
+    _SetupCoarsenOperatorTimer.Reset();
     _SetupNextLevelTimer.Reset();
     _SolveTotalTimer.Reset();
     _SolveRestrictionTimer.Reset();
@@ -557,14 +536,14 @@ public:
 };
 
 // Specialization for the coarsest level
-template<class Fobj, class CoarseScalar, int nCoarseSpins, int nbasis, class Matrix>
-class MultiGridPreconditioner<Fobj, CoarseScalar, nCoarseSpins, nbasis, 0, Matrix> : public MultiGridPreconditionerBase<Lattice<Fobj>> {
+template<class Fobj, class CComplex, int nBasis, class Matrix>
+class MultiGridPreconditioner<Fobj, CComplex, nBasis, 0, Matrix> : public MultiGridPreconditionerBase<Lattice<Fobj>> {
 public:
   /////////////////////////////////////////////
   // Type Definitions
   /////////////////////////////////////////////
 
-  typedef Matrix        FineMatrix;
+  typedef Matrix        FineDiracMatrix;
   typedef Lattice<Fobj> FineVector;
 
   /////////////////////////////////////////////
@@ -576,8 +555,8 @@ public:
   MultiGridParams &_MultiGridParams;
   LevelInfo &      _LevelInfo;
 
-  FineMatrix &_FineMatrix;
-  FineMatrix &_SmootherMatrix;
+  FineDiracMatrix &_FineMatrix;
+  FineDiracMatrix &_SmootherMatrix;
 
   GridStopWatch _SolveTotalTimer;
   GridStopWatch _SolveSmootherTimer;
@@ -586,7 +565,7 @@ public:
   // Member Functions
   /////////////////////////////////////////////
 
-  MultiGridPreconditioner(MultiGridParams &mgParams, LevelInfo &LvlInfo, FineMatrix &FineMat, FineMatrix &SmootherMat)
+  MultiGridPreconditioner(MultiGridParams &mgParams, LevelInfo &LvlInfo, FineDiracMatrix &FineMat, FineDiracMatrix &SmootherMat)
     : _CurrentLevel(mgParams.nLevels - (0 + 1))
     , _MultiGridParams(mgParams)
     , _LevelInfo(LvlInfo)
@@ -598,7 +577,7 @@ public:
 
   void setup() {}
 
-  virtual void operator()(Lattice<Fobj> const &in, Lattice<Fobj> &out) {
+  virtual void operator()(FineVector const &in, FineVector &out) {
 
     _SolveTotalTimer.Start();
 
@@ -612,7 +591,7 @@ public:
     FlexibleGeneralisedMinimalResidual<FineVector> fineFGMRES(
       _MultiGridParams.coarseSolverTol, coarseSolverMaxIter, fineTrivialPreconditioner, _MultiGridParams.coarseSolverMaxInnerIter, false);
 
-    MdagMLinearOperator<FineMatrix, FineVector> fineMdagMOp(_FineMatrix);
+    MdagMLinearOperator<FineDiracMatrix, FineVector> fineMdagMOp(_FineMatrix);
 
     _SolveSmootherTimer.Start();
     fineFGMRES(fineMdagMOp, in, out);
@@ -621,13 +600,13 @@ public:
     _SolveTotalTimer.Stop();
   }
 
-  void runChecks() {}
+  void runChecks(RealD tolerance) {}
 
   void reportTimings() {
 
     // clang-format off
-    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve total        " <<    _SolveTotalTimer.Elapsed() << std::endl;
-    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve smoother     " << _SolveSmootherTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve total            " <<    _SolveTotalTimer.Elapsed() << std::endl;
+    std::cout << GridLogMG << " Level " << _CurrentLevel << ": Time elapsed: Solve smoother         " << _SolveSmootherTimer.Elapsed() << std::endl;
     // clang-format on
   }
 
@@ -638,20 +617,18 @@ public:
   }
 };
 
-template<class Fobj, class CoarseScalar, int nCoarseSpins, int nbasis, int nLevels, class Matrix>
-using NLevelMGPreconditioner = MultiGridPreconditioner<Fobj, CoarseScalar, nCoarseSpins, nbasis, nLevels - 1, Matrix>;
+template<class Fobj, class CComplex, int nBasis, int nLevels, class Matrix>
+using NLevelMGPreconditioner = MultiGridPreconditioner<Fobj, CComplex, nBasis, nLevels - 1, Matrix>;
 
-template<class Fobj, class CoarseScalar, int nCoarseSpins, int nbasis, class Matrix>
+template<class Fobj, class CComplex, int nBasis, class Matrix>
 std::unique_ptr<MultiGridPreconditionerBase<Lattice<Fobj>>>
 createMGInstance(MultiGridParams &mgParams, LevelInfo &levelInfo, Matrix &FineMat, Matrix &SmootherMat) {
 
-  // clang-format off
-  #define CASE_FOR_N_LEVELS(nLevels)                                                                                                       \
-    case nLevels:                                                                                                                          \
-      return std::unique_ptr<NLevelMGPreconditioner<Fobj, CoarseScalar, nCoarseSpins, nbasis, nLevels, Matrix>>(                           \
-        new NLevelMGPreconditioner<Fobj, CoarseScalar, nCoarseSpins, nbasis, nLevels, Matrix>(mgParams, levelInfo, FineMat, SmootherMat)); \
-      break;
-  // clang-format on
+#define CASE_FOR_N_LEVELS(nLevels)                                                                                     \
+  case nLevels:                                                                                                        \
+    return std::unique_ptr<NLevelMGPreconditioner<Fobj, CComplex, nBasis, nLevels, Matrix>>(                           \
+      new NLevelMGPreconditioner<Fobj, CComplex, nBasis, nLevels, Matrix>(mgParams, levelInfo, FineMat, SmootherMat)); \
+    break;
 
   switch(mgParams.nLevels) {
     CASE_FOR_N_LEVELS(2);
@@ -662,6 +639,7 @@ createMGInstance(MultiGridParams &mgParams, LevelInfo &levelInfo, Matrix &FineMa
       exit(EXIT_FAILURE);
       break;
   }
+#undef CASE_FOR_N_LEVELS
 }
 
 int main(int argc, char **argv) {
@@ -680,19 +658,20 @@ int main(int argc, char **argv) {
   GridParallelRNG  fPRNG(FGrid);
   fPRNG.SeedFixedIntegers(fSeeds);
 
-  Gamma g5(Gamma::Algebra::Gamma5);
-
   // clang-format off
   LatticeFermion    src(FGrid); gaussian(fPRNG, src);
   LatticeFermion result(FGrid); result = zero;
   LatticeGaugeField Umu(FGrid); SU3::HotConfiguration(fPRNG, Umu);
   // clang-format on
 
-  RealD mass  = 0.5;
+  RealD mass  = -0.25;
   RealD csw_r = 1.0;
   RealD csw_t = 1.0;
 
+  // Note: We do chiral doubling, so actually only nbasis/2 full basis vectors are used
   const int nbasis = 20;
+
+  RealD toleranceForMGChecks = 1e-13; // TODO: depends on the precision MG precondtioner is run in
 
   WilsonFermionR       Dw(Umu, *FGrid, *FrbGrid, mass);
   WilsonCloverFermionR Dwc(Umu, *FGrid, *FrbGrid, mass, csw_r, csw_t, wilsonAnisCoeff, wcImplparams);
@@ -768,21 +747,21 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "**************************************************" << std::endl;
 
   TrivialPrecon<LatticeFermion> TrivialPrecon;
-  auto MGPreconDw = createMGInstance<vSpinColourVector, vTComplex, 1, nbasis, WilsonFermionR>(mgParams, levelInfo, Dw, Dw);
+  auto MGPreconDw = createMGInstance<vSpinColourVector, vTComplex, nbasis, WilsonFermionR>(mgParams, levelInfo, Dw, Dw);
 
   MGPreconDw->setup();
-  MGPreconDw->runChecks();
+  MGPreconDw->runChecks(toleranceForMGChecks);
 
   std::vector<std::unique_ptr<OperatorFunction<LatticeFermion>>> solversDw;
 
+  solversDw.emplace_back(new ConjugateGradient<LatticeFermion>(1.0e-12, 50000, false));
   solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, TrivialPrecon, 100, false));
   solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, *MGPreconDw, 100, false));
 
   for(auto const &solver : solversDw) {
-    std::cout << "Starting with a new solver" << std::endl;
+    std::cout << std::endl << "Starting with a new solver" << std::endl;
     result = zero;
     (*solver)(MdagMOpDw, src, result);
-    std::cout << std::endl;
   }
 
   MGPreconDw->reportTimings();
@@ -791,13 +770,14 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Testing Multigrid for Wilson Clover" << std::endl;
   std::cout << GridLogMessage << "**************************************************" << std::endl;
 
-  auto MGPreconDwc = createMGInstance<vSpinColourVector, vTComplex, 1, nbasis, WilsonCloverFermionR>(mgParams, levelInfo, Dwc, Dwc);
+  auto MGPreconDwc = createMGInstance<vSpinColourVector, vTComplex, nbasis, WilsonCloverFermionR>(mgParams, levelInfo, Dwc, Dwc);
 
   MGPreconDwc->setup();
-  MGPreconDwc->runChecks();
+  MGPreconDwc->runChecks(toleranceForMGChecks);
 
   std::vector<std::unique_ptr<OperatorFunction<LatticeFermion>>> solversDwc;
 
+  solversDwc.emplace_back(new ConjugateGradient<LatticeFermion>(1.0e-12, 50000, false));
   solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, TrivialPrecon, 100, false));
   solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, *MGPreconDwc, 100, false));
 
