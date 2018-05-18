@@ -120,7 +120,7 @@ envTmp(type, name, Ls, env().getGrid(Ls))
 MACRO_REDIRECT(__VA_ARGS__, envTmpLat5, envTmpLat4)(__VA_ARGS__)
 
 #define saveResult(ioStem, name, result)\
-if (env().getGrid()->IsBoss())\
+if (env().getGrid()->IsBoss() and !ioStem.empty())\
 {\
     makeFileDir(ioStem, env().getGrid());\
     {\
