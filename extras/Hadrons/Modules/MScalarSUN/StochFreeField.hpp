@@ -24,10 +24,10 @@ template <typename SImpl>
 class TStochFreeField: public Module<StochFreeFieldPar>
 {
 public:
-    typedef typename SImpl::Field                Field;
-    typedef typename SImpl::ComplexField         ComplexField;
-    typedef typename SImpl::Group                Group;
-    typedef typename Group::LatticeAlgebraVector AlgebraField;
+    typedef typename SImpl::Field                    Field;
+    typedef typename SImpl::ComplexField             ComplexField;
+    typedef typename SImpl::Group                    Group;
+    typedef typename SImpl::SiteField::scalar_object Site;
 public:
     // constructor
     TStochFreeField(const std::string name);
@@ -87,6 +87,7 @@ void TStochFreeField<SImpl>::setup(void)
         create_weight = true;
     }
     envTmpLat(Field, "phift");
+    envTmpLat(ComplexField, "ca");
     envCreateLat(Field, getName());
 }
 
@@ -120,13 +121,27 @@ void TStochFreeField<SImpl>::execute(void)
     }
     LOG(Message) << "Generating random momentum-space field" << std::endl;
     envGetTmp(Field, phift);
-    Group::GaussianFundamentalLieAlgebraMatrix(rng, phift);
+    envGetTmp(ComplexField, ca);
+    phift = zero;
+    for (int a = 0; a < Nadj; ++a) 
+    {
+        Site ta;
+
+        gaussian(rng, ca);
+        Group::generator(a, ta);
+        phift += ca*ta;
+    }
     phift *= w;
     LOG(Message) << "Field Fourier transform" << std::endl;
     fft.FFT_all_dim(phi, phift, FFT::backward);
-    phi = (1./sqrt(2.))*(phi - adj(phi));
+    phi = 0.5*(phi - adj(phi));
     trphi2 = -TensorRemove(sum(trace(phi*phi))).real()/vol;
     LOG(Message) << "tr(phi^2)= " << trphi2 << std::endl;
+
+    // ComplexField phi2(env().getGrid());
+
+    // phi2=trace(phi*phi);
+    // std::cout << phi2 << std::endl;
 }
 
 END_MODULE_NAMESPACE
