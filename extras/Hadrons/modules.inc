@@ -32,6 +32,7 @@ modules_cc =\
   Modules/MAction/DWF.cc \
   Modules/MScalarSUN/TrPhi.cc \
   Modules/MScalarSUN/Grad.cc \
+  Modules/MScalarSUN/TimeMomProbe.cc \
   Modules/MScalarSUN/TrMag.cc \
   Modules/MScalarSUN/TrKinetic.cc \
   Modules/MScalarSUN/EMT.cc \
@@ -39,6 +40,7 @@ modules_cc =\
   Modules/MScalarSUN/TransProj.cc \
   Modules/MScalarSUN/StochFreeField.cc \
   Modules/MScalarSUN/TwoPoint.cc \
+  Modules/MScalarSUN/TwoPointNPR.cc \
   Modules/MScalarSUN/Div.cc \
   Modules/MIO/LoadEigenPack.cc \
   Modules/MIO/LoadBinary.cc \
@@ -80,8 +82,10 @@ modules_hpp =\
   Modules/MAction/WilsonClover.hpp \
   Modules/MAction/ZMobiusDWF.hpp \
   Modules/MScalarSUN/StochFreeField.hpp \
+  Modules/MScalarSUN/TwoPointNPR.hpp \
   Modules/MScalarSUN/ShiftProbe.hpp \
   Modules/MScalarSUN/Div.hpp \
+  Modules/MScalarSUN/TimeMomProbe.hpp \
   Modules/MScalarSUN/TrMag.hpp \
   Modules/MScalarSUN/EMT.hpp \
   Modules/MScalarSUN/TwoPoint.hpp \

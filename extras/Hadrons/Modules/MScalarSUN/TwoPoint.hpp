@@ -80,12 +80,6 @@ public:
     // execution
     virtual void execute(void);
 private:
-    // make 2-pt function
-    template <class SinkSite, class SourceSite>
-    std::vector<Complex> makeTwoPoint(const std::vector<SinkSite>   &sink,
-                                      const std::vector<SourceSite> &source,
-                                      const double factor = 1.);
-private:
     std::vector<std::vector<int>> mom_;
 };
 
@@ -219,31 +213,6 @@ void TTwoPoint<SImpl>::execute(void)
         result.push_back(r);
     }
     saveResult(par().output, "twopt", result);
-}
-
-// make 2-pt function //////////////////////////////////////////////////////////
-template <class SImpl>
-template <class SinkSite, class SourceSite>
-std::vector<Complex> TTwoPoint<SImpl>::makeTwoPoint(
-                                  const std::vector<SinkSite>   &sink,
-                                  const std::vector<SourceSite> &source,
-                                  const double factor)
-{
-    assert(sink.size() == source.size());
-    
-    unsigned int         nt = sink.size();
-    std::vector<Complex> res(nt, 0.);
-    
-    for (unsigned int dt = 0; dt < nt; ++dt)
-    {
-        for (unsigned int t  = 0; t < nt; ++t)
-        {
-            res[dt] += sink[(t+dt)%nt]*adj(source[t]);
-        }
-        res[dt] *= factor/static_cast<double>(nt);
-    }
-    
-    return res;
 }
 
 END_MODULE_NAMESPACE

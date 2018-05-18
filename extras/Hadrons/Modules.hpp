@@ -32,8 +32,10 @@
 #include <Grid/Hadrons/Modules/MAction/WilsonClover.hpp>
 #include <Grid/Hadrons/Modules/MAction/ZMobiusDWF.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/StochFreeField.hpp>
+#include <Grid/Hadrons/Modules/MScalarSUN/TwoPointNPR.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/ShiftProbe.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/Div.hpp>
+#include <Grid/Hadrons/Modules/MScalarSUN/TimeMomProbe.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TrMag.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/EMT.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TwoPoint.hpp>
