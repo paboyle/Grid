@@ -68,7 +68,7 @@ public:
     // constructor
     TBaryon(const std::string name);
     // destructor
-    virtual ~TBaryon(void) = default;
+    virtual ~TBaryon(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -79,7 +79,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Baryon, ARG(TBaryon<FIMPL, FIMPL, FIMPL>), MContraction);
+MODULE_REGISTER_TMP(Baryon, ARG(TBaryon<FIMPL, FIMPL, FIMPL>), MContraction);
 
 /******************************************************************************
  *                         TBaryon implementation                             *

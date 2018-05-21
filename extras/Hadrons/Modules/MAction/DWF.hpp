@@ -61,7 +61,7 @@ public:
     // constructor
     TDWF(const std::string name);
     // destructor
-    virtual ~TDWF(void) = default;
+    virtual ~TDWF(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -72,7 +72,8 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(DWF, TDWF<FIMPL>, MAction);
+extern template class TDWF<FIMPL>;
+MODULE_REGISTER_TMP(DWF, TDWF<FIMPL>, MAction);
 
 /******************************************************************************
  *                        DWF template implementation                         *

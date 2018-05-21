@@ -34,10 +34,10 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Global.hpp>
 #endif
 
-#define SRC_LOC std::string(__FUNCTION__) + " at " + std::string(__FILE__) + ":"\
-                + std::to_string(__LINE__)
-#define HADRON_ERROR(exc, msg)\
-throw(Exceptions::exc(msg, SRC_LOC));
+#define HADRONS_SRC_LOC std::string(__FUNCTION__) + " at " \
+                        + std::string(__FILE__) + ":" + std::to_string(__LINE__)
+#define HADRONS_ERROR(exc, msg)\
+throw(Exceptions::exc(msg, HADRONS_SRC_LOC));
 
 #define DECL_EXC(name, base) \
 class name: public base\
@@ -56,6 +56,7 @@ namespace Exceptions
     DECL_EXC(Implementation, Logic);
     DECL_EXC(Range, Logic);
     DECL_EXC(Size, Logic);
+
     // runtime errors
     DECL_EXC(Runtime, std::runtime_error);
     DECL_EXC(Argument, Runtime);
@@ -64,6 +65,9 @@ namespace Exceptions
     DECL_EXC(Parsing, Runtime);
     DECL_EXC(Program, Runtime);
     DECL_EXC(System, Runtime);
+
+    // abort functions
+    void abort(const std::exception& e);
 }
 
 END_HADRONS_NAMESPACE

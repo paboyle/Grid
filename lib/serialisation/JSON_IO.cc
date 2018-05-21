@@ -28,11 +28,10 @@
 #include <Grid/Grid.h>
 
 using namespace Grid;
-using namespace std;
 
 // Writer implementation ///////////////////////////////////////////////////////
-JSONWriter::JSONWriter(const string &fileName)
-: fileName_(fileName), ss_("{ ", ostringstream::ate){}
+JSONWriter::JSONWriter(const std::string &fileName)
+: fileName_(fileName), ss_("{ ", std::ostringstream::ate){}
 
 JSONWriter::~JSONWriter(void)
 {
@@ -46,7 +45,7 @@ JSONWriter::~JSONWriter(void)
   os << std::setw(2) << json::parse(ss_.str()) << std::endl;
 }
 
-void JSONWriter::push(const string &s)
+void JSONWriter::push(const std::string &s)
 {
   // adding a nested object
   if (s.size())
@@ -90,7 +89,7 @@ namespace Grid
 
 
 // Reader implementation ///////////////////////////////////////////////////////
-JSONReader::JSONReader(const string &fileName)
+JSONReader::JSONReader(const std::string &fileName)
 : fileName_(fileName)
 {
   std::ifstream file(fileName_);
@@ -102,7 +101,7 @@ JSONReader::JSONReader(const string &fileName)
   jcur_ = jobject_;
 }
 
-bool JSONReader::push(const string &s)
+bool JSONReader::push(const std::string &s)
 {
   if (s.size()){
     jold_.push_back(jcur_);
@@ -159,7 +158,7 @@ bool JSONReader::nextElement(const std::string &s)
 }
 
 template <>
-void JSONReader::readDefault(const string &s, string &output)
+void JSONReader::readDefault(const std::string &s, std::string &output)
 {
   //cout << "JSONReader::readDefault(string) : " << s<< " " << jcur_ << endl;
   if (s.size()){

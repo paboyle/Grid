@@ -49,24 +49,26 @@ public:
                                     std::string,  output);
 };
 
+class TrPhiResult: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(TrPhiResult,
+                                    std::string, op,
+                                    Real,        value);
+};
+
 template <typename SImpl>
 class TTrPhi: public Module<TrPhiPar>
 {
 public:
     typedef typename SImpl::Field        Field;
     typedef typename SImpl::ComplexField ComplexField;
-    class Result: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        std::string, op,
-                                        Real,        value);
-    };
+
 public:
     // constructor
     TTrPhi(const std::string name);
     // destructor
-    virtual ~TTrPhi(void) = default;
+    virtual ~TTrPhi(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -76,11 +78,11 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(TrPhiSU2, TTrPhi<ScalarNxNAdjImplR<2>>, MScalarSUN);
-MODULE_REGISTER_NS(TrPhiSU3, TTrPhi<ScalarNxNAdjImplR<3>>, MScalarSUN);
-MODULE_REGISTER_NS(TrPhiSU4, TTrPhi<ScalarNxNAdjImplR<4>>, MScalarSUN);
-MODULE_REGISTER_NS(TrPhiSU5, TTrPhi<ScalarNxNAdjImplR<5>>, MScalarSUN);
-MODULE_REGISTER_NS(TrPhiSU6, TTrPhi<ScalarNxNAdjImplR<6>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrPhiSU2, TTrPhi<ScalarNxNAdjImplR<2>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrPhiSU3, TTrPhi<ScalarNxNAdjImplR<3>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrPhiSU4, TTrPhi<ScalarNxNAdjImplR<4>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrPhiSU5, TTrPhi<ScalarNxNAdjImplR<5>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrPhiSU6, TTrPhi<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
  *                          TTrPhi implementation                             *
@@ -119,7 +121,7 @@ void TTrPhi<SImpl>::setup(void)
 {
     if (par().maxPow < 2)
     {
-        HADRON_ERROR(Size, "'maxPow' should be at least equal to 2");
+        HADRONS_ERROR(Size, "'maxPow' should be at least equal to 2");
     }
     envTmpLat(Field, "phi2");
     envTmpLat(Field, "buf");
@@ -136,8 +138,8 @@ void TTrPhi<SImpl>::execute(void)
     LOG(Message) << "Computing tr(phi^n) for n even up to " << par().maxPow
                  << std::endl; 
 
-    std::vector<Result> result;
-    auto                &phi = envGet(Field, par().field);
+    std::vector<TrPhiResult> result;
+    auto                     &phi = envGet(Field, par().field);
 
     envGetTmp(Field, phi2);
     envGetTmp(Field, buf);
@@ -151,7 +153,7 @@ void TTrPhi<SImpl>::execute(void)
         phin = trace(buf);
         if (!par().output.empty())
         {
-            Result r;
+            TrPhiResult r;
 
             r.op    = "tr(phi^" + std::to_string(n) + ")";
             r.value = TensorRemove(sum(phin)).real();

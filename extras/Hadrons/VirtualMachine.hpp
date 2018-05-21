@@ -114,6 +114,7 @@ public:
     std::string         getModuleType(const std::string name) const;
     std::string         getModuleNamespace(const unsigned int address) const;
     std::string         getModuleNamespace(const std::string name) const;
+    int                 getCurrentModule(void) const;
     bool                hasModule(const unsigned int address) const;
     bool                hasModule(const std::string name) const;
     // print VM content
@@ -133,8 +134,8 @@ public:
     // genetic scheduler
     Program             schedule(const GeneticPar &par);
     // general execution
-    void                executeProgram(const Program &p) const;
-    void                executeProgram(const std::vector<std::string> &p) const;
+    void                executeProgram(const Program &p);
+    void                executeProgram(const std::vector<std::string> &p);
 private:
     // environment shortcut
     DEFINE_ENV_ALIAS;
@@ -154,13 +155,13 @@ private:
     // module and related maps
     std::vector<ModuleInfo>             module_;
     std::map<std::string, unsigned int> moduleAddress_;
-    std::string                         currentModule_{""};
+    int                                 currentModule_{-1};
     // module graph
     bool                                graphOutdated_{true};
     Graph<unsigned int>                 graph_;
     // memory profile
     bool                                memoryProfileOutdated_{true};
-    MemoryProfile                       profile_;
+    MemoryProfile                       profile_;                    
 };
 
 /******************************************************************************
@@ -194,7 +195,7 @@ M * VirtualMachine::getModule(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR(Definition, "module '" + module_[address].name
+        HADRONS_ERROR(Definition, "module '" + module_[address].name
                      + "' does not have type " + typeid(M).name()
                      + "(has type: " + getModuleType(address) + ")");
     }

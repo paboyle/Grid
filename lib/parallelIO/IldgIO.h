@@ -182,6 +182,11 @@ class GridLimeReader : public BinaryIO {
    {
      filename= _filename;
      File = fopen(filename.c_str(), "r");
+     if (File == nullptr)
+     {
+       std::cerr << "cannot open file '" << filename << "'" << std::endl;
+       abort();
+     }
      LimeR = limeCreateReader(File);
    }
    /////////////////////////////////////////////
@@ -248,7 +253,6 @@ class GridLimeReader : public BinaryIO {
   template<class serialisable_object>
   void readLimeObject(serialisable_object &object,std::string object_name,std::string record_name)
   {
-    std::string xmlstring;
     // should this be a do while; can we miss a first record??
     while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
 
@@ -262,7 +266,8 @@ class GridLimeReader : public BinaryIO {
 	limeReaderReadData((void *)&xmlc[0], &nbytes, LimeR);    
 	//	std::cout << GridLogMessage<< " readLimeObject matches XML " << &xmlc[0] <<std::endl;
 
-	XmlReader RD(&xmlc[0],"");
+  std::string xmlstring(&xmlc[0]);
+	XmlReader RD(xmlstring, true, "");
 	read(RD,object_name,object);
 	return;
       }
@@ -272,8 +277,10 @@ class GridLimeReader : public BinaryIO {
   }
 };
 
-class GridLimeWriter : public BinaryIO {
+class GridLimeWriter : public BinaryIO 
+{
  public:
+
    ///////////////////////////////////////////////////
    // FIXME: format for RNG? Now just binary out instead
    // FIXME: collective calls or not ?
@@ -282,17 +289,24 @@ class GridLimeWriter : public BinaryIO {
    FILE       *File;
    LimeWriter *LimeW;
    std::string filename;
-
+   bool        boss_node;
+   GridLimeWriter( bool isboss = true) {
+     boss_node = isboss;
+   }
    void open(const std::string &_filename) { 
      filename= _filename;
-     File = fopen(filename.c_str(), "w");
-     LimeW = limeCreateWriter(File); assert(LimeW != NULL );
+     if ( boss_node ) {
+       File = fopen(filename.c_str(), "w");
+       LimeW = limeCreateWriter(File); assert(LimeW != NULL );
+     }
    }
    /////////////////////////////////////////////
    // Close the file
    /////////////////////////////////////////////
    void close(void) {
-     fclose(File);
+     if ( boss_node ) {
+       fclose(File);
+     }
      //  limeDestroyWriter(LimeW);
    }
   ///////////////////////////////////////////////////////
@@ -300,40 +314,54 @@ class GridLimeWriter : public BinaryIO {
   ///////////////////////////////////////////////////////
   int createLimeRecordHeader(std::string message, int MB, int ME, size_t PayloadSize)
   {
-    LimeRecordHeader *h;
-    h = limeCreateHeader(MB, ME, const_cast<char *>(message.c_str()), PayloadSize);
-    assert(limeWriteRecordHeader(h, LimeW) >= 0);
-    limeDestroyHeader(h);
+    if ( boss_node ) {
+      LimeRecordHeader *h;
+      h = limeCreateHeader(MB, ME, const_cast<char *>(message.c_str()), PayloadSize);
+      assert(limeWriteRecordHeader(h, LimeW) >= 0);
+      limeDestroyHeader(h);
+    }
     return LIME_SUCCESS;
   }
   ////////////////////////////////////////////
   // Write a generic serialisable object
   ////////////////////////////////////////////
-  template<class serialisable_object>
-  void writeLimeObject(int MB,int ME,serialisable_object &object,std::string object_name,std::string record_name)
+  void writeLimeObject(int MB,int ME,XmlWriter &writer,std::string object_name,std::string record_name)
   {
-    std::string xmlstring;
-    {
-      XmlWriter WR("","");
-      write(WR,object_name,object);
-      xmlstring = WR.XmlString();
-    }
-    //    std::cout << "WriteLimeObject" << record_name <<std::endl;
-    uint64_t nbytes = xmlstring.size();
-    //    std::cout << " xmlstring "<< nbytes<< " " << xmlstring <<std::endl;
-    int err;
-    LimeRecordHeader *h = limeCreateHeader(MB, ME,const_cast<char *>(record_name.c_str()), nbytes); 
-    assert(h!= NULL);
+    if ( boss_node ) {
+      std::string xmlstring = writer.docString();
 
-    err=limeWriteRecordHeader(h, LimeW);                    assert(err>=0);
-    err=limeWriteRecordData(&xmlstring[0], &nbytes, LimeW); assert(err>=0);
-    err=limeWriterCloseRecord(LimeW);                       assert(err>=0);
-    limeDestroyHeader(h);
-    //    std::cout << " File offset is now"<<ftello(File) << std::endl;
+      //    std::cout << "WriteLimeObject" << record_name <<std::endl;
+      uint64_t nbytes = xmlstring.size();
+      //    std::cout << " xmlstring "<< nbytes<< " " << xmlstring <<std::endl;
+      int err;
+      LimeRecordHeader *h = limeCreateHeader(MB, ME,const_cast<char *>(record_name.c_str()), nbytes); 
+      assert(h!= NULL);
+      
+      err=limeWriteRecordHeader(h, LimeW);                    assert(err>=0);
+      err=limeWriteRecordData(&xmlstring[0], &nbytes, LimeW); assert(err>=0);
+      err=limeWriterCloseRecord(LimeW);                       assert(err>=0);
+      limeDestroyHeader(h);
+    }
   }
-  ////////////////////////////////////////////
+
+  template<class serialisable_object>
+  void writeLimeObject(int MB,int ME,serialisable_object &object,std::string object_name,std::string record_name, const unsigned int scientificPrec = 0)
+  {
+    XmlWriter WR("","");
+
+    if (scientificPrec)
+    {
+      WR.scientificFormat(true);
+      WR.setPrecision(scientificPrec);
+    }
+    write(WR,object_name,object);
+    writeLimeObject(MB, ME, WR, object_name, record_name);
+  }
+  ////////////////////////////////////////////////////
   // Write a generic lattice field and csum
-  ////////////////////////////////////////////
+  // This routine is Collectively called by all nodes
+  // in communicator used by the field._grid
+  ////////////////////////////////////////////////////
   template<class vobj>
   void writeLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name)
   {
@@ -350,6 +378,9 @@ class GridLimeWriter : public BinaryIO {
     // iv) fseek on FILE * to end of this disjoint section.
     //  v) Continue writing scidac record.
     ////////////////////////////////////////////////////////////////////
+    
+    GridBase *grid = field._grid;
+    assert(boss_node == field._grid->IsBoss() );
 
     ////////////////////////////////////////////
     // Create record header
@@ -357,19 +388,28 @@ class GridLimeWriter : public BinaryIO {
     typedef typename vobj::scalar_object sobj;
     int err;
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
-    uint64_t PayloadSize = sizeof(sobj) * field._grid->_gsites;
-    createLimeRecordHeader(record_name, 0, 0, PayloadSize);
-
+    uint64_t PayloadSize = sizeof(sobj) * grid->_gsites;
+    if ( boss_node ) {
+      createLimeRecordHeader(record_name, 0, 0, PayloadSize);
+      fflush(File);
+    }
+    
     //    std::cout << "W sizeof(sobj)"      <<sizeof(sobj)<<std::endl;
     //    std::cout << "W Gsites "           <<field._grid->_gsites<<std::endl;
     //    std::cout << "W Payload expected " <<PayloadSize<<std::endl;
 
-    fflush(File);
+    ////////////////////////////////////////////////
+    // Check all nodes agree on file position
+    ////////////////////////////////////////////////
+    uint64_t offset1;
+    if ( boss_node ) {
+      offset1 = ftello(File);    
+    }
+    grid->Broadcast(0,(void *)&offset1,sizeof(offset1));
 
     ///////////////////////////////////////////
-    // Write by other means into the binary record
+    // The above is collective. Write by other means into the binary record
     ///////////////////////////////////////////
-    uint64_t offset1 = ftello(File);    //    std::cout << " Writing to offset "<<offset1 << std::endl;
     std::string format = getFormatString<vobj>();
     BinarySimpleMunger<sobj,sobj> munge;
     BinaryIO::writeLatticeObject<vobj,sobj>(field, filename, munge, offset1, format,nersc_csum,scidac_csuma,scidac_csumb);
@@ -377,13 +417,19 @@ class GridLimeWriter : public BinaryIO {
     ///////////////////////////////////////////
     // Wind forward and close the record
     ///////////////////////////////////////////
-    fseek(File,0,SEEK_END);             
-    uint64_t offset2 = ftello(File);     //    std::cout << " now at offset "<<offset2 << std::endl;
+    if ( boss_node ) {
+      fseek(File,0,SEEK_END);             
+      uint64_t offset2 = ftello(File);     //    std::cout << " now at offset "<<offset2 << std::endl;
+      assert( (offset2-offset1) == PayloadSize);
+    }
 
-    assert((offset2-offset1) == PayloadSize);
+    /////////////////////////////////////////////////////////////
+    // Check MPI-2 I/O did what we expect to file
+    /////////////////////////////////////////////////////////////
 
-    err=limeWriterCloseRecord(LimeW);  assert(err>=0);
-
+    if ( boss_node ) { 
+      err=limeWriterCloseRecord(LimeW);  assert(err>=0);
+    }
     ////////////////////////////////////////
     // Write checksum element, propagaing forward from the BinaryIO
     // Always pair a checksum with a binary object, and close message
@@ -393,26 +439,32 @@ class GridLimeWriter : public BinaryIO {
     std::stringstream streamb; streamb << std::hex << scidac_csumb;
     checksum.suma= streama.str();
     checksum.sumb= streamb.str();
-    //    std::cout << GridLogMessage<<" writing scidac checksums "<<std::hex<<scidac_csuma<<"/"<<scidac_csumb<<std::dec<<std::endl;
-    writeLimeObject(0,1,checksum,std::string("scidacChecksum"),std::string(SCIDAC_CHECKSUM));
+    if ( boss_node ) { 
+      writeLimeObject(0,1,checksum,std::string("scidacChecksum"),std::string(SCIDAC_CHECKSUM));
+    }
   }
 };
 
 class ScidacWriter : public GridLimeWriter {
  public:
 
-   template<class SerialisableUserFile>
-   void writeScidacFileRecord(GridBase *grid,SerialisableUserFile &_userFile)
-   {
-     scidacFile    _scidacFile(grid);
-     writeLimeObject(1,0,_scidacFile,_scidacFile.SerialisableClassName(),std::string(SCIDAC_PRIVATE_FILE_XML));
-     writeLimeObject(0,1,_userFile,_userFile.SerialisableClassName(),std::string(SCIDAC_FILE_XML));
-   }
+  ScidacWriter(bool isboss =true ) : GridLimeWriter(isboss)  { };
+
+  template<class SerialisableUserFile>
+  void writeScidacFileRecord(GridBase *grid,SerialisableUserFile &_userFile)
+  {
+    scidacFile    _scidacFile(grid);
+    if ( this->boss_node ) {
+      writeLimeObject(1,0,_scidacFile,_scidacFile.SerialisableClassName(),std::string(SCIDAC_PRIVATE_FILE_XML));
+      writeLimeObject(0,1,_userFile,_userFile.SerialisableClassName(),std::string(SCIDAC_FILE_XML));
+    }
+  }
   ////////////////////////////////////////////////
   // Write generic lattice field in scidac format
   ////////////////////////////////////////////////
   template <class vobj, class userRecord>
-  void writeScidacFieldRecord(Lattice<vobj> &field,userRecord _userRecord) 
+  void writeScidacFieldRecord(Lattice<vobj> &field,userRecord _userRecord,
+                              const unsigned int recordScientificPrec = 0) 
   {
     GridBase * grid = field._grid;
 
@@ -428,9 +480,12 @@ class ScidacWriter : public GridLimeWriter {
     //////////////////////////////////////////////
     // Fill the Lime file record by record
     //////////////////////////////////////////////
-    writeLimeObject(1,0,header ,std::string("FieldMetaData"),std::string(GRID_FORMAT)); // Open message 
-    writeLimeObject(0,0,_userRecord,_userRecord.SerialisableClassName(),std::string(SCIDAC_RECORD_XML));
-    writeLimeObject(0,0,_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML));
+    if ( this->boss_node ) {
+      writeLimeObject(1,0,header ,std::string("FieldMetaData"),std::string(GRID_FORMAT)); // Open message 
+      writeLimeObject(0,0,_userRecord,_userRecord.SerialisableClassName(),std::string(SCIDAC_RECORD_XML), recordScientificPrec);
+      writeLimeObject(0,0,_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML));
+    }
+    // Collective call
     writeLimeLatticeBinaryObject(field,std::string(ILDG_BINARY_DATA));      // Closes message with checksum
   }
 };
@@ -497,6 +552,8 @@ class ScidacReader : public GridLimeReader {
 
 class IldgWriter : public ScidacWriter {
  public:
+  
+  IldgWriter(bool isboss) : ScidacWriter(isboss) {};
 
   ///////////////////////////////////
   // A little helper
@@ -656,9 +713,11 @@ class IldgReader : public GridLimeReader {
 
 	//////////////////////////////////
 	// ILDG format record
+
+  std::string xmlstring(&xmlc[0]);
 	if ( !strncmp(limeReaderType(LimeR), ILDG_FORMAT,strlen(ILDG_FORMAT)) ) { 
 
-	  XmlReader RD(&xmlc[0],"");
+	  XmlReader RD(xmlstring, true, "");
 	  read(RD,"ildgFormat",ildgFormat_);
 
 	  if ( ildgFormat_.precision == 64 ) format = std::string("IEEE64BIG");
@@ -673,13 +732,13 @@ class IldgReader : public GridLimeReader {
 	}
 
 	if ( !strncmp(limeReaderType(LimeR), ILDG_DATA_LFN,strlen(ILDG_DATA_LFN)) ) {
-	  FieldMetaData_.ildg_lfn = std::string(&xmlc[0]);
+	  FieldMetaData_.ildg_lfn = xmlstring;
 	  found_ildgLFN = 1;
 	}
 
 	if ( !strncmp(limeReaderType(LimeR), GRID_FORMAT,strlen(ILDG_FORMAT)) ) { 
 
-	  XmlReader RD(&xmlc[0],"");
+	  XmlReader RD(xmlstring, true, "");
 	  read(RD,"FieldMetaData",FieldMetaData_);
 
 	  format = FieldMetaData_.floating_point;
@@ -693,18 +752,17 @@ class IldgReader : public GridLimeReader {
 	}
 
 	if ( !strncmp(limeReaderType(LimeR), SCIDAC_RECORD_XML,strlen(SCIDAC_RECORD_XML)) ) { 
-	  std::string xmls(&xmlc[0]);
 	  // is it a USQCD info field
-	  if ( xmls.find(std::string("usqcdInfo")) != std::string::npos ) { 
+	  if ( xmlstring.find(std::string("usqcdInfo")) != std::string::npos ) { 
 	    //	    std::cout << GridLogMessage<<"...found a usqcdInfo field"<<std::endl;
-	    XmlReader RD(&xmlc[0],"");
+	    XmlReader RD(xmlstring, true, "");
 	    read(RD,"usqcdInfo",usqcdInfo_);
 	    found_usqcdInfo = 1;
 	  }
 	}
 
 	if ( !strncmp(limeReaderType(LimeR), SCIDAC_CHECKSUM,strlen(SCIDAC_CHECKSUM)) ) { 
-	  XmlReader RD(&xmlc[0],"");
+	  XmlReader RD(xmlstring, true, "");
 	  read(RD,"scidacChecksum",scidacChecksum_);
 	  found_scidacChecksum = 1;
 	}

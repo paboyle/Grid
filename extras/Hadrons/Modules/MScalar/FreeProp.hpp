@@ -56,7 +56,7 @@ public:
     // constructor
     TFreeProp(const std::string name);
     // destructor
-    virtual ~TFreeProp(void) = default;
+    virtual ~TFreeProp(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -70,7 +70,7 @@ private:
     bool        freePropDone_;
 };
 
-MODULE_REGISTER_NS(FreeProp, TFreeProp, MScalar);
+MODULE_REGISTER(FreeProp, TFreeProp, MScalar);
 
 END_MODULE_NAMESPACE
 

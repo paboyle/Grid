@@ -7,6 +7,7 @@ Source file: extras/Hadrons/Modules/MGauge/StochEm.hpp
 Copyright (C) 2015
 Copyright (C) 2016
 
+Author: James Harrison <j.harrison@soton.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

@@ -123,7 +123,7 @@ void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
                 else
                 {
                     // output already fully registered, error
-                    HADRON_ERROR(Definition, "object '" + out
+                    HADRONS_ERROR(Definition, "object '" + out
                                  + "' is already produced by module '"
                                  + module_[env().getObjectModule(out)].name
                                  + "' (while pushing module '" + name + "')");
@@ -158,7 +158,7 @@ void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
     }
     else
     {
-        HADRON_ERROR(Definition, "module '" + name + "' already exists");
+        HADRONS_ERROR(Definition, "module '" + name + "' already exists");
     }
 }
 
@@ -185,7 +185,7 @@ ModuleBase * VirtualMachine::getModule(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR(Definition, "no module with address " + std::to_string(address));
+        HADRONS_ERROR(Definition, "no module with address " + std::to_string(address));
     }
 }
 
@@ -202,7 +202,7 @@ unsigned int VirtualMachine::getModuleAddress(const std::string name) const
     }
     else
     {
-        HADRON_ERROR(Definition, "no module with name '" + name + "'");
+        HADRONS_ERROR(Definition, "no module with name '" + name + "'");
     }
 }
 
@@ -214,7 +214,7 @@ std::string VirtualMachine::getModuleName(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR(Definition, "no module with address " + std::to_string(address));
+        HADRONS_ERROR(Definition, "no module with address " + std::to_string(address));
     }
 }
 
@@ -226,7 +226,7 @@ std::string VirtualMachine::getModuleType(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR(Definition, "no module with address " + std::to_string(address));
+        HADRONS_ERROR(Definition, "no module with address " + std::to_string(address));
     }
 }
 
@@ -248,6 +248,11 @@ std::string VirtualMachine::getModuleNamespace(const unsigned int address) const
 std::string VirtualMachine::getModuleNamespace(const std::string name) const
 {
     return getModuleNamespace(getModuleAddress(name));
+}
+
+int VirtualMachine::getCurrentModule(void) const
+{
+    return currentModule_;
 }
 
 bool VirtualMachine::hasModule(const unsigned int address) const
@@ -301,9 +306,10 @@ void VirtualMachine::makeModuleGraph(void)
 
             if (min < 0)
             {
-                HADRON_ERROR(Definition, "object with address " 
-                             + std::to_string(in) 
-                             + " is not produced by any module");
+                HADRONS_ERROR(Definition, "dependency '" 
+                             + env().getObjectName(in) + "' (address " 
+                             + std::to_string(in)
+                             + ") is not produced by any module");
             }
             else
             {
@@ -468,7 +474,9 @@ void VirtualMachine::memoryProfile(const unsigned int address)
                << "' (" << address << ")..." << std::endl;
     try
     {
+        currentModule_ = address;
         m->setup();
+        currentModule_ = -1;
         updateProfile(address);
     }
     catch (Exceptions::Definition &)
@@ -588,6 +596,9 @@ VirtualMachine::Program VirtualMachine::schedule(const GeneticPar &par)
     };
     Scheduler scheduler(graph, memPeak, gpar);
     gen = 0;
+    scheduler.initPopulation();
+    LOG(Iterative) << "Start: " << sizeString(scheduler.getMinValue()) 
+                   << std::endl;
     do
     {
         //LOG(Debug) << "Generation " << gen << ":" << std::endl;
@@ -622,7 +633,7 @@ VirtualMachine::Program VirtualMachine::schedule(const GeneticPar &par)
 #define SEP     "---------------"
 #define MEM_MSG(size) sizeString(size)
 
-void VirtualMachine::executeProgram(const Program &p) const
+void VirtualMachine::executeProgram(const Program &p)
 {
     Size            memPeak = 0, sizeBefore, sizeAfter;
     GarbageSchedule freeProg;
@@ -650,7 +661,9 @@ void VirtualMachine::executeProgram(const Program &p) const
         LOG(Message) << SEP << " Measurement step " << i + 1 << "/"
                      << p.size() << " (module '" << module_[p[i]].name
                      << "') " << SEP << std::endl;
+        currentModule_ = p[i];
         (*module_[p[i]].data)();
+        currentModule_ = -1;
         sizeBefore = env().getTotalSize();
         // print used memory after execution
         LOG(Message) << "Allocated objects: " << MEM_MSG(sizeBefore)
@@ -679,7 +692,7 @@ void VirtualMachine::executeProgram(const Program &p) const
     }
 }
 
-void VirtualMachine::executeProgram(const std::vector<std::string> &p) const
+void VirtualMachine::executeProgram(const std::vector<std::string> &p)
 {
     Program pAddress;
     

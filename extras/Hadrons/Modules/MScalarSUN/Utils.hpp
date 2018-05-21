@@ -44,7 +44,7 @@ inline void dmu(Field &out, const Field &in, const unsigned int mu, const DiffTy
 
     if (mu >= env.getNd())
     {
-        HADRON_ERROR(Range, "Derivative direction out of range");
+        HADRONS_ERROR(Range, "Derivative direction out of range");
     }
     switch(type)
     {
@@ -58,7 +58,7 @@ inline void dmu(Field &out, const Field &in, const unsigned int mu, const DiffTy
             out = 0.5*(Cshift(in, mu, 1) - Cshift(in, mu, -1));
             break;
         default:
-            HADRON_ERROR(Argument, "Derivative type invalid");
+            HADRONS_ERROR(Argument, "Derivative type invalid");
             break;
     }
 }
@@ -70,7 +70,7 @@ inline void dmuAcc(Field &out, const Field &in, const unsigned int mu, const Dif
 
     if (mu >= env.getNd())
     {
-        HADRON_ERROR(Range, "Derivative direction out of range");
+        HADRONS_ERROR(Range, "Derivative direction out of range");
     }
     switch(type)
     {
@@ -84,20 +84,47 @@ inline void dmuAcc(Field &out, const Field &in, const unsigned int mu, const Dif
             out += 0.5*(Cshift(in, mu, 1) - Cshift(in, mu, -1));
             break;
         default:
-            HADRON_ERROR(Argument, "Derivative type invalid");
+            HADRONS_ERROR(Argument, "Derivative type invalid");
             break;
     }
 }
 
+template <class SinkSite, class SourceSite>
+std::vector<Complex> makeTwoPoint(const std::vector<SinkSite>   &sink,
+                                  const std::vector<SourceSite> &source,
+                                  const double factor = 1.)
+{
+    assert(sink.size() == source.size());
+    
+    unsigned int         nt = sink.size();
+    std::vector<Complex> res(nt, 0.);
+    
+    for (unsigned int dt = 0; dt < nt; ++dt)
+    {
+        for (unsigned int t  = 0; t < nt; ++t)
+        {
+            res[dt] += trace(sink[(t+dt)%nt]*source[t]);
+        }
+        res[dt] *= factor/static_cast<double>(nt);
+    }
+    
+    return res;
+}
+
+inline std::string varName(const std::string name, const std::string suf)
+{
+    return name + "_" + suf;
+}
+
 inline std::string varName(const std::string name, const unsigned int mu)
 {
-    return name + "_" + std::to_string(mu);
+    return varName(name, std::to_string(mu));
 }
 
 inline std::string varName(const std::string name, const unsigned int mu, 
                            const unsigned int nu)
 {
-    return name + "_" + std::to_string(mu) + "_" + std::to_string(nu);
+    return varName(name, std::to_string(mu) + "_" + std::to_string(nu));
 }
 
 END_MODULE_NAMESPACE

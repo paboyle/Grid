@@ -29,10 +29,20 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/GridCore.h>
 
 using namespace Grid;
-using namespace std;
+
+void Grid::xmlCheckParse(const pugi::xml_parse_result &result, const std::string name)
+{
+  if (!result) 
+  {
+    std::cerr << "XML parsing error for " << name << std::endl;
+    std::cerr << "XML error description: " << result.description() << std::endl;
+    std::cerr << "XML error offset     : " << result.offset << std::endl;
+    abort();
+  }
+}
 
 // Writer implementation ///////////////////////////////////////////////////////
-XmlWriter::XmlWriter(const string &fileName, string toplev) : fileName_(fileName)
+XmlWriter::XmlWriter(const std::string &fileName, std::string toplev) : fileName_(fileName)
 {
   if ( toplev == std::string("") ) {
     node_=doc_;
@@ -45,60 +55,73 @@ XmlWriter::XmlWriter(const string &fileName, string toplev) : fileName_(fileName
 XmlWriter::~XmlWriter(void)
 {
   if ( fileName_ != std::string("") ) { 
-    doc_.save_file(fileName_.c_str(), "  ");
+    doc_.save_file(fileName_.c_str(), indent_.c_str());
   }
 }
 
-void XmlWriter::push(const string &s)
+void XmlWriter::push(const std::string &s)
 {
   node_ = node_.append_child(s.c_str());
+}
+
+void XmlWriter::pushXmlString(const std::string &s)
+{
+  pugi::xml_document doc;
+  auto               result = doc.load_buffer(s.c_str(), s.size());
+
+  xmlCheckParse(result, "fragment\n'" + s +"'");
+  for (pugi::xml_node child = doc.first_child(); child; child = child.next_sibling())
+  {
+      node_ = node_.append_copy(child);
+  }
+  pop();
 }
 
 void XmlWriter::pop(void)
 {
   node_ = node_.parent();
 }
-std::string XmlWriter::XmlString(void)
+
+std::string XmlWriter::docString(void)
 {
   std::ostringstream oss; 
-  doc_.save(oss);
+  doc_.save(oss, indent_.c_str());
   return oss.str();
 }
 
-XmlReader::XmlReader(const char *xmlstring,string toplev) : fileName_("")
+std::string XmlWriter::string(void)
 {
-  pugi::xml_parse_result result;
-  result = doc_.load_string(xmlstring);
-  if ( !result ) {
-    cerr << "XML error description (from char *): " << result.description() << "\nXML\n"<< xmlstring << "\n";
-    cerr << "XML error offset      (from char *) " << result.offset         << "\nXML\n"<< xmlstring <<"\n";
-    abort();
-  }
-  if ( toplev == std::string("") ) {
-    node_ = doc_;
-  } else { 
-    node_ = doc_.child(toplev.c_str());
-  }
+  std::ostringstream oss; 
+  doc_.save(oss, indent_.c_str(), pugi::format_default | pugi::format_no_declaration);
+  return oss.str();
 }
 
 // Reader implementation ///////////////////////////////////////////////////////
-XmlReader::XmlReader(const string &fileName,string toplev) : fileName_(fileName)
+XmlReader::XmlReader(const std::string &s,  const bool isBuffer, 
+                     std::string toplev) 
 {
   pugi::xml_parse_result result;
-  result = doc_.load_file(fileName_.c_str());
-  if ( !result ) {
-    cerr << "XML error description: " << result.description() <<" "<< fileName_ <<"\n";
-    cerr << "XML error offset     : " << result.offset        <<" "<< fileName_ <<"\n";
-    abort();
+  
+  if (isBuffer)
+  {
+    fileName_ = "<string>";
+    result    = doc_.load_string(s.c_str());
+    xmlCheckParse(result, "string\n'" + s + "'");
+  }
+  else
+  {
+    fileName_ = s;
+    result    = doc_.load_file(s.c_str());
+    xmlCheckParse(result, "file '" + fileName_ + "'");
   }
   if ( toplev == std::string("") ) {
-    node_ = doc_;
+  node_ = doc_;
   } else { 
     node_ = doc_.child(toplev.c_str());
   }
 }
 
-bool XmlReader::push(const string &s)
+bool XmlReader::push(const std::string &s)
 {
   if (node_.child(s.c_str()))
   {
@@ -129,11 +152,10 @@ bool XmlReader::nextElement(const std::string &s)
   {
     return false;
   }
-
 }
 
 template <>
-void XmlReader::readDefault(const string &s, string &output)
+void XmlReader::readDefault(const std::string &s, std::string &output)
 {
   if (node_.child(s.c_str()))
   {

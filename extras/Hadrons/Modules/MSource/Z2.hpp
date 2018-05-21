@@ -71,7 +71,7 @@ public:
     // constructor
     TZ2(const std::string name);
     // destructor
-    virtual ~TZ2(void) = default;
+    virtual ~TZ2(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -85,8 +85,8 @@ private:
     std::string tName_;
 };
 
-MODULE_REGISTER_NS(Z2,       TZ2<FIMPL>,        MSource);
-MODULE_REGISTER_NS(ScalarZ2, TZ2<ScalarImplCR>, MSource);
+MODULE_REGISTER_TMP(Z2,       TZ2<FIMPL>,        MSource);
+MODULE_REGISTER_TMP(ScalarZ2, TZ2<ScalarImplCR>, MSource);
 
 /******************************************************************************
  *                       TZ2 template implementation                          *

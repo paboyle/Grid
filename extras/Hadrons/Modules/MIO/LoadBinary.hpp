@@ -61,7 +61,7 @@ public:
     // constructor
     TLoadBinary(const std::string name);
     // destructor
-    virtual ~TLoadBinary(void) = default;
+    virtual ~TLoadBinary(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -71,12 +71,12 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(LoadBinary, TLoadBinary<GIMPL>, MIO);
-MODULE_REGISTER_NS(LoadBinaryScalarSU2, TLoadBinary<ScalarNxNAdjImplR<2>>, MIO);
-MODULE_REGISTER_NS(LoadBinaryScalarSU3, TLoadBinary<ScalarNxNAdjImplR<3>>, MIO);
-MODULE_REGISTER_NS(LoadBinaryScalarSU4, TLoadBinary<ScalarNxNAdjImplR<4>>, MIO);
-MODULE_REGISTER_NS(LoadBinaryScalarSU5, TLoadBinary<ScalarNxNAdjImplR<5>>, MIO);
-MODULE_REGISTER_NS(LoadBinaryScalarSU6, TLoadBinary<ScalarNxNAdjImplR<6>>, MIO);
+MODULE_REGISTER_TMP(LoadBinary, TLoadBinary<GIMPL>, MIO);
+MODULE_REGISTER_TMP(LoadBinaryScalarSU2, TLoadBinary<ScalarNxNAdjImplR<2>>, MIO);
+MODULE_REGISTER_TMP(LoadBinaryScalarSU3, TLoadBinary<ScalarNxNAdjImplR<3>>, MIO);
+MODULE_REGISTER_TMP(LoadBinaryScalarSU4, TLoadBinary<ScalarNxNAdjImplR<4>>, MIO);
+MODULE_REGISTER_TMP(LoadBinaryScalarSU5, TLoadBinary<ScalarNxNAdjImplR<5>>, MIO);
+MODULE_REGISTER_TMP(LoadBinaryScalarSU6, TLoadBinary<ScalarNxNAdjImplR<6>>, MIO);
 
 /******************************************************************************
  *                         TLoadBinary implementation                         *

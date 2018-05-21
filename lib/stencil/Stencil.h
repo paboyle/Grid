@@ -66,6 +66,8 @@ void Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const La
   parallel_for(int i=0;i<num;i++){
     compress.Compress(&buffer[off],table[i].first,rhs._odata[so+table[i].second]);
   }
+// Further optimisatoin: i) streaming store the result
+//                       ii) software prefetch the first element of the next table entry
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -505,25 +507,24 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
   template<class decompressor>
   void CommsMerge(decompressor decompress,std::vector<Merge> &mm,std::vector<Decompress> &dd) { 
 
+    mergetime-=usecond();
     for(int i=0;i<mm.size();i++){	
-      mergetime-=usecond();
       parallel_for(int o=0;o<mm[i].buffer_size/2;o++){
 	decompress.Exchange(mm[i].mpointer,
 			    mm[i].vpointers[0],
 			    mm[i].vpointers[1],
 			    mm[i].type,o);
       }
-      mergetime+=usecond();
     }
+    mergetime+=usecond();
 
+    decompresstime-=usecond();
     for(int i=0;i<dd.size();i++){	
-      decompresstime-=usecond();
       parallel_for(int o=0;o<dd[i].buffer_size;o++){
 	decompress.Decompress(dd[i].kernel_p,dd[i].mpi_p,o);
       }      
-      decompresstime+=usecond();
     }
-
+    decompresstime+=usecond();
   }
   ////////////////////////////////////////
   // Set up routines

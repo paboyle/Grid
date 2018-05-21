@@ -92,8 +92,6 @@ public:
     GridRedBlackCartesian * getRbGrid(const unsigned int Ls = 1) const;
     GridCartesian *         getCoarseGrid(const std::vector<int> &blockSize,
                                           const unsigned int Ls = 1) const;
-    GridRedBlackCartesian * getRbCoarseGrid(const std::vector<int> &blockSize,
-                                            const unsigned int Ls = 1) const;
     std::vector<int>        getDim(void) const;
     int                     getDim(const unsigned int mu) const;
     unsigned long int       getLocalVolume(void) const;
@@ -166,9 +164,7 @@ private:
     GridRbPt                               gridRb4d_;
     std::map<unsigned int, GridRbPt>       gridRb5d_;
     std::map<std::vector<int>, GridPt>     gridCoarse4d_;
-    std::map<std::vector<int>, GridRbPt>   gridCoarseRb4d_;
     std::map<std::vector<int>, GridPt>     gridCoarse5d_;
-    std::map<std::vector<int>, GridRbPt>   gridCoarseRb5d_;
     unsigned int                           nd_;
     // random number generator
     RngPt                                  rng4d_;
@@ -249,7 +245,7 @@ void Environment::createDerivedObject(const std::string name,
              (object_[address].type        != &typeid(B))     or
              (object_[address].derivedType != &typeid(T)))
     {
-        HADRON_ERROR(Definition, "object '" + name + "' already allocated");
+        HADRONS_ERROR(Definition, "object '" + name + "' already allocated");
     }
 }
 
@@ -283,7 +279,7 @@ T * Environment::getDerivedObject(const unsigned int address) const
                     }
                     else
                     {
-                        HADRON_ERROR(Definition, "object with address " + std::to_string(address) +
+                        HADRONS_ERROR(Definition, "object with address " + std::to_string(address) +
                             " cannot be casted to '" + typeName(&typeid(T)) +
                             "' (has type '" + typeName(&typeid(h->get())) + "')");
                     }
@@ -291,20 +287,20 @@ T * Environment::getDerivedObject(const unsigned int address) const
             }
             else
             {
-                HADRON_ERROR(Definition, "object with address " + std::to_string(address) +
+                HADRONS_ERROR(Definition, "object with address " + std::to_string(address) +
                             " does not have type '" + typeName(&typeid(B)) +
                             "' (has type '" + getObjectType(address) + "')");
             }
         }
         else
         {
-            HADRON_ERROR(Definition, "object with address " + std::to_string(address) +
+            HADRONS_ERROR(Definition, "object with address " + std::to_string(address) +
                          " is empty");
         }
     }
     else
     {
-        HADRON_ERROR(Definition, "no object with address " + std::to_string(address));
+        HADRONS_ERROR(Definition, "no object with address " + std::to_string(address));
     }
 }
 
@@ -342,7 +338,7 @@ bool Environment::isObjectOfType(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR(Definition, "no object with address " + std::to_string(address));
+        HADRONS_ERROR(Definition, "no object with address " + std::to_string(address));
     }
 }
 

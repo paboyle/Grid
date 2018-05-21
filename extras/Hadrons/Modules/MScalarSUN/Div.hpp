@@ -49,24 +49,25 @@ public:
                                     std::string,              output);
 };
 
+class DivResult: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(DivResult,
+                                    DiffType, type,
+                                    Complex,  value);
+};
+
 template <typename SImpl>
 class TDiv: public Module<DivPar>
 {
 public:
     typedef typename SImpl::Field        Field;
     typedef typename SImpl::ComplexField ComplexField;
-    class Result: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        DiffType, type,
-                                        Complex,  value);
-    };
 public:
     // constructor
     TDiv(const std::string name);
     // destructor
-    virtual ~TDiv(void) = default;
+    virtual ~TDiv(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -76,11 +77,11 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(DivSU2, TDiv<ScalarNxNAdjImplR<2>>, MScalarSUN);
-MODULE_REGISTER_NS(DivSU3, TDiv<ScalarNxNAdjImplR<3>>, MScalarSUN);
-MODULE_REGISTER_NS(DivSU4, TDiv<ScalarNxNAdjImplR<4>>, MScalarSUN);
-MODULE_REGISTER_NS(DivSU5, TDiv<ScalarNxNAdjImplR<5>>, MScalarSUN);
-MODULE_REGISTER_NS(DivSU6, TDiv<ScalarNxNAdjImplR<6>>, MScalarSUN);
+MODULE_REGISTER_TMP(DivSU2, TDiv<ScalarNxNAdjImplR<2>>, MScalarSUN);
+MODULE_REGISTER_TMP(DivSU3, TDiv<ScalarNxNAdjImplR<3>>, MScalarSUN);
+MODULE_REGISTER_TMP(DivSU4, TDiv<ScalarNxNAdjImplR<4>>, MScalarSUN);
+MODULE_REGISTER_TMP(DivSU5, TDiv<ScalarNxNAdjImplR<5>>, MScalarSUN);
+MODULE_REGISTER_TMP(DivSU6, TDiv<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
  *                           TDiv implementation                              *
@@ -112,7 +113,7 @@ void TDiv<SImpl>::setup(void)
 {
     if (par().op.size() != env().getNd())
     {
-        HADRON_ERROR(Size, "the number of components differs from number of dimensions");
+        HADRONS_ERROR(Size, "the number of components differs from number of dimensions");
     }
     envCreateLat(ComplexField, getName());
 }
@@ -126,7 +127,7 @@ void TDiv<SImpl>::execute(void)
     LOG(Message) << "Computing the " << par().type << " divergence of [";
     for (unsigned int mu = 0; mu < nd; ++mu)
     {
-        std::cout << par().op[mu] << ((mu == nd - 1) ? "]" : ", ");
+        std::cout << "'" << par().op[mu] << ((mu == nd - 1) ? "']" : "', ");
     }
     std::cout << std::endl;
 
@@ -139,7 +140,7 @@ void TDiv<SImpl>::execute(void)
     }
     if (!par().output.empty())
     {
-        Result       r;
+        DivResult r;
 
         r.type  = par().type;
         r.value = TensorRemove(sum(div));

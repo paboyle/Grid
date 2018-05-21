@@ -79,6 +79,48 @@ namespace Grid {
   };
 
   template <typename T>
+  void tensorDim(std::vector<size_t> &dim, const T &t, const bool wipe = true)
+  {
+    if (wipe)
+    {
+      dim.clear();
+    }
+  }
+
+  template <typename T>
+  void tensorDim(std::vector<size_t> &dim, const iScalar<T> &t, const bool wipe = true)
+  {
+    if (wipe)
+    {
+      dim.clear();
+    }
+    tensorDim(dim, t._internal, false);
+  }
+
+  template <typename T, int N>
+  void tensorDim(std::vector<size_t> &dim, const iVector<T, N> &t, const bool wipe = true)
+  {
+    if (wipe)
+    {
+      dim.clear();
+    }
+    dim.push_back(N);
+    tensorDim(dim, t._internal[0], false);
+  }
+
+  template <typename T, int N>
+  void tensorDim(std::vector<size_t> &dim, const iMatrix<T, N> &t, const bool wipe = true)
+  {
+    if (wipe)
+    {
+      dim.clear();
+    }
+    dim.push_back(N);
+    dim.push_back(N);
+    tensorDim(dim, t._internal[0][0], false);
+  }
+
+  template <typename T>
   typename TensorToVec<T>::type tensorToVec(const T &t)
   {
     return t;
@@ -367,13 +409,13 @@ namespace Grid {
   inline std::ostream & operator<<(std::ostream &os, const std::vector<T> &v)
   {
     os << "[";
-    for (auto &x: v)
+    for (unsigned int i = 0; i < v.size(); ++i)
     {
-      os << x << " ";
-    }
-    if (v.size() > 0)
-    {
-      os << "\b";
+      os << v[i];
+      if (i < v.size() - 1)
+      {
+        os << " ";
+      }
     }
     os << "]";
     

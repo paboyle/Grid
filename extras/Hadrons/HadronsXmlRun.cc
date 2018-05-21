@@ -69,12 +69,7 @@ int main(int argc, char *argv[])
     }
     catch (const std::exception& e)
     {
-        LOG(Error) << "FATAL ERROR -- Exception " << typeName(&typeid(e)) << std::endl;
-        LOG(Error) << e.what() << std::endl;
-        LOG(Error) << "Aborting program" << std::endl;
-        Grid_finalize();
-
-        return EXIT_FAILURE;
+        Exceptions::abort(e);
     }
     
     // epilogue

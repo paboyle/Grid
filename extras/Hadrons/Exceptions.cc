@@ -27,6 +27,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 /*  END LEGAL */
 
 #include <Grid/Hadrons/Exceptions.hpp>
+#include <Grid/Hadrons/VirtualMachine.hpp>
+#include <Grid/Hadrons/Module.hpp>
 
 #ifndef ERR_SUFF
 #define ERR_SUFF " (" + loc + ")"
@@ -47,6 +49,7 @@ CONST_EXC(Definition, Logic("definition error: " + msg, loc))
 CONST_EXC(Implementation, Logic("implementation error: " + msg, loc))
 CONST_EXC(Range, Logic("range error: " + msg, loc))
 CONST_EXC(Size, Logic("size error: " + msg, loc))
+
 // runtime errors
 CONST_EXC(Runtime, runtime_error(msg + ERR_SUFF))
 CONST_EXC(Argument, Runtime("argument error: " + msg, loc))
@@ -55,3 +58,24 @@ CONST_EXC(Memory, Runtime("memory error: " + msg, loc))
 CONST_EXC(Parsing, Runtime("parsing error: " + msg, loc))
 CONST_EXC(Program, Runtime("program error: " + msg, loc))
 CONST_EXC(System, Runtime("system error: " + msg, loc))
+
+// abort functions
+void Grid::Hadrons::Exceptions::abort(const std::exception& e)
+{
+    auto &vm = VirtualMachine::getInstance();
+    int  mod = vm.getCurrentModule();
+
+    LOG(Error) << "FATAL ERROR -- Exception " << typeName(&typeid(e)) 
+               << std::endl;
+    if (mod >= 0)
+    {
+        LOG(Error) << "During execution of module '"
+                    << vm.getModuleName(mod) << "' (address " << mod << ")"
+                    << std::endl;
+    }
+    LOG(Error) << e.what() << std::endl;
+    LOG(Error) << "Aborting program" << std::endl;
+    Grid_finalize();
+
+    exit(EXIT_FAILURE);
+}

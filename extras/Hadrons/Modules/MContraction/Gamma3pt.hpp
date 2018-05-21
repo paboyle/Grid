@@ -96,7 +96,7 @@ public:
     // constructor
     TGamma3pt(const std::string name);
     // destructor
-    virtual ~TGamma3pt(void) = default;
+    virtual ~TGamma3pt(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -107,7 +107,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Gamma3pt, ARG(TGamma3pt<FIMPL, FIMPL, FIMPL>), MContraction);
+MODULE_REGISTER_TMP(Gamma3pt, ARG(TGamma3pt<FIMPL, FIMPL, FIMPL>), MContraction);
 
 /******************************************************************************
  *                       TGamma3pt implementation                             *

@@ -28,6 +28,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 #include <Grid/Hadrons/Application.hpp>
 #include <Grid/Hadrons/GeneticScheduler.hpp>
+#include <Grid/Hadrons/Modules.hpp>
 
 using namespace Grid;
 using namespace QCD;
@@ -113,12 +114,12 @@ void Application::parseParameterFile(const std::string parameterFileName)
     setPar(par);
     if (!push(reader, "modules"))
     {
-        HADRON_ERROR(Parsing, "Cannot open node 'modules' in parameter file '" 
+        HADRONS_ERROR(Parsing, "Cannot open node 'modules' in parameter file '" 
                               + parameterFileName + "'");
     }
     if (!push(reader, "module"))
     {
-        HADRON_ERROR(Parsing, "Cannot open node 'modules/module' in parameter file '" 
+        HADRONS_ERROR(Parsing, "Cannot open node 'modules/module' in parameter file '" 
                               + parameterFileName + "'");
     }
     do
@@ -176,7 +177,7 @@ void Application::saveSchedule(const std::string filename)
         
         if (!scheduled_)
         {
-            HADRON_ERROR(Definition, "Computation not scheduled");
+            HADRONS_ERROR(Definition, "Computation not scheduled");
         }
 
         for (auto address: program_)
@@ -207,7 +208,7 @@ void Application::printSchedule(void)
 {
     if (!scheduled_)
     {
-        HADRON_ERROR(Definition, "Computation not scheduled");
+        HADRONS_ERROR(Definition, "Computation not scheduled");
     }
     auto peak = vm().memoryNeeded(program_);
     LOG(Message) << "Schedule (memory needed: " << sizeString(peak) << "):"

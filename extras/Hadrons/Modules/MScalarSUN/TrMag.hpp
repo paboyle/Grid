@@ -49,24 +49,25 @@ public:
                                     std::string,  output);
 };
 
+class TrMagResult: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(TrMagResult,
+                                    std::string, op,
+                                    Real,        value);
+};
+
 template <typename SImpl>
 class TTrMag: public Module<TrMagPar>
 {
 public:
     typedef typename SImpl::Field        Field;
     typedef typename SImpl::ComplexField ComplexField;
-    class Result: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        std::string, op,
-                                        Real,        value);
-    };
 public:
     // constructor
     TTrMag(const std::string name);
     // destructor
-    virtual ~TTrMag(void) = default;
+    virtual ~TTrMag(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -76,11 +77,11 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(TrMagSU2, TTrMag<ScalarNxNAdjImplR<2>>, MScalarSUN);
-MODULE_REGISTER_NS(TrMagSU3, TTrMag<ScalarNxNAdjImplR<3>>, MScalarSUN);
-MODULE_REGISTER_NS(TrMagSU4, TTrMag<ScalarNxNAdjImplR<4>>, MScalarSUN);
-MODULE_REGISTER_NS(TrMagSU5, TTrMag<ScalarNxNAdjImplR<5>>, MScalarSUN);
-MODULE_REGISTER_NS(TrMagSU6, TTrMag<ScalarNxNAdjImplR<6>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrMagSU2, TTrMag<ScalarNxNAdjImplR<2>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrMagSU3, TTrMag<ScalarNxNAdjImplR<3>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrMagSU4, TTrMag<ScalarNxNAdjImplR<4>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrMagSU5, TTrMag<ScalarNxNAdjImplR<5>>, MScalarSUN);
+MODULE_REGISTER_TMP(TrMagSU6, TTrMag<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
  *                         TTrMag implementation                              *
@@ -120,8 +121,8 @@ void TTrMag<SImpl>::execute(void)
     LOG(Message) << "Computing tr(mag^n) for n even up to " << par().maxPow
                  << std::endl;
 
-    std::vector<Result> result;
-    auto                &phi = envGet(Field, par().field);
+    std::vector<TrMagResult> result;
+    auto                     &phi = envGet(Field, par().field);
 
     auto m2 = sum(phi), mn = m2;
 
@@ -129,7 +130,7 @@ void TTrMag<SImpl>::execute(void)
     mn = 1.;
     for (unsigned int n = 2; n <= par().maxPow; n += 2)
     {
-        Result r;
+        TrMagResult r;
 
         mn = mn*m2;
         r.op    = "tr(mag^" + std::to_string(n) + ")";

@@ -64,7 +64,7 @@ public:
     // constructor
     TWilsonClover(const std::string name);
     // destructor
-    virtual ~TWilsonClover(void) = default;
+    virtual ~TWilsonClover(void) {};
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -74,7 +74,7 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(WilsonClover, TWilsonClover<FIMPL>, MAction);
+MODULE_REGISTER_TMP(WilsonClover, TWilsonClover<FIMPL>, MAction);
 
 /******************************************************************************
  *                     TWilsonClover template implementation                        *

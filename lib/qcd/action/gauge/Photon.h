@@ -266,7 +266,7 @@ namespace QCD{
           vol = vol * latt_size[d];
         }
         invKHatSquared(weight);
-        weight = sqrt(vol*real(weight));
+        weight = sqrt(vol)*sqrt(weight);
         zmSub(weight);
         break;
       }

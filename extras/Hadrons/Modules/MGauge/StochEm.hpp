@@ -7,6 +7,7 @@ Source file: extras/Hadrons/Modules/MGauge/StochEm.hpp
 Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: James Harrison <j.harrison@soton.ac.uk>
 Author: Vera Guelpers <vmg1n14@soton.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
@@ -59,7 +60,7 @@ public:
     // constructor
     TStochEm(const std::string name);
     // destructor
-    virtual ~TStochEm(void) = default;
+    virtual ~TStochEm(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -72,7 +73,7 @@ private:
     bool    weightDone_;
 };
 
-MODULE_REGISTER_NS(StochEm, TStochEm, MGauge);
+MODULE_REGISTER(StochEm, TStochEm, MGauge);
 
 END_MODULE_NAMESPACE
 

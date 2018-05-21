@@ -83,8 +83,13 @@ namespace Grid {
       virtual void   M5D   (const FermionField &psi, FermionField &chi);
       virtual void   M5Ddag(const FermionField &psi, FermionField &chi);
 
+      ///////////////////////////////////////////////////////////////
+      // Physical surface field utilities
+      ///////////////////////////////////////////////////////////////
       virtual void   Dminus(const FermionField &psi, FermionField &chi);
       virtual void   DminusDag(const FermionField &psi, FermionField &chi);
+      virtual void ExportPhysicalFermionSolution(const FermionField &solution5d,FermionField &exported4d);
+      virtual void ImportPhysicalFermionSource(const FermionField &input4d,FermionField &imported5d);
 
       /////////////////////////////////////////////////////
       // Instantiate different versions depending on Impl

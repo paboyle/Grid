@@ -39,6 +39,10 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define SITE_SIZE_TYPE size_t
 #endif
 
+#ifndef DEFAULT_ASCII_PREC
+#define DEFAULT_ASCII_PREC 16
+#endif
+
 #define BEGIN_HADRONS_NAMESPACE \
 namespace Grid {\
 using namespace QCD;\
@@ -110,7 +114,7 @@ public:
 };
 
 #define LOG(channel) std::cout << HadronsLog##channel
-#define DEBUG_VAR(var) LOG(Debug) << #var << "= " << (var) << std::endl;
+#define HADRONS_DEBUG_VAR(var) LOG(Debug) << #var << "= " << (var) << std::endl;
 
 extern HadronsLogger HadronsLogError;
 extern HadronsLogger HadronsLogWarning;
@@ -187,8 +191,14 @@ typedef XmlWriter ResultWriter;
 #define RESULT_FILE_NAME(name) \
 name + "." + std::to_string(vm().getTrajectory()) + "." + resultFileExt
 
-// default Schur convention
+// recursive mkdir
+#define MAX_PATH_LENGTH 512u
+int         mkdir(const std::string dirName);
+std::string basename(const std::string &s);
+std::string dirname(const std::string &s);
+void        makeFileDir(const std::string filename, GridBase *g);
 
+// default Schur convention
 #ifndef HADRONS_DEFAULT_SCHUR 
 #define HADRONS_DEFAULT_SCHUR DiagTwo
 #endif

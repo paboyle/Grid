@@ -71,7 +71,7 @@ public:
     // constructor
     TWardIdentity(const std::string name);
     // destructor
-    virtual ~TWardIdentity(void) = default;
+    virtual ~TWardIdentity(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -84,7 +84,7 @@ private:
     unsigned int Ls_;
 };
 
-MODULE_REGISTER_NS(WardIdentity, TWardIdentity<FIMPL>, MContraction);
+MODULE_REGISTER_TMP(WardIdentity, TWardIdentity<FIMPL>, MContraction);
 
 /******************************************************************************
  *                     TWardIdentity implementation                           *
@@ -119,7 +119,7 @@ void TWardIdentity<FImpl>::setup(void)
     Ls_ = env().getObjectLs(par().q);
     if (Ls_ != env().getObjectLs(par().action))
     {
-        HADRON_ERROR(Size, "Ls mismatch between quark action and propagator");
+        HADRONS_ERROR(Size, "Ls mismatch between quark action and propagator");
     }
     envTmpLat(PropagatorField, "tmp");
     envTmpLat(PropagatorField, "vector_WI");

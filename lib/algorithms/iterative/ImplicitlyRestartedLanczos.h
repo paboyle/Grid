@@ -479,15 +479,13 @@ until convergence
 	Field B(grid); B.checkerboard = evec[0].checkerboard;
 
 	//  power of two search pattern;  not every evalue in eval2 is assessed.
+	int allconv =1;
 	for(int jj = 1; jj<=Nstop; jj*=2){
 	  int j = Nstop-jj;
 	  RealD e = eval2_copy[j]; // Discard the evalue
 	  basisRotateJ(B,evec,Qt,j,0,Nk,Nm);	    
-	  if( _Tester.TestConvergence(j,eresid,B,e,evalMaxApprox) ) {
-	    if ( j > Nconv ) {
-	      Nconv=j+1;
-	      jj=Nstop; // Terminate the scan
-	    }
+	  if( !_Tester.TestConvergence(j,eresid,B,e,evalMaxApprox) ) {
+	    allconv=0;
 	  }
 	}
 	// Do evec[0] for good measure
@@ -495,8 +493,10 @@ until convergence
 	  int j=0;
 	  RealD e = eval2_copy[0]; 
 	  basisRotateJ(B,evec,Qt,j,0,Nk,Nm);	    
-	  _Tester.TestConvergence(j,eresid,B,e,evalMaxApprox);
+	  if( !_Tester.TestConvergence(j,eresid,B,e,evalMaxApprox) ) allconv=0;
 	}
+	if ( allconv ) Nconv = Nstop;
+
 	// test if we converged, if so, terminate
 	std::cout<<GridLogIRL<<" #modes converged: >= "<<Nconv<<"/"<<Nstop<<std::endl;
 	//	if( Nconv>=Nstop || beta_k < betastp){

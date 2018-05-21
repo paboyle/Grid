@@ -35,32 +35,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 BEGIN_HADRONS_NAMESPACE
 
 // module registration macros
-#define MODULE_REGISTER(mod, base)\
-class mod: public base\
-{\
-public:\
-    typedef base Base;\
-    using Base::Base;\
-    virtual std::string getRegisteredName(void)\
-    {\
-        return std::string(#mod);\
-    }\
-};\
-class mod##ModuleRegistrar\
-{\
-public:\
-    mod##ModuleRegistrar(void)\
-    {\
-        ModuleFactory &modFac = ModuleFactory::getInstance();\
-        modFac.registerBuilder(#mod, [&](const std::string name)\
-                              {\
-                                  return std::unique_ptr<mod>(new mod(name));\
-                              });\
-    }\
-};\
-static mod##ModuleRegistrar mod##ModuleRegistrarInstance;
-
-#define MODULE_REGISTER_NS(mod, base, ns)\
+#define MODULE_REGISTER(mod, base, ns)\
 class mod: public base\
 {\
 public:\
@@ -84,6 +59,10 @@ public:\
     }\
 };\
 static ns##mod##ModuleRegistrar ns##mod##ModuleRegistrarInstance;
+
+#define MODULE_REGISTER_TMP(mod, base, ns)\
+extern template class base;\
+MODULE_REGISTER(mod, ARG(base), ns);
 
 #define ARG(...) __VA_ARGS__
 #define MACRO_REDIRECT(arg1, arg2, arg3, macro, ...) macro
@@ -141,10 +120,13 @@ envTmp(type, name, Ls, env().getGrid(Ls))
 MACRO_REDIRECT(__VA_ARGS__, envTmpLat5, envTmpLat4)(__VA_ARGS__)
 
 #define saveResult(ioStem, name, result)\
-if (env().getGrid()->IsBoss())\
+if (env().getGrid()->IsBoss() and !ioStem.empty())\
 {\
-    ResultWriter _writer(RESULT_FILE_NAME(ioStem));\
-    write(_writer, name, result);\
+    makeFileDir(ioStem, env().getGrid());\
+    {\
+        ResultWriter _writer(RESULT_FILE_NAME(ioStem));\
+        write(_writer, name, result);\
+    }\
 }
 
 /******************************************************************************
@@ -172,6 +154,8 @@ public:
     // parse parameters
     virtual void parseParameters(XmlReader &reader, const std::string name) = 0;
     virtual void saveParameters(XmlWriter &writer, const std::string name) = 0;
+    // parameter string
+    virtual std::string parString(void) const = 0;
     // setup
     virtual void setup(void) {};
     virtual void execute(void) = 0;
@@ -200,9 +184,11 @@ public:
     // parse parameters
     virtual void parseParameters(XmlReader &reader, const std::string name);
     virtual void saveParameters(XmlWriter &writer, const std::string name);
+    // parameter string
+    virtual std::string parString(void) const;
     // parameter access
-    const P & par(void) const;
-    void      setPar(const P &par);
+    const P &   par(void) const;
+    void        setPar(const P &par);
 private:
     P par_;
 };
@@ -225,6 +211,8 @@ public:
         push(writer, "options");
         pop(writer);
     };
+    // parameter string (empty)
+    virtual std::string parString(void) const {return "";};
 };
 
 /******************************************************************************
@@ -245,6 +233,16 @@ template <typename P>
 void Module<P>::saveParameters(XmlWriter &writer, const std::string name)
 {
     write(writer, name, par_);
+}
+
+template <typename P>
+std::string Module<P>::parString(void) const
+{
+    XmlWriter writer("", "");
+
+    write(writer, par_.SerialisableClassName(), par_);
+
+    return writer.string();
 }
 
 template <typename P>

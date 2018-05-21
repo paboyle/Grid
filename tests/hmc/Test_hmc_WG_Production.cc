@@ -33,6 +33,7 @@ namespace Grid{
     GRID_SERIALIZABLE_CLASS_MEMBERS(ActionParameters,
 				    double, beta)
 
+    ActionParameters() = default;
 
     template <class ReaderClass >
     ActionParameters(Reader<ReaderClass>& Reader){
@@ -68,11 +69,15 @@ int main(int argc, char **argv) {
   }
   Serialiser Reader(TheHMC.ParameterFile);
 
-
+  // Read parameters from input file
+  ActionParameters WilsonPar(Reader);
 
   // Checkpointer definition
   CheckpointerParameters CPparams(Reader);
-  TheHMC.Resources.LoadNerscCheckpointer(CPparams);
+  //TheHMC.Resources.LoadNerscCheckpointer(CPparams);
+
+  // Store metadata in the Scidac checkpointer
+  TheHMC.Resources.LoadScidacCheckpointer(CPparams, WilsonPar);
 
   RNGModuleParameters RNGpar(Reader);
   TheHMC.Resources.SetRNGSeeds(RNGpar);
@@ -91,8 +96,6 @@ int main(int argc, char **argv) {
   // need wrappers of the fermionic classes
   // that have a complex construction
   // standard
-  ActionParameters WilsonPar(Reader);
-  //RealD beta = 6.4 ;
   WilsonGaugeActionR Waction(WilsonPar.beta);
 
   ActionLevel<HMCWrapper::Field> Level1(1);

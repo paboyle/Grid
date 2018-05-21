@@ -51,7 +51,8 @@ public:
                                     ChebyParams,   smoother,
                                     RealD,         coarseRelaxTol,
                                     std::string,   blockSize,
-                                    std::string,   output);
+                                    std::string,   output,
+                                    bool,          multiFile);
 };
 
 template <typename FImpl, int nBasis>
@@ -69,7 +70,7 @@ public:
     // constructor
     TLocalCoherenceLanczos(const std::string name);
     // destructor
-    virtual ~TLocalCoherenceLanczos(void) = default;
+    virtual ~TLocalCoherenceLanczos(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -79,12 +80,8 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(LocalCoherenceLanczos, 
-    ARG(TLocalCoherenceLanczos<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), 
-    MSolver);
-MODULE_REGISTER_NS(ZLocalCoherenceLanczos, 
-    ARG(TLocalCoherenceLanczos<ZFIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), 
-    MSolver);
+MODULE_REGISTER_TMP(LocalCoherenceLanczos, ARG(TLocalCoherenceLanczos<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
+MODULE_REGISTER_TMP(ZLocalCoherenceLanczos, ARG(TLocalCoherenceLanczos<ZFIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
 
 /******************************************************************************
  *                 TLocalCoherenceLanczos implementation                      *
@@ -125,19 +122,18 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::setup(void)
 
     env().createCoarseGrid(blockSize, Ls);
 
-    auto cg   = env().getCoarseGrid(blockSize, Ls);
-    auto cgrb = env().getRbCoarseGrid(blockSize, Ls);
-    int  cNm  = (par().doCoarse) ? par().coarseParams.Nm : 0;
+    auto cg  = env().getCoarseGrid(blockSize, Ls);
+    int  cNm = (par().doCoarse) ? par().coarseParams.Nm : 0;
 
     LOG(Message) << "Coarse grid: " << cg->GlobalDimensions() << std::endl;
     envCreateDerived(BasePack, CoarsePack, getName(), Ls,
-                     par().fineParams.Nm, cNm, env().getRbGrid(Ls), cgrb);
+                     par().fineParams.Nm, cNm, env().getRbGrid(Ls), cg);
 
     auto &epack = envGetDerived(BasePack, CoarsePack, getName());
 
     envTmp(SchurFMat, "mat", Ls, envGet(FMat, par().action));
     envGetTmp(SchurFMat, mat);
-    envTmp(LCL, "solver", Ls, env().getRbGrid(Ls), cgrb, mat, 
+    envTmp(LCL, "solver", Ls, env().getRbGrid(Ls), cg, mat, 
            Odd, epack.evec, epack.evecCoarse, epack.eval, epack.evalCoarse);
 }
 
@@ -149,6 +145,8 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::execute(void)
     auto &coarsePar = par().coarseParams;
     auto &epack     = envGetDerived(BasePack, CoarsePack, getName());
 
+    epack.record.operatorXml = vm().getModule(par().action)->parString();
+    epack.record.solverXml   = parString();
     envGetTmp(LCL, solver);
     LOG(Message) << "Performing fine grid IRL -- Nstop= " 
                  << finePar.Nstop << ", Nk= " << finePar.Nk << ", Nm= " 
@@ -157,6 +155,10 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::execute(void)
                     finePar.resid,finePar.MaxIt, finePar.betastp, 
                     finePar.MinRes);
     solver.testFine(finePar.resid*100.0);
+    if (!par().output.empty())
+    {
+        epack.writeFine(par().output, par().multiFile, vm().getTrajectory());
+    }
     if (par().doCoarse)
     {
         LOG(Message) << "Orthogonalising" << std::endl;
@@ -170,10 +172,10 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::execute(void)
                           coarsePar.MinRes);
         solver.testCoarse(coarsePar.resid*100.0, par().smoother, 
                         par().coarseRelaxTol);
-    }
-    if (!par().output.empty())
-    {
-        epack.write(par().output, vm().getTrajectory());
+        if (!par().output.empty())
+        {
+            epack.writeCoarse(par().output, par().multiFile, vm().getTrajectory());
+        }
     }
 }
 

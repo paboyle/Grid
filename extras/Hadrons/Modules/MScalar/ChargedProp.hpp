@@ -7,6 +7,7 @@ Source file: extras/Hadrons/Modules/MScalar/ChargedProp.hpp
 Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: James Harrison <j.harrison@soton.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -81,7 +82,7 @@ public:
     // constructor
     TChargedProp(const std::string name);
     // destructor
-    virtual ~TChargedProp(void) = default;
+    virtual ~TChargedProp(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -103,7 +104,7 @@ private:
     std::vector<ScalarField *> phase_;
 };
 
-MODULE_REGISTER_NS(ChargedProp, TChargedProp, MScalar);
+MODULE_REGISTER(ChargedProp, TChargedProp, MScalar);
 
 END_MODULE_NAMESPACE
 

@@ -6,30 +6,33 @@
 #ifndef GAUGE_CONFIG_
 #define GAUGE_CONFIG_
 
-namespace Grid {
+namespace Grid
+{
 
-namespace QCD {
+namespace QCD
+{
 
-  //trivial class for no smearing
-  template< class Impl >
-class NoSmearing {
+//trivial class for no smearing
+template <class Impl>
+class NoSmearing
+{
 public:
   INHERIT_FIELD_TYPES(Impl);
 
-  Field* ThinField;
+  Field *ThinField;
 
-  NoSmearing(): ThinField(NULL) {}
+  NoSmearing() : ThinField(NULL) {}
 
-  void set_Field(Field& U) { ThinField = &U; }
+  void set_Field(Field &U) { ThinField = &U; }
 
-  void smeared_force(Field&) const {}
+  void smeared_force(Field &) const {}
 
-  Field& get_SmearedU() { return *ThinField; }
+  Field &get_SmearedU() { return *ThinField; }
 
-  Field& get_U(bool smeared = false) {
+  Field &get_U(bool smeared = false)
+  {
     return *ThinField;
   }
-
 };
 
 /*!
@@ -44,32 +47,36 @@ public:
   It stores a list of smeared configurations.
 */
 template <class Gimpl>
-class SmearedConfiguration {
- public:
+class SmearedConfiguration
+{
+public:
   INHERIT_GIMPL_TYPES(Gimpl);
 
- private:
+private:
   const unsigned int smearingLevels;
   Smear_Stout<Gimpl> StoutSmearing;
   std::vector<GaugeField> SmearedSet;
 
   // Member functions
   //====================================================================
-  void fill_smearedSet(GaugeField& U) {
-    ThinLinks = &U;  // attach the smearing routine to the field U
+  void fill_smearedSet(GaugeField &U)
+  {
+    ThinLinks = &U; // attach the smearing routine to the field U
 
     // check the pointer is not null
     if (ThinLinks == NULL)
       std::cout << GridLogError
                 << "[SmearedConfiguration] Error in ThinLinks pointer\n";
 
-    if (smearingLevels > 0) {
+    if (smearingLevels > 0)
+    {
       std::cout << GridLogDebug
                 << "[SmearedConfiguration] Filling SmearedSet\n";
       GaugeField previous_u(ThinLinks->_grid);
 
       previous_u = *ThinLinks;
-      for (int smearLvl = 0; smearLvl < smearingLevels; ++smearLvl) {
+      for (int smearLvl = 0; smearLvl < smearingLevels; ++smearLvl)
+      {
         StoutSmearing.smear(SmearedSet[smearLvl], previous_u);
         previous_u = SmearedSet[smearLvl];
 
@@ -81,9 +88,10 @@ class SmearedConfiguration {
     }
   }
   //====================================================================
-  GaugeField AnalyticSmearedForce(const GaugeField& SigmaKPrime,
-                                  const GaugeField& GaugeK) const {
-    GridBase* grid = GaugeK._grid;
+  GaugeField AnalyticSmearedForce(const GaugeField &SigmaKPrime,
+                                  const GaugeField &GaugeK) const
+  {
+    GridBase *grid = GaugeK._grid;
     GaugeField C(grid), SigmaK(grid), iLambda(grid);
     GaugeLinkField iLambda_mu(grid);
     GaugeLinkField iQ(grid), e_iQ(grid);
@@ -94,7 +102,8 @@ class SmearedConfiguration {
     SigmaK = zero;
     iLambda = zero;
 
-    for (int mu = 0; mu < Nd; mu++) {
+    for (int mu = 0; mu < Nd; mu++)
+    {
       Cmu = peekLorentz(C, mu);
       GaugeKmu = peekLorentz(GaugeK, mu);
       SigmaKPrime_mu = peekLorentz(SigmaKPrime, mu);
@@ -104,20 +113,22 @@ class SmearedConfiguration {
       pokeLorentz(iLambda, iLambda_mu, mu);
     }
     StoutSmearing.derivative(SigmaK, iLambda,
-                             GaugeK);  // derivative of SmearBase
+                             GaugeK); // derivative of SmearBase
     return SigmaK;
   }
 
   /*! @brief Returns smeared configuration at level 'Level' */
-  const GaugeField& get_smeared_conf(int Level) const {
+  const GaugeField &get_smeared_conf(int Level) const
+  {
     return SmearedSet[Level];
   }
 
   //====================================================================
-  void set_iLambda(GaugeLinkField& iLambda, GaugeLinkField& e_iQ,
-                   const GaugeLinkField& iQ, const GaugeLinkField& Sigmap,
-                   const GaugeLinkField& GaugeK) const {
-    GridBase* grid = iQ._grid;
+  void set_iLambda(GaugeLinkField &iLambda, GaugeLinkField &e_iQ,
+                   const GaugeLinkField &iQ, const GaugeLinkField &Sigmap,
+                   const GaugeLinkField &GaugeK) const
+  {
+    GridBase *grid = iQ._grid;
     GaugeLinkField iQ2(grid), iQ3(grid), B1(grid), B2(grid), USigmap(grid);
     GaugeLinkField unity(grid);
     unity = 1.0;
@@ -206,15 +217,15 @@ class SmearedConfiguration {
   }
 
   //====================================================================
- public:
-  GaugeField*
-      ThinLinks; /*!< @brief Pointer to the thin
-                                                         links configuration */
+public:
+  GaugeField *
+      ThinLinks; /* Pointer to the thin links configuration */
 
-  /*! @brief Standard constructor */
-  SmearedConfiguration(GridCartesian* UGrid, unsigned int Nsmear,
-                       Smear_Stout<Gimpl>& Stout)
-      : smearingLevels(Nsmear), StoutSmearing(Stout), ThinLinks(NULL) {
+  /* Standard constructor */
+  SmearedConfiguration(GridCartesian *UGrid, unsigned int Nsmear,
+                       Smear_Stout<Gimpl> &Stout)
+      : smearingLevels(Nsmear), StoutSmearing(Stout), ThinLinks(NULL)
+  {
     for (unsigned int i = 0; i < smearingLevels; ++i)
       SmearedSet.push_back(*(new GaugeField(UGrid)));
   }
@@ -223,21 +234,29 @@ class SmearedConfiguration {
   SmearedConfiguration()
       : smearingLevels(0), StoutSmearing(), SmearedSet(), ThinLinks(NULL) {}
 
-
-  
   // attach the smeared routines to the thin links U and fill the smeared set
-  void set_Field(GaugeField& U) { fill_smearedSet(U); }
+  void set_Field(GaugeField &U)
+  {
+    double start = usecond();
+    fill_smearedSet(U);
+    double end = usecond();
+    double time = (end - start)/ 1e3;
+    std::cout << GridLogMessage << "Smearing in " << time << " ms" << std::endl;  
+  }
 
   //====================================================================
-  void smeared_force(GaugeField& SigmaTilde) const {
-    if (smearingLevels > 0) {
+  void smeared_force(GaugeField &SigmaTilde) const
+  {
+    if (smearingLevels > 0)
+    {
+      double start = usecond();
       GaugeField force = SigmaTilde; // actually = U*SigmaTilde
       GaugeLinkField tmp_mu(SigmaTilde._grid);
 
-      for (int mu = 0; mu < Nd; mu++) {
+      for (int mu = 0; mu < Nd; mu++)
+      {
         // to get just SigmaTilde
-        tmp_mu = adj(peekLorentz(SmearedSet[smearingLevels - 1], mu)) *
-                 peekLorentz(force, mu);
+        tmp_mu = adj(peekLorentz(SmearedSet[smearingLevels - 1], mu)) * peekLorentz(force, mu);
         pokeLorentz(force, tmp_mu, mu);
       }
 
@@ -246,33 +265,43 @@ class SmearedConfiguration {
 
       force = AnalyticSmearedForce(force, *ThinLinks);
 
-      for (int mu = 0; mu < Nd; mu++) {
+      for (int mu = 0; mu < Nd; mu++)
+      {
         tmp_mu = peekLorentz(*ThinLinks, mu) * peekLorentz(force, mu);
         pokeLorentz(SigmaTilde, tmp_mu, mu);
       }
-    }  // if smearingLevels = 0 do nothing
+      double end = usecond();
+      double time = (end - start)/ 1e3;
+      std::cout << GridLogMessage << "Smearing force in " << time << " ms" << std::endl;  
+    } // if smearingLevels = 0 do nothing
   }
   //====================================================================
 
-  GaugeField& get_SmearedU() { return SmearedSet[smearingLevels - 1]; }
+  GaugeField &get_SmearedU() { return SmearedSet[smearingLevels - 1]; }
 
-  GaugeField& get_U(bool smeared = false) {
+  GaugeField &get_U(bool smeared = false)
+  {
     // get the config, thin links by default
-    if (smeared) {
-      if (smearingLevels) {
+    if (smeared)
+    {
+      if (smearingLevels)
+      {
         RealD impl_plaq =
             WilsonLoops<Gimpl>::avgPlaquette(SmearedSet[smearingLevels - 1]);
         std::cout << GridLogDebug << "getting Usmr Plaq: " << impl_plaq
                   << std::endl;
         return get_SmearedU();
-
-      } else {
+      }
+      else
+      {
         RealD impl_plaq = WilsonLoops<Gimpl>::avgPlaquette(*ThinLinks);
         std::cout << GridLogDebug << "getting Thin Plaq: " << impl_plaq
                   << std::endl;
         return *ThinLinks;
       }
-    } else {
+    }
+    else
+    {
       RealD impl_plaq = WilsonLoops<Gimpl>::avgPlaquette(*ThinLinks);
       std::cout << GridLogDebug << "getting Thin Plaq: " << impl_plaq
                 << std::endl;

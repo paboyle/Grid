@@ -44,9 +44,21 @@ class EigenPack
 {
 public:
     typedef F Field;
+    struct PackRecord
+    {
+        std::string operatorXml, solverXml;
+    };
+    struct VecRecord: Serializable
+    {
+        GRID_SERIALIZABLE_CLASS_MEMBERS(VecRecord,
+                                        unsigned int, index,
+                                        double,       eval);
+        VecRecord(void): index(0), eval(0.) {}
+    };
 public:
     std::vector<RealD> eval;
     std::vector<F>     evec;
+    PackRecord         record;
 public:
     EigenPack(void)          = default;
     virtual ~EigenPack(void) = default;
@@ -62,66 +74,137 @@ public:
         evec.resize(size, grid);
     }
 
-    virtual void read(const std::string fileStem, const int traj = -1)
+    virtual void read(const std::string fileStem, const bool multiFile, const int traj = -1)
     {
-        std::string evecFilename, evalFilename;
-
-        makeFilenames(evecFilename, evalFilename, fileStem, traj);
-        XmlReader xmlReader(evalFilename);
-        basicRead(evec, evecFilename, evec.size());
-        LOG(Message) << "Reading " << eval.size() << " eigenvalues from '" 
-                     << evalFilename << "'" << std::endl;
-        Grid::read(xmlReader, "evals", eval);
+        if (multiFile)
+        {
+            for(int k = 0; k < evec.size(); ++k)
+            {
+                basicReadSingle(evec[k], eval[k], evecFilename(fileStem, k, traj), k);
+            }
+        }
+        else
+        {
+            basicRead(evec, eval, evecFilename(fileStem, -1, traj), evec.size());
+        }
     }
 
-    virtual void write(const std::string fileStem, const int traj = -1)
+    virtual void write(const std::string fileStem, const bool multiFile, const int traj = -1)
     {
-        std::string evecFilename, evalFilename;
-
-        makeFilenames(evecFilename, evalFilename, fileStem, traj);
-        XmlWriter xmlWriter(evalFilename);
-        basicWrite(evecFilename, evec, evec.size());
-        LOG(Message) << "Writing " << eval.size() << " eigenvalues to '" 
-                     << evalFilename << "'" << std::endl;
-        Grid::write(xmlWriter, "evals", eval);
+        if (multiFile)
+        {
+            for(int k = 0; k < evec.size(); ++k)
+            {
+                basicWriteSingle(evecFilename(fileStem, k, traj), evec[k], eval[k], k);
+            }
+        }
+        else
+        {
+            basicWrite(evecFilename(fileStem, -1, traj), evec, eval, evec.size());
+        }
     }
 protected:
-    void makeFilenames(std::string &evecFilename, std::string &evalFilename,
-                       const std::string stem, const int traj = -1)
+    std::string evecFilename(const std::string stem, const int vec, const int traj)
     {
         std::string t = (traj < 0) ? "" : ("." + std::to_string(traj));
 
-        evecFilename = stem + "_evec" + t + ".bin";
-        evalFilename = stem + "_eval" + t + ".xml";
+        if (vec == -1)
+        {
+            return stem + t + ".bin";
+        }
+        else
+        {
+            return stem + t + "/v" + std::to_string(vec) + ".bin";
+        }
     }
 
     template <typename T>
-    static void basicRead(std::vector<T> &evec, const std::string filename, 
-                          const unsigned int size)
+    void basicRead(std::vector<T> &evec, std::vector<double> &eval,
+                   const std::string filename, const unsigned int size)
     {
-        emptyUserRecord record;
         ScidacReader    binReader;
 
         binReader.open(filename);
+        binReader.skipPastObjectRecord(SCIDAC_FILE_XML);
         for(int k = 0; k < size; ++k) 
         {
-            binReader.readScidacFieldRecord(evec[k], record);
+            VecRecord vecRecord;
+
+            LOG(Message) << "Reading eigenvector " << k << std::endl;
+            binReader.readScidacFieldRecord(evec[k], vecRecord);
+            if (vecRecord.index != k)
+            {
+                HADRONS_ERROR(Io, "Eigenvector " + std::to_string(k) + " has a"
+                              + " wrong index (expected " + std::to_string(vecRecord.index) 
+                              + ") in file '" + filename + "'");
+            }
+            eval[k] = vecRecord.eval;
         }
         binReader.close();
     }
 
     template <typename T>
-    static void basicWrite(const std::string filename, std::vector<T> &evec, 
-                           const unsigned int size)
+    void basicReadSingle(T &evec, double &eval, const std::string filename, 
+                         const unsigned int index)
     {
-        emptyUserRecord record;
-        ScidacWriter    binWriter;
+        ScidacReader binReader;
+        VecRecord    vecRecord;
 
+        binReader.open(filename);
+        binReader.skipPastObjectRecord(SCIDAC_FILE_XML);
+        LOG(Message) << "Reading eigenvector " << index << std::endl;
+        binReader.readScidacFieldRecord(evec, vecRecord);
+        if (vecRecord.index != index)
+        {
+            HADRONS_ERROR(Io, "Eigenvector " + std::to_string(index) + " has a"
+                          + " wrong index (expected " + std::to_string(vecRecord.index) 
+                          + ") in file '" + filename + "'");
+        }
+        eval = vecRecord.eval;
+        binReader.close();
+    }
+
+    template <typename T>
+    void basicWrite(const std::string filename, std::vector<T> &evec, 
+                    const std::vector<double> &eval, const unsigned int size)
+    {
+        ScidacWriter binWriter(evec[0]._grid->IsBoss());
+        XmlWriter    xmlWriter("", "eigenPackPar");
+
+        makeFileDir(filename, evec[0]._grid);
+        xmlWriter.pushXmlString(record.operatorXml);
+        xmlWriter.pushXmlString(record.solverXml);
         binWriter.open(filename);
+        binWriter.writeLimeObject(1, 1, xmlWriter, "parameters", SCIDAC_FILE_XML);
         for(int k = 0; k < size; ++k) 
         {
-            binWriter.writeScidacFieldRecord(evec[k], record);
+            VecRecord vecRecord;
+
+            vecRecord.index = k;
+            vecRecord.eval  = eval[k];
+            LOG(Message) << "Writing eigenvector " << k << std::endl;
+            binWriter.writeScidacFieldRecord(evec[k], vecRecord, DEFAULT_ASCII_PREC);
         }
+        binWriter.close();
+    }
+
+    template <typename T>
+    void basicWriteSingle(const std::string filename, T &evec, 
+                          const double eval, const unsigned int index)
+    {
+        ScidacWriter binWriter(evec._grid->IsBoss());
+        XmlWriter    xmlWriter("", "eigenPackPar");
+        VecRecord    vecRecord;
+
+        makeFileDir(filename, evec._grid);
+        xmlWriter.pushXmlString(record.operatorXml);
+        xmlWriter.pushXmlString(record.solverXml);
+        binWriter.open(filename);
+        binWriter.writeLimeObject(1, 1, xmlWriter, "parameters", SCIDAC_FILE_XML);
+        vecRecord.index = index;
+        vecRecord.eval  = eval;
+        LOG(Message) << "Writing eigenvector " << index << std::endl;
+        binWriter.writeScidacFieldRecord(evec, vecRecord, DEFAULT_ASCII_PREC);
         binWriter.close();
     }
 };
@@ -152,54 +235,76 @@ public:
         evecCoarse.resize(sizeCoarse, gridCoarse);
     }
 
-    virtual void read(const std::string fileStem, const int traj = -1)
+    void readFine(const std::string fileStem, const bool multiFile, const int traj = -1)
     {
-        std::string evecFineFilename, evalFineFilename;
-        std::string evecCoarseFilename, evalCoarseFilename;
-
-        this->makeFilenames(evecFineFilename, evalFineFilename, 
-                            fileStem + "_fine", traj);
-        this->makeFilenames(evecCoarseFilename, evalCoarseFilename, 
-                            fileStem + "_coarse", traj);
-        XmlReader xmlFineReader(evalFineFilename);
-        XmlReader xmlCoarseReader(evalCoarseFilename);
-        LOG(Message) << "Reading " << this->evec.size() << " fine eigenvectors from '" 
-                     << evecFineFilename << "'" << std::endl;
-        this->basicRead(this->evec, evecFineFilename, this->evec.size());
-        LOG(Message) << "Reading " << evecCoarse.size() << " coarse eigenvectors from '" 
-                     << evecCoarseFilename << "'" << std::endl;
-        this->basicRead(evecCoarse, evecCoarseFilename, evecCoarse.size());
-        LOG(Message) << "Reading " << this->eval.size() << " fine eigenvalues from '" 
-                     << evalFineFilename << "'" << std::endl;
-        Grid::read(xmlFineReader, "evals", this->eval);
-        LOG(Message) << "Reading " << evalCoarse.size() << " coarse eigenvalues from '" 
-                     << evalCoarseFilename << "'" << std::endl;
-        Grid::read(xmlCoarseReader, "evals", evalCoarse);
+        if (multiFile)
+        {
+            for(int k = 0; k < this->evec.size(); ++k)
+            {
+                this->basicReadSingle(this->evec[k], this->eval[k], this->evecFilename(fileStem + "_fine", k, traj), k);
+            }
+        }
+        else
+        {
+            this->basicRead(this->evec, this->eval, this->evecFilename(fileStem + "_fine", -1, traj), this->evec.size());
+        }
     }
 
-    virtual void write(const std::string fileStem, const int traj = -1)
+    void readCoarse(const std::string fileStem, const bool multiFile, const int traj = -1)
     {
-        std::string evecFineFilename, evalFineFilename;
-        std::string evecCoarseFilename, evalCoarseFilename;
+        if (multiFile)
+        {
+            for(int k = 0; k < evecCoarse.size(); ++k)
+            {
+                this->basicReadSingle(evecCoarse[k], evalCoarse[k], this->evecFilename(fileStem + "_coarse", k, traj), k);
+            }
+        }
+        else
+        {
+            this->basicRead(evecCoarse, evalCoarse, this->evecFilename(fileStem + "_coarse", -1, traj), evecCoarse.size());
+        }
+    }
 
-        this->makeFilenames(evecFineFilename, evalFineFilename, 
-                            fileStem + "_fine", traj);
-        this->makeFilenames(evecCoarseFilename, evalCoarseFilename,
-                            fileStem + "_coarse", traj);
-        XmlWriter xmlFineWriter(evalFineFilename);
-        XmlWriter xmlCoarseWriter(evalCoarseFilename);
-        LOG(Message) << "Writing " << this->evec.size() << " fine eigenvectors to '" 
-                     << evecFineFilename << "'" << std::endl;
-        this->basicWrite(evecFineFilename, this->evec, this->evec.size());
-        LOG(Message) << "Writing " << evecCoarse.size() << " coarse eigenvectors to '" 
-                     << evecCoarseFilename << "'" << std::endl;
-        this->basicWrite(evecCoarseFilename, evecCoarse, evecCoarse.size());
-        LOG(Message) << "Writing " << this->eval.size() << " fine eigenvalues to '" 
-                     << evalFineFilename << "'" << std::endl;
-        Grid::write(xmlFineWriter, "evals", this->eval);
-        LOG(Message) << "Writing " << evalCoarse.size() << " coarse eigenvalues to '" 
-                     << evalCoarseFilename << "'" << std::endl;
-        Grid::write(xmlCoarseWriter, "evals", evalCoarse);
+    virtual void read(const std::string fileStem, const bool multiFile, const int traj = -1)
+    {
+        readFine(fileStem, multiFile, traj);
+        readCoarse(fileStem, multiFile, traj);
+    }
+
+    void writeFine(const std::string fileStem, const bool multiFile, const int traj = -1)
+    {
+        if (multiFile)
+        {
+            for(int k = 0; k < this->evec.size(); ++k)
+            {
+                this->basicWriteSingle(this->evecFilename(fileStem + "_fine", k, traj), this->evec[k], this->eval[k], k);
+            }
+        }
+        else
+        {
+            this->basicWrite(this->evecFilename(fileStem + "_fine", -1, traj), this->evec, this->eval, this->evec.size());
+        }
+    }
+
+    void writeCoarse(const std::string fileStem, const bool multiFile, const int traj = -1)
+    {
+        if (multiFile)
+        {
+            for(int k = 0; k < evecCoarse.size(); ++k)
+            {
+                this->basicWriteSingle(this->evecFilename(fileStem + "_coarse", k, traj), evecCoarse[k], evalCoarse[k], k);
+            }
+        }
+        else
+        {
+            this->basicWrite(this->evecFilename(fileStem + "_coarse", -1, traj), evecCoarse, evalCoarse, evecCoarse.size());
+        }
+    }
+    
+    virtual void write(const std::string fileStem, const bool multiFile, const int traj = -1)
+    {
+        writeFine(fileStem, multiFile, traj);
+        writeCoarse(fileStem, multiFile, traj);
     }
 };
 
