@@ -32,223 +32,241 @@ namespace Grid {
 namespace QCD {
 
 int StaggeredKernelsStatic::Opt= StaggeredKernelsStatic::OptGeneric;
+int StaggeredKernelsStatic::Comms = StaggeredKernelsStatic::CommsAndCompute;
+
+#define GENERIC_STENCIL_LEG(U,Dir,skew,multLink)		\
+  SE = st.GetEntry(ptype, Dir+skew, sF);			\
+  if (SE->_is_local ) {						\
+    if (SE->_permute) {						\
+      chi_p = &chi;						\
+      permute(chi,  in._odata[SE->_offset], ptype);		\
+    } else {							\
+      chi_p = &in._odata[SE->_offset];				\
+    }								\
+  } else {							\
+    chi_p = &buf[SE->_offset];					\
+  }								\
+  multLink(Uchi, U._odata[sU], *chi_p, Dir);			
+
+#define GENERIC_STENCIL_LEG_INT(U,Dir,skew,multLink)		\
+  SE = st.GetEntry(ptype, Dir+skew, sF);			\
+  if (SE->_is_local ) {						\
+    if (SE->_permute) {						\
+      chi_p = &chi;						\
+      permute(chi,  in._odata[SE->_offset], ptype);		\
+    } else {							\
+      chi_p = &in._odata[SE->_offset];				\
+    }								\
+  } else if ( st.same_node[Dir] ) {				\
+    chi_p = &buf[SE->_offset];					\
+  }								\
+  if (SE->_is_local || st.same_node[Dir] ) {			\
+    multLink(Uchi, U._odata[sU], *chi_p, Dir);			\
+  }
+
+#define GENERIC_STENCIL_LEG_EXT(U,Dir,skew,multLink)		\
+  SE = st.GetEntry(ptype, Dir+skew, sF);			\
+  if ((!SE->_is_local) && (!st.same_node[Dir]) ) {		\
+    nmu++;							\
+    chi_p = &buf[SE->_offset];					\
+    multLink(Uchi, U._odata[sU], *chi_p, Dir);			\
+  }
 
 template <class Impl>
 StaggeredKernels<Impl>::StaggeredKernels(const ImplParams &p) : Base(p){};
 
-////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
 // Generic implementation; move to different file?
-////////////////////////////////////////////
-
+// Int, Ext, Int+Ext cases for comms overlap
+////////////////////////////////////////////////////////////////////////////////////
 template <class Impl>
-void StaggeredKernels<Impl>::DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-					   SiteSpinor *buf, int sF,
-					   int sU, const FermionField &in, SiteSpinor &out,int threeLink) {
+void StaggeredKernels<Impl>::DhopSiteGeneric(StencilImpl &st, LebesgueOrder &lo, 
+					     DoubledGaugeField &U, DoubledGaugeField &UUU,
+					     SiteSpinor *buf, int LLs, int sU, 
+					     const FermionField &in, FermionField &out, int dag) {
   const SiteSpinor *chi_p;
   SiteSpinor chi;
   SiteSpinor Uchi;
   StencilEntry *SE;
   int ptype;
-  int skew = 0;
-  if (threeLink) skew=8;
-  ///////////////////////////
-  // Xp
-  ///////////////////////////
+  int skew;
 
-  SE = st.GetEntry(ptype, Xp+skew, sF);
-  if (SE->_is_local) {
-    if (SE->_permute) {
-      chi_p = &chi;
-      permute(chi,  in._odata[SE->_offset], ptype);
-    } else {
-      chi_p = &in._odata[SE->_offset];
-    }
-  } else {
-    chi_p = &buf[SE->_offset];
+  for(int s=0;s<LLs;s++){
+    int sF=LLs*sU+s;
+    skew = 0;
+    GENERIC_STENCIL_LEG(U,Xp,skew,Impl::multLink);
+    GENERIC_STENCIL_LEG(U,Yp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG(U,Zp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG(U,Tp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG(U,Xm,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG(U,Ym,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG(U,Zm,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG(U,Tm,skew,Impl::multLinkAdd);
+    skew=8;
+    GENERIC_STENCIL_LEG(UUU,Xp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG(UUU,Yp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG(UUU,Zp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG(UUU,Tp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG(UUU,Xm,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG(UUU,Ym,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG(UUU,Zm,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG(UUU,Tm,skew,Impl::multLinkAdd);
+    if ( dag ) { 
+      Uchi = - Uchi;
+    } 
+    vstream(out._odata[sF], Uchi);
   }
-  Impl::multLink(Uchi, U._odata[sU], *chi_p, Xp);
-
-  ///////////////////////////
-  // Yp
-  ///////////////////////////
-  SE = st.GetEntry(ptype, Yp+skew, sF);
-  if (SE->_is_local) {
-    if (SE->_permute) {
-      chi_p = &chi;
-      permute(chi,  in._odata[SE->_offset], ptype);
-    } else {
-      chi_p = &in._odata[SE->_offset];
-    }
-  } else {
-    chi_p = &buf[SE->_offset];
-  }
-  Impl::multLinkAdd(Uchi, U._odata[sU], *chi_p, Yp);
-
-  ///////////////////////////
-  // Zp
-  ///////////////////////////
-  SE = st.GetEntry(ptype, Zp+skew, sF);
-  if (SE->_is_local) {
-    if (SE->_permute) {
-      chi_p = &chi;
-      permute(chi,  in._odata[SE->_offset], ptype);
-    } else {
-      chi_p = &in._odata[SE->_offset];
-    }
-  } else {
-    chi_p = &buf[SE->_offset];
-  }
-  Impl::multLinkAdd(Uchi, U._odata[sU], *chi_p, Zp);
-
-  ///////////////////////////
-  // Tp
-  ///////////////////////////
-  SE = st.GetEntry(ptype, Tp+skew, sF);
-  if (SE->_is_local) {
-    if (SE->_permute) {
-      chi_p = &chi;
-      permute(chi,  in._odata[SE->_offset], ptype);
-    } else {
-      chi_p = &in._odata[SE->_offset];
-    }
-  } else {
-    chi_p = &buf[SE->_offset];
-  }
-  Impl::multLinkAdd(Uchi, U._odata[sU], *chi_p, Tp);
-
-  ///////////////////////////
-  // Xm
-  ///////////////////////////
-  SE = st.GetEntry(ptype, Xm+skew, sF);
-  if (SE->_is_local) {
-    if (SE->_permute) {
-      chi_p = &chi;
-      permute(chi,  in._odata[SE->_offset], ptype);
-    } else {
-      chi_p = &in._odata[SE->_offset];
-    }
-  } else {
-    chi_p = &buf[SE->_offset];
-  }
-  Impl::multLinkAdd(Uchi, U._odata[sU], *chi_p, Xm);
-
-  ///////////////////////////
-  // Ym
-  ///////////////////////////
-  SE = st.GetEntry(ptype, Ym+skew, sF);
-  if (SE->_is_local) {
-    if (SE->_permute) {
-      chi_p = &chi;
-      permute(chi,  in._odata[SE->_offset], ptype);
-    } else {
-      chi_p = &in._odata[SE->_offset];
-    }
-  } else {
-    chi_p = &buf[SE->_offset];
-  }
-  Impl::multLinkAdd(Uchi, U._odata[sU], *chi_p, Ym);
-
-  ///////////////////////////
-  // Zm
-  ///////////////////////////
-  SE = st.GetEntry(ptype, Zm+skew, sF);
-  if (SE->_is_local) {
-    if (SE->_permute) {
-      chi_p = &chi;
-      permute(chi,  in._odata[SE->_offset], ptype);
-    } else {
-      chi_p = &in._odata[SE->_offset];
-    }
-  } else {
-    chi_p = &buf[SE->_offset];
-  }
-  Impl::multLinkAdd(Uchi, U._odata[sU], *chi_p, Zm);
-
-  ///////////////////////////
-  // Tm
-  ///////////////////////////
-  SE = st.GetEntry(ptype, Tm+skew, sF);
-  if (SE->_is_local) {
-    if (SE->_permute) {
-      chi_p = &chi;
-      permute(chi,  in._odata[SE->_offset], ptype);
-    } else {
-      chi_p = &in._odata[SE->_offset];
-    }
-  } else {
-    chi_p = &buf[SE->_offset];
-  }
-  Impl::multLinkAdd(Uchi, U._odata[sU], *chi_p, Tm);
-
-  vstream(out, Uchi);
 };
+
+  ///////////////////////////////////////////////////
+  // Only contributions from interior of our node
+  ///////////////////////////////////////////////////
+template <class Impl>
+void StaggeredKernels<Impl>::DhopSiteGenericInt(StencilImpl &st, LebesgueOrder &lo, 
+						DoubledGaugeField &U, DoubledGaugeField &UUU,
+						SiteSpinor *buf, int LLs, int sU, 
+						const FermionField &in, FermionField &out,int dag) {
+  const SiteSpinor *chi_p;
+  SiteSpinor chi;
+  SiteSpinor Uchi;
+  StencilEntry *SE;
+  int ptype;
+  int skew ;
+
+  for(int s=0;s<LLs;s++){
+    int sF=LLs*sU+s;
+    skew = 0;
+    Uchi=zero;
+    GENERIC_STENCIL_LEG_INT(U,Xp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_INT(U,Yp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_INT(U,Zp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_INT(U,Tp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_INT(U,Xm,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_INT(U,Ym,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_INT(U,Zm,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_INT(U,Tm,skew,Impl::multLinkAdd);
+    skew=8;
+    GENERIC_STENCIL_LEG_INT(UUU,Xp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_INT(UUU,Yp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_INT(UUU,Zp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_INT(UUU,Tp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_INT(UUU,Xm,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_INT(UUU,Ym,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_INT(UUU,Zm,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_INT(UUU,Tm,skew,Impl::multLinkAdd);
+    if ( dag ) {
+      Uchi = - Uchi;
+    }
+    vstream(out._odata[sF], Uchi);
+  }
+};
+
+
+  ///////////////////////////////////////////////////
+  // Only contributions from exterior of our node
+  ///////////////////////////////////////////////////
+template <class Impl>
+void StaggeredKernels<Impl>::DhopSiteGenericExt(StencilImpl &st, LebesgueOrder &lo, 
+						DoubledGaugeField &U, DoubledGaugeField &UUU,
+						SiteSpinor *buf, int LLs, int sU,
+						const FermionField &in, FermionField &out,int dag) {
+  const SiteSpinor *chi_p;
+  SiteSpinor chi;
+  SiteSpinor Uchi;
+  StencilEntry *SE;
+  int ptype;
+  int nmu=0;
+  int skew ;
+
+  for(int s=0;s<LLs;s++){
+    int sF=LLs*sU+s;
+    skew = 0;
+    Uchi=zero;
+    GENERIC_STENCIL_LEG_EXT(U,Xp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_EXT(U,Yp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_EXT(U,Zp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_EXT(U,Tp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_EXT(U,Xm,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_EXT(U,Ym,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_EXT(U,Zm,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_EXT(U,Tm,skew,Impl::multLinkAdd);
+    skew=8;
+    GENERIC_STENCIL_LEG_EXT(UUU,Xp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_EXT(UUU,Yp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_EXT(UUU,Zp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_EXT(UUU,Tp,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_EXT(UUU,Xm,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_EXT(UUU,Ym,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_EXT(UUU,Zm,skew,Impl::multLinkAdd);
+    GENERIC_STENCIL_LEG_EXT(UUU,Tm,skew,Impl::multLinkAdd);
+
+    if ( nmu ) { 
+      if ( dag ) { 
+	out._odata[sF] = out._odata[sF] - Uchi;
+      } else { 
+	out._odata[sF] = out._odata[sF] + Uchi;
+      }
+    }
+  }
+};
+
+////////////////////////////////////////////////////////////////////////////////////
+// Driving / wrapping routine to select right kernel
+////////////////////////////////////////////////////////////////////////////////////
 
 template <class Impl>
 void StaggeredKernels<Impl>::DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU,
-						  SiteSpinor *buf, int LLs, int sU,
-						  const FermionField &in, FermionField &out) {
-  SiteSpinor naik;
-  SiteSpinor naive;
-  int oneLink  =0;
-  int threeLink=1;
+					 SiteSpinor *buf, int LLs, int sU,
+					 const FermionField &in, FermionField &out,
+					 int interior,int exterior)
+{
   int dag=1;
-  switch(Opt) {
-#ifdef AVX512
-  //FIXME; move the sign into the Asm routine
-  case OptInlineAsm:
-    DhopSiteAsm(st,lo,U,UUU,buf,LLs,sU,in,out);
-    for(int s=0;s<LLs;s++) {
-      int sF=s+LLs*sU;
-      out._odata[sF]=-out._odata[sF];
-    }
-    break;
-#endif
-  case OptHandUnroll:
-    DhopSiteHand(st,lo,U,UUU,buf,LLs,sU,in,out,dag);
-    break;
-  case OptGeneric:
-    for(int s=0;s<LLs;s++){
-       int sF=s+LLs*sU;
-       DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
-       DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
-       out._odata[sF] =-naive-naik; 
-     }
-    break;
-  default:
-    std::cout<<"Oops Opt = "<<Opt<<std::endl;
-    assert(0);
-    break;
-  }
+  DhopSite(st,lo,U,UUU,buf,LLs,sU,in,out,dag,interior,exterior);
+};
+
+template <class Impl>
+void StaggeredKernels<Impl>::DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU,
+				      SiteSpinor *buf, int LLs, int sU,
+				      const FermionField &in, FermionField &out,
+				      int interior,int exterior)
+{
+  int dag=0;
+  DhopSite(st,lo,U,UUU,buf,LLs,sU,in,out,dag,interior,exterior);
 };
 
 template <class Impl>
 void StaggeredKernels<Impl>::DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU,
 				      SiteSpinor *buf, int LLs,
-				      int sU, const FermionField &in, FermionField &out) 
+				      int sU, const FermionField &in, FermionField &out,
+				      int dag,int interior,int exterior) 
 {
-  int oneLink  =0;
-  int threeLink=1;
-  SiteSpinor naik;
-  SiteSpinor naive;
-  int dag=0;
   switch(Opt) {
 #ifdef AVX512
   case OptInlineAsm:
-    DhopSiteAsm(st,lo,U,UUU,buf,LLs,sU,in,out);
+    if ( interior && exterior ) {
+      DhopSiteAsm(st,lo,U,UUU,buf,LLs,sU,in,out,dag);
+    } else { 
+      std::cout << GridLogError << "Cannot overlap comms and compute with Staggered assembly"<<std::endl;
+      assert(0);
+    }
     break;
 #endif
   case OptHandUnroll:
-    DhopSiteHand(st,lo,U,UUU,buf,LLs,sU,in,out,dag);
+    if ( interior && exterior ) {
+      DhopSiteHand   (st,lo,U,UUU,buf,LLs,sU,in,out,dag);
+    } else if ( interior ) {
+      DhopSiteHandInt(st,lo,U,UUU,buf,LLs,sU,in,out,dag);
+    } else if ( exterior ) {
+      DhopSiteHandExt(st,lo,U,UUU,buf,LLs,sU,in,out,dag);
+    }
     break;
   case OptGeneric:
-    for(int s=0;s<LLs;s++){
-      int sF=LLs*sU+s;
-      //      assert(sF<in._odata.size());
-      //      assert(sU< U._odata.size());
-      //      assert(sF>=0);      assert(sU>=0);
-      DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
-      DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
-      out._odata[sF] =naive+naik;
+    if ( interior && exterior ) {
+      DhopSiteGeneric   (st,lo,U,UUU,buf,LLs,sU,in,out,dag);
+    } else if ( interior ) {
+      DhopSiteGenericInt(st,lo,U,UUU,buf,LLs,sU,in,out,dag);
+    } else if ( exterior ) {
+      DhopSiteGenericExt(st,lo,U,UUU,buf,LLs,sU,in,out,dag);
     }
     break;
   default:
