@@ -208,6 +208,7 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
     cp=c;
     MatrixTimer.Start();  
     //Linop.HermOpAndNorm(p,mmp,d,qq); // d is used
+    // The below is faster on KNL
     Linop.HermOp(p,mmp); 
     d=real(innerProduct(p,mmp));
     
