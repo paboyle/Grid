@@ -28,7 +28,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #ifndef GRID_LOCAL_COHERENCE_IRL_H
 #define GRID_LOCAL_COHERENCE_IRL_H
+
 namespace Grid { 
+
+
 struct LanczosParams : Serializable {
  public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(LanczosParams,
@@ -45,6 +48,7 @@ struct LanczosParams : Serializable {
 struct LocalCoherenceLanczosParams : Serializable {
  public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(LocalCoherenceLanczosParams,
+				  bool, saveEvecs,
 				  bool, doFine,
 				  bool, doFineRead,
 				  bool, doCoarse,
@@ -70,21 +74,24 @@ public:
   typedef Lattice<Fobj>          FineField;
 
   LinearOperatorBase<FineField> &_Linop;
-  Aggregation<Fobj,CComplex,nbasis> &_Aggregate;
+  std::vector<FineField>        &subspace;
 
-  ProjectedHermOp(LinearOperatorBase<FineField>& linop,  Aggregation<Fobj,CComplex,nbasis> &aggregate) : 
-    _Linop(linop),
-    _Aggregate(aggregate)  {  };
+  ProjectedHermOp(LinearOperatorBase<FineField>& linop, std::vector<FineField> & _subspace) : 
+    _Linop(linop), subspace(_subspace)
+  {  
+    assert(subspace.size() >0);
+  };
 
   void operator()(const CoarseField& in, CoarseField& out) {
+    GridBase *FineGrid = subspace[0]._grid;    
+    int   checkerboard = subspace[0].checkerboard;
+      
+    FineField fin (FineGrid);     fin.checkerboard= checkerboard;
+    FineField fout(FineGrid);   fout.checkerboard = checkerboard;
 
-    GridBase *FineGrid = _Aggregate.FineGrid;
-    FineField fin(FineGrid);
-    FineField fout(FineGrid);
-
-    _Aggregate.PromoteFromSubspace(in,fin);    std::cout<<GridLogIRL<<"ProjectedHermop : Promote to fine"<<std::endl;
-    _Linop.HermOp(fin,fout);                   std::cout<<GridLogIRL<<"ProjectedHermop : HermOp (fine) "<<std::endl;
-    _Aggregate.ProjectToSubspace(out,fout);    std::cout<<GridLogIRL<<"ProjectedHermop : Project to coarse "<<std::endl;
+    blockPromote(in,fin,subspace);       std::cout<<GridLogIRL<<"ProjectedHermop : Promote to fine"<<std::endl;
+    _Linop.HermOp(fin,fout);             std::cout<<GridLogIRL<<"ProjectedHermop : HermOp (fine) "<<std::endl;
+    blockProject(out,fout,subspace);     std::cout<<GridLogIRL<<"ProjectedHermop : Project to coarse "<<std::endl;
   }
 };
 
@@ -99,24 +106,27 @@ public:
 
   OperatorFunction<FineField>   & _poly;
   LinearOperatorBase<FineField> &_Linop;
-  Aggregation<Fobj,CComplex,nbasis> &_Aggregate;
+  std::vector<FineField>        &subspace;
 
-  ProjectedFunctionHermOp(OperatorFunction<FineField> & poly,LinearOperatorBase<FineField>& linop, 
-			  Aggregation<Fobj,CComplex,nbasis> &aggregate) : 
+  ProjectedFunctionHermOp(OperatorFunction<FineField> & poly,
+			  LinearOperatorBase<FineField>& linop, 
+			  std::vector<FineField> & _subspace) :
     _poly(poly),
     _Linop(linop),
-    _Aggregate(aggregate)  {  };
+    subspace(_subspace)
+  {  };
 
   void operator()(const CoarseField& in, CoarseField& out) {
-
-    GridBase *FineGrid = _Aggregate.FineGrid;
-
-    FineField fin(FineGrid) ;fin.checkerboard  =_Aggregate.checkerboard;
-    FineField fout(FineGrid);fout.checkerboard =_Aggregate.checkerboard;
     
-    _Aggregate.PromoteFromSubspace(in,fin);    std::cout<<GridLogIRL<<"ProjectedFunctionHermop : Promote to fine"<<std::endl;
+    GridBase *FineGrid = subspace[0]._grid;    
+    int   checkerboard = subspace[0].checkerboard;
+
+    FineField fin (FineGrid); fin.checkerboard =checkerboard;
+    FineField fout(FineGrid);fout.checkerboard =checkerboard;
+    
+    blockPromote(in,fin,subspace);             std::cout<<GridLogIRL<<"ProjectedFunctionHermop : Promote to fine"<<std::endl;
     _poly(_Linop,fin,fout);                    std::cout<<GridLogIRL<<"ProjectedFunctionHermop : Poly "<<std::endl;
-    _Aggregate.ProjectToSubspace(out,fout);    std::cout<<GridLogIRL<<"ProjectedFunctionHermop : Project to coarse "<<std::endl;
+    blockProject(out,fout,subspace);           std::cout<<GridLogIRL<<"ProjectedFunctionHermop : Project to coarse "<<std::endl;
   }
 };
 
@@ -132,19 +142,23 @@ class ImplicitlyRestartedLanczosSmoothedTester  : public ImplicitlyRestartedLanc
   LinearFunction<CoarseField> & _Poly;
   OperatorFunction<FineField>   & _smoother;
   LinearOperatorBase<FineField> &_Linop;
-  Aggregation<Fobj,CComplex,nbasis> &_Aggregate;
-  RealD                             _coarse_relax_tol;
+  RealD                          _coarse_relax_tol;
+  std::vector<FineField>        &_subspace;
+  
   ImplicitlyRestartedLanczosSmoothedTester(LinearFunction<CoarseField>   &Poly,
 					   OperatorFunction<FineField>   &smoother,
 					   LinearOperatorBase<FineField> &Linop,
-					   Aggregation<Fobj,CComplex,nbasis> &Aggregate,
+					   std::vector<FineField>        &subspace,
 					   RealD coarse_relax_tol=5.0e3) 
-    : _smoother(smoother), _Linop(Linop),_Aggregate(Aggregate), _Poly(Poly), _coarse_relax_tol(coarse_relax_tol)  {    };
+    : _smoother(smoother), _Linop(Linop), _Poly(Poly), _subspace(subspace),
+      _coarse_relax_tol(coarse_relax_tol)  
+  {    };
 
   int TestConvergence(int j,RealD eresid,CoarseField &B, RealD &eval,RealD evalMaxApprox)
   {
     CoarseField v(B);
     RealD eval_poly = eval;
+
     // Apply operator
     _Poly(B,v);
 
@@ -168,14 +182,13 @@ class ImplicitlyRestartedLanczosSmoothedTester  : public ImplicitlyRestartedLanc
   }
   int ReconstructEval(int j,RealD eresid,CoarseField &B, RealD &eval,RealD evalMaxApprox)
   {
-    GridBase *FineGrid = _Aggregate.FineGrid;
-
-    int checkerboard   = _Aggregate.checkerboard;
-
+    GridBase *FineGrid = _subspace[0]._grid;    
+    int checkerboard   = _subspace[0].checkerboard;
     FineField fB(FineGrid);fB.checkerboard =checkerboard;
     FineField fv(FineGrid);fv.checkerboard =checkerboard;
 
-    _Aggregate.PromoteFromSubspace(B,fv);
+    blockPromote(B,fv,_subspace);  
+    
     _smoother(_Linop,fv,fB); 
 
     RealD eval_poly = eval;
@@ -217,27 +230,65 @@ protected:
   int _checkerboard;
   LinearOperatorBase<FineField>                 & _FineOp;
   
-  // FIXME replace Aggregation with vector of fine; the code reuse is too small for
-  // the hassle and complexity of cross coupling.
-  Aggregation<Fobj,CComplex,nbasis>               _Aggregate;  
-  std::vector<RealD>                              evals_fine;
-  std::vector<RealD>                              evals_coarse; 
-  std::vector<CoarseField>                        evec_coarse;
+  std::vector<RealD>                              &evals_fine;
+  std::vector<RealD>                              &evals_coarse; 
+  std::vector<FineField>                          &subspace;
+  std::vector<CoarseField>                        &evec_coarse;
+
+private:
+  std::vector<RealD>                              _evals_fine;
+  std::vector<RealD>                              _evals_coarse; 
+  std::vector<FineField>                          _subspace;
+  std::vector<CoarseField>                        _evec_coarse;
+
 public:
+
   LocalCoherenceLanczos(GridBase *FineGrid,
-		GridBase *CoarseGrid,
-		LinearOperatorBase<FineField> &FineOp,
-		int checkerboard) :
+			GridBase *CoarseGrid,
+			LinearOperatorBase<FineField> &FineOp,
+			int checkerboard) :
     _CoarseGrid(CoarseGrid),
     _FineGrid(FineGrid),
-    _Aggregate(CoarseGrid,FineGrid,checkerboard),
     _FineOp(FineOp),
-    _checkerboard(checkerboard)
+    _checkerboard(checkerboard),
+    evals_fine  (_evals_fine),
+    evals_coarse(_evals_coarse),
+    subspace    (_subspace),
+    evec_coarse(_evec_coarse)
   {
     evals_fine.resize(0);
     evals_coarse.resize(0);
   };
-  void Orthogonalise(void ) { _Aggregate.Orthogonalise(); }
+  //////////////////////////////////////////////////////////////////////////
+  // Alternate constructore, external storage for use by Hadrons module
+  //////////////////////////////////////////////////////////////////////////
+  LocalCoherenceLanczos(GridBase *FineGrid,
+			GridBase *CoarseGrid,
+			LinearOperatorBase<FineField> &FineOp,
+			int checkerboard,
+			std::vector<FineField>   &ext_subspace,
+			std::vector<CoarseField> &ext_coarse,
+			std::vector<RealD>       &ext_eval_fine,
+			std::vector<RealD>       &ext_eval_coarse
+			) :
+    _CoarseGrid(CoarseGrid),
+    _FineGrid(FineGrid),
+    _FineOp(FineOp),
+    _checkerboard(checkerboard),
+    evals_fine  (ext_eval_fine), 
+    evals_coarse(ext_eval_coarse),
+    subspace    (ext_subspace),
+    evec_coarse (ext_coarse)
+  {
+    evals_fine.resize(0);
+    evals_coarse.resize(0);
+  };
+
+  void Orthogonalise(void ) {
+    CoarseScalar InnerProd(_CoarseGrid); 
+    blockOrthogonalise(InnerProd,subspace);std::cout << GridLogMessage <<" Gramm-Schmidt pass 1"<<std::endl;
+    blockOrthogonalise(InnerProd,subspace);std::cout << GridLogMessage <<" Gramm-Schmidt pass 2"<<std::endl;
+  };
 
   template<typename T>  static RealD normalise(T& v) 
   {
@@ -246,43 +297,44 @@ public:
     v = v * (1.0/nn);
     return nn;
   }
-
+  /*
   void fakeFine(void)
   {
     int Nk = nbasis;
-    _Aggregate.subspace.resize(Nk,_FineGrid);
-    _Aggregate.subspace[0]=1.0;
-    _Aggregate.subspace[0].checkerboard=_checkerboard;
-    normalise(_Aggregate.subspace[0]);
+    subspace.resize(Nk,_FineGrid);
+    subspace[0]=1.0;
+    subspace[0].checkerboard=_checkerboard;
+    normalise(subspace[0]);
     PlainHermOp<FineField>    Op(_FineOp);
     for(int k=1;k<Nk;k++){
-      _Aggregate.subspace[k].checkerboard=_checkerboard;
-      Op(_Aggregate.subspace[k-1],_Aggregate.subspace[k]);
-      normalise(_Aggregate.subspace[k]);
+      subspace[k].checkerboard=_checkerboard;
+      Op(subspace[k-1],subspace[k]);
+      normalise(subspace[k]);
     }
   }
+  */
 
   void testFine(RealD resid) 
   {
     assert(evals_fine.size() == nbasis);
-    assert(_Aggregate.subspace.size() == nbasis);
+    assert(subspace.size() == nbasis);
     PlainHermOp<FineField>    Op(_FineOp);
     ImplicitlyRestartedLanczosHermOpTester<FineField> SimpleTester(Op);
     for(int k=0;k<nbasis;k++){
-      assert(SimpleTester.ReconstructEval(k,resid,_Aggregate.subspace[k],evals_fine[k],1.0)==1);
+      assert(SimpleTester.ReconstructEval(k,resid,subspace[k],evals_fine[k],1.0)==1);
     }
   }
 
   void testCoarse(RealD resid,ChebyParams cheby_smooth,RealD relax) 
   {
     assert(evals_fine.size() == nbasis);
-    assert(_Aggregate.subspace.size() == nbasis);
+    assert(subspace.size() == nbasis);
     //////////////////////////////////////////////////////////////////////////////////////////////////
     // create a smoother and see if we can get a cheap convergence test and smooth inside the IRL
     //////////////////////////////////////////////////////////////////////////////////////////////////
     Chebyshev<FineField>                          ChebySmooth(cheby_smooth);
-    ProjectedFunctionHermOp<Fobj,CComplex,nbasis> ChebyOp (ChebySmooth,_FineOp,_Aggregate);
-    ImplicitlyRestartedLanczosSmoothedTester<Fobj,CComplex,nbasis> ChebySmoothTester(ChebyOp,ChebySmooth,_FineOp,_Aggregate,relax);
+    ProjectedFunctionHermOp<Fobj,CComplex,nbasis> ChebyOp (ChebySmooth,_FineOp,_subspace);
+    ImplicitlyRestartedLanczosSmoothedTester<Fobj,CComplex,nbasis> ChebySmoothTester(ChebyOp,ChebySmooth,_FineOp,subspace,relax);
 
     for(int k=0;k<evec_coarse.size();k++){
       if ( k < nbasis ) { 
@@ -302,34 +354,34 @@ public:
     PlainHermOp<FineField>    Op(_FineOp);
 
     evals_fine.resize(Nm);
-    _Aggregate.subspace.resize(Nm,_FineGrid);
+    subspace.resize(Nm,_FineGrid);
 
     ImplicitlyRestartedLanczos<FineField> IRL(ChebyOp,Op,Nstop,Nk,Nm,resid,MaxIt,betastp,MinRes);
 
     FineField src(_FineGrid); src=1.0; src.checkerboard = _checkerboard;
 
     int Nconv;
-    IRL.calc(evals_fine,_Aggregate.subspace,src,Nconv,false);
+    IRL.calc(evals_fine,subspace,src,Nconv,false);
     
     // Shrink down to number saved
     assert(Nstop>=nbasis);
     assert(Nconv>=nbasis);
     evals_fine.resize(nbasis);
-    _Aggregate.subspace.resize(nbasis,_FineGrid);
+    subspace.resize(nbasis,_FineGrid);
   }
   void calcCoarse(ChebyParams cheby_op,ChebyParams cheby_smooth,RealD relax,
 		  int Nstop, int Nk, int Nm,RealD resid, 
 		  RealD MaxIt, RealD betastp, int MinRes)
   {
     Chebyshev<FineField>                          Cheby(cheby_op);
-    ProjectedHermOp<Fobj,CComplex,nbasis>         Op(_FineOp,_Aggregate);
-    ProjectedFunctionHermOp<Fobj,CComplex,nbasis> ChebyOp (Cheby,_FineOp,_Aggregate);
+    ProjectedHermOp<Fobj,CComplex,nbasis>         Op(_FineOp,_subspace);
+    ProjectedFunctionHermOp<Fobj,CComplex,nbasis> ChebyOp (Cheby,_FineOp,_subspace);
     //////////////////////////////////////////////////////////////////////////////////////////////////
     // create a smoother and see if we can get a cheap convergence test and smooth inside the IRL
     //////////////////////////////////////////////////////////////////////////////////////////////////
 
     Chebyshev<FineField>                                           ChebySmooth(cheby_smooth);
-    ImplicitlyRestartedLanczosSmoothedTester<Fobj,CComplex,nbasis> ChebySmoothTester(ChebyOp,ChebySmooth,_FineOp,_Aggregate,relax);
+    ImplicitlyRestartedLanczosSmoothedTester<Fobj,CComplex,nbasis> ChebySmoothTester(ChebyOp,ChebySmooth,_FineOp,_subspace,relax);
 
     evals_coarse.resize(Nm);
     evec_coarse.resize(Nm,_CoarseGrid);

@@ -76,6 +76,14 @@ class BaseHmcCheckpointer : public HmcObservable<typename Impl::Field> {
     }
  	} 
 
+  void check_filename(const std::string &filename){
+    std::ifstream f(filename.c_str());
+    if(!f.good()){
+      std::cout << GridLogError << "Filename " << filename << " not found. Aborting. " << std::endl;
+      abort();
+    };
+  }
+
   virtual void initialize(const CheckpointerParameters &Params) = 0;
 
   virtual void CheckpointRestore(int traj, typename Impl::Field &U,

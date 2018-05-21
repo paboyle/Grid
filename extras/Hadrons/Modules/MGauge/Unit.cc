@@ -4,8 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MGauge/Unit.cc
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -57,13 +56,14 @@ std::vector<std::string> TUnit::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void TUnit::setup(void)
 {
-    env().registerLattice<LatticeGaugeField>(getName());
+    envCreateLat(LatticeGaugeField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 void TUnit::execute(void)
 {
     LOG(Message) << "Creating unit gauge configuration" << std::endl;
-    LatticeGaugeField &U = *env().createLattice<LatticeGaugeField>(getName());
+    
+    auto &U = envGet(LatticeGaugeField, getName());
     SU3::ColdConfiguration(*env().get4dRng(), U);
 }

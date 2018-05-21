@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <H5Cpp.h>
+#include <Grid/tensors/Tensors.h>
 #include "Hdf5Type.h"
 
 #ifndef H5_NO_NAMESPACE
@@ -37,6 +38,7 @@ namespace Grid
     template <typename U>
     typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
     writeDefault(const std::string &s, const std::vector<U> &x);
+    H5NS::Group & getGroup(void);
   private:
     template <typename U>
     void writeSingleAttribute(const U &x, const std::string &name,
@@ -64,6 +66,7 @@ namespace Grid
     template <typename U>
     typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
     readDefault(const std::string &s, std::vector<U> &x);
+    H5NS::Group & getGroup(void);
   private:
     template <typename U>
     void readSingleAttribute(U &x, const std::string &name,

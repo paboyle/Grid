@@ -44,6 +44,21 @@ class WilsonFermionStatic {
   static const int npoint = 8;
 };
 
+ struct WilsonAnisotropyCoefficients: Serializable
+ {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(WilsonAnisotropyCoefficients,
+  bool, isAnisotropic,
+  int, t_direction,
+  double, xi_0,
+  double, nu);
+
+  WilsonAnisotropyCoefficients():
+    isAnisotropic(false), 
+    t_direction(Nd-1), 
+    xi_0(1.0), 
+    nu(1.0){}
+};
+
 template <class Impl>
 class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
  public:
@@ -65,8 +80,8 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
   // override multiply; cut number routines if pass dagger argument
   // and also make interface more uniformly consistent
   //////////////////////////////////////////////////////////////////
-  RealD M(const FermionField &in, FermionField &out);
-  RealD Mdag(const FermionField &in, FermionField &out);
+  virtual RealD M(const FermionField &in, FermionField &out);
+  virtual RealD Mdag(const FermionField &in, FermionField &out);
 
   /////////////////////////////////////////////////////////
   // half checkerboard operations
@@ -123,8 +138,9 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
 
   // Constructor
   WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
-                GridRedBlackCartesian &Hgrid, RealD _mass,
-                const ImplParams &p = ImplParams());
+                GridRedBlackCartesian &Hgrid, RealD _mass, 
+                const ImplParams &p = ImplParams(), 
+                const WilsonAnisotropyCoefficients &anis = WilsonAnisotropyCoefficients() );
 
   // DoubleStore impl dependent
   void ImportGauge(const GaugeField &_Umu);
@@ -138,6 +154,7 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
   virtual RealD Mass(void) { return mass; }
   virtual int   isTrivialEE(void) { return 1; };
   RealD mass;
+  RealD diag_mass;
 
   GridBase *_grid;
   GridBase *_cbgrid;
@@ -154,6 +171,24 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
 
   LebesgueOrder Lebesgue;
   LebesgueOrder LebesgueEvenOdd;
+
+  WilsonAnisotropyCoefficients anisotropyCoeff;
+  
+  ///////////////////////////////////////////////////////////////
+  // Conserved current utilities
+  ///////////////////////////////////////////////////////////////
+  void ContractConservedCurrent(PropagatorField &q_in_1,
+                                PropagatorField &q_in_2,
+                                PropagatorField &q_out,
+                                Current curr_type,
+                                unsigned int mu);
+  void SeqConservedCurrent(PropagatorField &q_in,
+                           PropagatorField &q_out,
+                           Current curr_type,
+                           unsigned int mu, 
+                           std::vector<Real> mom,
+                           unsigned int tmin,
+                           unsigned int tmax);
 };
 
 typedef WilsonFermion<WilsonImplF> WilsonFermionF;

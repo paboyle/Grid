@@ -4,8 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Module.cc
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -39,7 +38,6 @@ using namespace Hadrons;
 // constructor /////////////////////////////////////////////////////////////////
 ModuleBase::ModuleBase(const std::string name)
 : name_(name)
-, env_(Environment::getInstance())
 {}
 
 // access //////////////////////////////////////////////////////////////////////
@@ -48,15 +46,10 @@ std::string ModuleBase::getName(void) const
     return name_;
 }
 
-Environment & ModuleBase::env(void) const
-{
-    return env_;
-}
-
 // get factory registration name if available
 std::string ModuleBase::getRegisteredName(void)
 {
-    HADRON_ERROR("module '" + getName() + "' has a type not registered"
+    HADRON_ERROR(Definition, "module '" + getName() + "' has no registered type"
                  + " in the factory");
 }
 
@@ -64,8 +57,5 @@ std::string ModuleBase::getRegisteredName(void)
 void ModuleBase::operator()(void)
 {
     setup();
-    if (!env().isDryRun())
-    {
-        execute();
-    }
+    execute();
 }

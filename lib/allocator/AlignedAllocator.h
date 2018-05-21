@@ -63,6 +63,64 @@ namespace Grid {
     static void *Lookup(size_t bytes) ;
 
   };
+  
+  std::string sizeString(size_t bytes);
+
+  struct MemoryStats
+  {
+    size_t totalAllocated{0}, maxAllocated{0}, 
+           currentlyAllocated{0}, totalFreed{0};
+  };
+    
+  class MemoryProfiler
+  {
+  public:
+    static MemoryStats *stats;
+    static bool        debug;
+  };
+
+  #define memString(bytes) std::to_string(bytes) + " (" + sizeString(bytes) + ")"
+  #define profilerDebugPrint \
+  if (MemoryProfiler::stats)\
+  {\
+    auto s = MemoryProfiler::stats;\
+    std::cout << GridLogDebug << "[Memory debug] Stats " << MemoryProfiler::stats << std::endl;\
+    std::cout << GridLogDebug << "[Memory debug] total  : " << memString(s->totalAllocated) \
+              << std::endl;\
+    std::cout << GridLogDebug << "[Memory debug] max    : " << memString(s->maxAllocated) \
+              << std::endl;\
+    std::cout << GridLogDebug << "[Memory debug] current: " << memString(s->currentlyAllocated) \
+              << std::endl;\
+    std::cout << GridLogDebug << "[Memory debug] freed  : " << memString(s->totalFreed) \
+              << std::endl;\
+  }
+
+  #define profilerAllocate(bytes)\
+  if (MemoryProfiler::stats)\
+  {\
+    auto s = MemoryProfiler::stats;\
+    s->totalAllocated     += (bytes);\
+    s->currentlyAllocated += (bytes);\
+    s->maxAllocated        = std::max(s->maxAllocated, s->currentlyAllocated);\
+  }\
+  if (MemoryProfiler::debug)\
+  {\
+    std::cout << GridLogDebug << "[Memory debug] allocating " << memString(bytes) << std::endl;\
+    profilerDebugPrint;\
+  }
+
+  #define profilerFree(bytes)\
+  if (MemoryProfiler::stats)\
+  {\
+    auto s = MemoryProfiler::stats;\
+    s->totalFreed         += (bytes);\
+    s->currentlyAllocated -= (bytes);\
+  }\
+  if (MemoryProfiler::debug)\
+  {\
+    std::cout << GridLogDebug << "[Memory debug] freeing " << memString(bytes) << std::endl;\
+    profilerDebugPrint;\
+  }
 
   void check_huge_pages(void *Buf,uint64_t BYTES);
 
@@ -92,6 +150,7 @@ public:
   pointer allocate(size_type __n, const void* _p= 0)
   { 
     size_type bytes = __n*sizeof(_Tp);
+    profilerAllocate(bytes);
 
     _Tp *ptr = (_Tp *) PointerCache::Lookup(bytes);
     //    if ( ptr != NULL ) 
@@ -121,6 +180,8 @@ public:
 
   void deallocate(pointer __p, size_type __n) { 
     size_type bytes = __n * sizeof(_Tp);
+
+    profilerFree(bytes);
 
     pointer __freeme = (pointer)PointerCache::Insert((void *)__p,bytes);
 
@@ -172,10 +233,13 @@ public:
 #ifdef GRID_COMMS_SHMEM
   pointer allocate(size_type __n, const void* _p= 0)
   {
+    size_type bytes = __n*sizeof(_Tp);
+
+    profilerAllocate(bytes);
 #ifdef CRAY
-    _Tp *ptr = (_Tp *) shmem_align(__n*sizeof(_Tp),64);
+    _Tp *ptr = (_Tp *) shmem_align(bytes,64);
 #else
-    _Tp *ptr = (_Tp *) shmem_align(64,__n*sizeof(_Tp));
+    _Tp *ptr = (_Tp *) shmem_align(64,bytes);
 #endif
 #ifdef PARANOID_SYMMETRIC_HEAP
     static void * bcast;
@@ -193,29 +257,39 @@ public:
 #endif 
     return ptr;
   }
-  void deallocate(pointer __p, size_type) { 
+  void deallocate(pointer __p, size_type __n) { 
+    size_type bytes = __n*sizeof(_Tp);
+
+    profilerFree(bytes);
     shmem_free((void *)__p);
   }
 #else
   pointer allocate(size_type __n, const void* _p= 0) 
   {
-#ifdef HAVE_MM_MALLOC_H
-    _Tp * ptr = (_Tp *) _mm_malloc(__n*sizeof(_Tp),GRID_ALLOC_ALIGN);
-#else
-    _Tp * ptr = (_Tp *) memalign(GRID_ALLOC_ALIGN,__n*sizeof(_Tp));
-#endif
     size_type bytes = __n*sizeof(_Tp);
+    
+    profilerAllocate(bytes);
+#ifdef HAVE_MM_MALLOC_H
+    _Tp * ptr = (_Tp *) _mm_malloc(bytes, GRID_ALLOC_ALIGN);
+#else
+    _Tp * ptr = (_Tp *) memalign(GRID_ALLOC_ALIGN, bytes);
+#endif
     uint8_t *cp = (uint8_t *)ptr;
     if ( ptr ) { 
     // One touch per 4k page, static OMP loop to catch same loop order
+#ifdef GRID_OMP
 #pragma omp parallel for schedule(static)
+#endif
       for(size_type n=0;n<bytes;n+=4096){
 	cp[n]=0;
       }
     }
     return ptr;
   }
-  void deallocate(pointer __p, size_type) { 
+  void deallocate(pointer __p, size_type __n) {
+    size_type bytes = __n*sizeof(_Tp);
+
+    profilerFree(bytes);
 #ifdef HAVE_MM_MALLOC_H
     _mm_free((void *)__p); 
 #else

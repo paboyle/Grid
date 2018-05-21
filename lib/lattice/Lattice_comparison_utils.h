@@ -179,7 +179,7 @@ namespace Grid {
       return ret;
     }
 
-#define DECLARE_RELATIONAL(op,functor) \
+#define DECLARE_RELATIONAL_EQ(op,functor) \
   template<class vsimd,IfSimd<vsimd> = 0>\
     inline vInteger operator op (const vsimd & lhs, const vsimd & rhs)\
     {\
@@ -199,11 +199,6 @@ namespace Grid {
       return Comparison(functor<scalar,scalar>(),lhs,rhs);\
     }\
   template<class vsimd>\
-    inline vInteger operator op(const iScalar<vsimd> &lhs,const iScalar<vsimd> &rhs)\
-    {									\
-      return lhs._internal op rhs._internal;				\
-    }									\
-  template<class vsimd>\
     inline vInteger operator op(const iScalar<vsimd> &lhs,const typename vsimd::scalar_type &rhs) \
     {									\
       return lhs._internal op rhs;					\
@@ -212,14 +207,21 @@ namespace Grid {
     inline vInteger operator op(const typename vsimd::scalar_type &lhs,const iScalar<vsimd> &rhs) \
     {									\
       return lhs op rhs._internal;					\
-    }									
+    }									\
 
+#define DECLARE_RELATIONAL(op,functor) \
+  DECLARE_RELATIONAL_EQ(op,functor)    \
+  template<class vsimd>\
+    inline vInteger operator op(const iScalar<vsimd> &lhs,const iScalar<vsimd> &rhs)\
+    {									\
+      return lhs._internal op rhs._internal;				\
+    }									
 
 DECLARE_RELATIONAL(<,slt);
 DECLARE_RELATIONAL(<=,sle);
 DECLARE_RELATIONAL(>,sgt);
 DECLARE_RELATIONAL(>=,sge);
-DECLARE_RELATIONAL(==,seq);
+DECLARE_RELATIONAL_EQ(==,seq);
 DECLARE_RELATIONAL(!=,sne);
 
 #undef DECLARE_RELATIONAL

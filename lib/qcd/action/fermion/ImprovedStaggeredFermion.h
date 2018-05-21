@@ -179,6 +179,22 @@ class ImprovedStaggeredFermion : public StaggeredKernels<Impl>, public ImprovedS
 
   LebesgueOrder Lebesgue;
   LebesgueOrder LebesgueEvenOdd;
+  
+  ///////////////////////////////////////////////////////////////
+  // Conserved current utilities
+  ///////////////////////////////////////////////////////////////
+  void ContractConservedCurrent(PropagatorField &q_in_1,
+                                PropagatorField &q_in_2,
+                                PropagatorField &q_out,
+                                Current curr_type,
+                                unsigned int mu);
+  void SeqConservedCurrent(PropagatorField &q_in,
+                           PropagatorField &q_out,
+                           Current curr_type,
+                           unsigned int mu, 
+                           std::vector<Real> mom,
+                           unsigned int tmin,
+                           unsigned int tmax);
 };
 
 typedef ImprovedStaggeredFermion<StaggeredImplF> ImprovedStaggeredFermionF;

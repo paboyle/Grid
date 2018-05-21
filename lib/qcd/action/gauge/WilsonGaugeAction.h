@@ -71,18 +71,14 @@ class WilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
 
     RealD factor = 0.5 * beta / RealD(Nc);
 
-    //GaugeLinkField Umu(U._grid);
+    GaugeLinkField Umu(U._grid);
     GaugeLinkField dSdU_mu(U._grid);
     for (int mu = 0; mu < Nd; mu++) {
-      //Umu = PeekIndex<LorentzIndex>(U, mu);
+      Umu = PeekIndex<LorentzIndex>(U, mu);
 
       // Staple in direction mu
-      //WilsonLoops<Gimpl>::Staple(dSdU_mu, U, mu);
-      //dSdU_mu = Ta(Umu * dSdU_mu) * factor;
-
-  
-      WilsonLoops<Gimpl>::StapleMult(dSdU_mu, U, mu);
-      dSdU_mu = Ta(dSdU_mu) * factor;
+      WilsonLoops<Gimpl>::Staple(dSdU_mu, U, mu);
+      dSdU_mu = Ta(Umu * dSdU_mu) * factor;
 
       PokeIndex<LorentzIndex>(dSdU, dSdU_mu, mu);
     }

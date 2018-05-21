@@ -31,7 +31,10 @@ class ScalarActionParameters : Serializable {
  public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(ScalarActionParameters,
     double, mass_squared,
-    double, lambda);
+    double, lambda,
+    double, g);
+
+  ScalarActionParameters() = default;
 
     template <class ReaderClass >
   ScalarActionParameters(Reader<ReaderClass>& Reader){
@@ -123,10 +126,13 @@ int main(int argc, char **argv) {
   ScalarGrid.set_rb(new GridRedBlackCartesian(ScalarGrid.get_full()));
   TheHMC.Resources.AddGrid("scalar", ScalarGrid);
   std::cout << "Lattice size : " << GridDefaultLatt() << std::endl;
+  
+  ScalarActionParameters SPar(Reader);
 
   // Checkpointer definition
   CheckpointerParameters CPparams(Reader);
-  TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
+  //TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
+  TheHMC.Resources.LoadScidacCheckpointer(CPparams, SPar);
 
   RNGModuleParameters RNGpar(Reader);
   TheHMC.Resources.SetRNGSeeds(RNGpar);
@@ -139,8 +145,7 @@ int main(int argc, char **argv) {
   // Collect actions, here use more encapsulation
 
   // Scalar action in adjoint representation
-  ScalarActionParameters SPar(Reader);
-  ScalarAction Saction(SPar.mass_squared, SPar.lambda);
+  ScalarAction Saction(SPar.mass_squared, SPar.lambda, SPar.g);
 
   // Collect actions
   ActionLevel<ScalarAction::Field, ScalarNxNMatrixFields<Ncolours>> Level1(1);

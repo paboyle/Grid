@@ -69,39 +69,47 @@ class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
   /*****************************************************/
   /* Compress includes precision change if mpi data is not same */
   /*****************************************************/
-  inline void Compress(SiteHalfSpinor *buf,Integer o,const SiteSpinor &in) {
-    projector::Proj(buf[o],in,mu,dag);
+  inline void Compress(SiteHalfSpinor * __restrict__ buf,Integer o,const SiteSpinor &in) {
+    SiteHalfSpinor tmp;
+    projector::Proj(tmp,in,mu,dag);
+    vstream(buf[o],tmp);
   }
 
   /*****************************************************/
   /* Exchange includes precision change if mpi data is not same */
   /*****************************************************/
-  inline void Exchange(SiteHalfSpinor *mp,
-                       SiteHalfSpinor *vp0,
-                       SiteHalfSpinor *vp1,
+  inline void Exchange(SiteHalfSpinor * __restrict__ mp,
+                       const SiteHalfSpinor * __restrict__ vp0,
+                       const SiteHalfSpinor * __restrict__ vp1,
 		       Integer type,Integer o){
-    exchange(mp[2*o],mp[2*o+1],vp0[o],vp1[o],type);
+    SiteHalfSpinor tmp1;
+    SiteHalfSpinor tmp2;
+    exchange(tmp1,tmp2,vp0[o],vp1[o],type);
+    vstream(mp[2*o  ],tmp1);
+    vstream(mp[2*o+1],tmp2);
   }
 
   /*****************************************************/
   /* Have a decompression step if mpi data is not same */
   /*****************************************************/
-  inline void Decompress(SiteHalfSpinor *out,
-			 SiteHalfSpinor *in, Integer o) {    
+  inline void Decompress(SiteHalfSpinor * __restrict__ out,
+			 SiteHalfSpinor * __restrict__ in, Integer o) {    
     assert(0);
   }
 
   /*****************************************************/
   /* Compress Exchange                                 */
   /*****************************************************/
-  inline void CompressExchange(SiteHalfSpinor *out0,
-			       SiteHalfSpinor *out1,
-			       const SiteSpinor *in,
+  inline void CompressExchange(SiteHalfSpinor * __restrict__ out0,
+			       SiteHalfSpinor * __restrict__ out1,
+			       const SiteSpinor * __restrict__ in,
 			       Integer j,Integer k, Integer m,Integer type){
     SiteHalfSpinor temp1, temp2,temp3,temp4;
     projector::Proj(temp1,in[k],mu,dag);
     projector::Proj(temp2,in[m],mu,dag);
-    exchange(out0[j],out1[j],temp1,temp2,type);
+    exchange(temp3,temp4,temp1,temp2,type);
+    vstream(out0[j],temp3);
+    vstream(out1[j],temp4);
   }
 
   /*****************************************************/
@@ -265,7 +273,6 @@ public:
     if ( timer3 ) std::cout << GridLogMessage << " timer3 (commsMergeShm) " <<timer3/calls <<std::endl;
     if ( timer4 ) std::cout << GridLogMessage << " timer4 " <<timer4 <<std::endl;
   }
-  typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
 
   WilsonStencil(GridBase *grid,
 		int npoints,

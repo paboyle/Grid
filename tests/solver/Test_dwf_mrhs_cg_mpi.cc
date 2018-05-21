@@ -72,27 +72,29 @@ int main (int argc, char ** argv)
   int nrhs = 1;
   int me;
   for(int i=0;i<mpi_layout.size();i++) nrhs *= (mpi_layout[i]/mpi_split[i]);
-
+  std::cout << GridLogMessage << "Creating split grids " <<std::endl;
   GridCartesian         * SGrid = new GridCartesian(GridDefaultLatt(),
 						    GridDefaultSimd(Nd,vComplex::Nsimd()),
 						    mpi_split,
 						    *UGrid,me); 
+  std::cout << GridLogMessage <<"Creating split ferm grids " <<std::endl;
 
   GridCartesian         * SFGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,SGrid);
+  std::cout << GridLogMessage <<"Creating split rb grids " <<std::endl;
   GridRedBlackCartesian * SrbGrid  = SpaceTimeGrid::makeFourDimRedBlackGrid(SGrid);
+  std::cout << GridLogMessage <<"Creating split ferm rb grids " <<std::endl;
   GridRedBlackCartesian * SFrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,SGrid);
-
+  std::cout << GridLogMessage << "Made the grids"<<std::endl;
   ///////////////////////////////////////////////
   // Set up the problem as a 4d spreadout job
   ///////////////////////////////////////////////
   std::vector<int> seeds({1,2,3,4});
 
-  GridParallelRNG pRNG(UGrid );  pRNG.SeedFixedIntegers(seeds);
-  GridParallelRNG pRNG5(FGrid);  pRNG5.SeedFixedIntegers(seeds);
   std::vector<FermionField>    src(nrhs,FGrid);
   std::vector<FermionField> src_chk(nrhs,FGrid);
   std::vector<FermionField> result(nrhs,FGrid);
   FermionField tmp(FGrid);
+  std::cout << GridLogMessage << "Made the Fermion Fields"<<std::endl;
 
   for(int s=0;s<nrhs;s++) result[s]=zero;
 #undef LEXICO_TEST
@@ -117,20 +119,29 @@ int main (int argc, char ** argv)
     }    
   }
 #else
+  GridParallelRNG pRNG5(FGrid);  pRNG5.SeedFixedIntegers(seeds);
   for(int s=0;s<nrhs;s++) {
     random(pRNG5,src[s]);
-    tmp = 100.0*s;
+    tmp = 10.0*s;
     src[s] = (src[s] * 0.1) + tmp;
-    std::cout << " src ]"<<s<<"] "<<norm2(src[s])<<std::endl;
+    std::cout << GridLogMessage << " src ["<<s<<"] "<<norm2(src[s])<<std::endl;
   }
 #endif
+  std::cout << GridLogMessage << "Intialised the Fermion Fields"<<std::endl;
 
-  for(int n =0 ; n< nrhs ; n++) { 
-    std::cout << " src"<<n<<"\n"<< src[n] <<std::endl;
+  LatticeGaugeField Umu(UGrid); 
+  if(1) { 
+    GridParallelRNG pRNG(UGrid );  
+    std::cout << GridLogMessage << "Intialising 4D RNG "<<std::endl;
+    pRNG.SeedFixedIntegers(seeds);
+    std::cout << GridLogMessage << "Intialised 4D RNG "<<std::endl;
+    SU3::HotConfiguration(pRNG,Umu);
+    std::cout << GridLogMessage << "Intialised the HOT Gauge Field"<<std::endl;
+    //    std::cout << " Site zero "<< Umu._odata[0]   <<std::endl;
+  } else { 
+    SU3::ColdConfiguration(Umu);
+    std::cout << GridLogMessage << "Intialised the COLD Gauge Field"<<std::endl;
   }
-
-  LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
-
   /////////////////
   // MPI only sends
   /////////////////
@@ -139,13 +150,13 @@ int main (int argc, char ** argv)
   FermionField s_tmp(SFGrid);
   FermionField s_res(SFGrid);
 
+  std::cout << GridLogMessage << "Made the split grid fields"<<std::endl;
   ///////////////////////////////////////////////////////////////
   // split the source out using MPI instead of I/O
   ///////////////////////////////////////////////////////////////
   Grid_split  (Umu,s_Umu);
   Grid_split  (src,s_src);
-  std::cout << " split rank  " <<me << " s_src "<<norm2(s_src)<<std::endl;
-  std::cout << " s_src\n "<< s_src <<std::endl;
+  std::cout << GridLogMessage << " split rank  " <<me << " s_src "<<norm2(s_src)<<std::endl;
 
 #ifdef LEXICO_TEST
   FermionField s_src_tmp(SFGrid);
@@ -168,16 +179,13 @@ int main (int argc, char ** argv)
     s_src_tmp = s_src_tmp + ftmp;
   }
   s_src_diff = s_src_tmp - s_src;
-  std::cout << " s_src_diff " << norm2(s_src_diff)<<std::endl;
-
-  std::cout << " s_src \n" << s_src << std::endl;
-  std::cout << " s_src_tmp \n" << s_src_tmp << std::endl;
-  std::cout << " s_src_diff \n" << s_src_diff << std::endl;
+  std::cout << GridLogMessage <<" LEXICO test:  s_src_diff " << norm2(s_src_diff)<<std::endl;
 #endif
 
   ///////////////////////////////////////////////////////////////
   // Set up N-solvers as trivially parallel
   ///////////////////////////////////////////////////////////////
+  std::cout << GridLogMessage << " Building the solvers"<<std::endl;
   RealD mass=0.01;
   RealD M5=1.8;
   DomainWallFermionR Dchk(Umu,*FGrid,*FrbGrid,*UGrid,*rbGrid,mass,M5);
@@ -189,11 +197,11 @@ int main (int argc, char ** argv)
 
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOp(Ddwf);
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOpCk(Dchk);
-  ConjugateGradient<FermionField> CG((1.0e-5),10000);
+  ConjugateGradient<FermionField> CG((1.0e-2),10000);
   s_res = zero;
   CG(HermOp,s_src,s_res);
 
-  std::cout << " s_res norm "<<norm2(s_res)<<std::endl;
+  std::cout << GridLogMessage << " split residual norm "<<norm2(s_res)<<std::endl;
   /////////////////////////////////////////////////////////////
   // Report how long they all took
   /////////////////////////////////////////////////////////////
@@ -214,7 +222,7 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage<< "Checking the residuals"<<std::endl;
   for(int n=0;n<nrhs;n++){
-    std::cout << " res["<<n<<"] norm "<<norm2(result[n])<<std::endl;
+    std::cout << GridLogMessage<< " res["<<n<<"] norm "<<norm2(result[n])<<std::endl;
     HermOpCk.HermOp(result[n],tmp); tmp = tmp - src[n];
     std::cout << GridLogMessage<<" resid["<<n<<"]  "<< norm2(tmp)/norm2(src[n])<<std::endl;
   }

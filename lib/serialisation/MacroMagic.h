@@ -125,7 +125,11 @@ static inline void write(Writer<T> &WR,const std::string &s, const cname &obj){ 
 }\
 template <typename T>\
 static inline void read(Reader<T> &RD,const std::string &s, cname &obj){	\
-  push(RD,s);\
+  if (!push(RD,s))\
+  {\
+    std::cout << Grid::GridLogWarning << "IO: Cannot open node '" << s << "'" << std::endl;\
+    return;\
+  };\
   GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_READ_MEMBER,__VA_ARGS__))	\
   pop(RD);\
 }\

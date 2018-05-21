@@ -4,8 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Application.cc
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -43,12 +42,7 @@ using namespace Hadrons;
 // constructors ////////////////////////////////////////////////////////////////
 Application::Application(void)
 {
-    LOG(Message) << "Modules available:" << std::endl;
-    auto list = ModuleFactory::getInstance().getBuilderList();
-    for (auto &m: list)
-    {
-        LOG(Message) << "  " << m << std::endl;
-    }
+    initLogger();
     auto dim = GridDefaultLatt(), mpi = GridDefaultMpi(), loc(dim);
     locVol_ = 1;
     for (unsigned int d = 0; d < dim.size(); ++d)
@@ -73,12 +67,6 @@ Application::Application(const std::string parameterFileName)
     parameterFileName_ = parameterFileName;
 }
 
-// environment shortcut ////////////////////////////////////////////////////////
-Environment & Application::env(void) const
-{
-    return Environment::getInstance();
-}
-
 // access //////////////////////////////////////////////////////////////////////
 void Application::setPar(const Application::GlobalPar &par)
 {
@@ -94,14 +82,13 @@ const Application::GlobalPar & Application::getPar(void)
 // execute /////////////////////////////////////////////////////////////////////
 void Application::run(void)
 {
-    if (!parameterFileName_.empty() and (env().getNModule() == 0))
+    if (!parameterFileName_.empty() and (vm().getNModule() == 0))
     {
         parseParameterFile(parameterFileName_);
     }
-    if (!scheduled_)
-    {
-        schedule();
-    }
+    vm().printContent();
+    env().printContent();
+    schedule();
     printSchedule();
     configLoop();
 }
@@ -124,12 +111,20 @@ void Application::parseParameterFile(const std::string parameterFileName)
     LOG(Message) << "Building application from '" << parameterFileName << "'..." << std::endl;
     read(reader, "parameters", par);
     setPar(par);
-    push(reader, "modules");
-    push(reader, "module");
+    if (!push(reader, "modules"))
+    {
+        HADRON_ERROR(Parsing, "Cannot open node 'modules' in parameter file '" 
+                              + parameterFileName + "'");
+    }
+    if (!push(reader, "module"))
+    {
+        HADRON_ERROR(Parsing, "Cannot open node 'modules/module' in parameter file '" 
+                              + parameterFileName + "'");
+    }
     do
     {
         read(reader, "id", id);
-        env().createModule(id.name, id.type, reader);
+        vm().createModule(id.name, id.type, reader);
     } while (reader.nextElement("module"));
     pop(reader);
     pop(reader);
@@ -139,7 +134,7 @@ void Application::saveParameterFile(const std::string parameterFileName)
 {
     XmlWriter          writer(parameterFileName);
     ObjectId           id;
-    const unsigned int nMod = env().getNModule();
+    const unsigned int nMod = vm().getNModule();
     
     LOG(Message) << "Saving application to '" << parameterFileName << "'..." << std::endl;
     write(writer, "parameters", getPar());
@@ -147,10 +142,10 @@ void Application::saveParameterFile(const std::string parameterFileName)
     for (unsigned int i = 0; i < nMod; ++i)
     {
         push(writer, "module");
-        id.name = env().getModuleName(i);
-        id.type = env().getModule(i)->getRegisteredName();
+        id.name = vm().getModuleName(i);
+        id.type = vm().getModule(i)->getRegisteredName();
         write(writer, "id", id);
-        env().getModule(i)->saveParameters(writer, "options");
+        vm().getModule(i)->saveParameters(writer, "options");
         pop(writer);
     }
     pop(writer);
@@ -158,95 +153,13 @@ void Application::saveParameterFile(const std::string parameterFileName)
 }
 
 // schedule computation ////////////////////////////////////////////////////////
-#define MEM_MSG(size)\
-sizeString((size)*locVol_) << " (" << sizeString(size)  << "/site)"
-
-#define DEFINE_MEMPEAK \
-GeneticScheduler<unsigned int>::ObjFunc memPeak = \
-[this](const std::vector<unsigned int> &program)\
-{\
-    unsigned int memPeak;\
-    bool         msg;\
-    \
-    msg = HadronsLogMessage.isActive();\
-    HadronsLogMessage.Active(false);\
-    env().dryRun(true);\
-    memPeak = env().executeProgram(program);\
-    env().dryRun(false);\
-    env().freeAll();\
-    HadronsLogMessage.Active(true);\
-    \
-    return memPeak;\
-}
-
 void Application::schedule(void)
 {
-    DEFINE_MEMPEAK;
-    
-    // build module dependency graph
-    LOG(Message) << "Building module graph..." << std::endl;
-    auto graph = env().makeModuleGraph();
-    auto con = graph.getConnectedComponents();
-    
-    // constrained topological sort using a genetic algorithm
-    LOG(Message) << "Scheduling computation..." << std::endl;
-    LOG(Message) << "               #module= " << graph.size() << std::endl;
-    LOG(Message) << "       population size= " << par_.genetic.popSize << std::endl;
-    LOG(Message) << "       max. generation= " << par_.genetic.maxGen << std::endl;
-    LOG(Message) << "  max. cst. generation= " << par_.genetic.maxCstGen << std::endl;
-    LOG(Message) << "         mutation rate= " << par_.genetic.mutationRate << std::endl;
-    
-    unsigned int                               k = 0, gen, prevPeak, nCstPeak = 0;
-    std::random_device                         rd;
-    GeneticScheduler<unsigned int>::Parameters par;
-    
-    par.popSize      = par_.genetic.popSize;
-    par.mutationRate = par_.genetic.mutationRate;
-    par.seed         = rd();
-    memPeak_         = 0;
-    CartesianCommunicator::BroadcastWorld(0, &(par.seed), sizeof(par.seed));
-    for (unsigned int i = 0; i < con.size(); ++i)
+    if (!scheduled_ and !loadedSchedule_)
     {
-        GeneticScheduler<unsigned int> scheduler(con[i], memPeak, par);
-        
-        gen = 0;
-        do
-        {
-            LOG(Debug) << "Generation " << gen << ":" << std::endl;
-            scheduler.nextGeneration();
-            if (gen != 0)
-            {
-                if (prevPeak == scheduler.getMinValue())
-                {
-                    nCstPeak++;
-                }
-                else
-                {
-                    nCstPeak = 0;
-                }
-            }
-            
-            prevPeak = scheduler.getMinValue();
-            if (gen % 10 == 0)
-            {
-                LOG(Iterative) << "Generation " << gen << ": "
-                               << MEM_MSG(scheduler.getMinValue()) << std::endl;
-            }
-            
-            gen++;
-        } while ((gen < par_.genetic.maxGen)
-                 and (nCstPeak < par_.genetic.maxCstGen));
-        auto &t = scheduler.getMinSchedule();
-        if (scheduler.getMinValue() > memPeak_)
-        {
-            memPeak_ = scheduler.getMinValue();
-        }
-        for (unsigned int j = 0; j < t.size(); ++j)
-        {
-            program_.push_back(t[j]);
-        }
+        program_   = vm().schedule(par_.genetic);
+        scheduled_ = true;
     }
-    scheduled_ = true;
 }
 
 void Application::saveSchedule(const std::string filename)
@@ -256,21 +169,19 @@ void Application::saveSchedule(const std::string filename)
     
     if (!scheduled_)
     {
-        HADRON_ERROR("Computation not scheduled");
+        HADRON_ERROR(Definition, "Computation not scheduled");
     }
     LOG(Message) << "Saving current schedule to '" << filename << "'..."
                  << std::endl;
     for (auto address: program_)
     {
-        program.push_back(env().getModuleName(address));
+        program.push_back(vm().getModuleName(address));
     }
     write(writer, "schedule", program);
 }
 
 void Application::loadSchedule(const std::string filename)
 {
-    DEFINE_MEMPEAK;
-    
     TextReader               reader(filename);
     std::vector<std::string> program;
     
@@ -280,24 +191,24 @@ void Application::loadSchedule(const std::string filename)
     program_.clear();
     for (auto &name: program)
     {
-        program_.push_back(env().getModuleAddress(name));
+        program_.push_back(vm().getModuleAddress(name));
     }
-    scheduled_ = true;
-    memPeak_   = memPeak(program_);
+    loadedSchedule_ = true;
 }
 
 void Application::printSchedule(void)
 {
     if (!scheduled_)
     {
-        HADRON_ERROR("Computation not scheduled");
+        HADRON_ERROR(Definition, "Computation not scheduled");
     }
-    LOG(Message) << "Schedule (memory peak: " << MEM_MSG(memPeak_) << "):"
+    auto peak = vm().memoryNeeded(program_);
+    LOG(Message) << "Schedule (memory needed: " << sizeString(peak) << "):"
                  << std::endl;
     for (unsigned int i = 0; i < program_.size(); ++i)
     {
         LOG(Message) << std::setw(4) << i + 1 << ": "
-                     << env().getModuleName(program_[i]) << std::endl;
+                     << vm().getModuleName(program_[i]) << std::endl;
     }
 }
 
@@ -310,8 +221,8 @@ void Application::configLoop(void)
     {
         LOG(Message) << BIG_SEP << " Starting measurement for trajectory " << t
                      << " " << BIG_SEP << std::endl;
-        env().setTrajectory(t);
-        env().executeProgram(program_);
+        vm().setTrajectory(t);
+        vm().executeProgram(program_);
     }
     LOG(Message) << BIG_SEP << " End of measurement " << BIG_SEP << std::endl;
     env().freeAll();

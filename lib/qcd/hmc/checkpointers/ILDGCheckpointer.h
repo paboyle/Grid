@@ -74,10 +74,10 @@ class ILDGHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
     if ((traj % Params.saveInterval) == 0) {
       std::string config, rng;
       this->build_filenames(traj, Params, config, rng);
-      
+      GridBase *grid = U._grid;
       uint32_t nersc_csum,scidac_csuma,scidac_csumb;
       BinaryIO::writeRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
-      IldgWriter _IldgWriter;
+      IldgWriter _IldgWriter(grid->IsBoss());
       _IldgWriter.open(config);
       _IldgWriter.writeConfiguration(U, traj, config, config);
       _IldgWriter.close();
@@ -95,6 +95,10 @@ class ILDGHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
                          GridParallelRNG &pRNG) {
     std::string config, rng;
     this->build_filenames(traj, Params, config, rng);
+    this->check_filename(rng);
+    this->check_filename(config);
+
+    
 
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
     BinaryIO::readRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);

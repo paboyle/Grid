@@ -249,6 +249,9 @@ case ${ax_cv_cxx_compiler_vendor} in
       AVX512)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-mavx512f -mavx512pf -mavx512er -mavx512cd';;
+      SKL)
+        AC_DEFINE([AVX512],[1],[AVX512 intrinsics for SkyLake Xeon])
+        SIMD_FLAGS='-march=skylake-avx512';;
       KNC)
         AC_DEFINE([IMCI],[1],[IMCI intrinsics for Knights Corner])
         SIMD_FLAGS='';;
@@ -337,17 +340,21 @@ case ${ac_PRECISION} in
 esac
 
 ######################  Shared memory allocation technique under MPI3
-AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmget|shmopen|hugetlbfs],
+AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmopen|shmget|hugetlbfs|shmnone],
               [Select SHM allocation technique])],[ac_SHM=${enable_shm}],[ac_SHM=shmopen])
 
 case ${ac_SHM} in
+
+     shmopen)
+     AC_DEFINE([GRID_MPI3_SHMOPEN],[1],[GRID_MPI3_SHMOPEN] )
+     ;;
 
      shmget)
      AC_DEFINE([GRID_MPI3_SHMGET],[1],[GRID_MPI3_SHMGET] )
      ;;
 
-     shmopen)
-     AC_DEFINE([GRID_MPI3_SHMOPEN],[1],[GRID_MPI3_SHMOPEN] )
+     shmnone)
+     AC_DEFINE([GRID_MPI3_SHM_NONE],[1],[GRID_MPI3_SHM_NONE] )
      ;;
 
      hugetlbfs)
@@ -363,11 +370,11 @@ esac
 AC_ARG_ENABLE([shmpath],[AC_HELP_STRING([--enable-shmpath=path],
               [Select SHM mmap base path for hugetlbfs])],
 	      [ac_SHMPATH=${enable_shmpath}],
-	      [ac_SHMPATH=/var/lib/hugetlbfs/pagesize-2MB/])
+	      [ac_SHMPATH=/var/lib/hugetlbfs/global/pagesize-2MB/])
 AC_DEFINE_UNQUOTED([GRID_SHM_PATH],["$ac_SHMPATH"],[Path to a hugetlbfs filesystem for MMAPing])
 
 ############### communication type selection
-AC_ARG_ENABLE([comms],[AC_HELP_STRING([--enable-comms=none|mpi|mpi-auto|mpi3|mpi3-auto|shmem],
+AC_ARG_ENABLE([comms],[AC_HELP_STRING([--enable-comms=none|mpi|mpi-auto],
               [Select communications])],[ac_COMMS=${enable_comms}],[ac_COMMS=none])
 
 case ${ac_COMMS} in
@@ -375,21 +382,9 @@ case ${ac_COMMS} in
         AC_DEFINE([GRID_COMMS_NONE],[1],[GRID_COMMS_NONE] )
         comms_type='none'
      ;;
-     mpi3*)
+     mpi*)
         AC_DEFINE([GRID_COMMS_MPI3],[1],[GRID_COMMS_MPI3] )
         comms_type='mpi3'
-     ;;
-     mpit)
-        AC_DEFINE([GRID_COMMS_MPIT],[1],[GRID_COMMS_MPIT] )
-        comms_type='mpit'
-     ;;
-     mpi*)
-        AC_DEFINE([GRID_COMMS_MPI],[1],[GRID_COMMS_MPI] )
-        comms_type='mpi'
-     ;;
-     shmem)
-        AC_DEFINE([GRID_COMMS_SHMEM],[1],[GRID_COMMS_SHMEM] )
-        comms_type='shmem'
      ;;
      *)
         AC_MSG_ERROR([${ac_COMMS} unsupported --enable-comms option]);

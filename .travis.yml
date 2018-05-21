@@ -19,6 +19,8 @@ before_install:
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install libmpc; fi
     
 install:
+    - export CWD=`pwd`
+    - echo $CWD
     - export CC=$CC$VERSION
     - export CXX=$CXX$VERSION
     - echo $PATH
@@ -36,11 +38,23 @@ script:
     - ./bootstrap.sh
     - mkdir build
     - cd build
-    - ../configure --enable-precision=single --enable-simd=SSE4 --enable-comms=none
+    - mkdir lime
+    - cd lime
+    - mkdir build
+    - cd build
+    - wget http://usqcd-software.github.io/downloads/c-lime/lime-1.3.2.tar.gz
+    - tar xf lime-1.3.2.tar.gz
+    - cd lime-1.3.2
+    - ./configure --prefix=$CWD/build/lime/install
+    - make -j4
+    - make install
+    - cd $CWD/build
+    - ../configure --enable-precision=single --enable-simd=SSE4 --enable-comms=none --with-lime=$CWD/build/lime/install
     - make -j4 
     - ./benchmarks/Benchmark_dwf --threads 1 --debug-signals
     - echo make clean
-    - ../configure --enable-precision=double --enable-simd=SSE4 --enable-comms=none
+    - ../configure --enable-precision=double --enable-simd=SSE4 --enable-comms=none --with-lime=$CWD/build/lime/install
     - make -j4
     - ./benchmarks/Benchmark_dwf --threads 1 --debug-signals
     - make check
+
