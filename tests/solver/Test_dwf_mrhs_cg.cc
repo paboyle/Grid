@@ -68,6 +68,7 @@ int main (int argc, char ** argv)
 
   int nrhs = 1;
   int me;
+  for(int i=0;i<mpi_layout.size();i++) cout <<" node split = "<<mpi_layout[i]<<" "<<mpi_split[i]<<endl;
   for(int i=0;i<mpi_layout.size();i++) nrhs *= (mpi_layout[i]/mpi_split[i]);
 
   GridCartesian         * SGrid = new GridCartesian(GridDefaultLatt(),
@@ -99,12 +100,6 @@ int main (int argc, char ** argv)
   // Bounce these fields to disk
   ///////////////////////////////////////////////////////////////
 
-  std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-  std::cout << GridLogMessage << " Writing out in parallel view "<<std::endl;
-  std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-  emptyUserRecord record;
-  std::string file("./scratch.scidac");
-  std::string filef("./scratch.scidac.ferm");
 
   LatticeGaugeField s_Umu(SGrid);
   FermionField s_src(SFGrid);
@@ -114,57 +109,10 @@ int main (int argc, char ** argv)
 
   {
     FGrid->Barrier();
-    ScidacWriter _ScidacWriter(FGrid->IsBoss());
-    _ScidacWriter.open(file);
-    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-    std::cout << GridLogMessage << " Writing out gauge field "<<std::endl;
-    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-    _ScidacWriter.writeScidacFieldRecord(Umu,record);
-    _ScidacWriter.close();
-    FGrid->Barrier();
-    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-    std::cout << GridLogMessage << " Reading in gauge field "<<std::endl;
-    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-    ScidacReader  _ScidacReader;
-    _ScidacReader.open(file);
-    _ScidacReader.readScidacFieldRecord(s_Umu,record);
-    _ScidacReader.close();
-    FGrid->Barrier();
-    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-    std::cout << GridLogMessage << " Read in gauge field "<<std::endl;
-    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   }
 
 
   {
-    for(int n=0;n<nrhs;n++){
-
-      std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-      std::cout << GridLogMessage << " Writing out record "<<n<<std::endl;
-      std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-
-      std::stringstream filefn;      filefn << filef << "."<< n;
-      ScidacWriter _ScidacWriter(FGrid->IsBoss());
-      _ScidacWriter.open(filefn.str());
-      _ScidacWriter.writeScidacFieldRecord(src[n],record);
-      _ScidacWriter.close();
-    }
-      
-    FGrid->Barrier();
-
-    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-    std::cout << GridLogMessage << " Reading back in the single process view "<<std::endl;
-    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-      
-    for(int n=0;n<nrhs;n++){
-      if ( n==me ) { 
-	std::stringstream filefn;	filefn << filef << "."<< n;
-	ScidacReader  _ScidacReader;
-	_ScidacReader.open(filefn.str());
-	_ScidacReader.readScidacFieldRecord(s_src,record);
-	_ScidacReader.close();
-      }
-    }
     FGrid->Barrier();
   }
 

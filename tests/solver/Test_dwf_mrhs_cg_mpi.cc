@@ -90,7 +90,7 @@ int main (int argc, char ** argv)
   ///////////////////////////////////////////////
   std::vector<int> seeds({1,2,3,4});
 
-  std::vector<FermionField>    src(nrhs,FGrid);
+  std::vector<FermionField> src(nrhs,FGrid);
   std::vector<FermionField> src_chk(nrhs,FGrid);
   std::vector<FermionField> result(nrhs,FGrid);
   FermionField tmp(FGrid);
@@ -197,7 +197,7 @@ int main (int argc, char ** argv)
 
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOp(Ddwf);
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOpCk(Dchk);
-  ConjugateGradient<FermionField> CG((1.0e-2),10000);
+  ConjugateGradient<FermionField> CG((1.0e-5),10000);
   s_res = zero;
   CG(HermOp,s_src,s_res);
 
@@ -226,6 +226,20 @@ int main (int argc, char ** argv)
     HermOpCk.HermOp(result[n],tmp); tmp = tmp - src[n];
     std::cout << GridLogMessage<<" resid["<<n<<"]  "<< norm2(tmp)/norm2(src[n])<<std::endl;
   }
+
+  for(int s=0;s<nrhs;s++) result[s]=zero;
+
+//  ConjugateGradient<FermionField> CG(1.0e-8,10000);
+  int blockDim = 0;
+//  BlockConjugateGradient<FermionField>    BCGrQ(BlockCGrQ,blockDim,1.0e-8,10000);
+  BlockConjugateGradient<FermionField>    BCG  (BlockCG,blockDim,1.0e-8,10000);
+//  BlockConjugateGradient<FermionField>    mCG  (CGmultiRHS,blockDim,1.0e-8,10000);
+  BlockConjugateGradient<FermionField>    BCGV  (BlockCGVec,blockDim,1.0e-8,10000);
+{
+//  BCG(HermOpCk,src[0],result[0]);
+  BCGV(HermOpCk,src,result);
+}
+
 
   Grid_finalize();
 }

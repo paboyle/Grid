@@ -33,7 +33,7 @@ directory
 
 namespace Grid {
 
-enum BlockCGtype { BlockCG, BlockCGrQ, CGmultiRHS };
+enum BlockCGtype { BlockCG, BlockCGrQ, CGmultiRHS, BlockCGVec };
 
 //////////////////////////////////////////////////////////////////////////
 // Block conjugate gradient. Dimension zero should be the block direction
@@ -123,6 +123,14 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
     BlockCGsolve(Linop,Src,Psi);
   } else if (CGtype == CGmultiRHS ) {
     CGmultiRHSsolve(Linop,Src,Psi);
+  } else {
+    assert(0);
+  }
+}
+void operator()(LinearOperatorBase<Field> &Linop, const std::vector<Field> &Src, std::vector<Field> &Psi) 
+{
+  if ( CGtype == BlockCGVec ) {
+    BlockCGVecsolve(Linop,Src,Psi);
   } else {
     assert(0);
   }
@@ -595,6 +603,192 @@ void CGmultiRHSsolve(LinearOperatorBase<Field> &Linop, const Field &Src, Field &
 
   }
   std::cout << GridLogMessage << "MultiRHSConjugateGradient did NOT converge" << std::endl;
+
+  if (ErrorOnNoConverge) assert(0);
+  IterationsToComplete = k;
+}
+
+void BlockCGVecsolve(LinearOperatorBase<Field> &Linop, const std::vector<Field> &Src, std::vector<Field> &Psi) 
+{
+//  int Orthog = blockDim; // First dimension is block dim; this is an assumption
+//  Nblock = Src._grid->_fdimensions[Orthog];
+  Nblock = Src.size();
+  assert(Nblock == Psi.size());
+
+  std::cout<<GridLogMessage<<" Block Conjugate Gradient :  Nblock "<<Nblock<<std::endl;
+
+  for(int b=0;b<Nblock;b++)
+  Psi[b].checkerboard = Src[0].checkerboard;
+  conformable(Psi[0], Src[0]);
+
+  Field Fake(Src[0]);
+
+  std::vector<Field> P(Nblock,Fake);
+// P.resize(Nblock);
+  std::vector<Field> AP(Nblock,Fake); 
+//AP.resize(Nblock);
+  std::vector<Field> R(Nblock,Fake); 
+//R.resize(Nblock);
+  
+  Eigen::MatrixXcd m_pAp    = Eigen::MatrixXcd::Identity(Nblock,Nblock);
+  Eigen::MatrixXcd m_pAp_inv= Eigen::MatrixXcd::Identity(Nblock,Nblock);
+  Eigen::MatrixXcd m_rr     = Eigen::MatrixXcd::Zero(Nblock,Nblock);
+  Eigen::MatrixXcd m_rr_inv = Eigen::MatrixXcd::Zero(Nblock,Nblock);
+
+  Eigen::MatrixXcd m_alpha      = Eigen::MatrixXcd::Zero(Nblock,Nblock);
+  Eigen::MatrixXcd m_beta   = Eigen::MatrixXcd::Zero(Nblock,Nblock);
+
+  // Initial residual computation & set up
+  std::vector<RealD> residuals(Nblock);
+  std::vector<RealD> ssq(Nblock);
+
+//  sliceNorm(ssq,Src,Orthog);
+  for(int b=0;b<Nblock;b++){ ssq[b] = norm2(Src[b]);}
+  RealD sssum=0;
+  for(int b=0;b<Nblock;b++) sssum+=ssq[b];
+
+//  sliceNorm(residuals,Src,Orthog);
+  for(int b=0;b<Nblock;b++){ residuals[b] = norm2(Src[b]);}
+  for(int b=0;b<Nblock;b++){ assert(std::isnan(residuals[b])==0); }
+
+//  sliceNorm(residuals,Psi,Orthog);
+  for(int b=0;b<Nblock;b++){ residuals[b] = norm2(Psi[b]);}
+  for(int b=0;b<Nblock;b++){ assert(std::isnan(residuals[b])==0); }
+
+  // Initial search dir is guess
+  for(int b=0;b<Nblock;b++) Linop.HermOp(Psi[b], AP[b]);
+  
+
+  /************************************************************************
+   * Block conjugate gradient (Stephen Pickles, thesis 1995, pp 71, O Leary 1980)
+   ************************************************************************
+   * O'Leary : R = B - A X
+   * O'Leary : P = M R ; preconditioner M = 1
+   * O'Leary : alpha = PAP^{-1} RMR
+   * O'Leary : beta  = RMR^{-1}_old RMR_new
+   * O'Leary : X=X+Palpha
+   * O'Leary : R_new=R_old-AP alpha
+   * O'Leary : P=MR_new+P beta
+   */
+
+  for(int b=0;b<Nblock;b++){
+  R[b] = Src[b] - AP[b];  
+  P[b] = R[b];
+  }
+//  sliceInnerProductMatrix(m_rr,R,R,Orthog);
+  for(int b=0;b<Nblock;b++)
+  for(int bp=0;bp<Nblock;bp++) {
+    m_rr(b,bp) = innerProduct(R[b],R[bp]);  
+  }
+
+  GridStopWatch sliceInnerTimer;
+  GridStopWatch sliceMaddTimer;
+  GridStopWatch MatrixTimer;
+  GridStopWatch SolverTimer;
+  SolverTimer.Start();
+
+  int k;
+  for (k = 1; k <= MaxIterations; k++) {
+
+    RealD rrsum=0;
+    for(int b=0;b<Nblock;b++) rrsum+=real(m_rr(b,b));
+
+    std::cout << GridLogIterative << "\titeration "<<k<<" rr_sum "<<rrsum<<" ssq_sum "<< sssum
+	      <<" / "<<std::sqrt(rrsum/sssum) <<std::endl;
+
+    MatrixTimer.Start();
+  for(int b=0;b<Nblock;b++)
+    Linop.HermOp(P[b], AP[b]);
+    MatrixTimer.Stop();
+
+    // Alpha
+    sliceInnerTimer.Start();
+ //   sliceInnerProductMatrix(m_pAp,P,AP,Orthog);
+  for(int b=0;b<Nblock;b++)
+  for(int bp=0;bp<Nblock;bp++) {
+    m_pAp(b,bp) = innerProduct(P[b],AP[bp]);  
+  }
+    sliceInnerTimer.Stop();
+    m_pAp_inv = m_pAp.inverse();
+    m_alpha   = m_pAp_inv * m_rr ;
+
+    // Psi, R update
+    sliceMaddTimer.Start();
+//    sliceMaddMatrix(Psi,m_alpha, P,Psi,Orthog);     // add alpha *  P to psi
+  for(int b=0;b<Nblock;b++)
+  for(int bp=0;bp<Nblock;bp++) {
+    Psi[b] += m_alpha(bp,b)*P[bp];
+  }
+//    sliceMaddMatrix(R  ,m_alpha,AP,  R,Orthog,-1.0);// sub alpha * AP to resid
+  for(int b=0;b<Nblock;b++)
+  for(int bp=0;bp<Nblock;bp++) {
+    R[b] -= m_alpha(bp,b)*AP[bp];
+  }
+    sliceMaddTimer.Stop();
+
+    // Beta
+    m_rr_inv = m_rr.inverse();
+    sliceInnerTimer.Start();
+//    sliceInnerProductMatrix(m_rr,R,R,Orthog);
+  for(int b=0;b<Nblock;b++)
+  for(int bp=0;bp<Nblock;bp++) {
+    m_rr(b,bp) = innerProduct(R[b],R[bp]);  
+  }
+    sliceInnerTimer.Stop();
+    m_beta = m_rr_inv *m_rr;
+
+    // Search update
+    sliceMaddTimer.Start();
+//    sliceMaddMatrix(AP,m_beta,P,R,Orthog);
+  for(int b=0;b<Nblock;b++){
+    AP[b] = R[b];
+  for(int bp=0;bp<Nblock;bp++) {
+    AP[b] += m_beta(bp,b)*P[bp];
+  }
+  }
+    sliceMaddTimer.Stop();
+  for(int b=0;b<Nblock;b++) P[b]= AP[b];
+
+    /*********************
+     * convergence monitor
+     *********************
+     */
+    RealD max_resid=0;
+    RealD rr;
+    for(int b=0;b<Nblock;b++){
+      rr = real(m_rr(b,b))/ssq[b];
+      if ( rr > max_resid ) max_resid = rr;
+    }
+    
+    if ( max_resid < Tolerance*Tolerance ) { 
+
+      SolverTimer.Stop();
+
+      std::cout << GridLogMessage<<"BlockCG converged in "<<k<<" iterations"<<std::endl;
+      for(int b=0;b<Nblock;b++){
+	std::cout << GridLogMessage<< "\t\tblock "<<b<<" computed resid "
+		  << std::sqrt(real(m_rr(b,b))/ssq[b])<<std::endl;
+      }
+      std::cout << GridLogMessage<<"\tMax residual is "<<std::sqrt(max_resid)<<std::endl;
+
+  for(int b=0;b<Nblock;b++) { 
+      Linop.HermOp(Psi[b], AP[b]);
+AP[b] = AP[b]-Src[b];
+      std::cout << GridLogMessage <<"\t True residual is " << b<<" "<<std::sqrt(norm2(AP[b])/norm2(Src[b])) <<std::endl;
+}
+
+      std::cout << GridLogMessage << "Time Breakdown "<<std::endl;
+      std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed()     <<std::endl;
+      std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed()     <<std::endl;
+      std::cout << GridLogMessage << "\tInnerProd  " << sliceInnerTimer.Elapsed() <<std::endl;
+      std::cout << GridLogMessage << "\tMaddMatrix " << sliceMaddTimer.Elapsed()  <<std::endl;
+	    
+      IterationsToComplete = k;
+      return;
+    }
+
+  }
+  std::cout << GridLogMessage << "BlockConjugateGradient did NOT converge" << std::endl;
 
   if (ErrorOnNoConverge) assert(0);
   IterationsToComplete = k;
