@@ -56,7 +56,7 @@ public:
     // constructor
     TScalarVP(const std::string name);
     // destructor
-    virtual ~TScalarVP(void) = default;
+    virtual ~TScalarVP(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -92,7 +92,7 @@ private:
     std::vector<ScalarField *>                  phase_, momPhase_;
 };
 
-MODULE_REGISTER_NS(ScalarVP, TScalarVP, MScalar);
+MODULE_REGISTER(ScalarVP, TScalarVP, MScalar);
 
 END_MODULE_NAMESPACE
 

@@ -49,7 +49,7 @@ public:
     // constructor
     TUnitEm(const std::string name);
     // destructor
-    virtual ~TUnitEm(void) = default;
+    virtual ~TUnitEm(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -60,7 +60,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(UnitEm, TUnitEm, MGauge);
+MODULE_REGISTER(UnitEm, TUnitEm, MGauge);
 
 END_MODULE_NAMESPACE
 

@@ -47,7 +47,7 @@ public:
     // constructor
     TVPCounterTerms(const std::string name);
     // destructor
-    virtual ~TVPCounterTerms(void) = default;
+    virtual ~TVPCounterTerms(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -66,7 +66,7 @@ private:
     std::vector<ScalarField *> phase_, momPhase_;
 };
 
-MODULE_REGISTER_NS(VPCounterTerms, TVPCounterTerms, MScalar);
+MODULE_REGISTER(VPCounterTerms, TVPCounterTerms, MScalar);
 
 END_MODULE_NAMESPACE
 
