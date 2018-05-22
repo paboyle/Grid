@@ -69,6 +69,8 @@ int main (int argc, char ** argv)
     }
   }
 
+ 
+  double stp = 1.e-5;
   int nrhs = 1;
   int me;
   for(int i=0;i<mpi_layout.size();i++) nrhs *= (mpi_layout[i]/mpi_split[i]);
@@ -130,18 +132,27 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "Intialised the Fermion Fields"<<std::endl;
 
   LatticeGaugeField Umu(UGrid); 
-  if(1) { 
+  FieldMetaData header;
+    std::string file("./lat.in");
+    SU3::ColdConfiguration(Umu);
+    std::cout << GridLogMessage << "Intialised the COLD Gauge Field"<<std::endl;
+  if(0) { 
+    NerscIO::readConfiguration(Umu,header,file);
+    std::cout << GridLogMessage << " "<<file<<" successfully read" <<std::endl;
+  } else {
     GridParallelRNG pRNG(UGrid );  
     std::cout << GridLogMessage << "Intialising 4D RNG "<<std::endl;
     pRNG.SeedFixedIntegers(seeds);
     std::cout << GridLogMessage << "Intialised 4D RNG "<<std::endl;
     SU3::HotConfiguration(pRNG,Umu);
     std::cout << GridLogMessage << "Intialised the HOT Gauge Field"<<std::endl;
-    //    std::cout << " Site zero "<< Umu._odata[0]   <<std::endl;
-  } else { 
-    SU3::ColdConfiguration(Umu);
-    std::cout << GridLogMessage << "Intialised the COLD Gauge Field"<<std::endl;
-  }
+    std::cout << " Site zero "<< Umu._odata[0]   <<std::endl;
+  } 
+   int precision32 = 0;
+   int tworow      = 0;
+   std::string file2("./lat.out");
+   NerscIO::writeConfiguration(Umu,file2,tworow,precision32);
+   std::cout << GridLogMessage << " Successfully saved to " <<file2 <<std::endl;
   /////////////////
   // MPI only sends
   /////////////////
@@ -197,7 +208,7 @@ int main (int argc, char ** argv)
 
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOp(Ddwf);
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOpCk(Dchk);
-  ConjugateGradient<FermionField> CG((1.0e-5),10000);
+  ConjugateGradient<FermionField> CG((stp),10000);
   s_res = zero;
   CG(HermOp,s_src,s_res);
 
@@ -229,12 +240,12 @@ int main (int argc, char ** argv)
 
   for(int s=0;s<nrhs;s++) result[s]=zero;
 
-//  ConjugateGradient<FermionField> CG(1.0e-8,10000);
+//  ConjugateGradient<FermionField> CG(stp,10000);
   int blockDim = 0;
-//  BlockConjugateGradient<FermionField>    BCGrQ(BlockCGrQ,blockDim,1.0e-8,10000);
-  BlockConjugateGradient<FermionField>    BCG  (BlockCG,blockDim,1.0e-8,10000);
-//  BlockConjugateGradient<FermionField>    mCG  (CGmultiRHS,blockDim,1.0e-8,10000);
-  BlockConjugateGradient<FermionField>    BCGV  (BlockCGVec,blockDim,1.0e-8,10000);
+//  BlockConjugateGradient<FermionField>    BCGrQ(BlockCGrQ,blockDim,stp,10000);
+  BlockConjugateGradient<FermionField>    BCG  (BlockCG,blockDim,stp,10000);
+//  BlockConjugateGradient<FermionField>    mCG  (CGmultiRHS,blockDim,stp,10000);
+  BlockConjugateGradient<FermionField>    BCGV  (BlockCGVec,blockDim,stp,10000);
 {
 //  BCG(HermOpCk,src[0],result[0]);
   BCGV(HermOpCk,src,result);
