@@ -211,6 +211,7 @@ namespace Grid {
 
       for(int b=0;b<nn;b++){
 	
+	subspace[b] = zero;
 	gaussian(RNG,noise);
 	scale = std::pow(norm2(noise),-0.5); 
 	noise=noise*scale;
