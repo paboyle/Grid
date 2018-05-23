@@ -179,6 +179,10 @@ public:
       assert(checker_dim_mask.size() == _ndimension);
       assert(processor_grid.size() == _ndimension);
       assert(simd_layout.size() == _ndimension);
+         std::cout <<"dimensions processor_grid simd_layout checker_dim_mask"<<std::endl;
+      for(int i=0;i<_ndimension;i++){
+         std::cout <<i << " "<<dimensions[i]<<" "<<processor_grid[i]<<" "<< simd_layout[i]<<" "<< checker_dim_mask[i]<<std::endl;
+      }
 
       _fdimensions.resize(_ndimension);
       _gdimensions.resize(_ndimension);

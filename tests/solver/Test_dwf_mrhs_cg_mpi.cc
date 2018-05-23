@@ -38,7 +38,7 @@ int main (int argc, char ** argv)
   typedef typename DomainWallFermionR::ComplexField ComplexField; 
   typename DomainWallFermionR::ImplParams params; 
 
-  const int Ls=4;
+  const int Ls=8;
 
   Grid_init(&argc,&argv);
 
@@ -210,7 +210,7 @@ int main (int argc, char ** argv)
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOpCk(Dchk);
   ConjugateGradient<FermionField> CG((stp),10000);
   s_res = zero;
-  CG(HermOp,s_src,s_res);
+//  CG(HermOp,s_src,s_res);
 
   std::cout << GridLogMessage << " split residual norm "<<norm2(s_res)<<std::endl;
   /////////////////////////////////////////////////////////////

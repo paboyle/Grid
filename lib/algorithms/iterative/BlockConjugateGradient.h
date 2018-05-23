@@ -617,9 +617,10 @@ void BlockCGVecsolve(LinearOperatorBase<Field> &Linop, const std::vector<Field> 
 
   std::cout<<GridLogMessage<<" Block Conjugate Gradient :  Nblock "<<Nblock<<std::endl;
 
-  for(int b=0;b<Nblock;b++)
+  for(int b=0;b<Nblock;b++){
   Psi[b].checkerboard = Src[0].checkerboard;
-  conformable(Psi[0], Src[0]);
+  conformable(Psi[b], Src[b]);
+  }
 
   Field Fake(Src[0]);
 
@@ -628,6 +629,7 @@ void BlockCGVecsolve(LinearOperatorBase<Field> &Linop, const std::vector<Field> 
   std::vector<Field> AP(Nblock,Fake); 
 //AP.resize(Nblock);
   std::vector<Field> R(Nblock,Fake); 
+  std::vector<Field> TMP(Nblock,Fake); 
 //R.resize(Nblock);
   
   Eigen::MatrixXcd m_pAp    = Eigen::MatrixXcd::Identity(Nblock,Nblock);
@@ -657,6 +659,8 @@ void BlockCGVecsolve(LinearOperatorBase<Field> &Linop, const std::vector<Field> 
 
   // Initial search dir is guess
   for(int b=0;b<Nblock;b++) Linop.HermOp(Psi[b], AP[b]);
+  for(int b=0;b<Nblock;b++) 
+  std::cout << b << " Psi " << norm2(Psi[b]) <<" AP "<<norm2(AP[b])<<std::endl;
   
 
   /************************************************************************
@@ -672,13 +676,14 @@ void BlockCGVecsolve(LinearOperatorBase<Field> &Linop, const std::vector<Field> 
    */
 
   for(int b=0;b<Nblock;b++){
-  R[b] = Src[b] - AP[b];  
-  P[b] = R[b];
+  R[b] = Src[b] - AP[b]; //R_0  
+  P[b] = R[b];  // P_1
   }
 //  sliceInnerProductMatrix(m_rr,R,R,Orthog);
   for(int b=0;b<Nblock;b++)
   for(int bp=0;bp<Nblock;bp++) {
     m_rr(b,bp) = innerProduct(R[b],R[bp]);  
+    std::cout << 0 <<" : R_0 R_0 "<< b <<" "<<bp<<" "<<innerProduct(R[b],R[bp]) <<std::endl;
   }
 
   GridStopWatch sliceInnerTimer;
@@ -693,12 +698,12 @@ void BlockCGVecsolve(LinearOperatorBase<Field> &Linop, const std::vector<Field> 
     RealD rrsum=0;
     for(int b=0;b<Nblock;b++) rrsum+=real(m_rr(b,b));
 
-    std::cout << GridLogIterative << "\titeration "<<k<<" rr_sum "<<rrsum<<" ssq_sum "<< sssum
+    if((k%1)==0)
+    std::cout << GridLogMessage << "\titeration "<<k<<" rr_sum "<<rrsum<<" ssq_sum "<< sssum
 	      <<" / "<<std::sqrt(rrsum/sssum) <<std::endl;
 
     MatrixTimer.Start();
-  for(int b=0;b<Nblock;b++)
-    Linop.HermOp(P[b], AP[b]);
+    for(int b=0;b<Nblock;b++) Linop.HermOp(P[b], AP[b]);
     MatrixTimer.Stop();
 
     // Alpha
@@ -707,35 +712,55 @@ void BlockCGVecsolve(LinearOperatorBase<Field> &Linop, const std::vector<Field> 
   for(int b=0;b<Nblock;b++)
   for(int bp=0;bp<Nblock;bp++) {
     m_pAp(b,bp) = innerProduct(P[b],AP[bp]);  
+    std::cout << k <<" : m_pAp "<< b <<" "<<bp<<" "<<innerProduct(P[b],AP[bp]) <<std::endl;
   }
     sliceInnerTimer.Stop();
     m_pAp_inv = m_pAp.inverse();
-    m_alpha   = m_pAp_inv * m_rr ;
+{
+    m_alpha = m_pAp*m_pAp_inv;
+  for(int b=0;b<Nblock;b++){
+  for(int bp=0;bp<Nblock;bp++) {
+    std::cout << k <<" : pAp*pAp_inv "<< b <<" "<<bp<<" "<<m_alpha(b,bp)<<std::endl;
+  }
+  }
+}
+    m_alpha   = m_pAp_inv * m_rr ; //alpha_k+1 = (P_k+1^t A P_k+1)^-1 (R_k^t R_k)
 
     // Psi, R update
     sliceMaddTimer.Start();
-//    sliceMaddMatrix(Psi,m_alpha, P,Psi,Orthog);     // add alpha *  P to psi
+//    sliceMaddMatrix(Psi,m_alpha, P,Psi,Orthog);     // X_k+1=X_k+P_k+1 alpha_k+1
   for(int b=0;b<Nblock;b++)
   for(int bp=0;bp<Nblock;bp++) {
-    Psi[b] += m_alpha(bp,b)*P[bp];
+    Psi[b] += m_alpha(bp,b)*P[bp];  // X_k+1 = X_k + P_k+1 alpha_k+1
   }
+
+  for(int b=0;b<Nblock;b++) TMP[b] = R[b];
 //    sliceMaddMatrix(R  ,m_alpha,AP,  R,Orthog,-1.0);// sub alpha * AP to resid
   for(int b=0;b<Nblock;b++)
   for(int bp=0;bp<Nblock;bp++) {
-    R[b] -= m_alpha(bp,b)*AP[bp];
+    R[b] -= m_alpha(bp,b)*AP[bp];  // R_k+1 = R_k - AP_k+1 alpha_k+1
   }
     sliceMaddTimer.Stop();
+{
+//check
+  for(int b=0;b<Nblock;b++){
+  for(int bp=0;bp<Nblock;bp++) {
+    std::cout << k <<" : R_k+1 R_k "<< b <<" "<<bp<<" "<<innerProduct(R[b],TMP[bp]) <<std::endl;
+    std::cout << k <<" : R_k R_k "<< b <<" "<<bp<<" "<<innerProduct(TMP[b],TMP[bp]) <<std::endl;
+  }
+  }
+}
 
     // Beta
-    m_rr_inv = m_rr.inverse();
+    m_rr_inv = m_rr.inverse(); //m_rr_inv = (R_k^t R_k)^-1
     sliceInnerTimer.Start();
 //    sliceInnerProductMatrix(m_rr,R,R,Orthog);
   for(int b=0;b<Nblock;b++)
   for(int bp=0;bp<Nblock;bp++) {
-    m_rr(b,bp) = innerProduct(R[b],R[bp]);  
+    m_rr(b,bp) = innerProduct(R[b],R[bp]);  // beta_k+2 = (R_k
   }
     sliceInnerTimer.Stop();
-    m_beta = m_rr_inv *m_rr;
+    m_beta = m_rr_inv *m_rr; // beta_k+2 = (R_k^t R_k)^-1 (R_k+1^5 R_k+1)
 
     // Search update
     sliceMaddTimer.Start();
@@ -743,11 +768,20 @@ void BlockCGVecsolve(LinearOperatorBase<Field> &Linop, const std::vector<Field> 
   for(int b=0;b<Nblock;b++){
     AP[b] = R[b];
   for(int bp=0;bp<Nblock;bp++) {
-    AP[b] += m_beta(bp,b)*P[bp];
+    AP[b] += m_beta(bp,b)*P[bp]; //AP = R_k+1 + P_k+1 beta_k+1
   }
   }
+{
+//check
+    for(int b=0;b<Nblock;b++) Linop.HermOp(P[b], TMP[b]);
+  for(int b=0;b<Nblock;b++){
+  for(int bp=0;bp<Nblock;bp++) {
+    std::cout << k <<" : P_k+2 A P "<< b <<" "<<bp<<" "<<innerProduct(AP[b],TMP[bp]) <<std::endl;
+  }
+  }
+}
     sliceMaddTimer.Stop();
-  for(int b=0;b<Nblock;b++) P[b]= AP[b];
+  for(int b=0;b<Nblock;b++) P[b]= AP[b]; //P_k+2 = AP
 
     /*********************
      * convergence monitor
@@ -769,12 +803,12 @@ void BlockCGVecsolve(LinearOperatorBase<Field> &Linop, const std::vector<Field> 
 	std::cout << GridLogMessage<< "\t\tblock "<<b<<" computed resid "
 		  << std::sqrt(real(m_rr(b,b))/ssq[b])<<std::endl;
       }
-      std::cout << GridLogMessage<<"\tMax residual is "<<std::sqrt(max_resid)<<std::endl;
+	      std::cout << GridLogMessage<<"\tMax residual is "<<std::sqrt(max_resid)<<std::endl;
 
-  for(int b=0;b<Nblock;b++) { 
-      Linop.HermOp(Psi[b], AP[b]);
-AP[b] = AP[b]-Src[b];
-      std::cout << GridLogMessage <<"\t True residual is " << b<<" "<<std::sqrt(norm2(AP[b])/norm2(Src[b])) <<std::endl;
+	  for(int b=0;b<Nblock;b++) { 
+	      Linop.HermOp(Psi[b], AP[b]);
+	AP[b] = AP[b]-Src[b];
+	      std::cout << GridLogMessage <<"\t True residual is " << b<<" "<<std::sqrt(norm2(AP[b])/norm2(Src[b])) <<std::endl;
 }
 
       std::cout << GridLogMessage << "Time Breakdown "<<std::endl;
