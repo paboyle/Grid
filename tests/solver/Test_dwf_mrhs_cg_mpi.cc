@@ -125,7 +125,7 @@ int main (int argc, char ** argv)
   for(int s=0;s<nrhs;s++) {
     random(pRNG5,src[s]);
     tmp = 10.0*s;
-    src[s] = (src[s] * 0.1) + tmp;
+//    src[s] = (src[s] * 0.1) + tmp;
     std::cout << GridLogMessage << " src ["<<s<<"] "<<norm2(src[s])<<std::endl;
   }
 #endif
@@ -240,14 +240,10 @@ int main (int argc, char ** argv)
 
   for(int s=0;s<nrhs;s++) result[s]=zero;
 
-//  ConjugateGradient<FermionField> CG(stp,10000);
-  int blockDim = 0;
-//  BlockConjugateGradient<FermionField>    BCGrQ(BlockCGrQ,blockDim,stp,10000);
-  BlockConjugateGradient<FermionField>    BCG  (BlockCG,blockDim,stp,10000);
-//  BlockConjugateGradient<FermionField>    mCG  (CGmultiRHS,blockDim,stp,10000);
+  int blockDim = 0;//not used for BlockCGVec
   BlockConjugateGradient<FermionField>    BCGV  (BlockCGVec,blockDim,stp,10000);
+  BCGV.PrintInterval=10;
 {
-//  BCG(HermOpCk,src[0],result[0]);
   BCGV(HermOpCk,src,result);
 }
 
