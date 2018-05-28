@@ -130,6 +130,12 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
   void DhopInternal(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
                     const FermionField &in, FermionField &out, int dag);
 
+  void DhopInternalSerial(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+                    const FermionField &in, FermionField &out, int dag);
+
+  void DhopInternalOverlappedComms(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+                    const FermionField &in, FermionField &out, int dag);
+
   // Constructor
   WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
                 GridRedBlackCartesian &Hgrid, RealD _mass, 
@@ -145,6 +151,8 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
 
   //    protected:
  public:
+  virtual RealD Mass(void) { return mass; }
+  virtual int   isTrivialEE(void) { return 1; };
   RealD mass;
   RealD diag_mass;
 

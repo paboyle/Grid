@@ -349,15 +349,98 @@ void WilsonFermion<Impl>::DhopDirDisp(const FermionField &in, FermionField &out,
   parallel_for (int sss = 0; sss < in._grid->oSites(); sss++) {
     Kernels::DhopDir(Stencil, Umu, Stencil.CommBuf(), sss, sss, in, out, dirdisp, gamma);
   }
-};
-
+} 
+/*Change starts*/
 template <class Impl>
 void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
                                        DoubledGaugeField &U,
                                        const FermionField &in,
                                        FermionField &out, int dag) {
-  assert((dag == DaggerNo) || (dag == DaggerYes));
+#ifdef GRID_OMP
+  if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute )
+    DhopInternalOverlappedComms(st,lo,U,in,out,dag);
+  else
+#endif 
+    DhopInternalSerial(st,lo,U,in,out,dag);
 
+}
+
+template <class Impl>
+void WilsonFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, LebesgueOrder &lo,
+                                       DoubledGaugeField &U,
+                                       const FermionField &in,
+                                       FermionField &out, int dag) {
+  assert((dag == DaggerNo) || (dag == DaggerYes));
+#ifdef GRID_OMP
+  Compressor compressor;
+  int len =  U._grid->oSites();
+  const int LLs =  1;
+
+  st.Prepare();
+  st.HaloGather(in,compressor);
+  st.CommsMergeSHM(compressor);
+#pragma omp parallel
+  {
+    int tid = omp_get_thread_num();
+    int nthreads = omp_get_num_threads();
+    int ncomms = CartesianCommunicator::nCommThreads;
+    if (ncomms == -1) ncomms = 1;
+    assert(nthreads > ncomms);
+    if (tid >= ncomms) {
+      nthreads -= ncomms;
+      int ttid  = tid - ncomms;
+      int n     = len;
+      int chunk = n / nthreads;
+      int rem   = n % nthreads;
+      int myblock, myn;
+      if (ttid < rem) {
+        myblock = ttid * chunk + ttid;
+        myn = chunk+1;
+      } else {
+        myblock = ttid*chunk + rem;
+        myn = chunk;
+      }
+      // do the compute
+     if (dag == DaggerYes) {
+
+        for (int sss = myblock; sss < myblock+myn; ++sss) {
+         Kernels::DhopSiteDag(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
+       }
+     } else {
+        for (int sss = myblock; sss < myblock+myn; ++sss) {
+         Kernels::DhopSite(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
+       }
+    } //else
+
+    } else {
+      st.CommunicateThreaded();
+    }
+
+  Compressor compressor(dag);
+
+  if (dag == DaggerYes) {
+    parallel_for (int sss = 0; sss < in._grid->oSites(); sss++) {
+      Kernels::DhopSiteDag(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
+    }
+  } else {
+    parallel_for (int sss = 0; sss < in._grid->oSites(); sss++) {
+      Kernels::DhopSite(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
+    }
+  }
+
+  }  //pragma
+#else
+  assert(0);
+#endif
+};
+
+
+template <class Impl>
+void WilsonFermion<Impl>::DhopInternalSerial(StencilImpl &st, LebesgueOrder &lo,
+                                       DoubledGaugeField &U,
+                                       const FermionField &in,
+                                       FermionField &out, int dag) {
+  assert((dag == DaggerNo) || (dag == DaggerYes));
   Compressor compressor(dag);
   st.HaloExchange(in, compressor);
 
@@ -371,6 +454,7 @@ void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
     }
   }
 };
+/*Change ends */
 
 /*******************************************************************************
  * Conserved current utilities for Wilson fermions, for contracting propagators

@@ -41,7 +41,7 @@ int main (int argc, char ** argv)
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
   const int Ls=16;
-  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
+  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
@@ -63,9 +63,9 @@ int main (int argc, char ** argv)
   pRNG4.SeedFixedIntegers(seeds);
   pRNG5.SeedFixedIntegers(seeds);
 
-  typedef typename ImprovedStaggeredFermion5DR::FermionField FermionField; 
-  typedef typename ImprovedStaggeredFermion5DR::ComplexField ComplexField; 
-  typename ImprovedStaggeredFermion5DR::ImplParams params; 
+  typedef typename ImprovedStaggeredFermion5DF::FermionField FermionField; 
+  typedef typename ImprovedStaggeredFermion5DF::ComplexField ComplexField; 
+  typename ImprovedStaggeredFermion5DF::ImplParams params; 
 
   FermionField src   (FGrid);
   random(pRNG5,src);
@@ -82,7 +82,7 @@ int main (int argc, char ** argv)
   FermionField phi   (FGrid); random(pRNG5,phi);
   FermionField chi   (FGrid); random(pRNG5,chi);
 
-  LatticeGaugeField Umu(UGrid);
+  LatticeGaugeFieldF Umu(UGrid);
   SU3::HotConfiguration(pRNG4,Umu);
 
   /*
@@ -102,8 +102,8 @@ int main (int argc, char ** argv)
   RealD c2=-1.0/24.0;
   RealD u0=1.0;
 
-  ImprovedStaggeredFermion5DR     Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,c1,c2,u0,params);
-  ImprovedStaggeredFermionVec5dR sDs(Umu,Umu,*sFGrid,*sFrbGrid,*sUGrid,*sUrbGrid,mass,c1,c2,u0,params);
+  ImprovedStaggeredFermion5DF     Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,c1,c2,u0,params);
+  ImprovedStaggeredFermionVec5dF sDs(Umu,Umu,*sFGrid,*sFrbGrid,*sUGrid,*sUrbGrid,mass,c1,c2,u0,params);
 
   std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
   std::cout<<GridLogMessage<<"= Testing Dhop against cshift implementation         "<<std::endl;
