@@ -94,8 +94,8 @@ public:
                                           const unsigned int Ls = 1) const;
     std::vector<int>        getDim(void) const;
     int                     getDim(const unsigned int mu) const;
-    unsigned long int       getLocalVolume(void) const;
     unsigned int            getNd(void) const;
+    double                  getVolume(void) const;
     // random number generator
     void                    setSeed(const std::vector<int> &seed);
     GridParallelRNG *       get4dRng(void) const;
@@ -155,7 +155,7 @@ public:
     void                    printContent(void) const;
 private:
     // general
-    unsigned long int                      locVol_;
+    double                                 vol_;
     bool                                   protect_{true};
     // grids
     std::vector<int>                       dim_;
