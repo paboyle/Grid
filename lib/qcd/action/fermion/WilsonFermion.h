@@ -96,7 +96,7 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
   virtual void MooeeInv(const FermionField &in, FermionField &out);
   virtual void MooeeInvDag(const FermionField &in, FermionField &out);
 
-  virtual void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _mass) ;
+  virtual void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _mass,std::vector<double> twist) ;
 
   ////////////////////////
   // Derivative interface

@@ -9,6 +9,7 @@
 Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
+Author: Vera Guelpers <V.M.Guelpers@soton.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -95,17 +96,38 @@ namespace Grid {
       virtual void  Mdir   (const FermionField &in, FermionField &out,int dir,int disp)=0;   // case by case Wilson, Clover, Cayley, ContFrac, PartFrac
 
 
-      virtual void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m) { assert(0);};
+      virtual void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m,std::vector<double> twist) { assert(0);};
 
-      virtual void  FreePropagator(const FermionField &in,FermionField &out,RealD mass) { 
+      virtual void  FreePropagator(const FermionField &in,FermionField &out,RealD mass,std::vector<double> twist) {
 	FFT theFFT((GridCartesian *) in._grid);
 
 	FermionField in_k(in._grid);
 	FermionField prop_k(in._grid);
 
-	theFFT.FFT_all_dim(in_k,in,FFT::forward);
-        this->MomentumSpacePropagator(prop_k,in_k,mass);
+	//phase for boundary condition
+	ComplexField coor(in._grid);
+	ComplexField ph(in._grid);  ph = zero;
+	FermionField in_buf(in._grid); in_buf = zero;
+	Complex ci(0.0,1.0);
+	assert(twist.size() == Nd);//check that twist is Nd
+	for(unsigned int nu = 0; nu < Nd; nu++)
+	{
+          LatticeCoordinate(coor, nu);
+	  ph = ph + twist[nu]*coor*((1./(in._grid->_fdimensions[nu])));
+	}
+	in_buf = exp((Real)(2.0*M_PI)*ci*ph*(-1.0))*in;
+
+	theFFT.FFT_all_dim(in_k,in_buf,FFT::forward);
+        this->MomentumSpacePropagator(prop_k,in_k,mass,twist);
 	theFFT.FFT_all_dim(out,prop_k,FFT::backward);
+
+	//phase for boundary condition
+	out = out * exp((Real)(2.0*M_PI)*ci*ph);
+
+      };
+      virtual void FreePropagator(const FermionField &in,FermionField &out,RealD mass) {
+		std::vector<double> twist(Nd,0.0); //default: periodic boundarys in all directions
+	        FreePropagator(in,out,mass,twist);
       };
 
       ///////////////////////////////////////////////

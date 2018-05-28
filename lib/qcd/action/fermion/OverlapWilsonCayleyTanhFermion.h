@@ -42,8 +42,8 @@ namespace Grid {
      INHERIT_IMPL_TYPES(Impl);
     public:
 
-     void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m) { 
-       this->MomentumSpacePropagatorHw(out,in,_m);
+     void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m,std::vector<double> twist) {
+       this->MomentumSpacePropagatorHw(out,in,_m,twist);
      };
 
      // Constructors
