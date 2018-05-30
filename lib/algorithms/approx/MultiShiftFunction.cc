@@ -53,4 +53,10 @@ void MultiShiftFunction::csv(std::ostream &out)
   }
   return;
 }
+
+RealD __InverseApproximation(RealD x)
+{
+  return 1.0/x;
+}
+
 }

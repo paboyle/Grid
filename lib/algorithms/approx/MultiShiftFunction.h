@@ -63,5 +63,7 @@ public:
   }
 
 };
+RealD __InverseApproximation(RealD x);
+
 }
 #endif
