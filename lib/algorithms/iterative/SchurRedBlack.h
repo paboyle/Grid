@@ -95,16 +95,26 @@ namespace Grid {
   private:
     OperatorFunction<Field> & _HermitianRBSolver;
     int CBfactorise;
+    bool subGuess;
   public:
 
     /////////////////////////////////////////////////////
     // Wrap the usual normal equations Schur trick
     /////////////////////////////////////////////////////
-  SchurRedBlackStaggeredSolve(OperatorFunction<Field> &HermitianRBSolver)  :
+  SchurRedBlackStaggeredSolve(OperatorFunction<Field> &HermitianRBSolver, const bool initSubGuess = false)  :
      _HermitianRBSolver(HermitianRBSolver) 
     { 
       CBfactorise=0;
+      subtractGuess(initSubGuess);
     };
+    void subtractGuess(const bool initSubGuess)
+    {
+      subGuess = initSubGuess;
+    }
+    bool isSubtractGuess(void)
+    {
+      return subGuess;
+    }
 
     template<class Matrix>
     void operator() (Matrix & _Matrix,const Field &in, Field &out){
@@ -151,7 +161,17 @@ namespace Grid {
       //////////////////////////////////////////////////////////////
       std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver calling the Mpc solver" <<std::endl;
       guess(src_o,sol_o);
-      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
+      if (subGuess)
+      {
+        std::cout << GridLogMessage << "Subtracting guess after solve" << std::endl;
+        Mtmp = sol_o;
+        _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
+        sol_o = sol_o - Mtmp;
+      }
+      else
+      {
+        _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
+      }
       std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver called  the Mpc solver" <<std::endl;
 
       ///////////////////////////////////////////////////
@@ -184,15 +204,25 @@ namespace Grid {
   private:
     OperatorFunction<Field> & _HermitianRBSolver;
     int CBfactorise;
+    bool subGuess;
   public:
 
     /////////////////////////////////////////////////////
     // Wrap the usual normal equations Schur trick
     /////////////////////////////////////////////////////
-  SchurRedBlackDiagMooeeSolve(OperatorFunction<Field> &HermitianRBSolver,int cb=0)  :  _HermitianRBSolver(HermitianRBSolver) 
+  SchurRedBlackDiagMooeeSolve(OperatorFunction<Field> &HermitianRBSolver,int cb=0, const bool initSubGuess = false)  :  _HermitianRBSolver(HermitianRBSolver) 
   { 
     CBfactorise=cb;
+    subtractGuess(initSubGuess);
   };
+    void subtractGuess(const bool initSubGuess)
+    {
+      subGuess = initSubGuess;
+    }
+    bool isSubtractGuess(void)
+    {
+      return subGuess;
+    }
     template<class Matrix>
     void operator() (Matrix & _Matrix,const Field &in, Field &out){
       ZeroGuesser<Field> guess;
@@ -236,7 +266,17 @@ namespace Grid {
       //////////////////////////////////////////////////////////////
       std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
       guess(src_o,sol_o);
-      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
+      if (subGuess)
+      {
+        std::cout << GridLogMessage << "Subtracting guess after solve" << std::endl;
+        Mtmp = sol_o;
+        _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
+        sol_o = sol_o - Mtmp;
+      }
+      else
+      {
+        _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
+      }
 
       ///////////////////////////////////////////////////
       // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
@@ -267,16 +307,26 @@ namespace Grid {
   private:
     OperatorFunction<Field> & _HermitianRBSolver;
     int CBfactorise;
+    bool subGuess;
   public:
 
     /////////////////////////////////////////////////////
     // Wrap the usual normal equations Schur trick
     /////////////////////////////////////////////////////
-  SchurRedBlackDiagTwoSolve(OperatorFunction<Field> &HermitianRBSolver)  :
+  SchurRedBlackDiagTwoSolve(OperatorFunction<Field> &HermitianRBSolver, const bool initSubGuess = false)  :
      _HermitianRBSolver(HermitianRBSolver) 
     { 
-      CBfactorise=0;
+      CBfactorise = 0;
+      subtractGuess(initSubGuess);
     };
+    void subtractGuess(const bool initSubGuess)
+    {
+      subGuess = initSubGuess;
+    }
+    bool isSubtractGuess(void)
+    {
+      return subGuess;
+    }
 
     template<class Matrix>
     void operator() (Matrix & _Matrix,const Field &in, Field &out){
@@ -322,7 +372,17 @@ namespace Grid {
       std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
 //      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
       guess(src_o,tmp);
-      _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
+      if (subGuess)
+      {
+        std::cout << GridLogMessage << "Subtracting guess after solve" << std::endl;
+        Mtmp = tmp;
+        _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard == Odd);
+        tmp = tmp - Mtmp;
+      }
+      else
+      {
+        _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
+      }
       _Matrix.MooeeInv(tmp,sol_o);        assert(  sol_o.checkerboard   ==Odd);
 
       ///////////////////////////////////////////////////
@@ -352,16 +412,26 @@ namespace Grid {
   private:
     LinearFunction<Field> & _HermitianRBSolver;
     int CBfactorise;
+    bool subGuess;
   public:
 
     /////////////////////////////////////////////////////
     // Wrap the usual normal equations Schur trick
     /////////////////////////////////////////////////////
-  SchurRedBlackDiagTwoMixed(LinearFunction<Field> &HermitianRBSolver)  :
+  SchurRedBlackDiagTwoMixed(LinearFunction<Field> &HermitianRBSolver, const bool initSubGuess = false)  :
      _HermitianRBSolver(HermitianRBSolver) 
     { 
       CBfactorise=0;
+      subtractGuess(initSubGuess);
     };
+    void subtractGuess(const bool initSubGuess)
+    {
+      subGuess = initSubGuess;
+    }
+    bool isSubtractGuess(void)
+    {
+      return subGuess;
+    }
 
     template<class Matrix>
     void operator() (Matrix & _Matrix,const Field &in, Field &out){
@@ -408,7 +478,17 @@ namespace Grid {
 //      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
 //      _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
       guess(src_o,tmp);
-      _HermitianRBSolver(src_o,tmp);  assert(tmp.checkerboard==Odd);
+      if (subGuess)
+      {
+        std::cout << GridLogMessage << "Subtracting guess after solve" << std::endl;
+        Mtmp = tmp;
+        _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
+        tmp = tmp - Mtmp;
+      }
+      else
+      {
+        _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
+      }
       _Matrix.MooeeInv(tmp,sol_o);        assert(  sol_o.checkerboard   ==Odd);
 
       ///////////////////////////////////////////////////

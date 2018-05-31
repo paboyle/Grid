@@ -63,7 +63,7 @@ public:
 
   DeflatedGuesser(const std::vector<Field> & _evec,const std::vector<RealD> & _eval) : evec(_evec), eval(_eval) {};
 
-  virtual void operator()(const Field &src,Field &guess) { 
+  virtual void operator()(const Field &src,Field &guess) {
     guess = zero;
     assert(evec.size()==eval.size());
     auto N = evec.size();
@@ -71,6 +71,7 @@ public:
       const Field& tmp = evec[i];
       axpy(guess,TensorRemove(innerProduct(tmp,src)) / eval[i],tmp,guess);
     }
+    guess.checkerboard = src.checkerboard;
   }
 };
 
@@ -101,6 +102,7 @@ public:
       axpy(guess_coarse,TensorRemove(innerProduct(tmp,src_coarse)) / eval_coarse[i],tmp,guess_coarse);
     }
     blockPromote(guess_coarse,guess,subspace);
+    guess.checkerboard = src.checkerboard;
   };
 };
 
