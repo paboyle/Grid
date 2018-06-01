@@ -52,7 +52,33 @@ public:
                                   double,                        coarseSolverTol,
                                   int,                           coarseSolverMaxOuterIter,
                                   int,                           coarseSolverMaxInnerIter);
-  MultiGridParams(){};
+
+  // constructor with default values
+  MultiGridParams(int                           _nLevels                  = 2,
+                  std::vector<std::vector<int>> _blockSizes               = {{4, 4, 4, 4}},
+                  std::vector<double>           _smootherTol              = {1e-14},
+                  std::vector<int>              _smootherMaxOuterIter     = {4},
+                  std::vector<int>              _smootherMaxInnerIter     = {4},
+                  bool                          _kCycle                   = true,
+                  std::vector<double>           _kCycleTol                = {1e-1},
+                  std::vector<int>              _kCycleMaxOuterIter       = {2},
+                  std::vector<int>              _kCycleMaxInnerIter       = {5},
+                  double                        _coarseSolverTol          = 5e-2,
+                  int                           _coarseSolverMaxOuterIter = 10,
+                  int                           _coarseSolverMaxInnerIter = 500)
+  : nLevels(_nLevels)
+  , blockSizes(_blockSizes)
+  , smootherTol(_smootherTol)
+  , smootherMaxOuterIter(_smootherMaxOuterIter)
+  , smootherMaxInnerIter(_smootherMaxInnerIter)
+  , kCycle(_kCycle)
+  , kCycleTol(_kCycleTol)
+  , kCycleMaxOuterIter(_kCycleMaxOuterIter)
+  , kCycleMaxInnerIter(_kCycleMaxInnerIter)
+  , coarseSolverTol(_coarseSolverTol)
+  , coarseSolverMaxOuterIter(_coarseSolverMaxOuterIter)
+  , coarseSolverMaxInnerIter(_coarseSolverMaxInnerIter)
+  {}
 };
 // clang-format on
 
@@ -646,8 +672,6 @@ int main(int argc, char **argv) {
 
   Grid_init(&argc, &argv);
 
-  MultiGridParams mgParams;
-
   typename WilsonCloverFermionR::ImplParams wcImplparams;
   WilsonAnisotropyCoefficients              wilsonAnisCoeff;
 
@@ -668,73 +692,35 @@ int main(int argc, char **argv) {
   RealD csw_r = 1.0;
   RealD csw_t = 1.0;
 
-  // Note: We do chiral doubling, so actually only nbasis/2 full basis vectors are used
-  const int nbasis = 20;
+  MultiGridParams mgParams;
+  std::string     inputXml{"./mg_params.xml"};
 
-  RealD toleranceForMGChecks = 1e-13; // TODO: depends on the precision MG precondtioner is run in
-
-  WilsonFermionR       Dw(Umu, *FGrid, *FrbGrid, mass);
-  WilsonCloverFermionR Dwc(Umu, *FGrid, *FrbGrid, mass, csw_r, csw_t, wilsonAnisCoeff, wcImplparams);
-
-  // // Default params for two-level MG preconditioner
-  // mgParams.nLevels                  = 2;
-  // mgParams.blockSizes               = {{4, 4, 4, 4}};
-  // mgParams.smootherTol              = {1e-14};
-  // mgParams.smootherMaxOuterIter     = {4};
-  // mgParams.smootherMaxInnerIter     = {4};
-  // mgParams.kCycle                   = true;
-  // mgParams.kCycleTol                = {1e-1};
-  // mgParams.kCycleMaxOuterIter       = {2};
-  // mgParams.kCycleMaxInnerIter       = {5};
-  // mgParams.coarseSolverTol          = 5e-2;
-  // mgParams.coarseSolverMaxOuterIter = 10;
-  // mgParams.coarseSolverMaxInnerIter = 500;
-
-  // Default params for three-level MG preconditioner
-  mgParams.nLevels                  = 3;
-  mgParams.blockSizes               = {{4, 4, 4, 4}, {2, 2, 2, 2}};
-  mgParams.smootherTol              = {1e-14, 1e-14};
-  mgParams.smootherMaxOuterIter     = {4, 4};
-  mgParams.smootherMaxInnerIter     = {4, 4};
-  mgParams.kCycle                   = true;
-  mgParams.kCycleTol                = {1e-1, 1e-1};
-  mgParams.kCycleMaxOuterIter       = {2, 2};
-  mgParams.kCycleMaxInnerIter       = {5, 5};
-  mgParams.coarseSolverTol          = 5e-2;
-  mgParams.coarseSolverMaxOuterIter = 10;
-  mgParams.coarseSolverMaxInnerIter = 500;
-
-  // // Default params for four-level MG preconditioner
-  // mgParams.nLevels                  = 4;
-  // mgParams.blockSizes               = {{4, 4, 4, 4}, {2, 2, 2, 2}, {2, 2, 2, 2}};
-  // mgParams.smootherTol              = {1e-14, 1e-14, 1e-14};
-  // mgParams.smootherMaxOuterIter     = {4, 4, 4};
-  // mgParams.smootherMaxInnerIter     = {4, 4, 4};
-  // mgParams.kCycle                   = true;
-  // mgParams.kCycleTol                = {1e-1, 1e-1, 1e-1};
-  // mgParams.kCycleMaxOuterIter       = {2, 2, 2};
-  // mgParams.kCycleMaxInnerIter       = {5, 5, 5};
-  // mgParams.coarseSolverTol          = 5e-2;
-  // mgParams.coarseSolverMaxOuterIter = 10;
-  // mgParams.coarseSolverMaxInnerIter = 500;
+  if(GridCmdOptionExists(argv, argv + argc, "--inputxml")) {
+    inputXml = GridCmdOptionPayload(argv, argv + argc, "--inputxml");
+    assert(inputXml.length() != 0);
+  }
 
   {
     XmlWriter writer("mg_params_template.xml");
     write(writer, "Params", mgParams);
-    std::cout << GridLogMessage << " Written mg_params_template.xml" << std::endl;
-  }
+    std::cout << GridLogMessage << "Written mg_params_template.xml" << std::endl;
 
-  {
-    std::string paramFileName{"./mg_params.xml"};
-    XmlReader   reader(paramFileName);
+    XmlReader reader(inputXml);
     read(reader, "Params", mgParams);
+    std::cout << GridLogMessage << "Read in " << inputXml << std::endl;
   }
 
   checkParameterValidity(mgParams);
-
   std::cout << mgParams << std::endl;
 
   LevelInfo levelInfo(FGrid, mgParams);
+
+  // Note: We do chiral doubling, so actually only nbasis/2 full basis vectors are used
+  const int nbasis               = 40;
+  RealD     toleranceForMGChecks = 1e-13; // TODO: depends on the precision MG precondtioner is run in
+
+  WilsonFermionR       Dw(Umu, *FGrid, *FrbGrid, mass);
+  WilsonCloverFermionR Dwc(Umu, *FGrid, *FrbGrid, mass, csw_r, csw_t, wilsonAnisCoeff, wcImplparams);
 
   static_assert(std::is_same<LatticeFermion, typename WilsonFermionR::FermionField>::value, "");
   static_assert(std::is_same<LatticeFermion, typename WilsonCloverFermionR::FermionField>::value, "");
