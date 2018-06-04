@@ -13,6 +13,7 @@ Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
 Author: paboyle <paboyle@ph.ed.ac.uk>
 Author: Guido Cossu <guido.cossu@ed.ac.uk>
 Author: Andrew Lawson <andrew.lawson1991@gmail.com>
+Author: Vera Guelpers <V.M.Guelpers@soton.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -445,8 +446,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 	}
       }
 	ptime = usecond() - start;
-    }
-    {
+    } else {
       double start = usecond();
       st.CommunicateThreaded();
       ctime = usecond() - start;
@@ -563,7 +563,221 @@ void WilsonFermion5D<Impl>::DW(const FermionField &in, FermionField &out,int dag
 }
 
 template<class Impl>
-void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const FermionField &in, RealD mass) 
+void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt_5d(FermionField &out,const FermionField &in, RealD mass,std::vector<double> twist)
+{
+  // what type LatticeComplex 
+  GridBase *_grid = _FourDimGrid;
+  GridBase *_5dgrid = _FiveDimGrid;
+
+  conformable(_5dgrid,out._grid);
+
+  FermionField   PRsource(_5dgrid);
+  FermionField   PLsource(_5dgrid);
+  FermionField   buf1_4d(_grid);
+  FermionField   buf2_4d(_grid);
+  FermionField   GR(_5dgrid);
+  FermionField   GL(_5dgrid);
+  FermionField   bufL_4d(_grid);
+  FermionField   bufR_4d(_grid);
+
+  unsigned int Ls = in._grid->_rdimensions[0];
+  
+  typedef typename FermionField::vector_type vector_type;
+  typedef typename FermionField::scalar_type ScalComplex;
+  typedef iSinglet<ScalComplex> Tcomplex;
+  typedef Lattice<iSinglet<vector_type> > LatComplex;
+  
+  Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT
+  };
+
+  Gamma g5(Gamma::Algebra::Gamma5);
+
+  std::vector<int> latt_size   = _grid->_fdimensions;
+
+  LatComplex    sk(_grid);  sk = zero;
+  LatComplex    sk2(_grid); sk2= zero;
+  LatComplex    W(_grid); W= zero;
+  LatComplex    a(_grid); a= zero;
+  LatComplex    one  (_grid); one = ScalComplex(1.0,0.0);
+  LatComplex 	cosha(_grid);
+  LatComplex 	kmu(_grid);
+  LatComplex 	Wea(_grid);
+  LatComplex 	Wema(_grid);
+  LatComplex 	sinha(_grid);
+  LatComplex 	sinhaLs(_grid);
+  LatComplex 	coshaLs(_grid);
+  LatComplex 	A(_grid);
+  LatComplex 	F(_grid);
+  LatComplex 	App(_grid);
+  LatComplex 	Amm(_grid);
+  LatComplex 	Bpp(_grid);
+  LatComplex 	Bmm(_grid);
+  LatComplex 	ABpm(_grid); //Apm=Amp=Bpm=Bmp
+  LatComplex 	signW(_grid);
+
+  ScalComplex ci(0.0,1.0);
+
+  for(int mu=0;mu<Nd;mu++) {
+    
+    LatticeCoordinate(kmu,mu);
+    
+    RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
+    
+    kmu = TwoPiL * kmu;
+    kmu = kmu + TwoPiL * one * twist[mu];//momentum for twisted boundary conditions
+    
+    sk2 = sk2 + 2.0*sin(kmu*0.5)*sin(kmu*0.5);
+    sk  = sk  +     sin(kmu)    *sin(kmu);
+  }
+  
+  W = one - M5 + sk2;
+
+  ////////////////////////////////////////////
+  // Cosh alpha -> alpha
+  ////////////////////////////////////////////
+  cosha = (one + W*W + sk) / (abs(W)*2.0);
+
+  // FIXME Need a Lattice acosh
+  for(int idx=0;idx<_grid->lSites();idx++){
+    std::vector<int> lcoor(Nd);
+    Tcomplex cc;
+    RealD sgn;
+    _grid->LocalIndexToLocalCoor(idx,lcoor);
+    peekLocalSite(cc,cosha,lcoor);
+    assert((double)real(cc)>=1.0);
+    assert(fabs((double)imag(cc))<=1.0e-15);
+    cc = ScalComplex(::acosh(real(cc)),0.0);
+    pokeLocalSite(cc,a,lcoor);
+  }
+
+  Wea = ( exp( a) * abs(W)  );
+  Wema= ( exp(-a) * abs(W)  );
+  sinha = 0.5*(exp( a) - exp(-a));
+  sinhaLs = 0.5*(exp( a*Ls) - exp(-a*Ls));
+  coshaLs = 0.5*(exp( a*Ls) + exp(-a*Ls));
+
+  A = one / (abs(W) * sinha * 2.0) * one / (sinhaLs * 2.0);
+  F = exp( a*Ls) * (one - Wea + (Wema - one) * mass*mass);
+  F = F + exp(-a*Ls) * (Wema - one + (one - Wea) * mass*mass);
+  F = F - abs(W) * sinha * 4.0 * mass;
+
+  Bpp =  (A/F) * (exp(-a*Ls*2.0) - one) * (one - Wema) * (one - mass*mass * one);
+  Bmm =  (A/F) * (one - exp(a*Ls*2.0)) * (one - Wea) * (one - mass*mass * one);
+  App =  (A/F) * (exp(-a*Ls*2.0) - one) * exp(-a) * (exp(-a) - abs(W)) * (one - mass*mass * one);
+  Amm =  (A/F) * (one - exp(a*Ls*2.0)) * exp(a) * (exp(a) - abs(W)) * (one - mass*mass * one);
+  ABpm = (A/F) * abs(W) * sinha * 2.0  * (one + mass * coshaLs * 2.0 + mass*mass * one);
+
+  //P+ source, P- source
+  PRsource = (in + g5 * in) * 0.5;
+  PLsource = (in - g5 * in) * 0.5;
+
+  //calculate GR, GL
+  for(unsigned int ss=1;ss<=Ls;ss++)
+  {
+    bufR_4d = zero;
+    bufL_4d = zero;
+    for(unsigned int tt=1;tt<=Ls;tt++)
+    {
+      //possible sign if W<0
+      if((ss+tt)%2==1) signW = abs(W)/W;
+      else signW = one;
+
+      unsigned int f = (ss > tt) ? ss-tt : tt-ss; //f = abs(ss-tt)
+      //GR
+      buf1_4d = zero;
+      ExtractSlice(buf1_4d, PRsource, (tt-1), 0);
+      //G(s,t)
+      bufR_4d = bufR_4d + A * exp(a*Ls) * exp(-a*f) * signW * buf1_4d + A * exp(-a*Ls) * exp(a*f) * signW * buf1_4d;
+      //A++*exp(a(s+t))
+      bufR_4d = bufR_4d + App * exp(a*ss) * exp(a*tt) * signW * buf1_4d ;
+      //A+-*exp(a(s-t))
+      bufR_4d = bufR_4d + ABpm * exp(a*ss) * exp(-a*tt) * signW * buf1_4d ;
+      //A-+*exp(a(-s+t))
+      bufR_4d = bufR_4d + ABpm * exp(-a*ss) * exp(a*tt) * signW * buf1_4d ;
+      //A--*exp(a(-s-t))
+      bufR_4d = bufR_4d + Amm * exp(-a*ss) * exp(-a*tt) * signW * buf1_4d ;
+
+      //GL
+      buf2_4d = zero;
+      ExtractSlice(buf2_4d, PLsource, (tt-1), 0);
+      //G(s,t)
+      bufL_4d = bufL_4d + A * exp(a*Ls) * exp(-a*f) * signW * buf2_4d + A * exp(-a*Ls) * exp(a*f) * signW * buf2_4d;
+      //B++*exp(a(s+t))
+      bufL_4d = bufL_4d + Bpp * exp(a*ss) * exp(a*tt) * signW * buf2_4d ;
+      //B+-*exp(a(s-t))
+      bufL_4d = bufL_4d + ABpm * exp(a*ss) * exp(-a*tt) * signW * buf2_4d ;
+      //B-+*exp(a(-s+t))
+      bufL_4d = bufL_4d + ABpm * exp(-a*ss) * exp(a*tt) * signW * buf2_4d ;
+      //B--*exp(a(-s-t))
+      bufL_4d = bufL_4d + Bmm * exp(-a*ss) * exp(-a*tt) * signW * buf2_4d ;
+    }
+    InsertSlice(bufR_4d, GR, (ss-1), 0);
+    InsertSlice(bufL_4d, GL, (ss-1), 0);
+  }
+
+//calculate propagator
+  for(unsigned int ss=1;ss<=Ls;ss++)
+  {
+    bufR_4d = zero;
+    bufL_4d = zero;
+
+    //(i*gamma_mu*sin(p_mu) - W)*(GL*P- source)
+    buf1_4d = zero;
+    ExtractSlice(buf1_4d, GL, (ss-1), 0);
+    buf2_4d = zero;
+    for(int mu=0;mu<Nd;mu++) {
+      LatticeCoordinate(kmu,mu);
+      RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
+      kmu = TwoPiL * kmu + TwoPiL * one * twist[mu];//twisted boundary
+      buf2_4d = buf2_4d + sin(kmu)*ci*(Gamma(Gmu[mu])*buf1_4d);
+    }
+    bufL_4d = buf2_4d - W * buf1_4d;
+
+    //(i*gamma_mu*sin(p_mu) - W)*(GR*P+ source)
+    buf1_4d = zero;
+    ExtractSlice(buf1_4d, GR, (ss-1), 0);
+    buf2_4d = zero;
+    for(int mu=0;mu<Nd;mu++) {
+      LatticeCoordinate(kmu,mu);
+      RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
+      kmu = TwoPiL * kmu + TwoPiL * one * twist[mu];//twisted boundary
+      buf2_4d = buf2_4d + sin(kmu)*ci*(Gamma(Gmu[mu])*buf1_4d);
+    }
+    bufR_4d = buf2_4d - W * buf1_4d;
+
+    //(delta(s-1,u) - m*delta(s,1)*delta(u,Ls))*GL
+    if(ss==1){
+      ExtractSlice(buf1_4d, GL, (Ls-1), 0);
+      bufL_4d = bufL_4d - mass*buf1_4d;
+    }
+    else {
+      ExtractSlice(buf1_4d, GL, (ss-2), 0);
+      bufL_4d = bufL_4d + buf1_4d;
+    }
+
+    //(delta(s+1,u) - m*delta(s,Ls)*delta(u,1))*GR
+    if(ss==Ls){
+      ExtractSlice(buf1_4d, GR, 0, 0);
+      bufR_4d = bufR_4d - mass*buf1_4d;
+    }
+    else {
+      ExtractSlice(buf1_4d, GR, ss, 0);
+      bufR_4d = bufR_4d + buf1_4d;
+    }
+    buf1_4d = bufL_4d + bufR_4d;
+    InsertSlice(buf1_4d, out, (ss-1), 0);
+  }
+
+
+  out = out * (-1.0);
+}
+
+template<class Impl>
+void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const FermionField &in, RealD mass,std::vector<double> twist)
 {
   // what type LatticeComplex 
   GridBase *_grid = _FourDimGrid;
@@ -606,6 +820,7 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const Fe
     RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
     
     kmu = TwoPiL * kmu;
+    kmu = kmu + TwoPiL * one * twist[mu];//momentum for twisted boundary conditions
     
     sk2 = sk2 + 2.0*sin(kmu*0.5)*sin(kmu*0.5);
     sk  = sk  +     sin(kmu)    *sin(kmu); 
@@ -619,7 +834,7 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const Fe
   ////////////////////////////////////////////
   // Cosh alpha -> alpha
   ////////////////////////////////////////////
-  cosha =  (one + W*W + sk) / (W*2.0);
+  cosha =  (one + W*W + sk) / (abs(W)*2.0);
 
   // FIXME Need a Lattice acosh
   for(int idx=0;idx<_grid->lSites();idx++){
@@ -634,8 +849,8 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const Fe
     pokeLocalSite(cc,a,lcoor);
   }
   
-  Wea = ( exp( a) * W  ); 
-  Wema= ( exp(-a) * W  ); 
+  Wea = ( exp( a) * abs(W)  );
+  Wema= ( exp(-a) * abs(W)  );
   
   num   = num + ( one - Wema ) * mass * in;
   denom= ( Wea - one ) + mass*mass * (one - Wema); 
@@ -643,7 +858,7 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const Fe
 }
 
 template<class Impl>
-void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const FermionField &in,RealD mass) 
+void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const FermionField &in,RealD mass,std::vector<double> twist)
 {
     Gamma::Algebra Gmu [] = {
       Gamma::Algebra::GammaX,
@@ -683,6 +898,7 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const Fe
       RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
 
       kmu = TwoPiL * kmu;
+      kmu = kmu + TwoPiL * one * twist[mu];//momentum for twisted boundary conditions
 
       sk2 = sk2 + 2.0*sin(kmu*0.5)*sin(kmu*0.5);
       sk  = sk  + sin(kmu)*sin(kmu); 

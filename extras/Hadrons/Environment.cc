@@ -49,11 +49,10 @@ Environment::Environment(void)
         dim_, GridDefaultSimd(nd_, vComplex::Nsimd()),
         GridDefaultMpi()));
     gridRb4d_.reset(SpaceTimeGrid::makeFourDimRedBlackGrid(grid4d_.get()));
-    auto loc = getGrid()->LocalDimensions();
-    locVol_ = 1;
-    for (unsigned int d = 0; d < loc.size(); ++d)
+    vol_ = 1.;
+    for (auto d: dim_)
     {
-        locVol_ *= loc[d];
+        vol_ *= d;
     }
     rng4d_.reset(new GridParallelRNG(grid4d_.get()));
 }
@@ -190,9 +189,9 @@ int Environment::getDim(const unsigned int mu) const
     return dim_[mu];
 }
 
-unsigned long int Environment::getLocalVolume(void) const
+double Environment::getVolume(void) const
 {
-    return locVol_;
+    return vol_;
 }
 
 // random number generator /////////////////////////////////////////////////////

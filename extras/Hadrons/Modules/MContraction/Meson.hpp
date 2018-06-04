@@ -45,8 +45,8 @@ BEGIN_HADRONS_NAMESPACE
  - q1: input propagator 1 (string)
  - q2: input propagator 2 (string)
  - gammas: gamma products to insert at sink & source, pairs of gamma matrices 
-           (space-separated strings) in angled brackets (i.e. <g_sink g_src>),
-           in a sequence (e.g. "<Gamma5 Gamma5><Gamma5 GammaT>").
+           (space-separated strings) in round brackets (i.e. (g_sink g_src)),
+           in a sequence (e.g. "(Gamma5 Gamma5)(Gamma5 GammaT)").
 
            Special values: "all" - perform all possible contractions.
  - sink: module to compute the sink to use in contraction (string).

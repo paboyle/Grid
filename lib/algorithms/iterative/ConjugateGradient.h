@@ -54,6 +54,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
 
   void operator()(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi) {
 
+
     psi.checkerboard = src.checkerboard;
     conformable(psi, src);
 
@@ -69,7 +70,6 @@ class ConjugateGradient : public OperatorFunction<Field> {
 
     
     Linop.HermOpAndNorm(psi, mmp, d, b);
-    
 
     r = src - mmp;
     p = r;
@@ -96,38 +96,44 @@ class ConjugateGradient : public OperatorFunction<Field> {
               << "ConjugateGradient: k=0 residual " << cp << " target " << rsq << std::endl;
 
     GridStopWatch LinalgTimer;
+    GridStopWatch InnerTimer;
+    GridStopWatch AxpyNormTimer;
+    GridStopWatch LinearCombTimer;
     GridStopWatch MatrixTimer;
     GridStopWatch SolverTimer;
 
     SolverTimer.Start();
     int k;
-    for (k = 1; k <= MaxIterations; k++) {
+    for (k = 1; k <= MaxIterations*1000; k++) {
       c = cp;
 
       MatrixTimer.Start();
-      Linop.HermOpAndNorm(p, mmp, d, qq);
+      Linop.HermOp(p, mmp);
       MatrixTimer.Stop();
 
       LinalgTimer.Start();
-      //  RealD    qqck = norm2(mmp);
-      //  ComplexD dck  = innerProduct(p,mmp);
 
+      InnerTimer.Start();
+      ComplexD dc  = innerProduct(p,mmp);
+      InnerTimer.Stop();
+      d = dc.real();
       a = c / d;
-      b_pred = a * (a * qq - d) / c;
 
+      AxpyNormTimer.Start();
       cp = axpy_norm(r, -a, mmp, r);
+      AxpyNormTimer.Stop();
       b = cp / c;
 
-      // Fuse these loops ; should be really easy
-      psi = a * p + psi;
-      p = p * b + r;
-
+      LinearCombTimer.Start();
+      parallel_for(int ss=0;ss<src._grid->oSites();ss++){
+	vstream(psi[ss], a      *  p[ss] + psi[ss]);
+	vstream(p  [ss], b      *  p[ss] + r[ss]);
+      }
+      LinearCombTimer.Stop();
       LinalgTimer.Stop();
 
       std::cout << GridLogIterative << "ConjugateGradient: Iteration " << k
                 << " residual " << cp << " target " << rsq << std::endl;
-      std::cout << GridLogDebug << "a = "<< a << " b_pred = "<< b_pred << "  b = "<< b << std::endl;
-      std::cout << GridLogDebug << "qq = "<< qq << " d = "<< d << "  c = "<< c << std::endl;
 
       // Stopping condition
       if (cp <= rsq) {
@@ -148,6 +154,9 @@ class ConjugateGradient : public OperatorFunction<Field> {
 	std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed() <<std::endl;
 	std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
 	std::cout << GridLogMessage << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tInner      " << InnerTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
 
         if (ErrorOnNoConverge) assert(true_residual / Tolerance < 10000.0);
 

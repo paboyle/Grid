@@ -309,7 +309,8 @@ int main (int argc, char ** argv)
 
     // Momentum space prop
     std::cout << " Solving by FFT and Feynman rules" <<std::endl;
-    Ddwf.FreePropagator(src,ref,mass) ;
+    bool fiveD = false; //calculate 4d free propagator
+    Ddwf.FreePropagator(src,ref,mass,fiveD) ;
 
     Gamma G5(Gamma::Algebra::Gamma5);
 

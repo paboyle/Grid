@@ -49,12 +49,18 @@ inline double usecond(void) {
 
 typedef  std::chrono::system_clock          GridClock;
 typedef  std::chrono::time_point<GridClock> GridTimePoint;
-typedef  std::chrono::milliseconds          GridTime;
+typedef  std::chrono::milliseconds          GridMillisecs;
+typedef  std::chrono::microseconds          GridTime;
 typedef  std::chrono::microseconds          GridUsecs;
 
 inline std::ostream& operator<< (std::ostream & stream, const std::chrono::milliseconds & time)
 {
   stream << time.count()<<" ms";
+  return stream;
+}
+inline std::ostream& operator<< (std::ostream & stream, const std::chrono::microseconds & time)
+{
+  stream << time.count()<<" usec";
   return stream;
 }
  

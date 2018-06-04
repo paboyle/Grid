@@ -7,6 +7,7 @@ modules_cc =\
   Modules/MContraction/WardIdentity.cc \
   Modules/MContraction/DiscLoop.cc \
   Modules/MContraction/Gamma3pt.cc \
+  Modules/MFermion/FreeProp.cc \
   Modules/MFermion/GaugeProp.cc \
   Modules/MSource/Point.cc \
   Modules/MSource/Wall.cc \
@@ -60,6 +61,7 @@ modules_hpp =\
   Modules/MContraction/Gamma3pt.hpp \
   Modules/MContraction/WardIdentity.hpp \
   Modules/MContraction/WeakHamiltonianEye.hpp \
+  Modules/MFermion/FreeProp.hpp \
   Modules/MFermion/GaugeProp.hpp \
   Modules/MSource/SeqGamma.hpp \
   Modules/MSource/Point.hpp \
