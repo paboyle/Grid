@@ -57,9 +57,8 @@ void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, i
       
   parallel_region
   {
-    Vector < vobj > B; // Thread private
 
-    PARALLEL_CRITICAL { B.resize(Nm); }
+    std::vector < vobj , commAllocator<vobj> > B(Nm); // Thread private
        
     parallel_for_internal(int ss=0;ss < grid->oSites();ss++){
       for(int j=j0; j<j1; ++j) B[j]=0.;
