@@ -158,10 +158,19 @@ namespace Grid {
       // tens of seconds per trajectory so this is clean in all reasonable cases,
       // and margin of safety is orders of magnitude.
       // We could hack Sitmo to skip in the higher order words of state if necessary
+      //
+      // Replace with 2^30 ; avoid problem on large volumes
+      //
       /////////////////////////////////////////////////////////////////////////////////////
       //      uint64_t skip = site+1;  //   Old init Skipped then drew.  Checked compat with faster init
+      const int shift = 30;
+
       uint64_t skip = site;
-      skip = skip<<40;
+
+      skip = skip<<shift;
+
+      assert((skip >> shift)==site); // check for overflow
+
       eng.discard(skip);
       //      std::cout << " Engine  " <<site << " state " <<eng<<std::endl;
     } 
