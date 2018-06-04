@@ -560,16 +560,53 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
        VSTORE(2,%0,pUChi_02)					\
        : : "r" (out) : "memory" );
 
+#define nREDUCE(out)							\
+  asm (									\
+       VADD(UChi_00,UChi_10,UChi_00)					\
+       VADD(UChi_01,UChi_11,UChi_01)					\
+       VADD(UChi_02,UChi_12,UChi_02)					\
+       VADD(UChi_30,UChi_20,UChi_30)					\
+       VADD(UChi_31,UChi_21,UChi_31)					\
+       VADD(UChi_32,UChi_22,UChi_32)					\
+       VADD(UChi_00,UChi_30,UChi_00)					\
+       VADD(UChi_01,UChi_31,UChi_01)					\
+       VADD(UChi_02,UChi_32,UChi_02)				);	\
+  asm (VZERO(Chi_00)							\
+       VSUB(UChi_00,Chi_00,UChi_00)					\
+       VSUB(UChi_01,Chi_00,UChi_01)					\
+       VSUB(UChi_02,Chi_00,UChi_02)				);	\
+  asm (								\
+       VSTORE(0,%0,pUChi_00)					\
+       VSTORE(1,%0,pUChi_01)					\
+       VSTORE(2,%0,pUChi_02)					\
+       : : "r" (out) : "memory" );
+
 #define REDUCEa(out)					\
   asm (							\
   VADD(UChi_00,UChi_10,UChi_00)				\
   VADD(UChi_01,UChi_11,UChi_01)				\
   VADD(UChi_02,UChi_12,UChi_02)	);			\
+  asm (									\
+       VSTORE(0,%0,pUChi_00)						\
+       VSTORE(1,%0,pUChi_01)						\
+       VSTORE(2,%0,pUChi_02)						\
+       : : "r" (out) : "memory" );
+
+// FIXME is sign right in the VSUB ?
+#define nREDUCEa(out)					\
   asm (							\
-  VSTORE(0,%0,pUChi_00)					\
-  VSTORE(1,%0,pUChi_01)					\
-  VSTORE(2,%0,pUChi_02)					\
-  : : "r" (out) : "memory" );
+  VADD(UChi_00,UChi_10,UChi_00)				\
+  VADD(UChi_01,UChi_11,UChi_01)				\
+  VADD(UChi_02,UChi_12,UChi_02)	);			\
+  asm (VZERO(Chi_00)							\
+       VSUB(UChi_00,Chi_00,UChi_00)					\
+       VSUB(UChi_01,Chi_00,UChi_01)					\
+       VSUB(UChi_02,Chi_00,UChi_02)				);	\
+  asm (									\
+       VSTORE(0,%0,pUChi_00)				\
+       VSTORE(1,%0,pUChi_01)				\
+       VSTORE(2,%0,pUChi_02)				\
+       : : "r" (out) : "memory" );
 
 #define PERMUTE_DIR(dir)			\
       permute##dir(Chi_0,Chi_0);\
@@ -581,10 +618,9 @@ namespace QCD {
 
 template <class Impl>
 void StaggeredKernels<Impl>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
-					 DoubledGaugeField &U,
-					 DoubledGaugeField &UUU,
-					 SiteSpinor *buf, int LLs,
-					 int sU, const FermionField &in, FermionField &out) 
+					 DoubledGaugeField &U, DoubledGaugeField &UUU,
+					 SiteSpinor *buf, int LLs, int sU, 
+					 const FermionField &in, FermionField &out,int dag) 
 {
   assert(0);
 };
@@ -645,10 +681,9 @@ void StaggeredKernels<Impl>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo,
   // This is the single precision 5th direction vectorised kernel
 #include <simd/Intel512single.h>
 template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
-								    DoubledGaugeField &U,
-								    DoubledGaugeField &UUU,
-								    SiteSpinor *buf, int LLs,
-								    int sU, const FermionField &in, FermionField &out) 
+								    DoubledGaugeField &U, DoubledGaugeField &UUU,
+								    SiteSpinor *buf, int LLs, int sU, 
+								    const FermionField &in, FermionField &out,int dag) 
 {
 #ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;
@@ -685,7 +720,11 @@ template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilImpl 
     MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);
 
     addr0 = (uint64_t) &out._odata[sF];
-    REDUCE(addr0);
+    if ( dag ) {
+      nREDUCE(addr0);
+    } else { 
+      REDUCE(addr0);
+    }
    }
 #else 
     assert(0);
@@ -695,10 +734,9 @@ template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilImpl 
 
 #include <simd/Intel512double.h>
 template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
-								    DoubledGaugeField &U,
-								    DoubledGaugeField &UUU,
-								    SiteSpinor *buf, int LLs,
-								    int sU, const FermionField &in, FermionField &out) 
+								    DoubledGaugeField &U, DoubledGaugeField &UUU,
+								    SiteSpinor *buf, int LLs, int sU, 
+								    const FermionField &in, FermionField &out,int dag) 
 {
 #ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;
@@ -734,7 +772,11 @@ template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilImpl 
     MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);
 
     addr0 = (uint64_t) &out._odata[sF];
-    REDUCE(addr0);
+    if ( dag ) {
+      nREDUCE(addr0);
+    } else { 
+      REDUCE(addr0);
+    }
   }
 #else 
   assert(0);
@@ -776,10 +818,9 @@ template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilImpl 
 
 #include <simd/Intel512single.h>
 template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
-								    DoubledGaugeField &U,
-								    DoubledGaugeField &UUU,
-								    SiteSpinor *buf, int LLs,
-								    int sU, const FermionField &in, FermionField &out) 
+							       DoubledGaugeField &U, DoubledGaugeField &UUU,
+							       SiteSpinor *buf, int LLs, int sU, 
+							       const FermionField &in, FermionField &out,int dag) 
 {
 #ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;
@@ -832,7 +873,11 @@ template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilImpl &st, 
     MULT_ADD_XYZT(gauge2,gauge3);  
 
     addr0 = (uint64_t) &out._odata[sF];
-    REDUCEa(addr0);
+    if ( dag ) { 
+      nREDUCEa(addr0);
+    } else { 
+      REDUCEa(addr0);
+    }
   }
 #else 
   assert(0);
@@ -841,10 +886,9 @@ template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilImpl &st, 
 
 #include <simd/Intel512double.h>
 template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
-								    DoubledGaugeField &U,
-								    DoubledGaugeField &UUU,
-								    SiteSpinor *buf, int LLs,
-								    int sU, const FermionField &in, FermionField &out) 
+							       DoubledGaugeField &U, DoubledGaugeField &UUU,
+							       SiteSpinor *buf, int LLs, int sU, 
+							       const FermionField &in, FermionField &out,int dag) 
 {
 #ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;
@@ -897,7 +941,11 @@ template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilImpl &st, 
     MULT_ADD_XYZT(gauge2,gauge3);  
     
     addr0 = (uint64_t) &out._odata[sF];
-    REDUCEa(addr0);
+    if ( dag ) {
+      nREDUCEa(addr0);
+    } else { 
+      REDUCEa(addr0);
+    }
   }
 #else 
   assert(0);
@@ -909,7 +957,7 @@ template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilImpl &st, 
 				  DoubledGaugeField &U,			\
 				  DoubledGaugeField &UUU,		\
 				  SiteSpinor *buf, int LLs,		\
-				  int sU, const FermionField &in, FermionField &out);
+				  int sU, const FermionField &in, FermionField &out,int dag);
 
 KERNEL_INSTANTIATE(StaggeredKernels,DhopSiteAsm,StaggeredImplD);
 KERNEL_INSTANTIATE(StaggeredKernels,DhopSiteAsm,StaggeredImplF);

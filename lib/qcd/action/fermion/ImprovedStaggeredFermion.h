@@ -49,6 +49,18 @@ class ImprovedStaggeredFermion : public StaggeredKernels<Impl>, public ImprovedS
   FermionField _tmp;
   FermionField &tmp(void) { return _tmp; }
 
+  ////////////////////////////////////////
+  // Performance monitoring
+  ////////////////////////////////////////
+  void Report(void);
+  void ZeroCounters(void);
+  double DhopTotalTime;
+  double DhopCalls;
+  double DhopCommTime;
+  double DhopComputeTime;
+  double DhopComputeTime2;
+  double DhopFaceTime;
+
   ///////////////////////////////////////////////////////////////
   // Implement the abstract base
   ///////////////////////////////////////////////////////////////
@@ -105,25 +117,34 @@ class ImprovedStaggeredFermion : public StaggeredKernels<Impl>, public ImprovedS
 
   void DhopInternal(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU,
                     const FermionField &in, FermionField &out, int dag);
+  void DhopInternalSerialComms(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU,
+                    const FermionField &in, FermionField &out, int dag);
+  void DhopInternalOverlappedComms(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU,
+                    const FermionField &in, FermionField &out, int dag);
 
-  // Constructor
+  //////////////////////////////////////////////////////////////////////////
+  // Grid own interface Constructor
+  //////////////////////////////////////////////////////////////////////////
   ImprovedStaggeredFermion(GaugeField &_Uthin, GaugeField &_Ufat, GridCartesian &Fgrid,
 			   GridRedBlackCartesian &Hgrid, RealD _mass,
-			   RealD _c1=9.0/8.0, RealD _c2=-1.0/24.0,RealD _u0=1.0,
+			   RealD _c1, RealD _c2,RealD _u0,
 			   const ImplParams &p = ImplParams());
 
-  ImprovedStaggeredFermion(GaugeField &_Uthin, GaugeField &_Utriple, GaugeField &_Ufat, GridCartesian &Fgrid,
-			   GridRedBlackCartesian &Hgrid, RealD _mass,
-			   const ImplParams &p = ImplParams());
-
+  //////////////////////////////////////////////////////////////////////////
+  // MILC constructor no gauge fields
+  //////////////////////////////////////////////////////////////////////////
   ImprovedStaggeredFermion(GridCartesian &Fgrid, GridRedBlackCartesian &Hgrid, RealD _mass,
+			   RealD _c1=1.0, RealD _c2=1.0,RealD _u0=1.0,
 			   const ImplParams &p = ImplParams());
-
 
   // DoubleStore impl dependent
-  void ImportGaugeSimple(const GaugeField &_Utriple, const GaugeField &_Ufat);
-  void ImportGauge(const GaugeField &_Uthin, const GaugeField &_Ufat);
-  void ImportGauge(const GaugeField &_Uthin);
+  void ImportGauge      (const GaugeField &_Uthin ) { assert(0); }
+  void ImportGauge      (const GaugeField &_Uthin  ,const GaugeField &_Ufat);
+  void ImportGaugeSimple(const GaugeField &_UUU    ,const GaugeField &_U);
+  void ImportGaugeSimple(const DoubledGaugeField &_UUU,const DoubledGaugeField &_U);
+  DoubledGaugeField &GetU(void)   { return Umu ; } ;
+  DoubledGaugeField &GetUUU(void) { return UUUmu; };
+  void CopyGaugeCheckerboards(void);
 
   ///////////////////////////////////////////////////////////////
   // Data members require to support the functionality
@@ -132,7 +153,8 @@ class ImprovedStaggeredFermion : public StaggeredKernels<Impl>, public ImprovedS
   //    protected:
  public:
   // any other parameters of action ???
-
+  virtual int   isTrivialEE(void) { return 1; };
+  virtual RealD Mass(void) { return mass; }
   RealD mass;
   RealD u0;
   RealD c1;

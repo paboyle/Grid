@@ -431,13 +431,19 @@ PARALLEL_CRITICAL
           MPI_Abort(MPI_COMM_WORLD, 1); //assert(ierr == 0);
         }
 
-        std::cout << GridLogDebug << "MPI read I/O set view " << file << std::endl;
+        std::cout << GridLogDebug << "MPI write I/O set view " << file << std::endl;
         ierr = MPI_File_set_view(fh, disp, mpiObject, fileArray, "native", MPI_INFO_NULL);
         assert(ierr == 0);
 
-        std::cout << GridLogDebug << "MPI read I/O write all " << file << std::endl;
+        std::cout << GridLogDebug << "MPI write I/O write all " << file << std::endl;
         ierr = MPI_File_write_all(fh, &iodata[0], 1, localArray, &status);
         assert(ierr == 0);
+
+        MPI_Offset os;
+        MPI_File_get_position(fh, &os);
+        MPI_File_get_byte_offset(fh, os, &disp);
+        offset = disp;
+
 
         MPI_File_close(&fh);
         MPI_Type_free(&fileArray);
@@ -448,7 +454,7 @@ PARALLEL_CRITICAL
       } else { 
 
         std::cout << GridLogMessage << "IOobject: C++ write I/O " << file << " : "
-                  << iodata.size() * sizeof(fobj) << " bytes" << std::endl;
+                  << iodata.size() * sizeof(fobj) << " bytes and offset " << offset << std::endl;
         
 	std::ofstream fout; 
 	fout.exceptions ( std::fstream::failbit | std::fstream::badbit );

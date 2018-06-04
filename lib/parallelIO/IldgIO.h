@@ -182,6 +182,11 @@ class GridLimeReader : public BinaryIO {
    {
      filename= _filename;
      File = fopen(filename.c_str(), "r");
+     if (File == nullptr)
+     {
+       std::cerr << "cannot open file '" << filename << "'" << std::endl;
+       abort();
+     }
      LimeR = limeCreateReader(File);
    }
    /////////////////////////////////////////////
