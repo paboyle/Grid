@@ -445,8 +445,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 	}
       }
 	ptime = usecond() - start;
-    }
-    {
+    } else {
       double start = usecond();
       st.CommunicateThreaded();
       ctime = usecond() - start;
