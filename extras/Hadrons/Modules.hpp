@@ -22,12 +22,15 @@
 #include <Grid/Hadrons/Modules/MGauge/Random.hpp>
 #include <Grid/Hadrons/Modules/MGauge/FundtoHirep.hpp>
 #include <Grid/Hadrons/Modules/MGauge/StochEm.hpp>
+#include <Grid/Hadrons/Modules/MGauge/UnitEm.hpp>
 #include <Grid/Hadrons/Modules/MUtilities/TestSeqGamma.hpp>
 #include <Grid/Hadrons/Modules/MUtilities/TestSeqConserved.hpp>
 #include <Grid/Hadrons/Modules/MLoop/NoiseLoop.hpp>
 #include <Grid/Hadrons/Modules/MScalar/FreeProp.hpp>
-#include <Grid/Hadrons/Modules/MScalar/Scalar.hpp>
 #include <Grid/Hadrons/Modules/MScalar/ChargedProp.hpp>
+#include <Grid/Hadrons/Modules/MScalar/Scalar.hpp>
+#include <Grid/Hadrons/Modules/MScalar/ScalarVP.hpp>
+#include <Grid/Hadrons/Modules/MScalar/VPCounterTerms.hpp>
 #include <Grid/Hadrons/Modules/MAction/DWF.hpp>
 #include <Grid/Hadrons/Modules/MAction/Wilson.hpp>
 #include <Grid/Hadrons/Modules/MAction/WilsonClover.hpp>

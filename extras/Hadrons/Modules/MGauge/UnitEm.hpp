@@ -4,11 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MGauge/StochEm.hpp
 
-Copyright (C) 2015-2018
+Copyright (C) 2015
+Copyright (C) 2016
 
-Author: Antonin Portelli <antonin.portelli@me.com>
 Author: James Harrison <j.harrison@soton.ac.uk>
-Author: Vera Guelpers <vmg1n14@soton.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -27,8 +26,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef Hadrons_MGauge_StochEm_hpp_
-#define Hadrons_MGauge_StochEm_hpp_
+#ifndef Hadrons_MGauge_UnitEm_hpp_
+#define Hadrons_MGauge_UnitEm_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -41,26 +40,16 @@ BEGIN_HADRONS_NAMESPACE
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MGauge)
 
-class StochEmPar: Serializable
-{
-public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(StochEmPar,
-                                    PhotonR::Gauge,    gauge,
-                                    PhotonR::ZmScheme, zmScheme,
-                                    std::string,       improvement,
-                                    Real,              G0_qedInf);
-};
-
-class TStochEm: public Module<StochEmPar>
+class TUnitEm: public Module<NoPar>
 {
 public:
     typedef PhotonR::GaugeField     EmField;
     typedef PhotonR::GaugeLinkField EmComp;
 public:
     // constructor
-    TStochEm(const std::string name);
+    TUnitEm(const std::string name);
     // destructor
-    virtual ~TStochEm(void) {};
+    virtual ~TUnitEm(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -69,14 +58,12 @@ protected:
     virtual void setup(void);
     // execution
     virtual void execute(void);
-private:
-    bool    weightDone_;
 };
 
-MODULE_REGISTER(StochEm, TStochEm, MGauge);
+MODULE_REGISTER(UnitEm, TUnitEm, MGauge);
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MGauge_StochEm_hpp_
+#endif // Hadrons_MGauge_UnitEm_hpp_

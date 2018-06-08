@@ -19,6 +19,7 @@ modules_cc =\
   Modules/MSolver/RBPrecCG.cc \
   Modules/MSolver/LocalCoherenceLanczos.cc \
   Modules/MGauge/Unit.cc \
+  Modules/MGauge/UnitEm.cc \
   Modules/MGauge/StochEm.cc \
   Modules/MGauge/Random.cc \
   Modules/MGauge/FundtoHirep.cc \
@@ -27,6 +28,8 @@ modules_cc =\
   Modules/MLoop/NoiseLoop.cc \
   Modules/MScalar/FreeProp.cc \
   Modules/MScalar/ChargedProp.cc \
+  Modules/MScalar/ScalarVP.cc \
+  Modules/MScalar/VPCounterTerms.cc \
   Modules/MAction/Wilson.cc \
   Modules/MAction/ZMobiusDWF.cc \
   Modules/MAction/WilsonClover.cc \
@@ -69,16 +72,19 @@ modules_hpp =\
   Modules/MSink/Point.hpp \
   Modules/MSolver/LocalCoherenceLanczos.hpp \
   Modules/MSolver/RBPrecCG.hpp \
-  Modules/MGauge/Unit.hpp \
   Modules/MGauge/Random.hpp \
   Modules/MGauge/FundtoHirep.hpp \
   Modules/MGauge/StochEm.hpp \
+  Modules/MGauge/Unit.hpp \
+  Modules/MGauge/UnitEm.hpp \
   Modules/MUtilities/TestSeqGamma.hpp \
   Modules/MUtilities/TestSeqConserved.hpp \
   Modules/MLoop/NoiseLoop.hpp \
+  Modules/MScalar/ChargedProp.hpp \
   Modules/MScalar/FreeProp.hpp \
   Modules/MScalar/Scalar.hpp \
-  Modules/MScalar/ChargedProp.hpp \
+  Modules/MScalar/ScalarVP.hpp \
+  Modules/MScalar/VPCounterTerms.hpp \
   Modules/MAction/DWF.hpp \
   Modules/MAction/Wilson.hpp \
   Modules/MAction/WilsonClover.hpp \
