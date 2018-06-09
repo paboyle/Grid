@@ -100,7 +100,7 @@ public:
         Seeds[level][d] = (level)*Nd + d + 1;
       }
 
-      Grids.push_back(SpaceTimeGrid::makeFourDimGrid(tmp, GridDefaultSimd(Nd, vComplex::Nsimd()), GridDefaultMpi()));
+      Grids.push_back(SpaceTimeGrid::makeFourDimGrid(tmp, Grids[level - 1]->_simd_layout, GridDefaultMpi()));
       PRNGs.push_back(GridParallelRNG(Grids[level]));
 
       PRNGs[level].SeedFixedIntegers(Seeds[level]);
