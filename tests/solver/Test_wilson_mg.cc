@@ -2,7 +2,7 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/solver/Test_wilsonclover_mg.cc
+    Source file: ./tests/solver/Test_wilson_mg.cc
 
     Copyright (C) 2017
 
@@ -50,9 +50,7 @@ int main(int argc, char **argv) {
   LatticeGaugeField Umu(FGrid); SU3::HotConfiguration(fPRNG, Umu);
   // clang-format on
 
-  RealD mass  = -0.25;
-  RealD csw_r = 1.0;
-  RealD csw_t = 1.0;
+  RealD mass = -0.25;
 
   MultiGridParams mgParams;
   std::string     inputXml{"./mg_params.xml"};
@@ -81,36 +79,35 @@ int main(int argc, char **argv) {
   const int nbasis               = 40;
   RealD     toleranceForMGChecks = 1e-13; // TODO: depends on the precision MG precondtioner is run in
 
-  WilsonCloverFermionR Dwc(Umu, *FGrid, *FrbGrid, mass, csw_r, csw_t);
+  WilsonFermionR Dw(Umu, *FGrid, *FrbGrid, mass);
 
-  static_assert(std::is_same<LatticeFermion, typename WilsonCloverFermionR::FermionField>::value, "");
+  static_assert(std::is_same<LatticeFermion, typename WilsonFermionR::FermionField>::value, "");
 
-  MdagMLinearOperator<WilsonCloverFermionR, LatticeFermion> MdagMOpDwc(Dwc);
+  MdagMLinearOperator<WilsonFermionR, LatticeFermion> MdagMOpDw(Dw);
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;
-  std::cout << GridLogMessage << "Testing Multigrid for Wilson Clover" << std::endl;
+  std::cout << GridLogMessage << "Testing Multigrid for Wilson" << std::endl;
   std::cout << GridLogMessage << "**************************************************" << std::endl;
 
   TrivialPrecon<LatticeFermion> TrivialPrecon;
-  auto MGPreconDwc = createMGInstance<vSpinColourVector, vTComplex, nbasis, WilsonCloverFermionR>(mgParams, levelInfo, Dwc, Dwc);
+  auto MGPreconDw = createMGInstance<vSpinColourVector, vTComplex, nbasis, WilsonFermionR>(mgParams, levelInfo, Dw, Dw);
 
-  MGPreconDwc->setup();
-  MGPreconDwc->runChecks(toleranceForMGChecks);
+  MGPreconDw->setup();
+  MGPreconDw->runChecks(toleranceForMGChecks);
 
-  std::vector<std::unique_ptr<OperatorFunction<LatticeFermion>>> solversDwc;
+  std::vector<std::unique_ptr<OperatorFunction<LatticeFermion>>> solversDw;
 
-  solversDwc.emplace_back(new ConjugateGradient<LatticeFermion>(1.0e-12, 50000, false));
-  solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, TrivialPrecon, 100, false));
-  solversDwc.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, *MGPreconDwc, 100, false));
+  solversDw.emplace_back(new ConjugateGradient<LatticeFermion>(1.0e-12, 50000, false));
+  solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, TrivialPrecon, 100, false));
+  solversDw.emplace_back(new FlexibleGeneralisedMinimalResidual<LatticeFermion>(1.0e-12, 50000, *MGPreconDw, 100, false));
 
-  for(auto const &solver : solversDwc) {
+  for(auto const &solver : solversDw) {
     std::cout << std::endl << "Starting with a new solver" << std::endl;
     result = zero;
-    (*solver)(MdagMOpDwc, src, result);
-    std::cout << std::endl;
+    (*solver)(MdagMOpDw, src, result);
   }
 
-  MGPreconDwc->reportTimings();
+  MGPreconDw->reportTimings();
 
   Grid_finalize();
 }
