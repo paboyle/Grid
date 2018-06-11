@@ -78,8 +78,7 @@ int main(int argc, char **argv) {
   LevelInfo levelInfo(FGrid, mgParams);
 
   // Note: We do chiral doubling, so actually only nbasis/2 full basis vectors are used
-  const int nbasis               = 40;
-  RealD     toleranceForMGChecks = 1e-13; // TODO: depends on the precision MG precondtioner is run in
+  const int nbasis = 40;
 
   WilsonCloverFermionR Dwc(Umu, *FGrid, *FrbGrid, mass, csw_r, csw_t);
 
@@ -95,7 +94,11 @@ int main(int argc, char **argv) {
   auto MGPreconDwc = createMGInstance<vSpinColourVector, vTComplex, nbasis, WilsonCloverFermionR>(mgParams, levelInfo, Dwc, Dwc);
 
   MGPreconDwc->setup();
-  MGPreconDwc->runChecks(toleranceForMGChecks);
+
+  if(GridCmdOptionExists(argv, argv + argc, "--runchecks")) {
+    RealD toleranceForMGChecks = (getPrecision<LatticeFermion>::value == 1) ? 1e-6 : 1e-13;
+    MGPreconDwc->runChecks(toleranceForMGChecks);
+  }
 
   std::vector<std::unique_ptr<OperatorFunction<LatticeFermion>>> solversDwc;
 
