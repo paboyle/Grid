@@ -422,7 +422,7 @@ public:
 
     if(deviation > tolerance) {
       std::cout << " > " << tolerance << " -> check failed" << std::endl;
-      // abort();
+      abort();
     } else {
       std::cout << " < " << tolerance << " -> check passed" << std::endl;
     }
@@ -444,7 +444,7 @@ public:
 
       if(deviation > tolerance) {
         std::cout << " > " << tolerance << " -> check failed" << std::endl;
-        // abort();
+        abort();
       } else {
         std::cout << " < " << tolerance << " -> check passed" << std::endl;
       }
@@ -468,7 +468,7 @@ public:
 
     if(deviation > tolerance) {
       std::cout << " > " << tolerance << " -> check failed" << std::endl;
-      // abort();
+      abort();
     } else {
       std::cout << " < " << tolerance << " -> check passed" << std::endl;
     }
@@ -493,7 +493,7 @@ public:
 
     if(deviation > tolerance) {
       std::cout << " > " << tolerance << " -> check failed" << std::endl;
-      // abort();
+      abort();
     } else {
       std::cout << " < " << tolerance << " -> check passed" << std::endl;
     }
@@ -515,7 +515,7 @@ public:
 
     if(deviation > tolerance) {
       std::cout << " > " << tolerance << " -> check failed" << std::endl;
-      // abort();
+      abort();
     } else {
       std::cout << " < " << tolerance << " -> check passed" << std::endl;
     }
