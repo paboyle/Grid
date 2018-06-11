@@ -145,7 +145,8 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
     Field w(src._grid);
     Field r(src._grid);
 
-    std::vector<Field> v(RestartLength + 1, src._grid);
+    // this should probably be made a class member so that it is only allocated once, not in every restart
+    std::vector<Field> v(RestartLength + 1, src._grid); for (auto &elem : v) elem = zero;
 
     MatrixTimer.Start();
     LinOp.Op(psi, w);

@@ -157,8 +157,9 @@ class MixedPrecisionFlexibleGeneralisedMinimalResidual : public OperatorFunction
     FieldD w(src._grid);
     FieldD r(src._grid);
 
-    std::vector<FieldD> v(RestartLength + 1, src._grid); // these should probably be made class members
-    std::vector<FieldD> z(RestartLength + 1, src._grid); // so that they are only allocated once, not in every restart
+    // these should probably be made class members so that they are only allocated once, not in every restart
+    std::vector<FieldD> v(RestartLength + 1, src._grid); for (auto &elem : v) elem = zero;
+    std::vector<FieldD> z(RestartLength + 1, src._grid); for (auto &elem : z) elem = zero;
 
     MatrixTimer.Start();
     LinOp.Op(psi, w);

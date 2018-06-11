@@ -152,8 +152,9 @@ class FlexibleCommunicationAvoidingGeneralisedMinimalResidual : public OperatorF
     Field w(src._grid);
     Field r(src._grid);
 
-    std::vector<Field> v(RestartLength + 1, src._grid);
-    std::vector<Field> z(RestartLength + 1, src._grid);
+    // these should probably be made class members so that they are only allocated once, not in every restart
+    std::vector<Field> v(RestartLength + 1, src._grid); for (auto &elem : v) elem = zero;
+    std::vector<Field> z(RestartLength + 1, src._grid); for (auto &elem : z) elem = zero;
 
     MatrixTimer.Start();
     LinOp.Op(psi, w);
