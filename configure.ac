@@ -340,13 +340,21 @@ case ${ac_PRECISION} in
 esac
 
 ######################  Shared memory allocation technique under MPI3
-AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmopen|hugetlbfs],
+AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmopen|shmget|hugetlbfs|shmnone],
               [Select SHM allocation technique])],[ac_SHM=${enable_shm}],[ac_SHM=shmopen])
 
 case ${ac_SHM} in
 
      shmopen)
      AC_DEFINE([GRID_MPI3_SHMOPEN],[1],[GRID_MPI3_SHMOPEN] )
+     ;;
+
+     shmget)
+     AC_DEFINE([GRID_MPI3_SHMGET],[1],[GRID_MPI3_SHMGET] )
+     ;;
+
+     shmnone)
+     AC_DEFINE([GRID_MPI3_SHM_NONE],[1],[GRID_MPI3_SHM_NONE] )
      ;;
 
      hugetlbfs)
@@ -362,7 +370,7 @@ esac
 AC_ARG_ENABLE([shmpath],[AC_HELP_STRING([--enable-shmpath=path],
               [Select SHM mmap base path for hugetlbfs])],
 	      [ac_SHMPATH=${enable_shmpath}],
-	      [ac_SHMPATH=/var/lib/hugetlbfs/pagesize-2MB/])
+	      [ac_SHMPATH=/var/lib/hugetlbfs/global/pagesize-2MB/])
 AC_DEFINE_UNQUOTED([GRID_SHM_PATH],["$ac_SHMPATH"],[Path to a hugetlbfs filesystem for MMAPing])
 
 ############### communication type selection

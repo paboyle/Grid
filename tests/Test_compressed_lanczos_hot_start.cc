@@ -33,8 +33,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Grid.h>
 #include <Grid/algorithms/iterative/ImplicitlyRestartedLanczos.h>
 #include <Grid/algorithms/iterative/LocalCoherenceLanczos.h>
-#include <Grid/parallelIO/IldgIOtypes.h>
-#include <Grid/parallelIO/IldgIO.h>
 
 using namespace std;
 using namespace Grid;
@@ -58,8 +56,9 @@ public:
 
   void checkpointFine(std::string evecs_file,std::string evals_file)
   {
+#ifdef HAVE_LIME
     assert(this->subspace.size()==nbasis);
-    Grid::emptyUserRecord record;
+    emptyUserRecord record;
     Grid::QCD::ScidacWriter WR(this->_FineGrid->IsBoss());
     WR.open(evecs_file);
     for(int k=0;k<nbasis;k++) {
@@ -69,10 +68,14 @@ public:
     
     XmlWriter WRx(evals_file);
     write(WRx,"evals",this->evals_fine);
+#else
+    assert(0);
+#endif
   }
 
   void checkpointFineRestore(std::string evecs_file,std::string evals_file)
   {
+#ifdef HAVE_LIME
     this->evals_fine.resize(nbasis);
     this->subspace.resize(nbasis,this->_FineGrid);
     
@@ -92,10 +95,14 @@ public:
       
     }
     RD.close();
+#else
+    assert(0);
+#endif 
   }
 
   void checkpointCoarse(std::string evecs_file,std::string evals_file)
   {
+#ifdef HAVE_LIME
     int n = this->evec_coarse.size();
     emptyUserRecord record;
     Grid::QCD::ScidacWriter WR(this->_CoarseGrid->IsBoss());
@@ -107,10 +114,14 @@ public:
     
     XmlWriter WRx(evals_file);
     write(WRx,"evals",this->evals_coarse);
+#else
+    assert(0);
+#endif
   }
 
   void checkpointCoarseRestore(std::string evecs_file,std::string evals_file,int nvec)
   {
+#ifdef HAVE_LIME
     std::cout << "resizing coarse vecs to " << nvec<< std::endl;
     this->evals_coarse.resize(nvec);
     this->evec_coarse.resize(nvec,this->_CoarseGrid);
@@ -127,6 +138,9 @@ public:
       RD.readScidacFieldRecord(this->evec_coarse[k],record);
     }
     RD.close();
+#else 
+    assert(0);
+#endif
   }
 };
 
@@ -153,16 +167,18 @@ int main (int argc, char ** argv) {
   RealD mass = Params.mass;
   RealD M5   = Params.M5;
   std::vector<int> blockSize = Params.blockSize;
-
+  std::vector<int> latt({32,32,32,32});
+  uint64_t     vol = Ls*latt[0]*latt[1]*latt[2]*latt[3];
+  double   mat_flop= 2.0*1320.0*vol;    
   // Grids
-  GridCartesian         * UGrid     = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(),
+  GridCartesian         * UGrid     = SpaceTimeGrid::makeFourDimGrid(latt,
 								     GridDefaultSimd(Nd,vComplex::Nsimd()),
 								     GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid   = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid     = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid   = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
-  std::vector<int> fineLatt     = GridDefaultLatt();
+  std::vector<int> fineLatt     = latt;
   int dims=fineLatt.size();
   assert(blockSize.size()==dims+1);
   std::vector<int> coarseLatt(dims);
@@ -184,10 +200,14 @@ int main (int argc, char ** argv) {
   GridCartesian         * CoarseGrid5    = SpaceTimeGrid::makeFiveDimGrid(cLs,CoarseGrid4);
 
   // Gauge field
+  std::vector<int> seeds4({1,2,3,4});
+  GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
   LatticeGaugeField Umu(UGrid);
-  FieldMetaData header;
-  NerscIO::readConfiguration(Umu,header,Params.config);
-  std::cout << GridLogMessage << "Lattice dimensions: " << GridDefaultLatt() << "   Ls: " << Ls << std::endl;
+  SU3::HotConfiguration(RNG4,Umu);
+  //  FieldMetaData header;
+  //  NerscIO::readConfiguration(Umu,header,Params.config);
+
+  std::cout << GridLogMessage << "Lattice dimensions: " << latt << "   Ls: " << Ls << std::endl;
 
   // ZMobius EO Operator
   ZMobiusFermionR Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, Params.omega,1.,0.);
@@ -214,42 +234,26 @@ int main (int argc, char ** argv) {
 
   if ( Params.doFine ) { 
     std::cout << GridLogMessage << "Performing fine grid IRL Nstop "<< Ns1 << " Nk "<<Nk1<<" Nm "<<Nm1<< std::endl;
+    double t0=-usecond();
     _LocalCoherenceLanczos.calcFine(fine.Cheby,
 		 fine.Nstop,fine.Nk,fine.Nm,
 		 fine.resid,fine.MaxIt, 
 		 fine.betastp,fine.MinRes);
+    t0+=usecond();
 
-    std::cout << GridLogIRL<<"Checkpointing Fine evecs"<<std::endl;
-    _LocalCoherenceLanczos.checkpointFine(std::string("evecs.scidac"),std::string("evals.xml"));
-    _LocalCoherenceLanczos.testFine(fine.resid*100.0); // Coarse check
-    std::cout << GridLogIRL<<"Orthogonalising"<<std::endl;
-    _LocalCoherenceLanczos.Orthogonalise();
-    std::cout << GridLogIRL<<"Orthogonaled"<<std::endl;
+    double t1=-usecond();
+    if ( Params.saveEvecs ) {
+      std::cout << GridLogIRL<<"Checkpointing Fine evecs"<<std::endl;
+      _LocalCoherenceLanczos.checkpointFine(std::string("evecs.scidac"),std::string("evals.xml"));
+    }
+    t1+=usecond();
+
+    std::cout << GridLogMessage << "Computation time is " << (t0)/1.0e6 <<" seconds"<<std::endl;
+    if ( Params.saveEvecs )  std::cout << GridLogMessage << "I/O         time is " << (t1)/1.0e6 <<" seconds"<<std::endl;
+    std::cout << GridLogMessage << "Time to solution is " << (t1+t0)/1.0e6 <<" seconds"<<std::endl;
+    std::cout << GridLogMessage << "Done"<<std::endl;
   }
 
-  if ( Params.doFineRead ) { 
-    _LocalCoherenceLanczos.checkpointFineRestore(std::string("evecs.scidac"),std::string("evals.xml"));
-    _LocalCoherenceLanczos.testFine(fine.resid*100.0); // Coarse check
-    _LocalCoherenceLanczos.Orthogonalise();
-  }
-
-  if ( Params.doCoarse ) {
-    std::cout << GridLogMessage << "Performing coarse grid IRL Nstop "<< Ns2<< " Nk "<<Nk2<<" Nm "<<Nm2<< std::endl;
-    _LocalCoherenceLanczos.calcCoarse(coarse.Cheby,Params.Smoother,Params.coarse_relax_tol,
-			      coarse.Nstop, coarse.Nk,coarse.Nm,
-			      coarse.resid, coarse.MaxIt, 
-			      coarse.betastp,coarse.MinRes);
-
-
-    std::cout << GridLogIRL<<"Checkpointing coarse evecs"<<std::endl;
-    _LocalCoherenceLanczos.checkpointCoarse(std::string("evecs.coarse.scidac"),std::string("evals.coarse.xml"));
-  }
-
-  if ( Params.doCoarseRead ) {
-    // Verify we can reread ???
-    _LocalCoherenceLanczos.checkpointCoarseRestore(std::string("evecs.coarse.scidac"),std::string("evals.coarse.xml"),coarse.Nstop);
-    _LocalCoherenceLanczos.testCoarse(coarse.resid*100.0,Params.Smoother,Params.coarse_relax_tol); // Coarse check
-  }
   Grid_finalize();
 }
 

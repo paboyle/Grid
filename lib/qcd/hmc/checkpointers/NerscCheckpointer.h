@@ -69,6 +69,9 @@ class NerscHmcCheckpointer : public BaseHmcCheckpointer<Gimpl> {
                          GridParallelRNG &pRNG) {
     std::string config, rng;
     this->build_filenames(traj, Params, config, rng);
+    this->check_filename(rng);
+    this->check_filename(config);
+
 
     FieldMetaData header;
     NerscIO::readRNGState(sRNG, pRNG, header, rng);

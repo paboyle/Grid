@@ -33,8 +33,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Grid.h>
 #include <Grid/algorithms/iterative/ImplicitlyRestartedLanczos.h>
 #include <Grid/algorithms/iterative/LocalCoherenceLanczos.h>
-#include <Grid/parallelIO/IldgIOtypes.h>
-#include <Grid/parallelIO/IldgIO.h>
 
 using namespace std;
 using namespace Grid;
@@ -59,7 +57,7 @@ public:
   void checkpointFine(std::string evecs_file,std::string evals_file)
   {
     assert(this->subspace.size()==nbasis);
-    Grid::emptyUserRecord record;
+    emptyUserRecord record;
     Grid::QCD::ScidacWriter WR(this->_FineGrid->IsBoss());
     WR.open(evecs_file);
     for(int k=0;k<nbasis;k++) {

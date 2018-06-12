@@ -115,7 +115,7 @@ int main (int argc, char ** argv)
 
   {
     FGrid->Barrier();
-//    ScidacWriter _ScidacWriter;
+    ScidacWriter _ScidacWriter(FGrid->IsBoss());
 //    _ScidacWriter.open(file);
     std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
     std::cout << GridLogMessage << " Writing out gauge field "<<std::endl;
@@ -145,7 +145,7 @@ int main (int argc, char ** argv)
       std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
 
       std::stringstream filefn;      filefn << filef << "."<< n;
-//      ScidacWriter _ScidacWriter;
+      ScidacWriter _ScidacWriter(FGrid->IsBoss());
 //      _ScidacWriter.open(filefn.str());
 //      _ScidacWriter.writeScidacFieldRecord(src[n],record);
 //      _ScidacWriter.close();

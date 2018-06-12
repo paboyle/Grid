@@ -136,6 +136,20 @@ class ILDGCPModule: public CheckPointerModule< ImplementationPolicy> {
 
 };
 
+template<class ImplementationPolicy, class Metadata>
+class ScidacCPModule: public CheckPointerModule< ImplementationPolicy> {
+  typedef CheckPointerModule< ImplementationPolicy> CPBase;
+  Metadata M;
+
+  // acquire resource
+  virtual void initialize(){
+     this->CheckPointPtr.reset(new ScidacHmcCheckpointer<ImplementationPolicy, Metadata>(this->Par_, M));
+  }
+public:
+  ScidacCPModule(typename CPBase::APar Par, Metadata M_):M(M_), CPBase(Par) {}
+  template <class ReaderClass>
+  ScidacCPModule(Reader<ReaderClass>& Reader) : Parametrized<typename CPBase::APar>(Reader), M(Reader){};
+};
 #endif
 
 
