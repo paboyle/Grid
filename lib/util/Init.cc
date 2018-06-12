@@ -376,8 +376,10 @@ void Grid_init(int *argc,char ***argv)
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-overlap") ){
     QCD::WilsonKernelsStatic::Comms = QCD::WilsonKernelsStatic::CommsAndCompute;
+    QCD::StaggeredKernelsStatic::Comms = QCD::StaggeredKernelsStatic::CommsAndCompute;
   } else {
     QCD::WilsonKernelsStatic::Comms = QCD::WilsonKernelsStatic::CommsThenCompute;
+    QCD::StaggeredKernelsStatic::Comms = QCD::StaggeredKernelsStatic::CommsThenCompute;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-concurrent") ){
     CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicyConcurrent);

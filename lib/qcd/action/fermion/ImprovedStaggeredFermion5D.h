@@ -64,6 +64,8 @@ namespace QCD {
       double DhopCalls;
       double DhopCommTime;
       double DhopComputeTime;
+      double DhopComputeTime2;
+      double DhopFaceTime;
 
       ///////////////////////////////////////////////////////////////
       // Implement the abstract base
@@ -119,7 +121,27 @@ namespace QCD {
 		      FermionField &out,
 		      int dag);
     
+    void DhopInternalOverlappedComms(StencilImpl & st,
+		      LebesgueOrder &lo,
+		      DoubledGaugeField &U,
+		      DoubledGaugeField &UUU,
+		      const FermionField &in, 
+		      FermionField &out,
+		      int dag);
+
+    void DhopInternalSerialComms(StencilImpl & st,
+		      LebesgueOrder &lo,
+		      DoubledGaugeField &U,
+		      DoubledGaugeField &UUU,
+		      const FermionField &in, 
+		      FermionField &out,
+		      int dag);
+    
+    
     // Constructors
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Grid internal interface -- Thin link and fat link, with coefficients
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     ImprovedStaggeredFermion5D(GaugeField &_Uthin,
 			       GaugeField &_Ufat,
 			       GridCartesian         &FiveDimGrid,
@@ -127,17 +149,37 @@ namespace QCD {
 			       GridCartesian         &FourDimGrid,
 			       GridRedBlackCartesian &FourDimRedBlackGrid,
 			       double _mass,
-			       RealD _c1=9.0/8.0, RealD _c2=-1.0/24.0,RealD _u0=1.0,
+			       RealD _c1, RealD _c2,RealD _u0,
 			       const ImplParams &p= ImplParams());
-    
-    // DoubleStore
-    void ImportGauge(const GaugeField &_U);
-    void ImportGauge(const GaugeField &_Uthin,const GaugeField &_Ufat);
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // MILC constructor ; triple links, no rescale factors; must be externally pre multiplied
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    ImprovedStaggeredFermion5D(GridCartesian         &FiveDimGrid,
+			       GridRedBlackCartesian &FiveDimRedBlackGrid,
+			       GridCartesian         &FourDimGrid,
+			       GridRedBlackCartesian &FourDimRedBlackGrid,
+			       double _mass,
+			       RealD _c1=1.0, RealD _c2=1.0,RealD _u0=1.0,
+			       const ImplParams &p= ImplParams());
+
+    // DoubleStore gauge field in operator
+    void ImportGauge      (const GaugeField &_Uthin ) { assert(0); }
+    void ImportGauge      (const GaugeField &_Uthin  ,const GaugeField &_Ufat);
+    void ImportGaugeSimple(const GaugeField &_UUU,const GaugeField &_U);
+    void ImportGaugeSimple(const DoubledGaugeField &_UUU,const DoubledGaugeField &_U);
+    // Give a reference; can be used to do an assignment or copy back out after import
+    // if Carleton wants to cache them and not use the ImportSimple
+    DoubledGaugeField &GetU(void)   { return Umu ; } ;
+    DoubledGaugeField &GetUUU(void) { return UUUmu; };
+    void CopyGaugeCheckerboards(void);
     
     ///////////////////////////////////////////////////////////////
     // Data members require to support the functionality
     ///////////////////////////////////////////////////////////////
   public:
+
+    virtual int   isTrivialEE(void) { return 1; };
+    virtual RealD Mass(void) { return mass; }
     
     GridBase *_FourDimGrid;
     GridBase *_FourDimRedBlackGrid;

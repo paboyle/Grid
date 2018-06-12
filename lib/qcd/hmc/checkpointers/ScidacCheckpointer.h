@@ -86,10 +86,7 @@ class ScidacHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
       _ScidacWriter.writeScidacFieldRecord(U, MData);
       _ScidacWriter.close();
 
-      std::cout << GridLogMessage << "Written Scidac Configuration on " << config
-                << " checksum " << std::hex << nersc_csum<<"/"
-		            << scidac_csuma<<"/" << scidac_csumb
-		            << std::dec << std::endl;
+      std::cout << GridLogMessage << "Written Scidac Configuration on " << config << std::endl;
     }
   };
 
