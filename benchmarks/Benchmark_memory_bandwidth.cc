@@ -30,7 +30,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
 int main (int argc, char ** argv)
 {
@@ -55,8 +54,8 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<"\t\t seconds"<<std::endl;
   std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
-  uint64_t lmax=96;
-#define NLOOP (10*lmax*lmax*lmax*lmax/vol)
+  uint64_t lmax=48;
+#define NLOOP (100*lmax*lmax*lmax*lmax/vol)
   for(int lat=8;lat<=lmax;lat+=8){
 
       Coordinate latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
@@ -73,14 +72,10 @@ int main (int argc, char ** argv)
       double a=2.0;
 
 
+      axpy(z,a,x,y);
       double start=usecond();
       for(int i=0;i<Nloop;i++){
-	auto x_v = x.View();
-	auto y_v = y.View();
-	auto z_v = z.View();
 	axpy(z,a,x,y);
-        x_v[0]=z_v[0]; // serial loop dependence to prevent optimise
-        y_v[4]=z_v[4];
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
@@ -112,14 +107,10 @@ int main (int argc, char ** argv)
 
       uint64_t Nloop=NLOOP;
 
+      z=a*x-y;
       double start=usecond();
       for(int i=0;i<Nloop;i++){
-	auto x_v = x.View();
-	auto y_v = y.View();
-	auto z_v = z.View();
 	z=a*x-y;
-        x_v[0]=z_v[0]; // force serial dependency to prevent optimise away
-        y_v[4]=z_v[4];
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
@@ -151,12 +142,10 @@ int main (int argc, char ** argv)
       LatticeVec y(&Grid);// random(pRNG,y);
       RealD a=2.0;
 
+      z=a*x;
       double start=usecond();
       for(int i=0;i<Nloop;i++){
-	auto x_v = x.View();
-	auto z_v = z.View();
 	z=a*x;
-        x_v[0]=z_v[0]*2.0;
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;

@@ -170,12 +170,13 @@ int main (int argc, char ** argv)
   if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsThenCompute) std::cout << GridLogMessage<< "* Using sequential comms compute" <<std::endl;
 #endif
   if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGpu       ) std::cout << GridLogMessage<< "* Using Gpu WilsonKernels" <<std::endl;
   if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
   if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
 
   DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  int ncall =500;
+  int ncall =1000;
   if (1) {
     FGrid->Barrier();
     Dw.ZeroCounters();
@@ -201,7 +202,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NN<<std::endl;
     err = ref-result; 
     std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-
+    //    exit(0);
     /*
     if(( norm2(err)>1.0e-4) ) { 
       std::cout << "RESULT\n " << result<<std::endl;
@@ -256,6 +257,7 @@ int main (int argc, char ** argv)
   if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsThenCompute) std::cout << GridLogMessage<< "* Using sequential comms compute" <<std::endl;
 #endif
     if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
+    if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGpu       ) std::cout << GridLogMessage<< "* Using Gpu WilsonKernels" <<std::endl;
     if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
     if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
     std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
@@ -324,12 +326,10 @@ int main (int argc, char ** argv)
   if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute ) std::cout << GridLogMessage<< "* Using Overlapped Comms/Compute" <<std::endl;
   if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsThenCompute) std::cout << GridLogMessage<< "* Using sequential comms compute" <<std::endl;
 #endif
-      if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) 
-	std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
-      if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) 
-	std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
-      if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) 
-	std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
+      if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   )  std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
+      if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGpu       )  std::cout << GridLogMessage<< "* Using Gpu WilsonKernels" <<std::endl;
+      if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll)  std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
+      if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm )  std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
       std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
 
       LatticeFermion sr_eo(sFGrid);
@@ -475,6 +475,7 @@ int main (int argc, char ** argv)
   if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsThenCompute) std::cout << GridLogMessage<< "* Using sequential comms compute" <<std::endl;
 #endif
   if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGpu       ) std::cout << GridLogMessage<< "* Using Gpu WilsonKernels" <<std::endl;
   if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
   if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
   std::cout << GridLogMessage<< "*********************************************************" <<std::endl;

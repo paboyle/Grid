@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -31,16 +31,17 @@ Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
 using namespace std;
 using namespace Grid;
 
+
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-#define LMAX (32)
-#define LMIN (4)
-#define LADD (4)
+#define LMAX (48)
+#define LMIN (8)
+#define LADD (8)
 
-  int64_t Nwarm=5;
-  int64_t Nloop=25;
+  int64_t Nwarm=50;
+  int64_t Nloop=500;
 
   Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   Coordinate mpi_layout  = GridDefaultMpi();
@@ -141,6 +142,7 @@ int main (int argc, char ** argv)
       double start=usecond();
       for(int64_t i=0;i<Nloop;i++){
 	mult(z,x,y);
+	//	mac(z,x,y);
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000.0;
@@ -179,7 +181,7 @@ int main (int argc, char ** argv)
       double stop=usecond();
       double time = (stop-start)/Nloop*1000.0;
       
-      double bytes=3*vol*Nc*Nc*sizeof(Complex);
+      double bytes=4*vol*Nc*Nc*sizeof(Complex);
       double flops=Nc*Nc*(8+8+8)*vol;
       std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
 
