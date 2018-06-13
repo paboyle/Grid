@@ -144,6 +144,7 @@ public:
   typedef typename Impl::FermionField           FermionField;		\
   typedef typename Impl::PropagatorField     PropagatorField;		\
   typedef typename Impl::DoubledGaugeField DoubledGaugeField;		\
+  typedef typename Impl::SiteDoubledGaugeField SiteDoubledGaugeField;	\
   typedef typename Impl::SiteSpinor               SiteSpinor;		\
   typedef typename Impl::SitePropagator       SitePropagator;		\
   typedef typename Impl::SiteHalfSpinor       SiteHalfSpinor;		\
