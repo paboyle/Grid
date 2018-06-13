@@ -251,6 +251,8 @@ esac
 ##################### Compiler dependent choices
 case ${CXX} in 
   nvcc) 
+#    CXX="nvcc -keep -v -x cu "
+#    CXXLD="nvcc -v -link"
     CXX="nvcc -x cu "
     CXXLD="nvcc -link"
     CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing"
@@ -264,6 +266,12 @@ esac
 case ${ax_cv_cxx_compiler_vendor} in
   clang|gnu)
     case ${ac_SIMD} in
+      GPU)
+        AC_DEFINE([GPU],[1],[GPU float4 vectors])
+	SIMD_FLAGS='';;
+      VGPU)
+        AC_DEFINE([GPU_VEC],[1],[GPU vectorised 512bit])
+	SIMD_FLAGS='';;
       SSE4)
         AC_DEFINE([SSE4],[1],[SSE4 intrinsics])
 	case ${ac_SFW_FP16} in
@@ -313,6 +321,12 @@ case ${ax_cv_cxx_compiler_vendor} in
     esac;;
   intel)
     case ${ac_SIMD} in
+      GPU)
+        AC_DEFINE([GPU],[1],[GPU float4 vectors])
+	SIMD_FLAGS='';;
+      VGPU)
+        AC_DEFINE([GPU_VEC],[1],[GPU vectorised ])
+	SIMD_FLAGS='';;
       SSE4)
         AC_DEFINE([SSE4],[1],[SSE4 intrinsics])
         SIMD_FLAGS='-msse4.2 -xsse4.2';;
@@ -350,13 +364,6 @@ case ${ax_cv_cxx_compiler_vendor} in
 esac
 AM_CXXFLAGS="$SIMD_FLAGS $AM_CXXFLAGS"
 AM_CFLAGS="$SIMD_FLAGS $AM_CFLAGS"
-
-case ${ac_SIMD} in
-  AVX512|KNL)
-    AC_DEFINE([TEST_ZMM],[1],[compile ZMM test]);;
-  *)
-	;;
-esac
 
 ############### Precision selection
 AC_ARG_ENABLE([precision],
