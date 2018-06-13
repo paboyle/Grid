@@ -62,8 +62,8 @@ LebesgueOrder::LebesgueOrder(GridBase *_grid)
 }
 void LebesgueOrder::ThreadInterleave(void)
 {
-  std::vector<IndexInteger> reorder = _LebesgueReorder;
-  std::vector<IndexInteger> throrder;
+  Vector<IndexInteger> reorder = _LebesgueReorder;
+  Vector<IndexInteger> throrder;
   int vol = _LebesgueReorder.size();
   int threads = GridThread::GetThreads();
   int blockbits=3;
