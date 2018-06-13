@@ -72,7 +72,7 @@ public:
   void ThreadInterleave(void);
 
 private:
-  std::vector<IndexInteger> _LebesgueReorder;
+  Vector<IndexInteger> _LebesgueReorder;
 
 };    
 
