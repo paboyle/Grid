@@ -38,6 +38,80 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_VECTOR_TYPES
 #define GRID_VECTOR_TYPES
 
+// PAB - Lifted and adapted from Eigen, which is GPL V2
+struct Grid_half {
+  accelerator Grid_half(){}
+  accelerator Grid_half(uint16_t raw) : x(raw) {}
+  uint16_t x;
+};
+union FP32 {
+  unsigned int u;
+  float f;
+};
+accelerator_inline float sfw_half_to_float(Grid_half h) {
+  const FP32 magic = { 113 << 23 };
+  const unsigned int shifted_exp = 0x7c00 << 13; // exponent mask after shift
+  FP32 o;
+  o.u = (h.x & 0x7fff) << 13;             // exponent/mantissa bits
+  unsigned int exp = shifted_exp & o.u;   // just the exponent
+  o.u += (127 - 15) << 23;                // exponent adjust
+  // handle exponent special cases
+  if (exp == shifted_exp) {     // Inf/NaN?
+    o.u += (128 - 16) << 23;    // extra exp adjust
+  } else if (exp == 0) {        // Zero/Denormal?
+    o.u += 1 << 23;             // extra exp adjust
+    o.f -= magic.f;             // renormalize
+  }
+  o.u |= (h.x & 0x8000) << 16;    // sign bit
+  return o.f;
+}
+accelerator_inline Grid_half sfw_float_to_half(float ff) {
+  FP32 f; f.f = ff;
+  const FP32 f32infty = { 255 << 23 };
+  const FP32 f16max = { (127 + 16) << 23 };
+  const FP32 denorm_magic = { ((127 - 15) + (23 - 10) + 1) << 23 };
+  unsigned int sign_mask = 0x80000000u;
+  Grid_half o;
+    
+  o.x = static_cast<unsigned short>(0x0u);
+  unsigned int sign = f.u & sign_mask;
+  f.u ^= sign;
+  // NOTE all the integer compares in this function can be safely
+  // compiled into signed compares since all operands are below
+  // 0x80000000. Important if you want fast straight SSE2 code
+  // (since there's no unsigned PCMPGTD).
+  if (f.u >= f16max.u) {  // result is Inf or NaN (all exponent bits set)
+    o.x = (f.u > f32infty.u) ? 0x7e00 : 0x7c00; // NaN->qNaN and Inf->Inf
+  } else {  // (De)normalized number or zero
+    if (f.u < (113 << 23)) {  // resulting FP16 is subnormal or zero
+      // use a magic value to align our 10 mantissa bits at the bottom of
+      // the float. as long as FP addition is round-to-nearest-even this
+      // just works.
+      f.f += denorm_magic.f;
+      // and one integer subtract of the bias later, we have our final float!
+      o.x = static_cast<unsigned short>(f.u - denorm_magic.u);
+    } else {
+      unsigned int mant_odd = (f.u >> 13) & 1; // resulting mantissa is odd
+	
+      // update exponent, rounding bias part 1
+      f.u += ((unsigned int)(15 - 127) << 23) + 0xfff;
+      // rounding bias part 2
+      f.u += mant_odd;
+      // take the bits!
+      o.x = static_cast<unsigned short>(f.u >> 13);
+    }
+  } 
+  o.x |= static_cast<unsigned short>(sign >> 16);
+  return o;
+}
+
+
+#ifdef GPU_VEC
+#include "Grid_gpu_vec.h"
+#endif
+#ifdef GPU
+#include "Grid_gpu.h"
+#endif
 #ifdef GEN
 #include "Grid_generic.h"
 #endif
@@ -61,6 +135,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #endif
 
 NAMESPACE_BEGIN(Grid);
+
 
 //////////////////////////////////////
 // To take the floating point type of real/complex type
@@ -250,7 +325,7 @@ public:
   // Vstore
   ///////////////////////
   friend accelerator_inline void vstore(const Grid_simd &ret, Scalar_type *a) {
-    binary<void>(ret.v, (Real *)a, VstoreSIMD());
+    binary<void>(ret.v, (Real *) a, VstoreSIMD());
   }
 
   ///////////////////////
@@ -425,6 +500,25 @@ public:
     ((Scalar_type*)&v)[lane] = S;
   }
 };  // end of Grid_simd class definition
+
+///////////////////////////////
+// Define available types
+///////////////////////////////
+typedef Grid_simd<float  , SIMD_Ftype> vRealF;
+typedef Grid_simd<double , SIMD_Dtype> vRealD;
+typedef Grid_simd<Integer, SIMD_Itype> vInteger;
+typedef Grid_simd<uint16_t,SIMD_Htype> vRealH;
+
+#ifdef GPU_VEC
+typedef Grid_simd<complex<uint16_t>, SIMD_CHtype> vComplexH;
+typedef Grid_simd<complex<float>   , SIMD_CFtype> vComplexF;
+typedef Grid_simd<complex<double>  , SIMD_CDtype> vComplexD;
+#else
+typedef Grid_simd<complex<uint16_t>, SIMD_Htype> vComplexH;
+typedef Grid_simd<complex<float>   , SIMD_Ftype> vComplexF;
+typedef Grid_simd<complex<double>  , SIMD_Dtype> vComplexD;
+#endif
+
 
 accelerator_inline void permute(ComplexD &y,ComplexD b, int perm) {  y=b; }
 accelerator_inline void permute(ComplexF &y,ComplexF b, int perm) {  y=b; }
@@ -763,18 +857,6 @@ accelerator_inline Grid_simd< complex<R>, V> toComplex(const Grid_simd<R, V> &in
   return ret;
 }
 
-///////////////////////////////
-// Define available types
-///////////////////////////////
-typedef Grid_simd<float, SIMD_Ftype> vRealF;
-typedef Grid_simd<double, SIMD_Dtype> vRealD;
-typedef Grid_simd< complex<float>, SIMD_Ftype> vComplexF;
-typedef Grid_simd< complex<double>, SIMD_Dtype> vComplexD;
-typedef Grid_simd<Integer, SIMD_Itype> vInteger;
-
-// Half precision; no arithmetic support
-typedef Grid_simd<uint16_t, SIMD_Htype>               vRealH;
-typedef Grid_simd< complex<uint16_t>, SIMD_Htype> vComplexH;
 
 accelerator_inline void precisionChange(vRealF    *out,vRealD    *in,int nvec)
 {
