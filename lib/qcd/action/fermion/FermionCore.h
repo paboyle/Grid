@@ -49,20 +49,22 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
   template class A<StaggeredVec5dImplF>; \
   template class A<StaggeredVec5dImplD>; 
 
-#define FermOp4dVecTemplateInstantiate(A) \
+#define FermOp4dVecTemplateInstantiateNoGP(A) \
   template class A<WilsonImplF>;		\
   template class A<WilsonImplD>;		\
   template class A<ZWilsonImplF>;		\
   template class A<ZWilsonImplD>;		\
-  template class A<GparityWilsonImplF>;		\
-  template class A<GparityWilsonImplD>;		\
   template class A<WilsonImplFH>;		\
   template class A<WilsonImplDF>;		\
   template class A<ZWilsonImplFH>;		\
-  template class A<ZWilsonImplDF>;		\
+  template class A<ZWilsonImplDF>;		
+
+#define FermOp4dVecTemplateInstantiate(A)		\
+  FermOp4dVecTemplateInstantiateNoGP(A)			\
+  template class A<GparityWilsonImplF>;			\
+  template class A<GparityWilsonImplD>;			\
   template class A<GparityWilsonImplFH>;		\
   template class A<GparityWilsonImplDF>;		
-
 
 #define AdjointFermOpTemplateInstantiate(A) \
   template class A<WilsonAdjImplF>; \
