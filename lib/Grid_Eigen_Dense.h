@@ -10,7 +10,10 @@
 #pragma diag_suppress code_is_unreachable
 #undef __NVCC__
 #undef __CUDACC__
+#ifdef __CUDA_ARCH__
+#define __CUDA_ARCH__REDEFINE__
 #undef __CUDA_ARCH__
+#endif
 #endif
 
 #include <Grid/Eigen/Dense>
@@ -19,7 +22,10 @@
 #pragma pop
 #define __NVCC__
 #define __CUDACC__
+
+#ifdef __CUDA_ARCH__REDEFINE__
 #define __CUDA_ARCH__
+#endif
 #endif
 
 #if defined __GNUC__
