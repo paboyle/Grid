@@ -576,6 +576,7 @@ template<class Impl> void  accelerator
 WilsonKernels<Impl>::HandDhopSite(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
 				  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
+#ifndef GRID_NVCC
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -597,12 +598,14 @@ WilsonKernels<Impl>::HandDhopSite(StencilView &st, DoubledGaugeFieldView &U,Site
   HAND_RESULT(ss,F)
 
   HAND_DOP_SITE(, LOAD_CHI,LOAD_CHIMU,MULT_2SPIN);
+#endif
 }
 
 template<class Impl> accelerator
 void WilsonKernels<Impl>::HandDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 						  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
+#ifndef GRID_NVCC
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
 
@@ -623,12 +626,14 @@ void WilsonKernels<Impl>::HandDhopSiteDag(StencilView &st, DoubledGaugeFieldView
   HAND_RESULT(ss,F)
 
   HAND_DOP_SITE_DAG(, LOAD_CHI,LOAD_CHIMU,MULT_2SPIN);
+#endif
 }
 
 template<class Impl> void accelerator
 WilsonKernels<Impl>::HandDhopSiteInt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
 					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
+#ifndef GRID_NVCC
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -651,12 +656,14 @@ WilsonKernels<Impl>::HandDhopSiteInt(StencilView &st, DoubledGaugeFieldView &U,S
   HAND_RESULT(ss,F)
 
   HAND_DOP_SITE_INT(, LOAD_CHI,LOAD_CHIMU,MULT_2SPIN);
+#endif
 }
 
 template<class Impl> accelerator
 void WilsonKernels<Impl>::HandDhopSiteDagInt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 						  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
+#ifndef GRID_NVCC
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
 
@@ -678,12 +685,14 @@ void WilsonKernels<Impl>::HandDhopSiteDagInt(StencilView &st, DoubledGaugeFieldV
   HAND_RESULT(ss,F)
   
   HAND_DOP_SITE_DAG_INT(, LOAD_CHI,LOAD_CHIMU,MULT_2SPIN);
+#endif
 }
 
 template<class Impl> void accelerator
 WilsonKernels<Impl>::HandDhopSiteExt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
 					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
+#ifndef GRID_NVCC
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -708,12 +717,14 @@ WilsonKernels<Impl>::HandDhopSiteExt(StencilView &st, DoubledGaugeFieldView &U,S
 
   HAND_DOP_SITE_EXT(, LOAD_CHI,LOAD_CHIMU,MULT_2SPIN);
   perm++;
+#endif
 }
 
 template<class Impl>
 accelerator void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 						  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
+#ifndef GRID_NVCC
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
 
@@ -737,6 +748,7 @@ accelerator void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilView &st, Double
 
   HAND_DOP_SITE_DAG_EXT(, LOAD_CHI,LOAD_CHIMU,MULT_2SPIN);
   perm++;
+#endif
 }
 
   ////////////////////////////////////////////////
@@ -793,7 +805,9 @@ accelerator void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilView &st, Double
 				    FermionFieldView &out){ assert(0); }	\
 
 
-
+#ifdef GRID_NVCC
+#define HAND_SPECIALISE_GPARITY(IMPL) HAND_SPECIALISE_EMPTY(IMPL)
+#else
 #define HAND_SPECIALISE_GPARITY(IMPL)					\
   template<> void							\
   WilsonKernels<IMPL>::HandDhopSite(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor  *buf, \
@@ -893,7 +907,7 @@ accelerator void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilView &st, Double
     nmu = 0;								\
     HAND_DOP_SITE_DAG_EXT(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
   }
-
+#endif
 
 HAND_SPECIALISE_GPARITY(GparityWilsonImplF);
 HAND_SPECIALISE_GPARITY(GparityWilsonImplD);
