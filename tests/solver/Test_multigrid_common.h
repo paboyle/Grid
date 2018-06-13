@@ -4,7 +4,7 @@
 
     Source file: ./tests/solver/Test_multigrid_common.h
 
-    Copyright (C) 2015
+    Copyright (C) 2015-2018
 
     Author: Daniel Richtmann <daniel.richtmann@ur.de>
 

@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: ./tests/solver/Test_wilsonclover_fgmres_prec.cc
 
-Copyright (C) 2015
+Copyright (C) 2015-2018
 
 Author: Daniel Richtmann <daniel.richtmann@ur.de>
 

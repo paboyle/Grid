@@ -4,7 +4,7 @@
 
     Source file: ./tests/solver/Test_wilson_mg_mp.cc
 
-    Copyright (C) 2017
+    Copyright (C) 2015-2018
 
     Author: Daniel Richtmann <daniel.richtmann@ur.de>
 
