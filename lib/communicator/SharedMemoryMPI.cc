@@ -42,9 +42,14 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
   /////////////////////////////////////////////////////////////////////
   // Split into groups that can share memory
   /////////////////////////////////////////////////////////////////////
+#ifdef GRID_NVCC
+  MPI_Comm_split(comm, WorldRank , 0,&WorldShmComm);
+#else 
   MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,&WorldShmComm);
+#endif
   MPI_Comm_rank(WorldShmComm     ,&WorldShmRank);
   MPI_Comm_size(WorldShmComm     ,&WorldShmSize);
+  std::cout << " Shared communicator of size " <<WorldShmSize << std::endl;
   // WorldShmComm, WorldShmSize, WorldShmRank
 
   // WorldNodes
@@ -179,6 +184,34 @@ void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_M
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Hugetlbfs mapping intended
 ////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef GRID_NVCC
+void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
+{
+  void * ShmCommBuf ; 
+  assert(_ShmSetup==1);
+  assert(_ShmAlloc==0);
+
+
+  //std::cerr << " allocating "<<bytes <<"  bytes "<< std::endl;
+  if ( cudaMallocManaged(&ShmCommBuf, bytes) !=  cudaSuccess) {
+    perror("cudaMallocManaged failed ");
+    exit(EXIT_FAILURE);  
+  }
+
+  if (ShmCommBuf == (void *)NULL ) {
+    perror("cudaMallocManaged failed ");
+    exit(EXIT_FAILURE);  
+  }
+  std::cerr << " Cuda allocated managed memory at "<<std::hex<<ShmCommBuf <<" - " << ((uint64_t)ShmCommBuf + bytes)<<std::dec<< std::endl;
+  bzero(ShmCommBuf,bytes);
+
+  WorldShmCommBufs.resize(1);
+  WorldShmCommBufs[0] = ShmCommBuf;
+  _ShmAllocBytes=bytes;
+  _ShmAlloc=1;
+  //std::cerr << " cudaMallocManaged Returning ; "<< bytes <<" bytes allocated at "<<std::hex<<ShmCommBuf <<std::dec<< std::endl;
+}
+#else 
 #ifdef GRID_MPI3_SHMMMAP
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
@@ -291,7 +324,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   _ShmAllocBytes = bytes;
 }
 #endif
-
+#endif
 ////////////////////////////////////////////////////////
 // Global shared functionality finished
 // Now move to per communicator functionality
@@ -306,7 +339,11 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
   /////////////////////////////////////////////////////////////////////
   // Split into groups that can share memory
   /////////////////////////////////////////////////////////////////////
+#ifdef GRID_NVCC
+  MPI_Comm_split(comm, rank, 0,&ShmComm);
+#else 
   MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,&ShmComm);
+#endif
   MPI_Comm_rank(ShmComm     ,&ShmRank);
   MPI_Comm_size(ShmComm     ,&ShmSize);
   ShmCommBufs.resize(ShmSize);
@@ -318,11 +355,11 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
   heap_size = GlobalSharedMemory::ShmAllocBytes();
   for(int r=0;r<ShmSize;r++){
 
-    uint32_t sr = (r==ShmRank) ? GlobalSharedMemory::WorldRank : 0 ;
+    uint32_t wsr = (r==ShmRank) ? GlobalSharedMemory::WorldShmRank : 0 ;
 
-    MPI_Allreduce(MPI_IN_PLACE,&sr,1,MPI_UINT32_T,MPI_SUM,comm);
+    MPI_Allreduce(MPI_IN_PLACE,&wsr,1,MPI_UINT32_T,MPI_SUM,comm);
 
-    ShmCommBufs[r] = GlobalSharedMemory::WorldShmCommBufs[sr];
+    ShmCommBufs[r] = GlobalSharedMemory::WorldShmCommBufs[wsr];
   }
   ShmBufferFreeAll();
 
@@ -380,7 +417,6 @@ void *SharedMemory::ShmBuffer(int rank)
 }
 void *SharedMemory::ShmBufferTranslate(int rank,void * local_p)
 {
-  static int count =0;
   int gpeer = ShmRanks[rank];
   assert(gpeer!=ShmRank); // never send to self
   if (gpeer == MPI_UNDEFINED){
