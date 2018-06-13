@@ -95,9 +95,9 @@ void LambdaApply(uint64_t base, uint64_t Num, lambda Lambda)
   auto lambda = [=] accelerator (Iterator iterator) mutable {		\
     __VA_ARGS__;							\
   };									\
-  Iterator num  = range.end();						\
+  Iterator num  = range.end() - range.begin();				\
   Iterator base = range.begin();					\
-  Iterator num_block = (num + gpu_threads - 1)/gpu_threads;		\
+  Iterator num_block  = (num+gpu_threads-1)/gpu_threads;		\
   LambdaApply<<<num_block,gpu_threads>>>(base,num,lambda);		\
   cudaDeviceSynchronize();						\
   cudaError err = cudaGetLastError();					\
@@ -107,6 +107,33 @@ void LambdaApply(uint64_t base, uint64_t Num, lambda Lambda)
   }									
 
 #define cpu_loop( iterator, range, ... )   thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
+
+template<typename lambda>  __global__
+void LambdaApply2D(uint64_t Osites, uint64_t Isites, lambda Lambda)
+{
+  uint64_t site  = threadIdx.x + blockIdx.x*blockDim.x;
+  uint64_t osite = site / Isites;
+  if ( (osite <Osites) ) {
+    Lambda(osite);
+  }
+}
+
+#define coalesce_loop( iterator, range, nsimd, ... )			\
+  typedef uint64_t Iterator;						\
+  auto lambda = [=] accelerator (Iterator iterator) mutable {		\
+    __VA_ARGS__;							\
+  };									\
+  Iterator num  = range.end() - range.begin();				\
+  Iterator base = range.begin();					\
+  Iterator cu_threads= gpu_threads;					\
+  Iterator cu_blocks = num*nsimd/cu_threads;				\
+  LambdaApply2D<<<cu_blocks,cu_threads>>>(num,(uint64_t)nsimd,lambda);	\
+  cudaDeviceSynchronize();						\
+  cudaError err = cudaGetLastError();					\
+  if ( cudaSuccess != err ) {						\
+    printf("Cuda error %s\n",cudaGetErrorString( err ));		\
+    exit(0);								\
+  }									
 
 #else
 
