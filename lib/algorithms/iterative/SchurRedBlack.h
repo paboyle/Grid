@@ -160,19 +160,12 @@ namespace Grid {
       // Call the red-black solver
       //////////////////////////////////////////////////////////////
       std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver calling the Mpc solver" <<std::endl;
-      guess(src_o,sol_o);
-      if (subGuess)
-      {
-        std::cout << GridLogMessage << "Subtracting guess after solve" << std::endl;
-        Mtmp = sol_o;
-        _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
-        sol_o = sol_o - Mtmp;
-      }
-      else
-      {
-        _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
-      }
+      guess(src_o, sol_o);
+      Mtmp = sol_o;
+      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
       std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver called  the Mpc solver" <<std::endl;
+      // Fionn A2A boolean behavioural control
+      if (subGuess)        sol_o = sol_o-Mtmp;
 
       ///////////////////////////////////////////////////
       // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
@@ -187,11 +180,13 @@ namespace Grid {
       std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver inserted solution" <<std::endl;
 
       // Verify the unprec residual
-      _Matrix.M(out,resid); 
-      resid = resid-in;
-      RealD ns = norm2(in);
-      RealD nr = norm2(resid);
-      std::cout<<GridLogMessage << "SchurRedBlackStaggered solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
+      if ( ! subGuess ) {
+        _Matrix.M(out,resid); 
+        resid = resid-in;
+        RealD ns = norm2(in);
+        RealD nr = norm2(resid);
+        std::cout<<GridLogMessage << "SchurRedBlackStaggered solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
+      }
     }     
   };
   template<class Field> using SchurRedBlackStagSolve = SchurRedBlackStaggeredSolve<Field>;
@@ -266,17 +261,10 @@ namespace Grid {
       //////////////////////////////////////////////////////////////
       std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
       guess(src_o,sol_o);
-      if (subGuess)
-      {
-        std::cout << GridLogMessage << "Subtracting guess after solve" << std::endl;
-        Mtmp = sol_o;
-        _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
-        sol_o = sol_o - Mtmp;
-      }
-      else
-      {
-        _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
-      }
+      Mtmp = sol_o;
+      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
+      // Fionn A2A boolean behavioural control
+      if (subGuess)        sol_o = sol_o-Mtmp;
 
       ///////////////////////////////////////////////////
       // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
@@ -289,12 +277,14 @@ namespace Grid {
       setCheckerboard(out,sol_o); assert(  sol_o.checkerboard ==Odd );
 
       // Verify the unprec residual
-      _Matrix.M(out,resid); 
-      resid = resid-in;
-      RealD ns = norm2(in);
-      RealD nr = norm2(resid);
+      if ( ! subGuess ) {
+        _Matrix.M(out,resid); 
+        resid = resid-in;
+        RealD ns = norm2(in);
+        RealD nr = norm2(resid);
 
-      std::cout<<GridLogMessage << "SchurRedBlackDiagMooee solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
+        std::cout<<GridLogMessage << "SchurRedBlackDiagMooee solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
+      }
     }     
   };
 
@@ -372,18 +362,11 @@ namespace Grid {
       std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
 //      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
       guess(src_o,tmp);
-      if (subGuess)
-      {
-        std::cout << GridLogMessage << "Subtracting guess after solve" << std::endl;
-        Mtmp = tmp;
-        _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard == Odd);
-        tmp = tmp - Mtmp;
-      }
-      else
-      {
-        _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
-      }
-      _Matrix.MooeeInv(tmp,sol_o);        assert(  sol_o.checkerboard   ==Odd);
+      Mtmp = tmp;
+      _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
+      // Fionn A2A boolean behavioural control
+      if (subGuess)      tmp = tmp-Mtmp;
+      _Matrix.MooeeInv(tmp,sol_o);       assert(  sol_o.checkerboard   ==Odd);
 
       ///////////////////////////////////////////////////
       // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
@@ -396,12 +379,14 @@ namespace Grid {
       setCheckerboard(out,sol_o); assert(  sol_o.checkerboard ==Odd );
 
       // Verify the unprec residual
-      _Matrix.M(out,resid); 
-      resid = resid-in;
-      RealD ns = norm2(in);
-      RealD nr = norm2(resid);
+      if ( ! subGuess ) {
+        _Matrix.M(out,resid); 
+        resid = resid-in;
+        RealD ns = norm2(in);
+        RealD nr = norm2(resid);
 
-      std::cout<<GridLogMessage << "SchurRedBlackDiagTwo solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
+        std::cout<<GridLogMessage << "SchurRedBlackDiagTwo solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
+      }
     }     
   };
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -478,17 +463,10 @@ namespace Grid {
 //      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
 //      _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
       guess(src_o,tmp);
-      if (subGuess)
-      {
-        std::cout << GridLogMessage << "Subtracting guess after solve" << std::endl;
-        Mtmp = tmp;
-        _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
-        tmp = tmp - Mtmp;
-      }
-      else
-      {
-        _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
-      }
+      Mtmp = tmp;
+      _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
+      // Fionn A2A boolean behavioural control
+      if (subGuess)      tmp = tmp-Mtmp;
       _Matrix.MooeeInv(tmp,sol_o);        assert(  sol_o.checkerboard   ==Odd);
 
       ///////////////////////////////////////////////////
@@ -502,12 +480,14 @@ namespace Grid {
       setCheckerboard(out,sol_o); assert(  sol_o.checkerboard ==Odd );
 
       // Verify the unprec residual
-      _Matrix.M(out,resid); 
-      resid = resid-in;
-      RealD ns = norm2(in);
-      RealD nr = norm2(resid);
+      if ( ! subGuess ) {
+        _Matrix.M(out,resid); 
+        resid = resid-in;
+        RealD ns = norm2(in);
+        RealD nr = norm2(resid);
 
-      std::cout<<GridLogMessage << "SchurRedBlackDiagTwo solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
+        std::cout << GridLogMessage << "SchurRedBlackDiagTwo solver true unprec resid " << std::sqrt(nr / ns) << " nr " << nr << " ns " << ns << std::endl;
+      }
     }     
   };
 
