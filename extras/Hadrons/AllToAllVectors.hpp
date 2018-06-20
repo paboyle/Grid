@@ -17,77 +17,53 @@ class A2AModesSchurDiagTwo
     A2AModesSchurDiagTwo(void) = default;
     virtual ~A2AModesSchurDiagTwo(void) = default;
 
-    void low_mode_v(Matrix &_Matrix, const Field &evec, const RealD &eval, Field &vout)
+    void Doo(Matrix &action, const Field &in, Field &out)
     {
+        Field tmp(in._grid);
 
-        GridBase *grid = _Matrix.RedBlackGrid();
+        action.MooeeInv(in, out);
+        action.Meooe(out, tmp);
+        action.MooeeInv(tmp, out);
+        action.Meooe(out, tmp);
 
-        Field src_o(grid);
-        Field sol_e(grid);
-        Field sol_o(grid);
-        Field tmp(grid);
-
-        pickCheckerboard(Odd, src_o, evec);
-        pickCheckerboard(Even, sol_e, vout);
-        pickCheckerboard(Odd, sol_o, vout);
-
-        /////////////////////////////////////////////////////
-        // v_ie = -(1/eval_i)* Mee Meo MooInv evec_i
-        /////////////////////////////////////////////////////
-        _Matrix.MooeeInv(src_o, tmp);
-        assert(tmp.checkerboard == Odd);
-        _Matrix.Meooe(tmp, sol_e);
-        assert(sol_e.checkerboard == Even);
-        _Matrix.Mooee(sol_e, tmp);
-        assert(tmp.checkerboard == Even);
-        sol_e = -(1.0 / eval) * tmp;
-        assert(sol_e.checkerboard == Even);
-
-        /////////////////////////////////////////////////////
-        // v_io = -(1/eval_i)* MooInv evec_i
-        /////////////////////////////////////////////////////
-        _Matrix.MooeeInv(src_o, tmp);
-        assert(tmp.checkerboard == Odd);
-        sol_o = -(1.0 / eval) * tmp;
-        assert(sol_o.checkerboard == Odd);
-
-        setCheckerboard(vout, sol_e);
-        assert(sol_e.checkerboard == Even);
-        setCheckerboard(vout, sol_o);
-        assert(sol_o.checkerboard == Odd);
+        axpy(out, -1.0, tmp, in);
     }
 
-    void low_mode_w(Matrix &_Matrix, const Field &evec, const RealD &eval, Field &wout)
+    void low_mode_v(Matrix &action, const Field &evec, const RealD &eval, Field &vout, bool return_5d = true)
     {
-        GridBase *grid = _Matrix.RedBlackGrid();
-        SchurDiagTwoOperator<Matrix, Field> _HermOpEO(_Matrix);
 
+        GridBase *grid = action.RedBlackGrid();
         Field src_o(grid);
         Field sol_e(grid);
         Field sol_o(grid);
         Field tmp(grid);
 
-        GridBase *fgrid = _Matrix.Grid();
+        GridBase *fgrid = action.Grid();
         Field tmp_out(fgrid);
 
-        pickCheckerboard(Odd, src_o, evec);
-        pickCheckerboard(Even, sol_e, wout);
-        pickCheckerboard(Odd, sol_o, wout);
+        src_o = evec;
+        src_o.checkerboard = Odd;
+        pickCheckerboard(Even, sol_e, tmp_out);
+        pickCheckerboard(Odd, sol_o, tmp_out);
 
         /////////////////////////////////////////////////////
-        // w_ie = MeeInvDag MoeDag Doo evec_i
+        // v_ie = -(1/eval_i) * MeeInv Meo MooInv evec_i
         /////////////////////////////////////////////////////
-        _HermOpEO.Mpc(src_o, sol_e);
-        assert(sol_e.checkerboard == Odd);
-        _Matrix.MeooeDag(sol_e, tmp);
+        action.MooeeInv(src_o, tmp);
+        assert(tmp.checkerboard == Odd);
+        action.Meooe(tmp, sol_e);
+        assert(sol_e.checkerboard == Even);
+        action.MooeeInv(sol_e, tmp);
         assert(tmp.checkerboard == Even);
-        _Matrix.MooeeInvDag(tmp, sol_e);
+        sol_e = (-1.0 / eval) * tmp;
         assert(sol_e.checkerboard == Even);
 
         /////////////////////////////////////////////////////
-        // w_io = Doo evec_i
+        // v_io = (1/eval_i) * MooInv evec_i
         /////////////////////////////////////////////////////
-        _HermOpEO.Mpc(src_o, sol_o);
+        action.MooeeInv(src_o, tmp);
+        assert(tmp.checkerboard == Odd);
+        sol_o = (1.0 / eval) * tmp;
         assert(sol_o.checkerboard == Odd);
 
         setCheckerboard(tmp_out, sol_e);
@@ -95,21 +71,85 @@ class A2AModesSchurDiagTwo
         setCheckerboard(tmp_out, sol_o);
         assert(sol_o.checkerboard == Odd);
 
-        _Matrix.Dminus(tmp_out, wout);
+        this->return_dim(action, tmp_out, vout, return_5d);
     }
 
-    void high_mode_v(Matrix &_Matrix, std::function<void(Field &, const Field &)> &Solver, const Field &source, Field &vout)
+    void low_mode_w(Matrix &action, const Field &evec, const RealD &eval, Field &wout, bool return_5d = true)
     {
-        GridBase *fgrid = _Matrix.Grid();
+        GridBase *grid = action.RedBlackGrid();
+        SchurDiagTwoOperator<Matrix, Field> _HermOpEO(action);
+
+        Field src_o(grid);
+        Field sol_e(grid);
+        Field sol_o(grid);
+        Field tmp(grid);
+
+        GridBase *fgrid = action.Grid();
+        Field tmp_out(fgrid);
+        Field tmp_wout(fgrid);
+
+        src_o = evec;
+        src_o.checkerboard = Odd;
+        pickCheckerboard(Even, sol_e, tmp_wout);
+        pickCheckerboard(Odd, sol_o, tmp_wout);
+
+        /////////////////////////////////////////////////////
+        // w_ie = - MeeInvDag MoeDag Doo evec_i
+        /////////////////////////////////////////////////////
+        Doo(action, src_o, tmp);
+        assert(tmp.checkerboard == Odd);
+        action.MeooeDag(tmp, sol_e);
+        assert(sol_e.checkerboard == Even);
+        action.MooeeInvDag(sol_e, tmp);
+        assert(tmp.checkerboard == Even);
+        sol_e = (-1.0) * tmp;
+
+        /////////////////////////////////////////////////////
+        // w_io = Doo evec_i
+        /////////////////////////////////////////////////////
+        Doo(action, src_o, sol_o);
+        assert(sol_o.checkerboard == Odd);
+
+        setCheckerboard(tmp_wout, sol_e);
+        assert(sol_e.checkerboard == Even);
+        setCheckerboard(tmp_wout, sol_o);
+        assert(sol_o.checkerboard == Odd);
+
+        action.DminusDag(tmp_wout, tmp_out);
+        this->return_dim(action, tmp_out, wout, return_5d);
+    }
+
+    void high_mode_v(Matrix &action, std::function<void(Field &, const Field &)> &Solver, const Field &source, Field &vout, bool return_5d = true)
+    {
+        GridBase *fgrid = action.Grid();
         Field tmp(fgrid);
+        Field tmp_out(fgrid);
 
-        _Matrix.Dminus(source, tmp);
-        Solver(vout, tmp);
+        action.Dminus(source, tmp);
+        Solver(tmp_out, source); // Note: Solver is Solver(out, in)
+        this->return_dim(action, tmp_out, vout, return_5d);
     }
 
-    void high_mode_w(Matrix &_Matrix, const Field &source, Field &wout)
+    void high_mode_w(Matrix &action, const Field &source4d, Field &wout, bool return_5d = true)
     {
-        wout = source;
+        // GridBase *fgrid = action.Grid();
+        // Field tmp_out(fgrid);
+
+        // tmp_out = source;
+        // this->return_dim(action, tmp_out, wout, return_5d);
+        wout = source4d;
+    }
+
+    void return_dim(Matrix &action, const Field &in, Field &out, bool return_5d)
+    {
+        if (return_5d)
+        {
+            out = in;
+        }
+        else
+        {
+            action.ExportPhysicalFermionSolution(in, out);
+        }
     }
 };
 
@@ -123,7 +163,7 @@ class A2ALMSchurDiagTwo : public A2AModesSchurDiagTwo<Field, Matrix>
   private:
     const std::vector<Field> &evec;
     const std::vector<RealD> &eval;
-    Matrix                   &action;
+    Matrix &action;
 
   public:
     A2ALMSchurDiagTwo(const std::vector<Field> &_evec, const std::vector<RealD> &_eval, Matrix &_action) : evec(_evec), eval(_eval), action(_action){};
@@ -138,10 +178,10 @@ template <class FineField, class CoarseField, class Matrix>
 class A2ALMSchurDiagTwoCoarse : public A2AModesSchurDiagTwo<FineField, Matrix>
 {
   private:
-    const std::vector<FineField>   &subspace;
+    const std::vector<FineField> &subspace;
     const std::vector<CoarseField> &evec_coarse;
-    const std::vector<RealD>       &eval_coarse;
-    Matrix                         &action;
+    const std::vector<RealD> &eval_coarse;
+    Matrix &action;
 
   public:
     A2ALMSchurDiagTwoCoarse(const std::vector<FineField> &_subspace, const std::vector<CoarseField> &_evec_coarse, const std::vector<RealD> &_eval_coarse, Matrix &_action)
@@ -164,58 +204,10 @@ template <class Field, class Matrix>
 class A2AHMSchurDiagTwo : virtual public A2AModesSchurDiagTwo<Field, Matrix>
 {
   public:
-    void operator()(Matrix &_Matrix, std::function<void(Field &, const Field &)> &Solver, const Field &source, Field &vout, Field &wout)
+    void operator()(Matrix &action, std::function<void(Field &, const Field &)> &Solver, const Field &source, Field &vout, Field &wout)
     {
-        this->high_mode_v(_Matrix, Solver, source, vout);
-        this->high_mode_w(_Matrix, source, wout);
-    }
-};
-
-template <class Field, class Matrix>
-class A2AVectorsReturnHigh : public A2AModesSchurDiagTwo<Field, Matrix>
-{
-  private:
-    Matrix &action;
-    std::function<void(Field &, const Field &)> &Solver;
-    const int Nh, Ls;
-
-  public:
-    std::vector<Field> w_high, v_high;
-    A2AVectorsReturnHigh(Matrix &_action,
-                         std::function<void(Field &, const Field &)> &_Solver,
-                         const int _Nh, const int _Ls)
-        : action(_action),
-          Solver(_Solver),
-          Nh(_Nh), Ls(_Ls)
-    {
-        GridBase *fgrid = action.Grid();
-        resize(Nh, fgrid);
-    };
-
-    void resize(const size_t size, GridBase *grid)
-    {
-        w_high.resize(size, grid);
-        v_high.resize(size, grid);
-    }
-
-    void high_modes(Field &source, int i)
-    {
-        this->high_mode_v(action, Solver, source, v_high[i]);
-        this->high_mode_w(action, source, w_high[i]);
-    }
-
-    void operator()(int i, Field &vout, Field &wout)
-    {
-        if (Ls > 1)
-        {
-            vout = v_high[i];
-            wout = w_high[i];
-        }
-        else
-        {
-            action.ExportPhysicalFermionSolution(v_high[i], vout);
-            action.ExportPhysicalFermionSolution(w_high[i], wout);
-        }
+        this->high_mode_v(action, Solver, source, vout);
+        this->high_mode_w(action, source, wout);
     }
 };
 
@@ -227,26 +219,36 @@ template <class Field, class Matrix>
 class A2AVectorsReturn : public A2AModesSchurDiagTwo<Field, Matrix>
 {
   private:
-    const std::vector<Field> &evec;
-    const std::vector<RealD> &eval;
+    const std::vector<Field> *evec;
+    const std::vector<RealD> *eval;
     Matrix &action;
     std::function<void(Field &, const Field &)> &Solver;
-    const int Nl, Nh, Ls;
-
-  public:
+    const int Nl, Nh;
+    const bool return_5d;
     std::vector<Field> w_high, v_high;
 
-    A2AVectorsReturn(const std::vector<Field> &_evec, const std::vector<RealD> &_eval,
+  public:
+    A2AVectorsReturn(const std::vector<Field> *_evec, const std::vector<RealD> *_eval,
                      Matrix &_action,
                      std::function<void(Field &, const Field &)> &_Solver,
-                     const int _Nl, const int _Nh, const int _Ls)
+                     const int _Nl, const int _Nh,
+                     const bool _return_5d)
         : evec(_evec), eval(_eval),
           action(_action),
           Solver(_Solver),
-          Nl(_Nl), Nh(_Nh), Ls(_Ls)
+          Nl(_Nl), Nh(_Nh),
+          return_5d(_return_5d)
     {
-        GridBase *fgrid = action.Grid();
-        resize(Nh, fgrid);
+        GridBase *grid;
+        if (return_5d)
+        {
+            grid = action.Grid();
+        }
+        else
+        {
+            grid = action.GaugeGrid();
+        }
+        resize(Nh, grid);
     };
 
     void resize(const size_t size, GridBase *grid)
@@ -255,38 +257,25 @@ class A2AVectorsReturn : public A2AModesSchurDiagTwo<Field, Matrix>
         v_high.resize(size, grid);
     }
 
-    void high_modes(Field &source, int i)
+    void high_modes(Field &source5d, Field &source4d, int i)
     {
-        this->high_mode_v(action, Solver, source, v_high[i]);
-        this->high_mode_w(action, source, w_high[i]);
+        LOG(Message) << "A2A high modes for i = " << i << std::endl;
+        this->high_mode_v(action, Solver, source5d, v_high[i], return_5d);
+        this->high_mode_w(action, source4d, w_high[i], return_5d);
     }
 
     void operator()(int i, Field &vout, Field &wout)
     {
-
-        GridBase *fgrid = action.Grid();
-        Field vtmp(fgrid);
-        Field wtmp(fgrid);
         if (i < Nl)
-        {   
-            this->low_mode_v(action, evec[i], eval[i], vtmp);
-            this->low_mode_w(action, evec[i], eval[i], wtmp);
+        {
+            LOG(Message) << "A2A low modes for i = " << i << std::endl;
+            this->low_mode_v(action, evec->at(i), eval->at(i), vout, return_5d);
+            this->low_mode_w(action, evec->at(i), eval->at(i), wout, return_5d);
         }
         else
         {
-            vtmp = v_high[i-Nl];
-            wtmp = w_high[i-Nl];
-        }
-
-        if (Ls > 1)
-        {
-            vout = vtmp;
-            wout = wtmp;
-        }
-        else
-        {
-            action.ExportPhysicalFermionSolution(vtmp, vout);
-            action.ExportPhysicalFermionSolution(wtmp, wout);
+            vout = v_high[i - Nl];
+            wout = w_high[i - Nl];
         }
     }
 };
