@@ -38,7 +38,6 @@ class TA2AVectors : public Module<A2AVectorsPar>
     typedef CoarseFermionEigenPack<FImpl, nBasis> CoarseEPack;
 
     typedef A2AModesSchurDiagTwo<typename FImpl::FermionField, FMat> A2ABase;
-    typedef A2AVectorsReturn<typename FImpl::FermionField, FMat> A2AReturn;
 
   public:
     // constructor
@@ -55,7 +54,7 @@ class TA2AVectors : public Module<A2AVectorsPar>
 
   private:
     unsigned int Ls_;
-    std::string retName_, whighName_, vhighName_;
+    std::string retName_;
 };
 
 MODULE_REGISTER_TMP(A2AVectors, ARG(TA2AVectors<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
@@ -69,8 +68,6 @@ template <typename FImpl, int nBasis>
 TA2AVectors<FImpl, nBasis>::TA2AVectors(const std::string name)
 : Module<A2AVectorsPar>(name)
 , retName_ (name + "_ret")
-, whighName_ (name + "_whigh")
-, vhighName_ (name + "_vhigh")
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
@@ -107,27 +104,16 @@ void TA2AVectors<FImpl, nBasis>::setup(void)
     bool return_5d = par().return_5d;
     int Ls, Ls_;
 
-    Ls_ = env().getObjectLs(par().solver + "_subtract");
-    auto &solver = envGet(SolverFn, par().solver + "_subtract");
-    if (!(Nl > 0))
-    {
-        Ls_ = env().getObjectLs(par().solver);
-        auto &solver = envGet(SolverFn, par().solver);
-    }
-
-    if (return_5d)
-    {
-        Ls = Ls_;
-    }
-    else
-    {
-        Ls = 1;
-    }
+    std::string sub_string = "";
+    if (Nl > 0) sub_string = "_subtract";
+    auto &solver = envGet(SolverFn, par().solver + sub_string);
+    Ls_ = env().getObjectLs(par().solver + sub_string);
 
     auto &action = envGet(FMat, par().action);
 
     envTmpLat(FermionField, "ferm_src", Ls_);
     envTmpLat(FermionField, "tmp");
+    envTmpLat(FermionField, "tmp2");
 
     std::vector<FermionField> *evec;
     const std::vector<RealD> *eval;
@@ -149,7 +135,7 @@ void TA2AVectors<FImpl, nBasis>::setup(void)
         LOG(Message) << "Creating a2a vectors " << getName() <<
                      " using " << Nh << " high modes only." << std::endl;
     }
-    envCreateDerived(A2ABase, A2AReturn, retName_, Ls,
+    envCreate(A2ABase, retName_, Ls_,
                      evec, eval,
                      action,
                      solver,
@@ -167,13 +153,12 @@ void TA2AVectors<FImpl, nBasis>::execute(void)
     int Nc = FImpl::Dimension;
     int Ls_;
     int Nl = par().Nl;
-    Ls_ = env().getObjectLs(par().solver + "_subtract");
-    if (!(Nl > 0))
-    {
-        Ls_ = env().getObjectLs(par().solver);
-    }
 
-    auto &a2areturn = envGetDerived(A2ABase, A2AReturn, retName_);
+    std::string sub_string = "";
+    if (Nl > 0) sub_string = "_subtract";
+    Ls_ = env().getObjectLs(par().solver + sub_string);
+
+    auto &a2areturn = envGet(A2ABase, retName_);
 
     // High modes
     auto sources = par().sources;
@@ -181,7 +166,9 @@ void TA2AVectors<FImpl, nBasis>::execute(void)
 
     envGetTmp(FermionField, ferm_src);
     envGetTmp(FermionField, tmp);
+    envGetTmp(FermionField, tmp2);
 
+    double weight = 1.0 / sqrt(Ns*Nc*Nsrc);
     int N_count = 0;
     for (unsigned int s = 0; s < Ns; ++s)
         for (unsigned int c = 0; c < Nc; ++c)
@@ -198,7 +185,8 @@ void TA2AVectors<FImpl, nBasis>::execute(void)
                 }
                 else
                 {
-                    PropToFerm<FImpl>(tmp, prop_src, s, c);
+                    PropToFerm<FImpl>(tmp2, prop_src, s, c);
+                    tmp = weight*tmp2;
                     action.ImportPhysicalFermionSource(tmp, ferm_src);
                 }
             }
