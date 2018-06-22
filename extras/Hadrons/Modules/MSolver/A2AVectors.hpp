@@ -168,6 +168,8 @@ void TA2AVectors<FImpl, nBasis>::execute(void)
     envGetTmp(FermionField, tmp);
     envGetTmp(FermionField, tmp2);
 
+    // TODO: At the moment weighting only applies to the 4d->5d source path
+    // similar to how the 5d and 4d srcs are passed in, this needs more work to be less brittle
     double weight = 1.0 / sqrt(Ns*Nc*Nsrc);
     int N_count = 0;
     for (unsigned int s = 0; s < Ns; ++s)

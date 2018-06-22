@@ -77,7 +77,7 @@ class A2AModesSchurDiagTwo
     {
         if (i < Nl)
         {
-            this->low_mode_w(action, evec->at(i), eval->at(i), wout_5d, wout_5d);
+            this->low_mode_w(action, evec->at(i), eval->at(i), wout_5d, wout_4d);
         }
         else
         {
