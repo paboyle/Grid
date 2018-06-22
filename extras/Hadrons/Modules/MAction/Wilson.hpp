@@ -54,7 +54,7 @@ template <typename FImpl>
 class TWilson: public Module<WilsonPar>
 {
 public:
-    FGS_TYPE_ALIASES(FImpl,);
+    FG_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TWilson(const std::string name);

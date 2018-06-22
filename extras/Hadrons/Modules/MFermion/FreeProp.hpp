@@ -57,7 +57,7 @@ template <typename FImpl>
 class TFreeProp: public Module<FreePropPar>
 {
 public:
-    FGS_TYPE_ALIASES(FImpl,);
+    FG_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TFreeProp(const std::string name);
