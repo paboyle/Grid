@@ -40,27 +40,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- * 5D -> 4D and 4D -> 5D conversions.                                         *
- ******************************************************************************/
-template<class vobj> // Note that 5D object is modified.
-inline void make_4D(Lattice<vobj> &in_5d, Lattice<vobj> &out_4d, int Ls)
-{
-    axpby_ssp_pminus(in_5d, 0., in_5d, 1., in_5d, 0, 0);
-    axpby_ssp_pplus(in_5d, 1., in_5d, 1., in_5d, 0, Ls-1);
-    ExtractSlice(out_4d, in_5d, 0, 0);
-}
-
-template<class vobj>
-inline void make_5D(Lattice<vobj> &in_4d, Lattice<vobj> &out_5d, int Ls)
-{
-    out_5d = zero;
-    InsertSlice(in_4d, out_5d, 0, 0);
-    InsertSlice(in_4d, out_5d, Ls-1, 0);
-    axpby_ssp_pplus(out_5d, 0., out_5d, 1., out_5d, 0, 0);
-    axpby_ssp_pminus(out_5d, 0., out_5d, 1., out_5d, Ls-1, Ls-1);
-}
-
-/******************************************************************************
  *                                GaugeProp                                   *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MFermion)
