@@ -51,9 +51,27 @@ Application::Application(void)
         loc[d]  /= mpi[d];
         locVol_ *= loc[d];
     }
-    LOG(Message) << "Global lattice: " << dim << std::endl;
-    LOG(Message) << "MPI partition : " << mpi << std::endl;
-    LOG(Message) << "Local lattice : " << loc << std::endl;
+    LOG(Message) << "====== HADRONS APPLICATION STARTING ======" << std::endl;
+    LOG(Message) << "** Dimensions" << std::endl;
+    LOG(Message) << "Global lattice       : " << dim << std::endl;
+    LOG(Message) << "MPI partition        : " << mpi << std::endl;
+    LOG(Message) << "Local lattice        : " << loc << std::endl;
+    LOG(Message) << std::endl;
+    LOG(Message) << "** Default parameters (associated C macro)" << std::endl;
+    LOG(Message) << "ASCII output precision (DEFAULT_ASCII_PREC)           : "
+                 << DEFAULT_ASCII_PREC << std::endl;
+    LOG(Message) << "Fermion implementation (FIMPL)                        : "
+                 << HADRONS_STR(FIMPL) << std::endl;
+    LOG(Message) << "Fermion complex implementation (ZFIMPL)               : "
+                 << HADRONS_STR(ZFIMPL) << std::endl;
+    LOG(Message) << "Scalar implementation (SIMPL)                         : "
+                 << HADRONS_STR(SIMPL) << std::endl;
+    LOG(Message) << "Gauge implementation (GIMPL)                          : "
+                 << HADRONS_STR(GIMPL) << std::endl;
+    LOG(Message) << "Eigenvector base size (HADRONS_DEFAULT_LANCZOS_NBASIS): " 
+                 << HADRONS_DEFAULT_LANCZOS_NBASIS << std::endl;
+    LOG(Message) << "Schur decomposition (HADRONS_DEFAULT_SCHUR)           : " 
+                 << HADRONS_STR(HADRONS_DEFAULT_SCHUR) << std::endl;
 }
 
 Application::Application(const Application::GlobalPar &par)
