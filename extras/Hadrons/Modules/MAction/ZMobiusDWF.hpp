@@ -35,7 +35,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         ZMobiusDWF                                 *
+ *                      z-Mobius domain-wall fermion action                   *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MAction)
 
@@ -75,7 +75,7 @@ public:
 MODULE_REGISTER_TMP(ZMobiusDWF, TZMobiusDWF<ZFIMPL>, MAction);
 
 /******************************************************************************
- *                 TZMobiusDWF implementation                             *
+ *                     TZMobiusDWF implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
