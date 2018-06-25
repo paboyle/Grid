@@ -30,8 +30,8 @@ modules_cc =\
   Modules/MContraction/WardIdentity.cc \
   Modules/MContraction/WeakHamiltonianEye.cc \
   Modules/MContraction/DiscLoop.cc \
-  Modules/MContraction/A2AMeson.cc \
   Modules/MContraction/Baryon.cc \
+  Modules/MContraction/MesonFieldGmu.cc \
   Modules/MContraction/Gamma3pt.cc \
   Modules/MContraction/WeakNeutral4ptDisc.cc \
   Modules/MContraction/Meson.cc \
@@ -86,9 +86,9 @@ modules_hpp =\
   Modules/MContraction/WeakHamiltonianEye.hpp \
   Modules/MContraction/Gamma3pt.hpp \
   Modules/MContraction/WeakHamiltonianNonEye.hpp \
+  Modules/MContraction/MesonFieldGmu.hpp \
   Modules/MContraction/Baryon.hpp \
   Modules/MContraction/WeakNeutral4ptDisc.hpp \
-  Modules/MContraction/A2AMeson.hpp \
   Modules/MScalar/Scalar.hpp \
   Modules/MScalar/FreeProp.hpp \
   Modules/MScalar/ChargedProp.hpp \
