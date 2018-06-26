@@ -90,9 +90,6 @@ int main(int argc, char **argv) {
   WilsonCloverFermionD Dwc_d(Umu_d, *FGrid_d, *FrbGrid_d, mass, csw_r, csw_t);
   WilsonCloverFermionF Dwc_f(Umu_f, *FGrid_f, *FrbGrid_f, mass, csw_r, csw_t);
 
-  static_assert(std::is_same<LatticeFermionD, typename WilsonCloverFermionD::FermionField>::value, "");
-  static_assert(std::is_same<LatticeFermionF, typename WilsonCloverFermionF::FermionField>::value, "");
-
   MdagMLinearOperator<WilsonCloverFermionD, LatticeFermionD> MdagMOpDwc_d(Dwc_d);
   MdagMLinearOperator<WilsonCloverFermionF, LatticeFermionF> MdagMOpDwc_f(Dwc_f);
 

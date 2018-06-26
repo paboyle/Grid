@@ -88,9 +88,6 @@ int main(int argc, char **argv) {
   WilsonFermionD Dw_d(Umu_d, *FGrid_d, *FrbGrid_d, mass);
   WilsonFermionF Dw_f(Umu_f, *FGrid_f, *FrbGrid_f, mass);
 
-  static_assert(std::is_same<LatticeFermionD, typename WilsonFermionD::FermionField>::value, "");
-  static_assert(std::is_same<LatticeFermionF, typename WilsonFermionF::FermionField>::value, "");
-
   MdagMLinearOperator<WilsonFermionD, LatticeFermionD> MdagMOpDw_d(Dw_d);
   MdagMLinearOperator<WilsonFermionF, LatticeFermionF> MdagMOpDw_f(Dw_f);
 

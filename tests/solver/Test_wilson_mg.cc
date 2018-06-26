@@ -80,8 +80,6 @@ int main(int argc, char **argv) {
 
   WilsonFermionR Dw(Umu, *FGrid, *FrbGrid, mass);
 
-  static_assert(std::is_same<LatticeFermion, typename WilsonFermionR::FermionField>::value, "");
-
   MdagMLinearOperator<WilsonFermionR, LatticeFermion> MdagMOpDw(Dw);
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;

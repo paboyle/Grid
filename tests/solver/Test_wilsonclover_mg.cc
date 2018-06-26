@@ -82,8 +82,6 @@ int main(int argc, char **argv) {
 
   WilsonCloverFermionR Dwc(Umu, *FGrid, *FrbGrid, mass, csw_r, csw_t);
 
-  static_assert(std::is_same<LatticeFermion, typename WilsonCloverFermionR::FermionField>::value, "");
-
   MdagMLinearOperator<WilsonCloverFermionR, LatticeFermion> MdagMOpDwc(Dwc);
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;
