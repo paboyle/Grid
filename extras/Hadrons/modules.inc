@@ -35,6 +35,7 @@ modules_cc =\
   Modules/MAction/ZMobiusDWF.cc \
   Modules/MAction/WilsonClover.cc \
   Modules/MAction/DWF.cc \
+  Modules/MAction/ScaledDWF.cc \
   Modules/MScalarSUN/TrPhi.cc \
   Modules/MScalarSUN/Grad.cc \
   Modules/MScalarSUN/TimeMomProbe.cc \
@@ -91,6 +92,7 @@ modules_hpp =\
   Modules/MAction/Wilson.hpp \
   Modules/MAction/WilsonClover.hpp \
   Modules/MAction/ZMobiusDWF.hpp \
+  Modules/MAction/ScaledDWF.hpp \
   Modules/MScalarSUN/StochFreeField.hpp \
   Modules/MScalarSUN/TwoPointNPR.hpp \
   Modules/MScalarSUN/ShiftProbe.hpp \

@@ -36,6 +36,7 @@
 #include <Grid/Hadrons/Modules/MAction/Wilson.hpp>
 #include <Grid/Hadrons/Modules/MAction/WilsonClover.hpp>
 #include <Grid/Hadrons/Modules/MAction/ZMobiusDWF.hpp>
+#include <Grid/Hadrons/Modules/MAction/ScaledDWF.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/StochFreeField.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TwoPointNPR.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/ShiftProbe.hpp>
