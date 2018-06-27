@@ -170,8 +170,10 @@ public:
     // Unified (managed) memory
     ////////////////////////////////////
     if ( ptr == (_Tp *) NULL ) {
-      if( cudaMallocManaged((void **)&ptr,bytes) != cudaSuccess ) {
+      auto err = cudaMallocManaged((void **)&ptr,bytes);
+      if( err != cudaSuccess ) {
 	ptr = (_Tp *) NULL;
+	std::cerr << " cudaMallocManaged failed for " << bytes<<" bytes " <<cudaGetErrorString(err)<< std::endl;
 	assert(0);
       }
     }
