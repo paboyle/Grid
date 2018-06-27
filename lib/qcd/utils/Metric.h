@@ -146,7 +146,7 @@ public:
       }
     }
 
-    Complex Hsum = sum(Hloc);
+    auto Hsum = TensorRemove(sum(Hloc));
     return Hsum.real();
   }
 
