@@ -513,23 +513,12 @@ void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOr
   
   DhopComputeTime-=usecond();
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
-
+  auto U_v = U.View();
   int Opt = WilsonKernelsStatic::Opt;
-  auto U_v   = U.View();
-  auto in_v  = in.View();
-  auto out_v = out.View();
   if (dag == DaggerYes) {
-    accelerator_loop( ss, U_v, {
-      int sU = ss;
-      int sF = LLs * sU;
-      Kernels::DhopSiteDag(Opt,st,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v);
-    });
+    Kernels::DhopDag(Opt,st,U,st.CommBuf(),LLs,U_v.end(),in,out);
   } else {
-    accelerator_loop( ss, U_v , {
-      int sU = ss;
-      int sF = LLs * sU;
-      Kernels::DhopSite(Opt,st,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v);
-    });
+    Kernels::Dhop(Opt,st,U,st.CommBuf(),LLs,U_v.end(),in,out);
   }
   DhopComputeTime+=usecond();
 }
