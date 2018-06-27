@@ -622,7 +622,7 @@ public:
     LatticeMatrixType lie(grid);
     LatticeMatrixType la(grid);
     ComplexD ci(0.0, scale);
-    ComplexD cone(1.0, 0.0);
+    //    ComplexD cone(1.0, 0.0);
     MatrixType ta;
 
     lie = Zero();
