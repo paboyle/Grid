@@ -120,7 +120,7 @@ public:
       auto Umu = PeekIndex<LorentzIndex>(U, mu);
       Hloc += trace(Umu * Umu);
     }
-    Complex Hsum = sum(Hloc);
+    auto Hsum = TensorRemove(sum(Hloc));
     return Hsum.real();
   }
 
