@@ -41,9 +41,6 @@ __host__ __device__ inline void synchronise(void)
   return;
 }
 
-#define GPU_DSLASH_COALESCE  
-#ifdef GPU_DSLASH_COALESCE
-
 __host__ __device__ inline int get_my_lanes(int Nsimd) 
 {
 #ifdef __CUDA_ARCH__
@@ -118,40 +115,42 @@ typename vobj::scalar_object extractLaneFloat2(int lane, const vobj & __restrict
   return extracted;
 }
 
-
-#define GPU_COALESCED_STENCIL_LEG_PROJ(Dir,spProj)		\
-  if (SE->_is_local) {						\
-    auto in_l = extractLaneGpu(lane,in[SE->_offset]);		\
-    spProj(chi,in_l);						\
-  } else {							\
-    chi  = extractLaneGpu(lane,buf[SE->_offset]);		\
+#define GPU_COALESCED_STENCIL_LEG_PROJ(Dir,spProj)			\
+  if (SE->_is_local) {							\
+    int mask = Nsimd >> (ptype + 1);					\
+    int plane= lane;							\
+    if (SE->_permute) plane = (lane ^ mask);				\
+    auto in_l = extractLaneGpu(plane,in[SE->_offset]);			\
+    spProj(chi,in_l);							\
+  } else {								\
+    chi  = extractLaneGpu(lane,buf[SE->_offset]);			\
   }								
+
 
 template <class Impl>
 accelerator void WilsonKernels<Impl>::GpuDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U,
-						     SiteHalfSpinor *buf, int sF,int LLs,
+						     SiteHalfSpinor *buf, int sF,
 						     int sU, const FermionFieldView &in, FermionFieldView &out)
 {
-  typename SiteHalfSpinor::scalar_object tmp;
   typename SiteHalfSpinor::scalar_object chi;
   typename SiteHalfSpinor::scalar_object Uchi;
   typename SiteSpinor::scalar_object   result;
-
   typedef typename SiteSpinor::scalar_type scalar_type;
   typedef typename SiteSpinor::vector_type vector_type;
+
   constexpr int Nsimd = sizeof(vector_type)/sizeof(scalar_type);
 
   uint64_t lane_offset= get_my_lane_offset(Nsimd);
-  uint64_t lanes      = get_my_lanes (Nsimd);
+  uint64_t lanes      = get_my_lanes(Nsimd);
 
   StencilEntry *SE;
   int ptype;
 
   for(int lane = lane_offset;lane<lane_offset+lanes;lane++){
-  for(int s=0;s<LLs;s++){
   for(int mu=0;mu<2*Nd;mu++) {
-
+ 
     SE = st.GetEntry(ptype, mu, sF);
+
     switch(mu){
     case Xp:
       GPU_COALESCED_STENCIL_LEG_PROJ(Xp,spProjXp); break;
@@ -171,14 +170,12 @@ accelerator void WilsonKernels<Impl>::GpuDhopSiteDag(StencilView &st, DoubledGau
     default:
       GPU_COALESCED_STENCIL_LEG_PROJ(Tm,spProjTm); break;
     }
-    synchronise();
 
-    auto U_l = extractLaneGpu(lane,U[sU](mu));
-    Uchi()=U_l*chi();
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,mu);
 
     switch(mu){
     case Xp:
-      spReconXp(result, Uchi);    break;
+      spReconXp(result, Uchi); break;
     case Yp:
       accumReconYp(result, Uchi); break;
     case Zp:
@@ -195,19 +192,16 @@ accelerator void WilsonKernels<Impl>::GpuDhopSiteDag(StencilView &st, DoubledGau
     default:
       accumReconTm(result, Uchi); break;
     }
-    synchronise();
   }
-  insertLane (lane,out[sF],result);
-  sF++;
-  }}
-};
+  insertLaneFloat2 (lane,out[sF],result);
+  }
+}
 
 template <class Impl>
 accelerator void WilsonKernels<Impl>::GpuDhopSite(StencilView &st, DoubledGaugeFieldView &U,
-						  SiteHalfSpinor *buf, int sF,int LLs,
+						  SiteHalfSpinor *buf, int sF,
 						  int sU, const FermionFieldView &in, FermionFieldView &out) 
 {
-  typename SiteHalfSpinor::scalar_object tmp;
   typename SiteHalfSpinor::scalar_object chi;
   typename SiteHalfSpinor::scalar_object Uchi;
   typename SiteSpinor::scalar_object   result;
@@ -219,14 +213,11 @@ accelerator void WilsonKernels<Impl>::GpuDhopSite(StencilView &st, DoubledGaugeF
   uint64_t lane_offset= get_my_lane_offset(Nsimd);
   uint64_t lanes      = get_my_lanes(Nsimd);
 
-  //  printf("Evaluating site %d  Nsimd %d : lanes %ld %ld - %ld\n",sF,Nsimd,lanes,lane_offset,lane_offset+lanes-1);
-
   StencilEntry *SE;
   int ptype;
-  
+
   for(int lane = lane_offset;lane<lane_offset+lanes;lane++){
-  for(int s=0;s<LLs;s++){
-#if 1
+#if 0
     int mu=0;
     SE = st.GetEntry(ptype, mu, sF);
     GPU_COALESCED_STENCIL_LEG_PROJ(Xp,spProjXm); 
@@ -294,11 +285,7 @@ accelerator void WilsonKernels<Impl>::GpuDhopSite(StencilView &st, DoubledGaugeF
       GPU_COALESCED_STENCIL_LEG_PROJ(Tm,spProjTp); break;
     }
 
-    auto U_l = extractLaneGpu(lane,U[sU](mu));
-
-    auto tmp =  U_l * chi();
-
-    Uchi() = tmp;
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,mu);
 
     switch(mu){
     case Xp:
@@ -322,8 +309,7 @@ accelerator void WilsonKernels<Impl>::GpuDhopSite(StencilView &st, DoubledGaugeF
   }
 #endif
   insertLaneFloat2 (lane,out[sF],result);
-  sF++;
-  }}
+  }
 };
 
 // Template specialise Gparity to empty for now
@@ -332,23 +318,25 @@ accelerator void WilsonKernels<Impl>::GpuDhopSite(StencilView &st, DoubledGaugeF
 accelerator void							\
 WilsonKernels<A>::GpuDhopSite(StencilView &st,				\
 			      DoubledGaugeFieldView &U,			\
-			      SiteHalfSpinor *buf, int sF, int LLs,	\
+			      SiteHalfSpinor *buf, int sF,		\
 			      int sU,					\
 			      const FermionFieldView &in,		\
-			      FermionFieldView &out) {};		\
+			      FermionFieldView &out) { assert(0);};	\
   template <>								\
   accelerator void							\
   WilsonKernels<A>::GpuDhopSiteDag(StencilView &st,			\
 				DoubledGaugeFieldView &U,		\
-				   SiteHalfSpinor *buf, int sF,int LLs,	\
+				   SiteHalfSpinor *buf, int sF,		\
 				int sU,					\
 				const FermionFieldView &in,		\
-				FermionFieldView &out) {};
+				   FermionFieldView &out) { assert(0);};
 
 GPU_EMPTY(GparityWilsonImplF);
 GPU_EMPTY(GparityWilsonImplFH);
 GPU_EMPTY(GparityWilsonImplD);
 GPU_EMPTY(GparityWilsonImplDF);
+
+/*
 GPU_EMPTY(DomainWallVec5dImplF);
 GPU_EMPTY(DomainWallVec5dImplFH);
 GPU_EMPTY(DomainWallVec5dImplD);
@@ -357,8 +345,11 @@ GPU_EMPTY(ZDomainWallVec5dImplF);
 GPU_EMPTY(ZDomainWallVec5dImplFH);
 GPU_EMPTY(ZDomainWallVec5dImplD);
 GPU_EMPTY(ZDomainWallVec5dImplDF);
+*/
 
 FermOpTemplateInstantiate(WilsonKernels);
+AdjointFermOpTemplateInstantiate(WilsonKernels);
+TwoIndexFermOpTemplateInstantiate(WilsonKernels);
 
 NAMESPACE_END(Grid);
 
