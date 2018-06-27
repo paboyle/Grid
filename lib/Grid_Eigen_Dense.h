@@ -5,7 +5,7 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#ifdef GRID_NVCC
+#ifdef __NVCC__
 #pragma push
 #pragma diag_suppress code_is_unreachable
 #undef __NVCC__
@@ -18,7 +18,7 @@
 
 #include <Grid/Eigen/Dense>
 
-#ifdef GRID_NVCC
+#ifdef __NVCC__
 #pragma pop
 #define __NVCC__
 #define __CUDACC__
