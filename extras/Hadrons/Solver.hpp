@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MFermion/GaugeProp.cc
+Source file: extras/Hadrons/EigenPack.hpp
 
 Copyright (C) 2015-2018
 
@@ -25,11 +25,38 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Grid/Hadrons/Modules/MFermion/GaugeProp.hpp>
+#ifndef Hadrons_Solver_hpp_
+#define Hadrons_Solver_hpp_
 
-using namespace Grid;
-using namespace Hadrons;
-using namespace MFermion;
+#include <Grid/Hadrons/Global.hpp>
 
-template class Grid::Hadrons::MFermion::TGaugeProp<FIMPL>;
-template class Grid::Hadrons::MFermion::TGaugeProp<ZFIMPL>;
+BEGIN_HADRONS_NAMESPACE
+
+template <typename FImpl>
+class Solver
+{
+public:
+    typedef typename FImpl::FermionField                      FermionField;
+    typedef FermionOperator<FImpl>                            FMat; 
+    typedef std::function<void(FermionField &, 
+                               const FermionField &)>         SolverFn;
+public:
+    Solver(SolverFn fn, FMat &mat): mat_(mat), fn_(fn) {}
+
+    void operator()(FermionField &sol, const FermionField &src)
+    {
+        fn_(sol, src);
+    }
+
+    FMat & getFMat(void)
+    {
+        return mat_;
+    }
+private:
+    FMat     &mat_;
+    SolverFn fn_;
+};
+
+END_HADRONS_NAMESPACE
+
+#endif // Hadrons_Solver_hpp_

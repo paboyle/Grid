@@ -16,16 +16,17 @@ nobase_libHadrons_a_HEADERS = \
 	$(modules_hpp)            \
 	AllToAllVectors.hpp       \
 	Application.hpp           \
+	EigenPack.hpp             \
 	Environment.hpp           \
 	Exceptions.hpp            \
 	Factory.hpp               \
 	GeneticScheduler.hpp      \
 	Global.hpp                \
 	Graph.hpp                 \
-	EigenPack.hpp          \
 	Module.hpp                \
 	Modules.hpp               \
 	ModuleFactory.hpp         \
+	Solver.hpp                \
 	VirtualMachine.hpp
 
 HadronsXmlRun_SOURCES = HadronsXmlRun.cc

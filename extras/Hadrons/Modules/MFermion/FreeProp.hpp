@@ -34,8 +34,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
 
-#include <Grid/Hadrons/Modules/MFermion/GaugeProp.hpp>
-
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
@@ -57,7 +55,7 @@ template <typename FImpl>
 class TFreeProp: public Module<FreePropPar>
 {
 public:
-    FGS_TYPE_ALIASES(FImpl,);
+    FG_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TFreeProp(const std::string name);
@@ -152,7 +150,7 @@ void TFreeProp<FImpl>::execute(void)
             else
             {
                 PropToFerm<FImpl>(tmp, fullSrc, s, c);
-                make_5D(tmp, source, Ls_);
+                mat.ImportPhysicalFermionSource(tmp, source);
             }
         }
         // source conversion for 5D sources
@@ -176,7 +174,7 @@ void TFreeProp<FImpl>::execute(void)
         if (Ls_ > 1)
         {
             PropagatorField &p4d = envGet(PropagatorField, getName());
-            make_4D(sol, tmp, Ls_);
+            mat.ExportPhysicalFermionSolution(sol, tmp);
             FermToProp<FImpl>(p4d, tmp, s, c);
         }
     }

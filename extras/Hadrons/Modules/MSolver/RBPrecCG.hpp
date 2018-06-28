@@ -32,6 +32,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
+#include <Grid/Hadrons/Solver.hpp>
 #include <Grid/Hadrons/EigenPack.hpp>
 
 BEGIN_HADRONS_NAMESPACE
@@ -55,7 +56,8 @@ template <typename FImpl, int nBasis>
 class TRBPrecCG: public Module<RBPrecCGPar>
 {
 public:
-    FGS_TYPE_ALIASES(FImpl,);
+    FG_TYPE_ALIASES(FImpl,);
+    SOLVER_TYPE_ALIASES(FImpl,);
     typedef FermionEigenPack<FImpl>                       EPack;
     typedef CoarseFermionEigenPack<FImpl, nBasis>         CoarseEPack;
     typedef std::shared_ptr<Guesser<FermionField>>        GuesserPt;
@@ -176,13 +178,11 @@ void TRBPrecCG<FImpl, nBasis>::setup(void)
             schurSolver(mat, source, sol, *guesser);
         };
     };
-
     auto solver = makeSolver(false);
-    envCreate(SolverFn, getName(), Ls, solver);
+    envCreate(Solver, getName(), Ls, solver, mat);
     auto solver_subtract = makeSolver(true);
-    envCreate(SolverFn, getName() + "_subtract", Ls, solver_subtract);
+    envCreate(Solver, getName() + "_subtract", Ls, solver_subtract, mat);
 }
-
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl, int nBasis>

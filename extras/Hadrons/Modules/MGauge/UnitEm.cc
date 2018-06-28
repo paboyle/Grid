@@ -4,11 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MGauge/StochEm.cc
 
-Copyright (C) 2015-2018
+Copyright (C) 2015
+Copyright (C) 2016
 
-Author: Antonin Portelli <antonin.portelli@me.com>
 Author: James Harrison <j.harrison@soton.ac.uk>
-Author: Vera Guelpers <vmg1n14@soton.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -27,7 +26,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Grid/Hadrons/Modules/MGauge/StochEm.hpp>
+#include <Grid/Hadrons/Modules/MGauge/UnitEm.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
@@ -37,19 +36,17 @@ using namespace MGauge;
 *                  TStochEm implementation                             *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-TStochEm::TStochEm(const std::string name)
-: Module<StochEmPar>(name)
+TUnitEm::TUnitEm(const std::string name)
+: Module<NoPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> TStochEm::getInput(void)
+std::vector<std::string> TUnitEm::getInput(void)
 {
-    std::vector<std::string> in;
-    
-    return in;
+    return std::vector<std::string>();
 }
 
-std::vector<std::string> TStochEm::getOutput(void)
+std::vector<std::string> TUnitEm::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -57,29 +54,16 @@ std::vector<std::string> TStochEm::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void TStochEm::setup(void)
+void TUnitEm::setup(void)
 {
-    weightDone_ = env().hasCreatedObject("_" + getName() + "_weight");
-    envCacheLat(EmComp, "_" + getName() + "_weight");
     envCreateLat(EmField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void TStochEm::execute(void)
+void TUnitEm::execute(void)
 {
-    LOG(Message) << "Generating stochastic EM potential..." << std::endl;
-
-    std::vector<Real> improvements = strToVec<Real>(par().improvement);
-    PhotonR photon(par().gauge, par().zmScheme, improvements, par().G0_qedInf);
+    PhotonR photon(0, 0); // Just chose arbitrary input values here
     auto    &a = envGet(EmField, getName());
-    auto    &w = envGet(EmComp, "_" + getName() + "_weight");
-    
-    if (!weightDone_)
-    {
-        LOG(Message) << "Caching stochastic EM potential weight (gauge: "
-                     << par().gauge << ", zero-mode scheme: "
-                     << par().zmScheme << ")..." << std::endl;
-        photon.StochasticWeight(w);
-    }
-    photon.StochasticField(a, *env().get4dRng(), w);
+    LOG(Message) << "Generating unit EM potential..." << std::endl;
+    photon.UnitField(a);
 }

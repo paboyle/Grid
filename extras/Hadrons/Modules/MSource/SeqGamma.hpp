@@ -71,7 +71,7 @@ template <typename FImpl>
 class TSeqGamma: public Module<SeqGammaPar>
 {
 public:
-    FGS_TYPE_ALIASES(FImpl,);
+    FG_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TSeqGamma(const std::string name);

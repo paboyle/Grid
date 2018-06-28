@@ -35,29 +35,9 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
+#include <Grid/Hadrons/Solver.hpp>
 
 BEGIN_HADRONS_NAMESPACE
-
-/******************************************************************************
- * 5D -> 4D and 4D -> 5D conversions.                                         *
- ******************************************************************************/
-template<class vobj> // Note that 5D object is modified.
-inline void make_4D(Lattice<vobj> &in_5d, Lattice<vobj> &out_4d, int Ls)
-{
-    axpby_ssp_pminus(in_5d, 0., in_5d, 1., in_5d, 0, 0);
-    axpby_ssp_pplus(in_5d, 1., in_5d, 1., in_5d, 0, Ls-1);
-    ExtractSlice(out_4d, in_5d, 0, 0);
-}
-
-template<class vobj>
-inline void make_5D(Lattice<vobj> &in_4d, Lattice<vobj> &out_5d, int Ls)
-{
-    out_5d = zero;
-    InsertSlice(in_4d, out_5d, 0, 0);
-    InsertSlice(in_4d, out_5d, Ls-1, 0);
-    axpby_ssp_pplus(out_5d, 0., out_5d, 1., out_5d, 0, 0);
-    axpby_ssp_pminus(out_5d, 0., out_5d, 1., out_5d, Ls-1, Ls-1);
-}
 
 /******************************************************************************
  *                                GaugeProp                                   *
@@ -76,7 +56,8 @@ template <typename FImpl>
 class TGaugeProp: public Module<GaugePropPar>
 {
 public:
-    FGS_TYPE_ALIASES(FImpl,);
+    FG_TYPE_ALIASES(FImpl,);
+    SOLVER_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TGaugeProp(const std::string name);
@@ -92,10 +73,12 @@ protected:
     virtual void execute(void);
 private:
     unsigned int Ls_;
-    SolverFn     *solver_{nullptr};
+    Solver       *solver_{nullptr};
 };
 
 MODULE_REGISTER_TMP(GaugeProp, TGaugeProp<FIMPL>, MFermion);
+MODULE_REGISTER_TMP(ZGaugeProp, TGaugeProp<ZFIMPL>, MFermion);
+
 /******************************************************************************
  *                      TGaugeProp implementation                             *
  ******************************************************************************/
@@ -147,7 +130,8 @@ void TGaugeProp<FImpl>::execute(void)
     std::string propName = (Ls_ == 1) ? getName() : (getName() + "_5d");
     auto        &prop    = envGet(PropagatorField, propName);
     auto        &fullSrc = envGet(PropagatorField, par().source);
-    auto        &solver  = envGet(SolverFn, par().solver);
+    auto        &solver  = envGet(Solver, par().solver);
+    auto        &mat     = solver.getFMat();
     
     envGetTmp(FermionField, source);
     envGetTmp(FermionField, sol);
@@ -155,11 +139,12 @@ void TGaugeProp<FImpl>::execute(void)
     LOG(Message) << "Inverting using solver '" << par().solver
                  << "' on source '" << par().source << "'" << std::endl;
     for (unsigned int s = 0; s < Ns; ++s)
-      for (unsigned int c = 0; c < FImpl::Dimension; ++c)
+    for (unsigned int c = 0; c < FImpl::Dimension; ++c)
     {
         LOG(Message) << "Inversion for spin= " << s << ", color= " << c
                      << std::endl;
         // source conversion for 4D sources
+        LOG(Message) << "Import source" << std::endl;
         if (!env().isObject5d(par().source))
         {
             if (Ls_ == 1)
@@ -169,7 +154,7 @@ void TGaugeProp<FImpl>::execute(void)
             else
             {
                 PropToFerm<FImpl>(tmp, fullSrc, s, c);
-                make_5D(tmp, source, Ls_);
+                mat.ImportPhysicalFermionSource(tmp, source);
             }
         }
         // source conversion for 5D sources
@@ -184,14 +169,16 @@ void TGaugeProp<FImpl>::execute(void)
                 PropToFerm<FImpl>(source, fullSrc, s, c);
             }
         }
+        LOG(Message) << "Solve" << std::endl;
         sol = zero;
         solver(sol, source);
+        LOG(Message) << "Export solution" << std::endl;
         FermToProp<FImpl>(prop, sol, s, c);
         // create 4D propagators from 5D one if necessary
         if (Ls_ > 1)
         {
             PropagatorField &p4d = envGet(PropagatorField, getName());
-            make_4D(sol, tmp, Ls_);
+            mat.ExportPhysicalFermionSolution(sol, tmp);
             FermToProp<FImpl>(p4d, tmp, s, c);
         }
     }

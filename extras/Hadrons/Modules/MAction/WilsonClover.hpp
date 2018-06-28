@@ -59,7 +59,7 @@ template <typename FImpl>
 class TWilsonClover: public Module<WilsonCloverPar>
 {
 public:
-    FGS_TYPE_ALIASES(FImpl,);
+    FG_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TWilsonClover(const std::string name);

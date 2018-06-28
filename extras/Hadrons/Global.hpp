@@ -93,17 +93,15 @@ typedef typename SImpl::Field ScalarField##suffix;\
 typedef typename SImpl::Field PropagatorField##suffix;
 
 #define SOLVER_TYPE_ALIASES(FImpl, suffix)\
-typedef std::function<void(FermionField##suffix &,\
-                      const FermionField##suffix &)> SolverFn##suffix;
+typedef Solver<FImpl> Solver##suffix;
 
 #define SINK_TYPE_ALIASES(suffix)\
 typedef std::function<SlicedPropagator##suffix\
                       (const PropagatorField##suffix &)> SinkFn##suffix;
 
-#define FGS_TYPE_ALIASES(FImpl, suffix)\
+#define FG_TYPE_ALIASES(FImpl, suffix)\
 FERM_TYPE_ALIASES(FImpl, suffix)\
-GAUGE_TYPE_ALIASES(FImpl, suffix)\
-SOLVER_TYPE_ALIASES(FImpl, suffix)
+GAUGE_TYPE_ALIASES(FImpl, suffix)
 
 // logger
 class HadronsLogger: public Logger
