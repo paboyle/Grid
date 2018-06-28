@@ -43,6 +43,10 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define DEFAULT_ASCII_PREC 16
 #endif
 
+/* the 'using Grid::operator<<;' statement prevents a very nasty compilation
+ * error with GCC 5 (clang & GCC 6 compile fine without it).
+ */
+
 #define BEGIN_HADRONS_NAMESPACE \
 namespace Grid {\
 using namespace QCD;\
@@ -57,10 +61,6 @@ using Grid::operator<<;\
 using Grid::operator>>;
 
 #define END_MODULE_NAMESPACE }
-
-/* the 'using Grid::operator<<;' statement prevents a very nasty compilation
- * error with GCC 5 (clang & GCC 6 compile fine without it).
- */
 
 #ifndef FIMPL
 #define FIMPL WilsonImplR
@@ -206,6 +206,10 @@ void        makeFileDir(const std::string filename, GridBase *g);
 #define _HADRONS_SCHUR_SOLVE_(conv) SchurRedBlack##conv##Solve
 #define HADRONS_SCHUR_SOLVE(conv) _HADRONS_SCHUR_SOLVE_(conv)
 #define HADRONS_DEFAULT_SCHUR_SOLVE HADRONS_SCHUR_SOLVE(HADRONS_DEFAULT_SCHUR)
+
+// stringify macro
+#define _HADRONS_STR(x) #x
+#define HADRONS_STR(x) _HADRONS_STR(x)
 
 END_HADRONS_NAMESPACE
 

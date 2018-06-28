@@ -29,13 +29,15 @@ modules_cc =\
   Modules/MUtilities/TestSeqConserved.cc \
   Modules/MLoop/NoiseLoop.cc \
   Modules/MScalar/FreeProp.cc \
+  Modules/MScalar/VPCounterTerms.cc \
   Modules/MScalar/ChargedProp.cc \
   Modules/MScalar/ScalarVP.cc \
-  Modules/MScalar/VPCounterTerms.cc \
   Modules/MAction/Wilson.cc \
+  Modules/MAction/MobiusDWF.cc \
   Modules/MAction/ZMobiusDWF.cc \
   Modules/MAction/WilsonClover.cc \
   Modules/MAction/DWF.cc \
+  Modules/MAction/ScaledDWF.cc \
   Modules/MScalarSUN/TrPhi.cc \
   Modules/MScalarSUN/Grad.cc \
   Modules/MScalarSUN/TimeMomProbe.cc \
@@ -76,23 +78,25 @@ modules_hpp =\
   Modules/MSolver/A2AVectors.hpp \
   Modules/MSolver/LocalCoherenceLanczos.hpp \
   Modules/MSolver/RBPrecCG.hpp \
+  Modules/MGauge/UnitEm.hpp \
+  Modules/MGauge/Unit.hpp \
   Modules/MGauge/Random.hpp \
   Modules/MGauge/FundtoHirep.hpp \
   Modules/MGauge/StochEm.hpp \
-  Modules/MGauge/Unit.hpp \
-  Modules/MGauge/UnitEm.hpp \
   Modules/MUtilities/TestSeqGamma.hpp \
   Modules/MUtilities/TestSeqConserved.hpp \
   Modules/MLoop/NoiseLoop.hpp \
-  Modules/MScalar/ChargedProp.hpp \
   Modules/MScalar/FreeProp.hpp \
-  Modules/MScalar/Scalar.hpp \
-  Modules/MScalar/ScalarVP.hpp \
   Modules/MScalar/VPCounterTerms.hpp \
+  Modules/MScalar/ScalarVP.hpp \
+  Modules/MScalar/Scalar.hpp \
+  Modules/MScalar/ChargedProp.hpp \
   Modules/MAction/DWF.hpp \
+  Modules/MAction/MobiusDWF.hpp \
   Modules/MAction/Wilson.hpp \
   Modules/MAction/WilsonClover.hpp \
   Modules/MAction/ZMobiusDWF.hpp \
+  Modules/MAction/ScaledDWF.hpp \
   Modules/MScalarSUN/StochFreeField.hpp \
   Modules/MScalarSUN/TwoPointNPR.hpp \
   Modules/MScalarSUN/ShiftProbe.hpp \
