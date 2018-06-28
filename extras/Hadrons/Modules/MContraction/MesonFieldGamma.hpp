@@ -1,5 +1,5 @@
-#ifndef Hadrons_MContraction_A2AMeson_hpp_
-#define Hadrons_MContraction_A2AMeson_hpp_
+#ifndef Hadrons_MContraction_MesonFieldGamma_hpp_
+#define Hadrons_MContraction_MesonFieldGamma_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -9,7 +9,7 @@
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         A2AMeson                                 *
+ *                         MesonFieldGamma                                 *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MContraction)
 
@@ -21,88 +21,98 @@ class MesonFieldPar : Serializable
                                     int, N,
                                     std::string, A2A1,
                                     std::string, A2A2,
-                                    std::string, action,
-                                    std::string, epack1,
-                                    std::string, epack2,
-                                    std::string, gamma,
+                                    std::string, gammas,
                                     std::string, output);
 };
 
 template <typename FImpl>
-class TMesonFieldGmu : public Module<MesonFieldPar>
+class TMesonFieldGamma : public Module<MesonFieldPar>
 {
   public:
     FERM_TYPE_ALIASES(FImpl, );
+    SOLVER_TYPE_ALIASES(FImpl, );
 
-    typedef A2AModesSchurDiagTwo<typename FImpl::FermionField, FMat> A2ABase;
+    typedef A2AModesSchurDiagTwo<typename FImpl::FermionField, FMat, Solver> A2ABase;
 
     class Result : Serializable
     {
       public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        Gamma::Algebra, gamma_mu,
+                                        Gamma::Algebra, gamma,
                                         std::vector<std::vector<std::vector<ComplexD>>>, MesonField);
     };
 
   public:
     // constructor
-    TMesonFieldGmu(const std::string name);
+    TMesonFieldGamma(const std::string name);
     // destructor
-    virtual ~TMesonFieldGmu(void){};
+    virtual ~TMesonFieldGamma(void){};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+    virtual void parseGammaString(std::vector<Gamma::Algebra> &gammaList);
     // setup
     virtual void setup(void);
     // execution
     virtual void execute(void);
 };
 
-MODULE_REGISTER(A2AMeson, ARG(TMesonFieldGmu<FIMPL>), MContraction);
+MODULE_REGISTER(MesonFieldGamma, ARG(TMesonFieldGamma<FIMPL>), MContraction);
 
 /******************************************************************************
-*                  TMesonFieldGmu implementation                             *
+*                  TMesonFieldGamma implementation                             *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TMesonFieldGmu<FImpl>::TMesonFieldGmu(const std::string name)
+TMesonFieldGamma<FImpl>::TMesonFieldGamma(const std::string name)
     : Module<MesonFieldPar>(name)
 {
 }
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
-std::vector<std::string> TMesonFieldGmu<FImpl>::getInput(void)
+std::vector<std::string> TMesonFieldGamma<FImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().A2A1, par().A2A2, par().action};
-    in.push_back(par().A2A1 + "_ret");
-    in.push_back(par().A2A2 + "_ret");
-    int Nl = par().Nl;
-    if (Nl > 0)
-    {
-        in.push_back(par().epack1);
-        in.push_back(par().epack2);
-    }
-
+    std::vector<std::string> in = {par().A2A1 + "_class", par().A2A2 + "_class"};
     return in;
 }
 
 template <typename FImpl>
-std::vector<std::string> TMesonFieldGmu<FImpl>::getOutput(void)
+std::vector<std::string> TMesonFieldGamma<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {};
 
     return out;
 }
 
+template <typename FImpl>
+void TMesonFieldGamma<FImpl>::parseGammaString(std::vector<Gamma::Algebra> &gammaList)
+{
+    gammaList.clear();
+    // Determine gamma matrices to insert at source/sink.
+    if (par().gammas.compare("all") == 0)
+    {
+        // Do all contractions.
+        for (unsigned int i = 1; i < Gamma::nGamma; i += 2)
+        {
+            gammaList.push_back(((Gamma::Algebra)i));
+        }
+    }
+    else
+    {
+        // Parse individual contractions from input string.
+        gammaList = strToVec<Gamma::Algebra>(par().gammas);
+    }
+}
+
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TMesonFieldGmu<FImpl>::setup(void)
+void TMesonFieldGamma<FImpl>::setup(void)
 {
     int nt = env().getDim(Tp);
     int N = par().N;
 
-    int Ls_ = env().getObjectLs(par().A2A1 + "_ret");
+    int Ls_ = env().getObjectLs(par().A2A1 + "_class");
 
     envTmpLat(FermionField, "w", Ls_);
     envTmpLat(FermionField, "v", Ls_);
@@ -112,27 +122,37 @@ void TMesonFieldGmu<FImpl>::setup(void)
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TMesonFieldGmu<FImpl>::execute(void)
+void TMesonFieldGamma<FImpl>::execute(void)
 {
-    LOG(Message) << "Computing A2A meson field for gamma_mu  = " << par().gamma << ", taking w from " << par().A2A1 << " and v from " << par().A2A2 << std::endl;
-
-    Result result;
-    std::istringstream sstr(par().gamma);
-    Gamma::Algebra g_mu;
-    sstr >> g_mu;
-    Gamma gamma_mu(g_mu);
+    LOG(Message) << "Computing A2A meson field for gamma = " << par().gammas << ", taking w from " << par().A2A1 << " and v from " << par().A2A2 << std::endl;
 
     int N = par().N;
-    LOG(Message) << "N for A2A cont: " << N << std::endl;
-    result.gamma_mu = g_mu;
-    result.MesonField.resize(N);
-
     int nt = env().getDim(Tp);
+
+    std::vector<Result> result;
+    std::vector<Gamma::Algebra> gammaResultList;
+    std::vector<Gamma> gammaList;
+
+    parseGammaString(gammaResultList);
+    result.resize(gammaResultList.size());
+
+    Gamma g5(Gamma::Algebra::Gamma5);
+    gammaList.resize(gammaResultList.size(), g5);
+
+    for (unsigned int i = 0; i < result.size(); ++i)
+    {
+        result[i].gamma = gammaResultList[i];
+        result[i].MesonField.resize(N, std::vector<std::vector<ComplexD>>(N, std::vector<ComplexD>(nt)));
+
+        Gamma gamma(gammaResultList[i]);
+        gammaList[i] = gamma;
+    }
+
     std::vector<ComplexD> MesonField_ij;
     MesonField_ij.resize(nt);
 
-    auto &a2a1 = envGet(A2ABase, par().A2A1 + "_ret");
-    auto &a2a2 = envGet(A2ABase, par().A2A2 + "_ret");
+    auto &a2a1 = envGet(A2ABase, par().A2A1 + "_class");
+    auto &a2a2 = envGet(A2ABase, par().A2A2 + "_class");
 
     envGetTmp(FermionField, w);
     envGetTmp(FermionField, v);
@@ -145,9 +165,12 @@ void TMesonFieldGmu<FImpl>::execute(void)
         for (unsigned int j = 0; j < N; j++)
         {
             a2a2.return_v(j, tmpv_5d, v);
-            v = gamma_mu*v;
-            sliceInnerProductVector(MesonField_ij, w, v, Tp);
-            result.MesonField[j][i] = MesonField_ij;
+            for (unsigned int k = 0; k < result.size(); k++)
+            {
+                v = gammaList[k]*v;
+                sliceInnerProductVector(MesonField_ij, w, v, Tp);
+                result[k].MesonField[i][j] = MesonField_ij;
+            }
         }
         if (i % 10 == 0)
         {
@@ -162,4 +185,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MContraction_A2AMeson_hpp_
+#endif // Hadrons_MContraction_MesonFieldGm_hpp_
