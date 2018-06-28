@@ -186,6 +186,8 @@ namespace Grid {
         RealD ns = norm2(in);
         RealD nr = norm2(resid);
         std::cout<<GridLogMessage << "SchurRedBlackStaggered solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
+      } else {
+        std::cout << GridLogMessage << "Guess subtracted after solve." << std::endl;
       }
     }     
   };
@@ -284,6 +286,8 @@ namespace Grid {
         RealD nr = norm2(resid);
 
         std::cout<<GridLogMessage << "SchurRedBlackDiagMooee solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
+      } else {
+        std::cout << GridLogMessage << "Guess subtracted after solve." << std::endl;
       }
     }     
   };
@@ -386,6 +390,8 @@ namespace Grid {
         RealD nr = norm2(resid);
 
         std::cout<<GridLogMessage << "SchurRedBlackDiagTwo solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
+      } else {
+        std::cout << GridLogMessage << "Guess subtracted after solve." << std::endl;
       }
     }     
   };
@@ -487,6 +493,8 @@ namespace Grid {
         RealD nr = norm2(resid);
 
         std::cout << GridLogMessage << "SchurRedBlackDiagTwo solver true unprec resid " << std::sqrt(nr / ns) << " nr " << nr << " ns " << ns << std::endl;
+      } else {
+        std::cout << GridLogMessage << "Guess subtracted after solve." << std::endl;
       }
     }     
   };
