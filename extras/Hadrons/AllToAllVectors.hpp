@@ -3,6 +3,7 @@
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Environment.hpp>
+#include <Grid/Hadrons/Solver.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -10,14 +11,14 @@ BEGIN_HADRONS_NAMESPACE
 // A2A Modes
 ////////////////////////////////
 
-template <class Field, class Matrix>
+template <class Field, class Matrix, class Solver>
 class A2AModesSchurDiagTwo
 {
   private:
     const std::vector<Field> *evec;
     const std::vector<RealD> *eval;
     Matrix &action;
-    std::function<void(Field &, const Field &)> &Solver;
+    Solver &solver;
     const int Nl, Nh;
     const bool return_5d;
     std::vector<Field> w_high_5d, v_high_5d, w_high_4d, v_high_4d;
@@ -25,12 +26,12 @@ class A2AModesSchurDiagTwo
   public:
     A2AModesSchurDiagTwo(const std::vector<Field> *_evec, const std::vector<RealD> *_eval,
                          Matrix &_action,
-                         std::function<void(Field &, const Field &)> &_Solver,
+                         Solver &_solver,
                          const int _Nl, const int _Nh,
                          const bool _return_5d)
                         : evec(_evec), eval(_eval),
                         action(_action),
-                        Solver(_Solver),
+                        solver(_solver),
                         Nl(_Nl), Nh(_Nh),
                         return_5d(_return_5d)
     {
@@ -56,7 +57,7 @@ class A2AModesSchurDiagTwo
         LOG(Message) << "A2A high modes for i = " << i << std::endl;
         i5d = 0;
         if (return_5d) i5d = i;
-        this->high_mode_v(action, Solver, source_5d, v_high_5d[i5d], v_high_4d[i]);
+        this->high_mode_v(action, solver, source_5d, v_high_5d[i5d], v_high_4d[i]);
         this->high_mode_w(source_5d, source_4d, w_high_5d[i5d], w_high_4d[i]);
     }
 
@@ -185,13 +186,13 @@ class A2AModesSchurDiagTwo
         action.ExportPhysicalFermionSolution(wout_5d, wout_4d);
     }
 
-    void high_mode_v(Matrix &action, std::function<void(Field &, const Field &)> &Solver, const Field &source, Field &vout_5d, Field &vout_4d)
+    void high_mode_v(Matrix &action, Solver &solver, const Field &source, Field &vout_5d, Field &vout_4d)
     {
         GridBase *fgrid = action.Grid();
         Field tmp(fgrid);
 
         action.Dminus(source, tmp);
-        Solver(vout_5d, source); // Note: Solver is Solver(out, in)
+        solver(vout_5d, source); // Note: solver is solver(out, in)
         action.ExportPhysicalFermionSolution(vout_5d, vout_4d);
     }
 
@@ -202,63 +203,29 @@ class A2AModesSchurDiagTwo
     }
 };
 
-////////////////////////////////
-// Low Modes
-////////////////////////////////
+// TODO: A2A for coarse eigenvectors
 
-template <class Field, class Matrix>
-class A2ALMSchurDiagTwo : public A2AModesSchurDiagTwo<Field, Matrix>
-{
-  private:
-    const std::vector<Field> &evec;
-    const std::vector<RealD> &eval;
-    Matrix &action;
+// template <class FineField, class CoarseField, class Matrix, class Solver>
+// class A2ALMSchurDiagTwoCoarse : public A2AModesSchurDiagTwo<FineField, Matrix, Solver>
+// {
+//   private:
+//     const std::vector<FineField> &subspace;
+//     const std::vector<CoarseField> &evec_coarse;
+//     const std::vector<RealD> &eval_coarse;
+//     Matrix &action;
 
-  public:
-    A2ALMSchurDiagTwo(const std::vector<Field> &_evec, const std::vector<RealD> &_eval, Matrix &_action) : evec(_evec), eval(_eval), action(_action){};
-    void operator()(int i, Field &vout, Field &wout)
-    {
-        this->low_mode_v(action, evec[i], eval[i], vout);
-        this->low_mode_w(action, evec[i], eval[i], wout);
-    }
-};
+//   public:
+//     A2ALMSchurDiagTwoCoarse(const std::vector<FineField> &_subspace, const std::vector<CoarseField> &_evec_coarse, const std::vector<RealD> &_eval_coarse, Matrix &_action)
+//         : subspace(_subspace), evec_coarse(_evec_coarse), eval_coarse(_eval_coarse), action(_action){};
 
-template <class FineField, class CoarseField, class Matrix>
-class A2ALMSchurDiagTwoCoarse : public A2AModesSchurDiagTwo<FineField, Matrix>
-{
-  private:
-    const std::vector<FineField> &subspace;
-    const std::vector<CoarseField> &evec_coarse;
-    const std::vector<RealD> &eval_coarse;
-    Matrix &action;
-
-  public:
-    A2ALMSchurDiagTwoCoarse(const std::vector<FineField> &_subspace, const std::vector<CoarseField> &_evec_coarse, const std::vector<RealD> &_eval_coarse, Matrix &_action)
-        : subspace(_subspace), evec_coarse(_evec_coarse), eval_coarse(_eval_coarse), action(_action){};
-
-    void operator()(int i, FineField &vout, FineField &wout)
-    {
-        FineField prom_evec(subspace[0]._grid);
-        blockPromote(evec_coarse[i], prom_evec, subspace);
-        this->low_mode_v(action, prom_evec, eval_coarse[i], vout);
-        this->low_mode_w(action, prom_evec, eval_coarse[i], wout);
-    }
-};
-
-////////////////////////////////
-// High Modes
-////////////////////////////////
-
-template <class Field, class Matrix>
-class A2AHMSchurDiagTwo : virtual public A2AModesSchurDiagTwo<Field, Matrix>
-{
-  public:
-    void operator()(Matrix &action, std::function<void(Field &, const Field &)> &Solver, const Field &source, Field &vout, Field &wout)
-    {
-        this->high_mode_v(action, Solver, source, vout);
-        this->high_mode_w(action, source, wout);
-    }
-};
+//     void operator()(int i, FineField &vout, FineField &wout)
+//     {
+//         FineField prom_evec(subspace[0]._grid);
+//         blockPromote(evec_coarse[i], prom_evec, subspace);
+//         this->low_mode_v(action, prom_evec, eval_coarse[i], vout);
+//         this->low_mode_w(action, prom_evec, eval_coarse[i], wout);
+//     }
+// };
 
 END_HADRONS_NAMESPACE
 
