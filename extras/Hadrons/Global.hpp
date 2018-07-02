@@ -72,7 +72,7 @@ using Grid::operator>>;
 #define SIMPL ScalarImplCR
 #endif
 #ifndef GIMPL
-#define GIMPL GimplTypesR
+#define GIMPL PeriodicGimplR
 #endif
 
 BEGIN_HADRONS_NAMESPACE

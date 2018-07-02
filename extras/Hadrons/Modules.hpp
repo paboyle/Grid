@@ -19,6 +19,7 @@
 #include <Grid/Hadrons/Modules/MSolver/LocalCoherenceLanczos.hpp>
 #include <Grid/Hadrons/Modules/MSolver/RBPrecCG.hpp>
 #include <Grid/Hadrons/Modules/MGauge/UnitEm.hpp>
+#include <Grid/Hadrons/Modules/MGauge/StoutSmearing.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Unit.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Random.hpp>
 #include <Grid/Hadrons/Modules/MGauge/FundtoHirep.hpp>
