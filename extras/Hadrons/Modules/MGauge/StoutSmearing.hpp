@@ -81,6 +81,7 @@ template <typename GImpl>
 void TStoutSmearing<GImpl>::execute(void)
 {
     LOG(Message) << "Smearing '" << par().gauge << "' with " << par().steps
+                 << " step" << ((par().steps > 1) ? "s" : "") 
                  << " of stout smearing and rho= " << par().rho << std::endl;
 
     Smear_Stout<GImpl> smearer(par().rho);
