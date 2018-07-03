@@ -20,6 +20,7 @@ modules_cc =\
   Modules/MSolver/A2AVectors.cc \
   Modules/MSolver/RBPrecCG.cc \
   Modules/MSolver/LocalCoherenceLanczos.cc \
+  Modules/MGauge/StoutSmearing.cc \
   Modules/MGauge/Unit.cc \
   Modules/MGauge/UnitEm.cc \
   Modules/MGauge/StochEm.cc \
@@ -79,6 +80,7 @@ modules_hpp =\
   Modules/MSolver/LocalCoherenceLanczos.hpp \
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MGauge/UnitEm.hpp \
+  Modules/MGauge/StoutSmearing.hpp \
   Modules/MGauge/Unit.hpp \
   Modules/MGauge/Random.hpp \
   Modules/MGauge/FundtoHirep.hpp \
