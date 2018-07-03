@@ -5,3 +5,4 @@ using namespace Hadrons;
 using namespace MContraction;
 
 template class Grid::Hadrons::MContraction::TMesonFieldGamma<FIMPL>;
+template class Grid::Hadrons::MContraction::TMesonFieldGamma<ZFIMPL>;

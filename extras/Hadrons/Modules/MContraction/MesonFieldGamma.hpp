@@ -58,6 +58,7 @@ class TMesonFieldGamma : public Module<MesonFieldPar>
 };
 
 MODULE_REGISTER(MesonFieldGamma, ARG(TMesonFieldGamma<FIMPL>), MContraction);
+MODULE_REGISTER(ZMesonFieldGamma, ARG(TMesonFieldGamma<ZFIMPL>), MContraction);
 
 /******************************************************************************
 *                  TMesonFieldGamma implementation                             *
