@@ -202,8 +202,8 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NN<<std::endl;
     err = ref-result; 
     std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-    //    exit(0);
-    /*
+    //exit(0);
+
     if(( norm2(err)>1.0e-4) ) { 
       std::cout << "RESULT\n " << result<<std::endl;
       std::cout << "REF   \n " << ref   <<std::endl;
@@ -211,7 +211,6 @@ int main (int argc, char ** argv)
       FGrid->Barrier();
       exit(-1);
     }
-    */
     assert (norm2(err)< 1.0e-4 );
     Dw.Report();
   }
