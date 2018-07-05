@@ -62,10 +62,11 @@ public:
     auto st_v  = st.View();
     if ( (Opt == WilsonKernelsStatic::OptGpu) && interior && exterior ) { 
       const uint64_t nsimd = Simd::Nsimd();
-      const uint64_t    NN = Nsite*Ls*Simd::Nsimd();
+      const uint64_t    NN = Nsite*Ls*nsimd;
       accelerator_loopN( sss, NN, {
 	  uint64_t cur  = sss;
-	  /*	  uint64_t lane = cur % nsimd;  */ cur = cur / nsimd;
+	  //	  uint64_t lane = cur % nsimd;
+	  cur = cur / nsimd;
 	  uint64_t   sF = cur;         cur = cur / Ls;
 	  uint64_t   sU = cur;
 	  WilsonKernels<Impl>::GpuDhopSite(st_v,U_v,buf,sF,sU,in_v,out_v);
@@ -89,10 +90,11 @@ public:
 
     if ( (Opt == WilsonKernelsStatic::OptGpu) && interior && exterior ) { 
       const uint64_t nsimd = Simd::Nsimd();
-      const uint64_t    NN = Nsite*Ls*Simd::Nsimd();
+      const uint64_t    NN = Nsite*Ls*nsimd;
       accelerator_loopN( sss, NN, {
 	  uint64_t cur  = sss;
-	  /* uint64_t lane = cur % nsimd; */ cur = cur / nsimd;
+	  // uint64_t lane = cur % nsimd;
+	  cur = cur / nsimd;
 	  uint64_t   sF = cur;         cur = cur / Ls;
 	  uint64_t   sU = cur;
 	  WilsonKernels<Impl>::GpuDhopSiteDag(st_v,U_v,buf,sF,sU,in_v,out_v);
