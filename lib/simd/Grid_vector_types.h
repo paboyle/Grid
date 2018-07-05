@@ -504,6 +504,7 @@ public:
 ///////////////////////////////
 // Define available types
 ///////////////////////////////
+
 typedef Grid_simd<float  , SIMD_Ftype> vRealF;
 typedef Grid_simd<double , SIMD_Dtype> vRealD;
 typedef Grid_simd<Integer, SIMD_Itype> vInteger;
@@ -519,6 +520,19 @@ typedef Grid_simd<complex<float>   , SIMD_Ftype> vComplexF;
 typedef Grid_simd<complex<double>  , SIMD_Dtype> vComplexD;
 #endif
 
+/////////////////////////////////////////
+// Pointer type to use on extractLane
+/////////////////////////////////////////
+template<class _scalar> class ExtractTypeMap                      { public: typedef _scalar extract_type;};
+#ifdef GPU_VEC
+template<>              class ExtractTypeMap< complex<uint16_t> > { public: typedef   half2 extract_type;};
+template<>              class ExtractTypeMap< complex<   float> > { public: typedef  float2 extract_type;};
+template<>              class ExtractTypeMap< complex<  double> > { public: typedef double2 extract_type;};
+#endif
+
+/////////////////////////////////////////
+// Permute
+/////////////////////////////////////////
 
 accelerator_inline void permute(ComplexD &y,ComplexD b, int perm) {  y=b; }
 accelerator_inline void permute(ComplexF &y,ComplexF b, int perm) {  y=b; }
