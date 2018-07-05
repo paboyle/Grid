@@ -221,7 +221,7 @@ public:
 					     const typename SiteHalfSpinor::scalar_object &chi,
 					     int mu) 
   {
-    auto U_l   = extractLaneGpu(lane,U(mu));
+    auto U_l   = extractLane(lane,U(mu));
     phi() =  U_l * chi();
   }
     
