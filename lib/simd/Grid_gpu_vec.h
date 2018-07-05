@@ -36,6 +36,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid {
 
+#define COALESCE_GRANULARITY (32) // bytes for coalesce granularity of target: Pascal, Volta
 
 template<class pair>
 class GpuComplex {
@@ -117,8 +118,6 @@ inline accelerator GpuVector<N,datum> operator/(const GpuVector<N,datum> l,const
   }
   return ret;
 }
-
-#define COALESCE_GRANULARITY (64) // 512 bit coalesce size target 
 
 constexpr int NSIMD_RealH    = COALESCE_GRANULARITY / sizeof(half);
 constexpr int NSIMD_ComplexH = COALESCE_GRANULARITY / sizeof(half2);
