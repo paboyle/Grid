@@ -516,9 +516,9 @@ void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOr
   auto U_v = U.View();
   int Opt = WilsonKernelsStatic::Opt;
   if (dag == DaggerYes) {
-    Kernels::DhopDag(Opt,st,U,st.CommBuf(),LLs,U_v.end(),in,out);
+    Kernels::DhopDag(Opt,st,U,st.CommBuf(),LLs,U_v.size(),in,out);
   } else {
-    Kernels::Dhop(Opt,st,U,st.CommBuf(),LLs,U_v.end(),in,out);
+    Kernels::Dhop(Opt,st,U,st.CommBuf(),LLs,U_v.size(),in,out);
   }
   DhopComputeTime+=usecond();
 }
