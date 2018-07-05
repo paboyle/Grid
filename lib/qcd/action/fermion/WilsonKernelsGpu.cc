@@ -31,17 +31,16 @@ directory
 NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////////////////////
-// Gpu implementation; thread loop is implicit
+// Gpu implementation; thread loop is implicit ; move to header
 //////////////////////////////////////////////////////////////
-__host__ __device__ inline void synchronise(void) 
+accelerator_inline void synchronise(void) 
 {
 #ifdef __CUDA_ARCH__
   __syncthreads();
 #endif
   return;
 }
-
-__host__ __device__ inline int get_my_lanes(int Nsimd) 
+accelerator_inline int get_my_lanes(int Nsimd) 
 {
 #ifdef __CUDA_ARCH__
   return 1;
@@ -49,7 +48,7 @@ __host__ __device__ inline int get_my_lanes(int Nsimd)
   return Nsimd;
 #endif
 }
-__host__ __device__ inline int get_my_lane_offset(int Nsimd) 
+accelerator_inline int get_my_lane_offset(int Nsimd) 
 {
 #ifdef __CUDA_ARCH__
   return ( (threadIdx.x) % Nsimd);
@@ -58,74 +57,18 @@ __host__ __device__ inline int get_my_lane_offset(int Nsimd)
 #endif
 }
 
-////////////////////////////////////////////////////////////////////////
-// Extract/Insert a single lane; do this locally in this file.
-// Don't need a global version really.
-////////////////////////////////////////////////////////////////////////
-template<class vobj> accelerator_inline
-typename vobj::scalar_object extractLaneGpu(int lane, const vobj & __restrict__ vec)
-{
-  typedef typename vobj::scalar_object scalar_object;
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-
-  constexpr int words=sizeof(vobj)/sizeof(vector_type);
-  constexpr int Nsimd=vector_type::Nsimd();
-
-  scalar_object extracted;
-  scalar_type * __restrict__  sp = (scalar_type *)&extracted; // Type pun
-  scalar_type * __restrict__  vp = (scalar_type *)&vec;
-  for(int w=0;w<words;w++){
-    sp[w]=vp[w*Nsimd+lane];
-  }
-  return extracted;
-}
-
-template<class vobj> accelerator_inline
-void insertLaneFloat2(int lane, vobj & __restrict__ vec,const typename vobj::scalar_object & __restrict__ extracted)
-{
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-
-  constexpr int words=sizeof(vobj)/sizeof(vector_type);
-  constexpr int Nsimd=vector_type::Nsimd();
-
-  float2 * __restrict__ sp = (float2 *)&extracted;
-  float2 * __restrict__ vp = (float2 *)&vec;
-  for(int w=0;w<words;w++){
-    vp[w*Nsimd+lane]=sp[w];
-  }
-}
-template<class vobj> accelerator_inline
-typename vobj::scalar_object extractLaneFloat2(int lane, const vobj & __restrict__ vec)
-{
-  typedef typename vobj::scalar_object scalar_object;
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-
-  constexpr int words=sizeof(vobj)/sizeof(vector_type);
-  constexpr int Nsimd=vector_type::Nsimd();
-
-  scalar_object extracted;
-  float2 * __restrict__  sp = (float2 *)&extracted; // Type pun
-  float2 * __restrict__  vp = (float2 *)&vec;
-  for(int w=0;w<words;w++){
-    sp[w]=vp[w*Nsimd+lane];
-  }
-  return extracted;
-}
 
 #define GPU_COALESCED_STENCIL_LEG_PROJ(Dir,spProj)			\
+  synchronise();							\
   if (SE->_is_local) {							\
     int mask = Nsimd >> (ptype + 1);					\
-    int plane= lane;							\
-    if (SE->_permute) plane = (lane ^ mask);				\
-    auto in_l = extractLaneGpu(plane,in[SE->_offset]);			\
+    int plane= SE->_permute ? (lane ^ mask) : lane;			\
+    auto in_l = extractLane(plane,in[SE->_offset]);			\
     spProj(chi,in_l);							\
   } else {								\
-    chi  = extractLaneGpu(lane,buf[SE->_offset]);			\
-  }								
-
+    chi  = extractLane(lane,buf[SE->_offset]);				\
+  }									\
+  synchronise();
 
 template <class Impl>
 accelerator void WilsonKernels<Impl>::GpuDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U,
@@ -146,54 +89,54 @@ accelerator void WilsonKernels<Impl>::GpuDhopSiteDag(StencilView &st, DoubledGau
   StencilEntry *SE;
   int ptype;
 
+#ifndef __CUDA_ARCH__
   for(int lane = lane_offset;lane<lane_offset+lanes;lane++){
-  for(int mu=0;mu<2*Nd;mu++) {
- 
-    SE = st.GetEntry(ptype, mu, sF);
+#else
+  int lane = lane_offset; {
+#endif
+    SE = st.GetEntry(ptype, Xp, sF);
+    GPU_COALESCED_STENCIL_LEG_PROJ(Xp,spProjXp); 
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,Xp);
+    spReconXp(result, Uchi);
 
-    switch(mu){
-    case Xp:
-      GPU_COALESCED_STENCIL_LEG_PROJ(Xp,spProjXp); break;
-    case Yp:
-      GPU_COALESCED_STENCIL_LEG_PROJ(Yp,spProjYp); break;
-    case Zp:
-      GPU_COALESCED_STENCIL_LEG_PROJ(Zp,spProjZp); break;
-    case Tp:
-      GPU_COALESCED_STENCIL_LEG_PROJ(Tp,spProjTp); break;
-    case Xm:
-      GPU_COALESCED_STENCIL_LEG_PROJ(Xm,spProjXm); break;
-    case Ym:
-      GPU_COALESCED_STENCIL_LEG_PROJ(Ym,spProjYm); break;
-    case Zm:
-      GPU_COALESCED_STENCIL_LEG_PROJ(Zm,spProjZm); break;
-    case Tm:
-    default:
-      GPU_COALESCED_STENCIL_LEG_PROJ(Tm,spProjTm); break;
-    }
+    SE = st.GetEntry(ptype, Yp, sF);
+    GPU_COALESCED_STENCIL_LEG_PROJ(Yp,spProjYp);
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,Yp);
+    accumReconYp(result, Uchi);
+      
+    SE = st.GetEntry(ptype, Zp, sF);
+    GPU_COALESCED_STENCIL_LEG_PROJ(Zp,spProjZp);
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,Zp);
+    accumReconZp(result, Uchi);
 
-    Impl::multLinkGpu(lane,Uchi,U[sU],chi,mu);
+    SE = st.GetEntry(ptype, Tp, sF);
+    GPU_COALESCED_STENCIL_LEG_PROJ(Tp,spProjTp);
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,Tp);
+    accumReconTp(result, Uchi);
 
-    switch(mu){
-    case Xp:
-      spReconXp(result, Uchi); break;
-    case Yp:
-      accumReconYp(result, Uchi); break;
-    case Zp:
-      accumReconZp(result, Uchi); break;
-    case Tp:
-      accumReconTp(result, Uchi); break;
-    case Xm:
-      accumReconXm(result, Uchi); break;
-    case Ym:
-      accumReconYm(result, Uchi); break;
-    case Zm:
-      accumReconZm(result, Uchi); break;
-    case Tm:
-    default:
-      accumReconTm(result, Uchi); break;
-    }
-  }
-  insertLaneFloat2 (lane,out[sF],result);
+    SE = st.GetEntry(ptype, Xm, sF);
+    GPU_COALESCED_STENCIL_LEG_PROJ(Xm,spProjXm);
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,Xm);
+    accumReconXm(result, Uchi);
+
+    SE = st.GetEntry(ptype, Ym, sF);
+    GPU_COALESCED_STENCIL_LEG_PROJ(Ym,spProjYm);
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,Ym);
+    accumReconYm(result, Uchi);
+
+
+    SE = st.GetEntry(ptype, Zm, sF);
+    GPU_COALESCED_STENCIL_LEG_PROJ(Zm,spProjZm);
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,Zm);
+    accumReconZm(result, Uchi);
+
+    SE = st.GetEntry(ptype, Tm, sF);
+    GPU_COALESCED_STENCIL_LEG_PROJ(Tm,spProjTm); 
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,Tm);
+    accumReconTm(result, Uchi);
+
+    synchronise();
+    insertLane (lane,out[sF],result);
   }
 }
 
@@ -216,100 +159,55 @@ accelerator void WilsonKernels<Impl>::GpuDhopSite(StencilView &st, DoubledGaugeF
   StencilEntry *SE;
   int ptype;
 
+#ifndef __CUDA_ARCH__
   for(int lane = lane_offset;lane<lane_offset+lanes;lane++){
-#if 0
-    int mu=0;
-    SE = st.GetEntry(ptype, mu, sF);
+#else
+  int lane = lane_offset; {
+#endif
+    SE = st.GetEntry(ptype, Xp, sF);
     GPU_COALESCED_STENCIL_LEG_PROJ(Xp,spProjXm); 
-    { auto U_l = extractLaneFloat2(lane,U[sU](mu)); Uchi() =  U_l * chi();}
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,Xp);
     spReconXm(result, Uchi);
 
-    mu++; SE = st.GetEntry(ptype, mu, sF);
+    SE = st.GetEntry(ptype, Yp, sF);
     GPU_COALESCED_STENCIL_LEG_PROJ(Yp,spProjYm);
-    { auto U_l = extractLaneFloat2(lane,U[sU](mu)); Uchi() =  U_l * chi();}
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,Yp);
     accumReconYm(result, Uchi);
       
-    mu++; SE = st.GetEntry(ptype, mu, sF);
+    SE = st.GetEntry(ptype, Zp, sF);
     GPU_COALESCED_STENCIL_LEG_PROJ(Zp,spProjZm);
-    { auto U_l = extractLaneFloat2(lane,U[sU](mu)); Uchi() =  U_l * chi();}
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,Zp);
     accumReconZm(result, Uchi);
 
-    mu++; SE = st.GetEntry(ptype, mu, sF);
+    SE = st.GetEntry(ptype, Tp, sF);
     GPU_COALESCED_STENCIL_LEG_PROJ(Tp,spProjTm);
-    { auto U_l = extractLaneFloat2(lane,U[sU](mu)); Uchi() =  U_l * chi();}
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,Tp);
     accumReconTm(result, Uchi);
 
-    mu++; SE = st.GetEntry(ptype, mu, sF);
+    SE = st.GetEntry(ptype, Xm, sF);
     GPU_COALESCED_STENCIL_LEG_PROJ(Xm,spProjXp);
-    { auto U_l = extractLaneFloat2(lane,U[sU](mu)); Uchi() =  U_l * chi();}
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,Xm);
     accumReconXp(result, Uchi);
 
-    mu++; SE = st.GetEntry(ptype, mu, sF);
+    SE = st.GetEntry(ptype, Ym, sF);
     GPU_COALESCED_STENCIL_LEG_PROJ(Ym,spProjYp);
-    { auto U_l = extractLaneFloat2(lane,U[sU](mu)); Uchi() =  U_l * chi();}
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,Ym);
     accumReconYp(result, Uchi);
 
-
-    mu++; SE = st.GetEntry(ptype, mu, sF);
+    SE = st.GetEntry(ptype, Zm, sF);
     GPU_COALESCED_STENCIL_LEG_PROJ(Zm,spProjZp);
-    { auto U_l = extractLaneFloat2(lane,U[sU](mu)); Uchi() =  U_l * chi();}
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,Zm);
     accumReconZp(result, Uchi);
 
-    mu++; SE = st.GetEntry(ptype, mu, sF);
+    SE = st.GetEntry(ptype, Tm, sF);
     GPU_COALESCED_STENCIL_LEG_PROJ(Tm,spProjTp); 
-    { auto U_l = extractLaneFloat2(lane,U[sU](mu)); Uchi() =  U_l * chi();}
+    Impl::multLinkGpu(lane,Uchi,U[sU],chi,Tm);
     accumReconTp(result, Uchi);
 
-#else 
-  for(int mu=0;mu<2*Nd;mu++) {
- 
-    SE = st.GetEntry(ptype, mu, sF);
-
-    switch(mu){
-    case Xp:
-      GPU_COALESCED_STENCIL_LEG_PROJ(Xp,spProjXm); break;
-    case Yp:
-      GPU_COALESCED_STENCIL_LEG_PROJ(Yp,spProjYm); break;
-    case Zp:
-      GPU_COALESCED_STENCIL_LEG_PROJ(Zp,spProjZm); break;
-    case Tp:
-      GPU_COALESCED_STENCIL_LEG_PROJ(Tp,spProjTm); break;
-    case Xm:
-      GPU_COALESCED_STENCIL_LEG_PROJ(Xm,spProjXp); break;
-    case Ym:
-      GPU_COALESCED_STENCIL_LEG_PROJ(Ym,spProjYp); break;
-    case Zm:
-      GPU_COALESCED_STENCIL_LEG_PROJ(Zm,spProjZp); break;
-    case Tm:
-    default:
-      GPU_COALESCED_STENCIL_LEG_PROJ(Tm,spProjTp); break;
-    }
-
-    Impl::multLinkGpu(lane,Uchi,U[sU],chi,mu);
-
-    switch(mu){
-    case Xp:
-      spReconXm(result, Uchi); break;
-    case Yp:
-      accumReconYm(result, Uchi); break;
-    case Zp:
-      accumReconZm(result, Uchi); break;
-    case Tp:
-      accumReconTm(result, Uchi); break;
-    case Xm:
-      accumReconXp(result, Uchi); break;
-    case Ym:
-      accumReconYp(result, Uchi); break;
-    case Zm:
-      accumReconZp(result, Uchi); break;
-    case Tm:
-    default:
-      accumReconTp(result, Uchi); break;
-    }
+    synchronise();
+    insertLane (lane,out[sF],result);
   }
-#endif
-  insertLaneFloat2 (lane,out[sF],result);
-  }
+
 };
 
 // Template specialise Gparity to empty for now
