@@ -110,7 +110,7 @@ void TWilson<FImpl>::setup(void)
     auto &U      = envGet(LatticeGaugeField, par().gauge);
     auto &grid   = *env().getGrid();
     auto &gridRb = *env().getRbGrid();
-    std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
+    std::vector<ComplexD> boundary = strToVec<ComplexD>(par().boundary);
     typename WilsonFermion<FImpl>::ImplParams implParams(boundary);
     envCreateDerived(FMat, WilsonFermion<FImpl>, getName(), 1, U, grid, gridRb,
                      par().mass, implParams);

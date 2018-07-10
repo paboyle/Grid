@@ -44,11 +44,11 @@ namespace QCD {
   
   struct WilsonImplParams {
     bool overlapCommsCompute;
-    std::vector<Complex> boundary_phases;
+    std::vector<ComplexD> boundary_phases;
     WilsonImplParams() : overlapCommsCompute(false) {
       boundary_phases.resize(Nd, 1.0);
     };
-    WilsonImplParams(const std::vector<Complex> phi)
+    WilsonImplParams(const std::vector<ComplexD> phi)
       : boundary_phases(phi), overlapCommsCompute(false) {}
   };
 

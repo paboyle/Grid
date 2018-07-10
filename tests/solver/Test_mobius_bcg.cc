@@ -38,7 +38,7 @@ int main (int argc, char ** argv)
   typedef typename MobiusFermionR::ComplexField ComplexField; 
   typename MobiusFermionR::ImplParams params; 
 
-  const int Ls=24;
+  const int Ls=12;
 
   Grid_init(&argc,&argv);
 
@@ -48,6 +48,10 @@ int main (int argc, char ** argv)
   std::vector<int> mpi_split (mpi_layout.size(),1);
   std::vector<int> split_coor (mpi_layout.size(),1);
   std::vector<int> split_dim (mpi_layout.size(),1);
+
+  std::vector<ComplexD> boundary_phases(Nd,1.);
+  boundary_phases[Nd-1]=-1.;
+  params.boundary_phases = boundary_phases;
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), 
 								   GridDefaultSimd(Nd,vComplex::Nsimd()),
@@ -139,7 +143,7 @@ int main (int argc, char ** argv)
 
   LatticeGaugeField Umu(UGrid); 
   FieldMetaData header;
-    std::string file("./lat.in.24ID");
+    std::string file("./lat.in.32IDfine");
     SU3::ColdConfiguration(Umu);
     std::cout << GridLogMessage << "Intialised the COLD Gauge Field"<<std::endl;
   if(1) { 
@@ -203,14 +207,14 @@ int main (int argc, char ** argv)
   // Set up N-solvers as trivially parallel
   ///////////////////////////////////////////////////////////////
   std::cout << GridLogMessage << " Building the solvers"<<std::endl;
-//  RealD mass=0.00107;
-  RealD mass=0.01;
+  RealD mass=0.00107;
+//  RealD mass=0.01;
   RealD M5=1.8;
-  RealD mobius_factor=4;
+  RealD mobius_factor=32./12.;
   RealD mobius_b=0.5*(mobius_factor+1.);
   RealD mobius_c=0.5*(mobius_factor-1.);
-  MobiusFermionR Dchk(Umu,*FGrid,*FrbGrid,*UGrid,*rbGrid,mass,M5,mobius_b,mobius_c);
-  MobiusFermionR Ddwf(s_Umu,*SFGrid,*SFrbGrid,*SGrid,*SrbGrid,mass,M5,mobius_b,mobius_c);
+  MobiusFermionR Dchk(Umu,*FGrid,*FrbGrid,*UGrid,*rbGrid,mass,M5,mobius_b,mobius_c,params);
+  MobiusFermionR Ddwf(s_Umu,*SFGrid,*SFrbGrid,*SGrid,*SrbGrid,mass,M5,mobius_b,mobius_c,params);
 
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   std::cout << GridLogMessage << " Calling DWF CG "<<std::endl;
@@ -218,8 +222,9 @@ int main (int argc, char ** argv)
 
   MdagMLinearOperator<MobiusFermionR,FermionField> HermOp(Ddwf);
   MdagMLinearOperator<MobiusFermionR,FermionField> HermOpCk(Dchk);
-  ConjugateGradient<FermionField> CG((stp),10000);
+  ConjugateGradient<FermionField> CG((stp),100000);
   s_res = zero;
+if(0){
 //  CG(HermOp,s_src,s_res);
 
   std::cout << GridLogMessage << " split residual norm "<<norm2(s_res)<<std::endl;
@@ -247,17 +252,21 @@ int main (int argc, char ** argv)
     HermOpCk.HermOp(result[n],tmp); tmp = tmp - src[n];
     std::cout << GridLogMessage<<" resid["<<n<<"]  "<< norm2(tmp)/norm2(src[n])<<std::endl;
   }
+}
 
 // faking enlarged/cooperative CG
+if(0){
+    std::cout << GridLogMessage<<" Trying blocking enlarged CG" <<std::endl;
   assert(me < nrhs);
   if (me>0) src[me] = src[0];
   for(int s=0;s<nrhs;s++){
      result[s]=zero;
      if(s!=me) src[s] = zero;
   }
+}
 
   int blockDim = 0;//not used for BlockCGVec
-  BlockConjugateGradient<FermionField>    BCGV  (BlockCGVec,blockDim,stp,10000);
+  BlockConjugateGradient<FermionField>    BCGV  (BlockCGVec,blockDim,stp,100000);
   BCGV.PrintInterval=10;
 {
   BCGV(HermOpCk,src,result);
