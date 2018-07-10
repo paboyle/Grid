@@ -39,7 +39,8 @@ class TMesonFieldGamma : public Module<MesonFieldPar>
       public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
                                         Gamma::Algebra, gamma,
-                                        std::vector<std::vector<std::vector<ComplexD>>>, MesonField);
+                                        std::vector<std::vector<std::vector<ComplexD>>>, MesonField,
+                                        ComplexD, last);
     };
 
   public:
@@ -178,7 +179,7 @@ void TMesonFieldGamma<FImpl>::execute(void)
             LOG(Message) << "MF for i = " << i << " of " << N << std::endl;
         }
     }
-
+    result[0].last = MesonField_ij[7];
     saveResult(par().output, "meson", result);
 }
 

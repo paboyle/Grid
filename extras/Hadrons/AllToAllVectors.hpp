@@ -102,7 +102,6 @@ class A2AModesSchurDiagTwo
 
     void low_mode_v(Matrix &action, const Field &evec, const RealD &eval, Field &vout_5d, Field &vout_4d)
     {
-
         GridBase *grid = action.RedBlackGrid();
         Field src_o(grid);
         Field sol_e(grid);
