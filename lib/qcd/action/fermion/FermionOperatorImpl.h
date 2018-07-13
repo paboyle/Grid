@@ -215,6 +215,14 @@ public:
     mult(&phi(), &U(mu), &chi());
   }
       
+#ifdef GPU_VEC
+  static accelerator_inline void copyLinkGpu(int lane,
+					     SiteDoubledGaugeField & UU,
+					     const SiteDoubledGaugeField &U)
+  {
+    auto U_l   = extractLane(lane,U);
+    insertLane(lane,UU,U_l);
+  }
   static accelerator_inline void multLinkGpu(int lane,
 					     typename SiteHalfSpinor::scalar_object &phi,
 					     const SiteDoubledGaugeField &U,
@@ -224,6 +232,17 @@ public:
     auto U_l   = extractLane(lane,U(mu));
     phi() =  U_l * chi();
   }
+#else
+  static accelerator_inline void multLinkGpu(int lane,
+					     SiteHalfSpinor &phi,
+					     const SiteDoubledGaugeField &U,
+					     const SiteHalfSpinor &chi,
+					     int mu) 
+  {
+    auto U_l   = U(mu);
+    phi() =  U_l * chi();
+  }
+#endif
     
   static accelerator_inline void multLinkProp(SitePropagator &phi,
 					      const SiteDoubledGaugeField &U,
@@ -364,7 +383,13 @@ public:
     }
     mult(&phi(), &UU(), &chi());
   }
-
+#ifdef GPU_VEC
+  static accelerator_inline void copyLinkGpu(int lane,
+					     SiteDoubledGaugeField & UU,
+					     const SiteDoubledGaugeField &U)
+  {
+    UU = U;
+  }
   static accelerator_inline void multLinkGpu(int lane,
 					     typename SiteHalfSpinor::scalar_object &phi,
 					     const SiteDoubledGaugeField &U,
@@ -374,6 +399,17 @@ public:
     auto U_l   = U(mu);
     phi() =  U_l * chi();
   }
+#else
+  static accelerator_inline void multLinkGpu(int lane,
+					     SiteHalfSpinor &phi,
+					     const SiteDoubledGaugeField &U,
+					     const SiteHalfSpinor &chi,
+					     int mu) 
+  {
+    auto U_l   = U(mu);
+    phi() =  U_l * chi();
+  }
+#endif
 
   static accelerator_inline void multLinkProp(SitePropagator &phi,
 					      const SiteDoubledGaugeField &U,

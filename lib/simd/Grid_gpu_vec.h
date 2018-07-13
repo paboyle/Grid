@@ -36,7 +36,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid {
 
-#define COALESCE_GRANULARITY (16) // bytes for coalesce granularity of target: Pascal, Volta
+  //#define COALESCE_GRANULARITY (64) // bytes for coalesce granularity of target: Pascal, Volta
+  //#define COALESCE_GRANULARITY (32) // bytes for coalesce granularity of target: Pascal, Volta
+  #define COALESCE_GRANULARITY (16) // bytes for coalesce granularity of target: Pascal, Volta
 
 template<class pair>
 class GpuComplex {

@@ -54,59 +54,11 @@ public:
 
   static void Dhop(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
 		   int Ls, int Nsite, const FermionField &in, FermionField &out,
-		   int interior=1,int exterior=1) 
-  {
-    auto U_v   = U.View();
-    auto in_v  = in.View();
-    auto out_v = out.View();
-    auto st_v  = st.View();
-    if ( (Opt == WilsonKernelsStatic::OptGpu) && interior && exterior ) { 
-      const uint64_t nsimd = Simd::Nsimd();
-      const uint64_t    NN = Nsite*Ls*nsimd;
-      accelerator_loopN( sss, NN, {
-	  uint64_t cur  = sss;
-	  //	  uint64_t lane = cur % nsimd;
-	  cur = cur / nsimd;
-	  uint64_t   sF = cur;         cur = cur / Ls;
-	  uint64_t   sU = cur;
-	  WilsonKernels<Impl>::GpuDhopSite(st_v,U_v,buf,sF,sU,in_v,out_v);
-      });
-    } else { 
-      accelerator_loop( ss, U_v, {
-	int sU = ss;
-        int sF = Ls * sU;
-        DhopSite(Opt,st_v,U_v,st.CommBuf(),sF,sU,Ls,1,in_v,out_v);
-      });
-    }
-  }
+		   int interior=1,int exterior=1) ;
   static void DhopDag(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
 		      int Ls, int Nsite, const FermionField &in, FermionField &out,
-		      int interior=1,int exterior=1) 
-  {
-    auto U_v   = U.View();
-    auto in_v  = in.View();
-    auto out_v = out.View();
-    auto st_v  = st.View();
+		      int interior=1,int exterior=1) ;
 
-    if ( (Opt == WilsonKernelsStatic::OptGpu) && interior && exterior ) { 
-      const uint64_t nsimd = Simd::Nsimd();
-      const uint64_t    NN = Nsite*Ls*nsimd;
-      accelerator_loopN( sss, NN, {
-	  uint64_t cur  = sss;
-	  // uint64_t lane = cur % nsimd;
-	  cur = cur / nsimd;
-	  uint64_t   sF = cur;         cur = cur / Ls;
-	  uint64_t   sU = cur;
-	  WilsonKernels<Impl>::GpuDhopSiteDag(st_v,U_v,buf,sF,sU,in_v,out_v);
-      });
-    } else { 
-      accelerator_loop( ss, U_v, {
-	int sU = ss;
-        int sF = Ls * sU;
-        DhopSiteDag(Opt,st,U_v,st.CommBuf(),sF,sU,Ls,1,in_v,out_v);
-      });
-    }
-  }
    
   template <bool EnableBool = true> static accelerator
   typename std::enable_if<Impl::Dimension == 3 && Nc == 3 &&EnableBool, void>::type
@@ -275,11 +227,11 @@ public:
 
 private:
   // Specialised variants
-  static accelerator void GpuDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-				      int sF,  int sU, const FermionFieldView &in, FermionFieldView &out);
+  static accelerator_inline void GpuDhopSite(StencilView &st,  SiteDoubledGaugeField &U, SiteHalfSpinor * buf,
+					     int Ls, int sF,  int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void GpuDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-					 int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  static accelerator_inline void GpuDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+						int Ls,int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
 
   static accelerator void GenericDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
