@@ -80,6 +80,8 @@ static Registrar<QCD::OneFlavourRatioEOFModule<FermionImplementationPolicy>,
 
 static Registrar< ConjugateGradientModule<QCD::WilsonFermionR::FermionField>,   
                   HMC_SolverModuleFactory<solver_string, QCD::WilsonFermionR::FermionField, Serialiser> > __CGWFmodXMLInit("ConjugateGradient"); 
+static Registrar< BiCGSTABModule<QCD::WilsonFermionR::FermionField>,   
+                  HMC_SolverModuleFactory<solver_string, QCD::WilsonFermionR::FermionField, Serialiser> > __CGWFmodXMLInit("BiCGSTAB"); 
 static Registrar< ConjugateResidualModule<QCD::WilsonFermionR::FermionField>,   
                   HMC_SolverModuleFactory<solver_string, QCD::WilsonFermionR::FermionField, Serialiser> > __CRWFmodXMLInit("ConjugateResidual"); 
 
