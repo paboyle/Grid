@@ -186,7 +186,6 @@ void TA2AVectors<FImpl, nBasis>::execute(void)
     envGetTmp(FermionField, tmp);
     envGetTmp(FermionField, tmp2);
 
-    double weight = 1.0 / sqrt(Ns*Nc*Nsrc);
     int N_count = 0;
     for (unsigned int s = 0; s < Ns; ++s)
         for (unsigned int c = 0; c < Nc; ++c)
@@ -200,13 +199,11 @@ void TA2AVectors<FImpl, nBasis>::execute(void)
                 if (Ls_ == 1)
                 {
                     PropToFerm<FImpl>(ferm_src, prop_src, s, c);
-                    ferm_src = weight*ferm_src;
                     tmp = ferm_src;
                 }
                 else
                 {
                     PropToFerm<FImpl>(tmp, prop_src, s, c);
-                    tmp = weight*tmp;
                     action.ImportPhysicalFermionSource(tmp, ferm_src);
                 }
             }
@@ -220,7 +217,6 @@ void TA2AVectors<FImpl, nBasis>::execute(void)
                 else
                 {
                     PropToFerm<FImpl>(ferm_src, prop_src, s, c);
-                    ferm_src = weight*ferm_src;
                     action.ExportPhysicalFermionSolution(ferm_src, tmp);
                 }
             }
