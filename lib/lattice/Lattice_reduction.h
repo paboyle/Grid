@@ -41,7 +41,6 @@ template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
 template<class vobj>
 inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right)
 {
-  std::cout << GridLogMessage << "Start alloc innerProduct" << std::endl;
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_typeD vector_type;
   GridBase *grid = left._grid;
@@ -50,8 +49,6 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
   ComplexD  inner;
   Vector<ComplexD> sumarray(grid->SumArraySize()*pad);
 
-  std::cout << GridLogMessage << "End alloc innerProduct" << std::endl;
-  std::cout << GridLogMessage << "Start parallel for innerProduct" << std::endl;
   parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
     int nwork, mywork, myoff;
     GridThread::GetWork(left._grid->oSites(),thr,mywork,myoff);
@@ -65,18 +62,13 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
     ComplexD tmp = Reduce(TensorRemove(vinner)) ;
     vstream(sumarray[thr*pad],tmp);
   }
-  std::cout << GridLogMessage << "End parallel for innerProduct" << std::endl;
 
-  std::cout << GridLogMessage << "Start inner sum innerProduct" << std::endl;
   inner=0.0;
   for(int i=0;i<grid->SumArraySize();i++){
     inner = inner+sumarray[i*pad];
   } 
   right._grid->GlobalSum(inner);
   return inner;
-  std::cout << GridLogMessage << "End inner sum innerProduct" << std::endl;
-
-  std::cout << GridLogMessage << "End innerProduct" << std::endl;
 }
 
 /////////////////////////
@@ -339,7 +331,7 @@ static void localSliceInnerProductVector(std::vector<ComplexD> &result, const La
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
         int ss = so + n * stride + b;
-        vv = TensorRemove(innerProduct(lhs._odata[ss]._internal, rhs._odata[ss]._internal));
+        vv = TensorRemove(innerProduct(lhs._odata[ss], rhs._odata[ss]));
         lvSum[r] = lvSum[r] + vv;
       }
     }
