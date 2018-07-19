@@ -174,8 +174,8 @@ void TA2AMeson<FImpl>::execute(void)
     {
         for (unsigned int j = 0; j < N; j++)
         {
-            sliceInnerProductVector(MF_x, w1[i], v1[j], Tp);
-            sliceInnerProductVector(MF_y, w1[j], v1[i], Tp);
+            mySliceInnerProductVector(MF_x, w1[i], v1[j], Tp);
+            mySliceInnerProductVector(MF_y, w1[j], v1[i], Tp);
             for (unsigned int t = 0; t < nt; ++t)
             {
                 for (unsigned int tx = 0; tx < nt; tx++)

@@ -5,6 +5,9 @@
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
 #include <Grid/Hadrons/AllToAllVectors.hpp>
+#include <Grid/Hadrons/AllToAllReduction.hpp>
+#include <Grid/Grid_Eigen_Dense.h>
+#include <fstream>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -19,6 +22,7 @@ class MesonFieldPar : Serializable
     GRID_SERIALIZABLE_CLASS_MEMBERS(MesonFieldPar,
                                     int, Nl,
                                     int, N,
+                                    int, Nblock,
                                     std::string, A2A1,
                                     std::string, A2A2,
                                     std::string, gammas,
@@ -40,6 +44,7 @@ class TMesonFieldGamma : public Module<MesonFieldPar>
         GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
                                         Gamma::Algebra, gamma,
                                         std::vector<std::vector<std::vector<ComplexD>>>, MesonField,
+                                        std::vector<std::vector<ComplexD>>, MesonFiield,
                                         ComplexD, last);
     };
 
@@ -52,6 +57,9 @@ class TMesonFieldGamma : public Module<MesonFieldPar>
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
     virtual void parseGammaString(std::vector<Gamma::Algebra> &gammaList);
+    virtual void vectorOfWs(std::vector<FermionField> &w, int i, int Nblock, FermionField &tmpw_5d, std::vector<FermionField> &vec_w);
+    virtual void vectorOfVs(std::vector<FermionField> &v, int j, int Nblock, FermionField &tmpv_5d, std::vector<FermionField> &vec_v);
+    virtual void gammaMult(std::vector<FermionField> &v, Gamma gamma);
     // setup
     virtual void setup(void);
     // execution
@@ -107,19 +115,54 @@ void TMesonFieldGamma<FImpl>::parseGammaString(std::vector<Gamma::Algebra> &gamm
     }
 }
 
+template <typename FImpl>
+void TMesonFieldGamma<FImpl>::vectorOfWs(std::vector<FermionField> &w, int i, int Nblock, FermionField &tmpw_5d, std::vector<FermionField> &vec_w)
+{
+    for (unsigned int ni = 0; ni < Nblock; ni++)
+    {
+        vec_w[ni] = w[i + ni];
+    }
+}
+
+template <typename FImpl>
+void TMesonFieldGamma<FImpl>::vectorOfVs(std::vector<FermionField> &v, int j, int Nblock, FermionField &tmpv_5d, std::vector<FermionField> &vec_v)
+{
+    for (unsigned int nj = 0; nj < Nblock; nj++)
+    {
+        vec_v[nj] = v[j+nj];
+    }
+}
+
+template <typename FImpl>
+void TMesonFieldGamma<FImpl>::gammaMult(std::vector<FermionField> &v, Gamma gamma)
+{
+    int Nblock = v.size();
+    for (unsigned int nj = 0; nj < Nblock; nj++)
+    {
+        v[nj] = gamma * v[nj];
+    }
+}
+
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TMesonFieldGamma<FImpl>::setup(void)
 {
     int nt = env().getDim(Tp);
     int N = par().N;
+    int Nblock = par().Nblock;
 
     int Ls_ = env().getObjectLs(par().A2A1 + "_class");
 
-    envTmpLat(FermionField, "w", Ls_);
-    envTmpLat(FermionField, "v", Ls_);
     envTmpLat(FermionField, "tmpv_5d", Ls_);
     envTmpLat(FermionField, "tmpw_5d", Ls_);
+
+    envTmp(std::vector<FermionField>, "w", 1, N, FermionField(env().getGrid(1)));
+    envTmp(std::vector<FermionField>, "v", 1, N, FermionField(env().getGrid(1)));
+
+    envTmp(Eigen::MatrixXcd, "MF", 1, Eigen::MatrixXcd::Zero(nt, N * N));
+
+    envTmp(std::vector<FermionField>, "w_block", 1, Nblock, FermionField(env().getGrid(1)));
+    envTmp(std::vector<FermionField>, "v_block", 1, Nblock, FermionField(env().getGrid(1)));
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -130,6 +173,7 @@ void TMesonFieldGamma<FImpl>::execute(void)
 
     int N = par().N;
     int nt = env().getDim(Tp);
+    int Nblock = par().Nblock;
 
     std::vector<Result> result;
     std::vector<Gamma::Algebra> gammaResultList;
@@ -145,33 +189,54 @@ void TMesonFieldGamma<FImpl>::execute(void)
     {
         result[i].gamma = gammaResultList[i];
         result[i].MesonField.resize(N, std::vector<std::vector<ComplexD>>(N, std::vector<ComplexD>(nt)));
+        result[i].MesonFiield.resize(N, std::vector<<ComplexD>(nt));
 
         Gamma gamma(gammaResultList[i]);
         gammaList[i] = gamma;
     }
 
-    std::vector<ComplexD> MesonField_ij;
-    MesonField_ij.resize(nt);
-
     auto &a2a1 = envGet(A2ABase, par().A2A1 + "_class");
     auto &a2a2 = envGet(A2ABase, par().A2A2 + "_class");
 
-    envGetTmp(FermionField, w);
-    envGetTmp(FermionField, v);
     envGetTmp(FermionField, tmpv_5d);
     envGetTmp(FermionField, tmpw_5d);
 
-    for (unsigned int i = 0; i < N; i++)
+    envGetTmp(std::vector<FermionField>, v);
+    envGetTmp(std::vector<FermionField>, w);
+    LOG(Message) << "Finding v and w vectors for N =  " << N << std::endl;
+    for (int i = 0; i < N; i++)
     {
-        a2a1.return_w(i, tmpw_5d, w);
-        for (unsigned int j = 0; j < N; j++)
+        a2a2.return_v(i, tmpv_5d, v[i]);
+        a2a1.return_w(i, tmpw_5d, w[i]);
+    }
+    LOG(Message) << "Found v and w vectors for N =  " << N << std::endl;
+
+    std::vector<std::vector<ComplexD>> MesonField_ij;
+    LOG(Message) << "Before blocked MFs, Nblock = " << Nblock << std::endl;
+    envGetTmp(std::vector<FermionField>, v_block);
+    envGetTmp(std::vector<FermionField>, w_block);
+    MesonField_ij.resize(Nblock * Nblock, std::vector<ComplexD>(nt));
+
+    envGetTmp(Eigen::MatrixXcd, MF);
+
+    LOG(Message) << "Before blocked MFs, Nblock = " << Nblock << std::endl;
+    for (unsigned int i = 0; i < N; i += Nblock)
+    {
+        vectorOfWs(w, i, Nblock, tmpw_5d, w_block);
+        for (unsigned int j = 0; j < N; j += Nblock)
         {
-            a2a2.return_v(j, tmpv_5d, v);
+            vectorOfVs(v, j, Nblock, tmpv_5d, v_block);
             for (unsigned int k = 0; k < result.size(); k++)
             {
-                v = gammaList[k]*v;
-                sliceInnerProductVector(MesonField_ij, w, v, Tp);
-                result[k].MesonField[i][j] = MesonField_ij;
+                gammaMult(v_block, gammaList[k]);
+                sliceInnerProductMesonField(MesonField_ij, w_block, v_block, Tp);
+                for (unsigned int nj = 0; nj < Nblock; nj++)
+                {
+                    for (unsigned int ni = 0; ni < Nblock; ni++)
+                    {
+                        MF.col((i + ni) + (j + nj) * N) = Eigen::VectorXcd::Map(&MesonField_ij[nj * Nblock + ni][0], MesonField_ij[nj * Nblock + ni].size());
+                    }
+                }
             }
         }
         if (i % 10 == 0)
@@ -179,7 +244,22 @@ void TMesonFieldGamma<FImpl>::execute(void)
             LOG(Message) << "MF for i = " << i << " of " << N << std::endl;
         }
     }
-    result[0].last = MesonField_ij[7];
+    LOG(Message) << "Before Global sum, Nblock = " << Nblock << std::endl;
+    v_block[0]._grid->GlobalSumVector(MF.data(), MF.size());
+    LOG(Message) << "After Global sum, Nblock = " << Nblock << std::endl;
+    for (unsigned int i = 0; i < N; i++)
+    {
+        for (unsigned int j = 0; j < N; j++)
+        {
+            for (unsigned int k = 0; k < result.size(); k++)
+            {
+                for (unsigned int t = 0; t < nt; t++)
+                {
+                    result[k].MesonField[i][j][t] = MF.col(i + N * j)[t];
+                }
+            }
+        }
+    }
     saveResult(par().output, "meson", result);
 }
 

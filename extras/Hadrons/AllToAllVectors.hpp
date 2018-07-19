@@ -182,6 +182,7 @@ class A2AModesSchurDiagTwo
         assert(sol_o.checkerboard == Odd);
 
         action.DminusDag(tmp_wout, wout_5d);
+
         action.ExportPhysicalFermionSolution(wout_5d, wout_4d);
     }
 
