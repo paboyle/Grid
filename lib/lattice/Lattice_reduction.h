@@ -62,6 +62,7 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
     ComplexD tmp = Reduce(TensorRemove(vinner)) ;
     vstream(sumarray[thr*pad],tmp);
   }
+  
   inner=0.0;
   for(int i=0;i<grid->SumArraySize();i++){
     inner = inner+sumarray[i*pad];

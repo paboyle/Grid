@@ -43,9 +43,7 @@ class TMesonFieldGamma : public Module<MesonFieldPar>
       public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
                                         Gamma::Algebra, gamma,
-                                        std::vector<std::vector<std::vector<ComplexD>>>, MesonField,
-                                        std::vector<std::vector<ComplexD>>, MesonFiield,
-                                        ComplexD, last);
+                                        std::vector<std::vector<std::vector<ComplexD>>>, MesonField);
     };
 
   public:
@@ -189,7 +187,6 @@ void TMesonFieldGamma<FImpl>::execute(void)
     {
         result[i].gamma = gammaResultList[i];
         result[i].MesonField.resize(N, std::vector<std::vector<ComplexD>>(N, std::vector<ComplexD>(nt)));
-        result[i].MesonFiield.resize(N, std::vector<<ComplexD>(nt));
 
         Gamma gamma(gammaResultList[i]);
         gammaList[i] = gamma;
