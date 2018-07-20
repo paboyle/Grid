@@ -166,6 +166,10 @@ namespace Grid {
       {
 	exported=solution;
       };
+      virtual void ExportPhysicalFermionSource(const FermionField &solution, FermionField &exported)
+      {
+	exported = solution;
+      };
     };
 
   }

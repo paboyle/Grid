@@ -183,7 +183,7 @@ class A2AModesSchurDiagTwo
 
         action.DminusDag(tmp_wout, wout_5d);
 
-        action.ExportPhysicalFermionSolution(wout_5d, wout_4d);
+        action.ExportPhysicalFermionSource(wout_5d, wout_4d);
     }
 
     void high_mode_v(Matrix &action, Solver &solver, const Field &source, Field &vout_5d, Field &vout_4d)
