@@ -91,6 +91,7 @@ namespace Grid {
       virtual void ExportPhysicalFermionSolution(const FermionField &solution5d,FermionField &exported4d);
       virtual void ExportPhysicalFermionSource(const FermionField &solution5d, FermionField &exported4d);
       virtual void ImportPhysicalFermionSource(const FermionField &input4d,FermionField &imported5d);
+      virtual void ImportUnphysicalFermion(const FermionField &solution5d, FermionField &exported4d);
 
       /////////////////////////////////////////////////////
       // Instantiate different versions depending on Impl

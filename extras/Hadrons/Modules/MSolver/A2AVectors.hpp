@@ -130,6 +130,7 @@ void TA2AVectors<FImpl, nBasis>::setup(void)
     auto &action = envGet(FMat, par().action);
 
     envTmpLat(FermionField, "ferm_src", Ls_);
+    envTmpLat(FermionField, "unphys_ferm", Ls_);
     envTmpLat(FermionField, "tmp");
     envTmpLat(FermionField, "tmp2");
 
@@ -183,6 +184,7 @@ void TA2AVectors<FImpl, nBasis>::execute(void)
     int Nsrc = par().sources.size();
 
     envGetTmp(FermionField, ferm_src);
+    envGetTmp(FermionField, unphys_ferm);
     envGetTmp(FermionField, tmp);
     envGetTmp(FermionField, tmp2);
 
@@ -205,6 +207,7 @@ void TA2AVectors<FImpl, nBasis>::execute(void)
                 {
                     PropToFerm<FImpl>(tmp, prop_src, s, c);
                     action.ImportPhysicalFermionSource(tmp, ferm_src);
+                    action.ImportUnphysicalFermion(tmp, unphys_ferm);
                 }
             }
             // source conversion for 5D sources
@@ -218,10 +221,11 @@ void TA2AVectors<FImpl, nBasis>::execute(void)
                 {
                     PropToFerm<FImpl>(ferm_src, prop_src, s, c);
                     action.ExportPhysicalFermionSolution(ferm_src, tmp);
+                    unphys_ferm = ferm_src;
                 }
             }
             LOG(Message) << "a2areturn.high_modes Ncount = " << N_count << std::endl;
-            a2areturn.high_modes(ferm_src, tmp, N_count);
+            a2areturn.high_modes(ferm_src, unphys_ferm, tmp, N_count);
             N_count++;
         }
 }

@@ -162,13 +162,17 @@ namespace Grid {
       {
 	imported = input;
       };
+      virtual void ImportUnphysicalFermion(const FermionField &input,FermionField &imported)
+      {
+	imported=input;
+      };
       virtual void ExportPhysicalFermionSolution(const FermionField &solution,FermionField &exported)
       {
 	exported=solution;
       };
-      virtual void ExportPhysicalFermionSource(const FermionField &solution, FermionField &exported)
+      virtual void ExportPhysicalFermionSource(const FermionField &solution,FermionField &exported)
       {
-	exported = solution;
+	exported=solution;
       };
     };
 

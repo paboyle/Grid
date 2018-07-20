@@ -51,14 +51,14 @@ class A2AModesSchurDiagTwo
         v_high_4d.resize(size_4d, grid_4d);
     }
 
-    void high_modes(Field &source_5d, Field &source_4d, int i)
+    void high_modes(Field &source_5d, Field &w_source_5d, Field &source_4d, int i)
     {
         int i5d;
         LOG(Message) << "A2A high modes for i = " << i << std::endl;
         i5d = 0;
         if (return_5d) i5d = i;
         this->high_mode_v(action, solver, source_5d, v_high_5d[i5d], v_high_4d[i]);
-        this->high_mode_w(source_5d, source_4d, w_high_5d[i5d], w_high_4d[i]);
+        this->high_mode_w(w_source_5d, source_4d, w_high_5d[i5d], w_high_4d[i]);
     }
 
     void return_v(int i, Field &vout_5d, Field &vout_4d)
@@ -181,9 +181,9 @@ class A2AModesSchurDiagTwo
         action.ExportPhysicalFermionSolution(vout_5d, vout_4d);
     }
 
-    void high_mode_w(const Field &source_5d, const Field &source_4d, Field &wout_5d, Field &wout_4d)
+    void high_mode_w(const Field &w_source_5d, const Field &source_4d, Field &wout_5d, Field &wout_4d)
     {
-        wout_5d = source_5d;
+        wout_5d = w_source_5d;
         wout_4d = source_4d;
     }
 };
