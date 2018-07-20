@@ -61,6 +61,7 @@ class TA2AMeson : public Module<A2AMesonPar>
 };
 
 MODULE_REGISTER(A2AMeson, ARG(TA2AMeson<FIMPL>), MContraction);
+MODULE_REGISTER(ZA2AMeson, ARG(TA2AMeson<ZFIMPL>), MContraction);
 
 /******************************************************************************
 *                  TA2AMeson implementation                             *
