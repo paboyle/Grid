@@ -88,18 +88,6 @@ class A2AModesSchurDiagTwo
         }
     }
 
-    void Doo(Matrix &action, const Field &in, Field &out)
-    {
-        Field tmp(in._grid);
-
-        action.MooeeInv(in, out);
-        action.Meooe(out, tmp);
-        action.MooeeInv(tmp, out);
-        action.Meooe(out, tmp);
-
-        axpy(out,-1.0, tmp, in);
-    }
-
     void low_mode_v(Matrix &action, const Field &evec, const RealD &eval, Field &vout_5d, Field &vout_4d)
     {
         GridBase *grid = action.RedBlackGrid();
@@ -162,7 +150,7 @@ class A2AModesSchurDiagTwo
         /////////////////////////////////////////////////////
         // w_ie = - MeeInvDag MoeDag Doo evec_i
         /////////////////////////////////////////////////////
-        Doo(action, src_o, tmp);
+        _HermOpEO.Mpc(src_o, tmp);
         assert(tmp.checkerboard == Odd);
         action.MeooeDag(tmp, sol_e);
         assert(sol_e.checkerboard == Even);
@@ -173,7 +161,7 @@ class A2AModesSchurDiagTwo
         /////////////////////////////////////////////////////
         // w_io = Doo evec_i
         /////////////////////////////////////////////////////
-        Doo(action, src_o, sol_o);
+        _HermOpEO.Mpc(src_o, sol_o);
         assert(sol_o.checkerboard == Odd);
 
         setCheckerboard(tmp_wout, sol_e);
@@ -189,9 +177,6 @@ class A2AModesSchurDiagTwo
     void high_mode_v(Matrix &action, Solver &solver, const Field &source, Field &vout_5d, Field &vout_4d)
     {
         GridBase *fgrid = action.Grid();
-        Field tmp(fgrid);
-
-        action.Dminus(source, tmp);
         solver(vout_5d, source); // Note: solver is solver(out, in)
         action.ExportPhysicalFermionSolution(vout_5d, vout_4d);
     }
