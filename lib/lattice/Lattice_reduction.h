@@ -277,19 +277,19 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
 template<class vobj>
 static void mySliceInnerProductVector( std::vector<ComplexD> & result, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int orthogdim)
 {
-  std::cout << GridLogMessage << "Start mySliceInnerProductVector" << std::endl;
+  // std::cout << GridLogMessage << "Start mySliceInnerProductVector" << std::endl;
 
   typedef typename vobj::scalar_type scalar_type;
   std::vector<scalar_type> lsSum;
   localSliceInnerProductVector(result, lhs, rhs, lsSum, orthogdim);
   globalSliceInnerProductVector(result, lhs, lsSum, orthogdim);
-  std::cout << GridLogMessage << "End mySliceInnerProductVector" << std::endl;
+  // std::cout << GridLogMessage << "End mySliceInnerProductVector" << std::endl;
 }
 
 template <class vobj>
 static void localSliceInnerProductVector(std::vector<ComplexD> &result, const Lattice<vobj> &lhs, const Lattice<vobj> &rhs, std::vector<typename vobj::scalar_type> &lsSum, int orthogdim)
 {
-  std::cout << GridLogMessage << "Start prep" << std::endl;
+  // std::cout << GridLogMessage << "Start prep" << std::endl;
   typedef typename vobj::vector_type   vector_type;
   typedef typename vobj::scalar_type   scalar_type;
   GridBase  *grid = lhs._grid;
