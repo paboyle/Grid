@@ -19,37 +19,25 @@ class A2AModesSchurDiagTwo
     const std::vector<RealD> *eval;
     Matrix &action;
     Solver &solver;
+    std::vector<Field> w_high_5d, v_high_5d, w_high_4d, v_high_4d;
     const int Nl, Nh;
     const bool return_5d;
-    std::vector<Field> w_high_5d, v_high_5d, w_high_4d, v_high_4d;
 
   public:
     A2AModesSchurDiagTwo(const std::vector<Field> *_evec, const std::vector<RealD> *_eval,
                          Matrix &_action,
                          Solver &_solver,
+                         std::vector<Field> _w_high_5d, std::vector<Field> _v_high_5d,
+                         std::vector<Field> _w_high_4d, std::vector<Field> _v_high_4d,
                          const int _Nl, const int _Nh,
                          const bool _return_5d)
                         : evec(_evec), eval(_eval),
                         action(_action),
                         solver(_solver),
+                        w_high_5d(_w_high_5d), v_high_5d(_v_high_5d),
+                        w_high_4d(_w_high_4d), v_high_4d(_v_high_4d),
                         Nl(_Nl), Nh(_Nh),
-                        return_5d(_return_5d)
-    {
-        init_resize(1, Nh);
-        if (return_5d) init_resize(Nh, Nh);
-    };
-
-    void init_resize(const size_t size_5d, const size_t size_4d)
-    {
-        GridBase *grid_5d = action.Grid();
-        GridBase *grid_4d = action.GaugeGrid();
-
-        w_high_5d.resize(size_5d, grid_5d);
-        v_high_5d.resize(size_5d, grid_5d);
-
-        w_high_4d.resize(size_4d, grid_4d);
-        v_high_4d.resize(size_4d, grid_4d);
-    }
+                        return_5d(_return_5d){};
 
     void high_modes(Field &source_5d, Field &w_source_5d, Field &source_4d, int i)
     {

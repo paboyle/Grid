@@ -77,9 +77,9 @@ TA2AMeson<FImpl>::TA2AMeson(const std::string name)
 template <typename FImpl>
 std::vector<std::string> TA2AMeson<FImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().A2A1, par().A2A2};
-    in.push_back(par().A2A1 + "_class");
-    in.push_back(par().A2A2 + "_class");
+    std::vector<std::string> in = {par().A2A1 + "_class", par().A2A2 + "_class"};
+    in.push_back(par().A2A1 + "_w_high_4d");
+    in.push_back(par().A2A2 + "_v_high_4d");
 
     return in;
 }

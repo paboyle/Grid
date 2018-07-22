@@ -107,7 +107,9 @@ std::vector<std::string> TA2AVectors<FImpl, nBasis>::getReference(void)
 template <typename FImpl, int nBasis>
 std::vector<std::string> TA2AVectors<FImpl, nBasis>::getOutput(void)
 {
-    std::vector<std::string> out = {getName(), className_};
+    std::vector<std::string> out = {getName(), className_,
+                                    getName() + "_w_high_5d", getName() + "_v_high_5d",
+                                    getName() + "_w_high_4d", getName() + "_v_high_4d"};
 
     return out;
 }
@@ -120,17 +122,17 @@ void TA2AVectors<FImpl, nBasis>::setup(void)
     int Nl = par().Nl;
     int Nh = N - Nl;
     bool return_5d = par().return_5d;
-    int Ls, Ls_;
+    int Ls;
 
     std::string sub_string = "";
     if (Nl > 0) sub_string = "_subtract";
     auto &solver = envGet(Solver, par().solver + sub_string);
-    Ls_ = env().getObjectLs(par().solver + sub_string);
+    Ls = env().getObjectLs(par().solver + sub_string);
 
     auto &action = envGet(FMat, par().action);
 
-    envTmpLat(FermionField, "ferm_src", Ls_);
-    envTmpLat(FermionField, "unphys_ferm", Ls_);
+    envTmpLat(FermionField, "ferm_src", Ls);
+    envTmpLat(FermionField, "unphys_ferm", Ls);
     envTmpLat(FermionField, "tmp");
     envTmpLat(FermionField, "tmp2");
 
@@ -154,10 +156,25 @@ void TA2AVectors<FImpl, nBasis>::setup(void)
         LOG(Message) << "Creating a2a vectors " << getName() <<
                      " using " << Nh << " high modes only." << std::endl;
     }
-    envCreate(A2ABase, className_, Ls_,
+
+    int size_5d = 1;
+    if (return_5d) size_5d = Nh;
+    envCreate(std::vector<FermionField>, getName() + "_w_high_5d", Ls, size_5d, FermionField(env().getGrid(Ls)));
+    envCreate(std::vector<FermionField>, getName() + "_v_high_5d", Ls, size_5d, FermionField(env().getGrid(Ls)));
+    envCreate(std::vector<FermionField>, getName() + "_w_high_4d", 1, Nh, FermionField(env().getGrid(1)));
+    envCreate(std::vector<FermionField>, getName() + "_v_high_4d", 1, Nh, FermionField(env().getGrid(1)));
+
+    auto &w_high_5d = envGet(std::vector<FermionField>, getName() + "_w_high_5d");
+    auto &v_high_5d = envGet(std::vector<FermionField>, getName() + "_v_high_5d");
+    auto &w_high_4d = envGet(std::vector<FermionField>, getName() + "_w_high_4d");
+    auto &v_high_4d = envGet(std::vector<FermionField>, getName() + "_v_high_4d");
+
+    envCreate(A2ABase, className_, Ls,
                      evec, eval,
                      action,
                      solver,
+                     w_high_5d, v_high_5d,
+                     w_high_4d, v_high_4d,
                      Nl, Nh,
                      return_5d);
 }
