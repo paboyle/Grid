@@ -271,6 +271,9 @@ case ${ax_cv_cxx_compiler_vendor} in
 	SIMD_FLAGS='';;
       VGPU)
         AC_DEFINE([GPU_VEC],[1],[GPU vectorised 512bit])
+        AC_DEFINE_UNQUOTED([GEN_SIMD_WIDTH],[$ac_gen_simd_width],
+                           [generic SIMD vector width (in bytes)])
+        SIMD_GEN_WIDTH_MSG=" (width= $ac_gen_simd_width)"
 	SIMD_FLAGS='';;
       SSE4)
         AC_DEFINE([SSE4],[1],[SSE4 intrinsics])
