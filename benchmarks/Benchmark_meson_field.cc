@@ -66,7 +66,10 @@ void sliceInnerProductMesonField(std::vector< std::vector<ComplexD> > &mat,
   // will locally sum vectors first
   // sum across these down to scalars
   // splitting the SIMD
-  std::vector<vector_type,alignedAllocator<vector_type> > lvSum(rd*Lblock*Rblock); 
+  std::vector<vector_type,alignedAllocator<vector_type> > lvSum(rd*Lblock*Rblock);
+  for (int r = 0; r < rd * Lblock * Rblock; r++){
+    lvSum[r] = zero;
+  }
   std::vector<scalar_type > lsSum(ld*Lblock*Rblock,scalar_type(0.0));             
 
   int e1=    grid->_slice_nblock[orthogdim];
@@ -140,11 +143,19 @@ void sliceInnerProductMesonField(std::vector< std::vector<ComplexD> > &mat,
   }
 
   std::cout << GridLogMessage << " Entering non parallel loop "<<std::endl;
-  for(int t=0;t<ld;t++){
+  for(int t=0;t<fd;t++)
+  {
+    int pt = t / ld; // processor plane
+    int lt = t % ld;
     for(int i=0;i<Lblock;i++){
     for(int j=0;j<Rblock;j++){
-      int ij_dx = i+Lblock*j+Lblock*Rblock*t;
-      mat[i+j*Lblock][t] = lsSum[ij_dx];
+      if (pt == grid->_processor_coor[orthogdim]){
+        int ij_dx = i + Lblock * j + Lblock * Rblock * lt;
+        mat[i+j*Lblock][t] = lsSum[ij_dx];
+      }
+      else{
+        mat[i+j*Lblock][t] = scalar_type(0.0);
+      }
     }}
   }
   std::cout << GridLogMessage << " Done "<<std::endl;
