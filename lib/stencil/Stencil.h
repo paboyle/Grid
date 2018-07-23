@@ -94,13 +94,20 @@ void Gather_plane_exchange_table(std::vector<std::pair<int,int> >& table,const L
 }
 
 struct StencilEntry { 
-  uint64_t _offset;
-  uint64_t _byte_offset;
-  uint16_t _is_local;
-  uint16_t _permute;
-  uint16_t _around_the_world; //256 bits, 32 bytes, 1/2 cacheline
-  uint16_t _pad;
+#ifdef GRID_NVCC
+  uint64_t _byte_offset;       // 8 bytes 
+  uint32_t _offset;            // 8 bytes 
+#else
+  uint64_t _byte_offset;       // 8 bytes 
+  uint64_t _offset;            // 4 bytes (8 ever required?)
+#endif
+  uint8_t _is_local;           // 1 bytes 
+  uint8_t _permute;            // 1 bytes
+  uint8_t _around_the_world;   // 1 bytes
+  uint8_t _pad;   // 1 bytes
 };
+// Could pack to 8 + 4 + 4 = 128 bit and use 
+
 template<class vobj,class cobj>
 class CartesianStencilView {
  public:
