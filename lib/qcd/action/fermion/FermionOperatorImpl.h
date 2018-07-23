@@ -396,8 +396,22 @@ public:
 					     const typename SiteHalfSpinor::scalar_object &chi,
 					     int mu) 
   {
-    auto U_l   = U(mu);
+#if 1
+    typedef typename ExtractTypeMap<typename Simd::scalar_type>::extract_type extract_type;
+
+    SiteScalarGaugeLink U_l;
+
+    extract_type * U_mem  = (extract_type *) &U(mu);
+    extract_type * U_stack= (extract_type *) &U_l;
+
+    for(int w=0;w<(sizeof(U_l)/sizeof(extract_type)) ;w++) U_stack[w] = U_mem[w];
+
+    phi() =  U_l() * chi();
+#else
+    auto U_l = U(mu);
+
     phi() =  U_l * chi();
+#endif
   }
 #else
   static accelerator_inline void multLinkGpu(int lane,

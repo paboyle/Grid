@@ -57,30 +57,54 @@ accelerator_inline int get_my_lane_offset(int Nsimd)
 #endif
 }
 
+accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
+{
+#if 0
+  chip = *mem;
+#else 
+  assert(sizeof(StencilEntry)==sizeof(uint4));
+  uint4 * mem_pun  = (uint4 *)mem;
+  uint4 * chip_pun = (uint4 *)&chip;
+  * chip_pun = * mem_pun;
+#endif
+  return;
+}
+
 #ifdef GPU_VEC
+#if 0
 #define GPU_COALESCED_STENCIL_LEG_PROJ(Dir,spProj)			\
   synchronise();							\
-  if (SE->_is_local) {							\
+  if (SE._is_local) {							\
     int mask = Nsimd >> (ptype + 1);					\
-    int plane= SE->_permute ? (lane ^ mask) : lane;			\
-    auto in_l = extractLane(plane,in[SE->_offset+s]);			\
+    int plane= SE._permute ? (lane ^ mask) : lane;			\
+    auto in_l = extractLane(plane,in[SE._offset+s]);			\
     spProj(chi,in_l);							\
   } else {								\
-    chi  = extractLane(lane,buf[SE->_offset+s]);			\
+    chi  = extractLane(lane,buf[SE._offset+s]);			\
   }									\
   synchronise();
 #else 
 #define GPU_COALESCED_STENCIL_LEG_PROJ(Dir,spProj)			\
-  if (SE->_is_local) {							\
-    auto in_t = in[SE->_offset+s];					\
-    if (SE->_permute) {							\
+  { int mask = Nsimd >> (ptype + 1);					\
+  int plane= SE._permute ? (lane ^ mask) : lane;			\
+  synchronise();							\
+  auto in_l = extractLane(plane,in[SE._offset+s]);			\
+  synchronise();							\
+  spProj(chi,in_l); }							
+#endif
+#else 
+#define GPU_COALESCED_STENCIL_LEG_PROJ(Dir,spProj)			\
+  synchronise();							\
+  if (SE._is_local) {							\
+    auto in_t = in[SE._offset+s];					\
+    if (SE._permute) {							\
       spProj(tmp, in_t);						\
       permute(chi, tmp, ptype);						\
     } else {								\
       spProj(chi, in_t);						\
     }									\
   } else {								\
-    chi  = buf[SE->_offset+s];						\
+    chi  = buf[SE._offset+s];						\
   }									\
   synchronise();
 #endif
@@ -107,7 +131,9 @@ accelerator_inline void WilsonKernels<Impl>::GpuDhopSiteDag(StencilView &st, Dou
   uint64_t lane_offset= get_my_lane_offset(Nsimd);
   uint64_t lanes      = get_my_lanes(Nsimd);
 
-  StencilEntry *SE;
+  StencilEntry *SE_mem;
+  StencilEntry SE; 
+
   int ptype;
   uint64_t ssF = Ls * sU;
   uint64_t sF  = ssF + s;
@@ -116,43 +142,42 @@ accelerator_inline void WilsonKernels<Impl>::GpuDhopSiteDag(StencilView &st, Dou
 #else
   int lane = lane_offset; {
 #endif
-    SE = st.GetEntry(ptype, Xp, ssF);
+    SE_mem = st.GetEntry(ptype, Xp, ssF); get_stencil(SE_mem,SE);
     GPU_COALESCED_STENCIL_LEG_PROJ(Xp,spProjXp); 
     Impl::multLinkGpu(lane,Uchi,U[sU],chi,Xp);
     spReconXp(result, Uchi);
 
-    SE = st.GetEntry(ptype, Yp, ssF);
+    SE_mem = st.GetEntry(ptype, Yp, ssF); get_stencil(SE_mem,SE);
     GPU_COALESCED_STENCIL_LEG_PROJ(Yp,spProjYp);
     Impl::multLinkGpu(lane,Uchi,U[sU],chi,Yp);
     accumReconYp(result, Uchi);
       
-    SE = st.GetEntry(ptype, Zp, ssF);
+    SE_mem = st.GetEntry(ptype, Zp, ssF); get_stencil(SE_mem,SE);
     GPU_COALESCED_STENCIL_LEG_PROJ(Zp,spProjZp);
     Impl::multLinkGpu(lane,Uchi,U[sU],chi,Zp);
     accumReconZp(result, Uchi);
 
-    SE = st.GetEntry(ptype, Tp, ssF);
+    SE_mem = st.GetEntry(ptype, Tp, ssF); get_stencil(SE_mem,SE);
     GPU_COALESCED_STENCIL_LEG_PROJ(Tp,spProjTp);
     Impl::multLinkGpu(lane,Uchi,U[sU],chi,Tp);
     accumReconTp(result, Uchi);
 
-    SE = st.GetEntry(ptype, Xm, ssF);
+    SE_mem = st.GetEntry(ptype, Xm, ssF); get_stencil(SE_mem,SE);
     GPU_COALESCED_STENCIL_LEG_PROJ(Xm,spProjXm);
     Impl::multLinkGpu(lane,Uchi,U[sU],chi,Xm);
     accumReconXm(result, Uchi);
 
-    SE = st.GetEntry(ptype, Ym, ssF);
+    SE_mem = st.GetEntry(ptype, Ym, ssF); get_stencil(SE_mem,SE);
     GPU_COALESCED_STENCIL_LEG_PROJ(Ym,spProjYm);
     Impl::multLinkGpu(lane,Uchi,U[sU],chi,Ym);
     accumReconYm(result, Uchi);
 
-
-    SE = st.GetEntry(ptype, Zm, ssF);
+    SE_mem = st.GetEntry(ptype, Zm, ssF); get_stencil(SE_mem,SE);
     GPU_COALESCED_STENCIL_LEG_PROJ(Zm,spProjZm);
     Impl::multLinkGpu(lane,Uchi,U[sU],chi,Zm);
     accumReconZm(result, Uchi);
 
-    SE = st.GetEntry(ptype, Tm, ssF);
+    SE_mem = st.GetEntry(ptype, Tm, ssF); get_stencil(SE_mem,SE);
     GPU_COALESCED_STENCIL_LEG_PROJ(Tm,spProjTm); 
     Impl::multLinkGpu(lane,Uchi,U[sU],chi,Tm);
     accumReconTm(result, Uchi);
@@ -188,7 +213,10 @@ accelerator_inline void WilsonKernels<Impl>::GpuDhopSite(StencilView &st, SiteDo
   uint64_t lane_offset= get_my_lane_offset(Nsimd);
   uint64_t lanes      = get_my_lanes(Nsimd);
 
-  StencilEntry *SE;
+  //  printf (" sU %d s %d Nsimd %d lanes %ld lane_off %ld\n",sU, s, Nsimd, lanes, lane_offset);
+
+  StencilEntry *SE_mem;
+  StencilEntry SE;
   int ptype;
   // Forces some degree of coalesce on the table look ups
   // Could also use wide load instructions on the data structure
@@ -200,42 +228,42 @@ accelerator_inline void WilsonKernels<Impl>::GpuDhopSite(StencilView &st, SiteDo
 #else
   int lane = lane_offset; {
 #endif
-    SE = st.GetEntry(ptype, Xp, ssF);
+    SE_mem = st.GetEntry(ptype, Xp, ssF); get_stencil(SE_mem,SE);
     GPU_COALESCED_STENCIL_LEG_PROJ(Xp,spProjXm); 
     Impl::multLinkGpu(lane,Uchi,U,chi,Xp);
     spReconXm(result, Uchi);
 
-    SE = st.GetEntry(ptype, Yp, ssF);
+    SE_mem = st.GetEntry(ptype, Yp, ssF); get_stencil(SE_mem,SE);
     GPU_COALESCED_STENCIL_LEG_PROJ(Yp,spProjYm);
     Impl::multLinkGpu(lane,Uchi,U,chi,Yp);
     accumReconYm(result, Uchi);
       
-    SE = st.GetEntry(ptype, Zp, ssF);
+    SE_mem = st.GetEntry(ptype, Zp, ssF); get_stencil(SE_mem,SE);
     GPU_COALESCED_STENCIL_LEG_PROJ(Zp,spProjZm);
     Impl::multLinkGpu(lane,Uchi,U,chi,Zp);
     accumReconZm(result, Uchi);
 
-    SE = st.GetEntry(ptype, Tp, ssF);
+    SE_mem = st.GetEntry(ptype, Tp, ssF); get_stencil(SE_mem,SE);
     GPU_COALESCED_STENCIL_LEG_PROJ(Tp,spProjTm);
     Impl::multLinkGpu(lane,Uchi,U,chi,Tp);
     accumReconTm(result, Uchi);
 
-    SE = st.GetEntry(ptype, Xm, ssF);
+    SE_mem = st.GetEntry(ptype, Xm, ssF); get_stencil(SE_mem,SE);
     GPU_COALESCED_STENCIL_LEG_PROJ(Xm,spProjXp);
     Impl::multLinkGpu(lane,Uchi,U,chi,Xm);
     accumReconXp(result, Uchi);
 
-    SE = st.GetEntry(ptype, Ym, ssF);
+    SE_mem = st.GetEntry(ptype, Ym, ssF); get_stencil(SE_mem,SE);
     GPU_COALESCED_STENCIL_LEG_PROJ(Ym,spProjYp);
     Impl::multLinkGpu(lane,Uchi,U,chi,Ym);
     accumReconYp(result, Uchi);
 
-    SE = st.GetEntry(ptype, Zm, ssF);
+    SE_mem = st.GetEntry(ptype, Zm, ssF); get_stencil(SE_mem,SE);
     GPU_COALESCED_STENCIL_LEG_PROJ(Zm,spProjZp);
     Impl::multLinkGpu(lane,Uchi,U,chi,Zm);
     accumReconZp(result, Uchi);
 
-    SE = st.GetEntry(ptype, Tm, ssF);
+    SE_mem = st.GetEntry(ptype, Tm, ssF); get_stencil(SE_mem,SE);
     GPU_COALESCED_STENCIL_LEG_PROJ(Tm,spProjTp); 
     Impl::multLinkGpu(lane,Uchi,U,chi,Tm);
     accumReconTp(result, Uchi);
