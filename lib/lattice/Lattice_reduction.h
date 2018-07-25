@@ -39,7 +39,7 @@ template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
 
 // Double inner product
 template<class vobj>
-inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right) 
+inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right)
 {
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_typeD vector_type;
@@ -274,6 +274,115 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   }
 }
 
+template<class vobj>
+static void mySliceInnerProductVector( std::vector<ComplexD> & result, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int orthogdim)
+{
+  // std::cout << GridLogMessage << "Start mySliceInnerProductVector" << std::endl;
+
+  typedef typename vobj::scalar_type scalar_type;
+  std::vector<scalar_type> lsSum;
+  localSliceInnerProductVector(result, lhs, rhs, lsSum, orthogdim);
+  globalSliceInnerProductVector(result, lhs, lsSum, orthogdim);
+  // std::cout << GridLogMessage << "End mySliceInnerProductVector" << std::endl;
+}
+
+template <class vobj>
+static void localSliceInnerProductVector(std::vector<ComplexD> &result, const Lattice<vobj> &lhs, const Lattice<vobj> &rhs, std::vector<typename vobj::scalar_type> &lsSum, int orthogdim)
+{
+  // std::cout << GridLogMessage << "Start prep" << std::endl;
+  typedef typename vobj::vector_type   vector_type;
+  typedef typename vobj::scalar_type   scalar_type;
+  GridBase  *grid = lhs._grid;
+  assert(grid!=NULL);
+  conformable(grid,rhs._grid);
+
+  const int    Nd = grid->_ndimension;
+  const int Nsimd = grid->Nsimd();
+
+  assert(orthogdim >= 0);
+  assert(orthogdim < Nd);
+
+  int fd=grid->_fdimensions[orthogdim];
+  int ld=grid->_ldimensions[orthogdim];
+  int rd=grid->_rdimensions[orthogdim];
+  // std::cout << GridLogMessage << "Start alloc" << std::endl;
+
+  std::vector<vector_type,alignedAllocator<vector_type> > lvSum(rd); // will locally sum vectors first
+  lsSum.resize(ld,scalar_type(0.0));                    // sum across these down to scalars
+  std::vector<iScalar<scalar_type>> extracted(Nsimd);   // splitting the SIMD  
+  // std::cout << GridLogMessage << "End alloc" << std::endl;
+
+  result.resize(fd); // And then global sum to return the same vector to every node for IO to file
+  for(int r=0;r<rd;r++){
+    lvSum[r]=zero;
+  }
+
+  int e1=    grid->_slice_nblock[orthogdim];
+  int e2=    grid->_slice_block [orthogdim];
+  int stride=grid->_slice_stride[orthogdim];
+  // std::cout << GridLogMessage << "End prep" << std::endl;
+  // std::cout << GridLogMessage << "Start parallel inner product, _rd = " << rd << std::endl;
+  vector_type vv;
+  parallel_for(int r=0;r<rd;r++)
+  {
+
+    int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
+
+    for(int n=0;n<e1;n++){
+      for(int b=0;b<e2;b++){
+        int ss = so + n * stride + b;
+        vv = TensorRemove(innerProduct(lhs._odata[ss], rhs._odata[ss]));
+        lvSum[r] = lvSum[r] + vv;
+      }
+    }
+  }
+  // std::cout << GridLogMessage << "End parallel inner product" << std::endl;
+
+  // Sum across simd lanes in the plane, breaking out orthog dir.
+  std::vector<int> icoor(Nd);
+  for(int rt=0;rt<rd;rt++){
+
+    iScalar<vector_type> temp; 
+    temp._internal = lvSum[rt];
+    extract(temp,extracted);
+
+    for(int idx=0;idx<Nsimd;idx++){
+
+      grid->iCoorFromIindex(icoor,idx);
+
+      int ldx =rt+icoor[orthogdim]*rd;
+
+      lsSum[ldx]=lsSum[ldx]+extracted[idx]._internal;
+
+    }
+  }
+  // std::cout << GridLogMessage << "End sum over simd lanes" << std::endl;
+}
+template <class vobj>
+static void globalSliceInnerProductVector(std::vector<ComplexD> &result, const Lattice<vobj> &lhs, std::vector<typename vobj::scalar_type> &lsSum, int orthogdim)
+{
+  typedef typename vobj::scalar_type scalar_type;
+  GridBase *grid = lhs._grid;
+  int fd = result.size();
+  int ld = lsSum.size();
+  // sum over nodes.
+  std::vector<scalar_type> gsum;
+  gsum.resize(fd, scalar_type(0.0));
+  // std::cout << GridLogMessage << "Start of gsum[t] creation:" << std::endl;
+  for(int t=0;t<fd;t++){
+    int pt = t/ld; // processor plane
+    int lt = t%ld;
+    if ( pt == grid->_processor_coor[orthogdim] ) {
+      gsum[t]=lsSum[lt];
+    }
+  }
+  // std::cout << GridLogMessage << "End of gsum[t] creation:" << std::endl;
+  // std::cout << GridLogMessage << "Start of GlobalSumVector:" << std::endl;
+  grid->GlobalSumVector(&gsum[0], fd);
+  // std::cout << GridLogMessage << "End of GlobalSumVector:" << std::endl;
+
+  result = gsum;
+}
 template<class vobj>
 static void sliceInnerProductVector( std::vector<ComplexD> & result, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int orthogdim) 
 {
