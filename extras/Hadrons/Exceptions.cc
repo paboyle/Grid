@@ -48,6 +48,9 @@ using namespace Grid;
 using namespace Hadrons;
 using namespace Exceptions;
 
+// backtrace cache
+std::vector<std::string> Grid::Hadrons::Exceptions::backtraceStr;
+
 // logic errors
 CTOR_EXC(Logic, logic_error(msg + ERR_SUFF))
 CTOR_EXC(Definition, Logic("definition error: " + msg, loc))
@@ -82,6 +85,15 @@ void Grid::Hadrons::Exceptions::abort(const std::exception& e)
                     << std::endl;
     }
     LOG(Error) << e.what() << std::endl;
+    if (!backtraceStr.empty())
+    {
+        LOG(Error) << "-- BACKTRACE --------------" << std::endl;
+        for (auto &s: backtraceStr)
+        {
+            LOG(Error) << s << std::endl;
+        }
+        LOG(Error) << "---------------------------" << std::endl;
+    }
     LOG(Error) << "Aborting program" << std::endl;
     Grid_finalize();
 

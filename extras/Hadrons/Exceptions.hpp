@@ -30,16 +30,39 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define Hadrons_Exceptions_hpp_
 
 #include <stdexcept>
+#include <execinfo.h>
 #ifndef Hadrons_Global_hpp_
 #include <Grid/Hadrons/Global.hpp>
 #endif
 
 #define HADRONS_SRC_LOC std::string(__FUNCTION__) + " at " \
                         + std::string(__FILE__) + ":" + std::to_string(__LINE__)
+#define HADRONS_BACKTRACE_MAX 128
+#ifdef HAVE_EXECINFO_H
+#define HADRONS_CACHE_BACKTRACE \
+{\
+    void* _callstack[HADRONS_BACKTRACE_MAX];\
+    int _i, _frames = backtrace(_callstack, HADRONS_BACKTRACE_MAX);\
+    char** _strs = backtrace_symbols(_callstack, _frames);\
+    Grid::Hadrons::Exceptions::backtraceStr.clear();\
+    for (_i = 0; _i < _frames; ++_i)\
+    {\
+        Hadrons::Exceptions::backtraceStr.push_back(std::string(_strs[_i]));\
+    }\
+    free(_strs);\
+}
+#else
+#define HADRONS_CACHE_BACKTRACE \
+Grid::Hadrons::Exceptions::backtraceStr.clear();\
+Grid::Hadrons::Exceptions::backtraceStr.push_back("<backtrace not supported>");
+#endif
+
 #define HADRONS_ERROR(exc, msg)\
+HADRONS_CACHE_BACKTRACE \
 throw(Exceptions::exc(msg, HADRONS_SRC_LOC));
 
 #define HADRONS_ERROR_REF(exc, msg, address)\
+HADRONS_CACHE_BACKTRACE \
 throw(Exceptions::exc(msg, HADRONS_SRC_LOC, address));
 
 #define DECL_EXC(name, base) \
@@ -60,6 +83,9 @@ BEGIN_HADRONS_NAMESPACE
 
 namespace Exceptions
 {
+    // backtrace cache
+    extern std::vector<std::string> backtraceStr;
+
     // logic errors
     DECL_EXC(Logic, std::logic_error);
     DECL_EXC(Definition, Logic);
