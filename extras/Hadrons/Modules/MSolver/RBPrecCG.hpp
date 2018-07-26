@@ -158,7 +158,7 @@ void TRBPrecCG<FImpl, nBasis>::setup(void)
             guesser.reset(new CoarseGuesser(epack.evec, epack.evecCoarse,
                                             epack.evalCoarse));
         }
-        catch (Exceptions::Definition &e)
+        catch (Exceptions::ObjectDefinition &)
         {
             auto &epack = envGet(EPack, par().eigenPack);
 

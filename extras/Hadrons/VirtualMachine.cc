@@ -123,10 +123,11 @@ void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
                 else
                 {
                     // output already fully registered, error
-                    HADRONS_ERROR(Definition, "object '" + out
+                    HADRONS_ERROR_REF(ObjectDefinition, "object '" + out
                                  + "' is already produced by module '"
                                  + module_[env().getObjectModule(out)].name
-                                 + "' (while pushing module '" + name + "')");
+                                 + "' (while pushing module '" + name + "')",
+                                 env().getObjectAddress(out));
                 }
                 if (getModule(address)->getReference().size() > 0)
                 {
@@ -306,10 +307,10 @@ void VirtualMachine::makeModuleGraph(void)
 
             if (min < 0)
             {
-                HADRONS_ERROR(Definition, "dependency '" 
+                HADRONS_ERROR_REF(ObjectDefinition, "dependency '" 
                              + env().getObjectName(in) + "' (address " 
                              + std::to_string(in)
-                             + ") is not produced by any module");
+                             + ") is not produced by any module", in);
             }
             else
             {
@@ -394,7 +395,7 @@ void VirtualMachine::makeMemoryProfile(void)
         if (profile_.module[a].empty())
         {
             LOG(Debug) << "Profiling memory for module '" << module_[a].name
-                       << "' (" << a << ")..." << std::endl;
+                       << "' (" << a << ")" << std::endl;
             memoryProfile(a);
             env().freeAll();
         }
@@ -471,7 +472,7 @@ void VirtualMachine::memoryProfile(const unsigned int address)
     auto m = getModule(address);
 
     LOG(Debug) << "Setting up module '" << m->getName() 
-               << "' (" << address << ")..." << std::endl;
+               << "' (" << address << ")" << std::endl;
     try
     {
         currentModule_ = address;
@@ -479,25 +480,17 @@ void VirtualMachine::memoryProfile(const unsigned int address)
         currentModule_ = -1;
         updateProfile(address);
     }
-    catch (Exceptions::Definition &)
+    catch (Exceptions::ObjectDefinition &exc)
     {
         cleanEnvironment();
-        for (auto &in: m->getInput())
+        if (!env().hasCreatedObject(exc.getAddress()))
         {
-            if (!env().hasCreatedObject(in))
-            {
-                memoryProfile(env().getObjectModule(in));
-            }
+            LOG(Debug) << "Object '" << env().getObjectName(exc.getAddress())
+                       << "' missing for setup of '" << m->getName() 
+                       << "' (" << address << ")" << std::endl;
+            memoryProfile(env().getObjectModule(exc.getAddress()));
         }
-        for (auto &ref: m->getReference())
-        {
-            if (!env().hasCreatedObject(ref))
-            {
-                memoryProfile(env().getObjectModule(ref));
-            }
-        }
-        m->setup();
-        updateProfile(address);
+        memoryProfile(address);
     }
 }
 

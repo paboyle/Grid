@@ -35,7 +35,7 @@ using namespace QCD;
 using namespace Hadrons;
 
 #define ERROR_NO_ADDRESS(address)\
-HADRONS_ERROR(Definition, "no object with address " + std::to_string(address));
+HADRONS_ERROR_REF(ObjectDefinition, "no object with address " + std::to_string(address), address);
 
 /******************************************************************************
  *                       Environment implementation                           *
@@ -220,7 +220,8 @@ void Environment::addObject(const std::string name, const int moduleAddress)
     }
     else
     {
-        HADRONS_ERROR(Definition, "object '" + name + "' already exists");
+        HADRONS_ERROR_REF(ObjectDefinition, "object '" + name + "' already exists",
+                          getObjectAddress(name));
     }
 }
 

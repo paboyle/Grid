@@ -245,7 +245,7 @@ void Environment::createDerivedObject(const std::string name,
              (object_[address].type        != &typeid(B))     or
              (object_[address].derivedType != &typeid(T)))
     {
-        HADRONS_ERROR(Definition, "object '" + name + "' already allocated");
+        HADRONS_ERROR_REF(ObjectDefinition, "object '" + name + "' already allocated", address);
     }
 }
 
@@ -279,28 +279,31 @@ T * Environment::getDerivedObject(const unsigned int address) const
                     }
                     else
                     {
-                        HADRONS_ERROR(Definition, "object with address " + std::to_string(address) +
+                        HADRONS_ERROR_REF(ObjectDefinition, "object with address " +
+                            std::to_string(address) +
                             " cannot be casted to '" + typeName(&typeid(T)) +
-                            "' (has type '" + typeName(&typeid(h->get())) + "')");
+                            "' (has type '" + typeName(&typeid(h->get())) + "')", address);
                     }
                 }
             }
             else
             {
-                HADRONS_ERROR(Definition, "object with address " + std::to_string(address) +
+                HADRONS_ERROR_REF(ObjectDefinition, "object with address " + 
+                            std::to_string(address) +
                             " does not have type '" + typeName(&typeid(B)) +
-                            "' (has type '" + getObjectType(address) + "')");
+                            "' (has type '" + getObjectType(address) + "')", address);
             }
         }
         else
         {
-            HADRONS_ERROR(Definition, "object with address " + std::to_string(address) +
-                         " is empty");
+            HADRONS_ERROR_REF(ObjectDefinition, "object with address " + 
+                              std::to_string(address) + " is empty", address);
         }
     }
     else
     {
-        HADRONS_ERROR(Definition, "no object with address " + std::to_string(address));
+        HADRONS_ERROR_REF(ObjectDefinition, "no object with address " + 
+                          std::to_string(address), address);
     }
 }
 
@@ -338,7 +341,8 @@ bool Environment::isObjectOfType(const unsigned int address) const
     }
     else
     {
-        HADRONS_ERROR(Definition, "no object with address " + std::to_string(address));
+        HADRONS_ERROR_REF(ObjectDefinition, "no object with address " 
+                          + std::to_string(address), address);
     }
 }
 
