@@ -39,11 +39,21 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define HADRONS_ERROR(exc, msg)\
 throw(Exceptions::exc(msg, HADRONS_SRC_LOC));
 
+#define HADRONS_ERROR_REF(exc, msg, address)\
+throw(Exceptions::exc(msg, HADRONS_SRC_LOC, address));
+
 #define DECL_EXC(name, base) \
 class name: public base\
 {\
 public:\
     name(std::string msg, std::string loc);\
+}
+
+#define DECL_EXC_REF(name, base) \
+class name: public base\
+{\
+public:\
+    name(std::string msg, std::string loc, const unsigned int address);\
 }
 
 BEGIN_HADRONS_NAMESPACE
@@ -65,6 +75,23 @@ namespace Exceptions
     DECL_EXC(Parsing, Runtime);
     DECL_EXC(Program, Runtime);
     DECL_EXC(System, Runtime);
+
+    // virtual machine errors
+    class RuntimeRef: public Runtime
+    {
+    public:
+        RuntimeRef(std::string msg, std::string loc, const unsigned int address)
+        : Runtime(msg, loc), address_(address)
+        {}
+        unsigned int getAddress(void) const
+        {
+            return address_;
+        }
+    private:
+        unsigned int address_;
+    };
+
+    DECL_EXC_REF(ObjectDefinition, RuntimeRef);
 
     // abort functions
     void abort(const std::exception& e);

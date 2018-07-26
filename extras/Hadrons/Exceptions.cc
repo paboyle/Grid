@@ -34,8 +34,13 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define ERR_SUFF " (" + loc + ")"
 #endif
 
-#define CONST_EXC(name, init) \
+#define CTOR_EXC(name, init) \
 name::name(std::string msg, std::string loc)\
+:init\
+{}
+
+#define CTOR_EXC_REF(name, init) \
+name::name(std::string msg, std::string loc, const unsigned int address)\
 :init\
 {}
 
@@ -44,20 +49,23 @@ using namespace Hadrons;
 using namespace Exceptions;
 
 // logic errors
-CONST_EXC(Logic, logic_error(msg + ERR_SUFF))
-CONST_EXC(Definition, Logic("definition error: " + msg, loc))
-CONST_EXC(Implementation, Logic("implementation error: " + msg, loc))
-CONST_EXC(Range, Logic("range error: " + msg, loc))
-CONST_EXC(Size, Logic("size error: " + msg, loc))
+CTOR_EXC(Logic, logic_error(msg + ERR_SUFF))
+CTOR_EXC(Definition, Logic("definition error: " + msg, loc))
+CTOR_EXC(Implementation, Logic("implementation error: " + msg, loc))
+CTOR_EXC(Range, Logic("range error: " + msg, loc))
+CTOR_EXC(Size, Logic("size error: " + msg, loc))
 
 // runtime errors
-CONST_EXC(Runtime, runtime_error(msg + ERR_SUFF))
-CONST_EXC(Argument, Runtime("argument error: " + msg, loc))
-CONST_EXC(Io, Runtime("IO error: " + msg, loc))
-CONST_EXC(Memory, Runtime("memory error: " + msg, loc))
-CONST_EXC(Parsing, Runtime("parsing error: " + msg, loc))
-CONST_EXC(Program, Runtime("program error: " + msg, loc))
-CONST_EXC(System, Runtime("system error: " + msg, loc))
+CTOR_EXC(Runtime, runtime_error(msg + ERR_SUFF))
+CTOR_EXC(Argument, Runtime("argument error: " + msg, loc))
+CTOR_EXC(Io, Runtime("IO error: " + msg, loc))
+CTOR_EXC(Memory, Runtime("memory error: " + msg, loc))
+CTOR_EXC(Parsing, Runtime("parsing error: " + msg, loc))
+CTOR_EXC(Program, Runtime("program error: " + msg, loc))
+CTOR_EXC(System, Runtime("system error: " + msg, loc))
+
+// virtual machine errors
+CTOR_EXC_REF(ObjectDefinition, RuntimeRef("object definition error: " + msg, loc, address));
 
 // abort functions
 void Grid::Hadrons::Exceptions::abort(const std::exception& e)
