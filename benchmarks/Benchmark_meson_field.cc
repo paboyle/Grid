@@ -223,13 +223,11 @@ void sliceInnerProductMesonFieldGamma(std::vector< std::vector<ComplexD> > &mat,
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
 	for(int i=0;i<Lblock;i++){
+	    auto left = conjugate(lhs[i]._odata[ss]);
+	    for(int j=0;j<Rblock;j++){
 	  for(int mu=0;mu<Ngamma;mu++){
 
-	    auto left = Gamma(gammas[mu])*conjugate(lhs[i]._odata[ss]);
-	    for(int j=0;j<Rblock;j++){
-
-
-	      auto right = rhs[j]._odata[ss];
+        auto right = Gamma(gammas[mu])*rhs[j]._odata[ss];
 
 	      vector_type vv = left()(0)(0) * right()(0)(0)
 		+              left()(0)(1) * right()(0)(1)
@@ -291,14 +289,15 @@ void sliceInnerProductMesonFieldGamma(std::vector< std::vector<ComplexD> > &mat,
     int lt = t % ld;
     for(int i=0;i<Lblock;i++){
     for(int j=0;j<Rblock;j++){
+    for(int mu=0;mu<Ngamma;mu++){
       if (pt == grid->_processor_coor[orthogdim]){
-        int ij_dx = i + Lblock * j + Lblock * Rblock * lt;
-        mat[i+j*Lblock][t] = lsSum[ij_dx];
+        int ij_dx = mu+i*Ngamma+Ngamma*Lblock*j+Ngamma*Lblock*Rblock* lt;
+        mat[mu+i*Ngamma+j*Lblock*Ngamma][t] = lsSum[ij_dx];
       }
       else{
-        mat[i+j*Lblock][t] = scalar_type(0.0);
+        mat[mu+i*Ngamma+j*Lblock*Ngamma][t] = scalar_type(0.0);
       }
-    }}
+    }}}
   }
   std::cout << GridLogMessage << " Done "<<std::endl;
   // defer sum over nodes.
@@ -382,7 +381,7 @@ void sliceInnerProductMesonFieldGamma1(std::vector< std::vector<ComplexD> > &mat
 	    auto right = rhs[j]._odata[ss];
 	    for(int s1=0;s1<Ns;s1++){
 	    for(int s2=0;s2<Ns;s2++){
-	      vv()(s1,s2)() = left()(s1)(0) * right()(s2)(0)
+	     vv()(s2,s1)() = left()(s1)(0) * right()(s2)(0)
 		+             left()(s1)(1) * right()(s2)(1)
 		+             left()(s1)(2) * right()(s2)(2);
 	    }}
@@ -392,10 +391,10 @@ void sliceInnerProductMesonFieldGamma1(std::vector< std::vector<ComplexD> > &mat
 	    lvSum[idx]=lvSum[idx]+vv;
 	  
 	  }
+	  }
 	}
       }
     }
-  }
 
   std::cout << GridLogMessage << " Entering second parallel loop "<<std::endl;
   // Sum across simd lanes in the plane, breaking out orthog dir.
@@ -434,12 +433,12 @@ void sliceInnerProductMesonFieldGamma1(std::vector< std::vector<ComplexD> > &mat
     for(int j=0;j<Rblock;j++){
       if (pt == grid->_processor_coor[orthogdim]){
         int ij_dx = i + Lblock * j + Lblock * Rblock * lt;
-	for(int mu=0;mu<Ngamma;mu++){
+    	for(int mu=0;mu<Ngamma;mu++){
 	  mat[mu+i*Ngamma+j*Lblock*Ngamma][t] = trace(lsSum[ij_dx]*Gamma(gammas[mu]));
 	}
       }
       else{
-	for(int mu=0;mu<Ngamma;mu++){
+        for(int mu=0;mu<Ngamma;mu++){
 	  mat[mu+i*Ngamma+j*Lblock*Ngamma][t] = scalar_type(0.0);
 	}
       }
@@ -465,22 +464,22 @@ std::vector<Gamma::Algebra> Gmu4 ( {
   Gamma::Algebra::GammaT });
 
 std::vector<Gamma::Algebra> Gmu16 ( {
-  Gamma::Algebra::GammaX,
-  Gamma::Algebra::GammaY,
-  Gamma::Algebra::GammaZ,
+  Gamma::Algebra::Gamma5,
   Gamma::Algebra::GammaT,
+  Gamma::Algebra::GammaTGamma5,
   Gamma::Algebra::GammaX,
+  Gamma::Algebra::GammaXGamma5,
   Gamma::Algebra::GammaY,
+  Gamma::Algebra::GammaYGamma5,
   Gamma::Algebra::GammaZ,
-  Gamma::Algebra::GammaT,
-  Gamma::Algebra::GammaX,
-  Gamma::Algebra::GammaY,
-  Gamma::Algebra::GammaZ,
-  Gamma::Algebra::GammaT,
-  Gamma::Algebra::GammaX,
-  Gamma::Algebra::GammaY,
-  Gamma::Algebra::GammaZ,
-  Gamma::Algebra::GammaT
+  Gamma::Algebra::GammaZGamma5,
+  Gamma::Algebra::Identity,
+  Gamma::Algebra::SigmaXT,
+  Gamma::Algebra::SigmaXY,
+  Gamma::Algebra::SigmaXZ,
+  Gamma::Algebra::SigmaYT,
+  Gamma::Algebra::SigmaYZ,
+  Gamma::Algebra::SigmaZT
 });
 
 int main (int argc, char ** argv)
@@ -507,6 +506,7 @@ int main (int argc, char ** argv)
 
   std::vector<LatticeFermion> v(Nm,&Grid);
   std::vector<LatticeFermion> w(Nm,&Grid);
+  std::vector<LatticeFermion> gammaV(Nm,&Grid);
 
   for(int i=0;i<Nm;i++) { 
     random(pRNG,v[i]);
@@ -520,12 +520,14 @@ int main (int argc, char ** argv)
   std::vector<std::vector<ComplexD> > MesonFields   (Nm*Nm);
   std::vector<std::vector<ComplexD> > MesonFields4  (Nm*Nm*4);
   std::vector<std::vector<ComplexD> > MesonFields16 (Nm*Nm*16);
+  std::vector<std::vector<ComplexD> > MesonFields161(Nm*Nm*16);
   std::vector<std::vector<ComplexD> > MesonFieldsRef(Nm*Nm);
 
-  for(int i=0;i<MesonFields.size();i++   ) MesonFields   [i].resize(nt);
-  for(int i=0;i<MesonFieldsRef.size();i++) MesonFieldsRef[i].resize(nt);
-  for(int i=0;i<MesonFields4.size();i++  ) MesonFields4  [i].resize(nt);
-  for(int i=0;i<MesonFields16.size();i++ ) MesonFields16 [i].resize(nt);
+  for(int i=0;i<MesonFields.size();i++   )  MesonFields   [i].resize(nt);
+  for(int i=0;i<MesonFieldsRef.size();i++)  MesonFieldsRef[i].resize(nt);
+  for(int i=0;i<MesonFields4.size();i++  )  MesonFields4  [i].resize(nt);
+  for(int i=0;i<MesonFields16.size();i++ )  MesonFields16 [i].resize(nt);
+  for(int i=0;i<MesonFields161.size();i++ ) MesonFields161[i].resize(nt);
 
   GridLogMessage.TimingMode(1);
 
@@ -580,7 +582,7 @@ int main (int argc, char ** argv)
   byte  = vol * (12.0 * sizeof(Complex) ) * Nm*Nm
         + vol * ( 2.0 * sizeof(Complex) ) * Nm*Nm* 16;
   t0 = usecond();
-  sliceInnerProductMesonFieldGamma1(MesonFields16,w,v,Tp,Gmu16);
+  sliceInnerProductMesonFieldGamma1(MesonFields161, w, v, Tp, Gmu16);
   t1 = usecond();
   std::cout<<GridLogMessage << "Done "<< (t1-t0) <<" usecond " <<std::endl;
   std::cout<<GridLogMessage << "Done "<< flops/(t1-t0) <<" mflops " <<std::endl;
@@ -589,7 +591,9 @@ int main (int argc, char ** argv)
 
 
   RealD err = 0;
+  RealD err2 = 0;
   ComplexD diff;
+  ComplexD diff2;
 
   for(int i=0;i<Nm;i++) { 
   for(int j=0;j<Nm;j++) { 
@@ -600,6 +604,29 @@ int main (int argc, char ** argv)
   }}
   std::cout<<GridLogMessage << "Norm error "<< err <<std::endl;
   
+  err = err*0.;
+  diff = diff*0.;
+
+  for (int mu = 0; mu < 16; mu++){
+    for (int k = 0; k < gammaV.size(); k++){
+      gammaV[k] = Gamma(Gmu16[mu]) * v[k];
+    }
+    for (int i = 0; i < Nm; i++){
+      for (int j = 0; j < Nm; j++){
+        sliceInnerProductVector(ip, w[i], gammaV[j], Tp);
+        for (int t = 0; t < nt; t++){
+          MesonFields[i + j * Nm][t] = ip[t];
+          diff = MesonFields16[mu+i*16+Nm*16*j][t] - MesonFields161[mu+i*16+Nm*16*j][t];
+          diff2 = MesonFields[i+j*Nm][t] - MesonFields161[mu+i*16+Nm*16*j][t];
+          err += real(diff*conj(diff));
+          err2 += real(diff2*conj(diff2));
+        }
+      }
+    }
+  }
+  std::cout << GridLogMessage << "Norm error 16 gamma1/16 gamma naive    " << err << std::endl;
+  std::cout << GridLogMessage << "Norm error 16 gamma1/sliceInnerProduct " << err2 << std::endl;
+
   Grid_finalize();
 }
 
