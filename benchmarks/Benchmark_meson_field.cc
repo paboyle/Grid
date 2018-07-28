@@ -507,8 +507,7 @@ void sliceInnerProductMesonFieldGammaMom(std::vector< std::vector<ComplexD> > &m
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
-	Vector<iSinglet<vector_type> > phase(Nmom);
-	for(int m=0;m<Nmom;m++) phase[m] = mom[m]._odata[ss];
+
 
 	for(int i=0;i<Lblock;i++){
 
@@ -525,9 +524,12 @@ void sliceInnerProductMesonFieldGammaMom(std::vector< std::vector<ComplexD> > &m
 	    }}
 	    
 	    // After getting the sitewise product do the mom phase loop
+	    int base = Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*r;
+	    // Trigger unroll
 	    for ( int m=0;m<Nmom;m++){
-	      int idx = m+Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*r;
-	      lvSum[idx]=lvSum[idx]+vv*phase[m];
+	      int idx = m+base;
+	      auto phase = mom[m]._odata[ss];
+	      mac(&lvSum[idx],&vv,&phase);
 	    }
 	  
 	  }
@@ -640,7 +642,7 @@ int main (int argc, char ** argv)
   std::vector<int> mpi_layout  = GridDefaultMpi();
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   
-  int Nmom=7;
+  const int Nmom=7;
   int nt = latt_size[Tp];
   uint64_t vol = 1;
   for(int d=0;d<Nd;d++){
