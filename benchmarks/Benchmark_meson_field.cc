@@ -640,7 +640,7 @@ int main (int argc, char ** argv)
   std::vector<int> mpi_layout  = GridDefaultMpi();
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   
-  int Nmom=9;
+  int Nmom=7;
   int nt = latt_size[Tp];
   uint64_t vol = 1;
   for(int d=0;d<Nd;d++){
