@@ -137,7 +137,7 @@ void TA2AMeson<FImpl>::execute(void)
     result.corr.resize(nt);
 
     int Nl = par().Nl;
-    int N = par().N;
+    int N  = par().N;
     LOG(Message) << "N for A2A cont: " << N << std::endl;
 
     envGetTmp(std::vector<ComplexD>, MF_x);
