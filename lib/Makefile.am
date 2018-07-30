@@ -34,4 +34,4 @@ HFILES  += $(extra_headers)
 
 libGrid_a_SOURCES              = $(CCFILES)
 libGrid_adir                   = $(pkgincludedir)
-nobase_dist_pkginclude_HEADERS = $(HFILES) $(eigen_files) Config.h
+nobase_dist_pkginclude_HEADERS = $(HFILES) $(eigen_files) $(eigen_unsupp_files) Config.h

@@ -33,6 +33,7 @@ modules_cc =\
   Modules/MContraction/WeakHamiltonianEye.cc \
   Modules/MContraction/DiscLoop.cc \
   Modules/MContraction/A2AMeson.cc \
+  Modules/MContraction/A2AMesonField.cc \
   Modules/MContraction/Baryon.cc \
   Modules/MContraction/MesonFieldGamma.cc \
   Modules/MContraction/Gamma3pt.cc \
