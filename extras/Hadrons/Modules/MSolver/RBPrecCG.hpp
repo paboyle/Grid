@@ -118,7 +118,7 @@ std::vector<std::string> TRBPrecCG<FImpl, nBasis>::getReference(void)
 template <typename FImpl, int nBasis>
 std::vector<std::string> TRBPrecCG<FImpl, nBasis>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {getName(), getName() + "_subtract"};
     
     return out;
 }
@@ -158,7 +158,7 @@ void TRBPrecCG<FImpl, nBasis>::setup(void)
             guesser.reset(new CoarseGuesser(epack.evec, epack.evecCoarse,
                                             epack.evalCoarse));
         }
-        catch (Exceptions::ObjectDefinition &)
+        catch (Exceptions::Definition &e)
         {
             auto &epack = envGet(EPack, par().eigenPack);
 
@@ -168,18 +168,21 @@ void TRBPrecCG<FImpl, nBasis>::setup(void)
             guesser.reset(new FineGuesser(epack.evec, epack.eval));
         }
     }
-    auto solver = [&mat, guesser, this](FermionField &sol, 
-                                        const FermionField &source)
-    {
-        ConjugateGradient<FermionField>           cg(par().residual, 
-                                                     par().maxIteration);
-        HADRONS_DEFAULT_SCHUR_SOLVE<FermionField> schurSolver(cg);
-        
-        schurSolver(mat, source, sol, *guesser);
+    auto makeSolver = [&mat, guesser, this](bool subGuess) {
+        return [&mat, guesser, subGuess, this](FermionField &sol,
+                                     const FermionField &source) {
+            ConjugateGradient<FermionField> cg(par().residual,
+                                               par().maxIteration);
+            HADRONS_DEFAULT_SCHUR_SOLVE<FermionField> schurSolver(cg);
+            schurSolver.subtractGuess(subGuess);
+            schurSolver(mat, source, sol, *guesser);
+        };
     };
+    auto solver = makeSolver(false);
     envCreate(Solver, getName(), Ls, solver, mat);
+    auto solver_subtract = makeSolver(true);
+    envCreate(Solver, getName() + "_subtract", Ls, solver_subtract, mat);
 }
-
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl, int nBasis>
