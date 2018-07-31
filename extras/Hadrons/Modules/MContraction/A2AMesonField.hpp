@@ -24,6 +24,7 @@ class A2AMesonFieldPar : Serializable
     GRID_SERIALIZABLE_CLASS_MEMBERS(A2AMesonFieldPar,
 				    int, cacheBlock,
 				    int, schurBlock,
+				    int, Nmom,
 				    int, N,
 				    int, Nl,
                                     std::string, A2A,
@@ -54,8 +55,8 @@ class TA2AMesonField : public Module<A2AMesonFieldPar>
 
     // Arithmetic help. Move to Grid??
     virtual void MesonField(Eigen::Tensor<ComplexD,5> &mat, 
-			    const std::vector<LatticeFermion > &lhs,
-			    const std::vector<LatticeFermion > &rhs,
+			    const LatticeFermion *lhs,
+			    const LatticeFermion *rhs,
 			    std::vector<Gamma::Algebra> gammas,
 			    const std::vector<LatticeComplex > &mom,
 			    int orthogdim) ;
@@ -120,8 +121,8 @@ void TA2AMesonField<FImpl>::setup(void)
 //////////////////////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TA2AMesonField<FImpl>::MesonField(Eigen::Tensor<ComplexD,5> &mat, 
-				       const std::vector<LatticeFermion > &lhs,
-				       const std::vector<LatticeFermion > &rhs,
+				       const LatticeFermion *lhs_wi,
+				       const LatticeFermion *rhs_vj,
 				       std::vector<Gamma::Algebra> gammas,
 				       const std::vector<LatticeComplex > &mom,
 				       int orthogdim) 
@@ -135,10 +136,10 @@ void TA2AMesonField<FImpl>::MesonField(Eigen::Tensor<ComplexD,5> &mat,
   typedef iSpinMatrix<vector_type> SpinMatrix_v;
   typedef iSpinMatrix<scalar_type> SpinMatrix_s;
   
-  int Lblock = lhs.size();
-  int Rblock = rhs.size();
+  int Lblock = mat.dimension(3); 
+  int Rblock = mat.dimension(4);
 
-  GridBase *grid = lhs[0]._grid;
+  GridBase *grid = lhs_wi[0]._grid;
   
   const int    Nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
@@ -170,16 +171,14 @@ void TA2AMesonField<FImpl>::MesonField(Eigen::Tensor<ComplexD,5> &mat,
   int e1=    grid->_slice_nblock[orthogdim];
   int e2=    grid->_slice_block [orthogdim];
   int stride=grid->_slice_stride[orthogdim];
-  
-  std::cout << GridLogMessage << " Entering first parallel loop "<<std::endl;
 
-  // Parallelise over t-direction doesn't expose as much parallelism as needed for KNL
+  // Nested parallelism would be ok
   parallel_for(int r=0;r<rd;r++){
-
-    int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
-
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
+
+	int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
+
 	int ss= so+n*stride+b;
 
 	Vector<iSinglet<vector_type> > phase(Nmom);
@@ -188,11 +187,11 @@ void TA2AMesonField<FImpl>::MesonField(Eigen::Tensor<ComplexD,5> &mat,
 
 	for(int i=0;i<Lblock;i++){
 
-	  auto left = conjugate(lhs[i]._odata[ss]);
+	  auto left = conjugate(lhs_wi[i]._odata[ss]);
 	  for(int j=0;j<Rblock;j++){
 
 	    SpinMatrix_v vv;
-	    auto right = rhs[j]._odata[ss];
+	    auto right = rhs_vj[j]._odata[ss];
 	    for(int s1=0;s1<Ns;s1++){
 	    for(int s2=0;s2<Ns;s2++){
 	      vv()(s1,s2)() = left()(s1)(0) * right()(s2)(0)
@@ -201,9 +200,11 @@ void TA2AMesonField<FImpl>::MesonField(Eigen::Tensor<ComplexD,5> &mat,
 	    }}
 	    
 	    // After getting the sitewise product do the mom phase loop
+	    int base = Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*r;
 	    for ( int m=0;m<Nmom;m++){
-	      int idx = m+Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*r;
-	      lvSum[idx]=lvSum[idx]+vv*phase[m];
+	      int idx = m+base;
+	      auto phase = mom[m]._odata[ss];
+	      mac(&lvSum[idx],&vv,&phase);
 	    }
 	  
 	  }
@@ -217,7 +218,6 @@ void TA2AMesonField<FImpl>::MesonField(Eigen::Tensor<ComplexD,5> &mat,
 
     std::vector<int> icoor(Nd);
     std::vector<SpinMatrix_s> extracted(Nsimd);               
-
 
     for(int i=0;i<Lblock;i++){
     for(int j=0;j<Rblock;j++){
@@ -241,13 +241,11 @@ void TA2AMesonField<FImpl>::MesonField(Eigen::Tensor<ComplexD,5> &mat,
     }}}
   }
 
-  assert(mat.dimension(0) == Nt);
-  assert(mat.dimension(1) == Nmom);
-  assert(mat.dimension(2) == Ngamma);
-  assert(mat.dimension(3) == Lblock);
-  assert(mat.dimension(4) == Rblock);
-  mat.setZero();
-  parallel_for(int t=0;t<fd;t++)
+  assert(mat.dimension(0) == Nmom);
+  assert(mat.dimension(1) == Ngamma);
+  assert(mat.dimension(2) == Nt);
+  mat.setZero();// unthreaded alert
+  for(int t=0;t<fd;t++)
   {
     int pt = t / ld; // processor plane
     int lt = t % ld;
@@ -257,15 +255,14 @@ void TA2AMesonField<FImpl>::MesonField(Eigen::Tensor<ComplexD,5> &mat,
 	  for(int m=0;m<Nmom;m++){
 	    int ij_dx = m+Nmom*i + Nmom*Lblock * j + Nmom*Lblock * Rblock * lt;
 	    for(int mu=0;mu<Ngamma;mu++){
-	      mat(t,m,mu,i,j) = trace(lsSum[ij_dx]*Gamma(gammas[mu]));
+	      mat(m,mu,t,i,j) = trace(lsSum[ij_dx]*Gamma(gammas[mu]));
 	    }
 	  }
 	}
       }
     }
   }
-  grid->GlobalSumVector(&mat(0,0,0,0,0),Nmom*Rblock*Lblock*Nt*Ngamma);
-
+  grid->GlobalSumVector(&mat(0,0,0,0,0),Nmom*Ngamma*Nt*Lblock*Rblock);
   return;
 }
 
@@ -280,8 +277,8 @@ void TA2AMesonField<FImpl>::execute(void)
     // 2+6+4+4 = 16 gammas
     // Ordering defined here
     std::vector<Gamma::Algebra> gammas ( {
-	  Gamma::Algebra::Identity,    
           Gamma::Algebra::Gamma5,
+	  Gamma::Algebra::Identity,    
 	  Gamma::Algebra::GammaX,
 	  Gamma::Algebra::GammaY,
 	  Gamma::Algebra::GammaZ,
@@ -306,15 +303,20 @@ void TA2AMesonField<FImpl>::execute(void)
     int Nl = par().Nl;
     int ngamma = gammas.size();
 
+    int schurBlock = par().schurBlock;
+    int cacheBlock = par().cacheBlock;
+    int nmom       = par().Nmom;
+
     ///////////////////////////////////////////////
     // Momentum setup
     ///////////////////////////////////////////////
-    std::vector<LatticeComplex> phases(1,env().getGrid(1));
-    int nmom = phases.size();
-    phases[0] = Complex(1.0);
+    GridBase *grid = env().getGrid(1);
+    std::vector<LatticeComplex> phases(nmom,grid);
+    for(int m=0;m<nmom;m++){
+      phases[m] = Complex(1.0);    // All zero momentum for now
+    }
 
     Eigen::Tensor<ComplexD,5> mesonField       (nmom,ngamma,nt,N,N);    
-
     LOG(Message) << "N = Nh+Nl for A2A MesonField is " << N << std::endl;
 
     envGetTmp(std::vector<FermionField>, w);
@@ -323,47 +325,103 @@ void TA2AMesonField<FImpl>::execute(void)
 
     LOG(Message) << "Finding v and w vectors for N =  " << N << std::endl;
 
-    int schurBlock = par().schurBlock;
-    int cacheBlock = par().cacheBlock;
-    for(int i_base=0;i_base<N;i_base+=schurBlock){
-    for(int j_base=0;j_base<N;j_base+=schurBlock){
+    //////////////////////////////////////////////////////////////////////////
+    // i,j   is first  loop over SchurBlock factors reusing 5D matrices
+    // ii,jj is second loop over cacheBlock factors for high perf contractoin
+    // iii,jjj are loops within cacheBlock
+    // Total index is sum of these  i+ii+iii etc...
+    //////////////////////////////////////////////////////////////////////////
+
+    double t_schur=0;
+    double t_contr=0;
+    double t0 = usecond();
+    int N_i = N;
+    int N_j = N;
+    for(int i=0;i<N_i;i+=schurBlock){ //loop over SchurBlocking to suppress 5D matrix overhead
+    for(int j=0;j<N_j;j+=schurBlock){
+      
 
       ///////////////////////////////////////////////////////////////
       // Get the W and V vectors for this schurBlock^2 set of terms
       ///////////////////////////////////////////////////////////////
-      int i_max = MIN(N,i_base+schurBlock);
-      int j_max = MIN(N,j_base+schurBlock);
+      int N_ii = MIN(N_i-i,schurBlock);
+      int N_jj = MIN(N_j-j,schurBlock);
 
-      int N_i   = i_max-i_base;
-      int N_j   = j_max-j_base;
+      t_schur-=usecond();
+      for(int ii =0;ii < N_ii;ii++) a2a.return_w(i+ii, tmp_5d, w[ii]);
+      for(int jj =0;jj < N_jj;jj++) a2a.return_v(j+jj, tmp_5d, v[jj]);
+      t_schur+=usecond();
 
-      for(int ii =0;ii+i_base< i_max;ii++) a2a.return_v(i_base+ii, tmp_5d, v[ii]);
-      for(int jj =0;jj+j_base< j_max;jj++) a2a.return_w(j_base+jj, tmp_5d, w[jj]);
-
-      LOG(Message) << "Found v vectors " << i_base <<" .. " << i_max-1 << std::endl;
-      LOG(Message) << "Found w vectors " << j_base <<" .. " << j_max-1 << std::endl;
-
-      ///////////////////////////////////////////////////////////////
-      // Do a cache blocked chunk of the contractions
-      /////////////////////////////////////////////////////////////// 
-      Eigen::Tensor<ComplexD,5> mesonFieldBlocked(nmom,ngamma,nt,N_i,N_j);    
-
-      MesonField(mesonFieldBlocked, w, v, gammas, phases,Tp);
+      LOG(Message) << "Found w vectors " << i <<" .. " << i+N_ii-1 << std::endl;
+      LOG(Message) << "Found v vectors " << j <<" .. " << j+N_jj-1 << std::endl;
 
       ///////////////////////////////////////////////////////////////
-      // Copy out to full meson field tensor
+      // Series of cache blocked chunks of the contractions within this SchurBlock
       /////////////////////////////////////////////////////////////// 
-      for(int ii =0;ii< N_i;ii++) {
-      for(int jj =0;jj< N_j;jj++) {
-      for(int m =0;m< nmom;m++) {
-      for(int g =0;g< ngamma;g++) {
-      for(int t =0;t< nt;t++) {
-	mesonField(m,g,t,i_base+ii,j_base+jj) = mesonFieldBlocked(m,g,t,ii,jj);
-      }}}}}
+      for(int ii=0;ii<N_ii;ii+=cacheBlock){
+      for(int jj=0;jj<N_jj;jj+=cacheBlock){
 
-      LOG(Message) << "Contracted MesonFields " <<std::endl;
+	int N_iii = MIN(N_ii-ii,cacheBlock);
+	int N_jjj = MIN(N_jj-jj,cacheBlock);
 
+	Eigen::Tensor<ComplexD,5> mesonFieldBlocked(nmom,ngamma,nt,N_iii,N_jjj);    
+
+	t_contr-=usecond();
+	MesonField(mesonFieldBlocked, &w[ii], &v[jj], gammas, phases,Tp);
+	t_contr+=usecond();
+
+	///////////////////////////////////////////////////////////////
+	// Copy back to full meson field tensor
+	/////////////////////////////////////////////////////////////// 
+	for(int iii=0;iii< N_iii;iii++) {
+        for(int jjj=0;jjj< N_jjj;jjj++) {
+	  for(int m =0;m< nmom;m++) {
+	  for(int g =0;g< ngamma;g++) {
+          for(int t =0;t< nt;t++) {
+	    mesonField(m,g,t,i+ii+iii,j+jj+jjj) = mesonFieldBlocked(m,g,t,iii,jjj);
+	  }}}
+
+	}}
+      }}
     }}
+
+
+    /*
+    for(int i=0;i<N_i;i++){
+    for(int j=0;j<N_j;j++){
+      for(int t =0;t< nt;t++) {
+	if ( abs(mesonField(0,0,t,i,j)) != 0.0) { 
+	  LOG(Message) << i << " " << j << " "<<t<< mesonField(0,0,t,i,j)<<std::endl;
+	}
+      }
+    }}
+    */
+
+    double t1 = usecond();
+    LOG(Message) << " Contraction of MesonFields took "<<(t1-t0)/1.0e6<< " seconds "  << std::endl;
+    LOG(Message) << " Schur "<<(t_schur)/1.0e6<< " seconds "  << std::endl;
+    LOG(Message) << " Contr "<<(t_contr)/1.0e6<< " seconds "  << std::endl;
+
+
+    /////////////////////////////////////////////////////////////////////////
+    // Test: Build the pion correlator (two end)
+    // < PI_ij(t0) PI_ji (t0+t) >
+    /////////////////////////////////////////////////////////////////////////
+    std::vector<ComplexD> corr(nt,ComplexD(0.0));
+
+    for(int i=0;i<N;i++){
+    for(int j=0;j<N;j++){
+      int m=0; // first momentum
+      int g=0; // first gamma in above ordering is gamma5 for pion
+      for(int t0=0;t0<nt;t0++){
+      for(int t=0;t<nt;t++){
+	int tt = (t0+t)%nt;
+	corr[t] += mesonField(m,g,t0,i,j)* mesonField(m,g,tt,j,i);
+      }}
+    }}    
+    for(int t=0;t<nt;t++) corr[t] = corr[t]/ (double)nt;
+
+    for(int t=0;t<nt;t++) LOG(Message) << " " << t << " " << corr[t]<<std::endl;
 
     //    saveResult(par().output, "meson", result);
 }
