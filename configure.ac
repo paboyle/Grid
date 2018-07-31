@@ -480,8 +480,8 @@ GRID_LIBS=$LIBS
 GRID_SHORT_SHA=`git rev-parse --short HEAD`
 GRID_SHA=`git rev-parse HEAD`
 GRID_BRANCH=`git rev-parse --abbrev-ref HEAD`
-AM_CXXFLAGS="-I${abs_srcdir}/include -I${abs_srcdir}/EigenDist/  -I${abs_srcdir}/EigenDist/unsupported $AM_CXXFLAGS"
-AM_CFLAGS="-I${abs_srcdir}/include -I${abs_srcdir}/EigenDist/  -I${abs_srcdir}/EigenDist/unsupported $AM_CFLAGS"
+AM_CXXFLAGS="-I${abs_srcdir}/include -I${abs_srcdir}/Eigen/  -I${abs_srcdir}/Eigen/unsupported $AM_CXXFLAGS"
+AM_CFLAGS="-I${abs_srcdir}/include -I${abs_srcdir}/Eigen/  -I${abs_srcdir}/Eigen/unsupported $AM_CFLAGS"
 AM_LDFLAGS="-L${cwd}/lib $AM_LDFLAGS"
 AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CXXFLAGS])
