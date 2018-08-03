@@ -27,7 +27,7 @@
     *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/Grid.h>
-#include <Grid/Eigen/Dense>
+//#include <Grid/Eigen/Dense>
 #include <Grid/qcd/spin/Dirac.h>
 
 namespace Grid
