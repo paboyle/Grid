@@ -130,3 +130,7 @@ lib/version.h
 .vscode/
 .vscode/settings.json
 settings.json
+
+# Eigen #
+#########
+Eigen
