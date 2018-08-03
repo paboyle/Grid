@@ -7,42 +7,29 @@ fi
 ARC=$1
 
 INITDIR=`pwd`
+rm -f lib/Eigen
+rm -rf Eigen
 
 ##################
 #untar
 ##################
-
 tar -xf ${ARC}
 ARCDIR=`tar -tf ${ARC} | head -n1 | sed -e 's@/.*@@'`
-rm -f ${ARC}
 
 ###############################
 # Link to a deterministic name
 ###############################
 
-mv ${ARCDIR}  Eigen
+mv ${ARCDIR} Eigen
+ln -s ${INITDIR}/Eigen/Eigen ${INITDIR}/lib/Eigen
+ln -s ${INITDIR}/Eigen/unsupported/Eigen ${INITDIR}/lib/Eigen/unsupported
 
 # Eigen source headers
-cd ${INITDIR}/Eigen
-
+cd ${INITDIR}/lib
 echo 'eigen_files =\' > ${INITDIR}/lib/Eigen.inc
-find Eigen -name "*.h" -print | sed 's/^/  /;$q;s/$/ \\/' >> ${INITDIR}/lib/Eigen.inc
-
-cd ${INITDIR}
-echo 'eigen_unsupp_files =\' >> ${INITDIR}/lib/Eigen.inc
-find  Eigen/unsupported/Eigen -name "*.h" -print | sed 's/^/  /;$q;s/$/ \\/' >> ${INITDIR}/lib/Eigen.inc
-
-
+find -L Eigen -print | sed 's/^/  /;$q;s/$/ \\/' >> ${INITDIR}/lib/Eigen.inc
 
 ###################################
 # back to home
 ###################################
 cd ${INITDIR}
-
-#########################################
-# Make grid includes happy
-#########################################
-mkdir ${INITDIR}/lib/Eigen/
-
-ln -s ${INITDIR}/Eigen/Eigen/* ${INITDIR}/lib/Eigen/
-ln -s ${INITDIR}/Eigen/unsupported ${INITDIR}/lib/Eigen/

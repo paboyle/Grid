@@ -5,8 +5,7 @@
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
 #include <Grid/Hadrons/AllToAllVectors.hpp>
-
-#include <unsupported/Eigen/CXX11/Tensor>
+#include <Grid/Eigen/unsupported/CXX11/Tensor>
 
 BEGIN_HADRONS_NAMESPACE
 
