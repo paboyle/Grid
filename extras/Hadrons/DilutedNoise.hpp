@@ -19,14 +19,15 @@ public:
     DilutedNoise(GridCartesian *g, const unsigned int nNoise);
     virtual ~DilutedNoise(void) = default;
     // access
-    const FermionField & operator[](const unsigned int i) const;
-    FermionField &       operator[](const unsigned int i);
-    void                 resize(const unsigned int nNoise);
-    unsigned int         size(void) const;
-    unsigned int         getNNoise(void) const; 
-    GridCartesian        *getGrid(void) const;
+    std::vector<FermionField> &       getNoise(void);
+    const std::vector<FermionField> & getNoise(void) const;
+    const FermionField &              operator[](const unsigned int i) const;
+    FermionField &                    operator[](const unsigned int i);
+    void                              resize(const unsigned int nNoise);
+    unsigned int                      size(void) const;
+    GridCartesian                     *getGrid(void) const;
     // generate noise (pure virtual)
-    virtual void         generateNoise(GridParallelRNG &rng) = 0;
+    virtual void generateNoise(GridParallelRNG &rng) = 0;
 private:
     std::vector<FermionField> noise_;
     GridCartesian             *grid_;
@@ -65,28 +66,17 @@ DilutedNoise<FImpl>::DilutedNoise(GridCartesian *g,
 }
 
 template <typename FImpl>
-void DilutedNoise<FImpl>::resize(const unsigned int nNoise)
+std::vector<typename DilutedNoise<FImpl>::FermionField> & DilutedNoise<FImpl>::
+getNoise(void)
 {
-    nNoise_ = nNoise;
-    noise_.resize(nNoise, grid_);
+    return noise_;
 }
 
 template <typename FImpl>
-unsigned int DilutedNoise<FImpl>::size(void) const
-{  
-    return noise_.size();
-}
-
-template <typename FImpl>
-unsigned int DilutedNoise<FImpl>::getNNoise(void) const
+const std::vector<typename DilutedNoise<FImpl>::FermionField> & DilutedNoise<FImpl>::
+getNoise(void) const
 {
-    return nNoise_;
-}
-
-template <typename FImpl>
-GridCartesian * DilutedNoise<FImpl>::getGrid(void) const
-{
-    return grid_;
+    return noise_;
 }
 
 template <typename FImpl>
@@ -101,6 +91,25 @@ typename DilutedNoise<FImpl>::FermionField &
 DilutedNoise<FImpl>::operator[](const unsigned int i)
 {
     return noise_[i];
+}
+
+template <typename FImpl>
+void DilutedNoise<FImpl>::resize(const unsigned int nNoise)
+{
+    nNoise_ = nNoise;
+    noise_.resize(nNoise, grid_);
+}
+
+template <typename FImpl>
+unsigned int DilutedNoise<FImpl>::size(void) const
+{  
+    return noise_.size();
+}
+
+template <typename FImpl>
+GridCartesian * DilutedNoise<FImpl>::getGrid(void) const
+{
+    return grid_;
 }
 
 /******************************************************************************

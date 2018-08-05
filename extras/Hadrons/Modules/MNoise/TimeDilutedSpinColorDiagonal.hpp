@@ -33,7 +33,7 @@ public:
 MODULE_REGISTER_TMP(TimeDilutedSpinColorDiagonal, TTimeDilutedSpinColorDiagonal<FIMPL>, MNoise);
 
 /******************************************************************************
- *                 TTimeDilutedSpinColorDiagonal implementation                             *
+ *              TTimeDilutedSpinColorDiagonal implementation                  *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
