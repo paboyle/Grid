@@ -288,7 +288,7 @@ T * Environment::getDerivedObject(const unsigned int address) const
             }
             else
             {
-                HADRONS_ERROR_REF(ObjectDefinition, "object with address " + 
+                HADRONS_ERROR_REF(ObjectType, "object with address " + 
                             std::to_string(address) +
                             " does not have type '" + typeName(&typeid(B)) +
                             "' (has type '" + getObjectType(address) + "')", address);

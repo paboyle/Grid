@@ -69,6 +69,7 @@ CTOR_EXC(System, Runtime("system error: " + msg, loc))
 
 // virtual machine errors
 CTOR_EXC_REF(ObjectDefinition, RuntimeRef("object definition error: " + msg, loc, address));
+CTOR_EXC_REF(ObjectType, RuntimeRef("object type error: " + msg, loc, address));
 
 // abort functions
 void Grid::Hadrons::Exceptions::abort(const std::exception& e)

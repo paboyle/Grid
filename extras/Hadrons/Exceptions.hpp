@@ -118,6 +118,7 @@ namespace Exceptions
     };
 
     DECL_EXC_REF(ObjectDefinition, RuntimeRef);
+    DECL_EXC_REF(ObjectType, RuntimeRef);
 
     // abort functions
     void abort(const std::exception& e);
