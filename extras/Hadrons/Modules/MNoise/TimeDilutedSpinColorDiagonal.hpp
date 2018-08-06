@@ -31,6 +31,7 @@ public:
 };
 
 MODULE_REGISTER_TMP(TimeDilutedSpinColorDiagonal, TTimeDilutedSpinColorDiagonal<FIMPL>, MNoise);
+MODULE_REGISTER_TMP(ZTimeDilutedSpinColorDiagonal, TTimeDilutedSpinColorDiagonal<ZFIMPL>, MNoise);
 
 /******************************************************************************
  *              TTimeDilutedSpinColorDiagonal implementation                  *

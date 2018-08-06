@@ -51,6 +51,16 @@ class A2AModesSchurDiagTwo
         v_high_4d.resize(size_4d, grid_4d);
     }
 
+    int get_Nh(void) const
+    {
+        return Nh;
+    }
+
+    int get_Nl(void) const
+    {
+        return Nl;
+    }
+
     void high_modes(Field &source_5d, Field &w_source_5d, Field &source_4d, int i)
     {
         int i5d;

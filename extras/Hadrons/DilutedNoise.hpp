@@ -142,7 +142,6 @@ void TimeDilutedSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rn
     LatticeCoordinate(tLat, nd - 1);
     bernoulli(rng, eta);
     eta = (2.*eta - shift)*(1./::sqrt(2.));
-    std::cout << eta << std::endl;
     for (unsigned int t = 0; t < nt_; ++t)
     {
         etaCut = where((tLat == t), eta, 0.*eta);
@@ -154,7 +153,6 @@ void TimeDilutedSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rn
             {
                 noise[i] = zero;
                 pokeColour(noise[i], etas, c);
-                std::cout << noise[i] << std::endl;
                 i++;
             }
         }

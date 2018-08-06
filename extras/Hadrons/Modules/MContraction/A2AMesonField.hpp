@@ -24,8 +24,6 @@ class A2AMesonFieldPar : Serializable
 				    int, cacheBlock,
 				    int, schurBlock,
 				    int, Nmom,
-				    int, N,
-				    int, Nl,
                                     std::string, A2A,
                                     std::string, output);
 };
@@ -82,9 +80,7 @@ TA2AMesonField<FImpl>::TA2AMesonField(const std::string name)
 template <typename FImpl>
 std::vector<std::string> TA2AMesonField<FImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().A2A + "_class"};
-    in.push_back(par().A2A + "_w_high_4d");
-    in.push_back(par().A2A + "_v_high_4d");
+    std::vector<std::string> in = {par().A2A};
 
     return in;
 }
@@ -102,18 +98,17 @@ std::vector<std::string> TA2AMesonField<FImpl>::getOutput(void)
 template <typename FImpl>
 void TA2AMesonField<FImpl>::setup(void)
 {
-    auto &a2a = envGet(A2ABase, par().A2A + "_class");
-    int nt = env().getDim(Tp);
-    int Nl = par().Nl;
-    int N  = par().N;
-    int Ls_ = env().getObjectLs(par().A2A + "_class");
+    auto &a2a = envGet(A2ABase, par().A2A);
+    int  Ls   = env().getObjectLs(par().A2A);
 
     // Four D fields
-    envTmp(std::vector<FermionField>, "w", 1, par().schurBlock, FermionField(env().getGrid(1)));
-    envTmp(std::vector<FermionField>, "v", 1, par().schurBlock, FermionField(env().getGrid(1)));
+    envTmp(std::vector<FermionField>, "w", 1, par().schurBlock, 
+           FermionField(env().getGrid()));
+    envTmp(std::vector<FermionField>, "v", 1, par().schurBlock, 
+           FermionField(env().getGrid()));
 
     // 5D tmp
-    envTmpLat(FermionField, "tmp_5d", Ls_);
+    envTmpLat(FermionField, "tmp_5d", Ls);
 }
 
 
@@ -305,7 +300,7 @@ void TA2AMesonField<FImpl>::execute(void)
 {
     LOG(Message) << "Computing A2A meson field" << std::endl;
 
-    auto &a2a = envGet(A2ABase, par().A2A + "_class");
+    auto &a2a = envGet(A2ABase, par().A2A);
     
     // 2+6+4+4 = 16 gammas
     // Ordering defined here
@@ -335,8 +330,9 @@ void TA2AMesonField<FImpl>::execute(void)
     int nx = env().getDim(Xp);
     int ny = env().getDim(Yp);
     int nz = env().getDim(Zp);
-    int N  = par().N;
-    int Nl = par().Nl;
+    int Nl = a2a.get_Nl();
+    int N  = Nl + a2a.get_Nh();
+    
     int ngamma = gammas.size();
 
     int schurBlock = par().schurBlock;
@@ -407,7 +403,6 @@ void TA2AMesonField<FImpl>::execute(void)
 
 	int N_iii = MIN(N_ii-ii,cacheBlock);
 	int N_jjj = MIN(N_jj-jj,cacheBlock);
-
 	Eigen::Tensor<ComplexD,5> mesonFieldBlocked(nmom,ngamma,nt,N_iii,N_jjj);    
 
 	t_contr-=usecond();
