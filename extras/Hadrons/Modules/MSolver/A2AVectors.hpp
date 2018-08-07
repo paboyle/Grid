@@ -1,3 +1,31 @@
+/*************************************************************************************
+
+Grid physics library, www.github.com/paboyle/Grid 
+
+Source file: extras/Hadrons/Modules/MSolver/A2AVectors.hpp
+
+Copyright (C) 2015-2018
+
+Author: Antonin Portelli <antonin.portelli@me.com>
+Author: fionnoh <fionnoh@gmail.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+See the full license in the file "LICENSE" in the top level distribution directory
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef Hadrons_MSolver_A2AVectors_hpp_
 #define Hadrons_MSolver_A2AVectors_hpp_
 
@@ -12,7 +40,7 @@
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                     Create all-to-all vector class                         *
+ *                       Create all-to-all V & W vectors                      *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MSolver)
 
@@ -57,7 +85,7 @@ MODULE_REGISTER_TMP(ZA2AVectors,
     ARG(TA2AVectors<ZFIMPL, FermionEigenPack<ZFIMPL>>), MSolver);
 
 /******************************************************************************
- *                 TA2AVectors implementation                             *
+ *                       TA2AVectors implementation                           *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl, typename Pack>
@@ -200,39 +228,8 @@ void TA2AVectors<FImpl, Pack>::execute(void)
             std::cout << norm2(w[Nl_ + ih]) << std::endl;
         }
     }
-
-
-        // // source conversion for 4D sources
-        // if (!env().isObject5d(par().noise))
-        // {
-        //     if (Ls == 1)
-        //     {
-        //         ferm_src = noise[ih];
-        //         tmp = ferm_src;
-        //     }
-        //     else
-        //     {
-        //         tmp = noise[ih];
-        //         action.ImportPhysicalFermionSource(noise[ih], ferm_src);
-        //         action.ImportUnphysicalFermion(noise[ih], unphys_ferm);
-        //     }
-        // }
-        // // source conversion for 5D sources
-        // else
-        // {
-        //     if (Ls != env().getObjectLs(par().noise))
-        //     {
-        //         HADRONS_ERROR(Size, "Ls mismatch between quark action and source");
-        //     }
-        //     else
-        //     {
-        //         ferm_src = noise[ih];
-        //         action.ExportPhysicalFermionSolution(ferm_src, tmp);
-        //         unphys_ferm = ferm_src;
-        //     }
-        // }
-        // a2a.high_modes(ih, ferm_src, unphys_ferm, tmp, solver);
 }
+
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
