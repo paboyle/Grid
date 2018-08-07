@@ -56,7 +56,7 @@ public:
         VecRecord(void): index(0), eval(0.) {}
     };
 public:
-    std::vector<RealD> eval;
+    std::vector<Real> eval;
     std::vector<F>     evec;
     PackRecord         record;
 public:
@@ -215,7 +215,7 @@ class CoarseEigenPack: public EigenPack<FineF>
 public:
     typedef CoarseF CoarseField;
 public:
-    std::vector<RealD>   evalCoarse;
+    std::vector<Real>   evalCoarse;
     std::vector<CoarseF> evecCoarse;
 public:
     CoarseEigenPack(void)          = default;
