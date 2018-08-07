@@ -218,11 +218,12 @@ void Application::loadSchedule(const std::string filename)
         program_.push_back(vm().getModuleAddress(name));
     }
     loadedSchedule_ = true;
+    scheduled_      = true;
 }
 
 void Application::printSchedule(void)
 {
-    if (!scheduled_)
+    if (!scheduled_ and !loadedSchedule_)
     {
         HADRONS_ERROR(Definition, "Computation not scheduled");
     }
