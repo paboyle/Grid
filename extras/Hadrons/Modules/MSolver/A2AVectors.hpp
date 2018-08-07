@@ -6,13 +6,13 @@
 #include <Grid/Hadrons/ModuleFactory.hpp>
 #include <Grid/Hadrons/Solver.hpp>
 #include <Grid/Hadrons/EigenPack.hpp>
-#include <Grid/Hadrons/AllToAllVectors.hpp>
+#include <Grid/Hadrons/A2AVectors.hpp>
 #include <Grid/Hadrons/DilutedNoise.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         A2AVectors                                 *
+ *                     Create all-to-all vector class                         *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MSolver)
 
@@ -21,7 +21,6 @@ class A2AVectorsPar: Serializable
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(A2AVectorsPar,
                                   bool, return_5d,
-                                  int, Nl,
                                   std::string, noise,
                                   std::string, action,
                                   std::string, eigenPack,
@@ -34,7 +33,7 @@ class TA2AVectors : public Module<A2AVectorsPar>
 public:
     FERM_TYPE_ALIASES(FImpl,);
     SOLVER_TYPE_ALIASES(FImpl,);
-    typedef A2AModesSchurDiagTwo<FermionField, FMat, Solver> A2ABase;
+    typedef A2AVectorsSchurDiagTwo<FImpl> A2A;
 public:
     // constructor
     TA2AVectors(const std::string name);
@@ -42,12 +41,14 @@ public:
     virtual ~TA2AVectors(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getReference(void);
     virtual std::vector<std::string> getOutput(void);
     // setup
     virtual void setup(void);
     // execution
     virtual void execute(void);
+private:
+    std::string  solverName_;
+    unsigned int Nl_{0};
 };
 
 MODULE_REGISTER_TMP(A2AVectors, 
@@ -68,32 +69,24 @@ TA2AVectors<FImpl, Pack>::TA2AVectors(const std::string name)
 template <typename FImpl, typename Pack>
 std::vector<std::string> TA2AVectors<FImpl, Pack>::getInput(void)
 {
-    int Nl = par().Nl;
-    std::string sub_string = "";
-    if (Nl > 0) sub_string = "_subtract";
+    std::string              sub_string;
+    std::vector<std::string> in;
 
-    std::vector<std::string> in = {par().solver + sub_string, par().noise};
+    if (!par().eigenPack.empty())
+    {
+        in.push_back(par().eigenPack);
+        sub_string = (!par().eigenPack.empty()) ? "_subtract" : "";
+    }
+    in.push_back(par().solver + sub_string);
+    in.push_back(par().noise);
 
     return in;
 }
 
 template <typename FImpl, typename Pack>
-std::vector<std::string> TA2AVectors<FImpl, Pack>::getReference(void)
-{
-    std::vector<std::string> ref = {par().action};
-
-    if (!par().eigenPack.empty())
-    {
-        ref.push_back(par().eigenPack);
-    }
-
-    return ref;
-}
-
-template <typename FImpl, typename Pack>
 std::vector<std::string> TA2AVectors<FImpl, Pack>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {getName() + "_v", getName() + "_w"};
 
     return out;
 }
@@ -102,102 +95,143 @@ std::vector<std::string> TA2AVectors<FImpl, Pack>::getOutput(void)
 template <typename FImpl, typename Pack>
 void TA2AVectors<FImpl, Pack>::setup(void)
 {
-    int Nl = par().Nl;
-    bool return_5d = par().return_5d;   
-    auto &noise  = envGet(DilutedNoise<FImpl>, par().noise);
-    int Ls;
+    bool        hasLowModes = (!par().eigenPack.empty());
+    std::string sub_string  = (hasLowModes) ? "_subtract" : "";
+    bool        return_5d   = par().return_5d;   
+    auto        &noise      = envGet(DilutedNoise<FImpl>, par().noise);
+    auto        &action     = envGet(FMat, par().action);
+    auto        &solver     = envGet(Solver, par().solver + sub_string);
+    int         Ls          = env().getObjectLs(par().action);
 
-    std::string sub_string = "";
-    if (Nl > 0) sub_string = "_subtract";
-    auto &solver = envGet(Solver, par().solver + sub_string);
-    Ls = env().getObjectLs(par().solver + sub_string);
-
-    auto &action = envGet(FMat, par().action);
-
-    envTmpLat(FermionField, "ferm_src", Ls);
-    envTmpLat(FermionField, "unphys_ferm", Ls);
-    envTmpLat(FermionField, "tmp");
-
-    std::vector<FermionField> *evec;
-    const std::vector<RealD> *eval;
-
-    if (Nl > 0)
+    LOG(Message) << "Creating all-to-all vectors ";
+    if (hasLowModes)
     {
-        // Low modes
         auto &epack = envGet(Pack, par().eigenPack);
-
-        LOG(Message) << "Creating a2a vectors " << getName() <<
-                     " using eigenpack '" << par().eigenPack << "' ("
-                     << epack.evec.size() << " modes)" <<
-                     " and " << noise.size() << " high modes." << std::endl;
-        evec = &epack.evec;
-        eval = &epack.eval;
+        
+        Nl_ = epack.evec.size();
+        std::cout << " using eigenpack '" << par().eigenPack << "' ("
+                  << Nl_ << " low modes) and noise '"
+                  << par().noise << "' (" << noise.size() 
+                  << " noise vectors)" << std::endl;
     }
     else
     {
-        LOG(Message) << "Creating a2a vectors " << getName() <<
-                     " using " << noise.size() << " high modes only." << std::endl;
+        std::cout << " using noise '" << par().noise << "' (" << noise.size() 
+                  << " noise vectors)" << std::endl;
     }
-
-    envCreate(A2ABase, getName(), Ls, evec, eval, action, solver, Nl, noise.size(),
-              return_5d);
+    envCreate(std::vector<FermionField>, getName() + "_v", 1, 
+              Nl_ + noise.size(), FermionField(env().getGrid()));
+    envCreate(std::vector<FermionField>, getName() + "_w", 1, 
+              Nl_ + noise.size(), FermionField(env().getGrid()));
+    if (Ls > 1)
+    {
+        envTmpLat(FermionField, "f5", Ls);
+    }
+    envTmp(A2A, "a2a", 1, action, solver);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl, typename Pack>
 void TA2AVectors<FImpl, Pack>::execute(void)
 {
-    auto &action = envGet(FMat, par().action);
-    auto &noise  = envGet(DilutedNoise<FImpl>, par().noise);
+    std::string sub_string = (Nl_ > 0) ? "_subtract" : "";
+    auto        &action    = envGet(FMat, par().action);
+    auto        &solver    = envGet(Solver, par().solver + sub_string);
+    auto        &noise     = envGet(DilutedNoise<FImpl>, par().noise);
+    auto        &v         = envGet(std::vector<FermionField>, getName() + "_v");
+    auto        &w         = envGet(std::vector<FermionField>, getName() + "_w");
+    int         Ls         = env().getObjectLs(par().action);
 
-    int Ls;
-    int Nl = par().Nl;
-
-    std::string sub_string = "";
-    if (Nl > 0) sub_string = "_subtract";
-    Ls = env().getObjectLs(par().solver + sub_string);
-
-    auto &a2areturn = envGet(A2ABase, getName());
-
-    // High modes
-    envGetTmp(FermionField, ferm_src);
-    envGetTmp(FermionField, unphys_ferm);
-    envGetTmp(FermionField, tmp);
-    for (unsigned int i = 0; i < noise.size(); i++)
+    envGetTmp(A2A, a2a);
+    // Low modes
+    for (unsigned int il = 0; il < Nl_; il++)
     {
-        LOG(Message) << "A2A src for noise vector " << i << std::endl;
-        // source conversion for 4D sources
-        if (!env().isObject5d(par().noise))
+        auto &epack  = envGet(Pack, par().eigenPack);
+
+        LOG(Message) << "V vector i = " << il << " (low mode)" << std::endl;
+        if (Ls == 1)
         {
-            if (Ls == 1)
-            {
-                ferm_src = noise[i];
-                tmp = ferm_src;
-            }
-            else
-            {
-                tmp = noise[i];
-                action.ImportPhysicalFermionSource(noise[i], ferm_src);
-                action.ImportUnphysicalFermion(noise[i], unphys_ferm);
-            }
+            a2a.makeLowModeV(v[il], epack.evec[il], epack.eval[il]);
         }
-        // source conversion for 5D sources
         else
         {
-            if (Ls != env().getObjectLs(par().noise))
-            {
-                HADRONS_ERROR(Size, "Ls mismatch between quark action and source");
-            }
-            else
-            {
-                ferm_src = noise[i];
-                action.ExportPhysicalFermionSolution(ferm_src, tmp);
-                unphys_ferm = ferm_src;
-            }
+            envGetTmp(FermionField, f5);
+            a2a.makeLowModeV5D(v[il], f5, epack.evec[il], epack.eval[il]);
         }
-        LOG(Message) << "solveHighMode i = " << i << std::endl;
-        a2areturn.high_modes(ferm_src, unphys_ferm, tmp, i);
+        LOG(Message) << "W vector i = " << il << " (low mode)" << std::endl;
+        if (Ls == 1)
+        {
+            a2a.makeLowModeW(w[il], epack.evec[il], epack.eval[il]);
+        }
+        else
+        {
+            envGetTmp(FermionField, f5);
+            a2a.makeLowModeW5D(w[il], f5, epack.evec[il], epack.eval[il]);
+        }   
     }
+
+    // High modes
+    for (unsigned int ih = 0; ih < noise.size(); ih++)
+    {
+        LOG(Message) << "V vector i = " << Nl_ + ih
+                     << " (" << ((Nl_ > 0) ? "high " : "") 
+                     << "stochastic mode)" << std::endl;
+        if (Ls == 1)
+        {
+            a2a.makeHighModeV(v[Nl_ + ih], noise[ih]);
+        }
+        else
+        {
+            envGetTmp(FermionField, f5);
+            a2a.makeHighModeV5D(v[Nl_ + ih], f5, noise[ih]);
+            std::cout << norm2(v[Nl_ + ih]) << std::endl;
+        }
+        LOG(Message) << "W vector i = " << Nl_ + ih
+                     << " (" << ((Nl_ > 0) ? "high " : "") 
+                     << "stochastic mode)" << std::endl;
+        if (Ls == 1)
+        {
+            a2a.makeHighModeW(w[Nl_ + ih], noise[ih]);
+        }
+        else
+        {
+            envGetTmp(FermionField, f5);
+            a2a.makeHighModeW5D(w[Nl_ + ih], f5, noise[ih]);
+            std::cout << norm2(w[Nl_ + ih]) << std::endl;
+        }
+    }
+
+
+        // // source conversion for 4D sources
+        // if (!env().isObject5d(par().noise))
+        // {
+        //     if (Ls == 1)
+        //     {
+        //         ferm_src = noise[ih];
+        //         tmp = ferm_src;
+        //     }
+        //     else
+        //     {
+        //         tmp = noise[ih];
+        //         action.ImportPhysicalFermionSource(noise[ih], ferm_src);
+        //         action.ImportUnphysicalFermion(noise[ih], unphys_ferm);
+        //     }
+        // }
+        // // source conversion for 5D sources
+        // else
+        // {
+        //     if (Ls != env().getObjectLs(par().noise))
+        //     {
+        //         HADRONS_ERROR(Size, "Ls mismatch between quark action and source");
+        //     }
+        //     else
+        //     {
+        //         ferm_src = noise[ih];
+        //         action.ExportPhysicalFermionSolution(ferm_src, tmp);
+        //         unphys_ferm = ferm_src;
+        //     }
+        // }
+        // a2a.high_modes(ih, ferm_src, unphys_ferm, tmp, solver);
 }
 END_MODULE_NAMESPACE
 

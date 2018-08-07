@@ -14,7 +14,7 @@ libHadrons_a_SOURCES = \
 libHadrons_adir = $(pkgincludedir)/Hadrons
 nobase_libHadrons_a_HEADERS = \
 	$(modules_hpp)            \
-	AllToAllVectors.hpp       \
+	A2AVectors.hpp            \
 	Application.hpp           \
 	EigenPack.hpp             \
 	Environment.hpp           \
