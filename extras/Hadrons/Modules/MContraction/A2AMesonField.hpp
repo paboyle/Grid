@@ -355,6 +355,7 @@ void TA2AMesonField<FImpl>::execute(void)
   int schurBlock = par().schurBlock;
   int cacheBlock = par().cacheBlock;
   int nmom       = par().Nmom;
+  std::vector<ComplexD> corr(nt,ComplexD(0.0));
 
   ///////////////////////////////////////////////
   // Momentum setup
@@ -427,17 +428,36 @@ void TA2AMesonField<FImpl>::execute(void)
       bytes  += vol * (12.0 * sizeof(Complex) ) * N_iii*N_jjj
                   +  vol * ( 2.0 * sizeof(Complex) *nmom ) * N_iii*N_jjj* ngamma;
 
+      /////////////////////////////////////////////////////////////////////////
+      // Test: Build the pion correlator (two end)
+      // < PI_ij(t0) PI_ji (t0+t) >
+      /////////////////////////////////////////////////////////////////////////
+      parallel_for_nest2(int iii=0;iii< N_iii;iii++)
+      for(int jjj=0;jjj< N_jjj;jjj++)
+      {
+        int m=0; // first momentum
+        int g=0; // first gamma in above ordering is gamma5 for pion
+
+        for(int t0=0;t0<nt;t0++)
+        for(int t=0;t<nt;t++)
+        {
+          int tt = (t0+t)%nt;
+
+          corr[t] += mesonFieldBlocked(m,g,t0,iii,jjj)*mesonFieldBlocked(m,g,tt,jjj,iii);
+        }
+      }
+
       ///////////////////////////////////////////////////////////////
       // Copy back to full meson field tensor
       /////////////////////////////////////////////////////////////// 
-      parallel_for_nest2(int iii=0;iii< N_iii;iii++)
-      for(int jjj=0;jjj< N_jjj;jjj++)
-      for(int m =0;m< nmom;m++)
-      for(int g =0;g< ngamma;g++)
-      for(int t =0;t< nt;t++)
-      {
-        mesonField(m,g,t,i+ii+iii,j+jj+jjj) = mesonFieldBlocked(m,g,t,iii,jjj);
-      }
+      // parallel_for_nest2(int iii=0;iii< N_iii;iii++)
+      // for(int jjj=0;jjj< N_jjj;jjj++)
+      // for(int m =0;m< nmom;m++)
+      // for(int g =0;g< ngamma;g++)
+      // for(int t =0;t< nt;t++)
+      // {
+      //   mesonField(m,g,t,i+ii+iii,j+jj+jjj) = mesonFieldBlocked(m,g,t,iii,jjj);
+      // }
     }
   }
 
@@ -455,26 +475,6 @@ void TA2AMesonField<FImpl>::execute(void)
   LOG(Message) << "  Arith   " << flops/(t_kernel)/1.0e3/nodes << " Gflop/s/ node "  << std::endl;
   LOG(Message) << "  Arith   " << bytes/(t_kernel)/1.0e3/nodes << " GB/s/node "  << std::endl;
 
-  /////////////////////////////////////////////////////////////////////////
-  // Test: Build the pion correlator (two end)
-  // < PI_ij(t0) PI_ji (t0+t) >
-  /////////////////////////////////////////////////////////////////////////
-  std::vector<ComplexD> corr(nt,ComplexD(0.0));
-
-  for(int i=0;i<N_i;i++)
-  for(int j=0;j<N_j;j++)
-  {
-    int m=0; // first momentum
-    int g=0; // first gamma in above ordering is gamma5 for pion
-
-    for(int t0=0;t0<nt;t0++)
-    for(int t=0;t<nt;t++)
-    {
-	    int tt = (t0+t)%nt;
-
-	    corr[t] += mesonField(m,g,t0,i,j)* mesonField(m,g,tt,j,i);
-    }
-  }   
   for(int t=0;t<nt;t++) corr[t] = corr[t]/ (double)nt;
   for(int t=0;t<nt;t++) LOG(Message) << " " << t << " " << corr[t]<<std::endl;
 }

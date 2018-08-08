@@ -48,7 +48,6 @@ class A2AVectorsPar: Serializable
 {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(A2AVectorsPar,
-                                  bool, return_5d,
                                   std::string, noise,
                                   std::string, action,
                                   std::string, eigenPack,
@@ -131,21 +130,10 @@ void TA2AVectors<FImpl, Pack>::setup(void)
     auto        &solver     = envGet(Solver, par().solver + sub_string);
     int         Ls          = env().getObjectLs(par().action);
 
-    LOG(Message) << "Creating all-to-all vectors ";
     if (hasLowModes)
     {
         auto &epack = envGet(Pack, par().eigenPack);
-        
         Nl_ = epack.evec.size();
-        std::cout << " using eigenpack '" << par().eigenPack << "' ("
-                  << Nl_ << " low modes) and noise '"
-                  << par().noise << "' (" << noise.size() 
-                  << " noise vectors)" << std::endl;
-    }
-    else
-    {
-        std::cout << " using noise '" << par().noise << "' (" << noise.size() 
-                  << " noise vectors)" << std::endl;
     }
     envCreate(std::vector<FermionField>, getName() + "_v", 1, 
               Nl_ + noise.size(), FermionField(env().getGrid()));
@@ -171,6 +159,24 @@ void TA2AVectors<FImpl, Pack>::execute(void)
     int         Ls         = env().getObjectLs(par().action);
 
     envGetTmp(A2A, a2a);
+
+    if (hasLowModes)
+    {
+        auto &epack = envGet(Pack, par().eigenPack);
+        
+        Nl_ = epack.evec.size();
+        LOG(Message) << "Computing all-to-all vectors "
+                     << " using eigenpack '" << par().eigenPack << "' ("
+                     << Nl_ << " low modes) and noise '"
+                     << par().noise << "' (" << noise.size() 
+                     << " noise vectors)" << std::endl;
+    }
+    else
+    {
+        LOG(Message) << "Computing all-to-all vectors "
+                     << " using noise '" << par().noise << "' (" << noise.size() 
+                     << " noise vectors)" << std::endl;
+    }
     // Low modes
     for (unsigned int il = 0; il < Nl_; il++)
     {
