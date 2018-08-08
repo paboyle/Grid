@@ -167,7 +167,7 @@ void TFreeProp<FImpl>::execute(void)
             }
         }
         sol = zero;
-	std::vector<Real> twist = strToVec<Real>(par().twist);
+	std::vector<double> twist = strToVec<double>(par().twist);
 	if(twist.size() != Nd) HADRONS_ERROR(Size, "number of twist angles does not match number of dimensions");
 	mat.FreePropagator(source,sol,mass,twist);
         FermToProp<FImpl>(prop, sol, s, c);
