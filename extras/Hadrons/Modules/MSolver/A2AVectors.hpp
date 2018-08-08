@@ -124,7 +124,6 @@ void TA2AVectors<FImpl, Pack>::setup(void)
 {
     bool        hasLowModes = (!par().eigenPack.empty());
     std::string sub_string  = (hasLowModes) ? "_subtract" : "";
-    bool        return_5d   = par().return_5d;   
     auto        &noise      = envGet(DilutedNoise<FImpl>, par().noise);
     auto        &action     = envGet(FMat, par().action);
     auto        &solver     = envGet(Solver, par().solver + sub_string);
@@ -160,11 +159,8 @@ void TA2AVectors<FImpl, Pack>::execute(void)
 
     envGetTmp(A2A, a2a);
 
-    if (hasLowModes)
+    if (Nl_ > 0)
     {
-        auto &epack = envGet(Pack, par().eigenPack);
-        
-        Nl_ = epack.evec.size();
         LOG(Message) << "Computing all-to-all vectors "
                      << " using eigenpack '" << par().eigenPack << "' ("
                      << Nl_ << " low modes) and noise '"
