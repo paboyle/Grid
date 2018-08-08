@@ -206,6 +206,9 @@ void        makeFileDir(const std::string filename, GridBase *g);
 #define _HADRONS_SCHUR_SOLVE_(conv) SchurRedBlack##conv##Solve
 #define HADRONS_SCHUR_SOLVE(conv) _HADRONS_SCHUR_SOLVE_(conv)
 #define HADRONS_DEFAULT_SCHUR_SOLVE HADRONS_SCHUR_SOLVE(HADRONS_DEFAULT_SCHUR)
+#define _HADRONS_SCHUR_A2A_(conv) A2AVectorsSchur##conv
+#define HADRONS_SCHUR_A2A(conv) _HADRONS_SCHUR_A2A_(conv)
+#define HADRONS_DEFAULT_SCHUR_A2A HADRONS_SCHUR_A2A(HADRONS_DEFAULT_SCHUR)
 
 // stringify macro
 #define _HADRONS_STR(x) #x

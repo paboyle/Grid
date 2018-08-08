@@ -35,10 +35,9 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 BEGIN_HADRONS_NAMESPACE
 
-////////////////////////////////
-// A2A Modes
-////////////////////////////////
-
+/******************************************************************************
+ *               Classes to generate V & W all-to-all vectors                 *
+ ******************************************************************************/
 template <typename FImpl>
 class A2AVectorsSchurDiagTwo
 {
@@ -48,14 +47,20 @@ public:
 public:
     A2AVectorsSchurDiagTwo(FMat &action, Solver &solver);
     virtual ~A2AVectorsSchurDiagTwo(void) = default;
-    void makeLowModeV(FermionField &vout, const FermionField &evec, const Real &eval);
-    void makeLowModeV5D(FermionField &vout_4d, FermionField &vout_5d, const FermionField &evec, const Real &eval);
-    void makeLowModeW(FermionField &wout, const FermionField &evec, const Real &eval);
-    void makeLowModeW5D(FermionField &wout_4d, FermionField &wout_5d, const FermionField &evec, const Real &eval);
+    void makeLowModeV(FermionField &vout, 
+                      const FermionField &evec, const Real &eval);
+    void makeLowModeV5D(FermionField &vout_4d, FermionField &vout_5d, 
+                        const FermionField &evec, const Real &eval);
+    void makeLowModeW(FermionField &wout, 
+                      const FermionField &evec, const Real &eval);
+    void makeLowModeW5D(FermionField &wout_4d, FermionField &wout_5d, 
+                        const FermionField &evec, const Real &eval);
     void makeHighModeV(FermionField &vout, const FermionField &noise);
-    void makeHighModeV5D(FermionField &vout_4d, FermionField &vout_5d, const FermionField &noise_5d);
+    void makeHighModeV5D(FermionField &vout_4d, FermionField &vout_5d, 
+                         const FermionField &noise_5d);
     void makeHighModeW(FermionField &wout, const FermionField &noise);
-    void makeHighModeW5D(FermionField &vout_5d, FermionField &wout_5d, const FermionField &noise_5d);
+    void makeHighModeW5D(FermionField &vout_5d, FermionField &wout_5d, 
+                         const FermionField &noise_5d);
 private:
     FMat                                     &action_;
     Solver                                   &solver_;
@@ -65,6 +70,9 @@ private:
     SchurDiagTwoOperator<FMat, FermionField> op_;
 };
 
+/******************************************************************************
+ *               A2AVectorsSchurDiagTwo template implementation               *
+ ******************************************************************************/
 template <typename FImpl>
 A2AVectorsSchurDiagTwo<FImpl>::A2AVectorsSchurDiagTwo(FMat &action, Solver &solver)
 : action_(action)
@@ -107,7 +115,6 @@ void A2AVectorsSchurDiagTwo<FImpl>::makeLowModeV(FermionField &vout, const Fermi
     assert(tmp_.checkerboard == Odd);
     sol_o_ = (1.0 / eval) * tmp_;
     assert(sol_o_.checkerboard == Odd);
-
     setCheckerboard(vout, sol_e_);
     assert(sol_e_.checkerboard == Even);
     setCheckerboard(vout, sol_o_);
@@ -145,7 +152,6 @@ void A2AVectorsSchurDiagTwo<FImpl>::makeLowModeW(FermionField &wout, const Fermi
     /////////////////////////////////////////////////////
     op_.Mpc(src_o_, sol_o_);
     assert(sol_o_.checkerboard == Odd);
-
     setCheckerboard(wout, sol_e_);
     assert(sol_e_.checkerboard == Even);
     setCheckerboard(wout, sol_o_);
