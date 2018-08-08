@@ -214,7 +214,6 @@ void TA2AVectors<FImpl, Pack>::execute(void)
         {
             envGetTmp(FermionField, f5);
             a2a.makeHighModeV5D(v[Nl_ + ih], f5, noise[ih]);
-            std::cout << norm2(v[Nl_ + ih]) << std::endl;
         }
         LOG(Message) << "W vector i = " << Nl_ + ih
                      << " (" << ((Nl_ > 0) ? "high " : "") 
@@ -227,7 +226,6 @@ void TA2AVectors<FImpl, Pack>::execute(void)
         {
             envGetTmp(FermionField, f5);
             a2a.makeHighModeW5D(w[Nl_ + ih], f5, noise[ih]);
-            std::cout << norm2(w[Nl_ + ih]) << std::endl;
         }
     }
 }

@@ -324,22 +324,22 @@ void TA2AMesonField<FImpl>::execute(void)
   // 2+6+4+4 = 16 gammas
   // Ordering defined here
   std::vector<Gamma::Algebra> gammas ( {
-        Gamma::Algebra::Gamma5,
-  Gamma::Algebra::Identity,    
-  Gamma::Algebra::GammaX,
-  Gamma::Algebra::GammaY,
-  Gamma::Algebra::GammaZ,
-  Gamma::Algebra::GammaT,
-  Gamma::Algebra::GammaXGamma5,
-  Gamma::Algebra::GammaYGamma5,
-  Gamma::Algebra::GammaZGamma5,
-  Gamma::Algebra::GammaTGamma5,
-  Gamma::Algebra::SigmaXY,
-  Gamma::Algebra::SigmaXZ,
-  Gamma::Algebra::SigmaXT,
-  Gamma::Algebra::SigmaYZ,
-  Gamma::Algebra::SigmaYT,
-  Gamma::Algebra::SigmaZT
+    Gamma::Algebra::Gamma5,
+    Gamma::Algebra::Identity,    
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT,
+    Gamma::Algebra::GammaXGamma5,
+    Gamma::Algebra::GammaYGamma5,
+    Gamma::Algebra::GammaZGamma5,
+    Gamma::Algebra::GammaTGamma5,
+    Gamma::Algebra::SigmaXY,
+    Gamma::Algebra::SigmaXZ,
+    Gamma::Algebra::SigmaXT,
+    Gamma::Algebra::SigmaYZ,
+    Gamma::Algebra::SigmaYT,
+    Gamma::Algebra::SigmaZT
   });
 
   ///////////////////////////////////////////////
@@ -360,14 +360,13 @@ void TA2AMesonField<FImpl>::execute(void)
   ///////////////////////////////////////////////
   // Momentum setup
   ///////////////////////////////////////////////
-  GridBase *grid = env().getGrid(1);
+  GridBase *grid = env().getGrid();
   std::vector<LatticeComplex> phases(nmom,grid);
+
   for(int m=0;m<nmom;m++)
   {
     phases[m] = Complex(1.0);    // All zero momentum for now
   }
-
-  Eigen::Tensor<ComplexD,5> mesonField(nmom,ngamma,nt,N_i,N_j);    
   LOG(Message) << "MesonField size " << N_i << "x" << N_j << "x" << nt << std::endl;
 
   //////////////////////////////////////////////////////////////////////////
