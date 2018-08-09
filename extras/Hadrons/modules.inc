@@ -27,6 +27,7 @@ modules_cc =\
   Modules/MGauge/Random.cc \
   Modules/MGauge/FundtoHirep.cc \
   Modules/MNoise/TimeDilutedSpinColorDiagonal.cc \
+  Modules/MUtilities/RandomVectors.cc \
   Modules/MUtilities/TestSeqGamma.cc \
   Modules/MUtilities/TestSeqConserved.cc \
   Modules/MLoop/NoiseLoop.cc \
@@ -87,6 +88,7 @@ modules_hpp =\
   Modules/MGauge/FundtoHirep.hpp \
   Modules/MGauge/StochEm.hpp \
   Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp \
+  Modules/MUtilities/RandomVectors.hpp \
   Modules/MUtilities/TestSeqGamma.hpp \
   Modules/MUtilities/TestSeqConserved.hpp \
   Modules/MLoop/NoiseLoop.hpp \

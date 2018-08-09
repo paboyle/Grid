@@ -27,6 +27,7 @@
 #include <Grid/Hadrons/Modules/MGauge/FundtoHirep.hpp>
 #include <Grid/Hadrons/Modules/MGauge/StochEm.hpp>
 #include <Grid/Hadrons/Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp>
+#include <Grid/Hadrons/Modules/MUtilities/RandomVectors.hpp>
 #include <Grid/Hadrons/Modules/MUtilities/TestSeqGamma.hpp>
 #include <Grid/Hadrons/Modules/MUtilities/TestSeqConserved.hpp>
 #include <Grid/Hadrons/Modules/MLoop/NoiseLoop.hpp>
