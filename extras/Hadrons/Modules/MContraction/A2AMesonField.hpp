@@ -390,7 +390,7 @@ void TA2AMesonField<FImpl>::execute(void)
   int NBlock_i = N_i/schurBlock + (((N_i % schurBlock) != 0) ? 1 : 0);
   int NBlock_j = N_j/schurBlock + (((N_j % schurBlock) != 0) ? 1 : 0);
 
-  for(int i=0;i<N_i;i+=schurBlock) //loop over SchurBlocking to suppress 5D matrix overhead
+  for(int i=0;i<N_i;i+=schurBlock)
   for(int j=0;j<N_j;j+=schurBlock)
   {
     ///////////////////////////////////////////////////////////////
@@ -408,6 +408,8 @@ void TA2AMesonField<FImpl>::execute(void)
                  << i+N_ii-1 << ", " << j <<" .. " << j+N_jj-1 << "]" 
                  << std::endl;
 
+    Eigen::Tensor<ComplexD,5> mesonFieldBlocked(nmom,ngamma,nt,N_ii,N_jj);
+
     ///////////////////////////////////////////////////////////////
     // Series of cache blocked chunks of the contractions within this SchurBlock
     /////////////////////////////////////////////////////////////// 
@@ -416,47 +418,26 @@ void TA2AMesonField<FImpl>::execute(void)
     {
       int N_iii = MIN(N_ii-ii,cacheBlock);
       int N_jjj = MIN(N_jj-jj,cacheBlock);
-      Eigen::Tensor<ComplexD,5> mesonFieldBlocked(nmom,ngamma,nt,N_iii,N_jjj);    
+      Eigen::Tensor<ComplexD,5> mesonFieldCache(nmom,ngamma,nt,N_iii,N_jjj);    
 
       t_contr-=usecond();
-      MesonField(mesonFieldBlocked, &w[i+ii], &v[j+jj], gammas, phases,Tp,
+      MesonField(mesonFieldCache, &w[i+ii], &v[j+jj], gammas, phases,Tp,
                  t_int_0,t_int_1,t_int_2,t_int_3);
       t_contr+=usecond();
+      
       // flops for general N_c & N_s
       flops += vol * ( 2 * 8.0 + 6.0 + 8.0*nmom) * N_iii*N_jjj*ngamma;
       bytes  += vol * (12.0 * sizeof(Complex) ) * N_iii*N_jjj
                   +  vol * ( 2.0 * sizeof(Complex) *nmom ) * N_iii*N_jjj* ngamma;
 
-      /////////////////////////////////////////////////////////////////////////
-      // Test: Build the pion correlator (two end)
-      // < PI_ij(t0) PI_ji (t0+t) >
-      /////////////////////////////////////////////////////////////////////////
-      parallel_for_nest2(int iii=0;iii< N_iii;iii++)
+      for(int iii=0;iii< N_iii;iii++)
       for(int jjj=0;jjj< N_jjj;jjj++)
+      for(int m =0;m< nmom;m++)
+      for(int g =0;g< ngamma;g++)
+      for(int t =0;t< nt;t++)
       {
-        int m=0; // first momentum
-        int g=0; // first gamma in above ordering is gamma5 for pion
-
-        for(int t0=0;t0<nt;t0++)
-        for(int t=0;t<nt;t++)
-        {
-          int tt = (t0+t)%nt;
-
-          corr[t] += mesonFieldBlocked(m,g,t0,iii,jjj)*mesonFieldBlocked(m,g,tt,jjj,iii);
-        }
+        mesonFieldBlocked(m,g,t,ii+iii,jj+jjj) = mesonFieldCache(m,g,t,iii,jjj);
       }
-
-      ///////////////////////////////////////////////////////////////
-      // Copy back to full meson field tensor
-      /////////////////////////////////////////////////////////////// 
-      // parallel_for_nest2(int iii=0;iii< N_iii;iii++)
-      // for(int jjj=0;jjj< N_jjj;jjj++)
-      // for(int m =0;m< nmom;m++)
-      // for(int g =0;g< ngamma;g++)
-      // for(int t =0;t< nt;t++)
-      // {
-      //   mesonField(m,g,t,i+ii+iii,j+jj+jjj) = mesonFieldBlocked(m,g,t,iii,jjj);
-      // }
     }
   }
 
