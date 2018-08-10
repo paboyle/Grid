@@ -101,6 +101,7 @@ void TTimeDilutedSpinColorDiagonal<FImpl>::execute(void)
 {
     auto &noise = envGet(DilutedNoise<FImpl>, getName());
 
+    LOG(Message) << "Generating time-diluted, spin-color diagonal noise" << std::endl;
     noise.generateNoise(*env().get4dRng());
 }
 
