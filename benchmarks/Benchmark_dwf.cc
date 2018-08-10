@@ -76,9 +76,9 @@ int main (int argc, char ** argv)
   std::vector<int> seeds5({5,6,7,8});
   
   std::cout << GridLogMessage << "Initialising 4d RNG" << std::endl;
-  GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
+  GridParallelRNG          RNG4(UGrid);  RNG4.SeedUniqueString(std::string("The 4D RNG"));
   std::cout << GridLogMessage << "Initialising 5d RNG" << std::endl;
-  GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
+  GridParallelRNG          RNG5(FGrid);  RNG5.SeedUniqueString(std::string("The 5D RNG"));
   std::cout << GridLogMessage << "Initialised RNGs" << std::endl;
 
   LatticeFermion src   (FGrid); random(RNG5,src);

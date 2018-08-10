@@ -48,6 +48,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/serialisation/Serialisation.h>
 #include <Grid/threads/Threads.h>
 #include <Grid/util/Util.h>
+#include <Grid/util/Sha.h>
 #include <Grid/communicator/Communicator.h> 
 #include <Grid/cartesian/Cartesian.h>    
 #include <Grid/tensors/Tensors.h>      

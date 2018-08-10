@@ -251,7 +251,7 @@ namespace Grid {
 
       dist[0].reset();
       for(int idx=0;idx<words;idx++){
-  fillScalar(buf[idx],dist[0],_generators[0]);
+	fillScalar(buf[idx],dist[0],_generators[0]);
       }
 
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
@@ -283,7 +283,7 @@ namespace Grid {
       RealF *pointer=(RealF *)&l;
       dist[0].reset();
       for(int i=0;i<2*vComplexF::Nsimd();i++){
-  fillScalar(pointer[i],dist[0],_generators[0]);
+	fillScalar(pointer[i],dist[0],_generators[0]);
       }
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
@@ -291,7 +291,7 @@ namespace Grid {
       RealD *pointer=(RealD *)&l;
       dist[0].reset();
       for(int i=0;i<2*vComplexD::Nsimd();i++){
-  fillScalar(pointer[i],dist[0],_generators[0]);
+	fillScalar(pointer[i],dist[0],_generators[0]);
       }
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
@@ -299,7 +299,7 @@ namespace Grid {
       RealF *pointer=(RealF *)&l;
       dist[0].reset();
       for(int i=0;i<vRealF::Nsimd();i++){
-  fillScalar(pointer[i],dist[0],_generators[0]);
+	fillScalar(pointer[i],dist[0],_generators[0]);
       }
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
@@ -316,6 +316,17 @@ namespace Grid {
       CartesianCommunicator::BroadcastWorld(0,(void *)&seeds[0],sizeof(int)*seeds.size());
       std::seed_seq src(seeds.begin(),seeds.end());
       Seed(src,0);
+    }
+
+    void SeedUniqueString(const std::string &s){
+      std::vector<int> seeds;
+      seeds = GridChecksum::sha256_seeds(s);
+      std::cout << GridLogMessage << "Intialising Serial RNG with unique string " <<s<< std::endl;
+      std::cout << GridLogMessage << "SHA seeds are: " <<s<< std::endl;
+      for(int i=0;i<seeds.size();i++){
+	std::cout << GridLogMessage << "\t " <<seeds[i]<< std::endl;
+      }
+      SeedFixedIntegers(seeds);
     }
   };
 
@@ -377,6 +388,16 @@ namespace Grid {
       _time_counter += usecond()- inner_time_counter;
     };
 
+    void SeedUniqueString(const std::string &s){
+      std::vector<int> seeds;
+      seeds = GridChecksum::sha256_seeds(s);
+      std::cout << GridLogMessage << "Intialising Parallel RNG with unique string " <<s<< std::endl;
+      std::cout << GridLogMessage << "SHA seeds are: " <<s<< std::endl;
+      for(int i=0;i<seeds.size();i++){
+	std::cout << GridLogMessage << "\t " <<seeds[i]<< std::endl;
+      }
+      SeedFixedIntegers(seeds);
+    }
     void SeedFixedIntegers(const std::vector<int> &seeds){
 
       // Everyone generates the same seed_seq based on input seeds
