@@ -56,6 +56,75 @@ std::string ModuleBase::getRegisteredName(void)
 // execution ///////////////////////////////////////////////////////////////////
 void ModuleBase::operator()(void)
 {
+    resetTimers();
+    startTimer("_total");
+    startTimer("_setup");
     setup();
+    stopTimer("_setup");
+    startTimer("_execute");
     execute();
+    stopAllTimers();
+}
+
+// timers //////////////////////////////////////////////////////////////////////
+void ModuleBase::startTimer(const std::string &name)
+{
+    if (!name.empty())
+    {
+        timer_[name].Start();
+    }
+}
+
+void ModuleBase::startCurrentTimer(const std::string &name)
+{
+    if (!name.empty())
+    {
+        stopCurrentTimer();
+        startTimer(name);
+        currentTimer_ = name;
+    }
+}
+
+void ModuleBase::stopTimer(const std::string &name)
+{
+    if (timer_.at(name).isRunning())
+    {
+        timer_.at(name).Stop();
+    }
+}
+
+void ModuleBase::stopCurrentTimer(void)
+{
+    if (!currentTimer_.empty())
+    {
+        stopTimer(currentTimer_);
+        currentTimer_ = "";
+    }
+}
+
+void ModuleBase::stopAllTimers(void)
+{
+    for (auto &t: timer_)
+    {
+        stopTimer(t.first);
+    }
+    currentTimer_ = "";
+}
+
+void ModuleBase::resetTimers(void)
+{
+    timer_.clear();
+    currentTimer_ = "";
+}
+
+std::map<std::string, GridTime> ModuleBase::getTimings(void)
+{
+    std::map<std::string, GridTime> timing;
+
+    for (auto &t: timer_)
+    {
+        timing[t.first] = t.second.Elapsed();
+    }
+
+    return timing;
 }

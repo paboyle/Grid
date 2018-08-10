@@ -622,9 +622,14 @@ VirtualMachine::Program VirtualMachine::schedule(const GeneticPar &par)
 }
 
 // general execution ///////////////////////////////////////////////////////////
-#define BIG_SEP "==============="
-#define SEP     "---------------"
+#define BIG_SEP   "==============="
+#define SEP       "---------------"
+#define SMALL_SEP "..............."
 #define MEM_MSG(size) sizeString(size)
+#define PRINT_TIME(name, t, total)                                  \
+std::right << std::setw(30) << name << ": " << t.count() << " us (" \
+<< std::fixed << std::setprecision(1)                               \
+<< static_cast<double>((t).count())/total*100 << "%)"
 
 void VirtualMachine::executeProgram(const Program &p)
 {
@@ -654,11 +659,31 @@ void VirtualMachine::executeProgram(const Program &p)
         LOG(Message) << SEP << " Measurement step " << i + 1 << "/"
                      << p.size() << " (module '" << module_[p[i]].name
                      << "') " << SEP << std::endl;
+        LOG(Message) << SMALL_SEP << " Module execution" << std::endl;
         currentModule_ = p[i];
         (*module_[p[i]].data)();
         currentModule_ = -1;
         sizeBefore = env().getTotalSize();
+        // print time profile after execution
+        LOG(Message) << SMALL_SEP << " Timings" << std::endl;
+
+        std::map<std::string, GridTime> ctiming, gtiming;
+        GridTime                        total;
+
+        ctiming  = module_[p[i]].data->getTimings();
+        total    = ctiming.at("_total");
+        gtiming["total"]     = ctiming["_total"];   ctiming.erase("_total");
+        gtiming["setup"]     = ctiming["_setup"];   ctiming.erase("_setup");
+        gtiming["execution"] = ctiming["_execute"]; ctiming.erase("_execute");
+        LOG(Message) << "* GLOBAL TIMERS" << std::endl;
+        printTimeProfile(gtiming, total);
+        if (!ctiming.empty())
+        {
+            LOG(Message) << "* CUSTOM TIMERS" << std::endl;
+            printTimeProfile(ctiming, total);
+        }
         // print used memory after execution
+        LOG(Message) << SMALL_SEP << " Memory management" << std::endl;
         LOG(Message) << "Allocated objects: " << MEM_MSG(sizeBefore)
                      << std::endl;
         if (sizeBefore > memPeak)

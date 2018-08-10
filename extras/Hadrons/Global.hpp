@@ -214,6 +214,9 @@ void        makeFileDir(const std::string filename, GridBase *g);
 #define _HADRONS_STR(x) #x
 #define HADRONS_STR(x) _HADRONS_STR(x)
 
+// pretty print time profile
+void printTimeProfile(const std::map<std::string, GridTime> &timing, GridTime total);
+
 END_HADRONS_NAMESPACE
 
 #include <Grid/Hadrons/Exceptions.hpp>

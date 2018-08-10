@@ -189,6 +189,7 @@ void TA2AMesonField<FImpl>::MesonField(Eigen::Tensor<ComplexD,5> &mat,
   int stride=grid->_slice_stride[orthogdim];
 
   t0-=usecond();
+  MODULE_TIMER("Colour trace * mom.");
   // Nested parallelism would be ok
   // Wasting cores here. Test case r
   parallel_for(int r=0;r<rd;r++)
@@ -233,6 +234,7 @@ void TA2AMesonField<FImpl>::MesonField(Eigen::Tensor<ComplexD,5> &mat,
   t0+=usecond();
 
   // Sum across simd lanes in the plane, breaking out orthog dir.
+  MODULE_TIMER("Local space sum");
   t1-=usecond();
   parallel_for(int rt=0;rt<rd;rt++)
   {
@@ -265,6 +267,7 @@ void TA2AMesonField<FImpl>::MesonField(Eigen::Tensor<ComplexD,5> &mat,
   t2-=usecond();
 
   // ld loop and local only??
+  MODULE_TIMER("Spin trace");
   int pd = grid->_processors[orthogdim];
   int pc = grid->_processor_coor[orthogdim];
   parallel_for_nest2(int lt=0;lt<ld;lt++)
@@ -308,6 +311,7 @@ void TA2AMesonField<FImpl>::MesonField(Eigen::Tensor<ComplexD,5> &mat,
   // Healthy size that should suffice
   ////////////////////////////////////////////////////////////////////
   t3-=usecond();
+  MODULE_TIMER("Global sum");
   grid->GlobalSumVector(&mat(0,0,0,0,0),Nmom*Ngamma*Nt*Lblock*Rblock);
   t3+=usecond();
 }
@@ -430,6 +434,7 @@ void TA2AMesonField<FImpl>::execute(void)
       bytes  += vol * (12.0 * sizeof(Complex) ) * N_iii*N_jjj
                   +  vol * ( 2.0 * sizeof(Complex) *nmom ) * N_iii*N_jjj* ngamma;
 
+      MODULE_TIMER("Cache copy");
       for(int iii=0;iii< N_iii;iii++)
       for(int jjj=0;jjj< N_jjj;jjj++)
       for(int m =0;m< nmom;m++)
@@ -442,21 +447,10 @@ void TA2AMesonField<FImpl>::execute(void)
   }
 
   double nodes=grid->NodeCount();
-  double t1 = usecond();
-  LOG(Message) << "Contraction of MesonFields took "<<(t1-t0)/1.0e6<< " s"  << std::endl;
-  LOG(Message) << "  Schur   " << (t_schur)/1.0e6 << " s"  << std::endl;
-  LOG(Message) << "  Contr   " << (t_contr)/1.0e6 << " s"  << std::endl;
-  LOG(Message) << "  Intern0 " << (t_int_0)/1.0e6 << " s"  << std::endl;
-  LOG(Message) << "  Intern1 " << (t_int_1)/1.0e6 << " s"  << std::endl;
-  LOG(Message) << "  Intern2 " << (t_int_2)/1.0e6 << " s"  << std::endl;
-  LOG(Message) << "  Intern3 " << (t_int_3)/1.0e6 << " s"  << std::endl;
-
   double t_kernel = t_int_0 + t_int_1;
-  LOG(Message) << "  Arith   " << flops/(t_kernel)/1.0e3/nodes << " Gflop/s/ node "  << std::endl;
-  LOG(Message) << "  Arith   " << bytes/(t_kernel)/1.0e3/nodes << " GB/s/node "  << std::endl;
 
-  for(int t=0;t<nt;t++) corr[t] = corr[t]/ (double)nt;
-  for(int t=0;t<nt;t++) LOG(Message) << " " << t << " " << corr[t]<<std::endl;
+  LOG(Message) << "Perf " << flops/(t_kernel)/1.0e3/nodes << " Gflop/s/node "  << std::endl;
+  LOG(Message) << "Perf " << bytes/(t_kernel)/1.0e3/nodes << " GB/s/node "  << std::endl;
 }
 
 END_MODULE_NAMESPACE

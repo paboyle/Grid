@@ -102,6 +102,9 @@ public:
     assert(running == false);
     return (uint64_t) accumulator.count();
   }
+  bool isRunning(void){
+    return running;
+  }
 };
 
 }

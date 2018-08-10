@@ -178,6 +178,7 @@ void TA2AVectors<FImpl, Pack>::execute(void)
     {
         auto &epack  = envGet(Pack, par().eigenPack);
 
+        MODULE_TIMER("V low mode");
         LOG(Message) << "V vector i = " << il << " (low mode)" << std::endl;
         if (Ls == 1)
         {
@@ -188,6 +189,7 @@ void TA2AVectors<FImpl, Pack>::execute(void)
             envGetTmp(FermionField, f5);
             a2a.makeLowModeV5D(v[il], f5, epack.evec[il], epack.eval[il]);
         }
+        MODULE_TIMER("W low mode");
         LOG(Message) << "W vector i = " << il << " (low mode)" << std::endl;
         if (Ls == 1)
         {
@@ -203,6 +205,7 @@ void TA2AVectors<FImpl, Pack>::execute(void)
     // High modes
     for (unsigned int ih = 0; ih < noise.size(); ih++)
     {
+        MODULE_TIMER("V high mode");
         LOG(Message) << "V vector i = " << Nl_ + ih
                      << " (" << ((Nl_ > 0) ? "high " : "") 
                      << "stochastic mode)" << std::endl;
@@ -215,6 +218,7 @@ void TA2AVectors<FImpl, Pack>::execute(void)
             envGetTmp(FermionField, f5);
             a2a.makeHighModeV5D(v[Nl_ + ih], f5, noise[ih]);
         }
+        MODULE_TIMER("W high mode");
         LOG(Message) << "W vector i = " << Nl_ + ih
                      << " (" << ((Nl_ > 0) ? "high " : "") 
                      << "stochastic mode)" << std::endl;

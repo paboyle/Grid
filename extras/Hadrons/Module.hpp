@@ -129,6 +129,8 @@ if (env().getGrid()->IsBoss() and !ioStem.empty())\
     }\
 }
 
+#define MODULE_TIMER(name) this->startCurrentTimer(name)
+
 /******************************************************************************
  *                            Module class                                    *
  ******************************************************************************/
@@ -161,13 +163,22 @@ public:
     virtual void execute(void) = 0;
     // execution
     void operator()(void);
+    // timers
+    void                            startTimer(const std::string &name);
+    void                            startCurrentTimer(const std::string &name);
+    void                            stopTimer(const std::string &name);
+    void                            stopCurrentTimer(void);
+    void                            stopAllTimers(void);
+    void                            resetTimers(void);
+    std::map<std::string, GridTime> getTimings(void);
 protected:
     // environment shortcut
     DEFINE_ENV_ALIAS;
     // virtual machine shortcut
     DEFINE_VM_ALIAS;
 private:
-    std::string name_;
+    std::string                          name_, currentTimer_;
+    std::map<std::string, GridStopWatch> timer_; 
 };
 
 // derived class, templating the parameter class

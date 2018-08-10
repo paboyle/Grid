@@ -173,3 +173,29 @@ void Hadrons::makeFileDir(const std::string filename, GridBase *g)
         }
     }
 }
+
+void Hadrons::printTimeProfile(const std::map<std::string, GridTime> &timing, 
+                               GridTime total)
+{
+    typedef decltype(total.count()) Count;
+
+    std::map<Count, std::string, std::greater<Count>> rtiming;
+    const double dtotal = static_cast<double>(total.count());
+    auto cf = std::cout.flags();
+    unsigned int width = 0;
+
+    for (auto &t: timing)
+    {
+        width = std::max(width, static_cast<unsigned int>(t.first.length()));
+        rtiming[t.second.count()] = t.first;
+    }
+    for (auto &rt: rtiming)
+    {
+        LOG(Message) << std::right << std::setw(width) << rt.second << ": " 
+                     << rt.first << " us (" << std::fixed 
+                     << std::setprecision(1) 
+                     << static_cast<double>(rt.first)/dtotal*100 << "%)"
+                     << std::endl;
+    }
+    std::cout.flags(cf);
+}
