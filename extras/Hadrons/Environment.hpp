@@ -97,7 +97,6 @@ public:
     unsigned int            getNd(void) const;
     double                  getVolume(void) const;
     // random number generator
-    void                    setSeed(const std::vector<int> &seed);
     GridParallelRNG *       get4dRng(void) const;
     // general memory management
     void                    addObject(const std::string name,

@@ -67,5 +67,5 @@ void TRandom::execute(void)
     LOG(Message) << "Generating random gauge configuration" << std::endl;
     
     auto &U = envGet(LatticeGaugeField, getName());
-    SU3::HotConfiguration(*env().get4dRng(), U);
+    SU3::HotConfiguration(rng4d(), U);
 }

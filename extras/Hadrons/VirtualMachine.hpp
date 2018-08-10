@@ -91,6 +91,9 @@ public:
     // trajectory counter
     void                setTrajectory(const unsigned int traj);
     unsigned int        getTrajectory(void) const;
+    // run tag
+    void                setRunId(const std::string id);
+    std::string         getRunId(void) const;
     // module management
     void                pushModule(ModPt &pt);
     template <typename M>
@@ -151,6 +154,7 @@ private:
     void memoryProfile(const unsigned int address);
 private:
     // general
+    std::string                         runId_;
     unsigned int                        traj_;
     // module and related maps
     std::vector<ModuleInfo>             module_;

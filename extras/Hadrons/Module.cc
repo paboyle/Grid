@@ -128,3 +128,31 @@ std::map<std::string, GridTime> ModuleBase::getTimings(void)
 
     return timing;
 }
+
+std::string ModuleBase::makeSeedString(void)
+{
+    std::string seed;
+
+    if (!vm().getRunId().empty())
+    {
+        seed += vm().getRunId() + "-";
+    }
+    seed += getName() + "-" + std::to_string(vm().getTrajectory());
+
+    return seed;
+}
+
+GridParallelRNG & ModuleBase::rng4d(void)
+{
+    auto &r = *env().get4dRng();
+
+    if (makeSeedString() != seed_)
+    {
+        seed_ = makeSeedString();
+        LOG(Message) << "Seeding 4D RNG " << &r << " with string '" 
+                     << seed_ << "'" << std::endl;
+        r.SeedUniqueString(seed_);
+    }
+
+    return r;
+}

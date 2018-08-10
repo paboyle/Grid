@@ -128,7 +128,7 @@ void TStochFreeField<SImpl>::execute(void)
     const   unsigned int Nadj = Group::AdjointDimension;
     auto    &phi              = envGet(Field, getName());
     auto    &w                = envGet(ComplexField, "_" + getName() + "_weight");
-    auto    &rng              = *env().get4dRng();
+    auto    &rng              = rng4d();
     double  trphi2;
     FFT     fft(env().getGrid());
     Integer vol;

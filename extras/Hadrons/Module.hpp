@@ -176,8 +176,12 @@ protected:
     DEFINE_ENV_ALIAS;
     // virtual machine shortcut
     DEFINE_VM_ALIAS;
+    // RNG seeded from module string
+    GridParallelRNG &rng4d(void);
 private:
-    std::string                          name_, currentTimer_;
+    std::string makeSeedString(void);
+private:
+    std::string                          name_, currentTimer_, seed_;
     std::map<std::string, GridStopWatch> timer_; 
 };
 

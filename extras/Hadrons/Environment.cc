@@ -195,11 +195,6 @@ double Environment::getVolume(void) const
 }
 
 // random number generator /////////////////////////////////////////////////////
-void Environment::setSeed(const std::vector<int> &seed)
-{
-    rng4d_->SeedFixedIntegers(seed);
-}
-
 GridParallelRNG * Environment::get4dRng(void) const
 {
     return rng4d_.get();

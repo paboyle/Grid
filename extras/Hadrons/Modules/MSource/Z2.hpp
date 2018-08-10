@@ -149,7 +149,7 @@ void TZ2<FImpl>::execute(void)
         hasT_ = true;
     }
     envGetTmp(LatticeComplex, eta);
-    bernoulli(*env().get4dRng(), eta);
+    bernoulli(rng4d(), eta);
     eta = (2.*eta - shift)*(1./::sqrt(2.));
     eta = where((t >= par().tA) and (t <= par().tB), eta, 0.*eta);
     src = 1.;

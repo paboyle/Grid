@@ -55,7 +55,7 @@ public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(GlobalPar,
                                         TrajRange,                  trajCounter,
                                         VirtualMachine::GeneticPar, genetic,
-                                        std::string,                seed);
+                                        std::string,                runId);
     };
 public:
     // constructors

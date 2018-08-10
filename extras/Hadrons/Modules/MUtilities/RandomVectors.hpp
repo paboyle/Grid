@@ -83,7 +83,7 @@ void TRandomVectors<Field>::execute(void)
     
     for (unsigned int i = 0; i < vec.size(); ++i)
     {
-        random(*env().get4dRng(), vec[i]);
+        random(rng4d(), vec[i]);
     }
 }
 

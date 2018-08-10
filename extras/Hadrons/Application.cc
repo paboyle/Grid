@@ -34,8 +34,8 @@ using namespace Grid;
 using namespace QCD;
 using namespace Hadrons;
 
-#define BIG_SEP "==============="
-#define SEP     "---------------"
+#define BIG_SEP "================"
+#define SEP     "----------------"
 
 /******************************************************************************
  *                       Application implementation                           *
@@ -54,11 +54,11 @@ Application::Application(void)
         loc[d]  /= mpi[d];
         locVol_ *= loc[d];
     }
-    LOG(Message) << "====== HADRONS APPLICATION STARTING ======" << std::endl;
+    LOG(Message) << "====== HADRONS APPLICATION INITIALISATION ======" << std::endl;
     LOG(Message) << "** Dimensions" << std::endl;
-    LOG(Message) << "Global lattice       : " << dim << std::endl;
-    LOG(Message) << "MPI partition        : " << mpi << std::endl;
-    LOG(Message) << "Local lattice        : " << loc << std::endl;
+    LOG(Message) << "Global lattice: " << dim << std::endl;
+    LOG(Message) << "MPI partition : " << mpi << std::endl;
+    LOG(Message) << "Local lattice : " << loc << std::endl;
     LOG(Message) << std::endl;
     LOG(Message) << "** Default parameters (and associated C macro)" << std::endl;
     LOG(Message) << "ASCII output precision  : " << MACOUT(DEFAULT_ASCII_PREC) << std::endl;
@@ -88,7 +88,6 @@ Application::Application(const std::string parameterFileName)
 void Application::setPar(const Application::GlobalPar &par)
 {
     par_ = par;
-    env().setSeed(strToVec<int>(par_.seed));
 }
 
 const Application::GlobalPar & Application::getPar(void)
@@ -99,10 +98,17 @@ const Application::GlobalPar & Application::getPar(void)
 // execute /////////////////////////////////////////////////////////////////////
 void Application::run(void)
 {
+    LOG(Message) << "====== HADRONS APPLICATION START ======" << std::endl;
     if (!parameterFileName_.empty() and (vm().getNModule() == 0))
     {
         parseParameterFile(parameterFileName_);
     }
+    if (getPar().runId.empty())
+    {
+        HADRONS_ERROR(Definition, "run id is empty");
+    }
+    LOG(Message) << "RUN ID '" << getPar().runId << "'" << std::endl;
+    vm().setRunId(getPar().runId);
     vm().printContent();
     env().printContent();
     schedule();

@@ -81,5 +81,5 @@ void TStochEm::execute(void)
                      << par().zmScheme << ")..." << std::endl;
         photon.StochasticWeight(w);
     }
-    photon.StochasticField(a, *env().get4dRng(), w);
+    photon.StochasticField(a, rng4d(), w);
 }

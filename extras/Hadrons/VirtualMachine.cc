@@ -48,6 +48,17 @@ unsigned int VirtualMachine::getTrajectory(void) const
     return traj_;
 }
 
+// run tag /////////////////////////////////////////////////////////////////////
+void VirtualMachine::setRunId(const std::string id)
+{
+    runId_ = id;
+}
+
+std::string VirtualMachine::getRunId(void) const
+{
+    return runId_;
+}
+
 // module management ///////////////////////////////////////////////////////////
 void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
 {
@@ -622,9 +633,9 @@ VirtualMachine::Program VirtualMachine::schedule(const GeneticPar &par)
 }
 
 // general execution ///////////////////////////////////////////////////////////
-#define BIG_SEP   "==============="
-#define SEP       "---------------"
-#define SMALL_SEP "..............."
+#define BIG_SEP   "================"
+#define SEP       "----------------"
+#define SMALL_SEP "................"
 #define MEM_MSG(size) sizeString(size)
 #define PRINT_TIME(name, t, total)                                  \
 std::right << std::setw(30) << name << ": " << t.count() << " us (" \

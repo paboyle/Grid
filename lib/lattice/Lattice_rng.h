@@ -320,12 +320,14 @@ namespace Grid {
 
     void SeedUniqueString(const std::string &s){
       std::vector<int> seeds;
+      std::stringstream sha;
       seeds = GridChecksum::sha256_seeds(s);
-      std::cout << GridLogMessage << "Intialising Serial RNG with unique string " <<s<< std::endl;
-      std::cout << GridLogMessage << "SHA seeds are: " <<s<< std::endl;
-      for(int i=0;i<seeds.size();i++){
-	std::cout << GridLogMessage << "\t " <<seeds[i]<< std::endl;
+      for(int i=0;i<seeds.size();i++) { 
+        sha << std::hex << seeds[i];
       }
+      std::cout << GridLogMessage << "Intialising serial RNG with unique string '" 
+                << s << "'" << std::endl;
+      std::cout << GridLogMessage << "Seed SHA256: " << sha.str() << std::endl;
       SeedFixedIntegers(seeds);
     }
   };
@@ -390,12 +392,14 @@ namespace Grid {
 
     void SeedUniqueString(const std::string &s){
       std::vector<int> seeds;
+      std::stringstream sha;
       seeds = GridChecksum::sha256_seeds(s);
-      std::cout << GridLogMessage << "Intialising Parallel RNG with unique string " <<s<< std::endl;
-      std::cout << GridLogMessage << "SHA seeds are: " <<s<< std::endl;
-      for(int i=0;i<seeds.size();i++){
-	std::cout << GridLogMessage << "\t " <<seeds[i]<< std::endl;
+      for(int i=0;i<seeds.size();i++) { 
+        sha << std::hex << seeds[i];
       }
+      std::cout << GridLogMessage << "Intialising parallel RNG with unique string '" 
+                << s << "'" << std::endl;
+      std::cout << GridLogMessage << "Seed SHA256: " << sha.str() << std::endl;
       SeedFixedIntegers(seeds);
     }
     void SeedFixedIntegers(const std::vector<int> &seeds){
