@@ -88,6 +88,13 @@ AC_ARG_WITH([lime],
             [AM_CXXFLAGS="-I$with_lime/include $AM_CXXFLAGS"]
             [AM_LDFLAGS="-L$with_lime/lib $AM_LDFLAGS"])
 
+############### OpenSSL
+AC_ARG_WITH([openssl],
+            [AS_HELP_STRING([--with-openssl=prefix],
+            [try this for a non-standard install prefix of the OpenSSL library])],
+            [AM_CXXFLAGS="-I$with_openssl/include $AM_CXXFLAGS"]
+            [AM_LDFLAGS="-L$with_openssl/lib $AM_LDFLAGS"])
+
 ############### lapack
 AC_ARG_ENABLE([lapack],
     [AC_HELP_STRING([--enable-lapack=yes|no|prefix], [enable LAPACK])],
@@ -188,9 +195,13 @@ AC_SEARCH_LIBS([fftw_execute], [fftw3],
 AC_SEARCH_LIBS([limeCreateReader], [lime],
                [AC_DEFINE([HAVE_LIME], [1], [Define to 1 if you have the `LIME' library])]
                [have_lime=true],
-	       [AC_MSG_WARN(C-LIME library was not found in your system.
-In order to use ILGG file format please install or provide the correct path to your installation
-Info at: http://usqcd.jlab.org/usqcd-docs/c-lime/)])
+	             [AC_MSG_ERROR(LIME library was not found in your system.)])
+
+AC_SEARCH_LIBS([SHA256_Init], [crypto],
+               [AC_DEFINE([HAVE_CRYPTO], [1], [Define to 1 if you have the `OpenSSL' library])]
+               [have_crypto=true],
+	             [AC_MSG_ERROR(OpenSSL library was not found in your system.)])
+AC_CHECK_HEADER([openssl/sha.h], [], [AC_MSG_ERROR(OpenSSL library found but without headers.)], [AC_INCLUDES_DEFAULT([])])
 
 AC_SEARCH_LIBS([crc32], [z],
                [AC_DEFINE([HAVE_ZLIB], [1], [Define to 1 if you have the `LIBZ' library])]
