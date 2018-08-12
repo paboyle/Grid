@@ -35,6 +35,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/ModuleFactory.hpp>
 #include <Grid/Hadrons/A2AVectors.hpp>
 #include <Grid/Eigen/unsupported/CXX11/Tensor>
+#include <Grid/Hadrons/Modules/MSolver/A2AVectors.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -46,7 +47,7 @@ BEGIN_MODULE_NAMESPACE(MContraction)
 typedef std::pair<Gamma::Algebra, Gamma::Algebra> GammaPair;
 
 
-class A2AMesonFieldPar : Serializable
+class A2AMesonFieldPar: Serializable
 {
   public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(A2AMesonFieldPar,
@@ -62,8 +63,9 @@ template <typename FImpl>
 class TA2AMesonField : public Module<A2AMesonFieldPar>
 {
 public:
-    FERM_TYPE_ALIASES(FImpl, );
-    SOLVER_TYPE_ALIASES(FImpl, );
+    FERM_TYPE_ALIASES(FImpl,);
+    SOLVER_TYPE_ALIASES(FImpl,);
+    typedef Eigen::Tensor<Complex, 5, Eigen::RowMajor> MesonField;
 public:
     // constructor
     TA2AMesonField(const std::string name);
@@ -77,20 +79,29 @@ public:
     // execution
     virtual void execute(void);
 private:
-    // Arithmetic help. Move to Grid??
-    virtual void makeBlock(Eigen::Tensor<ComplexD,5> &mat, 
-                           const LatticeFermion *lhs,
-                           const LatticeFermion *rhs,
-                           std::vector<Gamma::Algebra> gammas,
-                           const std::vector<LatticeComplex> &mom,
-                           int orthogdim,
-                           double &t0,
-                           double &t1,
-                           double &t2,
-                           double &t3);
+    // Arithmetic kernel. Move to Grid??
+    void makeBlock(MesonField &mat, 
+                   const FermionField *lhs,
+                   const FermionField *rhs,
+                   std::vector<Gamma::Algebra> gamma,
+                   const std::vector<LatticeComplex> &mom,
+                   int orthogdim,
+                   double &t0,
+                   double &t1,
+                   double &t2,
+                   double &t3);
+    // IO
+    std::string ioname(unsigned int m, unsigned int g) const;
+    std::string filename(unsigned int m, unsigned int g) const;
+    void initFile(unsigned int m, unsigned int g);
+    void saveBlock(const MesonField &mf,
+                   unsigned int m, unsigned int g, 
+                   unsigned int i, unsigned int j);
 private:
-    bool        hasPhase_{false};
-    std::string momphName_;
+    bool                             hasPhase_{false};
+    std::string                      momphName_;
+    std::vector<Gamma::Algebra>      gamma_;
+    std::vector<std::vector<double>> mom_;
 };
 
 MODULE_REGISTER(A2AMesonField, ARG(TA2AMesonField<FIMPL>), MContraction);
@@ -128,23 +139,7 @@ std::vector<std::string> TA2AMesonField<FImpl>::getOutput(void)
 template <typename FImpl>
 void TA2AMesonField<FImpl>::setup(void)
 {
-    envCache(std::vector<LatticeComplex>, momphName_, 1, 
-             par().mom.size(), env().getGrid());
-    envTmpLat(LatticeComplex, "coor");
-}
-
-// execution ///////////////////////////////////////////////////////////////////
-template <typename FImpl>
-void TA2AMesonField<FImpl>::execute(void)
-{
-    LOG(Message) << "Computing all-to-all meson fields" << std::endl;
-
-    auto &v = envGet(std::vector<FermionField>, par().v);
-    auto &w = envGet(std::vector<FermionField>, par().w);
-    
-    // 2+6+4+4 = 16 gammas
-    // Ordering defined here
-    std::vector<Gamma::Algebra> gammas ( {
+    gamma_ = {
         Gamma::Algebra::Gamma5,
         Gamma::Algebra::Identity,    
         Gamma::Algebra::GammaX,
@@ -161,12 +156,26 @@ void TA2AMesonField<FImpl>::execute(void)
         Gamma::Algebra::SigmaYZ,
         Gamma::Algebra::SigmaYT,
         Gamma::Algebra::SigmaZT
-    });
+    };
+
+    envCache(std::vector<LatticeComplex>, momphName_, 1, 
+             par().mom.size(), env().getGrid());
+    envTmpLat(LatticeComplex, "coor");
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TA2AMesonField<FImpl>::execute(void)
+{
+    LOG(Message) << "Computing all-to-all meson fields" << std::endl;
+
+    auto &v = envGet(std::vector<FermionField>, par().v);
+    auto &w = envGet(std::vector<FermionField>, par().w);
 
     int nt         = env().getDim().back();
     int N_i        = w.size();
     int N_j        = v.size();
-    int ngamma     = gammas.size();
+    int ngamma     = gamma_.size();
     int nmom       = par().mom.size();
     int block      = par().block;
     int cacheBlock = par().cacheBlock;
@@ -185,12 +194,12 @@ void TA2AMesonField<FImpl>::execute(void)
             std::vector<Real> p;
 
             envGetTmp(LatticeComplex, coor);
-            p     = strToVec<Real>(par().mom[j]);
+            mom_.push_back(strToVec<Real>(par().mom[j]));
             ph[j] = zero;
-            for(unsigned int mu = 0; mu < p.size(); mu++)
+            for(unsigned int mu = 0; mu < mom_[j].size(); mu++)
             {
                 LatticeCoordinate(coor, mu);
-                ph[j] = ph[j] + (p[mu]/env().getDim(mu))*coor;
+                ph[j] = ph[j] + (mom_[j][mu]/env().getDim(mu))*coor;
             }
             ph[j] = exp((Real)(2*M_PI)*i*ph[j]);
         }
@@ -222,9 +231,7 @@ void TA2AMesonField<FImpl>::execute(void)
     for(int i=0;i<N_i;i+=block)
     for(int j=0;j<N_j;j+=block)
     {
-        ///////////////////////////////////////////////////////////////
         // Get the W and V vectors for this block^2 set of terms
-        ///////////////////////////////////////////////////////////////
         int N_ii = MIN(N_i-i,block);
         int N_jj = MIN(N_j-j,block);
 
@@ -237,20 +244,18 @@ void TA2AMesonField<FImpl>::execute(void)
                     << i+N_ii-1 << ", " << j <<" .. " << j+N_jj-1 << "]" 
                     << std::endl;
 
-        Eigen::Tensor<ComplexD,5> mfBlock(nmom,ngamma,nt,N_ii,N_jj);
+        MesonField mfBlock(nmom,ngamma,nt,N_ii,N_jj);
 
-        ///////////////////////////////////////////////////////////////
         // Series of cache blocked chunks of the contractions within this block
-        /////////////////////////////////////////////////////////////// 
         for(int ii=0;ii<N_ii;ii+=cacheBlock)
         for(int jj=0;jj<N_jj;jj+=cacheBlock)
         {
             int N_iii = MIN(N_ii-ii,cacheBlock);
             int N_jjj = MIN(N_jj-jj,cacheBlock);
-            Eigen::Tensor<ComplexD,5> mfCache(nmom,ngamma,nt,N_iii,N_jjj);    
+            MesonField mfCache(nmom,ngamma,nt,N_iii,N_jjj);    
 
             t_contr-=usecond();
-            makeBlock(mfCache, &w[i+ii], &v[j+jj], gammas, ph, 
+            makeBlock(mfCache, &w[i+ii], &v[j+jj], gamma_, ph, 
                       env().getNd() - 1, t_int_0, t_int_1, t_int_2, t_int_3);
             t_contr+=usecond();
             
@@ -269,13 +274,25 @@ void TA2AMesonField<FImpl>::execute(void)
                 mfBlock(m,g,t,ii+iii,jj+jjj) = mfCache(m,g,t,iii,jjj);
             }
         }
+
+        // IO
+        MODULE_TIMER("IO");
+        for(int m = 0; m < nmom; m++)
+        for(int g = 0; g < ngamma; g++)
+        {
+            if ((i == 0) and (j == 0))
+            {
+                initFile(m, g);
+            }
+            saveBlock(mfBlock, m, g, i, j);
+        }
     }
 
     double nodes    = env().getGrid()->NodeCount();
     double t_kernel = t_int_0 + t_int_1;
 
-    LOG(Message) << "Perf " << flops/(t_kernel)/1.0e3/nodes << " Gflop/s/node "  << std::endl;
-    LOG(Message) << "Perf " << bytes/(t_kernel)/1.0e3/nodes << " GB/s/node "  << std::endl;
+    LOG(Message) << "Perf " << flops/t_kernel/1.0e3/nodes << " Gflop/s/node "  << std::endl;
+    LOG(Message) << "Perf " << bytes/t_kernel/1.0e3/nodes << " GB/s/node "  << std::endl;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -283,16 +300,16 @@ void TA2AMesonField<FImpl>::execute(void)
 // Could move to Grid ???
 //////////////////////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TA2AMesonField<FImpl>::makeBlock(Eigen::Tensor<ComplexD,5> &mat, 
-					 const LatticeFermion *lhs_wi,
-					 const LatticeFermion *rhs_vj,
-					 std::vector<Gamma::Algebra> gammas,
-					 const std::vector<LatticeComplex > &mom,
-					 int orthogdim,
-					 double &t0,
-					 double &t1,
-					 double &t2,
-					 double &t3) 
+void TA2AMesonField<FImpl>::makeBlock(MesonField &mat, 
+					                  const FermionField *lhs_wi,
+					                  const FermionField *rhs_vj,
+					                  std::vector<Gamma::Algebra> gamma,
+					                  const std::vector<LatticeComplex> &mom,
+					                  int orthogdim,
+					                  double &t0,
+					                  double &t1,
+					                  double &t2,
+					                  double &t3) 
 {
     typedef typename FImpl::SiteSpinor vobj;
 
@@ -312,7 +329,7 @@ void TA2AMesonField<FImpl>::makeBlock(Eigen::Tensor<ComplexD,5> &mat,
     const int Nsimd = grid->Nsimd();
 
     int Nt     = grid->GlobalDimensions()[orthogdim];
-    int Ngamma = gammas.size();
+    int Ngamma = gamma.size();
     int Nmom   = mom.size();
 
     int fd=grid->_fdimensions[orthogdim];
@@ -436,9 +453,9 @@ void TA2AMesonField<FImpl>::makeBlock(Eigen::Tensor<ComplexD,5> &mat,
                     int ij_dx = m+Nmom*i + Nmom*Lblock * j + Nmom*Lblock * Rblock * lt;
 
                     for(int mu=0;mu<Ngamma;mu++)
-                {
+                    {
                         // this is a bit slow
-                    mat(m,mu,t,i,j) = trace(lsSum[ij_dx]*Gamma(gammas[mu]));
+                        mat(m,mu,t,i,j) = trace(lsSum[ij_dx]*Gamma(gamma[mu]));
                     }
                 }
             } 
@@ -466,6 +483,101 @@ void TA2AMesonField<FImpl>::makeBlock(Eigen::Tensor<ComplexD,5> &mat,
     MODULE_TIMER("Global sum");
     grid->GlobalSumVector(&mat(0,0,0,0,0),Nmom*Ngamma*Nt*Lblock*Rblock);
     t3+=usecond();
+}
+
+// IO
+template <typename FImpl>
+std::string TA2AMesonField<FImpl>::ioname(unsigned int m, unsigned int g) const
+{
+    std::stringstream ss;
+
+    ss << gamma_[g] << "_";
+    for (unsigned int mu = 0; mu < mom_[m].size(); ++mu)
+    {
+        ss << mom_[m][mu] << ((mu == mom_[m].size() - 1) ? "" : "_");
+    }
+
+    return ss.str();
+}
+
+template <typename FImpl>
+std::string TA2AMesonField<FImpl>::filename(unsigned int m, unsigned int g) const
+{
+    return par().output + "." + std::to_string(vm().getTrajectory()) 
+           + "/" + ioname(m, g) + ".h5";
+}
+
+template <typename FImpl>
+void TA2AMesonField<FImpl>::initFile(unsigned int m, unsigned int g)
+{
+#ifdef HAVE_HDF5
+    std::string  f     = filename(m, g);
+    GridBase     *grid = env().getGrid();
+    auto         &v    = envGet(std::vector<FermionField>, par().v);
+    auto         &w    = envGet(std::vector<FermionField>, par().w);
+    int          nt    = env().getDim().back();
+    int          N_i   = w.size();
+    int          N_j   = v.size();
+
+    makeFileDir(f, grid);
+    if (grid->IsBoss())
+    {
+        Hdf5Writer           writer(f);
+        std::vector<hsize_t> dim = {static_cast<hsize_t>(nt), 
+                                    static_cast<hsize_t>(N_i), 
+                                    static_cast<hsize_t>(N_j)};
+        H5NS::DataSpace      dataspace(dim.size(), dim.data());
+        H5NS::DataSet        dataset;
+        
+        push(writer, ioname(m, g));
+        write(writer, "momentum", mom_[m]);
+        write(writer, "gamma", gamma_[g]);
+        auto &group = writer.getGroup();
+        dataset = group.createDataSet("mesonField", Hdf5Type<Complex>::type(),
+                                      dataspace);
+    }
+#else
+    HADRONS_ERROR(Implementation, "meson field I/O needs HDF5 library");
+#endif
+}
+
+template <typename FImpl>
+void TA2AMesonField<FImpl>::saveBlock(const MesonField &mf,
+                                      unsigned int m, unsigned int g, 
+                                      unsigned int i, unsigned int j)
+{
+#ifdef HAVE_HDF5
+    std::string  f     = filename(m, g);
+    GridBase     *grid = env().getGrid();
+
+    if (grid->IsBoss())
+    {
+        Hdf5Reader           reader(f);
+        hsize_t              nt = mf.dimension(2),
+                             Ni = mf.dimension(3),
+                             Nj = mf.dimension(4);
+        std::vector<hsize_t> count = {nt, Ni, Nj},
+                             offset = {0, static_cast<hsize_t>(i),
+                                       static_cast<hsize_t>(j)},
+                             stride = {1, 1, 1},
+                             block  = {1, 1, 1}; 
+        H5NS::DataSpace      memspace(count.size(), count.data()), dataspace;
+        H5NS::DataSet        dataset;
+        size_t               shift;
+
+        push(reader, ioname(m, g));
+        auto &group = reader.getGroup();
+        dataset   = group.openDataSet("mesonField");
+        dataspace = dataset.getSpace();
+        dataspace.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data(),
+                                  stride.data(), block.data());
+        shift = (m*mf.dimension(1) + g)*nt*Ni*Nj;
+        dataset.write(mf.data() + shift, Hdf5Type<Complex>::type(), memspace, 
+                      dataspace);
+    }
+#else
+    HADRONS_ERROR(Implementation, "meson field I/O needs HDF5 library");
+#endif
 }
 
 END_MODULE_NAMESPACE
