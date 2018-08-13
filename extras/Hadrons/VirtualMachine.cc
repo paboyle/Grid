@@ -664,6 +664,7 @@ void VirtualMachine::executeProgram(const Program &p)
 
     // program execution
     LOG(Debug) << "Executing program..." << std::endl;
+    totalTime_ = GridTime::zero();
     for (unsigned int i = 0; i < p.size(); ++i)
     {
         // execute module
@@ -693,6 +694,8 @@ void VirtualMachine::executeProgram(const Program &p)
             LOG(Message) << "* CUSTOM TIMERS" << std::endl;
             printTimeProfile(ctiming, total);
         }
+        timeProfile_[module_[p[i]].name] = total;
+        totalTime_ += total;
         // print used memory after execution
         LOG(Message) << SMALL_SEP << " Memory management" << std::endl;
         LOG(Message) << "Allocated objects: " << MEM_MSG(sizeBefore)
@@ -719,6 +722,11 @@ void VirtualMachine::executeProgram(const Program &p)
             LOG(Message) << "Nothing to free" << std::endl;
         }
     }
+    // print total time profile
+     LOG(Message) << SEP << " Measurement time profile" << SEP << std::endl;
+     LOG(Message) << "Total measurement time: " << totalTime_ << " us" << std::endl;
+     LOG(Message) << SMALL_SEP << " Module breakdown" << std::endl;
+     printTimeProfile(timeProfile_, totalTime_);
 }
 
 void VirtualMachine::executeProgram(const std::vector<std::string> &p)

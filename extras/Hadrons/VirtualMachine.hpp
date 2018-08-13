@@ -165,7 +165,10 @@ private:
     Graph<unsigned int>                 graph_;
     // memory profile
     bool                                memoryProfileOutdated_{true};
-    MemoryProfile                       profile_;                    
+    MemoryProfile                       profile_;     
+    // time profile
+    GridTime                            totalTime_;
+    std::map<std::string, GridTime>     timeProfile_;               
 };
 
 /******************************************************************************
