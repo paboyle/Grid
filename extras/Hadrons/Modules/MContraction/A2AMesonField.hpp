@@ -56,6 +56,7 @@ class A2AMesonFieldPar: Serializable
                                     std::string, v,
                                     std::string, w,
                                     std::string, output,
+                                    std::string, gammas,
                                     std::vector<std::string>, mom);
 };
 
@@ -65,7 +66,7 @@ class TA2AMesonField : public Module<A2AMesonFieldPar>
 public:
     FERM_TYPE_ALIASES(FImpl,);
     SOLVER_TYPE_ALIASES(FImpl,);
-    typedef Eigen::Tensor<Complex, 5, Eigen::RowMajor> MesonField;
+    typedef Eigen::TensorMap<Eigen::Tensor<Complex, 5, Eigen::RowMajor>> MesonField;
 public:
     // constructor
     TA2AMesonField(const std::string name);
@@ -139,6 +140,10 @@ std::vector<std::string> TA2AMesonField<FImpl>::getOutput(void)
 template <typename FImpl>
 void TA2AMesonField<FImpl>::setup(void)
 {
+    gamma_.clear();
+    mom_.clear();
+    if (par().gammas == "all")
+    {
     gamma_ = {
         Gamma::Algebra::Gamma5,
         Gamma::Algebra::Identity,    
@@ -157,18 +162,38 @@ void TA2AMesonField<FImpl>::setup(void)
         Gamma::Algebra::SigmaYT,
         Gamma::Algebra::SigmaZT
     };
+    }
+    else
+    {
+        gamma_ = strToVec<Gamma::Algebra>(par().gammas);
+    }
+    for (auto &pstr: par().mom)
+    {
+        auto p = strToVec<Real>(pstr);
 
+        if (p.size() != env().getNd() - 1)
+        {
+            HADRONS_ERROR(Size, "Momentum has " + std::to_string(p.size())
+                                + " components instead of " 
+                                + std::to_string(env().getNd() - 1));
+        }
+        mom_.push_back(p);
+    }
+    
     envCache(std::vector<LatticeComplex>, momphName_, 1, 
              par().mom.size(), env().getGrid());
     envTmpLat(LatticeComplex, "coor");
+    // preallocate memory for meson field block
+    auto tgp = env().getDim().back()*gamma_.size()*mom_.size();
+
+    envTmp(Vector<Complex>, "mfBuf", 1, tgp*par().block*par().block);
+    envTmp(Vector<Complex>, "mfCache", 1, tgp*par().cacheBlock*par().cacheBlock);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TA2AMesonField<FImpl>::execute(void)
 {
-    LOG(Message) << "Computing all-to-all meson fields" << std::endl;
-
     auto &v = envGet(std::vector<FermionField>, par().v);
     auto &w = envGet(std::vector<FermionField>, par().w);
 
@@ -176,9 +201,24 @@ void TA2AMesonField<FImpl>::execute(void)
     int N_i        = w.size();
     int N_j        = v.size();
     int ngamma     = gamma_.size();
-    int nmom       = par().mom.size();
+    int nmom       = mom_.size();
     int block      = par().block;
     int cacheBlock = par().cacheBlock;
+
+    LOG(Message) << "Computing all-to-all meson fields" << std::endl;
+    LOG(Message) << "W: '" << par().w << "' V: '" << par().v << "'" << std::endl;
+    LOG(Message) << "Meson field size: " << nt << "*" << N_i << "*" << N_j 
+                 << " (" << sizeString(nt*N_i*N_j*sizeof(Complex)) << ")" << std::endl;
+    LOG(Message) << "Momenta:" << std::endl;
+    for (auto &p: mom_)
+    {
+        LOG(Message) << "  " << p << std::endl;
+    }
+    LOG(Message) << "Spin structures:" << std::endl;
+    for (auto &g: gamma_)
+    {
+        LOG(Message) << "  " << g << std::endl;
+    }
 
     ///////////////////////////////////////////////
     // Momentum setup
@@ -194,7 +234,6 @@ void TA2AMesonField<FImpl>::execute(void)
             std::vector<Real> p;
 
             envGetTmp(LatticeComplex, coor);
-            mom_.push_back(strToVec<Real>(par().mom[j]));
             ph[j] = zero;
             for(unsigned int mu = 0; mu < mom_[j].size(); mu++)
             {
@@ -205,7 +244,7 @@ void TA2AMesonField<FImpl>::execute(void)
         }
         hasPhase_ = true;
     }
-    LOG(Message) << "MesonField size " << N_i << "x" << N_j << "x" << nt << std::endl;
+    
 
     //////////////////////////////////////////////////////////////////////////
     // i,j   is first  loop over SchurBlock factors reusing 5D matrices
@@ -224,6 +263,9 @@ void TA2AMesonField<FImpl>::execute(void)
     double t_int_2=0;
     double t_int_3=0;
 
+    envGetTmp(Vector<Complex>, mfBuf);
+    envGetTmp(Vector<Complex>, mfCache);
+    
     double t0    = usecond();
     int NBlock_i = N_i/block + (((N_i % block) != 0) ? 1 : 0);
     int NBlock_j = N_j/block + (((N_j % block) != 0) ? 1 : 0);
@@ -244,7 +286,7 @@ void TA2AMesonField<FImpl>::execute(void)
                     << i+N_ii-1 << ", " << j <<" .. " << j+N_jj-1 << "]" 
                     << std::endl;
 
-        MesonField mfBlock(nmom,ngamma,nt,N_ii,N_jj);
+        MesonField mfBlock(mfBuf.data(),nmom,ngamma,nt,N_ii,N_jj);
 
         // Series of cache blocked chunks of the contractions within this block
         for(int ii=0;ii<N_ii;ii+=cacheBlock)
@@ -252,10 +294,10 @@ void TA2AMesonField<FImpl>::execute(void)
         {
             int N_iii = MIN(N_ii-ii,cacheBlock);
             int N_jjj = MIN(N_jj-jj,cacheBlock);
-            MesonField mfCache(nmom,ngamma,nt,N_iii,N_jjj);    
+            MesonField mfCacheBlock(mfCache.data(),nmom,ngamma,nt,N_iii,N_jjj);    
 
             t_contr-=usecond();
-            makeBlock(mfCache, &w[i+ii], &v[j+jj], gamma_, ph, 
+            makeBlock(mfCacheBlock, &w[i+ii], &v[j+jj], gamma_, ph, 
                       env().getNd() - 1, t_int_0, t_int_1, t_int_2, t_int_3);
             t_contr+=usecond();
             
@@ -271,11 +313,13 @@ void TA2AMesonField<FImpl>::execute(void)
             for(int g =0;g< ngamma;g++)
             for(int t =0;t< nt;t++)
             {
-                mfBlock(m,g,t,ii+iii,jj+jjj) = mfCache(m,g,t,iii,jjj);
+                mfBlock(m,g,t,ii+iii,jj+jjj) = mfCacheBlock(m,g,t,iii,jjj);
             }
         }
 
         // IO
+        double blockSize, ioTime;
+        
         MODULE_TIMER("IO");
         for(int m = 0; m < nmom; m++)
         for(int g = 0; g < ngamma; g++)
@@ -286,13 +330,17 @@ void TA2AMesonField<FImpl>::execute(void)
             }
             saveBlock(mfBlock, m, g, i, j);
         }
+        blockSize = static_cast<double>(nmom*ngamma*nt*N_ii*N_jj*sizeof(Complex));
+        ioTime    = static_cast<double>(this->getTimer("IO").count());
+        LOG(Message) << "HDF5 IO " << blockSize/ioTime*1.0e6/1024/1024
+                     << " MB/s" << std::endl;
     }
 
     double nodes    = env().getGrid()->NodeCount();
     double t_kernel = t_int_0 + t_int_1;
 
-    LOG(Message) << "Perf " << flops/t_kernel/1.0e3/nodes << " Gflop/s/node "  << std::endl;
-    LOG(Message) << "Perf " << bytes/t_kernel/1.0e3/nodes << " GB/s/node "  << std::endl;
+    LOG(Message) << "Perf " << flops/(t_kernel)/1.0e3/nodes << " Gflop/s/node "  << std::endl;
+    LOG(Message) << "Perf " << bytes/(t_kernel)/1.0e3/nodes << " GB/s/node "  << std::endl;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -349,7 +397,8 @@ void TA2AMesonField<FImpl>::makeBlock(MesonField &mat,
     }
 
     Vector<SpinMatrix_s > lsSum(MFlvol);             
-    parallel_for (int r = 0; r < MFlvol; r++){
+    parallel_for (int r = 0; r < MFlvol; r++)
+    {
         lsSum[r]=scalar_type(0.0);
     }
 
