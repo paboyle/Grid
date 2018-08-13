@@ -637,10 +637,6 @@ VirtualMachine::Program VirtualMachine::schedule(const GeneticPar &par)
 #define SEP       "----------------"
 #define SMALL_SEP "................"
 #define MEM_MSG(size) sizeString(size)
-#define PRINT_TIME(name, t, total)                                  \
-std::right << std::setw(30) << name << ": " << t.count() << " us (" \
-<< std::fixed << std::setprecision(1)                               \
-<< static_cast<double>((t).count())/total*100 << "%)"
 
 void VirtualMachine::executeProgram(const Program &p)
 {

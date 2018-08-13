@@ -182,6 +182,7 @@ void Hadrons::printTimeProfile(const std::map<std::string, GridTime> &timing,
     std::map<Count, std::string, std::greater<Count>> rtiming;
     const double dtotal = static_cast<double>(total.count());
     auto cf = std::cout.flags();
+    auto p  = std::cout.precision();
     unsigned int width = 0;
 
     for (auto &t: timing)
@@ -198,4 +199,5 @@ void Hadrons::printTimeProfile(const std::map<std::string, GridTime> &timing,
                      << std::endl;
     }
     std::cout.flags(cf);
+    std::cout.precision(p);
 }

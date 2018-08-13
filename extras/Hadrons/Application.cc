@@ -60,7 +60,7 @@ Application::Application(void)
     LOG(Message) << "MPI partition : " << mpi << std::endl;
     LOG(Message) << "Local lattice : " << loc << std::endl;
     LOG(Message) << std::endl;
-    LOG(Message) << "** Default parameters (and associated C macro)" << std::endl;
+    LOG(Message) << "** Default parameters (and associated C macros)" << std::endl;
     LOG(Message) << "ASCII output precision  : " << MACOUT(DEFAULT_ASCII_PREC) << std::endl;
     LOG(Message) << "Fermion implementation  : " << MACOUTS(FIMPL) << std::endl;
     LOG(Message) << "z-Fermion implementation: " << MACOUTS(ZFIMPL) << std::endl;
