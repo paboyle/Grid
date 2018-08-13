@@ -165,6 +165,7 @@ public:
     void operator()(void);
     // timers
     void                            startTimer(const std::string &name);
+    GridTime                        getTimer(const std::string &name);
     void                            startCurrentTimer(const std::string &name);
     void                            stopTimer(const std::string &name);
     void                            stopCurrentTimer(void);
