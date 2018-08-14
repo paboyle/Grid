@@ -247,10 +247,12 @@ void TA2AMesonField<FImpl>::execute(void)
     // Total index is sum of these  i+ii+iii etc...
     //////////////////////////////////////////////////////////////////////////
     
-    double flops = 0.0;
-    double bytes = 0.0;
-    double vol   = env().getVolume();
-    double t_contr=0;
+    double flops;
+    double bytes;
+    double vol      = env().getVolume();
+    double t_kernel = 0.0;
+    double nodes    = env().getGrid()->NodeCount();
+    double tot_kernel;
 
     envGetTmp(Vector<MF_IO_TYPE>, mfBuf);
     envGetTmp(Vector<Complex>, mfCache);
@@ -275,6 +277,8 @@ void TA2AMesonField<FImpl>::execute(void)
         MesonFieldIo mfBlock(mfBuf.data(),nmom,ngamma,nt,N_ii,N_jj);
 
         // Series of cache blocked chunks of the contractions within this block
+        flops = 0.0;
+        bytes = 0.0;
         for(int ii=0;ii<N_ii;ii+=cacheBlock)
         for(int jj=0;jj<N_jj;jj+=cacheBlock)
         {
@@ -290,7 +294,7 @@ void TA2AMesonField<FImpl>::execute(void)
             // flops for general N_c & N_s
             flops += vol * ( 2 * 8.0 + 6.0 + 8.0*nmom) * N_iii*N_jjj*ngamma;
             bytes += vol * (12.0 * sizeof(Complex) ) * N_iii*N_jjj
-                +  vol * ( 2.0 * sizeof(Complex) *nmom ) * N_iii*N_jjj* ngamma;
+                     +  vol * ( 2.0 * sizeof(Complex) *nmom ) * N_iii*N_jjj* ngamma;
 
             startTimer("cache copy");
 
@@ -304,6 +308,16 @@ void TA2AMesonField<FImpl>::execute(void)
             }
             stopTimer("cache copy");
         }
+
+        // perf
+        tot_kernel = getDTimer("contraction: colour trace & mom.")
+                     + getDTimer("contraction: local space sum");
+        t_kernel   = tot_kernel - t_kernel;
+        LOG(Message) << "Kernel perf " << flops/t_kernel/1.0e3/nodes 
+                     << " Gflop/s/node " << std::endl;
+        LOG(Message) << "Kernel perf " << bytes/t_kernel*1.0e6/1024/1024/1024/nodes 
+                     << " GB/s/node "  << std::endl;
+        t_kernel = tot_kernel;
 
         // IO
         if (!par().output.empty())
@@ -374,13 +388,6 @@ void TA2AMesonField<FImpl>::execute(void)
                          << " MB/s)" << std::endl;
         }
     }
-
-    double nodes    = env().getGrid()->NodeCount();
-    double t_kernel = getDTimer("contraction: colour trace & mom.")
-                      + getDTimer("contraction: local space sum");
-
-    LOG(Message) << "Perf " << flops/t_kernel/1.0e3/nodes << " Gflop/s/node "  << std::endl;
-    LOG(Message) << "Perf " << bytes/t_kernel/1.0e3/nodes << " GB/s/node "  << std::endl;
 }
 
 // IO
