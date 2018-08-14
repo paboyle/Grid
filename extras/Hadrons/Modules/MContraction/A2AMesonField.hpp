@@ -374,8 +374,10 @@ void TA2AMesonField<FImpl>::execute(void)
             stopTimer("IO: total");
             blockSize  = static_cast<double>(nmom*ngamma*nt*N_ii*N_jj*sizeof(Complex));
             ioTime    += getDTimer("IO: write block");
-            LOG(Message) << "HDF5 IO done " << blockSize/ioTime*1.0e6/1024/1024
-                         << " MB/s" << std::endl;
+            LOG(Message) << "HDF5 IO done " << sizeString(blockSize) << " in "
+                         << getTimer("IO: write block")  << " us (" 
+                         << blockSize/ioTime*1.0e6/1024/1024
+                         << " MB/s)" << std::endl;
         }
     }
 
@@ -420,19 +422,24 @@ void TA2AMesonField<FImpl>::initFile(unsigned int m, unsigned int g)
     int          N_i   = w.size();
     int          N_j   = v.size();
 
-    Hdf5Writer           writer(f);
-    std::vector<hsize_t> dim = {static_cast<hsize_t>(nt), 
-                                static_cast<hsize_t>(N_i), 
-                                static_cast<hsize_t>(N_j)};
-    H5NS::DataSpace      dataspace(dim.size(), dim.data());
-    H5NS::DataSet        dataset;
+    Hdf5Writer              writer(f);
+    std::vector<hsize_t>    dim = {static_cast<hsize_t>(nt), 
+                                   static_cast<hsize_t>(N_i), 
+                                   static_cast<hsize_t>(N_j)},
+                            chunk = {static_cast<hsize_t>(nt), 
+                                     static_cast<hsize_t>(par().block), 
+                                     static_cast<hsize_t>(par().block)};
+    H5NS::DataSpace         dataspace(dim.size(), dim.data());
+    H5NS::DataSet           dataset;
+    H5NS::DSetCreatPropList plist;
     
     push(writer, ioname(m, g));
     write(writer, "momentum", mom_[m]);
     write(writer, "gamma", gamma_[g]);
     auto &group = writer.getGroup();
+    plist.setChunk(chunk.size(), chunk.data());
     dataset = group.createDataSet("mesonField", Hdf5Type<Complex>::type(),
-                                    dataspace);
+                                  dataspace, plist);
 #else
     HADRONS_ERROR(Implementation, "meson field I/O needs HDF5 library");
 #endif
