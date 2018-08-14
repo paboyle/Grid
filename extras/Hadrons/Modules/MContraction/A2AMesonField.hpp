@@ -78,17 +78,6 @@ public:
     // execution
     virtual void execute(void);
 private:
-    // Arithmetic kernel. Move to Grid??
-    void makeBlock(MesonField &mat, 
-                   const FermionField *lhs,
-                   const FermionField *rhs,
-                   std::vector<Gamma::Algebra> gamma,
-                   const std::vector<LatticeComplex> &mom,
-                   int orthogdim,
-                   double &t0,
-                   double &t1,
-                   double &t2,
-                   double &t3);
     // IO
     std::string ioname(unsigned int m, unsigned int g) const;
     std::string filename(unsigned int m, unsigned int g) const;
@@ -375,7 +364,7 @@ void TA2AMesonField<FImpl>::execute(void)
             blockSize  = static_cast<double>(nmom*ngamma*nt*N_ii*N_jj*sizeof(Complex));
             ioTime    += getDTimer("IO: write block");
             LOG(Message) << "HDF5 IO done " << sizeString(blockSize) << " in "
-                         << getTimer("IO: write block")  << " us (" 
+                         << ioTime  << " us (" 
                          << blockSize/ioTime*1.0e6/1024/1024
                          << " MB/s)" << std::endl;
         }
