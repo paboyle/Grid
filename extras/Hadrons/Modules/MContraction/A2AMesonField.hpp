@@ -38,6 +38,9 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MContraction/A2AMesonFieldKernels.hpp>
 
 #define MF_PARALLEL_IO
+#ifndef MF_IO_TYPE
+#define MF_IO_TYPE ComplexF
+#endif
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -65,6 +68,8 @@ class TA2AMesonField : public Module<A2AMesonFieldPar>
 public:
     FERM_TYPE_ALIASES(FImpl,);
     SOLVER_TYPE_ALIASES(FImpl,);
+    typedef Eigen::TensorMap<Eigen::Tensor<Complex, 5, Eigen::RowMajor>>    MesonField;
+    typedef Eigen::TensorMap<Eigen::Tensor<MF_IO_TYPE, 5, Eigen::RowMajor>> MesonFieldIo;
 public:
     // constructor
     TA2AMesonField(const std::string name);
@@ -82,14 +87,14 @@ private:
     std::string ioname(unsigned int m, unsigned int g) const;
     std::string filename(unsigned int m, unsigned int g) const;
     void initFile(unsigned int m, unsigned int g);
-    void saveBlock(const MesonField &mf,
+    void saveBlock(const MesonFieldIo &mf,
                    unsigned int m, unsigned int g, 
                    unsigned int i, unsigned int j);
 private:
-    bool                             hasPhase_{false};
-    std::string                      momphName_;
-    std::vector<Gamma::Algebra>      gamma_;
-    std::vector<std::vector<double>> mom_;
+    bool                                               hasPhase_{false};
+    std::string                                        momphName_;
+    std::vector<Gamma::Algebra>                        gamma_;
+    std::vector<std::vector<double>>                   mom_;
     std::vector<std::pair<unsigned int, unsigned int>> nodeFile_;
 };
 
@@ -174,7 +179,7 @@ void TA2AMesonField<FImpl>::setup(void)
     // preallocate memory for meson field block
     auto tgp = env().getDim().back()*gamma_.size()*mom_.size();
 
-    envTmp(Vector<Complex>, "mfBuf", 1, tgp*par().block*par().block);
+    envTmp(Vector<MF_IO_TYPE>, "mfBuf", 1, tgp*par().block*par().block);
     envTmp(Vector<Complex>, "mfCache", 1, tgp*par().cacheBlock*par().cacheBlock);
 }
 
@@ -195,18 +200,19 @@ void TA2AMesonField<FImpl>::execute(void)
 
     LOG(Message) << "Computing all-to-all meson fields" << std::endl;
     LOG(Message) << "W: '" << par().w << "' V: '" << par().v << "'" << std::endl;
-    LOG(Message) << "Meson field size: " << nt << "*" << N_i << "*" << N_j 
-                 << " (" << sizeString(nt*N_i*N_j*sizeof(Complex)) << ")" << std::endl;
     LOG(Message) << "Momenta:" << std::endl;
     for (auto &p: mom_)
     {
         LOG(Message) << "  " << p << std::endl;
     }
-    LOG(Message) << "Spin structures:" << std::endl;
+    LOG(Message) << "Spin bilinears:" << std::endl;
     for (auto &g: gamma_)
     {
         LOG(Message) << "  " << g << std::endl;
     }
+    LOG(Message) << "Meson field size: " << nt << "*" << N_i << "*" << N_j 
+                 << " (filesize " << sizeString(nt*N_i*N_j*sizeof(MF_IO_TYPE)) 
+                 << "/momentum/bilinear)" << std::endl;
 
     ///////////////////////////////////////////////
     // Momentum setup
@@ -246,8 +252,7 @@ void TA2AMesonField<FImpl>::execute(void)
     double vol   = env().getVolume();
     double t_contr=0;
 
-
-    envGetTmp(Vector<Complex>, mfBuf);
+    envGetTmp(Vector<MF_IO_TYPE>, mfBuf);
     envGetTmp(Vector<Complex>, mfCache);
     
     double t0    = usecond();
@@ -267,7 +272,7 @@ void TA2AMesonField<FImpl>::execute(void)
                     << i+N_ii-1 << ", " << j <<" .. " << j+N_jj-1 << "]" 
                     << std::endl;
 
-        MesonField mfBlock(mfBuf.data(),nmom,ngamma,nt,N_ii,N_jj);
+        MesonFieldIo mfBlock(mfBuf.data(),nmom,ngamma,nt,N_ii,N_jj);
 
         // Series of cache blocked chunks of the contractions within this block
         for(int ii=0;ii<N_ii;ii+=cacheBlock)
@@ -361,7 +366,7 @@ void TA2AMesonField<FImpl>::execute(void)
             }
 #endif
             stopTimer("IO: total");
-            blockSize  = static_cast<double>(nmom*ngamma*nt*N_ii*N_jj*sizeof(Complex));
+            blockSize  = static_cast<double>(nmom*ngamma*nt*N_ii*N_jj*sizeof(MF_IO_TYPE));
             ioTime    += getDTimer("IO: write block");
             LOG(Message) << "HDF5 IO done " << sizeString(blockSize) << " in "
                          << ioTime  << " us (" 
@@ -427,7 +432,7 @@ void TA2AMesonField<FImpl>::initFile(unsigned int m, unsigned int g)
     write(writer, "gamma", gamma_[g]);
     auto &group = writer.getGroup();
     plist.setChunk(chunk.size(), chunk.data());
-    dataset = group.createDataSet("mesonField", Hdf5Type<Complex>::type(),
+    dataset = group.createDataSet("mesonField", Hdf5Type<MF_IO_TYPE>::type(),
                                   dataspace, plist);
 #else
     HADRONS_ERROR(Implementation, "meson field I/O needs HDF5 library");
@@ -435,7 +440,7 @@ void TA2AMesonField<FImpl>::initFile(unsigned int m, unsigned int g)
 }
 
 template <typename FImpl>
-void TA2AMesonField<FImpl>::saveBlock(const MesonField &mf,
+void TA2AMesonField<FImpl>::saveBlock(const MesonFieldIo &mf,
                                       unsigned int m, unsigned int g, 
                                       unsigned int i, unsigned int j)
 {
@@ -443,13 +448,13 @@ void TA2AMesonField<FImpl>::saveBlock(const MesonField &mf,
     std::string          f = filename(m, g);
     Hdf5Reader           reader(f);
     hsize_t              nt = mf.dimension(2),
-                            Ni = mf.dimension(3),
-                            Nj = mf.dimension(4);
+                         Ni = mf.dimension(3),
+                         Nj = mf.dimension(4);
     std::vector<hsize_t> count = {nt, Ni, Nj},
-                            offset = {0, static_cast<hsize_t>(i),
-                                    static_cast<hsize_t>(j)},
-                            stride = {1, 1, 1},
-                            block  = {1, 1, 1}; 
+                         offset = {0, static_cast<hsize_t>(i),
+                                 static_cast<hsize_t>(j)},
+                         stride = {1, 1, 1},
+                         block  = {1, 1, 1}; 
     H5NS::DataSpace      memspace(count.size(), count.data()), dataspace;
     H5NS::DataSet        dataset;
     size_t               shift;
@@ -459,10 +464,10 @@ void TA2AMesonField<FImpl>::saveBlock(const MesonField &mf,
     dataset   = group.openDataSet("mesonField");
     dataspace = dataset.getSpace();
     dataspace.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data(),
-                                stride.data(), block.data());
+                              stride.data(), block.data());
     shift = (m*mf.dimension(1) + g)*nt*Ni*Nj;
-    dataset.write(mf.data() + shift, Hdf5Type<Complex>::type(), memspace, 
-                    dataspace);
+    dataset.write(mf.data() + shift, Hdf5Type<MF_IO_TYPE>::type(), memspace, 
+                  dataspace);
 #else
     HADRONS_ERROR(Implementation, "meson field I/O needs HDF5 library");
 #endif

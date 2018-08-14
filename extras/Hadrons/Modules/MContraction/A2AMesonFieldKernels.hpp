@@ -37,13 +37,11 @@ BEGIN_HADRONS_NAMESPACE
 
 BEGIN_MODULE_NAMESPACE(MContraction)
 
-typedef Eigen::TensorMap<Eigen::Tensor<Complex, 5, Eigen::RowMajor>> MesonField;
-
 ////////////////////////////////////////////////////////////////////////////////
 // Cache blocked arithmetic routine
 // Could move to Grid ???
 ////////////////////////////////////////////////////////////////////////////////
-template <typename Field>
+template <typename Field, typename MesonField>
 void makeMesonFieldBlock(MesonField &mat, 
                          const Field *lhs_wi,
                          const Field *rhs_vj,
