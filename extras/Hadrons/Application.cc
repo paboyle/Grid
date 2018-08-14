@@ -110,6 +110,11 @@ void Application::run(void)
     LOG(Message) << "RUN ID '" << getPar().runId << "'" << std::endl;
     vm().setRunId(getPar().runId);
     vm().printContent();
+    if (!getPar().graphFile.empty())
+    {
+        makeFileDir(getPar().graphFile, env().getGrid());
+        vm().dumpModuleGraph(getPar().graphFile);
+    }
     env().printContent();
     schedule();
     printSchedule();
