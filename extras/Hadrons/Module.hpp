@@ -129,8 +129,6 @@ if (env().getGrid()->IsBoss() and !ioStem.empty())\
     }\
 }
 
-#define MODULE_TIMER(name) this->startCurrentTimer(name)
-
 /******************************************************************************
  *                            Module class                                    *
  ******************************************************************************/
@@ -166,6 +164,7 @@ public:
     // timers
     void                            startTimer(const std::string &name);
     GridTime                        getTimer(const std::string &name);
+    double                          getDTimer(const std::string &name);
     void                            startCurrentTimer(const std::string &name);
     void                            stopTimer(const std::string &name);
     void                            stopCurrentTimer(void);

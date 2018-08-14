@@ -34,8 +34,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
 #include <Grid/Hadrons/A2AVectors.hpp>
-#include <Grid/Eigen/unsupported/CXX11/Tensor>
 #include <Grid/Hadrons/Modules/MSolver/A2AVectors.hpp>
+#include <Grid/Hadrons/Modules/MContraction/A2AMesonFieldKernels.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -43,9 +43,6 @@ BEGIN_HADRONS_NAMESPACE
  *                     All-to-all meson field creation                        *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MContraction)
-
-typedef std::pair<Gamma::Algebra, Gamma::Algebra> GammaPair;
-
 
 class A2AMesonFieldPar: Serializable
 {
@@ -66,7 +63,6 @@ class TA2AMesonField : public Module<A2AMesonFieldPar>
 public:
     FERM_TYPE_ALIASES(FImpl,);
     SOLVER_TYPE_ALIASES(FImpl,);
-    typedef Eigen::TensorMap<Eigen::Tensor<Complex, 5, Eigen::RowMajor>> MesonField;
 public:
     // constructor
     TA2AMesonField(const std::string name);
@@ -144,24 +140,24 @@ void TA2AMesonField<FImpl>::setup(void)
     mom_.clear();
     if (par().gammas == "all")
     {
-    gamma_ = {
-        Gamma::Algebra::Gamma5,
-        Gamma::Algebra::Identity,    
-        Gamma::Algebra::GammaX,
-        Gamma::Algebra::GammaY,
-        Gamma::Algebra::GammaZ,
-        Gamma::Algebra::GammaT,
-        Gamma::Algebra::GammaXGamma5,
-        Gamma::Algebra::GammaYGamma5,
-        Gamma::Algebra::GammaZGamma5,
-        Gamma::Algebra::GammaTGamma5,
-        Gamma::Algebra::SigmaXY,
-        Gamma::Algebra::SigmaXZ,
-        Gamma::Algebra::SigmaXT,
-        Gamma::Algebra::SigmaYZ,
-        Gamma::Algebra::SigmaYT,
-        Gamma::Algebra::SigmaZT
-    };
+        gamma_ = {
+            Gamma::Algebra::Gamma5,
+            Gamma::Algebra::Identity,    
+            Gamma::Algebra::GammaX,
+            Gamma::Algebra::GammaY,
+            Gamma::Algebra::GammaZ,
+            Gamma::Algebra::GammaT,
+            Gamma::Algebra::GammaXGamma5,
+            Gamma::Algebra::GammaYGamma5,
+            Gamma::Algebra::GammaZGamma5,
+            Gamma::Algebra::GammaTGamma5,
+            Gamma::Algebra::SigmaXY,
+            Gamma::Algebra::SigmaXZ,
+            Gamma::Algebra::SigmaXT,
+            Gamma::Algebra::SigmaYZ,
+            Gamma::Algebra::SigmaYT,
+            Gamma::Algebra::SigmaZT
+        };
     }
     else
     {
@@ -227,7 +223,7 @@ void TA2AMesonField<FImpl>::execute(void)
 
     if (!hasPhase_)
     {
-        MODULE_TIMER("Momentum phases");
+        startTimer("Momentum phases");
         for (unsigned int j = 0; j < nmom; ++j)
         {
             Complex           i(0.0,1.0);
@@ -243,9 +239,9 @@ void TA2AMesonField<FImpl>::execute(void)
             ph[j] = exp((Real)(2*M_PI)*i*ph[j]);
         }
         hasPhase_ = true;
+        stopTimer("Momentum phases");
     }
     
-
     //////////////////////////////////////////////////////////////////////////
     // i,j   is first  loop over SchurBlock factors reusing 5D matrices
     // ii,jj is second loop over cacheBlock factors for high perf contractoin
@@ -256,12 +252,8 @@ void TA2AMesonField<FImpl>::execute(void)
     double flops = 0.0;
     double bytes = 0.0;
     double vol   = env().getVolume();
-    double t_schur=0;
     double t_contr=0;
-    double t_int_0=0;
-    double t_int_1=0;
-    double t_int_2=0;
-    double t_int_3=0;
+
 
     envGetTmp(Vector<Complex>, mfBuf);
     envGetTmp(Vector<Complex>, mfCache);
@@ -276,9 +268,6 @@ void TA2AMesonField<FImpl>::execute(void)
         // Get the W and V vectors for this block^2 set of terms
         int N_ii = MIN(N_i-i,block);
         int N_jj = MIN(N_j-j,block);
-
-        t_schur-=usecond();
-        t_schur+=usecond();
 
         LOG(Message) << "Meson field block " 
                     << j/block + NBlock_j*i/block + 1 
@@ -296,17 +285,17 @@ void TA2AMesonField<FImpl>::execute(void)
             int N_jjj = MIN(N_jj-jj,cacheBlock);
             MesonField mfCacheBlock(mfCache.data(),nmom,ngamma,nt,N_iii,N_jjj);    
 
-            t_contr-=usecond();
-            makeBlock(mfCacheBlock, &w[i+ii], &v[j+jj], gamma_, ph, 
-                      env().getNd() - 1, t_int_0, t_int_1, t_int_2, t_int_3);
-            t_contr+=usecond();
+            startTimer("contraction: total");
+            makeMesonFieldBlock(mfCacheBlock, &w[i+ii], &v[j+jj], gamma_, ph, 
+                                env().getNd() - 1, this);
+            stopTimer("contraction: total");
             
             // flops for general N_c & N_s
             flops += vol * ( 2 * 8.0 + 6.0 + 8.0*nmom) * N_iii*N_jjj*ngamma;
             bytes += vol * (12.0 * sizeof(Complex) ) * N_iii*N_jjj
                 +  vol * ( 2.0 * sizeof(Complex) *nmom ) * N_iii*N_jjj* ngamma;
 
-            MODULE_TIMER("Cache copy");
+            startTimer("cache copy");
             for(int iii=0;iii< N_iii;iii++)
             for(int jjj=0;jjj< N_jjj;jjj++)
             for(int m =0;m< nmom;m++)
@@ -315,223 +304,44 @@ void TA2AMesonField<FImpl>::execute(void)
             {
                 mfBlock(m,g,t,ii+iii,jj+jjj) = mfCacheBlock(m,g,t,iii,jjj);
             }
+            stopTimer("cache copy");
         }
 
         // IO
+        if (!par().output.empty())
+        {
         double blockSize, ioTime;
         
-        MODULE_TIMER("IO");
+            LOG(Message) << "Writing block to disk" << std::endl;
+            ioTime = -getDTimer("IO: write block");
+            startTimer("IO: total");
         for(int m = 0; m < nmom; m++)
         for(int g = 0; g < ngamma; g++)
         {
             if ((i == 0) and (j == 0))
             {
+                    startTimer("IO: file creation");
                 initFile(m, g);
+                    stopTimer("IO: file creation");
             }
+                startTimer("IO: write block");
             saveBlock(mfBlock, m, g, i, j);
+                stopTimer("IO: write block");
         }
-        blockSize = static_cast<double>(nmom*ngamma*nt*N_ii*N_jj*sizeof(Complex));
-        ioTime    = static_cast<double>(this->getTimer("IO").count());
-        LOG(Message) << "HDF5 IO " << blockSize/ioTime*1.0e6/1024/1024
+            stopTimer("IO: total");
+            blockSize  = static_cast<double>(nmom*ngamma*nt*N_ii*N_jj*sizeof(Complex));
+            ioTime    += getDTimer("IO: write block");
+            LOG(Message) << "HDF5 IO done " << blockSize/ioTime*1.0e6/1024/1024
                      << " MB/s" << std::endl;
+    }
     }
 
     double nodes    = env().getGrid()->NodeCount();
-    double t_kernel = t_int_0 + t_int_1;
+    double t_kernel = getDTimer("contraction: colour trace & mom.")
+                      + getDTimer("contraction: local space sum");
 
-    LOG(Message) << "Perf " << flops/(t_kernel)/1.0e3/nodes << " Gflop/s/node "  << std::endl;
-    LOG(Message) << "Perf " << bytes/(t_kernel)/1.0e3/nodes << " GB/s/node "  << std::endl;
-}
-
-//////////////////////////////////////////////////////////////////////////////////
-// Cache blocked arithmetic routine
-// Could move to Grid ???
-//////////////////////////////////////////////////////////////////////////////////
-template <typename FImpl>
-void TA2AMesonField<FImpl>::makeBlock(MesonField &mat, 
-					                  const FermionField *lhs_wi,
-					                  const FermionField *rhs_vj,
-					                  std::vector<Gamma::Algebra> gamma,
-					                  const std::vector<LatticeComplex> &mom,
-					                  int orthogdim,
-					                  double &t0,
-					                  double &t1,
-					                  double &t2,
-					                  double &t3) 
-{
-    typedef typename FImpl::SiteSpinor vobj;
-
-    typedef typename vobj::scalar_object sobj;
-    typedef typename vobj::scalar_type scalar_type;
-    typedef typename vobj::vector_type vector_type;
-
-    typedef iSpinMatrix<vector_type> SpinMatrix_v;
-    typedef iSpinMatrix<scalar_type> SpinMatrix_s;
-    
-    int Lblock = mat.dimension(3); 
-    int Rblock = mat.dimension(4);
-
-    GridBase *grid = lhs_wi[0]._grid;
-    
-    const int    Nd = grid->_ndimension;
-    const int Nsimd = grid->Nsimd();
-
-    int Nt     = grid->GlobalDimensions()[orthogdim];
-    int Ngamma = gamma.size();
-    int Nmom   = mom.size();
-
-    int fd=grid->_fdimensions[orthogdim];
-    int ld=grid->_ldimensions[orthogdim];
-    int rd=grid->_rdimensions[orthogdim];
-
-    // will locally sum vectors first
-    // sum across these down to scalars
-    // splitting the SIMD
-    int MFrvol = rd*Lblock*Rblock*Nmom;
-    int MFlvol = ld*Lblock*Rblock*Nmom;
-
-    Vector<SpinMatrix_v > lvSum(MFrvol);
-    parallel_for (int r = 0; r < MFrvol; r++)
-    {
-        lvSum[r] = zero;
-    }
-
-    Vector<SpinMatrix_s > lsSum(MFlvol);             
-    parallel_for (int r = 0; r < MFlvol; r++)
-    {
-        lsSum[r]=scalar_type(0.0);
-    }
-
-    int e1=    grid->_slice_nblock[orthogdim];
-    int e2=    grid->_slice_block [orthogdim];
-    int stride=grid->_slice_stride[orthogdim];
-
-    t0-=usecond();
-    MODULE_TIMER("Colour trace * mom.");
-    // Nested parallelism would be ok
-    // Wasting cores here. Test case r
-    parallel_for(int r=0;r<rd;r++)
-    {
-        int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
-
-        for(int n=0;n<e1;n++)
-        for(int b=0;b<e2;b++)
-        {
-            int ss= so+n*stride+b;
-
-            for(int i=0;i<Lblock;i++)
-            {
-                auto left = conjugate(lhs_wi[i]._odata[ss]);
-
-                for(int j=0;j<Rblock;j++)
-                {
-                    SpinMatrix_v vv;
-                    auto right = rhs_vj[j]._odata[ss];
-
-                    for(int s1=0;s1<Ns;s1++)
-                    for(int s2=0;s2<Ns;s2++)
-                    {
-                        vv()(s1,s2)() = left()(s2)(0) * right()(s1)(0)
-                                        + left()(s2)(1) * right()(s1)(1)
-                                        + left()(s2)(2) * right()(s1)(2);
-                    }
-                    
-                    // After getting the sitewise product do the mom phase loop
-                    int base = Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*r;
-
-                    for ( int m=0;m<Nmom;m++)
-                    {
-                        int idx = m+base;
-                        auto phase = mom[m]._odata[ss];
-                        mac(&lvSum[idx],&vv,&phase);
-                    }
-                }
-            }
-        }
-    }
-    t0+=usecond();
-
-    // Sum across simd lanes in the plane, breaking out orthog dir.
-    MODULE_TIMER("Local space sum");
-    t1-=usecond();
-    parallel_for(int rt=0;rt<rd;rt++)
-    {
-        std::vector<int> icoor(Nd);
-        std::vector<SpinMatrix_s> extracted(Nsimd);               
-
-        for(int i=0;i<Lblock;i++)
-        for(int j=0;j<Rblock;j++)
-        for(int m=0;m<Nmom;m++)
-        {
-
-            int ij_rdx = m+Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*rt;
-
-            extract(lvSum[ij_rdx],extracted);
-            for(int idx=0;idx<Nsimd;idx++)
-            {
-                grid->iCoorFromIindex(icoor,idx);
-
-                int ldx    = rt+icoor[orthogdim]*rd;
-                int ij_ldx = m+Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*ldx;
-
-                lsSum[ij_ldx]=lsSum[ij_ldx]+extracted[idx];
-            }
-        }
-    }
-    t1+=usecond();
-    assert(mat.dimension(0) == Nmom);
-    assert(mat.dimension(1) == Ngamma);
-    assert(mat.dimension(2) == Nt);
-    t2-=usecond();
-
-    // ld loop and local only??
-    MODULE_TIMER("Spin trace");
-    int pd = grid->_processors[orthogdim];
-    int pc = grid->_processor_coor[orthogdim];
-    parallel_for_nest2(int lt=0;lt<ld;lt++)
-    {
-        for(int pt=0;pt<pd;pt++)
-        {
-            int t = lt + pt*ld;
-            if (pt == pc)
-            {
-                for(int i=0;i<Lblock;i++)
-                for(int j=0;j<Rblock;j++)
-                for(int m=0;m<Nmom;m++)
-                {
-                    int ij_dx = m+Nmom*i + Nmom*Lblock * j + Nmom*Lblock * Rblock * lt;
-
-                    for(int mu=0;mu<Ngamma;mu++)
-                    {
-                        // this is a bit slow
-                        mat(m,mu,t,i,j) = trace(lsSum[ij_dx]*Gamma(gamma[mu]));
-                    }
-                }
-            } 
-            else 
-            { 
-                const scalar_type zz(0.0);
-
-                for(int i=0;i<Lblock;i++)
-                for(int j=0;j<Rblock;j++)
-                for(int mu=0;mu<Ngamma;mu++)
-                for(int m=0;m<Nmom;m++)
-                {
-                    mat(m,mu,t,i,j) =zz;
-                }
-            }
-        }
-    }
-    t2+=usecond();
-    ////////////////////////////////////////////////////////////////////
-    // This global sum is taking as much as 50% of time on 16 nodes
-    // Vector size is 7 x 16 x 32 x 16 x 16 x sizeof(complex) = 2MB - 60MB depending on volume
-    // Healthy size that should suffice
-    ////////////////////////////////////////////////////////////////////
-    t3-=usecond();
-    MODULE_TIMER("Global sum");
-    grid->GlobalSumVector(&mat(0,0,0,0,0),Nmom*Ngamma*Nt*Lblock*Rblock);
-    t3+=usecond();
+    LOG(Message) << "Perf " << flops/t_kernel/1.0e3/nodes << " Gflop/s/node "  << std::endl;
+    LOG(Message) << "Perf " << bytes/t_kernel/1.0e3/nodes << " GB/s/node "  << std::endl;
 }
 
 // IO

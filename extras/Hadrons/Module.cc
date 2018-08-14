@@ -78,12 +78,21 @@ void ModuleBase::startTimer(const std::string &name)
 GridTime ModuleBase::getTimer(const std::string &name)
 {
     GridTime t;
-
+    
     if (!name.empty())
     {
-        stopTimer(name);
-        t = timer_.at(name).Elapsed();
-        startTimer(name);
+        try
+        {
+            bool running = timer_.at(name).isRunning();
+
+            if (running) stopTimer(name);
+            t = timer_.at(name).Elapsed();
+            if (running) startTimer(name);
+        }
+        catch (std::out_of_range &)
+        {
+            t = GridTime::zero();
+        }
     }
     else
     {
@@ -91,6 +100,11 @@ GridTime ModuleBase::getTimer(const std::string &name)
     }
 
     return t;
+}
+
+double ModuleBase::getDTimer(const std::string &name)
+{
+    return static_cast<double>(getTimer(name).count());
 }
 
 void ModuleBase::startCurrentTimer(const std::string &name)

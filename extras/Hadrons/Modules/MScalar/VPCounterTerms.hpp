@@ -6,6 +6,7 @@ Source file: extras/Hadrons/Modules/MScalar/VPCounterTerms.hpp
 
 Copyright (C) 2015-2018
 
+Author: Antonin Portelli <antonin.portelli@me.com>
 Author: James Harrison <jch1g10@soton.ac.uk>
 
 This program is free software; you can redistribute it and/or modify

@@ -6,6 +6,7 @@ Source file: extras/Hadrons/Modules/MContraction/A2AMesonField.cc
 
 Copyright (C) 2015-2018
 
+Author: Antonin Portelli <antonin.portelli@me.com>
 Author: paboyle <paboyle@ph.ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify

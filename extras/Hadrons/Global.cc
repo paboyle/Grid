@@ -192,7 +192,7 @@ void Hadrons::printTimeProfile(const std::map<std::string, GridTime> &timing,
     }
     for (auto &rt: rtiming)
     {
-        LOG(Message) << std::right << std::setw(width) << rt.second << ": " 
+        LOG(Message) << std::setw(width) << rt.second << ": " 
                      << rt.first << " us (" << std::fixed 
                      << std::setprecision(1) 
                      << static_cast<double>(rt.first)/dtotal*100 << "%)"
