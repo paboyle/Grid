@@ -37,6 +37,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MSolver/A2AVectors.hpp>
 #include <Grid/Hadrons/Modules/MContraction/A2AMesonFieldKernels.hpp>
 
+#define MF_PARALLEL_IO
+
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
@@ -99,6 +101,7 @@ private:
     std::string                      momphName_;
     std::vector<Gamma::Algebra>      gamma_;
     std::vector<std::vector<double>> mom_;
+    std::vector<std::pair<unsigned int, unsigned int>> nodeFile_;
 };
 
 MODULE_REGISTER(A2AMesonField, ARG(TA2AMesonField<FIMPL>), MContraction);
@@ -311,14 +314,30 @@ void TA2AMesonField<FImpl>::execute(void)
         // IO
         if (!par().output.empty())
         {
-            double blockSize, ioTime;
+            double       blockSize, ioTime;
+            unsigned int myRank = env().getGrid()->ThisRank(),
+                         nRank  = env().getGrid()->RankCount();
         
             LOG(Message) << "Writing block to disk" << std::endl;
             ioTime = -getDTimer("IO: write block");
             startTimer("IO: total");
-            for(int m = 0; m < nmom; m++)
-            for(int g = 0; g < ngamma; g++)
+            makeFileDir(filename(0, 0), env().getGrid());
+#ifdef MF_PARALLEL_IO
+            env().getGrid()->Barrier();
+            nodeFile_.clear();
+            for(int f = myRank; f < nmom*ngamma; f += nRank)
             {
+                std::pair<unsigned int, unsigned int> file;
+
+                file.first  = f/ngamma;
+                file.second = f % ngamma;
+                nodeFile_.push_back(file);
+            }
+            // parallel IO
+            for (auto &f: nodeFile_)
+            {
+                auto m = f.first, g = f.second;
+
                 if ((i == 0) and (j == 0))
                 {
                     startTimer("IO: file creation");
@@ -329,6 +348,29 @@ void TA2AMesonField<FImpl>::execute(void)
                 saveBlock(mfBlock, m, g, i, j);
                 stopTimer("IO: write block");
             }
+            env().getGrid()->Barrier();
+#else
+            // serial IO
+            for(int m = 0; m < nmom; m++)
+            for(int g = 0; g < ngamma; g++)
+            {   
+                if ((i == 0) and (j == 0))
+                {
+                    startTimer("IO: file creation");
+                    if (env().getGrid()->IsBoss())
+                    {
+                        initFile(m, g);
+                    }
+                    stopTimer("IO: file creation");
+                }
+                startTimer("IO: write block");
+                if (env().getGrid()->IsBoss())
+                {
+                    saveBlock(mfBlock, m, g, i, j);
+                }
+                stopTimer("IO: write block");
+            }
+#endif
             stopTimer("IO: total");
             blockSize  = static_cast<double>(nmom*ngamma*nt*N_ii*N_jj*sizeof(Complex));
             ioTime    += getDTimer("IO: write block");
@@ -372,30 +414,25 @@ void TA2AMesonField<FImpl>::initFile(unsigned int m, unsigned int g)
 {
 #ifdef HAVE_HDF5
     std::string  f     = filename(m, g);
-    GridBase     *grid = env().getGrid();
     auto         &v    = envGet(std::vector<FermionField>, par().v);
     auto         &w    = envGet(std::vector<FermionField>, par().w);
     int          nt    = env().getDim().back();
     int          N_i   = w.size();
     int          N_j   = v.size();
 
-    makeFileDir(f, grid);
-    if (grid->IsBoss())
-    {
-        Hdf5Writer           writer(f);
-        std::vector<hsize_t> dim = {static_cast<hsize_t>(nt), 
-                                    static_cast<hsize_t>(N_i), 
-                                    static_cast<hsize_t>(N_j)};
-        H5NS::DataSpace      dataspace(dim.size(), dim.data());
-        H5NS::DataSet        dataset;
-        
-        push(writer, ioname(m, g));
-        write(writer, "momentum", mom_[m]);
-        write(writer, "gamma", gamma_[g]);
-        auto &group = writer.getGroup();
-        dataset = group.createDataSet("mesonField", Hdf5Type<Complex>::type(),
-                                      dataspace);
-    }
+    Hdf5Writer           writer(f);
+    std::vector<hsize_t> dim = {static_cast<hsize_t>(nt), 
+                                static_cast<hsize_t>(N_i), 
+                                static_cast<hsize_t>(N_j)};
+    H5NS::DataSpace      dataspace(dim.size(), dim.data());
+    H5NS::DataSet        dataset;
+    
+    push(writer, ioname(m, g));
+    write(writer, "momentum", mom_[m]);
+    write(writer, "gamma", gamma_[g]);
+    auto &group = writer.getGroup();
+    dataset = group.createDataSet("mesonField", Hdf5Type<Complex>::type(),
+                                    dataspace);
 #else
     HADRONS_ERROR(Implementation, "meson field I/O needs HDF5 library");
 #endif
@@ -407,34 +444,29 @@ void TA2AMesonField<FImpl>::saveBlock(const MesonField &mf,
                                       unsigned int i, unsigned int j)
 {
 #ifdef HAVE_HDF5
-    std::string  f     = filename(m, g);
-    GridBase     *grid = env().getGrid();
+    std::string          f = filename(m, g);
+    Hdf5Reader           reader(f);
+    hsize_t              nt = mf.dimension(2),
+                            Ni = mf.dimension(3),
+                            Nj = mf.dimension(4);
+    std::vector<hsize_t> count = {nt, Ni, Nj},
+                            offset = {0, static_cast<hsize_t>(i),
+                                    static_cast<hsize_t>(j)},
+                            stride = {1, 1, 1},
+                            block  = {1, 1, 1}; 
+    H5NS::DataSpace      memspace(count.size(), count.data()), dataspace;
+    H5NS::DataSet        dataset;
+    size_t               shift;
 
-    if (grid->IsBoss())
-    {
-        Hdf5Reader           reader(f);
-        hsize_t              nt = mf.dimension(2),
-                             Ni = mf.dimension(3),
-                             Nj = mf.dimension(4);
-        std::vector<hsize_t> count = {nt, Ni, Nj},
-                             offset = {0, static_cast<hsize_t>(i),
-                                       static_cast<hsize_t>(j)},
-                             stride = {1, 1, 1},
-                             block  = {1, 1, 1}; 
-        H5NS::DataSpace      memspace(count.size(), count.data()), dataspace;
-        H5NS::DataSet        dataset;
-        size_t               shift;
-
-        push(reader, ioname(m, g));
-        auto &group = reader.getGroup();
-        dataset   = group.openDataSet("mesonField");
-        dataspace = dataset.getSpace();
-        dataspace.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data(),
-                                  stride.data(), block.data());
-        shift = (m*mf.dimension(1) + g)*nt*Ni*Nj;
-        dataset.write(mf.data() + shift, Hdf5Type<Complex>::type(), memspace, 
-                      dataspace);
-    }
+    push(reader, ioname(m, g));
+    auto &group = reader.getGroup();
+    dataset   = group.openDataSet("mesonField");
+    dataspace = dataset.getSpace();
+    dataspace.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data(),
+                                stride.data(), block.data());
+    shift = (m*mf.dimension(1) + g)*nt*Ni*Nj;
+    dataset.write(mf.data() + shift, Hdf5Type<Complex>::type(), memspace, 
+                    dataspace);
 #else
     HADRONS_ERROR(Implementation, "meson field I/O needs HDF5 library");
 #endif
