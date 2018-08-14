@@ -297,7 +297,7 @@ void TA2AMesonField<FImpl>::execute(void)
 
             startTimer("cache copy");
 
-            parallel_for_nest(5)(int iii=0;iii< N_iii;iii++)
+            parallel_for_nest5(int iii=0;iii< N_iii;iii++)
             for(int jjj=0;jjj< N_jjj;jjj++)
             for(int m =0;m< nmom;m++)
             for(int g =0;g< ngamma;g++)

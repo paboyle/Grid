@@ -94,7 +94,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename vobj::scalar_
   int n1=rhs._grid->_slice_stride[dimension];
 
   if ( cbmask ==0x3){
-    parallel_for_nest(2)(int n=0;n<e1;n++){
+    parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 
 	int o      =   n*n1;
@@ -110,7 +110,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename vobj::scalar_
     // Case of SIMD split AND checker dim cannot currently be hit, except in 
     // Test_cshift_red_black code.
     std::cout << " Dense packed buffer WARNING " <<std::endl;
-    parallel_for_nest(2)(int n=0;n<e1;n++){
+    parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 
 	int o=n*n1;
@@ -191,7 +191,7 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,std::vector<typ
   int e2=rhs._grid->_slice_block[dimension];
 
   if(cbmask ==0x3 ) {
-    parallel_for_nest(2)(int n=0;n<e1;n++){
+    parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int o      = n*rhs._grid->_slice_stride[dimension];
 	int offset = b+n*rhs._grid->_slice_block[dimension];
