@@ -296,7 +296,8 @@ void TA2AMesonField<FImpl>::execute(void)
                 +  vol * ( 2.0 * sizeof(Complex) *nmom ) * N_iii*N_jjj* ngamma;
 
             startTimer("cache copy");
-            for(int iii=0;iii< N_iii;iii++)
+
+            parallel_for_nest(5)(int iii=0;iii< N_iii;iii++)
             for(int jjj=0;jjj< N_jjj;jjj++)
             for(int m =0;m< nmom;m++)
             for(int g =0;g< ngamma;g++)
@@ -310,30 +311,30 @@ void TA2AMesonField<FImpl>::execute(void)
         // IO
         if (!par().output.empty())
         {
-        double blockSize, ioTime;
+            double blockSize, ioTime;
         
             LOG(Message) << "Writing block to disk" << std::endl;
             ioTime = -getDTimer("IO: write block");
             startTimer("IO: total");
-        for(int m = 0; m < nmom; m++)
-        for(int g = 0; g < ngamma; g++)
-        {
-            if ((i == 0) and (j == 0))
+            for(int m = 0; m < nmom; m++)
+            for(int g = 0; g < ngamma; g++)
             {
+                if ((i == 0) and (j == 0))
+                {
                     startTimer("IO: file creation");
-                initFile(m, g);
+                    initFile(m, g);
                     stopTimer("IO: file creation");
-            }
+                }
                 startTimer("IO: write block");
-            saveBlock(mfBlock, m, g, i, j);
+                saveBlock(mfBlock, m, g, i, j);
                 stopTimer("IO: write block");
-        }
+            }
             stopTimer("IO: total");
             blockSize  = static_cast<double>(nmom*ngamma*nt*N_ii*N_jj*sizeof(Complex));
             ioTime    += getDTimer("IO: write block");
             LOG(Message) << "HDF5 IO done " << blockSize/ioTime*1.0e6/1024/1024
-                     << " MB/s" << std::endl;
-    }
+                         << " MB/s" << std::endl;
+        }
     }
 
     double nodes    = env().getGrid()->NodeCount();

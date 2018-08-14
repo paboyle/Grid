@@ -174,7 +174,7 @@ void makeMesonFieldBlock(MesonField &mat,
     if (caller) caller->startTimer("contraction: spin trace");
     int pd = grid->_processors[orthogdim];
     int pc = grid->_processor_coor[orthogdim];
-    parallel_for_nest2(int lt=0;lt<ld;lt++)
+    parallel_for_nest(2)(int lt=0;lt<ld;lt++)
     {
         for(int pt=0;pt<pd;pt++)
         {

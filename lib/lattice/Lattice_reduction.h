@@ -522,7 +522,7 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
 
     tensor_reduced at; at=av;
 
-    parallel_for_nest2(int n=0;n<e1;n++){
+    parallel_for_nest(2)(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
 	R._odata[ss] = at*X._odata[ss]+Y._odata[ss];
