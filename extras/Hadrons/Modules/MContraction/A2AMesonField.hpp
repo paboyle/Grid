@@ -297,12 +297,11 @@ void TA2AMesonField<FImpl>::execute(void)
                      +  vol * ( 2.0 * sizeof(Complex) *nmom ) * N_iii*N_jjj* ngamma;
 
             startTimer("cache copy");
-
-            parallel_for_nest5(int iii=0;iii< N_iii;iii++)
-            for(int jjj=0;jjj< N_jjj;jjj++)
-            for(int m =0;m< nmom;m++)
+            parallel_for_nest5(int m =0;m< nmom;m++)
             for(int g =0;g< ngamma;g++)
             for(int t =0;t< nt;t++)
+            for(int iii=0;iii< N_iii;iii++)
+            for(int jjj=0;jjj< N_jjj;jjj++)
             {
                 mfBlock(m,g,t,ii+iii,jj+jjj) = mfCacheBlock(m,g,t,iii,jjj);
             }
