@@ -72,7 +72,6 @@ protected:
     virtual void execute(void);
 };
 
-extern template class TDWF<FIMPL>;
 MODULE_REGISTER_TMP(DWF, TDWF<FIMPL>, MAction);
 
 /******************************************************************************
