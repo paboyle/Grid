@@ -9,6 +9,11 @@ matrix:
     - os:        osx
       osx_image: xcode8.3
       compiler: clang
+      env: PREC=single
+    - os:        osx
+      osx_image: xcode8.3
+      compiler: clang
+      env: PREC=double
       
 before_install:
     - export GRIDDIR=`pwd`
@@ -50,12 +55,7 @@ script:
     - make -j4
     - make install
     - cd $CWD/build
-    - ../configure --enable-precision=single --enable-simd=SSE4 --enable-comms=none --with-lime=$CWD/build/lime/install ${EXTRACONF}
+    - ../configure --enable-precision=$PREC --enable-simd=SSE4 --enable-comms=none --with-lime=$CWD/build/lime/install ${EXTRACONF}
     - make -j4 
     - ./benchmarks/Benchmark_dwf --threads 1 --debug-signals
-    - echo make clean
-    - ../configure --enable-precision=double --enable-simd=SSE4 --enable-comms=none --with-lime=$CWD/build/lime/install ${EXTRACONF}
-    - make -j4
-    - ./benchmarks/Benchmark_dwf --threads 1 --debug-signals
     - make check
-
