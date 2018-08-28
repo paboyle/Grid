@@ -6,8 +6,8 @@ AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([subdir-objects 1.13])
 AM_EXTRA_RECURSIVE_TARGETS([tests bench])
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([lib/Grid.h])
-AC_CONFIG_HEADERS([lib/Config.h],[sed -i 's|PACKAGE_|GRID_|' lib/Config.h])
+AC_CONFIG_SRCDIR([Grid/Grid.h])
+AC_CONFIG_HEADERS([Grid/Config.h],[sed -i 's|PACKAGE_|GRID_|' Grid/Config.h])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 ################ Get git info
@@ -491,9 +491,9 @@ GRID_LIBS=$LIBS
 GRID_SHORT_SHA=`git rev-parse --short HEAD`
 GRID_SHA=`git rev-parse HEAD`
 GRID_BRANCH=`git rev-parse --abbrev-ref HEAD`
-AM_CXXFLAGS="-I${abs_srcdir}/include -I${abs_srcdir}/include/Grid $AM_CXXFLAGS"
-AM_CFLAGS="-I${abs_srcdir}/include -I${abs_srcdir}/include/Grid $AM_CFLAGS"
-AM_LDFLAGS="-L${cwd}/lib $AM_LDFLAGS"
+AM_CXXFLAGS="-I${abs_srcdir} $AM_CXXFLAGS"
+AM_CFLAGS="-I${abs_srcdir} $AM_CFLAGS"
+AM_LDFLAGS="-L${cwd}/Grid $AM_LDFLAGS"
 AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CXXFLAGS])
 AC_SUBST([AM_LDFLAGS])
@@ -547,7 +547,7 @@ AC_SUBST([GRID_SUMMARY])
 
 AC_CONFIG_FILES([grid-config], [chmod +x grid-config])
 AC_CONFIG_FILES(Makefile)
-AC_CONFIG_FILES(lib/Makefile)
+AC_CONFIG_FILES(Grid/Makefile)
 AC_CONFIG_FILES(tests/Makefile)
 AC_CONFIG_FILES(tests/IO/Makefile)
 AC_CONFIG_FILES(tests/core/Makefile)
@@ -561,8 +561,7 @@ AC_CONFIG_FILES(tests/smearing/Makefile)
 AC_CONFIG_FILES(tests/qdpxx/Makefile)
 AC_CONFIG_FILES(tests/testu01/Makefile)
 AC_CONFIG_FILES(benchmarks/Makefile)
-AC_CONFIG_FILES(extras/Makefile)
-AC_CONFIG_FILES(extras/Hadrons/Makefile)
+AC_CONFIG_FILES(Hadrons/Makefile)
 AC_OUTPUT
 
 echo ""

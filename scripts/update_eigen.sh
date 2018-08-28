@@ -7,7 +7,7 @@ fi
 ARC=$1
 
 INITDIR=`pwd`
-rm -f lib/Eigen
+rm -f Grid/Eigen
 rm -rf Eigen
 
 ##################
@@ -21,13 +21,13 @@ ARCDIR=`tar -tf ${ARC} | head -n1 | sed -e 's@/.*@@'`
 ###############################
 
 mv ${ARCDIR} Eigen
-ln -s ${INITDIR}/Eigen/Eigen ${INITDIR}/lib/Eigen
-ln -s ${INITDIR}/Eigen/unsupported/Eigen ${INITDIR}/lib/Eigen/unsupported
+ln -s ${INITDIR}/Eigen/Eigen ${INITDIR}/Grid/Eigen
+ln -s ${INITDIR}/Eigen/unsupported/Eigen ${INITDIR}/Grid/Eigen/unsupported
 
 # Eigen source headers
-cd ${INITDIR}/lib
-echo 'eigen_files =\' > ${INITDIR}/lib/Eigen.inc
-find -L Eigen -print | sed 's/^/  /;$q;s/$/ \\/' >> ${INITDIR}/lib/Eigen.inc
+cd ${INITDIR}/Grid
+echo 'eigen_files =\' > ${INITDIR}/Grid/Eigen.inc
+find -L Eigen -type f -print | sed 's/^/  /;$q;s/$/ \\/' >> ${INITDIR}/Grid/Eigen.inc
 
 ###################################
 # back to home

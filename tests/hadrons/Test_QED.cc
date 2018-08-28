@@ -26,8 +26,8 @@
  directory.
  *******************************************************************************/
 
-#include <Grid/Hadrons/Application.hpp>
-#include <Grid/Hadrons/Modules.hpp>
+#include <Hadrons/Application.hpp>
+#include <Hadrons/Modules.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
