@@ -206,9 +206,9 @@ void TA2AVectors<FImpl, nBasis>::execute(void)
     envGetTmp(FermionField, tmp2);
 
     int N_count = 0;
+    for (unsigned int T = 0; T < Nsrc; T++)
     for (unsigned int s = 0; s < Ns; ++s)
-        for (unsigned int c = 0; c < Nc; ++c)
-        for (unsigned int T = 0; T < Nsrc; T++)
+    for (unsigned int c = 0; c < Nc; ++c)
         {
             auto &prop_src = envGet(PropagatorField, sources[T]);
             LOG(Message) << "A2A src for s = " << s << " , c = " << c << ", T = " << T << std::endl;
