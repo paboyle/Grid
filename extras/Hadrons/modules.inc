@@ -48,6 +48,7 @@ modules_cc =\
   Modules/MContraction/A2AMeson.cc \
   Modules/MContraction/WeakNeutral4ptDisc.cc \
   Modules/MContraction/Gamma3pt.cc \
+  Modules/MContraction/A2APionField.cc \
   Modules/MAction/MobiusDWF.cc \
   Modules/MAction/WilsonClover.cc \
   Modules/MAction/Wilson.cc \
@@ -102,6 +103,7 @@ modules_hpp =\
   Modules/MContraction/MesonFieldGamma.hpp \
   Modules/MContraction/WeakHamiltonianEye.hpp \
   Modules/MContraction/Baryon.hpp \
+  Modules/MContraction/A2APionField.hpp \
   Modules/MContraction/Meson.hpp \
   Modules/MContraction/WeakHamiltonian.hpp \
   Modules/MContraction/WeakNeutral4ptDisc.hpp \
