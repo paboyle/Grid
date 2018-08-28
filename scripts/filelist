@@ -3,7 +3,7 @@
 home=`pwd`
 
 # library Make.inc
-cd $home/lib
+cd $home/Grid
 HFILES=`find . -type f -name '*.h' -not -name '*Hdf5*' -not -path '*/gamma-gen/*' -not -path '*/Old/*' -not -path '*/Eigen/*'`
 HFILES="$HFILES"
 CCFILES=`find . -type f -name '*.cc' -not -path '*/gamma-gen/*' -not -name '*Communicator*.cc' -not -name '*SharedMemory*.cc' -not -name '*Hdf5*'`

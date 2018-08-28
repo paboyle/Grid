@@ -25,7 +25,8 @@
  directory.
  *******************************************************************************/
 
-#include <Grid/Hadrons/Application.hpp>
+#include <Hadrons/Application.hpp>
+#include <Hadrons/Modules.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
@@ -176,8 +177,9 @@ inline void makeRBPrecCGSolver(Application &application, std::string &solverName
     if (!(VirtualMachine::getInstance().hasModule(solverName)))
     {
         MSolver::RBPrecCG::Par solverPar;
-        solverPar.action   = actionName;
-        solverPar.residual = residual;
+        solverPar.action       = actionName;
+        solverPar.residual     = residual;
+        solverPar.maxIteration = 10000;
         application.createModule<MSolver::RBPrecCG>(solverName,
                                                     solverPar);
     }
@@ -263,7 +265,8 @@ inline void makeConservedSequentialSource(Application &application,
         seqPar.tA        = tS;
         seqPar.tB        = tS;
         seqPar.curr_type = curr;
-        seqPar.mu        = mu;
+        seqPar.mu_min    = mu;
+        seqPar.mu_min    = mu;
         seqPar.mom       = mom;
         application.createModule<MSource::SeqConserved>(srcName, seqPar);
     }

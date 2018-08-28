@@ -120,6 +120,8 @@ void tensorConvTestFn(GridSerialRNG &rng, const std::string label)
 
 int main(int argc,char **argv)
 {
+  Grid_init(&argc,&argv);
+  
   GridSerialRNG    rng;
 
   rng.SeedFixedIntegers(std::vector<int>({42,10,81,9}));
