@@ -94,7 +94,7 @@ private:
     bool                                               hasPhase_{false};
     std::string                                        momphName_;
     std::vector<Gamma::Algebra>                        gamma_;
-    std::vector<std::vector<double>>                   mom_;
+    std::vector<std::vector<Real>>                     mom_;
     std::vector<std::pair<unsigned int, unsigned int>> nodeFile_;
 };
 

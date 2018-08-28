@@ -56,7 +56,7 @@ public:
         VecRecord(void): index(0), eval(0.) {}
     };
 public:
-    std::vector<Real> eval;
+    std::vector<RealD> eval;
     std::vector<F>     evec;
     PackRecord         record;
 public:
@@ -119,7 +119,7 @@ protected:
     }
 
     template <typename T>
-    void basicRead(std::vector<T> &evec, std::vector<double> &eval,
+    void basicRead(std::vector<T> &evec, std::vector<RealD> &eval,
                    const std::string filename, const unsigned int size)
     {
         ScidacReader    binReader;
@@ -144,7 +144,7 @@ protected:
     }
 
     template <typename T>
-    void basicReadSingle(T &evec, double &eval, const std::string filename, 
+    void basicReadSingle(T &evec, RealD &eval, const std::string filename, 
                          const unsigned int index)
     {
         ScidacReader binReader;
@@ -166,7 +166,7 @@ protected:
 
     template <typename T>
     void basicWrite(const std::string filename, std::vector<T> &evec, 
-                    const std::vector<double> &eval, const unsigned int size)
+                    const std::vector<RealD> &eval, const unsigned int size)
     {
         ScidacWriter binWriter(evec[0]._grid->IsBoss());
         XmlWriter    xmlWriter("", "eigenPackPar");
@@ -190,7 +190,7 @@ protected:
 
     template <typename T>
     void basicWriteSingle(const std::string filename, T &evec, 
-                          const double eval, const unsigned int index)
+                          const RealD eval, const unsigned int index)
     {
         ScidacWriter binWriter(evec._grid->IsBoss());
         XmlWriter    xmlWriter("", "eigenPackPar");
@@ -215,7 +215,7 @@ class CoarseEigenPack: public EigenPack<FineF>
 public:
     typedef CoarseF CoarseField;
 public:
-    std::vector<Real>   evalCoarse;
+    std::vector<RealD>   evalCoarse;
     std::vector<CoarseF> evecCoarse;
 public:
     CoarseEigenPack(void)          = default;
