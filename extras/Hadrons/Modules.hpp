@@ -41,6 +41,7 @@
 #include <Grid/Hadrons/Modules/MContraction/MesonFieldGamma.hpp>
 #include <Grid/Hadrons/Modules/MContraction/WeakHamiltonianEye.hpp>
 #include <Grid/Hadrons/Modules/MContraction/Baryon.hpp>
+#include <Grid/Hadrons/Modules/MContraction/A2APionField.hpp>
 #include <Grid/Hadrons/Modules/MContraction/Meson.hpp>
 #include <Grid/Hadrons/Modules/MContraction/WeakHamiltonian.hpp>
 #include <Grid/Hadrons/Modules/MContraction/WeakNeutral4ptDisc.hpp>
