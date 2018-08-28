@@ -24,6 +24,11 @@ class A2AModesSchurDiagTwo
     const bool return_5d;
 
   public:
+
+  int getNl (void ) {return Nl;}
+  int getNh (void ) {return Nh;}
+  int getN  (void ) {return Nh+Nl;}
+
     A2AModesSchurDiagTwo(const std::vector<Field> *_evec, const std::vector<RealD> *_eval,
                          Matrix &_action,
                          Solver &_solver,
