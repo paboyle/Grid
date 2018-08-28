@@ -41,7 +41,7 @@ AC_TYPE_UINT64_T
 ############### OpenMP
 AC_OPENMP
 ac_openmp=no
-if test "${OPENMP_CXXFLAGS}X" != "X"; then
+if test "${ac_cv_prog_cxx_openmp}X" != "noX"; then
   ac_openmp=yes
   AM_CXXFLAGS="$OPENMP_CXXFLAGS $AM_CXXFLAGS"
   AM_LDFLAGS="$OPENMP_CXXFLAGS $AM_LDFLAGS"
