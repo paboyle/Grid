@@ -24,7 +24,7 @@ endif
 all: version-cache
 
 version-cache:
-	if [ `git status --porcelain | wc -l` -gt 0 ]; then\
+	if [ `git status --porcelain | grep -v '??' | wc -l` -gt 0 ]; then\
 		a="uncommited changes";\
 	else\
 		a="no uncommitted changes";\
@@ -43,7 +43,7 @@ version-cache:
 	rm -f vertmp
 
 Version.h:
-	echo "`git log -n 1 --format=format:"#define GITHASH \\"%H:%d $$a\\"%n" HEAD`" > Version.h
+	cp version-cache Version.h
 
 .PHONY: version-cache
 
