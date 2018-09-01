@@ -15,7 +15,12 @@ Copyright (C) 2015-2018
 
 EOF
 
-git log $1 | grep Author | sort -u >> message
+git log $1 | grep Author > gitauth
+grep 'Author: '  $1 > fileauth
+
+cat gitauth fileauth | sort -u >> message
+
+rm gitauth fileauth
 
 cat >> message <<EOF
 
