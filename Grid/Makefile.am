@@ -21,6 +21,28 @@ if BUILD_HDF5
   extra_headers+=serialisation/Hdf5Type.h
 endif
 
+all: version-cache
+
+version-cache:
+	if [ `git status --porcelain | wc -l` -gt 0 ]; then\
+		a="uncommited changes";\
+	else\
+		a="no uncommitted changes";\
+	fi;\
+	echo "`git log -n 1 --format=format:"#define GITHASH \\"%H:%d $$a\\"%n" HEAD`" > vertmp;\
+	if [ -e version-cache ]; then\
+		d=`diff vertmp version-cache`;\
+		[ "${d}" != "" ] && mv vertmp version-cache;\
+	else\
+		mv vertmp version-cache;\
+	fi;\
+	rm -f vertmp
+
+Version.h:
+	echo "`git log -n 1 --format=format:"#define GITHASH \\"%H:%d $$a\\"%n" HEAD`" > Version.h
+
+.PHONY: version-cache
+
 #
 # Libraries
 #
@@ -30,8 +52,8 @@ include Eigen.inc
 lib_LIBRARIES = libGrid.a
 
 CCFILES += $(extra_sources)
-HFILES  += $(extra_headers)
+HFILES  += $(extra_headers) Config.h Version.h
 
 libGrid_a_SOURCES              = $(CCFILES)
 libGrid_adir                   = $(includedir)/Grid
-nobase_dist_pkginclude_HEADERS = $(HFILES) $(eigen_files) $(eigen_unsupp_files) Config.h
+nobase_dist_pkginclude_HEADERS = $(HFILES) $(eigen_files) $(eigen_unsupp_files)

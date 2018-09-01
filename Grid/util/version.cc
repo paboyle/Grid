@@ -1,5 +1,5 @@
 #include <iostream>
-#include <version.h>
+#include "Version.h"
 namespace Grid {
   void printHash(){
 #ifdef GITHASH
