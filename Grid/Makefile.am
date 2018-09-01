@@ -27,7 +27,7 @@ version-cache:
 	if [ `git status --porcelain | grep -v '??' | wc -l` -gt 0 ]; then\
 		a="uncommited changes";\
 	else\
-		a="no uncommitted changes";\
+		a="clean";\
 	fi;\
 	echo "`git log -n 1 --format=format:"#define GITHASH \\"%H:%d $$a\\"%n" HEAD`" > vertmp;\
 	if [ -e version-cache ]; then\
