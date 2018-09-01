@@ -44,7 +44,8 @@ class StochFreeFieldPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(StochFreeFieldPar,
                                     double, m2,
-                                    double, g);
+                                    double, g,
+                                    double, smearing);
 };
 
 template <typename SImpl>
@@ -111,6 +112,7 @@ void TStochFreeField<SImpl>::setup(void)
     if (!env().hasCreatedObject("_" + getName() + "_weight"))
     {
         envCacheLat(ComplexField, "_" + getName() + "_weight");
+        envTmpLat(ComplexField, "smear");
         create_weight = true;
     }
     envTmpLat(Field, "phift");
@@ -142,8 +144,11 @@ void TStochFreeField<SImpl>::execute(void)
     {
         LOG(Message) << "Caching momentum-space scalar action" << std::endl;
         
+        envGetTmp(ComplexField, smear);
+        SImpl::MomentaSquare(smear);
+        smear = exp(-par().smearing*smear);
         SImpl::MomentumSpacePropagator(w, sqrt(par().m2));
-        w *= par().g/N;
+        w *= par().g/N*smear;
         w  = sqrt(vol)*sqrt(w);
     }
     LOG(Message) << "Generating random momentum-space field" << std::endl;

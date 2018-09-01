@@ -133,13 +133,14 @@ void TTwoPointNPR<SImpl>::setup(void)
 template <typename SImpl>
 void TTwoPointNPR<SImpl>::execute(void)
 {
-    const unsigned int             nd = env().getNd();
-    const unsigned int             nl = env().getDim(0);
+    const unsigned int             nd   = env().getNd();
+    const unsigned int             nl   = env().getDim(0);
+    const double                   invV = 1./env().getVolume();
     FFT                            fft(env().getGrid());
     std::vector<TwoPointNPRResult> result;
-    TwoPointNPRResult              twoPtp1, twoPtp2;
+    TwoPointNPRResult              twoPtp1, twoPtp2, twoPtDisc;
     auto                           &phi    = envGet(Field, par().field);
-    bool                           doTwoPt = true;
+    bool                           doAux = true;
 
     envGetTmp(ComplexField, ftBuf);
     envGetTmp(Field, ftMatBuf);
@@ -151,19 +152,23 @@ void TTwoPointNPR<SImpl>::execute(void)
         std::vector<int>  p1, p2, p;
         Site              phip1, phip2;
         TComplex          opp;
-        TwoPointNPRResult r;
+        TwoPointNPRResult r, rDisc;
 
         LOG(Message) << "FFT: operator '" << opName << "'" << std::endl;
         fft.FFT_all_dim(ftBuf, op, FFT::forward);
         LOG(Message) << "Generating vertex function" << std::endl;
         r.op = opName;
         r.data.resize(nl);
-        if (doTwoPt)
+        rDisc.op = opName + "_disc";
+        rDisc.data.resize(nl);
+        if (doAux)
         {
             twoPtp1.op = "phi_prop_p1";
             twoPtp1.data.resize(nl);
             twoPtp2.op = "phi_prop_p2";
             twoPtp2.data.resize(nl);
+            twoPtDisc.op = "phi_prop_disc";
+            twoPtDisc.data.resize(nl);
         }
         for (unsigned int n = 0; n < nl; ++n)
         {
@@ -184,20 +189,24 @@ void TTwoPointNPR<SImpl>::execute(void)
             peekSite(phip1, ftMatBuf, p1);
             peekSite(phip2, ftMatBuf, p2);
             peekSite(opp, ftBuf, p);
-            if (doTwoPt)
+            if (doAux)
             {
-                twoPtp1.data[n] = TensorRemove(trace(phip1*adj(phip1)));
-                twoPtp2.data[n] = TensorRemove(trace(phip2*adj(phip2)));
+                twoPtp1.data[n]   = invV*TensorRemove(trace(phip1*adj(phip1)));
+                twoPtp2.data[n]   = invV*TensorRemove(trace(phip2*adj(phip2)));
+                twoPtDisc.data[n] = invV*TensorRemove(trace(phip2*adj(phip1)));
             }
-            r.data[n]  = TensorRemove(trace(phip2*adj(phip1))*opp);
+            r.data[n]     = invV*TensorRemove(trace(phip2*adj(phip1))*opp);
+            rDisc.data[n] = invV*TensorRemove(trace(phip1*adj(phip1))*opp);
         }
-        if (doTwoPt)
+        if (doAux)
         {
             result.push_back(twoPtp1);
             result.push_back(twoPtp2);
+            result.push_back(twoPtDisc);
         }
         result.push_back(r);
-        doTwoPt = false;
+        result.push_back(rDisc);
+        doAux = false;
     }
     saveResult(par().output, "twoptnpr", result);
 }
