@@ -117,10 +117,14 @@ void TStoutSmearing<GImpl>::execute(void)
 
     envGetTmp(GaugeField, buf);
     buf = U;
+    LOG(Message) << "plaquette= " << WilsonLoops<GImpl>::avgPlaquette(U)
+                 << std::endl;
     for (unsigned int n = 0; n < par().steps; ++n)
     {
         smearer.smear(Usmr, buf);
         buf = Usmr;
+        LOG(Message) << "plaquette= " << WilsonLoops<GImpl>::avgPlaquette(Usmr)
+                     << std::endl;
     }
 }
 
