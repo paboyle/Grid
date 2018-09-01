@@ -32,9 +32,13 @@ version-cache:
 	echo "`git log -n 1 --format=format:"#define GITHASH \\"%H:%d $$a\\"%n" HEAD`" > vertmp;\
 	if [ -e version-cache ]; then\
 		d=`diff vertmp version-cache`;\
-		[ "${d}" != "" ] && mv vertmp version-cache;\
+		if [ "$${d}" != "" ]; then\
+			mv vertmp version-cache;\
+			rm -f Version.h;\
+		fi;\
 	else\
 		mv vertmp version-cache;\
+		rm -f Version.h;\
 	fi;\
 	rm -f vertmp
 
