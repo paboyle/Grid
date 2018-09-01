@@ -15,7 +15,9 @@ libHadrons_adir = $(includedir)/Hadrons
 nobase_libHadrons_a_HEADERS = \
 	$(modules_hpp)            \
 	A2AVectors.hpp            \
+	A2AMatrix.hpp             \
 	Application.hpp           \
+	DilutedNoise.hpp          \
 	EigenPack.hpp             \
 	Environment.hpp           \
 	Exceptions.hpp            \

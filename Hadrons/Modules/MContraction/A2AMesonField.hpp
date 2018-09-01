@@ -34,6 +34,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 #include <Hadrons/A2AVectors.hpp>
+#include <Hadrons/A2AMatrix.hpp>
 #include <Hadrons/Modules/MSolver/A2AVectors.hpp>
 #include <Hadrons/Modules/MContraction/A2AMesonFieldKernels.hpp>
 
@@ -62,6 +63,14 @@ class A2AMesonFieldPar: Serializable
                                     std::vector<std::string>, mom);
 };
 
+class A2AMesonFieldMetadata: Serializable
+{
+  public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(A2AMesonFieldMetadata,
+                                    std::vector<RealF>, momentum,
+                                    Gamma::Algebra, gamma);
+};
+
 template <typename FImpl>
 class TA2AMesonField : public Module<A2AMesonFieldPar>
 {
@@ -70,6 +79,13 @@ public:
     SOLVER_TYPE_ALIASES(FImpl,);
     typedef Eigen::TensorMap<Eigen::Tensor<Complex, 5, Eigen::RowMajor>>    MesonField;
     typedef Eigen::TensorMap<Eigen::Tensor<MF_IO_TYPE, 5, Eigen::RowMajor>> MesonFieldIo;
+    typedef A2AMatrixIo<MF_IO_TYPE, A2AMesonFieldMetadata>                  MatrixIo;
+    struct IoHelper
+    {
+        MatrixIo              io;
+        A2AMesonFieldMetadata metadata;
+        size_t                offset;
+    };
 public:
     // constructor
     TA2AMesonField(const std::string name);
@@ -86,16 +102,13 @@ private:
     // IO
     std::string ioname(unsigned int m, unsigned int g) const;
     std::string filename(unsigned int m, unsigned int g) const;
-    void initFile(unsigned int m, unsigned int g);
-    void saveBlock(const MesonFieldIo &mf,
-                   unsigned int m, unsigned int g, 
-                   unsigned int i, unsigned int j);
+    void saveBlock(MF_IO_TYPE *data, IoHelper &h, unsigned int i, unsigned int j);
 private:
     bool                                               hasPhase_{false};
     std::string                                        momphName_;
     std::vector<Gamma::Algebra>                        gamma_;
     std::vector<std::vector<Real>>                     mom_;
-    std::vector<std::pair<unsigned int, unsigned int>> nodeFile_;
+    std::vector<IoHelper>                              nodeIo_;
 };
 
 MODULE_REGISTER(A2AMesonField, ARG(TA2AMesonField<FIMPL>), MContraction);
@@ -331,51 +344,42 @@ void TA2AMesonField<FImpl>::execute(void)
             makeFileDir(filename(0, 0), env().getGrid());
 #ifdef MF_PARALLEL_IO
             env().getGrid()->Barrier();
-            nodeFile_.clear();
+            nodeIo_.clear();
             for(int f = myRank; f < nmom*ngamma; f += nRank)
             {
-                std::pair<unsigned int, unsigned int> file;
+                const unsigned int    m = f/ngamma, g = f % ngamma;
+                IoHelper              h;
 
-                file.first  = f/ngamma;
-                file.second = f % ngamma;
-                nodeFile_.push_back(file);
+                h.io = MatrixIo(filename(m, g), ioname(m, g), nt, N_i, N_j, block);
+                for (auto pmu: mom_[m])
+                {
+                    h.metadata.momentum.push_back(pmu);
+                }
+                h.metadata.gamma = gamma_[g];
+                h.offset         = (m*ngamma + g)*nt*block*block;
+                nodeIo_.push_back(h);
             }
             // parallel IO
-            for (auto &f: nodeFile_)
+            for (auto &h: nodeIo_)
             {
-                auto m = f.first, g = f.second;
-
-                if ((i == 0) and (j == 0))
-                {
-                    startTimer("IO: file creation");
-                    initFile(m, g);
-                    stopTimer("IO: file creation");
-                }
-                startTimer("IO: write block");
-                saveBlock(mfBlock, m, g, i, j);
-                stopTimer("IO: write block");
+                saveBlock(mfBlock.data(), h, i, j);
             }
             env().getGrid()->Barrier();
 #else
             // serial IO
             for(int m = 0; m < nmom; m++)
             for(int g = 0; g < ngamma; g++)
-            {   
-                if ((i == 0) and (j == 0))
+            {
+                IoHelper h;
+
+                h.io = MatrixIo(filename(m, g), ioname(m, g), nt, N_i, N_j, block);
+                for (auto pmu: mom_[m])
                 {
-                    startTimer("IO: file creation");
-                    if (env().getGrid()->IsBoss())
-                    {
-                        initFile(m, g);
-                    }
-                    stopTimer("IO: file creation");
+                    h.metadata.momentum.push_back(pmu);
                 }
-                startTimer("IO: write block");
-                if (env().getGrid()->IsBoss())
-                {
-                    saveBlock(mfBlock, m, g, i, j);
-                }
-                stopTimer("IO: write block");
+                h.metadata.gamma = gamma_[g];
+                h.offset         = (m*ngamma + g)*nt*block*block;
+                saveBlock(mfBlock.data(), h, i, j);
             }
 #endif
             stopTimer("IO: total");
@@ -412,71 +416,18 @@ std::string TA2AMesonField<FImpl>::filename(unsigned int m, unsigned int g) cons
 }
 
 template <typename FImpl>
-void TA2AMesonField<FImpl>::initFile(unsigned int m, unsigned int g)
-{
-#ifdef HAVE_HDF5
-    std::string  f     = filename(m, g);
-    auto         &v    = envGet(std::vector<FermionField>, par().v);
-    auto         &w    = envGet(std::vector<FermionField>, par().w);
-    int          nt    = env().getDim().back();
-    int          N_i   = w.size();
-    int          N_j   = v.size();
-
-    Hdf5Writer              writer(f);
-    std::vector<hsize_t>    dim = {static_cast<hsize_t>(nt), 
-                                   static_cast<hsize_t>(N_i), 
-                                   static_cast<hsize_t>(N_j)},
-                            chunk = {static_cast<hsize_t>(nt), 
-                                     static_cast<hsize_t>(par().block), 
-                                     static_cast<hsize_t>(par().block)};
-    H5NS::DataSpace         dataspace(dim.size(), dim.data());
-    H5NS::DataSet           dataset;
-    H5NS::DSetCreatPropList plist;
-    
-    push(writer, ioname(m, g));
-    write(writer, "momentum", mom_[m]);
-    write(writer, "gamma", gamma_[g]);
-    auto &group = writer.getGroup();
-    plist.setChunk(chunk.size(), chunk.data());
-    dataset = group.createDataSet("mesonField", Hdf5Type<MF_IO_TYPE>::type(),
-                                  dataspace, plist);
-#else
-    HADRONS_ERROR(Implementation, "meson field I/O needs HDF5 library");
-#endif
-}
-
-template <typename FImpl>
-void TA2AMesonField<FImpl>::saveBlock(const MesonFieldIo &mf,
-                                      unsigned int m, unsigned int g, 
+void TA2AMesonField<FImpl>::saveBlock(MF_IO_TYPE *data, IoHelper &h, 
                                       unsigned int i, unsigned int j)
 {
-#ifdef HAVE_HDF5
-    std::string          f = filename(m, g);
-    Hdf5Reader           reader(f);
-    hsize_t              nt = mf.dimension(2),
-                         Ni = mf.dimension(3),
-                         Nj = mf.dimension(4);
-    std::vector<hsize_t> count = {nt, Ni, Nj},
-                         offset = {0, static_cast<hsize_t>(i),
-                                 static_cast<hsize_t>(j)},
-                         stride = {1, 1, 1},
-                         block  = {1, 1, 1}; 
-    H5NS::DataSpace      memspace(count.size(), count.data()), dataspace;
-    H5NS::DataSet        dataset;
-    size_t               shift;
-
-    push(reader, ioname(m, g));
-    auto &group = reader.getGroup();
-    dataset   = group.openDataSet("mesonField");
-    dataspace = dataset.getSpace();
-    dataspace.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data(),
-                              stride.data(), block.data());
-    shift = (m*mf.dimension(1) + g)*nt*Ni*Nj;
-    dataset.write(mf.data() + shift, Hdf5Type<MF_IO_TYPE>::type(), memspace, 
-                  dataspace);
-#else
-    HADRONS_ERROR(Implementation, "meson field I/O needs HDF5 library");
-#endif
+    if ((i == 0) and (j == 0))
+    {
+        startTimer("IO: file creation");
+        h.io.initFile(h.metadata);
+        stopTimer("IO: file creation");
+    }
+    startTimer("IO: write block");
+    h.io.saveBlock(data + h.offset, i, j);
+    stopTimer("IO: write block");
 }
 
 END_MODULE_NAMESPACE
