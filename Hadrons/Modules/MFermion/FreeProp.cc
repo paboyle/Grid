@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MFermion/FreeProp.cc
+Source file: Hadrons/Modules/MFermion/FreeProp.cc
 
 Copyright (C) 2015-2018
 

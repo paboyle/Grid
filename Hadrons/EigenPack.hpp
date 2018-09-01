@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/EigenPack.hpp
+Source file: Hadrons/EigenPack.hpp
 
 Copyright (C) 2015-2018
 

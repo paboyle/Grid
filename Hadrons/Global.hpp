@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Global.hpp
+Source file: Hadrons/Global.hpp
 
 Copyright (C) 2015-2018
 

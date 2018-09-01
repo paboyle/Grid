@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MIO/LoadCoarseEigenPack.cc
+Source file: Hadrons/Modules/MIO/LoadCoarseEigenPack.cc
 
 Copyright (C) 2015-2018
 

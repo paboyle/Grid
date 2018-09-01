@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MGauge/StochEm.cc
+Source file: Hadrons/Modules/MGauge/StochEm.cc
 
 Copyright (C) 2015-2018
 

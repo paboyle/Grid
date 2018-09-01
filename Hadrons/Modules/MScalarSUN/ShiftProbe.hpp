@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MScalarSUN/ShiftProbe.hpp
+Source file: Hadrons/Modules/MScalarSUN/ShiftProbe.hpp
 
 Copyright (C) 2015-2018
 

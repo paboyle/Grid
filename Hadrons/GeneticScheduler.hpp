@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/GeneticScheduler.hpp
+Source file: Hadrons/GeneticScheduler.hpp
 
 Copyright (C) 2015-2018
 

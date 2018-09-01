@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MScalarSUN/TrKinetic.cc
+Source file: Hadrons/Modules/MScalarSUN/TrKinetic.cc
 
 Copyright (C) 2015-2018
 

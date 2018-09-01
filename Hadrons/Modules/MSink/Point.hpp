@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MSink/Point.hpp
+Source file: Hadrons/Modules/MSink/Point.hpp
 
 Copyright (C) 2015-2018
 

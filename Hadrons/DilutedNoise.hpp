@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/DilutedNoise.hpp
+Source file: Hadrons/DilutedNoise.hpp
 
 Copyright (C) 2015-2018
 

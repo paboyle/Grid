@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MSink/Smear.hpp
+Source file: Hadrons/Modules/MSink/Smear.hpp
 
 Copyright (C) 2015-2018
 

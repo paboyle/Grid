@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MSolver/LocalCoherenceLanczos.cc
+Source file: Hadrons/Modules/MSolver/LocalCoherenceLanczos.cc
 
 Copyright (C) 2015-2018
 

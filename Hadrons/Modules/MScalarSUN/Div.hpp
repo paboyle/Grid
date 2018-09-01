@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MScalarSUN/Div.hpp
+Source file: Hadrons/Modules/MScalarSUN/Div.hpp
 
 Copyright (C) 2015-2018
 

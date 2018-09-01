@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MAction/ScaledDWF.hpp
+Source file: Hadrons/Modules/MAction/ScaledDWF.hpp
 
 Copyright (C) 2015-2018
 

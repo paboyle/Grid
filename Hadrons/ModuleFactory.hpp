@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/ModuleFactory.hpp
+Source file: Hadrons/ModuleFactory.hpp
 
 Copyright (C) 2015-2018
 
