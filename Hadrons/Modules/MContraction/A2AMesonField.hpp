@@ -102,7 +102,7 @@ private:
     // IO
     std::string ioname(unsigned int m, unsigned int g) const;
     std::string filename(unsigned int m, unsigned int g) const;
-    void saveBlock(MF_IO_TYPE *data, IoHelper &h, unsigned int i, unsigned int j);
+    void saveBlock(const MF_IO_TYPE *data, IoHelper &h, unsigned int i, unsigned int j);
 private:
     bool                                               hasPhase_{false};
     std::string                                        momphName_;
@@ -416,7 +416,7 @@ std::string TA2AMesonField<FImpl>::filename(unsigned int m, unsigned int g) cons
 }
 
 template <typename FImpl>
-void TA2AMesonField<FImpl>::saveBlock(MF_IO_TYPE *data, IoHelper &h, 
+void TA2AMesonField<FImpl>::saveBlock(const MF_IO_TYPE *data, IoHelper &h, 
                                       unsigned int i, unsigned int j)
 {
     if ((i == 0) and (j == 0))

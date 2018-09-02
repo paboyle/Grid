@@ -80,10 +80,10 @@ void A2AMatrixIo<T, MetadataType>::initFile(const MetadataType &d)
     }
 
     // create the dataset
-    Hdf5Writer writer(filename_);
+    Hdf5Reader reader(filename_);
 
-    push(writer, dataname_);
-    auto &group = writer.getGroup();
+    push(reader, dataname_);
+    auto &group = reader.getGroup();
     plist.setChunk(chunk.size(), chunk.data());
     dataset = group.createDataSet("data", Hdf5Type<T>::type(), dataspace, plist);
 #else
