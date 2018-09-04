@@ -5,8 +5,7 @@
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
 #include <Grid/Hadrons/AllToAllVectors.hpp>
-
-#include <unsupported/Eigen/CXX11/Tensor>
+#include <Grid/Hadrons/Modules/MContraction/A2Autils.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -33,13 +32,22 @@ class A2APionFieldPar : Serializable
 template <typename FImpl>
 class TA2APionField : public Module<A2APionFieldPar>
 {
-  public:
-    FERM_TYPE_ALIASES(FImpl, );
-    SOLVER_TYPE_ALIASES(FImpl, );
+public:
+  FERM_TYPE_ALIASES(FImpl, );
+  SOLVER_TYPE_ALIASES(FImpl, );
 
-    typedef A2AModesSchurDiagTwo<typename FImpl::FermionField, FMat, Solver> A2ABase;
+  typedef typename FImpl::SiteSpinor vobj;
 
-  int d_unroll ;
+  typedef typename vobj::scalar_object sobj;
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+  
+  typedef iSpinMatrix<vector_type> SpinMatrix_v;
+  typedef iSpinMatrix<scalar_type> SpinMatrix_s;
+  typedef iSinglet<vector_type> Scalar_v;
+  typedef iSinglet<scalar_type> Scalar_s;
+
+  typedef A2AModesSchurDiagTwo<typename FImpl::FermionField, FMat, Solver> A2ABase;
 
   public:
     // constructor
@@ -53,48 +61,6 @@ class TA2APionField : public Module<A2APionFieldPar>
     virtual void setup(void);
     // execution
     virtual void execute(void);
-  
-    virtual void DeltaFeq2(int dt_min,int dt_max,
-			   Eigen::Tensor<ComplexD,2> &dF2_fig8,
-			   Eigen::Tensor<ComplexD,2> &dF2_trtr,
-			   Eigen::Tensor<ComplexD,1> &den0,
-			   Eigen::Tensor<ComplexD,1> &den1,
-			   Eigen::Tensor<ComplexD,3> &WW_sd, 
-			   const LatticeFermion *vs,
-			   const LatticeFermion *vd,
-			   int orthogdim);
-
-    ///////////////////////////////////////
-    // Arithmetic help. Move to Grid??
-    ///////////////////////////////////////
-    virtual void PionFieldXX(Eigen::Tensor<ComplexD,3> &mat, 
-			     const LatticeFermion *wi,
-			     const LatticeFermion *vj,
-			     int orthogdim,
-			     int g5);      
-    ///////////////////////////
-    // Simple wrappers
-    ///////////////////////////
-    virtual void PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat, 
-				const LatticeFermion *wi,
-				const LatticeFermion *vj,
-				const std::vector<LatticeComplex > &mom,
-				int orthogdim);      
-
-    virtual void PionFieldWV(Eigen::Tensor<ComplexD,3> &mat, 
-			     const LatticeFermion *wi,
-			     const LatticeFermion *vj,
-			     int orthogdim);      
-
-    virtual void PionFieldVV(Eigen::Tensor<ComplexD,3> &mat, 
-			     const LatticeFermion *vi,
-			     const LatticeFermion *vj,
-			     int orthogdim);      
-
-    virtual void PionFieldWW(Eigen::Tensor<ComplexD,3> &mat, 
-			     const LatticeFermion *wi,
-			     const LatticeFermion *wj,
-			     int orthogdim);      
 
 };
 
@@ -139,7 +105,6 @@ std::vector<std::string> TA2APionField<FImpl>::getOutput(void)
 template <typename FImpl>
 void TA2APionField<FImpl>::setup(void)
 {
-  d_unroll = 32; // empirical default. Can be overridden if desired
 
   // Four D fields
   envTmp(std::vector<FermionField>, "wi", 1, par().schurBlock, FermionField(env().getGrid(1)));
@@ -154,841 +119,6 @@ void TA2APionField<FImpl>::setup(void)
   int Ls_j= env().getObjectLs(par().A2A_j + "_class");
   assert ( Ls_i == Ls_j ); 
 }
-
-
-//////////////////////////////////////////////////////////////////////////////////
-// Cache blocked arithmetic routine
-// Could move to Grid ???
-//////////////////////////////////////////////////////////////////////////////////
-template <typename FImpl>
-void TA2APionField<FImpl>::PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat, 
-					  const LatticeFermion *wi,
-					  const LatticeFermion *vj,
-					  const std::vector<LatticeComplex > &mom,
-					  int orthogdim) 
-{
-  double t0,t1,t2,t3;  t0=t1=t2=t3= 0.0;
-
-  typedef typename FImpl::SiteSpinor vobj;
-
-  typedef typename vobj::scalar_object sobj;
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-
-  typedef iSpinMatrix<vector_type> SpinMatrix_v;
-  typedef iSpinMatrix<scalar_type> SpinMatrix_s;
-  
-  int Lblock = mat.dimension(2); 
-  int Rblock = mat.dimension(3);
-
-  GridBase *grid = wi[0]._grid;
-  
-  const int    nd = grid->_ndimension;
-  const int Nsimd = grid->Nsimd();
-
-  int Nt     = grid->GlobalDimensions()[orthogdim];
-  int Nmom   = mom.size();
-
-  int fd=grid->_fdimensions[orthogdim];
-  int ld=grid->_ldimensions[orthogdim];
-  int rd=grid->_rdimensions[orthogdim];
-
-  // will locally sum vectors first
-  // sum across these down to scalars
-  // splitting the SIMD
-  int MFrvol = rd*Lblock*Rblock*Nmom;
-  int MFlvol = ld*Lblock*Rblock*Nmom;
-
-  Vector<vector_type > lvSum(MFrvol);
-  parallel_for (int r = 0; r < MFrvol; r++){
-    lvSum[r] = zero;
-  }
-
-  Vector<scalar_type > lsSum(MFlvol);             
-  parallel_for (int r = 0; r < MFlvol; r++){
-    lsSum[r]=scalar_type(0.0);
-  }
-
-  int e1=    grid->_slice_nblock[orthogdim];
-  int e2=    grid->_slice_block [orthogdim];
-  int stride=grid->_slice_stride[orthogdim];
-
-  t0-=usecond();
-  parallel_for(int r=0;r<rd;r++){
-
-    int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
-
-    for(int n=0;n<e1;n++){
-      for(int b=0;b<e2;b++){
-
-	int ss= so+n*stride+b;
-
-	for(int i=0;i<Lblock;i++){
-
-	  auto w = conjugate(wi[i]._odata[ss]);
-
-	  for(int j=0;j<Rblock;j++){
-
-	    auto v = vj[j]._odata[ss];
-
-	    auto vv = w()(0)(0) * v()(0)(0)// Gamma5 Dirac basis explicitly written out
-	      +       w()(0)(1) * v()(0)(1)
-	      +       w()(0)(2) * v()(0)(2)
-	      +       w()(1)(0) * v()(1)(0)
-	      +       w()(1)(1) * v()(1)(1)
-	      +       w()(1)(2) * v()(1)(2)
-	      -       w()(2)(0) * v()(2)(0)
-	      -       w()(2)(1) * v()(2)(1)
-	      -       w()(2)(2) * v()(2)(2)
-	      -       w()(3)(0) * v()(3)(0)
-	      -       w()(3)(1) * v()(3)(1)
-	      -       w()(3)(2) * v()(3)(2);
-
-	    
-	    // After getting the sitewise product do the mom phase loop
-	    int base = Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*r;
-	    for ( int m=0;m<Nmom;m++){
-	      int idx = m+base;
-	      auto phase = mom[m]._odata[ss];
-	      mac(&lvSum[idx],&vv,&phase()()());
-	    }
-	  }
-	}
-      }
-    }
-  }
-  t0+=usecond();
-
-
-  // Sum across simd lanes in the plane, breaking out orthog dir.
-  t1-=usecond();
-  parallel_for(int rt=0;rt<rd;rt++){
-
-    std::vector<int> icoor(nd);
-    iScalar<vector_type> temp; 
-    std::vector<iScalar<scalar_type> > extracted(Nsimd);               
-
-      //    std::vector<scalar_type> extracted(Nsimd);               
-
-    for(int i=0;i<Lblock;i++){
-    for(int j=0;j<Rblock;j++){
-    for(int m=0;m<Nmom;m++){
-
-      int ij_rdx = m+Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*rt;
-
-      temp._internal = lvSum[ij_rdx];
-      extract(temp,extracted);
-
-      for(int idx=0;idx<Nsimd;idx++){
-
-	grid->iCoorFromIindex(icoor,idx);
-
-	int ldx    = rt+icoor[orthogdim]*rd;
-
-	int ij_ldx = m+Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*ldx;
-
-	lsSum[ij_ldx]=lsSum[ij_ldx]+extracted[idx]._internal;
-
-      }
-    }}}
-  }
-  t1+=usecond();
-
-  assert(mat.dimension(0) == Nmom);
-  assert(mat.dimension(1) == Nt);
-  t2-=usecond();
-  // ld loop and local only??
-  int pd = grid->_processors[orthogdim];
-  int pc = grid->_processor_coor[orthogdim];
-  parallel_for_nest2(int lt=0;lt<ld;lt++)
-  {
-    for(int pt=0;pt<pd;pt++){
-      int t = lt + pt*ld;
-      if (pt == pc){
-	for(int i=0;i<Lblock;i++){
-	  for(int j=0;j<Rblock;j++){
-	    for(int m=0;m<Nmom;m++){
-	      int ij_dx = m+Nmom*i + Nmom*Lblock * j + Nmom*Lblock * Rblock * lt;
-	      mat(m,t,i,j) = lsSum[ij_dx];
-	    }
-	  }
-	}
-      } else { 
-	const scalar_type zz(0.0);
-	for(int i=0;i<Lblock;i++){
-	  for(int j=0;j<Rblock;j++){
-	    for(int m=0;m<Nmom;m++){
-	      mat(m,t,i,j) =zz;
-	    }
-	  }
-	}
-      }
-    }
-  }
-  t2+=usecond();
-
-  t3-=usecond();
-  grid->GlobalSumVector(&mat(0,0,0,0),Nmom*Nt*Lblock*Rblock);
-  t3+=usecond();
-}
-
-///////////////////////////////////////////////////////////////////
-//Meson 
-// Interested in
-//
-//      sum_x,y Trace[ G S(x,tx,y,ty) G S(y,ty,x,tx) ]
-//
-// Conventional meson field:
-//                 
-//    = sum_x,y Trace[ sum_j G |v_j(y,ty)> <w_j(x,tx)|  G sum_i |v_i(x,tx) ><w_i(y,ty)| ]
-//    = sum_ij sum_x,y < w_j(x,tx)| G |v_i(x,tx) > <w_i(y,ty) (x)|G| v_j(y,ty) >
-//    = sum_ij PI_ji(tx) PI_ij(ty)
-//
-// G5-Hermiticity
-//
-//      sum_x,y Trace[ G S(x,tx,y,ty) G S(y,ty,x,tx) ]
-//    = sum_x,y Trace[ G S(x,tx,y,ty) G g5 S^dag(x,tx,y,ty) g5 ]
-//    = sum_x,y Trace[ g5 G sum_j |v_j(y,ty)> <w_j(x,tx)|  G g5 sum_i   (|v_j(y,ty)> <w_i(x,tx)|)^dag ]      --  (*)
-//
-// NB:  Dag applies to internal indices spin,colour,complex
-//
-//    = sum_ij sum_x,y Trace[ g5 G |v_j(y,ty)> <w_j(x,tx)|  G g5  |w_i(x,tx)> <v_i(y,ty)| ]
-//    = sum_ij sum_x,y <v_i(y,ty)|g5 G |v_j(y,ty)> <w_j(x,tx)|  G g5 |w_i(x,tx)> 
-//    = sum_ij  PionVV(ty) PionWW(tx)
-//
-// (*) is only correct estimator if w_i and w_j come from distinct noise sets to preserve the kronecker
-//     expectation value. Otherwise biased.
-////////////////////////////////////////////////////////////////////
-
-
-template <typename FImpl>
-void TA2APionField<FImpl>::PionFieldXX(Eigen::Tensor<ComplexD,3> &mat, 
-				       const LatticeFermion *wi,
-				       const LatticeFermion *vj,
-				       int orthogdim,
-				       int g5) 
-{
-  typedef typename FImpl::SiteSpinor vobj;
-
-  typedef typename vobj::scalar_object sobj;
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-
-  typedef iSpinMatrix<vector_type> SpinMatrix_v;
-  typedef iSpinMatrix<scalar_type> SpinMatrix_s;
-  
-  int Lblock = mat.dimension(1); 
-  int Rblock = mat.dimension(2);
-
-  GridBase *grid = wi[0]._grid;
-  
-  const int    nd = grid->_ndimension;
-  const int Nsimd = grid->Nsimd();
-
-  int Nt     = grid->GlobalDimensions()[orthogdim];
-
-  int fd=grid->_fdimensions[orthogdim];
-  int ld=grid->_ldimensions[orthogdim];
-  int rd=grid->_rdimensions[orthogdim];
-
-  // will locally sum vectors first
-  // sum across these down to scalars
-  // splitting the SIMD
-  int MFrvol = rd*Lblock*Rblock;
-  int MFlvol = ld*Lblock*Rblock;
-
-  Vector<vector_type > lvSum(MFrvol);
-  parallel_for (int r = 0; r < MFrvol; r++){
-    lvSum[r] = zero;
-  }
-
-  Vector<scalar_type > lsSum(MFlvol);             
-  parallel_for (int r = 0; r < MFlvol; r++){
-    lsSum[r]=scalar_type(0.0);
-  }
-
-  int e1=    grid->_slice_nblock[orthogdim];
-  int e2=    grid->_slice_block [orthogdim];
-  int stride=grid->_slice_stride[orthogdim];
-
-  parallel_for(int r=0;r<rd;r++){
-
-    int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
-
-    for(int n=0;n<e1;n++){
-      for(int b=0;b<e2;b++){
-
-	int ss= so+n*stride+b;
-
-	for(int i=0;i<Lblock;i++){
-
-	  auto w = conjugate(wi[i]._odata[ss]);
-
-	  for(int j=0;j<Rblock;j++){
-
-	    auto v = vj[j]._odata[ss];
-	    auto vv = v()(0)(0);
-	    if (g5) {
-	         vv = w()(0)(0) * v()(0)(0)// Gamma5 Dirac basis explicitly written out
-	      +       w()(0)(1) * v()(0)(1)
-	      +       w()(0)(2) * v()(0)(2)
-	      +       w()(1)(0) * v()(1)(0)
-	      +       w()(1)(1) * v()(1)(1)
-  	      +       w()(1)(2) * v()(1)(2)
-	      -       w()(2)(0) * v()(2)(0)
-	      -       w()(2)(1) * v()(2)(1)
-	      -       w()(2)(2) * v()(2)(2)
-	      -       w()(3)(0) * v()(3)(0)
-	      -       w()(3)(1) * v()(3)(1)
-	      -       w()(3)(2) * v()(3)(2);
-	    } else {
-	         vv = w()(0)(0) * v()(0)(0)// Gamma5 Dirac basis explicitly written out
-	      +       w()(0)(1) * v()(0)(1)
-	      +       w()(0)(2) * v()(0)(2)
-	      +       w()(1)(0) * v()(1)(0)
-	      +       w()(1)(1) * v()(1)(1)
-	      +       w()(1)(2) * v()(1)(2)
-	      +       w()(2)(0) * v()(2)(0)
-	      +       w()(2)(1) * v()(2)(1)
-	      +       w()(2)(2) * v()(2)(2)
-	      +       w()(3)(0) * v()(3)(0)
-	      +       w()(3)(1) * v()(3)(1)
-	      +       w()(3)(2) * v()(3)(2);
-	    }
-	    
-	    int idx = i+Lblock*j+Lblock*Rblock*r;
-	    lvSum[idx] = lvSum[idx]+vv;
-	  }
-	}
-      }
-    }
-  }
-
-  // Sum across simd lanes in the plane, breaking out orthog dir.
-  parallel_for(int rt=0;rt<rd;rt++){
-
-    std::vector<int> icoor(nd);
-    iScalar<vector_type> temp; 
-    std::vector<iScalar<scalar_type> > extracted(Nsimd);               
-
-    for(int i=0;i<Lblock;i++){
-    for(int j=0;j<Rblock;j++){
-
-      int ij_rdx = i+Lblock*j+Lblock*Rblock*rt;
-
-      temp._internal =lvSum[ij_rdx];
-      extract(temp,extracted);
-
-      for(int idx=0;idx<Nsimd;idx++){
-
-	grid->iCoorFromIindex(icoor,idx);
-
-	int ldx    = rt+icoor[orthogdim]*rd;
-
-	int ij_ldx =i+Lblock*j+Lblock*Rblock*ldx;
-
-	lsSum[ij_ldx]=lsSum[ij_ldx]+extracted[idx]._internal;
-
-      }
-    }}
-  }
-
-  assert(mat.dimension(0) == Nt);
-  // ld loop and local only??
-  int pd = grid->_processors[orthogdim];
-  int pc = grid->_processor_coor[orthogdim];
-  parallel_for_nest2(int lt=0;lt<ld;lt++)
-  {
-    for(int pt=0;pt<pd;pt++){
-      int t = lt + pt*ld;
-      if (pt == pc){
-	for(int i=0;i<Lblock;i++){
-	  for(int j=0;j<Rblock;j++){
-	    int ij_dx = i + Lblock * j + Lblock * Rblock * lt;
-	    mat(t,i,j) = lsSum[ij_dx];
-	  }
-	}
-      } else { 
-	const scalar_type zz(0.0);
-	for(int i=0;i<Lblock;i++){
-	  for(int j=0;j<Rblock;j++){
-	    mat(t,i,j) =zz;
-	  }
-	}
-      }
-    }
-  }
-
-  grid->GlobalSumVector(&mat(0,0,0),Nt*Lblock*Rblock);
-}
-
-template <typename FImpl>
-void TA2APionField<FImpl>::PionFieldWV(Eigen::Tensor<ComplexD,3> &mat, 
-				       const LatticeFermion *wi,
-				       const LatticeFermion *vj,
-				       int orthogdim) 
-{
-  const int g5=1;
-  PionFieldXX(mat,wi,vj,orthogdim,g5);
-}
-template <typename FImpl>
-void TA2APionField<FImpl>::PionFieldWW(Eigen::Tensor<ComplexD,3> &mat, 
-				       const LatticeFermion *wi,
-				       const LatticeFermion *wj,
-				       int orthogdim) 
-{
-  const int nog5=0;
-  PionFieldXX(mat,wi,wj,orthogdim,nog5);
-}
-template <typename FImpl>
-void TA2APionField<FImpl>::PionFieldVV(Eigen::Tensor<ComplexD,3> &mat, 
-				       const LatticeFermion *vi,
-				       const LatticeFermion *vj,
-				       int orthogdim) 
-{
-  const int nog5=0;
-  PionFieldXX(mat,vi,vj,orthogdim,nog5);
-}
-
-
-/////////////////////////////////////////////////////////////////////////
-// New dirac trace code needed for efficiency (I think).
-// TODO: Ask Antonin to auto gen from Mathemetica
-/////////////////////////////////////////////////////////////////////////
-template<class vtype>
-inline iScalar<vtype> traceGammaZ(const iMatrix<vtype, Ns> &rhs)
-{
-  iScalar<vtype> ret;
-  ret() = timesI(rhs(2,0)) + timesMinusI(rhs(3,1)) + timesMinusI(rhs(0,2)) + timesI(rhs(1,3));
-  return ret;
-};
-template<class vtype>
-inline iScalar<vtype> traceGammaZGamma5(const iMatrix<vtype, Ns> &rhs)
-{
-  iScalar<vtype> ret;
-  ret() = timesMinusI(rhs(2,0)) + timesI(rhs(3,1)) + timesMinusI(rhs(0,2)) + timesI(rhs(1,3));
-  return ret;
-};
-template<class vtype>
-inline iScalar<vtype> traceGammaY(const iMatrix<vtype, Ns> &rhs)
-{
-  iScalar<vtype> ret;
-  ret() = -rhs(3,0) + rhs(2,1) + rhs(1,2) -rhs(0,3);
-  return ret;
-};
-template<class vtype>
-inline iScalar<vtype> traceGammaYGamma5(const iMatrix<vtype, Ns> &rhs)
-{
-  iScalar<vtype> ret;
-  ret() = rhs(3,0) - rhs(2,1) + rhs(1,2) -rhs(0,3);
-  return ret;
-};
-template<class vtype>
-inline iScalar<vtype> traceGamma5(const iMatrix<vtype, Ns> &rhs)
-{
-  iScalar<vtype> ret;
-  ret() = rhs(0, 0) + rhs(1, 1) - rhs(2, 2) - rhs(3,3);
-  return ret;
-};
-template<class vtype>
-inline iScalar<vtype> traceGammaT(const iMatrix<vtype, Ns> &rhs)
-{
-  iScalar<vtype> ret;
-  ret() = rhs(2, 0) + rhs(3, 1) + rhs(0, 2) + rhs(1,3);
-  return ret;
-};
-template<class vtype>
-inline iScalar<vtype> traceGammaTGamma5(const iMatrix<vtype, Ns> &rhs)
-{
-  iScalar<vtype> ret;
-  ret() = -rhs(2, 0) - rhs(3, 1) + rhs(0, 2) + rhs(1,3);
-  return ret;
-};
-template<class vtype>
-inline iScalar<vtype> traceGammaX(const iMatrix<vtype, Ns> &rhs)
-{
-  iScalar<vtype> ret;
-  ret() = timesMinusI(rhs(0, 3)) +timesMinusI(rhs(1, 2)) 
-        + timesI(rhs(2, 1)) +timesI(rhs(3,0));
-  return ret;
-};
-template<class vtype>
-inline iScalar<vtype> traceGammaXGamma5(const iMatrix<vtype, Ns> &rhs)
-{
-  iScalar<vtype> ret;
-  ret() = timesMinusI(rhs(0, 3)) +timesMinusI(rhs(1, 2)) 
-        + timesMinusI(rhs(2, 1)) +timesMinusI(rhs(3,0));
-  return ret;
-};
-
-
-////////////////////////////////////////////////////////////////////////
-// DeltaF=2 contraction ; use exernal WW field for Kaon, anti Kaon sink
-////////////////////////////////////////////////////////////////////////
-//
-// WW -- i vectors have adjoint, and j vectors not. 
-//    -- Think of "i" as the strange quark, forward prop from 0
-//    -- Think of "j" as the anti-down quark.
-//
-// WW_sd are w^dag_s w_d
-//
-// Hence VV vectors correspondingly are  v^dag_d,  v_s    from t=0
-//                                  and  v^dag_d,  v_s    from t=dT
-//
-// There is an implicit g5 associated with each v^dag_d from use of g5 Hermiticity.
-// The other gamma_5 lies in the WW external meson operator.
-//
-// From UKhadron wallbag.cc:
-//
-//   LatticePropagator anti_d0 =  adj( Gamma(G5) * Qd0 * Gamma(G5));
-//   LatticePropagator anti_d1 =  adj( Gamma(G5) * Qd1 * Gamma(G5));
-//
-//   PR1 = Qs0 * Gamma(G5) * anti_d0;
-//   PR2 = Qs1 * Gamma(G5) * anti_d1;
-//
-//   TR1 = trace( PR1 * G1 );
-//   TR2 = trace( PR2 * G2 );
-//   Wick1 = TR1 * TR2;
-//
-//   Wick2 = trace( PR1* G1 * PR2 * G2 );
-//   // was      Wick2 = trace( Qs0 * Gamma(G5) * anti_d0 * G1 * Qs1 * Gamma(G5) * anti_d1 * G2 );
-//
-// TR TR(tx) = Wick1 = sum_x WW[t0]_sd < v^_d |g5 G| v_s>   WW[t1]_s'd' < v^_d' |g5 G| v_s'> |_{x,tx)
-//           = sum_x [ Trace(WW[t0] VgV(t,x) )  x Trace( WW_[t1] VgV(t,x) ) ]
-//           
-//
-// Calc all Nt Trace(WW VV) products at once, take Nt^2 products of these.
-//
-// Fig8(tx)  = Wick2 = sum_x WW[t0]_sd WW[t1]_s'd'  < v^_d |g5 G| v_s'> < v^_d' |g5 G| v_s> |_{x,tx}
-//
-//                   = sum_x Trace( WW[t0] VV[t,x] WW[t1] VV[t,x] )
-// 
-///////////////////////////////////////////////////////////////////////////////
-//
-// WW is w_s^dag (x) w_d       (G5 implicitly absorbed)
-//
-// WWVV will have spin-col (x) spin-col tensor.
-//
-// Want this to look like a strange fwd prop, anti-d prop.
-// 
-// Take WW_sd v^dag_d (x) v_s
-// 
-// 
-
-template <typename FImpl>
-void TA2APionField<FImpl>::DeltaFeq2(int dt_min,int dt_max,
-				     Eigen::Tensor<ComplexD,2> &dF2_fig8,
-				     Eigen::Tensor<ComplexD,2> &dF2_trtr,
-				     Eigen::Tensor<ComplexD,1> &den0,
-				     Eigen::Tensor<ComplexD,1> &den1,
-				     Eigen::Tensor<ComplexD,3> &WW_sd, 
-				     const LatticeFermion *vs,
-				     const LatticeFermion *vd,
-				     int orthogdim)
-{
-  LOG(Message) << "Computing A2A DeltaF=2 graph" << std::endl;
-
-  int dt = dt_min; 
-
-  auto G5 = Gamma(Gamma::Algebra::Gamma5);
-
-  typedef typename FImpl::SiteSpinor vobj;
-
-  typedef typename vobj::scalar_object sobj;
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-
-  typedef iSpinMatrix<vector_type> SpinMatrix_v;
-  typedef iSpinMatrix<scalar_type> SpinMatrix_s;
-  typedef iSinglet<vector_type> Scalar_v;
-  typedef iSinglet<scalar_type> Scalar_s;
-  
-  int N_s = WW_sd.dimension(1); 
-  int N_d = WW_sd.dimension(2);
-
-  GridBase *grid = vs[0]._grid;
-  
-  const int    nd = grid->_ndimension;
-  const int Nsimd = grid->Nsimd();
-  int N_t          = grid->GlobalDimensions()[orthogdim];
-  double vol         = 1.0;
-  for(int dim=0;dim<nd;dim++){
-    vol = vol * grid->GlobalDimensions()[dim];
-  }
-  double nodes = grid->NodeCount();
-  dF2_trtr.resize(N_t,16);
-  dF2_fig8.resize(N_t,16);
-
-  den0.resize(N_t);
-  den1.resize(N_t);
-  for(int t=0;t<N_t;t++){
-    for(int g=0;g<dF2_trtr.dimension(1);g++) dF2_trtr(t,g)= ComplexD(0.0);
-    for(int g=0;g<dF2_fig8.dimension(1);g++) dF2_fig8(t,g)= ComplexD(0.0);
-    den0(t) =ComplexD(0.0);
-    den1(t) =ComplexD(0.0);
-  }
-
-  LatticeComplex D0(grid); // <P|A0> correlator from each wall
-  LatticeComplex D1(grid);
-
-  LatticeComplex O1_trtr(grid);
-  LatticeComplex O2_trtr(grid);
-  LatticeComplex O3_trtr(grid);
-  LatticeComplex O4_trtr(grid);
-  LatticeComplex O5_trtr(grid);
-
-  LatticeComplex O1_fig8(grid);
-  LatticeComplex O2_fig8(grid);
-  LatticeComplex O3_fig8(grid);
-  LatticeComplex O4_fig8(grid);
-  LatticeComplex O5_fig8(grid);
-
-  O1_trtr = zero;
-  O2_trtr = zero;
-  O3_trtr = zero;
-  O4_trtr = zero;
-  O5_trtr = zero;
-
-  O1_fig8 = zero;
-  O2_fig8 = zero;
-  O3_fig8 = zero;
-  O4_fig8 = zero;
-  O5_fig8 = zero;
-
-  D0 = zero;
-  D1 = zero;
-
-  double t_tot  = -usecond();
-  std::vector<LatticePropagator> WWVV (N_t,grid);
-  for(int t=0;t<N_t;t++){
-    WWVV[t] = zero;
-  }
-
-  //////////////////////////////////////////////////////////////////
-  // Method-5 - wrap this assembly in a distinct routine for reuse
-  //////////////////////////////////////////////////////////////////
-  double t_outer= -usecond();
-  parallel_for(int ss=0;ss<grid->oSites();ss++){
-    for(int d_o=0;d_o<N_d;d_o+=d_unroll){
-      for(int t=0;t<N_t;t++){
-      for(int s=0;s<N_s;s++){
-	auto tmp1 = vs[s]._odata[ss];
-	vobj tmp2 = zero;
-
-	////////////////////////////////////////
-	// Surprisingly slow with d_unroll = 32
-	////////////////////////////////////////
-	for(int d=d_o;d<MIN(d_o+d_unroll,N_d);d++){
-	  Scalar_v coeff = WW_sd(t,s,d);
-	  mac(&tmp2 ,& coeff, & vd[d]._odata[ss]);
-	}
-
-	//////////////////////////
-	// Fast outer product of tmp1 with a sum of terms suppressed by d_unroll
-	//////////////////////////
-	tmp2 = conjugate(tmp2);
-	for(int s1=0;s1<Ns;s1++){
-	for(int s2=0;s2<Ns;s2++){
-	  WWVV[t]._odata[ss]()(s1,s2)(0,0) += tmp1()(s1)(0)*tmp2()(s2)(0);
-	  WWVV[t]._odata[ss]()(s1,s2)(0,1) += tmp1()(s1)(0)*tmp2()(s2)(1);
-	  WWVV[t]._odata[ss]()(s1,s2)(0,2) += tmp1()(s1)(0)*tmp2()(s2)(2);
-	  WWVV[t]._odata[ss]()(s1,s2)(1,0) += tmp1()(s1)(1)*tmp2()(s2)(0);
-	  WWVV[t]._odata[ss]()(s1,s2)(1,1) += tmp1()(s1)(1)*tmp2()(s2)(1);
-	  WWVV[t]._odata[ss]()(s1,s2)(1,2) += tmp1()(s1)(1)*tmp2()(s2)(2);
-	  WWVV[t]._odata[ss]()(s1,s2)(2,0) += tmp1()(s1)(2)*tmp2()(s2)(0);
-	  WWVV[t]._odata[ss]()(s1,s2)(2,1) += tmp1()(s1)(2)*tmp2()(s2)(1);
-	  WWVV[t]._odata[ss]()(s1,s2)(2,2) += tmp1()(s1)(2)*tmp2()(s2)(2);
-	}}
-
-      }}
-    }
-  }
-  t_outer+=usecond();
-
-  //////////////////////////////
-  // Implicit gamma-5 
-  //////////////////////////////
-  for(int t=0;t<N_t;t++){
-    WWVV[t] = WWVV[t]* G5 ; 
-  }
-
-
-  //////////////////////////////////////////////////
-  // Used to store appropriate correlation funcs
-  //////////////////////////////////////////////////
-  std::vector<TComplex>  C1;
-  std::vector<TComplex>  C2;
-  std::vector<TComplex>  C3;
-  std::vector<TComplex>  C4;
-  std::vector<TComplex>  C5;
-
-  //////////////////////////////////////////////////////////
-  // Could do AA, VV, SS, PP, TT and form linear combinations later.
-  // Almost 2x. but for many modes, the above loop dominates.
-  //////////////////////////////////////////////////////////
-  double t_contr= -usecond();
-  for(int t0=0;t0<N_t;t0++){
-    // No loop over t1
-    // Cost is trivial to add given cost of outer product
-    {
-      int t1 = (t0+dt)%N_t;
-
-      parallel_for(int ss=0;ss<grid->oSites();ss++){
-
-	auto VV0= WWVV[t0]._odata[ss];
-	auto VV1= WWVV[t1]._odata[ss];
-
-	// Tr Tr Wick contraction
-	auto VX = Gamma(Gamma::Algebra::GammaX);
-	auto VY = Gamma(Gamma::Algebra::GammaY);
-	auto VZ = Gamma(Gamma::Algebra::GammaZ);
-	auto VT = Gamma(Gamma::Algebra::GammaT);
-
-	auto AX = Gamma(Gamma::Algebra::GammaXGamma5);
-	auto AY = Gamma(Gamma::Algebra::GammaYGamma5);
-	auto AZ = Gamma(Gamma::Algebra::GammaZGamma5);
-	auto AT = Gamma(Gamma::Algebra::GammaTGamma5);
-
-	auto S  = Gamma(Gamma::Algebra::Identity);
-	auto P  = Gamma(Gamma::Algebra::Gamma5);
-
-	auto T0 = Gamma(Gamma::Algebra::SigmaXY);
-	auto T1 = Gamma(Gamma::Algebra::SigmaXZ);
-	auto T2 = Gamma(Gamma::Algebra::SigmaXT);
-	auto T3 = Gamma(Gamma::Algebra::SigmaYZ);
-	auto T4 = Gamma(Gamma::Algebra::SigmaYT);
-	auto T5 = Gamma(Gamma::Algebra::SigmaZT);
-
-	O1_trtr._odata[ss] = trace(VX*VV0) * trace(VX*VV1)
-	  +                  trace(VY*VV0) * trace(VY*VV1)
-	  +                  trace(VZ*VV0) * trace(VZ*VV1)
-	  +                  trace(VT*VV0) * trace(VT*VV1)
-          +                  trace(AX*VV0) * trace(AX*VV1)
-	  +                  trace(AY*VV0) * trace(AY*VV1)
-	  +                  trace(AZ*VV0) * trace(AZ*VV1)
-	  +                  trace(AT*VV0) * trace(AT*VV1);
-
-	O2_trtr._odata[ss] = trace(VX*VV0) * trace(VX*VV1)
-	  +                  trace(VY*VV0) * trace(VY*VV1)
-	  +                  trace(VZ*VV0) * trace(VZ*VV1)
-	  +                  trace(VT*VV0) * trace(VT*VV1)
-          -                  trace(AX*VV0) * trace(AX*VV1)
-	  -                  trace(AY*VV0) * trace(AY*VV1)
-	  -                  trace(AZ*VV0) * trace(AZ*VV1)
-	  -                  trace(AT*VV0) * trace(AT*VV1);
-
-	O3_trtr._odata[ss] = trace(S*VV0) * trace(S*VV1)
-	  +                  trace(P*VV0) * trace(P*VV1);
-
-	O4_trtr._odata[ss] = trace(S*VV0) * trace(S*VV1)
-	  -                  trace(P*VV0) * trace(P*VV1);
-
-	O5_trtr._odata[ss] = trace(T0*VV0) * trace(T0*VV1)
-	  +                  trace(T1*VV0) * trace(T1*VV1)
-	  +                  trace(T2*VV0) * trace(T2*VV1)
-	  +                  trace(T3*VV0) * trace(T3*VV1)
-	  +                  trace(T4*VV0) * trace(T4*VV1)
-	  +                  trace(T5*VV0) * trace(T5*VV1);
-
-
-	////////////////////////////////////
-	// Fig8 Wick contraction
-	////////////////////////////////////
-        // was (UKhadron) Wick2 = trace( Qs0 * Gamma(G5) * anti_d0 * G * Qs1 * Gamma(G5) * anti_d1 * G );
-	//
-	//                      = trace( [ Vs WW_sd'[t0] Vd'^dag ]  G [ Vs' WW_s'd[t1] Vd^dag ] G  )
-	//                      = trace( WWVV * G * WWVV * G )
-	// 
-	// Can do VV and AA seperately and then add/sub later cheaper
-
-	O1_fig8._odata[ss]  = trace (VV0 * VX * VV1 * VX)
-	  +                   trace (VV0 * VY * VV1 * VY)
-	  +                   trace (VV0 * VZ * VV1 * VZ)
-	  +                   trace (VV0 * VT * VV1 * VT)
-          +                   trace (VV0 * AX * VV1 * AX)
-	  +                   trace (VV0 * AY * VV1 * AY)
-	  +                   trace (VV0 * AZ * VV1 * AZ)
-	  +                   trace (VV0 * AT * VV1 * AT);
-
-	O2_fig8._odata[ss]  = trace (VV0 * VX * VV1 * VX)
-	  +                   trace (VV0 * VY * VV1 * VY)
-	  +                   trace (VV0 * VZ * VV1 * VZ)
-	  +                   trace (VV0 * VT * VV1 * VT)
-          -                   trace (VV0 * AX * VV1 * AX)
-	  -                   trace (VV0 * AY * VV1 * AY)
-	  -                   trace (VV0 * AZ * VV1 * AZ)
-	  -                   trace (VV0 * AT * VV1 * AT);
-
-	O3_fig8._odata[ss]  = trace (VV0 * S * VV1 * S)
-	  +                   trace (VV0 * P * VV1 * P);
-
-	O4_fig8._odata[ss]  = trace (VV0 * S * VV1 * S)
-	  -                   trace (VV0 * P * VV1 * P);
-
-	O5_fig8._odata[ss] =  trace (VV0 * T0 * VV1 * T0)
-	  +                   trace (VV0 * T1 * VV1 * T1)
-	  +                   trace (VV0 * T2 * VV1 * T2)
-	  +                   trace (VV0 * T3 * VV1 * T3)
-	  +                   trace (VV0 * T4 * VV1 * T4)
-	  +                   trace (VV0 * T5 * VV1 * T5);
-
-
-	// Hack force PP correlator
-	//	D0._odata[ss] = trace(P*VV0); // These match signed off
-	//	D1._odata[ss] = trace(P*VV1);
-	D0._odata[ss] = trace(AT*VV0);
-	D1._odata[ss] = trace(AT*VV1);
-
-      }
-
-      sliceSum(O1_trtr,C1, orthogdim);
-      sliceSum(O2_trtr,C2, orthogdim);
-      sliceSum(O3_trtr,C3, orthogdim);
-      sliceSum(O4_trtr,C4, orthogdim);
-      sliceSum(O5_trtr,C5, orthogdim);
-
-      for(int t=0;t<N_t;t++){// 2x from Wick contraction reordering
-	dF2_trtr(t,0)+= 2.0*C1[(t+t0)%N_t]()()()/vol;
-	dF2_trtr(t,1)+= 2.0*C2[(t+t0)%N_t]()()()/vol;
-	dF2_trtr(t,2)+= 2.0*C3[(t+t0)%N_t]()()()/vol;
-	dF2_trtr(t,3)+= 2.0*C4[(t+t0)%N_t]()()()/vol;
-	dF2_trtr(t,4)+= 2.0*C5[(t+t0)%N_t]()()()/vol;
-      }
-
-      sliceSum(O1_fig8,C1, orthogdim);
-      sliceSum(O2_fig8,C2, orthogdim);
-      sliceSum(O3_fig8,C3, orthogdim);
-      sliceSum(O4_fig8,C4, orthogdim);
-      sliceSum(O5_fig8,C5, orthogdim);
-
-      for(int t=0;t<N_t;t++){
-	dF2_fig8(t,0)= 2.0*C1[(t+t0)%N_t]()()()/vol;
-	dF2_fig8(t,1)= 2.0*C2[(t+t0)%N_t]()()()/vol;
-	dF2_fig8(t,2)= 2.0*C3[(t+t0)%N_t]()()()/vol;
-	dF2_fig8(t,3)= 2.0*C4[(t+t0)%N_t]()()()/vol;
-	dF2_fig8(t,4)= 2.0*C5[(t+t0)%N_t]()()()/vol;
-      }
-
-      sliceSum(D0,C1, orthogdim);
-      sliceSum(D1,C2, orthogdim);
-      for(int t=0;t<N_t;t++){
-	den0(t)+=C1[(t+t0)%N_t]()()()/vol;
-	den1(t)+=C2[(t+t0)%N_t]()()()/vol;
-      }
-
-    }
-  }
-  t_contr +=usecond();
-  
-  t_tot+=usecond();
-  double million=1.0e6;
-  LOG(Message) << "Computing A2A DeltaF=2 graph t_tot      " << t_tot      /million << " s "<< std::endl;
-  LOG(Message) << "Computing A2A DeltaF=2 graph t_outer    " << t_outer    /million << " s "<< std::endl;
-  LOG(Message) << "Computing A2A DeltaF=2 graph t_contr    " << t_contr    /million << " s "<< std::endl;
-
-}
-
-
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
@@ -1103,13 +233,13 @@ void TA2APionField<FImpl>::execute(void)
 	Eigen::Tensor<ComplexD,3> pionFieldWVB_ji(nt,N_jjj,N_iii);    
 
 	t_contr_vwm-=usecond();
-	PionFieldWVmom(pionFieldWVmomB_ij, &wi[ii], &vj[jj], phases,Tp);
-	PionFieldWVmom(pionFieldWVmomB_ji, &wj[jj], &vi[ii], phases,Tp);
+	A2Autils<FImpl>::PionFieldWVmom(pionFieldWVmomB_ij, &wi[ii], &vj[jj], phases,Tp);
+	A2Autils<FImpl>::PionFieldWVmom(pionFieldWVmomB_ji, &wj[jj], &vi[ii], phases,Tp);
 	t_contr_vwm+=usecond();
 
 	t_contr_vw-=usecond();
-	PionFieldWV(pionFieldWVB_ij, &wi[ii], &vj[jj],Tp);
-	PionFieldWV(pionFieldWVB_ji, &wj[jj], &vi[ii],Tp);
+	A2Autils<FImpl>::PionFieldWV(pionFieldWVB_ij, &wi[ii], &vj[jj],Tp);
+	A2Autils<FImpl>::PionFieldWV(pionFieldWVB_ji, &wj[jj], &vi[ii],Tp);
 	t_contr_vw+=usecond();
 
 
@@ -1134,7 +264,6 @@ void TA2APionField<FImpl>::execute(void)
 	    pionFieldWV_ij(t,i+ii+iii,j+jj+jjj) = pionFieldWVB_ij(t,iii,jjj);
 	    pionFieldWV_ji(t,j+jj+jjj,i+ii+iii) = pionFieldWVB_ji(t,jjj,iii);
 	  }
-
 
 	}}
       }}
@@ -1211,10 +340,10 @@ void TA2APionField<FImpl>::execute(void)
     Eigen::Tensor<ComplexD,3> pionFieldWW_ji        (nt,N_j,N_i);    
     Eigen::Tensor<ComplexD,3> pionFieldVV_ij        (nt,N_i,N_j);    
 
-    PionFieldWW(pionFieldWW_ij, &wi[0], &wj[0],Tp);
-    PionFieldVV(pionFieldVV_ji, &vj[0], &vi[0],Tp);
-    PionFieldWW(pionFieldWW_ji, &wj[0], &wi[0],Tp);
-    PionFieldVV(pionFieldVV_ij, &vi[0], &vj[0],Tp);
+    A2Autils<FImpl>::PionFieldWW(pionFieldWW_ij, &wi[0], &wj[0],Tp);
+    A2Autils<FImpl>::PionFieldVV(pionFieldVV_ji, &vj[0], &vi[0],Tp);
+    A2Autils<FImpl>::PionFieldWW(pionFieldWW_ji, &wj[0], &wi[0],Tp);
+    A2Autils<FImpl>::PionFieldVV(pionFieldVV_ij, &vi[0], &vj[0],Tp);
 
 
     for(int i=0;i<N_i;i++){
@@ -1240,8 +369,8 @@ void TA2APionField<FImpl>::execute(void)
     Eigen::Tensor<ComplexD,3> pionFieldVV        (nt,N_i,N_i);    
 
 
-    PionFieldWW(pionFieldWW, &wi[0], &wi[0],Tp);
-    PionFieldVV(pionFieldVV, &vi[0], &vi[0],Tp);
+    A2Autils<FImpl>::PionFieldWW(pionFieldWW, &wi[0], &wi[0],Tp);
+    A2Autils<FImpl>::PionFieldVV(pionFieldVV, &vi[0], &vi[0],Tp);
     for(int i=0;i<N_i;i++){
       for(int t0=0;t0<nt;t0++){
       for(int t=0;t<nt;t++){
@@ -1263,9 +392,9 @@ void TA2APionField<FImpl>::execute(void)
     
     const int dT=16;
 
-    DeltaFeq2  (dT,dT,DeltaF2_fig8,DeltaF2_trtr,
-		denom0,denom1,
-		pionFieldWW_ij,&vi[0],&vj[0],Tp);
+    A2Autils<FImpl>::DeltaFeq2  (dT,dT,DeltaF2_fig8,DeltaF2_trtr,
+				 denom0,denom1,
+				 pionFieldWW_ij,&vi[0],&vj[0],Tp);
     
     { 
       int g=0; // O_{VV+AA}
@@ -1347,6 +476,7 @@ void TA2APionField<FImpl>::execute(void)
       sliceSum(Wick2,C2, Tp);
       sliceSum(TR1  ,C3, Tp);
       
+      /*
       if(g<5){
 	for(int t=0;t<C1.size();t++){
 	  LOG(Message) << " Wick1["<<g<<","<<t<< "] "<< C1[t]<<std::endl; 
@@ -1360,6 +490,7 @@ void TA2APionField<FImpl>::execute(void)
 	  LOG(Message) << " <G|P>["<<g<<","<<t<< "] "<< C3[t]<<std::endl; 
 	}
       } 
+      */
     }
 }
 

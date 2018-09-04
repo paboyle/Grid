@@ -6,7 +6,7 @@
 #include <Grid/Hadrons/ModuleFactory.hpp>
 #include <Grid/Hadrons/AllToAllVectors.hpp>
 
-#include <unsupported/Eigen/CXX11/Tensor>
+#include <Grid/Hadrons/Modules/MContraction/A2Autils.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -53,17 +53,6 @@ class TA2AMesonField : public Module<A2AMesonFieldPar>
     // execution
     virtual void execute(void);
 
-    // Arithmetic help. Move to Grid??
-    virtual void MesonField(Eigen::Tensor<ComplexD,5> &mat, 
-			    const LatticeFermion *lhs,
-			    const LatticeFermion *rhs,
-			    std::vector<Gamma::Algebra> gammas,
-			    const std::vector<LatticeComplex > &mom,
-			    int orthogdim,
-			    double &t0,
-			    double &t1,
-			    double &t2,
-			    double &t3);      
 };
 
 MODULE_REGISTER(A2AMesonField, ARG(TA2AMesonField<FIMPL>), MContraction);
@@ -115,189 +104,6 @@ void TA2AMesonField<FImpl>::setup(void)
 
     // 5D tmp
     envTmpLat(FermionField, "tmp_5d", Ls_);
-}
-
-
-//////////////////////////////////////////////////////////////////////////////////
-// Cache blocked arithmetic routine
-// Could move to Grid ???
-//////////////////////////////////////////////////////////////////////////////////
-template <typename FImpl>
-void TA2AMesonField<FImpl>::MesonField(Eigen::Tensor<ComplexD,5> &mat, 
-					 const LatticeFermion *lhs_wi,
-					 const LatticeFermion *rhs_vj,
-					 std::vector<Gamma::Algebra> gammas,
-					 const std::vector<LatticeComplex > &mom,
-					 int orthogdim,
-					 double &t0,
-					 double &t1,
-					 double &t2,
-					 double &t3) 
-{
-  typedef typename FImpl::SiteSpinor vobj;
-
-  typedef typename vobj::scalar_object sobj;
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-
-  typedef iSpinMatrix<vector_type> SpinMatrix_v;
-  typedef iSpinMatrix<scalar_type> SpinMatrix_s;
-  
-  int Lblock = mat.dimension(3); 
-  int Rblock = mat.dimension(4);
-
-  GridBase *grid = lhs_wi[0]._grid;
-  
-  const int    Nd = grid->_ndimension;
-  const int Nsimd = grid->Nsimd();
-
-  int Nt     = grid->GlobalDimensions()[orthogdim];
-  int Ngamma = gammas.size();
-  int Nmom   = mom.size();
-
-  int fd=grid->_fdimensions[orthogdim];
-  int ld=grid->_ldimensions[orthogdim];
-  int rd=grid->_rdimensions[orthogdim];
-
-  // will locally sum vectors first
-  // sum across these down to scalars
-  // splitting the SIMD
-  int MFrvol = rd*Lblock*Rblock*Nmom;
-  int MFlvol = ld*Lblock*Rblock*Nmom;
-
-  Vector<SpinMatrix_v > lvSum(MFrvol);
-  parallel_for (int r = 0; r < MFrvol; r++){
-    lvSum[r] = zero;
-  }
-
-  Vector<SpinMatrix_s > lsSum(MFlvol);             
-  parallel_for (int r = 0; r < MFlvol; r++){
-    lsSum[r]=scalar_type(0.0);
-  }
-
-  int e1=    grid->_slice_nblock[orthogdim];
-  int e2=    grid->_slice_block [orthogdim];
-  int stride=grid->_slice_stride[orthogdim];
-
-  t0-=usecond();
-  // Nested parallelism would be ok
-  // Wasting cores here. Test case r
-  parallel_for(int r=0;r<rd;r++){
-
-    int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
-
-    for(int n=0;n<e1;n++){
-      for(int b=0;b<e2;b++){
-
-	int ss= so+n*stride+b;
-
-	for(int i=0;i<Lblock;i++){
-
-	  auto left = conjugate(lhs_wi[i]._odata[ss]);
-
-	  for(int j=0;j<Rblock;j++){
-
-	    SpinMatrix_v vv;
-	    auto right = rhs_vj[j]._odata[ss];
-	    for(int s1=0;s1<Ns;s1++){
-	    for(int s2=0;s2<Ns;s2++){
-	      vv()(s1,s2)() = left()(s2)(0) * right()(s1)(0)
-		+             left()(s2)(1) * right()(s1)(1)
-		+             left()(s2)(2) * right()(s1)(2);
-	    }}
-	    
-	    // After getting the sitewise product do the mom phase loop
-	    int base = Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*r;
-	    for ( int m=0;m<Nmom;m++){
-	      int idx = m+base;
-	      auto phase = mom[m]._odata[ss];
-	      mac(&lvSum[idx],&vv,&phase);
-	    }
-	  
-	  }
-	}
-      }
-    }
-  }
-  t0+=usecond();
-
-
-  // Sum across simd lanes in the plane, breaking out orthog dir.
-  t1-=usecond();
-  parallel_for(int rt=0;rt<rd;rt++){
-
-    std::vector<int> icoor(Nd);
-    std::vector<SpinMatrix_s> extracted(Nsimd);               
-
-    for(int i=0;i<Lblock;i++){
-    for(int j=0;j<Rblock;j++){
-    for(int m=0;m<Nmom;m++){
-
-      int ij_rdx = m+Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*rt;
-
-      extract(lvSum[ij_rdx],extracted);
-
-      for(int idx=0;idx<Nsimd;idx++){
-
-	grid->iCoorFromIindex(icoor,idx);
-
-	int ldx    = rt+icoor[orthogdim]*rd;
-
-	int ij_ldx = m+Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*ldx;
-
-	lsSum[ij_ldx]=lsSum[ij_ldx]+extracted[idx];
-
-      }
-    }}}
-  }
-  t1+=usecond();
-
-  assert(mat.dimension(0) == Nmom);
-  assert(mat.dimension(1) == Ngamma);
-  assert(mat.dimension(2) == Nt);
-  t2-=usecond();
-  // ld loop and local only??
-  int pd = grid->_processors[orthogdim];
-  int pc = grid->_processor_coor[orthogdim];
-  parallel_for_nest2(int lt=0;lt<ld;lt++)
-  {
-    for(int pt=0;pt<pd;pt++){
-      int t = lt + pt*ld;
-      if (pt == pc){
-	for(int i=0;i<Lblock;i++){
-	  for(int j=0;j<Rblock;j++){
-	    for(int m=0;m<Nmom;m++){
-	      int ij_dx = m+Nmom*i + Nmom*Lblock * j + Nmom*Lblock * Rblock * lt;
-	      for(int mu=0;mu<Ngamma;mu++){
-		// this is a bit slow
-		mat(m,mu,t,i,j) = trace(lsSum[ij_dx]*Gamma(gammas[mu]));
-	      }
-	    }
-	  }
-	}
-      } else { 
-	const scalar_type zz(0.0);
-	for(int i=0;i<Lblock;i++){
-	  for(int j=0;j<Rblock;j++){
-	    for(int mu=0;mu<Ngamma;mu++){
-	      for(int m=0;m<Nmom;m++){
-		mat(m,mu,t,i,j) =zz;
-	      }
-	    }
-	  }
-	}
-      }
-    }
-  }
-  t2+=usecond();
-  ////////////////////////////////////////////////////////////////////
-  // This global sum is taking as much as 50% of time on 16 nodes
-  // Vector size is 7 x 16 x 32 x 16 x 16 x sizeof(complex) = 2MB - 60MB depending on volume
-  // Healthy size that should suffice
-  ////////////////////////////////////////////////////////////////////
-  t3-=usecond();
-  grid->GlobalSumVector(&mat(0,0,0,0,0),Nmom*Ngamma*Nt*Lblock*Rblock);
-  t3+=usecond();
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -412,8 +218,9 @@ void TA2AMesonField<FImpl>::execute(void)
 	Eigen::Tensor<ComplexD,5> mesonFieldBlocked(nmom,ngamma,nt,N_iii,N_jjj);    
 
 	t_contr-=usecond();
-	MesonField(mesonFieldBlocked, &w[ii], &v[jj], gammas, phases,Tp,
-		   t_int_0,t_int_1,t_int_2,t_int_3);
+	A2Autils<FImpl>::MesonField(mesonFieldBlocked, 
+				    &w[ii], 
+				    &v[jj], gammas, phases,Tp);
 	t_contr+=usecond();
 	flops += vol * ( 2 * 8.0 + 6.0 + 8.0*nmom) * N_iii*N_jjj*ngamma;
 
@@ -441,14 +248,6 @@ void TA2AMesonField<FImpl>::execute(void)
     LOG(Message) << " Contraction of MesonFields took "<<(t1-t0)/1.0e6<< " seconds "  << std::endl;
     LOG(Message) << " Schur "<<(t_schur)/1.0e6<< " seconds "  << std::endl;
     LOG(Message) << " Contr "<<(t_contr)/1.0e6<< " seconds "  << std::endl;
-    LOG(Message) << " Intern0 "<<(t_int_0)/1.0e6<< " seconds "  << std::endl;
-    LOG(Message) << " Intern1 "<<(t_int_1)/1.0e6<< " seconds "  << std::endl;
-    LOG(Message) << " Intern2 "<<(t_int_2)/1.0e6<< " seconds "  << std::endl;
-    LOG(Message) << " Intern3 "<<(t_int_3)/1.0e6<< " seconds "  << std::endl;
-
-    double t_kernel = t_int_0 + t_int_1;
-    LOG(Message) << " Arith "<<flops/(t_kernel)/1.0e3/nodes<< " Gflop/s / node "  << std::endl;
-    LOG(Message) << " Arith "<<bytes/(t_kernel)/1.0e3/nodes<< " GB/s /node "  << std::endl;
 
     /////////////////////////////////////////////////////////////////////////
     // Test: Build the pion correlator (two end)
