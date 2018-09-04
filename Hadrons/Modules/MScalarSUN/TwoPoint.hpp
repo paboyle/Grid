@@ -141,6 +141,10 @@ void TTwoPoint<SImpl>::setup(void)
             HADRONS_ERROR(Size, "momentum number of components different from " 
                                + std::to_string(nd-1));
         }
+        for (unsigned int j = 0; j < nd - 1; ++j)
+        {
+            mom_[i][j] = (mom_[i][j] + env().getDim(j)) % env().getDim(j);
+        }
     }
     envTmpLat(ComplexField, "ftBuf");
 }
