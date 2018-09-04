@@ -52,7 +52,7 @@ BEGIN_MODULE_NAMESPACE(MContraction)
 
 class A2AMesonFieldPar: Serializable
 {
-  public:
+public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(A2AMesonFieldPar,
                                     int, cacheBlock,
                                     int, block,
@@ -65,7 +65,7 @@ class A2AMesonFieldPar: Serializable
 
 class A2AMesonFieldMetadata: Serializable
 {
-  public:
+public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(A2AMesonFieldMetadata,
                                     std::vector<RealF>, momentum,
                                     Gamma::Algebra, gamma);
