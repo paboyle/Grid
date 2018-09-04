@@ -8,5 +8,5 @@ find Modules -name '*.hpp' -type f -print | sed 's/^/  /;$q;s/$/ \\/' >> modules
 echo '' >> modules.inc
 rm -f Modules.hpp
 for f in `find Modules -name '*.hpp'`; do
-	echo "#include <Grid/Hadrons/${f}>" >> Modules.hpp
+	echo "#include <Hadrons/${f}>" >> Modules.hpp
 done
