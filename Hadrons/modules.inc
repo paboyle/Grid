@@ -56,7 +56,8 @@ modules_cc =\
   Modules/MIO/LoadEigenPack.cc \
   Modules/MIO/LoadBinary.cc \
   Modules/MIO/LoadNersc.cc \
-  Modules/MIO/LoadCoarseEigenPack.cc
+  Modules/MIO/LoadCoarseEigenPack.cc \
+  Modules/MIO/LoadCosmHol.cc
 
 modules_hpp =\
   Modules/MContraction/Baryon.hpp \
@@ -119,6 +120,7 @@ modules_hpp =\
   Modules/MScalarSUN/TrKinetic.hpp \
   Modules/MIO/LoadEigenPack.hpp \
   Modules/MIO/LoadNersc.hpp \
+  Modules/MIO/LoadCosmHol.hpp \
   Modules/MIO/LoadCoarseEigenPack.hpp \
   Modules/MIO/LoadBinary.hpp
 
