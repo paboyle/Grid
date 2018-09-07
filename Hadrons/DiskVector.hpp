@@ -56,6 +56,9 @@ public:
         // write to disk and cache
         T &operator=(const T &obj) const
         {
+#ifdef DV_DEBUG
+            LOG(Debug) << "diskvector " << &master_ << ": writing to " << i_ << std::endl;
+#endif
             master_.cacheInsert(i_, obj);
             master_.save(master_.filename(i_), obj);
             
