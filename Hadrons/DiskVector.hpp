@@ -209,9 +209,7 @@ typename DiskVectorBase<T>::RwAccessHelper DiskVectorBase<T>::operator[](const u
         HADRONS_ERROR(Size, "index out of range");
     }
 
-    RwAccessHelper h(*this, i);
-
-    return h;
+    return RwAccessHelper(*this, i);
 }
 
 template <typename T>
