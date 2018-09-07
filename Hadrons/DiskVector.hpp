@@ -29,7 +29,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define Hadrons_DiskVector_hpp_
 
 #include <Hadrons/Global.hpp>
-#include <queue>
+#include <deque>
 #include <sys/stat.h>
 #include <ftw.h>
 #include <unistd.h>
@@ -94,7 +94,7 @@ private:
     // using pointers to allow modifications when class is const
     // semantic: const means data unmodified, but cache modification allowed
     std::unique_ptr<std::map<unsigned int, T>> cachePtr_;
-    std::unique_ptr<std::queue<unsigned int>>  loadsPtr_;                
+    std::unique_ptr<std::deque<unsigned int>>  loadsPtr_;                
 };
 
 /******************************************************************************
@@ -134,7 +134,7 @@ DiskVectorBase<T>::DiskVectorBase(const std::string dirname,
                                   const bool clean)
 : dirname_(dirname), size_(size), cacheSize_(cacheSize), clean_(clean)
 , cachePtr_(new std::map<unsigned int, T>())
-, loadsPtr_(new std::queue<unsigned int>())
+, loadsPtr_(new std::deque<unsigned int>())
 {
     struct stat s;
 
@@ -158,6 +158,7 @@ template <typename T>
 const T & DiskVectorBase<T>::operator[](const unsigned int i) const
 {
     auto &cache = *cachePtr_;
+    auto &loads = *loadsPtr_;
 
     DV_DEBUG_MSG("accessing " << i << " (RO)");
 
@@ -175,14 +176,19 @@ const T & DiskVectorBase<T>::operator[](const unsigned int i) const
     else
     {
         DV_DEBUG_MSG("cache hit");
+
+        auto pos = std::find(loads.begin(), loads.end(), i);
+
+        loads.erase(pos);
+        loads.push_back(i);
     }
 
 #ifdef DV_DEBUG
     std::string msg;
 
-    for (auto &p: cache)
+    for (auto &p: loads)
     {
-        msg += std::to_string(p.first) + " ";
+        msg += std::to_string(p) + " ";
     }
     DV_DEBUG_MSG("in cache: " << msg);
 #endif
@@ -221,7 +227,7 @@ void DiskVectorBase<T>::evict(void) const
     {
         DV_DEBUG_MSG("evicting " << loads.front());
         cache.erase(loads.front());
-        loads.pop();
+        loads.pop_front();
     }
 }
 
@@ -240,7 +246,7 @@ void DiskVectorBase<T>::fetch(const unsigned int i) const
         HADRONS_ERROR(Io, "disk vector element " + std::to_string(i) + " uninitialised");
     }
     load(cache[i], filename(i));
-    loads.push(i);
+    loads.push_back(i);
 }
 
 template <typename T>
@@ -251,14 +257,14 @@ void DiskVectorBase<T>::cacheInsert(const unsigned int i, const T &obj) const
 
     evict();
     cache[i] = obj;
-    loads.push(i);
+    loads.push_back(i);
 
 #ifdef DV_DEBUG
     std::string msg;
 
-    for (auto &p: cache)
+    for (auto &p: loads)
     {
-        msg += std::to_string(p.first) + " ";
+        msg += std::to_string(p) + " ";
     }
     DV_DEBUG_MSG("in cache: " << msg);
 #endif

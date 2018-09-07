@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     GridSerialRNG rng;
     Object        obj, v2w, v2r, v13w, v13r;
 
-    SerializableDiskVector<Object, TestReader, TestWriter> v("diskvector_test", 1000, 2);
+    SerializableDiskVector<Object, TestReader, TestWriter> v("diskvector_test", 1000, 4);
 
     obj.e = Enum::red;
     random(rng, obj.scm);
@@ -66,10 +66,24 @@ int main(int argc, char *argv[])
     random(rng, obj.scm);
     v[6] = obj;
     random(rng, obj.scm);
+    v[7] = obj;
+    random(rng, obj.scm);
+    v[8] = obj;
+    random(rng, obj.scm);
+    v[9] = obj;
+    random(rng, obj.scm);
+    v[10] = obj;
+    random(rng, obj.scm);
+    v[11] = obj;
+    random(rng, obj.scm);
     v[12] = obj;
     random(rng, obj.scm);
     v[13] = obj;
     v13w  = obj;
+    random(rng, obj.scm);
+    v[14] = obj;
+    random(rng, obj.scm);
+    v[15] = obj;
 
     v2r = v[2];
     LOG(Message) << "v[2] correct? " 
