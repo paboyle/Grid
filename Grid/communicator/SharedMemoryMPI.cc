@@ -132,7 +132,6 @@ int Log2Size(int TwoToPower,int MAXLOG2)
 }
 void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,Grid_MPI_Comm & optimal_comm)
 {
-#undef HYPERCUBE 
 #ifdef HYPERCUBE
   ////////////////////////////////////////////////////////////////
   // Assert power of two shm_size.
@@ -175,7 +174,7 @@ void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,
 
   std::string hname(name);
   std::cout << "hostname "<<hname<<std::endl;
-  std::cout << "R " << R << " I " << I << " N "<< N<<
+  std::cout << "R " << R << " I " << I << " N "<< N
             << " hypercoor 0x"<<std::hex<<hypercoor<<std::dec<<std::endl;
 
   //////////////////////////////////////////////////////////////////
