@@ -51,7 +51,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   Coordinate latt4 = GridDefaultLatt();
-  int Ls=16;
+  int Ls=8;
   for(int i=0;i<argc;i++)
     if(std::string(argv[i]) == "-Ls"){
       std::stringstream ss(argv[i+1]); ss >> Ls;
