@@ -71,7 +71,7 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
 }
 
 #ifdef GPU_VEC
-#if 0
+#if 1
 #define GPU_COALESCED_STENCIL_LEG_PROJ(Dir,spProj)			\
   synchronise();							\
   if (SE._is_local) {							\
