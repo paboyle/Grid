@@ -49,6 +49,7 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
 #endif
   MPI_Comm_rank(WorldShmComm     ,&WorldShmRank);
   MPI_Comm_size(WorldShmComm     ,&WorldShmSize);
+  std::cout << " World  communicator of size " <<WorldSize << std::endl;
   std::cout << " Shared communicator of size " <<WorldShmSize << std::endl;
   // WorldShmComm, WorldShmSize, WorldShmRank
 
@@ -193,13 +194,14 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 
 
   //std::cerr << " allocating "<<bytes <<"  bytes "<< std::endl;
-  if ( cudaMallocManaged(&ShmCommBuf, bytes) !=  cudaSuccess) {
-    perror("cudaMallocManaged failed ");
+  auto err =  cudaMallocManaged(&ShmCommBuf, bytes);
+  if ( err !=  cudaSuccess) {
+    std::cerr << " SharedMemoryMPI.cc cudaMallocManaged failed for " << bytes<<" bytes " <<cudaGetErrorString(err)<< std::endl;
     exit(EXIT_FAILURE);  
   }
 
   if (ShmCommBuf == (void *)NULL ) {
-    perror("cudaMallocManaged failed ");
+    std::cerr << " SharedMemoryMPI.cc cudaMallocManaged failed NULL pointer for " << bytes<<" bytes " << std::endl;
     exit(EXIT_FAILURE);  
   }
   std::cerr << " Cuda allocated managed memory at "<<std::hex<<ShmCommBuf <<" - " << ((uint64_t)ShmCommBuf + bytes)<<std::dec<< std::endl;
