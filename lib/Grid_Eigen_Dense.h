@@ -21,7 +21,6 @@
 #define __CUDA_ARCH_SAVE__ __CUDA_ARCH__
 
 #undef __CUDA_ARCH__
-#warning "Hiding CUDA_ARCH from Eigen"
 
 #endif
 
@@ -39,8 +38,6 @@
 #ifdef __CUDA_ARCH__REDEFINE__
 
 #define __CUDA_ARCH__ __CUDA_ARCH_SAVE__
-
-#warning "redefined CUDA_ARCH outside Eigen"
 
 #endif
 #endif
