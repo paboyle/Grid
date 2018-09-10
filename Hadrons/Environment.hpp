@@ -63,6 +63,9 @@ inline Environment & env(void) const\
     return Environment::getInstance();\
 }
 
+#define DEFINE_ENV_LAMBDA \
+auto env = [](void)->Environment &{return Environment::getInstance();}
+
 class Environment
 {
     SINGLETON(Environment);
