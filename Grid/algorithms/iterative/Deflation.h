@@ -31,21 +31,13 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 namespace Grid { 
 
 template<class Field>
-class Guesser {
-public:
-  Guesser(void) = default;
-  virtual ~Guesser(void) = default;
-  virtual void operator()(const Field &src, Field &guess) = 0;
-};
-
-template<class Field>
-class ZeroGuesser: public Guesser<Field> {
+class ZeroGuesser: public LinearFunction<Field> {
 public:
   virtual void operator()(const Field &src, Field &guess) { guess = zero; };
 };
 
 template<class Field>
-class SourceGuesser: public Guesser<Field> {
+class SourceGuesser: public LinearFunction<Field> {
 public:
   virtual void operator()(const Field &src, Field &guess) { guess = src; };
 };
@@ -54,7 +46,7 @@ public:
 // Fine grid deflation
 ////////////////////////////////
 template<class Field>
-class DeflatedGuesser: public Guesser<Field> {
+class DeflatedGuesser: public LinearFunction<Field> {
 private:
   const std::vector<Field> &evec;
   const std::vector<RealD> &eval;
@@ -76,7 +68,7 @@ public:
 };
 
 template<class FineField, class CoarseField>
-class LocalCoherenceDeflatedGuesser: public Guesser<FineField> {
+class LocalCoherenceDeflatedGuesser: public LinearFunction<FineField> {
 private:
   const std::vector<FineField>   &subspace;
   const std::vector<CoarseField> &evec_coarse;
