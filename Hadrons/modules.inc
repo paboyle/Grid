@@ -81,6 +81,7 @@ modules_hpp =\
   Modules/MSink/Smear.hpp \
   Modules/MSink/Point.hpp \
   Modules/MSolver/LocalCoherenceLanczos.hpp \
+  Modules/MSolver/Guesser.hpp \
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MSolver/A2AVectors.hpp \
   Modules/MGauge/UnitEm.hpp \

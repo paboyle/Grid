@@ -46,6 +46,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Modules/MSink/Smear.hpp>
 #include <Hadrons/Modules/MSink/Point.hpp>
 #include <Hadrons/Modules/MSolver/LocalCoherenceLanczos.hpp>
+#include <Hadrons/Modules/MSolver/Guesser.hpp>
 #include <Hadrons/Modules/MSolver/RBPrecCG.hpp>
 #include <Hadrons/Modules/MSolver/A2AVectors.hpp>
 #include <Hadrons/Modules/MGauge/UnitEm.hpp>
