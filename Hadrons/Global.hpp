@@ -155,13 +155,27 @@ const std::type_info * typeIdPt(const T &x)
     return &typeid(x);
 }
 
-std::string typeName(const std::type_info *info);
-
 template <typename T>
 const std::type_info * typeIdPt(void)
 {
     return &typeid(T);
 }
+
+size_t typeHash(const std::type_info *info);
+
+template <typename T>
+size_t typeHash(const T &x)
+{
+    return typeHash(typeIdPt(x));
+}
+
+template <typename T>
+size_t typeHash(void)
+{
+    return typeHash(typeIdPt<T>());
+}
+
+std::string typeName(const std::type_info *info);
 
 template <typename T>
 std::string typeName(const T &x)

@@ -72,6 +72,11 @@ void Hadrons::initLogger(void)
 }
 
 // type utilities //////////////////////////////////////////////////////////////
+size_t Hadrons::typeHash(const std::type_info *info)
+{
+    return info->hash_code();
+}
+
 constexpr unsigned int maxNameSize = 1024u;
 
 std::string Hadrons::typeName(const std::type_info *info)

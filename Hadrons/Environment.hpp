@@ -83,15 +83,28 @@ private:
         int                     module{-1};
         std::unique_ptr<Object> data{nullptr};
     };
+    typedef std::pair<size_t, unsigned int>     FineGridKey;
+    typedef std::pair<size_t, std::vector<int>> CoarseGridKey;
 public:
     // grids
+    template <typename VType = vComplex>
     void                    createGrid(const unsigned int Ls);
+    template <typename VType = vComplex>
     void                    createCoarseGrid(const std::vector<int> &blockSize,
                                              const unsigned int Ls = 1);
-    GridCartesian *         getGrid(const unsigned int Ls = 1) const;
-    GridRedBlackCartesian * getRbGrid(const unsigned int Ls = 1) const;
+    template <typename VType = vComplex>
+    GridCartesian *         getGrid(void) const;
+    template <typename VType = vComplex>
+    GridRedBlackCartesian * getRbGrid(void) const;
+    template <typename VType = vComplex>
+    GridCartesian *         getCoarseGrid(const std::vector<int> &blockSize) const;
+    template <typename VType = vComplex>
+    GridCartesian *         getGrid(const unsigned int Ls) const;
+    template <typename VType = vComplex>
+    GridRedBlackCartesian * getRbGrid(const unsigned int Ls) const;
+    template <typename VType = vComplex>
     GridCartesian *         getCoarseGrid(const std::vector<int> &blockSize,
-                                          const unsigned int Ls = 1) const;
+                                          const unsigned int Ls) const;
     std::vector<int>        getDim(void) const;
     int                     getDim(const unsigned int mu) const;
     unsigned int            getNd(void) const;
@@ -154,22 +167,23 @@ public:
     void                    printContent(void) const;
 private:
     // general
-    double                                 vol_;
-    bool                                   protect_{true};
+    double                              vol_;
+    bool                                protect_{true};
     // grids
-    std::vector<int>                       dim_;
-    GridPt                                 grid4d_;
-    std::map<unsigned int, GridPt>         grid5d_;
-    GridRbPt                               gridRb4d_;
-    std::map<unsigned int, GridRbPt>       gridRb5d_;
-    std::map<std::vector<int>, GridPt>     gridCoarse4d_;
-    std::map<std::vector<int>, GridPt>     gridCoarse5d_;
-    unsigned int                           nd_;
+    std::vector<int>                    dim_;
+    FineGridKey                         defaultGrid_;
+    std::map<FineGridKey, GridPt>       grid4d_;
+    std::map<FineGridKey, GridPt>       grid5d_;
+    std::map<FineGridKey, GridRbPt>     gridRb4d_;
+    std::map<FineGridKey, GridRbPt>     gridRb5d_;
+    std::map<CoarseGridKey, GridPt>     gridCoarse4d_;
+    std::map<CoarseGridKey, GridPt>     gridCoarse5d_;
+    unsigned int                        nd_;
     // random number generator
-    RngPt                                  rng4d_;
+    RngPt                               rng4d_;
     // object store
-    std::vector<ObjInfo>                   object_;
-    std::map<std::string, unsigned int>    objectAddress_;
+    std::vector<ObjInfo>                object_;
+    std::map<std::string, unsigned int> objectAddress_;
 };
 
 /******************************************************************************
@@ -203,6 +217,191 @@ void Holder<T>::reset(T *pt)
 /******************************************************************************
  *                     Environment template implementation                    *
  ******************************************************************************/
+// grids ///////////////////////////////////////////////////////////////////////
+template <typename VType>
+void Environment::createGrid(const unsigned int Ls)
+{
+    size_t hash = typeHash<VType>();
+
+    if (grid4d_.find({hash, 1}) == grid4d_.end())
+    {
+        grid4d_[{hash, 1}].reset(
+            SpaceTimeGrid::makeFourDimGrid(getDim(), 
+                                        GridDefaultSimd(getNd(), VType::Nsimd()),
+                                        GridDefaultMpi()));
+        gridRb4d_[{hash, 1}].reset(
+            SpaceTimeGrid::makeFourDimRedBlackGrid(grid4d_[{hash, 1}].get()));
+    }
+    if (grid5d_.find({hash, Ls}) == grid5d_.end())
+    {
+        auto g = grid4d_[{hash, 1}].get();
+        
+        grid5d_[{hash, Ls}].reset(SpaceTimeGrid::makeFiveDimGrid(Ls, g));
+        gridRb5d_[{hash, Ls}].reset(SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls, g));
+    }
+}
+
+template <typename VType>
+void Environment::createCoarseGrid(const std::vector<int> &blockSize,
+                                   const unsigned int Ls)
+{
+    int              nd      = getNd();
+    std::vector<int> fineDim = getDim(), coarseDim(nd);
+    unsigned int     cLs;
+    auto             key4d = blockSize, key5d = blockSize;
+    size_t           hash  = typeHash<VType>();
+
+    createGrid(Ls);
+    for (int d = 0; d < coarseDim.size(); d++)
+    {
+        coarseDim[d] = fineDim[d]/blockSize[d];
+        if (coarseDim[d]*blockSize[d] != fineDim[d])
+        {
+            HADRONS_ERROR(Size, "Fine dimension " + std::to_string(d) 
+                         + " (" + std::to_string(fineDim[d]) 
+                         + ") not divisible by coarse dimension ("
+                         + std::to_string(coarseDim[d]) + ")"); 
+        }
+    }
+    if (blockSize.size() > nd)
+    {
+        cLs = Ls/blockSize[nd];
+        if (cLs*blockSize[nd] != Ls)
+        {
+            HADRONS_ERROR(Size, "Fine Ls (" + std::to_string(Ls) 
+                         + ") not divisible by coarse Ls ("
+                         + std::to_string(cLs) + ")");
+        }
+    }
+    else
+    {
+        cLs = Ls;
+    }
+    key4d.resize(nd);
+    key5d.push_back(Ls);
+
+    CoarseGridKey hkey4d = {hash, key4d}, hkey5d = {hash, key5d};
+
+    if (gridCoarse4d_.find(hkey4d) == gridCoarse4d_.end())
+    {
+        gridCoarse4d_[hkey4d].reset(
+            SpaceTimeGrid::makeFourDimGrid(coarseDim, 
+                GridDefaultSimd(nd, VType::Nsimd()), GridDefaultMpi()));
+    }
+    if (gridCoarse5d_.find(hkey5d) == gridCoarse5d_.end())
+    {
+        gridCoarse5d_[hkey5d].reset(
+            SpaceTimeGrid::makeFiveDimGrid(cLs, gridCoarse4d_[hkey4d].get()));
+    }
+}
+
+template <typename VType>
+GridCartesian * Environment::getGrid(void) const
+{
+    auto it = grid4d_.find({typeHash<VType>(), 1});
+
+    if (it != grid4d_.end())
+    {
+        return it->second.get();
+    }
+    else
+    {
+        HADRONS_ERROR(Definition, "no 4D grid for SIMD type '" 
+                                  + typeName<VType>() + "'");
+    }
+}
+
+template <typename VType>
+GridRedBlackCartesian * Environment::getRbGrid(void) const
+{
+    auto it = gridRb4d_.find({typeHash<VType>(), 1});
+
+    if (it != gridRb4d_.end())
+    {
+        return it->second.get();
+    }
+    else
+    {
+        HADRONS_ERROR(Definition, "no 4D red-black grid for SIMD type '" 
+                                  + typeName<VType>() + "'");
+    }
+}
+
+template <typename VType>
+GridCartesian * Environment::getCoarseGrid(const std::vector<int> &blockSize) const
+{
+    std::vector<int> s = blockSize;
+
+    s.resize(getNd());
+    auto it = gridCoarse4d_.find({typeHash<VType>(), s});
+    if (it != gridCoarse4d_.end())
+    {
+        return it->second.get();
+    }
+    else
+    {
+        HADRONS_ERROR(Definition, "no 4D coarse grid for SIMD type '" 
+                                  + typeName<VType>() + "' and block size "
+                                  + vecToStr(blockSize));
+    }
+}
+
+template <typename VType>
+GridCartesian * Environment::getGrid(const unsigned int Ls) const
+{
+    auto it = grid5d_.find({typeHash<VType>(), Ls});
+
+    if (it != grid5d_.end())
+    {
+        return it->second.get();
+    }
+    else
+    {
+        HADRONS_ERROR(Definition, "no 5D grid for SIMD type '" 
+                                  + typeName<VType>() + "' and Ls = "
+                                  + std::to_string(Ls));
+    }
+}
+
+template <typename VType>
+GridRedBlackCartesian * Environment::getRbGrid(const unsigned int Ls) const
+{
+    auto it = gridRb5d_.find({typeHash<VType>(), Ls});
+
+    if (it != gridRb5d_.end())
+    {
+        return it->second.get();
+    }
+    else
+    {
+        HADRONS_ERROR(Definition, "no 5D red-black grid for SIMD type '" 
+                                  + typeName<VType>() + "' and Ls = "
+                                  + std::to_string(Ls));
+    }
+}
+
+template <typename VType>
+GridCartesian * Environment::getCoarseGrid(const std::vector<int> &blockSize,
+                                           const unsigned int Ls) const
+{
+    std::vector<int> s = blockSize;
+
+    s.push_back(Ls);
+    auto it = gridCoarse5d_.find({typeHash<VType>(), s});
+    if (it != gridCoarse5d_.end())
+    {
+        return it->second.get();
+    }
+    else
+    {
+        HADRONS_ERROR(Definition, "no 5D coarse grid for SIMD type '" 
+                                  + typeName<VType>() + "', block size "
+                                  + vecToStr(blockSize)
+                                  + " and Ls = " + std::to_string(Ls));
+    }
+}
+
+
 // general memory management ///////////////////////////////////////////////////
 template <typename B, typename T, typename ... Ts>
 void Environment::createDerivedObject(const std::string name,
@@ -230,19 +429,19 @@ void Environment::createDerivedObject(const std::string name,
         object_[address].Ls          = Ls;
         object_[address].data.reset(new Holder<B>(new T(std::forward<Ts>(args)...)));
         object_[address].size        = MemoryProfiler::stats->maxAllocated - initMem;
-        object_[address].type        = &typeid(B);
-        object_[address].derivedType = &typeid(T);
+        object_[address].type        = typeIdPt<B>();
+        object_[address].derivedType = typeIdPt<T>();
         if (MemoryProfiler::stats == &memStats)
         {
             MemoryProfiler::stats = nullptr;
         }
     }
     // object already exists, no error if it is a cache, error otherwise
-    else if ((object_[address].storage     != Storage::cache) or 
-             (object_[address].storage     != storage)        or
-             (object_[address].name        != name)           or
-             (object_[address].type        != &typeid(B))     or
-             (object_[address].derivedType != &typeid(T)))
+    else if ((object_[address].storage               != Storage::cache) or 
+             (object_[address].storage               != storage)        or
+             (object_[address].name                  != name)           or
+             (typeHash(object_[address].type)        != typeHash<B>())  or
+             (typeHash(object_[address].derivedType) != typeHash<T>()))
     {
         HADRONS_ERROR_REF(ObjectDefinition, "object '" + name + "' already allocated", address);
     }

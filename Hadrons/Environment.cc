@@ -43,137 +43,24 @@ HADRONS_ERROR_REF(ObjectDefinition, "no object with address " + std::to_string(a
 // constructor /////////////////////////////////////////////////////////////////
 Environment::Environment(void)
 {
-    dim_ = GridDefaultLatt();
-    nd_  = dim_.size();
-    grid4d_.reset(SpaceTimeGrid::makeFourDimGrid(
-        dim_, GridDefaultSimd(nd_, vComplex::Nsimd()),
-        GridDefaultMpi()));
-    gridRb4d_.reset(SpaceTimeGrid::makeFourDimRedBlackGrid(grid4d_.get()));
+    dim_         = GridDefaultLatt();
+    nd_          = dim_.size();
+    defaultGrid_ = {typeHash<vComplex>(), 1};
+    grid4d_[defaultGrid_].reset(
+        SpaceTimeGrid::makeFourDimGrid(dim_, 
+                                       GridDefaultSimd(nd_, vComplex::Nsimd()),
+                                       GridDefaultMpi()));
+    gridRb4d_[defaultGrid_].reset(
+        SpaceTimeGrid::makeFourDimRedBlackGrid(grid4d_[defaultGrid_].get()));
     vol_ = 1.;
     for (auto d: dim_)
     {
         vol_ *= d;
     }
-    rng4d_.reset(new GridParallelRNG(grid4d_.get()));
+    rng4d_.reset(new GridParallelRNG(grid4d_[defaultGrid_].get()));
 }
 
 // grids ///////////////////////////////////////////////////////////////////////
-void Environment::createGrid(const unsigned int Ls)
-{
-    if ((Ls > 1) and (grid5d_.find(Ls) == grid5d_.end()))
-    {
-        auto g = getGrid();
-        
-        grid5d_[Ls].reset(SpaceTimeGrid::makeFiveDimGrid(Ls, g));
-        gridRb5d_[Ls].reset(SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls, g));
-    }
-}
-
-void Environment::createCoarseGrid(const std::vector<int> &blockSize, 
-                                   const unsigned int Ls)
-{
-    int              nd      = getNd();
-    std::vector<int> fineDim = getDim(), coarseDim;
-    unsigned int     cLs;
-    auto             key4d = blockSize, key5d = blockSize;
-
-    createGrid(Ls);
-    coarseDim.resize(nd);
-    for (int d = 0; d < coarseDim.size(); d++)
-    {
-        coarseDim[d] = fineDim[d]/blockSize[d];
-        if (coarseDim[d]*blockSize[d] != fineDim[d])
-        {
-            HADRONS_ERROR(Size, "Fine dimension " + std::to_string(d) 
-                         + " (" + std::to_string(fineDim[d]) 
-                         + ") not divisible by coarse dimension ("
-                         + std::to_string(coarseDim[d]) + ")"); 
-        }
-    }
-    if (blockSize.size() > nd)
-    {
-        cLs = Ls/blockSize[nd];
-        if (cLs*blockSize[nd] != Ls)
-        {
-            HADRONS_ERROR(Size, "Fine Ls (" + std::to_string(Ls) 
-                         + ") not divisible by coarse Ls ("
-                         + std::to_string(cLs) + ")");
-        }
-        key4d.resize(nd);
-        key5d.push_back(Ls);
-    }
-    gridCoarse4d_[key4d].reset(
-        SpaceTimeGrid::makeFourDimGrid(coarseDim, 
-            GridDefaultSimd(nd, vComplex::Nsimd()), GridDefaultMpi()));
-    if (Ls > 1)
-    {
-        gridCoarse5d_[key5d].reset(
-            SpaceTimeGrid::makeFiveDimGrid(cLs, gridCoarse4d_[key4d].get()));
-    }
-}
-
-GridCartesian * Environment::getGrid(const unsigned int Ls) const
-{
-    try
-    {
-        if (Ls == 1)
-        {
-            return grid4d_.get();
-        }
-        else
-        {
-            return grid5d_.at(Ls).get();
-        }
-    }
-    catch(std::out_of_range &)
-    {
-        HADRONS_ERROR(Definition, "no grid with Ls= " + std::to_string(Ls));
-    }
-}
-
-GridRedBlackCartesian * Environment::getRbGrid(const unsigned int Ls) const
-{
-    try
-    {
-        if (Ls == 1)
-        {
-            return gridRb4d_.get();
-        }
-        else
-        {
-            return gridRb5d_.at(Ls).get();
-        }
-    }
-    catch(std::out_of_range &)
-    {
-        HADRONS_ERROR(Definition, "no red-black grid with Ls= " + std::to_string(Ls));
-    }
-}
-
-GridCartesian * Environment::getCoarseGrid(
-    const std::vector<int> &blockSize, const unsigned int Ls) const
-{
-    auto key = blockSize;
-
-    try
-    {
-        if (Ls == 1)
-        {
-            key.resize(getNd());
-            return gridCoarse4d_.at(key).get();
-        }
-        else
-        {
-            key.push_back(Ls);
-            return gridCoarse5d_.at(key).get();
-        }
-    }
-    catch(std::out_of_range &)
-    {
-        HADRONS_ERROR(Definition, "no coarse grid with Ls= " + std::to_string(Ls));
-    }
-}
-
 unsigned int Environment::getNd(void) const
 {
     return nd_;
