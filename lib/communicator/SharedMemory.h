@@ -96,6 +96,8 @@ public:
   ///////////////////////////////////////////////////
   static void SharedMemoryAllocate(uint64_t bytes, int flags);
   static void SharedMemoryFree(void);
+  static void SharedMemoryCopy(void *dest,const void *src,size_t bytes);
+  static void SharedMemoryZero(void *dest,size_t bytes);
 
 };
 
@@ -135,6 +137,7 @@ public:
   // Call on any instance
   ///////////////////////////////////////////////////
   void SharedMemoryTest(void);
+  
   void *ShmBufferSelf(void);
   void *ShmBuffer    (int rank);
   void *ShmBufferTranslate(int rank,void * local_p);

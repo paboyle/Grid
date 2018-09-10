@@ -28,6 +28,10 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 #include <Grid/GridCore.h>
 
+#ifdef GRID_NVCC
+#include <cuda_runtime_api.h>
+#endif
+
 NAMESPACE_BEGIN(Grid); 
 
 /*Construct from an MPI communicator*/
@@ -42,15 +46,12 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
   /////////////////////////////////////////////////////////////////////
   // Split into groups that can share memory
   /////////////////////////////////////////////////////////////////////
-#ifdef GRID_NVCC
-  MPI_Comm_split(comm, WorldRank , 0,&WorldShmComm);
-#else 
   MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,&WorldShmComm);
-#endif
   MPI_Comm_rank(WorldShmComm     ,&WorldShmRank);
   MPI_Comm_size(WorldShmComm     ,&WorldShmSize);
-  std::cout << " World  communicator of size " <<WorldSize << std::endl;
-  std::cout << " Shared communicator of size " <<WorldShmSize << std::endl;
+
+  std::cout << " GRID initialisation: World communicator of size " <<WorldSize << std::endl;  
+  std::cout << " GRID initialisation: Node  communicator of size " <<WorldShmSize << std::endl;
   // WorldShmComm, WorldShmSize, WorldShmRank
 
   // WorldNodes
@@ -192,26 +193,74 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   assert(_ShmSetup==1);
   assert(_ShmAlloc==0);
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // allocate the pointer array for shared windows for our group
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////
+  MPI_Barrier(WorldShmComm);
+  WorldShmCommBufs.resize(WorldShmSize);
 
-  //std::cerr << " allocating "<<bytes <<"  bytes "<< std::endl;
-  auto err =  cudaMallocManaged(&ShmCommBuf, bytes);
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Each MPI rank should allocate our own buffer
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+  auto err =  cudaMalloc(&ShmCommBuf, bytes);
   if ( err !=  cudaSuccess) {
     std::cerr << " SharedMemoryMPI.cc cudaMallocManaged failed for " << bytes<<" bytes " <<cudaGetErrorString(err)<< std::endl;
     exit(EXIT_FAILURE);  
   }
-
   if (ShmCommBuf == (void *)NULL ) {
     std::cerr << " SharedMemoryMPI.cc cudaMallocManaged failed NULL pointer for " << bytes<<" bytes " << std::endl;
     exit(EXIT_FAILURE);  
   }
-  std::cerr << " Cuda allocated managed memory at "<<std::hex<<ShmCommBuf <<" - " << ((uint64_t)ShmCommBuf + bytes)<<std::dec<< std::endl;
-  bzero(ShmCommBuf,bytes);
+  SharedMemoryZero(ShmCommBuf,bytes);
 
-  WorldShmCommBufs.resize(1);
-  WorldShmCommBufs[0] = ShmCommBuf;
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Loop over ranks/gpu's on our node
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+  for(int r=0;r<WorldShmSize;r++){
+    
+    //////////////////////////////////////////////////
+    // If it is me, pass around the IPC access key
+    //////////////////////////////////////////////////
+    cudaIpcMemHandle_t handle;
+
+    if ( r==WorldShmRank ) { 
+      err = cudaIpcGetMemHandle(&handle,ShmCommBuf);
+      if ( err !=  cudaSuccess) {
+	std::cerr << " SharedMemoryMPI.cc cudaIpcGetMemHandle failed for rank" << r <<" "<<cudaGetErrorString(err)<< std::endl;
+	exit(EXIT_FAILURE);
+      }
+    }
+    //////////////////////////////////////////////////
+    // Share this IPC handle across the Shm Comm
+    //////////////////////////////////////////////////
+    { 
+      int ierr=MPI_Bcast(&handle,
+			 sizeof(handle),
+			 MPI_BYTE,
+			 r,
+			 WorldShmComm);
+      assert(ierr==0);
+    }
+    
+    ///////////////////////////////////////////////////////////////
+    // If I am not the source, overwrite thisBuf with remote buffer
+    ///////////////////////////////////////////////////////////////
+    void * thisBuf = ShmCommBuf;
+    if ( r!=WorldShmRank ) { 
+      err = cudaIpcOpenMemHandle(&thisBuf,handle,cudaIpcMemLazyEnablePeerAccess);
+      if ( err !=  cudaSuccess) {
+	std::cerr << " SharedMemoryMPI.cc cudaIpcOpenMemHandle failed for rank" << r <<" "<<cudaGetErrorString(err)<< std::endl;
+	exit(EXIT_FAILURE);
+      }
+    }
+    ///////////////////////////////////////////////////////////////
+    // Save a copy of the device buffers
+    ///////////////////////////////////////////////////////////////
+    WorldShmCommBufs[r] = thisBuf;
+  }
+
   _ShmAllocBytes=bytes;
   _ShmAlloc=1;
-  //std::cerr << " cudaMallocManaged Returning ; "<< bytes <<" bytes allocated at "<<std::hex<<ShmCommBuf <<std::dec<< std::endl;
 }
 #else 
 #ifdef GRID_MPI3_SHMMMAP
@@ -326,7 +375,27 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   _ShmAllocBytes = bytes;
 }
 #endif
+#endif // End NVCC case for GPU device buffers
+
+/////////////////////////////////////////////////////////////////////////
+// Routines accessing shared memory should route through for GPU safety
+/////////////////////////////////////////////////////////////////////////
+void GlobalSharedMemory::SharedMemoryZero(void *dest,size_t bytes)
+{
+#ifdef GRID_NVCC
+  cudaMemset(dest,0,bytes);
+#else
+  bzero(dest,bytes);
 #endif
+}
+void GlobalSharedMemory::SharedMemoryCopy(void *dest,const void *src,size_t bytes)
+{
+#ifdef GRID_NVCC
+  cudaMemcpy(dest,src,bytes,cudaMemcpyDefault);
+#else   
+  bcopy(src,dest,bytes);
+#endif
+}
 ////////////////////////////////////////////////////////
 // Global shared functionality finished
 // Now move to per communicator functionality
@@ -341,11 +410,7 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
   /////////////////////////////////////////////////////////////////////
   // Split into groups that can share memory
   /////////////////////////////////////////////////////////////////////
-#ifdef GRID_NVCC
-  MPI_Comm_split(comm, rank, 0,&ShmComm);
-#else 
   MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,&ShmComm);
-#endif
   MPI_Comm_rank(ShmComm     ,&ShmRank);
   MPI_Comm_size(ShmComm     ,&ShmSize);
   ShmCommBufs.resize(ShmSize);
@@ -374,6 +439,8 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
 
   std::vector<int> ranks(size);   for(int r=0;r<size;r++) ranks[r]=r;
   MPI_Group_translate_ranks (FullGroup,size,&ranks[0],ShmGroup, &ShmRanks[0]); 
+
+  SharedMemoryTest();
 }
 //////////////////////////////////////////////////////////////////
 // On node barrier
@@ -388,24 +455,26 @@ void SharedMemory::ShmBarrier(void)
 void SharedMemory::SharedMemoryTest(void)
 {
   ShmBarrier();
+  uint64_t check[3];
+  uint64_t magic = 0x5A5A5A;
   if ( ShmRank == 0 ) {
-    for(int r=0;r<ShmSize;r++){
-      uint64_t * check = (uint64_t *) ShmCommBufs[r];
-      check[0] = GlobalSharedMemory::WorldNode;
-      check[1] = r;
-      check[2] = 0x5A5A5A;
+    for(uint64_t r=0;r<ShmSize;r++){
+       check[0]=GlobalSharedMemory::WorldNode;
+       check[1]=r;
+       check[2]=magic;
+       GlobalSharedMemory::SharedMemoryCopy( ShmCommBufs[r], check, 3*sizeof(uint64_t));
     }
   }
   ShmBarrier();
-  for(int r=0;r<ShmSize;r++){
-    uint64_t * check = (uint64_t *) ShmCommBufs[r];
-    
+  for(uint64_t r=0;r<ShmSize;r++){
+    ShmBarrier();
+    GlobalSharedMemory::SharedMemoryCopy(check,ShmCommBufs[r], 3*sizeof(uint64_t));
+    ShmBarrier();
     assert(check[0]==GlobalSharedMemory::WorldNode);
     assert(check[1]==r);
-    assert(check[2]==0x5A5A5A);
-    
+    assert(check[2]==magic);
+    ShmBarrier();
   }
-  ShmBarrier();
 }
 
 void *SharedMemory::ShmBuffer(int rank)
