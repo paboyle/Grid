@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     globalPar.trajCounter.start = 1500;
     globalPar.trajCounter.end   = 1520;
     globalPar.trajCounter.step  = 20;
-    globalPar.seed              = "1 2 3 4";
+    globalPar.runId             = "test";
     application.setPar(globalPar);
     // gauge field
     application.createModule<MGauge::Unit>("gauge");

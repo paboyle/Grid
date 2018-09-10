@@ -51,7 +51,7 @@ using namespace Hadrons;
     globalPar.trajCounter.start    = 1500;      \
     globalPar.trajCounter.end      = 1520;      \
     globalPar.trajCounter.step     = 20;        \
-    globalPar.seed                 = "1 2 3 4"; \
+    globalPar.runId                = "test";    \
     globalPar.genetic.maxGen       = 1000;      \
     globalPar.genetic.maxCstGen    = 200;       \
     globalPar.genetic.popSize      = 20;        \
