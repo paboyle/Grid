@@ -108,18 +108,20 @@ void LambdaApply(uint64_t base, uint64_t Num, lambda Lambda)
 
 #define accelerator_loopN( iterator, num, ... )			\
   typedef decltype(num) Iterator;				\
-  auto lambda = [=] accelerator (Iterator iterator) mutable {		\
-    __VA_ARGS__;							\
-  };									\
-  Iterator base = 0;							\
-  Iterator num_block  = (num+gpu_threads-1)/gpu_threads;		\
-  LambdaApply<<<num_block,gpu_threads>>>(base,num,lambda);		\
-  cudaDeviceSynchronize();						\
-  cudaError err = cudaGetLastError();					\
-  if ( cudaSuccess != err ) {						\
-    printf("Cuda error %s\n",cudaGetErrorString( err ));		\
-    exit(0);								\
-  }									
+  if ( num > 0 ) {			                        \
+    auto lambda = [=] accelerator (Iterator iterator) mutable { \
+      __VA_ARGS__;						\
+    };								\
+    Iterator base = 0;						\
+    Iterator num_block  = (num+gpu_threads-1)/gpu_threads;	\
+    LambdaApply<<<num_block,gpu_threads>>>(base,num,lambda);	\
+    cudaDeviceSynchronize();					\
+    cudaError err = cudaGetLastError();				\
+    if ( cudaSuccess != err ) {					\
+      printf("Cuda error %s\n",cudaGetErrorString( err ));	\
+      exit(0);							\
+    }								\
+  }
 
 #define cpu_loop( iterator, range, ... )   thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
 
