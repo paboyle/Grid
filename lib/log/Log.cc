@@ -109,7 +109,7 @@ void Grid_quiesce_nodes(void) {
 }
 
 void Grid_unquiesce_nodes(void) {
-#ifdef GRID_COMMS_MPI
+#if defined(GRID_COMMS_MPI) || defined(GRID_COMMS_MPI3) || defined(GRID_COMMS_MPIT)
   std::cout.clear();
 #endif
 }
