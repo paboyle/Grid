@@ -30,7 +30,7 @@
 NAMESPACE_BEGIN(Grid);
 
 void Gather_plane_table_compute (GridBase *grid,int dimension,int plane,int cbmask,
-				 int off,std::vector<std::pair<int,int> > & table)
+				 int off,Vector<std::pair<int,int> > & table)
 {
   table.resize(0);
 

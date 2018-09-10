@@ -56,18 +56,19 @@ NAMESPACE_BEGIN(Grid);
 // Gather for when there *is* need to SIMD split with compression
 ///////////////////////////////////////////////////////////////////
 void Gather_plane_table_compute (GridBase *grid,int dimension,int plane,int cbmask,
-				 int off,std::vector<std::pair<int,int> > & table);
+				 int off,Vector<std::pair<int,int> > & table);
 
 template<class vobj,class cobj,class compressor> 
-void Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)   __attribute__((noinline));
+void Gather_plane_simple_table (Vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)   __attribute__((noinline));
 
 template<class vobj,class cobj,class compressor> 
-void Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)
+void Gather_plane_simple_table (Vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)
 {
   int num=table.size();
+  std::pair<int,int> *table_v = & table[0];
   auto rhs_v = rhs.View();
-  thread_loop( (int i=0;i<num;i++), {
-    compress.Compress(&buffer[off],table[i].first,rhs_v[so+table[i].second]);
+  accelerator_loopN( i,num, {
+      compress.Compress(&buffer[off],table_v[i].first,rhs_v[so+table_v[i].second]);
   });
 }
 
@@ -76,10 +77,10 @@ void Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const La
 ///////////////////////////////////////////////////////////////////
 template<class cobj,class vobj,class compressor>
 void Gather_plane_exchange_table(const Lattice<vobj> &rhs,
-				 std::vector<cobj *> pointers,int dimension,int plane,int cbmask,compressor &compress,int type) __attribute__((noinline));
+				 Vector<cobj *> pointers,int dimension,int plane,int cbmask,compressor &compress,int type) __attribute__((noinline));
 
 template<class cobj,class vobj,class compressor>
-void Gather_plane_exchange_table(std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
+void Gather_plane_exchange_table(Vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
 				 std::vector<cobj *> pointers,int dimension,int plane,int cbmask,
 				 compressor &compress,int type)
 {
@@ -87,7 +88,7 @@ void Gather_plane_exchange_table(std::vector<std::pair<int,int> >& table,const L
   int num=table.size()/2;
   int so  = plane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane 
   auto rhs_v = rhs.View();
-  thread_loop( (int j=0;j<num;j++), {
+  accelerator_loopN( j,num, {
     compress.CompressExchange(&pointers[0][0],&pointers[1][0],&rhs_v[0],
 			      j,so+table[2*j].second,so+table[2*j+1].second,type);
   });
@@ -212,7 +213,7 @@ public:
   }
 
   int face_table_computed;
-  std::vector<std::vector<std::pair<int,int> > > face_table ;
+  Vector<Vector<std::pair<int,int> > > face_table ;
 
 
   Vector<StencilEntry>  _entries; // Resident in managed memory
@@ -537,7 +538,7 @@ public:
 
     for(int i=0;i<mm.size();i++){	
       mergetime-=usecond();
-      thread_loop( (int o=0;o<mm[i].buffer_size/2;o++), {
+      accelerator_loopN( o,mm[i].buffer_size/2, {
 	decompress.Exchange(mm[i].mpointer,
 			    mm[i].vpointers[0],
 			    mm[i].vpointers[1],
@@ -548,7 +549,7 @@ public:
 
     for(int i=0;i<dd.size();i++){	
       decompresstime-=usecond();
-      thread_loop( (int o=0;o<dd[i].buffer_size;o++),{
+      accelerator_loopN( o,dd[i].buffer_size, {
 	decompress.Decompress(dd[i].kernel_p,dd[i].mpi_p,o);
       });
       decompresstime+=usecond();
@@ -913,7 +914,7 @@ public:
     assert(comm_dim==1);
     assert(shift>=0);
     assert(shift<fd);
-    
+
     int buffer_size = _grid->_slice_nblock[dimension]*_grid->_slice_block[dimension];
     
     int cb= (cbmask==0x2)? Odd : Even;
