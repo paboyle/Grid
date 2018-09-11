@@ -213,7 +213,7 @@ public:
   }
 
   int face_table_computed;
-  Vector<Vector<std::pair<int,int> > > face_table ;
+  std::vector<Vector<std::pair<int,int> > > face_table ;
 
 
   Vector<StencilEntry>  _entries; // Resident in managed memory
