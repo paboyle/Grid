@@ -217,7 +217,7 @@ int main (int argc, char ** argv)
   }
 
   DomainWallFermionRL DwH(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  if (1) {
+  if (0) {
     FGrid->Barrier();
     DwH.ZeroCounters();
     DwH.Dhop(src,result,0);
