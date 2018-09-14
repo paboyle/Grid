@@ -19,6 +19,7 @@ modules_cc =\
   Modules/MSink/Smear.cc \
   Modules/MSolver/A2AVectors.cc \
   Modules/MSolver/RBPrecCG.cc \
+  Modules/MSolver/MixedPrecisionRBPrecCG.cc \
   Modules/MSolver/LocalCoherenceLanczos.cc \
   Modules/MGauge/StoutSmearing.cc \
   Modules/MGauge/Unit.cc \
@@ -80,6 +81,7 @@ modules_hpp =\
   Modules/MSource/SeqConserved.hpp \
   Modules/MSink/Smear.hpp \
   Modules/MSink/Point.hpp \
+  Modules/MSolver/MixedPrecisionRBPrecCG.hpp \
   Modules/MSolver/LocalCoherenceLanczos.hpp \
   Modules/MSolver/Guesser.hpp \
   Modules/MSolver/RBPrecCG.hpp \
