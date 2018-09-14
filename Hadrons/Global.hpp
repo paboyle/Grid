@@ -62,18 +62,36 @@ using Grid::operator>>;
 
 #define END_MODULE_NAMESPACE }
 
-#ifndef FIMPL
-#define FIMPL WilsonImplR
+#define _HADRONS_IMPL(impl, sub) impl##sub
+#define HADRONS_IMPL(impl, sub)   _HADRONS_IMPL(impl, sub)
+
+#ifndef FIMPLBASE
+#define FIMPLBASE WilsonImpl
 #endif
-#ifndef ZFIMPL
-#define ZFIMPL ZWilsonImplR
+#define FIMPL  HADRONS_IMPL(FIMPLBASE, R)
+#define FIMPLF HADRONS_IMPL(FIMPLBASE, F)
+#define FIMPLD HADRONS_IMPL(FIMPLBASE, D)
+
+#ifndef ZFIMPLBASE
+#define ZFIMPLBASE ZWilsonImpl
 #endif
-#ifndef SIMPL
-#define SIMPL ScalarImplCR
+#define ZFIMPL  HADRONS_IMPL(ZFIMPLBASE, R)
+#define ZFIMPLF HADRONS_IMPL(ZFIMPLBASE, F)
+#define ZFIMPLD HADRONS_IMPL(ZFIMPLBASE, D)
+
+#ifndef SIMPLBASE
+#define SIMPLBASE ScalarImplC
 #endif
-#ifndef GIMPL
-#define GIMPL PeriodicGimplR
+#define SIMPL  HADRONS_IMPL(SIMPLBASE, R)
+#define SIMPLF HADRONS_IMPL(SIMPLBASE, F)
+#define SIMPLD HADRONS_IMPL(SIMPLBASE, D)
+
+#ifndef GIMPLBASE
+#define GIMPLBASE PeriodicGimpl
 #endif
+#define GIMPL  HADRONS_IMPL(GIMPLBASE, R)
+#define GIMPLF HADRONS_IMPL(GIMPLBASE, F)
+#define GIMPLD HADRONS_IMPL(GIMPLBASE, D)
 
 BEGIN_HADRONS_NAMESPACE
 
