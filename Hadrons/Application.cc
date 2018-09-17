@@ -62,10 +62,10 @@ Application::Application(void)
     LOG(Message) << std::endl;
     LOG(Message) << "** Default parameters (and associated C macros)" << std::endl;
     LOG(Message) << "ASCII output precision  : " << MACOUT(DEFAULT_ASCII_PREC) << std::endl;
-    LOG(Message) << "Fermion implementation  : " << MACOUTS(FIMPL) << std::endl;
-    LOG(Message) << "z-Fermion implementation: " << MACOUTS(ZFIMPL) << std::endl;
-    LOG(Message) << "Scalar implementation   : " << MACOUTS(SIMPL) << std::endl;
-    LOG(Message) << "Gauge implementation    : " << MACOUTS(GIMPL) << std::endl;
+    LOG(Message) << "Fermion implementation  : " << MACOUTS(FIMPLBASE) << std::endl;
+    LOG(Message) << "z-Fermion implementation: " << MACOUTS(ZFIMPLBASE) << std::endl;
+    LOG(Message) << "Scalar implementation   : " << MACOUTS(SIMPLBASE) << std::endl;
+    LOG(Message) << "Gauge implementation    : " << MACOUTS(GIMPLBASE) << std::endl;
     LOG(Message) << "Eigenvector base size   : " 
                  << MACOUT(HADRONS_DEFAULT_LANCZOS_NBASIS) << std::endl;
     LOG(Message) << "Schur decomposition     : " << MACOUTS(HADRONS_DEFAULT_SCHUR) << std::endl;

@@ -55,8 +55,7 @@ int main(int argc, char *argv[])
     globalPar.trajCounter.start = 309;
     globalPar.trajCounter.end   = 310;
     globalPar.trajCounter.step  = 1;
-
-    globalPar.seed              = "1 2 3 4";
+    globalPar.runId             = "test";
 
     application.setPar(globalPar);
     // gauge field

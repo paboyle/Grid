@@ -24,7 +24,7 @@ endif
 all: version-cache
 
 version-cache:
-	if [ `git status --porcelain | grep -v '??' | wc -l` -gt 0 ]; then\
+	@if [ `git status --porcelain | grep -v '??' | wc -l` -gt 0 ]; then\
 		a="uncommited changes";\
 	else\
 		a="clean";\

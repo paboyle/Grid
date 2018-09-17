@@ -423,4 +423,17 @@ namespace Grid {
   }
 }
 
+// helper function to read space-separated values
+template <typename T>
+std::string vecToStr(const std::vector<T> &v)
+{
+  using Grid::operator<<;
+  
+  std::ostringstream sstr;
+
+  sstr << v;
+
+  return sstr.str();
+}
+
 #endif
