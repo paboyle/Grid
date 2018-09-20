@@ -12,6 +12,8 @@ Welcome to Grid's documentation!
 Preliminaries
 ====================================
 
+.. attention:: manual version 1 (CD)
+   
 Grid is primarily an *application* *development* *interface* (API) for structured Cartesian grid codes and written in C++11.
 In particular it is aimed at Lattice Field Theory simulations in general gauge theories, but
 with a particular emphasis on supporting SU(3) and U(1) gauge theories relevant to hadronic physics.
@@ -221,6 +223,7 @@ If you want to build all the tests just use `make tests`.
 
 Detailed build configuration options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. todo:: CD: The double dash here gets turned into a pdf long dash. Not good.
 
 ========================================  ==============================================================================================================================
   Option                                     usage
@@ -242,6 +245,9 @@ Detailed build configuration options
  `--enable-doxygen-doc`                   enable the Doxygen documentation generation (build with `make doxygen-doc`)
 ========================================  ==============================================================================================================================
 
+.. todo:: CD: Somewhere, please provide more explanation of the --enable--gen-simd-width value
+.. todo:: CD: Are there really two --enable-precision lines?
+
 
 Possible communication interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -257,6 +263,9 @@ The following options can be use with the `--enable-comms=` option to target dif
 ===============    ==========================================================================================
 
 For the MPI interfaces the optional `-auto` suffix instructs the `configure` scripts to determine all the necessary compilation and linking flags. This is done by extracting the informations from the MPI wrapper specified in the environment variable `MPICXX` (if not specified `configure` will scan though a list of default names). The `-auto` suffix is not supported by the Cray environment wrapper scripts. Use the standard wrappers ( `CXX=CC` ) set up by Cray `PrgEnv` modules instead.  
+
+.. todo:: CD: Later below, there is an "mpi3". Should it be listed and
+          explained here?  Is there an "mpit"?
 
 
 Possible SIMD types
@@ -287,6 +296,7 @@ Alternatively, some CPU codenames can be directly used:
   `SKL`         [Intel Skylake with AVX512 extensions](https://ark.intel.com/products/codename/37572/Skylake#@server)  
   `BGQ`         Blue Gene/Q                             
 ============    =====================================================================================================================
+
 
 Notes
 ^^^^^^^
@@ -439,6 +449,8 @@ shared memory to communicate within this node::
 
   mpirun -np 8 ./omp_bind.sh ./Benchmark_dwf --mpi 2.2.2.1 --dslash-unroll --threads 8 --grid 16.16.16.16 --cacheblocking 4.4.4.4 
 
+.. todo:: CD: Maybe need bash highlighting, not cpp below - Generates warning
+	  
 Where omp_bind.sh does the following::
 
   #!/bin/bash
@@ -550,7 +562,9 @@ scalar matrix and vector classes::
 
     template<class vobj      > class iScalar { private: vobj _internal ; } 
     template<class vobj,int N> class iVector { private: vobj _internal[N] ; } 
-    template<class vobj,int N> class iMatrix { private: vobj _internal[N] ; } 
+    template<class vobj,int N> class iMatrix { private: vobj _internal[N] ; }
+
+.. todo:: CD: Why is iMatrix only [N] and not [N][N]?
 
 These are template classes and can be passed a fundamental scalar or vector type, or
 nested to form arbitrarily complicated tensor products of indices. All mathematical expressions
@@ -572,6 +586,11 @@ For Lattice field theory, we define types according to the following tensor
 product structure ordering. The suffix "D" indicates either double types, and
 replacing with "F" gives the corresponding single precision type.
 
+.. todo:: CD: The test cases have R, which takes the compiled default.
+	  Do we want to expose that and say something here?
+.. todo:: CD: What is "Lattice" here?  This section is about "iXXX" types.
+	  Maybe say a few more introductory words.
+
 =======   =======    ======  ======  ===========  =======================
 Lattice   Lorentz    Spin    Colour  scalar_type   Field
 =======   =======    ======  ======  ===========  =======================
@@ -586,6 +605,10 @@ Scalar    Scalar     Matrix  Matrix  ComplexD      SpinColourMatrixD
 
 The types are implemented via a recursive tensor nesting system.
 
+.. todo:: CD: What choices are available for vtype?  Is the "v" for "variable"?
+.. todo:: CD: Should we say iLorentzColourMatrix is a Grid-provided typename?
+	  Is there a list of similar convenience types?
+	  
 **Example** we declare::
 
   template<typename vtype> 
@@ -675,6 +698,12 @@ General code can access any specific index by number with a peek/poke semantic::
    template<int Level,class vtype>  
    void pokeIndex (vtype &pokeme,arg,int i,int j) 
 
+.. todo:: CD: The are the choices for "vtype"?
+	  
+.. todo:: CD: The example below does not use the template pair shown
+	  above.  It is good, but perhaps, also show the pair form of
+	  the same example if there is one.
+   
 **Example**::
 
     for (int mu = 0; mu < Nd; mu++) {
@@ -777,6 +806,8 @@ The traceless anti-Hermitian part is taken with::
 
 Reunitarisation (or reorthogonalisation) is enabled by::
 
+.. todo:: CD: U(3) or SU(3) projection?
+  
     template<class vtype,int N> iMatrix<vtype,N> 
     ProjectOnGroup(const iMatrix<vtype,N> &arg)
 
@@ -946,11 +977,17 @@ Internally, Grid defines a portable abstraction SIMD vectorisation, via the foll
 
 * vComplexD
 
+.. todo:: CD: Maybe say something about how SIMD vectorization works
+	  here.  Does a vRealF collect values for several SIMD lanes
+	  at once?
+  
 These have the usual range of arithmetic operators and functions acting upon them. They do not form
 part of the API, but are mentioned to (partially) explain the need for controlling the
-layout transformation in lattice objects. 
+layout transformation in lattice objects.
 
 They are documented further in the Internals chapter.
+
+.. todo:: CD: Might they be needed for interfacing with external code?
 
 Coordinates
 ------------
@@ -979,6 +1016,16 @@ This enables the coordinates to be manipulated without heap allocation or thread
 and avoids introducing STL functions into GPU code, but does so at the expense of introducing
 a maximum dimensionality. This limit is easy to change (lib/util/Coordinate.h).
 
+.. todo:: CD: It would be very useful to explain how the communicator
+	  works.  That would include how the processor grid is
+	  organized, how the lattice is subdivided across MPI ranks,
+	  why Grid prefers to renumber the MPI ranks, what coordinates
+	  go with what ranks?  Ordinarily, this is hidden from the
+	  user, but it is important for interfacing with external
+	  code. Some methods and members of the communicator class
+	  need to be "exposed" to make that possible. This might be a
+	  good place for such a subsection?
+
 Grids
 -------------
 
@@ -991,6 +1038,9 @@ We use a partial vectorisation transformation, must select
 which space-time dimensions participate in SIMD vectorisation.
 The Lattice containers are defined to have opaque internal layout, hiding this layout transformation.
 
+.. todo:: CD: The constructor simply defines the layout parameters.
+          It doesn't allocate space, right?  Might be good to say.
+	  
 We define GridCartesian and GridRedBlackCartesian which both inherit from GridBase::
 
     class GridCartesian        : public GridBase 
@@ -1020,6 +1070,11 @@ useful for both Chiral fermions, lower dimensional operations, and multigrid::
 The Grid object provides much `internal` functionality to map a lattice site to 
 a node and lexicographic index. These are not needed by code interfacing
 to the data parallel layer.
+
+.. todo:: CD: What is specified with "split_rank" above?
+.. todo:: CD: Maybe list the exposed Grid options within the "SpaceTimeGrid"
+          class.
+
 
 **Example** (tests/solver/Test_split_grid.cc)::
 
@@ -1094,6 +1149,10 @@ Vector   Scalar     Matrix  Matrix  ComplexD      LatticeSpinColourMatrixD      
 Additional single precison variants are defined with the suffix "F".
 Other lattice objects can be defined using the sort of typedef's shown above if needed.
 
+.. todo:: CD: Are there others to expose, such as LatticeInteger,
+          LatticeFermionD, LatticeGaugeFieldD, LatticePropagatorD,
+          etc?  If so, could this list be made complete?
+
 Opaque containers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1108,6 +1167,8 @@ are provided (lib/lattice/Lattice_transfer.h)::
     unvectorizeToLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in);
     vectorizeFromLexOrdArray(std::vector<sobj> &in , Lattice<vobj> &out);
 
+.. todo:: CD: Explain the choices for sobj and vobj.
+	  
 The Lexicographic order of data in the external vector fields is defined by (lib/util/Lexicographic.h)::
 
     Lexicographic::IndexFromCoor(const Coordinate &lcoor, int &lex,Coordinate *local_dims);
@@ -1115,7 +1176,7 @@ The Lexicographic order of data in the external vector fields is defined by (lib
 This ordering is :math:`x + L_x * y + L_x*L_y*z + L_x*L_y*L_z *t`
 
 Peek and poke routines are provided to perform single site operations. These operations are
-extremely low performance and are not intended for algorithm development or performance critical code.
+extremely low performance and are not intended for algorithm development or performance-critical code.
 
 The following are `collective` operations and involve communication between nodes. All nodes receive the same
 result by broadcast from the owning node::
@@ -1143,8 +1204,15 @@ peeking and poking specific indices in a data parallel manner::
     template<int Index,class vobj>   // Matrix poke
     void PokeIndex(Lattice<vobj> &lhs,const Lattice<> & rhs,int i,int j)
 
+.. todo:: CD: Maybe mention that these match operations with scalar
+          objects, as listed above under "Internal index manipulation."
+  
 The inconsistent capitalisation on the letter P is due to an obscure bug in g++ that has not to
 our knowledge been fixed in any version. The bug was reported in 2016.
+
+.. todo:: CD: Do you want to mention/expose PropToFerm and FermToProp?
+	  Are there other such convenience routines to make part of the API?
+
 
 Global Reduction operations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1310,7 +1378,7 @@ the iftrue and iffalse argument::
 
 This plays the data parallel analogue of the C++ ternary operator::
 
-     a = b ? c : d;
+     a == b ? c : d;
 
 In order to create the predicate in a coordinate dependent fashion it is often useful
 to use the lattice coordinates. 
@@ -1319,19 +1387,21 @@ The LatticeCoordinate function::
 
     template<class iobj> LatticeCoordinate(Lattice<iobj> &coor,int dir);
 
-fills an Integer field with the coordinate in the N-th dimension.
+fills an Integer field with the coordinate in the direction specified by "dir".
 A usage example is given
 
 **Example**::
 
-        int dir  =3;
-        int block=4;
+        int dir = 3;
+        int block = 4;
         LatticeInteger coor(FineGrid);
 
 	LatticeCoordinate(coor,dir);
 	
 	result = where(mod(coor,block)==(block-1),x,z);
 
+.. todo:: CD: A few words motivating this example?
+	  
 (Other usage cases of LatticeCoordinate include the generation of plane wave momentum phases.)
 
 Site local fused operations
@@ -1398,7 +1468,10 @@ The first parallel primitive is the thread_loop
 accelerator_loops
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The second parallel primitive is an accelerated_loop
+The second parallel primitive is the "accelerator_loop".
+
+.. todo:: CD: What is the difference between these two loops?
+
 
 **Example**::
 
@@ -1462,7 +1535,7 @@ lattice site :math:`x_\mu = 1` in the rhs to :math:`x_\mu = 0` in the result.
 CovariantCshift 
 ^^^^^^^^^^^^^^^^^^^^
 
-Covariant Cshift operations are provided for common cases of boundary condition. These may be further optimised
+Covariant Cshift operations are provided for common cases of the boundary condition. These may be further optimised
 in future::
 
   template<class covariant,class gauge> 
@@ -1472,7 +1545,6 @@ in future::
   template<class covariant,class gauge> 
   Lattice<covariant> CovShiftBackward(const Lattice<gauge> &Link, int mu,
 			              const Lattice<covariant> &field);
-
 
 Boundary conditions
 ^^^^^^^^^^^^^^^^^^^^
@@ -1501,6 +1573,10 @@ treating the boundary.
 			Gimpl::CovShiftBackward(U[mu],mu,
 			   Gimpl::CovShiftIdentityBackward(U[nu], nu))));
   }
+
+.. todo:: CD: This example uses Gimpl instead of Impl.  What is the
+          difference, and what are the exposed choices for Impl?
+
 
 Inter-grid transfer operations
 -----------------------------------------------------
@@ -2071,6 +2147,8 @@ MooeeInvDag
 
 All Fermion operators will derive from this base class.
 
+.. todo:: CD: Descriptions needed.
+
 Linear Operators
 -------------------
 
@@ -2081,6 +2159,8 @@ By sharing the class for Sparse Matrix across multiple operator wrappers, we can
 between RB and non-RB variants. Sparse matrix is like the fermion action def, and then
 the wrappers implement the specialisation of "Op" and "AdjOp" to the cases minimising
 replication of code.
+
+.. todo:: CD: Descriptions needed below.
 
 **Abstract base**::
 
@@ -2097,7 +2177,6 @@ replication of code.
     virtual void HermOp(const Field &in, Field &out)=0;
   };
 
-
 ==============           ==============================================
 Member                       Description
 ==============           ==============================================
@@ -2109,8 +2188,9 @@ HermOpAndNorm
 HermOp
 ==============           ==============================================
 
-MdagMLinearOperator
-^^^^^^^^^^^^^^^^^^^^
+
+	  MdagMLinearOperator
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This Linear operator takes a SparseMatrix (Fermion operator) and implements the unpreconditioned
 MdagM operator with the above interface::
@@ -2202,6 +2282,8 @@ SchurDiagOneRH
 SchurStaggeredOperator
 =======================       ======================================================================================
 
+.. todo:: CD: Descriptions needed.
+	  
 Operator Functions
 ===================
 
@@ -2249,6 +2331,8 @@ Audit this::
 
 Algorithms
 =========================================
+
+.. todo:: CD: The whole section needs to be completed, of course
 
 Approximation
 --------------
@@ -2319,6 +2403,12 @@ Schur decomposition
 Lattice Gauge theory utilities
 =========================================
 
+.. todo:: CD: The whole section needs to be completed, of course
+
+.. todo:: CD: Gamma matrices?
+	  Spin projection, reconstruction?
+	  Lie Algebra?
+
 Types
 --------------
 
@@ -2342,6 +2432,8 @@ Wilson loops
 Lattice actions
 =========================================
 
+.. todo:: CD: The whole section needs to be completed, of course
+	  
 Gauge
 --------
 
@@ -2354,10 +2446,13 @@ Pseudofermion
 HMC
 =========================================
 
+.. todo:: CD: The whole section needs to be completed, of course
 
 Development of the internals
 ========================================
 
+.. todo:: CD: The whole section needs to be completed, of course
+	  
 The interfaces used in this chapter of the manual are subject 
 to change without notice as new architectures are addressed.
 
@@ -2381,6 +2476,21 @@ Optimised fermion operators
 
 Optimised communications
 ---------------------------------------------
+
+Interfacing with external software
+========================================
+.. todo:: CD: Such a section should be very useful
+
+.. todo:: CD: The whole section needs to be completed, of course
+	  
+MPI initialization and coordination
+-----------------------------------
+
+Creating Grid fields
+--------------------
+
+Mapping fields between Grid and user layouts
+--------------------------------------------
 
 .. image:: logo.png
    :width: 200px
