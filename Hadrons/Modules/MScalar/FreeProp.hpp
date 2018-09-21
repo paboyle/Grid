@@ -51,7 +51,7 @@ public:
 class TFreeProp: public Module<FreePropPar>
 {
 public:
-    SCALAR_TYPE_ALIASES(SIMPL,);
+    BASIC_TYPE_ALIASES(SIMPL,);
 public:
     // constructor
     TFreeProp(const std::string name);

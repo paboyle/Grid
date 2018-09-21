@@ -55,7 +55,7 @@ template <typename FImpl>
 class TScaledDWF: public Module<ScaledDWFPar>
 {
 public:
-    FG_TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TScaledDWF(const std::string name);

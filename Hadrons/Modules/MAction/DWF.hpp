@@ -56,7 +56,7 @@ template <typename FImpl>
 class TDWF: public Module<DWFPar>
 {
 public:
-    FG_TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TDWF(const std::string name);

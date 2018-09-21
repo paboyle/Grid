@@ -174,7 +174,6 @@ private:
     bool                                protect_{true};
     // grids
     std::vector<int>                    dim_;
-    FineGridKey                         defaultGrid_;
     std::map<FineGridKey, GridPt>       grid4d_;
     std::map<FineGridKey, GridPt>       grid5d_;
     std::map<FineGridKey, GridRbPt>     gridRb4d_;

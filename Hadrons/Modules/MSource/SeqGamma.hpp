@@ -71,7 +71,7 @@ template <typename FImpl>
 class TSeqGamma: public Module<SeqGammaPar>
 {
 public:
-    FG_TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TSeqGamma(const std::string name);
@@ -125,7 +125,7 @@ template <typename FImpl>
 void TSeqGamma<FImpl>::setup(void)
 {
     envCreateLat(PropagatorField, getName());
-    envCacheLat(Lattice<iScalar<vInteger>>, tName_);
+    envCache(Lattice<iScalar<vInteger>>, tName_, 1, env().getGrid());
     envCacheLat(LatticeComplex, momphName_);
     envTmpLat(LatticeComplex, "coor");
 }

@@ -31,44 +31,4 @@ using namespace Grid;
 using namespace Hadrons;
 using namespace MIO;
 
-/******************************************************************************
-*                       TLoadNersc implementation                             *
-******************************************************************************/
-// constructor /////////////////////////////////////////////////////////////////
-TLoadNersc::TLoadNersc(const std::string name)
-: Module<LoadNerscPar>(name)
-{}
-
-// dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> TLoadNersc::getInput(void)
-{
-    std::vector<std::string> in;
-    
-    return in;
-}
-
-std::vector<std::string> TLoadNersc::getOutput(void)
-{
-    std::vector<std::string> out = {getName()};
-    
-    return out;
-}
-
-// setup ///////////////////////////////////////////////////////////////////////
-void TLoadNersc::setup(void)
-{
-    envCreateLat(LatticeGaugeField, getName());
-}
-
-// execution ///////////////////////////////////////////////////////////////////
-void TLoadNersc::execute(void)
-{
-    FieldMetaData header;
-    std::string   fileName = par().file + "."
-                             + std::to_string(vm().getTrajectory());
-    LOG(Message) << "Loading NERSC configuration from file '" << fileName
-                 << "'" << std::endl;
-
-    auto &U = envGet(LatticeGaugeField, getName());
-    NerscIO::readConfiguration(U, header, fileName);
-}
+template class Grid::Hadrons::MIO::TLoadNersc<GIMPL>;

@@ -53,7 +53,7 @@ template <typename FImpl>
 class TPoint: public Module<PointPar>
 {
 public:
-    FERM_TYPE_ALIASES(FImpl,);
+    BASIC_TYPE_ALIASES(FImpl,);
     SINK_TYPE_ALIASES();
 public:
     // constructor

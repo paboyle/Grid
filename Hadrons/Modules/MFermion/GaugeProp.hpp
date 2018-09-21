@@ -56,7 +56,7 @@ template <typename FImpl>
 class TGaugeProp: public Module<GaugePropPar>
 {
 public:
-    FG_TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
     SOLVER_TYPE_ALIASES(FImpl,);
 public:
     // constructor

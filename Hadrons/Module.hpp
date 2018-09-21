@@ -67,6 +67,12 @@ MODULE_REGISTER(mod, ARG(base), ns);
 #define ARG(...) __VA_ARGS__
 #define MACRO_REDIRECT(arg1, arg2, arg3, macro, ...) macro
 
+#define envCreateGrid(latticeType, Ls)\
+env().template createGrid<typename latticeType::vector_type>(Ls)
+
+#define envGetGrid(latticeType, Ls)\
+env().template getGrid<typename latticeType::vector_type>(Ls)
+
 #define envGet(type, name)\
 *env().template getObject<type>(name)
 
@@ -86,10 +92,10 @@ env().template createObject<type>(name, Environment::Storage::object, Ls, __VA_A
 env().template createDerivedObject<base, type>(name, Environment::Storage::object, Ls, __VA_ARGS__)
 
 #define envCreateLat4(type, name)\
-envCreate(type, name, 1, env().getGrid())
+envCreate(type, name, 1, env().template getGrid<typename type::vector_type>())
 
 #define envCreateLat5(type, name, Ls)\
-envCreate(type, name, Ls, env().getGrid(Ls))
+envCreate(type, name, Ls, env().template getGrid<typename type::vector_type>(Ls))
 
 #define envCreateLat(...)\
 MACRO_REDIRECT(__VA_ARGS__, envCreateLat5, envCreateLat4)(__VA_ARGS__)
@@ -98,10 +104,10 @@ MACRO_REDIRECT(__VA_ARGS__, envCreateLat5, envCreateLat4)(__VA_ARGS__)
 env().template createObject<type>(name, Environment::Storage::cache, Ls, __VA_ARGS__)
 
 #define envCacheLat4(type, name)\
-envCache(type, name, 1, env().getGrid())
+envCache(type, name, 1, env().template getGrid<typename type::vector_type>())
 
 #define envCacheLat5(type, name, Ls)\
-envCache(type, name, Ls, env().getGrid(Ls))
+envCache(type, name, Ls, env().template getGrid<typename type::vector_type>(Ls))
 
 #define envCacheLat(...)\
 MACRO_REDIRECT(__VA_ARGS__, envCacheLat5, envCacheLat4)(__VA_ARGS__)
@@ -111,10 +117,10 @@ env().template createObject<type>(getName() + "_tmp_" + name,         \
                                   Environment::Storage::temporary, Ls, __VA_ARGS__)
 
 #define envTmpLat4(type, name)\
-envTmp(type, name, 1, env().getGrid())
+envTmp(type, name, 1, env().template getGrid<typename type::vector_type>())
 
 #define envTmpLat5(type, name, Ls)\
-envTmp(type, name, Ls, env().getGrid(Ls))
+envTmp(type, name, Ls, env().template getGrid<typename type::vector_type>(Ls))
 
 #define envTmpLat(...)\
 MACRO_REDIRECT(__VA_ARGS__, envTmpLat5, envTmpLat4)(__VA_ARGS__)

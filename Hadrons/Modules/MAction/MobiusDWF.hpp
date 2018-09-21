@@ -56,7 +56,7 @@ template <typename FImpl>
 class TMobiusDWF: public Module<MobiusDWFPar>
 {
 public:
-    FG_TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TMobiusDWF(const std::string name);

@@ -96,8 +96,15 @@ std::vector<std::string> TRandomVectors<Field>::getOutput(void)
 template <typename Field>
 void TRandomVectors<Field>::setup(void)
 {
-    envCreate(std::vector<Field>, getName(), par().Ls, par().size, 
-              env().getGrid(par().Ls));
+    if (par().Ls > 1)
+    {
+        envCreate(std::vector<Field>, getName(), par().Ls, par().size, 
+                  env().getGrid(par().Ls));
+    }
+    else
+    {
+        envCreate(std::vector<Field>, getName(), 1, par().size, env().getGrid());
+    }
 }
 
 // execution ///////////////////////////////////////////////////////////////////

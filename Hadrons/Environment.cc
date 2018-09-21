@@ -45,19 +45,13 @@ Environment::Environment(void)
 {
     dim_         = GridDefaultLatt();
     nd_          = dim_.size();
-    defaultGrid_ = {typeHash<vComplex>(), 1};
-    grid4d_[defaultGrid_].reset(
-        SpaceTimeGrid::makeFourDimGrid(dim_, 
-                                       GridDefaultSimd(nd_, vComplex::Nsimd()),
-                                       GridDefaultMpi()));
-    gridRb4d_[defaultGrid_].reset(
-        SpaceTimeGrid::makeFourDimRedBlackGrid(grid4d_[defaultGrid_].get()));
+    createGrid<vComplex>(1);
     vol_ = 1.;
     for (auto d: dim_)
     {
         vol_ *= d;
     }
-    rng4d_.reset(new GridParallelRNG(grid4d_[defaultGrid_].get()));
+    rng4d_.reset(new GridParallelRNG(getGrid()));
 }
 
 // grids ///////////////////////////////////////////////////////////////////////

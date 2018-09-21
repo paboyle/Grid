@@ -77,7 +77,7 @@ class TMeson: public Module<MesonPar>
 public:
     FERM_TYPE_ALIASES(FImpl1, 1);
     FERM_TYPE_ALIASES(FImpl2, 2);
-    FERM_TYPE_ALIASES(ScalarImplCR, Scalar);
+    BASIC_TYPE_ALIASES(ScalarImplCR, Scalar);
     SINK_TYPE_ALIASES(Scalar);
     class Result: Serializable
     {

@@ -40,8 +40,11 @@ BEGIN_HADRONS_NAMESPACE
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MGauge)
 
+template <typename GImpl>
 class TRandom: public Module<NoPar>
 {
+public:
+    GAUGE_TYPE_ALIASES(GImpl,);
 public:
     // constructor
     TRandom(const std::string name);
@@ -57,7 +60,50 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER(Random, TRandom, MGauge);
+MODULE_REGISTER_TMP(Random, TRandom<GIMPL>, MGauge);
+
+/******************************************************************************
+*                           TRandom implementation                            *
+******************************************************************************/
+// constructor /////////////////////////////////////////////////////////////////
+template <typename GImpl>
+TRandom<GImpl>::TRandom(const std::string name)
+: Module<NoPar>(name)
+{}
+
+// dependencies/products ///////////////////////////////////////////////////////
+template <typename GImpl>
+std::vector<std::string> TRandom<GImpl>::getInput(void)
+{
+    std::vector<std::string> in;
+    
+    return in;
+}
+
+template <typename GImpl>
+std::vector<std::string> TRandom<GImpl>::getOutput(void)
+{
+    std::vector<std::string> out = {getName()};
+    
+    return out;
+}
+
+// setup ///////////////////////////////////////////////////////////////////////
+template <typename GImpl>
+void TRandom<GImpl>::setup(void)
+{
+    envCreateLat(GaugeField, getName());
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename GImpl>
+void TRandom<GImpl>::execute(void)
+{
+    LOG(Message) << "Generating random gauge configuration" << std::endl;
+    
+    auto &U = envGet(GaugeField, getName());
+    GImpl::HotConfiguration(rng4d(), U);
+}
 
 END_MODULE_NAMESPACE
 

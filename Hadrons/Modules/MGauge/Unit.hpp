@@ -40,8 +40,11 @@ BEGIN_HADRONS_NAMESPACE
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MGauge)
 
+template <typename GImpl>
 class TUnit: public Module<NoPar>
 {
+public:
+    GAUGE_TYPE_ALIASES(GImpl,);
 public:
     // constructor
     TUnit(const std::string name);
@@ -57,7 +60,48 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER(Unit, TUnit, MGauge);
+MODULE_REGISTER_TMP(Unit, TUnit<GIMPL>, MGauge);
+
+/******************************************************************************
+*                            TUnit implementation                             *
+******************************************************************************/
+// constructor /////////////////////////////////////////////////////////////////
+template <typename GImpl>
+TUnit<GImpl>::TUnit(const std::string name)
+: Module<NoPar>(name)
+{}
+
+// dependencies/products ///////////////////////////////////////////////////////
+template <typename GImpl>
+std::vector<std::string> TUnit<GImpl>::getInput(void)
+{
+    return std::vector<std::string>();
+}
+
+template <typename GImpl>
+std::vector<std::string> TUnit<GImpl>::getOutput(void)
+{
+    std::vector<std::string> out = {getName()};
+    
+    return out;
+}
+
+// setup ///////////////////////////////////////////////////////////////////////
+template <typename GImpl>
+void TUnit<GImpl>::setup(void)
+{
+    envCreateLat(GaugeField, getName());
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename GImpl>
+void TUnit<GImpl>::execute(void)
+{
+    LOG(Message) << "Creating unit gauge configuration" << std::endl;
+    
+    auto &U = envGet(GaugeField, getName());
+    GImpl::ColdConfiguration(rng4d(), U);
+}
 
 END_MODULE_NAMESPACE
 

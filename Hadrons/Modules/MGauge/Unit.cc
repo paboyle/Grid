@@ -25,45 +25,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-
 #include <Hadrons/Modules/MGauge/Unit.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
 using namespace MGauge;
 
-/******************************************************************************
-*                            TUnit implementation                             *
-******************************************************************************/
-// constructor /////////////////////////////////////////////////////////////////
-TUnit::TUnit(const std::string name)
-: Module<NoPar>(name)
-{}
-
-// dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> TUnit::getInput(void)
-{
-    return std::vector<std::string>();
-}
-
-std::vector<std::string> TUnit::getOutput(void)
-{
-    std::vector<std::string> out = {getName()};
-    
-    return out;
-}
-
-// setup ///////////////////////////////////////////////////////////////////////
-void TUnit::setup(void)
-{
-    envCreateLat(LatticeGaugeField, getName());
-}
-
-// execution ///////////////////////////////////////////////////////////////////
-void TUnit::execute(void)
-{
-    LOG(Message) << "Creating unit gauge configuration" << std::endl;
-    
-    auto &U = envGet(LatticeGaugeField, getName());
-    SU3::ColdConfiguration(rng4d(), U);
-}
+template class Grid::Hadrons::MGauge::TUnit<GIMPL>;
