@@ -85,6 +85,7 @@ public:
         MatrixIo              io;
         A2AMesonFieldMetadata metadata;
         size_t                offset;
+        unsigned int          i, j, blockSizei, blockSizej;
     };
 public:
     // constructor
@@ -100,9 +101,9 @@ public:
     virtual void execute(void);
 private:
     // IO
-    std::string ioname(unsigned int m, unsigned int g) const;
-    std::string filename(unsigned int m, unsigned int g) const;
-    void saveBlock(const MF_IO_TYPE *data, IoHelper &h, unsigned int i, unsigned int j);
+    std::string ioname(const unsigned int m, const unsigned int g) const;
+    std::string filename(const unsigned int m, const unsigned int g) const;
+    void saveBlock(const MF_IO_TYPE *data, IoHelper &h);
 private:
     bool                                               hasPhase_{false};
     std::string                                        momphName_;
@@ -350,19 +351,23 @@ void TA2AMesonField<FImpl>::execute(void)
                 const unsigned int    m = f/ngamma, g = f % ngamma;
                 IoHelper              h;
 
-                h.io = MatrixIo(filename(m, g), ioname(m, g), nt, N_i, N_j, block);
+                h.io = MatrixIo(filename(m, g), ioname(m, g), nt, N_i, N_j);
                 for (auto pmu: mom_[m])
                 {
                     h.metadata.momentum.push_back(pmu);
                 }
                 h.metadata.gamma = gamma_[g];
-                h.offset         = (m*ngamma + g)*nt*block*block;
+                h.i              = i;
+                h.j              = j;
+                h.blockSizei     = mfBlock.dimension(3);
+                h.blockSizej     = mfBlock.dimension(4);
+                h.offset         = (m*ngamma + g)*nt*h.blockSizei*h.blockSizej;
                 nodeIo_.push_back(h);
             }
             // parallel IO
             for (auto &h: nodeIo_)
             {
-                saveBlock(mfBlock.data(), h, i, j);
+                saveBlock(mfBlock.data(), h);
             }
             env().getGrid()->Barrier();
 #else
@@ -372,14 +377,18 @@ void TA2AMesonField<FImpl>::execute(void)
             {
                 IoHelper h;
 
-                h.io = MatrixIo(filename(m, g), ioname(m, g), nt, N_i, N_j, block);
+                h.io = MatrixIo(filename(m, g), ioname(m, g), nt, N_i, N_j);
                 for (auto pmu: mom_[m])
                 {
                     h.metadata.momentum.push_back(pmu);
                 }
                 h.metadata.gamma = gamma_[g];
-                h.offset         = (m*ngamma + g)*nt*block*block;
-                saveBlock(mfBlock.data(), h, i, j);
+                h.i              = i;
+                h.j              = j;
+                h.blockSizei     = mfBlock.dimension(3);
+                h.blockSizej     = mfBlock.dimension(4);
+                h.offset         = (m*ngamma + g)*nt*h.blockSizei*h.blockSizej;
+                saveBlock(mfBlock.data(), h);
             }
 #endif
             stopTimer("IO: total");
@@ -416,17 +425,16 @@ std::string TA2AMesonField<FImpl>::filename(unsigned int m, unsigned int g) cons
 }
 
 template <typename FImpl>
-void TA2AMesonField<FImpl>::saveBlock(const MF_IO_TYPE *data, IoHelper &h, 
-                                      unsigned int i, unsigned int j)
+void TA2AMesonField<FImpl>::saveBlock(const MF_IO_TYPE *data, IoHelper &h)
 {
-    if ((i == 0) and (j == 0))
+    if ((h.i == 0) and (h.j == 0))
     {
         startTimer("IO: file creation");
-        h.io.initFile(h.metadata);
+        h.io.initFile(h.metadata, par().block);
         stopTimer("IO: file creation");
     }
     startTimer("IO: write block");
-    h.io.saveBlock(data + h.offset, i, j);
+    h.io.saveBlock(data + h.offset, h.i, h.j, h.blockSizei, h.blockSizej);
     stopTimer("IO: write block");
 }
 

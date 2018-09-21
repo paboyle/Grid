@@ -39,13 +39,14 @@ public:
     A2AMatrixIo(void) = default;
     A2AMatrixIo(std::string filename, std::string dataname, 
                 const unsigned int nt, const unsigned int ni,
-                const unsigned int nj, const unsigned int blockSize);
+                const unsigned int nj);
     ~A2AMatrixIo(void) = default;
-    void initFile(const MetadataType &d);
-    void saveBlock(const T *data, const unsigned int i, const unsigned int j);
+    void initFile(const MetadataType &d, const unsigned int chunkSize);
+    void saveBlock(const T *data, const unsigned int i, const unsigned int j,
+                   const unsigned int blockSizei, const unsigned int blockSizej);
 private:
     std::string  filename_, dataname_;
-    unsigned int nt_, ni_, nj_, blockSize_;
+    unsigned int nt_, ni_, nj_;
 };
 
 template <typename T, typename MetadataType>
@@ -53,22 +54,21 @@ A2AMatrixIo<T, MetadataType>::A2AMatrixIo(std::string filename,
                                           std::string dataname, 
                                           const unsigned int nt, 
                                           const unsigned int ni,
-                                          const unsigned int nj,
-                                          const unsigned int blockSize)
+                                          const unsigned int nj)
 : filename_(filename), dataname_(dataname)
-, nt_(nt), ni_(ni), nj_(nj), blockSize_(blockSize)
+, nt_(nt), ni_(ni), nj_(nj)
 {}
 
 template <typename T, typename MetadataType>
-void A2AMatrixIo<T, MetadataType>::initFile(const MetadataType &d)
+void A2AMatrixIo<T, MetadataType>::initFile(const MetadataType &d, const unsigned int chunkSize)
 {
 #ifdef HAVE_HDF5
     std::vector<hsize_t>    dim = {static_cast<hsize_t>(nt_), 
                                    static_cast<hsize_t>(ni_), 
                                    static_cast<hsize_t>(nj_)},
                             chunk = {static_cast<hsize_t>(nt_), 
-                                     static_cast<hsize_t>(blockSize_), 
-                                     static_cast<hsize_t>(blockSize_)};
+                                     static_cast<hsize_t>(chunkSize), 
+                                     static_cast<hsize_t>(chunkSize)};
     H5NS::DataSpace         dataspace(dim.size(), dim.data());
     H5NS::DataSet           dataset;
     H5NS::DSetCreatPropList plist;
@@ -94,11 +94,13 @@ void A2AMatrixIo<T, MetadataType>::initFile(const MetadataType &d)
 template <typename T, typename MetadataType>
 void A2AMatrixIo<T, MetadataType>::saveBlock(const T *data, 
                                              const unsigned int i, 
-                                             const unsigned int j)
+                                             const unsigned int j,
+                                             const unsigned int blockSizei,
+                                             const unsigned int blockSizej)
 {
 #ifdef HAVE_HDF5
     Hdf5Reader           reader(filename_);
-    std::vector<hsize_t> count = {nt_, blockSize_, blockSize_},
+    std::vector<hsize_t> count = {nt_, blockSizei, blockSizej},
                          offset = {0, static_cast<hsize_t>(i),
                                    static_cast<hsize_t>(j)},
                          stride = {1, 1, 1},
