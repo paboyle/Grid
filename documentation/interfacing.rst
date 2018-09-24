@@ -10,7 +10,7 @@ examples.
 
 	  
 MPI initialization
-------------------
+--------------------
 
 Grid supports threaded MPI sends and receives and, if running with
 more than one thread, requires the MPI_THREAD_MULTIPLE mode of message
@@ -21,7 +21,7 @@ appropriate initialization call is::
   assert(MPI_THREAD_MULTIPLE == provided);
 
 Grid Initialization
--------------------
+---------------------
 
 Grid itself is initialized with a call::
 
@@ -38,12 +38,14 @@ The following Grid procedures are useful for verifying that Grid is
 properly initialized.
 
 =============================================================   ===========================================================================================================
-  Grid procedure                                                returns 
+  Grid procedure                                                  returns 
 =============================================================   ===========================================================================================================
-  std::vector<int> GridDefaultLatt();                           lattice size
-  std::vector<int> GridDefaultSimd(int Nd,vComplex::Nsimd());   SIMD layout
-  std::vector<int> GridDefaultMpi();                            MPI layout
-  int Grid::GridThread::GetThreads();                           number of threads
+  std::vector<int> GridDefaultLatt();                            lattice size
+  std::vector<int> GridDefaultSimd(int Nd,vComplex::Nsimd());    SIMD layout
+  std::vector<int> GridDefaultMpi();                             MPI layout
+  int Grid::GridThread::GetThreads();                            number of threads
+=============================================================   ===========================================================================================================
+
 
 MPI coordination
 ----------------
@@ -96,7 +98,7 @@ returns a rank that agrees with Grid's `peRank`.
 
   
 Mapping fields between Grid and user layouts
--------------------------------------------
+---------------------------------------------
 
 In order to map data between layouts, it is important to know
 how the lattice sites are distributed across the processor grid.  A
@@ -177,15 +179,15 @@ Grid 5D fermion field `cv5`.
 
 **Example**::
 
-  GridCartesian * UGrid = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt();
-  GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid)  typename ImprovedStaggeredFermion5D::FermionField  cv5(FrbGrid);
+    GridCartesian * UGrid = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt();
+    GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid)  typename ImprovedStaggeredFermion5D::FermionField  cv5(FrbGrid);
 
-  std::vector<int> r(4);
-  indexToCoords(idx,r);
-  std::vector<int> r5(1,0);
-  for( int d = 0; d < 4; d++ ) r5.push_back(r[d]);
+    std::vector<int> r(4);
+    indexToCoords(idx,r);
+    std::vector<int> r5(1,0);
+    for( int d = 0; d < 4; d++ ) r5.push_back(r[d]);
 
-  for( int j = 0; j < Ls; j++ ){
+    for( int j = 0; j < Ls; j++ ){
       r5[0] = j;
       ColourVector cVec;
       for(int col=0; col<Nc; col++){
@@ -193,5 +195,5 @@ Grid 5D fermion field `cv5`.
 	      Complex(src[j][idx].c[col].real, src[j][idx].c[col].imag);
       }
       pokeLocalSite(cVec, *(out->cv), r5);
-  }
+    }
 
