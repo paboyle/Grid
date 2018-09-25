@@ -3189,7 +3189,127 @@ The exact one flavour algorithm for Domain Wall Fermions is present but is not d
 HMC
 =========================================
 
-.. todo:: CD: The whole section needs to be completed, of course
+There are a large number of examples under tests/hmc/
+
+The most important data structure associated with (R)HMC describes the action
+and integration scheme.
+
+The action is a sum of terms, possibly with nested timesteps.
+
+This is assembled in an ActionSet object (qcd/action/ActionSet.h).
+The timesteps are managed by Levels. The ActionSet object maintains a list
+of ActionLevel objects::
+
+  // Define the ActionSet
+  template <class GaugeField, class R>
+  using ActionSet = std::vector<ActionLevel<GaugeField, R> >;
+
+Each ActionLevel is associated with each level of the
+nested integration scheme, schematically::
+
+  template <class Field>
+  struct ActionLevel {
+  public:
+    unsigned int multiplier;
+    // Fundamental repr actions separated because of the smearing
+    typedef Action<Field>* ActPtr;
+    std::vector<ActPtr>& actions;
+  }
+
+The outer loop, running MD trajectories, Metropolis steps, saving and restoring configurations
+is generic and managed by a "Runner" class..
+
+There are a number of possible integrators: LeapFrog, MinimumNorm2, ForceGradient
+
+These are a template parameter to the HMCRunner class. We will take as an example Test_hmc_EODWFRatio.cc::
+
+  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
+
+The test defines the Fermion action and Gauge action
+
+  typedef WilsonImplR FermionImplPolicy;
+  typedef DomainWallFermionR FermionAction;
+  typedef typename FermionAction::FermionField FermionField;
+  HMCWrapper TheHMC;
+
+The HMC runner is given the Grid information (lifted from standard Grid --grid Lx.Ly.Lz.Lt command line)::
+
+  TheHMC.Resources.AddFourDimGrid("gauge");
+
+The checkpointing strategy is defined::
+
+  // Checkpointer definition
+  CheckpointerParameters CPparams;  
+  CPparams.config_prefix = "ckpoint_EODWF_lat";
+  CPparams.rng_prefix = "ckpoint_EODWF_rng";
+  CPparams.saveInterval = 5;
+  CPparams.format = "IEEE64BIG";
+  
+  TheHMC.Resources.LoadNerscCheckpointer(CPparams);
+
+.. todo::  HOW TO resume from saved RNGs. Guido changed this.
+
+Random number generators are seeded::
+
+  RNGModuleParameters RNGpar;
+  RNGpar.serial_seeds = "1 2 3 4 5";
+  RNGpar.parallel_seeds = "6 7 8 9 10";
+  TheHMC.Resources.SetRNGSeeds(RNGpar);
+
+Observables measured at the end of the trajectory can be registered::
+
+  // Construct observables
+  // here there is too much indirection 
+  typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
+  TheHMC.Resources.AddObservable<PlaqObs>();
+
+The action must be defined::
+
+  RealD beta = 5.6 ;
+  WilsonGaugeActionR Waction(beta);
+
+  const int Ls = 8;
+  auto GridPtr   = TheHMC.Resources.GetCartesian();
+  auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
+  auto FGrid     = SpaceTimeGrid::makeFiveDimGrid(Ls,GridPtr);
+  auto FrbGrid   = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,GridPtr);
+
+  LatticeGaugeField U(GridPtr);
+
+  Real mass = 0.04;
+  Real pv   = 1.0;
+  RealD M5  = 1.5;
+
+  FermionAction DenOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,mass,M5);
+  FermionAction NumOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,pv,  M5);
+
+  double StoppingCondition = 1.0e-8;
+  double MaxCGIterations = 10000;
+  ConjugateGradient<FermionField>  CG(StoppingCondition,MaxCGIterations);
+  TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> Nf2(NumOp, DenOp,CG,CG);
+
+    // Set smearing (true/false), default: false
+  Nf2.is_smeared = false;
+
+  // Collect actions
+  ActionLevel<HMCWrapper::Field> Level1(1);
+  Level1.push_back(&Nf2);
+
+  ActionLevel<HMCWrapper::Field> Level2(4);
+  Level2.push_back(&Waction);
+
+  TheHMC.TheAction.push_back(Level1);
+  TheHMC.TheAction.push_back(Level2);
+
+And the HMC can be setup and run::
+
+  TheHMC.Parameters.MD.MDsteps = 20;
+  TheHMC.Parameters.MD.trajL   = 1.0;
+  TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
+
+  TheHMC.Run();  // no smearing
+
+This puts together the pieces of the previous sections (actions, Fermion operators, solver algorithms etc...) into a full application.
 
 Development of the internals
 ========================================
