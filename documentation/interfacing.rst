@@ -191,7 +191,7 @@ there to the lattice colour-vector field `cv`, as defined above.
   indexToCoords(idx,r);
   ColourVector cVec;
   for(int col=0; col<Nc; col++)
-      cVec._internal._internal._internal[col] = 
+      cVec()()(col) = 
           Complex(src[idx].c[col].real, src[idx].c[col].imag);
 
   pokeLocalSite(cVec, cv, r);
@@ -224,7 +224,7 @@ Grid 5D fermion field `cv5`.
       r5[0] = j;
       ColourVector cVec;
       for(int col=0; col<Nc; col++){
-	  cVec._internal._internal._internal[col] = 
+	  cVec()()(col) = 
 	      Complex(src[j][idx].c[col].real, src[j][idx].c[col].imag);
       }
       pokeLocalSite(cVec, *(out->cv), r5);
