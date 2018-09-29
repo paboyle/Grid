@@ -10,7 +10,7 @@ examples.
 
 	  
 MPI initialization
-------------------
+--------------------
 
 Grid supports threaded MPI sends and receives and, if running with
 more than one thread, requires the MPI_THREAD_MULTIPLE mode of message
@@ -21,39 +21,46 @@ appropriate initialization call is::
   assert(MPI_THREAD_MULTIPLE == provided);
 
 Grid Initialization
--------------------
+---------------------
 
 Grid itself is initialized with a call::
 
   Grid_init(&argc, &argv);
 
-.. todo:: CD: Where are the command-line arguments explained above?
-	  
+Command line options include::
+
+  --mpi n.n.n.n   : default MPI decomposition
+  --threads n     : default number of OMP threads
+  --grid n.n.n.n  : default Grid size
+  
 where `argc` and `argv` are constructed to simulate the command-line
-options described above.  At a minimum one must provide the `--grid`
-and `--mpi` parameters.  The latter specifies the grid of processors
-(MPI ranks).
+options described above.  At a minimum one usually provides the
+`--grid` and `--mpi` parameters.  The former specifies the lattice
+dimensions and the latter specifies the grid of processors (MPI
+ranks).  If these parameters are not specified with the `Grid_init`
+call, they need to be supplied later when creating Grid fields.
 
-The following Grid procedures are useful for verifying that Grid is
-properly initialized.
+The following Grid procedures are useful for verifying that Grid
+"default" values are properly initialized.
 
 =============================================================   ===========================================================================================================
-  Grid procedure                                                returns 
+  Grid procedure                                                  returns 
 =============================================================   ===========================================================================================================
-  std::vector<int> GridDefaultLatt();                           lattice size
-  std::vector<int> GridDefaultSimd(int Nd,vComplex::Nsimd());   SIMD layout
-  std::vector<int> GridDefaultMpi();                            MPI layout
-  int Grid::GridThread::GetThreads();                           number of threads
+  std::vector<int> GridDefaultLatt();                            lattice size
+  std::vector<int> GridDefaultSimd(int Nd,vComplex::Nsimd());    SIMD layout
+  std::vector<int> GridDefaultMpi();                             MPI layout
+  int Grid::GridThread::GetThreads();                            number of threads
+=============================================================   ===========================================================================================================
+
 
 MPI coordination
 ----------------
 
 Grid wants to use its own numbering of MPI ranks and its own
 assignment of the lattice coordinates with each rank.  Obviously, the
-calling program and Grid must agree on these conventions.  It is
-convenient to use Grid's Cartesian communicator class to discover the
-processor assignments. For a four-dimensional processor grid one can
-define::
+calling program and Grid must agree on these conventions.  One should
+use Grid's Cartesian communicator class to discover the processor
+assignments. For a four-dimensional processor grid one can define::
 
   static Grid::CartesianCommunicator *grid_cart = NULL;
   grid_cart = new Grid::CartesianCommunicator(processors);
@@ -94,14 +101,38 @@ index number of the subcommunicator.  Once this is done,::
 
 returns a rank that agrees with Grid's `peRank`.
 
+QMP coordination
+----------------
+
+If the calling program uses the SciDAC QMP message-passing package, a
+call to QMP_comm_split() instead can be used to reassign the ranks.
+In the example below, `peGrid` gives the processor-grid dimensions,
+usually set on the command line with `-qmp-geom`.
+
+**Example**::
+  
+  int NDIM = QMP_get_allocated_number_of_dimensions();
+  Grid::Grid_init(argc,argv);
+  FgridBase::grid_initted=true;
+  std::vector<int> processors;
+  for(int i=0;i<NDIM;i++) processors.push_back(peGrid[i]);
+  Grid::CartesianCommunicator grid_cart(processors);
+  std::vector<int> pePos(NDIM);
+  for(int i=NDIM-1;i>=0;i--)
+     pePos[i] = grid_cart._processor_coor[i];
+  int peRank = grid_cart->RankFromProcessorCoor(pePos);
+  QMP_comm_split(QMP_comm_get_default(),0,peRank,&qmp_comm);
+  QMP_comm_set_default(qmp_comm);
+
   
 Mapping fields between Grid and user layouts
--------------------------------------------
+---------------------------------------------
 
-In order to map data between layouts, it is important to know
-how the lattice sites are distributed across the processor grid.  A
-lattice site with coordinates `r[mu]` is assigned to the processor with
-processor coordinates `pePos[mu]` according to the rule::
+In order to map data between calling-program and Grid layouts, it is
+important to know how the lattice sites are distributed across the
+processor grid.  A lattice site with coordinates `r[mu]` is assigned
+to the processor with processor coordinates `pePos[mu]` according to
+the rule::
 
   pePos[mu] = r[mu]/dim[mu]
 
@@ -116,7 +147,7 @@ defined on the appropriate grid, whether it be a full lattice (4D
 `GridCartesian`), one of the checkerboards (4D
 `GridRedBlackCartesian`), a five-dimensional full grid (5D
 `GridCartesian`), or a five-dimensional checkerboard (5D
-`GridRedBlackCartesian`).  For example, an improved staggered fermion
+`GridRedBlackCartesian`).  For example, an improved staggered-fermion
 color-vector field `cv` on a single checkerboard would be constructed
 using
 
@@ -131,12 +162,16 @@ using
 
   typename ImprovedStaggeredFermion::FermionField  cv(RBGrid);
 
-To map data within an MPI rank, the external code must iterate over
-the sites belonging to that rank (full or checkerboard as
-appropriate).  To import data into Grid, the external data on a single
-site with coordinates `r` is first copied into the appropriate Grid
-scalar object `s`.  Then it is copied into the Grid lattice field `l`
-with `pokeLocalSite`::
+The example above assumes that the grid default values were set in the
+`Grid_init` call.  If not, they can be set at this point and passed
+when `GridCartesian` is instantiated here.  To map data within an MPI
+rank, the external code must iterate over the sites belonging to that
+rank (full or checkerboard as appropriate).  Note that the site
+coordinates are specified relative to the origin of the lattice
+subvolume on that rank. To import data into Grid, the external data on
+a single site with coordinates `r` is first copied into the
+appropriate Grid scalar object `s`.  Then it is copied into the Grid
+lattice field `l` with `pokeLocalSite`::
 
   pokeLocalSite(const sobj &s, Lattice<vobj> &l, Coordinate &r);
 
@@ -156,7 +191,7 @@ there to the lattice colour-vector field `cv`, as defined above.
   indexToCoords(idx,r);
   ColourVector cVec;
   for(int col=0; col<Nc; col++)
-      cVec._internal._internal._internal[col] = 
+      cVec()()(col) = 
           Complex(src[idx].c[col].real, src[idx].c[col].imag);
 
   pokeLocalSite(cVec, cv, r);
@@ -177,21 +212,21 @@ Grid 5D fermion field `cv5`.
 
 **Example**::
 
-  GridCartesian * UGrid = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt();
-  GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid)  typename ImprovedStaggeredFermion5D::FermionField  cv5(FrbGrid);
+    GridCartesian * UGrid = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt();
+    GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid)  typename ImprovedStaggeredFermion5D::FermionField  cv5(FrbGrid);
 
-  std::vector<int> r(4);
-  indexToCoords(idx,r);
-  std::vector<int> r5(1,0);
-  for( int d = 0; d < 4; d++ ) r5.push_back(r[d]);
+    std::vector<int> r(4);
+    indexToCoords(idx,r);
+    std::vector<int> r5(1,0);
+    for( int d = 0; d < 4; d++ ) r5.push_back(r[d]);
 
-  for( int j = 0; j < Ls; j++ ){
+    for( int j = 0; j < Ls; j++ ){
       r5[0] = j;
       ColourVector cVec;
       for(int col=0; col<Nc; col++){
-	  cVec._internal._internal._internal[col] = 
+	  cVec()()(col) = 
 	      Complex(src[j][idx].c[col].real, src[j][idx].c[col].imag);
       }
       pokeLocalSite(cVec, *(out->cv), r5);
-  }
+    }
 

@@ -1,5 +1,4 @@
 .. Grid documentation 
-
 .. highlight:: cpp
 
 Welcome to Grid's documentation!
@@ -70,7 +69,7 @@ a programme is simply written as a series of statements, addressing entire latti
 
 Implementation details may be provided to explain how the code works, but are not strictly part of the API.
 
-**Example** 
+**Example**
 
    For example, as an implementation detail, in a single programme multiple data (SPMD) message passing supercomputer the main programme is trivially replicated on each computing node. The data parallel operations are called *collectively* by all nodes. Any scalar values returned by the various reduction routines are the same on each node, resulting in (for example) the same decision being made by all nodes to terminate an iterative solver on the same iteration. 
 
@@ -91,7 +90,8 @@ or any codes directly interacting with the
 
 * Stencil 
 
-will make use of facilities provided by to assist the creation of high performance code. The internal data layout complexities
+will make use of facilities provided by to assist the creation of high performance code. 
+The internal data layout complexities
 will be exposed to some degree and the interfaces are subject to change without notice as HPC architectures change.
 
 Since some of the internal implementation details are needed to explain the design strategy of grid these will be 
@@ -223,36 +223,32 @@ If you want to build all the tests just use `make tests`.
 
 Detailed build configuration options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. todo:: CD: The double dash here gets turned into a pdf long dash. Not good.
 
 ========================================  ==============================================================================================================================
-  Option                                     usage
+ Option                                     usage
 ========================================  ==============================================================================================================================
- `--prefix=<path>`                        installation prefix for Grid.
- `--with-gmp=<path>`                      look for GMP in the UNIX prefix `<path>`
- `--with-mpfr=<path>`                     look for MPFR in the UNIX prefix `<path>`
- `--with-fftw=<path>`                     look for FFTW in the UNIX prefix `<path>`
- `--with-lime=<path>`                     look for c-lime in the UNIX prefix `<path>`
- `--enable-lapack[=<path>]`               enable LAPACK support in Lanczos eigensolver. A UNIX prefix containing the library can be specified (optional).
- `--enable-mkl[=<path>]`                  use Intel MKL for FFT (and LAPACK if enabled) routines. A UNIX prefix containing the library can be specified (optional).
- `--enable-simd=<code>`                   setup Grid for the SIMD target `<code>` (default: `GEN`). A list of possible SIMD targets is detailed in a section below.
- `--enable-gen-simd-width=<size>`         select the size (in bytes) of the generic SIMD vector type (default: 32 bytes).
- `--enable-precision={single|double}`     set the default precision (default: `double`).
- `--enable-precision=<comm>`              use `<comm>` for message passing (default: `none`). A list of possible SIMD targets is detailed in a section below.
- `--enable-rng={sitmo|ranlux48|mt19937}`  choose the RNG (default: `sitmo`).
- `--disable-timers`                       disable system dependent high-resolution timers.
- `--enable-chroma`                        enable Chroma regression tests.
- `--enable-doxygen-doc`                   enable the Doxygen documentation generation (build with `make doxygen-doc`)
+  ``--prefix=path``                           installation prefix for Grid.
+  ``--with-gmp=path``                         look for GMP in the UNIX prefix `<path>`
+ ``--with-mpfr=path``                        look for MPFR in the UNIX prefix `<path>`
+ ``--with-fftw=path``                        look for FFTW in the UNIX prefix `<path>`
+ ``--with-lime=path``                       look for c-lime in the UNIX prefix `<path>`
+ ``--enable-lapack[=path]``                  enable LAPACK support in Lanczos eigensolver. A UNIX prefix containing the library can be specified (optional).
+  --enable-mkl[=path]                     use Intel MKL for FFT (and LAPACK if enabled) routines. A UNIX prefix containing the library can be specified (optional).
+  --enable-simd=code                      setup Grid for the SIMD target `<code>`(default: `GEN`). A list of possible SIMD targets is detailed in a section below.
+  --enable-gen-simd-width=size            select the size (in bytes) of the generic SIMD vector type (default: 32 bytes). E.g. SSE 128 bit corresponds to 16 bytes.
+  --enable-precision=single|double        set the default precision (default: `double`).
+  --enable-comms=mpi|none                 use `<comm>` for message passing (default: `none`).
+  --enable-rng=sitmo|ranlux48|mt19937     choose the RNG (default: `sitmo`).
+  --disable-timers                        disable system dependent high-resolution timers.
+  --enable-chroma                         enable Chroma regression tests.
+  --enable-doxygen-doc                    enable the Doxygen documentation generation (build with `make doxygen-doc`)
 ========================================  ==============================================================================================================================
-
-.. todo:: CD: Somewhere, please provide more explanation of the --enable--gen-simd-width value
-.. todo:: CD: Are there really two --enable-precision lines?
 
 
 Possible communication interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following options can be use with the `--enable-comms=` option to target different communication interfaces:
+The following options can be use with the `-\\-enable-comms=` option to target different communication interfaces:
 
 ===============    ==========================================================================================
  <comm>            Description            
@@ -264,14 +260,11 @@ The following options can be use with the `--enable-comms=` option to target dif
 
 For the MPI interfaces the optional `-auto` suffix instructs the `configure` scripts to determine all the necessary compilation and linking flags. This is done by extracting the informations from the MPI wrapper specified in the environment variable `MPICXX` (if not specified `configure` will scan though a list of default names). The `-auto` suffix is not supported by the Cray environment wrapper scripts. Use the standard wrappers ( `CXX=CC` ) set up by Cray `PrgEnv` modules instead.  
 
-.. todo:: CD: Later below, there is an "mpi3". Should it be listed and
-          explained here?  Is there an "mpit"?
-
 
 Possible SIMD types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following options can be use with the `--enable-simd=` option to target different SIMD instruction sets:
+The following options can be use with the `-\\-enable-simd=` option to target different SIMD instruction sets:
 
 ============    =====================================================================================================================
   `<simd>`      Description                             
@@ -304,7 +297,7 @@ Notes
   versions of Grid when the AVX512 support in the compiler is more advanced.
 * For BG/Q only [bgclang](http://trac.alcf.anl.gov/projects/llvm-bgq) is supported. We do not presently plan to support more compilers for this platform.
 * BG/Q performances are currently rather poor. This is being investigated for future versions.
-* The vector size for the `GEN` target can be specified with the `configure` script option `--enable-gen-simd-width`.
+* The vector size for the `GEN` target can be specified with the `configure` script option `-\\-enable-gen-simd-width`.
 
 Build setup for Intel Knights Landing platform
 ---------------------------------------------------------------------------------------
@@ -336,12 +329,12 @@ where `<path>` is the UNIX prefix where GMP and MPFR are installed.
 
 Knight's Landing with Intel Omnipath adapters with two adapters per node 
 presently performs better with use of more than one rank per node, using shared memory 
-for interior communication. This is the mpi3 communications implementation. 
+for interior communication.
 We recommend four ranks per node for best performance, but optimum is local volume dependent. ::
 
    ../configure --enable-precision=double\
              --enable-simd=KNL        \
-             --enable-comms=mpi3-auto \
+             --enable-comms=mpi-auto \
              --enable-mkl             \
              CC=icpc MPICXX=mpiicpc 
 
@@ -352,7 +345,7 @@ The following configuration is recommended for the Intel Haswell platform::
 
   ../configure --enable-precision=double\
              --enable-simd=AVX2       \
-             --enable-comms=mpi3-auto \
+             --enable-comms=mpi-auto \
              --enable-mkl             \
              CXX=icpc MPICXX=mpiicpc
 
@@ -369,7 +362,7 @@ If you are working on a Cray machine that does not use the `mpiicpc` wrapper, pl
 
   ../configure --enable-precision=double\
              --enable-simd=AVX2       \
-             --enable-comms=mpi3      \
+             --enable-comms=mpi      \
              --enable-mkl             \
              CXX=CC CC=cc
 
@@ -388,7 +381,7 @@ The following configuration is recommended for the Intel Skylake platform::
 
   ../configure --enable-precision=double\
              --enable-simd=AVX512     \
-             --enable-comms=mpi3      \
+             --enable-comms=mpi      \
              --enable-mkl             \
              CXX=mpiicpc
 
@@ -405,7 +398,7 @@ If you are working on a Cray machine that does not use the `mpiicpc` wrapper, pl
 
   ../configure --enable-precision=double\
              --enable-simd=AVX512     \
-             --enable-comms=mpi3      \
+             --enable-comms=mpi      \
              --enable-mkl             \
              CXX=CC CC=cc
 
@@ -431,7 +424,7 @@ The following configuration is recommended for the AMD EPYC platform::
 
   ../configure --enable-precision=double\
              --enable-simd=AVX2       \
-             --enable-comms=mpi3 \
+             --enable-comms=mpi \
              CXX=mpicxx 
 
 If gmp and mpfr are NOT in standard places (/usr/) these flags may be needed::
@@ -444,12 +437,13 @@ where `<path>` is the UNIX prefix where GMP and MPFR are installed.
 Using MPICH and g++ v4.9.2, best performance can be obtained using explicit GOMP_CPU_AFFINITY flags for each MPI rank.
 This can be done by invoking MPI on a wrapper script omp_bind.sh to handle this. 
 
-It is recommended to run 8 MPI ranks on a single dual socket AMD EPYC, with 8 threads per rank using MPI3 and
-shared memory to communicate within this node::
+It is recommended to run 8 MPI ranks on a single dual socket AMD EPYC, with 8 threads per rank using MPI and
+shared memory to communicate within this 
+
+.. describe::  command line
 
   mpirun -np 8 ./omp_bind.sh ./Benchmark_dwf --mpi 2.2.2.1 --dslash-unroll --threads 8 --grid 16.16.16.16 --cacheblocking 4.4.4.4 
 
-.. todo:: CD: Maybe need bash highlighting, not cpp below - Generates warning
 	  
 Where omp_bind.sh does the following::
 
@@ -562,9 +556,8 @@ scalar matrix and vector classes::
 
     template<class vobj      > class iScalar { private: vobj _internal ; } 
     template<class vobj,int N> class iVector { private: vobj _internal[N] ; } 
-    template<class vobj,int N> class iMatrix { private: vobj _internal[N] ; }
+    template<class vobj,int N> class iMatrix { private: vobj _internal[N][N] ; }
 
-.. todo:: CD: Why is iMatrix only [N] and not [N][N]?
 
 These are template classes and can be passed a fundamental scalar or vector type, or
 nested to form arbitrarily complicated tensor products of indices. All mathematical expressions
@@ -586,10 +579,27 @@ For Lattice field theory, we define types according to the following tensor
 product structure ordering. The suffix "D" indicates either double types, and
 replacing with "F" gives the corresponding single precision type.
 
-.. todo:: CD: The test cases have R, which takes the compiled default.
-	  Do we want to expose that and say something here?
-.. todo:: CD: What is "Lattice" here?  This section is about "iXXX" types.
-	  Maybe say a few more introductory words.
+The test cases have R, which takes the compiled default precision (either F or D).
+This is for convenience only and may be deprecated in future forcing code external
+to Grid to choose the specific word size.
+
+Type definitions are provided in qcd/QCD.h to give the internal index structures
+of QCD codes. For example::
+
+    template<typename vtype> 
+    using iSinglet                   = iScalar<iScalar<iScalar<vtype> > >;
+    using iSpinMatrix                = iScalar<iMatrix<iScalar<vtype>, Ns> >;
+    using iColourMatrix              = iScalar<iScalar<iMatrix<vtype, Nc> > > ;
+    using iSpinColourMatrix          = iScalar<iMatrix<iMatrix<vtype, Nc>, Ns> >;
+    using iLorentzColourMatrix       = iVector<iScalar<iMatrix<vtype, Nc> >, Nd > ;
+    using iDoubleStoredColourMatrix  = iVector<iScalar<iMatrix<vtype, Nc> >, Nds > ;
+    using iSpinVector                = iScalar<iVector<iScalar<vtype>, Ns> >;
+    using iColourVector              = iScalar<iScalar<iVector<vtype, Nc> > >;
+    using iSpinColourVector          = iScalar<iVector<iVector<vtype, Nc>, Ns> >;
+    using iHalfSpinVector            = iScalar<iVector<iScalar<vtype>, Nhs> >;
+    using iHalfSpinColourVector      = iScalar<iVector<iVector<vtype, Nc>, Nhs> >;
+
+Giving the type table:
 
 =======   =======    ======  ======  ===========  =======================
 Lattice   Lorentz    Spin    Colour  scalar_type   Field
@@ -605,16 +615,22 @@ Scalar    Scalar     Matrix  Matrix  ComplexD      SpinColourMatrixD
 
 The types are implemented via a recursive tensor nesting system.
 
-.. todo:: CD: What choices are available for vtype?  Is the "v" for "variable"?
-.. todo:: CD: Should we say iLorentzColourMatrix is a Grid-provided typename?
-	  Is there a list of similar convenience types?
-	  
-**Example** we declare::
+**Example**
 
-  template<typename vtype> 
-  using iLorentzColourMatrix = iVector<iScalar<iMatrix<vtype, Nc> >, Nd > ;
+Here, the prefix "i" indicates for internal use, preserving the template nature of the class. 
+Final types are declared with vtype selected to be both scalar and vector, appropriate to a
+single datum, or stored in a partial SoA transformed lattice object::
 
-  typedef iLorentzColourMatrix<ComplexD > LorentzColourMatrixD;
+
+    // LorentzColour
+    typedef iLorentzColourMatrix<Complex  > LorentzColourMatrix;
+    typedef iLorentzColourMatrix<ComplexF > LorentzColourMatrixF;
+    typedef iLorentzColourMatrix<ComplexD > LorentzColourMatrixD;
+
+    typedef iLorentzColourMatrix<vComplex > vLorentzColourMatrix;
+    typedef iLorentzColourMatrix<vComplexF> vLorentzColourMatrixF;
+    typedef iLorentzColourMatrix<vComplexD> vLorentzColourMatrixD;
+
 
 Arbitrarily deep tensor nests may be formed. Grid uses a positional and numerical rule to associate indices for contraction
 in the Einstein summation sense.
@@ -697,12 +713,6 @@ General code can access any specific index by number with a peek/poke semantic::
    // poke index number "Level" of a matrix index
    template<int Level,class vtype>  
    void pokeIndex (vtype &pokeme,arg,int i,int j) 
-
-.. todo:: CD: The are the choices for "vtype"?
-	  
-.. todo:: CD: The example below does not use the template pair shown
-	  above.  It is good, but perhaps, also show the pair form of
-	  the same example if there is one.
    
 **Example**::
 
@@ -804,9 +814,7 @@ The traceless anti-Hermitian part is taken with::
     template<class vtype,int N> iMatrix<vtype,N> 
     Ta(const iMatrix<vtype,N> &arg)
 
-Reunitarisation (or reorthogonalisation) is enabled by::
-
-.. todo:: CD: U(3) or SU(3) projection?
+SU(N) Reunitarisation (or reorthogonalisation) is enabled by::
   
     template<class vtype,int N> iMatrix<vtype,N> 
     ProjectOnGroup(const iMatrix<vtype,N> &arg)
@@ -977,17 +985,15 @@ Internally, Grid defines a portable abstraction SIMD vectorisation, via the foll
 
 * vComplexD
 
-.. todo:: CD: Maybe say something about how SIMD vectorization works
-	  here.  Does a vRealF collect values for several SIMD lanes
-	  at once?
-  
 These have the usual range of arithmetic operators and functions acting upon them. They do not form
 part of the API, but are mentioned to (partially) explain the need for controlling the
-layout transformation in lattice objects.
+layout transformation in lattice objects. They contain a number consecutive elements of the appropriate
+Real/Complex type, where number is architecture depemendent. The number may be queried at runtime using::
 
+	     vComplexF::Nsimd();
+
+The layout transformations in indexing functions in the Grid objects as completely parameterised by this Nsimd().
 They are documented further in the Internals chapter.
-
-.. todo:: CD: Might they be needed for interfacing with external code?
 
 Coordinates
 ------------
@@ -1016,15 +1022,6 @@ This enables the coordinates to be manipulated without heap allocation or thread
 and avoids introducing STL functions into GPU code, but does so at the expense of introducing
 a maximum dimensionality. This limit is easy to change (lib/util/Coordinate.h).
 
-.. todo:: CD: It would be very useful to explain how the communicator
-	  works.  That would include how the processor grid is
-	  organized, how the lattice is subdivided across MPI ranks,
-	  why Grid prefers to renumber the MPI ranks, what coordinates
-	  go with what ranks?  Ordinarily, this is hidden from the
-	  user, but it is important for interfacing with external
-	  code. Some methods and members of the communicator class
-	  need to be "exposed" to make that possible. This might be a
-	  good place for such a subsection?
 
 Grids
 -------------
@@ -1037,9 +1034,6 @@ are decomposed across MPI tasks and SIMD lanes of the vector length.
 We use a partial vectorisation transformation, must select
 which space-time dimensions participate in SIMD vectorisation.
 The Lattice containers are defined to have opaque internal layout, hiding this layout transformation.
-
-.. todo:: CD: The constructor simply defines the layout parameters.
-          It doesn't allocate space, right?  Might be good to say.
 	  
 We define GridCartesian and GridRedBlackCartesian which both inherit from GridBase::
 
@@ -1071,10 +1065,16 @@ The Grid object provides much `internal` functionality to map a lattice site to
 a node and lexicographic index. These are not needed by code interfacing
 to the data parallel layer.
 
-.. todo:: CD: What is specified with "split_rank" above?
-.. todo:: CD: Maybe list the exposed Grid options within the "SpaceTimeGrid"
-          class.
+When the requested processor grid is smaller than the parent's processor grid, multiple copies of the
+same geometry communicator are created, indexed by spli_rank. This can be convenient to split
+a job into multiple independent sub jobs (a long present feature of MPI). It can be particularly
+effective in valence analysis, where for example, many inversions are performed on a single configuration.
+These can be made on smaller communicators in parallel and communications overheads minimised. Routines::
 
+      Grid_split
+      Grid_unsplit
+
+are provided to communicate fields between different communicators (e.g. between inversion and contraction phases).
 
 **Example** (tests/solver/Test_split_grid.cc)::
 
@@ -1110,6 +1110,32 @@ to the data parallel layer.
   GridRedBlackCartesian * SrbGrid  = SpaceTimeGrid::makeFourDimRedBlackGrid(SGrid);
   GridRedBlackCartesian * SFrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,SGrid);
 
+  ///////////////////////////////////////////////////////////////
+  // split the source out using MPI instead of I/O
+  ///////////////////////////////////////////////////////////////
+  Grid_split  (Umu,s_Umu);
+  Grid_split  (src,s_src);
+
+**Internals**
+
+The processor Grid is defined by data values in the Communicator object::
+
+  int              _Nprocessors;     // How many in all
+  std::vector<int> _processors;      // Which dimensions get relayed out over processors lanes.
+  int              _processor;       // linear processor rank
+  std::vector<int> _processor_coor;  // linear processor coordinate
+  unsigned long    _ndimension;
+  Grid_MPI_Comm    communicator;
+
+The final of these is potentially an MPI Cartesian communicator, mapping some total number of processors
+to an N-dimensional coordinate system. This is used by Grid to geometrically decompose the subvolumes of a
+lattice field across processing elements. Grid is aware of multiple ranks per node and attempts to ensure
+that the geometrical decomposition keeps as many neigbours as possible on the same node. This is done
+by reordering the ranks in the constructor of a Communicator object once the topology requested has
+been indicated, via an internal call to the method OptimalCommunicator(). The reordering is chosen
+by Grid to trick MPI, which makes a simple lexicographic assignment of ranks to coordinate, to ensure
+that the simple lexicographic assignment of the reordered ranks is the optimal choice. MPI does not do this
+by default and substantial improvements arise from this design choice.
 
 Lattice containers
 -----------------------------------------
@@ -1137,6 +1163,7 @@ The full range of QCD relevant lattice objects is given below.
 =======  =======    ======  ======  ===========  =============================   =====================
 Lattice  Lorentz    Spin    Colour  scalar_type   Field                            Synonym
 =======  =======    ======  ======  ===========  =============================   =====================
+Vector   Scalar     Scalar  Scalar  Integer       LatticeInteger                 N/A
 Vector   Scalar     Scalar  Scalar  RealD         LatticeRealD                   N/A
 Vector   Scalar     Scalar  Scalar  ComplexD      LatticeComplexD                N/A
 Vector   Scalar     Scalar  Matrix  ComplexD      LatticeColourMatrixD           LatticeGaugeLink
@@ -1148,10 +1175,7 @@ Vector   Scalar     Matrix  Matrix  ComplexD      LatticeSpinColourMatrixD      
 
 Additional single precison variants are defined with the suffix "F".
 Other lattice objects can be defined using the sort of typedef's shown above if needed.
-
-.. todo:: CD: Are there others to expose, such as LatticeInteger,
-          LatticeFermionD, LatticeGaugeFieldD, LatticePropagatorD,
-          etc?  If so, could this list be made complete?
+LatticeInteger is typically only used in the form of predicate fields for where statements.
 
 Opaque containers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1167,7 +1191,8 @@ are provided (lib/lattice/Lattice_transfer.h)::
     unvectorizeToLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in);
     vectorizeFromLexOrdArray(std::vector<sobj> &in , Lattice<vobj> &out);
 
-.. todo:: CD: Explain the choices for sobj and vobj.
+sobj and vobj should be a matching pair of scalar and vector objects of the same internal structure.
+The compiler will let you know with a long and verbose complaint if they are not.
 	  
 The Lexicographic order of data in the external vector fields is defined by (lib/util/Lexicographic.h)::
 
@@ -1203,9 +1228,6 @@ peeking and poking specific indices in a data parallel manner::
 
     template<int Index,class vobj>   // Matrix poke
     void PokeIndex(Lattice<vobj> &lhs,const Lattice<> & rhs,int i,int j)
-
-.. todo:: CD: Maybe mention that these match operations with scalar
-          objects, as listed above under "Internal index manipulation."
   
 The inconsistent capitalisation on the letter P is due to an obscure bug in g++ that has not to
 our knowledge been fixed in any version. The bug was reported in 2016.
@@ -1363,7 +1385,7 @@ Logical are defined on LatticeInteger types::
   operator||
 
 
-Ternary operator, logical operatons and where
+Ternary operator, logical operations and where
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Within the data parallel level of the API the only way to perform operations
@@ -1400,9 +1422,12 @@ A usage example is given
 	
 	result = where(mod(coor,block)==(block-1),x,z);
 
-.. todo:: CD: A few words motivating this example?
+This example takes result to be either "x" or "z" in a coordinate dependent way. 
+When third (z) lattice coordinate lies at the boundaries of a block size (periodic arithmetic).
+This example is lifted and paraphrased from code that (data parallel) evaluates matrix elements
+for a coarse representation of the Dirac operator in multigrid.
 	  
-(Other usage cases of LatticeCoordinate include the generation of plane wave momentum phases.)
+Other usage cases of LatticeCoordinate include the generation of plane wave momentum phases.
 
 Site local fused operations
 ------------------------------------------
@@ -1470,7 +1495,16 @@ accelerator_loops
 
 The second parallel primitive is the "accelerator_loop".
 
-.. todo:: CD: What is the difference between these two loops?
+The thread loop runs on host processor cores only. If the enabled architecture is 
+VGPU, if Grid is configured with 
+
+	 --enable-simd=VGPU, 
+
+the acccelerator_loop may run on a GPU if present. On non-accelerated architectures,
+the accelerator_loop will simply run as a an OpenMP thread_loop.
+
+It is planned to support multiple forms of acccelerator in future, including OpenMP 5.0 offload,
+and possibly SyCL based offload.
 
 
 **Example**::
@@ -1532,50 +1566,6 @@ lattice site :math:`x_\mu = 1` in the rhs to :math:`x_\mu = 0` in the result.
   }
 
 
-CovariantCshift 
-^^^^^^^^^^^^^^^^^^^^
-
-Covariant Cshift operations are provided for common cases of the boundary condition. These may be further optimised
-in future::
-
-  template<class covariant,class gauge> 
-  Lattice<covariant> CovShiftForward(const Lattice<gauge> &Link, int mu,
-			   	     const Lattice<covariant> &field);
-
-  template<class covariant,class gauge> 
-  Lattice<covariant> CovShiftBackward(const Lattice<gauge> &Link, int mu,
-			              const Lattice<covariant> &field);
-
-Boundary conditions
-^^^^^^^^^^^^^^^^^^^^
-
-The covariant shift routines occur in namespaces PeriodicBC and ConjugateBC. The correct covariant shift
-for the boundary condition is passed into the gauge actions and wilson loops via an
-"Impl" template policy class.
-
-The relevant staples, plaquettes, and loops are formed by using the provided method::
-
-    Impl::CovShiftForward
-    Impl::CovShiftBackward
-
-etc... This makes physics code transform appropriately with externally supplied rules about
-treating the boundary.
-
-**Example** (lib/qcd/util/WilsonLoops.h)::
-
-  static void dirPlaquette(GaugeMat &plaq, const std::vector<GaugeMat> &U,
-                           const int mu, const int nu) {
-    // ___
-    //|   |
-    //|<__|
-    plaq = Gimpl::CovShiftForward(U[mu],mu,
-                    Gimpl::CovShiftForward(U[nu],nu,
-			Gimpl::CovShiftBackward(U[mu],mu,
-			   Gimpl::CovShiftIdentityBackward(U[nu], nu))));
-  }
-
-.. todo:: CD: This example uses Gimpl instead of Impl.  What is the
-          difference, and what are the exposed choices for Impl?
 
 
 Inter-grid transfer operations
@@ -1649,11 +1639,6 @@ Growing a lattice by a multiple factor, with periodic replication::
 That latter is useful to, for example, pre-thermalise a smaller volume and then grow the volume in HMC.
 It was written while debugging G-parity boundary conditions.
 
-Input/Output facilities
----------------------------------------------
-
-
-
 
 Random number generators
 =========================================
@@ -1687,18 +1672,32 @@ The interface is as follows::
   class GridSerialRNG { 
     GridSerialRNG();
     void SeedFixedIntegers(const std::vector<int> &seeds);
+    void SeedUniqueString(const std::string &s);
   }
 
   class GridParallelRNG {
     GridParallelRNG(GridBase *grid);
     void SeedFixedIntegers(const std::vector<int> &seeds);
+    void SeedUniqueString(const std::string &s);
   }
 
-  template <class vobj> void random(GridParallelRNG &rng,Lattice<vobj> &l)   { rng.fill(l,rng._uniform);  }
-  template <class vobj> void gaussian(GridParallelRNG &rng,Lattice<vobj> &l) { rng.fill(l,rng._gaussian); }
+* Seeding 
 
-  template <class sobj> void random(GridSerialRNG &rng,sobj &l)   { rng.fill(l,rng._uniform  ); }
-  template <class sobj> void gaussian(GridSerialRNG &rng,sobj &l) { rng.fill(l,rng._gaussian ); }
+The SeedUniqueString uses a 256bit SHA from the OpenSSL library to construct integer seeds.
+The reason for this is to enable reproducible seeding in the measurement sector of physics codes.
+For example, labelling a random drawn by a string representation the physics information, and the
+appending trajectory number will give a unique set of seeds for each measurement on each trajectory.
+This string based functionality is probably not expected to be used in a lattice evolution, except for
+possibly the initial state. Subsequent evolution should checkpoint and restore lattice RNG state using
+the interfaces below.
+
+These may be drawn as follows::
+
+  void random(GridParallelRNG &rng,Lattice<vobj> &l)   { rng.fill(l,rng._uniform);  }
+  void gaussian(GridParallelRNG &rng,Lattice<vobj> &l) { rng.fill(l,rng._gaussian); }
+
+  void random(GridSerialRNG &rng,sobj &l)   { rng.fill(l,rng._uniform  ); }
+  void gaussian(GridSerialRNG &rng,sobj &l) { rng.fill(l,rng._gaussian ); }
 
 * Serial RNG's are used to assign scalar fields. 
 
@@ -1982,7 +1981,7 @@ The routines in this section rely on the c-lime library being enabled in the Gri
 (http://usqcd-software.github.io/c-lime/). The configure script searches for `lime`,
 but the location can be indicated with the 
 
-  `--with-lime=prefix` 
+  `-\\-with-lime=prefix` 
 
 flag. 
 
@@ -2129,25 +2128,28 @@ And a derived class adding methods suitable to red black preconditioning::
     virtual  void MooeeInvDag (const Field &in, Field &out)=0;
   };
 
-=============       ==============================================
+A checkerboard is defined as a parity :math:`(x+y+z+t)|2`, and half checker board operations supported
+for red black preconditioning.
+
+
+=============       ====================================================================
 Member                  Description
-=============       ==============================================
-M 
-Mdag
-MdagM
-Mdiag
-Mdir
-Meooe
-Mooee
-MooeInv
-MeooeDag
-MooeeDag
-MooeeInvDag
-=============       ==============================================
+=============       ====================================================================
+M                    Apply matrix
+Mdag                 Apply matrix adjoint
+MdagM                Apply Matrix then adjoin matrix
+Mdiag                Apply site diagonal part of matrix
+Mdir                 Apply terms involving hopping one direction
+Meooe                Apply even/odd matrix. ResultCB determined by InputCB
+Mooee                Apply site diagonal terms to a CB field
+MooeInv              Apply inverse of site diagonal terms to a CB field
+MeooeDag             Apply adjoint of Meooe
+MooeeDag             Apply adjoint of Mooee
+MooeeInvDag          Apply adjoint inverse of Mooee
+=============       ====================================================================
 
 All Fermion operators will derive from this base class.
 
-.. todo:: CD: Descriptions needed.
 
 Linear Operators
 -------------------
@@ -2160,7 +2162,6 @@ between RB and non-RB variants. Sparse matrix is like the fermion action def, an
 the wrappers implement the specialisation of "Op" and "AdjOp" to the cases minimising
 replication of code.
 
-.. todo:: CD: Descriptions needed below.
 
 **Abstract base**::
 
@@ -2177,20 +2178,20 @@ replication of code.
     virtual void HermOp(const Field &in, Field &out)=0;
   };
 
-==============           ==============================================
+==============           ==========================================================================
 Member                       Description
-==============           ==============================================
-OpDiag
-OpDir
-Op
-AdjOp
-HermOpAndNorm
-HermOp
-==============           ==============================================
+==============           ==========================================================================
+OpDiag                    Diagonal term
+OpDir                     Terms involving hopping in one direction
+Op                        Full operator
+AdjOp                     Full operator adjoint
+HermOp                    A hermitian version of operator (possibly squared)
+HermOpAndNorm             A hermitian version of operator (possibly squared) returns norm result
+==============           ==========================================================================
 
 
-	  MdagMLinearOperator
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+MdagMLinearOperator
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This Linear operator takes a SparseMatrix (Fermion operator) and implements the unpreconditioned
 MdagM operator with the above interface::
@@ -2276,13 +2277,12 @@ The meaning of these different operators is
 =======================       ======================================================================================
 Operator                           Description
 =======================       ======================================================================================
-SchurDiagMooeeeOperator
-SchurDiagOneLH
-SchurDiagOneRH
+SchurDiagMooeeeOperator        :math:`M_{oo} + M_{oe} M_ee^{-1} M_{eo}`
+SchurDiagOneLH                 :math:`1 + M_{oo}^{-1}M_{oe} M_ee^{-1} M_{eo}`
+SchurDiagOneRH                 :math:`1 + M_{oe} M_ee^{-1} M_{eo}M_{oo}^{-1}`
 SchurStaggeredOperator
 =======================       ======================================================================================
 
-.. todo:: CD: Descriptions needed.
 	  
 Operator Functions
 ===================
@@ -2332,10 +2332,18 @@ Audit this::
 Algorithms
 =========================================
 
-.. todo:: CD: The whole section needs to be completed, of course
+In this section we describe a number of algorithmic areas present in the core Grid library.
+
+* Approximation: Chebyshev and Rational
+* Krylov solvers: Conjugate Gradient
+* Eigensolver: Chebyshev preconditioned	Lanczos
+* FFT: multidimensional	 FFT of arbitrary lattice fields
 
 Approximation
 --------------
+
+Both Chebyshev and Rational approximation codes are included.
+
 
 Polynomial
 ^^^^^^^^^^^^^
@@ -2343,110 +2351,965 @@ Polynomial
 
 A polynomial of an operator with a given set of coefficients can be applied::
 
-  template<class Field>
-  class Polynomial : public OperatorFunction<Field> {
-    Polynomial(std::vector<RealD> &_Coeffs) ;
-  };
-
+     template<class Field>                    
+     class Polynomial : public OperatorFunction<Field> { 
+         Polynomial(std::vector<RealD> &_Coeffs) ;       
+     };
 
 Chebyshev
 ^^^^^^^^^^^
 
+Class::
+
+    template<class Field> class Chebyshev : public OperatorFunction<Field> 
+	
+Defines  constructors::
+
+    Chebyshev(ChebyParams p);
+    Chebyshev(RealD _lo,RealD _hi,int _order, RealD (* func)(RealD) );
+    Chebyshev(RealD _lo,RealD _hi,int _order) ;
+
+and methods::
+
+    RealD approx(RealD x);
+
+    void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) ;
+
+This will apply the appropriate polynomial of the LinearOperator Linop to the type Field.
+The coefficient for the standard Chebyshev approximation to an arbitrary function, over tha range
+[hi,lo] can be set up with the appropriate constructor call.
+
 Remez
 ^^^^^^^^^^^
 
-Iterative
-------------
+We adopt the Remez class written by Kate Clark with minimal modifications for compatibility
+
+Class::
+
+   class AlgRemez
+
+
+Iterative solvers and algorithms
+-----------------------------------
+
+We document a number of iterative algorithms of topical relevance to Lattice Gauge theory.
+These are written for application to arbitrary fields and arbitrary operators using type
+templating, by implementating them as arbitrary OperatorFunctions.
+
+Most of these algorithms these algorithms operate on a generic matrix class, which
+derives from LinearOperatorBase.
+
+Linear operators
+^^^^^^^^^^^^^^^^^
+
+By sharing the class for Sparse Matrix across multiple operator wrappers, we can share code
+between RB and non-RB variants. Sparse matrix is an abstract fermion action def, and then
+the LinearOperator wrappers implement the specialisation of "Op" and "AdjOp" to the cases minimising
+replication of code.
+
+algorithms/LinearOperator.h
+
+Class::
+
+    template<class Field> class LinearOperatorBase {
+    public:
+
+      // Support for coarsening to a multigrid
+      virtual void OpDiag (const Field &in, Field &out) = 0; // Abstract base
+      virtual void OpDir  (const Field &in, Field &out,int dir,int disp) = 0; // Abstract base
+
+      virtual void Op     (const Field &in, Field &out) = 0; // Abstract base
+      virtual void AdjOp  (const Field &in, Field &out) = 0; // Abstract base
+      virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2) = 0;
+      virtual void HermOp(const Field &in, Field &out)=0;
+    };
+
+The specific operators are:
+
+    template<class Matrix,class Field>  class MdagMLinearOperator : public LinearOperatorBase<Field> 
+    template<class Matrix,class Field>  class ShiftedMdagMLinearOperator : public LinearOperatorBase<Field> 
+    template<class Matrix,class Field>  class HermitianLinearOperator : public LinearOperatorBase<Field> 
+    template<class Field>               class SchurOperatorBase :  public LinearOperatorBase<Field> 
+    template<class Matrix,class Field>  class SchurDiagOneRH :  public SchurOperatorBase<Field> 
+    template<class Matrix,class Field>  class SchurDiagOneLH :  public SchurOperatorBase<Field> 
+    template<class Matrix,class Field>  class SchurStaggeredOperator :  public SchurOperatorBase<Field> 
+
 
 Conjugate Gradient 
 ^^^^^^^^^^^^^^^^^^^
 
+algorithms/iterative/ConjugateGradient.h
+
+Class::
+
+	   template <class Field>  class ConjugateGradient : public OperatorFunction<Field> 
+
+with methods::
+
+	   ConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true);
+
+           void operator()(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi) ;
+
 Multishift Conjugate Gradient 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-MultiRHS Conjugate Gradient 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+algorithms/iterative/ConjugateGradientMultiShift.h
+
+Class::  template<class Field> class ConjugateGradientMultiShift : public OperatorMultiFunction<Field>, public OperatorFunction<Field>
+
+with methods::
+
+       ConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true);
+
+       void operator()(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi) ;
+
 
 Block Conjugate Gradient 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+algorithms/iterative/BlockConjugateGradient.h
+
+Class::
+
+	 template <class Field> class BlockConjugateGradient : public OperatorFunction<Field> 
+
+Several options are possible. The behaviour is controlled by an enumeration.
+
+Enum:: 
+
+         enum BlockCGtype { BlockCG, BlockCGrQ, CGmultiRHS };
+
+Constructor::
+
+	 BlockConjugateGradient(BlockCGtype cgtype,int _Orthog,RealD tol, Integer maxit, bool err_on_no_conv = true)
+
+With operator::
+
+        void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi) 
+
+
+* CGmultiRHS
+
+
+This applies conjugate gradient to multiple right hand sides concurrently making
+use of a separate Krylov space for each. There is no cross coupling and
+the routine is equivalent to running each of these independently one after the other
+in term of iteration count.
+
+*  BlockCGrQ
+
+This applies block conjugate gradient to multiple right hand sides concurrently making
+use of a shared Krylov space for each. The cross coupling may in some cases lead to
+acceleration of convergence and reduced matrix multiplies for multiple solves.
+
 Mixed precision Conjugate Gradient 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Conjugate Gradient Reliable Update
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Class::
 
-Adef Generic
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    template<class FieldD,class FieldF>  class MixedPrecisionConjugateGradient : public LinearFunction<FieldD> 
 
-Preconditioned Conjugate Gradient
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Applies an inner outer mixed precision Conjagate Gradient. It has constructor::
+
+    MixedPrecisionConjugateGradient(RealD tol, Integer maxinnerit, Integer maxouterit, GridBase* _sp_grid, LinearOperatorBase<FieldF> &_Linop_f, LinearOperatorBase<FieldD> &_Linop_d) :
+
+
+Where the linear operators are for the single precision and double precision operators respectively.
+The operator to apply the inversion is::
+
+    void operator() (const FieldD &src_d_in, FieldD &sol_d){
+
+
 
 Preconditioned Conjugate Residual
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Preconditioned Generalised Conjugate Residual
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Class::
+
+    template<class Field> class PrecConjugateResidual : public OperatorFunction<Field> 
+
+Constructor::
+
+    PrecConjugateResidual(RealD tol,Integer maxit,LinearFunction<Field> &Prec)
+
+
+Solve method::
+
+    void operator() (LinearOperatorBase<Field> &Linop,const Field &src, Field &psi)
+
 
 Implicitly restarted Lanczos
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Helpers and wrappers
-----------------------
+Class::
 
-Normal Equations
-^^^^^^^^^^^^^^^^^
+      template<class Field> class ImplicitlyRestartedLanczos 
+
+Solve method::
+
+      void calc(std::vector<RealD>& eval, std::vector<Field>& evec,  const Field& src, int& Nconv, bool reverse=false)
+
 
 Schur decomposition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+=======================       ======================================================================================
+Operator                           Description
+=======================       ======================================================================================
+SchurDiagMooeeeOperator        :math:`M_{oo} + M_{oe} M_ee^{-1} M_{eo}`
+SchurDiagOneLH                 :math:`1 + M_{oo}^{-1}M_{oe} M_ee^{-1} M_{eo}`
+SchurDiagOneRH                 :math:`1 + M_{oe} M_ee^{-1} M_{eo}M_{oo}^{-1}`
+SchurStaggeredOperator         :math:`m^2 - M_{oe} M_{eo}`
+=======================       ======================================================================================
+
+Associated with these operators are convenience wrappers for Schur 
+decomposed solution of the full system are provided (red-black preconditioning, algorithms/iterative/SchurRedBlack.h):
+
+Class:: 
+
+	  template<class Field> class SchurRedBlackStaggeredSolve 
+	  template<class Field> class SchurRedBlackDiagMooeeSolve
+	  template<class Field> class SchurRedBlackDiagOneLHSolve
+	  template<class Field> class SchurRedBlackDiagOneRHSolve
+
+Constructors::
+
+	  SchurRedBlackStaggeredSolve(OperatorFunction<Field> &HermitianRBSolver);
+          SchurRedBlackDiagMooeeSolve(OperatorFunction<Field> &HermitianRBSolver,int cb=0);
+          SchurRedBlackDiagOneLHSolve(OperatorFunction<Field> &HermitianRBSolver,int cb=0);
+          SchurRedBlackDiagOneRHSolve(OperatorFunction<Field> &HermitianRBSolver,int cb=0);
+
+The cb parameter specifies which checkerboard the SchurDecomposition factorises around, and the
+HermitianRBSolver parameter is an algorithm class, such as conjugate gradients, for solving the
+system of equations on a single checkerboard.
+
+
+All have the operator method, returning both checkerboard solutions::
+
+        template<class Matrix> void operator() (Matrix & _Matrix,const Field &in, Field &out)
+
+In order to allow for deflation of the preconditioned system, and external guess constructor is possible::
+
+	template<class Matrix, class Guesser> void operator() (Matrix & _Matrix,const Field &in, Field &out,Guesser &guess){
+
 Lattice Gauge theory utilities
 =========================================
 
-.. todo:: CD: The whole section needs to be completed, of course
-
-.. todo:: CD: Gamma matrices?
-	  Spin projection, reconstruction?
-	  Lie Algebra?
-
-Types
---------------
 
 Spin
 --------
 
+See, for example, tests/core/Test_gamma.cc for a complete self test of the 
+Grid Dirac algebra, spin projectors, and Gamma multiplication table.
+
+The spin basis is:
+
+.. math:: \gamma_x= \left(\begin{array}{cccc}    0& 0& 0& i\\  0& 0& i& 0\\  0&-i& 0& 0\\ -i& 0& 0& 0 \end{array}\right)
+
+.. math:: \gamma_y= \left(\begin{array}{cccc}    0& 0& 0&-1\\  0& 0& 1& 0\\  0& 1& 0& 0\\ -1& 0& 0& 0 \end{array}\right)
+
+.. math:: \gamma_z= \left(\begin{array}{cccc}    0& 0& i& 0\\  0& 0& 0&-i\\ -i& 0& 0& 0\\  0& i& 0& 0 \end{array}\right)
+
+.. math:: \gamma_t= \left(\begin{array}{cccc}    0& 0& 1& 0\\  0& 0& 0& 1\\  1& 0& 0& 0\\  0& 1& 0& 0 \end{array}\right)
+
+.. math:: \gamma_5= \left(\begin{array}{cccc}    1& 0& 0& 0\\  0& 1& 0& 0\\  0& 0&-1 &0\\  0& 0& 0&-1 \end{array}\right)
+
+These can be accessed via a strongly typed enumeration to avoid multiplication by zeros.
+The values are considered opaque, and symbolic names must be used.
+These are signed (prefixes like MinusIdentity also work)::
+
+      Gamma::Algebra::Identity
+      Gamma::Algebra::Gamma5
+      Gamma::Algebra::GammaT
+      Gamma::Algebra::GammaTGamma5
+      Gamma::Algebra::GammaX
+      Gamma::Algebra::GammaXGamma5
+      Gamma::Algebra::GammaY
+      Gamma::Algebra::GammaYGamma5
+      Gamma::Algebra::GammaZ
+      Gamma::Algebra::GammaZGamma5
+      Gamma::Algebra::SigmaXT
+      Gamma::Algebra::SigmaXZ
+      Gamma::Algebra::SigmaXY
+      Gamma::Algebra::SigmaYT
+      Gamma::Algebra::SigmaYZ
+      Gamma::Algebra::SigmaZT
+
+**Example** 
+
+They can be used, for example (benchmarks/Benchmark_wilson.cc)::
+
+  Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT
+  };
+
+  { // Naive wilson implementation
+    ref = zero;
+    for(int mu=0;mu<Nd;mu++){
+
+      tmp = U[mu]*Cshift(src,mu,1);
+      for(int i=0;i<ref._odata.size();i++){
+	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
+      }
+
+      tmp =adj(U[mu])*src;
+      tmp =Cshift(tmp,mu,-1);
+      for(int i=0;i<ref._odata.size();i++){
+	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
+      }
+    }
+  }
+  ref = -0.5*ref;
+  RealD mass=0.1;
+
+Two spin projection is also possible on non-lattice fields, and used to build high performance routines
+such as the Wilson kernel::
+
+  template<class vtype>  void spProjXp (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
+  template<class vtype>  void spProjYp (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
+  template<class vtype>  void spProjZp (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
+  template<class vtype>  void spProjTp (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
+  template<class vtype>  void spProj5p (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
+  template<class vtype>  void spProjXm (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
+  template<class vtype>  void spProjYm (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
+  template<class vtype>  void spProjZm (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
+  template<class vtype>  void spProjTm (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
+  template<class vtype>  void spProj5m (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
+
+and there are associated reconstruction routines for assembling four spinors from these two spinors::
+
+  template<class vtype>  void spReconXp (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void spReconYp (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void spReconZp (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void spReconTp (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void spRecon5p (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void spReconXm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void spReconYm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void spReconZm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void spReconTm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void spRecon5m (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+
+  template<class vtype>  void accumReconXp (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void accumReconYp (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void accumReconZp (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void accumReconTp (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void accumRecon5p (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void accumReconXm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void accumReconYm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void accumReconZm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void accumReconTm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+  template<class vtype>  void accumRecon5m (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
+
+These ca
+
+
 SU(N)
 --------
+
+A generic Nc qcd/utils/SUn.h is provided. This defines a template class::
+
+  template <int ncolour> class SU ;
+
+The most important external methods are::
+
+  static void printGenerators(void) ;
+  template <class cplx>  static void generator(int lieIndex, iSUnMatrix<cplx> &ta) ;
+
+  static void SubGroupHeatBath(GridSerialRNG &sRNG, GridParallelRNG &pRNG, RealD beta,  // coeff multiplying staple in action (with no 1/Nc)
+                               LatticeMatrix &link,
+			       const LatticeMatrix &barestaple,  // multiplied by action coeffs so th
+			       int su2_subgroup, int nheatbath, LatticeInteger &wheremask);
+
+  static void GaussianFundamentalLieAlgebraMatrix(GridParallelRNG &pRNG,
+                                                  LatticeMatrix &out,
+                                                  Real scale = 1.0) ;
+  static void GaugeTransform( GaugeField &Umu, GaugeMat &g)
+  static void RandomGaugeTransform(GridParallelRNG &pRNG, GaugeField &Umu, GaugeMat &g);
+
+  static void HotConfiguration(GridParallelRNG &pRNG, GaugeField &out) ;
+  static void TepidConfiguration(GridParallelRNG &pRNG,GaugeField &out);
+  static void ColdConfiguration(GaugeField &out);
+
+  static void taProj( const LatticeMatrixType &in,  LatticeMatrixType &out);
+  static void taExp(const LatticeMatrixType &x, LatticeMatrixType &ex) ;
+
+  static int su2subgroups(void) ; // returns how many subgroups
+
+
+Specific instantiations are defined::
+
+	 typedef SU<2> SU2;
+	 typedef SU<3> SU3;
+	 typedef SU<4> SU4;
+	 typedef SU<5> SU5;
+
+For example, Quenched QCD updating may be run as (tests/core/Test_quenched_update.cc)::
+
+  for(int sweep=0;sweep<1000;sweep++){
+
+    RealD plaq = ColourWilsonLoops::avgPlaquette(Umu);
+
+    std::cout<<GridLogMessage<<"sweep "<<sweep<<" PLAQUETTE "<<plaq<<std::endl;
+
+    for( int cb=0;cb<2;cb++ ) {
+
+      one.checkerboard=subsets[cb];
+      mask= zero;
+      setCheckerboard(mask,one);
+
+      //      std::cout<<GridLogMessage<<mask<<std::endl;
+      for(int mu=0;mu<Nd;mu++){
+	
+	// Get Link and Staple term in action; must contain Beta and 
+	// any other coeffs
+	ColourWilsonLoops::Staple(staple,Umu,mu);
+
+	link = PeekIndex<LorentzIndex>(Umu,mu);
+
+	for( int subgroup=0;subgroup<SU3::su2subgroups();subgroup++ ) {
+
+	  // update Even checkerboard
+	  SU3::SubGroupHeatBath(sRNG,pRNG,beta,link,staple,subgroup,20,mask);
+
+	}
+
+	PokeIndex<LorentzIndex>(Umu,link,mu);
+	
+	//reunitarise link;
+	ProjectOnGroup(Umu);
+      }
+    }
+  }
+
 
 Space time grids
 ----------------
 
-Random configurations and random gauge transforms
----------------------------------------------------
-
-
-Wilson loops
---------------
 
 
 Lattice actions
 =========================================
 
-.. todo:: CD: The whole section needs to be completed, of course
-	  
-Gauge
---------
+We discuss in some detail the implementation of the lattice actions.
+The action is a sum of terms, each of which must inherit from and provide the following interface.
+
+lib/qcd/action/ActionBase.h::
+
+  class Action 
+  {
+
+   public:
+    bool is_smeared = false;
+    // Heatbath?
+    virtual void refresh(const GaugeField& U, GridParallelRNG& pRNG) = 0; // refresh pseudofermions
+    virtual RealD S(const GaugeField& U) = 0;                             // evaluate the action
+    virtual void deriv(const GaugeField& U, GaugeField& dSdU) = 0;        // evaluate the action derivative
+    virtual std::string action_name()    = 0;                             // return the action name
+    virtual std::string LogParameters()  = 0;                             // prints action parameters
+    virtual ~Action(){}
+  };
+
+Fermion Lattice actions are defined in the qcd/action/fermion subdirectory and  in the
+qcd/action/gauge subdirectories. For Hybrid Monte Carlo and derivative sampling algorithm
+Pseudofermoin actions are defined in the qcd/action/pseudofermion subdirectory.
+
+The simplest lattice action is the Wilson plaquette action, and we start by considering the Wilson loops
+facilities as this is illustrative of the implementation policy design approach.
+
+Wilson loops
+--------------
+
+Wilson loops are common objects in Lattice Gauge Theory.
+A utility class is provided to assist assembling these as they occur both in common observable construction but
+also in actions such as the Wilson plaquette and the rectangle actions. 
+
+Since derivatives with respect to gauge links are required for evolution codes, non-closed staples of 
+various types are also provided. The gauge actions are all assembled consistently from the Wilson loops
+class.
+
+**Implementation policies**
+
+The Wilson loops class is templated to take a implementation policy class parameter. The covarian Cshift is inherity from
+the policy and implements boundary conditions, such as period, anti-period or charge conjugate. In this
+way the Wilson loop code can automatically transform with the boundary condition and give the right plaquette,
+force terms etc... for the boundary conditions passed in external to the class. 
+
+
+This implementation policy class is called an "impl", and a class that bundles together all the required
+rules to assemble a gauge action is called a Gimpl.
+
+There are several facilities provided by a Gimpl.
+
+These include Boundary conditions and consequently a CovariantCshift.
+
+CovariantCshift 
+^^^^^^^^^^^^^^^^^^
+
+Covariant Cshift operations are provided for common cases of the boundary condition. These may be further optimised
+in future::
+
+  template<class covariant,class gauge> 
+  Lattice<covariant> CovShiftForward(const Lattice<gauge> &Link, int mu,
+			   	     const Lattice<covariant> &field);
+
+  template<class covariant,class gauge> 
+  Lattice<covariant> CovShiftBackward(const Lattice<gauge> &Link, int mu,
+			              const Lattice<covariant> &field);
+
+Boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The covariant shift routines occur in namespaces PeriodicBC and ConjugateBC. The correct covariant shift
+for the boundary condition is passed into the gauge actions and wilson loops via an
+"Impl" template policy class.
+
+The relevant staples, plaquettes, and loops are formed by using the provided method::
+
+    Impl::CovShiftForward
+    Impl::CovShiftBackward
+
+etc... This makes physics code transform appropriately with externally supplied rules about
+treating the boundary.
+
+**Example** (lib/qcd/util/WilsonLoops.h)::
+
+  static void dirPlaquette(GaugeMat &plaq, const std::vector<GaugeMat> &U,
+                           const int mu, const int nu) {
+    // ___
+    //|   |
+    //|<__|
+    plaq = Gimpl::CovShiftForward(U[mu],mu,
+                    Gimpl::CovShiftForward(U[nu],nu,
+			Gimpl::CovShiftBackward(U[mu],mu,
+			   Gimpl::CovShiftIdentityBackward(U[nu], nu))));
+  }
+
+Currently provided predefined implementations are (qcd/action/gauge/GaugeImplementations.h)::
+
+	  typedef PeriodicGaugeImpl<GimplTypesR> PeriodicGimplR; // Real.. whichever prec
+	  typedef PeriodicGaugeImpl<GimplTypesF> PeriodicGimplF; // Float
+	  typedef PeriodicGaugeImpl<GimplTypesD> PeriodicGimplD; // Double
+
+	  typedef PeriodicGaugeImpl<GimplAdjointTypesR> PeriodicGimplAdjR; // Real.. whichever prec
+	  typedef PeriodicGaugeImpl<GimplAdjointTypesF> PeriodicGimplAdjF; // Float
+	  typedef PeriodicGaugeImpl<GimplAdjointTypesD> PeriodicGimplAdjD; // Double
+
+	  typedef ConjugateGaugeImpl<GimplTypesR> ConjugateGimplR; // Real.. whichever prec
+	  typedef ConjugateGaugeImpl<GimplTypesF> ConjugateGimplF; // Float
+	  typedef ConjugateGaugeImpl<GimplTypesD> ConjugateGimplD; // Double
+
+Gauge Actions
+---------------
+
+lib/qcd/action/gauge/Photon.h defines the U(1) field::
+
+     class Photon
+
+using Fourier techniques.
+
+lib/qcd/action/gauge/WilsonGaugeAction.h defines the standard plaquette action::
+
+  template <class Gimpl>
+  class WilsonGaugeAction : public Action<typename Gimpl::GaugeField> ;
+
+This action is suitable to use in a Hybrid Monte Carlo evolution as an action term and has constructor::
+
+   WilsonGaugeAction(RealD beta_);
+
+lib/qcd/action/gauge/PlaqPlusRectangleAction.h defines the standard plaquette plus rectangle class of action::
+
+  template<class Gimpl>
+  class PlaqPlusRectangleAction : public Action<typename Gimpl::GaugeField> ;
+
+The constructor is::
+
+   PlaqPlusRectangleAction(RealD b,RealD c);
+
+Due to varying conventions, convenience wrappers are provided::
+
+    template<class Gimpl>    class RBCGaugeAction : public PlaqPlusRectangleAction<Gimpl>;
+    template<class Gimpl>    class IwasakiGaugeAction : public RBCGaugeAction<Gimpl> ;
+    template<class Gimpl>    class SymanzikGaugeAction : public RBCGaugeAction<Gimpl> ;
+    template<class Gimpl>    class DBW2GaugeAction : public RBCGaugeAction<Gimpl> ;
+
+With convenience constructors to set the rectangle coefficient automatically to popular values::
+
+      SymanzikGaugeAction(RealD beta) : RBCGaugeAction<Gimpl>(beta,-1.0/12.0) {};
+      IwasakiGaugeAction(RealD beta) : RBCGaugeAction<Gimpl>(beta,-0.331) {};
+      DBW2GaugeAction(RealD beta) : RBCGaugeAction<Gimpl>(beta,-1.4067) {};
+
 
 Fermion
 --------
 
+These classes all make use of a Fermion Implementation (Fimpl) policy class to provide
+things like boundary conditions, covariant transportation rules etc.
+
+All Fermion operators actions inherit from a common base class, 
+
+that conforms to the CheckerBoardedSparseMatrix interface and constrains these objects to conform to the
+interface expected by general algorithms in Grid::
+
+    /////////////////////////////////////////////////////////////////////////////////////////////
+    // Interface defining what I expect of a general sparse matrix, such as a Fermion action
+    /////////////////////////////////////////////////////////////////////////////////////////////
+    template<class Field> class SparseMatrixBase {
+    public:
+      virtual GridBase *Grid(void) =0;
+      // Full checkerboar operations
+      virtual RealD M    (const Field &in, Field &out)=0;
+      virtual RealD Mdag (const Field &in, Field &out)=0;
+      virtual void  MdagM(const Field &in, Field &out,RealD &ni,RealD &no) {
+        Field tmp (in._grid);
+        ni=M(in,tmp);
+        no=Mdag(tmp,out);
+      }
+      virtual  void Mdiag    (const Field &in, Field &out)=0;
+      virtual  void Mdir     (const Field &in, Field &out,int dir, int disp)=0;
+    };
+
+    /////////////////////////////////////////////////////////////////////////////////////////////
+    // Interface augmented by a red black sparse matrix, such as a Fermion action
+    /////////////////////////////////////////////////////////////////////////////////////////////
+    template<class Field> class CheckerBoardedSparseMatrixBase : public SparseMatrixBase<Field> {
+    public:
+      virtual GridBase *RedBlackGrid(void)=0;
+      // half checkerboard operaions
+      virtual  void Meooe    (const Field &in, Field &out)=0;
+      virtual  void Mooee    (const Field &in, Field &out)=0;
+      virtual  void MooeeInv (const Field &in, Field &out)=0;
+
+      virtual  void MeooeDag    (const Field &in, Field &out)=0;
+      virtual  void MooeeDag    (const Field &in, Field &out)=0;
+      virtual  void MooeeInvDag (const Field &in, Field &out)=0;
+
+    };
+
+The base class for Fermion Operators inherits frmo these::
+
+    template<class Impl>
+    class FermionOperator : public CheckerBoardedSparseMatrixBase<typename Impl::FermionField>, public Impl
+
+These all make use of an implementation template class, and the possible implementations include::
+
+  typedef WilsonImpl<vComplexF, FundamentalRepresentation, CoeffReal > WilsonImplF;  // Float
+  typedef WilsonImpl<vComplexD, FundamentalRepresentation, CoeffReal > WilsonImplD;  // Double
+
+Staggered fermions make us of a spin index free field via the StaggeredImpl::
+
+  typedef StaggeredImpl<vComplexF, FundamentalRepresentation > StaggeredImplF;  // Float
+  typedef StaggeredImpl<vComplexD, FundamentalRepresentation > StaggeredImplD;  // Double
+
+A number of alternate, non-fundamental Fermion representations are supported. Note that the Fermion
+action code is common to each of these, demonstrating the utility of the template Fimpl classes for separating
+the code that varies from the invariant sections::
+
+  typedef WilsonImpl<vComplexF, AdjointRepresentation, CoeffReal > WilsonAdjImplF;  // Float
+  typedef WilsonImpl<vComplexD, AdjointRepresentation, CoeffReal > WilsonAdjImplD;  // Double
+
+  typedef WilsonImpl<vComplexF, TwoIndexSymmetricRepresentation, CoeffReal > WilsonTwoIndexSymmetricImplF;  // Float
+  typedef WilsonImpl<vComplexD, TwoIndexSymmetricRepresentation, CoeffReal > WilsonTwoIndexSymmetricImplD;  // Double
+ 
+  typedef WilsonImpl<vComplexF, TwoIndexAntiSymmetricRepresentation, CoeffReal > WilsonTwoIndexAntiSymmetricImplF;  // Float
+  typedef WilsonImpl<vComplexD, TwoIndexAntiSymmetricRepresentation, CoeffReal > WilsonTwoIndexAntiSymmetricImplD;  // Double
+
+G-parity boundary conditions are supported, and an additional flavour index inserted on the Fermion field via the Gparity implementation::
+
+  typedef GparityWilsonImpl<vComplexF, FundamentalRepresentation,CoeffReal> GparityWilsonImplF;  // Float
+  typedef GparityWilsonImpl<vComplexD, FundamentalRepresentation,CoeffReal> GparityWilsonImplD;  // Double
+  
+ZMobius Fermions use complex rather than real action coefficients and are supported via an alternate implementation::
+
+  typedef WilsonImpl<vComplexF, FundamentalRepresentation, CoeffComplex > ZWilsonImplF; // Float
+  typedef WilsonImpl<vComplexD, FundamentalRepresentation, CoeffComplex > ZWilsonImplD; // Double
+
+
+Some example constructor calls are given below for Wilson and Clover fermions::
+
+    template <class Impl> class WilsonFermion;
+
+With constructor::
+
+    WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
+                  GridRedBlackCartesian &Hgrid, RealD _mass, 
+		  const ImplParams &p = ImplParams(), 
+                  const WilsonAnisotropyCoefficients &anis = WilsonAnisotropyCoefficients() );
+
+and::
+
+    template <class Impl> class WilsonCloverFermion : public WilsonFermion<Impl>;
+
+with constructor::
+
+    WilsonCloverFermion(GaugeField &_Umu, GridCartesian &Fgrid,
+                        GridRedBlackCartesian &Hgrid,
+                        const RealD _mass,
+                        const RealD _csw_r = 0.0,
+                        const RealD _csw_t = 0.0,
+                        const WilsonAnisotropyCoefficients &clover_anisotropy = WilsonAnisotropyCoefficients(),
+                        const ImplParams &impl_p = ImplParams());
+
+Additional paramters allow for anisotropic versions to be created, which take default values for
+the isotropic case.
+
+The constuctor signatures can be found in the header files in qcd/action/fermion/
+A complete list of the 4D ultralocal Fermion types is::
+
+    WilsonFermion<WilsonImplF>                            WilsonFermionF;
+    WilsonFermion<WilsonAdjImplF>                         WilsonAdjFermionF;
+    WilsonFermion<WilsonTwoIndexSymmetricImplF>           WilsonTwoIndexSymmetricFermionF;
+    WilsonFermion<WilsonTwoIndexAntiSymmetricImplF>       WilsonTwoIndexAntiSymmetricFermionF;
+    WilsonTMFermion<WilsonImplF>                          WilsonTMFermionF;
+    WilsonCloverFermion<WilsonImplF>                      WilsonCloverFermionF;
+    WilsonCloverFermion<WilsonAdjImplF>                   WilsonCloverAdjFermionF;
+    WilsonCloverFermion<WilsonTwoIndexSymmetricImplF>     WilsonCloverTwoIndexSymmetricFermionF;
+    WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplF> WilsonCloverTwoIndexAntiSymmetricFermionF;
+    ImprovedStaggeredFermion<StaggeredImplF>              ImprovedStaggeredFermionF;
+
+Cayley form chiral fermions (incl. domain wall)::
+
+    DomainWallFermion<WilsonImplF>                   DomainWallFermionF;
+    DomainWallEOFAFermion<WilsonImplF>               DomainWallEOFAFermionF;
+    MobiusFermion<WilsonImplF>                       MobiusFermionF;
+    MobiusEOFAFermion<WilsonImplF>                   MobiusEOFAFermionF;
+    ZMobiusFermion<ZWilsonImplF>                     ZMobiusFermionF;
+    ScaledShamirFermion<WilsonImplF>                 ScaledShamirFermionF;
+    MobiusZolotarevFermion<WilsonImplF>              MobiusZolotarevFermionF;
+    ShamirZolotarevFermion<WilsonImplF>              ShamirZolotarevFermionF;
+    OverlapWilsonCayleyTanhFermion<WilsonImplF>      OverlapWilsonCayleyTanhFermionF;
+    OverlapWilsonCayleyZolotarevFermion<WilsonImplF> OverlapWilsonCayleyZolotarevFermionF;
+
+Continued fraction overlap::
+
+    OverlapWilsonContFracTanhFermion<WilsonImplF>      OverlapWilsonContFracTanhFermionF;
+    OverlapWilsonContFracZolotarevFermion<WilsonImplF> OverlapWilsonContFracZolotarevFermionF;
+
+ Partial fraction overlap::
+
+    OverlapWilsonPartialFractionTanhFermion<WilsonImplF> OverlapWilsonPartialFractionTanhFermionF;
+    OverlapWilsonPartialFractionZolotarevFermion<WilsonImplF> OverlapWilsonPartialFractionZolotarevFermionF;
+
+  Gparity cases; a partial list is defined until tested::
+
+    WilsonFermion<GparityWilsonImplF>         GparityWilsonFermionF;
+    DomainWallFermion<GparityWilsonImplF>     GparityDomainWallFermionF;
+    DomainWallEOFAFermion<GparityWilsonImplF> GparityDomainWallEOFAFermionF;
+
+    WilsonTMFermion<GparityWilsonImplF>       GparityWilsonTMFermionF;
+    MobiusFermion<GparityWilsonImplF>         GparityMobiusFermionF;
+    MobiusEOFAFermion<GparityWilsonImplF>     GparityMobiusEOFAFermionF;
+
+For each action, the suffix "F" can be replaced with "D" to obtain a double precision version. More generally,
+it is possible to perform communications with a different precision from computation.
+The number of combinations is rather large to list, but in the above listing the substitution is the
+obvious one.
+
+==========   ================  ==================
+Suffix        Computation       Communication
+==========   ================  ==================
+F                fp32               fp32
+D                fp64               fp64
+R                default            default
+FH               fp32               fp16
+DF               fp64               fp32
+RL               default            lower 
+==========   ================  ==================
+
+
 Pseudofermion
 ---------------
+
+Pseudofermion actions are defined in  qcd/action/pseudofermion/ .
+These action terms are built from template classes::
+
+    // Base even odd HMC on the normal Mee based schur decomposition.
+    //
+    //     M = (Mee Meo) =  (1             0 )   (Mee   0               )  (1 Mee^{-1} Meo)
+    //         (Moe Moo)    (Moe Mee^-1    1 )   (0   Moo-Moe Mee^-1 Meo)  (0   1         )
+    //
+    // Determinant is det of middle factor. This assumes Mee is indept of U.
+    template<class Impl> class SchurDifferentiableOperator ;
+
+    // S = phi^dag (Mdag M)^-1 phi
+    template <class Impl>  class TwoFlavourPseudoFermionAction ;
+
+    // S = phi^dag V (Mdag M)^-1 Vdag phi
+    template<class Impl>   class TwoFlavourRatioPseudoFermionAction ;
+
+    // S = phi^dag (Mdag M)^-1 phi  (odd)
+    //   + phi^dag (Mdag M)^-1 phi  (even)
+    template <class Impl>  class TwoFlavourEvenOddPseudoFermionAction;
+
+    // S = phi^dag V (Mdag M)^-1 Vdag phi
+    template <class Impl>  class TwoFlavourEvenOddRatioPseudoFermionAction ;
+
+
+Rational HMC pseudofermion terms::
+
+    // S_f = chi^dag *  N(M^dag*M)/D(M^dag*M) * chi
+    //
+    // Here, M is some operator 
+    // N and D makeup the rat. poly 
+    template<class Impl> class OneFlavourRationalPseudoFermionAction;
+
+    // S_f = chi^dag* P(V^dag*V)/Q(V^dag*V)* N(M^dag*M)/D(M^dag*M)* P(V^dag*V)/Q(V^dag*V)* chi       
+    //
+    // Here P/Q \sim R_{1/4}  ~ (V^dagV)^{1/4}  
+    // Here N/D \sim R_{-1/2} ~ (M^dagM)^{-1/2}  
+    template<class Impl> class OneFlavourRatioRationalPseudoFermionAction;
+
+
+    // S = phi^dag (Mdag M)^-1/2 phi
+    template <class Impl> class OneFlavourEvenOddRationalPseudoFermionAction;
+
+    // S_f = chi^dag* P(V^dag*V)/Q(V^dag*V)* N(M^dag*M)/D(M^dag*M)* P(V^dag*V)/Q(V^dag*V)* chi       
+    //
+    // Here P/Q \sim R_{1/4}  ~ (V^dagV)^{1/4}  
+    // Here N/D \sim R_{-1/2} ~ (M^dagM)^{-1/2}  
+    template<class Impl> class OneFlavourEvenOddRatioRationalPseudoFermionAction;
+
+The relevant Fermion operators are constructed externally,
+and references are passed in to these object constructors. Thus, they work for any Fermion operator and the code
+can be shared. For example, one of the constructors is given as::
+
+      TwoFlavourEvenOddRatioPseudoFermionAction(FermionOperator<Impl>  &_NumOp, 
+                                                FermionOperator<Impl>  &_DenOp, 
+                                                OperatorFunction<FermionField> & DS,
+                                                OperatorFunction<FermionField> & AS) :
+
+
+The exact one flavour algorithm for Domain Wall Fermions is present but is not documented here::
+
+      #include <Grid/qcd/action/pseudofermion/ExactOneFlavourRatio.h>
 
 HMC
 =========================================
 
-.. todo:: CD: The whole section needs to be completed, of course
+There are a large number of examples under tests/hmc/
+
+The most important data structure associated with (R)HMC describes the action
+and integration scheme.
+
+The action is a sum of terms, possibly with nested timesteps.
+
+This is assembled in an ActionSet object (qcd/action/ActionSet.h).
+The timesteps are managed by Levels. The ActionSet object maintains a list
+of ActionLevel objects::
+
+  // Define the ActionSet
+  template <class GaugeField, class R>
+  using ActionSet = std::vector<ActionLevel<GaugeField, R> >;
+
+Each ActionLevel is associated with each level of the
+nested integration scheme, schematically::
+
+  template <class Field>
+  struct ActionLevel {
+  public:
+    unsigned int multiplier;
+    // Fundamental repr actions separated because of the smearing
+    typedef Action<Field>* ActPtr;
+    std::vector<ActPtr>& actions;
+  }
+
+The outer loop, running MD trajectories, Metropolis steps, saving and restoring configurations
+is generic and managed by a "Runner" class..
+
+There are a number of possible integrators: LeapFrog, MinimumNorm2, ForceGradient
+
+These are a template parameter to the HMCRunner class. We will take as an example Test_hmc_EODWFRatio.cc::
+
+  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
+
+The test defines the Fermion action and Gauge action
+
+  typedef WilsonImplR FermionImplPolicy;
+  typedef DomainWallFermionR FermionAction;
+  typedef typename FermionAction::FermionField FermionField;
+  HMCWrapper TheHMC;
+
+The HMC runner is given the Grid information (lifted from standard Grid --grid Lx.Ly.Lz.Lt command line)::
+
+  TheHMC.Resources.AddFourDimGrid("gauge");
+
+The checkpointing strategy is defined::
+
+  // Checkpointer definition
+  CheckpointerParameters CPparams;  
+  CPparams.config_prefix = "ckpoint_EODWF_lat";
+  CPparams.rng_prefix = "ckpoint_EODWF_rng";
+  CPparams.saveInterval = 5;
+  CPparams.format = "IEEE64BIG";
+  
+  TheHMC.Resources.LoadNerscCheckpointer(CPparams);
+
+.. todo::  HOW TO resume from saved RNGs. Guido changed this.
+
+Random number generators are seeded::
+
+  RNGModuleParameters RNGpar;
+  RNGpar.serial_seeds = "1 2 3 4 5";
+  RNGpar.parallel_seeds = "6 7 8 9 10";
+  TheHMC.Resources.SetRNGSeeds(RNGpar);
+
+Observables measured at the end of the trajectory can be registered::
+
+  // Construct observables
+  // here there is too much indirection 
+  typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
+  TheHMC.Resources.AddObservable<PlaqObs>();
+
+The action must be defined::
+
+  RealD beta = 5.6 ;
+  WilsonGaugeActionR Waction(beta);
+
+  const int Ls = 8;
+  auto GridPtr   = TheHMC.Resources.GetCartesian();
+  auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
+  auto FGrid     = SpaceTimeGrid::makeFiveDimGrid(Ls,GridPtr);
+  auto FrbGrid   = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,GridPtr);
+
+  LatticeGaugeField U(GridPtr);
+
+  Real mass = 0.04;
+  Real pv   = 1.0;
+  RealD M5  = 1.5;
+
+  FermionAction DenOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,mass,M5);
+  FermionAction NumOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,pv,  M5);
+
+  double StoppingCondition = 1.0e-8;
+  double MaxCGIterations = 10000;
+  ConjugateGradient<FermionField>  CG(StoppingCondition,MaxCGIterations);
+  TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> Nf2(NumOp, DenOp,CG,CG);
+
+    // Set smearing (true/false), default: false
+  Nf2.is_smeared = false;
+
+  // Collect actions
+  ActionLevel<HMCWrapper::Field> Level1(1);
+  Level1.push_back(&Nf2);
+
+  ActionLevel<HMCWrapper::Field> Level2(4);
+  Level2.push_back(&Waction);
+
+  TheHMC.TheAction.push_back(Level1);
+  TheHMC.TheAction.push_back(Level2);
+
+And the HMC can be setup and run::
+
+  TheHMC.Parameters.MD.MDsteps = 20;
+  TheHMC.Parameters.MD.trajL   = 1.0;
+  TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
+
+  TheHMC.Run();  // no smearing
+
+This puts together the pieces of the previous sections (actions, Fermion operators, solver algorithms etc...) into a full application.
 
 Development of the internals
 ========================================
@@ -2477,20 +3340,9 @@ Optimised fermion operators
 Optimised communications
 ---------------------------------------------
 
-Interfacing with external software
-========================================
-.. todo:: CD: Such a section should be very useful
 
-.. todo:: CD: The whole section needs to be completed, of course
+.. include:: interfacing.rst
 	  
-MPI initialization and coordination
------------------------------------
-
-Creating Grid fields
---------------------
-
-Mapping fields between Grid and user layouts
---------------------------------------------
 
 .. image:: logo.png
    :width: 200px

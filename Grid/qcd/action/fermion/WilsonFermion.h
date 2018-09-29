@@ -141,7 +141,7 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
                 GridRedBlackCartesian &Hgrid, RealD _mass, 
                 const ImplParams &p = ImplParams(), 
                 const WilsonAnisotropyCoefficients &anis = WilsonAnisotropyCoefficients() );
-
+  
   // DoubleStore impl dependent
   void ImportGauge(const GaugeField &_Umu);
 
