@@ -30,6 +30,7 @@ modules_cc =\
   Modules/MNoise/TimeDilutedSpinColorDiagonal.cc \
   Modules/MUtilities/RandomVectors.cc \
   Modules/MUtilities/TestSeqGamma.cc \
+  Modules/MUtilities/PrecisionCast.cc \
   Modules/MUtilities/TestSeqConserved.cc \
   Modules/MLoop/NoiseLoop.cc \
   Modules/MScalar/FreeProp.cc \
@@ -93,6 +94,7 @@ modules_hpp =\
   Modules/MGauge/FundtoHirep.hpp \
   Modules/MGauge/StochEm.hpp \
   Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp \
+  Modules/MUtilities/PrecisionCast.hpp \
   Modules/MUtilities/RandomVectors.hpp \
   Modules/MUtilities/TestSeqGamma.hpp \
   Modules/MUtilities/TestSeqConserved.hpp \
