@@ -106,7 +106,9 @@ typedef std::vector<SitePropagator##suffix>          SlicedPropagator##suffix;
 BASIC_TYPE_ALIASES(FImpl, suffix);\
 typedef FermionOperator<FImpl>            FMat##suffix;\
 typedef typename FImpl::FermionField      FermionField##suffix;\
-typedef typename FImpl::DoubledGaugeField DoubledGaugeField##suffix;
+typedef typename FImpl::GaugeField        GaugeField##suffix;\
+typedef typename FImpl::DoubledGaugeField DoubledGaugeField##suffix;\
+typedef typename FImpl::ComplexField      ComplexField##suffix;
 
 #define GAUGE_TYPE_ALIASES(GImpl, suffix)\
 typedef typename GImpl::GaugeField GaugeField##suffix;

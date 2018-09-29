@@ -126,7 +126,7 @@ void TTrKinetic<SImpl>::setup(void)
         envCreateLat(ComplexField, varName(getName(), mu, nu));
     }
     envCreateLat(ComplexField, varName(getName(), "sum"));
-    envTmp(std::vector<Field>, "der", 1, env().getNd(), env().getGrid());
+    envTmp(std::vector<Field>, "der", 1, env().getNd(), envGetGrid(Field));
 }
 
 // execution ///////////////////////////////////////////////////////////////////

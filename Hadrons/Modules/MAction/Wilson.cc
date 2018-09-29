@@ -32,4 +32,4 @@ using namespace Hadrons;
 using namespace MAction;
 
 template class Grid::Hadrons::MAction::TWilson<FIMPL>;
-
+template class Grid::Hadrons::MAction::TWilson<FIMPLF>;

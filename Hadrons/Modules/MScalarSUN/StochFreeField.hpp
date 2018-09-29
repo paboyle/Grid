@@ -132,7 +132,7 @@ void TStochFreeField<SImpl>::execute(void)
     auto    &w                = envGet(ComplexField, "_" + getName() + "_weight");
     auto    &rng              = rng4d();
     double  trphi2;
-    FFT     fft(env().getGrid());
+    FFT     fft(envGetGrid(Field));
     Integer vol;
 
     vol = 1;
@@ -169,11 +169,6 @@ void TStochFreeField<SImpl>::execute(void)
     phi = 0.5*(phi - adj(phi));
     trphi2 = -TensorRemove(sum(trace(phi*phi))).real()/vol;
     LOG(Message) << "tr(phi^2)= " << trphi2 << std::endl;
-
-    // ComplexField phi2(env().getGrid());
-
-    // phi2=trace(phi*phi);
-    // std::cout << phi2 << std::endl;
 }
 
 END_MODULE_NAMESPACE

@@ -71,6 +71,7 @@ protected:
 };
 
 MODULE_REGISTER_TMP(Wilson, TWilson<FIMPL>, MAction);
+MODULE_REGISTER_TMP(WilsonF, TWilson<FIMPLF>, MAction);
 
 /******************************************************************************
  *                     TWilson template implementation                        *
@@ -107,9 +108,9 @@ void TWilson<FImpl>::setup(void)
     LOG(Message) << "Fermion boundary conditions: " << par().boundary
                  << std::endl;
                  
-    auto &U      = envGet(LatticeGaugeField, par().gauge);
-    auto &grid   = *env().getGrid();
-    auto &gridRb = *env().getRbGrid();
+    auto &U      = envGet(GaugeField, par().gauge);
+    auto &grid   = *envGetGrid(FermionField);
+    auto &gridRb = *envGetRbGrid(FermionField);
     std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
     typename WilsonFermion<FImpl>::ImplParams implParams(boundary);
     envCreateDerived(FMat, WilsonFermion<FImpl>, getName(), 1, U, grid, gridRb,

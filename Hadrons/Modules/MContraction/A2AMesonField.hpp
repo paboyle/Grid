@@ -187,9 +187,9 @@ void TA2AMesonField<FImpl>::setup(void)
         mom_.push_back(p);
     }
     
-    envCache(std::vector<LatticeComplex>, momphName_, 1, 
-             par().mom.size(), env().getGrid());
-    envTmpLat(LatticeComplex, "coor");
+    envCache(std::vector<ComplexField>, momphName_, 1, 
+             par().mom.size(), envGetGrid(ComplexField));
+    envTmpLat(ComplexField, "coor");
     // preallocate memory for meson field block
     auto tgp = env().getDim().back()*gamma_.size()*mom_.size();
 
@@ -231,7 +231,7 @@ void TA2AMesonField<FImpl>::execute(void)
     ///////////////////////////////////////////////
     // Momentum setup
     ///////////////////////////////////////////////
-    auto &ph = envGet(std::vector<LatticeComplex>, momphName_);
+    auto &ph = envGet(std::vector<ComplexField>, momphName_);
 
     if (!hasPhase_)
     {
@@ -241,7 +241,7 @@ void TA2AMesonField<FImpl>::execute(void)
             Complex           i(0.0,1.0);
             std::vector<Real> p;
 
-            envGetTmp(LatticeComplex, coor);
+            envGetTmp(ComplexField, coor);
             ph[j] = zero;
             for(unsigned int mu = 0; mu < mom_[j].size(); mu++)
             {

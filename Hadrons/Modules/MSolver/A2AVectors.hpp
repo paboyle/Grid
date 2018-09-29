@@ -135,9 +135,9 @@ void TA2AVectors<FImpl, Pack>::setup(void)
         Nl_ = epack.evec.size();
     }
     envCreate(std::vector<FermionField>, getName() + "_v", 1, 
-              Nl_ + noise.size(), FermionField(env().getGrid()));
+              Nl_ + noise.size(), envGetGrid(FermionField));
     envCreate(std::vector<FermionField>, getName() + "_w", 1, 
-              Nl_ + noise.size(), FermionField(env().getGrid()));
+              Nl_ + noise.size(), envGetGrid(FermionField));
     if (Ls > 1)
     {
         envTmpLat(FermionField, "f5", Ls);

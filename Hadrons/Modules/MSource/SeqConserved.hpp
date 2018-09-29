@@ -187,7 +187,7 @@ void TSeqConserved<FImpl>::execute(void)
         for(unsigned int mu = 0; mu < env().getNd(); mu++)
         {
             LatticeCoordinate(coor, mu);
-            mom_phase = mom_phase + (mom[mu]/env().getGrid()->_fdimensions[mu])*coor;
+            mom_phase = mom_phase + (mom[mu]/env().getDim(mu))*coor;
         }
         mom_phase = exp((Real)(2*M_PI)*i*mom_phase);
         SeqhasPhase_ = true;

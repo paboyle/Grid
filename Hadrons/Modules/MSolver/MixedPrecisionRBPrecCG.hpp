@@ -170,7 +170,7 @@ void TMixedPrecisionRBPrecCG<FImplInner, FImplOuter, nBasis>
             MixedPrecisionConjugateGradient<FermionFieldOuter, FermionFieldInner> 
                 mpcg(par().residual, par().maxInnerIteration, 
                      par().maxOuterIteration, 
-                     env().template getGrid<VTypeInner>(Ls),
+                     env().template getRbGrid<VTypeInner>(Ls),
                      simat, somat);
             OperatorFunctionWrapper<FermionFieldOuter> wmpcg(mpcg);
             HADRONS_DEFAULT_SCHUR_SOLVE<FermionFieldOuter> schurSolver(wmpcg);

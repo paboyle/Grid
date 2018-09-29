@@ -32,3 +32,4 @@ using namespace Hadrons;
 using namespace MAction;
 
 template class Grid::Hadrons::MAction::TScaledDWF<FIMPL>;
+template class Grid::Hadrons::MAction::TScaledDWF<FIMPLF>;

@@ -99,11 +99,11 @@ void TRandomVectors<Field>::setup(void)
     if (par().Ls > 1)
     {
         envCreate(std::vector<Field>, getName(), par().Ls, par().size, 
-                  env().getGrid(par().Ls));
+                  envGetGrid(Field, par().Ls));
     }
     else
     {
-        envCreate(std::vector<Field>, getName(), 1, par().size, env().getGrid());
+        envCreate(std::vector<Field>, getName(), 1, par().size, envGetGrid(Field));
     }
 }
 

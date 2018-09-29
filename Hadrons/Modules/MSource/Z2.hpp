@@ -120,7 +120,7 @@ template <typename FImpl>
 void TZ2<FImpl>::setup(void)
 {
     envCreateLat(PropagatorField, getName());
-    envCache(Lattice<iScalar<vInteger>>, tName_, 1, env().getGrid());
+    envCache(Lattice<iScalar<vInteger>>, tName_, 1, envGetGrid(LatticeComplex));
     envTmpLat(LatticeComplex, "eta");
 }
 
