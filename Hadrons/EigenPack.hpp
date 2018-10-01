@@ -39,6 +39,13 @@ BEGIN_HADRONS_NAMESPACE
 #define HADRONS_DEFAULT_LANCZOS_NBASIS 60
 #endif
 
+#define HADRONS_DUMP_EP_METADATA \
+LOG(Message) << "Eigenpack metadata:" << std::endl;\
+LOG(Message) << "* operator" << std::endl;\
+LOG(Message) << record.operatorXml << std::endl;\
+LOG(Message) << "* solver" << std::endl;\
+LOG(Message) << record.solverXml << std::endl;
+
 template <typename F>
 class EigenPack
 {
@@ -81,11 +88,16 @@ public:
             for(int k = 0; k < evec.size(); ++k)
             {
                 basicReadSingle(evec[k], eval[k], evecFilename(fileStem, k, traj), k);
+                if (k == 0)
+                {
+                    HADRONS_DUMP_EP_METADATA;
+                }
             }
         }
         else
         {
             basicRead(evec, eval, evecFilename(fileStem, -1, traj), evec.size());
+            HADRONS_DUMP_EP_METADATA;
         }
     }
 
@@ -118,26 +130,38 @@ protected:
         }
     }
 
-    template <typename T>
-    void basicRead(std::vector<T> &evec, std::vector<RealD> &eval,
-                   const std::string filename, const unsigned int size)
+    void readHeader(ScidacReader &binReader)
     {
-        ScidacReader binReader;
         std::string  recordXml;
 
-        binReader.open(filename);
         binReader.readLimeObject(recordXml, SCIDAC_FILE_XML);
         XmlReader xmlReader(recordXml, true, "eigenPackPar");
         xmlReader.push();
         xmlReader.readCurrentSubtree(record.operatorXml);
         xmlReader.nextElement();
         xmlReader.readCurrentSubtree(record.solverXml);
+    }
+
+    template <typename T>
+    void readElement(T &evec, VecRecord &vecRecord, ScidacReader &binReader)
+    {
+        binReader.readScidacFieldRecord(evec, vecRecord);
+    }
+
+    template <typename T>
+    void basicRead(std::vector<T> &evec, std::vector<RealD> &eval,
+                   const std::string filename, const unsigned int size)
+    {
+        ScidacReader binReader;
+
+        binReader.open(filename);
+        readHeader(binReader);
         for(int k = 0; k < size; ++k) 
         {
             VecRecord vecRecord;
 
             LOG(Message) << "Reading eigenvector " << k << std::endl;
-            binReader.readScidacFieldRecord(evec[k], vecRecord);
+            readElement(evec[k], vecRecord, binReader);
             if (vecRecord.index != k)
             {
                 HADRONS_ERROR(Io, "Eigenvector " + std::to_string(k) + " has a"
@@ -155,17 +179,11 @@ protected:
     {
         ScidacReader binReader;
         VecRecord    vecRecord;
-        std::string  recordXml;
 
         binReader.open(filename);
-        binReader.readLimeObject(recordXml, SCIDAC_FILE_XML);
-        XmlReader xmlReader(recordXml, true, "eigenPackPar");
-        xmlReader.push();
-        xmlReader.readCurrentSubtree(record.operatorXml);
-        xmlReader.nextElement();
-        xmlReader.readCurrentSubtree(record.solverXml);
+        readHeader(binReader);
         LOG(Message) << "Reading eigenvector " << index << std::endl;
-        binReader.readScidacFieldRecord(evec, vecRecord);
+        readElement(evec, vecRecord, binReader);
         if (vecRecord.index != index)
         {
             HADRONS_ERROR(Io, "Eigenvector " + std::to_string(index) + " has a"
@@ -176,18 +194,30 @@ protected:
         binReader.close();
     }
 
+    void writeHeader(ScidacWriter &binWriter)
+    {
+        XmlWriter    xmlWriter("", "eigenPackPar");
+
+        xmlWriter.pushXmlString(record.operatorXml);
+        xmlWriter.pushXmlString(record.solverXml);
+        binWriter.writeLimeObject(1, 1, xmlWriter, "parameters", SCIDAC_FILE_XML);
+    }
+
+    template <typename T>
+    void writeElement(ScidacWriter &binWriter, T &evec, VecRecord &vecRecord)
+    {
+        binWriter.writeScidacFieldRecord(evec, vecRecord, DEFAULT_ASCII_PREC);
+    }
+
     template <typename T>
     void basicWrite(const std::string filename, std::vector<T> &evec, 
                     const std::vector<RealD> &eval, const unsigned int size)
     {
         ScidacWriter binWriter(evec[0]._grid->IsBoss());
-        XmlWriter    xmlWriter("", "eigenPackPar");
 
         makeFileDir(filename, evec[0]._grid);
-        xmlWriter.pushXmlString(record.operatorXml);
-        xmlWriter.pushXmlString(record.solverXml);
         binWriter.open(filename);
-        binWriter.writeLimeObject(1, 1, xmlWriter, "parameters", SCIDAC_FILE_XML);
+        writeHeader(binWriter);
         for(int k = 0; k < size; ++k) 
         {
             VecRecord vecRecord;
@@ -195,7 +225,7 @@ protected:
             vecRecord.index = k;
             vecRecord.eval  = eval[k];
             LOG(Message) << "Writing eigenvector " << k << std::endl;
-            binWriter.writeScidacFieldRecord(evec[k], vecRecord, DEFAULT_ASCII_PREC);
+            writeElement(binWriter, evec[k], vecRecord);
         }
         binWriter.close();
     }
@@ -205,18 +235,15 @@ protected:
                           const RealD eval, const unsigned int index)
     {
         ScidacWriter binWriter(evec._grid->IsBoss());
-        XmlWriter    xmlWriter("", "eigenPackPar");
         VecRecord    vecRecord;
 
         makeFileDir(filename, evec._grid);
-        xmlWriter.pushXmlString(record.operatorXml);
-        xmlWriter.pushXmlString(record.solverXml);
         binWriter.open(filename);
-        binWriter.writeLimeObject(1, 1, xmlWriter, "parameters", SCIDAC_FILE_XML);
+        writeHeader(binWriter);
         vecRecord.index = index;
         vecRecord.eval  = eval;
         LOG(Message) << "Writing eigenvector " << index << std::endl;
-        binWriter.writeScidacFieldRecord(evec, vecRecord, DEFAULT_ASCII_PREC);
+        writeElement(binWriter, evec, vecRecord);
         binWriter.close();
     }
 };
@@ -329,6 +356,8 @@ using CoarseFermionEigenPack = CoarseEigenPack<
     typename LocalCoherenceLanczos<typename FImpl::SiteSpinor, 
                                    typename FImpl::SiteComplex, 
                                    nBasis>::CoarseField>;
+
+#undef HADRONS_DUMP_EP_METADATA
 
 END_HADRONS_NAMESPACE
 
