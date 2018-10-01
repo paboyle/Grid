@@ -122,10 +122,16 @@ protected:
     void basicRead(std::vector<T> &evec, std::vector<RealD> &eval,
                    const std::string filename, const unsigned int size)
     {
-        ScidacReader    binReader;
+        ScidacReader binReader;
+        std::string  recordXml;
 
         binReader.open(filename);
-        binReader.skipPastObjectRecord(SCIDAC_FILE_XML);
+        binReader.readLimeObject(recordXml, SCIDAC_FILE_XML);
+        XmlReader xmlReader(recordXml, true, "eigenPackPar");
+        xmlReader.push();
+        xmlReader.readCurrentSubtree(record.operatorXml);
+        xmlReader.nextElement();
+        xmlReader.readCurrentSubtree(record.solverXml);
         for(int k = 0; k < size; ++k) 
         {
             VecRecord vecRecord;
@@ -149,9 +155,15 @@ protected:
     {
         ScidacReader binReader;
         VecRecord    vecRecord;
+        std::string  recordXml;
 
         binReader.open(filename);
-        binReader.skipPastObjectRecord(SCIDAC_FILE_XML);
+        binReader.readLimeObject(recordXml, SCIDAC_FILE_XML);
+        XmlReader xmlReader(recordXml, true, "eigenPackPar");
+        xmlReader.push();
+        xmlReader.readCurrentSubtree(record.operatorXml);
+        xmlReader.nextElement();
+        xmlReader.readCurrentSubtree(record.solverXml);
         LOG(Message) << "Reading eigenvector " << index << std::endl;
         binReader.readScidacFieldRecord(evec, vecRecord);
         if (vecRecord.index != index)
