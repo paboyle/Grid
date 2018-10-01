@@ -250,8 +250,7 @@ class GridLimeReader : public BinaryIO {
   ////////////////////////////////////////////
   // Read a generic serialisable object
   ////////////////////////////////////////////
-  template<class serialisable_object>
-  void readLimeObject(serialisable_object &object,std::string object_name,std::string record_name)
+  void readLimeObject(std::string &xmlstring,std::string record_name)
   {
     // should this be a do while; can we miss a first record??
     while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
@@ -266,14 +265,22 @@ class GridLimeReader : public BinaryIO {
 	limeReaderReadData((void *)&xmlc[0], &nbytes, LimeR);    
 	//	std::cout << GridLogMessage<< " readLimeObject matches XML " << &xmlc[0] <<std::endl;
 
-  std::string xmlstring(&xmlc[0]);
-	XmlReader RD(xmlstring, true, "");
-	read(RD,object_name,object);
+   xmlstring = std::string(&xmlc[0]);
 	return;
       }
 
     }  
     assert(0);
+  }
+
+  template<class serialisable_object>
+  void readLimeObject(serialisable_object &object,std::string object_name,std::string record_name)
+  {
+    std::string xmlstring;
+
+    readLimeObject(xmlstring, record_name);
+	  XmlReader RD(xmlstring, true, "");
+	  read(RD,object_name,object);
   }
 };
 
