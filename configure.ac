@@ -562,6 +562,7 @@ AC_CONFIG_FILES(tests/qdpxx/Makefile)
 AC_CONFIG_FILES(tests/testu01/Makefile)
 AC_CONFIG_FILES(benchmarks/Makefile)
 AC_CONFIG_FILES(Hadrons/Makefile)
+AC_CONFIG_FILES(Hadrons/Utilities/Makefile)
 AC_OUTPUT
 
 echo ""

@@ -46,22 +46,24 @@ LOG(Message) << record.operatorXml << std::endl;\
 LOG(Message) << "* solver" << std::endl;\
 LOG(Message) << record.solverXml << std::endl;
 
+struct PackRecord
+{
+    std::string operatorXml, solverXml;
+};
+
+struct VecRecord: Serializable
+{
+    GRID_SERIALIZABLE_CLASS_MEMBERS(VecRecord,
+                                    unsigned int, index,
+                                    double,       eval);
+    VecRecord(void): index(0), eval(0.) {}
+};
+
 template <typename F>
 class EigenPack
 {
 public:
     typedef F Field;
-    struct PackRecord
-    {
-        std::string operatorXml, solverXml;
-    };
-    struct VecRecord: Serializable
-    {
-        GRID_SERIALIZABLE_CLASS_MEMBERS(VecRecord,
-                                        unsigned int, index,
-                                        double,       eval);
-        VecRecord(void): index(0), eval(0.) {}
-    };
 public:
     std::vector<RealD> eval;
     std::vector<F>     evec;
@@ -115,6 +117,39 @@ public:
             basicWrite(evecFilename(fileStem, -1, traj), evec, eval, evec.size());
         }
     }
+
+    static void readHeader(PackRecord &record, ScidacReader &binReader)
+    {
+        std::string recordXml;
+
+        binReader.readLimeObject(recordXml, SCIDAC_FILE_XML);
+        XmlReader xmlReader(recordXml, true, "eigenPackPar");
+        xmlReader.push();
+        xmlReader.readCurrentSubtree(record.operatorXml);
+        xmlReader.nextElement();
+        xmlReader.readCurrentSubtree(record.solverXml);
+    }
+
+    template <typename T>
+    static void readElement(T &evec, VecRecord &vecRecord, ScidacReader &binReader)
+    {
+        binReader.readScidacFieldRecord(evec, vecRecord);
+    }
+
+    static void writeHeader(ScidacWriter &binWriter, PackRecord &record)
+    {
+        XmlWriter xmlWriter("", "eigenPackPar");
+
+        xmlWriter.pushXmlString(record.operatorXml);
+        xmlWriter.pushXmlString(record.solverXml);
+        binWriter.writeLimeObject(1, 1, xmlWriter, "parameters", SCIDAC_FILE_XML);
+    }
+
+    template <typename T>
+    static void writeElement(ScidacWriter &binWriter, T &evec, VecRecord &vecRecord)
+    {
+        binWriter.writeScidacFieldRecord(evec, vecRecord, DEFAULT_ASCII_PREC);
+    }
 protected:
     std::string evecFilename(const std::string stem, const int vec, const int traj)
     {
@@ -130,24 +165,6 @@ protected:
         }
     }
 
-    void readHeader(ScidacReader &binReader)
-    {
-        std::string  recordXml;
-
-        binReader.readLimeObject(recordXml, SCIDAC_FILE_XML);
-        XmlReader xmlReader(recordXml, true, "eigenPackPar");
-        xmlReader.push();
-        xmlReader.readCurrentSubtree(record.operatorXml);
-        xmlReader.nextElement();
-        xmlReader.readCurrentSubtree(record.solverXml);
-    }
-
-    template <typename T>
-    void readElement(T &evec, VecRecord &vecRecord, ScidacReader &binReader)
-    {
-        binReader.readScidacFieldRecord(evec, vecRecord);
-    }
-
     template <typename T>
     void basicRead(std::vector<T> &evec, std::vector<RealD> &eval,
                    const std::string filename, const unsigned int size)
@@ -155,7 +172,7 @@ protected:
         ScidacReader binReader;
 
         binReader.open(filename);
-        readHeader(binReader);
+        readHeader(record, binReader);
         for(int k = 0; k < size; ++k) 
         {
             VecRecord vecRecord;
@@ -181,7 +198,7 @@ protected:
         VecRecord    vecRecord;
 
         binReader.open(filename);
-        readHeader(binReader);
+        readHeader(record, binReader);
         LOG(Message) << "Reading eigenvector " << index << std::endl;
         readElement(evec, vecRecord, binReader);
         if (vecRecord.index != index)
@@ -194,21 +211,6 @@ protected:
         binReader.close();
     }
 
-    void writeHeader(ScidacWriter &binWriter)
-    {
-        XmlWriter    xmlWriter("", "eigenPackPar");
-
-        xmlWriter.pushXmlString(record.operatorXml);
-        xmlWriter.pushXmlString(record.solverXml);
-        binWriter.writeLimeObject(1, 1, xmlWriter, "parameters", SCIDAC_FILE_XML);
-    }
-
-    template <typename T>
-    void writeElement(ScidacWriter &binWriter, T &evec, VecRecord &vecRecord)
-    {
-        binWriter.writeScidacFieldRecord(evec, vecRecord, DEFAULT_ASCII_PREC);
-    }
-
     template <typename T>
     void basicWrite(const std::string filename, std::vector<T> &evec, 
                     const std::vector<RealD> &eval, const unsigned int size)
@@ -217,7 +219,7 @@ protected:
 
         makeFileDir(filename, evec[0]._grid);
         binWriter.open(filename);
-        writeHeader(binWriter);
+        writeHeader(binWriter, record);
         for(int k = 0; k < size; ++k) 
         {
             VecRecord vecRecord;
@@ -239,7 +241,7 @@ protected:
 
         makeFileDir(filename, evec._grid);
         binWriter.open(filename);
-        writeHeader(binWriter);
+        writeHeader(binWriter, record);
         vecRecord.index = index;
         vecRecord.eval  = eval;
         LOG(Message) << "Writing eigenvector " << index << std::endl;
