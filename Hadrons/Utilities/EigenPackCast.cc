@@ -16,7 +16,9 @@ void convert(const std::string outFilename, const std::string inFilename,
     typedef typename FOut::vector_type VTypeOut;
     typedef typename FIn::vector_type  VTypeIn;
 
-    std::shared_ptr<GridBase> fgIn, fgOut, gIn, gOut;
+    std::shared_ptr<GridCartesian>         fgIn, fgOut;
+    std::shared_ptr<GridRedBlackCartesian> gIn, gOut;
+
     auto                      dim     = GridDefaultLatt();
     unsigned int              nd      = dim.size();
     auto                      simdOut = GridDefaultSimd(nd, VTypeOut::Nsimd());
@@ -25,8 +27,8 @@ void convert(const std::string outFilename, const std::string inFilename,
     fgOut.reset(SpaceTimeGrid::makeFourDimGrid(dim, simdOut, GridDefaultMpi()));
     gOut.reset(SpaceTimeGrid::makeFourDimRedBlackGrid(fgOut.get()));
     fgIn.reset(SpaceTimeGrid::makeFourDimGrid(dim, simdIn, GridDefaultMpi()));
-    gIn.reset(SpaceTimeGrid::makeFourDimRedBlackGrid(fgOut.get()));
-    
+    gIn.reset(SpaceTimeGrid::makeFourDimRedBlackGrid(fgIn.get()));
+
     FOut bufOut(gOut.get());
     FIn  bufIn(gIn.get()), testIn(gIn.get());
 
