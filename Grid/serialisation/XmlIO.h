@@ -72,16 +72,18 @@ namespace Grid
     XmlReader(const std::string &fileName, const bool isBuffer = false, 
               std::string toplev = std::string("grid") );
     virtual ~XmlReader(void) = default;
-    bool push(const std::string &s);
+    bool push(const std::string &s = "");
     void pop(void);
-    bool nextElement(const std::string &s);
+    bool nextElement(const std::string &s = "");
     template <typename U>
     void readDefault(const std::string &s, U &output);
     template <typename U>
     void readDefault(const std::string &s, std::vector<U> &output);
+    void readCurrentSubtree(std::string &s);
   private:
     void checkParse(const pugi::xml_parse_result &result, const std::string name);
   private:
+    const std::string  indent_{"  "};
     pugi::xml_document doc_;
     pugi::xml_node     node_;
     std::string        fileName_;

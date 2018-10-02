@@ -121,17 +121,26 @@ XmlReader::XmlReader(const std::string &s,  const bool isBuffer,
   }
 }
 
+#define XML_SAFE_NODE(expr)\
+if (expr)\
+{\
+  node_ = expr;\
+  return true;\
+}\
+else\
+{\
+  return false;\
+}
+
 bool XmlReader::push(const std::string &s)
 {
-  if (node_.child(s.c_str()))
+  if (s.empty())
   {
-    node_ = node_.child(s.c_str());
-
-    return true;
+    XML_SAFE_NODE(node_.first_child());
   }
   else
   {
-    return false;
+    XML_SAFE_NODE(node_.child(s.c_str()));
   }
 }
 
@@ -142,16 +151,24 @@ void XmlReader::pop(void)
 
 bool XmlReader::nextElement(const std::string &s)
 {
-  if (node_.next_sibling(s.c_str()))
+  if (s.empty())
   {
-    node_ = node_.next_sibling(s.c_str());
-    
-    return true;
+    XML_SAFE_NODE(node_.next_sibling());
   }
   else
   {
-    return false;
+    XML_SAFE_NODE(node_.next_sibling(s.c_str()));
   }
+}
+
+void XmlReader::readCurrentSubtree(std::string &s)
+{
+  std::ostringstream oss; 
+  pugi::xml_document doc;
+
+  doc.append_copy(node_);
+  doc.save(oss, indent_.c_str(), pugi::format_default | pugi::format_no_declaration);
+  s = oss.str();
 }
 
 template <>
