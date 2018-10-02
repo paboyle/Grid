@@ -61,7 +61,7 @@ struct VecRecord: Serializable
 
 namespace EigenPackIo
 {
-    void readHeader(PackRecord &record, ScidacReader &binReader)
+    inline void readHeader(PackRecord &record, ScidacReader &binReader)
     {
         std::string recordXml;
 
@@ -141,7 +141,7 @@ namespace EigenPackIo
         }
     }
 
-    void writeHeader(ScidacWriter &binWriter, PackRecord &record)
+    inline void writeHeader(ScidacWriter &binWriter, PackRecord &record)
     {
         XmlWriter xmlWriter("", "eigenPackPar");
 
