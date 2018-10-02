@@ -159,6 +159,7 @@ int main(int argc, char *argv[])
     
     // initialization
     Grid_init(&argc, &argv);
+    initLogger();
 
     // execution
     try
