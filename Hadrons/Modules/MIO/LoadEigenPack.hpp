@@ -54,7 +54,7 @@ template <typename Pack>
 class TLoadEigenPack: public Module<LoadEigenPackPar>
 {
 public:
-    typedef EigenPack<typename Pack::Field> BasePack;
+    typedef EigenPack<typename Pack::Field, typename Pack::FieldIo> BasePack;
 public:
     // constructor
     TLoadEigenPack(const std::string name);
@@ -70,6 +70,7 @@ public:
 };
 
 MODULE_REGISTER_TMP(LoadFermionEigenPack, TLoadEigenPack<FermionEigenPack<FIMPL>>, MIO);
+MODULE_REGISTER_TMP(LoadFermionEigenPackIo32, ARG(TLoadEigenPack<FermionEigenPack<FIMPL, FIMPLF>>), MIO);
 
 /******************************************************************************
  *                    TLoadEigenPack implementation                           *

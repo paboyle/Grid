@@ -228,7 +228,8 @@ template <typename F, typename FIo = F>
 class EigenPack
 {
 public:
-    typedef F Field;
+    typedef F   Field;
+    typedef FIo FieldIo;
 public:
     std::vector<RealD> eval;
     std::vector<F>     evec;

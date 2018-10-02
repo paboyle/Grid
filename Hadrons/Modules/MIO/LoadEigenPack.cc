@@ -32,4 +32,4 @@ using namespace Hadrons;
 using namespace MIO;
 
 template class Grid::Hadrons::MIO::TLoadEigenPack<FermionEigenPack<FIMPL>>;
-
+template class Grid::Hadrons::MIO::TLoadEigenPack<FermionEigenPack<FIMPL, FIMPLF>>;
