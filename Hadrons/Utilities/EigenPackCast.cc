@@ -26,8 +26,14 @@ void convert(const std::string outFilename, const std::string inFilename,
     gIn.reset(SpaceTimeGrid::makeFourDimGrid(dim, simdIn, GridDefaultMpi()));
 
     FOut bufOut(gOut.get());
-    FIn  bufIn(gIn.get());
+    FIn  bufIn(gIn.get()), testIn(gIn.get());
 
+    LOG(Message) << "==== EIGENPACK CONVERSION" << std::endl;
+    LOG(Message) << "In path  : " << inFilename  << std::endl;
+    LOG(Message) << "In type  : " << typeName<FIn>() << std::endl;
+    LOG(Message) << "Out path : " << outFilename << std::endl;
+    LOG(Message) << "Out type : " << typeName<FOut>() << std::endl;
+    LOG(Message) << "Multifile: " << (multiFile ? "yes" : "no") << std::endl;
     if (multiFile)
     {
         for(unsigned int k = 0; k < size; ++k)
@@ -39,6 +45,9 @@ void convert(const std::string outFilename, const std::string inFilename,
             std::string  outV = outFilename + "/v" + std::to_string(k) + ".bin";
             std::string  inV  = inFilename + "/v" + std::to_string(k) + ".bin";
 
+            LOG(Message) << "==== Converting vector " << k << std::endl;
+            LOG(Message) << "In : " << inV  << std::endl;
+            LOG(Message) << "Out: " << outV << std::endl;
             makeFileDir(outV, gOut.get());
             binWriter.open(outV);
             binReader.open(inV);
@@ -46,6 +55,9 @@ void convert(const std::string outFilename, const std::string inFilename,
             EPOut::writeHeader(binWriter, record);
             EPIn::readElement(bufIn, vecRecord, binReader);
             precisionChange(bufOut, bufIn);
+            precisionChange(testIn, bufOut);
+            testIn -= bufIn;
+            LOG(Message) << "Diff norm^2: " << norm2(testIn) << std::endl;
             EPOut::writeElement(binWriter, bufOut, vecRecord);
             binWriter.close();
             binReader.close();
@@ -66,8 +78,12 @@ void convert(const std::string outFilename, const std::string inFilename,
         {
             VecRecord vecRecord;
 
+            LOG(Message) << "==== Converting vector " << k << std::endl;
             EPIn::readElement(bufIn, vecRecord, binReader);
             precisionChange(bufOut, bufIn);
+            precisionChange(testIn, bufOut);
+            testIn -= bufIn;
+            LOG(Message) << "Diff norm^2: " << norm2(testIn) << std::endl;
             EPOut::writeElement(binWriter, bufOut, vecRecord);
         }
         binWriter.close();
