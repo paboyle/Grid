@@ -224,21 +224,41 @@ namespace EigenPackIo
     }
 }
 
-template <typename F, typename FIo = F>
-class EigenPack
+template <typename F>
+class BaseEigenPack
 {
 public:
-    typedef F   Field;
-    typedef FIo FieldIo;
+    typedef F Field;
 public:
     std::vector<RealD> eval;
     std::vector<F>     evec;
     PackRecord         record;
 public:
+    BaseEigenPack(void)          = default;
+    BaseEigenPack(const size_t size, GridBase *grid)
+    {
+        resize(size, grid);
+    }
+    virtual ~BaseEigenPack(void) = default;
+    void resize(const size_t size, GridBase *grid)
+    {
+        eval.resize(size);
+        evec.resize(size, grid);
+    }
+};
+
+template <typename F, typename FIo = F>
+class EigenPack: public BaseEigenPack<F>
+{
+public:
+    typedef F   Field;
+    typedef FIo FieldIo;
+public:
     EigenPack(void)          = default;
     virtual ~EigenPack(void) = default;
 
     EigenPack(const size_t size, GridBase *grid, GridBase *gridIo = nullptr)
+    : BaseEigenPack<F>(size, grid)
     {
         if (typeHash<F>() != typeHash<FIo>())
         {
@@ -249,24 +269,21 @@ public:
             }
         }
         gridIo_ = gridIo;
-        resize(size, grid);
-    }
-
-    void resize(const size_t size, GridBase *grid)
-    {
-        eval.resize(size);
-        evec.resize(size, grid);
     }
 
     virtual void read(const std::string fileStem, const bool multiFile, const int traj = -1)
     {
-        EigenPackIo::readPack<F, FIo>(evec, eval, record, evecFilename(fileStem, traj, multiFile), evec.size(), multiFile, gridIo_);
-        HADRONS_DUMP_EP_METADATA(record);
+        EigenPackIo::readPack<F, FIo>(this->evec, this->eval, this->record, 
+                                      evecFilename(fileStem, traj, multiFile), 
+                                      this->evec.size(), multiFile, gridIo_);
+        HADRONS_DUMP_EP_METADATA(this->record);
     }
 
     virtual void write(const std::string fileStem, const bool multiFile, const int traj = -1)
     {
-        EigenPackIo::writePack<F, FIo>(evecFilename(fileStem, traj, multiFile), evec, eval, record, evec.size(), multiFile, gridIo_);
+        EigenPackIo::writePack<F, FIo>(evecFilename(fileStem, traj, multiFile), 
+                                       this->evec, this->eval, this->record, 
+                                       this->evec.size(), multiFile, gridIo_);
     }
 protected:
     std::string evecFilename(const std::string stem, const int traj, const bool multiFile)
@@ -282,8 +299,6 @@ protected:
             return stem + t + ".bin";
         }
     }
-
-    
 protected:
     GridBase *gridIo_;
 };
@@ -374,6 +389,9 @@ public:
 private:
     GridBase *gridCoarseIo_;
 };
+
+template <typename FImpl>
+using BaseFermionEigenPack = BaseEigenPack<typename FImpl::FermionField>;
 
 template <typename FImpl, typename FImplIo = FImpl>
 using FermionEigenPack = EigenPack<typename FImpl::FermionField, typename FImplIo::FermionField>;

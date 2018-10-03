@@ -54,9 +54,9 @@ template <typename Pack>
 class TLoadEigenPack: public Module<LoadEigenPackPar>
 {
 public:
-    typedef typename Pack::Field      Field;
-    typedef typename Pack::FieldIo    FieldIo;
-    typedef EigenPack<Field, FieldIo> BasePack;
+    typedef typename Pack::Field   Field;
+    typedef typename Pack::FieldIo FieldIo;
+    typedef BaseEigenPack<Field>   BasePack;
 public:
     // constructor
     TLoadEigenPack(const std::string name);
