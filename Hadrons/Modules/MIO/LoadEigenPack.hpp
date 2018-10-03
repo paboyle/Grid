@@ -54,7 +54,9 @@ template <typename Pack>
 class TLoadEigenPack: public Module<LoadEigenPackPar>
 {
 public:
-    typedef EigenPack<typename Pack::Field, typename Pack::FieldIo> BasePack;
+    typedef typename Pack::Field      Field;
+    typedef typename Pack::FieldIo    FieldIo;
+    typedef EigenPack<Field, FieldIo> BasePack;
 public:
     // constructor
     TLoadEigenPack(const std::string name);
@@ -102,9 +104,14 @@ std::vector<std::string> TLoadEigenPack<Pack>::getOutput(void)
 template <typename Pack>
 void TLoadEigenPack<Pack>::setup(void)
 {
-    env().createGrid(par().Ls);
+    GridBase *gridIo = nullptr;
+
+    if (typeHash<Field>() != typeHash<FieldIo>())
+    {
+        gridIo = envGetRbGrid(FieldIo, par().Ls);
+    }
     envCreateDerived(BasePack, Pack, getName(), par().Ls, par().size, 
-                     env().getRbGrid(par().Ls));
+                     envGetRbGrid(Field, par().Ls), gridIo);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
