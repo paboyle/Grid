@@ -59,8 +59,12 @@ void convert(const std::string outFilename, const std::string inFilename,
         }
     }
 
-    FOut bufOut(gOut);
-    FIn  bufIn(gIn), testIn(gIn);
+    FOut         bufOut(gOut);
+    FIn          bufIn(gIn), testIn(gIn);
+    ScidacWriter binWriter(gOut->IsBoss());
+    ScidacReader binReader;
+    PackRecord   record;
+    RealD        eval;
 
     LOG(Message) << "==== EIGENPACK CONVERSION" << std::endl;
     LOG(Message) << "Lattice       : " << gIn->GlobalDimensions() << std::endl;
@@ -75,10 +79,6 @@ void convert(const std::string outFilename, const std::string inFilename,
     {
         for(unsigned int k = 0; k < size; ++k)
         {
-            ScidacWriter binWriter(gOut->IsBoss());
-            ScidacReader binReader;
-            PackRecord   record;
-            VecRecord    vecRecord;
             std::string  outV = outFilename + "/v" + std::to_string(k) + ".bin";
             std::string  inV  = inFilename + "/v" + std::to_string(k) + ".bin";
 
@@ -88,40 +88,25 @@ void convert(const std::string outFilename, const std::string inFilename,
             makeFileDir(outV, gOut);
             binWriter.open(outV);
             binReader.open(inV);
-            EPIn::readHeader(record, binReader);
-            EPOut::writeHeader(binWriter, record);
-            EPIn::readElement(bufIn, vecRecord, binReader);
-            precisionChange(bufOut, bufIn);
-            precisionChange(testIn, bufOut);
-            testIn -= bufIn;
-            LOG(Message) << "Diff norm^2: " << norm2(testIn) << std::endl;
-            EPOut::writeElement(binWriter, bufOut, vecRecord);
+            EigenPackIo::readHeader(record, binReader);
+            EigenPackIo::writeHeader(binWriter, record);
+            EigenPackIo::readElement<FIn>(bufIn, eval, k, binReader);
+            EigenPackIo::writeElement<FIn, FOut>(binWriter, bufIn, eval, k, &bufOut, &testIn);
             binWriter.close();
             binReader.close();
         }
     }
     else
     {
-        ScidacWriter binWriter(gOut->IsBoss());
-        ScidacReader binReader;
-        PackRecord   record;
-
         makeFileDir(outFilename, gOut);
         binWriter.open(outFilename);
         binReader.open(inFilename);
-        EPIn::readHeader(record, binReader);
-        EPOut::writeHeader(binWriter, record);
+        EigenPackIo::readHeader(record, binReader);
+        EigenPackIo::writeHeader(binWriter, record);
         for(unsigned int k = 0; k < size; ++k)
         {
-            VecRecord vecRecord;
-
-            LOG(Message) << "==== Converting vector " << k << std::endl;
-            EPIn::readElement(bufIn, vecRecord, binReader);
-            precisionChange(bufOut, bufIn);
-            precisionChange(testIn, bufOut);
-            testIn -= bufIn;
-            LOG(Message) << "Diff norm^2: " << norm2(testIn) << std::endl;
-            EPOut::writeElement(binWriter, bufOut, vecRecord);
+            EigenPackIo::readElement<FIn>(bufIn, eval, k, binReader);
+            EigenPackIo::writeElement<FIn, FOut>(binWriter, bufIn, eval, k, &bufOut, &testIn);
         }
         binWriter.close();
         binReader.close();

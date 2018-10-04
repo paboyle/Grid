@@ -39,12 +39,12 @@ BEGIN_HADRONS_NAMESPACE
 #define HADRONS_DEFAULT_LANCZOS_NBASIS 60
 #endif
 
-#define HADRONS_DUMP_EP_METADATA \
+#define HADRONS_DUMP_EP_METADATA(record) \
 LOG(Message) << "Eigenpack metadata:" << std::endl;\
 LOG(Message) << "* operator" << std::endl;\
-LOG(Message) << record.operatorXml << std::endl;\
+LOG(Message) << (record).operatorXml << std::endl;\
 LOG(Message) << "* solver" << std::endl;\
-LOG(Message) << record.solverXml << std::endl;
+LOG(Message) << (record).solverXml << std::endl;
 
 struct PackRecord
 {
@@ -59,66 +59,9 @@ struct VecRecord: Serializable
     VecRecord(void): index(0), eval(0.) {}
 };
 
-template <typename F>
-class EigenPack
+namespace EigenPackIo
 {
-public:
-    typedef F Field;
-public:
-    std::vector<RealD> eval;
-    std::vector<F>     evec;
-    PackRecord         record;
-public:
-    EigenPack(void)          = default;
-    virtual ~EigenPack(void) = default;
-
-    EigenPack(const size_t size, GridBase *grid)
-    {
-        resize(size, grid);
-    }
-
-    void resize(const size_t size, GridBase *grid)
-    {
-        eval.resize(size);
-        evec.resize(size, grid);
-    }
-
-    virtual void read(const std::string fileStem, const bool multiFile, const int traj = -1)
-    {
-        if (multiFile)
-        {
-            for(int k = 0; k < evec.size(); ++k)
-            {
-                basicReadSingle(evec[k], eval[k], evecFilename(fileStem, k, traj), k);
-                if (k == 0)
-                {
-                    HADRONS_DUMP_EP_METADATA;
-                }
-            }
-        }
-        else
-        {
-            basicRead(evec, eval, evecFilename(fileStem, -1, traj), evec.size());
-            HADRONS_DUMP_EP_METADATA;
-        }
-    }
-
-    virtual void write(const std::string fileStem, const bool multiFile, const int traj = -1)
-    {
-        if (multiFile)
-        {
-            for(int k = 0; k < evec.size(); ++k)
-            {
-                basicWriteSingle(evecFilename(fileStem, k, traj), evec[k], eval[k], k);
-            }
-        }
-        else
-        {
-            basicWrite(evecFilename(fileStem, -1, traj), evec, eval, evec.size());
-        }
-    }
-
-    static void readHeader(PackRecord &record, ScidacReader &binReader)
+    inline void readHeader(PackRecord &record, ScidacReader &binReader)
     {
         std::string recordXml;
 
@@ -130,13 +73,75 @@ public:
         xmlReader.readCurrentSubtree(record.solverXml);
     }
 
-    template <typename T>
-    static void readElement(T &evec, VecRecord &vecRecord, ScidacReader &binReader)
+    template <typename T, typename TIo = T>
+    void readElement(T &evec, RealD &eval, const unsigned int index,
+                     ScidacReader &binReader, TIo *ioBuf = nullptr)
     {
-        binReader.readScidacFieldRecord(evec, vecRecord);
+        VecRecord vecRecord;
+
+        LOG(Message) << "Reading eigenvector " << index << std::endl;
+        if (ioBuf == nullptr)
+        {
+            binReader.readScidacFieldRecord(evec, vecRecord);
+        }
+        else
+        {
+            binReader.readScidacFieldRecord(*ioBuf, vecRecord);
+            precisionChange(evec, *ioBuf);
+        }
+        if (vecRecord.index != index)
+        {
+            HADRONS_ERROR(Io, "Eigenvector " + std::to_string(index) + " has a"
+                            + " wrong index (expected " + std::to_string(vecRecord.index) 
+                            + ")");
+        }
+        eval = vecRecord.eval;
     }
 
-    static void writeHeader(ScidacWriter &binWriter, PackRecord &record)
+    template <typename T, typename TIo = T>
+    static void readPack(std::vector<T> &evec, std::vector<RealD> &eval,
+                         PackRecord &record, const std::string filename, 
+                         const unsigned int size, bool multiFile, 
+                         GridBase *gridIo = nullptr)
+    {
+        std::unique_ptr<TIo> ioBuf{nullptr};
+        ScidacReader         binReader;
+
+        if (typeHash<T>() != typeHash<TIo>())
+        {
+            if (gridIo == nullptr)
+            {
+                HADRONS_ERROR(Definition, 
+                              "I/O type different from vector type but null I/O grid passed");
+            }
+            ioBuf.reset(new TIo(gridIo));
+        }
+        if (multiFile)
+        {
+            std::string fullFilename;
+
+            for(int k = 0; k < size; ++k) 
+            {
+                fullFilename = filename + "/v" + std::to_string(k) + ".bin";
+                binReader.open(fullFilename);
+                readHeader(record, binReader);
+                readElement(evec[k], eval[k], k, binReader, ioBuf.get());
+                binReader.close();
+            }
+        }
+        else
+        {
+            binReader.open(filename);
+            readHeader(record, binReader);
+            for(int k = 0; k < size; ++k) 
+            {
+                readElement(evec[k], eval[k], k, binReader, ioBuf.get());
+            }
+            binReader.close();
+        }
+    }
+
+    inline void writeHeader(ScidacWriter &binWriter, PackRecord &record)
     {
         XmlWriter xmlWriter("", "eigenPackPar");
 
@@ -145,165 +150,217 @@ public:
         binWriter.writeLimeObject(1, 1, xmlWriter, "parameters", SCIDAC_FILE_XML);
     }
 
-    template <typename T>
-    static void writeElement(ScidacWriter &binWriter, T &evec, VecRecord &vecRecord)
+    template <typename T, typename TIo = T>
+    void writeElement(ScidacWriter &binWriter, T &evec, RealD &eval, 
+                      const unsigned int index, TIo *ioBuf, 
+                      T *testBuf = nullptr)
     {
-        binWriter.writeScidacFieldRecord(evec, vecRecord, DEFAULT_ASCII_PREC);
-    }
-protected:
-    std::string evecFilename(const std::string stem, const int vec, const int traj)
-    {
-        std::string t = (traj < 0) ? "" : ("." + std::to_string(traj));
+        VecRecord vecRecord;
 
-        if (vec == -1)
+        LOG(Message) << "Writing eigenvector " << index << std::endl;
+        vecRecord.eval  = eval;
+        vecRecord.index = index;
+        if ((ioBuf == nullptr) || (testBuf == nullptr))
         {
-            return stem + t + ".bin";
+            binWriter.writeScidacFieldRecord(evec, vecRecord, DEFAULT_ASCII_PREC);
         }
         else
         {
-            return stem + t + "/v" + std::to_string(vec) + ".bin";
-        }
+            precisionChange(*ioBuf, evec);
+            precisionChange(*testBuf, *ioBuf);
+            *testBuf -= evec;
+            LOG(Message) << "Precision diff norm^2 " << norm2(*testBuf) << std::endl;
+            binWriter.writeScidacFieldRecord(*ioBuf, vecRecord, DEFAULT_ASCII_PREC);
+        }   
     }
-
-    template <typename T>
-    void basicRead(std::vector<T> &evec, std::vector<RealD> &eval,
-                   const std::string filename, const unsigned int size)
+    
+    template <typename T, typename TIo = T>
+    static void writePack(const std::string filename, std::vector<T> &evec, 
+                          std::vector<RealD> &eval, PackRecord &record, 
+                          const unsigned int size, bool multiFile, 
+                          GridBase *gridIo = nullptr)
     {
-        ScidacReader binReader;
+        GridBase             *grid = evec[0]._grid;
+        std::unique_ptr<TIo> ioBuf{nullptr}; 
+        std::unique_ptr<T>   testBuf{nullptr};
+        ScidacWriter         binWriter(grid->IsBoss());
 
-        binReader.open(filename);
-        readHeader(record, binReader);
-        for(int k = 0; k < size; ++k) 
+        if (typeHash<T>() != typeHash<TIo>())
         {
-            VecRecord vecRecord;
-
-            LOG(Message) << "Reading eigenvector " << k << std::endl;
-            readElement(evec[k], vecRecord, binReader);
-            if (vecRecord.index != k)
+            if (gridIo == nullptr)
             {
-                HADRONS_ERROR(Io, "Eigenvector " + std::to_string(k) + " has a"
-                              + " wrong index (expected " + std::to_string(vecRecord.index) 
-                              + ") in file '" + filename + "'");
+                HADRONS_ERROR(Definition, 
+                              "I/O type different from vector type but null I/O grid passed");
             }
-            eval[k] = vecRecord.eval;
+            ioBuf.reset(new TIo(gridIo));
+            testBuf.reset(new T(grid));
         }
-        binReader.close();
-    }
-
-    template <typename T>
-    void basicReadSingle(T &evec, RealD &eval, const std::string filename, 
-                         const unsigned int index)
-    {
-        ScidacReader binReader;
-        VecRecord    vecRecord;
-
-        binReader.open(filename);
-        readHeader(record, binReader);
-        LOG(Message) << "Reading eigenvector " << index << std::endl;
-        readElement(evec, vecRecord, binReader);
-        if (vecRecord.index != index)
+        if (multiFile)
         {
-            HADRONS_ERROR(Io, "Eigenvector " + std::to_string(index) + " has a"
-                          + " wrong index (expected " + std::to_string(vecRecord.index) 
-                          + ") in file '" + filename + "'");
+            std::string fullFilename;
+
+            for(int k = 0; k < size; ++k) 
+            {
+                fullFilename = filename + "/v" + std::to_string(k) + ".bin";
+
+                makeFileDir(fullFilename, grid);
+                binWriter.open(fullFilename);
+                writeHeader(binWriter, record);
+                writeElement(binWriter, evec[k], eval[k], k, ioBuf.get(), testBuf.get());
+                binWriter.close();
+            }
         }
-        eval = vecRecord.eval;
-        binReader.close();
-    }
-
-    template <typename T>
-    void basicWrite(const std::string filename, std::vector<T> &evec, 
-                    const std::vector<RealD> &eval, const unsigned int size)
-    {
-        ScidacWriter binWriter(evec[0]._grid->IsBoss());
-
-        makeFileDir(filename, evec[0]._grid);
-        binWriter.open(filename);
-        writeHeader(binWriter, record);
-        for(int k = 0; k < size; ++k) 
+        else
         {
-            VecRecord vecRecord;
-
-            vecRecord.index = k;
-            vecRecord.eval  = eval[k];
-            LOG(Message) << "Writing eigenvector " << k << std::endl;
-            writeElement(binWriter, evec[k], vecRecord);
+            makeFileDir(filename, grid);
+            binWriter.open(filename);
+            writeHeader(binWriter, record);
+            for(int k = 0; k < size; ++k) 
+            {
+                writeElement(binWriter, evec[k], eval[k], k, ioBuf.get(), testBuf.get());
+            }
+            binWriter.close();
         }
-        binWriter.close();
     }
+}
 
-    template <typename T>
-    void basicWriteSingle(const std::string filename, T &evec, 
-                          const RealD eval, const unsigned int index)
+template <typename F>
+class BaseEigenPack
+{
+public:
+    typedef F Field;
+public:
+    std::vector<RealD> eval;
+    std::vector<F>     evec;
+    PackRecord         record;
+public:
+    BaseEigenPack(void)          = default;
+    BaseEigenPack(const size_t size, GridBase *grid)
     {
-        ScidacWriter binWriter(evec._grid->IsBoss());
-        VecRecord    vecRecord;
-
-        makeFileDir(filename, evec._grid);
-        binWriter.open(filename);
-        writeHeader(binWriter, record);
-        vecRecord.index = index;
-        vecRecord.eval  = eval;
-        LOG(Message) << "Writing eigenvector " << index << std::endl;
-        writeElement(binWriter, evec, vecRecord);
-        binWriter.close();
+        resize(size, grid);
+    }
+    virtual ~BaseEigenPack(void) = default;
+    void resize(const size_t size, GridBase *grid)
+    {
+        eval.resize(size);
+        evec.resize(size, grid);
     }
 };
 
-template <typename FineF, typename CoarseF>
-class CoarseEigenPack: public EigenPack<FineF>
+template <typename F, typename FIo = F>
+class EigenPack: public BaseEigenPack<F>
 {
 public:
-    typedef CoarseF CoarseField;
+    typedef F   Field;
+    typedef FIo FieldIo;
 public:
-    std::vector<RealD>   evalCoarse;
+    EigenPack(void)          = default;
+    virtual ~EigenPack(void) = default;
+
+    EigenPack(const size_t size, GridBase *grid, GridBase *gridIo = nullptr)
+    : BaseEigenPack<F>(size, grid)
+    {
+        if (typeHash<F>() != typeHash<FIo>())
+        {
+            if (gridIo == nullptr)
+            {
+                HADRONS_ERROR(Definition, 
+                              "I/O type different from vector type but null I/O grid passed");
+            }
+        }
+        gridIo_ = gridIo;
+    }
+
+    virtual void read(const std::string fileStem, const bool multiFile, const int traj = -1)
+    {
+        EigenPackIo::readPack<F, FIo>(this->evec, this->eval, this->record, 
+                                      evecFilename(fileStem, traj, multiFile), 
+                                      this->evec.size(), multiFile, gridIo_);
+        HADRONS_DUMP_EP_METADATA(this->record);
+    }
+
+    virtual void write(const std::string fileStem, const bool multiFile, const int traj = -1)
+    {
+        EigenPackIo::writePack<F, FIo>(evecFilename(fileStem, traj, multiFile), 
+                                       this->evec, this->eval, this->record, 
+                                       this->evec.size(), multiFile, gridIo_);
+    }
+protected:
+    std::string evecFilename(const std::string stem, const int traj, const bool multiFile)
+    {
+        std::string t = (traj < 0) ? "" : ("." + std::to_string(traj));
+
+        if (multiFile)
+        {
+            return stem + t;
+        }
+        else
+        {
+            return stem + t + ".bin";
+        }
+    }
+protected:
+    GridBase *gridIo_;
+};
+
+template <typename FineF, typename CoarseF, 
+          typename FineFIo = FineF, typename CoarseFIo = CoarseF>
+class CoarseEigenPack: public EigenPack<FineF, FineFIo>
+{
+public:
+    typedef CoarseF CoarseField;         
     std::vector<CoarseF> evecCoarse;
+    std::vector<RealD>   evalCoarse;
 public:
     CoarseEigenPack(void)          = default;
     virtual ~CoarseEigenPack(void) = default;
 
     CoarseEigenPack(const size_t sizeFine, const size_t sizeCoarse, 
-                    GridBase *gridFine, GridBase *gridCoarse)
+                    GridBase *gridFine, GridBase *gridCoarse,
+                    GridBase *gridFineIo = nullptr, 
+                    GridBase *gridCoarseIo = nullptr)
     {
+        if (typeHash<FineF>() != typeHash<FineFIo>())
+        {
+            if (gridFineIo == nullptr)
+            {
+                HADRONS_ERROR(Definition, 
+                              "Fine I/O type different from vector type but null fine I/O grid passed");
+            }
+        }
+        if (typeHash<CoarseF>() != typeHash<CoarseFIo>())
+        {
+            if (gridCoarseIo == nullptr)
+            {
+                HADRONS_ERROR(Definition, 
+                              "Coarse I/O type different from vector type but null coarse I/O grid passed");
+            }
+        }
+        this->gridIo_ = gridFineIo;
+        gridCoarseIo_ = gridCoarseIo;
         resize(sizeFine, sizeCoarse, gridFine, gridCoarse);
     }
 
     void resize(const size_t sizeFine, const size_t sizeCoarse, 
                 GridBase *gridFine, GridBase *gridCoarse)
     {
-        EigenPack<FineF>::resize(sizeFine, gridFine);
+        EigenPack<FineF, FineFIo>::resize(sizeFine, gridFine);
         evalCoarse.resize(sizeCoarse);
         evecCoarse.resize(sizeCoarse, gridCoarse);
     }
 
     void readFine(const std::string fileStem, const bool multiFile, const int traj = -1)
     {
-        if (multiFile)
-        {
-            for(int k = 0; k < this->evec.size(); ++k)
-            {
-                this->basicReadSingle(this->evec[k], this->eval[k], this->evecFilename(fileStem + "_fine", k, traj), k);
-            }
-        }
-        else
-        {
-            this->basicRead(this->evec, this->eval, this->evecFilename(fileStem + "_fine", -1, traj), this->evec.size());
-        }
+        EigenPack<FineF, FineFIo>::read(fileStem + "_fine", multiFile, traj);
     }
 
     void readCoarse(const std::string fileStem, const bool multiFile, const int traj = -1)
     {
-        if (multiFile)
-        {
-            for(int k = 0; k < evecCoarse.size(); ++k)
-            {
-                this->basicReadSingle(evecCoarse[k], evalCoarse[k], this->evecFilename(fileStem + "_coarse", k, traj), k);
-            }
-        }
-        else
-        {
-            this->basicRead(evecCoarse, evalCoarse, this->evecFilename(fileStem + "_coarse", -1, traj), evecCoarse.size());
-        }
+        PackRecord dummy;
+
+        EigenPackIo::readPack<CoarseF, CoarseFIo>(evecCoarse, evalCoarse, dummy, 
+                              this->evecFilename(fileStem + "_coarse", traj, multiFile), 
+                              evecCoarse.size(), multiFile, gridCoarseIo_);
     }
 
     virtual void read(const std::string fileStem, const bool multiFile, const int traj = -1)
@@ -314,32 +371,14 @@ public:
 
     void writeFine(const std::string fileStem, const bool multiFile, const int traj = -1)
     {
-        if (multiFile)
-        {
-            for(int k = 0; k < this->evec.size(); ++k)
-            {
-                this->basicWriteSingle(this->evecFilename(fileStem + "_fine", k, traj), this->evec[k], this->eval[k], k);
-            }
-        }
-        else
-        {
-            this->basicWrite(this->evecFilename(fileStem + "_fine", -1, traj), this->evec, this->eval, this->evec.size());
-        }
+        EigenPack<FineF, FineFIo>::write(fileStem + "_fine", multiFile, traj);
     }
 
     void writeCoarse(const std::string fileStem, const bool multiFile, const int traj = -1)
     {
-        if (multiFile)
-        {
-            for(int k = 0; k < evecCoarse.size(); ++k)
-            {
-                this->basicWriteSingle(this->evecFilename(fileStem + "_coarse", k, traj), evecCoarse[k], evalCoarse[k], k);
-            }
-        }
-        else
-        {
-            this->basicWrite(this->evecFilename(fileStem + "_coarse", -1, traj), evecCoarse, evalCoarse, evecCoarse.size());
-        }
+        EigenPackIo::writePack<CoarseF, CoarseFIo>(this->evecFilename(fileStem + "_coarse", traj, multiFile), 
+                                                   evecCoarse, evalCoarse, this->record, 
+                                                   evecCoarse.size(), multiFile, gridCoarseIo_);
     }
     
     virtual void write(const std::string fileStem, const bool multiFile, const int traj = -1)
@@ -347,16 +386,25 @@ public:
         writeFine(fileStem, multiFile, traj);
         writeCoarse(fileStem, multiFile, traj);
     }
+private:
+    GridBase *gridCoarseIo_;
 };
 
 template <typename FImpl>
-using FermionEigenPack = EigenPack<typename FImpl::FermionField>;
+using BaseFermionEigenPack = BaseEigenPack<typename FImpl::FermionField>;
 
-template <typename FImpl, int nBasis>
+template <typename FImpl, typename FImplIo = FImpl>
+using FermionEigenPack = EigenPack<typename FImpl::FermionField, typename FImplIo::FermionField>;
+
+template <typename FImpl, int nBasis, typename FImplIo = FImpl>
 using CoarseFermionEigenPack = CoarseEigenPack<
     typename FImpl::FermionField,
     typename LocalCoherenceLanczos<typename FImpl::SiteSpinor, 
                                    typename FImpl::SiteComplex, 
+                                   nBasis>::CoarseField,
+    typename FImplIo::FermionField,
+    typename LocalCoherenceLanczos<typename FImplIo::SiteSpinor, 
+                                   typename FImplIo::SiteComplex, 
                                    nBasis>::CoarseField>;
 
 #undef HADRONS_DUMP_EP_METADATA
