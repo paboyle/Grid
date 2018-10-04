@@ -31,7 +31,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
-#include <Grid/Eigen/unsupported/CXX11/Tensor>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -45,10 +44,10 @@ template <typename Field, typename MesonField>
 void makeMesonFieldBlock(MesonField &mat, 
                          const Field *lhs_wi,
                          const Field *rhs_vj,
-                         std::vector<Gamma::Algebra> gamma,
+                         const std::vector<Gamma::Algebra> &gamma,
                          const std::vector<LatticeComplex> &mom,
                          int orthogdim,
-                         ModuleBase *caller = nullptr) 
+                         double &time) 
 {
     typedef typename Field::vector_object vobj;
     typedef typename vobj::scalar_object  sobj;
@@ -58,6 +57,8 @@ void makeMesonFieldBlock(MesonField &mat,
     typedef iSpinMatrix<vector_type> SpinMatrix_v;
     typedef iSpinMatrix<scalar_type> SpinMatrix_s;
     
+    TimerArray tArray;
+
     int Lblock = mat.dimension(3); 
     int Rblock = mat.dimension(4);
 
@@ -96,7 +97,7 @@ void makeMesonFieldBlock(MesonField &mat,
     int e2=    grid->_slice_block [orthogdim];
     int stride=grid->_slice_stride[orthogdim];
 
-    if (caller) caller->startTimer("contraction: colour trace & mom.");
+    tArray.startTimer("contraction: colour trace & mom.");
     // Nested parallelism would be ok
     // Wasting cores here. Test case r
     parallel_for(int r=0;r<rd;r++)
@@ -138,10 +139,10 @@ void makeMesonFieldBlock(MesonField &mat,
             }
         }
     }
-    if (caller) caller->stopTimer("contraction: colour trace & mom.");
+    tArray.stopTimer("contraction: colour trace & mom.");
 
     // Sum across simd lanes in the plane, breaking out orthog dir.
-    if (caller) caller->startTimer("contraction: local space sum");
+    tArray.startTimer("contraction: local space sum");
     parallel_for(int rt=0;rt<rd;rt++)
     {
         std::vector<int> icoor(Nd);
@@ -166,10 +167,12 @@ void makeMesonFieldBlock(MesonField &mat,
             }
         }
     }
-    if (caller) caller->stopTimer("contraction: local space sum");
+    tArray.stopTimer("contraction: local space sum");
+    time = tArray.getDTimer("contraction: colour trace & mom.")
+           + tArray.getDTimer("contraction: local space sum");
 
     // ld loop and local only??
-    if (caller) caller->startTimer("contraction: spin trace");
+    tArray.startTimer("contraction: spin trace");
     int pd = grid->_processors[orthogdim];
     int pc = grid->_processor_coor[orthogdim];
     parallel_for_nest2(int lt=0;lt<ld;lt++)
@@ -206,14 +209,198 @@ void makeMesonFieldBlock(MesonField &mat,
             }
         }
     }
-    if (caller) caller->stopTimer("contraction: spin trace");
+    tArray.stopTimer("contraction: spin trace");
     ////////////////////////////////////////////////////////////////////
     // This global sum is taking as much as 50% of time on 16 nodes
     // Vector size is 7 x 16 x 32 x 16 x 16 x sizeof(complex) = 2MB - 60MB depending on volume
     // Healthy size that should suffice
     ////////////////////////////////////////////////////////////////////
-    if (caller) caller->startTimer("contraction: global sum");
+    tArray.startTimer("contraction: global sum");
     grid->GlobalSumVector(&mat(0,0,0,0,0),Nmom*Ngamma*Nt*Lblock*Rblock);
+    tArray.stopTimer("contraction: global sum");
+}
+
+template <typename Field, typename AslashField>
+void makeAslashFieldBlock(AslashField &mat, 
+                          const Field *lhs_wi,
+                          const Field *rhs_vj,
+                          const std::vector<LatticeComplex> &emB0,
+                          const std::vector<LatticeComplex> &emB1,
+                          int orthogdim,
+                          ModuleBase *caller = nullptr) 
+{
+    typedef typename Field::vector_object vobj;
+    typedef typename vobj::scalar_object  sobj;
+    typedef typename vobj::scalar_type    scalar_type;
+    typedef typename vobj::vector_type    vector_type;
+
+    typedef iSpinMatrix<vector_type> SpinMatrix_v;
+    typedef iSpinMatrix<scalar_type> SpinMatrix_s;
+    
+    int Lblock = mat.dimension(2); 
+    int Rblock = mat.dimension(3);
+
+    GridBase *grid = lhs_wi[0]._grid;
+    
+    const int    Nd = grid->_ndimension;
+    const int Nsimd = grid->Nsimd();
+
+    int Nt  = grid->GlobalDimensions()[orthogdim];
+    int Nem = emB0.size();
+    assert(emB1.size() == Nem);
+
+    int fd=grid->_fdimensions[orthogdim];
+    int ld=grid->_ldimensions[orthogdim];
+    int rd=grid->_rdimensions[orthogdim];
+
+    // will locally sum vectors first
+    // sum across these down to scalars
+    // splitting the SIMD
+    int MFrvol = rd*Lblock*Rblock*Nem;
+    int MFlvol = ld*Lblock*Rblock*Nem;
+
+    Vector<vector_type> lvSum(MFrvol);
+    parallel_for (int r = 0; r < MFrvol; r++)
+    {
+        lvSum[r] = zero;
+    }
+
+    Vector<scalar_type> lsSum(MFlvol);             
+    parallel_for (int r = 0; r < MFlvol; r++)
+    {
+        lsSum[r] = scalar_type(0.0);
+    }
+
+    int e1=    grid->_slice_nblock[orthogdim];
+    int e2=    grid->_slice_block [orthogdim];
+    int stride=grid->_slice_stride[orthogdim];
+
+    if (caller) caller->startTimer("contraction: colour trace & Aslash mul");
+    // Nested parallelism would be ok
+    // Wasting cores here. Test case r
+    parallel_for(int r=0;r<rd;r++)
+    {
+        int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
+
+        for(int n=0;n<e1;n++)
+        for(int b=0;b<e2;b++)
+        {
+            int ss= so+n*stride+b;
+
+            for(int i=0;i<Lblock;i++)
+            {
+                auto left = conjugate(lhs_wi[i]._odata[ss]);
+
+                for(int j=0;j<Rblock;j++)
+                {
+                    SpinMatrix_v vv;
+                    auto right = rhs_vj[j]._odata[ss];
+
+                    for(int s1=0;s1<Ns;s1++)
+                    for(int s2=0;s2<Ns;s2++)
+                    {
+                        vv()(s1,s2)() = left()(s2)(0) * right()(s1)(0)
+                                        + left()(s2)(1) * right()(s1)(1)
+                                        + left()(s2)(2) * right()(s1)(2);
+                    }
+                    
+                    // After getting the sitewise product do the mom phase loop
+                    int base = Nem*i+Nem*Lblock*j+Nem*Lblock*Rblock*r;
+
+                    for ( int m=0;m<Nem;m++)
+                    {
+                        int idx  = m+base;
+                        auto b0  = emB0[m]._odata[ss];
+                        auto b1  = emB1[m]._odata[ss];
+                        auto cb0 = conjugate(b0);
+                        auto cb1 = conjugate(b1);
+
+                        // B_0 = A_1 + i A_0
+                        // B_1 = A_3 + i A_2
+                        // 
+                        // then in spin space
+                        // 
+                        //             ( 0          0         B_1 -conj(B_0) )
+                        // A_mu g_mu = ( 0          0         B_0  conj(B_1) )
+                        //             ( conj(B_1)  conj(B_0) 0    0         )
+                        //             ( -B_0       B_1       0    0         )
+
+                        lvSum[idx] +=   vv()(0,2)()*b1  - vv()(0,3)()*cb0
+                                        + vv()(1,2)()*b0  + vv()(1,3)()*cb1
+                                        + vv()(2,0)()*cb1 + vv()(2,1)()*cb0 
+                                        - vv()(3,0)()*b0  + vv()(3,1)()*b1;
+                    }
+                }
+            }
+        }
+    }
+    if (caller) caller->stopTimer("contraction: colour trace & Aslash mul");
+
+    // Sum across simd lanes in the plane, breaking out orthog dir.
+    if (caller) caller->startTimer("contraction: local space sum");
+    parallel_for(int rt=0;rt<rd;rt++)
+    {
+        std::vector<int> icoor(Nd);
+        std::vector<scalar_type> extracted(Nsimd);               
+
+        for(int i=0;i<Lblock;i++)
+        for(int j=0;j<Rblock;j++)
+        for(int m=0;m<Nem;m++)
+        {
+
+            int ij_rdx = m+Nem*i+Nem*Lblock*j+Nem*Lblock*Rblock*rt;
+
+            extract(lvSum[ij_rdx],extracted);
+            for(int idx=0;idx<Nsimd;idx++)
+            {
+                grid->iCoorFromIindex(icoor,idx);
+
+                int ldx    = rt+icoor[orthogdim]*rd;
+                int ij_ldx = m+Nem*i+Nem*Lblock*j+Nem*Lblock*Rblock*ldx;
+
+                lsSum[ij_ldx]=lsSum[ij_ldx]+extracted[idx];
+            }
+        }
+    }
+    if (caller) caller->stopTimer("contraction: local space sum");
+
+    // ld loop and local only??
+    if (caller) caller->startTimer("contraction: tensor store");
+    int pd = grid->_processors[orthogdim];
+    int pc = grid->_processor_coor[orthogdim];
+    parallel_for_nest2(int lt=0;lt<ld;lt++)
+    {
+        for(int pt=0;pt<pd;pt++)
+        {
+            int t = lt + pt*ld;
+            if (pt == pc)
+            {
+                for(int i=0;i<Lblock;i++)
+                for(int j=0;j<Rblock;j++)
+                for(int m=0;m<Nem;m++)
+                {
+                    int ij_dx = m+Nem*i + Nem*Lblock * j + Nem*Lblock * Rblock * lt;
+
+                    mat(m,t,i,j) = lsSum[ij_dx];
+                }
+            } 
+            else 
+            { 
+                const scalar_type zz(0.0);
+
+                for(int i=0;i<Lblock;i++)
+                for(int j=0;j<Rblock;j++)
+                for(int m=0;m<Nem;m++)
+                {
+                    mat(m,t,i,j) = zz;
+                }
+            }
+        }
+    }
+    if (caller) caller->stopTimer("contraction: tensor store");
+
+    if (caller) caller->startTimer("contraction: global sum");
+    grid->GlobalSumVector(&mat(0,0,0,0),Nem*Nt*Lblock*Rblock);
     if (caller) caller->stopTimer("contraction: global sum");
 }
 

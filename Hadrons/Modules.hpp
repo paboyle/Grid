@@ -1,6 +1,6 @@
 #include <Hadrons/Modules/MContraction/Baryon.hpp>
 #include <Hadrons/Modules/MContraction/A2AMesonField.hpp>
-#include <Hadrons/Modules/MContraction/A2AMesonFieldKernels.hpp>
+#include <Hadrons/Modules/MContraction/A2AKernels.hpp>
 #include <Hadrons/Modules/MContraction/Meson.hpp>
 #include <Hadrons/Modules/MContraction/WeakHamiltonian.hpp>
 #include <Hadrons/Modules/MContraction/WeakHamiltonianNonEye.hpp>

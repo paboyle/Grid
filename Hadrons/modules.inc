@@ -64,7 +64,7 @@ modules_cc =\
 modules_hpp =\
   Modules/MContraction/Baryon.hpp \
   Modules/MContraction/A2AMesonField.hpp \
-  Modules/MContraction/A2AMesonFieldKernels.hpp \
+  Modules/MContraction/A2AKernels.hpp \
   Modules/MContraction/Meson.hpp \
   Modules/MContraction/WeakHamiltonian.hpp \
   Modules/MContraction/WeakHamiltonianNonEye.hpp \

@@ -11,6 +11,7 @@ libHadrons_a_SOURCES = \
 	Exceptions.cc      \
     Global.cc          \
     Module.cc		   \
+	TimerArray.cc      \
 	VirtualMachine.cc
 libHadrons_adir = $(includedir)/Hadrons
 nobase_libHadrons_a_HEADERS = \
@@ -31,4 +32,5 @@ nobase_libHadrons_a_HEADERS = \
 	Modules.hpp               \
 	ModuleFactory.hpp         \
 	Solver.hpp                \
+	TimerArray.hpp            \
 	VirtualMachine.hpp

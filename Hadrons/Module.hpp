@@ -30,6 +30,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define Hadrons_Module_hpp_
 
 #include <Hadrons/Global.hpp>
+#include <Hadrons/TimerArray.hpp>
 #include <Hadrons/VirtualMachine.hpp>
 
 BEGIN_HADRONS_NAMESPACE
@@ -152,7 +153,7 @@ if (env().getGrid()->IsBoss() and !ioStem.empty())\
  *                            Module class                                    *
  ******************************************************************************/
 // base class
-class ModuleBase
+class ModuleBase: public TimerArray
 {
 public:
     // constructor
@@ -180,16 +181,6 @@ public:
     virtual void execute(void) = 0;
     // execution
     void operator()(void);
-    // timers
-    void                            startTimer(const std::string &name);
-    GridTime                        getTimer(const std::string &name);
-    double                          getDTimer(const std::string &name);
-    void                            startCurrentTimer(const std::string &name);
-    void                            stopTimer(const std::string &name);
-    void                            stopCurrentTimer(void);
-    void                            stopAllTimers(void);
-    void                            resetTimers(void);
-    std::map<std::string, GridTime> getTimings(void);
 protected:
     // environment shortcut
     DEFINE_ENV_ALIAS;
