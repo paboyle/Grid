@@ -41,7 +41,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 BEGIN_HADRONS_NAMESPACE
 
-// general A2A matrix set class based on Eigen tensors and Grid-allocated memory
+// general A2A matrix set based on Eigen tensors and Grid-allocated memory
 // Dimensions:
 //   0 - ext - external field (momentum, EM field, ...)
 //   1 - str - spin-color structure
@@ -51,26 +51,9 @@ BEGIN_HADRONS_NAMESPACE
 template <typename T>
 using A2AMatrixSet = Eigen::TensorMap<Eigen::Tensor<T, 5, Eigen::RowMajor>>;
 
-template <typename T>
-class A2AMatrixIo
-{
-public:
-    A2AMatrixIo(void) = default;
-    A2AMatrixIo(std::string filename, std::string dataname, 
-                const unsigned int nt, const unsigned int ni,
-                const unsigned int nj);
-    ~A2AMatrixIo(void) = default;
-    template <typename MetadataType>
-    void initFile(const MetadataType &d, const unsigned int chunkSize);
-    void saveBlock(const T *data, const unsigned int i, const unsigned int j,
-                   const unsigned int blockSizei, const unsigned int blockSizej);
-    void saveBlock(const A2AMatrixSet<T> &m, const unsigned int ext, const unsigned int str,
-                   const unsigned int i, const unsigned int j);
-private:
-    std::string  filename_, dataname_;
-    unsigned int nt_, ni_, nj_;
-};
-
+/******************************************************************************
+ *                      Abstract class for A2A kernels                        *
+ ******************************************************************************/
 template <typename T, typename Field>
 class A2AKernel
 {
@@ -83,6 +66,36 @@ public:
     virtual double bytes(const unsigned int blockSizei, const unsigned int blockSizej) = 0;
 };
 
+/******************************************************************************
+ *                  Class to handle A2A matrix block HDF5 I/O                 *
+ ******************************************************************************/
+template <typename T>
+class A2AMatrixIo
+{
+public:
+    // constructors
+    A2AMatrixIo(void) = default;
+    A2AMatrixIo(std::string filename, std::string dataname, 
+                const unsigned int nt, const unsigned int ni,
+                const unsigned int nj);
+    // destructor
+    ~A2AMatrixIo(void) = default;
+    // file allocation
+    template <typename MetadataType>
+    void initFile(const MetadataType &d, const unsigned int chunkSize);
+    // block I/O
+    void saveBlock(const T *data, const unsigned int i, const unsigned int j,
+                   const unsigned int blockSizei, const unsigned int blockSizej);
+    void saveBlock(const A2AMatrixSet<T> &m, const unsigned int ext, const unsigned int str,
+                   const unsigned int i, const unsigned int j);
+private:
+    std::string  filename_, dataname_;
+    unsigned int nt_, ni_, nj_;
+};
+
+/******************************************************************************
+ *                  Wrapper for A2A matrix block computation                  *
+ ******************************************************************************/
 template <typename T, typename Field, typename MetadataType, typename TIo = T>
 class A2AMatrixBlockComputation
 {
@@ -96,6 +109,7 @@ private:
     typedef std::function<std::string(const unsigned int, const unsigned int)>  FilenameFn;
     typedef std::function<MetadataType(const unsigned int, const unsigned int)> MetadataFn;
 public:
+    // constructor
     A2AMatrixBlockComputation(GridBase *grid,
                               const unsigned int orthogDim,
                               const unsigned int next,
@@ -103,6 +117,7 @@ public:
                               const unsigned int blockSize,
                               const unsigned int cacheBlockSize,
                               TimerArray *tArray = nullptr);
+    // execution
     void execute(const std::vector<Field> &left, 
                  const std::vector<Field> &right,
                  A2AKernel<T, Field> &kernel,
@@ -110,6 +125,7 @@ public:
                  const FilenameFn &filenameFn,
                  const MetadataFn &metadataFn);
 private:
+    // I/O handler
     void saveBlock(const A2AMatrixSet<TIo> &m, IoHelper &h);
 private:
     TimerArray            *tArray_;
@@ -120,6 +136,100 @@ private:
     std::vector<IoHelper> nodeIo_;
 };
 
+/******************************************************************************
+ *                     A2AMatrixIo template implementation                    *
+ ******************************************************************************/
+// constructor /////////////////////////////////////////////////////////////////
+template <typename T>
+A2AMatrixIo<T>::A2AMatrixIo(std::string filename, std::string dataname, 
+                            const unsigned int nt, const unsigned int ni,
+                            const unsigned int nj)
+: filename_(filename), dataname_(dataname)
+, nt_(nt), ni_(ni), nj_(nj)
+{}
+
+// file allocation /////////////////////////////////////////////////////////////
+template <typename T>
+template <typename MetadataType>
+void A2AMatrixIo<T>::initFile(const MetadataType &d, const unsigned int chunkSize)
+{
+#ifdef HAVE_HDF5
+    std::vector<hsize_t>    dim = {static_cast<hsize_t>(nt_), 
+                                   static_cast<hsize_t>(ni_), 
+                                   static_cast<hsize_t>(nj_)},
+                            chunk = {static_cast<hsize_t>(nt_), 
+                                     static_cast<hsize_t>(chunkSize), 
+                                     static_cast<hsize_t>(chunkSize)};
+    H5NS::DataSpace         dataspace(dim.size(), dim.data());
+    H5NS::DataSet           dataset;
+    H5NS::DSetCreatPropList plist;
+    
+    // create empty file just with metadata
+    {
+        Hdf5Writer writer(filename_);
+        write(writer, dataname_, d);
+    }
+
+    // create the dataset
+    Hdf5Reader reader(filename_);
+
+    push(reader, dataname_);
+    auto &group = reader.getGroup();
+    plist.setChunk(chunk.size(), chunk.data());
+    dataset = group.createDataSet(HADRONS_A2AM_NAME, Hdf5Type<T>::type(), dataspace, plist);
+#else
+    HADRONS_ERROR(Implementation, "all-to-all matrix I/O needs HDF5 library");
+#endif
+}
+
+// block I/O ///////////////////////////////////////////////////////////////////
+template <typename T>
+void A2AMatrixIo<T>::saveBlock(const T *data, 
+                               const unsigned int i, 
+                               const unsigned int j,
+                               const unsigned int blockSizei,
+                               const unsigned int blockSizej)
+{
+#ifdef HAVE_HDF5
+    Hdf5Reader           reader(filename_);
+    std::vector<hsize_t> count = {nt_, blockSizei, blockSizej},
+                         offset = {0, static_cast<hsize_t>(i),
+                                   static_cast<hsize_t>(j)},
+                         stride = {1, 1, 1},
+                         block  = {1, 1, 1}; 
+    H5NS::DataSpace      memspace(count.size(), count.data()), dataspace;
+    H5NS::DataSet        dataset;
+    size_t               shift;
+
+    push(reader, dataname_);
+    auto &group = reader.getGroup();
+    dataset     = group.openDataSet(HADRONS_A2AM_NAME);
+    dataspace   = dataset.getSpace();
+    dataspace.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data(),
+                              stride.data(), block.data());
+    dataset.write(data, Hdf5Type<T>::type(), memspace, dataspace);
+#else
+    HADRONS_ERROR(Implementation, "all-to-all matrix I/O needs HDF5 library");
+#endif
+}
+
+template <typename T>
+void A2AMatrixIo<T>::saveBlock(const A2AMatrixSet<T> &m,
+                               const unsigned int ext, const unsigned int str,
+                               const unsigned int i, const unsigned int j)
+{
+    unsigned int blockSizei = m.dimension(3);
+    unsigned int blockSizej = m.dimension(4);
+    unsigned int nstr       = m.dimension(1);
+    size_t       offset     = (ext*nstr + str)*nt_*blockSizei*blockSizej;
+
+    saveBlock(m.data() + offset, i, j, blockSizei, blockSizej);
+}
+
+/******************************************************************************
+ *               A2AMatrixBlockComputation template implementation            *
+ ******************************************************************************/
+// constructor /////////////////////////////////////////////////////////////////
 template <typename T, typename Field, typename MetadataType, typename TIo>
 A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
 ::A2AMatrixBlockComputation(GridBase *grid,
@@ -133,23 +243,15 @@ A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
 , next_(next), nstr_(nstr), blockSize_(blockSize), cacheBlockSize_(cacheBlockSize)
 , tArray_(tArray)
 {
-    std::cout << nt_ << std::endl;
-    std::cout << next_ << std::endl;
-    std::cout << nstr_ << std::endl;
-    std::cout << cacheBlockSize_ << std::endl;
-    std::cout << blockSize_ << std::endl;
     mCache_.resize(nt_*next_*nstr_*cacheBlockSize_*cacheBlockSize_);
     mBuf_.resize(nt_*next_*nstr_*blockSize_*blockSize_);
-    std::cout << mCache_.size() << std::endl;
-    std::cout << mBuf_.size() << std::endl;
-    std::cout << blockSize << std::endl;
-    std::cout << cacheBlockSize << std::endl;
 }
 
 #define START_TIMER(name) if (tArray_) tArray_->startTimer(name)
 #define STOP_TIMER(name)  if (tArray_) tArray_->stopTimer(name)
 #define GET_TIMER(name)   ((tArray_ != nullptr) ? tArray_->getDTimer(name) : 0.)
 
+// execution ///////////////////////////////////////////////////////////////////
 template <typename T, typename Field, typename MetadataType, typename TIo>
 void A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
 ::execute(const std::vector<Field> &left, const std::vector<Field> &right,
@@ -157,20 +259,16 @@ void A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
           const FilenameFn &filenameFn, const MetadataFn &metadataFn)
 {
     //////////////////////////////////////////////////////////////////////////
-    // i,j   is first  loop over SchurBlock factors reusing 5D matrices
-    // ii,jj is second loop over cacheBlock factors for high perf contractoin
+    // i,j   is first  loop over blockSize_ factors
+    // ii,jj is second loop over cacheBlockSize_ factors for high perf contractions
     // iii,jjj are loops within cacheBlock
     // Total index is sum of these  i+ii+iii etc...
     //////////////////////////////////////////////////////////////////////////
-    int N_i        = left.size();
-    int N_j        = right.size();
-    double flops;
-    double bytes;
-    double t_kernel = 0.;
-    double nodes    = grid_->NodeCount();
-    double tot_kernel;
+    int    N_i = left.size();
+    int    N_j = right.size();
+    double flops, bytes, t_kernel;
+    double nodes = grid_->NodeCount();
     
-    double t0    = usecond();
     int NBlock_i = N_i/blockSize_ + (((N_i % blockSize_) != 0) ? 1 : 0);
     int NBlock_j = N_j/blockSize_ + (((N_j % blockSize_) != 0) ? 1 : 0);
 
@@ -180,15 +278,13 @@ void A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
         // Get the W and V vectors for this block^2 set of terms
         int N_ii = MIN(N_i-i,blockSize_);
         int N_jj = MIN(N_j-j,blockSize_);
+        A2AMatrixSet<TIo> mBlock(mBuf_.data(), next_, nstr_, nt_, N_ii, N_jj);
 
         LOG(Message) << "All-to-all matrix block " 
                      << j/blockSize_ + NBlock_j*i/blockSize_ + 1 
                      << "/" << NBlock_i*NBlock_j << " [" << i <<" .. " 
                      << i+N_ii-1 << ", " << j <<" .. " << j+N_jj-1 << "]" 
                      << std::endl;
-
-        A2AMatrixSet<TIo> mBlock(mBuf_.data(), next_, nstr_, nt_, N_ii, N_jj);
-
         // Series of cache blocked chunks of the contractions within this block
         flops    = 0.0;
         bytes    = 0.0;
@@ -201,18 +297,12 @@ void A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
             int N_jjj = MIN(N_jj-jj,cacheBlockSize_);
             A2AMatrixSet<T> mCacheBlock(mCache_.data(), next_, nstr_, nt_, N_iii, N_jjj);
 
-            // makeMesonFieldBlock(mfCacheBlock, &w[i+ii], &v[j+jj], gamma_, ph, 
-            //                     env().getNd() - 1, this);
             START_TIMER("kernel");
             kernel(mCacheBlock, &left[i+ii], &right[j+jj], orthogDim_, t);
             STOP_TIMER("kernel");
             t_kernel += t;
-            // flops for general N_c & N_s
-            // flops += vol * ( 2 * 8.0 + 6.0 + 8.0*nmom) * N_iii*N_jjj*ngamma;
-            // bytes += vol * (12.0 * sizeof(Complex) ) * N_iii*N_jjj
-            //          +  vol * ( 2.0 * sizeof(Complex) *nmom ) * N_iii*N_jjj* ngamma;
-            flops += kernel.flops(N_iii, N_jjj);
-            bytes += kernel.bytes(N_iii, N_jjj);
+            flops    += kernel.flops(N_iii, N_jjj);
+            bytes    += kernel.bytes(N_iii, N_jjj);
 
             START_TIMER("cache copy");
             parallel_for_nest5(int e =0;e<next_;e++)
@@ -227,8 +317,6 @@ void A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
         }
 
         // perf
-        // tot_kernel = getDTimer("contraction: colour trace & mom.")
-        //              + getDTimer("contraction: local space sum");
         LOG(Message) << "Kernel perf " << flops/t_kernel/1.0e3/nodes 
                      << " Gflop/s/node " << std::endl;
         LOG(Message) << "Kernel perf " << bytes/t_kernel*1.0e6/1024/1024/1024/nodes 
@@ -236,8 +324,7 @@ void A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
 
         // IO
         double       blockSize, ioTime;
-        unsigned int myRank = grid_->ThisRank(),
-                        nRank  = grid_->RankCount();
+        unsigned int myRank = grid_->ThisRank(), nRank  = grid_->RankCount();
     
         LOG(Message) << "Writing block to disk" << std::endl;
         ioTime = -GET_TIMER("IO: write block");
@@ -293,6 +380,7 @@ void A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
     }
 }
 
+// I/O handler /////////////////////////////////////////////////////////////////
 template <typename T, typename Field, typename MetadataType, typename TIo>
 void A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
 ::saveBlock(const A2AMatrixSet<TIo> &m, IoHelper &h)
@@ -308,91 +396,9 @@ void A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
     STOP_TIMER("IO: write block");
 }
 
-template <typename T>
-A2AMatrixIo<T>::A2AMatrixIo(std::string filename, std::string dataname, 
-                            const unsigned int nt, const unsigned int ni,
-                            const unsigned int nj)
-: filename_(filename), dataname_(dataname)
-, nt_(nt), ni_(ni), nj_(nj)
-{}
-
-template <typename T>
-template <typename MetadataType>
-void A2AMatrixIo<T>::initFile(const MetadataType &d, const unsigned int chunkSize)
-{
-#ifdef HAVE_HDF5
-    std::vector<hsize_t>    dim = {static_cast<hsize_t>(nt_), 
-                                   static_cast<hsize_t>(ni_), 
-                                   static_cast<hsize_t>(nj_)},
-                            chunk = {static_cast<hsize_t>(nt_), 
-                                     static_cast<hsize_t>(chunkSize), 
-                                     static_cast<hsize_t>(chunkSize)};
-    H5NS::DataSpace         dataspace(dim.size(), dim.data());
-    H5NS::DataSet           dataset;
-    H5NS::DSetCreatPropList plist;
-    
-    // create empty file just with metadata
-    {
-        Hdf5Writer writer(filename_);
-        write(writer, dataname_, d);
-    }
-
-    // create the dataset
-    Hdf5Reader reader(filename_);
-
-    push(reader, dataname_);
-    auto &group = reader.getGroup();
-    plist.setChunk(chunk.size(), chunk.data());
-    dataset = group.createDataSet(HADRONS_A2AM_NAME, Hdf5Type<T>::type(), dataspace, plist);
-#else
-    HADRONS_ERROR(Implementation, "all-to-all matrix I/O needs HDF5 library");
-#endif
-}
-
-template <typename T>
-void A2AMatrixIo<T>::saveBlock(const T *data, 
-                               const unsigned int i, 
-                               const unsigned int j,
-                               const unsigned int blockSizei,
-                               const unsigned int blockSizej)
-{
-#ifdef HAVE_HDF5
-    Hdf5Reader           reader(filename_);
-    std::vector<hsize_t> count = {nt_, blockSizei, blockSizej},
-                         offset = {0, static_cast<hsize_t>(i),
-                                   static_cast<hsize_t>(j)},
-                         stride = {1, 1, 1},
-                         block  = {1, 1, 1}; 
-    H5NS::DataSpace      memspace(count.size(), count.data()), dataspace;
-    H5NS::DataSet        dataset;
-    size_t               shift;
-
-    push(reader, dataname_);
-    auto &group = reader.getGroup();
-    dataset     = group.openDataSet(HADRONS_A2AM_NAME);
-    dataspace   = dataset.getSpace();
-    dataspace.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data(),
-                              stride.data(), block.data());
-    dataset.write(data, Hdf5Type<T>::type(), memspace, dataspace);
-#else
-    HADRONS_ERROR(Implementation, "all-to-all matrix I/O needs HDF5 library");
-#endif
-}
-
-template <typename T>
-void A2AMatrixIo<T>::saveBlock(const A2AMatrixSet<T> &m,
-                               const unsigned int ext, const unsigned int str,
-                               const unsigned int i, const unsigned int j)
-{
-    unsigned int blockSizei = m.dimension(3);
-    unsigned int blockSizej = m.dimension(4);
-    unsigned int nstr       = m.dimension(1);
-    size_t       offset     = (ext*nstr + str)*nt_*blockSizei*blockSizej;
-
-    saveBlock(m.data() + offset, i, j, blockSizei, blockSizej);
-}
-
-
+#undef START_TIMER
+#undef STOP_TIMER
+#undef GET_TIMER
 
 END_HADRONS_NAMESPACE
 
