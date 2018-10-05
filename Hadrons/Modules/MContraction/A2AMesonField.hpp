@@ -35,7 +35,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/ModuleFactory.hpp>
 #include <Hadrons/A2AMatrix.hpp>
 
-#define MF_PARALLEL_IO
 #ifndef MF_IO_TYPE
 #define MF_IO_TYPE ComplexF
 #endif
@@ -121,12 +120,6 @@ public:
                                       A2AMesonFieldMetadata, 
                                       MF_IO_TYPE> Computation;
     typedef MesonFieldKernel<Complex, FImpl> Kernel;
-    struct IoHelper
-    {
-        A2AMatrixIo<MF_IO_TYPE> io;
-        A2AMesonFieldMetadata   md;
-        unsigned int            m, g, i, j;
-    };
 public:
     // constructor
     TA2AMesonField(const std::string name);
@@ -144,7 +137,6 @@ private:
     std::string                        momphName_;
     std::vector<Gamma::Algebra>        gamma_;
     std::vector<std::vector<Real>>     mom_;
-    std::vector<IoHelper>              nodeIo_;
 };
 
 MODULE_REGISTER(A2AMesonField, ARG(TA2AMesonField<FIMPL>), MContraction);
@@ -259,9 +251,6 @@ void TA2AMesonField<FImpl>::execute(void)
                  << " (filesize " << sizeString(nt*N_i*N_j*sizeof(MF_IO_TYPE)) 
                  << "/momentum/bilinear)" << std::endl;
 
-    ///////////////////////////////////////////////
-    // Momentum setup
-    ///////////////////////////////////////////////
     auto &ph = envGet(std::vector<ComplexField>, momphName_);
 
     if (!hasPhase_)
