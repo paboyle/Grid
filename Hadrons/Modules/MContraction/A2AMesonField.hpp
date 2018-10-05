@@ -33,9 +33,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
-#include <Hadrons/A2AVectors.hpp>
 #include <Hadrons/A2AMatrix.hpp>
-#include <Hadrons/Modules/MSolver/A2AVectors.hpp>
 
 #define MF_PARALLEL_IO
 #ifndef MF_IO_TYPE
@@ -118,7 +116,6 @@ class TA2AMesonField : public Module<A2AMesonFieldPar>
 {
 public:
     FERM_TYPE_ALIASES(FImpl,);
-    SOLVER_TYPE_ALIASES(FImpl,);
     typedef A2AMatrixBlockComputation<Complex, 
                                       FermionField, 
                                       A2AMesonFieldMetadata, 
