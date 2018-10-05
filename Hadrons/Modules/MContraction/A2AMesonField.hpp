@@ -36,7 +36,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/A2AVectors.hpp>
 #include <Hadrons/A2AMatrix.hpp>
 #include <Hadrons/Modules/MSolver/A2AVectors.hpp>
-#include <Hadrons/Modules/MContraction/A2AKernels.hpp>
 
 #define MF_PARALLEL_IO
 #ifndef MF_IO_TYPE
@@ -71,9 +70,11 @@ public:
                                     Gamma::Algebra, gamma);
 };
 
-template <typename T, typename Field>
-class MesonFieldKernel: public A2AKernel<T, Field>
+template <typename T, typename FImpl>
+class MesonFieldKernel: public A2AKernel<T, typename FImpl::FermionField>
 {
+public:
+    typedef typename FImpl::FermionField FermionField;
 public:
     MesonFieldKernel(const std::vector<Gamma::Algebra> &gamma,
                      const std::vector<LatticeComplex> &mom,
@@ -88,10 +89,11 @@ public:
     }
 
     virtual ~MesonFieldKernel(void) = default;
-    virtual void operator()(A2AMatrixSet<T> &m, const Field *left, const Field *right,
-                          const unsigned int orthogDim, double &time)
+    virtual void operator()(A2AMatrixSet<T> &m, const FermionField *left, 
+                            const FermionField *right,
+                            const unsigned int orthogDim, double &t)
     {
-        makeMesonFieldBlock(m, left, right, gamma_, mom_, orthogDim, time);
+        A2Autils<FImpl>::MesonField(m, left, right, gamma_, mom_, orthogDim, &t);
     }
 
     virtual double flops(const unsigned int blockSizei, const unsigned int blockSizej)
@@ -121,7 +123,7 @@ public:
                                       FermionField, 
                                       A2AMesonFieldMetadata, 
                                       MF_IO_TYPE> Computation;
-    typedef MesonFieldKernel<Complex, FermionField> Kernel;
+    typedef MesonFieldKernel<Complex, FImpl> Kernel;
     struct IoHelper
     {
         A2AMatrixIo<MF_IO_TYPE> io;

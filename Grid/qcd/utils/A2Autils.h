@@ -27,12 +27,13 @@ public:
 
   typedef iSpinColourMatrix<vector_type> SpinColourMatrix_v;
 
-  static void MesonField(Eigen::Tensor<ComplexD,5> &mat, 
+  template <typename TensorType> // output: rank 5 tensor, e.g. Eigen::Tensor<ComplexD, 5>
+  static void MesonField(TensorType &mat, 
 			 const FermionField *lhs_wi,
 			 const FermionField *rhs_vj,
 			 std::vector<Gamma::Algebra> gammas,
 			 const std::vector<ComplexField > &mom,
-			 int orthogdim);
+			 int orthogdim, double *t_kernel = nullptr, double *t_gsum = nullptr);
 
   static void PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat, 
 			     const FermionField *wi,
@@ -92,13 +93,14 @@ public:
 #endif
 };
 
-template<class FImpl>
-void A2Autils<FImpl>::MesonField(Eigen::Tensor<ComplexD,5> &mat, 
+template <class FImpl>
+template <typename TensorType>
+void A2Autils<FImpl>::MesonField(TensorType &mat, 
 				 const FermionField *lhs_wi,
 				 const FermionField *rhs_vj,
 				 std::vector<Gamma::Algebra> gammas,
 				 const std::vector<ComplexField > &mom,
-				 int orthogdim) 
+				 int orthogdim, double *t_kernel, double *t_gsum) 
 {
   typedef typename FImpl::SiteSpinor vobj;
 
@@ -146,6 +148,7 @@ void A2Autils<FImpl>::MesonField(Eigen::Tensor<ComplexD,5> &mat,
   int stride=grid->_slice_stride[orthogdim];
 
   // potentially wasting cores here if local time extent too small
+  if (t_kernel) *t_kernel = -usecond();
   parallel_for(int r=0;r<rd;r++){
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
@@ -212,7 +215,7 @@ void A2Autils<FImpl>::MesonField(Eigen::Tensor<ComplexD,5> &mat,
       }
     }}}
   }
-
+  if (t_kernel) *t_kernel += usecond();
   assert(mat.dimension(0) == Nmom);
   assert(mat.dimension(1) == Ngamma);
   assert(mat.dimension(2) == Nt);
@@ -256,9 +259,9 @@ void A2Autils<FImpl>::MesonField(Eigen::Tensor<ComplexD,5> &mat,
   // Vector size is 7 x 16 x 32 x 16 x 16 x sizeof(complex) = 2MB - 60MB depending on volume
   // Healthy size that should suffice
   ////////////////////////////////////////////////////////////////////
-
+  if (t_gsum) *t_gsum = -usecond();
   grid->GlobalSumVector(&mat(0,0,0,0,0),Nmom*Ngamma*Nt*Lblock*Rblock);
-
+  if (t_gsum) *t_gsum += usecond();
 }
 
 
