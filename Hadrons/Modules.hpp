@@ -1,4 +1,5 @@
 #include <Hadrons/Modules/MContraction/Baryon.hpp>
+#include <Hadrons/Modules/MContraction/A2AAslashField.hpp>
 #include <Hadrons/Modules/MContraction/A2AMesonField.hpp>
 #include <Hadrons/Modules/MContraction/Meson.hpp>
 #include <Hadrons/Modules/MContraction/WeakHamiltonian.hpp>
