@@ -148,7 +148,7 @@ A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
 
 #define START_TIMER(name) if (tArray_) tArray_->startTimer(name)
 #define STOP_TIMER(name)  if (tArray_) tArray_->stopTimer(name)
-#define GET_TIMER(name)   (tArray_ != nullptr) ? tArray_->getDTimer(name) : 0.
+#define GET_TIMER(name)   ((tArray_ != nullptr) ? tArray_->getDTimer(name) : 0.)
 
 template <typename T, typename Field, typename MetadataType, typename TIo>
 void A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
@@ -190,11 +190,13 @@ void A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
         A2AMatrixSet<TIo> mBlock(mBuf_.data(), next_, nstr_, nt_, N_ii, N_jj);
 
         // Series of cache blocked chunks of the contractions within this block
-        flops = 0.0;
-        bytes = 0.0;
+        flops    = 0.0;
+        bytes    = 0.0;
+        t_kernel = 0.0;
         for(int ii=0;ii<N_ii;ii+=cacheBlockSize_)
         for(int jj=0;jj<N_jj;jj+=cacheBlockSize_)
         {
+            double t;
             int N_iii = MIN(N_ii-ii,cacheBlockSize_);
             int N_jjj = MIN(N_jj-jj,cacheBlockSize_);
             A2AMatrixSet<T> mCacheBlock(mCache_.data(), next_, nstr_, nt_, N_iii, N_jjj);
@@ -202,9 +204,9 @@ void A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
             // makeMesonFieldBlock(mfCacheBlock, &w[i+ii], &v[j+jj], gamma_, ph, 
             //                     env().getNd() - 1, this);
             START_TIMER("kernel");
-            kernel(mCacheBlock, &left[i+ii], &right[j+jj], orthogDim_, tot_kernel);
+            kernel(mCacheBlock, &left[i+ii], &right[j+jj], orthogDim_, t);
             STOP_TIMER("kernel");
-
+            t_kernel += t;
             // flops for general N_c & N_s
             // flops += vol * ( 2 * 8.0 + 6.0 + 8.0*nmom) * N_iii*N_jjj*ngamma;
             // bytes += vol * (12.0 * sizeof(Complex) ) * N_iii*N_jjj
@@ -227,12 +229,10 @@ void A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
         // perf
         // tot_kernel = getDTimer("contraction: colour trace & mom.")
         //              + getDTimer("contraction: local space sum");
-        t_kernel   = tot_kernel - t_kernel;
         LOG(Message) << "Kernel perf " << flops/t_kernel/1.0e3/nodes 
                      << " Gflop/s/node " << std::endl;
         LOG(Message) << "Kernel perf " << bytes/t_kernel*1.0e6/1024/1024/1024/nodes 
                      << " GB/s/node "  << std::endl;
-        t_kernel = tot_kernel;
 
         // IO
         double       blockSize, ioTime;
