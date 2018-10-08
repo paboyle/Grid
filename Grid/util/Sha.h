@@ -38,7 +38,21 @@ public:
   {
     return ::crc32(0L,(unsigned char *)data,bytes);
   }
-  static inline std::vector<unsigned char> sha256(void *data,size_t bytes)
+  template <typename T>
+  static inline std::string sha256_string(const std::vector<T> &hash)
+  {
+    std::stringstream sha;
+    std::string       s;
+
+    for(unsigned int i = 0; i < hash.size(); i++) 
+    { 
+        sha << std::hex << static_cast<unsigned int>(hash[i]);
+    }
+    s = sha.str();
+
+    return s;
+  }
+  static inline std::vector<unsigned char> sha256(const void *data,size_t bytes)
   {
     std::vector<unsigned char> hash(SHA256_DIGEST_LENGTH);
     SHA256_CTX sha256;

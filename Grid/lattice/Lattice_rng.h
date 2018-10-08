@@ -392,14 +392,10 @@ namespace Grid {
 
     void SeedUniqueString(const std::string &s){
       std::vector<int> seeds;
-      std::stringstream sha;
       seeds = GridChecksum::sha256_seeds(s);
-      for(int i=0;i<seeds.size();i++) { 
-        sha << std::hex << seeds[i];
-      }
       std::cout << GridLogMessage << "Intialising parallel RNG with unique string '" 
                 << s << "'" << std::endl;
-      std::cout << GridLogMessage << "Seed SHA256: " << sha.str() << std::endl;
+      std::cout << GridLogMessage << "Seed SHA256: " << GridChecksum::sha256_string(seeds) << std::endl;
       SeedFixedIntegers(seeds);
     }
     void SeedFixedIntegers(const std::vector<int> &seeds){
