@@ -25,47 +25,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-
 #include <Hadrons/Modules/MGauge/Random.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
 using namespace MGauge;
 
-/******************************************************************************
-*                           TRandom implementation                            *
-******************************************************************************/
-// constructor /////////////////////////////////////////////////////////////////
-TRandom::TRandom(const std::string name)
-: Module<NoPar>(name)
-{}
-
-// dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> TRandom::getInput(void)
-{
-    std::vector<std::string> in;
-    
-    return in;
-}
-
-std::vector<std::string> TRandom::getOutput(void)
-{
-    std::vector<std::string> out = {getName()};
-    
-    return out;
-}
-
-// setup ///////////////////////////////////////////////////////////////////////
-void TRandom::setup(void)
-{
-    envCreateLat(LatticeGaugeField, getName());
-}
-
-// execution ///////////////////////////////////////////////////////////////////
-void TRandom::execute(void)
-{
-    LOG(Message) << "Generating random gauge configuration" << std::endl;
-    
-    auto &U = envGet(LatticeGaugeField, getName());
-    SU3::HotConfiguration(rng4d(), U);
-}
+template class Grid::Hadrons::MGauge::TRandom<GIMPL>;

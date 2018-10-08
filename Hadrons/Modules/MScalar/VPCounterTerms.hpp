@@ -53,7 +53,7 @@ public:
 class TVPCounterTerms: public Module<VPCounterTermsPar>
 {
 public:
-    SCALAR_TYPE_ALIASES(SIMPL,);
+    BASIC_TYPE_ALIASES(SIMPL,);
     class Result: Serializable
     {
     public:

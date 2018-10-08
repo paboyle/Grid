@@ -39,7 +39,7 @@ std::shared_ptr<LinearFunction<typename FImpl::FermionField>>
 makeGuesser(const std::string epackName)
 {
     typedef typename FImpl::FermionField                  FermionField;
-    typedef FermionEigenPack<FImpl>                       EPack;
+    typedef BaseFermionEigenPack<FImpl>                   EPack;
     typedef CoarseFermionEigenPack<FImpl, nBasis>         CoarseEPack;
     typedef DeflatedGuesser<FermionField>                 FineGuesser;
     typedef LocalCoherenceDeflatedGuesser<

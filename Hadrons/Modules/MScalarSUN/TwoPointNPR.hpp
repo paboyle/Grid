@@ -136,7 +136,7 @@ void TTwoPointNPR<SImpl>::execute(void)
     const unsigned int             nd   = env().getNd();
     const unsigned int             nl   = env().getDim(0);
     const Real                     invV = 1./env().getVolume();
-    FFT                            fft(env().getGrid());
+    FFT                            fft(envGetGrid(Field));
     std::vector<TwoPointNPRResult> result;
     TwoPointNPRResult              twoPtp1, twoPtp2, twoPtDisc;
     auto                           &phi    = envGet(Field, par().field);

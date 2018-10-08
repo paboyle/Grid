@@ -53,7 +53,7 @@ public:
 class TScalarVP: public Module<ScalarVPPar>
 {
 public:
-    SCALAR_TYPE_ALIASES(SIMPL,);
+    BASIC_TYPE_ALIASES(SIMPL,);
     typedef PhotonR::GaugeField     EmField;
     typedef PhotonR::GaugeLinkField EmComp;
     class Result: Serializable

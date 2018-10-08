@@ -66,7 +66,7 @@ template <typename FImpl>
 class TZ2: public Module<Z2Par>
 {
 public:
-    FERM_TYPE_ALIASES(FImpl,);
+    BASIC_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TZ2(const std::string name);
@@ -120,7 +120,7 @@ template <typename FImpl>
 void TZ2<FImpl>::setup(void)
 {
     envCreateLat(PropagatorField, getName());
-    envCacheLat(Lattice<iScalar<vInteger>>, tName_);
+    envCache(Lattice<iScalar<vInteger>>, tName_, 1, envGetGrid(LatticeComplex));
     envTmpLat(LatticeComplex, "eta");
 }
 

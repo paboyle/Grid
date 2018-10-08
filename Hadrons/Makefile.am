@@ -1,5 +1,6 @@
+SUBDIRS = . Utilities
+
 lib_LIBRARIES = libHadrons.a
-bin_PROGRAMS  = HadronsXmlRun
 
 include modules.inc
 
@@ -10,6 +11,7 @@ libHadrons_a_SOURCES = \
 	Exceptions.cc      \
     Global.cc          \
     Module.cc		   \
+	TimerArray.cc      \
 	VirtualMachine.cc
 libHadrons_adir = $(includedir)/Hadrons
 nobase_libHadrons_a_HEADERS = \
@@ -30,7 +32,5 @@ nobase_libHadrons_a_HEADERS = \
 	Modules.hpp               \
 	ModuleFactory.hpp         \
 	Solver.hpp                \
+	TimerArray.hpp            \
 	VirtualMachine.hpp
-
-HadronsXmlRun_SOURCES = HadronsXmlRun.cc
-HadronsXmlRun_LDADD   = libHadrons.a -lGrid

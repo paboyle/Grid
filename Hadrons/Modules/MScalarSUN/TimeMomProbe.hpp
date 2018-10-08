@@ -146,7 +146,7 @@ void TTimeMomProbe<SImpl>::execute(void)
     std::set<std::vector<int>>                   timeMomSet;
     std::vector<std::vector<std::vector<int>>>   timeMom;
     std::vector<std::vector<int>>                transferMom;
-    FFT                                          fft(env().getGrid());
+    FFT                                          fft(envGetGrid(Field));
     std::vector<int>                             dMask(nd, 1);
     std::vector<TimeMomProbeResult>              result;
     std::map<std::string, std::vector<SlicedOp>> slicedOp;

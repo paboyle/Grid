@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MGauge/Unit.cc
+Source file: Hadrons/Modules/MUtilities/PrecisionCast.cc
 
 Copyright (C) 2015-2018
 
@@ -25,10 +25,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Hadrons/Modules/MGauge/Unit.hpp>
+#include <Hadrons/Modules/MUtilities/PrecisionCast.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
-using namespace MGauge;
+using namespace MUtilities;
 
-template class Grid::Hadrons::MGauge::TUnit<GIMPL>;
+template class Grid::Hadrons::MUtilities::TPrecisionCast<GIMPLD::GaugeField, GIMPLF::GaugeField>;
+template class Grid::Hadrons::MUtilities::TPrecisionCast<FIMPLD::FermionField, FIMPLF::FermionField>;

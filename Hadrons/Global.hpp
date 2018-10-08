@@ -96,19 +96,22 @@ using Grid::operator>>;
 BEGIN_HADRONS_NAMESPACE
 
 // type aliases
+#define BASIC_TYPE_ALIASES(Impl, suffix)\
+typedef typename Impl::Field                         ScalarField##suffix;\
+typedef typename Impl::PropagatorField               PropagatorField##suffix;\
+typedef typename Impl::SitePropagator::scalar_object SitePropagator##suffix;\
+typedef std::vector<SitePropagator##suffix>          SlicedPropagator##suffix;
+
 #define FERM_TYPE_ALIASES(FImpl, suffix)\
-typedef FermionOperator<FImpl>                        FMat##suffix;            \
-typedef typename FImpl::FermionField                  FermionField##suffix;    \
-typedef typename FImpl::PropagatorField               PropagatorField##suffix; \
-typedef typename FImpl::SitePropagator::scalar_object SitePropagator##suffix;  \
-typedef std::vector<SitePropagator##suffix>           SlicedPropagator##suffix;
+BASIC_TYPE_ALIASES(FImpl, suffix);\
+typedef FermionOperator<FImpl>            FMat##suffix;\
+typedef typename FImpl::FermionField      FermionField##suffix;\
+typedef typename FImpl::GaugeField        GaugeField##suffix;\
+typedef typename FImpl::DoubledGaugeField DoubledGaugeField##suffix;\
+typedef typename FImpl::ComplexField      ComplexField##suffix;
 
-#define GAUGE_TYPE_ALIASES(FImpl, suffix)\
-typedef typename FImpl::DoubledGaugeField DoubledGaugeField##suffix;
-
-#define SCALAR_TYPE_ALIASES(SImpl, suffix)\
-typedef typename SImpl::Field ScalarField##suffix;\
-typedef typename SImpl::Field PropagatorField##suffix;
+#define GAUGE_TYPE_ALIASES(GImpl, suffix)\
+typedef typename GImpl::GaugeField GaugeField##suffix;
 
 #define SOLVER_TYPE_ALIASES(FImpl, suffix)\
 typedef Solver<FImpl> Solver##suffix;
@@ -116,10 +119,6 @@ typedef Solver<FImpl> Solver##suffix;
 #define SINK_TYPE_ALIASES(suffix)\
 typedef std::function<SlicedPropagator##suffix\
                       (const PropagatorField##suffix &)> SinkFn##suffix;
-
-#define FG_TYPE_ALIASES(FImpl, suffix)\
-FERM_TYPE_ALIASES(FImpl, suffix)\
-GAUGE_TYPE_ALIASES(FImpl, suffix)
 
 // logger
 class HadronsLogger: public Logger

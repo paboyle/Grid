@@ -53,7 +53,7 @@ template <typename FImpl>
 class TPoint: public Module<PointPar>
 {
 public:
-    FERM_TYPE_ALIASES(FImpl,);
+    BASIC_TYPE_ALIASES(FImpl,);
     SINK_TYPE_ALIASES();
 public:
     // constructor
@@ -132,7 +132,7 @@ void TPoint<FImpl>::execute(void)
         for(unsigned int mu = 0; mu < p.size(); mu++)
         {
             LatticeCoordinate(coor, mu);
-            ph = ph + (p[mu]/env().getGrid()->_fdimensions[mu])*coor;
+            ph = ph + (p[mu]/env().getDim(mu))*coor;
         }
         ph = exp((Real)(2*M_PI)*i*ph);
         hasPhase_ = true;

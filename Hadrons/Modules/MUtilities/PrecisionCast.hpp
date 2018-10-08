@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MIO/LoadEigenPack.hpp
+Source file: Hadrons/Modules/MUtilities/PrecisionCast.hpp
 
 Copyright (C) 2015-2018
 
@@ -25,43 +25,35 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef Hadrons_MIO_LoadEigenPack_hpp_
-#define Hadrons_MIO_LoadEigenPack_hpp_
+#ifndef Hadrons_MUtilities_PrecisionCast_hpp_
+#define Hadrons_MUtilities_PrecisionCast_hpp_
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
-#include <Hadrons/EigenPack.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                   Load eigen vectors/values package                        *
+ *                          Precision cast module                             *
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MIO)
+BEGIN_MODULE_NAMESPACE(MUtilities)
 
-class LoadEigenPackPar: Serializable
+class PrecisionCastPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(LoadEigenPackPar,
-                                    std::string, filestem,
-                                    bool, multiFile,
-                                    unsigned int, size,
-                                    unsigned int, Ls);
+    GRID_SERIALIZABLE_CLASS_MEMBERS(PrecisionCastPar,
+                                    std::string, field);
 };
 
-template <typename Pack>
-class TLoadEigenPack: public Module<LoadEigenPackPar>
+template <typename FieldIn, typename FieldOut>
+class TPrecisionCast: public Module<PrecisionCastPar>
 {
 public:
-    typedef typename Pack::Field   Field;
-    typedef typename Pack::FieldIo FieldIo;
-    typedef BaseEigenPack<Field>   BasePack;
-public:
     // constructor
-    TLoadEigenPack(const std::string name);
+    TPrecisionCast(const std::string name);
     // destructor
-    virtual ~TLoadEigenPack(void) {};
+    virtual ~TPrecisionCast(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -71,29 +63,33 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_TMP(LoadFermionEigenPack, TLoadEigenPack<FermionEigenPack<FIMPL>>, MIO);
-MODULE_REGISTER_TMP(LoadFermionEigenPackIo32, ARG(TLoadEigenPack<FermionEigenPack<FIMPL, FIMPLF>>), MIO);
+MODULE_REGISTER_TMP(GaugeSinglePrecisionCast, 
+                    ARG(TPrecisionCast<GIMPLD::GaugeField, GIMPLF::GaugeField>),
+                    MUtilities);
+MODULE_REGISTER_TMP(FermionSinglePrecisionCast, 
+                    ARG(TPrecisionCast<FIMPLD::FermionField, FIMPLF::FermionField>),
+                    MUtilities);
 
 /******************************************************************************
- *                    TLoadEigenPack implementation                           *
+ *                     TPrecisionCast implementation                          *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-template <typename Pack>
-TLoadEigenPack<Pack>::TLoadEigenPack(const std::string name)
-: Module<LoadEigenPackPar>(name)
+template <typename FieldIn, typename FieldOut>
+TPrecisionCast<FieldIn, FieldOut>::TPrecisionCast(const std::string name)
+: Module<PrecisionCastPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-template <typename Pack>
-std::vector<std::string> TLoadEigenPack<Pack>::getInput(void)
+template <typename FieldIn, typename FieldOut>
+std::vector<std::string> TPrecisionCast<FieldIn, FieldOut>::getInput(void)
 {
-    std::vector<std::string> in;
+    std::vector<std::string> in = {par().field};
     
     return in;
 }
 
-template <typename Pack>
-std::vector<std::string> TLoadEigenPack<Pack>::getOutput(void)
+template <typename FieldIn, typename FieldOut>
+std::vector<std::string> TPrecisionCast<FieldIn, FieldOut>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -101,31 +97,28 @@ std::vector<std::string> TLoadEigenPack<Pack>::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-template <typename Pack>
-void TLoadEigenPack<Pack>::setup(void)
+template <typename FieldIn, typename FieldOut>
+void TPrecisionCast<FieldIn, FieldOut>::setup(void)
 {
-    GridBase *gridIo = nullptr;
-
-    if (typeHash<Field>() != typeHash<FieldIo>())
-    {
-        gridIo = envGetRbGrid(FieldIo, par().Ls);
-    }
-    envCreateDerived(BasePack, Pack, getName(), par().Ls, par().size, 
-                     envGetRbGrid(Field, par().Ls), gridIo);
+    envCreateLat(FieldOut, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-template <typename Pack>
-void TLoadEigenPack<Pack>::execute(void)
+template <typename FieldIn, typename FieldOut>
+void TPrecisionCast<FieldIn, FieldOut>::execute(void)
 {
-    auto &epack = envGetDerived(BasePack, Pack, getName());
+    LOG(Message) << "Casting field '" << par().field << "'" << std::endl;
+    LOG(Message) << "In  type: " << typeName<FieldIn>() << std::endl;
+    LOG(Message) << "Out type: " << typeName<FieldOut>() << std::endl;
 
-    epack.read(par().filestem, par().multiFile, vm().getTrajectory());
-    epack.eval.resize(par().size);
+    auto &in  = envGet(FieldIn,  par().field);
+    auto &out = envGet(FieldOut, getName());
+
+    precisionChange(out, in);
 }
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MIO_LoadEigenPack_hpp_
+#endif // Hadrons_MUtilities_PrecisionCast_hpp_

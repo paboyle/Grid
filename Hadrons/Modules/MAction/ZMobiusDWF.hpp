@@ -57,7 +57,7 @@ template <typename FImpl>
 class TZMobiusDWF: public Module<ZMobiusDWFPar>
 {
 public:
-    FG_TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TZMobiusDWF(const std::string name);
@@ -73,6 +73,7 @@ public:
 };
 
 MODULE_REGISTER_TMP(ZMobiusDWF, TZMobiusDWF<ZFIMPL>, MAction);
+MODULE_REGISTER_TMP(ZMobiusDWFF, TZMobiusDWF<ZFIMPLF>, MAction);
 
 /******************************************************************************
  *                     TZMobiusDWF implementation                             *
@@ -118,11 +119,11 @@ void TZMobiusDWF<FImpl>::setup(void)
                  << std::endl;
 
     env().createGrid(par().Ls);
-    auto &U    = envGet(LatticeGaugeField, par().gauge);
-    auto &g4   = *env().getGrid();
-    auto &grb4 = *env().getRbGrid();
-    auto &g5   = *env().getGrid(par().Ls);
-    auto &grb5 = *env().getRbGrid(par().Ls);
+    auto &U    = envGet(GaugeField, par().gauge);
+    auto &g4   = *envGetGrid(FermionField);
+    auto &grb4 = *envGetRbGrid(FermionField);
+    auto &g5   = *envGetGrid(FermionField, par().Ls);
+    auto &grb5 = *envGetRbGrid(FermionField, par().Ls);
     auto omega = par().omega;
     std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
     typename ZMobiusFermion<FImpl>::ImplParams implParams(boundary);

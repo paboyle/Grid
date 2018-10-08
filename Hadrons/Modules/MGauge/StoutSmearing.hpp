@@ -52,7 +52,7 @@ template <typename GImpl>
 class TStoutSmearing: public Module<StoutSmearingPar>
 {
 public:
-    typedef typename GImpl::Field GaugeField;
+    GAUGE_TYPE_ALIASES(GImpl,);
 public:
     // constructor
     TStoutSmearing(const std::string name);

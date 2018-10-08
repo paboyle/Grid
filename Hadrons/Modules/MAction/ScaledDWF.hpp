@@ -55,7 +55,7 @@ template <typename FImpl>
 class TScaledDWF: public Module<ScaledDWFPar>
 {
 public:
-    FG_TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TScaledDWF(const std::string name);
@@ -71,6 +71,7 @@ public:
 };
 
 MODULE_REGISTER_TMP(ScaledDWF, TScaledDWF<FIMPL>, MAction);
+MODULE_REGISTER_TMP(ScaledDWFF, TScaledDWF<FIMPLF>, MAction);
 
 /******************************************************************************
  *                      TScaledDWF implementation                             *
@@ -110,12 +111,11 @@ void TScaledDWF<FImpl>::setup(void)
     LOG(Message) << "Fermion boundary conditions: " << par().boundary
                  << std::endl;
 
-    env().createGrid(par().Ls);
-    auto &U    = envGet(LatticeGaugeField, par().gauge);
-    auto &g4   = *env().getGrid();
-    auto &grb4 = *env().getRbGrid();
-    auto &g5   = *env().getGrid(par().Ls);
-    auto &grb5 = *env().getRbGrid(par().Ls);
+    auto &U    = envGet(GaugeField, par().gauge);
+    auto &g4   = *envGetGrid(FermionField);
+    auto &grb4 = *envGetRbGrid(FermionField);
+    auto &g5   = *envGetGrid(FermionField, par().Ls);
+    auto &grb5 = *envGetRbGrid(FermionField, par().Ls);
     std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
     typename MobiusFermion<FImpl>::ImplParams implParams(boundary);
     envCreateDerived(FMat, ScaledShamirFermion<FImpl>, getName(), par().Ls, U, g5,

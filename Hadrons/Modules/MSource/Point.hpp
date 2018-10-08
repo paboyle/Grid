@@ -63,7 +63,7 @@ template <typename FImpl>
 class TPoint: public Module<PointPar>
 {
 public:
-    FERM_TYPE_ALIASES(FImpl,);
+    BASIC_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TPoint(const std::string name);
@@ -126,6 +126,11 @@ void TPoint<FImpl>::execute(void)
     auto             &src     = envGet(PropagatorField, getName());
     SitePropagator   id;
     
+    if (position.size() != env().getNd())
+    {
+        HADRONS_ERROR(Size, "position has " + std::to_string(position.size())
+                      + " components (must have " + std::to_string(env().getNd()) + ")");
+    }
     id  = 1.;
     src = zero;
     pokeSite(id, src, position);

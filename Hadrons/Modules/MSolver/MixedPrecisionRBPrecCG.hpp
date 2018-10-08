@@ -58,8 +58,8 @@ template <typename FImplInner, typename FImplOuter, int nBasis>
 class TMixedPrecisionRBPrecCG: public Module<MixedPrecisionRBPrecCGPar>
 {
 public:
-    FG_TYPE_ALIASES(FImplInner, Inner);
-    FG_TYPE_ALIASES(FImplOuter, Outer);
+    FERM_TYPE_ALIASES(FImplInner, Inner);
+    FERM_TYPE_ALIASES(FImplOuter, Outer);
     SOLVER_TYPE_ALIASES(FImplOuter,);
     typedef HADRONS_DEFAULT_SCHUR_OP<FMatInner, FermionFieldInner> SchurFMatInner;
     typedef HADRONS_DEFAULT_SCHUR_OP<FMatOuter, FermionFieldOuter> SchurFMatOuter;
@@ -170,7 +170,7 @@ void TMixedPrecisionRBPrecCG<FImplInner, FImplOuter, nBasis>
             MixedPrecisionConjugateGradient<FermionFieldOuter, FermionFieldInner> 
                 mpcg(par().residual, par().maxInnerIteration, 
                      par().maxOuterIteration, 
-                     env().template getGrid<VTypeInner>(Ls),
+                     env().template getRbGrid<VTypeInner>(Ls),
                      simat, somat);
             OperatorFunctionWrapper<FermionFieldOuter> wmpcg(mpcg);
             HADRONS_DEFAULT_SCHUR_SOLVE<FermionFieldOuter> schurSolver(wmpcg);

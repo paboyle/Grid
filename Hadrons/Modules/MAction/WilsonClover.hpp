@@ -59,7 +59,7 @@ template <typename FImpl>
 class TWilsonClover: public Module<WilsonCloverPar>
 {
 public:
-    FG_TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TWilsonClover(const std::string name);
@@ -75,9 +75,10 @@ public:
 };
 
 MODULE_REGISTER_TMP(WilsonClover, TWilsonClover<FIMPL>, MAction);
+MODULE_REGISTER_TMP(WilsonCloverF, TWilsonClover<FIMPLF>, MAction);
 
 /******************************************************************************
- *                     TWilsonClover template implementation                        *
+ *                    TWilsonClover template implementation                   *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
@@ -113,16 +114,14 @@ void TWilsonClover<FImpl>::setup(void)
     LOG(Message) << "Clover term csw_r: " << par().csw_r
                  << " csw_t: " << par().csw_t
                  << std::endl;
-    auto &U      = envGet(LatticeGaugeField, par().gauge);
-    auto &grid   = *env().getGrid();
-    auto &gridRb = *env().getRbGrid();
+    auto &U      = envGet(GaugeField, par().gauge);
+    auto &grid   = *envGetGrid(FermionField);
+    auto &gridRb = *envGetRbGrid(FermionField);
     std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
     typename WilsonCloverFermion<FImpl>::ImplParams implParams(boundary);
-    envCreateDerived(FMat, WilsonCloverFermion<FImpl>, getName(), 1, U, grid, gridRb, par().mass,
-						  par().csw_r,
-						  par().csw_t,
-					      par().clover_anisotropy,
-						  implParams); 
+    envCreateDerived(FMat, WilsonCloverFermion<FImpl>, getName(), 1, U, grid,
+                     gridRb, par().mass, par().csw_r, par().csw_t, 
+                     par().clover_anisotropy, implParams); 
 }
 
 // execution ///////////////////////////////////////////////////////////////////

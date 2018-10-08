@@ -46,8 +46,11 @@ public:
                                     std::string, file);
 };
 
+template <typename GImpl>
 class TLoadNersc: public Module<LoadNerscPar>
 {
+public:
+    GAUGE_TYPE_ALIASES(GImpl,);
 public:
     // constructor
     TLoadNersc(const std::string name);
@@ -62,7 +65,54 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER(LoadNersc, TLoadNersc, MIO);
+MODULE_REGISTER_TMP(LoadNersc,  TLoadNersc<GIMPL>,  MIO);
+
+/******************************************************************************
+*                       TLoadNersc implementation                             *
+******************************************************************************/
+// constructor /////////////////////////////////////////////////////////////////
+template <typename GImpl>
+TLoadNersc<GImpl>::TLoadNersc(const std::string name)
+: Module<LoadNerscPar>(name)
+{}
+
+// dependencies/products ///////////////////////////////////////////////////////
+template <typename GImpl>
+std::vector<std::string> TLoadNersc<GImpl>::getInput(void)
+{
+    std::vector<std::string> in;
+    
+    return in;
+}
+
+template <typename GImpl>
+std::vector<std::string> TLoadNersc<GImpl>::getOutput(void)
+{
+    std::vector<std::string> out = {getName()};
+    
+    return out;
+}
+
+// setup ///////////////////////////////////////////////////////////////////////
+template <typename GImpl>
+void TLoadNersc<GImpl>::setup(void)
+{
+    envCreateLat(GaugeField, getName());
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename GImpl>
+void TLoadNersc<GImpl>::execute(void)
+{
+    FieldMetaData header;
+    std::string   fileName = par().file + "."
+                             + std::to_string(vm().getTrajectory());
+    LOG(Message) << "Loading NERSC configuration from file '" << fileName
+                 << "'" << std::endl;
+
+    auto &U = envGet(GaugeField, getName());
+    NerscIO::readConfiguration(U, header, fileName);
+}
 
 END_MODULE_NAMESPACE
 

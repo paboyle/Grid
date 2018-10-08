@@ -4,6 +4,7 @@ modules_cc =\
   Modules/MContraction/Meson.cc \
   Modules/MContraction/WeakNeutral4ptDisc.cc \
   Modules/MContraction/WeakHamiltonianNonEye.cc \
+  Modules/MContraction/A2AAslashField.cc \
   Modules/MContraction/WardIdentity.cc \
   Modules/MContraction/A2AMesonField.cc \
   Modules/MContraction/DiscLoop.cc \
@@ -30,6 +31,7 @@ modules_cc =\
   Modules/MNoise/TimeDilutedSpinColorDiagonal.cc \
   Modules/MUtilities/RandomVectors.cc \
   Modules/MUtilities/TestSeqGamma.cc \
+  Modules/MUtilities/PrecisionCast.cc \
   Modules/MUtilities/TestSeqConserved.cc \
   Modules/MLoop/NoiseLoop.cc \
   Modules/MScalar/FreeProp.cc \
@@ -62,8 +64,8 @@ modules_cc =\
 
 modules_hpp =\
   Modules/MContraction/Baryon.hpp \
+  Modules/MContraction/A2AAslashField.hpp \
   Modules/MContraction/A2AMesonField.hpp \
-  Modules/MContraction/A2AMesonFieldKernels.hpp \
   Modules/MContraction/Meson.hpp \
   Modules/MContraction/WeakHamiltonian.hpp \
   Modules/MContraction/WeakHamiltonianNonEye.hpp \
@@ -93,6 +95,7 @@ modules_hpp =\
   Modules/MGauge/FundtoHirep.hpp \
   Modules/MGauge/StochEm.hpp \
   Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp \
+  Modules/MUtilities/PrecisionCast.hpp \
   Modules/MUtilities/RandomVectors.hpp \
   Modules/MUtilities/TestSeqGamma.hpp \
   Modules/MUtilities/TestSeqConserved.hpp \

@@ -168,7 +168,7 @@ void TTwoPoint<SImpl>::execute(void)
     std::set<std::string>                        ops;
     std::vector<TwoPointResult>                  result;
     std::map<std::string, std::vector<SlicedOp>> slicedOp;
-    FFT                                          fft(env().getGrid());
+    FFT                                          fft(envGetGrid(Field));
     TComplex                                     buf;
 
     envGetTmp(ComplexField, ftBuf);

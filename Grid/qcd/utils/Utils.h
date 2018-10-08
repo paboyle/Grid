@@ -12,4 +12,10 @@
 #include <Grid/qcd/utils/SUnAdjoint.h>
 #include <Grid/qcd/utils/SUnTwoIndex.h>
 
+// All-to-all contraction kernels that touch the 
+// internal lattice structure
+#include <Grid/qcd/utils/A2Autils.h>
+
+
+
 #endif

@@ -44,6 +44,8 @@ template <typename FImpl>
 class TTimeDilutedSpinColorDiagonal: public Module<NoPar>
 {
 public:
+    FERM_TYPE_ALIASES(FImpl,);
+public:
     // constructor
     TTimeDilutedSpinColorDiagonal(const std::string name);
     // destructor
@@ -92,7 +94,7 @@ void TTimeDilutedSpinColorDiagonal<FImpl>::setup(void)
 {
     envCreateDerived(DilutedNoise<FImpl>, 
                      TimeDilutedSpinColorDiagonalNoise<FImpl>,
-                     getName(), 1, env().getGrid());
+                     getName(), 1, envGetGrid(FermionField));
 }
 
 // execution ///////////////////////////////////////////////////////////////////

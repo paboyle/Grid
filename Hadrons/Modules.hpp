@@ -1,33 +1,6 @@
-/*************************************************************************************
-
-Grid physics library, www.github.com/paboyle/Grid 
-
-Source file: Hadrons/Modules.hpp
-
-Copyright (C) 2015-2018
-
-Author: Antonin Portelli <antonin.portelli@me.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
-See the full license in the file "LICENSE" in the top level distribution directory
-*************************************************************************************/
-/*  END LEGAL */
 #include <Hadrons/Modules/MContraction/Baryon.hpp>
+#include <Hadrons/Modules/MContraction/A2AAslashField.hpp>
 #include <Hadrons/Modules/MContraction/A2AMesonField.hpp>
-#include <Hadrons/Modules/MContraction/A2AMesonFieldKernels.hpp>
 #include <Hadrons/Modules/MContraction/Meson.hpp>
 #include <Hadrons/Modules/MContraction/WeakHamiltonian.hpp>
 #include <Hadrons/Modules/MContraction/WeakHamiltonianNonEye.hpp>
@@ -57,6 +30,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Modules/MGauge/FundtoHirep.hpp>
 #include <Hadrons/Modules/MGauge/StochEm.hpp>
 #include <Hadrons/Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp>
+#include <Hadrons/Modules/MUtilities/PrecisionCast.hpp>
 #include <Hadrons/Modules/MUtilities/RandomVectors.hpp>
 #include <Hadrons/Modules/MUtilities/TestSeqGamma.hpp>
 #include <Hadrons/Modules/MUtilities/TestSeqConserved.hpp>

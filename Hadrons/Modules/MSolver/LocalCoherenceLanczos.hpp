@@ -63,7 +63,7 @@ public:
     typedef LocalCoherenceLanczos<typename FImpl::SiteSpinor, 
                                   typename FImpl::SiteComplex, 
                                   nBasis>                LCL;
-    typedef FermionEigenPack<FImpl>                      BasePack;
+    typedef BaseFermionEigenPack<FImpl>                  BasePack;
     typedef CoarseFermionEigenPack<FImpl, nBasis>        CoarsePack;
     typedef HADRONS_DEFAULT_SCHUR_OP<FMat, FermionField> SchurFMat;
 public:

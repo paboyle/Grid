@@ -58,7 +58,7 @@ template <typename FImpl, int nBasis>
 class TRBPrecCG: public Module<RBPrecCGPar>
 {
 public:
-    FG_TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
     SOLVER_TYPE_ALIASES(FImpl,);
 public:
     // constructor

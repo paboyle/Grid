@@ -143,7 +143,7 @@ void TWall<FImpl>::execute(void)
         for(unsigned int mu = 0; mu < env().getNd(); mu++)
         {
             LatticeCoordinate(coor, mu);
-            ph = ph + (p[mu]/env().getGrid()->_fdimensions[mu])*coor;
+            ph = ph + (p[mu]/env().getDim(mu))*coor;
         }
         ph = exp((Real)(2*M_PI)*i*ph);
         LatticeCoordinate(t, Tp);

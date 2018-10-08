@@ -30,6 +30,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define Hadrons_Module_hpp_
 
 #include <Hadrons/Global.hpp>
+#include <Hadrons/TimerArray.hpp>
 #include <Hadrons/VirtualMachine.hpp>
 
 BEGIN_HADRONS_NAMESPACE
@@ -65,7 +66,26 @@ extern template class base;\
 MODULE_REGISTER(mod, ARG(base), ns);
 
 #define ARG(...) __VA_ARGS__
-#define MACRO_REDIRECT(arg1, arg2, arg3, macro, ...) macro
+#define HADRONS_MACRO_REDIRECT_12(arg1, arg2, macro, ...) macro
+#define HADRONS_MACRO_REDIRECT_23(arg1, arg2, arg3, macro, ...) macro
+
+#define envGetGrid4(latticeType)\
+env().template getGrid<typename latticeType::vector_type>()
+
+#define envGetGrid5(latticeType, Ls)\
+env().template getGrid<typename latticeType::vector_type>(Ls)
+
+#define envGetGrid(...)\
+HADRONS_MACRO_REDIRECT_12(__VA_ARGS__, envGetGrid5, envGetGrid4)(__VA_ARGS__)
+
+#define envGetRbGrid4(latticeType)\
+env().template getRbGrid<typename latticeType::vector_type>()
+
+#define envGetRbGrid5(latticeType, Ls)\
+env().template getRbGrid<typename latticeType::vector_type>(Ls)
+
+#define envGetRbGrid(...)\
+HADRONS_MACRO_REDIRECT_12(__VA_ARGS__, envGetRbGrid5, envGetRbGrid4)(__VA_ARGS__)
 
 #define envGet(type, name)\
 *env().template getObject<type>(name)
@@ -86,38 +106,38 @@ env().template createObject<type>(name, Environment::Storage::object, Ls, __VA_A
 env().template createDerivedObject<base, type>(name, Environment::Storage::object, Ls, __VA_ARGS__)
 
 #define envCreateLat4(type, name)\
-envCreate(type, name, 1, env().getGrid())
+envCreate(type, name, 1, envGetGrid(type))
 
 #define envCreateLat5(type, name, Ls)\
-envCreate(type, name, Ls, env().getGrid(Ls))
+envCreate(type, name, Ls, envGetGrid(type, Ls))
 
 #define envCreateLat(...)\
-MACRO_REDIRECT(__VA_ARGS__, envCreateLat5, envCreateLat4)(__VA_ARGS__)
+HADRONS_MACRO_REDIRECT_23(__VA_ARGS__, envCreateLat5, envCreateLat4)(__VA_ARGS__)
 
 #define envCache(type, name, Ls, ...)\
 env().template createObject<type>(name, Environment::Storage::cache, Ls, __VA_ARGS__)
 
 #define envCacheLat4(type, name)\
-envCache(type, name, 1, env().getGrid())
+envCache(type, name, 1, envGetGrid(type))
 
 #define envCacheLat5(type, name, Ls)\
-envCache(type, name, Ls, env().getGrid(Ls))
+envCache(type, name, Ls, envGetGrid(type, Ls))
 
 #define envCacheLat(...)\
-MACRO_REDIRECT(__VA_ARGS__, envCacheLat5, envCacheLat4)(__VA_ARGS__)
+HADRONS_MACRO_REDIRECT_23(__VA_ARGS__, envCacheLat5, envCacheLat4)(__VA_ARGS__)
 
 #define envTmp(type, name, Ls, ...)\
 env().template createObject<type>(getName() + "_tmp_" + name,         \
                                   Environment::Storage::temporary, Ls, __VA_ARGS__)
 
 #define envTmpLat4(type, name)\
-envTmp(type, name, 1, env().getGrid())
+envTmp(type, name, 1, envGetGrid(type))
 
 #define envTmpLat5(type, name, Ls)\
-envTmp(type, name, Ls, env().getGrid(Ls))
+envTmp(type, name, Ls, envGetGrid(type, Ls))
 
 #define envTmpLat(...)\
-MACRO_REDIRECT(__VA_ARGS__, envTmpLat5, envTmpLat4)(__VA_ARGS__)
+HADRONS_MACRO_REDIRECT_23(__VA_ARGS__, envTmpLat5, envTmpLat4)(__VA_ARGS__)
 
 #define saveResult(ioStem, name, result)\
 if (env().getGrid()->IsBoss() and !ioStem.empty())\
@@ -133,7 +153,7 @@ if (env().getGrid()->IsBoss() and !ioStem.empty())\
  *                            Module class                                    *
  ******************************************************************************/
 // base class
-class ModuleBase
+class ModuleBase: public TimerArray
 {
 public:
     // constructor
@@ -161,16 +181,6 @@ public:
     virtual void execute(void) = 0;
     // execution
     void operator()(void);
-    // timers
-    void                            startTimer(const std::string &name);
-    GridTime                        getTimer(const std::string &name);
-    double                          getDTimer(const std::string &name);
-    void                            startCurrentTimer(const std::string &name);
-    void                            stopTimer(const std::string &name);
-    void                            stopCurrentTimer(void);
-    void                            stopAllTimers(void);
-    void                            resetTimers(void);
-    std::map<std::string, GridTime> getTimings(void);
 protected:
     // environment shortcut
     DEFINE_ENV_ALIAS;
