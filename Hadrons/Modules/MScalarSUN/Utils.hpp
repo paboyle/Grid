@@ -103,7 +103,7 @@ std::vector<Complex> makeTwoPoint(const std::vector<SinkSite>   &sink,
     {
         for (unsigned int t  = 0; t < nt; ++t)
         {
-            res[dt] += trace(sink[(t+dt)%nt]*source[t]);
+            res[dt] += trace(sink[(t+dt)%nt]*adj(source[t]));
         }
         res[dt] *= factor/static_cast<double>(nt);
     }

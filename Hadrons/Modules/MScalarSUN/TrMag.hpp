@@ -124,7 +124,8 @@ void TTrMag<SImpl>::execute(void)
     std::vector<TrMagResult> result;
     auto                     &phi = envGet(Field, par().field);
 
-    auto m2 = sum(phi), mn = m2;
+    auto m2 = sum(phi);
+    auto mn = m2;
 
     m2 = -m2*m2;
     mn = 1.;

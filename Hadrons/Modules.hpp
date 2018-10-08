@@ -50,7 +50,6 @@
 #include <Hadrons/Modules/MScalarSUN/TwoPointNPR.hpp>
 #include <Hadrons/Modules/MScalarSUN/ShiftProbe.hpp>
 #include <Hadrons/Modules/MScalarSUN/Div.hpp>
-#include <Hadrons/Modules/MScalarSUN/TimeMomProbe.hpp>
 #include <Hadrons/Modules/MScalarSUN/TrMag.hpp>
 #include <Hadrons/Modules/MScalarSUN/EMT.hpp>
 #include <Hadrons/Modules/MScalarSUN/TwoPoint.hpp>

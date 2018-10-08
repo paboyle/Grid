@@ -46,7 +46,6 @@ modules_cc =\
   Modules/MAction/ScaledDWF.cc \
   Modules/MScalarSUN/TrPhi.cc \
   Modules/MScalarSUN/Grad.cc \
-  Modules/MScalarSUN/TimeMomProbe.cc \
   Modules/MScalarSUN/TrMag.cc \
   Modules/MScalarSUN/TrKinetic.cc \
   Modules/MScalarSUN/EMT.cc \
@@ -115,7 +114,6 @@ modules_hpp =\
   Modules/MScalarSUN/TwoPointNPR.hpp \
   Modules/MScalarSUN/ShiftProbe.hpp \
   Modules/MScalarSUN/Div.hpp \
-  Modules/MScalarSUN/TimeMomProbe.hpp \
   Modules/MScalarSUN/TrMag.hpp \
   Modules/MScalarSUN/EMT.hpp \
   Modules/MScalarSUN/TwoPoint.hpp \
