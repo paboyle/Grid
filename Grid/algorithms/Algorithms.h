@@ -52,6 +52,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/CoarsenedMatrix.h>
 #include <Grid/algorithms/FFT.h>
 
+
 // EigCg
 // Pcg
 // Hdcg

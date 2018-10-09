@@ -27,6 +27,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
+#include <Grid/algorithms/iterative/Reconstruct5Dprop.h>
 
 using namespace std;
 using namespace Grid;
@@ -74,6 +75,14 @@ void  TestCGprec(What & Ddwf,
 		 RealD mass, RealD M5,
 		 GridParallelRNG *RNG4,
 		 GridParallelRNG *RNG5);
+
+template<class What> 
+void  TestReconstruct5D(What & Ddwf, 
+			GridCartesian         * FGrid,	       GridRedBlackCartesian * FrbGrid,
+			GridCartesian         * UGrid,	       GridRedBlackCartesian * UrbGrid,
+			RealD mass, RealD M5,
+			GridParallelRNG *RNG4,
+			GridParallelRNG *RNG5);
 
 int main (int argc, char ** argv)
 {
@@ -152,6 +161,9 @@ void  TestCGinversions(What & Ddwf,
   TestCGprec<What>(Ddwf,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,RNG4,RNG5);
   std::cout<<GridLogMessage << "Testing red black Schur inverter"<<std::endl;
   TestCGschur<What>(Ddwf,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,RNG4,RNG5);
+
+  std::cout<<GridLogMessage << "Testing 5D PV reconstruction"<<std::endl;
+  TestReconstruct5D<What>(Ddwf,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,RNG4,RNG5);
 }
 
 template<class What> 
@@ -188,6 +200,56 @@ void  TestCGprec(What & Ddwf,
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
   CG(HermOpEO,src_o,result_o);
 }
+
+template<class What> 
+void  TestReconstruct5D(What & Ddwf, 
+			GridCartesian         * FGrid,	       GridRedBlackCartesian * FrbGrid,
+			GridCartesian         * UGrid,	       GridRedBlackCartesian * UrbGrid,
+			RealD mass, RealD M5,
+			GridParallelRNG *RNG4,
+			GridParallelRNG *RNG5)
+{
+  LatticeFermion src4   (UGrid); random(*RNG4,src4);
+  LatticeFermion res4   (UGrid); res4 = zero;
+
+  LatticeFermion src   (FGrid);
+  LatticeFermion src_NE(FGrid);
+  LatticeFermion result(FGrid);
+  LatticeFermion result_rec(FGrid);
+
+  MdagMLinearOperator<What,LatticeFermion> HermOp(Ddwf);
+  ConjugateGradient<LatticeFermion> CG(1.0e-12,10000);
+
+  Ddwf.ImportPhysicalFermionSource(src4,src);
+  Ddwf.Mdag(src,src_NE);
+  CG(HermOp,src_NE,result);
+
+  Ddwf.ExportPhysicalFermionSolution(result, res4);
+
+  Ddwf.M(result,src_NE);
+  src_NE = src_NE - src;
+  std::cout <<GridLogMessage<< " True residual is " << norm2(src_NE)<<std::endl;
+  
+  Reconstruct5DfromPhysical<LatticeFermion> reconstructor(CG);
+
+  std::cout <<GridLogMessage<< " True result " << norm2(result)<<std::endl;
+
+  std::cout <<GridLogMessage<< " 4d result " << norm2(res4)<<std::endl;
+
+  std::cout <<GridLogMessage<< " Reconstructing " <<std::endl;
+  
+  result_rec = result;
+  reconstructor(Ddwf,res4,src4,result_rec);
+
+  std::cout <<GridLogMessage << "Result     "<<norm2(result)<<std::endl;
+  std::cout <<GridLogMessage << "Result_rec "<<norm2(result_rec)<<std::endl;
+
+  result_rec = result_rec - result;
+  std::cout <<GridLogMessage << "Difference "<<norm2(result_rec)<<std::endl;
+  //  reconstructor.SliceDump(result_rec);
+
+}
+
 
 
 template<class What> 

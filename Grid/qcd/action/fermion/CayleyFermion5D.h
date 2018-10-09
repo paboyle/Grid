@@ -93,6 +93,14 @@ namespace Grid {
       virtual void ImportPhysicalFermionSource(const FermionField &input4d,FermionField &imported5d);
       virtual void ImportUnphysicalFermion(const FermionField &solution5d, FermionField &exported4d);
 
+      ///////////////////////////////////////////////////////////////
+      // Support for MADWF tricks
+      ///////////////////////////////////////////////////////////////
+      RealD Mass(void) { return mass; };
+      void  SetMass(RealD _mass) { mass=_mass; } ;
+      void  P(const FermionField &psi, FermionField &chi);
+      void  Pdag(const FermionField &psi, FermionField &chi);
+
       /////////////////////////////////////////////////////
       // Instantiate different versions depending on Impl
       /////////////////////////////////////////////////////
