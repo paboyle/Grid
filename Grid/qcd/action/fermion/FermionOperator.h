@@ -68,6 +68,7 @@ namespace Grid {
       virtual int    ConstEE(void) { return 1; }; // clover returns zero as EE depends on gauge field
       virtual int    isTrivialEE(void) { return 0; };
       virtual RealD  Mass(void) {return 0.0;};
+      virtual void SetMass(RealD _mass) { return; };
 
       // half checkerboard operaions
       virtual void   Meooe       (const FermionField &in, FermionField &out)=0;
