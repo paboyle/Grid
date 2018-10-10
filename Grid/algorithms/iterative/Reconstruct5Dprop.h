@@ -31,80 +31,125 @@ namespace Grid {
 namespace QCD {
 
 
-template<class Field> class Reconstruct5DfromPhysical {
+template<class Field>
+class PauliVillarsSolverUnprec
+{
+ public:
+  ConjugateGradient<Field> & CG;
+  PauliVillarsSolverUnprec(  ConjugateGradient<Field> &_CG) : CG(_CG){};
+
+  template<class Matrix>
+  void operator() (Matrix &_Matrix,const Field &src,Field &sol)
+  {
+    RealD m = _Matrix.Mass();
+    Field A  (_Matrix.FermionGrid());
+
+    MdagMLinearOperator<Matrix,Field> HermOp(_Matrix);
+
+    _Matrix.SetMass(1.0);
+    _Matrix.Mdag(src,A);
+    CG(HermOp,A,sol);
+    _Matrix.SetMass(m);
+  };
+};
+
+template<class Field>
+class PauliVillarsSolverRBprec
+{
+ public:
+  ConjugateGradient<Field> & CG;
+  PauliVillarsSolverRBprec(  ConjugateGradient<Field> &_CG) : CG(_CG){};
+
+  template<class Matrix>
+  void operator() (Matrix &_Matrix,const Field &src,Field &sol)
+  {
+    RealD m = _Matrix.Mass();
+    Field A  (_Matrix.FermionGrid());
+
+    _Matrix.SetMass(1.0);
+    SchurRedBlackDiagMooeeSolve<Field> SchurSolver(CG);
+    SchurSolver(_Matrix,src,sol);
+    _Matrix.SetMass(m);
+  };
+};
+
+template<class Field,class PVinverter> class Reconstruct5DfromPhysical {
  private:
-  OperatorFunction<Field> & _PauliVillarsSolver;
+  PVinverter & PauliVillarsSolver;
  public:
 
  /////////////////////////////////////////////////////
- // Wrap the usual normal equations Schur trick
+ // First cut works, 10 Oct 2018.
+ //
+ // Must form a plan to get this into production for Zmobius acceleration
+ // of the Mobius exact AMA corrections.
+ //
+ // TODO : understand absence of contact term in eqns in Hantao's thesis
+ //        sol4 is contact term subtracted.
+ //
+ // Options
+ // a) Defect correction approach:
+ //    1) Compute defect from current soln (initially guess).
+ //       This is ...... outerToInner check !!!!
+ //    2) Deflated Zmobius solve to get 4d soln
+ //       Ensure deflation is working
+ //    3) Refine 5d Outer using the inner 4d delta soln
+ // 
+ // Step 1: localise PV inverse in a routine. [DONE]
+ // Step 2: Schur based PV inverse            [DONE]
+ // Step 3: Fourier accelerated PV inverse
+ // Step 4: 
  /////////////////////////////////////////////////////
- Reconstruct5DfromPhysical(OperatorFunction<Field> &PauliVillarsSolver)  :
-  _PauliVillarsSolver(PauliVillarsSolver) 
-  { };
-  /*
-  void SliceDump(const Field &f)
-  {
-    std::vector<TComplex>  C1;
-    Field ff(f._grid);
-    Gamma G5 ( Gamma::Algebra::Gamma5);
-    ff= f+ G5*f;
-    ff=ff*0.5;
-    {
-      auto ip = localInnerProduct(ff,ff);
-      sliceSum(ip,C1,0);
-      for(int s=0;s<C1.size();s++){
-	std::cout << " P+ C[" <<s<<"] = "<<C1[s]<<std::endl;
-      }
-    }
+ 
+  Reconstruct5DfromPhysical(PVinverter &_PauliVillarsSolver) 
+    : PauliVillarsSolver(_PauliVillarsSolver) 
+  { 
+  };
 
-    ff= f- G5*f;
-    ff=ff*0.5;
-    {
-      auto ip = localInnerProduct(ff,ff);
-      sliceSum(ip,C1,0);
-      for(int s=0;s<C1.size();s++){
-	std::cout << " P- C[" <<s<<"] = "<<C1[s]<<std::endl;
-      }
-    }
 
-  }
-  */
-
+   template<class Matrix>
+   void PV(Matrix &_Matrix,const Field &src,Field &sol)
+   {
+     RealD m = _Matrix.Mass();
+     _Matrix.SetMass(1.0);
+     _Matrix.M(src,sol);
+     _Matrix.SetMass(m);
+   }
+   template<class Matrix>
+   void PVdag(Matrix &_Matrix,const Field &src,Field &sol)
+   {
+     RealD m = _Matrix.Mass();
+     _Matrix.SetMass(1.0);
+     _Matrix.Mdag(src,sol);
+     _Matrix.SetMass(m);
+   }
   template<class Matrix>
   void operator() (Matrix & _Matrix,const Field &sol4,const Field &src4, Field &sol5){
 
     int Ls =  _Matrix.Ls;
-    RealD m = _Matrix.Mass();
 
     Field psi4(_Matrix.GaugeGrid());
     Field psi(_Matrix.FermionGrid());
     Field A  (_Matrix.FermionGrid());
     Field B  (_Matrix.FermionGrid());
     Field c  (_Matrix.FermionGrid());
-    Field b  (_Matrix.FermionGrid());
 
     typedef typename Matrix::Coeff_t Coeff_t;
-    MdagMLinearOperator<Matrix,Field> HermOp(_Matrix);
+
+    std::cout << GridLogMessage<< " ************************************************" << std::endl;
+    std::cout << GridLogMessage<< " Reconstruct5Dprop: c.f. MADWF algorithm         " << std::endl;
+    std::cout << GridLogMessage<< " ************************************************" << std::endl;
 
     ///////////////////////////////////////
     //Import source, include Dminus factors
     ///////////////////////////////////////
-    _Matrix.ImportPhysicalFermionSource(src4,b); // Includes D_- factor
+    _Matrix.ImportPhysicalFermionSource(src4,B); 
 
     ///////////////////////////////////////
     // Set up c from src4
     ///////////////////////////////////////
-    std::cout << GridLogMessage<< " ************************************************" << std::endl;
-    std::cout << GridLogMessage<< " Reconstrucing 5D propagator using Pauli Villars" << std::endl;
-    std::cout << GridLogMessage<< " ************************************************" << std::endl;
-
-    _Matrix.SetMass(1.0); // PauliVillars mass
-
-    _Matrix.Mdag(b,B);   _PauliVillarsSolver(HermOp,B,A);
-    _Matrix.Pdag(A,c);      
-
-    _Matrix.SetMass(m);   // Back to physical mass
+    PauliVillarsSolver(_Matrix,B,A);
+    _Matrix.Pdag(A,c);
 
     //////////////////////////////////////
     // Build Pdag PV^-1 Dm P [-sol4,c2,c3... cL]
@@ -115,22 +160,24 @@ template<class Field> class Reconstruct5DfromPhysical {
       ExtractSlice(psi4,c,s,0);
        InsertSlice(psi4,psi,s,0);
     }
-    
+
+    /////////////////////////////
     // Pdag PV^-1 Dm P 
+    /////////////////////////////
     _Matrix.P(psi,B);
     _Matrix.M(B,A);
+    PauliVillarsSolver(_Matrix,A,B);
+    _Matrix.Pdag(B,A);
 
-    // PauliVillars invert
-    _Matrix.SetMass(1.0);    
-    _Matrix.Mdag(A,B);    _PauliVillarsSolver(HermOp,B,A);    
-    _Matrix.SetMass(m);  
+    //////////////////////////////
+    // Reinsert surface prop
+    //////////////////////////////
+    InsertSlice(sol4,A,0,0);
 
-    _Matrix.Pdag(A,B);
-
-    InsertSlice(sol4,B,0,0);
-
-    // Convert from y back to x with P+ circular shift
-    _Matrix.P(B,sol5);
+    //////////////////////////////
+    // Convert from y back to x 
+    //////////////////////////////
+    _Matrix.P(A,sol5);
     
   }
 };

@@ -229,16 +229,14 @@ void  TestReconstruct5D(What & Ddwf,
   Ddwf.M(result,src_NE);
   src_NE = src_NE - src;
   std::cout <<GridLogMessage<< " True residual is " << norm2(src_NE)<<std::endl;
-  
-  Reconstruct5DfromPhysical<LatticeFermion> reconstructor(CG);
-
-  std::cout <<GridLogMessage<< " True result " << norm2(result)<<std::endl;
-
-  std::cout <<GridLogMessage<< " 4d result " << norm2(res4)<<std::endl;
 
   std::cout <<GridLogMessage<< " Reconstructing " <<std::endl;
-  
-  result_rec = result;
+
+  //  typedef PauliVillarsSolverUnprec<LatticeFermion> PVinverter;
+  typedef PauliVillarsSolverRBprec<LatticeFermion> PVinverter;
+  PVinverter PVinverse(CG);
+  Reconstruct5DfromPhysical<LatticeFermion,PVinverter> reconstructor(PVinverse);
+
   reconstructor(Ddwf,res4,src4,result_rec);
 
   std::cout <<GridLogMessage << "Result     "<<norm2(result)<<std::endl;
@@ -246,7 +244,6 @@ void  TestReconstruct5D(What & Ddwf,
 
   result_rec = result_rec - result;
   std::cout <<GridLogMessage << "Difference "<<norm2(result_rec)<<std::endl;
-  //  reconstructor.SliceDump(result_rec);
 
 }
 
