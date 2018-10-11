@@ -68,6 +68,26 @@ void CayleyFermion5D<Impl>::ExportPhysicalFermionSolution(const FermionField &so
   ExtractSlice(exported4d, tmp, 0, 0);
 }
 template<class Impl>  
+void CayleyFermion5D<Impl>::P(const FermionField &psi, FermionField &chi)
+{
+  int Ls= this->Ls;
+  chi=zero;
+  for(int s=0;s<Ls;s++){
+    axpby_ssp_pminus(chi,1.0,chi,1.0,psi,s,s);
+    axpby_ssp_pplus (chi,1.0,chi,1.0,psi,s,(s+1)%Ls);
+  }
+}
+template<class Impl>  
+void CayleyFermion5D<Impl>::Pdag(const FermionField &psi, FermionField &chi)
+{
+  int Ls= this->Ls;
+  chi=zero;
+  for(int s=0;s<Ls;s++){
+    axpby_ssp_pminus(chi,1.0,chi,1.0,psi,s,s);
+    axpby_ssp_pplus (chi,1.0,chi,1.0,psi,s,(s-1+Ls)%Ls);
+  }
+}
+template<class Impl>  
 void CayleyFermion5D<Impl>::ExportPhysicalFermionSource(const FermionField &solution5d,FermionField &exported4d)
 {
   int Ls = this->Ls;

@@ -141,6 +141,7 @@ namespace QCD {
   ////////////////////////////////////////////////////////////////////////
   
 #define INHERIT_FIMPL_TYPES(Impl)\
+  typedef Impl Impl_t;							\
   typedef typename Impl::FermionField           FermionField;		\
   typedef typename Impl::PropagatorField     PropagatorField;		\
   typedef typename Impl::DoubledGaugeField DoubledGaugeField;		\
