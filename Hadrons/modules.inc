@@ -11,6 +11,7 @@ modules_cc =\
   Modules/MContraction/Gamma3pt.cc \
   Modules/MFermion/FreeProp.cc \
   Modules/MFermion/GaugeProp.cc \
+  Modules/MSource/Momentum.cc \
   Modules/MSource/Point.cc \
   Modules/MSource/Wall.cc \
   Modules/MSource/SeqConserved.cc \
@@ -28,6 +29,7 @@ modules_cc =\
   Modules/MGauge/StochEm.cc \
   Modules/MGauge/Random.cc \
   Modules/MGauge/FundtoHirep.cc \
+  Modules/MGauge/GaugeFix.cc \
   Modules/MNoise/TimeDilutedSpinColorDiagonal.cc \
   Modules/MUtilities/RandomVectors.cc \
   Modules/MUtilities/TestSeqGamma.cc \
@@ -38,6 +40,9 @@ modules_cc =\
   Modules/MScalar/VPCounterTerms.cc \
   Modules/MScalar/ChargedProp.cc \
   Modules/MScalar/ScalarVP.cc \
+  Modules/MNPR/Amputate.cc \
+  Modules/MNPR/Bilinear.cc \
+  Modules/MNPR/FourQuark.cc \
   Modules/MAction/Wilson.cc \
   Modules/MAction/MobiusDWF.cc \
   Modules/MAction/ZMobiusDWF.cc \
@@ -80,6 +85,7 @@ modules_hpp =\
   Modules/MSource/Wall.hpp \
   Modules/MSource/Z2.hpp \
   Modules/MSource/SeqConserved.hpp \
+  Modules/MSource/Momentum.hpp \
   Modules/MSink/Smear.hpp \
   Modules/MSink/Point.hpp \
   Modules/MSolver/MixedPrecisionRBPrecCG.hpp \
@@ -91,6 +97,7 @@ modules_hpp =\
   Modules/MGauge/StoutSmearing.hpp \
   Modules/MGauge/Unit.hpp \
   Modules/MGauge/Random.hpp \
+  Modules/MGauge/GaugeFix.hpp \
   Modules/MGauge/FundtoHirep.hpp \
   Modules/MGauge/StochEm.hpp \
   Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp \
@@ -104,6 +111,9 @@ modules_hpp =\
   Modules/MScalar/ScalarVP.hpp \
   Modules/MScalar/Scalar.hpp \
   Modules/MScalar/ChargedProp.hpp \
+  Modules/MNPR/Bilinear.hpp \
+  Modules/MNPR/Amputate.hpp \
+  Modules/MNPR/FourQuark.hpp \
   Modules/MAction/DWF.hpp \
   Modules/MAction/MobiusDWF.hpp \
   Modules/MAction/Wilson.hpp \
