@@ -7,7 +7,7 @@
 
     Copyright (C) 2015
 
-Author: Christoph Lehner
+Author: Christoph Lehner (lifted with permission by Peter Boyle, brought back to Grid)
 Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify

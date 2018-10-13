@@ -485,9 +485,13 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
     
   double bpc = b+c;
   double bmc = b-c;
+  _b = b;
+  _c = c;
+  _gamma  = gamma; // Save the parameters so we can change mass later.
+  _zolo_hi= zolo_hi;
   for(int i=0; i < Ls; i++){
     as[i] = 1.0;
-    omega[i] = gamma[i]*zolo_hi; //NB reciprocal relative to Chroma NEF code
+    omega[i] = _gamma[i]*_zolo_hi; //NB reciprocal relative to Chroma NEF code
     assert(omega[i]!=Coeff_t(0.0));
     bs[i] = 0.5*(bpc/omega[i] + bmc);
     cs[i] = 0.5*(bpc/omega[i] - bmc);

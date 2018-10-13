@@ -91,6 +91,7 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 #include <Grid/qcd/action/fermion/FourierAcceleratedPV.h>
 #include <Grid/qcd/action/fermion/PauliVillarsInverters.h>
 #include <Grid/qcd/action/fermion/Reconstruct5Dprop.h>
+#include <Grid/qcd/action/fermion/MADWF.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // More maintainable to maintain the following typedef list centrally, as more "impl" targets

@@ -250,10 +250,13 @@ void  TestReconstruct5D(What & Ddwf,
   LatticeFermion src_NE(FGrid);
   LatticeFermion result(FGrid);
   LatticeFermion result_rec(FGrid);
+  LatticeFermion result_madwf(FGrid);
 
   MdagMLinearOperator<What,LatticeFermion> HermOp(Ddwf);
   double Resid = 1.0e-12;
+  double Residi = 1.0e-6;
   ConjugateGradient<LatticeFermion> CG(Resid,10000);
+  ConjugateGradient<LatticeFermion> CGi(Residi,10000);
 
   Ddwf.ImportPhysicalFermionSource(src4,src);
   Ddwf.Mdag(src,src_NE);
@@ -271,7 +274,8 @@ void  TestReconstruct5D(What & Ddwf,
   // RBprec PV inverse
   ////////////////////////////
   typedef LatticeFermion Field;
-  typedef SchurRedBlackDiagMooeeSolve<Field> SchurSolverType; 
+  typedef SchurRedBlackDiagTwoSolve<Field> SchurSolverType; 
+  typedef SchurRedBlackDiagTwoSolve<Field> SchurSolverTypei; 
   typedef PauliVillarsSolverRBprec<Field,SchurSolverType> PVinverter;
   SchurSolverType SchurSolver(CG);
   PVinverter      PVinverse(SchurSolver);
@@ -285,6 +289,19 @@ void  TestReconstruct5D(What & Ddwf,
 
   result_rec = result_rec - result;
   std::cout <<GridLogMessage << "Difference "<<norm2(result_rec)<<std::endl;
+
+  //////////////////////////////
+  // Now try MADWF
+  //////////////////////////////
+  SchurSolverTypei SchurSolveri(CGi);
+  ZeroGuesser<LatticeFermion> Guess;
+  MADWF<What,What,PVinverter,SchurSolverTypei,ZeroGuesser<LatticeFermion> > 
+    madwf(Ddwf,Ddwf,PVinverse,SchurSolveri,Guess,Resid,10);
+  
+  madwf(src4,result_madwf);
+  result_madwf = result_madwf - result;
+  std::cout <<GridLogMessage << "Difference "<<norm2(result_madwf)<<std::endl;
+
 
 }
 template<class What> 
@@ -303,10 +320,13 @@ void  TestReconstruct5DFA(What & Ddwf,
   LatticeFermion src_NE(FGrid);
   LatticeFermion result(FGrid);
   LatticeFermion result_rec(FGrid);
+  LatticeFermion result_madwf(FGrid);
 
   MdagMLinearOperator<What,LatticeFermion> HermOp(Ddwf);
   double Resid = 1.0e-12;
+  double Residi = 1.0e-5;
   ConjugateGradient<LatticeFermion> CG(Resid,10000);
+  ConjugateGradient<LatticeFermion> CGi(Residi,10000);
 
   Ddwf.ImportPhysicalFermionSource(src4,src);
   Ddwf.Mdag(src,src_NE);
@@ -324,6 +344,7 @@ void  TestReconstruct5DFA(What & Ddwf,
   // Fourier accel PV inverse
   ////////////////////////////
   typedef LatticeFermion Field;
+  typedef SchurRedBlackDiagTwoSolve<Field> SchurSolverTypei; 
   typedef PauliVillarsSolverFourierAccel<LatticeFermion,LatticeGaugeField> PVinverter;
   PVinverter PVinverse(Umu,CG);
 
@@ -336,6 +357,18 @@ void  TestReconstruct5DFA(What & Ddwf,
 
   result_rec = result_rec - result;
   std::cout <<GridLogMessage << "Difference "<<norm2(result_rec)<<std::endl;
+
+  //////////////////////////////
+  // Now try MADWF
+  //////////////////////////////
+  SchurSolverTypei SchurSolver(CGi);
+  ZeroGuesser<LatticeFermion> Guess;
+  MADWF<What,What,PVinverter,SchurSolverTypei,ZeroGuesser<LatticeFermion> > 
+    madwf(Ddwf,Ddwf,PVinverse,SchurSolver,Guess,Resid,10);
+  
+  madwf(src4,result_madwf);
+  result_madwf = result_madwf - result;
+  std::cout <<GridLogMessage << "Difference "<<norm2(result_madwf)<<std::endl;
 
 }
 
