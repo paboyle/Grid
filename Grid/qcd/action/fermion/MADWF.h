@@ -30,6 +30,17 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 namespace Grid {
 namespace QCD {
 
+template <class Fieldi, class Fieldo,IfNotSame<Fieldi,Fieldo> X=0>
+inline void convert(const Fieldi &from,Fieldo &to) 
+{
+  precisionChange(to,from);
+}
+template <class Fieldi, class Fieldo,IfSame<Fieldi,Fieldo> X=0>
+inline void convert(const Fieldi &from,Fieldo &to) 
+{
+  to=from;
+}
+
 template<class Matrixo,class Matrixi,class PVinverter,class SchurSolver, class Guesser> 
 class MADWF 
 {
@@ -70,8 +81,10 @@ class MADWF
     std::cout << GridLogMessage<< "  MADWF-like algorithm                           " << std::endl;
     std::cout << GridLogMessage<< " ************************************************" << std::endl;
 
-    FermionFieldo    c0(Mato.GaugeGrid()); // 4d 
-    FermionFieldo    y0(Mato.GaugeGrid()); // 4d
+    FermionFieldi    c0i(Mati.GaugeGrid()); // 4d 
+    FermionFieldi    y0i(Mati.GaugeGrid()); // 4d
+    FermionFieldo    c0 (Mato.GaugeGrid()); // 4d 
+    FermionFieldo    y0 (Mato.GaugeGrid()); // 4d
 
     FermionFieldo    A(Mato.FermionGrid()); // Temporary outer
     FermionFieldo    B(Mato.FermionGrid()); // Temporary outer
@@ -110,15 +123,16 @@ class MADWF
       // Solve the inner system with surface term c0
       ////////////////////////////////////////////////
       ci = zero;  
-      InsertSlice(c0,ci,0, 0);
+      convert(c0,c0i); // Possible precison change
+      InsertSlice(c0i,ci,0, 0);
 
       // Dwm P y = Dwm x = D(1) P (c0,0,0,0)^T
-
       Mati.P(ci,Ai);
       Mati.SetMass(1.0);      Mati.M(Ai,srci);      Mati.SetMass(m);
       SchurSolveri(Mati,srci,xi,Guesseri); 
       Mati.Pdag(xi,yi);
-      ExtractSlice(y0, yi, 0 , 0);
+      ExtractSlice(y0i, yi, 0 , 0);
+      convert(y0i,y0); // Possible precision change
 
       //////////////////////////////////////
       // Propagate solution back to outer system
