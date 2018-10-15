@@ -2,12 +2,13 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MContraction/Bilinear.hpp
+Source file: Hadrons/Modules/MNPR/Bilinear.hpp
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
+Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Julia Kettle J.R.Kettle-2@sms.ed.ac.uk
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
