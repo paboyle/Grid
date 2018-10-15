@@ -75,7 +75,7 @@ public:
     // constructor
     TAmputate(const std::string name);
     // destructor
-    virtual ~TAmputate(void) = default;
+    virtual ~TAmputate(void) {};
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

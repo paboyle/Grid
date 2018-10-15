@@ -72,7 +72,7 @@ public:
     // constructor
     TFourQuark(const std::string name);
     // destructor
-    virtual ~TFourQuark(void) = default;
+    virtual ~TFourQuark(void) {};
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

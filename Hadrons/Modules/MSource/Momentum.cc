@@ -4,5 +4,5 @@ using namespace Grid;
 using namespace Hadrons;
 using namespace MSource;
 
-template class Grid::Hadrons::MSource::TMomSource<FIMPL>;
+template class Grid::Hadrons::MSource::TMomentum<FIMPL>;
 

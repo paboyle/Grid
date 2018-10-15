@@ -62,7 +62,7 @@ public:
     // constructor
     TGaugeFix(const std::string name);
     // destructor
-    virtual ~TGaugeFix(void) = default;
+    virtual ~TGaugeFix(void) {};
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -73,6 +73,60 @@ public:
 };
 
 MODULE_REGISTER_TMP(GaugeFix, TGaugeFix<GIMPL>, MGauge);
+
+/******************************************************************************
+*                            TGaugeFix implementation                             *
+******************************************************************************/
+// constructor /////////////////////////////////////////////////////////////////
+template <typename GImpl>
+TGaugeFix<GImpl>::TGaugeFix(const std::string name)
+: Module<GaugeFixPar>(name)
+{}
+
+// dependencies/products ///////////////////////////////////////////////////////
+template <typename GImpl>
+std::vector<std::string> TGaugeFix<GImpl>::getInput(void)
+{
+    std::vector<std::string> in = {par().gauge};
+    return in;
+}
+
+template <typename GImpl>
+std::vector<std::string> TGaugeFix<GImpl>::getOutput(void)
+{
+    std::vector<std::string> out = {getName()};
+    return out;
+}
+
+// setup ///////////////////////////////////////////////////////////////////////
+template <typename GImpl>
+void TGaugeFix<GImpl>::setup(void)
+{
+    envCreateLat(GaugeField, getName());
+}
+
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename GImpl>
+void TGaugeFix<GImpl>::execute(void)
+//Loads the gauge and fixes it
+{
+    std::cout << "executing" << std::endl;
+    LOG(Message) << "Fixing the Gauge" << std::endl;
+    LOG(Message) << par().gauge << std::endl;
+    auto &U     = envGet(GaugeField, par().gauge);
+    auto &Umu   = envGet(GaugeField, getName());
+    LOG(Message) << "Gauge Field fetched" << std::endl;
+    //do we allow maxiter etc to be user set?
+    Real alpha     = par().alpha;
+    int  maxiter   = par().maxiter;
+    Real Omega_tol = par().Omega_tol;
+    Real Phi_tol   = par().Phi_tol;
+    bool Fourier   = par().Fourier;
+    FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(U,alpha,maxiter,Omega_tol,Phi_tol,Fourier);
+    Umu = U;
+    LOG(Message) << "Gauge Fixed" << std::endl;
+}
 
 END_MODULE_NAMESPACE
 

@@ -1,5 +1,5 @@
-#ifndef Hadrons_MomSource_hpp_
-#define Hadrons_MomSource_hpp_
+#ifndef Hadrons_Momentum_hpp_
+#define Hadrons_Momentum_hpp_
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
@@ -14,29 +14,29 @@ src_x = e^i2pi/L * p *position
 */
 
 /******************************************************************************
- *                                  TPlane                                     *
-  ******************************************************************************/
-  BEGIN_MODULE_NAMESPACE(MSource)
+ *                          Plane Wave source                                 *
+ ******************************************************************************/
+BEGIN_MODULE_NAMESPACE(MSource)
 
-  class MomSourcePar: Serializable
-  {
-  public:
+class MomentumPar: Serializable
+{
+public:
 //What is meant by serializable in this context
-GRID_SERIALIZABLE_CLASS_MEMBERS(MomSourcePar,
+GRID_SERIALIZABLE_CLASS_MEMBERS(MomentumPar,
 std::string, mom);
 };
 
 
 template <typename FImpl>
-class TMomSource: public Module<MomSourcePar>
+class TMomentum: public Module<MomentumPar>
 {
 public:
 FERM_TYPE_ALIASES(FImpl,);
 public:
 // constructor
-TMomSource(const std::string name);
+TMomentum(const std::string name);
 // destructor
-virtual ~TMomSource(void) = default;
+virtual ~TMomentum(void) {};
 // dependency relation
 virtual std::vector<std::string> getInput(void);
 virtual std::vector<std::string> getOutput(void);
@@ -46,28 +46,28 @@ virtual void setup(void);
 virtual void execute(void);
 };
 
-MODULE_REGISTER_TMP(MomSource, TMomSource<FIMPL>, MSource);
-//MODULE_REGISTER_NS(MomSource, TMomSource, MSource);
+MODULE_REGISTER_TMP(Momentum, TMomentum<FIMPL>, MSource);
+//MODULE_REGISTER_NS(Momentum, TMomentum, MSource);
 
 /******************************************************************************
-*                       TMomSource template implementation                       *
+*                       TMomentum template implementation                     *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TMomSource<FImpl>::TMomSource(const std::string name)
-: Module<MomSourcePar>(name)
+TMomentum<FImpl>::TMomentum(const std::string name)
+: Module<MomentumPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
-std::vector<std::string> TMomSource<FImpl>::getInput(void)
+std::vector<std::string> TMomentum<FImpl>::getInput(void)
 {
     std::vector<std::string> in;
     return in;
 }
 
 template <typename FImpl>
-std::vector<std::string> TMomSource<FImpl>::getOutput(void)
+std::vector<std::string> TMomentum<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     return out;
@@ -76,7 +76,7 @@ std::vector<std::string> TMomSource<FImpl>::getOutput(void)
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TMomSource<FImpl>::setup(void)
+void TMomentum<FImpl>::setup(void)
 {
     envCreateLat(PropagatorField, getName());
 }
@@ -84,7 +84,7 @@ void TMomSource<FImpl>::setup(void)
 
 //execution//////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TMomSource<FImpl>::execute(void)
+void TMomentum<FImpl>::execute(void)
 {
     LOG(Message) << "Generating planewave momentum source with momentum " << par().mom << std::endl;
     //what does this env do?
@@ -118,4 +118,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MomSource_hpp_
+#endif // Hadrons_Momentum_hpp_

@@ -72,7 +72,7 @@ public:
     // constructor
     TBilinear(const std::string name);
     // destructor
-    virtual ~TBilinear(void) = default;
+    virtual ~TBilinear(void) {};
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
