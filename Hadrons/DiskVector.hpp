@@ -143,6 +143,12 @@ class EigenDiskVector: public DiskVectorBase<EigenDiskVectorMat<T>>
 public:
     using DiskVectorBase<EigenDiskVectorMat<T>>::DiskVectorBase;
     typedef EigenDiskVectorMat<T> Matrix;
+public:
+    T operator()(const unsigned int i, const Eigen::Index j,
+                 const Eigen::Index k) const
+    {
+        return (*this)[i](j, k);
+    }
 private:
     virtual void load(EigenDiskVectorMat<T> &obj, const std::string filename) const
     {
