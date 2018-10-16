@@ -7,6 +7,7 @@ Source file: Hadrons/DilutedNoise.hpp
 Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Vera Guelpers <Vera.Guelpers@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -55,6 +56,7 @@ public:
     GridCartesian                     *getGrid(void) const;
     // generate noise (pure virtual)
     virtual void generateNoise(GridParallelRNG &rng) = 0;
+    virtual void generateNoise(GridParallelRNG &rng, unsigned int n_src) = 0;
 private:
     std::vector<FermionField> noise_;
     GridCartesian             *grid_;
@@ -72,9 +74,27 @@ public:
     virtual ~TimeDilutedSpinColorDiagonalNoise(void) = default;
     // generate noise
     virtual void generateNoise(GridParallelRNG &rng);
+    virtual void generateNoise(GridParallelRNG &rng, unsigned int n_src);
 private:
     unsigned int nt_;
 };
+
+template <typename FImpl>
+class FullVolumeSpinColorDiagonalNoise: public DilutedNoise<FImpl>
+{
+public:
+    typedef typename FImpl::FermionField FermionField;
+public:
+    // constructor/destructor
+    FullVolumeSpinColorDiagonalNoise(GridCartesian *g, unsigned int n_src);
+    virtual ~FullVolumeSpinColorDiagonalNoise(void) = default;
+    // generate noise
+    virtual void generateNoise(GridParallelRNG &rng);
+    virtual void generateNoise(GridParallelRNG &rng, unsigned int n_src);
+public:
+    unsigned int n_src;
+};
+
 
 /******************************************************************************
  *                    DilutedNoise template implementation                    *
@@ -176,6 +196,61 @@ void TimeDilutedSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rn
         {
             etas = zero;
             pokeSpin(etas, etaCut, s);
+            for (unsigned int c = 0; c < nc; ++c)
+            {
+                noise[i] = zero;
+                pokeColour(noise[i], etas, c);
+                i++;
+            }
+        }
+    }
+}
+
+template <typename FImpl>
+void TimeDilutedSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng, unsigned int n_src)
+{
+ assert(0);
+}
+
+/******************************************************************************
+ *        FullVolumeSpinColorDiagonalNoise template implementation           *
+ ******************************************************************************/
+template <typename FImpl>
+FullVolumeSpinColorDiagonalNoise<FImpl>::
+FullVolumeSpinColorDiagonalNoise(GridCartesian *g, unsigned int n_src)
+: DilutedNoise<FImpl>(g)
+{
+    this->resize(n_src*Ns*FImpl::Dimension);
+}
+
+template <typename FImpl>
+void FullVolumeSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng)
+{
+    assert(0);
+}
+
+template <typename FImpl>
+void FullVolumeSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng,unsigned int n_src)
+{
+    typedef decltype(peekColour((*this)[0], 0)) SpinField;
+
+    auto                       &noise = *this;
+    auto                       g      = this->getGrid();
+    auto                       nd     = g->GlobalDimensions().size();
+    auto                       nc     = FImpl::Dimension;
+    Complex                    shift(1., 1.);
+    LatticeComplex             eta(g);
+    SpinField                  etas(g);
+    unsigned int               i = 0;
+
+    bernoulli(rng, eta);
+    eta = (2.*eta - shift)*(1./::sqrt(2.));
+    for (unsigned int n = 0; n < n_src; ++n)
+    {
+        for (unsigned int s = 0; s < Ns; ++s)
+        {
+            etas = zero;
+            pokeSpin(etas, eta, s);
             for (unsigned int c = 0; c < nc; ++c)
             {
                 noise[i] = zero;

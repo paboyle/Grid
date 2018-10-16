@@ -32,6 +32,7 @@
 #include <Hadrons/Modules/MGauge/FundtoHirep.hpp>
 #include <Hadrons/Modules/MGauge/StochEm.hpp>
 #include <Hadrons/Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp>
+#include <Hadrons/Modules/MNoise/FullVolumeSpinColorDiagonal.hpp>
 #include <Hadrons/Modules/MUtilities/PrecisionCast.hpp>
 #include <Hadrons/Modules/MUtilities/RandomVectors.hpp>
 #include <Hadrons/Modules/MUtilities/TestSeqGamma.hpp>
