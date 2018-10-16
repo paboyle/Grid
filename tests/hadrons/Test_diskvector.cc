@@ -91,6 +91,22 @@ int main(int argc, char *argv[])
     v13r = v[13];
     LOG(Message) << "v[13] correct? " 
                  << ((v13r == v13w) ? "yes" : "no" ) << std::endl;
+    LOG(Message) << "hit ratio " << v.hitRatio() << std::endl;
+
+    EigenDiskVector<ComplexD>         w("eigendiskvector_test", 1000, 4);
+    EigenDiskVector<ComplexD>::Matrix m,n;
+
+    w[2] = EigenDiskVectorMat<ComplexD>::Random(2000, 2000);
+    m    = w[2];
+    w[3] = EigenDiskVectorMat<ComplexD>::Random(2000, 2000);
+    w[4] = EigenDiskVectorMat<ComplexD>::Random(2000, 2000);
+    w[5] = EigenDiskVectorMat<ComplexD>::Random(2000, 2000);
+    w[6] = EigenDiskVectorMat<ComplexD>::Random(2000, 2000);
+    w[7] = EigenDiskVectorMat<ComplexD>::Random(2000, 2000);
+    n    = w[2];
+    LOG(Message) << "w[2] correct? " 
+                 << ((m == n) ? "yes" : "no" ) << std::endl;
+    LOG(Message) << "hit ratio " << w.hitRatio() << std::endl;
 
     Grid_finalize();
     
