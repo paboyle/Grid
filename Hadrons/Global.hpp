@@ -32,6 +32,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 #include <set>
 #include <stack>
+#include <regex>
 #include <Grid/Grid.h>
 #include <cxxabi.h>
 
