@@ -83,6 +83,7 @@ public:
 public:
     DiskVectorBase(const std::string dirname, const unsigned int size = 0,
                    const unsigned int cacheSize = 1, const bool clean = true);
+    DiskVectorBase(DiskVectorBase<T> &&v) = default;
     virtual ~DiskVectorBase(void);
     const T & operator[](const unsigned int i) const;
     RwAccessHelper operator[](const unsigned int i);
@@ -97,14 +98,16 @@ private:
     void cacheInsert(const unsigned int i, const T &obj) const;
     void clean(void);
 private:
-    std::string                                dirname_;
-    unsigned int                               size_, cacheSize_;
-    double                                     access_{0.}, hit_{0.};
-    bool                                       clean_;
+    std::string                               dirname_;
+    unsigned int                              size_, cacheSize_;
+    double                                    access_{0.}, hit_{0.};
+    bool                                      clean_;
     // using pointers to allow modifications when class is const
     // semantic: const means data unmodified, but cache modification allowed
-    std::unique_ptr<std::map<unsigned int, T>> cachePtr_;
-    std::unique_ptr<std::deque<unsigned int>>  loadsPtr_;                
+    std::unique_ptr<std::vector<T>>                       cachePtr_;
+    std::unique_ptr<std::map<unsigned int, unsigned int>> indexPtr_;
+    std::unique_ptr<std::stack<unsigned int>>             freePtr_;
+    std::unique_ptr<std::deque<unsigned int>>             loadsPtr_;                
 };
 
 /******************************************************************************
@@ -201,7 +204,9 @@ DiskVectorBase<T>::DiskVectorBase(const std::string dirname,
                                   const unsigned int cacheSize,
                                   const bool clean)
 : dirname_(dirname), size_(size), cacheSize_(cacheSize), clean_(clean)
-, cachePtr_(new std::map<unsigned int, T>())
+, cachePtr_(new std::vector<T>(size))
+, indexPtr_(new std::map<unsigned int, unsigned int>())
+, freePtr_(new std::stack<unsigned int>)
 , loadsPtr_(new std::deque<unsigned int>())
 {
     struct stat s;
@@ -211,6 +216,10 @@ DiskVectorBase<T>::DiskVectorBase(const std::string dirname,
         HADRONS_ERROR(Io, "directory '" + dirname + "' already exists")
     }
     mkdir(dirname);
+    for (unsigned int i = 0; i < cacheSize_; ++i)
+    {
+        freePtr_->push(i);
+    }
 }
 
 template <typename T>
@@ -225,8 +234,10 @@ DiskVectorBase<T>::~DiskVectorBase(void)
 template <typename T>
 const T & DiskVectorBase<T>::operator[](const unsigned int i) const
 {
-    auto &cache  = *cachePtr_;
-    auto &loads  = *loadsPtr_;
+    auto &cache   = *cachePtr_;
+    auto &index   = *indexPtr_;
+    auto &freeInd = *freePtr_;
+    auto &loads   = *loadsPtr_;
 
     DV_DEBUG_MSG(this, "accessing " << i << " (RO)");
 
@@ -235,7 +246,7 @@ const T & DiskVectorBase<T>::operator[](const unsigned int i) const
         HADRONS_ERROR(Size, "index out of range");
     }
     const_cast<double &>(access_)++;
-    if (cache.find(i) == cache.end())
+    if (index.find(i) == index.end())
     {
         // cache miss
         DV_DEBUG_MSG(this, "cache miss");
@@ -262,7 +273,7 @@ const T & DiskVectorBase<T>::operator[](const unsigned int i) const
     DV_DEBUG_MSG(this, "in cache: " << msg);
 #endif
 
-    return cache.at(i);
+    return cache[index.at(i)];
 }
 
 template <typename T>
@@ -300,13 +311,15 @@ std::string DiskVectorBase<T>::filename(const unsigned int i) const
 template <typename T>
 void DiskVectorBase<T>::evict(void) const
 {
-    auto &cache = *cachePtr_;
-    auto &loads = *loadsPtr_;
+    auto &index   = *indexPtr_;
+    auto &freeInd = *freePtr_;
+    auto &loads   = *loadsPtr_;
 
-    if (cache.size() >= cacheSize_)
+    if (index.size() >= cacheSize_)
     {
         DV_DEBUG_MSG(this, "evicting " << loads.front());
-        cache.erase(loads.front());
+        freeInd.push(index.at(loads.front()));
+        index.erase(loads.front());
         loads.pop_front();
     }
 }
@@ -314,29 +327,39 @@ void DiskVectorBase<T>::evict(void) const
 template <typename T>
 void DiskVectorBase<T>::fetch(const unsigned int i) const
 {
-    auto &cache = *cachePtr_;
-    auto &loads = *loadsPtr_;
+    auto &cache   = *cachePtr_;
+    auto &index   = *indexPtr_;
+    auto &freeInd = *freePtr_;
+    auto &loads   = *loadsPtr_;
+
     struct stat s;
 
     DV_DEBUG_MSG(this, "loading " << i << " from disk");
 
     evict();
+    
     if(stat(filename(i).c_str(), &s) != 0)
     {
         HADRONS_ERROR(Io, "disk vector element " + std::to_string(i) + " uninitialised");
     }
-    load(cache[i], filename(i));
+    index[i] = freeInd.top();
+    freeInd.pop();
+    load(cache[index.at(i)], filename(i));
     loads.push_back(i);
 }
 
 template <typename T>
 void DiskVectorBase<T>::cacheInsert(const unsigned int i, const T &obj) const
 {
-    auto &cache = *cachePtr_;
-    auto &loads = *loadsPtr_;
+    auto &cache   = *cachePtr_;
+    auto &index   = *indexPtr_;
+    auto &freeInd = *freePtr_;
+    auto &loads   = *loadsPtr_;
 
     evict();
-    cache[i] = obj;
+    index[i] = freeInd.top();
+    freeInd.pop();
+    cache[index.at(i)] = obj;
     loads.push_back(i);
 
 #ifdef DV_DEBUG
