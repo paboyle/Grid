@@ -6,10 +6,6 @@
 #include <Hadrons/ModuleFactory.hpp>
 #include <Hadrons/A2AMatrix.hpp>
 
-#ifndef ASF_IO_TYPE
-#define ASF_IO_TYPE ComplexF
-#endif
-
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
@@ -86,7 +82,7 @@ public:
     typedef A2AMatrixBlockComputation<Complex, 
                                       FermionField, 
                                       A2AAslashFieldMetadata, 
-                                      ASF_IO_TYPE> Computation;
+                                      HADRONS_A2AM_IO_TYPE> Computation;
     typedef AslashFieldKernel<Complex, FImpl> Kernel;
 public:
     // constructor
@@ -169,7 +165,7 @@ void TA2AAslashField<FImpl, PhotonImpl>::execute(void)
         LOG(Message) << "  " << name << std::endl;
     }
     LOG(Message) << "A-slash field size: " << nt << "*" << N_i << "*" << N_j 
-                 << " (filesize " << sizeString(nt*N_i*N_j*sizeof(ASF_IO_TYPE)) 
+                 << " (filesize " << sizeString(nt*N_i*N_j*sizeof(HADRONS_A2AM_IO_TYPE)) 
                  << "/EM field)" << std::endl;
     
     // preparing "B" complexified fields

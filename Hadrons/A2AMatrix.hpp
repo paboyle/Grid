@@ -37,6 +37,10 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define HADRONS_A2AM_NAME "a2aMatrix"
 #endif
 
+#ifndef HADRONS_A2AM_IO_TYPE
+#define HADRONS_A2AM_IO_TYPE ComplexF
+#endif
+
 #define HADRONS_A2AM_PARALLEL_IO
 
 BEGIN_HADRONS_NAMESPACE
@@ -50,6 +54,9 @@ BEGIN_HADRONS_NAMESPACE
 //   4 - j   - right A2A mode index
 template <typename T>
 using A2AMatrixSet = Eigen::TensorMap<Eigen::Tensor<T, 5, Eigen::RowMajor>>;
+
+template <typename T>
+using A2AMatrix = Eigen::Matrix<T, -1, -1, Eigen::RowMajor>;
 
 /******************************************************************************
  *                      Abstract class for A2A kernels                        *
@@ -76,10 +83,15 @@ public:
     // constructors
     A2AMatrixIo(void) = default;
     A2AMatrixIo(std::string filename, std::string dataname, 
-                const unsigned int nt, const unsigned int ni,
-                const unsigned int nj);
+                const unsigned int nt, const unsigned int ni = 0,
+                const unsigned int nj = 0);
     // destructor
     ~A2AMatrixIo(void) = default;
+    // access
+    unsigned int getNi(void) const;
+    unsigned int getNj(void) const;
+    unsigned int getNt(void) const;
+    size_t       getSize(void) const;
     // file allocation
     template <typename MetadataType>
     void initFile(const MetadataType &d, const unsigned int chunkSize);
@@ -88,9 +100,11 @@ public:
                    const unsigned int blockSizei, const unsigned int blockSizej);
     void saveBlock(const A2AMatrixSet<T> &m, const unsigned int ext, const unsigned int str,
                    const unsigned int i, const unsigned int j);
+    template <template <class> class Vec, typename VecT>
+    void load(Vec<VecT> &v, double *tRead = nullptr);
 private:
-    std::string  filename_, dataname_;
-    unsigned int nt_, ni_, nj_;
+    std::string  filename_{""}, dataname_{""};
+    unsigned int nt_{0}, ni_{0}, nj_{0};
 };
 
 /******************************************************************************
@@ -147,6 +161,31 @@ A2AMatrixIo<T>::A2AMatrixIo(std::string filename, std::string dataname,
 : filename_(filename), dataname_(dataname)
 , nt_(nt), ni_(ni), nj_(nj)
 {}
+
+// access //////////////////////////////////////////////////////////////////////
+template <typename T>
+unsigned int A2AMatrixIo<T>::getNt(void) const
+{
+    return nt_;
+}
+
+template <typename T>
+unsigned int A2AMatrixIo<T>::getNi(void) const
+{
+    return ni_;
+}
+
+template <typename T>
+unsigned int A2AMatrixIo<T>::getNj(void) const
+{
+    return nj_;
+}
+
+template <typename T>
+size_t A2AMatrixIo<T>::getSize(void) const
+{
+    return nt_*ni_*nj_*sizeof(T);
+}
 
 // file allocation /////////////////////////////////////////////////////////////
 template <typename T>
@@ -224,6 +263,81 @@ void A2AMatrixIo<T>::saveBlock(const A2AMatrixSet<T> &m,
     size_t       offset     = (ext*nstr + str)*nt_*blockSizei*blockSizej;
 
     saveBlock(m.data() + offset, i, j, blockSizei, blockSizej);
+}
+
+template <typename T>
+template <template <class> class Vec, typename VecT>
+void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead)
+{
+#ifdef HAVE_HDF5
+    Hdf5Reader           reader(filename_);
+    std::vector<hsize_t> hdim;
+    H5NS::DataSet        dataset;
+    H5NS::DataSpace      dataspace;
+    H5NS::CompType       datatype;
+    H5NS::DSetCreatPropList plist;
+    
+    push(reader, dataname_);
+    auto &group = reader.getGroup();
+    dataset     = group.openDataSet(HADRONS_A2AM_NAME);
+    datatype    = dataset.getCompType();
+    dataspace   = dataset.getSpace();
+    plist       = dataset.getCreatePlist();
+    hdim.resize(dataspace.getSimpleExtentNdims());
+    dataspace.getSimpleExtentDims(hdim.data());
+    if ((nt_*ni_*nj_ != 0) and
+        ((hdim[0] != nt_) or (hdim[1] != ni_) or (hdim[2] != nj_)))
+    {
+        HADRONS_ERROR(Size, "all-to-all matrix size mismatch (got "
+            + std::to_string(hdim[0]) + "x" + std::to_string(hdim[1]) + "x"
+            + std::to_string(hdim[2]) + ", expected "
+            + std::to_string(nt_) + "x" + std::to_string(ni_) + "x"
+            + std::to_string(nj_));
+    }
+    else if (ni_*nj_ == 0)
+    {
+        if (hdim[0] != nt_)
+        {
+            HADRONS_ERROR(Size, "all-to-all time size mismatch (got "
+                + std::to_string(hdim[0]) + ", expected "
+                + std::to_string(nt_) + ")");
+        }
+        ni_ = hdim[1];
+        nj_ = hdim[2];
+    }
+
+    A2AMatrix<T>         buf(ni_, nj_);
+    std::vector<hsize_t> count    = {1, static_cast<hsize_t>(ni_),
+                                     static_cast<hsize_t>(nj_)},
+                         stride   = {1, 1, 1},
+                         block    = {1, 1, 1},
+                         memCount = {static_cast<hsize_t>(ni_),
+                                     static_cast<hsize_t>(nj_)};
+    H5NS::DataSpace      memspace(memCount.size(), memCount.data());
+
+    std::cout << "Loading timeslice";
+    std::cout.flush();
+    *tRead = 0.;
+    for (unsigned int t = 0; t < nt_; ++t)
+    {
+        std::vector<hsize_t> offset = {static_cast<hsize_t>(t), 0, 0};
+        
+        if (t % 10 == 0)
+        {
+            std::cout << " " << t;
+            std::cout.flush();
+        }
+        dataspace.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data(),
+                                  stride.data(), block.data());
+        if (tRead) *tRead -= usecond();    
+        dataset.read(buf.data(), datatype, memspace, dataspace);
+        if (tRead) *tRead += usecond();
+        v[t] = buf.template cast<VecT>();
+    }
+    std::cout << std::endl;
+#else
+    HADRONS_ERROR(Implementation, "all-to-all matrix I/O needs HDF5 library");
+#endif
 }
 
 /******************************************************************************
