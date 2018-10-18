@@ -59,14 +59,18 @@ public:
         : master_(master), cmaster_(master), i_(i) {}
 
         // operator=: somebody is trying to store a vector element
-        // write to disk and cache
+        // write to cache and tag as modified
         T &operator=(const T &obj) const
         {
+            auto &cache    = *master_.cachePtr_;
+            auto &modified = *master_.modifiedPtr_;
+            auto &index    = *master_.indexPtr_;
+
             DV_DEBUG_MSG(&master_, "writing to " << i_);
             master_.cacheInsert(i_, obj);
-            master_.save(master_.filename(i_), obj);
+            modified[index.at(i_)] = true;
             
-            return master_.cachePtr_->at(i_);
+            return cache[index.at(i_)];
         }
 
         // implicit cast to const object reference and redirection
@@ -98,13 +102,14 @@ private:
     void cacheInsert(const unsigned int i, const T &obj) const;
     void clean(void);
 private:
-    std::string                               dirname_;
-    unsigned int                              size_, cacheSize_;
-    double                                    access_{0.}, hit_{0.};
-    bool                                      clean_;
+    std::string                                           dirname_;
+    unsigned int                                          size_, cacheSize_;
+    double                                                access_{0.}, hit_{0.};
+    bool                                                  clean_;
     // using pointers to allow modifications when class is const
     // semantic: const means data unmodified, but cache modification allowed
     std::unique_ptr<std::vector<T>>                       cachePtr_;
+    std::unique_ptr<std::vector<bool>>                    modifiedPtr_;
     std::unique_ptr<std::map<unsigned int, unsigned int>> indexPtr_;
     std::unique_ptr<std::stack<unsigned int>>             freePtr_;
     std::unique_ptr<std::deque<unsigned int>>             loadsPtr_;                
@@ -149,24 +154,24 @@ public:
 private:
     virtual void load(EigenDiskVectorMat<T> &obj, const std::string filename) const
     {
-        std::ifstream              f(filename, std::ios::binary);
-        std::vector<unsigned char> hash(SHA256_DIGEST_LENGTH);
-        Eigen::Index               nRow, nCol;
-        size_t                     matSize;
-        double                     t;
+        std::ifstream f(filename, std::ios::binary);
+        uint32_t      crc, check;
+        Eigen::Index  nRow, nCol;
+        size_t        matSize;
+        double        t;
 
-        f.read(reinterpret_cast<char *>(hash.data()), hash.size()*sizeof(unsigned char));
-        f.read(reinterpret_cast<char *>(&nRow), sizeof(Eigen::Index));
-        f.read(reinterpret_cast<char *>(&nCol), sizeof(Eigen::Index));
+        f.read(reinterpret_cast<char *>(&crc), sizeof(crc));
+        f.read(reinterpret_cast<char *>(&nRow), sizeof(nRow));
+        f.read(reinterpret_cast<char *>(&nCol), sizeof(nCol));
         obj.resize(nRow, nCol);
         matSize = nRow*nCol*sizeof(T);
         t  = -usecond();
         f.read(reinterpret_cast<char *>(obj.data()), matSize);
         t += usecond();
         DV_DEBUG_MSG(this, "Eigen read " << matSize/t*1.0e6/1024/1024 << " MB/s");
-        auto check = GridChecksum::sha256(obj.data(), matSize);
-        DV_DEBUG_MSG(this, "Eigen sha256 " << GridChecksum::sha256_string(check));
-        if (hash != check)
+        check = GridChecksum::crc32(obj.data(), matSize);
+        DV_DEBUG_MSG(this, "Eigen crc32 " << std::hex << check << std::dec);
+        if (crc != check)
         {
             HADRONS_ERROR(Io, "checksum failed")
         }
@@ -174,24 +179,24 @@ private:
 
     virtual void save(const std::string filename, const EigenDiskVectorMat<T> &obj) const
     {
-        std::ofstream              f(filename, std::ios::binary);
-        std::vector<unsigned char> hash(SHA256_DIGEST_LENGTH);
-        Eigen::Index               nRow, nCol;
-        size_t                     matSize;
-        double                     t;
+        std::ofstream f(filename, std::ios::binary);
+        uint32_t      crc;
+        Eigen::Index  nRow, nCol;
+        size_t        matSize;
+        double        t;
         
         nRow    = obj.rows();
         nCol    = obj.cols();
         matSize = nRow*nCol*sizeof(T);
-        hash    = GridChecksum::sha256(obj.data(), matSize);
-        DV_DEBUG_MSG(this, "Eigen sha256 " << GridChecksum::sha256_string(hash));
-        f.write(reinterpret_cast<char *>(hash.data()), hash.size()*sizeof(unsigned char));
-        f.write(reinterpret_cast<char *>(&nRow), sizeof(Eigen::Index));
-        f.write(reinterpret_cast<char *>(&nCol), sizeof(Eigen::Index));
+        crc     = GridChecksum::crc32(obj.data(), matSize);
+        f.write(reinterpret_cast<char *>(&crc), sizeof(crc));
+        f.write(reinterpret_cast<char *>(&nRow), sizeof(nRow));
+        f.write(reinterpret_cast<char *>(&nCol), sizeof(nCol));
         t  = -usecond();
         f.write(reinterpret_cast<const char *>(obj.data()), matSize);
         t += usecond();
         DV_DEBUG_MSG(this, "Eigen write " << matSize/t*1.0e6/1024/1024 << " MB/s");
+        DV_DEBUG_MSG(this, "Eigen crc32 " << std::hex << crc << std::dec);
     }
 };
 
@@ -205,6 +210,7 @@ DiskVectorBase<T>::DiskVectorBase(const std::string dirname,
                                   const bool clean)
 : dirname_(dirname), size_(size), cacheSize_(cacheSize), clean_(clean)
 , cachePtr_(new std::vector<T>(size))
+, modifiedPtr_(new std::vector<bool>(size, false))
 , indexPtr_(new std::map<unsigned int, unsigned int>())
 , freePtr_(new std::stack<unsigned int>)
 , loadsPtr_(new std::deque<unsigned int>())
@@ -311,15 +317,24 @@ std::string DiskVectorBase<T>::filename(const unsigned int i) const
 template <typename T>
 void DiskVectorBase<T>::evict(void) const
 {
-    auto &index   = *indexPtr_;
-    auto &freeInd = *freePtr_;
-    auto &loads   = *loadsPtr_;
+    auto &cache    = *cachePtr_;
+    auto &modified = *modifiedPtr_;
+    auto &index    = *indexPtr_;
+    auto &freeInd  = *freePtr_;
+    auto &loads    = *loadsPtr_;
 
     if (index.size() >= cacheSize_)
     {
-        DV_DEBUG_MSG(this, "evicting " << loads.front());
-        freeInd.push(index.at(loads.front()));
-        index.erase(loads.front());
+        unsigned int i = loads.front();
+        
+        DV_DEBUG_MSG(this, "evicting " << i);
+        if (modified[index.at(i)])
+        {
+            DV_DEBUG_MSG(this, "element " << i << " modified, saving to disk");
+            save(filename(i), cache[index.at(i)]);
+        }
+        freeInd.push(index.at(i));
+        index.erase(i);
         loads.pop_front();
     }
 }
@@ -327,10 +342,11 @@ void DiskVectorBase<T>::evict(void) const
 template <typename T>
 void DiskVectorBase<T>::fetch(const unsigned int i) const
 {
-    auto &cache   = *cachePtr_;
-    auto &index   = *indexPtr_;
-    auto &freeInd = *freePtr_;
-    auto &loads   = *loadsPtr_;
+    auto &cache    = *cachePtr_;
+    auto &modified = *modifiedPtr_;
+    auto &index    = *indexPtr_;
+    auto &freeInd  = *freePtr_;
+    auto &loads    = *loadsPtr_;
 
     struct stat s;
 
@@ -346,21 +362,24 @@ void DiskVectorBase<T>::fetch(const unsigned int i) const
     freeInd.pop();
     load(cache[index.at(i)], filename(i));
     loads.push_back(i);
+    modified[index.at(i)] = false;
 }
 
 template <typename T>
 void DiskVectorBase<T>::cacheInsert(const unsigned int i, const T &obj) const
 {
-    auto &cache   = *cachePtr_;
-    auto &index   = *indexPtr_;
-    auto &freeInd = *freePtr_;
-    auto &loads   = *loadsPtr_;
+    auto &cache    = *cachePtr_;
+    auto &modified = *modifiedPtr_;
+    auto &index    = *indexPtr_;
+    auto &freeInd  = *freePtr_;
+    auto &loads    = *loadsPtr_;
 
     evict();
     index[i] = freeInd.top();
     freeInd.pop();
     cache[index.at(i)] = obj;
     loads.push_back(i);
+    modified[index.at(i)] = false;
 
 #ifdef DV_DEBUG
     std::string msg;

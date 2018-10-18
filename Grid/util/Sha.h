@@ -34,10 +34,11 @@ extern "C" {
 class GridChecksum
 {
 public:
-  static inline uint32_t crc32(void *data,size_t bytes)
+  static inline uint32_t crc32(const void *data,size_t bytes)
   {
     return ::crc32(0L,(unsigned char *)data,bytes);
   }
+
   template <typename T>
   static inline std::string sha256_string(const std::vector<T> &hash)
   {
