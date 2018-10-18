@@ -24,8 +24,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#define DV_DEBUG
-
 #include <Hadrons/Global.hpp>
 #include <Hadrons/A2AMatrix.hpp>
 #include <Hadrons/DiskVector.hpp>
@@ -71,19 +69,27 @@ struct ContractorPar
     std::vector<Contractor::ProductPar>    product;
 };
 
-std::set<unsigned int> parseTimeRange(const std::string str)
+std::set<unsigned int> parseTimeRange(const std::string str, const unsigned int nt)
 {
     std::regex               rex("([0-9]+)|(([0-9]+)\\.\\.([0-9]+))");
     std::smatch              sm;
     std::vector<std::string> rstr = strToVec<std::string>(str);
-    std::set<unsigned int>   t;
+    std::set<unsigned int>   tSet;
+    
 
     for (auto &s: rstr)
     {
         std::regex_match(s, sm, rex);
         if (sm[1].matched)
         {
-            t.insert(std::stoi(sm[1].str()));
+            unsigned int t;
+            
+            t = std::stoi(sm[1].str());
+            if (t >= nt)
+            {
+                HADRONS_ERROR(Range, "time out of range (from expression '" + str + "')");
+            }
+            tSet.insert(t);
         }
         else if (sm[2].matched)
         {
@@ -91,14 +97,18 @@ std::set<unsigned int> parseTimeRange(const std::string str)
 
             ta = std::stoi(sm[3].str());
             tb = std::stoi(sm[4].str());
+            if ((ta >= nt) or (tb >= nt))
+            {
+                HADRONS_ERROR(Range, "time out of range (from expression '" + str + "')");
+            }
             for (unsigned int ti = ta; ti <= tb; ++ti)
             {
-                t.insert(ti);
+                tSet.insert(ti);
             }
         }
     }
 
-    return t;
+    return tSet;
 }
 
 int main(int argc, char* argv[])
@@ -117,14 +127,12 @@ int main(int argc, char* argv[])
 
     // parse parameter file
     ContractorPar par;
-    
-    unsigned int                        nMat, nCont;
-    {
-        XmlReader                           reader(parFilename);
-        read(reader, "global",    par.global);
-        read(reader, "a2aMatrix", par.a2aMatrix);
-        read(reader, "product",   par.product);
-    }
+    unsigned int  nMat, nCont;
+    XmlReader     reader(parFilename);
+
+    read(reader, "global",    par.global);
+    read(reader, "a2aMatrix", par.a2aMatrix);
+    read(reader, "product",   par.product);
     nMat  = par.a2aMatrix.size();
     nCont = par.product.size();
 
@@ -169,7 +177,7 @@ int main(int argc, char* argv[])
         }
         for (auto &s: p.timeRange)
         {
-            times.push_back(parseTimeRange(s));
+            times.push_back(parseTimeRange(s, par.global.nt));
         }
         
         // test: just 2-pt function for now
