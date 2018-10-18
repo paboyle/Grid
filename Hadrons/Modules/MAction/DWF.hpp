@@ -73,7 +73,9 @@ protected:
 };
 
 MODULE_REGISTER_TMP(DWF, TDWF<FIMPL>, MAction);
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
 MODULE_REGISTER_TMP(DWFF, TDWF<FIMPLF>, MAction);
+#endif
 
 /******************************************************************************
  *                        DWF template implementation                         *

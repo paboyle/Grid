@@ -71,7 +71,9 @@ public:
 };
 
 MODULE_REGISTER_TMP(ScaledDWF, TScaledDWF<FIMPL>, MAction);
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
 MODULE_REGISTER_TMP(ScaledDWFF, TScaledDWF<FIMPLF>, MAction);
+#endif
 
 /******************************************************************************
  *                      TScaledDWF implementation                             *

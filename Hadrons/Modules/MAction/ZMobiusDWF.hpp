@@ -73,7 +73,9 @@ public:
 };
 
 MODULE_REGISTER_TMP(ZMobiusDWF, TZMobiusDWF<ZFIMPL>, MAction);
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
 MODULE_REGISTER_TMP(ZMobiusDWFF, TZMobiusDWF<ZFIMPLF>, MAction);
+#endif
 
 /******************************************************************************
  *                     TZMobiusDWF implementation                             *

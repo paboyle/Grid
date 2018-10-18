@@ -72,7 +72,9 @@ public:
 };
 
 MODULE_REGISTER_TMP(MobiusDWF, TMobiusDWF<FIMPL>, MAction);
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
 MODULE_REGISTER_TMP(MobiusDWFF, TMobiusDWF<FIMPLF>, MAction);
+#endif
 
 /******************************************************************************
  *                      TMobiusDWF implementation                             *

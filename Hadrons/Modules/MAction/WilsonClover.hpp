@@ -75,7 +75,9 @@ public:
 };
 
 MODULE_REGISTER_TMP(WilsonClover, TWilsonClover<FIMPL>, MAction);
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
 MODULE_REGISTER_TMP(WilsonCloverF, TWilsonClover<FIMPLF>, MAction);
+#endif
 
 /******************************************************************************
  *                    TWilsonClover template implementation                   *

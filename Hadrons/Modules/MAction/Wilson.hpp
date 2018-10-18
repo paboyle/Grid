@@ -71,7 +71,9 @@ protected:
 };
 
 MODULE_REGISTER_TMP(Wilson, TWilson<FIMPL>, MAction);
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
 MODULE_REGISTER_TMP(WilsonF, TWilson<FIMPLF>, MAction);
+#endif
 
 /******************************************************************************
  *                     TWilson template implementation                        *
