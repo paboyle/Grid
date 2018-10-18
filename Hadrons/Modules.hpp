@@ -65,6 +65,7 @@
 #include <Hadrons/Modules/MScalarSUN/TrKinetic.hpp>
 #include <Hadrons/Modules/MIO/LoadEigenPack.hpp>
 #include <Hadrons/Modules/MIO/LoadNersc.hpp>
+#include <Hadrons/Modules/MIO/LoadA2AVectors.hpp>
 #include <Hadrons/Modules/MIO/LoadCosmHol.hpp>
 #include <Hadrons/Modules/MIO/LoadCoarseEigenPack.hpp>
 #include <Hadrons/Modules/MIO/LoadBinary.hpp>
