@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MAction/Wilson.cc
+Source file: Hadrons/Modules/MIO/LoadA2AVectors.cc
 
 Copyright (C) 2015-2018
 
@@ -25,13 +25,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Hadrons/Modules/MAction/Wilson.hpp>
+#include <Hadrons/Modules/MIO/LoadA2AVectors.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
-using namespace MAction;
+using namespace MIO;
 
-template class Grid::Hadrons::MAction::TWilson<FIMPL>;
-#ifdef GRID_DEFAULT_PRECISION_DOUBLE
-template class Grid::Hadrons::MAction::TWilson<FIMPLF>;
-#endif
+template class Grid::Hadrons::MIO::TLoadA2AVectors<FIMPL>;

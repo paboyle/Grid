@@ -2,12 +2,12 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MAction/Wilson.hpp
+Source file: Hadrons/Modules/MGauge/GaugeFix.hpp
 
 Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
-Author: Lanny91 <andrew.lawson@gmail.com>
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -27,105 +27,109 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_MAction_Wilson_hpp_
-#define Hadrons_MAction_Wilson_hpp_
+#ifndef Hadrons_MGaugeFix_hpp_
+#define Hadrons_MGaugeFix_hpp_
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
-
+#include <Grid/qcd/utils/GaugeFix.h>
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                            TWilson quark action                            *
+ *                              Fix gauge                                    *
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MAction)
+BEGIN_MODULE_NAMESPACE(MGauge)
 
-class WilsonPar: Serializable
+class GaugeFixPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(WilsonPar,
+    GRID_SERIALIZABLE_CLASS_MEMBERS(GaugeFixPar,
                                     std::string, gauge,
-                                    double     , mass,
-                                    std::string, boundary);
+                                    Real,  alpha,
+                                    int, maxiter, 
+                                    Real, Omega_tol, 
+                                    Real, Phi_tol,
+                                    bool, Fourier);
 };
 
-template <typename FImpl>
-class TWilson: public Module<WilsonPar>
+template <typename GImpl>
+class TGaugeFix: public Module<GaugeFixPar>
 {
 public:
-    FERM_TYPE_ALIASES(FImpl,);
+    GAUGE_TYPE_ALIASES(GImpl,);
 public:
     // constructor
-    TWilson(const std::string name);
+    TGaugeFix(const std::string name);
     // destructor
-    virtual ~TWilson(void) {};
+    virtual ~TGaugeFix(void) {};
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
-protected:
     // setup
     virtual void setup(void);
     // execution
     virtual void execute(void);
 };
 
-MODULE_REGISTER_TMP(Wilson, TWilson<FIMPL>, MAction);
-#ifdef GRID_DEFAULT_PRECISION_DOUBLE
-MODULE_REGISTER_TMP(WilsonF, TWilson<FIMPLF>, MAction);
-#endif
+MODULE_REGISTER_TMP(GaugeFix, TGaugeFix<GIMPL>, MGauge);
 
 /******************************************************************************
- *                     TWilson template implementation                        *
- ******************************************************************************/
+*                            TGaugeFix implementation                             *
+******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-template <typename FImpl>
-TWilson<FImpl>::TWilson(const std::string name)
-: Module<WilsonPar>(name)
+template <typename GImpl>
+TGaugeFix<GImpl>::TGaugeFix(const std::string name)
+: Module<GaugeFixPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-template <typename FImpl>
-std::vector<std::string> TWilson<FImpl>::getInput(void)
+template <typename GImpl>
+std::vector<std::string> TGaugeFix<GImpl>::getInput(void)
 {
     std::vector<std::string> in = {par().gauge};
-    
     return in;
 }
 
-template <typename FImpl>
-std::vector<std::string> TWilson<FImpl>::getOutput(void)
+template <typename GImpl>
+std::vector<std::string> TGaugeFix<GImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
-    
     return out;
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-template <typename FImpl>
-void TWilson<FImpl>::setup(void)
+template <typename GImpl>
+void TGaugeFix<GImpl>::setup(void)
 {
-    LOG(Message) << "Setting up Wilson fermion matrix with m= " << par().mass
-                 << " using gauge field '" << par().gauge << "'" << std::endl;
-    LOG(Message) << "Fermion boundary conditions: " << par().boundary
-                 << std::endl;
-                 
-    auto &U      = envGet(GaugeField, par().gauge);
-    auto &grid   = *envGetGrid(FermionField);
-    auto &gridRb = *envGetRbGrid(FermionField);
-    std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
-    typename WilsonFermion<FImpl>::ImplParams implParams(boundary);
-    envCreateDerived(FMat, WilsonFermion<FImpl>, getName(), 1, U, grid, gridRb,
-                     par().mass, implParams);
+    envCreateLat(GaugeField, getName());
 }
 
+
 // execution ///////////////////////////////////////////////////////////////////
-template <typename FImpl>
-void TWilson<FImpl>::execute()
-{}
+template <typename GImpl>
+void TGaugeFix<GImpl>::execute(void)
+//Loads the gauge and fixes it
+{
+    std::cout << "executing" << std::endl;
+    LOG(Message) << "Fixing the Gauge" << std::endl;
+    LOG(Message) << par().gauge << std::endl;
+    auto &U     = envGet(GaugeField, par().gauge);
+    auto &Umu   = envGet(GaugeField, getName());
+    LOG(Message) << "Gauge Field fetched" << std::endl;
+    //do we allow maxiter etc to be user set?
+    Real alpha     = par().alpha;
+    int  maxiter   = par().maxiter;
+    Real Omega_tol = par().Omega_tol;
+    Real Phi_tol   = par().Phi_tol;
+    bool Fourier   = par().Fourier;
+    FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(U,alpha,maxiter,Omega_tol,Phi_tol,Fourier);
+    Umu = U;
+    LOG(Message) << "Gauge Fixed" << std::endl;
+}
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_Wilson_hpp_
+#endif // Hadrons_MGaugeFix_hpp_

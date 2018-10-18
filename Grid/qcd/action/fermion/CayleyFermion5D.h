@@ -93,6 +93,17 @@ namespace Grid {
       virtual void ImportPhysicalFermionSource(const FermionField &input4d,FermionField &imported5d);
       virtual void ImportUnphysicalFermion(const FermionField &solution5d, FermionField &exported4d);
 
+      ///////////////////////////////////////////////////////////////
+      // Support for MADWF tricks
+      ///////////////////////////////////////////////////////////////
+      RealD Mass(void) { return mass; };
+      void  SetMass(RealD _mass) { 
+	mass=_mass; 
+	SetCoefficientsInternal(_zolo_hi,_gamma,_b,_c);  // Reset coeffs
+      } ;
+      void  P(const FermionField &psi, FermionField &chi);
+      void  Pdag(const FermionField &psi, FermionField &chi);
+
       /////////////////////////////////////////////////////
       // Instantiate different versions depending on Impl
       /////////////////////////////////////////////////////
@@ -138,6 +149,12 @@ namespace Grid {
 
       //    protected:
       RealD mass;
+
+      // Save arguments to SetCoefficientsInternal
+      std::vector<Coeff_t> _gamma;
+      RealD                _zolo_hi;
+      RealD                _b;
+      RealD                _c;
 
       // Cayley form Moebius (tanh and zolotarev)
       std::vector<Coeff_t> omega;

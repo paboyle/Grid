@@ -90,17 +90,20 @@ namespace QCD {
     // That probably makes for GridRedBlack4dCartesian grid.
 
     // s,sp,c,spc,lc
-    template<typename vtype> using iSinglet                   = iScalar<iScalar<iScalar<vtype> > >;
-    template<typename vtype> using iSpinMatrix                = iScalar<iMatrix<iScalar<vtype>, Ns> >;
-    template<typename vtype> using iColourMatrix              = iScalar<iScalar<iMatrix<vtype, Nc> > > ;
-    template<typename vtype> using iSpinColourMatrix          = iScalar<iMatrix<iMatrix<vtype, Nc>, Ns> >;
-    template<typename vtype> using iLorentzColourMatrix       = iVector<iScalar<iMatrix<vtype, Nc> >, Nd > ;
-    template<typename vtype> using iDoubleStoredColourMatrix  = iVector<iScalar<iMatrix<vtype, Nc> >, Nds > ;
-    template<typename vtype> using iSpinVector                = iScalar<iVector<iScalar<vtype>, Ns> >;
-    template<typename vtype> using iColourVector              = iScalar<iScalar<iVector<vtype, Nc> > >;
-    template<typename vtype> using iSpinColourVector          = iScalar<iVector<iVector<vtype, Nc>, Ns> >;
-    template<typename vtype> using iHalfSpinVector            = iScalar<iVector<iScalar<vtype>, Nhs> >;
-    template<typename vtype> using iHalfSpinColourVector      = iScalar<iVector<iVector<vtype, Nc>, Nhs> >;
+
+    template<typename vtype> using iSinglet                     = iScalar<iScalar<iScalar<vtype> > >;
+    template<typename vtype> using iSpinMatrix                  = iScalar<iMatrix<iScalar<vtype>, Ns> >;
+    template<typename vtype> using iColourMatrix                = iScalar<iScalar<iMatrix<vtype, Nc> > > ;
+    template<typename vtype> using iSpinColourMatrix            = iScalar<iMatrix<iMatrix<vtype, Nc>, Ns> >;
+    template<typename vtype> using iLorentzColourMatrix         = iVector<iScalar<iMatrix<vtype, Nc> >, Nd > ;
+    template<typename vtype> using iDoubleStoredColourMatrix    = iVector<iScalar<iMatrix<vtype, Nc> >, Nds > ;
+    template<typename vtype> using iSpinVector                  = iScalar<iVector<iScalar<vtype>, Ns> >;
+    template<typename vtype> using iColourVector                = iScalar<iScalar<iVector<vtype, Nc> > >;
+    template<typename vtype> using iSpinColourVector            = iScalar<iVector<iVector<vtype, Nc>, Ns> >;
+    template<typename vtype> using iHalfSpinVector              = iScalar<iVector<iScalar<vtype>, Nhs> >;
+    template<typename vtype> using iHalfSpinColourVector        = iScalar<iVector<iVector<vtype, Nc>, Nhs> >;
+    template<typename vtype> using iSpinColourSpinColourMatrix  = iScalar<iMatrix<iMatrix<iMatrix<iMatrix<vtype, Nc>, Ns>, Nc>, Ns> >;
+
 
     template<typename vtype> using iGparitySpinColourVector       = iVector<iVector<iVector<vtype, Nc>, Ns>, Ngp >;
     template<typename vtype> using iGparityHalfSpinColourVector   = iVector<iVector<iVector<vtype, Nc>, Nhs>, Ngp >;
@@ -127,10 +130,28 @@ namespace QCD {
     typedef iSpinColourMatrix<Complex  >    SpinColourMatrix;
     typedef iSpinColourMatrix<ComplexF >    SpinColourMatrixF;
     typedef iSpinColourMatrix<ComplexD >    SpinColourMatrixD;
-
+    
     typedef iSpinColourMatrix<vComplex >    vSpinColourMatrix;
     typedef iSpinColourMatrix<vComplexF>    vSpinColourMatrixF;
     typedef iSpinColourMatrix<vComplexD>    vSpinColourMatrixD;
+    
+    // SpinColourSpinColour matrix
+    typedef iSpinColourSpinColourMatrix<Complex  >    SpinColourSpinColourMatrix;
+    typedef iSpinColourSpinColourMatrix<ComplexF >    SpinColourSpinColourMatrixF;
+    typedef iSpinColourSpinColourMatrix<ComplexD >    SpinColourSpinColourMatrixD;
+
+    typedef iSpinColourSpinColourMatrix<vComplex >    vSpinColourSpinColourMatrix;
+    typedef iSpinColourSpinColourMatrix<vComplexF>    vSpinColourSpinColourMatrixF;
+    typedef iSpinColourSpinColourMatrix<vComplexD>    vSpinColourSpinColourMatrixD;
+
+    // SpinColourSpinColour matrix
+    typedef iSpinColourSpinColourMatrix<Complex  >    SpinColourSpinColourMatrix;
+    typedef iSpinColourSpinColourMatrix<ComplexF >    SpinColourSpinColourMatrixF;
+    typedef iSpinColourSpinColourMatrix<ComplexD >    SpinColourSpinColourMatrixD;
+
+    typedef iSpinColourSpinColourMatrix<vComplex >    vSpinColourSpinColourMatrix;
+    typedef iSpinColourSpinColourMatrix<vComplexF>    vSpinColourSpinColourMatrixF;
+    typedef iSpinColourSpinColourMatrix<vComplexD>    vSpinColourSpinColourMatrixD;
 
     // LorentzColour
     typedef iLorentzColourMatrix<Complex  > LorentzColourMatrix;
@@ -229,6 +250,9 @@ namespace QCD {
     typedef Lattice<vSpinColourMatrixF>     LatticeSpinColourMatrixF;
     typedef Lattice<vSpinColourMatrixD>     LatticeSpinColourMatrixD;
 
+    typedef Lattice<vSpinColourSpinColourMatrix>      LatticeSpinColourSpinColourMatrix;
+    typedef Lattice<vSpinColourSpinColourMatrixF>     LatticeSpinColourSpinColourMatrixF;
+    typedef Lattice<vSpinColourSpinColourMatrixD>     LatticeSpinColourSpinColourMatrixD;
 
     typedef Lattice<vLorentzColourMatrix>  LatticeLorentzColourMatrix;
     typedef Lattice<vLorentzColourMatrixF> LatticeLorentzColourMatrixF;

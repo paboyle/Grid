@@ -72,7 +72,9 @@ public:
 };
 
 MODULE_REGISTER_TMP(LoadFermionEigenPack, TLoadEigenPack<FermionEigenPack<FIMPL>>, MIO);
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
 MODULE_REGISTER_TMP(LoadFermionEigenPackIo32, ARG(TLoadEigenPack<FermionEigenPack<FIMPL, FIMPLF>>), MIO);
+#endif
 
 /******************************************************************************
  *                    TLoadEigenPack implementation                           *

@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MAction/MobiusDWF.hpp
+Source file: Hadrons/Modules/MIO/LoadA2AVectors.hpp
 
 Copyright (C) 2015-2018
 
@@ -25,43 +25,40 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef Hadrons_MAction_MobiusDWF_hpp_
-#define Hadrons_MAction_MobiusDWF_hpp_
+#ifndef Hadrons_MIO_LoadA2AVectors_hpp_
+#define Hadrons_MIO_LoadA2AVectors_hpp_
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
+#include <Hadrons/A2AVectors.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                      Mobius domain-wall fermion action                     *
+ *                    Module to load all-to-all vectors                       *
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MAction)
+BEGIN_MODULE_NAMESPACE(MIO)
 
-class MobiusDWFPar: Serializable
+class LoadA2AVectorsPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(MobiusDWFPar,
-                                    std::string , gauge,
-                                    unsigned int, Ls,
-                                    double      , mass,
-                                    double      , M5,
-                                    double      , b,
-                                    double      , c,
-                                    std::string , boundary);
+    GRID_SERIALIZABLE_CLASS_MEMBERS(LoadA2AVectorsPar,
+                                    std::string,  filestem,
+                                    bool,         multiFile,
+                                    unsigned int, size);
 };
 
 template <typename FImpl>
-class TMobiusDWF: public Module<MobiusDWFPar>
+class TLoadA2AVectors: public Module<LoadA2AVectorsPar>
 {
 public:
     FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
-    TMobiusDWF(const std::string name);
+    TLoadA2AVectors(const std::string name);
     // destructor
-    virtual ~TMobiusDWF(void) {};
+    virtual ~TLoadA2AVectors(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -71,31 +68,28 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_TMP(MobiusDWF, TMobiusDWF<FIMPL>, MAction);
-#ifdef GRID_DEFAULT_PRECISION_DOUBLE
-MODULE_REGISTER_TMP(MobiusDWFF, TMobiusDWF<FIMPLF>, MAction);
-#endif
+MODULE_REGISTER_TMP(LoadA2AVectors, TLoadA2AVectors<FIMPL>, MIO);
 
 /******************************************************************************
- *                      TMobiusDWF implementation                             *
+ *                      TLoadA2AVectors implementation                        *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TMobiusDWF<FImpl>::TMobiusDWF(const std::string name)
-: Module<MobiusDWFPar>(name)
+TLoadA2AVectors<FImpl>::TLoadA2AVectors(const std::string name)
+: Module<LoadA2AVectorsPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
-std::vector<std::string> TMobiusDWF<FImpl>::getInput(void)
+std::vector<std::string> TLoadA2AVectors<FImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().gauge};
+    std::vector<std::string> in;
     
     return in;
 }
 
 template <typename FImpl>
-std::vector<std::string> TMobiusDWF<FImpl>::getOutput(void)
+std::vector<std::string> TLoadA2AVectors<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -104,35 +98,23 @@ std::vector<std::string> TMobiusDWF<FImpl>::getOutput(void)
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TMobiusDWF<FImpl>::setup(void)
+void TLoadA2AVectors<FImpl>::setup(void)
 {
-    LOG(Message) << "Setting up Mobius domain wall fermion matrix with m= "
-                 << par().mass << ", M5= " << par().M5 << ", Ls= " << par().Ls 
-                 << ", b= " << par().b << ", c= " << par().c
-                 << " using gauge field '" << par().gauge << "'"
-                 << std::endl;
-    LOG(Message) << "Fermion boundary conditions: " << par().boundary
-                 << std::endl;
-
-    auto &U    = envGet(GaugeField, par().gauge);
-    auto &g4   = *envGetGrid(FermionField);
-    auto &grb4 = *envGetRbGrid(FermionField);
-    auto &g5   = *envGetGrid(FermionField, par().Ls);
-    auto &grb5 = *envGetRbGrid(FermionField, par().Ls);
-    std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
-    typename MobiusFermion<FImpl>::ImplParams implParams(boundary);
-    envCreateDerived(FMat, MobiusFermion<FImpl>, getName(), par().Ls, U, g5,
-                     grb5, g4, grb4, par().mass, par().M5, par().b, par().c,
-                     implParams);
+    envCreate(std::vector<FermionField>, getName(), 1, par().size, 
+              envGetGrid(FermionField));
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TMobiusDWF<FImpl>::execute(void)
-{}
+void TLoadA2AVectors<FImpl>::execute(void)
+{
+    auto &vec = envGet(std::vector<FermionField>, getName());
+
+    A2AVectorsIo::read(vec, par().filestem, par().multiFile, vm().getTrajectory());
+}
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MAction_MobiusDWF_hpp_
+#endif // Hadrons_MIO_LoadA2AVectors_hpp_

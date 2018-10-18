@@ -150,13 +150,13 @@ class ConjugateGradient : public OperatorFunction<Field> {
 	std::cout << GridLogMessage << "\tTrue residual " << true_residual<<std::endl;
 	std::cout << GridLogMessage << "\tTarget " << Tolerance << std::endl;
 
-        std::cout << GridLogMessage << "Time breakdown "<<std::endl;
-	std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tInner      " << InnerTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
+        std::cout << GridLogPerformance << "Time breakdown "<<std::endl;
+	std::cout << GridLogPerformance << "\tElapsed    " << SolverTimer.Elapsed() <<std::endl;
+	std::cout << GridLogPerformance << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
+	std::cout << GridLogPerformance << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
+	std::cout << GridLogPerformance << "\tInner      " << InnerTimer.Elapsed() <<std::endl;
+	std::cout << GridLogPerformance << "\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
+	std::cout << GridLogPerformance << "\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
 
         if (ErrorOnNoConverge) assert(true_residual / Tolerance < 10000.0);
 
