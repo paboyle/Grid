@@ -318,8 +318,9 @@ void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead)
     std::cout << "Loading timeslice";
     std::cout.flush();
     *tRead = 0.;
-    for (unsigned int t = 0; t < nt_; ++t)
+    for (unsigned int tp1 = nt_; tp1 > 0; --tp1)
     {
+        unsigned int         t      = tp1 - 1;
         std::vector<hsize_t> offset = {static_cast<hsize_t>(t), 0, 0};
         
         if (t % 10 == 0)
