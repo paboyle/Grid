@@ -263,7 +263,7 @@ void A2AVectorsIo::write(const std::string fileStem, std::vector<Field> &vec,
     Record       record;
     GridBase     *grid = vec[0]._grid;
     ScidacWriter binWriter(grid->IsBoss());
-    std::string  filename = vecFilename(fileStem, multiFile, trajectory);
+    std::string  filename = vecFilename(fileStem, trajectory, multiFile);
 
     if (multiFile)
     {
@@ -301,7 +301,7 @@ void A2AVectorsIo::read(std::vector<Field> &vec, const std::string fileStem,
 {
     Record       record;
     ScidacReader binReader;
-    std::string  filename = vecFilename(fileStem, multiFile, trajectory);
+    std::string  filename = vecFilename(fileStem, trajectory, multiFile);
 
     if (multiFile)
     {

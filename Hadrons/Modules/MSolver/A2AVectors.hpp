@@ -242,8 +242,12 @@ void TA2AVectors<FImpl, Pack>::execute(void)
     // I/O if necessary
     if (!par().output.empty())
     {
-        A2AVectorsIo::write(par().output + "_w", w, par().multiFile, vm().getTrajectory());
+        startTimer("V I/O");
         A2AVectorsIo::write(par().output + "_v", v, par().multiFile, vm().getTrajectory());
+        stopTimer("V I/O");
+        startTimer("W I/O");
+        A2AVectorsIo::write(par().output + "_w", w, par().multiFile, vm().getTrajectory());
+        stopTimer("W I/O");
     }
 }
 
