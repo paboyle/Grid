@@ -111,11 +111,11 @@ template <typename GImpl>
 void TGaugeFix<GImpl>::execute(void)
 //Loads the gauge and fixes it
 {
+    auto &U     = envGet(GaugeField, par().gauge);
+    auto &Umu   = envGet(GaugeField, getName());
     std::cout << "executing" << std::endl;
     LOG(Message) << "Fixing the Gauge" << std::endl;
     LOG(Message) << par().gauge << std::endl;
-    auto &U     = envGet(GaugeField, par().gauge);
-    auto &Umu   = envGet(GaugeField, getName());
     LOG(Message) << "Gauge Field fetched" << std::endl;
     //do we allow maxiter etc to be user set?
     Real alpha     = par().alpha;
