@@ -31,6 +31,7 @@ modules_cc =\
   Modules/MGauge/FundtoHirep.cc \
   Modules/MGauge/GaugeFix.cc \
   Modules/MNoise/TimeDilutedSpinColorDiagonal.cc \
+  Modules/MNoise/FullVolumeSpinColorDiagonal.cc \
   Modules/MUtilities/RandomVectors.cc \
   Modules/MUtilities/TestSeqGamma.cc \
   Modules/MUtilities/PrecisionCast.cc \
@@ -102,6 +103,7 @@ modules_hpp =\
   Modules/MGauge/FundtoHirep.hpp \
   Modules/MGauge/StochEm.hpp \
   Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp \
+  Modules/MNoise/FullVolumeSpinColorDiagonal.hpp \
   Modules/MUtilities/PrecisionCast.hpp \
   Modules/MUtilities/RandomVectors.hpp \
   Modules/MUtilities/TestSeqGamma.hpp \
