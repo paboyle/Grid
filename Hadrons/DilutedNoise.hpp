@@ -56,7 +56,6 @@ public:
     GridCartesian                     *getGrid(void) const;
     // generate noise (pure virtual)
     virtual void generateNoise(GridParallelRNG &rng) = 0;
-    virtual void generateNoise(GridParallelRNG &rng, unsigned int n_src) = 0;
 private:
     std::vector<FermionField> noise_;
     GridCartesian             *grid_;
@@ -74,7 +73,6 @@ public:
     virtual ~TimeDilutedSpinColorDiagonalNoise(void) = default;
     // generate noise
     virtual void generateNoise(GridParallelRNG &rng);
-    virtual void generateNoise(GridParallelRNG &rng, unsigned int n_src);
 private:
     unsigned int nt_;
 };
@@ -90,9 +88,8 @@ public:
     virtual ~FullVolumeSpinColorDiagonalNoise(void) = default;
     // generate noise
     virtual void generateNoise(GridParallelRNG &rng);
-    virtual void generateNoise(GridParallelRNG &rng, unsigned int n_src);
-public:
-    unsigned int n_src;
+private:
+    unsigned int nSrc_;
 };
 
 
@@ -206,31 +203,17 @@ void TimeDilutedSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rn
     }
 }
 
-template <typename FImpl>
-void TimeDilutedSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng, unsigned int n_src)
-{
- assert(0);
-}
-
 /******************************************************************************
  *        FullVolumeSpinColorDiagonalNoise template implementation           *
  ******************************************************************************/
 template <typename FImpl>
 FullVolumeSpinColorDiagonalNoise<FImpl>::
-FullVolumeSpinColorDiagonalNoise(GridCartesian *g, unsigned int n_src)
-: DilutedNoise<FImpl>(g)
-{
-    this->resize(n_src*Ns*FImpl::Dimension);
-}
+FullVolumeSpinColorDiagonalNoise(GridCartesian *g, unsigned int nSrc)
+: DilutedNoise<FImpl>(g, nSrc*Ns*FImpl::Dimension), nSrc_(nSrc)
+{}
 
 template <typename FImpl>
 void FullVolumeSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng)
-{
-    assert(0);
-}
-
-template <typename FImpl>
-void FullVolumeSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng,unsigned int n_src)
 {
     typedef decltype(peekColour((*this)[0], 0)) SpinField;
 
@@ -245,7 +228,7 @@ void FullVolumeSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng
 
     bernoulli(rng, eta);
     eta = (2.*eta - shift)*(1./::sqrt(2.));
-    for (unsigned int n = 0; n < n_src; ++n)
+    for (unsigned int n = 0; n < nSrc_; ++n)
     {
         for (unsigned int s = 0; s < Ns; ++s)
         {

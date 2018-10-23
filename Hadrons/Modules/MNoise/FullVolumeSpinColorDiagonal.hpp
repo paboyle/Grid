@@ -111,7 +111,7 @@ void TFullVolumeSpinColorDiagonal<FImpl>::execute(void)
 {
     auto &noise = envGet(DilutedNoise<FImpl>, getName());
     LOG(Message) << "Generating full volume, spin-color diagonal noise" << std::endl;
-    noise.generateNoise(rng4d(),par().nsrc);
+    noise.generateNoise(rng4d());
 }
 
 END_MODULE_NAMESPACE
