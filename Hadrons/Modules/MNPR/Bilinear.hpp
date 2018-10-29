@@ -168,9 +168,6 @@ q = (p1-p2)
                  << " momentum '" << par().Sin << "' and '" << par().Sout << "'"
                  << std::endl;
      
-    BinaryWriter             writer(par().output);
-    
-
     // Propogators
     LatticeSpinColourMatrix     &Sin = *env().template getObject<LatticeSpinColourMatrix>(par().Sin);
     LatticeSpinColourMatrix     &Sout = *env().template getObject<LatticeSpinColourMatrix>(par().Sout);
@@ -214,7 +211,7 @@ q = (p1-p2)
         result.bilinear[i] = sum(bilinear_x); //sum over lattice sites
     }
     //////////////////////////////////////////////////
-    write(writer, par().output, result.bilinear);
+    saveResult(par().output, "bilinear", result.bilinear);
     LOG(Message) << "Complete. Writing results to " << par().output << std:: endl;
 }
 

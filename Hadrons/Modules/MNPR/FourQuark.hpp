@@ -200,8 +200,6 @@ We have up to 256 of these including the offdiag (G1 != G2).
                  << " momentum '" << par().Sin << "' and '" << par().Sout << "'"
                  << std::endl;
     
-    BinaryWriter             writer(par().output);
-    
     PropagatorField1                            &Sin = *env().template getObject<PropagatorField1>(par().Sin);
     PropagatorField2                            &Sout = *env().template getObject<PropagatorField2>(par().Sout);
     std::vector<Real>                           pin  = strToVec<Real>(par().pin), pout = strToVec<Real>(par().pout);
@@ -264,7 +262,7 @@ We have up to 256 of these including the offdiag (G1 != G2).
             result.fourquark[mu] = sum(lret);
         }
     }
-    write(writer, "fourquark", result.fourquark);
+    saveResult(par().output, "fourquark", result.fourquark);
 }
 
 END_MODULE_NAMESPACE

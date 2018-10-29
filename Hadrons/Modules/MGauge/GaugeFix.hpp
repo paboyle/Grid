@@ -123,6 +123,11 @@ void TGaugeFix<GImpl>::execute(void)
     Real Omega_tol = par().Omega_tol;
     Real Phi_tol   = par().Phi_tol;
     bool Fourier   = par().Fourier;
+    LOG(Message) << "alpha     "<<par().alpha     << std::endl;
+    LOG(Message) << "maxiter   "<<par().maxiter   << std::endl;
+    LOG(Message) << "Omega_tol "<<par().Omega_tol << std::endl;
+    LOG(Message) << "Phi_tol   "<<par().Phi_tol   << std::endl;
+    LOG(Message) << "Fourier   "<<par().Fourier   << std::endl;
     FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(U,alpha,maxiter,Omega_tol,Phi_tol,Fourier);
     Umu = U;
     LOG(Message) << "Gauge Fixed" << std::endl;
