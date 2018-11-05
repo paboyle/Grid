@@ -55,17 +55,17 @@ public:
                                     bool,          multiFile);
 };
 
-template <typename FImpl, int nBasis>
+template <typename FImpl, int nBasis, typename FImplIo = FImpl>
 class TLocalCoherenceLanczos: public Module<LocalCoherenceLanczosPar>
 {
 public:
     FERM_TYPE_ALIASES(FImpl,);
     typedef LocalCoherenceLanczos<typename FImpl::SiteSpinor, 
                                   typename FImpl::SiteComplex, 
-                                  nBasis>                LCL;
-    typedef BaseFermionEigenPack<FImpl>                  BasePack;
-    typedef CoarseFermionEigenPack<FImpl, nBasis>        CoarsePack;
-    typedef HADRONS_DEFAULT_SCHUR_OP<FMat, FermionField> SchurFMat;
+                                  nBasis>                  LCL;
+    typedef BaseFermionEigenPack<FImpl>                    BasePack;
+    typedef CoarseFermionEigenPack<FImpl, nBasis, FImplIo> CoarsePack;
+    typedef HADRONS_DEFAULT_SCHUR_OP<FMat, FermionField>   SchurFMat;
 public:
     // constructor
     TLocalCoherenceLanczos(const std::string name);
@@ -82,27 +82,31 @@ public:
 
 MODULE_REGISTER_TMP(LocalCoherenceLanczos, ARG(TLocalCoherenceLanczos<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
 MODULE_REGISTER_TMP(ZLocalCoherenceLanczos, ARG(TLocalCoherenceLanczos<ZFIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
+MODULE_REGISTER_TMP(LocalCoherenceLanczosIo32, ARG(TLocalCoherenceLanczos<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS, FIMPLF>), MSolver);
+MODULE_REGISTER_TMP(ZLocalCoherenceLanczosIo32, ARG(TLocalCoherenceLanczos<ZFIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS, ZFIMPLF>), MSolver);
+#endif
 
 /******************************************************************************
  *                 TLocalCoherenceLanczos implementation                      *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-template <typename FImpl, int nBasis>
-TLocalCoherenceLanczos<FImpl, nBasis>::TLocalCoherenceLanczos(const std::string name)
+template <typename FImpl, int nBasis, typename FImplIo>
+TLocalCoherenceLanczos<FImpl, nBasis, FImplIo>::TLocalCoherenceLanczos(const std::string name)
 : Module<LocalCoherenceLanczosPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-template <typename FImpl, int nBasis>
-std::vector<std::string> TLocalCoherenceLanczos<FImpl, nBasis>::getInput(void)
+template <typename FImpl, int nBasis, typename FImplIo>
+std::vector<std::string> TLocalCoherenceLanczos<FImpl, nBasis, FImplIo>::getInput(void)
 {
     std::vector<std::string> in = {par().action};
     
     return in;
 }
 
-template <typename FImpl, int nBasis>
-std::vector<std::string> TLocalCoherenceLanczos<FImpl, nBasis>::getOutput(void)
+template <typename FImpl, int nBasis, typename FImplIo>
+std::vector<std::string> TLocalCoherenceLanczos<FImpl, nBasis, FImplIo>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -110,8 +114,8 @@ std::vector<std::string> TLocalCoherenceLanczos<FImpl, nBasis>::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-template <typename FImpl, int nBasis>
-void TLocalCoherenceLanczos<FImpl, nBasis>::setup(void)
+template <typename FImpl, int nBasis, typename FImplIo>
+void TLocalCoherenceLanczos<FImpl, nBasis, FImplIo>::setup(void)
 {
     LOG(Message) << "Setting up local coherence Lanczos eigensolver for"
                  << " action '" << par().action << "' (" << nBasis
@@ -138,8 +142,8 @@ void TLocalCoherenceLanczos<FImpl, nBasis>::setup(void)
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-template <typename FImpl, int nBasis>
-void TLocalCoherenceLanczos<FImpl, nBasis>::execute(void)
+template <typename FImpl, int nBasis, typename FImplIo>
+void TLocalCoherenceLanczos<FImpl, nBasis, FImplIo>::execute(void)
 {
     auto &finePar   = par().fineParams;
     auto &coarsePar = par().coarseParams;
