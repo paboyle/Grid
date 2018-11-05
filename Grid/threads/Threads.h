@@ -38,8 +38,19 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifdef GRID_OMP
 #include <omp.h>
 
+// complex reductions
+#pragma omp declare reduction(ComplexPlus: Grid::Complex: omp_out += omp_in)
+#pragma omp declare reduction(GridVComplexPlus: Grid::vComplex: omp_out += omp_in)
+#pragma omp declare reduction(ComplexDPlus: Grid::ComplexD: omp_out += omp_in)
+#pragma omp declare reduction(GridVComplexDPlus: Grid::vComplexD: omp_out += omp_in)
+#pragma omp declare reduction(ComplexFPlus: Grid::ComplexF: omp_out += omp_in)
+#pragma omp declare reduction(GridVComplexFPlus: Grid::vComplexF: omp_out += omp_in)
+
 #define PARALLEL_FOR_LOOP        _Pragma("omp parallel for schedule(static)")
 #define PARALLEL_FOR_LOOP_INTERN _Pragma("omp for schedule(static)")
+#define PARALLEL_FOR_REDUCE_HELPER0(x) #x
+#define PARALLEL_FOR_REDUCE_HELPER1(op, var) PARALLEL_FOR_REDUCE_HELPER0(omp parallel for schedule(static) reduction(op:var))
+#define PARALLEL_FOR_LOOP_REDUCE(op, var) _Pragma(PARALLEL_FOR_REDUCE_HELPER1(op, var))
 #define PARALLEL_NESTED_LOOP2 _Pragma("omp parallel for collapse(2)")
 #define PARALLEL_NESTED_LOOP5 _Pragma("omp parallel for collapse(5)")
 #define PARALLEL_REGION       _Pragma("omp parallel")
@@ -47,6 +58,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #else
 #define PARALLEL_FOR_LOOP
 #define PARALLEL_FOR_LOOP_INTERN
+#define PARALLEL_FOR_LOOP_REDUCE(op, var)
 #define PARALLEL_NESTED_LOOP2
 #define PARALLEL_NESTED_LOOP5
 #define PARALLEL_REGION
@@ -56,6 +68,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define parallel_region    PARALLEL_REGION
 #define parallel_for       PARALLEL_FOR_LOOP for
 #define parallel_for_internal PARALLEL_FOR_LOOP_INTERN for
+#define parallel_for_reduce(op, var) PARALLEL_FOR_LOOP_REDUCE(op, var) for
 #define parallel_for_nest2 PARALLEL_NESTED_LOOP2 for
 #define parallel_for_nest5 PARALLEL_NESTED_LOOP5 for
 
