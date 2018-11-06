@@ -25,6 +25,7 @@ modules_cc =\
   Modules/MSolver/LocalCoherenceLanczos.cc \
   Modules/MGauge/StoutSmearing.cc \
   Modules/MGauge/Unit.cc \
+  Modules/MGauge/Electrify.cc \
   Modules/MGauge/UnitEm.cc \
   Modules/MGauge/StochEm.cc \
   Modules/MGauge/Random.cc \
@@ -98,6 +99,7 @@ modules_hpp =\
   Modules/MGauge/UnitEm.hpp \
   Modules/MGauge/StoutSmearing.hpp \
   Modules/MGauge/Unit.hpp \
+  Modules/MGauge/Electrify.hpp \
   Modules/MGauge/Random.hpp \
   Modules/MGauge/GaugeFix.hpp \
   Modules/MGauge/FundtoHirep.hpp \
