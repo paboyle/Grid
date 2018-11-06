@@ -474,16 +474,17 @@ namespace Grid {
       Field   tmp(grid);
       guess(src_o,sol_o);
 
+      //      std::cout<<GridLogMessage << "SchurRedBlack saving the guess" <<std::endl;
       Field  guess_save(grid);
+      //      std::cout<<GridLogMessage << "SchurRedBlack operator =saving the guess" <<std::endl;
       guess_save = sol_o;
 
       std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
-
       //////////////////////////////////////////////////////////////
       // Call the red-black solver
       //////////////////////////////////////////////////////////////
       SchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
-      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(tmp.checkerboard==Odd);
+      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
 
       ////////////////////////////////////////////////
       // Fionn A2A boolean behavioural control
