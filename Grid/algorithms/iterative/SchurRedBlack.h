@@ -327,28 +327,19 @@ namespace Grid {
       ZeroGuesser<Field> guess;
       (*this)(_Matrix,in,out,guess);
     }
-    template<class Matrix,class Guesser>
-    void operator() (Matrix & _Matrix,const Field &in, Field &out,Guesser &guess){
 
-      // FIXME CGdiagonalMee not implemented virtual function
-      // FIXME use CBfactorise to control schur decomp
+    template<class Matrix> void RedBlackSource(Matrix & _Matrix,const Field &src, Field &src_e,Field &src_o)
+    {
       GridBase *grid = _Matrix.RedBlackGrid();
       GridBase *fgrid= _Matrix.Grid();
 
       SchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
- 
-      Field src_e(grid);
-      Field src_o(grid);
-      Field sol_e(grid);
-      Field sol_o(grid);
+      
       Field   tmp(grid);
       Field  Mtmp(grid);
-      Field resid(fgrid);
 
-      pickCheckerboard(Even,src_e,in);
-      pickCheckerboard(Odd ,src_o,in);
-      pickCheckerboard(Even,sol_e,out);
-      pickCheckerboard(Odd ,sol_o,out);
+      pickCheckerboard(Even,src_e,src);
+      pickCheckerboard(Odd ,src_o,src);
     
       /////////////////////////////////////////////////////
       // src_o = Mdag * (source_o - Moe MeeInv source_e)
@@ -359,28 +350,156 @@ namespace Grid {
 
       // get the right MpcDag
       _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.checkerboard ==Odd);       
+    }
 
-      //////////////////////////////////////////////////////////////
-      // Call the red-black solver
-      //////////////////////////////////////////////////////////////
-      std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
-//      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
-      guess(src_o,tmp);
-      Mtmp = tmp;
-      _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
-      // Fionn A2A boolean behavioural control
-      if (subGuess)      tmp = tmp-Mtmp;
-      _Matrix.MooeeInv(tmp,sol_o);       assert(  sol_o.checkerboard   ==Odd);
+    template<class Matrix> void RedBlackSolution(Matrix & _Matrix,const Field &sol_o, const Field &src_e,Field &sol)
+    {
+      GridBase *grid = _Matrix.RedBlackGrid();
+      GridBase *fgrid= _Matrix.Grid();
+
+      Field   tmp(grid);
+      Field   sol_e(grid);
 
       ///////////////////////////////////////////////////
       // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
       ///////////////////////////////////////////////////
       _Matrix.Meooe(sol_o,tmp);        assert(  tmp.checkerboard   ==Even);
-      src_e = src_e-tmp;               assert(  src_e.checkerboard ==Even);
-      _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.checkerboard ==Even);
+      tmp = src_e-tmp;               assert(  src_e.checkerboard ==Even);
+      _Matrix.MooeeInv(tmp,sol_e);   assert(  sol_e.checkerboard ==Even);
      
-      setCheckerboard(out,sol_e); assert(  sol_e.checkerboard ==Even);
-      setCheckerboard(out,sol_o); assert(  sol_o.checkerboard ==Odd );
+      setCheckerboard(sol,sol_e); assert(  sol_e.checkerboard ==Even);
+      setCheckerboard(sol,sol_o); assert(  sol_o.checkerboard ==Odd );
+    };
+
+    template<class Matrix>
+    void operator()(Matrix &_Matrix, const std::vector<Field> &in, std::vector<Field> &out) 
+    {
+      ZeroGuesser<Field> guess;
+      (*this)(_Matrix,in,out,guess);
+    }
+
+    template<class Matrix,class Guesser>
+    void operator()(Matrix &_Matrix, const std::vector<Field> &in, std::vector<Field> &out,Guesser &guess) 
+    {
+      GridBase *grid = _Matrix.RedBlackGrid();
+      GridBase *fgrid= _Matrix.Grid();
+      int nblock = in.size();
+
+      std::vector<Field> src_o(nblock,grid);
+      std::vector<Field> sol_o(nblock,grid);
+      
+      std::vector<Field> guess_save;
+
+      Field resid(fgrid);
+      Field tmp(grid);
+
+      ////////////////////////////////////////////////
+      // Prepare RedBlack source
+      ////////////////////////////////////////////////
+      for(int b=0;b<nblock;b++){
+	RedBlackSource(_Matrix,in[b],tmp,src_o[b]);
+      }
+      ////////////////////////////////////////////////
+      // Make the guesses
+      ////////////////////////////////////////////////
+      if ( subGuess ) guess_save.resize(nblock,grid);
+
+      for(int b=0;b<nblock;b++){
+	guess(src_o[b],sol_o[b]); 
+
+	if ( subGuess ) { 
+	  guess_save[b] = sol_o[b];
+	}
+      }
+      //////////////////////////////////////////////////////////////
+      // Call the block solver
+      //////////////////////////////////////////////////////////////
+      std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp BLOCK solver" <<std::endl;
+      SchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
+      _HermitianRBSolver(_HermOpEO,src_o,sol_o);
+
+      ////////////////////////////////////////////////
+      // A2A boolean behavioural control & reconstruct other checkerboard
+      ////////////////////////////////////////////////
+      for(int b=0;b<nblock;b++) {
+
+	if (subGuess)   tmp = sol_o[b] - guess_save[b];
+	else            tmp = sol_o[b];
+
+	_Matrix.MooeeInv(tmp,sol_o[b]); assert(  sol_o[b].checkerboard   ==Odd);
+
+	///////// Needs even source //////////////
+	pickCheckerboard(Even,tmp,in[b]);
+	RedBlackSolution(_Matrix,sol_o[b],tmp,out[b]);
+
+	/////////////////////////////////////////////////
+	// Check unprec residual if possible
+	/////////////////////////////////////////////////
+	if ( ! subGuess ) {
+	  _Matrix.M(out[b],resid); 
+	  resid = resid-in[b];
+	  RealD ns = norm2(in[b]);
+	  RealD nr = norm2(resid);
+	
+	  std::cout<<GridLogMessage 
+		   << "SchurRedBlackDiagTwo solver true unprec resid["<<b<<"] "<<std::sqrt(nr/ns) << std::endl;
+	} else {
+	  std::cout << GridLogMessage << "Guess subtracted after solve["<<b<<"]" << std::endl;
+	}
+
+      }
+    }
+    template<class Matrix,class Guesser>
+    void operator() (Matrix & _Matrix,const Field &in, Field &out,Guesser &guess){
+
+      // FIXME CGdiagonalMee not implemented virtual function
+      // FIXME use CBfactorise to control schur decomp
+      GridBase *grid = _Matrix.RedBlackGrid();
+      GridBase *fgrid= _Matrix.Grid();
+
+      Field resid(fgrid);
+      Field src_o(grid);
+      Field src_e(grid);
+      Field sol_o(grid);
+
+
+      ////////////////////////////////////////////////
+      // RedBlack source
+      ////////////////////////////////////////////////
+      RedBlackSource(_Matrix,in,src_e,src_o);
+
+      ////////////////////////////////
+      // Construct the guess
+      ////////////////////////////////
+      Field   tmp(grid);
+      guess(src_o,sol_o);
+
+      Field  guess_save(grid);
+      guess_save = sol_o;
+
+      std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
+
+      //////////////////////////////////////////////////////////////
+      // Call the red-black solver
+      //////////////////////////////////////////////////////////////
+      SchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
+      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(tmp.checkerboard==Odd);
+
+      ////////////////////////////////////////////////
+      // Fionn A2A boolean behavioural control
+      ////////////////////////////////////////////////
+      if (subGuess)      tmp = sol_o-guess_save;
+      else               tmp = sol_o;
+
+      ////////////////////////////////////////////////
+      // MooeeInv
+      ////////////////////////////////////////////////
+      _Matrix.MooeeInv(tmp,sol_o);       assert(  sol_o.checkerboard   ==Odd);
+
+      ///////////////////////////////////////////////////
+      // RedBlack solution needs the even source
+      ///////////////////////////////////////////////////
+      RedBlackSolution(_Matrix,sol_o,src_e,out);
 
       // Verify the unprec residual
       if ( ! subGuess ) {
