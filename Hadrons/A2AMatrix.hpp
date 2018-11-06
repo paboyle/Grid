@@ -32,6 +32,10 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Global.hpp>
 #include <Hadrons/TimerArray.hpp>
 #include <Grid/Eigen/unsupported/CXX11/Tensor>
+#ifdef USE_MKL
+#include "mkl.h"
+#include "mkl_cblas.h"
+#endif
 
 #ifndef HADRONS_A2AM_NAME 
 #define HADRONS_A2AM_NAME "a2aMatrix"
@@ -57,6 +61,9 @@ using A2AMatrixSet = Eigen::TensorMap<Eigen::Tensor<T, 5, Eigen::RowMajor>>;
 
 template <typename T>
 using A2AMatrix = Eigen::Matrix<T, -1, -1, Eigen::RowMajor>;
+
+template <typename T>
+using A2AMatrixTr = Eigen::Matrix<T, -1, -1, Eigen::ColMajor>;
 
 /******************************************************************************
  *                      Abstract class for A2A kernels                        *
@@ -148,6 +155,198 @@ private:
     Vector<T>             mCache_;
     Vector<TIo>           mBuf_;
     std::vector<IoHelper> nodeIo_;
+};
+
+/******************************************************************************
+ *                       A2A matrix contraction kernels                       *
+ ******************************************************************************/
+class A2AContraction
+{
+public:
+    // accTrMul(acc, a, b): acc += tr(a*b)
+    template <typename C, typename MatLeft, typename MatRight>
+    static inline void accTrMul(C &acc, const MatLeft &a, const MatRight &b)
+    {
+        if ((MatLeft::Options == Eigen::RowMajor) and
+            (MatRight::Options == Eigen::ColMajor))
+        {
+            parallel_for_reduce(ComplexPlus, acc) (unsigned int r = 0; r < a.rows(); ++r)
+            {
+#ifdef USE_MKL
+                ComplexD tmp;
+                dotuRow(tmp, r, a, b);
+                acc += tmp;
+#else
+                acc += a.row(r).conjugate().dot(b.col(r));
+#endif
+            }
+        }
+        else
+        {
+            parallel_for_reduce(ComplexPlus, acc) (unsigned int c = 0; c < a.cols(); ++c)
+            {
+#ifdef USE_MKL
+                ComplexD tmp;
+                dotuCol(tmp, c, a, b);
+                acc += tmp;
+#else
+                acc += a.col(c).conjugate().dot(b.row(c));
+#endif
+            }
+        }
+    }
+
+    // mul(res, a, b): res = a*b
+#ifdef USE_MKL
+    template <template <class, int...> class Mat, int... Opts>
+    static inline void mul(Mat<ComplexD, Opts...> &res, 
+                           const Mat<ComplexD, Opts...> &a, 
+                           const Mat<ComplexD, Opts...> &b)
+    {
+        static const ComplexD one(1., 0.), zero(0., 0.);
+
+        if (Mat<ComplexD, Opts...>::Options == Eigen::RowMajor)
+        {
+            cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
+                        a.cols(), &one, a.data(), a.cols(), b.data(), b.cols(), &zero,
+                        res.data(), res.cols());
+        }
+        else if (Mat<ComplexD, Opts...>::Options == Eigen::ColMajor)
+        {
+            cblas_zgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
+                        a.cols(), &one, a.data(), a.rows(), b.data(), b.rows(), &zero,
+                        res.data(), res.rows());
+        }
+    }
+
+    template <template <class, int...> class Mat, int... Opts>
+    static inline void mul(Mat<ComplexF, Opts...> &res, 
+                           const Mat<ComplexF, Opts...> &a, 
+                           const Mat<ComplexF, Opts...> &b)
+    {
+        static const ComplexF one(1., 0.), zero(0., 0.);
+
+        if (Mat<ComplexF, Opts...>::Options == Eigen::RowMajor)
+        {
+            cblas_cgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
+                        a.cols(), &one, a.data(), a.cols(), b.data(), b.cols(), &zero,
+                        res.data(), res.cols());
+        }
+        else if (Mat<ComplexF, Opts...>::Options == Eigen::ColMajor)
+        {
+            cblas_cgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
+                        a.cols(), &one, a.data(), a.rows(), b.data(), b.rows(), &zero,
+                        res.data(), res.rows());
+        }
+    }
+#else
+    template <typename Mat>
+    static inline void mul(Mat &res, const Mat &a, const Mat &b)
+    {
+        res = a*b;
+    }
+#endif
+
+private:
+    template <typename C, typename MatLeft, typename MatRight>
+    static inline void makeDotRowPt(C * &aPt, unsigned int &aInc, C * &bPt, 
+                                    unsigned int &bInc, const unsigned int aRow, 
+                                    const MatLeft &a, const MatRight &b)
+    {
+        if (MatLeft::Options == Eigen::RowMajor)
+        {
+            aPt  = a.data() + aRow*a.cols();
+            aInc = 1;
+        }
+        else if (MatLeft::Options == Eigen::ColMajor)
+        {
+            aPt  = a.data() + aRow;
+            aInc = a.rows();
+        }
+        if (MatRight::Options == Eigen::RowMajor)
+        {
+            bPt  = b.data() + aRow;
+            bInc = b.cols();
+        }
+        else if (MatRight::Options == Eigen::ColMajor)
+        {
+            bPt  = b.data() + aRow*b.rows();
+            bInc = 1;
+        }
+    }
+
+#ifdef USE_MKL
+    template <typename C, typename MatLeft, typename MatRight>
+    static inline void makeDotColPt(C * &aPt, unsigned int &aInc, C * &bPt, 
+                                    unsigned int &bInc, const unsigned int aCol, 
+                                    const MatLeft &a, const MatRight &b)
+    {
+        if (MatLeft::Options == Eigen::RowMajor)
+        {
+            aPt  = a.data() + aCol;
+            aInc = a.cols();
+        }
+        else if (MatLeft::Options == Eigen::ColMajor)
+        {
+            aPt  = a.data() + aCol*a.rows();
+            aInc = 1;
+        }
+        if (MatRight::Options == Eigen::RowMajor)
+        {
+            bPt  = b.data() + aCol*b.cols();
+            bInc = 1;
+        }
+        else if (MatRight::Options == Eigen::ColMajor)
+        {
+            bPt  = b.data() + aCol;
+            bInc = b.rows();
+        }
+    }
+
+    template <typename MatLeft, typename MatRight>
+    static inline void dotuRow(ComplexF &res, const unsigned int aRow,
+                               const MatLeft &a, const MatRight &b)
+    {
+        const ComplexF *aPt, *bPt;
+        unsigned int   aInc, bInc;
+
+        makeDotRowPt(aPt, aInc, bPt, bInc, aRow, a, b);
+        cblas_cdotu_sub(a.cols(), aPt, aInc, bPt, bInc, &res);
+    }
+
+    template <typename MatLeft, typename MatRight>
+    static inline void dotuCol(ComplexF &res, const unsigned int aCol,
+                               const MatLeft &a, const MatRight &b)
+    {
+        const ComplexF *aPt, *bPt;
+        unsigned int   aInc, bInc;
+
+        makeDotColPt(aPt, aInc, bPt, bInc, aCol, a, b);
+        cblas_cdotu_sub(a.rows(), aPt, aInc, bPt, bInc, &res);
+    }
+
+    template <typename MatLeft, typename MatRight>
+    static inline void dotuRow(ComplexD &res, const unsigned int aRow,
+                               const MatLeft &a, const MatRight &b)
+    {
+        const ComplexD *aPt, *bPt;
+        unsigned int   aInc, bInc;
+
+        makeDotRowPt(aPt, aInc, bPt, bInc, aRow, a, b);
+        cblas_zdotu_sub(a.cols(), aPt, aInc, bPt, bInc, &res);
+    }
+
+    template <typename MatLeft, typename MatRight>
+    static inline void dotuCol(ComplexD &res, const unsigned int aCol,
+                               const MatLeft &a, const MatRight &b)
+    {
+        const ComplexD *aPt, *bPt;
+        unsigned int   aInc, bInc;
+
+        makeDotColPt(aPt, aInc, bPt, bInc, aCol, a, b);
+        cblas_zdotu_sub(a.rows(), aPt, aInc, bPt, bInc, &res);
+    }
+#endif
 };
 
 /******************************************************************************

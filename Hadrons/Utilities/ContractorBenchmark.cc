@@ -1,16 +1,12 @@
 #include <Hadrons/Global.hpp>
+#include <Hadrons/A2AMatrix.hpp>
 #ifdef USE_MKL
 #include "mkl.h"
 #include "mkl_cblas.h"
 #endif
-#ifdef AVX2
-#include <immintrin.h>
-#endif
 
 using namespace Grid;
-
-typedef Eigen::Matrix<ComplexD, -1, -1, Eigen::RowMajor> RMCMat;
-typedef Eigen::Matrix<ComplexD, -1, -1, Eigen::ColMajor> CMCMat;
+using namespace Hadrons;
 
 #ifdef GRID_COMMS_MPI3
 #define GET_RANK(rank, nMpi) \
@@ -50,7 +46,7 @@ inline void trBenchmark(const std::string name, const MatLeft &left,
 
     if (rank == 0)
     {
-        std::cout << std::setw(30) << name << ": diff= "
+        std::cout << std::setw(34) << name << ": diff= "
                   << std::setw(12) << std::norm(buf-ref)
                   << std::setw(10) << t/1.0e6 << " sec "
                   << std::setw(10) << flops/t/1.0e3 << " GFlop/s " 
@@ -85,16 +81,17 @@ inline void mulBenchmark(const std::string name, const MatV &left,
 
     if (rank == 0)
     {
-        std::cout << std::setw(30) << name << ": diff= "
-                << std::setw(12) << (buf-ref).squaredNorm()
-                << std::setw(10) << t/1.0e6 << " sec "
-                << std::setw(10) << flops/t/1.0e3 << " GFlop/s " 
-                << std::setw(10) << bytes/t*1.0e6/1024/1024/1024 << " GB/s "
-                << std::endl;
+        std::cout << std::setw(34) << name << ": diff= "
+                  << std::setw(12) << (buf-ref).squaredNorm()
+                  << std::setw(10) << t/1.0e6 << " sec "
+                  << std::setw(10) << flops/t/1.0e3 << " GFlop/s " 
+                  << std::setw(10) << bytes/t*1.0e6/1024/1024/1024 << " GB/s "
+                  << std::endl;
     }
     ::sleep(1);
 }
 
+#ifdef USE_MKL
 template <typename MatLeft, typename MatRight>
 static inline void zdotuRow(ComplexD &res, const unsigned int aRow,
                             const MatLeft &a, const MatRight &b)
@@ -154,6 +151,7 @@ static inline void zdotuCol(ComplexD &res, const unsigned int aCol,
     }
     cblas_zdotu_sub(a.rows(), aPt, aInc, bPt, bInc, &res);
 }
+#endif
 
 template <typename MatLeft, typename MatRight>
 void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigned int nMat)
@@ -192,12 +190,18 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
     }
     BARRIER();
     ref = (left.back()*right.back()).trace();
+    trBenchmark("Hadrons A2AContraction::accTrMul", left, right, ref,
+    [](ComplexD &res, const MatLeft &a, const MatRight &b)
+    { 
+        res = 0.;
+        A2AContraction::accTrMul(res, a, b);
+    });
     trBenchmark("Naive loop rows first", left, right, ref,
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
     { 
         res = 0.;
         auto nr = a.rows(), nc = a.cols();
-        parallel_for_reduce(ComplexDPlus, res) (unsigned int i = 0; i < nr; ++i)
+        parallel_for_reduce(ComplexPlus, res) (unsigned int i = 0; i < nr; ++i)
         for (unsigned int j = 0; j < nc; ++j)
         {
             res += a(i, j)*b(j, i);
@@ -208,7 +212,7 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
     { 
         res = 0.;
         auto nr = a.rows(), nc = a.cols();
-        parallel_for_reduce(ComplexDPlus, res) (unsigned int j = 0; j < nc; ++j)
+        parallel_for_reduce(ComplexPlus, res) (unsigned int j = 0; j < nc; ++j)
         for (unsigned int i = 0; i < nr; ++i)
         {
             res += a(i, j)*b(j, i);
@@ -224,7 +228,7 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
     { 
         res = 0.;
 
-        parallel_for_reduce(ComplexDPlus, res) (unsigned int r = 0; r < a.rows(); ++r)
+        parallel_for_reduce(ComplexPlus, res) (unsigned int r = 0; r < a.rows(); ++r)
         {
             res += a.row(r).conjugate().dot(b.col(r));
         }
@@ -234,7 +238,7 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
     { 
         res = 0.;
 
-        parallel_for_reduce(ComplexDPlus, res) (unsigned int c = 0; c < a.cols(); ++c)
+        parallel_for_reduce(ComplexPlus, res) (unsigned int c = 0; c < a.cols(); ++c)
         {
             res += a.col(c).conjugate().dot(b.row(c));
         }
@@ -250,7 +254,7 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
     { 
         res = 0.;
 
-        parallel_for_reduce(ComplexDPlus, res) (unsigned int r = 0; r < a.rows(); ++r)
+        parallel_for_reduce(ComplexPlus, res) (unsigned int r = 0; r < a.rows(); ++r)
         {
             ComplexD tmp;
 
@@ -263,7 +267,7 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
     { 
         res = 0.;
 
-        parallel_for_reduce(ComplexDPlus, res) (unsigned int c = 0; c < a.cols(); ++c)
+        parallel_for_reduce(ComplexPlus, res) (unsigned int c = 0; c < a.cols(); ++c)
         {
             ComplexD tmp;
 
@@ -305,6 +309,11 @@ void fullMulBenchmark(const unsigned int ni, const unsigned int nj, const unsign
     }
     BARRIER();
     ref = left.back()*right.back();
+    mulBenchmark("Hadrons A2AContraction::mul", left, right, ref,
+    [](Mat &res, const Mat &a, const Mat &b)
+    { 
+        A2AContraction::mul(res, a, b);
+    });
     mulBenchmark("Eigen A*B", left, right, ref,
     [](Mat &res, const Mat &a, const Mat &b)
     { 
@@ -381,12 +390,12 @@ int main(int argc, char *argv[])
         std::cout << std::endl;
     }
 
-    fullTrBenchmark<RMCMat, RMCMat>(ni, nj, nMat);
-    fullTrBenchmark<RMCMat, CMCMat>(ni, nj, nMat);
-    fullTrBenchmark<CMCMat, RMCMat>(ni, nj, nMat);
-    fullTrBenchmark<CMCMat, CMCMat>(ni, nj, nMat);
-    fullMulBenchmark<RMCMat>(ni, nj, nMat);
-    fullMulBenchmark<CMCMat>(ni, nj, nMat);
+    fullTrBenchmark<A2AMatrix<ComplexD>, A2AMatrix<ComplexD>>(ni, nj, nMat);
+    fullTrBenchmark<A2AMatrix<ComplexD>, A2AMatrixTr<ComplexD>>(ni, nj, nMat);
+    fullTrBenchmark<A2AMatrixTr<ComplexD>, A2AMatrix<ComplexD>>(ni, nj, nMat);
+    fullTrBenchmark<A2AMatrixTr<ComplexD>, A2AMatrixTr<ComplexD>>(ni, nj, nMat);
+    fullMulBenchmark<A2AMatrix<ComplexD>>(ni, nj, nMat);
+    fullMulBenchmark<A2AMatrixTr<ComplexD>>(ni, nj, nMat);
     FINALIZE();
 
     return EXIT_SUCCESS;

@@ -39,12 +39,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <omp.h>
 
 // complex reductions
-#pragma omp declare reduction(ComplexPlus: Grid::Complex: omp_out += omp_in)
-#pragma omp declare reduction(GridVComplexPlus: Grid::vComplex: omp_out += omp_in)
-#pragma omp declare reduction(ComplexDPlus: Grid::ComplexD: omp_out += omp_in)
-#pragma omp declare reduction(GridVComplexDPlus: Grid::vComplexD: omp_out += omp_in)
-#pragma omp declare reduction(ComplexFPlus: Grid::ComplexF: omp_out += omp_in)
-#pragma omp declare reduction(GridVComplexFPlus: Grid::vComplexF: omp_out += omp_in)
+#pragma omp declare reduction(ComplexPlus:Grid::ComplexD, Grid::vComplexD, Grid::ComplexF, Grid::vComplexF: omp_out += omp_in)
 
 #define PARALLEL_FOR_LOOP        _Pragma("omp parallel for schedule(static)")
 #define PARALLEL_FOR_LOOP_INTERN _Pragma("omp for schedule(static)")
