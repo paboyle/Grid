@@ -34,12 +34,11 @@ using namespace Grid::QCD;
 
 int main (int argc, char ** argv)
 {
-  typedef typename DomainWallFermionR::FermionField FermionField; 
-  typedef typename DomainWallFermionR::ComplexField ComplexField; 
-  typename DomainWallFermionR::ImplParams params; 
+  typedef typename MobiusFermionR::FermionField FermionField; 
+  typedef typename MobiusFermionR::ComplexField ComplexField; 
+  typename MobiusFermionR::ImplParams params; 
 
-  double stp=1.0e-5;
-  const int Ls=4;
+  const int Ls=12;
 
   Grid_init(&argc,&argv);
 
@@ -47,6 +46,12 @@ int main (int argc, char ** argv)
   std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
   std::vector<int> mpi_split (mpi_layout.size(),1);
+  std::vector<int> split_coor (mpi_layout.size(),1);
+  std::vector<int> split_dim (mpi_layout.size(),1);
+
+  std::vector<ComplexD> boundary_phases(Nd,1.);
+  boundary_phases[Nd-1]=-1.;
+  params.boundary_phases = boundary_phases;
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), 
 								   GridDefaultSimd(Nd,vComplex::Nsimd()),
@@ -70,9 +75,15 @@ int main (int argc, char ** argv)
     }
   }
 
+ 
+  double stp = 1.e-8;
   int nrhs = 1;
   int me;
-  for(int i=0;i<mpi_layout.size();i++) nrhs *= (mpi_layout[i]/mpi_split[i]);
+  for(int i=0;i<mpi_layout.size();i++){
+//	split_dim[i] = (mpi_layout[i]/mpi_split[i]);
+	nrhs *= (mpi_layout[i]/mpi_split[i]);
+//	split_coor[i] = FGrid._processor_coor[i]/mpi_split[i];
+  }
   std::cout << GridLogMessage << "Creating split grids " <<std::endl;
   GridCartesian         * SGrid = new GridCartesian(GridDefaultLatt(),
 						    GridDefaultSimd(Nd,vComplex::Nsimd()),
@@ -91,58 +102,38 @@ int main (int argc, char ** argv)
   ///////////////////////////////////////////////
   std::vector<int> seeds({1,2,3,4});
 
-  std::vector<FermionField>    src(nrhs,FGrid);
+  std::vector<FermionField> src(nrhs,FGrid);
   std::vector<FermionField> src_chk(nrhs,FGrid);
   std::vector<FermionField> result(nrhs,FGrid);
   FermionField tmp(FGrid);
   std::cout << GridLogMessage << "Made the Fermion Fields"<<std::endl;
 
   for(int s=0;s<nrhs;s++) result[s]=zero;
-#undef LEXICO_TEST
-#ifdef LEXICO_TEST
-  {
-    LatticeFermion lex(FGrid);  lex = zero;
-    LatticeFermion ftmp(FGrid);
-    Integer stride =10000;
-    double nrm;
-    LatticeComplex coor(FGrid);
-    for(int d=0;d<5;d++){
-      LatticeCoordinate(coor,d);
-      ftmp = stride;
-      ftmp = ftmp * coor;
-      lex = lex + ftmp;
-      stride=stride/10;
-    }
-    for(int s=0;s<nrhs;s++) {
-      src[s]=lex;
-      ftmp = 1000*1000*s;
-      src[s] = src[s] + ftmp;
-    }    
-  }
-#else
   GridParallelRNG pRNG5(FGrid);  pRNG5.SeedFixedIntegers(seeds);
   for(int s=0;s<nrhs;s++) {
     random(pRNG5,src[s]);
-    tmp = 10.0*s;
-    src[s] = (src[s] * 0.1) + tmp;
     std::cout << GridLogMessage << " src ["<<s<<"] "<<norm2(src[s])<<std::endl;
   }
-#endif
+
   std::cout << GridLogMessage << "Intialised the Fermion Fields"<<std::endl;
 
   LatticeGaugeField Umu(UGrid); 
-  if(1) { 
+
+  if(0) { 
+    FieldMetaData header;
+    std::string file("./lat.in");
+    NerscIO::readConfiguration(Umu,header,file);
+    std::cout << GridLogMessage << " "<<file<<" successfully read" <<std::endl;
+  } else {
     GridParallelRNG pRNG(UGrid );  
     std::cout << GridLogMessage << "Intialising 4D RNG "<<std::endl;
     pRNG.SeedFixedIntegers(seeds);
     std::cout << GridLogMessage << "Intialised 4D RNG "<<std::endl;
     SU3::HotConfiguration(pRNG,Umu);
     std::cout << GridLogMessage << "Intialised the HOT Gauge Field"<<std::endl;
-    //    std::cout << " Site zero "<< Umu._odata[0]   <<std::endl;
-  } else { 
-    SU3::ColdConfiguration(Umu);
-    std::cout << GridLogMessage << "Intialised the COLD Gauge Field"<<std::endl;
-  }
+    std::cout << " Site zero "<< Umu._odata[0]   <<std::endl;
+  } 
+
   /////////////////
   // MPI only sends
   /////////////////
@@ -159,47 +150,28 @@ int main (int argc, char ** argv)
   Grid_split  (src,s_src);
   std::cout << GridLogMessage << " split rank  " <<me << " s_src "<<norm2(s_src)<<std::endl;
 
-#ifdef LEXICO_TEST
-  FermionField s_src_tmp(SFGrid);
-  FermionField s_src_diff(SFGrid);
-  {
-    LatticeFermion lex(SFGrid);  lex = zero;
-    LatticeFermion ftmp(SFGrid);
-    Integer stride =10000;
-    double nrm;
-    LatticeComplex coor(SFGrid);
-    for(int d=0;d<5;d++){
-      LatticeCoordinate(coor,d);
-      ftmp = stride;
-      ftmp = ftmp * coor;
-      lex = lex + ftmp;
-      stride=stride/10;
-    }
-    s_src_tmp=lex;
-    ftmp = 1000*1000*me;
-    s_src_tmp = s_src_tmp + ftmp;
-  }
-  s_src_diff = s_src_tmp - s_src;
-  std::cout << GridLogMessage <<" LEXICO test:  s_src_diff " << norm2(s_src_diff)<<std::endl;
-#endif
-
   ///////////////////////////////////////////////////////////////
   // Set up N-solvers as trivially parallel
   ///////////////////////////////////////////////////////////////
   std::cout << GridLogMessage << " Building the solvers"<<std::endl;
-  RealD mass=0.01;
+  //  RealD mass=0.00107;
+  RealD mass=0.1;
   RealD M5=1.8;
-  DomainWallFermionR Dchk(Umu,*FGrid,*FrbGrid,*UGrid,*rbGrid,mass,M5);
-  DomainWallFermionR Ddwf(s_Umu,*SFGrid,*SFrbGrid,*SGrid,*SrbGrid,mass,M5);
+  RealD mobius_factor=32./12.;
+  RealD mobius_b=0.5*(mobius_factor+1.);
+  RealD mobius_c=0.5*(mobius_factor-1.);
+  MobiusFermionR Dchk(Umu,*FGrid,*FrbGrid,*UGrid,*rbGrid,mass,M5,mobius_b,mobius_c,params);
+  MobiusFermionR Ddwf(s_Umu,*SFGrid,*SFrbGrid,*SGrid,*SrbGrid,mass,M5,mobius_b,mobius_c,params);
 
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   std::cout << GridLogMessage << " Calling DWF CG "<<std::endl;
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
 
-  MdagMLinearOperator<DomainWallFermionR,FermionField> HermOp(Ddwf);
-  MdagMLinearOperator<DomainWallFermionR,FermionField> HermOpCk(Dchk);
-  ConjugateGradient<FermionField> CG((stp),10000);
+  MdagMLinearOperator<MobiusFermionR,FermionField> HermOp(Ddwf);
+  MdagMLinearOperator<MobiusFermionR,FermionField> HermOpCk(Dchk);
+  ConjugateGradient<FermionField> CG((stp),100000);
   s_res = zero;
+
   CG(HermOp,s_src,s_res);
 
   std::cout << GridLogMessage << " split residual norm "<<norm2(s_res)<<std::endl;
@@ -208,7 +180,7 @@ int main (int argc, char ** argv)
   /////////////////////////////////////////////////////////////
   std::vector<uint32_t> iterations(nrhs,0);
   iterations[me] = CG.IterationsToComplete;
-
+    
   for(int n=0;n<nrhs;n++){
     UGrid->GlobalSum(iterations[n]);
     std::cout << GridLogMessage<<" Rank "<<n<<" "<< iterations[n]<<" CG iterations"<<std::endl;
@@ -225,14 +197,24 @@ int main (int argc, char ** argv)
   for(int n=0;n<nrhs;n++){
     std::cout << GridLogMessage<< " res["<<n<<"] norm "<<norm2(result[n])<<std::endl;
     HermOpCk.HermOp(result[n],tmp); tmp = tmp - src[n];
-    std::cout << GridLogMessage<<" resid["<<n<<"]  "<< norm2(tmp)/norm2(src[n])<<std::endl;
+    std::cout << GridLogMessage<<" resid["<<n<<"]  "<< std::sqrt(norm2(tmp)/norm2(src[n]))<<std::endl;
   }
 
-  for(int s=0;s<nrhs;s++) result[s]=zero;
-  int blockDim = 0;//not used for BlockCGVec
-  BlockConjugateGradient<FermionField>    BCGV  (BlockCGVec,blockDim,stp,10000);
-  BCGV.PrintInterval=10;
-  BCGV(HermOpCk,src,result);
 
+  for(int s=0;s<nrhs;s++){
+    result[s]=zero;
+  }
+
+  /////////////////////////////////////////////////////////////
+  // Try block CG
+  /////////////////////////////////////////////////////////////
+  int blockDim = 0;//not used for BlockCGVec
+  BlockConjugateGradient<FermionField>    BCGV  (BlockCGrQVec,blockDim,stp,100000);
+  {
+    BCGV(HermOpCk,src,result);
+  }
+
+  
+  
   Grid_finalize();
 }
