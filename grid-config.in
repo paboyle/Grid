@@ -61,6 +61,10 @@ while test $# -gt 0; do
       echo @GRID_CXXFLAGS@
     ;;
     
+    --cxx)
+      echo @GRID_CXX@
+    ;;
+    
     --ldflags)
       echo @GRID_LDFLAGS@
     ;;
