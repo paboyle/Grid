@@ -146,9 +146,11 @@ public:
       if ( log.timestamp ) {
 	log.StopWatch->Stop();
 	GridTime now = log.StopWatch->Elapsed();
+	
 	if ( log.timing_mode==1 ) log.StopWatch->Reset();
 	log.StopWatch->Start();
-	stream << log.evidence()<< std::setw(6)<<now << log.background() << " : " ;
+	stream << log.evidence()
+	       << now	       << log.background() << " : " ;
       }
       stream << log.colour();
       return stream;

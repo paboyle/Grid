@@ -64,11 +64,6 @@ namespace Grid {
       virtual RealD  M    (const FermionField &in, FermionField &out)=0;
       virtual RealD  Mdag (const FermionField &in, FermionField &out)=0;
 
-      // Query the even even properties to make algorithmic decisions
-      virtual int    ConstEE(void) { return 1; }; // clover returns zero as EE depends on gauge field
-      virtual int    isTrivialEE(void) { return 0; };
-      virtual RealD  Mass(void) {return 0.0;};
-
       // half checkerboard operaions
       virtual void   Meooe       (const FermionField &in, FermionField &out)=0;
       virtual void   MeooeDag    (const FermionField &in, FermionField &out)=0;
