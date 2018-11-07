@@ -142,6 +142,13 @@ std::set<unsigned int> parseTimeRange(const std::string str, const unsigned int 
     return tSet;
 }
 
+void printPerf(const double flops, const double fusec, const double bytes, const double busec)
+{
+    std::cout << std::setw(10) << flops/fusec/1.0e3 << " GFlop/s " 
+              << std::setw(10) << bytes/busec*1.0e6/1024/1024/1024 << " GB/s"
+              << std::endl;
+}
+
 int main(int argc, char* argv[])
 {
     // parse command line
@@ -204,6 +211,7 @@ int main(int argc, char* argv[])
         std::vector<ComplexD>                  corr(par.global.nt);
         std::vector<A2AMatrixTr<ComplexD>>     lastTerm(par.global.nt);
         A2AMatrix<ComplexD>                    prod, buf, tmp;
+        double                                 fusec, busec, flops, bytes;
 
         std::cout << "======== Product tr(";
         for (unsigned int g = 0; g < term.size(); ++g)
@@ -242,17 +250,47 @@ int main(int argc, char* argv[])
             for (auto &dt: translations)
             {
                 std::cout << "-- position " << t << ", translation " << dt << std::endl;
+                if (term.size() > 2)
+                {
+                    std::cout << "* matrix products" << std::endl;
+                }
+                flops  = 0.;
+                bytes  = 0.;
+                fusec  = 0.;
+                busec  = 0.;
                 prod = a2aMat.at(term[0])[TIME_MOD(t[0] + dt)];
                 for (unsigned int i = 1; i < term.size() - 1; ++i)
                 {
                     const A2AMatrix<ComplexD> &ref = a2aMat.at(term[i])[TIME_MOD(t[i] + dt)];
+                    fusec -= usecond();
+                    busec -= usecond();
                     A2AContraction::mul(tmp, prod, ref);
-                    prod = tmp;
+                    fusec += usecond();
+                    flops += A2AContraction::mulFlops(tmp, prod, ref);
+                    prod   = tmp;
+                    busec += usecond();
+                    bytes += 3.*tmp.rows()*tmp.cols()*sizeof(ComplexD);
                 }
+                if (term.size() > 2)
+                {
+                    printPerf(flops, fusec, bytes, busec);
+                }
+                std::cout << "* traces" << std::endl;
+                flops  = 0.;
+                bytes  = 0.;
+                fusec  = 0.;
+                busec  = 0.;
                 for (unsigned int tLast = 0; tLast < par.global.nt; ++tLast)
                 {
+                    fusec -= usecond();
+                    busec -= usecond();
                     A2AContraction::accTrMul(corr[tLast], prod, lastTerm[tLast]);
+                    fusec += usecond();
+                    busec += usecond();
+                    flops += A2AContraction::accTrMulFlops(corr[tLast], prod, lastTerm[tLast]);
+                    bytes += 2.*prod.rows()*prod.cols()*sizeof(ComplexD);
                 }
+                printPerf(flops, fusec, bytes, busec);
             }
             for (unsigned int tLast = 0; tLast < par.global.nt; ++tLast)
             {

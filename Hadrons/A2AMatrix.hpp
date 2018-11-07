@@ -196,6 +196,14 @@ public:
         }
     }
 
+    template <typename C, typename MatLeft, typename MatRight>
+    static inline double accTrMulFlops(C &acc, const MatLeft &a, const MatRight &b)
+    {
+        double n = a.rows()*a.cols();
+
+        return 8.*n;
+    }
+
     // mul(res, a, b): res = a*b
 #ifdef USE_MKL
     template <template <class, int...> class Mat, int... Opts>
@@ -246,7 +254,13 @@ public:
         res = a*b;
     }
 #endif
+    template <typename Mat>
+    static inline double mulFlops(Mat &res, const Mat &a, const Mat &b)
+    {
+        double nr = a.rows(), nc = a.cols();
 
+        return nr*nr*(6.*nc + 2.*(nc - 1.));
+    }
 private:
     template <typename C, typename MatLeft, typename MatRight>
     static inline void makeDotRowPt(C * &aPt, unsigned int &aInc, C * &bPt, 
