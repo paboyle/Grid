@@ -29,6 +29,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define Hadrons_DiskVector_hpp_
 
 #include <Hadrons/Global.hpp>
+#include <Hadrons/A2AMatrix.hpp>
 #include <deque>
 #include <sys/stat.h>
 #include <ftw.h>
@@ -143,7 +144,7 @@ private:
  *                      Specialisation for Eigen matrices                     *
  ******************************************************************************/
 template <typename T>
-using EigenDiskVectorMat = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
+using EigenDiskVectorMat = A2AMatrix<T>;
 
 template <typename T>
 class EigenDiskVector: public DiskVectorBase<EigenDiskVectorMat<T>>

@@ -32,6 +32,8 @@ using namespace Grid;
 using namespace QCD;
 using namespace Hadrons;
 
+#define TIME_MOD(t) (((t) + par.global.nt) % par.global.nt)
+
 namespace Contractor
 {
     class GlobalPar: Serializable
@@ -58,7 +60,8 @@ namespace Contractor
     public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(ProductPar,
                                         std::string, terms,
-                                        std::vector<std::string>, timeRange);
+                                        std::vector<std::string>, times,
+                                        std::string, translations);
     };
 }
 
@@ -68,6 +71,34 @@ struct ContractorPar
     std::vector<Contractor::A2AMatrixPar>  a2aMatrix;
     std::vector<Contractor::ProductPar>    product;
 };
+
+void makeTimeSeq(std::vector<std::vector<unsigned int>> &timeSeq, 
+                 const std::vector<std::set<unsigned int>> &times,
+                 std::vector<unsigned int> &current,
+                 const unsigned int depth)
+{
+    if (depth > 0)
+    {
+        for (auto t: times[times.size() - depth])
+        {
+            current[times.size() - depth] = t;
+            makeTimeSeq(timeSeq, times, current, depth - 1);
+        }
+    }
+    else
+    {
+        timeSeq.push_back(current);
+    }
+}
+
+void makeTimeSeq(std::vector<std::vector<unsigned int>> &timeSeq, 
+                 const std::vector<std::set<unsigned int>> &times)
+{
+    std::vector<unsigned int> current(times.size());
+
+    makeTimeSeq(timeSeq, times, current, times.size());
+}
+
 
 std::set<unsigned int> parseTimeRange(const std::string str, const unsigned int nt)
 {
@@ -153,7 +184,7 @@ int main(int argc, char* argv[])
         auto   &p = par.a2aMatrix[i];
         double t, size;
 
-        std::cout << "-- Loading '" << p.file << "'..." << std::endl;
+        std::cout << "======== Loading '" << p.file << "'" << std::endl;
 
         A2AMatrixIo<HADRONS_A2AM_IO_TYPE> a2aIo(p.file, p.dataset, par.global.nt);
 
@@ -166,58 +197,69 @@ int main(int argc, char* argv[])
 
     for (auto &p: par.product)
     {
-        std::vector<std::string>            term = strToVec<std::string>(p.terms);
-        std::vector<std::set<unsigned int>> times;
+        std::vector<std::string>               term = strToVec<std::string>(p.terms);
+        std::vector<std::set<unsigned int>>    times;
+        std::vector<std::vector<unsigned int>> timeSeq;
+        std::set<unsigned int>                 translations;
+        std::vector<ComplexD>                  corr(par.global.nt);
+        std::vector<A2AMatrixTr<ComplexD>>     lastTerm(par.global.nt);
+        A2AMatrix<ComplexD>                    prod, buf, tmp;
 
-        if (term.size() != p.timeRange.size())
+        std::cout << "======== Product tr(";
+        for (unsigned int g = 0; g < term.size(); ++g)
+        {
+            std::cout << term[g] << ((g == term.size() - 1) ? ')' : '*');
+        }
+        std::cout << std::endl;
+        if (term.size() != p.times.size() + 1)
         {
             HADRONS_ERROR(Size, "number of terms (" + std::to_string(term.size()) 
-                          + ") different from number of time ranges (" 
-                          + std::to_string(p.timeRange.size()) + ")");
+                          + ") different from number of times (" 
+                          + std::to_string(p.times.size() + 1) + ")");
         }
-        for (auto &s: p.timeRange)
+        for (auto &s: p.times)
         {
             times.push_back(parseTimeRange(s, par.global.nt));
         }
-        
-        // test: just 2-pt function for now
-        if (term.size() != 2)
-        {
-            HADRONS_ERROR(Implementation, "only 2-pt function implemented");
-        }
+        translations = parseTimeRange(p.translations, par.global.nt);
+        makeTimeSeq(timeSeq, times);
+        std::cout << timeSeq.size()*translations.size()*(term.size() - 2) << " A*B, "
+                  << timeSeq.size()*translations.size()*par.global.nt << " tr(A*B)"
+                  << std::endl;
 
-        std::vector<ComplexD> corr(par.global.nt);
-        double                tTrace = 0., flops, bytes;
-
-#define TIME_MOD(t) (((t) + par.global.nt) % par.global.nt)
+        std::cout << "-- caching transposed last term" << std::endl;
         for (unsigned int t = 0; t < par.global.nt; ++t)
         {
-            corr[t] = ComplexD(0., 0.);
+            buf         = a2aMat.at(term.back())[t];
+            lastTerm[t] = buf;
         }
-        for (auto &trans: times[1])
-        for (auto &t0: times[0])
+        for (auto &t: timeSeq)
         {
-            unsigned int tt0 = TIME_MOD(t0 + trans);
-            EigenDiskVector<ComplexD>::Matrix m0 = a2aMat.at(term[0])[tt0];
-            EigenDiskVector<ComplexD>::Matrix m1 = a2aMat.at(term[1])[trans];
-
-            std::cout << "tr(" << term[0] << "[" << tt0 << "]*"
-                      << term[1] << "[" << trans << "])";
-            tTrace  = -usecond();
-            corr[t0] += (m0*m1).trace();
-            tTrace += usecond();
-            flops = 6.*m0.rows()*m0.cols() + 2.*(m0.rows()*m0.cols() - 1.);
-            bytes = 2.*m0.rows()*m0.cols()*sizeof(ComplexD);
-            std::cout << " -- Perf " << flops/tTrace/1.0e3 << " GFlop/s " 
-                      << bytes/tTrace*1.0e6/1024/1024/1024 << " GB/s "<< std::endl;
+            for (unsigned int tLast = 0; tLast < par.global.nt; ++tLast)
+            {
+                corr[tLast] = 0.;
+            }
+            for (auto &dt: translations)
+            {
+                std::cout << "-- position " << t << ", translation " << dt << std::endl;
+                prod = a2aMat.at(term[0])[TIME_MOD(t[0] + dt)];
+                for (unsigned int i = 1; i < term.size() - 1; ++i)
+                {
+                    const A2AMatrix<ComplexD> &ref = a2aMat.at(term[i])[TIME_MOD(t[i] + dt)];
+                    A2AContraction::mul(tmp, prod, ref);
+                    prod = tmp;
+                }
+                for (unsigned int tLast = 0; tLast < par.global.nt; ++tLast)
+                {
+                    A2AContraction::accTrMul(corr[tLast], prod, lastTerm[tLast]);
+                }
+            }
+            for (unsigned int tLast = 0; tLast < par.global.nt; ++tLast)
+            {
+                std::cout << tLast << " " << corr[tLast] << std::endl;
+            }
         }
-        for (unsigned int t = 0; t < par.global.nt; ++t)
-        {
-            std::cout << t << " " << corr[t] << std::endl;
-        }
-#undef TIME_MOD
-   }
-
+    }
     
     return EXIT_SUCCESS;
 }
