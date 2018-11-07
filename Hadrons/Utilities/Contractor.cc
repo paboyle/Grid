@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
                 std::cout << "-- position " << t << ", translation " << dt << std::endl;
                 if (term.size() > 2)
                 {
-                    std::cout << "* matrix products" << std::endl;
+                    std::cout << "* matrix products ";
                 }
                 flops  = 0.;
                 bytes  = 0.;
@@ -275,7 +275,7 @@ int main(int argc, char* argv[])
                 {
                     printPerf(flops, fusec, bytes, busec);
                 }
-                std::cout << "* traces" << std::endl;
+                std::cout << "* traces ";
                 flops  = 0.;
                 bytes  = 0.;
                 fusec  = 0.;
