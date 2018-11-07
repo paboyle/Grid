@@ -115,27 +115,31 @@ template <typename FImpl>
 void TMomentum<FImpl>::execute(void)
 {
     LOG(Message) << "Generating planewave momentum source with momentum " << par().mom << std::endl;
-    //what does this env do?
-    PropagatorField &src = envGet(PropagatorField, getName());
-    Lattice<iScalar<vInteger>> t(env().getGrid());
-    LatticeComplex             C(env().getGrid()), coor(env().getGrid());
-    std::vector<Real>          p;
-    std::vector<Real> latt_size(GridDefaultLatt().begin(), GridDefaultLatt().end()); 
-    Complex                    i(0.0,1.0);
+    PropagatorField 		    &src = envGet(PropagatorField, getName());
+    std::vector<Real>          	p = strToVec<Real>(par().mom);
+    std::vector<int>  		    latt_size(env().getGrid()->_fdimensions); 
+    LatticeComplex             	C(env().getGrid()), coor(env().getGrid());
+    Complex                    	i(0.0,1.0);
 
-    LOG(Message) << " " << std::endl;
-    //get the momentum from parameters
-    p  = strToVec<Real>(par().mom);
-    C = zero;
+    
     LOG(Message) << "momentum converted from string - " << std::to_string(p[0]) <<std::to_string(p[1]) <<std::to_string(p[2]) <<   std::to_string(p[3]) << std::endl;
-    for(int mu=0;mu<4;mu++){
-    Real TwoPiL =  M_PI * 2.0/ latt_size[mu];
-    LatticeCoordinate(coor,mu);
-    C = C +(TwoPiL * p[mu]) * coor;
+
+    // ComplexPhase = e^{ i * sum_mu ( 2*PI/L_mu * x_mu ) }
+    C = zero;
+    for(int mu=0;mu<4;mu++)
+    {
+        Real TwoPiL =  M_PI * 2.0/ latt_size[mu];
+        LatticeCoordinate(coor,mu);
+        C = C +(TwoPiL * p[mu]) * coor;
     }
     C = exp(C*i);
-    LOG(Message) << "exponential of pdotx taken " << std::endl;
-    src = src + C;
+    
+    // set up delta_ij delta_ab
+    // i,j colour indices & a,b spin indices
+    src = Complex(1.0,0.0);
+    
+    // source = e^{i p^mu x_mu } delta_ij delta_ab
+    src = src * C;
     LOG(Message) << "source created" << std::endl;
 
 }

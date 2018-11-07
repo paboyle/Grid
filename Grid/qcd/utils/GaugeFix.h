@@ -72,7 +72,7 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
       for(int mu=0;mu<Nd;mu++) PokeIndex<LorentzIndex>(Umu,U[mu],mu);
       // Monitor progress and convergence test 
       // infrequently to minimise cost overhead
-      if ( (i %20 == 0)|| 1 ) { 
+      if ( (i %20 == 0) ) { 
 	Real plaq      =WilsonLoops<Gimpl>::avgPlaquette(Umu);
 	Real link_trace=WilsonLoops<Gimpl>::linkTrace(Umu); 
 
