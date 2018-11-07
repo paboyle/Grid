@@ -139,7 +139,7 @@ void TElectrify<GImpl>::execute(void)
 
     for(unsigned int mu = 0; mu < env().getNd(); mu++)
     {
-	eiAmu = exp(i * par().e * par().charge * PeekIndex<LorentzIndex>(A, mu));
+	eiAmu = exp(i * (Real)(par().e * par().charge) * PeekIndex<LorentzIndex>(A, mu));
 	PokeIndex<LorentzIndex>(Ue, PeekIndex<LorentzIndex>(U, mu) * eiAmu, mu);
     }
 }
