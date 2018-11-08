@@ -269,27 +269,32 @@ int main(int argc, char* argv[])
 
             lastTerm[t] = ref;
         }
-        for (auto &t: timeSeq)
+        for (unsigned int i = 0; i < timeSeq.size(); ++i)
         {
+            unsigned int dti = 0;
+            auto         &t = timeSeq[i];
+
             for (unsigned int tLast = 0; tLast < par.global.nt; ++tLast)
             {
                 corr[tLast] = 0.;
             }
             for (auto &dt: translations)
             {
-                std::cout << "-- position " << t << ", translation " << dt << std::endl;
+                std::cout << "* Step " << i*translations.size() + dti + 1
+                          << "/" << timeSeq.size()*translations.size()
+                          << " -- positions= " << t << ", dt= " << dt << std::endl;
                 if (term.size() > 2)
                 {
-                    std::cout << "*" << std::setw(12) << "products";
+                    std::cout << std::setw(8) << "products";
                 }
                 flops  = 0.;
                 bytes  = 0.;
                 fusec  = 0.;
                 busec  = 0.;
                 prod = a2aMat.at(term[0])[TIME_MOD(t[0] + dt)];
-                for (unsigned int i = 1; i < term.size() - 1; ++i)
+                for (unsigned int j = 1; j < term.size() - 1; ++j)
                 {
-                    const A2AMatrix<ComplexD> &ref = a2aMat.at(term[i])[TIME_MOD(t[i] + dt)];
+                    const A2AMatrix<ComplexD> &ref = a2aMat.at(term[j])[TIME_MOD(t[j] + dt)];
                     fusec -= usecond();
                     busec -= usecond();
                     A2AContraction::mul(tmp, prod, ref);
@@ -303,7 +308,7 @@ int main(int argc, char* argv[])
                 {
                     std::cout << Flops(flops, fusec) << " " << Bytes(bytes, busec) << std::endl;
                 }
-                std::cout << "*" << std::setw(12) << "traces";
+                std::cout << std::setw(8) << "traces";
                 flops  = 0.;
                 bytes  = 0.;
                 fusec  = 0.;
@@ -319,6 +324,7 @@ int main(int argc, char* argv[])
                     bytes += 2.*prod.rows()*prod.cols()*sizeof(ComplexD);
                 }
                 std::cout << Flops(flops, fusec) << " " << Bytes(bytes, busec) << std::endl;
+                dti++;
             }
             for (unsigned int tLast = 0; tLast < par.global.nt; ++tLast)
             {
