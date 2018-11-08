@@ -196,8 +196,8 @@ public:
         }
     }
 
-    template <typename C, typename MatLeft, typename MatRight>
-    static inline double accTrMulFlops(C &acc, const MatLeft &a, const MatRight &b)
+    template <typename MatLeft, typename MatRight>
+    static inline double accTrMulFlops(const MatLeft &a, const MatRight &b)
     {
         double n = a.rows()*a.cols();
 
@@ -263,7 +263,7 @@ public:
     }
 #endif
     template <typename Mat>
-    static inline double mulFlops(Mat &res, const Mat &a, const Mat &b)
+    static inline double mulFlops(const Mat &a, const Mat &b)
     {
         double nr = a.rows(), nc = a.cols();
 
