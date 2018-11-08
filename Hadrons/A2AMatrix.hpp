@@ -213,6 +213,10 @@ public:
     {
         static const ComplexD one(1., 0.), zero(0., 0.);
 
+        if ((res.rows() != a.rows()) or (res.cols() != b.cols()))
+        {
+            res.resize(a.rows(), b.cols());
+        }
         if (Mat<ComplexD, Opts...>::Options == Eigen::RowMajor)
         {
             cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
@@ -234,6 +238,10 @@ public:
     {
         static const ComplexF one(1., 0.), zero(0., 0.);
 
+        if ((res.rows() != a.rows()) or (res.cols() != b.cols()))
+        {
+            res.resize(a.rows(), b.cols());
+        }
         if (Mat<ComplexF, Opts...>::Options == Eigen::RowMajor)
         {
             cblas_cgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
