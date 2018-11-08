@@ -464,8 +464,10 @@ void InsertSliceLocal(const Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int
   assert(orthog>=0);
 
   for(int d=0;d<nh;d++){
-    assert(lg->_processors[d]  == hg->_processors[d]);
-    assert(lg->_ldimensions[d] == hg->_ldimensions[d]);
+    if ( d!=orthog ) {
+      assert(lg->_processors[d]  == hg->_processors[d]);
+      assert(lg->_ldimensions[d] == hg->_ldimensions[d]);
+    }
   }
 
   // the above should guarantee that the operations are local
@@ -499,8 +501,10 @@ void ExtractSliceLocal(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slic
   assert(orthog>=0);
 
   for(int d=0;d<nh;d++){
-    assert(lg->_processors[d]  == hg->_processors[d]);
-    assert(lg->_ldimensions[d] == hg->_ldimensions[d]);
+    if ( d!=orthog ) {
+      assert(lg->_processors[d]  == hg->_processors[d]);
+      assert(lg->_ldimensions[d] == hg->_ldimensions[d]);
+    }
   }
 
   // the above should guarantee that the operations are local

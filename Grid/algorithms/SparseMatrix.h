@@ -55,6 +55,14 @@ namespace Grid {
     template<class Field> class CheckerBoardedSparseMatrixBase : public SparseMatrixBase<Field> {
     public:
       virtual GridBase *RedBlackGrid(void)=0;
+
+      //////////////////////////////////////////////////////////////////////
+      // Query the even even properties to make algorithmic decisions
+      //////////////////////////////////////////////////////////////////////
+      virtual RealD  Mass(void)        { return 0.0; };
+      virtual int    ConstEE(void)     { return 0; }; // Disable assumptions unless overridden
+      virtual int    isTrivialEE(void) { return 0; }; // by a derived class that knows better
+
       // half checkerboard operaions
       virtual  void Meooe    (const Field &in, Field &out)=0;
       virtual  void Mooee    (const Field &in, Field &out)=0;

@@ -50,8 +50,6 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
       assert(0);
   }
 
-  Grid_quiesce_nodes();
-
   // Never clean up as done once.
   MPI_Comm_dup (MPI_COMM_WORLD,&communicator_world);
 
@@ -124,10 +122,8 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   // split the communicator
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   //  int Nparent = parent._processors ; 
-  //  std::cout << " splitting from communicator "<<parent.communicator <<std::endl;
   int Nparent;
   MPI_Comm_size(parent.communicator,&Nparent);
-  //  std::cout << " Parent size  "<<Nparent <<std::endl;
 
   int childsize=1;
   for(int d=0;d<processors.size();d++) {
@@ -135,8 +131,6 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   }
   int Nchild = Nparent/childsize;
   assert (childsize * Nchild == Nparent);
-
-  //  std::cout << " child size  "<<childsize <<std::endl;
 
   std::vector<int> ccoor(_ndimension); // coor within subcommunicator
   std::vector<int> scoor(_ndimension); // coor of split within parent

@@ -83,7 +83,7 @@ int main (int argc, char ** argv)
 
   LatticeGaugeField Umu(UGrid); 
 
-  int conf = 0;
+  int conf = 2;
   if(conf==0) { 
     FieldMetaData header;
     std::string file("./lat.in");
@@ -131,9 +131,12 @@ int main (int argc, char ** argv)
   for(int s=0;s<nrhs;s++){
     result[s]=zero;
   }
-  BlockConjugateGradient<FermionField>    BCGV  (BlockCGrQVec,blockDim,stp,100000);
+
+
   {
-    BCGV(HermOp,src,result);
+    BlockConjugateGradient<FermionField>    BCGV  (BlockCGrQVec,blockDim,stp,100000);
+    SchurRedBlackDiagTwoSolve<FermionField> SchurSolver(BCGV);
+    SchurSolver(Ddwf,src,result);
   }
   
   for(int rhs=0;rhs<nrhs;rhs++){

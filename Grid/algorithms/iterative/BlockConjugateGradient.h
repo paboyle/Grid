@@ -135,7 +135,7 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
     assert(0);
   }
 }
-void operator()(LinearOperatorBase<Field> &Linop, const std::vector<Field> &Src, std::vector<Field> &Psi) 
+virtual void operator()(LinearOperatorBase<Field> &Linop, const std::vector<Field> &Src, std::vector<Field> &Psi) 
 {
   if ( CGtype == BlockCGrQVec ) {
     BlockCGrQsolveVec(Linop,Src,Psi);
