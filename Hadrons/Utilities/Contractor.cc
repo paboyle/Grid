@@ -27,6 +27,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Global.hpp>
 #include <Hadrons/A2AMatrix.hpp>
 #include <Hadrons/DiskVector.hpp>
+#include <Hadrons/TimerArray.hpp>
 
 using namespace Grid;
 using namespace QCD;
@@ -142,6 +143,23 @@ std::set<unsigned int> parseTimeRange(const std::string str, const unsigned int 
     return tSet;
 }
 
+struct Sec
+{
+    Sec(const double usec)
+    {
+        seconds = usec/1.0e6;
+    }
+    
+    double seconds;
+};
+
+inline std::ostream & operator<< (std::ostream& s, const Sec &&sec)
+{
+    s << std::setw(10) << sec.seconds << " sec";
+
+    return s;
+}
+
 struct Flops
 {
     Flops(const double flops, const double fusec)
@@ -223,7 +241,8 @@ int main(int argc, char* argv[])
         A2AMatrixIo<HADRONS_A2AM_IO_TYPE> a2aIo(p.file, p.dataset, par.global.nt);
 
         a2aIo.load(a2aMat.at(p.name), &t);
-        std::cout << "Read " << a2aIo.getSize() << " bytes in " << t << " usec, " << a2aIo.getSize()/t*1.0e6/1024/1024 << " MB/s" << std::endl;
+        std::cout << "Read " << a2aIo.getSize() << " bytes in " << t/1.0e6 
+                  << " sec, " << a2aIo.getSize()/t*1.0e6/1024/1024 << " MB/s" << std::endl;
     }
 
     // contract
@@ -238,9 +257,10 @@ int main(int argc, char* argv[])
         std::vector<ComplexD>                  corr(par.global.nt);
         std::vector<A2AMatrixTr<ComplexD>>     lastTerm(par.global.nt);
         A2AMatrix<ComplexD>                    prod, buf, tmp;
-        double                                 fusec, busec, flops, bytes;
+        TimerArray                             tAr;
+        double                                 fusec, busec, flops, bytes, tusec;
 
-        std::cout << "======== Product tr(";
+        std::cout << "======== Contraction tr(";
         for (unsigned int g = 0; g < term.size(); ++g)
         {
             std::cout << term[g] << ((g == term.size() - 1) ? ')' : '*');
@@ -262,13 +282,18 @@ int main(int argc, char* argv[])
                   << timeSeq.size()*translations.size()*par.global.nt << " tr(A*B)"
                   << std::endl;
 
-        std::cout << "-- caching transposed last term" << std::endl;
+        std::cout << "* Caching transposed last term" << std::endl;
         for (unsigned int t = 0; t < par.global.nt; ++t)
         {
             const A2AMatrix<ComplexD> &ref = a2aMat.at(term.back())[t];
 
+            tAr.startTimer("Transpose caching");
             lastTerm[t] = ref;
+            tAr.stopTimer("Transpose caching");
         }
+        bytes = par.global.nt*lastTerm[0].rows()*lastTerm[0].cols()*sizeof(ComplexD);
+        std::cout << Sec(tAr.getDTimer("Transpose caching")) << " " 
+                  << Bytes(bytes, tAr.getDTimer("Transpose caching")) << std::endl;
         for (unsigned int i = 0; i < timeSeq.size(); ++i)
         {
             unsigned int dti = 0;
@@ -289,41 +314,50 @@ int main(int argc, char* argv[])
                 }
                 flops  = 0.;
                 bytes  = 0.;
-                fusec  = 0.;
-                busec  = 0.;
+                fusec  = tAr.getDTimer("A*B algebra");
+                busec  = tAr.getDTimer("A*B total");
+                tAr.startTimer("Linear algebra");
+                tAr.startTimer("Disk vector overhead");
                 prod = a2aMat.at(term[0])[TIME_MOD(t[0] + dt)];
+                tAr.stopTimer("Disk vector overhead");
                 for (unsigned int j = 1; j < term.size() - 1; ++j)
                 {
+                    tAr.startTimer("Disk vector overhead");
                     const A2AMatrix<ComplexD> &ref = a2aMat.at(term[j])[TIME_MOD(t[j] + dt)];
-                    fusec -= usecond();
-                    busec -= usecond();
+                    tAr.stopTimer("Disk vector overhead");
+                    
+                    tAr.startTimer("A*B total");
+                    tAr.startTimer("A*B algebra");
                     A2AContraction::mul(tmp, prod, ref);
-                    fusec += usecond();
+                    tAr.stopTimer("A*B algebra");
                     flops += A2AContraction::mulFlops(prod, ref);
                     prod   = tmp;
-                    busec += usecond();
+                    tAr.stopTimer("A*B total");
                     bytes += 3.*tmp.rows()*tmp.cols()*sizeof(ComplexD);
                 }
                 if (term.size() > 2)
                 {
-                    std::cout << Flops(flops, fusec) << " " << Bytes(bytes, busec) << std::endl;
+                    std::cout << Sec(tAr.getDTimer("A*B total") - busec) << " "
+                              << Flops(flops, tAr.getDTimer("A*B algebra") - fusec) << " " 
+                              << Bytes(bytes, tAr.getDTimer("A*B total") - busec) << std::endl;
                 }
                 std::cout << std::setw(8) << "traces";
                 flops  = 0.;
                 bytes  = 0.;
-                fusec  = 0.;
-                busec  = 0.;
+                fusec  = tAr.getDTimer("tr(A*B)");
+                busec  = tAr.getDTimer("tr(A*B)");
                 for (unsigned int tLast = 0; tLast < par.global.nt; ++tLast)
                 {
-                    fusec -= usecond();
-                    busec -= usecond();
+                    tAr.startTimer("tr(A*B)");
                     A2AContraction::accTrMul(corr[TIME_MOD(tLast - dt)], prod, lastTerm[tLast]);
-                    fusec += usecond();
-                    busec += usecond();
+                    tAr.stopTimer("tr(A*B)");
                     flops += A2AContraction::accTrMulFlops(prod, lastTerm[tLast]);
                     bytes += 2.*prod.rows()*prod.cols()*sizeof(ComplexD);
                 }
-                std::cout << Flops(flops, fusec) << " " << Bytes(bytes, busec) << std::endl;
+                tAr.stopTimer("Linear algebra");
+                std::cout << Sec(tAr.getDTimer("tr(A*B)") - busec) << " "
+                          << Flops(flops, tAr.getDTimer("tr(A*B)") - fusec) << " " 
+                          << Bytes(bytes, tAr.getDTimer("tr(A*B)") - busec) << std::endl;
                 dti++;
             }
             for (unsigned int tLast = 0; tLast < par.global.nt; ++tLast)
