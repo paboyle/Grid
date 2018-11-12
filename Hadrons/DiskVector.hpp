@@ -165,19 +165,22 @@ private:
         uint32_t      crc, check;
         Eigen::Index  nRow, nCol;
         size_t        matSize;
-        double        t;
+        double        tRead, tHash;
 
         f.read(reinterpret_cast<char *>(&crc), sizeof(crc));
         f.read(reinterpret_cast<char *>(&nRow), sizeof(nRow));
         f.read(reinterpret_cast<char *>(&nCol), sizeof(nCol));
         obj.resize(nRow, nCol);
         matSize = nRow*nCol*sizeof(T);
-        t  = -usecond();
+        tRead  = -usecond();
         f.read(reinterpret_cast<char *>(obj.data()), matSize);
-        t += usecond();
-        DV_DEBUG_MSG(this, "Eigen read " << matSize/t*1.0e6/1024/1024 << " MB/s");
-        check = GridChecksum::crc32(obj.data(), matSize);
-        DV_DEBUG_MSG(this, "Eigen crc32 " << std::hex << check << std::dec);
+        tRead += usecond();
+        tHash  = -usecond();
+        check  = GridChecksum::crc32(obj.data(), matSize);
+        tHash += usecond();
+        DV_DEBUG_MSG(this, "Eigen read " << tRead/1.0e6 << " sec " << matSize/tRead*1.0e6/1024/1024 << " MB/s");
+        DV_DEBUG_MSG(this, "Eigen crc32 " << std::hex << check << std::dec 
+                     << " " << tHash/1.0e6 << " sec " << matSize/tHash*1.0e6/1024/1024 << " MB/s");
         if (crc != check)
         {
             HADRONS_ERROR(Io, "checksum failed")
@@ -190,20 +193,23 @@ private:
         uint32_t      crc;
         Eigen::Index  nRow, nCol;
         size_t        matSize;
-        double        t;
+        double        tWrite, tHash;
         
         nRow    = obj.rows();
         nCol    = obj.cols();
         matSize = nRow*nCol*sizeof(T);
+        tHash   = -usecond();
         crc     = GridChecksum::crc32(obj.data(), matSize);
+        tHash  += usecond();
         f.write(reinterpret_cast<char *>(&crc), sizeof(crc));
         f.write(reinterpret_cast<char *>(&nRow), sizeof(nRow));
         f.write(reinterpret_cast<char *>(&nCol), sizeof(nCol));
-        t  = -usecond();
+        tWrite = -usecond();
         f.write(reinterpret_cast<const char *>(obj.data()), matSize);
-        t += usecond();
-        DV_DEBUG_MSG(this, "Eigen write " << matSize/t*1.0e6/1024/1024 << " MB/s");
-        DV_DEBUG_MSG(this, "Eigen crc32 " << std::hex << crc << std::dec);
+        tWrite += usecond();
+        DV_DEBUG_MSG(this, "Eigen write " << tWrite/1.0e6 << " sec " << matSize/tWrite*1.0e6/1024/1024 << " MB/s");
+        DV_DEBUG_MSG(this, "Eigen crc32 " << std::hex << crc << std::dec
+                     << " " << tHash/1.0e6 << " sec " << matSize/tHash*1.0e6/1024/1024 << " MB/s");
     }
 };
 
