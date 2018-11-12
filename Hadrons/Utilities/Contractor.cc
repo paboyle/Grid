@@ -372,6 +372,10 @@ int main(int argc, char* argv[])
             }
             for (unsigned int tLast = 0; tLast < par.global.nt; ++tLast)
             {
+                corr[tLast] /= translations.size();
+            }
+            for (unsigned int tLast = 0; tLast < par.global.nt; ++tLast)
+            {
                 std::cout << tLast << " " << corr[tLast] << std::endl;
             }
         }
