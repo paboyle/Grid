@@ -126,6 +126,7 @@ inline void makeWilsonAction(Application &application, std::string actionName,
         actionPar.gauge = gaugeField;
         actionPar.mass  = mass;
         actionPar.boundary = boundary;
+        actionPar.twist = "0. 0. 0. 0.";
         application.createModule<MAction::Wilson>(actionName, actionPar);
     }
 }
@@ -154,6 +155,7 @@ inline void makeDWFAction(Application &application, std::string actionName,
         actionPar.M5    = M5;
         actionPar.mass  = mass;
         actionPar.boundary = boundary;
+        actionPar.twist = "0. 0. 0. 0.";
         application.createModule<MAction::DWF>(actionName, actionPar);
     }
 }
