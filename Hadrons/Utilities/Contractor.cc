@@ -260,6 +260,7 @@ int main(int argc, char* argv[])
         TimerArray                             tAr;
         double                                 fusec, busec, flops, bytes, tusec;
 
+        tAr.startTimer("Total");
         std::cout << "======== Contraction tr(";
         for (unsigned int g = 0; g < term.size(); ++g)
         {
@@ -276,6 +277,7 @@ int main(int argc, char* argv[])
         {
             times.push_back(parseTimeRange(s, par.global.nt));
         }
+
         translations = parseTimeRange(p.translations, par.global.nt);
         makeTimeSeq(timeSeq, times);
         std::cout << timeSeq.size()*translations.size()*(term.size() - 2) << " A*B, "
@@ -285,15 +287,23 @@ int main(int argc, char* argv[])
         std::cout << "* Caching transposed last term" << std::endl;
         for (unsigned int t = 0; t < par.global.nt; ++t)
         {
+            tAr.startTimer("Disk vector overhead");
             const A2AMatrix<ComplexD> &ref = a2aMat.at(term.back())[t];
+            tAr.stopTimer("Disk vector overhead");
 
             tAr.startTimer("Transpose caching");
-            lastTerm[t] = ref;
+            lastTerm[t].resize(ref.rows(), ref.cols());
+            parallel_for (unsigned int j = 0; j < ref.cols(); ++j)
+            for (unsigned int i = 0; i < ref.rows(); ++i)
+            {
+                lastTerm[t](i, j) = ref(i, j);
+            }
             tAr.stopTimer("Transpose caching");
         }
         bytes = par.global.nt*lastTerm[0].rows()*lastTerm[0].cols()*sizeof(ComplexD);
         std::cout << Sec(tAr.getDTimer("Transpose caching")) << " " 
                   << Bytes(bytes, tAr.getDTimer("Transpose caching")) << std::endl;
+        std::cout << Sec(tAr.getDTimer("Disk vector overhead")) << std::endl;
         for (unsigned int i = 0; i < timeSeq.size(); ++i)
         {
             unsigned int dti = 0;
@@ -365,6 +375,8 @@ int main(int argc, char* argv[])
                 std::cout << tLast << " " << corr[tLast] << std::endl;
             }
         }
+        tAr.stopTimer("Total");
+        printTimeProfile(tAr.getTimings(), tAr.getTimer("Total"));
     }
     
     return EXIT_SUCCESS;
