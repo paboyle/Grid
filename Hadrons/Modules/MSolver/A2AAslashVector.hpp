@@ -48,8 +48,8 @@ BEGIN_MODULE_NAMESPACE(MSolver)
 *
 *  with
 *
-*  - v: A2A vector v_i(x)
-*  - photon: A_mu(x): electromagnetic photon field
+*  - vector: A2A vector v_i(x)
+*  - emField: A_mu(x): electromagnetic photon field
 *  - solver: the solver for calculating the sequential propagator
 *
 *****************************************************************************/
@@ -59,8 +59,8 @@ class A2AAslashVectorPar: Serializable
 {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(A2AAslashVectorPar,
-                                  std::string, v,
-                                  std::string, photon,
+                                  std::string, vector,
+                                  std::string, emField,
                                   std::string, solver);
 };
 
@@ -104,7 +104,7 @@ TA2AAslashVector<FImpl>::TA2AAslashVector(const std::string name)
 template <typename FImpl>
 std::vector<std::string> TA2AAslashVector<FImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().v, par().photon, par().solver};
+    std::vector<std::string> in = {par().vector, par().emField, par().solver};
 
     return in;
 }
@@ -122,7 +122,7 @@ template <typename FImpl>
 void TA2AAslashVector<FImpl>::setup(void)
 {
     Ls_  = env().getObjectLs(par().solver);
-    auto &vvector = envGet(std::vector<FermionField>, par().v);
+    auto &vvector = envGet(std::vector<FermionField>, par().vector);
     unsigned int Nmodes = vvector.size();
     envCreate(std::vector<FermionField>, getName(), 1, 
               Nmodes, envGetGrid(FermionField));
@@ -137,8 +137,8 @@ template <typename FImpl>
 void TA2AAslashVector<FImpl>::execute(void)
 {
     auto &solver = envGet(Solver, par().solver);
-    auto &stoch_photon = envGet(EmField,  par().photon);
-    auto &vvector = envGet(std::vector<FermionField>, par().v);
+    auto &stoch_photon = envGet(EmField,  par().emField);
+    auto &vvector = envGet(std::vector<FermionField>, par().vector);
     auto &Aslashv = envGet(std::vector<FermionField>, getName());
     unsigned int Nmodes = vvector.size();
     auto &mat = solver.getFMat();
@@ -151,8 +151,8 @@ void TA2AAslashVector<FImpl>::execute(void)
 
     startTimer("Seq Aslash");
 
-    LOG(Message) << "Calculate Sequential propagator on Aslash * v with the A2A vector " << par().v
-                  << " and the photon field " << par().photon << std::endl;
+    LOG(Message) << "Calculate Sequential propagator on Aslash * v with the A2A vector " << par().vector
+                  << " and the photon field " << par().emField << std::endl;
 
 
     for(unsigned int i=0; i<Nmodes; i++)

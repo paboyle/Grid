@@ -48,7 +48,7 @@ BEGIN_MODULE_NAMESPACE(MGauge)
 *  with
 *
 *  - gauge: U_mu(x): gauge field
-*  - photon: A_mu(x): electromagnetic photon field
+*  - emField: A_mu(x): electromagnetic photon field
 *  - e: value for the elementary charge
 *  - q: charge in units of e
 *
@@ -60,7 +60,7 @@ class ElectrifyPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(ElectrifyPar,
                                     std::string, gauge,
-				    std::string, photon,
+				    std::string, emField,
 				    double, e,
 				    double, charge);
 };
@@ -102,7 +102,7 @@ TElectrify<GImpl>::TElectrify(const std::string name)
 template <typename GImpl>
 std::vector<std::string> TElectrify<GImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().gauge, par().photon};	
+    std::vector<std::string> in = {par().gauge, par().emField};
 
     return in;
 }
@@ -128,11 +128,11 @@ template <typename GImpl>
 void TElectrify<GImpl>::execute(void)
 {
     LOG(Message) << "Electrify the gauge field " << par().gauge << " using the photon field " 
-                  << par().photon << " with charge e*q= " << par().e << "*" << par().charge << std::endl;
+                  << par().emField << " with charge e*q= " << par().e << "*" << par().charge << std::endl;
     
     auto &Ue = envGet(GaugeField, getName());
     auto &U = envGet(GaugeField, par().gauge);
-    auto &A = envGet(EmField,  par().photon);
+    auto &A = envGet(EmField,  par().emField);
     envGetTmp(LatticeComplex, eiAmu);
 
     Complex i(0.0,1.0);
