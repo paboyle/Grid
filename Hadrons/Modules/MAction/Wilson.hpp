@@ -47,7 +47,9 @@ public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(WilsonPar,
                                     std::string, gauge,
                                     double     , mass,
-                                    std::string, boundary);
+                                    std::string, boundary,
+                                    std::string, string,
+                                    std::string, twist);
 };
 
 template <typename FImpl>
@@ -71,7 +73,9 @@ protected:
 };
 
 MODULE_REGISTER_TMP(Wilson, TWilson<FIMPL>, MAction);
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
 MODULE_REGISTER_TMP(WilsonF, TWilson<FIMPLF>, MAction);
+#endif
 
 /******************************************************************************
  *                     TWilson template implementation                        *
@@ -111,8 +115,9 @@ void TWilson<FImpl>::setup(void)
     auto &U      = envGet(GaugeField, par().gauge);
     auto &grid   = *envGetGrid(FermionField);
     auto &gridRb = *envGetRbGrid(FermionField);
-    std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
-    typename WilsonFermion<FImpl>::ImplParams implParams(boundary);
+    typename WilsonFermion<FImpl>::ImplParams implParams;
+    implParams.boundary_phases = strToVec<Complex>(par().boundary);
+    implParams.twist_n_2pi_L   = strToVec<Real>(par().twist);
     envCreateDerived(FMat, WilsonFermion<FImpl>, getName(), 1, U, grid, gridRb,
                      par().mass, implParams);
 }

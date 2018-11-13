@@ -2,12 +2,12 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MNPR/FourQuark.cc
+Source file: Hadrons/Modules/MNoise/FullVolumeSpinColorDiagonal.cc
 
 Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Vera Guelpers <Vera.Guelpers@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,11 +26,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Hadrons/Modules/MNPR/FourQuark.hpp>
+#include <Hadrons/Modules/MNoise/FullVolumeSpinColorDiagonal.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
-using namespace MNPR;
+using namespace MNoise;
 
-template class Grid::Hadrons::MNPR::TFourQuark<FIMPL,FIMPL>;
-
+template class Grid::Hadrons::MNoise::TFullVolumeSpinColorDiagonal<FIMPL>;
+template class Grid::Hadrons::MNoise::TFullVolumeSpinColorDiagonal<ZFIMPL>;

@@ -51,7 +51,9 @@ public:
                                   std::string, noise,
                                   std::string, action,
                                   std::string, eigenPack,
-                                  std::string, solver);
+                                  std::string, solver,
+                                  std::string, output,
+                                  bool,        multiFile);
 };
 
 template <typename FImpl, typename Pack>
@@ -235,6 +237,17 @@ void TA2AVectors<FImpl, Pack>::execute(void)
             a2a.makeHighModeW5D(w[Nl_ + ih], f5, noise[ih]);
         }
         stopTimer("W high mode");
+    }
+
+    // I/O if necessary
+    if (!par().output.empty())
+    {
+        startTimer("V I/O");
+        A2AVectorsIo::write(par().output + "_v", v, par().multiFile, vm().getTrajectory());
+        stopTimer("V I/O");
+        startTimer("W I/O");
+        A2AVectorsIo::write(par().output + "_w", w, par().multiFile, vm().getTrajectory());
+        stopTimer("W I/O");
     }
 }
 

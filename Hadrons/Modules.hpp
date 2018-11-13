@@ -32,6 +32,7 @@
 #include <Hadrons/Modules/MGauge/FundtoHirep.hpp>
 #include <Hadrons/Modules/MGauge/StochEm.hpp>
 #include <Hadrons/Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp>
+#include <Hadrons/Modules/MNoise/FullVolumeSpinColorDiagonal.hpp>
 #include <Hadrons/Modules/MUtilities/PrecisionCast.hpp>
 #include <Hadrons/Modules/MUtilities/RandomVectors.hpp>
 #include <Hadrons/Modules/MUtilities/TestSeqGamma.hpp>
@@ -65,6 +66,7 @@
 #include <Hadrons/Modules/MScalarSUN/TrKinetic.hpp>
 #include <Hadrons/Modules/MIO/LoadEigenPack.hpp>
 #include <Hadrons/Modules/MIO/LoadNersc.hpp>
+#include <Hadrons/Modules/MIO/LoadA2AVectors.hpp>
 #include <Hadrons/Modules/MIO/LoadCosmHol.hpp>
 #include <Hadrons/Modules/MIO/LoadCoarseEigenPack.hpp>
 #include <Hadrons/Modules/MIO/LoadBinary.hpp>

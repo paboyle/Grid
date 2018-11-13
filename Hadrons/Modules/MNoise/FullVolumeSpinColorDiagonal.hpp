@@ -2,11 +2,12 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MIO/LoadEigenPack.hpp
+Source file: Hadrons/Modules/MNoise/FullVolumeSpinColorDiagonal.hpp
 
 Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Vera Guelpers <Vera.Guelpers@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,43 +26,38 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef Hadrons_MIO_LoadEigenPack_hpp_
-#define Hadrons_MIO_LoadEigenPack_hpp_
+#ifndef Hadrons_MNoise_FullVolumeSpinColorDiagonal_hpp_
+#define Hadrons_MNoise_FullVolumeSpinColorDiagonal_hpp_
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
-#include <Hadrons/EigenPack.hpp>
+#include <Hadrons/DilutedNoise.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                   Load eigen vectors/values package                        *
+ *             Generate full volume spin-color diagonal noise                *
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MIO)
+BEGIN_MODULE_NAMESPACE(MNoise)
 
-class LoadEigenPackPar: Serializable
+class FullVolumeSpinColorDiagonalPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(LoadEigenPackPar,
-                                    std::string, filestem,
-                                    bool, multiFile,
-                                    unsigned int, size,
-                                    unsigned int, Ls);
+    GRID_SERIALIZABLE_CLASS_MEMBERS(FullVolumeSpinColorDiagonalPar,
+                                    unsigned int, nsrc);
 };
 
-template <typename Pack>
-class TLoadEigenPack: public Module<LoadEigenPackPar>
+template <typename FImpl>
+class TFullVolumeSpinColorDiagonal: public Module<FullVolumeSpinColorDiagonalPar>
 {
 public:
-    typedef typename Pack::Field   Field;
-    typedef typename Pack::FieldIo FieldIo;
-    typedef BaseEigenPack<Field>   BasePack;
+    FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
-    TLoadEigenPack(const std::string name);
+    TFullVolumeSpinColorDiagonal(const std::string name);
     // destructor
-    virtual ~TLoadEigenPack(void) {};
+    virtual ~TFullVolumeSpinColorDiagonal(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -71,31 +67,29 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_TMP(LoadFermionEigenPack, TLoadEigenPack<FermionEigenPack<FIMPL>>, MIO);
-#ifdef GRID_DEFAULT_PRECISION_DOUBLE
-MODULE_REGISTER_TMP(LoadFermionEigenPackIo32, ARG(TLoadEigenPack<FermionEigenPack<FIMPL, FIMPLF>>), MIO);
-#endif
+MODULE_REGISTER_TMP(FullVolumeSpinColorDiagonal, TFullVolumeSpinColorDiagonal<FIMPL>, MNoise);
+MODULE_REGISTER_TMP(ZFullVolumeSpinColorDiagonal, TFullVolumeSpinColorDiagonal<ZFIMPL>, MNoise);
 
 /******************************************************************************
- *                    TLoadEigenPack implementation                           *
+ *              TFullVolumeSpinColorDiagonal implementation                  *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-template <typename Pack>
-TLoadEigenPack<Pack>::TLoadEigenPack(const std::string name)
-: Module<LoadEigenPackPar>(name)
+template <typename FImpl>
+TFullVolumeSpinColorDiagonal<FImpl>::TFullVolumeSpinColorDiagonal(const std::string name)
+: Module<FullVolumeSpinColorDiagonalPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-template <typename Pack>
-std::vector<std::string> TLoadEigenPack<Pack>::getInput(void)
+template <typename FImpl>
+std::vector<std::string> TFullVolumeSpinColorDiagonal<FImpl>::getInput(void)
 {
     std::vector<std::string> in;
     
     return in;
 }
 
-template <typename Pack>
-std::vector<std::string> TLoadEigenPack<Pack>::getOutput(void)
+template <typename FImpl>
+std::vector<std::string> TFullVolumeSpinColorDiagonal<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -103,31 +97,25 @@ std::vector<std::string> TLoadEigenPack<Pack>::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-template <typename Pack>
-void TLoadEigenPack<Pack>::setup(void)
+template <typename FImpl>
+void TFullVolumeSpinColorDiagonal<FImpl>::setup(void)
 {
-    GridBase *gridIo = nullptr;
-
-    if (typeHash<Field>() != typeHash<FieldIo>())
-    {
-        gridIo = envGetRbGrid(FieldIo, par().Ls);
-    }
-    envCreateDerived(BasePack, Pack, getName(), par().Ls, par().size, 
-                     envGetRbGrid(Field, par().Ls), gridIo);
+    envCreateDerived(DilutedNoise<FImpl>, 
+                     FullVolumeSpinColorDiagonalNoise<FImpl>,
+                     getName(), 1, envGetGrid(FermionField), par().nsrc);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-template <typename Pack>
-void TLoadEigenPack<Pack>::execute(void)
+template <typename FImpl>
+void TFullVolumeSpinColorDiagonal<FImpl>::execute(void)
 {
-    auto &epack = envGetDerived(BasePack, Pack, getName());
-
-    epack.read(par().filestem, par().multiFile, vm().getTrajectory());
-    epack.eval.resize(par().size);
+    auto &noise = envGet(DilutedNoise<FImpl>, getName());
+    LOG(Message) << "Generating full volume, spin-color diagonal noise" << std::endl;
+    noise.generateNoise(rng4d());
 }
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MIO_LoadEigenPack_hpp_
+#endif // Hadrons_MNoise_FullVolumeSpinColorDiagonal_hpp_

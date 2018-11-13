@@ -6,6 +6,7 @@ Source file: Hadrons/Modules/MNPR/Amputate.cc
 
 Copyright (C) 2015-2018
 
+Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
