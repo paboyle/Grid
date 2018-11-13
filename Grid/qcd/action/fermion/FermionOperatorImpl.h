@@ -240,16 +240,30 @@ namespace QCD {
       GaugeLinkField tmp(GaugeGrid);
 
       Lattice<iScalar<vInteger> > coor(GaugeGrid);
+      ////////////////////////////////////////////////////
+      // apply any boundary phase or twists
+      ////////////////////////////////////////////////////
       for (int mu = 0; mu < Nd; mu++) {
 
-	      auto pha = Params.boundary_phases[mu];
-	      scalar_type phase( real(pha),imag(pha) );
+	////////// boundary phase /////////////
+	auto pha = Params.boundary_phases[mu];
+	scalar_type phase( real(pha),imag(pha) );
 
-        int Lmu = GaugeGrid->GlobalDimensions()[mu] - 1;
+	int L   = GaugeGrid->GlobalDimensions()[mu];
+        int Lmu = L - 1;
 
         LatticeCoordinate(coor, mu);
 
         U = PeekIndex<LorentzIndex>(Umu, mu);
+
+	// apply any twists
+	RealD theta = Params.twist_n_2pi_L[mu] * 2*M_PI / L;
+	if ( theta != 0.0) { 
+	  scalar_type twphase(::cos(theta),::sin(theta));
+	  U = twphase*U;
+	  std::cout << GridLogMessage << " Twist ["<<mu<<"] "<< Params.twist_n_2pi_L[mu]<< " phase"<<phase <<std::endl;
+	}
+
         tmp = where(coor == Lmu, phase * U, U);
         PokeIndex<LorentzIndex>(Uds, tmp, mu);
 

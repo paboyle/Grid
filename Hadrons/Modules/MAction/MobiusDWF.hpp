@@ -49,7 +49,8 @@ public:
                                     double      , M5,
                                     double      , b,
                                     double      , c,
-                                    std::string , boundary);
+                                    std::string , boundary,
+                                    std::string , twist);
 };
 
 template <typename FImpl>
@@ -119,8 +120,9 @@ void TMobiusDWF<FImpl>::setup(void)
     auto &grb4 = *envGetRbGrid(FermionField);
     auto &g5   = *envGetGrid(FermionField, par().Ls);
     auto &grb5 = *envGetRbGrid(FermionField, par().Ls);
-    std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
-    typename MobiusFermion<FImpl>::ImplParams implParams(boundary);
+    typename MobiusFermion<FImpl>::ImplParams implParams;
+    implParams.boundary_phases = strToVec<Complex>(par().boundary);
+    implParams.twist_n_2pi_L   = strToVec<Real>(par().twist);
     envCreateDerived(FMat, MobiusFermion<FImpl>, getName(), par().Ls, U, g5,
                      grb5, g4, grb4, par().mass, par().M5, par().b, par().c,
                      implParams);

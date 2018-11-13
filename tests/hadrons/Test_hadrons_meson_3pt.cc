@@ -66,6 +66,7 @@ int main(int argc, char *argv[])
     
     // set fermion boundary conditions to be periodic space, antiperiodic time.
     std::string boundary = "1 1 1 -1";
+    std::string twist = "0. 0. 0. 0.";
 
     // sink
     MSink::Point::Par sinkPar;
@@ -80,6 +81,7 @@ int main(int argc, char *argv[])
         actionPar.M5    = 1.8;
         actionPar.mass  = mass[i];
         actionPar.boundary = boundary;
+        actionPar.twist = twist;
         application.createModule<MAction::DWF>("DWF_" + flavour[i], actionPar);
         
         // solvers
