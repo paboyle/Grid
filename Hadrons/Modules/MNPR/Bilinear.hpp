@@ -269,6 +269,7 @@ q = (p1-p2)
     // Amputate then project the bilinear results for every gamma
     // Tr ( Sout^-1 * Vertex_i * Sin^-1 * Gamma_i ) / 12
     // By looking at the single config the volume average approximates the gauge average
+    // This is only the gamma scheme. Need qslash scheme too
     /////////////////////////////////////////////////////
     for (int i=0; i < Gamma::nGamma; i++)
     {
