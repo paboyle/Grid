@@ -413,7 +413,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     assert(((uint64_t)ptr&0x3F)==0);
     close(fd);
     WorldShmCommBufs[r] =ptr;
-    std::cout << "Set WorldShmCommBufs["<<r<<"]="<<ptr<< "("<< bytes<< "bytes)"<<std::endl;
+    //    std::cout << "Set WorldShmCommBufs["<<r<<"]="<<ptr<< "("<< bytes<< "bytes)"<<std::endl;
   }
   _ShmAlloc=1;
   _ShmAllocBytes  = bytes;
@@ -455,7 +455,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     assert(((uint64_t)ptr&0x3F)==0);
     close(fd);
     WorldShmCommBufs[r] =ptr;
-    std::cout << "Set WorldShmCommBufs["<<r<<"]="<<ptr<< "("<< bytes<< "bytes)"<<std::endl;
+    //    std::cout << "Set WorldShmCommBufs["<<r<<"]="<<ptr<< "("<< bytes<< "bytes)"<<std::endl;
   }
   _ShmAlloc=1;
   _ShmAllocBytes  = bytes;
@@ -499,7 +499,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 #endif
       void * ptr =  mmap(NULL,size, PROT_READ | PROT_WRITE, mmap_flag, fd, 0);
       
-      std::cout << "Set WorldShmCommBufs["<<r<<"]="<<ptr<< "("<< size<< "bytes)"<<std::endl;
+      //      std::cout << "Set WorldShmCommBufs["<<r<<"]="<<ptr<< "("<< size<< "bytes)"<<std::endl;
       if ( ptr == (void * )MAP_FAILED ) {       
 	perror("failed mmap");     
 	assert(0);    
