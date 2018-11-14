@@ -24,9 +24,11 @@
 #include <Hadrons/Modules/MSolver/Guesser.hpp>
 #include <Hadrons/Modules/MSolver/RBPrecCG.hpp>
 #include <Hadrons/Modules/MSolver/A2AVectors.hpp>
+#include <Hadrons/Modules/MSolver/A2AAslashVector.hpp>
 #include <Hadrons/Modules/MGauge/UnitEm.hpp>
 #include <Hadrons/Modules/MGauge/StoutSmearing.hpp>
 #include <Hadrons/Modules/MGauge/Unit.hpp>
+#include <Hadrons/Modules/MGauge/Electrify.hpp>
 #include <Hadrons/Modules/MGauge/Random.hpp>
 #include <Hadrons/Modules/MGauge/GaugeFix.hpp>
 #include <Hadrons/Modules/MGauge/FundtoHirep.hpp>
