@@ -167,51 +167,38 @@ public:
     template <typename C, typename MatLeft, typename MatRight>
     static inline void accTrMul(C &acc, const MatLeft &a, const MatRight &b)
     {
-        int            nThreads = GridThread::GetThreads();
-        std::vector<C> tacc(nThreads, 0.);
-
         if ((MatLeft::Options == Eigen::RowMajor) and
             (MatRight::Options == Eigen::ColMajor))
         {
-            parallel_for (int thr = 0; thr < nThreads; ++thr)
+            parallel_for (unsigned int r = 0; r < a.rows(); ++r)
             {
-                int rt, nr;
-
-                GridThread::GetWork(a.rows(), thr, nr, rt);
-                for (unsigned int r = rt; r < nr + rt; ++r)
-                {
+                C tmp;
 #ifdef USE_MKL
-                    C tmp;
-                    dotuRow(tmp, r, a, b);
-                    tacc[thr] += tmp;
+                dotuRow(tmp, r, a, b);
 #else
-                    tacc[thr] += a.row(r).conjugate().dot(b.col(r));
+                tmp = a.row(r).conjugate().dot(b.col(r));
 #endif
+                parallel_critical
+                {
+                    acc += tmp;
                 }
             }
         }
         else
         {
-            parallel_for (int thr = 0; thr < nThreads; ++thr)
+            parallel_for (unsigned int c = 0; c < a.cols(); ++c)
             {
-                int ct, nc;
-
-                GridThread::GetWork(a.cols(), thr, nc, ct);
-                for (unsigned int c = ct; c < nc + ct; ++c)
-                {
-#ifdef USE_MKL
-                    C tmp;
-                    dotuCol(tmp, c, a, b);
-                    tacc[thr] += tmp;
+                C tmp;
+#ifdef USE_MKL 
+                dotuCol(tmp, c, a, b);
 #else
-                    tacc[thr] += a.col(c).conjugate().dot(b.row(c));
+                tmp = a.col(c).conjugate().dot(b.row(c));
 #endif
+                parallel_critical
+                {
+                    acc += tmp;
                 }
             }
-        }
-        for (int thr = 0; thr < nThreads; ++thr)
-        {
-            acc += tacc[thr];
         }
     }
 

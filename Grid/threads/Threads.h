@@ -59,6 +59,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define parallel_for_internal PARALLEL_FOR_LOOP_INTERN for
 #define parallel_for_nest2 PARALLEL_NESTED_LOOP2 for
 #define parallel_for_nest5 PARALLEL_NESTED_LOOP5 for
+#define parallel_critical PARALLEL_CRITICAL
 
 namespace Grid {
 
