@@ -133,7 +133,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
       LinalgTimer.Stop();
 
       std::cout << GridLogIterative << "ConjugateGradient: Iteration " << k
-                << " residual " << cp << " target " << rsq << std::endl;
+                << " residual^2 " << sqrt(cp/ssq) << " target " << Tolerance << std::endl;
 
       // Stopping condition
       if (cp <= rsq) {

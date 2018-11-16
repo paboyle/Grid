@@ -34,6 +34,12 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <ftw.h>
 #include <unistd.h>
 
+#ifdef DV_DEBUG
+#define DV_DEBUG_MSG(dv, stream) LOG(Debug) << "diskvector " << (dv) << ": " << stream << std::endl
+#else
+#define DV_DEBUG_MSG(dv, stream)
+#endif
+
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
@@ -56,9 +62,7 @@ public:
         // write to disk and cache
         T &operator=(const T &obj) const
         {
-#ifdef DV_DEBUG
-            LOG(Debug) << "diskvector " << &master_ << ": writing to " << i_ << std::endl;
-#endif
+            DV_DEBUG_MSG(&master_, "writing to " << i_);
             master_.cacheInsert(i_, obj);
             master_.save(master_.filename(i_), obj);
             
@@ -82,6 +86,8 @@ public:
     virtual ~DiskVectorBase(void);
     const T & operator[](const unsigned int i) const;
     RwAccessHelper operator[](const unsigned int i);
+    double hitRatio(void) const;
+    void resetStat(void);
 private:
     virtual void load(T &obj, const std::string filename) const = 0;
     virtual void save(const std::string filename, const T &obj) const = 0;
@@ -93,6 +99,7 @@ private:
 private:
     std::string                                dirname_;
     unsigned int                               size_, cacheSize_;
+    double                                     access_{0.}, hit_{0.};
     bool                                       clean_;
     // using pointers to allow modifications when class is const
     // semantic: const means data unmodified, but cache modification allowed
@@ -115,6 +122,7 @@ private:
 
         read(reader, basename(filename), obj);
     }
+
     virtual void save(const std::string filename, const T &obj) const
     {
         Writer writer(filename);
@@ -124,12 +132,75 @@ private:
 };
 
 /******************************************************************************
+ *                      Specialisation for Eigen matrices                     *
+ ******************************************************************************/
+template <typename T>
+using EigenDiskVectorMat = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
+
+template <typename T>
+class EigenDiskVector: public DiskVectorBase<EigenDiskVectorMat<T>>
+{
+public:
+    using DiskVectorBase<EigenDiskVectorMat<T>>::DiskVectorBase;
+    typedef EigenDiskVectorMat<T> Matrix;
+public:
+    T operator()(const unsigned int i, const Eigen::Index j,
+                 const Eigen::Index k) const
+    {
+        return (*this)[i](j, k);
+    }
+private:
+    virtual void load(EigenDiskVectorMat<T> &obj, const std::string filename) const
+    {
+        std::ifstream              f(filename, std::ios::binary);
+        std::vector<unsigned char> hash(SHA256_DIGEST_LENGTH);
+        Eigen::Index               nRow, nCol;
+        size_t                     matSize;
+        double                     t;
+
+        f.read(reinterpret_cast<char *>(hash.data()), hash.size()*sizeof(unsigned char));
+        f.read(reinterpret_cast<char *>(&nRow), sizeof(Eigen::Index));
+        f.read(reinterpret_cast<char *>(&nCol), sizeof(Eigen::Index));
+        obj.resize(nRow, nCol);
+        matSize = nRow*nCol*sizeof(T);
+        t  = -usecond();
+        f.read(reinterpret_cast<char *>(obj.data()), matSize);
+        t += usecond();
+        DV_DEBUG_MSG(this, "Eigen read " << matSize/t*1.0e6/1024/1024 << " MB/s");
+        auto check = GridChecksum::sha256(obj.data(), matSize);
+        DV_DEBUG_MSG(this, "Eigen sha256 " << GridChecksum::sha256_string(check));
+        if (hash != check)
+        {
+            HADRONS_ERROR(Io, "checksum failed")
+        }
+    }
+
+    virtual void save(const std::string filename, const EigenDiskVectorMat<T> &obj) const
+    {
+        std::ofstream              f(filename, std::ios::binary);
+        std::vector<unsigned char> hash(SHA256_DIGEST_LENGTH);
+        Eigen::Index               nRow, nCol;
+        size_t                     matSize;
+        double                     t;
+        
+        nRow    = obj.rows();
+        nCol    = obj.cols();
+        matSize = nRow*nCol*sizeof(T);
+        hash    = GridChecksum::sha256(obj.data(), matSize);
+        DV_DEBUG_MSG(this, "Eigen sha256 " << GridChecksum::sha256_string(hash));
+        f.write(reinterpret_cast<char *>(hash.data()), hash.size()*sizeof(unsigned char));
+        f.write(reinterpret_cast<char *>(&nRow), sizeof(Eigen::Index));
+        f.write(reinterpret_cast<char *>(&nCol), sizeof(Eigen::Index));
+        t  = -usecond();
+        f.write(reinterpret_cast<const char *>(obj.data()), matSize);
+        t += usecond();
+        DV_DEBUG_MSG(this, "Eigen write " << matSize/t*1.0e6/1024/1024 << " MB/s");
+    }
+};
+
+/******************************************************************************
  *                       DiskVectorBase implementation                         *
  ******************************************************************************/
-#ifdef DV_DEBUG
-#define DV_DEBUG_MSG(stream) LOG(Debug) << "diskvector " << this << ": " << stream << std::endl
-#endif
-
 template <typename T>
 DiskVectorBase<T>::DiskVectorBase(const std::string dirname, 
                                   const unsigned int size,
@@ -160,28 +231,29 @@ DiskVectorBase<T>::~DiskVectorBase(void)
 template <typename T>
 const T & DiskVectorBase<T>::operator[](const unsigned int i) const
 {
-    auto &cache = *cachePtr_;
-    auto &loads = *loadsPtr_;
+    auto &cache  = *cachePtr_;
+    auto &loads  = *loadsPtr_;
 
-    DV_DEBUG_MSG("accessing " << i << " (RO)");
+    DV_DEBUG_MSG(this, "accessing " << i << " (RO)");
 
     if (i >= size_)
     {
         HADRONS_ERROR(Size, "index out of range");
     }
-
+    const_cast<double &>(access_)++;
     if (cache.find(i) == cache.end())
     {
         // cache miss
-        DV_DEBUG_MSG("cache miss");
+        DV_DEBUG_MSG(this, "cache miss");
         fetch(i);
     }
     else
     {
-        DV_DEBUG_MSG("cache hit");
+        DV_DEBUG_MSG(this, "cache hit");
 
         auto pos = std::find(loads.begin(), loads.end(), i);
 
+        const_cast<double &>(hit_)++;
         loads.erase(pos);
         loads.push_back(i);
     }
@@ -193,7 +265,7 @@ const T & DiskVectorBase<T>::operator[](const unsigned int i) const
     {
         msg += std::to_string(p) + " ";
     }
-    DV_DEBUG_MSG("in cache: " << msg);
+    DV_DEBUG_MSG(this, "in cache: " << msg);
 #endif
 
     return cache.at(i);
@@ -202,7 +274,7 @@ const T & DiskVectorBase<T>::operator[](const unsigned int i) const
 template <typename T>
 typename DiskVectorBase<T>::RwAccessHelper DiskVectorBase<T>::operator[](const unsigned int i)
 {
-    DV_DEBUG_MSG("accessing " << i << " (RW)");
+    DV_DEBUG_MSG(this, "accessing " << i << " (RW)");
 
     if (i >= size_)
     {
@@ -210,6 +282,19 @@ typename DiskVectorBase<T>::RwAccessHelper DiskVectorBase<T>::operator[](const u
     }
 
     return RwAccessHelper(*this, i);
+}
+
+template <typename T>
+double DiskVectorBase<T>::hitRatio(void) const
+{
+    return hit_/access_;
+}
+
+template <typename T>
+void DiskVectorBase<T>::resetStat(void)
+{
+    access_ = 0.;
+    hit_    = 0.;
 }
 
 template <typename T>
@@ -226,7 +311,7 @@ void DiskVectorBase<T>::evict(void) const
 
     if (cache.size() >= cacheSize_)
     {
-        DV_DEBUG_MSG("evicting " << loads.front());
+        DV_DEBUG_MSG(this, "evicting " << loads.front());
         cache.erase(loads.front());
         loads.pop_front();
     }
@@ -239,7 +324,7 @@ void DiskVectorBase<T>::fetch(const unsigned int i) const
     auto &loads = *loadsPtr_;
     struct stat s;
 
-    DV_DEBUG_MSG("loading " << i << " from disk");
+    DV_DEBUG_MSG(this, "loading " << i << " from disk");
 
     evict();
     if(stat(filename(i).c_str(), &s) != 0)
@@ -267,7 +352,7 @@ void DiskVectorBase<T>::cacheInsert(const unsigned int i, const T &obj) const
     {
         msg += std::to_string(p) + " ";
     }
-    DV_DEBUG_MSG("in cache: " << msg);
+    DV_DEBUG_MSG(this, "in cache: " << msg);
 #endif
 }
 

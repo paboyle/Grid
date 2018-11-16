@@ -51,7 +51,8 @@ public:
 				                    double     , csw_r,
 				                    double     , csw_t,
 				                    WilsonAnisotropyCoefficients ,clover_anisotropy,
-                                    std::string, boundary
+                                    std::string, boundary,
+                                    std::string, twist
 				    );
 };
 
@@ -75,7 +76,9 @@ public:
 };
 
 MODULE_REGISTER_TMP(WilsonClover, TWilsonClover<FIMPL>, MAction);
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
 MODULE_REGISTER_TMP(WilsonCloverF, TWilsonClover<FIMPLF>, MAction);
+#endif
 
 /******************************************************************************
  *                    TWilsonClover template implementation                   *
@@ -117,8 +120,9 @@ void TWilsonClover<FImpl>::setup(void)
     auto &U      = envGet(GaugeField, par().gauge);
     auto &grid   = *envGetGrid(FermionField);
     auto &gridRb = *envGetRbGrid(FermionField);
-    std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
-    typename WilsonCloverFermion<FImpl>::ImplParams implParams(boundary);
+    typename WilsonCloverFermion<FImpl>::ImplParams implParams;
+    implParams.boundary_phases = strToVec<Complex>(par().boundary);
+    implParams.twist_n_2pi_L   = strToVec<Real>(par().twist);
     envCreateDerived(FMat, WilsonCloverFermion<FImpl>, getName(), 1, U, grid,
                      gridRb, par().mass, par().csw_r, par().csw_t, 
                      par().clover_anisotropy, implParams); 

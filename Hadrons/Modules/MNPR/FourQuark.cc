@@ -2,11 +2,12 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MScalarSUN/TimeMomProbe.cc
+Source file: Hadrons/Modules/MNPR/FourQuark.cc
 
 Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,14 +26,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Hadrons/Modules/MScalarSUN/TimeMomProbe.hpp>
+#include <Hadrons/Modules/MNPR/FourQuark.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
-using namespace MScalarSUN;
+using namespace MNPR;
 
-template class Grid::Hadrons::MScalarSUN::TTimeMomProbe<ScalarNxNAdjImplR<2>>;
-template class Grid::Hadrons::MScalarSUN::TTimeMomProbe<ScalarNxNAdjImplR<3>>;
-template class Grid::Hadrons::MScalarSUN::TTimeMomProbe<ScalarNxNAdjImplR<4>>;
-template class Grid::Hadrons::MScalarSUN::TTimeMomProbe<ScalarNxNAdjImplR<5>>;
-template class Grid::Hadrons::MScalarSUN::TTimeMomProbe<ScalarNxNAdjImplR<6>>;
+template class Grid::Hadrons::MNPR::TFourQuark<FIMPL,FIMPL>;
+

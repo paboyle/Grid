@@ -36,7 +36,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *               Classes to generate V & W all-to-all vectors                 *
+ *                 Class to generate V & W all-to-all vectors                 *
  ******************************************************************************/
 template <typename FImpl>
 class A2AVectorsSchurDiagTwo
@@ -68,6 +68,42 @@ private:
     bool                                     is5d_;
     FermionField                             src_o_, sol_e_, sol_o_, tmp_, tmp5_;
     SchurDiagTwoOperator<FMat, FermionField> op_;
+};
+
+/******************************************************************************
+ *                  Methods for V & W all-to-all vectors I/O                  *
+ ******************************************************************************/
+class A2AVectorsIo
+{
+public:
+    struct Record: Serializable
+    {
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Record,
+                                        unsigned int, index);
+        Record(void): index(0) {}
+    };
+public:
+    template <typename Field>
+    static void write(const std::string fileStem, std::vector<Field> &vec, 
+                      const bool multiFile, const int trajectory = -1);
+    template <typename Field>
+    static void read(std::vector<Field> &vec, const std::string fileStem,
+                     const bool multiFile, const int trajectory = -1);
+private:
+    static inline std::string vecFilename(const std::string stem, const int traj, 
+                                          const bool multiFile)
+    {
+        std::string t = (traj < 0) ? "" : ("." + std::to_string(traj));
+
+        if (multiFile)
+        {
+            return stem + t;
+        }
+        else
+        {
+            return stem + t + ".bin";
+        }
+    }
 };
 
 /******************************************************************************
@@ -214,6 +250,90 @@ void A2AVectorsSchurDiagTwo<FImpl>::makeHighModeW5D(FermionField &wout_4d,
     {
         wout_5d = noise;
         action_.ExportPhysicalFermionSource(wout_5d, wout_4d);
+    }
+}
+
+/******************************************************************************
+ *               all-to-all vectors I/O template implementation               *
+ ******************************************************************************/
+template <typename Field>
+void A2AVectorsIo::write(const std::string fileStem, std::vector<Field> &vec, 
+                         const bool multiFile, const int trajectory)
+{
+    Record       record;
+    GridBase     *grid = vec[0]._grid;
+    ScidacWriter binWriter(grid->IsBoss());
+    std::string  filename = vecFilename(fileStem, trajectory, multiFile);
+
+    if (multiFile)
+    {
+        std::string fullFilename;
+
+        for (unsigned int i = 0; i < vec.size(); ++i)
+        {
+            fullFilename = filename + "/elem" + std::to_string(i) + ".bin";
+
+            LOG(Message) << "Writing vector " << i << std::endl;
+            makeFileDir(fullFilename, grid);
+            binWriter.open(fullFilename);
+            record.index = i;
+            binWriter.writeScidacFieldRecord(vec[i], record);
+            binWriter.close();
+        }
+    }
+    else
+    {
+        makeFileDir(filename, grid);
+        binWriter.open(filename);
+        for (unsigned int i = 0; i < vec.size(); ++i)
+        {
+            LOG(Message) << "Writing vector " << i << std::endl;
+            record.index = i;
+            binWriter.writeScidacFieldRecord(vec[i], record);
+        }
+        binWriter.close();
+    }
+}
+
+template <typename Field>
+void A2AVectorsIo::read(std::vector<Field> &vec, const std::string fileStem, 
+                        const bool multiFile, const int trajectory)
+{
+    Record       record;
+    ScidacReader binReader;
+    std::string  filename = vecFilename(fileStem, trajectory, multiFile);
+
+    if (multiFile)
+    {
+        std::string fullFilename;
+
+        for (unsigned int i = 0; i < vec.size(); ++i)
+        {
+            fullFilename = filename + "/elem" + std::to_string(i) + ".bin";
+
+            LOG(Message) << "Reading vector " << i << std::endl;
+            binReader.open(fullFilename);
+            binReader.readScidacFieldRecord(vec[i], record);
+            binReader.close();
+            if (record.index != i)
+            {
+                HADRONS_ERROR(Io, "vector index mismatch");
+            }
+        }
+    }
+    else
+    {
+        binReader.open(filename);
+        for (unsigned int i = 0; i < vec.size(); ++i)
+        {
+            LOG(Message) << "Reading vector " << i << std::endl;
+            binReader.readScidacFieldRecord(vec[i], record);
+            if (record.index != i)
+            {
+                HADRONS_ERROR(Io, "vector index mismatch");
+            }
+        }
+        binReader.close();
     }
 }
 

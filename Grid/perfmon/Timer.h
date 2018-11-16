@@ -49,21 +49,35 @@ inline double usecond(void) {
 
 typedef  std::chrono::system_clock          GridClock;
 typedef  std::chrono::time_point<GridClock> GridTimePoint;
-typedef  std::chrono::milliseconds          GridMillisecs;
-typedef  std::chrono::microseconds          GridTime;
-typedef  std::chrono::microseconds          GridUsecs;
 
-inline std::ostream& operator<< (std::ostream & stream, const std::chrono::milliseconds & time)
+typedef  std::chrono::seconds               GridSecs;
+typedef  std::chrono::milliseconds          GridMillisecs;
+typedef  std::chrono::microseconds          GridUsecs;
+typedef  std::chrono::microseconds          GridTime;
+
+inline std::ostream& operator<< (std::ostream & stream, const GridSecs & time)
 {
-  stream << time.count()<<" ms";
+  stream << time.count()<<" s";
   return stream;
 }
-inline std::ostream& operator<< (std::ostream & stream, const std::chrono::microseconds & time)
+inline std::ostream& operator<< (std::ostream & stream, const GridMillisecs & now)
 {
-  stream << time.count()<<" usec";
+  GridSecs second(1);
+  auto     secs       = now/second ; 
+  auto     subseconds = now%second ; 
+  stream << secs<<"."<<std::setw(3)<<std::setfill('0')<<subseconds.count()<<" s";
   return stream;
 }
- 
+inline std::ostream& operator<< (std::ostream & stream, const GridUsecs & now)
+{
+  GridSecs second(1);
+  auto     seconds    = now/second ; 
+  auto     subseconds = now%second ; 
+  stream << seconds<<"."<<std::setw(6)<<std::setfill('0')<<subseconds.count()<<" s";
+  return stream;
+}
+
+
 class GridStopWatch {
 private:
   bool running;

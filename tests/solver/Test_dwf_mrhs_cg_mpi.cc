@@ -38,6 +38,7 @@ int main (int argc, char ** argv)
   typedef typename DomainWallFermionR::ComplexField ComplexField; 
   typename DomainWallFermionR::ImplParams params; 
 
+  double stp=1.0e-5;
   const int Ls=4;
 
   Grid_init(&argc,&argv);
@@ -197,7 +198,7 @@ int main (int argc, char ** argv)
 
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOp(Ddwf);
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOpCk(Dchk);
-  ConjugateGradient<FermionField> CG((1.0e-2),10000);
+  ConjugateGradient<FermionField> CG((stp),10000);
   s_res = zero;
   CG(HermOp,s_src,s_res);
 
@@ -226,6 +227,12 @@ int main (int argc, char ** argv)
     HermOpCk.HermOp(result[n],tmp); tmp = tmp - src[n];
     std::cout << GridLogMessage<<" resid["<<n<<"]  "<< norm2(tmp)/norm2(src[n])<<std::endl;
   }
+
+  for(int s=0;s<nrhs;s++) result[s]=zero;
+  int blockDim = 0;//not used for BlockCGVec
+  BlockConjugateGradient<FermionField>    BCGV  (BlockCGVec,blockDim,stp,10000);
+  BCGV.PrintInterval=10;
+  BCGV(HermOpCk,src,result);
 
   Grid_finalize();
 }
