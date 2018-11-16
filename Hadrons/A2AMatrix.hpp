@@ -167,32 +167,51 @@ public:
     template <typename C, typename MatLeft, typename MatRight>
     static inline void accTrMul(C &acc, const MatLeft &a, const MatRight &b)
     {
+        int            nThreads = GridThread::GetThreads();
+        std::vector<C> tacc(nThreads, 0.);
+
         if ((MatLeft::Options == Eigen::RowMajor) and
             (MatRight::Options == Eigen::ColMajor))
         {
-            parallel_for_reduce(ComplexPlus, acc) (unsigned int r = 0; r < a.rows(); ++r)
+            parallel_for (int thr = 0; thr < nThreads; ++thr)
             {
+                int rt, nr;
+
+                GridThread::GetWork(a.rows(), thr, nr, rt);
+                for (unsigned int r = rt; r < nr + rt; ++r)
+                {
 #ifdef USE_MKL
-                ComplexD tmp;
-                dotuRow(tmp, r, a, b);
-                acc += tmp;
+                    C tmp;
+                    dotuRow(tmp, r, a, b);
+                    tacc[thr] += tmp;
 #else
-                acc += a.row(r).conjugate().dot(b.col(r));
+                    tacc[thr] += a.row(r).conjugate().dot(b.col(r));
 #endif
+                }
             }
         }
         else
         {
-            parallel_for_reduce(ComplexPlus, acc) (unsigned int c = 0; c < a.cols(); ++c)
+            parallel_for (int thr = 0; thr < nThreads; ++thr)
             {
+                int ct, nc;
+
+                GridThread::GetWork(a.cols(), thr, nc, ct);
+                for (unsigned int c = ct; c < nc + ct; ++c)
+                {
 #ifdef USE_MKL
-                ComplexD tmp;
-                dotuCol(tmp, c, a, b);
-                acc += tmp;
+                    C tmp;
+                    dotuCol(tmp, c, a, b);
+                    tacc[thr] += tmp;
 #else
-                acc += a.col(c).conjugate().dot(b.row(c));
+                    tacc[thr] += a.col(c).conjugate().dot(b.row(c));
 #endif
+                }
             }
+        }
+        for (int thr = 0; thr < nThreads; ++thr)
+        {
+            acc += tacc[thr];
         }
     }
 

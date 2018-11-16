@@ -199,23 +199,49 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
     trBenchmark("Naive loop rows first", left, right, ref,
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
     { 
+        int                   nThreads = GridThread::GetThreads();
+        std::vector<ComplexD> tres(nThreads, 0.);
+
         res = 0.;
-        auto nr = a.rows(), nc = a.cols();
-        parallel_for_reduce(ComplexPlus, res) (unsigned int i = 0; i < nr; ++i)
-        for (unsigned int j = 0; j < nc; ++j)
+        parallel_for (int thr = 0; thr < nThreads; ++thr)
         {
-            res += a(i, j)*b(j, i);
+            int  rt, nr;
+            auto nc = a.cols();
+
+            GridThread::GetWork(a.rows(), thr, nr, rt);
+            for (unsigned int i = rt; i < nr + rt; ++i)
+            for (unsigned int j = 0; j < nc; ++j)
+            {
+                tres[thr] += a(i, j)*b(j, i);
+            }
+        }
+        for (int thr = 0; thr < nThreads; ++thr)
+        {
+            res += tres[thr];
         }
     });
     trBenchmark("Naive loop cols first", left, right, ref,
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
-    { 
+    {
+        int                   nThreads = GridThread::GetThreads();
+        std::vector<ComplexD> tres(nThreads, 0.);
+
         res = 0.;
-        auto nr = a.rows(), nc = a.cols();
-        parallel_for_reduce(ComplexPlus, res) (unsigned int j = 0; j < nc; ++j)
-        for (unsigned int i = 0; i < nr; ++i)
+        parallel_for (int thr = 0; thr < nThreads; ++thr)
         {
-            res += a(i, j)*b(j, i);
+            int  ct, nc;
+            auto nr = a.rows();
+
+            GridThread::GetWork(a.cols(), thr, nc, ct);
+            for (unsigned int j = ct; j < nc + ct; ++j)
+            for (unsigned int i = 0; i < nr; ++i)
+            {
+                tres[thr] += a(i, j)*b(j, i);
+            }
+        }
+        for (int thr = 0; thr < nThreads; ++thr)
+        {
+            res += tres[thr];
         }
     });
     trBenchmark("Eigen tr(A*B)", left, right, ref,
@@ -225,22 +251,46 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
     });
     trBenchmark("Eigen row-wise dot", left, right, ref,
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
-    { 
-        res = 0.;
+    {
+        int                   nThreads = GridThread::GetThreads();
+        std::vector<ComplexD> tres(nThreads, 0.);
 
-        parallel_for_reduce(ComplexPlus, res) (unsigned int r = 0; r < a.rows(); ++r)
+        res = 0.;
+        parallel_for (int thr = 0; thr < nThreads; ++thr)
         {
-            res += a.row(r).conjugate().dot(b.col(r));
+            int  rt, nr;
+
+            GridThread::GetWork(a.rows(), thr, nr, rt);
+            for (unsigned int i = rt; i < nr + rt; ++i)
+            {
+                tres[thr] += a.row(i).conjugate().dot(b.col(i));
+            }
+        }
+        for (int thr = 0; thr < nThreads; ++thr)
+        {
+            res += tres[thr];
         }
     });
     trBenchmark("Eigen col-wise dot", left, right, ref,
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
-    { 
-        res = 0.;
+    {
+        int                   nThreads = GridThread::GetThreads();
+        std::vector<ComplexD> tres(nThreads, 0.);
 
-        parallel_for_reduce(ComplexPlus, res) (unsigned int c = 0; c < a.cols(); ++c)
+        res = 0.;
+        parallel_for (int thr = 0; thr < nThreads; ++thr)
         {
-            res += a.col(c).conjugate().dot(b.row(c));
+            int  ct, nc;
+
+            GridThread::GetWork(a.cols(), thr, nc, ct);
+            for (unsigned int j = ct; j < nc + ct; ++j)
+            {
+                tres[thr] += a.col(j).conjugate().dot(b.row(j));
+            }
+        }
+        for (int thr = 0; thr < nThreads; ++thr)
+        {
+            res += tres[thr];
         }
     });
     trBenchmark("Eigen Hadamard", left, right, ref,
@@ -251,28 +301,50 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
 #ifdef USE_MKL
     trBenchmark("MKL row-wise zdotu", left, right, ref,
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
-    { 
-        res = 0.;
+    {
+        int                   nThreads = GridThread::GetThreads();
+        std::vector<ComplexD> tres(nThreads, 0.);
 
-        parallel_for_reduce(ComplexPlus, res) (unsigned int r = 0; r < a.rows(); ++r)
+        res = 0.;
+        parallel_for (int thr = 0; thr < nThreads; ++thr)
         {
             ComplexD tmp;
+            int      rt, nr;
 
-            zdotuRow(tmp, r, a, b);
-            res += tmp;
+            GridThread::GetWork(a.rows(), thr, nr, rt);
+            for (unsigned int i = rt; i < nr + rt; ++i)
+            {
+                zdotuRow(tmp, i, a, b);
+                tres[thr] += tmp;
+            }
+        }
+        for (int thr = 0; thr < nThreads; ++thr)
+        {
+            res += tres[thr];
         }
     });
     trBenchmark("MKL col-wise zdotu", left, right, ref,
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
-    { 
-        res = 0.;
+    {
+        int                   nThreads = GridThread::GetThreads();
+        std::vector<ComplexD> tres(nThreads, 0.);
 
-        parallel_for_reduce(ComplexPlus, res) (unsigned int c = 0; c < a.cols(); ++c)
+        res = 0.;
+        parallel_for (int thr = 0; thr < nThreads; ++thr)
         {
             ComplexD tmp;
+            int      ct, nc;
 
-            zdotuCol(tmp, c, a, b);
-            res += tmp;
+            GridThread::GetWork(a.cols(), thr, nc, ct);
+            for (unsigned int j = ct; j < nc + ct; ++j)
+            {
+                zdotuCol(tmp, j, a, b);
+                tres[thr] += tmp;
+            }
+        }
+        for (int thr = 0; thr < nThreads; ++thr)
+        {
+            res += tres[thr];
         }
     });
 #endif
