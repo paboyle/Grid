@@ -124,13 +124,14 @@ void makeTimeSeq(std::vector<std::vector<unsigned int>> &timeSeq,
 void saveCorrelator(const Contractor::CorrelatorResult &result, const std::string dir, 
                     const unsigned int dt, const unsigned int traj)
 {
-    std::string fileStem = "", us = "_", filename;
+    std::string              fileStem = "", filename;
+    std::vector<std::string> terms = strToVec<std::string>(result.contraction.terms);
 
-    for (unsigned int i = 0; i < result.contraction.terms.size() - 1; i++)
+    for (unsigned int i = 0; i < terms.size() - 1; i++)
     {
-        fileStem += result.contraction.terms[i] + us + std::to_string(result.times[i]) + us;
+        fileStem += terms[i] + "_" + std::to_string(result.times[i]) + "_";
     }
-    fileStem += result.contraction.terms.back();
+    fileStem += terms.back();
     if (!result.contraction.translationAverage)
     {
         fileStem += "_dt_" + std::to_string(dt);
