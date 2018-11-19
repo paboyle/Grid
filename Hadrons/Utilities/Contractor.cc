@@ -330,6 +330,7 @@ int main(int argc, char* argv[])
                 if (std::find(result.a2aMatrix.begin(), result.a2aMatrix.end(), m) == result.a2aMatrix.end())
                 {
                     result.a2aMatrix.push_back(m);
+                    tokenReplace(result.a2aMatrix.back().file, "traj", traj);
                 }
             }
             result.contraction = p;
