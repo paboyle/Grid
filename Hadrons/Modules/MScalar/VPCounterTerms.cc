@@ -239,7 +239,7 @@ void TVPCounterTerms::execute(void)
     if (!par().output.empty())
     {
         LOG(Message) << "Saving momentum-projected correlators to '"
-                     << RESULT_FILE_NAME(par().output) << "'..."
+                     << RESULT_FILE_NAME(par().output, vm().getTrajectory()) << "'..."
                      << std::endl;
         saveResult(par().output, "scalar_loops", outputData);
     }

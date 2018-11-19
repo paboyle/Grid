@@ -218,15 +218,15 @@ typedef XmlReader ResultReader;
 typedef XmlWriter ResultWriter;
 #endif
 
-#define RESULT_FILE_NAME(name) \
-name + "." + std::to_string(vm().getTrajectory()) + "." + resultFileExt
+#define RESULT_FILE_NAME(name, traj) \
+name + "." + std::to_string(traj) + "." + resultFileExt
 
 // recursive mkdir
 #define MAX_PATH_LENGTH 512u
 int         mkdir(const std::string dirName);
 std::string basename(const std::string &s);
 std::string dirname(const std::string &s);
-void        makeFileDir(const std::string filename, GridBase *g);
+void        makeFileDir(const std::string filename, GridBase *g = nullptr);
 
 // default Schur convention
 #ifndef HADRONS_DEFAULT_SCHUR 
