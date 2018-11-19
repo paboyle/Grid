@@ -485,7 +485,7 @@ void InsertSliceLocal(const Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int
 
 
 template<class vobj>
-void ExtractSliceLocal(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice_lo,int slice_hi, int orthog)
+void ExtractSliceLocal(Lattice<vobj> &lowDim, const Lattice<vobj> & higherDim,int slice_lo,int slice_hi, int orthog)
 {
   typedef typename vobj::scalar_object sobj;
 
@@ -520,7 +520,7 @@ void ExtractSliceLocal(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slic
 
 
 template<class vobj>
-void Replicate(Lattice<vobj> &coarse,Lattice<vobj> & fine)
+void Replicate(const Lattice<vobj> &coarse,Lattice<vobj> & fine)
 {
   typedef typename vobj::scalar_object sobj;
 
