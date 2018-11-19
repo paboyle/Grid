@@ -249,6 +249,20 @@ void        makeFileDir(const std::string filename, GridBase *g = nullptr);
 // pretty print time profile
 void printTimeProfile(const std::map<std::string, GridTime> &timing, GridTime total);
 
+// token replacement utility
+template <typename T>
+void tokenReplace(std::string &str, const std::string token,
+                  const T &x, const std::string mark = "@")
+{
+    std::string fullToken = mark + token + mark;
+    
+    auto pos = str.find(fullToken);
+    if (pos != std::string::npos)
+    {
+        str.replace(pos, fullToken.size(), std::to_string(x));
+    }
+}
+
 END_HADRONS_NAMESPACE
 
 #include <Hadrons/Exceptions.hpp>

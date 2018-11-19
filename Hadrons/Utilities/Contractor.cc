@@ -60,7 +60,7 @@ namespace Contractor
     {
     public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(A2AMatrixPar,
-                                        std::string, fileStem,
+                                        std::string, file,
                                         std::string, dataset,
                                         unsigned int, cacheSize,
                                         std::string, name);
@@ -279,9 +279,10 @@ int main(int argc, char* argv[])
         // load data
         for (auto &p: par.a2aMatrix)
         {
-            std::string filename = RESULT_FILE_NAME(p.fileStem, traj);
+            std::string filename = p.file;
             double      t, size;
 
+            tokenReplace(filename, "traj", traj);
             std::cout << "======== Loading '" << filename << "'" << std::endl;
 
             A2AMatrixIo<HADRONS_A2AM_IO_TYPE> a2aIo(filename, p.dataset, par.global.nt);
