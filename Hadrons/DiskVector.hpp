@@ -176,7 +176,11 @@ private:
         f.read(reinterpret_cast<char *>(obj.data()), matSize);
         tRead += usecond();
         tHash  = -usecond();
+#ifdef USE_IPP
+        check  = GridChecksum::crc32c(obj.data(), matSize);
+#else
         check  = GridChecksum::crc32(obj.data(), matSize);
+#endif
         tHash += usecond();
         DV_DEBUG_MSG(this, "Eigen read " << tRead/1.0e6 << " sec " << matSize/tRead*1.0e6/1024/1024 << " MB/s");
         DV_DEBUG_MSG(this, "Eigen crc32 " << std::hex << check << std::dec 
@@ -199,7 +203,11 @@ private:
         nCol    = obj.cols();
         matSize = nRow*nCol*sizeof(T);
         tHash   = -usecond();
+#ifdef USE_IPP
+        crc     = GridChecksum::crc32c(obj.data(), matSize);
+#else
         crc     = GridChecksum::crc32(obj.data(), matSize);
+#endif
         tHash  += usecond();
         f.write(reinterpret_cast<char *>(&crc), sizeof(crc));
         f.write(reinterpret_cast<char *>(&nRow), sizeof(nRow));
