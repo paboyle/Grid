@@ -437,7 +437,7 @@ void A2AMatrixIo<T>::initFile(const MetadataType &d, const unsigned int chunkSiz
     }
 
     // create the dataset
-    Hdf5Reader reader(filename_);
+    Hdf5Reader reader(filename_, false);
 
     push(reader, dataname_);
     auto &group = reader.getGroup();
@@ -457,7 +457,7 @@ void A2AMatrixIo<T>::saveBlock(const T *data,
                                const unsigned int blockSizej)
 {
 #ifdef HAVE_HDF5
-    Hdf5Reader           reader(filename_);
+    Hdf5Reader           reader(filename_, false);
     std::vector<hsize_t> count = {nt_, blockSizei, blockSizej},
                          offset = {0, static_cast<hsize_t>(i),
                                    static_cast<hsize_t>(j)},
