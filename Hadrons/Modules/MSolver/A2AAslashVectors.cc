@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MSolver/A2AAslashVector.cc
+Source file: Hadrons/Modules/MSolver/A2AAslashVectors.cc
 
 Copyright (C) 2015-2018
 
@@ -25,11 +25,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Hadrons/Modules/MSolver/A2AAslashVector.hpp>
+#include <Hadrons/Modules/MSolver/A2AAslashVectors.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
 using namespace MSolver;
 
-template class Grid::Hadrons::MSolver::TA2AAslashVector<FIMPL>;
-template class Grid::Hadrons::MSolver::TA2AAslashVector<ZFIMPL>;
+template class Grid::Hadrons::MSolver::TA2AAslashVectors<FIMPL>;
+template class Grid::Hadrons::MSolver::TA2AAslashVectors<ZFIMPL>;

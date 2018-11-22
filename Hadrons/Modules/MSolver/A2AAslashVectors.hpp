@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MSolver/A2AAslashVector.hpp
+Source file: Hadrons/Modules/MSolver/A2AAslashVectors.hpp
 
 Copyright (C) 2015-2018
 
@@ -25,13 +25,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef Hadrons_MSolver_A2AAslashVector_hpp_
-#define Hadrons_MSolver_A2AAslashVector_hpp_
+#ifndef Hadrons_MSolver_A2AAslashVectors_hpp_
+#define Hadrons_MSolver_A2AAslashVectors_hpp_
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 #include <Hadrons/Solver.hpp>
+#include <Hadrons/A2AVectors.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -54,29 +55,30 @@ BEGIN_MODULE_NAMESPACE(MSolver)
 *
 *****************************************************************************/
 
-
-class A2AAslashVectorPar: Serializable
+class A2AAslashVectorsPar: Serializable
 {
 public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(A2AAslashVectorPar,
+  GRID_SERIALIZABLE_CLASS_MEMBERS(A2AAslashVectorsPar,
                                   std::string, vector,
                                   std::string, emField,
-                                  std::string, solver);
+                                  std::string, solver,
+                                  std::string, output,
+                                  bool,        multiFile);
 };
 
 template <typename FImpl>
-class TA2AAslashVector : public Module<A2AAslashVectorPar>
+class TA2AAslashVectors : public Module<A2AAslashVectorsPar>
 {
 public:
     FERM_TYPE_ALIASES(FImpl,);
     SOLVER_TYPE_ALIASES(FImpl,);
 public:
-    typedef PhotonR::GaugeField     EmField;
+    typedef PhotonR::GaugeField EmField;
 public:
     // constructor
-    TA2AAslashVector(const std::string name);
+    TA2AAslashVectors(const std::string name);
     // destructor
-    virtual ~TA2AAslashVector(void) {};
+    virtual ~TA2AAslashVectors(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -88,21 +90,21 @@ private:
     unsigned int Ls_;
 };
 
-MODULE_REGISTER_TMP(A2AAslashVector,TA2AAslashVector<FIMPL>, MSolver);
-MODULE_REGISTER_TMP(ZA2AAslashVector,TA2AAslashVector<ZFIMPL>, MSolver);
+MODULE_REGISTER_TMP(A2AAslashVectors, TA2AAslashVectors<FIMPL>, MSolver);
+MODULE_REGISTER_TMP(ZA2AAslashVectors, TA2AAslashVectors<ZFIMPL>, MSolver);
 
 /******************************************************************************
- *                       TA2AAslashVector implementation                       *
+ *                       TA2AAslashVectors implementation                       *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TA2AAslashVector<FImpl>::TA2AAslashVector(const std::string name)
-: Module<A2AAslashVectorPar>(name)
+TA2AAslashVectors<FImpl>::TA2AAslashVectors(const std::string name)
+: Module<A2AAslashVectorsPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
-std::vector<std::string> TA2AAslashVector<FImpl>::getInput(void)
+std::vector<std::string> TA2AAslashVectors<FImpl>::getInput(void)
 {
     std::vector<std::string> in = {par().vector, par().emField, par().solver};
 
@@ -110,7 +112,7 @@ std::vector<std::string> TA2AAslashVector<FImpl>::getInput(void)
 }
 
 template <typename FImpl>
-std::vector<std::string> TA2AAslashVector<FImpl>::getOutput(void)
+std::vector<std::string> TA2AAslashVectors<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
 
@@ -119,7 +121,7 @@ std::vector<std::string> TA2AAslashVector<FImpl>::getOutput(void)
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TA2AAslashVector<FImpl>::setup(void)
+void TA2AAslashVectors<FImpl>::setup(void)
 {
     Ls_  = env().getObjectLs(par().solver);
     auto &vvector = envGet(std::vector<FermionField>, par().vector);
@@ -134,7 +136,7 @@ void TA2AAslashVector<FImpl>::setup(void)
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TA2AAslashVector<FImpl>::execute(void)
+void TA2AAslashVectors<FImpl>::execute(void)
 {
     auto &solver = envGet(Solver, par().solver);
     auto &stoch_photon = envGet(EmField,  par().emField);
@@ -148,42 +150,45 @@ void TA2AAslashVector<FImpl>::execute(void)
 
     Complex ci(0.0,1.0);
 
-
     startTimer("Seq Aslash");
-
-    LOG(Message) << "Calculate Sequential propagator on Aslash * v with the A2A vector " << par().vector
-                  << " and the photon field " << par().emField << std::endl;
-
-
+    LOG(Message) << "Calculate Sequential propagator on Aslash * v with the A2A vector " 
+                 << par().vector << " and the photon field " << par().emField << std::endl;
     for(unsigned int i=0; i<Nmodes; i++)
     {
-	v4dtmp = zero;
-	startTimer("Multiply Aslash");
-	for(unsigned int mu=0;mu<=3;mu++)
-    	{
-	    Gamma gmu(Gamma::gmu[mu]);
-		 v4dtmp +=  ci * PeekIndex<LorentzIndex>(stoch_photon, mu) * (gmu * vvector[i]);
-	}
-	stopTimer("Multiply Aslash");
+        v4dtmp = zero;
+        startTimer("Multiply Aslash");
+        for(unsigned int mu=0;mu<=3;mu++)
+        {
+            Gamma gmu(Gamma::gmu[mu]);
+            v4dtmp +=  ci * PeekIndex<LorentzIndex>(stoch_photon, mu) * (gmu * vvector[i]);
+        }
+        stopTimer("Multiply Aslash");
 
-	if (Ls_ == 1)
-	{
-	    solver(Aslashv[i], v4dtmp);
-	}
-	else
-	{
-	    mat.ImportPhysicalFermionSource(v4dtmp, v5dtmp);
-	    solver(v5dtmp_sol, v5dtmp);
-	    mat.ExportPhysicalFermionSolution(v5dtmp_sol, v4dtmp);
-	    Aslashv[i] = v4dtmp;
-	}
+        startTimer("Inversion");
+        if (Ls_ == 1)
+        {
+            solver(Aslashv[i], v4dtmp);
+        }
+        else
+        {
+            mat.ImportPhysicalFermionSource(v4dtmp, v5dtmp);
+            solver(v5dtmp_sol, v5dtmp);
+            mat.ExportPhysicalFermionSolution(v5dtmp_sol, v4dtmp);
+            Aslashv[i] = v4dtmp;
+        }
+        stopTimer("Inversion");
     }
-
     stopTimer("Seq Aslash");
+    if (!par().output.empty())
+    {
+        startTimer("I/O");
+        A2AVectorsIo::write(par().output, Aslashv, par().multiFile, vm().getTrajectory());
+        stopTimer("I/O");
+    }
 }
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MSolver_A2AAslashVector_hpp_
+#endif // Hadrons_MSolver_A2AAslashVectors_hpp_

@@ -20,7 +20,7 @@ modules_cc =\
   Modules/MSink/Point.cc \
   Modules/MSink/Smear.cc \
   Modules/MSolver/A2AVectors.cc \
-  Modules/MSolver/A2AAslashVector.cc \
+  Modules/MSolver/A2AAslashVectors.cc \
   Modules/MSolver/RBPrecCG.cc \
   Modules/MSolver/MixedPrecisionRBPrecCG.cc \
   Modules/MSolver/LocalCoherenceLanczos.cc \
@@ -97,7 +97,7 @@ modules_hpp =\
   Modules/MSolver/Guesser.hpp \
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MSolver/A2AVectors.hpp \
-  Modules/MSolver/A2AAslashVector.hpp \
+  Modules/MSolver/A2AAslashVectors.hpp \
   Modules/MGauge/UnitEm.hpp \
   Modules/MGauge/StoutSmearing.hpp \
   Modules/MGauge/Unit.hpp \
