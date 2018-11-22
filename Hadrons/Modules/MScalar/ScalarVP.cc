@@ -462,7 +462,7 @@ void TScalarVP::execute(void)
     if (!par().output.empty())
     {
         LOG(Message) << "Saving momentum-projected HVP to '"
-                     << RESULT_FILE_NAME(par().output) << "'..."
+                     << RESULT_FILE_NAME(par().output, vm().getTrajectory()) << "'..."
                      << std::endl;
         saveResult(par().output, "HVP", outputData);
     }

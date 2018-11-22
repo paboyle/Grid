@@ -28,16 +28,31 @@
 extern "C" {
 #include <openssl/sha.h>
 }
+#ifdef USE_IPP
+#include "ipp.h"
+#endif
 
 #pragma once
 
 class GridChecksum
 {
 public:
-  static inline uint32_t crc32(void *data,size_t bytes)
+  static inline uint32_t crc32(const void *data, size_t bytes)
   {
     return ::crc32(0L,(unsigned char *)data,bytes);
   }
+
+#ifdef USE_IPP
+  static inline uint32_t crc32c(const void* data, size_t bytes)
+  {
+      uint32_t crc32c = ~(uint32_t)0;
+      ippsCRC32C_8u(reinterpret_cast<const unsigned char *>(data), bytes, &crc32c);
+      ippsSwapBytes_32u_I(&crc32c, 1);
+  
+      return ~crc32c;
+  }
+#endif
+
   template <typename T>
   static inline std::string sha256_string(const std::vector<T> &hash)
   {

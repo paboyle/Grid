@@ -54,7 +54,7 @@ namespace Grid
   class Hdf5Reader: public Reader<Hdf5Reader>
   {
   public:
-    Hdf5Reader(const std::string &fileName);
+    Hdf5Reader(const std::string &fileName, const bool readOnly = true);
     virtual ~Hdf5Reader(void) = default;
     bool push(const std::string &s);
     void pop(void);

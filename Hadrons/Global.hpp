@@ -32,6 +32,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 #include <set>
 #include <stack>
+#include <regex>
 #include <Grid/Grid.h>
 #include <cxxabi.h>
 
@@ -217,15 +218,15 @@ typedef XmlReader ResultReader;
 typedef XmlWriter ResultWriter;
 #endif
 
-#define RESULT_FILE_NAME(name) \
-name + "." + std::to_string(vm().getTrajectory()) + "." + resultFileExt
+#define RESULT_FILE_NAME(name, traj) \
+name + "." + std::to_string(traj) + "." + resultFileExt
 
 // recursive mkdir
 #define MAX_PATH_LENGTH 512u
 int         mkdir(const std::string dirName);
 std::string basename(const std::string &s);
 std::string dirname(const std::string &s);
-void        makeFileDir(const std::string filename, GridBase *g);
+void        makeFileDir(const std::string filename, GridBase *g = nullptr);
 
 // default Schur convention
 #ifndef HADRONS_DEFAULT_SCHUR 
@@ -247,6 +248,20 @@ void        makeFileDir(const std::string filename, GridBase *g);
 
 // pretty print time profile
 void printTimeProfile(const std::map<std::string, GridTime> &timing, GridTime total);
+
+// token replacement utility
+template <typename T>
+void tokenReplace(std::string &str, const std::string token,
+                  const T &x, const std::string mark = "@")
+{
+    std::string fullToken = mark + token + mark;
+    
+    auto pos = str.find(fullToken);
+    if (pos != std::string::npos)
+    {
+        str.replace(pos, fullToken.size(), std::to_string(x));
+    }
+}
 
 END_HADRONS_NAMESPACE
 
