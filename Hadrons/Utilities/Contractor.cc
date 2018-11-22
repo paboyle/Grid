@@ -360,8 +360,7 @@ int main(int argc, char* argv[])
             }
             bytes = par.global.nt*lastTerm[0].rows()*lastTerm[0].cols()*sizeof(ComplexD);
             std::cout << Sec(tAr.getDTimer("Transpose caching")) << " " 
-                    << Bytes(bytes, tAr.getDTimer("Transpose caching")) << std::endl;
-            std::cout << Sec(tAr.getDTimer("Disk vector overhead")) << std::endl;
+                      << Bytes(bytes, tAr.getDTimer("Transpose caching")) << std::endl;
             for (unsigned int i = 0; i < timeSeq.size(); ++i)
             {
                 unsigned int dti = 0;
@@ -450,7 +449,6 @@ int main(int argc, char* argv[])
             printTimeProfile(tAr.getTimings(), tAr.getTimer("Total"));
         }
     }
-
     
     return EXIT_SUCCESS;
 }
