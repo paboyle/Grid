@@ -166,7 +166,13 @@ std::string Hadrons::dirname(const std::string &s)
 
 void Hadrons::makeFileDir(const std::string filename, GridBase *g)
 {
-    if (g->IsBoss())
+    bool doIt = true;
+
+    if (g)
+    {
+        doIt = g->IsBoss();
+    }
+    if (doIt)
     {
         std::string dir    = dirname(filename);
         int         status = mkdir(dir);

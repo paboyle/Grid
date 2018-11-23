@@ -5,17 +5,17 @@ lib_LIBRARIES = libHadrons.a
 include modules.inc
 
 libHadrons_a_SOURCES = \
-    $(modules_cc)      \
     Application.cc     \
     Environment.cc     \
 	Exceptions.cc      \
     Global.cc          \
     Module.cc		   \
 	TimerArray.cc      \
-	VirtualMachine.cc
+	VirtualMachine.cc  \
+	$(modules_cc)
+	
 libHadrons_adir = $(includedir)/Hadrons
 nobase_libHadrons_a_HEADERS = \
-	$(modules_hpp)            \
 	A2AVectors.hpp            \
 	A2AMatrix.hpp             \
 	Application.hpp           \
@@ -33,4 +33,5 @@ nobase_libHadrons_a_HEADERS = \
 	ModuleFactory.hpp         \
 	Solver.hpp                \
 	TimerArray.hpp            \
-	VirtualMachine.hpp
+	VirtualMachine.hpp        \
+	$(modules_hpp)

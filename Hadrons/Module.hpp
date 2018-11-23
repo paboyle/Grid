@@ -144,7 +144,7 @@ if (env().getGrid()->IsBoss() and !ioStem.empty())\
 {\
     makeFileDir(ioStem, env().getGrid());\
     {\
-        ResultWriter _writer(RESULT_FILE_NAME(ioStem));\
+        ResultWriter _writer(RESULT_FILE_NAME(ioStem, vm().getTrajectory()));\
         write(_writer, name, result);\
     }\
 }

@@ -32,9 +32,17 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Global.hpp>
 #include <Hadrons/TimerArray.hpp>
 #include <Grid/Eigen/unsupported/CXX11/Tensor>
+#ifdef USE_MKL
+#include "mkl.h"
+#include "mkl_cblas.h"
+#endif
 
 #ifndef HADRONS_A2AM_NAME 
 #define HADRONS_A2AM_NAME "a2aMatrix"
+#endif
+
+#ifndef HADRONS_A2AM_IO_TYPE
+#define HADRONS_A2AM_IO_TYPE ComplexF
 #endif
 
 #define HADRONS_A2AM_PARALLEL_IO
@@ -50,6 +58,12 @@ BEGIN_HADRONS_NAMESPACE
 //   4 - j   - right A2A mode index
 template <typename T>
 using A2AMatrixSet = Eigen::TensorMap<Eigen::Tensor<T, 5, Eigen::RowMajor>>;
+
+template <typename T>
+using A2AMatrix = Eigen::Matrix<T, -1, -1, Eigen::RowMajor>;
+
+template <typename T>
+using A2AMatrixTr = Eigen::Matrix<T, -1, -1, Eigen::ColMajor>;
 
 /******************************************************************************
  *                      Abstract class for A2A kernels                        *
@@ -76,10 +90,15 @@ public:
     // constructors
     A2AMatrixIo(void) = default;
     A2AMatrixIo(std::string filename, std::string dataname, 
-                const unsigned int nt, const unsigned int ni,
-                const unsigned int nj);
+                const unsigned int nt, const unsigned int ni = 0,
+                const unsigned int nj = 0);
     // destructor
     ~A2AMatrixIo(void) = default;
+    // access
+    unsigned int getNi(void) const;
+    unsigned int getNj(void) const;
+    unsigned int getNt(void) const;
+    size_t       getSize(void) const;
     // file allocation
     template <typename MetadataType>
     void initFile(const MetadataType &d, const unsigned int chunkSize);
@@ -88,9 +107,11 @@ public:
                    const unsigned int blockSizei, const unsigned int blockSizej);
     void saveBlock(const A2AMatrixSet<T> &m, const unsigned int ext, const unsigned int str,
                    const unsigned int i, const unsigned int j);
+    template <template <class> class Vec, typename VecT>
+    void load(Vec<VecT> &v, double *tRead = nullptr);
 private:
-    std::string  filename_, dataname_;
-    unsigned int nt_, ni_, nj_;
+    std::string  filename_{""}, dataname_{""};
+    unsigned int nt_{0}, ni_{0}, nj_{0};
 };
 
 /******************************************************************************
@@ -137,6 +158,226 @@ private:
 };
 
 /******************************************************************************
+ *                       A2A matrix contraction kernels                       *
+ ******************************************************************************/
+class A2AContraction
+{
+public:
+    // accTrMul(acc, a, b): acc += tr(a*b)
+    template <typename C, typename MatLeft, typename MatRight>
+    static inline void accTrMul(C &acc, const MatLeft &a, const MatRight &b)
+    {
+        if ((MatLeft::Options == Eigen::RowMajor) and
+            (MatRight::Options == Eigen::ColMajor))
+        {
+            parallel_for (unsigned int r = 0; r < a.rows(); ++r)
+            {
+                C tmp;
+#ifdef USE_MKL
+                dotuRow(tmp, r, a, b);
+#else
+                tmp = a.row(r).conjugate().dot(b.col(r));
+#endif
+                parallel_critical
+                {
+                    acc += tmp;
+                }
+            }
+        }
+        else
+        {
+            parallel_for (unsigned int c = 0; c < a.cols(); ++c)
+            {
+                C tmp;
+#ifdef USE_MKL 
+                dotuCol(tmp, c, a, b);
+#else
+                tmp = a.col(c).conjugate().dot(b.row(c));
+#endif
+                parallel_critical
+                {
+                    acc += tmp;
+                }
+            }
+        }
+    }
+
+    template <typename MatLeft, typename MatRight>
+    static inline double accTrMulFlops(const MatLeft &a, const MatRight &b)
+    {
+        double n = a.rows()*a.cols();
+
+        return 8.*n;
+    }
+
+    // mul(res, a, b): res = a*b
+#ifdef USE_MKL
+    template <template <class, int...> class Mat, int... Opts>
+    static inline void mul(Mat<ComplexD, Opts...> &res, 
+                           const Mat<ComplexD, Opts...> &a, 
+                           const Mat<ComplexD, Opts...> &b)
+    {
+        static const ComplexD one(1., 0.), zero(0., 0.);
+
+        if ((res.rows() != a.rows()) or (res.cols() != b.cols()))
+        {
+            res.resize(a.rows(), b.cols());
+        }
+        if (Mat<ComplexD, Opts...>::Options == Eigen::RowMajor)
+        {
+            cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
+                        a.cols(), &one, a.data(), a.cols(), b.data(), b.cols(), &zero,
+                        res.data(), res.cols());
+        }
+        else if (Mat<ComplexD, Opts...>::Options == Eigen::ColMajor)
+        {
+            cblas_zgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
+                        a.cols(), &one, a.data(), a.rows(), b.data(), b.rows(), &zero,
+                        res.data(), res.rows());
+        }
+    }
+
+    template <template <class, int...> class Mat, int... Opts>
+    static inline void mul(Mat<ComplexF, Opts...> &res, 
+                           const Mat<ComplexF, Opts...> &a, 
+                           const Mat<ComplexF, Opts...> &b)
+    {
+        static const ComplexF one(1., 0.), zero(0., 0.);
+
+        if ((res.rows() != a.rows()) or (res.cols() != b.cols()))
+        {
+            res.resize(a.rows(), b.cols());
+        }
+        if (Mat<ComplexF, Opts...>::Options == Eigen::RowMajor)
+        {
+            cblas_cgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
+                        a.cols(), &one, a.data(), a.cols(), b.data(), b.cols(), &zero,
+                        res.data(), res.cols());
+        }
+        else if (Mat<ComplexF, Opts...>::Options == Eigen::ColMajor)
+        {
+            cblas_cgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
+                        a.cols(), &one, a.data(), a.rows(), b.data(), b.rows(), &zero,
+                        res.data(), res.rows());
+        }
+    }
+#else
+    template <typename Mat>
+    static inline void mul(Mat &res, const Mat &a, const Mat &b)
+    {
+        res = a*b;
+    }
+#endif
+    template <typename Mat>
+    static inline double mulFlops(const Mat &a, const Mat &b)
+    {
+        double nr = a.rows(), nc = a.cols();
+
+        return nr*nr*(6.*nc + 2.*(nc - 1.));
+    }
+private:
+    template <typename C, typename MatLeft, typename MatRight>
+    static inline void makeDotRowPt(C * &aPt, unsigned int &aInc, C * &bPt, 
+                                    unsigned int &bInc, const unsigned int aRow, 
+                                    const MatLeft &a, const MatRight &b)
+    {
+        if (MatLeft::Options == Eigen::RowMajor)
+        {
+            aPt  = a.data() + aRow*a.cols();
+            aInc = 1;
+        }
+        else if (MatLeft::Options == Eigen::ColMajor)
+        {
+            aPt  = a.data() + aRow;
+            aInc = a.rows();
+        }
+        if (MatRight::Options == Eigen::RowMajor)
+        {
+            bPt  = b.data() + aRow;
+            bInc = b.cols();
+        }
+        else if (MatRight::Options == Eigen::ColMajor)
+        {
+            bPt  = b.data() + aRow*b.rows();
+            bInc = 1;
+        }
+    }
+
+#ifdef USE_MKL
+    template <typename C, typename MatLeft, typename MatRight>
+    static inline void makeDotColPt(C * &aPt, unsigned int &aInc, C * &bPt, 
+                                    unsigned int &bInc, const unsigned int aCol, 
+                                    const MatLeft &a, const MatRight &b)
+    {
+        if (MatLeft::Options == Eigen::RowMajor)
+        {
+            aPt  = a.data() + aCol;
+            aInc = a.cols();
+        }
+        else if (MatLeft::Options == Eigen::ColMajor)
+        {
+            aPt  = a.data() + aCol*a.rows();
+            aInc = 1;
+        }
+        if (MatRight::Options == Eigen::RowMajor)
+        {
+            bPt  = b.data() + aCol*b.cols();
+            bInc = 1;
+        }
+        else if (MatRight::Options == Eigen::ColMajor)
+        {
+            bPt  = b.data() + aCol;
+            bInc = b.rows();
+        }
+    }
+
+    template <typename MatLeft, typename MatRight>
+    static inline void dotuRow(ComplexF &res, const unsigned int aRow,
+                               const MatLeft &a, const MatRight &b)
+    {
+        const ComplexF *aPt, *bPt;
+        unsigned int   aInc, bInc;
+
+        makeDotRowPt(aPt, aInc, bPt, bInc, aRow, a, b);
+        cblas_cdotu_sub(a.cols(), aPt, aInc, bPt, bInc, &res);
+    }
+
+    template <typename MatLeft, typename MatRight>
+    static inline void dotuCol(ComplexF &res, const unsigned int aCol,
+                               const MatLeft &a, const MatRight &b)
+    {
+        const ComplexF *aPt, *bPt;
+        unsigned int   aInc, bInc;
+
+        makeDotColPt(aPt, aInc, bPt, bInc, aCol, a, b);
+        cblas_cdotu_sub(a.rows(), aPt, aInc, bPt, bInc, &res);
+    }
+
+    template <typename MatLeft, typename MatRight>
+    static inline void dotuRow(ComplexD &res, const unsigned int aRow,
+                               const MatLeft &a, const MatRight &b)
+    {
+        const ComplexD *aPt, *bPt;
+        unsigned int   aInc, bInc;
+
+        makeDotRowPt(aPt, aInc, bPt, bInc, aRow, a, b);
+        cblas_zdotu_sub(a.cols(), aPt, aInc, bPt, bInc, &res);
+    }
+
+    template <typename MatLeft, typename MatRight>
+    static inline void dotuCol(ComplexD &res, const unsigned int aCol,
+                               const MatLeft &a, const MatRight &b)
+    {
+        const ComplexD *aPt, *bPt;
+        unsigned int   aInc, bInc;
+
+        makeDotColPt(aPt, aInc, bPt, bInc, aCol, a, b);
+        cblas_zdotu_sub(a.rows(), aPt, aInc, bPt, bInc, &res);
+    }
+#endif
+};
+
+/******************************************************************************
  *                     A2AMatrixIo template implementation                    *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
@@ -147,6 +388,31 @@ A2AMatrixIo<T>::A2AMatrixIo(std::string filename, std::string dataname,
 : filename_(filename), dataname_(dataname)
 , nt_(nt), ni_(ni), nj_(nj)
 {}
+
+// access //////////////////////////////////////////////////////////////////////
+template <typename T>
+unsigned int A2AMatrixIo<T>::getNt(void) const
+{
+    return nt_;
+}
+
+template <typename T>
+unsigned int A2AMatrixIo<T>::getNi(void) const
+{
+    return ni_;
+}
+
+template <typename T>
+unsigned int A2AMatrixIo<T>::getNj(void) const
+{
+    return nj_;
+}
+
+template <typename T>
+size_t A2AMatrixIo<T>::getSize(void) const
+{
+    return nt_*ni_*nj_*sizeof(T);
+}
 
 // file allocation /////////////////////////////////////////////////////////////
 template <typename T>
@@ -171,7 +437,7 @@ void A2AMatrixIo<T>::initFile(const MetadataType &d, const unsigned int chunkSiz
     }
 
     // create the dataset
-    Hdf5Reader reader(filename_);
+    Hdf5Reader reader(filename_, false);
 
     push(reader, dataname_);
     auto &group = reader.getGroup();
@@ -191,7 +457,7 @@ void A2AMatrixIo<T>::saveBlock(const T *data,
                                const unsigned int blockSizej)
 {
 #ifdef HAVE_HDF5
-    Hdf5Reader           reader(filename_);
+    Hdf5Reader           reader(filename_, false);
     std::vector<hsize_t> count = {nt_, blockSizei, blockSizej},
                          offset = {0, static_cast<hsize_t>(i),
                                    static_cast<hsize_t>(j)},
@@ -224,6 +490,82 @@ void A2AMatrixIo<T>::saveBlock(const A2AMatrixSet<T> &m,
     size_t       offset     = (ext*nstr + str)*nt_*blockSizei*blockSizej;
 
     saveBlock(m.data() + offset, i, j, blockSizei, blockSizej);
+}
+
+template <typename T>
+template <template <class> class Vec, typename VecT>
+void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead)
+{
+#ifdef HAVE_HDF5
+    Hdf5Reader           reader(filename_);
+    std::vector<hsize_t> hdim;
+    H5NS::DataSet        dataset;
+    H5NS::DataSpace      dataspace;
+    H5NS::CompType       datatype;
+    H5NS::DSetCreatPropList plist;
+    
+    push(reader, dataname_);
+    auto &group = reader.getGroup();
+    dataset     = group.openDataSet(HADRONS_A2AM_NAME);
+    datatype    = dataset.getCompType();
+    dataspace   = dataset.getSpace();
+    plist       = dataset.getCreatePlist();
+    hdim.resize(dataspace.getSimpleExtentNdims());
+    dataspace.getSimpleExtentDims(hdim.data());
+    if ((nt_*ni_*nj_ != 0) and
+        ((hdim[0] != nt_) or (hdim[1] != ni_) or (hdim[2] != nj_)))
+    {
+        HADRONS_ERROR(Size, "all-to-all matrix size mismatch (got "
+            + std::to_string(hdim[0]) + "x" + std::to_string(hdim[1]) + "x"
+            + std::to_string(hdim[2]) + ", expected "
+            + std::to_string(nt_) + "x" + std::to_string(ni_) + "x"
+            + std::to_string(nj_));
+    }
+    else if (ni_*nj_ == 0)
+    {
+        if (hdim[0] != nt_)
+        {
+            HADRONS_ERROR(Size, "all-to-all time size mismatch (got "
+                + std::to_string(hdim[0]) + ", expected "
+                + std::to_string(nt_) + ")");
+        }
+        ni_ = hdim[1];
+        nj_ = hdim[2];
+    }
+
+    A2AMatrix<T>         buf(ni_, nj_);
+    std::vector<hsize_t> count    = {1, static_cast<hsize_t>(ni_),
+                                     static_cast<hsize_t>(nj_)},
+                         stride   = {1, 1, 1},
+                         block    = {1, 1, 1},
+                         memCount = {static_cast<hsize_t>(ni_),
+                                     static_cast<hsize_t>(nj_)};
+    H5NS::DataSpace      memspace(memCount.size(), memCount.data());
+
+    std::cout << "Loading timeslice";
+    std::cout.flush();
+    *tRead = 0.;
+    for (unsigned int tp1 = nt_; tp1 > 0; --tp1)
+    {
+        unsigned int         t      = tp1 - 1;
+        std::vector<hsize_t> offset = {static_cast<hsize_t>(t), 0, 0};
+        
+        if (t % 10 == 0)
+        {
+            std::cout << " " << t;
+            std::cout.flush();
+        }
+        dataspace.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data(),
+                                  stride.data(), block.data());
+        if (tRead) *tRead -= usecond();    
+        dataset.read(buf.data(), datatype, memspace, dataspace);
+        if (tRead) *tRead += usecond();
+        v[t] = buf.template cast<VecT>();
+    }
+    std::cout << std::endl;
+#else
+    HADRONS_ERROR(Implementation, "all-to-all matrix I/O needs HDF5 library");
+#endif
 }
 
 /******************************************************************************
