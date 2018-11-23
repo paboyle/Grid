@@ -64,16 +64,20 @@ inline std::ostream& operator<< (std::ostream & stream, const GridMillisecs & no
 {
   GridSecs second(1);
   auto     secs       = now/second ; 
-  auto     subseconds = now%second ; 
+  auto     subseconds = now%second ;
+  auto     fill       = stream.fill();
   stream << secs<<"."<<std::setw(3)<<std::setfill('0')<<subseconds.count()<<" s";
+  stream.fill(fill);
   return stream;
 }
 inline std::ostream& operator<< (std::ostream & stream, const GridUsecs & now)
 {
   GridSecs second(1);
   auto     seconds    = now/second ; 
-  auto     subseconds = now%second ; 
+  auto     subseconds = now%second ;
+  auto     fill       = stream.fill();
   stream << seconds<<"."<<std::setw(6)<<std::setfill('0')<<subseconds.count()<<" s";
+  stream.fill(fill);
   return stream;
 }
 
