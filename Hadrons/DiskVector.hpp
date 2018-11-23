@@ -87,13 +87,20 @@ public:
     };
 public:
     DiskVectorBase(const std::string dirname, const unsigned int size = 0,
-                   const unsigned int cacheSize = 1, const bool clean = true);
+                   const unsigned int cacheSize = 1, const bool clean = true,
+                   GridBase *grid = nullptr);
     DiskVectorBase(DiskVectorBase<T> &&v) = default;
     virtual ~DiskVectorBase(void);
     const T & operator[](const unsigned int i) const;
     RwAccessHelper operator[](const unsigned int i);
     double hitRatio(void) const;
     void resetStat(void);
+    void setSize(unsigned int size_);
+    unsigned int getSize() const;
+    unsigned int dvSize;
+    void setGrid(GridBase *grid_);
+    GridBase *getGrid() const;
+    GridBase *dvGrid;
 private:
     virtual void load(T &obj, const std::string filename) const = 0;
     virtual void save(const std::string filename, const T &obj) const = 0;
@@ -107,6 +114,7 @@ private:
     unsigned int                                          size_, cacheSize_;
     double                                                access_{0.}, hit_{0.};
     bool                                                  clean_;
+    GridBase                                              *grid_;
     // using pointers to allow modifications when class is const
     // semantic: const means data unmodified, but cache modification allowed
     std::unique_ptr<std::vector<T>>                       cachePtr_;
@@ -158,66 +166,92 @@ public:
     {
         return (*this)[i](j, k);
     }
+    std::vector<int> dimensions() const
+    {
+        std::vector<int> dims(3);
+        dims[0] = (*this).getSize();
+        dims[1] = (*this)[0].rows();
+        dims[2] = (*this)[0].cols();
+        return dims;
+    }
 private:
     virtual void load(EigenDiskVectorMat<T> &obj, const std::string filename) const
     {
-        std::ifstream f(filename, std::ios::binary);
-        uint32_t      crc, check;
-        Eigen::Index  nRow, nCol;
-        size_t        matSize;
-        double        tRead, tHash;
-
-        f.read(reinterpret_cast<char *>(&crc), sizeof(crc));
-        f.read(reinterpret_cast<char *>(&nRow), sizeof(nRow));
-        f.read(reinterpret_cast<char *>(&nCol), sizeof(nCol));
-        obj.resize(nRow, nCol);
-        matSize = nRow*nCol*sizeof(T);
-        tRead  = -usecond();
-        f.read(reinterpret_cast<char *>(obj.data()), matSize);
-        tRead += usecond();
-        tHash  = -usecond();
-#ifdef USE_IPP
-        check  = GridChecksum::crc32c(obj.data(), matSize);
-#else
-        check  = GridChecksum::crc32(obj.data(), matSize);
-#endif
-        tHash += usecond();
-        DV_DEBUG_MSG(this, "Eigen read " << tRead/1.0e6 << " sec " << matSize/tRead*1.0e6/1024/1024 << " MB/s");
-        DV_DEBUG_MSG(this, "Eigen crc32 " << std::hex << check << std::dec 
-                     << " " << tHash/1.0e6 << " sec " << matSize/tHash*1.0e6/1024/1024 << " MB/s");
-        if (crc != check)
+        GridBase *loadGrid;
+        loadGrid = (*this).getGrid();
+        if (!(loadGrid) || loadGrid->IsBoss())
         {
-            HADRONS_ERROR(Io, "checksum failed")
+            std::ifstream f(filename, std::ios::binary);
+            uint32_t      crc, check;
+            Eigen::Index  nRow, nCol;
+            size_t        matSize;
+            double        tRead, tHash;
+
+            f.read(reinterpret_cast<char *>(&crc), sizeof(crc));
+            f.read(reinterpret_cast<char *>(&nRow), sizeof(nRow));
+            f.read(reinterpret_cast<char *>(&nCol), sizeof(nCol));
+            obj.resize(nRow, nCol);
+            matSize = nRow*nCol*sizeof(T);
+            tRead  = -usecond();
+            f.read(reinterpret_cast<char *>(obj.data()), matSize);
+            tRead += usecond();
+            tHash  = -usecond();
+    #ifdef USE_IPP
+            check  = GridChecksum::crc32c(obj.data(), matSize);
+    #else
+            check  = GridChecksum::crc32(obj.data(), matSize);
+    #endif
+            tHash += usecond();
+            DV_DEBUG_MSG(this, "Eigen read " << tRead/1.0e6 << " sec " << matSize/tRead*1.0e6/1024/1024 << " MB/s");
+            DV_DEBUG_MSG(this, "Eigen crc32 " << std::hex << check << std::dec 
+                        << " " << tHash/1.0e6 << " sec " << matSize/tHash*1.0e6/1024/1024 << " MB/s");
+            if (crc != check)
+            {
+                HADRONS_ERROR(Io, "checksum failed")
+            }
+        }
+        int broadcastSize;
+        broadcastSize = sizeof(T)*obj.size();
+        if (loadGrid)
+        {
+            loadGrid->Broadcast(loadGrid->BossRank(), obj.data(), broadcastSize);
+            loadGrid->Barrier();
         }
     }
 
     virtual void save(const std::string filename, const EigenDiskVectorMat<T> &obj) const
     {
-        std::ofstream f(filename, std::ios::binary);
-        uint32_t      crc;
-        Eigen::Index  nRow, nCol;
-        size_t        matSize;
-        double        tWrite, tHash;
-        
-        nRow    = obj.rows();
-        nCol    = obj.cols();
-        matSize = nRow*nCol*sizeof(T);
-        tHash   = -usecond();
-#ifdef USE_IPP
-        crc     = GridChecksum::crc32c(obj.data(), matSize);
-#else
-        crc     = GridChecksum::crc32(obj.data(), matSize);
-#endif
-        tHash  += usecond();
-        f.write(reinterpret_cast<char *>(&crc), sizeof(crc));
-        f.write(reinterpret_cast<char *>(&nRow), sizeof(nRow));
-        f.write(reinterpret_cast<char *>(&nCol), sizeof(nCol));
-        tWrite = -usecond();
-        f.write(reinterpret_cast<const char *>(obj.data()), matSize);
-        tWrite += usecond();
-        DV_DEBUG_MSG(this, "Eigen write " << tWrite/1.0e6 << " sec " << matSize/tWrite*1.0e6/1024/1024 << " MB/s");
-        DV_DEBUG_MSG(this, "Eigen crc32 " << std::hex << crc << std::dec
-                     << " " << tHash/1.0e6 << " sec " << matSize/tHash*1.0e6/1024/1024 << " MB/s");
+        GridBase *saveGrid;
+        saveGrid = (*this).getGrid();
+        if (!(saveGrid) || saveGrid->IsBoss())
+        {
+            std::ofstream f(filename, std::ios::binary);
+            uint32_t      crc;
+            Eigen::Index  nRow, nCol;
+            size_t        matSize;
+            double        tWrite, tHash;
+            
+            nRow    = obj.rows();
+            nCol    = obj.cols();
+            matSize = nRow*nCol*sizeof(T);
+            tHash   = -usecond();
+    #ifdef USE_IPP
+            crc     = GridChecksum::crc32c(obj.data(), matSize);
+    #else
+            crc     = GridChecksum::crc32(obj.data(), matSize);
+    #endif
+            tHash  += usecond();
+            f.write(reinterpret_cast<char *>(&crc), sizeof(crc));
+            f.write(reinterpret_cast<char *>(&nRow), sizeof(nRow));
+            f.write(reinterpret_cast<char *>(&nCol), sizeof(nCol));
+            tWrite = -usecond();
+            f.write(reinterpret_cast<const char *>(obj.data()), matSize);
+            tWrite += usecond();
+            DV_DEBUG_MSG(this, "Eigen write " << tWrite/1.0e6 << " sec " << matSize/tWrite*1.0e6/1024/1024 << " MB/s");
+            DV_DEBUG_MSG(this, "Eigen crc32 " << std::hex << crc << std::dec
+                        << " " << tHash/1.0e6 << " sec " << matSize/tHash*1.0e6/1024/1024 << " MB/s");
+        }
+        if (saveGrid)   saveGrid->Barrier();
     }
 };
 
@@ -228,8 +262,9 @@ template <typename T>
 DiskVectorBase<T>::DiskVectorBase(const std::string dirname, 
                                   const unsigned int size,
                                   const unsigned int cacheSize,
-                                  const bool clean)
-: dirname_(dirname), size_(size), cacheSize_(cacheSize), clean_(clean)
+                                  const bool clean,
+                                  GridBase *grid)
+: dirname_(dirname), size_(size), cacheSize_(cacheSize), clean_(clean), grid_(grid)
 , cachePtr_(new std::vector<T>(size))
 , modifiedPtr_(new std::vector<bool>(size, false))
 , indexPtr_(new std::map<unsigned int, unsigned int>())
@@ -238,15 +273,21 @@ DiskVectorBase<T>::DiskVectorBase(const std::string dirname,
 {
     struct stat s;
 
-    if(stat(dirname.c_str(), &s) == 0)
+    if (!(grid_) || grid_->IsBoss())
     {
-        HADRONS_ERROR(Io, "directory '" + dirname + "' already exists")
+        if(stat(dirname.c_str(), &s) == 0)
+        {
+            HADRONS_ERROR(Io, "directory '" + dirname + "' already exists")
+        }
+        mkdir(dirname);
     }
-    mkdir(dirname);
+    if (grid_)  grid_->Barrier();
     for (unsigned int i = 0; i < cacheSize_; ++i)
     {
         freePtr_->push(i);
     }
+    setSize(size_);
+    setGrid(grid_);
 }
 
 template <typename T>
@@ -256,6 +297,30 @@ DiskVectorBase<T>::~DiskVectorBase(void)
     {
         clean();
     }
+}
+
+template <typename T>
+void DiskVectorBase<T>::setSize(unsigned int size_)
+{
+    dvSize = size_;
+}
+
+template <typename T>
+unsigned int DiskVectorBase<T>::getSize() const
+{
+    return dvSize;
+}
+
+template <typename T>
+void DiskVectorBase<T>::setGrid(GridBase *grid_)
+{
+    dvGrid = grid_;
+}
+
+template <typename T>
+GridBase *DiskVectorBase<T>::getGrid() const
+{
+    return dvGrid;
 }
 
 template <typename T>
@@ -299,7 +364,7 @@ const T & DiskVectorBase<T>::operator[](const unsigned int i) const
     }
     DV_DEBUG_MSG(this, "in cache: " << msg);
 #endif
-
+    if (grid_)  grid_->Barrier();
     return cache[index.at(i)];
 }
 
@@ -358,6 +423,7 @@ void DiskVectorBase<T>::evict(void) const
         index.erase(i);
         loads.pop_front();
     }
+    if (grid_)  grid_->Barrier();
 }
 
 template <typename T>
@@ -402,6 +468,7 @@ void DiskVectorBase<T>::cacheInsert(const unsigned int i, const T &obj) const
     loads.push_back(i);
     modified[index.at(i)] = false;
 
+    if (grid_)  grid_->Barrier();
 #ifdef DV_DEBUG
     std::string msg;
 
@@ -420,21 +487,23 @@ void DiskVectorBase<T>::cacheInsert(const unsigned int i, const T &obj) const
 template <typename T>
 void DiskVectorBase<T>::clean(void)
 {
-    auto unlink = [](const char *fpath, const struct stat *sb, 
-                     int typeflag, struct FTW *ftwbuf)
+    if (!(grid_) || grid_->IsBoss())
     {
-        int rv = remove(fpath);
+        auto unlink = [](const char *fpath, const struct stat *sb,
+                         int typeflag, struct FTW *ftwbuf) {
+            int rv = remove(fpath);
 
-        if (rv)
-        {
-            HADRONS_ERROR(Io, "cannot remove '" + std::string(fpath) + "': "
-                          + std::string(std::strerror(errno)));
-        }
+            if (rv)
+            {
+                HADRONS_ERROR(Io, "cannot remove '" + std::string(fpath) + "': " + std::string(std::strerror(errno)));
+            }
 
-        return rv;
-    };
+            return rv;
+        };
 
-    nftw(dirname_.c_str(), unlink, 64, FTW_DEPTH | FTW_PHYS);
+        nftw(dirname_.c_str(), unlink, 64, FTW_DEPTH | FTW_PHYS);
+    }
+    if (grid_)  grid_->Barrier();
 }
 
 END_HADRONS_NAMESPACE

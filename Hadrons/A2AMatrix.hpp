@@ -108,7 +108,7 @@ public:
     void saveBlock(const A2AMatrixSet<T> &m, const unsigned int ext, const unsigned int str,
                    const unsigned int i, const unsigned int j);
     template <template <class> class Vec, typename VecT>
-    void load(Vec<VecT> &v, double *tRead = nullptr);
+    void load(Vec<VecT> &v, double *tRead = nullptr, GridBase *grid = nullptr);
 private:
     std::string  filename_{""}, dataname_{""};
     unsigned int nt_{0}, ni_{0}, nj_{0};
@@ -494,46 +494,51 @@ void A2AMatrixIo<T>::saveBlock(const A2AMatrixSet<T> &m,
 
 template <typename T>
 template <template <class> class Vec, typename VecT>
-void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead)
+void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead, GridBase *grid)
 {
 #ifdef HAVE_HDF5
-    Hdf5Reader           reader(filename_);
     std::vector<hsize_t> hdim;
     H5NS::DataSet        dataset;
     H5NS::DataSpace      dataspace;
     H5NS::CompType       datatype;
     H5NS::DSetCreatPropList plist;
     
-    push(reader, dataname_);
-    auto &group = reader.getGroup();
-    dataset     = group.openDataSet(HADRONS_A2AM_NAME);
-    datatype    = dataset.getCompType();
-    dataspace   = dataset.getSpace();
-    plist       = dataset.getCreatePlist();
-    hdim.resize(dataspace.getSimpleExtentNdims());
-    dataspace.getSimpleExtentDims(hdim.data());
-    if ((nt_*ni_*nj_ != 0) and
-        ((hdim[0] != nt_) or (hdim[1] != ni_) or (hdim[2] != nj_)))
+    if (!(grid) || grid->IsBoss())
     {
-        HADRONS_ERROR(Size, "all-to-all matrix size mismatch (got "
-            + std::to_string(hdim[0]) + "x" + std::to_string(hdim[1]) + "x"
-            + std::to_string(hdim[2]) + ", expected "
-            + std::to_string(nt_) + "x" + std::to_string(ni_) + "x"
-            + std::to_string(nj_));
-    }
-    else if (ni_*nj_ == 0)
-    {
-        if (hdim[0] != nt_)
+        Hdf5Reader reader(filename_);
+        push(reader, dataname_);
+        auto &group = reader.getGroup();
+        dataset     = group.openDataSet(HADRONS_A2AM_NAME);
+        datatype    = dataset.getCompType();
+        dataspace   = dataset.getSpace();
+        plist       = dataset.getCreatePlist();
+        hdim.resize(dataspace.getSimpleExtentNdims());
+        dataspace.getSimpleExtentDims(hdim.data());
+        if ((nt_*ni_*nj_ != 0) and
+            ((hdim[0] != nt_) or (hdim[1] != ni_) or (hdim[2] != nj_)))
         {
-            HADRONS_ERROR(Size, "all-to-all time size mismatch (got "
-                + std::to_string(hdim[0]) + ", expected "
-                + std::to_string(nt_) + ")");
+            HADRONS_ERROR(Size, "all-to-all matrix size mismatch (got "
+                + std::to_string(hdim[0]) + "x" + std::to_string(hdim[1]) + "x"
+                + std::to_string(hdim[2]) + ", expected "
+                + std::to_string(nt_) + "x" + std::to_string(ni_) + "x"
+                + std::to_string(nj_));
         }
-        ni_ = hdim[1];
-        nj_ = hdim[2];
+        else if (ni_*nj_ == 0)
+        {
+            if (hdim[0] != nt_)
+            {
+                HADRONS_ERROR(Size, "all-to-all time size mismatch (got "
+                    + std::to_string(hdim[0]) + ", expected "
+                    + std::to_string(nt_) + ")");
+            }
+            ni_ = hdim[1];
+            nj_ = hdim[2];
+        }
     }
+    if (grid)   grid->Barrier();
 
     A2AMatrix<T>         buf(ni_, nj_);
+    int broadcastSize =  sizeof(T) * buf.size();
     std::vector<hsize_t> count    = {1, static_cast<hsize_t>(ni_),
                                      static_cast<hsize_t>(nj_)},
                          stride   = {1, 1, 1},
@@ -555,10 +560,21 @@ void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead)
             std::cout << " " << t;
             std::cout.flush();
         }
-        dataspace.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data(),
-                                  stride.data(), block.data());
-        if (tRead) *tRead -= usecond();    
-        dataset.read(buf.data(), datatype, memspace, dataspace);
+        if (!(grid) || grid->IsBoss())
+        {
+            dataspace.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data(),
+                                      stride.data(), block.data());
+        }
+        if (tRead) *tRead -= usecond();
+        if (!(grid) || grid->IsBoss())
+        {
+            dataset.read(buf.data(), datatype, memspace, dataspace);
+        }
+        if (grid)
+        {
+            grid->Broadcast(grid->BossRank(), buf.data(), broadcastSize);
+            grid->Barrier();
+        }
         if (tRead) *tRead += usecond();
         v[t] = buf.template cast<VecT>();
     }
