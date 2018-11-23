@@ -1,6 +1,7 @@
 #ifndef Hadrons_MContraction_A2AWeakHamiltonian_hpp_
 #define Hadrons_MContraction_A2AWeakHamiltonian_hpp_
 
+#define DV_DEBUG
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
@@ -53,7 +54,7 @@ void A2A_DVutils<FImpl>::ContractWWVV_dv(std::vector<PropagatorField> &WWVV,
 
     for (int t = 0; t < N_t; t++)
     {
-        std::cout << " Contraction t = " << t << std::endl;
+        LOG(Message) << "Contraction t = " << t << std::endl;
         Grid::Hadrons::EigenDiskVector<Grid::ComplexD>::Matrix buf = WW_sd[t];
         parallel_for(int ss = 0; ss < grid->oSites(); ss++)
         {
@@ -291,10 +292,10 @@ void TA2AWeakHamiltonian<FImpl>::execute(void)
     envGetTmp(PropagatorField, VW_U);
     envGetTmp(PropagatorField, VW_C);
 
-    Eigen::Matrix<ComplexD, Eigen::Dynamic, Eigen::Dynamic> PI_WVLL_G5_t1(N_i, N_i); // <ComplexD, Eigen::Dynamic, Eigen::Dynamic, Eigen ::RowMajor>
-    Eigen::Matrix<ComplexD, Eigen::Dynamic, Eigen::Dynamic> PI_WW_LS_t0(N_i, N_j);
+    EigenDiskVector<Grid::ComplexD>::Matrix PI_WVLL_G5_t1; // <ComplexD, Eigen::Dynamic, Eigen::Dynamic, Eigen ::RowMajor>
+    EigenDiskVector<Grid::ComplexD>::Matrix PI_WW_LS_t0;
 
-    std::cout << GridLogMessage << " dt " << dt_min << "..." << dt_max << std::endl;
+    LOG(Message) << " dt " << dt_min << "..." << dt_max << std::endl;
 
     double matmult = -usecond();
     for (int t0 = 0; t0 < nt; t0++)
@@ -302,12 +303,12 @@ void TA2AWeakHamiltonian<FImpl>::execute(void)
         Eigen::Matrix<ComplexD, Eigen::Dynamic, Eigen::Dynamic> PIik;
 
         PIik = Eigen::Matrix<ComplexD, Eigen::Dynamic, Eigen::Dynamic>::Zero(N_i, N_j);
-        std::cout << GridLogMessage << " t0 " << t0 << std::endl;
+        LOG(Message) << " t0 " << t0 << std::endl;
         // for (int dt = dt_min; dt < dt_max; dt++)
         {
             int dt = dt_min;
             int t1 = (t0 + dt) % nt;
-            std::cout << GridLogMessage << " t1 " << t1 << std::endl;
+            LOG(Message) << " t1 " << t1 << std::endl;
 
             PI_WW_LS_t0 = pionFieldWW_LS_dv[t0];
             PI_WVLL_G5_t1 = pionFieldWV_LL_G5_dv[t1];
@@ -428,16 +429,16 @@ void TA2AWeakHamiltonian<FImpl>::execute(void)
     std::vector<Gamma> VV({VX, VY, VZ, VT});
     std::vector<Gamma> AA({AX, AY, AZ, AT});
 
-    std::cout << GridLogMessage << " dt " << dt_min << "..." << dt_max << std::endl;
+    LOG(Message) << " dt " << dt_min << "..." << dt_max << std::endl;
     for (int t0 = 0; t0 < nt; t0++)
     {
-        std::cout << GridLogMessage << " t0 " << t0 << std::endl;
+        LOG(Message) << " t0 " << t0 << std::endl;
         // for (int dt = dt_min; dt < dt_max; dt++)
         {
             int dt = dt_min;
 
             int t1 = (t0 + dt) % nt;
-            std::cout << GridLogMessage << " t1 " << t1 << std::endl;
+            LOG(Message) << " t1 " << t1 << std::endl;
 
             A2Autils<FImpl>::ContractFourQuarkColourDiagonal(WWVV_LS[t0], WWVV_LL[t1], VV, VV, c_field_VV, w_field_VV); // VV
             A2Autils<FImpl>::ContractFourQuarkColourDiagonal(WWVV_LS[t0], WWVV_LL[t1], AA, AA, c_field_AA, w_field_AA); // AA
