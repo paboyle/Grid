@@ -73,6 +73,10 @@ public:
 			   const FermionField *vs,
 			   const FermionField *vd);
 
+  static void ContractVW(PropagatorField &VW,
+                         const std::vector<FermionField> &v,
+                         const std::vector<FermionField> &w);
+
   static void ContractFourQuarkColourDiagonal(const PropagatorField &WWVV0,
 					      const PropagatorField &WWVV1,
 					      const std::vector<Gamma> &gamma0,
@@ -1015,6 +1019,19 @@ void A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
   }
 }
 
+template <class FImpl>
+void A2Autils<FImpl>::ContractVW(PropagatorField &VW,
+                                 const std::vector<FermionField> &v,
+                                 const std::vector<FermionField> &w)
+{
+  GridBase *grid = v[0]._grid;
+  int Ni = v.size();
+  assert(Ni == w.size());
+  VW = zero;
+  for (int i = 0; i < Ni; i++)  {
+    VW += outerProduct(v[i], w[i]);
+  }
+}
 
 template<class FImpl>
 void A2Autils<FImpl>::ContractFourQuarkColourDiagonal(const PropagatorField &WWVV0,
