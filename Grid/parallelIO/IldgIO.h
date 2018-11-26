@@ -167,6 +167,14 @@ namespace QCD {
 ////////////////////////////////////////////////////////////////////////////////////
 class GridLimeReader : public BinaryIO {
  public:
+   // error codes
+   enum
+   {
+     LIME_READ_SUCCESS  = 0,
+     LIME_READ_CHECKSUM = 1,
+     LIME_READ_FAILURE  = -1
+   };
+
    ///////////////////////////////////////////////////
    // FIXME: format for RNG? Now just binary out instead
    ///////////////////////////////////////////////////
@@ -201,7 +209,7 @@ class GridLimeReader : public BinaryIO {
   // Read a generic lattice field and verify checksum
   ////////////////////////////////////////////
   template<class vobj>
-  void readLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name)
+  int readLimeLatticeBinaryObject(Lattice<vobj> &field, std::string record_name, const bool fatalChecksum = true)
   {
     typedef typename vobj::scalar_object sobj;
     scidacChecksum scidacChecksum_;
@@ -217,36 +225,47 @@ class GridLimeReader : public BinaryIO {
       //      std::cout << GridLogMessage<< " readLimeObject seeking "<<  record_name <<" found record :" <<limeReaderType(LimeR) <<std::endl;
 
       if ( !strncmp(limeReaderType(LimeR), record_name.c_str(),strlen(record_name.c_str()) )  ) {
+        //	std::cout << GridLogMessage<< " readLimeLatticeBinaryObject matches ! " <<std::endl;
 
-	//	std::cout << GridLogMessage<< " readLimeLatticeBinaryObject matches ! " <<std::endl;
+        uint64_t PayloadSize = sizeof(sobj) * field._grid->_gsites;
 
-	uint64_t PayloadSize = sizeof(sobj) * field._grid->_gsites;
+        //	std::cout << "R sizeof(sobj)= " <<sizeof(sobj)<<std::endl;
+        //	std::cout << "R Gsites " <<field._grid->_gsites<<std::endl;
+        //	std::cout << "R Payload expected " <<PayloadSize<<std::endl;
+        //	std::cout << "R file size " <<file_bytes <<std::endl;
 
-	//	std::cout << "R sizeof(sobj)= " <<sizeof(sobj)<<std::endl;
-	//	std::cout << "R Gsites " <<field._grid->_gsites<<std::endl;
-	//	std::cout << "R Payload expected " <<PayloadSize<<std::endl;
-	//	std::cout << "R file size " <<file_bytes <<std::endl;
+        assert(PayloadSize == file_bytes);// Must match or user error
 
-	assert(PayloadSize == file_bytes);// Must match or user error
+        uint64_t offset= ftello(File);
+        //	std::cout << " ReadLatticeObject from offset "<<offset << std::endl;
+        BinarySimpleMunger<sobj,sobj> munge;
+        BinaryIO::readLatticeObject< vobj, sobj >(field, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
+        std::cout << GridLogMessage << "SciDAC checksum A " << std::hex << scidac_csuma << std::dec << std::endl;
+        std::cout << GridLogMessage << "SciDAC checksum B " << std::hex << scidac_csumb << std::dec << std::endl;
+        /////////////////////////////////////////////
+        // Insist checksum is next record
+        /////////////////////////////////////////////
+        readLimeObject(scidacChecksum_,std::string("scidacChecksum"),std::string(SCIDAC_CHECKSUM));
 
-	uint64_t offset= ftello(File);
-	//	std::cout << " ReadLatticeObject from offset "<<offset << std::endl;
-	BinarySimpleMunger<sobj,sobj> munge;
-	BinaryIO::readLatticeObject< vobj, sobj >(field, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
-  std::cout << GridLogMessage << "SciDAC checksum A " << std::hex << scidac_csuma << std::dec << std::endl;
-  std::cout << GridLogMessage << "SciDAC checksum B " << std::hex << scidac_csumb << std::dec << std::endl;
-	/////////////////////////////////////////////
-	// Insist checksum is next record
-	/////////////////////////////////////////////
-	readLimeObject(scidacChecksum_,std::string("scidacChecksum"),std::string(SCIDAC_CHECKSUM));
+        /////////////////////////////////////////////
+        // Verify checksums
+        /////////////////////////////////////////////
+        bool checksumCorrect = (scidacChecksumVerify(scidacChecksum_,scidac_csuma,scidac_csumb) == 1);
 
-	/////////////////////////////////////////////
-	// Verify checksums
-	/////////////////////////////////////////////
-	assert(scidacChecksumVerify(scidacChecksum_,scidac_csuma,scidac_csumb)==1);
-	return;
+        if (fatalChecksum)
+        {
+          assert(checksumCorrect);
+        }
+        else if (!checksumCorrect)
+        {
+          return LIME_READ_CHECKSUM;
+        }
+
+        return LIME_READ_SUCCESS;
       }
     }
+
+    return LIME_READ_FAILURE;
   }
   ////////////////////////////////////////////
   // Read a generic serialisable object
@@ -513,7 +532,7 @@ class ScidacReader : public GridLimeReader {
   // Write generic lattice field in scidac format
   ////////////////////////////////////////////////
   template <class vobj, class userRecord>
-  void readScidacFieldRecord(Lattice<vobj> &field,userRecord &_userRecord) 
+  int readScidacFieldRecord(Lattice<vobj> &field, userRecord &_userRecord, const bool fatalChecksum = true) 
   {
     typedef typename vobj::scalar_object sobj;
     GridBase * grid = field._grid;
@@ -531,8 +550,10 @@ class ScidacReader : public GridLimeReader {
     readLimeObject(header ,std::string("FieldMetaData"),std::string(GRID_FORMAT)); // Open message 
     readLimeObject(_userRecord,_userRecord.SerialisableClassName(),std::string(SCIDAC_RECORD_XML));
     readLimeObject(_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML));
-    readLimeLatticeBinaryObject(field,std::string(ILDG_BINARY_DATA));
+
+    return readLimeLatticeBinaryObject(field, std::string(ILDG_BINARY_DATA), fatalChecksum);
   }
+
   void skipPastBinaryRecord(void) {
     std::string rec_name(ILDG_BINARY_DATA);
     while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
