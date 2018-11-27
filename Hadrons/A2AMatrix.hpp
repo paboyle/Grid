@@ -442,6 +442,7 @@ void A2AMatrixIo<T>::initFile(const MetadataType &d, const unsigned int chunkSiz
     push(reader, dataname_);
     auto &group = reader.getGroup();
     plist.setChunk(chunk.size(), chunk.data());
+    plist.setFletcher32();
     dataset = group.createDataSet(HADRONS_A2AM_NAME, Hdf5Type<T>::type(), dataspace, plist);
 #else
     HADRONS_ERROR(Implementation, "all-to-all matrix I/O needs HDF5 library");
@@ -502,14 +503,12 @@ void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead)
     H5NS::DataSet        dataset;
     H5NS::DataSpace      dataspace;
     H5NS::CompType       datatype;
-    H5NS::DSetCreatPropList plist;
     
     push(reader, dataname_);
     auto &group = reader.getGroup();
     dataset     = group.openDataSet(HADRONS_A2AM_NAME);
     datatype    = dataset.getCompType();
     dataspace   = dataset.getSpace();
-    plist       = dataset.getCreatePlist();
     hdim.resize(dataspace.getSimpleExtentNdims());
     dataspace.getSimpleExtentDims(hdim.data());
     if ((nt_*ni_*nj_ != 0) and
