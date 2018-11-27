@@ -56,7 +56,9 @@ public:
                                         TrajRange,                  trajCounter,
                                         VirtualMachine::GeneticPar, genetic,
                                         std::string,                runId,
-                                        std::string,                graphFile);
+                                        std::string,                graphFile,
+                                        int,                        parallelWriteMaxRetry);
+        GlobalPar(void): parallelWriteMaxRetry{-1} {}
     };
 public:
     // constructors
