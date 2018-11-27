@@ -83,14 +83,9 @@ public:
         Record(void): index(0) {}
     };
 public:
-    // maxRetry meaning:
-    // -1: don't read back to check (default)
-    // 0: read to check, and crash (assert) in case of failure
-    // n > 0: read to check, retry to write n times before crashing
     template <typename Field>
     static void write(const std::string fileStem, std::vector<Field> &vec, 
-                      const bool multiFile, const int trajectory = -1,
-                      const int maxRetry = -1);
+                      const bool multiFile, const int trajectory = -1);
     template <typename Field>
     static void read(std::vector<Field> &vec, const std::string fileStem,
                      const bool multiFile, const int trajectory = -1);
@@ -263,13 +258,12 @@ void A2AVectorsSchurDiagTwo<FImpl>::makeHighModeW5D(FermionField &wout_4d,
  ******************************************************************************/
 template <typename Field>
 void A2AVectorsIo::write(const std::string fileStem, std::vector<Field> &vec, 
-                         const bool multiFile, const int trajectory, const int maxRetry)
+                         const bool multiFile, const int trajectory)
 {
     Record       record;
     GridBase     *grid = vec[0]._grid;
     ScidacWriter binWriter(grid->IsBoss());
     std::string  filename = vecFilename(fileStem, trajectory, multiFile);
-    Field        buf(grid);
 
     if (multiFile)
     {
@@ -277,86 +271,27 @@ void A2AVectorsIo::write(const std::string fileStem, std::vector<Field> &vec,
 
         for (unsigned int i = 0; i < vec.size(); ++i)
         {
-            int status = GridLimeReader::LIME_READ_FAILURE, attempt = std::max(0, maxRetry);
+            fullFilename = filename + "/elem" + std::to_string(i) + ".bin";
 
-            while ((status != GridLimeReader::LIME_READ_SUCCESS) and (attempt >= 0))
-            {
-                fullFilename = filename + "/elem" + std::to_string(i) + ".bin";
-
-                LOG(Message) << "Writing vector " << i << std::endl;
-                makeFileDir(fullFilename, grid);
-                binWriter.open(fullFilename);
-                record.index = i;
-                binWriter.writeScidacFieldRecord(vec[i], record);
-                binWriter.close();
-                if (maxRetry < -1)
-                {
-                    status = GridLimeReader::LIME_READ_SUCCESS;
-                }
-                else if (attempt >= 0)
-                {
-                    ScidacReader binReader;
-
-                    LOG(Message) << "Reading back vector " << i 
-                                 << " (" << attempt << " attempt(s) left)" << std::endl;
-                    binReader.open(fullFilename);
-                    status = binReader.readScidacFieldRecord(buf, record, false);
-                    if (status != GridLimeReader::LIME_READ_SUCCESS)
-                    {
-                        LOG(Message) << "Read failure" << std::endl;
-                    }
-                    attempt--;
-                }
-            }
-            if (status != GridLimeReader::LIME_READ_SUCCESS)
-            {
-                HADRONS_ERROR(Io, "I/O error while writing vector " + std::to_string(i));
-            }
+            LOG(Message) << "Writing vector " << i << std::endl;
+            makeFileDir(fullFilename, grid);
+            binWriter.open(fullFilename);
+            record.index = i;
+            binWriter.writeScidacFieldRecord(vec[i], record);
+            binWriter.close();
         }
     }
     else
     {
-        int status = GridLimeReader::LIME_READ_FAILURE, attempt = std::max(0, maxRetry);
-
-        while ((status != GridLimeReader::LIME_READ_SUCCESS) and (attempt >= 0))
+        makeFileDir(filename, grid);
+        binWriter.open(filename);
+        for (unsigned int i = 0; i < vec.size(); ++i)
         {
-            makeFileDir(filename, grid);
-            binWriter.open(filename);
-            for (unsigned int i = 0; i < vec.size(); ++i)
-            {
-                LOG(Message) << "Writing vector " << i << std::endl;
-                record.index = i;
-                binWriter.writeScidacFieldRecord(vec[i], record);
-            }
-            binWriter.close();
-            if (maxRetry < -1)
-            {
-                status = GridLimeReader::LIME_READ_SUCCESS;
-            }
-            else if (attempt >= 0)
-            {
-                ScidacReader binReader;
-
-                binReader.open(filename);
-                LOG(Message) << "Reading back vector set ("
-                             << attempt << " attempt(s) left)" << std::endl;
-                for (unsigned int i = 0; i < vec.size(); ++i)
-                {
-                    LOG(Message) << "Reading vector " << i << std::endl;
-                    status = binReader.readScidacFieldRecord(buf, record, false);
-                    if (status != GridLimeReader::LIME_READ_SUCCESS)
-                    {
-                        LOG(Message) << "Read failure" << std::endl;
-                        break;
-                    }
-                }
-                attempt--;
-            }
+            LOG(Message) << "Writing vector " << i << std::endl;
+            record.index = i;
+            binWriter.writeScidacFieldRecord(vec[i], record);
         }
-        if (status != GridLimeReader::LIME_READ_SUCCESS)
-        {
-            HADRONS_ERROR(Io, "I/O error while writing vector set");
-        }
+        binWriter.close();
     }
 }
 

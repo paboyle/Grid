@@ -44,24 +44,16 @@ BEGIN_HADRONS_NAMESPACE
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MSolver)
 
-class A2AVectorsIoPar: Serializable
-{
-public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(A2AVectorsIoPar,
-                                  std::string, filestem,
-                                  bool,        multiFile,
-                                  int,         maxRetry);
-};
-
 class A2AVectorsPar: Serializable
 {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(A2AVectorsPar,
-                                  std::string,     noise,
-                                  std::string,     action,
-                                  std::string,     eigenPack,
-                                  std::string,     solver,
-                                  A2AVectorsIoPar, output);
+                                  std::string, noise,
+                                  std::string, action,
+                                  std::string, eigenPack,
+                                  std::string, solver,
+                                  std::string, output,
+                                  bool,        multiFile);
 };
 
 template <typename FImpl, typename Pack>
@@ -248,17 +240,13 @@ void TA2AVectors<FImpl, Pack>::execute(void)
     }
 
     // I/O if necessary
-    if (!par().output.filestem.empty())
+    if (!par().output.empty())
     {
         startTimer("V I/O");
-        A2AVectorsIo::write(par().output.filestem + "_v", v, 
-                            par().output.multiFile, vm().getTrajectory(), 
-                            par().output.maxRetry);
+        A2AVectorsIo::write(par().output + "_v", v, par().multiFile, vm().getTrajectory());
         stopTimer("V I/O");
         startTimer("W I/O");
-        A2AVectorsIo::write(par().output.filestem + "_w", w, 
-                            par().output.multiFile, vm().getTrajectory(), 
-                            par().output.maxRetry);
+        A2AVectorsIo::write(par().output + "_w", w, par().multiFile, vm().getTrajectory());
         stopTimer("W I/O");
     }
 }
