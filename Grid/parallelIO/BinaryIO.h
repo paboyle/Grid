@@ -81,6 +81,7 @@ inline void removeWhitespace(std::string &key)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 class BinaryIO {
  public:
+  static int latticeWriteMaxRetry;
 
   /////////////////////////////////////////////////////////////////////////////
   // more byte manipulation helpers
@@ -583,6 +584,8 @@ PARALLEL_CRITICAL
     typedef typename vobj::Realified::scalar_type word;    word w=0;
     GridBase *grid = Umu._grid;
     uint64_t lsites = grid->lSites();
+    int attemptsLeft = std::max(0, BinaryIO::latticeWriteMaxRetry);
+    bool checkWrite = (BinaryIO::latticeWriteMaxRetry >= 0);
 
     std::vector<sobj> scalardata(lsites); 
     std::vector<fobj>     iodata(lsites); // Munge, checksum, byte order in here
@@ -598,8 +601,28 @@ PARALLEL_CRITICAL
     grid->Barrier();
     timer.Stop();
 
-    IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_LEXICOGRAPHIC,
-	     nersc_csum,scidac_csuma,scidac_csumb);
+    while (attemptsLeft >= 0)
+    {
+      grid->Barrier();
+      IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_LEXICOGRAPHIC,
+	             nersc_csum,scidac_csuma,scidac_csumb);
+      if (checkWrite)
+      {
+        std::vector<fobj> ckiodata(lsites);
+        uint32_t          cknersc_csum, ckscidac_csuma, ckscidac_csumb;
+
+        std::cout << GridLogMessage << "writeLatticeObject: read back object to check" << std::endl;
+        grid->Barrier();
+        IOobject(w,grid,ckiodata,file,offset,format,BINARYIO_READ|BINARYIO_LEXICOGRAPHIC,
+	               cknersc_csum,ckscidac_csuma,ckscidac_csumb);
+        if ((cknersc_csum != nersc_csum) or (ckscidac_csuma != scidac_csuma) or (ckscidac_csumb != scidac_csumb))
+        {
+          std::cout << GridLogMessage << "writeLatticeObject: checksum failure in test read (" << attemptsLeft << " write attempt(s) remaining)" << std::endl;
+        }
+      }
+      attemptsLeft--;
+    }
+    
 
     std::cout<<GridLogMessage<<"writeLatticeObject: unvectorize overhead "<<timer.Elapsed()  <<std::endl;
   }
@@ -725,5 +748,6 @@ PARALLEL_CRITICAL
     std::cout << GridLogMessage << "RNG state overhead " << timer.Elapsed() << std::endl;
   }
 };
+
 }
 #endif
