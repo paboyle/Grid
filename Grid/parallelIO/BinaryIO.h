@@ -371,7 +371,7 @@ PARALLEL_CRITICAL
 #endif
       } else {
 	std::cout << GridLogMessage <<"IOobject: C++ read I/O " << file << " : "
-                  << iodata.size() * sizeof(fobj) << " bytes" << std::endl;
+                  << iodata.size() * sizeof(fobj) << " bytes and offset " << offset << std::endl;
         std::ifstream fin;
 	fin.open(file, std::ios::binary | std::ios::in);
         if (control & BINARYIO_MASTER_APPEND)
@@ -583,7 +583,7 @@ PARALLEL_CRITICAL
     typedef typename vobj::scalar_object sobj;
     typedef typename vobj::Realified::scalar_type word;    word w=0;
     GridBase *grid = Umu._grid;
-    uint64_t lsites = grid->lSites();
+    uint64_t lsites = grid->lSites(), offsetCopy = offset;
     int attemptsLeft = std::max(0, BinaryIO::latticeWriteMaxRetry);
     bool checkWrite = (BinaryIO::latticeWriteMaxRetry >= 0);
 
@@ -600,7 +600,6 @@ PARALLEL_CRITICAL
 
     grid->Barrier();
     timer.Stop();
-
     while (attemptsLeft >= 0)
     {
       grid->Barrier();
@@ -610,14 +609,21 @@ PARALLEL_CRITICAL
       {
         std::vector<fobj> ckiodata(lsites);
         uint32_t          cknersc_csum, ckscidac_csuma, ckscidac_csumb;
+        uint64_t          ckoffset = offsetCopy;
 
-        std::cout << GridLogMessage << "writeLatticeObject: read back object to check" << std::endl;
+        std::cout << GridLogMessage << "writeLatticeObject: read back object" << std::endl;
         grid->Barrier();
-        IOobject(w,grid,ckiodata,file,offset,format,BINARYIO_READ|BINARYIO_LEXICOGRAPHIC,
+        IOobject(w,grid,ckiodata,file,ckoffset,format,BINARYIO_READ|BINARYIO_LEXICOGRAPHIC,
 	               cknersc_csum,ckscidac_csuma,ckscidac_csumb);
         if ((cknersc_csum != nersc_csum) or (ckscidac_csuma != scidac_csuma) or (ckscidac_csumb != scidac_csumb))
         {
-          std::cout << GridLogMessage << "writeLatticeObject: checksum failure in test read (" << attemptsLeft << " write attempt(s) remaining)" << std::endl;
+          std::cout << GridLogMessage << "writeLatticeObject: read test checksum failure, re-writing (" << attemptsLeft << " attempt(s) remaining)" << std::endl;
+          offset = offsetCopy;
+        }
+        else
+        {
+          std::cout << GridLogMessage << "writeLatticeObject: read test checksum correct" << std::endl;
+          break;
         }
       }
       attemptsLeft--;
