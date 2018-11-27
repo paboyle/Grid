@@ -126,6 +126,7 @@ namespace Grid
       H5NS::DataSet           dataSet;
       H5NS::DSetCreatPropList plist;
       
+      plist.setChunk(dim.size(), dim.data());
       plist.setFletcher32();
       dataSet = group_.createDataSet(s, Hdf5Type<Element>::type(), dataSpace, plist);
       dataSet.write(flatx.data(), Hdf5Type<Element>::type());
