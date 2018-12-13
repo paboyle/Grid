@@ -50,6 +50,7 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
+
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
   std::cout << GridLogMessage<< "* Kernel options --dslash-generic, --dslash-unroll, --dslash-asm" <<std::endl;
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
@@ -107,6 +108,7 @@ void benchDw(std::vector<int> & latt4, int Ls, int threads,int report )
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
+  long unsigned int single_site_flops = 8*Nc*(7+16*Nc);
 
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
@@ -200,7 +202,7 @@ void benchDw(std::vector<int> & latt4, int Ls, int threads,int report )
 #endif  
   if ( ! report ) {
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-    double flops=1344*volume*ncall;
+    double flops=single_site_flops*volume*ncall;
     std::cout <<"\t"<<NP<< "\t"<<flops/(t1-t0)<< "\t";
   }
   
@@ -232,7 +234,7 @@ void benchDw(std::vector<int> & latt4, int Ls, int threads,int report )
     
     if(!report){
       double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-      double flops=(1344.0*volume*ncall)/2;
+      double flops=(single_site_flops*volume*ncall)/2.0;
       std::cout<< flops/(t1-t0);
     }
   }
@@ -241,6 +243,7 @@ void benchDw(std::vector<int> & latt4, int Ls, int threads,int report )
 #define CHECK_SDW
 void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
 {
+  long unsigned int single_site_flops = 8*Nc*(7+16*Nc);
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(latt4, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
@@ -333,7 +336,7 @@ void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
 
   if ( !report){
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-    double flops=1344*volume*ncall;
+    double flops=single_site_flops*volume*ncall;
     std::cout<<"\t"<< flops/(t1-t0);
   }
 
@@ -375,7 +378,7 @@ void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
 
   if ( ! report ) {
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-    double flops=(1344.0*volume*ncall)/2;
+    double flops=(single_site_flops*volume*ncall)/2.0;
     std::cout<<"\t"<< flops/(t1-t0);
   }
 }

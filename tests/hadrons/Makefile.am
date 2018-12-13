@@ -1,3 +1,3 @@
-AM_LDFLAGS += -L../../extras/Hadrons
+AM_LDFLAGS += -L../../Hadrons
 
 include Make.inc

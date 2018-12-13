@@ -446,7 +446,7 @@ int main (int argc, char ** argv)
   }    
 
 
-
+#ifdef GRID_OMP
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking threaded STENCIL halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
@@ -502,9 +502,9 @@ int main (int argc, char ** argv)
 	      int comm_proc = mpi_layout[mu]-1;
 	      Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
 	    }
-
+            int tid = omp_get_thread_num();
 	    tbytes= Grid.StencilSendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,
-					       (void *)&rbuf[dir][0], recv_from_rank, bytes,dir);
+					       (void *)&rbuf[dir][0], recv_from_rank, bytes,tid);
 
 	    thread_critical { dbytes+=tbytes; }
 	  }
@@ -531,7 +531,7 @@ int main (int argc, char ** argv)
  
     }
   }    
-
+#endif
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= All done; Bye Bye"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;

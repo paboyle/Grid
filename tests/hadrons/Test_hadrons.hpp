@@ -1,31 +1,33 @@
-/*******************************************************************************
- Grid physics library, www.github.com/paboyle/Grid
+/*************************************************************************************
 
- Source file: tests/hadrons/Test_hadrons.hpp
+Grid physics library, www.github.com/paboyle/Grid 
 
- Copyright (C) 2017
+Source file: Tests/Hadrons/Test_hadrons.hpp
+
+Copyright (C) 2015-2018
 
  Author: Andrew Lawson <andrew.lawson1991@gmail.com>
 
- This program is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation; either version 2 of the License, or
- (at your option) any later version.
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
- You should have received a copy of the GNU General Public License along
- with this program; if not, write to the Free Software Foundation, Inc.,
- 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
- See the full license in the file "LICENSE" in the top level distribution
- directory.
- *******************************************************************************/
+See the full license in the file "LICENSE" in the top level distribution directory
+*************************************************************************************/
+/*  END LEGAL */
 
-#include <Grid/Hadrons/Application.hpp>
+#include <Hadrons/Application.hpp>
+#include <Hadrons/Modules.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
@@ -49,7 +51,7 @@ using namespace Hadrons;
     globalPar.trajCounter.start    = 1500;      \
     globalPar.trajCounter.end      = 1520;      \
     globalPar.trajCounter.step     = 20;        \
-    globalPar.seed                 = "1 2 3 4"; \
+    globalPar.runId                = "test";    \
     globalPar.genetic.maxGen       = 1000;      \
     globalPar.genetic.maxCstGen    = 200;       \
     globalPar.genetic.popSize      = 20;        \
@@ -124,6 +126,7 @@ inline void makeWilsonAction(Application &application, std::string actionName,
         actionPar.gauge = gaugeField;
         actionPar.mass  = mass;
         actionPar.boundary = boundary;
+        actionPar.twist = "0. 0. 0. 0.";
         application.createModule<MAction::Wilson>(actionName, actionPar);
     }
 }
@@ -152,6 +155,7 @@ inline void makeDWFAction(Application &application, std::string actionName,
         actionPar.M5    = M5;
         actionPar.mass  = mass;
         actionPar.boundary = boundary;
+        actionPar.twist = "0. 0. 0. 0.";
         application.createModule<MAction::DWF>(actionName, actionPar);
     }
 }
@@ -176,8 +180,9 @@ inline void makeRBPrecCGSolver(Application &application, std::string &solverName
     if (!(VirtualMachine::getInstance().hasModule(solverName)))
     {
         MSolver::RBPrecCG::Par solverPar;
-        solverPar.action   = actionName;
-        solverPar.residual = residual;
+        solverPar.action       = actionName;
+        solverPar.residual     = residual;
+        solverPar.maxIteration = 10000;
         application.createModule<MSolver::RBPrecCG>(solverName,
                                                     solverPar);
     }
@@ -263,7 +268,8 @@ inline void makeConservedSequentialSource(Application &application,
         seqPar.tA        = tS;
         seqPar.tB        = tS;
         seqPar.curr_type = curr;
-        seqPar.mu        = mu;
+        seqPar.mu_min    = mu;
+        seqPar.mu_min    = mu;
         seqPar.mom       = mom;
         application.createModule<MSource::SeqConserved>(srcName, seqPar);
     }

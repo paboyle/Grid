@@ -45,7 +45,8 @@ public:
                           bool , b,
                           std::vector<double>, array,
                           std::vector<std::vector<double> >, twodimarray,
-                          std::vector<std::vector<std::vector<Complex> > >, cmplx3darray
+                          std::vector<std::vector<std::vector<Complex> > >, cmplx3darray,
+                          SpinColourMatrix, scm
                           );
   myclass() {}
   myclass(int i)
@@ -59,6 +60,12 @@ public:
     y=2*i;
     b=true;
     name="bother said pooh";
+    scm()(0, 1)(2, 1) = 2.356;
+    scm()(3, 0)(1, 1) = 1.323;
+    scm()(2, 1)(0, 1) = 5.3336;
+    scm()(0, 2)(1, 1) = 6.336;
+    scm()(2, 1)(2, 2) = 7.344;
+    scm()(1, 1)(2, 0) = 8.3534;
   }
 };
 
@@ -93,8 +100,32 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
   if (!good) exit(EXIT_FAILURE);
 }
 
+template <typename T>
+void tensorConvTestFn(GridSerialRNG &rng, const std::string label)
+{
+  T    t, ft;
+  Real n;
+  bool good;
+
+  random(rng, t);
+  auto tv = tensorToVec(t);
+  vecToTensor(ft, tv);
+  n    = norm2(t - ft);
+  good = (n == 0);
+  std::cout << label << " norm 2 diff: " << n << " -- " 
+            << (good ? "success" : "failure") << std::endl;
+}
+
+#define tensorConvTest(rng, type) tensorConvTestFn<type>(rng, #type)
+
 int main(int argc,char **argv)
 {
+  Grid_init(&argc,&argv);
+  
+  GridSerialRNG    rng;
+
+  rng.SeedFixedIntegers(std::vector<int>({42,10,81,9}));
+  
   std::cout << "==== basic IO" << std::endl;
   XmlWriter WR("bother.xml");
 
@@ -120,7 +151,7 @@ int main(int argc,char **argv)
   std::cout << "-- serialisable class writing to 'bother.xml'..." << std::endl;
   write(WR,"obj",obj);
   WR.write("obj2", obj);
-  vec.push_back(myclass(1234));
+  vec.push_back(obj);
   vec.push_back(myclass(5678));
   vec.push_back(myclass(3838));
   pair = std::make_pair(myenum::red, myenum::blue);
@@ -131,8 +162,6 @@ int main(int argc,char **argv)
   std::cout << "-- serialisable class comparison:" << std::endl;
   std::cout << "vec[0] == obj: " << ((vec[0] == obj) ? "true" : "false") << std::endl;
   std::cout << "vec[1] == obj: " << ((vec[1] == obj) ? "true" : "false") << std::endl;
-
-  write(WR, "objpair", pair);
   std::cout << "-- pair writing to std::cout:" << std::endl;
   std::cout << pair << std::endl;
 
@@ -141,26 +170,20 @@ int main(int argc,char **argv)
   //// XML
   ioTest<XmlWriter, XmlReader>("iotest.xml", obj, "XML    (object)           ");
   ioTest<XmlWriter, XmlReader>("iotest.xml", vec, "XML    (vector of objects)");
-  ioTest<XmlWriter, XmlReader>("iotest.xml", pair, "XML    (pair of objects)");
   //// binary
   ioTest<BinaryWriter, BinaryReader>("iotest.bin", obj, "binary (object)           ");
   ioTest<BinaryWriter, BinaryReader>("iotest.bin", vec, "binary (vector of objects)");
-  ioTest<BinaryWriter, BinaryReader>("iotest.bin", pair, "binary (pair of objects)");
   //// text
   ioTest<TextWriter, TextReader>("iotest.dat", obj, "text   (object)           ");
   ioTest<TextWriter, TextReader>("iotest.dat", vec, "text   (vector of objects)");
-  ioTest<TextWriter, TextReader>("iotest.dat", pair, "text   (pair of objects)");
   //// text
   ioTest<JSONWriter, JSONReader>("iotest.json", obj,  "JSON   (object)           ");
   ioTest<JSONWriter, JSONReader>("iotest.json", vec,  "JSON   (vector of objects)");
-  ioTest<JSONWriter, JSONReader>("iotest.json", pair, "JSON   (pair of objects)");
 
   //// HDF5
-#undef HAVE_HDF5
 #ifdef HAVE_HDF5
   ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", obj, "HDF5   (object)           ");
   ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", vec, "HDF5   (vector of objects)");
-  ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", pair, "HDF5   (pair of objects)");
 #endif
 
   std::cout << "\n==== vector flattening/reconstruction" << std::endl;
@@ -197,68 +220,11 @@ int main(int argc,char **argv)
   std::cout << flatdv.getVector() << std::endl;
   std::cout << std::endl;
 
-
-  std::cout << ".:::::: Testing JSON classes "<< std::endl;
-
-
-  {
-    JSONWriter JW("bother.json");
-
-    // test basic type writing
-    myenum a = myenum::red;
-    push(JW,"BasicTypes");
-    write(JW,std::string("i16"),i16);
-    write(JW,"myenum",a);
-    write(JW,"u16",u16);
-    write(JW,"i32",i32);
-    write(JW,"u32",u32);
-    write(JW,"i64",i64);
-    write(JW,"u64",u64);
-    write(JW,"f",f);
-    write(JW,"d",d);
-    write(JW,"b",b);
-    pop(JW);
-
-
-    // test serializable class writing
-    myclass obj(1234); // non-trivial constructor
-    std::cout << obj << std::endl;
-    std::cout << "-- serialisable class writing to 'bother.json'..." << std::endl;
-    write(JW,"obj",obj);
-    JW.write("obj2", obj);
-
-
-    std::vector<myclass> vec;
-    vec.push_back(myclass(1234));
-    vec.push_back(myclass(5678));
-    vec.push_back(myclass(3838));
-    write(JW, "objvec", vec);
-
-  }
-
-
-  {
-    JSONReader RD("bother.json");
-    myclass jcopy1;
-    std::vector<myclass> jveccopy1;
-    read(RD,"obj",jcopy1);
-    read(RD,"objvec", jveccopy1);
-    std::cout << "Loaded (JSON) -----------------" << std::endl;
-    std::cout << jcopy1 << std::endl << jveccopy1 << std::endl;
-  }
- 
-
-/*
-  // This is still work in progress
-  {
-    // Testing the next element function
-    JSONReader RD("test.json");
-    RD.push("grid");
-    RD.push("Observable");
-    std::string name;
-    read(RD,"name", name);
-  }
-*/
-
-
+  std::cout << "==== Grid tensor to vector test" << std::endl;
+  tensorConvTest(rng, SpinColourMatrix);
+  tensorConvTest(rng, SpinColourVector);
+  tensorConvTest(rng, ColourMatrix);
+  tensorConvTest(rng, ColourVector);
+  tensorConvTest(rng, SpinMatrix);
+  tensorConvTest(rng, SpinVector);
 }

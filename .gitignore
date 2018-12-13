@@ -83,6 +83,7 @@ ltmain.sh
 .Trashes
 ehthumbs.db
 Thumbs.db
+.dirstamp
 
 # build directory #
 ###################
@@ -97,11 +98,8 @@ build.sh
 
 # Eigen source #
 ################
-lib/Eigen/*
-
-# FFTW source #
-################
-lib/fftw/*
+Grid/Eigen
+Eigen/*
 
 # libtool macros #
 ##################
@@ -112,14 +110,7 @@ m4/libtool.m4
 ################
 gh-pages/
 
-# Buck files #
-##############
-.buck*
-buck-out
-BUCK
-make-bin-BUCK.sh
-
 # generated sources #
 #####################
-lib/qcd/spin/gamma-gen/*.h
-lib/qcd/spin/gamma-gen/*.cc
+Grid/qcd/spin/gamma-gen/*.h
+Grid/qcd/spin/gamma-gen/*.cc

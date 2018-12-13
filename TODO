@@ -1,8 +1,69 @@
 TODO:
 ---------------
 
-Code item work list
 
+GPU branch code item work list
+-----------------------------
+
+- Audit NAMESPACE CHANGES
+- Audit HMC timestep / traj length size
+- Verify HMC one flavour ratio; suspect dH too big
+- pragma once uniformly
+- GPU offload reductions; thrust initial ; inclusive_scan vs reduce?
+- Audit changes
+- thread_loop interface revisit.
+
+- - Need (1) omp parallel for     <-- thread_loop
+- -      (2) omp for
+- -      (3) omp for collapse(n)
+- -      (4) omp parallel for collapse(n)
+- - Only (1) has a natural mirror in accelerator_loop
+- - Nested loop macros get cumbersome
+- - Don't like thread_region and thread_loop_in_region
+- - Could replace with 
+
+    thread_nested(1, 
+      for {
+
+      }
+    );
+    thread_nested(2,
+      for (){
+        for (){
+
+	}
+      }
+    );
+
+    and same "in_region".
+
+- Remove old parallel_for macros, fix errors
+- check accelerator_loop uniformly used in fermion operators
+- Gamma tables on GPU
+- Accelerate the cshift
+- Accelerate non-dslash elements of Mobius
+- Mobius kernel fusion.
+- Staggered kernels inline for GPU
+- Reread WilsonKernels and check diffs
+- Single GPU simd target (VGPU)
+- Lebesgue reorder in all kernels
+- merge2 where used. Audit routines, comment out and check compile.
+- Pragmas.h - prune and remove strong_inline (?)
+- 
+-----------------------------
+Physics item work list:
+
+2)- Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
+4)- Multigrid Wilson and DWF, compare to other Multigrid implementations
+5)- HDCR resume
+
+-----------------------------
+Nov 2018
+
+1)- BG/Q port and check ; Andrew says ok.
+3)- Physical propagator interface  -- DONE
+
+DONE
 a) namespaces & indentation
  GRID_BEGIN_NAMESPACE();
  GRID_END_NAMESPACE();
@@ -15,14 +76,6 @@ b) GPU branch
 - Virtual function audit
 - Start port once Nvidia box is up
 - Cut down volume of code for first port? How?
-
-Physics item work list:
-
-1)- BG/Q port and check ; Andrew says ok.
-2)- Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
-3)- Physical propagator interface
-4)- Multigrid Wilson and DWF, compare to other Multigrid implementations
-5)- HDCR resume
 
 ----------------------------
 Recent DONE 
@@ -162,6 +215,8 @@ RECENT
 
 
 DONE:
+
+
 - MultiArray -- MultiRHS done
 - ConjugateGradientMultiShift -- DONE
 - MCR                         -- DONE

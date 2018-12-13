@@ -6,8 +6,8 @@ AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([subdir-objects 1.13])
 AM_EXTRA_RECURSIVE_TARGETS([tests bench])
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([lib/Grid.h])
-AC_CONFIG_HEADERS([lib/Config.h],[sed -i 's|PACKAGE_|GRID_|' lib/Config.h])
+AC_CONFIG_SRCDIR([Grid/Grid.h])
+AC_CONFIG_HEADERS([Grid/Config.h],[sed -i 's|PACKAGE_|GRID_|' Grid/Config.h])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 ################ Get git info
@@ -53,7 +53,7 @@ AC_TYPE_UINT64_T
 ############### OpenMP
 AC_OPENMP
 ac_openmp=no
-if test "${OPENMP_CXXFLAGS}X" != "X"; then
+if test "${ac_cv_prog_cxx_openmp}X" != "noX"; then
   ac_openmp=yes
   AM_CXXFLAGS="$OPENMP_CXXFLAGS $AM_CXXFLAGS"
   AM_LDFLAGS="$OPENMP_CXXFLAGS $AM_LDFLAGS"
@@ -101,6 +101,13 @@ AC_ARG_WITH([lime],
             [AM_CXXFLAGS="-I$with_lime/include $AM_CXXFLAGS"]
             [AM_LDFLAGS="-L$with_lime/lib $AM_LDFLAGS"])
 
+############### OpenSSL
+AC_ARG_WITH([openssl],
+            [AS_HELP_STRING([--with-openssl=prefix],
+            [try this for a non-standard install prefix of the OpenSSL library])],
+            [AM_CXXFLAGS="-I$with_openssl/include $AM_CXXFLAGS"]
+            [AM_LDFLAGS="-L$with_openssl/lib $AM_LDFLAGS"])
+
 ############### lapack
 AC_ARG_ENABLE([lapack],
     [AC_HELP_STRING([--enable-lapack=yes|no|prefix], [enable LAPACK])],
@@ -129,10 +136,13 @@ case ${ac_SFW_FP16} in
       AC_MSG_ERROR(["SFW FP16 option not supported ${ac_SFW_FP16}"]);;
 esac
 
-############### MKL
+############### Intel libraries
 AC_ARG_ENABLE([mkl],
     [AC_HELP_STRING([--enable-mkl=yes|no|prefix], [enable Intel MKL for LAPACK & FFTW])],
     [ac_MKL=${enable_mkl}], [ac_MKL=no])
+AC_ARG_ENABLE([ipp],
+    [AC_HELP_STRING([--enable-ipp=yes|no|prefix], [enable Intel IPP for fast CRC32C])],
+    [ac_IPP=${enable_mkl}], [ac_IPP=no])
 
 case ${ac_MKL} in
     no)
@@ -143,6 +153,17 @@ case ${ac_MKL} in
         AM_CXXFLAGS="-I$ac_MKL/include $AM_CXXFLAGS"
         AM_LDFLAGS="-L$ac_MKL/lib $AM_LDFLAGS"
         AC_DEFINE([USE_MKL], [1], [Define to 1 if you use the Intel MKL]);;
+esac
+
+case ${ac_IPP} in
+    no)
+        ;;
+    yes)
+        AC_DEFINE([USE_IPP], [1], [Define to 1 if you use the Intel IPP]);;
+    *)
+        AM_CXXFLAGS="-I$ac_IPP/include $AM_CXXFLAGS"
+        AM_LDFLAGS="-L$ac_IPP/lib $AM_LDFLAGS"
+        AC_DEFINE([USE_IPP], [1], [Define to 1 if you use the Intel IPP]);;
 esac
 
 ############### HDF5
@@ -176,7 +197,13 @@ AC_CHECK_FUNCS([gettimeofday])
 
 if test "${ac_MKL}x" != "nox"; then
     AC_SEARCH_LIBS([mkl_set_interface_layer], [mkl_rt], [],
-                   [AC_MSG_ERROR("MKL enabled but library not found")])
+                   [AC_MSG_ERROR("Intel MKL enabled but library not found")])
+fi
+
+if test "${ac_IPP}x" != "nox"; then
+     AC_SEARCH_LIBS([ippsCRC32C_8u], [ippdc], 
+                   [LIBS="${LIBS} -lippdc -lippvm -lipps -lippcore"],
+                   [AC_MSG_ERROR("Intel IPP enabled but library not found")])
 fi
 
 AC_SEARCH_LIBS([__gmpf_init], [gmp],
@@ -201,9 +228,13 @@ AC_SEARCH_LIBS([fftw_execute], [fftw3],
 AC_SEARCH_LIBS([limeCreateReader], [lime],
                [AC_DEFINE([HAVE_LIME], [1], [Define to 1 if you have the `LIME' library])]
                [have_lime=true],
-	       [AC_MSG_WARN(C-LIME library was not found in your system.
-In order to use ILGG file format please install or provide the correct path to your installation
-Info at: http://usqcd.jlab.org/usqcd-docs/c-lime/)])
+	             [AC_MSG_ERROR(LIME library was not found in your system.)])
+
+AC_SEARCH_LIBS([SHA256_Init], [crypto],
+               [AC_DEFINE([HAVE_CRYPTO], [1], [Define to 1 if you have the `OpenSSL' library])]
+               [have_crypto=true],
+	             [AC_MSG_ERROR(OpenSSL library was not found in your system.)])
+AC_CHECK_HEADER([openssl/sha.h], [], [AC_MSG_ERROR(OpenSSL library found but without headers.)], [AC_INCLUDES_DEFAULT([])])
 
 AC_SEARCH_LIBS([crc32], [z],
                [AC_DEFINE([HAVE_ZLIB], [1], [Define to 1 if you have the `LIBZ' library])]
@@ -300,6 +331,9 @@ case ${ax_cv_cxx_compiler_vendor} in
       AVX512)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-mavx512f -mavx512pf -mavx512er -mavx512cd';;
+      SKL)
+        AC_DEFINE([AVX512],[1],[AVX512 intrinsics for SkyLake Xeon])
+        SIMD_FLAGS='-march=skylake-avx512';;
       KNC)
         AC_DEFINE([IMCI],[1],[IMCI intrinsics for Knights Corner])
         SIMD_FLAGS='';;
@@ -387,13 +421,21 @@ case ${ac_PRECISION} in
 esac
 
 ######################  Shared memory allocation technique under MPI3
-AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmopen|hugetlbfs],
+AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmopen|shmget|hugetlbfs|shmnone],
               [Select SHM allocation technique])],[ac_SHM=${enable_shm}],[ac_SHM=shmopen])
 
 case ${ac_SHM} in
 
      shmopen)
      AC_DEFINE([GRID_MPI3_SHMOPEN],[1],[GRID_MPI3_SHMOPEN] )
+     ;;
+
+     shmget)
+     AC_DEFINE([GRID_MPI3_SHMGET],[1],[GRID_MPI3_SHMGET] )
+     ;;
+
+     shmnone)
+     AC_DEFINE([GRID_MPI3_SHM_NONE],[1],[GRID_MPI3_SHM_NONE] )
      ;;
 
      hugetlbfs)
@@ -409,7 +451,7 @@ esac
 AC_ARG_ENABLE([shmpath],[AC_HELP_STRING([--enable-shmpath=path],
               [Select SHM mmap base path for hugetlbfs])],
 	      [ac_SHMPATH=${enable_shmpath}],
-	      [ac_SHMPATH=/var/lib/hugetlbfs/pagesize-2MB/])
+	      [ac_SHMPATH=/var/lib/hugetlbfs/global/pagesize-2MB/])
 AC_DEFINE_UNQUOTED([GRID_SHM_PATH],["$ac_SHMPATH"],[Path to a hugetlbfs filesystem for MMAPing])
 
 ############### communication type selection
@@ -513,19 +555,21 @@ DX_INIT_DOXYGEN([$PACKAGE_NAME], [doxygen.cfg])
 
 ############### Ouput
 cwd=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${cwd}
+GRID_CXX="$CXX"
 GRID_CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
 GRID_LDFLAGS="$AM_LDFLAGS $LDFLAGS"
 GRID_LIBS=$LIBS
 GRID_SHORT_SHA=`git rev-parse --short HEAD`
 GRID_SHA=`git rev-parse HEAD`
 GRID_BRANCH=`git rev-parse --abbrev-ref HEAD`
-AM_CXXFLAGS="-I${abs_srcdir}/include $AM_CXXFLAGS"
-AM_CFLAGS="-I${abs_srcdir}/include $AM_CFLAGS"
-AM_LDFLAGS="-L${cwd}/lib $AM_LDFLAGS"
+AM_CXXFLAGS="-I${abs_srcdir} $AM_CXXFLAGS"
+AM_CFLAGS="-I${abs_srcdir} $AM_CFLAGS"
+AM_LDFLAGS="-L${cwd}/Grid $AM_LDFLAGS"
 AC_SUBST([CXXLD])
 AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CXXFLAGS])
 AC_SUBST([AM_LDFLAGS])
+AC_SUBST([GRID_CXX])
 AC_SUBST([GRID_CXXFLAGS])
 AC_SUBST([GRID_LDFLAGS])
 AC_SUBST([GRID_LIBS])
@@ -576,7 +620,7 @@ AC_SUBST([GRID_SUMMARY])
 
 AC_CONFIG_FILES([grid-config], [chmod +x grid-config])
 AC_CONFIG_FILES(Makefile)
-AC_CONFIG_FILES(lib/Makefile)
+AC_CONFIG_FILES(Grid/Makefile)
 AC_CONFIG_FILES(tests/Makefile)
 AC_CONFIG_FILES(tests/IO/Makefile)
 AC_CONFIG_FILES(tests/core/Makefile)
@@ -590,8 +634,8 @@ AC_CONFIG_FILES(tests/smearing/Makefile)
 AC_CONFIG_FILES(tests/qdpxx/Makefile)
 AC_CONFIG_FILES(tests/testu01/Makefile)
 AC_CONFIG_FILES(benchmarks/Makefile)
-AC_CONFIG_FILES(extras/Makefile)
-AC_CONFIG_FILES(extras/Hadrons/Makefile)
+AC_CONFIG_FILES(Hadrons/Makefile)
+AC_CONFIG_FILES(Hadrons/Utilities/Makefile)
 AC_OUTPUT
 
 echo ""

@@ -1,0 +1,7 @@
+#include <Hadrons/Modules/___NAMESPACE___/___FILEBASENAME___.hpp>
+
+using namespace Grid;
+using namespace Hadrons;
+using namespace ___NAMESPACE___;
+
+template class Grid::Hadrons::___NAMESPACE___::T___FILEBASENAME___<FIMPL>;

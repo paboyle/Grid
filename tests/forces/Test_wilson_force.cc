@@ -47,7 +47,12 @@ int main (int argc, char ** argv)
   std::vector<int> seeds({1,2,3,4});
 
   GridParallelRNG          pRNG(&Grid);
-  pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
+  std::vector<int> vrand(4);
+  std::srand(std::time(0));
+  std::generate(vrand.begin(), vrand.end(), std::rand);
+  std::cout << GridLogMessage << vrand << std::endl;
+  pRNG.SeedFixedIntegers(vrand);
+  //pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
   LatticeFermion phi        (&Grid); gaussian(pRNG,phi);
   LatticeFermion Mphi       (&Grid); 

@@ -67,34 +67,70 @@ int main (int argc, char ** argv)
   GridParallelRNG pRNG(UGrid );  pRNG.SeedFixedIntegers(seeds);
   GridParallelRNG pRNG5(FGrid);  pRNG5.SeedFixedIntegers(seeds);
 
-  FermionField src(FGrid); random(pRNG5,src);
+  FermionField src(FGrid);
+  FermionField tt(FGrid);
+#if 1
+  random(pRNG5,src);
+#else
+  src=zero;
+  ComplexField coor(FGrid);
+  LatticeCoordinate(coor,0);
+  for(int ss=0;ss<FGrid->oSites();ss++){
+    src._odata[ss]()()(0)=coor._odata[ss]()()();
+  }
+  LatticeCoordinate(coor,1);
+  for(int ss=0;ss<FGrid->oSites();ss++){
+    src._odata[ss]()()(0)+=coor._odata[ss]()()();
+  }
+#endif
   FermionField src_o(FrbGrid);   pickCheckerboard(Odd,src_o,src);
   FermionField result_o(FrbGrid); result_o=Zero(); 
   RealD nrm = norm2(src);
 
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
 
+  double volume=1;
+  for(int mu=0;mu<Nd;mu++){
+    volume=volume*latt_size[mu];
+  }  
+
   RealD mass=0.003;
-  ImprovedStaggeredFermion5DR Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass); 
+  RealD c1=9.0/8.0;
+  RealD c2=-1.0/24.0;
+  RealD u0=1.0;
+  ImprovedStaggeredFermion5DR Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,c1,c2,u0); 
   SchurStaggeredOperator<ImprovedStaggeredFermion5DR,FermionField> HermOp(Ds);
 
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
   int blockDim = 0;
   BlockConjugateGradient<FermionField>    BCGrQ(BlockCGrQ,blockDim,1.0e-8,10000);
-  BlockConjugateGradient<FermionField>    BCG  (BlockCG,blockDim,1.0e-8,10000);
+  BlockConjugateGradient<FermionField>    BCG  (BlockCGrQ,blockDim,1.0e-8,10000);
+  BlockConjugateGradient<FermionField>    BCGv (BlockCGrQVec,blockDim,1.0e-8,10000);
   BlockConjugateGradient<FermionField>    mCG  (CGmultiRHS,blockDim,1.0e-8,10000);
 
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   std::cout << GridLogMessage << " Calling 4d CG "<<std::endl;
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-  ImprovedStaggeredFermionR Ds4d(Umu,Umu,*UGrid,*UrbGrid,mass);
+  ImprovedStaggeredFermionR Ds4d(Umu,Umu,*UGrid,*UrbGrid,mass,c1,c2,u0);
   SchurStaggeredOperator<ImprovedStaggeredFermionR,FermionField> HermOp4d(Ds4d);
   FermionField src4d(UGrid); random(pRNG,src4d);
   FermionField src4d_o(UrbGrid);   pickCheckerboard(Odd,src4d_o,src4d);
   FermionField result4d_o(UrbGrid); 
 
   result4d_o=Zero();
-  CG(HermOp4d,src4d_o,result4d_o);
+  double deodoe_flops=(16*(3*(6+8+8)) + 15*3*2)*volume; // == 66*16 +  == 1146
+  {
+    double t1=usecond();
+    CG(HermOp4d,src4d_o,result4d_o);
+    double t2=usecond();
+    double ncall=CG.IterationsToComplete;
+    double flops = deodoe_flops * ncall;
+    std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+    std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
+    HermOp4d.Report();
+  }
+  Ds4d.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
 
@@ -103,7 +139,17 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   Ds.ZeroCounters();
   result_o=Zero();
-  CG(HermOp,src_o,result_o);
+  {
+    double t1=usecond();
+    CG(HermOp,src_o,result_o);
+    double t2=usecond();
+    double ncall=CG.IterationsToComplete*Ls;
+    double flops = deodoe_flops * ncall;
+    std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+    std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
+    HermOp.Report();
+  }
   Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
@@ -112,7 +158,37 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   Ds.ZeroCounters();
   result_o=Zero();
-  mCG(HermOp,src_o,result_o);
+  {
+    double t1=usecond();
+    mCG(HermOp,src_o,result_o);
+    double t2=usecond();
+    double ncall=mCG.IterationsToComplete*Ls;
+    double flops = deodoe_flops * ncall;
+    std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+    std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
+    HermOp.Report();
+  }
+
+  Ds.Report();
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
+
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
+  std::cout << GridLogMessage << " Calling Block CGrQ for "<<Ls <<" right hand sides" <<std::endl;
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
+  Ds.ZeroCounters();
+  result_o=Zero();
+  {
+    double t1=usecond();
+    BCGrQ(HermOp,src_o,result_o);
+    double t2=usecond();
+    double ncall=BCGrQ.IterationsToComplete*Ls;
+    double flops = deodoe_flops * ncall;
+    std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+    std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
+    HermOp.Report();
+  }
   Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
@@ -120,10 +196,44 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Calling Block CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   Ds.ZeroCounters();
-  result_o=Zero();
-  BCGrQ(HermOp,src_o,result_o);
+  result_o=zero;
+  {
+    double t1=usecond();
+    BCG(HermOp,src_o,result_o);
+    double t2=usecond();
+    double ncall=BCGrQ.IterationsToComplete*Ls;
+    double flops = deodoe_flops * ncall;
+    std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+    std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
+    HermOp.Report();
+  }
   Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
+
+  std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
+  std::cout << GridLogMessage << " Calling BCGvec "<<std::endl;
+  std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
+  std::vector<FermionField> src_v   (Ls,UrbGrid);
+  std::vector<FermionField> result_v(Ls,UrbGrid);
+  for(int s=0;s<Ls;s++) result_v[s] = zero;
+  for(int s=0;s<Ls;s++) {
+    FermionField src4(UGrid);
+    ExtractSlice(src4,src,s,0);
+    pickCheckerboard(Odd,src_v[s],src4);  
+  }
+
+  {
+    double t1=usecond();
+    BCGv(HermOp4d,src_v,result_v);
+    double t2=usecond();
+    double ncall=BCGv.IterationsToComplete*Ls;
+    double flops = deodoe_flops * ncall;
+    std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+    std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
+    //    HermOp4d.Report();
+  }
 
 
   Grid_finalize();

@@ -4,7 +4,7 @@
 
     Source file: ./benchmarks/Benchmark_wilson.cc
 
-    Copyright (C) 2015
+    Copyright (C) 2018
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
@@ -32,6 +32,9 @@ using namespace std;
 using namespace Grid;
  ;
 
+
+#include "Grid/util/Profiling.h"
+
 template<class d>
 struct scal {
   d internal;
@@ -44,21 +47,40 @@ struct scal {
     Gamma::Algebra::GammaT
   };
 
+bool overlapComms = false;
+bool perfProfiling = false;
+
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  Coordinate latt_size   = GridDefaultLatt();
-  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  Coordinate mpi_layout  = GridDefaultMpi();
+  if( GridCmdOptionExists(argv,argv+argc,"--asynch") ){
+    overlapComms = true;
+  }
+  if( GridCmdOptionExists(argv,argv+argc,"--perf") ){
+    perfProfiling = true;
+  }
+
+  long unsigned int single_site_flops = 8*Nc*(7+16*Nc);
+
+
+  auto latt_size   = GridDefaultLatt();
+  auto simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  auto mpi_layout  = GridDefaultMpi();
+
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian     RBGrid(&Grid);
 
   int threads = GridThread::GetThreads();
-  std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+
+  GridLogLayout();
+
   std::cout<<GridLogMessage << "Grid floating point word size is REALF"<< sizeof(RealF)<<std::endl;
   std::cout<<GridLogMessage << "Grid floating point word size is REALD"<< sizeof(RealD)<<std::endl;
   std::cout<<GridLogMessage << "Grid floating point word size is REAL"<< sizeof(Real)<<std::endl;
+  std::cout<<GridLogMessage << "Grid number of colours : "<< Nc <<std::endl;
+  std::cout<<GridLogMessage << "Benchmarking Wilson operator in the fundamental representation" << std::endl;
+
 
   std::vector<int> seeds({1,2,3,4});
   GridParallelRNG          pRNG(&Grid);
@@ -135,9 +157,25 @@ int main (int argc, char ** argv)
     Dw.Dhop(src,result,0);
   }
   double t1=usecond();
-  double flops=1344*volume*ncall;
+  double flops=single_site_flops*volume*ncall;
+  
+  if (perfProfiling){
+  std::cout<<GridLogMessage << "Profiling Dw with perf"<<std::endl;
+    
+  System::profile("kernel", [&]() {
+    for(int i=0;i<ncall;i++){
+      Dw.Dhop(src,result,0);
+    }
+  });
+
+  std::cout<<GridLogMessage << "Generated kernel.data"<<std::endl;
+  std::cout<<GridLogMessage << "Use with: perf report -i kernel.data"<<std::endl;
+
+  }
+
   
   std::cout<<GridLogMessage << "Called Dw"<<std::endl;
+  std::cout<<GridLogMessage << "flops per site " << single_site_flops << std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
   std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
   std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;

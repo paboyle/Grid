@@ -71,7 +71,10 @@ int main (int argc, char ** argv)
   }  
   
   RealD mass=0.003;
-  ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass);
+  RealD c1=9.0/8.0;
+  RealD c2=-1.0/24.0;
+  RealD u0=1.0;
+  ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0);
 
   FermionField res_o(&RBGrid); 
   FermionField src_o(&RBGrid); 
@@ -80,7 +83,19 @@ int main (int argc, char ** argv)
 
   SchurStaggeredOperator<ImprovedStaggeredFermionR,FermionField> HermOpEO(Ds);
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
+  double t1=usecond();
   CG(HermOpEO,src_o,res_o);
+  double t2=usecond();
+
+  // Schur solver: uses DeoDoe => volume * 1146
+  double ncall=CG.IterationsToComplete;
+  double flops=(16*(3*(6+8+8)) + 15*3*2)*volume*ncall; // == 66*16 +  == 1146
+
+  std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+  std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+  std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
+
+
 
   FermionField tmp(&RBGrid);
 
