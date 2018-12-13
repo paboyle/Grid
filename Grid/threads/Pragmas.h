@@ -94,7 +94,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #else
 #define thread_loop( range , ... )                for range { __VA_ARGS__ ; };
 #define thread_loop_collapse2( range , ... )      for range { __VA_ARGS__ ; };
-#define thread_loop_collapse ( N , range , ... )  for range { __VA_ARGS__ ; };
+#define thread_loop_collapse( N , range , ... )  for range { __VA_ARGS__ ; };
 #define thread_region                           
 #define thread_loop_in_region( range , ... )  for range { __VA_ARGS__ ; };
 #define thread_loop_collapse_in_region( N, range , ... ) for range  { __VA_ARGS__ ; };

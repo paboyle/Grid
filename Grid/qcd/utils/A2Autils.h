@@ -576,8 +576,7 @@ void A2Autils<FImpl>::PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat,
 
   int pd = grid->_processors[orthogdim];
   int pc = grid->_processor_coor[orthogdim];
-  thread_loop_collapse(2,(int lt=0;lt<ld;lt++),
-  {
+  thread_loop_collapse(2,(int lt=0;lt<ld;lt++), {
     for(int pt=0;pt<pd;pt++){
       int t = lt + pt*ld;
       if (pt == pc){
