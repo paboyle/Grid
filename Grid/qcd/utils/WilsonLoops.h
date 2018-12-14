@@ -128,12 +128,12 @@ public:
   // average over all x,y,z the temporal loop
   //////////////////////////////////////////////////
   static ComplexD avgPolyakovLoop(const GaugeField &Umu) {  //assume Nd=4
-    GaugeMat Ut(Umu._grid), P(Umu._grid);
+    GaugeMat Ut(Umu.Grid()), P(Umu.Grid());
     ComplexD out;
-    int T = Umu._grid->GlobalDimensions()[3];
-    int X = Umu._grid->GlobalDimensions()[0];
-    int Y = Umu._grid->GlobalDimensions()[1];
-    int Z = Umu._grid->GlobalDimensions()[2];
+    int T = Umu.Grid()->GlobalDimensions()[3];
+    int X = Umu.Grid()->GlobalDimensions()[0];
+    int Y = Umu.Grid()->GlobalDimensions()[1];
+    int Z = Umu.Grid()->GlobalDimensions()[2];
 
     Ut = peekLorentz(Umu,3); //Select temporal direction
     P = Ut;

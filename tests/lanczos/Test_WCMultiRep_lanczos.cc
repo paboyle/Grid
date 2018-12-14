@@ -30,7 +30,6 @@ directory
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
 
 //typedef WilsonCloverFermionR FermionOp;
@@ -154,11 +153,11 @@ NerscHmcCheckpointer<PeriodicGimplR> Checkpoint(CPparams);
   std::vector<ASymmFermionField>   ASevec(Nm, FGrid);
   
   for (int i = 0; i < 1; i++) {
-    std::cout << i << " / " << Nm << "Fund: grid pointer " << Fundevec[i]._grid
+    std::cout << i << " / " << Nm << "Fund: grid pointer " << Fundevec[i].Grid()
               << std::endl;
   };
   for (int i = 0; i < 1; i++) {
-    std::cout << i << " / " << Nm << "AS: grid pointer " << ASevec[i]._grid
+    std::cout << i << " / " << Nm << "AS: grid pointer " << ASevec[i].Grid()
               << std::endl;
   };
   

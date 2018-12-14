@@ -30,7 +30,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
 int main (int argc, char ** argv)
 {
@@ -42,12 +41,12 @@ int main (int argc, char ** argv)
 
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
-  std::vector<int> mpi_split (mpi_layout.size(),1);
-  std::vector<int> split_coor (mpi_layout.size(),1);
-  std::vector<int> split_dim (mpi_layout.size(),1);
+  auto latt_size   = GridDefaultLatt();
+  auto simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  auto mpi_layout  = GridDefaultMpi();
+  Coordinate mpi_split (mpi_layout.size(),1);
+  Coordinate split_coor (mpi_layout.size(),1);
+  Coordinate split_dim (mpi_layout.size(),1);
 
   std::vector<ComplexD> boundary_phases(Nd,1.);
   boundary_phases[Nd-1]=-1.;
@@ -108,7 +107,7 @@ int main (int argc, char ** argv)
   FermionField tmp(FGrid);
   std::cout << GridLogMessage << "Made the Fermion Fields"<<std::endl;
 
-  for(int s=0;s<nrhs;s++) result[s]=zero;
+  for(int s=0;s<nrhs;s++) result[s]=Zero();
   GridParallelRNG pRNG5(FGrid);  pRNG5.SeedFixedIntegers(seeds);
   for(int s=0;s<nrhs;s++) {
     random(pRNG5,src[s]);
@@ -131,7 +130,6 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage << "Intialised 4D RNG "<<std::endl;
     SU3::HotConfiguration(pRNG,Umu);
     std::cout << GridLogMessage << "Intialised the HOT Gauge Field"<<std::endl;
-    std::cout << " Site zero "<< Umu._odata[0]   <<std::endl;
   } 
 
   /////////////////
@@ -170,7 +168,7 @@ int main (int argc, char ** argv)
   MdagMLinearOperator<MobiusFermionR,FermionField> HermOp(Ddwf);
   MdagMLinearOperator<MobiusFermionR,FermionField> HermOpCk(Dchk);
   ConjugateGradient<FermionField> CG((stp),100000);
-  s_res = zero;
+  s_res = Zero();
 
   CG(HermOp,s_src,s_res);
 
@@ -202,7 +200,7 @@ int main (int argc, char ** argv)
 
 
   for(int s=0;s<nrhs;s++){
-    result[s]=zero;
+    result[s]=Zero();
   }
 
   /////////////////////////////////////////////////////////////

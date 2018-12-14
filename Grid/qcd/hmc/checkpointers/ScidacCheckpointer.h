@@ -75,7 +75,7 @@ class ScidacHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
     if ((traj % Params.saveInterval) == 0) {
       std::string config, rng;
       this->build_filenames(traj, Params, config, rng);
-      GridBase *grid = U._grid;
+      GridBase *grid = U.Grid();
       uint32_t nersc_csum,scidac_csuma,scidac_csumb;
       BinaryIO::writeRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
       ScidacWriter _ScidacWriter(grid->IsBoss());

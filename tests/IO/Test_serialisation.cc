@@ -45,8 +45,8 @@ public:
                           bool , b,
                           std::vector<double>, array,
                           std::vector<std::vector<double> >, twodimarray,
-                          std::vector<std::vector<std::vector<Complex> > >, cmplx3darray,
-                          SpinColourMatrix, scm
+			  std::vector<std::vector<std::vector<Complex> > >, cmplx3darray,
+			  SpinColourMatrix, scm
                           );
   myclass() {}
   myclass(int i)

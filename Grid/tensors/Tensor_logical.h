@@ -55,13 +55,13 @@ LOGICAL_BINOP(||);
 LOGICAL_BINOP(&&);
 
 template <class T>
-strong_inline bool operator==(const iScalar<T> &t1, const iScalar<T> &t2)
+accelerator_inline bool operator==(const iScalar<T> &t1, const iScalar<T> &t2)
 {
   return (t1._internal == t2._internal);
 }
 
 template <class T, int N>
-strong_inline bool operator==(const iVector<T, N> &t1, const iVector<T, N> &t2)
+accelerator_inline bool operator==(const iVector<T, N> &t1, const iVector<T, N> &t2)
 {
   bool res = true;
 
@@ -74,7 +74,7 @@ strong_inline bool operator==(const iVector<T, N> &t1, const iVector<T, N> &t2)
 }
 
 template <class T, int N>
-strong_inline bool operator==(const iMatrix<T, N> &t1, const iMatrix<T, N> &t2)
+accelerator_inline bool operator==(const iMatrix<T, N> &t1, const iMatrix<T, N> &t2)
 {
   bool res = true;
 

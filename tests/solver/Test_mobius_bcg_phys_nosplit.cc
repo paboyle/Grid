@@ -43,9 +43,9 @@ int main (int argc, char ** argv)
 
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  auto latt_size   = GridDefaultLatt();
+  auto simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  auto mpi_layout  = GridDefaultMpi();
 
   std::vector<ComplexD> boundary_phases(Nd,1.);
   boundary_phases[Nd-1]=-1.;
@@ -73,7 +73,7 @@ int main (int argc, char ** argv)
   FermionField tmp(FGrid);
   std::cout << GridLogMessage << "Made the Fermion Fields"<<std::endl;
 
-  for(int s=0;s<nrhs;s++) result[s]=zero;
+  for(int s=0;s<nrhs;s++) result[s]=Zero();
   GridParallelRNG pRNG4(UGrid);  pRNG4.SeedFixedIntegers(seeds);
   for(int s=0;s<nrhs;s++) {
     random(pRNG4,src4[s]);
@@ -120,7 +120,7 @@ int main (int argc, char ** argv)
   ConjugateGradient<FermionField> CG((stp),100000);
 
   for(int rhs=0;rhs<1;rhs++){
-    result[rhs] = zero;
+    result[rhs] = Zero();
     //    CG(HermOp,src[rhs],result[rhs]);
   }
 
@@ -133,7 +133,7 @@ int main (int argc, char ** argv)
   /////////////////////////////////////////////////////////////
   int blockDim = 0;//not used for BlockCGVec
   for(int s=0;s<nrhs;s++){
-    result[s]=zero;
+    result[s]=Zero();
   }
   BlockConjugateGradient<FermionField>    BCGV  (BlockCGrQVec,blockDim,stp,100000);
   {

@@ -81,16 +81,20 @@ public:
 
   virtual RealD S(const Field &p)
   {
-    assert(p._grid->Nd() == Ndim);
-    static Stencil phiStencil(p._grid, npoint, 0, directions, displacements);
+    assert(p.Grid()->Nd() == Ndim);
+    static Stencil phiStencil(p.Grid(), npoint, 0, directions, displacements);
     phiStencil.HaloExchange(p, compressor);
-    Field action(p._grid), pshift(p._grid), phisquared(p._grid);
+    Field action(p.Grid()), pshift(p.Grid()), phisquared(p.Grid());
     phisquared = p * p;
     action = (2.0 * Ndim + mass_square) * phisquared - lambda * phisquared * phisquared;
+    
+    
+    auto p_v = p.View();
+    auto action_v = action.View();
     for (int mu = 0; mu < Ndim; mu++)
     {
       //  pshift = Cshift(p, mu, +1);  // not efficient, implement with stencils
-      parallel_for(int i = 0; i < p._grid->oSites(); i++)
+      parallel_for(int i = 0; i < p.Grid()->oSites(); i++)
       {
         int permute_type;
         StencilEntry *SE;
@@ -98,23 +102,20 @@ public:
         const vobj *temp, *t_p;
 
         SE = phiStencil.GetEntry(permute_type, mu, i);
-        t_p = &p._odata[i];
+        t_p = &p_v[i];
         if (SE->_is_local)
         {
-          temp = &p._odata[SE->_offset];
-          if (SE->_permute)
-          {
+          temp = &p_v[SE->_offset];
+          if (SE->_permute) {
             permute(temp2, *temp, permute_type);
-            action._odata[i] -= temp2 * (*t_p) + (*t_p) * temp2;
-          }
-          else
-          {
-            action._odata[i] -= (*temp) * (*t_p) + (*t_p) * (*temp);
+            action_v[i] -= temp2 * (*t_p) + (*t_p) * temp2;
+          } else {
+            action_v[i] -= (*temp) * (*t_p) + (*t_p) * (*temp);
           }
         }
         else
         {
-          action._odata[i] -= phiStencil.CommBuf()[SE->_offset] * (*t_p) + (*t_p) * phiStencil.CommBuf()[SE->_offset];
+          action_v[i] -= phiStencil.CommBuf()[SE->_offset] * (*t_p) + (*t_p) * phiStencil.CommBuf()[SE->_offset];
         }
       }
       //  action -= pshift*p + p*pshift;
@@ -127,12 +128,12 @@ public:
   virtual void deriv(const Field &p, Field &force)
   {
     double t0 = usecond();
-    assert(p._grid->Nd() == Ndim);
+    assert(p.Grid()->Nd() == Ndim);
     force = (2. * Ndim + mass_square) * p - 2. * lambda * p * p * p;
     double interm_t = usecond();
 
     // move this outside
-    static Stencil phiStencil(p._grid, npoint, 0, directions, displacements);
+    static Stencil phiStencil(p.Grid(), npoint, 0, directions, displacements);
 
     phiStencil.HaloExchange(p, compressor);
     double halo_t = usecond();
@@ -145,59 +146,51 @@ public:
     for (int point = 0; point < npoint; point++)
     {
 
-#pragma omp parallel 
-{
-        int permute_type;
-        StencilEntry *SE;
-        const vobj *temp;
+      auto p_v = p.View();
+      auto force_v = force.View();
+            
+      int permute_type;
+      StencilEntry *SE;
+      const vobj *temp;
 
-#pragma omp for schedule(static, chunk)
-      for (int i = 0; i < p._grid->oSites(); i++)
-      {
-        SE = phiStencil.GetEntry(permute_type, point, i);
-        // prefetch next p?
-
-        if (SE->_is_local)
-        {
-          temp = &p._odata[SE->_offset];
-      
-          if (SE->_permute)
-          {
+      parallel_for (int i = 0; i < p.Grid()->oSites(); i++) {
+	
+	SE = phiStencil.GetEntry(permute_type, point, i);
+	// prefetch next p?
+	  
+	if (SE->_is_local) {
+	  temp = &p_v[SE->_offset];
+	    
+          if (SE->_permute) {
             vobj temp2;
             permute(temp2, *temp, permute_type);
-            force._odata[i] -= temp2;
+            force_v[i] -= temp2;
+          } else {
+            force_v[i] -= *temp; // slow part. Dominated by this read/write (BW)
           }
-          else
-          {
-            force._odata[i] -= *temp; // slow part. Dominated by this read/write (BW)
-          }
-        }
-        else
-        {
-          force._odata[i] -= phiStencil.CommBuf()[SE->_offset];
+        } else {
+          force_v[i] -= phiStencil.CommBuf()[SE->_offset];
         }
       }
-
     }
-  }
-  force *= N / g;
+    force *= N / g;
 
-  double t1 = usecond();
-  double total_time = (t1 - t0) / 1e6;
-  double interm_time = (interm_t - t0) / 1e6;
-  double halo_time = (halo_t - interm_t) / 1e6;
-  double stencil_time = (t1 - halo_t) / 1e6;
-  std::cout << GridLogIntegrator << "Total time for force computation (s)       : " << total_time << std::endl;
-  std::cout << GridLogIntegrator << "Intermediate time for force computation (s): " << interm_time << std::endl;
-  std::cout << GridLogIntegrator << "Halo time in force computation (s)         : " << halo_time << std::endl;
-  std::cout << GridLogIntegrator << "Stencil time in force computation (s)      : " << stencil_time << std::endl;
-  double flops = p._grid->gSites() * (14 * N * N * N + 18 * N * N + 2);
-  double flops_no_stencil = p._grid->gSites() * (14 * N * N * N + 6 * N * N + 2);
-  double Gflops = flops / (total_time * 1e9);
-  double Gflops_no_stencil = flops_no_stencil / (interm_time * 1e9);
-  std::cout << GridLogIntegrator << "Flops: " << flops << "  - Gflop/s : " << Gflops << std::endl;
-  std::cout << GridLogIntegrator << "Flops NS: " << flops_no_stencil << "  - Gflop/s NS: " << Gflops_no_stencil << std::endl;
-}
+    double t1 = usecond();
+    double total_time = (t1 - t0) / 1e6;
+    double interm_time = (interm_t - t0) / 1e6;
+    double halo_time = (halo_t - interm_t) / 1e6;
+    double stencil_time = (t1 - halo_t) / 1e6;
+    std::cout << GridLogIntegrator << "Total time for force computation (s)       : " << total_time << std::endl;
+    std::cout << GridLogIntegrator << "Intermediate time for force computation (s): " << interm_time << std::endl;
+    std::cout << GridLogIntegrator << "Halo time in force computation (s)         : " << halo_time << std::endl;
+    std::cout << GridLogIntegrator << "Stencil time in force computation (s)      : " << stencil_time << std::endl;
+    double flops = p.Grid()->gSites() * (14 * N * N * N + 18 * N * N + 2);
+    double flops_no_stencil = p.Grid()->gSites() * (14 * N * N * N + 6 * N * N + 2);
+    double Gflops = flops / (total_time * 1e9);
+    double Gflops_no_stencil = flops_no_stencil / (interm_time * 1e9);
+    std::cout << GridLogIntegrator << "Flops: " << flops << "  - Gflop/s : " << Gflops << std::endl;
+    std::cout << GridLogIntegrator << "Flops NS: " << flops_no_stencil << "  - Gflop/s NS: " << Gflops_no_stencil << std::endl;
+  }
 };
 
 NAMESPACE_END(Grid);

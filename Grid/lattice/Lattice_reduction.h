@@ -477,7 +477,7 @@ static void sliceNorm (std::vector<RealD> &sn,const Lattice<vobj> &rhs,int Ortho
   typedef typename vobj::vector_type vector_type;
   
   int Nblock = rhs.Grid()->GlobalDimensions()[Orthog];
-  Vector<ComplexD> ip(Nblock);
+  std::vector<ComplexD> ip(Nblock);
   sn.resize(Nblock);
   
   sliceInnerProductVector(ip,rhs,rhs,Orthog);
@@ -586,6 +586,10 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
   int block =FullGrid->_slice_block [Orthog];
   int nblock=FullGrid->_slice_nblock[Orthog];
   int ostride=FullGrid->_ostride[Orthog];
+
+  auto X_v=X.View();
+  auto Y_v=Y.View();
+  auto R_v=R.View();
   thread_region
   {
     Vector<vobj> s_x(Nblock);
@@ -595,16 +599,16 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
       int o  = n*stride + b;
 
       for(int i=0;i<Nblock;i++){
-	s_x[i] = X[o+i*ostride];
+	s_x[i] = X_v[o+i*ostride];
       }
 
       vobj dot;
       for(int i=0;i<Nblock;i++){
-	dot = Y[o+i*ostride];
+	dot = Y_v[o+i*ostride];
 	for(int j=0;j<Nblock;j++){
 	  dot = dot + s_x[j]*(scale*aa(j,i));
 	}
-	R[o+i*ostride]=dot;
+	R_v[o+i*ostride]=dot;
       }
     }});
   }
@@ -635,6 +639,8 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
   int block =FullGrid->_slice_block [Orthog];
   int nblock=FullGrid->_slice_nblock[Orthog];
   int ostride=FullGrid->_ostride[Orthog];
+  auto R_v = R.View();
+  auto X_v = X.View();
   thread_region
   {
     std::vector<vobj> s_x(Nblock);
@@ -645,7 +651,7 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
       int o  = n*stride + b;
 
       for(int i=0;i<Nblock;i++){
-	s_x[i] = X[o+i*ostride];
+	s_x[i] = X_v[o+i*ostride];
       }
 
       vobj dot;
@@ -654,7 +660,7 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
 	for(int j=1;j<Nblock;j++){
 	  dot = dot + s_x[j]*(scale*aa(j,i));
 	}
-	R[o+i*ostride]=dot;
+	R_v[o+i*ostride]=dot;
       }
     }});
   }
@@ -692,6 +698,8 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
 
   typedef typename vobj::vector_typeD vector_typeD;
 
+  auto lhs_v=lhs.View();
+  auto rhs_v=rhs.View();
   thread_region
   {
     std::vector<vobj> Left(Nblock);
@@ -704,8 +712,8 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
       int o  = n*stride + b;
 
       for(int i=0;i<Nblock;i++){
-	Left [i] = lhs[o+i*ostride];
-	Right[i] = rhs[o+i*ostride];
+	Left [i] = lhs_v[o+i*ostride];
+	Right[i] = rhs_v[o+i*ostride];
       }
 
       for(int i=0;i<Nblock;i++){

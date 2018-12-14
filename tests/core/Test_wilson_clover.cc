@@ -35,9 +35,9 @@ int main(int argc, char **argv)
 {
   Grid_init(&argc, &argv);
 
-  std::vector<int> latt_size = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
-  std::vector<int> mpi_layout = GridDefaultMpi();
+  auto latt_size = GridDefaultLatt();
+  auto simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
+  auto mpi_layout = GridDefaultMpi();
   GridCartesian Grid(latt_size, simd_layout, mpi_layout);
   GridRedBlackCartesian RBGrid(&Grid);
 
@@ -59,17 +59,17 @@ int main(int argc, char **argv)
   FermionField src(&Grid);
   random(pRNG, src);
   FermionField result(&Grid);
-  result = zero;
+  result = Zero();
   FermionField result2(&Grid);
-  result2 = zero;
+  result2 = Zero();
   FermionField ref(&Grid);
-  ref = zero;
+  ref = Zero();
   FermionField tmp(&Grid);
-  tmp = zero;
+  tmp = Zero();
   FermionField err(&Grid);
-  err = zero;
+  err = Zero();
   FermionField err2(&Grid);
-  err2 = zero;
+  err2 = Zero();
   FermionField phi(&Grid);
   random(pRNG, phi);
   FermionField chi(&Grid);
@@ -214,9 +214,9 @@ int main(int argc, char **argv)
   std::cout << GridLogMessage << "= Testing gauge covariance Clover term with EO preconditioning  " << std::endl;
   std::cout << GridLogMessage << "================================================================" << std::endl;
 
-  chi = zero;
-  phi = zero;
-  tmp = zero;
+  chi = Zero();
+  phi = Zero();
+  tmp = Zero();
   pickCheckerboard(Even, chi_e, chi);
   pickCheckerboard(Odd, chi_o, chi);
   pickCheckerboard(Even, phi_e, phi);
@@ -236,9 +236,9 @@ int main(int argc, char **argv)
   LatticeColourMatrix Omega(&Grid);
   LatticeColourMatrix ShiftedOmega(&Grid);
   LatticeGaugeField U_prime(&Grid);
-  U_prime = zero;
+  U_prime = Zero();
   LatticeColourMatrix U_prime_mu(&Grid);
-  U_prime_mu = zero;
+  U_prime_mu = Zero();
   SU<Nc>::LieRandomize(pRNG2, Omega, 1.0);
   for (int mu = 0; mu < Nd; mu++)
   {
@@ -269,8 +269,8 @@ int main(int argc, char **argv)
   std::cout << GridLogMessage << "= Testing gauge covariance Clover term w/o EO preconditioning  " << std::endl;
   std::cout << GridLogMessage << "================================================================" << std::endl;
 
-  chi = zero;
-  phi = zero;
+  chi = Zero();
+  phi = Zero();
 
   WilsonFermionR Dw(Umu, Grid, RBGrid, mass, params);
   Dw.ImportGauge(Umu);
@@ -293,9 +293,9 @@ int main(int argc, char **argv)
   std::cout << GridLogMessage << "= Testing Mooee(csw=0) Clover to reproduce Mooee Wilson   " << std::endl;
   std::cout << GridLogMessage << "==========================================================" << std::endl;
 
-  chi = zero;
-  phi = zero;
-  err = zero;
+  chi = Zero();
+  phi = Zero();
+  err = Zero();
   WilsonCloverFermionR Dwc_csw0(Umu, Grid, RBGrid, mass, 0.0, 0.0, anis, params); //  <-- Notice: csw=0
   Dwc_csw0.ImportGauge(Umu);
 
@@ -323,9 +323,9 @@ int main(int argc, char **argv)
   std::cout << GridLogMessage << "= Testing EO operator is equal to the unprec              " << std::endl;
   std::cout << GridLogMessage << "==========================================================" << std::endl;
 
-  chi = zero;
-  phi = zero;
-  err = zero;
+  chi = Zero();
+  phi = Zero();
+  err = Zero();
 
   pickCheckerboard(Even, phi_e, phi);
   pickCheckerboard(Odd, phi_o, phi);

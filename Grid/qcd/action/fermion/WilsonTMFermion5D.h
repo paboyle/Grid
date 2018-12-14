@@ -63,7 +63,7 @@ class WilsonTMFermion5D : public WilsonFermion5D<Impl>
     }
   
   virtual void Meooe(const FermionField &in, FermionField &out) {
-    if (in.checkerboard == Odd) {
+    if (in.Checkerboard() == Odd) {
       this->DhopEO(in, out, DaggerNo);
     } else {
       this->DhopOE(in, out, DaggerNo);
@@ -71,7 +71,7 @@ class WilsonTMFermion5D : public WilsonFermion5D<Impl>
   }
   
   virtual void MeooeDag(const FermionField &in, FermionField &out) {
-    if (in.checkerboard == Odd) {
+    if (in.Checkerboard() == Odd) {
       this->DhopEO(in, out, DaggerYes);
     } else {
       this->DhopOE(in, out, DaggerYes);
@@ -80,7 +80,7 @@ class WilsonTMFermion5D : public WilsonFermion5D<Impl>
   
   // allow override for twisted mass and clover
   virtual void Mooee(const FermionField &in, FermionField &out) {
-    out.checkerboard = in.checkerboard;
+    out.Checkerboard() = in.Checkerboard();
     //axpibg5x(out,in,a,b); // out = a*in + b*i*G5*in
     for (int s=0;s<(int)this->mass.size();s++) {
       ComplexD a = 4.0+this->mass[s];
@@ -90,7 +90,7 @@ class WilsonTMFermion5D : public WilsonFermion5D<Impl>
   }
   
   virtual void MooeeDag(const FermionField &in, FermionField &out) {
-    out.checkerboard = in.checkerboard;
+    out.Checkerboard() = in.Checkerboard();
     for (int s=0;s<(int)this->mass.size();s++) {
       ComplexD a = 4.0+this->mass[s];
       ComplexD b(0.0,-this->mu[s]);
@@ -121,9 +121,9 @@ class WilsonTMFermion5D : public WilsonFermion5D<Impl>
   }
   
   virtual RealD M(const FermionField &in, FermionField &out) {
-    out.checkerboard = in.checkerboard;
+    out.Checkerboard() = in.Checkerboard();
     this->Dhop(in, out, DaggerNo);
-    FermionField tmp(out._grid);
+    FermionField tmp(out.Grid());
     for (int s=0;s<(int)this->mass.size();s++) {
       ComplexD a = 4.0+this->mass[s];
       ComplexD b(0.0,this->mu[s]);

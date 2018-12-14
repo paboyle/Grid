@@ -72,7 +72,7 @@ int main (int argc, char ** argv)
 #if 1
   random(pRNG5,src);
 #else
-  src=zero;
+  src=Zero();
   ComplexField coor(FGrid);
   LatticeCoordinate(coor,0);
   for(int ss=0;ss<FGrid->oSites();ss++){
@@ -196,7 +196,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Calling Block CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   Ds.ZeroCounters();
-  result_o=zero;
+  result_o=Zero();
   {
     double t1=usecond();
     BCG(HermOp,src_o,result_o);
@@ -216,7 +216,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   std::vector<FermionField> src_v   (Ls,UrbGrid);
   std::vector<FermionField> result_v(Ls,UrbGrid);
-  for(int s=0;s<Ls;s++) result_v[s] = zero;
+  for(int s=0;s<Ls;s++) result_v[s] = Zero();
   for(int s=0;s<Ls;s++) {
     FermionField src4(UGrid);
     ExtractSlice(src4,src,s,0);

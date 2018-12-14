@@ -157,7 +157,7 @@ void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X)
   Nblock=8;
   std::cout<<GridLogMessage<<" Block Conjugate Gradient : Orthog "<<Orthog<<" Nblock "<<Nblock<<std::endl;
 
-  X.checkerboard = B.checkerboard;
+  X.Checkerboard() = B.Checkerboard();
   conformable(X, B);
 
   Field tmp(B);
@@ -336,7 +336,7 @@ void CGmultiRHSsolve(LinearOperatorBase<Field> &Linop, const Field &Src, Field &
 
   std::cout<<GridLogMessage<<"MultiRHS Conjugate Gradient : Orthog "<<Orthog<<" Nblock "<<Nblock<<std::endl;
 
-  Psi.checkerboard = Src.checkerboard;
+  Psi.Checkerboard() = Src.Checkerboard();
   conformable(Psi, Src);
 
   Field P(Src);
@@ -515,7 +515,7 @@ void BlockCGrQsolveVec(LinearOperatorBase<Field> &Linop, const std::vector<Field
   std::cout<<GridLogMessage<<" Block Conjugate Gradient Vec rQ : Nblock "<<Nblock<<std::endl;
 
   for(int b=0;b<Nblock;b++){ 
-    X[b].checkerboard = B[b].checkerboard;
+    X[b].Checkerboard() = B[b].Checkerboard();
     conformable(X[b], B[b]);
     conformable(X[b], X[0]); 
   }

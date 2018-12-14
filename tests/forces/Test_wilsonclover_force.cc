@@ -35,9 +35,9 @@ int main(int argc, char **argv)
 {
   Grid_init(&argc, &argv);
 
-  std::vector<int> latt_size = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
-  std::vector<int> mpi_layout = GridDefaultMpi();
+  auto latt_size = GridDefaultLatt();
+  auto simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
+  auto mpi_layout = GridDefaultMpi();
 
   GridCartesian Grid(latt_size, simd_layout, mpi_layout);
   GridRedBlackCartesian RBGrid(&Grid);
@@ -63,9 +63,8 @@ int main(int argc, char **argv)
 
   LatticeGaugeField U(&Grid);
 
-  std::vector<int> site = {0, 0, 0, 0};
   SU3::HotConfiguration(pRNG, U);
-  //SU3::ColdConfiguration(pRNG, U);// Clover term zero
+  //SU3::ColdConfiguration(pRNG, U);// Clover term Zero()
 
   ////////////////////////////////////
   // Unmodified matrix element
@@ -107,9 +106,12 @@ int main(int argc, char **argv)
     Hmom -= real(sum(trace(mommu * mommu)));
     PokeIndex<LorentzIndex>(mom, mommu, mu);
 
-    parallel_for(int ss = 0; ss < mom._grid->oSites(); ss++)
+    auto Uprime_v = Uprime.View();
+    auto U_v      = U.View();
+    auto mom_v    = mom.View();
+    parallel_for(int ss = 0; ss < mom.Grid()->oSites(); ss++)
     {
-      Uprime[ss]._internal[mu] = ProjectOnGroup(Exponentiate(mom[ss]._internal[mu], dt, 12) * U[ss]._internal[mu]);
+      Uprime_v[ss]._internal[mu] = ProjectOnGroup(Exponentiate(mom_v[ss]._internal[mu], dt, 12) * U_v[ss]._internal[mu]);
     }
   }
 
@@ -125,11 +127,11 @@ int main(int argc, char **argv)
   //////////////////////////////////////////////
 
   LatticeComplex dS(&Grid);
-  dS = zero;
+  dS = Zero();
   LatticeComplex dSmom(&Grid);
-  dSmom = zero;
+  dSmom = Zero();
   LatticeComplex dSmom2(&Grid);
-  dSmom2 = zero;
+  dSmom2 = Zero();
 
   for (int mu = 0; mu < Nd; mu++)
   {

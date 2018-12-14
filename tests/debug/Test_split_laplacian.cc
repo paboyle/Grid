@@ -38,13 +38,13 @@ int main (int argc, char ** argv)
 
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
+  Coordinate latt_size   = GridDefaultLatt();
   int nd   = latt_size.size();
   int ndm1 = nd-1;
 
-  std::vector<int> simd_layout = GridDefaultSimd(nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
-  std::vector<int> mpi_split (mpi_layout.size(),1);
+  Coordinate simd_layout = GridDefaultSimd(nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
+  Coordinate mpi_split (mpi_layout.size(),1);
 
   std::cout << " Full " << GridCmdVectorIntToString(latt_size)  << " subgrid"         <<std::endl;
   std::cout << " Full " << GridCmdVectorIntToString(mpi_layout) << " sub communicator"<<std::endl;
@@ -54,9 +54,9 @@ int main (int argc, char ** argv)
 						    simd_layout,
 						    mpi_layout);
 
-  std::vector<int> latt_m  = latt_size;   latt_m[nd-1] = 1;
-  std::vector<int> mpi_m   = mpi_layout;  mpi_m [nd-1] = 1;
-  std::vector<int> simd_m  = GridDefaultSimd(ndm1,vComplex::Nsimd()); simd_m.push_back(1);
+  Coordinate latt_m  = latt_size;   latt_m[nd-1] = 1;
+  Coordinate mpi_m   = mpi_layout;  mpi_m [nd-1] = 1;
+  Coordinate simd_m  = GridDefaultSimd(ndm1,vComplex::Nsimd()); simd_m.push_back(1);
 
 
   std::cout << " Requesting " << GridCmdVectorIntToString(latt_m)<< " subgrid"         <<std::endl;
@@ -88,7 +88,7 @@ int main (int argc, char ** argv)
 
   auto local_latt = GridN->LocalDimensions();
 
-  Full_cpy = zero;
+  Full_cpy = Zero();
   std::vector<int> seeds({1,2,3,4});
   GridParallelRNG          RNG(GridN);  RNG.SeedFixedIntegers(seeds);
 

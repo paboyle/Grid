@@ -58,7 +58,7 @@ public:
   {
     assert(this->subspace.size()==nbasis);
     emptyUserRecord record;
-    Grid::QCD::ScidacWriter WR(this->_FineGrid->IsBoss());
+    Grid::ScidacWriter WR(this->_FineGrid->IsBoss());
     WR.open(evecs_file);
     for(int k=0;k<nbasis;k++) {
       WR.writeScidacFieldRecord(this->subspace[k],record);
@@ -85,7 +85,7 @@ public:
     Grid::ScidacReader RD ;
     RD.open(evecs_file);
     for(int k=0;k<nbasis;k++) {
-      this->subspace[k].checkerboard=this->_checkerboard;
+      this->subspace[k].Checkerboard()=this->_checkerboard;
       RD.readScidacFieldRecord(this->subspace[k],record);
     }
     RD.close();
@@ -95,7 +95,7 @@ public:
   {
     int n = this->evec_coarse.size();
     emptyUserRecord record;
-    Grid::QCD::ScidacWriter WR(this->_CoarseGrid->IsBoss());
+    Grid::ScidacWriter WR(this->_CoarseGrid->IsBoss());
     WR.open(evecs_file);
     for(int k=0;k<n;k++) {
       WR.writeScidacFieldRecord(this->evec_coarse[k],record);

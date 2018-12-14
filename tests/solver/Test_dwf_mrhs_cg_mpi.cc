@@ -228,7 +228,7 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage<<" resid["<<n<<"]  "<< norm2(tmp)/norm2(src[n])<<std::endl;
   }
 
-  for(int s=0;s<nrhs;s++) result[s]=zero;
+  for(int s=0;s<nrhs;s++) result[s]=Zero();
   int blockDim = 0;//not used for BlockCGVec
   BlockConjugateGradient<FermionField>    BCGV  (BlockCGVec,blockDim,stp,10000);
   BCGV.PrintInterval=10;

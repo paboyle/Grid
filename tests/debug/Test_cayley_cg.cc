@@ -30,19 +30,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
-template<class d>
-struct scal {
-  d internal;
-};
 
-  Gamma::Algebra Gmu [] = {
-    Gamma::Algebra::GammaX,
-    Gamma::Algebra::GammaY,
-    Gamma::Algebra::GammaZ,
-    Gamma::Algebra::GammaT
-  };
+
 
 template<class What> 
 void  TestCGinversions(What & Ddwf, 
@@ -261,7 +251,7 @@ void  TestReconstruct5D(What & Ddwf,
 			GridParallelRNG *RNG5)
 {
   LatticeFermion src4   (UGrid); random(*RNG4,src4);
-  LatticeFermion res4   (UGrid); res4 = zero;
+  LatticeFermion res4   (UGrid); res4 = Zero();
 
   LatticeFermion src   (FGrid);
   LatticeFermion src_NE(FGrid);
@@ -332,7 +322,7 @@ void  TestReconstruct5DFA(What & Ddwf,
 			  GridParallelRNG *RNG5)
 {
   LatticeFermion src4   (UGrid); random(*RNG4,src4);
-  LatticeFermion res4   (UGrid); res4 = zero;
+  LatticeFermion res4   (UGrid); res4 = Zero();
 
   LatticeFermion src   (FGrid);
   LatticeFermion src_NE(FGrid);

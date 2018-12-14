@@ -30,15 +30,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  auto latt_size   = GridDefaultLatt();
+  auto simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  auto mpi_layout  = GridDefaultMpi();
 
   const int Ls=16;
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
@@ -76,9 +75,9 @@ int main (int argc, char ** argv)
   src = zero;
   pokeSite(cv,src,site);
   */
-  FermionField result(FGrid); result=zero;
-  FermionField    tmp(FGrid);    tmp=zero;
-  FermionField    err(FGrid);    tmp=zero;
+  FermionField result(FGrid); result=Zero();
+  FermionField    tmp(FGrid);    tmp=Zero();
+  FermionField    err(FGrid);    tmp=Zero();
   FermionField phi   (FGrid); random(pRNG5,phi);
   FermionField chi   (FGrid); random(pRNG5,chi);
 
@@ -88,7 +87,7 @@ int main (int argc, char ** argv)
   /*
   for(int mu=1;mu<4;mu++){
     auto tmp = PeekIndex<LorentzIndex>(Umu,mu);
-        tmp = zero;
+        tmp = Zero();
     PokeIndex<LorentzIndex>(Umu,tmp,mu);
   }
   */
@@ -129,9 +128,9 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Calling vectorised staggered operator"<<std::endl;
 
 #ifdef AVX512
-  QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptInlineAsm;
+  StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptInlineAsm;
 #else
-  QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptGeneric;
+  StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptGeneric;
 #endif
 
   t0=usecond();
@@ -150,9 +149,9 @@ int main (int argc, char ** argv)
 
   
   FermionField ssrc  (sFGrid);  localConvert(src,ssrc);
-  FermionField sresult(sFGrid); sresult=zero;
+  FermionField sresult(sFGrid); sresult=Zero();
 
-  QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptHandUnroll;
+  StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptHandUnroll;
   t0=usecond();
   for(int i=0;i<ncall1;i++){
     sDs.Dhop(ssrc,sresult,0);
@@ -167,9 +166,9 @@ int main (int argc, char ** argv)
 
 
 #ifdef AVX512
-  QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptInlineAsm;
+  StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptInlineAsm;
 #else
-  QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptGeneric;
+  StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptGeneric;
 #endif
 
   err = tmp-result; 
