@@ -4,9 +4,11 @@
  
  Source file: ./lib/qcd/action/gauge/Photon.h
  
- Copyright (C) 2015
+Copyright (C) 2015-2018
  
  Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+ Author: Antonin Portelli <antonin.portelli@me.com>
+ Author: James Harrison <J.Harrison@soton.ac.uk>
  
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
