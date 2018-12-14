@@ -137,10 +137,10 @@ namespace QCD{
     khat.resize(nd, grid_);
     for (unsigned int mu = 0; mu < nd; ++mu)
     {
-      Real twoPiL = M_PI*2./l[mu];
+      Real piL = M_PI/l[mu];
 
       LatticeCoordinate(khat[mu], mu);
-      khat[mu] = exp(0.5*ci*khat[mu])*2.*sin(.5*twoPiL*khat[mu]);
+      khat[mu] = exp(piL*ci*khat[mu])*2.*sin(piL*khat[mu]);
     }
   }
 
@@ -189,6 +189,7 @@ namespace QCD{
           Real f = sqrt(improvement_[i] + 1);
           out = where(spNrm == Integer(i + 1), f*out, out);
         }
+        break;
       }
       default:
         assert(0);
@@ -200,7 +201,7 @@ namespace QCD{
   void Photon<GImpl>::transverseProjectSpatial(GaugeField &out)
   {
     const unsigned int          nd = grid_->Nd();
-    GaugeLinkField              invKHat(grid_), cst(grid_);
+    GaugeLinkField              invKHat(grid_), cst(grid_), spdiv(grid_);
     LatticeInteger              spNrm(grid_);
     std::vector<GaugeLinkField> khat, a(nd, grid_), aProj(nd, grid_);
 
@@ -220,13 +221,15 @@ namespace QCD{
     invKHat = cst/invKHat;
     cst     = zero;
     invKHat = where(spNrm == Integer(0), cst, invKHat);
+    spdiv   = zero;
+    for (unsigned int nu = 0; nu < nd - 1; ++nu)
+    {
+      spdiv += conjugate(khat[nu])*a[nu];
+    }
+    spdiv *= invKHat;
     for (unsigned int mu = 0; mu < nd; ++mu)
     {
-      aProj[mu] = a[mu];
-      for (unsigned int nu = 0; nu < nd - 1; ++nu)
-      {
-        aProj[mu] -= invKHat*khat[mu]*conjugate(khat[nu])*a[nu];
-      }
+      aProj[mu] = a[mu] - khat[mu]*spdiv;
       pokeLorentz(out, aProj[mu], mu);
     }
   }
