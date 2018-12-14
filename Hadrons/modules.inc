@@ -16,6 +16,7 @@ modules_cc =\
   Modules/MSource/Wall.cc \
   Modules/MSource/SeqConserved.cc \
   Modules/MSource/SeqGamma.cc \
+  Modules/MSource/SeqAslash.cc \
   Modules/MSource/Z2.cc \
   Modules/MSink/Point.cc \
   Modules/MSink/Smear.cc \
@@ -85,6 +86,7 @@ modules_hpp =\
   Modules/MFermion/FreeProp.hpp \
   Modules/MFermion/GaugeProp.hpp \
   Modules/MSource/SeqGamma.hpp \
+  Modules/MSource/SeqAslash.hpp \
   Modules/MSource/Point.hpp \
   Modules/MSource/Wall.hpp \
   Modules/MSource/Z2.hpp \

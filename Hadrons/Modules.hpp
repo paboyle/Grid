@@ -12,6 +12,7 @@
 #include <Hadrons/Modules/MFermion/FreeProp.hpp>
 #include <Hadrons/Modules/MFermion/GaugeProp.hpp>
 #include <Hadrons/Modules/MSource/SeqGamma.hpp>
+#include <Hadrons/Modules/MSource/SeqAslash.hpp>
 #include <Hadrons/Modules/MSource/Point.hpp>
 #include <Hadrons/Modules/MSource/Wall.hpp>
 #include <Hadrons/Modules/MSource/Z2.hpp>
