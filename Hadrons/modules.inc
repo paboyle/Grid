@@ -4,6 +4,7 @@ modules_cc =\
   Modules/MContraction/Meson.cc \
   Modules/MContraction/WeakNeutral4ptDisc.cc \
   Modules/MContraction/WeakHamiltonianNonEye.cc \
+  Modules/MContraction/WeakMesonDecayKl2.cc \
   Modules/MContraction/A2AAslashField.cc \
   Modules/MContraction/WardIdentity.cc \
   Modules/MContraction/A2AMesonField.cc \
@@ -83,6 +84,7 @@ modules_hpp =\
   Modules/MContraction/Gamma3pt.hpp \
   Modules/MContraction/WardIdentity.hpp \
   Modules/MContraction/WeakHamiltonianEye.hpp \
+  Modules/MContraction/WeakMesonDecayKl2.hpp \
   Modules/MFermion/FreeProp.hpp \
   Modules/MFermion/GaugeProp.hpp \
   Modules/MSource/SeqGamma.hpp \

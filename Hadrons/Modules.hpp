@@ -9,6 +9,7 @@
 #include <Hadrons/Modules/MContraction/Gamma3pt.hpp>
 #include <Hadrons/Modules/MContraction/WardIdentity.hpp>
 #include <Hadrons/Modules/MContraction/WeakHamiltonianEye.hpp>
+#include <Hadrons/Modules/MContraction/WeakMesonDecayKl2.hpp>
 #include <Hadrons/Modules/MFermion/FreeProp.hpp>
 #include <Hadrons/Modules/MFermion/GaugeProp.hpp>
 #include <Hadrons/Modules/MSource/SeqGamma.hpp>
