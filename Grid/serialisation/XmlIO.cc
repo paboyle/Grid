@@ -30,7 +30,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
-void Grid::xmlCheckParse(const pugi::xml_parse_result &result, const std::string name)
+void xmlCheckParse(const pugi::xml_parse_result &result, const std::string name)
 {
   if (!result) 
   {
