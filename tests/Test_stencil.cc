@@ -80,7 +80,7 @@ int main(int argc, char ** argv) {
     Foo=lex;
   }
 
-  typedef CartesianStencil<vobj,vobj> Stencil;
+  typedef CartesianStencil<vobj,vobj,int> Stencil;
     for(int dir=0;dir<4;dir++){
       for(int disp=0;disp<Fine._fdimensions[dir];disp++){
 
@@ -90,7 +90,7 @@ int main(int argc, char ** argv) {
 	std::vector<int> directions(npoint,dir);
 	std::vector<int> displacements(npoint,disp);
 
-	Stencil myStencil(&Fine,npoint,0,directions,displacements);
+	Stencil myStencil(&Fine,npoint,0,directions,displacements,0);
 	Coordinate ocoor(4);
 	for(int o=0;o<Fine.oSites();o++){
 	  Fine.oCoorFromOindex(ocoor,o);
@@ -181,8 +181,8 @@ int main(int argc, char ** argv) {
 	std::vector<int> directions(npoint,dir);
 	std::vector<int> displacements(npoint,disp);
 
-	Stencil EStencil(&rbFine,npoint,Even,directions,displacements);
-	Stencil OStencil(&rbFine,npoint,Odd,directions,displacements);
+	Stencil EStencil(&rbFine,npoint,Even,directions,displacements,0);
+	Stencil OStencil(&rbFine,npoint,Odd,directions,displacements,0);
 
 	Coordinate ocoor(4);
 	for(int o=0;o<Fine.oSites();o++){

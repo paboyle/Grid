@@ -100,7 +100,7 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   // Modify the gauge field a little 
   ////////////////////////////////////
-  RealD dt = 0.0001;
+  RealD dt = 0.001;
 
   LatticeColourMatrix mommu(UGrid); 
   LatticeColourMatrix forcemu(UGrid); 

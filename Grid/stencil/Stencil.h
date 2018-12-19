@@ -111,7 +111,7 @@ struct StencilEntry {
 };
 // Could pack to 8 + 4 + 4 = 128 bit and use 
 
-template<class vobj,class cobj>
+template<class vobj,class cobj,class Parameters>
 class CartesianStencilView {
  public:
   typedef AcceleratorVector<int,STENCIL_MAX> StencilVector;
@@ -128,7 +128,7 @@ class CartesianStencilView {
   StencilVector _permute_type;
   StencilVector same_node;
   Coordinate                         _simd_layout;
-  Coordinate                         twists;
+  Parameters    parameters;
   StencilEntry*  _entries_p;
   cobj* u_recv_buf_p;
   cobj* u_send_buf_p;
@@ -170,14 +170,14 @@ class CartesianStencilView {
 ////////////////////////////////////////
 // The Stencil Class itself
 ////////////////////////////////////////
-template<class vobj,class cobj>
-class CartesianStencil : public CartesianStencilView<vobj,cobj> { // Stencil runs along coordinate axes only; NO diagonal fill in.
+template<class vobj,class cobj,class Parameters>
+class CartesianStencil : public CartesianStencilView<vobj,cobj,Parameters> { // Stencil runs along coordinate axes only; NO diagonal fill in.
 public:
 
   typedef typename cobj::vector_type vector_type;
   typedef typename cobj::scalar_type scalar_type;
   typedef typename cobj::scalar_object scalar_object;
-  typedef CartesianStencilView<vobj,cobj> View_type;
+  typedef CartesianStencilView<vobj,cobj,Parameters> View_type;
   typedef typename View_type::StencilVector StencilVector;
   ///////////////////////////////////////////
   // Helper structs
@@ -209,11 +209,18 @@ protected:
 public: 
   GridBase *Grid(void) const { return _grid; }
 
+  ////////////////////////////////////////////////////////////////////////
+  // Needed to conveniently communicate gparity parameters into GPU memory
+  // without adding parameters. Perhaps a template parameter to StenciView is
+  // required to pass general parameters.
+  // Generalise as required later if needed
+  ////////////////////////////////////////////////////////////////////////
+
   View_type View(void) const {
     View_type accessor(*( (View_type *) this));
     return accessor;
   }
-
+  
   int face_table_computed;
   std::vector<Vector<std::pair<int,int> > > face_table ;
   std::vector<int> surface_list;
@@ -599,7 +606,8 @@ public:
 		   int npoints,
 		   int checkerboard,
 		   const std::vector<int> &directions,
-		   const std::vector<int> &distances) 
+		   const std::vector<int> &distances,
+		   Parameters p) 
     : comm_bytes_thr(npoints), 
       comm_enter_thr(npoints),
       comm_leave_thr(npoints), 
@@ -607,7 +615,7 @@ public:
   {
     face_table_computed=0;
     _grid    = grid;
-
+    this->parameters=p;
     /////////////////////////////////////
     // Initialise the base
     /////////////////////////////////////

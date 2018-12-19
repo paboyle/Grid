@@ -212,7 +212,7 @@ class FourierAcceleratedPV {
 
 	// now rotate with inverse of
 	Coeff_t pA = b + c*cosp;
-	Coeff_t pB = - Coeff_t(0.0,1.0)*c*sinp;
+	Coeff_t pB = - Coeff_t(0.0,1.0)*Coeff_t(c*sinp);
 	Coeff_t pABden = pA*pA - pB*pB;
 	// (pA + pB * G5) * (pA - pB*G5) = (pA^2 - pB^2)
       

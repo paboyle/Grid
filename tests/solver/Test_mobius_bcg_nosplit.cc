@@ -47,7 +47,7 @@ int main (int argc, char ** argv)
   auto simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   auto mpi_layout  = GridDefaultMpi();
 
-  std::vector<ComplexD> boundary_phases(Nd,1.);
+  std::vector<Complex> boundary_phases(Nd,1.);
   boundary_phases[Nd-1]=-1.;
   params.boundary_phases = boundary_phases;
 

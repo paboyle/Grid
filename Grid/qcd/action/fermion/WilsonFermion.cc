@@ -51,9 +51,9 @@ WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
     Kernels(p),
     _grid(&Fgrid),
     _cbgrid(&Hgrid),
-    Stencil(&Fgrid, npoint, Even, directions, displacements),
-    StencilEven(&Hgrid, npoint, Even, directions,displacements),  // source is Even
-    StencilOdd(&Hgrid, npoint, Odd, directions,displacements),  // source is Odd
+    Stencil(&Fgrid, npoint, Even, directions, displacements,p),
+    StencilEven(&Hgrid, npoint, Even, directions,displacements,p),  // source is Even
+    StencilOdd(&Hgrid, npoint, Odd, directions,displacements,p),  // source is Odd
     mass(_mass),
     Lebesgue(_grid),
     LebesgueEvenOdd(_cbgrid),

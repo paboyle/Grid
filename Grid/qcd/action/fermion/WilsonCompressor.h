@@ -244,11 +244,11 @@ template<typename HCS,typename HS,typename S> using WilsonCompressor = WilsonCom
 
 // Fast comms buffer manipulation which should inline right through (avoid direction
 // dependent logic that prevents inlining
-template<class vobj,class cobj>
-class WilsonStencil : public CartesianStencil<vobj,cobj> {
+template<class vobj,class cobj,class Parameters>
+class WilsonStencil : public CartesianStencil<vobj,cobj,Parameters> {
 public:
 
-  typedef CartesianStencil<vobj,cobj> Base;
+  typedef CartesianStencil<vobj,cobj,Parameters> Base;
   typedef typename Base::View_type View_type;
   typedef typename Base::StencilVector StencilVector;
 
@@ -286,8 +286,8 @@ public:
 		int npoints,
 		int checkerboard,
 		const std::vector<int> &directions,
-		const std::vector<int> &distances)  
-    : CartesianStencil<vobj,cobj> (grid,npoints,checkerboard,directions,distances) 
+		const std::vector<int> &distances,Parameters p)  
+    : CartesianStencil<vobj,cobj,Parameters> (grid,npoints,checkerboard,directions,distances,p) 
   { 
     ZeroCountersi();
     surface_list.resize(0);

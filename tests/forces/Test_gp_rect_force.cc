@@ -73,7 +73,7 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   // Modify the gauge field a little 
   ////////////////////////////////////
-  RealD dt = 0.001;
+  RealD dt = 0.01;
 
   LatticeColourMatrix mommu(&Grid); 
   LatticeColourMatrix forcemu(&Grid); 
@@ -122,7 +122,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Sprime "<<Sprime<<std::endl;
   std::cout << GridLogMessage << "dS      "<<Sprime-S<<std::endl;
   std::cout << GridLogMessage << "pred dS "<< dSpred <<std::endl;
-  assert( fabs(real(Sprime-S-dSpred)) < 1.0e-2 ) ;
+  assert( fabs(real(Sprime-S-dSpred)) < 1.0e-1 ) ;
   std::cout<< GridLogMessage << "Done" <<std::endl;
   Grid_finalize();
 }

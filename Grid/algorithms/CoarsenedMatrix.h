@@ -254,7 +254,7 @@ public:
   ////////////////////
   Geometry         geom;
   GridBase *       _grid; 
-  CartesianStencil<siteVector,siteVector> Stencil; 
+  CartesianStencil<siteVector,siteVector,int> Stencil; 
 
   std::vector<CoarseMatrix> A;
 
@@ -309,7 +309,7 @@ public:
 
     _grid(&CoarseGrid),
     geom(CoarseGrid._ndimension),
-    Stencil(&CoarseGrid,geom.npoint,Even,geom.directions,geom.displacements),
+    Stencil(&CoarseGrid,geom.npoint,Even,geom.directions,geom.displacements,0),
     A(geom.npoint,&CoarseGrid)
   {
   };

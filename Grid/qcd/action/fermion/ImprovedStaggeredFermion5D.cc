@@ -52,9 +52,9 @@ ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GridCartesian      
   _FiveDimRedBlackGrid(&FiveDimRedBlackGrid),
   _FourDimGrid        (&FourDimGrid),
   _FourDimRedBlackGrid(&FourDimRedBlackGrid),
-  Stencil    (&FiveDimGrid,npoint,Even,directions,displacements),
-  StencilEven(&FiveDimRedBlackGrid,npoint,Even,directions,displacements), // source is Even
-  StencilOdd (&FiveDimRedBlackGrid,npoint,Odd ,directions,displacements), // source is Odd
+  Stencil    (&FiveDimGrid,npoint,Even,directions,displacements,p),
+  StencilEven(&FiveDimRedBlackGrid,npoint,Even,directions,displacements,p), // source is Even
+  StencilOdd (&FiveDimRedBlackGrid,npoint,Odd ,directions,displacements,p), // source is Odd
   mass(_mass),
   c1(_c1),
   c2(_c2),

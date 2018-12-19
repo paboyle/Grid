@@ -94,7 +94,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   distance = st._distances[DIR];				\
   sl = st._simd_layout[direction];			        \
   inplace_twist = 0;						\
-  if(SE->_around_the_world && st.twists[DIR % 4]){		\
+  if(SE->_around_the_world && st.parameters.twists[DIR % 4]){		\
     if(sl == 1){							\
       g = (F+1) % 2;							\
     }else{								\

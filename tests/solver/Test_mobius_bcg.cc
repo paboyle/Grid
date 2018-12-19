@@ -48,7 +48,7 @@ int main (int argc, char ** argv)
   Coordinate split_coor (mpi_layout.size(),1);
   Coordinate split_dim (mpi_layout.size(),1);
 
-  std::vector<ComplexD> boundary_phases(Nd,1.);
+  std::vector<Complex> boundary_phases(Nd,1.);
   boundary_phases[Nd-1]=-1.;
   params.boundary_phases = boundary_phases;
 

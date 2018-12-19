@@ -199,10 +199,11 @@ public:
     
   typedef WilsonCompressor<SiteHalfCommSpinor,SiteHalfSpinor, SiteSpinor> Compressor;
   typedef WilsonImplParams ImplParams;
-  typedef WilsonStencil<SiteSpinor, SiteHalfSpinor> StencilImpl;
+  typedef WilsonStencil<SiteSpinor, SiteHalfSpinor,ImplParams> StencilImpl;
   typedef typename StencilImpl::View_type StencilView;
-  ImplParams Params;
     
+  ImplParams Params;
+
   WilsonImpl(const ImplParams &p = ImplParams()) : Params(p){
     assert(Params.boundary_phases.size() == Nd);
   };
@@ -389,11 +390,11 @@ public:
       
   typedef WilsonCompressor<SiteHalfCommSpinor,SiteHalfSpinor, SiteSpinor> Compressor;
   typedef WilsonImplParams ImplParams;
-  typedef WilsonStencil<SiteSpinor, SiteHalfSpinor> StencilImpl;
+  typedef WilsonStencil<SiteSpinor, SiteHalfSpinor,ImplParams> StencilImpl;
   typedef typename StencilImpl::View_type StencilView;
   
   ImplParams Params;
-  
+
   DomainWallVec5dImpl(const ImplParams &p = ImplParams()) : Params(p){};
       
   template <class ref>
@@ -596,11 +597,10 @@ public:
   typedef Lattice<SitePropagator> PropagatorField;
   typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
  
-  typedef WilsonCompressor<SiteHalfCommSpinor,SiteHalfSpinor, SiteSpinor> Compressor;
-  typedef WilsonStencil<SiteSpinor, SiteHalfSpinor> StencilImpl;
-  typedef typename StencilImpl::View_type StencilView;
- 
   typedef GparityWilsonImplParams ImplParams;
+  typedef WilsonCompressor<SiteHalfCommSpinor,SiteHalfSpinor, SiteSpinor> Compressor;
+  typedef WilsonStencil<SiteSpinor, SiteHalfSpinor, ImplParams> StencilImpl;
+  typedef typename StencilImpl::View_type StencilView;
       
   ImplParams Params;
 
@@ -636,9 +636,8 @@ public:
     // assert our assumptions
     assert((distance == 1) || (distance == -1));  // nearest neighbour stencil hard code
     assert((sl == 1) || (sl == 2));
-   
     Coordinate icoor;
-    if ( SE->_around_the_world && St.twists[mmu] ) {
+    if ( SE->_around_the_world && St.parameters.twists[mmu] ) {
 
       if ( sl == 2 ) {
        
@@ -842,9 +841,9 @@ public:
   typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
   typedef Lattice<SitePropagator> PropagatorField;
     
-  typedef SimpleCompressor<SiteSpinor> Compressor;
   typedef StaggeredImplParams ImplParams;
-  typedef CartesianStencil<SiteSpinor, SiteSpinor> StencilImpl;
+  typedef SimpleCompressor<SiteSpinor> Compressor;
+  typedef CartesianStencil<SiteSpinor, SiteSpinor, ImplParams> StencilImpl;
   typedef typename StencilImpl::View_type StencilView;
 
   ImplParams Params;
@@ -990,9 +989,9 @@ public:
     
   typedef Lattice<SiteSpinor>            FermionField;
     
-  typedef SimpleCompressor<SiteSpinor> Compressor;
   typedef StaggeredImplParams ImplParams;
-  typedef CartesianStencil<SiteSpinor, SiteSpinor> StencilImpl;
+  typedef SimpleCompressor<SiteSpinor> Compressor;
+  typedef CartesianStencil<SiteSpinor, SiteSpinor, ImplParams> StencilImpl;
   typedef typename StencilImpl::View_type StencilView;
     
   ImplParams Params;
