@@ -140,7 +140,7 @@ void TSeqConserved<FImpl>::setup(void)
 {
     auto Ls_ = env().getObjectLs(par().action);
     envCreateLat(PropagatorField, getName(), Ls_);
-    envTmpLat(PropagatorField, "src_tmp");
+    envTmpLat(PropagatorField, "src_tmp",Ls_);
     envCacheLat(LatticeComplex, SeqmomphName_);
     envTmpLat(LatticeComplex, "coor");
     envTmpLat(LatticeComplex, "latt_compl");
