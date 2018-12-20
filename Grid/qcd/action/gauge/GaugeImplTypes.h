@@ -89,8 +89,39 @@ public:
     // specific for SU gauge fields
     LinkField Pmu(P.Grid());
     Pmu = Zero();
+    //
+    // Zbigniew Srocinsky thesis:
+    // P(p) =  N \Prod_{x\mu}e^-{1/2 Tr (p^2_mux)}
+    // 
+    // p_x,mu = c_x,mu,a T_a
+    //
+    // Tr p^2 =  sum_a,x,mu 1/2 (c_x,mu,a)^2
+    //
+    // Which implies P(p) =  N \Prod_{x,\mu,a} e^-{1/4 c_xmua^2  }
+    //
+    //                    =  N \Prod_{x,\mu,a} e^-{1/2 (c_xmua/sqrt{2})^2  }
+    // 
+    // Expect cx' = cxmua/sqrt(2) to be a unit variance gaussian.
+    //
+    // Expect        cxmua_new variance sqrt(2).
+    // Was variance  cxmua_old variance 1
+    // 
+    // tau_old * Pold = 1 = tau_old/sqrt(2)  * [Pold * sqrt(2)]
+    //                    = tau_new          * Pnew
+    //
+    // Hence tau_new = tau_cps = tau_guido/sqrt(2).
+    //
+    //
+    // Must scale the momentum by sqrt(2) up to invoke CPS and UKQCD conventions
+    //
+    //
+    // Hence expect cxmua = cx'*sqrt(2).
+    //
+    // Seek the scale parameter to be 
     for (int mu = 0; mu < Nd; mu++) {
       SU<Nrepresentation>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
+      RealD scale = ::sqrt(2) ;
+      Pmu = Pmu*scale;
       PokeIndex<LorentzIndex>(P, Pmu, mu);
     }
   }

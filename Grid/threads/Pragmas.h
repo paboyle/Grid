@@ -82,13 +82,13 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define DO_PRAGMA_(x) _Pragma (#x)
 #define DO_PRAGMA(x) DO_PRAGMA_(x)
 
-#define thread_loop( range , ... )            DO_PRAGMA(omp parallel for schedule(static))   for range { __VA_ARGS__ ; };
-#define thread_loop_in_region( range , ... )  DO_PRAGMA(omp for schedule(static))            for range  { __VA_ARGS__ ; };
-#define thread_loop_collapse2( range , ... )  DO_PRAGMA(omp parallel for collapse(2))        for range  { __VA_ARGS__ };
-#define thread_loop_collapse( N , range , ... )  DO_PRAGMA(omp parallel for collapse ( N ) ) for range  { __VA_ARGS__ };
-#define thread_loop_collapse_in_region( N , range , ... )  DO_PRAGMA(omp for collapse ( N )) for range  { __VA_ARGS__ };
-#define thread_region                         DO_PRAGMA("omp parallel")
-#define thread_critical                       DO_PRAGMA("omp critical")
+#define thread_loop( range , ... )                        DO_PRAGMA(omp parallel for schedule(static))for range { __VA_ARGS__ };
+#define thread_loop_collapse2( range , ... )              DO_PRAGMA(omp parallel for collapse(2))     for range { __VA_ARGS__ };
+#define thread_loop_collapse( N , range , ... )           DO_PRAGMA(omp parallel for collapse ( N ) ) for range { __VA_ARGS__ };
+#define thread_loop_in_region( range , ... )              DO_PRAGMA(omp for schedule(static))         for range { __VA_ARGS__ };
+#define thread_loop_collapse_in_region( N , range , ... ) DO_PRAGMA(omp for collapse ( N ))           for range { __VA_ARGS__ };
+#define thread_region                                     DO_PRAGMA(omp parallel)
+#define thread_critical                                   DO_PRAGMA(omp critical)
 #define thread_num(a) omp_get_thread_num()
 #define thread_max(a) omp_get_max_threads()
 #else
