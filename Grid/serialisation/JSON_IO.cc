@@ -26,6 +26,7 @@
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
+#ifndef __NVCC__
 
 NAMESPACE_BEGIN(Grid);
 
@@ -168,3 +169,4 @@ void JSONReader::readDefault(const std::string &s, std::string &output)
   }
 }
 NAMESPACE_END(Grid);
+#endif

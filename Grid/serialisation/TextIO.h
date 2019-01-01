@@ -97,6 +97,9 @@ namespace Grid
   }
   
   // Reader template implementation ////////////////////////////////////////////
+  template <>
+  void TextReader::readDefault(const std::string &s, std::string &output);
+
   template <typename U>
   void TextReader::readDefault(const std::string &s, U &output)
   {
@@ -105,9 +108,6 @@ namespace Grid
     readDefault(s, buf);
     fromString(output, buf);
   }
-  
-  template <>
-  void TextReader::readDefault(const std::string &s, std::string &output);
   
   template <typename U>
   void TextReader::readDefault(const std::string &s, std::vector<U> &output)
@@ -121,6 +121,9 @@ namespace Grid
       read("", output[i]);
     }
   }
+
+  
+
 }
 
 #endif
