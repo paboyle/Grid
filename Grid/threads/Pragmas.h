@@ -47,34 +47,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define UNROLL  _Pragma("unroll")
 
 //////////////////////////////////////////////////////////////////////////////////
-// Old primitives; shortly deprecate
-//////////////////////////////////////////////////////////////////////////////////
-
-#ifdef GRID_OMP
-#define PARALLEL_FOR_LOOP        _Pragma("omp parallel for schedule(static)")
-#define PARALLEL_FOR_LOOP_INTERN _Pragma("omp for schedule(static)")
-#define PARALLEL_NESTED_LOOP2 _Pragma("omp parallel for collapse(2)")
-#define PARALLEL_NESTED_LOOP5 _Pragma("omp parallel for collapse(5)")
-#define PARALLEL_REGION       _Pragma("omp parallel")
-#define PARALLEL_CRITICAL     _Pragma("omp critical")
-#else
-#define PARALLEL_FOR_LOOP
-#define PARALLEL_FOR_LOOP_INTERN
-#define PARALLEL_FOR_LOOP_REDUCE(op, var)
-#define PARALLEL_NESTED_LOOP2
-#define PARALLEL_NESTED_LOOP5
-#define PARALLEL_REGION
-#define PARALLEL_CRITICAL
-#endif
-
-#define parallel_region    PARALLEL_REGION
-#define parallel_for       PARALLEL_FOR_LOOP for
-#define parallel_for_internal PARALLEL_FOR_LOOP_INTERN for
-#define parallel_for_nest2 PARALLEL_NESTED_LOOP2 for
-#define parallel_for_nest5 PARALLEL_NESTED_LOOP5 for
-#define parallel_critical PARALLEL_CRITICAL
-
-//////////////////////////////////////////////////////////////////////////////////
 // New primitives; explicit host thread calls, and accelerator data parallel calls
 //////////////////////////////////////////////////////////////////////////////////
 #ifdef GRID_OMP
