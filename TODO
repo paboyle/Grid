@@ -1,18 +1,45 @@
 TODO:
 ---------------
 
-
 GPU branch code item work list
 -----------------------------
 
-- Audit NAMESPACE CHANGES
-- Audit HMC timestep / traj length size
-- Verify HMC one flavour ratio; suspect dH too big
-- pragma once uniformly
 - GPU offload reductions; thrust initial ; inclusive_scan vs reduce?
-- Audit changes
-- thread_loop interface revisit.
+- Accelerate the cshift
+- Accelerate non-dslash elements of Mobius; check accelerator_loop uniformly used in fermion operators
+- Gamma tables on GPU
 
+- Mobius kernel fusion.
+- Reread WilsonKernels and check diffs
+
+- thread_loop interface revisit.
+- pragma once uniformly
+- Audit changes
+- Audit NAMESPACE CHANGES
+- Verify HMC one flavour ratio; suspect dH too big; verify timestep with Guido.
+- Staggered kernels inline for GPU
+- Single GPU simd target (VGPU)
+- Lebesgue reorder in all kernels
+- merge2 where is it used. Audit routines, comment out and check compile.
+- AVX512 still broken, lebesgue order missing ?
+- Neon ??
+
+-----------------------------
+Physics item work list:
+
+2)- Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
+4)- Multigrid Wilson and DWF, compare to other Multigrid implementations
+5)- HDCR resume
+
+-----------------------------
+
+DONE
+
+- Audit HMC timestep / traj length size
+- GPU offload reductions; thrust initial ; inclusive_scan vs reduce?
+- Pragmas.h - prune and remove strong_inline (?)
+- GPU offload reductions; thrust initial ; inclusive_scan vs reduce?
+- Remove old parallel_for macros, fix errors
 - - Need (1) omp parallel for     <-- thread_loop
 - -      (2) omp for
 - -      (3) omp for collapse(n)
@@ -37,27 +64,6 @@ GPU branch code item work list
 
     and same "in_region".
 
-- Remove old parallel_for macros, fix errors
-- check accelerator_loop uniformly used in fermion operators
-- Gamma tables on GPU
-- Accelerate the cshift
-- Accelerate non-dslash elements of Mobius
-- Mobius kernel fusion.
-- Staggered kernels inline for GPU
-- Reread WilsonKernels and check diffs
-- Single GPU simd target (VGPU)
-- Lebesgue reorder in all kernels
-- merge2 where used. Audit routines, comment out and check compile.
-- Pragmas.h - prune and remove strong_inline (?)
-- 
------------------------------
-Physics item work list:
-
-2)- Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
-4)- Multigrid Wilson and DWF, compare to other Multigrid implementations
-5)- HDCR resume
-
------------------------------
 Nov 2018
 
 1)- BG/Q port and check ; Andrew says ok.
