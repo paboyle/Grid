@@ -76,6 +76,7 @@ public:
       else assert(0);
       break;
 #endif
+#if !defined(GRID_NVCC)
     case WilsonKernelsStatic::OptHandUnroll:
       for (int site = 0; site < Nsite; site++) {
 	for (int s = 0; s < Ls; s++) {
@@ -87,6 +88,9 @@ public:
 	sU++;
       }
       break;
+#else
+    case WilsonKernelsStatic::OptHandUnroll:
+#endif
     case WilsonKernelsStatic::OptGpu:
     case WilsonKernelsStatic::OptGeneric:
       for (int site = 0; site < Nsite; site++) {
@@ -139,6 +143,7 @@ public:
       else assert(0);
       break;
 #endif
+#if !defined(GRID_NVCC)
     case WilsonKernelsStatic::OptHandUnroll:
       for (int site = 0; site < Nsite; site++) {
 	for (int s = 0; s < Ls; s++) {
@@ -151,6 +156,9 @@ public:
 	sU++;
       }
       break;
+#else
+    case WilsonKernelsStatic::OptHandUnroll:
+#endif
     case WilsonKernelsStatic::OptGpu:
     case WilsonKernelsStatic::OptGeneric:
       for (int site = 0; site < Nsite; site++) {
