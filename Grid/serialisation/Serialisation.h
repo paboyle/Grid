@@ -36,7 +36,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include "BinaryIO.h"
 #include "TextIO.h"
 #include "XmlIO.h"
-//#include "JSON_IO.h"
+#ifndef GRID_NVCC
+#include "JSON_IO.h"
+#endif
 
 #ifdef HAVE_HDF5
 #include "Hdf5IO.h"

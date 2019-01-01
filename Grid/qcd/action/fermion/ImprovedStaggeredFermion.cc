@@ -482,16 +482,16 @@ void ImprovedStaggeredFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st
     auto out_v = out.View();
     if (dag == DaggerYes) {
       int sz=st.surface_list.size();
-      parallel_for (int ss = 0; ss < sz; ss++) {
+      thread_loop( (int ss = 0; ss < sz; ss++) ,{
 	int sU = st.surface_list[ss];
 	Kernels::DhopSiteDag(st,lo,U_v,UUU_v,st.CommBuf(),1,sU,in_v,out_v,0,1);
-      }
+      });
     } else {
       int sz=st.surface_list.size();
-      parallel_for (int ss = 0; ss < sz; ss++) {
+      thread_loop( (int ss = 0; ss < sz; ss++) ,{
 	int sU = st.surface_list[ss];
 	Kernels::DhopSite(st,lo,U_v,UUU_v,st.CommBuf(),1,sU,in_v,out_v,0,1);
-      }
+      });
     }
   }
   DhopComputeTime2    += usecond();

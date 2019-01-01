@@ -439,13 +439,13 @@ void WilsonFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, LebesgueO
     auto st_v  =  st.View();
     int Opt = WilsonKernelsStatic::Opt;
     if (dag == DaggerYes) {
-      parallel_for (int sss = 0; sss < in.Grid()->oSites(); sss++) {
+      thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++) ,{
 	Kernels::DhopSiteDag(Opt,st_v,U_v,st.CommBuf(),sss,sss,1,1,in_v,out_v,0,1);
-      }
+      });
     } else {
-      parallel_for (int sss = 0; sss < in.Grid()->oSites(); sss++) {
+      thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++) ,{
 	Kernels::DhopSite(Opt,st_v,U_v,st.CommBuf(),sss,sss,1,1,in_v,out_v,0,1);
-      }
+      });
     }
   }
 #else
