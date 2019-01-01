@@ -288,7 +288,6 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
   static std::vector<std::pair<int,int> > table;  table.resize(e1*e2);
   int ent=0;
 
-  double t_tab,t_perm;
   if ( cbmask == 0x3 ) {
     for(int n=0;n<e1;n++){
     for(int b=0;b<e2;b++){
@@ -321,8 +320,6 @@ template<class vobj> void Cshift_local(Lattice<vobj>& ret,const Lattice<vobj> &r
   sshift[0] = rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Even);
   sshift[1] = rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Odd);
 
-  double t_local;
-  
   if ( sshift[0] == sshift[1] ) {
     Cshift_local(ret,rhs,dimension,shift,0x3);
   } else {
@@ -351,7 +348,7 @@ template<class vobj> void Cshift_local(Lattice<vobj> &ret,const Lattice<vobj> &r
 
   for(int x=0;x<rd;x++){       
 
-    int o   = 0;
+    //    int o   = 0;
     int bo  = x * grid->_ostride[dimension];
     int cb= (cbmask==0x2)? Odd : Even;
 
