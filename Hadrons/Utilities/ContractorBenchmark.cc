@@ -11,12 +11,14 @@ using namespace Hadrons;
 #ifdef GRID_COMMS_MPI3
 #define GET_RANK(rank, nMpi) \
 MPI_Comm_size(MPI_COMM_WORLD, &(nMpi));\
-MPI_Comm_rank(MPI_COMM_WORLD, &(rank))
+MPI_Comm_rank(MPI_COMM_WORLD, &(rank));\
+assert(rank<nMpi)
+
 #define BARRIER() MPI_Barrier(MPI_COMM_WORLD)
 #define INIT() MPI_Init(NULL, NULL)
 #define FINALIZE() MPI_Finalize()
 #else
-#define GET_RANK(rank, nMpi) (nMpi) = 1; (rank) = 0
+#define GET_RANK(rank, nMpi) (nMpi) = 1; (rank) = 0 ; assert(rank<nMpi)
 #define BARRIER()
 #define INIT()
 #define FINALIZE()
@@ -47,7 +49,7 @@ inline void trBenchmark(const std::string name, const MatLeft &left,
     if (rank == 0)
     {
         std::cout << std::setw(34) << name << ": diff= "
-                  << std::setw(12) << std::norm(buf-ref)
+                  << std::setw(12) << abs(buf-ref)
                   << std::setw(10) << t/1.0e6 << " sec "
                   << std::setw(10) << flops/t/1.0e3 << " GFlop/s " 
                   << std::setw(10) << bytes/t*1.0e6/1024/1024/1024 << " GB/s "
@@ -61,7 +63,8 @@ inline void mulBenchmark(const std::string name, const MatV &left,
                          const MatV &right, const Mat &ref, Function fn)
 {
     double       t, flops, bytes;
-    double       nr = left[0].rows(), nc = left[0].cols(), n = nr*nc;
+    double       nr = left[0].rows(), nc = left[0].cols();
+    //    double        n = nr*nc;
     unsigned int nMat = left.size();
     int          nMpi, rank;
     Mat          buf(left[0].rows(), left[0].rows());
@@ -202,7 +205,7 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
         auto nr = a.rows(), nc = a.cols();
         
         res = 0.;
-        parallel_for (unsigned int i = 0; i < nr; ++i)
+        thread_loop( (unsigned int i = 0; i < nr; ++i),
         {
             ComplexD tmp = 0.;
 
@@ -210,11 +213,11 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
             {
                 tmp += a(i, j)*b(j, i);
             }
-            parallel_critical
+            thread_critical
             {
                 res += tmp;
             }
-        }
+        });
     });
     trBenchmark("Naive loop cols first", left, right, ref,
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
@@ -222,7 +225,7 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
         auto nr = a.rows(), nc = a.cols();
         
         res = 0.;
-        parallel_for (unsigned int j = 0; j < nc; ++j)
+        thread_loop( (unsigned int j = 0; j < nc; ++j),
         {
             ComplexD tmp = 0.;
 
@@ -230,11 +233,11 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
             {
                 tmp += a(i, j)*b(j, i);
             }        
-            parallel_critical
+            thread_critical
             {
                 res += tmp;
             }
-        }
+        });
     });
     trBenchmark("Eigen tr(A*B)", left, right, ref,
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
@@ -245,31 +248,31 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
     {
         res = 0.;
-        parallel_for (unsigned int r = 0; r < a.rows(); ++r)
+        thread_loop( (unsigned int r = 0; r < a.rows(); ++r),
         {
             ComplexD tmp;
 
             tmp = a.row(r).conjugate().dot(b.col(r));
-            parallel_critical
+            thread_critical
             {
                 res += tmp;
             }
-        }
+        });
     });
     trBenchmark("Eigen col-wise dot", left, right, ref,
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
     {
         res = 0.;
-        parallel_for (unsigned int c = 0; c < a.cols(); ++c)
+        thread_loop( (unsigned int c = 0; c < a.cols(); ++c),
         {
             ComplexD tmp;
 
             tmp = a.col(c).conjugate().dot(b.row(c));
-            parallel_critical
+            thread_critical
             {
                 res += tmp;
             }
-        }
+        });
     });
     trBenchmark("Eigen Hadamard", left, right, ref,
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
@@ -281,31 +284,31 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
     {
         res = 0.;
-        parallel_for (unsigned int r = 0; r < a.rows(); ++r)
+        thread_loop( (unsigned int r = 0; r < a.rows(); ++r),
         {
             ComplexD tmp;
 
             zdotuRow(tmp, r, a, b);
-            parallel_critical
+            thread_critical
             {
                 res += tmp;
             }
-        }
+        });
     });
     trBenchmark("MKL col-wise zdotu", left, right, ref,
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
     {
         res = 0.;
-        parallel_for (unsigned int c = 0; c < a.cols(); ++c)
+        thread_loop( (unsigned int c = 0; c < a.cols(); ++c),
         {
             ComplexD tmp;
 
             zdotuCol(tmp, c, a, b);
-            parallel_critical
+            thread_critical
             {
                 res += tmp;
             }
-        }
+        });
     });
 #endif
     BARRIER();
@@ -403,11 +406,7 @@ int main(int argc, char *argv[])
 
         std::cout << nMpi << " MPI processes" << std::endl;
 #ifdef GRID_OMP
-        #pragma omp parallel
-        {
-            #pragma omp single
-            std::cout << omp_get_num_threads() << " threads\n" << std::endl; 
-        }
+	std::cout << omp_get_num_threads() << " threads\n" << std::endl; 
 #else
         std::cout << "Single-threaded\n" << std::endl; 
 #endif

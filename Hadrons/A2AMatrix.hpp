@@ -170,7 +170,7 @@ public:
         if ((MatLeft::Options == Eigen::RowMajor) and
             (MatRight::Options == Eigen::ColMajor))
         {
-            parallel_for (unsigned int r = 0; r < a.rows(); ++r)
+  	  thread_loop( (unsigned int r = 0; r < a.rows(); ++r),
             {
                 C tmp;
 #ifdef USE_MKL
@@ -178,15 +178,15 @@ public:
 #else
                 tmp = a.row(r).conjugate().dot(b.col(r));
 #endif
-                parallel_critical
+                thread_critical
                 {
                     acc += tmp;
                 }
-            }
+            });
         }
         else
-        {
-            parallel_for (unsigned int c = 0; c < a.cols(); ++c)
+	  {
+            thread_loop( (unsigned int c = 0; c < a.cols(); ++c),
             {
                 C tmp;
 #ifdef USE_MKL 
@@ -194,11 +194,11 @@ public:
 #else
                 tmp = a.col(c).conjugate().dot(b.row(c));
 #endif
-                parallel_critical
+                thread_critical
                 {
                     acc += tmp;
                 }
-            }
+            });
         }
     }
 
@@ -646,14 +646,14 @@ void A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
             bytes    += kernel.bytes(N_iii, N_jjj);
 
             START_TIMER("cache copy");
-            parallel_for_nest5(int e =0;e<next_;e++)
+            thread_loop_collapse( 5, (int e =0;e<next_;e++),
             for(int s =0;s< nstr_;s++)
             for(int t =0;t< nt_;t++)
             for(int iii=0;iii< N_iii;iii++)
             for(int jjj=0;jjj< N_jjj;jjj++)
             {
                 mBlock(e,s,t,ii+iii,jj+jjj) = mCacheBlock(e,s,t,iii,jjj);
-            }
+            });
             STOP_TIMER("cache copy");
         }
 

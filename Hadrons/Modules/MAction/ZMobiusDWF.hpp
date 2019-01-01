@@ -49,7 +49,7 @@ public:
                                     double                           , M5,
                                     double                           , b,
                                     double                           , c,
-                                    std::vector<std::complex<double>>, omega,
+                                    std::vector<std::complex<double> >, omega,
                                     std::string                      , boundary,
                                     std::string                      , twist);
 };
@@ -131,9 +131,28 @@ void TZMobiusDWF<FImpl>::setup(void)
     typename ZMobiusFermion<FImpl>::ImplParams implParams;
     implParams.boundary_phases = strToVec<Complex>(par().boundary);
     implParams.twist_n_2pi_L   = strToVec<Real>(par().twist);
-    envCreateDerived(FMat, ZMobiusFermion<FImpl>, getName(), par().Ls, U, g5,
-                     grb5, g4, grb4, par().mass, par().M5, omega,
-                     par().b, par().c, implParams);
+    
+    assert(par().Ls==omega.size());
+    int Ls=par().Ls;
+    std::vector<ComplexD> _omega(Ls);
+    for(int i=0;i<Ls;i++){
+      _omega[i] = omega[i];
+    }
+    envCreateDerived(FMat, ZMobiusFermion<FImpl>, getName(), par().Ls,
+		     U, g5, grb5, g4, grb4, 
+		     par().mass, par().M5, 
+		     _omega, par().b, par().c, implParams);
+
+    /*
+  ZMobiusFermion(GaugeField &_Umu,
+		 GridCartesian         &FiveDimGrid,
+		 GridRedBlackCartesian &FiveDimRedBlackGrid,
+		 GridCartesian         &FourDimGrid,
+		 GridRedBlackCartesian &FourDimRedBlackGrid,
+		 RealD _mass,RealD _M5,
+		 std::vector<ComplexD> &gamma, RealD b,RealD c,const ImplParams &p= ImplParams()) : 
+    */
+
 }
 
 // execution ///////////////////////////////////////////////////////////////////
