@@ -720,7 +720,7 @@ class IldgReader : public GridLimeReader {
 	//////////////////////////////////
 	// ILDG format record
 
-  std::string xmlstring(&xmlc[0]);
+	std::string xmlstring(&xmlc[0]);
 	if ( !strncmp(limeReaderType(LimeR), ILDG_FORMAT,strlen(ILDG_FORMAT)) ) { 
 
 	  XmlReader RD(xmlstring, true, "");
@@ -796,6 +796,7 @@ class IldgReader : public GridLimeReader {
     // Minimally must find binary segment and checksum
     // Since this is an ILDG reader require ILDG format
     //////////////////////////////////////////////////////
+    assert(found_ildgLFN);
     assert(found_ildgBinary);
     assert(found_ildgFormat);
     assert(found_scidacChecksum);

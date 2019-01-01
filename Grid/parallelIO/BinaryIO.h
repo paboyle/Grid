@@ -629,8 +629,8 @@ class BinaryIO {
   /////////////////////////////////////////////////////////////////////////////
   // Read a RNG;  use IOobject and lexico map to an array of state 
   //////////////////////////////////////////////////////////////////////////////////////
-  static inline void readRNG(GridSerialRNG &serial,
-			     GridParallelRNG &parallel,
+  static inline void readRNG(GridSerialRNG &serial_rng,
+			     GridParallelRNG &parallel_rng,
 			     std::string file,
 			     uint64_t offset,
 			     uint32_t &nersc_csum,
@@ -644,7 +644,7 @@ class BinaryIO {
 
     std::string format = "IEEE32BIG";
 
-    GridBase *grid = parallel.Grid();
+    GridBase *grid = parallel_rng.Grid();
     uint64_t gsites = grid->gSites();
     uint64_t lsites = grid->lSites();
 
@@ -661,11 +661,11 @@ class BinaryIO {
 	     nersc_csum,scidac_csuma,scidac_csumb);
 
     timer.Start();
-    thread_loop( (uint64_t lidx=0;lidx<lsites;lidx++),{
+    thread_loop( (uint64_t lidx=0;lidx<lsites;lidx++), {
       std::vector<RngStateType> tmp(RngStateCount);
       std::copy(iodata[lidx].begin(),iodata[lidx].end(),tmp.begin());
-      parallel.SetState(tmp,lidx);
-    });
+      parallel_rng.SetState(tmp,lidx);
+      });
     timer.Stop();
 
     iodata.resize(1);
@@ -675,7 +675,7 @@ class BinaryIO {
     {
       std::vector<RngStateType> tmp(RngStateCount);
       std::copy(iodata[0].begin(),iodata[0].end(),tmp.begin());
-      serial.SetState(tmp,0);
+      serial_rng.SetState(tmp,0);
     }
 
     nersc_csum   = nersc_csum   + nersc_csum_tmp;
@@ -691,8 +691,8 @@ class BinaryIO {
   /////////////////////////////////////////////////////////////////////////////
   // Write a RNG; lexico map to an array of state and use IOobject
   //////////////////////////////////////////////////////////////////////////////////////
-  static inline void writeRNG(GridSerialRNG &serial,
-			      GridParallelRNG &parallel,
+  static inline void writeRNG(GridSerialRNG &serial_rng,
+			      GridParallelRNG &parallel_rng,
 			      std::string file,
 			      uint64_t offset,
 			      uint32_t &nersc_csum,
@@ -704,7 +704,7 @@ class BinaryIO {
     const int RngStateCount = GridSerialRNG::RngStateCount;
     typedef std::array<RngStateType,RngStateCount> RNGstate;
 
-    GridBase *grid = parallel.Grid();
+    GridBase *grid = parallel_rng.Grid();
     uint64_t gsites = grid->gSites();
     uint64_t lsites = grid->lSites();
 
@@ -721,9 +721,9 @@ class BinaryIO {
     std::vector<RNGstate> iodata(lsites);
     thread_loop( (uint64_t lidx=0;lidx<lsites;lidx++),{
       std::vector<RngStateType> tmp(RngStateCount);
-      parallel.GetState(tmp,lidx);
+      parallel_rng.GetState(tmp,lidx);
       std::copy(tmp.begin(),tmp.end(),iodata[lidx].begin());
-    });
+      });
     timer.Stop();
 
     IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_LEXICOGRAPHIC,
@@ -731,7 +731,7 @@ class BinaryIO {
     iodata.resize(1);
     {
       std::vector<RngStateType> tmp(RngStateCount);
-      serial.GetState(tmp,0);
+      serial_rng.GetState(tmp,0);
       std::copy(tmp.begin(),tmp.end(),iodata[0].begin());
     }
     IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_MASTER_APPEND,
