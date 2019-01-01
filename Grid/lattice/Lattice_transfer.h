@@ -640,7 +640,7 @@ unvectorizeToRevLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in)
     in_grid->iCoorFromIindex(in_icoor[lane], lane);
   }
   
-  parallel_for(int in_oidx = 0; in_oidx < in_grid->oSites(); in_oidx++){ //loop over outer index
+  thread_loop( (int in_oidx = 0; in_oidx < in_grid->oSites(); in_oidx++),{ //loop over outer index
     //Assemble vector of pointers to output elements
     std::vector<sobj*> out_ptrs(in_nsimd);
 
@@ -661,7 +661,7 @@ unvectorizeToRevLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in)
     //Unpack into those ptrs
     const vobj & in_vobj = in._odata[in_oidx];
     extract1(in_vobj, out_ptrs, 0);
-  }
+  });
 }
 
 //Copy SIMD-vectorized lattice to array of scalar objects in lexicographic order
@@ -733,7 +733,7 @@ vectorizeFromRevLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
     grid->iCoorFromIindex(icoor[lane],lane);
   }
   
-  parallel_for(uint64_t oidx = 0; oidx < grid->oSites(); oidx++){ //loop over outer index
+  thread_loop( (uint64_t oidx = 0; oidx < grid->oSites(); oidx++),{ //loop over outer index
     //Assemble vector of pointers to output elements
     std::vector<sobj*> ptrs(nsimd);
 
@@ -757,7 +757,7 @@ vectorizeFromRevLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
     vobj vecobj;
     merge1(vecobj, ptrs, 0);
     out._odata[oidx] = vecobj; 
-  }
+  });
 }
 
 //Convert a Lattice from one precision to another

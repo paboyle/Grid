@@ -22,6 +22,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #pragma once
 
 #include <Grid/Grid_Eigen_Dense.h>
+#ifdef GRID_NVCC
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
+#include <thrust/generate.h>
+#include <thrust/reduce.h>
+#include <thrust/functional.h>
+#include <thrust/reduce.h>
+#endif
 
 NAMESPACE_BEGIN(Grid);
 
@@ -32,6 +40,25 @@ template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
   ComplexD nrm = innerProduct(arg,arg);
   return real(nrm); 
 }
+
+#ifdef GRID_NVCC
+//#warning "ThrustReduce compiled"
+//#include <thrust/execution_policy.h>
+template<class vobj> 
+vobj ThrustNorm(const Lattice<vobj> &lat)
+{
+  typedef typename vobj::scalar_type scalar_type;
+  auto lat_v=lat.View();
+  Integer s0=0;
+  Integer sN=lat_v.end();
+  scalar_type sum = 0;
+  scalar_type * begin = (scalar_type *)&lat_v[s0];
+  scalar_type * end   = (scalar_type *)&lat_v[sN];
+  thrust::reduce(begin,end,sum);
+  std::cout <<" thrust::reduce sum "<< sum << std::endl;
+  return sum;
+}
+#endif
 
 // Double inner product
 template<class vobj>
@@ -47,7 +74,26 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
 
   auto left_v = left.View();
   auto right_v=right.View();
+#ifdef GRID_NVCC
+  //#if 0
 
+  typedef decltype(TensorRemove(innerProduct(left_v[0],right_v[0]))) inner_t;
+  
+  Lattice<inner_t> inner_tmp(grid);
+
+  /////////////////////////
+  // localInnerProduct
+  /////////////////////////
+  auto inner_tmp_v = inner_tmp.View();
+  accelerator_loop(ss,left_v,{
+      inner_tmp_v[ss] = TensorRemove(innerProduct(left_v[ss],right_v[ss]));
+  });
+  /////////////////////////
+  // and site sum the scalars
+  /////////////////////////
+  inner_t      vnrm = ThrustNorm(inner_tmp);
+  auto vvnrm = vnrm;
+#else
   thread_loop( (int thr=0;thr<grid->SumArraySize();thr++),{
     int mywork, myoff;
     GridThread::GetWork(left.Grid()->oSites(),thr,mywork,myoff);
@@ -63,6 +109,7 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
   for(int i=0;i<grid->SumArraySize();i++){
     vvnrm = vvnrm+sumarray[i];
   } 
+#endif
   nrm = Reduce(vvnrm);// sum across simd
   right.Grid()->GlobalSum(nrm);
   return nrm;
@@ -102,7 +149,8 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   thread_loop( (int thr=0;thr<grid->SumArraySize();thr++),
   {
     int nwork, mywork, myoff;
-    GridThread::GetWork(x.Grid()->oSites(),thr,mywork,myoff);
+    nwork = x.Grid()->oSites();
+    GridThread::GetWork(nwork,thr,mywork,myoff);
     
     // private to thread; sub summation
     decltype(innerProductD(z_v[0],z_v[0])) vnrm=Zero(); 
@@ -162,7 +210,8 @@ inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
   auto arg_v=arg.View();
   thread_loop( (int thr=0;thr<grid->SumArraySize();thr++),{
     int nwork, mywork, myoff;
-    GridThread::GetWork(grid->oSites(),thr,mywork,myoff);
+    nwork = grid->oSites();
+    GridThread::GetWork(nwork,thr,mywork,myoff);
     
     vobj vvsum=Zero();
     for(int ss=myoff;ss<mywork+myoff; ss++){
@@ -576,9 +625,9 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
   //  Lattice<vobj> Rslice(SliceGrid);
 
   assert( FullGrid->_simd_layout[Orthog]==1);
-  int nh =  FullGrid->_ndimension;
+  //  int nh =  FullGrid->_ndimension;
   //  int nl = SliceGrid->_ndimension;
-  int nl = nh-1;
+  //  int nl = nh-1;
 
   //FIXME package in a convenient iterator
   //Should loop over a plane orthogonal to direction "Orthog"
@@ -629,9 +678,9 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
   //  Lattice<vobj> Rslice(SliceGrid);
 
   assert( FullGrid->_simd_layout[Orthog]==1);
-  int nh =  FullGrid->_ndimension;
+  //  int nh =  FullGrid->_ndimension;
   //  int nl = SliceGrid->_ndimension;
-  int nl=1;
+  //  int nl=1;
 
   //FIXME package in a convenient iterator
   //Should loop over a plane orthogonal to direction "Orthog"
@@ -685,9 +734,9 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
   mat = Eigen::MatrixXcd::Zero(Nblock,Nblock);
 
   assert( FullGrid->_simd_layout[Orthog]==1);
-  int nh =  FullGrid->_ndimension;
+  //  int nh =  FullGrid->_ndimension;
   //  int nl = SliceGrid->_ndimension;
-  int nl = nh-1;
+  //  int nl = nh-1;
 
   //FIXME package in a convenient iterator
   //Should loop over a plane orthogonal to direction "Orthog"
