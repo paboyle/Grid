@@ -39,7 +39,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define GRID_BASE_H
 
 
-
 #include <Grid/DisableWarnings.h>
 #include <Grid/Namespace.h>
 #include <Grid/GridStd.h>
