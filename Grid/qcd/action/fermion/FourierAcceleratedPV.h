@@ -163,7 +163,7 @@ class FourierAcceleratedPV {
       for (int sidx=0;sidx<group_in_s;sidx++) {
 
 	int s = sgroup*group_in_s + sidx;
-	int sprime = Ls-s-1;
+	//	int sprime = Ls-s-1;
 
 	RealD phase = M_PI / (RealD)Ls * (2.0 * s + 1.0);
 	RealD cosp = ::cos(phase);

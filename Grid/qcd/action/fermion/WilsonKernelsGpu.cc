@@ -303,9 +303,9 @@ GPU_EMPTY(GparityWilsonImplD);
 GPU_EMPTY(GparityWilsonImplDF);
 
 template <class Impl>
-void WilsonKernels<Impl>::Dhop(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
-			       int Ls, int Nsite, const FermionField &in, FermionField &out,
-			       int interior,int exterior) 
+void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
+				     int Ls, int Nsite, const FermionField &in, FermionField &out,
+				     int interior,int exterior) 
 {
     auto U_v   = U.View();
     auto in_v  = in.View();
@@ -319,7 +319,8 @@ void WilsonKernels<Impl>::Dhop(int Opt,StencilImpl &st,  DoubledGaugeField &U, S
 	  //	  uint64_t lane = cur % nsimd;
 	  cur = cur / nsimd;
 	  uint64_t   s  = cur%Ls;
-	  uint64_t   sF = cur;         cur = cur / Ls;
+	  //	  uint64_t   sF = cur;         
+	  cur = cur / Ls;
 	  uint64_t   sU = cur;
 	  WilsonKernels<Impl>::GpuDhopSite(st_v,U_v[sU],buf,Ls,s,sU,in_v,out_v);
       });
@@ -332,9 +333,9 @@ void WilsonKernels<Impl>::Dhop(int Opt,StencilImpl &st,  DoubledGaugeField &U, S
     }
   }
   template <class Impl>
-  void WilsonKernels<Impl>::DhopDag(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
-				    int Ls, int Nsite, const FermionField &in, FermionField &out,
-				    int interior,int exterior) 
+  void WilsonKernels<Impl>::DhopDagKernel(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
+				     int Ls, int Nsite, const FermionField &in, FermionField &out,
+				     int interior,int exterior) 
   {
     auto U_v   = U.View();
     auto in_v  = in.View();
@@ -349,7 +350,8 @@ void WilsonKernels<Impl>::Dhop(int Opt,StencilImpl &st,  DoubledGaugeField &U, S
 	  // uint64_t lane = cur % nsimd;
 	  cur = cur / nsimd;
 	  uint64_t   s  = cur%Ls;
-	  uint64_t   sF = cur;         cur = cur / Ls;
+	  //uint64_t   sF = cur;         
+	  cur = cur / Ls;
 	  uint64_t   sU = cur;
 	  WilsonKernels<Impl>::GpuDhopSiteDag(st_v,U_v,buf,Ls,s,sU,in_v,out_v);
       });

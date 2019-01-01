@@ -49,8 +49,8 @@ template<class Impl> class StaggeredKernels : public FermionOperator<Impl> , pub
    
 public:
     
-   void DhopDir(StencilImpl &st, DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, SiteSpinor * buf,
-		int sF, int sU, const FermionFieldView &in, FermionFieldView &out, int dir,int disp);
+   void DhopDirKernel(StencilImpl &st, DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, SiteSpinor * buf,
+		      int sF, int sU, const FermionFieldView &in, FermionFieldView &out, int dir,int disp);
 
    ///////////////////////////////////////////////////////////////////////////////////////
    // Generic Nc kernels

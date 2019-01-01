@@ -931,13 +931,13 @@ template void WilsonKernels<A>::HandDhopSiteExt(StencilView &st, DoubledGaugeFie
 template void WilsonKernels<A>::HandDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
 						   int ss,int sU,const FermionFieldView &in, FermionFieldView &out); 
 
-INSTANTIATE_THEM(GparityWilsonImplF);
-INSTANTIATE_THEM(GparityWilsonImplD);
-INSTANTIATE_THEM(GparityWilsonImplFH);
-INSTANTIATE_THEM(GparityWilsonImplDF);
-INSTANTIATE_THEM(DomainWallVec5dImplFH);
-INSTANTIATE_THEM(DomainWallVec5dImplDF);
-INSTANTIATE_THEM(ZDomainWallVec5dImplFH);
-INSTANTIATE_THEM(ZDomainWallVec5dImplDF);
+//INSTANTIATE_THEM(GparityWilsonImplF);
+//INSTANTIATE_THEM(GparityWilsonImplD);
+//INSTANTIATE_THEM(GparityWilsonImplFH);
+//INSTANTIATE_THEM(GparityWilsonImplDF);
+//INSTANTIATE_THEM(DomainWallVec5dImplFH);
+//INSTANTIATE_THEM(DomainWallVec5dImplDF);
+//INSTANTIATE_THEM(ZDomainWallVec5dImplFH);
+//INSTANTIATE_THEM(ZDomainWallVec5dImplDF);
 
 NAMESPACE_END(Grid);

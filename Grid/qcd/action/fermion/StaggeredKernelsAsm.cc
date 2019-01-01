@@ -963,10 +963,10 @@ template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilImpl &st, 
 				  SiteSpinor *buf, int LLs,		\
 				  int sU, const FermionFieldView &in, FermionFieldView &out,int dag);
 
-KERNEL_INSTANTIATE(StaggeredKernels,DhopSiteAsm,StaggeredImplD);
-KERNEL_INSTANTIATE(StaggeredKernels,DhopSiteAsm,StaggeredImplF);
-KERNEL_INSTANTIATE(StaggeredKernels,DhopSiteAsm,StaggeredVec5dImplD);
-KERNEL_INSTANTIATE(StaggeredKernels,DhopSiteAsm,StaggeredVec5dImplF);
+//KERNEL_INSTANTIATE(StaggeredKernels,DhopSiteAsm,StaggeredImplD);
+//KERNEL_INSTANTIATE(StaggeredKernels,DhopSiteAsm,StaggeredImplF);
+//KERNEL_INSTANTIATE(StaggeredKernels,DhopSiteAsm,StaggeredVec5dImplD);
+//KERNEL_INSTANTIATE(StaggeredKernels,DhopSiteAsm,StaggeredVec5dImplF);
 
 NAMESPACE_END(Grid);
 

@@ -104,8 +104,8 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
     assert(FiveDimRedBlackGrid._simd_layout[0]==nsimd);
 
     for(int d=0;d<4;d++){
-      assert(FourDimGrid._simd_layout[d]=1);
-      assert(FourDimRedBlackGrid._simd_layout[d]=1);
+      assert(FourDimGrid._simd_layout[d]==1);
+      assert(FourDimRedBlackGrid._simd_layout[d]==1);
       assert(FiveDimRedBlackGrid._simd_layout[d+1]==1);
     }
 
@@ -528,14 +528,14 @@ void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOr
   auto U_v = U.View();
   int Opt = WilsonKernelsStatic::Opt;
   if (dag == DaggerYes) {
-    Kernels::DhopDag(Opt,st,U,st.CommBuf(),LLs,U_v.size(),in,out);
+    Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),LLs,U_v.size(),in,out);
     //    parallel_for (int ss = 0; ss < U.Grid()->oSites(); ss++) {
     //      int sU = ss;
     //      int sF = LLs * sU;
     //      Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
     //    }
   } else {
-    Kernels::Dhop(Opt,st,U,st.CommBuf(),LLs,U_v.size(),in,out);
+    Kernels::DhopKernel(Opt,st,U,st.CommBuf(),LLs,U_v.size(),in,out);
     //    parallel_for (int ss = 0; ss < U.Grid()->oSites(); ss++) {
     //      int sU = ss;
     //      int sF = LLs * sU;
@@ -672,7 +672,7 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt_5d(FermionField &out,const
   for(int idx=0;idx<_grid->lSites();idx++){
     Coordinate lcoor(Nd);
     Tcomplex cc;
-    RealD sgn;
+    //    RealD sgn;
     _grid->LocalIndexToLocalCoor(idx,lcoor);
     peekLocalSite(cc,cosha,lcoor);
     assert((double)real(cc)>=1.0);
@@ -867,7 +867,7 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const Fe
   for(int idx=0;idx<_grid->lSites();idx++){
     Coordinate lcoor(Nd);
     Tcomplex cc;
-    RealD sgn;
+    //    RealD sgn;
     _grid->LocalIndexToLocalCoor(idx,lcoor);
     peekLocalSite(cc,cosha,lcoor);
     assert((double)real(cc)>=1.0);

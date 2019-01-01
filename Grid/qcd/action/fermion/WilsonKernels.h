@@ -52,12 +52,12 @@ public:
    
 public:
 
-  static void Dhop(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
-		   int Ls, int Nsite, const FermionField &in, FermionField &out,
-		   int interior=1,int exterior=1) ;
-  static void DhopDag(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
-		      int Ls, int Nsite, const FermionField &in, FermionField &out,
-		      int interior=1,int exterior=1) ;
+  static void DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
+			 int Ls, int Nsite, const FermionField &in, FermionField &out,
+			 int interior=1,int exterior=1) ;
+  static void DhopDagKernel(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
+			    int Ls, int Nsite, const FermionField &in, FermionField &out,
+			    int interior=1,int exterior=1) ;
    
   template <bool EnableBool = true> static accelerator
   typename std::enable_if<Impl::Dimension == 3 && Nc == 3 &&EnableBool, void>::type

@@ -259,7 +259,7 @@ void ImprovedStaggeredFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGauge
     auto B_v   = B.View();
     auto Btilde_v   = Btilde.View();
     thread_loop( (int sss = 0; sss < B.Grid()->oSites(); sss++), {
-      Kernels::DhopDir(st, U_v, UUU_v, st.CommBuf(), sss, sss, B_v, Btilde_v, mu,1);
+      Kernels::DhopDirKernel(st, U_v, UUU_v, st.CommBuf(), sss, sss, B_v, Btilde_v, mu,1);
     });
 
     // Force in three link terms
@@ -380,7 +380,7 @@ void ImprovedStaggeredFermion<Impl>::DhopDir(const FermionField &in, FermionFiel
   auto in_v    =  in.View();
   auto out_v   = out.View();
   thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++) , {
-      Kernels::DhopDir(Stencil, Umu_v, UUUmu_v, Stencil.CommBuf(), sss, sss, in_v, out_v, dir, disp);
+      Kernels::DhopDirKernel(Stencil, Umu_v, UUUmu_v, Stencil.CommBuf(), sss, sss, in_v, out_v, dir, disp);
   });
 };
 

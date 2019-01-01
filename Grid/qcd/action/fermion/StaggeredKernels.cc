@@ -170,7 +170,7 @@ void StaggeredKernels<Impl>::DhopSiteGenericExt(StencilImpl &st, LebesgueOrder &
 						SiteSpinor *buf, int LLs, int sU,
 						const FermionFieldView &in, FermionFieldView &out,int dag) {
   const SiteSpinor *chi_p;
-  SiteSpinor chi;
+  //  SiteSpinor chi;
   SiteSpinor Uchi;
   StencilEntry *SE;
   int ptype;
@@ -276,8 +276,8 @@ void StaggeredKernels<Impl>::DhopSite(StencilImpl &st, LebesgueOrder &lo, Double
 };
 
 template <class Impl>
-void StaggeredKernels<Impl>::DhopDir( StencilImpl &st, DoubledGaugeFieldView &U,  DoubledGaugeFieldView &UUU, SiteSpinor *buf, int sF,
-				      int sU, const FermionFieldView &in, FermionFieldView &out, int dir, int disp) 
+void StaggeredKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeFieldView &U,  DoubledGaugeFieldView &UUU, SiteSpinor *buf, int sF,
+					    int sU, const FermionFieldView &in, FermionFieldView &out, int dir, int disp) 
 {
   // Disp should be either +1,-1,+3,-3
   // What about "dag" ?

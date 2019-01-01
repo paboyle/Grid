@@ -137,9 +137,11 @@
   int nmax=U.oSites();
   for(int site=0;site<Ns;site++) {
 #ifndef EXTERIOR
-    int sU =lo.Reorder(ssU);
+    //    int sU =lo.Reorder(ssU);
+    int sU =ssU;
     int ssn=ssU+1;     if(ssn>=nmax) ssn=0;
-    int sUn=lo.Reorder(ssn);
+    //    int sUn=lo.Reorder(ssn);
+    int sUn=ssn;
     LOCK_GAUGE(0);
 #else
     int sU =ssU;

@@ -247,7 +247,7 @@ void StaggeredKernels<Impl>::DhopSiteHandInt(StencilImpl &st, LebesgueOrder &lo,
   Simd U_22; 
 
   SiteSpinor result;
-  int offset,local,perm, ptype;
+  int offset, ptype, local, perm;
 
   StencilEntry *SE;
   int skew;
@@ -323,7 +323,7 @@ void StaggeredKernels<Impl>::DhopSiteHandExt(StencilImpl &st, LebesgueOrder &lo,
   Simd U_22; 
 
   SiteSpinor result;
-  int offset,local,perm, ptype;
+  int offset, ptype, local, perm;
 
   StencilEntry *SE;
   int skew;

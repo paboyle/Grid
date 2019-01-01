@@ -109,8 +109,10 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
     for (int j = 0; j < Ns; j++)
       for (int k = 0; k < Ns; k++)
         for (int a = 0; a < DimRep; a++)
-          for (int b = 0; b < DimRep; b++)
-            EigenCloverOp(a + j * DimRep, b + k * DimRep) = Qx()(j, k)(a, b);
+          for (int b = 0; b < DimRep; b++){
+	    auto zz =  Qx()(j, k)(a, b);
+            EigenCloverOp(a + j * DimRep, b + k * DimRep) = std::complex<double>(zz);
+	  }
     //   if (site==0) std::cout << "site =" << site << "\n" << EigenCloverOp << std::endl;
 
     EigenInvCloverOp = EigenCloverOp.inverse();

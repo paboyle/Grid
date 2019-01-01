@@ -233,7 +233,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopDir(const FermionField &in, FermionFi
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
-      Kernels::DhopDir(Stencil, Umu_v, UUUmu_v, Stencil.CommBuf(), sF, sU, in_v, out_v, dir, disp);
+      Kernels::DhopDirKernel(Stencil, Umu_v, UUUmu_v, Stencil.CommBuf(), sF, sU, in_v, out_v, dir, disp);
     }
   });
 };
@@ -427,15 +427,15 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st,
   auto  in_v  =  in.View();
   auto out_v  = out.View();
   if (dag == DaggerYes) {
-    parallel_for (int ss = 0; ss < U.Grid()->oSites(); ss++) {
+  thread_loop( (int ss = 0; ss < U.Grid()->oSites(); ss++), {
       int sU=ss;
       Kernels::DhopSiteDag(st, lo, U_v, UUU_v, st.CommBuf(), LLs, sU,in_v, out_v);
-    }
+    });
   } else {
-    parallel_for (int ss = 0; ss < U.Grid()->oSites(); ss++) {
+    thread_loop( (int ss = 0; ss < U.Grid()->oSites(); ss++) ,{
       int sU=ss;
       Kernels::DhopSite(st,lo,U_v,UUU_v,st.CommBuf(),LLs,sU,in_v,out_v);
-    }
+    });
   }
   DhopComputeTime += usecond();
   DhopTotalTime   += usecond();
