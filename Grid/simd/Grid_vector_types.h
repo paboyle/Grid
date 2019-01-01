@@ -225,9 +225,17 @@ public:
     v = rhs.v;
     return *this;
   };  // faster than not declaring it and leaving to the compiler
+
+
   accelerator Grid_simd() = default;
   accelerator_inline Grid_simd(const Grid_simd &rhs) : v(rhs.v){};  // compiles in movaps
   accelerator_inline Grid_simd(const Grid_simd &&rhs) : v(rhs.v){};
+  accelerator Grid_simd(const Real a) { vsplat(*this, Scalar_type(a)); };
+  // Enable if complex type
+  template <typename S = Scalar_type> accelerator_inline
+  Grid_simd(const typename std::enable_if<is_complex<S>::value, S>::type a) {
+      vsplat(*this, a);
+  };
 
   /////////////////////////////
   // Constructors
@@ -237,13 +245,7 @@ public:
     return (*this);
   }
 
-  // Enable if complex type
-  template <typename S = Scalar_type> accelerator_inline
-  Grid_simd(const typename std::enable_if<is_complex<S>::value, S>::type a) {
-    vsplat(*this, a);
-  };
 
-  accelerator Grid_simd(const Real a) { vsplat(*this, Scalar_type(a)); };
 
   ///////////////////////////////////////////////
   // mac, mult, sub, add, adj
@@ -251,66 +253,66 @@ public:
 
   // FIXME -- alias this to an accelerator_inline MAC struct.
   friend accelerator_inline void mac(Grid_simd *__restrict__ y,
-                         const Grid_simd *__restrict__ a,
-                         const Grid_simd *__restrict__ x) {
+				     const Grid_simd *__restrict__ a,
+				     const Grid_simd *__restrict__ x) {
     *y = (*a) * (*x) + (*y);
   };
-
+  
   friend accelerator_inline void mult(Grid_simd *__restrict__ y,
-                          const Grid_simd *__restrict__ l,
-                          const Grid_simd *__restrict__ r) {
+				      const Grid_simd *__restrict__ l,
+				      const Grid_simd *__restrict__ r) {
     *y = (*l) * (*r);
   }
 
   friend accelerator_inline void sub(Grid_simd *__restrict__ y,
-                         const Grid_simd *__restrict__ l,
-                         const Grid_simd *__restrict__ r) {
+				     const Grid_simd *__restrict__ l,
+				     const Grid_simd *__restrict__ r) {
     *y = (*l) - (*r);
   }
   friend accelerator_inline void add(Grid_simd *__restrict__ y,
-                         const Grid_simd *__restrict__ l,
-                         const Grid_simd *__restrict__ r) {
+				     const Grid_simd *__restrict__ l,
+				     const Grid_simd *__restrict__ r) {
     *y = (*l) + (*r);
   }
   friend accelerator_inline void mac(Grid_simd *__restrict__ y,
-                         const Scalar_type *__restrict__ a,
-                         const Grid_simd *__restrict__ x) {
+				     const Scalar_type *__restrict__ a,
+				     const Grid_simd *__restrict__ x) {
     *y = (*a) * (*x) + (*y);
   };
   friend accelerator_inline void mult(Grid_simd *__restrict__ y,
-                          const Scalar_type *__restrict__ l,
-                          const Grid_simd *__restrict__ r) {
+				      const Scalar_type *__restrict__ l,
+				      const Grid_simd *__restrict__ r) {
     *y = (*l) * (*r);
   }
   friend accelerator_inline void sub(Grid_simd *__restrict__ y,
-                         const Scalar_type *__restrict__ l,
-                         const Grid_simd *__restrict__ r) {
+				     const Scalar_type *__restrict__ l,
+				     const Grid_simd *__restrict__ r) {
     *y = (*l) - (*r);
   }
   friend accelerator_inline void add(Grid_simd *__restrict__ y,
-                         const Scalar_type *__restrict__ l,
-                         const Grid_simd *__restrict__ r) {
+				     const Scalar_type *__restrict__ l,
+				     const Grid_simd *__restrict__ r) {
     *y = (*l) + (*r);
   }
 
   friend accelerator_inline void mac(Grid_simd *__restrict__ y,
-                         const Grid_simd *__restrict__ a,
-                         const Scalar_type *__restrict__ x) {
+				     const Grid_simd *__restrict__ a,
+				     const Scalar_type *__restrict__ x) {
     *y = (*a) * (*x) + (*y);
   };
   friend accelerator_inline void mult(Grid_simd *__restrict__ y,
-                          const Grid_simd *__restrict__ l,
-                          const Scalar_type *__restrict__ r) {
+				      const Grid_simd *__restrict__ l,
+				      const Scalar_type *__restrict__ r) {
     *y = (*l) * (*r);
   }
   friend accelerator_inline void sub(Grid_simd *__restrict__ y,
-                         const Grid_simd *__restrict__ l,
-                         const Scalar_type *__restrict__ r) {
+				     const Grid_simd *__restrict__ l,
+				     const Scalar_type *__restrict__ r) {
     *y = (*l) - (*r);
   }
   friend accelerator_inline void add(Grid_simd *__restrict__ y,
-                         const Grid_simd *__restrict__ l,
-                         const Scalar_type *__restrict__ r) {
+				     const Grid_simd *__restrict__ l,
+				     const Scalar_type *__restrict__ r) {
     *y = (*l) + (*r);
   }
 
@@ -851,11 +853,17 @@ accelerator_inline Grid_simd<S, V> toReal(const Grid_simd<complex<S>, V> &in) {
   return ret;
 }
 
+
+template <class T> struct toComplexMapper {};
+template<> struct toComplexMapper<vRealF> {  typedef vComplexF Complexified; };
+template<> struct toComplexMapper<vRealD> {  typedef vComplexD Complexified; };
+
+
 // complex = toComplex( real )
-template <class R, class V, IfReal<R> = 0>  // must be a real arg
-accelerator_inline Grid_simd< complex<R>, V> toComplex(const Grid_simd<R, V> &in) {
-  typedef Grid_simd<R, V> Rsimd;
-  typedef Grid_simd< complex<R>, V> Csimd;
+template <class Rsimd>  // must be a real arg
+accelerator_inline typename toComplexMapper<Rsimd>::Complexified toComplex(const Rsimd &in) {
+
+  typedef typename toComplexMapper<Rsimd>::Complexified   Csimd;
   typename Rsimd::conv_t conv;  // address as real
 
   conv.v = in.v;
@@ -867,7 +875,7 @@ accelerator_inline Grid_simd< complex<R>, V> toComplex(const Grid_simd<R, V> &in
     conv.s[i + 1] = 0.0;  // zero imaginary parts
   }
   Csimd ret;
-  ret.v = conv.v;
+  memcpy((void *)&ret.v,(void *)&conv.v,sizeof(ret.v));
   return ret;
 }
 
