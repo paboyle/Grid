@@ -286,7 +286,7 @@ case ${CXX} in
 #    CXXLD="nvcc -v -link"
     CXX="nvcc -x cu "
     CXXLD="nvcc -link"
-    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing"
+    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing -Xcompiler -Wno-unusable-partial-specialization "
     ;;
   *)
     CXXLD=${CXX}
