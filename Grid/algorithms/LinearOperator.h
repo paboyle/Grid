@@ -391,12 +391,12 @@ template<class Matrix,class Field> using SchurStagOperator = SchurStaggeredOpera
 template<class Field> class OperatorFunction {
 public:
   virtual void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) = 0;
-      virtual void operator() (LinearOperatorBase<Field> &Linop, const std::vector<Field> &in,std::vector<Field> &out) {
-	assert(in.size()==out.size());
-	for(int k=0;k<in.size();k++){
-	  (*this)(Linop,in[k],out[k]);
-	}
-      };
+  virtual void operator() (LinearOperatorBase<Field> &Linop, const std::vector<Field> &in,std::vector<Field> &out) {
+    assert(in.size()==out.size());
+    for(int k=0;k<in.size();k++){
+      (*this)(Linop,in[k],out[k]);
+    }
+  };
 };
 
 template<class Field> class LinearFunction {

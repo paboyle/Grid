@@ -41,6 +41,9 @@ NAMESPACE_BEGIN(Grid);
 template <class Field>
 class ConjugateGradient : public OperatorFunction<Field> {
 public:
+
+  using OperatorFunction<Field>::operator();
+
   bool ErrorOnNoConverge;  // throw an assert when the CG fails to converge.
                            // Defaults true.
   RealD Tolerance;
@@ -58,7 +61,8 @@ public:
 
     conformable(psi, src);
 
-    RealD cp, c, a, d, b, ssq, qq, b_pred;
+    RealD cp, c, a, d, b, ssq, qq;
+    //RealD b_pred;
 
     Field p(src);
     Field mmp(src);
@@ -128,10 +132,10 @@ public:
       auto psi_v = psi.View();
       auto p_v   = p.View();
       auto r_v   = r.View();
-      parallel_for(int ss=0;ss<src.Grid()->oSites();ss++){
+      accelerator_loop(ss,p_v,{
 	vstream(psi_v[ss], a      *  p_v[ss] + psi_v[ss]);
 	vstream(p_v  [ss], b      *  p_v[ss] + r_v[ss]);
-      }
+      });
       LinearCombTimer.Stop();
       LinalgTimer.Stop();
 

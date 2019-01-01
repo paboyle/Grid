@@ -47,6 +47,8 @@ struct ChebyParams : Serializable {
 template<class Field>
 class Chebyshev : public OperatorFunction<Field> {
 private:
+  using OperatorFunction<Field>::operator();
+
   std::vector<RealD> Coeffs;
   int order;
   RealD hi;
