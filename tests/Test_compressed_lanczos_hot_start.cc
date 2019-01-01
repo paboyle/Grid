@@ -168,7 +168,7 @@ int main (int argc, char ** argv) {
   std::vector<int> blockSize = Params.blockSize;
   std::vector<int> latt({32,32,32,32});
   uint64_t     vol = Ls*latt[0]*latt[1]*latt[2]*latt[3];
-  double   mat_flop= 2.0*1320.0*vol;    
+  //  double   mat_flop= 2.0*1320.0*vol;    
   // Grids
   GridCartesian         * UGrid     = SpaceTimeGrid::makeFourDimGrid(latt,
 								     GridDefaultSimd(Nd,vComplex::Nsimd()),
@@ -216,8 +216,8 @@ int main (int argc, char ** argv) {
   LanczosParams fine  =Params.FineParams;  
   LanczosParams coarse=Params.CoarseParams;  
 
-  const int Ns1 = fine.Nstop;   const int Ns2 = coarse.Nstop;
-  const int Nk1 = fine.Nk;      const int Nk2 = coarse.Nk;
+  const int Ns1 = fine.Nstop;   //const int Ns2 = coarse.Nstop;
+  const int Nk1 = fine.Nk;      //const int Nk2 = coarse.Nk;
   const int Nm1 = fine.Nm;      const int Nm2 = coarse.Nm;
 
   std::cout << GridLogMessage << "Keep " << fine.Nstop   << " fine   vectors" << std::endl;
