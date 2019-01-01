@@ -94,7 +94,7 @@ public:
     for (int mu = 0; mu < Ndim; mu++)
     {
       //  pshift = Cshift(p, mu, +1);  // not efficient, implement with stencils
-      parallel_for(int i = 0; i < p.Grid()->oSites(); i++)
+      thread_loop( (int i = 0; i < p.Grid()->oSites(); i++),
       {
         int permute_type;
         StencilEntry *SE;
@@ -117,7 +117,7 @@ public:
         {
           action_v[i] -= phiStencil.CommBuf()[SE->_offset] * (*t_p) + (*t_p) * phiStencil.CommBuf()[SE->_offset];
         }
-      }
+      });
       //  action -= pshift*p + p*pshift;
     }
     // NB the trace in the algebra is normalised to 1/2
@@ -137,7 +137,7 @@ public:
 
     phiStencil.HaloExchange(p, compressor);
     double halo_t = usecond();
-    int chunk = 128;
+    //    int chunk = 128;
     //for (int mu = 0; mu < Nd; mu++) force -= Cshift(p, mu, -1) + Cshift(p, mu, 1);
 
     // inverting the order of the loops slows down the code(! g++ 7)
@@ -153,7 +153,7 @@ public:
       StencilEntry *SE;
       const vobj *temp;
 
-      parallel_for (int i = 0; i < p.Grid()->oSites(); i++) {
+      thread_loop( (int i = 0; i < p.Grid()->oSites(); i++) ,{
 	
 	SE = phiStencil.GetEntry(permute_type, point, i);
 	// prefetch next p?
@@ -171,7 +171,7 @@ public:
         } else {
           force_v[i] -= phiStencil.CommBuf()[SE->_offset];
         }
-      }
+      });
     }
     force *= N / g;
 

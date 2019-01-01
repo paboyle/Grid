@@ -980,7 +980,7 @@ void A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
 {
   GridBase *grid = vs[0].Grid();
 
-  int nd    = grid->_ndimension;
+  //  int nd    = grid->_ndimension;
   int Nsimd = grid->Nsimd();
   int N_t   = WW_sd.dimension(0);
   int N_s = WW_sd.dimension(1); 

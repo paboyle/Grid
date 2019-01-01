@@ -71,9 +71,9 @@ public:
   void StochasticField(GaugeField &out, GridParallelRNG &rng);
   void StochasticField(GaugeField &out, GridParallelRNG &rng,
 		       const GaugeLinkField &weight);
-    void UnitField(GaugeField &out);
+  void UnitField(GaugeField &out);
 private:
-    void infVolPropagator(GaugeLinkField &out);
+  void infVolPropagator(GaugeLinkField &out);
   void invKHatSquared(GaugeLinkField &out);
   void zmSub(GaugeLinkField &out);
 private:
@@ -123,34 +123,37 @@ void Photon<Gimpl>::FreePropagator (const GaugeField &in,GaugeField &out)
 }
   
 template<class Gimpl>
-  void Photon<Gimpl>::infVolPropagator(GaugeLinkField &out)
-  {
-    auto               *grid = dynamic_cast<GridCartesian *>(out.Grid());
-    LatticeReal        xmu(grid);
-    GaugeLinkField     one(grid);
-    const unsigned int nd    = grid->_ndimension;
-    Coordinate   &l    = grid->_fdimensions;
-    Coordinate   x0(nd,0);
-    TComplex           Tone  = Complex(1.0,0.0);
-    TComplex           Tzero = Complex(G0_,0.0);
-    FFT                fft(grid);
+void Photon<Gimpl>::infVolPropagator(GaugeLinkField &out)
+{
+  auto               *grid = dynamic_cast<GridCartesian *>(out.Grid());
+  LatticeReal        xmu(grid);
+  LatticeReal        pmusq(grid);
+  LatticeComplex     pmusq_z(grid);
+  GaugeLinkField     one(grid);
+  const unsigned int nd    = grid->_ndimension;
+  Coordinate   &l    = grid->_fdimensions;
+  Coordinate   x0(nd,0);
+  TComplex           Tone  = Complex(1.0,0.0);
+  TComplex           Tzero = Complex(G0_,0.0);
+  FFT                fft(grid);
     
-    one = Complex(1.0,0.0);
-    out = Zero();
-    for(int mu = 0; mu < nd; mu++)
-    {
-      LatticeCoordinate(xmu,mu);
-      Real lo2 = l[mu]/2.0;
-      xmu = where(xmu < lo2, xmu, xmu-double(l[mu]));
-      out = out + toComplex(4*M_PI*M_PI*xmu*xmu);
-    }
-    pokeSite(Tone, out, x0);
-    out = one/out;
-    pokeSite(Tzero, out, x0);
-    fft.FFT_all_dim(out, out, FFT::forward);
+  one = Complex(1.0,0.0);
+  out = Zero();
+  for(int mu = 0; mu < nd; mu++) {
+    LatticeCoordinate(xmu,mu);
+    Real lo2 = l[mu]/2.0;
+    xmu = where(xmu < lo2, xmu, xmu-double(l[mu]));
+    pmusq = (4.0*M_PI*M_PI)*xmu*xmu;
+    pmusq_z= toComplex(pmusq);
+    out = out + pmusq_z;
   }
+  pokeSite(Tone, out, x0);
+  out = one/out;
+  pokeSite(Tzero, out, x0);
+  fft.FFT_all_dim(out, out, FFT::forward);
+}
   
-  template<class Gimpl>
+template<class Gimpl>
 void Photon<Gimpl>::invKHatSquared(GaugeLinkField &out)
 {
   GridBase           *grid = out.Grid();
