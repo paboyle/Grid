@@ -48,6 +48,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/iterative/ConjugateGradientMixedPrec.h>
 #include <Grid/algorithms/iterative/BlockConjugateGradient.h>
 #include <Grid/algorithms/iterative/ConjugateGradientReliableUpdate.h>
+#include <Grid/algorithms/iterative/MinimalResidual.h>
+#include <Grid/algorithms/iterative/GeneralisedMinimalResidual.h>
+#include <Grid/algorithms/iterative/CommunicationAvoidingGeneralisedMinimalResidual.h>
+#include <Grid/algorithms/iterative/FlexibleGeneralisedMinimalResidual.h>
+#include <Grid/algorithms/iterative/FlexibleCommunicationAvoidingGeneralisedMinimalResidual.h>
+#include <Grid/algorithms/iterative/MixedPrecisionFlexibleGeneralisedMinimalResidual.h>
 #include <Grid/algorithms/iterative/ImplicitlyRestartedLanczos.h>
 #include <Grid/algorithms/CoarsenedMatrix.h>
 #include <Grid/algorithms/FFT.h>
