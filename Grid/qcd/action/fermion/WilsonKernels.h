@@ -59,9 +59,10 @@ public:
 			    int Ls, int Nsite, const FermionField &in, FermionField &out,
 			    int interior=1,int exterior=1) ;
    
-  template <bool EnableBool = true> static accelerator
-  typename std::enable_if<Impl::Dimension == 3 && Nc == 3 &&EnableBool, void>::type
-  DhopSite(int Opt,StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  template<bool EnableBool=true>
+  static accelerator_inline void
+    DhopSite(typename std::enable_if<(Impl::isFundamental==true && Nc == 3 &&EnableBool), int>::type Opt,
+	   StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 	   int sF, int sU, int Ls, int Nsite, 
 	   const FermionFieldView &in, FermionFieldView &out,int interior=1,int exterior=1) 
   {
@@ -110,9 +111,10 @@ public:
     //bgq_l1p_optimisation(0);
   }
      
-  template <bool EnableBool = true> static accelerator
-  typename std::enable_if<(Impl::Dimension != 3 || (Impl::Dimension == 3 && Nc != 3)) && EnableBool, void>::type
-  DhopSite(int Opt, StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  template<bool EnableBool=true>
+  static accelerator_inline void
+  DhopSite(typename std::enable_if<((Impl::isFundamental==false)||(Nc != 3))&& EnableBool, int>::type Opt, 
+	   StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 	   int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out,int interior=1,int exterior=1 ) 
   {
     // no kernel choice  
@@ -128,9 +130,10 @@ public:
     }
   }
      
-  template <bool EnableBool = true> static accelerator
-  typename std::enable_if<Impl::Dimension == 3 && Nc == 3 && EnableBool,void>::type
-  DhopSiteDag(int Opt, StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  template<bool EnableBool=true>
+  static accelerator_inline void
+  DhopSiteDag(typename std::enable_if<(Impl::isFundamental==true && Nc == 3 &&EnableBool), int>::type Opt, 
+	      StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 	      int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out,int interior=1,int exterior=1) 
   {
     //bgq_l1p_optimisation(1);
@@ -178,9 +181,10 @@ public:
     //bgq_l1p_optimisation(0);
   }
 
-  template <bool EnableBool = true> static accelerator
-  typename std::enable_if<(Impl::Dimension != 3 || (Impl::Dimension == 3 && Nc != 3)) && EnableBool,void>::type
-  DhopSiteDag(int Opt,StencilView &st,  DoubledGaugeFieldView &U,SiteHalfSpinor * buf,
+  template<bool EnableBool=true>
+  static accelerator_inline void
+  DhopSiteDag(typename std::enable_if<((Impl::isFundamental==false)||(Nc != 3))&& EnableBool, int>::type Opt,
+	      StencilView &st,  DoubledGaugeFieldView &U,SiteHalfSpinor * buf,
 	      int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out,int interior=1,int exterior=1) 
   {
     for (int site = 0; site < Nsite; site++) {

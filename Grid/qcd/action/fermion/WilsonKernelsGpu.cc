@@ -328,7 +328,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
       accelerator_loop( ss, U_v, {
 	int sU = ss;
         int sF = Ls * sU;
-        DhopSite(Opt,st_v,U_v,st.CommBuf(),sF,sU,Ls,1,in_v,out_v);
+        WilsonKernels<Impl>::DhopSite(Opt,st_v,U_v,st.CommBuf(),sF,sU,Ls,1,in_v,out_v);
       });
     }
   }
@@ -359,7 +359,7 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
       accelerator_loop( ss, U_v, {
 	int sU = ss;
         int sF = Ls * sU;
-        DhopSiteDag(Opt,st,U_v,st.CommBuf(),sF,sU,Ls,1,in_v,out_v);
+        WilsonKernels<Impl>::DhopSiteDag(Opt,st,U_v,st.CommBuf(),sF,sU,Ls,1,in_v,out_v);
       });
     }
   }
