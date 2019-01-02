@@ -1,10 +1,11 @@
-TODO:
----------------
 
 GPU branch code item work list
 -----------------------------
 
-- GPU offload reductions; thrust initial ; inclusive_scan vs reduce?
+TODO:
+---------------
+
+- Make GPU offload reductions optionally deterministic
 - Accelerate the cshift
 - Accelerate non-dslash elements of Mobius; check accelerator_loop uniformly used in fermion operators
 - Gamma tables on GPU
@@ -24,17 +25,12 @@ GPU branch code item work list
 - AVX512 still broken, lebesgue order missing ?
 - Neon ??
 
+DONE:
 -----------------------------
-Physics item work list:
-
-2)- Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
-4)- Multigrid Wilson and DWF, compare to other Multigrid implementations
-5)- HDCR resume
-
------------------------------
-
-DONE
-
+- GPU offload reductions: using thrust::reduce?
+- Deprecate JSON.
+- pugixml difficult.
+- Eigen problematic.
 - Audit HMC timestep / traj length size
 - GPU offload reductions; thrust initial ; inclusive_scan vs reduce?
 - Pragmas.h - prune and remove strong_inline (?)
@@ -45,7 +41,7 @@ DONE
 - -      (3) omp for collapse(n)
 - -      (4) omp parallel for collapse(n)
 - - Only (1) has a natural mirror in accelerator_loop
-- - Nested loop macros get cumbersome
+- - Nested loop macros get cumbersome made a generic interface for N deep
 - - Don't like thread_region and thread_loop_in_region
 - - Could replace with 
 
@@ -63,6 +59,18 @@ DONE
     );
 
     and same "in_region".
+
+
+-----------------------------
+Physics item work list:
+-----------------------------
+
+2)- Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
+4)- Multigrid Wilson and DWF, compare to other Multigrid implementations
+5)- HDCR resume
+
+-----------------------------
+
 
 Nov 2018
 
