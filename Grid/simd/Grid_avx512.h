@@ -481,7 +481,7 @@ struct Rotate{
 // Some Template specialization
 
 // Hack for CLANG until mm512_reduce_add_ps etc... are implemented in GCC and Clang releases
-#ifndef __INTEL_COMPILER
+#if 0
 #warning "Slow reduction due to incomplete reduce intrinsics"
 //Complex float Reduce
 template<>

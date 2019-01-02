@@ -746,11 +746,12 @@ accelerator_inline Grid_simd<S, V> operator/(Grid_simd<S, V> a, Grid_simd<S, V> 
 
   ret = a * conjugate(b) ;
   den = b * conjugate(b) ;
-  
-  auto real_den = toReal(den);
 
-  ret.v=binary<V>(ret.v, real_den.v, DivSIMD());
-
+  // duplicates real part
+  auto real_den  = toReal(den);
+  simd zden;
+  memcpy((void *)&zden.v,(void *)&real_den.v,sizeof(zden));
+  ret.v=binary<V>(ret.v, zden.v, DivSIMD());
   return ret;
 };
 
@@ -839,25 +840,27 @@ accelerator_inline Grid_simd<S, V> trace(const Grid_simd<S, V> &arg) {
 // insert real into complex and zero imag;
 ////////////////////////////////////////////////////////////
 
+
+template <class T> struct toRealMapper {};
+template<> struct toRealMapper<vComplexF> {  typedef vRealF Realified; };
+template<> struct toRealMapper<vComplexD> {  typedef vRealD Realified; };
 // real = toReal( complex )
-template <class S, class V, IfReal<S> = 0>
-accelerator_inline Grid_simd<S, V> toReal(const Grid_simd<complex<S>, V> &in) {
-  typedef Grid_simd<S, V> simd;
-  simd ret;
-  typename simd::conv_t conv;
-  conv.v = in.v;  // copy the vector content (bytewise)
-  for (int i = 0; i < simd::Nsimd(); i += 2) {
+template <class Csimd>  // must be a real arg
+accelerator_inline typename toRealMapper<Csimd>::Realified toReal(const Csimd &in) {
+  typedef typename toRealMapper<Csimd>::Realified Rsimd;
+  Rsimd ret;
+  typename Rsimd::conv_t conv;
+  memcpy((void *)&conv.v,(void *)&in.v,sizeof(conv.v));
+  for (int i = 0; i < Rsimd::Nsimd(); i += 2) {
     conv.s[i + 1] = conv.s[i];  // duplicate (r,r);(r,r);(r,r); etc...
   }
-  ret.v = conv.v;
+  memcpy((void *)&ret.v,(void *)&conv.v,sizeof(ret.v));
   return ret;
 }
-
 
 template <class T> struct toComplexMapper {};
 template<> struct toComplexMapper<vRealF> {  typedef vComplexF Complexified; };
 template<> struct toComplexMapper<vRealD> {  typedef vComplexD Complexified; };
-
 
 // complex = toComplex( real )
 template <class Rsimd>  // must be a real arg

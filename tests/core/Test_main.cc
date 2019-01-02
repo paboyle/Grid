@@ -179,7 +179,7 @@ int main(int argc, char **argv) {
       std::cout << "Norm2 LatticeReal : "<< norm2(BarReal) << std::endl;
       std::cout << "Norm2 LatticeComplex : "<< norm2(BarComplex) << std::endl;
 
-      exit(0);
+      //      exit(0);
 
       TComplex tr = trace(cmat);
 

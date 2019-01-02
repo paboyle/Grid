@@ -109,10 +109,10 @@ int main(int argc, char **argv)
     auto Uprime_v = Uprime.View();
     auto U_v      = U.View();
     auto mom_v    = mom.View();
-    parallel_for(int ss = 0; ss < mom.Grid()->oSites(); ss++)
+    thread_loop( (int ss = 0; ss < mom.Grid()->oSites(); ss++),
     {
       Uprime_v[ss]._internal[mu] = ProjectOnGroup(Exponentiate(mom_v[ss]._internal[mu], dt, 12) * U_v[ss]._internal[mu]);
-    }
+    });
   }
 
   std::cout << GridLogMessage << "Initial mom hamiltonian is " << Hmom << std::endl;
