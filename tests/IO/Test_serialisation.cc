@@ -177,8 +177,8 @@ int main(int argc,char **argv)
   ioTest<TextWriter, TextReader>("iotest.dat", obj, "text   (object)           ");
   ioTest<TextWriter, TextReader>("iotest.dat", vec, "text   (vector of objects)");
   //// text
-  ioTest<JSONWriter, JSONReader>("iotest.json", obj,  "JSON   (object)           ");
-  ioTest<JSONWriter, JSONReader>("iotest.json", vec,  "JSON   (vector of objects)");
+  //  ioTest<JSONWriter, JSONReader>("iotest.json", obj,  "JSON   (object)           ");
+  //  ioTest<JSONWriter, JSONReader>("iotest.json", vec,  "JSON   (vector of objects)");
 
   //// HDF5
 #ifdef HAVE_HDF5

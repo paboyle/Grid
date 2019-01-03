@@ -83,7 +83,7 @@ int main(int argc, char **argv)
   typedef WilsonAdjImplR FermionImplPolicy; // gauge field implemetation for the pseudofermions
   typedef WilsonCloverAdjFermionR FermionAction; // type of lattice fermions (Wilson, DW, ...)
   typedef typename FermionAction::FermionField FermionField;
-  typedef Grid::JSONReader Serialiser;
+  typedef Grid::XmlReader Serialiser;
 
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   HMCWrapper TheHMC;

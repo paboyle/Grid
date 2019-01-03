@@ -81,7 +81,7 @@ int main(int argc, char **argv)
   typedef WilsonImplR FermionImplPolicy;
   typedef WilsonCloverFermionR FermionAction;
   typedef typename FermionAction::FermionField FermionField;
-  typedef Grid::JSONReader Serialiser;
+  typedef Grid::XmlReader Serialiser;
 
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   HMCWrapper TheHMC;

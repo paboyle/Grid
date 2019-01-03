@@ -39,6 +39,8 @@ NAMESPACE_BEGIN(Grid);
 template<class Field> 
 class ConjugateResidual : public OperatorFunction<Field> {
 public:                                                
+  using OperatorFunction<Field>::operator();
+
   RealD   Tolerance;
   Integer MaxIterations;
   int verbose;

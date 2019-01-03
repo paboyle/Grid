@@ -4,9 +4,11 @@
  
  Source file: ./lib/qcd/action/gauge/Photon.h
  
- Copyright (C) 2015
+Copyright (C) 2015-2018
  
  Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+ Author: Antonin Portelli <antonin.portelli@me.com>
+ Author: James Harrison <J.Harrison@soton.ac.uk>
  
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -23,398 +25,304 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  
  See the full license in the file "LICENSE" in the top level distribution directory
-*************************************************************************************/
+ *************************************************************************************/
 /*  END LEGAL */
-#ifndef QCD_PHOTON_ACTION_H
-#define QCD_PHOTON_ACTION_H
+#pragma once
 
 NAMESPACE_BEGIN(Grid);
 
-template <class S>
-class QedGimpl
-{
-public:
-  typedef S Simd;
+  template <class S>
+  class QedGImpl
+  {
+  public:
+    typedef S Simd;
     
-  template <typename vtype>
-  using iImplGaugeLink  = iScalar<iScalar<iScalar<vtype>>>;
-  template <typename vtype>
-  using iImplGaugeField = iVector<iScalar<iScalar<vtype>>, Nd>;
+    template <typename vtype>
+    using iImplGaugeLink  = iScalar<iScalar<iScalar<vtype>>>;
+    template <typename vtype>
+    using iImplGaugeField = iVector<iScalar<iScalar<vtype>>, Nd>;
     
-  typedef iImplGaugeLink<Simd>  SiteLink;
-  typedef iImplGaugeField<Simd> SiteField;
-  typedef SiteField             SiteComplex;
+    typedef iImplGaugeLink<Simd>  SiteLink;
+    typedef iImplGaugeField<Simd> SiteField;
+    typedef SiteLink              SiteComplex;
     
-  typedef Lattice<SiteLink>  LinkField;
-  typedef Lattice<SiteField> Field;
-  typedef Field              ComplexField;
-};
+    typedef Lattice<SiteLink>  LinkField;
+    typedef Lattice<SiteField> Field;
+    typedef Field              ComplexField;
+  };
   
-typedef QedGimpl<vComplex> QedGimplR;
+  typedef QedGImpl<vComplex> QedGImplR;
   
-template<class Gimpl>
-class Photon
-{
-public:
-  INHERIT_GIMPL_TYPES(Gimpl);
-  GRID_SERIALIZABLE_ENUM(Gauge, undef, feynman, 1, coulomb, 2, landau, 3);
-    GRID_SERIALIZABLE_ENUM(ZmScheme, undef, qedL, 1, qedTL, 2, qedInf, 3);
-public:
-  Photon(Gauge gauge, ZmScheme zmScheme);
-    Photon(Gauge gauge, ZmScheme zmScheme, std::vector<Real> improvements);
-    Photon(Gauge gauge, ZmScheme zmScheme, Real G0);
-    Photon(Gauge gauge, ZmScheme zmScheme, std::vector<Real> improvements, Real G0);
-  virtual ~Photon(void) = default;
-  void FreePropagator(const GaugeField &in, GaugeField &out);
-  void MomentumSpacePropagator(const GaugeField &in, GaugeField &out);
-  void StochasticWeight(GaugeLinkField &weight);
-  void StochasticField(GaugeField &out, GridParallelRNG &rng);
-  void StochasticField(GaugeField &out, GridParallelRNG &rng,
-		       const GaugeLinkField &weight);
-  void UnitField(GaugeField &out);
-private:
-  void infVolPropagator(GaugeLinkField &out);
-  void invKHatSquared(GaugeLinkField &out);
-  void zmSub(GaugeLinkField &out);
-private:
-  Gauge    gauge_;
-  ZmScheme zmScheme_;
-    std::vector<Real>  improvement_;
-    Real     G0_;
-};
+  template <class GImpl>
+  class Photon
+  {
+  public:
+    INHERIT_GIMPL_TYPES(GImpl);
+    typedef typename SiteGaugeLink::scalar_object ScalarSite;
+    typedef typename ScalarSite::scalar_type      ScalarComplex;
+    GRID_SERIALIZABLE_ENUM(Gauge, undef, feynman, 1, coulomb, 2, landau, 3);
+    GRID_SERIALIZABLE_ENUM(ZmScheme, undef, qedL, 1, qedTL, 2);
+  public:
+    Photon(GridBase *grid, Gauge gauge, ZmScheme zmScheme, std::vector<Real> improvement);
+    Photon(GridBase *grid, Gauge gauge, ZmScheme zmScheme);
+    virtual ~Photon(void) = default;
+    void FreePropagator(const GaugeField &in, GaugeField &out);
+    void MomentumSpacePropagator(const GaugeField &in, GaugeField &out);
+    void StochasticWeight(GaugeLinkField &weight);
+    void StochasticField(GaugeField &out, GridParallelRNG &rng);
+    void StochasticField(GaugeField &out, GridParallelRNG &rng,
+                         const GaugeLinkField &weight);
+    void UnitField(GaugeField &out);
+  private:
+    void makeSpatialNorm(LatticeInteger &spNrm);
+    void makeKHat(std::vector<GaugeLinkField> &khat);
+    void makeInvKHatSquared(GaugeLinkField &out);
+    void zmSub(GaugeLinkField &out);
+    void transverseProjectSpatial(GaugeField &out);
+    void gaugeTransform(GaugeField &out);
+  private:
+    GridBase          *grid_;
+    Gauge             gauge_;
+    ZmScheme          zmScheme_;
+    std::vector<Real> improvement_;
+  };
 
-typedef Photon<QedGimplR>  PhotonR;
+  typedef Photon<QedGImplR>  PhotonR;
   
-template<class Gimpl>
-Photon<Gimpl>::Photon(Gauge gauge, ZmScheme zmScheme)
-  : gauge_(gauge), zmScheme_(zmScheme), improvement_(std::vector<Real>()),
-    G0_(0.15493339023106021408483720810737508876916113364521)
-  {}
-
-  template<class Gimpl>
-  Photon<Gimpl>::Photon(Gauge gauge, ZmScheme zmScheme,
+  template<class GImpl>
+  Photon<GImpl>::Photon(GridBase *grid, Gauge gauge, ZmScheme zmScheme,
                         std::vector<Real> improvements)
-  : gauge_(gauge), zmScheme_(zmScheme), improvement_(improvements),
-    G0_(0.15493339023106021408483720810737508876916113364521)
+  : grid_(grid), gauge_(gauge), zmScheme_(zmScheme), improvement_(improvements)
   {}
 
-  template<class Gimpl>
-  Photon<Gimpl>::Photon(Gauge gauge, ZmScheme zmScheme, Real G0)
-  : gauge_(gauge), zmScheme_(zmScheme), improvement_(std::vector<Real>()), G0_(G0)
+  template<class GImpl>
+  Photon<GImpl>::Photon(GridBase *grid, Gauge gauge, ZmScheme zmScheme)
+  : Photon(grid, gauge, zmScheme, std::vector<Real>())
   {}
 
-  template<class Gimpl>
-  Photon<Gimpl>::Photon(Gauge gauge, ZmScheme zmScheme,
-                        std::vector<Real> improvements, Real G0)
-  : gauge_(gauge), zmScheme_(zmScheme), improvement_(improvements), G0_(G0)
-{}
-  
-template<class Gimpl>
-void Photon<Gimpl>::FreePropagator (const GaugeField &in,GaugeField &out)
-{
-  FFT theFFT(in.Grid());
+  template<class GImpl>
+  void Photon<GImpl>::FreePropagator(const GaugeField &in, GaugeField &out)
+  {
+    FFT        theFFT(dynamic_cast<GridCartesian *>(grid_));
+    GaugeField in_k(grid_);
+    GaugeField prop_k(grid_);
     
-  GaugeField in_k(in.Grid());
-  GaugeField prop_k(in.Grid());
-    
-  theFFT.FFT_all_dim(in_k,in,FFT::forward);
-  MomentumSpacePropagator(prop_k,in_k);
-  theFFT.FFT_all_dim(out,prop_k,FFT::backward);
-}
-  
-template<class Gimpl>
-void Photon<Gimpl>::infVolPropagator(GaugeLinkField &out)
-{
-  auto               *grid = dynamic_cast<GridCartesian *>(out.Grid());
-  LatticeReal        xmu(grid);
-  LatticeReal        pmusq(grid);
-  LatticeComplex     pmusq_z(grid);
-  GaugeLinkField     one(grid);
-  const unsigned int nd    = grid->_ndimension;
-  Coordinate   &l    = grid->_fdimensions;
-  Coordinate   x0(nd,0);
-  TComplex           Tone  = Complex(1.0,0.0);
-  TComplex           Tzero = Complex(G0_,0.0);
-  FFT                fft(grid);
-    
-  one = Complex(1.0,0.0);
-  out = Zero();
-  for(int mu = 0; mu < nd; mu++) {
-    LatticeCoordinate(xmu,mu);
-    Real lo2 = l[mu]/2.0;
-    xmu = where(xmu < lo2, xmu, xmu-double(l[mu]));
-    pmusq = (4.0*M_PI*M_PI)*xmu*xmu;
-    pmusq_z= toComplex(pmusq);
-    out = out + pmusq_z;
+    theFFT.FFT_all_dim(in_k, in, FFT::forward);
+    MomentumSpacePropagator(prop_k, in_k);
+    theFFT.FFT_all_dim(out, prop_k, FFT::backward);
   }
-  pokeSite(Tone, out, x0);
-  out = one/out;
-  pokeSite(Tzero, out, x0);
-  fft.FFT_all_dim(out, out, FFT::forward);
-}
-  
-template<class Gimpl>
-void Photon<Gimpl>::invKHatSquared(GaugeLinkField &out)
-{
-  GridBase           *grid = out.Grid();
-  GaugeLinkField     kmu(grid), one(grid);
-  const unsigned int nd    = grid->_ndimension;
-  Coordinate   &l    = grid->_fdimensions;
-  Coordinate   zm(nd,0);
-  TComplex           Tone = Complex(1.0,0.0);
-  TComplex           Tzero= Complex(0.0,0.0);
-    
-  one = Complex(1.0,0.0);
-  out = Zero();
-  for(int mu = 0; mu < nd; mu++)
+
+  template<class GImpl>
+  void Photon<GImpl>::makeSpatialNorm(LatticeInteger &spNrm)
+  {
+    LatticeInteger   coor(grid_);
+    auto l = grid_->FullDimensions();
+
+    spNrm = Zero();
+    for(int mu = 0; mu < grid_->Nd() - 1; mu++)
     {
-      Real twoPiL = M_PI*2./l[mu];
-      
-      LatticeCoordinate(kmu,mu);
-      kmu = 2.*sin(.5*twoPiL*kmu);
-      out = out + kmu*kmu;
+      LatticeCoordinate(coor, mu);
+      coor  = where(coor < Integer(l[mu]/2), coor, coor - Integer(l[mu]));
+      spNrm = spNrm + coor*coor;
     }
-  pokeSite(Tone, out, zm);
-  out = one/out;
-  pokeSite(Tzero, out, zm);
-}
-  
-template<class Gimpl>
-void Photon<Gimpl>::zmSub(GaugeLinkField &out)
-{
-  GridBase           *grid = out.Grid();
-  const unsigned int nd    = grid->_ndimension;
-    Coordinate   &l    = grid->_fdimensions;
-    
-  switch (zmScheme_)
+  }
+
+  template<class GImpl>
+  void Photon<GImpl>::makeKHat(std::vector<GaugeLinkField> &khat)
+  {
+    const unsigned int nd = grid_->Nd();
+    auto l  = grid_->FullDimensions();
+    Complex            ci(0., 1.);
+
+    khat.resize(nd, grid_);
+    for (unsigned int mu = 0; mu < nd; ++mu)
     {
-    case ZmScheme::qedTL:
+      Real piL = M_PI/l[mu];
+
+      LatticeCoordinate(khat[mu], mu);
+      khat[mu] = exp(piL*ci*khat[mu])*2.*sin(piL*khat[mu]);
+    }
+  }
+
+  template<class GImpl>
+  void Photon<GImpl>::makeInvKHatSquared(GaugeLinkField &out)
+  {
+    std::vector<GaugeLinkField> khat;
+    GaugeLinkField              lone(grid_);
+    const unsigned int          nd = grid_->Nd();
+    Coordinate zm(nd, 0);
+    ScalarSite                  one = ScalarComplex(1., 0.), z = ScalarComplex(0., 0.);
+    
+    out = Zero();
+    makeKHat(khat);
+    for(int mu = 0; mu < nd; mu++)
+    {
+      out = out + khat[mu]*conjugate(khat[mu]);
+    }
+    lone = ScalarComplex(1., 0.);
+    pokeSite(one, out, zm);
+    out = lone/out;
+    pokeSite(z, out, zm);
+  }
+  
+  template<class GImpl>
+  void Photon<GImpl>::zmSub(GaugeLinkField &out)
+  {
+    switch (zmScheme_)
+    {
+      case ZmScheme::qedTL:
       {
-        Coordinate zm(nd,0);
-        TComplex         Tzero = Complex(0.0,0.0);
+        Coordinate zm(grid_->Nd(), 0);
+        ScalarSite       z = ScalarComplex(0., 0.);
         
-        pokeSite(Tzero, out, zm);
-        
+        pokeSite(z, out, zm);
         break;
       }
-    case ZmScheme::qedL:
+      case ZmScheme::qedL:
       {
-        LatticeInteger spNrm(grid), coor(grid);
-        GaugeLinkField z(grid);
-        
-        spNrm = Zero();
-        for(int d = 0; d < grid->_ndimension - 1; d++)
-	  {
-	    LatticeCoordinate(coor,d);
-          coor = where(coor < Integer(l[d]/2), coor, coor-Integer(l[d]));
-	    spNrm = spNrm + coor*coor;
-	  }
+        LatticeInteger spNrm(grid_);
+
+        makeSpatialNorm(spNrm);
         out = where(spNrm == Integer(0), 0.*out, out);
-        
-        // IR improvement
         for(int i = 0; i < improvement_.size(); i++)
         {
-          Real f = sqrt(improvement_[i]+1);
-          out = where(spNrm == Integer(i+1), f*out, out);
+          Real f = sqrt(improvement_[i] + 1);
+          out = where(spNrm == Integer(i + 1), f*out, out);
         }
-      }
-    default:
-      break;
-    }
-}
-  
-template<class Gimpl>
-void Photon<Gimpl>::MomentumSpacePropagator(const GaugeField &in,
-					    GaugeField &out)
-{
-  GridBase           *grid = out.Grid();
-  LatticeComplex     momProp(grid);
-
-    switch (zmScheme_)
-    {
-      case ZmScheme::qedTL:
-      case ZmScheme::qedL:
-      {
-        invKHatSquared(momProp);
-        zmSub(momProp);
-        break;
-      }
-      case ZmScheme::qedInf:
-      {
-        infVolPropagator(momProp);
         break;
       }
       default:
+        assert(0);
         break;
     }
+  }
+
+  template<class GImpl>
+  void Photon<GImpl>::transverseProjectSpatial(GaugeField &out)
+  {
+    const unsigned int          nd = grid_->Nd();
+    GaugeLinkField              invKHat(grid_), cst(grid_), spdiv(grid_);
+    LatticeInteger              spNrm(grid_);
+    std::vector<GaugeLinkField> khat, a(nd, grid_), aProj(nd, grid_);
+
+    invKHat = Zero();
+    makeSpatialNorm(spNrm);
+    makeKHat(khat);
+    for (unsigned int mu = 0; mu < nd; ++mu)
+    {
+      a[mu] = peekLorentz(out, mu);
+      if (mu < nd - 1)
+      {
+        invKHat += khat[mu]*conjugate(khat[mu]);
+      }
+    }
+    cst     = ScalarComplex(1., 0.);
+    invKHat = where(spNrm == Integer(0), cst, invKHat);
+    invKHat = cst/invKHat;
+    cst     = Zero();
+    invKHat = where(spNrm == Integer(0), cst, invKHat);
+    spdiv   = Zero();
+    for (unsigned int nu = 0; nu < nd - 1; ++nu)
+    {
+      spdiv += conjugate(khat[nu])*a[nu];
+    }
+    spdiv *= invKHat;
+    for (unsigned int mu = 0; mu < nd; ++mu)
+    {
+      aProj[mu] = a[mu] - khat[mu]*spdiv;
+      pokeLorentz(out, aProj[mu], mu);
+    }
+  }
+
+  template<class GImpl>
+  void Photon<GImpl>::gaugeTransform(GaugeField &out)
+  {
+    switch (gauge_)
+    {
+      case Gauge::feynman:
+        break;
+      case Gauge::coulomb:
+        transverseProjectSpatial(out);
+        break;
+      case Gauge::landau:
+        assert(0);
+        break;
+      default:
+        assert(0);
+        break;
+    }
+  }
+
+  template<class GImpl>
+  void Photon<GImpl>::MomentumSpacePropagator(const GaugeField &in,
+                                              GaugeField &out)
+  {
+    LatticeComplex momProp(grid_);
+    
+    makeInvKHatSquared(momProp);
+    zmSub(momProp);
     
     out = in*momProp;
-}
+  }
   
-template<class Gimpl>
-void Photon<Gimpl>::StochasticWeight(GaugeLinkField &weight)
-{
-  auto               *grid     = dynamic_cast<GridCartesian *>(weight.Grid());
-  const unsigned int nd        = grid->_ndimension;
-  Coordinate   latt_size = grid->_fdimensions;
-    
-    switch (zmScheme_)
+  template<class GImpl>
+  void Photon<GImpl>::StochasticWeight(GaugeLinkField &weight)
+  {
+    const unsigned int nd  = grid_->Nd();
+    auto  l   = grid_->FullDimensions();
+    Integer            vol = 1;
+
+    for(unsigned int mu = 0; mu < nd; mu++)
     {
-      case ZmScheme::qedTL:
-      case ZmScheme::qedL:
-      {
-  Integer vol = 1;
-  for(int d = 0; d < nd; d++)
-    {
-      vol = vol * latt_size[d];
+      vol = vol*l[mu];
     }
-  invKHatSquared(weight);
-        weight = sqrt(vol)*sqrt(weight);
-  zmSub(weight);
-        break;
-      }
-      case ZmScheme::qedInf:
-      {
-        infVolPropagator(weight);
-        weight = sqrt(real(weight));
-        break;
-      }
-      default:
-        break;
-    }
-}
+    makeInvKHatSquared(weight);
+    weight = sqrt(vol)*sqrt(weight);
+    zmSub(weight);
+  }
   
-template<class Gimpl>
-void Photon<Gimpl>::StochasticField(GaugeField &out, GridParallelRNG &rng)
-{
-  auto           *grid = dynamic_cast<GridCartesian *>(out.Grid());
-  GaugeLinkField weight(grid);
+  template<class GImpl>
+  void Photon<GImpl>::StochasticField(GaugeField &out, GridParallelRNG &rng)
+  {
+    GaugeLinkField weight(grid_);
     
-  StochasticWeight(weight);
-  StochasticField(out, rng, weight);
-}
+    StochasticWeight(weight);
+    StochasticField(out, rng, weight);
+  }
   
-template<class Gimpl>
-void Photon<Gimpl>::StochasticField(GaugeField &out, GridParallelRNG &rng,
-				    const GaugeLinkField &weight)
-{
-  auto               *grid = dynamic_cast<GridCartesian *>(out.Grid());
-  const unsigned int nd = grid->_ndimension;
-  GaugeLinkField     r(grid);
-  GaugeField         aTilde(grid);
-  FFT                fft(grid);
+  template<class GImpl>
+  void Photon<GImpl>::StochasticField(GaugeField &out, GridParallelRNG &rng,
+                                      const GaugeLinkField &weight)
+  {
+    const unsigned int nd = grid_->Nd();
+    GaugeLinkField     r(grid_);
+    GaugeField         aTilde(grid_);
+    FFT                fft(dynamic_cast<GridCartesian *>(grid_));
     
-    switch (zmScheme_)
-    {
-      case ZmScheme::qedTL:
-      case ZmScheme::qedL:
-      {
-  for(int mu = 0; mu < nd; mu++)
+    for(unsigned int mu = 0; mu < nd; mu++)
     {
       gaussian(rng, r);
       r = weight*r;
       pokeLorentz(aTilde, r, mu);
     }
-        break;
-      }
-      case ZmScheme::qedInf:
-      {
-        Complex                    shift(1., 1.); // This needs to be a GaugeLink element?
-        for(int mu = 0; mu < nd; mu++)
-        {
-          bernoulli(rng, r);
-          r = weight*(2.*r - shift);
-          pokeLorentz(aTilde, r, mu);
-        }
-        break;
-      }
-      default:
-        break;
-    }
+    gaugeTransform(aTilde);
+    fft.FFT_all_dim(out, aTilde, FFT::backward);
+    out = real(out);
+  }
 
-  fft.FFT_all_dim(out, aTilde, FFT::backward);
-    
-  out = real(out);
-}
-
-  template<class Gimpl>
-  void Photon<Gimpl>::UnitField(GaugeField &out)
+  template<class GImpl>
+  void Photon<GImpl>::UnitField(GaugeField &out)
   {
-    auto               *grid = dynamic_cast<GridCartesian *>(out.Grid());
-    const unsigned int nd = grid->_ndimension;
-    GaugeLinkField     r(grid);
+    const unsigned int nd = grid_->Nd();
+    GaugeLinkField     r(grid_);
     
-    r = Complex(1.0,0.0);
-
-    for(int mu = 0; mu < nd; mu++)
+    r = ScalarComplex(1., 0.);
+    for(unsigned int mu = 0; mu < nd; mu++)
     {
       pokeLorentz(out, r, mu);
     }
-    
     out = real(out);
   }
-//  template<class Gimpl>
-//  void Photon<Gimpl>::FeynmanGaugeMomentumSpacePropagator_L(GaugeField &out,
-//                                                            const GaugeField &in)
-//  {
-//    
-//    FeynmanGaugeMomentumSpacePropagator_TL(out,in);
-//    
-//    GridBase *grid = out.Grid();
-//    LatticeInteger     coor(grid);
-//    GaugeField zz(grid); zz=zero;
-//    
-//    // xyzt
-//    for(int d = 0; d < grid->_ndimension-1;d++){
-//      LatticeCoordinate(coor,d);
-//      out = where(coor==Integer(0),zz,out);
-//    }
-//  }
-//  
-//  template<class Gimpl>
-//  void Photon<Gimpl>::FeynmanGaugeMomentumSpacePropagator_TL(GaugeField &out,
-//                                                             const GaugeField &in)
-//  {
-//    
-//    // what type LatticeComplex
-//    GridBase *grid = out.Grid();
-//    int nd = grid->_ndimension;
-//    
-//    typedef typename GaugeField::vector_type vector_type;
-//    typedef typename GaugeField::scalar_type ScalComplex;
-//    typedef Lattice<iSinglet<vector_type> > LatComplex;
-//    
-//    Coordinate latt_size   = grid->_fdimensions;
-//    
-//    LatComplex denom(grid); denom= Zero();
-//    LatComplex   one(grid); one = ScalComplex(1.0,0.0);
-//    LatComplex   kmu(grid);
-//    
-//    ScalComplex ci(0.0,1.0);
-//    // momphase = n * 2pi / L
-//    for(int mu=0;mu<Nd;mu++) {
-//      
-//      LatticeCoordinate(kmu,mu);
-//      
-//      RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
-//      
-//      kmu = TwoPiL * kmu ;
-//      
-//      denom = denom + 4.0*sin(kmu*0.5)*sin(kmu*0.5); // Wilson term
-//    }
-//    Coordinate zero_mode(nd,0);
-//    TComplexD Tone = ComplexD(1.0,0.0);
-//    TComplexD Tzero= ComplexD(0.0,0.0);
-//    
-//    pokeSite(Tone,denom,zero_mode);
-//    
-//    denom= one/denom;
-//    
-//    pokeSite(Tzero,denom,zero_mode);
-//    
-//    out = Zero();
-//    out = in*denom;
-//  };
   
 NAMESPACE_END(Grid);
-#endif
+

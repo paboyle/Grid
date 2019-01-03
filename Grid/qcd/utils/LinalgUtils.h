@@ -27,8 +27,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef GRID_QCD_LINALG_UTILS_H
-#define GRID_QCD_LINALG_UTILS_H
+#pragma once
 
 NAMESPACE_BEGIN(Grid);
 
@@ -197,5 +196,40 @@ void G5R5(Lattice<vobj> &z,const Lattice<vobj> &x)
   });
 }
 
+// I explicitly need these outside the QCD namespace
+template<typename vobj>
+void G5C(Lattice<vobj> &z, const Lattice<vobj> &x)
+{
+  GridBase *grid = x._grid;
+  z.checkerboard = x.checkerboard;
+  conformable(x, z);
+
+  Gamma G5(Gamma::Algebra::Gamma5);
+  z = G5 * x;
+}
+
+template<class CComplex, int nbasis>
+void G5C(Lattice<iVector<CComplex, nbasis>> &z, const Lattice<iVector<CComplex, nbasis>> &x)
+{
+  GridBase *grid = x.Grid();
+  z.Checkerboard() = x.Checkerboard();
+  conformable(x, z);
+
+  static_assert(nbasis % 2 == 0, "");
+  int nb = nbasis / 2;
+
+  auto z_v = z.View();
+  auto x_v = x.View();
+  thread_loop( (int ss = 0; ss < grid->oSites(); ss++) ,
+  {
+    for(int n = 0; n < nb; ++n) {
+      z_v[ss](n) = x_v[ss](n);
+    }
+    for(int n = nb; n < nbasis; ++n) {
+      z_v[ss](n) = -x_v[ss](n);
+    }
+  });
+}
+
 NAMESPACE_END(Grid);
-#endif 
+

@@ -81,8 +81,8 @@ int main(int argc, char **argv) {
   LatticeGaugeField Umu(&Grid), Uflow(&Grid);
   SU<Nc>::HotConfiguration(pRNG, Umu);
   
-  typedef Grid::JSONReader       Serialiser;
-  Serialiser Reader("input.json");
+  typedef Grid::XmlReader       Serialiser;
+  Serialiser Reader("input.xml");
   WFParameters WFPar(Reader);
   ConfParameters CPar(Reader);
   CheckpointerParameters CPPar(CPar.conf_prefix, CPar.rng_prefix);

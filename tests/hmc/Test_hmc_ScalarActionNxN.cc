@@ -88,7 +88,8 @@ public:
 };
 
 int main(int argc, char **argv) {
-  typedef Grid::JSONReader       Serialiser;
+  //typedef Grid::JSONReader       Serialiser;
+  typedef Grid::XmlReader       Serialiser;
   
   Grid_init(&argc, &argv);
   int threads = GridThread::GetThreads();

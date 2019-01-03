@@ -211,10 +211,11 @@ public:
 
     for(int b=0;b<nn;b++){
 	
+      subspace[b] = Zero();
       gaussian(RNG,noise);
       scale = std::pow(norm2(noise),-0.5); 
       noise=noise*scale;
-
+	
       hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<b<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
 
       for(int i=0;i<1;i++){
@@ -254,6 +255,7 @@ public:
   ////////////////////
   Geometry         geom;
   GridBase *       _grid; 
+
   CartesianStencil<siteVector,siteVector,int> Stencil; 
 
   std::vector<CoarseMatrix> A;
@@ -297,15 +299,64 @@ public:
     return norm2(out);
   };
 
-  RealD Mdag (const CoarseVector &in, CoarseVector &out){ 
-    return M(in,out);
+  RealD Mdag (const CoarseVector &in, CoarseVector &out){
+    // // corresponds to Petrov-Galerkin coarsening
+    // return M(in,out);
+    
+    // corresponds to Galerkin coarsening
+    CoarseVector tmp(Grid());
+    G5C(tmp, in);
+    M(tmp, out);
+    G5C(out, out);
+    return norm2(out);
   };
 
-  // Defer support for further coarsening for now
-  void Mdiag    (const CoarseVector &in,  CoarseVector &out){};
-  void Mdir     (const CoarseVector &in,  CoarseVector &out,int dir, int disp){};
+  void Mdir(const CoarseVector &in, CoarseVector &out, int dir, int disp){
+    
+    conformable(_grid,in.Grid());
+    conformable(in.Grid(),out.Grid());
+    
+    SimpleCompressor<siteVector> compressor;
+    Stencil.HaloExchange(in,compressor);
+    
+    auto point = [dir, disp](){
+      if(dir == 0 and disp == 0)
+	return 8;
+      else
+	return (4 * dir + 1 - disp) / 2;
+    }();
 
-  CoarsenedMatrix(GridCartesian &CoarseGrid) 	: 
+    auto out_v = out.View();
+    auto in_v  = in.View();
+    thread_loop( (int ss=0;ss<Grid()->oSites();ss++),{
+      siteVector res = Zero();
+      siteVector nbr;
+      int ptype;
+      StencilEntry *SE;
+      
+      SE=Stencil.GetEntry(ptype,point,ss);
+      
+      if(SE->_is_local&&SE->_permute) {
+	permute(nbr,in_v[SE->_offset],ptype);
+      } else if(SE->_is_local) {
+	nbr = in_v[SE->_offset];
+      } else {
+	nbr = Stencil.CommBuf()[SE->_offset];
+      }
+
+      auto A_point = A[point].View();
+      res = res + A_point[ss]*nbr;
+      
+      vstream(out_v[ss],res);
+    });
+  };
+
+  void Mdiag(const CoarseVector &in, CoarseVector &out){
+    Mdir(in, out, 0, 0); // use the self coupling (= last) point of the stencil
+  };
+
+  
+ CoarsenedMatrix(GridCartesian &CoarseGrid) 	: 
 
     _grid(&CoarseGrid),
     geom(CoarseGrid._ndimension),
@@ -422,36 +473,11 @@ public:
     std::cout<<GridLogMessage<< iProj <<std::endl;
     std::cout<<GridLogMessage<<"Computed Coarse Operator"<<std::endl;
 #endif
-    //      ForceHermitian();
-    AssertHermitian();
-    // ForceDiagonal();
+      //      ForceHermitian();
+      // AssertHermitian();
+      // ForceDiagonal();
   }
-  void ForceDiagonal(void) {
 
-
-    std::cout<<GridLogMessage<<"**************************************************"<<std::endl;
-    std::cout<<GridLogMessage<<"****   Forcing coarse operator to be diagonal ****"<<std::endl;
-    std::cout<<GridLogMessage<<"**************************************************"<<std::endl;
-    for(int p=0;p<8;p++){
-      A[p]=Zero();
-    }
-
-    GridParallelRNG  RNG(Grid()); RNG.SeedFixedIntegers(std::vector<int>({55,72,19,17,34}));
-    Lattice<iScalar<CComplex> > val(Grid()); random(RNG,val);
-
-    Complex one(1.0);
-
-    iMatrix<CComplex,nbasis> ident;  ident=one;
-
-    val = val*adj(val);
-    val = val + 1.0;
-
-    A[8] = val*ident;
-
-    //      for(int s=0;s<Grid()->oSites();s++) {
-    //	A[8][s]=val[s];
-    //      }
-  }
   void ForceHermitian(void) {
     for(int d=0;d<4;d++){
       int dd=d+1;

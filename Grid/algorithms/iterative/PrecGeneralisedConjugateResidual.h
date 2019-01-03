@@ -132,6 +132,7 @@ public:
     std::vector<Field> p(mmax,grid);
     std::vector<RealD> qq(mmax);
       
+
     //////////////////////////////////
     // initial guess x0 is taken as nonzero.
     // r0=src-A x0 = src
@@ -139,8 +140,11 @@ public:
     MatTimer.Start();
     Linop.HermOpAndNorm(psi,Az,zAz,zAAz); 
     MatTimer.Stop();
+    
+    LinalgTimer.Start();
     r=src-Az;
-      
+    LinalgTimer.Stop();
+    
     /////////////////////
     // p = Prec(r)
     /////////////////////
@@ -152,8 +156,10 @@ public:
     Linop.HermOp(z,tmp); 
     MatTimer.Stop();
 
+    LinalgTimer.Start();
     ttmp=tmp;
     tmp=tmp-r;
+    LinalgTimer.Stop();
 
     /*
       std::cout<<GridLogMessage<<r<<std::endl;
@@ -166,12 +172,14 @@ public:
     Linop.HermOpAndNorm(z,Az,zAz,zAAz); 
     MatTimer.Stop();
 
+    LinalgTimer.Start();
     //p[0],q[0],qq[0] 
     p[0]= z;
     q[0]= Az;
     qq[0]= zAAz;
-
+    
     cp =norm2(r);
+    LinalgTimer.Stop();
 
     for(int k=0;k<nstep;k++){
 
@@ -181,12 +189,14 @@ public:
       int peri_k = k %mmax;
       int peri_kp= kp%mmax;
 
+      LinalgTimer.Start();
       rq= real(innerProduct(r,q[peri_k])); // what if rAr not real?
       a = rq/qq[peri_k];
 
       axpy(psi,a,p[peri_k],psi);         
 
-      cp = axpy_norm(r,-a,q[peri_k],r);  
+      cp = axpy_norm(r,-a,q[peri_k],r);
+      LinalgTimer.Stop();
 
       if((k==nstep-1)||(cp<rsq)){
 	return cp;
@@ -202,6 +212,8 @@ public:
       Linop.HermOpAndNorm(z,Az,zAz,zAAz);
       Linop.HermOp(z,tmp);
       MatTimer.Stop();
+
+      LinalgTimer.Start();
       tmp=tmp-r;
       std::cout<<GridLogMessage<< " Preconditioner resid " <<sqrt(norm2(tmp)/norm2(r))<<std::endl; 
 
@@ -219,8 +231,7 @@ public:
 
       }
       qq[peri_kp]=norm2(q[peri_kp]); // could use axpy_norm
-
-
+      LinalgTimer.Stop();
     }
     assert(0); // never reached
     return cp;

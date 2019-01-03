@@ -476,6 +476,8 @@ class Polynomial : public OperatorFunction<Field> {
 private:
   std::vector<RealD> Coeffs;
 public:
+  using OperatorFunction<Field>::operator();
+
   Polynomial(std::vector<RealD> &_Coeffs) : Coeffs(_Coeffs) { };
 
   // Implement the required interface
