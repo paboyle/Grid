@@ -62,7 +62,7 @@ void TUnitEm::setup(void)
 // execution ///////////////////////////////////////////////////////////////////
 void TUnitEm::execute(void)
 {
-    PhotonR photon(0, 0); // Just chose arbitrary input values here
+    PhotonR photon(envGetGrid(EmField), 0, 0); // Just chose arbitrary input values here
     auto    &a = envGet(EmField, getName());
     LOG(Message) << "Generating unit EM potential..." << std::endl;
     photon.UnitField(a);
