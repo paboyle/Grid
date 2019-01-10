@@ -34,4 +34,5 @@ nobase_libHadrons_a_HEADERS = \
 	Solver.hpp                \
 	TimerArray.hpp            \
 	VirtualMachine.hpp        \
+	Utilities/Contractor.hpp  \
 	$(modules_hpp)

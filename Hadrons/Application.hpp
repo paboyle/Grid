@@ -41,14 +41,6 @@ BEGIN_HADRONS_NAMESPACE
 class Application
 {
 public:
-    class TrajRange: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(TrajRange,
-                                        unsigned int, start,
-                                        unsigned int, end,
-                                        unsigned int, step);
-    };
     class GlobalPar: Serializable
     {
     public:

@@ -263,6 +263,33 @@ void tokenReplace(std::string &str, const std::string token,
     }
 }
 
+// trajectory range
+class TrajRange: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(TrajRange,
+                                    unsigned int, start,
+                                    unsigned int, end,
+                                    unsigned int, step,
+                                    std::string,  exclude);
+
+    inline std::vector<unsigned int> getTrajectoryList(void)
+    {
+        std::vector<unsigned int> excVec = strToVec<unsigned int>(exclude);
+        std::vector<unsigned int> list;
+
+        for (unsigned int t = start; t < end; t += step)
+        {
+            if (std::find(excVec.begin(), excVec.end(), t) != excVec.end())
+            {
+                list.push_back(t);
+            }
+        }
+
+        return list;
+    }
+};
+
 END_HADRONS_NAMESPACE
 
 #include <Hadrons/Exceptions.hpp>

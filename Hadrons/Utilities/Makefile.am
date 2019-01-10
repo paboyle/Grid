@@ -7,7 +7,7 @@ HadronsFermionEP64To32_SOURCES  = EigenPackCast.cc
 HadronsFermionEP64To32_CXXFLAGS = $(AM_CXXFLAGS) -DFIN=WilsonImplD::FermionField -DFOUT=WilsonImplF::FermionField
 HadronsFermionEP64To32_LDADD    = ../libHadrons.a ../../Grid/libGrid.a
 
-HadronsContractor_SOURCES = Contractor.cc
+HadronsContractor_SOURCES = Contractor.cc Contractor.hpp
 HadronsContractor_LDADD   = ../libHadrons.a ../../Grid/libGrid.a
 
 HadronsContractorBenchmark_SOURCES = ContractorBenchmark.cc

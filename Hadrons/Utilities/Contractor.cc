@@ -28,64 +28,31 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/A2AMatrix.hpp>
 #include <Hadrons/DiskVector.hpp>
 #include <Hadrons/TimerArray.hpp>
+#include <Hadrons/Utilities/Contractor.hpp>
+
+#ifdef GRID_COMMS_MPI3
+#define GET_RANK(rank, nMpi) \
+MPI_Comm_size(MPI_COMM_WORLD, &(nMpi));\
+MPI_Comm_rank(MPI_COMM_WORLD, &(rank))
+#define BARRIER() MPI_Barrier(MPI_COMM_WORLD)
+#define GLOBAL_DSUM(x) MPI_Allreduce(MPI_IN_PLACE, &x, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD)
+#define GLOBAL_DMAX(x) MPI_Allreduce(MPI_IN_PLACE, &x, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD)
+#define INIT() MPI_Init(NULL, NULL)
+#define FINALIZE() MPI_Finalize()
+#else
+#define GET_RANK(rank, nMpi) (nMpi) = 1; (rank) = 0
+#define BARRIER()
+#define GLOBAL_DSUM(x)
+#define GLOBAL_DMAX(x)
+#define INIT()
+#define FINALIZE()
+#endif
 
 using namespace Grid;
 using namespace QCD;
 using namespace Hadrons;
 
 #define TIME_MOD(t) (((t) + par.global.nt) % par.global.nt)
-
-namespace Contractor
-{
-    class TrajRange: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(TrajRange,
-                                        unsigned int, start,
-                                        unsigned int, end,
-                                        unsigned int, step);
-    };
-    
-    class GlobalPar: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(GlobalPar,
-                                        TrajRange, trajCounter,
-                                        unsigned int, nt,
-                                        std::string, diskVectorDir,
-                                        std::string, output);
-    };
-
-    class A2AMatrixPar: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(A2AMatrixPar,
-                                        std::string, file,
-                                        std::string, dataset,
-                                        unsigned int, cacheSize,
-                                        std::string, name);
-    };
-
-    class ProductPar: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(ProductPar,
-                                        std::string, terms,
-                                        std::vector<std::string>, times,
-                                        std::string, translations,
-                                        bool, translationAverage);
-    };
-
-    class CorrelatorResult: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(CorrelatorResult,
-                                        std::vector<Contractor::A2AMatrixPar>,  a2aMatrix,
-                                        ProductPar, contraction,
-                                        std::vector<unsigned int>, times,
-                                        std::vector<ComplexD>, correlator);
-    };
-}
 
 struct ContractorPar
 {
@@ -143,6 +110,27 @@ void saveCorrelator(const Contractor::CorrelatorResult &result, const std::strin
     write(writer, fileStem, result);
 }
 
+void printPerf(const double bytes, const double usec)
+{
+    double maxt;
+
+    maxt = usec;
+    GLOBAL_DMAX(maxt);
+    std::cout << maxt << " sec " << bytes/maxt*1.0e6/1024/1024/1024 << " GB/s";
+}
+
+void printPerf(const double bytes, const double busec, 
+               const double flops, const double fusec)
+{
+    double maxt;
+
+    printPerf(bytes, busec);
+    std::cout << " ";
+    maxt = fusec;
+    GLOBAL_DMAX(maxt);
+    std::cout << flops/fusec/1.0e3 << " GFlop/s";
+}
+
 std::set<unsigned int> parseTimeRange(const std::string str, const unsigned int nt)
 {
     std::regex               rex("([0-9]+)|(([0-9]+)\\.\\.([0-9]+))");
@@ -184,59 +172,18 @@ std::set<unsigned int> parseTimeRange(const std::string str, const unsigned int 
     return tSet;
 }
 
-struct Sec
-{
-    Sec(const double usec)
-    {
-        seconds = usec/1.0e6;
-    }
-    
-    double seconds;
-};
-
-inline std::ostream & operator<< (std::ostream& s, const Sec &&sec)
-{
-    s << std::setw(10) << sec.seconds << " sec";
-
-    return s;
-}
-
-struct Flops
-{
-    Flops(const double flops, const double fusec)
-    {
-        gFlopsPerSec = flops/fusec/1.0e3;
-    }
-    
-    double gFlopsPerSec;
-};
-
-inline std::ostream & operator<< (std::ostream& s, const Flops &&f)
-{
-    s << std::setw(10) << f.gFlopsPerSec << " GFlop/s";
-
-    return s;
-}
-
-struct Bytes
-{
-    Bytes(const double bytes, const double busec)
-    {
-        gBytesPerSec = bytes/busec*1.0e6/1024/1024/1024;
-    }
-    
-    double gBytesPerSec;
-};
-
-inline std::ostream & operator<< (std::ostream& s, const Bytes &&b)
-{
-    s << std::setw(10) << b.gBytesPerSec << " GB/s";
-
-    return s;
-}
-
 int main(int argc, char* argv[])
 {
+    // MPI init
+    int nMpi, rank;
+
+    INIT();
+    GET_RANK(rank, nMpi);
+    if (rank != 0)
+    {
+        std::cout.setstate(std::ios::badbit);
+    }
+
     // parse command line
     std::string   parFilename;
 
@@ -272,25 +219,63 @@ int main(int argc, char* argv[])
     }
 
     // trajectory loop
-    for (unsigned int traj = par.global.trajCounter.start; 
-         traj < par.global.trajCounter.end; traj += par.global.trajCounter.step)
-    {
-        std::cout << ":::::::: Trajectory " << traj << std::endl;
+    std::vector<unsigned int> tList = par.global.trajCounter.getTrajectoryList();
+    unsigned int              indi, inde, indPerRank;
 
+    indPerRank = tList.size()/nMpi;
+    indi       = rank*indPerRank;
+
+    BARRIER();
+    for (unsigned int tInd = indi; tInd < indi + indPerRank; tInd++)
+    {
+        unsigned int traj;
+
+        if (tInd < tList.size())
+        {
+            traj = tList[tInd];
+        }
+        else
+        {
+            traj = tList.back();
+        }
+        if (nMpi > 1)
+        {
+            if (rank == 0)
+            {
+                std::cout << ":::::::: Trajectories ";
+                for (unsigned int r = 0; r < nMpi - 1; ++r)
+                {
+                    std::cout << tList[tInd + r*indPerRank] << " ";
+                }
+                if (tInd + (nMpi - 1)*indPerRank < tList.size())
+                {
+                    std::cout << tList[tInd + (nMpi - 1)*indPerRank];
+                }
+                std::cout << std::endl;
+            }
+        }
+        else
+        {
+            std::cout << ":::::::: Trajectory " << traj << std::endl;
+        }
+    
         // load data
         for (auto &p: par.a2aMatrix)
         {
             std::string filename = p.file;
-            double      t, size;
+            double      t;
 
             tokenReplace(filename, "traj", traj);
             std::cout << "======== Loading '" << filename << "'" << std::endl;
 
+            BARRIER();
             A2AMatrixIo<HADRONS_A2AM_IO_TYPE> a2aIo(filename, p.dataset, par.global.nt);
 
             a2aIo.load(a2aMat.at(p.name), &t);
-            std::cout << "Read " << a2aIo.getSize() << " bytes in " << t/1.0e6 
-                    << " sec, " << a2aIo.getSize()/t*1.0e6/1024/1024 << " MB/s" << std::endl;
+            GLOBAL_DMAX(t);
+            std::cout << "Read "  << nMpi*a2aIo.getSize() << " bytes in " << t/1.0e6 
+                      << " sec, " << nMpi*a2aIo.getSize()/t*1.0e6/1024/1024 
+                      << " MB/s"  << std::endl;
         }
 
         // contract
@@ -308,6 +293,7 @@ int main(int argc, char* argv[])
             double                                 fusec, busec, flops, bytes, tusec;
             Contractor::CorrelatorResult           result;             
 
+            BARRIER();
             tAr.startTimer("Total");
             std::cout << "======== Contraction tr(";
             for (unsigned int g = 0; g < term.size(); ++g)
@@ -358,9 +344,10 @@ int main(int argc, char* argv[])
                 }
                 tAr.stopTimer("Transpose caching");
             }
-            bytes = par.global.nt*lastTerm[0].rows()*lastTerm[0].cols()*sizeof(ComplexD);
-            std::cout << Sec(tAr.getDTimer("Transpose caching")) << " " 
-                      << Bytes(bytes, tAr.getDTimer("Transpose caching")) << std::endl;
+            bytes  = par.global.nt*lastTerm[0].rows()*lastTerm[0].cols();
+            bytes *= sizeof(ComplexD)*nMpi;
+            printPerf(bytes, tAr.getDTimer("Transpose caching"));
+            std::cout << std::endl;
             for (unsigned int i = 0; i < timeSeq.size(); ++i)
             {
                 unsigned int dti = 0;
@@ -405,9 +392,9 @@ int main(int argc, char* argv[])
                     }
                     if (term.size() > 2)
                     {
-                        std::cout << Sec(tAr.getDTimer("A*B total") - busec) << " "
-                                << Flops(flops, tAr.getDTimer("A*B algebra") - fusec) << " " 
-                                << Bytes(bytes, tAr.getDTimer("A*B total") - busec) << std::endl;
+                        printPerf(bytes*nMpi, tAr.getDTimer("A*B total") - busec,
+                                  flops*nMpi, tAr.getDTimer("A*B algebra") - fusec);
+                        std::cout << std::endl;
                     }
                     std::cout << std::setw(8) << "traces";
                     flops  = 0.;
@@ -423,9 +410,9 @@ int main(int argc, char* argv[])
                         bytes += 2.*prod.rows()*prod.cols()*sizeof(ComplexD);
                     }
                     tAr.stopTimer("Linear algebra");
-                    std::cout << Sec(tAr.getDTimer("tr(A*B)") - busec) << " "
-                            << Flops(flops, tAr.getDTimer("tr(A*B)") - fusec) << " " 
-                            << Bytes(bytes, tAr.getDTimer("tr(A*B)") - busec) << std::endl;
+                    printPerf(bytes*nMpi, tAr.getDTimer("tr(A*B)") - busec,
+                              flops*nMpi, tAr.getDTimer("tr(A*B)") - fusec);
+                    std::cout << std::endl;
                     if (!p.translationAverage)
                     {
                         saveCorrelator(result, par.global.output, dt, traj);
@@ -450,5 +437,7 @@ int main(int argc, char* argv[])
         }
     }
     
+    FINALIZE();
+
     return EXIT_SUCCESS;
 }
