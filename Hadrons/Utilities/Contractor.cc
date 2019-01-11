@@ -116,7 +116,7 @@ void printPerf(const double bytes, const double usec)
 
     maxt = usec;
     GLOBAL_DMAX(maxt);
-    std::cout << maxt << " sec " << bytes/maxt*1.0e6/1024/1024/1024 << " GB/s";
+    std::cout << maxt/1.0e6 << " sec " << bytes/maxt*1.0e6/1024/1024/1024 << " GB/s";
 }
 
 void printPerf(const double bytes, const double busec, 
@@ -213,7 +213,7 @@ int main(int argc, char* argv[])
 
     for (auto &p: par.a2aMatrix)
     {
-        std::string dirName = par.global.diskVectorDir + "/" + p.name;
+        std::string dirName = par.global.diskVectorDir + "/" + p.name + "." + std::to_string(rank);
 
         a2aMat.emplace(p.name, EigenDiskVector<ComplexD>(dirName, par.global.nt, p.cacheSize));
     }
@@ -224,7 +224,6 @@ int main(int argc, char* argv[])
 
     indPerRank = tList.size()/nMpi;
     indi       = rank*indPerRank;
-
     BARRIER();
     for (unsigned int tInd = indi; tInd < indi + indPerRank; tInd++)
     {
@@ -266,7 +265,7 @@ int main(int argc, char* argv[])
             double      t;
 
             tokenReplace(filename, "traj", traj);
-            std::cout << "======== Loading '" << filename << "'" << std::endl;
+            std::cout << "======== Loading '" << p.file << "'" << std::endl;
 
             BARRIER();
             A2AMatrixIo<HADRONS_A2AM_IO_TYPE> a2aIo(filename, p.dataset, par.global.nt);
@@ -365,7 +364,7 @@ int main(int argc, char* argv[])
                             << " -- positions= " << t << ", dt= " << dt << std::endl;
                     if (term.size() > 2)
                     {
-                        std::cout << std::setw(8) << "products";
+                        std::cout << std::setw(10) << "products ";
                     }
                     flops  = 0.;
                     bytes  = 0.;
@@ -396,7 +395,7 @@ int main(int argc, char* argv[])
                                   flops*nMpi, tAr.getDTimer("A*B algebra") - fusec);
                         std::cout << std::endl;
                     }
-                    std::cout << std::setw(8) << "traces";
+                    std::cout << std::setw(10) << "traces ";
                     flops  = 0.;
                     bytes  = 0.;
                     fusec  = tAr.getDTimer("tr(A*B)");

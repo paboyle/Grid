@@ -280,7 +280,7 @@ public:
 
         for (unsigned int t = start; t < end; t += step)
         {
-            if (std::find(excVec.begin(), excVec.end(), t) != excVec.end())
+            if (std::find(excVec.begin(), excVec.end(), t) == excVec.end())
             {
                 list.push_back(t);
             }
