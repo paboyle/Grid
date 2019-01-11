@@ -63,6 +63,9 @@ template <typename T>
 using A2AMatrix = Eigen::Matrix<T, -1, -1, Eigen::RowMajor>;
 
 template <typename T>
+using A2AMatrixMap = Eigen::Map<A2AMatrix<T>>;
+
+template <typename T>
 using A2AMatrixTr = Eigen::Matrix<T, -1, -1, Eigen::ColMajor>;
 
 /******************************************************************************
@@ -108,7 +111,7 @@ public:
     void saveBlock(const A2AMatrixSet<T> &m, const unsigned int ext, const unsigned int str,
                    const unsigned int i, const unsigned int j);
     template <template <class> class Vec, typename VecT>
-    void load(Vec<VecT> &v, double *tRead = nullptr);
+    void load(Vec<VecT> &v, double *tRead = nullptr, const bool useCache = true);
 private:
     std::string  filename_{""}, dataname_{""};
     unsigned int nt_{0}, ni_{0}, nj_{0};
@@ -495,7 +498,7 @@ void A2AMatrixIo<T>::saveBlock(const A2AMatrixSet<T> &m,
 
 template <typename T>
 template <template <class> class Vec, typename VecT>
-void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead)
+void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead, const bool useCache)
 {
 #ifdef HAVE_HDF5
     Hdf5Reader           reader(filename_);
@@ -532,36 +535,55 @@ void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead)
         nj_ = hdim[2];
     }
 
-    A2AMatrix<T>         buf(ni_, nj_);
-    std::vector<hsize_t> count    = {1, static_cast<hsize_t>(ni_),
-                                     static_cast<hsize_t>(nj_)},
-                         stride   = {1, 1, 1},
-                         block    = {1, 1, 1},
-                         memCount = {static_cast<hsize_t>(ni_),
-                                     static_cast<hsize_t>(nj_)};
-    H5NS::DataSpace      memspace(memCount.size(), memCount.data());
-
-    std::cout << "Loading timeslice";
-    std::cout.flush();
-    *tRead = 0.;
-    for (unsigned int tp1 = nt_; tp1 > 0; --tp1)
+    if (useCache)
     {
-        unsigned int         t      = tp1 - 1;
-        std::vector<hsize_t> offset = {static_cast<hsize_t>(t), 0, 0};
-        
-        if (t % 10 == 0)
+        std::vector<T> buf(nt_*ni_*nj_);
+        T              *pt;
+
+        dataset.read(buf.data(), datatype);
+        pt = buf.data();
+        for (unsigned int t = 0; t < nt_; ++t)
         {
-            std::cout << " " << t;
-            std::cout.flush();
+            A2AMatrixMap<T> bufMap(pt, ni_, nj_);
+
+            v[t]  = bufMap.template cast<VecT>();
+            pt   += ni_*nj_;
         }
-        dataspace.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data(),
-                                  stride.data(), block.data());
-        if (tRead) *tRead -= usecond();    
-        dataset.read(buf.data(), datatype, memspace, dataspace);
-        if (tRead) *tRead += usecond();
-        v[t] = buf.template cast<VecT>();
     }
-    std::cout << std::endl;
+    // if useCache = false, do I/O timeslice per timeslice (much slower)
+    else
+    {
+        A2AMatrix<T>         buf(ni_, nj_);
+        std::vector<hsize_t> count    = {1, static_cast<hsize_t>(ni_),
+                                        static_cast<hsize_t>(nj_)},
+                             stride   = {1, 1, 1},
+                             block    = {1, 1, 1},
+                             memCount = {static_cast<hsize_t>(ni_),
+                                         static_cast<hsize_t>(nj_)};
+        H5NS::DataSpace      memspace(memCount.size(), memCount.data());
+
+        std::cout << "Loading timeslice";
+        std::cout.flush();
+        *tRead = 0.;
+        for (unsigned int tp1 = nt_; tp1 > 0; --tp1)
+        {
+            unsigned int         t      = tp1 - 1;
+            std::vector<hsize_t> offset = {static_cast<hsize_t>(t), 0, 0};
+            
+            if (t % 10 == 0)
+            {
+                std::cout << " " << t;
+                std::cout.flush();
+            }
+            dataspace.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data(),
+                                      stride.data(), block.data());
+            if (tRead) *tRead -= usecond();    
+            dataset.read(buf.data(), datatype, memspace, dataspace);
+            if (tRead) *tRead += usecond();
+            v[t] = buf.template cast<VecT>();
+        }
+        std::cout << std::endl;
+    }
 #else
     HADRONS_ERROR(Implementation, "all-to-all matrix I/O needs HDF5 library");
 #endif
