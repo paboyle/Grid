@@ -210,10 +210,10 @@ PARALLEL_CRITICAL
   static inline void le32toh_v(void *file_object,uint64_t bytes)
   {
     uint32_t *fp = (uint32_t *)file_object;
-    uint32_t f;
 
     uint64_t count = bytes/sizeof(uint32_t);
     parallel_for(uint64_t i=0;i<count;i++){  
+      uint32_t f;
       f = fp[i];
       // got network order and the network to host
       f = ((f&0xFF)<<24) | ((f&0xFF00)<<8) | ((f&0xFF0000)>>8) | ((f&0xFF000000UL)>>24) ; 
@@ -235,10 +235,9 @@ PARALLEL_CRITICAL
   static inline void le64toh_v(void *file_object,uint64_t bytes)
   {
     uint64_t *fp = (uint64_t *)file_object;
-    uint64_t f,g;
-    
     uint64_t count = bytes/sizeof(uint64_t);
     parallel_for(uint64_t i=0;i<count;i++){  
+      uint64_t f,g;
       f = fp[i];
       // got network order and the network to host
       g = ((f&0xFF)<<24) | ((f&0xFF00)<<8) | ((f&0xFF0000)>>8) | ((f&0xFF000000UL)>>24) ; 
@@ -349,7 +348,8 @@ PARALLEL_CRITICAL
     int ieee32    = (format == std::string("IEEE32"));
     int ieee64big = (format == std::string("IEEE64BIG"));
     int ieee64    = (format == std::string("IEEE64"));
-
+    assert(ieee64||ieee32|ieee64big||ieee32big);
+    assert((ieee64+ieee32+ieee64big+ieee32big)==1);
     //////////////////////////////////////////////////////////////////////////////
     // Do the I/O
     //////////////////////////////////////////////////////////////////////////////

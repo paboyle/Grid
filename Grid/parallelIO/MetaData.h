@@ -56,6 +56,10 @@ namespace Grid {
   ////////////////////////////////////////////////////////////////////////////////
   // header specification/interpretation
   ////////////////////////////////////////////////////////////////////////////////
+    class FieldNormMetaData : Serializable {
+    public:
+      GRID_SERIALIZABLE_CLASS_MEMBERS(FieldNormMetaData, double, norm2);
+    };
     class FieldMetaData : Serializable {
     public:
 
