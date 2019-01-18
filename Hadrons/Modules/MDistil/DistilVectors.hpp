@@ -8,6 +8,99 @@
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
+ *  *      Class to generate Distillation $\varrho$ and $\varphi$ vectors        *
+ *   ******************************************************************************/
+/*
+ * template <typename FImpl>
+ * class DistilVectorsFromPerambulator
+ * {
+ * public:
+ *     FERM_TYPE_ALIASES(FImpl,);
+ *         SOLVER_TYPE_ALIASES(FImpl,);
+ *         public:
+ *             DistilVectorsFromPerambulator(FMat &action);
+ *                 virtual ~DistilVectorsFromPerambulator(void) = default;
+ *                     void makeRho(FermionField &rhoOut,
+ *                                           const FermionField &evec, const Complex &noises);
+ *                                               void makePhi(FermionField &phiOut,
+ *                                                                     const FermionField &evec, const SpinVector &Perambulators);
+ *                                                                     private:
+ *                                                                         GridBase                                 *fGrid_, *frbGrid_, *gGrid_;
+ *                                                                             bool                                     is5d_;
+ *                                                                                 FermionField                             src_o_, sol_e_, sol_o_, tmp_, tmp5_;
+ *                                                                                 };
+ *
+ *                                                                                 */
+
+
+/******************************************************************************
+ *  *  *               A2AVectorsSchurDiagTwo template implementation               *
+ *   *   ******************************************************************************/
+/*
+ *
+ * template <typename FImpl>
+ * A2AVectorsSchurDiagTwo<FImpl>::A2AVectorsSchurDiagTwo(FMat &action)
+ * : action_(action)
+ * , fGrid_(action_.FermionGrid())
+ * , frbGrid_(action_.FermionRedBlackGrid())
+ * , gGrid_(action_.GaugeGrid())
+ * , src_o_(frbGrid_)
+ * , sol_e_(frbGrid_)
+ * , sol_o_(frbGrid_)
+ * , tmp_(frbGrid_)
+ * , tmp5_(fGrid_)
+ * , op_(action_)
+ * {}
+ *
+ * template <typename FImpl>
+ * void A2AVectorsSchurDiagTwo<FImpl>::makeRho(FermionField &rhoOut, const FermionField &evec, const Complex &noises)
+ * {
+ *
+ *   LatticeSpinColourVector tmp2(grid4d);
+ *     LatticeSpinColourVector tmp3d(grid3d);
+ *       LatticeColourVector tmp3d_nospin(grid3d);
+ *         LatticeColourVector tmp_nospin(grid4d);
+ *
+
+  for (int inoise = 0; inoise < nnoise; inoise++) {
+    for (int dk = 0; dk < LI; dk++) {
+      for (int dt = 0; dt < Nt_inv; dt++) {
+        if(full_tdil) dt=tsrc; //TODO: this works for now, as longs as tsrc=0, but will crash otherwise!
+        for (int ds = 0; ds < Ns; ds++) {
+          vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * Ns*dt;
+          sources_tsrc[vecindex] = zero;
+          tmp3d_nospin = zero;
+          for (int it = dt; it < Nt; it += TI){
+            if( it >= Ntfirst && it < Ntfirst + Ntlocal ) {
+              for (int ik = dk; ik < nvec; ik += LI){
+                for (int is = ds; is < Ns; is += Ns){ //at the moment, full spin dilution is enforced
+                  tmp3d_nospin = eig[it].evec[ik] * noises[inoise][it][ik]()(is)(); //noises do not have to be a spin vector
+                  tmp3d=zero;
+                  pokeSpin(tmp3d,tmp3d_nospin,is);
+                  tmp2=zero;
+#ifdef USE_LOCAL_SLICES
+                  InsertSliceLocal(tmp3d,tmp2,0,it-Ntfirst,Grid::QCD::Tdir);
+#else
+                  InsertSlice(tmp3d,tmp2,it,Grid::QCD::Tdir);
+#endif
+                  sources_tsrc[vecindex] += tmp2;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+
+}
+
+*/
+
+
+
+/******************************************************************************
  *                         DistilVectors                                 *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MDistil)
