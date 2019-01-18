@@ -26,14 +26,14 @@ modules_cc =\
   Modules/MSolver/LocalCoherenceLanczos.cc \
   Modules/MGauge/StoutSmearing.cc \
   Modules/MGauge/Unit.cc \
-  Modules/MGauge/Electrify.cc \
   Modules/MGauge/UnitEm.cc \
   Modules/MGauge/StochEm.cc \
   Modules/MGauge/Random.cc \
+  Modules/MGauge/Electrify.cc \
   Modules/MGauge/FundtoHirep.cc \
   Modules/MGauge/GaugeFix.cc \
-  Modules/MNoise/TimeDilutedSpinColorDiagonal.cc \
   Modules/MNoise/FullVolumeSpinColorDiagonal.cc \
+  Modules/MNoise/TimeDilutedSpinColorDiagonal.cc \
   Modules/MUtilities/RandomVectors.cc \
   Modules/MUtilities/TestSeqGamma.cc \
   Modules/MUtilities/PrecisionCast.cc \
@@ -43,6 +43,9 @@ modules_cc =\
   Modules/MScalar/VPCounterTerms.cc \
   Modules/MScalar/ChargedProp.cc \
   Modules/MScalar/ScalarVP.cc \
+  Modules/MDistil/DistilVectors.cc \
+  Modules/MDistil/LapEvec.cc \
+  Modules/MDistil/PerambLight.cc \
   Modules/MNPR/Amputate.cc \
   Modules/MNPR/Bilinear.cc \
   Modules/MNPR/FourQuark.cc \
@@ -94,18 +97,18 @@ modules_hpp =\
   Modules/MSink/Point.hpp \
   Modules/MSolver/MixedPrecisionRBPrecCG.hpp \
   Modules/MSolver/LocalCoherenceLanczos.hpp \
+  Modules/MSolver/A2AAslashVectors.hpp \
   Modules/MSolver/Guesser.hpp \
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MSolver/A2AVectors.hpp \
-  Modules/MSolver/A2AAslashVectors.hpp \
   Modules/MGauge/UnitEm.hpp \
   Modules/MGauge/StoutSmearing.hpp \
   Modules/MGauge/Unit.hpp \
-  Modules/MGauge/Electrify.hpp \
   Modules/MGauge/Random.hpp \
   Modules/MGauge/GaugeFix.hpp \
   Modules/MGauge/FundtoHirep.hpp \
   Modules/MGauge/StochEm.hpp \
+  Modules/MGauge/Electrify.hpp \
   Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp \
   Modules/MNoise/FullVolumeSpinColorDiagonal.hpp \
   Modules/MUtilities/PrecisionCast.hpp \
@@ -118,6 +121,9 @@ modules_hpp =\
   Modules/MScalar/ScalarVP.hpp \
   Modules/MScalar/Scalar.hpp \
   Modules/MScalar/ChargedProp.hpp \
+  Modules/MDistil/LapEvec.hpp \
+  Modules/MDistil/DistilVectors.hpp \
+  Modules/MDistil/PerambLight.hpp \
   Modules/MNPR/Bilinear.hpp \
   Modules/MNPR/Amputate.hpp \
   Modules/MNPR/FourQuark.hpp \
