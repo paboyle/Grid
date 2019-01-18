@@ -34,12 +34,12 @@ BEGIN_HADRONS_NAMESPACE
 
 
 /******************************************************************************
- *               A2AVectorsSchurDiagTwo template implementation               *
+ *            DistilVectorsFromPerambulator template implementation           *
  ******************************************************************************/
 /*
 
 template <typename FImpl>
-A2AVectorsSchurDiagTwo<FImpl>::A2AVectorsSchurDiagTwo(FMat &action)
+DistilVectorsFromPerambulator<FImpl>::DistilVectorsFromPerambulator(FMat &action)
 : action_(action)
 , fGrid_(action_.FermionGrid())
 , frbGrid_(action_.FermionRedBlackGrid())
@@ -53,7 +53,7 @@ A2AVectorsSchurDiagTwo<FImpl>::A2AVectorsSchurDiagTwo(FMat &action)
 {}
 
 template <typename FImpl>
-void A2AVectorsSchurDiagTwo<FImpl>::makeRho(FermionField &rhoOut, const FermionField &evec, const Complex &noises)
+void DistilVectorsFromPerambulator<FImpl>::makeRho(FermionField &rhoOut, const FermionField &evec, const Complex &noises)
 {
 
   LatticeSpinColourVector tmp2(grid4d);
@@ -62,7 +62,7 @@ void A2AVectorsSchurDiagTwo<FImpl>::makeRho(FermionField &rhoOut, const FermionF
   LatticeColourVector tmp_nospin(grid4d);
   LatticeColourVector evec3d(grid3d);
 
-
+  int vecindex;
   for (int inoise = 0; inoise < nnoise; inoise++) {
     for (int dk = 0; dk < LI; dk++) {
       for (int dt = 0; dt < Nt_inv; dt++) {
@@ -95,6 +95,42 @@ void A2AVectorsSchurDiagTwo<FImpl>::makeRho(FermionField &rhoOut, const FermionF
     }
   }
 
+
+}
+
+template <typename FImpl>
+void DistilVectorsFromPerambulator<FImpl>::makePhi(FermionField &rhoOut, const FermionField &evec, const SpinVector &perambulator)
+{
+
+  LatticeSpinColourVector tmp2(grid4d);
+  LatticeSpinColourVector tmp3d(grid3d);
+  LatticeColourVector tmp3d_nospin(grid3d);
+  LatticeColourVector tmp_nospin(grid4d);
+  LatticeColourVector evec3d(grid3d);
+
+  int vecindex;
+  for (int inoise = 0; inoise < nnoise; inoise++) {
+    for (int dk = 0; dk < LI; dk++) {
+      for (int dt = 0; dt < Nt_inv; dt++) {
+        for (int ds = 0; ds < Ns; ds++) {
+          vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * Ns*dt;
+          sinks_tsrc[vecindex] = zero;
+          for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
+            sink_tslice=zero;
+            for (int ivec = 0; ivec < nvec; ivec++) {
+              ExtractSliceLocal(evec3d,eig4d.evec[ivec],0,t,3);
+              sink_tslice += evec3d * perambulator(t, ivec, dk, inoise,dt,ds);
+            }
+#ifdef USE_LOCAL_SLICES
+            InsertSliceLocal(sink_tslice,sinks_tsrc[vecindex],0,t-Ntfirst,Grid::QCD::Tdir);
+#else
+            InsertSlice(sink_tslice,sinks_tsrc[vecindex],t,Grid::QCD::Tdir);
+#endif
+          }
+        }
+      }
+    }
+  }
 
 }
 
