@@ -356,6 +356,51 @@ void TDistilVectors<FImpl>::execute(void)
     auto        &rho       = envGet(std::vector<FermionField>, getName() + "_rho");
     auto        &phi       = envGet(std::vector<FermionField>, getName() + "_phi");
 
+
+  envGetTmp(LatticeSpinColourVector, tmp2);
+  /*LatticeSpinColourVector tmp2(grid4d);
+  LatticeSpinColourVector tmp3d(grid3d);
+  LatticeColourVector tmp3d_nospin(grid3d);
+  LatticeColourVector tmp_nospin(grid4d);
+  LatticeColourVector evec3d(grid3d);*/
+
+  int tsrc=0;
+  int nnoise=1;
+  int LI=6;
+  int Ns=4;
+  int Nt_inv=1;
+  int Nt=64;
+  int nvec=6;
+  bool full_tdil=true;
+
+  int vecindex;
+ /* for (int inoise = 0; inoise < nnoise; inoise++) {
+    for (int dk = 0; dk < LI; dk++) {
+      for (int dt = 0; dt < Nt_inv; dt++) {
+        if(full_tdil) dt=tsrc; //TODO: this works for now, as longs as tsrc=0, but will crash otherwise!
+        for (int ds = 0; ds < Ns; ds++) {
+          vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * Ns*dt;
+          sources_tsrc[vecindex] = zero;
+          tmp3d_nospin = zero;
+          for (int it = dt; it < Nt; it += TI){
+            for (int ik = dk; ik < nvec; ik += LI){
+              for (int is = ds; is < Ns; is += Ns){ //at the moment, full spin dilution is enforced
+                ExtractSliceLocal(evec3d,eig4d.evec[ik],0,it,3);
+                tmp3d_nospin = evec3d * noises[inoise][it][ik]()(is)(); //noises do not have to be a spin vector
+                tmp3d=zero;
+                pokeSpin(tmp3d,tmp3d_nospin,is);
+                tmp2=zero;
+                InsertSlice(tmp3d,tmp2,it,Grid::QCD::Tdir);
+                rho[vecindex] += tmp2;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+*/
+
 }
 
 END_MODULE_NAMESPACE
