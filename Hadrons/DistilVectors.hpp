@@ -32,6 +32,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Environment.hpp>
 #include <Hadrons/Solver.hpp>
+#include "Grid/lattice/Lattice_peekpoke.h"
+#include <Grid/Eigen/unsupported/CXX11/Tensor>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -117,7 +119,65 @@ public:
     return operator()(i, MyIndex);
   }
 };
+ /*
+#define BEGIN_GRID_NAMESPACE namespace Grid {
+BEGIN_GRID_NAMESPACE
 
+void CartesianCommunicatorCandidate::SliceShare( GridBase * gridLowDim, GridBase * gridHighDim, void * Buffer, int BufferSize )
+{
+  // Work out which dimension is the spread-out dimension
+  assert(gridLowDim);
+  assert(gridHighDim);
+  const int iNumDims{(const int)gridHighDim->_gdimensions.size()};
+  assert(iNumDims == gridLowDim->_gdimensions.size());
+  int dimSpreadOut = -1;
+  std::vector<int> coor(iNumDims);
+  for( int i = 0 ; i < iNumDims ; i++ ) {
+    coor[i] = gridHighDim->_processor_coor[i];
+    if( gridLowDim->_gdimensions[i] != gridHighDim->_gdimensions[i] ) {
+      assert( dimSpreadOut == -1 );
+      assert( gridLowDim->_processors[i] == 1 ); // easiest assumption to make for now
+      dimSpreadOut = i;
+    }
+  }
+  if( dimSpreadOut != -1 && gridHighDim->_processors[dimSpreadOut] != gridLowDim->_processors[dimSpreadOut] ) {
+    // Make sure the same number of data elements exist on each slice
+    const int NumSlices{gridHighDim->_processors[dimSpreadOut] / gridLowDim->_processors[dimSpreadOut]};
+    assert(gridHighDim->_processors[dimSpreadOut] == gridLowDim->_processors[dimSpreadOut] * NumSlices);
+    const int SliceSize{BufferSize/NumSlices};
+    CCC_DEBUG_DUMP(Buffer, NumSlices, SliceSize);
+    assert(BufferSize == SliceSize * NumSlices);
+#ifndef USE_LOCAL_SLICES
+    assert(0); // Can't do this without MPI (should really test whether MPI is defined)
+#else
+    const auto MyRank{gridHighDim->ThisRank()};
+    std::vector<CommsRequest_t> reqs(0);
+    int MySlice{coor[dimSpreadOut]};
+    char * const _buffer{(char *)Buffer};
+    char * const MyData{_buffer + MySlice * SliceSize};
+    for(int i = 1; i < NumSlices ; i++ ){
+      int SendSlice = ( MySlice + i ) % NumSlices;
+      int RecvSlice = ( MySlice - i + NumSlices ) % NumSlices;
+      char * const RecvData{_buffer + RecvSlice * SliceSize};
+      coor[dimSpreadOut] = SendSlice;
+      const auto SendRank{gridHighDim->RankFromProcessorCoor(coor)};
+      coor[dimSpreadOut] = RecvSlice;
+      const auto RecvRank{gridHighDim->RankFromProcessorCoor(coor)};
+      std::cout << GridLogMessage << "Send slice " << MySlice << " (" << MyRank << ") to " << SendSlice << " (" << SendRank
+      << "), receive slice from " << RecvSlice << " (" << RecvRank << ")" << std::endl;
+      gridHighDim->SendToRecvFromBegin(reqs,MyData,SendRank,RecvData,RecvRank,SliceSize);
+      //memcpy(RecvData,MyData,SliceSize); // Debug
+    }
+    gridHighDim->SendToRecvFromComplete(reqs);
+    std::cout << GridLogMessage << "Slice data shared." << std::endl;
+    CCC_DEBUG_DUMP(Buffer, NumSlices, SliceSize);
+#endif
+  }
+}
+
+#define END_GRID_NAMESPACE }
+
+*/
 
 END_HADRONS_NAMESPACE
 

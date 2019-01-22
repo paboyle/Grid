@@ -107,7 +107,6 @@ void TDistilVectors<FImpl>::setup(void)
   envTmp(LatticeSpinColourVector, "tmp3d",1,LatticeSpinColourVector(grid3d));
   envTmp(LatticeColourVector, "tmp3d_nospin",1,LatticeColourVector(grid3d));
   envTmp(LatticeSpinColourVector, "sink_tslice",1,LatticeSpinColourVector(grid3d));
-  envTmp(LatticeSpinColourVector, "sink4d",1,LatticeSpinColourVector(grid4d));
   envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
 }
 
@@ -117,8 +116,7 @@ void TDistilVectors<FImpl>::execute(void)
 {
    
     auto        &noise     = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
-    //auto        &perambulator   = envGet(std::vector<SpinVector>, par().perambulator);
-    auto        &perambulator   = envGet(Perambulator<SpinVector>, par().noise);
+    auto        &perambulator   = envGet(Perambulator<SpinVector>, getName() + "_perambulator_light");
     auto        &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
     auto        &rho       = envGet(std::vector<FermionField>, getName() + "_rho");
     auto        &phi       = envGet(std::vector<FermionField>, getName() + "_phi");
@@ -129,7 +127,6 @@ void TDistilVectors<FImpl>::execute(void)
   envGetTmp(LatticeSpinColourVector, tmp3d);
   envGetTmp(LatticeColourVector, tmp3d_nospin);
   envGetTmp(LatticeSpinColourVector, sink_tslice);
-  envGetTmp(LatticeSpinColourVector, sink4d);
   envGetTmp(LatticeColourVector, evec3d);
 
   GridCartesian * grid4d = env().getGrid();
