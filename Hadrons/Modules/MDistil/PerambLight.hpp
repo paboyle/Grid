@@ -8,7 +8,9 @@
 #include <Hadrons/EigenPack.hpp>
 #include <Hadrons/A2AVectors.hpp>
 #include <Hadrons/DilutedNoise.hpp>
-#include <Hadrons/DistilVectors.hpp>
+
+// These are members of Distillation
+#include <Hadrons/Modules/MDistil/Distil.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -235,10 +237,10 @@ void TPerambLight<FImpl>::execute(void)
   }
 }
     std::cout <<  "perambulator done" << std::endl;
-    //perambulator.SliceShare( grid3d, grid4d );
+    perambulator.SliceShare( grid3d, grid4d );
 
     // THIS IS WHERE WE WANT TO SAVE THE PERAMBULATORS TO DISK
-    //perambulator.WriteTemporary(std::string("perambulators/file"));
+    perambulator.WriteTemporary(std::string("perambulators/file"));
 
 }
 

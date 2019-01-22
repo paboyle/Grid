@@ -34,6 +34,9 @@
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 
+// These are members of Distillation
+#include <Hadrons/Modules/MDistil/Distil.hpp>
+
 BEGIN_HADRONS_NAMESPACE
 
 BEGIN_MODULE_NAMESPACE(MDistil)
