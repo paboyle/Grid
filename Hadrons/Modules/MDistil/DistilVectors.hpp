@@ -10,7 +10,7 @@
 #include <Hadrons/DilutedNoise.hpp>
 
 BEGIN_HADRONS_NAMESPACE
-/*
+
 template<typename LatticeObj>
 class Perambulator : Serializable{
 	  // TODO: The next line makes friends across all combinations
@@ -93,7 +93,7 @@ public:
     return operator()(i, MyIndex);
   }
 };
-*/
+
 
 /******************************************************************************
  *      Class to generate Distillation $\varrho$ and $\varphi$ vectors        *
@@ -332,16 +332,25 @@ void TDistilVectors<FImpl>::setup(void)
    envCreate(std::vector<FermionField>, getName() + "_phi", 1, 
                  	            noise.size(), envGetGrid(FermionField)); 
 
- 
-  envTmp(LatticeSpinColourVector, "tmp2",1,LatticeSpinColourVector(env().getGrid()));
-  envTmp(LatticeColourVector, "tmp_nospin",1,LatticeColourVector(env().getGrid()));
-  //GridCartesian * const grid3d;
-  //ExtractSlice(grid3d,env().getGrid(),0,3);
-  //envTmp(LatticeSpinColourVector, "tmp3d",1,LatticeSpinColourVector(grid3d));
-  /*LatticeSpinColourVector tmp3d(grid3d);
-  LatticeColourVector tmp3d_nospin(grid3d);
-  LatticeColourVector evec3d(grid3d);
-  */
+
+  GridCartesian * grid4d = env().getGrid();
+  std::vector<int> latt_size   = GridDefaultLatt();
+  std::vector<int> simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
+  std::vector<int> mpi_layout  = GridDefaultMpi();
+  std::vector<int> simd_layout_3 = GridDefaultSimd(Nd-1, vComplex::Nsimd());
+  latt_size[Nd-1] = 1;
+  simd_layout_3.push_back( 1 );
+  mpi_layout[Nd-1] = 1;
+  GridCartesian * grid3d = new GridCartesian(latt_size,simd_layout_3,mpi_layout,*grid4d);
+
+
+  envTmp(LatticeSpinColourVector, "tmp2",1,LatticeSpinColourVector(grid4d));
+  envTmp(LatticeColourVector, "tmp_nospin",1,LatticeColourVector(grid4d));
+  envTmp(LatticeSpinColourVector, "tmp3d",1,LatticeSpinColourVector(grid3d));
+  envTmp(LatticeColourVector, "tmp3d_nospin",1,LatticeColourVector(grid3d));
+  envTmp(LatticeSpinColourVector, "sink_tslice",1,LatticeSpinColourVector(grid3d));
+  envTmp(LatticeSpinColourVector, "sink4d",1,LatticeSpinColourVector(grid4d));
+  envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -350,19 +359,25 @@ void TDistilVectors<FImpl>::execute(void)
 {
    
     auto        &noise     = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
-    auto        &perambulator   = envGet(std::vector<SpinVector>, par().perambulator);
-    //auto        &perambulator   = envGet(Perambulator<SpinVector>, par().noise);
+    //auto        &perambulator   = envGet(std::vector<SpinVector>, par().perambulator);
+    auto        &perambulator   = envGet(Perambulator<SpinVector>, par().noise);
     auto        &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
     auto        &rho       = envGet(std::vector<FermionField>, getName() + "_rho");
     auto        &phi       = envGet(std::vector<FermionField>, getName() + "_phi");
 
 
   envGetTmp(LatticeSpinColourVector, tmp2);
-  /*LatticeSpinColourVector tmp2(grid4d);
-  LatticeSpinColourVector tmp3d(grid3d);
-  LatticeColourVector tmp3d_nospin(grid3d);
-  LatticeColourVector tmp_nospin(grid4d);
-  LatticeColourVector evec3d(grid3d);*/
+  envGetTmp(LatticeColourVector, tmp_nospin);
+  envGetTmp(LatticeSpinColourVector, tmp3d);
+  envGetTmp(LatticeColourVector, tmp3d_nospin);
+  envGetTmp(LatticeSpinColourVector, sink_tslice);
+  envGetTmp(LatticeSpinColourVector, sink4d);
+  envGetTmp(LatticeColourVector, evec3d);
+
+  GridCartesian * grid4d = env().getGrid();
+
+  int Ntlocal = grid4d->LocalDimensions()[3];
+  int Ntfirst = grid4d->LocalStarts()[3];
 
   int tsrc=0;
   int nnoise=1;
@@ -370,28 +385,31 @@ void TDistilVectors<FImpl>::execute(void)
   int Ns=4;
   int Nt_inv=1;
   int Nt=64;
+  int TI=64;
   int nvec=6;
   bool full_tdil=true;
 
   int vecindex;
- /* for (int inoise = 0; inoise < nnoise; inoise++) {
+  for (int inoise = 0; inoise < nnoise; inoise++) {
     for (int dk = 0; dk < LI; dk++) {
       for (int dt = 0; dt < Nt_inv; dt++) {
         if(full_tdil) dt=tsrc; //TODO: this works for now, as longs as tsrc=0, but will crash otherwise!
         for (int ds = 0; ds < Ns; ds++) {
           vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * Ns*dt;
-          sources_tsrc[vecindex] = zero;
+          rho[vecindex] = zero;
           tmp3d_nospin = zero;
           for (int it = dt; it < Nt; it += TI){
-            for (int ik = dk; ik < nvec; ik += LI){
-              for (int is = ds; is < Ns; is += Ns){ //at the moment, full spin dilution is enforced
-                ExtractSliceLocal(evec3d,eig4d.evec[ik],0,it,3);
-                tmp3d_nospin = evec3d * noises[inoise][it][ik]()(is)(); //noises do not have to be a spin vector
-                tmp3d=zero;
-                pokeSpin(tmp3d,tmp3d_nospin,is);
-                tmp2=zero;
-                InsertSlice(tmp3d,tmp2,it,Grid::QCD::Tdir);
-                rho[vecindex] += tmp2;
+	    if( it >= Ntfirst && it < Ntfirst + Ntlocal ) {
+              for (int ik = dk; ik < nvec; ik += LI){
+                for (int is = ds; is < Ns; is += Ns){ //at the moment, full spin dilution is enforced
+                  ExtractSliceLocal(evec3d,epack.evec[ik],0,it,3);
+                  tmp3d_nospin = evec3d * noise[inoise][it][ik]()(is)(); //noises do not have to be a spin vector
+                  tmp3d=zero;
+                  pokeSpin(tmp3d,tmp3d_nospin,is);
+                  tmp2=zero;
+                  InsertSliceLocal(tmp3d,tmp2,0,it-Ntfirst,Grid::QCD::Tdir);
+                  rho[vecindex] += tmp2;
+                }
               }
             }
           }
@@ -399,7 +417,30 @@ void TDistilVectors<FImpl>::execute(void)
       }
     }
   }
-*/
+
+
+  for (int inoise = 0; inoise < nnoise; inoise++) {
+    for (int dk = 0; dk < LI; dk++) {
+      for (int dt = 0; dt < Nt_inv; dt++) {
+        for (int ds = 0; ds < Ns; ds++) {
+          vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * Ns*dt;
+          phi[vecindex] = zero;
+          for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
+            sink_tslice=zero;
+            for (int ivec = 0; ivec < nvec; ivec++) {
+              ExtractSliceLocal(evec3d,epack.evec[ivec],0,t,3);
+             // sink_tslice += evec3d * perambulator[inoise + nnoise * dk + nnoise * LI * dt + nnoise*LI*Nt_inv * t + nnoise*LI*Nt_inv*Nt* ivec]()(ds)();
+              sink_tslice += evec3d * perambulator(t, ivec, dk, inoise,dt,ds);
+            }
+            //InsertSliceLocal(sink_tslice,sink4d,0,t-Ntfirst,Grid::QCD::Tdir);
+	    //phi[vecindex]+=sink4d; //DIFFERENT TYPES????
+            InsertSliceLocal(sink_tslice,phi[vecindex],0,t-Ntfirst,Grid::QCD::Tdir);
+          }
+        }
+      }
+    }
+  }
+
 
 }
 
