@@ -33,8 +33,10 @@
 using namespace Grid;
 using namespace Hadrons;
 
+/////////////////////////////////////////////////////////////
 // This is copied from the free propagator test
 // Just used as an example - will be deleted
+/////////////////////////////////////////////////////////////
 
 void free_prop(Application &application)
 {
@@ -105,12 +107,8 @@ void free_prop(Application &application)
     freePar_W.mass = lepton_mass[i];
     application.createModule<MFermion::FreeProp>("W_Lpt_" + lepton_flavour[i],
                                                  freePar_W);
-    
-    
   }
-  
-  
-  
+
   //Propagators from inversion
   for (unsigned int i = 0; i < flavour.size(); ++i)
   {
@@ -138,15 +136,12 @@ void free_prop(Application &application)
     application.createModule<MFermion::GaugeProp>("Qpt_" + flavour[i],
                                                   quarkPar);
     
-    
-    
     //Wilson actions
     MAction::Wilson::Par actionPar_W;
     actionPar_W.gauge = "gauge";
     actionPar_W.mass  = mass[i];
     actionPar_W.boundary = boundary;
     application.createModule<MAction::Wilson>("W_" + flavour[i], actionPar_W);
-    
     
     // solvers
     MSolver::RBPrecCG::Par solverPar_W;
@@ -220,12 +215,108 @@ void free_prop(Application &application)
       application.createModule<MContraction::Meson>("W_meson_pt_"
                                                     + flavour[i] + flavour[j],
                                                     mesPar_W);
-      
     }
+}
+
+/////////////////////////////////////////////////////////////
+// Test creation of laplacian eigenvectors
+/////////////////////////////////////////////////////////////
+
+void test_LapEvec(Application &application)
+{
+  const unsigned int  nt    = GridDefaultLatt()[Tp];
+  
+  // global parameters
+  Application::GlobalPar globalPar;
+  globalPar.trajCounter.start = 1500;
+  globalPar.trajCounter.end   = 1520;
+  globalPar.trajCounter.step  = 20;
+  globalPar.runId             = "test";
+  application.setPar(globalPar);
+  // gauge field
+  application.createModule<MGauge::Unit>("gauge");
+  // Now make an instance of the LapEvec object
+  application.createModule<MDistil::LapEvec>("LapEvecInstance");
+}
+
+/////////////////////////////////////////////////////////////
+// Felix, this is your test here
+/////////////////////////////////////////////////////////////
+
+void test_FelixRenameMe(Application &application)
+{
+  const unsigned int  nt    = GridDefaultLatt()[Tp];
+  
+  // global parameters
+  Application::GlobalPar globalPar;
+  globalPar.trajCounter.start = 1500;
+  globalPar.trajCounter.end   = 1520;
+  globalPar.trajCounter.step  = 20;
+  globalPar.runId             = "test";
+  application.setPar(globalPar);
+  // gauge field
+  application.createModule<MGauge::Unit>("gauge");
+  // Now make an instance of the LapEvec object
+  application.createModule<MDistil::DistilVectors>("DistilVectorsInstance");
+}
+
+bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
+{
+  if( bGobbleWhiteSpace )
+    while( std::isspace(static_cast<unsigned char>(*pstr)) )
+      pstr++;
+  const char * p = pstr;
+  bool bMinus = false;
+  char c = * p++;
+  if( c == '+' )
+    c = * p++;
+  else if( c == '-' ) {
+    bMinus = true;
+    c = * p++;
+  }
+  int n = c - '0';
+  if( n < 0 || n > 9 )
+    return false;
+  while( * p >= '0' && * p <= '9' ) {
+    n = n * 10 + ( * p ) - '0';
+    p++;
+  }
+  if( bMinus )
+    n *= -1;
+  ri = n;
+  pstr = p;
+  return true;
 }
 
 int main(int argc, char *argv[])
 {
+  // Decode command-line parameters. 1st one is which test to run
+  int iTestNum = 2;
+
+  for(int i = 1 ; i < argc ; i++ ) {
+    std::cout << "argv[" << i << "]=\"" << argv[i] << "\"" << std::endl;
+    const char * p = argv[i];
+    if( * p == '/' || * p == '-' ) {
+      p++;
+      char c = * p++;
+      switch(toupper(c)) {
+        case 'T':
+          if( bNumber( iTestNum, p ) ) {
+            std::cout << "Test " << iTestNum << " requested";
+            if( * p )
+              std::cout << " (ignoring trailer \"" << p << "\")";
+            std::cout << std::endl;
+          }
+          else
+            std::cout << "Invalid test \"" << &argv[i][2] << "\"" << std::endl;
+          break;
+        default:
+          std::cout << "Ignoring switch \"" << &argv[i][1] << "\"" << std::endl;
+          break;
+      }
+    }
+  }
+
   // initialization //////////////////////////////////////////////////////////
   Grid_init(&argc, &argv);
   HadronsLogError.Active(GridLogError.isActive());
@@ -239,7 +330,19 @@ int main(int argc, char *argv[])
   Application              application;
 
   // For now perform free propagator test - replace this with distillation test(s)
-  free_prop( application );
+  LOG(Message) << "====== Creating xml for test " << iTestNum << " ======" << std::endl;
+  switch(iTestNum) {
+    case 0:
+      free_prop( application );
+      break;
+    case 1:
+      test_LapEvec( application );
+      break;
+    default: // 2
+      test_FelixRenameMe( application );
+      break;
+  }
+  LOG(Message) << "====== XML creation for test " << iTestNum << " complete ======" << std::endl;
 
   // execution
   application.saveParameterFile("test_hadrons_distil.xml");

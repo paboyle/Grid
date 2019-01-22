@@ -36,17 +36,34 @@
 
 BEGIN_HADRONS_NAMESPACE
 
+BEGIN_MODULE_NAMESPACE(MDistil)
+
 /******************************************************************************
  *                         LapEvec                                 *
  ***** TEST *****
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MDistil)
+
 
 class LapEvecPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(LapEvecPar,
-                                    unsigned int, i);
+  GRID_SERIALIZABLE_CLASS_MEMBERS(LapEvecPar,
+                                  // StoutParameters,
+                                  int, steps,
+                                  double, parm,
+                                  // ChebyshevParameters,
+                                  int, PolyOrder,
+                                  double, alpha,
+                                  double, beta,
+                                  // LanczosParameters,
+                                  int, Nstart,
+                                  int, Nvec,
+                                  int, Nk,
+                                  int, Nm,    // Not currently used
+                                  int, Np,
+                                  int, MaxIt,
+                                  int, MinRes,
+                                  double, resid);
 };
 
 template <typename FImpl>
