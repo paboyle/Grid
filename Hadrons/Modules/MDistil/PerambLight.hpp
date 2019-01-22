@@ -1,32 +1,40 @@
-#ifndef Hadrons_MDistil_perambulator_l_hpp_
-#define Hadrons_MDistil_perambulator_l_hpp_
+#ifndef Hadrons_MDistil_PerambLight_hpp_
+#define Hadrons_MDistil_PerambLight_hpp_
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
+#include <Hadrons/Solver.hpp>
+#include <Hadrons/EigenPack.hpp>
+#include <Hadrons/A2AVectors.hpp>
+#include <Hadrons/DilutedNoise.hpp>
+#include <Hadrons/DistilVectors.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
+
 /******************************************************************************
- *                         perambulator_l                                 *
+ *                             PerambLight                                    *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MDistil)
 
-class perambulator_lPar: Serializable
+class PerambLightPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(perambulator_lPar,
-                                    unsigned int, i);
+    GRID_SERIALIZABLE_CLASS_MEMBERS(PerambLightPar,
+		                    std::string, noise,
+		                    std::string, eigenPack,
+                                    bool, multiFile);
 };
 
 template <typename FImpl>
-class Tperambulator_l: public Module<perambulator_lPar>
+class TPerambLight: public Module<PerambLightPar>
 {
 public:
     // constructor
-    Tperambulator_l(const std::string name);
+    TPerambLight(const std::string name);
     // destructor
-    virtual ~Tperambulator_l(void) {};
+    virtual ~TPerambLight(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -36,81 +44,55 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_TMP(perambulator_l, Tperambulator_l<FIMPL>, MDistil);
+MODULE_REGISTER_TMP(PerambLight, TPerambLight<FIMPL>, MDistil);
 
 /******************************************************************************
- *                 Tperambulator_l implementation                             *
+ *                 TPerambLight implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-Tperambulator_l<FImpl>::Tperambulator_l(const std::string name)
-: Module<perambulator_lPar>(name)
+TPerambLight<FImpl>::TPerambLight(const std::string name)
+: Module<PerambLightPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
-std::vector<std::string> Tperambulator_l<FImpl>::getInput(void)
+std::vector<std::string> TPerambLight<FImpl>::getInput(void)
 {
     std::vector<std::string> in;
+
+    in.push_back(par().noise);
+    in.push_back(par().eigenPack);
     
     return in;
 }
 
 template <typename FImpl>
-std::vector<std::string> Tperambulator_l<FImpl>::getOutput(void)
+std::vector<std::string> TPerambLight<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {getName() + "_perambulator_light"};
     
     return out;
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void Tperambulator_l<FImpl>::setup(void)
+void TPerambLight<FImpl>::setup(void)
 {
-/*
-    std::cout << "Compute perambulator from timeslice " << tsrc << std::endl;
 
-    LatticeSpinColourVector dist_source(grid4d);
-    LatticeSpinColourVector tmp2(grid4d);
-    LatticeSpinColourVector tmp3d(grid3d);
-    LatticeColourVector tmp3d_nospin(grid3d);
-    LatticeColourVector evec3d(grid3d);
-    LatticeColourVector tmp_nospin(grid4d);
+   auto &noise = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
+  
+   int nvec = 6;
+   int Nt=64;
 
-    LatticeColourVector result_tmp(grid3d);
+   envCreate(Perambulator<SpinVector>, getName() + "_perambulator_light", 1, 
+		                    noise.size() *nvec*Nt);
 
-    LatticeSpinVector peramb_tmp(grid4d);
-    LatticeFermion result(grid4d); result=zero; //Fermion = SpinColourVector!!!
-    LatticeFermion result_single_component(grid4d); result_single_component=zero; //Fermion = SpinColourVector!!!
-    LatticeColourVector result_nospin(grid4d); result_nospin=zero; //Fermion = SpinColourVector!!!
-    LatticeColourVector result_3d(grid3d); result_3d=zero; //Fermion = SpinColourVector!!!
-    LatticeFermion result_test(grid3d); result_test=zero; //Fermion = SpinColourVector!!!
-
-
-    Real mass=SPar.mass;    // TODO Infile
-    Real M5  =SPar.M5;     // TODO Infile
-    std::cout << "init RBG "  << std::endl;
-    GridRedBlackCartesian RBGrid(grid4d);
-    std::cout << "init RBG done"  << std::endl;
-
-    GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(DPar.Ls,grid4d);
-    GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(DPar.Ls,grid4d);
-
-    typedef DomainWallFermionR FermionAction;
-
-    FermionAction Dop(Umu,*FGrid,*FrbGrid,*grid4d,RBGrid,mass,M5);
-
-    MdagMLinearOperator<FermionAction,LatticeFermion> HermOp(Dop);
-    ConjugateGradient<LatticeFermion> CG(SPar.CGPrecision,SPar.MaxIterations);
-    SchurRedBlackDiagMooeeSolve<LatticeFermion> SchurSolver(CG);
-*/
-    
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void Tperambulator_l<FImpl>::execute(void)
+void TPerambLight<FImpl>::execute(void)
 {
 /*
     for (int inoise = 0; inoise < nnoise; inoise++) {
@@ -180,4 +162,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MDistil_perambulator_l_hpp_
+#endif // Hadrons_MDistil_PerambLight_hpp_
