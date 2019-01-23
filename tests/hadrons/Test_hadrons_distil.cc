@@ -274,24 +274,43 @@ void test_DistilVectors(Application &application)
   globalPar.trajCounter.step  = 20;
   globalPar.runId             = "test";
   application.setPar(globalPar);
-  // Module parameters
-  MDistil::DistilVectors::Par DistilPar;
-  DistilPar.noise="noise";
-  DistilPar.perambulator="perambulator";
-  DistilPar.eigenPack="ePack";
-  DistilPar.tsrc = 0;
-  DistilPar.nnoise = 1;
-  DistilPar.LI=6;
-  DistilPar.SI=4;
-  DistilPar.TI=64;
-  DistilPar.nvec=6;
-  DistilPar.Ns=4;
-  DistilPar.Nt=64;
-  DistilPar.Nt_inv=1;
+  // PerambLight parameters
+  MDistil::PerambLight::Par PerambPar;
+  PerambPar.eigenPack="ePack";
+  PerambPar.tsrc = 0;
+  PerambPar.nnoise = 1;
+  PerambPar.LI=6;
+  PerambPar.SI=4;
+  PerambPar.TI=64;
+  PerambPar.nvec=6;
+  PerambPar.Ns=4;
+  PerambPar.Nt=64;
+  PerambPar.Nt_inv=1;
+  PerambPar.mass=0.005;
+  PerambPar.M5=1.8;
+  PerambPar.Ls=16;
+  PerambPar.CGPrecision=1e-8;
+  PerambPar.MaxIterations=10000;
+  // DistilVectors parameters
+  MDistil::DistilVectors::Par DistilVecPar;
+  DistilVecPar.noise="noise";
+  DistilVecPar.perambulator="perambulator";
+  DistilVecPar.eigenPack="ePack";
+  DistilVecPar.tsrc = 0;
+  DistilVecPar.nnoise = 1;
+  DistilVecPar.LI=6;
+  DistilVecPar.SI=4;
+  DistilVecPar.TI=64;
+  DistilVecPar.nvec=6;
+  DistilVecPar.Ns=4;
+  DistilVecPar.Nt=64;
+  DistilVecPar.Nt_inv=1;
   // gauge field
   application.createModule<MGauge::Unit>("gauge");
-  // Now make an instance of the LapEvec object
-  application.createModule<MDistil::DistilVectors>("DistilVectorsInstance",DistilPar);
+  // Now make an instance of the Perambulator object
+  application.createModule<MDistil::PerambLight>("PerambulatorsInstance",PerambPar);
+  // Now make an instance of the DistilVectors object
+  application.createModule<MDistil::DistilVectors>("DistilVectorsInstance",DistilVecPar);
 }
 
 bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
