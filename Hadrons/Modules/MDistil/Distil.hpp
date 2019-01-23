@@ -101,6 +101,24 @@ BEGIN_HADRONS_NAMESPACE
 BEGIN_MODULE_NAMESPACE(MDistil)
 
 /******************************************************************************
+ Make a lower dimensional grid
+ ******************************************************************************/
+
+inline GridCartesian * MakeLowerDimGrid( GridCartesian * gridHD )
+{
+  int nd{static_cast<int>(gridHD->_ndimension)};
+  std::vector<int> latt_size   = gridHD->_fdimensions;
+  latt_size[nd-1] = 1;
+
+  std::vector<int> simd_layout = GridDefaultSimd(nd-1, vComplex::Nsimd());
+  simd_layout.push_back( 1 );
+
+  std::vector<int> mpi_layout  = gridHD->_processors;
+  mpi_layout[nd-1] = 1;
+  return new GridCartesian(latt_size,simd_layout,mpi_layout,*gridHD);
+}
+
+/******************************************************************************
  Perambulator object
  ******************************************************************************/
 

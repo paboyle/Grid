@@ -236,10 +236,10 @@ void test_LapEvec(Application &application)
   // gauge field
   application.createModule<MGauge::Unit>("gauge");
   // Now make an instance of the LapEvec object
-  MDistil::LapEvecPar levPar;
-  levPar.Stout.steps = 173;
-  levPar.Stout.parm = -9.87654321;
-  application.createModule<MDistil::LapEvec>("LapEvec",levPar);
+  MDistil::LapEvecPar par;
+  par.Stout.steps = 173;
+  par.Stout.parm = -9.87654321;
+  application.createModule<MDistil::LapEvec>("LapEvec",par);
 }
 
 /////////////////////////////////////////////////////////////
@@ -252,9 +252,9 @@ void test_Perambulators(Application &application)
   
   // global parameters
   Application::GlobalPar globalPar;
-  globalPar.trajCounter.start = 1500;
-  globalPar.trajCounter.end   = 1520;
-  globalPar.trajCounter.step  = 20;
+  globalPar.trajCounter.start = 3000;
+  globalPar.trajCounter.end   = 3040;
+  globalPar.trajCounter.step  = 40;
   globalPar.runId             = "test";
   application.setPar(globalPar);
   // gauge field

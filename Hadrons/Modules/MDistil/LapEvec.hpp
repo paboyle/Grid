@@ -123,9 +123,10 @@ class TLapEvec: public Module<LapEvecPar>
 {
 public:
     // constructor
+    TLapEvec();
     TLapEvec(const std::string name);
     // destructor
-    virtual ~TLapEvec(void) {};
+    virtual ~TLapEvec(void);
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -133,6 +134,8 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
+public:
+  GridCartesian * gridLD = nullptr;
 };
 
 MODULE_REGISTER_TMP(LapEvec, TLapEvec<FIMPL>, MDistil);
@@ -142,9 +145,25 @@ MODULE_REGISTER_TMP(LapEvec, TLapEvec<FIMPL>, MDistil);
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TLapEvec<FImpl>::TLapEvec(const std::string name)
-: Module<LapEvecPar>(name)
-{}
+TLapEvec<FImpl>::TLapEvec(const std::string name) : Module<LapEvecPar>(name)
+{
+  // NB: This constructor isn't used!!!
+  LOG(Message) << "TLapEvec constructor : TLapEvec<FImpl>::TLapEvec(const std::string name)" << std::endl;
+  LOG(Message) << "TLapEvec constructor : Setting gridLD=nullptr" << std::endl;
+  gridLD = nullptr;
+}
+
+// destructor /////////////////////////////////////////////////////////////////
+template <typename FImpl>
+TLapEvec<FImpl>::~TLapEvec()
+{
+  if( gridLD != nullptr ) {
+    LOG(Message) << "Destroying lower dimensional grid" << std::endl;
+    delete gridLD;
+  }
+  else
+    LOG(Message) << "Lower dimensional grid was never created" << std::endl;
+}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
@@ -169,6 +188,12 @@ void TLapEvec<FImpl>::setup(void)
 {
   LOG(Message) << "setup() : start" << std::endl;
   LOG(Message) << "Stout.steps=" << par().Stout.steps << ", Stout.parm=" << par().Stout.parm << std::endl;
+  if( gridLD ) {
+    LOG(Message) << "Didn't expect to need to destroy gridLD here!" << std::endl;
+    delete gridLD;
+  }
+  LOG(Message) << "Creating lower dimensional grid" << std::endl;
+  gridLD = MakeLowerDimGrid( env().getGrid() );
   LOG(Message) << "setup() : end" << std::endl;
 }
 
