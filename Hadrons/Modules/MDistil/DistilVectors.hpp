@@ -27,7 +27,16 @@ public:
 		                    std::string, noise,
 		                    std::string, perambulator,
 		                    std::string, eigenPack,
-                                    bool, multiFile);
+                                    bool, multiFile,
+				    int, tsrc,
+				    int, nnoise,
+				    int, LI,
+				    int, SI,
+				    int, TI,
+				    int, nvec,
+				    int, Ns,
+				    int, Nt,
+				    int, Nt_inv);
 };
 
 template <typename FImpl>
@@ -136,15 +145,16 @@ void TDistilVectors<FImpl>::execute(void)
   int Ntlocal = grid4d->LocalDimensions()[3];
   int Ntfirst = grid4d->LocalStarts()[3];
 
-  int tsrc=0;
-  int nnoise=1;
-  int LI=6;
-  int Ns=4;
-  int Nt_inv=1;
-  int Nt=64;
-  int TI=64;
-  int nvec=6;
-  bool full_tdil=true;
+  int tsrc=par().tsrc;
+  int nnoise=par().nnoise;
+  int LI=par().LI;
+  int Ns=par().Ns;
+  int Nt_inv=par().Nt_inv;
+  int Nt=par().Nt;
+  int TI=par().TI;
+  int nvec=par().nvec;
+  
+  bool full_tdil=(TI==Nt);
 
   int vecindex;
   for (int inoise = 0; inoise < nnoise; inoise++) {
