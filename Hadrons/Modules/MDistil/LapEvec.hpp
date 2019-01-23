@@ -42,23 +42,30 @@ BEGIN_HADRONS_NAMESPACE
 BEGIN_MODULE_NAMESPACE(MDistil)
 
 /******************************************************************************
- *                         LapEvec                                 *
- ***** TEST *****
+
+ Laplacian eigenvectors - parameters
+
  ******************************************************************************/
 
-
-class LapEvecPar: Serializable
-{
-public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(LapEvecPar,
-                                  // StoutParameters,
+struct StoutParameters: Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(StoutParameters,
                                   int, steps,
-                                  double, parm,
-                                  // ChebyshevParameters,
+                                  double, parm)
+  StoutParameters() = default;
+  template <class ReaderClass> StoutParameters(Reader<ReaderClass>& Reader){read(Reader,"StoutSmearing",*this);}
+};
+
+struct ChebyshevParameters: Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(ChebyshevParameters,
                                   int, PolyOrder,
                                   double, alpha,
-                                  double, beta,
-                                  // LanczosParameters,
+                                  double, beta)
+  ChebyshevParameters() = default;
+  template <class ReaderClass> ChebyshevParameters(Reader<ReaderClass>& Reader){read(Reader,"Chebyshev",*this);}
+};
+
+struct LanczosParameters: Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(LanczosParameters,
                                   int, Nstart,
                                   int, Nvec,
                                   int, Nk,
@@ -66,8 +73,50 @@ public:
                                   int, Np,
                                   int, MaxIt,
                                   int, MinRes,
-                                  double, resid);
+                                  double, resid)
+  LanczosParameters() = default;
+  template <class ReaderClass> LanczosParameters(Reader<ReaderClass>& Reader){read(Reader,"Lanczos",*this);}
 };
+
+struct DistilParameters: Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(DistilParameters,
+                                  int, TI,
+                                  int, LI,
+                                  int, Nnoise,
+                                  int, Ls,       // For makeFiveDimGrid
+                                  int, tSrc)
+  DistilParameters() = default;
+  template <class ReaderClass> DistilParameters(Reader<ReaderClass>& Reader){read(Reader,"Distil",*this);}
+};
+
+struct SolverParameters: Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(SolverParameters,
+                                  double, CGPrecision,
+                                  int, MaxIterations,
+                                  double, mass,
+                                  double, M5)
+  SolverParameters() = default;
+  template <class ReaderClass> SolverParameters(Reader<ReaderClass>& Reader){read(Reader,"Solver",*this);}
+};
+
+// These are the actual parameters passed to the module during construction
+
+class LapEvecPar: Serializable
+{
+public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(LapEvecPar,
+                                  StoutParameters,     Stout,
+                                  ChebyshevParameters, Cheby,
+                                  LanczosParameters,   Lanczos,
+                                  DistilParameters,    Distil,
+                                  SolverParameters,    Solver);
+};
+
+/******************************************************************************
+ 
+ Laplacian eigenvectors - Module (class) definition
+ 
+ ******************************************************************************/
 
 template <typename FImpl>
 class TLapEvec: public Module<LapEvecPar>
@@ -118,14 +167,18 @@ std::vector<std::string> TLapEvec<FImpl>::getOutput(void)
 template <typename FImpl>
 void TLapEvec<FImpl>::setup(void)
 {
-    
+  LOG(Message) << "setup() : start" << std::endl;
+  LOG(Message) << "Stout.steps=" << par().Stout.steps << ", Stout.parm=" << par().Stout.parm << std::endl;
+  LOG(Message) << "setup() : end" << std::endl;
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TLapEvec<FImpl>::execute(void)
 {
-    
+  LOG(Message) << "execute() : start" << std::endl;
+  LOG(Message) << "Stout.steps=" << par().Stout.steps << ", Stout.parm=" << par().Stout.parm << std::endl;
+  LOG(Message) << "execute() : end" << std::endl;
 }
 
 END_MODULE_NAMESPACE

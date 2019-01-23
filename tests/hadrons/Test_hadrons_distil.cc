@@ -236,7 +236,10 @@ void test_LapEvec(Application &application)
   // gauge field
   application.createModule<MGauge::Unit>("gauge");
   // Now make an instance of the LapEvec object
-  application.createModule<MDistil::LapEvec>("LapEvecInstance");
+  MDistil::LapEvecPar levPar;
+  levPar.Stout.steps = 173;
+  levPar.Stout.parm = -9.87654321;
+  application.createModule<MDistil::LapEvec>("LapEvec",levPar);
 }
 
 /////////////////////////////////////////////////////////////
