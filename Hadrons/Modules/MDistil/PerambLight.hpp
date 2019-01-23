@@ -26,7 +26,21 @@ public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(PerambLightPar,
 		                    std::string, noise,
 		                    std::string, eigenPack,
-                                    bool, multiFile);
+                                    bool, multiFile,
+				    int, tsrc,
+				    int, nnoise,
+				    int, LI,
+				    int, SI,
+				    int, TI,
+				    int, nvec,
+				    int, Ns,
+				    int, Nt,
+				    int, Nt_inv,
+				    Real, mass,
+				    Real, M5,
+				    int, Ls,
+				    double, CGPrecision,
+				    int, MaxIterations);
 };
 
 template <typename FImpl>
@@ -155,26 +169,28 @@ void TPerambLight<FImpl>::execute(void)
   int Ntlocal = grid4d->LocalDimensions()[3];
   int Ntfirst = grid4d->LocalStarts()[3];
 
-  int tsrc=0;
-  int nnoise=1;
-  int LI=6;
-  int Ns=4;
-  int Nt_inv=1;
-  int Nt=64;
-  int TI=64;
-  int nvec=6;
-  bool full_tdil=true;
+  
+  int tsrc=par().tsrc;
+  int nnoise=par().nnoise;
+  int LI=par().LI;
+  int Ns=par().Ns;
+  int Nt_inv=par().Nt_inv;
+  int Nt=par().Nt;
+  int TI=par().TI;
+  int nvec=par().nvec;
+  
+  bool full_tdil=(TI==Nt);
 
-    Real mass=0.005;    // TODO Infile
-    Real M5  =1.8;     // TODO Infile
+    Real mass=par().mass;    // TODO Infile
+    Real M5  =par().M5;     // TODO Infile
     std::cout << "init RBG "  << std::endl;
     GridRedBlackCartesian RBGrid(grid4d);
     std::cout << "init RBG done"  << std::endl;
    
-    int Ls=16;
+    int Ls=par().Ls;
 
-    double CGPrecision = 10e-8;
-    int MaxIterations = 10000;
+    double CGPrecision = par().CGPrecision;
+    int MaxIterations = par().MaxIterations;
     
     GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,grid4d);
     GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,grid4d);
