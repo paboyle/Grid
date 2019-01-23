@@ -33,6 +33,7 @@
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
+#include <Hadrons/EigenPack.hpp>
 
 // These are members of Distillation
 #include <Hadrons/Modules/MDistil/Distil.hpp>
@@ -105,6 +106,7 @@ class LapEvecPar: Serializable
 {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(LapEvecPar,
+                                  std::string,         gauge,
                                   StoutParameters,     Stout,
                                   ChebyshevParameters, Cheby,
                                   LanczosParameters,   Lanczos,
@@ -122,54 +124,57 @@ template <typename FImpl>
 class TLapEvec: public Module<LapEvecPar>
 {
 public:
-    // constructor
-    TLapEvec();
-    TLapEvec(const std::string name);
-    // destructor
-    virtual ~TLapEvec(void);
-    // dependency relation
-    virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getOutput(void);
-    // setup
-    virtual void setup(void);
-    // execution
-    virtual void execute(void);
+  GAUGE_TYPE_ALIASES(FImpl,);
+  typedef std::vector<Grid::Hadrons::EigenPack<LatticeColourVector> > DistilEP;
+
 public:
-  GridCartesian * gridLD = nullptr;
+  // constructor
+  TLapEvec(const std::string name);
+  // destructor
+  virtual ~TLapEvec(void);
+  // dependency relation
+  virtual std::vector<std::string> getInput(void);
+  virtual std::vector<std::string> getOutput(void);
+  // setup
+  virtual void setup(void);
+  // execution
+  virtual void execute(void);
+protected:
+  // These variables are created in setup() and freed in Cleanup()
+  GridCartesian * gridLD; // Owned by me, so I must delete it
+  GridCartesian * gridHD; // Owned by environment (so I won't delete it)
+  int Nx, Ny, Nz, Nt;
+
+protected:
+  void Cleanup(void);
 };
 
 MODULE_REGISTER_TMP(LapEvec, TLapEvec<FIMPL>, MDistil);
 
 /******************************************************************************
- *                 TLapEvec implementation                             *
+ TLapEvec implementation
  ******************************************************************************/
+
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TLapEvec<FImpl>::TLapEvec(const std::string name) : Module<LapEvecPar>(name)
+TLapEvec<FImpl>::TLapEvec(const std::string name) : gridLD{nullptr}, Module<LapEvecPar>(name)
 {
-  // NB: This constructor isn't used!!!
   LOG(Message) << "TLapEvec constructor : TLapEvec<FImpl>::TLapEvec(const std::string name)" << std::endl;
-  LOG(Message) << "TLapEvec constructor : Setting gridLD=nullptr" << std::endl;
-  gridLD = nullptr;
+  LOG(Message) << "this=" << this << ", gridLD=" << gridLD << std::endl;
 }
 
 // destructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
 TLapEvec<FImpl>::~TLapEvec()
 {
-  if( gridLD != nullptr ) {
-    LOG(Message) << "Destroying lower dimensional grid" << std::endl;
-    delete gridLD;
-  }
-  else
-    LOG(Message) << "Lower dimensional grid was never created" << std::endl;
+  Cleanup();
 }
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
 std::vector<std::string> TLapEvec<FImpl>::getInput(void)
 {
-    std::vector<std::string> in;
+    std::vector<std::string> in = {par().gauge};
     
     return in;
 }
@@ -186,15 +191,30 @@ std::vector<std::string> TLapEvec<FImpl>::getOutput(void)
 template <typename FImpl>
 void TLapEvec<FImpl>::setup(void)
 {
-  LOG(Message) << "setup() : start" << std::endl;
-  LOG(Message) << "Stout.steps=" << par().Stout.steps << ", Stout.parm=" << par().Stout.parm << std::endl;
-  if( gridLD ) {
-    LOG(Message) << "Didn't expect to need to destroy gridLD here!" << std::endl;
+  Cleanup();
+  Environment & e{env()};
+  gridHD = e.getGrid();
+  gridLD = MakeLowerDimGrid( gridHD );
+  Nx = gridHD->_gdimensions[Xdir];
+  Ny = gridHD->_gdimensions[Ydir];
+  Nz = gridHD->_gdimensions[Zdir];
+  Nt = gridHD->_gdimensions[Tdir];
+  // Temporaries
+  envTmpLat(GaugeField, "Umu");
+  envTmpLat(GaugeField, "Umu_stout");
+  envTmpLat(GaugeField, "Umu_smear");
+  // Output objects
+  envCreate(DistilEP, getName(), 1, Nt);
+}
+
+// clean up any temporaries created by setup (that aren't stored in the environment)
+template <typename FImpl>
+void TLapEvec<FImpl>::Cleanup(void)
+{
+  if( gridLD != nullptr ) {
     delete gridLD;
+    gridLD = nullptr;
   }
-  LOG(Message) << "Creating lower dimensional grid" << std::endl;
-  gridLD = MakeLowerDimGrid( env().getGrid() );
-  LOG(Message) << "setup() : end" << std::endl;
 }
 
 // execution ///////////////////////////////////////////////////////////////////

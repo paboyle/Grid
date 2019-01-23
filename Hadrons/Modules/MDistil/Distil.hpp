@@ -106,6 +106,7 @@ BEGIN_MODULE_NAMESPACE(MDistil)
 
 inline GridCartesian * MakeLowerDimGrid( GridCartesian * gridHD )
 {
+  //LOG(Message) << "MakeLowerDimGrid() begin" << std::endl;
   int nd{static_cast<int>(gridHD->_ndimension)};
   std::vector<int> latt_size   = gridHD->_fdimensions;
   latt_size[nd-1] = 1;
@@ -115,7 +116,9 @@ inline GridCartesian * MakeLowerDimGrid( GridCartesian * gridHD )
 
   std::vector<int> mpi_layout  = gridHD->_processors;
   mpi_layout[nd-1] = 1;
-  return new GridCartesian(latt_size,simd_layout,mpi_layout,*gridHD);
+  GridCartesian * gridLD = new GridCartesian(latt_size,simd_layout,mpi_layout,*gridHD);
+  //LOG(Message) << "MakeLowerDimGrid() end" << std::endl;
+  return gridLD;
 }
 
 /******************************************************************************

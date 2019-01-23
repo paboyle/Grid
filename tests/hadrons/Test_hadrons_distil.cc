@@ -224,8 +224,7 @@ void free_prop(Application &application)
 
 void test_LapEvec(Application &application)
 {
-  const unsigned int  nt    = GridDefaultLatt()[Tp];
-  
+  const char szGaugeName[] = "gauge";
   // global parameters
   Application::GlobalPar globalPar;
   globalPar.trajCounter.start = 1500;
@@ -234,11 +233,12 @@ void test_LapEvec(Application &application)
   globalPar.runId             = "test";
   application.setPar(globalPar);
   // gauge field
-  application.createModule<MGauge::Unit>("gauge");
+  application.createModule<MGauge::Unit>(szGaugeName);
   // Now make an instance of the LapEvec object
   MDistil::LapEvecPar par;
   par.Stout.steps = 173;
   par.Stout.parm = -9.87654321;
+  par.gauge = szGaugeName;
   application.createModule<MDistil::LapEvec>("LapEvec",par);
 }
 
