@@ -240,10 +240,10 @@ void test_LapEvec(Application &application)
 }
 
 /////////////////////////////////////////////////////////////
-// Felix, this is your test here
+// Perambulators
 /////////////////////////////////////////////////////////////
 
-void test_FelixRenameMe(Application &application)
+void test_Perambulators(Application &application)
 {
   const unsigned int  nt    = GridDefaultLatt()[Tp];
   
@@ -257,7 +257,41 @@ void test_FelixRenameMe(Application &application)
   // gauge field
   application.createModule<MGauge::Unit>("gauge");
   // Now make an instance of the LapEvec object
-  application.createModule<MDistil::DistilVectors>("DistilVectorsInstance");
+  application.createModule<MDistil::PerambLight>("PerambulatorsInstance");
+}
+/////////////////////////////////////////////////////////////
+// DistilVectors
+/////////////////////////////////////////////////////////////
+
+void test_DistilVectors(Application &application)
+{
+  const unsigned int  nt    = GridDefaultLatt()[Tp];
+  
+  // global parameters
+  Application::GlobalPar globalPar;
+  globalPar.trajCounter.start = 1500;
+  globalPar.trajCounter.end   = 1520;
+  globalPar.trajCounter.step  = 20;
+  globalPar.runId             = "test";
+  application.setPar(globalPar);
+  // Module parameters
+  MDistil::DistilVectors::Par DistilPar;
+  DistilPar.noise="noise";
+  DistilPar.perambulator="perambulator";
+  DistilPar.eigenPack="ePack";
+  DistilPar.tsrc = 0;
+  DistilPar.nnoise = 1;
+  DistilPar.LI=6;
+  DistilPar.SI=4;
+  DistilPar.TI=64;
+  DistilPar.nvec=6;
+  DistilPar.Ns=4;
+  DistilPar.Nt=64;
+  DistilPar.Nt_inv=1;
+  // gauge field
+  application.createModule<MGauge::Unit>("gauge");
+  // Now make an instance of the LapEvec object
+  application.createModule<MDistil::DistilVectors>("DistilVectorsInstance",DistilPar);
 }
 
 bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
@@ -331,7 +365,9 @@ int main(int argc, char *argv[])
 
   // For now perform free propagator test - replace this with distillation test(s)
   LOG(Message) << "====== Creating xml for test " << iTestNum << " ======" << std::endl;
-  switch(iTestNum) {
+  const unsigned int  nt    = GridDefaultLatt()[Tp];
+  
+   switch(iTestNum) {
     case 0:
       free_prop( application );
       break;
@@ -339,7 +375,7 @@ int main(int argc, char *argv[])
       test_LapEvec( application );
       break;
     default: // 2
-      test_FelixRenameMe( application );
+      test_DistilVectors( application );
       break;
   }
   LOG(Message) << "====== XML creation for test " << iTestNum << " complete ======" << std::endl;
