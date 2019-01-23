@@ -24,7 +24,6 @@ class PerambLightPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(PerambLightPar,
-		                    std::string, noise,
 		                    std::string, eigenPack,
                                     bool, multiFile,
 				    int, tsrc,
@@ -77,7 +76,7 @@ std::vector<std::string> TPerambLight<FImpl>::getInput(void)
 {
     std::vector<std::string> in;
 
-    in.push_back(par().noise);
+    //in.push_back(par().noise);
     in.push_back(par().eigenPack);
     
     return in;
@@ -86,7 +85,7 @@ std::vector<std::string> TPerambLight<FImpl>::getInput(void)
 template <typename FImpl>
 std::vector<std::string> TPerambLight<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName() + "_perambulator_light"};
+    std::vector<std::string> out = {getName() + "_perambulator_light",getName() + "_noise"};
     
     return out;
 }
@@ -96,13 +95,19 @@ template <typename FImpl>
 void TPerambLight<FImpl>::setup(void)
 {
 
-   auto &noise = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
+  // auto &noise = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
   
-   int nvec = 6;
-   int Nt=64;
-
-   envCreate(Perambulator<SpinVector>, getName() + "_perambulator_light", 1, 
-		                    noise.size() *nvec*Nt);
+  int LI=par().LI;
+  int SI=par().SI;
+  int TI=par().TI;
+  int nnoise=par().nnoise;
+  int Nt=par().Nt;
+  int nvec=par().nvec;
+ 
+  envCreate(Perambulator<SpinVector>, getName() + "_perambulator_light", 1, 
+		                    LI*SI*TI*nnoise*nvec*Nt);
+  envCreate(std::vector<Complex>, getName() + "_noise", 1, 
+		                    nvec*Ns*Nt*nnoise);
 
   GridCartesian * grid4d = env().getGrid();
   std::vector<int> latt_size   = GridDefaultLatt();
@@ -133,7 +138,8 @@ template <typename FImpl>
 void TPerambLight<FImpl>::execute(void)
 {
 
-    auto        &noise     = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
+    //auto        &noise     = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
+    auto        &noise   = envGet(std::vector<Complex>, getName() + "_noise");
     auto        &perambulator   = envGet(Perambulator<SpinVector>, getName() + "_perambulator_light");
     auto        &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
 
@@ -180,6 +186,30 @@ void TPerambLight<FImpl>::execute(void)
   int nvec=par().nvec;
   
   bool full_tdil=(TI==Nt);
+  bool exact_distillation = (full_tdil && LI==nvec);
+
+  //Create Noises
+  //std::cout << pszGaugeConfigFile << std::endl;
+  //GridSerialRNG sRNG; sRNG.SeedUniqueString(std::string(pszGaugeConfigFile));
+  GridSerialRNG sRNG; sRNG.SeedUniqueString("unique_string");
+  Real rn;
+
+  for (int inoise=0;inoise<nnoise;inoise++) {
+    for (int t=0;t<Nt;t++) {
+      for (int ivec=0;ivec<nvec;ivec++) {
+        for (int is=0;is<Ns;is++) {
+          if (exact_distillation)
+            noise[inoise + nnoise*(t + Nt*(ivec+nvec*is))] = 1.;
+            //noises[inoise][t][ivec]()(is)() = 1.;
+          else{
+            random(sRNG,rn); 
+            noise[inoise + nnoise*(t + Nt*(ivec+nvec*is))] = (rn-0.5 > 0) - (rn-0.5 < 0); //TODO: This could be 0 if rn==0.5!!
+            //noises[inoise][t][ivec]()(is)() = (rn-0.5 > 0) - (rn-0.5 < 0); //TODO: This could be 0 if rn==0.5!!
+          }
+        }
+      }
+    }
+  }
 
     Real mass=par().mass;    // TODO Infile
     Real M5  =par().M5;     // TODO Infile
@@ -218,7 +248,8 @@ void TPerambLight<FImpl>::execute(void)
                   for (int is = ds; is < Ns; is += Ns){ //at the moment, full spin dilution is enforced
                     std::cout <<  "LapH source vector from noise " << it << " and dilution component (d_k,d_t,d_alpha) : (" << ik << ","<< is << ")" << std::endl;
                     ExtractSliceLocal(evec3d,epack.evec[ik],0,it,3);
-                    tmp3d_nospin = evec3d * noise[inoise][it][ik]()(is)(); //noises do not have to be a spin vector
+                    tmp3d_nospin = evec3d * noise[inoise + nnoise*(it + Nt*(ik+nvec*is))]; 
+                    //tmp3d_nospin = evec3d * noise[inoise][it][ik]()(is)(); //noises do not have to be a spin vector
                     tmp3d=zero;
                     pokeSpin(tmp3d,tmp3d_nospin,is);
                     tmp2=zero;

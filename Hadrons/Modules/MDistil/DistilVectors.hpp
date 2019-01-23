@@ -126,7 +126,8 @@ template <typename FImpl>
 void TDistilVectors<FImpl>::execute(void)
 {
    
-    auto        &noise     = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
+    //auto        &noise     = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
+    auto        &noise     = envGet(std::vector<Complex>, par().noise);
     auto        &perambulator   = envGet(Perambulator<SpinVector>, getName() + "_perambulator_light");
     auto        &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
     auto        &rho       = envGet(std::vector<FermionField>, getName() + "_rho");
@@ -170,7 +171,8 @@ void TDistilVectors<FImpl>::execute(void)
               for (int ik = dk; ik < nvec; ik += LI){
                 for (int is = ds; is < Ns; is += Ns){ //at the moment, full spin dilution is enforced
                   ExtractSliceLocal(evec3d,epack.evec[ik],0,it,3);
-                  tmp3d_nospin = evec3d * noise[inoise][it][ik]()(is)(); //noises do not have to be a spin vector
+                  tmp3d_nospin = evec3d * noise[inoise + nnoise*(it + Nt*(ik+nvec*is))];
+                  //tmp3d_nospin = evec3d * noise[inoise][it][ik]()(is)(); //noises do not have to be a spin vector
                   tmp3d=zero;
                   pokeSpin(tmp3d,tmp3d_nospin,is);
                   tmp2=zero;
