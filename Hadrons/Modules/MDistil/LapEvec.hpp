@@ -79,17 +79,17 @@ struct LanczosParameters: Serializable {
   template <class ReaderClass> LanczosParameters(Reader<ReaderClass>& Reader){read(Reader,"Lanczos",*this);}
 };
 
-struct DistilParameters: Serializable {
-  GRID_SERIALIZABLE_CLASS_MEMBERS(DistilParameters,
-                                  int, TI,
-                                  int, LI,
-                                  int, Nnoise,
-                                  int, Ls,       // For makeFiveDimGrid
-                                  int, tSrc)
-  DistilParameters() = default;
-  template <class ReaderClass> DistilParameters(Reader<ReaderClass>& Reader){read(Reader,"Distil",*this);}
-};
-
+/*struct DistilParameters: Serializable {
+ GRID_SERIALIZABLE_CLASS_MEMBERS(DistilParameters
+ ,int, TI
+ ,int, LI
+ ,int, Nnoise
+ ,int, tSrc
+ )//,int, Ls)       // For makeFiveDimGrid
+ DistilParameters() = default;
+ template <class ReaderClass> DistilParameters(Reader<ReaderClass>& Reader){read(Reader,"Distil",*this);}
+ };
+ 
 struct SolverParameters: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(SolverParameters,
                                   double, CGPrecision,
@@ -98,21 +98,21 @@ struct SolverParameters: Serializable {
                                   double, M5)
   SolverParameters() = default;
   template <class ReaderClass> SolverParameters(Reader<ReaderClass>& Reader){read(Reader,"Solver",*this);}
-};
+};*/
 
 // These are the actual parameters passed to the module during construction
 
 class LapEvecPar: Serializable
 {
 public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(LapEvecPar,
-                                  std::string,         gauge,
-                                  std::string,         EigenPackName,
-                                  StoutParameters,     Stout,
-                                  ChebyshevParameters, Cheby,
-                                  LanczosParameters,   Lanczos,
-                                  DistilParameters,    Distil,
-                                  SolverParameters,    Solver);
+  GRID_SERIALIZABLE_CLASS_MEMBERS(LapEvecPar
+                                  ,std::string,         gauge
+                                  //,std::string,         EigenPackName
+                                  ,StoutParameters,     Stout
+                                  ,ChebyshevParameters, Cheby
+                                  ,LanczosParameters,   Lanczos
+                                  //,DistilParameters,    Distil
+                                  )//,SolverParameters,    Solver)
 };
 
 /******************************************************************************
@@ -231,69 +231,69 @@ void TLapEvec<FImpl>::Cleanup(void)
 template <typename FImpl>
 void TLapEvec<FImpl>::execute(void)
 {
-  LOG(Message) << "execute() : start" << std::endl;
+  LOG(Message) << "execute() : start for " << getName() << std::endl;
 
   // Alii for parameters
-  const int &TI{par().Distil.TI};
-  const int &LI{par().Distil.LI};
-  const int &nnoise{par().Distil.Nnoise};
-  const int &tsrc{par().Distil.tSrc};
-  const LanczosParameters &LPar{par().Lanczos};
-  const int &nvec{LPar.Nvec};
-  const bool exact_distillation{TI==Nt && LI==nvec};
-  const bool full_tdil{TI==Nt};
-  const int &Nt_inv{full_tdil ? 1 : TI};
+  //const int &TI{par().Distil.TI};
+  //const int &LI{par().Distil.LI};
+  //const int &nnoise{par().Distil.Nnoise};
+  //const int &tsrc{par().Distil.tSrc};
   const ChebyshevParameters &ChebPar{par().Cheby};
+  const LanczosParameters   &LPar{par().Lanczos};
+  const int &nvec{LPar.Nvec};
+  //const bool exact_distillation{TI==Nt && LI==nvec};
+  //const bool full_tdil{TI==Nt};
+  //const int &Nt_inv{full_tdil ? 1 : TI};
 
   // Assertions on the parameters we read
-  assert(TI>1);
-  assert(LI>1);
-  if(exact_distillation)
-    assert(nnoise==1);
-  else
-    assert(nnoise>1);
+  //assert(TI>1);
+  //assert(LI>1);
+  //if(exact_distillation)
+    //assert(nnoise==1);
+  //else
+    //assert(nnoise>1);
 
   // Debugging only
   //envGetTmp(GaugeField, Umu);
   auto &Umu = envGet(GaugeField, par().gauge);
-  if((1)) {
-    const std::vector<int> seeds({1, 2, 3, 4, 5});
-    GridParallelRNG pRNG4d(gridHD);
-    pRNG4d.SeedFixedIntegers(seeds);
-    std::cout << GridLogMessage << "now hot config" << std::endl;
-    SU<Nc>::HotConfiguration(pRNG4d, Umu);
-    std::cout << GridLogMessage << "hot cfg done." << std::endl;
+  envGetTmp(GaugeField, Umu_smear);
+  if((0)) {
+    //const std::vector<int> seeds({1, 2, 3, 4, 5});
+    //GridParallelRNG pRNG4d(gridHD);
+    //pRNG4d.SeedFixedIntegers(seeds);
+    //std::cout << GridLogMessage << "now hot config" << std::endl;
+    //SU<Nc>::HotConfiguration(pRNG4d, Umu);
+    //std::cout << GridLogMessage << "hot cfg done." << std::endl;
     
     // Set up the SAME gauge field on every time plane
     //  int Nt = grid4d->gDimensions()[Tdir];
     Grid_unquiesce_nodes();
     
-    auto Usft = Umu;
+    Umu_smear = Umu;
     Lattice<iScalar<vInteger> > coor(gridHD);
     LatticeCoordinate(coor,Tdir);
     for(int t=1;t<Nt;t++){
       // t=1
-      //  Umu                Usft
+      //  Umu                Umu_smear
       // 0,1,2,3,4,5,6,7 -> 7,0,1,2,3,4,5,6 t=1
       // 0,0,2,3,4,5,6,7    6,7,0,1,2,3,4,5 t=2
       // 0,0,0,3,4,5,6,7    5,6,7,0,1,2,3,4 t=3
       //...
       
-      Usft = Cshift(Usft,Tdir,-1);
-      Umu = where(coor==t,Usft,Umu);
+      Umu_smear = Cshift(Umu_smear,Tdir,-1);
+      Umu = where(coor==t,Umu_smear,Umu);
     }
     //  std::cout << "Umu is "<<Umu<<std::endl;
   }
 
   // Stout smearing
-  envGetTmp(GaugeField, Umu_smear);
   Umu_smear = Umu;
   LOG(Message) << "Initial plaquette: " << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu) << std::endl;
   {
+    const StoutParameters &Stout{par().Stout};
     envGetTmp(GaugeField, Umu_stout);
-    const int &Steps{par().Stout.steps};
-    Smear_Stout<PeriodicGimplR> LS(par().Stout.parm);
-    for (int i = 0; i < Steps; i++) {
+    Smear_Stout<PeriodicGimplR> LS(Stout.parm);
+    for (int i = 0; i < Stout.steps; i++) {
       LS.smear(Umu_stout, Umu_smear);
       Umu_smear = Umu_stout;
     }
@@ -314,10 +314,9 @@ void TLapEvec<FImpl>::execute(void)
   // Invert Peardon Nabla operator separately on each time-slice
   ////////////////////////////////////////////////////////////////////////
   
-  std::string sEigenPackName(par().EigenPackName);
+  std::string sEigenPackName(getName());
   bool bReturnValue = true;
   auto & eig4d = envGet(DistilEP, getName() );
-  eig4d.resize(nvec,gridHD);
   envGetTmp(std::vector<DistilEP>, eig);   // Eigenpack for each timeslice
   envGetTmp(LatticeGaugeField, UmuNoTime); // Gauge field without time dimension
   envGetTmp(LatticeColourVector, src);
@@ -330,9 +329,7 @@ void TLapEvec<FImpl>::execute(void)
     std::cout << GridLogMessage << " Compute eigenpack, Timeslice  = " << t << std::endl;
     std::cout << GridLogMessage << "------------------------------------------------------------" << std::endl;
     
-    LOG(Message) << "eig.size()=" << eig.size() << std::endl;
     eig[t].resize(LPar.Nk+LPar.Np,gridLD);
-    LOG(Message) << "After eig[t].resize" << std::endl;
     
     // Construct smearing operator
     ExtractSliceLocal(UmuNoTime,Umu_smear,0,t-Ntfirst,Grid::QCD::Tdir); // switch to 3d/4d objects

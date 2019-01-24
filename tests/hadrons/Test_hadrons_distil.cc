@@ -34,19 +34,11 @@ using namespace Grid;
 using namespace Hadrons;
 
 /////////////////////////////////////////////////////////////
-// This is copied from the free propagator test
-// Just used as an example - will be deleted
+// Test creation of laplacian eigenvectors
 /////////////////////////////////////////////////////////////
 
-void free_prop(Application &application)
+void test_Global(Application &application)
 {
-  std::vector<std::string> flavour = {"h"}; //{"l", "s", "c1", "c2", "c3"};
-  std::vector<double>      mass    = {.2}; //{.01, .04, .2  , .25 , .3  };
-  std::vector<std::string> lepton_flavour    = {"mu"};
-  std::vector<double>      lepton_mass    = {.2};
-  
-  unsigned int  nt    = GridDefaultLatt()[Tp];
-  
   // global parameters
   Application::GlobalPar globalPar;
   globalPar.trajCounter.start = 1500;
@@ -54,168 +46,6 @@ void free_prop(Application &application)
   globalPar.trajCounter.step  = 20;
   globalPar.runId             = "test";
   application.setPar(globalPar);
-  // gauge field
-  application.createModule<MGauge::Unit>("gauge");
-  // unit gauge field for lepton
-  application.createModule<MGauge::Unit>("free_gauge");
-  // pt source
-  MSource::Point::Par ptPar;
-  ptPar.position = "0 0 0 0";
-  application.createModule<MSource::Point>("pt", ptPar);
-  // sink
-  MSink::Point::Par sinkPar;
-  sinkPar.mom = "0 0 0";
-  application.createModule<MSink::ScalarPoint>("sink", sinkPar);
-  
-  // set fermion boundary conditions to be periodic space, antiperiodic time.
-  std::string boundary = "1 1 1 -1";
-  
-  
-  //Propagators from FFT and Feynman rules
-  for (unsigned int i = 0; i < lepton_mass.size(); ++i)
-  {
-    //DWF actions
-    MAction::DWF::Par actionPar_lep;
-    actionPar_lep.gauge = "free_gauge";
-    actionPar_lep.Ls    = 8;
-    actionPar_lep.M5    = 1.8;
-    actionPar_lep.mass  = lepton_mass[i];
-    actionPar_lep.boundary = boundary;
-    application.createModule<MAction::DWF>("free_DWF_" + lepton_flavour[i], actionPar_lep);
-    
-    //DWF free propagators
-    MFermion::FreeProp::Par freePar;
-    freePar.source = "pt";
-    freePar.action = "free_DWF_" + lepton_flavour[i];
-    freePar.twist = "0 0 0 0.5";
-    freePar.mass = lepton_mass[i];
-    application.createModule<MFermion::FreeProp>("Lpt_" + lepton_flavour[i],
-                                                 freePar);
-    
-    //Wilson actions
-    MAction::Wilson::Par actionPar_lep_W;
-    actionPar_lep_W.gauge = "free_gauge";
-    actionPar_lep_W.mass  = lepton_mass[i];
-    actionPar_lep_W.boundary = boundary;
-    application.createModule<MAction::Wilson>("free_W_" + lepton_flavour[i], actionPar_lep_W);
-    
-    //Wilson free propagators
-    MFermion::FreeProp::Par freePar_W;
-    freePar_W.source = "pt";
-    freePar_W.action = "free_W_" + lepton_flavour[i];
-    freePar_W.twist = "0 0 0 0.5";
-    freePar_W.mass = lepton_mass[i];
-    application.createModule<MFermion::FreeProp>("W_Lpt_" + lepton_flavour[i],
-                                                 freePar_W);
-  }
-
-  //Propagators from inversion
-  for (unsigned int i = 0; i < flavour.size(); ++i)
-  {
-    //DWF actions
-    MAction::DWF::Par actionPar;
-    actionPar.gauge = "gauge";
-    actionPar.Ls    = 8;
-    actionPar.M5    = 1.8;
-    actionPar.mass  = mass[i];
-    actionPar.boundary = boundary;
-    application.createModule<MAction::DWF>("DWF_" + flavour[i], actionPar);
-    
-    // solvers
-    MSolver::RBPrecCG::Par solverPar;
-    solverPar.action       = "DWF_" + flavour[i];
-    solverPar.residual     = 1.0e-8;
-    solverPar.maxIteration = 10000;
-    application.createModule<MSolver::RBPrecCG>("CG_" + flavour[i],
-                                                solverPar);
-    
-    //DWF propagators
-    MFermion::GaugeProp::Par quarkPar;
-    quarkPar.solver = "CG_" + flavour[i];
-    quarkPar.source = "pt";
-    application.createModule<MFermion::GaugeProp>("Qpt_" + flavour[i],
-                                                  quarkPar);
-    
-    //Wilson actions
-    MAction::Wilson::Par actionPar_W;
-    actionPar_W.gauge = "gauge";
-    actionPar_W.mass  = mass[i];
-    actionPar_W.boundary = boundary;
-    application.createModule<MAction::Wilson>("W_" + flavour[i], actionPar_W);
-    
-    // solvers
-    MSolver::RBPrecCG::Par solverPar_W;
-    solverPar_W.action       = "W_" + flavour[i];
-    solverPar_W.residual     = 1.0e-8;
-    solverPar_W.maxIteration = 10000;
-    application.createModule<MSolver::RBPrecCG>("W_CG_" + flavour[i],
-                                                solverPar_W);
-    
-    //Wilson propagators
-    MFermion::GaugeProp::Par quarkPar_W;
-    quarkPar_W.solver = "W_CG_" + flavour[i];
-    quarkPar_W.source = "pt";
-    application.createModule<MFermion::GaugeProp>("W_Qpt_" + flavour[i],
-                                                  quarkPar_W);
-    
-  }
-  
-  
-  //2pt contraction for Propagators from FFT and Feynman rules
-  for (unsigned int i = 0; i < lepton_flavour.size(); ++i)
-    for (unsigned int j = i; j < lepton_flavour.size(); ++j)
-    {
-      //2pt function contraction DWF
-      MContraction::Meson::Par freemesPar;
-      freemesPar.output  = "2pt_free/DWF_L_pt_" + lepton_flavour[i] + lepton_flavour[j];
-      freemesPar.q1      = "Lpt_" + lepton_flavour[i];
-      freemesPar.q2      = "Lpt_" + lepton_flavour[j];
-      freemesPar.gammas  = "(Gamma5 Gamma5)";
-      freemesPar.sink    = "sink";
-      application.createModule<MContraction::Meson>("meson_L_pt_"
-                                                    + lepton_flavour[i] + lepton_flavour[j],
-                                                    freemesPar);
-      
-      //2pt function contraction Wilson
-      MContraction::Meson::Par freemesPar_W;
-      freemesPar_W.output  = "2pt_free/W_L_pt_" + lepton_flavour[i] + lepton_flavour[j];
-      freemesPar_W.q1      = "W_Lpt_" + lepton_flavour[i];
-      freemesPar_W.q2      = "W_Lpt_" + lepton_flavour[j];
-      freemesPar_W.gammas  = "(Gamma5 Gamma5)";
-      freemesPar_W.sink    = "sink";
-      application.createModule<MContraction::Meson>("W_meson_L_pt_"
-                                                    + lepton_flavour[i] + lepton_flavour[j],
-                                                    freemesPar_W);
-      
-    }
-  
-  //2pt contraction for Propagators from inverion
-  for (unsigned int i = 0; i < flavour.size(); ++i)
-    for (unsigned int j = i; j < flavour.size(); ++j)
-    {
-      //2pt function contraction DWF
-      MContraction::Meson::Par mesPar;
-      mesPar.output  = "2pt_free/DWF_pt_" + flavour[i] + flavour[j];
-      mesPar.q1      = "Qpt_" + flavour[i];
-      mesPar.q2      = "Qpt_" + flavour[j];
-      mesPar.gammas  = "(Gamma5 Gamma5)";
-      mesPar.sink    = "sink";
-      application.createModule<MContraction::Meson>("meson_pt_"
-                                                    + flavour[i] + flavour[j],
-                                                    mesPar);
-      
-      
-      //2pt function contraction Wilson
-      MContraction::Meson::Par mesPar_W;
-      mesPar_W.output  = "2pt_free/W_pt_" + flavour[i] + flavour[j];
-      mesPar_W.q1      = "W_Qpt_" + flavour[i];
-      mesPar_W.q2      = "W_Qpt_" + flavour[j];
-      mesPar_W.gammas  = "(Gamma5 Gamma5)";
-      mesPar_W.sink    = "sink";
-      application.createModule<MContraction::Meson>("W_meson_pt_"
-                                                    + flavour[i] + flavour[j],
-                                                    mesPar_W);
-    }
 }
 
 /////////////////////////////////////////////////////////////
@@ -225,23 +55,16 @@ void free_prop(Application &application)
 void test_LapEvec(Application &application)
 {
   const char szGaugeName[] = "gauge";
-  // global parameters
-  Application::GlobalPar globalPar;
-  globalPar.trajCounter.start = 1500;
-  globalPar.trajCounter.end   = 1520;
-  globalPar.trajCounter.step  = 20;
-  globalPar.runId             = "test";
-  application.setPar(globalPar);
   // gauge field
   application.createModule<MGauge::Random>(szGaugeName);
   // Now make an instance of the LapEvec object
   MDistil::LapEvecPar p;
   p.gauge = szGaugeName;
   //p.EigenPackName = "ePack";
-  p.Distil.TI = 8;
-  p.Distil.LI = 3;
-  p.Distil.Nnoise = 2;
-  p.Distil.tSrc = 0;
+  //p.Distil.TI = 8;
+  //p.Distil.LI = 3;
+  //p.Distil.Nnoise = 2;
+  //p.Distil.tSrc = 0;
   p.Stout.steps = 3;
   p.Stout.parm = 0.2;
   p.Cheby.PolyOrder = 11;
@@ -261,60 +84,9 @@ void test_LapEvec(Application &application)
 
 void test_Perambulators(Application &application)
 {
-  const unsigned int  nt    = GridDefaultLatt()[Tp];
-  
-  // global parameters
-  Application::GlobalPar globalPar;
-  globalPar.trajCounter.start = 3000;
-  globalPar.trajCounter.end   = 3040;
-  globalPar.trajCounter.step  = 40;
-  globalPar.runId             = "test";
-  application.setPar(globalPar);
-  // gauge field
-  application.createModule<MGauge::Unit>("gauge");
-  // Now make an instance of the LapEvec object
-  application.createModule<MDistil::PerambLight>("PerambulatorsInstance");
-}
-/////////////////////////////////////////////////////////////
-// DistilVectors
-/////////////////////////////////////////////////////////////
-
-void test_DistilVectors(Application &application)
-{
-  const unsigned int  nt    = GridDefaultLatt()[Tp];
-  
-  const char szGaugeName[] = "gauge";
-  // global parameters
-  Application::GlobalPar globalPar;
-  globalPar.trajCounter.start = 1500;
-  globalPar.trajCounter.end   = 1520;
-  globalPar.trajCounter.step  = 20;
-  globalPar.runId             = "test";
-  application.setPar(globalPar);
-  // gauge field
-  application.createModule<MGauge::Random>(szGaugeName);
-  // Now make an instance of the LapEvec object
-  MDistil::LapEvecPar p;
-  p.gauge = szGaugeName;
-  //p.EigenPackName = "eigenPack";
-  p.Distil.TI = 8;
-  p.Distil.LI = 3;
-  p.Distil.Nnoise = 2;
-  p.Distil.tSrc = 0;
-  p.Stout.steps = 3;
-  p.Stout.parm = 0.2;
-  p.Cheby.PolyOrder = 11;
-  p.Cheby.alpha = 0.3;
-  p.Cheby.beta = 12.5;
-  p.Lanczos.Nvec = 5;
-  p.Lanczos.Nk = 6;
-  p.Lanczos.Np = 2;
-  p.Lanczos.MaxIt = 1000;
-  p.Lanczos.resid = 1e-2;
-  application.createModule<MDistil::LapEvec>("LapEvec",p);
   // PerambLight parameters
   MDistil::PerambLight::Par PerambPar;
-  PerambPar.eigenPack="LapEvec_eigenPack";
+  PerambPar.eigenPack="LapEvec";
   PerambPar.tsrc = 0;
   PerambPar.nnoise = 1;
   PerambPar.LI=6;
@@ -330,6 +102,13 @@ void test_DistilVectors(Application &application)
   PerambPar.CGPrecision=1e-8;
   PerambPar.MaxIterations=10000;
   application.createModule<MDistil::PerambLight>("Peramb",PerambPar);
+}
+/////////////////////////////////////////////////////////////
+// DistilVectors
+/////////////////////////////////////////////////////////////
+
+void test_DistilVectors(Application &application)
+{
   // DistilVectors parameters
   MDistil::DistilVectors::Par DistilVecPar;
   DistilVecPar.noise="Peramb_noise";
@@ -421,16 +200,22 @@ int main(int argc, char *argv[])
 
   // For now perform free propagator test - replace this with distillation test(s)
   LOG(Message) << "====== Creating xml for test " << iTestNum << " ======" << std::endl;
-  const unsigned int  nt    = GridDefaultLatt()[Tp];
+  //const unsigned int  nt    = GridDefaultLatt()[Tp];
   
-   switch(iTestNum) {
-    case 0:
-      free_prop( application );
-      break;
+  switch(iTestNum) {
     case 1:
+      test_Global( application );
       test_LapEvec( application );
       break;
-    default: // 2
+    case 2:
+      test_Global( application );
+      test_LapEvec( application );
+      test_Perambulators( application );
+      break;
+    default: // 3
+      test_Global( application );
+      test_LapEvec( application );
+      test_Perambulators( application );
       test_DistilVectors( application );
       break;
   }
