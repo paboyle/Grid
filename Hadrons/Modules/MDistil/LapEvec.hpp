@@ -323,6 +323,8 @@ void TLapEvec<FImpl>::execute(void)
   envGetTmp(LatticeColourVector, src);
   const int Ntlocal{gridHD->LocalDimensions()[Tdir]};
   const int Ntfirst{gridHD->LocalStarts()[Tdir]};
+  const char DefaultOperatorXml[] = "<OPERATOR>Michael</OPERATOR>";
+  const char DefaultsolverXml[]   = "<SOLVER>Felix</SOLVER>";
   for(int t=Ntfirst;bReturnValue && t<Ntfirst+Ntlocal;t++){
     std::cout << GridLogMessage << "------------------------------------------------------------" << std::endl;
     std::cout << GridLogMessage << " Compute eigenpack, Timeslice  = " << t << std::endl;
@@ -372,8 +374,8 @@ void TLapEvec<FImpl>::execute(void)
       
       // Write the eigenvectors and eigenvalues to disk
       //std::cout << GridLogMessage << "Writing eigenvalues/vectors to " << pszEigenPack << std::endl;
-      eig[t].record.operatorXml="<OPERATOR>Michael</OPERATOR>";
-      eig[t].record.solverXml="<SOLVER>Felix</SOLVER>";
+      eig[t].record.operatorXml = DefaultOperatorXml;
+      eig[t].record.solverXml = DefaultsolverXml;
       eig[t].write(sEigenPackName,false,t);
       //std::cout << GridLogMessage << "Written eigenvectors" << std::endl;
     }
@@ -382,6 +384,11 @@ void TLapEvec<FImpl>::execute(void)
       InsertSliceLocal(eig[t].evec[i],eig4d.evec[i],0,t,3);
     }
   }
+
+  // Now write out the 4d eigenvectors
+  eig4d.record.operatorXml = DefaultOperatorXml;
+  eig4d.record.solverXml = DefaultsolverXml;
+  eig4d.write(sEigenPackName,false);
 
   // Close the local debugging log file
   if( ll ) {
