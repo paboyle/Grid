@@ -90,6 +90,73 @@ inline void SliceShare( GridBase * gridLowDim, GridBase * gridHighDim, void * Bu
 //#endif
   }
 }
+
+/*************************************************************************************
+ 
+ -Grad^2 (Peardon, 2009, pg 2, equation 3)
+ Field      Type of field the operator will be applied to
+ GaugeField Gauge field the operator will smear using
+ 
+ TODO CANDIDATE for integration into laplacian operator
+ should just require adding number of dimensions to act on to constructor,
+ where the default=all dimensions, but we could specify 3 spatial dimensions
+ 
+ *************************************************************************************/
+
+template<typename Field, typename GaugeField=LatticeGaugeFieldD>
+class LinOpPeardonNabla : public LinearOperatorBase<Field>, public LinearFunction<Field> {
+  typedef typename GaugeField::vector_type vCoeff_t;
+protected: // I don't really mind if _gf is messed with ... so make this public?
+  //GaugeField & _gf;
+  int          nd; // number of spatial dimensions
+  std::vector<Lattice<iColourMatrix<vCoeff_t> > > U;
+public:
+  // Construct this operator given a gauge field and the number of dimensions it should act on
+  LinOpPeardonNabla( GaugeField& gf, int dimSpatial = Grid::QCD::Tdir ) : /*_gf(gf),*/ nd{dimSpatial} {
+    assert(dimSpatial>=1);
+    for( int mu = 0 ; mu < nd ; mu++ )
+      U.push_back(PeekIndex<LorentzIndex>(gf,mu));
+      }
+  
+  // Apply this operator to "in", return result in "out"
+  void operator()(const Field& in, Field& out) {
+    assert( nd <= in._grid->Nd() );
+    conformable( in, out );
+    out = ( ( Real ) ( 2 * nd ) ) * in;
+    Field _tmp(in._grid);
+    typedef typename GaugeField::vector_type vCoeff_t;
+    //Lattice<iColourMatrix<vCoeff_t> > U(in._grid);
+    for( int mu = 0 ; mu < nd ; mu++ ) {
+      //U = PeekIndex<LorentzIndex>(_gf,mu);
+      out -= U[mu] * Cshift( in, mu, 1);
+      _tmp = adj( U[mu] ) * in;
+      out -= Cshift(_tmp,mu,-1);
+    }
+  }
+  
+  void OpDiag (const Field &in, Field &out) { assert(0); };
+  void OpDir  (const Field &in, Field &out,int dir,int disp) { assert(0); };
+  void Op     (const Field &in, Field &out) { assert(0); };
+  void AdjOp  (const Field &in, Field &out) { assert(0); };
+  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2) { assert(0); };
+  void HermOp(const Field &in, Field &out) { operator()(in,out); };
+};
+
+template<typename Field>
+class LinOpPeardonNablaHerm : public LinearFunction<Field> {
+public:
+  OperatorFunction<Field>   & _poly;
+  LinearOperatorBase<Field> &_Linop;
+  
+  LinOpPeardonNablaHerm(OperatorFunction<Field> & poly,LinearOperatorBase<Field>& linop) : _poly(poly), _Linop(linop) {
+  }
+  
+  void operator()(const Field& in, Field& out) {
+    _poly(_Linop,in,out);
+  }
+};
+
+
 END_MODULE_NAMESPACE // Grid
 
 /******************************************************************************
@@ -99,6 +166,9 @@ END_MODULE_NAMESPACE // Grid
 BEGIN_HADRONS_NAMESPACE
 
 BEGIN_MODULE_NAMESPACE(MDistil)
+
+typedef Grid::Hadrons::EigenPack<LatticeColourVector>       DistilEP;
+typedef std::vector<std::vector<std::vector<SpinVector> > > DistilNoises;
 
 /******************************************************************************
  Make a lower dimensional grid
@@ -385,6 +455,41 @@ public:
     return bReturnValue;
   }
 };
+
+/*************************************************************************************
+ 
+ Rotate eigenvectors into our phase convention
+ First component of first eigenvector is real and positive
+ 
+ *************************************************************************************/
+
+inline void RotateEigen(std::vector<LatticeColourVector> & evec)
+{
+  ColourVector cv0;
+  auto grid = evec[0]._grid;
+  std::vector<int> siteFirst(grid->Nd(),0);
+  peekSite(cv0, evec[0], siteFirst);
+  auto & cplx0 = cv0()()(0);
+  if( std::imag(cplx0) == 0 )
+    std::cout << GridLogMessage << "RotateEigen() : Site 0 : " << cplx0 << " => already meets phase convention" << std::endl;
+  else {
+    const auto cplx0_mag{std::abs(cplx0)};
+    const auto phase{std::conj(cplx0 / cplx0_mag)};
+    std::cout << GridLogMessage << "RotateEigen() : Site 0 : |" << cplx0 << "|=" << cplx0_mag << " => phase=" << (std::arg(phase) / 3.14159265) << " pi" << std::endl;
+    {
+      // TODO: Only really needed on the master slice
+      for( int k = 0 ; k < evec.size() ; k++ )
+        evec[k] *= phase;
+      if(grid->IsBoss()){
+        for( int c = 0 ; c < Nc ; c++ )
+          cv0()()(c) *= phase;
+        cplx0.imag(0); // This assumes phase convention is real, positive (so I get rid of rounding error)
+        //pokeSite(cv0, evec[0], siteFirst);
+        pokeLocalSite(cv0, evec[0], siteFirst);
+      }
+    }
+  }
+}
 
 END_MODULE_NAMESPACE
 

@@ -107,6 +107,7 @@ class LapEvecPar: Serializable
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(LapEvecPar,
                                   std::string,         gauge,
+                                  std::string,         EigenPackName,
                                   StoutParameters,     Stout,
                                   ChebyshevParameters, Cheby,
                                   LanczosParameters,   Lanczos,
@@ -125,7 +126,6 @@ class TLapEvec: public Module<LapEvecPar>
 {
 public:
   GAUGE_TYPE_ALIASES(FImpl,);
-  typedef std::vector<Grid::Hadrons::EigenPack<LatticeColourVector> > DistilEP;
 
 public:
   // constructor
@@ -155,6 +155,8 @@ MODULE_REGISTER_TMP(LapEvec, TLapEvec<FIMPL>, MDistil);
  TLapEvec implementation
  ******************************************************************************/
 
+//constexpr char szEigenPackSuffix[] = "_eigenPack";
+
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
 TLapEvec<FImpl>::TLapEvec(const std::string name) : gridLD{nullptr}, Module<LapEvecPar>(name)
@@ -182,7 +184,7 @@ std::vector<std::string> TLapEvec<FImpl>::getInput(void)
 template <typename FImpl>
 std::vector<std::string> TLapEvec<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {getName()}; // This is the higher dimensional eigenpack
     
     return out;
 }
@@ -195,16 +197,19 @@ void TLapEvec<FImpl>::setup(void)
   Environment & e{env()};
   gridHD = e.getGrid();
   gridLD = MakeLowerDimGrid( gridHD );
-  Nx = gridHD->_gdimensions[Xdir];
-  Ny = gridHD->_gdimensions[Ydir];
-  Nz = gridHD->_gdimensions[Zdir];
-  Nt = gridHD->_gdimensions[Tdir];
+  Nx = gridHD->_fdimensions[Xdir];
+  Ny = gridHD->_fdimensions[Ydir];
+  Nz = gridHD->_fdimensions[Zdir];
+  Nt = gridHD->_fdimensions[Tdir];
   // Temporaries
   envTmpLat(GaugeField, "Umu");
   envTmpLat(GaugeField, "Umu_stout");
   envTmpLat(GaugeField, "Umu_smear");
+  envTmp(LatticeGaugeField, "UmuNoTime",1,LatticeGaugeField(gridLD));
+  envTmp(LatticeColourVector, "src",1,LatticeColourVector(gridLD));
+  envTmp(std::vector<DistilEP>, "eig",1,std::vector<DistilEP>(Nt));
   // Output objects
-  envCreate(DistilEP, getName(), 1, Nt);
+  envCreate(DistilEP, getName(), 1, par().Lanczos.Nvec, gridHD );
 }
 
 // clean up any temporaries created by setup (that aren't stored in the environment)
@@ -215,14 +220,142 @@ void TLapEvec<FImpl>::Cleanup(void)
     delete gridLD;
     gridLD = nullptr;
   }
+  gridHD = nullptr;
 }
+
+/******************************************************************************
+ Calculate low-mode eigenvalues of the Laplacian
+ ******************************************************************************/
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TLapEvec<FImpl>::execute(void)
 {
   LOG(Message) << "execute() : start" << std::endl;
-  LOG(Message) << "Stout.steps=" << par().Stout.steps << ", Stout.parm=" << par().Stout.parm << std::endl;
+
+  // Alii for parameters
+  const int &TI{par().Distil.TI};
+  const int &LI{par().Distil.LI};
+  const int &nnoise{par().Distil.Nnoise};
+  const int &tsrc{par().Distil.tSrc};
+  const LanczosParameters &LPar{par().Lanczos};
+  const int &nvec{LPar.Nvec};
+  const bool exact_distillation{TI==Nt && LI==nvec};
+  const bool full_tdil{TI==Nt};
+  const int &Nt_inv{full_tdil ? 1 : TI};
+  const ChebyshevParameters &ChebPar{par().Cheby};
+
+  // Assertions on the parameters we read
+  assert(TI>1);
+  assert(LI>1);
+  if(exact_distillation)
+    assert(nnoise==1);
+  else
+    assert(nnoise>1);
+
+  // Stout smearing
+  envGetTmp(GaugeField, Umu);
+  envGetTmp(GaugeField, Umu_smear);
+  LOG(Message) << "Initial plaquette: " << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu) << std::endl;
+  {
+    envGetTmp(GaugeField, Umu_stout);
+    const int &Steps{par().Stout.steps};
+    Smear_Stout<PeriodicGimplR> LS(par().Stout.parm);
+    for (int i = 0; i < Steps; i++) {
+      LS.smear(Umu_stout, Umu_smear);
+      Umu_smear = Umu_stout;
+    }
+  }
+  LOG(Message) << "Smeared plaquette: " << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu_smear) << std::endl;
+
+  // For debugging only, write logging output to a local file
+  std::ofstream * ll = nullptr;
+  const int rank{gridHD->ThisRank()};
+  if((0)) { // debug to a local log file
+    std::string filename{"Local_"};
+    filename.append(std::to_string(rank));
+    filename.append(".log");
+    ll = new std::ofstream(filename);
+  }
+
+  ////////////////////////////////////////////////////////////////////////
+  // Invert Peardon Nabla operator separately on each time-slice
+  ////////////////////////////////////////////////////////////////////////
+  
+  std::string sEigenPackName(par().EigenPackName);
+  bool bReturnValue = true;
+  auto & eig4d = envGet(DistilEP, getName() );
+  eig4d.resize(nvec,gridHD);
+  envGetTmp(std::vector<DistilEP>, eig);   // Eigenpack for each timeslice
+  envGetTmp(LatticeGaugeField, UmuNoTime); // Gauge field without time dimension
+  envGetTmp(LatticeColourVector, src);
+  const int Ntlocal{gridHD->LocalDimensions()[Tdir]};
+  const int Ntfirst{gridHD->LocalStarts()[Tdir]};
+  for(int t=Ntfirst;bReturnValue && t<Ntfirst+Ntlocal;t++){
+    std::cout << GridLogMessage << "------------------------------------------------------------" << std::endl;
+    std::cout << GridLogMessage << " Compute eigenpack, Timeslice  = " << t << std::endl;
+    std::cout << GridLogMessage << "------------------------------------------------------------" << std::endl;
+    
+    LOG(Message) << "eig.size()=" << eig.size() << std::endl;
+    eig[t].resize(LPar.Nk+LPar.Np,gridLD);
+    LOG(Message) << "After eig[t].resize" << std::endl;
+    
+    // Construct smearing operator
+    ExtractSliceLocal(UmuNoTime,Umu_smear,0,t-Ntfirst,Grid::QCD::Tdir); // switch to 3d/4d objects
+    LinOpPeardonNabla<LatticeColourVector> PeardonNabla(UmuNoTime);
+    std::cout << "Chebyshev preconditioning to order " << ChebPar.PolyOrder
+    << " with parameters (alpha,beta) = (" << ChebPar.alpha << "," << ChebPar.beta << ")" << std::endl;
+    Chebyshev<LatticeColourVector> Cheb(ChebPar.alpha,ChebPar.beta,ChebPar.PolyOrder);
+    
+    //from Test_Cheby.cc
+    if ( ((0)) && Ntfirst == 0 && t==0) {
+      std::ofstream of("cheby_" + std::to_string(ChebPar.alpha) + "_" + std::to_string(ChebPar.beta) + "_" + std::to_string(ChebPar.PolyOrder));
+      Cheb.csv(of);
+    }
+
+    // Construct source vector according to Test_dwf_compressed_lanczos.cc
+    src=11.0;
+    RealD nn = norm2(src);
+    nn = Grid::sqrt(nn);
+    src = src * (1.0/nn);
+
+    GridLogIRL.Active(1);
+    LinOpPeardonNablaHerm<LatticeColourVector> PeardonNablaCheby(Cheb,PeardonNabla);
+    ImplicitlyRestartedLanczos<LatticeColourVector> IRL(PeardonNablaCheby,PeardonNabla,LPar.Nvec,LPar.Nk,LPar.Nk+LPar.Np,LPar.resid,LPar.MaxIt);
+    int Nconv = 0;
+    
+    if(ll) *ll << t << " : Before IRL.calc()" << std::endl;
+    IRL.calc(eig[t].eval,eig[t].evec,src,Nconv);
+    if(ll) *ll << t << " : After  IRL.calc()" << std::endl;
+    if( Nconv < LPar.Nvec ) {
+      bReturnValue = false;
+      if(ll) *ll << t << " : Convergence error : Only " << Nconv << " converged!" << std::endl;
+    } else {
+      if( Nconv > LPar.Nvec )
+        eig[t].resize( LPar.Nvec, gridLD );
+      std::cout << GridLogMessage << "Timeslice " << t << " has " << eig[t].eval.size() << " eigenvalues and " << eig[t].evec.size() << " eigenvectors." << std::endl;
+      
+      // Now rotate the eigenvectors into our phase convention
+      RotateEigen( eig[t].evec );
+      
+      // Write the eigenvectors and eigenvalues to disk
+      //std::cout << GridLogMessage << "Writing eigenvalues/vectors to " << pszEigenPack << std::endl;
+      eig[t].record.operatorXml="<OPERATOR>Michael</OPERATOR>";
+      eig[t].record.solverXml="<SOLVER>Felix</SOLVER>";
+      eig[t].write(sEigenPackName,false,t);
+      //std::cout << GridLogMessage << "Written eigenvectors" << std::endl;
+    }
+    for (int i=0;i<LPar.Nvec;i++){
+      std::cout << "Inserting Timeslice " << t << " into vector " << i << std::endl;
+      InsertSliceLocal(eig[t].evec[i],eig4d.evec[i],0,t,3);
+    }
+  }
+
+  // Close the local debugging log file
+  if( ll ) {
+    *ll << " Returning " << bReturnValue << std::endl;
+    delete ll;
+  }
   LOG(Message) << "execute() : end" << std::endl;
 }
 

@@ -235,11 +235,22 @@ void test_LapEvec(Application &application)
   // gauge field
   application.createModule<MGauge::Unit>(szGaugeName);
   // Now make an instance of the LapEvec object
-  MDistil::LapEvecPar par;
-  par.Stout.steps = 173;
-  par.Stout.parm = -9.87654321;
-  par.gauge = szGaugeName;
-  application.createModule<MDistil::LapEvec>("LapEvec",par);
+  MDistil::LapEvecPar p;
+  p.gauge = szGaugeName;
+  p.EigenPackName = "ePack";
+  p.Distil.TI = 8;
+  p.Distil.LI = 3;
+  p.Distil.Nnoise = 2;
+  p.Distil.tSrc = 0;
+  p.Stout.steps = 3;
+  p.Stout.parm = 0.2;
+  p.Cheby.PolyOrder = 11;
+  p.Cheby.alpha = 0.3;
+  p.Cheby.beta = 12.5;
+  p.Lanczos.Nvec = 5;
+  p.Lanczos.Nk = 6;
+  p.Lanczos.Np = 2;
+  application.createModule<MDistil::LapEvec>("LapEvec",p);
 }
 
 /////////////////////////////////////////////////////////////
