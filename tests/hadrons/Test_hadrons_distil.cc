@@ -237,7 +237,7 @@ void test_LapEvec(Application &application)
   // Now make an instance of the LapEvec object
   MDistil::LapEvecPar p;
   p.gauge = szGaugeName;
-  p.EigenPackName = "ePack";
+  //p.EigenPackName = "ePack";
   p.Distil.TI = 8;
   p.Distil.LI = 3;
   p.Distil.Nnoise = 2;
@@ -283,6 +283,7 @@ void test_DistilVectors(Application &application)
 {
   const unsigned int  nt    = GridDefaultLatt()[Tp];
   
+  const char szGaugeName[] = "gauge";
   // global parameters
   Application::GlobalPar globalPar;
   globalPar.trajCounter.start = 1500;
@@ -290,9 +291,30 @@ void test_DistilVectors(Application &application)
   globalPar.trajCounter.step  = 20;
   globalPar.runId             = "test";
   application.setPar(globalPar);
+  // gauge field
+  application.createModule<MGauge::Random>(szGaugeName);
+  // Now make an instance of the LapEvec object
+  MDistil::LapEvecPar p;
+  p.gauge = szGaugeName;
+  //p.EigenPackName = "eigenPack";
+  p.Distil.TI = 8;
+  p.Distil.LI = 3;
+  p.Distil.Nnoise = 2;
+  p.Distil.tSrc = 0;
+  p.Stout.steps = 3;
+  p.Stout.parm = 0.2;
+  p.Cheby.PolyOrder = 11;
+  p.Cheby.alpha = 0.3;
+  p.Cheby.beta = 12.5;
+  p.Lanczos.Nvec = 5;
+  p.Lanczos.Nk = 6;
+  p.Lanczos.Np = 2;
+  p.Lanczos.MaxIt = 1000;
+  p.Lanczos.resid = 1e-2;
+  application.createModule<MDistil::LapEvec>("LapEvec",p);
   // PerambLight parameters
   MDistil::PerambLight::Par PerambPar;
-  PerambPar.eigenPack="ePack";
+  PerambPar.eigenPack="LapEvec_eigenPack";
   PerambPar.tsrc = 0;
   PerambPar.nnoise = 1;
   PerambPar.LI=6;
@@ -307,11 +329,12 @@ void test_DistilVectors(Application &application)
   PerambPar.Ls=16;
   PerambPar.CGPrecision=1e-8;
   PerambPar.MaxIterations=10000;
+  application.createModule<MDistil::PerambLight>("Peramb",PerambPar);
   // DistilVectors parameters
   MDistil::DistilVectors::Par DistilVecPar;
-  DistilVecPar.noise="noise";
-  DistilVecPar.perambulator="perambulator";
-  DistilVecPar.eigenPack="ePack";
+  DistilVecPar.noise="Peramb_noise";
+  DistilVecPar.perambulator="Peramb_perambulator_light";
+  DistilVecPar.eigenPack="LapEvec_eigenPack";
   DistilVecPar.tsrc = 0;
   DistilVecPar.nnoise = 1;
   DistilVecPar.LI=6;
@@ -322,9 +345,7 @@ void test_DistilVectors(Application &application)
   DistilVecPar.Nt=64;
   DistilVecPar.Nt_inv=1;
   // gauge field
-  application.createModule<MGauge::Unit>("gauge");
-  // Now make an instance of the Perambulator object
-  application.createModule<MDistil::PerambLight>("PerambulatorsInstance",PerambPar);
+  //application.createModule<MGauge::Unit>("gauge");
   // Now make an instance of the DistilVectors object
   application.createModule<MDistil::DistilVectors>("DistilVectorsInstance",DistilVecPar);
 }
