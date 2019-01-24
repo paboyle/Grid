@@ -233,7 +233,7 @@ void test_LapEvec(Application &application)
   globalPar.runId             = "test";
   application.setPar(globalPar);
   // gauge field
-  application.createModule<MGauge::Unit>(szGaugeName);
+  application.createModule<MGauge::Random>(szGaugeName);
   // Now make an instance of the LapEvec object
   MDistil::LapEvecPar p;
   p.gauge = szGaugeName;
@@ -250,6 +250,8 @@ void test_LapEvec(Application &application)
   p.Lanczos.Nvec = 5;
   p.Lanczos.Nk = 6;
   p.Lanczos.Np = 2;
+  p.Lanczos.MaxIt = 1000;
+  p.Lanczos.resid = 1e-2;
   application.createModule<MDistil::LapEvec>("LapEvec",p);
 }
 

@@ -67,13 +67,13 @@ struct ChebyshevParameters: Serializable {
 
 struct LanczosParameters: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(LanczosParameters,
-                                  int, Nstart,
+                                  //int, Nstart,
                                   int, Nvec,
                                   int, Nk,
-                                  int, Nm,    // Not currently used
+                                  //int, Nm,    // Not currently used
                                   int, Np,
                                   int, MaxIt,
-                                  int, MinRes,
+                                  //int, MinRes,
                                   double, resid)
   LanczosParameters() = default;
   template <class ReaderClass> LanczosParameters(Reader<ReaderClass>& Reader){read(Reader,"Lanczos",*this);}
@@ -202,7 +202,7 @@ void TLapEvec<FImpl>::setup(void)
   Nz = gridHD->_fdimensions[Zdir];
   Nt = gridHD->_fdimensions[Tdir];
   // Temporaries
-  envTmpLat(GaugeField, "Umu");
+  //envTmpLat(GaugeField, "Umu");
   envTmpLat(GaugeField, "Umu_stout");
   envTmpLat(GaugeField, "Umu_smear");
   envTmp(LatticeGaugeField, "UmuNoTime",1,LatticeGaugeField(gridLD));
@@ -253,9 +253,41 @@ void TLapEvec<FImpl>::execute(void)
   else
     assert(nnoise>1);
 
+  // Debugging only
+  //envGetTmp(GaugeField, Umu);
+  auto &Umu = envGet(GaugeField, par().gauge);
+  if((1)) {
+    const std::vector<int> seeds({1, 2, 3, 4, 5});
+    GridParallelRNG pRNG4d(gridHD);
+    pRNG4d.SeedFixedIntegers(seeds);
+    std::cout << GridLogMessage << "now hot config" << std::endl;
+    SU<Nc>::HotConfiguration(pRNG4d, Umu);
+    std::cout << GridLogMessage << "hot cfg done." << std::endl;
+    
+    // Set up the SAME gauge field on every time plane
+    //  int Nt = grid4d->gDimensions()[Tdir];
+    Grid_unquiesce_nodes();
+    
+    auto Usft = Umu;
+    Lattice<iScalar<vInteger> > coor(gridHD);
+    LatticeCoordinate(coor,Tdir);
+    for(int t=1;t<Nt;t++){
+      // t=1
+      //  Umu                Usft
+      // 0,1,2,3,4,5,6,7 -> 7,0,1,2,3,4,5,6 t=1
+      // 0,0,2,3,4,5,6,7    6,7,0,1,2,3,4,5 t=2
+      // 0,0,0,3,4,5,6,7    5,6,7,0,1,2,3,4 t=3
+      //...
+      
+      Usft = Cshift(Usft,Tdir,-1);
+      Umu = where(coor==t,Usft,Umu);
+    }
+    //  std::cout << "Umu is "<<Umu<<std::endl;
+  }
+
   // Stout smearing
-  envGetTmp(GaugeField, Umu);
   envGetTmp(GaugeField, Umu_smear);
+  Umu_smear = Umu;
   LOG(Message) << "Initial plaquette: " << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu) << std::endl;
   {
     envGetTmp(GaugeField, Umu_stout);
