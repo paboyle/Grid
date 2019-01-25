@@ -155,10 +155,19 @@ void TPerambLight<FImpl>::execute(void)
 
   LatticeGaugeField Umu(grid4d);
   FieldMetaData header;
-  std::string   fileName( "/home/dp008/dp008/dc-rich6/Scripts/ConfigsDeflQED/ckpoint_lat.3000" );
-  std::cout << GridLogMessage << "Loading NERSC configuration from '" << fileName << "'" << std::endl;
-  NerscIO::readConfiguration(Umu, header, fileName);
-  std::cout << GridLogMessage << "reading done." << std::endl;
+  if((1)){
+    const std::vector<int> seeds({1, 2, 3, 4, 5});
+    GridParallelRNG pRNG4d(grid4d);
+    pRNG4d.SeedFixedIntegers(seeds);
+    std::cout << GridLogMessage << "now hot config" << std::endl;
+    SU<Nc>::HotConfiguration(pRNG4d, Umu);
+    std::cout << GridLogMessage << "hot cfg done." << std::endl;
+  } else {
+    std::string   fileName( "/home/dp008/dp008/dc-rich6/Scripts/ConfigsDeflQED/ckpoint_lat.3000" );
+    std::cout << GridLogMessage << "Loading NERSC configuration from '" << fileName << "'" << std::endl;
+    NerscIO::readConfiguration(Umu, header, fileName);
+    std::cout << GridLogMessage << "reading done." << std::endl;
+  }
 
   envGetTmp(LatticeSpinColourVector, dist_source);
   envGetTmp(LatticeSpinColourVector, tmp2);
@@ -246,7 +255,6 @@ void TPerambLight<FImpl>::execute(void)
               if( it >= Ntfirst && it < Ntfirst + Ntlocal ) {
                 for (int ik = dk; ik < nvec; ik += LI){
                   for (int is = ds; is < Ns; is += Ns){ //at the moment, full spin dilution is enforced
-                    std::cout <<  "LapH source vector from noise " << it << " and dilution component (d_k,d_t,d_alpha) : (" << ik << ","<< is << ")" << std::endl;
                     ExtractSliceLocal(evec3d,epack.evec[ik],0,it,3);
                     tmp3d_nospin = evec3d * noise[inoise + nnoise*(it + Nt*(ik+nvec*is))]; 
                     //tmp3d_nospin = evec3d * noise[inoise][it][ik]()(is)(); //noises do not have to be a spin vector
@@ -274,8 +282,11 @@ void TPerambLight<FImpl>::execute(void)
               for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
                 ExtractSliceLocal(result_3d,result_nospin,0,t-Ntfirst,Grid::QCD::Tdir);
                 for (int ivec = 0; ivec < nvec; ivec++) {
+            std::cout <<  "1" << std::endl;
                   ExtractSliceLocal(evec3d,epack.evec[ivec],0,t,3);
+            std::cout <<  "2" << std::endl;
                   pokeSpin(perambulator(t, ivec, dk, inoise,dt,ds),innerProduct(evec3d, result_3d),is);
+            std::cout <<  "3" << std::endl;
                 }
           }
         }
