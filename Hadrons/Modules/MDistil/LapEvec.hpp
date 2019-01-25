@@ -315,6 +315,8 @@ void TLapEvec<FImpl>::execute(void)
   ////////////////////////////////////////////////////////////////////////
   
   std::string sEigenPackName(getName());
+  sEigenPackName.append("_");
+  sEigenPackName.append(std::to_string(vm().getTrajectory()));
   bool bReturnValue = true;
   auto & eig4d = envGet(DistilEP, getName() );
   envGetTmp(std::vector<DistilEP>, eig);   // Eigenpack for each timeslice
@@ -369,12 +371,14 @@ void TLapEvec<FImpl>::execute(void)
       // Now rotate the eigenvectors into our phase convention
       RotateEigen( eig[t].evec );
       
-      // Write the eigenvectors and eigenvalues to disk
-      //std::cout << GridLogMessage << "Writing eigenvalues/vectors to " << pszEigenPack << std::endl;
-      eig[t].record.operatorXml = DefaultOperatorXml;
-      eig[t].record.solverXml = DefaultsolverXml;
-      eig[t].write(sEigenPackName,false,t);
-      //std::cout << GridLogMessage << "Written eigenvectors" << std::endl;
+      if((1)) { // Debugging only
+        // Write the eigenvectors and eigenvalues to disk
+        //std::cout << GridLogMessage << "Writing eigenvalues/vectors to " << pszEigenPack << std::endl;
+        eig[t].record.operatorXml = DefaultOperatorXml;
+        eig[t].record.solverXml = DefaultsolverXml;
+        eig[t].write(sEigenPackName,false,t);
+        //std::cout << GridLogMessage << "Written eigenvectors" << std::endl;
+      }
     }
     for (int i=0;i<LPar.Nvec;i++){
       std::cout << "Inserting Timeslice " << t << " into vector " << i << std::endl;

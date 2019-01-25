@@ -36,6 +36,7 @@
 
 /******************************************************************************
  This potentially belongs in CartesianCommunicator
+ Turns out I don't actually need this when running inside hadrons
  ******************************************************************************/
 
 BEGIN_MODULE_NAMESPACE(Grid)
