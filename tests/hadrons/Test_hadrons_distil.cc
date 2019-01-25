@@ -138,6 +138,8 @@ void test_MesonField(Application &application)
   A2AMesonFieldPar.output="DistilFields";
   A2AMesonFieldPar.gammas="all";
   A2AMesonFieldPar.mom={"0 0 0"};
+  A2AMesonFieldPar.cacheBlock=4;
+  A2AMesonFieldPar.block=16;
   application.createModule<MContraction::A2AMesonField>("DistilMesonField",A2AMesonFieldPar);
 }
 
