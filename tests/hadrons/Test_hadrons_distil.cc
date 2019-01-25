@@ -174,7 +174,7 @@ bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
 int main(int argc, char *argv[])
 {
   // Decode command-line parameters. 1st one is which test to run
-  int iTestNum = 4;
+  int iTestNum = -1;
 
   for(int i = 1 ; i < argc ; i++ ) {
     std::cout << "argv[" << i << "]=\"" << argv[i] << "\"" << std::endl;
