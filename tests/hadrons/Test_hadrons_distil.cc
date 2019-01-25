@@ -174,7 +174,7 @@ bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
 int main(int argc, char *argv[])
 {
   // Decode command-line parameters. 1st one is which test to run
-  int iTestNum = 2;
+  int iTestNum = 4;
 
   for(int i = 1 ; i < argc ; i++ ) {
     std::cout << "argv[" << i << "]=\"" << argv[i] << "\"" << std::endl;
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
       test_Perambulators( application );
       test_DistilVectors( application );
       break;
-    case 4: // 4
+    default: // 4
       test_Global( application );
       test_LapEvec( application );
       test_Perambulators( application );
