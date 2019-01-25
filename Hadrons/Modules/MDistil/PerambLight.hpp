@@ -279,17 +279,12 @@ void TPerambLight<FImpl>::execute(void)
             //  current_sink[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))] = result;
             std::cout <<  "Contraction of perambulator from noise " << inoise << " and dilution component (d_k,d_t,d_alpha) : (" << dk << ","<< dt << "," << ds << ")" << std::endl;
             for (int is = 0; is < Ns; is++) {
-            std::cout <<  "is" << is << std::endl;
               result_nospin = peekSpin(result,is);
               for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
-            std::cout <<  "t" << t << std::endl;
                 ExtractSliceLocal(result_3d,result_nospin,0,t-Ntfirst,Grid::QCD::Tdir);
                 for (int ivec = 0; ivec < nvec; ivec++) {
-            std::cout <<  "1" << std::endl;
                   ExtractSliceLocal(evec3d,epack.evec[ivec],0,t,3);
-            std::cout <<  "2" << std::endl;
                   pokeSpin(perambulator(t, ivec, dk, inoise,dt,ds),innerProduct(evec3d, result_3d),is);
-            std::cout <<  "3" << std::endl;
                 }
           }
         }

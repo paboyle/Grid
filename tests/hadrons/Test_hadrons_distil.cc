@@ -89,10 +89,10 @@ void test_Perambulators(Application &application)
   PerambPar.eigenPack="LapEvec";
   PerambPar.tsrc = 0;
   PerambPar.nnoise = 1;
-  PerambPar.LI=6;
+  PerambPar.LI=5;
   PerambPar.SI=4;
   PerambPar.TI=64;
-  PerambPar.nvec=6;
+  PerambPar.nvec=5;
   PerambPar.Ns=4;
   PerambPar.Nt=64;
   PerambPar.Nt_inv=1;
@@ -113,7 +113,7 @@ void test_DistilVectors(Application &application)
   MDistil::DistilVectors::Par DistilVecPar;
   DistilVecPar.noise="Peramb_noise";
   DistilVecPar.perambulator="Peramb_perambulator_light";
-  DistilVecPar.eigenPack="LapEvec_eigenPack";
+  DistilVecPar.eigenPack="LapEvec";
   DistilVecPar.tsrc = 0;
   DistilVecPar.nnoise = 1;
   DistilVecPar.LI=6;
@@ -123,9 +123,6 @@ void test_DistilVectors(Application &application)
   DistilVecPar.Ns=4;
   DistilVecPar.Nt=64;
   DistilVecPar.Nt_inv=1;
-  // gauge field
-  //application.createModule<MGauge::Unit>("gauge");
-  // Now make an instance of the DistilVectors object
   application.createModule<MDistil::DistilVectors>("DistilVectorsInstance",DistilVecPar);
 }
 
