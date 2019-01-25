@@ -116,14 +116,29 @@ void test_DistilVectors(Application &application)
   DistilVecPar.eigenPack="LapEvec";
   DistilVecPar.tsrc = 0;
   DistilVecPar.nnoise = 1;
-  DistilVecPar.LI=6;
+  DistilVecPar.LI=5;
   DistilVecPar.SI=4;
   DistilVecPar.TI=64;
-  DistilVecPar.nvec=6;
+  DistilVecPar.nvec=5;
   DistilVecPar.Ns=4;
   DistilVecPar.Nt=64;
   DistilVecPar.Nt_inv=1;
-  application.createModule<MDistil::DistilVectors>("DistilVectorsInstance",DistilVecPar);
+  application.createModule<MDistil::DistilVectors>("DistilVecs",DistilVecPar);
+}
+/////////////////////////////////////////////////////////////
+// MesonFields
+/////////////////////////////////////////////////////////////
+
+void test_MesonField(Application &application)
+{
+  // DistilVectors parameters
+  MContraction::A2AMesonField::Par A2AMesonFieldPar;
+  A2AMesonFieldPar.left="DistilVecs_phi";
+  A2AMesonFieldPar.right="DistilVecs_rho";
+  A2AMesonFieldPar.output="DistilFields";
+  A2AMesonFieldPar.gammas="all";
+  A2AMesonFieldPar.mom={"0 0 0"};
+  application.createModule<MContraction::A2AMesonField>("DistilMesonField",A2AMesonFieldPar);
 }
 
 bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
@@ -209,11 +224,18 @@ int main(int argc, char *argv[])
       test_LapEvec( application );
       test_Perambulators( application );
       break;
-    default: // 3
+    case 3: // 3
       test_Global( application );
       test_LapEvec( application );
       test_Perambulators( application );
       test_DistilVectors( application );
+      break;
+    case 4: // 4
+      test_Global( application );
+      test_LapEvec( application );
+      test_Perambulators( application );
+      test_DistilVectors( application );
+      test_MesonField( application );
       break;
   }
   LOG(Message) << "====== XML creation for test " << iTestNum << " complete ======" << std::endl;
