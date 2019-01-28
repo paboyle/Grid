@@ -94,7 +94,8 @@ std::vector<std::string> TDistilVectors<FImpl>::getOutput(void)
 template <typename FImpl>
 void TDistilVectors<FImpl>::setup(void)
 {
-   auto &noise = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
+   //auto &noise = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
+   auto &noise = envGet(std::vector<Complex>, par().noise);
   
    envCreate(std::vector<FermionField>, getName() + "_rho", 1, 
 		                    noise.size(), envGetGrid(FermionField));
@@ -128,7 +129,7 @@ void TDistilVectors<FImpl>::execute(void)
    
     //auto        &noise     = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
     auto        &noise     = envGet(std::vector<Complex>, par().noise);
-    auto        &perambulator   = envGet(Perambulator<SpinVector>, getName() + "_perambulator_light");
+    auto        &perambulator   = envGet(Perambulator<SpinVector>, par().perambulator);
     auto        &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
     auto        &rho       = envGet(std::vector<FermionField>, getName() + "_rho");
     auto        &phi       = envGet(std::vector<FermionField>, getName() + "_phi");
