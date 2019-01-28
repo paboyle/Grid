@@ -121,11 +121,11 @@ public:
  
  ******************************************************************************/
 
-template <typename FImpl>
+template <typename GImpl>
 class TLapEvec: public Module<LapEvecPar>
 {
 public:
-  GAUGE_TYPE_ALIASES(FImpl,);
+  GAUGE_TYPE_ALIASES(GImpl,);
 
 public:
   // constructor
@@ -149,7 +149,7 @@ protected:
   void Cleanup(void);
 };
 
-MODULE_REGISTER_TMP(LapEvec, TLapEvec<FIMPL>, MDistil);
+MODULE_REGISTER_TMP(LapEvec, TLapEvec<GIMPL>, MDistil);
 
 /******************************************************************************
  TLapEvec implementation
@@ -158,31 +158,31 @@ MODULE_REGISTER_TMP(LapEvec, TLapEvec<FIMPL>, MDistil);
 //constexpr char szEigenPackSuffix[] = "_eigenPack";
 
 // constructor /////////////////////////////////////////////////////////////////
-template <typename FImpl>
-TLapEvec<FImpl>::TLapEvec(const std::string name) : gridLD{nullptr}, Module<LapEvecPar>(name)
+template <typename GImpl>
+TLapEvec<GImpl>::TLapEvec(const std::string name) : gridLD{nullptr}, Module<LapEvecPar>(name)
 {
-  LOG(Message) << "TLapEvec constructor : TLapEvec<FImpl>::TLapEvec(const std::string name)" << std::endl;
+  LOG(Message) << "TLapEvec constructor : TLapEvec<GImpl>::TLapEvec(const std::string name)" << std::endl;
   LOG(Message) << "this=" << this << ", gridLD=" << gridLD << std::endl;
 }
 
 // destructor /////////////////////////////////////////////////////////////////
-template <typename FImpl>
-TLapEvec<FImpl>::~TLapEvec()
+template <typename GImpl>
+TLapEvec<GImpl>::~TLapEvec()
 {
   Cleanup();
 }
 
 // dependencies/products ///////////////////////////////////////////////////////
-template <typename FImpl>
-std::vector<std::string> TLapEvec<FImpl>::getInput(void)
+template <typename GImpl>
+std::vector<std::string> TLapEvec<GImpl>::getInput(void)
 {
     std::vector<std::string> in = {par().gauge};
     
     return in;
 }
 
-template <typename FImpl>
-std::vector<std::string> TLapEvec<FImpl>::getOutput(void)
+template <typename GImpl>
+std::vector<std::string> TLapEvec<GImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()}; // This is the higher dimensional eigenpack
     
@@ -190,8 +190,8 @@ std::vector<std::string> TLapEvec<FImpl>::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-template <typename FImpl>
-void TLapEvec<FImpl>::setup(void)
+template <typename GImpl>
+void TLapEvec<GImpl>::setup(void)
 {
   Cleanup();
   Environment & e{env()};
@@ -213,8 +213,8 @@ void TLapEvec<FImpl>::setup(void)
 }
 
 // clean up any temporaries created by setup (that aren't stored in the environment)
-template <typename FImpl>
-void TLapEvec<FImpl>::Cleanup(void)
+template <typename GImpl>
+void TLapEvec<GImpl>::Cleanup(void)
 {
   if( gridLD != nullptr ) {
     delete gridLD;
@@ -228,8 +228,8 @@ void TLapEvec<FImpl>::Cleanup(void)
  ******************************************************************************/
 
 // execution ///////////////////////////////////////////////////////////////////
-template <typename FImpl>
-void TLapEvec<FImpl>::execute(void)
+template <typename GImpl>
+void TLapEvec<GImpl>::execute(void)
 {
   LOG(Message) << "execute() : start for " << getName() << std::endl;
 
@@ -258,17 +258,15 @@ void TLapEvec<FImpl>::execute(void)
   auto &Umu = envGet(GaugeField, par().gauge);
   envGetTmp(GaugeField, Umu_smear);
   if((0)) {
-    //const std::vector<int> seeds({1, 2, 3, 4, 5});
-    //GridParallelRNG pRNG4d(gridHD);
-    //pRNG4d.SeedFixedIntegers(seeds);
-    //std::cout << GridLogMessage << "now hot config" << std::endl;
-    //SU<Nc>::HotConfiguration(pRNG4d, Umu);
-    //std::cout << GridLogMessage << "hot cfg done." << std::endl;
+    const std::vector<int> seeds({1, 2, 3, 4, 5});
+    GridParallelRNG pRNG4d(gridHD);
+    pRNG4d.SeedFixedIntegers(seeds);
+    std::cout << GridLogMessage << "now hot config" << std::endl;
+    SU<Nc>::HotConfiguration(pRNG4d, Umu);
+    std::cout << GridLogMessage << "hot cfg done." << std::endl;
     
     // Set up the SAME gauge field on every time plane
-    //  int Nt = grid4d->gDimensions()[Tdir];
     Grid_unquiesce_nodes();
-    
     Umu_smear = Umu;
     Lattice<iScalar<vInteger> > coor(gridHD);
     LatticeCoordinate(coor,Tdir);
@@ -376,7 +374,7 @@ void TLapEvec<FImpl>::execute(void)
         //std::cout << GridLogMessage << "Writing eigenvalues/vectors to " << pszEigenPack << std::endl;
         eig[t].record.operatorXml = DefaultOperatorXml;
         eig[t].record.solverXml = DefaultsolverXml;
-        eig[t].write(sEigenPackName,false,t);
+        eig[t].write("DistilEigen",false,t);
         //std::cout << GridLogMessage << "Written eigenvectors" << std::endl;
       }
     }
