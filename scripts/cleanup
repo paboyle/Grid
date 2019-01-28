@@ -1,4 +1,0 @@
-find . -name "*~" -print -exec rm -f {} \;
-find . -name "errs" -print -exec rm -f {} \;
-find . -name "log" -print -exec rm -f {} \;
-find . -name "*.bak" -print -exec rm -f {} \;

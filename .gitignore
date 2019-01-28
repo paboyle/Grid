@@ -43,7 +43,7 @@
 ########################################
 Makefile.in
 Makefile
-Config.h
+#Config.h
 Config.h.in
 config.log
 config.status
@@ -67,13 +67,13 @@ config.guess
 INSTALL
 .dirstamp
 ltmain.sh
- 
+
 # Logs and databases #
 ######################
 *.log
 *.sql
 *.sqlite
- 
+
 # OS generated files #
 ######################
 .DS_Store
