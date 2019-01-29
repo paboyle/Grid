@@ -91,10 +91,10 @@ void test_Perambulators(Application &application)
   PerambPar.nnoise = 1;
   PerambPar.LI=5;
   PerambPar.SI=4;
-  PerambPar.TI=64;
+  PerambPar.TI=8;
   PerambPar.nvec=5;
   PerambPar.Ns=4;
-  PerambPar.Nt=64;
+  PerambPar.Nt=8;
   PerambPar.Nt_inv=1;
   PerambPar.mass=0.005;
   PerambPar.M5=1.8;
@@ -118,10 +118,10 @@ void test_DistilVectors(Application &application)
   DistilVecPar.nnoise = 1;
   DistilVecPar.LI=5;
   DistilVecPar.SI=4;
-  DistilVecPar.TI=64;
+  DistilVecPar.TI=8;
   DistilVecPar.nvec=5;
   DistilVecPar.Ns=4;
-  DistilVecPar.Nt=64;
+  DistilVecPar.Nt=8;
   DistilVecPar.Nt_inv=1;
   application.createModule<MDistil::DistilVectors>("DistilVecs",DistilVecPar);
 }
