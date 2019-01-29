@@ -163,6 +163,25 @@ void TPerambLight<FImpl>::execute(void)
     std::cout << GridLogMessage << "now hot config" << std::endl;
     SU<Nc>::HotConfiguration(pRNG4d, Umu);
     std::cout << GridLogMessage << "hot cfg done." << std::endl;
+
+  // Set up the SAME gauge field on every time plane
+  //  int Nt = grid4d->gDimensions()[Tdir];
+  Grid_unquiesce_nodes();
+  
+  auto Usft = Umu;
+  Lattice<iScalar<vInteger> > coor(grid4d);
+  LatticeCoordinate(coor,Tdir);
+  for(int t=1;t<par().Nt;t++){
+    // t=1
+    //  Umu                Usft
+    // 0,1,2,3,4,5,6,7 -> 7,0,1,2,3,4,5,6 t=1
+    // 0,0,2,3,4,5,6,7    6,7,0,1,2,3,4,5 t=2
+    // 0,0,0,3,4,5,6,7    5,6,7,0,1,2,3,4 t=3
+    //...
+    
+    Usft = Cshift(Usft,Tdir,-1);
+    Umu = where(coor==t,Usft,Umu);
+  }
   } else {
     std::string   fileName( "/home/dp008/dp008/dc-rich6/Scripts/ConfigsDeflQED/ckpoint_lat.3000" );
     std::cout << GridLogMessage << "Loading NERSC configuration from '" << fileName << "'" << std::endl;
@@ -285,6 +304,7 @@ void TPerambLight<FImpl>::execute(void)
                 for (int ivec = 0; ivec < nvec; ivec++) {
                   ExtractSliceLocal(evec3d,epack.evec[ivec],0,t,3);
                   pokeSpin(perambulator(t, ivec, dk, inoise,dt,ds),innerProduct(evec3d, result_3d),is);
+                  std::cout <<  "perambulator(t, ivec, dk, inoise,dt,ds)(is) = (" << t << "," << ivec << "," << dk << "," << inoise << "," << dt << "," << ds << ")(" << is << ") = " <<  perambulator(t, ivec, dk, inoise,dt,ds)()(is)() << std::endl;
                 }
           }
         }

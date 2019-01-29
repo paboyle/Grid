@@ -257,7 +257,7 @@ void TLapEvec<GImpl>::execute(void)
   //envGetTmp(GaugeField, Umu);
   auto &Umu = envGet(GaugeField, par().gauge);
   envGetTmp(GaugeField, Umu_smear);
-  if((0)) {
+  if((1)) {
     const std::vector<int> seeds({1, 2, 3, 4, 5});
     GridParallelRNG pRNG4d(gridHD);
     pRNG4d.SeedFixedIntegers(seeds);
@@ -381,6 +381,7 @@ void TLapEvec<GImpl>::execute(void)
     for (int i=0;i<LPar.Nvec;i++){
       std::cout << "Inserting Timeslice " << t << " into vector " << i << std::endl;
       InsertSliceLocal(eig[t].evec[i],eig4d.evec[i],0,t,3);
+      eig4d.eval[i] = eig[0].eval[i];
     }
   }
 
