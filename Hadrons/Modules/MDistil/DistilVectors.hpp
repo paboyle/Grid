@@ -183,6 +183,11 @@ void TDistilVectors<FImpl>::execute(void)
               }
             }
           }
+          SpinColourVector scv0;
+          std::vector<int> siteFirst(grid4d->Nd(),0);
+          peekSite(scv0, rho[vecindex], siteFirst);
+          auto & cplx0 = scv0()(0)(0);
+          std::cout <<  "site0[rho(vecindex = " << vecindex << ")] = " << cplx0 << std::endl;
         }
       }
     }
@@ -203,6 +208,11 @@ void TDistilVectors<FImpl>::execute(void)
             }
             InsertSliceLocal(sink_tslice,phi[vecindex],0,t-Ntfirst,Grid::QCD::Tdir);
           }
+          SpinColourVector scv0;
+          std::vector<int> siteFirst(grid4d->Nd(),0);
+          peekSite(scv0, phi[vecindex], siteFirst);
+          auto & cplx0 = scv0()(0)(0);
+          std::cout <<  "site0[phi(vecindex = " << vecindex << ")] = " << cplx0 << std::endl;
         }
       }
     }
