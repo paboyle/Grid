@@ -134,12 +134,13 @@ void test_MesonField(Application &application)
   // DistilVectors parameters
   MContraction::A2AMesonField::Par A2AMesonFieldPar;
   A2AMesonFieldPar.left="DistilVecs_phi";
-  A2AMesonFieldPar.right="DistilVecs_rho";
+  //A2AMesonFieldPar.right="DistilVecs_rho";
+  A2AMesonFieldPar.right="DistilVecs_phi";
   A2AMesonFieldPar.output="DistilFields";
   A2AMesonFieldPar.gammas="all";
   A2AMesonFieldPar.mom={"0 0 0"};
-  A2AMesonFieldPar.cacheBlock=4;
-  A2AMesonFieldPar.block=16;
+  A2AMesonFieldPar.cacheBlock=2;
+  A2AMesonFieldPar.block=4;
   application.createModule<MContraction::A2AMesonField>("DistilMesonField",A2AMesonFieldPar);
 }
 
