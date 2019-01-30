@@ -96,11 +96,16 @@ void TDistilVectors<FImpl>::setup(void)
 {
    //auto &noise = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
    auto &noise = envGet(std::vector<Complex>, par().noise);
-  
+
+   int nnoise=par().nnoise;
+   int LI=par().LI;
+   int Ns=par().Ns;
+   int Nt_inv=par().Nt_inv;
+
    envCreate(std::vector<FermionField>, getName() + "_rho", 1, 
-		                    noise.size(), envGetGrid(FermionField));
+		                    nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField));
    envCreate(std::vector<FermionField>, getName() + "_phi", 1, 
-                 	            noise.size(), envGetGrid(FermionField)); 
+                 	            nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField)); 
 
 
   GridCartesian * grid4d = env().getGrid();
@@ -218,6 +223,8 @@ void TDistilVectors<FImpl>::execute(void)
     }
   }
 
+  std::cout << "size rho" << rho.size() << std::endl;
+  std::cout << "size phi" << phi.size() << std::endl;
 
 }
 
