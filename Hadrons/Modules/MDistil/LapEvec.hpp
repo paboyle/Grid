@@ -144,9 +144,8 @@ protected:
   GridCartesian * gridLD; // Owned by me, so I must delete it
   GridCartesian * gridHD; // Owned by environment (so I won't delete it)
   int Nx, Ny, Nz, Nt;
-
 protected:
-  void Cleanup(void);
+  virtual void Cleanup(void);
 };
 
 MODULE_REGISTER_TMP(LapEvec, TLapEvec<GIMPL>, MDistil);

@@ -171,8 +171,58 @@ bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
   return true;
 }
 
+#ifdef DEBUG
+
+typedef Eigen::Tensor<Complex,3,Eigen::RowMajor | Eigen::DontAlign> MyTensor;
+
+bool DebugEigenTest()
+{
+  MyTensor x(2,3,4);
+  const MyTensor::Index s{x.size()};
+  std::cout << "x.size() = " << s << std::endl;
+  std::cout << "x.NumDimensions = " << x.NumDimensions << " (TensorBase)" << std::endl;
+  std::cout << "x.NumIndices = " << x.NumIndices << std::endl;
+  const MyTensor::Dimensions & d{x.dimensions()};
+  std::cout << "d.size() = " << d.size() << std::endl;
+  std::cout << "Dimensions are ";
+  for(auto i : d ) std::cout << "[" << i << "]";
+  std::cout << std::endl;
+  MyTensor::Index SizeCalculated{1};
+  std::cout << "Dimensions again";
+  for(int i=0 ; i < d.size() ; i++ ) {
+    std::cout << " : [" << i << "]=" << d[i];
+    SizeCalculated *= d[i];
+  }
+  std::cout << std::endl;
+  std::cout << "SizeCalculated = " << SizeCalculated << std::endl;\
+  assert( SizeCalculated == s );
+  // Initialise
+  assert( d.size() == 3 );
+  for( int i = 0 ; i < d[0] ; i++ )
+    for( int j = 0 ; j < d[1] ; j++ )
+      for( int k = 0 ; k < d[2] ; k++ ) {
+        x(i,j,k) = std::complex<double>(SizeCalculated, SizeCalculated);
+        SizeCalculated--;
+      }
+  // Show raw data
+  std::cout << "Data follow : " << std::endl;
+  Complex * p = x.data();
+  for( auto i = 0 ; i < s ; i++ ) {
+    if( i ) std::cout << ", ";
+    std::cout << "x.data()[" << i << "]=" << * p++;
+  }
+  std::cout << std::endl;
+  return true;
+}
+#endif
+
 int main(int argc, char *argv[])
 {
+#ifdef DEBUG
+  // Debug only - test of Eigen::Tensor
+  //if( DebugEigenTest() ) return 0;
+#endif
+
   // Decode command-line parameters. 1st one is which test to run
   int iTestNum = -1;
 

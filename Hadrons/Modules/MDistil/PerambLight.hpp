@@ -49,7 +49,7 @@ public:
     // constructor
     TPerambLight(const std::string name);
     // destructor
-    virtual ~TPerambLight(void) {};
+  virtual ~TPerambLight(void);
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -57,6 +57,13 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
+protected:
+  // These variables are created in setup() and freed in Cleanup()
+  GridCartesian * grid3d; // Owned by me, so I must delete it
+  GridCartesian * grid4d; // Owned by environment (so I won't delete it)
+
+protected:
+  virtual void Cleanup(void);
 };
 
 MODULE_REGISTER_TMP(PerambLight, TPerambLight<FIMPL>, MDistil);
@@ -67,8 +74,15 @@ MODULE_REGISTER_TMP(PerambLight, TPerambLight<FIMPL>, MDistil);
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
 TPerambLight<FImpl>::TPerambLight(const std::string name)
-: Module<PerambLightPar>(name)
+: grid3d{nullptr}, grid4d{nullptr}, Module<PerambLightPar>(name)
 {}
+
+// destructor
+template <typename FImpl>
+TPerambLight<FImpl>::~TPerambLight(void)
+{
+  Cleanup();
+};
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
@@ -94,31 +108,32 @@ std::vector<std::string> TPerambLight<FImpl>::getOutput(void)
 template <typename FImpl>
 void TPerambLight<FImpl>::setup(void)
 {
+  Cleanup();
 
   // auto &noise = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
   
-  int LI=par().LI;
-  int SI=par().SI;
-  int TI=par().TI;
-  int nnoise=par().nnoise;
-  int Nt=par().Nt;
-  int Nt_inv=par().Nt_inv;
-  int nvec=par().nvec;
+  const int LI{par().LI};
+  const int SI{par().SI};
+  //const int TI{par().TI};
+  const int nnoise{par().nnoise};
+  const int Nt{par().Nt};
+  const int Nt_inv{par().Nt_inv};
+  const int nvec{par().nvec};
  
   envCreate(Perambulator<SpinVector>, getName() + "_perambulator_light", 1, 
 		                    Nt,nvec,LI,nnoise,Nt_inv,SI);
   envCreate(std::vector<Complex>, getName() + "_noise", 1, 
 		                    nvec*Ns*Nt*nnoise);
 
-  GridCartesian * grid4d = env().getGrid();
-  std::vector<int> latt_size   = GridDefaultLatt();
+  grid4d = env().getGrid();
+  /*std::vector<int> latt_size   = GridDefaultLatt();
   std::vector<int> simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
   std::vector<int> simd_layout_3 = GridDefaultSimd(Nd-1, vComplex::Nsimd());
   latt_size[Nd-1] = 1;
   simd_layout_3.push_back( 1 );
-  mpi_layout[Nd-1] = 1;
-  GridCartesian * grid3d = new GridCartesian(latt_size,simd_layout_3,mpi_layout,*grid4d);
+  mpi_layout[Nd-1] = 1;*/
+  grid3d = MakeLowerDimGrid(grid4d);//new GridCartesian(latt_size,simd_layout_3,mpi_layout,*grid4d);
 
   envTmp(LatticeSpinColourVector, "dist_source",1,LatticeSpinColourVector(grid4d));
   envTmp(LatticeSpinColourVector, "tmp2",1,LatticeSpinColourVector(grid4d));
@@ -134,6 +149,17 @@ void TPerambLight<FImpl>::setup(void)
 
 }
 
+// clean up any temporaries created by setup (that aren't stored in the environment)
+template <typename FImpl>
+void TPerambLight<FImpl>::Cleanup(void)
+{
+  if( grid3d != nullptr ) {
+    delete grid3d;
+    grid3d = nullptr;
+  }
+  grid4d = nullptr;
+}
+
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TPerambLight<FImpl>::execute(void)
@@ -144,7 +170,7 @@ void TPerambLight<FImpl>::execute(void)
     auto        &perambulator   = envGet(Perambulator<SpinVector>, getName() + "_perambulator_light");
     auto        &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
 
-  GridCartesian * grid4d = env().getGrid();
+  /*GridCartesian * grid4d = env().getGrid();
   std::vector<int> latt_size   = GridDefaultLatt();
   std::vector<int> simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
@@ -152,7 +178,7 @@ void TPerambLight<FImpl>::execute(void)
   latt_size[Nd-1] = 1;
   simd_layout_3.push_back( 1 );
   mpi_layout[Nd-1] = 1;
-  GridCartesian * grid3d = new GridCartesian(latt_size,simd_layout_3,mpi_layout,*grid4d);
+  GridCartesian * grid3d = new GridCartesian(latt_size,simd_layout_3,mpi_layout,*grid4d);*/
 
   LatticeGaugeField Umu(grid4d);
   FieldMetaData header;
