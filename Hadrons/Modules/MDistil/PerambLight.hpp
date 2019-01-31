@@ -129,7 +129,8 @@ void TPerambLight<GImpl>::setup(void)
     const int nvec{par().nvec};
     const DistilParameters & Distil{par().Distil};
 
-    envCreate(Perambulator<SpinVector>, getName() + "_perambulator_light", 1,
+    //envCreate(Perambulator<SpinVector, 6>, getName() + "_perambulator_light", 1,
+    env().template createObject<Perambulator<SpinVector, 6> >(getName() + "_perambulator_light", Environment::Storage::object, 1,
               Distil.Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
     envCreate(std::vector<Complex>, getName() + "_noise", 1,
               nvec*Distil.Ns*Distil.Nt*Distil.nnoise);
@@ -183,7 +184,9 @@ void TPerambLight<GImpl>::execute(void)
 
     //auto        &noise     = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
     auto        &noise   = envGet(std::vector<Complex>, getName() + "_noise");
-    auto        &perambulator   = envGet(Perambulator<SpinVector>, getName() + "_perambulator_light");
+    auto        &perambulator = //envGet(Perambulator<SpinVector>,
+                                *env().template getObject<Perambulator<SpinVector,6> >(
+                                    getName() + "_perambulator_light");
     auto        &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
 
     envGetTmp(GaugeField, Umu);
