@@ -125,6 +125,49 @@ void test_DistilVectors(Application &application)
   DistilVecPar.Nt_inv=1;
   application.createModule<MDistil::DistilVectors>("DistilVecs",DistilVecPar);
 }
+void test_PerambulatorsS(Application &application)
+{
+  // PerambLight parameters
+  MDistil::PerambLight::Par PerambPar;
+  PerambPar.eigenPack="LapEvec";
+  PerambPar.tsrc = 0;
+  PerambPar.nnoise = 1;
+  PerambPar.LI=3;
+  PerambPar.SI=4;
+  PerambPar.TI=8;
+  PerambPar.nvec=3;
+  PerambPar.Ns=4;
+  PerambPar.Nt=8;
+  PerambPar.Nt_inv=1;
+  PerambPar.mass=0.04; //strange mass???
+  PerambPar.M5=1.8;
+  PerambPar.Ls=16;
+  PerambPar.CGPrecision=1e-8;
+  PerambPar.MaxIterations=10000;
+  application.createModule<MDistil::PerambLight>("PerambS",PerambPar);
+}
+/////////////////////////////////////////////////////////////
+// DistilVectors
+/////////////////////////////////////////////////////////////
+
+void test_DistilVectorsS(Application &application)
+{
+  // DistilVectors parameters
+  MDistil::DistilVectors::Par DistilVecPar;
+  DistilVecPar.noise="PerambS_noise";
+  DistilVecPar.perambulator="PerambS_perambulator_light";
+  DistilVecPar.eigenPack="LapEvec";
+  DistilVecPar.tsrc = 0;
+  DistilVecPar.nnoise = 1;
+  DistilVecPar.LI=3;
+  DistilVecPar.SI=4;
+  DistilVecPar.TI=8;
+  DistilVecPar.nvec=3;
+  DistilVecPar.Ns=4;
+  DistilVecPar.Nt=8;
+  DistilVecPar.Nt_inv=1;
+  application.createModule<MDistil::DistilVectors>("DistilVecsS",DistilVecPar);
+}
 /////////////////////////////////////////////////////////////
 // MesonFields
 /////////////////////////////////////////////////////////////
@@ -134,6 +177,24 @@ void test_MesonField(Application &application)
   // DistilVectors parameters
   MContraction::A2AMesonField::Par A2AMesonFieldPar;
   A2AMesonFieldPar.left="DistilVecs_phi";
+  //A2AMesonFieldPar.right="DistilVecs_rho";
+  A2AMesonFieldPar.right="DistilVecs_phi";
+  A2AMesonFieldPar.output="DistilFields";
+  A2AMesonFieldPar.gammas="all";
+  A2AMesonFieldPar.mom={"0 0 0"};
+  A2AMesonFieldPar.cacheBlock=2;
+  A2AMesonFieldPar.block=4;
+  application.createModule<MContraction::A2AMesonField>("DistilMesonField",A2AMesonFieldPar);
+}
+/////////////////////////////////////////////////////////////
+// MesonFields
+/////////////////////////////////////////////////////////////
+
+void test_MesonFieldSL(Application &application)
+{
+  // DistilVectors parameters
+  MContraction::A2AMesonField::Par A2AMesonFieldPar;
+  A2AMesonFieldPar.left="DistilVecsS_phi";
   //A2AMesonFieldPar.right="DistilVecs_rho";
   A2AMesonFieldPar.right="DistilVecs_phi";
   A2AMesonFieldPar.output="DistilFields";
@@ -289,6 +350,15 @@ int main(int argc, char *argv[])
       test_Perambulators( application );
       test_DistilVectors( application );
       test_MesonField( application );
+      break;
+    case 5: // 3
+      test_Global( application );
+      test_LapEvec( application );
+      test_Perambulators( application );
+      test_DistilVectors( application );
+      test_PerambulatorsS( application );
+      test_DistilVectorsS( application );
+      test_MesonFieldSL( application );
       break;
   }
   LOG(Message) << "====== XML creation for test " << iTestNum << " complete ======" << std::endl;
