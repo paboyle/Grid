@@ -105,7 +105,6 @@ std::vector<std::string> TPerambLight<GImpl>::getInput(void)
 {
     std::vector<std::string> in;
 
-    //in.push_back(par().noise);
     in.push_back(par().eigenPack);
     
     return in;
@@ -175,7 +174,7 @@ void TPerambLight<GImpl>::execute(void)
     const int TI{Distil.TI};
     const int nnoise{Distil.nnoise};
     const int Nt{Distil.Nt};
-    const int Nt_inv{Distil.Nt_inv};
+    const int Nt_inv{Distil.Nt_inv}; // TODO: PROBABLY BETTER: if (full_tdil) Nt_inv=1; else Nt_inv = TI;
     const int tsrc{Distil.tsrc};
     const int Ns{Distil.Ns};
     
@@ -242,7 +241,7 @@ void TPerambLight<GImpl>::execute(void)
   //Create Noises
   //std::cout << pszGaugeConfigFile << std::endl;
   //GridSerialRNG sRNG; sRNG.SeedUniqueString(std::string(pszGaugeConfigFile));
-  GridSerialRNG sRNG; sRNG.SeedUniqueString("unique_string");
+  GridSerialRNG sRNG; sRNG.SeedUniqueString("unique_string"); // TODO: Proper unique string. Include quark mass, gauge field? Maybe also nvec, but in a way that more nvec would only add noises, not change all of them???
   Real rn;
 
   for (int inoise=0;inoise<nnoise;inoise++) {
@@ -296,7 +295,7 @@ void TPerambLight<GImpl>::execute(void)
               if (full_tdil) t_inv = tsrc; else t_inv = it;
               if( t_inv >= Ntfirst && t_inv < Ntfirst + Ntlocal ) {
                 for (int ik = dk; ik < nvec; ik += LI){
-                  for (int is = ds; is < Ns; is += Ns){ //at the moment, full spin dilution is enforced
+                  for (int is = ds; is < Ns; is += Ns){ // TODO: Also allow non-full spin dilution (re-define exact_distillation?)
                     ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv,3);
                     tmp3d_nospin = evec3d * noise[inoise + nnoise*(t_inv + Nt*(ik+nvec*is))]; 
                     tmp3d=zero;
@@ -315,6 +314,7 @@ void TPerambLight<GImpl>::execute(void)
             Dop.ImportPhysicalFermionSource(dist_source,src5);
             SchurSolver(Dop,src5,sol5);
             Dop.ExportPhysicalFermionSolution(sol5,result); //These are the meson sinks
+            // TODO: Can we inherit something from MContraction to compute the fourier-transformed sinks???
             //if (compute_current_sink)
             //  current_sink[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))] = result;
             std::cout <<  "Contraction of perambulator from noise " << inoise << " and dilution component (d_k,d_t,d_alpha) : (" << dk << ","<< dt << "," << ds << ")" << std::endl;

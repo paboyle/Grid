@@ -156,7 +156,7 @@ void TDistilVectors<FImpl>::execute(void)
   int nnoise=par().nnoise;
   int LI=par().LI;
   int Ns=par().Ns;
-  int Nt_inv=par().Nt_inv;
+  int Nt_inv=par().Nt_inv; // TODO: No input, but define through Nt, TI
   int Nt=par().Nt;
   int TI=par().TI;
   int nvec=par().nvec;
