@@ -81,7 +81,7 @@ protected:
     virtual void Cleanup(void);
 };
 
-MODULE_REGISTER_TMP(PerambLight, TPerambLight<FIMPL>, MDistil);
+MODULE_REGISTER_TMP(PerambLight, TPerambLight<GIMPL>, MDistil);
 
 /******************************************************************************
  *                 TPerambLight implementation                             *
