@@ -130,20 +130,20 @@ void test_PerambulatorsS(Application &application)
   // PerambLight parameters
   MDistil::PerambLight::Par PerambPar;
   PerambPar.eigenPack="LapEvec";
-  PerambPar.tsrc = 0;
-  PerambPar.nnoise = 1;
-  PerambPar.LI=3;
-  PerambPar.SI=4;
-  PerambPar.TI=8;
+  PerambPar.Distil.tsrc = 0;
+  PerambPar.Distil.nnoise = 1;
+  PerambPar.Distil.LI=3;
+  PerambPar.Distil.SI=4;
+  PerambPar.Distil.TI=8;
   PerambPar.nvec=3;
-  PerambPar.Ns=4;
-  PerambPar.Nt=8;
-  PerambPar.Nt_inv=1;
-  PerambPar.mass=0.04; //strange mass???
-  PerambPar.M5=1.8;
+  PerambPar.Distil.Ns=4;
+  PerambPar.Distil.Nt=8;
+  PerambPar.Distil.Nt_inv=1;
+  PerambPar.Solver.mass=0.04; //strange mass???
+  PerambPar.Solver.M5=1.8;
   PerambPar.Ls=16;
-  PerambPar.CGPrecision=1e-8;
-  PerambPar.MaxIterations=10000;
+  PerambPar.Solver.CGPrecision=1e-8;
+  PerambPar.Solver.MaxIterations=10000;
   application.createModule<MDistil::PerambLight>("PerambS",PerambPar);
 }
 /////////////////////////////////////////////////////////////
