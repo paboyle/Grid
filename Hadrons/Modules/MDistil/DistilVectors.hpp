@@ -164,25 +164,26 @@ void TDistilVectors<FImpl>::execute(void)
   bool full_tdil=(TI==Nt);
 
   int vecindex;
+  int t_inv;
   for (int inoise = 0; inoise < nnoise; inoise++) {
     for (int dk = 0; dk < LI; dk++) {
       for (int dt = 0; dt < Nt_inv; dt++) {
-        if(full_tdil) dt=tsrc; //TODO: this works for now, as longs as tsrc=0, but will crash otherwise!
         for (int ds = 0; ds < Ns; ds++) {
           vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * Ns*dt;
           rho[vecindex] = zero;
           tmp3d_nospin = zero;
           for (int it = dt; it < Nt; it += TI){
-	    if( it >= Ntfirst && it < Ntfirst + Ntlocal ) {
+            if (full_tdil) t_inv = tsrc; else t_inv = it;
+            if( t_inv >= Ntfirst && t_inv < Ntfirst + Ntlocal ) {
               for (int ik = dk; ik < nvec; ik += LI){
                 for (int is = ds; is < Ns; is += Ns){ //at the moment, full spin dilution is enforced
-                  ExtractSliceLocal(evec3d,epack.evec[ik],0,it,3);
-                  tmp3d_nospin = evec3d * noise[inoise + nnoise*(it + Nt*(ik+nvec*is))];
+                  ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv,3);
+                  tmp3d_nospin = evec3d * noise[inoise + nnoise*(t_inv + Nt*(ik+nvec*is))];
                   //tmp3d_nospin = evec3d * noise[inoise][it][ik]()(is)(); //noises do not have to be a spin vector
                   tmp3d=zero;
                   pokeSpin(tmp3d,tmp3d_nospin,is);
                   tmp2=zero;
-                  InsertSliceLocal(tmp3d,tmp2,0,it-Ntfirst,Grid::QCD::Tdir);
+                  InsertSliceLocal(tmp3d,tmp2,0,t_inv-Ntfirst,Grid::QCD::Tdir);
                   rho[vecindex] += tmp2;
                 }
               }
