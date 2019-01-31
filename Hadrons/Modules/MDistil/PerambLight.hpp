@@ -20,36 +20,51 @@ BEGIN_HADRONS_NAMESPACE
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MDistil)
 
+struct DistilParameters: Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(DistilParameters,
+                                  int, TI,
+                                  int, LI,
+                                  int, nnoise,
+                                  int, tsrc,
+                                  int, SI,
+                                  int, Ns,
+                                  int, Nt,
+                                  int, Nt_inv)
+  DistilParameters() = default;
+  template <class ReaderClass> DistilParameters(Reader<ReaderClass>& Reader){read(Reader,"Distil",*this);}
+};
+ 
+struct SolverParameters: Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(SolverParameters,
+                                  double, CGPrecision,
+                                  int,    MaxIterations,
+                                  double, mass,
+                                  double, M5)
+  SolverParameters() = default;
+  template <class ReaderClass> SolverParameters(Reader<ReaderClass>& Reader){read(Reader,"Solver",*this);}
+};
+
 class PerambLightPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(PerambLightPar,
 		                    std::string, eigenPack,
                                     bool, multiFile,
-				    int, tsrc,
-				    int, nnoise,
-				    int, LI,
-				    int, SI,
-				    int, TI,
-				    int, nvec,
-				    int, Ns,
-				    int, Nt,
-				    int, Nt_inv,
-				    Real, mass,
-				    Real, M5,
-				    int, Ls,
-				    double, CGPrecision,
-				    int, MaxIterations);
+                                    int, nvec,
+				    int, Ls,          // For makeFiveDimGrid
+                                    DistilParameters, Distil,
+                                    SolverParameters, Solver);
 };
 
-template <typename FImpl>
+template <typename GImpl>
 class TPerambLight: public Module<PerambLightPar>
 {
 public:
+    GAUGE_TYPE_ALIASES(GImpl,);
     // constructor
     TPerambLight(const std::string name);
     // destructor
-  virtual ~TPerambLight(void);
+    virtual ~TPerambLight(void);
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -58,12 +73,12 @@ public:
     // execution
     virtual void execute(void);
 protected:
-  // These variables are created in setup() and freed in Cleanup()
-  GridCartesian * grid3d; // Owned by me, so I must delete it
-  GridCartesian * grid4d; // Owned by environment (so I won't delete it)
-
+    // These variables are created in setup() and freed in Cleanup()
+    GridCartesian * grid3d; // Owned by me, so I must delete it
+    GridCartesian * grid4d; // Owned by environment (so I won't delete it)
+    
 protected:
-  virtual void Cleanup(void);
+    virtual void Cleanup(void);
 };
 
 MODULE_REGISTER_TMP(PerambLight, TPerambLight<FIMPL>, MDistil);
@@ -72,21 +87,21 @@ MODULE_REGISTER_TMP(PerambLight, TPerambLight<FIMPL>, MDistil);
  *                 TPerambLight implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-template <typename FImpl>
-TPerambLight<FImpl>::TPerambLight(const std::string name)
+template <typename GImpl>
+TPerambLight<GImpl>::TPerambLight(const std::string name)
 : grid3d{nullptr}, grid4d{nullptr}, Module<PerambLightPar>(name)
 {}
 
 // destructor
-template <typename FImpl>
-TPerambLight<FImpl>::~TPerambLight(void)
+template <typename GImpl>
+TPerambLight<GImpl>::~TPerambLight(void)
 {
   Cleanup();
 };
 
 // dependencies/products ///////////////////////////////////////////////////////
-template <typename FImpl>
-std::vector<std::string> TPerambLight<FImpl>::getInput(void)
+template <typename GImpl>
+std::vector<std::string> TPerambLight<GImpl>::getInput(void)
 {
     std::vector<std::string> in;
 
@@ -96,8 +111,8 @@ std::vector<std::string> TPerambLight<FImpl>::getInput(void)
     return in;
 }
 
-template <typename FImpl>
-std::vector<std::string> TPerambLight<FImpl>::getOutput(void)
+template <typename GImpl>
+std::vector<std::string> TPerambLight<GImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName() + "_perambulator_light",getName() + "_noise"};
     
@@ -105,53 +120,40 @@ std::vector<std::string> TPerambLight<FImpl>::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-template <typename FImpl>
-void TPerambLight<FImpl>::setup(void)
+template <typename GImpl>
+void TPerambLight<GImpl>::setup(void)
 {
-  Cleanup();
+    Cleanup();
 
-  // auto &noise = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
-  
-  const int LI{par().LI};
-  const int SI{par().SI};
-  //const int TI{par().TI};
-  const int nnoise{par().nnoise};
-  const int Nt{par().Nt};
-  const int Nt_inv{par().Nt_inv};
-  const int nvec{par().nvec};
- 
-  envCreate(Perambulator<SpinVector>, getName() + "_perambulator_light", 1, 
-		                    Nt,nvec,LI,nnoise,Nt_inv,SI);
-  envCreate(std::vector<Complex>, getName() + "_noise", 1, 
-		                    nvec*Ns*Nt*nnoise);
+    // auto &noise = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
+    const int nvec{par().nvec};
+    const DistilParameters & Distil{par().Distil};
 
-  grid4d = env().getGrid();
-  /*std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
-  std::vector<int> simd_layout_3 = GridDefaultSimd(Nd-1, vComplex::Nsimd());
-  latt_size[Nd-1] = 1;
-  simd_layout_3.push_back( 1 );
-  mpi_layout[Nd-1] = 1;*/
-  grid3d = MakeLowerDimGrid(grid4d);//new GridCartesian(latt_size,simd_layout_3,mpi_layout,*grid4d);
+    envCreate(Perambulator<SpinVector>, getName() + "_perambulator_light", 1,
+              Distil.Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
+    envCreate(std::vector<Complex>, getName() + "_noise", 1,
+              nvec*Distil.Ns*Distil.Nt*Distil.nnoise);
 
-  envTmp(LatticeSpinColourVector, "dist_source",1,LatticeSpinColourVector(grid4d));
-  envTmp(LatticeSpinColourVector, "tmp2",1,LatticeSpinColourVector(grid4d));
-  envTmp(LatticeSpinColourVector, "result",1,LatticeSpinColourVector(grid4d));
-  envTmp(LatticeSpinColourVector, "result_single_component",1,LatticeSpinColourVector(grid4d));
-  envTmp(LatticeColourVector, "result_nospin",1,LatticeColourVector(grid4d));
-  envTmp(LatticeColourVector, "tmp_nospin",1,LatticeColourVector(grid4d));
-  envTmp(LatticeSpinColourVector, "tmp3d",1,LatticeSpinColourVector(grid3d));
-  envTmp(LatticeColourVector, "tmp3d_nospin",1,LatticeColourVector(grid3d));
-  envTmp(LatticeColourVector, "result_3d",1,LatticeColourVector(grid3d));
-  envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
-  envTmp(LatticeSpinVector, "peramb_tmp",1,LatticeSpinVector(grid4d));
+    grid4d = env().getGrid();
+    grid3d = MakeLowerDimGrid(grid4d);//new GridCartesian(latt_size,simd_layout_3,mpi_layout,*grid4d);
 
+    envTmpLat(GaugeField, "Umu");
+    envTmpLat(LatticeSpinColourVector, "dist_source");
+    envTmpLat(LatticeSpinColourVector, "tmp2");
+    envTmpLat(LatticeSpinColourVector, "result");
+    //envTmpLat(LatticeSpinColourVector, "result_single_component");
+    envTmpLat(LatticeColourVector, "result_nospin");
+    //envTmpLat(LatticeColourVector, "tmp_nospin");
+    //envTmpLat(LatticeSpinVector, "peramb_tmp");
+    envTmp(LatticeSpinColourVector, "tmp3d",1,LatticeSpinColourVector(grid3d));
+    envTmp(LatticeColourVector, "tmp3d_nospin",1,LatticeColourVector(grid3d));
+    envTmp(LatticeColourVector, "result_3d",1,LatticeColourVector(grid3d));
+    envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
 }
 
 // clean up any temporaries created by setup (that aren't stored in the environment)
-template <typename FImpl>
-void TPerambLight<FImpl>::Cleanup(void)
+template <typename GImpl>
+void TPerambLight<GImpl>::Cleanup(void)
 {
   if( grid3d != nullptr ) {
     delete grid3d;
@@ -161,26 +163,30 @@ void TPerambLight<FImpl>::Cleanup(void)
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-template <typename FImpl>
-void TPerambLight<FImpl>::execute(void)
+template <typename GImpl>
+void TPerambLight<GImpl>::execute(void)
 {
+    const int nvec{par().nvec};
+    const DistilParameters & Distil{par().Distil};
+    const SolverParameters & Solver{par().Solver};
+    const int LI{Distil.LI};
+    //const int SI{Distil.SI};
+    const int TI{Distil.TI};
+    const int nnoise{Distil.nnoise};
+    const int Nt{Distil.Nt};
+    const int Nt_inv{Distil.Nt_inv};
+    const int tsrc{Distil.tsrc};
+    const int Ns{Distil.Ns};
+    
+    const bool full_tdil{TI==Nt};
+    const bool exact_distillation{full_tdil && LI==nvec};
 
     //auto        &noise     = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
     auto        &noise   = envGet(std::vector<Complex>, getName() + "_noise");
     auto        &perambulator   = envGet(Perambulator<SpinVector>, getName() + "_perambulator_light");
     auto        &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
 
-  /*GridCartesian * grid4d = env().getGrid();
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
-  std::vector<int> simd_layout_3 = GridDefaultSimd(Nd-1, vComplex::Nsimd());
-  latt_size[Nd-1] = 1;
-  simd_layout_3.push_back( 1 );
-  mpi_layout[Nd-1] = 1;
-  GridCartesian * grid3d = new GridCartesian(latt_size,simd_layout_3,mpi_layout,*grid4d);*/
-
-  LatticeGaugeField Umu(grid4d);
+    envGetTmp(GaugeField, Umu);
   FieldMetaData header;
   if((1)){
     const std::vector<int> seeds({1, 2, 3, 4, 5});
@@ -197,7 +203,7 @@ void TPerambLight<FImpl>::execute(void)
   auto Usft = Umu;
   Lattice<iScalar<vInteger> > coor(grid4d);
   LatticeCoordinate(coor,Tdir);
-  for(int t=1;t<par().Nt;t++){
+  for(int t=1;t<Nt;t++){
     // t=1
     //  Umu                Usft
     // 0,1,2,3,4,5,6,7 -> 7,0,1,2,3,4,5,6 t=1
@@ -218,30 +224,17 @@ void TPerambLight<FImpl>::execute(void)
   envGetTmp(LatticeSpinColourVector, dist_source);
   envGetTmp(LatticeSpinColourVector, tmp2);
   envGetTmp(LatticeSpinColourVector, result);
-  envGetTmp(LatticeSpinColourVector, result_single_component);
+  //envGetTmp(LatticeSpinColourVector, result_single_component);
   envGetTmp(LatticeColourVector, result_nospin);
-  envGetTmp(LatticeColourVector, tmp_nospin);
+  //envGetTmp(LatticeColourVector, tmp_nospin);
+    //envGetTmp(LatticeSpinVector, peramb_tmp);
   envGetTmp(LatticeSpinColourVector, tmp3d);
   envGetTmp(LatticeColourVector, tmp3d_nospin);
   envGetTmp(LatticeColourVector, result_3d);
   envGetTmp(LatticeColourVector, evec3d);
-  envGetTmp(LatticeSpinVector, peramb_tmp);
 
-  int Ntlocal = grid4d->LocalDimensions()[3];
-  int Ntfirst = grid4d->LocalStarts()[3];
-
-  
-  int tsrc=par().tsrc;
-  int nnoise=par().nnoise;
-  int LI=par().LI;
-  int Ns=par().Ns;
-  int Nt_inv=par().Nt_inv;
-  int Nt=par().Nt;
-  int TI=par().TI;
-  int nvec=par().nvec;
-  
-  bool full_tdil=(TI==Nt);
-  bool exact_distillation = (full_tdil && LI==nvec);
+    const int Ntlocal{grid4d->LocalDimensions()[3]};
+    const int Ntfirst{grid4d->LocalStarts()[3]};
 
   //Create Noises
   //std::cout << pszGaugeConfigFile << std::endl;
@@ -266,17 +259,16 @@ void TPerambLight<FImpl>::execute(void)
     }
   }
 
-    Real mass=par().mass;    // TODO Infile
-    Real M5  =par().M5;     // TODO Infile
+    const Real mass{Solver.mass};
+    const Real M5  {Solver.M5};
     std::cout << "init RBG "  << std::endl;
     GridRedBlackCartesian RBGrid(grid4d);
     std::cout << "init RBG done"  << std::endl;
    
-    int Ls=par().Ls;
-
-    double CGPrecision = par().CGPrecision;
-    int MaxIterations = par().MaxIterations;
-    
+    const int Ls{par().Ls};
+    const double CGPrecision{Solver.CGPrecision};
+    const int MaxIterations {Solver.MaxIterations};
+    {
     GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,grid4d);
     GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,grid4d);
     
@@ -338,6 +330,10 @@ void TPerambLight<FImpl>::execute(void)
     }
   }
 }
+        // Kill our 5 dimensional grid (avoid leaks). Should really declare these objects temporary
+        delete FrbGrid;
+        delete FGrid;
+    }
     std::cout <<  "perambulator done" << std::endl;
     perambulator.SliceShare( grid3d, grid4d );
 
