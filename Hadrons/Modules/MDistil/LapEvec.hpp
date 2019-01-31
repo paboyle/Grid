@@ -79,27 +79,6 @@ struct LanczosParameters: Serializable {
   template <class ReaderClass> LanczosParameters(Reader<ReaderClass>& Reader){read(Reader,"Lanczos",*this);}
 };
 
-/*struct DistilParameters: Serializable {
- GRID_SERIALIZABLE_CLASS_MEMBERS(DistilParameters
- ,int, TI
- ,int, LI
- ,int, Nnoise
- ,int, tSrc
- )//,int, Ls)       // For makeFiveDimGrid
- DistilParameters() = default;
- template <class ReaderClass> DistilParameters(Reader<ReaderClass>& Reader){read(Reader,"Distil",*this);}
- };
- 
-struct SolverParameters: Serializable {
-  GRID_SERIALIZABLE_CLASS_MEMBERS(SolverParameters,
-                                  double, CGPrecision,
-                                  int, MaxIterations,
-                                  double, mass,
-                                  double, M5)
-  SolverParameters() = default;
-  template <class ReaderClass> SolverParameters(Reader<ReaderClass>& Reader){read(Reader,"Solver",*this);}
-};*/
-
 // These are the actual parameters passed to the module during construction
 
 class LapEvecPar: Serializable
@@ -126,8 +105,6 @@ class TLapEvec: public Module<LapEvecPar>
 {
 public:
   GAUGE_TYPE_ALIASES(GImpl,);
-
-public:
   // constructor
   TLapEvec(const std::string name);
   // destructor
