@@ -47,8 +47,7 @@ public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(StochEmPar,
                                     PhotonR::Gauge,    gauge,
                                     PhotonR::ZmScheme, zmScheme,
-                                    std::string,       improvement,
-                                    Real,              G0_qedInf);
+                                    std::string,       improvement);
 };
 
 class TStochEm: public Module<StochEmPar>

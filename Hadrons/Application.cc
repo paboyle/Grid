@@ -108,6 +108,9 @@ void Application::run(void)
         HADRONS_ERROR(Definition, "run id is empty");
     }
     LOG(Message) << "RUN ID '" << getPar().runId << "'" << std::endl;
+    BinaryIO::latticeWriteMaxRetry = getPar().parallelWriteMaxRetry;
+    LOG(Message) << "Attempt(s) for resilient parallel I/O: " 
+                 << BinaryIO::latticeWriteMaxRetry << std::endl;
     vm().setRunId(getPar().runId);
     vm().printContent();
     env().printContent();
