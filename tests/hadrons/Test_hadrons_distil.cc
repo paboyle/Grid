@@ -169,22 +169,21 @@ void test_DistilVectorsS(Application &application)
   application.createModule<MDistil::DistilVectors>("DistilVecsS",DistilVecPar);
 }
 /////////////////////////////////////////////////////////////
-// MesonFields
+// MesonSink
 /////////////////////////////////////////////////////////////
 
-void test_MesonField(Application &application)
+void test_MesonSink(Application &application)
 {
   // DistilVectors parameters
   MContraction::A2AMesonField::Par A2AMesonFieldPar;
-  A2AMesonFieldPar.left="DistilVecs_phi";
-  //A2AMesonFieldPar.right="DistilVecs_rho";
-  A2AMesonFieldPar.right="DistilVecs_phi";
+  A2AMesonFieldPar.left="Peramb_unsmeared_sink";
+  A2AMesonFieldPar.right="Peramb_unsmeared_sink";
   A2AMesonFieldPar.output="DistilFields";
   A2AMesonFieldPar.gammas="all";
   A2AMesonFieldPar.mom={"0 0 0"};
   A2AMesonFieldPar.cacheBlock=2;
   A2AMesonFieldPar.block=4;
-  application.createModule<MContraction::A2AMesonField>("DistilMesonField",A2AMesonFieldPar);
+  application.createModule<MContraction::A2AMesonField>("DistilMesonSink",A2AMesonFieldPar);
 }
 /////////////////////////////////////////////////////////////
 // MesonFields
@@ -197,7 +196,25 @@ void test_MesonFieldSL(Application &application)
   A2AMesonFieldPar.left="DistilVecsS_phi";
   //A2AMesonFieldPar.right="DistilVecs_rho";
   A2AMesonFieldPar.right="DistilVecs_phi";
-  A2AMesonFieldPar.output="DistilFields";
+  A2AMesonFieldPar.output="DistilFieldsS";
+  A2AMesonFieldPar.gammas="all";
+  A2AMesonFieldPar.mom={"0 0 0"};
+  A2AMesonFieldPar.cacheBlock=2;
+  A2AMesonFieldPar.block=4;
+  application.createModule<MContraction::A2AMesonField>("DistilMesonFieldS",A2AMesonFieldPar);
+}
+/////////////////////////////////////////////////////////////
+// MesonFields
+/////////////////////////////////////////////////////////////
+
+void test_MesonField(Application &application)
+{
+  // DistilVectors parameters
+  MContraction::A2AMesonField::Par A2AMesonFieldPar;
+  A2AMesonFieldPar.left="DistilVecs_phi";
+  //A2AMesonFieldPar.right="DistilVecs_rho";
+  A2AMesonFieldPar.right="DistilVecs_phi";
+  A2AMesonFieldPar.output="MesonSinks";
   A2AMesonFieldPar.gammas="all";
   A2AMesonFieldPar.mom={"0 0 0"};
   A2AMesonFieldPar.cacheBlock=2;
@@ -373,6 +390,12 @@ int main(int argc, char *argv[])
       test_PerambulatorsS( application );
       test_DistilVectorsS( application );
       test_MesonFieldSL( application );
+      break;
+    case 6: // 3
+      test_Global( application );
+      test_LapEvec( application );
+      test_Perambulators( application );
+      test_MesonSink( application );
       break;
   }
   LOG(Message) << "====== XML creation for test " << iTestNum << " complete ======" << std::endl;

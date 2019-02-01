@@ -56,11 +56,11 @@ public:
                                     SolverParameters, Solver);
 };
 
-template <typename GImpl>
+template <typename FImpl>
 class TPerambLight: public Module<PerambLightPar>
 {
 public:
-    GAUGE_TYPE_ALIASES(GImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
     // constructor
     TPerambLight(const std::string name);
     // destructor
@@ -81,27 +81,27 @@ protected:
     virtual void Cleanup(void);
 };
 
-MODULE_REGISTER_TMP(PerambLight, TPerambLight<GIMPL>, MDistil);
+MODULE_REGISTER_TMP(PerambLight, TPerambLight<FIMPL>, MDistil);
 
 /******************************************************************************
  *                 TPerambLight implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-template <typename GImpl>
-TPerambLight<GImpl>::TPerambLight(const std::string name)
+template <typename FImpl>
+TPerambLight<FImpl>::TPerambLight(const std::string name)
 : grid3d{nullptr}, grid4d{nullptr}, Module<PerambLightPar>(name)
 {}
 
 // destructor
-template <typename GImpl>
-TPerambLight<GImpl>::~TPerambLight(void)
+template <typename FImpl>
+TPerambLight<FImpl>::~TPerambLight(void)
 {
   Cleanup();
 };
 
 // dependencies/products ///////////////////////////////////////////////////////
-template <typename GImpl>
-std::vector<std::string> TPerambLight<GImpl>::getInput(void)
+template <typename FImpl>
+std::vector<std::string> TPerambLight<FImpl>::getInput(void)
 {
     std::vector<std::string> in;
 
@@ -110,27 +110,29 @@ std::vector<std::string> TPerambLight<GImpl>::getInput(void)
     return in;
 }
 
-template <typename GImpl>
-std::vector<std::string> TPerambLight<GImpl>::getOutput(void)
+template <typename FImpl>
+std::vector<std::string> TPerambLight<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName() + "_perambulator_light",getName() + "_noise"};
+    std::vector<std::string> out = {getName() + "_perambulator_light",getName() + "_noise",getName() + "_unsmeared_sink"};
     
     return out;
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-template <typename GImpl>
-void TPerambLight<GImpl>::setup(void)
+template <typename FImpl>
+void TPerambLight<FImpl>::setup(void)
 {
     Cleanup();
 
     // auto &noise = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
     const int nvec{par().nvec};
     const DistilParameters & Distil{par().Distil};
-    //const char * IndexNames[6] = {"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
+    const int LI{Distil.LI};
+    const int nnoise{Distil.nnoise};
+    const int Nt_inv{Distil.Nt_inv}; // TODO: PROBABLY BETTER: if (full_tdil) Nt_inv=1; else Nt_inv = TI;
+    const int Ns{Distil.Ns};
     std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
     //std::complex<double> z{0.6,-3.1};
-
     //envCreate(std::string, getName() + "_debug_delete_me", 1, "Bingonuts");
     //envCreate(std::complex<double>, getName() + "_debug_delete_me_2", 1, 0.6);
     //envCreate(std::complex<double>, getName() + "_debug_delete_me_3", 1, z);
@@ -140,6 +142,8 @@ void TPerambLight<GImpl>::setup(void)
               sIndexNames,Distil.Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
     envCreate(std::vector<Complex>, getName() + "_noise", 1,
               nvec*Distil.Ns*Distil.Nt*Distil.nnoise);
+    envCreate(std::vector<FermionField>, getName() + "_unsmeared_sink", 1, 
+            nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField));
 
     grid4d = env().getGrid();
     grid3d = MakeLowerDimGrid(grid4d);//new GridCartesian(latt_size,simd_layout_3,mpi_layout,*grid4d);
@@ -159,8 +163,8 @@ void TPerambLight<GImpl>::setup(void)
 }
 
 // clean up any temporaries created by setup (that aren't stored in the environment)
-template <typename GImpl>
-void TPerambLight<GImpl>::Cleanup(void)
+template <typename FImpl>
+void TPerambLight<FImpl>::Cleanup(void)
 {
   if( grid3d != nullptr ) {
     delete grid3d;
@@ -170,8 +174,8 @@ void TPerambLight<GImpl>::Cleanup(void)
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-template <typename GImpl>
-void TPerambLight<GImpl>::execute(void)
+template <typename FImpl>
+void TPerambLight<FImpl>::execute(void)
 {
     const int nvec{par().nvec};
     const DistilParameters & Distil{par().Distil};
@@ -192,6 +196,7 @@ void TPerambLight<GImpl>::execute(void)
     auto        &noise   = envGet(std::vector<Complex>, getName() + "_noise");
     auto        &perambulator = envGet(Perambulator<SpinVector COMMA 6>, getName() + "_perambulator_light");
     auto        &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
+    auto        &unsmeared_sink       = envGet(std::vector<FermionField>, getName() + "_unsmeared_sink");
 
     envGetTmp(GaugeField, Umu);
   FieldMetaData header;
@@ -321,8 +326,8 @@ void TPerambLight<GImpl>::execute(void)
             SchurSolver(Dop,src5,sol5);
             Dop.ExportPhysicalFermionSolution(sol5,result); //These are the meson sinks
             // TODO: Can we inherit something from MContraction to compute the fourier-transformed sinks???
-            //if (compute_current_sink)
-            //  current_sink[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))] = result;
+            if ((1)) // comment out if unsmeared sink is too large???
+              unsmeared_sink[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))] = result;
             std::cout <<  "Contraction of perambulator from noise " << inoise << " and dilution component (d_k,d_t,d_alpha) : (" << dk << ","<< dt << "," << ds << ")" << std::endl;
             for (int is = 0; is < Ns; is++) {
               result_nospin = peekSpin(result,is);
@@ -347,7 +352,7 @@ void TPerambLight<GImpl>::execute(void)
     perambulator.SliceShare( grid3d, grid4d );
 
     // THIS IS WHERE WE WANT TO SAVE THE PERAMBULATORS TO DISK
-    perambulator.WriteTemporary(std::string("perambulators/file"));
+    perambulator.WriteTemporary(std::string("perambulators/file")); // TODO: Specify the file name in the xml
 
 }
 
