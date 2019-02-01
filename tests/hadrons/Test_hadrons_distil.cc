@@ -237,9 +237,8 @@ bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
 
 typedef Eigen::Tensor<Complex,3,Eigen::RowMajor | Eigen::DontAlign> MyTensor;
 
-bool DebugEigenTest()
+void DebugShowTensor(MyTensor &x)
 {
-  MyTensor x(2,3,4);
   const MyTensor::Index s{x.size()};
   std::cout << "x.size() = " << s << std::endl;
   std::cout << "x.NumDimensions = " << x.NumDimensions << " (TensorBase)" << std::endl;
@@ -261,11 +260,11 @@ bool DebugEigenTest()
   // Initialise
   assert( d.size() == 3 );
   for( int i = 0 ; i < d[0] ; i++ )
-    for( int j = 0 ; j < d[1] ; j++ )
-      for( int k = 0 ; k < d[2] ; k++ ) {
-        x(i,j,k) = std::complex<double>(SizeCalculated, SizeCalculated);
-        SizeCalculated--;
-      }
+  for( int j = 0 ; j < d[1] ; j++ )
+  for( int k = 0 ; k < d[2] ; k++ ) {
+    x(i,j,k) = std::complex<double>(SizeCalculated, SizeCalculated);
+    SizeCalculated--;
+  }
   // Show raw data
   std::cout << "Data follow : " << std::endl;
   Complex * p = x.data();
@@ -274,6 +273,21 @@ bool DebugEigenTest()
     std::cout << "x.data()[" << i << "]=" << * p++;
   }
   std::cout << std::endl;
+}
+
+bool DebugEigenTest()
+{
+  MyTensor x(2,3,4);
+  DebugShowTensor(x);
+  // Test initialisation of an array of strings
+  std::array<std::string,3> as={"Alpha", "Beta", "Gamma"};
+  for( auto a : as )
+    std::cout << a << std::endl;
+  Grid::Hadrons::MDistil::Perambulator<Complex,3> p{as,2,7,2};
+  DebugShowTensor(p);
+  std::cout << "p.IndexNames follow" << std::endl;
+  for( auto a : p.IndexNames )
+    std::cout << a << std::endl;
   return true;
 }
 #endif
@@ -282,7 +296,7 @@ int main(int argc, char *argv[])
 {
 #ifdef DEBUG
   // Debug only - test of Eigen::Tensor
-  //if( DebugEigenTest() ) return 0;
+  if( DebugEigenTest() ) return 0;
 #endif
 
   // Decode command-line parameters. 1st one is which test to run

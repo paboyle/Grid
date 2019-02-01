@@ -34,6 +34,10 @@
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 
+#ifndef COMMA
+#define COMMA ,
+#endif
+
 /******************************************************************************
  This potentially belongs in CartesianCommunicator
  Turns out I don't actually need this when running inside hadrons
@@ -199,10 +203,13 @@ inline GridCartesian * MakeLowerDimGrid( GridCartesian * gridHD )
 template<typename Scalar_, int NumIndices_>
 class Perambulator : public Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor | Eigen::DontAlign>
 {
+protected:
+public:
+  std::array<std::string,NumIndices_> IndexNames;
 public:
   template<typename... IndexTypes>
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Perambulator(Eigen::Index firstDimension, IndexTypes... otherDimensions)
-  : Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor | Eigen::DontAlign>(firstDimension, otherDimensions...)
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Perambulator(std::array<std::string,NumIndices_> &IndexNames_, Eigen::Index firstDimension, IndexTypes... otherDimensions)
+  : IndexNames{IndexNames_}, Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor | Eigen::DontAlign>(firstDimension, otherDimensions...)
   {
     // The number of dimensions used to construct a tensor must be equal to the rank of the tensor.
     EIGEN_STATIC_ASSERT(sizeof...(otherDimensions) + 1 == NumIndices_, YOU_MADE_A_PROGRAMMING_MISTAKE)
@@ -212,7 +219,7 @@ public:
 
   // Share data for timeslices we calculated with other nodes
   inline void SliceShare( GridCartesian * gridLowDim, GridCartesian * gridHighDim ) {
-    //Grid::SliceShare( gridLowDim, gridHighDim, data(), (int) (size() * sizeof(Scalar_)));
+    Grid::SliceShare( gridLowDim, gridHighDim, this->data(), (int) (this->size() * sizeof(Scalar_)));
   }
 };
 

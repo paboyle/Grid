@@ -127,10 +127,17 @@ void TPerambLight<GImpl>::setup(void)
     // auto &noise = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
     const int nvec{par().nvec};
     const DistilParameters & Distil{par().Distil};
+    //const char * IndexNames[6] = {"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
+    std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
+    //std::complex<double> z{0.6,-3.1};
 
-    //envCreate(Perambulator<SpinVector, 6>, getName() + "_perambulator_light", 1,
-    env().template createObject<Perambulator<SpinVector, 6> >(getName() + "_perambulator_light", Environment::Storage::object, 1,
-              Distil.Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
+    //envCreate(std::string, getName() + "_debug_delete_me", 1, "Bingonuts");
+    //envCreate(std::complex<double>, getName() + "_debug_delete_me_2", 1, 0.6);
+    //envCreate(std::complex<double>, getName() + "_debug_delete_me_3", 1, z);
+    //envCreate(std::complex<double>, getName() + "_debug_delete_me_4", 1, {0.6 COMMA -3.1});
+    //envCreate(std::array<std::string COMMA 3>, getName() + "_debug_delete_me_5", 1, {"One" COMMA "Two" COMMA "Three"});
+    envCreate(Perambulator<SpinVector COMMA 6>, getName() + "_perambulator_light", 1,
+              sIndexNames,Distil.Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
     envCreate(std::vector<Complex>, getName() + "_noise", 1,
               nvec*Distil.Ns*Distil.Nt*Distil.nnoise);
 
@@ -183,9 +190,7 @@ void TPerambLight<GImpl>::execute(void)
 
     //auto        &noise     = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
     auto        &noise   = envGet(std::vector<Complex>, getName() + "_noise");
-    auto        &perambulator = //envGet(Perambulator<SpinVector>,
-                                *env().template getObject<Perambulator<SpinVector,6> >(
-                                    getName() + "_perambulator_light");
+    auto        &perambulator = envGet(Perambulator<SpinVector COMMA 6>, getName() + "_perambulator_light");
     auto        &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
 
     envGetTmp(GaugeField, Umu);
@@ -252,9 +257,10 @@ void TPerambLight<GImpl>::execute(void)
             noise[inoise + nnoise*(t + Nt*(ivec+nvec*is))] = 1.;
             //noises[inoise][t][ivec]()(is)() = 1.;
           else{
-            random(sRNG,rn); 
-            noise[inoise + nnoise*(t + Nt*(ivec+nvec*is))] = (rn-0.5 > 0) - (rn-0.5 < 0); //TODO: This could be 0 if rn==0.5!!
-            //noises[inoise][t][ivec]()(is)() = (rn-0.5 > 0) - (rn-0.5 < 0); //TODO: This could be 0 if rn==0.5!!
+            random(sRNG,rn);
+            // We could use a greater number of complex roots of unity
+            // ... but this seems to work well
+            noise[inoise + nnoise*(t + Nt*(ivec+nvec*is))] = (rn > 0.5) ? -1 : 1;
           }
         }
       }
