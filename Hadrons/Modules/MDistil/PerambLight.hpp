@@ -325,7 +325,6 @@ void TPerambLight<FImpl>::execute(void)
             Dop.ImportPhysicalFermionSource(dist_source,src5);
             SchurSolver(Dop,src5,sol5);
             Dop.ExportPhysicalFermionSolution(sol5,result); //These are the meson sinks
-            // TODO: Can we inherit something from MContraction to compute the fourier-transformed sinks???
             if ((1)) // comment out if unsmeared sink is too large???
               unsmeared_sink[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))] = result;
             std::cout <<  "Contraction of perambulator from noise " << inoise << " and dilution component (d_k,d_t,d_alpha) : (" << dk << ","<< dt << "," << ds << ")" << std::endl;
