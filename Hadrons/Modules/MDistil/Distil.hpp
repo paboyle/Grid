@@ -238,20 +238,26 @@ void NamedTensor<Scalar_, NumIndices_>::WriteTemporary(const std::string filenam
   // total number of elements
   uint32_t ul = htonl( static_cast<uint32_t>( this->size() ) );
   w.write(reinterpret_cast<const char *>(&ul), sizeof(ul));
-  // number of dimensions
-  uint16_t us = htons( static_cast<uint16_t>( this->NumIndices ) );
+  // number of dimensions which aren't 1
+  uint16_t us = static_cast<uint16_t>( this->NumIndices );
+  for( auto dim : this->dimensions() )
+    if( dim == 1 )
+      us--;
+  us = htons( us );
   w.write(reinterpret_cast<const char *>(&us), sizeof(us));
   // dimensions together with names
   int d = 0;
   for( auto dim : this->dimensions() ) {
-    // size of this dimension
-    us = htons( static_cast<uint16_t>( dim ) );
-    w.write(reinterpret_cast<const char *>(&us), sizeof(us));
-    // length of this dimension name
-    us = htons( static_cast<uint16_t>( IndexNames[d].size() ) );
-    w.write(reinterpret_cast<const char *>(&us), sizeof(us));
-    // dimension name
-    w.write(IndexNames[d].c_str(), IndexNames[d].size());
+    if( dim != 1 ) {
+      // size of this dimension
+      us = htons( static_cast<uint16_t>( dim ) );
+      w.write(reinterpret_cast<const char *>(&us), sizeof(us));
+      // length of this dimension name
+      us = htons( static_cast<uint16_t>( IndexNames[d].size() ) );
+      w.write(reinterpret_cast<const char *>(&us), sizeof(us));
+      // dimension name
+      w.write(IndexNames[d].c_str(), IndexNames[d].size());
+    }
     d++;
   }
   // Actual data
@@ -277,24 +283,30 @@ void NamedTensor<Scalar_, NumIndices_>::ReadTemporary(const std::string filename
   uint32_t ul;
   r.read(reinterpret_cast<char *>(&ul), sizeof(ul));
   assert( this->size() == ntohl( ul ) && "Error: total number of elements" );
-  // number of dimensions
+  // number of dimensions which aren't 1
   uint16_t us;
   r.read(reinterpret_cast<char *>(&us), sizeof(us));
-  assert( this->NumIndices == ntohs( us ) && "Error: number of dimensions" );
+  us = ntohs( us );
+  for( auto dim : this->dimensions() )
+    if( dim == 1 )
+      us++;
+  assert( this->NumIndices == us && "Error: number of dimensions which aren't 1" );
   // dimensions together with names
   int d = 0;
   for( auto dim : this->dimensions() ) {
-    // size of dimension
-    r.read(reinterpret_cast<char *>(&us), sizeof(us));
-    assert( dim == ntohs( us ) && "size of dimension" );
-    // length of dimension name
-    r.read(reinterpret_cast<char *>(&us), sizeof(us));
-    size_t l = ntohs( us );
-    assert( l == IndexNames[d].size() && "length of dimension name" );
-    // dimension name
-    std::string s( l, '?' );
-    r.read(&s[0], l);
-    assert( s == IndexNames[d] && "dimension name" );
+    if( dim != 1 ) {
+      // size of dimension
+      r.read(reinterpret_cast<char *>(&us), sizeof(us));
+      assert( dim == ntohs( us ) && "size of dimension" );
+      // length of dimension name
+      r.read(reinterpret_cast<char *>(&us), sizeof(us));
+      size_t l = ntohs( us );
+      assert( l == IndexNames[d].size() && "length of dimension name" );
+      // dimension name
+      std::string s( l, '?' );
+      r.read(&s[0], l);
+      assert( s == IndexNames[d] && "dimension name" );
+    }
     d++;
   }
   // Actual data

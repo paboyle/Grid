@@ -296,7 +296,7 @@ bool DebugEigenTest()
 {
   const char pszTestFileName[] = "test_tensor.bin";
   std::array<std::string,3> as={"Alpha", "Beta", "Gamma"};
-  MyTensor x(as, 2,3,4);
+  MyTensor x(as, 2,1,4);
   DebugShowTensor(x, "x");
   x.WriteTemporary(pszTestFileName);
   // Test initialisation of an array of strings
@@ -308,7 +308,8 @@ bool DebugEigenTest()
   for( auto a : p.IndexNames )
     std::cout << a << std::endl;
   // Now see whether we can read a tensor back
-  MyTensor y(as, 2,3,4);
+  std::array<std::string,3> a2={"Alpha", "Delta", "Gamma"};
+  MyTensor y(a2, 2,1,4);
   y.ReadTemporary(pszTestFileName);
   DebugShowTensor(y, "y");
   return true;
