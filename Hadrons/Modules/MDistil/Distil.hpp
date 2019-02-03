@@ -201,27 +201,138 @@ inline GridCartesian * MakeLowerDimGrid( GridCartesian * gridHD )
  ******************************************************************************/
 
 template<typename Scalar_, int NumIndices_>
-class Perambulator : public Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor | Eigen::DontAlign>
+class NamedTensor : public Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor | Eigen::DontAlign>
 {
-protected:
 public:
+  typedef Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor | Eigen::DontAlign> ET;
   std::array<std::string,NumIndices_> IndexNames;
 public:
   template<typename... IndexTypes>
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Perambulator(std::array<std::string,NumIndices_> &IndexNames_, Eigen::Index firstDimension, IndexTypes... otherDimensions)
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor(std::array<std::string,NumIndices_> &IndexNames_, Eigen::Index firstDimension, IndexTypes... otherDimensions)
   : IndexNames{IndexNames_}, Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor | Eigen::DontAlign>(firstDimension, otherDimensions...)
   {
     // The number of dimensions used to construct a tensor must be equal to the rank of the tensor.
     EIGEN_STATIC_ASSERT(sizeof...(otherDimensions) + 1 == NumIndices_, YOU_MADE_A_PROGRAMMING_MISTAKE)
   }
 
-  inline void WriteTemporary(const std::string &FileName){}
-
   // Share data for timeslices we calculated with other nodes
   inline void SliceShare( GridCartesian * gridLowDim, GridCartesian * gridHighDim ) {
     Grid::SliceShare( gridLowDim, gridHighDim, this->data(), (int) (this->size() * sizeof(Scalar_)));
   }
+
+  // load and save - not virtual - probably all changes
+  inline void load(const std::string filename);
+  inline void save(const std::string filename) const;
+  inline void ReadTemporary(const std::string filename);
+  inline void WriteTemporary(const std::string filename) const;
 };
+
+/******************************************************************************
+ Save NamedTensor binary format
+ ******************************************************************************/
+
+template<typename Scalar_, int NumIndices_>
+void NamedTensor<Scalar_, NumIndices_>::WriteTemporary(const std::string filename) const {
+  std::cout << GridLogMessage << "Writing NamedTensor to \"" << filename << "\"" << std::endl;
+  std::ofstream w(filename, std::ios::binary);
+  // total number of elements
+  uint32_t ul = htonl( static_cast<uint32_t>( this->size() ) );
+  w.write(reinterpret_cast<const char *>(&ul), sizeof(ul));
+  // number of dimensions
+  uint16_t us = htons( static_cast<uint16_t>( this->NumIndices ) );
+  w.write(reinterpret_cast<const char *>(&us), sizeof(us));
+  // dimensions together with names
+  int d = 0;
+  for( auto dim : this->dimensions() ) {
+    // size of this dimension
+    us = htons( static_cast<uint16_t>( dim ) );
+    w.write(reinterpret_cast<const char *>(&us), sizeof(us));
+    // length of this dimension name
+    us = htons( static_cast<uint16_t>( IndexNames[d].size() ) );
+    w.write(reinterpret_cast<const char *>(&us), sizeof(us));
+    // dimension name
+    w.write(IndexNames[d].c_str(), IndexNames[d].size());
+    d++;
+  }
+  // Actual data
+  w.write(reinterpret_cast<const char *>(this->data()),(int) (this->size() * sizeof(Scalar_)));
+}
+
+/******************************************************************************
+ Load NamedTensor binary format
+ ******************************************************************************/
+
+template<typename Scalar_, int NumIndices_>
+void NamedTensor<Scalar_, NumIndices_>::ReadTemporary(const std::string filename) {
+  std::cout << GridLogMessage << "Reading NamedTensor from \"" << filename << "\"" << std::endl;
+  std::ifstream r(filename, std::ios::binary);
+  // total number of elements
+  uint32_t ul;
+  r.read(reinterpret_cast<char *>(&ul), sizeof(ul));
+  assert( this->size() == ntohl( ul ) && "Error: total number of elements" );
+  // number of dimensions
+  uint16_t us;
+  r.read(reinterpret_cast<char *>(&us), sizeof(us));
+  assert( this->NumIndices == ntohs( us ) && "Error: number of dimensions" );
+  // dimensions together with names
+  int d = 0;
+  for( auto dim : this->dimensions() ) {
+    // size of dimension
+    r.read(reinterpret_cast<char *>(&us), sizeof(us));
+    assert( dim == ntohs( us ) && "size of dimension" );
+    // length of dimension name
+    r.read(reinterpret_cast<char *>(&us), sizeof(us));
+    size_t l = ntohs( us );
+    assert( l == IndexNames[d].size() && "length of dimension name" );
+    // dimension name
+    std::string s( l, '?' );
+    r.read(&s[0], l);
+    assert( s == IndexNames[d] && "dimension name" );
+    d++;
+  }
+  // Actual data
+  r.read(reinterpret_cast<char *>(this->data()),(int) (this->size() * sizeof(Scalar_)));
+}
+
+/******************************************************************************
+ Save NamedTensor Hdf5 format
+ ******************************************************************************/
+
+template<typename Scalar_, int NumIndices_>
+void NamedTensor<Scalar_, NumIndices_>::save(const std::string filename) const {
+  std::cout << GridLogMessage << "Writing NamedTensor to \"" << filename << "\"" << std::endl;
+#ifndef HAVE_HDF5
+  std::cout << GridErrorMessage << "Error: I/O for NamedTensor requires HDF5" << std::endl;
+#else
+  Hdf5Writer w(filename);
+  //w << this->NumIndices << this->dimensions() << this->IndexNames;
+#endif
+}
+
+/******************************************************************************
+ Load NamedTensor Hdf5 format
+ ******************************************************************************/
+
+template<typename Scalar_, int NumIndices_>
+void NamedTensor<Scalar_, NumIndices_>::load(const std::string filename) {
+  std::cout << GridLogMessage << "Reading NamedTensor from \"" << filename << "\"" << std::endl;
+#ifndef HAVE_HDF5
+  std::cout << GridErrorMessage << "Error: I/O for NamedTensor requires HDF5" << std::endl;
+#else
+  Hdf5Reader r(filename);
+  typename ET::Dimensions d;
+  std::array<std::string,NumIndices_> n;
+  //r >> this->NumIndices >> d >> n;
+  //this->IndexNames = n;
+#endif
+}
+
+/******************************************************************************
+ Perambulator object
+ ******************************************************************************/
+
+template<typename Scalar_, int NumIndices_>
+using Perambulator = NamedTensor<Scalar_, NumIndices_>;
 
 /*************************************************************************************
  

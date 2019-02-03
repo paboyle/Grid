@@ -252,16 +252,16 @@ bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
 
 #ifdef DEBUG
 
-typedef Eigen::Tensor<Complex,3,Eigen::RowMajor | Eigen::DontAlign> MyTensor;
+typedef Grid::Hadrons::MDistil::NamedTensor<Complex,3> MyTensor;
 
-void DebugShowTensor(MyTensor &x)
+void DebugShowTensor(MyTensor &x, const char * n)
 {
   const MyTensor::Index s{x.size()};
-  std::cout << "x.size() = " << s << std::endl;
-  std::cout << "x.NumDimensions = " << x.NumDimensions << " (TensorBase)" << std::endl;
-  std::cout << "x.NumIndices = " << x.NumIndices << std::endl;
+  std::cout << n << ".size() = " << s << std::endl;
+  std::cout << n << ".NumDimensions = " << x.NumDimensions << " (TensorBase)" << std::endl;
+  std::cout << n << ".NumIndices = " << x.NumIndices << std::endl;
   const MyTensor::Dimensions & d{x.dimensions()};
-  std::cout << "d.size() = " << d.size() << std::endl;
+  std::cout << n << ".dimensions().size() = " << d.size() << std::endl;
   std::cout << "Dimensions are ";
   for(auto i : d ) std::cout << "[" << i << "]";
   std::cout << std::endl;
@@ -287,24 +287,30 @@ void DebugShowTensor(MyTensor &x)
   Complex * p = x.data();
   for( auto i = 0 ; i < s ; i++ ) {
     if( i ) std::cout << ", ";
-    std::cout << "x.data()[" << i << "]=" << * p++;
+    std::cout << n << ".data()[" << i << "]=" << * p++;
   }
   std::cout << std::endl;
 }
 
 bool DebugEigenTest()
 {
-  MyTensor x(2,3,4);
-  DebugShowTensor(x);
-  // Test initialisation of an array of strings
+  const char pszTestFileName[] = "test_tensor.bin";
   std::array<std::string,3> as={"Alpha", "Beta", "Gamma"};
+  MyTensor x(as, 2,3,4);
+  DebugShowTensor(x, "x");
+  x.WriteTemporary(pszTestFileName);
+  // Test initialisation of an array of strings
   for( auto a : as )
     std::cout << a << std::endl;
   Grid::Hadrons::MDistil::Perambulator<Complex,3> p{as,2,7,2};
-  DebugShowTensor(p);
+  DebugShowTensor(p, "p");
   std::cout << "p.IndexNames follow" << std::endl;
   for( auto a : p.IndexNames )
     std::cout << a << std::endl;
+  // Now see whether we can read a tensor back
+  MyTensor y(as, 2,3,4);
+  y.ReadTemporary(pszTestFileName);
+  DebugShowTensor(y, "y");
   return true;
 }
 #endif
