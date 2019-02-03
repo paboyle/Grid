@@ -320,7 +320,7 @@ int main(int argc, char *argv[])
 {
 #ifdef DEBUG
   // Debug only - test of Eigen::Tensor
-  if( DebugEigenTest() ) return 0;
+  //if( DebugEigenTest() ) return 0;
 #endif
 
   // Decode command-line parameters. 1st one is which test to run

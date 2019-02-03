@@ -233,7 +233,7 @@ public:
 
 template<typename Scalar_, int NumIndices_>
 void NamedTensor<Scalar_, NumIndices_>::WriteTemporary(const std::string filename) const {
-  std::cout << GridLogMessage << "Writing NamedTensor to \"" << filename << "\"" << std::endl;
+  LOG(Message) << "Writing NamedTensor to \"" << filename << "\"" << std::endl;
   std::ofstream w(filename, std::ios::binary);
   // total number of elements
   uint32_t ul = htonl( static_cast<uint32_t>( this->size() ) );
@@ -277,7 +277,7 @@ void NamedTensor<Scalar_, NumIndices_>::WriteTemporary(const std::string filenam
 
 template<typename Scalar_, int NumIndices_>
 void NamedTensor<Scalar_, NumIndices_>::ReadTemporary(const std::string filename) {
-  std::cout << GridLogMessage << "Reading NamedTensor from \"" << filename << "\"" << std::endl;
+  LOG(Message) << "Reading NamedTensor from \"" << filename << "\"" << std::endl;
   std::ifstream r(filename, std::ios::binary);
   // total number of elements
   uint32_t ul;
@@ -328,9 +328,9 @@ void NamedTensor<Scalar_, NumIndices_>::ReadTemporary(const std::string filename
 
 template<typename Scalar_, int NumIndices_>
 void NamedTensor<Scalar_, NumIndices_>::save(const std::string filename) const {
-  std::cout << GridLogMessage << "Writing NamedTensor to \"" << filename << "\"" << std::endl;
+  LOG(Message) << "Writing NamedTensor to \"" << filename << "\"" << std::endl;
 #ifndef HAVE_HDF5
-  std::cout << GridErrorMessage << "Error: I/O for NamedTensor requires HDF5" << std::endl;
+  LOG(Message) << "Error: I/O for NamedTensor requires HDF5" << std::endl;
 #else
   Hdf5Writer w(filename);
   //w << this->NumIndices << this->dimensions() << this->IndexNames;
@@ -343,9 +343,9 @@ void NamedTensor<Scalar_, NumIndices_>::save(const std::string filename) const {
 
 template<typename Scalar_, int NumIndices_>
 void NamedTensor<Scalar_, NumIndices_>::load(const std::string filename) {
-  std::cout << GridLogMessage << "Reading NamedTensor from \"" << filename << "\"" << std::endl;
+  LOG(Message) << "Reading NamedTensor from \"" << filename << "\"" << std::endl;
 #ifndef HAVE_HDF5
-  std::cout << GridErrorMessage << "Error: I/O for NamedTensor requires HDF5" << std::endl;
+  LOG(Message) << "Error: I/O for NamedTensor requires HDF5" << std::endl;
 #else
   Hdf5Reader r(filename);
   typename ET::Dimensions d;
