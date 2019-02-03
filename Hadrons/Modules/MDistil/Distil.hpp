@@ -256,6 +256,13 @@ void NamedTensor<Scalar_, NumIndices_>::WriteTemporary(const std::string filenam
   }
   // Actual data
   w.write(reinterpret_cast<const char *>(this->data()),(int) (this->size() * sizeof(Scalar_)));
+  // checksum
+#ifdef USE_IPP
+  ul = htonl( GridChecksum::crc32c(this->data(), (int) (this->size() * sizeof(Scalar_))) );
+#else
+  ul = htonl( GridChecksum::crc32(this->data(), (int) (this->size() * sizeof(Scalar_))) );
+#endif
+  w.write(reinterpret_cast<const char *>(&ul), sizeof(ul));
 }
 
 /******************************************************************************
@@ -292,6 +299,15 @@ void NamedTensor<Scalar_, NumIndices_>::ReadTemporary(const std::string filename
   }
   // Actual data
   r.read(reinterpret_cast<char *>(this->data()),(int) (this->size() * sizeof(Scalar_)));
+  // checksum
+  r.read(reinterpret_cast<char *>(&ul), sizeof(ul));
+  ul = htonl( ul );
+#ifdef USE_IPP
+  ul -= GridChecksum::crc32c(this->data(), (int) (this->size() * sizeof(Scalar_)));
+#else
+  ul -= GridChecksum::crc32(this->data(), (int) (this->size() * sizeof(Scalar_)));
+#endif
+  assert( ul == 0 && "checksum");
 }
 
 /******************************************************************************
