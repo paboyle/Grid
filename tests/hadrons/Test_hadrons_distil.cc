@@ -131,7 +131,7 @@ void test_PerambulatorsS(Application &application)
   // PerambLight parameters
   MDistil::PerambLight::Par PerambPar;
   PerambPar.eigenPack="LapEvec";
-  PerambPar.PerambFileName="peramb.bin";
+  PerambPar.PerambFileName="perambS.bin";
   PerambPar.Distil.tsrc = 0;
   PerambPar.Distil.nnoise = 1;
   PerambPar.Distil.LI=3;

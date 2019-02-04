@@ -234,6 +234,45 @@ void TPerambLight<FImpl>::execute(void)
     std::cout << GridLogMessage << "reading done." << std::endl;
   }
 
+    //Create Noises
+    //std::cout << pszGaugeConfigFile << std::endl;
+    //GridSerialRNG sRNG; sRNG.SeedUniqueString(std::string(pszGaugeConfigFile));
+    GridSerialRNG sRNG; sRNG.SeedUniqueString("unique_string"); // TODO: Proper unique string. Include quark mass, gauge field? Maybe also nvec, but in a way that more nvec would only add noises, not change all of them???
+    Real rn;
+    
+    for (int inoise=0;inoise<nnoise;inoise++) {
+        for (int t=0;t<Nt;t++) {
+            for (int ivec=0;ivec<nvec;ivec++) {
+                for (int is=0;is<Ns;is++) {
+                    if (exact_distillation)
+                        noise[inoise + nnoise*(t + Nt*(ivec+nvec*is))] = 1.;
+                    //noises[inoise][t][ivec]()(is)() = 1.;
+                    else{
+                        random(sRNG,rn);
+                        // We could use a greater number of complex roots of unity
+                        // ... but this seems to work well
+                        noise[inoise + nnoise*(t + Nt*(ivec+nvec*is))] = (rn > 0.5) ? -1 : 1;
+                    }
+                }
+            }
+        }
+    }
+
+    // Load perambulator if it exists on disk instead of creating it
+    const std::string &PerambFileName{par().PerambFileName};
+    if( PerambFileName.length() ){
+        bool bExists = false;
+        {
+            std::ifstream f(PerambFileName, std::ios::binary);
+            if( f.is_open() )
+                bExists = true;
+        }
+        if( bExists ) {
+            perambulator.ReadTemporary(PerambFileName);
+            return;
+        }
+    }
+
   envGetTmp(LatticeSpinColourVector, dist_source);
   envGetTmp(LatticeSpinColourVector, tmp2);
   envGetTmp(LatticeSpinColourVector, result);
@@ -248,30 +287,6 @@ void TPerambLight<FImpl>::execute(void)
 
     const int Ntlocal{grid4d->LocalDimensions()[3]};
     const int Ntfirst{grid4d->LocalStarts()[3]};
-
-  //Create Noises
-  //std::cout << pszGaugeConfigFile << std::endl;
-  //GridSerialRNG sRNG; sRNG.SeedUniqueString(std::string(pszGaugeConfigFile));
-  GridSerialRNG sRNG; sRNG.SeedUniqueString("unique_string"); // TODO: Proper unique string. Include quark mass, gauge field? Maybe also nvec, but in a way that more nvec would only add noises, not change all of them???
-  Real rn;
-
-  for (int inoise=0;inoise<nnoise;inoise++) {
-    for (int t=0;t<Nt;t++) {
-      for (int ivec=0;ivec<nvec;ivec++) {
-        for (int is=0;is<Ns;is++) {
-          if (exact_distillation)
-            noise[inoise + nnoise*(t + Nt*(ivec+nvec*is))] = 1.;
-            //noises[inoise][t][ivec]()(is)() = 1.;
-          else{
-            random(sRNG,rn);
-            // We could use a greater number of complex roots of unity
-            // ... but this seems to work well
-            noise[inoise + nnoise*(t + Nt*(ivec+nvec*is))] = (rn > 0.5) ? -1 : 1;
-          }
-        }
-      }
-    }
-  }
 
     const Real mass{Solver.mass};
     const Real M5  {Solver.M5};
@@ -352,9 +367,8 @@ void TPerambLight<FImpl>::execute(void)
     perambulator.SliceShare( grid3d, grid4d );
 
     // THIS IS WHERE WE WANT TO SAVE THE PERAMBULATORS TO DISK
-    const std::string &FileName{par().PerambFileName};
-    if(FileName.length())
-        perambulator.WriteTemporary(FileName);
+    if(PerambFileName.length())
+        perambulator.WriteTemporary(PerambFileName);
 }
 
 END_MODULE_NAMESPACE
