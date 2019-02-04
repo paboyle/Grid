@@ -254,7 +254,7 @@ bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
 
 #ifdef DEBUG
 
-typedef Grid::Hadrons::MDistil::NamedTensor<Complex,3> MyTensor;
+typedef Grid::Hadrons::MDistil::NamedTensor<Complex,Real,3> MyTensor;
 
 void DebugShowTensor(MyTensor &x, const char * n)
 {
@@ -270,7 +270,7 @@ void DebugShowTensor(MyTensor &x, const char * n)
   MyTensor::Index SizeCalculated{1};
   std::cout << "Dimensions again";
   for(int i=0 ; i < d.size() ; i++ ) {
-    std::cout << " : [" << i << "]=" << d[i];
+    std::cout << " : [" << i << ", " << x.IndexNames[i] << "]=" << d[i];
     SizeCalculated *= d[i];
   }
   std::cout << std::endl;
@@ -281,7 +281,7 @@ void DebugShowTensor(MyTensor &x, const char * n)
   for( int i = 0 ; i < d[0] ; i++ )
   for( int j = 0 ; j < d[1] ; j++ )
   for( int k = 0 ; k < d[2] ; k++ ) {
-    x(i,j,k) = std::complex<double>(SizeCalculated, SizeCalculated);
+    x(i,j,k) = std::complex<double>(SizeCalculated, -SizeCalculated);
     SizeCalculated--;
   }
   // Show raw data
@@ -300,19 +300,20 @@ bool DebugEigenTest()
   std::array<std::string,3> as={"Alpha", "Beta", "Gamma"};
   MyTensor x(as, 2,1,4);
   DebugShowTensor(x, "x");
-  x.WriteTemporary(pszTestFileName);
+  x.WriteBinary(pszTestFileName);
+  DebugShowTensor(x, "x");
   // Test initialisation of an array of strings
   for( auto a : as )
     std::cout << a << std::endl;
-  Grid::Hadrons::MDistil::Perambulator<Complex,3> p{as,2,7,2};
+  Grid::Hadrons::MDistil::Perambulator<Complex,Real,3> p{as,2,7,2};
   DebugShowTensor(p, "p");
   std::cout << "p.IndexNames follow" << std::endl;
   for( auto a : p.IndexNames )
     std::cout << a << std::endl;
   // Now see whether we can read a tensor back
-  std::array<std::string,3> a2={"Alpha", "Delta", "Gamma"};
-  MyTensor y(a2, 2,1,4);
-  y.ReadTemporary(pszTestFileName);
+  std::array<std::string,3> a2={"Alpha", "Gamma", "Delta"};
+  MyTensor y(a2, 2,4,1);
+  y.ReadBinary(pszTestFileName);
   DebugShowTensor(y, "y");
   return true;
 }
