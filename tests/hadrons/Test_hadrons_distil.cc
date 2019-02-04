@@ -87,6 +87,7 @@ void test_Perambulators(Application &application)
   // PerambLight parameters
   MDistil::PerambLight::Par PerambPar;
   PerambPar.eigenPack="LapEvec";
+  PerambPar.PerambFileName="peramb.bin";
   PerambPar.Distil.tsrc = 0;
   PerambPar.Distil.nnoise = 1;
   PerambPar.Distil.LI=5;
@@ -130,6 +131,7 @@ void test_PerambulatorsS(Application &application)
   // PerambLight parameters
   MDistil::PerambLight::Par PerambPar;
   PerambPar.eigenPack="LapEvec";
+  PerambPar.PerambFileName="peramb.bin";
   PerambPar.Distil.tsrc = 0;
   PerambPar.Distil.nnoise = 1;
   PerambPar.Distil.LI=3;
@@ -320,6 +322,8 @@ int main(int argc, char *argv[])
 {
 #ifdef DEBUG
   // Debug only - test of Eigen::Tensor
+  std::cout << "sizeof(std::streamsize) = " << sizeof(std::streamsize) << std::endl;
+  std::cout << "sizeof(Eigen::Index) = " << sizeof(Eigen::Index) << std::endl;
   //if( DebugEigenTest() ) return 0;
 #endif
 

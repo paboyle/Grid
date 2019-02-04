@@ -34,8 +34,46 @@
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 
+/******************************************************************************
+ Needed to make sure envCreate() (see Hadrons) works with specialisations
+ with more than one parameter, eg obj<T1 COMMA T2>
+ I imagine this exists already?
+ ******************************************************************************/
+
 #ifndef COMMA
 #define COMMA ,
+#endif
+
+/******************************************************************************
+ A consistent set of cross-platform methods for big endian <-> host byte ordering
+ I imagine this exists already?
+ ******************************************************************************/
+
+#if defined(__linux__)
+#  include <endian.h>
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
+#  include <sys/endian.h>
+#elif defined(__OpenBSD__)
+#  include <sys/types.h>
+#  define be16toh(x) betoh16(x)
+#  define be32toh(x) betoh32(x)
+#  define be64toh(x) betoh64(x)
+#elif defined(__APPLE__)
+#include <libkern/OSByteOrder.h>
+#define htobe16(x) OSSwapHostToBigInt16(x)
+#define htole16(x) OSSwapHostToLittleInt16(x)
+#define be16toh(x) OSSwapBigToHostInt16(x)
+#define le16toh(x) OSSwapLittleToHostInt16(x)
+
+#define htobe32(x) OSSwapHostToBigInt32(x)
+#define htole32(x) OSSwapHostToLittleInt32(x)
+#define be32toh(x) OSSwapBigToHostInt32(x)
+#define le32toh(x) OSSwapLittleToHostInt32(x)
+
+#define htobe64(x) OSSwapHostToBigInt64(x)
+#define htole64(x) OSSwapHostToLittleInt64(x)
+#define be64toh(x) OSSwapBigToHostInt64(x)
+#define le64toh(x) OSSwapLittleToHostInt64(x)
 #endif
 
 /******************************************************************************
@@ -235,40 +273,41 @@ template<typename Scalar_, int NumIndices_>
 void NamedTensor<Scalar_, NumIndices_>::WriteTemporary(const std::string filename) const {
   LOG(Message) << "Writing NamedTensor to \"" << filename << "\"" << std::endl;
   std::ofstream w(filename, std::ios::binary);
-  // total number of elements
-  uint32_t ul = htonl( static_cast<uint32_t>( this->size() ) );
-  w.write(reinterpret_cast<const char *>(&ul), sizeof(ul));
+  // Size of the data (in bytes)
+  const std::streamsize TotalDataSize{static_cast<std::streamsize>(this->size() * sizeof(Scalar_))};
+  uint64_t u64 = htobe64(static_cast<uint64_t>(TotalDataSize));
+  w.write(reinterpret_cast<const char *>(&u64), sizeof(u64));
   // number of dimensions which aren't 1
-  uint16_t us = static_cast<uint16_t>( this->NumIndices );
+  uint16_t u16 = static_cast<uint16_t>(this->NumIndices);
   for( auto dim : this->dimensions() )
     if( dim == 1 )
-      us--;
-  us = htons( us );
-  w.write(reinterpret_cast<const char *>(&us), sizeof(us));
+      u16--;
+  u16 = htobe16( u16 );
+  w.write(reinterpret_cast<const char *>(&u16), sizeof(u16));
   // dimensions together with names
   int d = 0;
   for( auto dim : this->dimensions() ) {
     if( dim != 1 ) {
       // size of this dimension
-      us = htons( static_cast<uint16_t>( dim ) );
-      w.write(reinterpret_cast<const char *>(&us), sizeof(us));
+      u16 = htobe16( static_cast<uint16_t>( dim ) );
+      w.write(reinterpret_cast<const char *>(&u16), sizeof(u16));
       // length of this dimension name
-      us = htons( static_cast<uint16_t>( IndexNames[d].size() ) );
-      w.write(reinterpret_cast<const char *>(&us), sizeof(us));
+      u16 = htobe16( static_cast<uint16_t>( IndexNames[d].size() ) );
+      w.write(reinterpret_cast<const char *>(&u16), sizeof(u16));
       // dimension name
       w.write(IndexNames[d].c_str(), IndexNames[d].size());
     }
     d++;
   }
   // Actual data
-  w.write(reinterpret_cast<const char *>(this->data()),(int) (this->size() * sizeof(Scalar_)));
+  w.write(reinterpret_cast<const char *>(this->data()), TotalDataSize);
   // checksum
 #ifdef USE_IPP
-  ul = htonl( GridChecksum::crc32c(this->data(), (int) (this->size() * sizeof(Scalar_))) );
+  uint32_t u32 = htobe32(GridChecksum::crc32c(this->data(), TotalDataSize));
 #else
-  ul = htonl( GridChecksum::crc32(this->data(), (int) (this->size() * sizeof(Scalar_))) );
+  uint32_t u32 = htobe32(GridChecksum::crc32(this->data(), TotalDataSize));
 #endif
-  w.write(reinterpret_cast<const char *>(&ul), sizeof(ul));
+  w.write(reinterpret_cast<const char *>(&u32), sizeof(u32));
 }
 
 /******************************************************************************
@@ -279,28 +318,29 @@ template<typename Scalar_, int NumIndices_>
 void NamedTensor<Scalar_, NumIndices_>::ReadTemporary(const std::string filename) {
   LOG(Message) << "Reading NamedTensor from \"" << filename << "\"" << std::endl;
   std::ifstream r(filename, std::ios::binary);
-  // total number of elements
-  uint32_t ul;
-  r.read(reinterpret_cast<char *>(&ul), sizeof(ul));
-  assert( this->size() == ntohl( ul ) && "Error: total number of elements" );
+  // Size of the data in bytes
+  const std::streamsize TotalDataSize{static_cast<std::streamsize>(this->size() * sizeof(Scalar_))};
+  uint64_t u64;
+  r.read(reinterpret_cast<char *>(&u64), sizeof(u64));
+  assert( TotalDataSize == be64toh( u64 ) && "Error: Size of the data in bytes" );
   // number of dimensions which aren't 1
-  uint16_t us;
-  r.read(reinterpret_cast<char *>(&us), sizeof(us));
-  us = ntohs( us );
+  uint16_t u16;
+  r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
+  u16 = be16toh( u16 );
   for( auto dim : this->dimensions() )
     if( dim == 1 )
-      us++;
-  assert( this->NumIndices == us && "Error: number of dimensions which aren't 1" );
+      u16++;
+  assert( this->NumIndices == u16 && "Error: number of dimensions which aren't 1" );
   // dimensions together with names
   int d = 0;
   for( auto dim : this->dimensions() ) {
     if( dim != 1 ) {
       // size of dimension
-      r.read(reinterpret_cast<char *>(&us), sizeof(us));
-      assert( dim == ntohs( us ) && "size of dimension" );
+      r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
+      assert( dim == be16toh( u16 ) && "size of dimension" );
       // length of dimension name
-      r.read(reinterpret_cast<char *>(&us), sizeof(us));
-      size_t l = ntohs( us );
+      r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
+      size_t l = be16toh( u16 );
       assert( l == IndexNames[d].size() && "length of dimension name" );
       // dimension name
       std::string s( l, '?' );
@@ -310,16 +350,17 @@ void NamedTensor<Scalar_, NumIndices_>::ReadTemporary(const std::string filename
     d++;
   }
   // Actual data
-  r.read(reinterpret_cast<char *>(this->data()),(int) (this->size() * sizeof(Scalar_)));
+  r.read(reinterpret_cast<char *>(this->data()),TotalDataSize);
   // checksum
-  r.read(reinterpret_cast<char *>(&ul), sizeof(ul));
-  ul = htonl( ul );
+  uint32_t u32;
+  r.read(reinterpret_cast<char *>(&u32), sizeof(u32));
+  u32 = be32toh( u32 );
 #ifdef USE_IPP
-  ul -= GridChecksum::crc32c(this->data(), (int) (this->size() * sizeof(Scalar_)));
+  u32 -= GridChecksum::crc32c(this->data(), TotalDataSize);
 #else
-  ul -= GridChecksum::crc32(this->data(), (int) (this->size() * sizeof(Scalar_)));
+  u32 -= GridChecksum::crc32(this->data(), TotalDataSize);
 #endif
-  assert( ul == 0 && "checksum");
+  assert( u32 == 0 && "checksum");
 }
 
 /******************************************************************************

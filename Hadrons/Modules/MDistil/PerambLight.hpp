@@ -49,6 +49,7 @@ class PerambLightPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(PerambLightPar,
 		                    std::string, eigenPack,
+                                    std::string, PerambFileName,
                                     bool, multiFile,
                                     int, nvec,
 				    int, Ls,          // For makeFiveDimGrid
@@ -351,8 +352,9 @@ void TPerambLight<FImpl>::execute(void)
     perambulator.SliceShare( grid3d, grid4d );
 
     // THIS IS WHERE WE WANT TO SAVE THE PERAMBULATORS TO DISK
-    perambulator.WriteTemporary(std::string("perambulators/file")); // TODO: Specify the file name in the xml
-
+    const std::string &FileName{par().PerambFileName};
+    if(FileName.length())
+        perambulator.WriteTemporary(FileName);
 }
 
 END_MODULE_NAMESPACE
