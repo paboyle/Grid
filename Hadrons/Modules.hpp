@@ -4,6 +4,7 @@
 #include <Hadrons/Modules/MContraction/Meson.hpp>
 #include <Hadrons/Modules/MContraction/DiscLoop.hpp>
 #include <Hadrons/Modules/MContraction/Gamma3pt.hpp>
+#include <Hadrons/Modules/MContraction/WeakNonEye3pt.hpp>
 #include <Hadrons/Modules/MFermion/FreeProp.hpp>
 #include <Hadrons/Modules/MFermion/GaugeProp.hpp>
 #include <Hadrons/Modules/MSource/SeqGamma.hpp>

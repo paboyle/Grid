@@ -1,6 +1,7 @@
 modules_cc =\
   Modules/MContraction/Baryon.cc \
   Modules/MContraction/Meson.cc \
+  Modules/MContraction/WeakNonEye3pt.cc \
   Modules/MContraction/A2AAslashField.cc \
   Modules/MContraction/A2AMesonField.cc \
   Modules/MContraction/DiscLoop.cc \
