@@ -65,7 +65,6 @@ static ns##mod##ModuleRegistrar ns##mod##ModuleRegistrarInstance;
 extern template class base;\
 MODULE_REGISTER(mod, ARG(base), ns);
 
-#define ARG(...) __VA_ARGS__
 #define HADRONS_MACRO_REDIRECT_12(arg1, arg2, macro, ...) macro
 #define HADRONS_MACRO_REDIRECT_23(arg1, arg2, arg3, macro, ...) macro
 
