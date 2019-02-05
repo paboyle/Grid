@@ -236,21 +236,28 @@ inline GridCartesian * MakeLowerDimGrid( GridCartesian * gridHD )
 
 /******************************************************************************
  Perambulator object
+ This is an Eigen::Tensor of type Scalar_ and rank NumIndices_ (row-major order)
+ They can be persisted to disk, with the on-disk format being big endian.
+ Scalar_ objects are assumed to be composite objects of size Endian_Scalar_Size.
+ (Disable big-endian by setting Endian_Scalar_Size=1)
+ IndexNames contains one name for each index, and IndexNames are validated on load.
+ (NB: Indices of dimension 1 are not saved, and not validated on load)
  ******************************************************************************/
 
-template<typename Scalar_, int NumIndices_, uint16_t Scalar_Unit_Size = sizeof(Scalar_)>
-class NamedTensor : public Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor | Eigen::DontAlign>
+template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size = sizeof(Scalar_)>
+class NamedTensor : public Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor>
 {
 public:
-  typedef Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor | Eigen::DontAlign> ET;
+  typedef Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor> ET;
   std::array<std::string,NumIndices_> IndexNames;
 public:
   template<typename... IndexTypes>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor(std::array<std::string,NumIndices_> &IndexNames_, Eigen::Index firstDimension, IndexTypes... otherDimensions)
-  : IndexNames{IndexNames_}, Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor | Eigen::DontAlign>(firstDimension, otherDimensions...)
+  : IndexNames{IndexNames_}, ET(firstDimension, otherDimensions...)
   {
     // The number of dimensions used to construct a tensor must be equal to the rank of the tensor.
-    EIGEN_STATIC_ASSERT(sizeof...(otherDimensions) + 1 == NumIndices_, YOU_MADE_A_PROGRAMMING_MISTAKE)
+    assert(sizeof...(otherDimensions) + 1 == NumIndices_
+           && "NamedTensor error: dimensions in constructor != tensor rank");
   }
 
   // Share data for timeslices we calculated with other nodes
@@ -267,16 +274,17 @@ public:
 
 /******************************************************************************
  Save NamedTensor binary format (NB: On-disk format is Big Endian)
+ Assumes the Scalar_ objects are contiguous (no padding)
  ******************************************************************************/
 
-template<typename Scalar_, int NumIndices_, uint16_t Scalar_Unit_Size>
-void NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>::WriteBinary(const std::string filename) {
+template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
+void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::WriteBinary(const std::string filename) {
   LOG(Message) << "Writing NamedTensor to \"" << filename << "\"" << std::endl;
   std::ofstream w(filename, std::ios::binary);
-  // Enforce assumption that the scalar is composed of fundamental elements of size Scalar_Unit_Size
-  assert((Scalar_Unit_Size == 1 || Scalar_Unit_Size == 2 || Scalar_Unit_Size == 4 || Scalar_Unit_Size == 8 )
-         && "Scalar_Unit_Size should be 1, 2, 4 or 8");
-  assert((sizeof(Scalar_) % Scalar_Unit_Size) == 0 && "Scalar_ is not composed of Scalar_Unit_Size" );
+  // Enforce assumption that the scalar is composed of fundamental elements of size Endian_Scalar_Size
+  assert((Endian_Scalar_Size == 1 || Endian_Scalar_Size == 2 || Endian_Scalar_Size == 4 || Endian_Scalar_Size == 8 )
+         && "NamedTensor error: Endian_Scalar_Size should be 1, 2, 4 or 8");
+  assert((sizeof(Scalar_) % Endian_Scalar_Size) == 0 && "NamedTensor error: Scalar_ is not composed of Endian_Scalar_Size" );
   // Size of the data (in bytes)
   const uint32_t Scalar_Size{sizeof(Scalar_)};
   const auto NumElements{this->size()};
@@ -286,8 +294,8 @@ void NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>::WriteBinary(const std:
   // Size of a Scalar_
   uint32_t u32{htobe32(Scalar_Size)};
   w.write(reinterpret_cast<const char *>(&u32), sizeof(u32));
-  // Scalar_Unit_Size
-  uint16_t u16{htobe16(Scalar_Unit_Size)};
+  // Endian_Scalar_Size
+  uint16_t u16{htobe16(Endian_Scalar_Size)};
   w.write(reinterpret_cast<const char *>(&u16), sizeof(u16));
   // number of dimensions which aren't 1
   u16 = static_cast<uint16_t>(this->NumIndices);
@@ -315,24 +323,24 @@ void NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>::WriteBinary(const std:
   char * const pStart{reinterpret_cast<char *>(this->data())};
   // Swap to network byte order in place (alternative is to copy memory - still slow)
   void * const pEnd{pStart + TotalDataSize};
-  if(Scalar_Unit_Size == 8)
+  if(Endian_Scalar_Size == 8)
     for(uint64_t * p = reinterpret_cast<uint64_t *>(pStart) ; p < pEnd ; p++ )
       * p = htobe64( * p );
-  else if(Scalar_Unit_Size == 4)
+  else if(Endian_Scalar_Size == 4)
     for(uint32_t * p = reinterpret_cast<uint32_t *>(pStart) ; p < pEnd ; p++ )
       * p = htobe32( * p );
-  else if(Scalar_Unit_Size == 2)
+  else if(Endian_Scalar_Size == 2)
     for(uint16_t * p = reinterpret_cast<uint16_t *>(pStart) ; p < pEnd ; p++ )
       * p = htobe16( * p );
   w.write(pStart, TotalDataSize);
   // Swap back from network byte order
-  if(Scalar_Unit_Size == 8)
+  if(Endian_Scalar_Size == 8)
     for(uint64_t * p = reinterpret_cast<uint64_t *>(pStart) ; p < pEnd ; p++ )
       * p = be64toh( * p );
-  else if(Scalar_Unit_Size == 4)
+  else if(Endian_Scalar_Size == 4)
     for(uint32_t * p = reinterpret_cast<uint32_t *>(pStart) ; p < pEnd ; p++ )
       * p = be32toh( * p );
-  else if(Scalar_Unit_Size == 2)
+  else if(Endian_Scalar_Size == 2)
     for(uint16_t * p = reinterpret_cast<uint16_t *>(pStart) ; p < pEnd ; p++ )
       * p = be16toh( * p );
   // checksum
@@ -346,16 +354,17 @@ void NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>::WriteBinary(const std:
 
 /******************************************************************************
  Load NamedTensor binary format (NB: On-disk format is Big Endian)
+ Assumes the Scalar_ objects are contiguous (no padding)
  ******************************************************************************/
 
-template<typename Scalar_, int NumIndices_, uint16_t Scalar_Unit_Size>
-void NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>::ReadBinary(const std::string filename) {
+template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
+void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::ReadBinary(const std::string filename) {
   LOG(Message) << "Reading NamedTensor from \"" << filename << "\"" << std::endl;
   std::ifstream r(filename, std::ios::binary);
-  // Enforce assumption that the scalar is composed of fundamental elements of size Scalar_Unit_Size
-  assert((Scalar_Unit_Size == 1 || Scalar_Unit_Size == 2 || Scalar_Unit_Size == 4 || Scalar_Unit_Size == 8 )
-         && "NamedTensor error: Scalar_Unit_Size should be 1, 2, 4 or 8");
-  assert((sizeof(Scalar_) % Scalar_Unit_Size) == 0 && "NamedTensor error: Scalar_ is not composed of Scalar_Unit_Size" );
+  // Enforce assumption that the scalar is composed of fundamental elements of size Endian_Scalar_Size
+  assert((Endian_Scalar_Size == 1 || Endian_Scalar_Size == 2 || Endian_Scalar_Size == 4 || Endian_Scalar_Size == 8 )
+         && "NamedTensor error: Endian_Scalar_Size should be 1, 2, 4 or 8");
+  assert((sizeof(Scalar_) % Endian_Scalar_Size) == 0 && "NamedTensor error: Scalar_ is not composed of Endian_Scalar_Size" );
   // Size of the data in bytes
   const uint32_t Scalar_Size{sizeof(Scalar_)};
   const auto NumElements{this->size()};
@@ -367,10 +376,10 @@ void NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>::ReadBinary(const std::
   uint32_t u32;
   r.read(reinterpret_cast<char *>(&u32), sizeof(u32));
   assert( Scalar_Size == be32toh( u32 ) && "NamedTensor error: sizeof(Scalar_)");
-  // Scalar_Unit_Size
+  // Endian_Scalar_Size
   uint16_t u16;
   r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
-  assert( Scalar_Unit_Size == be16toh( u16 ) && "NamedTensor error: Scalar_Unit_size");
+  assert( Endian_Scalar_Size == be16toh( u16 ) && "NamedTensor error: Scalar_Unit_size");
   // number of dimensions which aren't 1
   r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
   u16 = be16toh( u16 );
@@ -401,13 +410,13 @@ void NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>::ReadBinary(const std::
   void * const pEnd{pStart + TotalDataSize};
   r.read(pStart,TotalDataSize);
   // Swap back from network byte order
-  if(Scalar_Unit_Size == 8)
+  if(Endian_Scalar_Size == 8)
     for(uint64_t * p = reinterpret_cast<uint64_t *>(pStart) ; p < pEnd ; p++ )
       * p = be64toh( * p );
-  else if(Scalar_Unit_Size == 4)
+  else if(Endian_Scalar_Size == 4)
     for(uint32_t * p = reinterpret_cast<uint32_t *>(pStart) ; p < pEnd ; p++ )
       * p = be32toh( * p );
-  else if(Scalar_Unit_Size == 2)
+  else if(Endian_Scalar_Size == 2)
     for(uint16_t * p = reinterpret_cast<uint16_t *>(pStart) ; p < pEnd ; p++ )
       * p = be16toh( * p );
   // checksum
@@ -425,8 +434,8 @@ void NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>::ReadBinary(const std::
  Save NamedTensor Hdf5 format
  ******************************************************************************/
 
-template<typename Scalar_, int NumIndices_, uint16_t Scalar_Unit_Size>
-void NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>::save(const std::string filename) const {
+template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
+void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::save(const std::string filename) const {
   LOG(Message) << "Writing NamedTensor to \"" << filename << "\"" << std::endl;
 #ifndef HAVE_HDF5
   LOG(Message) << "Error: I/O for NamedTensor requires HDF5" << std::endl;
@@ -440,8 +449,8 @@ void NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>::save(const std::string
  Load NamedTensor Hdf5 format
  ******************************************************************************/
 
-template<typename Scalar_, int NumIndices_, uint16_t Scalar_Unit_Size>
-void NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>::load(const std::string filename) {
+template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
+void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::load(const std::string filename) {
   LOG(Message) << "Reading NamedTensor from \"" << filename << "\"" << std::endl;
 #ifndef HAVE_HDF5
   LOG(Message) << "Error: I/O for NamedTensor requires HDF5" << std::endl;
@@ -458,8 +467,8 @@ void NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>::load(const std::string
  Perambulator object
  ******************************************************************************/
 
-template<typename Scalar_, int NumIndices_, uint16_t Scalar_Unit_Size = sizeof(Scalar_)>
-using Perambulator = NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>;
+template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size = sizeof(Scalar_)>
+using Perambulator = NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>;
 
 /*************************************************************************************
  
