@@ -77,6 +77,15 @@ env().template getGrid<typename latticeType::vector_type>(Ls)
 #define envGetGrid(...)\
 HADRONS_MACRO_REDIRECT_12(__VA_ARGS__, envGetGrid5, envGetGrid4)(__VA_ARGS__)
 
+#define envGetCoarseGrid4(latticeType, blockSize)\
+env().template getCoarseGrid<typename latticeType::vector_type>(blockSize)
+
+#define envGetCoarseGrid5(latticeType, blockSize, Ls)\
+env().template getCoarseGrid<typename latticeType::vector_type>(blockSize, Ls)
+
+#define envGetCoarseGrid(...)\
+HADRONS_MACRO_REDIRECT_23(__VA_ARGS__, envGetCoarseGrid5, envGetCoarseGrid4)(__VA_ARGS__)
+
 #define envGetRbGrid4(latticeType)\
 env().template getRbGrid<typename latticeType::vector_type>()
 

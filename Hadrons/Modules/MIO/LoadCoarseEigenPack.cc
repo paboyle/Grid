@@ -32,4 +32,6 @@ using namespace Hadrons;
 using namespace MIO;
 
 template class Grid::Hadrons::MIO::TLoadCoarseEigenPack<CoarseFermionEigenPack<FIMPL,HADRONS_DEFAULT_LANCZOS_NBASIS>>;
-
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
+template class Grid::Hadrons::MIO::TLoadCoarseEigenPack<CoarseFermionEigenPack<FIMPL,HADRONS_DEFAULT_LANCZOS_NBASIS, FIMPLF>>;
+#endif

@@ -308,7 +308,9 @@ template <typename FineF, typename CoarseF,
 class CoarseEigenPack: public EigenPack<FineF, FineFIo>
 {
 public:
-    typedef CoarseF CoarseField;         
+    typedef CoarseF   CoarseField;
+    typedef CoarseFIo CoarseFieldIo;
+public:      
     std::vector<CoarseF> evecCoarse;
     std::vector<RealD>   evalCoarse;
 public:
