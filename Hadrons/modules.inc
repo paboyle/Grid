@@ -2,6 +2,7 @@ modules_cc =\
   Modules/MContraction/Baryon.cc \
   Modules/MContraction/Meson.cc \
   Modules/MContraction/WeakEye3pt.cc \
+  Modules/MContraction/A2ALoop.cc \
   Modules/MContraction/WeakNonEye3pt.cc \
   Modules/MContraction/A2AAslashField.cc \
   Modules/MContraction/A2AMesonField.cc \
@@ -34,7 +35,6 @@ modules_cc =\
   Modules/MNoise/TimeDilutedSpinColorDiagonal.cc \
   Modules/MUtilities/RandomVectors.cc \
   Modules/MUtilities/PrecisionCast.cc \
-  Modules/MLoop/NoiseLoop.cc \
   Modules/MScalar/FreeProp.cc \
   Modules/MScalar/ChargedProp.cc \
   Modules/MNPR/Amputate.cc \
@@ -67,6 +67,7 @@ modules_hpp =\
   Modules/MContraction/WeakEye3pt.hpp \
   Modules/MContraction/Baryon.hpp \
   Modules/MContraction/A2AAslashField.hpp \
+  Modules/MContraction/A2ALoop.hpp \
   Modules/MContraction/A2AMesonField.hpp \
   Modules/MContraction/Meson.hpp \
   Modules/MContraction/DiscLoop.hpp \
@@ -100,7 +101,6 @@ modules_hpp =\
   Modules/MNoise/FullVolumeSpinColorDiagonal.hpp \
   Modules/MUtilities/PrecisionCast.hpp \
   Modules/MUtilities/RandomVectors.hpp \
-  Modules/MLoop/NoiseLoop.hpp \
   Modules/MScalar/FreeProp.hpp \
   Modules/MScalar/Scalar.hpp \
   Modules/MScalar/ChargedProp.hpp \
