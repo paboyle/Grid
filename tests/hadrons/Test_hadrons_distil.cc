@@ -254,7 +254,7 @@ bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
 
 #ifdef DEBUG
 
-typedef Grid::Hadrons::MDistil::NamedTensor<Complex,Real,3> MyTensor;
+typedef Grid::Hadrons::MDistil::NamedTensor<Complex,3,sizeof(Real)> MyTensor;
 
 void DebugShowTensor(MyTensor &x, const char * n)
 {
@@ -305,7 +305,7 @@ bool DebugEigenTest()
   // Test initialisation of an array of strings
   for( auto a : as )
     std::cout << a << std::endl;
-  Grid::Hadrons::MDistil::Perambulator<Complex,Real,3> p{as,2,7,2};
+  Grid::Hadrons::MDistil::Perambulator<Complex,3,sizeof(Real)> p{as,2,7,2};
   DebugShowTensor(p, "p");
   std::cout << "p.IndexNames follow" << std::endl;
   for( auto a : p.IndexNames )

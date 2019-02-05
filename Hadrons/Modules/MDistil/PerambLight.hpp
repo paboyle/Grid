@@ -139,7 +139,7 @@ void TPerambLight<FImpl>::setup(void)
     //envCreate(std::complex<double>, getName() + "_debug_delete_me_3", 1, z);
     //envCreate(std::complex<double>, getName() + "_debug_delete_me_4", 1, {0.6 COMMA -3.1});
     //envCreate(std::array<std::string COMMA 3>, getName() + "_debug_delete_me_5", 1, {"One" COMMA "Two" COMMA "Three"});
-    envCreate(Perambulator<SpinVector COMMA Real COMMA 6>, getName() + "_perambulator_light", 1,
+    envCreate(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName() + "_perambulator_light", 1,
               sIndexNames,Distil.Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
     envCreate(std::vector<Complex>, getName() + "_noise", 1,
               nvec*Distil.Ns*Distil.Nt*Distil.nnoise);
@@ -195,7 +195,8 @@ void TPerambLight<FImpl>::execute(void)
 
     //auto        &noise     = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
     auto        &noise   = envGet(std::vector<Complex>, getName() + "_noise");
-    auto        &perambulator = envGet(Perambulator<SpinVector COMMA Real COMMA 6>, getName() + "_perambulator_light");
+    auto        &perambulator = envGet(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>,
+                                       getName() + "_perambulator_light");
     auto        &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
     auto        &unsmeared_sink       = envGet(std::vector<FermionField>, getName() + "_unsmeared_sink");
 

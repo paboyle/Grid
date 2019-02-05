@@ -238,7 +238,7 @@ inline GridCartesian * MakeLowerDimGrid( GridCartesian * gridHD )
  Perambulator object
  ******************************************************************************/
 
-template<typename Scalar_, typename Scalar_Unit, int NumIndices_>
+template<typename Scalar_, int NumIndices_, uint16_t Scalar_Unit_Size = sizeof(Scalar_)>
 class NamedTensor : public Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor | Eigen::DontAlign>
 {
 public:
@@ -269,22 +269,28 @@ public:
  Save NamedTensor binary format (NB: On-disk format is Big Endian)
  ******************************************************************************/
 
-template<typename Scalar_, typename Scalar_Unit, int NumIndices_>
-void NamedTensor<Scalar_, Scalar_Unit, NumIndices_>::WriteBinary(const std::string filename) {
+template<typename Scalar_, int NumIndices_, uint16_t Scalar_Unit_Size>
+void NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>::WriteBinary(const std::string filename) {
   LOG(Message) << "Writing NamedTensor to \"" << filename << "\"" << std::endl;
   std::ofstream w(filename, std::ios::binary);
-  // Number of Scalar_Unit objects per Scalar_
-  constexpr unsigned int Scalar_Unit_Size{sizeof(Scalar_Unit)};
-  assert((Scalar_Unit_Size == 2 || Scalar_Unit_Size == 4 || Scalar_Unit_Size == 8 )
-         && "Scalar_Unit_Size should be 2, 4 or 8");
+  // Enforce assumption that the scalar is composed of fundamental elements of size Scalar_Unit_Size
+  assert((Scalar_Unit_Size == 1 || Scalar_Unit_Size == 2 || Scalar_Unit_Size == 4 || Scalar_Unit_Size == 8 )
+         && "Scalar_Unit_Size should be 1, 2, 4 or 8");
   assert((sizeof(Scalar_) % Scalar_Unit_Size) == 0 && "Scalar_ is not composed of Scalar_Unit_Size" );
   // Size of the data (in bytes)
+  const uint32_t Scalar_Size{sizeof(Scalar_)};
   const auto NumElements{this->size()};
-  const std::streamsize TotalDataSize{static_cast<std::streamsize>(NumElements * sizeof(Scalar_))};
+  const std::streamsize TotalDataSize{static_cast<std::streamsize>(NumElements * Scalar_Size)};
   uint64_t u64 = htobe64(static_cast<uint64_t>(TotalDataSize));
   w.write(reinterpret_cast<const char *>(&u64), sizeof(u64));
+  // Size of a Scalar_
+  uint32_t u32{htobe32(Scalar_Size)};
+  w.write(reinterpret_cast<const char *>(&u32), sizeof(u32));
+  // Scalar_Unit_Size
+  uint16_t u16{htobe16(Scalar_Unit_Size)};
+  w.write(reinterpret_cast<const char *>(&u16), sizeof(u16));
   // number of dimensions which aren't 1
-  uint16_t u16 = static_cast<uint16_t>(this->NumIndices);
+  u16 = static_cast<uint16_t>(this->NumIndices);
   for( auto dim : this->dimensions() )
     if( dim == 1 )
       u16--;
@@ -331,9 +337,9 @@ void NamedTensor<Scalar_, Scalar_Unit, NumIndices_>::WriteBinary(const std::stri
       * p = be16toh( * p );
   // checksum
 #ifdef USE_IPP
-  uint32_t u32 = htobe32(GridChecksum::crc32c(this->data(), TotalDataSize));
+  u32 = htobe32(GridChecksum::crc32c(this->data(), TotalDataSize));
 #else
-  uint32_t u32 = htobe32(GridChecksum::crc32(this->data(), TotalDataSize));
+  u32 = htobe32(GridChecksum::crc32(this->data(), TotalDataSize));
 #endif
   w.write(reinterpret_cast<const char *>(&u32), sizeof(u32));
 }
@@ -342,29 +348,36 @@ void NamedTensor<Scalar_, Scalar_Unit, NumIndices_>::WriteBinary(const std::stri
  Load NamedTensor binary format (NB: On-disk format is Big Endian)
  ******************************************************************************/
 
-template<typename Scalar_, typename Scalar_Unit, int NumIndices_>
-void NamedTensor<Scalar_, Scalar_Unit, NumIndices_>::ReadBinary(const std::string filename) {
+template<typename Scalar_, int NumIndices_, uint16_t Scalar_Unit_Size>
+void NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>::ReadBinary(const std::string filename) {
   LOG(Message) << "Reading NamedTensor from \"" << filename << "\"" << std::endl;
   std::ifstream r(filename, std::ios::binary);
-  // Number of Scalar_Unit objects per Scalar_
-  constexpr unsigned int Scalar_Unit_Size{sizeof(Scalar_Unit)};
-  assert((Scalar_Unit_Size == 2 || Scalar_Unit_Size == 4 || Scalar_Unit_Size == 8 )
-         && "Scalar_Unit_Size should be 2, 4 or 8");
-  assert((sizeof(Scalar_) % Scalar_Unit_Size) == 0 && "Scalar_ is not composed of Scalar_Unit_Size" );
+  // Enforce assumption that the scalar is composed of fundamental elements of size Scalar_Unit_Size
+  assert((Scalar_Unit_Size == 1 || Scalar_Unit_Size == 2 || Scalar_Unit_Size == 4 || Scalar_Unit_Size == 8 )
+         && "NamedTensor error: Scalar_Unit_Size should be 1, 2, 4 or 8");
+  assert((sizeof(Scalar_) % Scalar_Unit_Size) == 0 && "NamedTensor error: Scalar_ is not composed of Scalar_Unit_Size" );
   // Size of the data in bytes
+  const uint32_t Scalar_Size{sizeof(Scalar_)};
   const auto NumElements{this->size()};
-  const std::streamsize TotalDataSize{static_cast<std::streamsize>(NumElements * sizeof(Scalar_))};
+  const std::streamsize TotalDataSize{static_cast<std::streamsize>(NumElements * Scalar_Size)};
   uint64_t u64;
   r.read(reinterpret_cast<char *>(&u64), sizeof(u64));
-  assert( TotalDataSize == be64toh( u64 ) && "Error: Size of the data in bytes" );
-  // number of dimensions which aren't 1
+  assert( TotalDataSize == be64toh( u64 ) && "NamedTensor error: Size of the data in bytes" );
+  // Size of a Scalar_
+  uint32_t u32;
+  r.read(reinterpret_cast<char *>(&u32), sizeof(u32));
+  assert( Scalar_Size == be32toh( u32 ) && "NamedTensor error: sizeof(Scalar_)");
+  // Scalar_Unit_Size
   uint16_t u16;
+  r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
+  assert( Scalar_Unit_Size == be16toh( u16 ) && "NamedTensor error: Scalar_Unit_size");
+  // number of dimensions which aren't 1
   r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
   u16 = be16toh( u16 );
   for( auto dim : this->dimensions() )
     if( dim == 1 )
       u16++;
-  assert( this->NumIndices == u16 && "Error: number of dimensions which aren't 1" );
+  assert( this->NumIndices == u16 && "NamedTensor error: number of dimensions which aren't 1" );
   // dimensions together with names
   int d = 0;
   for( auto dim : this->dimensions() ) {
@@ -375,11 +388,11 @@ void NamedTensor<Scalar_, Scalar_Unit, NumIndices_>::ReadBinary(const std::strin
       // length of dimension name
       r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
       size_t l = be16toh( u16 );
-      assert( l == IndexNames[d].size() && "length of dimension name" );
+      assert( l == IndexNames[d].size() && "NamedTensor error: length of dimension name" );
       // dimension name
       std::string s( l, '?' );
       r.read(&s[0], l);
-      assert( s == IndexNames[d] && "dimension name" );
+      assert( s == IndexNames[d] && "NamedTensor error: dimension name" );
     }
     d++;
   }
@@ -398,7 +411,6 @@ void NamedTensor<Scalar_, Scalar_Unit, NumIndices_>::ReadBinary(const std::strin
     for(uint16_t * p = reinterpret_cast<uint16_t *>(pStart) ; p < pEnd ; p++ )
       * p = be16toh( * p );
   // checksum
-  uint32_t u32;
   r.read(reinterpret_cast<char *>(&u32), sizeof(u32));
   u32 = be32toh( u32 );
 #ifdef USE_IPP
@@ -406,15 +418,15 @@ void NamedTensor<Scalar_, Scalar_Unit, NumIndices_>::ReadBinary(const std::strin
 #else
   u32 -= GridChecksum::crc32(this->data(), TotalDataSize);
 #endif
-  assert( u32 == 0 && "Perambulator checksum invalid");
+  assert( u32 == 0 && "NamedTensor error: Perambulator checksum invalid");
 }
 
 /******************************************************************************
  Save NamedTensor Hdf5 format
  ******************************************************************************/
 
-template<typename Scalar_, typename Scalar_Unit, int NumIndices_>
-void NamedTensor<Scalar_, Scalar_Unit, NumIndices_>::save(const std::string filename) const {
+template<typename Scalar_, int NumIndices_, uint16_t Scalar_Unit_Size>
+void NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>::save(const std::string filename) const {
   LOG(Message) << "Writing NamedTensor to \"" << filename << "\"" << std::endl;
 #ifndef HAVE_HDF5
   LOG(Message) << "Error: I/O for NamedTensor requires HDF5" << std::endl;
@@ -428,8 +440,8 @@ void NamedTensor<Scalar_, Scalar_Unit, NumIndices_>::save(const std::string file
  Load NamedTensor Hdf5 format
  ******************************************************************************/
 
-template<typename Scalar_, typename Scalar_Unit, int NumIndices_>
-void NamedTensor<Scalar_, Scalar_Unit, NumIndices_>::load(const std::string filename) {
+template<typename Scalar_, int NumIndices_, uint16_t Scalar_Unit_Size>
+void NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>::load(const std::string filename) {
   LOG(Message) << "Reading NamedTensor from \"" << filename << "\"" << std::endl;
 #ifndef HAVE_HDF5
   LOG(Message) << "Error: I/O for NamedTensor requires HDF5" << std::endl;
@@ -446,8 +458,8 @@ void NamedTensor<Scalar_, Scalar_Unit, NumIndices_>::load(const std::string file
  Perambulator object
  ******************************************************************************/
 
-template<typename Scalar_, typename Scalar_Unit, int NumIndices_>
-using Perambulator = NamedTensor<Scalar_, Scalar_Unit, NumIndices_>;
+template<typename Scalar_, int NumIndices_, uint16_t Scalar_Unit_Size = sizeof(Scalar_)>
+using Perambulator = NamedTensor<Scalar_, NumIndices_, Scalar_Unit_Size>;
 
 /*************************************************************************************
  
