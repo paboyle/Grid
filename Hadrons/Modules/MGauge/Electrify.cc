@@ -6,6 +6,7 @@ Source file: Hadrons/Modules/MGauge/Electrify.cc
 
 Copyright (C) 2015-2019
 
+Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Vera Guelpers <Vera.Guelpers@ed.ac.uk>
 Author: Vera Guelpers <vmg1n14@soton.ac.uk>
 
