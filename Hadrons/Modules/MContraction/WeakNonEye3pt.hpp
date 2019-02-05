@@ -8,8 +8,7 @@
 BEGIN_HADRONS_NAMESPACE
 
 /*
- * Weak Hamiltonian meson 3-pt diagrams, non-eye-topologies.
- * 
+ * Weak Hamiltonian meson 3-pt diagrams, non-eye topologies.
  * 
  * Schematic:     
  *            qbl           qbr            |            qbl             qbr
@@ -24,10 +23,10 @@ BEGIN_HADRONS_NAMESPACE
  *         \       /     \       /         |          \-->--/         \-->--/      
  *          \-->--/       \-->--/          |            ql              qr 
  *            ql            qr             |
- *               One trace                 |              Two traces
+ *               one trace                 |              two traces
  *
- * One trace : tr(ql*adj(gIn)*g5*adj(qbl)*g5*G*qbr*gOut*g5*adj(qr)*g5*G)
- * Two traces: tr(ql*adj(gIn)*g5*adj(qbl)*g5*G)*tr(qbr*gOut*g5*adj(qr)*g5*G)
+ * one trace : tr(ql*adj(gIn)*g5*adj(qbl)*g5*G*qbr*gOut*g5*adj(qr)*g5*G)
+ * two traces: tr(ql*adj(gIn)*g5*adj(qbl)*g5*G)*tr(qbr*gOut*g5*adj(qr)*g5*G)
  * 
  */
 
@@ -143,6 +142,7 @@ void TWeakNonEye3pt<FImpl>::execute(void)
         // one trace
         corr = trace(ql*adj(gIn)*g5*adj(qbl)*g5*G*qbr*gOut*g5*adj(qr)*g5*G);
         sliceSum(corr, buf, Tp);
+        r.corr.clear();
         for (unsigned int t = 0; t < buf.size(); ++t)
         {
             r.corr.push_back(TensorRemove(buf[t]));
@@ -152,6 +152,7 @@ void TWeakNonEye3pt<FImpl>::execute(void)
         // two traces
         corr = trace(ql*adj(gIn)*g5*adj(qbl)*g5*G)*trace(qbr*gOut*g5*adj(qr)*g5*G);
         sliceSum(corr, buf, Tp);
+        r.corr.clear();
         for (unsigned int t = 0; t < buf.size(); ++t)
         {
             r.corr.push_back(TensorRemove(buf[t]));
