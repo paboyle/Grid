@@ -1,3 +1,4 @@
+#include <Hadrons/Modules/MContraction/WeakEye3pt.hpp>
 #include <Hadrons/Modules/MContraction/Baryon.hpp>
 #include <Hadrons/Modules/MContraction/A2AAslashField.hpp>
 #include <Hadrons/Modules/MContraction/A2AMesonField.hpp>
