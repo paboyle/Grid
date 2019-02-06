@@ -151,7 +151,7 @@ void TBContraction<FImpl>::execute(void)
        Gamma::Algebra::SigmaYT, // C = i gamma_2 gamma_4
        Gamma::Algebra::GammaYGamma5, // i gamma_4 C gamma_5 = i gamma_2 gamma_5
     };
-    //std::vector<Complex> factor23 = {(0.,-1.),(0.,1.),(0.,1.)};
+  std::vector<Complex> factor23{{0.,-1.},{0.,1.},{0.,1.}};
 
     for (int i1=0 ; i1 < N_1 ; i1++){
       for (int i2=0 ; i2 < N_2 ; i2++){
