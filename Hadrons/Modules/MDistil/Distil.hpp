@@ -35,7 +35,7 @@
 #include <Hadrons/ModuleFactory.hpp>
 
 /******************************************************************************
- Needed to make sure envCreate() (see Hadrons) works with specialisations
+ Needed to make sure envCreate() (see Hadrons) work with specialisations
  with more than one parameter, eg obj<T1 COMMA T2>
  I imagine this exists already?
  ******************************************************************************/
@@ -191,8 +191,8 @@ public:
   OperatorFunction<Field>   & _poly;
   LinearOperatorBase<Field> &_Linop;
   
-  LinOpPeardonNablaHerm(OperatorFunction<Field> & poly,LinearOperatorBase<Field>& linop) : _poly(poly), _Linop(linop) {
-  }
+  LinOpPeardonNablaHerm(OperatorFunction<Field> & poly,LinearOperatorBase<Field>& linop)
+  : _poly{poly}, _Linop{linop} {}
   
   void operator()(const Field& in, Field& out) {
     _poly(_Linop,in,out);

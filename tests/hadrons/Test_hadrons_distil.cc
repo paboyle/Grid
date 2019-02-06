@@ -27,6 +27,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <typeinfo>
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>
 
@@ -309,6 +310,66 @@ void DebugShowTensor(MyTensor &x, const char * n)
   std::cout << std::endl;
 }
 
+// Test whether typedef and underlying types are the same
+
+void DebugTestTypeEqualities(void)
+{
+  Real    r1;
+  RealD   r2;
+  double  r3;
+  const std::type_info &tr1{typeid(r1)};
+  const std::type_info &tr2{typeid(r2)};
+  const std::type_info &tr3{typeid(r3)};
+  if( tr1 == tr2 && tr2 == tr3 )
+    std::cout << "r1, r2 and r3 are the same type" << std::endl;
+  else
+    std::cout << "r1, r2 and r3 are different types" << std::endl;
+  std::cout << "r1 is a " << tr1.name() << std::endl;
+  std::cout << "r2 is a " << tr2.name() << std::endl;
+  std::cout << "r3 is a " << tr3.name() << std::endl;
+  
+  // These are the same
+  Complex             c1;
+  std::complex<Real>  c2;
+  const std::type_info &tc1{typeid(c1)};
+  const std::type_info &tc2{typeid(c2)};
+  const std::type_info &tc3{typeid(SpinVector::scalar_type)};
+  if( tc1 == tc2 && tc2 == tc3)
+    std::cout << "c1, c2 and SpinVector::scalar_type are the same type" << std::endl;
+  else
+    std::cout << "c1, c2 and SpinVector::scalar_type are different types" << std::endl;
+  std::cout << "c1                      is a " << tc1.name() << std::endl;
+  std::cout << "c2                      is a " << tc2.name() << std::endl;
+  std::cout << "SpinVector::scalar_type is a " << tc3.name() << std::endl;
+  
+  // These are the same
+  SpinVector                              s1;
+  iSpinVector<Complex >                   s2;
+  iScalar<iVector<iScalar<Complex>, Ns> > s3;
+  const std::type_info &ts1{typeid(s1)};
+  const std::type_info &ts2{typeid(s2)};
+  const std::type_info &ts3{typeid(s3)};
+  if( ts1 == ts2 && ts2 == ts3 )
+    std::cout << "s1, s2 and s3 are the same type" << std::endl;
+  else
+    std::cout << "s1, s2 and s3 are different types" << std::endl;
+  std::cout << "s1 is a " << ts1.name() << std::endl;
+  std::cout << "s2 is a " << ts2.name() << std::endl;
+  std::cout << "s3 is a " << ts3.name() << std::endl;
+  
+  // These are the same
+  SpinColourVector            sc1;
+  iSpinColourVector<Complex > sc2;
+  const std::type_info &tsc1{typeid(sc1)};
+  const std::type_info &tsc2{typeid(sc2)};
+  if( tsc1 == tsc2 )
+    std::cout << "sc1 and sc2 are the same type" << std::endl;
+  else
+    std::cout << "sc1 and sc2 are different types" << std::endl;
+  std::cout << "sc1 is a " << tsc1.name() << std::endl;
+  std::cout << "sc2 is a " << tsc2.name() << std::endl;
+}
+
 bool DebugEigenTest()
 {
   const char pszTestFileName[] = "test_tensor.bin";
@@ -326,10 +387,39 @@ bool DebugEigenTest()
   for( auto a : p.IndexNames )
     std::cout << a << std::endl;
   // Now see whether we can read a tensor back
-  std::array<std::string,3> a2={"Alpha", "Gamma", "Delta"};
-  MyTensor y(a2, 2,4,1);
+  std::array<std::string,3> Names2={"Alpha", "Gamma", "Delta"};
+  MyTensor y(Names2, 2,4,1);
   y.ReadBinary(pszTestFileName);
   DebugShowTensor(y, "y");
+
+  // Testing whether typedef produces the same type - yes it does
+
+  DebugTestTypeEqualities();
+  std::cout << std::endl;
+
+  // How to access members of SpinColourVector
+  SpinColourVector  sc;
+  for( int s = 0 ; s < Ns ; s++ ) {
+    auto cv{sc()(s)};
+    iVector<Complex,Nc> c2{sc()(s)};
+    std::cout << " cv is a " << typeid(cv).name() << std::endl;
+    std::cout << " c2 is a " << typeid(c2).name() << std::endl;
+    for( int c = 0 ; c < Nc ; c++ ) {
+      Complex & z{cv(c)};
+      std::cout << "  sc[spin=" << s << ", colour=" << c << "] = " << z << std::endl;
+    }
+  }
+  // We could have removed the Lorentz index independently, but much easier to do as we do above
+  iVector<iVector<Complex,Nc>,Ns> sc2{sc()};
+  std::cout << "sc() is a " << typeid(sc()).name() << std::endl;
+  std::cout << "sc2  is a " << typeid(sc2 ).name() << std::endl;
+
+  // Or you can access elements directly
+  std::complex<Real> z = sc()(0)(0);
+  std::cout << "z = " << z << std::endl;
+  sc()(3)(2) = std::complex<Real>{3.141,-3.141};
+  std::cout << "sc()(3)(2) = " << sc()(3)(2) << std::endl;
+
   return true;
 }
 #endif
@@ -340,7 +430,7 @@ int main(int argc, char *argv[])
   // Debug only - test of Eigen::Tensor
   std::cout << "sizeof(std::streamsize) = " << sizeof(std::streamsize) << std::endl;
   std::cout << "sizeof(Eigen::Index) = " << sizeof(Eigen::Index) << std::endl;
-  //if( DebugEigenTest() ) return 0;
+  if( DebugEigenTest() ) return 0;
 #endif
 
   // Decode command-line parameters. 1st one is which test to run
