@@ -224,6 +224,21 @@ void test_MesonField(Application &application)
   A2AMesonFieldPar.block=4;
   application.createModule<MContraction::A2AMesonField>("DistilMesonField",A2AMesonFieldPar);
 }
+/////////////////////////////////////////////////////////////
+// BaryonFields
+/////////////////////////////////////////////////////////////
+
+void test_BaryonField(Application &application)
+{
+  // DistilVectors parameters
+  MDistil::BContraction::Par BContractionPar;
+  BContractionPar.one="DistilVecs_phi";
+  BContractionPar.two="DistilVecs_phi";
+  BContractionPar.three="DistilVecs_phi";
+  BContractionPar.output="BaryonField";
+  BContractionPar.mom={"0 0 0"};
+  application.createModule<MDistil::BContraction>("BaryonField",BContractionPar);
+}
 
 bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
 {
@@ -498,6 +513,13 @@ int main(int argc, char *argv[])
       test_LapEvec( application );
       test_Perambulators( application );
       test_MesonSink( application );
+      break;
+    case 7: // 3
+      test_Global( application );
+      test_LapEvec( application );
+      test_Perambulators( application );
+      test_DistilVectors( application );
+      test_BaryonField( application );
       break;
   }
   LOG(Message) << "====== XML creation for test " << iTestNum << " complete ======" << std::endl;

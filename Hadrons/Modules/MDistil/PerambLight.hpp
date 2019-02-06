@@ -310,6 +310,10 @@ void TPerambLight<FImpl>::execute(void)
     ConjugateGradient<LatticeFermion> CG(CGPrecision,MaxIterations);
     SchurRedBlackDiagMooeeSolve<LatticeFermion> SchurSolver(CG);
 
+    LatticeSpinColourVector a(grid4d);
+    LatticeColourVector b(grid4d);
+    b= peekSpin(a,0);
+
     int t_inv;
     for (int inoise = 0; inoise < nnoise; inoise++) {
       for (int dk = 0; dk < LI; dk++) {
