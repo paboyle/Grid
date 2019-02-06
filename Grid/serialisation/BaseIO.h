@@ -33,6 +33,7 @@ Author: Guido Cossu <guido.cossu@ed.ac.uk>
 #include <type_traits>
 #include <Grid/tensors/Tensors.h>
 #include <Grid/serialisation/VectorUtils.h>
+#include <Grid/Eigen/unsupported/CXX11/Tensor>
 
 namespace Grid {
   // Abstract writer/reader classes ////////////////////////////////////////////
@@ -60,6 +61,9 @@ namespace Grid {
     void write(const std::string &s, const iVector<U, N> &output);
     template <typename U, int N>
     void write(const std::string &s, const iMatrix<U, N> &output);
+    template <typename Scalar_, int NumIndices_>
+    void write(const std::string &s, const Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor> &output);
+    
     void         scientificFormat(const bool set);
     bool         isScientific(void);
     void         setPrecision(const unsigned int prec);
@@ -162,6 +166,14 @@ namespace Grid {
     upcast->writeDefault(s, tensorToVec(output));
   }
 
+  template <typename T>
+  template <typename Scalar_, int NumIndices_>
+  void Writer<T>::write(const std::string &s, const Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor> &output)
+  {
+    //upcast->writeDefault(s, tensorToVec(output));
+    std::cout << "I really should add code to write Eigen::Tensor ..." << std::endl;
+  }
+  
   template <typename T>
   void Writer<T>::scientificFormat(const bool set)
   {

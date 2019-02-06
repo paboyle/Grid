@@ -422,6 +422,51 @@ bool DebugEigenTest()
 
   return true;
 }
+
+typedef iMatrix<Complex,7> OddBall;
+
+// From Test_serialisation.cc
+class myclass: Serializable {
+public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(myclass
+                                  , OddBall, critter
+                                  , SpinColourVector, scv
+                                  , SpinColourMatrix, scm
+                                  );
+};
+
+template <typename W, typename R, typename O>
+bool ioTest(const std::string &filename, const O &object, const std::string &name)
+{
+  // writer needs to be destroyed so that writing physically happens
+  {
+    W writer(filename);
+    write(writer, "testobject", object);
+  }
+  
+  /*R    reader(filename);
+  O    buf;
+  bool good;
+  
+  read(reader, "testobject", buf);
+  good = (object == buf);
+  std::cout << name << " IO test: " << (good ? "success" : "failure");
+  std::cout << std::endl;
+  return good;*/
+  return true;
+}
+
+bool DebugIOTest(void) {
+  OddBall critter;
+  ioTest<Hdf5Writer, Hdf5Reader, OddBall>("iotest_oddball.h5", critter, "OddBall");
+  SpinColourMatrix scm;
+  ioTest<Hdf5Writer, Hdf5Reader, SpinColourMatrix>("iotest_matrix.h5", scm, "SpinColourMatrix");
+  SpinColourVector scv;
+  ioTest<Hdf5Writer, Hdf5Reader, SpinColourVector>("iotest_vector.h5", scv, "SpinColourVector");
+  myclass o;
+  ioTest<Hdf5Writer, Hdf5Reader, myclass>("iotest_object.h5", o, "myclass_object_instance_name");
+  return true;
+}
 #endif
 
 int main(int argc, char *argv[])
@@ -430,7 +475,8 @@ int main(int argc, char *argv[])
   // Debug only - test of Eigen::Tensor
   std::cout << "sizeof(std::streamsize) = " << sizeof(std::streamsize) << std::endl;
   std::cout << "sizeof(Eigen::Index) = " << sizeof(Eigen::Index) << std::endl;
-  if( DebugEigenTest() ) return 0;
+  //if( DebugEigenTest() ) return 0;
+  if(DebugIOTest()) return 0;
 #endif
 
   // Decode command-line parameters. 1st one is which test to run
