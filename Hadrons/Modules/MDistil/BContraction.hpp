@@ -129,10 +129,14 @@ void TBContraction<FImpl>::execute(void)
     SpinColourVector * tmp22 = reinterpret_cast<SpinColourVector *>(&(tmp2[0]()(0)(0)));
     SpinColourVector * tmp33 = reinterpret_cast<SpinColourVector *>(&(tmp3[0]()(0)(0)));
    
+    SpinVector tmp11s; 
+    SpinVector tmp22s; 
     SpinVector tmp33s; 
-    SpinColourVector * tmp333;
-    SpinColourVector * diquark;
-    SpinColourVector * tmp222;
+    SpinVector tmp333;
+    SpinMatrix diquark;
+    SpinMatrix g_diquark;
+    SpinVector tmp222;
+    SpinVector tmp111;
 
     std::vector<std::vector<int>> epsilon = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
     std::vector<int> epsilon_sgn = {1,1,1,-1,-1,-1};
@@ -149,30 +153,44 @@ void TBContraction<FImpl>::execute(void)
     };
     std::vector<Complex> factor23 = {(0.,-1.),(0.,1.),(0.,1.)};
 
-  //  SpinColourVector a;
-  //  SpinVector b;
-  //  b = peekColour(a,0);
-    //b= a()(0)();
-    //tmp33s = peekColour(a,0);
-
     for (int i1=0 ; i1 < N_1 ; i1++){
       for (int i2=0 ; i2 < N_2 ; i2++){
         for (int i3=0 ; i3 < N_3 ; i3++){
           for (int imom=0 ; imom < Nmom ; imom++){
-            Bindex = i1 + N_1*(i2 + N_2*(i3 + N_3*imom));
             for (int t=0 ; t < Nt ; t++){
+              Bindex = i1 + N_1*(i2 + N_2*(i3 + N_3*(imom+Nmom*t)));
 	      ExtractSliceLocal(tmp1,one[i1],0,t,3);
               parallel_for (unsigned int sU = 0; sU < grid3d->oSites(); ++sU)
               {
                 for (int ie=0 ; ie < 6 ; ie++){
-	          //tmp33s = peekColour(tmp33[sU],epsilon[ie][2]);
-		  //tmp333 = Gamma(gamma23_[0])*tmp33s;
-		  //tmp333 = Gamma(gamma23_[0])*tmp33[sU]()()(epsilon[ie][2]);
-		  /*diquark = tmp22[sU]()()(epsilon[ie][1])*factor23[0]*tmp333;
-		  tmp222 = Gamma(gamma12_[0])*diquark;
-                  BField[Bindex]+=(double)epsilon_sgn[ie]*(tmp11[sU]()()(epsilon[ie][0])*tmp222);
-                  */
+		  // Why does peekColour not work????
+                  for (int is=0 ; is < 4 ; is++){
+	            tmp11s()(is)() = tmp11[sU]()(is)(epsilon[ie][0]);
+	            tmp22s()(is)() = tmp22[sU]()(is)(epsilon[ie][1]);
+	            tmp33s()(is)() = tmp33[sU]()(is)(epsilon[ie][2]);
+		  }
+		  tmp333 = Gamma(gamma23_[0])*tmp33s;
+		  // this should be outerProduct??? Does not work.
+                  for (int isl=0 ; isl < 4 ; isl++){
+                    for (int isr=0 ; isr < 4 ; isr++){
+		      diquark()(isl,isr)() = factor23[0]*tmp22s()(isl)(),tmp333()(isr)();
+		    }
+		  }
+		  // Is there a way to compute gamma * SpinMatrix (left component)???
+                  for (int isr=0 ; isr < 4 ; isr++){
+                    for (int isl=0 ; isl < 4 ; isl++){
+		      tmp222()(isl)() = diquark()(isl,isr)();
+		    }
+		    tmp111 = Gamma(gamma12_[0]) * tmp222;
+                    for (int isl=0 ; isl < 4 ; isl++){
+		      g_diquark()(isl,isr)() = tmp111()(isl)();
+		    }
+		  }
+		  // Really only the trace? Should check baryons again! laph paper lists c_{alpha,beta,gamma}, gattringer-lang two gamma matrices.
+                  for (int is=0 ; is < 4 ; is++){
+                    BField[Bindex]+=(double)epsilon_sgn[ie]*tmp11s()(is)()*g_diquark()(is,is)();
   		  }
+		}
   	      }
             }
 	  }
@@ -180,6 +198,10 @@ void TBContraction<FImpl>::execute(void)
       }
     }
 
+    for (int t=0 ; t < Nt ; t++){
+      Bindex = 0 + N_1*(0 + N_2*(0 + N_3*(0+Nmom*t)));
+      std::cout << "BaryonField(t=" << t << ") = " << BField[Bindex] << std::endl;
+    }
 }
 
 END_MODULE_NAMESPACE
