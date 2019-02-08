@@ -215,6 +215,8 @@ void TBContraction<FImpl>::execute(void)
             for (int t=0 ; t < Nt ; t++){
               Bindex = i1 + N_1*(i2 + N_2*(i3 + N_3*(imom+Nmom*t)));
 	      ExtractSliceLocal(tmp1,one[i1],0,t,3);
+	      ExtractSliceLocal(tmp2,two[i2],0,t,3);
+	      ExtractSliceLocal(tmp3,three[i3],0,t,3);
               parallel_for (unsigned int sU = 0; sU < grid3d->oSites(); ++sU)
               {
                 for (int ie=0 ; ie < 6 ; ie++){
