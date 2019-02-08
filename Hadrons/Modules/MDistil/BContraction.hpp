@@ -151,8 +151,8 @@ void TBContraction<FImpl>::execute(void)
        Gamma::Algebra::SigmaYT, // C = i gamma_2 gamma_4
        Gamma::Algebra::GammaYGamma5, // i gamma_4 C gamma_5 = i gamma_2 gamma_5
     };
-    std::vector<Complex> factor23 = {(0.,-1.),(0.,1.),(0.,1.)};
-
+  std::vector<Complex> factor23{{0.,-1.},{0.,1.},{0.,1.}};
+    if((0)){
     for (int i1=0 ; i1 < N_1 ; i1++){
       for (int i2=0 ; i2 < N_2 ; i2++){
         for (int i3=0 ; i3 < N_3 ; i3++){
@@ -175,7 +175,7 @@ void TBContraction<FImpl>::execute(void)
 		  // this should be outerProduct??? Does not work.
                   for (int isl=0 ; isl < 4 ; isl++){
                     for (int isr=0 ; isr < 4 ; isr++){
-		      diquark()(isl,isr)() = factor23[0]*tmp22s()(isl)(),tmp333()(isr)();
+		      diquark()(isl,isr)() = factor23[0]*tmp22s()(isl)()*tmp333()(isr)();
 		    }
 		  }
 		  // Is there a way to compute gamma * SpinMatrix (left component)???
@@ -202,6 +202,43 @@ void TBContraction<FImpl>::execute(void)
     for (int t=0 ; t < Nt ; t++){
       Bindex = 0 + N_1*(0 + N_2*(0 + N_3*(0+Nmom*t)));
       std::cout << "BaryonField(t=" << t << ") = " << BField[Bindex] << std::endl;
+    }
+    } // end if 0
+    
+    // ONLY THIS IS CORRECT?
+    std::vector<SpinVector> BField2(Nmom*Nt*N_1*N_2*N_3);    
+    Complex diquark2;
+    for (int i1=0 ; i1 < N_1 ; i1++){
+      for (int i2=0 ; i2 < N_2 ; i2++){
+        for (int i3=0 ; i3 < N_3 ; i3++){
+          for (int imom=0 ; imom < Nmom ; imom++){
+            for (int t=0 ; t < Nt ; t++){
+              Bindex = i1 + N_1*(i2 + N_2*(i3 + N_3*(imom+Nmom*t)));
+	      ExtractSliceLocal(tmp1,one[i1],0,t,3);
+              parallel_for (unsigned int sU = 0; sU < grid3d->oSites(); ++sU)
+              {
+                for (int ie=0 ; ie < 6 ; ie++){
+		  // Why does peekColour not work????
+                  for (int is=0 ; is < 4 ; is++){
+	            tmp11s()(is)() = tmp11[sU]()(is)(epsilon[ie][0]);
+	            tmp22s()(is)() = tmp22[sU]()(is)(epsilon[ie][1]);
+	            tmp33s()(is)() = tmp33[sU]()(is)(epsilon[ie][2]);
+		  }
+		  tmp333 = Gamma(gamma23_[0])*tmp33s;
+                  diquark2 = factor23[0]*innerProduct(tmp22s,tmp333);
+                  BField2[Bindex]+=(double)epsilon_sgn[ie]*tmp11s*diquark2;
+		}
+  	      }
+            }
+	  }
+	}
+      }
+    }
+    for (int is=0 ; is < 4 ; is++){
+      for (int t=0 ; t < Nt ; t++){
+        Bindex = 0 + N_1*(0 + N_2*(0 + N_3*(0+Nmom*t)));
+        std::cout << "BaryonField(is=" << is << ",t=" << t << ") = " << BField2[Bindex]()(is)() << std::endl;
+      }
     }
 }
 
