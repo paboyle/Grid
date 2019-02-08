@@ -151,7 +151,7 @@ void TBContraction<FImpl>::execute(void)
        Gamma::Algebra::SigmaYT, // C = i gamma_2 gamma_4
        Gamma::Algebra::GammaYGamma5, // i gamma_4 C gamma_5 = i gamma_2 gamma_5
     };
-    //std::vector<Complex> factor23 = {(0.,-1.),(0.,1.),(0.,1.)};
+    std::vector<Complex> factor23 = {(0.,-1.),(0.,1.),(0.,1.)};
 
     for (int i1=0 ; i1 < N_1 ; i1++){
       for (int i2=0 ; i2 < N_2 ; i2++){
@@ -160,6 +160,8 @@ void TBContraction<FImpl>::execute(void)
             for (int t=0 ; t < Nt ; t++){
               Bindex = i1 + N_1*(i2 + N_2*(i3 + N_3*(imom+Nmom*t)));
 	      ExtractSliceLocal(tmp1,one[i1],0,t,3);
+	      ExtractSliceLocal(tmp2,two[i2],0,t,3);
+	      ExtractSliceLocal(tmp3,three[i3],0,t,3);
               parallel_for (unsigned int sU = 0; sU < grid3d->oSites(); ++sU)
               {
                 for (int ie=0 ; ie < 6 ; ie++){
@@ -186,7 +188,6 @@ void TBContraction<FImpl>::execute(void)
 		      g_diquark()(isl,isr)() = tmp111()(isl)();
 		    }
 		  }
-		  // Really only the trace? Should check baryons again! laph paper lists c_{alpha,beta,gamma}, gattringer-lang two gamma matrices.
                   for (int is=0 ; is < 4 ; is++){
                     BField[Bindex]+=(double)epsilon_sgn[ie]*tmp11s()(is)()*g_diquark()(is,is)();
   		  }
