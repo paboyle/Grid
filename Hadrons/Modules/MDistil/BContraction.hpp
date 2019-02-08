@@ -26,6 +26,7 @@ public:
 		                    std::string, two,
 		                    std::string, three,
 		                    std::string, output,
+				    int, parity,
                                     std::vector<std::string>, mom);
 };
 
@@ -104,6 +105,8 @@ void TBContraction<FImpl>::execute(void)
     int N_2     = two.size();
     int N_3     = three.size();
 
+    int parity = par().parity;
+
     LOG(Message) << "Computing distillation baryon fields" << std::endl;
     LOG(Message) << "One: '" << par().one << "' Two: '" << par().two  << "' Three: '" << par().three << "'" << std::endl;
     LOG(Message) << "Momenta:" << std::endl;
@@ -138,8 +141,12 @@ void TBContraction<FImpl>::execute(void)
     SpinVector tmp222;
     SpinVector tmp111;
 
+    assert(parity == 1 || parity == -1);
+
     std::vector<std::vector<int>> epsilon = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
     std::vector<int> epsilon_sgn = {1,1,1,-1,-1,-1};
+
+    Gamma g4(Gamma::Algebra::GammaT);
 
     gamma12_ = {
        Gamma::Algebra::Identity, // I
@@ -227,8 +234,11 @@ void TBContraction<FImpl>::execute(void)
 	            tmp33s()(is)() = tmp33[sU]()(is)(epsilon[ie][2]);
 		  }
 		  tmp333 = Gamma(gamma23_[0])*tmp33s;
+		  tmp111 = Gamma(gamma12_[0])*tmp11s;
+		  tmp222 = g4*tmp111;
+		  tmp111 = 0.5*(double)parity*(tmp111 + tmp222); // P_\pm * ...
                   diquark2 = factor23[0]*innerProduct(tmp22s,tmp333);
-                  BField2[Bindex]+=(double)epsilon_sgn[ie]*tmp11s*diquark2;
+                  BField2[Bindex]+=(double)epsilon_sgn[ie]*tmp111*diquark2;
 		}
   	      }
             }
