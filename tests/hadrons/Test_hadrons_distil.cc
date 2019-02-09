@@ -225,19 +225,36 @@ void test_MesonField(Application &application)
   application.createModule<MContraction::A2AMesonField>("DistilMesonField",A2AMesonFieldPar);
 }
 /////////////////////////////////////////////////////////////
-// BaryonFields
+// BaryonFields - phiphiphi
 /////////////////////////////////////////////////////////////
 
-void test_BaryonField(Application &application)
+void test_BaryonFieldPhi(Application &application)
 {
   // DistilVectors parameters
   MDistil::BContraction::Par BContractionPar;
   BContractionPar.one="DistilVecs_phi";
   BContractionPar.two="DistilVecs_phi";
   BContractionPar.three="DistilVecs_phi";
-  BContractionPar.output="BaryonField";
+  BContractionPar.output="BaryonFieldPhi";
+  BContractionPar.parity=1;
   BContractionPar.mom={"0 0 0"};
-  application.createModule<MDistil::BContraction>("BaryonField",BContractionPar);
+  application.createModule<MDistil::BContraction>("BaryonFieldPhi",BContractionPar);
+}
+/////////////////////////////////////////////////////////////
+// BaryonFields - rhorhorho
+/////////////////////////////////////////////////////////////
+
+void test_BaryonFieldRho(Application &application)
+{
+  // DistilVectors parameters
+  MDistil::BContraction::Par BContractionPar;
+  BContractionPar.one="DistilVecs_rho";
+  BContractionPar.two="DistilVecs_rho";
+  BContractionPar.three="DistilVecs_rho";
+  BContractionPar.output="BaryonFieldRho";
+  BContractionPar.parity=1;
+  BContractionPar.mom={"0 0 0"};
+  application.createModule<MDistil::BContraction>("BaryonFieldRho",BContractionPar);
 }
 
 bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
@@ -571,7 +588,8 @@ int main(int argc, char *argv[])
       test_LapEvec( application );
       test_Perambulators( application );
       test_DistilVectors( application );
-      test_BaryonField( application );
+      test_BaryonFieldPhi( application );
+      test_BaryonFieldRho( application );
       break;
   }
   LOG(Message) << "====== XML creation for test " << iTestNum << " complete ======" << std::endl;
