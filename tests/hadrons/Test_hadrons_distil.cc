@@ -424,12 +424,15 @@ bool DebugEigenTest()
 }
 
 typedef iMatrix<Complex,7> OddBall;
+typedef Eigen::Tensor<int, 3, Eigen::RowMajor> TensorInt;
+typedef Eigen::Tensor<std::complex<double>, 3, Eigen::RowMajor> TensorComplex;
+typedef Eigen::Tensor<OddBall, 3, Eigen::RowMajor> TensorOddBall;
 
 // From Test_serialisation.cc
 class myclass: Serializable {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(myclass
-                                  , OddBall, critter
+                                  //, OddBall, critter
                                   , SpinColourVector, scv
                                   , SpinColourMatrix, scm
                                   );
@@ -465,6 +468,9 @@ bool DebugIOTest(void) {
   ioTest<Hdf5Writer, Hdf5Reader, SpinColourVector>("iotest_vector.h5", scv, "SpinColourVector");
   myclass o;
   ioTest<Hdf5Writer, Hdf5Reader, myclass>("iotest_object.h5", o, "myclass_object_instance_name");
+  TensorInt t(3,6,2);
+  ioTest<Hdf5Writer, Hdf5Reader, TensorInt>("iotest_tensor.h5", t, "eigen_tensor_instance_name");
+
   return true;
 }
 #endif
