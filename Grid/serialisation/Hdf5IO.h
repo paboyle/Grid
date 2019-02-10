@@ -38,6 +38,8 @@ namespace Grid
     template <typename U>
     typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
     writeDefault(const std::string &s, const std::vector<U> &x);
+    template <typename U>
+    void writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const std::vector<U> & DataRowMajor);
     H5NS::Group & getGroup(void);
   private:
     template <typename U>
@@ -102,6 +104,35 @@ namespace Grid
   void Hdf5Writer::writeDefault(const std::string &s, const std::string &x);
   
   template <typename U>
+  void Hdf5Writer::writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const std::vector<U> & DataRowMajor)
+  {
+    // Hdf5 needs the dimensions as hsize_t
+    std::vector<hsize_t> dim;
+    for (auto &d: Dimensions)
+      dim.push_back(d);
+    // write to file
+    H5NS::DataSpace dataSpace(dim.size(), dim.data());
+    
+    if (DataRowMajor.size() > dataSetThres_)
+    {
+      H5NS::DataSet           dataSet;
+      H5NS::DSetCreatPropList plist;
+      
+      plist.setChunk(dim.size(), dim.data());
+      plist.setFletcher32();
+      dataSet = group_.createDataSet(s, Hdf5Type<U>::type(), dataSpace, plist);
+      dataSet.write(&DataRowMajor[0], Hdf5Type<U>::type());
+    }
+    else
+    {
+      H5NS::Attribute attribute;
+      
+      attribute = group_.createAttribute(s, Hdf5Type<U>::type(), dataSpace);
+      attribute.write(Hdf5Type<U>::type(), &DataRowMajor[0]);
+    }
+  }
+
+  template <typename U>
   typename std::enable_if<element<std::vector<U>>::is_number, void>::type
   Hdf5Writer::writeDefault(const std::string &s, const std::vector<U> &x)
   {
@@ -110,34 +141,11 @@ namespace Grid
     
     // flatten the vector and getting dimensions
     Flatten<std::vector<U>> flat(x);
-    std::vector<hsize_t> dim;
+    std::vector<size_t> dim;
     const auto           &flatx = flat.getFlatVector();
-    
     for (auto &d: flat.getDim())
-    {
       dim.push_back(d);
-    }
-    
-    // write to file
-    H5NS::DataSpace dataSpace(dim.size(), dim.data());
-    
-    if (flatx.size() > dataSetThres_)
-    {
-      H5NS::DataSet           dataSet;
-      H5NS::DSetCreatPropList plist;
-      
-      plist.setChunk(dim.size(), dim.data());
-      plist.setFletcher32();
-      dataSet = group_.createDataSet(s, Hdf5Type<Element>::type(), dataSpace, plist);
-      dataSet.write(flatx.data(), Hdf5Type<Element>::type());
-    }
-    else
-    {
-      H5NS::Attribute attribute;
-      
-      attribute = group_.createAttribute(s, Hdf5Type<Element>::type(), dataSpace);
-      attribute.write(Hdf5Type<Element>::type(), flatx.data());
-    }
+    writeMultiDim<Element>(s, dim, flatx);
   }
   
   template <typename U>

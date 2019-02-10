@@ -441,18 +441,21 @@ bool DebugEigenTest()
 }
 
 typedef iMatrix<Complex,7> OddBall;
-typedef Eigen::Tensor<int, 3, Eigen::RowMajor> TensorInt;
-typedef Eigen::Tensor<std::complex<double>, 3, Eigen::RowMajor> TensorComplex;
 typedef Eigen::Tensor<OddBall, 3, Eigen::RowMajor> TensorOddBall;
+
+typedef int TestScalar;
+//typedef std::complex<double> TestScalar;
+typedef Eigen::Tensor<TestScalar, 3, Eigen::RowMajor> TestTensor;
 
 // From Test_serialisation.cc
 class myclass: Serializable {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(myclass
-                                  //, OddBall, critter
+                                  //, TestTensor, critter
                                   , SpinColourVector, scv
                                   , SpinColourMatrix, scm
                                   );
+  //myclass() : critter(7,3,2) {}
 };
 
 template <typename W, typename R, typename O>
@@ -483,11 +486,31 @@ bool DebugIOTest(void) {
   ioTest<Hdf5Writer, Hdf5Reader, SpinColourMatrix>("iotest_matrix.h5", scm, "SpinColourMatrix");
   SpinColourVector scv;
   ioTest<Hdf5Writer, Hdf5Reader, SpinColourVector>("iotest_vector.h5", scv, "SpinColourVector");
+
+  TestTensor t(3,6,2);
+  TestScalar Val{1};
+  const TestScalar Inc{1};
+  for( int i = 0 ; i < 3 ; i++)
+    for( int j = 0 ; j < 6 ; j++)
+      for( int k = 0 ; k < 2 ; k++) {
+        t(i,j,k) = Val;
+        Val += Inc;
+      }
+  ioTest<Hdf5Writer, Hdf5Reader, TestTensor>("iotest_tensor.h5", t, "eigen_tensor_instance_name");
+
+  TestTensor t2(t);
+  auto bEqual = (t == t2).all();
+  std::cout << "(t2 == t) = " << bEqual << std::endl;
+  //if( * bEqual.data() != 0 )
+    //std::cout << "t2 == t" << std::endl;
+  //else
+    //std::cout << "t2 != t" << std::endl;
+
   myclass o;
   ioTest<Hdf5Writer, Hdf5Reader, myclass>("iotest_object.h5", o, "myclass_object_instance_name");
-  TensorInt t(3,6,2);
-  ioTest<Hdf5Writer, Hdf5Reader, TensorInt>("iotest_tensor.h5", t, "eigen_tensor_instance_name");
 
+  std::cout << "Wow!" << std::endl;
+  
   return true;
 }
 #endif

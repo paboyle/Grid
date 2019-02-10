@@ -53,6 +53,17 @@ namespace Grid {
     return os;
   }
   
+  // std::vector<std:vector<...>> nested to specified Rank //////////////////////////////////
+  template<typename T, unsigned int Rank>
+  struct NestedStdVector {
+    typedef typename std::vector<typename NestedStdVector<T, Rank - 1>::type> type;
+  };
+  
+  template<typename T>
+  struct NestedStdVector<T,0> {
+    typedef T type;
+  };
+  
   // Grid scalar tensors to nested std::vectors //////////////////////////////////
   template <typename T>
   struct TensorToVec

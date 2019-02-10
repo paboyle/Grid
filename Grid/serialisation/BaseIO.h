@@ -55,6 +55,12 @@ namespace Grid {
     template <typename U>
     typename std::enable_if<!std::is_base_of<Serializable, U>::value, void>::type
     write(const std::string& s, const U &output);
+    template <typename U>
+    void write(const std::string &s, const iScalar<U> &output);
+    template <typename U, int N>
+    void write(const std::string &s, const iVector<U, N> &output);
+    template <typename U, int N>
+    void write(const std::string &s, const iMatrix<U, N> &output);
     template <typename Scalar_, int NumIndices_, int Options_, typename IndexType_>
     typename std::enable_if<std::is_arithmetic<Scalar_>::value || Grid::is_complex<Scalar_>::value, void>::type
     write(const std::string &s, const Eigen::Tensor<Scalar_, NumIndices_, Options_, IndexType_> &output);
@@ -64,13 +70,7 @@ namespace Grid {
     void write(const std::string &s, const Eigen::Tensor<iVector<U, N>, NumIndices_, Options_, IndexType_> &output);
     template<typename U, int N, int NumIndices_, int Options_, typename IndexType_>
     void write(const std::string &s, const Eigen::Tensor<iMatrix<U, N>, NumIndices_, Options_, IndexType_> &output);
-    template <typename U>
-    void write(const std::string &s, const iScalar<U> &output);
-    template <typename U, int N>
-    void write(const std::string &s, const iVector<U, N> &output);
-    template <typename U, int N>
-    void write(const std::string &s, const iMatrix<U, N> &output);
-    
+
     void         scientificFormat(const bool set);
     bool         isScientific(void);
     void         setPrecision(const unsigned int prec);
@@ -152,43 +152,6 @@ namespace Grid {
     upcast->writeDefault(s, output);
   }
 
-  // Eigen::Tensors of arithmetic/complex base type
-  template <typename T>
-  template <typename Scalar_, int NumIndices_, int Options_, typename IndexType_>
-  typename std::enable_if<std::is_arithmetic<Scalar_>::value || Grid::is_complex<Scalar_>::value, void>::type
-  Writer<T>::write(const std::string &s, const Eigen::Tensor<Scalar_, NumIndices_, Options_, IndexType_> &output)
-  {
-    //upcast->writeDefault(s, tensorToVec(output));
-    std::cout << "I really should add code to write Eigen::Tensor (arithmetic/complex) ..." << std::endl;
-  }
-
-  // Eigen::Tensors of iScalar<U>
-  template <typename T>
-  template<typename U, int NumIndices_, int Options_, typename IndexType_>
-  void Writer<T>::write(const std::string &s, const Eigen::Tensor<iScalar<U>, NumIndices_, Options_, IndexType_> &output)
-  {
-    //upcast->writeDefault(s, tensorToVec(output));
-    std::cout << "I really should add code to write Eigen::Tensor (iScalar) ..." << std::endl;
-  }
-
-  // Eigen::Tensors of iVector<U, N>
-  template <typename T>
-  template<typename U, int N, int NumIndices_, int Options_, typename IndexType_>
-  void Writer<T>::write(const std::string &s, const Eigen::Tensor<iVector<U, N>, NumIndices_, Options_, IndexType_> &output)
-  {
-    //upcast->writeDefault(s, tensorToVec(output));
-    std::cout << "I really should add code to write Eigen::Tensor (iVector) ..." << std::endl;
-  }
-
-  // Eigen::Tensors of iMatrix<U, N>
-  template <typename T>
-  template<typename U, int N, int NumIndices_, int Options_, typename IndexType_>
-  void Writer<T>::write(const std::string &s, const Eigen::Tensor<iMatrix<U, N>, NumIndices_, Options_, IndexType_> &output)
-  {
-    //upcast->writeDefault(s, tensorToVec(output));
-    std::cout << "I really should add code to write Eigen::Tensor (iMatrix) ..." << std::endl;
-  }
-
 
   template <typename T>
   template <typename U>
@@ -209,6 +172,83 @@ namespace Grid {
   void Writer<T>::write(const std::string &s, const iMatrix<U, N> &output)
   {
     upcast->writeDefault(s, tensorToVec(output));
+  }
+
+  // Eigen::Tensors of arithmetic/complex base type
+  template <typename T>
+  template <typename Scalar_, int NumIndices_, int Options_, typename IndexType_>
+  typename std::enable_if<std::is_arithmetic<Scalar_>::value || Grid::is_complex<Scalar_>::value, void>::type
+  Writer<T>::write(const std::string &s, const Eigen::Tensor<Scalar_, NumIndices_, Options_, IndexType_> &output)
+  {
+    typedef Eigen::Tensor<Scalar_, NumIndices_, Options_, IndexType_> Tensor;
+    const typename Tensor::Index NumElements{output.size()};
+    assert( NumElements > 0 );
+    if( NumElements == 1 )
+      upcast->writeDefault(s, * output.data());
+    else {
+      // Create a single, flat vector to hold all the data
+      std::vector<Scalar_> flat(NumElements);
+      // We're not interested in trivial dimensions, i.e. dimensions = 1
+      const typename Tensor::Dimensions & DimsOriginal{output.dimensions()};
+      assert(DimsOriginal.size() == NumIndices_);
+      unsigned int TrivialDimCount{0};
+      for(auto i : DimsOriginal ) {
+        if( i <= 1 ) {
+          TrivialDimCount++;
+          assert( i == 1 ); // Not expecting dimension to be <= 0
+        }
+      }
+      const unsigned int ReducedDimCount{NumIndices_ - TrivialDimCount};
+      assert( ReducedDimCount > 0 ); // NB: We've already checked this is not a scalar
+      // Save a flat vector of the non-trivial dimensions
+      std::vector<size_t> ReducedDims(ReducedDimCount);
+      unsigned int ui = 0;
+      for(auto i : DimsOriginal ) {
+        if( i > 1 ) {
+          ReducedDims[ui] = static_cast<size_t>(i);
+          assert( ReducedDims[ui] == i ); // check we didn't lose anything in the conversion
+          ui++;
+        }
+      }
+      // Now copy all the data to my flat vector
+      // Regardless of the Eigen::Tensor storage order, the copy will be Row Major
+      std::array<typename Tensor::Index, NumIndices_> MyIndex;
+      for( int i = 0 ; i < NumIndices_ ; i++ ) MyIndex[i] = 0;
+      for( typename Tensor::Index n = 0; n < NumElements; n++ ) {
+        flat[n] = output( MyIndex );
+        // Now increment the index
+        for( int i = NumIndices_ - 1; i >= 0 && ++MyIndex[i] == DimsOriginal[i]; i-- )
+          MyIndex[i] = 0;
+      }
+      upcast->template writeMultiDim<Scalar_>(s, ReducedDims, flat);
+    }
+  }
+  
+  // Eigen::Tensors of iScalar<U>
+  template <typename T>
+  template<typename U, int NumIndices_, int Options_, typename IndexType_>
+  void Writer<T>::write(const std::string &s, const Eigen::Tensor<iScalar<U>, NumIndices_, Options_, IndexType_> &output)
+  {
+    //upcast->writeDefault(s, tensorToVec(output));
+    std::cout << "I really should add code to write Eigen::Tensor (iScalar) ..." << std::endl;
+  }
+  
+  // Eigen::Tensors of iVector<U, N>
+  template <typename T>
+  template<typename U, int N, int NumIndices_, int Options_, typename IndexType_>
+  void Writer<T>::write(const std::string &s, const Eigen::Tensor<iVector<U, N>, NumIndices_, Options_, IndexType_> &output)
+  {
+    //upcast->writeDefault(s, tensorToVec(output));
+    std::cout << "I really should add code to write Eigen::Tensor (iVector) ..." << std::endl;
+  }
+  
+  // Eigen::Tensors of iMatrix<U, N>
+  template <typename T>
+  template<typename U, int N, int NumIndices_, int Options_, typename IndexType_>
+  void Writer<T>::write(const std::string &s, const Eigen::Tensor<iMatrix<U, N>, NumIndices_, Options_, IndexType_> &output)
+  {
+    //upcast->writeDefault(s, tensorToVec(output));
+    std::cout << "I really should add code to write Eigen::Tensor (iMatrix) ..." << std::endl;
   }
 
   template <typename T>
