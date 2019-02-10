@@ -441,21 +441,21 @@ bool DebugEigenTest()
 }
 
 typedef iMatrix<Complex,7> OddBall;
-typedef Eigen::Tensor<OddBall, 3, Eigen::RowMajor> TensorOddBall;
+typedef Eigen::Tensor<OddBall, 3> TensorOddBall;
 
-typedef int TestScalar;
-//typedef std::complex<double> TestScalar;
-typedef Eigen::Tensor<TestScalar, 3, Eigen::RowMajor> TestTensor;
+//typedef int TestScalar;
+typedef std::complex<double> TestScalar;
+typedef Eigen::Tensor<TestScalar, 3> TestTensor;
 
 // From Test_serialisation.cc
 class myclass: Serializable {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(myclass
-                                  //, TestTensor, critter
+                                  , TestTensor, critter
                                   , SpinColourVector, scv
                                   , SpinColourMatrix, scm
                                   );
-  //myclass() : critter(7,3,2) {}
+  myclass() : critter(7,3,2) {}
 };
 
 template <typename W, typename R, typename O>
@@ -479,6 +479,30 @@ bool ioTest(const std::string &filename, const O &object, const std::string &nam
   return true;
 }
 
+/*
+ template <typename Scalar_, int NumIndices_, int Options_, typename IndexType_>
+eval  Eigen::TensorForcedEvalOp<const Eigen::TensorCwiseBinaryOp<Eigen::internal::scalar_cmp_op<Scalar_, Scalar_, Eigen::internal::cmp_EQ>, const Eigen::Tensor<Scalar_, NumIndices_, Options_, IndexType_>, const Eigen::Tensor<Scalar_, NumIndices_, Options_, IndexType_> >, Eigen::MakePointer>
+
+ template <typename T>
+ std::ostream& operator << (std::ostream& os, const TensorBase<T, ReadOnlyAccessors>& expr) {
+ typedef TensorEvaluator<const TensorForcedEvalOp<const T>, DefaultDevice> Evaluator;
+ typedef typename Evaluator::Dimensions Dimensions;
+ 
+ // Evaluate the expression if needed
+ TensorForcedEvalOp<const T> eval = expr.eval();
+ Evaluator tensor(eval, DefaultDevice());
+ tensor.evalSubExprsIfNeeded(NULL);
+ 
+ // Print the result
+ static const int rank = internal::array_size<Dimensions>::value;
+ internal::TensorPrinter<Evaluator, rank>::run(os, tensor);
+ 
+ // Cleanup.
+ tensor.cleanup();
+ return os;
+ }
+*/
+
 bool DebugIOTest(void) {
   OddBall critter;
   ioTest<Hdf5Writer, Hdf5Reader, OddBall>("iotest_oddball.h5", critter, "OddBall");
@@ -499,12 +523,13 @@ bool DebugIOTest(void) {
   ioTest<Hdf5Writer, Hdf5Reader, TestTensor>("iotest_tensor.h5", t, "eigen_tensor_instance_name");
 
   TestTensor t2(t);
-  auto bEqual = (t == t2).all();
-  std::cout << "(t2 == t) = " << bEqual << std::endl;
-  //if( * bEqual.data() != 0 )
-    //std::cout << "t2 == t" << std::endl;
-  //else
-    //std::cout << "t2 != t" << std::endl;
+  t2(1,1,1) += Inc;
+  Eigen::Tensor<bool, 0> rResult = (t == t2).all();
+  if( rResult(0) )
+    std::cout << "t2 == t" << std::endl;
+  else
+    std::cout << "t2 != t" << std::endl;
+  //std::cout << "(t == t2) : " << (t == t2).all()(0) << std::endl;
 
   myclass o;
   ioTest<Hdf5Writer, Hdf5Reader, myclass>("iotest_object.h5", o, "myclass_object_instance_name");

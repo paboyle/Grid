@@ -378,8 +378,20 @@ namespace Grid {
     {
       return os;
     }
+
+    template <typename T>
+    static inline bool CompareMember(const T &lhs, const T &rhs) {
+      return lhs == rhs;
+    }
+
+    template <typename Scalar_, int NumIndices_, int Options_, typename Index_>
+    static inline bool CompareMember(const Eigen::Tensor<Scalar_, NumIndices_, Options_, Index_> &lhs,
+                                     const Eigen::Tensor<Scalar_, NumIndices_, Options_, Index_> &rhs) {
+      Eigen::Tensor<bool, 0, Options_, Index_> bResult = (lhs == rhs).all();
+      return bResult(0);
+    }
   };
-  
+
   // Generic writer interface //////////////////////////////////////////////////
   template <typename T>
   inline void push(Writer<T> &w, const std::string &s) {
