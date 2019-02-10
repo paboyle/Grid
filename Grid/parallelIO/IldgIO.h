@@ -47,7 +47,8 @@ namespace Grid {
 namespace QCD {
 
 #define GRID_FIELD_NORM "FieldNormMetaData"
-#define GRID_FIELD_NORM_CHECK(FieldNormMetaData_,n2ck)  assert(fabs(FieldNormMetaData_.norm2 - n2ck < 1.0e-5 ));
+#define GRID_FIELD_NORM_CHECK(FieldNormMetaData_,n2ck) \
+assert(0.5*fabs(FieldNormMetaData_.norm2 - n2ck)/(FieldNormMetaData_.norm2 + n2ck) < 1.0e-5 );
 
   /////////////////////////////////
   // Encode word types as strings
