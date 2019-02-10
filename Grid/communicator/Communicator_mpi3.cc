@@ -53,10 +53,12 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
   // Never clean up as done once.
   MPI_Comm_dup (MPI_COMM_WORLD,&communicator_world);
 
+  Grid_quiesce_nodes();
   GlobalSharedMemory::Init(communicator_world);
   GlobalSharedMemory::SharedMemoryAllocate(
 		   GlobalSharedMemory::MAX_MPI_SHM_BYTES,
 		   GlobalSharedMemory::Hugepages);
+  Grid_unquiesce_nodes();
 }
 
 ///////////////////////////////////////////////////////////////////////////
