@@ -248,7 +248,7 @@ class GridLimeReader : public BinaryIO {
 	/////////////////////////////////////////////
 	if(FieldNormMetaData_.norm2 != 0.0){ 
 	  RealD n2ck = norm2(field);
-	  //	  std::cout << GridLogMessage << "checking field norm: metadata "<<FieldNormMetaData_.norm2<< " vs " << n2ck<<std::endl;
+	  std::cout << GridLogMessage << "Field norm: metadata= "<<FieldNormMetaData_.norm2<< " / field= " << n2ck<<std::endl;
 	  GRID_FIELD_NORM_CHECK(FieldNormMetaData_,n2ck);
 	  std::cout << GridLogMessage <<  "FieldNormMetaData OK! "<<std::endl;
 	}
