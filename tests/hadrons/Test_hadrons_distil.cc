@@ -466,6 +466,8 @@ typedef std::complex<double> TestScalar;
 typedef Eigen::Tensor<TestScalar, 3> TestTensor;
 typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>> TestTensorFixed;
 typedef std::vector<TestTensorFixed> aTestTensorFixed;
+typedef Eigen::TensorFixedSize<SpinColourVector, Eigen::Sizes<11,3,2>> LSCTensor;
+typedef Eigen::TensorFixedSize<LorentzColourMatrix, Eigen::Sizes<5,7,2>> LCMTensor;
 // From Test_serialisation.cc
 class myclass: Serializable {
 public:
@@ -475,12 +477,15 @@ public:
                                   , TestTensor, Critter
                                   , TestTensorFixed, FixedCritter
                                   , aTestTensorFixed, aFixedCritter
+                                  , LSCTensor, MyLSCTensor
+                                  , LCMTensor, MyLCMTensor
                                   );
   myclass() : Critter(7,3,2), aFixedCritter(3) {}
 };
 
 bool DebugIOTest(void) {
-  SpinColourVector scv;
+  SpinColourVector scv, scv2;
+  scv2 = scv;
   ioTest<Hdf5Writer, Hdf5Reader, SpinColourVector>("iotest_vector.h5", scv, "SpinColourVector");
   SpinColourMatrix scm;
   ioTest<Hdf5Writer, Hdf5Reader, SpinColourMatrix>("iotest_matrix.h5", scm, "SpinColourMatrix");
@@ -512,6 +517,35 @@ bool DebugIOTest(void) {
   myclass o;
   ioTest<Hdf5Writer, Hdf5Reader, myclass>("iotest_object.h5", o, "myclass_object_instance_name");
 
+  // Tensor of spin colour
+  LSCTensor l;
+  Val = 0;
+  for( int i = 0 ; i < l.dimension(0) ; i++)
+    for( int j = 0 ; j < l.dimension(1) ; j++)
+      for( int k = 0 ; k < l.dimension(2) ; k++)
+        for( int s = 0 ; s < Ns ; s++ )
+          for( int c = 0 ; c < Nc ; c++ )
+          {
+            l(i,j,k)()(s)(c) = Val;
+            Val += Inc;
+          }
+  ioTest<Hdf5Writer, Hdf5Reader, LSCTensor>("iotest_LSCTensor.h5", l, "LSCTensor_object_instance_name");
+
+  // Tensor of spin colour
+  LCMTensor l2;
+  Val = 0;
+  for( int i = 0 ; i < l2.dimension(0) ; i++)
+    for( int j = 0 ; j < l2.dimension(1) ; j++)
+      for( int k = 0 ; k < l2.dimension(2) ; k++)
+        for( int l = 0 ; l < Ns ; l++ )
+          for( int c = 0 ; c < Nc ; c++ )
+            for( int c2 = 0 ; c2 < Nc ; c2++ )
+            {
+              l2(i,j,k)(l)()(c,c2) = Val;
+              Val += Inc;
+            }
+  ioTest<Hdf5Writer, Hdf5Reader, LCMTensor>("iotest_LCMTensor.h5", l2, "LCMTensor_object_instance_name");
+  
   std::cout << "Wow!" << std::endl;
   
   return true;

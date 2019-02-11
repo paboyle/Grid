@@ -65,12 +65,20 @@ namespace Grid {
     template <typename ETensor>
     typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && (std::is_arithmetic<typename ETensor::Scalar>::value || Grid::is_complex<typename ETensor::Scalar>::value), void>::type
     write(const std::string &s, const ETensor &output);
-    template<typename U, int NumIndices_, int Options_, typename IndexType_>
-    void write(const std::string &s, const Eigen::Tensor<iScalar<U>, NumIndices_, Options_, IndexType_> &output);
-    template<typename U, int N, int NumIndices_, int Options_, typename IndexType_>
-    void write(const std::string &s, const Eigen::Tensor<iVector<U, N>, NumIndices_, Options_, IndexType_> &output);
-    template<typename U, int N, int NumIndices_, int Options_, typename IndexType_>
-    void write(const std::string &s, const Eigen::Tensor<iMatrix<U, N>, NumIndices_, Options_, IndexType_> &output);
+    template <typename ETensor/*, typename U, int N*/>
+    typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && !(std::is_arithmetic<typename ETensor::Scalar>::value || Grid::is_complex<typename ETensor::Scalar>::value)
+                         /*&& ( std::is_base_of<typename ETensor::Scalar, iScalar<U>   >::value
+                           || std::is_base_of<typename ETensor::Scalar, iVector<U, N>>::value
+                           || std::is_base_of<typename ETensor::Scalar, iMatrix<U, N>>::value )*/, void>::type
+    write(const std::string &s, const ETensor &output);
+    /*template <typename ETensor, typename U, int N>
+    typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value
+                         && std::is_base_of<typename ETensor::Scalar, iVector<U, N>>::value, void>::type
+    write(const std::string &s, const ETensor &output);
+    template <typename ETensor, typename U, int N>
+    typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value
+                         && std::is_base_of<typename ETensor::Scalar, iMatrix<U, N>>::value, void>::type
+    write(const std::string &s, const ETensor &output);*/
 
     void         scientificFormat(const bool set);
     bool         isScientific(void);
@@ -182,13 +190,12 @@ namespace Grid {
   typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && (std::is_arithmetic<typename ETensor::Scalar>::value || Grid::is_complex<typename ETensor::Scalar>::value), void>::type
   Writer<T>::write(const std::string &s, const ETensor &output)
   {
+    std::cout << "Eigen::Tensors of arithmetic/complex base type" << std::endl;
     const typename ETensor::Index NumElements{output.size()};
     assert( NumElements > 0 );
     if( NumElements == 1 )
       upcast->writeDefault(s, * output.data());
     else {
-      // Create a single, flat vector to hold all the data
-      std::vector<typename ETensor::Scalar> flat(NumElements);
       // We're not interested in trivial dimensions, i.e. dimensions = 1
       unsigned int TrivialDimCount{0};
       std::vector<size_t> ReducedDims;
@@ -203,8 +210,9 @@ namespace Grid {
           ReducedDims.push_back(s);
         }
       }
-      const unsigned int ReducedDimCount{output.NumDimensions - TrivialDimCount};
-      assert( ReducedDimCount > 0 ); // NB: NumElements > 1 implies this is not a scalar
+      assert( output.NumDimensions > TrivialDimCount > 0 ); // NB: NumElements > 1 implies this is not a scalar, so some dims should be left
+      // Create a single, flat vector to hold all the data
+      std::vector<typename ETensor::Scalar> flat(NumElements);
       // Now copy all the data to my flat vector
       // Regardless of the Eigen::Tensor storage order, the copy will be Row Major
       std::array<typename ETensor::Index, ETensor::NumIndices> MyIndex;
@@ -221,17 +229,71 @@ namespace Grid {
   
   // Eigen::Tensors of iScalar<U>
   template <typename T>
-  template<typename U, int NumIndices_, int Options_, typename IndexType_>
-  void Writer<T>::write(const std::string &s, const Eigen::Tensor<iScalar<U>, NumIndices_, Options_, IndexType_> &output)
+  template <typename ETensor/*, typename U, int N*/>
+  typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && !(std::is_arithmetic<typename ETensor::Scalar>::value || Grid::is_complex<typename ETensor::Scalar>::value)
+                     /*&& ( std::is_base_of<typename ETensor::Scalar, iScalar<U>   >::value
+                       || std::is_base_of<typename ETensor::Scalar, iVector<U, N>>::value
+                       || std::is_base_of<typename ETensor::Scalar, iMatrix<U, N>>::value )*/, void>::type
+  Writer<T>::write(const std::string &s, const ETensor &output)
   {
-    //upcast->writeDefault(s, tensorToVec(output));
-    std::cout << "I really should add code to write Eigen::Tensor (iScalar) ..." << std::endl;
+    std::cout << "Eigen::Tensors of iScalar<U>" << std::endl;
+    const typename ETensor::Index NumElements{output.size()};
+    assert( NumElements > 0 );
+    if( NumElements == 1 )
+      upcast->writeDefault(s, tensorToVec(* output.data()));
+    else {
+      // We're not interested in trivial dimensions, i.e. dimensions = 1
+      unsigned int TrivialDimCount{0};
+      std::vector<size_t> ReducedDims;
+      for(auto i = 0; i < output.NumDimensions; i++ ) {
+        auto dim = output.dimension(i);
+        if( dim <= 1 ) {
+          TrivialDimCount++;
+          assert( dim == 1 ); // Not expecting dimension to be <= 0
+        } else {
+          size_t s = static_cast<size_t>(dim);
+          assert( s == dim ); // check we didn't lose anything in the conversion
+          ReducedDims.push_back(s);
+        }
+      }
+      assert( output.NumDimensions > TrivialDimCount > 0 ); // NB: NumElements > 1 implies this is not a scalar, so some dims should be left
+      // Now add the extra dimensions, based on object zero
+      typename TensorToVec<typename ETensor::Scalar>::type ttv = tensorToVec(* output.data());
+      Flatten<typename TensorToVec<typename ETensor::Scalar>::type> f(ttv);
+      const std::vector<size_t> & ExtraDims{f.getDim()};
+      size_t ExtraCount{1};
+      for( auto i : ExtraDims ) {
+        assert( i > 0 );
+        ExtraCount *= i;
+        ReducedDims.push_back(i);
+      }
+      typedef typename ETensor::Scalar::scalar_type Scalar;
+      assert( sizeof( typename ETensor::Scalar ) == ExtraCount * sizeof( Scalar ) );
+      // Create a single, flat vector to hold all the data
+      const typename ETensor::Index TotalNumElements = NumElements * ExtraCount;
+      std::vector<Scalar> flat(TotalNumElements);
+      // Now copy all the data to my flat vector
+      // Regardless of the Eigen::Tensor storage order, the copy will be Row Major
+      std::array<typename ETensor::Index, ETensor::NumIndices> MyIndex;
+      for( int i = 0 ; i < output.NumDimensions ; i++ ) MyIndex[i] = 0;
+      for( typename ETensor::Index n = 0; n < TotalNumElements; ) {
+        const Scalar * p = reinterpret_cast<const Scalar *>( &output( MyIndex ));
+        for( auto j = 0; j < ExtraCount ; j++ )
+          flat[n++] =  * p++;
+        // Now increment the index
+        for( int i = output.NumDimensions - 1; i >= 0 && ++MyIndex[i] == output.dimension(i); i-- )
+          MyIndex[i] = 0;
+      }
+      upcast->template writeMultiDim<Scalar>(s, ReducedDims, flat);
+    }
   }
-  
+
   // Eigen::Tensors of iVector<U, N>
-  template <typename T>
-  template<typename U, int N, int NumIndices_, int Options_, typename IndexType_>
-  void Writer<T>::write(const std::string &s, const Eigen::Tensor<iVector<U, N>, NumIndices_, Options_, IndexType_> &output)
+  /*template <typename T>
+  template <typename ETensor, typename U, int N>
+  typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value
+  && std::is_base_of<typename ETensor::Scalar, iVector<U, N>>::value, void>::type
+  Writer<T>::write(const std::string &s, const ETensor &output)
   {
     //upcast->writeDefault(s, tensorToVec(output));
     std::cout << "I really should add code to write Eigen::Tensor (iVector) ..." << std::endl;
@@ -239,12 +301,14 @@ namespace Grid {
   
   // Eigen::Tensors of iMatrix<U, N>
   template <typename T>
-  template<typename U, int N, int NumIndices_, int Options_, typename IndexType_>
-  void Writer<T>::write(const std::string &s, const Eigen::Tensor<iMatrix<U, N>, NumIndices_, Options_, IndexType_> &output)
+  template <typename ETensor, typename U, int N>
+  typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value
+  && std::is_base_of<typename ETensor::Scalar, iMatrix<U, N>>::value, void>::type
+  Writer<T>::write(const std::string &s, const ETensor &output)
   {
     //upcast->writeDefault(s, tensorToVec(output));
     std::cout << "I really should add code to write Eigen::Tensor (iMatrix) ..." << std::endl;
-  }
+  }*/
 
   template <typename T>
   void Writer<T>::scientificFormat(const bool set)
@@ -397,6 +461,18 @@ namespace Grid {
         bResult = b(0);
       }
       return bResult;
+    }
+
+    template <typename T>
+    static inline typename std::enable_if<!std::is_base_of<Eigen::TensorBase<T, Eigen::ReadOnlyAccessors>, T>::value, void>::type
+    WriteMember(std::ostream &os, const T &object) {
+      os << object;
+    }
+    
+    template <typename T>
+    static inline typename std::enable_if<std::is_base_of<Eigen::TensorBase<T, Eigen::ReadOnlyAccessors>, T>::value, void>::type
+    WriteMember(std::ostream &os, const T &object) {
+      os << "Eigen::Tensor";
     }
   };
 
