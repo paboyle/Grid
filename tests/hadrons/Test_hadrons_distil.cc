@@ -446,16 +446,18 @@ typedef Eigen::Tensor<OddBall, 3> TensorOddBall;
 //typedef int TestScalar;
 typedef std::complex<double> TestScalar;
 typedef Eigen::Tensor<TestScalar, 3> TestTensor;
+typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>> TestTensorFixed;
 
 // From Test_serialisation.cc
 class myclass: Serializable {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(myclass
-                                  , TestTensor, critter
+                                  , TestTensor, Critter
+                                  , TestTensorFixed, FixedCritter
                                   , SpinColourVector, scv
                                   , SpinColourMatrix, scm
                                   );
-  myclass() : critter(7,3,2) {}
+  myclass() : Critter(7,3,2) {}
 };
 
 template <typename W, typename R, typename O>
@@ -503,6 +505,9 @@ eval  Eigen::TensorForcedEvalOp<const Eigen::TensorCwiseBinaryOp<Eigen::internal
  }
 */
 
+template <typename T> constexpr T Inc{1,-1};
+//template <> constexpr std::complex<double> Inc< < std::complex<double> > >{1,1};
+
 bool DebugIOTest(void) {
   OddBall critter;
   ioTest<Hdf5Writer, Hdf5Reader, OddBall>("iotest_oddball.h5", critter, "OddBall");
@@ -512,24 +517,35 @@ bool DebugIOTest(void) {
   ioTest<Hdf5Writer, Hdf5Reader, SpinColourVector>("iotest_vector.h5", scv, "SpinColourVector");
 
   TestTensor t(3,6,2);
-  TestScalar Val{1};
-  const TestScalar Inc{1};
+  TestScalar Val{Inc<TestScalar>};
   for( int i = 0 ; i < 3 ; i++)
     for( int j = 0 ; j < 6 ; j++)
       for( int k = 0 ; k < 2 ; k++) {
         t(i,j,k) = Val;
-        Val += Inc;
+        Val += Inc<TestScalar>;
       }
   ioTest<Hdf5Writer, Hdf5Reader, TestTensor>("iotest_tensor.h5", t, "eigen_tensor_instance_name");
 
   TestTensor t2(t);
-  t2(1,1,1) += Inc;
+  t2(1,1,1) += Inc<TestScalar>;
   Eigen::Tensor<bool, 0> rResult = (t == t2).all();
   if( rResult(0) )
     std::cout << "t2 == t" << std::endl;
   else
     std::cout << "t2 != t" << std::endl;
   //std::cout << "(t == t2) : " << (t == t2).all()(0) << std::endl;
+
+  // Now serialise a fixed size tensor
+  using FixedTensor = Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<8,4,3>>;
+  FixedTensor tf;
+  Val = Inc<TestScalar>;
+  for( int i = 0 ; i < 8 ; i++)
+    for( int j = 0 ; j < 4 ; j++)
+      for( int k = 0 ; k < 3 ; k++) {
+        tf(i,j,k) = Val;
+        Val += Inc<TestScalar>;
+      }
+  ioTest<Hdf5Writer, Hdf5Reader, FixedTensor>("iotest_tensor_fixed.h5", tf, "eigen_tensor_fixed_name");
 
   myclass o;
   ioTest<Hdf5Writer, Hdf5Reader, myclass>("iotest_object.h5", o, "myclass_object_instance_name");
