@@ -89,6 +89,9 @@ void test_Perambulators(Application &application)
   MDistil::PerambLight::Par PerambPar;
   PerambPar.eigenPack="LapEvec";
   PerambPar.PerambFileName="peramb.bin";
+  PerambPar.ConfigFileDir="/home/dp008/dp008/dc-rich6/Scripts/ConfigsDeflQED/";
+  PerambPar.ConfigFileName="ckpoint_lat.3000";
+  PerambPar.UniqueIdentifier="full_dilution";
   PerambPar.Distil.tsrc = 0;
   PerambPar.Distil.nnoise = 1;
   PerambPar.Distil.LI=5;
@@ -133,6 +136,9 @@ void test_PerambulatorsS(Application &application)
   MDistil::PerambLight::Par PerambPar;
   PerambPar.eigenPack="LapEvec";
   PerambPar.PerambFileName="perambS.bin";
+  PerambPar.ConfigFileDir="/home/dp008/dp008/dc-rich6/Scripts/ConfigsDeflQED/";
+  PerambPar.ConfigFileName="ckpoint_lat.3000";
+  PerambPar.UniqueIdentifier="full_dilution";
   PerambPar.Distil.tsrc = 0;
   PerambPar.Distil.nnoise = 1;
   PerambPar.Distil.LI=3;
