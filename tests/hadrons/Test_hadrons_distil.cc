@@ -446,26 +446,6 @@ bool DebugEigenTest()
   return true;
 }
 
-typedef iMatrix<Complex,7> OddBall;
-typedef Eigen::Tensor<OddBall, 3> TensorOddBall;
-
-//typedef int TestScalar;
-typedef std::complex<double> TestScalar;
-typedef Eigen::Tensor<TestScalar, 3> TestTensor;
-typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>> TestTensorFixed;
-
-// From Test_serialisation.cc
-class myclass: Serializable {
-public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(myclass
-                                  , TestTensor, Critter
-                                  , TestTensorFixed, FixedCritter
-                                  , SpinColourVector, scv
-                                  , SpinColourMatrix, scm
-                                  );
-  myclass() : Critter(7,3,2) {}
-};
-
 template <typename W, typename R, typename O>
 bool ioTest(const std::string &filename, const O &object, const std::string &name)
 {
@@ -476,80 +456,62 @@ bool ioTest(const std::string &filename, const O &object, const std::string &nam
   }
   
   /*R    reader(filename);
-  O    buf;
-  bool good;
-  
-  read(reader, "testobject", buf);
-  good = (object == buf);
-  std::cout << name << " IO test: " << (good ? "success" : "failure");
-  std::cout << std::endl;
-  return good;*/
+   O    buf;
+   bool good;
+   
+   read(reader, "testobject", buf);
+   good = (object == buf);
+   std::cout << name << " IO test: " << (good ? "success" : "failure");
+   std::cout << std::endl;
+   return good;*/
   return true;
 }
 
-/*
- template <typename Scalar_, int NumIndices_, int Options_, typename IndexType_>
-eval  Eigen::TensorForcedEvalOp<const Eigen::TensorCwiseBinaryOp<Eigen::internal::scalar_cmp_op<Scalar_, Scalar_, Eigen::internal::cmp_EQ>, const Eigen::Tensor<Scalar_, NumIndices_, Options_, IndexType_>, const Eigen::Tensor<Scalar_, NumIndices_, Options_, IndexType_> >, Eigen::MakePointer>
-
- template <typename T>
- std::ostream& operator << (std::ostream& os, const TensorBase<T, ReadOnlyAccessors>& expr) {
- typedef TensorEvaluator<const TensorForcedEvalOp<const T>, DefaultDevice> Evaluator;
- typedef typename Evaluator::Dimensions Dimensions;
- 
- // Evaluate the expression if needed
- TensorForcedEvalOp<const T> eval = expr.eval();
- Evaluator tensor(eval, DefaultDevice());
- tensor.evalSubExprsIfNeeded(NULL);
- 
- // Print the result
- static const int rank = internal::array_size<Dimensions>::value;
- internal::TensorPrinter<Evaluator, rank>::run(os, tensor);
- 
- // Cleanup.
- tensor.cleanup();
- return os;
- }
-*/
-
-template <typename T> constexpr T Inc{1,-1};
-//template <> constexpr std::complex<double> Inc< < std::complex<double> > >{1,1};
+//typedef int TestScalar;
+typedef std::complex<double> TestScalar;
+typedef Eigen::Tensor<TestScalar, 3> TestTensor;
+typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>> TestTensorFixed;
+typedef std::vector<TestTensorFixed> aTestTensorFixed;
+// From Test_serialisation.cc
+class myclass: Serializable {
+public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(myclass
+                                  , SpinColourVector, scv
+                                  , SpinColourMatrix, scm
+                                  , TestTensor, Critter
+                                  , TestTensorFixed, FixedCritter
+                                  , aTestTensorFixed, aFixedCritter
+                                  );
+  myclass() : Critter(7,3,2), aFixedCritter(3) {}
+};
 
 bool DebugIOTest(void) {
-  OddBall critter;
-  ioTest<Hdf5Writer, Hdf5Reader, OddBall>("iotest_oddball.h5", critter, "OddBall");
-  SpinColourMatrix scm;
-  ioTest<Hdf5Writer, Hdf5Reader, SpinColourMatrix>("iotest_matrix.h5", scm, "SpinColourMatrix");
   SpinColourVector scv;
   ioTest<Hdf5Writer, Hdf5Reader, SpinColourVector>("iotest_vector.h5", scv, "SpinColourVector");
+  SpinColourMatrix scm;
+  ioTest<Hdf5Writer, Hdf5Reader, SpinColourMatrix>("iotest_matrix.h5", scm, "SpinColourMatrix");
+
+  constexpr TestScalar Inc{1,-1};
 
   TestTensor t(3,6,2);
-  TestScalar Val{Inc<TestScalar>};
-  for( int i = 0 ; i < 3 ; i++)
-    for( int j = 0 ; j < 6 ; j++)
-      for( int k = 0 ; k < 2 ; k++) {
+  TestScalar Val{Inc};
+  for( int i = 0 ; i < t.dimension(0) ; i++)
+    for( int j = 0 ; j < t.dimension(1) ; j++)
+      for( int k = 0 ; k < t.dimension(2) ; k++) {
         t(i,j,k) = Val;
-        Val += Inc<TestScalar>;
+        Val += Inc;
       }
   ioTest<Hdf5Writer, Hdf5Reader, TestTensor>("iotest_tensor.h5", t, "eigen_tensor_instance_name");
-
-  TestTensor t2(t);
-  t2(1,1,1) += Inc<TestScalar>;
-  Eigen::Tensor<bool, 0> rResult = (t == t2).all();
-  if( rResult(0) )
-    std::cout << "t2 == t" << std::endl;
-  else
-    std::cout << "t2 != t" << std::endl;
-  //std::cout << "(t == t2) : " << (t == t2).all()(0) << std::endl;
 
   // Now serialise a fixed size tensor
   using FixedTensor = Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<8,4,3>>;
   FixedTensor tf;
-  Val = Inc<TestScalar>;
-  for( int i = 0 ; i < 8 ; i++)
-    for( int j = 0 ; j < 4 ; j++)
-      for( int k = 0 ; k < 3 ; k++) {
+  Val = Inc;
+  for( int i = 0 ; i < tf.dimension(0) ; i++)
+    for( int j = 0 ; j < tf.dimension(1) ; j++)
+      for( int k = 0 ; k < tf.dimension(2) ; k++) {
         tf(i,j,k) = Val;
-        Val += Inc<TestScalar>;
+        Val += Inc;
       }
   ioTest<Hdf5Writer, Hdf5Reader, FixedTensor>("iotest_tensor_fixed.h5", tf, "eigen_tensor_fixed_name");
 

@@ -62,9 +62,6 @@ namespace Grid {
     void write(const std::string &s, const iVector<U, N> &output);
     template <typename U, int N>
     void write(const std::string &s, const iMatrix<U, N> &output);
-    /*template <typename Scalar_, int NumIndices_, int Options_, typename IndexType_>
-    typename std::enable_if<std::is_arithmetic<Scalar_>::value || Grid::is_complex<Scalar_>::value, void>::type
-    write(const std::string &s, const Eigen::Tensor<Scalar_, NumIndices_, Options_, IndexType_> &output);*/
     template <typename ETensor>
     typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && (std::is_arithmetic<typename ETensor::Scalar>::value || Grid::is_complex<typename ETensor::Scalar>::value), void>::type
     write(const std::string &s, const ETensor &output);
@@ -181,15 +178,10 @@ namespace Grid {
 
   // Eigen::Tensors of arithmetic/complex base type
   template <typename T>
-  /*template <typename Scalar_, int NumIndices_, int Options_, typename IndexType_>
-  typename std::enable_if<std::is_arithmetic<Scalar_>::value || Grid::is_complex<Scalar_>::value, void>::type
-  Writer<T>::write(const std::string &s, const Eigen::Tensor<Scalar_, NumIndices_, Options_, IndexType_> &output)*/
   template <typename ETensor>
   typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && (std::is_arithmetic<typename ETensor::Scalar>::value || Grid::is_complex<typename ETensor::Scalar>::value), void>::type
   Writer<T>::write(const std::string &s, const ETensor &output)
   {
-    //typedef Eigen::Tensor<Scalar_, NumIndices_, Options_, IndexType_> Tensor;
-    //typedef Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors> Tensor;
     const typename ETensor::Index NumElements{output.size()};
     assert( NumElements > 0 );
     if( NumElements == 1 )
@@ -393,6 +385,18 @@ namespace Grid {
     CompareMember(const T &lhs, const T &rhs) {
       Eigen::Tensor<bool, 0> bResult = (lhs == rhs).all();
       return bResult(0);
+    }
+
+    template <typename T>
+    static inline typename std::enable_if<std::is_base_of<Eigen::TensorBase<T, Eigen::ReadOnlyAccessors>, T>::value, bool>::type
+    CompareMember(const std::vector<T> &lhs, const std::vector<T> &rhs) {
+      const auto NumElements{lhs.size()};
+      bool bResult = ( NumElements == rhs.size() );
+      for( auto i = 0 ; i < NumElements && bResult ; i++ ) {
+        Eigen::Tensor<bool, 0> b = (lhs[i] == rhs[i]).all();
+        bResult = b(0);
+      }
+      return bResult;
     }
   };
 
