@@ -50,6 +50,9 @@ public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(PerambLightPar,
 		                    std::string, eigenPack,
                                     std::string, PerambFileName,
+                                    std::string, ConfigFileDir,
+                                    std::string, ConfigFileName,
+                                    std::string, UniqueIdentifier,
                                     bool, multiFile,
                                     int, nvec,
 				    int, Ls,          // For makeFiveDimGrid
@@ -189,9 +192,16 @@ void TPerambLight<FImpl>::execute(void)
     const int Nt_inv{Distil.Nt_inv}; // TODO: PROBABLY BETTER: if (full_tdil) Nt_inv=1; else Nt_inv = TI;
     const int tsrc{Distil.tsrc};
     const int Ns{Distil.Ns};
-    
+   
+    const Real mass{Solver.mass};
+    const Real M5  {Solver.M5};
+
     const bool full_tdil{TI==Nt};
     const bool exact_distillation{full_tdil && LI==nvec};
+
+    const std::string &ConfigFileDir{par().ConfigFileDir};
+    const std::string &ConfigFileName{par().ConfigFileName};
+    const std::string &UniqueIdentifier{par().UniqueIdentifier};
 
     //auto        &noise     = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
     auto        &noise   = envGet(std::vector<Complex>, getName() + "_noise");
@@ -229,7 +239,8 @@ void TPerambLight<FImpl>::execute(void)
     Umu = where(coor==t,Usft,Umu);
   }
   } else {
-    std::string   fileName( "/home/dp008/dp008/dc-rich6/Scripts/ConfigsDeflQED/ckpoint_lat.3000" );
+    //std::string   fileName( "/home/dp008/dp008/dc-rich6/Scripts/ConfigsDeflQED/ckpoint_lat.3000" );
+    std::string   fileName(ConfigFileDir + ConfigFileName);
     std::cout << GridLogMessage << "Loading NERSC configuration from '" << fileName << "'" << std::endl;
     NerscIO::readConfiguration(Umu, header, fileName);
     std::cout << GridLogMessage << "reading done." << std::endl;
@@ -238,7 +249,8 @@ void TPerambLight<FImpl>::execute(void)
     //Create Noises
     //std::cout << pszGaugeConfigFile << std::endl;
     //GridSerialRNG sRNG; sRNG.SeedUniqueString(std::string(pszGaugeConfigFile));
-    GridSerialRNG sRNG; sRNG.SeedUniqueString("unique_string"); // TODO: Proper unique string. Include quark mass, gauge field? Maybe also nvec, but in a way that more nvec would only add noises, not change all of them???
+    GridSerialRNG sRNG; 
+    sRNG.SeedUniqueString(ConfigFileName + "_" + std::to_string(mass) + "_" + UniqueIdentifier);
     Real rn;
     
     for (int inoise=0;inoise<nnoise;inoise++) {
@@ -289,8 +301,6 @@ void TPerambLight<FImpl>::execute(void)
     const int Ntlocal{grid4d->LocalDimensions()[3]};
     const int Ntfirst{grid4d->LocalStarts()[3]};
 
-    const Real mass{Solver.mass};
-    const Real M5  {Solver.M5};
     std::cout << "init RBG "  << std::endl;
     GridRedBlackCartesian RBGrid(grid4d);
     std::cout << "init RBG done"  << std::endl;
