@@ -39,7 +39,61 @@ namespace Grid {
   // Abstract writer/reader classes ////////////////////////////////////////////
   // static polymorphism implemented using CRTP idiom
   class Serializable;
-  
+
+  // which types are supported scalar types for Eigen::Tensor
+  template<typename T> struct is_eigen_tensor_scalar : std::integral_constant<bool,
+    std::is_arithmetic<T>::value || is_complex<T>::value> {};
+  // which types are grid tensors
+  template <typename T> struct is_grid_tensor : public std::false_type {
+    static constexpr unsigned int rank = 0;
+    static constexpr unsigned int dim = 1;
+  };
+  template <typename T> struct is_grid_tensor<iScalar<T>> : public std::true_type {};
+  template <typename T, int N> struct is_grid_tensor<iVector<T, N>> : public std::true_type {};
+  template <typename T, int N> struct is_grid_tensor<iMatrix<T, N>> : public std::true_type {};
+
+  // Rank and dimension of grid tensors, i.e. compositions of iScalar, iVector and iMatrix
+  template <typename T> struct grid_tensor_att {
+    static constexpr unsigned int depth = 0;  // How many levels of Grid Tensor there are
+    static constexpr unsigned int rank = 0;   // The rank of the grid tensor (i.e. how many indices used)
+    static constexpr unsigned int count = 1;  // total number of elements (i.e. product of dimensions)
+    typedef T scalar_type;                              // Type of the underlying scalar
+    static constexpr size_t scalar_size = sizeof(T);    // Size of the underlying scalar in bytes
+    static constexpr size_t size = scalar_size * count; // total size of elements in bytes
+    // e.g. iVector<iMatrix<Complex,3>,4>
+    //      depth = 2
+    //      rank  = 3
+    //      size  = 36
+    // e.g. iScalar<iVector<iMatrix<Complex,4>,3>>
+    //      depth = 3
+    //      rank  = 3
+    //      size  = 48
+  };
+  template <typename T> struct grid_tensor_att<iScalar<T>> {
+    static constexpr unsigned int depth = 1 + grid_tensor_att<T>::depth;
+    static constexpr unsigned int rank = 0 + grid_tensor_att<T>::rank;
+    static constexpr unsigned int count = 1 * grid_tensor_att<T>::count;
+    typedef typename grid_tensor_att<T>::scalar_type scalar_type;
+    static constexpr size_t scalar_size = grid_tensor_att<T>::scalar_size;
+    static constexpr size_t size = scalar_size * count;
+  };
+  template <typename T, int N> struct grid_tensor_att<iVector<T, N>> {
+    static constexpr unsigned int depth = 1 + grid_tensor_att<T>::depth;
+    static constexpr unsigned int rank = 1 + grid_tensor_att<T>::rank;
+    static constexpr unsigned int count = N * grid_tensor_att<T>::count;
+    typedef typename grid_tensor_att<T>::scalar_type scalar_type;
+    static constexpr size_t scalar_size = grid_tensor_att<T>::scalar_size;
+    static constexpr size_t size = scalar_size * count;
+  };
+  template <typename T, int N> struct grid_tensor_att<iMatrix<T, N>> {
+    static constexpr unsigned int depth = 1 + grid_tensor_att<T>::depth;
+    static constexpr unsigned int rank = 2 + grid_tensor_att<T>::rank;
+    static constexpr unsigned int count = N * N * grid_tensor_att<T>::count;
+    typedef typename grid_tensor_att<T>::scalar_type scalar_type;
+    static constexpr size_t scalar_size = grid_tensor_att<T>::scalar_size;
+    static constexpr size_t size = scalar_size * count;
+  };
+
   // Static abstract writer
   template <typename T>
   class Writer
@@ -66,7 +120,9 @@ namespace Grid {
     typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && (std::is_arithmetic<typename ETensor::Scalar>::value || Grid::is_complex<typename ETensor::Scalar>::value), void>::type
     write(const std::string &s, const ETensor &output);
     template <typename ETensor/*, typename U, int N*/>
-    typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && !(std::is_arithmetic<typename ETensor::Scalar>::value || Grid::is_complex<typename ETensor::Scalar>::value)
+    typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value
+    && is_grid_tensor<typename ETensor::Scalar>::value
+    //&& !(std::is_arithmetic<typename ETensor::Scalar>::value || Grid::is_complex<typename ETensor::Scalar>::value)
                          /*&& ( std::is_base_of<typename ETensor::Scalar, iScalar<U>   >::value
                            || std::is_base_of<typename ETensor::Scalar, iVector<U, N>>::value
                            || std::is_base_of<typename ETensor::Scalar, iMatrix<U, N>>::value )*/, void>::type
@@ -230,7 +286,9 @@ namespace Grid {
   // Eigen::Tensors of iScalar<U>
   template <typename T>
   template <typename ETensor/*, typename U, int N*/>
-  typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && !(std::is_arithmetic<typename ETensor::Scalar>::value || Grid::is_complex<typename ETensor::Scalar>::value)
+  typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value
+  && is_grid_tensor<typename ETensor::Scalar>::value
+  //&& !(std::is_arithmetic<typename ETensor::Scalar>::value || Grid::is_complex<typename ETensor::Scalar>::value)
                      /*&& ( std::is_base_of<typename ETensor::Scalar, iScalar<U>   >::value
                        || std::is_base_of<typename ETensor::Scalar, iVector<U, N>>::value
                        || std::is_base_of<typename ETensor::Scalar, iMatrix<U, N>>::value )*/, void>::type
