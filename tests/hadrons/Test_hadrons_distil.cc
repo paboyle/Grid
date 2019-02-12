@@ -574,7 +574,14 @@ struct rank<T[N]> : public std::integral_constant<std::size_t, rank<T>::value + 
 template <typename T>
 void DebugGridTensorTest_print( int i )
 {
-  std::cout << i << " : " << is_grid_tensor<T>::value << ", depth" << grid_tensor_att<T>::depth << ", rank" << grid_tensor_att<T>::rank << ", count" << grid_tensor_att<T>::count << ", scalar_size" << grid_tensor_att<T>::scalar_size << ", size" << grid_tensor_att<T>::size << std::endl;
+  std::cout << i << " : " << is_grid_tensor<T>::value
+  << ", depth " << grid_tensor_att<T>::depth
+  << ", rank " << grid_tensor_att<T>::rank
+  << ", rank_non_trivial " << grid_tensor_att<T>::rank_non_trivial
+  << ", count " << grid_tensor_att<T>::count
+  << ", scalar_size " << grid_tensor_att<T>::scalar_size
+  << ", size " << grid_tensor_att<T>::size
+  << std::endl;
 }
 
 bool DebugGridTensorTest( void )
@@ -583,9 +590,9 @@ bool DebugGridTensorTest( void )
   typedef iScalar<t1> t2;
   typedef iVector<t1, Ns> t3;
   typedef iMatrix<t1, Nc> t4;
-  typedef iVector<iMatrix<t1,3>,4> t5;
+  typedef iVector<iMatrix<t1,1>,4> t5;
   typedef iScalar<t5> t6;
-  typedef iMatrix<iVector<iScalar<iMatrix<t6, 4>>,2>,7> t7;
+  typedef iMatrix<iVector<iScalar<iMatrix<t6, 1>>,2>,7> t7;
   int i = 1;
   DebugGridTensorTest_print<t1>( i++ );
   DebugGridTensorTest_print<t2>( i++ );
@@ -605,8 +612,8 @@ int main(int argc, char *argv[])
   std::cout << "sizeof(std::streamsize) = " << sizeof(std::streamsize) << std::endl;
   std::cout << "sizeof(Eigen::Index) = " << sizeof(Eigen::Index) << std::endl;
   //if( DebugEigenTest() ) return 0;
-  //if(DebugGridTensorTest()) return 0;
-  if(DebugIOTest()) return 0;
+  if(DebugGridTensorTest()) return 0;
+  //if(DebugIOTest()) return 0;
 #endif
 
   // Decode command-line parameters. 1st one is which test to run
