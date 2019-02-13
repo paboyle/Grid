@@ -103,8 +103,9 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
 #ifdef DEBUG
 //typedef int TestScalar;
 typedef std::complex<double> TestScalar;
-typedef Eigen::Tensor<TestScalar, 3> TestTensor;
-typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>> TestTensorFixed;
+typedef Eigen::Tensor<iMatrix<TestScalar,1>, 6> TestTensorSingle;
+typedef Eigen::Tensor<TestScalar, 3, Eigen::StorageOptions::RowMajor> TestTensor;
+typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>, Eigen::StorageOptions::RowMajor> TestTensorFixed;
 typedef std::vector<TestTensorFixed> aTestTensorFixed;
 typedef Eigen::TensorFixedSize<SpinColourVector, Eigen::Sizes<11,3,2>> LSCTensor;
 typedef Eigen::TensorFixedSize<LorentzColourMatrix, Eigen::Sizes<5,7,2>> LCMTensor;
@@ -124,15 +125,18 @@ public:
 };
 
 bool EigenIOTest(void) {
+  constexpr TestScalar Inc{1,-1};
+  TestTensorSingle ts(1,1,1,1,1,1);
+  ts(0,0,0,0,0,0) = Inc * 3.1415927;
+  ioTest<Hdf5Writer, Hdf5Reader, TestTensorSingle>("iotest_single.h5", ts, "Singlet");
+
   SpinColourVector scv, scv2;
   scv2 = scv;
   ioTest<Hdf5Writer, Hdf5Reader, SpinColourVector>("iotest_vector.h5", scv, "SpinColourVector");
   SpinColourMatrix scm;
   ioTest<Hdf5Writer, Hdf5Reader, SpinColourMatrix>("iotest_matrix.h5", scm, "SpinColourMatrix");
   
-  constexpr TestScalar Inc{1,-1};
-  
-  TestTensor t(3,6,2);
+  TestTensor t(6,3,2);
   TestScalar Val{Inc};
   for( int i = 0 ; i < t.dimension(0) ; i++)
     for( int j = 0 ; j < t.dimension(1) ; j++)
@@ -141,7 +145,7 @@ bool EigenIOTest(void) {
         Val += Inc;
       }
   ioTest<Hdf5Writer, Hdf5Reader, TestTensor>("iotest_tensor.h5", t, "eigen_tensor_instance_name");
-  
+
   // Now serialise a fixed size tensor
   using FixedTensor = Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<8,4,3>>;
   FixedTensor tf;
@@ -170,7 +174,15 @@ bool EigenIOTest(void) {
             Val += Inc;
           }
   ioTest<Hdf5Writer, Hdf5Reader, LSCTensor>("iotest_LSCTensor.h5", l, "LSCTensor_object_instance_name");
-  
+  std::cout << "t:";
+  for_all( l, [](std::complex<double> &c, LSCTensor::Index index, const std::size_t * pDims ){
+    std::cout << "  ";
+    for( int i = 0 ; i < 5; i++ )
+      std::cout << "[" << pDims[i] << "]";
+    std::cout << " = " << c << std::endl;
+  } );
+  std::cout << std::endl;
+
   // Tensor of spin colour
   LCMTensor l2;
   Val = 0;

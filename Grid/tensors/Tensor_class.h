@@ -173,7 +173,37 @@ class iScalar {
     return stream;
   };
 
+  template <typename T = vtype>
+  typename std::enable_if<!is_grid_tensor<T>::value, const scalar_type *>::type
+  strong_inline begin() const { return &_internal; }
 
+  template <typename T = vtype>
+  typename std::enable_if<is_grid_tensor<T>::value, const scalar_type *>::type
+  strong_inline begin() const { return _internal.begin(); }
+
+  template <typename T = vtype>
+  typename std::enable_if<!is_grid_tensor<T>::value, const scalar_type *>::type
+  strong_inline end() const { return (&_internal) + grid_tensor_att<iScalar<T>>::count; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<is_grid_tensor<T>::value, const scalar_type *>::type
+  strong_inline end() const { return _internal.begin() + grid_tensor_att<iScalar<T>>::count; }
+
+  template <typename T = vtype>
+  typename std::enable_if<!is_grid_tensor<T>::value, scalar_type *>::type
+  strong_inline begin() { return &_internal; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<is_grid_tensor<T>::value, scalar_type *>::type
+  strong_inline begin() { return _internal.begin(); }
+  
+  template <typename T = vtype>
+  typename std::enable_if<!is_grid_tensor<T>::value, scalar_type *>::type
+  strong_inline end() { return (&_internal) + grid_tensor_att<iScalar<T>>::count; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<is_grid_tensor<T>::value, scalar_type *>::type
+  strong_inline end() { return _internal.begin() + grid_tensor_att<iScalar<T>>::count; }
 };
 ///////////////////////////////////////////////////////////
 // Allows to turn scalar<scalar<scalar<double>>>> back to double.
@@ -303,6 +333,38 @@ class iVector {
   //    strong_inline vtype && operator ()(int i) {
   //      return _internal[i];
   //    }
+
+  template <typename T = vtype>
+  typename std::enable_if<!is_grid_tensor<T>::value, const scalar_type *>::type
+  strong_inline begin() const { return _internal; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<is_grid_tensor<T>::value, const scalar_type *>::type
+  strong_inline begin() const { return _internal[0].begin(); }
+  
+  template <typename T = vtype>
+  typename std::enable_if<!is_grid_tensor<T>::value, const scalar_type *>::type
+  strong_inline end() const { return _internal + grid_tensor_att<iVector<T,N>>::count; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<is_grid_tensor<T>::value, const scalar_type *>::type
+  strong_inline end() const { return _internal[0].begin() + grid_tensor_att<iVector<T,N>>::count; }
+
+  template <typename T = vtype>
+  typename std::enable_if<!is_grid_tensor<T>::value, scalar_type *>::type
+  strong_inline begin() { return _internal; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<is_grid_tensor<T>::value, scalar_type *>::type
+  strong_inline begin() { return _internal[0].begin(); }
+  
+  template <typename T = vtype>
+  typename std::enable_if<!is_grid_tensor<T>::value, scalar_type *>::type
+  strong_inline end() { return _internal + grid_tensor_att<iVector<T,N>>::count; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<is_grid_tensor<T>::value, scalar_type *>::type
+  strong_inline end() { return _internal[0].begin() + grid_tensor_att<iVector<T,N>>::count; }
 };
 
 template <class vtype, int N>
@@ -458,6 +520,38 @@ class iMatrix {
   //  strong_inline vtype && operator ()(int i,int j) {
   //    return _internal[i][j];
   //  }
+
+  template <typename T = vtype>
+  typename std::enable_if<!is_grid_tensor<T>::value, const scalar_type *>::type
+  strong_inline begin() const { return _internal[0]; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<is_grid_tensor<T>::value, const scalar_type *>::type
+  strong_inline begin() const { return _internal[0][0].begin(); }
+  
+  template <typename T = vtype>
+  typename std::enable_if<!is_grid_tensor<T>::value, const scalar_type *>::type
+  strong_inline end() const { return _internal[0] + grid_tensor_att<iMatrix<T,N>>::count; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<is_grid_tensor<T>::value, const scalar_type *>::type
+  strong_inline end() const { return _internal[0][0].begin() + grid_tensor_att<iMatrix<T,N>>::count; }
+
+  template <typename T = vtype>
+  typename std::enable_if<!is_grid_tensor<T>::value, scalar_type *>::type
+  strong_inline begin() { return _internal[0]; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<is_grid_tensor<T>::value, scalar_type *>::type
+  strong_inline begin() { return _internal[0][0].begin(); }
+  
+  template <typename T = vtype>
+  typename std::enable_if<!is_grid_tensor<T>::value, scalar_type *>::type
+  strong_inline end() { return _internal[0] + grid_tensor_att<iMatrix<T,N>>::count; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<is_grid_tensor<T>::value, scalar_type *>::type
+  strong_inline end() { return _internal[0][0].begin() + grid_tensor_att<iMatrix<T,N>>::count; }
 };
 
 template <class v>

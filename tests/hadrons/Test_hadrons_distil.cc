@@ -477,6 +477,23 @@ void DebugGridTensorTest_print( int i )
   << std::endl;
 }
 
+// begin() and end() are the minimum necessary to support range-for loops
+// should really turn this into an iterator ...
+template<typename T, int N>
+class TestObject {
+public:
+  using value_type = T;
+private:
+  value_type * m_p;
+public:
+  TestObject() {
+    m_p = reinterpret_cast<value_type *>(std::malloc(N * sizeof(value_type)));
+  }
+  ~TestObject() { std::free(m_p); }
+  inline value_type * begin(void) { return m_p; }
+  inline value_type * end(void) { return m_p + N; }
+};
+
 bool DebugGridTensorTest( void )
 {
   typedef Complex t1;
@@ -485,7 +502,8 @@ bool DebugGridTensorTest( void )
   typedef iMatrix<t1, Nc> t4;
   typedef iVector<iMatrix<t1,1>,4> t5;
   typedef iScalar<t5> t6;
-  typedef iMatrix<iVector<iScalar<iMatrix<t6, 1>>,2>,7> t7;
+  typedef iMatrix<t6, 3> t7;
+  typedef iMatrix<iVector<iScalar<t7>,4>,2> t8;
   int i = 1;
   DebugGridTensorTest_print<t1>( i++ );
   DebugGridTensorTest_print<t2>( i++ );
@@ -494,6 +512,27 @@ bool DebugGridTensorTest( void )
   DebugGridTensorTest_print<t5>( i++ );
   DebugGridTensorTest_print<t6>( i++ );
   DebugGridTensorTest_print<t7>( i++ );
+  DebugGridTensorTest_print<t8>( i++ );
+
+  //using TOC7 = TestObject<std::complex<double>, 7>;
+  using TOC7 = t7;
+  TOC7 toc7;
+  constexpr std::complex<double> Inc{1,-1};
+  std::complex<double> Start{Inc};
+  for( auto &x : toc7 ) {
+    x = Start;
+    Start += Inc;
+  }
+  i = 0;
+  for( auto x : toc7 ) std::cout << "toc7[" << i++ << "] = " << x << std::endl;
+
+  t2 o2;
+  auto a2 = TensorRemove(o2);
+  //t3 o3;
+  //t4 o4;
+  //auto a3 = TensorRemove(o3);
+  //auto a4 = TensorRemove(o4);
+  
   return true;
 }
 #endif
@@ -502,8 +541,12 @@ int main(int argc, char *argv[])
 {
 #ifdef DEBUG
   // Debug only - test of Eigen::Tensor
-  std::cout << "sizeof(std::streamsize) = " << sizeof(std::streamsize) << std::endl;
-  std::cout << "sizeof(Eigen::Index) = " << sizeof(Eigen::Index) << std::endl;
+  std::cout << "sizeof(int) = " << sizeof(int)
+  << ", sizeof(long) = " << sizeof(long)
+  << ", sizeof(size_t) = " << sizeof(size_t)
+  << ", sizeof(std::size_t) = " << sizeof(std::size_t)
+  << ", sizeof(std::streamsize) = " << sizeof(std::streamsize)
+  << ", sizeof(Eigen::Index) = " << sizeof(Eigen::Index) << std::endl;
   //if( DebugEigenTest() ) return 0;
   if(DebugGridTensorTest()) return 0;
 #endif
