@@ -102,16 +102,17 @@ namespace Grid {
       for( auto &idx : MyIndex ) idx = 0;
       std::vector<std::size_t> SubIndex(ReducedDimsSize);
       for( auto &idx : SubIndex ) idx = 0;
-      for( typename ETensor::Index n = 0; n < TotalNumElements; ) {
+      typename ETensor::Index n = 0;
+      for( std::size_t j = 0; j < NumElements; j++ ) {
         for( Scalar &Source : ET( MyIndex ) ) {
           lambda(Source, n++, &SubIndex[0] );
-          // Now increment MyIndex
-          for( auto i = ET.NumDimensions - 1; i >= 0 && ++MyIndex[i] == ET.dimension(i); i-- )
-            MyIndex[i] = 0;
           // Now increment SubIndex
-          for( auto i = ReducedDimsSize - 1; i >= 0 && ++SubIndex[i] == ReducedDims[i]; i-- )
+          for( long i = ReducedDimsSize - 1; i >= 0 && ++SubIndex[i] == ReducedDims[i]; i-- )
             SubIndex[i] = 0;
         }
+        // Now increment MyIndex
+        for( long i = ET.NumDimensions - 1; i >= 0 && ++MyIndex[i] == ET.dimension(i); i-- )
+          MyIndex[i] = 0;
       }
     }
   }
