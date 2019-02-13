@@ -60,6 +60,8 @@ void test_LapEvec(Application &application)
   application.createModule<MGauge::Random>(szGaugeName);
   // Now make an instance of the LapEvec object
   MDistil::LapEvecPar p;
+  p.ConfigFileDir="/home/dp008/dp008/dc-rich6/Scripts/ConfigsDeflQED/";
+  p.ConfigFileName="ckpoint_lat.3000";
   p.gauge = szGaugeName;
   //p.EigenPackName = "ePack";
   //p.Distil.TI = 8;
