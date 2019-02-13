@@ -213,7 +213,7 @@ void test_MesonFieldSL(Application &application)
   application.createModule<MContraction::A2AMesonField>("DistilMesonFieldS",A2AMesonFieldPar);
 }
 /////////////////////////////////////////////////////////////
-// MesonFields
+// MesonFields - phiphi
 /////////////////////////////////////////////////////////////
 
 void test_MesonField(Application &application)
@@ -223,12 +223,30 @@ void test_MesonField(Application &application)
   A2AMesonFieldPar.left="DistilVecs_phi";
   //A2AMesonFieldPar.right="DistilVecs_rho";
   A2AMesonFieldPar.right="DistilVecs_phi";
-  A2AMesonFieldPar.output="MesonSinks";
+  A2AMesonFieldPar.output="MesonSinksPhi";
   A2AMesonFieldPar.gammas="all";
   A2AMesonFieldPar.mom={"0 0 0"};
   A2AMesonFieldPar.cacheBlock=2;
   A2AMesonFieldPar.block=4;
   application.createModule<MContraction::A2AMesonField>("DistilMesonField",A2AMesonFieldPar);
+}
+/////////////////////////////////////////////////////////////
+// MesonFields - rhorho
+/////////////////////////////////////////////////////////////
+
+void test_MesonFieldRho(Application &application)
+{
+  // DistilVectors parameters
+  MContraction::A2AMesonField::Par A2AMesonFieldPar;
+  A2AMesonFieldPar.left="DistilVecs_rho";
+  //A2AMesonFieldPar.right="DistilVecs_rho";
+  A2AMesonFieldPar.right="DistilVecs_rho";
+  A2AMesonFieldPar.output="MesonSinksRho";
+  A2AMesonFieldPar.gammas="all";
+  A2AMesonFieldPar.mom={"0 0 0"};
+  A2AMesonFieldPar.cacheBlock=2;
+  A2AMesonFieldPar.block=4;
+  application.createModule<MContraction::A2AMesonField>("DistilMesonFieldRho",A2AMesonFieldPar);
 }
 /////////////////////////////////////////////////////////////
 // BaryonFields - phiphiphi
@@ -656,6 +674,14 @@ int main(int argc, char *argv[])
       test_DistilVectors( application );
       test_BaryonFieldPhi( application );
       test_BaryonFieldRho( application );
+      break;
+    case 8: // 3
+      test_Global( application );
+      test_LapEvec( application );
+      test_Perambulators( application );
+      test_DistilVectors( application );
+      test_MesonField( application );
+      test_MesonFieldRho( application );
       break;
   }
   LOG(Message) << "====== XML creation for test " << iTestNum << " complete ======" << std::endl;
