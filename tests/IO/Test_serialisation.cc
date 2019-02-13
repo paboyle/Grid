@@ -91,14 +91,106 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
 
   R    reader(filename);
   O    buf;
-  bool good;
 
+#ifndef DEBUG
   read(reader, "testobject", buf);
-  good = (object == buf);
-  std::cout << name << " IO test: " << (good ? "success" : "failure");
-  std::cout << std::endl;
+  bool good = (object == buf);
+  std::cout << name << " IO test: " << std::endl;
   if (!good) exit(EXIT_FAILURE);
+#endif
 }
+
+#ifdef DEBUG
+//typedef int TestScalar;
+typedef std::complex<double> TestScalar;
+typedef Eigen::Tensor<TestScalar, 3> TestTensor;
+typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>> TestTensorFixed;
+typedef std::vector<TestTensorFixed> aTestTensorFixed;
+typedef Eigen::TensorFixedSize<SpinColourVector, Eigen::Sizes<11,3,2>> LSCTensor;
+typedef Eigen::TensorFixedSize<LorentzColourMatrix, Eigen::Sizes<5,7,2>> LCMTensor;
+// From Test_serialisation.cc
+class ETSerClass: Serializable {
+public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(ETSerClass
+                                  , SpinColourVector, scv
+                                  , SpinColourMatrix, scm
+                                  , TestTensor, Critter
+                                  , TestTensorFixed, FixedCritter
+                                  , aTestTensorFixed, aFixedCritter
+                                  , LSCTensor, MyLSCTensor
+                                  , LCMTensor, MyLCMTensor
+                                  );
+  ETSerClass() : Critter(7,3,2), aFixedCritter(3) {}
+};
+
+bool EigenIOTest(void) {
+  SpinColourVector scv, scv2;
+  scv2 = scv;
+  ioTest<Hdf5Writer, Hdf5Reader, SpinColourVector>("iotest_vector.h5", scv, "SpinColourVector");
+  SpinColourMatrix scm;
+  ioTest<Hdf5Writer, Hdf5Reader, SpinColourMatrix>("iotest_matrix.h5", scm, "SpinColourMatrix");
+  
+  constexpr TestScalar Inc{1,-1};
+  
+  TestTensor t(3,6,2);
+  TestScalar Val{Inc};
+  for( int i = 0 ; i < t.dimension(0) ; i++)
+    for( int j = 0 ; j < t.dimension(1) ; j++)
+      for( int k = 0 ; k < t.dimension(2) ; k++) {
+        t(i,j,k) = Val;
+        Val += Inc;
+      }
+  ioTest<Hdf5Writer, Hdf5Reader, TestTensor>("iotest_tensor.h5", t, "eigen_tensor_instance_name");
+  
+  // Now serialise a fixed size tensor
+  using FixedTensor = Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<8,4,3>>;
+  FixedTensor tf;
+  Val = Inc;
+  for( int i = 0 ; i < tf.dimension(0) ; i++)
+    for( int j = 0 ; j < tf.dimension(1) ; j++)
+      for( int k = 0 ; k < tf.dimension(2) ; k++) {
+        tf(i,j,k) = Val;
+        Val += Inc;
+      }
+  ioTest<Hdf5Writer, Hdf5Reader, FixedTensor>("iotest_tensor_fixed.h5", tf, "eigen_tensor_fixed_name");
+  
+  ETSerClass o;
+  ioTest<Hdf5Writer, Hdf5Reader, ETSerClass>("iotest_object.h5", o, "ETSerClass_object_instance_name");
+  
+  // Tensor of spin colour
+  LSCTensor l;
+  Val = 0;
+  for( int i = 0 ; i < l.dimension(0) ; i++)
+    for( int j = 0 ; j < l.dimension(1) ; j++)
+      for( int k = 0 ; k < l.dimension(2) ; k++)
+        for( int s = 0 ; s < Ns ; s++ )
+          for( int c = 0 ; c < Nc ; c++ )
+          {
+            l(i,j,k)()(s)(c) = Val;
+            Val += Inc;
+          }
+  ioTest<Hdf5Writer, Hdf5Reader, LSCTensor>("iotest_LSCTensor.h5", l, "LSCTensor_object_instance_name");
+  
+  // Tensor of spin colour
+  LCMTensor l2;
+  Val = 0;
+  for( int i = 0 ; i < l2.dimension(0) ; i++)
+    for( int j = 0 ; j < l2.dimension(1) ; j++)
+      for( int k = 0 ; k < l2.dimension(2) ; k++)
+        for( int l = 0 ; l < Ns ; l++ )
+          for( int c = 0 ; c < Nc ; c++ )
+            for( int c2 = 0 ; c2 < Nc ; c2++ )
+            {
+              l2(i,j,k)(l)()(c,c2) = Val;
+              Val += Inc;
+            }
+  ioTest<Hdf5Writer, Hdf5Reader, LCMTensor>("iotest_LCMTensor.h5", l2, "LCMTensor_object_instance_name");
+  
+  std::cout << "Wow!" << std::endl;
+  
+  return true;
+}
+#endif
 
 template <typename T>
 void tensorConvTestFn(GridSerialRNG &rng, const std::string label)
@@ -121,12 +213,13 @@ void tensorConvTestFn(GridSerialRNG &rng, const std::string label)
 int main(int argc,char **argv)
 {
   Grid_init(&argc,&argv);
-  
+  std::cout << std::boolalpha << "==== basic IO" << std::endl; // display true / false for boolean
+
+#ifndef DEBUG
   GridSerialRNG    rng;
 
   rng.SeedFixedIntegers(std::vector<int>({42,10,81,9}));
-  
-  std::cout << "==== basic IO" << std::endl;
+
   XmlWriter WR("bother.xml");
 
   // test basic type writing
@@ -160,8 +253,8 @@ int main(int argc,char **argv)
   std::cout << "-- serialisable class writing to std::cout:" << std::endl;
   std::cout << obj << std::endl;
   std::cout << "-- serialisable class comparison:" << std::endl;
-  std::cout << "vec[0] == obj: " << ((vec[0] == obj) ? "true" : "false") << std::endl;
-  std::cout << "vec[1] == obj: " << ((vec[1] == obj) ? "true" : "false") << std::endl;
+  std::cout << "vec[0] == obj: " << (vec[0] == obj) << std::endl;
+  std::cout << "vec[1] == obj: " << (vec[1] == obj) << std::endl;
   std::cout << "-- pair writing to std::cout:" << std::endl;
   std::cout << pair << std::endl;
 
@@ -227,4 +320,8 @@ int main(int argc,char **argv)
   tensorConvTest(rng, ColourVector);
   tensorConvTest(rng, SpinMatrix);
   tensorConvTest(rng, SpinVector);
+#elif HAVE_HDF5
+  if(! EigenIOTest() ) exit(EXIT_FAILURE);
+#endif
+  Grid_finalize();
 }
