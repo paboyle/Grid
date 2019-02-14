@@ -467,13 +467,13 @@ bool DebugEigenTest()
 template <typename T>
 void DebugGridTensorTest_print( int i )
 {
-  std::cout << i << " : " << is_grid_tensor<T>::value
-  << ", depth " << grid_tensor_att<T>::depth
-  << ", rank " << grid_tensor_att<T>::rank
-  << ", rank_non_trivial " << grid_tensor_att<T>::rank_non_trivial
-  << ", count " << grid_tensor_att<T>::count
-  << ", scalar_size " << grid_tensor_att<T>::scalar_size
-  << ", size " << grid_tensor_att<T>::size
+  std::cout << i << " : " << EigenIO::is_tensor<T>::value
+  << ", depth " << EigenIO::Traits<T>::depth
+  << ", rank " << EigenIO::Traits<T>::rank
+  << ", rank_non_trivial " << EigenIO::Traits<T>::rank_non_trivial
+  << ", count " << EigenIO::Traits<T>::count
+  << ", scalar_size " << EigenIO::Traits<T>::scalar_size
+  << ", size " << EigenIO::Traits<T>::size
   << std::endl;
 }
 
@@ -494,8 +494,24 @@ public:
   inline value_type * end(void) { return m_p + N; }
 };
 
+bool DebugFelixTensorTest( void )
+{
+  unsigned int Nmom = 2;
+  unsigned int Nt = 2;
+  unsigned int N_1 = 2;
+  unsigned int N_2 = 2;
+  unsigned int N_3 = 2;
+  using BaryonTensorSet = Eigen::Tensor<Complex, 6, Eigen::RowMajor>;
+  BaryonTensorSet BField3(Nmom,4,Nt,N_1,N_2,N_3);
+  std::vector<Complex> Memory(Nmom * Nt * N_1 * N_2 * N_3 * 2);
+  using BaryonTensorMap = Eigen::TensorMap<BaryonTensorSet>;
+  BaryonTensorMap BField4 (&Memory[0], Nmom,4,Nt,N_1,N_2,N_3);
+  return true;
+}
+
 bool DebugGridTensorTest( void )
 {
+  DebugFelixTensorTest();
   typedef Complex t1;
   typedef iScalar<t1> t2;
   typedef iVector<t1, Ns> t3;

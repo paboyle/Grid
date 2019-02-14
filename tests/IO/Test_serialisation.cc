@@ -101,6 +101,20 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
 }
 
 #ifdef DEBUG
+template <typename T>
+//typename std::enable_if<EigenIO::is_tensor<T>::value, void>::type
+void dump_tensor(T & t)
+{
+  using Traits = typename EigenIO::Traits<typename T::Scalar>;
+  for_all( t, [&](typename Traits::scalar_type &c, typename T::Index index, const std::size_t * pDims ){
+    std::cout << "  ";
+    for( int i = 0 ; i < t.NumDimensions + Traits::rank_non_trivial; i++ )
+      std::cout << "[" << pDims[i] << "]";
+    std::cout << " = " << c << std::endl;
+  } );
+  std::cout << "========================================" << std::endl;
+}
+
 //typedef int TestScalar;
 typedef std::complex<double> TestScalar;
 typedef Eigen::Tensor<iMatrix<TestScalar,1>, 6> TestTensorSingle;
@@ -145,6 +159,8 @@ bool EigenIOTest(void) {
         Val += Inc;
       }
   ioTest<Hdf5Writer, Hdf5Reader, TestTensor>("iotest_tensor.h5", t, "eigen_tensor_instance_name");
+  std::cout << "t:";
+  dump_tensor(t);
 
   // Now serialise a fixed size tensor
   using FixedTensor = Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<8,4,3>>;
@@ -157,7 +173,9 @@ bool EigenIOTest(void) {
         Val += Inc;
       }
   ioTest<Hdf5Writer, Hdf5Reader, FixedTensor>("iotest_tensor_fixed.h5", tf, "eigen_tensor_fixed_name");
-  
+  std::cout << "tf:";
+  dump_tensor(tf);
+
   ETSerClass o;
   ioTest<Hdf5Writer, Hdf5Reader, ETSerClass>("iotest_object.h5", o, "ETSerClass_object_instance_name");
   
@@ -174,14 +192,8 @@ bool EigenIOTest(void) {
             Val += Inc;
           }
   ioTest<Hdf5Writer, Hdf5Reader, LSCTensor>("iotest_LSCTensor.h5", l, "LSCTensor_object_instance_name");
-  std::cout << "t:";
-  for_all( l, [](std::complex<double> &c, LSCTensor::Index index, const std::size_t * pDims ){
-    std::cout << "  ";
-    for( int i = 0 ; i < 5; i++ )
-      std::cout << "[" << pDims[i] << "]";
-    std::cout << " = " << c << std::endl;
-  } );
-  std::cout << std::endl;
+  std::cout << "l:";
+  dump_tensor(l);
 
   // Tensor of spin colour
   LCMTensor l2;
