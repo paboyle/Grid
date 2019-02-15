@@ -84,10 +84,12 @@ struct LanczosParameters: Serializable {
 class LapEvecPar: Serializable
 {
 public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(LapEvecPar
-                                  ,std::string,         gauge
+  GRID_SERIALIZABLE_CLASS_MEMBERS(LapEvecPar,
+                                  std::string,         gauge,
+                                  std::string, ConfigFileDir,
+                                  std::string, ConfigFileName,
                                   //,std::string,         EigenPackName
-                                  ,StoutParameters,     Stout
+                                  StoutParameters,     Stout
                                   ,ChebyshevParameters, Cheby
                                   ,LanczosParameters,   Lanczos
                                   //,DistilParameters,    Distil
@@ -229,10 +231,14 @@ void TLapEvec<GImpl>::execute(void)
   //else
     //assert(nnoise>1);
 
+    const std::string &ConfigFileDir{par().ConfigFileDir};
+    const std::string &ConfigFileName{par().ConfigFileName};
+
   // Debugging only
   //envGetTmp(GaugeField, Umu);
   auto &Umu = envGet(GaugeField, par().gauge);
   envGetTmp(GaugeField, Umu_smear);
+  FieldMetaData header;
   if((1)) {
     const std::vector<int> seeds({1, 2, 3, 4, 5});
     GridParallelRNG pRNG4d(gridHD);
@@ -258,6 +264,11 @@ void TLapEvec<GImpl>::execute(void)
       Umu = where(coor==t,Umu_smear,Umu);
     }
     //  std::cout << "Umu is "<<Umu<<std::endl;
+  } else {
+    std::string   fileName(ConfigFileDir + ConfigFileName);
+    std::cout << GridLogMessage << "Loading NERSC configuration from '" << fileName << "'" << std::endl;
+    NerscIO::readConfiguration(Umu, header, fileName);
+    std::cout << GridLogMessage << "reading done." << std::endl;
   }
 
   // Stout smearing
