@@ -39,7 +39,7 @@ namespace Grid
     typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
     writeDefault(const std::string &s, const std::vector<U> &x);
     template <typename U>
-    void writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const std::vector<U> & DataRowMajor);
+    void writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const U * pDataRowMajor, size_t NumElements);
     H5NS::Group & getGroup(void);
   private:
     template <typename U>
@@ -104,31 +104,32 @@ namespace Grid
   void Hdf5Writer::writeDefault(const std::string &s, const std::string &x);
   
   template <typename U>
-  void Hdf5Writer::writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const std::vector<U> & DataRowMajor)
+  void Hdf5Writer::writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const U * pDataRowMajor, size_t NumElements)
   {
     // Hdf5 needs the dimensions as hsize_t
-    std::vector<hsize_t> dim;
-    for (auto &d: Dimensions)
-      dim.push_back(d);
+    int rank = static_cast<int>(Dimensions.size());
+    std::vector<hsize_t> dim(rank);
+    for(int i = 0; i < rank; i++)
+      dim[i] = Dimensions[i];
     // write to file
-    H5NS::DataSpace dataSpace(dim.size(), dim.data());
-    
-    if (DataRowMajor.size() > dataSetThres_)
+    H5NS::DataSpace dataSpace(rank, dim.data());
+
+    size_t DataSize = NumElements * sizeof(U);
+    if (DataSize > dataSetThres_)
     {
       H5NS::DataSet           dataSet;
       H5NS::DSetCreatPropList plist;
       
-      plist.setChunk(dim.size(), dim.data());
+      plist.setChunk(rank, dim.data());
       plist.setFletcher32();
       dataSet = group_.createDataSet(s, Hdf5Type<U>::type(), dataSpace, plist);
-      dataSet.write(&DataRowMajor[0], Hdf5Type<U>::type());
+      dataSet.write(pDataRowMajor, Hdf5Type<U>::type());
     }
     else
     {
       H5NS::Attribute attribute;
-      
       attribute = group_.createAttribute(s, Hdf5Type<U>::type(), dataSpace);
-      attribute.write(Hdf5Type<U>::type(), &DataRowMajor[0]);
+      attribute.write(Hdf5Type<U>::type(), pDataRowMajor);
     }
   }
 
@@ -145,7 +146,7 @@ namespace Grid
     const auto           &flatx = flat.getFlatVector();
     for (auto &d: flat.getDim())
       dim.push_back(d);
-    writeMultiDim<Element>(s, dim, flatx);
+    writeMultiDim<Element>(s, dim, &flatx[0], flatx.size());
   }
   
   template <typename U>

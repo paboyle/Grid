@@ -466,153 +466,62 @@ bool DebugEigenTest()
   return true;
 }
 
-template <typename W, typename R, typename O>
-bool ioTest(const std::string &filename, const O &object, const std::string &name)
-{
-  // writer needs to be destroyed so that writing physically happens
-  {
-    W writer(filename);
-    write(writer, "testobject", object);
-  }
-  
-  /*R    reader(filename);
-   O    buf;
-   bool good;
-   
-   read(reader, "testobject", buf);
-   good = (object == buf);
-   std::cout << name << " IO test: " << (good ? "success" : "failure");
-   std::cout << std::endl;
-   return good;*/
-  return true;
-}
-
-//typedef int TestScalar;
-typedef std::complex<double> TestScalar;
-typedef Eigen::Tensor<TestScalar, 3> TestTensor;
-typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>> TestTensorFixed;
-typedef std::vector<TestTensorFixed> aTestTensorFixed;
-typedef Eigen::TensorFixedSize<SpinColourVector, Eigen::Sizes<11,3,2>> LSCTensor;
-typedef Eigen::TensorFixedSize<LorentzColourMatrix, Eigen::Sizes<5,7,2>> LCMTensor;
-// From Test_serialisation.cc
-class myclass: Serializable {
-public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(myclass
-                                  , SpinColourVector, scv
-                                  , SpinColourMatrix, scm
-                                  , TestTensor, Critter
-                                  , TestTensorFixed, FixedCritter
-                                  , aTestTensorFixed, aFixedCritter
-                                  , LSCTensor, MyLSCTensor
-                                  , LCMTensor, MyLCMTensor
-                                  );
-  myclass() : Critter(7,3,2), aFixedCritter(3) {}
-};
-
-bool DebugIOTest(void) {
-  SpinColourVector scv, scv2;
-  scv2 = scv;
-  ioTest<Hdf5Writer, Hdf5Reader, SpinColourVector>("iotest_vector.h5", scv, "SpinColourVector");
-  SpinColourMatrix scm;
-  ioTest<Hdf5Writer, Hdf5Reader, SpinColourMatrix>("iotest_matrix.h5", scm, "SpinColourMatrix");
-
-  constexpr TestScalar Inc{1,-1};
-
-  TestTensor t(3,6,2);
-  TestScalar Val{Inc};
-  for( int i = 0 ; i < t.dimension(0) ; i++)
-    for( int j = 0 ; j < t.dimension(1) ; j++)
-      for( int k = 0 ; k < t.dimension(2) ; k++) {
-        t(i,j,k) = Val;
-        Val += Inc;
-      }
-  ioTest<Hdf5Writer, Hdf5Reader, TestTensor>("iotest_tensor.h5", t, "eigen_tensor_instance_name");
-
-  // Now serialise a fixed size tensor
-  using FixedTensor = Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<8,4,3>>;
-  FixedTensor tf;
-  Val = Inc;
-  for( int i = 0 ; i < tf.dimension(0) ; i++)
-    for( int j = 0 ; j < tf.dimension(1) ; j++)
-      for( int k = 0 ; k < tf.dimension(2) ; k++) {
-        tf(i,j,k) = Val;
-        Val += Inc;
-      }
-  ioTest<Hdf5Writer, Hdf5Reader, FixedTensor>("iotest_tensor_fixed.h5", tf, "eigen_tensor_fixed_name");
-
-  myclass o;
-  ioTest<Hdf5Writer, Hdf5Reader, myclass>("iotest_object.h5", o, "myclass_object_instance_name");
-
-  // Tensor of spin colour
-  LSCTensor l;
-  Val = 0;
-  for( int i = 0 ; i < l.dimension(0) ; i++)
-    for( int j = 0 ; j < l.dimension(1) ; j++)
-      for( int k = 0 ; k < l.dimension(2) ; k++)
-        for( int s = 0 ; s < Ns ; s++ )
-          for( int c = 0 ; c < Nc ; c++ )
-          {
-            l(i,j,k)()(s)(c) = Val;
-            Val += Inc;
-          }
-  ioTest<Hdf5Writer, Hdf5Reader, LSCTensor>("iotest_LSCTensor.h5", l, "LSCTensor_object_instance_name");
-
-  // Tensor of spin colour
-  LCMTensor l2;
-  Val = 0;
-  for( int i = 0 ; i < l2.dimension(0) ; i++)
-    for( int j = 0 ; j < l2.dimension(1) ; j++)
-      for( int k = 0 ; k < l2.dimension(2) ; k++)
-        for( int l = 0 ; l < Ns ; l++ )
-          for( int c = 0 ; c < Nc ; c++ )
-            for( int c2 = 0 ; c2 < Nc ; c2++ )
-            {
-              l2(i,j,k)(l)()(c,c2) = Val;
-              Val += Inc;
-            }
-  ioTest<Hdf5Writer, Hdf5Reader, LCMTensor>("iotest_LCMTensor.h5", l2, "LCMTensor_object_instance_name");
-  
-  std::cout << "Wow!" << std::endl;
-  
-  return true;
-}
-
-//template <typename T> ReallyIsGridTensor struct {
-  //false_type;
-//}
-
-/*template<typename T>
-struct GridSize : public std::integral_constant<std::size_t, 0> {};
-
-template<typename T>
-struct GridRank<iScalar<T>> : public std::integral_constant<std::size_t, rank<T>::value + 1> {};
-
-template<class T, std::size_t N>
-struct rank<T[N]> : public std::integral_constant<std::size_t, rank<T>::value + 1> {};
-*/
-
 template <typename T>
 void DebugGridTensorTest_print( int i )
 {
-  std::cout << i << " : " << is_grid_tensor<T>::value
-  << ", depth " << grid_tensor_att<T>::depth
-  << ", rank " << grid_tensor_att<T>::rank
-  << ", rank_non_trivial " << grid_tensor_att<T>::rank_non_trivial
-  << ", count " << grid_tensor_att<T>::count
-  << ", scalar_size " << grid_tensor_att<T>::scalar_size
-  << ", size " << grid_tensor_att<T>::size
+  std::cout << i << " : " << EigenIO::is_tensor<T>::value
+  << ", depth " << EigenIO::Traits<T>::depth
+  << ", rank " << EigenIO::Traits<T>::rank
+  << ", rank_non_trivial " << EigenIO::Traits<T>::rank_non_trivial
+  << ", count " << EigenIO::Traits<T>::count
+  << ", scalar_size " << EigenIO::Traits<T>::scalar_size
+  << ", size " << EigenIO::Traits<T>::size
   << std::endl;
+}
+
+// begin() and end() are the minimum necessary to support range-for loops
+// should really turn this into an iterator ...
+template<typename T, int N>
+class TestObject {
+public:
+  using value_type = T;
+private:
+  value_type * m_p;
+public:
+  TestObject() {
+    m_p = reinterpret_cast<value_type *>(std::malloc(N * sizeof(value_type)));
+  }
+  ~TestObject() { std::free(m_p); }
+  inline value_type * begin(void) { return m_p; }
+  inline value_type * end(void) { return m_p + N; }
+};
+
+bool DebugFelixTensorTest( void )
+{
+  unsigned int Nmom = 2;
+  unsigned int Nt = 2;
+  unsigned int N_1 = 2;
+  unsigned int N_2 = 2;
+  unsigned int N_3 = 2;
+  using BaryonTensorSet = Eigen::Tensor<Complex, 6, Eigen::RowMajor>;
+  BaryonTensorSet BField3(Nmom,4,Nt,N_1,N_2,N_3);
+  std::vector<Complex> Memory(Nmom * Nt * N_1 * N_2 * N_3 * 2);
+  using BaryonTensorMap = Eigen::TensorMap<BaryonTensorSet>;
+  BaryonTensorMap BField4 (&Memory[0], Nmom,4,Nt,N_1,N_2,N_3);
+  return true;
 }
 
 bool DebugGridTensorTest( void )
 {
+  DebugFelixTensorTest();
   typedef Complex t1;
   typedef iScalar<t1> t2;
   typedef iVector<t1, Ns> t3;
   typedef iMatrix<t1, Nc> t4;
   typedef iVector<iMatrix<t1,1>,4> t5;
   typedef iScalar<t5> t6;
-  typedef iMatrix<iVector<iScalar<iMatrix<t6, 1>>,2>,7> t7;
+  typedef iMatrix<t6, 3> t7;
+  typedef iMatrix<iVector<iScalar<t7>,4>,2> t8;
   int i = 1;
   DebugGridTensorTest_print<t1>( i++ );
   DebugGridTensorTest_print<t2>( i++ );
@@ -621,6 +530,27 @@ bool DebugGridTensorTest( void )
   DebugGridTensorTest_print<t5>( i++ );
   DebugGridTensorTest_print<t6>( i++ );
   DebugGridTensorTest_print<t7>( i++ );
+  DebugGridTensorTest_print<t8>( i++ );
+
+  //using TOC7 = TestObject<std::complex<double>, 7>;
+  using TOC7 = t7;
+  TOC7 toc7;
+  constexpr std::complex<double> Inc{1,-1};
+  std::complex<double> Start{Inc};
+  for( auto &x : toc7 ) {
+    x = Start;
+    Start += Inc;
+  }
+  i = 0;
+  for( auto x : toc7 ) std::cout << "toc7[" << i++ << "] = " << x << std::endl;
+
+  t2 o2;
+  auto a2 = TensorRemove(o2);
+  //t3 o3;
+  //t4 o4;
+  //auto a3 = TensorRemove(o3);
+  //auto a4 = TensorRemove(o4);
+  
   return true;
 }
 #endif
@@ -629,11 +559,14 @@ int main(int argc, char *argv[])
 {
 #ifdef DEBUG
   // Debug only - test of Eigen::Tensor
-  std::cout << "sizeof(std::streamsize) = " << sizeof(std::streamsize) << std::endl;
-  std::cout << "sizeof(Eigen::Index) = " << sizeof(Eigen::Index) << std::endl;
+  std::cout << "sizeof(int) = " << sizeof(int)
+  << ", sizeof(long) = " << sizeof(long)
+  << ", sizeof(size_t) = " << sizeof(size_t)
+  << ", sizeof(std::size_t) = " << sizeof(std::size_t)
+  << ", sizeof(std::streamsize) = " << sizeof(std::streamsize)
+  << ", sizeof(Eigen::Index) = " << sizeof(Eigen::Index) << std::endl;
   //if( DebugEigenTest() ) return 0;
   if(DebugGridTensorTest()) return 0;
-  //if(DebugIOTest()) return 0;
 #endif
 
   // Decode command-line parameters. 1st one is which test to run
