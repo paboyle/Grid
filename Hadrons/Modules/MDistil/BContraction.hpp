@@ -178,7 +178,24 @@ void TBContraction<FImpl>::execute(void)
   BaryonTensorSet BField3(Nmom,4,Nt,N_1,N_2,N_3); 
 
   Eigen::Tensor<Complex, 3> corr(Nmom,4,Nt); 
-  
+
+  //Needs more work - but this is important for contraction
+ /* int Npairs = 0;
+  char left[] = "uud";
+  char right[] = "uud";
+  std::vector<std::vector<int>> pairs;
+  for (int il=0, i=0 ; il < 3 ; il++){
+  for (int ir=0 ; ir < 3 ; ir++){
+    if (il>ir) continue;
+    if (left[il] != right[il]) continue;
+    pairs[i][0]=il;
+    pairs[i][1]=ir;
+    i++;
+    Npairs = i;
+  }
+  std::cout << "pairs: " << pairs << std::endl;
+   }
+   */
     Complex diquark2;
     for (int i1=0 ; i1 < N_1 ; i1++){
       for (int i2=0 ; i2 < N_2 ; i2++){
