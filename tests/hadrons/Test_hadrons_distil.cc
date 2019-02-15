@@ -508,6 +508,25 @@ bool DebugFelixTensorTest( void )
   std::vector<Complex> Memory(Nmom * Nt * N_1 * N_2 * N_3 * 2);
   using BaryonTensorMap = Eigen::TensorMap<BaryonTensorSet>;
   BaryonTensorMap BField4 (&Memory[0], Nmom,4,Nt,N_1,N_2,N_3);
+
+  using TestScalar = std::complex<float>;
+  //typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>, Eigen::StorageOptions::RowMajor> TestTensorFixed;
+  using T3 = Eigen::Tensor<TestScalar, 3, Eigen::StorageOptions::RowMajor>;
+  using T2 = Eigen::Tensor<TestScalar, 2, Eigen::StorageOptions::RowMajor>;
+  T3 a(4,3,2);
+  for_all( a, [&](TestScalar &c, float n, const std::size_t * pDims ){
+    c = std::complex<float>{n,-n};
+  } );
+  std::cout << "a initialised to:\n" << a << std::endl;
+  Eigen::array<int, 3> offsets = {0,0,0};
+  Eigen::array<int, 3> extents = {1,3,2};
+  T2 b(3,2);
+  auto c = a.slice( offsets, extents).reshape(extents);
+  std::cout << "c is:\n" << c << std::endl;
+  b = a.chip(0,0);
+  std::cout << "b is:\n" << b << std::endl;
+  //b = c;
+
   return true;
 }
 
