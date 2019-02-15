@@ -175,8 +175,10 @@ void TBContraction<FImpl>::execute(void)
     };
   std::vector<Complex> factor23{{0.,-1.},{0.,1.},{0.,1.}};
   //BaryonTensorSet<Complex>  BField3(storage,Nmom,4,Nt,N_1,N_2,N_3);    
-  using BaryonTensorSet = Eigen::Tensor<Complex, 6, Eigen::RowMajor>;
+  using BaryonTensorSet = Eigen::Tensor<Complex, 6>;
   BaryonTensorSet BField3(Nmom,4,Nt,N_1,N_2,N_3); 
+  using C2Set = Eigen::Tensor<Complex, 3>;
+  C2Set corr(Nmom,4,Nt); 
 
    std::vector<SpinVector> BField2(Nmom*Nt*N_1*N_2*N_3);    
     Complex diquark2;
@@ -223,10 +225,25 @@ void TBContraction<FImpl>::execute(void)
     }
 
    //Product ijk * ijk
-   // for ijk * jik: (4,5),(5,4),(6,6) z.b.
-   Eigen::array<Eigen::IndexPair<int>, 3> product_dims = { Eigen::IndexPair<int>(4, 4),Eigen::IndexPair<int>(5, 5) ,Eigen::IndexPair<int>(6, 6)  };
-   // Whycan't I choose the dimension to be 3??? Want to sum over them, not save each element!
-   Eigen::Tensor<Complex,6,Eigen::RowMajor> C2 = BField3.contract(BField3,product_dims);
+   // for ijk * jik: (0,1),(1,0),(2,2) z.b.
+   Eigen::array<Eigen::IndexPair<int>, 3> product_dims = { Eigen::IndexPair<int>(0,0),Eigen::IndexPair<int>(1,1) ,Eigen::IndexPair<int>(2,2)  };
+   for (int imom=0 ; imom < Nmom ; imom++){
+     Eigen::Tensor<Complex,5> B5 = BField3.chip(imom,0);
+     for (int is=0 ; is < 4 ; is++){
+       Eigen::Tensor<Complex,4> B4 = B5.chip(is,0);
+       for (int t=0 ; t < Nt ; t++){
+         Eigen::Tensor<Complex,3> B3 = B4.chip(t,0);
+         Eigen::Tensor<Complex,0> C2 = B3.contract(B3,product_dims);
+	 corr(imom,is,t) = C2(0);
+       }
+     }
+   }
+   //Eigen::Tensor<Complex,6,Eigen::RowMajor> C2 = BField3.contract(BField3,product_dims);
+    for (int is=0 ; is < 4 ; is++){
+      for (int t=0 ; t < Nt ; t++){
+        std::cout << "C2(is=" << is << ",t=" << t << ") = " << corr(0,is,t) << std::endl;
+      }
+    }
 }
 
 END_MODULE_NAMESPACE
