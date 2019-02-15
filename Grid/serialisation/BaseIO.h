@@ -120,16 +120,7 @@ namespace Grid {
       static constexpr std::size_t Dimension(unsigned int dim) {
         return ( dim == 0 ) ? N : Traits<T>::Dimension(dim - 1); }
       static constexpr std::size_t DimensionNT(unsigned int dim) {
-        std::size_t DimSize = N;
-        bool bGotDimSize = false;
-        if( N != 1 ) {
-          if( dim == 0 )
-            bGotDimSize = true;
-          dim--;
-        }
-        if( !bGotDimSize )
-          DimSize = Traits<T>::DimensionNT(dim);
-        return DimSize;
+        return ( N == 1 ) ? Traits<T>::DimensionNT(dim) : ( dim == 0 ) ? N : Traits<T>::DimensionNT(dim - 1);
       }
     };
     template <typename T, int N> struct Traits<iMatrix<T, N>> {
@@ -143,16 +134,7 @@ namespace Grid {
       static constexpr std::size_t Dimension(unsigned int dim) {
         return ( dim == 0 || dim == 1 ) ? N : Traits<T>::Dimension(dim - 2); }
       static constexpr std::size_t DimensionNT(unsigned int dim) {
-        std::size_t DimSize = N;
-        bool bGotDimSize = false;
-        if( N != 1 ) {
-          if( dim == 0 || dim == 1 )
-            bGotDimSize = true;
-          dim -= 2;
-        }
-        if( !bGotDimSize )
-          DimSize = Traits<T>::DimensionNT(dim);
-        return DimSize;
+        return ( N == 1 ) ? Traits<T>::DimensionNT(dim) : ( dim == 0 || dim == 1 ) ? N : Traits<T>::DimensionNT(dim - 2);
       }
     };
     template <typename T, int N> struct Traits<std::array<T, N>> : Traits<iVector<T, N>> {};
