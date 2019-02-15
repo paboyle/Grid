@@ -104,7 +104,7 @@ std::vector<std::string> TBContraction<FImpl>::getOutput(void)
 template <typename FImpl>
 void TBContraction<FImpl>::setup(void)
 {
-    
+
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -173,14 +173,12 @@ void TBContraction<FImpl>::execute(void)
        Gamma::Algebra::SigmaYT, // C = i gamma_2 gamma_4
        Gamma::Algebra::GammaYGamma5, // i gamma_4 C gamma_5 = i gamma_2 gamma_5
     };
-  std::vector<Complex> factor23{{0.,-1.},{0.,1.},{0.,1.}};
-  //BaryonTensorSet<Complex>  BField3(storage,Nmom,4,Nt,N_1,N_2,N_3);    
+  std::vector<Complex> factor23{{0.,-1.},{0.,1.},{0.,1.}}; 
   using BaryonTensorSet = Eigen::Tensor<Complex, 6>;
   BaryonTensorSet BField3(Nmom,4,Nt,N_1,N_2,N_3); 
-  using C2Set = Eigen::Tensor<Complex, 3>;
-  C2Set corr(Nmom,4,Nt); 
 
-   std::vector<SpinVector> BField2(Nmom*Nt*N_1*N_2*N_3);    
+  Eigen::Tensor<Complex, 3> corr(Nmom,4,Nt); 
+  
     Complex diquark2;
     for (int i1=0 ; i1 < N_1 ; i1++){
       for (int i2=0 ; i2 < N_2 ; i2++){
@@ -205,7 +203,6 @@ void TBContraction<FImpl>::execute(void)
 		  tmp222 = g4*tmp111;
 		  tmp111 = 0.5*(double)parity*(tmp111 + tmp222); // P_\pm * ...
                   diquark2 = factor23[0]*innerProduct(tmp22s,tmp333);
-                  //BField2[Bindex]+=(double)epsilon_sgn[ie]*tmp111*diquark2;
                   for (int is=0 ; is < 4 ; is++){
                     BField3(imom,is,t,i1,i2,i3)+=(double)epsilon_sgn[ie]*tmp111()(is)()*diquark2;
                   }
@@ -218,8 +215,6 @@ void TBContraction<FImpl>::execute(void)
     }
     for (int is=0 ; is < 4 ; is++){
       for (int t=0 ; t < Nt ; t++){
-     //   Bindex = 0 + N_1*(0 + N_2*(0 + N_3*(0+Nmom*t)));
-     //   std::cout << "BaryonField(is=" << is << ",t=" << t << ") = " << BField2[Bindex]()(is)() << std::endl;
         std::cout << "BaryonField(is=" << is << ",t=" << t << ") = " << BField3(0,is,t,0,0,0) << std::endl;
       }
     }
@@ -238,7 +233,6 @@ void TBContraction<FImpl>::execute(void)
        }
      }
    }
-   //Eigen::Tensor<Complex,6,Eigen::RowMajor> C2 = BField3.contract(BField3,product_dims);
     for (int is=0 ; is < 4 ; is++){
       for (int t=0 ; t < Nt ; t++){
         std::cout << "C2(is=" << is << ",t=" << t << ") = " << corr(0,is,t) << std::endl;
