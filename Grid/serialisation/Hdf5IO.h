@@ -68,6 +68,8 @@ namespace Grid
     template <typename U>
     typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
     readDefault(const std::string &s, std::vector<U> &x);
+    template <typename U>
+    void readMultiDim(const std::string &s, std::vector<U> &buf, std::vector<size_t> &dim);
     H5NS::Group & getGroup(void);
   private:
     template <typename U>
@@ -182,10 +184,9 @@ namespace Grid
   
   template <>
   void Hdf5Reader::readDefault(const std::string &s, std::string &x);
-  
+
   template <typename U>
-  typename std::enable_if<element<std::vector<U>>::is_number, void>::type
-  Hdf5Reader::readDefault(const std::string &s, std::vector<U> &x)
+  void Hdf5Reader::readMultiDim(const std::string &s, std::vector<U> &buf, std::vector<size_t> &dim)
   {
     // alias to element type
     typedef typename element<std::vector<U>>::type Element;
@@ -193,7 +194,6 @@ namespace Grid
     // read the dimensions
     H5NS::DataSpace       dataSpace;
     std::vector<hsize_t>  hdim;
-    std::vector<size_t>   dim;
     hsize_t               size = 1;
     
     if (group_.attrExists(s))
@@ -213,8 +213,8 @@ namespace Grid
     }
     
     // read the flat vector
-    std::vector<Element> buf(size);
-
+    buf.resize(size);
+    
     if (size * sizeof(Element) > dataSetThres_)
     {
       H5NS::DataSet dataSet;
@@ -229,7 +229,19 @@ namespace Grid
       attribute = group_.openAttribute(s);
       attribute.read(Hdf5Type<Element>::type(), buf.data());
     }
-    
+  }
+
+  template <typename U>
+  typename std::enable_if<element<std::vector<U>>::is_number, void>::type
+  Hdf5Reader::readDefault(const std::string &s, std::vector<U> &x)
+  {
+    // alias to element type
+    typedef typename element<std::vector<U>>::type Element;
+
+    std::vector<size_t>   dim;
+    std::vector<Element>  buf;
+    readMultiDim( s, buf, dim );
+
     // reconstruct the multidimensional vector
     Reconstruct<std::vector<U>> r(buf, dim);
     

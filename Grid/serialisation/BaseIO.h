@@ -215,6 +215,7 @@ namespace Grid {
 
   // Helper to dump a tensor
 #ifdef DEBUG
+#define dump_tensor(args...) dump_tensor_func(args)
   template <typename T>
   typename std::enable_if<EigenIO::is_tensor<T>::value, void>::type
   dump_tensor_func(T &t, const char * pName = nullptr)
@@ -235,17 +236,13 @@ namespace Grid {
     } );
     std::cout << "========================================" << std::endl;
   }
-#define dump_tensor(args...) dump_tensor_func(args)
-#else
-#define dump_tensor(args...)
-#endif
 
   // Helper to dump a tensor in memory order
   // Kind of superfluous given the above
-#ifdef DEBUG
+#define DumpMemoryOrder(args...) DumpMemoryOrder_func(args)
   template <typename T>
   typename std::enable_if<EigenIO::is_tensor_of_scalar<T>::value, void>::type
-  DumpMemoryOrder(T &t, const char * pName = nullptr)
+  DumpMemoryOrder_func(T &t, const char * pName = nullptr)
   {
     const auto rank = t.rank();
     const auto &dims = t.dimensions();
@@ -287,6 +284,9 @@ namespace Grid {
         std::cout << std::endl;
     }
   }
+#else
+#define dump_tensor(args...)
+#define DumpMemoryOrder(args...)
 #endif
 
   // Abstract writer/reader classes ////////////////////////////////////////////
@@ -345,7 +345,8 @@ namespace Grid {
     typename std::enable_if<std::is_base_of<Serializable, U>::value, void>::type
     read(const std::string& s, U &output);
     template <typename U>
-    typename std::enable_if<!std::is_base_of<Serializable, U>::value, void>::type
+    typename std::enable_if<!std::is_base_of<Serializable, U>::value
+        && !std::is_base_of<Eigen::TensorBase<U, Eigen::ReadOnlyAccessors>, U>::value, void>::type
     read(const std::string& s, U &output);
     template <typename U>
     void read(const std::string &s, iScalar<U> &output);
@@ -353,6 +354,12 @@ namespace Grid {
     void read(const std::string &s, iVector<U, N> &output);
     template <typename U, int N>
     void read(const std::string &s, iMatrix<U, N> &output);
+    template <typename ETensor>
+    typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && EigenIO::is_scalar<typename ETensor::Scalar>::value, void>::type
+    read(const std::string &s, ETensor &output);
+    template <typename ETensor>
+    typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && EigenIO::is_container<typename ETensor::Scalar>::value, void>::type
+    read(const std::string &s, ETensor &output);
   protected:
     template <typename U>
     void fromString(U &output, const std::string &s);
@@ -398,7 +405,7 @@ namespace Grid {
   template <typename T>
   template <typename U>
   typename std::enable_if<!std::is_base_of<Serializable, U>::value
-                       && !std::is_base_of<Eigen::TensorBase<U, Eigen::ReadOnlyAccessors>, U>::value, void>::type
+      && !std::is_base_of<Eigen::TensorBase<U, Eigen::ReadOnlyAccessors>, U>::value, void>::type
   Writer<T>::write(const std::string &s, const U &output)
   {
     upcast->writeDefault(s, output);
@@ -602,7 +609,8 @@ namespace Grid {
   
   template <typename T>
   template <typename U>
-  typename std::enable_if<!std::is_base_of<Serializable, U>::value, void>::type
+  typename std::enable_if<!std::is_base_of<Serializable, U>::value
+      && !std::is_base_of<Eigen::TensorBase<U, Eigen::ReadOnlyAccessors>, U>::value, void>::type
   Reader<T>::read(const std::string &s, U &output)
   {
     upcast->readDefault(s, output);
@@ -636,6 +644,20 @@ namespace Grid {
     
     upcast->readDefault(s, v);
     vecToTensor(output, v);
+  }
+
+  template <typename T>
+  template <typename ETensor>
+  typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && EigenIO::is_scalar<typename ETensor::Scalar>::value, void>::type
+  Reader<T>::read(const std::string &s, ETensor &output)
+  {
+  }
+
+  template <typename T>
+  template <typename ETensor>
+  typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && EigenIO::is_container<typename ETensor::Scalar>::value, void>::type
+  Reader<T>::read(const std::string &s, ETensor &output)
+  {
   }
 
   template <typename T>
