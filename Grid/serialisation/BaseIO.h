@@ -145,7 +145,9 @@ namespace Grid {
     //template <typename T> struct Traits<T, typename std::enable_if<is_tensor<T>::value, void>::type> : Traits<T> {};
   }
 
-  // Helper to allow iteration through an Eigen::Tensor (using a lambda)
+  // Calls a lamda (passing index and sequence number) for every member of an Eigen::Tensor
+  // For efficiency, iteration proceeds in memory order,
+  // ... but parameters guaranteed to be the same regardless of memory order
   template <typename ETensor, typename Lambda>
   typename std::enable_if<EigenIO::is_tensor<ETensor>::value, void>::type
   for_all( ETensor &ET, Lambda lambda )
@@ -153,62 +155,107 @@ namespace Grid {
     using Scalar = typename ETensor::Scalar; // This could be a Container - we'll check later
     const std::size_t NumScalars = ET.size();
     assert( NumScalars > 0 );
-    // Assemble a vector containing all the non-trivial dimensions (i.e. dimensions > 1)
-    unsigned int ScalarElementCount{1};
-    std::vector<size_t> NonTrivialDims;
-    NonTrivialDims.reserve(ET.NumDimensions + EigenIO::Traits<Scalar>::rank_non_trivial);
-    for(auto i = 0; i < ET.NumDimensions; i++ ) {
+    using Index = typename ETensor::Index;
+    Index ScalarElementCount{1};
+    const auto InnerRank = EigenIO::Traits<Scalar>::rank_non_trivial;
+    const auto rank{ETensor::NumIndices};
+    std::array<std::size_t, rank + InnerRank> Dims;
+    for(auto i = 0; i < rank; i++ ) {
       auto dim = ET.dimension(i);
-      if( dim <= 1 ) {
-        assert( dim == 1 ); // Not expecting dimension to be <= 0
-      } else {
-        size_t s = static_cast<size_t>(dim);
-        assert( s == dim ); // check we didn't lose anything in the conversion
-        NonTrivialDims.push_back(s);
-        ScalarElementCount *= s;
-      }
+      assert( dim > 0 );
+      Dims[i] = static_cast<std::size_t>(dim);
+      assert( Dims[i] == dim ); // check we didn't lose anything in the conversion
+      ScalarElementCount *= Dims[i];
     }
-    // Check that the number of containers is correct
+    // Check that the number of containers is correct ... and we didn't lose anything in conversions
     assert( NumScalars == ScalarElementCount );
     // If the Scalar is actually a container, add the inner Scalar's non-trivial dimensions
     size_t InnerScalarCount{1};
-    for(auto i = 0; i < EigenIO::Traits<Scalar>::rank_non_trivial; i++ ) {
+    for(auto i = 0; i < InnerRank; i++ ) {
       auto dim = EigenIO::Traits<Scalar>::DimensionNT(i);
       assert( dim > 1 );
-      NonTrivialDims.push_back(dim);
+      Dims[rank + i] = static_cast<std::size_t>(dim);
+      assert( Dims[rank + i] == dim ); // check we didn't lose anything in the conversion
       InnerScalarCount *= dim;
     }
     assert(EigenIO::Traits<Scalar>::count == InnerScalarCount);
     assert(EigenIO::Traits<Scalar>::size  == sizeof( Scalar ));
-    const unsigned int NonTrivialDimsSize = static_cast<unsigned int>(NonTrivialDims.size());
-    assert( NonTrivialDimsSize == NonTrivialDims.size() );
-    //const typename ETensor::Index TotalNumElements = NumScalars * InnerScalarCount;
-    using Index = typename ETensor::Index;
-    std::array<Index, ETensor::NumIndices> MyIndex;
+    std::array<std::size_t, rank + InnerRank> MyIndex;
     for( auto &idx : MyIndex ) idx = 0;
-    std::vector<std::size_t> SubIndex(NonTrivialDimsSize);
-    for( auto &idx : SubIndex ) idx = 0;
-    Index n = 0;
+    Index Seq = 0;
+    Scalar * pScalar = ET.data();
     for( std::size_t j = 0; j < NumScalars; j++ ) {
       // if constexpr is C++ 17 ... but otherwise need two specialisations (Container vs Scalar)
-      if constexpr ( EigenIO::Traits<Scalar>::rank_non_trivial == 0 ) {
-        lambda(ET( MyIndex ), n++, &SubIndex[0] );
-        // Now increment SubIndex
-        for( auto i = NonTrivialDimsSize - 1; i != -1 && ++SubIndex[i] == NonTrivialDims[i]; i-- )
-          SubIndex[i] = 0;
-      }
-      else
-      {
-        for( typename Scalar::scalar_type &Source : ET( MyIndex ) ) {
-          lambda(Source, n++, &SubIndex[0] );
+      if constexpr ( InnerRank == 0 ) {
+        lambda( * pScalar, Seq++, &MyIndex[0] );
+      } else {
+        for( typename Scalar::scalar_type &Source : * pScalar ) {
+          lambda(Source, Seq++, &MyIndex[0] );
           // Now increment SubIndex
-          for( auto i = NonTrivialDimsSize - 1; i != -1 && ++SubIndex[i] == NonTrivialDims[i]; i-- )
-            SubIndex[i] = 0;
+          for( auto i = rank + InnerRank - 1; i != rank - 1 && ++MyIndex[i] == Dims[i]; i-- )
+            MyIndex[i] = 0;
         }
       }
-      // Now increment MyIndex
-      for( auto i = ET.NumDimensions - 1; i != -1 && ++MyIndex[i] == ET.dimension(i); i-- )
-        MyIndex[i] = 0;
+      // Now increment the index to pass to the lambda (bearing in mind we're walking in memory order)
+      if( ETensor::Options & Eigen::RowMajor ) {
+        for( auto i = rank - 1; i != -1 && ++MyIndex[i] == Dims[i]; i-- )
+          MyIndex[i] = 0;
+      } else {
+        for( auto i = 0; i < rank && ++MyIndex[i] == Dims[i]; i++ )
+          MyIndex[i] = 0;
+        Seq = 0;
+        for( auto i = 0; i < rank + InnerRank ; i++ ) {
+          Seq *= Dims[i];
+          Seq += MyIndex[i];
+        }
+      }
+      pScalar++;
+    }
+  }
+
+  // Helper to dump a tensor in memory order
+  template <typename T>
+  typename std::enable_if<EigenIO::is_tensor_of_scalar<T>::value, void>::type
+  DumpMemoryOrder(T t, const char * pName = nullptr)
+  {
+    const auto dims = t.dimensions();
+    const auto rank = t.rank();
+    std::cout << "Dumping rank " << rank << ((T::Options & Eigen::RowMajor) ? ", row" : ", column") << "-major tensor ";
+    if( pName )
+      std::cout << pName;
+    for( auto d : dims ) std::cout << "[" << d << "]";
+    std::cout << " in memory order:" << std::endl;
+    const typename T::Scalar * p = t.data();
+    const auto size = t.size();
+    const typename T::Scalar * pEnd = p + size;
+    if( rank <= 2 ) {
+      for( unsigned int i = 0 ; i < t.size() ; i++ )
+        std::cout << "[" << i << "]=" << *p++ << " ";
+      std::cout << std::endl;
+    } else {
+      const auto innersize = dims[rank-2] * dims[rank-1];
+      using Index = typename T::Index;
+      std::vector<Index> idx(rank - 2);
+      for( auto &i : idx ) i = 0;
+      Index idxCounter = 0;
+      while( p < pEnd ) {
+        if( T::Options & Eigen::RowMajor ) {
+          if( pName )
+            std::cout << pName;
+          idxCounter = 0;
+          for(auto i = 0 ; i < rank - 2 ; i++)
+            std::cout << "[" << idx[i] << "]:";
+        }
+        for( unsigned int i = 0 ; i < innersize ; i++ )
+          std::cout << " [" << idxCounter++ << "]=" << *p++;
+        if( T::Options & Eigen::RowMajor )
+          std::cout << std::endl;
+        // Now increment MyIndex
+        for( auto i = rank - 3; i != -1 && ++idx[i] == dims[i]; i-- )
+          idx[i] = 0;
+      }
+      if( ! ( T::Options & Eigen::RowMajor ) )
+        std::cout << std::endl;
     }
   }
 

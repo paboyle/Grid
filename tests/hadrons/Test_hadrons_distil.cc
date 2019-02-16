@@ -338,11 +338,11 @@ void DebugShowTensor(MyTensor &x, const char * n)
   // Initialise
   assert( d.size() == 3 );
   for( int i = 0 ; i < d[0] ; i++ )
-  for( int j = 0 ; j < d[1] ; j++ )
-  for( int k = 0 ; k < d[2] ; k++ ) {
-    x(i,j,k) = std::complex<double>(SizeCalculated, -SizeCalculated);
-    SizeCalculated--;
-  }
+    for( int j = 0 ; j < d[1] ; j++ )
+      for( int k = 0 ; k < d[2] ; k++ ) {
+        x(i,j,k) = std::complex<double>(SizeCalculated, -SizeCalculated);
+        SizeCalculated--;
+      }
   // Show raw data
   std::cout << "Data follow : " << std::endl;
   Complex * p = x.data();
@@ -496,7 +496,66 @@ public:
   inline value_type * end(void) { return m_p + N; }
 };
 
-bool DebugFelixTensorTest( void )
+template <int Options>
+void EigenSliceExample()
+{
+  std::cout << "Eigen example, Options = " << Options << std::endl;
+  using T2 = Eigen::Tensor<int, 2, Options>;
+  T2 a(4, 3);
+  a.setValues({{0, 100, 200}, {300, 400, 500},
+    {600, 700, 800}, {900, 1000, 1100}});
+  std::cout << "a\n" << a << std::endl;
+  DumpMemoryOrder( a, "a" );
+  Eigen::array<typename T2::Index, 2> offsets = {1, 0};
+  Eigen::array<typename T2::Index, 2> extents = {2, 2};
+  T2 slice = a.slice(offsets, extents);
+  std::cout << "slice\n" << slice << std::endl;
+  DumpMemoryOrder( slice, "slice" );
+  std::cout << "\n========================================" << std::endl;
+}
+
+template <int Options>
+void EigenSliceExample2()
+{
+  using TestScalar = std::complex<float>;
+  using T3 = Eigen::Tensor<TestScalar, 3, Options>;
+  using T2 = Eigen::Tensor<TestScalar, 2, Options>;
+  T3 a(2,3,4);
+
+  std::cout << "Initialising:a";
+  float z = 0;
+  for( int i = 0 ; i < a.dimension(0) ; i++ )
+    for( int j = 0 ; j < a.dimension(1) ; j++ )
+      for( int k = 0 ; k < a.dimension(2) ; k++ ) {
+        TestScalar w{z, -z};
+        a(i,j,k) = w;
+        std::cout << " a(" << i << "," << j << "," << k << ")=" << w;
+        z++;
+      }
+  std::cout << std::endl;
+  //std::cout << "a initialised to:\n" << a << std::endl;
+  DumpMemoryOrder( a, "a" );
+  std::cout << "for_all(a):";
+  for_all( a, [&](TestScalar c, typename T3::Index n, const std::size_t * pDims ){
+    std::cout << " (" << pDims[0] << "," << pDims[1] << "," << pDims[2] << ")<" << n << ">=" << c;
+  } );
+  std::cout << std::endl;
+  Eigen::array<typename T3::Index, 3> offsets = {0,1,1};
+  Eigen::array<typename T3::Index, 3> extents = {1,2,2};
+  T3 b;
+  b = a.slice( offsets, extents );//.reshape(NewExtents);
+  std::cout << "b = a.slice( offsets, extents ):\n" << b << std::endl;
+  DumpMemoryOrder( b, "b" );
+  T2 c(3,4);
+  c = a.chip(0,1);
+  std::cout << "c = a.chip(0,0):\n" << c << std::endl;
+  DumpMemoryOrder( c, "c" );
+  //T2 d = b.reshape(extents);
+  //std::cout << "b.reshape(extents) is:\n" << d << std::endl;
+  std::cout << "\n========================================" << std::endl;
+}
+
+void DebugFelixTensorTest( void )
 {
   unsigned int Nmom = 2;
   unsigned int Nt = 2;
@@ -509,25 +568,10 @@ bool DebugFelixTensorTest( void )
   using BaryonTensorMap = Eigen::TensorMap<BaryonTensorSet>;
   BaryonTensorMap BField4 (&Memory[0], Nmom,4,Nt,N_1,N_2,N_3);
 
-  using TestScalar = std::complex<float>;
-  //typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>, Eigen::StorageOptions::RowMajor> TestTensorFixed;
-  using T3 = Eigen::Tensor<TestScalar, 3, Eigen::StorageOptions::RowMajor>;
-  using T2 = Eigen::Tensor<TestScalar, 2, Eigen::StorageOptions::RowMajor>;
-  T3 a(4,3,2);
-  for_all( a, [&](TestScalar &c, float n, const std::size_t * pDims ){
-    c = std::complex<float>{n,-n};
-  } );
-  std::cout << "a initialised to:\n" << a << std::endl;
-  Eigen::array<int, 3> offsets = {0,0,0};
-  Eigen::array<int, 3> extents = {1,3,2};
-  T2 b(3,2);
-  auto c = a.slice( offsets, extents).reshape(extents);
-  std::cout << "c is:\n" << c << std::endl;
-  b = a.chip(0,0);
-  std::cout << "b is:\n" << b << std::endl;
-  //b = c;
-
-  return true;
+  EigenSliceExample<Eigen::RowMajor>();
+  EigenSliceExample<0>();
+  EigenSliceExample2<Eigen::RowMajor>();
+  EigenSliceExample2<0>();
 }
 
 bool DebugGridTensorTest( void )
@@ -561,7 +605,9 @@ bool DebugGridTensorTest( void )
     Start += Inc;
   }
   i = 0;
-  for( auto x : toc7 ) std::cout << "toc7[" << i++ << "] = " << x << std::endl;
+  std::cout << "toc7:";
+  for( auto x : toc7 ) std::cout << " [" << i++ << "]=" << x;
+  std::cout << std::endl;
 
   t2 o2;
   auto a2 = TensorRemove(o2);
