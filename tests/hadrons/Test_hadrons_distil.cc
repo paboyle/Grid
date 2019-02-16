@@ -522,22 +522,28 @@ void EigenSliceExample2()
   using T2 = Eigen::Tensor<TestScalar, 2, Options>;
   T3 a(2,3,4);
 
-  std::cout << "Initialising:a";
+  std::cout << "Initialising a:";
+  for_all( a, [&](TestScalar &c, float f, const std::array<size_t,T3::NumIndices> &Dims ){
+    c = TestScalar{f,-f};
+    std::cout << " a(" << Dims[0] << "," << Dims[1] << "," << Dims[2] << ")=" << c;
+  } );
+  std::cout << std::endl;
+  //std::cout << "Validating   a:";
   float z = 0;
   for( int i = 0 ; i < a.dimension(0) ; i++ )
     for( int j = 0 ; j < a.dimension(1) ; j++ )
       for( int k = 0 ; k < a.dimension(2) ; k++ ) {
         TestScalar w{z, -z};
-        a(i,j,k) = w;
-        std::cout << " a(" << i << "," << j << "," << k << ")=" << w;
+        //std::cout << " a(" << i << "," << j << "," << k << ")=" << w;
+        assert( a(i,j,k) == w );
         z++;
       }
-  std::cout << std::endl;
+  //std::cout << std::endl;
   //std::cout << "a initialised to:\n" << a << std::endl;
   DumpMemoryOrder( a, "a" );
   std::cout << "for_all(a):";
-  for_all( a, [&](TestScalar c, typename T3::Index n, const std::size_t * pDims ){
-    std::cout << " (" << pDims[0] << "," << pDims[1] << "," << pDims[2] << ")<" << n << ">=" << c;
+  for_all( a, [&](TestScalar c, typename T3::Index n, const std::array<size_t,T3::NumIndices> &Dims ){
+    std::cout << " (" << Dims[0] << "," << Dims[1] << "," << Dims[2] << ")<" << n << ">=" << c;
   } );
   std::cout << std::endl;
   Eigen::array<typename T3::Index, 3> offsets = {0,1,1};

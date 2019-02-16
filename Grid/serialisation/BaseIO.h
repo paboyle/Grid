@@ -187,10 +187,10 @@ namespace Grid {
     for( std::size_t j = 0; j < NumScalars; j++ ) {
       // if constexpr is C++ 17 ... but otherwise need two specialisations (Container vs Scalar)
       if constexpr ( InnerRank == 0 ) {
-        lambda( * pScalar, Seq++, &MyIndex[0] );
+        lambda( * pScalar, Seq++, MyIndex );
       } else {
         for( typename Scalar::scalar_type &Source : * pScalar ) {
-          lambda(Source, Seq++, &MyIndex[0] );
+          lambda(Source, Seq++, MyIndex );
           // Now increment SubIndex
           for( auto i = rank + InnerRank - 1; i != rank - 1 && ++MyIndex[i] == Dims[i]; i-- )
             MyIndex[i] = 0;
