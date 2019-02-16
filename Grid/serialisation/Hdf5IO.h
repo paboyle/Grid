@@ -215,7 +215,7 @@ namespace Grid
     // read the flat vector
     std::vector<Element> buf(size);
 
-    if (size > dataSetThres_)
+    if (size * sizeof(Element) > dataSetThres_)
     {
       H5NS::DataSet dataSet;
       

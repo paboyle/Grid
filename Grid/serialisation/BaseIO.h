@@ -213,13 +213,42 @@ namespace Grid {
     }
   }
 
+  // Helper to dump a tensor
+#ifdef DEBUG
+  template <typename T>
+  typename std::enable_if<EigenIO::is_tensor<T>::value, void>::type
+  dump_tensor_func(T &t, const char * pName = nullptr)
+  {
+    using Traits = typename EigenIO::Traits<typename T::Scalar>;
+    const auto rank{T::NumIndices};
+    const auto &dims = t.dimensions();
+    std::cout << "Dumping rank " << rank << ((T::Options & Eigen::RowMajor) ? ", row" : ", column") << "-major tensor ";
+    if( pName )
+      std::cout << pName;
+    for( auto i = 0 ; i < rank; i++ ) std::cout << "[" << dims[i] << "]";
+    std::cout << " in memory order:" << std::endl;
+    for_all( t, [&](typename Traits::scalar_type &c, typename T::Index index, const std::array<size_t, T::NumIndices + Traits::rank_non_trivial> Dims ){
+      std::cout << "  ";
+      for( auto dim : Dims )
+        std::cout << "[" << dim << "]";
+      std::cout << " = " << c << std::endl;
+    } );
+    std::cout << "========================================" << std::endl;
+  }
+#define dump_tensor(args...) dump_tensor_func(args)
+#else
+#define dump_tensor(args...)
+#endif
+
   // Helper to dump a tensor in memory order
+  // Kind of superfluous given the above
+#ifdef DEBUG
   template <typename T>
   typename std::enable_if<EigenIO::is_tensor_of_scalar<T>::value, void>::type
-  DumpMemoryOrder(T t, const char * pName = nullptr)
+  DumpMemoryOrder(T &t, const char * pName = nullptr)
   {
-    const auto dims = t.dimensions();
     const auto rank = t.rank();
+    const auto &dims = t.dimensions();
     std::cout << "Dumping rank " << rank << ((T::Options & Eigen::RowMajor) ? ", row" : ", column") << "-major tensor ";
     if( pName )
       std::cout << pName;
@@ -258,6 +287,7 @@ namespace Grid {
         std::cout << std::endl;
     }
   }
+#endif
 
   // Abstract writer/reader classes ////////////////////////////////////////////
   // static polymorphism implemented using CRTP idiom
