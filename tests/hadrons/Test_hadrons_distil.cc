@@ -506,8 +506,8 @@ void EigenSliceExample()
     {600, 700, 800}, {900, 1000, 1100}});
   std::cout << "a\n" << a << std::endl;
   DumpMemoryOrder( a, "a" );
-  Eigen::array<typename T2::Index, 2> offsets = {1, 0};
-  Eigen::array<typename T2::Index, 2> extents = {2, 2};
+  Eigen::array<typename T2::Index, 2> offsets = {0, 1};
+  Eigen::array<typename T2::Index, 2> extents = {4, 2};
   T2 slice = a.slice(offsets, extents);
   std::cout << "slice\n" << slice << std::endl;
   DumpMemoryOrder( slice, "slice" );

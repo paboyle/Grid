@@ -175,27 +175,12 @@ void TBContraction<FImpl>::execute(void)
     };
   std::vector<Complex> factor23{{0.,-1.},{0.,1.},{0.,1.}}; 
   using BaryonTensorSet = Eigen::Tensor<Complex, 6>;
-  BaryonTensorSet BField3(Nmom,4,Nt,N_1,N_2,N_3); 
+  int Ngamma=3;
+  BaryonTensorSet BField3(Nmom,4*Ngamma,Nt,N_1,N_2,N_3); 
 
   Eigen::Tensor<Complex, 3> corr(Nmom,4,Nt); 
 
-  //Needs more work - but this is important for contraction
- /* int Npairs = 0;
-  char left[] = "uud";
-  char right[] = "uud";
-  std::vector<std::vector<int>> pairs;
-  for (int il=0, i=0 ; il < 3 ; il++){
-  for (int ir=0 ; ir < 3 ; ir++){
-    if (il>ir) continue;
-    if (left[il] != right[il]) continue;
-    pairs[i][0]=il;
-    pairs[i][1]=ir;
-    i++;
-    Npairs = i;
-  }
-  std::cout << "pairs: " << pairs << std::endl;
-   }
-   */
+   
     Complex diquark2;
     for (int i1=0 ; i1 < N_1 ; i1++){
       for (int i2=0 ; i2 < N_2 ; i2++){
@@ -215,14 +200,16 @@ void TBContraction<FImpl>::execute(void)
 	            tmp22s()(is)() = tmp22[sU]()(is)(epsilon[ie][1]);
 	            tmp33s()(is)() = tmp33[sU]()(is)(epsilon[ie][2]);
 		  }
-		  tmp333 = Gamma(gamma23_[0])*tmp33s;
-		  tmp111 = Gamma(gamma12_[0])*tmp11s;
-		  tmp222 = g4*tmp111;
-		  tmp111 = 0.5*(double)parity*(tmp111 + tmp222); // P_\pm * ...
-                  diquark2 = factor23[0]*innerProduct(tmp22s,tmp333);
-                  for (int is=0 ; is < 4 ; is++){
-                    BField3(imom,is,t,i1,i2,i3)+=(double)epsilon_sgn[ie]*tmp111()(is)()*diquark2;
-                  }
+                  for (int ig=0 ; ig < Ngamma ; ig++){
+		    tmp333 = Gamma(gamma23_[ig])*tmp33s;
+		    tmp111 = Gamma(gamma12_[ig])*tmp11s;
+		    tmp222 = g4*tmp111;
+		    tmp111 = 0.5*(double)parity*(tmp111 + tmp222); // P_\pm * ...
+                    diquark2 = factor23[0]*innerProduct(tmp22s,tmp333);
+                    for (int is=0 ; is < 4 ; is++){
+                      BField3(imom,is+4*ig,t,i1,i2,i3)+=(double)epsilon_sgn[ie]*tmp111()(is)()*diquark2;
+                    }
+  		  }
 		}
   	      }
             }
@@ -236,17 +223,37 @@ void TBContraction<FImpl>::execute(void)
       }
     }
 
-   //Product ijk * ijk
-   // for ijk * jik: (0,1),(1,0),(2,2) z.b.
-   Eigen::array<Eigen::IndexPair<int>, 3> product_dims = { Eigen::IndexPair<int>(0,0),Eigen::IndexPair<int>(1,1) ,Eigen::IndexPair<int>(2,2)  };
-   for (int imom=0 ; imom < Nmom ; imom++){
-     Eigen::Tensor<Complex,5> B5 = BField3.chip(imom,0);
-     for (int is=0 ; is < 4 ; is++){
-       Eigen::Tensor<Complex,4> B4 = B5.chip(is,0);
-       for (int t=0 ; t < Nt ; t++){
-         Eigen::Tensor<Complex,3> B3 = B4.chip(t,0);
-         Eigen::Tensor<Complex,0> C2 = B3.contract(B3,product_dims);
-	 corr(imom,is,t) = C2(0);
+  int Npairs = 0;
+  char left[] = "uud";
+  char right[] = "uud";
+  std::vector<int> pairs(6);
+  for (int ie=0, i=0 ; ie < 6 ; ie++){
+    if (left[0] == right[epsilon[ie][0]] && left[1] == right[epsilon[ie][1]] && left[2] == right[epsilon[ie][2]]){
+      pairs[i] = ie;
+      i++;
+      Npairs++;
+    }
+  }
+  pairs.resize(Npairs);
+  std::cout << Npairs << " pairs: " << pairs << std::endl;
+     for (int imom=0 ; imom < Nmom ; imom++){
+       for (int is=0 ; is < 4 ; is++){
+         for (int t=0 ; t < Nt ; t++){
+   	   corr(imom,is,t) = 0.;
+         }
+       }
+     }
+   for (int ipair=0 ; ipair < Npairs ; ipair++){
+   Eigen::array<Eigen::IndexPair<int>, 3> product_dims = { Eigen::IndexPair<int>(0,epsilon[pairs[ipair]][0]),Eigen::IndexPair<int>(1,epsilon[pairs[ipair]][1]) ,Eigen::IndexPair<int>(2,epsilon[pairs[ipair]][2])  };
+     for (int imom=0 ; imom < Nmom ; imom++){
+       Eigen::Tensor<Complex,5> B5 = BField3.chip(imom,0);
+       for (int is=0 ; is < 4 ; is++){
+         Eigen::Tensor<Complex,4> B4 = B5.chip(is,0);
+         for (int t=0 ; t < Nt ; t++){
+           Eigen::Tensor<Complex,3> B3 = B4.chip(t,0);
+           Eigen::Tensor<Complex,0> C2 = B3.contract(B3,product_dims);
+   	   corr(imom,is,t) += C2(0);
+         }
        }
      }
    }
