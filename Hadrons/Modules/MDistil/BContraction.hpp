@@ -252,7 +252,7 @@ void TBContraction<FImpl>::execute(void)
          for (int t=0 ; t < Nt ; t++){
            Eigen::Tensor<Complex,3> B3 = B4.chip(t,0);
            Eigen::Tensor<Complex,0> C2 = B3.contract(B3,product_dims);
-   	   corr(imom,is,t) += C2(0);
+   	   corr(imom,is,t) += (double)epsilon_sgn[pairs[ipair]]*C2(0);
          }
        }
      }
