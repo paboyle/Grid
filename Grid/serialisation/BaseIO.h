@@ -42,6 +42,7 @@ namespace Grid {
         : std::integral_constant<bool, std::is_arithmetic<T>::value> {};
 
     // Eigen tensors can be composed of arithmetic scalar and complex types
+    // TODO Support Grid::comples from GPU port
     template<typename T> struct is_scalar : std::integral_constant<bool,
                             std::is_arithmetic<T>::value || is_complex<T>::value> {};
 
@@ -202,10 +203,10 @@ namespace Grid {
     Scalar * pScalar = ET.data();
     for( std::size_t j = 0; j < NumScalars; j++ ) {
       // if constexpr is C++ 17 ... but otherwise need two specialisations (Container vs Scalar)
-      if constexpr ( InnerRank == 0 ) {
+      if constexpr ( EigenIO::is_scalar<Scalar>::value ) {
         lambda( * pScalar, Seq++, MyIndex );
       } else {
-        for( typename Scalar::scalar_type &Source : * pScalar ) {
+        for( typename EigenIO::Traits<Scalar>::scalar_type &Source : * pScalar ) {
           lambda(Source, Seq++, MyIndex );
           // Now increment SubIndex
           for( auto i = rank + InnerRank - 1; i != rank - 1 && ++MyIndex[i] == Dims[i]; i-- )
@@ -244,13 +245,23 @@ namespace Grid {
       std::cout << pName;
     for( auto i = 0 ; i < rank; i++ ) std::cout << "[" << dims[i] << "]";
     std::cout << " in memory order:" << std::endl;
-    for_all( t, [&](typename Traits::scalar_type &c, typename T::Index index, const std::array<size_t, T::NumIndices + Traits::rank_non_trivial> Dims ){
+    for_all( t, [&](typename Traits::scalar_type &c, typename T::Index index, const std::array<size_t, T::NumIndices + Traits::rank_non_trivial> &Dims ){
       std::cout << "  ";
       for( auto dim : Dims )
         std::cout << "[" << dim << "]";
       std::cout << " = " << c << std::endl;
     } );
     std::cout << "========================================" << std::endl;
+  }
+
+  template <typename T>
+  typename std::enable_if<!EigenIO::is_tensor<T>::value, void>::type
+  dump_tensor_func(T &t, const char * pName = nullptr)
+  {
+    std::cout << "Dumping non-tensor object ";
+    if( pName )
+      std::cout << pName;
+    std::cout << "=" << t;
   }
 
   // Helper to dump a tensor in memory order
@@ -379,12 +390,12 @@ namespace Grid {
     template <typename ETensor>
     typename std::enable_if<EigenIO::is_tensor_variable<ETensor>::value, void>::type
     Reshape(ETensor &t, const std::array<typename ETensor::Index, ETensor::NumDimensions> &dims );
-    template <typename ETensor>
+    /*template <typename ETensor>
     typename std::enable_if<EigenIO::is_tensor_fixed<ETensor>::value, std::size_t>::type
     DimSize(ETensor &t, std::size_t dim );
     template <typename ETensor>
     typename std::enable_if<EigenIO::is_tensor_variable<ETensor>::value, std::size_t>::type
-    DimSize(ETensor &t, std::size_t dim );
+    DimSize(ETensor &t, std::size_t dim );*/
   protected:
     template <typename U>
     void fromString(U &output, const std::string &s);
@@ -677,43 +688,52 @@ namespace Grid {
   Reader<T>::read(const std::string &s, ETensor &output)
   {
     // alias to element type
-    using Scalar = typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type;
+    using Container = typename ETensor::Scalar;
+    using Traits = EigenIO::Traits<Container>;
+    using Scalar = typename Traits::scalar_type;
 
     // read the (flat) data and dimensionality
     std::vector<std::size_t>   dimData;
     std::vector<Scalar>  buf;
     upcast->readMultiDim( s, buf, dimData );
     // Make sure that the number of elements read matches dimensions read
-    const std::size_t NumElements{buf.size()};
-    std::size_t NumElements_check = 1;
+    std::size_t NumElements = 1;
     std::size_t RankRequired = 0;
     std::vector<typename ETensor::Index>   dimNonTrivial;
     dimNonTrivial.reserve(dimData.size());
     for( auto d : dimData ) {
-      NumElements_check *= d;
+      NumElements *= d;
       if( d > 1 ) {
         RankRequired++;
         dimNonTrivial.push_back(d);
       }
     }
-    //if( RankRequired == 0 ) RankRequired++;
-    assert( NumElements_check == NumElements );
+    assert( NumElements == buf.size() && "Number of elements read back <> product of dimensions" );
+    // If our scalar object is a Container, make sure it's dimensions match what we read back
+    const auto InnerRank{Traits::rank_non_trivial};
+    if ( InnerRank > 0 ) {
+      assert( RankRequired >= InnerRank && "Tensor Container too complex for data" );
+      for( auto i = InnerRank - 1 ; i != -1 ; i-- ) {
+        auto d = dimNonTrivial[--RankRequired];
+        assert( d == Traits::DimensionNT(i) && "Tensor Container dimensions don't match data" );
+        NumElements /= d;
+        dimNonTrivial.pop_back();
+      }
+    }
     // Make sure our object has the right rank
-    using Container = typename ETensor::Scalar;
-    const auto InnerRank = EigenIO::Traits<Container>::rank_non_trivial;
-    assert( ETensor::NumDimensions + InnerRank >= RankRequired );
+    assert( ETensor::NumDimensions >= RankRequired );
     bool bShapeOK = true;
     std::size_t RankNonTrivial = 0;
-    // Make sure fixed dimension objects have allocated memory
+    const auto & dims{output.dimensions()};
     using ETDims = std::array<typename ETensor::Index, ETensor::NumDimensions>;
     ETDims dimsNew;
+    // Make sure fixed dimension objects have allocated memory
     /*if constexpr( EigenIO::is_tensor_fixed<ETensor>::value ) {
       for( auto &d : dimsNew ) d = 0;
       output( dimsNew ) = 0;
     }*/
-    //const auto & dims{output.dimensions()};
     for( auto i = 0, j = 0 ; bShapeOK && i < ETensor::NumDimensions ; i++ ) {
-      auto d = DimSize( output, i );
+      auto d = dims[i];
       if( d < 1 )
         bShapeOK = false;
       else if( d > 1 ) {
@@ -737,14 +757,14 @@ namespace Grid {
     std::size_t idx = 0;
     for( auto n = 0 ; n < NumElements ; n++ ) {
       Container & c = output( MyIndex );
-      if constexpr( InnerRank == 0 ) {
+      if constexpr ( EigenIO::is_scalar<Container>::value ) {
         c = buf[idx++];
       } else {
         for( Scalar & s : c )
           s = buf[idx++];
       }
       // Now increment the index
-      for( int i = output.NumDimensions - 1; i >= 0 && ++MyIndex[i] == output.dimension(i); i-- )
+      for( int i = ETensor::NumDimensions - 1; i >= 0 && ++MyIndex[i] == dims[i]; i-- )
         MyIndex[i] = 0;
     }
   }
@@ -766,7 +786,7 @@ namespace Grid {
     t.resize( dims );
   }
 
-  template <typename T>
+  /*template <typename T>
   template <typename ETensor>
   typename std::enable_if<EigenIO::is_tensor_fixed<ETensor>::value, std::size_t>::type
   Reader<T>::DimSize(ETensor &t, std::size_t dim )
@@ -780,7 +800,7 @@ namespace Grid {
   Reader<T>::DimSize(ETensor &t, std::size_t dim )
   {
     return t.dimension(dim);
-  }
+  }*/
 
   template <typename T>
   template <typename U>

@@ -98,6 +98,8 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
   bool good = Serializable::CompareMember(object, buf);
   if (!good) {
     std::cout << " failure!" << std::endl;
+    if constexpr (EigenIO::is_tensor<O>::value)
+      dump_tensor(buf,"???");
     exit(EXIT_FAILURE);
   }
   std::cout << " done." << std::endl;
@@ -109,21 +111,28 @@ typedef std::complex<double> TestScalar;
 typedef Eigen::Tensor<TestScalar, 3, Eigen::StorageOptions::RowMajor> TestTensor;
 typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>, Eigen::StorageOptions::RowMajor> TestTensorFixed;
 typedef std::vector<TestTensorFixed> aTestTensorFixed;
-typedef Eigen::TensorFixedSize<SpinColourVector, Eigen::Sizes<11,3,2>> LSCTensor;
-typedef Eigen::TensorFixedSize<LorentzColourMatrix, Eigen::Sizes<5,7,2>> LCMTensor;
+typedef Eigen::TensorFixedSize<SpinColourVector, Eigen::Sizes<11,3,2>, Eigen::StorageOptions::RowMajor> LSCTensor;
+typedef Eigen::TensorFixedSize<LorentzColourMatrix, Eigen::Sizes<5,7,2>, Eigen::StorageOptions::RowMajor> LCMTensor;
 // From Test_serialisation.cc
-class ETSerClass: Serializable {
+class PerambIOTestClass: Serializable {
 public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(ETSerClass
-                                  , SpinColourVector, scv
-                                  , SpinColourMatrix, scm
-                                  , TestTensor, Critter
-                                  , TestTensorFixed, FixedCritter
-                                  , aTestTensorFixed, aFixedCritter
-                                  , LSCTensor, MyLSCTensor
-                                  , LCMTensor, MyLCMTensor
+  using PerambTensor = Eigen::Tensor<SpinColourVector, 6, Eigen::StorageOptions::RowMajor>;
+  GRID_SERIALIZABLE_CLASS_MEMBERS(PerambIOTestClass
+                                  //, SpinColourVector, scv
+                                  //, SpinColourMatrix, scm
+                                  , PerambTensor,               Perambulator
+                                  , std::vector<std::string>, DistilParameterNames
+                                  , std::vector<int>,         DistilParameterValues
+                                  //, TestTensor,       Critter
+                                  //, TestTensorFixed,  FixedCritter
+                                  //, aTestTensorFixed, aFixedCritter
+                                  //, LSCTensor, MyLSCTensor
+                                  //, LCMTensor, MyLCMTensor
                                   );
-  ETSerClass() : Critter(7,3,2), aFixedCritter(3) {}
+  PerambIOTestClass() : Perambulator(2,3,1,4,5,1),
+                        DistilParameterNames {"alpha", "beta", "gamma", "delta", "epsilon", "what's f?"},
+                        DistilParameterValues{2,3,1,4,5,1}//, Critter(7,3,2), aFixedCritter(3)
+  {}
 };
 
 bool EigenIOTest(void) {
@@ -157,7 +166,7 @@ bool EigenIOTest(void) {
         Val += Inc;
       }
   ioTest<Hdf5Writer, Hdf5Reader, TestTensor>("iotest_tensor.h5", t, "eigen_tensor_instance_name");
-  dump_tensor(t, "t");
+  //dump_tensor(t, "t");
 
   // Now serialise a fixed size tensor
   using FixedTensor = Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<8,4,3>>;
@@ -170,11 +179,26 @@ bool EigenIOTest(void) {
         Val += Inc;
       }
   ioTest<Hdf5Writer, Hdf5Reader, FixedTensor>("iotest_tensor_fixed.h5", tf, "eigen_tensor_fixed_name");
-  dump_tensor(tf, "tf");
+  //dump_tensor(tf, "tf");
 
-  ETSerClass o;
-  ioTest<Hdf5Writer, Hdf5Reader, ETSerClass>("iotest_object.h5", o, "ETSerClass_object_instance_name");
-  
+  PerambIOTestClass o;
+  for_all( o.Perambulator, [&](TestScalar &c, float f, const std::array<size_t,PerambIOTestClass::PerambTensor::NumIndices + EigenIO::Traits<SpinColourVector>::rank_non_trivial> &Dims ){
+    c = TestScalar{f,-f};
+    //std::cout << " a(" << Dims[0] << "," << Dims[1] << "," << Dims[2] << ")=" << c;
+  } );
+  dump_tensor(o.Perambulator, "PerambIOTestClass" );
+  /*for_all( o.FixedCritter, [&](TestScalar &c, float f, const std::array<size_t,TestTensorFixed::NumIndices> &Dims ){
+    c = TestScalar{f,-f};
+    //std::cout << " a(" << Dims[0] << "," << Dims[1] << "," << Dims[2] << ")=" << c;
+  } );
+  for( auto &z : o.aFixedCritter )
+    for_all( z, [&](TestScalar &c, float f, const std::array<size_t,TestTensorFixed::NumIndices> &Dims ){
+      c = TestScalar{f,-f};
+      //std::cout << " a(" << Dims[0] << "," << Dims[1] << "," << Dims[2] << ")=" << c;
+    } );*/
+  ioTest<Hdf5Writer, Hdf5Reader, PerambIOTestClass>("iotest_object.h5", o, "PerambIOTestClass_object_instance_name");
+  //DumpMemoryOrder(o.Perambulator);
+
   // Tensor of spin colour
   LSCTensor l;
   Val = 0;
@@ -188,7 +212,7 @@ bool EigenIOTest(void) {
             Val += Inc;
           }
   ioTest<Hdf5Writer, Hdf5Reader, LSCTensor>("iotest_LSCTensor.h5", l, "LSCTensor_object_instance_name");
-  dump_tensor(l, "l");
+  //dump_tensor(l, "l");
 
   // Tensor of spin colour
   LCMTensor l2;
@@ -204,7 +228,8 @@ bool EigenIOTest(void) {
               Val += Inc;
             }
   ioTest<Hdf5Writer, Hdf5Reader, LCMTensor>("iotest_LCMTensor.h5", l2, "LCMTensor_object_instance_name");
-  
+  //dump_tensor(l2, "l2");
+
   std::cout << "Wow!" << std::endl;
   
   return true;

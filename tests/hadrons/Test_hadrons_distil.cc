@@ -315,28 +315,30 @@ bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
 
 typedef Grid::Hadrons::MDistil::NamedTensor<Complex,3,sizeof(Real)> MyTensor;
 
-void DebugShowTensor(MyTensor &x, const char * n)
+template<typename T>
+void DebugShowTensor(T &x, const char * n)
 {
   const MyTensor::Index s{x.size()};
   std::cout << n << ".size() = " << s << std::endl;
   std::cout << n << ".NumDimensions = " << x.NumDimensions << " (TensorBase)" << std::endl;
   std::cout << n << ".NumIndices = " << x.NumIndices << std::endl;
-  const MyTensor::Dimensions & d{x.dimensions()};
-  std::cout << n << ".dimensions().size() = " << d.size() << std::endl;
+  const auto d{x.dimensions()};
+  //std::cout << n << ".dimensions().size() = " << d.size() << std::endl;
   std::cout << "Dimensions are ";
-  for(auto i : d ) std::cout << "[" << i << "]";
+  for(auto i = 0; i < x.NumDimensions ; i++)
+    std::cout << "[" << d[i] << "]";
   std::cout << std::endl;
   MyTensor::Index SizeCalculated{1};
   std::cout << "Dimensions again";
-  for(int i=0 ; i < d.size() ; i++ ) {
-    std::cout << " : [" << i << ", " << x.IndexNames[i] << "]=" << d[i];
+  for(int i=0 ; i < x.NumDimensions ; i++ ) {
+    std::cout << " : [" << i << /*", " << x.IndexNames[i] << */"]=" << x.dimension(i);
     SizeCalculated *= d[i];
   }
   std::cout << std::endl;
   std::cout << "SizeCalculated = " << SizeCalculated << std::endl;\
   assert( SizeCalculated == s );
   // Initialise
-  assert( d.size() == 3 );
+  assert( x.NumDimensions == 3 );
   for( int i = 0 ; i < d[0] ; i++ )
     for( int j = 0 ; j < d[1] ; j++ )
       for( int k = 0 ; k < d[2] ; k++ ) {
@@ -345,7 +347,7 @@ void DebugShowTensor(MyTensor &x, const char * n)
       }
   // Show raw data
   std::cout << "Data follow : " << std::endl;
-  Complex * p = x.data();
+  typename T::Scalar * p = x.data();
   for( auto i = 0 ; i < s ; i++ ) {
     if( i ) std::cout << ", ";
     std::cout << n << ".data()[" << i << "]=" << * p++;
@@ -415,6 +417,10 @@ void DebugTestTypeEqualities(void)
 
 bool DebugEigenTest()
 {
+  {
+    Eigen::TensorFixedSize<std::complex<double>,Eigen::Sizes<3,4,5>> x;
+    DebugShowTensor(x, "fixed");
+  }
   const char pszTestFileName[] = "test_tensor.bin";
   std::array<std::string,3> as={"Alpha", "Beta", "Gamma"};
   MyTensor x(as, 2,1,4);
@@ -636,7 +642,7 @@ int main(int argc, char *argv[])
   << ", sizeof(std::size_t) = " << sizeof(std::size_t)
   << ", sizeof(std::streamsize) = " << sizeof(std::streamsize)
   << ", sizeof(Eigen::Index) = " << sizeof(Eigen::Index) << std::endl;
-  //if( DebugEigenTest() ) return 0;
+  if( DebugEigenTest() ) return 0;
   if(DebugGridTensorTest()) return 0;
 #endif
 
