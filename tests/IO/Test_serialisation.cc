@@ -105,7 +105,8 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
   std::cout << " done." << std::endl;
 }
 
-#ifdef DEBUG
+#ifdef HAVE_HDF5
+typedef Eigen::Tensor<int, 5> ShortRank5Tensor;
 //typedef int TestScalar;
 typedef std::complex<double> TestScalar;
 typedef Eigen::Tensor<TestScalar, 3, Eigen::StorageOptions::RowMajor> TestTensor;
@@ -118,24 +119,32 @@ class PerambIOTestClass: Serializable {
 public:
   using PerambTensor = Eigen::Tensor<SpinColourVector, 6, Eigen::StorageOptions::RowMajor>;
   GRID_SERIALIZABLE_CLASS_MEMBERS(PerambIOTestClass
-                                  //, SpinColourVector, scv
-                                  //, SpinColourMatrix, scm
-                                  , PerambTensor,               Perambulator
+                                  , ShortRank5Tensor,         shortRank5Tensor
+                                  , PerambTensor,             Perambulator
                                   , std::vector<std::string>, DistilParameterNames
                                   , std::vector<int>,         DistilParameterValues
+                                  , PerambTensor,             Perambulator2
+                                  , SpinColourVector, scv
+                                  , SpinColourMatrix, scm
                                   //, TestTensor,       Critter
                                   //, TestTensorFixed,  FixedCritter
                                   //, aTestTensorFixed, aFixedCritter
                                   //, LSCTensor, MyLSCTensor
                                   //, LCMTensor, MyLCMTensor
                                   );
-  PerambIOTestClass() : Perambulator(2,3,1,4,5,1),
+  PerambIOTestClass() : Perambulator(2,3,1,4,5,1), Perambulator2(7,1,6,1,5,1),
                         DistilParameterNames {"alpha", "beta", "gamma", "delta", "epsilon", "what's f?"},
-                        DistilParameterValues{2,3,1,4,5,1}//, Critter(7,3,2), aFixedCritter(3)
-  {}
+                        DistilParameterValues{2,3,1,4,5,1}
+                        , shortRank5Tensor{5,4,3,2,1}
+                        //, Critter(7,3,2)//, aFixedCritter(3)
+  {
+    Sequential_Init(Perambulator);
+    Sequential_Init(Perambulator2, {-3.1415927,7});
+    Sequential_Init(shortRank5Tensor);
+  }
 };
 
-bool EigenIOTest(void) {
+void EigenHdf5IOTest(void) {
   SpinColourVector scv, scv2;
   scv2 = scv;
   ioTest<Hdf5Writer, Hdf5Reader, SpinColourVector>("iotest_vector.h5", scv, "SpinColourVector");
@@ -182,11 +191,8 @@ bool EigenIOTest(void) {
   //dump_tensor(tf, "tf");
 
   PerambIOTestClass o;
-  for_all( o.Perambulator, [&](TestScalar &c, float f, const std::array<size_t,PerambIOTestClass::PerambTensor::NumIndices + EigenIO::Traits<SpinColourVector>::rank_non_trivial> &Dims ){
-    c = TestScalar{f,-f};
-    //std::cout << " a(" << Dims[0] << "," << Dims[1] << "," << Dims[2] << ")=" << c;
-  } );
-  dump_tensor(o.Perambulator, "PerambIOTestClass" );
+  //dump_tensor(o.Perambulator, "Perambulator" );
+  dump_tensor(o.shortRank5Tensor, "shortRank5Tensor");
   /*for_all( o.FixedCritter, [&](TestScalar &c, float f, const std::array<size_t,TestTensorFixed::NumIndices> &Dims ){
     c = TestScalar{f,-f};
     //std::cout << " a(" << Dims[0] << "," << Dims[1] << "," << Dims[2] << ")=" << c;
@@ -229,10 +235,6 @@ bool EigenIOTest(void) {
             }
   ioTest<Hdf5Writer, Hdf5Reader, LCMTensor>("iotest_LCMTensor.h5", l2, "LCMTensor_object_instance_name");
   //dump_tensor(l2, "l2");
-
-  std::cout << "Wow!" << std::endl;
-  
-  return true;
 }
 #endif
 
@@ -259,7 +261,6 @@ int main(int argc,char **argv)
   Grid_init(&argc,&argv);
   std::cout << std::boolalpha << "==== basic IO" << std::endl; // display true / false for boolean
 
-#ifndef DEBUG
   GridSerialRNG    rng;
 
   rng.SeedFixedIntegers(std::vector<int>({42,10,81,9}));
@@ -283,7 +284,6 @@ int main(int argc,char **argv)
   // test serializable class writing
   myclass              obj(1234); // non-trivial constructor
   std::vector<myclass> vec;
-  std::pair<myenum, myenum> pair;
 
   std::cout << "-- serialisable class writing to 'bother.xml'..." << std::endl;
   write(WR,"obj",obj);
@@ -291,7 +291,6 @@ int main(int argc,char **argv)
   vec.push_back(obj);
   vec.push_back(myclass(5678));
   vec.push_back(myclass(3838));
-  pair = std::make_pair(myenum::red, myenum::blue);
 
   write(WR, "objvec", vec);
   std::cout << "-- serialisable class writing to std::cout:" << std::endl;
@@ -300,6 +299,7 @@ int main(int argc,char **argv)
   std::cout << "vec[0] == obj: " << (vec[0] == obj) << std::endl;
   std::cout << "vec[1] == obj: " << (vec[1] == obj) << std::endl;
   std::cout << "-- pair writing to std::cout:" << std::endl;
+  std::pair<myenum, myenum> pair = std::make_pair(myenum::red, myenum::blue);
   std::cout << pair << std::endl;
 
   // read tests
@@ -321,6 +321,8 @@ int main(int argc,char **argv)
 #ifdef HAVE_HDF5
   ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", obj, "HDF5   (object)           ");
   ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", vec, "HDF5   (vector of objects)");
+  std::cout << "\n==== detailed Hdf5 tensor tests (Grid::EigenIO)" << std::endl;
+  EigenHdf5IOTest();
 #endif
 
   std::cout << "\n==== vector flattening/reconstruction" << std::endl;
@@ -364,8 +366,6 @@ int main(int argc,char **argv)
   tensorConvTest(rng, ColourVector);
   tensorConvTest(rng, SpinMatrix);
   tensorConvTest(rng, SpinVector);
-#elif HAVE_HDF5
-  if(! EigenIOTest() ) exit(EXIT_FAILURE);
-#endif
+
   Grid_finalize();
 }

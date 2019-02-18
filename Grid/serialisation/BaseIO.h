@@ -230,6 +230,24 @@ namespace Grid {
     }
   }
 
+  // Used for sequential initialisations
+  template<typename T> constexpr T Flag = 1;
+  template<typename T> constexpr std::complex<T> Flag<std::complex<T>> {1, -1};
+  // Returns the type of the real part of an arithmetic type
+  template<typename T> struct RealType { using type = T; };
+  template<typename T> struct RealType<std::complex<T>> { using type = T; };
+
+  template <typename ETensor>
+  typename std::enable_if<EigenIO::is_tensor<ETensor>::value, void>::type
+  Sequential_Init( ETensor &ET, typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type Inc = Flag<typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type> )
+  {
+    using Traits = EigenIO::Traits<typename ETensor::Scalar>;
+    using scalar_type = typename Traits::scalar_type;
+    for_all( ET, [&](scalar_type &c, typename ETensor::Index n, const std::array<size_t, ETensor::NumIndices + Traits::rank_non_trivial> &Dims ) {
+      c = Inc * static_cast<typename RealType<scalar_type>::type>(n);
+    } );
+  }
+
   // Helper to dump a tensor
 #ifdef DEBUG
 #define dump_tensor(args...) dump_tensor_func(args)
@@ -774,7 +792,7 @@ namespace Grid {
   typename std::enable_if<EigenIO::is_tensor_fixed<ETensor>::value, void>::type
   Reader<T>::Reshape(ETensor &t, const std::array<typename ETensor::Index, ETensor::NumDimensions> &dims )
   {
-    //assert( 0 && "EigenIO: Fixed tensor dimensions can't be changed" );
+    assert( 0 && "EigenIO: Fixed tensor dimensions can't be changed" );
   }
 
   template <typename T>
