@@ -58,16 +58,32 @@ namespace Grid {
       std::is_base_of<Eigen::TensorBase<T, Eigen::ReadOnlyAccessors>, T>::value> {};
 
     // Is this an Eigen tensor of a supported scalar
-    template<typename T> struct is_tensor_of_scalar : std::integral_constant<bool,
-    is_tensor<T>::value && is_scalar<typename T::Scalar>::value> {};
+    template<typename T, typename C = void> struct is_tensor_of_scalar : public std::false_type {};
+    template<typename T> struct is_tensor_of_scalar<T, typename std::enable_if<is_tensor<T>::value && is_scalar<typename T::Scalar>::value, void>::type> : public std::true_type {};
 
     // Is this an Eigen tensor of a supported container
-    template<typename T> struct is_tensor_of_container : std::integral_constant<bool,
-    is_tensor<T>::value && is_container<typename T::Scalar>::value> {};
+    template<typename T, typename C = void> struct is_tensor_of_container : public std::false_type {};
+    template<typename T> struct is_tensor_of_container<T, typename std::enable_if<is_tensor<T>::value && is_container<typename T::Scalar>::value, void>::type> : public std::true_type {};
 
-    // These traits describe the Eigen tensor scalar objects supported for IO
-    // Mostly intended for grid tensors, i.e. compositions of iScalar, iVector and iMatrix
-    // but also supports fixed size arrays
+    // Is this a fixed-size Eigen tensor
+    template<typename T, typename C = void> struct is_tensor_fixed : public std::false_type {};
+    template<typename Scalar_, typename Dimensions_, int Options_, typename IndexType>
+    struct is_tensor_fixed<Eigen::TensorFixedSize<Scalar_, Dimensions_, Options_, IndexType>>
+        : public std::true_type {};
+    template<typename Scalar_, typename Dimensions_, int Options_, typename IndexType,
+              int MapOptions_, template <class> class MapPointer_>
+    struct is_tensor_fixed<Eigen::TensorMap<Eigen::TensorFixedSize<Scalar_, Dimensions_,
+                                            Options_, IndexType>, MapOptions_, MapPointer_>>
+        : public std::true_type {};
+
+    // Is this a variable-size Eigen tensor
+    template<typename T, typename C = void> struct is_tensor_variable : public std::false_type {};
+    template<typename T> struct is_tensor_variable<T, typename std::enable_if<is_tensor<T>::value
+        && !is_tensor_fixed<T>::value, void>::type> : public std::true_type {};
+
+    // These traits describe the Eigen tensor scalar and container objects supported for IO
+    // Containers arbitrarily deeply nested compositions of fixed size objects:
+    // ... grid tensors (iScalar, iVector, and iMatrix) and fixed size arrays
     template <typename T, typename C = void> struct Traits {}; // C needed for specialisation
     // This defines the bottom level - i.e. it's a description of the underlying scalar
     template <typename T> struct Traits<T, typename std::enable_if<is_scalar<T>::value, void>::type> {
@@ -238,7 +254,7 @@ namespace Grid {
   }
 
   // Helper to dump a tensor in memory order
-  // Kind of superfluous given the above
+  // Kind of superfluous given the above ... just keeping in case I need to fall back to this
 #define DumpMemoryOrder(args...) DumpMemoryOrder_func(args)
   template <typename T>
   typename std::enable_if<EigenIO::is_tensor_of_scalar<T>::value, void>::type
@@ -307,7 +323,7 @@ namespace Grid {
     write(const std::string& s, const U &output);
     template <typename U>
     typename std::enable_if<!std::is_base_of<Serializable, U>::value
-                         && !std::is_base_of<Eigen::TensorBase<U, Eigen::ReadOnlyAccessors>, U>::value, void>::type
+                         && !EigenIO::is_tensor<U>::value, void>::type
     write(const std::string& s, const U &output);
     template <typename U>
     void write(const std::string &s, const iScalar<U> &output);
@@ -316,10 +332,10 @@ namespace Grid {
     template <typename U, int N>
     void write(const std::string &s, const iMatrix<U, N> &output);
     template <typename ETensor>
-    typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && EigenIO::is_scalar<typename ETensor::Scalar>::value, void>::type
+    typename std::enable_if<EigenIO::is_tensor_of_scalar<ETensor>::value, void>::type
     write(const std::string &s, const ETensor &output);
     template <typename ETensor>
-    typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && EigenIO::is_container<typename ETensor::Scalar>::value, void>::type
+    typename std::enable_if<EigenIO::is_tensor_of_container<ETensor>::value, void>::type
     write(const std::string &s, const ETensor &output);
 
     void         scientificFormat(const bool set);
@@ -346,7 +362,7 @@ namespace Grid {
     read(const std::string& s, U &output);
     template <typename U>
     typename std::enable_if<!std::is_base_of<Serializable, U>::value
-        && !std::is_base_of<Eigen::TensorBase<U, Eigen::ReadOnlyAccessors>, U>::value, void>::type
+                         && !EigenIO::is_tensor<U>::value, void>::type
     read(const std::string& s, U &output);
     template <typename U>
     void read(const std::string &s, iScalar<U> &output);
@@ -355,11 +371,20 @@ namespace Grid {
     template <typename U, int N>
     void read(const std::string &s, iMatrix<U, N> &output);
     template <typename ETensor>
-    typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && EigenIO::is_scalar<typename ETensor::Scalar>::value, void>::type
+    typename std::enable_if<EigenIO::is_tensor<ETensor>::value, void>::type
     read(const std::string &s, ETensor &output);
     template <typename ETensor>
-    typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && EigenIO::is_container<typename ETensor::Scalar>::value, void>::type
-    read(const std::string &s, ETensor &output);
+    typename std::enable_if<EigenIO::is_tensor_fixed<ETensor>::value, void>::type
+    Reshape(ETensor &t, const std::array<typename ETensor::Index, ETensor::NumDimensions> &dims );
+    template <typename ETensor>
+    typename std::enable_if<EigenIO::is_tensor_variable<ETensor>::value, void>::type
+    Reshape(ETensor &t, const std::array<typename ETensor::Index, ETensor::NumDimensions> &dims );
+    template <typename ETensor>
+    typename std::enable_if<EigenIO::is_tensor_fixed<ETensor>::value, std::size_t>::type
+    DimSize(ETensor &t, std::size_t dim );
+    template <typename ETensor>
+    typename std::enable_if<EigenIO::is_tensor_variable<ETensor>::value, std::size_t>::type
+    DimSize(ETensor &t, std::size_t dim );
   protected:
     template <typename U>
     void fromString(U &output, const std::string &s);
@@ -405,7 +430,7 @@ namespace Grid {
   template <typename T>
   template <typename U>
   typename std::enable_if<!std::is_base_of<Serializable, U>::value
-      && !std::is_base_of<Eigen::TensorBase<U, Eigen::ReadOnlyAccessors>, U>::value, void>::type
+                       && !EigenIO::is_tensor<U>::value, void>::type
   Writer<T>::write(const std::string &s, const U &output)
   {
     upcast->writeDefault(s, output);
@@ -436,7 +461,7 @@ namespace Grid {
   // Eigen::Tensors of arithmetic/complex base type
   template <typename T>
   template <typename ETensor>
-  typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && EigenIO::is_scalar<typename ETensor::Scalar>::value, void>::type
+  typename std::enable_if<EigenIO::is_tensor_of_scalar<ETensor>::value, void>::type
   Writer<T>::write(const std::string &s, const ETensor &output)
   {
     const typename ETensor::Index NumElements{output.size()};
@@ -489,7 +514,7 @@ namespace Grid {
   // Eigen::Tensors of Grid tensors (iScalar, iVector, iMatrix)
   template <typename T>
   template <typename ETensor/*, typename U, int N*/>
-  typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && EigenIO::is_container<typename ETensor::Scalar>::value, void>::type
+  typename std::enable_if<EigenIO::is_tensor_of_container<ETensor>::value, void>::type
   Writer<T>::write(const std::string &s, const ETensor &output)
   {
     const typename ETensor::Index NumElements{output.size()};
@@ -610,7 +635,7 @@ namespace Grid {
   template <typename T>
   template <typename U>
   typename std::enable_if<!std::is_base_of<Serializable, U>::value
-      && !std::is_base_of<Eigen::TensorBase<U, Eigen::ReadOnlyAccessors>, U>::value, void>::type
+                       && !EigenIO::is_tensor<U>::value, void>::type
   Reader<T>::read(const std::string &s, U &output)
   {
     upcast->readDefault(s, output);
@@ -648,16 +673,113 @@ namespace Grid {
 
   template <typename T>
   template <typename ETensor>
-  typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && EigenIO::is_scalar<typename ETensor::Scalar>::value, void>::type
+  typename std::enable_if<EigenIO::is_tensor<ETensor>::value, void>::type
   Reader<T>::read(const std::string &s, ETensor &output)
   {
+    // alias to element type
+    using Scalar = typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type;
+
+    // read the (flat) data and dimensionality
+    std::vector<std::size_t>   dimData;
+    std::vector<Scalar>  buf;
+    upcast->readMultiDim( s, buf, dimData );
+    // Make sure that the number of elements read matches dimensions read
+    const std::size_t NumElements{buf.size()};
+    std::size_t NumElements_check = 1;
+    std::size_t RankRequired = 0;
+    std::vector<typename ETensor::Index>   dimNonTrivial;
+    dimNonTrivial.reserve(dimData.size());
+    for( auto d : dimData ) {
+      NumElements_check *= d;
+      if( d > 1 ) {
+        RankRequired++;
+        dimNonTrivial.push_back(d);
+      }
+    }
+    //if( RankRequired == 0 ) RankRequired++;
+    assert( NumElements_check == NumElements );
+    // Make sure our object has the right rank
+    using Container = typename ETensor::Scalar;
+    const auto InnerRank = EigenIO::Traits<Container>::rank_non_trivial;
+    assert( ETensor::NumDimensions + InnerRank >= RankRequired );
+    bool bShapeOK = true;
+    std::size_t RankNonTrivial = 0;
+    // Make sure fixed dimension objects have allocated memory
+    using ETDims = std::array<typename ETensor::Index, ETensor::NumDimensions>;
+    ETDims dimsNew;
+    /*if constexpr( EigenIO::is_tensor_fixed<ETensor>::value ) {
+      for( auto &d : dimsNew ) d = 0;
+      output( dimsNew ) = 0;
+    }*/
+    //const auto & dims{output.dimensions()};
+    for( auto i = 0, j = 0 ; bShapeOK && i < ETensor::NumDimensions ; i++ ) {
+      auto d = DimSize( output, i );
+      if( d < 1 )
+        bShapeOK = false;
+      else if( d > 1 ) {
+        RankNonTrivial++;
+        if( d != dimNonTrivial[j] )
+          bShapeOK = false;
+        j++;
+      }
+      dimsNew[i] = d;
+    }
+    //if( RankNonTrivial == 0 ) RankNonTrivial++;
+    // Make the tensor the same size as the data read
+    if ( !bShapeOK || RankNonTrivial != RankRequired ) {
+      for( auto i = 0 ; i < ETensor::NumDimensions ; i++ )
+        dimsNew[i] = ( i < RankRequired ) ? dimNonTrivial[i] : 1;
+      Reshape(output, dimsNew);
+    }
+    // Copy the data into the tensor
+    ETDims MyIndex;
+    for( auto &d : MyIndex ) d = 0;
+    std::size_t idx = 0;
+    for( auto n = 0 ; n < NumElements ; n++ ) {
+      Container & c = output( MyIndex );
+      if constexpr( InnerRank == 0 ) {
+        c = buf[idx++];
+      } else {
+        for( Scalar & s : c )
+          s = buf[idx++];
+      }
+      // Now increment the index
+      for( int i = output.NumDimensions - 1; i >= 0 && ++MyIndex[i] == output.dimension(i); i-- )
+        MyIndex[i] = 0;
+    }
   }
 
   template <typename T>
   template <typename ETensor>
-  typename std::enable_if<std::is_base_of<Eigen::TensorBase<ETensor, Eigen::ReadOnlyAccessors>, ETensor>::value && EigenIO::is_container<typename ETensor::Scalar>::value, void>::type
-  Reader<T>::read(const std::string &s, ETensor &output)
+  typename std::enable_if<EigenIO::is_tensor_fixed<ETensor>::value, void>::type
+  Reader<T>::Reshape(ETensor &t, const std::array<typename ETensor::Index, ETensor::NumDimensions> &dims )
   {
+    //assert( 0 && "EigenIO: Fixed tensor dimensions can't be changed" );
+  }
+
+  template <typename T>
+  template <typename ETensor>
+  typename std::enable_if<EigenIO::is_tensor_variable<ETensor>::value, void>::type
+  Reader<T>::Reshape(ETensor &t, const std::array<typename ETensor::Index, ETensor::NumDimensions> &dims )
+  {
+    //t.reshape( dims );
+    t.resize( dims );
+  }
+
+  template <typename T>
+  template <typename ETensor>
+  typename std::enable_if<EigenIO::is_tensor_fixed<ETensor>::value, std::size_t>::type
+  Reader<T>::DimSize(ETensor &t, std::size_t dim )
+  {
+    return 0;//ETensor::Dimension[dim];
+  }
+
+  template <typename T>
+  template <typename ETensor>
+  typename std::enable_if<EigenIO::is_tensor_variable<ETensor>::value, std::size_t>::type
+  Reader<T>::DimSize(ETensor &t, std::size_t dim )
+  {
+    return t.dimension(dim);
   }
 
   template <typename T>
@@ -708,8 +830,15 @@ namespace Grid {
     template <typename T>
     static inline typename std::enable_if<std::is_base_of<Eigen::TensorBase<T, Eigen::ReadOnlyAccessors>, T>::value, bool>::type
     CompareMember(const T &lhs, const T &rhs) {
-      Eigen::Tensor<bool, 0, T::Options> bResult = (lhs == rhs).all();
-      return bResult(0);
+      // First check whether dimensions match (Eigen tensor library will assert if they don't match)
+      bool bReturnValue = true;
+      for( auto i = 0 ; bReturnValue && i < T::NumIndices ; i++ )
+          bReturnValue = ( lhs.dimension(i)) == rhs.dimension(i);
+      if( bReturnValue ) {
+        Eigen::Tensor<bool, 0, T::Options> bResult = (lhs == rhs).all();
+        bReturnValue = bResult(0);
+      }
+      return bReturnValue;
     }
 
     template <typename T>

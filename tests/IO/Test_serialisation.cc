@@ -82,6 +82,7 @@ bool     b   = false;
 template <typename W, typename R, typename O>
 void ioTest(const std::string &filename, const O &object, const std::string &name)
 {
+  std::cout << name << " IO test: writing ...";
   // writer needs to be destroyed so that writing physically happens
   {
     W writer(filename);
@@ -89,21 +90,22 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
     write(writer, "testobject", object);
   }
 
+  std::cout << " done. reading...";
   R    reader(filename);
   O    buf;
 
-#ifndef DEBUG
   read(reader, "testobject", buf);
-  bool good = (object == buf);
-  std::cout << name << " IO test: " << std::endl;
-  if (!good) exit(EXIT_FAILURE);
-#endif
+  bool good = Serializable::CompareMember(object, buf);
+  if (!good) {
+    std::cout << " failure!" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  std::cout << " done." << std::endl;
 }
 
 #ifdef DEBUG
 //typedef int TestScalar;
 typedef std::complex<double> TestScalar;
-typedef Eigen::Tensor<iMatrix<TestScalar,1>, 6> TestTensorSingle;
 typedef Eigen::Tensor<TestScalar, 3, Eigen::StorageOptions::RowMajor> TestTensor;
 typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>, Eigen::StorageOptions::RowMajor> TestTensorFixed;
 typedef std::vector<TestTensorFixed> aTestTensorFixed;
@@ -125,17 +127,27 @@ public:
 };
 
 bool EigenIOTest(void) {
-  constexpr TestScalar Inc{1,-1};
-  TestTensorSingle ts(1,1,1,1,1,1);
-  ts(0,0,0,0,0,0) = Inc * 3.1415927;
-  ioTest<Hdf5Writer, Hdf5Reader, TestTensorSingle>("iotest_single.h5", ts, "Singlet");
-
   SpinColourVector scv, scv2;
   scv2 = scv;
   ioTest<Hdf5Writer, Hdf5Reader, SpinColourVector>("iotest_vector.h5", scv, "SpinColourVector");
   SpinColourMatrix scm;
   ioTest<Hdf5Writer, Hdf5Reader, SpinColourMatrix>("iotest_matrix.h5", scm, "SpinColourMatrix");
-  
+
+  constexpr TestScalar Inc{1,-1};
+  {
+    using TestTensorSingle = Eigen::TensorFixedSize<int, Eigen::Sizes<1>>;
+    TestTensorSingle ts;
+    ts(0) = 7; // lucky
+    ioTest<Hdf5Writer, Hdf5Reader, TestTensorSingle>("iotest_single.h5", ts, "Tensor_single");
+  }
+
+  {
+    using TestTensorSimple = Eigen::Tensor<iMatrix<TestScalar,1>, 6>;
+    TestTensorSimple ts(1,1,1,1,1,1);
+    ts(0,0,0,0,0,0) = Inc * 3.1415927;
+    ioTest<Hdf5Writer, Hdf5Reader, TestTensorSimple>("iotest_simple.h5", ts, "Tensor_simple");
+  }
+
   TestTensor t(6,3,2);
   TestScalar Val{Inc};
   for( int i = 0 ; i < t.dimension(0) ; i++)
