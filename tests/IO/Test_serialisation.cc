@@ -159,9 +159,11 @@ public:
   }
 };
 
+#define RDR_ Hdf5Reader
+#define WTR_ Hdf5Writer
 #define TensorWriteReadInnerNoInit( T ) \
   filename = "iotest_"s + std::to_string(++TestNum) + "_" #T ".h5"; \
-  ioTest<Hdf5Writer, Hdf5Reader, T>(filename, t, #T, #T);
+  ioTest<WTR_, RDR_, T>(filename, t, #T, #T);
 #define TensorWriteReadInner( T )  SequentialInit( t ); TensorWriteReadInnerNoInit( T )
 #define TensorWriteRead( T      ) { T t               ; TensorWriteReadInner( T ) }
 #define TensorWriteReadV(T, ... ) { T t( __VA_ARGS__ ); TensorWriteReadInner( T ) }
@@ -183,7 +185,7 @@ void EigenHdf5IOTest(void)
     TensorWriteReadInner ( TensorRank5UShort );
     std::cout << "    Testing alternate memory order read ... ";
     TensorRank5UShortAlt t2;
-    Hdf5Reader reader(filename);
+    RDR_ reader(filename);
     read(reader, "TensorRank5UShort", t2);
     bool good = true;
     for_all( t2, [&](unsigned short c, unsigned short n,
