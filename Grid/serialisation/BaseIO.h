@@ -36,13 +36,19 @@ Author: Guido Cossu <guido.cossu@ed.ac.uk>
 #include <Grid/Eigen/unsupported/CXX11/Tensor>
 
 namespace Grid {
+  // TODO Support Grid::complex from GPU port
+  template<typename T> using Grid_complex = std::complex<T>;
+
+  // Returns original type, except for Grid_complex, where it returns the underlying type
+  template<typename T> struct RealType { using type = T; };
+  template<typename T> struct RealType<Grid_complex<T>> { using type = T; };
+
   namespace EigenIO {
     template<typename T> struct is_complex : public std::false_type {};
-    template<typename T> struct is_complex<std::complex<T>>
+    template<typename T> struct is_complex<Grid_complex<T>>
         : std::integral_constant<bool, std::is_arithmetic<T>::value> {};
 
     // Eigen tensors can be composed of arithmetic scalar and complex types
-    // TODO Support Grid::comples from GPU port
     template<typename T> struct is_scalar : std::integral_constant<bool,
                             std::is_arithmetic<T>::value || is_complex<T>::value> {};
 
@@ -88,11 +94,12 @@ namespace Grid {
     template <typename T, typename C = void> struct Traits {}; // C needed for specialisation
     // This defines the bottom level - i.e. it's a description of the underlying scalar
     template <typename T> struct Traits<T, typename std::enable_if<is_scalar<T>::value, void>::type> {
+      using scalar_type = T; // Type of the underlying scalar
+      using scalar_real = typename RealType<scalar_type>::type; // real type underlying scalar_type
       static constexpr unsigned int depth = 0;  // How many levels of Grid Tensor there are (TensorLevel)
       static constexpr unsigned int rank = 0;   // The rank of the grid tensor (i.e. how many indices used)
       static constexpr unsigned int rank_non_trivial = 0; // As per rank, but excludes those of dimension 1
       static constexpr unsigned int count = 1;  // total number of elements (i.e. product of dimensions)
-      using scalar_type = T;                              // Type of the underlying scalar
       static constexpr std::size_t scalar_size = sizeof(T);    // Size of the underlying scalar in bytes
       static constexpr std::size_t size = scalar_size * count; // total size of elements in bytes
       static constexpr std::size_t Dimension(unsigned int dim) { return 0; } // Dimension size
@@ -114,11 +121,12 @@ namespace Grid {
       //      count  = 48
     };
     template <typename T> struct Traits<iScalar<T>> {
+      using scalar_type = typename Traits<T>::scalar_type;
+      using scalar_real = typename RealType<scalar_type>::type;
       static constexpr unsigned int depth = 1 + Traits<T>::depth;
       static constexpr unsigned int rank = 0 + Traits<T>::rank;
       static constexpr unsigned int rank_non_trivial = 0 + Traits<T>::rank_non_trivial;
       static constexpr unsigned int count = 1 * Traits<T>::count;
-      using scalar_type = typename Traits<T>::scalar_type;
       static constexpr std::size_t scalar_size = Traits<T>::scalar_size;
       static constexpr std::size_t size = scalar_size * count;
       static constexpr std::size_t Dimension(unsigned int dim) {
@@ -127,11 +135,12 @@ namespace Grid {
         return Traits<T>::DimensionNT(dim); }
     };
     template <typename T, int N> struct Traits<iVector<T, N>> {
+      using scalar_type = typename Traits<T>::scalar_type;
+      using scalar_real = typename RealType<scalar_type>::type;
       static constexpr unsigned int depth = 1 + Traits<T>::depth;
       static constexpr unsigned int rank = 1 + Traits<T>::rank;
       static constexpr unsigned int rank_non_trivial = (N>1 ? 1 : 0) + Traits<T>::rank_non_trivial;
       static constexpr unsigned int count = N * Traits<T>::count;
-      using scalar_type = typename Traits<T>::scalar_type;
       static constexpr std::size_t scalar_size = Traits<T>::scalar_size;
       static constexpr std::size_t size = scalar_size * count;
       static constexpr std::size_t Dimension(unsigned int dim) {
@@ -141,11 +150,12 @@ namespace Grid {
       }
     };
     template <typename T, int N> struct Traits<iMatrix<T, N>> {
+      using scalar_type = typename Traits<T>::scalar_type;
+      using scalar_real = typename RealType<scalar_type>::type;
       static constexpr unsigned int depth = 1 + Traits<T>::depth;
       static constexpr unsigned int rank = 2 + Traits<T>::rank;
       static constexpr unsigned int rank_non_trivial = (N>1 ? 2 : 0) + Traits<T>::rank_non_trivial;
       static constexpr unsigned int count = N * N * Traits<T>::count;
-      using scalar_type = typename Traits<T>::scalar_type;
       static constexpr std::size_t scalar_size = Traits<T>::scalar_size;
       static constexpr std::size_t size = scalar_size * count;
       static constexpr std::size_t Dimension(unsigned int dim) {
@@ -230,16 +240,22 @@ namespace Grid {
     }
   }
 
-  // Used for sequential initialisations
-  template<typename T> constexpr T Flag = 1;
-  template<typename T> constexpr std::complex<T> Flag<std::complex<T>> {1, -1};
-  // Returns the type of the real part of an arithmetic type
-  template<typename T> struct RealType { using type = T; };
-  template<typename T> struct RealType<std::complex<T>> { using type = T; };
+  // Sequential initialisation of tensors
+  // Would have preferred to define template variables for this, but that's c++ 17
+  template <typename ETensor>
+  typename std::enable_if<EigenIO::is_tensor<ETensor>::value && !EigenIO::is_complex<typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type>::value, void>::type
+  SequentialInit( ETensor &ET, typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type Inc = 1 )
+  {
+    using Traits = EigenIO::Traits<typename ETensor::Scalar>;
+    using scalar_type = typename Traits::scalar_type;
+    for_all( ET, [&](scalar_type &c, typename ETensor::Index n, const std::array<size_t, ETensor::NumIndices + Traits::rank_non_trivial> &Dims ) {
+      c = Inc * static_cast<scalar_type>(n);
+    } );
+  }
 
   template <typename ETensor>
-  typename std::enable_if<EigenIO::is_tensor<ETensor>::value, void>::type
-  Sequential_Init( ETensor &ET, typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type Inc = Flag<typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type> )
+  typename std::enable_if<EigenIO::is_tensor<ETensor>::value && EigenIO::is_complex<typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type>::value, void>::type
+  SequentialInit( ETensor &ET, typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type Inc={1,-1})
   {
     using Traits = EigenIO::Traits<typename ETensor::Scalar>;
     using scalar_type = typename Traits::scalar_type;
@@ -247,7 +263,7 @@ namespace Grid {
       c = Inc * static_cast<typename RealType<scalar_type>::type>(n);
     } );
   }
-
+  
   // Helper to dump a tensor
 #ifdef DEBUG
 #define dump_tensor(args...) dump_tensor_func(args)

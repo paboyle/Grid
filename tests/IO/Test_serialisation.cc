@@ -82,7 +82,7 @@ bool     b   = false;
 template <typename W, typename R, typename O>
 void ioTest(const std::string &filename, const O &object, const std::string &name)
 {
-  std::cout << name << " IO test: writing ...";
+  std::cout << "IO test: " << name << " -> " << filename << " ...";
   // writer needs to be destroyed so that writing physically happens
   {
     W writer(filename);
@@ -92,149 +92,105 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
 
   std::cout << " done. reading...";
   R    reader(filename);
-  O    buf;
+  std::unique_ptr<O> buf( new O ); // In case object too big for stack
 
-  read(reader, "testobject", buf);
-  bool good = Serializable::CompareMember(object, buf);
+  read(reader, "testobject", *buf);
+  bool good = Serializable::CompareMember(object, *buf);
   if (!good) {
     std::cout << " failure!" << std::endl;
     if constexpr (EigenIO::is_tensor<O>::value)
-      dump_tensor(buf,"???");
+      dump_tensor(*buf,"???");
     exit(EXIT_FAILURE);
   }
   std::cout << " done." << std::endl;
 }
 
 #ifdef HAVE_HDF5
-typedef Eigen::Tensor<int, 5> ShortRank5Tensor;
-//typedef int TestScalar;
 typedef std::complex<double> TestScalar;
-typedef Eigen::Tensor<TestScalar, 3, Eigen::StorageOptions::RowMajor> TestTensor;
-typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>, Eigen::StorageOptions::RowMajor> TestTensorFixed;
-typedef std::vector<TestTensorFixed> aTestTensorFixed;
-typedef Eigen::TensorFixedSize<SpinColourVector, Eigen::Sizes<11,3,2>, Eigen::StorageOptions::RowMajor> LSCTensor;
-typedef Eigen::TensorFixedSize<LorentzColourMatrix, Eigen::Sizes<5,7,2>, Eigen::StorageOptions::RowMajor> LCMTensor;
-// From Test_serialisation.cc
+using TensorSingle = Eigen::TensorFixedSize<int, Eigen::Sizes<1>>;
+using TensorSimple = Eigen::Tensor<iMatrix<TestScalar,1>, 6>;
+typedef Eigen::Tensor<unsigned short, 5> TensorRank5UShort;
+typedef Eigen::Tensor<int, 5, Eigen::StorageOptions::RowMajor> TensorRank5IntAlt;
+typedef Eigen::Tensor<TestScalar, 3, Eigen::StorageOptions::RowMajor> TensorRank3;
+typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>, Eigen::StorageOptions::RowMajor> Tensor_9_4_2;
+typedef std::vector<Tensor_9_4_2> aTensor_9_4_2;
+typedef Eigen::TensorFixedSize<SpinColourVector, Eigen::Sizes<6,5>> LSCTensor;
+#ifdef DEBUG
+typedef Eigen::TensorFixedSize<iMatrix<iVector<iMatrix<iVector<LorentzColourMatrix,5>,2>,7>,3>, Eigen::Sizes<2,2,11,10,9>, Eigen::StorageOptions::RowMajor> LCMTensor;
+#endif
+
 class PerambIOTestClass: Serializable {
 public:
   using PerambTensor = Eigen::Tensor<SpinColourVector, 6, Eigen::StorageOptions::RowMajor>;
   GRID_SERIALIZABLE_CLASS_MEMBERS(PerambIOTestClass
-                                  , ShortRank5Tensor,         shortRank5Tensor
-                                  , PerambTensor,             Perambulator
+                                  , SpinColourVector, spinColourVector
+                                  , SpinColourMatrix, spinColourMatrix
                                   , std::vector<std::string>, DistilParameterNames
                                   , std::vector<int>,         DistilParameterValues
+                                  , PerambTensor,             Perambulator
                                   , PerambTensor,             Perambulator2
-                                  , SpinColourVector, scv
-                                  , SpinColourMatrix, scm
-                                  //, TestTensor,       Critter
-                                  //, TestTensorFixed,  FixedCritter
-                                  //, aTestTensorFixed, aFixedCritter
-                                  //, LSCTensor, MyLSCTensor
-                                  //, LCMTensor, MyLCMTensor
+                                  , TensorRank5UShort,        tensorRank5UShort
+                                  , TensorRank3,              tensorRank3
+                                  , Tensor_9_4_2,             tensor_9_4_2
+                                  , aTensor_9_4_2,            atensor_9_4_2
+                                  , LSCTensor,                MyLSCTensor
+#ifdef DEBUG
+                                  , LCMTensor,                MyLCMTensor
+#endif
                                   );
-  PerambIOTestClass() : Perambulator(2,3,1,4,5,1), Perambulator2(7,1,6,1,5,1),
-                        DistilParameterNames {"alpha", "beta", "gamma", "delta", "epsilon", "what's f?"},
-                        DistilParameterValues{2,3,1,4,5,1}
-                        , shortRank5Tensor{5,4,3,2,1}
-                        //, Critter(7,3,2)//, aFixedCritter(3)
+  PerambIOTestClass()
+  : DistilParameterNames {"alpha", "beta", "gamma", "delta", "epsilon", "zeta"}
+  , DistilParameterValues{2,3,1,4,5,1}
+  , Perambulator(2,3,1,4,5,1)
+  , Perambulator2(7,1,6,1,5,1)
+  , tensorRank5UShort{5,4,3,2,1}
+  , tensorRank3(7,3,2)
   {
-    Sequential_Init(Perambulator);
-    Sequential_Init(Perambulator2, {-3.1415927,7});
-    Sequential_Init(shortRank5Tensor);
+    Grid_complex<double> Flag{1,-3.1415927};
+    SequentialInit(Perambulator,  Flag);
+    SequentialInit(Perambulator2, Flag);
+    SequentialInit(tensorRank5UShort);
+    SequentialInit(tensorRank3, Flag);
+    SequentialInit(tensor_9_4_2, Flag);
+    for( auto &t : atensor_9_4_2 )
+      SequentialInit(t, Flag);
+    SequentialInit( MyLSCTensor );
+#ifdef DEBUG
+    SequentialInit( MyLCMTensor );
+#endif
   }
 };
 
-void EigenHdf5IOTest(void) {
-  SpinColourVector scv, scv2;
-  scv2 = scv;
-  ioTest<Hdf5Writer, Hdf5Reader, SpinColourVector>("iotest_vector.h5", scv, "SpinColourVector");
-  SpinColourMatrix scm;
-  ioTest<Hdf5Writer, Hdf5Reader, SpinColourMatrix>("iotest_matrix.h5", scm, "SpinColourMatrix");
+#define TensorWriteReadInnerNoInit( T ) \
+  ioTest<Hdf5Writer, Hdf5Reader, T>("iotest_"s + std::to_string(++TestNum) + "_" #T ".h5", t, #T);
+#define TensorWriteReadInner( T )  SequentialInit( t ); TensorWriteReadInnerNoInit( T )
+#define TensorWriteRead( T      ) { T t               ; TensorWriteReadInner( T ) }
+#define TensorWriteReadV(T, ... ) { T t( __VA_ARGS__ ); TensorWriteReadInner( T ) }
+#define TensorWriteReadLarge( T ) { std::unique_ptr<T> p{new T}; T &t{*p}; TensorWriteReadInnerNoInit(T) }
 
-  constexpr TestScalar Inc{1,-1};
+void EigenHdf5IOTest(void)
+{
+  unsigned int TestNum = 0;
+  using namespace std::string_literals;
+  TensorWriteRead( TensorSingle )
+  TensorWriteReadV( TensorSimple, 1, 1, 1, 1, 1, 1 )
+  TensorWriteReadV( TensorRank3, 6, 3, 2 )
+  TensorWriteRead ( Tensor_9_4_2 )
+  TensorWriteRead ( LSCTensor )
+  TensorWriteReadLarge( PerambIOTestClass )
+#ifdef DEBUG
+  std::cout << "sizeof( LCMTensor ) = " << sizeof( LCMTensor ) / 1024 / 1024 << " MB" << std::endl;
+  TensorWriteReadLarge ( LCMTensor )
+  // Also write > 4GB of complex numbers (I suspect this will fail inside Hdf5)
   {
-    using TestTensorSingle = Eigen::TensorFixedSize<int, Eigen::Sizes<1>>;
-    TestTensorSingle ts;
-    ts(0) = 7; // lucky
-    ioTest<Hdf5Writer, Hdf5Reader, TestTensorSingle>("iotest_single.h5", ts, "Tensor_single");
+    static constexpr size_t Num = 0x11000000;
+    std::cout << "Stress test: " << Num * sizeof( Grid_complex<double> ) / 1024 / 1024
+              << " MB array of complex<double>" << std::endl;
+    using Stress = std::vector<Grid_complex<double>>;
+    Stress t (Num);
+    TensorWriteReadInnerNoInit( Stress );
   }
-
-  {
-    using TestTensorSimple = Eigen::Tensor<iMatrix<TestScalar,1>, 6>;
-    TestTensorSimple ts(1,1,1,1,1,1);
-    ts(0,0,0,0,0,0) = Inc * 3.1415927;
-    ioTest<Hdf5Writer, Hdf5Reader, TestTensorSimple>("iotest_simple.h5", ts, "Tensor_simple");
-  }
-
-  TestTensor t(6,3,2);
-  TestScalar Val{Inc};
-  for( int i = 0 ; i < t.dimension(0) ; i++)
-    for( int j = 0 ; j < t.dimension(1) ; j++)
-      for( int k = 0 ; k < t.dimension(2) ; k++) {
-        t(i,j,k) = Val;
-        Val += Inc;
-      }
-  ioTest<Hdf5Writer, Hdf5Reader, TestTensor>("iotest_tensor.h5", t, "eigen_tensor_instance_name");
-  //dump_tensor(t, "t");
-
-  // Now serialise a fixed size tensor
-  using FixedTensor = Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<8,4,3>>;
-  FixedTensor tf;
-  Val = Inc;
-  for( int i = 0 ; i < tf.dimension(0) ; i++)
-    for( int j = 0 ; j < tf.dimension(1) ; j++)
-      for( int k = 0 ; k < tf.dimension(2) ; k++) {
-        tf(i,j,k) = Val;
-        Val += Inc;
-      }
-  ioTest<Hdf5Writer, Hdf5Reader, FixedTensor>("iotest_tensor_fixed.h5", tf, "eigen_tensor_fixed_name");
-  //dump_tensor(tf, "tf");
-
-  PerambIOTestClass o;
-  //dump_tensor(o.Perambulator, "Perambulator" );
-  dump_tensor(o.shortRank5Tensor, "shortRank5Tensor");
-  /*for_all( o.FixedCritter, [&](TestScalar &c, float f, const std::array<size_t,TestTensorFixed::NumIndices> &Dims ){
-    c = TestScalar{f,-f};
-    //std::cout << " a(" << Dims[0] << "," << Dims[1] << "," << Dims[2] << ")=" << c;
-  } );
-  for( auto &z : o.aFixedCritter )
-    for_all( z, [&](TestScalar &c, float f, const std::array<size_t,TestTensorFixed::NumIndices> &Dims ){
-      c = TestScalar{f,-f};
-      //std::cout << " a(" << Dims[0] << "," << Dims[1] << "," << Dims[2] << ")=" << c;
-    } );*/
-  ioTest<Hdf5Writer, Hdf5Reader, PerambIOTestClass>("iotest_object.h5", o, "PerambIOTestClass_object_instance_name");
-  //DumpMemoryOrder(o.Perambulator);
-
-  // Tensor of spin colour
-  LSCTensor l;
-  Val = 0;
-  for( int i = 0 ; i < l.dimension(0) ; i++)
-    for( int j = 0 ; j < l.dimension(1) ; j++)
-      for( int k = 0 ; k < l.dimension(2) ; k++)
-        for( int s = 0 ; s < Ns ; s++ )
-          for( int c = 0 ; c < Nc ; c++ )
-          {
-            l(i,j,k)()(s)(c) = Val;
-            Val += Inc;
-          }
-  ioTest<Hdf5Writer, Hdf5Reader, LSCTensor>("iotest_LSCTensor.h5", l, "LSCTensor_object_instance_name");
-  //dump_tensor(l, "l");
-
-  // Tensor of spin colour
-  LCMTensor l2;
-  Val = 0;
-  for( int i = 0 ; i < l2.dimension(0) ; i++)
-    for( int j = 0 ; j < l2.dimension(1) ; j++)
-      for( int k = 0 ; k < l2.dimension(2) ; k++)
-        for( int l = 0 ; l < Ns ; l++ )
-          for( int c = 0 ; c < Nc ; c++ )
-            for( int c2 = 0 ; c2 < Nc ; c2++ )
-            {
-              l2(i,j,k)(l)()(c,c2) = Val;
-              Val += Inc;
-            }
-  ioTest<Hdf5Writer, Hdf5Reader, LCMTensor>("iotest_LCMTensor.h5", l2, "LCMTensor_object_instance_name");
-  //dump_tensor(l2, "l2");
+#endif
 }
 #endif
 
