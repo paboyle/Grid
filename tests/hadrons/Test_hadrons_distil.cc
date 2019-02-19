@@ -282,6 +282,19 @@ void test_BaryonFieldRho(Application &application)
   BContractionPar.mom={"0 0 0"};
   application.createModule<MDistil::BContraction>("BaryonFieldRho",BContractionPar);
 }
+/////////////////////////////////////////////////////////////
+// BaryonContraction
+/////////////////////////////////////////////////////////////
+
+void test_Baryon2pt(Application &application)
+{
+  // DistilVectors parameters
+  MDistil::Baryon2pt::Par Baryon2ptPar;
+  Baryon2ptPar.inputL="BaryonFieldPhi";
+  Baryon2ptPar.inputR="BaryonFieldRho";
+  Baryon2ptPar.output="C2_baryon";
+  application.createModule<MDistil::Baryon2pt>("C2_b",Baryon2ptPar);
+}
 
 bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
 {
@@ -742,6 +755,10 @@ int main(int argc, char *argv[])
       test_DistilVectors( application );
       test_MesonField( application );
       test_MesonFieldRho( application );
+      break;
+    case 9: // 3
+      test_Global( application );
+      test_Baryon2pt( application );
       break;
   }
   LOG(Message) << "====== XML creation for test " << iTestNum << " complete ======" << std::endl;

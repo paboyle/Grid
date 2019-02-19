@@ -200,6 +200,14 @@ public:
 };
 
 
+class BFieldIO: Serializable{
+public:
+  using BaryonTensorSet = Eigen::Tensor<Complex, 6>;
+  GRID_SERIALIZABLE_CLASS_MEMBERS(BFieldIO,
+                                  BaryonTensorSet, BField
+		                  );
+};
+
 END_MODULE_NAMESPACE // Grid
 
 /******************************************************************************
