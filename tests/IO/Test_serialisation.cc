@@ -80,21 +80,21 @@ double   d   = 2*M_PI;
 bool     b   = false;
 
 template <typename W, typename R, typename O>
-void ioTest(const std::string &filename, const O &object, const std::string &name)
+void ioTest(const std::string &filename, const O &object, const std::string &name, const char * tag = "testobject" )
 {
   std::cout << "IO test: " << name << " -> " << filename << " ...";
   // writer needs to be destroyed so that writing physically happens
   {
     W writer(filename);
 
-    write(writer, "testobject", object);
+    write(writer, tag , object);
   }
 
   std::cout << " done. reading...";
   R    reader(filename);
   std::unique_ptr<O> buf( new O ); // In case object too big for stack
 
-  read(reader, "testobject", *buf);
+  read(reader, tag, *buf);
   bool good = Serializable::CompareMember(object, *buf);
   if (!good) {
     std::cout << " failure!" << std::endl;
@@ -107,10 +107,8 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
 
 #ifdef HAVE_HDF5
 typedef std::complex<double> TestScalar;
-using TensorSingle = Eigen::TensorFixedSize<int, Eigen::Sizes<1>>;
-using TensorSimple = Eigen::Tensor<iMatrix<TestScalar,1>, 6>;
-typedef Eigen::Tensor<unsigned short, 5> TensorRank5UShort;
-typedef Eigen::Tensor<int, 5, Eigen::StorageOptions::RowMajor> TensorRank5IntAlt;
+typedef Eigen::TensorFixedSize<unsigned short, Eigen::Sizes<5,4,3,2,1>> TensorRank5UShort;
+typedef Eigen::TensorFixedSize<unsigned short, Eigen::Sizes<5,4,3,2>, Eigen::StorageOptions::RowMajor> TensorRank5UShortAlt;
 typedef Eigen::Tensor<TestScalar, 3, Eigen::StorageOptions::RowMajor> TensorRank3;
 typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>, Eigen::StorageOptions::RowMajor> Tensor_9_4_2;
 typedef std::vector<Tensor_9_4_2> aTensor_9_4_2;
@@ -143,8 +141,8 @@ public:
   , DistilParameterValues{2,3,1,4,5,1}
   , Perambulator(2,3,1,4,5,1)
   , Perambulator2(7,1,6,1,5,1)
-  , tensorRank5UShort{5,4,3,2,1}
   , tensorRank3(7,3,2)
+  , atensor_9_4_2(3)
   {
     Grid_complex<double> Flag{1,-3.1415927};
     SequentialInit(Perambulator,  Flag);
@@ -162,7 +160,8 @@ public:
 };
 
 #define TensorWriteReadInnerNoInit( T ) \
-  ioTest<Hdf5Writer, Hdf5Reader, T>("iotest_"s + std::to_string(++TestNum) + "_" #T ".h5", t, #T);
+  filename = "iotest_"s + std::to_string(++TestNum) + "_" #T ".h5"; \
+  ioTest<Hdf5Writer, Hdf5Reader, T>(filename, t, #T, #T);
 #define TensorWriteReadInner( T )  SequentialInit( t ); TensorWriteReadInnerNoInit( T )
 #define TensorWriteRead( T      ) { T t               ; TensorWriteReadInner( T ) }
 #define TensorWriteReadV(T, ... ) { T t( __VA_ARGS__ ); TensorWriteReadInner( T ) }
@@ -170,12 +169,34 @@ public:
 
 void EigenHdf5IOTest(void)
 {
-  unsigned int TestNum = 0;
   using namespace std::string_literals;
+  unsigned int TestNum = 0;
+  std::string filename;
+  using TensorSingle = Eigen::TensorFixedSize<int, Eigen::Sizes<1>>;
   TensorWriteRead( TensorSingle )
+  using TensorSimple = Eigen::Tensor<iMatrix<TestScalar,1>, 6>;
   TensorWriteReadV( TensorSimple, 1, 1, 1, 1, 1, 1 )
   TensorWriteReadV( TensorRank3, 6, 3, 2 )
   TensorWriteRead ( Tensor_9_4_2 )
+  {
+    TensorRank5UShort t;
+    TensorWriteReadInner ( TensorRank5UShort );
+    std::cout << "    Testing alternate memory order read ... ";
+    TensorRank5UShortAlt t2;
+    Hdf5Reader reader(filename);
+    read(reader, "TensorRank5UShort", t2);
+    bool good = true;
+    for_all( t2, [&](unsigned short c, unsigned short n,
+                     const std::array<size_t, TensorRank5UShortAlt::NumIndices> &Dims ) {
+      good = good && ( c == n );
+    } );
+    if (!good) {
+      std::cout << " failure!" << std::endl;
+      dump_tensor(t2,"t2");
+      exit(EXIT_FAILURE);
+    }
+    std::cout << " done." << std::endl;
+  }
   TensorWriteRead ( LSCTensor )
   TensorWriteReadLarge( PerambIOTestClass )
 #ifdef DEBUG
