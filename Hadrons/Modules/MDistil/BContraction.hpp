@@ -72,6 +72,14 @@ protected:
     GridCartesian * grid3d;
 };
 
+/*class BFieldIO: Serializable{
+public:
+  using BaryonTensorSet = Eigen::Tensor<Complex, 6>;
+  GRID_SERIALIZABLE_CLASS_MEMBERS(BFieldIO,
+                                  BaryonTensorSet, BField
+		                  );
+};*/
+
 MODULE_REGISTER_TMP(BContraction, TBContraction<FIMPL>, MDistil);
 
 /******************************************************************************
@@ -120,6 +128,7 @@ void TBContraction<FImpl>::execute(void)
     int N_3     = three.size();
 
     int parity = par().parity;
+    const std::string &output{par().output};
 
     LOG(Message) << "Computing distillation baryon fields" << std::endl;
     LOG(Message) << "One: '" << par().one << "' Two: '" << par().two  << "' Three: '" << par().three << "'" << std::endl;
@@ -133,7 +142,7 @@ void TBContraction<FImpl>::execute(void)
     grid3d = MakeLowerDimGrid(grid4d);    
     int Nmom=1;
     int Nt=64;
-    std::vector<Complex> BField(Nmom*Nt*N_1*N_2*N_3);    
+   // std::vector<Complex> BField(Nmom*Nt*N_1*N_2*N_3);    
     int Bindex;
     int Nc=3; //Num colours
 
@@ -223,7 +232,15 @@ void TBContraction<FImpl>::execute(void)
       }
     }
 
-  int Npairs = 0;
+    BFieldIO BField_save;
+    BField_save.BField = BField3;
+
+  std::string filename ="./" + output + ".h5"; 
+  std::cout << "Writing to file " << filename << std::endl;
+  Hdf5Writer writer(filename);
+  write(writer,"BaryonField",BField_save.BField);
+
+ /* int Npairs = 0;
   char left[] = "uud";
   char right[] = "uud";
   std::vector<int> pairs(6);
@@ -261,7 +278,7 @@ void TBContraction<FImpl>::execute(void)
       for (int t=0 ; t < Nt ; t++){
         std::cout << "C2(is=" << is << ",t=" << t << ") = " << corr(0,is,t) << std::endl;
       }
-    }
+    }*/
 }
 
 END_MODULE_NAMESPACE
