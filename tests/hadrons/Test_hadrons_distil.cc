@@ -292,6 +292,8 @@ void test_Baryon2pt(Application &application)
   MDistil::Baryon2pt::Par Baryon2ptPar;
   Baryon2ptPar.inputL="BaryonFieldPhi";
   Baryon2ptPar.inputR="BaryonFieldRho";
+  Baryon2ptPar.quarksL="uud";
+  Baryon2ptPar.quarksR="uud";
   Baryon2ptPar.output="C2_baryon";
   application.createModule<MDistil::Baryon2pt>("C2_b",Baryon2ptPar);
 }

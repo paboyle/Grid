@@ -202,7 +202,7 @@ public:
 
 class BFieldIO: Serializable{
 public:
-  using BaryonTensorSet = Eigen::Tensor<Complex, 6>;
+  using BaryonTensorSet = Eigen::Tensor<Complex, 7>;
   GRID_SERIALIZABLE_CLASS_MEMBERS(BFieldIO,
                                   BaryonTensorSet, BField
 		                  );

@@ -24,6 +24,8 @@ public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(Baryon2ptPar,
 		                    std::string, inputL,
 		                    std::string, inputR,
+		                    std::string, quarksL,
+		                    std::string, quarksR,
 		                    std::string, output
                                     );
 };
@@ -95,6 +97,8 @@ void TBaryon2pt<FImpl>::execute(void)
 
     const std::string &inputL{par().inputL};
     const std::string &inputR{par().inputR};
+    const std::string &inputL{par().quarksL};
+    const std::string &inputR{par().quarksR};
     const std::string &output{par().output};
 
     int Nmom=1;
@@ -108,10 +112,10 @@ void TBaryon2pt<FImpl>::execute(void)
     int N_2=20;
     int N_3=20;
 
-  //  using BaryonTensorSet = Eigen::Tensor<Complex, 6>;
+  //  using BaryonTensorSet = Eigen::Tensor<Complex, 7>;
 
     BFieldIO BFieldL;
-    BFieldL.BField.resize(Nmom,4*Ngamma,Nt,N_1,N_2,N_3);
+    BFieldL.BField.resize(Nmom,Ngamma,Nt,4,N_1,N_2,N_3);
 
     std::string filenameL ="./" + inputL + ".h5"; 
     std::cout << "Reading from file " << filenameL << std::endl;
@@ -119,7 +123,7 @@ void TBaryon2pt<FImpl>::execute(void)
     read(readerL,"BaryonField",BFieldL.BField);
 
     BFieldIO BFieldR;
-    BFieldR.BField.resize(Nmom,4*Ngamma,Nt,N_1,N_2,N_3);
+    BFieldR.BField.resize(Nmom,Ngamma,Nt,4,N_1,N_2,N_3);
 
     std::string filenameR ="./" + inputR + ".h5"; 
     std::cout << "Reading from file " << filenameR << std::endl;
@@ -153,16 +157,20 @@ void TBaryon2pt<FImpl>::execute(void)
       Eigen::array<Eigen::IndexPair<int>, 3> product_dims = { Eigen::IndexPair<int>(0,epsilon[pairs[ipair]][0]),Eigen::IndexPair<int>(1,epsilon[pairs[ipair]][1]) ,Eigen::IndexPair<int>(2,epsilon[pairs[ipair]][2])  };
       for (int imom=0 ; imom < Nmom ; imom++){
         std::cout << imom << std::endl;
-        Eigen::Tensor<Complex,5> B5L = BFieldL.BField.chip(imom,0);
-        Eigen::Tensor<Complex,5> B5R = BFieldR.BField.chip(imom,0);
-        for (int is=0 ; is < 4 ; is++){
-          Eigen::Tensor<Complex,4> B4L = B5L.chip(is,0);
-          Eigen::Tensor<Complex,4> B4R = B5R.chip(is,0);
+        Eigen::Tensor<Complex,6> B6L = BFieldL.BField.chip(imom,0);
+        Eigen::Tensor<Complex,6> B6R = BFieldR.BField.chip(imom,0);
+        for (int ig=0 ; ig < Ngamma ; ig++){
+          Eigen::Tensor<Complex,5> B5L = B6L.chip(ig,0);
+          Eigen::Tensor<Complex,5> B5R = B6R.chip(ig,0);
           for (int t=0 ; t < Nt ; t++){
-            Eigen::Tensor<Complex,3> B3L = B4L.chip(t,0);
-            Eigen::Tensor<Complex,3> B3R = B4R.chip(tsrc,0);
-            Eigen::Tensor<Complex,0> C2 = B3L.contract(B3R,product_dims);
-            corr(imom,t) += (double)epsilon_sgn[pairs[ipair]]*C2(0);
+            Eigen::Tensor<Complex,4> B4L = B5L.chip(t,0);
+            Eigen::Tensor<Complex,4> B4R = B5R.chip(tsrc,0);
+            for (int is=0 ; is < 4 ; is++){
+              Eigen::Tensor<Complex,4> B3L = B4L.chip(is,0);
+              Eigen::Tensor<Complex,4> B3R = B4R.chip(is,0);
+              Eigen::Tensor<Complex,0> C2 = B3L.contract(B3R,product_dims);
+              corr(imom,t) += (double)epsilon_sgn[pairs[ipair]]*C2(0);
+            }
           }
         }
       }

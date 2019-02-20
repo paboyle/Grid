@@ -18,18 +18,17 @@ BEGIN_HADRONS_NAMESPACE
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MDistil)
 
-
-
     // general baryon tensor set based on Eigen tensors and Grid-allocated memory
     // Dimensions:
     //   0 - ext - external field (momentum, EM field, ...)
-    //   1 - str - spin-color structure
+    //   1 - str - dirac structure
     //   2 - t   - timeslice
-    //   3 - i   - left  distillation mode index
-    //   4 - j   - middle  distillation mode index
-    //   5 - k   - left  distillation mode index
+    //   3 - s   - free spin index
+    //   4 - i   - left  distillation mode index
+    //   5 - j   - middle  distillation mode index
+    //   6 - k   - left  distillation mode index
     // template <typename T>
-    // using BaryonTensorSet = Eigen::TensorMap<Eigen::Tensor<T, 6, Eigen::RowMajor>>;
+    // using BaryonTensorSet = Eigen::TensorMap<Eigen::Tensor<T, 7, Eigen::RowMajor>>;
 
 
 class BContractionPar: Serializable
@@ -74,7 +73,7 @@ protected:
 
 /*class BFieldIO: Serializable{
 public:
-  using BaryonTensorSet = Eigen::Tensor<Complex, 6>;
+  using BaryonTensorSet = Eigen::Tensor<Complex, 7>;
   GRID_SERIALIZABLE_CLASS_MEMBERS(BFieldIO,
                                   BaryonTensorSet, BField
 		                  );
@@ -183,9 +182,9 @@ void TBContraction<FImpl>::execute(void)
        Gamma::Algebra::GammaYGamma5, // i gamma_4 C gamma_5 = i gamma_2 gamma_5
     };
   std::vector<Complex> factor23{{0.,-1.},{0.,1.},{0.,1.}}; 
-  using BaryonTensorSet = Eigen::Tensor<Complex, 6>;
+  using BaryonTensorSet = Eigen::Tensor<Complex, 7>;
   int Ngamma=3;
-  BaryonTensorSet BField3(Nmom,4*Ngamma,Nt,N_1,N_2,N_3); 
+  BaryonTensorSet BField3(Nmom,Ngamma,Nt,4,N_1,N_2,N_3); 
 
   Eigen::Tensor<Complex, 3> corr(Nmom,4,Nt); 
 
@@ -216,7 +215,7 @@ void TBContraction<FImpl>::execute(void)
 		    tmp111 = 0.5*(double)parity*(tmp111 + tmp222); // P_\pm * ...
                     diquark2 = factor23[0]*innerProduct(tmp22s,tmp333);
                     for (int is=0 ; is < 4 ; is++){
-                      BField3(imom,is+4*ig,t,i1,i2,i3)+=(double)epsilon_sgn[ie]*tmp111()(is)()*diquark2;
+                      BField3(imom,ig,t,is,i1,i2,i3)+=(double)epsilon_sgn[ie]*tmp111()(is)()*diquark2;
                     }
   		  }
 		}
@@ -228,7 +227,7 @@ void TBContraction<FImpl>::execute(void)
     }
     for (int is=0 ; is < 4 ; is++){
       for (int t=0 ; t < Nt ; t++){
-        std::cout << "BaryonField(is=" << is << ",t=" << t << ") = " << BField3(0,is,t,0,0,0) << std::endl;
+        std::cout << "BaryonField(is=" << is << ",t=" << t << ") = " << BField3(0,0,t,is,0,0,0) << std::endl;
       }
     }
 
@@ -240,45 +239,6 @@ void TBContraction<FImpl>::execute(void)
   Hdf5Writer writer(filename);
   write(writer,"BaryonField",BField_save.BField);
 
- /* int Npairs = 0;
-  char left[] = "uud";
-  char right[] = "uud";
-  std::vector<int> pairs(6);
-  for (int ie=0, i=0 ; ie < 6 ; ie++){
-    if (left[0] == right[epsilon[ie][0]] && left[1] == right[epsilon[ie][1]] && left[2] == right[epsilon[ie][2]]){
-      pairs[i] = ie;
-      i++;
-      Npairs++;
-    }
-  }
-  pairs.resize(Npairs);
-  std::cout << Npairs << " pairs: " << pairs << std::endl;
-     for (int imom=0 ; imom < Nmom ; imom++){
-       for (int is=0 ; is < 4 ; is++){
-         for (int t=0 ; t < Nt ; t++){
-   	   corr(imom,is,t) = 0.;
-         }
-       }
-     }
-   for (int ipair=0 ; ipair < Npairs ; ipair++){
-   Eigen::array<Eigen::IndexPair<int>, 3> product_dims = { Eigen::IndexPair<int>(0,epsilon[pairs[ipair]][0]),Eigen::IndexPair<int>(1,epsilon[pairs[ipair]][1]) ,Eigen::IndexPair<int>(2,epsilon[pairs[ipair]][2])  };
-     for (int imom=0 ; imom < Nmom ; imom++){
-       Eigen::Tensor<Complex,5> B5 = BField3.chip(imom,0);
-       for (int is=0 ; is < 4 ; is++){
-         Eigen::Tensor<Complex,4> B4 = B5.chip(is,0);
-         for (int t=0 ; t < Nt ; t++){
-           Eigen::Tensor<Complex,3> B3 = B4.chip(t,0);
-           Eigen::Tensor<Complex,0> C2 = B3.contract(B3,product_dims);
-   	   corr(imom,is,t) += (double)epsilon_sgn[pairs[ipair]]*C2(0);
-         }
-       }
-     }
-   }
-    for (int is=0 ; is < 4 ; is++){
-      for (int t=0 ; t < Nt ; t++){
-        std::cout << "C2(is=" << is << ",t=" << t << ") = " << corr(0,is,t) << std::endl;
-      }
-    }*/
 }
 
 END_MODULE_NAMESPACE
