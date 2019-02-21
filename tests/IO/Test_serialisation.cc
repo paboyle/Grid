@@ -98,7 +98,7 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
   bool good = Serializable::CompareMember(object, *buf);
   if (!good) {
     std::cout << " failure!" << std::endl;
-    if constexpr (EigenIO::is_tensor<O>::value)
+    if (EigenIO::is_tensor<O>::value)
       dump_tensor(*buf,"???");
     exit(EXIT_FAILURE);
   }
