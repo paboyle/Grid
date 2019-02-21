@@ -168,6 +168,32 @@ namespace Grid {
     //template <typename T> struct Traits<T, typename std::enable_if<is_tensor<T>::value, void>::type> : Traits<T> {};
   }
 
+  // for_all helper function to call the lambda
+  template <typename ETensor, typename Lambda>
+  typename std::enable_if<EigenIO::is_tensor_of_scalar<ETensor>::value, void>::type
+  for_all_do_lambda( Lambda lambda, typename ETensor::Scalar &scalar, typename ETensor::Index &Seq,
+                    std::array<std::size_t, ETensor::NumIndices + EigenIO::Traits<typename ETensor::Scalar>::rank_non_trivial> &MyIndex)
+  {
+    lambda( scalar, Seq++, MyIndex );
+  }
+
+  // for_all helper function to call the lambda
+  template <typename ETensor, typename Lambda>
+  typename std::enable_if<EigenIO::is_tensor_of_container<ETensor>::value, void>::type
+  for_all_do_lambda( Lambda lambda, typename ETensor::Scalar &scalar, typename ETensor::Index Seq,
+                    std::array<std::size_t, ETensor::NumIndices + EigenIO::Traits<typename ETensor::Scalar>::rank_non_trivial> &MyIndex)
+  {
+    using Scalar = typename ETensor::Scalar; // This could be a Container - we'll check later
+    const auto InnerRank = EigenIO::Traits<Scalar>::rank_non_trivial;
+    const auto rank{ETensor::NumIndices};
+    for( typename EigenIO::Traits<Scalar>::scalar_type &Source : scalar ) {
+      lambda(Source, Seq++, MyIndex );
+      // Now increment SubIndex
+      for( auto i = InnerRank - 1; i != -1 && ++MyIndex[rank + i] == EigenIO::Traits<Scalar>::DimensionNT(i); i-- )
+        MyIndex[i] = 0;
+    }
+  }
+  
   // Calls a lamda (passing index and sequence number) for every member of an Eigen::Tensor
   // For efficiency, iteration proceeds in memory order,
   // ... but parameters guaranteed to be the same regardless of memory order
@@ -208,17 +234,7 @@ namespace Grid {
     Index Seq = 0;
     Scalar * pScalar = ET.data();
     for( std::size_t j = 0; j < NumScalars; j++ ) {
-      // if constexpr is C++ 17 ... but otherwise need two specialisations (Container vs Scalar)
-      if constexpr ( EigenIO::is_scalar<Scalar>::value ) {
-        lambda( * pScalar, Seq++, MyIndex );
-      } else {
-        for( typename EigenIO::Traits<Scalar>::scalar_type &Source : * pScalar ) {
-          lambda(Source, Seq++, MyIndex );
-          // Now increment SubIndex
-          for( auto i = rank + InnerRank - 1; i != rank - 1 && ++MyIndex[i] == Dims[i]; i-- )
-            MyIndex[i] = 0;
-        }
-      }
+      for_all_do_lambda<ETensor, Lambda>( lambda, * pScalar, Seq, MyIndex );
       // Now increment the index to pass to the lambda (bearing in mind we're walking in memory order)
       if( ETensor::Options & Eigen::RowMajor ) {
         for( auto i = rank - 1; i != -1 && ++MyIndex[i] == Dims[i]; i-- )
@@ -376,6 +392,36 @@ namespace Grid {
     typename std::enable_if<EigenIO::is_tensor<ETensor>::value, void>::type
     write(const std::string &s, const ETensor &output);
 
+    // Helper functions for Scalar vs Container specialisations
+    template <typename ETensor>
+    inline typename std::enable_if<EigenIO::is_tensor_of_scalar<ETensor>::value, const typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type *>::type
+    getFirstScalar(const ETensor &output)
+    {
+      return output.data();
+    }
+    
+    template <typename ETensor>
+    inline typename std::enable_if<EigenIO::is_tensor_of_container<ETensor>::value, const typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type *>::type
+    getFirstScalar(const ETensor &output)
+    {
+      return output.data()->begin();
+    }
+    
+    template <typename S>
+    inline typename std::enable_if<EigenIO::is_scalar<S>::value, void>::type
+    copyScalars(typename EigenIO::Traits<S>::scalar_type * &pCopy, const S &Source)
+    {
+      * pCopy ++ = Source;
+    }
+    
+    template <typename S>
+    inline typename std::enable_if<EigenIO::is_container<S>::value, void>::type
+    copyScalars(typename EigenIO::Traits<S>::scalar_type * &pCopy, const S &Source)
+    {
+      for( const typename EigenIO::Traits<S>::scalar_type &item : Source )
+        * pCopy ++ = item;
+    }
+
     void         scientificFormat(const bool set);
     bool         isScientific(void);
     void         setPrecision(const unsigned int prec);
@@ -417,12 +463,23 @@ namespace Grid {
     template <typename ETensor>
     typename std::enable_if<EigenIO::is_tensor_variable<ETensor>::value, void>::type
     Reshape(ETensor &t, const std::array<typename ETensor::Index, ETensor::NumDimensions> &dims );
-    /*template <typename ETensor>
-    typename std::enable_if<EigenIO::is_tensor_fixed<ETensor>::value, std::size_t>::type
-    DimSize(ETensor &t, std::size_t dim );
-    template <typename ETensor>
-    typename std::enable_if<EigenIO::is_tensor_variable<ETensor>::value, std::size_t>::type
-    DimSize(ETensor &t, std::size_t dim );*/
+  
+    // Helper functions for Scalar vs Container specialisations
+    template <typename S>
+    inline typename std::enable_if<EigenIO::is_scalar<S>::value, void>::type
+    copyScalars(S &Dest, const typename EigenIO::Traits<S>::scalar_type * &pSource)
+    {
+      Dest = * pSource ++;
+    }
+    
+    template <typename S>
+    inline typename std::enable_if<EigenIO::is_container<S>::value, void>::type
+    copyScalars(S &Dest, const typename EigenIO::Traits<S>::scalar_type * &pSource)
+    {
+      for( typename EigenIO::Traits<S>::scalar_type &item : Dest )
+        item = * pSource ++;
+    }
+    
   protected:
     template <typename U>
     void fromString(U &output, const std::string &s);
@@ -498,7 +555,7 @@ namespace Grid {
   
   // Eigen::Tensors of Grid tensors (iScalar, iVector, iMatrix)
   template <typename T>
-  template <typename ETensor/*, typename U, int N*/>
+  template <typename ETensor>
   typename std::enable_if<EigenIO::is_tensor<ETensor>::value, void>::type
   Writer<T>::write(const std::string &s, const ETensor &output)
   {
@@ -528,10 +585,11 @@ namespace Grid {
     Scalar * pCopyBuffer = nullptr;
     const Index TotalNumElements = NumElements * Traits::count;
     if( !CopyData ) {
-      if constexpr ( ContainerRank == 0 )
+      /*if constexpr ( ContainerRank == 0 )
         pWriteBuffer = output.data();
       else
-        pWriteBuffer = output.data()->begin();
+        pWriteBuffer = output.data()->begin();*/
+      pWriteBuffer = getFirstScalar( output );
     } else {
       // Regardless of the Eigen::Tensor storage order, the copy will be Row Major
       pCopyBuffer = static_cast<Scalar *>(malloc(TotalNumElements * sizeof(Scalar)));
@@ -540,12 +598,14 @@ namespace Grid {
       std::array<Index, TensorRank> MyIndex;
       for( auto &idx : MyIndex ) idx = 0;
       for( auto n = 0; n < NumElements; n++ ) {
-        if constexpr ( ContainerRank == 0 )
-          * pCopy ++ = output( MyIndex );
+        const Container & c = output( MyIndex );
+        /*if constexpr ( ContainerRank == 0 )
+          * pCopy ++ = c;
         else {
-          for( const Scalar &Source : output( MyIndex ) )
+          for( const Scalar &Source : c )
             * pCopy ++ = Source;
-        }
+        }*/
+        copyScalars( pCopy, c );
         // Now increment the index
         for( int i = output.NumDimensions - 1; i >= 0 && ++MyIndex[i] == output.dimension(i); i-- )
           MyIndex[i] = 0;
@@ -656,8 +716,8 @@ namespace Grid {
     using Scalar = typename Traits::scalar_type;
 
     // read the (flat) data and dimensionality
-    std::vector<std::size_t>   dimData;
-    std::vector<Scalar>  buf;
+    std::vector<std::size_t> dimData;
+    std::vector<Scalar> buf;
     upcast->readMultiDim( s, buf, dimData );
     // Make sure that the number of elements read matches dimensions read
     std::size_t NumElements = 1;
@@ -717,15 +777,16 @@ namespace Grid {
     // Copy the data into the tensor
     ETDims MyIndex;
     for( auto &d : MyIndex ) d = 0;
-    std::size_t idx = 0;
+    const Scalar * pSource = &buf[0];
     for( auto n = 0 ; n < NumElements ; n++ ) {
       Container & c = output( MyIndex );
-      if constexpr ( EigenIO::is_scalar<Container>::value ) {
+      /*if constexpr ( EigenIO::is_scalar<Container>::value ) {
         c = buf[idx++];
       } else {
         for( Scalar & s : c )
           s = buf[idx++];
-      }
+      }*/
+      copyScalars( c, pSource );
       // Now increment the index
       for( int i = ETensor::NumDimensions - 1; i >= 0 && ++MyIndex[i] == dims[i]; i-- )
         MyIndex[i] = 0;
