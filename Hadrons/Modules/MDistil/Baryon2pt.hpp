@@ -97,8 +97,8 @@ void TBaryon2pt<FImpl>::execute(void)
 
     const std::string &inputL{par().inputL};
     const std::string &inputR{par().inputR};
-    const std::string &inputL{par().quarksL};
-    const std::string &inputR{par().quarksR};
+    const std::string &quarksL{par().quarksL};
+    const std::string &quarksR{par().quarksR};
     const std::string &output{par().output};
 
     int Nmom=1;
@@ -166,8 +166,8 @@ void TBaryon2pt<FImpl>::execute(void)
             Eigen::Tensor<Complex,4> B4L = B5L.chip(t,0);
             Eigen::Tensor<Complex,4> B4R = B5R.chip(tsrc,0);
             for (int is=0 ; is < 4 ; is++){
-              Eigen::Tensor<Complex,4> B3L = B4L.chip(is,0);
-              Eigen::Tensor<Complex,4> B3R = B4R.chip(is,0);
+              Eigen::Tensor<Complex,3> B3L = B4L.chip(is,0);
+              Eigen::Tensor<Complex,3> B3R = B4R.chip(is,0);
               Eigen::Tensor<Complex,0> C2 = B3L.contract(B3R,product_dims);
               corr(imom,t) += (double)epsilon_sgn[pairs[ipair]]*C2(0);
             }
