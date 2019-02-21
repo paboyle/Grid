@@ -162,7 +162,7 @@ public:
 #define RDR_ Hdf5Reader
 #define WTR_ Hdf5Writer
 #define TensorWriteReadInnerNoInit( T ) \
-  filename = "iotest_"s + std::to_string(++TestNum) + "_" #T ".h5"; \
+  filename = "iotest_" + std::to_string(++TestNum) + "_" #T ".h5"; \
   ioTest<WTR_, RDR_, T>(filename, t, #T, #T);
 #define TensorWriteReadInner( T )  SequentialInit( t ); TensorWriteReadInnerNoInit( T )
 #define TensorWriteRead( T      ) { T t               ; TensorWriteReadInner( T ) }
@@ -171,7 +171,6 @@ public:
 
 void EigenHdf5IOTest(void)
 {
-  using namespace std::string_literals;
   unsigned int TestNum = 0;
   std::string filename;
   using TensorSingle = Eigen::TensorFixedSize<int, Eigen::Sizes<1>>;
