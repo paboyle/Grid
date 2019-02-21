@@ -491,7 +491,6 @@ template <typename T>
 void DebugGridTensorTest_print( int i )
 {
   std::cout << i << " : " << EigenIO::is_tensor<T>::value
-  << ", depth " << EigenIO::Traits<T>::depth
   << ", rank " << EigenIO::Traits<T>::rank
   << ", rank_non_trivial " << EigenIO::Traits<T>::rank_non_trivial
   << ", count " << EigenIO::Traits<T>::count
