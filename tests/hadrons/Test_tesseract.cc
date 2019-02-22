@@ -73,13 +73,13 @@ void test_LapEvec(Application &application)
   p.Stout.steps = 3;
   p.Stout.parm = 0.2;
   p.Cheby.PolyOrder = 11;
-  p.Cheby.alpha = 0.3;
+  p.Cheby.alpha = 0.5;
   p.Cheby.beta = 12.5;
-  p.Lanczos.Nvec = 5;
-  p.Lanczos.Nk = 6;
-  p.Lanczos.Np = 2;
+  p.Lanczos.Nvec = 6;
+  p.Lanczos.Nk = 15;
+  p.Lanczos.Np = 5;
   p.Lanczos.MaxIt = 1000;
-  p.Lanczos.resid = 1e-2;
+  p.Lanczos.resid = 1e-5;
   application.createModule<MDistil::LapEvec>("LapEvec",p);
 }
 
@@ -98,17 +98,17 @@ void test_Perambulators(Application &application)
   PerambPar.UniqueIdentifier="full_dilution";
   PerambPar.Distil.tsrc = 0;
   PerambPar.Distil.nnoise = 1;
-  PerambPar.Distil.LI=5;
+  PerambPar.Distil.LI=6;
   PerambPar.Distil.SI=4;
-  PerambPar.Distil.TI=8;
-  PerambPar.nvec=5;
+  PerambPar.Distil.TI=32;
+  PerambPar.nvec=6;
   PerambPar.Distil.Ns=4;
-  PerambPar.Distil.Nt=8;
+  PerambPar.Distil.Nt=32;
   PerambPar.Distil.Nt_inv=1;
-  PerambPar.Solver.mass=0.005;
+  PerambPar.Solver.mass=0.5;
   PerambPar.Solver.M5=1.8;
   PerambPar.Ls=16;
-  PerambPar.Solver.CGPrecision=1e-8;
+  PerambPar.Solver.CGPrecision=1e-2;
   PerambPar.Solver.MaxIterations=10000;
   application.createModule<MDistil::PerambLight>("Peramb",PerambPar);
 }
@@ -125,12 +125,12 @@ void test_DistilVectors(Application &application)
   DistilVecPar.eigenPack="LapEvec";
   DistilVecPar.tsrc = 0;
   DistilVecPar.nnoise = 1;
-  DistilVecPar.LI=5;
+  DistilVecPar.LI=6;
   DistilVecPar.SI=4;
-  DistilVecPar.TI=8;
-  DistilVecPar.nvec=5;
+  DistilVecPar.TI=32;
+  DistilVecPar.nvec=6;
   DistilVecPar.Ns=4;
-  DistilVecPar.Nt=8;
+  DistilVecPar.Nt=32;
   DistilVecPar.Nt_inv=1;
   application.createModule<MDistil::DistilVectors>("DistilVecs",DistilVecPar);
 }
@@ -299,32 +299,30 @@ void test_Baryon2pt(Application &application)
   Baryon2ptPar.output="C2_baryon";
   application.createModule<MDistil::Baryon2pt>("C2_b",Baryon2ptPar);
 }
+
 /////////////////////////////////////////////////////////////
 // emField
 /////////////////////////////////////////////////////////////
 void test_em(Application &application)
 {
-  MGauge::StochEm::Par StochEmPar;
-  StochEmPar.gauge=PhotonR::Gauge::feynman;
-  StochEmPar.zmScheme=PhotonR::ZmScheme::qedL;
-  application.createModule<MGauge::StochEm>("Em",StochEmPar);
+   MGauge::StochEm::Par StochEmPar;
+   StochEmPar.gauge=PhotonR::Gauge::feynman;
+   StochEmPar.zmScheme=PhotonR::ZmScheme::qedL;
+   application.createModule<MGauge::StochEm>("Em",StochEmPar);
 }
-
 /////////////////////////////////////////////////////////////
 // MesonA2ASlash
 /////////////////////////////////////////////////////////////
-
 void test_Aslash(Application &application)
 {
-  // DistilVectors parameters
-  MContraction::A2AAslashField::Par A2AAslashFieldPar;
-  A2AAslashFieldPar.left="Peramb_unsmeared_sink";
-  A2AAslashFieldPar.right="Peramb_unsmeared_sink";
-  A2AAslashFieldPar.output="unsmeared_Aslash";
-  A2AAslashFieldPar.emField={"Em"};
-  A2AAslashFieldPar.cacheBlock=2;
-  A2AAslashFieldPar.block=4;
-  application.createModule<MContraction::A2AAslashField>("Aslash_field",A2AAslashFieldPar);
+   MContraction::A2AAslashField::Par A2AAslashFieldPar;
+   A2AAslashFieldPar.left="Peramb_unsmeared_sink";
+   A2AAslashFieldPar.right="Peramb_unsmeared_sink";
+   A2AAslashFieldPar.output="unsmeared_Aslash";
+   A2AAslashFieldPar.emField={"Em"};
+   A2AAslashFieldPar.cacheBlock=2;
+   A2AAslashFieldPar.block=4;
+   application.createModule<MContraction::A2AAslashField>("Aslash_field",A2AAslashFieldPar);
 }
 
 bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
@@ -684,10 +682,7 @@ int main(int argc, char *argv[])
   << ", sizeof(size_t) = " << sizeof(size_t)
   << ", sizeof(std::size_t) = " << sizeof(std::size_t)
   << ", sizeof(std::streamsize) = " << sizeof(std::streamsize)
-  << ", sizeof(Eigen::Index) = " << sizeof(Eigen::Index)
-  << ", sizeof(hsize_t) = " << sizeof(hsize_t)
-  << ", sizeof(unsigned long long) = " << sizeof(unsigned long long)
-  << std::endl;
+  << ", sizeof(Eigen::Index) = " << sizeof(Eigen::Index) << std::endl;
   if( DebugEigenTest() ) return 0;
   if(DebugGridTensorTest()) return 0;
 #endif
@@ -792,13 +787,6 @@ int main(int argc, char *argv[])
     case 9: // 3
       test_Global( application );
       test_Baryon2pt( application );
-      break;
-    case 10: // 3
-      test_Global( application );
-      test_LapEvec( application );
-      test_Perambulators( application );
-      test_em( application );
-      test_Aslash( application );
       break;
   }
   LOG(Message) << "====== XML creation for test " << iTestNum << " complete ======" << std::endl;
