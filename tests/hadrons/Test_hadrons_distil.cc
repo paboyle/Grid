@@ -297,6 +297,33 @@ void test_Baryon2pt(Application &application)
   Baryon2ptPar.output="C2_baryon";
   application.createModule<MDistil::Baryon2pt>("C2_b",Baryon2ptPar);
 }
+/////////////////////////////////////////////////////////////
+// emField
+/////////////////////////////////////////////////////////////
+void test_em(Application &application)
+{
+  MGauge::StochEm::Par StochEmPar;
+  StochEmPar.gauge=PhotonR::Gauge::feynman;
+  StochEmPar.zmScheme=PhotonR::ZmScheme::qedL;
+  application.createModule<MGauge::StochEm>("Em",StochEmPar);
+}
+
+/////////////////////////////////////////////////////////////
+// MesonA2ASlash
+/////////////////////////////////////////////////////////////
+
+void test_Aslash(Application &application)
+{
+  // DistilVectors parameters
+  MContraction::A2AAslashField::Par A2AAslashFieldPar;
+  A2AAslashFieldPar.left="Peramb_unsmeared_sink";
+  A2AAslashFieldPar.right="Peramb_unsmeared_sink";
+  A2AAslashFieldPar.output="unsmeared_Aslash";
+  A2AAslashFieldPar.emField={"Em"};
+  A2AAslashFieldPar.cacheBlock=2;
+  A2AAslashFieldPar.block=4;
+  application.createModule<MContraction::A2AAslashField>("Aslash_field",A2AAslashFieldPar);
+}
 
 bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
 {
@@ -760,6 +787,13 @@ int main(int argc, char *argv[])
     case 9: // 3
       test_Global( application );
       test_Baryon2pt( application );
+      break;
+    case 10: // 3
+      test_Global( application );
+      test_LapEvec( application );
+      test_Perambulators( application );
+      test_em( application );
+      test_Aslash( application );
       break;
   }
   LOG(Message) << "====== XML creation for test " << iTestNum << " complete ======" << std::endl;
