@@ -48,28 +48,32 @@ Application::Application(void)
 {
     initLogger();
     auto dim = GridDefaultLatt(), mpi = GridDefaultMpi(), loc(dim);
-    locVol_ = 1;
-    for (unsigned int d = 0; d < dim.size(); ++d)
+
+    if (dim.size())
     {
-        loc[d]  /= mpi[d];
-        locVol_ *= loc[d];
+        locVol_ = 1;
+        for (unsigned int d = 0; d < dim.size(); ++d)
+        {
+            loc[d]  /= mpi[d];
+            locVol_ *= loc[d];
+        }
+        LOG(Message) << "====== HADRONS APPLICATION INITIALISATION ======" << std::endl;
+        LOG(Message) << "** Dimensions" << std::endl;
+        LOG(Message) << "Global lattice: " << dim << std::endl;
+        LOG(Message) << "MPI partition : " << mpi << std::endl;
+        LOG(Message) << "Local lattice : " << loc << std::endl;
+        LOG(Message) << std::endl;
+        LOG(Message) << "** Default parameters (and associated C macros)" << std::endl;
+        LOG(Message) << "ASCII output precision  : " << MACOUT(DEFAULT_ASCII_PREC) << std::endl;
+        LOG(Message) << "Fermion implementation  : " << MACOUTS(FIMPLBASE) << std::endl;
+        LOG(Message) << "z-Fermion implementation: " << MACOUTS(ZFIMPLBASE) << std::endl;
+        LOG(Message) << "Scalar implementation   : " << MACOUTS(SIMPLBASE) << std::endl;
+        LOG(Message) << "Gauge implementation    : " << MACOUTS(GIMPLBASE) << std::endl;
+        LOG(Message) << "Eigenvector base size   : " 
+                    << MACOUT(HADRONS_DEFAULT_LANCZOS_NBASIS) << std::endl;
+        LOG(Message) << "Schur decomposition     : " << MACOUTS(HADRONS_DEFAULT_SCHUR) << std::endl;
+        LOG(Message) << std::endl;
     }
-    LOG(Message) << "====== HADRONS APPLICATION INITIALISATION ======" << std::endl;
-    LOG(Message) << "** Dimensions" << std::endl;
-    LOG(Message) << "Global lattice: " << dim << std::endl;
-    LOG(Message) << "MPI partition : " << mpi << std::endl;
-    LOG(Message) << "Local lattice : " << loc << std::endl;
-    LOG(Message) << std::endl;
-    LOG(Message) << "** Default parameters (and associated C macros)" << std::endl;
-    LOG(Message) << "ASCII output precision  : " << MACOUT(DEFAULT_ASCII_PREC) << std::endl;
-    LOG(Message) << "Fermion implementation  : " << MACOUTS(FIMPLBASE) << std::endl;
-    LOG(Message) << "z-Fermion implementation: " << MACOUTS(ZFIMPLBASE) << std::endl;
-    LOG(Message) << "Scalar implementation   : " << MACOUTS(SIMPLBASE) << std::endl;
-    LOG(Message) << "Gauge implementation    : " << MACOUTS(GIMPLBASE) << std::endl;
-    LOG(Message) << "Eigenvector base size   : " 
-                 << MACOUT(HADRONS_DEFAULT_LANCZOS_NBASIS) << std::endl;
-    LOG(Message) << "Schur decomposition     : " << MACOUTS(HADRONS_DEFAULT_SCHUR) << std::endl;
-    LOG(Message) << std::endl;
 }
 
 Application::Application(const Application::GlobalPar &par)

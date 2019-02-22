@@ -43,15 +43,13 @@ HADRONS_ERROR_REF(ObjectDefinition, "no object with address " + std::to_string(a
 // constructor /////////////////////////////////////////////////////////////////
 Environment::Environment(void)
 {
-    dim_         = GridDefaultLatt();
-    nd_          = dim_.size();
-    createGrid<vComplex>(1);
+    dim_ = GridDefaultLatt();
+    nd_  = dim_.size();
     vol_ = 1.;
     for (auto d: dim_)
     {
         vol_ *= d;
     }
-    rng4d_.reset(new GridParallelRNG(getGrid()));
 }
 
 // grids ///////////////////////////////////////////////////////////////////////
@@ -76,8 +74,13 @@ double Environment::getVolume(void) const
 }
 
 // random number generator /////////////////////////////////////////////////////
-GridParallelRNG * Environment::get4dRng(void) const
+GridParallelRNG * Environment::get4dRng(void)
 {
+    if (rng4d_ == nullptr)
+    {
+        rng4d_.reset(new GridParallelRNG(getGrid()));
+    }
+
     return rng4d_.get();
 }
 
