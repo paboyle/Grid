@@ -657,7 +657,10 @@ int main(int argc, char *argv[])
   << ", sizeof(size_t) = " << sizeof(size_t)
   << ", sizeof(std::size_t) = " << sizeof(std::size_t)
   << ", sizeof(std::streamsize) = " << sizeof(std::streamsize)
-  << ", sizeof(Eigen::Index) = " << sizeof(Eigen::Index) << std::endl;
+  << ", sizeof(Eigen::Index) = " << sizeof(Eigen::Index)
+  << ", sizeof(hsize_t) = " << sizeof(hsize_t)
+  << ", sizeof(unsigned long long) = " << sizeof(unsigned long long)
+  << std::endl;
   if( DebugEigenTest() ) return 0;
   if(DebugGridTensorTest()) return 0;
 #endif
