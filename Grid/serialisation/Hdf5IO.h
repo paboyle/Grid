@@ -105,11 +105,23 @@ namespace Grid
   template <>
   void Hdf5Writer::writeDefault(const std::string &s, const std::string &x);
   
+  static hsize_t alignup(hsize_t n)
+  {
+    n--;           // 1000 0011 --> 1000 0010
+    n |= n >> 1;   // 1000 0010 | 0100 0001 = 1100 0011
+    n |= n >> 2;   // 1100 0011 | 0011 0000 = 1111 0011
+    n |= n >> 4;   // 1111 0011 | 0000 1111 = 1111 1111
+    n |= n >> 8;   // ... (At this point all bits are 1, so further bitwise-or
+    n |= n >> 16;  //      operations produce no effect.)
+    n++;           // 1111 1111 --> 1 0000 0000
+    return n;
+  };
+
   template <typename U>
   void Hdf5Writer::writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const U * pDataRowMajor, size_t NumElements)
   {
     // Hdf5 needs the dimensions as hsize_t
-    int rank = static_cast<int>(Dimensions.size());
+    const int rank = static_cast<int>(Dimensions.size());
     std::vector<hsize_t> dim(rank);
     for(int i = 0; i < rank; i++)
       dim[i] = Dimensions[i];
@@ -119,9 +131,29 @@ namespace Grid
     size_t DataSize = NumElements * sizeof(U);
     if (DataSize > dataSetThres_)
     {
+      // Make sure the chunk size is < 4GB
+      const hsize_t MaxElements = ( sizeof( U ) == 1 ) ? 0xffffffff : 0x100000000 / sizeof( U );
+      hsize_t ElementsPerChunk = 1;
+      bool bTooBig = false;
+      for( unsigned int i = rank - 1; i != -1; i-- ) {
+        if( bTooBig )
+          // Chunk size is already as big as can be - remaining dimensions = 1
+          dim[i] = 1;
+        else {
+          // Now make sure overall size is not too big
+          ElementsPerChunk *= dim[i];
+          if( ElementsPerChunk >= MaxElements ) {
+            bTooBig = true;
+            hsize_t dividend  = ElementsPerChunk / MaxElements;
+            hsize_t remainder = ElementsPerChunk % MaxElements;
+            if( remainder )
+              dividend++;
+            dim[i] = dim[i] / dividend;
+          }
+        }
+      }
       H5NS::DataSet           dataSet;
       H5NS::DSetCreatPropList plist;
-      
       plist.setChunk(rank, dim.data());
       plist.setFletcher32();
       dataSet = group_.createDataSet(s, Hdf5Type<U>::type(), dataSpace, plist);
