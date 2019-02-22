@@ -199,6 +199,21 @@ void test_MesonSink(Application &application)
   application.createModule<MContraction::A2AMesonField>("DistilMesonSink",A2AMesonFieldPar);
 }
 /////////////////////////////////////////////////////////////
+// g5*unsmeared
+/////////////////////////////////////////////////////////////
+
+void test_g5_sinks(Application &application)
+{
+  // DistilVectors parameters
+  MDistil::g5_multiply::Par g5_multiplyPar;
+  g5_multiplyPar.input="Peramb_unsmeared_sink";
+  g5_multiplyPar.nnoise = 1;
+  g5_multiplyPar.LI=5;
+  g5_multiplyPar.Ns=4;
+  g5_multiplyPar.Nt_inv=1;
+  application.createModule<MDistil::g5_multiply>("g5phi",g5_multiplyPar);
+}
+/////////////////////////////////////////////////////////////
 // MesonFields
 /////////////////////////////////////////////////////////////
 
@@ -318,7 +333,7 @@ void test_Aslash(Application &application)
 {
   // DistilVectors parameters
   MContraction::A2AAslashField::Par A2AAslashFieldPar;
-  A2AAslashFieldPar.left="Peramb_unsmeared_sink";
+  A2AAslashFieldPar.left="g5phi";
   A2AAslashFieldPar.right="Peramb_unsmeared_sink";
   A2AAslashFieldPar.output="unsmeared_Aslash";
   A2AAslashFieldPar.emField={"Em"};
@@ -797,6 +812,7 @@ int main(int argc, char *argv[])
       test_Global( application );
       test_LapEvec( application );
       test_Perambulators( application );
+      test_g5_sinks( application );
       test_em( application );
       test_Aslash( application );
       break;

@@ -239,7 +239,7 @@ void TLapEvec<GImpl>::execute(void)
   auto &Umu = envGet(GaugeField, par().gauge);
   envGetTmp(GaugeField, Umu_smear);
   FieldMetaData header;
-  if((0)) {
+  if((1)) {
     const std::vector<int> seeds({1, 2, 3, 4, 5});
     GridParallelRNG pRNG4d(gridHD);
     pRNG4d.SeedFixedIntegers(seeds);
