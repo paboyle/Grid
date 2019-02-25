@@ -125,24 +125,28 @@ namespace Grid
   template <typename U>
   void XmlWriter::writeDefault(const std::string &s, const std::vector<U> &x)
   {
-    std::vector<size_t> dims(1);
-    dims[0] = x.size();
-    writeMultiDim(s, dims, &x[0], dims[0]);
+    push(s);
+    for( auto &u : x )
+    {
+      write("elem", u);
+    }
+    pop();
   }
 
   template <typename U>
   void XmlWriter::writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const U * pDataRowMajor, size_t NumElements)
   {
     push(s);
-    if( Dimensions.size() > 1 )
-    {
-      for( auto d : Dimensions )
-        write("dim", d);
+    size_t count = 1;
+    const size_t Rank = Dimensions.size();
+    write("rank", Rank );
+    for( auto d : Dimensions ) {
+      write("dim", d);
+      count *= d;
     }
+    assert( count == NumElements && "XmlIO : element count doesn't match dimensions" );
     while (NumElements--)
-    {
       write("elem", *pDataRowMajor++);
-    }
     pop();
   }
 
@@ -162,38 +166,46 @@ namespace Grid
   template <typename U>
   void XmlReader::readDefault(const std::string &s, std::vector<U> &output)
   {
-    std::vector<size_t> dims;
-    readMultiDim(s, output, dims);
-    assert( dims.size() == 1 && dims[0] == output.size() && "XmlIO: Expected 1D vector" );
-  }
-
-  template <typename U>
-  void XmlReader::readMultiDim(const std::string &s, std::vector<U> &buf, std::vector<size_t> &dim)
-  {
-    unsigned int i = 0;
-    unsigned int Rank = 0;
     if (!push(s))
     {
       std::cout << GridLogWarning << "XML: cannot open node '" << s << "'";
       std::cout << std::endl;
     } else {
-      while (node_.child("dim"))
+      for(unsigned int i = 0; node_.child("elem"); )
       {
-        dim.resize(Rank + 1);
-        read("dim", dim[Rank]);
-        node_.child("dim").set_name("dim-done");
-        Rank++;
-      }
-      while (node_.child("elem"))
-      {
-        buf.resize(i + 1);
-        read("elem", buf[i]);
+        output.resize(i + 1);
+        read("elem", output[i++]);
         node_.child("elem").set_name("elem-done");
-        i++;
       }
       pop();
-      if( Rank == 0 )
-        dim.push_back(i);
+    }
+  }
+
+  template <typename U>
+  void XmlReader::readMultiDim(const std::string &s, std::vector<U> &buf, std::vector<size_t> &dim)
+  {
+    if (!push(s))
+    {
+      std::cout << GridLogWarning << "XML: cannot open node '" << s << "'";
+      std::cout << std::endl;
+    } else {
+      size_t Rank;
+      read("rank", Rank);
+      dim.resize( Rank );
+      size_t NumElements = 1;
+      for( auto &d : dim )
+      {
+        read("dim", d);
+        node_.child("dim").set_name("dim-done");
+        NumElements *= d;
+      }
+      buf.resize( NumElements );
+      for( auto &x : buf )
+      {
+        read("elem", x);
+        node_.child("elem").set_name("elem-done");
+      }
+      pop();
     }
   }
 }

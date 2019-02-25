@@ -150,8 +150,8 @@ namespace Grid
       NumElements *= d;
     }
     buf.resize( NumElements );
-    for( auto i = 0; i < NumElements; i++ )
-      read(s, buf[i]);
+    for( auto &x : buf )
+      read(s, x);
   }
 }
 

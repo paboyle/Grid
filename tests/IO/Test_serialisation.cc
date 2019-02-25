@@ -113,7 +113,7 @@ typedef Eigen::Tensor<TestScalar, 3, Eigen::StorageOptions::RowMajor> TensorRank
 typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>, Eigen::StorageOptions::RowMajor> Tensor_9_4_2;
 typedef std::vector<Tensor_9_4_2> aTensor_9_4_2;
 typedef Eigen::TensorFixedSize<SpinColourVector, Eigen::Sizes<6,5>> LSCTensor;
-#ifdef DEBUG
+#ifndef DEBUG
 typedef Eigen::TensorFixedSize<iMatrix<iVector<iMatrix<iVector<LorentzColourMatrix,5>,2>,7>,3>, Eigen::Sizes<2,4,11,10,9>, Eigen::StorageOptions::RowMajor> LCMTensor;
 #endif
 
@@ -193,7 +193,7 @@ void EigenHdf5IOTest(const char * pszExtension)
   }
   TensorWriteRead ( LSCTensor )
   TensorWriteReadLarge( PerambIOTestClass )
-#ifdef DEBUG
+#ifndef DEBUG
   std::cout << "sizeof( LCMTensor ) = " << sizeof( LCMTensor ) / 1024 / 1024 << " MB" << std::endl;
   TensorWriteReadLarge ( LCMTensor )
   // Also write > 4GB of complex numbers (I suspect this will fail inside Hdf5)
@@ -295,12 +295,12 @@ int main(int argc,char **argv)
   std::cout << "\n==== detailed Hdf5 tensor tests (Grid::EigenIO)" << std::endl;
   EigenHdf5IOTest<Hdf5Writer, Hdf5Reader>(".h5");
 #endif
-  std::cout << "\n==== detailed xml tensor tests (Grid::EigenIO)" << std::endl;
-  EigenHdf5IOTest<XmlWriter, XmlReader>(".xml");
   std::cout << "\n==== detailed binary tensor tests (Grid::EigenIO)" << std::endl;
   EigenHdf5IOTest<BinaryWriter, BinaryReader>(".bin");
   std::cout << "\n==== detailed text tensor tests (Grid::EigenIO)" << std::endl;
   EigenHdf5IOTest<TextWriter, TextReader>(".dat");
+  std::cout << "\n==== detailed xml tensor tests (Grid::EigenIO)" << std::endl;
+  EigenHdf5IOTest<XmlWriter, XmlReader>(".xml");
 
   std::cout << "\n==== vector flattening/reconstruction" << std::endl;
   typedef std::vector<std::vector<std::vector<double>>> vec3d;
