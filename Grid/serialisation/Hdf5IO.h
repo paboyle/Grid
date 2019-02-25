@@ -3,6 +3,7 @@
 
 #include <stack>
 #include <string>
+#include <list>
 #include <vector>
 #include <H5Cpp.h>
 #include <Grid/tensors/Tensors.h>
@@ -105,17 +106,16 @@ namespace Grid
   template <>
   void Hdf5Writer::writeDefault(const std::string &s, const std::string &x);
   
-  static hsize_t alignup(hsize_t n)
-  {
-    n--;           // 1000 0011 --> 1000 0010
-    n |= n >> 1;   // 1000 0010 | 0100 0001 = 1100 0011
-    n |= n >> 2;   // 1100 0011 | 0011 0000 = 1111 0011
-    n |= n >> 4;   // 1111 0011 | 0000 1111 = 1111 1111
-    n |= n >> 8;   // ... (At this point all bits are 1, so further bitwise-or
-    n |= n >> 16;  //      operations produce no effect.)
-    n++;           // 1111 1111 --> 1 0000 0000
-    return n;
+  class SortNode {
+  public:
+    int index;
+    hsize_t dimsize;
+    //bool operator<(const SortNode &r) { return dimsize < r.dimsize || (dimsize == r.dimsize && index < r.index); }
+    //SortNode() = default;
+    SortNode(int Index, hsize_t DimSize) : index{Index}, dimsize{DimSize} {}
   };
+
+  bool operator<(const SortNode &l, const SortNode &r) { return l.dimsize < r.dimsize || (l.dimsize == r.dimsize && l.index < r.index); }
 
   template <typename U>
   void Hdf5Writer::writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const U * pDataRowMajor, size_t NumElements)
@@ -125,30 +125,64 @@ namespace Grid
     std::vector<hsize_t> dim(rank);
     for(int i = 0; i < rank; i++)
       dim[i] = Dimensions[i];
-    // write to file
+    // write the entire dataset to file
     H5NS::DataSpace dataSpace(rank, dim.data());
 
     size_t DataSize = NumElements * sizeof(U);
     if (DataSize > dataSetThres_)
     {
-      // Make sure the chunk size is < 4GB
+      // First few prime numbers from https://oeis.org/A000040
+      static const unsigned short Primes[] = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31,
+        37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109,
+        113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193,
+        197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271 };
+      constexpr int NumPrimes = sizeof( Primes ) / sizeof( Primes[0] );
+      // Make sure 1) each dimension; and 2) chunk size is < 4GB
       const hsize_t MaxElements = ( sizeof( U ) == 1 ) ? 0xffffffff : 0x100000000 / sizeof( U );
       hsize_t ElementsPerChunk = 1;
       bool bTooBig = false;
-      for( unsigned int i = rank - 1; i != -1; i-- ) {
+      for( int i = rank - 1 ; i != -1 ; i-- ) {
+        auto &d = dim[i];
         if( bTooBig )
-          // Chunk size is already as big as can be - remaining dimensions = 1
-          dim[i] = 1;
+          d = 1; // Chunk size is already as big as can be - remaining dimensions = 1
         else {
+          // If individual dimension too big, reduce by prime factors if possible
+          for( int PrimeIdx = 0; d > MaxElements && PrimeIdx < NumPrimes; ) {
+            if( d % Primes[PrimeIdx] )
+              PrimeIdx++;
+            else
+              d /= Primes[PrimeIdx];
+          }
+          const char ErrorMsg[] = " dimension > 4GB without small prime factors. "
+                                  "Hdf5IO chunk size will be inefficient.";
+          if( d > MaxElements ) {
+            std::cout << GridLogMessage << "Individual" << ErrorMsg << std::endl;
+            hsize_t quotient = d / MaxElements;
+            if( d % MaxElements )
+              quotient++;
+            d /= quotient;
+          }
           // Now make sure overall size is not too big
-          ElementsPerChunk *= dim[i];
-          if( ElementsPerChunk >= MaxElements ) {
+          hsize_t OverflowCheck = ElementsPerChunk;
+          ElementsPerChunk *= d;
+          assert( OverflowCheck == ElementsPerChunk / d && "Product of dimensions overflowed hsize_t" );
+          // If product of dimensions too big, reduce by prime factors
+          for( int PrimeIdx = 0; ElementsPerChunk > MaxElements && PrimeIdx < NumPrimes; ) {
             bTooBig = true;
-            hsize_t dividend  = ElementsPerChunk / MaxElements;
-            hsize_t remainder = ElementsPerChunk % MaxElements;
-            if( remainder )
-              dividend++;
-            dim[i] = dim[i] / dividend;
+            if( d % Primes[PrimeIdx] )
+              PrimeIdx++;
+            else {
+              d /= Primes[PrimeIdx];
+              ElementsPerChunk /= Primes[PrimeIdx];
+            }
+          }
+          if( ElementsPerChunk > MaxElements ) {
+            std::cout << GridLogMessage << "Product of" << ErrorMsg << std::endl;
+            hsize_t quotient = ElementsPerChunk / MaxElements;
+            if( ElementsPerChunk % MaxElements )
+              quotient++;
+            d /= quotient;
+            ElementsPerChunk /= quotient;
           }
         }
       }

@@ -114,7 +114,7 @@ typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>, Eigen::StorageOp
 typedef std::vector<Tensor_9_4_2> aTensor_9_4_2;
 typedef Eigen::TensorFixedSize<SpinColourVector, Eigen::Sizes<6,5>> LSCTensor;
 #ifdef DEBUG
-typedef Eigen::TensorFixedSize<iMatrix<iVector<iMatrix<iVector<LorentzColourMatrix,5>,2>,7>,3>, Eigen::Sizes<2,2,11,10,9>, Eigen::StorageOptions::RowMajor> LCMTensor;
+typedef Eigen::TensorFixedSize<iMatrix<iVector<iMatrix<iVector<LorentzColourMatrix,5>,2>,7>,3>, Eigen::Sizes<2,4,11,10,9>, Eigen::StorageOptions::RowMajor> LCMTensor;
 #endif
 
 class PerambIOTestClass: Serializable {
@@ -132,9 +132,6 @@ public:
                                   , Tensor_9_4_2,             tensor_9_4_2
                                   , aTensor_9_4_2,            atensor_9_4_2
                                   , LSCTensor,                MyLSCTensor
-#ifdef DEBUG
-                                  , LCMTensor,                MyLCMTensor
-#endif
                                   );
   PerambIOTestClass()
   : DistilParameterNames {"alpha", "beta", "gamma", "delta", "epsilon", "zeta"}
@@ -153,23 +150,19 @@ public:
     for( auto &t : atensor_9_4_2 )
       SequentialInit(t, Flag);
     SequentialInit( MyLSCTensor );
-#ifdef DEBUG
-    SequentialInit( MyLCMTensor );
-#endif
   }
 };
 
-#define RDR_ Hdf5Reader
-#define WTR_ Hdf5Writer
 #define TensorWriteReadInnerNoInit( T ) \
-  filename = "iotest_" + std::to_string(++TestNum) + "_" #T ".h5"; \
+  filename = "iotest_" + std::to_string(++TestNum) + "_" #T + pszExtension; \
   ioTest<WTR_, RDR_, T>(filename, t, #T, #T);
 #define TensorWriteReadInner( T )  SequentialInit( t ); TensorWriteReadInnerNoInit( T )
 #define TensorWriteRead( T      ) { T t               ; TensorWriteReadInner( T ) }
 #define TensorWriteReadV(T, ... ) { T t( __VA_ARGS__ ); TensorWriteReadInner( T ) }
 #define TensorWriteReadLarge( T ) { std::unique_ptr<T> p{new T}; T &t{*p}; TensorWriteReadInnerNoInit(T) }
 
-void EigenHdf5IOTest(void)
+template <typename WTR_, typename RDR_>
+void EigenHdf5IOTest(const char * pszExtension)
 {
   unsigned int TestNum = 0;
   std::string filename;
@@ -300,8 +293,10 @@ int main(int argc,char **argv)
   ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", obj, "HDF5   (object)           ");
   ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", vec, "HDF5   (vector of objects)");
   std::cout << "\n==== detailed Hdf5 tensor tests (Grid::EigenIO)" << std::endl;
-  EigenHdf5IOTest();
+  EigenHdf5IOTest<Hdf5Writer, Hdf5Reader>(".h5");
 #endif
+  std::cout << "\n==== detailed binary tensor tests (Grid::EigenIO)" << std::endl;
+  EigenHdf5IOTest<BinaryWriter, BinaryReader>(".bin");
 
   std::cout << "\n==== vector flattening/reconstruction" << std::endl;
   typedef std::vector<std::vector<std::vector<double>>> vec3d;
