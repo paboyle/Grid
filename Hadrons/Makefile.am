@@ -15,23 +15,24 @@ libHadrons_a_SOURCES = \
 	$(modules_cc)
 	
 libHadrons_adir = $(includedir)/Hadrons
-nobase_libHadrons_a_HEADERS = \
-	A2AVectors.hpp            \
-	A2AMatrix.hpp             \
-	Application.hpp           \
-	DilutedNoise.hpp          \
-	DiskVector.hpp            \
-	EigenPack.hpp             \
-	Environment.hpp           \
-	Exceptions.hpp            \
-	Factory.hpp               \
-	GeneticScheduler.hpp      \
-	Global.hpp                \
-	Graph.hpp                 \
-	Module.hpp                \
-	Modules.hpp               \
-	ModuleFactory.hpp         \
-	Solver.hpp                \
-	TimerArray.hpp            \
-	VirtualMachine.hpp        \
+nobase_libHadrons_a_HEADERS =   \
+	A2AVectors.hpp              \
+	A2AMatrix.hpp               \
+	A2AFourQuarkContraction.hpp \
+	Application.hpp             \
+	DilutedNoise.hpp            \
+	DiskVector.hpp              \
+	EigenPack.hpp               \
+	Environment.hpp             \
+	Exceptions.hpp              \
+	Factory.hpp                 \
+	GeneticScheduler.hpp        \
+	Global.hpp                  \
+	Graph.hpp                   \
+	Module.hpp                  \
+	Modules.hpp                 \
+	ModuleFactory.hpp           \
+	Solver.hpp                  \
+	TimerArray.hpp              \
+	VirtualMachine.hpp          \
 	$(modules_hpp)
