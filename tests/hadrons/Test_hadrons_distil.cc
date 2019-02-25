@@ -334,6 +334,7 @@ void test_Aslash(Application &application)
   // DistilVectors parameters
   MContraction::A2AAslashField::Par A2AAslashFieldPar;
   A2AAslashFieldPar.left="g5phi";
+  //A2AAslashFieldPar.right="DistilVecs_phi";
   A2AAslashFieldPar.right="Peramb_unsmeared_sink";
   A2AAslashFieldPar.output="unsmeared_Aslash";
   A2AAslashFieldPar.emField={"Em"};
@@ -802,7 +803,6 @@ int main(int argc, char *argv[])
       test_Perambulators( application );
       test_DistilVectors( application );
       test_MesonField( application );
-      test_MesonFieldRho( application );
       break;
     case 9: // 3
       test_Global( application );

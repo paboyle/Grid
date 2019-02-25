@@ -731,62 +731,17 @@ int main(int argc, char *argv[])
   //const unsigned int  nt    = GridDefaultLatt()[Tp];
   
   switch(iTestNum) {
-    case 1:
-      test_Global( application );
-      test_LapEvec( application );
-      break;
-    case 2:
-      test_Global( application );
-      test_LapEvec( application );
-      test_Perambulators( application );
-      break;
-    case 3: // 3
-      test_Global( application );
-      test_LapEvec( application );
-      test_Perambulators( application );
-      test_DistilVectors( application );
-      break;
-    default: // 4
-      test_Global( application );
-      test_LapEvec( application );
-      test_Perambulators( application );
-      test_DistilVectors( application );
-      test_MesonField( application );
-      break;
-    case 5: // 3
-      test_Global( application );
-      test_LapEvec( application );
-      test_Perambulators( application );
-      test_DistilVectors( application );
-      test_PerambulatorsS( application );
-      test_DistilVectorsS( application );
-      test_MesonFieldSL( application );
-      break;
-    case 6: // 3
+    default:
       test_Global( application );
       test_LapEvec( application );
       test_Perambulators( application );
       test_MesonSink( application );
-      break;
-    case 7: // 3
-      test_Global( application );
-      test_LapEvec( application );
-      test_Perambulators( application );
-      test_DistilVectors( application );
-      test_BaryonFieldPhi( application );
-      test_BaryonFieldRho( application );
-      break;
-    case 8: // 3
-      test_Global( application );
-      test_LapEvec( application );
-      test_Perambulators( application );
+      test_g5_sinks( application );
+      test_em( application );
+      test_Aslash( application );
       test_DistilVectors( application );
       test_MesonField( application );
       test_MesonFieldRho( application );
-      break;
-    case 9: // 3
-      test_Global( application );
-      test_Baryon2pt( application );
       break;
   }
   LOG(Message) << "====== XML creation for test " << iTestNum << " complete ======" << std::endl;
