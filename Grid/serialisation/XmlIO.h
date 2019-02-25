@@ -57,6 +57,8 @@ namespace Grid
     void writeDefault(const std::string &s, const U &x);
     template <typename U>
     void writeDefault(const std::string &s, const std::vector<U> &x);
+    template <typename U>
+    void writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const U * pDataRowMajor, size_t NumElements);
     std::string docString(void);
     std::string string(void);
   private:
@@ -79,6 +81,8 @@ namespace Grid
     void readDefault(const std::string &s, U &output);
     template <typename U>
     void readDefault(const std::string &s, std::vector<U> &output);
+    template <typename U>
+    void readMultiDim(const std::string &s, std::vector<U> &buf, std::vector<size_t> &dim);
     void readCurrentSubtree(std::string &s);
   private:
     void checkParse(const pugi::xml_parse_result &result, const std::string name);
@@ -121,14 +125,27 @@ namespace Grid
   template <typename U>
   void XmlWriter::writeDefault(const std::string &s, const std::vector<U> &x)
   {
+    std::vector<size_t> dims(1);
+    dims[0] = x.size();
+    writeMultiDim(s, dims, &x[0], dims[0]);
+  }
+
+  template <typename U>
+  void XmlWriter::writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const U * pDataRowMajor, size_t NumElements)
+  {
     push(s);
-    for (auto &x_i: x)
+    if( Dimensions.size() > 1 )
     {
-      write("elem", x_i);
+      for( auto d : Dimensions )
+        write("dim", d);
+    }
+    while (NumElements--)
+    {
+      write("elem", *pDataRowMajor++);
     }
     pop();
   }
-  
+
   // Reader template implementation ////////////////////////////////////////////
   template <typename U>
   void XmlReader::readDefault(const std::string &s, U &output)
@@ -145,25 +162,39 @@ namespace Grid
   template <typename U>
   void XmlReader::readDefault(const std::string &s, std::vector<U> &output)
   {
-    std::string    buf;
-    unsigned int   i = 0;
-    
+    std::vector<size_t> dims;
+    readMultiDim(s, output, dims);
+    assert( dims.size() == 1 && dims[0] == output.size() && "XmlIO: Expected 1D vector" );
+  }
+
+  template <typename U>
+  void XmlReader::readMultiDim(const std::string &s, std::vector<U> &buf, std::vector<size_t> &dim)
+  {
+    unsigned int i = 0;
+    unsigned int Rank = 0;
     if (!push(s))
     {
       std::cout << GridLogWarning << "XML: cannot open node '" << s << "'";
       std::cout << std::endl;
-
-      return; 
+    } else {
+      while (node_.child("dim"))
+      {
+        dim.resize(Rank + 1);
+        read("dim", dim[Rank]);
+        node_.child("dim").set_name("dim-done");
+        Rank++;
+      }
+      while (node_.child("elem"))
+      {
+        buf.resize(i + 1);
+        read("elem", buf[i]);
+        node_.child("elem").set_name("elem-done");
+        i++;
+      }
+      pop();
+      if( Rank == 0 )
+        dim.push_back(i);
     }
-    while (node_.child("elem"))
-    {
-      output.resize(i + 1);
-      read("elem", output[i]);
-      node_.child("elem").set_name("elem-done");
-      i++;
-    }
-    pop();
   }
-  
 }
 #endif

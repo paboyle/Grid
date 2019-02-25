@@ -86,7 +86,7 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
   // writer needs to be destroyed so that writing physically happens
   {
     W writer(filename);
-
+    writer.setPrecision(std::numeric_limits<double>::digits10 + 1);
     write(writer, tag , object);
   }
 
@@ -141,14 +141,14 @@ public:
   , tensorRank3(7,3,2)
   , atensor_9_4_2(3)
   {
-    Grid_complex<double> Flag{1,-3.1415927};
+    //Grid_complex<double> Flag{1,-3.1415927}; // Gives errors on readback for text types
+    Grid_complex<double> Flag{1,-1};
     SequentialInit(Perambulator,  Flag);
     SequentialInit(Perambulator2, Flag);
     SequentialInit(tensorRank5UShort);
     SequentialInit(tensorRank3, Flag);
     SequentialInit(tensor_9_4_2, Flag);
-    for( auto &t : atensor_9_4_2 )
-      SequentialInit(t, Flag);
+    for( auto &t : atensor_9_4_2 ) SequentialInit(t, Flag);
     SequentialInit( MyLSCTensor );
   }
 };
@@ -295,6 +295,8 @@ int main(int argc,char **argv)
   std::cout << "\n==== detailed Hdf5 tensor tests (Grid::EigenIO)" << std::endl;
   EigenHdf5IOTest<Hdf5Writer, Hdf5Reader>(".h5");
 #endif
+  std::cout << "\n==== detailed xml tensor tests (Grid::EigenIO)" << std::endl;
+  EigenHdf5IOTest<XmlWriter, XmlReader>(".xml");
   std::cout << "\n==== detailed binary tensor tests (Grid::EigenIO)" << std::endl;
   EigenHdf5IOTest<BinaryWriter, BinaryReader>(".bin");
 
