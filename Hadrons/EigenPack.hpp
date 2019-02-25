@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/EigenPack.hpp
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -308,7 +308,9 @@ template <typename FineF, typename CoarseF,
 class CoarseEigenPack: public EigenPack<FineF, FineFIo>
 {
 public:
-    typedef CoarseF CoarseField;         
+    typedef CoarseF   CoarseField;
+    typedef CoarseFIo CoarseFieldIo;
+public:      
     std::vector<CoarseF> evecCoarse;
     std::vector<RealD>   evalCoarse;
 public:

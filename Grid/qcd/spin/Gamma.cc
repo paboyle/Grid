@@ -11,6 +11,24 @@ const std::array<const Gamma, 4> Gamma::gmu = {{
   Gamma(Gamma::Algebra::GammaZ),
   Gamma(Gamma::Algebra::GammaT)}};
 
+const std::array<const Gamma, 16> Gamma::gall = {{
+  Gamma(Gamma::Algebra::Identity),
+  Gamma(Gamma::Algebra::Gamma5),
+  Gamma(Gamma::Algebra::GammaX),
+  Gamma(Gamma::Algebra::GammaY),
+  Gamma(Gamma::Algebra::GammaZ),
+  Gamma(Gamma::Algebra::GammaT),
+  Gamma(Gamma::Algebra::GammaXGamma5),
+  Gamma(Gamma::Algebra::GammaYGamma5),
+  Gamma(Gamma::Algebra::GammaZGamma5),
+  Gamma(Gamma::Algebra::GammaTGamma5),
+  Gamma(Gamma::Algebra::SigmaXT),      
+  Gamma(Gamma::Algebra::SigmaXY),      
+  Gamma(Gamma::Algebra::SigmaXZ),      
+  Gamma(Gamma::Algebra::SigmaYT),
+  Gamma(Gamma::Algebra::SigmaYZ),
+  Gamma(Gamma::Algebra::SigmaZT)}};
+
 const std::array<const char *, Gamma::nGamma> Gamma::name = {{
   "-Gamma5      ",
   "Gamma5       ",

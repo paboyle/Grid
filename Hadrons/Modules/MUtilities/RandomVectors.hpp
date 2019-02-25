@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Modules/MUtilities/RandomVectors.hpp
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -31,6 +31,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
+#include <Hadrons/A2AVectors.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -44,7 +45,9 @@ class RandomVectorsPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(RandomVectorsPar,
                                     unsigned int, size,
-                                    unsigned int, Ls);
+                                    unsigned int, Ls,
+                                    std::string,  output,
+                                    bool,         multiFile);
 };
 
 template <typename Field>
@@ -118,6 +121,11 @@ void TRandomVectors<Field>::execute(void)
     for (unsigned int i = 0; i < vec.size(); ++i)
     {
         random(rng4d(), vec[i]);
+    }
+    // I/O if necessary
+    if (!par().output.empty())
+    {
+        A2AVectorsIo::write(par().output, vec, par().multiFile, vm().getTrajectory());
     }
 }
 

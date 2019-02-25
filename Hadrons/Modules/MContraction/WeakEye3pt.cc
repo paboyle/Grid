@@ -2,9 +2,9 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MScalarSUN/ShiftProbe.cc
+Source file: Hadrons/Modules/MContraction/WeakEye3pt.cc
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -25,15 +25,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Hadrons/Modules/MScalarSUN/ShiftProbe.hpp>
+#include <Hadrons/Modules/MContraction/WeakEye3pt.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
-using namespace MScalarSUN;
+using namespace MContraction;
 
-template class Grid::Hadrons::MScalarSUN::TShiftProbe<ScalarNxNAdjImplR<2>>;
-template class Grid::Hadrons::MScalarSUN::TShiftProbe<ScalarNxNAdjImplR<3>>;
-template class Grid::Hadrons::MScalarSUN::TShiftProbe<ScalarNxNAdjImplR<4>>;
-template class Grid::Hadrons::MScalarSUN::TShiftProbe<ScalarNxNAdjImplR<5>>;
-template class Grid::Hadrons::MScalarSUN::TShiftProbe<ScalarNxNAdjImplR<6>>;
-
+template class Grid::Hadrons::MContraction::TWeakEye3pt<FIMPL>;
