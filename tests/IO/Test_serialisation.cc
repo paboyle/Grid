@@ -299,6 +299,8 @@ int main(int argc,char **argv)
   EigenHdf5IOTest<XmlWriter, XmlReader>(".xml");
   std::cout << "\n==== detailed binary tensor tests (Grid::EigenIO)" << std::endl;
   EigenHdf5IOTest<BinaryWriter, BinaryReader>(".bin");
+  std::cout << "\n==== detailed text tensor tests (Grid::EigenIO)" << std::endl;
+  EigenHdf5IOTest<TextWriter, TextReader>(".dat");
 
   std::cout << "\n==== vector flattening/reconstruction" << std::endl;
   typedef std::vector<std::vector<std::vector<double>>> vec3d;
