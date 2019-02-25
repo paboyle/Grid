@@ -106,17 +106,6 @@ namespace Grid
   template <>
   void Hdf5Writer::writeDefault(const std::string &s, const std::string &x);
   
-  class SortNode {
-  public:
-    int index;
-    hsize_t dimsize;
-    //bool operator<(const SortNode &r) { return dimsize < r.dimsize || (dimsize == r.dimsize && index < r.index); }
-    //SortNode() = default;
-    SortNode(int Index, hsize_t DimSize) : index{Index}, dimsize{DimSize} {}
-  };
-
-  bool operator<(const SortNode &l, const SortNode &r) { return l.dimsize < r.dimsize || (l.dimsize == r.dimsize && l.index < r.index); }
-
   template <typename U>
   void Hdf5Writer::writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const U * pDataRowMajor, size_t NumElements)
   {
