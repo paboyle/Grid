@@ -169,6 +169,7 @@ public:
 
 void GridLogConfigure(std::vector<std::string> &logstreams);
 
+extern GridLogger GridLogMG;
 extern GridLogger GridLogIRL;
 extern GridLogger GridLogSolver;
 extern GridLogger GridLogError;

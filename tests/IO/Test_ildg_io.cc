@@ -53,7 +53,6 @@ int main (int argc, char ** argv)
   GridCartesian     Fine(latt_size,simd_layout,mpi_layout);
   GridCartesian     Coarse(clatt_size,simd_layout,mpi_layout);
 
-
   GridParallelRNG   pRNGa(&Fine);
   GridParallelRNG   pRNGb(&Fine);
   GridSerialRNG     sRNGa;
@@ -93,6 +92,27 @@ int main (int argc, char ** argv)
   _IldgReader.readConfiguration(Umu,header);
   _IldgReader.close();
   Umu_diff = Umu - Umu_saved;
+
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  std::cout <<GridLogMessage<<"** Writing out  ILDG conf    *********"<<std::endl;
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  file = std::string("./ckpoint_scidac.4000");
+  emptyUserRecord record;
+  ScidacWriter _ScidacWriter(Fine.IsBoss());
+  _ScidacWriter.open(file);
+  _ScidacWriter.writeScidacFieldRecord(Umu,record);
+  _ScidacWriter.close();
+
+  Umu_saved = Umu;
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  std::cout <<GridLogMessage<<"** Reading back ILDG conf    *********"<<std::endl;
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  ScidacReader _ScidacReader;
+  _ScidacReader.open(file);
+  _ScidacReader.readScidacFieldRecord(Umu,record);
+  _ScidacReader.close();
+  Umu_diff = Umu - Umu_saved;
+
 
   std::cout <<GridLogMessage<< "norm2 Gauge Diff = "<<norm2(Umu_diff)<<std::endl;
 

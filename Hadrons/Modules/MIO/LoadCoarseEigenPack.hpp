@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Modules/MIO/LoadCoarseEigenPack.hpp
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -56,7 +56,11 @@ template <typename Pack>
 class TLoadCoarseEigenPack: public Module<LoadCoarseEigenPackPar>
 {
 public:
-    typedef CoarseEigenPack<typename Pack::Field, typename Pack::CoarseField> BasePack;
+    typedef typename Pack::Field                Field;
+    typedef typename Pack::FieldIo              FieldIo;
+    typedef typename Pack::CoarseField          CoarseField;
+    typedef typename Pack::CoarseFieldIo        CoarseFieldIo;
+    typedef CoarseEigenPack<Field, CoarseField, FieldIo, CoarseFieldIo> BasePack;
     template <typename vtype> 
     using iImplScalar = iScalar<iScalar<iScalar<vtype>>>;
     typedef iImplScalar<typename Pack::Field::vector_type> SiteComplex;
@@ -74,7 +78,12 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_TMP(LoadCoarseFermionEigenPack, ARG(TLoadCoarseEigenPack<CoarseFermionEigenPack<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>>), MIO);
+MODULE_REGISTER_TMP(LoadCoarseFermionEigenPack, 
+                    ARG(TLoadCoarseEigenPack<CoarseFermionEigenPack<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>>), MIO);
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
+MODULE_REGISTER_TMP(LoadCoarseFermionEigenPackIo32, 
+                    ARG(TLoadCoarseEigenPack<CoarseFermionEigenPack<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS, FIMPLF>>), MIO);
+#endif
 
 /******************************************************************************
  *                 TLoadCoarseEigenPack implementation                             *
@@ -106,18 +115,27 @@ std::vector<std::string> TLoadCoarseEigenPack<Pack>::getOutput(void)
 template <typename Pack>
 void TLoadCoarseEigenPack<Pack>::setup(void)
 {
-    env().createGrid(par().Ls);
-    env().createCoarseGrid(par().blockSize, par().Ls);
+    GridBase     *gridIo = nullptr, *gridCoarseIo = nullptr;
+
+    if (typeHash<Field>() != typeHash<FieldIo>())
+    {
+        gridIo = envGetRbGrid(FieldIo, par().Ls);
+    }
+    if (typeHash<CoarseField>() != typeHash<CoarseFieldIo>())
+    {
+        gridCoarseIo = envGetCoarseGrid(CoarseFieldIo, par().blockSize, par().Ls);
+    }
     envCreateDerived(BasePack, Pack, getName(), par().Ls, par().sizeFine,
-                     par().sizeCoarse, env().getRbGrid(par().Ls), 
-                     env().getCoarseGrid(par().blockSize, par().Ls));
+                     par().sizeCoarse, envGetRbGrid(Field, par().Ls), 
+                     envGetCoarseGrid(CoarseField, par().blockSize, par().Ls),
+                     gridIo, gridCoarseIo);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename Pack>
 void TLoadCoarseEigenPack<Pack>::execute(void)
 {
-    auto                 cg     = env().getCoarseGrid(par().blockSize, par().Ls);
+    auto                 cg     = envGetCoarseGrid(CoarseField, par().blockSize, par().Ls);
     auto                 &epack = envGetDerived(BasePack, Pack, getName());
     Lattice<SiteComplex> dummy(cg);
 

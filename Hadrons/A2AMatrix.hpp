@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/A2AMatrix.hpp
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
@@ -442,6 +442,7 @@ void A2AMatrixIo<T>::initFile(const MetadataType &d, const unsigned int chunkSiz
     push(reader, dataname_);
     auto &group = reader.getGroup();
     plist.setChunk(chunk.size(), chunk.data());
+    plist.setFletcher32();
     dataset = group.createDataSet(HADRONS_A2AM_NAME, Hdf5Type<T>::type(), dataspace, plist);
 #else
     HADRONS_ERROR(Implementation, "all-to-all matrix I/O needs HDF5 library");
@@ -501,20 +502,18 @@ void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead, GridBase *grid)
     H5NS::DataSet        dataset;
     H5NS::DataSpace      dataspace;
     H5NS::CompType       datatype;
-    H5NS::DSetCreatPropList plist;
-    
+
     if (!(grid) || grid->IsBoss())
     {
         Hdf5Reader reader(filename_);
         push(reader, dataname_);
         auto &group = reader.getGroup();
-        dataset     = group.openDataSet(HADRONS_A2AM_NAME);
-        datatype    = dataset.getCompType();
-        dataspace   = dataset.getSpace();
-        plist       = dataset.getCreatePlist();
+        dataset = group.openDataSet(HADRONS_A2AM_NAME);
+        datatype = dataset.getCompType();
+        dataspace = dataset.getSpace();
         hdim.resize(dataspace.getSimpleExtentNdims());
         dataspace.getSimpleExtentDims(hdim.data());
-        if ((nt_*ni_*nj_ != 0) and
+        if ((nt_ * ni_ * nj_ != 0) and
             ((hdim[0] != nt_) or (hdim[1] != ni_) or (hdim[2] != nj_)))
         {
             HADRONS_ERROR(Size, "all-to-all matrix size mismatch (got "

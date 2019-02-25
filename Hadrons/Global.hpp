@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Global.hpp
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Lanny91 <andrew.lawson@gmail.com>
@@ -43,6 +43,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #ifndef DEFAULT_ASCII_PREC
 #define DEFAULT_ASCII_PREC 16
 #endif
+
+#define ARG(...) __VA_ARGS__
 
 /* the 'using Grid::operator<<;' statement prevents a very nasty compilation
  * error with GCC 5 (clang & GCC 6 compile fine without it).
@@ -101,15 +103,16 @@ BEGIN_HADRONS_NAMESPACE
 typedef typename Impl::Field                         ScalarField##suffix;\
 typedef typename Impl::PropagatorField               PropagatorField##suffix;\
 typedef typename Impl::SitePropagator::scalar_object SitePropagator##suffix;\
-typedef std::vector<SitePropagator##suffix>          SlicedPropagator##suffix;
+typedef typename Impl::ComplexField                  ComplexField##suffix;\
+typedef std::vector<SitePropagator##suffix>          SlicedPropagator##suffix;\
+typedef std::vector<typename ComplexField##suffix::vector_object::scalar_object> SlicedComplex##suffix;
 
 #define FERM_TYPE_ALIASES(FImpl, suffix)\
 BASIC_TYPE_ALIASES(FImpl, suffix);\
 typedef FermionOperator<FImpl>            FMat##suffix;\
 typedef typename FImpl::FermionField      FermionField##suffix;\
 typedef typename FImpl::GaugeField        GaugeField##suffix;\
-typedef typename FImpl::DoubledGaugeField DoubledGaugeField##suffix;\
-typedef typename FImpl::ComplexField      ComplexField##suffix;
+typedef typename FImpl::DoubledGaugeField DoubledGaugeField##suffix;
 
 #define GAUGE_TYPE_ALIASES(GImpl, suffix)\
 typedef typename GImpl::GaugeField GaugeField##suffix;
@@ -262,6 +265,15 @@ void tokenReplace(std::string &str, const std::string token,
         str.replace(pos, fullToken.size(), std::to_string(x));
     }
 }
+
+// generic correlator class
+template <typename Metadata, typename Scalar = Complex>
+struct Correlator: Serializable
+{
+    GRID_SERIALIZABLE_CLASS_MEMBERS(ARG(Correlator<Metadata, Scalar>),
+                                    Metadata,             info,
+                                    std::vector<Complex>, corr);
+};
 
 END_HADRONS_NAMESPACE
 
