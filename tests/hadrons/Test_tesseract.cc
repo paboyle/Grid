@@ -199,6 +199,21 @@ void test_MesonSink(Application &application)
   application.createModule<MContraction::A2AMesonField>("DistilMesonSink",A2AMesonFieldPar);
 }
 /////////////////////////////////////////////////////////////
+// g5*unsmeared
+/////////////////////////////////////////////////////////////
+
+void test_g5_sinks(Application &application)
+{
+  // DistilVectors parameters
+  MDistil::g5_multiply::Par g5_multiplyPar;
+  g5_multiplyPar.input="Peramb_unsmeared_sink";
+  g5_multiplyPar.nnoise = 1;
+  g5_multiplyPar.LI=5;
+  g5_multiplyPar.Ns=4;
+  g5_multiplyPar.Nt_inv=1;
+  application.createModule<MDistil::g5_multiply>("g5phi",g5_multiplyPar);
+}
+/////////////////////////////////////////////////////////////
 // MesonFields
 /////////////////////////////////////////////////////////////
 
