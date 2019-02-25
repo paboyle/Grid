@@ -189,7 +189,8 @@ void test_MesonSink(Application &application)
 {
   // DistilVectors parameters
   MContraction::A2AMesonField::Par A2AMesonFieldPar;
-  A2AMesonFieldPar.left="Peramb_unsmeared_sink";
+  //A2AMesonFieldPar.left="Peramb_unsmeared_sink";
+  A2AMesonFieldPar.left="g5phi";
   A2AMesonFieldPar.right="Peramb_unsmeared_sink";
   A2AMesonFieldPar.output="DistilFields";
   A2AMesonFieldPar.gammas="all";
@@ -787,6 +788,7 @@ int main(int argc, char *argv[])
       test_Global( application );
       test_LapEvec( application );
       test_Perambulators( application );
+      test_g5_sinks( application );
       test_MesonSink( application );
       break;
     case 7: // 3
