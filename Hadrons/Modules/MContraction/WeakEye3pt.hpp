@@ -118,7 +118,7 @@ template <typename FImpl>
 std::vector<std::string> TWeakEye3pt<FImpl>::getInput(void)
 {
     std::vector<std::string> in = {par().qBarLeft, par().qBarRight, 
-                                   par().qSpectator};
+                                   par().qSpectator, par().loop};
     
     return in;
 }
