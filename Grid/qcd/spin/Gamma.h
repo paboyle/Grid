@@ -48,6 +48,7 @@ class Gamma {
     static const std::array<std::array<Algebra, nGamma>, nGamma> mul;
     static const std::array<Algebra, nGamma>                     adj;
     static const std::array<const Gamma, 4>                      gmu;
+    static const std::array<const Gamma, 16>                     gall;
     Algebra                                                      g;
   public:
     Gamma(Algebra initg): g(initg) {}  

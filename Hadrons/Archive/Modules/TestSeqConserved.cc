@@ -2,12 +2,11 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MContraction/WeakNeutral4ptDisc.hpp
+Source file: Hadrons/Archive/Modules/TestSeqConserved.cc
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
-Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,35 +25,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
+#include <Hadrons/Modules/MUtilities/TestSeqConserved.hpp>
 
-#ifndef Hadrons_MContraction_WeakNeutral4ptDisc_hpp_
-#define Hadrons_MContraction_WeakNeutral4ptDisc_hpp_
+using namespace Grid;
+using namespace Hadrons;
+using namespace MUtilities;
 
-#include <Hadrons/Modules/MContraction/WeakHamiltonian.hpp>
+template class Grid::Hadrons::MUtilities::TTestSeqConserved<FIMPL>;
 
-BEGIN_HADRONS_NAMESPACE
-
-/******************************************************************************
- *                         WeakNeutral4ptDisc                                 *
- ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MContraction)
-
-enum
-{
-    neut_disc_1_diag = 0,
-    neut_disc_2_diag = 1,
-    n_neut_disc_diag = 2
-};
-
-// Neutral 4pt disconnected subdiagram contractions.
-#define MAKE_DISC_MESON(Q_1, Q_2, gamma) (Q_1*adj(Q_2)*g5*gamma)
-#define MAKE_DISC_LOOP(Q_LOOP, gamma) (Q_LOOP*gamma)
-#define MAKE_DISC_CURR(Q_c, gamma) (trace(Q_c*gamma))
-
-MAKE_WEAK_MODULE(WeakNeutral4ptDisc)
-
-END_MODULE_NAMESPACE
-
-END_HADRONS_NAMESPACE
-
-#endif // Hadrons_MContraction_WeakNeutral4ptDisc_hpp_

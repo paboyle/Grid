@@ -1,11 +1,10 @@
 modules_cc =\
-  Modules/MContraction/WeakHamiltonianEye.cc \
   Modules/MContraction/Baryon.cc \
   Modules/MContraction/Meson.cc \
-  Modules/MContraction/WeakNeutral4ptDisc.cc \
-  Modules/MContraction/WeakHamiltonianNonEye.cc \
+  Modules/MContraction/WeakEye3pt.cc \
+  Modules/MContraction/A2ALoop.cc \
+  Modules/MContraction/WeakNonEye3pt.cc \
   Modules/MContraction/A2AAslashField.cc \
-  Modules/MContraction/WardIdentity.cc \
   Modules/MContraction/A2AMesonField.cc \
   Modules/MContraction/DiscLoop.cc \
   Modules/MContraction/Gamma3pt.cc \
@@ -26,23 +25,18 @@ modules_cc =\
   Modules/MSolver/LocalCoherenceLanczos.cc \
   Modules/MGauge/StoutSmearing.cc \
   Modules/MGauge/Unit.cc \
-  Modules/MGauge/Electrify.cc \
   Modules/MGauge/UnitEm.cc \
   Modules/MGauge/StochEm.cc \
   Modules/MGauge/Random.cc \
+  Modules/MGauge/Electrify.cc \
   Modules/MGauge/FundtoHirep.cc \
   Modules/MGauge/GaugeFix.cc \
-  Modules/MNoise/TimeDilutedSpinColorDiagonal.cc \
   Modules/MNoise/FullVolumeSpinColorDiagonal.cc \
+  Modules/MNoise/TimeDilutedSpinColorDiagonal.cc \
   Modules/MUtilities/RandomVectors.cc \
-  Modules/MUtilities/TestSeqGamma.cc \
   Modules/MUtilities/PrecisionCast.cc \
-  Modules/MUtilities/TestSeqConserved.cc \
-  Modules/MLoop/NoiseLoop.cc \
   Modules/MScalar/FreeProp.cc \
-  Modules/MScalar/VPCounterTerms.cc \
   Modules/MScalar/ChargedProp.cc \
-  Modules/MScalar/ScalarVP.cc \
   Modules/MNPR/Amputate.cc \
   Modules/MNPR/Bilinear.cc \
   Modules/MNPR/FourQuark.cc \
@@ -57,7 +51,6 @@ modules_cc =\
   Modules/MScalarSUN/TrMag.cc \
   Modules/MScalarSUN/TrKinetic.cc \
   Modules/MScalarSUN/EMT.cc \
-  Modules/MScalarSUN/ShiftProbe.cc \
   Modules/MScalarSUN/TransProj.cc \
   Modules/MScalarSUN/StochFreeField.cc \
   Modules/MScalarSUN/TwoPoint.cc \
@@ -71,17 +64,15 @@ modules_cc =\
   Modules/MIO/LoadA2AVectors.cc
 
 modules_hpp =\
+  Modules/MContraction/WeakEye3pt.hpp \
   Modules/MContraction/Baryon.hpp \
   Modules/MContraction/A2AAslashField.hpp \
+  Modules/MContraction/A2ALoop.hpp \
   Modules/MContraction/A2AMesonField.hpp \
   Modules/MContraction/Meson.hpp \
-  Modules/MContraction/WeakHamiltonian.hpp \
-  Modules/MContraction/WeakHamiltonianNonEye.hpp \
   Modules/MContraction/DiscLoop.hpp \
-  Modules/MContraction/WeakNeutral4ptDisc.hpp \
   Modules/MContraction/Gamma3pt.hpp \
-  Modules/MContraction/WardIdentity.hpp \
-  Modules/MContraction/WeakHamiltonianEye.hpp \
+  Modules/MContraction/WeakNonEye3pt.hpp \
   Modules/MFermion/FreeProp.hpp \
   Modules/MFermion/GaugeProp.hpp \
   Modules/MSource/SeqGamma.hpp \
@@ -94,28 +85,23 @@ modules_hpp =\
   Modules/MSink/Point.hpp \
   Modules/MSolver/MixedPrecisionRBPrecCG.hpp \
   Modules/MSolver/LocalCoherenceLanczos.hpp \
+  Modules/MSolver/A2AAslashVectors.hpp \
   Modules/MSolver/Guesser.hpp \
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MSolver/A2AVectors.hpp \
-  Modules/MSolver/A2AAslashVectors.hpp \
   Modules/MGauge/UnitEm.hpp \
   Modules/MGauge/StoutSmearing.hpp \
   Modules/MGauge/Unit.hpp \
-  Modules/MGauge/Electrify.hpp \
   Modules/MGauge/Random.hpp \
   Modules/MGauge/GaugeFix.hpp \
   Modules/MGauge/FundtoHirep.hpp \
   Modules/MGauge/StochEm.hpp \
+  Modules/MGauge/Electrify.hpp \
   Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp \
   Modules/MNoise/FullVolumeSpinColorDiagonal.hpp \
   Modules/MUtilities/PrecisionCast.hpp \
   Modules/MUtilities/RandomVectors.hpp \
-  Modules/MUtilities/TestSeqGamma.hpp \
-  Modules/MUtilities/TestSeqConserved.hpp \
-  Modules/MLoop/NoiseLoop.hpp \
   Modules/MScalar/FreeProp.hpp \
-  Modules/MScalar/VPCounterTerms.hpp \
-  Modules/MScalar/ScalarVP.hpp \
   Modules/MScalar/Scalar.hpp \
   Modules/MScalar/ChargedProp.hpp \
   Modules/MNPR/Bilinear.hpp \
@@ -129,7 +115,6 @@ modules_hpp =\
   Modules/MAction/ScaledDWF.hpp \
   Modules/MScalarSUN/StochFreeField.hpp \
   Modules/MScalarSUN/TwoPointNPR.hpp \
-  Modules/MScalarSUN/ShiftProbe.hpp \
   Modules/MScalarSUN/Div.hpp \
   Modules/MScalarSUN/TrMag.hpp \
   Modules/MScalarSUN/EMT.hpp \

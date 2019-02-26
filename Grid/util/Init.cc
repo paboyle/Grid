@@ -289,6 +289,11 @@ void Grid_init(int *argc,char ***argv)
     std::cout << "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"<<std::endl;
     std::cout << "GNU General Public License for more details."<<std::endl;
     printHash();
+  #ifdef GRID_BUILD_REF
+  #define _GRID_BUILD_STR(x) #x
+  #define GRID_BUILD_STR(x) _GRID_BUILD_STR(x)
+    std::cout << "Build " << GRID_BUILD_STR(GRID_BUILD_REF) << std::endl;
+  #endif
     std::cout << std::endl;
   }
 
