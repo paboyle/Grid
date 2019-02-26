@@ -212,7 +212,7 @@ void TPerambLight<FImpl>::execute(void)
 
     envGetTmp(GaugeField, Umu);
   FieldMetaData header;
-  if((1)){
+  if((0)){
     const std::vector<int> seeds({1, 2, 3, 4, 5});
     GridParallelRNG pRNG4d(grid4d);
     pRNG4d.SeedFixedIntegers(seeds);
