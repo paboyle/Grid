@@ -100,7 +100,6 @@ public:
 			int orthogdim);
 #endif
 };
-
 /*
 template <class FImpl>
 template <typename TensorType>
@@ -122,6 +121,8 @@ void A2Autils<FImpl>::BaryonField(TensorType &mat,
   typedef iSpinMatrix<vector_type> SpinMatrix_v;
   typedef iSpinMatrix<scalar_type> SpinMatrix_s;
   
+  typedef iSpinColourMatrix<vector_type> SpinColourMatrix_v;
+
   int oneBlock = mat.dimension(3); 
   int twoBlock = mat.dimension(4);
   int threeBlock = mat.dimension(5);
@@ -180,13 +181,16 @@ void A2Autils<FImpl>::BaryonField(TensorType &mat,
 
 	    auto three_k = three[j]._odata[ss];
 
-	    SpinMatrix_v vv;
+	    SpinColourMatrix_v vv;
 
 	    for(int s1=0;s1<Ns;s1++){
 	    for(int s2=0;s2<Ns;s2++){
-	      vv()(s1,s2)() = two_j()(s2)(0) * three_k()(s1)(0)   //make this a colorMatrix for the diquark???
-		+             two_j()(s2)(1) * three_k()(s1)(1)
-		+             two_j()(s2)(2) * three_k()(s1)(2);
+	      vv()(s1,s2)(0,0) = two_j()(s2)(1) * three_k()(s1)(2)           //ideal would be SpinMatrix but ColourVector...
+                -                two_j()(s2)(2) * three_k()(s1)(1);          //this is the cross product (two x three)^i
+	      vv()(s1,s2)(1,1) = two_j()(s2)(2) * three_k()(s1)(0)           
+                -                two_j()(s2)(0) * three_k()(s1)(2);         
+	      vv()(s1,s2)(2,2) = two_j()(s2)(0) * three_k()(s1)(1)           
+                -                two_j()(s2)(1) * three_k()(s1)(0);         
 	    }}
 	    
 	    // After getting the sitewise product do the mom phase loop
