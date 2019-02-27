@@ -18,10 +18,10 @@ class LoadA2AMatrixDiskVectorPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(LoadA2AMatrixDiskVectorPar,
-                                    std::string,  dirstem,
+                                    std::string,  file,
                                     std::string,  dataset,
-                                    unsigned int, ni,
-                                    unsigned int, nj);
+                                    std::string,  diskVectorDir,
+                                    int,  cacheSize);
 };
 
 template <typename FImpl>
@@ -74,12 +74,18 @@ std::vector<std::string> TLoadA2AMatrixDiskVector<FImpl>::getOutput(void)
 template <typename FImpl>
 void TLoadA2AMatrixDiskVector<FImpl>::setup(void)
 {
-    int nt = env().getDim(Tp);
+    int Ls = 1;
+
+    std::string dvDir = par().diskVectorDir;
     std::string dataset = par().dataset;
-    std::string dvFile = getName() + "_" + dataset + "_DV_" + std::to_string(vm().getTrajectory());
+    std::string dvFile = dvDir + "/" + getName() + "." + std::to_string(vm().getTrajectory());
+
+    int nt = env().getDim(Tp);
+    int cacheSize = par().cacheSize;
+    bool clean = true;
     GridBase *grid = env().getGrid();
 
-    envCreate(EigenDiskVector<ComplexD>, getName(), 1, dvFile, nt, 1, true, grid);
+    envCreate(EigenDiskVector<ComplexD>, getName(), Ls, dvFile, nt, cacheSize, clean, grid);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -87,23 +93,17 @@ template <typename FImpl>
 void TLoadA2AMatrixDiskVector<FImpl>::execute(void)
 {
     int nt = env().getDim(Tp);
-    int ni = par().ni;
-    int nj = par().nj;
-    std::string dirstem  = par().dirstem;
+    std::string file  = par().file;
     std::string dataset  = par().dataset;
-
     GridBase *grid = env().getGrid();
 
-    LOG(Message) << "Meson Field size: " << nt << "*" << ni << "*" << nj
-                 << " (filesize " << sizeString(nt * ni * nj * sizeof(Complex))
-                 << "/momentum/bilinear)" << std::endl;
-
     auto &mesonFieldDV = envGet(EigenDiskVector<ComplexD>, getName());
-    std::string file = dirstem + "." + std::to_string(vm().getTrajectory()) + "/" + dataset + ".h5";
 
+    int traj = vm().getTrajectory();
+    tokenReplace(file, "traj", traj);
+    LOG(Message) << "-- Loading '" << file << "'-- " << std::endl;
     double t;
-    LOG(Message) << "-- Loading '" << file << "'..." << std::endl;
-    A2AMatrixIo<HADRONS_A2AM_IO_TYPE> mfIO(file, dataset, nt, ni, nj);
+    A2AMatrixIo<HADRONS_A2AM_IO_TYPE> mfIO(file, dataset, nt);
     mfIO.load(mesonFieldDV, &t, grid);
     LOG(Message) << "Read " << mfIO.getSize() << " bytes in " << t << " usec, " << mfIO.getSize() / t * 1.0e6 / 1024 / 1024 << " MB/s" << std::endl;
 }
