@@ -144,17 +144,23 @@ void A2Autils<FImpl>::BaryonField(TensorType &mat,
   // will locally sum vectors first
   // sum across these down to scalars
   // splitting the SIMD
-  int MFrvol = rd*oneBlock*twoBlock*threeBlock*Nmom;
-  int MFlvol = ld*oneBlock*twoBlock*threeBlock*Nmom;
+  int MFrvol = rd*twoBlock*threeBlock*Nmom;
+  int MFlvol = ld*twoBlock*threeBlock*Nmom;
 
-  Vector<SpinMatrix_v > lvSum(MFrvol);
-  parallel_for (int r = 0; r < MFrvol; r++){
-    lvSum[r] = zero;
+  Vector<Vector<SpinMatrix_v >> lvSum(3);
+  for (int ic=0;ic<3;ic++){
+    lvSum[ic].resize(MFrvol);
+    parallel_for (int r = 0; r < MFrvol; r++){
+      lvSum[ic][r] = zero;
+    }
   }
 
-  Vector<SpinMatrix_s > lsSum(MFlvol);             
-  parallel_for (int r = 0; r < MFlvol; r++){
-    lsSum[r]=scalar_type(0.0);
+  Vector<Vector<SpinMatrix_s >> lsSum(3);
+  for (int ic=0;ic<3;ic++){
+    lsSum[ic].resize(MFlvol);
+    parallel_for (int r = 0; r < MFlvol; r++){
+      lsSum[ic][r] = scalar_type(0.0);
+    }
   }
 
   int e1=    grid->_slice_nblock[orthogdim];
@@ -181,24 +187,26 @@ void A2Autils<FImpl>::BaryonField(TensorType &mat,
 
 	    auto three_k = three[j]._odata[ss];
 
-	    SpinColourMatrix_v vv;
+	    Vector<SpinMatrix_v > vv(3);
 
 	    for(int s1=0;s1<Ns;s1++){
 	    for(int s2=0;s2<Ns;s2++){
-	      vv()(s1,s2)(0,0) = two_j()(s2)(1) * three_k()(s1)(2)           //ideal would be SpinMatrix but ColourVector...
+	      vv[0]()(s1,s2)() = two_j()(s2)(1) * three_k()(s1)(2)           //ideal would be SpinMatrix but ColourVector...
                 -                two_j()(s2)(2) * three_k()(s1)(1);          //this is the cross product (two x three)^i
-	      vv()(s1,s2)(1,1) = two_j()(s2)(2) * three_k()(s1)(0)           
+	      vv[1]()(s1,s2)() = two_j()(s2)(2) * three_k()(s1)(0)           
                 -                two_j()(s2)(0) * three_k()(s1)(2);         
-	      vv()(s1,s2)(2,2) = two_j()(s2)(0) * three_k()(s1)(1)           
+	      vv[2]()(s1,s2)() = two_j()(s2)(0) * three_k()(s1)(1)           
                 -                two_j()(s2)(1) * three_k()(s1)(0);         
 	    }}
 	    
 	    // After getting the sitewise product do the mom phase loop
 	    int base = Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*r;
 	    for ( int m=0;m<Nmom;m++){
-	      int idx = m+base;
-	      auto phase = mom[m]._odata[ss];
-	      mac(&lvSum[idx],&vv,&phase);
+	      for ( int ic=0;ic<3;ic++){
+	        int idx = m+base;
+	        auto phase = mom[m]._odata[ss];
+	        mac(&lvSum[ic][idx],&vv,&phase);
+	      }
 	    }
 	 
 	  }
@@ -208,19 +216,20 @@ void A2Autils<FImpl>::BaryonField(TensorType &mat,
   }
 
 
+  for ( int ic=0;ic<3;ic++){
   // Sum across simd lanes in the plane, breaking out orthog dir.
   parallel_for(int rt=0;rt<rd;rt++){
 
     std::vector<int> icoor(Nd);
     std::vector<SpinMatrix_s> extracted(Nsimd);               
 
-    for(int i=0;i<Lblock;i++){
-    for(int j=0;j<Rblock;j++){
+    for(int i=0;i<twoBlock;i++){
+    for(int j=0;j<threeBlock;j++){
     for(int m=0;m<Nmom;m++){
 
       int ij_rdx = m+Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*rt;
 
-      extract(lvSum[ij_rdx],extracted);
+      extract(lvSum[ic][ij_rdx],extracted);
 
       for(int idx=0;idx<Nsimd;idx++){
 
@@ -230,15 +239,19 @@ void A2Autils<FImpl>::BaryonField(TensorType &mat,
 
 	int ij_ldx = m+Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*ldx;
 
-	lsSum[ij_ldx]=lsSum[ij_ldx]+extracted[idx];
+	lsSum[ic][ij_ldx]=lsSum[ic][ij_ldx]+extracted[idx];
 
       }
     }}}
   }
+ 
+
   if (t_kernel) *t_kernel += usecond();
   assert(mat.dimension(0) == Nmom);
   assert(mat.dimension(1) == Ngamma);
   assert(mat.dimension(2) == Nt);
+
+  TensorType diquark; // Need this instead of mat!!!
 
   // ld loop and local only??
   int pd = grid->_processors[orthogdim];
@@ -248,21 +261,21 @@ void A2Autils<FImpl>::BaryonField(TensorType &mat,
     for(int pt=0;pt<pd;pt++){
       int t = lt + pt*ld;
       if (pt == pc){
-	for(int i=0;i<Lblock;i++){
-	  for(int j=0;j<Rblock;j++){
+	for(int i=0;i<twoBlock;i++){
+	  for(int j=0;j<threeBlock;j++){
 	    for(int m=0;m<Nmom;m++){
 	      int ij_dx = m+Nmom*i + Nmom*Lblock * j + Nmom*Lblock * Rblock * lt;
 	      for(int mu=0;mu<Ngamma;mu++){
 		// this is a bit slow
-		mat(m,mu,t,i,j) = trace(lsSum[ij_dx]*Gamma(gammas[mu]));
+		mat(m,mu,t,i,j) = trace(lsSum[ic][ij_dx]*Gamma(gammaB[mu]));
 	      }
 	    }
 	  }
 	}
       } else { 
 	const scalar_type zz(0.0);
-	for(int i=0;i<Lblock;i++){
-	  for(int j=0;j<Rblock;j++){
+	for(int i=0;i<twoBlock;i++){
+	  for(int j=0;j<threeBlock;j++){
 	    for(int mu=0;mu<Ngamma;mu++){
 	      for(int m=0;m<Nmom;m++){
 		mat(m,mu,t,i,j) =zz;
@@ -273,7 +286,7 @@ void A2Autils<FImpl>::BaryonField(TensorType &mat,
       }
     }
   }
-
+  }
   ////////////////////////////////////////////////////////////////////
   // This global sum is taking as much as 50% of time on 16 nodes
   // Vector size is 7 x 16 x 32 x 16 x 16 x sizeof(complex) = 2MB - 60MB depending on volume
