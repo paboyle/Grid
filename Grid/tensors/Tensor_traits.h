@@ -26,6 +26,21 @@ Author: Christopher Kelly <ckelly@phys.columbia.edu>
 
 namespace Grid {
 
+  // Forward declarations
+  template<class T>        class iScalar;
+  template<class T, int N> class iVector;
+  template<class T, int N> class iMatrix;
+
+  // These are the Grid tensors
+  template<typename T> struct isGridTensor
+  : public std::false_type { static constexpr bool notvalue = true; };
+  template<class T> struct isGridTensor<iScalar<T>>
+  : public std::true_type { static constexpr bool notvalue = false; };
+  template<class T, int N> struct isGridTensor<iVector<T, N>>
+  : public std::true_type { static constexpr bool notvalue = false; };
+  template<class T, int N> struct isGridTensor<iMatrix<T, N>>
+  : public std::true_type { static constexpr bool notvalue = false; };
+
 //////////////////////////////////////////////////////////////////////////////////
 // Want to recurse: GridTypeMapper<Matrix<vComplexD> >::scalar_type == ComplexD.
 // Use of a helper class like this allows us to template specialise and "dress"
@@ -40,25 +55,31 @@ namespace Grid {
 // to study C++11's type_traits.h file. (std::enable_if<isGridTensorType<vtype> >)
 //
 //////////////////////////////////////////////////////////////////////////////////
-  
-  template <class T> class GridTypeMapper {
-  public:
-    typedef typename T::scalar_type scalar_type;
-    typedef typename T::vector_type vector_type;
-    typedef typename T::vector_typeD vector_typeD;
-    typedef typename T::tensor_reduced tensor_reduced;
-    typedef typename T::scalar_object scalar_object;
-    typedef typename T::Complexified Complexified;
-    typedef typename T::Realified Realified;
-    typedef typename T::DoublePrecision DoublePrecision;
-    enum { TensorLevel = T::TensorLevel };
+
+  // This saves repeating common properties for supported Grid Scalar types
+  template<typename T, typename V=void> struct GridTypeMapper_Base {};
+  // TensorLevel    How many nested grid tensors
+  // Rank           Rank of the grid tensor
+  // count          Total number of elements, i.e. product of dimensions
+  // scalar_size    Size of the underlying fundamental object (tensor_reduced) in bytes
+  // size           Total size of all elements in bytes
+  // Dimension(dim) Size of dimension dim
+  template<typename T> struct GridTypeMapper_Base<T> {
+    static constexpr int TensorLevel = 0;
+    static constexpr int Rank = 0;
+    static constexpr std::size_t count = 1;
+    static constexpr std::size_t scalar_size = sizeof(T);
+    static constexpr std::size_t size = scalar_size * count;
+    static constexpr int Dimension(unsigned int dim) { return 0; }
   };
 
 //////////////////////////////////////////////////////////////////////////////////
 // Recursion stops with these template specialisations
 //////////////////////////////////////////////////////////////////////////////////
-  template<> class GridTypeMapper<RealF> {
-  public:
+
+  template<typename T> struct GridTypeMapper {};
+
+  template<> struct GridTypeMapper<RealF> : public GridTypeMapper_Base<RealF> {
     typedef RealF scalar_type;
     typedef RealF vector_type;
     typedef RealD vector_typeD;
@@ -67,10 +88,8 @@ namespace Grid {
     typedef ComplexF Complexified;
     typedef RealF Realified;
     typedef RealD DoublePrecision;
-    enum { TensorLevel = 0 };
   };
-  template<> class GridTypeMapper<RealD> {
-  public:
+  template<> struct GridTypeMapper<RealD> : public GridTypeMapper_Base<RealD> {
     typedef RealD scalar_type;
     typedef RealD vector_type;
     typedef RealD vector_typeD;
@@ -79,10 +98,8 @@ namespace Grid {
     typedef ComplexD Complexified;
     typedef RealD Realified;
     typedef RealD DoublePrecision;
-    enum { TensorLevel = 0 };
   };
-  template<> class GridTypeMapper<ComplexF> {
-  public:
+  template<> struct GridTypeMapper<ComplexF> : public GridTypeMapper_Base<ComplexF> {
     typedef ComplexF scalar_type;
     typedef ComplexF vector_type;
     typedef ComplexD vector_typeD;
@@ -91,10 +108,8 @@ namespace Grid {
     typedef ComplexF Complexified;
     typedef RealF Realified;
     typedef ComplexD DoublePrecision;
-    enum { TensorLevel = 0 };
   };
-  template<> class GridTypeMapper<ComplexD> {
-  public:
+  template<> struct GridTypeMapper<ComplexD> : public GridTypeMapper_Base<ComplexD> {
     typedef ComplexD scalar_type;
     typedef ComplexD vector_type;
     typedef ComplexD vector_typeD;
@@ -103,10 +118,8 @@ namespace Grid {
     typedef ComplexD Complexified;
     typedef RealD Realified;
     typedef ComplexD DoublePrecision;
-    enum { TensorLevel = 0 };
   };
-  template<> class GridTypeMapper<Integer> {
-  public:
+  template<> struct GridTypeMapper<Integer> : public GridTypeMapper_Base<Integer> {
     typedef Integer scalar_type;
     typedef Integer vector_type;
     typedef Integer vector_typeD;
@@ -115,11 +128,9 @@ namespace Grid {
     typedef void Complexified;
     typedef void Realified;
     typedef void DoublePrecision;
-    enum { TensorLevel = 0 };
   };
 
-  template<> class GridTypeMapper<vRealF> {
-  public:
+  template<> struct GridTypeMapper<vRealF> : public GridTypeMapper_Base<vRealF> {
     typedef RealF  scalar_type;
     typedef vRealF vector_type;
     typedef vRealD vector_typeD;
@@ -128,10 +139,8 @@ namespace Grid {
     typedef vComplexF Complexified;
     typedef vRealF Realified;
     typedef vRealD DoublePrecision;
-    enum { TensorLevel = 0 };
   };
-  template<> class GridTypeMapper<vRealD> {
-  public:
+  template<> struct GridTypeMapper<vRealD> : public GridTypeMapper_Base<vRealD> {
     typedef RealD  scalar_type;
     typedef vRealD vector_type;
     typedef vRealD vector_typeD;
@@ -140,10 +149,8 @@ namespace Grid {
     typedef vComplexD Complexified;
     typedef vRealD Realified;
     typedef vRealD DoublePrecision;
-    enum { TensorLevel = 0 };
   };
-  template<> class GridTypeMapper<vComplexH> {
-  public:
+  template<> struct GridTypeMapper<vComplexH> : public GridTypeMapper_Base<vComplexH> {
     typedef ComplexF  scalar_type;
     typedef vComplexH vector_type;
     typedef vComplexD vector_typeD;
@@ -152,10 +159,8 @@ namespace Grid {
     typedef vComplexH Complexified;
     typedef vRealH Realified;
     typedef vComplexD DoublePrecision;
-    enum { TensorLevel = 0 };
   };
-  template<> class GridTypeMapper<vComplexF> {
-  public:
+  template<> struct GridTypeMapper<vComplexF> : public GridTypeMapper_Base<vComplexF> {
     typedef ComplexF  scalar_type;
     typedef vComplexF vector_type;
     typedef vComplexD vector_typeD;
@@ -164,10 +169,8 @@ namespace Grid {
     typedef vComplexF Complexified;
     typedef vRealF Realified;
     typedef vComplexD DoublePrecision;
-    enum { TensorLevel = 0 };
   };
-  template<> class GridTypeMapper<vComplexD> {
-  public:
+  template<> struct GridTypeMapper<vComplexD> : public GridTypeMapper_Base<vComplexD> {
     typedef ComplexD  scalar_type;
     typedef vComplexD vector_type;
     typedef vComplexD vector_typeD;
@@ -176,10 +179,8 @@ namespace Grid {
     typedef vComplexD Complexified;
     typedef vRealD Realified;
     typedef vComplexD DoublePrecision;
-    enum { TensorLevel = 0 };
   };
-  template<> class GridTypeMapper<vInteger> {
-  public:
+  template<> struct GridTypeMapper<vInteger> : public GridTypeMapper_Base<vInteger> {
     typedef  Integer scalar_type;
     typedef vInteger vector_type;
     typedef vInteger vector_typeD;
@@ -188,57 +189,49 @@ namespace Grid {
     typedef void Complexified;
     typedef void Realified;
     typedef void DoublePrecision;
-    enum { TensorLevel = 0 };
   };
 
-  // First some of my own traits
-  template<typename T> struct isGridTensor {
-    static const bool value = true;
-    static const bool notvalue = false;
+#define GridTypeMapper_RepeatedTypes \
+  typedef typename ObjectTraits::scalar_type scalar_type; \
+  typedef typename ObjectTraits::vector_type vector_type; \
+  typedef typename ObjectTraits::vector_typeD vector_typeD; \
+  typedef typename ObjectTraits::tensor_reduced tensor_reduced; \
+  typedef typename ObjectTraits::scalar_object scalar_object; \
+  typedef typename ObjectTraits::Complexified Complexified; \
+  typedef typename ObjectTraits::Realified Realified; \
+  typedef typename ObjectTraits::DoublePrecision DoublePrecision; \
+  static constexpr int TensorLevel = BaseTraits::TensorLevel + 1; \
+  static constexpr std::size_t scalar_size = BaseTraits::scalar_size; \
+  static constexpr std::size_t size = scalar_size * count
+
+  template<typename T> struct GridTypeMapper<iScalar<T>> {
+    using ObjectTraits = iScalar<T>;
+    using BaseTraits = GridTypeMapper<T>;
+    static constexpr int Rank = 1 + BaseTraits::Rank;
+    static constexpr std::size_t count = 1 * BaseTraits::count;
+    static constexpr int Dimension(unsigned int dim) {
+      return ( dim == 0 ) ? 1 : BaseTraits::Dimension(dim - 1); }
+    GridTypeMapper_RepeatedTypes;
   };
-  template<> struct isGridTensor<int > {
-    static const bool value = false;
-    static const bool notvalue = true;
+
+  template<typename T, int N> struct GridTypeMapper<iVector<T, N>> {
+    using ObjectTraits = iVector<T, N>;
+    using BaseTraits = GridTypeMapper<T>;
+    static constexpr int Rank = 1 + BaseTraits::Rank;
+    static constexpr std::size_t count = N * BaseTraits::count;
+    static constexpr int Dimension(unsigned int dim) {
+      return ( dim == 0 ) ? N : BaseTraits::Dimension(dim - 1); }
+    GridTypeMapper_RepeatedTypes;
   };
-  template<> struct isGridTensor<RealD > {
-    static const bool value = false;
-    static const bool notvalue = true;
-  };
-  template<> struct isGridTensor<RealF > {
-    static const bool value = false;
-    static const bool notvalue = true;
-  };
-  template<> struct isGridTensor<ComplexD > {
-    static const bool value = false;
-    static const bool notvalue = true;
-  };
-  template<> struct isGridTensor<ComplexF > {
-    static const bool value = false;
-    static const bool notvalue = true;
-  };
-  template<> struct isGridTensor<Integer > {
-    static const bool value = false;
-    static const bool notvalue = true;
-  };
-  template<> struct isGridTensor<vRealD > {
-    static const bool value = false;
-    static const bool notvalue = true;
-  };
-  template<> struct isGridTensor<vRealF > {
-    static const bool value = false;
-    static const bool notvalue = true;
-  };
-  template<> struct isGridTensor<vComplexD > {
-    static const bool value = false;
-    static const bool notvalue = true;
-  };
-  template<> struct isGridTensor<vComplexF > {
-    static const bool value = false;
-    static const bool notvalue = true;
-  };
-  template<> struct isGridTensor<vInteger > {
-    static const bool value = false;
-    static const bool notvalue = true;
+
+  template<typename T, int N> struct GridTypeMapper<iMatrix<T, N>> {
+    using ObjectTraits = iMatrix<T, N>;
+    using BaseTraits = GridTypeMapper<T>;
+    static constexpr int Rank = 2 + BaseTraits::Rank;
+    static constexpr std::size_t count = N * N * BaseTraits::count;
+    static constexpr int Dimension(unsigned int dim) {
+      return ( dim == 0 || dim == 1 ) ? N : BaseTraits::Dimension(dim - 2); }
+    GridTypeMapper_RepeatedTypes;
   };
 
   // Match the index
@@ -263,20 +256,13 @@ namespace Grid {
     typedef T type;
   };
   
-  //Query if a tensor or Lattice<Tensor> is SIMD vector or scalar
-  template<typename T>
-  class isSIMDvectorized{
-    template<typename U>
-    static typename std::enable_if< !std::is_same< typename GridTypeMapper<typename getVectorType<U>::type>::scalar_type,   
-      typename GridTypeMapper<typename getVectorType<U>::type>::vector_type>::value, char>::type test(void *);
+  //Query whether a tensor or Lattice<Tensor> is SIMD vector or scalar
+  template<typename T, typename V=void> struct isSIMDvectorized : public std::false_type {};
+  template<typename U> struct isSIMDvectorized<U, typename std::enable_if< !std::is_same<
+    typename GridTypeMapper<typename getVectorType<U>::type>::scalar_type,
+    typename GridTypeMapper<typename getVectorType<U>::type>::vector_type>::value, void>::type>
+  : public std::true_type {};
 
-    template<typename U>
-    static double test(...);
-  
-  public:
-    enum {value = sizeof(test<T>(0)) == sizeof(char) };
-  };
-  
   //Get the precision of a Lattice, tensor or scalar type in units of sizeof(float)
   template<typename T>
   class getPrecision{

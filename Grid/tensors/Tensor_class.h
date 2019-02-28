@@ -62,7 +62,7 @@ class iScalar {
   // get double precision version
   typedef iScalar<typename GridTypeMapper<vtype>::DoublePrecision> DoublePrecision;
   
-  enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1 };
+  static constexpr int TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1;
 
   // Scalar no action
   //  template<int Level> using tensor_reduce_level = typename
@@ -248,7 +248,7 @@ class iVector {
     return *this;
   }
 
-  enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1 };
+  static constexpr int TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1;
   iVector(const Zero &z) { *this = zero; };
   iVector() = default;
   /*
@@ -390,7 +390,7 @@ class iMatrix {
   typedef iScalar<tensor_reduced_v> tensor_reduced;
   typedef iMatrix<recurse_scalar_object, N> scalar_object;
 
-  enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1 };
+  static constexpr int TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1;
 
   iMatrix(const Zero &z) { *this = zero; };
   iMatrix() = default;
