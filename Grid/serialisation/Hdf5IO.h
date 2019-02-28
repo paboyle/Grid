@@ -143,9 +143,9 @@ namespace Grid
               d /= Primes[PrimeIdx];
           }
           const char ErrorMsg[] = " dimension > 4GB without small prime factors. "
-                                  "Hdf5IO chunk size will be inefficient.";
+                                  "Hdf5IO chunk size will be inefficient. NB Serialisation is not intended for large datasets - please consider alternatives.";
           if( d > MaxElements ) {
-            std::cout << GridLogMessage << "Individual" << ErrorMsg << std::endl;
+            std::cout << GridLogWarning << "Individual" << ErrorMsg << std::endl;
             hsize_t quotient = d / MaxElements;
             if( d % MaxElements )
               quotient++;

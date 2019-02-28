@@ -80,17 +80,19 @@ double   d   = 2*M_PI;
 bool     b   = false;
 
 template <typename W, typename R, typename O>
-void ioTest(const std::string &filename, const O &object, const std::string &name, const char * tag = "testobject" )
+void ioTest(const std::string &filename, const O &object, const std::string &name,
+            const char * tag = "testobject", unsigned short Precision = 0 )
 {
   std::cout << "IO test: " << name << " -> " << filename << " ...";
   // writer needs to be destroyed so that writing physically happens
   {
     W writer(filename);
-    writer.setPrecision(std::numeric_limits<double>::digits10 + 1);
+    if( Precision )
+      writer.setPrecision(Precision);
     write(writer, tag , object);
   }
 
-  std::cout << " done. reading...";
+  std::cout << " done. reading ...";
   R    reader(filename);
   std::unique_ptr<O> buf( new O ); // In case object too big for stack
 
@@ -99,7 +101,7 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
   if (!good) {
     std::cout << " failure!" << std::endl;
     if (EigenIO::is_tensor<O>::value)
-      dump_tensor(*buf,"???");
+      dump_tensor(*buf);
     exit(EXIT_FAILURE);
   }
   std::cout << " done." << std::endl;
@@ -108,16 +110,17 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
 #ifdef HAVE_HDF5
 typedef std::complex<double> TestScalar;
 typedef Eigen::TensorFixedSize<unsigned short, Eigen::Sizes<5,4,3,2,1>> TensorRank5UShort;
-typedef Eigen::TensorFixedSize<unsigned short, Eigen::Sizes<5,4,3,2>, Eigen::StorageOptions::RowMajor> TensorRank5UShortAlt;
+typedef Eigen::TensorFixedSize<unsigned short, Eigen::Sizes<5,4,3,2,1>, Eigen::StorageOptions::RowMajor> TensorRank5UShortAlt;
 typedef Eigen::Tensor<TestScalar, 3, Eigen::StorageOptions::RowMajor> TensorRank3;
 typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>, Eigen::StorageOptions::RowMajor> Tensor_9_4_2;
 typedef std::vector<Tensor_9_4_2> aTensor_9_4_2;
 typedef Eigen::TensorFixedSize<SpinColourVector, Eigen::Sizes<6,5>> LSCTensor;
-#ifndef DEBUG
+#ifndef NO_STRESS_TESTS
 typedef Eigen::TensorFixedSize<iMatrix<iVector<iMatrix<iVector<LorentzColourMatrix,5>,2>,7>,3>, Eigen::Sizes<2,4,11,10,9>, Eigen::StorageOptions::RowMajor> LCMTensor;
 #endif
 
 class PerambIOTestClass: Serializable {
+  Grid_complex<double> Flag;
 public:
   using PerambTensor = Eigen::Tensor<SpinColourVector, 6, Eigen::StorageOptions::RowMajor>;
   GRID_SERIALIZABLE_CLASS_MEMBERS(PerambIOTestClass
@@ -134,45 +137,52 @@ public:
                                   , LSCTensor,                MyLSCTensor
                                   );
   PerambIOTestClass()
-  : DistilParameterNames {"alpha", "beta", "gamma", "delta", "epsilon", "zeta"}
+  : DistilParameterNames {"do", "androids", "dream", "of", "electric", "sheep?"}
   , DistilParameterValues{2,3,1,4,5,1}
   , Perambulator(2,3,1,4,5,1)
   , Perambulator2(7,1,6,1,5,1)
   , tensorRank3(7,3,2)
   , atensor_9_4_2(3)
+  //, Flag(1,-3.1415927)
+  , Flag(1,-1)
   {
-    //Grid_complex<double> Flag{1,-3.1415927}; // Gives errors on readback for text types
-    Grid_complex<double> Flag{1,-1};
     SequentialInit(Perambulator,  Flag);
     SequentialInit(Perambulator2, Flag);
     SequentialInit(tensorRank5UShort);
     SequentialInit(tensorRank3, Flag);
     SequentialInit(tensor_9_4_2, Flag);
     for( auto &t : atensor_9_4_2 ) SequentialInit(t, Flag);
-    SequentialInit( MyLSCTensor );
+    SequentialInit( MyLSCTensor, Flag );
   }
 };
 
 #define TensorWriteReadInnerNoInit( T ) \
   filename = "iotest_" + std::to_string(++TestNum) + "_" #T + pszExtension; \
   ioTest<WTR_, RDR_, T>(filename, t, #T, #T);
-#define TensorWriteReadInner( T )  SequentialInit( t ); TensorWriteReadInnerNoInit( T )
+#define TensorWriteReadInner( T )  SequentialInit( t, Flag, Precision ); TensorWriteReadInnerNoInit( T )
 #define TensorWriteRead( T      ) { T t               ; TensorWriteReadInner( T ) }
 #define TensorWriteReadV(T, ... ) { T t( __VA_ARGS__ ); TensorWriteReadInner( T ) }
 #define TensorWriteReadLarge( T ) { std::unique_ptr<T> p{new T}; T &t{*p}; TensorWriteReadInnerNoInit(T) }
 
 template <typename WTR_, typename RDR_>
-void EigenHdf5IOTest(const char * pszExtension)
+void EigenHdf5IOTest(const char * pszExtension, unsigned short Precision = 0)
 {
   unsigned int TestNum = 0;
   std::string filename;
-  using TensorSingle = Eigen::TensorFixedSize<int, Eigen::Sizes<1>>;
-  TensorWriteRead( TensorSingle )
+  {
+    int Flag = 7;
+    unsigned short Precision = 0;
+    using TensorSingle = Eigen::TensorFixedSize<int, Eigen::Sizes<1>>;
+    TensorWriteRead( TensorSingle )
+  }
+  TestScalar Flag{1,-3.1415927};
   using TensorSimple = Eigen::Tensor<iMatrix<TestScalar,1>, 6>;
   TensorWriteReadV( TensorSimple, 1, 1, 1, 1, 1, 1 )
   TensorWriteReadV( TensorRank3, 6, 3, 2 )
   TensorWriteRead ( Tensor_9_4_2 )
   {
+    unsigned short Flag = 1;
+    unsigned short Precision = 0;
     TensorRank5UShort t;
     TensorWriteReadInner ( TensorRank5UShort );
     std::cout << "    Testing alternate memory order read ... ";
@@ -193,7 +203,7 @@ void EigenHdf5IOTest(const char * pszExtension)
   }
   TensorWriteRead ( LSCTensor )
   TensorWriteReadLarge( PerambIOTestClass )
-#ifndef DEBUG
+#ifndef NO_STRESS_TESTS
   std::cout << "sizeof( LCMTensor ) = " << sizeof( LCMTensor ) / 1024 / 1024 << " MB" << std::endl;
   TensorWriteReadLarge ( LCMTensor )
   // Also write > 4GB of complex numbers (I suspect this will fail inside Hdf5)
@@ -285,22 +295,24 @@ int main(int argc,char **argv)
   ioTest<TextWriter, TextReader>("iotest.dat", obj, "text   (object)           ");
   ioTest<TextWriter, TextReader>("iotest.dat", vec, "text   (vector of objects)");
   //// text
-  ioTest<JSONWriter, JSONReader>("iotest.json", obj,  "JSON   (object)           ");
-  ioTest<JSONWriter, JSONReader>("iotest.json", vec,  "JSON   (vector of objects)");
+  //ioTest<JSONWriter, JSONReader>("iotest.json", obj,  "JSON   (object)           ");
+  //ioTest<JSONWriter, JSONReader>("iotest.json", vec,  "JSON   (vector of objects)");
 
   //// HDF5
 #ifdef HAVE_HDF5
   ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", obj, "HDF5   (object)           ");
   ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", vec, "HDF5   (vector of objects)");
+#endif
+  std::cout << "\n==== detailed text tensor tests (Grid::EigenIO)" << std::endl;
+  EigenHdf5IOTest<TextWriter, TextReader>(".dat", 6);
+  std::cout << "\n==== detailed xml tensor tests (Grid::EigenIO)" << std::endl;
+  EigenHdf5IOTest<XmlWriter, XmlReader>(".xml", 4);
+  std::cout << "\n==== detailed binary tensor tests (Grid::EigenIO)" << std::endl;
+  EigenHdf5IOTest<BinaryWriter, BinaryReader>(".bin");
+#ifdef HAVE_HDF5
   std::cout << "\n==== detailed Hdf5 tensor tests (Grid::EigenIO)" << std::endl;
   EigenHdf5IOTest<Hdf5Writer, Hdf5Reader>(".h5");
 #endif
-  std::cout << "\n==== detailed binary tensor tests (Grid::EigenIO)" << std::endl;
-  EigenHdf5IOTest<BinaryWriter, BinaryReader>(".bin");
-  std::cout << "\n==== detailed text tensor tests (Grid::EigenIO)" << std::endl;
-  EigenHdf5IOTest<TextWriter, TextReader>(".dat");
-  std::cout << "\n==== detailed xml tensor tests (Grid::EigenIO)" << std::endl;
-  EigenHdf5IOTest<XmlWriter, XmlReader>(".xml");
 
   std::cout << "\n==== vector flattening/reconstruction" << std::endl;
   typedef std::vector<std::vector<std::vector<double>>> vec3d;
