@@ -41,12 +41,21 @@ public:
 			     const std::vector<ComplexField > &mom,
 			     int orthogdim);
 
+
+  static void NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat, 
+				     const FermionField *one,
+				     const FermionField *two,
+				     const FermionField *three,
+				     const std::vector<ComplexField > &mom,
+				     int parity,
+				     int orthogdim); 
+ 
   static void PionFieldXX(Eigen::Tensor<ComplexD,3> &mat, 
 			  const FermionField *wi,
 			  const FermionField *vj,
 			  int orthogdim,
 			  int g5);
-  
+ 
   static void PionFieldWV(Eigen::Tensor<ComplexD,3> &mat, 
 			  const FermionField *wi,
 			  const FermionField *vj,
@@ -100,7 +109,7 @@ public:
 			int orthogdim);
 #endif
 };
-/*
+
 template<class FImpl>
 void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat, 
 				     const FermionField *one,
@@ -277,7 +286,7 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat,
 
   grid->GlobalSumVector(&mat(0,0,0,0,0,0),Nmom*Nt*oneBlock*twoBlock*threeBlock);
 }
-*/
+
 
 
 
