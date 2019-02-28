@@ -841,15 +841,10 @@ namespace Grid {
       // First check whether dimensions match (Eigen tensor library will assert if they don't match)
       bool bReturnValue = (T1::NumIndices == T2::NumIndices);
       for( auto i = 0 ; bReturnValue && i < T1::NumIndices ; i++ )
-          bReturnValue = ( lhs.dimension(i)) == rhs.dimension(i);
+          bReturnValue = ( lhs.dimension(i) == rhs.dimension(i) );
       if( bReturnValue ) {
-        using Traits = EigenIO::Traits<typename T1::Scalar>;
-        using scalar_type = typename Traits::scalar_type;
-        for_all( lhs, [&](scalar_type &c, typename T1::Index n, const std::array<size_t, T1::NumIndices + Traits::rank> &Dims ) {
-          scalar_type x = c - rhs[Dims];
-          if( x < 1e-10 )
-            bReturnValue = false;
-        } );
+        Eigen::Tensor<bool, 0, T1::Options> bResult = (lhs == rhs).all();
+        bReturnValue = bResult(0);
       }
       return bReturnValue;
     }
@@ -865,13 +860,13 @@ namespace Grid {
     }
 
     template <typename T>
-    static inline typename std::enable_if<!std::is_base_of<Eigen::TensorBase<T, Eigen::ReadOnlyAccessors>, T>::value, void>::type
+    static inline typename std::enable_if<!EigenIO::is_tensor<T>::value, void>::type
     WriteMember(std::ostream &os, const T &object) {
       os << object;
     }
     
     template <typename T>
-    static inline typename std::enable_if<std::is_base_of<Eigen::TensorBase<T, Eigen::ReadOnlyAccessors>, T>::value, void>::type
+    static inline typename std::enable_if<EigenIO::is_tensor<T>::value, void>::type
     WriteMember(std::ostream &os, const T &object) {
       os << "Eigen::Tensor";
     }
