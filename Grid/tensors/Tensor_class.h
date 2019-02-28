@@ -62,7 +62,7 @@ class iScalar {
   // get double precision version
   typedef iScalar<typename GridTypeMapper<vtype>::DoublePrecision> DoublePrecision;
   
-  enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1 };
+  static constexpr int TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1;
 
   // Scalar no action
   //  template<int Level> using tensor_reduce_level = typename
@@ -173,7 +173,37 @@ class iScalar {
     return stream;
   };
 
+  template <typename T = vtype>
+  typename std::enable_if<!isGridTensor<T>::value, const scalar_type *>::type
+  strong_inline begin() const { return &_internal; }
 
+  template <typename T = vtype>
+  typename std::enable_if<isGridTensor<T>::value, const scalar_type *>::type
+  strong_inline begin() const { return _internal.begin(); }
+
+  template <typename T = vtype>
+  typename std::enable_if<!isGridTensor<T>::value, const scalar_type *>::type
+  strong_inline end() const { return (&_internal) + 1; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<isGridTensor<T>::value, const scalar_type *>::type
+  strong_inline end() const { return _internal.begin() + sizeof(_internal)/sizeof(scalar_type); }
+
+  template <typename T = vtype>
+  typename std::enable_if<!isGridTensor<T>::value, scalar_type *>::type
+  strong_inline begin() { return &_internal; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<isGridTensor<T>::value, scalar_type *>::type
+  strong_inline begin() { return _internal.begin(); }
+  
+  template <typename T = vtype>
+  typename std::enable_if<!isGridTensor<T>::value, scalar_type *>::type
+  strong_inline end() { return (&_internal) + 1; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<isGridTensor<T>::value, scalar_type *>::type
+  strong_inline end() { return _internal.begin() + sizeof(_internal)/sizeof(scalar_type); }
 };
 ///////////////////////////////////////////////////////////
 // Allows to turn scalar<scalar<scalar<double>>>> back to double.
@@ -218,7 +248,7 @@ class iVector {
     return *this;
   }
 
-  enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1 };
+  static constexpr int TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1;
   iVector(const Zero &z) { *this = zero; };
   iVector() = default;
   /*
@@ -303,6 +333,38 @@ class iVector {
   //    strong_inline vtype && operator ()(int i) {
   //      return _internal[i];
   //    }
+
+  template <typename T = vtype>
+  typename std::enable_if<!isGridTensor<T>::value, const scalar_type *>::type
+  strong_inline begin() const { return _internal; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<isGridTensor<T>::value, const scalar_type *>::type
+  strong_inline begin() const { return _internal[0].begin(); }
+  
+  template <typename T = vtype>
+  typename std::enable_if<!isGridTensor<T>::value, const scalar_type *>::type
+  strong_inline end() const { return _internal + N; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<isGridTensor<T>::value, const scalar_type *>::type
+  strong_inline end() const { return _internal[0].begin() + sizeof(_internal)/sizeof(scalar_type); }
+
+  template <typename T = vtype>
+  typename std::enable_if<!isGridTensor<T>::value, scalar_type *>::type
+  strong_inline begin() { return _internal; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<isGridTensor<T>::value, scalar_type *>::type
+  strong_inline begin() { return _internal[0].begin(); }
+  
+  template <typename T = vtype>
+  typename std::enable_if<!isGridTensor<T>::value, scalar_type *>::type
+  strong_inline end() { return _internal + N; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<isGridTensor<T>::value, scalar_type *>::type
+  strong_inline end() { return _internal[0].begin() + sizeof(_internal)/sizeof(scalar_type); }
 };
 
 template <class vtype, int N>
@@ -328,7 +390,7 @@ class iMatrix {
   typedef iScalar<tensor_reduced_v> tensor_reduced;
   typedef iMatrix<recurse_scalar_object, N> scalar_object;
 
-  enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1 };
+  static constexpr int TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1;
 
   iMatrix(const Zero &z) { *this = zero; };
   iMatrix() = default;
@@ -458,6 +520,38 @@ class iMatrix {
   //  strong_inline vtype && operator ()(int i,int j) {
   //    return _internal[i][j];
   //  }
+
+  template <typename T = vtype>
+  typename std::enable_if<!isGridTensor<T>::value, const scalar_type *>::type
+  strong_inline begin() const { return _internal[0]; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<isGridTensor<T>::value, const scalar_type *>::type
+  strong_inline begin() const { return _internal[0][0].begin(); }
+  
+  template <typename T = vtype>
+  typename std::enable_if<!isGridTensor<T>::value, const scalar_type *>::type
+  strong_inline end() const { return _internal[0] + N * N; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<isGridTensor<T>::value, const scalar_type *>::type
+  strong_inline end() const { return _internal[0][0].begin() + sizeof(_internal)/sizeof(scalar_type); }
+
+  template <typename T = vtype>
+  typename std::enable_if<!isGridTensor<T>::value, scalar_type *>::type
+  strong_inline begin() { return _internal[0]; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<isGridTensor<T>::value, scalar_type *>::type
+  strong_inline begin() { return _internal[0][0].begin(); }
+  
+  template <typename T = vtype>
+  typename std::enable_if<!isGridTensor<T>::value, scalar_type *>::type
+  strong_inline end() { return _internal[0] + N * N; }
+  
+  template <typename T = vtype>
+  typename std::enable_if<isGridTensor<T>::value, scalar_type *>::type
+  strong_inline end() { return _internal[0][0].begin() + sizeof(_internal)/sizeof(scalar_type); }
 };
 
 template <class v>

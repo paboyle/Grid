@@ -89,17 +89,25 @@ template <typename Condition, typename ReturnType> using NotEnableIf = Invoke<st
 ////////////////////////////////////////////////////////
 // Check for complexity with type traits
 template <typename T> struct is_complex : public std::false_type {};
-template <> struct is_complex<std::complex<double> > : public std::true_type {};
-template <> struct is_complex<std::complex<float> > : public std::true_type {};
+template <> struct is_complex<ComplexD> : public std::true_type {};
+template <> struct is_complex<ComplexF> : public std::true_type {};
 
-template <typename T>              using IfReal    = Invoke<std::enable_if<std::is_floating_point<T>::value, int> >;
+template<typename T, typename V=void> struct is_real : public std::false_type {};
+template<typename T> struct is_real<T, typename std::enable_if<std::is_floating_point<T>::value,
+  void>::type> : public std::true_type {};
+
+template<typename T, typename V=void> struct is_integer : public std::false_type {};
+template<typename T> struct is_integer<T, typename std::enable_if<std::is_integral<T>::value,
+  void>::type> : public std::true_type {};
+  
+template <typename T>              using IfReal    = Invoke<std::enable_if<is_real<T>::value, int> >;
 template <typename T>              using IfComplex = Invoke<std::enable_if<is_complex<T>::value, int> >;
-template <typename T>              using IfInteger = Invoke<std::enable_if<std::is_integral<T>::value, int> >;
+template <typename T>              using IfInteger = Invoke<std::enable_if<is_integer<T>::value, int> >;
 template <typename T1,typename T2> using IfSame    = Invoke<std::enable_if<std::is_same<T1,T2>::value, int> >;
 
-template <typename T>              using IfNotReal    = Invoke<std::enable_if<!std::is_floating_point<T>::value, int> >;
+template <typename T>              using IfNotReal    = Invoke<std::enable_if<!is_real<T>::value, int> >;
 template <typename T>              using IfNotComplex = Invoke<std::enable_if<!is_complex<T>::value, int> >;
-template <typename T>              using IfNotInteger = Invoke<std::enable_if<!std::is_integral<T>::value, int> >;
+template <typename T>              using IfNotInteger = Invoke<std::enable_if<!is_integer<T>::value, int> >;
 template <typename T1,typename T2> using IfNotSame    = Invoke<std::enable_if<!std::is_same<T1,T2>::value, int> >;
 
 ////////////////////////////////////////////////////////
