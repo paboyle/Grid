@@ -102,13 +102,16 @@ public:
 };
 /*
 template<class FImpl>
-void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,5> &mat, 
+void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat, 
 				     const FermionField *one,
 				     const FermionField *two,
 				     const FermionField *three,
 				     const std::vector<ComplexField > &mom,
+				     int parity,
 				     int orthogdim) 
 {
+  assert(parity == 1 || parity == -1);
+
   typedef typename FImpl::SiteSpinor vobj;
 
   typedef typename vobj::scalar_object sobj;
@@ -166,6 +169,7 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,5> &mat,
 	for(int i=0;i<oneBlock;i++){
 
 	  auto v1 = one[i]._odata[ss];
+	  auto pv1 = 0.5*(double)parity*(v1 + Gamma(Gamma::Algebra::GammaT)*v1); 
 
        	  for(int j=0;j<twoBlock;j++){
 
@@ -178,12 +182,12 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,5> &mat,
 	      auto gv3 = Gamma(Gamma::Algebra::SigmaXZ) * v3;
 	      SpinVector_v vv;
             
-	      vv()()() =  v1()()(0) * v2()()(1) * gv3()()(2)   //Cross product
-                -         v1()()(0) * v2()()(2) * gv3()()(1)    
-                +         v1()()(1) * v2()()(2) * gv3()()(0)    
-                -         v1()()(1) * v2()()(0) * gv3()()(2)    
-                +         v1()()(2) * v2()()(0) * gv3()()(1)    
-                -         v1()()(2) * v2()()(1) * gv3()()(0);    
+	      vv()()() =  pv1()()(0) * v2()()(1) * gv3()()(2)   //Cross product
+                -         pv1()()(0) * v2()()(2) * gv3()()(1)    
+                +         pv1()()(1) * v2()()(2) * gv3()()(0)    
+                -         pv1()()(1) * v2()()(0) * gv3()()(2)    
+                +         pv1()()(2) * v2()()(0) * gv3()()(1)    
+                -         pv1()()(2) * v2()()(1) * gv3()()(0);    
 
 	    
 	      // After getting the sitewise product do the mom phase loop
