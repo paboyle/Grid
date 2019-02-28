@@ -101,6 +101,184 @@ public:
 #endif
 };
 /*
+template<class FImpl>
+void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,5> &mat, 
+				     const FermionField *one,
+				     const FermionField *two,
+				     const FermionField *three,
+				     const std::vector<ComplexField > &mom,
+				     int orthogdim) 
+{
+  typedef typename FImpl::SiteSpinor vobj;
+
+  typedef typename vobj::scalar_object sobj;
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+
+  typedef iSpinVector<vector_type> SpinVector_v;
+  typedef iSpinVector<scalar_type> SpinVector_s;
+  
+  int oneBlock = mat.dimension(2); 
+  int twoBlock = mat.dimension(3);
+  int threeBlock = mat.dimension(4);
+
+  GridBase *grid = wi[0]._grid;
+  
+  const int    nd = grid->_ndimension;
+  const int Nsimd = grid->Nsimd();
+
+  int Nt     = grid->GlobalDimensions()[orthogdim];
+  int Nmom   = mom.size();
+
+  int fd=grid->_fdimensions[orthogdim];
+  int ld=grid->_ldimensions[orthogdim];
+  int rd=grid->_rdimensions[orthogdim];
+
+  // will locally sum vectors first
+  // sum across these down to scalars
+  // splitting the SIMD
+  int MFrvol = rd*oneBlock*twoBlock*threeBlock*Nmom;
+  int MFlvol = ld*oneBlock*twoBlock*threeBlock*Nmom;
+
+  Vector<SpinVector_v > lvSum(MFrvol);
+  parallel_for (int r = 0; r < MFrvol; r++){
+    lvSum[r] = zero;
+  }
+
+  Vector<SpinVector_s > lsSum(MFlvol);             
+  parallel_for (int r = 0; r < MFlvol; r++){
+    lsSum[r]=scalar_type(0.0);
+  }
+
+  int e1=    grid->_slice_nblock[orthogdim];
+  int e2=    grid->_slice_block [orthogdim];
+  int stride=grid->_slice_stride[orthogdim];
+
+  parallel_for(int r=0;r<rd;r++){
+
+    int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
+
+    for(int n=0;n<e1;n++){
+      for(int b=0;b<e2;b++){
+
+	int ss= so+n*stride+b;
+
+	for(int i=0;i<oneBlock;i++){
+
+	  auto v1 = one[i]._odata[ss];
+
+       	  for(int j=0;j<twoBlock;j++){
+
+	    auto v2 = conjugate(two[j]._odata[ss]);
+
+	    for(int k=0;k<threeBlock;k++){
+
+	      auto v3 = three[k]._odata[ss];
+              // C = i gamma_2 gamma_4 => C gamma_5 = - i gamma_1 gamma_3
+	      auto gv3 = Gamma(Gamma::Algebra::SigmaXZ) * v3;
+	      SpinVector_v vv;
+            
+	      vv()()() =  v1()()(0) * v2()()(1) * gv3()()(2)   //Cross product
+                -         v1()()(0) * v2()()(2) * gv3()()(1)    
+                +         v1()()(1) * v2()()(2) * gv3()()(0)    
+                -         v1()()(1) * v2()()(0) * gv3()()(2)    
+                +         v1()()(2) * v2()()(0) * gv3()()(1)    
+                -         v1()()(2) * v2()()(1) * gv3()()(0);    
+
+	    
+	      // After getting the sitewise product do the mom phase loop
+	      int base = Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*r;
+	      for ( int m=0;m<Nmom;m++){
+	        int idx = m+base;
+	        auto phase = mom[m]._odata[ss];
+	        mac(&lvSum[idx],&vv,&phase()()());
+              }
+	    }
+	  }
+	}
+      }
+    }
+  }
+
+
+  // Sum across simd lanes in the plane, breaking out orthog dir.
+  parallel_for(int rt=0;rt<rd;rt++){
+
+    std::vector<int> icoor(nd);
+    iScalar<vector_type> temp; 
+    std::vector<iScalar<SpinVector_s> > extracted(Nsimd);               
+
+    for(int i=0;i<oneBlock;i++){
+    for(int j=0;j<twoBlock;j++){
+    for(int k=0;k<threeBlock;k++){
+    for(int m=0;m<Nmom;m++){
+
+      int ij_rdx = m+Nmom*i + Nmom*oneBlock * j + Nmom*oneBlock * twoBlock * k + Nmom*oneBlock * twoBlock *threeBlock * rt;
+
+      temp._internal = lvSum[ij_rdx];
+      extract(temp,extracted);
+
+      for(int idx=0;idx<Nsimd;idx++){
+
+	grid->iCoorFromIindex(icoor,idx);
+
+	int ldx    = rt+icoor[orthogdim]*rd;
+
+	int ij_ldx = m+Nmom*i + Nmom*oneBlock * j + Nmom*oneBlock * twoBlock * k + Nmom*oneBlock * twoBlock *threeBlock * ldx;
+
+	lsSum[ij_ldx]=lsSum[ij_ldx]+extracted[idx]._internal;
+
+      }
+    }}}}
+  }
+
+  assert(mat.dimension(0) == Nmom);
+  assert(mat.dimension(1) == Nt);
+
+  int pd = grid->_processors[orthogdim];
+  int pc = grid->_processor_coor[orthogdim];
+  parallel_for_nest2(int lt=0;lt<ld;lt++)
+  {
+    for(int pt=0;pt<pd;pt++){
+      int t = lt + pt*ld;
+      if (pt == pc){
+        for(int i=0;i<oneBlock;i++){
+          for(int j=0;j<twoBlock;j++){
+            for(int k=0;k<threeBlock;k++){
+	      for(int m=0;m<Nmom;m++){
+	        int ij_dx = m+Nmom*i + Nmom*oneBlock * j + Nmom*oneBlock * twoBlock * k + Nmom*oneBlock * twoBlock *threeBlock * lt;
+	        for(int is=0;is<4;is++){
+	          mat(m,t,i,j,k,is) = lsSum[ij_dx]()(is)();
+                }
+              }
+	    }
+	  }
+	}
+      } else { 
+	const scalar_type zz(0.0);
+        for(int i=0;i<oneBlock;i++){
+          for(int j=0;j<twoBlock;j++){
+            for(int k=0;k<threeBlock;k++){
+	      for(int m=0;m<Nmom;m++){
+	        for(int is=0;is<4;is++){
+	          mat(m,t,i,j,k,is) =zz;
+                }
+              }
+	    }
+	  }
+	}
+      }
+    }
+  }
+
+  grid->GlobalSumVector(&mat(0,0,0,0,0,0),Nmom*Nt*oneBlock*twoBlock*threeBlock);
+}
+*/
+
+
+
+
+/*
 template <class FImpl>
 template <typename TensorType>
 void A2Autils<FImpl>::BaryonField(TensorType &mat, 
