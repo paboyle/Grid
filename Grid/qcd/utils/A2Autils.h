@@ -134,9 +134,7 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat,
   int twoBlock = mat.dimension(3);
   int threeBlock = mat.dimension(4);
 
-  assert(0 && "Apologies, Felix, next line was causing compile failure");
-  //GridBase *grid = wi[0]._grid;
-  GridBase *grid = nullptr;
+  GridBase *grid = one[0]._grid;
 
   const int    nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
@@ -202,9 +200,7 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat,
 
 	    
 	      // After getting the sitewise product do the mom phase loop
-              assert(0 && "Apologies, Felix, next line was causing compile failure");
-              //int base = Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*r;
-	      int base = 0;
+              int base = Nmom*i+Nmom*oneBlock*j+Nmom*oneBlock*twoBlock*k+Nmom*oneBlock*twoBlock*threeBlock*r;
 	      for ( int m=0;m<Nmom;m++){
 	        int idx = m+base;
 	        auto phase = mom[m]._odata[ss];
