@@ -178,7 +178,9 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat,
 	for(int i=0;i<oneBlock;i++){
 
 	  auto v1 = one[i]._odata[ss];
-	  auto pv1 = 0.5*(v1 + (double)parity*Gamma(Gamma::Algebra::GammaT)*v1); 
+          assert(0 && "Sorry, Felix, the next line was stopping the build");
+	  //auto pv1 = 0.5*(v1 + (double)parity*Gamma(Gamma::Algebra::GammaT)*v1);
+          auto pv1 = v1;
 
        	  for(int j=0;j<twoBlock;j++){
 
