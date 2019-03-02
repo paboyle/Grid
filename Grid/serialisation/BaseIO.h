@@ -282,7 +282,7 @@ namespace Grid {
       im *= n;
       if( Precision ) {
         std::stringstream s;
-        s << std::scientific << std::setprecision(Precision) << re;
+        s << std::setprecision(Precision) << re;
         s >> re;
         s.clear();
         s << im;
@@ -741,13 +741,16 @@ namespace Grid {
     upcast->readMultiDim( s, buf, dimData );
     assert(dimData.size() == TotalRank && "EigenIO: Tensor rank mismatch" );
     // Make sure that the number of elements read matches dimensions read
-    std::size_t NumElements = 1;
-    for( auto d : dimData )
-      NumElements *= d;
-    assert( NumElements == buf.size() && "EigenIO: Number of elements != product of dimensions" );
+    std::size_t NumContainers = 1;
+    for( auto i = 0 ; i < TensorRank ; i++ )
+      NumContainers *= dimData[i];
     // If our scalar object is a Container, make sure it's dimensions match what we read back
-    for( auto i = 0 ; i < ContainerRank ; i++ )
+    std::size_t ElementsPerContainer = 1;
+    for( auto i = 0 ; i < ContainerRank ; i++ ) {
       assert( dimData[TensorRank+i] == Traits::Dimension(i) && "Tensor Container dimensions don't match data" );
+      ElementsPerContainer *= dimData[TensorRank+i];
+    }
+    assert( NumContainers * ElementsPerContainer == buf.size() && "EigenIO: Number of elements != product of dimensions" );
     // Now see whether the tensor is the right shape, or can be made to be
     const auto & dims{output.dimensions()};
     bool bShapeOK = (output.data() != nullptr);
@@ -764,13 +767,14 @@ namespace Grid {
     // Copy the data into the tensor
     for( auto &d : MyIndex ) d = 0;
     const Scalar * pSource = &buf[0];
-    for( auto n = 0 ; n < NumElements ; n++ ) {
+    for( std::size_t n = 0 ; n < NumContainers ; n++ ) {
       Container & c = output( MyIndex );
       copyScalars( c, pSource );
       // Now increment the index
       for( int i = TensorRank - 1; i != -1 && ++MyIndex[i] == dims[i]; i-- )
         MyIndex[i] = 0;
     }
+    assert( pSource == &buf[NumContainers * ElementsPerContainer] );
   }
 
   template <typename T>
