@@ -178,29 +178,28 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat,
 	for(int i=0;i<oneBlock;i++){
 
 	  auto v1 = one[i]._odata[ss];
-          assert(0 && "Sorry, Felix, the next line was stopping the build");
-	  //auto pv1 = 0.5*(v1 + (double)parity*Gamma(Gamma::Algebra::GammaT)*v1);
-          auto pv1 = v1;
+	  auto gv1 = Gamma(Gamma::Algebra::GammaT)*v1;
+	  auto pv1 = 0.5*(v1 + (double)parity*gv1);
 
        	  for(int j=0;j<twoBlock;j++){
 
 	    auto v2 = conjugate(two[j]._odata[ss]);
+            // C = i gamma_2 gamma_4 => C gamma_5 = - i gamma_1 gamma_3
+	    auto v2g = v2*Gamma(Gamma::Algebra::SigmaXZ);
 
 	    for(int k=0;k<threeBlock;k++){
 
 	      auto v3 = three[k]._odata[ss];
-              // C = i gamma_2 gamma_4 => C gamma_5 = - i gamma_1 gamma_3
-	      auto gv3 = Gamma(Gamma::Algebra::SigmaXZ) * v3;
 	      SpinVector_v vv;
 
               for(int s1=0;s1<Ns;s1++){
 	      for(int s2=0;s2<Ns;s2++){            
-	        vv()(s1)() =  pv1()(s1)(0) * v2()(s2)(1) * gv3()(s2)(2)   //Cross product
-                  -           pv1()(s1)(0) * v2()(s2)(2) * gv3()(s2)(1)    
-                  +           pv1()(s1)(1) * v2()(s2)(2) * gv3()(s2)(0)    
-                  -           pv1()(s1)(1) * v2()(s2)(0) * gv3()(s2)(2)    
-                  +           pv1()(s1)(2) * v2()(s2)(0) * gv3()(s2)(1)    
-                  -           pv1()(s1)(2) * v2()(s2)(1) * gv3()(s2)(0);    
+	        vv()(s1)() =  pv1()(s1)(0) * v2g()(s2)(1) * v3()(s2)(2)   //Cross product
+                  -           pv1()(s1)(0) * v2g()(s2)(2) * v3()(s2)(1)    
+                  +           pv1()(s1)(1) * v2g()(s2)(2) * v3()(s2)(0)    
+                  -           pv1()(s1)(1) * v2g()(s2)(0) * v3()(s2)(2)    
+                  +           pv1()(s1)(2) * v2g()(s2)(0) * v3()(s2)(1)    
+                  -           pv1()(s1)(2) * v2g()(s2)(1) * v3()(s2)(0);    
               }}
 	    
 	      // After getting the sitewise product do the mom phase loop
