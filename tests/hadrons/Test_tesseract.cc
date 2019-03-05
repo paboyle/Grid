@@ -285,6 +285,38 @@ void test_MesonFieldRhoAll(Application &application)
   application.createModule<MContraction::A2AMesonField>("DistilMesonFieldRhoAll",A2AMesonFieldPar);
 }
 /////////////////////////////////////////////////////////////
+// BaryonFields - phiphiphi - efficient
+/////////////////////////////////////////////////////////////
+
+void test_BaryonFieldPhi2(Application &application)
+{
+  // DistilVectors parameters
+  MDistil::BC2::Par BC2Par;
+  BC2Par.one="DistilVecs_phi";
+  BC2Par.two="DistilVecs_phi";
+  BC2Par.three="DistilVecs_phi";
+  BC2Par.output="BaryonFieldPhi2";
+  BC2Par.parity=1;
+  BC2Par.mom={"0 0 0"};
+  application.createModule<MDistil::BC2>("BaryonFieldPhi2",BC2Par);
+}
+/////////////////////////////////////////////////////////////
+// BaryonFields - rhorhorho - efficient
+/////////////////////////////////////////////////////////////
+
+void test_BaryonFieldRho2(Application &application)
+{
+  // DistilVectors parameters
+  MDistil::BC2::Par BC2Par;
+  BC2Par.one="DistilVecs_rho";
+  BC2Par.two="DistilVecs_rho";
+  BC2Par.three="DistilVecs_rho";
+  BC2Par.output="BaryonFieldRho2";
+  BC2Par.parity=1;
+  BC2Par.mom={"0 0 0"};
+  application.createModule<MDistil::BC2>("BaryonFieldRho2",BC2Par);
+}
+/////////////////////////////////////////////////////////////
 // BaryonFields - phiphiphi
 /////////////////////////////////////////////////////////////
 

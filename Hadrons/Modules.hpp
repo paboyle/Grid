@@ -15,6 +15,7 @@
 #include <Hadrons/Modules/MDistil/Baryon2pt.hpp>
 #include <Hadrons/Modules/MDistil/BContraction.hpp>
 #include <Hadrons/Modules/MDistil/PerambLight.hpp>
+#include <Hadrons/Modules/MDistil/BC2.hpp>
 #include <Hadrons/Modules/MContraction/WeakHamiltonian.hpp>
 #include <Hadrons/Modules/MContraction/WeakNeutral4ptDisc.hpp>
 #include <Hadrons/Modules/MContraction/WeakHamiltonianEye.hpp>

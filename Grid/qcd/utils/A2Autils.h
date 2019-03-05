@@ -185,21 +185,29 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat,
 
 	    auto v2 = conjugate(two[j]._odata[ss]);
             // C = i gamma_2 gamma_4 => C gamma_5 = - i gamma_1 gamma_3
-	    auto v2g = v2*Gamma(Gamma::Algebra::SigmaXZ);
+	    //auto v2g = v2*Gamma(Gamma::Algebra::SigmaXZ);
+            auto v2g=v2;  
 
 	    for(int k=0;k<threeBlock;k++){
 
 	      auto v3 = three[k]._odata[ss];
+	      auto gv3 = Gamma(Gamma::Algebra::SigmaXZ)*v3;
 	      SpinVector_v vv;
 
               for(int s1=0;s1<Ns;s1++){
 	      for(int s2=0;s2<Ns;s2++){            
-	        vv()(s1)() =  pv1()(s1)(0) * v2g()(s2)(1) * v3()(s2)(2)   //Cross product
+	     /*   vv()(s1)() =  pv1()(s1)(0) * v2g()(s2)(1) * v3()(s2)(2)   //Cross product
                   -           pv1()(s1)(0) * v2g()(s2)(2) * v3()(s2)(1)    
                   +           pv1()(s1)(1) * v2g()(s2)(2) * v3()(s2)(0)    
                   -           pv1()(s1)(1) * v2g()(s2)(0) * v3()(s2)(2)    
                   +           pv1()(s1)(2) * v2g()(s2)(0) * v3()(s2)(1)    
-                  -           pv1()(s1)(2) * v2g()(s2)(1) * v3()(s2)(0);    
+                  -           pv1()(s1)(2) * v2g()(s2)(1) * v3()(s2)(0);    */
+	        vv()(s1)() =  pv1()(s1)(0) * v2()(s2)(1) * gv3()(s2)(2)   //Cross product
+                  -           pv1()(s1)(0) * v2()(s2)(2) * gv3()(s2)(1)    
+                  +           pv1()(s1)(1) * v2()(s2)(2) * gv3()(s2)(0)    
+                  -           pv1()(s1)(1) * v2()(s2)(0) * gv3()(s2)(2)    
+                  +           pv1()(s1)(2) * v2()(s2)(0) * gv3()(s2)(1)    
+                  -           pv1()(s1)(2) * v2()(s2)(1) * gv3()(s2)(0);    
               }}
 	    
 	      // After getting the sitewise product do the mom phase loop
@@ -207,7 +215,9 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat,
 	      for ( int m=0;m<Nmom;m++){
 	        int idx = m+base;
 	        auto phase = mom[m]._odata[ss];
-	        mac(&lvSum[idx],&vv,&phase()()());
+                for(int is=0;is<Ns;is++){
+	          mac(&lvSum[idx]()(is)(),&vv()(is)(),&phase()()());
+		}
               }
 	    }
 	  }
@@ -221,8 +231,7 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat,
   parallel_for(int rt=0;rt<rd;rt++){
 
     std::vector<int> icoor(nd);
-    iScalar<vector_type> temp; 
-    std::vector<iScalar<SpinVector_s> > extracted(Nsimd);               
+    std::vector<SpinVector_s>  extracted(Nsimd);               
 
     for(int i=0;i<oneBlock;i++){
     for(int j=0;j<twoBlock;j++){
@@ -231,8 +240,7 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat,
 
       int ij_rdx = m+Nmom*i + Nmom*oneBlock * j + Nmom*oneBlock * twoBlock * k + Nmom*oneBlock * twoBlock *threeBlock * rt;
 
-      temp._internal = lvSum[ij_rdx];
-      extract(temp,extracted);
+      extract(lvSum[ij_rdx],extracted);
 
       for(int idx=0;idx<Nsimd;idx++){
 
@@ -242,7 +250,7 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat,
 
 	int ij_ldx = m+Nmom*i + Nmom*oneBlock * j + Nmom*oneBlock * twoBlock * k + Nmom*oneBlock * twoBlock *threeBlock * ldx;
 
-	lsSum[ij_ldx]=lsSum[ij_ldx]+extracted[idx]._internal;
+	lsSum[ij_ldx]=lsSum[ij_ldx]+extracted[idx];
 
       }
     }}}}
