@@ -269,6 +269,23 @@ void test_MesonFieldRho(Application &application)
   application.createModule<MContraction::A2AMesonField>("DistilMesonFieldRho",A2AMesonFieldPar);
 }
 /////////////////////////////////////////////////////////////
+// MesonFields - rhorhoall
+/////////////////////////////////////////////////////////////
+
+void test_MesonFieldRhoAll(Application &application)
+{
+  // DistilVectors parameters
+  MContraction::A2AMesonField::Par A2AMesonFieldPar;
+  A2AMesonFieldPar.left="DistilVecs_rho_all_tsrc";
+  A2AMesonFieldPar.right="DistilVecs_rho_all_tsrc";
+  A2AMesonFieldPar.output="MesonSinksRhoAll";
+  A2AMesonFieldPar.gammas="all";
+  A2AMesonFieldPar.mom={"0 0 0"};
+  A2AMesonFieldPar.cacheBlock=2;
+  A2AMesonFieldPar.block=4;
+  application.createModule<MContraction::A2AMesonField>("DistilMesonFieldRhoAll",A2AMesonFieldPar);
+}
+/////////////////////////////////////////////////////////////
 // BaryonFields - phiphiphi
 /////////////////////////////////////////////////////////////
 
@@ -774,6 +791,7 @@ int main(int argc, char *argv[])
       test_Perambulators( application );
       test_DistilVectors( application );
       test_MesonField( application );
+      test_MesonFieldRhoAll( application );
       break;
     case 5: // 3
       test_Global( application );
