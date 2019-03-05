@@ -94,7 +94,7 @@ std::vector<std::string> TGaugeFix<GImpl>::getInput(void)
 template <typename GImpl>
 std::vector<std::string> TGaugeFix<GImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {getName(), getName()+"_xform"};
     return out;
 }
 
@@ -103,6 +103,7 @@ template <typename GImpl>
 void TGaugeFix<GImpl>::setup(void)
 {
     envCreateLat(GaugeField, getName());
+    envCreateLat(LatticeColourMatrix, getName()+"_xform");
 }
 
 
@@ -116,6 +117,7 @@ void TGaugeFix<GImpl>::execute(void)
     LOG(Message) << par().gauge << std::endl;
     auto &U     = envGet(GaugeField, par().gauge);
     auto &Umu   = envGet(GaugeField, getName());
+    auto &xform = envGet(LatticeColourMatrix, getName()+"_xform");
     LOG(Message) << "Gauge Field fetched" << std::endl;
     //do we allow maxiter etc to be user set?
     Real alpha     = par().alpha;
@@ -123,7 +125,7 @@ void TGaugeFix<GImpl>::execute(void)
     Real Omega_tol = par().Omega_tol;
     Real Phi_tol   = par().Phi_tol;
     bool Fourier   = par().Fourier;
-    FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(U,alpha,maxiter,Omega_tol,Phi_tol,Fourier);
+    FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(U,xform,alpha,maxiter,Omega_tol,Phi_tol,Fourier);
     Umu = U;
     LOG(Message) << "Gauge Fixed" << std::endl;
 }
