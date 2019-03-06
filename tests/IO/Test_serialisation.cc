@@ -29,6 +29,7 @@ Author: Michael Marshall <michael.marshall@ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
+#include <Grid/util/Eigen.h>
 
 using namespace Grid;
 using namespace Grid::QCD;
