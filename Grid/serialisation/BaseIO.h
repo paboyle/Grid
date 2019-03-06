@@ -37,16 +37,16 @@ Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
 namespace Grid {
   // TODO Support Grid::complex from GPU port
-  template<typename T> using Grid_complex = std::complex<T>;
+  //template<typename T> using Grid_complex = std::complex<T>;
 
   // Returns original type, except for Grid_complex, where it returns the underlying type
-  template<typename T> struct RealType { using type = T; };
-  template<typename T> struct RealType<Grid_complex<T>> { using type = T; };
+  //template<typename T> struct RealType { using type = T; };
+  //template<typename T> struct RealType<Grid_complex<T>> { using type = T; };
 
   namespace EigenIO {
-    template<typename T> struct is_complex : public std::false_type {};
-    template<typename T> struct is_complex<Grid_complex<T>>
-        : std::integral_constant<bool, std::is_arithmetic<T>::value> {};
+    //template<typename T> struct is_complex : public std::false_type {};
+    //template<typename T> struct is_complex<Grid_complex<T>>
+        //: std::integral_constant<bool, std::is_arithmetic<T>::value> {};
 
     // Eigen tensors can be composed of arithmetic scalar and complex types
     template<typename T> struct is_scalar : std::integral_constant<bool,
@@ -54,11 +54,11 @@ namespace Grid {
 
     // Eigen tensors can also be composed of a limited number of containers
     // NB: grid tensors (iScalar, iVector, iMatrix) have stricter limits on complex types
-    template <typename T> struct is_container                       : public std::false_type {};
-    template <typename T> struct is_container<iScalar<T>>           : public std::true_type {};
-    template <typename T, int N> struct is_container<iVector<T, N>> : public std::true_type {};
-    template <typename T, int N> struct is_container<iMatrix<T, N>> : public std::true_type {};
-    template <typename T, std::size_t N> struct is_container<std::array<T, N>> : public std::true_type {};
+    //template <typename T> struct is_container                       : public std::false_type {};
+    //template <typename T> struct is_container<iScalar<T>>           : public std::true_type {};
+    //template <typename T, int N> struct is_container<iVector<T, N>> : public std::true_type {};
+    //template <typename T, int N> struct is_container<iMatrix<T, N>> : public std::true_type {};
+    //template <typename T, std::size_t N> struct is_container<std::array<T, N>> : public std::true_type {};
 
     // Is this an Eigen tensor
     template<typename T> struct is_tensor : std::integral_constant<bool,
@@ -70,7 +70,7 @@ namespace Grid {
 
     // Is this an Eigen tensor of a supported container
     template<typename T, typename C = void> struct is_tensor_of_container : public std::false_type {};
-    template<typename T> struct is_tensor_of_container<T, typename std::enable_if<is_tensor<T>::value && is_container<typename T::Scalar>::value, void>::type> : public std::true_type {};
+    template<typename T> struct is_tensor_of_container<T, typename std::enable_if<is_tensor<T>::value && isGridTensor<typename T::Scalar>::value, void>::type> : public std::true_type {};
 
     // Is this a fixed-size Eigen tensor
     template<typename T> struct is_tensor_fixed : public std::false_type {};
@@ -94,11 +94,11 @@ namespace Grid {
     // EigenIO::Traits are not defined for Eigen tensors, but rather their top-level scalar
     // This is because Eigen tensors have a dynamic size flavour, but the scalars are all fixed size
     // This allows the traits to all be defined as constexpr
-    template <typename T, typename C = void> struct Traits {}; // C needed for specialisation
+    /*template <typename T, typename C = void> struct Traits {}; // C needed for specialisation
     // This defines the bottom level - i.e. it's a description of the underlying scalar
     template <typename T> struct Traits<T, typename std::enable_if<is_scalar<T>::value, void>::type> {
       using scalar_type = T; // Type of the underlying scalar
-      using scalar_real = typename RealType<scalar_type>::type; // real type underlying scalar_type
+      using scalar_real = typename RealPart<scalar_type>::type; // real type underlying scalar_type
       static constexpr unsigned int rank = 0;   // The rank of the grid tensor (i.e. how many indices used)
       //static constexpr unsigned int rank_non_trivial = 0; // As per rank, but excludes those of dimension 1
       static constexpr unsigned int count = 1;  // total number of elements (i.e. product of dimensions)
@@ -121,7 +121,7 @@ namespace Grid {
     };
     template <typename T> struct Traits<iScalar<T>> {
       using scalar_type = typename Traits<T>::scalar_type;
-      using scalar_real = typename RealType<scalar_type>::type;
+      using scalar_real = typename RealPart<scalar_type>::type;
       static constexpr unsigned int rank = 1 + Traits<T>::rank;
       //static constexpr unsigned int rank_non_trivial = 0 + Traits<T>::rank_non_trivial;
       static constexpr unsigned int count = 1 * Traits<T>::count;
@@ -134,7 +134,7 @@ namespace Grid {
     };
     template <typename T, int N> struct Traits<iVector<T, N>> {
       using scalar_type = typename Traits<T>::scalar_type;
-      using scalar_real = typename RealType<scalar_type>::type;
+      using scalar_real = typename RealPart<scalar_type>::type;
       static constexpr unsigned int rank = 1 + Traits<T>::rank;
       //static constexpr unsigned int rank_non_trivial = (N>1 ? 1 : 0) + Traits<T>::rank_non_trivial;
       static constexpr unsigned int count = N * Traits<T>::count;
@@ -148,7 +148,7 @@ namespace Grid {
     };
     template <typename T, int N> struct Traits<iMatrix<T, N>> {
       using scalar_type = typename Traits<T>::scalar_type;
-      using scalar_real = typename RealType<scalar_type>::type;
+      using scalar_real = typename RealPart<scalar_type>::type;
       static constexpr unsigned int rank = 2 + Traits<T>::rank;
       //static constexpr unsigned int rank_non_trivial = (N>1 ? 2 : 0) + Traits<T>::rank_non_trivial;
       static constexpr unsigned int count = N * N * Traits<T>::count;
@@ -160,223 +160,8 @@ namespace Grid {
         //return ( N == 1 ) ? Traits<T>::DimensionNT(dim) : ( dim == 0 || dim == 1 ) ? N : Traits<T>::DimensionNT(dim - 2);
       //}
     };
-    template <typename T, int N> struct Traits<std::array<T, N>> : Traits<iVector<T, N>> {};
+    template <typename T, int N> struct Traits<std::array<T, N>> : Traits<iVector<T, N>> {};*/
   }
-
-  // for_all helper function to call the lambda for scalar
-  template <typename ETensor, typename Lambda>
-  typename std::enable_if<EigenIO::is_tensor_of_scalar<ETensor>::value, void>::type
-  for_all_do_lambda( Lambda lambda, typename ETensor::Scalar &scalar, typename ETensor::Index &Seq,
-                    std::array<std::size_t, ETensor::NumIndices + EigenIO::Traits<typename ETensor::Scalar>::rank> &MyIndex)
-  {
-    lambda( scalar, Seq++, MyIndex );
-  }
-
-  // for_all helper function to call the lambda for container
-  template <typename ETensor, typename Lambda>
-  typename std::enable_if<EigenIO::is_tensor_of_container<ETensor>::value, void>::type
-  for_all_do_lambda( Lambda lambda, typename ETensor::Scalar &container, typename ETensor::Index &Seq,
-                    std::array<std::size_t, ETensor::NumIndices + EigenIO::Traits<typename ETensor::Scalar>::rank> &MyIndex)
-  {
-    using Traits = EigenIO::Traits<typename ETensor::Scalar>;
-    const auto rank{ETensor::NumIndices};
-    const auto InnerRank = Traits::rank;
-    for( typename Traits::scalar_type &Source : container ) {
-      lambda(Source, Seq++, MyIndex );
-      // Now increment SubIndex
-      for( auto i = InnerRank - 1; i != -1 && ++MyIndex[rank + i] == Traits::Dimension(i); i-- )
-        MyIndex[rank + i] = 0;
-    }
-  }
-  
-  // Calls a lamda (passing index and sequence number) for every member of an Eigen::Tensor
-  // For efficiency, iteration proceeds in memory order,
-  // ... but parameters guaranteed to be the same regardless of memory order
-  template <typename ETensor, typename Lambda>
-  typename std::enable_if<EigenIO::is_tensor<ETensor>::value, void>::type
-  for_all( ETensor &ET, Lambda lambda )
-  {
-    using Scalar = typename ETensor::Scalar; // This could be a Container - we'll check later
-    const std::size_t NumScalars = ET.size();
-    assert( NumScalars > 0 );
-    using Index = typename ETensor::Index;
-    Index ScalarElementCount{1};
-    const auto InnerRank = EigenIO::Traits<Scalar>::rank;
-    const auto rank{ETensor::NumIndices};
-    std::array<std::size_t, rank + InnerRank> Dims;
-    for(auto i = 0; i < rank; i++ ) {
-      auto dim = ET.dimension(i);
-      assert( dim > 0 );
-      Dims[i] = static_cast<std::size_t>(dim);
-      assert( Dims[i] == dim ); // check we didn't lose anything in the conversion
-      ScalarElementCount *= Dims[i];
-    }
-    // Check that the number of containers is correct ... and we didn't lose anything in conversions
-    assert( NumScalars == ScalarElementCount );
-    // If the Scalar is actually a container, add the inner Scalar's dimensions
-    size_t InnerScalarCount{1};
-    for(auto i = 0; i < InnerRank; i++ ) {
-      auto dim = EigenIO::Traits<Scalar>::Dimension(i);
-      assert( dim > 0 );
-      Dims[rank + i] = static_cast<std::size_t>(dim);
-      assert( Dims[rank + i] == dim ); // check we didn't lose anything in the conversion
-      InnerScalarCount *= dim;
-    }
-    assert(EigenIO::Traits<Scalar>::count == InnerScalarCount);
-    assert(EigenIO::Traits<Scalar>::size  == sizeof( Scalar ));
-    std::array<std::size_t, rank + InnerRank> MyIndex;
-    for( auto &idx : MyIndex ) idx = 0;
-    Index Seq = 0;
-    Scalar * pScalar = ET.data();
-    for( std::size_t j = 0; j < NumScalars; j++ ) {
-      for_all_do_lambda<ETensor, Lambda>( lambda, * pScalar, Seq, MyIndex );
-      // Now increment the index to pass to the lambda (bearing in mind we're walking in memory order)
-      if( ETensor::Options & Eigen::RowMajor ) {
-        for( auto i = rank - 1; i != -1 && ++MyIndex[i] == Dims[i]; i-- )
-          MyIndex[i] = 0;
-      } else {
-        for( auto i = 0; i < rank && ++MyIndex[i] == Dims[i]; i++ )
-          MyIndex[i] = 0;
-        size_t NewSeq = 0;
-        for( auto i = 0; i < rank + InnerRank ; i++ ) {
-          NewSeq *= Dims[i];
-          NewSeq += MyIndex[i];
-        }
-        Seq = static_cast<Index>( NewSeq );
-      }
-      pScalar++;
-    }
-  }
-
-  // Sequential initialisation of tensors
-  // Would have preferred to define template variables for this, but that's c++ 17
-  template <typename ETensor>
-  typename std::enable_if<EigenIO::is_tensor<ETensor>::value && !EigenIO::is_complex<typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type>::value, void>::type
-  SequentialInit( ETensor &ET, typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type Inc = 1,
-                 unsigned short Precision = 0 )
-  {
-    using Traits = EigenIO::Traits<typename ETensor::Scalar>;
-    using scalar_type = typename Traits::scalar_type;
-    for_all( ET, [&](scalar_type &c, typename ETensor::Index n, const std::array<size_t, ETensor::NumIndices + Traits::rank> &Dims ) {
-      scalar_type x = Inc * static_cast<scalar_type>(n);
-      if( Precision ) {
-        std::stringstream s;
-        s << std::scientific << std::setprecision(Precision) << x;
-        s >> x;
-      }
-      c = x;
-    } );
-  }
-
-  template <typename ETensor>
-  typename std::enable_if<EigenIO::is_tensor<ETensor>::value && EigenIO::is_complex<typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type>::value, void>::type
-  SequentialInit( ETensor &ET, typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type Inc={1,-1},
-                 unsigned short Precision = 0 )
-  {
-    using Traits = EigenIO::Traits<typename ETensor::Scalar>;
-    using scalar_type = typename Traits::scalar_type;
-    for_all( ET, [&](scalar_type &c, typename ETensor::Index n, const std::array<size_t, ETensor::NumIndices + Traits::rank> &Dims ) {
-      auto re = Inc.real();
-      auto im = Inc.imag();
-      re *= n;
-      im *= n;
-      if( Precision ) {
-        std::stringstream s;
-        s << std::setprecision(Precision) << re;
-        s >> re;
-        s.clear();
-        s << im;
-        s >> im;
-      }
-      c = scalar_type(re,im);
-    } );
-  }
-  
-  // Helper to dump a tensor
-#ifdef DEBUG
-#define dump_tensor(args...) dump_tensor_func(args)
-  template <typename T>
-  typename std::enable_if<EigenIO::is_tensor<T>::value, void>::type
-  dump_tensor_func(T &t, const char * pName = nullptr)
-  {
-    using Traits = typename EigenIO::Traits<typename T::Scalar>;
-    const auto rank{T::NumIndices};
-    const auto &dims = t.dimensions();
-    std::cout << "Dumping rank " << rank << ((T::Options & Eigen::RowMajor) ? ", row" : ", column") << "-major tensor ";
-    if( pName )
-      std::cout << pName;
-    for( auto i = 0 ; i < rank; i++ ) std::cout << "[" << dims[i] << "]";
-    std::cout << " in memory order:" << std::endl;
-    for_all( t, [&](typename Traits::scalar_type &c, typename T::Index index, const std::array<size_t, T::NumIndices + Traits::rank> &Dims ){
-      std::cout << "  ";
-      for( auto dim : Dims )
-        std::cout << "[" << dim << "]";
-      std::cout << " = " << c << std::endl;
-    } );
-    std::cout << "========================================" << std::endl;
-  }
-
-  template <typename T>
-  typename std::enable_if<!EigenIO::is_tensor<T>::value, void>::type
-  dump_tensor_func(T &t, const char * pName = nullptr)
-  {
-    std::cout << "Dumping non-tensor object ";
-    if( pName )
-      std::cout << pName;
-    std::cout << "=" << t;
-  }
-
-  // Helper to dump a tensor in memory order
-  // Kind of superfluous given the above ... just keeping in case I need to fall back to this
-#define DumpMemoryOrder(args...) DumpMemoryOrder_func(args)
-  template <typename T>
-  typename std::enable_if<EigenIO::is_tensor_of_scalar<T>::value, void>::type
-  DumpMemoryOrder_func(T &t, const char * pName = nullptr)
-  {
-    const auto rank = t.rank();
-    const auto &dims = t.dimensions();
-    std::cout << "Dumping rank " << rank << ((T::Options & Eigen::RowMajor) ? ", row" : ", column") << "-major tensor ";
-    if( pName )
-      std::cout << pName;
-    for( auto d : dims ) std::cout << "[" << d << "]";
-    std::cout << " in memory order:" << std::endl;
-    const typename T::Scalar * p = t.data();
-    const auto size = t.size();
-    const typename T::Scalar * pEnd = p + size;
-    if( rank <= 2 ) {
-      for( unsigned int i = 0 ; i < t.size() ; i++ )
-        std::cout << "[" << i << "]=" << *p++ << " ";
-      std::cout << std::endl;
-    } else {
-      const auto innersize = dims[rank-2] * dims[rank-1];
-      using Index = typename T::Index;
-      std::vector<Index> idx(rank - 2);
-      for( auto &i : idx ) i = 0;
-      Index idxCounter = 0;
-      while( p < pEnd ) {
-        if( T::Options & Eigen::RowMajor ) {
-          if( pName )
-            std::cout << pName;
-          idxCounter = 0;
-          for(auto i = 0 ; i < rank - 2 ; i++)
-            std::cout << "[" << idx[i] << "]:";
-        }
-        for( unsigned int i = 0 ; i < innersize ; i++ )
-          std::cout << " [" << idxCounter++ << "]=" << *p++;
-        if( T::Options & Eigen::RowMajor )
-          std::cout << std::endl;
-        // Now increment MyIndex
-        for( auto i = rank - 3; i != -1 && ++idx[i] == dims[i]; i-- )
-          idx[i] = 0;
-      }
-      if( ! ( T::Options & Eigen::RowMajor ) )
-        std::cout << std::endl;
-    }
-  }
-#else
-#define dump_tensor(args...)
-#define DumpMemoryOrder(args...)
-#endif
 
   // Abstract writer/reader classes ////////////////////////////////////////////
   // static polymorphism implemented using CRTP idiom
@@ -410,14 +195,14 @@ namespace Grid {
 
     // Helper functions for Scalar vs Container specialisations
     template <typename ETensor>
-    inline typename std::enable_if<EigenIO::is_tensor_of_scalar<ETensor>::value, const typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type *>::type
+    inline typename std::enable_if<EigenIO::is_tensor_of_scalar<ETensor>::value, const typename GridTypeMapper<typename ETensor::Scalar>::scalar_type *>::type
     getFirstScalar(const ETensor &output)
     {
       return output.data();
     }
     
     template <typename ETensor>
-    inline typename std::enable_if<EigenIO::is_tensor_of_container<ETensor>::value, const typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type *>::type
+    inline typename std::enable_if<EigenIO::is_tensor_of_container<ETensor>::value, const typename GridTypeMapper<typename ETensor::Scalar>::scalar_type *>::type
     getFirstScalar(const ETensor &output)
     {
       return output.data()->begin();
@@ -425,16 +210,16 @@ namespace Grid {
     
     template <typename S>
     inline typename std::enable_if<EigenIO::is_scalar<S>::value, void>::type
-    copyScalars(typename EigenIO::Traits<S>::scalar_type * &pCopy, const S &Source)
+    copyScalars(typename GridTypeMapper<S>::scalar_type * &pCopy, const S &Source)
     {
       * pCopy ++ = Source;
     }
     
     template <typename S>
-    inline typename std::enable_if<EigenIO::is_container<S>::value, void>::type
-    copyScalars(typename EigenIO::Traits<S>::scalar_type * &pCopy, const S &Source)
+    inline typename std::enable_if<isGridTensor<S>::value, void>::type
+    copyScalars(typename GridTypeMapper<S>::scalar_type * &pCopy, const S &Source)
     {
-      for( const typename EigenIO::Traits<S>::scalar_type &item : Source )
+      for( const typename GridTypeMapper<S>::scalar_type &item : Source )
         * pCopy ++ = item;
     }
 
@@ -483,16 +268,16 @@ namespace Grid {
     // Helper functions for Scalar vs Container specialisations
     template <typename S>
     inline typename std::enable_if<EigenIO::is_scalar<S>::value, void>::type
-    copyScalars(S &Dest, const typename EigenIO::Traits<S>::scalar_type * &pSource)
+    copyScalars(S &Dest, const typename GridTypeMapper<S>::scalar_type * &pSource)
     {
       Dest = * pSource ++;
     }
     
     template <typename S>
-    inline typename std::enable_if<EigenIO::is_container<S>::value, void>::type
-    copyScalars(S &Dest, const typename EigenIO::Traits<S>::scalar_type * &pSource)
+    inline typename std::enable_if<isGridTensor<S>::value, void>::type
+    copyScalars(S &Dest, const typename GridTypeMapper<S>::scalar_type * &pSource)
     {
-      for( typename EigenIO::Traits<S>::scalar_type &item : Dest )
+      for( typename GridTypeMapper<S>::scalar_type &item : Dest )
         item = * pSource ++;
     }
     
@@ -577,10 +362,10 @@ namespace Grid {
   {
     using Index = typename ETensor::Index;
     using Container = typename ETensor::Scalar; // NB: could be same as scalar
-    using Traits = EigenIO::Traits<Container>;
+    using Traits = GridTypeMapper<Container>;
     using Scalar = typename Traits::scalar_type; // type of the underlying scalar
     constexpr unsigned int TensorRank{ETensor::NumIndices};
-    constexpr unsigned int ContainerRank{Traits::rank}; // Only non-zero for containers
+    constexpr unsigned int ContainerRank{Traits::Rank}; // Only non-zero for containers
     constexpr unsigned int TotalRank{TensorRank + ContainerRank};
     const Index NumElements{output.size()};
     assert( NumElements > 0 );
@@ -728,10 +513,10 @@ namespace Grid {
   {
     using Index = typename ETensor::Index;
     using Container = typename ETensor::Scalar; // NB: could be same as scalar
-    using Traits = EigenIO::Traits<Container>;
+    using Traits = GridTypeMapper<Container>;
     using Scalar = typename Traits::scalar_type; // type of the underlying scalar
     constexpr unsigned int TensorRank{ETensor::NumIndices};
-    constexpr unsigned int ContainerRank{Traits::rank}; // Only non-zero for containers
+    constexpr unsigned int ContainerRank{Traits::Rank}; // Only non-zero for containers
     constexpr unsigned int TotalRank{TensorRank + ContainerRank};
     using ETDims = std::array<Index, TensorRank>; // Dimensions of the tensor
 
