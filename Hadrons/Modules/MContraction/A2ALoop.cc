@@ -2,12 +2,11 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MContraction/WeakHamiltonianEye.hpp
+Source file: Hadrons/Modules/MContraction/A2ALoop.cc
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
-Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,34 +25,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
+#include <Hadrons/Modules/MContraction/A2ALoop.hpp>
 
-#ifndef Hadrons_MContraction_WeakHamiltonianEye_hpp_
-#define Hadrons_MContraction_WeakHamiltonianEye_hpp_
+using namespace Grid;
+using namespace Hadrons;
+using namespace MContraction;
 
-#include <Hadrons/Modules/MContraction/WeakHamiltonian.hpp>
-
-BEGIN_HADRONS_NAMESPACE
-
-/******************************************************************************
- *                         WeakHamiltonianEye                                 *
- ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MContraction)
-
-enum
-{
-    S_diag = 0,
-    E_diag = 1,
-    n_eye_diag = 2
-};
-
-// Saucer and Eye subdiagram contractions.
-#define MAKE_SE_BODY(Q_1, Q_2, Q_3, gamma) (Q_3*g5*Q_1*adj(Q_2)*g5*gamma)
-#define MAKE_SE_LOOP(Q_loop, gamma) (Q_loop*gamma)
-
-MAKE_WEAK_MODULE(WeakHamiltonianEye)
-
-END_MODULE_NAMESPACE
-
-END_HADRONS_NAMESPACE
-
-#endif // Hadrons_MContraction_WeakHamiltonianEye_hpp_
+template class Grid::Hadrons::MContraction::TA2ALoop<FIMPL>;

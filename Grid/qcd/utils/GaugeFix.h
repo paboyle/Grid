@@ -53,21 +53,32 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
   }  
   static void SteepestDescentGaugeFix(GaugeLorentz &Umu,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false) {
     GridBase *grid = Umu._grid;
+    GaugeMat xform(grid);
+    SteepestDescentGaugeFix(Umu,xform,alpha,maxiter,Omega_tol,Phi_tol,Fourier);
+  }
+  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,GaugeMat &xform,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false) {
+
+    GridBase *grid = Umu._grid;
 
     Real org_plaq      =WilsonLoops<Gimpl>::avgPlaquette(Umu);
     Real org_link_trace=WilsonLoops<Gimpl>::linkTrace(Umu); 
     Real old_trace = org_link_trace;
     Real trG;
+    
+    xform=1.0;
 
     std::vector<GaugeMat> U(Nd,grid);
-                 GaugeMat dmuAmu(grid);
+
+    GaugeMat dmuAmu(grid);
 
     for(int i=0;i<maxiter;i++){
+
       for(int mu=0;mu<Nd;mu++) U[mu]= PeekIndex<LorentzIndex>(Umu,mu);
+
       if ( Fourier==false ) { 
-	trG = SteepestDescentStep(U,alpha,dmuAmu);
+	trG = SteepestDescentStep(U,xform,alpha,dmuAmu);
       } else { 
-	trG = FourierAccelSteepestDescentStep(U,alpha,dmuAmu);
+	trG = FourierAccelSteepestDescentStep(U,xform,alpha,dmuAmu);
       }
       for(int mu=0;mu<Nd;mu++) PokeIndex<LorentzIndex>(Umu,U[mu],mu);
       // Monitor progress and convergence test 
@@ -84,7 +95,6 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
 	Real Phi  = 1.0 - old_trace / link_trace ;
 	Real Omega= 1.0 - trG;
 
-
 	std::cout << GridLogMessage << " Iteration "<<i<< " Phi= "<<Phi<< " Omega= " << Omega<< " trG " << trG <<std::endl;
 	if ( (Omega < Omega_tol) && ( ::fabs(Phi) < Phi_tol) ) {
 	  std::cout << GridLogMessage << "Converged ! "<<std::endl;
@@ -96,7 +106,7 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
       }
     }
   };
-  static Real SteepestDescentStep(std::vector<GaugeMat> &U,Real & alpha, GaugeMat & dmuAmu) {
+  static Real SteepestDescentStep(std::vector<GaugeMat> &U,GaugeMat &xform,Real & alpha, GaugeMat & dmuAmu) {
     GridBase *grid = U[0]._grid;
 
     std::vector<GaugeMat> A(Nd,grid);
@@ -109,12 +119,13 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
     Real vol = grid->gSites();
     Real trG = TensorRemove(sum(trace(g))).real()/vol/Nc;
 
+    xform = g*xform ;
     SU<Nc>::GaugeTransform(U,g);
 
     return trG;
   }
 
-  static Real FourierAccelSteepestDescentStep(std::vector<GaugeMat> &U,Real & alpha, GaugeMat & dmuAmu) {
+  static Real FourierAccelSteepestDescentStep(std::vector<GaugeMat> &U,GaugeMat &xform,Real & alpha, GaugeMat & dmuAmu) {
 
     GridBase *grid = U[0]._grid;
 
@@ -153,13 +164,6 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
     Complex psqMax(16.0);
     Fp =  psqMax*one/psq;
 
-    /*
-    static int once;
-    if ( once == 0 ) { 
-      std::cout << " Fp " << Fp <<std::endl;
-      once ++;
-      }*/
-
     pokeSite(TComplex(1.0),Fp,coor);
 
     dmuAmu_p  = dmuAmu_p * Fp; 
@@ -173,6 +177,7 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
 
     Real trG = TensorRemove(sum(trace(g))).real()/vol/Nc;
 
+    xform = g*xform ;
     SU<Nc>::GaugeTransform(U,g);
 
     return trG;
