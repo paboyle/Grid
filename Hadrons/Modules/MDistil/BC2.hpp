@@ -1,0 +1,189 @@
+#ifndef Hadrons_MDistil_BC2_hpp_
+#define Hadrons_MDistil_BC2_hpp_
+
+#include <Hadrons/Global.hpp>
+#include <Hadrons/Module.hpp>
+#include <Hadrons/ModuleFactory.hpp>
+#include <Hadrons/Solver.hpp>
+#include <Hadrons/EigenPack.hpp>
+#include <Hadrons/A2AVectors.hpp>
+#include <Hadrons/DilutedNoise.hpp>
+
+// These are members of Distillation
+#include <Hadrons/Modules/MDistil/Distil.hpp>
+
+BEGIN_HADRONS_NAMESPACE
+
+/******************************************************************************
+ *                         BC2                                 *
+ ******************************************************************************/
+BEGIN_MODULE_NAMESPACE(MDistil)
+
+    // general baryon tensor set based on Eigen tensors and Grid-allocated memory
+    // Dimensions:
+    //   0 - ext - external field (momentum, EM field, ...)
+    //   1 - str - dirac structure
+    //   2 - t   - timeslice
+    //   3 - s   - free spin index
+    //   4 - i   - left  distillation mode index
+    //   5 - j   - middle  distillation mode index
+    //   6 - k   - left  distillation mode index
+    // template <typename T>
+    // using BaryonTensorSet = Eigen::TensorMap<Eigen::Tensor<T, 7, Eigen::RowMajor>>;
+
+class BC2Par: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(BC2Par,
+		                    std::string, one,
+		                    std::string, two,
+		                    std::string, three,
+		                    std::string, output,
+				    int, parity,
+                                    std::vector<std::string>, mom);
+};
+
+template <typename FImpl>
+class TBC2: public Module<BC2Par>
+{
+public:
+    FERM_TYPE_ALIASES(FImpl,);
+public:
+    // constructor
+    TBC2(const std::string name);
+    // destructor
+    virtual ~TBC2(void) {};
+    // dependency relation
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+    // setup
+    virtual void setup(void);
+    // execution
+    virtual void execute(void);
+private:
+    bool                               hasPhase_{false};
+    std::string                        momphName_;
+    std::vector<Gamma::Algebra>        gamma12_;
+    std::vector<Gamma::Algebra>        gamma23_;
+    std::vector<std::vector<Real>>     mom_;
+protected:
+    GridCartesian * grid4d;
+    GridCartesian * grid3d;
+};
+
+MODULE_REGISTER_TMP(BC2, TBC2<FIMPL>, MDistil);
+
+/******************************************************************************
+ *                 TBC2 implementation                             *
+ ******************************************************************************/
+// constructor /////////////////////////////////////////////////////////////////
+template <typename FImpl>
+TBC2<FImpl>::TBC2(const std::string name)
+: Module<BC2Par>(name)
+, momphName_(name + "_momph")
+{}
+
+// dependencies/products ///////////////////////////////////////////////////////
+template <typename FImpl>
+std::vector<std::string> TBC2<FImpl>::getInput(void)
+{
+    std::vector<std::string> in = {par().one, par().two, par().three};
+    
+    return in;
+}
+
+template <typename FImpl>
+std::vector<std::string> TBC2<FImpl>::getOutput(void)
+{
+    std::vector<std::string> out = {};
+    
+    return out;
+}
+
+// setup ///////////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TBC2<FImpl>::setup(void)
+{
+       for (auto &pstr: par().mom)
+       {
+         auto p = strToVec<Real>(pstr);
+
+         if (p.size() != env().getNd() - 1)
+         {
+           HADRONS_ERROR(Size, "Momentum has " + std::to_string(p.size()) + " components instead of " + std::to_string(env().getNd() - 1));
+	 }
+	 mom_.push_back(p);
+    }
+    envCache(std::vector<ComplexField>, momphName_, 1, 
+	     par().mom.size(), envGetGrid(ComplexField));	    
+
+    envTmpLat(ComplexField, "coor");
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TBC2<FImpl>::execute(void)
+{
+
+    auto &one   = envGet(std::vector<FermionField>, par().one);
+    auto &two   = envGet(std::vector<FermionField>, par().two);
+    auto &three = envGet(std::vector<FermionField>, par().three);
+
+    int N_1     = one.size();
+    int N_2     = two.size();
+    int N_3     = three.size();
+
+    LOG(Message) << "Computing distillation baryon fields" << std::endl;
+    LOG(Message) << "One: '" << par().one << "' Two: '" << par().two  << "' Three: '" << par().three << "'" << std::endl;
+    LOG(Message) << "Momenta:" << std::endl;
+    for (auto &p: mom_)
+    {
+        LOG(Message) << "  " << p << std::endl;
+    }
+
+
+    int Nmom=1;
+    int Nt=8;
+
+    int parity = 1;
+    int orthogDim=3;
+
+    auto &ph = envGet(std::vector<ComplexField>, momphName_);
+
+    if (!hasPhase_)
+    {
+        startTimer("Momentum phases");
+        for (unsigned int j = 0; j < Nmom; ++j)
+        {
+            Complex           i(0.0,1.0);
+            std::vector<Real> p;
+
+            envGetTmp(ComplexField, coor);
+            ph[j] = zero;
+            for(unsigned int mu = 0; mu < mom_[j].size(); mu++)
+            {
+                LatticeCoordinate(coor, mu);
+                ph[j] = ph[j] + (mom_[j][mu]/env().getDim(mu))*coor;
+            }
+            ph[j] = exp((Real)(2*M_PI)*i*ph[j]);
+        }
+        hasPhase_ = true;
+        stopTimer("Momentum phases");
+}
+    envCache(std::vector<ComplexField>, momphName_, 1, mom_.size(), envGetGrid(ComplexField));
+
+    Eigen::Tensor<Complex, 6> m(Nmom,Nt,N_1,N_2,N_3,4);
+    A2Autils<FImpl>::NucleonFieldMom(m, &one[0], &two[0], &three[0], ph, parity, orthogDim);
+    for (int is=0 ; is < 4 ; is++){
+      for (int t=0 ; t < Nt ; t++){
+        std::cout << "BaryonField(is=" << is << ",t=" << t << ") = " << m(0,t,is,0,0,0) << std::endl;
+      }
+    }
+    
+}
+
+END_MODULE_NAMESPACE
+
+END_HADRONS_NAMESPACE
+
+#endif // Hadrons_MDistil_BC2_hpp_
