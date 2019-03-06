@@ -27,6 +27,7 @@
 /*  END LEGAL */
 #ifndef GRID_UTIL_EIGEN_H
 #define GRID_UTIL_EIGEN_H
+#include <Grid/tensors/Tensor_traits.h>
 #include <Grid/Eigen/unsupported/CXX11/Tensor>
 
 namespace Grid {
@@ -34,7 +35,7 @@ namespace Grid {
   template <typename ETensor, typename Lambda>
   typename std::enable_if<EigenIO::is_tensor_of_scalar<ETensor>::value, void>::type
   for_all_do_lambda( Lambda lambda, typename ETensor::Scalar &scalar, typename ETensor::Index &Seq,
-                    std::array<std::size_t, ETensor::NumIndices + EigenIO::Traits<typename ETensor::Scalar>::rank> &MyIndex)
+                    std::array<std::size_t, ETensor::NumIndices + GridTypeMapper<typename ETensor::Scalar>::Rank> &MyIndex)
   {
     lambda( scalar, Seq++, MyIndex );
   }
@@ -43,11 +44,11 @@ namespace Grid {
   template <typename ETensor, typename Lambda>
   typename std::enable_if<EigenIO::is_tensor_of_container<ETensor>::value, void>::type
   for_all_do_lambda( Lambda lambda, typename ETensor::Scalar &container, typename ETensor::Index &Seq,
-                    std::array<std::size_t, ETensor::NumIndices + EigenIO::Traits<typename ETensor::Scalar>::rank> &MyIndex)
+                    std::array<std::size_t, ETensor::NumIndices + GridTypeMapper<typename ETensor::Scalar>::Rank> &MyIndex)
   {
-    using Traits = EigenIO::Traits<typename ETensor::Scalar>;
+    using Traits = GridTypeMapper<typename ETensor::Scalar>;
     const auto rank{ETensor::NumIndices};
-    const auto InnerRank = Traits::rank;
+    const auto InnerRank = Traits::Rank;
     for( typename Traits::scalar_type &Source : container ) {
       lambda(Source, Seq++, MyIndex );
       // Now increment SubIndex
@@ -68,7 +69,7 @@ namespace Grid {
     assert( NumScalars > 0 );
     using Index = typename ETensor::Index;
     Index ScalarElementCount{1};
-    const auto InnerRank = EigenIO::Traits<Scalar>::rank;
+    const auto InnerRank = GridTypeMapper<Scalar>::Rank;
     const auto rank{ETensor::NumIndices};
     std::array<std::size_t, rank + InnerRank> Dims;
     for(auto i = 0; i < rank; i++ ) {
@@ -83,14 +84,14 @@ namespace Grid {
     // If the Scalar is actually a container, add the inner Scalar's dimensions
     size_t InnerScalarCount{1};
     for(auto i = 0; i < InnerRank; i++ ) {
-      auto dim = EigenIO::Traits<Scalar>::Dimension(i);
+      auto dim = GridTypeMapper<Scalar>::Dimension(i);
       assert( dim > 0 );
       Dims[rank + i] = static_cast<std::size_t>(dim);
       assert( Dims[rank + i] == dim ); // check we didn't lose anything in the conversion
       InnerScalarCount *= dim;
     }
-    assert(EigenIO::Traits<Scalar>::count == InnerScalarCount);
-    assert(EigenIO::Traits<Scalar>::size  == sizeof( Scalar ));
+    assert(GridTypeMapper<Scalar>::count == InnerScalarCount);
+    assert(GridTypeMapper<Scalar>::size  == sizeof( Scalar ));
     std::array<std::size_t, rank + InnerRank> MyIndex;
     for( auto &idx : MyIndex ) idx = 0;
     Index Seq = 0;
@@ -118,13 +119,13 @@ namespace Grid {
   // Sequential initialisation of tensors
   // Would have preferred to define template variables for this, but that's c++ 17
   template <typename ETensor>
-  typename std::enable_if<EigenIO::is_tensor<ETensor>::value && !EigenIO::is_complex<typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type>::value, void>::type
-  SequentialInit( ETensor &ET, typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type Inc = 1,
+  typename std::enable_if<EigenIO::is_tensor<ETensor>::value && !is_complex<typename GridTypeMapper<typename ETensor::Scalar>::scalar_type>::value, void>::type
+  SequentialInit( ETensor &ET, typename GridTypeMapper<typename ETensor::Scalar>::scalar_type Inc = 1,
                  unsigned short Precision = 0 )
   {
-    using Traits = EigenIO::Traits<typename ETensor::Scalar>;
+    using Traits = GridTypeMapper<typename ETensor::Scalar>;
     using scalar_type = typename Traits::scalar_type;
-    for_all( ET, [&](scalar_type &c, typename ETensor::Index n, const std::array<size_t, ETensor::NumIndices + Traits::rank> &Dims ) {
+    for_all( ET, [&](scalar_type &c, typename ETensor::Index n, const std::array<size_t, ETensor::NumIndices + Traits::Rank> &Dims ) {
       scalar_type x = Inc * static_cast<scalar_type>(n);
       if( Precision ) {
         std::stringstream s;
@@ -136,13 +137,13 @@ namespace Grid {
   }
   
   template <typename ETensor>
-  typename std::enable_if<EigenIO::is_tensor<ETensor>::value && EigenIO::is_complex<typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type>::value, void>::type
-  SequentialInit( ETensor &ET, typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type Inc={1,-1},
+  typename std::enable_if<EigenIO::is_tensor<ETensor>::value && is_complex<typename GridTypeMapper<typename ETensor::Scalar>::scalar_type>::value, void>::type
+  SequentialInit( ETensor &ET, typename GridTypeMapper<typename ETensor::Scalar>::scalar_type Inc={1,-1},
                  unsigned short Precision = 0 )
   {
-    using Traits = EigenIO::Traits<typename ETensor::Scalar>;
+    using Traits = GridTypeMapper<typename ETensor::Scalar>;
     using scalar_type = typename Traits::scalar_type;
-    for_all( ET, [&](scalar_type &c, typename ETensor::Index n, const std::array<size_t, ETensor::NumIndices + Traits::rank> &Dims ) {
+    for_all( ET, [&](scalar_type &c, typename ETensor::Index n, const std::array<size_t, ETensor::NumIndices + Traits::Rank> &Dims ) {
       auto re = Inc.real();
       auto im = Inc.imag();
       re *= n;
@@ -166,7 +167,7 @@ namespace Grid {
   typename std::enable_if<EigenIO::is_tensor<T>::value, void>::type
   dump_tensor_func(T &t, const char * pName = nullptr)
   {
-    using Traits = typename EigenIO::Traits<typename T::Scalar>;
+    using Traits = GridTypeMapper<typename T::Scalar>;
     const auto rank{T::NumIndices};
     const auto &dims = t.dimensions();
     std::cout << "Dumping rank " << rank << ((T::Options & Eigen::RowMajor) ? ", row" : ", column") << "-major tensor ";
@@ -174,7 +175,7 @@ namespace Grid {
       std::cout << pName;
     for( auto i = 0 ; i < rank; i++ ) std::cout << "[" << dims[i] << "]";
     std::cout << " in memory order:" << std::endl;
-    for_all( t, [&](typename Traits::scalar_type &c, typename T::Index index, const std::array<size_t, T::NumIndices + Traits::rank> &Dims ){
+    for_all( t, [&](typename Traits::scalar_type &c, typename T::Index index, const std::array<size_t, T::NumIndices + Traits::Rank> &Dims ){
       std::cout << "  ";
       for( auto dim : Dims )
         std::cout << "[" << dim << "]";

@@ -37,16 +37,16 @@ Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
 namespace Grid {
   // TODO Support Grid::complex from GPU port
-  template<typename T> using Grid_complex = std::complex<T>;
+  //template<typename T> using Grid_complex = std::complex<T>;
 
   // Returns original type, except for Grid_complex, where it returns the underlying type
-  template<typename T> struct RealType { using type = T; };
-  template<typename T> struct RealType<Grid_complex<T>> { using type = T; };
+  //template<typename T> struct RealType { using type = T; };
+  //template<typename T> struct RealType<Grid_complex<T>> { using type = T; };
 
   namespace EigenIO {
-    template<typename T> struct is_complex : public std::false_type {};
-    template<typename T> struct is_complex<Grid_complex<T>>
-        : std::integral_constant<bool, std::is_arithmetic<T>::value> {};
+    //template<typename T> struct is_complex : public std::false_type {};
+    //template<typename T> struct is_complex<Grid_complex<T>>
+        //: std::integral_constant<bool, std::is_arithmetic<T>::value> {};
 
     // Eigen tensors can be composed of arithmetic scalar and complex types
     template<typename T> struct is_scalar : std::integral_constant<bool,
@@ -54,11 +54,11 @@ namespace Grid {
 
     // Eigen tensors can also be composed of a limited number of containers
     // NB: grid tensors (iScalar, iVector, iMatrix) have stricter limits on complex types
-    template <typename T> struct is_container                       : public std::false_type {};
-    template <typename T> struct is_container<iScalar<T>>           : public std::true_type {};
-    template <typename T, int N> struct is_container<iVector<T, N>> : public std::true_type {};
-    template <typename T, int N> struct is_container<iMatrix<T, N>> : public std::true_type {};
-    template <typename T, std::size_t N> struct is_container<std::array<T, N>> : public std::true_type {};
+    //template <typename T> struct is_container                       : public std::false_type {};
+    //template <typename T> struct is_container<iScalar<T>>           : public std::true_type {};
+    //template <typename T, int N> struct is_container<iVector<T, N>> : public std::true_type {};
+    //template <typename T, int N> struct is_container<iMatrix<T, N>> : public std::true_type {};
+    //template <typename T, std::size_t N> struct is_container<std::array<T, N>> : public std::true_type {};
 
     // Is this an Eigen tensor
     template<typename T> struct is_tensor : std::integral_constant<bool,
@@ -70,7 +70,7 @@ namespace Grid {
 
     // Is this an Eigen tensor of a supported container
     template<typename T, typename C = void> struct is_tensor_of_container : public std::false_type {};
-    template<typename T> struct is_tensor_of_container<T, typename std::enable_if<is_tensor<T>::value && is_container<typename T::Scalar>::value, void>::type> : public std::true_type {};
+    template<typename T> struct is_tensor_of_container<T, typename std::enable_if<is_tensor<T>::value && isGridTensor<typename T::Scalar>::value, void>::type> : public std::true_type {};
 
     // Is this a fixed-size Eigen tensor
     template<typename T> struct is_tensor_fixed : public std::false_type {};
@@ -94,11 +94,11 @@ namespace Grid {
     // EigenIO::Traits are not defined for Eigen tensors, but rather their top-level scalar
     // This is because Eigen tensors have a dynamic size flavour, but the scalars are all fixed size
     // This allows the traits to all be defined as constexpr
-    template <typename T, typename C = void> struct Traits {}; // C needed for specialisation
+    /*template <typename T, typename C = void> struct Traits {}; // C needed for specialisation
     // This defines the bottom level - i.e. it's a description of the underlying scalar
     template <typename T> struct Traits<T, typename std::enable_if<is_scalar<T>::value, void>::type> {
       using scalar_type = T; // Type of the underlying scalar
-      using scalar_real = typename RealType<scalar_type>::type; // real type underlying scalar_type
+      using scalar_real = typename RealPart<scalar_type>::type; // real type underlying scalar_type
       static constexpr unsigned int rank = 0;   // The rank of the grid tensor (i.e. how many indices used)
       //static constexpr unsigned int rank_non_trivial = 0; // As per rank, but excludes those of dimension 1
       static constexpr unsigned int count = 1;  // total number of elements (i.e. product of dimensions)
@@ -121,7 +121,7 @@ namespace Grid {
     };
     template <typename T> struct Traits<iScalar<T>> {
       using scalar_type = typename Traits<T>::scalar_type;
-      using scalar_real = typename RealType<scalar_type>::type;
+      using scalar_real = typename RealPart<scalar_type>::type;
       static constexpr unsigned int rank = 1 + Traits<T>::rank;
       //static constexpr unsigned int rank_non_trivial = 0 + Traits<T>::rank_non_trivial;
       static constexpr unsigned int count = 1 * Traits<T>::count;
@@ -134,7 +134,7 @@ namespace Grid {
     };
     template <typename T, int N> struct Traits<iVector<T, N>> {
       using scalar_type = typename Traits<T>::scalar_type;
-      using scalar_real = typename RealType<scalar_type>::type;
+      using scalar_real = typename RealPart<scalar_type>::type;
       static constexpr unsigned int rank = 1 + Traits<T>::rank;
       //static constexpr unsigned int rank_non_trivial = (N>1 ? 1 : 0) + Traits<T>::rank_non_trivial;
       static constexpr unsigned int count = N * Traits<T>::count;
@@ -148,7 +148,7 @@ namespace Grid {
     };
     template <typename T, int N> struct Traits<iMatrix<T, N>> {
       using scalar_type = typename Traits<T>::scalar_type;
-      using scalar_real = typename RealType<scalar_type>::type;
+      using scalar_real = typename RealPart<scalar_type>::type;
       static constexpr unsigned int rank = 2 + Traits<T>::rank;
       //static constexpr unsigned int rank_non_trivial = (N>1 ? 2 : 0) + Traits<T>::rank_non_trivial;
       static constexpr unsigned int count = N * N * Traits<T>::count;
@@ -160,7 +160,7 @@ namespace Grid {
         //return ( N == 1 ) ? Traits<T>::DimensionNT(dim) : ( dim == 0 || dim == 1 ) ? N : Traits<T>::DimensionNT(dim - 2);
       //}
     };
-    template <typename T, int N> struct Traits<std::array<T, N>> : Traits<iVector<T, N>> {};
+    template <typename T, int N> struct Traits<std::array<T, N>> : Traits<iVector<T, N>> {};*/
   }
 
   // Abstract writer/reader classes ////////////////////////////////////////////
@@ -195,14 +195,14 @@ namespace Grid {
 
     // Helper functions for Scalar vs Container specialisations
     template <typename ETensor>
-    inline typename std::enable_if<EigenIO::is_tensor_of_scalar<ETensor>::value, const typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type *>::type
+    inline typename std::enable_if<EigenIO::is_tensor_of_scalar<ETensor>::value, const typename GridTypeMapper<typename ETensor::Scalar>::scalar_type *>::type
     getFirstScalar(const ETensor &output)
     {
       return output.data();
     }
     
     template <typename ETensor>
-    inline typename std::enable_if<EigenIO::is_tensor_of_container<ETensor>::value, const typename EigenIO::Traits<typename ETensor::Scalar>::scalar_type *>::type
+    inline typename std::enable_if<EigenIO::is_tensor_of_container<ETensor>::value, const typename GridTypeMapper<typename ETensor::Scalar>::scalar_type *>::type
     getFirstScalar(const ETensor &output)
     {
       return output.data()->begin();
@@ -210,16 +210,16 @@ namespace Grid {
     
     template <typename S>
     inline typename std::enable_if<EigenIO::is_scalar<S>::value, void>::type
-    copyScalars(typename EigenIO::Traits<S>::scalar_type * &pCopy, const S &Source)
+    copyScalars(typename GridTypeMapper<S>::scalar_type * &pCopy, const S &Source)
     {
       * pCopy ++ = Source;
     }
     
     template <typename S>
-    inline typename std::enable_if<EigenIO::is_container<S>::value, void>::type
-    copyScalars(typename EigenIO::Traits<S>::scalar_type * &pCopy, const S &Source)
+    inline typename std::enable_if<isGridTensor<S>::value, void>::type
+    copyScalars(typename GridTypeMapper<S>::scalar_type * &pCopy, const S &Source)
     {
-      for( const typename EigenIO::Traits<S>::scalar_type &item : Source )
+      for( const typename GridTypeMapper<S>::scalar_type &item : Source )
         * pCopy ++ = item;
     }
 
@@ -268,16 +268,16 @@ namespace Grid {
     // Helper functions for Scalar vs Container specialisations
     template <typename S>
     inline typename std::enable_if<EigenIO::is_scalar<S>::value, void>::type
-    copyScalars(S &Dest, const typename EigenIO::Traits<S>::scalar_type * &pSource)
+    copyScalars(S &Dest, const typename GridTypeMapper<S>::scalar_type * &pSource)
     {
       Dest = * pSource ++;
     }
     
     template <typename S>
-    inline typename std::enable_if<EigenIO::is_container<S>::value, void>::type
-    copyScalars(S &Dest, const typename EigenIO::Traits<S>::scalar_type * &pSource)
+    inline typename std::enable_if<isGridTensor<S>::value, void>::type
+    copyScalars(S &Dest, const typename GridTypeMapper<S>::scalar_type * &pSource)
     {
-      for( typename EigenIO::Traits<S>::scalar_type &item : Dest )
+      for( typename GridTypeMapper<S>::scalar_type &item : Dest )
         item = * pSource ++;
     }
     
@@ -362,10 +362,10 @@ namespace Grid {
   {
     using Index = typename ETensor::Index;
     using Container = typename ETensor::Scalar; // NB: could be same as scalar
-    using Traits = EigenIO::Traits<Container>;
+    using Traits = GridTypeMapper<Container>;
     using Scalar = typename Traits::scalar_type; // type of the underlying scalar
     constexpr unsigned int TensorRank{ETensor::NumIndices};
-    constexpr unsigned int ContainerRank{Traits::rank}; // Only non-zero for containers
+    constexpr unsigned int ContainerRank{Traits::Rank}; // Only non-zero for containers
     constexpr unsigned int TotalRank{TensorRank + ContainerRank};
     const Index NumElements{output.size()};
     assert( NumElements > 0 );
@@ -513,10 +513,10 @@ namespace Grid {
   {
     using Index = typename ETensor::Index;
     using Container = typename ETensor::Scalar; // NB: could be same as scalar
-    using Traits = EigenIO::Traits<Container>;
+    using Traits = GridTypeMapper<Container>;
     using Scalar = typename Traits::scalar_type; // type of the underlying scalar
     constexpr unsigned int TensorRank{ETensor::NumIndices};
-    constexpr unsigned int ContainerRank{Traits::rank}; // Only non-zero for containers
+    constexpr unsigned int ContainerRank{Traits::Rank}; // Only non-zero for containers
     constexpr unsigned int TotalRank{TensorRank + ContainerRank};
     using ETDims = std::array<Index, TensorRank>; // Dimensions of the tensor
 

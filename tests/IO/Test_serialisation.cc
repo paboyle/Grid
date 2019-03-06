@@ -109,16 +109,16 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
   std::cout << " done." << std::endl;
 }
 
-typedef std::complex<double> TestScalar;
-typedef Eigen::TensorFixedSize<unsigned short, Eigen::Sizes<5,4,3,2,1>> TensorRank5UShort;
-typedef Eigen::TensorFixedSize<unsigned short, Eigen::Sizes<5,4,3,2,1>, Eigen::StorageOptions::RowMajor> TensorRank5UShortAlt;
+typedef ComplexD TestScalar;
+typedef Eigen::TensorFixedSize<Integer, Eigen::Sizes<5,4,3,2,1>> TensorRank5UShort;
+typedef Eigen::TensorFixedSize<Integer, Eigen::Sizes<5,4,3,2,1>, Eigen::StorageOptions::RowMajor> TensorRank5UShortAlt;
 typedef Eigen::Tensor<TestScalar, 3, Eigen::StorageOptions::RowMajor> TensorRank3;
 typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>, Eigen::StorageOptions::RowMajor> Tensor_9_4_2;
 typedef std::vector<Tensor_9_4_2> aTensor_9_4_2;
 typedef Eigen::TensorFixedSize<SpinColourVector, Eigen::Sizes<6,5>> LSCTensor;
 
 class PerambIOTestClass: Serializable {
-  Grid_complex<double> Flag;
+  ComplexD Flag;
 public:
   using PerambTensor = Eigen::Tensor<SpinColourVector, 6, Eigen::StorageOptions::RowMajor>;
   GRID_SERIALIZABLE_CLASS_MEMBERS(PerambIOTestClass
@@ -157,11 +157,11 @@ public:
 #define TEST_PARAMS( T ) #T, Flag, Precision, filename, pszExtension, TestNum
 
 template <typename WTR_, typename RDR_, typename T, typename... IndexTypes>
-void EigenTensorTestSingle(const char * MyTypeName, typename EigenIO::Traits<typename T::Scalar>::scalar_type Flag,
+void EigenTensorTestSingle(const char * MyTypeName, typename GridTypeMapper<typename T::Scalar>::scalar_type Flag,
                            unsigned short Precision, std::string &filename, const char * pszExtension, unsigned int &TestNum,
                            IndexTypes... otherDims)
 {
-  using Traits = EigenIO::Traits<typename T::Scalar>;
+  using Traits = GridTypeMapper<typename T::Scalar>;
   using scalar_type = typename Traits::scalar_type;
   std::unique_ptr<T> pTensor{new T(otherDims...)};
   SequentialInit( * pTensor, Flag, Precision );
@@ -176,7 +176,7 @@ void EigenTensorTest(const char * pszExtension, unsigned short Precision = 0)
   std::string filename;
   {
     int Flag = 7;
-    using TensorSingle = Eigen::TensorFixedSize<int, Eigen::Sizes<1>>;
+    using TensorSingle = Eigen::TensorFixedSize<Integer, Eigen::Sizes<1>>;
     EigenTensorTestSingle<WTR_, RDR_, TensorSingle>(TEST_PARAMS( TensorSingle ));
   }
   TestScalar Flag{1,-3.1415927};
@@ -240,6 +240,20 @@ void tensorConvTestFn(GridSerialRNG &rng, const std::string label)
 
 int main(int argc,char **argv)
 {
+  {
+    LSCTensor Bingo;
+    constexpr Complex Flag{1,-3.1415927};
+    Complex z{0};
+    SpinColourVector * pV = Bingo.data();
+    for( std::size_t i = Bingo.size(); i--; ) {
+      for( typename GridTypeMapper<SpinColourVector>::scalar_type &s : *pV++ ) {
+        s = z;
+        z += Flag;
+      }
+    }
+    dump_tensor( Bingo );
+  }
+
   Grid_init(&argc,&argv);
   std::cout << std::boolalpha << "==== basic IO" << std::endl; // display true / false for boolean
 
