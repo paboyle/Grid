@@ -34,7 +34,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
-#include <Hadrons/Modules/MContraction/WeakHamiltonianNonEye.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -84,14 +83,14 @@ class TWeakMesonDecayKl2: public Module<WeakMesonDecayKl2Par>
 {
 public:
     FERM_TYPE_ALIASES(FImpl,);
-    class Result: Serializable
+    class Metadata: Serializable
     {
     public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Metadata,
                                         int, spinidx1,
-                                        int, spinidx2,
-                                        std::vector<Complex>, corr);
+                                        int, spinidx2);
     };
+    typedef Correlator<Metadata> Result;
 public:
     // constructor
     TWeakMesonDecayKl2(const std::string name);
@@ -107,7 +106,7 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_TMP(WeakMesonDecayKl2, ARG(TWeakMesonDecayKl2<FIMPL>), MContraction);
+MODULE_REGISTER_TMP(WeakMesonDecayKl2, TWeakMesonDecayKl2<FIMPL>, MContraction);
 
 /******************************************************************************
  *                           TWeakMesonDecayKl2 implementation                   *
@@ -167,18 +166,13 @@ void TWeakMesonDecayKl2<FImpl>::execute(void)
     envGetTmp(PropagatorField, prop_buf);  
 
     std::vector<Result>    result;
-    result.resize(Ns*Ns);
-    for (unsigned int i = 0; i < Ns*Ns ; ++i)
-    {
-        result[i].corr.resize(nt);
-    }
-
+    Result r;
 
     for (unsigned int mu = 0; mu < 4; ++mu)
     {
 	c = zero;
 	//hadronic part: trace(q1*adj(q2)*g5*gL[mu]) 
-	c   = trace(MAKE_CW_SUBDIAG(q1, q2, GammaL(Gamma::gmu[mu])));
+        c   = trace(q1*adj(q2)*g5*GammaL(Gamma::gmu[mu]));
     	prop_buf = 1.;
 	//multiply lepton part
 	res += c * prop_buf * GammaL(Gamma::gmu[mu]) * lepton;
@@ -193,12 +187,15 @@ void TWeakMesonDecayKl2<FImpl>::execute(void)
 
 	sliceSum(buf, res_summed, Tp);
 
+	r.corr.clear();
 	for (unsigned int t = 0; t < nt; ++t)
 	{
-		result[i].corr[t] = TensorRemove(res_summed[t]);
+              r.corr.push_back(TensorRemove(res_summed[t]));
 	}
-	result[i].spinidx1 = s1;
-        result[i].spinidx2 = s2;
+
+	r.info.spinidx1 = s1;
+	r.info.spinidx2 = s2;
+	result.push_back(r);
 
 	i+=1;
     }
