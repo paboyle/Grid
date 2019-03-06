@@ -2,9 +2,9 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MContraction/WardIdentity.cc
+Source file: Hadrons/Modules/MContraction/WeakNonEye3pt.cc
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -25,11 +25,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Hadrons/Modules/MContraction/WardIdentity.hpp>
+#include <Hadrons/Modules/MContraction/WeakNonEye3pt.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
 using namespace MContraction;
 
-template class Grid::Hadrons::MContraction::TWardIdentity<FIMPL>;
-
+template class Grid::Hadrons::MContraction::TWeakNonEye3pt<FIMPL>;
