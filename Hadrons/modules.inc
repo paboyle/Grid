@@ -10,6 +10,7 @@ modules_cc =\
   Modules/MSolver/RBPrecCG.cc \
   Modules/MDistil/g5_multiply.cc \
   Modules/MDistil/BContraction.cc \
+  Modules/MDistil/BC2.cc \
   Modules/MDistil/LapEvec.cc \
   Modules/MDistil/Baryon2pt.cc \
   Modules/MDistil/PerambLight.cc \
@@ -94,6 +95,7 @@ modules_hpp =\
   Modules/MDistil/Baryon2pt.hpp \
   Modules/MDistil/BContraction.hpp \
   Modules/MDistil/PerambLight.hpp \
+  Modules/MDistil/BC2.hpp \
   Modules/MContraction/WeakHamiltonian.hpp \
   Modules/MContraction/WeakNeutral4ptDisc.hpp \
   Modules/MContraction/WeakHamiltonianEye.hpp \

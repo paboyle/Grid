@@ -269,6 +269,55 @@ void test_MesonFieldRho(Application &application)
   application.createModule<MContraction::A2AMesonField>("DistilMesonFieldRho",A2AMesonFieldPar);
 }
 /////////////////////////////////////////////////////////////
+// MesonFields - rhorhoall
+/////////////////////////////////////////////////////////////
+
+void test_MesonFieldRhoAll(Application &application)
+{
+  // DistilVectors parameters
+  MContraction::A2AMesonField::Par A2AMesonFieldPar;
+  A2AMesonFieldPar.left="DistilVecs_rho_all_tsrc";
+  A2AMesonFieldPar.right="DistilVecs_rho_all_tsrc";
+  A2AMesonFieldPar.output="MesonSinksRhoAll";
+  A2AMesonFieldPar.gammas="all";
+  A2AMesonFieldPar.mom={"0 0 0"};
+  A2AMesonFieldPar.cacheBlock=2;
+  A2AMesonFieldPar.block=4;
+  application.createModule<MContraction::A2AMesonField>("DistilMesonFieldRhoAll",A2AMesonFieldPar);
+}
+/////////////////////////////////////////////////////////////
+// BaryonFields - phiphiphi - efficient
+/////////////////////////////////////////////////////////////
+
+void test_BaryonFieldPhi2(Application &application)
+{
+  // DistilVectors parameters
+  MDistil::BC2::Par BC2Par;
+  BC2Par.one="DistilVecs_phi";
+  BC2Par.two="DistilVecs_phi";
+  BC2Par.three="DistilVecs_phi";
+  BC2Par.output="BaryonFieldPhi2";
+  BC2Par.parity=1;
+  BC2Par.mom={"0 0 0"};
+  application.createModule<MDistil::BC2>("BaryonFieldPhi2",BC2Par);
+}
+/////////////////////////////////////////////////////////////
+// BaryonFields - rhorhorho - efficient
+/////////////////////////////////////////////////////////////
+
+void test_BaryonFieldRho2(Application &application)
+{
+  // DistilVectors parameters
+  MDistil::BC2::Par BC2Par;
+  BC2Par.one="DistilVecs_rho";
+  BC2Par.two="DistilVecs_rho";
+  BC2Par.three="DistilVecs_rho";
+  BC2Par.output="BaryonFieldRho2";
+  BC2Par.parity=1;
+  BC2Par.mom={"0 0 0"};
+  application.createModule<MDistil::BC2>("BaryonFieldRho2",BC2Par);
+}
+/////////////////////////////////////////////////////////////
 // BaryonFields - phiphiphi
 /////////////////////////////////////////////////////////////
 
@@ -774,6 +823,7 @@ int main(int argc, char *argv[])
       test_Perambulators( application );
       test_DistilVectors( application );
       test_MesonField( application );
+      test_MesonFieldRhoAll( application );
       break;
     case 5: // 3
       test_Global( application );
@@ -817,6 +867,14 @@ int main(int argc, char *argv[])
       test_g5_sinks( application );
       test_em( application );
       test_Aslash( application );
+      break;
+    case 11: // 3
+      test_Global( application );
+      test_LapEvec( application );
+      test_Perambulators( application );
+      test_DistilVectors( application );
+      test_BaryonFieldPhi2( application );
+      test_BaryonFieldRho2( application );
       break;
   }
   LOG(Message) << "====== XML creation for test " << iTestNum << " complete ======" << std::endl;
