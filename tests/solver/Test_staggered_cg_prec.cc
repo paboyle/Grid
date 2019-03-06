@@ -70,7 +70,7 @@ int main (int argc, char ** argv)
     volume=volume*latt_size[mu];
   }  
   
-  RealD mass=0.003;
+  RealD mass=0.1;
   RealD c1=9.0/8.0;
   RealD c2=-1.0/24.0;
   RealD u0=1.0;

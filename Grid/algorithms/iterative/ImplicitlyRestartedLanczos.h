@@ -289,6 +289,7 @@ public:
   template<typename T>  static RealD normalise(T& v) 
   {
     RealD nn = norm2(v);
+      
     nn = sqrt(nn);
     v = v * (1.0/nn);
     return nn;
@@ -343,27 +344,28 @@ until convergence
     std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
 	
     assert(Nm <= evec.size() && Nm <= eval.size());
-    
     // quickly get an idea of the largest eigenvalue to more properly normalize the residuum
     RealD evalMaxApprox = 0.0;
     {
-      auto src_n = src;
-      auto tmp = src;
-      const int _MAX_ITER_IRL_MEVAPP_ = 50;
-      for (int i=0;i<_MAX_ITER_IRL_MEVAPP_;i++) {
-	normalise(src_n);
-	_HermOp(src_n,tmp);
-	RealD vnum = real(innerProduct(src_n,tmp)); // HermOp.
-	RealD vden = norm2(src_n);
-	RealD na = vnum/vden;
-	if (fabs(evalMaxApprox/na - 1.0) < 0.05)
-	  i=_MAX_ITER_IRL_MEVAPP_;
-	evalMaxApprox = na;
-	std::cout << GridLogIRL << " Approximation of largest eigenvalue: " << evalMaxApprox << std::endl;
-	src_n = tmp;
-      }
+        auto src_n = src;
+        auto tmp = src;
+        
+        const int _MAX_ITER_IRL_MEVAPP_ = 50;
+        
+        for (int i=0;i<_MAX_ITER_IRL_MEVAPP_;i++) {
+            normalise(src_n);
+            _HermOp(src_n,tmp);
+            RealD vnum = real(innerProduct(src_n,tmp)); // HermOp.
+            RealD vden = norm2(src_n);
+            RealD na = vnum/vden;
+            if (fabs(evalMaxApprox/na - 1.0) < 0.05)
+                i=_MAX_ITER_IRL_MEVAPP_;
+            evalMaxApprox = na;
+            std::cout << GridLogIRL << " Approximation of largest eigenvalue: " << evalMaxApprox << std::endl;
+            src_n = tmp;
+        }
     }
-	
+      
     std::vector<RealD> lme(Nm);  
     std::vector<RealD> lme2(Nm);
     std::vector<RealD> eval2(Nm);

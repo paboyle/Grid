@@ -653,7 +653,7 @@ int main (int argc, char ** argv)
   GridParallelRNG          pRNG(&Grid);
   pRNG.SeedFixedIntegers(seeds);
 
-
+    
   int Nm = atoi(argv[1]); // number of all modes (high + low)
 
   std::vector<LatticeFermion> v(Nm,&Grid);

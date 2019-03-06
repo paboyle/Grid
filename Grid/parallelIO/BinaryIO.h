@@ -359,46 +359,46 @@ PARALLEL_CRITICAL
 
       if ( (control & BINARYIO_LEXICOGRAPHIC) && (nrank > 1) ) {
 #ifdef USE_MPI_IO
-	std::cout<< GridLogMessage<<"IOobject: MPI read I/O "<< file<< std::endl;
-	ierr=MPI_File_open(grid->communicator,(char *) file.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);    assert(ierr==0);
-	ierr=MPI_File_set_view(fh, disp, mpiObject, fileArray, "native", MPI_INFO_NULL);    assert(ierr==0);
-	ierr=MPI_File_read_all(fh, &iodata[0], 1, localArray, &status);    assert(ierr==0);
-	MPI_File_close(&fh);
-	MPI_Type_free(&fileArray);
-	MPI_Type_free(&localArray);
+          std::cout<< GridLogMessage<<"IOobject: MPI read I/O "<< file<< std::endl;
+          ierr=MPI_File_open(grid->communicator,(char *) file.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);    assert(ierr==0);
+          ierr=MPI_File_set_view(fh, disp, mpiObject, fileArray, "native", MPI_INFO_NULL);    assert(ierr==0);
+          ierr=MPI_File_read_all(fh, &iodata[0], 1, localArray, &status);    assert(ierr==0);
+          MPI_File_close(&fh);
+          MPI_Type_free(&fileArray);
+          MPI_Type_free(&localArray);
 #else 
-	assert(0);
+          assert(0);
 #endif
-      } else {
-	std::cout << GridLogMessage <<"IOobject: C++ read I/O " << file << " : "
-                  << iodata.size() * sizeof(fobj) << " bytes and offset " << offset << std::endl;
-        std::ifstream fin;
-	fin.open(file, std::ios::binary | std::ios::in);
-        if (control & BINARYIO_MASTER_APPEND)
-        {
-          fin.seekg(-sizeof(fobj), fin.end);
+        } else {
+            std::cout << GridLogMessage <<"IOobject: C++ read I/O " << file << " : "
+                    << iodata.size() * sizeof(fobj) << " bytes and offset " << offset << std::endl;
+            std::ifstream fin;
+            fin.open(file, std::ios::binary | std::ios::in);
+            if (control & BINARYIO_MASTER_APPEND)
+            {
+                fin.seekg(-sizeof(fobj), fin.end);
+            }
+            else
+            {
+              fin.seekg(offset + myrank * lsites * sizeof(fobj));
+            }
+            fin.read((char *)&iodata[0], iodata.size() * sizeof(fobj));
+            assert(fin.fail() == 0);
+            fin.close();
         }
-        else
-        {
-          fin.seekg(offset + myrank * lsites * sizeof(fobj));
+        timer.Stop();
+        
+        grid->Barrier();
+
+        bstimer.Start();
+        ScidacChecksum(grid,iodata,scidac_csuma,scidac_csumb);
+        if (ieee32big) be32toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
+        if (ieee32)    le32toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
+        if (ieee64big) be64toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
+        if (ieee64)    le64toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
+        NerscChecksum(grid,iodata,nersc_csum);
+        bstimer.Stop();
         }
-        fin.read((char *)&iodata[0], iodata.size() * sizeof(fobj));
-        assert(fin.fail() == 0);
-        fin.close();
-      }
-      timer.Stop();
-
-      grid->Barrier();
-
-      bstimer.Start();
-      ScidacChecksum(grid,iodata,scidac_csuma,scidac_csumb);
-      if (ieee32big) be32toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
-      if (ieee32)    le32toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
-      if (ieee64big) be64toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
-      if (ieee64)    le64toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
-      NerscChecksum(grid,iodata,nersc_csum);
-      bstimer.Stop();
-    }
     
     if ( control & BINARYIO_WRITE ) { 
 

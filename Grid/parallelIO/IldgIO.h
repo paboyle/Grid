@@ -758,7 +758,7 @@ class IldgReader : public GridLimeReader {
       //////////////////////////////////////////////////////////////////
       // If not BINARY_DATA read a string and parse
       //////////////////////////////////////////////////////////////////
-      if ( strncmp(limeReaderType(LimeR), ILDG_BINARY_DATA,strlen(ILDG_BINARY_DATA) )  ) {
+      if ( strncmp(limeReaderType(LimeR),ILDG_BINARY_DATA,strlen(ILDG_BINARY_DATA) )  ) {
 	
 	// Copy out the string
 	std::vector<char> xmlc(nbytes+1,'\0');
