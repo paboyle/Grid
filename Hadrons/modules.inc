@@ -47,6 +47,7 @@ modules_cc =\
   Modules/MDistil/Baryon2pt.cc \
   Modules/MDistil/BC2.cc \
   Modules/MDistil/PerambLight.cc \
+  Modules/MDistil/DistilSink.cc \
   Modules/MSource/Momentum.cc \
   Modules/MSource/Z2.cc \
   Modules/MSource/Point.cc \
@@ -130,6 +131,7 @@ modules_hpp =\
   Modules/MDistil/LapEvec.hpp \
   Modules/MDistil/BContraction.hpp \
   Modules/MDistil/DistilVectors.hpp \
+  Modules/MDistil/DistilSink.hpp \
   Modules/MSource/SeqConserved.hpp \
   Modules/MSource/Z2.hpp \
   Modules/MSource/Wall.hpp \

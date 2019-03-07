@@ -178,7 +178,7 @@ void test_PerambulatorsS(Application &application)
   PerambPar.Distil.Ns=4;
   PerambPar.Distil.Nt=8;
   PerambPar.Distil.Nt_inv=1;
-  PerambPar.Solver.mass=0.04; //strange mass???
+  PerambPar.Solver.mass=0.005; //strange mass???
   PerambPar.Solver.M5=1.8;
   PerambPar.Ls=16;
   PerambPar.Solver.CGPrecision=1e-8;
@@ -200,10 +200,10 @@ void test_DistilVectorsS(Application &application)
   DistilVecPar.nnoise = 1;
   DistilVecPar.LI=3;
   DistilVecPar.SI=4;
-  DistilVecPar.TI=8;
+  DistilVecPar.TI=32;
   DistilVecPar.nvec=3;
   DistilVecPar.Ns=4;
-  DistilVecPar.Nt=8;
+  DistilVecPar.Nt=32;
   DistilVecPar.Nt_inv=1;
   application.createModule<MDistil::DistilVectors>("DistilVecsS",DistilVecPar);
 }
@@ -427,11 +427,68 @@ void test_AslashSeq(Application &application)
 {
   // DistilVectors parameters
   MSolver::A2AAslashVectors::Par A2AAslashVectorsPar;
-  A2AAslashVectorsPar.vector="Peramb_unsmeared_sink";
+  A2AAslashVectorsPar.vector="PerambS_unsmeared_sink";
   A2AAslashVectorsPar.emField="Em";
   A2AAslashVectorsPar.solver="CG_s";
   A2AAslashVectorsPar.output="Aslash_seq";
   application.createModule<MSolver::A2AAslashVectors>("Aslash_seq",A2AAslashVectorsPar);
+}
+/////////////////////////////////////////////////////////////
+// DistilVectors
+/////////////////////////////////////////////////////////////
+
+void test_DistilVectorsAslashSeq(Application &application)
+{
+  // DistilVectors parameters
+  MDistil::DistilSink::Par DistilSinkPar;
+  DistilSinkPar.perambulator="PerambAslashS";
+  DistilSinkPar.eigenPack="LapEvec";
+  DistilSinkPar.tsrc = 0;
+  DistilSinkPar.nnoise = 1;
+  DistilSinkPar.LI=3;
+  DistilSinkPar.SI=4;
+  DistilSinkPar.TI=8;
+  DistilSinkPar.nvec=3;
+  DistilSinkPar.Ns=4;
+  DistilSinkPar.Nt=8;
+  DistilSinkPar.Nt_inv=1;
+  application.createModule<MDistil::DistilSink>("DistilVecsAslashSeq",DistilSinkPar);
+}
+void test_PerambulatorsSolve(Application &application)
+{
+  // PerambLight parameters
+  MDistil::PerambFromSolve::Par PerambFromSolvePar;
+  PerambFromSolvePar.eigenPack="LapEvec";
+  PerambFromSolvePar.solve="Aslash_seq";
+  PerambFromSolvePar.PerambFileName="perambAslashS.bin";
+  PerambFromSolvePar.Distil.tsrc = 0;
+  PerambFromSolvePar.Distil.nnoise = 1;
+  PerambFromSolvePar.Distil.LI=3;
+  PerambFromSolvePar.Distil.SI=4;
+  PerambFromSolvePar.Distil.TI=8;
+  PerambFromSolvePar.nvec=3;
+  PerambFromSolvePar.Distil.Ns=4;
+  PerambFromSolvePar.Distil.Nt=8;
+  PerambFromSolvePar.Distil.Nt_inv=1;
+  application.createModule<MDistil::PerambFromSolve>("PerambAslashS",PerambFromSolvePar);
+}
+/////////////////////////////////////////////////////////////
+// MesonFields - aslaaaash
+/////////////////////////////////////////////////////////////
+
+void test_MesonFieldAslashSeq(Application &application)
+{
+  // DistilVectors parameters
+  MContraction::A2AMesonField::Par A2AMesonFieldPar;
+  A2AMesonFieldPar.left="DistilVecsAslashSeq";
+  //A2AMesonFieldPar.right="DistilVecs_rho";
+  A2AMesonFieldPar.right="DistilVecsAslashSeq";
+  A2AMesonFieldPar.output="MesonSinksAslashSeq";
+  A2AMesonFieldPar.gammas="all";
+  A2AMesonFieldPar.mom={"0 0 0"};
+  A2AMesonFieldPar.cacheBlock=2;
+  A2AMesonFieldPar.block=4;
+  application.createModule<MContraction::A2AMesonField>("DistilMesonFieldAslashSeq",A2AMesonFieldPar);
 }
 
 bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
@@ -916,6 +973,17 @@ int main(int argc, char *argv[])
       test_DistilVectors( application );
       test_BaryonFieldPhi2( application );
       test_BaryonFieldRho2( application );
+      break;
+    case 12: // 3
+      test_Global( application );
+      test_SolverS( application );
+      test_LapEvec( application );
+      test_PerambulatorsS( application );
+      test_em( application );
+      test_AslashSeq( application );
+      test_PerambulatorsSolve( application );
+      test_DistilVectorsAslashSeq( application );
+      test_MesonFieldAslashSeq( application );
       break;
   }
   LOG(Message) << "====== XML creation for test " << iTestNum << " complete ======" << std::endl;

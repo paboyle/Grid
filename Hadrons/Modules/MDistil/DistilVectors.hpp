@@ -85,7 +85,7 @@ std::vector<std::string> TDistilVectors<FImpl>::getInput(void)
 template <typename FImpl>
 std::vector<std::string> TDistilVectors<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName() + "_rho", getName() + "_phi", getName() + "_rho_all_tsrc"};
+    std::vector<std::string> out = {getName() + "_rho", getName() + "_phi"};
     
     return out;
 }
@@ -106,9 +106,6 @@ void TDistilVectors<FImpl>::setup(void)
 		                    nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField));
    envCreate(std::vector<FermionField>, getName() + "_phi", 1, 
                  	            nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField)); 
-   envCreate(std::vector<FermionField>, getName() + "_rho_all_tsrc", 1, 
-		                    nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField));
-
 
   GridCartesian * grid4d = env().getGrid();
   std::vector<int> latt_size   = GridDefaultLatt();
@@ -140,8 +137,6 @@ void TDistilVectors<FImpl>::execute(void)
     auto        &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
     auto        &rho       = envGet(std::vector<FermionField>, getName() + "_rho");
     auto        &phi       = envGet(std::vector<FermionField>, getName() + "_phi");
-    auto        &rho_all       = envGet(std::vector<FermionField>, getName() + "_rho_all_tsrc");
-
 
   envGetTmp(LatticeSpinColourVector, tmp2);
   envGetTmp(LatticeColourVector, tmp_nospin);
@@ -188,34 +183,6 @@ void TDistilVectors<FImpl>::execute(void)
                   tmp2=zero;
                   InsertSliceLocal(tmp3d,tmp2,0,t_inv-Ntfirst,Grid::QCD::Tdir);
                   rho[vecindex] += tmp2;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  for (int inoise = 0; inoise < nnoise; inoise++) {
-    for (int dk = 0; dk < LI; dk++) {
-      for (int dt = 0; dt < Nt_inv; dt++) {
-        for (int ds = 0; ds < Ns; ds++) {
-          vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * Ns*dt;
-          rho_all[vecindex] = zero;
-          tmp3d_nospin = zero;
-          for (int it = 0; it < Nt; it++){
-            t_inv = it;
-            if( t_inv >= Ntfirst && t_inv < Ntfirst + Ntlocal ) {
-              for (int ik = dk; ik < nvec; ik += LI){
-                for (int is = ds; is < Ns; is += Ns){ //at the moment, full spin dilution is enforced
-                  ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv,3);
-                  tmp3d_nospin = evec3d * noise[inoise + nnoise*(t_inv + Nt*(ik+nvec*is))];
-                  tmp3d=zero;
-                  pokeSpin(tmp3d,tmp3d_nospin,is);
-                  tmp2=zero;
-                  InsertSliceLocal(tmp3d,tmp2,0,t_inv-Ntfirst,Grid::QCD::Tdir);
-                  rho_all[vecindex] += tmp2;
                 }
               }
             }

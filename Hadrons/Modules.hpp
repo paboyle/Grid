@@ -49,6 +49,7 @@
 #include <Hadrons/Modules/MDistil/LapEvec.hpp>
 #include <Hadrons/Modules/MDistil/BContraction.hpp>
 #include <Hadrons/Modules/MDistil/DistilVectors.hpp>
+#include <Hadrons/Modules/MDistil/DistilSink.hpp>
 #include <Hadrons/Modules/MSource/SeqConserved.hpp>
 #include <Hadrons/Modules/MSource/Z2.hpp>
 #include <Hadrons/Modules/MSource/Wall.hpp>
