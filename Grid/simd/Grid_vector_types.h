@@ -865,8 +865,10 @@ template <typename T>
 struct is_simd : public std::false_type {};
 template <> struct is_simd<vRealF>     : public std::true_type {};
 template <> struct is_simd<vRealD>     : public std::true_type {};
+template <> struct is_simd<vRealH>     : public std::true_type {};
 template <> struct is_simd<vComplexF>  : public std::true_type {};
 template <> struct is_simd<vComplexD>  : public std::true_type {};
+template <> struct is_simd<vComplexH>  : public std::true_type {};
 template <> struct is_simd<vInteger>   : public std::true_type {};
 
 template <typename T> using IfSimd    = Invoke<std::enable_if<is_simd<T>::value, int> >;
