@@ -110,8 +110,8 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
 }
 
 typedef ComplexD TestScalar;
-typedef Eigen::TensorFixedSize<Integer, Eigen::Sizes<5,4,3,2,1>> TensorRank5UShort;
-typedef Eigen::TensorFixedSize<Integer, Eigen::Sizes<5,4,3,2,1>, Eigen::StorageOptions::RowMajor> TensorRank5UShortAlt;
+typedef Eigen::TensorFixedSize<unsigned short, Eigen::Sizes<5,4,3,2,1>> TensorRank5UShort;
+typedef Eigen::TensorFixedSize<unsigned short, Eigen::Sizes<5,4,3,2,1>, Eigen::StorageOptions::RowMajor> TensorRank5UShortAlt;
 typedef Eigen::Tensor<TestScalar, 3, Eigen::StorageOptions::RowMajor> TensorRank3;
 typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>, Eigen::StorageOptions::RowMajor> Tensor_9_4_2;
 typedef std::vector<Tensor_9_4_2> aTensor_9_4_2;
@@ -157,11 +157,11 @@ public:
 #define TEST_PARAMS( T ) #T, Flag, Precision, filename, pszExtension, TestNum
 
 template <typename WTR_, typename RDR_, typename T, typename... IndexTypes>
-void EigenTensorTestSingle(const char * MyTypeName, typename GridTypeMapper<typename T::Scalar>::scalar_type Flag,
+void EigenTensorTestSingle(const char * MyTypeName, typename EigenIO::Traits<T>::scalar_type Flag,
                            unsigned short Precision, std::string &filename, const char * pszExtension, unsigned int &TestNum,
                            IndexTypes... otherDims)
 {
-  using Traits = GridTypeMapper<typename T::Scalar>;
+  using Traits = EigenIO::Traits<T>;
   using scalar_type = typename Traits::scalar_type;
   std::unique_ptr<T> pTensor{new T(otherDims...)};
   SequentialInit( * pTensor, Flag, Precision );

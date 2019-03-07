@@ -10,6 +10,7 @@ Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Guido Cossu <cossu@iroiro-pc.kek.jp>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: neo <cossu@post.kek.jp>
+Author: Michael Marshall <michael.marshall@ed.ac.au>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -865,8 +866,10 @@ template <typename T>
 struct is_simd : public std::false_type {};
 template <> struct is_simd<vRealF>     : public std::true_type {};
 template <> struct is_simd<vRealD>     : public std::true_type {};
+template <> struct is_simd<vRealH>     : public std::true_type {};
 template <> struct is_simd<vComplexF>  : public std::true_type {};
 template <> struct is_simd<vComplexD>  : public std::true_type {};
+template <> struct is_simd<vComplexH>  : public std::true_type {};
 template <> struct is_simd<vInteger>   : public std::true_type {};
 
 template <typename T> using IfSimd    = Invoke<std::enable_if<is_simd<T>::value, int> >;
