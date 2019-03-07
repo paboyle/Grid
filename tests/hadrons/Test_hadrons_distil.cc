@@ -49,6 +49,32 @@ void test_Global(Application &application)
   application.setPar(globalPar);
 }
 
+
+/////////////////////////////////////////////////////////////
+// Test creation Solver
+/////////////////////////////////////////////////////////////
+
+void test_SolverS(Application &application)
+{
+    std::string boundary = "1 1 1 -1";
+
+
+        MAction::DWF::Par actionPar;
+        actionPar.gauge = "gauge";
+        actionPar.Ls    = 16;
+        actionPar.M5    = 1.8;
+        actionPar.mass  = 0.005;
+        actionPar.boundary = boundary;
+        actionPar.twist = "0. 0. 0. 0.";
+        application.createModule<MAction::DWF>("DWF_s", actionPar);
+
+
+        MSolver::RBPrecCG::Par solverPar;
+        solverPar.action       = "DWF_s";
+        solverPar.residual     = 1.0e-7;
+        solverPar.maxIteration = 10000;
+        application.createModule<MSolver::RBPrecCG>("CG_s", solverPar);
+}
 /////////////////////////////////////////////////////////////
 // Test creation of laplacian eigenvectors
 /////////////////////////////////////////////////////////////
@@ -391,6 +417,21 @@ void test_Aslash(Application &application)
   A2AAslashFieldPar.cacheBlock=2;
   A2AAslashFieldPar.block=4;
   application.createModule<MContraction::A2AAslashField>("Aslash_field",A2AAslashFieldPar);
+}
+
+/////////////////////////////////////////////////////////////
+// MesonA2ASlashSequential
+/////////////////////////////////////////////////////////////
+
+void test_AslashSeq(Application &application)
+{
+  // DistilVectors parameters
+  MSolver::A2AAslashVectors::Par A2AAslashVectorsPar;
+  A2AAslashVectorsPar.vector="Peramb_unsmeared_sink";
+  A2AAslashVectorsPar.emField="Em";
+  A2AAslashVectorsPar.solver="CG_s";
+  A2AAslashVectorsPar.output="Aslash_seq";
+  application.createModule<MSolver::A2AAslashVectors>("Aslash_seq",A2AAslashVectorsPar);
 }
 
 bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )

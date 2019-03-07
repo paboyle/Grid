@@ -513,6 +513,21 @@ inline void RotateEigen(std::vector<LatticeColourVector> & evec)
   }
 }
 
+struct DistilParameters: Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(DistilParameters,
+                                  int, TI,
+                                  int, LI,
+                                  int, nnoise,
+                                  int, tsrc,
+                                  int, SI,
+                                  int, Ns,
+                                  int, Nt,
+                                  int, Nt_inv)
+  DistilParameters() = default;
+  template <class ReaderClass> DistilParameters(Reader<ReaderClass>& Reader){read(Reader,"Distil",*this);}
+};
+
+
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE

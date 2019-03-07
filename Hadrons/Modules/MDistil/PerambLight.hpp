@@ -19,7 +19,7 @@ BEGIN_HADRONS_NAMESPACE
  *                             PerambLight                                    *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MDistil)
-
+/*
 struct DistilParameters: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(DistilParameters,
                                   int, TI,
@@ -33,7 +33,7 @@ struct DistilParameters: Serializable {
   DistilParameters() = default;
   template <class ReaderClass> DistilParameters(Reader<ReaderClass>& Reader){read(Reader,"Distil",*this);}
 };
- 
+ */
 struct SolverParameters: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(SolverParameters,
                                   double, CGPrecision,

@@ -316,6 +316,7 @@ void TLapEvec<GImpl>::execute(void)
     std::cout << GridLogMessage << " Compute eigenpack, Timeslice  = " << t << std::endl;
     std::cout << GridLogMessage << "------------------------------------------------------------" << std::endl;
     
+      std::cout << "T:  " << t << " / " << Ntfirst + Ntlocal << std::endl;
     eig[t].resize(LPar.Nk+LPar.Np,gridLD);
     
     // Construct smearing operator
@@ -356,7 +357,7 @@ void TLapEvec<GImpl>::execute(void)
       // Now rotate the eigenvectors into our phase convention
       RotateEigen( eig[t].evec );
       
-      if((1)) { // Debugging only
+      if((0)) { // Debugging only
         // Write the eigenvectors and eigenvalues to disk
         //std::cout << GridLogMessage << "Writing eigenvalues/vectors to " << pszEigenPack << std::endl;
         eig[t].record.operatorXml = DefaultOperatorXml;
@@ -365,6 +366,7 @@ void TLapEvec<GImpl>::execute(void)
         //std::cout << GridLogMessage << "Written eigenvectors" << std::endl;
       }
     }
+      std::cout << "T:  " << t << " / " << Ntfirst + Ntlocal << std::endl;
     for (int i=0;i<LPar.Nvec;i++){
       std::cout << "Inserting Timeslice " << t << " into vector " << i << std::endl;
       InsertSliceLocal(eig[t].evec[i],eig4d.evec[i],0,t,3);
