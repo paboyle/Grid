@@ -173,10 +173,10 @@ void test_PerambulatorsS(Application &application)
   PerambPar.solver="CG_s";
   PerambPar.Distil.tsrc = 0;
   PerambPar.Distil.nnoise = 1;
-  PerambPar.Distil.LI=3;
+  PerambPar.Distil.LI=5;
   PerambPar.Distil.SI=4;
   PerambPar.Distil.TI=8;
-  PerambPar.nvec=3;
+  PerambPar.nvec=5;
   PerambPar.Distil.Ns=4;
   PerambPar.Distil.Nt=8;
   PerambPar.Distil.Nt_inv=1;
@@ -200,10 +200,10 @@ void test_DistilVectorsS(Application &application)
   DistilVecPar.eigenPack="LapEvec";
   DistilVecPar.tsrc = 0;
   DistilVecPar.nnoise = 1;
-  DistilVecPar.LI=3;
+  DistilVecPar.LI=5;
   DistilVecPar.SI=4;
   DistilVecPar.TI=32;
-  DistilVecPar.nvec=3;
+  DistilVecPar.nvec=5;
   DistilVecPar.Ns=4;
   DistilVecPar.Nt=8;
   DistilVecPar.Nt_inv=1;
@@ -447,10 +447,10 @@ void test_PerambulatorsSolve(Application &application)
   PerambFromSolvePar.PerambFileName="perambAslashS.bin";
   PerambFromSolvePar.Distil.tsrc = 0;
   PerambFromSolvePar.Distil.nnoise = 1;
-  PerambFromSolvePar.Distil.LI=3;
+  PerambFromSolvePar.Distil.LI=5;
   PerambFromSolvePar.Distil.SI=4;
   PerambFromSolvePar.Distil.TI=8;
-  PerambFromSolvePar.nvec=3;
+  PerambFromSolvePar.nvec=5;
   PerambFromSolvePar.Distil.Ns=4;
   PerambFromSolvePar.Distil.Nt=8;
   PerambFromSolvePar.Distil.Nt_inv=1;
@@ -468,10 +468,10 @@ void test_DistilVectorsAslashSeq(Application &application)
   DistilSinkPar.eigenPack="LapEvec";
   DistilSinkPar.tsrc = 0;
   DistilSinkPar.nnoise = 1;
-  DistilSinkPar.LI=3;
+  DistilSinkPar.LI=5;
   DistilSinkPar.SI=4;
   DistilSinkPar.TI=8;
-  DistilSinkPar.nvec=3;
+  DistilSinkPar.nvec=5;
   DistilSinkPar.Ns=4;
   DistilSinkPar.Nt=8;
   DistilSinkPar.Nt_inv=1;
@@ -911,17 +911,20 @@ int main(int argc, char *argv[])
       break;
     case 2:
       test_Global( application );
+      test_SolverS( application );
       test_LapEvec( application );
       test_Perambulators( application );
       break;
     case 3: // 3
       test_Global( application );
+      test_SolverS( application );
       test_LapEvec( application );
       test_Perambulators( application );
       test_DistilVectors( application );
       break;
     default: // 4
       test_Global( application );
+      test_SolverS( application );
       test_LapEvec( application );
       test_Perambulators( application );
       test_DistilVectors( application );
@@ -930,6 +933,7 @@ int main(int argc, char *argv[])
       break;
     case 5: // 3
       test_Global( application );
+      test_SolverS( application );
       test_LapEvec( application );
       test_Perambulators( application );
       test_DistilVectors( application );
@@ -939,6 +943,7 @@ int main(int argc, char *argv[])
       break;
     case 6: // 3
       test_Global( application );
+      test_SolverS( application );
       test_LapEvec( application );
       test_Perambulators( application );
       test_g5_sinks( application );
@@ -946,6 +951,7 @@ int main(int argc, char *argv[])
       break;
     case 7: // 3
       test_Global( application );
+      test_SolverS( application );
       test_LapEvec( application );
       test_Perambulators( application );
       test_DistilVectors( application );
@@ -954,6 +960,7 @@ int main(int argc, char *argv[])
       break;
     case 8: // 3
       test_Global( application );
+      test_SolverS( application );
       test_LapEvec( application );
       test_Perambulators( application );
       test_DistilVectors( application );
@@ -961,10 +968,12 @@ int main(int argc, char *argv[])
       break;
     case 9: // 3
       test_Global( application );
+      test_SolverS( application );
       test_Baryon2pt( application );
       break;
     case 10: // 3
       test_Global( application );
+      test_SolverS( application );
       test_LapEvec( application );
       test_Perambulators( application );
       test_g5_sinks( application );
@@ -973,6 +982,7 @@ int main(int argc, char *argv[])
       break;
     case 11: // 3
       test_Global( application );
+      test_SolverS( application );
       test_LapEvec( application );
       test_Perambulators( application );
       test_DistilVectors( application );
