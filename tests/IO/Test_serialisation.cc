@@ -156,6 +156,7 @@ public:
 
 #define TEST_PARAMS( T ) #T, Flag, Precision, filename, pszExtension, TestNum
 
+// Perform an I/O test for a single Eigen tensor (of any type)
 template <typename WTR_, typename RDR_, typename T, typename... IndexTypes>
 void EigenTensorTestSingle(const char * MyTypeName, typename EigenIO::Traits<T>::scalar_type Flag,
                            unsigned short Precision, std::string &filename, const char * pszExtension,
@@ -169,9 +170,11 @@ void EigenTensorTestSingle(const char * MyTypeName, typename EigenIO::Traits<T>:
   ioTest<WTR_, RDR_, T>(filename, * pTensor, MyTypeName, MyTypeName);
 }
 
+// Perform a series of I/O tests for Eigen tensors, including a serialisable object
 template <typename WTR_, typename RDR_>
 void EigenTensorTest(const char * pszExtension, unsigned short Precision = 0)
 {
+  // Perform a series of tests on progressively more complex tensors
   unsigned int TestNum = 0;
   std::string filename;
   {
@@ -185,6 +188,8 @@ void EigenTensorTest(const char * pszExtension, unsigned short Precision = 0)
   EigenTensorTestSingle<WTR_, RDR_, TensorSimple, I, I, I, I, I, I>( TEST_PARAMS( TensorSimple ), 1, 1, 1, 1, 1, 1 );
   EigenTensorTestSingle<WTR_, RDR_, TensorRank3, I, I, I>( TEST_PARAMS( TensorRank3 ), 6, 3, 2 );
   EigenTensorTestSingle<WTR_, RDR_, Tensor_9_4_2>(TEST_PARAMS( Tensor_9_4_2 ));
+  EigenTensorTestSingle<WTR_, RDR_, LSCTensor>(TEST_PARAMS( LSCTensor ));
+  // Now see whether we could write out a tensor in one memory order and read back in the other
   {
     unsigned short Flag = 1;
     EigenTensorTestSingle<WTR_, RDR_, TensorRank5UShort>(TEST_PARAMS( TensorRank5UShort ));
@@ -207,18 +212,21 @@ void EigenTensorTest(const char * pszExtension, unsigned short Precision = 0)
     }
     std::cout << " done." << std::endl;
   }
-  EigenTensorTestSingle<WTR_, RDR_, LSCTensor>(TEST_PARAMS( LSCTensor ));
+  // Now test a serialisable object containing a number of tensors
   {
     static const char MyTypeName[] = "PerambIOTestClass";
     std::unique_ptr<PerambIOTestClass> pObj{new PerambIOTestClass()};
     filename = "iotest_" + std::to_string(++TestNum) + "_" + MyTypeName + pszExtension;
     ioTest<WTR_, RDR_, PerambIOTestClass>(filename, * pObj, MyTypeName, MyTypeName);
   }
-#ifdef STRESS_TESTS
-  using LCMTensor = Eigen::TensorFixedSize<iMatrix<iVector<iMatrix<iVector<LorentzColourMatrix,5>,2>,7>,3>,
-                      Eigen::Sizes<2,4,11,10,9>, Eigen::StorageOptions::RowMajor>;
-  std::cout << "sizeof( LCMTensor ) = " << sizeof( LCMTensor ) / 1024 / 1024 << " MB" << std::endl;
-  EigenTensorTestSingle<WTR_, RDR_, LCMTensor>(TEST_PARAMS( LCMTensor ));
+  // Stress test. Too large for the XML or text readers and writers!
+#ifdef STRESS_TEST
+  if( typeid( WTR_ ).name() == typeid( Hdf5Writer ).name() || typeid( WTR_ ).name() == typeid( BinaryWriter ).name() ) {
+    using LCMTensor=Eigen::TensorFixedSize<iMatrix<iVector<iMatrix<iVector<LorentzColourMatrix,5>,2>,7>,3>,
+        Eigen::Sizes<2,4,11,10,9>, Eigen::StorageOptions::RowMajor>;
+    std::cout << "sizeof( LCMTensor ) = " << sizeof( LCMTensor ) / 1024 / 1024 << " MB" << std::endl;
+    EigenTensorTestSingle<WTR_, RDR_, LCMTensor>(TEST_PARAMS( LCMTensor ));
+  }
 #endif
 }
 
