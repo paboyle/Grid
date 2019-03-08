@@ -34,7 +34,7 @@ struct DistilParameters: Serializable {
   template <class ReaderClass> DistilParameters(Reader<ReaderClass>& Reader){read(Reader,"Distil",*this);}
 };
  */
-struct SolverParameters: Serializable {
+/*struct SolverParameters: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(SolverParameters,
                                   double, CGPrecision,
                                   int,    MaxIterations,
@@ -42,7 +42,7 @@ struct SolverParameters: Serializable {
                                   double, M5)
   SolverParameters() = default;
   template <class ReaderClass> SolverParameters(Reader<ReaderClass>& Reader){read(Reader,"Solver",*this);}
-};
+};*/
 
 class PerambLightPar: Serializable
 {
@@ -55,9 +55,10 @@ public:
                                     std::string, UniqueIdentifier,
                                     bool, multiFile,
                                     int, nvec,
-				    int, Ls,          // For makeFiveDimGrid
+//				    int, Ls,          // For makeFiveDimGrid
                                     DistilParameters, Distil,
-                                    SolverParameters, Solver);
+				    std::string, solver);
+//                                    SolverParameters, Solver);
 };
 
 template <typename FImpl>
@@ -65,6 +66,7 @@ class TPerambLight: public Module<PerambLightPar>
 {
 public:
     FERM_TYPE_ALIASES(FImpl,);
+    SOLVER_TYPE_ALIASES(FImpl,);
     // constructor
     TPerambLight(const std::string name);
     // destructor
@@ -80,9 +82,10 @@ protected:
     // These variables are created in setup() and freed in Cleanup()
     GridCartesian * grid3d; // Owned by me, so I must delete it
     GridCartesian * grid4d; // Owned by environment (so I won't delete it)
-    
 protected:
     virtual void Cleanup(void);
+private:
+        unsigned int Ls_;
 };
 
 MODULE_REGISTER_TMP(PerambLight, TPerambLight<FIMPL>, MDistil);
@@ -110,6 +113,7 @@ std::vector<std::string> TPerambLight<FImpl>::getInput(void)
     std::vector<std::string> in;
 
     in.push_back(par().eigenPack);
+    in.push_back(par().solver);
     
     return in;
 }
@@ -164,6 +168,12 @@ void TPerambLight<FImpl>::setup(void)
     envTmp(LatticeColourVector, "tmp3d_nospin",1,LatticeColourVector(grid3d));
     envTmp(LatticeColourVector, "result_3d",1,LatticeColourVector(grid3d));
     envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
+
+    Ls_ = env().getObjectLs(par().solver);
+    envTmpLat(FermionField, "v4dtmp");
+    envTmpLat(FermionField, "v5dtmp", Ls_);
+    envTmpLat(FermionField, "v5dtmp_sol", Ls_);
+
 }
 
 // clean up any temporaries created by setup (that aren't stored in the environment)
@@ -183,7 +193,7 @@ void TPerambLight<FImpl>::execute(void)
 {
     const int nvec{par().nvec};
     const DistilParameters & Distil{par().Distil};
-    const SolverParameters & Solver{par().Solver};
+    //const SolverParameters & Solver{par().Solver};
     const int LI{Distil.LI};
     //const int SI{Distil.SI};
     const int TI{Distil.TI};
@@ -192,9 +202,15 @@ void TPerambLight<FImpl>::execute(void)
     const int Nt_inv{Distil.Nt_inv}; // TODO: PROBABLY BETTER: if (full_tdil) Nt_inv=1; else Nt_inv = TI;
     const int tsrc{Distil.tsrc};
     const int Ns{Distil.Ns};
-   
-    const Real mass{Solver.mass};
-    const Real M5  {Solver.M5};
+  
+    auto &solver=envGet(Solver, par().solver);
+    auto &mat = solver.getFMat();
+    envGetTmp(FermionField, v4dtmp);
+    envGetTmp(FermionField, v5dtmp);
+    envGetTmp(FermionField, v5dtmp_sol);
+
+    //const Real mass{Solver.mass};
+    //const Real M5  {Solver.M5};
 
     const bool full_tdil{TI==Nt};
     const bool exact_distillation{full_tdil && LI==nvec};
@@ -250,7 +266,7 @@ void TPerambLight<FImpl>::execute(void)
     //std::cout << pszGaugeConfigFile << std::endl;
     //GridSerialRNG sRNG; sRNG.SeedUniqueString(std::string(pszGaugeConfigFile));
     GridSerialRNG sRNG; 
-    sRNG.SeedUniqueString(ConfigFileName + "_" + std::to_string(mass) + "_" + UniqueIdentifier);
+    sRNG.SeedUniqueString(ConfigFileName + "_"  + UniqueIdentifier);
     Real rn;
     
     for (int inoise=0;inoise<nnoise;inoise++) {
@@ -305,11 +321,11 @@ void TPerambLight<FImpl>::execute(void)
     GridRedBlackCartesian RBGrid(grid4d);
     std::cout << "init RBG done"  << std::endl;
    
-    const int Ls{par().Ls};
-    const double CGPrecision{Solver.CGPrecision};
-    const int MaxIterations {Solver.MaxIterations};
+    //const int Ls{par().Ls};
+    //const double CGPrecision{Solver.CGPrecision};
+    //const int MaxIterations {Solver.MaxIterations};
     {
-    GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,grid4d);
+    /*GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,grid4d);
     GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,grid4d);
     
     typedef DomainWallFermionR FermionAction;
@@ -323,7 +339,7 @@ void TPerambLight<FImpl>::execute(void)
     LatticeSpinColourVector a(grid4d);
     LatticeColourVector b(grid4d);
     b= peekSpin(a,0);
-
+*/
     int t_inv;
     for (int inoise = 0; inoise < nnoise; inoise++) {
       for (int dk = 0; dk < LI; dk++) {
@@ -351,11 +367,21 @@ void TPerambLight<FImpl>::execute(void)
             }
             std::cout <<  "Inversion for noise " << inoise << " and dilution component (d_k,d_t,d_alpha) : (" << dk << ","<< dt << "," << ds << ")" << std::endl;
             result=zero;
-            LatticeFermion src5(FGrid);
+            /*LatticeFermion src5(FGrid);
             LatticeFermion sol5(FGrid);
             Dop.ImportPhysicalFermionSource(dist_source,src5);
             SchurSolver(Dop,src5,sol5);
             Dop.ExportPhysicalFermionSolution(sol5,result); //These are the meson sinks
+	    */
+	    v4dtmp = dist_source;
+	    if (Ls_ == 1){
+	      solver(result, v4dtmp);
+	    } else {
+	       mat.ImportPhysicalFermionSource(v4dtmp, v5dtmp);
+	       solver(v5dtmp_sol, v5dtmp);
+	       mat.ExportPhysicalFermionSolution(v5dtmp_sol, v4dtmp);
+	       result = v4dtmp;
+	    }
             if ((1)) // comment out if unsmeared sink is too large???
               unsmeared_sink[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))] = result;
             std::cout <<  "Contraction of perambulator from noise " << inoise << " and dilution component (d_k,d_t,d_alpha) : (" << dk << ","<< dt << "," << ds << ")" << std::endl;
@@ -375,8 +401,8 @@ void TPerambLight<FImpl>::execute(void)
   }
 }
         // Kill our 5 dimensional grid (avoid leaks). Should really declare these objects temporary
-        delete FrbGrid;
-        delete FGrid;
+        //delete FrbGrid;
+        //delete FGrid;
     }
     std::cout <<  "perambulator done" << std::endl;
     perambulator.SliceShare( grid3d, grid4d );

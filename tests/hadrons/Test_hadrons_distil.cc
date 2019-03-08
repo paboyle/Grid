@@ -122,6 +122,7 @@ void test_Perambulators(Application &application)
   PerambPar.ConfigFileDir="/home/dp008/dp008/paboyle/A2A/run/";
   PerambPar.ConfigFileName="ckpoint_lat.IEEE64BIG.1100";
   PerambPar.UniqueIdentifier="full_dilution";
+  PerambPar.solver="CG_s";
   PerambPar.Distil.tsrc = 0;
   PerambPar.Distil.nnoise = 1;
   PerambPar.Distil.LI=5;
@@ -131,11 +132,11 @@ void test_Perambulators(Application &application)
   PerambPar.Distil.Ns=4;
   PerambPar.Distil.Nt=8;
   PerambPar.Distil.Nt_inv=1;
-  PerambPar.Solver.mass=0.005;
-  PerambPar.Solver.M5=1.8;
-  PerambPar.Ls=16;
-  PerambPar.Solver.CGPrecision=1e-8;
-  PerambPar.Solver.MaxIterations=10000;
+  //PerambPar.Solver.mass=0.005;
+  //PerambPar.Solver.M5=1.8;
+  //PerambPar.Ls=16;
+  //PerambPar.Solver.CGPrecision=1e-8;
+  //PerambPar.Solver.MaxIterations=10000;
   application.createModule<MDistil::PerambLight>("Peramb",PerambPar);
 }
 /////////////////////////////////////////////////////////////
@@ -169,6 +170,7 @@ void test_PerambulatorsS(Application &application)
   PerambPar.ConfigFileDir="/home/dp008/dp008/paboyle/A2A/run/";
   PerambPar.ConfigFileName="ckpoint_lat.IEEE64BIG.1100";
   PerambPar.UniqueIdentifier="full_dilution";
+  PerambPar.solver="CG_s";
   PerambPar.Distil.tsrc = 0;
   PerambPar.Distil.nnoise = 1;
   PerambPar.Distil.LI=3;
@@ -178,11 +180,11 @@ void test_PerambulatorsS(Application &application)
   PerambPar.Distil.Ns=4;
   PerambPar.Distil.Nt=8;
   PerambPar.Distil.Nt_inv=1;
-  PerambPar.Solver.mass=0.005; //strange mass???
-  PerambPar.Solver.M5=1.8;
-  PerambPar.Ls=16;
-  PerambPar.Solver.CGPrecision=1e-8;
-  PerambPar.Solver.MaxIterations=10000;
+  //PerambPar.Solver.mass=0.005; //strange mass???
+  //PerambPar.Solver.M5=1.8;
+  //PerambPar.Ls=16;
+  //PerambPar.Solver.CGPrecision=1e-8;
+  //PerambPar.Solver.MaxIterations=10000;
   application.createModule<MDistil::PerambLight>("PerambS",PerambPar);
 }
 /////////////////////////////////////////////////////////////
