@@ -138,15 +138,30 @@ namespace Grid
   {
     push(s);
     size_t count = 1;
-    const size_t Rank = Dimensions.size();
+    const int Rank = static_cast<int>( Dimensions.size() );
     write("rank", Rank );
+    std::vector<size_t> MyIndex( Rank );
     for( auto d : Dimensions ) {
       write("dim", d);
       count *= d;
     }
     assert( count == NumElements && "XmlIO : element count doesn't match dimensions" );
-    while (NumElements--)
+    static const char sName[] = "tensor";
+    for( int i = 0 ; i < Rank ; i++ ) {
+      MyIndex[i] = 0;
+      push(sName);
+    }
+    while (NumElements--) {
       write("elem", *pDataRowMajor++);
+      int i;
+      for( i = Rank - 1 ; i != -1 && ++MyIndex[i] == Dimensions[i] ; i-- )
+        MyIndex[i] = 0;
+      int Rollover = Rank - 1 - i;
+      for( i = 0 ; i < Rollover ; i++ )
+        pop();
+      for( i = 0 ; NumElements && i < Rollover ; i++ )
+        push(sName);
+    }
     pop();
   }
 
@@ -189,7 +204,9 @@ namespace Grid
       std::cout << GridLogWarning << "XML: cannot open node '" << s << "'";
       std::cout << std::endl;
     } else {
-      size_t Rank;
+      static const char sName[] = "tensor";
+      static const char sNameDone[] = "tensor-done";
+      int Rank;
       read("rank", Rank);
       dim.resize( Rank );
       size_t NumElements = 1;
@@ -200,10 +217,27 @@ namespace Grid
         NumElements *= d;
       }
       buf.resize( NumElements );
+      std::vector<size_t> MyIndex( Rank );
+      for( int i = 0 ; i < Rank ; i++ ) {
+        MyIndex[i] = 0;
+        push(sName);
+      }
+
       for( auto &x : buf )
       {
+        NumElements--;
         read("elem", x);
         node_.child("elem").set_name("elem-done");
+        int i;
+        for( i = Rank - 1 ; i != -1 && ++MyIndex[i] == dim[i] ; i-- )
+          MyIndex[i] = 0;
+        int Rollover = Rank - 1 - i;
+        for( i = 0 ; i < Rollover ; i++ ) {
+          node_.set_name(sNameDone);
+          pop();
+        }
+        for( i = 0 ; NumElements && i < Rollover ; i++ )
+          push(sName);
       }
       pop();
     }

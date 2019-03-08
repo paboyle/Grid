@@ -316,7 +316,7 @@ namespace Grid {
       pWriteBuffer = getFirstScalar( output );
     } else {
       // Regardless of the Eigen::Tensor storage order, the copy will be Row Major
-      pCopyBuffer = static_cast<Scalar *>(malloc(TotalNumElements * sizeof(Scalar)));
+      pCopyBuffer = new Scalar[TotalNumElements];
       pWriteBuffer = pCopyBuffer;
       Scalar * pCopy = pCopyBuffer;
       std::array<Index, TensorRank> MyIndex;
@@ -330,7 +330,7 @@ namespace Grid {
       }
     }
     upcast->template writeMultiDim<Scalar>(s, TotalDims, pWriteBuffer, TotalNumElements);
-    if( pCopyBuffer ) free( pCopyBuffer );
+    if( pCopyBuffer ) delete [] pCopyBuffer;
   }
 
   template <typename T>

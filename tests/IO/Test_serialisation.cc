@@ -29,7 +29,7 @@ Author: Michael Marshall <michael.marshall@ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
-#include <Grid/util/Eigen.h>
+#include <Grid/util/EigenUtil.h>
 
 using namespace Grid;
 using namespace Grid::QCD;
@@ -158,8 +158,8 @@ public:
 
 template <typename WTR_, typename RDR_, typename T, typename... IndexTypes>
 void EigenTensorTestSingle(const char * MyTypeName, typename EigenIO::Traits<T>::scalar_type Flag,
-                           unsigned short Precision, std::string &filename, const char * pszExtension, unsigned int &TestNum,
-                           IndexTypes... otherDims)
+                           unsigned short Precision, std::string &filename, const char * pszExtension,
+                           unsigned int &TestNum, IndexTypes... otherDims)
 {
   using Traits = EigenIO::Traits<T>;
   using scalar_type = typename Traits::scalar_type;
@@ -187,15 +187,17 @@ void EigenTensorTest(const char * pszExtension, unsigned short Precision = 0)
   EigenTensorTestSingle<WTR_, RDR_, Tensor_9_4_2>(TEST_PARAMS( Tensor_9_4_2 ));
   {
     unsigned short Flag = 1;
-    TensorRank5UShort t;
     EigenTensorTestSingle<WTR_, RDR_, TensorRank5UShort>(TEST_PARAMS( TensorRank5UShort ));
     std::cout << "    Testing alternate memory order read ... ";
     TensorRank5UShortAlt t2;
     RDR_ reader(filename);
     read(reader, "TensorRank5UShort", t2);
     bool good = true;
-    for_all( t2, [&](unsigned short c, unsigned short n,
-                     const std::array<size_t, TensorRank5UShortAlt::NumIndices> &Dims ) {
+    using Index = typename TensorRank5UShortAlt::Index;
+    // NB: I can't call
+    for_all( t2, [&](unsigned short c, Index n,
+                     const std::array<Index, TensorRank5UShortAlt::NumIndices> &TensorIndex,
+                     const std::array<int, EigenIO::Traits<TensorRank5UShortAlt>::Rank> &GridTensorIndex ){
       good = good && ( c == n );
     } );
     if (!good) {
@@ -240,20 +242,6 @@ void tensorConvTestFn(GridSerialRNG &rng, const std::string label)
 
 int main(int argc,char **argv)
 {
-  {
-    LSCTensor Bingo;
-    constexpr Complex Flag{1,-3.1415927};
-    Complex z{0};
-    SpinColourVector * pV = Bingo.data();
-    for( std::size_t i = Bingo.size(); i--; ) {
-      for( typename GridTypeMapper<SpinColourVector>::scalar_type &s : *pV++ ) {
-        s = z;
-        z += Flag;
-      }
-    }
-    dump_tensor( Bingo );
-  }
-
   Grid_init(&argc,&argv);
   std::cout << std::boolalpha << "==== basic IO" << std::endl; // display true / false for boolean
 
