@@ -50,11 +50,10 @@ class TPerambFromSolve: public Module<PerambFromSolvePar>
 {
 public:
     FERM_TYPE_ALIASES(FImpl,);
-public:
     // constructor
     TPerambFromSolve(const std::string name);
     // destructor
-    virtual ~TPerambFromSolve(void) {};
+    virtual ~TPerambFromSolve(void);
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -62,6 +61,12 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
+protected:
+	GridCartesian * grid3d; // Owned by me, so I must delete it
+	GridCartesian * grid4d;
+protected:
+	    virtual void Cleanup(void);
+
 };
 
 MODULE_REGISTER_TMP(PerambFromSolve, TPerambFromSolve<FIMPL>, MDistil);
@@ -72,8 +77,15 @@ MODULE_REGISTER_TMP(PerambFromSolve, TPerambFromSolve<FIMPL>, MDistil);
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
 TPerambFromSolve<FImpl>::TPerambFromSolve(const std::string name)
-: Module<PerambFromSolvePar>(name)
+:grid3d{nullptr}, grid4d{nullptr}, Module<PerambFromSolvePar>(name)
 {}
+//destructor
+template <typename FImpl>
+TPerambFromSolve<FImpl>::~TPerambFromSolve(void)
+{
+  Cleanup();
+};
+
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
@@ -99,7 +111,9 @@ std::vector<std::string> TPerambFromSolve<FImpl>::getOutput(void)
 template <typename FImpl>
 void TPerambFromSolve<FImpl>::setup(void)
 {
-    const int nvec{par().nvec};
+		  Cleanup();
+    
+	const int nvec{par().nvec};
     const DistilParameters & Distil{par().Distil};
     const int LI{Distil.LI};
     const int nnoise{Distil.nnoise};
@@ -107,12 +121,32 @@ void TPerambFromSolve<FImpl>::setup(void)
     const int Ns{Distil.Ns};
     std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
 
+    grid4d = env().getGrid();
+        grid3d = MakeLowerDimGrid(grid4d);
+
+
     envCreate(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName(), 1,
               sIndexNames,Distil.Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
     envCreate(std::vector<Complex>, getName() + "_noise", 1,
               nvec*Distil.Ns*Distil.Nt*Distil.nnoise);
- 
+
+    envTmp(LatticeColourVector, "result_3d",1,LatticeColourVector(grid3d));
+        envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
+	    envTmpLat(LatticeColourVector, "result_nospin");
+
+
 }
+
+template <typename FImpl>
+void TPerambFromSolve<FImpl>::Cleanup(void)
+{
+	  if( grid3d != nullptr ) {
+		      delete grid3d;
+		          grid3d = nullptr;
+			    }
+	    grid4d = nullptr;
+}
+
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>

@@ -203,7 +203,7 @@ void test_DistilVectorsS(Application &application)
   DistilVecPar.TI=32;
   DistilVecPar.nvec=3;
   DistilVecPar.Ns=4;
-  DistilVecPar.Nt=32;
+  DistilVecPar.Nt=8;
   DistilVecPar.Nt_inv=1;
   application.createModule<MDistil::DistilVectors>("DistilVecsS",DistilVecPar);
 }
@@ -430,8 +430,29 @@ void test_AslashSeq(Application &application)
   A2AAslashVectorsPar.vector="PerambS_unsmeared_sink";
   A2AAslashVectorsPar.emField="Em";
   A2AAslashVectorsPar.solver="CG_s";
-  A2AAslashVectorsPar.output="Aslash_seq";
+  A2AAslashVectorsPar.output="AslashSeq";
   application.createModule<MSolver::A2AAslashVectors>("Aslash_seq",A2AAslashVectorsPar);
+}
+/////////////////////////////////////////////////////////////
+// Aslash_perambulators
+/////////////////////////////////////////////////////////////
+void test_PerambulatorsSolve(Application &application)
+{
+  // PerambLight parameters
+  MDistil::PerambFromSolve::Par PerambFromSolvePar;
+  PerambFromSolvePar.eigenPack="LapEvec";
+  PerambFromSolvePar.solve="Aslash_seq";
+  PerambFromSolvePar.PerambFileName="perambAslashS.bin";
+  PerambFromSolvePar.Distil.tsrc = 0;
+  PerambFromSolvePar.Distil.nnoise = 1;
+  PerambFromSolvePar.Distil.LI=3;
+  PerambFromSolvePar.Distil.SI=4;
+  PerambFromSolvePar.Distil.TI=8;
+  PerambFromSolvePar.nvec=3;
+  PerambFromSolvePar.Distil.Ns=4;
+  PerambFromSolvePar.Distil.Nt=8;
+  PerambFromSolvePar.Distil.Nt_inv=1;
+  application.createModule<MDistil::PerambFromSolve>("PerambAslashS",PerambFromSolvePar);
 }
 /////////////////////////////////////////////////////////////
 // DistilVectors
@@ -453,24 +474,6 @@ void test_DistilVectorsAslashSeq(Application &application)
   DistilSinkPar.Nt=8;
   DistilSinkPar.Nt_inv=1;
   application.createModule<MDistil::DistilSink>("DistilVecsAslashSeq",DistilSinkPar);
-}
-void test_PerambulatorsSolve(Application &application)
-{
-  // PerambLight parameters
-  MDistil::PerambFromSolve::Par PerambFromSolvePar;
-  PerambFromSolvePar.eigenPack="LapEvec";
-  PerambFromSolvePar.solve="Aslash_seq";
-  PerambFromSolvePar.PerambFileName="perambAslashS.bin";
-  PerambFromSolvePar.Distil.tsrc = 0;
-  PerambFromSolvePar.Distil.nnoise = 1;
-  PerambFromSolvePar.Distil.LI=3;
-  PerambFromSolvePar.Distil.SI=4;
-  PerambFromSolvePar.Distil.TI=8;
-  PerambFromSolvePar.nvec=3;
-  PerambFromSolvePar.Distil.Ns=4;
-  PerambFromSolvePar.Distil.Nt=8;
-  PerambFromSolvePar.Distil.Nt_inv=1;
-  application.createModule<MDistil::PerambFromSolve>("PerambAslashS",PerambFromSolvePar);
 }
 /////////////////////////////////////////////////////////////
 // MesonFields - aslaaaash
