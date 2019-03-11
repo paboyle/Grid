@@ -1,4 +1,4 @@
-bin_PROGRAMS = HadronsXmlRun HadronsXmlValidate HadronsFermionEP64To32 HadronsContractor HadronsContractorBenchmark
+bin_PROGRAMS = HadronsXmlRun HadronsXmlValidate HadronsFermionEP64To32 HadronsContractor HadronsMultiplier HadronsContractorBenchmark
 
 HadronsXmlRun_SOURCES = HadronsXmlRun.cc
 HadronsXmlRun_LDADD   = ../libHadrons.a ../../Grid/libGrid.a
@@ -12,6 +12,9 @@ HadronsFermionEP64To32_LDADD    = ../libHadrons.a ../../Grid/libGrid.a
 
 HadronsContractor_SOURCES = Contractor.cc
 HadronsContractor_LDADD   = ../libHadrons.a ../../Grid/libGrid.a
+
+HadronsMultiplier_SOURCES = Multiplier.cc
+HadronsMultiplier_LDADD   = ../libHadrons.a ../../Grid/libGrid.a
 
 HadronsContractorBenchmark_SOURCES = ContractorBenchmark.cc
 HadronsContractorBenchmark_LDADD   = ../libHadrons.a ../../Grid/libGrid.a
