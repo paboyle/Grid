@@ -63,8 +63,8 @@ void A2AUtilsDV<FImpl>::ContractWWVVDiskVector(std::vector<PropagatorField> &WWV
                 for (int s = 0; s < N_s; s++)
                 {
                     auto tmp1 = vs[s]._odata[ss];
-                    vobj tmp2 = tmp1 * 0.0; // would rather write zero
-                    vobj tmp3 = tmp1 * 0.0; // would rather write zero
+                    vobj tmp2 = zero;
+                    vobj tmp3 = zero;
 
                     for (int d = d_o; d < MIN(d_o + d_unroll, N_d); d++)
                     {
