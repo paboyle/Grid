@@ -52,7 +52,7 @@ BEGIN_HADRONS_NAMESPACE
  *                                        |
  *                one trace               |                two traces
  * 
- * one trace : tr(qbr*gOut*qs*adj(gIn)*g5*adj(qbl)*g5*G*loop*G*qbr*gOut)
+ * one trace : tr(qbr*gOut*qs*adj(gIn)*g5*adj(qbl)*g5*G*loop*G)
  * two traces: tr(qbr*gOut*qs*adj(gIn)*g5*adj(qbl)*g5*G)*tr(loop*G)
  * 
  */
@@ -170,7 +170,7 @@ void TWeakEye3pt<FImpl>::execute(void)
 
         r.info.op = G.g;
         // one trace
-        corr = trace(qbr*gOut*qst*adj(gIn)*g5*adj(qbl)*g5*G*loop*G*qbr*gOut);
+        corr = trace(qbr*gOut*qst*adj(gIn)*g5*adj(qbl)*g5*G*loop*G);
         sliceSum(corr, buf, Tp);
         r.corr.clear();
         for (unsigned int t = 0; t < buf.size(); ++t)
