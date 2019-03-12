@@ -30,6 +30,7 @@
 #include <typeinfo>
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>
+#include <Grid/util/EigenUtil.h>
 
 using namespace Grid;
 using namespace Hadrons;
@@ -688,13 +689,10 @@ bool DebugEigenTest()
 template <typename T>
 void DebugGridTensorTest_print( int i )
 {
-  std::cout << i << " : " << EigenIO::is_tensor<T>::value
-  << ", rank " << EigenIO::Traits<T>::rank
-  << ", rank_non_trivial " << EigenIO::Traits<T>::rank_non_trivial
-  << ", count " << EigenIO::Traits<T>::count
-  << ", scalar_size " << EigenIO::Traits<T>::scalar_size
-  << ", size " << EigenIO::Traits<T>::size
-  << std::endl;
+  // std::cout << i << " : " << EigenIO::is_tensor<T>::value
+  // << ", Rank " << EigenIO::Traits<T>::Rank
+  // << ", count " << EigenIO::Traits<T>::count
+  // << std::endl;
 }
 
 // begin() and end() are the minimum necessary to support range-for loops
@@ -723,12 +721,12 @@ void EigenSliceExample()
   a.setValues({{0, 100, 200}, {300, 400, 500},
     {600, 700, 800}, {900, 1000, 1100}});
   std::cout << "a\n" << a << std::endl;
-  DumpMemoryOrder( a, "a" );
+  dump_tensor( a, "a" );
   Eigen::array<typename T2::Index, 2> offsets = {0, 1};
   Eigen::array<typename T2::Index, 2> extents = {4, 2};
   T2 slice = a.slice(offsets, extents);
   std::cout << "slice\n" << slice << std::endl;
-  DumpMemoryOrder( slice, "slice" );
+  dump_tensor( slice, "slice" );
   std::cout << "\n========================================" << std::endl;
 }
 
@@ -741,10 +739,7 @@ void EigenSliceExample2()
   T3 a(2,3,4);
 
   std::cout << "Initialising a:";
-  for_all( a, [&](TestScalar &c, float f, const std::array<size_t,T3::NumIndices> &Dims ){
-    c = TestScalar{f,-f};
-    std::cout << " a(" << Dims[0] << "," << Dims[1] << "," << Dims[2] << ")=" << c;
-  } );
+  SequentialInit( a );
   std::cout << std::endl;
   //std::cout << "Validating   a:";
   float z = 0;
@@ -758,22 +753,18 @@ void EigenSliceExample2()
       }
   //std::cout << std::endl;
   //std::cout << "a initialised to:\n" << a << std::endl;
-  DumpMemoryOrder( a, "a" );
-  std::cout << "for_all(a):";
-  for_all( a, [&](TestScalar c, typename T3::Index n, const std::array<size_t,T3::NumIndices> &Dims ){
-    std::cout << " (" << Dims[0] << "," << Dims[1] << "," << Dims[2] << ")<" << n << ">=" << c;
-  } );
+  dump_tensor( a, "a" );
   std::cout << std::endl;
   Eigen::array<typename T3::Index, 3> offsets = {0,1,1};
   Eigen::array<typename T3::Index, 3> extents = {1,2,2};
   T3 b;
   b = a.slice( offsets, extents );//.reshape(NewExtents);
   std::cout << "b = a.slice( offsets, extents ):\n" << b << std::endl;
-  DumpMemoryOrder( b, "b" );
+  dump_tensor( b, "b" );
   T2 c(3,4);
   c = a.chip(0,1);
   std::cout << "c = a.chip(0,0):\n" << c << std::endl;
-  DumpMemoryOrder( c, "c" );
+  dump_tensor( c, "c" );
   //T2 d = b.reshape(extents);
   //std::cout << "b.reshape(extents) is:\n" << d << std::endl;
   std::cout << "\n========================================" << std::endl;

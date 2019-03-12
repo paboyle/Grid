@@ -109,7 +109,7 @@ std::vector<std::string> TPerambMultipleSolves<FImpl>::getOutput(void)
 template <typename FImpl>
 void TPerambMultipleSolves<FImpl>::setup(void)
 {
- /*   Cleanup();
+    Cleanup();
 
     const int nvec{par().nvec};
     // auto &noise = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
@@ -133,7 +133,8 @@ void TPerambMultipleSolves<FImpl>::setup(void)
 
     envTmpLat(GaugeField, "Umu");
     envTmpLat(LatticeSpinColourVector, "dist_source");
-    envTmp(std::vector<LatticeSpinColourVector>, "sources",nsolves);
+    envTmp(std::vector<LatticeSpinColourVector>, "sources", 1,
+           std::vector<LatticeSpinColourVector>( nsolves, grid4d ));
     envTmpLat(LatticeSpinColourVector, "tmp2");
     envTmpLat(LatticeSpinColourVector, "result");
     //envTmpLat(LatticeSpinColourVector, "result_single_component");
@@ -149,7 +150,6 @@ void TPerambMultipleSolves<FImpl>::setup(void)
     envTmpLat(FermionField, "v4dtmp");
     envTmpLat(FermionField, "v5dtmp", Ls_);
     envTmpLat(FermionField, "v5dtmp_sol", Ls_);
-*/
 }
 
 // clean up any temporaries created by setup (that aren't stored in the environment)
@@ -167,7 +167,7 @@ void TPerambMultipleSolves<FImpl>::Cleanup(void)
 template <typename FImpl>
 void TPerambMultipleSolves<FImpl>::execute(void)
 {
- /*   const int nsolves{par().nsolves};
+    const int nsolves{par().nsolves};
     const int nvec{par().nvec};
     std::vector<int> nvecs{par().nvecs};
     const DistilParameters & Distil{par().Distil};
@@ -199,7 +199,7 @@ void TPerambMultipleSolves<FImpl>::execute(void)
     std::vector<std::vector<FermionField>> solves(nsolves);
     for(int i=0;i<nsolves;i++){
       auto &unsmeared_sink = envGet(std::vector<FermionField>, getName() +"_solve_"+std::to_string(nvecs[i]));
-      solves[i].resize(nnoise*nvecs[i]*Ns*Nt_inv);
+      solves[i].resize(nnoise*nvecs[i]*Ns*Nt_inv, grid4d);
       solves[i]=unsmeared_sink;
     }
 
@@ -333,10 +333,7 @@ void TPerambMultipleSolves<FImpl>::execute(void)
         }
       }
     }
-
-
   }
-*/
 }
 END_MODULE_NAMESPACE
 
