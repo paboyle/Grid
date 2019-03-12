@@ -76,7 +76,7 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionR::Dhop "<<std::endl;
     std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
 
-    GridParallelRNG RNG5(FGrid);
+    GridParallelRNG RNG5(FGrid); RNG5.SeedFixedIntegers(seeds5);
     LatticeFermion src(FGrid); random(RNG5,src);
     LatticeFermion result(FGrid);
 
@@ -173,7 +173,7 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionVec5dR::Dhop "<<std::endl;
     std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
 
-    GridParallelRNG RNG5(sFGrid);
+    GridParallelRNG RNG5(sFGrid); RNG5.SeedFixedIntegers(seeds5);
     LatticeFermion src(sFGrid); random(RNG5,src);
     LatticeFermion sref(sFGrid);
     LatticeFermion result(sFGrid);
