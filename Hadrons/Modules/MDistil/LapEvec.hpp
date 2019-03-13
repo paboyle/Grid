@@ -86,8 +86,8 @@ class LapEvecPar: Serializable
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(LapEvecPar,
                                   std::string,         gauge,
-                                  std::string, ConfigFileDir,
-                                  std::string, ConfigFileName,
+ //                                 std::string, ConfigFileDir,
+  //                                std::string, ConfigFileName,
                                   //,std::string,         EigenPackName
                                   StoutParameters,     Stout
                                   ,ChebyshevParameters, Cheby
@@ -211,11 +211,6 @@ void TLapEvec<GImpl>::execute(void)
 {
   LOG(Message) << "execute() : start for " << getName() << std::endl;
 
-  // Alii for parameters
-  //const int &TI{par().Distil.TI};
-  //const int &LI{par().Distil.LI};
-  //const int &nnoise{par().Distil.Nnoise};
-  //const int &tsrc{par().Distil.tSrc};
   const ChebyshevParameters &ChebPar{par().Cheby};
   const LanczosParameters   &LPar{par().Lanczos};
   const int &nvec{LPar.Nvec};
@@ -231,45 +226,8 @@ void TLapEvec<GImpl>::execute(void)
   //else
     //assert(nnoise>1);
 
-    const std::string &ConfigFileDir{par().ConfigFileDir};
-    const std::string &ConfigFileName{par().ConfigFileName};
-
-  // Debugging only
-  //envGetTmp(GaugeField, Umu);
   auto &Umu = envGet(GaugeField, par().gauge);
   envGetTmp(GaugeField, Umu_smear);
-  FieldMetaData header;
-  if((0)) {
-    const std::vector<int> seeds({1, 2, 3, 4, 5});
-    GridParallelRNG pRNG4d(gridHD);
-    pRNG4d.SeedFixedIntegers(seeds);
-    std::cout << GridLogMessage << "now hot config" << std::endl;
-    SU<Nc>::HotConfiguration(pRNG4d, Umu);
-    std::cout << GridLogMessage << "hot cfg done." << std::endl;
-    
-    // Set up the SAME gauge field on every time plane
-    Grid_unquiesce_nodes();
-    Umu_smear = Umu;
-    Lattice<iScalar<vInteger> > coor(gridHD);
-    LatticeCoordinate(coor,Tdir);
-    for(int t=1;t<Nt;t++){
-      // t=1
-      //  Umu                Umu_smear
-      // 0,1,2,3,4,5,6,7 -> 7,0,1,2,3,4,5,6 t=1
-      // 0,0,2,3,4,5,6,7    6,7,0,1,2,3,4,5 t=2
-      // 0,0,0,3,4,5,6,7    5,6,7,0,1,2,3,4 t=3
-      //...
-      
-      Umu_smear = Cshift(Umu_smear,Tdir,-1);
-      Umu = where(coor==t,Umu_smear,Umu);
-    }
-    //  std::cout << "Umu is "<<Umu<<std::endl;
-  } else {
-    std::string   fileName(ConfigFileDir + ConfigFileName);
-    std::cout << GridLogMessage << "Loading NERSC configuration from '" << fileName << "'" << std::endl;
-    NerscIO::readConfiguration(Umu, header, fileName);
-    std::cout << GridLogMessage << "reading done." << std::endl;
-  }
 
   // Stout smearing
   Umu_smear = Umu;
