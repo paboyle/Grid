@@ -207,8 +207,8 @@ void TPerambLight<FImpl>::execute(void)
     // Load perambulator if it exists on disk instead of creating it
     // Not sure this is how we want it - rather specify an input flag 'read' 
     // and assert that the file is there.
-/*    const std::string &PerambFileName{par().PerambFileName};
-    if( PerambFileName.length() ){
+    const std::string &PerambFileName{par().PerambFileName};
+/*    if( PerambFileName.length() ){
         bool bExists = false;
         {
             std::ifstream f(PerambFileName, std::ios::binary);
