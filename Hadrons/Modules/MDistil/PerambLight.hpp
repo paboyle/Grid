@@ -184,7 +184,7 @@ void TPerambLight<FImpl>::execute(void)
 
     //Create Noises
     GridSerialRNG sRNG; 
-    sRNG.SeedUniqueString(UniqueIdentifier); //maybe add trajectory number??
+    sRNG.SeedUniqueString(UniqueIdentifier + std::to_string(vm().getTrajectory())); //maybe add more??
     Real rn;
     
     for (int inoise=0;inoise<nnoise;inoise++) {
@@ -205,7 +205,9 @@ void TPerambLight<FImpl>::execute(void)
     }
 
     // Load perambulator if it exists on disk instead of creating it
-    const std::string &PerambFileName{par().PerambFileName};
+    // Not sure this is how we want it - rather specify an input flag 'read' 
+    // and assert that the file is there.
+/*    const std::string &PerambFileName{par().PerambFileName};
     if( PerambFileName.length() ){
         bool bExists = false;
         {
@@ -217,7 +219,7 @@ void TPerambLight<FImpl>::execute(void)
             perambulator.ReadBinary(PerambFileName);
             return;
         }
-    }
+    }*/
 
   envGetTmp(LatticeSpinColourVector, dist_source);
   envGetTmp(LatticeSpinColourVector, tmp2);
@@ -231,10 +233,6 @@ void TPerambLight<FImpl>::execute(void)
     const int Ntlocal{grid4d->LocalDimensions()[3]};
     const int Ntfirst{grid4d->LocalStarts()[3]};
 
-    std::cout << "init RBG "  << std::endl;
-    GridRedBlackCartesian RBGrid(grid4d);
-    std::cout << "init RBG done"  << std::endl;
-   
     {
 
     int t_inv;
@@ -262,7 +260,6 @@ void TPerambLight<FImpl>::execute(void)
                 }
               }
             }
-            std::cout <<  "Inversion for noise " << inoise << " and dilution component (d_k,d_t,d_alpha) : (" << dk << ","<< dt << "," << ds << ")" << std::endl;
             result=zero;
 	    v4dtmp = dist_source;
 	    if (Ls_ == 1){
@@ -275,7 +272,6 @@ void TPerambLight<FImpl>::execute(void)
 	    }
             if ((1)) // comment out if unsmeared sink is too large???
               unsmeared_sink[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))] = result;
-            std::cout <<  "Contraction of perambulator from noise " << inoise << " and dilution component (d_k,d_t,d_alpha) : (" << dk << ","<< dt << "," << ds << ")" << std::endl;
             for (int is = 0; is < Ns; is++) {
               result_nospin = peekSpin(result,is);
               for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
@@ -283,7 +279,6 @@ void TPerambLight<FImpl>::execute(void)
                 for (int ivec = 0; ivec < nvec; ivec++) {
                   ExtractSliceLocal(evec3d,epack.evec[ivec],0,t,3);
                   pokeSpin(perambulator(t, ivec, dk, inoise,dt,ds),innerProduct(evec3d, result_3d),is);
-                  std::cout <<  "perambulator(t, ivec, dk, inoise,dt,ds)(is) = (" << t << "," << ivec << "," << dk << "," << inoise << "," << dt << "," << ds << ")(" << is << ") = " <<  perambulator(t, ivec, dk, inoise,dt,ds)()(is)() << std::endl;
                 }
           }
         }
@@ -296,7 +291,7 @@ void TPerambLight<FImpl>::execute(void)
     perambulator.SliceShare( grid3d, grid4d );
 
     if(PerambFileName.length())
-        perambulator.WriteBinary(PerambFileName);
+        perambulator.WriteBinary(PerambFileName + "." + std::to_string(vm().getTrajectory()));
 }
 
 END_MODULE_NAMESPACE

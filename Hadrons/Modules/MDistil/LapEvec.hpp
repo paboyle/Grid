@@ -335,7 +335,7 @@ void TLapEvec<GImpl>::execute(void)
   // Now write out the 4d eigenvectors
   eig4d.record.operatorXml = DefaultOperatorXml;
   eig4d.record.solverXml = DefaultsolverXml;
-  eig4d.write(sEigenPackName,false);
+  eig4d.write(sEigenPackName + "." + std::to_string(vm().getTrajectory()),false);
 
   // Close the local debugging log file
   if( ll ) {

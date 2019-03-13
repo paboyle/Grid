@@ -201,7 +201,7 @@ void TPerambFromSolve<FImpl>::execute(void)
     }
 
     if(PerambFileName.length())
-        perambulator.WriteBinary(PerambFileName);
+        perambulator.WriteBinary(PerambFileName + "." + std::to_string(vm().getTrajectory()));
  
 }
 
