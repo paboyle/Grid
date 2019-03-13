@@ -75,10 +75,11 @@ void makeTimeSeq(std::vector<std::vector<unsigned int>> &timeSeq,
 }
 
 void makeOutFilename(std::string &outFilename, std::stringstream &ioName,
-                     std::string momentum, std::string &outStem,
+                     std::string momentum, std::string &outStem, std::vector<std::string> term,
                      const std::vector<Gamma::Algebra> &gammas, const int traj,
                      const std::vector<unsigned int> &dt)
 {
+    std::string termString;
 
     if (gammas.size() != dt.size())
             {
@@ -100,17 +101,31 @@ void makeOutFilename(std::string &outFilename, std::stringstream &ioName,
         
     }
     ioName << momentum;
-    outFilename = outStem + "." + std::to_string(traj) + "/" + ioName.str() + ".h5";
+
+    for(unsigned int i = 0; i < term.size(); i++)
+    {
+        if ( i < term.size() - 1)
+        {
+            termString += term[i] + "_";
+        }
+        else
+        {
+            termString += term[i];
+        }
+        
+    }
+    
+    outFilename = outStem + "." + std::to_string(traj) + "/" + termString + "/" + ioName.str() + ".h5";
 }
 
-void makeIoHelper(IoHelper &helper, std::string momentum, std::string &outStem,
+void makeIoHelper(IoHelper &helper, std::string momentum, std::string &outStem, std::vector<std::string> term,
                   const std::vector<Gamma::Algebra> &gammas,
                   const std::vector<unsigned int> dt, const int nt, const int N_i, const int N_j,
                   const int blockSize, const int traj)
 {
     std::string filenameOut;
     std::stringstream ioName;
-    makeOutFilename(filenameOut, ioName, momentum, outStem, gammas, traj, dt);
+    makeOutFilename(filenameOut, ioName, momentum, outStem, term, gammas, traj, dt);
     helper.io = A2AMatrixIo<HADRONS_A2AM_IO_TYPE>(filenameOut,
                                              ioName.str(), nt, N_i, N_j);
 
@@ -413,7 +428,7 @@ int main(int argc, char* argv[])
 
             for (unsigned int j = 0; j < term.size(); ++j)
             {
-                parseDataset(a2aMatDataset.at(term[0]), matString, momString);
+                parseDataset(a2aMatDataset.at(term[j]), matString, momString);
 
                 gamma = strToVec<Gamma::Algebra>(matString);
                 gammas.push_back(gamma[0]);
@@ -428,7 +443,7 @@ int main(int argc, char* argv[])
             }
 
             IoHelper h;
-            makeIoHelper(h, momStrings[0], par.global.output, gammas, dt, nt, N_i, N_j, blockSize, traj);
+            makeIoHelper(h, momStrings[0], par.global.output, term, gammas, dt, nt, N_i, N_j, blockSize, traj);
 
             flops  = 0.;
             bytes  = 0.;
