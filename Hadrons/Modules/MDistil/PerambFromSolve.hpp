@@ -42,6 +42,8 @@ public:
                                     std::string, PerambFileName,
                                     std::string, solve,
                                     int, nvec,
+                                    int, nvec_reduced,
+                                    int, LI_reduced,
                                     DistilParameters, Distil);
 };
 
@@ -125,8 +127,12 @@ void TPerambFromSolve<FImpl>::setup(void)
         grid3d = MakeLowerDimGrid(grid4d);
 
 
+	const int nvec_reduced{par().nvec_reduced};
+	const int LI_reduced{par().LI_reduced};
+    //envCreate(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName(), 1,
+    //          sIndexNames,Distil.Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
     envCreate(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName(), 1,
-              sIndexNames,Distil.Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
+              sIndexNames,Distil.Nt,nvec_reduced,LI_reduced,Distil.nnoise,Distil.Nt_inv,Distil.SI);
     envCreate(std::vector<Complex>, getName() + "_noise", 1,
               nvec*Distil.Ns*Distil.Nt*Distil.nnoise);
 
@@ -152,6 +158,8 @@ void TPerambFromSolve<FImpl>::Cleanup(void)
 template <typename FImpl>
 void TPerambFromSolve<FImpl>::execute(void)
 {
+	const int nvec_reduced{par().nvec_reduced};
+	const int LI_reduced{par().LI_reduced};
     const int nvec{par().nvec};
     const DistilParameters & Distil{par().Distil};
     const int LI{Distil.LI};
@@ -181,14 +189,14 @@ void TPerambFromSolve<FImpl>::execute(void)
 
 
     for (int inoise = 0; inoise < nnoise; inoise++) {
-      for (int dk = 0; dk < LI; dk++) {
+      for (int dk = 0; dk < LI_reduced; dk++) {
         for (int dt = 0; dt < Nt_inv; dt++) {
           for (int ds = 0; ds < Ns; ds++) {
             for (int is = 0; is < Ns; is++) {
               result_nospin = peekSpin(solve[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))],is);
               for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
                 ExtractSliceLocal(result_3d,result_nospin,0,t-Ntfirst,Grid::QCD::Tdir);
-                for (int ivec = 0; ivec < nvec; ivec++) {
+                for (int ivec = 0; ivec < nvec_reduced; ivec++) {
                   ExtractSliceLocal(evec3d,epack.evec[ivec],0,t,3);
                   pokeSpin(perambulator(t, ivec, dk, inoise,dt,ds),innerProduct(evec3d, result_3d),is);
                   std::cout <<  "perambulator(t, ivec, dk, inoise,dt,ds)(is) = (" << t << "," << ivec << "," << dk << "," << inoise << "," << dt << "," << ds << ")(" << is << ") = " <<  perambulator(t, ivec, dk, inoise,dt,ds)()(is)() << std::endl;
