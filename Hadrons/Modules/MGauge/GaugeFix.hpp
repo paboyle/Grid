@@ -7,6 +7,7 @@ Source file: Hadrons/Modules/MGauge/GaugeFix.hpp
 Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Nils Asmussen <n.asmussen@soton.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
@@ -58,6 +59,7 @@ class TGaugeFix: public Module<GaugeFixPar>
 {
 public:
     GAUGE_TYPE_ALIASES(GImpl,);
+    typedef typename GImpl::GaugeLinkField GaugeMat;
 public:
     // constructor
     TGaugeFix(const std::string name);
@@ -103,7 +105,7 @@ template <typename GImpl>
 void TGaugeFix<GImpl>::setup(void)
 {
     envCreateLat(GaugeField, getName());
-    envCreateLat(LatticeColourMatrix, getName()+"_xform");
+    envCreateLat(GaugeMat, getName()+"_xform");
 }
 
 
@@ -117,7 +119,7 @@ void TGaugeFix<GImpl>::execute(void)
     LOG(Message) << par().gauge << std::endl;
     auto &U     = envGet(GaugeField, par().gauge);
     auto &Umu   = envGet(GaugeField, getName());
-    auto &xform = envGet(LatticeColourMatrix, getName()+"_xform");
+    auto &xform = envGet(GaugeMat, getName()+"_xform");
     LOG(Message) << "Gauge Field fetched" << std::endl;
     //do we allow maxiter etc to be user set?
     Real alpha     = par().alpha;
