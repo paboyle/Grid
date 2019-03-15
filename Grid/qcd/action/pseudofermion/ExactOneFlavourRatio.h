@@ -63,8 +63,8 @@ namespace QCD{
 
     public:
       ExactOneFlavourRatioPseudoFermionAction(AbstractEOFAFermion<Impl>& _Lop, AbstractEOFAFermion<Impl>& _Rop,
-        OperatorFunction<FermionField>& S, Params& p, bool use_fc=false) : Lop(_Lop), Rop(_Rop), Solver(S),
-        Phi(_Lop.FermionGrid()), param(p), use_heatbath_forecasting(use_fc)
+        OperatorFunction<FermionField>& S, Params& p, bool use_fc=false) : Lop(_Lop), Rop(_Rop), 
+        Solver(S, false, true), Phi(_Lop.FermionGrid()), param(p), use_heatbath_forecasting(use_fc)
       {
         AlgRemez remez(param.lo, param.hi, param.precision);
 
