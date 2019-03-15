@@ -54,7 +54,7 @@ void A2AUtilsDV<FImpl>::ContractWWVVDiskVector(std::vector<PropagatorField> &WWV
 
     for (int t = 0; t < N_t; t++)
     {
-        std::cout << "Contraction t = " << t << std::endl;
+        LOG(Message) << "Contraction t = " << t << std::endl;
         EigenDiskVector<ComplexD>::Matrix buf = WW_sd[t];
         parallel_for(int ss = 0; ss < grid->oSites(); ss++)
         {

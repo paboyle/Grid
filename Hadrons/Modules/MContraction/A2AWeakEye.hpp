@@ -133,6 +133,11 @@ void TA2AWeakEye<FImpl>::execute(void)
         res.info.dtmin = dtmin;
         res.info.dtmax = dtmax;
 
+        for (int t = 0; t < nt; t++)
+        {
+            corrSaucer[t] = 0.0;
+            corrEye[t] = 0.0;
+        }
         for (int t0 = 0; t0 < nt; t0++)
         {
             A2Autils<FImpl>::ContractFourQuarkColourDiagonal(propT0[t0], propLoop, GG, GG, eyeField, saucerField);

@@ -130,8 +130,16 @@ void TA2AWeakNonEye<FImpl>::execute(void)
     {
         std::vector<Gamma> GG({G});
         res.info.op    = G.g;
+        std::cout << "===================" << std::endl;
+        std::cout << "Gamma: " << G.g << std::endl;
+        std::cout << "===================" << std::endl;
         res.info.dtmin = dtmin;
         res.info.dtmax = dtmax;
+        for(int t = 0; t < nt; t++)
+        {
+            corrConnected[t] = 0.0;
+            corrWing[t] = 0.0;
+        }
         for (int t0 = 0; t0 < nt; t0++)
         {
             LOG(Message) << " t0 " << t0 << std::endl;
@@ -160,12 +168,20 @@ void TA2AWeakNonEye<FImpl>::execute(void)
         {
             res.corr.push_back(corrConnected[t]);
         }
+        for (int t = 0; t < nt; t++)
+        {
+            std::cout << "CorrConnected[" << t << "] = " << corrConnected[t] << std::endl;
+        }
         res.info.trace = 1;
         result.push_back(res);
         res.corr.clear();
         for (int t = 0; t < nt; t++)
         {
             res.corr.push_back(corrWing[t]);
+        }
+        for (int t = 0; t < nt; t++)
+        {
+            std::cout << "CorrWing[" << t << "] = " << corrWing[t] << std::endl;
         }
         res.info.trace = 2;
         result.push_back(res);
