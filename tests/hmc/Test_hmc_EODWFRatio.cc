@@ -146,13 +146,7 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Denominator report, Dw(m) term (includes CG) : " << std::endl;
   DenOp.Report();
 
-
-
-
   Grid_finalize();
-
-
-
 
 } // main
 

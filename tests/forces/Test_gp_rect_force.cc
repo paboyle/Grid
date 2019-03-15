@@ -59,8 +59,8 @@ int main (int argc, char ** argv)
   double beta = 1.0;
   double c1   = 0.331;
 
-  //GparityPlaqPlusRectangleActionR Action(beta,c1);
-  ConjugateWilsonGaugeActionR Action(beta);
+  ConjugatePlaqPlusRectangleActionR Action(beta,c1);
+  //  ConjugateWilsonGaugeActionR Action(beta);
   //WilsonGaugeActionR Action(beta);
 
   ComplexD S    = Action.S(U);

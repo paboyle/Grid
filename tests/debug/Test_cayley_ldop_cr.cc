@@ -78,6 +78,7 @@ int main (int argc, char ** argv)
 
   RealD mass=0.1;
   RealD M5=1.5;
+  int cb=0;
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Building g5R5 hermitian DWF operator" <<std::endl;
@@ -95,7 +96,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Calling Aggregation class to build subspace" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermDefOp(Ddwf);
-  Subspace Aggregates(Coarse5d,FGrid);
+  Subspace Aggregates(Coarse5d,FGrid,cb);
   Aggregates.CreateSubspace(RNG5,HermDefOp);
 
 

@@ -1,0 +1,19 @@
+--- ./Eigen/unsupported/Eigen/CXX11/Tensor	2018-07-23 10:33:42.000000000 +0100
++++ Tensor	2018-08-28 16:15:56.000000000 +0100
+@@ -25,7 +25,7 @@
+ #include <utility>
+ #endif
+ 
+-#include <Eigen/src/Core/util/DisableStupidWarnings.h>
++#include "../../../Eigen/src/Core/util/DisableStupidWarnings.h"
+ 
+ #include "../SpecialFunctions"
+ #include "src/util/CXX11Meta.h"
+@@ -147,6 +147,6 @@
+ 
+ #include "src/Tensor/TensorIO.h"
+ 
+-#include <Eigen/src/Core/util/ReenableStupidWarnings.h>
++#include "../../../Eigen/src/Core/util/ReenableStupidWarnings.h"
+ 
+ //#endif // EIGEN_CXX11_TENSOR_MODULE

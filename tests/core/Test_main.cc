@@ -393,7 +393,6 @@ int main(int argc, char **argv) {
       }
       random(Foo);
       */
-      lex_sites(Foo);
 
       Integer mm[4];
       mm[0] = 1;

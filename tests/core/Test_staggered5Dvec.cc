@@ -141,6 +141,7 @@ int main (int argc, char ** argv)
   t1=usecond();
  
   std::cout<<GridLogMessage << "Called Ds ASM"<<std::endl;
+  std::cout<<GridLogMessage << "norm src "<< norm2(src)<<std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(tmp)<<std::endl;
   std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
 
@@ -160,7 +161,8 @@ int main (int argc, char ** argv)
   localConvert(sresult,tmp);
  
   std::cout<<GridLogMessage << "Called sDs unroll"<<std::endl;
-  std::cout<<GridLogMessage << "norm result "<< norm2(sresult)<<std::endl;
+  std::cout<<GridLogMessage << "norm ssrc "<< norm2(ssrc)<<std::endl;
+  std::cout<<GridLogMessage << "norm sresult "<< norm2(sresult)<<std::endl;
   std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
 
 
@@ -181,6 +183,7 @@ int main (int argc, char ** argv)
   localConvert(sresult,tmp);
  
   std::cout<<GridLogMessage << "Called sDs asm"<<std::endl;
+  std::cout<<GridLogMessage << "norm ssrc   "<< norm2(ssrc)<<std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(sresult)<<std::endl;
   std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)*extra<<std::endl;
 

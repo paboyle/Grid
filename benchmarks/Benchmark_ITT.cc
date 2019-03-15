@@ -158,8 +158,10 @@ public:
 
 	  dbytes=0;
 	  ncomm=0;
-
-	  parallel_for(int dir=0;dir<8;dir++){
+#ifdef GRID_OMP
+#pragma omp parallel for num_threads(Grid::CartesianCommunicator::nCommThreads)
+#endif
+	  for(int dir=0;dir<8;dir++){
 
 	    double tbytes;
 	    int mu =dir % 4;
@@ -175,9 +177,14 @@ public:
 		int comm_proc = mpi_layout[mu]-1;
 		Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
 	      }
+#ifdef GRID_OMP
+	int tid = omp_get_thread_num(); 
+#else 
+        int tid = dir;
+#endif
 	      tbytes= Grid.StencilSendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,
 						 (void *)&rbuf[dir][0], recv_from_rank,
-						 bytes,dir);
+						 bytes,tid);
 	  
 #ifdef GRID_OMP
 #pragma omp atomic

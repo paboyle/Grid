@@ -187,10 +187,11 @@ Alternatively, some CPU codenames can be directly used:
 | `<code>`    | Description                            |
 | ----------- | -------------------------------------- |
 | `KNL`       | [Intel Xeon Phi codename Knights Landing](http://ark.intel.com/products/codename/48999/Knights-Landing) |
+| `SKL`       | [Intel Skylake with AVX512 extensions](https://ark.intel.com/products/codename/37572/Skylake#@server) |
 | `BGQ`       | Blue Gene/Q                            |
 
 #### Notes:
-- We currently support AVX512 only for the Intel compiler. Support for GCC and clang will appear in future versions of Grid when the AVX512 support within GCC and clang will be more advanced.
+- We currently support AVX512 for the Intel compiler and GCC (KNL and SKL target). Support for clang will appear in future versions of Grid when the AVX512 support in the compiler will be more advanced.
 - For BG/Q only [bgclang](http://trac.alcf.anl.gov/projects/llvm-bgq) is supported. We do not presently plan to support more compilers for this platform.
 - BG/Q performances are currently rather poor. This is being investigated for future versions.
 - The vector size for the `GEN` target can be specified with the `configure` script option `--enable-gen-simd-width`.

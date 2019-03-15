@@ -107,7 +107,7 @@ int main (int argc, char ** argv)
     FGrid->Barrier();
     
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-    double flops=2*1344*volume*ncall;
+    double flops=2*1320*volume*ncall;
 
     std::cout<<GridLogMessage << "Called Dw "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
     //    std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
@@ -134,7 +134,7 @@ int main (int argc, char ** argv)
     FGrid->Barrier();
     
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-    double flops=2*1344*volume*ncall;
+    double flops=2*1320*volume*ncall;
 
     std::cout<<GridLogMessage << "Called half prec comms Dw "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
@@ -174,7 +174,7 @@ int main (int argc, char ** argv)
     FGrid_d->Barrier();
     
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-    double flops=2*1344*volume*ncall;
+    double flops=2*1320*volume*ncall;
 
     std::cout<<GridLogMessage << "Called Dw "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
     //    std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;

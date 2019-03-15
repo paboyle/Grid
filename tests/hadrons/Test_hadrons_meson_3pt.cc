@@ -1,31 +1,33 @@
-/*******************************************************************************
- Grid physics library, www.github.com/paboyle/Grid
- 
- Source file: tests/hadrons/Test_hadrons_meson_3pt.cc
- 
- Copyright (C) 2015
- 
- Author: Antonin Portelli <antonin.portelli@me.com>
- 
- This program is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation; either version 2 of the License, or
- (at your option) any later version.
- 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
- 
- You should have received a copy of the GNU General Public License along
- with this program; if not, write to the Free Software Foundation, Inc.,
- 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
- See the full license in the file "LICENSE" in the top level distribution
- directory.
- *******************************************************************************/
+/*************************************************************************************
 
-#include <Grid/Hadrons/Application.hpp>
+Grid physics library, www.github.com/paboyle/Grid 
+
+Source file: Tests/Hadrons/Test_hadrons_meson_3pt.cc
+
+Copyright (C) 2015-2018
+
+ Author: Antonin Portelli <antonin.portelli@me.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+See the full license in the file "LICENSE" in the top level distribution directory
+*************************************************************************************/
+/*  END LEGAL */
+
+#include <Hadrons/Application.hpp>
+#include <Hadrons/Modules.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
@@ -52,7 +54,7 @@ int main(int argc, char *argv[])
     globalPar.trajCounter.start    = 1500;
     globalPar.trajCounter.end      = 1520;
     globalPar.trajCounter.step     = 20;
-    globalPar.seed                 = "1 2 3 4";
+    globalPar.runId                = "test";
     globalPar.genetic.maxGen       = 1000;
     globalPar.genetic.maxCstGen    = 200;
     globalPar.genetic.popSize      = 20;
@@ -64,6 +66,7 @@ int main(int argc, char *argv[])
     
     // set fermion boundary conditions to be periodic space, antiperiodic time.
     std::string boundary = "1 1 1 -1";
+    std::string twist = "0. 0. 0. 0.";
 
     // sink
     MSink::Point::Par sinkPar;
@@ -78,12 +81,14 @@ int main(int argc, char *argv[])
         actionPar.M5    = 1.8;
         actionPar.mass  = mass[i];
         actionPar.boundary = boundary;
+        actionPar.twist = twist;
         application.createModule<MAction::DWF>("DWF_" + flavour[i], actionPar);
         
         // solvers
         MSolver::RBPrecCG::Par solverPar;
-        solverPar.action   = "DWF_" + flavour[i];
-        solverPar.residual = 1.0e-8;
+        solverPar.action       = "DWF_" + flavour[i];
+        solverPar.residual     = 1.0e-8;
+        solverPar.maxIteration = 10000;
         application.createModule<MSolver::RBPrecCG>("CG_" + flavour[i],
                                                     solverPar);
     }
