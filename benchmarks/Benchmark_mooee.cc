@@ -184,7 +184,7 @@ int main (int argc, char ** argv)
 
     RealD b=1.5;// Scale factor b+c=2, b-c=1
     RealD c=0.5;
-    std::vector<ComplexD> gamma(Ls,std::complex<double>(1.0,0.0));
+    Vector<ComplexD> gamma(Ls,std::complex<double>(1.0,0.0));
     ZMobiusFermionVec5dR zDw(Umu,*sFGrid,*sFrbGrid,*sUGrid,*sUrbGrid,mass,M5,gamma,b,c);
 
     std::cout<<GridLogMessage << "Calling Dhop "<<std::endl;
