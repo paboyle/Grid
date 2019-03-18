@@ -87,10 +87,6 @@ void test_LapEvec(Application &application)
   application.createModule<MGauge::Random>(szGaugeName);
   // Now make an instance of the LapEvec object
   MDistil::LapEvecPar p;
-  //p.ConfigFileDir="/home/dp008/dp008/dc-rich6/Scripts/ConfigsDeflQED/";
-  //p.ConfigFileName="ckpoint_lat.3000";
-  p.ConfigFileDir="/home/dp008/dp008/paboyle/A2A/run/";
-  p.ConfigFileName="ckpoint_lat.IEEE64BIG.1100";
   p.gauge = szGaugeName;
   //p.EigenPackName = "ePack";
   //p.Distil.TI = 8;
@@ -120,8 +116,6 @@ void test_Perambulators(Application &application)
   MDistil::PerambLight::Par PerambPar;
   PerambPar.eigenPack="LapEvec";
   PerambPar.PerambFileName="peramb.bin";
-  PerambPar.ConfigFileDir="/home/dp008/dp008/paboyle/A2A/run/";
-  PerambPar.ConfigFileName="ckpoint_lat.IEEE64BIG.1100";
   PerambPar.UniqueIdentifier="full_dilution";
   PerambPar.solver="CG_s";
   PerambPar.Distil.tsrc = 0;
@@ -139,6 +133,99 @@ void test_Perambulators(Application &application)
   //PerambPar.Solver.CGPrecision=1e-8;
   //PerambPar.Solver.MaxIterations=10000;
   application.createModule<MDistil::PerambLight>("Peramb",PerambPar);
+}
+/////////////////////////////////////////////////////////////
+// Multiple Perambulators
+/////////////////////////////////////////////////////////////
+
+void test_MultiPerambulators(Application &application)
+{
+  // PerambLight parameters
+  MDistil::PerambLight::Par PerambPar;
+  PerambPar.eigenPack="LapEvec";
+  PerambPar.UniqueIdentifier="full_dilution";
+  PerambPar.PerambFileName="Peramb5";
+  PerambPar.solver="CG_s";
+  PerambPar.Distil.tsrc = 0;
+  PerambPar.Distil.nnoise = 1;
+  PerambPar.Distil.LI=5;
+  PerambPar.Distil.SI=4;
+  PerambPar.Distil.TI=8;
+  PerambPar.nvec=5;
+  PerambPar.Distil.Ns=4;
+  PerambPar.Distil.Nt=8;
+  PerambPar.Distil.Nt_inv=1;
+  application.createModule<MDistil::PerambLight>("Peramb5",PerambPar);
+  MDistil::PerambFromSolve::Par SolvePar;
+  SolvePar.eigenPack="LapEvec";
+  SolvePar.PerambFileName="Peramb2";
+  SolvePar.solve = "Peramb5_unsmeared_sink";
+  SolvePar.Distil.nnoise = 1;
+  SolvePar.Distil.LI=5;
+  SolvePar.Distil.SI=4;
+  SolvePar.Distil.TI=8;
+  SolvePar.nvec=5;
+  SolvePar.nvec_reduced=2;
+  SolvePar.LI_reduced=2;
+  SolvePar.Distil.Ns=4;
+  SolvePar.Distil.Nt=8;
+  SolvePar.Distil.Nt_inv=1;
+  application.createModule<MDistil::PerambFromSolve>("Peramb2",SolvePar);
+  SolvePar.PerambFileName="Peramb3";
+  SolvePar.nvec_reduced=3;
+  SolvePar.LI_reduced=3;
+  application.createModule<MDistil::PerambFromSolve>("Peramb3",SolvePar);
+  MDistil::DistilVectors::Par DistilVecPar;
+  DistilVecPar.noise="Peramb5_noise";
+  DistilVecPar.perambulator="Peramb2";
+  DistilVecPar.eigenPack="LapEvec";
+  DistilVecPar.tsrc = 0;
+  DistilVecPar.nnoise = 1;
+  DistilVecPar.LI=2;
+  DistilVecPar.SI=4;
+  DistilVecPar.TI=8;
+  DistilVecPar.nvec=2;
+  DistilVecPar.Ns=4;
+  DistilVecPar.Nt=8;
+  DistilVecPar.Nt_inv=1;
+  application.createModule<MDistil::DistilVectors>("DistilVecs2",DistilVecPar);
+  DistilVecPar.perambulator="Peramb3";
+  DistilVecPar.LI=3;
+  DistilVecPar.nvec=3;
+  application.createModule<MDistil::DistilVectors>("DistilVecs3",DistilVecPar);
+  DistilVecPar.perambulator="Peramb5_perambulator_light";
+  DistilVecPar.LI=5;
+  DistilVecPar.nvec=5;
+  application.createModule<MDistil::DistilVectors>("DistilVecs5",DistilVecPar);
+  MContraction::A2AMesonField::Par A2AMesonFieldPar;
+  A2AMesonFieldPar.left="DistilVecs2_rho";
+  A2AMesonFieldPar.right="DistilVecs2_rho";
+  A2AMesonFieldPar.output="MesonSinksRho2";
+  A2AMesonFieldPar.gammas="all";
+  A2AMesonFieldPar.mom={"0 0 0"};
+  A2AMesonFieldPar.cacheBlock=2;
+  A2AMesonFieldPar.block=4;
+  application.createModule<MContraction::A2AMesonField>("DistilMesonFieldRho2",A2AMesonFieldPar);
+  A2AMesonFieldPar.left="DistilVecs2_phi";
+  A2AMesonFieldPar.right="DistilVecs2_phi";
+  A2AMesonFieldPar.output="MesonSinksPhi2";
+  application.createModule<MContraction::A2AMesonField>("DistilMesonFieldPhi2",A2AMesonFieldPar);
+  A2AMesonFieldPar.left="DistilVecs3_rho";
+  A2AMesonFieldPar.right="DistilVecs3_rho";
+  A2AMesonFieldPar.output="MesonSinksRho3";
+  application.createModule<MContraction::A2AMesonField>("DistilMesonFieldRho3",A2AMesonFieldPar);
+  A2AMesonFieldPar.left="DistilVecs3_phi";
+  A2AMesonFieldPar.right="DistilVecs3_phi";
+  A2AMesonFieldPar.output="MesonSinksPhi3";
+  application.createModule<MContraction::A2AMesonField>("DistilMesonFieldPhi3",A2AMesonFieldPar);
+  A2AMesonFieldPar.left="DistilVecs5_rho";
+  A2AMesonFieldPar.right="DistilVecs5_rho";
+  A2AMesonFieldPar.output="MesonSinksRho5";
+  application.createModule<MContraction::A2AMesonField>("DistilMesonFieldRho5",A2AMesonFieldPar);
+  A2AMesonFieldPar.left="DistilVecs5_phi";
+  A2AMesonFieldPar.right="DistilVecs5_phi";
+  A2AMesonFieldPar.output="MesonSinksPhi5";
+  application.createModule<MContraction::A2AMesonField>("DistilMesonFieldPhi5",A2AMesonFieldPar);
 }
 /////////////////////////////////////////////////////////////
 // DistilVectors
@@ -168,8 +255,6 @@ void test_PerambulatorsS(Application &application)
   MDistil::PerambLight::Par PerambPar;
   PerambPar.eigenPack="LapEvec";
   PerambPar.PerambFileName="perambS.bin";
-  PerambPar.ConfigFileDir="/home/dp008/dp008/paboyle/A2A/run/";
-  PerambPar.ConfigFileName="ckpoint_lat.IEEE64BIG.1100";
   PerambPar.UniqueIdentifier="full_dilution";
   PerambPar.solver="CG_s";
   PerambPar.Distil.tsrc = 0;
@@ -990,6 +1075,12 @@ int main(int argc, char *argv[])
       test_PerambulatorsSolve( application );
       test_DistilVectorsAslashSeq( application );
       test_MesonFieldAslashSeq( application );
+      break;
+    case 13:
+      test_Global( application );
+      test_SolverS( application );
+      test_LapEvec( application );
+      test_MultiPerambulators( application );
       break;
   }
   LOG(Message) << "====== XML creation for test " << iTestNum << " complete ======" << std::endl;
