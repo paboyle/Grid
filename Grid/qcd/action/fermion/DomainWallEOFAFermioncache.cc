@@ -41,7 +41,7 @@ NAMESPACE_BEGIN(Grid);
 // Pplus  backwards..
 template<class Impl>
 void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi_i, const FermionField& phi_i,FermionField& chi_i, 
-				      std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper)
+				      Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper)
 {
   chi_i.Checkerboard() = psi_i.Checkerboard();
   int Ls = this->Ls;
@@ -81,7 +81,7 @@ void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi_i, const FermionFi
 
 template<class Impl>
 void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi_i, const FermionField& phi_i, FermionField& chi_i, 
-					 std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper)
+					 Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper)
 {
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase* grid = psi_i.Grid();
@@ -180,11 +180,11 @@ void DomainWallEOFAFermion<Impl>::MooeeInvDag(const FermionField& psi_i, Fermion
 
   assert(psi.Checkerboard() == psi.Checkerboard());
 
-  std::vector<Coeff_t> ueec(Ls);
-  std::vector<Coeff_t> deec(Ls+1);
-  std::vector<Coeff_t> leec(Ls);
-  std::vector<Coeff_t> ueemc(Ls);
-  std::vector<Coeff_t> leemc(Ls);
+  Vector<Coeff_t> ueec(Ls);
+  Vector<Coeff_t> deec(Ls+1);
+  Vector<Coeff_t> leec(Ls);
+  Vector<Coeff_t> ueemc(Ls);
+  Vector<Coeff_t> leemc(Ls);
 
   for(int s=0; s<ueec.size(); s++){
     ueec[s]  = conjugate(this->uee[s]);

@@ -36,7 +36,7 @@ template<class Matrix, class Field>
 class KappaSimilarityTransform {
 public:
   INHERIT_IMPL_TYPES(Matrix);
-  std::vector<Coeff_t> kappa, kappaDag, kappaInv, kappaInvDag;
+  Vector<Coeff_t> kappa, kappaDag, kappaInv, kappaInvDag;
 
   KappaSimilarityTransform (Matrix &zmob) {
     for (int i=0;i<(int)zmob.bs.size();i++) {

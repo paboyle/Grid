@@ -54,9 +54,9 @@ template<class Impl>
 void CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
 				const FermionField &phi_i, 
 				FermionField &chi_i,
-				std::vector<Coeff_t> &lower,
-				std::vector<Coeff_t> &diag,
-				std::vector<Coeff_t> &upper)
+				Vector<Coeff_t> &lower,
+				Vector<Coeff_t> &diag,
+				Vector<Coeff_t> &upper)
 {
   chi_i.Checkerboard()=psi_i.Checkerboard();
   GridBase *grid=psi_i.Grid();
@@ -200,9 +200,9 @@ template<class Impl>
 void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
 				   const FermionField &phi_i, 
 				   FermionField &chi_i,
-				   std::vector<Coeff_t> &lower,
-				   std::vector<Coeff_t> &diag,
-				   std::vector<Coeff_t> &upper)
+				   Vector<Coeff_t> &lower,
+				   Vector<Coeff_t> &diag,
+				   Vector<Coeff_t> &upper)
 {
   chi_i.Checkerboard()=psi_i.Checkerboard();
   GridBase *grid=psi_i.Grid();
