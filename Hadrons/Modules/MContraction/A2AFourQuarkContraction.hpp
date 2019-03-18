@@ -97,10 +97,7 @@ void TA2AFourQuarkContraction<FImpl>::execute(void)
     }
 
     LOG(Message) << "Computing 4 quark contraction for: " << getName() << std::endl;
-    double contr1 = -usecond();
     A2AUtilsDV<FImpl>::ContractWWVVDiskVector(wwvv, mf12, &v1[0], &v2[0]);
-    contr1 += usecond();
-    std::cout << "Contraction completed in " << contr1 / million << " s " << std::endl;
 }
 
 END_MODULE_NAMESPACE

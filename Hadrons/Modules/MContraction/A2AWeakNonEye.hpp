@@ -91,6 +91,9 @@ void TA2AWeakNonEye<FImpl>::setup(void)
     envTmp(std::vector<Complex>,  "corrWing",      1, nt);
     envTmp(std::vector<Complex>,  "corrConnected", 1, nt);
 
+    envTmp(std::vector<PropagatorField>, "propT0G5", 1, nt, PropagatorField(env().getGrid()));
+    envTmp(std::vector<PropagatorField>, "propT1G5", 1, nt, PropagatorField(env().getGrid()));
+
     envTmp(ComplexField, "wingField",      1, ComplexField(env().getGrid()));
     envTmp(ComplexField, "connectedField", 1, ComplexField(env().getGrid()));
 }
@@ -107,12 +110,13 @@ void TA2AWeakNonEye<FImpl>::execute(void)
     GridBase *grid = propT0[0]._grid;
     int nt = env().getDim(Tp);
 
-    // Implicit gamma-5
-    auto G5 = Gamma(Gamma::Algebra::Gamma5);
+    Gamma G5 = Gamma(Gamma::Algebra::Gamma5);
+    envGetTmp(std::vector<PropagatorField>, propT0G5);
+    envGetTmp(std::vector<PropagatorField>, propT1G5);
     for (int t = 0; t < nt; t++)
     {
-        propT0[t] = propT0[t] * G5;
-        propT1[t] = propT1[t] * G5;
+        propT0G5[t] = propT0[t] * G5;
+        propT1G5[t] = propT1[t] * G5;
     }
 
     std::vector<Result> result;
@@ -135,17 +139,14 @@ void TA2AWeakNonEye<FImpl>::execute(void)
         for(int t = 0; t < nt; t++)
         {
             corrConnected[t] = 0.0;
-            corrWing[t] = 0.0;
+            corrWing[t]      = 0.0;
         }
         for (int t0 = 0; t0 < nt; t0++)
         {
-            LOG(Message) << " t0 " << t0 << std::endl;
             for (int dt = dtmin; dt < dtmax; dt++)
             {
                 int t1 = (t0 + dt) % nt;
-                LOG(Message) << " t1 " << t1 << std::endl;
-
-                A2Autils<FImpl>::ContractFourQuarkColourDiagonal(propT0[t0], propT1[t1], GG, GG, wingField, connectedField);
+                A2Autils<FImpl>::ContractFourQuarkColourDiagonal(propT0G5[t0], propT1G5[t1], GG, GG, wingField, connectedField);
 
                 sliceSum(connectedField, corrTmp, Tp);
                 for (int t = 0; t < nt; t++)
