@@ -91,6 +91,8 @@ void TA2AWeakEye<FImpl>::setup(void)
     envTmp(std::vector<Complex>,  "corrSaucer", 1, nt);
     envTmp(std::vector<Complex>,  "corrEye",    1, nt);
 
+    envTmp(std::vector<PropagatorField>, "propT0G5", 1, nt, PropagatorField(env().getGrid()));
+
     envTmp(ComplexField, "saucerField", 1, ComplexField(env().getGrid()));
     envTmp(ComplexField, "eyeField",    1, ComplexField(env().getGrid()));
 }
@@ -109,9 +111,10 @@ void TA2AWeakEye<FImpl>::execute(void)
 
     // Implicit gamma-5
     auto G5 = Gamma(Gamma::Algebra::Gamma5);
+    envGetTmp(std::vector<PropagatorField>, propT0G5);
     for (int t = 0; t < nt; t++)
     {
-        propT0[t]   = propT0[t] * G5;
+        propT0G5[t] = propT0[t] * G5;
     }
 
     std::vector<Result> result;
@@ -140,7 +143,7 @@ void TA2AWeakEye<FImpl>::execute(void)
         }
         for (int t0 = 0; t0 < nt; t0++)
         {
-            A2Autils<FImpl>::ContractFourQuarkColourDiagonal(propT0[t0], propLoop, GG, GG, eyeField, saucerField);
+            A2Autils<FImpl>::ContractFourQuarkColourDiagonal(propT0G5[t0], propLoop, GG, GG, eyeField, saucerField);
 
             sliceSum(saucerField, corrTmp, Tp);
 
