@@ -182,7 +182,7 @@ private:
     std::map<CoarseGridKey, GridPt>     gridCoarse5d_;
     unsigned int                        nd_;
     // random number generator
-    RngPt                               rng4d_;
+    RngPt                               rng4d_{nullptr};
     // object store
     std::vector<ObjInfo>                object_;
     std::map<std::string, unsigned int> objectAddress_;
