@@ -51,6 +51,8 @@ namespace Grid
     void writeDefault(const std::string &s, const U &x);
     template <typename U>
     void writeDefault(const std::string &s, const std::vector<U> &x);
+    template <typename U>
+    void writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const U * pDataRowMajor, size_t NumElements);
   private:
     void indent(void);
   private:
@@ -69,6 +71,8 @@ namespace Grid
     void readDefault(const std::string &s, U &output);
     template <typename U>
     void readDefault(const std::string &s, std::vector<U> &output);
+    template <typename U>
+    void readMultiDim(const std::string &s, std::vector<U> &buf, std::vector<size_t> &dim);
   private:
     void checkIndent(void);
   private:
@@ -95,7 +99,18 @@ namespace Grid
       write(s, x[i]);
     }
   }
-  
+
+  template <typename U>
+  void TextWriter::writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const U * pDataRowMajor, size_t NumElements)
+  {
+    uint64_t Rank = Dimensions.size();
+    write(s, Rank);
+    for( uint64_t d : Dimensions )
+      write(s, d);
+    while( NumElements-- )
+      write(s, *pDataRowMajor++);
+  }
+
   // Reader template implementation ////////////////////////////////////////////
   template <typename U>
   void TextReader::readDefault(const std::string &s, U &output)
@@ -120,6 +135,23 @@ namespace Grid
     {
       read("", output[i]);
     }
+  }
+
+  template <typename U>
+  void TextReader::readMultiDim(const std::string &s, std::vector<U> &buf, std::vector<size_t> &dim)
+  {
+    const char sz[] = "";
+    uint64_t Rank;
+    read(sz, Rank);
+    dim.resize( Rank );
+    size_t NumElements = 1;
+    for( auto &d : dim ) {
+      read(sz, d);
+      NumElements *= d;
+    }
+    buf.resize( NumElements );
+    for( auto &x : buf )
+      read(s, x);
   }
 }
 
