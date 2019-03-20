@@ -113,7 +113,7 @@ namespace Grid {
           LatticeCoordinate(coor, nu);
 	  ph = ph + twist[nu]*coor*((1./(in._grid->_fdimensions[nu])));
 	}
-	in_buf = exp((Real)(2.0*M_PI)*ci*ph*(-1.0))*in;
+	in_buf = exp((Real)(-2.0*M_PI)*ci*ph)*in;
 
 	theFFT.FFT_all_dim(in_k,in_buf,FFT::forward);
         this->MomentumSpacePropagator(prop_k,in_k,mass,twist);
@@ -136,6 +136,7 @@ namespace Grid {
       //////////////////////////////////////////////////////////////////////
       // Conserved currents, either contract at sink or insert sequentially.
       //////////////////////////////////////////////////////////////////////
+
       virtual void ContractConservedCurrent(PropagatorField &q_in_1,
                                             PropagatorField &q_in_2,
                                             PropagatorField &q_out,
@@ -148,6 +149,12 @@ namespace Grid {
                                        unsigned int tmin, 
                                        unsigned int tmax,
                                        ComplexField &lattice_cmplx)=0;
+
+      // Only reimplemented in Wilson5D 
+      // Default to just a zero correlation function
+      virtual void ContractJ5q(FermionField &q_in   ,ComplexField &J5q) { J5q=zero; };
+      virtual void ContractJ5q(PropagatorField &q_in,ComplexField &J5q) { J5q=zero; };
+
       ///////////////////////////////////////////////
       // Physical field import/export
       ///////////////////////////////////////////////

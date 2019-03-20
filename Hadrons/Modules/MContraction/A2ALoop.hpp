@@ -2,12 +2,11 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MLoop/NoiseLoop.hpp
+Source file: Hadrons/Modules/MContraction/A2ALoop.hpp
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
-Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,9 +25,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-
-#ifndef Hadrons_MLoop_NoiseLoop_hpp_
-#define Hadrons_MLoop_NoiseLoop_hpp_
+#ifndef Hadrons_MContraction_A2ALoop_hpp_
+#define Hadrons_MContraction_A2ALoop_hpp_
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
@@ -36,99 +34,90 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 BEGIN_HADRONS_NAMESPACE
 
-/*
- 
- Noise loop propagator
- -----------------------------
- * loop_x = q_x * adj(eta_x)
- 
- * options:
- - q = Result of inversion on noise source.
- - eta = noise source.
-
- */
-
-
 /******************************************************************************
- *                         NoiseLoop                                          *
+ *                  From closed loop from all-to-all vectors                  *
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MLoop)
+BEGIN_MODULE_NAMESPACE(MContraction)
 
-class NoiseLoopPar: Serializable
+class A2ALoopPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(NoiseLoopPar,
-                                    std::string, q,
-                                    std::string, eta);
+    GRID_SERIALIZABLE_CLASS_MEMBERS(A2ALoopPar,
+                                    std::string, left,
+                                    std::string, right);
 };
 
 template <typename FImpl>
-class TNoiseLoop: public Module<NoiseLoopPar>
+class TA2ALoop: public Module<A2ALoopPar>
 {
 public:
     FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
-    TNoiseLoop(const std::string name);
+    TA2ALoop(const std::string name);
     // destructor
-    virtual ~TNoiseLoop(void) {};
+    virtual ~TA2ALoop(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
-protected:
     // setup
     virtual void setup(void);
     // execution
     virtual void execute(void);
 };
 
-MODULE_REGISTER_TMP(NoiseLoop, TNoiseLoop<FIMPL>, MLoop);
+MODULE_REGISTER_TMP(A2ALoop, TA2ALoop<FIMPL>, MContraction);
 
 /******************************************************************************
- *                 TNoiseLoop implementation                                  *
+ *                        TA2ALoop implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TNoiseLoop<FImpl>::TNoiseLoop(const std::string name)
-: Module<NoiseLoopPar>(name)
+TA2ALoop<FImpl>::TA2ALoop(const std::string name)
+: Module<A2ALoopPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
-std::vector<std::string> TNoiseLoop<FImpl>::getInput(void)
+std::vector<std::string> TA2ALoop<FImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().q, par().eta};
+    std::vector<std::string> in = {par().left, par().right};
     
     return in;
 }
 
 template <typename FImpl>
-std::vector<std::string> TNoiseLoop<FImpl>::getOutput(void)
+std::vector<std::string> TA2ALoop<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {};
     
     return out;
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TNoiseLoop<FImpl>::setup(void)
+void TA2ALoop<FImpl>::setup(void)
 {
     envCreateLat(PropagatorField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TNoiseLoop<FImpl>::execute(void)
+void TA2ALoop<FImpl>::execute(void)
 {
-    auto &loop = envGet(PropagatorField, getName());
-    auto &q    = envGet(PropagatorField, par().q);
-    auto &eta  = envGet(PropagatorField, par().eta);
-    loop = q*adj(eta);
+    auto &loop  = envGet(PropagatorField, getName());
+    auto &left  = envGet(std::vector<FermionField>, par().left);
+    auto &right = envGet(std::vector<FermionField>, par().right);
+
+    loop = zero;
+    for (unsigned int i = 0; i < left.size(); ++i)
+    {
+        loop += outerProduct(adj(left[i]), right[i]);
+    }
 }
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MLoop_NoiseLoop_hpp_
+#endif // Hadrons_MContraction_A2ALoop_hpp_

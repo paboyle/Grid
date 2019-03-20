@@ -50,6 +50,44 @@ modules_cc =\
   Modules/MIO/LoadEigenPack.cc \
   Modules/MIO/LoadBinary.cc \
   Modules/MIO/LoadCosmHol.cc \
+  Modules/MContraction/Baryon.cc \
+  Modules/MContraction/Meson.cc \
+  Modules/MContraction/WeakEye3pt.cc \
+  Modules/MContraction/A2ALoop.cc \
+  Modules/MContraction/WeakNonEye3pt.cc \
+  Modules/MContraction/A2AAslashField.cc \
+  Modules/MContraction/A2AMesonField.cc \
+  Modules/MContraction/DiscLoop.cc \
+  Modules/MContraction/Gamma3pt.cc \
+  Modules/MFermion/FreeProp.cc \
+  Modules/MFermion/GaugeProp.cc \
+  Modules/MSource/Momentum.cc \
+  Modules/MSource/Point.cc \
+  Modules/MSource/Wall.cc \
+  Modules/MSource/SeqConserved.cc \
+  Modules/MSource/SeqGamma.cc \
+  Modules/MSource/Z2.cc \
+  Modules/MSink/Point.cc \
+  Modules/MSink/Smear.cc \
+  Modules/MSolver/A2AVectors.cc \
+  Modules/MSolver/A2AAslashVectors.cc \
+  Modules/MSolver/RBPrecCG.cc \
+  Modules/MSolver/MixedPrecisionRBPrecCG.cc \
+  Modules/MSolver/LocalCoherenceLanczos.cc \
+  Modules/MGauge/StoutSmearing.cc \
+  Modules/MGauge/Unit.cc \
+  Modules/MGauge/UnitEm.cc \
+  Modules/MGauge/StochEm.cc \
+  Modules/MGauge/Random.cc \
+  Modules/MGauge/Electrify.cc \
+  Modules/MGauge/FundtoHirep.cc \
+  Modules/MGauge/GaugeFix.cc \
+  Modules/MNoise/FullVolumeSpinColorDiagonal.cc \
+  Modules/MNoise/TimeDilutedSpinColorDiagonal.cc \
+  Modules/MUtilities/RandomVectors.cc \
+  Modules/MUtilities/PrecisionCast.cc \
+  Modules/MScalar/FreeProp.cc \
+  Modules/MScalar/ChargedProp.cc \
   Modules/MNPR/Amputate.cc \
   Modules/MNPR/Bilinear.cc \
   Modules/MNPR/FourQuark.cc \
@@ -60,6 +98,8 @@ modules_cc =\
   Modules/MScalarSUN/ShiftProbe.cc \
   Modules/MScalarSUN/TrPhi.cc \
   Modules/MScalarSUN/TrMag.cc \
+  Modules/MScalarSUN/TrKinetic.cc \
+  Modules/MScalarSUN/EMT.cc \
   Modules/MScalarSUN/TransProj.cc \
   Modules/MScalarSUN/TrKinetic.cc \
   Modules/MScalarSUN/StochFreeField.cc \
@@ -86,6 +126,27 @@ modules_hpp =\
   Modules/MUtilities/PrecisionCast.hpp \
   Modules/MUtilities/TestSeqConserved.hpp \
   Modules/MSolver/MixedPrecisionRBPrecCG.hpp \
+  Modules/MContraction/WeakEye3pt.hpp \
+  Modules/MContraction/Baryon.hpp \
+  Modules/MContraction/A2AAslashField.hpp \
+  Modules/MContraction/A2ALoop.hpp \
+  Modules/MContraction/A2AMesonField.hpp \
+  Modules/MContraction/Meson.hpp \
+  Modules/MContraction/DiscLoop.hpp \
+  Modules/MContraction/Gamma3pt.hpp \
+  Modules/MContraction/WeakNonEye3pt.hpp \
+  Modules/MFermion/FreeProp.hpp \
+  Modules/MFermion/GaugeProp.hpp \
+  Modules/MSource/SeqGamma.hpp \
+  Modules/MSource/Point.hpp \
+  Modules/MSource/Wall.hpp \
+  Modules/MSource/Z2.hpp \
+  Modules/MSource/SeqConserved.hpp \
+  Modules/MSource/Momentum.hpp \
+  Modules/MSink/Smear.hpp \
+  Modules/MSink/Point.hpp \
+  Modules/MSolver/MixedPrecisionRBPrecCG.hpp \
+  Modules/MSolver/LocalCoherenceLanczos.hpp \
   Modules/MSolver/A2AAslashVectors.hpp \
   Modules/MSolver/Guesser.hpp \
   Modules/MSolver/LocalCoherenceLanczos.hpp \
@@ -141,6 +202,33 @@ modules_hpp =\
   Modules/MLoop/NoiseLoop.hpp \
   Modules/MScalarSUN/TransProj.hpp \
   Modules/MScalarSUN/TwoPoint.hpp \
+  Modules/MGauge/UnitEm.hpp \
+  Modules/MGauge/StoutSmearing.hpp \
+  Modules/MGauge/Unit.hpp \
+  Modules/MGauge/Random.hpp \
+  Modules/MGauge/GaugeFix.hpp \
+  Modules/MGauge/FundtoHirep.hpp \
+  Modules/MGauge/StochEm.hpp \
+  Modules/MGauge/Electrify.hpp \
+  Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp \
+  Modules/MNoise/FullVolumeSpinColorDiagonal.hpp \
+  Modules/MUtilities/PrecisionCast.hpp \
+  Modules/MUtilities/RandomVectors.hpp \
+  Modules/MScalar/FreeProp.hpp \
+  Modules/MScalar/Scalar.hpp \
+  Modules/MScalar/ChargedProp.hpp \
+  Modules/MNPR/Bilinear.hpp \
+  Modules/MNPR/Amputate.hpp \
+  Modules/MNPR/FourQuark.hpp \
+  Modules/MAction/DWF.hpp \
+  Modules/MAction/MobiusDWF.hpp \
+  Modules/MAction/Wilson.hpp \
+  Modules/MAction/WilsonClover.hpp \
+  Modules/MAction/ZMobiusDWF.hpp \
+  Modules/MAction/ScaledDWF.hpp \
+  Modules/MScalarSUN/StochFreeField.hpp \
+  Modules/MScalarSUN/TwoPointNPR.hpp \
+  Modules/MScalarSUN/Div.hpp \
   Modules/MScalarSUN/TrMag.hpp \
   Modules/MScalarSUN/TrKinetic.hpp \
   Modules/MScalarSUN/EMT.hpp \

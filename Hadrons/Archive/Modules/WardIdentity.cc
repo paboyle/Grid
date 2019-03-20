@@ -2,12 +2,11 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MContraction/WeakHamiltonianNonEye.hpp
+Source file: Hadrons/Archive/Modules/WardIdentity.cc
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
-Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,33 +25,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
+#include <Hadrons/Modules/MContraction/WardIdentity.hpp>
 
-#ifndef Hadrons_MContraction_WeakHamiltonianNonEye_hpp_
-#define Hadrons_MContraction_WeakHamiltonianNonEye_hpp_
+using namespace Grid;
+using namespace Hadrons;
+using namespace MContraction;
 
-#include <Hadrons/Modules/MContraction/WeakHamiltonian.hpp>
+template class Grid::Hadrons::MContraction::TWardIdentity<FIMPL>;
 
-BEGIN_HADRONS_NAMESPACE
-
-/******************************************************************************
- *                         WeakHamiltonianNonEye                              *
- ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MContraction)
-
-enum
-{
-    W_diag = 0,
-    C_diag = 1,
-    n_noneye_diag = 2
-};
-
-// Wing and Connected subdiagram contractions
-#define MAKE_CW_SUBDIAG(Q_1, Q_2, gamma) (Q_1*adj(Q_2)*g5*gamma)
-
-MAKE_WEAK_MODULE(WeakHamiltonianNonEye)
-
-END_MODULE_NAMESPACE
-
-END_HADRONS_NAMESPACE
-
-#endif // Hadrons_MContraction_WeakHamiltonianNonEye_hpp_
