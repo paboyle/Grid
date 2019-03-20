@@ -48,7 +48,7 @@ public:
     // constructor
     TDistilVectors(const std::string name);
     // destructor
-    virtual ~TDistilVectors(void) {};
+    virtual ~TDistilVectors(void);
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -56,6 +56,12 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
+protected:
+    // These variables are created in setup() and freed in Cleanup()
+    GridCartesian * grid3d; // Owned by me, so I must delete it
+    GridCartesian * grid4d; // Owned by environment (so I won't delete it)
+protected:
+    virtual void Cleanup(void);
 };
 
 MODULE_REGISTER_TMP(DistilVectors, TDistilVectors<FIMPL>, MDistil);
@@ -66,8 +72,14 @@ MODULE_REGISTER_TMP(DistilVectors, TDistilVectors<FIMPL>, MDistil);
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
 TDistilVectors<FImpl>::TDistilVectors(const std::string name)
-: Module<DistilVectorsPar>(name)
+:  grid3d{nullptr}, grid4d{nullptr}, Module<DistilVectorsPar>(name)
 {}
+// destructor
+template <typename FImpl>
+TDistilVectors<FImpl>::~TDistilVectors(void)
+{
+  Cleanup();
+};
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
@@ -94,6 +106,7 @@ std::vector<std::string> TDistilVectors<FImpl>::getOutput(void)
 template <typename FImpl>
 void TDistilVectors<FImpl>::setup(void)
 {
+    Cleanup();
    //auto &noise = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
    auto &noise = envGet(std::vector<Complex>, par().noise);
 
@@ -107,7 +120,8 @@ void TDistilVectors<FImpl>::setup(void)
    envCreate(std::vector<FermionField>, getName() + "_phi", 1, 
                  	            nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField)); 
 
-  GridCartesian * grid4d = env().getGrid();
+  //GridCartesian * grid4d = env().getGrid();
+    grid4d = env().getGrid();
   std::vector<int> latt_size   = GridDefaultLatt();
   std::vector<int> simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
@@ -115,7 +129,8 @@ void TDistilVectors<FImpl>::setup(void)
   latt_size[Nd-1] = 1;
   simd_layout_3.push_back( 1 );
   mpi_layout[Nd-1] = 1;
-  GridCartesian * grid3d = new GridCartesian(latt_size,simd_layout_3,mpi_layout,*grid4d);
+  //GridCartesian * grid3d = new GridCartesian(latt_size,simd_layout_3,mpi_layout,*grid4d);
+  grid3d = MakeLowerDimGrid(grid4d);
 
 
   envTmp(LatticeSpinColourVector, "tmp2",1,LatticeSpinColourVector(grid4d));
@@ -124,6 +139,17 @@ void TDistilVectors<FImpl>::setup(void)
   envTmp(LatticeColourVector, "tmp3d_nospin",1,LatticeColourVector(grid3d));
   envTmp(LatticeSpinColourVector, "sink_tslice",1,LatticeSpinColourVector(grid3d));
   envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
+}
+
+// clean up any temporaries created by setup (that aren't stored in the environment)
+template <typename FImpl>
+void TDistilVectors<FImpl>::Cleanup(void)
+{
+  if( grid3d != nullptr ) {
+    delete grid3d;
+    grid3d = nullptr;
+  }
+  grid4d = nullptr;
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -145,7 +171,7 @@ void TDistilVectors<FImpl>::execute(void)
   envGetTmp(LatticeSpinColourVector, sink_tslice);
   envGetTmp(LatticeColourVector, evec3d);
 
-  GridCartesian * grid4d = env().getGrid();
+  //GridCartesian * grid4d = env().getGrid();
 
   int Ntlocal = grid4d->LocalDimensions()[3];
   int Ntfirst = grid4d->LocalStarts()[3];
