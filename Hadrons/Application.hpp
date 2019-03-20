@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Application.hpp
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -56,7 +56,9 @@ public:
                                         TrajRange,                  trajCounter,
                                         VirtualMachine::GeneticPar, genetic,
                                         std::string,                runId,
-                                        std::string,                graphFile);
+                                        std::string,                graphFile,
+                                        int,                        parallelWriteMaxRetry);
+        GlobalPar(void): parallelWriteMaxRetry{-1} {}
     };
 public:
     // constructors

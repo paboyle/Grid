@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Modules/MFermion/FreeProp.cc
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Vera Guelpers <vmg1n14@soton.ac.uk>

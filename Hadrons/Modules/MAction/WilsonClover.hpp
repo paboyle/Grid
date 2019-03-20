@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Modules/MAction/WilsonClover.hpp
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Guido Cossu <guido.cossu@ed.ac.uk>
@@ -112,17 +112,34 @@ void TWilsonClover<FImpl>::setup(void)
 {
     LOG(Message) << "Setting up Wilson clover fermion matrix with m= " << par().mass
                  << " using gauge field '" << par().gauge << "'" << std::endl;
-    LOG(Message) << "Fermion boundary conditions: " << par().boundary 
-                 << std::endl;
     LOG(Message) << "Clover term csw_r: " << par().csw_r
                  << " csw_t: " << par().csw_t
                  << std::endl;
+                 
     auto &U      = envGet(GaugeField, par().gauge);
     auto &grid   = *envGetGrid(FermionField);
     auto &gridRb = *envGetRbGrid(FermionField);
     typename WilsonCloverFermion<FImpl>::ImplParams implParams;
-    implParams.boundary_phases = strToVec<Complex>(par().boundary);
-    implParams.twist_n_2pi_L   = strToVec<Real>(par().twist);
+    if (!par().boundary.empty())
+    {
+        implParams.boundary_phases = strToVec<Complex>(par().boundary);
+    }
+    if (!par().twist.empty())
+    {
+        implParams.twist_n_2pi_L   = strToVec<Real>(par().twist);
+    }
+    LOG(Message) << "Fermion boundary conditions: " << implParams.boundary_phases
+                 << std::endl;
+    LOG(Message) << "Twists: " << implParams.twist_n_2pi_L
+                 << std::endl;
+    if (implParams.boundary_phases.size() != env().getNd())
+    {
+        HADRONS_ERROR(Size, "Wrong number of boundary phase");
+    }
+    if (implParams.twist_n_2pi_L.size() != env().getNd())
+    {
+        HADRONS_ERROR(Size, "Wrong number of twist");
+    }
     envCreateDerived(FMat, WilsonCloverFermion<FImpl>, getName(), 1, U, grid,
                      gridRb, par().mass, par().csw_r, par().csw_t, 
                      par().clover_anisotropy, implParams); 

@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Modules/MGauge/UnitEm.cc
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: James Harrison <jch1g10@soton.ac.uk>
@@ -62,7 +62,7 @@ void TUnitEm::setup(void)
 // execution ///////////////////////////////////////////////////////////////////
 void TUnitEm::execute(void)
 {
-    PhotonR photon(0, 0); // Just chose arbitrary input values here
+    PhotonR photon(envGetGrid(EmField), 0, 0); // Just chose arbitrary input values here
     auto    &a = envGet(EmField, getName());
     LOG(Message) << "Generating unit EM potential..." << std::endl;
     photon.UnitField(a);

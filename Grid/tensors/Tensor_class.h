@@ -5,6 +5,7 @@ Copyright (C) 2015
 
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Michael Marshall <michael.marshall@ed.ac.au>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -42,27 +43,26 @@ namespace Grid {
 //
 class GridTensorBase {};
 
+// Too late to remove these traits from Grid Tensors, so inherit from GridTypeMapper
+#define GridVector_CopyTraits \
+  using element = vtype; \
+  using scalar_type     = typename Traits::scalar_type; \
+  using vector_type     = typename Traits::vector_type; \
+  using vector_typeD    = typename Traits::vector_typeD; \
+  using tensor_reduced  = typename Traits::tensor_reduced; \
+  using scalar_object   = typename Traits::scalar_object; \
+  using Complexified    = typename Traits::Complexified; \
+  using Realified       = typename Traits::Realified; \
+  using DoublePrecision = typename Traits::DoublePrecision; \
+  static constexpr int TensorLevel = Traits::TensorLevel
+
 template <class vtype>
 class iScalar {
  public:
   vtype _internal;
 
-  typedef vtype element;
-  typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
-  typedef typename GridTypeMapper<vtype>::vector_type vector_type;
-  typedef typename GridTypeMapper<vtype>::vector_typeD vector_typeD;
-  typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
-  typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
-  typedef iScalar<tensor_reduced_v> tensor_reduced;
-  typedef iScalar<recurse_scalar_object> scalar_object;
-  // substitutes a real or complex version with same tensor structure
-  typedef iScalar<typename GridTypeMapper<vtype>::Complexified> Complexified;
-  typedef iScalar<typename GridTypeMapper<vtype>::Realified> Realified;
-
-  // get double precision version
-  typedef iScalar<typename GridTypeMapper<vtype>::DoublePrecision> DoublePrecision;
-  
-  enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1 };
+  using Traits = GridTypeMapper<iScalar<vtype> >;
+  GridVector_CopyTraits;
 
   // Scalar no action
   //  template<int Level> using tensor_reduce_level = typename
@@ -173,7 +173,10 @@ class iScalar {
     return stream;
   };
 
-
+  strong_inline const scalar_type * begin() const { return reinterpret_cast<const scalar_type *>(&_internal); }
+  strong_inline       scalar_type * begin()       { return reinterpret_cast<      scalar_type *>(&_internal); }
+  strong_inline const scalar_type * end()   const { return begin() + Traits::count; }
+  strong_inline       scalar_type * end()         { return begin() + Traits::count; }
 };
 ///////////////////////////////////////////////////////////
 // Allows to turn scalar<scalar<scalar<double>>>> back to double.
@@ -194,22 +197,9 @@ class iVector {
  public:
   vtype _internal[N];
 
-  typedef vtype element;
-  typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
-  typedef typename GridTypeMapper<vtype>::vector_type vector_type;
-  typedef typename GridTypeMapper<vtype>::vector_typeD vector_typeD;
-  typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
-  typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
-  typedef iScalar<tensor_reduced_v> tensor_reduced;
-  typedef iVector<recurse_scalar_object, N> scalar_object;
+  using Traits = GridTypeMapper<iVector<vtype, N> >;
+  GridVector_CopyTraits;
 
-  // substitutes a real or complex version with same tensor structure
-  typedef iVector<typename GridTypeMapper<vtype>::Complexified, N> Complexified;
-  typedef iVector<typename GridTypeMapper<vtype>::Realified, N> Realified;
-
-  // get double precision version
-  typedef iVector<typename GridTypeMapper<vtype>::DoublePrecision, N> DoublePrecision;
-  
   template <class T, typename std::enable_if<!isGridTensor<T>::value, T>::type
                          * = nullptr>
   strong_inline auto operator=(T arg) -> iVector<vtype, N> {
@@ -218,7 +208,6 @@ class iVector {
     return *this;
   }
 
-  enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1 };
   iVector(const Zero &z) { *this = zero; };
   iVector() = default;
   /*
@@ -303,6 +292,11 @@ class iVector {
   //    strong_inline vtype && operator ()(int i) {
   //      return _internal[i];
   //    }
+
+  strong_inline const scalar_type * begin() const { return reinterpret_cast<const scalar_type *>(_internal); }
+  strong_inline       scalar_type * begin()       { return reinterpret_cast<      scalar_type *>(_internal); }
+  strong_inline const scalar_type * end()   const { return begin() + Traits::count; }
+  strong_inline       scalar_type * end()         { return begin() + Traits::count; }
 };
 
 template <class vtype, int N>
@@ -310,25 +304,8 @@ class iMatrix {
  public:
   vtype _internal[N][N];
 
-  typedef vtype element;
-  typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
-  typedef typename GridTypeMapper<vtype>::vector_type vector_type;
-  typedef typename GridTypeMapper<vtype>::vector_typeD vector_typeD;
-  typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
-  typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
-
-  // substitutes a real or complex version with same tensor structure
-  typedef iMatrix<typename GridTypeMapper<vtype>::Complexified, N> Complexified;
-  typedef iMatrix<typename GridTypeMapper<vtype>::Realified, N> Realified;
-
-  // get double precision version
-  typedef iMatrix<typename GridTypeMapper<vtype>::DoublePrecision, N> DoublePrecision;
-  
-  // Tensor removal
-  typedef iScalar<tensor_reduced_v> tensor_reduced;
-  typedef iMatrix<recurse_scalar_object, N> scalar_object;
-
-  enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1 };
+  using Traits = GridTypeMapper<iMatrix<vtype, N> >;
+  GridVector_CopyTraits;
 
   iMatrix(const Zero &z) { *this = zero; };
   iMatrix() = default;
@@ -458,6 +435,11 @@ class iMatrix {
   //  strong_inline vtype && operator ()(int i,int j) {
   //    return _internal[i][j];
   //  }
+
+  strong_inline const scalar_type * begin() const { return reinterpret_cast<const scalar_type *>(_internal[0]); }
+  strong_inline       scalar_type * begin()       { return reinterpret_cast<      scalar_type *>(_internal[0]); }
+  strong_inline const scalar_type * end()   const { return begin() + Traits::count; }
+  strong_inline       scalar_type * end()         { return begin() + Traits::count; }
 };
 
 template <class v>
@@ -480,6 +462,3 @@ void vprefetch(const iMatrix<v, N> &vv) {
 }
 }
 #endif
-
-
-

@@ -230,6 +230,10 @@ namespace QCD {
                              unsigned int tmin, 
                              unsigned int tmax,
 			     ComplexField &lattice_cmplx);
+
+    void ContractJ5q(PropagatorField &q_in,ComplexField &J5q);
+    void ContractJ5q(FermionField &q_in,ComplexField &J5q);
+
   };
 
 }}

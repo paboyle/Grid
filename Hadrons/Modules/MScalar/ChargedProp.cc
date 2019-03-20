@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Modules/MScalar/ChargedProp.cc
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: James Harrison <jch1g10@soton.ac.uk>
@@ -146,7 +146,7 @@ void TChargedProp::execute(void)
         std::vector<int>    siteCoor;
 
         LOG(Message) << "Saving momentum-projected propagator to '"
-                     << RESULT_FILE_NAME(par().output) << "'..."
+                     << RESULT_FILE_NAME(par().output, vm().getTrajectory()) << "'..."
                      << std::endl;
         result.projection.resize(par().outputMom.size());
         result.lattice_size = env().getGrid()->_fdimensions;

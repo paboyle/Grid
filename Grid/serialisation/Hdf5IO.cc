@@ -61,9 +61,9 @@ Group & Hdf5Writer::getGroup(void)
 }
 
 // Reader implementation ///////////////////////////////////////////////////////
-Hdf5Reader::Hdf5Reader(const std::string &fileName)
+Hdf5Reader::Hdf5Reader(const std::string &fileName, const bool readOnly)
 : fileName_(fileName)
-, file_(fileName.c_str(), H5F_ACC_RDWR)
+, file_(fileName.c_str(), readOnly ? H5F_ACC_RDONLY : H5F_ACC_RDWR)
 {
   group_ = file_.openGroup("/");
   readSingleAttribute(dataSetThres_, HDF5_GRID_GUARD "dataset_threshold",
