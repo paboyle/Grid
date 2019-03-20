@@ -109,8 +109,8 @@ THE SOFTWARE.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define GRID_MACRO_MEMBER(A,B)        A B;
-#define GRID_MACRO_COMP_MEMBER(A,B) result = (result and (lhs. B == rhs. B));
-#define GRID_MACRO_OS_WRITE_MEMBER(A,B) os<< #A <<" " #B << " = " << obj. B << " ; " <<std::endl;
+#define GRID_MACRO_COMP_MEMBER(A,B) result = (result and CompareMember(lhs. B, rhs. B));
+#define GRID_MACRO_OS_WRITE_MEMBER(A,B) os<< #A <<" " #B << " = "; WriteMember( os, obj. B ); os << " ; " <<std::endl;
 #define GRID_MACRO_READ_MEMBER(A,B) Grid::read(RD,#B,obj. B);
 #define GRID_MACRO_WRITE_MEMBER(A,B) Grid::write(WR,#B,obj. B);
 

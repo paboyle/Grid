@@ -143,6 +143,7 @@ namespace Grid {
     typedef vRealD DoublePrecision;
   };
   template<> struct GridTypeMapper<vRealH> : public GridTypeMapper_Base {
+    // Fixme this is incomplete until Grid supports fp16 or bfp16 arithmetic types
     typedef RealF  scalar_type;
     typedef vRealH vector_type;
     typedef vRealD vector_typeD;
@@ -153,6 +154,7 @@ namespace Grid {
     typedef vRealD DoublePrecision;
   };
   template<> struct GridTypeMapper<vComplexH> : public GridTypeMapper_Base {
+    // Fixme this is incomplete until Grid supports fp16 or bfp16 arithmetic types
     typedef ComplexF  scalar_type;
     typedef vComplexH vector_type;
     typedef vComplexD vector_typeD;
