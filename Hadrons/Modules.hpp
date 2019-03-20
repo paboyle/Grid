@@ -44,7 +44,6 @@
 #include <Hadrons/Modules/MScalar/Scalar.hpp>
 #include <Hadrons/Modules/MScalar/ChargedProp.hpp>
 #include <Hadrons/Modules/MNPR/Bilinear.hpp>
-#include <Hadrons/Modules/MNPR/Amputate.hpp>
 #include <Hadrons/Modules/MNPR/FourQuark.hpp>
 #include <Hadrons/Modules/MAction/DWF.hpp>
 #include <Hadrons/Modules/MAction/MobiusDWF.hpp>

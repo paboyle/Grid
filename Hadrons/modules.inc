@@ -41,7 +41,6 @@ modules_cc =\
   Modules/MScalar/VPCounterTerms.cc \
   Modules/MScalar/ChargedProp.cc \
   Modules/MScalar/ScalarVP.cc \
-  Modules/MNPR/Amputate.cc \
   Modules/MNPR/Bilinear.cc \
   Modules/MNPR/FourQuark.cc \
   Modules/MAction/Wilson.cc \
@@ -115,7 +114,6 @@ modules_hpp =\
   Modules/MScalar/Scalar.hpp \
   Modules/MScalar/ChargedProp.hpp \
   Modules/MNPR/Bilinear.hpp \
-  Modules/MNPR/Amputate.hpp \
   Modules/MNPR/FourQuark.hpp \
   Modules/MAction/DWF.hpp \
   Modules/MAction/MobiusDWF.hpp \
