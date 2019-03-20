@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Global.cc
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -166,7 +166,13 @@ std::string Hadrons::dirname(const std::string &s)
 
 void Hadrons::makeFileDir(const std::string filename, GridBase *g)
 {
-    if (g->IsBoss())
+    bool doIt = true;
+
+    if (g)
+    {
+        doIt = g->IsBoss();
+    }
+    if (doIt)
     {
         std::string dir    = dirname(filename);
         int         status = mkdir(dir);

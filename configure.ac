@@ -123,10 +123,13 @@ case ${ac_SFW_FP16} in
       AC_MSG_ERROR(["SFW FP16 option not supported ${ac_SFW_FP16}"]);;
 esac
 
-############### MKL
+############### Intel libraries
 AC_ARG_ENABLE([mkl],
     [AC_HELP_STRING([--enable-mkl=yes|no|prefix], [enable Intel MKL for LAPACK & FFTW])],
     [ac_MKL=${enable_mkl}], [ac_MKL=no])
+AC_ARG_ENABLE([ipp],
+    [AC_HELP_STRING([--enable-ipp=yes|no|prefix], [enable Intel IPP for fast CRC32C])],
+    [ac_IPP=${enable_mkl}], [ac_IPP=no])
 
 case ${ac_MKL} in
     no)
@@ -137,6 +140,17 @@ case ${ac_MKL} in
         AM_CXXFLAGS="-I$ac_MKL/include $AM_CXXFLAGS"
         AM_LDFLAGS="-L$ac_MKL/lib $AM_LDFLAGS"
         AC_DEFINE([USE_MKL], [1], [Define to 1 if you use the Intel MKL]);;
+esac
+
+case ${ac_IPP} in
+    no)
+        ;;
+    yes)
+        AC_DEFINE([USE_IPP], [1], [Define to 1 if you use the Intel IPP]);;
+    *)
+        AM_CXXFLAGS="-I$ac_IPP/include $AM_CXXFLAGS"
+        AM_LDFLAGS="-L$ac_IPP/lib $AM_LDFLAGS"
+        AC_DEFINE([USE_IPP], [1], [Define to 1 if you use the Intel IPP]);;
 esac
 
 ############### HDF5
@@ -170,7 +184,13 @@ AC_CHECK_FUNCS([gettimeofday])
 
 if test "${ac_MKL}x" != "nox"; then
     AC_SEARCH_LIBS([mkl_set_interface_layer], [mkl_rt], [],
-                   [AC_MSG_ERROR("MKL enabled but library not found")])
+                   [AC_MSG_ERROR("Intel MKL enabled but library not found")])
+fi
+
+if test "${ac_IPP}x" != "nox"; then
+     AC_SEARCH_LIBS([ippsCRC32C_8u], [ippdc], 
+                   [LIBS="${LIBS} -lippdc -lippvm -lipps -lippcore"],
+                   [AC_MSG_ERROR("Intel IPP enabled but library not found")])
 fi
 
 AC_SEARCH_LIBS([__gmpf_init], [gmp],

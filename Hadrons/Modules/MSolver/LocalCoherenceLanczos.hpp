@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Modules/MSolver/LocalCoherenceLanczos.hpp
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -65,6 +65,10 @@ public:
                                   nBasis>                  LCL;
     typedef BaseFermionEigenPack<FImpl>                    BasePack;
     typedef CoarseFermionEigenPack<FImpl, nBasis, FImplIo> CoarsePack;
+    typedef typename CoarsePack::Field                     Field;
+    typedef typename CoarsePack::FieldIo                   FieldIo;
+    typedef typename CoarsePack::CoarseField               CoarseField;
+    typedef typename CoarsePack::CoarseFieldIo             CoarseFieldIo;
     typedef HADRONS_DEFAULT_SCHUR_OP<FMat, FermionField>   SchurFMat;
 public:
     // constructor
@@ -123,21 +127,30 @@ void TLocalCoherenceLanczos<FImpl, nBasis, FImplIo>::setup(void)
     
     unsigned int Ls        = env().getObjectLs(par().action);
     auto         blockSize = strToVec<int>(par().blockSize);
+    GridBase     *gridIo = nullptr, *gridCoarseIo = nullptr;
 
-    env().createCoarseGrid(blockSize, Ls);
+    if (typeHash<Field>() != typeHash<FieldIo>())
+    {
+        gridIo       = envGetRbGrid(FieldIo, Ls);
+    }
+    if (typeHash<CoarseField>() != typeHash<CoarseFieldIo>())
+    {
+        gridCoarseIo = envGetCoarseGrid(CoarseFieldIo, blockSize, Ls);
+    }
 
-    auto cg  = env().getCoarseGrid(blockSize, Ls);
+    auto cg  = envGetCoarseGrid(CoarseField, blockSize, Ls);
     int  cNm = (par().doCoarse) ? par().coarseParams.Nm : 0;
 
     LOG(Message) << "Coarse grid: " << cg->GlobalDimensions() << std::endl;
     envCreateDerived(BasePack, CoarsePack, getName(), Ls,
-                     par().fineParams.Nm, cNm, env().getRbGrid(Ls), cg);
+                     par().fineParams.Nm, cNm, envGetRbGrid(Field, Ls), cg,
+                     gridIo, gridCoarseIo);
 
     auto &epack = envGetDerived(BasePack, CoarsePack, getName());
 
     envTmp(SchurFMat, "mat", Ls, envGet(FMat, par().action));
     envGetTmp(SchurFMat, mat);
-    envTmp(LCL, "solver", Ls, env().getRbGrid(Ls), cg, mat, 
+    envTmp(LCL, "solver", Ls, envGetRbGrid(Field, Ls), cg, mat, 
            Odd, epack.evec, epack.evecCoarse, epack.eval, epack.evalCoarse);
 }
 

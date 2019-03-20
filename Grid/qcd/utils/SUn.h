@@ -676,10 +676,18 @@ class SU {
     }
   }
 /*
- add GaugeTrans
-*/
-
-template<typename GaugeField,typename GaugeMat>
+ * Fundamental rep gauge xform
+ */
+  template<typename Fundamental,typename GaugeMat>
+  static void GaugeTransformFundamental( Fundamental &ferm, GaugeMat &g){
+    GridBase *grid = ferm._grid;
+    conformable(grid,g._grid);
+    ferm = g*ferm;
+  }
+/*
+ * Adjoint rep gauge xform
+ */
+  template<typename GaugeField,typename GaugeMat>
   static void GaugeTransform( GaugeField &Umu, GaugeMat &g){
     GridBase *grid = Umu._grid;
     conformable(grid,g._grid);

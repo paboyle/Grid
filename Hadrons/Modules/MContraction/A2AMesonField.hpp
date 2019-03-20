@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Modules/MContraction/A2AMesonField.hpp
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
@@ -34,10 +34,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 #include <Hadrons/A2AMatrix.hpp>
-
-#ifndef MF_IO_TYPE
-#define MF_IO_TYPE ComplexF
-#endif
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -118,7 +114,7 @@ public:
     typedef A2AMatrixBlockComputation<Complex, 
                                       FermionField, 
                                       A2AMesonFieldMetadata, 
-                                      MF_IO_TYPE> Computation;
+                                      HADRONS_A2AM_IO_TYPE> Computation;
     typedef MesonFieldKernel<Complex, FImpl> Kernel;
 public:
     // constructor
@@ -248,7 +244,7 @@ void TA2AMesonField<FImpl>::execute(void)
         LOG(Message) << "  " << g << std::endl;
     }
     LOG(Message) << "Meson field size: " << nt << "*" << N_i << "*" << N_j 
-                 << " (filesize " << sizeString(nt*N_i*N_j*sizeof(MF_IO_TYPE)) 
+                 << " (filesize " << sizeString(nt*N_i*N_j*sizeof(HADRONS_A2AM_IO_TYPE)) 
                  << "/momentum/bilinear)" << std::endl;
 
     auto &ph = envGet(std::vector<ComplexField>, momphName_);

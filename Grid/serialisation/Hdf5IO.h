@@ -54,7 +54,7 @@ namespace Grid
   class Hdf5Reader: public Reader<Hdf5Reader>
   {
   public:
-    Hdf5Reader(const std::string &fileName);
+    Hdf5Reader(const std::string &fileName, const bool readOnly = true);
     virtual ~Hdf5Reader(void) = default;
     bool push(const std::string &s);
     void pop(void);
@@ -123,9 +123,12 @@ namespace Grid
     
     if (flatx.size() > dataSetThres_)
     {
-      H5NS::DataSet dataSet;
+      H5NS::DataSet           dataSet;
+      H5NS::DSetCreatPropList plist;
       
-      dataSet = group_.createDataSet(s, Hdf5Type<Element>::type(), dataSpace);
+      plist.setChunk(dim.size(), dim.data());
+      plist.setFletcher32();
+      dataSet = group_.createDataSet(s, Hdf5Type<Element>::type(), dataSpace, plist);
       dataSet.write(flatx.data(), Hdf5Type<Element>::type());
     }
     else

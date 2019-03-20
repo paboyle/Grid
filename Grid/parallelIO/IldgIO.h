@@ -46,6 +46,12 @@ extern "C" {
 namespace Grid {
 namespace QCD {
 
+#define GRID_FIELD_NORM "FieldNormMetaData"
+#define GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) \
+0.5*fabs(FieldNormMetaData_.norm2 - n2ck)/(FieldNormMetaData_.norm2 + n2ck)
+#define GRID_FIELD_NORM_CHECK(FieldNormMetaData_, n2ck) \
+assert(GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) < 1.0e-5);
+
   /////////////////////////////////
   // Encode word types as strings
   /////////////////////////////////
@@ -205,6 +211,7 @@ class GridLimeReader : public BinaryIO {
   {
     typedef typename vobj::scalar_object sobj;
     scidacChecksum scidacChecksum_;
+    FieldNormMetaData  FieldNormMetaData_;
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
 
     std::string format = getFormatString<vobj>();
@@ -233,20 +240,51 @@ class GridLimeReader : public BinaryIO {
 	//	std::cout << " ReadLatticeObject from offset "<<offset << std::endl;
 	BinarySimpleMunger<sobj,sobj> munge;
 	BinaryIO::readLatticeObject< vobj, sobj >(field, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
-  std::cout << GridLogMessage << "SciDAC checksum A " << std::hex << scidac_csuma << std::dec << std::endl;
-  std::cout << GridLogMessage << "SciDAC checksum B " << std::hex << scidac_csumb << std::dec << std::endl;
+	std::cout << GridLogMessage << "SciDAC checksum A " << std::hex << scidac_csuma << std::dec << std::endl;
+	std::cout << GridLogMessage << "SciDAC checksum B " << std::hex << scidac_csumb << std::dec << std::endl;
 	/////////////////////////////////////////////
 	// Insist checksum is next record
 	/////////////////////////////////////////////
-	readLimeObject(scidacChecksum_,std::string("scidacChecksum"),std::string(SCIDAC_CHECKSUM));
-
+	readScidacChecksum(scidacChecksum_,FieldNormMetaData_);
 	/////////////////////////////////////////////
 	// Verify checksums
 	/////////////////////////////////////////////
+	if(FieldNormMetaData_.norm2 != 0.0){ 
+	  RealD n2ck = norm2(field);
+	  std::cout << GridLogMessage << "Field norm: metadata= " << FieldNormMetaData_.norm2 
+              << " / field= " << n2ck << " / rdiff= " << GRID_FIELD_NORM_CALC(FieldNormMetaData_,n2ck) << std::endl;
+	  GRID_FIELD_NORM_CHECK(FieldNormMetaData_,n2ck);
+	}
 	assert(scidacChecksumVerify(scidacChecksum_,scidac_csuma,scidac_csumb)==1);
+
+	// find out if next field is a GridFieldNorm
 	return;
       }
     }
+  }
+  void readScidacChecksum(scidacChecksum     &scidacChecksum_,
+			  FieldNormMetaData  &FieldNormMetaData_)
+  {
+    FieldNormMetaData_.norm2 =0.0;
+    std::string scidac_str(SCIDAC_CHECKSUM);
+    std::string field_norm_str(GRID_FIELD_NORM);
+    while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
+      uint64_t nbytes = limeReaderBytes(LimeR);//size of this record (configuration)
+      std::vector<char> xmlc(nbytes+1,'\0');
+      limeReaderReadData((void *)&xmlc[0], &nbytes, LimeR);    
+      std::string xmlstring = std::string(&xmlc[0]);
+      XmlReader RD(xmlstring, true, "");
+      if ( !strncmp(limeReaderType(LimeR), field_norm_str.c_str(),strlen(field_norm_str.c_str()) )  ) {
+	//	std::cout << "FieldNormMetaData "<<xmlstring<<std::endl;
+	read(RD,field_norm_str,FieldNormMetaData_);
+      }
+      if ( !strncmp(limeReaderType(LimeR), scidac_str.c_str(),strlen(scidac_str.c_str()) )  ) {
+	//	std::cout << SCIDAC_CHECKSUM << " " <<xmlstring<<std::endl;
+	read(RD,std::string("scidacChecksum"),scidacChecksum_);
+	return;
+      }      
+    }
+    assert(0);
   }
   ////////////////////////////////////////////
   // Read a generic serialisable object
@@ -266,7 +304,7 @@ class GridLimeReader : public BinaryIO {
 	limeReaderReadData((void *)&xmlc[0], &nbytes, LimeR);    
 	//	std::cout << GridLogMessage<< " readLimeObject matches XML " << &xmlc[0] <<std::endl;
 
-   xmlstring = std::string(&xmlc[0]);
+	xmlstring = std::string(&xmlc[0]);
 	return;
       }
 
@@ -280,8 +318,8 @@ class GridLimeReader : public BinaryIO {
     std::string xmlstring;
 
     readLimeObject(xmlstring, record_name);
-	  XmlReader RD(xmlstring, true, "");
-	  read(RD,object_name,object);
+    XmlReader RD(xmlstring, true, "");
+    read(RD,object_name,object);
   }
 };
 
@@ -390,6 +428,8 @@ class GridLimeWriter : public BinaryIO
     GridBase *grid = field._grid;
     assert(boss_node == field._grid->IsBoss() );
 
+    FieldNormMetaData FNMD; FNMD.norm2 = norm2(field);
+
     ////////////////////////////////////////////
     // Create record header
     ////////////////////////////////////////////
@@ -448,6 +488,7 @@ class GridLimeWriter : public BinaryIO
     checksum.suma= streama.str();
     checksum.sumb= streamb.str();
     if ( boss_node ) { 
+      writeLimeObject(0,0,FNMD,std::string(GRID_FIELD_NORM),std::string(GRID_FIELD_NORM));
       writeLimeObject(0,1,checksum,std::string("scidacChecksum"),std::string(SCIDAC_CHECKSUM));
     }
   }
@@ -626,6 +667,12 @@ class IldgWriter : public ScidacWriter {
     assert(header.nd==header.dimension.size());
 
     //////////////////////////////////////////////////////////////////////////////
+    // Field norm tests
+    //////////////////////////////////////////////////////////////////////////////
+    FieldNormMetaData FieldNormMetaData_;
+    FieldNormMetaData_.norm2 = norm2(Umu);
+
+    //////////////////////////////////////////////////////////////////////////////
     // Fill the USQCD info field
     //////////////////////////////////////////////////////////////////////////////
     usqcdInfo info;
@@ -633,11 +680,12 @@ class IldgWriter : public ScidacWriter {
     info.plaq   = header.plaquette;
     info.linktr = header.link_trace;
 
-    std::cout << GridLogMessage << " Writing config; IldgIO "<<std::endl;
+    //    std::cout << GridLogMessage << " Writing config; IldgIO n2 "<< FieldNormMetaData_.norm2<<std::endl;
     //////////////////////////////////////////////
     // Fill the Lime file record by record
     //////////////////////////////////////////////
     writeLimeObject(1,0,header ,std::string("FieldMetaData"),std::string(GRID_FORMAT)); // Open message 
+    writeLimeObject(0,0,FieldNormMetaData_,FieldNormMetaData_.SerialisableClassName(),std::string(GRID_FIELD_NORM));
     writeLimeObject(0,0,_scidacFile,_scidacFile.SerialisableClassName(),std::string(SCIDAC_PRIVATE_FILE_XML));
     writeLimeObject(0,1,info,info.SerialisableClassName(),std::string(SCIDAC_FILE_XML));
     writeLimeObject(1,0,_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML));
@@ -680,6 +728,7 @@ class IldgReader : public GridLimeReader {
     std::string    ildgLFN_       ;
     scidacChecksum scidacChecksum_; 
     usqcdInfo      usqcdInfo_     ;
+    FieldNormMetaData FieldNormMetaData_;
 
     // track what we read from file
     int found_ildgFormat    =0;
@@ -688,7 +737,7 @@ class IldgReader : public GridLimeReader {
     int found_usqcdInfo     =0;
     int found_ildgBinary =0;
     int found_FieldMetaData =0;
-
+    int found_FieldNormMetaData =0;
     uint32_t nersc_csum;
     uint32_t scidac_csuma;
     uint32_t scidac_csumb;
@@ -722,7 +771,7 @@ class IldgReader : public GridLimeReader {
 	//////////////////////////////////
 	// ILDG format record
 
-  std::string xmlstring(&xmlc[0]);
+	std::string xmlstring(&xmlc[0]);
 	if ( !strncmp(limeReaderType(LimeR), ILDG_FORMAT,strlen(ILDG_FORMAT)) ) { 
 
 	  XmlReader RD(xmlstring, true, "");
@@ -775,11 +824,17 @@ class IldgReader : public GridLimeReader {
 	  found_scidacChecksum = 1;
 	}
 
+	if ( !strncmp(limeReaderType(LimeR), GRID_FIELD_NORM,strlen(GRID_FIELD_NORM)) ) { 
+	  XmlReader RD(xmlstring, true, "");
+	  read(RD,GRID_FIELD_NORM,FieldNormMetaData_);
+	  found_FieldNormMetaData = 1;
+	}
+
       } else {  
 	/////////////////////////////////
 	// Binary data
 	/////////////////////////////////
-	std::cout << GridLogMessage << "ILDG Binary record found : "  ILDG_BINARY_DATA << std::endl;
+	//	std::cout << GridLogMessage << "ILDG Binary record found : "  ILDG_BINARY_DATA << std::endl;
 	uint64_t offset= ftello(File);
 	if ( format == std::string("IEEE64BIG") ) {
 	  GaugeSimpleMunger<dobj, sobj> munge;
@@ -846,6 +901,13 @@ class IldgReader : public GridLimeReader {
     ////////////////////////////////////////////////////////////
     // Really really want to mandate a scidac checksum
     ////////////////////////////////////////////////////////////
+    if ( found_FieldNormMetaData ) { 
+      RealD nn = norm2(Umu);
+      GRID_FIELD_NORM_CHECK(FieldNormMetaData_,nn);
+      std::cout << GridLogMessage<<"FieldNormMetaData matches " << std::endl;
+    }  else { 
+      std::cout << GridLogWarning<<"FieldNormMetaData not found. " << std::endl;
+    }
     if ( found_scidacChecksum ) {
       FieldMetaData_.scidac_checksuma = stoull(scidacChecksum_.suma,0,16);
       FieldMetaData_.scidac_checksumb = stoull(scidacChecksum_.sumb,0,16);
