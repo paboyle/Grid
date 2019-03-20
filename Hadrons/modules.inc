@@ -42,7 +42,6 @@ modules_cc =\
   Modules/MDistil/BC2.cc \
   Modules/MDistil/BContraction.cc \
   Modules/MDistil/LapEvec.cc \
-  Modules/MDistil/PerambMultipleSolves.cc \
   Modules/MDistil/DistilSink.cc \
   Modules/MDistil/Baryon2pt.cc \
   Modules/MDistil/PerambFromSolve.cc \

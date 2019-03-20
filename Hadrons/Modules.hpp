@@ -44,7 +44,6 @@
 #include <Hadrons/Modules/MDistil/DistilSink.hpp>
 #include <Hadrons/Modules/MDistil/BC2.hpp>
 #include <Hadrons/Modules/MDistil/PerambLight.hpp>
-#include <Hadrons/Modules/MDistil/PerambMultipleSolves.hpp>
 #include <Hadrons/Modules/MDistil/PerambFromSolve.hpp>
 #include <Hadrons/Modules/MDistil/BContraction.hpp>
 #include <Hadrons/Modules/MDistil/Baryon2pt.hpp>
