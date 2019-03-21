@@ -106,7 +106,7 @@ namespace Grid {
 	ComplexField coor(in._grid);
 	ComplexField ph(in._grid);  ph = zero;
 	FermionField in_buf(in._grid); in_buf = zero;
-	Complex ci(0.0,1.0);
+	Scalar ci(0.0,1.0);
 	assert(twist.size() == Nd);//check that twist is Nd
 	for(unsigned int nu = 0; nu < Nd; nu++)
 	{
