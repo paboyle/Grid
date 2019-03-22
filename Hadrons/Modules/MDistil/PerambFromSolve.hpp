@@ -164,6 +164,7 @@ void TPerambFromSolve<FImpl>::execute(void)
     const DistilParameters & Distil{par().Distil};
     const int LI{Distil.LI};
        const int TI{Distil.TI};
+       const int SI{Distil.SI};
     const int nnoise{Distil.nnoise};
     const int Nt{Distil.Nt};
     const int Nt_inv{Distil.Nt_inv};
@@ -191,7 +192,7 @@ void TPerambFromSolve<FImpl>::execute(void)
     for (int inoise = 0; inoise < nnoise; inoise++) {
       for (int dk = 0; dk < LI_reduced; dk++) {
         for (int dt = 0; dt < Nt_inv; dt++) {
-          for (int ds = 0; ds < Ns; ds++) {
+          for (int ds = 0; ds < SI; ds++) {
             for (int is = 0; is < Ns; is++) {
               result_nospin = peekSpin(solve[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))],is);
               for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {

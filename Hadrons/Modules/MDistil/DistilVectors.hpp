@@ -113,12 +113,13 @@ void TDistilVectors<FImpl>::setup(void)
    int nnoise=par().nnoise;
    int LI=par().LI;
    int Ns=par().Ns;
+   int SI=par().SI;
    int Nt_inv=par().Nt_inv;
 
    envCreate(std::vector<FermionField>, getName() + "_rho", 1, 
-		                    nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField));
+		                    nnoise*LI*SI*Nt_inv, envGetGrid(FermionField));
    envCreate(std::vector<FermionField>, getName() + "_phi", 1, 
-                 	            nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField)); 
+                 	            nnoise*LI*SI*Nt_inv, envGetGrid(FermionField)); 
 
   //GridCartesian * grid4d = env().getGrid();
     grid4d = env().getGrid();
@@ -184,6 +185,7 @@ void TDistilVectors<FImpl>::execute(void)
   int Nt=par().Nt;
   int TI=par().TI;
   int nvec=par().nvec;
+  int SI=par().SI;
   
   bool full_tdil=(TI==Nt);
 
@@ -192,18 +194,17 @@ void TDistilVectors<FImpl>::execute(void)
   for (int inoise = 0; inoise < nnoise; inoise++) {
     for (int dk = 0; dk < LI; dk++) {
       for (int dt = 0; dt < Nt_inv; dt++) {
-        for (int ds = 0; ds < Ns; ds++) {
-          vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * Ns*dt;
+        for (int ds = 0; ds < SI; ds++) {
+          vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * SI*dt;
           rho[vecindex] = zero;
           tmp3d_nospin = zero;
           for (int it = dt; it < Nt; it += TI){
             if (full_tdil) t_inv = tsrc; else t_inv = it;
             if( t_inv >= Ntfirst && t_inv < Ntfirst + Ntlocal ) {
               for (int ik = dk; ik < nvec; ik += LI){
-                for (int is = ds; is < Ns; is += Ns){ //at the moment, full spin dilution is enforced
+                for (int is = ds; is < Ns; is += SI){ 
                   ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv,3);
                   tmp3d_nospin = evec3d * noise[inoise + nnoise*(t_inv + Nt*(ik+nvec*is))];
-                  //tmp3d_nospin = evec3d * noise[inoise][it][ik]()(is)(); //noises do not have to be a spin vector
                   tmp3d=zero;
                   pokeSpin(tmp3d,tmp3d_nospin,is);
                   tmp2=zero;
@@ -221,8 +222,8 @@ void TDistilVectors<FImpl>::execute(void)
   for (int inoise = 0; inoise < nnoise; inoise++) {
     for (int dk = 0; dk < LI; dk++) {
       for (int dt = 0; dt < Nt_inv; dt++) {
-        for (int ds = 0; ds < Ns; ds++) {
-          vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * Ns*dt;
+        for (int ds = 0; ds < SI; ds++) {
+          vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * SI*dt;
           phi[vecindex] = zero;
           for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
             sink_tslice=zero;

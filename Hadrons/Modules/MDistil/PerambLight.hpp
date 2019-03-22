@@ -156,7 +156,7 @@ void TPerambLight<FImpl>::execute(void)
     const int nvec{par().nvec};
     const DistilParameters & Distil{par().Distil};
     const int LI{Distil.LI};
-    //const int SI{Distil.SI};
+    const int SI{Distil.SI};
     const int TI{Distil.TI};
     const int nnoise{Distil.nnoise};
     const int Nt{Distil.Nt};
@@ -239,7 +239,7 @@ void TPerambLight<FImpl>::execute(void)
     for (int inoise = 0; inoise < nnoise; inoise++) {
       for (int dk = 0; dk < LI; dk++) {
         for (int dt = 0; dt < Nt_inv; dt++) {
-          for (int ds = 0; ds < Ns; ds++) {
+          for (int ds = 0; ds < SI; ds++) {
             std::cout <<  "LapH source vector from noise " << inoise << " and dilution component (d_k,d_t,d_alpha) : (" << dk << ","<< dt << "," << ds << ")" << std::endl;
             dist_source = zero;
             tmp3d_nospin = zero;
@@ -248,7 +248,7 @@ void TPerambLight<FImpl>::execute(void)
               if (full_tdil) t_inv = tsrc; else t_inv = it;
               if( t_inv >= Ntfirst && t_inv < Ntfirst + Ntlocal ) {
                 for (int ik = dk; ik < nvec; ik += LI){
-                  for (int is = ds; is < Ns; is += Ns){ // TODO: Also allow non-full spin dilution (re-define exact_distillation?)
+                  for (int is = ds; is < Ns; is += SI){ 
                     ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv,3);
                     tmp3d_nospin = evec3d * noise[inoise + nnoise*(t_inv + Nt*(ik+nvec*is))]; 
                     tmp3d=zero;

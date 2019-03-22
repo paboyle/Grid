@@ -108,13 +108,13 @@ void TDistilSink<FImpl>::setup(void)
    int nnoise=par().nnoise;
    int LI=par().LI;
    int Ns=par().Ns;
+   int SI=par().SI;
    int Nt_inv=par().Nt_inv;
 
    envCreate(std::vector<FermionField>, getName(), 1, 
-                 	            nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField)); 
+                 	            nnoise*LI*SI*Nt_inv, envGetGrid(FermionField)); 
 
-  //GridCartesian * grid4d = env().getGrid();
-    grid4d = env().getGrid();
+  grid4d = env().getGrid();
   std::vector<int> latt_size   = GridDefaultLatt();
   std::vector<int> simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
@@ -122,7 +122,6 @@ void TDistilSink<FImpl>::setup(void)
   latt_size[Nd-1] = 1;
   simd_layout_3.push_back( 1 );
   mpi_layout[Nd-1] = 1;
-  //GridCartesian * grid3d = new GridCartesian(latt_size,simd_layout_3,mpi_layout,*grid4d);
   grid3d = MakeLowerDimGrid(grid4d);
 
 
@@ -161,14 +160,13 @@ void TDistilSink<FImpl>::execute(void)
   envGetTmp(LatticeSpinColourVector, sink_tslice);
   envGetTmp(LatticeColourVector, evec3d);
 
-  //GridCartesian * grid4d = env().getGrid();
-
   int Ntlocal = grid4d->LocalDimensions()[3];
   int Ntfirst = grid4d->LocalStarts()[3];
 
   int tsrc=par().tsrc;
   int nnoise=par().nnoise;
   int LI=par().LI;
+  int SI=par().SI;
   int Ns=par().Ns;
   int Nt_inv=par().Nt_inv; // TODO: No input, but define through Nt, TI
   int Nt=par().Nt;
@@ -182,8 +180,8 @@ void TDistilSink<FImpl>::execute(void)
   for (int inoise = 0; inoise < nnoise; inoise++) {
     for (int dk = 0; dk < LI; dk++) {
       for (int dt = 0; dt < Nt_inv; dt++) {
-        for (int ds = 0; ds < Ns; ds++) {
-          vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * Ns*dt;
+        for (int ds = 0; ds < SI; ds++) {
+          vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * SI*dt;
           phi[vecindex] = zero;
           for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
             sink_tslice=zero;
@@ -197,8 +195,6 @@ void TDistilSink<FImpl>::execute(void)
       }
     }
   }
-
-  std::cout << "size phi" << phi.size() << std::endl;
 
 }
 
