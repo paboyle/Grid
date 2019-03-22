@@ -119,7 +119,6 @@ modules_hpp =\
   Modules/MDistil/DistilSink.hpp \
   Modules/MDistil/BC2.hpp \
   Modules/MDistil/PerambLight.hpp \
-  Modules/MDistil/PerambMultipleSolves.hpp \
   Modules/MDistil/PerambFromSolve.hpp \
   Modules/MDistil/BContraction.hpp \
   Modules/MDistil/Baryon2pt.hpp \
