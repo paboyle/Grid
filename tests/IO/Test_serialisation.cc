@@ -30,6 +30,7 @@ Author: Michael Marshall <michael.marshall@ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 #include <Grid/util/EigenUtil.h>
+#include <typeinfo>
 
 using namespace Grid;
 using namespace Grid::QCD;
@@ -109,126 +110,148 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
   std::cout << " done." << std::endl;
 }
 
-typedef ComplexD TestScalar;
-typedef Eigen::TensorFixedSize<unsigned short, Eigen::Sizes<5,4,3,2,1>> TensorRank5UShort;
-typedef Eigen::TensorFixedSize<unsigned short, Eigen::Sizes<5,4,3,2,1>, Eigen::StorageOptions::RowMajor> TensorRank5UShortAlt;
-typedef Eigen::Tensor<TestScalar, 3, Eigen::StorageOptions::RowMajor> TensorRank3;
-typedef Eigen::TensorFixedSize<TestScalar, Eigen::Sizes<9,4,2>, Eigen::StorageOptions::RowMajor> Tensor_9_4_2;
-typedef std::vector<Tensor_9_4_2> aTensor_9_4_2;
-typedef Eigen::TensorFixedSize<SpinColourVector, Eigen::Sizes<6,5>> LSCTensor;
+// Perform I/O tests on a range of tensor types
+// Test coverage: scalars, complex and GridVectors in single, double and default precision
+class TensorIO : public Serializable {
+  using TestScalar = ComplexD;
+  using SR3 = Eigen::Sizes<9,4,2>;
+  using SR5 = Eigen::Sizes<5,4,3,2,1>;
+  using ESO = Eigen::StorageOptions;
+  using TensorRank3  = Eigen::Tensor<ComplexF, 3, ESO::RowMajor>;
+  using TensorR5     = Eigen::TensorFixedSize<Real, SR5>;
+  using TensorR5Alt  = Eigen::TensorFixedSize<Real, SR5, ESO::RowMajor>;
+  using Tensor942    = Eigen::TensorFixedSize<TestScalar, SR3, ESO::RowMajor>;
+  using aTensor942   = std::vector<Tensor942>;
+  using Perambulator = Eigen::Tensor<SpinColourVector, 6, ESO::RowMajor>;
+  using LSCTensor    = Eigen::TensorFixedSize<SpinColourMatrix, Eigen::Sizes<6,5>>;
+  
+  static const Real       FlagR;
+  static const Complex    Flag;
+  static const ComplexF   FlagF;
+  static const TestScalar FlagTS;
+  static const char * const pszFilePrefix;
 
-class PerambIOTestClass: Serializable {
-  ComplexD Flag;
+  void Init(unsigned short Precision)
+  {
+    SequentialInit(Perambulator1, Flag, Precision);
+    SequentialInit(Perambulator2, Flag, Precision);
+    SequentialInit(tensorR5,      FlagR, Precision);
+    SequentialInit(tensorRank3,   FlagF, Precision);
+    SequentialInit(tensor_9_4_2,  FlagTS, Precision);
+    for( auto &t : atensor_9_4_2 )
+      SequentialInit(t, FlagTS, Precision);
+    SequentialInit(MyLSCTensor, Flag, Precision);
+  }
+  
+  // Perform an I/O test for a single Eigen tensor (of any type)
+  template <typename W, typename R, typename T, typename... IndexTypes>
+  static void TestOne(const char * MyTypeName, unsigned short Precision, std::string &filename,
+                      const char * pszExtension, unsigned int &TestNum,
+                      typename EigenIO::Traits<T>::scalar_type Flag, IndexTypes... otherDims)
+  {
+    using Traits = EigenIO::Traits<T>;
+    using scalar_type = typename Traits::scalar_type;
+    std::unique_ptr<T> pTensor{new T(otherDims...)};
+    SequentialInit( * pTensor, Flag, Precision );
+    filename = pszFilePrefix + std::to_string(++TestNum) + "_" + MyTypeName + pszExtension;
+    ioTest<W, R, T>(filename, * pTensor, MyTypeName, MyTypeName);
+  }
+  
 public:
-  using PerambTensor = Eigen::Tensor<SpinColourVector, 6, Eigen::StorageOptions::RowMajor>;
-  GRID_SERIALIZABLE_CLASS_MEMBERS(PerambIOTestClass
-                                  , SpinColourVector, spinColourVector
-                                  , SpinColourMatrix, spinColourMatrix
+  GRID_SERIALIZABLE_CLASS_MEMBERS(TensorIO
+                                  , SpinColourVector,         spinColourVector
+                                  , SpinColourMatrix,         spinColourMatrix
                                   , std::vector<std::string>, DistilParameterNames
                                   , std::vector<int>,         DistilParameterValues
-                                  , PerambTensor,             Perambulator
-                                  , PerambTensor,             Perambulator2
-                                  , TensorRank5UShort,        tensorRank5UShort
+                                  , Perambulator,             Perambulator1
+                                  , Perambulator,             Perambulator2
+                                  , TensorR5,                 tensorR5
                                   , TensorRank3,              tensorRank3
-                                  , Tensor_9_4_2,             tensor_9_4_2
-                                  , aTensor_9_4_2,            atensor_9_4_2
+                                  , Tensor942,                tensor_9_4_2
+                                  , aTensor942,               atensor_9_4_2
                                   , LSCTensor,                MyLSCTensor
                                   );
-  PerambIOTestClass()
+  TensorIO()
   : DistilParameterNames {"do", "androids", "dream", "of", "electric", "sheep?"}
   , DistilParameterValues{2,3,1,4,5,1}
-  , Perambulator(2,3,1,4,5,1)
+  , Perambulator1(2,3,1,4,5,1)
   , Perambulator2(7,1,6,1,5,1)
   , tensorRank3(7,3,2)
-  , atensor_9_4_2(3)
-  //, Flag(1,-3.1415927)
-  , Flag(1,-1)
+  , atensor_9_4_2(3) {}
+  
+#define TEST_PARAMS( T ) #T, Precision, filename, pszExtension, TestNum
+  
+  // Perform a series of I/O tests for Eigen tensors, including a serialisable object
+  template <typename WTR_, typename RDR_>
+  static void Test(const char * pszExtension, unsigned short Precision = 0)
   {
-    SequentialInit(Perambulator,  Flag);
-    SequentialInit(Perambulator2, Flag);
-    SequentialInit(tensorRank5UShort);
-    SequentialInit(tensorRank3, Flag);
-    SequentialInit(tensor_9_4_2, Flag);
-    for( auto &t : atensor_9_4_2 ) SequentialInit(t, Flag);
-    SequentialInit( MyLSCTensor, Flag );
+    // Perform a series of tests on progressively more complex tensors
+    unsigned int TestNum = 0;
+    std::string filename;
+    // Rank 1 tensor containing a single integer
+    using TensorSingle = Eigen::TensorFixedSize<Integer, Eigen::Sizes<1>>;
+    TestOne<WTR_, RDR_, TensorSingle>( TEST_PARAMS( TensorSingle ), 7 ); // lucky!
+    // Rather convoluted way of defining a single complex number
+    using TensorSimple = Eigen::Tensor<iMatrix<TestScalar,1>, 6>;
+    using I = typename TensorSimple::Index; // NB: Never specified, so same for all my test tensors
+    // Try progressively more complicated tensors
+    TestOne<WTR_, RDR_, TensorSimple, I,I,I,I,I,I>( TEST_PARAMS( TensorSimple ), FlagTS, 1,1,1,1,1,1 );
+    TestOne<WTR_, RDR_, TensorRank3, I, I, I>( TEST_PARAMS( TensorRank3 ), FlagF, 6, 3, 2 );
+    TestOne<WTR_, RDR_, Tensor942>(TEST_PARAMS( Tensor942 ), FlagTS);
+    TestOne<WTR_, RDR_, LSCTensor>(TEST_PARAMS( LSCTensor ), Flag );
+    
+    // Now see whether we can write a tensor in one memory order and read back in the other
+    {
+      TestOne<WTR_, RDR_, TensorR5>(TEST_PARAMS( TensorR5 ), FlagR);
+      std::cout << "    Testing alternate memory order read ... ";
+      TensorR5Alt t2;
+      RDR_ reader(filename);
+      ::Grid::read(reader, "TensorR5", t2);
+      bool good = true;
+      TensorR5 cf;
+      SequentialInit( cf, FlagR, Precision );
+      for_all( t2, [&](typename EigenIO::Traits<TensorR5Alt>::scalar_type c, I n,
+                       const std::array<I, TensorR5Alt::NumIndices> &TensorIndex,
+                       const std::array<int, EigenIO::Traits<TensorR5Alt>::Rank> &GridTensorIndex ){
+        Real &r = cf(TensorIndex);
+        if( c != r ){
+          good = false;
+          std::cout << "\nError: " << n << ": " << c << " != " << r;
+        }
+      } );
+      if (!good) {
+        std::cout << std::endl;
+        dump_tensor(t2,"t2");
+        exit(EXIT_FAILURE);
+      }
+      std::cout << " done." << std::endl;
+    }
+    // Now test a serialisable object containing a number of tensors
+    {
+      static const char MyTypeName[] = "TensorIO";
+      filename = pszFilePrefix + std::to_string(++TestNum) + "_" + MyTypeName + pszExtension;
+      std::unique_ptr<TensorIO> pObj{new TensorIO()};
+      pObj->Init(Precision);
+      ioTest<WTR_, RDR_, TensorIO>(filename, * pObj, MyTypeName, MyTypeName, Precision);
+    }
+    // Stress test. Too large for the XML or text readers and writers!
+#ifdef STRESS_TEST
+    const std::type_info &tw = typeid( WTR_ );
+    if( tw == typeid( Hdf5Writer ) || tw == typeid( BinaryWriter ) ) {
+      using LCMTensor=Eigen::TensorFixedSize<iMatrix<iVector<iMatrix<iVector<LorentzColourMatrix,5>,2>,7>,3>,
+      Eigen::Sizes<2,4,11,10,9>, Eigen::StorageOptions::RowMajor>;
+      std::cout << "sizeof( LCMTensor ) = " << sizeof( LCMTensor ) / 1024 / 1024 << " MB" << std::endl;
+      TestOne<WTR_, RDR_, LCMTensor>(TEST_PARAMS( LCMTensor ), Flag);
+    }
+#endif
   }
 };
 
-#define TEST_PARAMS( T ) #T, Flag, Precision, filename, pszExtension, TestNum
-
-// Perform an I/O test for a single Eigen tensor (of any type)
-template <typename WTR_, typename RDR_, typename T, typename... IndexTypes>
-void EigenTensorTestSingle(const char * MyTypeName, typename EigenIO::Traits<T>::scalar_type Flag,
-                           unsigned short Precision, std::string &filename, const char * pszExtension,
-                           unsigned int &TestNum, IndexTypes... otherDims)
-{
-  using Traits = EigenIO::Traits<T>;
-  using scalar_type = typename Traits::scalar_type;
-  std::unique_ptr<T> pTensor{new T(otherDims...)};
-  SequentialInit( * pTensor, Flag, Precision );
-  filename = "iotest_" + std::to_string(++TestNum) + "_" + MyTypeName + pszExtension;
-  ioTest<WTR_, RDR_, T>(filename, * pTensor, MyTypeName, MyTypeName);
-}
-
-// Perform a series of I/O tests for Eigen tensors, including a serialisable object
-template <typename WTR_, typename RDR_>
-void EigenTensorTest(const char * pszExtension, unsigned short Precision = 0)
-{
-  // Perform a series of tests on progressively more complex tensors
-  unsigned int TestNum = 0;
-  std::string filename;
-  {
-    int Flag = 7;
-    using TensorSingle = Eigen::TensorFixedSize<Integer, Eigen::Sizes<1>>;
-    EigenTensorTestSingle<WTR_, RDR_, TensorSingle>(TEST_PARAMS( TensorSingle ));
-  }
-  TestScalar Flag{1,-3.1415927};
-  using TensorSimple = Eigen::Tensor<iMatrix<TestScalar,1>, 6>;
-  using I = typename TensorSimple::Index;
-  EigenTensorTestSingle<WTR_, RDR_, TensorSimple, I, I, I, I, I, I>( TEST_PARAMS( TensorSimple ), 1, 1, 1, 1, 1, 1 );
-  EigenTensorTestSingle<WTR_, RDR_, TensorRank3, I, I, I>( TEST_PARAMS( TensorRank3 ), 6, 3, 2 );
-  EigenTensorTestSingle<WTR_, RDR_, Tensor_9_4_2>(TEST_PARAMS( Tensor_9_4_2 ));
-  EigenTensorTestSingle<WTR_, RDR_, LSCTensor>(TEST_PARAMS( LSCTensor ));
-  // Now see whether we could write out a tensor in one memory order and read back in the other
-  {
-    unsigned short Flag = 1;
-    EigenTensorTestSingle<WTR_, RDR_, TensorRank5UShort>(TEST_PARAMS( TensorRank5UShort ));
-    std::cout << "    Testing alternate memory order read ... ";
-    TensorRank5UShortAlt t2;
-    RDR_ reader(filename);
-    read(reader, "TensorRank5UShort", t2);
-    bool good = true;
-    using Index = typename TensorRank5UShortAlt::Index;
-    // NB: I can't call
-    for_all( t2, [&](unsigned short c, Index n,
-                     const std::array<Index, TensorRank5UShortAlt::NumIndices> &TensorIndex,
-                     const std::array<int, EigenIO::Traits<TensorRank5UShortAlt>::Rank> &GridTensorIndex ){
-      good = good && ( c == n );
-    } );
-    if (!good) {
-      std::cout << " failure!" << std::endl;
-      dump_tensor(t2,"t2");
-      exit(EXIT_FAILURE);
-    }
-    std::cout << " done." << std::endl;
-  }
-  // Now test a serialisable object containing a number of tensors
-  {
-    static const char MyTypeName[] = "PerambIOTestClass";
-    std::unique_ptr<PerambIOTestClass> pObj{new PerambIOTestClass()};
-    filename = "iotest_" + std::to_string(++TestNum) + "_" + MyTypeName + pszExtension;
-    ioTest<WTR_, RDR_, PerambIOTestClass>(filename, * pObj, MyTypeName, MyTypeName);
-  }
-  // Stress test. Too large for the XML or text readers and writers!
-#ifdef STRESS_TEST
-  if( typeid( WTR_ ).name() == typeid( Hdf5Writer ).name() || typeid( WTR_ ).name() == typeid( BinaryWriter ).name() ) {
-    using LCMTensor=Eigen::TensorFixedSize<iMatrix<iVector<iMatrix<iVector<LorentzColourMatrix,5>,2>,7>,3>,
-        Eigen::Sizes<2,4,11,10,9>, Eigen::StorageOptions::RowMajor>;
-    std::cout << "sizeof( LCMTensor ) = " << sizeof( LCMTensor ) / 1024 / 1024 << " MB" << std::endl;
-    EigenTensorTestSingle<WTR_, RDR_, LCMTensor>(TEST_PARAMS( LCMTensor ));
-  }
-#endif
-}
+const Real                 TensorIO::FlagR {-1.001};
+const Complex              TensorIO::Flag  {1,-3.1415927};
+const ComplexF             TensorIO::FlagF {1,-3.1415927};
+const TensorIO::TestScalar TensorIO::FlagTS{1,-3.1415927};
+const char * const         TensorIO::pszFilePrefix = "tensor_";
 
 template <typename T>
 void tensorConvTestFn(GridSerialRNG &rng, const std::string label)
@@ -314,14 +337,14 @@ int main(int argc,char **argv)
   ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", obj, "HDF5   (object)           ");
   ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", vec, "HDF5   (vector of objects)");
   std::cout << "\n==== detailed Hdf5 tensor tests (Grid::EigenIO)" << std::endl;
-  EigenTensorTest<Hdf5Writer, Hdf5Reader>(".h5");
+  TensorIO::Test<Hdf5Writer, Hdf5Reader>(".h5");
 #endif
   std::cout << "\n==== detailed binary tensor tests (Grid::EigenIO)" << std::endl;
-  EigenTensorTest<BinaryWriter, BinaryReader>(".bin");
+  TensorIO::Test<BinaryWriter, BinaryReader>(".bin");
   std::cout << "\n==== detailed xml tensor tests (Grid::EigenIO)" << std::endl;
-  EigenTensorTest<XmlWriter, XmlReader>(".xml", 6);
+  TensorIO::Test<XmlWriter, XmlReader>(".xml", 6);
   std::cout << "\n==== detailed text tensor tests (Grid::EigenIO)" << std::endl;
-  EigenTensorTest<TextWriter, TextReader>(".dat", 5);
+  TensorIO::Test<TextWriter, TextReader>(".dat", 5);
 
   std::cout << "\n==== vector flattening/reconstruction" << std::endl;
   typedef std::vector<std::vector<std::vector<double>>> vec3d;
