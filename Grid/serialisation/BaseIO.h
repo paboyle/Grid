@@ -454,7 +454,7 @@ namespace Grid {
     }
     assert( NumContainers * ElementsPerContainer == buf.size() && "EigenIO: Number of elements != product of dimensions" );
     // Now see whether the tensor is the right shape, or can be made to be
-    const auto & dims{output.dimensions()};
+    const auto & dims = output.dimensions();
     bool bShapeOK = (output.data() != nullptr);
     for( auto i = 0; bShapeOK && i < TensorRank ; i++ )
       if( dims[i] != dimData[i] )
@@ -558,7 +558,7 @@ namespace Grid {
     template <typename T>
     static inline typename std::enable_if<EigenIO::is_tensor<T>::value, bool>::type
     CompareMember(const std::vector<T> &lhs, const std::vector<T> &rhs) {
-      const auto NumElements{lhs.size()};
+      const auto NumElements = lhs.size();
       bool bResult = ( NumElements == rhs.size() );
       for( auto i = 0 ; i < NumElements && bResult ; i++ )
         bResult = CompareMember(lhs[i], rhs[i]);

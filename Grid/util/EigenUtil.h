@@ -51,11 +51,11 @@ namespace Grid {
             std::array<int, EigenIO::Traits<ETensor>::Rank> &GridTensorIndex)
   {
     using Traits = EigenIO::Traits<ETensor>;
-    const auto InnerRank = Traits::Rank;
+    const int InnerRank = Traits::Rank;
     for( typename Traits::scalar_type &Source : container ) {
       lambda(Source, Seq++, MyIndex, GridTensorIndex );
       // Now increment SubIndex
-      for( auto i = InnerRank - 1; i != -1 && ++GridTensorIndex[i] == DimGridTensor[i]; i-- )
+      for( int i = InnerRank - 1; i != -1 && ++GridTensorIndex[i] == DimGridTensor[i]; i-- )
         GridTensorIndex[i] = 0;
     }
   }
@@ -74,7 +74,7 @@ namespace Grid {
     const Index NumScalars = ET.size();
     assert( NumScalars > 0 && "EigenUtil: tensor has no elements" );
     Index ScalarElementCount{1};
-    const auto rank{ETensor::NumIndices};
+    const int rank{ETensor::NumIndices};
     std::array<Index, rank> DimTensor, MyIndex;
     for(int i = 0; i < rank; i++ ) {
       DimTensor[i] = ET.dimension(i);
@@ -83,7 +83,7 @@ namespace Grid {
     }
     assert( NumScalars == ScalarElementCount && "EigenUtil: tensor size not product of dimensions" );
     // Save the GridTensor dimensions
-    const auto InnerRank{Traits::Rank};
+    const int InnerRank{Traits::Rank};
     std::array<int, InnerRank> DimGridTensor, GridTensorIndex;
     for(int i = 0; i < InnerRank; i++ ) {
       DimGridTensor[i] = Traits::Dimension(i);
@@ -96,13 +96,13 @@ namespace Grid {
       for_all_do_lambda<ETensor, Lambda>( lambda, * pScalar, Seq, MyIndex, DimGridTensor, GridTensorIndex );
       // Now increment the index to pass to the lambda (bearing in mind we're walking in memory order)
       if( ETensor::Options & Eigen::RowMajor ) {
-        for( auto i = rank - 1; i != -1 && ++MyIndex[i] == DimTensor[i]; i-- )
+        for( int i = rank - 1; i != -1 && ++MyIndex[i] == DimTensor[i]; i-- )
           MyIndex[i] = 0;
       } else {
-        for( auto i = 0; i < rank && ++MyIndex[i] == DimTensor[i]; i++ )
+        for( int i = 0; i < rank && ++MyIndex[i] == DimTensor[i]; i++ )
           MyIndex[i] = 0;
         Seq = 0;
-        for( auto i = 0; i < rank; i++ ) {
+        for( int i = 0; i < rank; i++ ) {
           Seq *= DimTensor[i];
           Seq += MyIndex[i];
         }
@@ -166,7 +166,7 @@ namespace Grid {
     using Traits = EigenIO::Traits<T>;
     using scalar_type = typename Traits::scalar_type;
     using Index = typename T::Index;
-    const auto rank{T::NumIndices};
+    const int rank{T::NumIndices};
     const auto &dims = t.dimensions();
     std::cout << "Dumping rank " << rank + Traits::Rank << ((T::Options & Eigen::RowMajor) ? ", row" : ", column") << "-major tensor ";
     if( pName )
