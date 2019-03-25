@@ -25,8 +25,7 @@ public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(NoisesPar,
                                     std::string, UniqueIdentifier,
                                     int, nvec,
-			            DistilParameters, Distil,
-				    unsigned int, i);
+			            DistilParameters, Distil);
 };
 
 template <typename FImpl>
