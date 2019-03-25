@@ -78,7 +78,7 @@ namespace Grid {
       }
       inline bool operator!=(const TensorIterator_raw<ETensor, bConst> &r)
       { return pET == nullptr || pET != r.pET || position != r.position; }
-      // These functions aren't rerquired for iterators, but they make using them easier
+      // These functions aren't required for iterators, but they make using them easier
       inline bool AtEnd() { return position == end; }
       inline void DumpIndex(void) {
         for( auto dim : indexPos )
@@ -251,23 +251,11 @@ namespace Grid {
     for( int i = 0 ; i < rank; i++ ) std::cout << "[" << dims[i] << "]";
     for( int i = 0 ; i < Traits::Rank; i++ ) std::cout << "(" << Traits::Dimension(i) << ")";
     std::cout << " in memory order:" << std::endl;
-#ifdef OLD_DEFINITION
-    for_all( t, [&](scalar_type &c, Index n, const std::array<Index, rank> &TensorIndex,
-                    const std::array<int, Traits::Rank> &ScalarIndex ){
-      std::cout << "  ";
-      for( auto dim : TensorIndex )
-        std::cout << "[" << dim << "]";
-      for( auto dim : ScalarIndex )
-        std::cout << "(" << dim << ")";
-      std::cout << " = " << c << std::endl;
-    } );
-#else
     for( auto it = begin(t); !it.AtEnd(); ++it ) {
       std::cout << "  ";
       it.DumpIndex();
       std::cout << " = " << (const typename T::Scalar)(*it) << std::endl;
     }
-#endif
     std::cout << "========================================" << std::endl;
   }
   
