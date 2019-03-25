@@ -92,20 +92,10 @@ void TLoadPerambulator<FImpl>::execute(void)
     auto        &perambulator = envGet(MDistil::Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>,
 		                                           getName());
 
-    
-	const std::string &PerambFileName{par().PerambFileName};
-    if( PerambFileName.length() ){
-      bool bExists = false;
-      {
-        std::ifstream f(PerambFileName, std::ios::binary);
-        if( f.is_open() )
-	bExists = true;
-      }
-      if( bExists ) {
+	const std::string &PerambFileName{par().PerambFileName + "." + std::to_string(vm().getTrajectory())};
+        std::cout << "reading perambulator from file " << PerambFileName << std::endl;
         perambulator.ReadBinary(PerambFileName);
-        return;
-      }
-    }                                                                                                                
+                                                          
 }
 
 END_MODULE_NAMESPACE
