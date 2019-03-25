@@ -9,6 +9,7 @@
 #include <Hadrons/Modules/MDistil/LapEvec.hpp>
 #include <Hadrons/Modules/MDistil/Distil.hpp>
 #include <Hadrons/Modules/MDistil/g5_multiply.hpp>
+#include <Hadrons/Modules/MDistil/Noises.hpp>
 #include <Hadrons/Modules/MDistil/DistilVectors.hpp>
 #include <Hadrons/Modules/MDistil/Baryon2pt.hpp>
 #include <Hadrons/Modules/MDistil/BContraction.hpp>

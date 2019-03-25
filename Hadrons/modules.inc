@@ -14,6 +14,7 @@ modules_cc =\
   Modules/MDistil/Baryon2pt.cc \
   Modules/MDistil/PerambLight.cc \
   Modules/MDistil/DistilSink.cc \
+  Modules/MDistil/Noises.cc \
   Modules/MDistil/DistilVectors.cc \
   Modules/MContraction/WeakEye3pt.cc \
   Modules/MContraction/WeakNonEye3pt.cc \
@@ -85,6 +86,7 @@ modules_hpp =\
   Modules/MDistil/LapEvec.hpp \
   Modules/MDistil/Distil.hpp \
   Modules/MDistil/g5_multiply.hpp \
+  Modules/MDistil/Noises.hpp \
   Modules/MDistil/DistilVectors.hpp \
   Modules/MDistil/Baryon2pt.hpp \
   Modules/MDistil/BContraction.hpp \
