@@ -173,7 +173,7 @@ void TBC2<FImpl>::execute(void)
 }
     envCache(std::vector<ComplexField>, momphName_, 1, mom_.size(), envGetGrid(ComplexField));
 
-    Eigen::Tensor<Complex, 6> m(Nmom,Nt,N_1,N_2,N_3,4);
+    Eigen::Tensor<ComplexD, 6> m(Nmom,Nt,N_1,N_2,N_3,4);
     A2Autils<FImpl>::NucleonFieldMom(m, &one[0], &two[0], &three[0], ph, parity, orthogDim);
     for (int is=0 ; is < 4 ; is++){
       for (int t=0 ; t < Nt ; t++){
