@@ -146,7 +146,7 @@ inline void SliceShare( GridBase * gridLowDim, GridBase * gridHighDim, void * Bu
  
  *************************************************************************************/
 
-template<typename Field, typename GaugeField=LatticeGaugeFieldD>
+template<typename Field, typename GaugeField=LatticeGaugeField>
 class LinOpPeardonNabla : public LinearOperatorBase<Field>, public LinearFunction<Field> {
   typedef typename GaugeField::vector_type vCoeff_t;
 protected: // I don't really mind if _gf is messed with ... so make this public?

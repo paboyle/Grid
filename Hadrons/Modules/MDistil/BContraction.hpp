@@ -215,7 +215,7 @@ void TBContraction<FImpl>::execute(void)
 		    tmp111 = 0.5*(double)parity*(tmp111 + tmp222); // P_\pm * ...
                     diquark2 = factor23[0]*innerProduct(tmp22s,tmp333);
                     for (int is=0 ; is < 4 ; is++){
-                      BField3(imom,ig,t,is,i1,i2,i3)+=(double)epsilon_sgn[ie]*tmp111()(is)()*diquark2;
+                      BField3(imom,ig,t,is,i1,i2,i3)+=static_cast<Real>(epsilon_sgn[ie])*tmp111()(is)()*diquark2;
                     }
   		  }
 		}

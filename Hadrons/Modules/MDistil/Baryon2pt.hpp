@@ -169,7 +169,7 @@ void TBaryon2pt<FImpl>::execute(void)
               Eigen::Tensor<Complex,3> B3L = B4L.chip(is,0);
               Eigen::Tensor<Complex,3> B3R = B4R.chip(is,0);
               Eigen::Tensor<Complex,0> C2 = B3L.contract(B3R,product_dims);
-              corr(imom,t) += (double)epsilon_sgn[pairs[ipair]]*C2(0);
+              corr(imom,t) += static_cast<Real>(epsilon_sgn[pairs[ipair]])*C2(0);
             }
           }
         }
