@@ -19,7 +19,6 @@ class LoadPerambulatorPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(LoadPerambulatorPar,
                                         std::string, PerambFileName, //stem!!!
-	                                std::string, UniqueIdentifier,
 	                                int, nvec,
 	                                MDistil::DistilParameters, Distil);
 };
@@ -81,7 +80,7 @@ void TLoadPerambulator<FImpl>::setup(void)
     const int Ns{Distil.Ns};
     std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
 
-    envCreate(MDistil::Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName() + "_perambulator_light", 1,
+    envCreate(MDistil::Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName(), 1,
 		              sIndexNames,Distil.Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
 
 }
@@ -91,7 +90,7 @@ template <typename FImpl>
 void TLoadPerambulator<FImpl>::execute(void)
 {
     auto        &perambulator = envGet(MDistil::Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>,
-		                                           getName() + "_perambulator_light");
+		                                           getName());
 
     
 	const std::string &PerambFileName{par().PerambFileName};
