@@ -328,7 +328,9 @@ void TLapEvec<GImpl>::execute(void)
     for (int i=0;i<LPar.Nvec;i++){
       std::cout << "Inserting Timeslice " << t << " into vector " << i << std::endl;
       InsertSliceLocal(eig[t].evec[i],eig4d.evec[i],0,t,3);
-      eig4d.eval[i] = eig[0].eval[i];
+      // TODO: Discuss: is this needed? Is there a better way?
+      if(t==0)
+        eig4d.eval[i] = eig[t].eval[i];
     }
   }
 

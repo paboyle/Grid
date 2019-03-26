@@ -250,6 +250,12 @@ inline GridCartesian * MakeLowerDimGrid( GridCartesian * gridHD )
  (Disable big-endian by setting Endian_Scalar_Size=1)
  IndexNames contains one name for each index, and IndexNames are validated on load.
  (NB: Indices of dimension 1 are not saved, and not validated on load)
+ WHAT TO SAVE / VALIDATE ON LOAD (Override to warn instead of assert on load)
+ Ensemble string
+ Configuration number
+ Noise unique string
+ Distillation parameters
+
  ******************************************************************************/
 
 template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size = sizeof(Scalar_)>
