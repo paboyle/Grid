@@ -107,7 +107,6 @@ template <typename FImpl>
 void TDistilVectors<FImpl>::setup(void)
 {
     Cleanup();
-   //auto &noise = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
    auto &noise = envGet(std::vector<Complex>, par().noise);
 
    int nnoise=par().nnoise;
@@ -121,8 +120,7 @@ void TDistilVectors<FImpl>::setup(void)
    envCreate(std::vector<FermionField>, getName() + "_phi", 1, 
                  	            nnoise*LI*SI*Nt_inv, envGetGrid(FermionField)); 
 
-  //GridCartesian * grid4d = env().getGrid();
-    grid4d = env().getGrid();
+  grid4d = env().getGrid();
   std::vector<int> latt_size   = GridDefaultLatt();
   std::vector<int> simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
@@ -130,7 +128,6 @@ void TDistilVectors<FImpl>::setup(void)
   latt_size[Nd-1] = 1;
   simd_layout_3.push_back( 1 );
   mpi_layout[Nd-1] = 1;
-  //GridCartesian * grid3d = new GridCartesian(latt_size,simd_layout_3,mpi_layout,*grid4d);
   grid3d = MakeLowerDimGrid(grid4d);
 
 
@@ -158,7 +155,6 @@ template <typename FImpl>
 void TDistilVectors<FImpl>::execute(void)
 {
    
-    //auto        &noise     = envGet(std::vector<std::vector<std::vector<SpinVector>>>, par().noise);
     auto        &noise     = envGet(std::vector<Complex>, par().noise);
     auto        &perambulator   = envGet(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, par().perambulator);
     auto        &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
@@ -172,7 +168,6 @@ void TDistilVectors<FImpl>::execute(void)
   envGetTmp(LatticeSpinColourVector, sink_tslice);
   envGetTmp(LatticeColourVector, evec3d);
 
-  //GridCartesian * grid4d = env().getGrid();
 
   int Ntlocal = grid4d->LocalDimensions()[3];
   int Ntfirst = grid4d->LocalStarts()[3];
@@ -238,6 +233,8 @@ void TDistilVectors<FImpl>::execute(void)
     }
   }
 
+  // TEST TO SEE WHETHER THIS MIGHT BE THE MEMORY LEAK
+  Cleanup();
   std::cout << "size rho" << rho.size() << std::endl;
   std::cout << "size phi" << phi.size() << std::endl;
 

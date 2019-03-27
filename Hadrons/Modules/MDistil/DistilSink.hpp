@@ -195,7 +195,9 @@ void TDistilSink<FImpl>::execute(void)
       }
     }
   }
-
+  // TEST TO SEE WHETHER THIS MIGHT BE THE MEMORY LEAK
+     Cleanup();
+     
 }
 
 END_MODULE_NAMESPACE
