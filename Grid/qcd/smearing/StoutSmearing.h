@@ -13,7 +13,13 @@ template <class Gimpl>
 class Smear_Stout : public Smear<Gimpl> {
  private:
   const Smear<Gimpl>* SmearBase;
-
+  inline std::vector<double> rho3D(double rho, int orthogdim){ 
+    std::vector<double> rho3d(Nd*Nd);
+    for (int mu=0; mu<Nd; mu++)
+      for (int nu=0; nu<Nd; nu++)
+        rho3d[mu + Nd * nu] = (mu == orthogdim || nu == orthogdim) ? 0.0:rho;
+    return rho3d;
+  };
  public:
   INHERIT_GIMPL_TYPES(Gimpl)
 
@@ -22,9 +28,19 @@ class Smear_Stout : public Smear<Gimpl> {
   }
 
   /*! Default constructor */
-  Smear_Stout(double rho = 1.0) : SmearBase(new Smear_APE<Gimpl>(rho)) {
+/*  Smear_Stout(double rho = 1.0) : SmearBase(new Smear_APE<Gimpl>(rho)) {
     assert(Nc == 3);//                  "Stout smearing currently implemented only for Nc==3");
-  }
+  } */
+
+  /*! general constructor */
+   Smear_Stout(std::vector<double>& rho_) : SmearBase(new Smear_APE<Gimpl>(rho_)) {
+     assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
+   }
+
+   /*! 3D constructor */
+   Smear_Stout(double rho = 1.0, int orthogdim = -1) :  SmearBase(new Smear_APE<Gimpl>(rho3D(rho,orthogdim))) {
+     assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
+   }
 
   ~Smear_Stout() {}  // delete SmearBase...
 
