@@ -38,11 +38,11 @@ class Smear_Stout : public Smear<Gimpl> {
    }
 
    /*! 3D constructor */
-   Smear_Stout(double rho = 1.0, int orthogdim = -1) :  SmearBase(new Smear_APE<Gimpl>(rho3D(rho,orthogdim))) {
+  Smear_Stout(double rho = 1.0, int orthogdim = -1) :  SmearBase{new Smear_APE<Gimpl>(rho3D(rho,orthogdim))} {
      assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
    }
 
-  ~Smear_Stout() {}  // delete SmearBase...
+  ~Smear_Stout() {delete SmearBase;}
 
   void smear(GaugeField& u_smr, const GaugeField& U) const {
     GaugeField C(U._grid);
