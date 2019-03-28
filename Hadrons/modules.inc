@@ -11,6 +11,7 @@ modules_cc =\
   Modules/MContraction/Gamma3pt.cc \
   Modules/MFermion/FreeProp.cc \
   Modules/MFermion/GaugeProp.cc \
+  Modules/MFermion/EMLepton.cc \
   Modules/MSource/Momentum.cc \
   Modules/MSource/Point.cc \
   Modules/MSource/Wall.cc \
@@ -78,6 +79,7 @@ modules_hpp =\
   Modules/MContraction/WeakNonEye3pt.hpp \
   Modules/MFermion/FreeProp.hpp \
   Modules/MFermion/GaugeProp.hpp \
+  Modules/MFermion/EMLepton.hpp \
   Modules/MSource/SeqGamma.hpp \
   Modules/MSource/SeqAslash.hpp \
   Modules/MSource/Point.hpp \
