@@ -127,6 +127,8 @@ void TA2AWeakEye<FImpl>::execute(void)
     envGetTmp(ComplexField, saucerField);
     envGetTmp(ComplexField, eyeField);
 
+    LOG(Message) << "Computing A2A weak eye diagrams using propagators: "
+                 << par().propT0 << " and " << par().propLoop << "." << std::endl;
     LOG(Message) << " dt " << dtmin << "..." << dtmax << std::endl;
 
     for (auto &G : Gamma::gall)
@@ -176,7 +178,7 @@ void TA2AWeakEye<FImpl>::execute(void)
         result.push_back(res);
     }
     LOG(Message) << "Writing results to " << par().output << "." << std::endl;
-    saveResult(par().output, "A2AweakEye", result);
+    saveResult(par().output, "A2AWeakEye", result);
 }
 
 END_MODULE_NAMESPACE

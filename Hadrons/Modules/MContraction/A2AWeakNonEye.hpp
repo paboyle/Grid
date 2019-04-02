@@ -106,8 +106,6 @@ void TA2AWeakNonEye<FImpl>::execute(void)
     auto &propT1 = envGet(std::vector<PropagatorField>, par().propT1);
     int dtmin = par().dtmin;
     int dtmax = par().dtmax;
-
-    GridBase *grid = propT0[0]._grid;
     int nt = env().getDim(Tp);
 
     Gamma G5 = Gamma(Gamma::Algebra::Gamma5);
@@ -129,6 +127,8 @@ void TA2AWeakNonEye<FImpl>::execute(void)
     envGetTmp(ComplexField, connectedField);
     envGetTmp(ComplexField, wingField);
 
+    LOG(Message) << "Computing A2A weak non-eye diagrams using propagators: "
+                 << par().propT0 << " and " << par().propT1 << "." << std::endl;
     LOG(Message) << " dt " << dtmin << "..." << dtmax << std::endl;
     for (auto &G : Gamma::gall)
     {
@@ -178,7 +178,7 @@ void TA2AWeakNonEye<FImpl>::execute(void)
     }
 
     LOG(Message) << "Writing results to " << par().output << "." << std::endl;
-    saveResult(par().output, "A2AweakNonEye", result);
+    saveResult(par().output, "A2AWeakNonEye", result);
 }
 
 END_MODULE_NAMESPACE
