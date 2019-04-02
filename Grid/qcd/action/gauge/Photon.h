@@ -38,6 +38,7 @@ namespace QCD{
   {
   public:
     typedef S Simd;
+    typedef typename Simd::scalar_type Scalar;
     
     template <typename vtype>
     using iImplGaugeLink  = iScalar<iScalar<iScalar<vtype>>>;

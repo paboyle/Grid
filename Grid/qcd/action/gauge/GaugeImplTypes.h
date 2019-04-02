@@ -38,6 +38,7 @@ namespace QCD {
 
 #define INHERIT_GIMPL_TYPES(GImpl)                  \
   typedef typename GImpl::Simd Simd;                \
+  typedef typename GImpl::Scalar Scalar;	    \
   typedef typename GImpl::LinkField GaugeLinkField; \
   typedef typename GImpl::Field GaugeField;         \
   typedef typename GImpl::ComplexField ComplexField;\
@@ -55,7 +56,8 @@ namespace QCD {
 template <class S, int Nrepresentation = Nc, int Nexp = 12 > class GaugeImplTypes {
 public:
   typedef S Simd;
-
+  typedef typename Simd::scalar_type scalar_type;
+  typedef scalar_type Scalar;
   template <typename vtype> using iImplScalar     = iScalar<iScalar<iScalar<vtype> > >;
   template <typename vtype> using iImplGaugeLink  = iScalar<iScalar<iMatrix<vtype, Nrepresentation> > >;
   template <typename vtype> using iImplGaugeField = iVector<iScalar<iMatrix<vtype, Nrepresentation> >, Nd>;
