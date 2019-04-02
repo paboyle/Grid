@@ -534,7 +534,11 @@ void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead, GridBase *grid)
             nj_ = hdim[2];
         }
     }
-    if (grid)   grid->Barrier();
+    if (grid)
+    {
+        grid->Broadcast(grid->BossRank(), &ni_, sizeof(int));
+        grid->Broadcast(grid->BossRank(), &nj_, sizeof(int);
+    }
 
     A2AMatrix<T>         buf(ni_, nj_);
     int broadcastSize =  sizeof(T) * buf.size();
@@ -572,7 +576,6 @@ void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead, GridBase *grid)
         if (grid)
         {
             grid->Broadcast(grid->BossRank(), buf.data(), broadcastSize);
-            grid->Barrier();
         }
         if (tRead) *tRead += usecond();
         v[t] = buf.template cast<VecT>();
