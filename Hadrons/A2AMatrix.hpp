@@ -537,7 +537,7 @@ void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead, GridBase *grid)
     if (grid)
     {
         grid->Broadcast(grid->BossRank(), &ni_, sizeof(int));
-        grid->Broadcast(grid->BossRank(), &nj_, sizeof(int);
+        grid->Broadcast(grid->BossRank(), &nj_, sizeof(int));
     }
 
     A2AMatrix<T>         buf(ni_, nj_);
