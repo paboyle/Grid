@@ -91,10 +91,10 @@ void TA2AWeakEye<FImpl>::setup(void)
     envTmp(std::vector<Complex>,  "corrSaucer", 1, nt);
     envTmp(std::vector<Complex>,  "corrEye",    1, nt);
 
-    envTmp(std::vector<PropagatorField>, "propT0G5", 1, nt, PropagatorField(env().getGrid()));
+    envTmp(std::vector<PropagatorField>, "propT0G5", 1, nt, envGetGrid(PropagatorField));
 
-    envTmp(ComplexField, "saucerField", 1, ComplexField(env().getGrid()));
-    envTmp(ComplexField, "eyeField",    1, ComplexField(env().getGrid()));
+    envTmp(ComplexField, "saucerField", 1, envGetGrid(ComplexField));
+    envTmp(ComplexField, "eyeField",    1, envGetGrid(ComplexField));
 }
 
 // execution ///////////////////////////////////////////////////////////////////

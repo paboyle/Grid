@@ -83,7 +83,7 @@ void TLoadA2AMatrixDiskVector<FImpl>::setup(void)
     int nt = env().getDim(Tp);
     int cacheSize = par().cacheSize;
     bool clean = true;
-    GridBase *grid = env().getGrid();
+    GridBase *grid = envGetGrid(FermionField);
 
     envCreate(EigenDiskVector<ComplexD>, getName(), Ls, dvFile, nt, cacheSize, clean, grid);
 }
@@ -95,7 +95,7 @@ void TLoadA2AMatrixDiskVector<FImpl>::execute(void)
     int nt = env().getDim(Tp);
     std::string file  = par().file;
     std::string dataset  = par().dataset;
-    GridBase *grid = env().getGrid();
+    GridBase *grid = envGetGrid(FermionField);
 
     auto &mesonFieldDV = envGet(EigenDiskVector<ComplexD>, getName());
 

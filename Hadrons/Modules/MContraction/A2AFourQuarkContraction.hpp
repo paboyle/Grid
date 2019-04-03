@@ -75,7 +75,7 @@ void TA2AFourQuarkContraction<FImpl>::setup(void)
 {
     int nt = env().getDim(Tp);
 
-    envCreate(std::vector<PropagatorField>, getName(), 1, nt, PropagatorField(env().getGrid()));
+    envCreate(std::vector<PropagatorField>, getName(), 1, nt, envGetGrid(PropagatorField));
 }
 
 // execution ///////////////////////////////////////////////////////////////////

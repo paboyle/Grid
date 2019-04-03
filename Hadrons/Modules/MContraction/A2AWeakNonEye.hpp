@@ -86,16 +86,16 @@ template <typename FImpl>
 void TA2AWeakNonEye<FImpl>::setup(void)
 {
     int nt = env().getDim(Tp);
-
+    
     envTmp(std::vector<TComplex>, "corrTmp",       1, nt);
     envTmp(std::vector<Complex>,  "corrWing",      1, nt);
     envTmp(std::vector<Complex>,  "corrConnected", 1, nt);
 
-    envTmp(std::vector<PropagatorField>, "propT0G5", 1, nt, PropagatorField(env().getGrid()));
-    envTmp(std::vector<PropagatorField>, "propT1G5", 1, nt, PropagatorField(env().getGrid()));
+    envTmp(std::vector<PropagatorField>, "propT0G5", 1, nt, envGetGrid(PropagatorField));
+    envTmp(std::vector<PropagatorField>, "propT1G5", 1, nt, envGetGrid(PropagatorField));
 
-    envTmp(ComplexField, "wingField",      1, ComplexField(env().getGrid()));
-    envTmp(ComplexField, "connectedField", 1, ComplexField(env().getGrid()));
+    envTmp(ComplexField, "wingField",      1, envGetGrid(ComplexField));
+    envTmp(ComplexField, "connectedField", 1, envGetGrid(ComplexField));
 }
 
 // execution ///////////////////////////////////////////////////////////////////
