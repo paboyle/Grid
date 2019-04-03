@@ -61,15 +61,25 @@ namespace Grid {
     template<typename T, typename V = void> struct is_tensor_of_container : public std::false_type {};
     template<typename T> struct is_tensor_of_container<T, typename std::enable_if<is_tensor<T>::value && isGridTensor<typename T::Scalar>::value>::type> : public std::true_type {};
 
-    // Traits are the default for scalars, or come from GridTypeMapper for GridTensors
+    // These traits describe the scalars inside Eigen tensors
+    // I wish I could define these in reference to the scalar type (so there would be fewer traits defined)
+    // but I'm unable to find a syntax to make this work
     template<typename T, typename V = void> struct Traits {};
-    template<typename T> struct Traits<T, typename std::enable_if<is_tensor_of_scalar<T>::value>::type> : public GridTypeMapper_Base {
-      using scalar_type = typename T::Scalar;
+    // Traits are the default for scalars, or come from GridTypeMapper for GridTensors
+    template<typename T> struct Traits<T, typename std::enable_if<is_tensor_of_scalar<T>::value>::type>
+      : public GridTypeMapper_Base {
+      using scalar_type   = typename T::Scalar; // ultimate base scalar
       static constexpr bool is_complex = ::Grid::EigenIO::is_complex<scalar_type>::value;
     };
-    template<typename T> struct Traits<T, typename std::enable_if<is_tensor_of_container<T>::value>::type> : public GridTypeMapper<typename T::Scalar> {
-      using scalar_type = typename GridTypeMapper<typename T::Scalar>::scalar_type;
-      static constexpr bool is_complex = ::Grid::EigenIO::is_complex<scalar_type>::value;
+    // Traits are the default for scalars, or come from GridTypeMapper for GridTensors
+    template<typename T> struct Traits<T, typename std::enable_if<is_tensor_of_container<T>::value>::type> {
+      using BaseTraits  = GridTypeMapper<typename T::Scalar>;
+      using scalar_type = typename BaseTraits::scalar_type; // ultimate base scalar
+      static constexpr bool   is_complex = ::Grid::EigenIO::is_complex<scalar_type>::value;
+      static constexpr int   TensorLevel = BaseTraits::TensorLevel;
+      static constexpr int          Rank = BaseTraits::Rank;
+      static constexpr std::size_t count = BaseTraits::count;
+      static constexpr int Dimension(int dim) { return BaseTraits::Dimension(dim); }
     };
 
     // Is this a fixed-size Eigen tensor
@@ -310,15 +320,15 @@ namespace Grid {
     // If the Tensor isn't in Row-Major order, then we'll need to copy it's data
     const bool CopyData{NumElements > 1 && ETensor::Layout != Eigen::StorageOptions::RowMajor};
     const Scalar * pWriteBuffer;
-    Scalar * pCopyBuffer = nullptr;
+    std::vector<Scalar> CopyBuffer;
     const Index TotalNumElements = NumElements * Traits::count;
     if( !CopyData ) {
       pWriteBuffer = getFirstScalar( output );
     } else {
       // Regardless of the Eigen::Tensor storage order, the copy will be Row Major
-      pCopyBuffer = new Scalar[TotalNumElements];
-      pWriteBuffer = pCopyBuffer;
-      Scalar * pCopy = pCopyBuffer;
+      CopyBuffer.resize( TotalNumElements );
+      Scalar * pCopy = &CopyBuffer[0];
+      pWriteBuffer = pCopy;
       std::array<Index, TensorRank> MyIndex;
       for( auto &idx : MyIndex ) idx = 0;
       for( auto n = 0; n < NumElements; n++ ) {
@@ -330,7 +340,6 @@ namespace Grid {
       }
     }
     upcast->template writeMultiDim<Scalar>(s, TotalDims, pWriteBuffer, TotalNumElements);
-    if( pCopyBuffer ) delete [] pCopyBuffer;
   }
 
   template <typename T>

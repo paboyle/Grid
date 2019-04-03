@@ -29,7 +29,6 @@ Author: Michael Marshall <michael.marshall@ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
-#include <Grid/util/EigenUtil.h>
 #include <typeinfo>
 
 using namespace Grid;
@@ -103,11 +102,20 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
   bool good = Serializable::CompareMember(object, *buf);
   if (!good) {
     std::cout << " failure!" << std::endl;
-    if (EigenIO::is_tensor<O>::value)
-      dump_tensor(*buf);
     exit(EXIT_FAILURE);
   }
   std::cout << " done." << std::endl;
+}
+
+// The only way I could get these iterators to work is to put the begin() and end() functions in the Eigen namespace
+// So if Eigen ever defines these, we'll have a conflict and have to change this
+namespace Eigen {
+  template <typename ET>
+  inline typename std::enable_if<EigenIO::is_tensor<ET>::value, typename EigenIO::Traits<ET>::scalar_type *>::type
+  begin( ET & et ) { return reinterpret_cast<typename Grid::EigenIO::Traits<ET>::scalar_type *>(et.data()); }
+  template <typename ET>
+  inline typename std::enable_if<EigenIO::is_tensor<ET>::value, typename EigenIO::Traits<ET>::scalar_type *>::type
+  end( ET & et ) { return begin(et) + et.size() * EigenIO::Traits<ET>::count; }
 }
 
 // Perform I/O tests on a range of tensor types
@@ -133,14 +141,14 @@ class TensorIO : public Serializable {
 
   void Init(unsigned short Precision)
   {
-    SequentialInit(Perambulator1, Flag, Precision);
-    SequentialInit(Perambulator2, Flag, Precision);
-    SequentialInit(tensorR5,      FlagR, Precision);
-    SequentialInit(tensorRank3,   FlagF, Precision);
-    SequentialInit(tensor_9_4_2,  FlagTS, Precision);
+    for( auto &s : Perambulator1 ) s = Flag;
+    for( auto &s : Perambulator2 ) s = Flag;
+    for( auto &s : tensorR5 )      s = FlagR;
+    for( auto &s : tensorRank3 )   s = FlagF;
+    for( auto &s : tensor_9_4_2 )  s = FlagTS;
     for( auto &t : atensor_9_4_2 )
-      SequentialInit(t, FlagTS, Precision);
-    SequentialInit(MyLSCTensor, Flag, Precision);
+      for( auto &s : t )           s = FlagTS;
+    for( auto &s : MyLSCTensor )   s = Flag;
   }
   
   // Perform an I/O test for a single Eigen tensor (of any type)
@@ -152,7 +160,7 @@ class TensorIO : public Serializable {
     using Traits = EigenIO::Traits<T>;
     using scalar_type = typename Traits::scalar_type;
     std::unique_ptr<T> pTensor{new T(otherDims...)};
-    SequentialInit( * pTensor, Flag, Precision );
+    for( auto &s : * pTensor ) s = Flag;
     filename = pszFilePrefix + std::to_string(++TestNum) + "_" + MyTypeName + pszExtension;
     ioTest<W, R, T>(filename, * pTensor, MyTypeName, MyTypeName);
   }
@@ -191,41 +199,15 @@ public:
     // Rank 1 tensor containing a single integer
     using TensorSingle = Eigen::TensorFixedSize<Integer, Eigen::Sizes<1>>;
     TestOne<WTR_, RDR_, TensorSingle>( TEST_PARAMS( TensorSingle ), 7 ); // lucky!
-    // Rather convoluted way of defining a single complex number
-    using TensorSimple = Eigen::Tensor<iMatrix<TestScalar,1>, 6>;
+    // Rather convoluted way of defining four complex numbers
+    using TensorSimple = Eigen::Tensor<iMatrix<TestScalar,2>, 6>;
     using I = typename TensorSimple::Index; // NB: Never specified, so same for all my test tensors
     // Try progressively more complicated tensors
     TestOne<WTR_, RDR_, TensorSimple, I,I,I,I,I,I>( TEST_PARAMS( TensorSimple ), FlagTS, 1,1,1,1,1,1 );
     TestOne<WTR_, RDR_, TensorRank3, I, I, I>( TEST_PARAMS( TensorRank3 ), FlagF, 6, 3, 2 );
     TestOne<WTR_, RDR_, Tensor942>(TEST_PARAMS( Tensor942 ), FlagTS);
     TestOne<WTR_, RDR_, LSCTensor>(TEST_PARAMS( LSCTensor ), Flag );
-    
-    // Now see whether we can write a tensor in one memory order and read back in the other
-    {
-      TestOne<WTR_, RDR_, TensorR5>(TEST_PARAMS( TensorR5 ), FlagR);
-      std::cout << "    Testing alternate memory order read ... ";
-      TensorR5Alt t2;
-      RDR_ reader(filename);
-      ::Grid::read(reader, "TensorR5", t2);
-      bool good = true;
-      TensorR5 cf;
-      SequentialInit( cf, FlagR, Precision );
-      for_all( t2, [&](typename EigenIO::Traits<TensorR5Alt>::scalar_type c, I n,
-                       const std::array<I, TensorR5Alt::NumIndices> &TensorIndex,
-                       const std::array<int, EigenIO::Traits<TensorR5Alt>::Rank> &GridTensorIndex ){
-        Real &r = cf(TensorIndex);
-        if( c != r ){
-          good = false;
-          std::cout << "\nError: " << n << ": " << c << " != " << r;
-        }
-      } );
-      if (!good) {
-        std::cout << std::endl;
-        dump_tensor(t2,"t2");
-        exit(EXIT_FAILURE);
-      }
-      std::cout << " done." << std::endl;
-    }
+    TestOne<WTR_, RDR_, TensorR5>(TEST_PARAMS( TensorR5 ), FlagR);
     // Now test a serialisable object containing a number of tensors
     {
       static const char MyTypeName[] = "TensorIO";
@@ -247,10 +229,10 @@ public:
   }
 };
 
-const Real                 TensorIO::FlagR {-1.001};
-const Complex              TensorIO::Flag  {1,-3.1415927};
-const ComplexF             TensorIO::FlagF {1,-3.1415927};
-const TensorIO::TestScalar TensorIO::FlagTS{1,-3.1415927};
+const Real                 TensorIO::FlagR {1};
+const Complex              TensorIO::Flag  {1,-1};
+const ComplexF             TensorIO::FlagF {1,-1};
+const TensorIO::TestScalar TensorIO::FlagTS{1,-1};
 const char * const         TensorIO::pszFilePrefix = "tensor_";
 
 template <typename T>
