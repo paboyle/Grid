@@ -87,7 +87,7 @@ void TA2AFourQuarkContraction<FImpl>::execute(void)
 
     auto &v1   = envGet(std::vector<FermionField>, par().v1);
     auto &v2   = envGet(std::vector<FermionField>, par().v2);
-    auto &mf12 = envGet(EigenDiskVector<ComplexD>, par().mf12);
+    auto &mf12 = envGet(EigenDiskVector<Complex>, par().mf12);
 
     auto &wwvv = envGet(std::vector<PropagatorField>, getName());
 

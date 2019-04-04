@@ -13,21 +13,14 @@ template <typename FImpl>
 class A2AUtilsDV
 {
   public:
-    typedef typename FImpl::ComplexField ComplexField;
     typedef typename FImpl::FermionField FermionField;
     typedef typename FImpl::PropagatorField PropagatorField;
 
     typedef typename FImpl::SiteSpinor vobj;
-    typedef typename vobj::scalar_object sobj;
     typedef typename vobj::scalar_type scalar_type;
     typedef typename vobj::vector_type vector_type;
 
-    typedef iSpinMatrix<vector_type> SpinMatrix_v;
-    typedef iSpinMatrix<scalar_type> SpinMatrix_s;
     typedef iSinglet<vector_type> Scalar_v;
-    typedef iSinglet<scalar_type> Scalar_s;
-
-    typedef iSpinColourMatrix<vector_type> SpinColourMatrix_v;
 
     template <typename TensorType>
     static void ContractWWVVDiskVector(std::vector<PropagatorField> &WWVV,
@@ -55,7 +48,7 @@ void A2AUtilsDV<FImpl>::ContractWWVVDiskVector(std::vector<PropagatorField> &WWV
     for (int t = 0; t < N_t; t++)
     {
         LOG(Message) << "Contraction t = " << t << std::endl;
-        EigenDiskVector<ComplexD>::Matrix buf = WW_sd[t];
+        EigenDiskVector<Complex>::Matrix buf = WW_sd[t];
         parallel_for(int ss = 0; ss < grid->oSites(); ss++)
         {
             for (int d_o = 0; d_o < N_d; d_o += d_unroll)

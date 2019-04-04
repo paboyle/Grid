@@ -66,7 +66,7 @@ namespace Multiplier
     {
       public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(MultiplierMetadata,
-                                        std::vector<RealD>, momentum,
+                                        std::vector<Real>, momentum,
                                         std::vector<Gamma::Algebra>, gammas);
     };
 }

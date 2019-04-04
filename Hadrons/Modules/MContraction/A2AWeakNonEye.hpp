@@ -130,6 +130,8 @@ void TA2AWeakNonEye<FImpl>::execute(void)
     LOG(Message) << "Computing A2A weak non-eye diagrams using propagators: "
                  << par().propT0 << " and " << par().propT1 << "." << std::endl;
     LOG(Message) << " dt " << dtmin << "..." << dtmax << std::endl;
+
+    Real two = 2.0;
     for (auto &G : Gamma::gall)
     {
         std::vector<Gamma> GG({G});
@@ -151,13 +153,13 @@ void TA2AWeakNonEye<FImpl>::execute(void)
                 sliceSum(connectedField, corrTmp, Tp);
                 for (int t = 0; t < nt; t++)
                 {
-                    corrConnected[t] += 2.0 * corrTmp[(t + t0) % nt]()()();
+                    corrConnected[t] += two * corrTmp[(t + t0) % nt]()()();
                 }
 
                 sliceSum(wingField, corrTmp, Tp);
                 for (int t = 0; t < nt; t++)
                 {
-                    corrWing[t] += 2.0 * corrTmp[(t + t0) % nt]()()();
+                    corrWing[t] += two * corrTmp[(t + t0) % nt]()()();
                 }
             }
         }

@@ -130,7 +130,7 @@ void makeIoHelper(IoHelper &helper, std::string momentum, std::string &outStem, 
                                              ioName.str(), nt, N_i, N_j);
 
     std::replace(momentum.begin(), momentum.end(), '_', ' ');
-    std::vector<std::vector<RealD>> mom;
+    std::vector<std::vector<Real>> mom;
     auto p = strToVec<Real>(momentum);
     mom.push_back(p);
 

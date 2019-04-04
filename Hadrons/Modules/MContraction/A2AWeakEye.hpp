@@ -131,6 +131,8 @@ void TA2AWeakEye<FImpl>::execute(void)
                  << par().propT0 << " and " << par().propLoop << "." << std::endl;
     LOG(Message) << " dt " << dtmin << "..." << dtmax << std::endl;
 
+    Real two = 2.0;
+
     for (auto &G : Gamma::gall)
     {
         std::vector<Gamma> GG({G});
@@ -151,14 +153,14 @@ void TA2AWeakEye<FImpl>::execute(void)
 
             for (int t = 0; t < nt; t++)
             {
-                corrSaucer[t] += 2.0 * corrTmp[(t + t0) % nt]()()();
+                corrSaucer[t] += two * corrTmp[(t + t0) % nt]()()();
             }
 
             sliceSum(eyeField, corrTmp, Tp);
 
             for (int t = 0; t < nt; t++)
             {
-                corrEye[t] += 2.0 * corrTmp[(t + t0) % nt]()()();
+                corrEye[t] += two * corrTmp[(t + t0) % nt]()()();
             }
         }
 
