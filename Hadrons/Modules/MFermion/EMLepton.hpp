@@ -72,6 +72,7 @@ public:
 				    std::string,  action,
 				    std::string, emField,
 				    double, mass,
+                                    std::string , boundary,
 				    std::string,  twist,
                                     unsigned int, deltat);
 };
@@ -163,8 +164,7 @@ void TEMLepton<FImpl>::execute(void)
     envGetTmp(FermionField, sol);
     envGetTmp(FermionField, tmp);
     LOG(Message) << "Calculating a lepton Propagator with sequential Aslash insertion with lepton mass " 
-                 << mass << " and twist ("
-                 << par().twist << ") using the action '" << par().action
+                 << mass << " using the action '" << par().action
                  << "' for fixed source-sink separation of " << par().deltat << std::endl;
 
     envGetTmp(Lattice<iScalar<vInteger>>, tlat);
@@ -175,6 +175,11 @@ void TEMLepton<FImpl>::execute(void)
     if(twist.size() != Nd)
     {
 	HADRONS_ERROR(Size, "number of twist angles does not match number of dimensions");
+    }
+    std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
+    if(boundary.size() != Nd)
+    {
+	HADRONS_ERROR(Size, "number of boundary conditions does not match number of dimensions");
     }
 
     auto &stoch_photon = envGet(EmField,  par().emField);
@@ -212,7 +217,7 @@ void TEMLepton<FImpl>::execute(void)
 	    mat.ImportPhysicalFermionSource(tmp, source);
 	}
         sol = zero;
-	mat.FreePropagator(source,sol,mass,twist);
+	mat.FreePropagator(source,sol,mass,boundary,twist);
 	if (Ls_ == 1)
 	{
             FermToProp<FImpl>(freetmp, sol, s, 0);
@@ -229,11 +234,7 @@ void TEMLepton<FImpl>::execute(void)
 
 	//shift free propagator to different source positions
 	proptmp = Cshift(freetmp,Tp, -tl);
-        //take anti-periodic boundary conditions into account, if used
-        if(twist[Tp]==0.5)
-        {
-	      proptmp = where( tlat < tl, (-1.0)*proptmp, proptmp);
-        }	
+	proptmp = where( tlat < tl, boundary[Tp]*proptmp, proptmp);
 
         // free propagator for fixed source-sink separation 
 	lep = where(tlat == (tl-par().deltat+nt)%nt, proptmp, lep);
@@ -264,7 +265,7 @@ void TEMLepton<FImpl>::execute(void)
 		mat.ImportPhysicalFermionSource(tmp, source);
 	    }
             sol = zero;
-	    mat.FreePropagator(source,sol,mass,twist);
+	    mat.FreePropagator(source,sol,mass,boundary,twist);
 	    if (Ls_ == 1)
 	    {
         	FermToProp<FImpl>(proptmp, sol, s, 0);
