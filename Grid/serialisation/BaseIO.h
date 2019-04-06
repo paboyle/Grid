@@ -583,7 +583,27 @@ namespace Grid {
     template <typename T>
     static inline typename std::enable_if<EigenIO::is_tensor<T>::value, void>::type
     WriteMember(std::ostream &os, const T &object) {
-      os << "Eigen::Tensor";
+      using Index = typename T::Index;
+      const Index NumElements{object.size()};
+      assert( NumElements > 0 );
+      Index count = 1;
+      os << "T<";
+      for( int i = 0; i < T::NumIndices; i++ ) {
+        Index dim = object.dimension(i);
+        count *= dim;
+        if( i )
+          os << ",";
+        os << dim;
+      }
+      assert( count == NumElements && "Number of elements doesn't match tensor dimensions" );
+      os << ">{";
+      const typename T::Scalar * p = object.data();
+      for( Index i = 0; i < count; i++ ) {
+        if( i )
+          os << ",";
+        os << *p++;
+      }
+      os << "}";
     }
   };
 
