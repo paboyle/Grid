@@ -7,6 +7,7 @@ Source file: Hadrons/Modules/MGauge/GaugeFix.hpp
 Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Nils Asmussen <n.asmussen@soton.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
@@ -58,6 +59,7 @@ class TGaugeFix: public Module<GaugeFixPar>
 {
 public:
     GAUGE_TYPE_ALIASES(GImpl,);
+    typedef typename GImpl::GaugeLinkField GaugeMat;
 public:
     // constructor
     TGaugeFix(const std::string name);
@@ -94,7 +96,7 @@ std::vector<std::string> TGaugeFix<GImpl>::getInput(void)
 template <typename GImpl>
 std::vector<std::string> TGaugeFix<GImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {getName(), getName()+"_xform"};
     return out;
 }
 
@@ -103,6 +105,7 @@ template <typename GImpl>
 void TGaugeFix<GImpl>::setup(void)
 {
     envCreateLat(GaugeField, getName());
+    envCreateLat(GaugeMat, getName()+"_xform");
 }
 
 
@@ -111,11 +114,12 @@ template <typename GImpl>
 void TGaugeFix<GImpl>::execute(void)
 //Loads the gauge and fixes it
 {
-    auto &U     = envGet(GaugeField, par().gauge);
-    auto &Umu   = envGet(GaugeField, getName());
     std::cout << "executing" << std::endl;
     LOG(Message) << "Fixing the Gauge" << std::endl;
     LOG(Message) << par().gauge << std::endl;
+    auto &U     = envGet(GaugeField, par().gauge);
+    auto &Umu   = envGet(GaugeField, getName());
+    auto &xform = envGet(GaugeMat, getName()+"_xform");
     LOG(Message) << "Gauge Field fetched" << std::endl;
     //do we allow maxiter etc to be user set?
     Real alpha     = par().alpha;
@@ -123,13 +127,8 @@ void TGaugeFix<GImpl>::execute(void)
     Real Omega_tol = par().Omega_tol;
     Real Phi_tol   = par().Phi_tol;
     bool Fourier   = par().Fourier;
-    LOG(Message) << "alpha     "<<par().alpha     << std::endl;
-    LOG(Message) << "maxiter   "<<par().maxiter   << std::endl;
-    LOG(Message) << "Omega_tol "<<par().Omega_tol << std::endl;
-    LOG(Message) << "Phi_tol   "<<par().Phi_tol   << std::endl;
-    LOG(Message) << "Fourier   "<<par().Fourier   << std::endl;
-    FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(U,alpha,maxiter,Omega_tol,Phi_tol,Fourier);
     Umu = U;
+    FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(Umu,xform,alpha,maxiter,Omega_tol,Phi_tol,Fourier);
     LOG(Message) << "Gauge Fixed" << std::endl;
 }
 

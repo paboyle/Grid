@@ -1,29 +1,21 @@
 /*************************************************************************************
-
 Grid physics library, www.github.com/paboyle/Grid 
-
 Source file: Hadrons/Modules/MNPR/Bilinear.hpp
-
 Copyright (C) 2015-2019
-
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Julia Kettle J.R.Kettle-2@sms.ed.ac.uk
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 2 of the License, or
 (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
@@ -31,11 +23,12 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #ifndef Hadrons_Bilinear_hpp_
 #define Hadrons_Bilinear_hpp_
 
+
+#include <typeinfo>
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
-#include <Hadrons/ModuleFactory.hpp>
-//#include <Grid/qcd/utils/PropagatorUtils.h>
+#include <Grid/serialisation/Serialisation.h>
 #include <Grid/Eigen/Core>
 #include <Grid/Eigen/Dense>
 #include <Grid/Eigen/SVD>
@@ -45,7 +38,7 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                                TBilinear                                       *
         Performs bilinear contractions of the type tr[g5*adj(Sout)*g5*G*Sin]
-        Suitable for non exceptional momenta in Rome-Southampton NPR
+        Suitable for non exceptional momenta in Rome-Southampton Bilinear
 ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MNPR)
 
@@ -57,6 +50,8 @@ public:
                                     std::string,    Sout,
                                     std::string,    pin,
                                     std::string,    pout,
+                                    bool,           fullbasis,
+                                    std::string,    fourQuark_output,
                                     std::string,    propInOutput,
                                     std::string,    propOutOutput,
                                     std::string,    output);
@@ -72,7 +67,8 @@ public:
     {
     public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Result, 
-                                        std::vector<SpinColourMatrix>,  bilinear
+                                        std::vector<SpinColourMatrix>,  bilinear,
+                                        std::vector<SpinColourSpinColourMatrix>, fourquark
                                        );
     };
 public:
@@ -83,6 +79,7 @@ public:
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+    virtual void tensorprod(LatticeSpinColourSpinColourMatrix &lret, LatticeSpinColourMatrix a, LatticeSpinColourMatrix b);
     //LatticeSpinColourMatrix PhaseProps(LatticeSpinColourMatrix S, std::vector<Real> p);
     // setup
     virtual void setup(void);
@@ -116,6 +113,51 @@ std::vector<std::string> TBilinear<FImpl1, FImpl2>::getInput(void)
     return input;
 }
 
+
+
+template <typename FImpl1, typename FImpl2>
+void TBilinear<FImpl1, FImpl2>::tensorprod(LatticeSpinColourSpinColourMatrix &lret, LatticeSpinColourMatrix a, LatticeSpinColourMatrix b)
+{
+#if 0
+            parallel_for(auto site=lret.begin();site<lret.end();site++) {
+                for (int si; si < 4; ++si){
+                for(int sj; sj <4; ++sj){
+                    for (int ci; ci < 3; ++ci){
+                    for (int cj; cj < 3; ++cj){
+                        for (int sk; sk < 4; ++sk){
+                        for(int sl; sl <4; ++sl){
+                            for (int ck; ck < 3; ++ck){
+                            for (int cl; cl < 3; ++cl){
+                        lret[site]()(si,sj)(ci,cj)(sk,sl)(ck,cl)=a[site]()(si,sj)(ci,cj)*b[site]()(sk,sl)(ck,cl);
+                            }}
+                        }}
+                    }}
+                }}
+        }
+#else 
+            // FIXME ; is there a general need for this construct ? In which case we should encapsulate the
+            //         below loops in a helper function.
+            //LOG(Message) << "sp co mat a is - " << a << std::endl;
+            //LOG(Message) << "sp co mat b is - " << b << std::endl;
+            parallel_for(auto site=lret.begin();site<lret.end();site++) {
+            vTComplex left;
+                for(int si=0; si < Ns; ++si){
+                for(int sj=0; sj < Ns; ++sj){
+                    for (int ci=0; ci < Nc; ++ci){
+                    for (int cj=0; cj < Nc; ++cj){
+                      //LOG(Message) << "si, sj, ci, cj -  " << si << ", " << sj  << ", "<< ci  << ", "<< cj << std::endl;
+                      left()()() = a[site]()(si,sj)(ci,cj);
+                      //LOG(Message) << left << std::endl;
+                      lret[site]()(si,sj)(ci,cj)=left()*b[site]();
+                    }}
+                }}
+            }
+#endif      
+}
+
+
+
+
 template <typename FImpl1, typename FImpl2>
 std::vector<std::string> TBilinear<FImpl1, FImpl2>::getOutput(void)
 {
@@ -130,54 +172,50 @@ template <typename FImpl1, typename FImpl2>
 void TBilinear<FImpl1, FImpl2>::execute(void)
 {
 /**************************************************************************
-
-Compute the bilinear vertex needed for the NPR.
+Compute the bilinear vertex needed for the Bilinear.
 V(G) = sum_x  [ g5 * adj(S'(x,p2)) * g5 * G * S'(x,p1) ]_{si,sj,ci,cj}
 G is one of the 16 gamma vertices [I,gmu,g5,g5gmu,sig(mu,nu)]
-
         * G
        / \
     p1/   \p2
      /     \
     /       \
-
 Returns a spin-colour matrix, with indices si,sj, ci,cj
-
 Conventions:
 p1 - incoming momenta
 p2 - outgoing momenta
 q = (p1-p2)
 **************************************************************************/
 
-    LOG(Message) << "Computing bilinear contractions '" << getName() << "' using"
+    LOG(Message) << "Computing bilinear and fourquark contractions '" << getName() << "' using"
                  << " momentum '" << par().pin << "' and '" << par().pout << "'"
                  << std::endl;
      
     // Propogators
-    LatticeSpinColourMatrix     &Sin = *env().template getObject<LatticeSpinColourMatrix>(par().Sin);
-    LatticeSpinColourMatrix     &Sout = *env().template getObject<LatticeSpinColourMatrix>(par().Sout);
+    LatticeSpinColourMatrix                     &Sin = *env().template getObject<LatticeSpinColourMatrix>(par().Sin);
+    LatticeSpinColourMatrix                     &Sout = *env().template getObject<LatticeSpinColourMatrix>(par().Sout);
     // Averages and inverses
-    SpinColourMatrix            SinAve, SoutAve;
-    SpinColourMatrix            SinInv, SoutInv;
+    SpinColourMatrix                            SinAve, SoutAve;
+    SpinColourMatrix                            SinInv, SoutInv;
     
-    LatticeComplex              pdotxin(env().getGrid()), pdotxout(env().getGrid()), coor(env().getGrid());
-    Complex                     Ci(0.0,1.0);
-    // momentum on legs
-    std::vector<Real>           pin  = strToVec<Real>(par().pin), pout = strToVec<Real>(par().pout);
-    //lattice size
-    std::vector<int>   		    latt_size(env().getGrid()->_fdimensions); 
+    LatticeComplex                              pdotxin(env().getGrid()), pdotxout(env().getGrid()), coor(env().getGrid());
+    Complex                                     Ci(0.0,1.0);
+    std::vector<Real>                           pin  = strToVec<Real>(par().pin), pout = strToVec<Real>(par().pout);
+    std::vector<int>   		                    latt_size(env().getGrid()->_fdimensions); 
+    
+    bool                                        fullbasis = par().fullbasis;
 
     //bilinear_x holds bilinear before summing
-    LatticeSpinColourMatrix     bilinear_x(env().getGrid());
-    SpinColourMatrix            bilinear;
+    LatticeSpinColourMatrix                     bilinear_x(env().getGrid());
+    std::vector<LatticeSpinColourMatrix>        bilinear_x_allGamma;
+    SpinColourMatrix                            bilinear;
+    SpinColourSpinColourMatrix                  fourquark;
+    LatticeSpinColourSpinColourMatrix           lret(env().getGrid()); 
 
-    Gamma                       g5(Gamma::Algebra::Gamma5);
-    Result                      result;
+    Gamma                                       g5(Gamma::Algebra::Gamma5);
+    Result                                      result;
 
-    //
     
-    pdotxin=zero;
-    pdotxout=zero;
 
     ////Find volume factor for normalisation/////////////////////////
     RealD vol=1;
@@ -185,8 +223,10 @@ q = (p1-p2)
     { 
       vol=vol*latt_size[mu];
     }
-
+    
     ////Find the phases sun_mu( p_mu x^mu ) for both legs////////////
+    pdotxin=zero;
+    pdotxout=zero;
     for (unsigned int mu = 0; mu < 4; ++mu)
     {
         Real TwoPiL =  M_PI * 2.0/ latt_size[mu];
@@ -213,7 +253,8 @@ q = (p1-p2)
     ////////Form Vertex//////////////////////////////
     for (int i=0; i < Gamma::nGamma; i++)
     {
-        bilinear_x = g5*adj(Sout)*g5*gammavector[i]*Sin; 
+        bilinear_x = g5*adj(Sout)*g5*gammavector[i]*Sin;
+        bilinear_x_allGamma.push_back(bilinear_x); 
         result.bilinear[i] = sum(bilinear_x); 
         result.bilinear[i] = result.bilinear[i]*(1.0/vol);
     }
@@ -297,10 +338,37 @@ q = (p1-p2)
       std::cout << "Lambda_A/Lambda_S "<< " " << tr_A/tr_S <<std::endl;
 	   
     }
+
+
+    ////////////////////////////////
+    // Find FourQuark
+    if (fullbasis == true)  
+    {
+        for ( int mu=0; mu<Gamma::nGamma; mu++) 
+        for ( int nu=0; nu<Gamma::nGamma; nu++)
+        {
+            lret = zero;
+            tensorprod(lret,bilinear_x_allGamma[mu],bilinear_x_allGamma[nu]);
+            result.fourquark.push_back(sum(lret));
+        }
+    } 
+    else 
+    {
+        // only diagonal gammas 
+        for( int mu=0; mu<Gamma::nGamma; mu++ )
+        {
+            lret = zero;
+            tensorprod(lret,bilinear_x_allGamma[mu],bilinear_x_allGamma[mu]); //tensor outer product
+            result.fourquark.push_back(sum(lret)*(1.0/vol));
+        }
+    }
+
+
     //////////////////////////////////////////////////
     saveResult(par().propInOutput , "SinAve",   SinAve  );
     saveResult(par().propOutOutput, "SoutAve",  SoutAve );
     saveResult(par().output, "bilinear", result.bilinear);
+    saveResult(par().fourQuark_output, "fourquark", result.fourquark);
     LOG(Message) << "Complete. Writing results to " << par().output << std:: endl;
 }
 

@@ -51,6 +51,7 @@ public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(FourQuarkPar,
                                     std::string,    Sin, //need to make this a propogator type?
                                     std::string,    Sout, //same
+                                    std::string,    bilinear_lattice,
                                     std::string,    pin,
                                     std::string,    pout,
                                     bool,           fullbasis,
@@ -99,7 +100,7 @@ TFourQuark<FImpl1, FImpl2>::TFourQuark(const std::string name)
 template <typename FImpl1, typename FImpl2>
 std::vector<std::string> TFourQuark<FImpl1, FImpl2>::getInput(void)
 {
-    std::vector<std::string> input = {par().Sin, par().Sout};
+    std::vector<std::string> input = {par().Sin, par().Sout, par().bilinear_lattice};
     
     return input;
 }
@@ -200,69 +201,202 @@ We have up to 256 of these including the offdiag (G1 != G2).
                  << " momentum '" << par().Sin << "' and '" << par().Sout << "'"
                  << std::endl;
     
-    PropagatorField1                            &Sin = *env().template getObject<PropagatorField1>(par().Sin);
-    PropagatorField2                            &Sout = *env().template getObject<PropagatorField2>(par().Sout);
-    std::vector<Real>                           pin  = strToVec<Real>(par().pin), pout = strToVec<Real>(par().pout);
-    bool                                        fullbasis = par().fullbasis;
-    Gamma                                       g5(Gamma::Algebra::Gamma5);
-    Result                                      result;
-    std::vector<Real>                           latt_size(pin.begin(), pin.end());
-    LatticeComplex                              pdotxin(env().getGrid()), pdotxout(env().getGrid()), coor(env().getGrid());
-    LatticeSpinColourMatrix                     bilinear_mu(env().getGrid()), bilinear_nu(env().getGrid());
-    LatticeSpinColourSpinColourMatrix           lret(env().getGrid()); 
-    Complex                         Ci(0.0,1.0);
-
-    //Phase propagators
-    //Sin = Grid::QCD::PropUtils::PhaseProps(Sin,pin);
-    //Sout = Grid::QCD::PropUtils::PhaseProps(Sout,pout);
+    // Propogators
+    LatticeSpinColourMatrix                     &Sin = *env().template getObject<LatticeSpinColourMatrix>(par().Sin);
+    LatticeSpinColourMatrix                     &Sout = *env().template getObject<LatticeSpinColourMatrix>(par().Sout);
     
-    //find p.x for in and out so phase can be accounted for in propagators
+    // new code
+    std::vector<LatticeSpinColourMatrix>        &bilinear_lattice = *env().template getObject<std::vector<LatticeSpinColourMatrix>>(par().bilinear_lattice);
+   
+    // Averages and inverses
+    SpinColourMatrix                            SinAve, SoutAve;
+    SpinColourMatrix                            SinInv, SoutInv;
+    // g5 for adjoint
+    Gamma                                       g5(Gamma::Algebra::Gamma5);
+    std::vector<int>   		                    latt_size(env().getGrid()->_fdimensions); 
+    Complex                                     Ci(0.0,1.0);
+    // momenta and p.x
+    std::vector<Real>                           pin  = strToVec<Real>(par().pin), pout = strToVec<Real>(par().pout);
+    LatticeComplex                              pdotxin(env().getGrid()), pdotxout(env().getGrid()), coor(env().getGrid());
+    //bilinear
+    LatticeSpinColourMatrix                     bilinear_mu(env().getGrid());
+    std::vector<LatticeSpinColourMatrix>        bilinear;
+    //boolean for full or diagonal only basis
+    bool                                        fullbasis = par().fullbasis;
+    // tensor product results + fourquark result
+    LatticeSpinColourSpinColourMatrix           lret(env().getGrid()); 
+    Result                                      result;
+    
+    ////Find volume factor for normalisation/////////////////////////
+    RealD vol=1;
+    for (unsigned int mu = 0; mu < 4; ++mu)
+    { 
+      vol=vol*latt_size[mu];
+    }
+   
+
+    /* 
     pdotxin=zero;
     pdotxout=zero;
+    ////Find the phases sun_mu( p_mu x^mu ) for both legs////////////
     for (unsigned int mu = 0; mu < 4; ++mu)
     {
         Real TwoPiL =  M_PI * 2.0/ latt_size[mu];
         LatticeCoordinate(coor,mu);
-        pdotxin = pdotxin +(TwoPiL * pin[mu]) * coor;
-        pdotxout= pdotxout +(TwoPiL * pout[mu]) * coor;
+        pdotxin  = pdotxin  + (TwoPiL * pin[mu] ) * coor;
+        pdotxout = pdotxout + (TwoPiL * pout[mu]) * coor;
     }
-    Sin = Sin*exp(-Ci*pdotxin); //phase corrections
+    // But these are already phased in the bilinear step?
+    // Make this all one step?
+    // Or let's output the lattice spin colour bilinear from the bilinear code?
+    // Then phase the props
+    Sin = Sin*exp(-Ci*pdotxin); 
     Sout = Sout*exp(-Ci*pdotxout);
-
-
-    //Set up Gammas 
-    std::vector<Gamma> gammavector;
-     for( int i=1; i<Gamma::nGamma; i+=2){
-         Gamma::Algebra gam = i;
-         gammavector.push_back(Gamma(gam));
-       }
     
-    lret = zero;
-    if (fullbasis == true){ // all combinations of mu and nu
-        result.fourquark.resize(Gamma::nGamma/2*Gamma::nGamma/2);
-        for( int mu=0; mu<Gamma::nGamma/2; mu++){ 
-            bilinear_mu = g5*adj(Sout)*g5*gammavector[mu]*Sin;
-            for ( int nu=0; nu<Gamma::nGamma; nu++){
-                LatticeSpinColourMatrix     bilinear_nu(env().getGrid());
-                bilinear_nu = g5*adj(Sout)*g5*gammavector[nu]*Sin;
-                LOG(Message) << "bilinear_nu for nu = " << nu << " is - " << bilinear_mu << std::endl;
-                result.fourquark[mu*Gamma::nGamma/2 + nu] = zero;
-                tensorprod(lret,bilinear_mu,bilinear_nu);
-                result.fourquark[mu*Gamma::nGamma/2 + nu] = sum(lret);
-            }
+
+
+    /////////////////////////////////////////////////
+    // sum_x ( (g5*Sout^dag*g5) * Gamma * Sin )
+    ////////Form Vertex//////////////////////////////
+    for (int i=0; i < Gamma::nGamma; i++)
+    {
+        //bilinear[i] = zero;
+        bilinear_mu  = g5*adj(Sout)*g5*gammavector[i]*Sin; 
+        bilinear.push_back(bilinear_mu); 
+    }
+    */
+    
+    ////Set up gamma vector//////////////////////////
+    std::vector<Gamma> gammavector;
+    for( int i=0; i<Gamma::nGamma; i++)
+    {
+        Gamma::Algebra gam = i;
+        gammavector.push_back(Gamma(gam));
+    }
+    // ensure results vector can hold all gamma
+    //bilinear.resize(Gamma::nGamma);
+
+    /////////////////////////////////////////////////
+    // Debug code to amputate on a single config
+    /////////////////////////////////////////////////
+    
+    ////Find the propogator averages ( normalising by vol factor )
+    SinAve = sum(Sin); SinAve = SinAve*(1.0/vol); 
+    SoutAve= sum(Sout);SoutAve= SoutAve*(1.0/vol);
+    SoutAve= g5*adj(SoutAve)*g5; // quark flow reversal
+
+    ////////////////////////////////////////////////////
+    // Invert the volume averaged propogators
+    // Rewrite as 12x12 matrix for inverting 
+    // then restructure as spin-colour matrix after
+    ////////////////////////////////////////////////////
+    std::cout << "Setting up eigen matrices" << std::endl;
+    Eigen::MatrixXcd Sout_ei = Eigen::MatrixXcd::Zero(12,12);
+    Eigen::MatrixXcd Sin_ei  = Eigen::MatrixXcd::Zero(12,12);
+    for(int c1=0;c1<Nc;c1++)
+    for(int c2=0;c2<Nc;c2++)
+    for(int s1=0;s1<Ns;s1++)
+    for(int s2=0;s2<Ns;s2++)
+    {
+        int i1=s1*Nc+c1;
+        int i2=s2*Nc+c2;
+        Sout_ei(i1,i2) = SoutAve()(s1,s2)(c1,c2);
+        Sin_ei(i1,i2)  =  SinAve()(s1,s2)(c1,c2);
+    }
+    
+    // SVD
+    
+    std::cout << "SVD" << std::endl;
+    Eigen::JacobiSVD<Eigen::MatrixXcd> svd_o(Sout_ei,Eigen::ComputeThinU|Eigen::ComputeThinV);
+    Eigen::JacobiSVD<Eigen::MatrixXcd> svd_i( Sin_ei,Eigen::ComputeThinU|Eigen::ComputeThinV);
+
+    // Inversion
+    std::cout << "inverting" << std::endl;
+    Eigen::MatrixXcd Ident = Eigen::MatrixXcd::Identity(12,12);
+    Eigen::MatrixXcd SoutInv_ei = Sout_ei.inverse();
+    Eigen::MatrixXcd SinInv_ei  = Sin_ei.inverse();
+    
+
+    std::cout << "recover spin matrix" << std::endl;
+    // recover Spin-colour matrix form
+    for(int c1=0;c1<Nc;c1++)
+    for(int c2=0;c2<Nc;c2++)
+    for(int s1=0;s1<Ns;s1++)
+    for(int s2=0;s2<Ns;s2++)
+    {
+        int i1=s1*Nc+c1;
+        int i2=s2*Nc+c2;
+        SoutInv()(s1,s2)(c1,c2) = SoutInv_ei(i1,i2);
+        SinInv()(s1,s2)(c1,c2)  = SinInv_ei(i1,i2) ;
+    }
+    
+    /////////////////////////////////////////////////////
+    // Amputate then project the bilinear results for every gamma
+    // Tr ( Sout^-1 * Vertex_i * Sin^-1 * Gamma_i ) / 12
+    // By looking at the single config the volume average approximates the gauge average
+    // This is only the gamma scheme for bilinears as a debug check
+    /////////////////////////////////////////////////////
+    std::cout << "amputate" << std::endl;
+    for (int i=0; i < Gamma::nGamma; i++)
+    {
+      /*
+      auto tr = trace (SoutInv * sum(bilinear[i]) * (1.0/vol) * SinInv * gammavector[i] ) / 12.0 ;
+      std::cout << "Gamma "<< i << " " << tr <<std::endl;
+      */
+      auto tr = trace (SoutInv * sum(bilinear_lattice[i]) * (1.0/vol) * SinInv * gammavector[i] ) / 12.0 ;
+      std::cout << "Gamma "<< i << " " << tr <<std::endl;
+    }
+
+
+    /*
+    ////////////////////////////////
+    // Find FourQuark
+    if (fullbasis == true)  
+    {
+        for ( int mu=0; mu<Gamma::nGamma; mu++) 
+        for ( int nu=0; nu<Gamma::nGamma; nu++)
+        {
+            lret = zero;
+            tensorprod(lret,bilinear[mu],bilinear[nu]);
+            result.fourquark.push_back(sum(lret));
         }
-    } else {
-        result.fourquark.resize(Gamma::nGamma/2);
-        for ( int mu=0; mu<1; mu++){
-        //for( int mu=0; mu<Gamma::nGamma/2; mu++ ){
-            bilinear_mu = g5*adj(Sout)*g5*gammavector[mu]*Sin;
-            //LOG(Message) << "bilinear_mu for mu = " << mu << " is - " << bilinear_mu << std::endl;
-            result.fourquark[mu] = zero;
-            tensorprod(lret,bilinear_mu,bilinear_mu); //tensor outer product
-            result.fourquark[mu] = sum(lret);
+    } 
+    else 
+    {
+        // only diagonal gammas 
+        for( int mu=0; mu<Gamma::nGamma; mu++ )
+        {
+            lret = zero;
+            tensorprod(lret,bilinear[mu],bilinear[mu]); //tensor outer product
+            result.fourquark.push_back(sum(lret)*(1.0/vol));
         }
     }
-    saveResult(par().output, "fourquark", result.fourquark);
+    */
+
+    ////////////////////////////////
+    // Find FourQuark
+    if (fullbasis == true)  
+    {
+        for ( int mu=0; mu<Gamma::nGamma; mu++) 
+        for ( int nu=0; nu<Gamma::nGamma; nu++)
+        {
+            lret = zero;
+            tensorprod(lret,bilinear_lattice[mu],bilinear_lattice[nu]);
+            result.fourquark.push_back(sum(lret));
+        }
+    } 
+    else 
+    {
+        // only diagonal gammas 
+        for( int mu=0; mu<Gamma::nGamma; mu++ )
+        {
+            lret = zero;
+            tensorprod(lret,bilinear_lattice[mu],bilinear_lattice[mu]); //tensor outer product
+            result.fourquark.push_back(sum(lret)*(1.0/vol));
+        }
+    }
+
+    saveResult(par().output, "fourquark", result.fourquark); 
 }
 
 END_MODULE_NAMESPACE
