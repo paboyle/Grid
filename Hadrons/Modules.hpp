@@ -61,5 +61,4 @@
 #include <Hadrons/Modules/MSolver/MixedPrecisionRBPrecCG.hpp>
 #include <Hadrons/Modules/MSolver/Guesser.hpp>
 #include <Hadrons/Modules/MSolver/A2AAslashVectors.hpp>
-#include <Hadrons/Modules/MNPR/FourQuark.hpp>
 #include <Hadrons/Modules/MNPR/Bilinear.hpp>

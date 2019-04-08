@@ -59,8 +59,7 @@ modules_cc =\
   Modules/MSolver/LocalCoherenceLanczos.cc \
   Modules/MSolver/MixedPrecisionRBPrecCG.cc \
   Modules/MSolver/A2AAslashVectors.cc \
-  Modules/MNPR/Bilinear.cc \
-  Modules/MNPR/FourQuark.cc
+  Modules/MNPR/Bilinear.cc
 
 modules_hpp =\
   Modules/MScalarSUN/TrKinetic.hpp \
@@ -126,6 +125,5 @@ modules_hpp =\
   Modules/MSolver/MixedPrecisionRBPrecCG.hpp \
   Modules/MSolver/Guesser.hpp \
   Modules/MSolver/A2AAslashVectors.hpp \
-  Modules/MNPR/FourQuark.hpp \
   Modules/MNPR/Bilinear.hpp
 
