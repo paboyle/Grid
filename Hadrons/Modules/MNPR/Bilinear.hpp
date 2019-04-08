@@ -314,7 +314,7 @@ q = (p1-p2)
     /////////////////////////////////////////////////////
     for (int i=0; i < Gamma::nGamma; i++)
     {
-      auto tr = trace (SoutInv * result.bilinear[i] * SinInv * gammavector[i] ) / 12.0 ;
+      auto tr = trace (SoutInv * result.bilinear[i] * SinInv * gammavector[i] ) *( 1.0 / 12.0) ;
       std::cout << "Gamma "<< i << " " << tr <<std::endl;
     }
     /////////////////////////////////////////////////////
@@ -326,11 +326,11 @@ q = (p1-p2)
       int AY= Gamma::Algebra::GammaYGamma5;
       int AZ= Gamma::Algebra::GammaZGamma5;
       int AT= Gamma::Algebra::GammaTGamma5;
-      auto tr_S = trace (SoutInv * result.bilinear[S] * SinInv * gammavector[S] ) / 12.0;
-      auto tr_A = trace (SoutInv * result.bilinear[AX]* SinInv * gammavector[AX] ) / 48.0;
-           tr_A+= trace (SoutInv * result.bilinear[AY]* SinInv * gammavector[AY] ) / 48.0;
-           tr_A+= trace (SoutInv * result.bilinear[AZ]* SinInv * gammavector[AZ] ) / 48.0;
-           tr_A+= trace (SoutInv * result.bilinear[AT]* SinInv * gammavector[AT] ) / 48.0;
+      auto tr_S = trace (SoutInv * result.bilinear[S] * SinInv * gammavector[S] ) * (1.0 / 12.0);
+      auto tr_A = trace (SoutInv * result.bilinear[AX]* SinInv * gammavector[AX] ) * (1.0 / 48.0);
+           tr_A+= trace (SoutInv * result.bilinear[AY]* SinInv * gammavector[AY] ) * (1.0 / 48.0);
+           tr_A+= trace (SoutInv * result.bilinear[AZ]* SinInv * gammavector[AZ] ) * (1.0 / 48.0);
+           tr_A+= trace (SoutInv * result.bilinear[AT]* SinInv * gammavector[AT] ) * (1.0 / 48.0);
 
       std::cout << "Lambda_S "<< " " << tr_S <<std::endl;
       std::cout << "Lambda_A "<< " " << tr_A <<std::endl;
