@@ -1029,7 +1029,6 @@ A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
                                    const FermionField *vs,
                                    const FermionField *vd)
 {
-  std::cout << "Start contraction DV " << std::endl;
   GridBase *grid = vs[0]._grid;
 
   int nd    = grid->_ndimension;
@@ -1040,7 +1039,7 @@ A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
 
   int d_unroll = 32;// Empirical optimisation
 
-  Eigen::Matrix<ComplexD, -1, -1, Eigen::RowMajor> buf;
+  Eigen::Matrix<Complex, -1, -1, Eigen::RowMajor> buf;
 
   for(int t=0;t<N_t;t++){
     WWVV[t] = zero;
