@@ -5,7 +5,6 @@
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 #include <Hadrons/DiskVector.hpp>
-#include <Hadrons/A2AFourQuarkContraction.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -83,7 +82,6 @@ template <typename FImpl>
 void TA2AFourQuarkContraction<FImpl>::execute(void)
 {
     int nt = env().getDim(Tp);
-    double million = 1.0e6;
 
     auto &v1   = envGet(std::vector<FermionField>, par().v1);
     auto &v2   = envGet(std::vector<FermionField>, par().v2);
@@ -97,7 +95,7 @@ void TA2AFourQuarkContraction<FImpl>::execute(void)
     }
 
     LOG(Message) << "Computing 4 quark contraction for: " << getName() << std::endl;
-    A2AUtilsDV<FImpl>::ContractWWVVDiskVector(wwvv, mf12, &v1[0], &v2[0]);
+    A2Autils<FImpl>::ContractWWVV(wwvv, mf12, &v1[0], &v2[0]);
 }
 
 END_MODULE_NAMESPACE

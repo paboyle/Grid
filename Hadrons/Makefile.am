@@ -18,7 +18,6 @@ libHadrons_adir = $(includedir)/Hadrons
 nobase_libHadrons_a_HEADERS =   \
 	A2AVectors.hpp              \
 	A2AMatrix.hpp               \
-	A2AFourQuarkContraction.hpp \
 	Application.hpp             \
 	DilutedNoise.hpp            \
 	DiskVector.hpp              \
