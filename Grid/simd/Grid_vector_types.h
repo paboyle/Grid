@@ -100,7 +100,7 @@ template<typename T> struct is_real<T, typename std::enable_if<std::is_floating_
 template<typename T, typename V=void> struct is_integer : public std::false_type {};
 template<typename T> struct is_integer<T, typename std::enable_if<std::is_integral<T>::value,
   void>::type> : public std::true_type {};
-  
+
 template <typename T>              using IfReal    = Invoke<std::enable_if<is_real<T>::value, int> >;
 template <typename T>              using IfComplex = Invoke<std::enable_if<is_complex<T>::value, int> >;
 template <typename T>              using IfInteger = Invoke<std::enable_if<is_integer<T>::value, int> >;
@@ -280,8 +280,28 @@ class Grid_simd {
   }
 
   ////////////////////////////
-  // operator scalar * simd
+  // operator scalar +-*/ simd
   ////////////////////////////
+  friend inline Grid_simd operator+(const Scalar_type &a, Grid_simd b) {
+    Grid_simd va;
+    vsplat(va, a);
+    return va + b;
+  }
+  friend inline Grid_simd operator+(Grid_simd b, const Scalar_type &a) {
+    return a + b;
+  }
+
+  friend inline Grid_simd operator-(const Scalar_type &a, Grid_simd b) {
+    Grid_simd va;
+    vsplat(va, a);
+    return va - b;
+  }
+  friend inline Grid_simd operator-(Grid_simd b, const Scalar_type &a) {
+    Grid_simd va;
+    vsplat(va, a);
+    return b - va;
+  }
+
   friend inline Grid_simd operator*(const Scalar_type &a, Grid_simd b) {
     Grid_simd va;
     vsplat(va, a);
@@ -291,9 +311,6 @@ class Grid_simd {
     return a * b;
   }
 
-  //////////////////////////////////
-  // Divides
-  //////////////////////////////////
   friend inline Grid_simd operator/(const Scalar_type &a, Grid_simd b) {
     Grid_simd va;
     vsplat(va, a);
@@ -341,7 +358,7 @@ class Grid_simd {
     Grid_simd ret;
     Grid_simd::conv_t conv;
     Grid_simd::scalar_type s;
-    
+
     conv.v = v.v;
     for (int i = 0; i < Nsimd(); i++) {
       s = conv.s[i];
@@ -370,7 +387,7 @@ class Grid_simd {
     return ret;
   }
   ///////////////////////
-  // Exchange 
+  // Exchange
   // Al Ah , Bl Bh -> Al Bl Ah,Bh
   ///////////////////////
   friend inline void exchange(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2,int n)
@@ -381,20 +398,20 @@ class Grid_simd {
       Optimization::Exchange::Exchange2(out1.v,out2.v,in1.v,in2.v);
     } else if(n==1) {
       Optimization::Exchange::Exchange1(out1.v,out2.v,in1.v,in2.v);
-    } else if(n==0) { 
+    } else if(n==0) {
       Optimization::Exchange::Exchange0(out1.v,out2.v,in1.v,in2.v);
     }
   }
-  friend inline void exchange0(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){    
+  friend inline void exchange0(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){
     Optimization::Exchange::Exchange0(out1.v,out2.v,in1.v,in2.v);
   }
-  friend inline void exchange1(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){    
+  friend inline void exchange1(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){
     Optimization::Exchange::Exchange1(out1.v,out2.v,in1.v,in2.v);
   }
-  friend inline void exchange2(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){    
+  friend inline void exchange2(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){
     Optimization::Exchange::Exchange2(out1.v,out2.v,in1.v,in2.v);
   }
-  friend inline void exchange3(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){    
+  friend inline void exchange3(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){
     Optimization::Exchange::Exchange3(out1.v,out2.v,in1.v,in2.v);
   }
   ////////////////////////////////////////////////////////////////////
@@ -419,7 +436,7 @@ class Grid_simd {
       int dist = perm & 0xF;
       y = rotate(b, dist);
       return;
-    } 
+    }
     else if(perm==3) permute3(y, b);
     else if(perm==2) permute2(y, b);
     else if(perm==1) permute1(y, b);
@@ -438,7 +455,7 @@ class Grid_simd {
   }
 
 
-  
+
 };  // end of Grid_simd class definition
 
 inline void permute(ComplexD &y,ComplexD b, int perm) {  y=b; }
@@ -463,29 +480,29 @@ inline Grid_simd<S, V> rotate(Grid_simd<S, V> b, int nrot) {
   ret.v = Optimization::Rotate::rotate(b.v, 2 * nrot);
   return ret;
 }
-template <class S, class V, IfNotComplex<S> =0> 
+template <class S, class V, IfNotComplex<S> =0>
 inline void rotate( Grid_simd<S,V> &ret,Grid_simd<S,V> b,int nrot)
 {
   nrot = nrot % Grid_simd<S,V>::Nsimd();
   ret.v = Optimization::Rotate::rotate(b.v,nrot);
 }
-template <class S, class V, IfComplex<S> =0> 
+template <class S, class V, IfComplex<S> =0>
 inline void rotate(Grid_simd<S,V> &ret,Grid_simd<S,V> b,int nrot)
 {
   nrot = nrot % Grid_simd<S,V>::Nsimd();
   ret.v = Optimization::Rotate::rotate(b.v,2*nrot);
 }
 
-template <class S, class V> 
+template <class S, class V>
 inline void vbroadcast(Grid_simd<S,V> &ret,const Grid_simd<S,V> &src,int lane){
   S* typepun =(S*) &src;
   vsplat(ret,typepun[lane]);
-}    
-template <class S, class V, IfComplex<S> =0> 
+}
+template <class S, class V, IfComplex<S> =0>
 inline void rbroadcast(Grid_simd<S,V> &ret,const Grid_simd<S,V> &src,int lane){
   S* typepun =(S*) &src;
   ret.v = unary<V>(real(typepun[lane]), VsplatSIMD());
-}    
+}
 
 
 
@@ -652,7 +669,7 @@ inline Grid_simd<S, V> operator/(Grid_simd<S, V> a, Grid_simd<S, V> b) {
   ret = a * conjugate(b) ;
   den = b * conjugate(b) ;
 
-  
+
   auto real_den = toReal(den);
 
   ret.v=binary<V>(ret.v, real_den.v, DivSIMD());
@@ -771,7 +788,7 @@ inline Grid_simd<std::complex<R>, V> toComplex(const Grid_simd<R, V> &in) {
 
   conv.v = in.v;
   for (int i = 0; i < Rsimd::Nsimd(); i += 2) {
-    assert(conv.s[i + 1] == conv.s[i]);  
+    assert(conv.s[i + 1] == conv.s[i]);
     // trap any cases where real was not duplicated
     // indicating the SIMD grids of real and imag assignment did not correctly
     // match
