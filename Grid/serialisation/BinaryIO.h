@@ -51,6 +51,8 @@ namespace Grid {
     template <typename U>
     void writeDefault(const std::string &s, const std::vector<U> &x);
     void writeDefault(const std::string &s, const char *x);
+    template <typename U>
+    void writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const U * pDataRowMajor, size_t NumElements);
   private:
     std::ofstream file_;
   };
@@ -66,6 +68,8 @@ namespace Grid {
     void readDefault(const std::string &s, U &output);
     template <typename U>
     void readDefault(const std::string &s, std::vector<U> &output);
+    template <typename U>
+    void readMultiDim(const std::string &s, std::vector<U> &buf, std::vector<size_t> &dim);
   private:
     std::ifstream file_;
   };
@@ -92,6 +96,27 @@ namespace Grid {
     }
   }
   
+  template <typename U>
+  void BinaryWriter::writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const U * pDataRowMajor, size_t NumElements)
+  {
+    uint64_t rank = static_cast<uint64_t>( Dimensions.size() );
+    uint64_t tmp = 1;
+    for( auto i = 0 ; i < rank ; i++ )
+      tmp *= Dimensions[i];
+    assert( tmp == NumElements && "Dimensions don't match size of data being written" );
+    // Total number of elements
+    write("", tmp);
+    // Number of dimensions
+    write("", rank);
+    // Followed by each dimension
+    for( auto i = 0 ; i < rank ; i++ ) {
+      tmp = Dimensions[i];
+      write("", tmp);
+    }
+    for( auto i = 0; i < NumElements; ++i)
+      write("", pDataRowMajor[i]);
+  }
+
   // Reader template implementation ////////////////////////////////////////////
   template <typename U>
   void BinaryReader::readDefault(const std::string &s, U &output)
@@ -113,6 +138,30 @@ namespace Grid {
     {
       read("", output[i]);
     }
+  }
+
+  template <typename U>
+  void BinaryReader::readMultiDim(const std::string &s, std::vector<U> &buf, std::vector<size_t> &dim)
+  {
+    // Number of elements
+    uint64_t NumElements;
+    read("", NumElements);
+    // Number of dimensions
+    uint64_t rank;
+    read("", rank);
+    // Followed by each dimension
+    uint64_t count = 1;
+    dim.resize(rank);
+    uint64_t tmp;
+    for( auto i = 0 ; i < rank ; i++ ) {
+      read("", tmp);
+      dim[i] = tmp;
+      count *= tmp;
+    }
+    assert( count == NumElements && "Dimensions don't match size of data being read" );
+    buf.resize(count);
+    for( auto i = 0; i < count; ++i)
+      read("", buf[i]);
   }
 }
 
