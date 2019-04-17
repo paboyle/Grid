@@ -113,7 +113,7 @@ public:
     unsigned int            getNd(void) const;
     double                  getVolume(void) const;
     // random number generator
-    GridParallelRNG *       get4dRng(void) const;
+    GridParallelRNG *       get4dRng(void);
     // general memory management
     void                    addObject(const std::string name,
                                       const int moduleAddress = -1);
@@ -182,7 +182,7 @@ private:
     std::map<CoarseGridKey, GridPt>     gridCoarse5d_;
     unsigned int                        nd_;
     // random number generator
-    RngPt                               rng4d_;
+    RngPt                               rng4d_{nullptr};
     // object store
     std::vector<ObjInfo>                object_;
     std::map<std::string, unsigned int> objectAddress_;

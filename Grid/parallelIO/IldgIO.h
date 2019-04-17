@@ -47,8 +47,10 @@ namespace Grid {
 namespace QCD {
 
 #define GRID_FIELD_NORM "FieldNormMetaData"
-#define GRID_FIELD_NORM_CHECK(FieldNormMetaData_,n2ck) \
-assert(0.5*fabs(FieldNormMetaData_.norm2 - n2ck)/(FieldNormMetaData_.norm2 + n2ck) < 1.0e-5 );
+#define GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) \
+0.5*fabs(FieldNormMetaData_.norm2 - n2ck)/(FieldNormMetaData_.norm2 + n2ck)
+#define GRID_FIELD_NORM_CHECK(FieldNormMetaData_, n2ck) \
+assert(GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) < 1.0e-5);
 
   /////////////////////////////////
   // Encode word types as strings
@@ -249,9 +251,9 @@ class GridLimeReader : public BinaryIO {
 	/////////////////////////////////////////////
 	if(FieldNormMetaData_.norm2 != 0.0){ 
 	  RealD n2ck = norm2(field);
-	  std::cout << GridLogMessage << "Field norm: metadata= "<<FieldNormMetaData_.norm2<< " / field= " << n2ck<<std::endl;
+	  std::cout << GridLogMessage << "Field norm: metadata= " << FieldNormMetaData_.norm2 
+              << " / field= " << n2ck << " / rdiff= " << GRID_FIELD_NORM_CALC(FieldNormMetaData_,n2ck) << std::endl;
 	  GRID_FIELD_NORM_CHECK(FieldNormMetaData_,n2ck);
-	  std::cout << GridLogMessage <<  "FieldNormMetaData OK! "<<std::endl;
 	}
 	assert(scidacChecksumVerify(scidacChecksum_,scidac_csuma,scidac_csumb)==1);
 
