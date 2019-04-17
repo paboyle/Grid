@@ -29,6 +29,14 @@ directory
 #ifndef GRID_GAUGE_IMPL_TYPES_H
 #define GRID_GAUGE_IMPL_TYPES_H
 
+#define CPS_MD_TIME
+
+#ifdef CPS_MD_TIME
+#define HMC_MOMENTUM_DENOMINATOR (2.0)
+#else
+#define HMC_MOMENTUM_DENOMINATOR (1.0)
+#endif
+
 namespace Grid {
 namespace QCD {
 
@@ -105,13 +113,13 @@ public:
     //
     // Expect cxmua variance sqrt(2).
     //
-    // Must scale the momentum by sqrt(2) up to invoke CPS and UKQCD conventions
+    // Must scale the momentum by sqrt(2) to invoke CPS and UKQCD conventions
     //
     LinkField Pmu(P._grid);
     Pmu = Zero();
     for (int mu = 0; mu < Nd; mu++) {
       SU<Nrepresentation>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
-      RealD scale = ::sqrt(2) ;
+      RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR) ;
       Pmu = Pmu*scale;
       PokeIndex<LorentzIndex>(P, Pmu, mu);
     }
