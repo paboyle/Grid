@@ -67,6 +67,7 @@ public:
 public:
   typedef WilsonFermion<Impl> WilsonBase;
 
+  virtual int    ConstEE(void)     { return 0; };
   virtual void Instantiatable(void){};
   // Constructors
   WilsonCloverFermion(GaugeField &_Umu, GridCartesian &Fgrid,

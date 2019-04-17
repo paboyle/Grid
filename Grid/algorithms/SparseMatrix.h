@@ -60,7 +60,7 @@ namespace Grid {
       // Query the even even properties to make algorithmic decisions
       //////////////////////////////////////////////////////////////////////
       virtual RealD  Mass(void)        { return 0.0; };
-      virtual int    ConstEE(void)     { return 0; }; // Disable assumptions unless overridden
+      virtual int    ConstEE(void)     { return 1; }; // Disable assumptions unless overridden
       virtual int    isTrivialEE(void) { return 0; }; // by a derived class that knows better
 
       // half checkerboard operaions
