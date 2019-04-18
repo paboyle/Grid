@@ -123,6 +123,7 @@ modules_hpp =\
   Modules/MIO/LoadEigenPack.hpp \
   Modules/MIO/LoadNersc.hpp \
   Modules/MIO/LoadA2AVectors.hpp \
-  Modules/MIO/LoadCoarseEigenPack.hpp \
   Modules/MIO/LoadCosmHol.hpp \
+  Modules/MIO/LoadCoarseEigenPack.hpp \
   Modules/MIO/LoadBinary.hpp 
+
