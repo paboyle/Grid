@@ -113,7 +113,8 @@ void TStoutSmearing3D<GImpl>::execute(void)
                  << " of 3D-stout smearing and rho= " << par().rho
 		 << "orthogonal to dimension " << par().orthogdim << std::endl;
 
-    Smear_Stout<GImpl> smearer(par().rho, par().orthogdim);
+    //Smear_Stout<GImpl> smearer(par().rho, par().orthogdim);
+    Smear_Stout<GImpl> smearer(par().rho);
     auto               &U    = envGet(GaugeField, par().gauge);
     auto               &Usmr = envGet(GaugeField, getName());
 

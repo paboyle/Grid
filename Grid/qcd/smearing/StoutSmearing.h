@@ -71,9 +71,13 @@ public:
     }
 
   /*! Default constructor. rho is constant in all directions, optionally except for orthogonal dimension */
-  Smear_Stout(double rho = 1.0, int orthogdim = -1)
+  /*Smear_Stout(double rho = 1.0, int orthogdim = -1)
     : OwnedBase{new Smear_APE<Gimpl>(rho3D(rho,orthogdim))}, SmearBase{OwnedBase.get()} {
     assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
+  }*/
+
+  Smear_Stout(double rho = 1.0) : SmearBase(new Smear_APE<Gimpl>(rho)) {
+    assert(Nc == 3);//                  "Stout smearing currently implemented only for Nc==3");
   }
 
   ~Smear_Stout() {}  // delete SmearBase...
