@@ -59,7 +59,7 @@ modules_cc =\
   Modules/MIO/LoadNersc.cc \
   Modules/MIO/LoadCoarseEigenPack.cc \
   Modules/MIO/LoadCosmHol.cc \
-  Modules/MIO/LoadA2AVectors.cc 
+  Modules/MIO/LoadA2AVectors.cc
 
 modules_hpp =\
   Modules/MContraction/WeakEye3pt.hpp \
@@ -125,5 +125,5 @@ modules_hpp =\
   Modules/MIO/LoadA2AVectors.hpp \
   Modules/MIO/LoadCosmHol.hpp \
   Modules/MIO/LoadCoarseEigenPack.hpp \
-  Modules/MIO/LoadBinary.hpp 
+  Modules/MIO/LoadBinary.hpp
 
