@@ -39,6 +39,7 @@ BEGIN_HADRONS_NAMESPACE
  *                                TBilinear                                       *
         Performs bilinear contractions of the type tr[g5*adj(Sout)*g5*G*Sin]
         Suitable for non exceptional momenta in Rome-Southampton Bilinear
+        Also outputs the four quark contractions
 ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MNPR)
 
@@ -118,51 +119,24 @@ std::vector<std::string> TBilinear<FImpl1, FImpl2>::getInput(void)
 template <typename FImpl1, typename FImpl2>
 void TBilinear<FImpl1, FImpl2>::tensorprod(LatticeSpinColourSpinColourMatrix &lret, LatticeSpinColourMatrix a, LatticeSpinColourMatrix b)
 {
-#if 0
-            parallel_for(auto site=lret.begin();site<lret.end();site++) {
-                for (int si; si < 4; ++si){
-                for(int sj; sj <4; ++sj){
-                    for (int ci; ci < 3; ++ci){
-                    for (int cj; cj < 3; ++cj){
-                        for (int sk; sk < 4; ++sk){
-                        for(int sl; sl <4; ++sl){
-                            for (int ck; ck < 3; ++ck){
-                            for (int cl; cl < 3; ++cl){
-                        lret[site]()(si,sj)(ci,cj)(sk,sl)(ck,cl)=a[site]()(si,sj)(ci,cj)*b[site]()(sk,sl)(ck,cl);
-                            }}
-                        }}
-                    }}
-                }}
-        }
-#else 
-            // FIXME ; is there a general need for this construct ? In which case we should encapsulate the
-            //         below loops in a helper function.
-            //LOG(Message) << "sp co mat a is - " << a << std::endl;
-            //LOG(Message) << "sp co mat b is - " << b << std::endl;
+            // Tensor product of 2 Lattice Spin Colour Matrices
             parallel_for(auto site=lret.begin();site<lret.end();site++) {
             vTComplex left;
                 for(int si=0; si < Ns; ++si){
                 for(int sj=0; sj < Ns; ++sj){
                     for (int ci=0; ci < Nc; ++ci){
                     for (int cj=0; cj < Nc; ++cj){
-                      //LOG(Message) << "si, sj, ci, cj -  " << si << ", " << sj  << ", "<< ci  << ", "<< cj << std::endl;
                       left()()() = a[site]()(si,sj)(ci,cj);
-                      //LOG(Message) << left << std::endl;
                       lret[site]()(si,sj)(ci,cj)=left()*b[site]();
                     }}
                 }}
             }
-#endif      
 }
-
-
-
 
 template <typename FImpl1, typename FImpl2>
 std::vector<std::string> TBilinear<FImpl1, FImpl2>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
-    
     return out;
 }
     
@@ -185,6 +159,9 @@ Conventions:
 p1 - incoming momenta
 p2 - outgoing momenta
 q = (p1-p2)
+
+Also computes and saves the four quarks
+V4q(G) = sum_x ( [ g5 * adj(S'(x,p2)) * g5 * G * S'(x,p1) ]_{si,sj,ci,cj} [ g5 * adj(S'(x,p2)) * g5 * G * S'(x,p1) ]_{sk,sl,ck,cl} )
 **************************************************************************/
 
     LOG(Message) << "Computing bilinear and fourquark contractions '" << getName() << "' using"
@@ -207,6 +184,7 @@ q = (p1-p2)
 
     //bilinear_x holds bilinear before summing
     LatticeSpinColourMatrix                     bilinear_x(env().getGrid());
+    // vector to hold all lattice bilinear vertices required for 4q calculation
     std::vector<LatticeSpinColourMatrix>        bilinear_x_allGamma;
     SpinColourMatrix                            bilinear;
     SpinColourSpinColourMatrix                  fourquark;
@@ -259,7 +237,7 @@ q = (p1-p2)
         result.bilinear[i] = result.bilinear[i]*(1.0/vol);
     }
     /////////////////////////////////////////////////
-    // Debug code to amputate on a single config
+    // amputate on a single config and print as a check
     /////////////////////////////////////////////////
     
     ////Find the propogator averages ( normalising by vol factor )
@@ -344,6 +322,7 @@ q = (p1-p2)
     // Find FourQuark
     if (fullbasis == true)  
     {
+        // Compute all vertes Gamma_i Gamma_j  eg  VA or SP
         for ( int mu=0; mu<Gamma::nGamma; mu++) 
         for ( int nu=0; nu<Gamma::nGamma; nu++)
         {
@@ -355,6 +334,7 @@ q = (p1-p2)
     else 
     {
         // only diagonal gammas 
+        //  only VV, AA etc
         for( int mu=0; mu<Gamma::nGamma; mu++ )
         {
             lret = zero;
@@ -364,7 +344,8 @@ q = (p1-p2)
     }
 
 
-    //////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
+    // write the results, props, bilinear and fourquark
     saveResult(par().propInOutput , "SinAve",   SinAve  );
     saveResult(par().propOutOutput, "SoutAve",  SoutAve );
     saveResult(par().output, "bilinear", result.bilinear);
