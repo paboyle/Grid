@@ -105,8 +105,6 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
 
       }
     }
-    std::cout << GridLogError << "Gauge fixing has NOT converged "<<std::endl;
-    assert(0); // Should never hit
   };
   static Real SteepestDescentStep(std::vector<GaugeMat> &U,GaugeMat &xform,Real & alpha, GaugeMat & dmuAmu) {
     GridBase *grid = U[0]._grid;
