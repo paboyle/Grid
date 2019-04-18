@@ -39,6 +39,7 @@ modules_cc =\
   Modules/MDistil/g5_multiply.cc \
   Modules/MDistil/LapEvec.cc \
   Modules/MDistil/Noises.cc \
+  Modules/MDistil/DistilSource.cc \
   Modules/MDistil/DistilVectors.cc \
   Modules/MDistil/BContraction.cc \
   Modules/MDistil/Baryon2pt.cc \
@@ -122,6 +123,7 @@ modules_hpp =\
   Modules/MDistil/PerambFromSolve.hpp \
   Modules/MDistil/Baryon2pt.hpp \
   Modules/MDistil/LapEvec.hpp \
+  Modules/MDistil/DistilSource.hpp \
   Modules/MDistil/BContraction.hpp \
   Modules/MDistil/DistilVectors.hpp \
   Modules/MDistil/DistilSink.hpp \

@@ -25,6 +25,7 @@ class PerambLightPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(PerambLightPar,
 		                    std::string, eigenPack,
+		                    std::string, noise,
                                     std::string, PerambFileName, //stem!!!
                                     std::string, UniqueIdentifier,
                                     bool, multiFile,
@@ -86,6 +87,7 @@ std::vector<std::string> TPerambLight<FImpl>::getInput(void)
 
     in.push_back(par().eigenPack);
     in.push_back(par().solver);
+    in.push_back(par().noise);
     
     return in;
 }
@@ -93,7 +95,7 @@ std::vector<std::string> TPerambLight<FImpl>::getInput(void)
 template <typename FImpl>
 std::vector<std::string> TPerambLight<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName() + "_perambulator_light",getName() + "_noise",getName() + "_unsmeared_sink"};
+    std::vector<std::string> out = {getName(),getName() + "_unsmeared_sink"};
     
     return out;
 }
@@ -112,10 +114,8 @@ void TPerambLight<FImpl>::setup(void)
     const int Ns{Distil.Ns};
     std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
 
-    envCreate(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName() + "_perambulator_light", 1,
+    envCreate(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName(), 1,
               sIndexNames,Distil.Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
-    envCreate(std::vector<Complex>, getName() + "_noise", 1,
-              nvec*Distil.Ns*Distil.Nt*Distil.nnoise);
     envCreate(std::vector<FermionField>, getName() + "_unsmeared_sink", 1, 
             nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField));
 
@@ -176,50 +176,17 @@ void TPerambLight<FImpl>::execute(void)
 
     const std::string &UniqueIdentifier{par().UniqueIdentifier};
 
-    auto        &noise   = envGet(std::vector<Complex>, getName() + "_noise");
+    auto        &noise   = envGet(std::vector<Complex>, par().noise);
     auto        &perambulator = envGet(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>,
                                        getName() + "_perambulator_light");
     auto        &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
     auto        &unsmeared_sink       = envGet(std::vector<FermionField>, getName() + "_unsmeared_sink");
 
-    //Create Noises
-    GridSerialRNG sRNG; 
-    sRNG.SeedUniqueString(UniqueIdentifier + std::to_string(vm().getTrajectory())); //maybe add more??
-    Real rn;
-    
-    for (int inoise=0;inoise<nnoise;inoise++) {
-        for (int t=0;t<Nt;t++) {
-            for (int ivec=0;ivec<nvec;ivec++) {
-                for (int is=0;is<Ns;is++) {
-                    if (exact_distillation)
-                        noise[inoise + nnoise*(t + Nt*(ivec+nvec*is))] = 1.;
-                    else{
-                        random(sRNG,rn);
-                        // We could use a greater number of complex roots of unity
-                        // ... but this seems to work well
-                        noise[inoise + nnoise*(t + Nt*(ivec+nvec*is))] = (rn > 0.5) ? -1 : 1;
-                    }
-                }
-            }
-        }
-    }
 
     // Load perambulator if it exists on disk instead of creating it
     // Not sure this is how we want it - rather specify an input flag 'read' 
     // and assert that the file is there.
     const std::string &PerambFileName{par().PerambFileName};
-/*    if( PerambFileName.length() ){
-        bool bExists = false;
-        {
-            std::ifstream f(PerambFileName, std::ios::binary);
-            if( f.is_open() )
-                bExists = true;
-        }
-        if( bExists ) {
-            perambulator.ReadBinary(PerambFileName);
-            return;
-        }
-    }*/
 
   envGetTmp(LatticeSpinColourVector, dist_source);
   envGetTmp(LatticeSpinColourVector, tmp2);
