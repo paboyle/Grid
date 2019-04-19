@@ -55,7 +55,7 @@ public:
   template <class ReaderClass, typename std::enable_if<isReader<ReaderClass>::value, int >::type = 0 >
   IntegratorParameters(ReaderClass & Reader){
     std::cout << "Reading integrator\n";
-        read(Reader, "Integrator", *this);
+    read(Reader, "Integrator", *this);
   }
 
   void print_parameters() const {
@@ -88,8 +88,7 @@ class Integrator {
     t_P[level] += ep;
     update_P(P, U, level, ep);
 
-    std::cout << GridLogIntegrator << "[" << level << "] P "
-              << " dt " << ep << " : t_P " << t_P[level] << std::endl;
+    std::cout << GridLogIntegrator << "[" << level << "] P " << " dt " << ep << " : t_P " << t_P[level] << std::endl;
   }
 
   // to be used by the actionlevel class to iterate
