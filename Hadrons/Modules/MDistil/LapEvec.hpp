@@ -51,7 +51,7 @@ BEGIN_MODULE_NAMESPACE(MDistil)
 struct StoutParameters: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(StoutParameters,
                                   int, steps,
-                                  double, parm)
+                                  double, parm) // TODO: change name of this to rho
   StoutParameters() = default;
   template <class ReaderClass> StoutParameters(Reader<ReaderClass>& Reader){read(Reader,"StoutSmearing",*this);}
 };
@@ -139,8 +139,8 @@ MODULE_REGISTER_TMP(LapEvec, TLapEvec<GIMPL>, MDistil);
 template <typename GImpl>
 TLapEvec<GImpl>::TLapEvec(const std::string name) : gridLD{nullptr}, Module<LapEvecPar>(name)
 {
-  LOG(Message) << "TLapEvec constructor : TLapEvec<GImpl>::TLapEvec(const std::string name)" << std::endl;
-  LOG(Message) << "this=" << this << ", gridLD=" << gridLD << std::endl;
+  //LOG(Message) << "TLapEvec constructor : TLapEvec<GImpl>::TLapEvec(const std::string name)" << std::endl;
+  //LOG(Message) << "this=" << this << ", gridLD=" << gridLD << std::endl;
 }
 
 // destructor /////////////////////////////////////////////////////////////////
@@ -235,7 +235,7 @@ void TLapEvec<GImpl>::execute(void)
   {
     const StoutParameters &Stout{par().Stout};
     envGetTmp(GaugeField, Umu_stout);
-    Smear_Stout<PeriodicGimplR> LS(Stout.parm);
+    Smear_Stout<PeriodicGimplR> LS(Stout.parm, Tdir);
     for (int i = 0; i < Stout.steps; i++) {
       LS.smear(Umu_stout, Umu_smear);
       Umu_smear = Umu_stout;

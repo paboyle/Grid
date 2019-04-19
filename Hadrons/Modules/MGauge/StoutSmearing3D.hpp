@@ -108,13 +108,12 @@ void TStoutSmearing3D<GImpl>::setup(void)
 template <typename GImpl>
 void TStoutSmearing3D<GImpl>::execute(void)
 {
-    LOG(Message) << "Smearing '" << par().gauge << "' with " << par().steps
-                 << " step" << ((par().steps > 1) ? "s" : "") 
-                 << " of 3D-stout smearing and rho= " << par().rho
-		 << "orthogonal to dimension " << par().orthogdim << std::endl;
+    LOG(Message) << "Smearing '" << par().gauge
+                 << "' with " << par().steps << " step" << ((par().steps > 1) ? "s" : "")
+                 << " of 3D-stout smearing and rho=" << par().rho
+		 << " orthogonal to dimension " << par().orthogdim << std::endl;
 
-    //Smear_Stout<GImpl> smearer(par().rho, par().orthogdim);
-    Smear_Stout<GImpl> smearer(par().rho);
+    Smear_Stout<GImpl> smearer(par().rho, par().orthogdim);
     auto               &U    = envGet(GaugeField, par().gauge);
     auto               &Usmr = envGet(GaugeField, getName());
 

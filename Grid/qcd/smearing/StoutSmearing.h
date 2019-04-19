@@ -44,20 +44,20 @@ class Smear_Stout : public Smear<Gimpl> {
   // Smear<Gimpl>* ownership semantics:
   //    Smear<Gimpl>* passed in to constructor are owned by caller, so we don't delete them here
   //    Smear<Gimpl>* created within constructor need to be deleted as part of the destructor
-  const Smear<Gimpl>* SmearBase; // Not owned by this object, so not deleted at destruction
   const std::unique_ptr<Smear<Gimpl>> OwnedBase; // deleted at destruction
+  const Smear<Gimpl>* SmearBase; // Not owned by this object, so not deleted at destruction
 
-public:
-  INHERIT_GIMPL_TYPES(Gimpl)
-
-  // only anticipated to be used from default constructor, but might as well be visible
-  inline static std::vector<double> rho3D(double rho = 1.0, int orthogdim = -1){
+  // only anticipated to be used from default constructor
+  inline static std::vector<double> rho3D(double rho, int orthogdim){
     std::vector<double> rho3d(Nd*Nd);
     for (int mu=0; mu<Nd; mu++)
       for (int nu=0; nu<Nd; nu++)
-        rho3d[mu + Nd * nu] = (mu == orthogdim || nu == orthogdim) ? 0.0 : rho;
+        rho3d[mu + Nd * nu] = (mu == nu || mu == orthogdim || nu == orthogdim) ? 0.0 : rho;
     return rho3d;
   };
+  
+public:
+  INHERIT_GIMPL_TYPES(Gimpl)
 
   /*! Stout smearing with base explicitly specified */
   Smear_Stout(Smear<Gimpl>* base) : SmearBase{base} {
@@ -71,14 +71,16 @@ public:
     }
 
   /*! Default constructor. rho is constant in all directions, optionally except for orthogonal dimension */
-  /*Smear_Stout(double rho = 1.0, int orthogdim = -1)
-    : OwnedBase{new Smear_APE<Gimpl>(rho3D(rho,orthogdim))}, SmearBase{OwnedBase.get()} {
+  Smear_Stout(double rho, int orthogdim = -1)
+    : OwnedBase{(orthogdim<0 || orthogdim>=Nd) ? new Smear_APE<Gimpl>(rho) : new Smear_APE<Gimpl>(rho3D(rho,orthogdim))},
+      SmearBase{OwnedBase.get()} {
+    assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
+  }
+
+  /*
+  Smear_Stout(double rho = 1.0) : SmearBase(new Smear_APE<Gimpl>(rho)) {
     assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
   }*/
-
-  Smear_Stout(double rho = 1.0) : SmearBase(new Smear_APE<Gimpl>(rho)) {
-    assert(Nc == 3);//                  "Stout smearing currently implemented only for Nc==3");
-  }
 
   ~Smear_Stout() {}  // delete SmearBase...
 
