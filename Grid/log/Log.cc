@@ -77,19 +77,18 @@ void GridLogConfigure(std::vector<std::string> &logstreams) {
   GridLogIterative.Active(0);
   GridLogDebug.Active(0);
   GridLogPerformance.Active(0);
-  GridLogIntegrator.Active(0);
+  GridLogIntegrator.Active(1);
   GridLogColours.Active(0);
 
   for (int i = 0; i < logstreams.size(); i++) {
-    if (logstreams[i] == std::string("Error")) GridLogError.Active(1);
-    if (logstreams[i] == std::string("Warning")) GridLogWarning.Active(1);
-    if (logstreams[i] == std::string("NoMessage")) GridLogMessage.Active(0);
-    if (logstreams[i] == std::string("Iterative")) GridLogIterative.Active(1);
-    if (logstreams[i] == std::string("Debug")) GridLogDebug.Active(1);
-    if (logstreams[i] == std::string("Performance"))
-      GridLogPerformance.Active(1);
-    if (logstreams[i] == std::string("Integrator")) GridLogIntegrator.Active(1);
-    if (logstreams[i] == std::string("Colours")) GridLogColours.Active(1);
+    if (logstreams[i] == std::string("Error"))       GridLogError.Active(1);
+    if (logstreams[i] == std::string("Warning"))     GridLogWarning.Active(1);
+    if (logstreams[i] == std::string("NoMessage"))   GridLogMessage.Active(0);
+    if (logstreams[i] == std::string("Iterative"))   GridLogIterative.Active(1);
+    if (logstreams[i] == std::string("Debug"))       GridLogDebug.Active(1);
+    if (logstreams[i] == std::string("Performance")) GridLogPerformance.Active(1);
+    if (logstreams[i] == std::string("Integrator"))  GridLogIntegrator.Active(1);
+    if (logstreams[i] == std::string("Colours"))     GridLogColours.Active(1);
   }
 }
 
