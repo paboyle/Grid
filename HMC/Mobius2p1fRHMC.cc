@@ -146,8 +146,6 @@ int main(int argc, char **argv) {
   FermionAction StrangePauliVillarsOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,pv_mass,  M5,b,c, Params);
 
   OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermion(StrangePauliVillarsOp,StrangeOp,OFRp);
-  //  OneFlavourRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermion(StrangePauliVillarsOp,StrangeOp,OFRp);
-  //  TwoFlavourRationalTesterPseudoFermionAction<FermionImplPolicy> StrangePseudoFermion1F(StrangeOp,OFRp);
   Level1.push_back(&StrangePseudoFermion);
 
   ////////////////////////////////////
