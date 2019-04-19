@@ -176,11 +176,10 @@ void TPerambLight<FImpl>::execute(void)
 
     const std::string &UniqueIdentifier{par().UniqueIdentifier};
 
-    auto        &noise   = envGet(std::vector<Complex>, par().noise);
-    auto        &perambulator = envGet(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>,
-                                       getName() + "_perambulator_light");
-    auto        &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
-    auto        &unsmeared_sink       = envGet(std::vector<FermionField>, getName() + "_unsmeared_sink");
+    auto &noise = envGet(std::vector<Complex>, par().noise);
+    auto &perambulator = envGet(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName());
+    auto &epack = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
+    auto &unsmeared_sink = envGet(std::vector<FermionField>, getName() + "_unsmeared_sink");
 
 
     // Load perambulator if it exists on disk instead of creating it
