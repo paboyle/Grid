@@ -257,9 +257,6 @@ void TLapEvec<GImpl>::execute(void)
   // Invert Peardon Nabla operator separately on each time-slice
   ////////////////////////////////////////////////////////////////////////
   
-  std::string sEigenPackName(getName());
-  sEigenPackName.append("_");
-  sEigenPackName.append(std::to_string(vm().getTrajectory()));
   bool bReturnValue = true;
   auto & eig4d = envGet(DistilEP, getName() );
   envGetTmp(std::vector<DistilEP>, eig);   // Eigenpack for each timeslice
@@ -337,7 +334,10 @@ void TLapEvec<GImpl>::execute(void)
   // Now write out the 4d eigenvectors
   eig4d.record.operatorXml = DefaultOperatorXml;
   eig4d.record.solverXml = DefaultsolverXml;
-  eig4d.write(sEigenPackName + "." + std::to_string(vm().getTrajectory()),false);
+  std::string sEigenPackName(getName());
+  sEigenPackName.append(".");
+  sEigenPackName.append(std::to_string(vm().getTrajectory()));
+  eig4d.write(sEigenPackName,false);
 
   // Close the local debugging log file
   if( ll ) {
