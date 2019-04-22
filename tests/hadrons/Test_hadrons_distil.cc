@@ -30,10 +30,21 @@
 #include <typeinfo>
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>
-#include <Grid/util/EigenUtil.h>
 
 using namespace Grid;
 using namespace Hadrons;
+
+// Very simple iterators for Eigen tensors
+// The only way I could get these iterators to work is to put the begin() and end() functions in the Eigen namespace
+// So if Eigen ever defines these, we'll have a conflict and have to change this
+namespace Eigen {
+  template <typename ET>
+  inline typename std::enable_if<EigenIO::is_tensor<ET>::value, typename EigenIO::Traits<ET>::scalar_type *>::type
+  begin( ET & et ) { return reinterpret_cast<typename Grid::EigenIO::Traits<ET>::scalar_type *>(et.data()); }
+  template <typename ET>
+  inline typename std::enable_if<EigenIO::is_tensor<ET>::value, typename EigenIO::Traits<ET>::scalar_type *>::type
+  end( ET & et ) { return begin(et) + et.size() * EigenIO::Traits<ET>::count; }
+}
 
 /////////////////////////////////////////////////////////////
 // Test creation of laplacian eigenvectors
@@ -115,6 +126,7 @@ void test_Perambulators(Application &application)
   // PerambLight parameters
   MDistil::PerambLight::Par PerambPar;
   PerambPar.eigenPack="LapEvec";
+  PerambPar.noise="Peramb_noise";
   PerambPar.PerambFileName="peramb.bin";
   PerambPar.UniqueIdentifier="full_dilution";
   PerambPar.solver="CG_s";
@@ -227,16 +239,32 @@ void test_MultiPerambulators(Application &application)
   A2AMesonFieldPar.output="MesonSinksPhi5";
   application.createModule<MContraction::A2AMesonField>("DistilMesonFieldPhi5",A2AMesonFieldPar);
 }
+
+void test_Noises(Application &application) {
+  // DistilVectors parameters
+  MDistil::NoisesPar NoisePar;
+  NoisePar.UniqueIdentifier = "full_dilution";
+  NoisePar.nvec = 5;
+  NoisePar.Distil.LI = 5;
+  NoisePar.Distil.nnoise = 1;
+  NoisePar.Distil.Ns = 4;
+  NoisePar.Distil.Nt = 8;
+  NoisePar.Distil.Nt = 1;
+  application.createModule<MDistil::Noises>("Peramb_noise",NoisePar);
+}
+
 /////////////////////////////////////////////////////////////
 // DistilVectors
 /////////////////////////////////////////////////////////////
 
 void test_DistilVectors(Application &application)
 {
+  test_Noises(application);
   // DistilVectors parameters
   MDistil::DistilVectors::Par DistilVecPar;
   DistilVecPar.noise="Peramb_noise";
-  DistilVecPar.perambulator="Peramb_perambulator_light";
+  //DistilVecPar.perambulator="Peramb_perambulator_light";
+  DistilVecPar.perambulator="Peramb";
   DistilVecPar.eigenPack="LapEvec";
   DistilVecPar.tsrc = 0;
   DistilVecPar.nnoise = 1;
@@ -390,8 +418,10 @@ void test_MesonFieldRhoAll(Application &application)
 {
   // DistilVectors parameters
   MContraction::A2AMesonField::Par A2AMesonFieldPar;
-  A2AMesonFieldPar.left="DistilVecs_rho_all_tsrc";
-  A2AMesonFieldPar.right="DistilVecs_rho_all_tsrc";
+  //A2AMesonFieldPar.left="DistilVecs_rho_all_tsrc";
+  //A2AMesonFieldPar.right="DistilVecs_rho_all_tsrc";
+  A2AMesonFieldPar.left="DistilVecs_rho";
+  A2AMesonFieldPar.right="DistilVecs_rho";
   A2AMesonFieldPar.output="MesonSinksRhoAll";
   A2AMesonFieldPar.gammas="all";
   A2AMesonFieldPar.mom={"0 0 0"};
@@ -797,6 +827,15 @@ public:
   inline value_type * end(void) { return m_p + N; }
 };
 
+template<typename ET> typename std::enable_if<EigenIO::is_tensor<ET>::value>::type
+dump_tensor(const ET & et, const char * psz = nullptr) {
+  if( psz )
+    std::cout << psz << ": ";
+  else
+    std::cout << "Unnamed tensor: ";
+  Serializable::WriteMember( std::cout, et );
+}
+
 template <int Options>
 void EigenSliceExample()
 {
@@ -824,17 +863,21 @@ void EigenSliceExample2()
   T3 a(2,3,4);
 
   std::cout << "Initialising a:";
-  SequentialInit( a );
+  TestScalar f{ 0 };
+  const TestScalar Inc{ 1, -1 };
+  for( auto &c : a ) {
+    c = f;
+    f += Inc;
+  }
   std::cout << std::endl;
-  //std::cout << "Validating   a:";
-  float z = 0;
+  std::cout << "Validating   a (Eigen::" << ( ( Options & Eigen::RowMajor ) ? "Row" : "Col" ) << "Major):" << std::endl;
+  f = 0;
   for( int i = 0 ; i < a.dimension(0) ; i++ )
     for( int j = 0 ; j < a.dimension(1) ; j++ )
       for( int k = 0 ; k < a.dimension(2) ; k++ ) {
-        TestScalar w{z, -z};
-        //std::cout << " a(" << i << "," << j << "," << k << ")=" << w;
-        assert( a(i,j,k) == w );
-        z++;
+        std::cout << " a(" << i << "," << j << "," << k << ")=" << a(i,j,k) << std::endl;
+        assert( ( Options & Eigen::RowMajor ) == 0 || a(i,j,k) == f );
+        f += Inc;
       }
   //std::cout << std::endl;
   //std::cout << "a initialised to:\n" << a << std::endl;
@@ -933,8 +976,8 @@ int main(int argc, char *argv[])
   << ", sizeof(hsize_t) = " << sizeof(hsize_t)
   << ", sizeof(unsigned long long) = " << sizeof(unsigned long long)
   << std::endl;
-  if( DebugEigenTest() ) return 0;
-  if(DebugGridTensorTest()) return 0;
+  //if( DebugEigenTest() ) return 0;
+  //if(DebugGridTensorTest()) return 0;
 #endif
 
   // Decode command-line parameters. 1st one is which test to run
