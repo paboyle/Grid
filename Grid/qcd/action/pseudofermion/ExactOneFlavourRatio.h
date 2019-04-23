@@ -59,12 +59,23 @@ namespace QCD{
       AbstractEOFAFermion<Impl>& Lop; // the basic LH operator
       AbstractEOFAFermion<Impl>& Rop; // the basic RH operator
       SchurRedBlackDiagMooeeSolve<FermionField> Solver;
+      SchurRedBlackDiagMooeeSolve<FermionField> DerivativeSolver;
       FermionField Phi; // the pseudofermion field for this trajectory
 
     public:
-      ExactOneFlavourRatioPseudoFermionAction(AbstractEOFAFermion<Impl>& _Lop, AbstractEOFAFermion<Impl>& _Rop,
-        OperatorFunction<FermionField>& S, Params& p, bool use_fc=false) : Lop(_Lop), Rop(_Rop), 
-        Solver(S, false, true), Phi(_Lop.FermionGrid()), param(p), use_heatbath_forecasting(use_fc)
+      ExactOneFlavourRatioPseudoFermionAction(AbstractEOFAFermion<Impl>& _Lop, 
+					      AbstractEOFAFermion<Impl>& _Rop,
+					      OperatorFunction<FermionField>& ActionCG, 
+					      OperatorFunction<FermionField>& DerivCG, 
+					      Params& p, 
+					      bool use_fc=false) : 
+        Lop(_Lop), 
+	Rop(_Rop), 
+        Solver(ActionCG, false, true), 
+        DerivativeSolver(DerivCG, false, true), 
+	Phi(_Lop.FermionGrid()), 
+	param(p), 
+        use_heatbath_forecasting(use_fc)
       {
         AlgRemez remez(param.lo, param.hi, param.precision);
 
@@ -245,7 +256,7 @@ namespace QCD{
         Lop.Omega(spProj_Phi, Omega_spProj_Phi, -1, 0);
         G5R5(CG_src, Omega_spProj_Phi);
         spProj_Phi = zero;
-        Solver(Lop, CG_src, spProj_Phi);
+        DerivativeSolver(Lop, CG_src, spProj_Phi);
         Lop.Dtilde(spProj_Phi, Chi);
         G5R5(g5_R5_Chi, Chi);
         Lop.MDeriv(force, g5_R5_Chi, Chi, DaggerNo);
@@ -257,7 +268,7 @@ namespace QCD{
         Rop.Omega(spProj_Phi, Omega_spProj_Phi, 1, 0);
         G5R5(CG_src, Omega_spProj_Phi);
         spProj_Phi = zero;
-        Solver(Rop, CG_src, spProj_Phi);
+        DerivativeSolver(Rop, CG_src, spProj_Phi);
         Rop.Dtilde(spProj_Phi, Chi);
         G5R5(g5_R5_Chi, Chi);
         Lop.MDeriv(force, g5_R5_Chi, Chi, DaggerNo);
