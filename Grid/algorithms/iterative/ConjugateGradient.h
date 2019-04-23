@@ -89,6 +89,8 @@ class ConjugateGradient : public OperatorFunction<Field> {
 
     // Check if guess is really REALLY good :)
     if (cp <= rsq) {
+      std::cout << GridLogMessage << "ConjugateGradient guess is converged already " << std::endl;
+      IterationsToComplete = 0;	
       return;
     }
 
