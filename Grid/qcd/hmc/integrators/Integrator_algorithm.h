@@ -231,8 +231,7 @@ class ForceGradient : public Integrator<FieldImplementation, SmearingPolicy,
     Field Pfg(U._grid);
     Ufg = U;
     Pfg = zero;
-    std::cout << GridLogIntegrator << "FG update " << fg_dt << " " << ep
-              << std::endl;
+    std::cout << GridLogIntegrator << "FG update " << fg_dt << " " << ep << std::endl;
     // prepare_fg; no prediction/result cache for now
     // could relax CG stopping conditions for the
     // derivatives in the small step since the force gets multiplied by
@@ -271,8 +270,7 @@ class ForceGradient : public Integrator<FieldImplementation, SmearingPolicy,
         this->step(U, level + 1, first_step, 0);
       }
 
-      this->FG_update_P(U, level, 2 * Chi / ((1.0 - 2.0 * lambda) * eps),
-                        (1.0 - 2.0 * lambda) * eps);
+      this->FG_update_P(U, level, 2 * Chi / ((1.0 - 2.0 * lambda) * eps), (1.0 - 2.0 * lambda) * eps);
 
       if (level == fl) {  // lowest level
         this->update_U(U, 0.5 * eps);
