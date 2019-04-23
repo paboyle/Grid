@@ -30,6 +30,134 @@ directory
 /*  END LEGAL */
 #include <Grid/Grid.h>
 
+namespace Grid{ 
+  namespace QCD{
+
+  /*
+   * Need a plan for gauge field update for mixed precision in HMC                      (2x speed up)
+   *    -- Store the single prec action operator.
+   *    -- Clone the gauge field from the operator function argument.
+   *    -- Build the mixed precision operator dynamically from the passed operator and single prec clone.
+   */
+
+  template<class FermionOperatorD, class FermionOperatorF, class SchurOperatorD, class  SchurOperatorF> 
+  class MixedPrecisionConjugateGradientOperatorFunction : public OperatorFunction<typename FermionOperatorD::FermionField> {
+  public:
+    typedef typename FermionOperatorD::FermionField FieldD;
+    typedef typename FermionOperatorF::FermionField FieldF;
+
+    RealD   Tolerance;
+    RealD   InnerTolerance; //Initial tolerance for inner CG. Defaults to Tolerance but can be changed
+    Integer MaxInnerIterations;
+    Integer MaxOuterIterations;
+    GridBase* SinglePrecGrid4; //Grid for single-precision fields
+    GridBase* SinglePrecGrid5; //Grid for single-precision fields
+    RealD OuterLoopNormMult; //Stop the outer loop and move to a final double prec solve when the residual is OuterLoopNormMult * Tolerance
+
+    FermionOperatorF &FermOpF;
+    FermionOperatorD &FermOpD;;
+    SchurOperatorF &LinOpF;
+    SchurOperatorD &LinOpD;
+
+    Integer TotalInnerIterations; //Number of inner CG iterations
+    Integer TotalOuterIterations; //Number of restarts
+    Integer TotalFinalStepIterations; //Number of CG iterations in final patch-up step
+
+    //Option to speed up *inner single precision* solves using a LinearFunction that produces a guess
+    LinearFunction<FieldF> *guesser;
+    
+    MixedPrecisionConjugateGradientOperatorFunction(RealD tol, 
+						    Integer maxinnerit, 
+						    Integer maxouterit, 
+						    GridBase* _sp_grid4, 
+						    GridBase* _sp_grid5, 
+						    FermionOperatorF &_FermOpF,
+						    FermionOperatorD &_FermOpD,
+						    SchurOperatorF   &_LinOpF,
+						    SchurOperatorD   &_LinOpD): 
+      LinOpF(_LinOpF),
+      LinOpD(_LinOpD),
+      FermOpF(_FermOpF),
+      FermOpD(_FermOpD),
+      Tolerance(tol), 
+      InnerTolerance(tol), 
+      MaxInnerIterations(maxinnerit), 
+      MaxOuterIterations(maxouterit), 
+      SinglePrecGrid4(_sp_grid4),
+      SinglePrecGrid5(_sp_grid5),
+      OuterLoopNormMult(100.), 
+      guesser(NULL)
+    { 
+      std::cout << GridLogMessage << " Mixed precision CG wrapper LinOpF " <<std::hex<< &LinOpF<<std::dec <<std::endl;
+      std::cout << GridLogMessage << " Mixed precision CG wrapper LinOpD " <<std::hex<< &LinOpD<<std::dec <<std::endl;
+      std::cout << GridLogMessage << " Mixed precision CG wrapper FermOpF " <<std::hex<< &FermOpF<<std::dec <<std::endl;
+      std::cout << GridLogMessage << " Mixed precision CG wrapper FermOpD " <<std::hex<< &FermOpD<<std::dec <<std::endl;
+    };
+
+      void useGuesser(LinearFunction<FieldF> &g){
+        guesser = &g;
+      }
+
+    void operator()(LinearOperatorBase<FieldD> &LinOpU, const FieldD &src, FieldD &psi) {
+
+
+      SchurOperatorD * SchurOpU = static_cast<SchurOperatorD *>(&LinOpU);
+      
+      std::cout << GridLogMessage << " Mixed precision CG wrapper FermOpD " <<std::hex<< &(SchurOpU->_Mat)<<std::dec <<std::endl;
+      std::cout << GridLogMessage << " Mixed precision CG wrapper FermOpU " <<std::hex<< &(LinOpD._Mat) <<std::dec <<std::endl;
+
+      assert(&(SchurOpU->_Mat)==&(LinOpD._Mat));
+
+      ////////////////////////////////////////////////////////////////////////////////////
+      // Must snarf a single precision copy of the gauge field in Linop_d argument
+      ////////////////////////////////////////////////////////////////////////////////////
+      typedef typename FermionOperatorF::GaugeField GaugeFieldF;
+      typedef typename FermionOperatorF::GaugeLinkField GaugeLinkFieldF;
+      typedef typename FermionOperatorD::GaugeField GaugeFieldD;
+      typedef typename FermionOperatorD::GaugeLinkField GaugeLinkFieldD;
+
+      GridBase * GridPtrF = SinglePrecGrid4;
+      GridBase * GridPtrD = FermOpD.Umu._grid;
+      GaugeFieldF     U_f  (GridPtrF);
+      GaugeLinkFieldF Umu_f(GridPtrF);
+      std::cout << " Dim gauge field "<<GridPtrF->Nd()<<std::endl; // 4d
+      std::cout << " Dim gauge field "<<GridPtrD->Nd()<<std::endl; // 4d
+
+      GaugeLinkFieldD Umu_d(GridPtrD);
+      for(int mu=0;mu<Nd*2;mu++){ 
+	Umu_d = PeekIndex<LorentzIndex>(FermOpD.Umu, mu);
+	precisionChange(Umu_f,Umu_d);
+	PokeIndex<LorentzIndex>(FermOpF.Umu, Umu_f, mu);
+      }
+      pickCheckerboard(Even,FermOpF.UmuEven,FermOpF.Umu);
+      pickCheckerboard(Odd ,FermOpF.UmuOdd ,FermOpF.Umu);
+      
+
+      ////////////////////////////////////////////////////////////////////////////////////
+      // Could test to make sure that LinOpF and LinOpD agree to single prec?
+      ////////////////////////////////////////////////////////////////////////////////////
+      GridBase *Fgrid = psi._grid;
+      FieldD tmp2(Fgrid);
+      FieldD tmp1(Fgrid);
+      LinOpU.Op(src,tmp1);
+      LinOpD.Op(src,tmp2);
+      std::cout << " Double gauge field "<< norm2(FermOpD.Umu)<<std::endl;
+      std::cout << " Single gauge field "<< norm2(FermOpF.Umu)<<std::endl;
+      std::cout << " Test of operators "<<norm2(tmp1)<<std::endl;
+      std::cout << " Test of operators "<<norm2(tmp2)<<std::endl;
+      tmp1=tmp1-tmp2;
+      std::cout << " Test of operators diff "<<norm2(tmp1)<<std::endl;
+
+      ////////////////////////////////////////////////////////////////////////////////////
+      // Make a mixed precision conjugate gradient
+      ////////////////////////////////////////////////////////////////////////////////////
+      MixedPrecisionConjugateGradient<FieldD,FieldF> MPCG(Tolerance,MaxInnerIterations,MaxOuterIterations,SinglePrecGrid5,LinOpF,LinOpD);
+      std::cout << GridLogMessage << "Calling mixed precision Conjugate Gradient" <<std::endl;
+      MPCG(src,psi);
+    }
+  };
+}};
+
 int main(int argc, char **argv) {
   using namespace Grid;
   using namespace Grid::QCD;
@@ -42,7 +170,9 @@ int main(int argc, char **argv) {
    // Typedefs to simplify notation
   typedef WilsonImplR FermionImplPolicy;
   typedef MobiusFermionR FermionAction;
+  typedef MobiusFermionF FermionActionF;
   typedef typename FermionAction::FermionField FermionField;
+  typedef typename FermionActionF::FermionField FermionFieldF;
 
   typedef Grid::XmlReader       Serialiser;
   
@@ -54,12 +184,12 @@ int main(int argc, char **argv) {
   MD.name    = std::string("Force Gradient");
   //  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper; 
   //  MD.name    = std::string("MinimumNorm2");
-  MD.MDsteps = 8;
+  MD.MDsteps = 6;
   MD.trajL   = 1.0;
   
   HMCparameters HMCparams;
-  HMCparams.StartTrajectory  = 70;
-  HMCparams.Trajectories     = 200;
+  HMCparams.StartTrajectory  = 530;
+  HMCparams.Trajectories     = 1000;
   HMCparams.NoMetropolisUntil=  0;
   //  "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
   //  HMCparams.StartingType     =std::string("ColdStart");
@@ -97,24 +227,35 @@ int main(int argc, char **argv) {
   RealD b   = 1.0; 
   RealD c   = 0.0;
 
-  std::vector<Real> hasenbusch({ 0.1, 0.3 });
+  std::vector<Real> hasenbusch({ 0.1, 0.3, 0.6 });
 
   auto GridPtr   = TheHMC.Resources.GetCartesian();
   auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
   auto FGrid     = SpaceTimeGrid::makeFiveDimGrid(Ls,GridPtr);
   auto FrbGrid   = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,GridPtr);
 
+  std::vector<int> latt  = GridDefaultLatt();
+  std::vector<int> mpi   = GridDefaultMpi();
+  std::vector<int> simdF = GridDefaultSimd(Nd,vComplexF::Nsimd());
+  std::vector<int> simdD = GridDefaultSimd(Nd,vComplexD::Nsimd());
+  auto GridPtrF   = SpaceTimeGrid::makeFourDimGrid(latt,simdF,mpi);
+  auto GridRBPtrF = SpaceTimeGrid::makeFourDimRedBlackGrid(GridPtrF);
+  auto FGridF     = SpaceTimeGrid::makeFiveDimGrid(Ls,GridPtrF);
+  auto FrbGridF   = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,GridPtrF);
+
   IwasakiGaugeActionR GaugeAction(beta);
 
   // temporarily need a gauge field
   LatticeGaugeField U(GridPtr);
+  LatticeGaugeFieldF UF(GridPtrF);
 
   // These lines are unecessary if BC are all periodic
   std::vector<Complex> boundary = {1,1,1,-1};
   FermionAction::ImplParams Params(boundary);
+  FermionActionF::ImplParams ParamsF(boundary);
   
   double ActionStoppingCondition     = 1e-10;
-  double DerivativeStoppingCondition = 1e-7;
+  double DerivativeStoppingCondition = 1e-6;
   double MaxCGIterations = 30000;
   ConjugateGradient<FermionField>      ActionCG(ActionStoppingCondition,MaxCGIterations);
   ConjugateGradient<FermionField>  DerivativeCG(DerivativeStoppingCondition,MaxCGIterations);
@@ -123,16 +264,11 @@ int main(int argc, char **argv) {
   // Collect actions
   ////////////////////////////////////
   ActionLevel<HMCWrapper::Field> Level1(1);
-  ActionLevel<HMCWrapper::Field> Level2(4);
+  ActionLevel<HMCWrapper::Field> Level2(8);
 
   ////////////////////////////////////
   // Strange action
   ////////////////////////////////////
-
-  //  FermionAction StrangeOp (U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,strange_mass,M5,b,c, Params);
-  //  FermionAction StrangePauliVillarsOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,pv_mass,  M5,b,c, Params);
-  //  OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermion(StrangePauliVillarsOp,StrangeOp,OFRp);
-  //  Level1.push_back(&StrangePseudoFermion);
 
   // DJM: setup for EOFA ratio (Mobius)
   OneFlavourRationalParams OFRp;
@@ -145,7 +281,8 @@ int main(int argc, char **argv) {
 
   MobiusEOFAFermionR Strange_Op_L(U, *FGrid, *FrbGrid, *GridPtr, *GridRBPtr, strange_mass, strange_mass, pv_mass, 0.0, -1, M5, b, c);
   MobiusEOFAFermionR Strange_Op_R(U, *FGrid, *FrbGrid, *GridPtr, *GridRBPtr, pv_mass, strange_mass, pv_mass, -1.0, 1, M5, b, c);
-  ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> EOFA(Strange_Op_L, Strange_Op_R, ActionCG, OFRp, true);
+
+  ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> EOFA(Strange_Op_L, Strange_Op_R, ActionCG, DerivativeCG, OFRp, true);
   Level1.push_back(&EOFA);
 
   ////////////////////////////////////
@@ -162,15 +299,51 @@ int main(int argc, char **argv) {
   }
   light_num.push_back(pv_mass);
 
+  typedef SchurDiagMooeeOperator<FermionActionF,FermionFieldF> LinearOperatorF;
+  typedef SchurDiagMooeeOperator<FermionAction ,FermionField > LinearOperatorD;
+
   std::vector<FermionAction *> Numerators;
   std::vector<FermionAction *> Denominators;
+  std::vector<LinearOperatorD *> LinOpD;
+
+  std::vector<FermionActionF *> DenominatorsF;
+  std::vector<LinearOperatorF *> LinOpF; 
+
+  typedef MixedPrecisionConjugateGradientOperatorFunction<MobiusFermionD,MobiusFermionF,
+							  LinearOperatorD,LinearOperatorF> MxPCG;
+  std::vector<MxPCG *> MPCG;
+
   std::vector<TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> *> Quotients;
 
   for(int h=0;h<n_hasenbusch+1;h++){
+
     std::cout << GridLogMessage << " 2f quotient Action  "<< light_num[h] << " / " << light_den[h]<< std::endl;
+
     Numerators.push_back  (new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[h],M5,b,c, Params));
     Denominators.push_back(new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[h],M5,b,c, Params));
+
+#if 0
+    ////////////////////////////////////////////////////////////////////////////
+    // Standard CG for 2f force
+    ////////////////////////////////////////////////////////////////////////////
     Quotients.push_back   (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],DerivativeCG,ActionCG));
+#else 
+    ////////////////////////////////////////////////////////////////////////////
+    // Mixed precision CG for 2f force
+    ////////////////////////////////////////////////////////////////////////////
+    DenominatorsF.push_back(new FermionActionF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_den[h],M5,b,c, ParamsF));
+    LinOpF.push_back(new LinearOperatorF(*DenominatorsF[h]));
+    LinOpD.push_back(new LinearOperatorD(*Denominators[h]));
+    MPCG.push_back(new MxPCG(DerivativeStoppingCondition,
+			     200,
+			     MaxCGIterations,
+			     GridPtrF,
+			     FrbGridF,
+			     *DenominatorsF[h],*Denominators[h],
+			     *LinOpF[h], *LinOpD[h]) );
+    Quotients.push_back (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],*MPCG[h],ActionCG));
+#endif
+
   }
 
   for(int h=0;h<n_hasenbusch+1;h++){
