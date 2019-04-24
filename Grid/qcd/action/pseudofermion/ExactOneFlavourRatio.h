@@ -234,6 +234,11 @@ namespace QCD{
 
         GaugeField force(Lop.GaugeGrid());
 
+	/////////////////////////////////////////////
+	// PAB: 
+	//   Optional single precision derivative ?
+	/////////////////////////////////////////////
+
         // LH: dSdU = k \chi_{L}^{\dagger} \gamma_{5} R_{5} ( \partial_{x,\mu} D_{w} ) \chi_{L}
         //     \chi_{L} = H(mf)^{-1} \Omega_{-} P_{-} \Phi
         spProj(Phi, spProj_Phi, -1, Lop.Ls);

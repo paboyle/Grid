@@ -2,12 +2,13 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./tests/Test_hmc_EODWFRatio.cc
+Source file: 
 
 Copyright (C) 2015-2016
 
 Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
-Author: Guido Cossu <guido.cossu@ed.ac.uk>
+Author: Guido Cossu
+Author: David Murphy
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -49,18 +50,18 @@ int main(int argc, char **argv) {
   IntegratorParameters MD;
   //  typedef GenericHMCRunner<LeapFrog> HMCWrapper; 
   //  MD.name    = std::string("Leap Frog");
-  //  typedef GenericHMCRunner<ForceGradient> HMCWrapper; 
-  //  MD.name    = std::string("Force Gradient");
-  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper; 
-  MD.name    = std::string("MinimumNorm2");
-  MD.MDsteps = 20;
+  typedef GenericHMCRunner<ForceGradient> HMCWrapper; 
+  MD.name    = std::string("Force Gradient");
+  //  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper; 
+  //  MD.name    = std::string("MinimumNorm2");
+  MD.MDsteps = 8;
   MD.trajL   = 1.0;
   
   HMCparameters HMCparams;
-  HMCparams.StartTrajectory  = 30;
+  HMCparams.StartTrajectory  = 70;
   HMCparams.Trajectories     = 200;
   HMCparams.NoMetropolisUntil=  0;
-  // "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
+  //  "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
   //  HMCparams.StartingType     =std::string("ColdStart");
   HMCparams.StartingType     =std::string("CheckpointStart");
   HMCparams.MD = MD;
@@ -95,19 +96,8 @@ int main(int argc, char **argv) {
   RealD M5  = 1.8;
   RealD b   = 1.0; 
   RealD c   = 0.0;
-  
-  // FIXME:
-  // Same in MC and MD 
-  // Need to mix precision too
-  OneFlavourRationalParams OFRp;
-  OFRp.lo       = 4.0e-3;
-  OFRp.hi       = 30.0;
-  OFRp.MaxIter  = 10000;
-  OFRp.tolerance= 1.0e-10;
-  OFRp.degree   = 16;
-  OFRp.precision= 50;
 
-  std::vector<Real> hasenbusch({ 0.1 });
+  std::vector<Real> hasenbusch({ 0.1, 0.3 });
 
   auto GridPtr   = TheHMC.Resources.GetCartesian();
   auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
@@ -123,9 +113,11 @@ int main(int argc, char **argv) {
   std::vector<Complex> boundary = {1,1,1,-1};
   FermionAction::ImplParams Params(boundary);
   
-  double StoppingCondition = 1e-10;
+  double ActionStoppingCondition     = 1e-10;
+  double DerivativeStoppingCondition = 1e-7;
   double MaxCGIterations = 30000;
-  ConjugateGradient<FermionField>  CG(StoppingCondition,MaxCGIterations);
+  ConjugateGradient<FermionField>      ActionCG(ActionStoppingCondition,MaxCGIterations);
+  ConjugateGradient<FermionField>  DerivativeCG(DerivativeStoppingCondition,MaxCGIterations);
 
   ////////////////////////////////////
   // Collect actions
@@ -137,16 +129,24 @@ int main(int argc, char **argv) {
   // Strange action
   ////////////////////////////////////
 
-  //  FermionAction StrangeOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_mass,M5,b,c, Params);
-  //  DomainWallEOFAFermionR Strange_Op_L(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, mf, mb, shift_L, pm, M5);
-  //  DomainWallEOFAFermionR Strange_Op_R(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, mf, mb, shift_R, pm, M5);
-  //  ExactOneFlavourRatioPseudoFermionAction EOFA(Strange_Op_L,Strange_Op_R,CG,ofp, false);
+  //  FermionAction StrangeOp (U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,strange_mass,M5,b,c, Params);
+  //  FermionAction StrangePauliVillarsOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,pv_mass,  M5,b,c, Params);
+  //  OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermion(StrangePauliVillarsOp,StrangeOp,OFRp);
+  //  Level1.push_back(&StrangePseudoFermion);
 
-  FermionAction StrangeOp (U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,strange_mass,M5,b,c, Params);
-  FermionAction StrangePauliVillarsOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,pv_mass,  M5,b,c, Params);
+  // DJM: setup for EOFA ratio (Mobius)
+  OneFlavourRationalParams OFRp;
+  OFRp.lo       = 0.1;
+  OFRp.hi       = 25.0;
+  OFRp.MaxIter  = 10000;
+  OFRp.tolerance= 1.0e-9;
+  OFRp.degree   = 14;
+  OFRp.precision= 50;
 
-  OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> StrangePseudoFermion(StrangePauliVillarsOp,StrangeOp,OFRp);
-  Level1.push_back(&StrangePseudoFermion);
+  MobiusEOFAFermionR Strange_Op_L(U, *FGrid, *FrbGrid, *GridPtr, *GridRBPtr, strange_mass, strange_mass, pv_mass, 0.0, -1, M5, b, c);
+  MobiusEOFAFermionR Strange_Op_R(U, *FGrid, *FrbGrid, *GridPtr, *GridRBPtr, pv_mass, strange_mass, pv_mass, -1.0, 1, M5, b, c);
+  ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> EOFA(Strange_Op_L, Strange_Op_R, ActionCG, OFRp, true);
+  Level1.push_back(&EOFA);
 
   ////////////////////////////////////
   // up down action
@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
     std::cout << GridLogMessage << " 2f quotient Action  "<< light_num[h] << " / " << light_den[h]<< std::endl;
     Numerators.push_back  (new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[h],M5,b,c, Params));
     Denominators.push_back(new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[h],M5,b,c, Params));
-    Quotients.push_back   (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],CG,CG));
+    Quotients.push_back   (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],DerivativeCG,ActionCG));
   }
 
   for(int h=0;h<n_hasenbusch+1;h++){
