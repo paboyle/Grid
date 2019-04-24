@@ -85,21 +85,20 @@ class TwoFlavourPseudoFermionAction : public Action<typename Impl::GaugeField> {
     // and must multiply by 0.707....
     //
     // Chroma has this scale factor: two_flavor_monomial_w.h
+    // CPS uses this factor
     // IroIro: does not use this scale. It is absorbed by a change of vars
     //         in the Phi integral, and thus is only an irrelevant prefactor for
     //         the partition function.
     //
 
-    RealD scale = std::sqrt(0.5);
+    const RealD scale = std::sqrt(0.5);
 
     FermionField eta(FermOp.FermionGrid());
 
-    gaussian(pRNG, eta);
+    gaussian(pRNG, eta); eta = scale *eta;
 
     FermOp.ImportGauge(U);
     FermOp.Mdag(eta, Phi);
-
-    Phi = Phi * scale;
   };
 
   //////////////////////////////////////////////////////

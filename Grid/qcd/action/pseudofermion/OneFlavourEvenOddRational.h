@@ -157,6 +157,13 @@ class OneFlavourEvenOddRationalPseudoFermionAction
 
     msCG(Mpc, PhiOdd, Y);
 
+    if ( (rand()%param.BoundsCheckFreq)==0 ) { 
+      FermionField gauss(FermOp.FermionRedBlackGrid());
+      gauss = PhiOdd;
+      HighBoundCheck(Mpc,gauss,param.hi);
+      InverseSqrtBoundsCheck(param.MaxIter,param.tolerance*100,Mpc,gauss,PowerNegHalf);
+    }
+
     RealD action = norm2(Y);
     std::cout << GridLogMessage << "Pseudofermion action FIXME -- is -1/4 "
                                    "solve or -1/2 solve faster??? "
