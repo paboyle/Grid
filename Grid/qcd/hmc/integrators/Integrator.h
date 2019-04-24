@@ -264,6 +264,7 @@ class Integrator {
   // Calculate action
   RealD S(Field& U) {  // here also U not used
 
+    std::cout << GridLogIntegrator << "Integrator action\n";
 
     RealD H = - FieldImplementation::FieldSquareNorm(P)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom
 
@@ -275,6 +276,7 @@ class Integrator {
         // get gauge field from the SmearingPolicy and
         // based on the boolean is_smeared in actionID
         Field& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
+        std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] action eval " << std::endl;
         Hterm = as[level].actions.at(actionID)->S(Us);
         std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] H = " << Hterm << std::endl;
         H += Hterm;
