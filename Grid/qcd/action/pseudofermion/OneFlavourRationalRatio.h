@@ -156,6 +156,14 @@ namespace Grid{
 	ConjugateGradientMultiShift<FermionField> msCG_M(param.MaxIter,PowerNegQuarter);
 	msCG_M(MdagM,X,Y);
 
+	// Randomly apply rational bounds checks.
+	if ( (rand()%param.BoundsCheckFreq)==0 ) { 
+	  FermionField gauss(NumOp.FermionGrid());
+	  gauss = Phi;
+	  HighBoundCheck(MdagM,gauss,param.hi);
+	  InverseSqrtBoundsCheck(param.MaxIter,param.tolerance*100,MdagM,gauss,PowerNegHalf);
+	}
+
 	//  Phidag VdagV^1/4 MdagM^-1/4  MdagM^-1/4 VdagV^1/4 Phi
 	RealD action = norm2(Y);
 
