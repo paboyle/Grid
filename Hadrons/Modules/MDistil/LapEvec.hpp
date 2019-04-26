@@ -235,7 +235,7 @@ void TLapEvec<GImpl>::execute(void)
   {
     const StoutParameters &Stout{par().Stout};
     envGetTmp(GaugeField, Umu_stout);
-    Smear_Stout<PeriodicGimplR> LS(Stout.parm);//, Tdir); // spatial smearing only
+    Smear_Stout<PeriodicGimplR> LS(Stout.parm, Tdir); // spatial smearing only
     for (int i = 0; i < Stout.steps; i++) {
       LS.smear(Umu_stout, Umu_smear);
       Umu_smear = Umu_stout;

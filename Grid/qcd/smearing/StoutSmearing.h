@@ -53,7 +53,7 @@ class Smear_Stout : public Smear<Gimpl> {
     std::vector<double> rho3d(Nd*Nd);
     for (int mu=0; mu<Nd; mu++)
       for (int nu=0; nu<Nd; nu++)
-        rho3d[mu + Nd * nu] = (mu == nu || mu == orthogdim || nu == orthogdim) ? 0.0 : rho;
+        rho3d[mu + Nd * nu] = (mu == nu || mu == orthogdim || nu == orthogdim) ? 1.0 : rho;
     return rho3d;
   };
   
@@ -62,12 +62,14 @@ public:
 
   /*! Stout smearing with base explicitly specified */
   Smear_Stout(Smear<Gimpl>* base) : SmearBase{base} {
+    std::cout << GridLogDebug << "Stout smearing constructor : Smear_Stout(Smear<Gimpl>* base)" << std::endl
     assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
   }
 
   /*! Construct stout smearing object from explicitly specified rho matrix */
   Smear_Stout(const std::vector<double>& rho_)
     : OwnedBase{new Smear_APE<Gimpl>(rho_)}, SmearBase{OwnedBase.get()} {
+    std::cout << GridLogDebug << "Stout smearing constructor : Smear_Stout(const std::vector<double>& rho_)" << std::endl
     assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
     }
 
@@ -75,6 +77,7 @@ public:
   Smear_Stout(double rho, int orthogdim = -1)
   //: OwnedBase{(orthogdim<0 || orthogdim>=Nd) ? new Smear_APE<Gimpl>(rho) : new Smear_APE<Gimpl>(rho3D(rho,orthogdim))},
   : SmearRho{ rho3D(rho,orthogdim) }, OwnedBase{ new Smear_APE<Gimpl>(SmearRho) }, SmearBase{OwnedBase.get()} {
+    std::cout << GridLogDebug << "Stout smearing constructor : Smear_StoutSmear_Stout(double rho, int orthogdim = -1)\nrho3d=" << rho3D << std::endl;
     assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
   }
 
@@ -89,7 +92,7 @@ public:
     GaugeField C(U._grid);
     GaugeLinkField tmp(U._grid), iq_mu(U._grid), Umu(U._grid);
 
-    std::cout << GridLogDebug << "Stout smearing started\n";
+    std::cout << GridLogDebug << "Stout smearing started" << std::endl;
 
     // Smear the configurations
     SmearBase->smear(C, U);
@@ -103,7 +106,7 @@ public:
       exponentiate_iQ(tmp, iq_mu);
       pokeLorentz(u_smr, tmp * Umu, mu);  // u_smr = exp(iQ_mu)*U_mu
     }
-    std::cout << GridLogDebug << "Stout smearing completed\n";
+    std::cout << GridLogDebug << "Stout smearing completed" << std::endl;
   };
 
   void derivative(GaugeField& SigmaTerm, const GaugeField& iLambda,
