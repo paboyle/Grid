@@ -41,6 +41,7 @@ namespace QCD {
 template <class Gimpl>
 class Smear_Stout : public Smear<Gimpl> {
  private:
+  const std::vector<double> SmearRho{};
   // Smear<Gimpl>* ownership semantics:
   //    Smear<Gimpl>* passed in to constructor are owned by caller, so we don't delete them here
   //    Smear<Gimpl>* created within constructor need to be deleted as part of the destructor
@@ -72,8 +73,8 @@ public:
 
   /*! Default constructor. rho is constant in all directions, optionally except for orthogonal dimension */
   Smear_Stout(double rho, int orthogdim = -1)
-    : OwnedBase{(orthogdim<0 || orthogdim>=Nd) ? new Smear_APE<Gimpl>(rho) : new Smear_APE<Gimpl>(rho3D(rho,orthogdim))},
-      SmearBase{OwnedBase.get()} {
+  //: OwnedBase{(orthogdim<0 || orthogdim>=Nd) ? new Smear_APE<Gimpl>(rho) : new Smear_APE<Gimpl>(rho3D(rho,orthogdim))},
+  : SmearRho{ rho3D(rho,orthogdim) }, OwnedBase{ new Smear_APE<Gimpl>(SmearRho) }, SmearBase{OwnedBase.get()} {
     assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
   }
 
