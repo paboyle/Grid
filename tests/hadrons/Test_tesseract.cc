@@ -89,8 +89,8 @@ void test_LapEvec(Application &application)
 
 void test_Perambulators(Application &application)
 {
-  // PerambLight parameters
-  MDistil::PerambLight::Par PerambPar;
+  // Perambulator parameters
+  MDistil::Peramb::Par PerambPar;
   PerambPar.eigenPack="LapEvec";
   PerambPar.PerambFileName="peramb.bin";
   PerambPar.ConfigFileDir="/home/dp008/dp008/paboyle/A2A/run/";
@@ -110,7 +110,7 @@ void test_Perambulators(Application &application)
   PerambPar.Ls=16;
   PerambPar.Solver.CGPrecision=1e-2;
   PerambPar.Solver.MaxIterations=10000;
-  application.createModule<MDistil::PerambLight>("Peramb",PerambPar);
+  application.createModule<MDistil::Peramb>("Peramb",PerambPar);
 }
 /////////////////////////////////////////////////////////////
 // DistilVectors
@@ -136,8 +136,8 @@ void test_DistilVectors(Application &application)
 }
 void test_PerambulatorsS(Application &application)
 {
-  // PerambLight parameters
-  MDistil::PerambLight::Par PerambPar;
+  // Perambulator parameters
+  MDistil::Peramb::Par PerambPar;
   PerambPar.eigenPack="LapEvec";
   PerambPar.PerambFileName="perambS.bin";
   PerambPar.ConfigFileDir="/home/dp008/dp008/paboyle/A2A/run/";
@@ -157,7 +157,7 @@ void test_PerambulatorsS(Application &application)
   PerambPar.Ls=16;
   PerambPar.Solver.CGPrecision=1e-8;
   PerambPar.Solver.MaxIterations=10000;
-  application.createModule<MDistil::PerambLight>("PerambS",PerambPar);
+  application.createModule<MDistil::Peramb>("PerambS",PerambPar);
 }
 /////////////////////////////////////////////////////////////
 // DistilVectors
