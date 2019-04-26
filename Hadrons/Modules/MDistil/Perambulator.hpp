@@ -2,7 +2,7 @@
  
  Grid physics library, www.github.com/paboyle/Grid
  
- Source file: Hadrons/Modules/MDistil/PerambLight.hpp
+ Source file: Hadrons/Modules/MDistil/Perambulator.hpp
  
  Copyright (C) 2019
  
@@ -27,8 +27,8 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_MDistil_PerambLight_hpp_
-#define Hadrons_MDistil_PerambLight_hpp_
+#ifndef Hadrons_MDistil_Perambulator_hpp_
+#define Hadrons_MDistil_Perambulator_hpp_
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
@@ -45,14 +45,14 @@ BEGIN_HADRONS_NAMESPACE
 
 
 /******************************************************************************
- *                             PerambLight                                    *
+ *                             Perambulator                                    *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MDistil)
 
-class PerambLightPar: Serializable
+class PerambulatorPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(PerambLightPar,
+    GRID_SERIALIZABLE_CLASS_MEMBERS(PerambulatorPar,
 		                    std::string, eigenPack,
 		                    std::string, noise,
                                     std::string, PerambFileName, //stem!!!
@@ -64,15 +64,15 @@ public:
 };
 
 template <typename FImpl>
-class TPerambLight: public Module<PerambLightPar>
+class TPerambulator: public Module<PerambulatorPar>
 {
 public:
     FERM_TYPE_ALIASES(FImpl,);
     SOLVER_TYPE_ALIASES(FImpl,);
     // constructor
-    TPerambLight(const std::string name);
+    TPerambulator(const std::string name);
     // destructor
-    virtual ~TPerambLight(void);
+    virtual ~TPerambulator(void);
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -90,27 +90,28 @@ private:
         unsigned int Ls_;
 };
 
-MODULE_REGISTER_TMP(PerambLight, TPerambLight<FIMPL>, MDistil);
+// Can't name the module Perambulator, because that's what we've called the object
+MODULE_REGISTER_TMP(Peramb, TPerambulator<FIMPL>, MDistil);
 
 /******************************************************************************
- *                 TPerambLight implementation                             *
+ *                 TPerambulator implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TPerambLight<FImpl>::TPerambLight(const std::string name)
-: grid3d{nullptr}, grid4d{nullptr}, Module<PerambLightPar>(name)
+TPerambulator<FImpl>::TPerambulator(const std::string name)
+: grid3d{nullptr}, grid4d{nullptr}, Module<PerambulatorPar>(name)
 {}
 
 // destructor
 template <typename FImpl>
-TPerambLight<FImpl>::~TPerambLight(void)
+TPerambulator<FImpl>::~TPerambulator(void)
 {
   Cleanup();
 };
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
-std::vector<std::string> TPerambLight<FImpl>::getInput(void)
+std::vector<std::string> TPerambulator<FImpl>::getInput(void)
 {
     std::vector<std::string> in;
 
@@ -122,7 +123,7 @@ std::vector<std::string> TPerambLight<FImpl>::getInput(void)
 }
 
 template <typename FImpl>
-std::vector<std::string> TPerambLight<FImpl>::getOutput(void)
+std::vector<std::string> TPerambulator<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName(),getName() + "_unsmeared_sink"};
     
@@ -131,7 +132,7 @@ std::vector<std::string> TPerambLight<FImpl>::getOutput(void)
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TPerambLight<FImpl>::setup(void)
+void TPerambulator<FImpl>::setup(void)
 {
     Cleanup();
 
@@ -169,7 +170,7 @@ void TPerambLight<FImpl>::setup(void)
 
 // clean up any temporaries created by setup (that aren't stored in the environment)
 template <typename FImpl>
-void TPerambLight<FImpl>::Cleanup(void)
+void TPerambulator<FImpl>::Cleanup(void)
 {
   if( grid3d != nullptr ) {
     delete grid3d;
@@ -180,7 +181,7 @@ void TPerambLight<FImpl>::Cleanup(void)
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TPerambLight<FImpl>::execute(void)
+void TPerambulator<FImpl>::execute(void)
 {
     const int nvec{par().nvec};
     const DistilParameters & Distil{par().Distil};
@@ -293,4 +294,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MDistil_PerambLight_hpp_
+#endif // Hadrons_MDistil_Perambulator_hpp_

@@ -123,8 +123,8 @@ void test_LapEvec(Application &application)
 
 void test_Perambulators(Application &application)
 {
-  // PerambLight parameters
-  MDistil::PerambLight::Par PerambPar;
+  // Perambulator parameters
+  MDistil::Peramb::Par PerambPar;
   PerambPar.eigenPack="LapEvec";
   PerambPar.noise="Peramb_noise";
   PerambPar.PerambFileName="peramb.bin";
@@ -144,7 +144,7 @@ void test_Perambulators(Application &application)
   //PerambPar.Ls=16;
   //PerambPar.Solver.CGPrecision=1e-8;
   //PerambPar.Solver.MaxIterations=10000;
-  application.createModule<MDistil::PerambLight>("Peramb",PerambPar);
+  application.createModule<MDistil::Peramb>("Peramb",PerambPar);
 }
 /////////////////////////////////////////////////////////////
 // Multiple Perambulators
@@ -152,8 +152,8 @@ void test_Perambulators(Application &application)
 
 void test_MultiPerambulators(Application &application)
 {
-  // PerambLight parameters
-  MDistil::PerambLight::Par PerambPar;
+  // Perambulator parameters
+  MDistil::Peramb::Par PerambPar;
   PerambPar.eigenPack="LapEvec";
   PerambPar.UniqueIdentifier="full_dilution";
   PerambPar.PerambFileName="Peramb5";
@@ -167,7 +167,7 @@ void test_MultiPerambulators(Application &application)
   PerambPar.Distil.Ns=4;
   PerambPar.Distil.Nt=8;
   PerambPar.Distil.Nt_inv=1;
-  application.createModule<MDistil::PerambLight>("Peramb5",PerambPar);
+  application.createModule<MDistil::Peramb>("Peramb5",PerambPar);
   MDistil::PerambFromSolve::Par SolvePar;
   SolvePar.eigenPack="LapEvec";
   SolvePar.PerambFileName="Peramb2";
@@ -205,7 +205,8 @@ void test_MultiPerambulators(Application &application)
   DistilVecPar.LI=3;
   DistilVecPar.nvec=3;
   application.createModule<MDistil::DistilVectors>("DistilVecs3",DistilVecPar);
-  DistilVecPar.perambulator="Peramb5_perambulator_light";
+  //DistilVecPar.perambulator="Peramb5_perambulator_light";
+  DistilVecPar.perambulator="Peramb5";
   DistilVecPar.LI=5;
   DistilVecPar.nvec=5;
   application.createModule<MDistil::DistilVectors>("DistilVecs5",DistilVecPar);
@@ -279,8 +280,8 @@ void test_DistilVectors(Application &application)
 }
 void test_PerambulatorsS(Application &application)
 {
-  // PerambLight parameters
-  MDistil::PerambLight::Par PerambPar;
+  // Perambulator parameters
+  MDistil::Peramb::Par PerambPar;
   PerambPar.eigenPack="LapEvec";
   PerambPar.PerambFileName="perambS.bin";
   PerambPar.UniqueIdentifier="full_dilution";
@@ -299,7 +300,7 @@ void test_PerambulatorsS(Application &application)
   //PerambPar.Ls=16;
   //PerambPar.Solver.CGPrecision=1e-8;
   //PerambPar.Solver.MaxIterations=10000;
-  application.createModule<MDistil::PerambLight>("PerambS",PerambPar);
+  application.createModule<MDistil::Peramb>("PerambS",PerambPar);
 }
 /////////////////////////////////////////////////////////////
 // DistilVectors
@@ -310,7 +311,8 @@ void test_DistilVectorsS(Application &application)
   // DistilVectors parameters
   MDistil::DistilVectors::Par DistilVecPar;
   DistilVecPar.noise="PerambS_noise";
-  DistilVecPar.perambulator="PerambS_perambulator_light";
+  //DistilVecPar.perambulator="PerambS_perambulator_light";
+  DistilVecPar.perambulator="PerambS";
   DistilVecPar.eigenPack="LapEvec";
   DistilVecPar.tsrc = 0;
   DistilVecPar.nnoise = 1;
@@ -556,7 +558,7 @@ void test_AslashSeq(Application &application)
 /////////////////////////////////////////////////////////////
 void test_PerambulatorsSolve(Application &application)
 {
-  // PerambLight parameters
+  // Perambulator parameters
   MDistil::PerambFromSolve::Par PerambFromSolvePar;
   PerambFromSolvePar.eigenPack="LapEvec";
   PerambFromSolvePar.solve="Aslash_seq";
@@ -759,7 +761,7 @@ bool DebugEigenTest()
   // Test initialisation of an array of strings
   for( auto a : as )
     std::cout << a << std::endl;
-  Grid::Hadrons::MDistil::Perambulator<Complex,3,sizeof(Real)> p{as,2,7,2};
+  Grid::Hadrons::MDistil::Peramb<Complex,3,sizeof(Real)> p{as,2,7,2};
   DebugShowTensor(p, "p");
   std::cout << "p.IndexNames follow" << std::endl;
   for( auto a : p.IndexNames )

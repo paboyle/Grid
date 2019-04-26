@@ -2,7 +2,7 @@
  
  Grid physics library, www.github.com/paboyle/Grid
  
- Source file: Hadrons/Modules/MDistil/PerambLight.cc
+ Source file: Hadrons/Modules/MDistil/Perambulator.cc
  
  Copyright (C) 2019
  
@@ -27,10 +27,10 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include <Hadrons/Modules/MDistil/PerambLight.hpp>
+#include <Hadrons/Modules/MDistil/Perambulator.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
 using namespace MDistil;
 
-template class Grid::Hadrons::MDistil::TPerambLight<FIMPL>;
+template class Grid::Hadrons::MDistil::TPerambulator<FIMPL>;
