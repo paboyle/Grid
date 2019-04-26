@@ -36,7 +36,7 @@
 #include <Hadrons/EigenPack.hpp>
 
 // These are members of Distillation
-#include <Hadrons/Modules/MDistil/Distil.hpp>
+#include <Hadrons/Distil.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 

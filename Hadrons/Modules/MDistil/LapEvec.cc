@@ -6,7 +6,6 @@
  
  Copyright (C) 2015-2019
  
- *** MM making a change on Tesseract **
  Author: Felix Erben <ferben@ed.ac.uk>
  Author: Michael Marshall <Michael.Marshall@ed.ac.uk>
  
