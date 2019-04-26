@@ -41,6 +41,7 @@ namespace QCD {
 template <class Gimpl>
 class Smear_Stout : public Smear<Gimpl> {
  private:
+  int OrthogDim = -1;
   const std::vector<double> SmearRho{};
   // Smear<Gimpl>* ownership semantics:
   //    Smear<Gimpl>* passed in to constructor are owned by caller, so we don't delete them here
@@ -76,7 +77,7 @@ public:
   /*! Default constructor. rho is constant in all directions, optionally except for orthogonal dimension */
   Smear_Stout(double rho, int orthogdim = -1)
   //: OwnedBase{(orthogdim<0 || orthogdim>=Nd) ? new Smear_APE<Gimpl>(rho) : new Smear_APE<Gimpl>(rho3D(rho,orthogdim))},
-  : SmearRho{ rho3D(rho,orthogdim) }, OwnedBase{ new Smear_APE<Gimpl>(SmearRho) }, SmearBase{OwnedBase.get()} {
+  : OrthogDim{orthogdim}, SmearRho{ rho3D(rho,orthogdim) }, OwnedBase{ new Smear_APE<Gimpl>(SmearRho) }, SmearBase{OwnedBase.get()} {
     std::cout << GridLogDebug << "Stout smearing constructor : Smear_StoutSmear_Stout(double rho, int orthogdim = -1)\nrho3d=" << SmearRho << std::endl;
     assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
   }
@@ -98,13 +99,17 @@ public:
     SmearBase->smear(C, U);
 
     for (int mu = 0; mu < Nd; mu++) {
-      tmp = peekLorentz(C, mu);
-      Umu = peekLorentz(U, mu);
-      iq_mu = Ta(
-          tmp *
-          adj(Umu));  // iq_mu = Ta(Omega_mu) to match the signs with the paper
-      exponentiate_iQ(tmp, iq_mu);
-      pokeLorentz(u_smr, tmp * Umu, mu);  // u_smr = exp(iQ_mu)*U_mu
+      if( mu == OrthogDim )
+        tmp = 1.0;
+      else {
+        tmp = peekLorentz(C, mu);
+        Umu = peekLorentz(U, mu);
+        iq_mu = Ta(
+                   tmp *
+                   adj(Umu));  // iq_mu = Ta(Omega_mu) to match the signs with the paper
+        exponentiate_iQ(tmp, iq_mu);
+        pokeLorentz(u_smr, tmp * Umu, mu);  // u_smr = exp(iQ_mu)*U_mu
+      }
     }
     std::cout << GridLogDebug << "Stout smearing completed" << std::endl;
   };
@@ -142,16 +147,11 @@ public:
     iQ2 = iQ * iQ;
     iQ3 = iQ * iQ2;
 
-    Real tr = real(trace(iQ2));
-    if(tr > -0.0000001 && tr < 0.00000001 ) // Felix, please check this
-      e_iQ = unity;
-    else {
-      //We should check sgn(c0) here already and then apply eq (34) from 0311018
-      set_uw(u, w, iQ2, iQ3);
-      set_fj(f0, f1, f2, u, w);
-      
-      e_iQ = f0 * unity + timesMinusI(f1) * iQ - f2 * iQ2;
-    }
+    //We should check sgn(c0) here already and then apply eq (34) from 0311018
+    set_uw(u, w, iQ2, iQ3);
+    set_fj(f0, f1, f2, u, w);
+
+    e_iQ = f0 * unity + timesMinusI(f1) * iQ - f2 * iQ2;
   };
 
   void set_uw(LatticeComplex& u, LatticeComplex& w, GaugeLinkField& iQ2,
