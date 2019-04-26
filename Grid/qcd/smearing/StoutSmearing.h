@@ -142,11 +142,15 @@ public:
     iQ2 = iQ * iQ;
     iQ3 = iQ * iQ2;
 
-    //We should check sgn(c0) here already and then apply eq (34) from 0311018
-    set_uw(u, w, iQ2, iQ3);
-    set_fj(f0, f1, f2, u, w);
-
-    e_iQ = f0 * unity + timesMinusI(f1) * iQ - f2 * iQ2;
+    if(abs(real(trace(iQ2))) < 0.000000001) // Felix, please check this
+      e_iQ = unity;
+    else {
+      //We should check sgn(c0) here already and then apply eq (34) from 0311018
+      set_uw(u, w, iQ2, iQ3);
+      set_fj(f0, f1, f2, u, w);
+      
+      e_iQ = f0 * unity + timesMinusI(f1) * iQ - f2 * iQ2;
+    }
   };
 
   void set_uw(LatticeComplex& u, LatticeComplex& w, GaugeLinkField& iQ2,
