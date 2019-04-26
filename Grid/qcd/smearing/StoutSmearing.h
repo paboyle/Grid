@@ -53,7 +53,7 @@ class Smear_Stout : public Smear<Gimpl> {
     std::vector<double> rho3d(Nd*Nd);
     for (int mu=0; mu<Nd; mu++)
       for (int nu=0; nu<Nd; nu++)
-        rho3d[mu + Nd * nu] = (mu == nu || mu == orthogdim || nu == orthogdim) ? 1.0 : rho;
+        rho3d[mu + Nd * nu] = (mu == nu || mu == orthogdim || nu == orthogdim) ? 0.0 : rho;
     return rho3d;
   };
   
