@@ -139,6 +139,7 @@ public:
     iQ2 = iQ * iQ;
     iQ3 = iQ * iQ2;
 
+    //We should check sgn(c0) here already and then apply eq (34) from 0311018
     set_uw(u, w, iQ2, iQ3);
     set_fj(f0, f1, f2, u, w);
 
@@ -198,9 +199,8 @@ public:
   }
 
   LatticeComplex func_xi0(const LatticeComplex& w) const {
-    // Define a function to do the check
-    // if( w < 1e-4 ) std::cout << GridLogWarning<< "[Smear_stout] w too small:
-    // "<< w <<"\n";
+    // Definition from arxiv 0311018
+    //if (abs(w) < 0.05) {w2 = w*w; return 1.0 - w2/6.0 * (1.0-w2/20.0 * (1.0-w2/42.0));}
     return sin(w) / w;
   }
 
