@@ -142,7 +142,8 @@ public:
     iQ2 = iQ * iQ;
     iQ3 = iQ * iQ2;
 
-    if(abs(real(trace(iQ2))) < 0.000000001) // Felix, please check this
+    Real tr = real(trace(iQ2));
+    if(tr > -0.0000001 && tr < 0.00000001 ) // Felix, please check this
       e_iQ = unity;
     else {
       //We should check sgn(c0) here already and then apply eq (34) from 0311018
