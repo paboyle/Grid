@@ -77,7 +77,7 @@ public:
   Smear_Stout(double rho, int orthogdim = -1)
   //: OwnedBase{(orthogdim<0 || orthogdim>=Nd) ? new Smear_APE<Gimpl>(rho) : new Smear_APE<Gimpl>(rho3D(rho,orthogdim))},
   : SmearRho{ rho3D(rho,orthogdim) }, OwnedBase{ new Smear_APE<Gimpl>(SmearRho) }, SmearBase{OwnedBase.get()} {
-    std::cout << GridLogDebug << "Stout smearing constructor : Smear_StoutSmear_Stout(double rho, int orthogdim = -1)\nrho3d=" << rho3D << std::endl;
+    std::cout << GridLogDebug << "Stout smearing constructor : Smear_StoutSmear_Stout(double rho, int orthogdim = -1)\nrho3d=" << SmearRho << std::endl;
     assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
   }
 
