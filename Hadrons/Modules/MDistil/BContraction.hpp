@@ -4,7 +4,7 @@
  
  Source file: Hadrons/Modules/MDistil/BContraction.hpp
  
- Copyright (C) 2015-2019
+ Copyright (C) 2019
  
  Author: Felix Erben <ferben@ed.ac.uk>
  Author: Michael Marshall <Michael.Marshall@ed.ac.uk>

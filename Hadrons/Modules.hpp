@@ -38,7 +38,7 @@
 #include <Hadrons/Modules/MUtilities/PrecisionCast.hpp>
 #include <Hadrons/Modules/MDistil/Noises.hpp>
 #include <Hadrons/Modules/MDistil/PerambLight.hpp>
-#include <Hadrons/Modules/MDistil/Distil.hpp>
+#include <Hadrons/Distil.hpp>
 #include <Hadrons/Modules/MDistil/BC2.hpp>
 #include <Hadrons/Modules/MDistil/g5_multiply.hpp>
 #include <Hadrons/Modules/MDistil/PerambFromSolve.hpp>
