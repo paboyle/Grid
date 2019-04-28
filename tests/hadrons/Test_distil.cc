@@ -784,20 +784,34 @@ bool DebugEigenTest()
   DebugShowTensor(y, "y");
 
   // Now see whether we can read a tensor back from an hdf5 file
-  const char * pszH5Name = "test.h5";
-  y.write<Hdf5Writer>(pszH5Name);
+  const char * pszFileName = "test";
+  y.write(pszFileName);
   {
     MyTensor z;
     const char * pszName = "z1";
     DebugShowTensor(z, pszName);
-    z.read<Hdf5Reader>(pszH5Name);
+    z.read(pszFileName);
     DebugShowTensor(z, pszName);
   }
   {
     MyTensor z(Names2,2,0,0);
     const char * pszName = "z2";
     DebugShowTensor(z, pszName);
-    z.read<Hdf5Reader>(pszH5Name);
+    z.read(pszFileName);
+    DebugShowTensor(z, pszName);
+  }
+  {
+    // Now see whether we can read a tensor back from an xml file
+    const char * pszXmlName = "test.xml";
+    {
+      XmlWriter w(pszXmlName);
+      y.write<XmlWriter>(w);
+    }
+    MyTensor z;
+    const char * pszName = "xml1";
+    DebugShowTensor(z, pszName);
+    XmlReader r(pszXmlName);
+    z.read<XmlReader>(r);
     DebugShowTensor(z, pszName);
   }
   if((0)) // The following tests would fail
@@ -807,17 +821,7 @@ bool DebugEigenTest()
     //MyTensor z(NamesBad);
     const char * pszName = "zFail";
     DebugShowTensor(z, pszName);
-    z.read<Hdf5Reader>(pszH5Name);
-    DebugShowTensor(z, pszName);
-  }
-  // Now see whether we can read a tensor back from an xml file
-  const char * pszXmlName = "test.xml";
-  y.write<XmlWriter>(pszXmlName);
-  {
-    MyTensor z;
-    const char * pszName = "xml1";
-    DebugShowTensor(z, pszName);
-    z.read<XmlReader>(pszXmlName);
+    z.read(pszFileName);
     DebugShowTensor(z, pszName);
   }
 
@@ -1027,7 +1031,7 @@ int main(int argc, char *argv[])
   << ", sizeof(hsize_t) = " << sizeof(hsize_t)
   << ", sizeof(unsigned long long) = " << sizeof(unsigned long long)
   << std::endl;
-  //if( DebugEigenTest() ) return 0;
+  if( DebugEigenTest() ) return 0;
   //if(DebugGridTensorTest()) return 0;
 #endif
 

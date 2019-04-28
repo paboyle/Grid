@@ -242,14 +242,24 @@ inline GridCartesian * MakeLowerDimGrid( GridCartesian * gridHD )
   return gridLD;
 }
 
+#ifdef HAVE_HDF5
+using Default_Reader = Grid::Hdf5Reader;
+using Default_Writer = Grid::Hdf5Writer;
+static const char * FileExtension = ".h5";
+#else
+using Default_Reader = Grid::BinaryReader;
+using Default_Writer = Grid::BinaryWriter;
+static const char * FileExtension = ".dat";
+#endif
+
 /******************************************************************************
- Perambulator object
+ NamedTensor object
  This is an Eigen::Tensor of type Scalar_ and rank NumIndices_ (row-major order)
- They can be persisted to disk, with the on-disk format being big endian.
+ They can be persisted to disk
  Scalar_ objects are assumed to be composite objects of size Endian_Scalar_Size.
- (Disable big-endian by setting Endian_Scalar_Size=1)
+ (Disable big-endian by setting Endian_Scalar_Size=1).
+ NB: Endian_Scalar_Size will disappear when ReadBinary & WriteBinary retired
  IndexNames contains one name for each index, and IndexNames are validated on load.
- (NB: Indices of dimension 1 are not saved, and not validated on load)
  WHAT TO SAVE / VALIDATE ON LOAD (Override to warn instead of assert on load)
  Ensemble string
  Configuration number
@@ -324,8 +334,8 @@ public:
   // load and save - not virtual - probably all changes
   template<typename Reader> inline void read (Reader &r, const char * pszTag = nullptr);
   template<typename Writer> inline void write(Writer &w, const char * pszTag = nullptr) const;
-  template<typename Reader> inline void read (const char * filename, const char * pszTag = nullptr);
-  template<typename Writer> inline void write(const char * filename, const char * pszTag = nullptr) const;
+  inline void read (const char * filename, const char * pszTag = nullptr);
+  inline void write(const char * filename, const char * pszTag = nullptr) const;
   EIGEN_DEPRECATED inline void ReadBinary (const std::string filename); // To be removed
   EIGEN_DEPRECATED inline void WriteBinary(const std::string filename); // To be removed
 };
@@ -506,11 +516,13 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::write(Writer &w, con
 }
 
 template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
-template<typename Writer>
 void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::write(const char * filename, const char * pszTag)const{
-  LOG(Message) << "Writing NamedTensor to \"" << filename << "\"" << std::endl;
-  Writer w(filename);
-  write(w, pszTag);
+  const std::string sTag{pszTag == nullptr ? filename : pszTag};
+  std::string sFileName{filename};
+  sFileName.append( MDistil::FileExtension );
+  LOG(Message) << "Writing NamedTensor to " << sFileName << ", tag " << sTag << std::endl;
+  MDistil::Default_Writer w(sFileName);
+  write(w, sTag.c_str());
 }
 
 /******************************************************************************
@@ -534,11 +546,13 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::read(Reader &r, cons
 }
 
 template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
-template<typename Reader>
 void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::read(const char * filename, const char * pszTag) {
-  LOG(Message) << "Reading NamedTensor from \"" << filename << "\"" << std::endl;
-  Reader r(filename);
-  read(r, pszTag);
+  const std::string sTag{pszTag == nullptr ? filename : pszTag};
+  std::string sFileName{filename};
+  sFileName.append( MDistil::FileExtension );
+  LOG(Message) << "Reading NamedTensor from " << sFileName << ", tag " << sTag << std::endl;
+  MDistil::Default_Reader r(sFileName);
+  read(r, sTag.c_str());
 }
 
 /******************************************************************************

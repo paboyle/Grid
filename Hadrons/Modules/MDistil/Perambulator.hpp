@@ -289,7 +289,7 @@ void TPerambulator<FImpl>::execute(void)
   if(PerambFileName.length()) {
     std::string sPerambName{PerambFileName + "." + std::to_string(vm().getTrajectory())};
     //perambulator.WriteBinary(sPerambName);
-    perambulator.template write<Hdf5Writer>((sPerambName + ".h5").c_str(), sPerambName.c_str());
+    perambulator.write(sPerambName.c_str());
   }
 }
 
