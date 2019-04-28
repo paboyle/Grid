@@ -66,6 +66,7 @@ void Gather_plane_simple_table (Vector<std::pair<int,int> >& table,const Lattice
 {
   int num=table.size();
   std::pair<int,int> *table_v = & table[0];
+
   auto rhs_v = rhs.View();
   accelerator_loopN( i,num, {
       compress.Compress(&buffer[off],table_v[i].first,rhs_v[so+table_v[i].second]);
@@ -83,12 +84,13 @@ void Gather_plane_exchange_table(const Lattice<vobj> &rhs,
 
 template<class cobj,class vobj,class compressor>
 void Gather_plane_exchange_table(Vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
-				 std::vector<cobj *> pointers,int dimension,int plane,int cbmask,
+				 Vector<cobj *> pointers,int dimension,int plane,int cbmask,
 				 compressor &compress,int type)
 {
   assert( (table.size()&0x1)==0);
   int num=table.size()/2;
   int so  = plane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane 
+
   auto rhs_v = rhs.View();
   accelerator_loopN( j,num, {
     compress.CompressExchange(&pointers[0][0],&pointers[1][0],&rhs_v[0],
@@ -191,8 +193,8 @@ public:
   };
   struct Merge {
     cobj * mpointer;
-    std::vector<scalar_object *> rpointers;
-    std::vector<cobj *> vpointers;
+    Vector<scalar_object *> rpointers;
+    Vector<cobj *> vpointers;
     Integer buffer_size;
     Integer type;
   };
@@ -222,8 +224,8 @@ public:
   }
   
   int face_table_computed;
-  std::vector<Vector<std::pair<int,int> > > face_table ;
-  std::vector<int> surface_list;
+  Vector<Vector<std::pair<int,int> > > face_table ;
+  Vector<int> surface_list;
 
   Vector<StencilEntry>  _entries; // Resident in managed memory
   std::vector<Packet> Packets;
@@ -238,8 +240,8 @@ public:
   // Vectors that live on the symmetric heap in case of SHMEM
   // These are used; either SHM objects or refs to the above symmetric heap vectors
   // depending on comms target
-  std::vector<cobj *> u_simd_send_buf;
-  std::vector<cobj *> u_simd_recv_buf;
+  Vector<cobj *> u_simd_send_buf;
+  Vector<cobj *> u_simd_recv_buf;
 
   int u_comm_offset;
   int _unified_buffer_size;
@@ -524,7 +526,7 @@ public:
     d.buffer_size = buffer_size;
     dv.push_back(d);
   }
-  void AddMerge(cobj *merge_p,std::vector<cobj *> &rpointers,Integer buffer_size,Integer type,std::vector<Merge> &mv) {
+  void AddMerge(cobj *merge_p,Vector<cobj *> &rpointers,Integer buffer_size,Integer type,std::vector<Merge> &mv) {
     Merge m;
     m.type     = type;
     m.mpointer = merge_p;
@@ -951,6 +953,7 @@ public:
     assert(shift>=0);
     assert(shift<fd);
 
+
     int buffer_size = _grid->_slice_nblock[dimension]*_grid->_slice_block[dimension];
     
     int cb= (cbmask==0x2)? Odd : Even;
@@ -1060,6 +1063,7 @@ public:
     assert(shift>=0);
     assert(shift<fd);
 
+
     int permute_type=_grid->PermuteType(dimension);
     //    std::cout << "SimdNew permute type "<<permute_type<<std::endl;
 
@@ -1078,8 +1082,8 @@ public:
     int bytes = (reduced_buffer_size*datum_bytes)/simd_layout;
     assert(bytes*simd_layout == reduced_buffer_size*datum_bytes);
 
-    std::vector<cobj *> rpointers(maxl);
-    std::vector<cobj *> spointers(maxl);
+    Vector<cobj *> rpointers(maxl);
+    Vector<cobj *> spointers(maxl);
 
     ///////////////////////////////////////////
     // Work out what to send where
@@ -1107,7 +1111,9 @@ public:
 	  Gather_plane_table_compute ((GridBase *)_grid,dimension,sx,cbmask,u_comm_offset,face_table[face_idx]);
 	}
 	gathermtime-=usecond();
+
 	Gather_plane_exchange_table(face_table[face_idx],rhs,spointers,dimension,sx,cbmask,compress,permute_type);  face_idx++;
+
 	gathermtime+=usecond();
 	//spointers[0] -- low
 	//spointers[1] -- high
