@@ -286,7 +286,7 @@ case ${CXX} in
 #    CXXLD="nvcc -v -link"
     CXX="nvcc -x cu "
     CXXLD="nvcc -link"
-    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing -Xcompiler -Wno-unusable-partial-specialization "
+    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing -Xcompiler -Wno-unusable-partial-specialization --expt-extended-lambda --expt-relaxed-constexpr"
     ;;
   *)
     CXXLD=${CXX}
@@ -474,7 +474,7 @@ esac
 case ${ac_COMMS} in
     *-auto)
         LX_FIND_MPI
-        if test "x$have_CXX_mpi" = 'xno'; then AC_MSG_ERROR(["The configure could not find the MPI compilation flags. N.B. The -auto mode is not supported by Cray wrappers. Use the non -auto version in this case."]); fi
+#        if test "x$have_CXX_mpi" = 'xno'; then AC_MSG_ERROR(["The configure could not find the MPI compilation flags. N.B. The -auto mode is not supported by Cray wrappers. Use the non -auto version in this case."]); fi
         AM_CXXFLAGS="$MPI_CXXFLAGS $AM_CXXFLAGS"
         AM_CFLAGS="$MPI_CFLAGS $AM_CFLAGS"
         AM_LDFLAGS="`echo $MPI_CXXLDFLAGS | sed -E 's/-l@<:@^ @:>@+//g'` $AM_LDFLAGS"
@@ -483,10 +483,7 @@ case ${ac_COMMS} in
         ;;
 esac
 
-AM_CONDITIONAL(BUILD_COMMS_SHMEM, [ test "${comms_type}X" == "shmemX" ])
-AM_CONDITIONAL(BUILD_COMMS_MPI,   [ test "${comms_type}X" == "mpiX" ])
 AM_CONDITIONAL(BUILD_COMMS_MPI3,  [ test "${comms_type}X" == "mpi3X" ] )
-AM_CONDITIONAL(BUILD_COMMS_MPIT,  [ test "${comms_type}X" == "mpitX" ] )
 AM_CONDITIONAL(BUILD_COMMS_NONE,  [ test "${comms_type}X" == "noneX" ])
 
 ############### RNG selection
