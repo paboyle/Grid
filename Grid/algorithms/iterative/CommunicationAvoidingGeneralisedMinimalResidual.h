@@ -214,7 +214,7 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
     }
 
     // Compute new Givens Rotation
-    ComplexD nu = sqrt(std::norm(H(iter, iter)) + std::norm(H(iter, iter + 1)));
+    auto nu     = sqrt(std::norm(H(iter, iter)) + std::norm(H(iter, iter + 1)));
     c[iter]     = H(iter, iter) / nu;
     s[iter]     = H(iter, iter + 1) / nu;
 
