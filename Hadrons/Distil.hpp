@@ -440,11 +440,11 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::ReadBinary(const std
   assert((sizeof(Scalar_) % Endian_Scalar_Size) == 0 && "NamedTensor error: Scalar_ is not composed of Endian_Scalar_Size" );
   // Size of the data in bytes
   const uint32_t Scalar_Size{sizeof(Scalar_)};
-  const auto NumElements{tensor.size()};
-  const std::streamsize TotalDataSize{static_cast<std::streamsize>(NumElements * Scalar_Size)};
+  Index NumElements{tensor.size()};
+  std::streamsize TotalDataSize{static_cast<std::streamsize>(NumElements * Scalar_Size)};
   uint64_t u64;
   r.read(reinterpret_cast<char *>(&u64), sizeof(u64));
-  assert( TotalDataSize == be64toh( u64 ) && "NamedTensor error: Size of the data in bytes" );
+  assert( TotalDataSize == 0 || TotalDataSize == be64toh( u64 ) && "NamedTensor error: Size of the data in bytes" );
   // Size of a Scalar_
   uint32_t u32;
   r.read(reinterpret_cast<char *>(&u32), sizeof(u32));
@@ -454,19 +454,47 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::ReadBinary(const std
   r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
   assert( Endian_Scalar_Size == be16toh( u16 ) && "NamedTensor error: Scalar_Unit_size");
   // number of dimensions which aren't 1
-  r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
-  u16 = be16toh( u16 );
-  for( auto dim : tensor.dimensions() )
+  uint16_t NumFileDimensions;
+  r.read(reinterpret_cast<char *>(&NumFileDimensions), sizeof(NumFileDimensions));
+  NumFileDimensions = be16toh( NumFileDimensions );
+  /*for( auto dim : tensor.dimensions() )
     if( dim == 1 )
-      u16++;
-  assert( this->NumIndices == u16 && "NamedTensor error: number of dimensions which aren't 1" );
-  // dimensions together with names
-  int d = 0;
-  for( auto dim : tensor.dimensions() ) {
-    if( dim != 1 ) {
+      u16++;*/
+  assert( ( TotalDataSize == 0 && this->NumIndices >= NumFileDimensions || this->NumIndices == NumFileDimensions )
+         && "NamedTensor error: number of dimensions which aren't 1" );
+  if( TotalDataSize == 0 ) {
+    // Read each dimension, using names to skip past dimensions == 1
+    std::array<Index,NumIndices_> NewDimensions;
+    for( Index &i : NewDimensions ) i = 1;
+    int d = 0;
+    for( int FileDimension = 0; FileDimension < NumFileDimensions; FileDimension++ ) {
+      // read dimension
+      uint16_t thisDim;
+      r.read(reinterpret_cast<char *>(&thisDim), sizeof(thisDim));
+      // read dimension name
+      r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
+      size_t l = be16toh( u16 );
+      std::string s( l, '?' );
+      r.read(&s[0], l);
+      // skip forward to matching name
+      while( IndexNames[d].size() > 0 && s != IndexNames[d] )
+        assert(++d < NumIndices && "NamedTensor error: dimension name" );
+      if( IndexNames[d].size() == 0 )
+        IndexNames[d] = s;
+      NewDimensions[d++] = be16toh( thisDim );
+    }
+    tensor.resize(NewDimensions);
+    NumElements = 1;
+    for( Index i : NewDimensions ) NumElements *= i;
+    TotalDataSize = NumElements * Scalar_Size;
+  } else {
+    // dimensions together with names
+    const auto & TensorDims{tensor.dimensions()};
+    for( int d = 0; d < NumIndices_; d++ ) {
       // size of dimension
       r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
-      assert( dim == be16toh( u16 ) && "size of dimension" );
+      u16 = be16toh( u16 );
+      assert( TensorDims[d] == u16 && "size of dimension" );
       // length of dimension name
       r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
       size_t l = be16toh( u16 );
@@ -476,7 +504,6 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::ReadBinary(const std
       r.read(&s[0], l);
       assert( s == IndexNames[d] && "NamedTensor error: dimension name" );
     }
-    d++;
   }
   // Actual data
   char * const pStart{reinterpret_cast<char *>(tensor.data())};

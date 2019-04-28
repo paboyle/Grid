@@ -1016,6 +1016,14 @@ bool DebugGridTensorTest( void )
   
   return true;
 }
+
+bool ConvertPeramb(const char * pszSource, const char * pszDest) {
+  std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
+  Grid::Hadrons::MDistil::Perambulator<SpinVector, 6, sizeof(Real)> p(sIndexNames);
+  p.ReadBinary( pszSource );
+  p.write(pszDest);
+  return true;
+}
 #endif
 
 int main(int argc, char *argv[])
@@ -1031,8 +1039,9 @@ int main(int argc, char *argv[])
   << ", sizeof(hsize_t) = " << sizeof(hsize_t)
   << ", sizeof(unsigned long long) = " << sizeof(unsigned long long)
   << std::endl;
-  if( DebugEigenTest() ) return 0;
+  //if( DebugEigenTest() ) return 0;
   //if(DebugGridTensorTest()) return 0;
+  //if(ConvertPeramb("PerambL_100_tsrc0.3000","PerambL_100_tsrc0.3000")) return 0;
 #endif
 
   // Decode command-line parameters. 1st one is which test to run

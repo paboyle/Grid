@@ -215,7 +215,6 @@ void TPerambulator<FImpl>::execute(void)
     // Load perambulator if it exists on disk instead of creating it
     // Not sure this is how we want it - rather specify an input flag 'read' 
     // and assert that the file is there.
-    const std::string &PerambFileName{par().PerambFileName};
 
   envGetTmp(LatticeSpinColourVector, dist_source);
   envGetTmp(LatticeSpinColourVector, tmp2);
@@ -276,18 +275,22 @@ void TPerambulator<FImpl>::execute(void)
                   ExtractSliceLocal(evec3d,epack.evec[ivec],0,t,3);
                   pokeSpin(perambulator(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
                 }
+              }
+            }
           }
         }
       }
     }
-  }
-}
     }
-    std::cout <<  "perambulator done" << std::endl;
-    perambulator.SliceShare( grid3d, grid4d );
+  std::cout <<  "perambulator done" << std::endl;
+  perambulator.SliceShare( grid3d, grid4d );
 
-  if(PerambFileName.length()) {
-    std::string sPerambName{PerambFileName + "." + std::to_string(vm().getTrajectory())};
+  if(grid4d->IsBoss()) {
+    std::string sPerambName{par().PerambFileName};
+    if( sPerambName.length() == 0 )
+      sPerambName = getName();
+    sPerambName.append( "." );
+    sPerambName.append( std::to_string(vm().getTrajectory()));
     //perambulator.WriteBinary(sPerambName);
     perambulator.write(sPerambName.c_str());
   }

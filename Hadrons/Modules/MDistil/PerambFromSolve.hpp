@@ -215,31 +215,32 @@ void TPerambFromSolve<FImpl>::execute(void)
   int Ntlocal = grid4d->LocalDimensions()[3];
   int Ntfirst = grid4d->LocalStarts()[3];
 
-    const std::string &PerambFileName{par().PerambFileName};
-
-
-    for (int inoise = 0; inoise < nnoise; inoise++) {
-      for (int dk = 0; dk < LI_reduced; dk++) {
-        for (int dt = 0; dt < Nt_inv; dt++) {
-          for (int ds = 0; ds < SI; ds++) {
-            for (int is = 0; is < Ns; is++) {
-              result_nospin = peekSpin(solve[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))],is);
-              for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
-                ExtractSliceLocal(result_3d,result_nospin,0,t-Ntfirst,Grid::QCD::Tdir);
-                for (int ivec = 0; ivec < nvec_reduced; ivec++) {
-                  ExtractSliceLocal(evec3d,epack.evec[ivec],0,t,3);
-                  pokeSpin(perambulator(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
-                  std::cout <<  "perambulator(t, ivec, dk, inoise,dt,ds)(is) = (" << t << "," << ivec << "," << dk << "," << inoise << "," << dt << "," << ds << ")(" << is << ") = " <<  perambulator(t, ivec, dk, inoise,dt,ds)()(is)() << std::endl;
-                }
+  for (int inoise = 0; inoise < nnoise; inoise++) {
+    for (int dk = 0; dk < LI_reduced; dk++) {
+      for (int dt = 0; dt < Nt_inv; dt++) {
+        for (int ds = 0; ds < SI; ds++) {
+          for (int is = 0; is < Ns; is++) {
+            result_nospin = peekSpin(solve[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))],is);
+            for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
+              ExtractSliceLocal(result_3d,result_nospin,0,t-Ntfirst,Grid::QCD::Tdir);
+              for (int ivec = 0; ivec < nvec_reduced; ivec++) {
+                ExtractSliceLocal(evec3d,epack.evec[ivec],0,t,3);
+                pokeSpin(perambulator(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
+                std::cout <<  "perambulator(t, ivec, dk, inoise,dt,ds)(is) = (" << t << "," << ivec << "," << dk << "," << inoise << "," << dt << "," << ds << ")(" << is << ") = " <<  perambulator(t, ivec, dk, inoise,dt,ds)()(is)() << std::endl;
               }
             }
           }
         }
       }
     }
+  }
 
-  if(PerambFileName.length()) {
-    std::string sPerambName{PerambFileName + "." + std::to_string(vm().getTrajectory())};
+  if(grid4d->IsBoss()) {
+    std::string sPerambName{par().PerambFileName};
+    if( sPerambName.length() == 0 )
+      sPerambName = getName();
+    sPerambName.append( "." );
+    sPerambName.append( std::to_string(vm().getTrajectory()));
     //perambulator.WriteBinary(sPerambName);
     perambulator.write(sPerambName.c_str());
   }
