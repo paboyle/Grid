@@ -41,7 +41,7 @@ template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
   return real(nrm); 
 }
 
-#ifdef GRID_NVCC
+#if 0
 //#warning "ThrustReduce compiled"
 //#include <thrust/execution_policy.h>
 template<class vobj> 
@@ -74,8 +74,8 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
 
   auto left_v = left.View();
   auto right_v=right.View();
-#ifdef GRID_NVCC
-  //#if 0
+
+#if 0
 
   typedef decltype(TensorRemove(innerProduct(left_v[0],right_v[0]))) inner_t;
   
