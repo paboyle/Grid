@@ -245,59 +245,59 @@ private:
   static accelerator_inline void GpuDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 						int Ls,int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
 
-  static accelerator void GenericDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  static void GenericDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
       
-  static accelerator void GenericDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  static void GenericDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 					     int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void GenericDhopSiteInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-					     int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
-      
-  static accelerator void GenericDhopSiteDagInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-						int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
-  
-  static accelerator void GenericDhopSiteExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  static void GenericDhopSiteInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 					     int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
       
-  static accelerator void GenericDhopSiteDagExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  static void GenericDhopSiteDagInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 						int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void AsmDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  static void GenericDhopSiteExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					     int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+      
+  static void GenericDhopSiteDagExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+						int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+
+  static void AsmDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 				      int sF, int sU, int Ls, int Nsite, const FermionFieldView &in,FermionFieldView &out);
   
-  static accelerator void AsmDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  static void AsmDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 					 int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void AsmDhopSiteInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  static void AsmDhopSiteInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 					 int sF, int sU, int Ls, int Nsite, const FermionFieldView &in,FermionFieldView &out);
   
-  static accelerator void AsmDhopSiteDagInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  static void AsmDhopSiteDagInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 					    int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void AsmDhopSiteExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  static void AsmDhopSiteExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 					 int sF, int sU, int Ls, int Nsite, const FermionFieldView &in,FermionFieldView &out);
   
-  static accelerator void AsmDhopSiteDagExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  static void AsmDhopSiteDagExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 					    int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out);
   
 
-  static accelerator void HandDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  static void HandDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 				       int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void HandDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  static void HandDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void HandDhopSiteInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  static void HandDhopSiteInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void HandDhopSiteDagInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  static void HandDhopSiteDagInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 					     int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void HandDhopSiteExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  static void HandDhopSiteExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
-  static accelerator void HandDhopSiteDagExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+  static void HandDhopSiteDagExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 					     int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
 
  public:

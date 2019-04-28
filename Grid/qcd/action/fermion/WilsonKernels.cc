@@ -100,7 +100,7 @@ int WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsAndCompute;
   // All legs kernels ; comms then compute
   ////////////////////////////////////////////////////////////////////
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U,
+void WilsonKernels<Impl>::GenericDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U,
 							 SiteHalfSpinor *buf, int sF,
 							 int sU, const FermionFieldView &in, FermionFieldView &out)
 {
@@ -126,7 +126,7 @@ accelerator void WilsonKernels<Impl>::GenericDhopSiteDag(StencilView &st, Double
 };
 
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSite(StencilView &st, DoubledGaugeFieldView &U,
+void WilsonKernels<Impl>::GenericDhopSite(StencilView &st, DoubledGaugeFieldView &U,
 						      SiteHalfSpinor *buf, int sF,
 						      int sU, const FermionFieldView &in, FermionFieldView &out) 
 {
@@ -154,7 +154,7 @@ accelerator void WilsonKernels<Impl>::GenericDhopSite(StencilView &st, DoubledGa
   // Interior kernels
   ////////////////////////////////////////////////////////////////////
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilView &st,  DoubledGaugeFieldView &U,
+void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilView &st,  DoubledGaugeFieldView &U,
 							    SiteHalfSpinor *buf, int sF,
 							    int sU, const FermionFieldView &in, FermionFieldView &out)
 {
@@ -181,7 +181,7 @@ accelerator void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilView &st,  Do
 };
 
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSiteInt(StencilView &st,  DoubledGaugeFieldView &U,
+void WilsonKernels<Impl>::GenericDhopSiteInt(StencilView &st,  DoubledGaugeFieldView &U,
 							 SiteHalfSpinor *buf, int sF,
 							 int sU, const FermionFieldView &in, FermionFieldView &out) 
 {
@@ -209,7 +209,7 @@ accelerator void WilsonKernels<Impl>::GenericDhopSiteInt(StencilView &st,  Doubl
 // Exterior kernels
 ////////////////////////////////////////////////////////////////////
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilView &st,  DoubledGaugeFieldView &U,
+void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilView &st,  DoubledGaugeFieldView &U,
 							    SiteHalfSpinor *buf, int sF,
 							    int sU, const FermionFieldView &in, FermionFieldView &out)
 {
@@ -238,7 +238,7 @@ accelerator void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilView &st,  Do
 };
 
 template <class Impl>
-accelerator void WilsonKernels<Impl>::GenericDhopSiteExt(StencilView &st,  DoubledGaugeFieldView &U,
+void WilsonKernels<Impl>::GenericDhopSiteExt(StencilView &st,  DoubledGaugeFieldView &U,
 							 SiteHalfSpinor *buf, int sF,
 							 int sU, const FermionFieldView &in, FermionFieldView &out) 
 {
@@ -267,7 +267,7 @@ accelerator void WilsonKernels<Impl>::GenericDhopSiteExt(StencilView &st,  Doubl
 };
 
 template <class Impl>
-accelerator void WilsonKernels<Impl>::DhopDirK( StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf, int sF,
+void WilsonKernels<Impl>::DhopDirK( StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf, int sF,
 						int sU, const FermionFieldView &in, FermionFieldView &out, int dir, int gamma) 
 {
 #ifndef GRID_NVCC
