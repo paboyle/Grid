@@ -399,6 +399,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   // e.g. DGX1, supermicro board, 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
   //  cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, device1, device2);
+  cudaSetDevice(WorldShmRank);
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Each MPI rank should allocate our own buffer
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -411,6 +412,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     std::cerr << " SharedMemoryMPI.cc cudaMallocManaged failed NULL pointer for " << bytes<<" bytes " << std::endl;
     exit(EXIT_FAILURE);  
   }
+  std::cout << " SharedMemoryMPI.cc cudaMalloc "<< bytes << "bytes at "<< std::hex<< ShmCommBuf <<std::dec<<" for comms buffers " <<std::endl;
   SharedMemoryZero(ShmCommBuf,bytes);
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
