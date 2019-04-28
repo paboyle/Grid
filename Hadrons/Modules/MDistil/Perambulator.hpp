@@ -286,8 +286,11 @@ void TPerambulator<FImpl>::execute(void)
     std::cout <<  "perambulator done" << std::endl;
     perambulator.SliceShare( grid3d, grid4d );
 
-    if(PerambFileName.length())
-        perambulator.WriteBinary(PerambFileName + "." + std::to_string(vm().getTrajectory()));
+  if(PerambFileName.length()) {
+    std::string sPerambName{PerambFileName + "." + std::to_string(vm().getTrajectory())};
+    //perambulator.WriteBinary(sPerambName);
+    perambulator.template write<Hdf5Writer>((sPerambName + ".h5").c_str(), sPerambName.c_str());
+  }
 }
 
 END_MODULE_NAMESPACE

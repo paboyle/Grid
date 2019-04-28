@@ -647,7 +647,8 @@ bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
 typedef Grid::Hadrons::MDistil::NamedTensor<Complex,3,sizeof(Real)> MyTensor;
 
 template<typename T>
-void DebugShowTensor(T &x, const char * n)
+typename std::enable_if<Grid::EigenIO::is_tensor<T>::value && !Grid::Hadrons::MDistil::is_named_tensor<T>::value>::type
+DebugShowTensor(T &x, const char * n, std::string * pIndexNames=nullptr)
 {
   const MyTensor::Index s{x.size()};
   std::cout << n << ".size() = " << s << std::endl;
@@ -662,7 +663,10 @@ void DebugShowTensor(T &x, const char * n)
   MyTensor::Index SizeCalculated{1};
   std::cout << "Dimensions again";
   for(int i=0 ; i < x.NumDimensions ; i++ ) {
-    std::cout << " : [" << i << /*", " << x.IndexNames[i] << */"]=" << x.dimension(i);
+    std::cout << " : [" << i;
+    if( pIndexNames )
+      std::cout << ", " << pIndexNames[i];
+    std::cout << "]=" << x.dimension(i);
     SizeCalculated *= d[i];
   }
   std::cout << std::endl;
@@ -684,6 +688,13 @@ void DebugShowTensor(T &x, const char * n)
     std::cout << n << ".data()[" << i << "]=" << * p++;
   }
   std::cout << std::endl;
+}
+
+template<typename T>
+typename std::enable_if<Grid::Hadrons::MDistil::is_named_tensor<T>::value>::type
+DebugShowTensor(T &x, const char * n)
+{
+  DebugShowTensor( x.tensor, n, &x.IndexNames[0] );
 }
 
 // Test whether typedef and underlying types are the same
@@ -757,20 +768,58 @@ bool DebugEigenTest()
   MyTensor x(as, 2,1,4);
   DebugShowTensor(x, "x");
   x.WriteBinary(pszTestFileName);
-  DebugShowTensor(x, "x");
   // Test initialisation of an array of strings
   for( auto a : as )
     std::cout << a << std::endl;
-  Grid::Hadrons::MDistil::Peramb<Complex,3,sizeof(Real)> p{as,2,7,2};
+  Grid::Hadrons::MDistil::Perambulator<Complex,3,sizeof(Real)> p{as,2,7,2};
   DebugShowTensor(p, "p");
   std::cout << "p.IndexNames follow" << std::endl;
   for( auto a : p.IndexNames )
     std::cout << a << std::endl;
+
   // Now see whether we can read a tensor back
   std::array<std::string,3> Names2={"Alpha", "Gamma", "Delta"};
   MyTensor y(Names2, 2,4,1);
   y.ReadBinary(pszTestFileName);
   DebugShowTensor(y, "y");
+
+  // Now see whether we can read a tensor back from an hdf5 file
+  const char * pszH5Name = "test.h5";
+  y.write<Hdf5Writer>(pszH5Name);
+  {
+    MyTensor z;
+    const char * pszName = "z1";
+    DebugShowTensor(z, pszName);
+    z.read<Hdf5Reader>(pszH5Name);
+    DebugShowTensor(z, pszName);
+  }
+  {
+    MyTensor z(Names2,2,0,0);
+    const char * pszName = "z2";
+    DebugShowTensor(z, pszName);
+    z.read<Hdf5Reader>(pszH5Name);
+    DebugShowTensor(z, pszName);
+  }
+  if((0)) // The following tests would fail
+  {
+    MyTensor z(Names2,2,0,78);
+    //std::array<std::string,3> NamesBad={"Alpha", "Gamma", "Kilo"};
+    //MyTensor z(NamesBad);
+    const char * pszName = "zFail";
+    DebugShowTensor(z, pszName);
+    z.read<Hdf5Reader>(pszH5Name);
+    DebugShowTensor(z, pszName);
+  }
+  // Now see whether we can read a tensor back from an xml file
+  const char * pszXmlName = "test.xml";
+  y.write<XmlWriter>(pszXmlName);
+  {
+    MyTensor z;
+    const char * pszName = "xml1";
+    DebugShowTensor(z, pszName);
+    z.read<XmlReader>(pszXmlName);
+    DebugShowTensor(z, pszName);
+  }
 
   // Testing whether typedef produces the same type - yes it does
 
@@ -954,8 +1003,8 @@ bool DebugGridTensorTest( void )
   for( auto x : toc7 ) std::cout << " [" << i++ << "]=" << x;
   std::cout << std::endl;
 
-  t2 o2;
-  auto a2 = TensorRemove(o2);
+  //t2 o2;
+  //auto a2 = TensorRemove(o2);
   //t3 o3;
   //t4 o4;
   //auto a3 = TensorRemove(o3);

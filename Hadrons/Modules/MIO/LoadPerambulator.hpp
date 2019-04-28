@@ -118,13 +118,11 @@ void TLoadPerambulator<FImpl>::setup(void)
 template <typename FImpl>
 void TLoadPerambulator<FImpl>::execute(void)
 {
-    auto        &perambulator = envGet(MDistil::Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>,
-		                                           getName());
-
-	const std::string &PerambFileName{par().PerambFileName + "." + std::to_string(vm().getTrajectory())};
-        std::cout << "reading perambulator from file " << PerambFileName << std::endl;
-        perambulator.ReadBinary(PerambFileName);
-                                                          
+  auto &perambulator = envGet(MDistil::Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName());
+  const std::string sPerambName{par().PerambFileName + "." + std::to_string(vm().getTrajectory())};
+  const std::string PerambFileName{sPerambName + ".h5"};
+  std::cout << "reading perambulator from file " << PerambFileName << std::endl;
+  perambulator.template read<Hdf5Reader>(PerambFileName.c_str(), sPerambName.c_str());
 }
 
 END_MODULE_NAMESPACE

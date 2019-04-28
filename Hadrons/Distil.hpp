@@ -258,33 +258,82 @@ inline GridCartesian * MakeLowerDimGrid( GridCartesian * gridHD )
 
  ******************************************************************************/
 
-template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size = sizeof(Scalar_)>
-class NamedTensor : public Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor>
+template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size_ = sizeof(Scalar_)>
+class NamedTensor : Serializable
 {
 public:
-  typedef Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor> ET;
-  std::array<std::string,NumIndices_> IndexNames;
+  using Scalar = Scalar_;
+  static constexpr int NumIndices = NumIndices_;
+  static constexpr uint16_t Endian_Scalar_Size = Endian_Scalar_Size_;
+  using ET = Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor>;
+  using Index = typename ET::Index;
+  GRID_SERIALIZABLE_CLASS_MEMBERS(NamedTensor
+                                  , ET, tensor
+                                  , std::vector<std::string>, IndexNames
+                                  );
 public:
+  // Named tensors are intended to be a superset of Eigen tensor
+  inline operator ET&() const { return tensor; }
   template<typename... IndexTypes>
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor(std::array<std::string,NumIndices_> &IndexNames_, Eigen::Index firstDimension, IndexTypes... otherDimensions)
-  : IndexNames{IndexNames_}, ET(firstDimension, otherDimensions...)
+  inline const Scalar_& operator()(const std::array<Eigen::Index, NumIndices_> &Indices) const
+  { return tensor.operator()(Indices); }
+  inline Scalar_& operator()(const std::array<Eigen::Index, NumIndices_> &Indices)
+  { return tensor.operator()(Indices); }
+  template<typename... IndexTypes>
+  inline const Scalar_& operator()(Eigen::Index firstDimension, IndexTypes... otherDimensions) const
   {
-    // The number of dimensions used to construct a tensor must be equal to the rank of the tensor.
-    assert(sizeof...(otherDimensions) + 1 == NumIndices_
-           && "NamedTensor error: dimensions in constructor != tensor rank");
+    // The number of indices used to access a tensor coefficient must be equal to the rank of the tensor.
+    assert(sizeof...(otherDimensions) + 1 == NumIndices_ && "NamedTensor: dimensions != tensor rank");
+    return tensor.operator()(std::array<Eigen::Index, NumIndices_>{{firstDimension, otherDimensions...}});
+  }
+  template<typename... IndexTypes>
+  inline Scalar_& operator()(Eigen::Index firstDimension, IndexTypes... otherDimensions)
+  {
+    // The number of indices used to access a tensor coefficient must be equal to the rank of the tensor.
+    assert(sizeof...(otherDimensions) + 1 == NumIndices_ && "NamedTensor: dimensions != tensor rank");
+    return tensor.operator()(std::array<Eigen::Index, NumIndices_>{{firstDimension, otherDimensions...}});
   }
 
+  // Construct a named tensor explicitly specifying size of each dimension
+  template<typename... IndexTypes>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor(std::array<std::string,NumIndices_> &IndexNames_, Eigen::Index firstDimension, IndexTypes... otherDimensions)
+  : tensor(firstDimension, otherDimensions...), IndexNames{NumIndices}
+  {
+    // The number of dimensions used to construct a tensor must be equal to the rank of the tensor.
+    assert(sizeof...(otherDimensions) + 1 == NumIndices_ && "NamedTensor: dimensions != tensor rank");
+    for( int i = 0; i < NumIndices_; i++ )
+      IndexNames[i] = IndexNames_[i];
+  }
+
+  // Default constructor (assumes tensor will be loaded from file)
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor() : IndexNames{NumIndices_} {}
+  
+  // Construct a named tensor without specifying size of each dimension (because it will be loaded from file)
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor(std::array<std::string,NumIndices_> &IndexNames_)
+  : IndexNames{NumIndices_}
+  {
+    for( int i = 0; i < NumIndices_; i++ )
+      IndexNames[i] = IndexNames_[i];
+  }
+  
   // Share data for timeslices we calculated with other nodes
   inline void SliceShare( GridCartesian * gridLowDim, GridCartesian * gridHighDim ) {
-    Grid::SliceShare( gridLowDim, gridHighDim, this->data(), (int) (this->size() * sizeof(Scalar_)));
+    Grid::SliceShare( gridLowDim, gridHighDim, tensor.data(), (int) (tensor.size() * sizeof(Scalar_)));
   }
 
   // load and save - not virtual - probably all changes
-  inline void load(const std::string filename);
-  inline void save(const std::string filename) const;
-  inline void ReadBinary(const std::string filename);
-  inline void WriteBinary(const std::string filename);
+  template<typename Reader> inline void read (Reader &r, const char * pszTag = nullptr);
+  template<typename Writer> inline void write(Writer &w, const char * pszTag = nullptr) const;
+  template<typename Reader> inline void read (const char * filename, const char * pszTag = nullptr);
+  template<typename Writer> inline void write(const char * filename, const char * pszTag = nullptr) const;
+  EIGEN_DEPRECATED inline void ReadBinary (const std::string filename); // To be removed
+  EIGEN_DEPRECATED inline void WriteBinary(const std::string filename); // To be removed
 };
+
+// Is this a named tensor
+template<typename T, typename V = void> struct is_named_tensor : public std::false_type {};
+template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size_> struct is_named_tensor<NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size_>> : public std::true_type {};
+template<typename T> struct is_named_tensor<T, typename std::enable_if<std::is_base_of<NamedTensor<typename T::Scalar, T::NumIndices, T::Endian_Scalar_Size_>, T>::value>::type> : public std::true_type {};
 
 /******************************************************************************
  Save NamedTensor binary format (NB: On-disk format is Big Endian)
@@ -301,7 +350,7 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::WriteBinary(const st
   assert((sizeof(Scalar_) % Endian_Scalar_Size) == 0 && "NamedTensor error: Scalar_ is not composed of Endian_Scalar_Size" );
   // Size of the data (in bytes)
   const uint32_t Scalar_Size{sizeof(Scalar_)};
-  const auto NumElements{this->size()};
+  const auto NumElements{tensor.size()};
   const std::streamsize TotalDataSize{static_cast<std::streamsize>(NumElements * Scalar_Size)};
   uint64_t u64 = htobe64(static_cast<uint64_t>(TotalDataSize));
   w.write(reinterpret_cast<const char *>(&u64), sizeof(u64));
@@ -313,14 +362,14 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::WriteBinary(const st
   w.write(reinterpret_cast<const char *>(&u16), sizeof(u16));
   // number of dimensions which aren't 1
   u16 = static_cast<uint16_t>(this->NumIndices);
-  for( auto dim : this->dimensions() )
+  for( auto dim : tensor.dimensions() )
     if( dim == 1 )
       u16--;
   u16 = htobe16( u16 );
   w.write(reinterpret_cast<const char *>(&u16), sizeof(u16));
   // dimensions together with names
   int d = 0;
-  for( auto dim : this->dimensions() ) {
+  for( auto dim : tensor.dimensions() ) {
     if( dim != 1 ) {
       // size of this dimension
       u16 = htobe16( static_cast<uint16_t>( dim ) );
@@ -334,7 +383,7 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::WriteBinary(const st
     d++;
   }
   // Actual data
-  char * const pStart{reinterpret_cast<char *>(this->data())};
+  char * const pStart{reinterpret_cast<char *>(tensor.data())};
   // Swap to network byte order in place (alternative is to copy memory - still slow)
   void * const pEnd{pStart + TotalDataSize};
   if(Endian_Scalar_Size == 8)
@@ -359,9 +408,9 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::WriteBinary(const st
       * p = be16toh( * p );
   // checksum
 #ifdef USE_IPP
-  u32 = htobe32(GridChecksum::crc32c(this->data(), TotalDataSize));
+  u32 = htobe32(GridChecksum::crc32c(tensor.data(), TotalDataSize));
 #else
-  u32 = htobe32(GridChecksum::crc32(this->data(), TotalDataSize));
+  u32 = htobe32(GridChecksum::crc32(tensor.data(), TotalDataSize));
 #endif
   w.write(reinterpret_cast<const char *>(&u32), sizeof(u32));
 }
@@ -381,7 +430,7 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::ReadBinary(const std
   assert((sizeof(Scalar_) % Endian_Scalar_Size) == 0 && "NamedTensor error: Scalar_ is not composed of Endian_Scalar_Size" );
   // Size of the data in bytes
   const uint32_t Scalar_Size{sizeof(Scalar_)};
-  const auto NumElements{this->size()};
+  const auto NumElements{tensor.size()};
   const std::streamsize TotalDataSize{static_cast<std::streamsize>(NumElements * Scalar_Size)};
   uint64_t u64;
   r.read(reinterpret_cast<char *>(&u64), sizeof(u64));
@@ -397,13 +446,13 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::ReadBinary(const std
   // number of dimensions which aren't 1
   r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
   u16 = be16toh( u16 );
-  for( auto dim : this->dimensions() )
+  for( auto dim : tensor.dimensions() )
     if( dim == 1 )
       u16++;
   assert( this->NumIndices == u16 && "NamedTensor error: number of dimensions which aren't 1" );
   // dimensions together with names
   int d = 0;
-  for( auto dim : this->dimensions() ) {
+  for( auto dim : tensor.dimensions() ) {
     if( dim != 1 ) {
       // size of dimension
       r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
@@ -420,7 +469,7 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::ReadBinary(const std
     d++;
   }
   // Actual data
-  char * const pStart{reinterpret_cast<char *>(this->data())};
+  char * const pStart{reinterpret_cast<char *>(tensor.data())};
   void * const pEnd{pStart + TotalDataSize};
   r.read(pStart,TotalDataSize);
   // Swap back from network byte order
@@ -437,44 +486,59 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::ReadBinary(const std
   r.read(reinterpret_cast<char *>(&u32), sizeof(u32));
   u32 = be32toh( u32 );
 #ifdef USE_IPP
-  u32 -= GridChecksum::crc32c(this->data(), TotalDataSize);
+  u32 -= GridChecksum::crc32c(tensor.data(), TotalDataSize);
 #else
-  u32 -= GridChecksum::crc32(this->data(), TotalDataSize);
+  u32 -= GridChecksum::crc32(tensor.data(), TotalDataSize);
 #endif
   assert( u32 == 0 && "NamedTensor error: Perambulator checksum invalid");
 }
 
 /******************************************************************************
- Save NamedTensor Hdf5 format
+ Write NamedTensor
  ******************************************************************************/
 
 template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
-void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::save(const std::string filename) const {
+template<typename Writer>
+void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::write(Writer &w, const char * pszTag)const{
+  if( pszTag == nullptr )
+    pszTag = "tensor";
+  write(w, pszTag, *this);
+}
+
+template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
+template<typename Writer>
+void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::write(const char * filename, const char * pszTag)const{
   LOG(Message) << "Writing NamedTensor to \"" << filename << "\"" << std::endl;
-#ifndef HAVE_HDF5
-  LOG(Message) << "Error: I/O for NamedTensor requires HDF5" << std::endl;
-#else
-  Hdf5Writer w(filename);
-  //w << this->NumIndices << this->dimensions() << this->IndexNames;
-#endif
+  Writer w(filename);
+  write(w, pszTag);
 }
 
 /******************************************************************************
- Load NamedTensor Hdf5 format
+ Read NamedTensor
  ******************************************************************************/
 
 template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
-void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::load(const std::string filename) {
+template<typename Reader>
+void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::read(Reader &r, const char * pszTag) {
+  // Grab index names and dimensions
+  if( pszTag == nullptr )
+    pszTag = "tensor";
+  std::vector<std::string> OldIndexNames{std::move(IndexNames)};
+  typename ET::Dimensions OldDimensions{tensor.dimensions()};
+  read(r, pszTag, *this);
+  const typename ET::Dimensions & NewDimensions{tensor.dimensions()};
+  for( int i=0; i < NumIndices_; i++ ) {
+    assert(OldDimensions[i] == 0 || OldDimensions[i] == NewDimensions[i] && "NamedTensor::load dimension size");
+    assert(OldIndexNames[i].size() == 0 || OldIndexNames[i] == IndexNames[i] && "NamedTensor::load dimension name");
+  }
+}
+
+template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
+template<typename Reader>
+void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::read(const char * filename, const char * pszTag) {
   LOG(Message) << "Reading NamedTensor from \"" << filename << "\"" << std::endl;
-#ifndef HAVE_HDF5
-  LOG(Message) << "Error: I/O for NamedTensor requires HDF5" << std::endl;
-#else
-  Hdf5Reader r(filename);
-  typename ET::Dimensions d;
-  std::array<std::string,NumIndices_> n;
-  //r >> this->NumIndices >> d >> n;
-  //this->IndexNames = n;
-#endif
+  Reader r(filename);
+  read(r, pszTag);
 }
 
 /******************************************************************************
