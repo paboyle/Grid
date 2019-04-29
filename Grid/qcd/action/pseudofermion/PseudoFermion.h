@@ -29,6 +29,9 @@ directory
 #ifndef QCD_PSEUDOFERMION_AGGREGATE_H
 #define QCD_PSEUDOFERMION_AGGREGATE_H
 
+// Rational functions
+#include <Grid/qcd/action/pseudofermion/Bounds.h>
+
 #include <Grid/qcd/action/pseudofermion/EvenOddSchurDifferentiable.h>
 #include <Grid/qcd/action/pseudofermion/TwoFlavour.h>
 #include <Grid/qcd/action/pseudofermion/TwoFlavourRatio.h>

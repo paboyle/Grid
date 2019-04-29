@@ -52,7 +52,7 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
   _processors = processors;
-  _ndimension = processors.size();
+  _ndimension = processors.size();  assert(_ndimension>=1);
   _processor_coor.resize(_ndimension);
   
   // Require 1^N processor grid for fake
