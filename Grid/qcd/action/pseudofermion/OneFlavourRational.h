@@ -143,6 +143,14 @@ namespace Grid{
 
 	msCG(MdagMOp,Phi,Y);
 
+	if ( (rand()%param.BoundsCheckFreq)==0 ) { 
+	  FermionField gauss(FermOp.FermionGrid());
+	  gauss = Phi;
+	  HighBoundCheck(MdagMOp,gauss,param.hi);
+	  InverseSqrtBoundsCheck(param.MaxIter,param.tolerance*100,MdagMOp,gauss,PowerNegHalf);
+	}
+
+
 	RealD action = norm2(Y);
 	std::cout << GridLogMessage << "Pseudofermion action FIXME -- is -1/4 solve or -1/2 solve faster??? "<<action<<std::endl;
 	return action;

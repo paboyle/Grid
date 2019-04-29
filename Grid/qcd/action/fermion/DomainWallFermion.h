@@ -53,7 +53,7 @@ namespace Grid {
 	ComplexField coor(in._grid);
 	ComplexField ph(in._grid);  ph = zero;
 	FermionField in_buf(in._grid); in_buf = zero;
-	Complex ci(0.0,1.0);
+	Scalar ci(0.0,1.0);
 	assert(twist.size() == Nd);//check that twist is Nd
 	assert(boundary.size() == Nd);//check that boundary conditions is Nd
 	int shift = 0;
@@ -68,6 +68,7 @@ namespace Grid {
 	  twist[nu] = twist[nu] + boundary_phase/((2.0*M_PI));
 	}
 	in_buf = exp(ci*ph*(-1.0))*in;
+
 
 	if(fiveD){//FFT only on temporal and spatial dimensions
           std::vector<int> mask(Nd+1,1); mask[0] = 0;
