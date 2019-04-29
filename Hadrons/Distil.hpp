@@ -47,6 +47,9 @@
 /******************************************************************************
  A consistent set of cross-platform methods for big endian <-> host byte ordering
  I imagine this exists already?
+ 
+ RELEASE NOTE:
+ 
  ******************************************************************************/
 
 #if defined(__linux__)
@@ -589,6 +592,20 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::read(const char * fi
 template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size = sizeof(Scalar_)>
 using Perambulator = NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>;
 
+struct DistilParameters: Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(DistilParameters,
+                                  int, TI,
+                                  int, LI,
+                                  int, nnoise,
+                                  int, tsrc,
+                                  int, SI,
+                                  int, Ns,
+                                  int, Nt,
+                                  int, Nt_inv)
+  DistilParameters() = default;
+  template <class ReaderClass> DistilParameters(Reader<ReaderClass>& Reader){read(Reader,"Distil",*this);}
+};
+
 /*************************************************************************************
  
  Rotate eigenvectors into our phase convention
@@ -623,21 +640,6 @@ inline void RotateEigen(std::vector<LatticeColourVector> & evec)
     }
   }
 }
-
-struct DistilParameters: Serializable {
-  GRID_SERIALIZABLE_CLASS_MEMBERS(DistilParameters,
-                                  int, TI,
-                                  int, LI,
-                                  int, nnoise,
-                                  int, tsrc,
-                                  int, SI,
-                                  int, Ns,
-                                  int, Nt,
-                                  int, Nt_inv)
-  DistilParameters() = default;
-  template <class ReaderClass> DistilParameters(Reader<ReaderClass>& Reader){read(Reader,"Distil",*this);}
-};
-
 
 END_MODULE_NAMESPACE
 

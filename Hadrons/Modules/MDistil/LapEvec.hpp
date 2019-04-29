@@ -74,7 +74,8 @@ struct LanczosParameters: Serializable {
                                   int, Np,
                                   int, MaxIt,
                                   //int, MinRes,
-                                  double, resid)
+                                  double, resid,
+                                  std::string, Log) // Any non-empty string will enable logging
   LanczosParameters() = default;
   template <class ReaderClass> LanczosParameters(Reader<ReaderClass>& Reader){read(Reader,"Lanczos",*this);}
 };
@@ -133,14 +134,10 @@ MODULE_REGISTER_TMP(LapEvec, TLapEvec<GIMPL>, MDistil);
  TLapEvec implementation
  ******************************************************************************/
 
-//constexpr char szEigenPackSuffix[] = "_eigenPack";
-
 // constructor /////////////////////////////////////////////////////////////////
 template <typename GImpl>
 TLapEvec<GImpl>::TLapEvec(const std::string name) : gridLD{nullptr}, Module<LapEvecPar>(name)
 {
-  //LOG(Message) << "TLapEvec constructor : TLapEvec<GImpl>::TLapEvec(const std::string name)" << std::endl;
-  //LOG(Message) << "this=" << this << ", gridLD=" << gridLD << std::endl;
 }
 
 // destructor /////////////////////////////////////////////////////////////////
@@ -155,7 +152,6 @@ template <typename GImpl>
 std::vector<std::string> TLapEvec<GImpl>::getInput(void)
 {
     std::vector<std::string> in = {par().gauge};
-    
     return in;
 }
 
@@ -163,7 +159,6 @@ template <typename GImpl>
 std::vector<std::string> TLapEvec<GImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()}; // This is the higher dimensional eigenpack
-    
     return out;
 }
 
@@ -209,11 +204,14 @@ void TLapEvec<GImpl>::Cleanup(void)
 template <typename GImpl>
 void TLapEvec<GImpl>::execute(void)
 {
-  LOG(Message) << "execute() : start for " << getName() << std::endl;
-
   const ChebyshevParameters &ChebPar{par().Cheby};
   const LanczosParameters   &LPar{par().Lanczos};
   const int &nvec{LPar.Nvec};
+
+  // Enable IRL logging if requested
+  if( LPar.Log.size() > 0 )
+    GridLogIRL.Active(1);
+
   //const bool exact_distillation{TI==Nt && LI==nvec};
   //const bool full_tdil{TI==Nt};
   //const int &Nt_inv{full_tdil ? 1 : TI};
@@ -243,21 +241,10 @@ void TLapEvec<GImpl>::execute(void)
   }
   LOG(Message) << "Smeared plaquette: " << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu_smear) << std::endl;
 
-  // For debugging only, write logging output to a local file
-  std::ofstream * ll = nullptr;
-  const int rank{gridHD->ThisRank()};
-  if((0)) { // debug to a local log file
-    std::string filename{"Local_"};
-    filename.append(std::to_string(rank));
-    filename.append(".log");
-    ll = new std::ofstream(filename);
-  }
-
   ////////////////////////////////////////////////////////////////////////
   // Invert Peardon Nabla operator separately on each time-slice
   ////////////////////////////////////////////////////////////////////////
   
-  bool bReturnValue = true;
   auto & eig4d = envGet(DistilEP, getName() );
   envGetTmp(std::vector<DistilEP>, eig);   // Eigenpack for each timeslice
   envGetTmp(LatticeGaugeField, UmuNoTime); // Gauge field without time dimension
@@ -266,68 +253,45 @@ void TLapEvec<GImpl>::execute(void)
   const int Ntfirst{gridHD->LocalStarts()[Tdir]};
   const char DefaultOperatorXml[] = "<OPERATOR>Michael</OPERATOR>";
   const char DefaultsolverXml[]   = "<SOLVER>Felix</SOLVER>";
-  for(int t=Ntfirst;bReturnValue && t<Ntfirst+Ntlocal;t++){
-    std::cout << GridLogMessage << "------------------------------------------------------------" << std::endl;
-    std::cout << GridLogMessage << " Compute eigenpack, Timeslice  = " << t << std::endl;
-    std::cout << GridLogMessage << "------------------------------------------------------------" << std::endl;
-    
-      std::cout << "T:  " << t << " / " << Ntfirst + Ntlocal << std::endl;
+  for(int t = Ntfirst; t < Ntfirst + Ntlocal; t++ ) {
+    LOG(Message) << "------------------------------------------------------------" << std::endl;
+    LOG(Message) << " Compute eigenpack, Timeslice = " << t << " / " << Ntfirst + Ntlocal << std::endl;
+    LOG(Message) << "------------------------------------------------------------" << std::endl;
     eig[t].resize(LPar.Nk+LPar.Np,gridLD);
     
     // Construct smearing operator
     ExtractSliceLocal(UmuNoTime,Umu_smear,0,t-Ntfirst,Grid::QCD::Tdir); // switch to 3d/4d objects
     LinOpPeardonNabla<LatticeColourVector> PeardonNabla(UmuNoTime);
-    std::cout << "Chebyshev preconditioning to order " << ChebPar.PolyOrder
-    << " with parameters (alpha,beta) = (" << ChebPar.alpha << "," << ChebPar.beta << ")" << std::endl;
+    LOG(Debug) << "Chebyshev preconditioning to order " << ChebPar.PolyOrder
+      << " with parameters (alpha,beta) = (" << ChebPar.alpha << "," << ChebPar.beta << ")" << std::endl;
     Chebyshev<LatticeColourVector> Cheb(ChebPar.alpha,ChebPar.beta,ChebPar.PolyOrder);
     
     //from Test_Cheby.cc
-    if ( ((0)) && Ntfirst == 0 && t==0) {
-      std::ofstream of("cheby_" + std::to_string(ChebPar.alpha) + "_" + std::to_string(ChebPar.beta) + "_" + std::to_string(ChebPar.PolyOrder));
-      Cheb.csv(of);
-    }
+    //if( Ntfirst == 0 && t==0) {
+      //std::ofstream of("cheby_" + std::to_string(ChebPar.alpha) + "_" + std::to_string(ChebPar.beta) + "_" + std::to_string(ChebPar.PolyOrder));
+      //Cheb.csv(of);
+    //}
 
     // Construct source vector according to Test_dwf_compressed_lanczos.cc
-    src=11.0;
+    src = 11.0;
     RealD nn = norm2(src);
     nn = Grid::sqrt(nn);
     src = src * (1.0/nn);
 
-    GridLogIRL.Active(1);
     LinOpPeardonNablaHerm<LatticeColourVector> PeardonNablaCheby(Cheb,PeardonNabla);
-    ImplicitlyRestartedLanczos<LatticeColourVector> IRL(PeardonNablaCheby,PeardonNabla,LPar.Nvec,LPar.Nk,LPar.Nk+LPar.Np,LPar.resid,LPar.MaxIt);
+    ImplicitlyRestartedLanczos<LatticeColourVector>
+      IRL(PeardonNablaCheby,PeardonNabla,LPar.Nvec,LPar.Nk,LPar.Nk+LPar.Np,LPar.resid,LPar.MaxIt);
     int Nconv = 0;
-    
-    if(ll) *ll << t << " : Before IRL.calc()" << std::endl;
     IRL.calc(eig[t].eval,eig[t].evec,src,Nconv);
-    if(ll) *ll << t << " : After  IRL.calc()" << std::endl;
-    if( Nconv < LPar.Nvec ) {
-      bReturnValue = false;
-      if(ll) *ll << t << " : Convergence error : Only " << Nconv << " converged!" << std::endl;
-    } else {
-      if( Nconv > LPar.Nvec )
-        eig[t].resize( LPar.Nvec, gridLD );
-      std::cout << GridLogMessage << "Timeslice " << t << " has " << eig[t].eval.size() << " eigenvalues and " << eig[t].evec.size() << " eigenvectors." << std::endl;
-      
-      // Now rotate the eigenvectors into our phase convention
-      RotateEigen( eig[t].evec );
-      
-      if((0)) { // Debugging only
-        // Write the eigenvectors and eigenvalues to disk
-        //std::cout << GridLogMessage << "Writing eigenvalues/vectors to " << pszEigenPack << std::endl;
-        eig[t].record.operatorXml = DefaultOperatorXml;
-        eig[t].record.solverXml = DefaultsolverXml;
-        eig[t].write("DistilEigen",false,t);
-        //std::cout << GridLogMessage << "Written eigenvectors" << std::endl;
-      }
-    }
-      std::cout << "T:  " << t << " / " << Ntfirst + Ntlocal << std::endl;
+    assert( Nconv >= LPar.Nvec && "MDistil::LapEvec : Error - not enough eigenvectors converged" );
+    if( Nconv > LPar.Nvec )
+      eig[t].resize( LPar.Nvec, gridLD );
+    RotateEigen( eig[t].evec ); // Rotate the eigenvectors into our phase convention
+
     for (int i=0;i<LPar.Nvec;i++){
-      std::cout << "Inserting Timeslice " << t << " into vector " << i << std::endl;
       InsertSliceLocal(eig[t].evec[i],eig4d.evec[i],0,t,3);
-      // TODO: Discuss: is this needed? Is there a better way?
       if(t==0)
-        eig4d.eval[i] = eig[t].eval[i];
+        eig4d.eval[i] = eig[t].eval[i]; // TODO: Discuss: is this needed? Is there a better way?
     }
   }
 
@@ -338,13 +302,6 @@ void TLapEvec<GImpl>::execute(void)
   sEigenPackName.append(".");
   sEigenPackName.append(std::to_string(vm().getTrajectory()));
   eig4d.write(sEigenPackName,false);
-
-  // Close the local debugging log file
-  if( ll ) {
-    *ll << " Returning " << bReturnValue << std::endl;
-    delete ll;
-  }
-  LOG(Message) << "execute() : end" << std::endl;
 }
 
 END_MODULE_NAMESPACE
