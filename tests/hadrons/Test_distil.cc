@@ -347,6 +347,7 @@ void test_MesonSink(Application &application)
 // g5*unsmeared
 /////////////////////////////////////////////////////////////
 
+#ifdef DISTIL_PRE_RELEASE
 void test_g5_sinks(Application &application)
 {
   // DistilVectors parameters
@@ -358,6 +359,8 @@ void test_g5_sinks(Application &application)
   g5_multiplyPar.Nt_inv=1;
   application.createModule<MDistil::g5_multiply>("g5phi",g5_multiplyPar);
 }
+#endif
+
 /////////////////////////////////////////////////////////////
 // MesonFields
 /////////////////////////////////////////////////////////////
@@ -435,6 +438,7 @@ void test_MesonFieldRhoAll(Application &application)
 // BaryonFields - phiphiphi - efficient
 /////////////////////////////////////////////////////////////
 
+#ifdef DISTIL_PRE_RELEASE
 void test_BaryonFieldPhi2(Application &application)
 {
   // DistilVectors parameters
@@ -510,6 +514,8 @@ void test_Baryon2pt(Application &application)
   Baryon2ptPar.output="C2_baryon";
   application.createModule<MDistil::Baryon2pt>("C2_b",Baryon2ptPar);
 }
+#endif
+
 /////////////////////////////////////////////////////////////
 // emField
 /////////////////////////////////////////////////////////////
@@ -1124,6 +1130,7 @@ int main(int argc, char *argv[])
       test_DistilVectorsS( application );
       test_MesonFieldSL( application );
       break;
+#ifdef DISTIL_PRE_RELEASE
     case 6: // 3
       test_Global( application );
       test_SolverS( application );
@@ -1141,6 +1148,7 @@ int main(int argc, char *argv[])
       test_BaryonFieldPhi( application );
       test_BaryonFieldRho( application );
       break;
+#endif
     case 8: // 3
       test_Global( application );
       test_SolverS( application );
@@ -1149,6 +1157,7 @@ int main(int argc, char *argv[])
       test_DistilVectors( application );
       test_MesonField( application );
       break;
+#ifdef DISTIL_PRE_RELEASE
     case 9: // 3
       test_Global( application );
       test_SolverS( application );
@@ -1172,6 +1181,7 @@ int main(int argc, char *argv[])
       test_BaryonFieldPhi2( application );
       test_BaryonFieldRho2( application );
       break;
+#endif
     case 12: // 3
       test_Global( application );
       test_SolverS( application );
