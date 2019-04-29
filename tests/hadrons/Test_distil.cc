@@ -114,6 +114,7 @@ void test_LapEvec(Application &application)
   p.Lanczos.Np = 2;
   p.Lanczos.MaxIt = 1000;
   p.Lanczos.resid = 1e-2;
+  p.Lanczos.IRLLog = 0;
   application.createModule<MDistil::LapEvec>("LapEvec",p);
 }
 
@@ -190,9 +191,9 @@ void test_MultiPerambulators(Application &application)
   MDistil::DistilVectors::Par DistilVecPar;
   DistilVecPar.noise="Peramb5_noise";
   DistilVecPar.perambulator="Peramb2";
-  DistilVecPar.eigenPack="LapEvec";
+  DistilVecPar.lapevec ="LapEvec";
   DistilVecPar.tsrc = 0;
-  DistilVecPar.nnoise = 1;
+  //DistilVecPar.nnoise = 1;
   DistilVecPar.LI=2;
   DistilVecPar.SI=4;
   DistilVecPar.TI=8;
@@ -266,9 +267,9 @@ void test_DistilVectors(Application &application)
   DistilVecPar.noise="Peramb_noise";
   //DistilVecPar.perambulator="Peramb_perambulator_light";
   DistilVecPar.perambulator="Peramb";
-  DistilVecPar.eigenPack="LapEvec";
+  DistilVecPar.lapevec="LapEvec";
   DistilVecPar.tsrc = 0;
-  DistilVecPar.nnoise = 1;
+  //DistilVecPar.nnoise = 1;
   DistilVecPar.LI=5;
   DistilVecPar.SI=4;
   DistilVecPar.TI=8;
@@ -313,9 +314,9 @@ void test_DistilVectorsS(Application &application)
   DistilVecPar.noise="PerambS_noise";
   //DistilVecPar.perambulator="PerambS_perambulator_light";
   DistilVecPar.perambulator="PerambS";
-  DistilVecPar.eigenPack="LapEvec";
+  DistilVecPar.lapevec="LapEvec";
   DistilVecPar.tsrc = 0;
-  DistilVecPar.nnoise = 1;
+  //DistilVecPar.nnoise = 1;
   DistilVecPar.LI=5;
   DistilVecPar.SI=4;
   DistilVecPar.TI=32;
@@ -1203,7 +1204,7 @@ int main(int argc, char *argv[])
   LOG(Message) << "====== XML creation for test " << iTestNum << " complete ======" << std::endl;
 
   // execution
-  application.saveParameterFile("test_hadrons_distil.xml");
+  application.saveParameterFile("test_distil.xml");
   application.run();
   
   // epilogue

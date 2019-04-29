@@ -75,7 +75,7 @@ struct LanczosParameters: Serializable {
                                   int, MaxIt,
                                   //int, MinRes,
                                   double, resid,
-                                  std::string, Log) // Any non-empty string will enable logging
+                                  int, IRLLog)
   LanczosParameters() = default;
   template <class ReaderClass> LanczosParameters(Reader<ReaderClass>& Reader){read(Reader,"Lanczos",*this);}
 };
@@ -208,10 +208,6 @@ void TLapEvec<GImpl>::execute(void)
   const LanczosParameters   &LPar{par().Lanczos};
   const int &nvec{LPar.Nvec};
 
-  // Enable IRL logging if requested
-  if( LPar.Log.size() > 0 )
-    GridLogIRL.Active(1);
-
   //const bool exact_distillation{TI==Nt && LI==nvec};
   //const bool full_tdil{TI==Nt};
   //const int &Nt_inv{full_tdil ? 1 : TI};
@@ -224,6 +220,11 @@ void TLapEvec<GImpl>::execute(void)
   //else
     //assert(nnoise>1);
 
+  // Disable IRL logging if requested
+  LOG(Message) << "IRLLog=" << LPar.IRLLog << std::endl;
+  const int PreviousIRLLogState{GridLogIRL.isActive()};
+  GridLogIRL.Active( LPar.IRLLog == 0 ? 0 : 1 );
+  
   auto &Umu = envGet(GaugeField, par().gauge);
   envGetTmp(GaugeField, Umu_smear);
 
@@ -302,6 +303,8 @@ void TLapEvec<GImpl>::execute(void)
   sEigenPackName.append(".");
   sEigenPackName.append(std::to_string(vm().getTrajectory()));
   eig4d.write(sEigenPackName,false);
+
+  GridLogIRL.Active( PreviousIRLLogState );
 }
 
 END_MODULE_NAMESPACE
