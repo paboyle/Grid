@@ -7,6 +7,7 @@ modules_cc =\
   Modules/MContraction/WeakNonEye3pt.cc \
   Modules/MContraction/A2AAslashField.cc \
   Modules/MContraction/A2AMesonField.cc \
+  Modules/MContraction/A2ALeptonField.cc \
   Modules/MContraction/DiscLoop.cc \
   Modules/MContraction/Gamma3pt.cc \
   Modules/MFermion/FreeProp.cc \
@@ -72,6 +73,7 @@ modules_hpp =\
   Modules/MContraction/A2AAslashField.hpp \
   Modules/MContraction/A2ALoop.hpp \
   Modules/MContraction/A2AMesonField.hpp \
+  Modules/MContraction/A2ALeptonField.hpp \
   Modules/MContraction/Meson.hpp \
   Modules/MContraction/DiscLoop.hpp \
   Modules/MContraction/Gamma3pt.hpp \
