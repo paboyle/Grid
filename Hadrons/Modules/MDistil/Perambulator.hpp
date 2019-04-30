@@ -134,38 +134,36 @@ std::vector<std::string> TPerambulator<FImpl>::getOutput(void)
 template <typename FImpl>
 void TPerambulator<FImpl>::setup(void)
 {
-    Cleanup();
-
-    const int nvec{par().nvec};
-    const DistilParameters & Distil{par().Distil};
-    const int LI{Distil.LI};
-    const int nnoise{Distil.nnoise};
-    const int Nt_inv{Distil.Nt_inv}; // TODO: PROBABLY BETTER: if (full_tdil) Nt_inv=1; else Nt_inv = TI;
-    const int Ns{Distil.Ns};
-    std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
-
-    envCreate(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName(), 1,
-              sIndexNames,Distil.Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
-    envCreate(std::vector<FermionField>, getName() + "_unsmeared_sink", 1, 
+  Cleanup();
+  grid4d = env().getGrid();
+  grid3d = MakeLowerDimGrid(grid4d);
+  const int Nt{grid4d->GlobalDimensions()[Tdir]};
+  const int nvec{par().nvec};
+  const DistilParameters & Distil{par().Distil};
+  const int LI{Distil.LI};
+  const int nnoise{Distil.nnoise};
+  const int Nt_inv{Distil.Nt_inv}; // TODO: PROBABLY BETTER: if (full_tdil) Nt_inv=1; else Nt_inv = TI;
+  const int Ns{Distil.Ns};
+  std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
+  
+  envCreate(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName(), 1,
+            sIndexNames,Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
+  envCreate(std::vector<FermionField>, getName() + "_unsmeared_sink", 1,
             nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField));
-
-    grid4d = env().getGrid();
-    grid3d = MakeLowerDimGrid(grid4d);//new GridCartesian(latt_size,simd_layout_3,mpi_layout,*grid4d);
-
-    envTmpLat(LatticeSpinColourVector, "dist_source");
-    envTmpLat(LatticeSpinColourVector, "tmp2");
-    envTmpLat(LatticeSpinColourVector, "result");
-    envTmpLat(LatticeColourVector, "result_nospin");
-    envTmp(LatticeSpinColourVector, "tmp3d",1,LatticeSpinColourVector(grid3d));
-    envTmp(LatticeColourVector, "tmp3d_nospin",1,LatticeColourVector(grid3d));
-    envTmp(LatticeColourVector, "result_3d",1,LatticeColourVector(grid3d));
-    envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
-
-    Ls_ = env().getObjectLs(par().solver);
-    envTmpLat(FermionField, "v4dtmp");
-    envTmpLat(FermionField, "v5dtmp", Ls_);
-    envTmpLat(FermionField, "v5dtmp_sol", Ls_);
-
+  
+  envTmpLat(LatticeSpinColourVector, "dist_source");
+  envTmpLat(LatticeSpinColourVector, "tmp2");
+  envTmpLat(LatticeSpinColourVector, "result");
+  envTmpLat(LatticeColourVector, "result_nospin");
+  envTmp(LatticeSpinColourVector, "tmp3d",1,LatticeSpinColourVector(grid3d));
+  envTmp(LatticeColourVector, "tmp3d_nospin",1,LatticeColourVector(grid3d));
+  envTmp(LatticeColourVector, "result_3d",1,LatticeColourVector(grid3d));
+  envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
+  
+  Ls_ = env().getObjectLs(par().solver);
+  envTmpLat(FermionField, "v4dtmp");
+  envTmpLat(FermionField, "v5dtmp", Ls_);
+  envTmpLat(FermionField, "v5dtmp_sol", Ls_);
 }
 
 // clean up any temporaries created by setup (that aren't stored in the environment)
@@ -183,30 +181,29 @@ void TPerambulator<FImpl>::Cleanup(void)
 template <typename FImpl>
 void TPerambulator<FImpl>::execute(void)
 {
+  const int Nt{grid4d->GlobalDimensions()[Tdir]};
     const int nvec{par().nvec};
     const DistilParameters & Distil{par().Distil};
     const int LI{Distil.LI};
     const int SI{Distil.SI};
     const int TI{Distil.TI};
     const int nnoise{Distil.nnoise};
-    const int Nt{Distil.Nt};
-    const int Nt_inv{Distil.Nt_inv}; // TODO: PROBABLY BETTER: if (full_tdil) Nt_inv=1; else Nt_inv = TI;
     const int tsrc{Distil.tsrc};
     const int Ns{Distil.Ns};
-  
+  const bool full_tdil{TI==Nt};
+  const bool exact_distillation{full_tdil && LI==nvec};
+  const int Nt_inv{full_tdil ? 1 : TI}; // TODO: PROBABLY BETTER: if (full_tdil) Nt_inv=1; else Nt_inv = TI;
+
     auto &solver=envGet(Solver, par().solver);
     auto &mat = solver.getFMat();
     envGetTmp(FermionField, v4dtmp);
     envGetTmp(FermionField, v5dtmp);
     envGetTmp(FermionField, v5dtmp_sol);
 
-
-    const bool full_tdil{TI==Nt};
-    const bool exact_distillation{full_tdil && LI==nvec};
-
     const std::string &UniqueIdentifier{par().UniqueIdentifier};
 
-    auto &noise = envGet(std::vector<Complex>, par().noise);
+    //auto &noise = envGet(std::vector<Complex>, par().noise);
+    auto &noise = envGet(NoiseTensor, par().noise);
     auto &perambulator = envGet(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName());
     auto &epack = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
     auto &unsmeared_sink = envGet(std::vector<FermionField>, getName() + "_unsmeared_sink");
@@ -245,7 +242,8 @@ void TPerambulator<FImpl>::execute(void)
                 for (int ik = dk; ik < nvec; ik += LI){
                   for (int is = ds; is < Ns; is += SI){ 
                     ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv,3);
-                    tmp3d_nospin = evec3d * noise[inoise + nnoise*(t_inv + Nt*(ik+nvec*is))]; 
+                    //tmp3d_nospin = evec3d * noise[inoise + nnoise*(t_inv + Nt*(ik+nvec*is))];
+                    tmp3d_nospin = evec3d * noise(inoise, t_inv, ik, is);
                     tmp3d=zero;
                     pokeSpin(tmp3d,tmp3d_nospin,is);
                     tmp2=zero;

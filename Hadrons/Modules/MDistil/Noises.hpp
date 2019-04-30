@@ -106,54 +106,53 @@ std::vector<std::string> TNoises<FImpl>::getOutput(void)
 template <typename FImpl>
 void TNoises<FImpl>::setup(void)
 {
-    const DistilParameters & Distil{par().Distil};
-    const int nvec{par().nvec};
- 
-    envCreate(std::vector<Complex>, getName(), 1, nvec*Distil.Ns*Distil.Nt*Distil.nnoise);
-
+  const int Nt{env().getGrid()->GlobalDimensions()[Tdir]};
+  const int nvec{par().nvec};
+  const DistilParameters & Distil{par().Distil};
+  //envCreate(std::vector<Complex>, getName(), 1, nvec*Distil.Ns*Distil.Nt*Distil.nnoise);
+  envCreate(NoiseTensor, getName(), 1, Distil.nnoise, Nt, nvec, Distil.Ns);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TNoises<FImpl>::execute(void)
 {
-       const std::string &UniqueIdentifier{par().UniqueIdentifier};
-       auto &noise   = envGet(std::vector<Complex>, getName());
-       const int nvec{par().nvec};
-       const DistilParameters & Distil{par().Distil};
-       const int nnoise{Distil.nnoise};
-       const int Nt{Distil.Nt};
-       const int Ns{Distil.Ns};
-       const int TI{Distil.TI};
-       const int LI{Distil.LI};
-       const bool full_tdil{TI==Nt};
-       const bool exact_distillation{full_tdil && LI==nvec};
-
-       GridSerialRNG sRNG; 
-       sRNG.SeedUniqueString(UniqueIdentifier + std::to_string(vm().getTrajectory())); //maybe add more??
-       Real rn;
-		       
-       for (int inoise=0;inoise<nnoise;inoise++) {
-         for (int t=0;t<Nt;t++) {
-           for (int ivec=0;ivec<nvec;ivec++) {
-             for (int is=0;is<Ns;is++) {
-               if (exact_distillation)
-                 noise[inoise + nnoise*(t + Nt*(ivec+nvec*is))] = 1.;
-               else{
-                 random(sRNG,rn);
-                 // We could use a greater number of complex roots of unity
-                 // ... but this seems to work well
-                 noise[inoise + nnoise*(t + Nt*(ivec+nvec*is))] = (rn > 0.5) ? -1 : 1;
-               }
-	     }
-	   }
-	 }
-       }
-
+  const std::string &UniqueIdentifier{par().UniqueIdentifier};
+  auto &noise   = envGet(NoiseTensor, getName());
+  const int nvec{par().nvec};
+  const DistilParameters & Distil{par().Distil};
+  const int nnoise{Distil.nnoise};
+  const int Nt{env().getGrid()->GlobalDimensions()[Tdir]};
+  const int Ns{Distil.Ns};
+  const int TI{Distil.TI};
+  const int LI{Distil.LI};
+  const bool full_tdil{TI==Nt};
+  const bool exact_distillation{full_tdil && LI==nvec};
+  
+  GridSerialRNG sRNG;
+  sRNG.SeedUniqueString(UniqueIdentifier + std::to_string(vm().getTrajectory())); //maybe add more??
+  Real rn;
+  
+  for( int inoise = 0; inoise < nnoise; inoise++ ) {
+    for( int t = 0; t < Nt; t++ ) {
+      for( int ivec = 0; ivec < nvec; ivec++ ) {
+        for( int is = 0; is < Ns; is++ ) {
+          if( exact_distillation )
+            //noise[inoise + nnoise*(t + Nt*(ivec+nvec*is))] = 1.;
+            noise(inoise, t, ivec, is) = 1.;
+          else{
+            random(sRNG,rn);
+            // We could use a greater number of complex roots of unity
+            // ... but this seems to work well
+            //noise[inoise + nnoise*(t + Nt*(ivec+nvec*is))] = (rn > 0.5) ? -1 : 1;
+            noise(inoise, t, ivec, is) = (rn > 0.5) ? -1 : 1;
+          }
+        }
+      }
+    }
+  }
 }
 
 END_MODULE_NAMESPACE
-
 END_HADRONS_NAMESPACE
-
 #endif // Hadrons_MDistil_Noises_hpp_

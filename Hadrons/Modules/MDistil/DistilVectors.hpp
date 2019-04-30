@@ -60,13 +60,11 @@ public:
                                   std::string, sink,
                                   bool, multiFile,
                                   int, tsrc,
-                                  //int, nnoise,
                                   int, LI,
                                   int, SI,
                                   int, TI,
                                   int, nvec,
                                   int, Ns,
-                                  int, Nt,
                                   int, Nt_inv);
 };
 
@@ -172,7 +170,7 @@ template <typename FImpl>
 void TDistilVectors<FImpl>::setup(void)
 {
   Cleanup();
-  auto &noise        = envGet(std::vector<Complex>, NoiseVectorName);
+  auto &noise        = envGet(NoiseTensor, NoiseVectorName);
   auto &perambulator = envGet(DistilPeramb, PerambulatorName);
 
   // We expect the perambulator to have been created with these indices
@@ -180,7 +178,8 @@ void TDistilVectors<FImpl>::setup(void)
   for(int i = 0; i < DistilPeramb::NumIndices; i++ )
     assert( sIndexNames[i] == perambulator.IndexNames[i] && "Perambulator indices bad" );
 
-  nnoise = static_cast<int>( noise.size() );
+  nnoise = static_cast<int>( noise.dimension(0) );
+  LOG(Message) << "NoiseTensor has " << nnoise << " noise vectors" << std::endl;
   int LI=par().LI;
   int Ns=par().Ns;
   int SI=par().SI;
@@ -225,7 +224,7 @@ void TDistilVectors<FImpl>::Cleanup(void)
 template <typename FImpl>
 void TDistilVectors<FImpl>::execute(void)
 {
-  auto &noise        = envGet(std::vector<Complex>, NoiseVectorName);
+  auto &noise        = envGet(NoiseTensor, NoiseVectorName);
   auto &perambulator = envGet(DistilPeramb, PerambulatorName);
   auto &epack        = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, LapEvecName);
   
@@ -244,7 +243,7 @@ void TDistilVectors<FImpl>::execute(void)
   int LI=par().LI;
   int Ns=par().Ns;
   int Nt_inv=par().Nt_inv; // TODO: No input, but define through Nt, TI
-  int Nt=par().Nt;
+  const int Nt{grid4d->GlobalDimensions()[Tdir]};
   int TI=par().TI;
   int nvec=par().nvec;
   int SI=par().SI;
@@ -255,10 +254,10 @@ void TDistilVectors<FImpl>::execute(void)
   int t_inv;
   if( bMakeSource ) {
     auto &rho = envGet(std::vector<FermionField>, SourceName);
-    for (int inoise = 0; inoise < nnoise; inoise++) {
-      for (int dk = 0; dk < LI; dk++) {
-        for (int dt = 0; dt < Nt_inv; dt++) {
-          for (int ds = 0; ds < SI; ds++) {
+    for( int inoise = 0; inoise < nnoise; inoise++ ) {
+      for( int dk = 0; dk < LI; dk++ ) {
+        for( int dt = 0; dt < Nt_inv; dt++ ) {
+          for( int ds = 0; ds < SI; ds++ ) {
             vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * SI*dt;
             rho[vecindex] = zero;
             tmp3d_nospin = zero;
@@ -268,7 +267,8 @@ void TDistilVectors<FImpl>::execute(void)
                 for (int ik = dk; ik < nvec; ik += LI){
                   for (int is = ds; is < Ns; is += SI){
                     ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv,3);
-                    tmp3d_nospin = evec3d * noise[inoise + nnoise*(t_inv + Nt*(ik+nvec*is))];
+                    //tmp3d_nospin = evec3d * noise[inoise + nnoise*(t_inv + Nt*(ik+nvec*is))];
+                    tmp3d_nospin = evec3d * noise(inoise, t_inv, ik, is);
                     tmp3d=zero;
                     pokeSpin(tmp3d,tmp3d_nospin,is);
                     tmp2=zero;
@@ -285,10 +285,10 @@ void TDistilVectors<FImpl>::execute(void)
   }
   if( bMakeSink ) {
     auto &phi = envGet(std::vector<FermionField>, SinkName);
-    for (int inoise = 0; inoise < nnoise; inoise++) {
-      for (int dk = 0; dk < LI; dk++) {
-        for (int dt = 0; dt < Nt_inv; dt++) {
-          for (int ds = 0; ds < SI; ds++) {
+    for( int inoise = 0; inoise < nnoise; inoise++ ) {
+      for( int dk = 0; dk < LI; dk++ ) {
+        for( int dt = 0; dt < Nt_inv; dt++ ) {
+          for( int ds = 0; ds < SI; ds++ ) {
             vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * SI*dt;
             phi[vecindex] = zero;
             for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
@@ -307,7 +307,5 @@ void TDistilVectors<FImpl>::execute(void)
 }
 
 END_MODULE_NAMESPACE
-
 END_HADRONS_NAMESPACE
-
 #endif // Hadrons_MDistil_DistilVectors_hpp_

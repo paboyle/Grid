@@ -68,25 +68,22 @@ void test_Global(Application &application)
 
 void test_SolverS(Application &application)
 {
-    std::string boundary = "1 1 1 -1";
-
-
-        MAction::DWF::Par actionPar;
-        actionPar.gauge = "gauge";
-        actionPar.Ls    = 16;
-        actionPar.M5    = 1.8;
-        actionPar.mass  = 0.005;
-        actionPar.boundary = boundary;
-        actionPar.twist = "0. 0. 0. 0.";
-        application.createModule<MAction::DWF>("DWF_s", actionPar);
-
-
-        MSolver::RBPrecCG::Par solverPar;
-        solverPar.action       = "DWF_s";
-        solverPar.residual     = 1.0e-7;
-        solverPar.maxIteration = 10000;
-        application.createModule<MSolver::RBPrecCG>("CG_s", solverPar);
+  std::string boundary = "1 1 1 -1";
+  MAction::DWF::Par actionPar;
+  actionPar.gauge = "gauge";
+  actionPar.Ls    = 16;
+  actionPar.M5    = 1.8;
+  actionPar.mass  = 0.005;
+  actionPar.boundary = boundary;
+  actionPar.twist = "0. 0. 0. 0.";
+  application.createModule<MAction::DWF>("DWF_s", actionPar);
+  MSolver::RBPrecCG::Par solverPar;
+  solverPar.action       = "DWF_s";
+  solverPar.residual     = 1.0e-2;
+  solverPar.maxIteration = 10000;
+  application.createModule<MSolver::RBPrecCG>("CG_s", solverPar);
 }
+
 /////////////////////////////////////////////////////////////
 // Test creation of laplacian eigenvectors
 /////////////////////////////////////////////////////////////
@@ -138,7 +135,6 @@ void test_Perambulators(Application &application)
   PerambPar.Distil.TI=8;
   PerambPar.nvec=5;
   PerambPar.Distil.Ns=4;
-  PerambPar.Distil.Nt=8;
   PerambPar.Distil.Nt_inv=1;
   //PerambPar.Solver.mass=0.005;
   //PerambPar.Solver.M5=1.8;
@@ -166,7 +162,6 @@ void test_MultiPerambulators(Application &application)
   PerambPar.Distil.TI=8;
   PerambPar.nvec=5;
   PerambPar.Distil.Ns=4;
-  PerambPar.Distil.Nt=8;
   PerambPar.Distil.Nt_inv=1;
   application.createModule<MDistil::Peramb>("Peramb5",PerambPar);
   MDistil::PerambFromSolve::Par SolvePar;
@@ -181,7 +176,6 @@ void test_MultiPerambulators(Application &application)
   SolvePar.nvec_reduced=2;
   SolvePar.LI_reduced=2;
   SolvePar.Distil.Ns=4;
-  SolvePar.Distil.Nt=8;
   SolvePar.Distil.Nt_inv=1;
   application.createModule<MDistil::PerambFromSolve>("Peramb2",SolvePar);
   SolvePar.PerambFileName="Peramb3";
@@ -199,7 +193,6 @@ void test_MultiPerambulators(Application &application)
   DistilVecPar.TI=8;
   DistilVecPar.nvec=2;
   DistilVecPar.Ns=4;
-  DistilVecPar.Nt=8;
   DistilVecPar.Nt_inv=1;
   application.createModule<MDistil::DistilVectors>("DistilVecs2",DistilVecPar);
   DistilVecPar.perambulator="Peramb3";
@@ -215,7 +208,7 @@ void test_MultiPerambulators(Application &application)
   A2AMesonFieldPar.left="DistilVecs2_rho";
   A2AMesonFieldPar.right="DistilVecs2_rho";
   A2AMesonFieldPar.output="MesonSinksRho2";
-  A2AMesonFieldPar.gammas="all";
+  A2AMesonFieldPar.gammas="Identity";
   A2AMesonFieldPar.mom={"0 0 0"};
   A2AMesonFieldPar.cacheBlock=2;
   A2AMesonFieldPar.block=4;
@@ -247,11 +240,13 @@ void test_Noises(Application &application) {
   MDistil::NoisesPar NoisePar;
   NoisePar.UniqueIdentifier = "full_dilution";
   NoisePar.nvec = 5;
+  NoisePar.Distil.TI = 8;
+  NoisePar.Distil.SI = 4;
   NoisePar.Distil.LI = 5;
   NoisePar.Distil.nnoise = 1;
   NoisePar.Distil.Ns = 4;
-  NoisePar.Distil.Nt = 8;
-  NoisePar.Distil.Nt = 1;
+  NoisePar.Distil.Nt_inv = 1;
+  NoisePar.Distil.tsrc = 0;
   application.createModule<MDistil::Noises>("Peramb_noise",NoisePar);
 }
 
@@ -269,13 +264,11 @@ void test_DistilVectors(Application &application)
   DistilVecPar.perambulator="Peramb";
   DistilVecPar.lapevec="LapEvec";
   DistilVecPar.tsrc = 0;
-  //DistilVecPar.nnoise = 1;
   DistilVecPar.LI=5;
   DistilVecPar.SI=4;
   DistilVecPar.TI=8;
   DistilVecPar.nvec=5;
   DistilVecPar.Ns=4;
-  DistilVecPar.Nt=8;
   DistilVecPar.Nt_inv=1;
   application.createModule<MDistil::DistilVectors>("DistilVecs",DistilVecPar);
 }
@@ -294,7 +287,6 @@ void test_PerambulatorsS(Application &application)
   PerambPar.Distil.TI=8;
   PerambPar.nvec=5;
   PerambPar.Distil.Ns=4;
-  PerambPar.Distil.Nt=8;
   PerambPar.Distil.Nt_inv=1;
   //PerambPar.Solver.mass=0.005; //strange mass???
   //PerambPar.Solver.M5=1.8;
@@ -322,7 +314,6 @@ void test_DistilVectorsS(Application &application)
   DistilVecPar.TI=32;
   DistilVecPar.nvec=5;
   DistilVecPar.Ns=4;
-  DistilVecPar.Nt=8;
   DistilVecPar.Nt_inv=1;
   application.createModule<MDistil::DistilVectors>("DistilVecsS",DistilVecPar);
 }
@@ -338,12 +329,40 @@ void test_MesonSink(Application &application)
   A2AMesonFieldPar.left="g5phi";
   A2AMesonFieldPar.right="Peramb_unsmeared_sink";
   A2AMesonFieldPar.output="DistilFields";
-  A2AMesonFieldPar.gammas="all";
+  A2AMesonFieldPar.gammas="Identity";
   A2AMesonFieldPar.mom={"0 0 0"};
   A2AMesonFieldPar.cacheBlock=2;
   A2AMesonFieldPar.block=4;
   application.createModule<MContraction::A2AMesonField>("DistilMesonSink",A2AMesonFieldPar);
 }
+/////////////////////////////////////////////////////////////
+// MesonFields
+/////////////////////////////////////////////////////////////
+
+void test_MesonField(Application &application, const char * pszFileSuffix,
+                     const char * pszObjectLeft = nullptr, const char * pszObjectRight = nullptr )
+{
+  // DistilVectors parameters
+  if( pszObjectLeft == nullptr )
+    pszObjectLeft = pszFileSuffix;
+  if( pszObjectRight == nullptr )
+    pszObjectRight = pszObjectLeft;
+  MContraction::A2AMesonField::Par A2AMesonFieldPar;
+  A2AMesonFieldPar.left="DistilVecs";
+  A2AMesonFieldPar.right=A2AMesonFieldPar.left;
+  A2AMesonFieldPar.left.append( pszObjectLeft );
+  A2AMesonFieldPar.right.append( pszObjectRight );
+  A2AMesonFieldPar.output="MesonSinks";
+  A2AMesonFieldPar.output.append( pszFileSuffix );
+  A2AMesonFieldPar.gammas="Identity";
+  A2AMesonFieldPar.mom={"0 0 0"};
+  A2AMesonFieldPar.cacheBlock=2;
+  A2AMesonFieldPar.block=4;
+  std::string sObjectName{"DistilMesonField"};
+  sObjectName.append( pszFileSuffix );
+  application.createModule<MContraction::A2AMesonField>(sObjectName, A2AMesonFieldPar);
+}
+
 /////////////////////////////////////////////////////////////
 // g5*unsmeared
 /////////////////////////////////////////////////////////////
@@ -360,86 +379,11 @@ void test_g5_sinks(Application &application)
   g5_multiplyPar.Nt_inv=1;
   application.createModule<MDistil::g5_multiply>("g5phi",g5_multiplyPar);
 }
-#endif
 
-/////////////////////////////////////////////////////////////
-// MesonFields
-/////////////////////////////////////////////////////////////
-
-void test_MesonFieldSL(Application &application)
-{
-  // DistilVectors parameters
-  MContraction::A2AMesonField::Par A2AMesonFieldPar;
-  A2AMesonFieldPar.left="DistilVecsS_phi";
-  //A2AMesonFieldPar.right="DistilVecs_rho";
-  A2AMesonFieldPar.right="DistilVecs_phi";
-  A2AMesonFieldPar.output="DistilFieldsS";
-  A2AMesonFieldPar.gammas="all";
-  A2AMesonFieldPar.mom={"0 0 0"};
-  A2AMesonFieldPar.cacheBlock=2;
-  A2AMesonFieldPar.block=4;
-  application.createModule<MContraction::A2AMesonField>("DistilMesonFieldS",A2AMesonFieldPar);
-}
-/////////////////////////////////////////////////////////////
-// MesonFields - phiphi
-/////////////////////////////////////////////////////////////
-
-void test_MesonField(Application &application)
-{
-  // DistilVectors parameters
-  MContraction::A2AMesonField::Par A2AMesonFieldPar;
-  A2AMesonFieldPar.left="DistilVecs_phi";
-  //A2AMesonFieldPar.right="DistilVecs_rho";
-  A2AMesonFieldPar.right="DistilVecs_phi";
-  A2AMesonFieldPar.output="MesonSinksPhi";
-  A2AMesonFieldPar.gammas="all";
-  A2AMesonFieldPar.mom={"0 0 0"};
-  A2AMesonFieldPar.cacheBlock=2;
-  A2AMesonFieldPar.block=4;
-  application.createModule<MContraction::A2AMesonField>("DistilMesonField",A2AMesonFieldPar);
-}
-/////////////////////////////////////////////////////////////
-// MesonFields - rhorho
-/////////////////////////////////////////////////////////////
-
-void test_MesonFieldRho(Application &application)
-{
-  // DistilVectors parameters
-  MContraction::A2AMesonField::Par A2AMesonFieldPar;
-  A2AMesonFieldPar.left="DistilVecs_rho";
-  //A2AMesonFieldPar.right="DistilVecs_rho";
-  A2AMesonFieldPar.right="DistilVecs_rho";
-  A2AMesonFieldPar.output="MesonSinksRho";
-  A2AMesonFieldPar.gammas="all";
-  A2AMesonFieldPar.mom={"0 0 0"};
-  A2AMesonFieldPar.cacheBlock=2;
-  A2AMesonFieldPar.block=4;
-  application.createModule<MContraction::A2AMesonField>("DistilMesonFieldRho",A2AMesonFieldPar);
-}
-/////////////////////////////////////////////////////////////
-// MesonFields - rhorhoall
-/////////////////////////////////////////////////////////////
-
-void test_MesonFieldRhoAll(Application &application)
-{
-  // DistilVectors parameters
-  MContraction::A2AMesonField::Par A2AMesonFieldPar;
-  //A2AMesonFieldPar.left="DistilVecs_rho_all_tsrc";
-  //A2AMesonFieldPar.right="DistilVecs_rho_all_tsrc";
-  A2AMesonFieldPar.left="DistilVecs_rho";
-  A2AMesonFieldPar.right="DistilVecs_rho";
-  A2AMesonFieldPar.output="MesonSinksRhoAll";
-  A2AMesonFieldPar.gammas="all";
-  A2AMesonFieldPar.mom={"0 0 0"};
-  A2AMesonFieldPar.cacheBlock=2;
-  A2AMesonFieldPar.block=4;
-  application.createModule<MContraction::A2AMesonField>("DistilMesonFieldRhoAll",A2AMesonFieldPar);
-}
 /////////////////////////////////////////////////////////////
 // BaryonFields - phiphiphi - efficient
 /////////////////////////////////////////////////////////////
 
-#ifdef DISTIL_PRE_RELEASE
 void test_BaryonFieldPhi2(Application &application)
 {
   // DistilVectors parameters
@@ -577,7 +521,6 @@ void test_PerambulatorsSolve(Application &application)
   PerambFromSolvePar.Distil.TI=8;
   PerambFromSolvePar.nvec=5;
   PerambFromSolvePar.Distil.Ns=4;
-  PerambFromSolvePar.Distil.Nt=8;
   PerambFromSolvePar.Distil.Nt_inv=1;
   application.createModule<MDistil::PerambFromSolve>("PerambAslashS",PerambFromSolvePar);
 }
@@ -602,25 +545,6 @@ void test_DistilVectorsAslashSeq(Application &application)
   DistilSinkPar.Nt_inv=1;
   application.createModule<MDistil::DistilSink>("DistilVecsAslashSeq",DistilSinkPar);
 }
-/////////////////////////////////////////////////////////////
-// MesonFields - aslaaaash
-/////////////////////////////////////////////////////////////
-
-void test_MesonFieldAslashSeq(Application &application)
-{
-  // DistilVectors parameters
-  MContraction::A2AMesonField::Par A2AMesonFieldPar;
-  A2AMesonFieldPar.left="DistilVecsAslashSeq";
-  //A2AMesonFieldPar.right="DistilVecs_rho";
-  A2AMesonFieldPar.right="DistilVecsAslashSeq";
-  A2AMesonFieldPar.output="MesonSinksAslashSeq";
-  A2AMesonFieldPar.gammas="all";
-  A2AMesonFieldPar.mom={"0 0 0"};
-  A2AMesonFieldPar.cacheBlock=2;
-  A2AMesonFieldPar.block=4;
-  application.createModule<MContraction::A2AMesonField>("DistilMesonFieldAslashSeq",A2AMesonFieldPar);
-}
-
 bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
 {
   if( bGobbleWhiteSpace )
@@ -774,7 +698,7 @@ bool DebugEigenTest()
   std::array<std::string,3> as={"Alpha", "Beta", "Gamma"};
   MyTensor x(as, 2,1,4);
   DebugShowTensor(x, "x");
-  x.WriteBinary(pszTestFileName);
+  x.write(pszTestFileName);
   // Test initialisation of an array of strings
   for( auto a : as )
     std::cout << a << std::endl;
@@ -787,7 +711,7 @@ bool DebugEigenTest()
   // Now see whether we can read a tensor back
   std::array<std::string,3> Names2={"Alpha", "Gamma", "Delta"};
   MyTensor y(Names2, 2,4,1);
-  y.ReadBinary(pszTestFileName);
+  y.read(pszTestFileName);
   DebugShowTensor(y, "y");
 
   // Now see whether we can read a tensor back from an hdf5 file
@@ -1037,15 +961,6 @@ int main(int argc, char *argv[])
 {
 #ifdef DEBUG
   // Debug only - test of Eigen::Tensor
-  std::cout << "sizeof(int) = " << sizeof(int)
-  << ", sizeof(long) = " << sizeof(long)
-  << ", sizeof(size_t) = " << sizeof(size_t)
-  << ", sizeof(std::size_t) = " << sizeof(std::size_t)
-  << ", sizeof(std::streamsize) = " << sizeof(std::streamsize)
-  << ", sizeof(Eigen::Index) = " << sizeof(Eigen::Index)
-  << ", sizeof(hsize_t) = " << sizeof(hsize_t)
-  << ", sizeof(unsigned long long) = " << sizeof(unsigned long long)
-  << std::endl;
   //if( DebugEigenTest() ) return 0;
   //if(DebugGridTensorTest()) return 0;
   //if(ConvertPeramb("PerambL_100_tsrc0.3000","PerambL_100_tsrc0.3000")) return 0;
@@ -1105,21 +1020,21 @@ int main(int argc, char *argv[])
       test_LapEvec( application );
       test_Perambulators( application );
       break;
-    case 3: // 3
+    default: // 3
       test_Global( application );
       test_SolverS( application );
       test_LapEvec( application );
       test_Perambulators( application );
       test_DistilVectors( application );
       break;
-    default: // 4
+    case 4:
       test_Global( application );
       test_SolverS( application );
       test_LapEvec( application );
       test_Perambulators( application );
       test_DistilVectors( application );
-      test_MesonField( application );
-      test_MesonFieldRhoAll( application );
+      test_MesonField( application, "Phi", "_phi" );
+      test_MesonField( application, "Rho", "_rho" );
       break;
     case 5: // 3
       test_Global( application );
@@ -1129,7 +1044,8 @@ int main(int argc, char *argv[])
       test_DistilVectors( application );
       test_PerambulatorsS( application );
       test_DistilVectorsS( application );
-      test_MesonFieldSL( application );
+      test_MesonField( application, "SPhi", "S_phi" );
+      test_MesonField( application, "SRho", "S_rho" );
       break;
 #ifdef DISTIL_PRE_RELEASE
     case 6: // 3
@@ -1156,7 +1072,8 @@ int main(int argc, char *argv[])
       test_LapEvec( application );
       test_Perambulators( application );
       test_DistilVectors( application );
-      test_MesonField( application );
+      test_MesonField( application, "Phi", "_phi" );
+      test_MesonField( application, "Rho", "_rho" );
       break;
 #ifdef DISTIL_PRE_RELEASE
     case 9: // 3
@@ -1192,7 +1109,7 @@ int main(int argc, char *argv[])
       test_AslashSeq( application );
       test_PerambulatorsSolve( application );
       test_DistilVectorsAslashSeq( application );
-      test_MesonFieldAslashSeq( application );
+      test_MesonField( application, "AslashSeq" );
       break;
     case 13:
       test_Global( application );
@@ -1201,10 +1118,9 @@ int main(int argc, char *argv[])
       test_MultiPerambulators( application );
       break;
   }
-  LOG(Message) << "====== XML creation for test " << iTestNum << " complete ======" << std::endl;
-
   // execution
   application.saveParameterFile("test_distil.xml");
+  LOG(Warning) << "These parameters are designed to run on a laptop usid --grid 4.4.4.8" << std::endl;
   application.run();
   
   // epilogue

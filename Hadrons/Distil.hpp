@@ -47,9 +47,7 @@
 /******************************************************************************
  A consistent set of cross-platform methods for big endian <-> host byte ordering
  I imagine this exists already?
- 
- RELEASE NOTE:
- 
+ This can be removed once the (deprecated) NamedTensor::ReadBinary & WriteBinary methods are deleted
  ******************************************************************************/
 
 #if defined(__linux__)
@@ -81,7 +79,6 @@
 
 /******************************************************************************
  This potentially belongs in CartesianCommunicator
- Turns out I don't actually need this when running inside hadrons
  ******************************************************************************/
 
 BEGIN_MODULE_NAMESPACE(Grid)
@@ -138,14 +135,12 @@ inline void SliceShare( GridBase * gridLowDim, GridBase * gridHighDim, void * Bu
 }
 
 /*************************************************************************************
+
+ Not sure where the right home for this is? But presumably in Grid
  
- -Grad^2 (Peardon, 2009, pg 2, equation 3)
+ -Grad^2 (Peardon, 2009, pg 2, equation 3, https://arxiv.org/abs/0905.2160)
  Field      Type of field the operator will be applied to
  GaugeField Gauge field the operator will smear using
- 
- TODO CANDIDATE for integration into laplacian operator
- should just require adding number of dimensions to act on to constructor,
- where the default=all dimensions, but we could specify 3 spatial dimensions
  
  *************************************************************************************/
 
@@ -202,15 +197,6 @@ public:
   }
 };
 
-
-class BFieldIO: Serializable{
-public:
-  using BaryonTensorSet = Eigen::Tensor<Complex, 7>;
-  GRID_SERIALIZABLE_CLASS_MEMBERS(BFieldIO,
-                                  BaryonTensorSet, BField
-		                  );
-};
-
 END_MODULE_NAMESPACE // Grid
 
 /******************************************************************************
@@ -221,29 +207,33 @@ BEGIN_HADRONS_NAMESPACE
 
 BEGIN_MODULE_NAMESPACE(MDistil)
 
-typedef Grid::Hadrons::EigenPack<LatticeColourVector>       DistilEP;
-typedef std::vector<std::vector<std::vector<SpinVector> > > DistilNoises;
+using DistilEP = Grid::Hadrons::EigenPack<LatticeColourVector>;
+
+// Noise vector index order: nnoise, nt, nvec, ns
+using NoiseTensor = Eigen::Tensor<Complex, 4, Eigen::RowMajor>;
+
+struct DistilParameters: Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(DistilParameters,
+                                  int, TI,
+                                  int, LI,
+                                  int, nnoise,
+                                  int, tsrc,
+                                  int, SI,
+                                  int, Ns,
+                                  int, Nt_inv)
+  DistilParameters() = default;
+  template <class ReaderClass> DistilParameters(Reader<ReaderClass>& Reader){read(Reader,"Distil",*this);}
+};
+
+class BFieldIO: Serializable{
+public:
+  using BaryonTensorSet = Eigen::Tensor<Complex, 7>;
+  GRID_SERIALIZABLE_CLASS_MEMBERS(BFieldIO, BaryonTensorSet, BField );
+};
 
 /******************************************************************************
- Make a lower dimensional grid
- ******************************************************************************/
-
-inline GridCartesian * MakeLowerDimGrid( GridCartesian * gridHD )
-{
-  //LOG(Message) << "MakeLowerDimGrid() begin" << std::endl;
-  int nd{static_cast<int>(gridHD->_ndimension)};
-  std::vector<int> latt_size   = gridHD->_gdimensions;
-  latt_size[nd-1] = 1;
-
-  std::vector<int> simd_layout = GridDefaultSimd(nd-1, vComplex::Nsimd());
-  simd_layout.push_back( 1 );
-
-  std::vector<int> mpi_layout  = gridHD->_processors;
-  mpi_layout[nd-1] = 1;
-  GridCartesian * gridLD = new GridCartesian(latt_size,simd_layout,mpi_layout,*gridHD);
-  //LOG(Message) << "MakeLowerDimGrid() end" << std::endl;
-  return gridLD;
-}
+ Default for distillation file operations. For now only used by NamedTensor
+******************************************************************************/
 
 #ifdef HAVE_HDF5
 using Default_Reader = Grid::Hdf5Reader;
@@ -347,6 +337,14 @@ public:
 template<typename T, typename V = void> struct is_named_tensor : public std::false_type {};
 template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size_> struct is_named_tensor<NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size_>> : public std::true_type {};
 template<typename T> struct is_named_tensor<T, typename std::enable_if<std::is_base_of<NamedTensor<typename T::Scalar, T::NumIndices, T::Endian_Scalar_Size_>, T>::value>::type> : public std::true_type {};
+
+/******************************************************************************
+ Perambulator object
+ Endian_Scalar_Size can be removed once (deprecated) NamedTensor::ReadBinary & WriteBinary methods deleted
+ ******************************************************************************/
+
+template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size = sizeof(Scalar_)>
+using Perambulator = NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>;
 
 /******************************************************************************
  Save NamedTensor binary format (NB: On-disk format is Big Endian)
@@ -586,31 +584,25 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::read(const char * fi
 }
 
 /******************************************************************************
- Perambulator object
+ Make a lower dimensional grid in preparation for local slice operations
  ******************************************************************************/
 
-template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size = sizeof(Scalar_)>
-using Perambulator = NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>;
-
-struct DistilParameters: Serializable {
-  GRID_SERIALIZABLE_CLASS_MEMBERS(DistilParameters,
-                                  int, TI,
-                                  int, LI,
-                                  int, nnoise,
-                                  int, tsrc,
-                                  int, SI,
-                                  int, Ns,
-                                  int, Nt,
-                                  int, Nt_inv)
-  DistilParameters() = default;
-  template <class ReaderClass> DistilParameters(Reader<ReaderClass>& Reader){read(Reader,"Distil",*this);}
-};
+inline GridCartesian * MakeLowerDimGrid( GridCartesian * gridHD )
+{
+  int nd{static_cast<int>(gridHD->_ndimension)};
+  std::vector<int> latt_size   = gridHD->_gdimensions;
+  latt_size[nd-1] = 1;
+  std::vector<int> simd_layout = GridDefaultSimd(nd-1, vComplex::Nsimd());
+  simd_layout.push_back( 1 );
+  std::vector<int> mpi_layout  = gridHD->_processors;
+  mpi_layout[nd-1] = 1;
+  GridCartesian * gridLD = new GridCartesian(latt_size,simd_layout,mpi_layout,*gridHD);
+  return gridLD;
+}
 
 /*************************************************************************************
- 
  Rotate eigenvectors into our phase convention
  First component of first eigenvector is real and positive
- 
  *************************************************************************************/
 
 inline void RotateEigen(std::vector<LatticeColourVector> & evec)
@@ -642,7 +634,5 @@ inline void RotateEigen(std::vector<LatticeColourVector> & evec)
 }
 
 END_MODULE_NAMESPACE
-
 END_HADRONS_NAMESPACE
-
 #endif // Hadrons_MDistil_Distil_hpp_

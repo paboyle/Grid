@@ -101,17 +101,13 @@ std::vector<std::string> TLoadPerambulator<FImpl>::getOutput(void)
 template <typename FImpl>
 void TLoadPerambulator<FImpl>::setup(void)
 {
+  GridCartesian * grid4d = env().getGrid();
+  const int Nt{grid4d->GlobalDimensions()[Tdir]};
     const int nvec{par().nvec};
     const MDistil::DistilParameters & Distil{par().Distil};
-    const int LI{Distil.LI};
-    const int nnoise{Distil.nnoise};
-    const int Nt_inv{Distil.Nt_inv}; // TODO: PROBABLY BETTER: if (full_tdil) Nt_inv=1; else Nt_inv = TI;
-    const int Ns{Distil.Ns};
     std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
-
     envCreate(MDistil::Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName(), 1,
-		              sIndexNames,Distil.Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
-
+		              sIndexNames,Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
