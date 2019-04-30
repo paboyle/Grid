@@ -39,10 +39,8 @@
 #include <Hadrons/Modules/MScalar/FreeProp.hpp>
 #include <Hadrons/Modules/MScalar/Scalar.hpp>
 #include <Hadrons/Modules/MScalar/ChargedProp.hpp>
-#include <Hadrons/Modules/MDistil/DistilSource.hpp>
 #include <Hadrons/Modules/MDistil/LapEvec.hpp>
 #include <Hadrons/Modules/MDistil/DistilVectors.hpp>
-#include <Hadrons/Modules/MDistil/DistilSink.hpp>
 #include <Hadrons/Modules/MDistil/Noises.hpp>
 #include <Hadrons/Modules/MDistil/BC2.hpp>
 #include <Hadrons/Modules/MDistil/Perambulator.hpp>

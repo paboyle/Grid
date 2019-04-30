@@ -101,20 +101,16 @@ std::vector<std::string> TLoadPerambulator<FImpl>::getOutput(void)
 template <typename FImpl>
 void TLoadPerambulator<FImpl>::setup(void)
 {
-  GridCartesian * grid4d = env().getGrid();
-  const int Nt{grid4d->GlobalDimensions()[Tdir]};
-    const int nvec{par().nvec};
-    const MDistil::DistilParameters & Distil{par().Distil};
-    std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
-    envCreate(MDistil::Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName(), 1,
-		              sIndexNames,Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
+  DISTIL_PARAMETERS_DEFINE( true );
+  //std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
+  envCreate(MDistil::Perambulator, getName(), 1, MDistil::PerambIndexNames,Nt,nvec,LI,nnoise,Nt_inv,SI);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TLoadPerambulator<FImpl>::execute(void)
 {
-  auto &perambulator = envGet(MDistil::Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName());
+  auto &perambulator = envGet(MDistil::Perambulator, getName());
   const std::string sPerambName{par().PerambFileName + "." + std::to_string(vm().getTrajectory())};
   perambulator.read(sPerambName.c_str());
 }

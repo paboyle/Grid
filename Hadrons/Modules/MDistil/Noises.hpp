@@ -52,9 +52,11 @@ class NoisesPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(NoisesPar,
-                                    std::string, UniqueIdentifier,
+                                    int, nnoise,
                                     int, nvec,
-			            DistilParameters, Distil);
+                                    std::string, UniqueIdentifier,
+                                    std::string, TI,
+                                    std::string, LI)
 };
 
 template <typename FImpl>
@@ -103,36 +105,41 @@ std::vector<std::string> TNoises<FImpl>::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
+
 template <typename FImpl>
 void TNoises<FImpl>::setup(void)
 {
-  const int Nt{env().getGrid()->GlobalDimensions()[Tdir]};
+  const int Nt{env().getDim(Tdir)};
+  const int Ns{Grid::QCD::Ns};
+  const int nnoise{par().nnoise};
   const int nvec{par().nvec};
-  const DistilParameters & Distil{par().Distil};
-  //envCreate(std::vector<Complex>, getName(), 1, nvec*Distil.Ns*Distil.Nt*Distil.nnoise);
-  envCreate(NoiseTensor, getName(), 1, Distil.nnoise, Nt, nvec, Distil.Ns);
+  const int TI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().TI, Nt, true) };
+  const int LI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().LI, nvec, true) };
+  envCreate(NoiseTensor, getName(), 1, nnoise, Nt, nvec, Ns);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TNoises<FImpl>::execute(void)
 {
-  const std::string &UniqueIdentifier{par().UniqueIdentifier};
-  auto &noise   = envGet(NoiseTensor, getName());
+  const int Nt{env().getDim(Tdir)};
+  const int Ns{Grid::QCD::Ns};
+  const int nnoise{par().nnoise};
   const int nvec{par().nvec};
-  const DistilParameters & Distil{par().Distil};
-  const int nnoise{Distil.nnoise};
-  const int Nt{env().getGrid()->GlobalDimensions()[Tdir]};
-  const int Ns{Distil.Ns};
-  const int TI{Distil.TI};
-  const int LI{Distil.LI};
-  const bool full_tdil{TI==Nt};
-  const bool exact_distillation{full_tdil && LI==nvec};
+  const int TI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().TI, Nt, false) };
+  const int LI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().LI, nvec, false) };
+  const bool full_tdil{ TI == Nt }; \
+  const bool exact_distillation{ full_tdil && LI == nvec }; \
+  std::string UniqueIdentifier{par().UniqueIdentifier};
+  if( UniqueIdentifier.length() == 0 ) {
+    UniqueIdentifier = getName();
+  }
+  UniqueIdentifier.append( std::to_string( vm().getTrajectory() ) ); //maybe add more??
   
   GridSerialRNG sRNG;
-  sRNG.SeedUniqueString(UniqueIdentifier + std::to_string(vm().getTrajectory())); //maybe add more??
+  sRNG.SeedUniqueString(UniqueIdentifier);
   Real rn;
-  
+  auto &noise = envGet(NoiseTensor, getName());
   for( int inoise = 0; inoise < nnoise; inoise++ ) {
     for( int t = 0; t < Nt; t++ ) {
       for( int ivec = 0; ivec < nvec; ivec++ ) {

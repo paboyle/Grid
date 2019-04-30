@@ -60,12 +60,8 @@ public:
                                   std::string, sink,
                                   bool, multiFile,
                                   int, tsrc,
-                                  int, LI,
-                                  int, SI,
-                                  int, TI,
-                                  int, nvec,
-                                  int, Ns,
-                                  int, Nt_inv);
+                                  std::string, nvec,
+                                  std::string, TI)
 };
 
 template <typename FImpl>
@@ -73,8 +69,6 @@ class TDistilVectors: public Module<DistilVectorsPar>
 {
 public:
   FERM_TYPE_ALIASES(FImpl,);
-  // This is the type of perambulator I expect
-  using DistilPeramb = Perambulator<SpinVector, 6, sizeof(Real)>;
   // constructor
   TDistilVectors(const std::string name);
   // destructor
@@ -100,7 +94,6 @@ public:
   bool bMakeSink;
   std::string SourceName;
   std::string SinkName;
-  int nnoise;
 };
 
 MODULE_REGISTER_TMP(DistilVectors, TDistilVectors<FIMPL>, MDistil);
@@ -171,19 +164,24 @@ void TDistilVectors<FImpl>::setup(void)
 {
   Cleanup();
   auto &noise        = envGet(NoiseTensor, NoiseVectorName);
-  auto &perambulator = envGet(DistilPeramb, PerambulatorName);
+  auto &perambulator = envGet(Perambulator, PerambulatorName);
 
   // We expect the perambulator to have been created with these indices
-  std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
-  for(int i = 0; i < DistilPeramb::NumIndices; i++ )
-    assert( sIndexNames[i] == perambulator.IndexNames[i] && "Perambulator indices bad" );
+  for(int i = 0; i < Perambulator::NumIndices; i++ )
+    assert( PerambIndexNames[i] == perambulator.IndexNames[i] && "Perambulator indices bad" );
 
-  nnoise = static_cast<int>( noise.dimension(0) );
-  LOG(Message) << "NoiseTensor has " << nnoise << " noise vectors" << std::endl;
-  int LI=par().LI;
-  int Ns=par().Ns;
-  int SI=par().SI;
-  int Nt_inv=par().Nt_inv;
+  const int Nt{ env().getDim(Tdir) };
+  assert( Nt == static_cast<int>( perambulator.tensor.dimension(0) ) && "Perambulator time dimensionality bad" );
+  const int TI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().TI, Nt, true) };
+  const int LI{ static_cast<int>( perambulator.tensor.dimension(2) ) };
+  const int SI{ static_cast<int>( perambulator.tensor.dimension(5) ) };
+  const int Nt_inv{ static_cast<int>( perambulator.tensor.dimension(4) ) };
+  const int nnoise{ static_cast<int>( perambulator.tensor.dimension(3) ) };
+  assert( nnoise >= static_cast<int>( noise.dimension(0) ) && "Not enough noise vectors for perambulator" );
+  // Nvec defaults to what's in the perambulator unless overriden
+  const int nvec_per{ static_cast<int>( perambulator.tensor.dimension(1) ) };
+  const int nvec{Hadrons::MDistil::DistilParameters::ParameterDefault(par().nvec, nvec_per, true) };
+  assert( nvec <= nvec_per && "Not enough distillation sub-space vectors" );
 
   if( bMakeSource )
     envCreate(std::vector<FermionField>, SourceName, 1, nnoise*LI*SI*Nt_inv, envGetGrid(FermionField));
@@ -225,31 +223,30 @@ template <typename FImpl>
 void TDistilVectors<FImpl>::execute(void)
 {
   auto &noise        = envGet(NoiseTensor, NoiseVectorName);
-  auto &perambulator = envGet(DistilPeramb, PerambulatorName);
+  auto &perambulator = envGet(Perambulator, PerambulatorName);
   auto &epack        = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, LapEvecName);
   
   envGetTmp(LatticeSpinColourVector, tmp2);
-  //envGetTmp(LatticeColourVector, tmp_nospin);
   envGetTmp(LatticeSpinColourVector, tmp3d);
-  envGetTmp(LatticeColourVector, tmp3d_nospin);
+  envGetTmp(LatticeColourVector,     tmp3d_nospin);
   envGetTmp(LatticeSpinColourVector, sink_tslice);
-  envGetTmp(LatticeColourVector, evec3d);
-  
-  
-  int Ntlocal = grid4d->LocalDimensions()[3];
-  int Ntfirst = grid4d->LocalStarts()[3];
-  
-  int tsrc=par().tsrc;
-  int LI=par().LI;
-  int Ns=par().Ns;
-  int Nt_inv=par().Nt_inv; // TODO: No input, but define through Nt, TI
-  const int Nt{grid4d->GlobalDimensions()[Tdir]};
-  int TI=par().TI;
-  int nvec=par().nvec;
-  int SI=par().SI;
-  
-  bool full_tdil=(TI==Nt);
-  
+  envGetTmp(LatticeColourVector,     evec3d);
+
+  const int Ntlocal{ grid4d->LocalDimensions()[3] };
+  const int Ntfirst{ grid4d->LocalStarts()[3] };
+
+  const int Ns{ Grid::QCD::Ns };
+  const int Nt{ env().getDim(Tdir) };
+  const int TI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().TI, Nt, false ) };
+  const int LI{ static_cast<int>( perambulator.tensor.dimension(2) ) };
+  const int SI{ static_cast<int>( perambulator.tensor.dimension(5) ) };
+  const int Nt_inv{ static_cast<int>( perambulator.tensor.dimension(4) ) };
+  const int nnoise{ static_cast<int>( perambulator.tensor.dimension(3) ) };
+  // Nvec defaults to what's in the perambulator unless overriden
+  const int nvec{Hadrons::MDistil::DistilParameters::ParameterDefault(par().nvec, static_cast<int>( perambulator.tensor.dimension(1) ), false)};
+  const int tsrc{ par().tsrc };
+  const bool full_tdil{ TI==Nt };
+
   int vecindex;
   int t_inv;
   if( bMakeSource ) {

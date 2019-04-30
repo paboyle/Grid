@@ -47,21 +47,6 @@ BEGIN_HADRONS_NAMESPACE
  *                         PerambFromSolve                                 *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MDistil)
-/*
-struct DistilParameters: Serializable {
-  GRID_SERIALIZABLE_CLASS_MEMBERS(DistilParameters,
-                                  int, TI,
-                                  int, LI,
-                                  int, nnoise,
-                                  int, tsrc,
-                                  int, SI,
-                                  int, Ns,
-                                  int, Nt,
-                                  int, Nt_inv)
-  DistilParameters() = default;
-  template <class ReaderClass> DistilParameters(Reader<ReaderClass>& Reader){read(Reader,"Distil",*this);}
-};
-*/
 
 class PerambFromSolvePar: Serializable
 {
@@ -122,91 +107,54 @@ TPerambFromSolve<FImpl>::~TPerambFromSolve(void)
 template <typename FImpl>
 std::vector<std::string> TPerambFromSolve<FImpl>::getInput(void)
 {
-    std::vector<std::string> in;
-
-    in.push_back(par().solve);
-    in.push_back(par().eigenPack);
-    
-    return in;
+  return std::vector<std::string>{ par().solve, par().eigenPack };
 }
 
 template <typename FImpl>
 std::vector<std::string> TPerambFromSolve<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
-    
-    return out;
+  return std::vector<std::string>{ getName() };
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TPerambFromSolve<FImpl>::setup(void)
 {
-		  Cleanup();
-    
-	const int nvec{par().nvec};
-    const DistilParameters & Distil{par().Distil};
-    const int LI{Distil.LI};
-    const int nnoise{Distil.nnoise};
-    const int Nt_inv{Distil.Nt_inv};
-    const int Ns{Distil.Ns};
-    std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
-
-    grid4d = env().getGrid();
-        grid3d = MakeLowerDimGrid(grid4d);
-  const int Nt{grid4d->GlobalDimensions()[Tdir]};
-
-
-	const int nvec_reduced{par().nvec_reduced};
-	const int LI_reduced{par().LI_reduced};
-    //envCreate(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName(), 1,
-    //          sIndexNames,Distil.Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
-    envCreate(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName(), 1,
-              sIndexNames,Nt,nvec_reduced,LI_reduced,Distil.nnoise,Distil.Nt_inv,Distil.SI);
-    envCreate(std::vector<Complex>, getName() + "_noise", 1,
-              nvec*Distil.Ns*Nt*Distil.nnoise);
-
-    envTmp(LatticeColourVector, "result_3d",1,LatticeColourVector(grid3d));
-        envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
-	    envTmpLat(LatticeColourVector, "result_nospin");
-
-
+  Cleanup();
+  DISTIL_PARAMETERS_DEFINE( true );
+  grid4d = env().getGrid();
+  grid3d = MakeLowerDimGrid(grid4d);
+  const int nvec_reduced{par().nvec_reduced};
+  const int LI_reduced{par().LI_reduced};
+  //std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
+  envCreate(Perambulator, getName(), 1, PerambIndexNames,Nt,nvec_reduced,LI_reduced,nnoise,Nt_inv,SI);
+  envCreate(NoiseTensor, getName() + "_noise", 1, nnoise, Nt, nvec, Ns );
+  envTmp(LatticeColourVector, "result_3d",1,LatticeColourVector(grid3d));
+  envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
+  envTmpLat(LatticeColourVector, "result_nospin");
 }
 
 template <typename FImpl>
 void TPerambFromSolve<FImpl>::Cleanup(void)
 {
-	  if( grid3d != nullptr ) {
-		      delete grid3d;
-		          grid3d = nullptr;
-			    }
-	    grid4d = nullptr;
+  if( grid3d != nullptr ) {
+    delete grid3d;
+    grid3d = nullptr;
+  }
+  grid4d = nullptr;
 }
-
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TPerambFromSolve<FImpl>::execute(void)
 {
   GridCartesian * grid4d = env().getGrid();
-  const int Nt{grid4d->GlobalDimensions()[Tdir]};
   const int Ntlocal{grid4d->LocalDimensions()[3]};
   const int Ntfirst{grid4d->LocalStarts()[3]};
-
   const int nvec_reduced{par().nvec_reduced};
   const int LI_reduced{par().LI_reduced};
-  const int nvec{par().nvec};
-  const DistilParameters & Distil{par().Distil};
-  const int LI{Distil.LI};
-  const int TI{Distil.TI};
-  const int SI{Distil.SI};
-  const int nnoise{Distil.nnoise};
-  const int Nt_inv{Distil.Nt_inv};
-  const int tsrc{Distil.tsrc};
-  const int Ns{Distil.Ns};
-  const bool full_tdil{TI==Nt};
-  const bool exact_distillation{full_tdil && LI==nvec};
-  auto &perambulator = envGet(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName());
+  DISTIL_PARAMETERS_DEFINE( false );
+  auto &perambulator = envGet(Perambulator, getName());
   auto &solve       = envGet(std::vector<FermionField>, par().solve);
   auto &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
 

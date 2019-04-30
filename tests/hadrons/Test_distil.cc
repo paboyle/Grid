@@ -70,7 +70,7 @@ void test_SolverS(Application &application)
 {
   std::string boundary = "1 1 1 -1";
   MAction::DWF::Par actionPar;
-  actionPar.gauge = "gauge";
+  actionPar.gauge = "LapEvec_gauge";
   actionPar.Ls    = 16;
   actionPar.M5    = 1.8;
   actionPar.mass  = 0.005;
@@ -90,19 +90,16 @@ void test_SolverS(Application &application)
 
 void test_LapEvec(Application &application)
 {
-  const char szGaugeName[] = "gauge";
+  const char szModuleName[] = "LapEvec";
   // gauge field
-  application.createModule<MGauge::Random>(szGaugeName);
+  std::string sGaugeName{szModuleName};
+  sGaugeName.append( "_gauge" );
+  application.createModule<MGauge::Random>(sGaugeName);
   // Now make an instance of the LapEvec object
   MDistil::LapEvecPar p;
-  p.gauge = szGaugeName;
-  //p.EigenPackName = "ePack";
-  //p.Distil.TI = 8;
-  //p.Distil.LI = 3;
-  //p.Distil.Nnoise = 2;
-  //p.Distil.tSrc = 0;
+  //p.gauge = sGaugeName; // This is the default for LapEvec, so no need to be explicit
   p.Stout.steps = 3;
-  p.Stout.parm = 0.2;
+  p.Stout.rho = 0.2;
   p.Cheby.PolyOrder = 11;
   p.Cheby.alpha = 0.3;
   p.Cheby.beta = 12.5;
@@ -112,58 +109,90 @@ void test_LapEvec(Application &application)
   p.Lanczos.MaxIt = 1000;
   p.Lanczos.resid = 1e-2;
   p.Lanczos.IRLLog = 0;
-  application.createModule<MDistil::LapEvec>("LapEvec",p);
+  application.createModule<MDistil::LapEvec>(szModuleName,p);
+}
+
+/////////////////////////////////////////////////////////////
+// Noises
+/////////////////////////////////////////////////////////////
+
+std::string test_Noises(Application &application, const std::string &sNoiseBaseName ) {
+  // DistilVectors parameters
+  MDistil::NoisesPar NoisePar;
+  NoisePar.nnoise = 1;
+  NoisePar.nvec = 5;
+  std::string sNoiseName{sNoiseBaseName + "_noise"};
+  application.createModule<MDistil::Noises>(sNoiseName,NoisePar);
+  return sNoiseName;
 }
 
 /////////////////////////////////////////////////////////////
 // Perambulators
 /////////////////////////////////////////////////////////////
 
-void test_Perambulators(Application &application)
+void test_Perambulators( Application &application, const char * pszSuffix = nullptr )
 {
+  std::string sModuleName{ "Peramb" };
+  if( pszSuffix )
+    sModuleName.append( pszSuffix );
+  test_Noises(application, sModuleName);
   // Perambulator parameters
   MDistil::Peramb::Par PerambPar;
-  PerambPar.eigenPack="LapEvec";
-  PerambPar.noise="Peramb_noise";
-  PerambPar.PerambFileName="peramb.bin";
-  PerambPar.UniqueIdentifier="full_dilution";
+  PerambPar.lapevec = "LapEvec";
+  PerambPar.PerambFileName = sModuleName + ".bin";
   PerambPar.solver="CG_s";
   PerambPar.Distil.tsrc = 0;
   PerambPar.Distil.nnoise = 1;
-  PerambPar.Distil.LI=5;
-  PerambPar.Distil.SI=4;
-  PerambPar.Distil.TI=8;
   PerambPar.nvec=5;
-  PerambPar.Distil.Ns=4;
-  PerambPar.Distil.Nt_inv=1;
-  //PerambPar.Solver.mass=0.005;
-  //PerambPar.Solver.M5=1.8;
-  //PerambPar.Ls=16;
-  //PerambPar.Solver.CGPrecision=1e-8;
-  //PerambPar.Solver.MaxIterations=10000;
-  application.createModule<MDistil::Peramb>("Peramb",PerambPar);
+  application.createModule<MDistil::Peramb>( sModuleName, PerambPar );
 }
+
+/////////////////////////////////////////////////////////////
+// DistilVectors
+/////////////////////////////////////////////////////////////
+
+#define TEST_DISTIL_VECTORS_COMMON \
+std::string sModuleName{"DistilVecs"}; \
+if( pszSuffix ) \
+  sModuleName.append( pszSuffix ); \
+std::string sPerambName{"Peramb"}; \
+if( pszSuffix ) \
+  sPerambName.append( pszSuffix ); \
+MDistil::DistilVectors::Par DistilVecPar; \
+DistilVecPar.noise = sPerambName + "_noise"; \
+DistilVecPar.perambulator = sPerambName; \
+DistilVecPar.lapevec = "LapEvec"; \
+DistilVecPar.tsrc = 0; \
+if( pszNvec ) \
+  DistilVecPar.nvec = pszNvec
+
+#define TEST_DISTIL_VECTORS_COMMON_END \
+application.createModule<MDistil::DistilVectors>(sModuleName,DistilVecPar)
+
+void test_DistilVectors(Application &application, const char * pszSuffix = nullptr, const char * pszNvec = nullptr )
+{
+  TEST_DISTIL_VECTORS_COMMON;
+  TEST_DISTIL_VECTORS_COMMON_END;
+}
+
+void test_DistilVectorsSS(Application &application, const char * pszSink, const char * pszSource,
+                          const char * pszSuffix = nullptr, const char * pszNvec = nullptr )
+{
+  TEST_DISTIL_VECTORS_COMMON;
+  if( pszSink )
+    DistilVecPar.sink = pszSink;
+  if( pszSource )
+    DistilVecPar.source = pszSource;
+  TEST_DISTIL_VECTORS_COMMON_END;
+}
+
 /////////////////////////////////////////////////////////////
 // Multiple Perambulators
 /////////////////////////////////////////////////////////////
 
 void test_MultiPerambulators(Application &application)
 {
-  // Perambulator parameters
-  MDistil::Peramb::Par PerambPar;
-  PerambPar.eigenPack="LapEvec";
-  PerambPar.UniqueIdentifier="full_dilution";
-  PerambPar.PerambFileName="Peramb5";
-  PerambPar.solver="CG_s";
-  PerambPar.Distil.tsrc = 0;
-  PerambPar.Distil.nnoise = 1;
-  PerambPar.Distil.LI=5;
-  PerambPar.Distil.SI=4;
-  PerambPar.Distil.TI=8;
-  PerambPar.nvec=5;
-  PerambPar.Distil.Ns=4;
-  PerambPar.Distil.Nt_inv=1;
-  application.createModule<MDistil::Peramb>("Peramb5",PerambPar);
+  test_Perambulators( application, "5" );
   MDistil::PerambFromSolve::Par SolvePar;
   SolvePar.eigenPack="LapEvec";
   SolvePar.PerambFileName="Peramb2";
@@ -175,35 +204,16 @@ void test_MultiPerambulators(Application &application)
   SolvePar.nvec=5;
   SolvePar.nvec_reduced=2;
   SolvePar.LI_reduced=2;
-  SolvePar.Distil.Ns=4;
-  SolvePar.Distil.Nt_inv=1;
   application.createModule<MDistil::PerambFromSolve>("Peramb2",SolvePar);
   SolvePar.PerambFileName="Peramb3";
   SolvePar.nvec_reduced=3;
   SolvePar.LI_reduced=3;
   application.createModule<MDistil::PerambFromSolve>("Peramb3",SolvePar);
-  MDistil::DistilVectors::Par DistilVecPar;
-  DistilVecPar.noise="Peramb5_noise";
-  DistilVecPar.perambulator="Peramb2";
-  DistilVecPar.lapevec ="LapEvec";
-  DistilVecPar.tsrc = 0;
-  //DistilVecPar.nnoise = 1;
-  DistilVecPar.LI=2;
-  DistilVecPar.SI=4;
-  DistilVecPar.TI=8;
-  DistilVecPar.nvec=2;
-  DistilVecPar.Ns=4;
-  DistilVecPar.Nt_inv=1;
-  application.createModule<MDistil::DistilVectors>("DistilVecs2",DistilVecPar);
-  DistilVecPar.perambulator="Peramb3";
-  DistilVecPar.LI=3;
-  DistilVecPar.nvec=3;
-  application.createModule<MDistil::DistilVectors>("DistilVecs3",DistilVecPar);
-  //DistilVecPar.perambulator="Peramb5_perambulator_light";
-  DistilVecPar.perambulator="Peramb5";
-  DistilVecPar.LI=5;
-  DistilVecPar.nvec=5;
-  application.createModule<MDistil::DistilVectors>("DistilVecs5",DistilVecPar);
+
+  test_DistilVectors( application, "2", "2" );
+  test_DistilVectors( application, "3", "3" );
+  test_DistilVectors( application, "5", "5" );
+
   MContraction::A2AMesonField::Par A2AMesonFieldPar;
   A2AMesonFieldPar.left="DistilVecs2_rho";
   A2AMesonFieldPar.right="DistilVecs2_rho";
@@ -235,88 +245,6 @@ void test_MultiPerambulators(Application &application)
   application.createModule<MContraction::A2AMesonField>("DistilMesonFieldPhi5",A2AMesonFieldPar);
 }
 
-void test_Noises(Application &application) {
-  // DistilVectors parameters
-  MDistil::NoisesPar NoisePar;
-  NoisePar.UniqueIdentifier = "full_dilution";
-  NoisePar.nvec = 5;
-  NoisePar.Distil.TI = 8;
-  NoisePar.Distil.SI = 4;
-  NoisePar.Distil.LI = 5;
-  NoisePar.Distil.nnoise = 1;
-  NoisePar.Distil.Ns = 4;
-  NoisePar.Distil.Nt_inv = 1;
-  NoisePar.Distil.tsrc = 0;
-  application.createModule<MDistil::Noises>("Peramb_noise",NoisePar);
-}
-
-/////////////////////////////////////////////////////////////
-// DistilVectors
-/////////////////////////////////////////////////////////////
-
-void test_DistilVectors(Application &application)
-{
-  test_Noises(application);
-  // DistilVectors parameters
-  MDistil::DistilVectors::Par DistilVecPar;
-  DistilVecPar.noise="Peramb_noise";
-  //DistilVecPar.perambulator="Peramb_perambulator_light";
-  DistilVecPar.perambulator="Peramb";
-  DistilVecPar.lapevec="LapEvec";
-  DistilVecPar.tsrc = 0;
-  DistilVecPar.LI=5;
-  DistilVecPar.SI=4;
-  DistilVecPar.TI=8;
-  DistilVecPar.nvec=5;
-  DistilVecPar.Ns=4;
-  DistilVecPar.Nt_inv=1;
-  application.createModule<MDistil::DistilVectors>("DistilVecs",DistilVecPar);
-}
-void test_PerambulatorsS(Application &application)
-{
-  // Perambulator parameters
-  MDistil::Peramb::Par PerambPar;
-  PerambPar.eigenPack="LapEvec";
-  PerambPar.PerambFileName="perambS.bin";
-  PerambPar.UniqueIdentifier="full_dilution";
-  PerambPar.solver="CG_s";
-  PerambPar.Distil.tsrc = 0;
-  PerambPar.Distil.nnoise = 1;
-  PerambPar.Distil.LI=5;
-  PerambPar.Distil.SI=4;
-  PerambPar.Distil.TI=8;
-  PerambPar.nvec=5;
-  PerambPar.Distil.Ns=4;
-  PerambPar.Distil.Nt_inv=1;
-  //PerambPar.Solver.mass=0.005; //strange mass???
-  //PerambPar.Solver.M5=1.8;
-  //PerambPar.Ls=16;
-  //PerambPar.Solver.CGPrecision=1e-8;
-  //PerambPar.Solver.MaxIterations=10000;
-  application.createModule<MDistil::Peramb>("PerambS",PerambPar);
-}
-/////////////////////////////////////////////////////////////
-// DistilVectors
-/////////////////////////////////////////////////////////////
-
-void test_DistilVectorsS(Application &application)
-{
-  // DistilVectors parameters
-  MDistil::DistilVectors::Par DistilVecPar;
-  DistilVecPar.noise="PerambS_noise";
-  //DistilVecPar.perambulator="PerambS_perambulator_light";
-  DistilVecPar.perambulator="PerambS";
-  DistilVecPar.lapevec="LapEvec";
-  DistilVecPar.tsrc = 0;
-  //DistilVecPar.nnoise = 1;
-  DistilVecPar.LI=5;
-  DistilVecPar.SI=4;
-  DistilVecPar.TI=32;
-  DistilVecPar.nvec=5;
-  DistilVecPar.Ns=4;
-  DistilVecPar.Nt_inv=1;
-  application.createModule<MDistil::DistilVectors>("DistilVecsS",DistilVecPar);
-}
 /////////////////////////////////////////////////////////////
 // MesonSink
 /////////////////////////////////////////////////////////////
@@ -516,35 +444,10 @@ void test_PerambulatorsSolve(Application &application)
   PerambFromSolvePar.PerambFileName="perambAslashS.bin";
   PerambFromSolvePar.Distil.tsrc = 0;
   PerambFromSolvePar.Distil.nnoise = 1;
-  PerambFromSolvePar.Distil.LI=5;
-  PerambFromSolvePar.Distil.SI=4;
-  PerambFromSolvePar.Distil.TI=8;
   PerambFromSolvePar.nvec=5;
-  PerambFromSolvePar.Distil.Ns=4;
-  PerambFromSolvePar.Distil.Nt_inv=1;
   application.createModule<MDistil::PerambFromSolve>("PerambAslashS",PerambFromSolvePar);
 }
-/////////////////////////////////////////////////////////////
-// DistilVectors
-/////////////////////////////////////////////////////////////
 
-void test_DistilVectorsAslashSeq(Application &application)
-{
-  // DistilVectors parameters
-  MDistil::DistilSink::Par DistilSinkPar;
-  DistilSinkPar.perambulator="PerambAslashS";
-  DistilSinkPar.eigenPack="LapEvec";
-  DistilSinkPar.tsrc = 0;
-  DistilSinkPar.nnoise = 1;
-  DistilSinkPar.LI=5;
-  DistilSinkPar.SI=4;
-  DistilSinkPar.TI=8;
-  DistilSinkPar.nvec=5;
-  DistilSinkPar.Ns=4;
-  DistilSinkPar.Nt=8;
-  DistilSinkPar.Nt_inv=1;
-  application.createModule<MDistil::DistilSink>("DistilVecsAslashSeq",DistilSinkPar);
-}
 bool bNumber( int &ri, const char * & pstr, bool bGobbleWhiteSpace = true )
 {
   if( bGobbleWhiteSpace )
@@ -702,7 +605,7 @@ bool DebugEigenTest()
   // Test initialisation of an array of strings
   for( auto a : as )
     std::cout << a << std::endl;
-  Grid::Hadrons::MDistil::Perambulator<Complex,3,sizeof(Real)> p{as,2,7,2};
+  Grid::Hadrons::MDistil::NamedTensor<Complex,3,sizeof(Real)> p{as,2,7,2};
   DebugShowTensor(p, "p");
   std::cout << "p.IndexNames follow" << std::endl;
   for( auto a : p.IndexNames )
@@ -950,7 +853,7 @@ bool DebugGridTensorTest( void )
 
 bool ConvertPeramb(const char * pszSource, const char * pszDest) {
   std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
-  Grid::Hadrons::MDistil::Perambulator<SpinVector, 6, sizeof(Real)> p(sIndexNames);
+  Grid::Hadrons::MDistil::Perambulator p(sIndexNames);
   p.ReadBinary( pszSource );
   p.write(pszDest);
   return true;
@@ -1016,21 +919,21 @@ int main(int argc, char *argv[])
       break;
     case 2:
       test_Global( application );
-      test_SolverS( application );
       test_LapEvec( application );
+      test_SolverS( application );
       test_Perambulators( application );
       break;
     default: // 3
       test_Global( application );
-      test_SolverS( application );
       test_LapEvec( application );
+      test_SolverS( application );
       test_Perambulators( application );
       test_DistilVectors( application );
       break;
     case 4:
       test_Global( application );
-      test_SolverS( application );
       test_LapEvec( application );
+      test_SolverS( application );
       test_Perambulators( application );
       test_DistilVectors( application );
       test_MesonField( application, "Phi", "_phi" );
@@ -1038,28 +941,28 @@ int main(int argc, char *argv[])
       break;
     case 5: // 3
       test_Global( application );
-      test_SolverS( application );
       test_LapEvec( application );
+      test_SolverS( application );
       test_Perambulators( application );
       test_DistilVectors( application );
-      test_PerambulatorsS( application );
-      test_DistilVectorsS( application );
+      test_Perambulators( application, "S" );
+      test_DistilVectors( application, "S" );
       test_MesonField( application, "SPhi", "S_phi" );
       test_MesonField( application, "SRho", "S_rho" );
       break;
 #ifdef DISTIL_PRE_RELEASE
     case 6: // 3
       test_Global( application );
-      test_SolverS( application );
       test_LapEvec( application );
+      test_SolverS( application );
       test_Perambulators( application );
       test_g5_sinks( application );
       test_MesonSink( application );
       break;
     case 7: // 3
       test_Global( application );
-      test_SolverS( application );
       test_LapEvec( application );
+      test_SolverS( application );
       test_Perambulators( application );
       test_DistilVectors( application );
       test_BaryonFieldPhi( application );
@@ -1068,8 +971,8 @@ int main(int argc, char *argv[])
 #endif
     case 8: // 3
       test_Global( application );
-      test_SolverS( application );
       test_LapEvec( application );
+      test_SolverS( application );
       test_Perambulators( application );
       test_DistilVectors( application );
       test_MesonField( application, "Phi", "_phi" );
@@ -1083,8 +986,8 @@ int main(int argc, char *argv[])
       break;
     case 10: // 3
       test_Global( application );
-      test_SolverS( application );
       test_LapEvec( application );
+      test_SolverS( application );
       test_Perambulators( application );
       test_g5_sinks( application );
       test_em( application );
@@ -1092,8 +995,8 @@ int main(int argc, char *argv[])
       break;
     case 11: // 3
       test_Global( application );
-      test_SolverS( application );
       test_LapEvec( application );
+      test_SolverS( application );
       test_Perambulators( application );
       test_DistilVectors( application );
       test_BaryonFieldPhi2( application );
@@ -1102,26 +1005,31 @@ int main(int argc, char *argv[])
 #endif
     case 12: // 3
       test_Global( application );
-      test_SolverS( application );
       test_LapEvec( application );
-      test_PerambulatorsS( application );
+      test_SolverS( application );
+      test_Perambulators( application, "S" );
       test_em( application );
       test_AslashSeq( application );
       test_PerambulatorsSolve( application );
-      test_DistilVectorsAslashSeq( application );
+      test_DistilVectorsSS( application, "AslashSeq", nullptr, "S" );
       test_MesonField( application, "AslashSeq" );
       break;
     case 13:
       test_Global( application );
-      test_SolverS( application );
       test_LapEvec( application );
+      test_SolverS( application );
       test_MultiPerambulators( application );
       break;
   }
   // execution
-  application.saveParameterFile("test_distil.xml");
-  LOG(Warning) << "These parameters are designed to run on a laptop usid --grid 4.4.4.8" << std::endl;
-  application.run();
+  static const char XmlFileName[] = "test_distil.xml";
+  application.saveParameterFile( XmlFileName );
+
+  const std::vector<int> &lat{GridDefaultLatt()};
+  if( lat.size() == 4 && lat[0] == 4 && lat[1] == 4 && lat[2] == 4 && lat[3] == 8 )
+    application.run();
+  else
+    LOG(Warning) << "The parameters in " << XmlFileName << " are designed to run on a laptop usid --grid 4.4.4.8" << std::endl;
   
   // epilogue
   LOG(Message) << "Grid is finalizing now" << std::endl;

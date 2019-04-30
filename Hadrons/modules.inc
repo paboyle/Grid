@@ -43,9 +43,7 @@ modules_cc =\
   Modules/MDistil/BC2.cc \
   Modules/MDistil/Noises.cc \
   Modules/MDistil/BContraction.cc \
-  Modules/MDistil/DistilSource.cc \
   Modules/MDistil/LapEvec.cc \
-  Modules/MDistil/DistilSink.cc \
   Modules/MDistil/Baryon2pt.cc \
   Modules/MDistil/Perambulator.cc \
   Modules/MDistil/PerambFromSolve.cc \
@@ -118,10 +116,8 @@ modules_hpp =\
   Modules/MScalar/FreeProp.hpp \
   Modules/MScalar/Scalar.hpp \
   Modules/MScalar/ChargedProp.hpp \
-  Modules/MDistil/DistilSource.hpp \
   Modules/MDistil/LapEvec.hpp \
   Modules/MDistil/DistilVectors.hpp \
-  Modules/MDistil/DistilSink.hpp \
   Modules/MDistil/Noises.hpp \
   Modules/MDistil/BC2.hpp \
   Modules/MDistil/Perambulator.hpp \

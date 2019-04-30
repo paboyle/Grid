@@ -33,16 +33,10 @@
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
-
-/******************************************************************************
- Needed to make sure envCreate() (see Hadrons) work with specialisations
- with more than one parameter, eg obj<T1 COMMA T2>
- I imagine this exists already?
- ******************************************************************************/
-
-#ifndef COMMA
-#define COMMA ,
-#endif
+#include <Hadrons/Solver.hpp>
+#include <Hadrons/EigenPack.hpp>
+#include <Hadrons/A2AVectors.hpp>
+#include <Hadrons/DilutedNoise.hpp>
 
 /******************************************************************************
  A consistent set of cross-platform methods for big endian <-> host byte ordering
@@ -207,23 +201,52 @@ BEGIN_HADRONS_NAMESPACE
 
 BEGIN_MODULE_NAMESPACE(MDistil)
 
-using DistilEP = Grid::Hadrons::EigenPack<LatticeColourVector>;
+using LapEvecs = Grid::Hadrons::EigenPack<LatticeColourVector>;
 
 // Noise vector index order: nnoise, nt, nvec, ns
 using NoiseTensor = Eigen::Tensor<Complex, 4, Eigen::RowMajor>;
 
 struct DistilParameters: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(DistilParameters,
-                                  int, TI,
-                                  int, LI,
                                   int, nnoise,
                                   int, tsrc,
-                                  int, SI,
-                                  int, Ns,
-                                  int, Nt_inv)
+                                  std::string, TI,
+                                  std::string, LI,
+                                  std::string, SI )
   DistilParameters() = default;
   template <class ReaderClass> DistilParameters(Reader<ReaderClass>& Reader){read(Reader,"Distil",*this);}
+
+  // Numeric parameter is allowed to be empty (in which case it = Default),
+  // but assert during setup() if specified but not numeric
+  
+  static int ParameterDefault( const std::string & s, int Default, bool bCalledFromSetup )
+  {
+    int i = Default;
+    if( s.length() > 0 ) {
+      std::istringstream ss( s );
+      ss >> i;
+      if( bCalledFromSetup )
+        assert( !ss.fail() && "Parameter should either be empty or integer" );
+    }
+    return i;
+  }
+
+  int getTI( const Environment & env, bool bCalledFromSetup ) const {
+    return ParameterDefault( TI, env.getDim(Tdir), bCalledFromSetup ); }
 };
+
+#define DISTIL_PARAMETERS_DEFINE( inSetup ) \
+const int Nt{env().getDim(Tdir)}; \
+const int nvec{par().nvec}; \
+const int Ns{Grid::QCD::Ns}; \
+const int nnoise{par().Distil.nnoise}; \
+const int tsrc{par().Distil.tsrc}; \
+const int TI{par().Distil.getTI(env(), inSetup)}; \
+const int LI{Hadrons::MDistil::DistilParameters::ParameterDefault(par().Distil.LI, nvec, inSetup)}; \
+const int SI{Hadrons::MDistil::DistilParameters::ParameterDefault(par().Distil.SI, Ns, inSetup)}; \
+const bool full_tdil{ TI == Nt }; \
+const bool exact_distillation{ full_tdil && LI == nvec }; \
+const int Nt_inv{ full_tdil ? 1 : TI }
 
 class BFieldIO: Serializable{
 public:
@@ -299,7 +322,7 @@ public:
 
   // Construct a named tensor explicitly specifying size of each dimension
   template<typename... IndexTypes>
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor(std::array<std::string,NumIndices_> &IndexNames_, Eigen::Index firstDimension, IndexTypes... otherDimensions)
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor(const std::array<std::string,NumIndices_> &IndexNames_, Eigen::Index firstDimension, IndexTypes... otherDimensions)
   : tensor(firstDimension, otherDimensions...), IndexNames{NumIndices}
   {
     // The number of dimensions used to construct a tensor must be equal to the rank of the tensor.
@@ -343,8 +366,9 @@ template<typename T> struct is_named_tensor<T, typename std::enable_if<std::is_b
  Endian_Scalar_Size can be removed once (deprecated) NamedTensor::ReadBinary & WriteBinary methods deleted
  ******************************************************************************/
 
-template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size = sizeof(Scalar_)>
-using Perambulator = NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>;
+//template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size = sizeof(Scalar_)>
+using Perambulator = NamedTensor<SpinVector, 6, sizeof(Real)>;
+static const std::array<std::string, 6> PerambIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
 
 /******************************************************************************
  Save NamedTensor binary format (NB: On-disk format is Big Endian)

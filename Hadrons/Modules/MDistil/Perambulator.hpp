@@ -30,14 +30,6 @@
 #ifndef Hadrons_MDistil_Perambulator_hpp_
 #define Hadrons_MDistil_Perambulator_hpp_
 
-#include <Hadrons/Global.hpp>
-#include <Hadrons/Module.hpp>
-#include <Hadrons/ModuleFactory.hpp>
-#include <Hadrons/Solver.hpp>
-#include <Hadrons/EigenPack.hpp>
-#include <Hadrons/A2AVectors.hpp>
-#include <Hadrons/DilutedNoise.hpp>
-
 // These are members of Distillation
 #include <Hadrons/Distil.hpp>
 
@@ -53,41 +45,42 @@ class PerambulatorPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(PerambulatorPar,
-		                    std::string, eigenPack,
+                                    std::string, lapevec,
+                                    std::string, solver,
 		                    std::string, noise,
                                     std::string, PerambFileName, //stem!!!
-                                    std::string, UniqueIdentifier,
                                     bool, multiFile,
                                     int, nvec,
-                                    DistilParameters, Distil,
-				    std::string, solver);
+                                    DistilParameters, Distil);
 };
 
 template <typename FImpl>
 class TPerambulator: public Module<PerambulatorPar>
 {
 public:
-    FERM_TYPE_ALIASES(FImpl,);
-    SOLVER_TYPE_ALIASES(FImpl,);
-    // constructor
-    TPerambulator(const std::string name);
-    // destructor
-    virtual ~TPerambulator(void);
-    // dependency relation
-    virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getOutput(void);
-    // setup
-    virtual void setup(void);
-    // execution
-    virtual void execute(void);
+  FERM_TYPE_ALIASES(FImpl,);
+  SOLVER_TYPE_ALIASES(FImpl,);
+  // constructor
+  TPerambulator(const std::string name);
+  // destructor
+  virtual ~TPerambulator(void);
+  // dependency relation
+  virtual std::vector<std::string> getInput(void);
+  virtual std::vector<std::string> getOutput(void);
+  // setup
+  virtual void setup(void);
+  // execution
+  virtual void execute(void);
 protected:
-    // These variables are created in setup() and freed in Cleanup()
-    GridCartesian * grid3d; // Owned by me, so I must delete it
-    GridCartesian * grid4d; // Owned by environment (so I won't delete it)
+  virtual void Cleanup(void);
 protected:
-    virtual void Cleanup(void);
-private:
-        unsigned int Ls_;
+  // These variables are created in setup() and freed in Cleanup()
+  GridCartesian * grid3d; // Owned by me, so I must delete it
+  GridCartesian * grid4d; // Owned by environment (so I won't delete it)
+  // Other members
+  unsigned int Ls_;
+  std::string sLapEvecName;
+  std::string sNoiseName;
 };
 
 // Can't name the module Perambulator, because that's what we've called the object
@@ -113,21 +106,17 @@ TPerambulator<FImpl>::~TPerambulator(void)
 template <typename FImpl>
 std::vector<std::string> TPerambulator<FImpl>::getInput(void)
 {
-    std::vector<std::string> in;
-
-    in.push_back(par().eigenPack);
-    in.push_back(par().solver);
-    in.push_back(par().noise);
-    
-    return in;
+  sLapEvecName = par().lapevec;
+  sNoiseName = par().noise;
+  if( sNoiseName.length() == 0 )
+    sNoiseName = getName() + "_noise";
+  return {sLapEvecName, par().solver, sNoiseName };
 }
 
 template <typename FImpl>
 std::vector<std::string> TPerambulator<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName(),getName() + "_unsmeared_sink"};
-    
-    return out;
+  return {getName(), getName() + "_unsmeared_sink"};
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
@@ -137,17 +126,9 @@ void TPerambulator<FImpl>::setup(void)
   Cleanup();
   grid4d = env().getGrid();
   grid3d = MakeLowerDimGrid(grid4d);
-  const int Nt{grid4d->GlobalDimensions()[Tdir]};
-  const int nvec{par().nvec};
-  const DistilParameters & Distil{par().Distil};
-  const int LI{Distil.LI};
-  const int nnoise{Distil.nnoise};
-  const int Nt_inv{Distil.Nt_inv}; // TODO: PROBABLY BETTER: if (full_tdil) Nt_inv=1; else Nt_inv = TI;
-  const int Ns{Distil.Ns};
-  std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
+  DISTIL_PARAMETERS_DEFINE( true );
   
-  envCreate(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName(), 1,
-            sIndexNames,Nt,nvec,Distil.LI,Distil.nnoise,Distil.Nt_inv,Distil.SI);
+  envCreate(Perambulator, getName(), 1, PerambIndexNames,Nt,nvec,LI,nnoise,Nt_inv,SI);
   envCreate(std::vector<FermionField>, getName() + "_unsmeared_sink", 1,
             nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField));
   
@@ -181,18 +162,7 @@ void TPerambulator<FImpl>::Cleanup(void)
 template <typename FImpl>
 void TPerambulator<FImpl>::execute(void)
 {
-  const int Nt{grid4d->GlobalDimensions()[Tdir]};
-    const int nvec{par().nvec};
-    const DistilParameters & Distil{par().Distil};
-    const int LI{Distil.LI};
-    const int SI{Distil.SI};
-    const int TI{Distil.TI};
-    const int nnoise{Distil.nnoise};
-    const int tsrc{Distil.tsrc};
-    const int Ns{Distil.Ns};
-  const bool full_tdil{TI==Nt};
-  const bool exact_distillation{full_tdil && LI==nvec};
-  const int Nt_inv{full_tdil ? 1 : TI}; // TODO: PROBABLY BETTER: if (full_tdil) Nt_inv=1; else Nt_inv = TI;
+  DISTIL_PARAMETERS_DEFINE( false );
 
     auto &solver=envGet(Solver, par().solver);
     auto &mat = solver.getFMat();
@@ -200,12 +170,9 @@ void TPerambulator<FImpl>::execute(void)
     envGetTmp(FermionField, v5dtmp);
     envGetTmp(FermionField, v5dtmp_sol);
 
-    const std::string &UniqueIdentifier{par().UniqueIdentifier};
-
-    //auto &noise = envGet(std::vector<Complex>, par().noise);
-    auto &noise = envGet(NoiseTensor, par().noise);
-    auto &perambulator = envGet(Perambulator<SpinVector COMMA 6 COMMA sizeof(Real)>, getName());
-    auto &epack = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
+    auto &noise = envGet(NoiseTensor, sNoiseName);
+    auto &perambulator = envGet(Perambulator, getName());
+    auto &epack = envGet(LapEvecs, sLapEvecName);
     auto &unsmeared_sink = envGet(std::vector<FermionField>, getName() + "_unsmeared_sink");
 
 

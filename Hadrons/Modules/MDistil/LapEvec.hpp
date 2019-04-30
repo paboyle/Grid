@@ -51,7 +51,7 @@ BEGIN_MODULE_NAMESPACE(MDistil)
 struct StoutParameters: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(StoutParameters,
                                   int, steps,
-                                  double, parm) // TODO: change name of this to rho
+                                  double, rho) // TODO: change name of this to rho
   StoutParameters() = default;
   template <class ReaderClass> StoutParameters(Reader<ReaderClass>& Reader){read(Reader,"StoutSmearing",*this);}
 };
@@ -67,13 +67,10 @@ struct ChebyshevParameters: Serializable {
 
 struct LanczosParameters: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(LanczosParameters,
-                                  //int, Nstart,
                                   int, Nvec,
                                   int, Nk,
-                                  //int, Nm,    // Not currently used
                                   int, Np,
                                   int, MaxIt,
-                                  //int, MinRes,
                                   double, resid,
                                   int, IRLLog)
   LanczosParameters() = default;
@@ -82,19 +79,12 @@ struct LanczosParameters: Serializable {
 
 // These are the actual parameters passed to the module during construction
 
-class LapEvecPar: Serializable
-{
-public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(LapEvecPar,
-                                  std::string,         gauge,
- //                                 std::string, ConfigFileDir,
-  //                                std::string, ConfigFileName,
-                                  //,std::string,         EigenPackName
-                                  StoutParameters,     Stout
+struct LapEvecPar: Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(LapEvecPar
+                                  ,std::string,         gauge
+                                  ,StoutParameters,     Stout
                                   ,ChebyshevParameters, Cheby
-                                  ,LanczosParameters,   Lanczos
-                                  //,DistilParameters,    Distil
-                                  )//,SolverParameters,    Solver)
+                                  ,LanczosParameters,   Lanczos)
 };
 
 /******************************************************************************
@@ -123,7 +113,7 @@ protected:
   // These variables are created in setup() and freed in Cleanup()
   GridCartesian * gridLD; // Owned by me, so I must delete it
   GridCartesian * gridHD; // Owned by environment (so I won't delete it)
-  int Nx, Ny, Nz, Nt;
+  std::string sGaugeName;
 protected:
   virtual void Cleanup(void);
 };
@@ -151,8 +141,12 @@ TLapEvec<GImpl>::~TLapEvec()
 template <typename GImpl>
 std::vector<std::string> TLapEvec<GImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().gauge};
-    return in;
+  sGaugeName = par().gauge;
+  if( sGaugeName.size() == 0 ) {
+    sGaugeName = getName();
+    sGaugeName.append( "_gauge" );
+  }
+  return std::vector<std::string>{ sGaugeName };
 }
 
 template <typename GImpl>
@@ -170,19 +164,16 @@ void TLapEvec<GImpl>::setup(void)
   Environment & e{env()};
   gridHD = e.getGrid();
   gridLD = MakeLowerDimGrid( gridHD );
-  Nx = gridHD->_fdimensions[Xdir];
-  Ny = gridHD->_fdimensions[Ydir];
-  Nz = gridHD->_fdimensions[Zdir];
-  Nt = gridHD->_fdimensions[Tdir];
+  const int Nt{e.getDim(Tdir)};
   // Temporaries
-  //envTmpLat(GaugeField, "Umu");
+  envTmpLat(GaugeField, "Umu");
   envTmpLat(GaugeField, "Umu_stout");
   envTmpLat(GaugeField, "Umu_smear");
   envTmp(LatticeGaugeField, "UmuNoTime",1,LatticeGaugeField(gridLD));
   envTmp(LatticeColourVector, "src",1,LatticeColourVector(gridLD));
-  envTmp(std::vector<DistilEP>, "eig",1,std::vector<DistilEP>(Nt));
+  envTmp(std::vector<LapEvecs>, "eig",1,std::vector<LapEvecs>(Nt));
   // Output objects
-  envCreate(DistilEP, getName(), 1, par().Lanczos.Nvec, gridHD );
+  envCreate(LapEvecs, getName(), 1, par().Lanczos.Nvec, gridHD );
 }
 
 // clean up any temporaries created by setup (that aren't stored in the environment)
@@ -206,35 +197,21 @@ void TLapEvec<GImpl>::execute(void)
 {
   const ChebyshevParameters &ChebPar{par().Cheby};
   const LanczosParameters   &LPar{par().Lanczos};
-  const int &nvec{LPar.Nvec};
-
-  //const bool exact_distillation{TI==Nt && LI==nvec};
-  //const bool full_tdil{TI==Nt};
-  //const int &Nt_inv{full_tdil ? 1 : TI};
-
-  // Assertions on the parameters we read
-  //assert(TI>1);
-  //assert(LI>1);
-  //if(exact_distillation)
-    //assert(nnoise==1);
-  //else
-    //assert(nnoise>1);
 
   // Disable IRL logging if requested
   LOG(Message) << "IRLLog=" << LPar.IRLLog << std::endl;
   const int PreviousIRLLogState{GridLogIRL.isActive()};
   GridLogIRL.Active( LPar.IRLLog == 0 ? 0 : 1 );
-  
-  auto &Umu = envGet(GaugeField, par().gauge);
-  envGetTmp(GaugeField, Umu_smear);
 
   // Stout smearing
-  Umu_smear = Umu;
-  LOG(Message) << "Initial plaquette: " << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu) << std::endl;
+  envGetTmp(GaugeField, Umu_smear);
   {
+    auto &Umu = envGet(GaugeField, sGaugeName);
+    LOG(Message) << "Initial plaquette: " << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu) << std::endl;
+    Umu_smear = Umu;
     const StoutParameters &Stout{par().Stout};
     envGetTmp(GaugeField, Umu_stout);
-    Smear_Stout<PeriodicGimplR> LS(Stout.parm, Tdir); // spatial smearing only
+    Smear_Stout<PeriodicGimplR> LS(Stout.rho, Tdir); // spatial smearing only
     for (int i = 0; i < Stout.steps; i++) {
       LS.smear(Umu_stout, Umu_smear);
       Umu_smear = Umu_stout;
@@ -246,8 +223,8 @@ void TLapEvec<GImpl>::execute(void)
   // Invert Peardon Nabla operator separately on each time-slice
   ////////////////////////////////////////////////////////////////////////
   
-  auto & eig4d = envGet(DistilEP, getName() );
-  envGetTmp(std::vector<DistilEP>, eig);   // Eigenpack for each timeslice
+  auto & eig4d = envGet(LapEvecs, getName() );
+  envGetTmp(std::vector<LapEvecs>, eig);   // Eigenpack for each timeslice
   envGetTmp(LatticeGaugeField, UmuNoTime); // Gauge field without time dimension
   envGetTmp(LatticeColourVector, src);
   const int Ntlocal{gridHD->LocalDimensions()[Tdir]};
@@ -267,12 +244,6 @@ void TLapEvec<GImpl>::execute(void)
       << " with parameters (alpha,beta) = (" << ChebPar.alpha << "," << ChebPar.beta << ")" << std::endl;
     Chebyshev<LatticeColourVector> Cheb(ChebPar.alpha,ChebPar.beta,ChebPar.PolyOrder);
     
-    //from Test_Cheby.cc
-    //if( Ntfirst == 0 && t==0) {
-      //std::ofstream of("cheby_" + std::to_string(ChebPar.alpha) + "_" + std::to_string(ChebPar.beta) + "_" + std::to_string(ChebPar.PolyOrder));
-      //Cheb.csv(of);
-    //}
-
     // Construct source vector according to Test_dwf_compressed_lanczos.cc
     src = 11.0;
     RealD nn = norm2(src);
