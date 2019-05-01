@@ -49,7 +49,6 @@ public:
                                     std::string, solver,
 		                    std::string, noise,
                                     std::string, PerambFileName, //stem!!!
-                                    bool, multiFile,
                                     int, nvec,
                                     DistilParameters, Distil);
 };

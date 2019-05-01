@@ -61,29 +61,6 @@ void test_Global(Application &application)
   application.setPar(globalPar);
 }
 
-
-/////////////////////////////////////////////////////////////
-// Test creation Solver
-/////////////////////////////////////////////////////////////
-
-void test_SolverS(Application &application)
-{
-  std::string boundary = "1 1 1 -1";
-  MAction::DWF::Par actionPar;
-  actionPar.gauge = "LapEvec_gauge";
-  actionPar.Ls    = 16;
-  actionPar.M5    = 1.8;
-  actionPar.mass  = 0.005;
-  actionPar.boundary = boundary;
-  actionPar.twist = "0. 0. 0. 0.";
-  application.createModule<MAction::DWF>("DWF_s", actionPar);
-  MSolver::RBPrecCG::Par solverPar;
-  solverPar.action       = "DWF_s";
-  solverPar.residual     = 1.0e-2;
-  solverPar.maxIteration = 10000;
-  application.createModule<MSolver::RBPrecCG>("CG_s", solverPar);
-}
-
 /////////////////////////////////////////////////////////////
 // Test creation of laplacian eigenvectors
 /////////////////////////////////////////////////////////////
@@ -101,7 +78,7 @@ void test_LapEvec(Application &application)
   p.Stout.steps = 3;
   p.Stout.rho = 0.2;
   p.Cheby.PolyOrder = 11;
-  p.Cheby.alpha = 0.3;
+  p.Cheby.alpha = 0.55;
   p.Cheby.beta = 12.5;
   p.Lanczos.Nvec = 5;
   p.Lanczos.Nk = 6;
@@ -110,6 +87,43 @@ void test_LapEvec(Application &application)
   p.Lanczos.resid = 1e-2;
   p.Lanczos.IRLLog = 0;
   application.createModule<MDistil::LapEvec>(szModuleName,p);
+}
+
+/////////////////////////////////////////////////////////////
+// Test creation Solver
+/////////////////////////////////////////////////////////////
+
+std::string SolverName( const char * pSuffix = nullptr ) {
+  std::string sSolverName{ "CG" };
+  if( pSuffix && pSuffix[0] ) {
+    sSolverName.append( "_" );
+    sSolverName.append( pSuffix );
+  }
+  return sSolverName;
+}
+
+std::string test_Solver(Application &application, const char * pSuffix = nullptr )
+{
+  std::string sActionName{ "DWF" };
+  if( pSuffix && pSuffix[0] ) {
+    sActionName.append( "_" );
+    sActionName.append( pSuffix );
+  }
+  MAction::DWF::Par actionPar;
+  actionPar.gauge = "LapEvec_gauge";
+  actionPar.Ls    = 16;
+  actionPar.M5    = 1.8;
+  actionPar.mass  = 0.005;
+  actionPar.boundary = "1 1 1 -1";
+  actionPar.twist = "0. 0. 0. 0.";
+  application.createModule<MAction::DWF>( sActionName, actionPar );
+  MSolver::RBPrecCG::Par solverPar;
+  solverPar.action       = sActionName;
+  solverPar.residual     = 1.0e-2;
+  solverPar.maxIteration = 10000;
+  std::string sSolverName{ SolverName( pSuffix ) };
+  application.createModule<MSolver::RBPrecCG>( sSolverName, solverPar );
+  return sSolverName;
 }
 
 /////////////////////////////////////////////////////////////
@@ -133,17 +147,17 @@ std::string test_Noises(Application &application, const std::string &sNoiseBaseN
 void test_Perambulators( Application &application, const char * pszSuffix = nullptr )
 {
   std::string sModuleName{ "Peramb" };
-  if( pszSuffix )
+  if( pszSuffix && pszSuffix[0] )
     sModuleName.append( pszSuffix );
-  test_Noises(application, sModuleName);
   // Perambulator parameters
   MDistil::Peramb::Par PerambPar;
   PerambPar.lapevec = "LapEvec";
-  PerambPar.PerambFileName = sModuleName + ".bin";
-  PerambPar.solver="CG_s";
+  PerambPar.PerambFileName = sModuleName;
+  PerambPar.solver = test_Solver( application, pszSuffix );
   PerambPar.Distil.tsrc = 0;
   PerambPar.Distil.nnoise = 1;
-  PerambPar.nvec=5;
+  PerambPar.nvec = 5;
+  test_Noises(application, sModuleName); // I want these written after solver stuff
   application.createModule<MDistil::Peramb>( sModuleName, PerambPar );
 }
 
@@ -920,20 +934,17 @@ int main(int argc, char *argv[])
     case 2:
       test_Global( application );
       test_LapEvec( application );
-      test_SolverS( application );
       test_Perambulators( application );
       break;
     default: // 3
       test_Global( application );
       test_LapEvec( application );
-      test_SolverS( application );
       test_Perambulators( application );
       test_DistilVectors( application );
       break;
     case 4:
       test_Global( application );
       test_LapEvec( application );
-      test_SolverS( application );
       test_Perambulators( application );
       test_DistilVectors( application );
       test_MesonField( application, "Phi", "_phi" );
@@ -942,7 +953,6 @@ int main(int argc, char *argv[])
     case 5: // 3
       test_Global( application );
       test_LapEvec( application );
-      test_SolverS( application );
       test_Perambulators( application );
       test_DistilVectors( application );
       test_Perambulators( application, "S" );
@@ -954,7 +964,6 @@ int main(int argc, char *argv[])
     case 6: // 3
       test_Global( application );
       test_LapEvec( application );
-      test_SolverS( application );
       test_Perambulators( application );
       test_g5_sinks( application );
       test_MesonSink( application );
@@ -962,7 +971,6 @@ int main(int argc, char *argv[])
     case 7: // 3
       test_Global( application );
       test_LapEvec( application );
-      test_SolverS( application );
       test_Perambulators( application );
       test_DistilVectors( application );
       test_BaryonFieldPhi( application );
@@ -972,7 +980,6 @@ int main(int argc, char *argv[])
     case 8: // 3
       test_Global( application );
       test_LapEvec( application );
-      test_SolverS( application );
       test_Perambulators( application );
       test_DistilVectors( application );
       test_MesonField( application, "Phi", "_phi" );
@@ -981,13 +988,12 @@ int main(int argc, char *argv[])
 #ifdef DISTIL_PRE_RELEASE
     case 9: // 3
       test_Global( application );
-      test_SolverS( application );
+      test_Solver( application );
       test_Baryon2pt( application );
       break;
     case 10: // 3
       test_Global( application );
       test_LapEvec( application );
-      test_SolverS( application );
       test_Perambulators( application );
       test_g5_sinks( application );
       test_em( application );
@@ -996,7 +1002,6 @@ int main(int argc, char *argv[])
     case 11: // 3
       test_Global( application );
       test_LapEvec( application );
-      test_SolverS( application );
       test_Perambulators( application );
       test_DistilVectors( application );
       test_BaryonFieldPhi2( application );
@@ -1006,7 +1011,6 @@ int main(int argc, char *argv[])
     case 12: // 3
       test_Global( application );
       test_LapEvec( application );
-      test_SolverS( application );
       test_Perambulators( application, "S" );
       test_em( application );
       test_AslashSeq( application );
@@ -1017,7 +1021,6 @@ int main(int argc, char *argv[])
     case 13:
       test_Global( application );
       test_LapEvec( application );
-      test_SolverS( application );
       test_MultiPerambulators( application );
       break;
   }

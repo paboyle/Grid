@@ -58,7 +58,6 @@ public:
                                   std::string, lapevec,
                                   std::string, source,
                                   std::string, sink,
-                                  bool, multiFile,
                                   int, tsrc,
                                   std::string, nvec,
                                   std::string, TI)
