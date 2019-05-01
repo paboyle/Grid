@@ -163,14 +163,14 @@ void TDistilVectors<FImpl>::setup(void)
 {
   Cleanup();
   auto &noise        = envGet(NoiseTensor, NoiseVectorName);
-  auto &perambulator = envGet(Perambulator, PerambulatorName);
+  auto &perambulator = envGet(PerambTensor, PerambulatorName);
 
   // We expect the perambulator to have been created with these indices
-  for(int i = 0; i < Perambulator::NumIndices; i++ )
-    assert( PerambIndexNames[i] == perambulator.IndexNames[i] && "Perambulator indices bad" );
+  for(int i = 0; i < PerambTensor::NumIndices; i++ )
+    assert( PerambIndexNames[i] == perambulator.IndexNames[i] && "PerambTensor indices bad" );
 
   const int Nt{ env().getDim(Tdir) };
-  assert( Nt == static_cast<int>( perambulator.tensor.dimension(0) ) && "Perambulator time dimensionality bad" );
+  assert( Nt == static_cast<int>( perambulator.tensor.dimension(0) ) && "PerambTensor time dimensionality bad" );
   const int TI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().TI, Nt, true) };
   const int LI{ static_cast<int>( perambulator.tensor.dimension(2) ) };
   const int SI{ static_cast<int>( perambulator.tensor.dimension(5) ) };
@@ -222,7 +222,7 @@ template <typename FImpl>
 void TDistilVectors<FImpl>::execute(void)
 {
   auto &noise        = envGet(NoiseTensor, NoiseVectorName);
-  auto &perambulator = envGet(Perambulator, PerambulatorName);
+  auto &perambulator = envGet(PerambTensor, PerambulatorName);
   auto &epack        = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, LapEvecName);
   
   envGetTmp(LatticeSpinColourVector, tmp2);

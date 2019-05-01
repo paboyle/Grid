@@ -175,7 +175,7 @@ void test_Perambulators( Application &application, const char * pszSuffix = null
 {
   std::string sModuleName{ PerambulatorName( pszSuffix ) };
   // Perambulator parameters
-  MDistil::Peramb::Par PerambPar;
+  MDistil::Perambulator::Par PerambPar;
   PerambPar.lapevec = "LapEvec";
   PerambPar.PerambFileName = sModuleName;
   PerambPar.solver = test_Solver( application, pszSuffix );
@@ -183,7 +183,7 @@ void test_Perambulators( Application &application, const char * pszSuffix = null
   PerambPar.Distil.nnoise = 1;
   PerambPar.nvec = 5;
   test_Noises(application, sModuleName); // I want these written after solver stuff
-  application.createModule<MDistil::Peramb>( sModuleName, PerambPar );
+  application.createModule<MDistil::Perambulator>( sModuleName, PerambPar );
 }
 
 /////////////////////////////////////////////////////////////
@@ -892,7 +892,7 @@ bool DebugGridTensorTest( void )
 
 bool ConvertPeramb(const char * pszSource, const char * pszDest) {
   std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
-  Grid::Hadrons::MDistil::Perambulator p(sIndexNames);
+  Grid::Hadrons::MDistil::PerambTensor p(sIndexNames);
   p.ReadBinary( pszSource );
   p.write(pszDest);
   return true;

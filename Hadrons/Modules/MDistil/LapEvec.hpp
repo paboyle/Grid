@@ -205,11 +205,12 @@ void TLapEvec<GImpl>::execute(void)
 
   // Stout smearing
   envGetTmp(GaugeField, Umu_smear);
+  const StoutParameters &Stout{par().Stout};
+  if( Stout.steps )
   {
     auto &Umu = envGet(GaugeField, sGaugeName);
     LOG(Message) << "Initial plaquette: " << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu) << std::endl;
     Umu_smear = Umu;
-    const StoutParameters &Stout{par().Stout};
     envGetTmp(GaugeField, Umu_stout);
     Smear_Stout<PeriodicGimplR> LS(Stout.rho, Tdir); // spatial smearing only
     for (int i = 0; i < Stout.steps; i++) {

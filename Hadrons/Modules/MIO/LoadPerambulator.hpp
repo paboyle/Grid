@@ -103,14 +103,14 @@ void TLoadPerambulator<FImpl>::setup(void)
 {
   DISTIL_PARAMETERS_DEFINE( true );
   //std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
-  envCreate(MDistil::Perambulator, getName(), 1, MDistil::PerambIndexNames,Nt,nvec,LI,nnoise,Nt_inv,SI);
+  envCreate(MDistil::PerambTensor, getName(), 1, MDistil::PerambIndexNames,Nt,nvec,LI,nnoise,Nt_inv,SI);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TLoadPerambulator<FImpl>::execute(void)
 {
-  auto &perambulator = envGet(MDistil::Perambulator, getName());
+  auto &perambulator = envGet(MDistil::PerambTensor, getName());
   const std::string sPerambName{par().PerambFileName + "." + std::to_string(vm().getTrajectory())};
   perambulator.read(sPerambName.c_str());
 }

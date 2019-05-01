@@ -56,8 +56,8 @@ public:
                                     std::string, PerambFileName,
                                     std::string, solve,
                                     int, nvec,
-                                    int, nvec_reduced,
-                                    int, LI_reduced,
+                                    std::string, nvec_reduced,
+                                    std::string, LI_reduced,
                                     DistilParameters, Distil);
 };
 
@@ -122,12 +122,12 @@ void TPerambFromSolve<FImpl>::setup(void)
 {
   Cleanup();
   DISTIL_PARAMETERS_DEFINE( true );
+  const int nvec_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().nvec_reduced, nvec, true) };
+  const int LI_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().LI_reduced, LI, true) };
   grid4d = env().getGrid();
   grid3d = MakeLowerDimGrid(grid4d);
-  const int nvec_reduced{par().nvec_reduced};
-  const int LI_reduced{par().LI_reduced};
   //std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
-  envCreate(Perambulator, getName(), 1, PerambIndexNames,Nt,nvec_reduced,LI_reduced,nnoise,Nt_inv,SI);
+  envCreate(PerambTensor, getName(), 1, PerambIndexNames,Nt,nvec_reduced,LI_reduced,nnoise,Nt_inv,SI);
   envCreate(NoiseTensor, getName() + "_noise", 1, nnoise, Nt, nvec, Ns );
   envTmp(LatticeColourVector, "result_3d",1,LatticeColourVector(grid3d));
   envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
@@ -151,10 +151,10 @@ void TPerambFromSolve<FImpl>::execute(void)
   GridCartesian * grid4d = env().getGrid();
   const int Ntlocal{grid4d->LocalDimensions()[3]};
   const int Ntfirst{grid4d->LocalStarts()[3]};
-  const int nvec_reduced{par().nvec_reduced};
-  const int LI_reduced{par().LI_reduced};
   DISTIL_PARAMETERS_DEFINE( false );
-  auto &perambulator = envGet(Perambulator, getName());
+  const int nvec_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().nvec_reduced, nvec, false) };
+  const int LI_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().LI_reduced, LI, false) };
+  auto &perambulator = envGet(PerambTensor, getName());
   auto &solve       = envGet(std::vector<FermionField>, par().solve);
   auto &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
 

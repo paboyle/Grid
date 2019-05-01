@@ -82,8 +82,7 @@ protected:
   std::string sNoiseName;
 };
 
-// Can't name the module Perambulator, because that's what we've called the object
-MODULE_REGISTER_TMP(Peramb, TPerambulator<FIMPL>, MDistil);
+MODULE_REGISTER_TMP(Perambulator, TPerambulator<FIMPL>, MDistil);
 
 /******************************************************************************
  *                 TPerambulator implementation                             *
@@ -127,7 +126,7 @@ void TPerambulator<FImpl>::setup(void)
   grid3d = MakeLowerDimGrid(grid4d);
   DISTIL_PARAMETERS_DEFINE( true );
   
-  envCreate(Perambulator, getName(), 1, PerambIndexNames,Nt,nvec,LI,nnoise,Nt_inv,SI);
+  envCreate(PerambTensor, getName(), 1, PerambIndexNames,Nt,nvec,LI,nnoise,Nt_inv,SI);
   envCreate(std::vector<FermionField>, getName() + "_unsmeared_sink", 1,
             nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField));
   
@@ -170,7 +169,7 @@ void TPerambulator<FImpl>::execute(void)
     envGetTmp(FermionField, v5dtmp_sol);
 
     auto &noise = envGet(NoiseTensor, sNoiseName);
-    auto &perambulator = envGet(Perambulator, getName());
+    auto &perambulator = envGet(PerambTensor, getName());
     auto &epack = envGet(LapEvecs, sLapEvecName);
     auto &unsmeared_sink = envGet(std::vector<FermionField>, getName() + "_unsmeared_sink");
 

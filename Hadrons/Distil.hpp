@@ -362,13 +362,13 @@ template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size_> struct
 template<typename T> struct is_named_tensor<T, typename std::enable_if<std::is_base_of<NamedTensor<typename T::Scalar, T::NumIndices, T::Endian_Scalar_Size_>, T>::value>::type> : public std::true_type {};
 
 /******************************************************************************
- Perambulator object
+ PerambTensor object
  Endian_Scalar_Size can be removed once (deprecated) NamedTensor::ReadBinary & WriteBinary methods deleted
  ******************************************************************************/
 
 //template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size = sizeof(Scalar_)>
-using Perambulator = NamedTensor<SpinVector, 6, sizeof(Real)>;
-static const std::array<std::string, 6> PerambIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
+using PerambTensor = NamedTensor<SpinVector, 6, sizeof(Real)>;
+static const std::array<std::string, 6> PerambIndexNames{"nT", "nVec", "LI", "nNoise", "nT_inv", "SI"};
 
 /******************************************************************************
  Save NamedTensor binary format (NB: On-disk format is Big Endian)
@@ -552,7 +552,7 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::ReadBinary(const std
 #else
   u32 -= GridChecksum::crc32(tensor.data(), TotalDataSize);
 #endif
-  assert( u32 == 0 && "NamedTensor error: Perambulator checksum invalid");
+  assert( u32 == 0 && "NamedTensor error: PerambTensor checksum invalid");
 }
 
 /******************************************************************************
@@ -593,7 +593,20 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::read(Reader &r, cons
   const typename ET::Dimensions & NewDimensions{tensor.dimensions()};
   for( int i=0; i < NumIndices_; i++ ) {
     assert(OldDimensions[i] == 0 || OldDimensions[i] == NewDimensions[i] && "NamedTensor::load dimension size");
-    assert(OldIndexNames[i].size() == 0 || OldIndexNames[i] == IndexNames[i] && "NamedTensor::load dimension name");
+    // Case insensitive name compare - TODO std:: c++ way of doing this
+    const int iOldLen{ static_cast<int>( OldIndexNames[i].size() ) };
+    const int iNewLen{ static_cast<int>(    IndexNames[i].size() ) };
+    bool bSame{ iOldLen == 0 || iOldLen == iNewLen };
+    for( int j = 0; j < iOldLen && bSame; j++ ) {
+      wchar_t c1 = OldIndexNames[i][j];
+      if( c1 >= 'a' && c1 <= 'z' )
+        c1 -= 'a' - 'A';
+      wchar_t c2 = IndexNames[i][j];
+      if( c2 >= 'a' && c1 <= 'z' )
+        c2 -= 'a' - 'A';
+      bSame = ( c1 == c2 );
+    }
+    assert(bSame && "NamedTensor::load dimension name");
   }
 }
 
