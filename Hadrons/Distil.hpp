@@ -103,7 +103,7 @@ inline void SliceShare( GridBase * gridLowDim, GridBase * gridHighDim, void * Bu
 //#ifndef USE_LOCAL_SLICES
 //    assert(0); // Can't do this without MPI (should really test whether MPI is defined)
 //#else
-    const auto MyRank{gridHighDim->ThisRank()};
+    const auto MyRank = gridHighDim->ThisRank();
     std::vector<CommsRequest_t> reqs(0);
     int MySlice{coor[dimSpreadOut]};
     char * const _buffer{(char *)Buffer};
@@ -113,9 +113,9 @@ inline void SliceShare( GridBase * gridLowDim, GridBase * gridHighDim, void * Bu
       int RecvSlice = ( MySlice - i + NumSlices ) % NumSlices;
       char * const RecvData{_buffer + RecvSlice * SliceSize};
       coor[dimSpreadOut] = SendSlice;
-      const auto SendRank{gridHighDim->RankFromProcessorCoor(coor)};
+      const auto SendRank = gridHighDim->RankFromProcessorCoor(coor);
       coor[dimSpreadOut] = RecvSlice;
-      const auto RecvRank{gridHighDim->RankFromProcessorCoor(coor)};
+      const auto RecvRank = gridHighDim->RankFromProcessorCoor(coor);
       std::cout << GridLogMessage << "Send slice " << MySlice << " (" << MyRank << ") to " << SendSlice << " (" << SendRank
       << "), receive slice from " << RecvSlice << " (" << RecvRank << ")" << std::endl;
       gridHighDim->SendToRecvFromBegin(reqs,MyData,SendRank,RecvData,RecvRank,SliceSize);
@@ -389,7 +389,7 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::WriteBinary(const st
   assert((sizeof(Scalar_) % Endian_Scalar_Size) == 0 && "NamedTensor error: Scalar_ is not composed of Endian_Scalar_Size" );
   // Size of the data (in bytes)
   const uint32_t Scalar_Size{sizeof(Scalar_)};
-  const auto NumElements{tensor.size()};
+  const auto NumElements = tensor.size();
   const std::streamsize TotalDataSize{static_cast<std::streamsize>(NumElements * Scalar_Size)};
   uint64_t u64 = htobe64(static_cast<uint64_t>(TotalDataSize));
   w.write(reinterpret_cast<const char *>(&u64), sizeof(u64));
@@ -518,7 +518,7 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::ReadBinary(const std
     TotalDataSize = NumElements * Scalar_Size;
   } else {
     // dimensions together with names
-    const auto & TensorDims{tensor.dimensions()};
+    const auto & TensorDims = tensor.dimensions();
     for( int d = 0; d < NumIndices_; d++ ) {
       // size of dimension
       r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
@@ -665,11 +665,11 @@ inline void RotateEigen(std::vector<LatticeColourVector> & evec)
   peekSite(cv0, evec[0], siteFirst);
   auto & cplx0 = cv0()()(0);
   if( std::imag(cplx0) == 0 )
-    std::cout << GridLogMessage << "RotateEigen() : Site 0 : already meets phase convention" << std::endl;
+    std::cout << GridLogMessage << "RotateEigen() : Site 0 : " << cplx0 << " => already meets phase convention" << std::endl;
   else {
-    const auto cplx0_mag{std::abs(cplx0)};
-    const auto phase{std::conj(cplx0 / cplx0_mag)};
-    std::cout << GridLogMessage << "RotateEigen() : Site 0 : =" << cplx0_mag << " => phase=" << (std::arg(phase) / 3.14159265) << " pi" << std::endl;
+    const auto cplx0_mag = std::abs(cplx0);
+    const auto phase = std::conj(cplx0 / cplx0_mag);
+    std::cout << GridLogMessage << "RotateEigen() : Site 0 : |" << cplx0 << "|=" << cplx0_mag << " => phase=" << (std::arg(phase) / 3.14159265) << " pi" << std::endl;
     {
       // TODO: Only really needed on the master slice
       for( int k = 0 ; k < evec.size() ; k++ )
