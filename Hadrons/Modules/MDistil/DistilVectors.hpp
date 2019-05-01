@@ -166,8 +166,7 @@ void TDistilVectors<FImpl>::setup(void)
   auto &perambulator = envGet(PerambTensor, PerambulatorName);
 
   // We expect the perambulator to have been created with these indices
-  for(int i = 0; i < PerambTensor::NumIndices; i++ )
-    assert( PerambIndexNames[i] == perambulator.IndexNames[i] && "PerambTensor indices bad" );
+  assert( perambulator.ValidateIndexNames( PerambIndexNames.size(), &PerambIndexNames[0] ) && "Perambulator index names bad" );
 
   const int Nt{ env().getDim(Tdir) };
   assert( Nt == static_cast<int>( perambulator.tensor.dimension(0) ) && "PerambTensor time dimensionality bad" );
