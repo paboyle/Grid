@@ -665,11 +665,11 @@ inline void RotateEigen(std::vector<LatticeColourVector> & evec)
   peekSite(cv0, evec[0], siteFirst);
   auto & cplx0 = cv0()()(0);
   if( std::imag(cplx0) == 0 )
-    std::cout << GridLogMessage << "RotateEigen() : Site 0 : " << cplx0 << " => already meets phase convention" << std::endl;
+    std::cout << GridLogMessage << "RotateEigen() : Site 0 : already meets phase convention" << std::endl;
   else {
     const auto cplx0_mag{std::abs(cplx0)};
     const auto phase{std::conj(cplx0 / cplx0_mag)};
-    std::cout << GridLogMessage << "RotateEigen() : Site 0 : |" << cplx0 << "|=" << cplx0_mag << " => phase=" << (std::arg(phase) / 3.14159265) << " pi" << std::endl;
+    std::cout << GridLogMessage << "RotateEigen() : Site 0 : =" << cplx0_mag << " => phase=" << (std::arg(phase) / 3.14159265) << " pi" << std::endl;
     {
       // TODO: Only really needed on the master slice
       for( int k = 0 ; k < evec.size() ; k++ )
