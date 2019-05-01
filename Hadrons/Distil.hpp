@@ -347,11 +347,15 @@ public:
     Grid::SliceShare( gridLowDim, gridHighDim, tensor.data(), (int) (tensor.size() * sizeof(Scalar_)));
   }
 
-  // load and save - not virtual - probably all changes
+  bool ValidateIndexNames( int iNumNames, const std::string * MatchNames ) const;
+
+  // Read/Write in any format
   template<typename Reader> inline void read (Reader &r, const char * pszTag = nullptr);
   template<typename Writer> inline void write(Writer &w, const char * pszTag = nullptr) const;
+  // Read/Write in default format, i.e. HDF5 if present, else binary
   inline void read (const char * filename, const char * pszTag = nullptr);
   inline void write(const char * filename, const char * pszTag = nullptr) const;
+  // Original I/O implementation. This will be removed when we're sure it's no longer needed
   EIGEN_DEPRECATED inline void ReadBinary (const std::string filename); // To be removed
   EIGEN_DEPRECATED inline void WriteBinary(const std::string filename); // To be removed
 };
@@ -563,18 +567,43 @@ template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
 template<typename Writer>
 void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::write(Writer &w, const char * pszTag)const{
   if( pszTag == nullptr )
-    pszTag = "tensor";
+    pszTag = "NamedTensor";
+  LOG(Message) << "Writing NamedTensor to tag  " << pszTag << std::endl;
   write(w, pszTag, *this);
 }
 
 template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
 void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::write(const char * filename, const char * pszTag)const{
-  const std::string sTag{pszTag == nullptr ? filename : pszTag};
   std::string sFileName{filename};
   sFileName.append( MDistil::FileExtension );
-  LOG(Message) << "Writing NamedTensor to " << sFileName << ", tag " << sTag << std::endl;
-  MDistil::Default_Writer w(sFileName);
-  write(w, sTag.c_str());
+  LOG(Message) << "Writing NamedTensor to file " << sFileName << std::endl;
+  MDistil::Default_Writer w( sFileName );
+  write( w, pszTag );
+}
+
+/******************************************************************************
+ Validate named tensor index names
+ ******************************************************************************/
+
+template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
+bool NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::ValidateIndexNames( int iNumNames, const std::string * MatchNames ) const {
+  bool bSame{ iNumNames == NumIndices_ && IndexNames.size() == NumIndices_ };
+  for( int i = 0; bSame && i < NumIndices_; i++ ) {
+    // Case insensitive name compare
+    const int iMatchLen{ static_cast<int>( MatchNames[i].size() ) };
+    const int iNewLen  { static_cast<int>( IndexNames[i].size() ) };
+    bSame = ( iMatchLen == iNewLen );
+    for( int j = 0; bSame && j < iMatchLen; j++ ) {
+      wchar_t c1 = MatchNames[i][j];
+      if( c1 >= 'a' && c1 <= 'z' )
+        c1 -= 'a' - 'A';
+      wchar_t c2 = IndexNames[i][j];
+      if( c2 >= 'a' && c1 <= 'z' )
+        c2 -= 'a' - 'A';
+      bSame = ( c1 == c2 );
+    }
+  }
+  return bSame;
 }
 
 /******************************************************************************
@@ -584,40 +613,26 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::write(const char * f
 template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
 template<typename Reader>
 void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::read(Reader &r, const char * pszTag) {
-  // Grab index names and dimensions
   if( pszTag == nullptr )
-    pszTag = "tensor";
+    pszTag = "NamedTensor";
+  // Grab index names and dimensions
   std::vector<std::string> OldIndexNames{std::move(IndexNames)};
   typename ET::Dimensions OldDimensions{tensor.dimensions()};
+  LOG(Message) << "Reading NamedTensor from tag  " << pszTag << std::endl;
   read(r, pszTag, *this);
   const typename ET::Dimensions & NewDimensions{tensor.dimensions()};
-  for( int i=0; i < NumIndices_; i++ ) {
+  for( int i = 0; i < NumIndices_; i++ )
     assert(OldDimensions[i] == 0 || OldDimensions[i] == NewDimensions[i] && "NamedTensor::load dimension size");
-    // Case insensitive name compare - TODO std:: c++ way of doing this
-    const int iOldLen{ static_cast<int>( OldIndexNames[i].size() ) };
-    const int iNewLen{ static_cast<int>(    IndexNames[i].size() ) };
-    bool bSame{ iOldLen == 0 || iOldLen == iNewLen };
-    for( int j = 0; j < iOldLen && bSame; j++ ) {
-      wchar_t c1 = OldIndexNames[i][j];
-      if( c1 >= 'a' && c1 <= 'z' )
-        c1 -= 'a' - 'A';
-      wchar_t c2 = IndexNames[i][j];
-      if( c2 >= 'a' && c1 <= 'z' )
-        c2 -= 'a' - 'A';
-      bSame = ( c1 == c2 );
-    }
-    assert(bSame && "NamedTensor::load dimension name");
-  }
+  assert( ValidateIndexNames( OldIndexNames.size(), &OldIndexNames[0] ) && "NamedTensor::load dimension name" );
 }
 
 template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
 void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::read(const char * filename, const char * pszTag) {
-  const std::string sTag{pszTag == nullptr ? filename : pszTag};
   std::string sFileName{filename};
   sFileName.append( MDistil::FileExtension );
-  LOG(Message) << "Reading NamedTensor from " << sFileName << ", tag " << sTag << std::endl;
-  MDistil::Default_Reader r(sFileName);
-  read(r, sTag.c_str());
+  LOG(Message) << "Reading NamedTensor from file " << sFileName << std::endl;
+  MDistil::Default_Reader r( sFileName );
+  read( r, pszTag );
 }
 
 /******************************************************************************
