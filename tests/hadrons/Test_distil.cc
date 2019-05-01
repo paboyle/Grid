@@ -62,19 +62,26 @@ void test_Global(Application &application)
 }
 
 /////////////////////////////////////////////////////////////
+// Create a random gauge with the correct name
+/////////////////////////////////////////////////////////////
+
+std::string test_Gauge(Application &application, const char * pszBaseName )
+{
+  std::string sGaugeName{ pszBaseName };
+  sGaugeName.append( "_gauge" );
+  application.createModule<MGauge::Random>( sGaugeName );
+  return sGaugeName;
+}
+
+/////////////////////////////////////////////////////////////
 // Test creation of laplacian eigenvectors
 /////////////////////////////////////////////////////////////
 
 void test_LapEvec(Application &application)
 {
   const char szModuleName[] = "LapEvec";
-  // gauge field
-  std::string sGaugeName{szModuleName};
-  sGaugeName.append( "_gauge" );
-  application.createModule<MGauge::Random>(sGaugeName);
-  // Now make an instance of the LapEvec object
+  test_Gauge( application, szModuleName );
   MDistil::LapEvecPar p;
-  //p.gauge = sGaugeName; // This is the default for LapEvec, so no need to be explicit
   p.Stout.steps = 3;
   p.Stout.rho = 0.2;
   p.Cheby.PolyOrder = 11;
@@ -144,11 +151,29 @@ std::string test_Noises(Application &application, const std::string &sNoiseBaseN
 // Perambulators
 /////////////////////////////////////////////////////////////
 
+std::string PerambulatorName( const char * pszSuffix = nullptr )
+{
+  std::string sPerambulatorName{ "Peramb" };
+  if( pszSuffix && pszSuffix[0] )
+    sPerambulatorName.append( pszSuffix );
+  return sPerambulatorName;
+}
+
+void test_LoadPerambulators( Application &application, const char * pszSuffix = nullptr )
+{
+  std::string sModuleName{ PerambulatorName( pszSuffix ) };
+  MIO::LoadPerambulator::Par PerambPar;
+  PerambPar.PerambFileName = sModuleName;
+  PerambPar.Distil.tsrc = 0;
+  PerambPar.Distil.nnoise = 1;
+  PerambPar.nvec = 5;
+  test_Noises(application, sModuleName); // I want these written after solver stuff
+  application.createModule<MIO::LoadPerambulator>( sModuleName, PerambPar );
+}
+
 void test_Perambulators( Application &application, const char * pszSuffix = nullptr )
 {
-  std::string sModuleName{ "Peramb" };
-  if( pszSuffix && pszSuffix[0] )
-    sModuleName.append( pszSuffix );
+  std::string sModuleName{ PerambulatorName( pszSuffix ) };
   // Perambulator parameters
   MDistil::Peramb::Par PerambPar;
   PerambPar.lapevec = "LapEvec";
@@ -927,19 +952,25 @@ int main(int argc, char *argv[])
   //const unsigned int  nt    = GridDefaultLatt()[Tp];
   
   switch(iTestNum) {
+    case 0:
+      test_Global( application );
+      test_LapEvec( application );
+      break;
     case 1:
       test_Global( application );
       test_LapEvec( application );
+      test_Perambulators( application );
       break;
-    case 2:
+    default: // 2
       test_Global( application );
       test_LapEvec( application );
       test_Perambulators( application );
+      test_DistilVectors( application );
       break;
-    default: // 3
+    case 3:
       test_Global( application );
       test_LapEvec( application );
-      test_Perambulators( application );
+      test_LoadPerambulators( application );
       test_DistilVectors( application );
       break;
     case 4:
@@ -950,7 +981,7 @@ int main(int argc, char *argv[])
       test_MesonField( application, "Phi", "_phi" );
       test_MesonField( application, "Rho", "_rho" );
       break;
-    case 5: // 3
+    case 5:
       test_Global( application );
       test_LapEvec( application );
       test_Perambulators( application );

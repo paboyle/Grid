@@ -229,8 +229,6 @@ void TLapEvec<GImpl>::execute(void)
   envGetTmp(LatticeColourVector, src);
   const int Ntlocal{gridHD->LocalDimensions()[Tdir]};
   const int Ntfirst{gridHD->LocalStarts()[Tdir]};
-  const char DefaultOperatorXml[] = "<OPERATOR>Michael</OPERATOR>";
-  const char DefaultsolverXml[]   = "<SOLVER>Felix</SOLVER>";
   for(int t = Ntfirst; t < Ntfirst + Ntlocal; t++ ) {
     LOG(Message) << "------------------------------------------------------------" << std::endl;
     LOG(Message) << " Compute eigenpack, Timeslice = " << t << " / " << Ntfirst + Ntlocal << std::endl;
@@ -266,16 +264,16 @@ void TLapEvec<GImpl>::execute(void)
         eig4d.eval[i] = eig[t].eval[i]; // TODO: Discuss: is this needed? Is there a better way?
     }
   }
-
+  GridLogIRL.Active( PreviousIRLLogState );
+#if DEBUG
   // Now write out the 4d eigenvectors
-  eig4d.record.operatorXml = DefaultOperatorXml;
-  eig4d.record.solverXml = DefaultsolverXml;
+  eig4d.record.operatorXml = "<OPERATOR>Distillation</OPERATOR>";
+  eig4d.record.solverXml = "<SOLVER>CG</SOLVER>";
   std::string sEigenPackName(getName());
   sEigenPackName.append(".");
   sEigenPackName.append(std::to_string(vm().getTrajectory()));
   eig4d.write(sEigenPackName,false);
-
-  GridLogIRL.Active( PreviousIRLLogState );
+#endif
 }
 
 END_MODULE_NAMESPACE
