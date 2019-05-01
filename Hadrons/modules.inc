@@ -37,6 +37,11 @@ modules_cc =\
   Modules/MUtilities/PrecisionCast.cc \
   Modules/MScalar/FreeProp.cc \
   Modules/MScalar/ChargedProp.cc \
+  Modules/MDistil/DistilVectors.cc \
+  Modules/MDistil/Noises.cc \
+  Modules/MDistil/LapEvec.cc \
+  Modules/MDistil/Perambulator.cc \
+  Modules/MDistil/PerambFromSolve.cc \
   Modules/MNPR/Amputate.cc \
   Modules/MNPR/Bilinear.cc \
   Modules/MNPR/FourQuark.cc \
@@ -58,6 +63,7 @@ modules_cc =\
   Modules/MScalarSUN/Div.cc \
   Modules/MIO/LoadEigenPack.cc \
   Modules/MIO/LoadBinary.cc \
+  Modules/MIO/LoadPerambulator.cc \
   Modules/MIO/LoadNersc.cc \
   Modules/MIO/LoadCoarseEigenPack.cc \
   Modules/MIO/LoadCosmHol.cc \
@@ -104,6 +110,11 @@ modules_hpp =\
   Modules/MScalar/FreeProp.hpp \
   Modules/MScalar/Scalar.hpp \
   Modules/MScalar/ChargedProp.hpp \
+  Modules/MDistil/LapEvec.hpp \
+  Modules/MDistil/DistilVectors.hpp \
+  Modules/MDistil/Noises.hpp \
+  Modules/MDistil/Perambulator.hpp \
+  Modules/MDistil/PerambFromSolve.hpp \
   Modules/MNPR/Bilinear.hpp \
   Modules/MNPR/Amputate.hpp \
   Modules/MNPR/FourQuark.hpp \
@@ -126,6 +137,7 @@ modules_hpp =\
   Modules/MScalarSUN/TrKinetic.hpp \
   Modules/MIO/LoadEigenPack.hpp \
   Modules/MIO/LoadNersc.hpp \
+  Modules/MIO/LoadPerambulator.hpp \
   Modules/MIO/LoadA2AVectors.hpp \
   Modules/MIO/LoadCosmHol.hpp \
   Modules/MIO/LoadCoarseEigenPack.hpp \
