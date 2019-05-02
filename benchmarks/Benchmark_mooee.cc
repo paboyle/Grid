@@ -82,7 +82,14 @@ int main (int argc, char ** argv)
 
     DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
     double t0,t1;
-
+    
+    typedef typename DomainWallFermionR::Coeff_t Coeff_t;
+    Vector<Coeff_t> diag = Dw.bs;
+    Vector<Coeff_t> upper= Dw.cs;
+    Vector<Coeff_t> lower= Dw.cs;
+    upper[Ls-1]=-Dw.mass*upper[Ls-1];
+    lower[0]   =-Dw.mass*lower[0];
+    
     LatticeFermion r_eo(FGrid);
     LatticeFermion src_e (FrbGrid);
     LatticeFermion src_o (FrbGrid);
@@ -99,13 +106,13 @@ int main (int argc, char ** argv)
     r_o = Zero();
 
 
-#define BENCH_DW(A,in,out)			\
+#define BENCH_DW(A,...)			\
     Dw.CayleyZeroCounters();			\
-    Dw. A (in,out);				\
+    Dw. A (__VA_ARGS__);				\
     FGrid->Barrier();				\
     t0=usecond();				\
     for(int i=0;i<ncall;i++){			\
-      Dw. A (in,out);				\
+      Dw. A (__VA_ARGS__);				\
     }						\
     t1=usecond();				\
     FGrid->Barrier();				\
@@ -143,23 +150,10 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "Called " #A " "<< (t1-t0)/ncall<<" us"<<std::endl;\
     std::cout<<GridLogMessage << "******************"<<std::endl;
 
-#define BENCH_DW_MEO(A,in,out)			\
-    Dw.CayleyZeroCounters();			\
-    Dw. A (in,out,0);				\
-    FGrid->Barrier();				\
-    t0=usecond();				\
-    for(int i=0;i<ncall;i++){			\
-      Dw. A (in,out,0);				\
-    }						\
-    t1=usecond();				\
-    FGrid->Barrier();				\
-    Dw.CayleyReport();					\
-    std::cout<<GridLogMessage << "Called " #A " "<< (t1-t0)/ncall<<" us"<<std::endl;\
-    std::cout<<GridLogMessage << "******************"<<std::endl;
-
-    BENCH_DW_MEO(Dhop    ,src,result);
-    BENCH_DW_MEO(DhopEO  ,src_o,r_e);
+    BENCH_DW(Dhop    ,src,result,0);
+    BENCH_DW(DhopEO  ,src_o,r_e,0);
     BENCH_DW(Meooe   ,src_o,r_e);
+    BENCH_DW(M5D     ,src_o,src_o,r_e,lower,diag,upper);
     BENCH_DW(Mooee   ,src_o,r_o);
     BENCH_DW(MooeeInv,src_o,r_o);
 
@@ -207,8 +201,8 @@ int main (int argc, char ** argv)
     r_e = Zero();
     r_o = Zero();
 
-    BENCH_DW_MEO(Dhop    ,src,result);
-    BENCH_DW_MEO(DhopEO  ,src_o,r_e);
+    BENCH_DW(Dhop    ,src,result,0);
+    BENCH_DW(DhopEO  ,src_o,r_e,0);
     BENCH_DW_SSC(Meooe   ,src_o,r_e);
     BENCH_DW(Mooee   ,src_o,r_o);
     BENCH_DW(MooeeInv,src_o,r_o);
