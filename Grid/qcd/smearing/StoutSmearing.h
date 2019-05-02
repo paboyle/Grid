@@ -70,7 +70,7 @@ public:
   /*! Construct stout smearing object from explicitly specified rho matrix */
   Smear_Stout(const std::vector<double>& rho_)
     : OwnedBase{new Smear_APE<Gimpl>(rho_)}, SmearBase{OwnedBase.get()} {
-    std::cout << GridLogDebug << "Stout smearing constructor : Smear_Stout(const std::vector<double>& rho_)" << std::endl
+    std::cout << GridLogDebug << "Stout smearing constructor : Smear_Stout(const std::vector<double>& " << rho_ << " )" << std::endl
     assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
     }
 
@@ -78,7 +78,7 @@ public:
   Smear_Stout(double rho, int orthogdim = -1)
   //: OwnedBase{(orthogdim<0 || orthogdim>=Nd) ? new Smear_APE<Gimpl>(rho) : new Smear_APE<Gimpl>(rho3D(rho,orthogdim))},
   : OrthogDim{orthogdim}, SmearRho{ rho3D(rho,orthogdim) }, OwnedBase{ new Smear_APE<Gimpl>(SmearRho) }, SmearBase{OwnedBase.get()} {
-    std::cout << GridLogDebug << "Stout smearing constructor : Smear_StoutSmear_Stout(double rho, int orthogdim = -1)\nrho3d=" << SmearRho << std::endl;
+    std::cout << GridLogDebug << "Stout smearing constructor : Smear_StoutSmear_Stout(double " << rho << ", int " << OrthogDim << " )\nrho3d=" << SmearRho << std::endl;
     assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
   }
 
@@ -108,8 +108,8 @@ public:
                    tmp *
                    adj(Umu));  // iq_mu = Ta(Omega_mu) to match the signs with the paper
         exponentiate_iQ(tmp, iq_mu);
-        pokeLorentz(u_smr, tmp * Umu, mu);  // u_smr = exp(iQ_mu)*U_mu
       }
+      pokeLorentz(u_smr, tmp * Umu, mu);  // u_smr = exp(iQ_mu)*U_mu
     }
     std::cout << GridLogDebug << "Stout smearing completed" << std::endl;
   };
