@@ -69,14 +69,18 @@ public:
         int orthogdim, double *t_kernel = nullptr, double *t_gsum = nullptr);
 
   template <typename TensorType>
-  typename std::enable_if<std::is_same<Eigen::Tensor<ComplexD,3>, TensorType>::value, void>::type
+  typename std::enable_if<(std::is_same<Eigen::Tensor<ComplexD,3>, TensorType>::value ||
+                           std::is_same<Eigen::TensorMap<Eigen::Tensor<Complex, 3, Eigen::RowMajor>>, TensorType>::value),
+                           void>::type
   static ContractWWVV(std::vector<PropagatorField> &WWVV,
 			   const TensorType &WW_sd,
 			   const FermionField *vs,
 			   const FermionField *vd);
 
   template <typename TensorType>
-  typename std::enable_if<!std::is_same<Eigen::Tensor<ComplexD,3>, TensorType>::value, void>::type
+  typename std::enable_if<!(std::is_same<Eigen::Tensor<ComplexD,3>, TensorType>::value ||
+                            std::is_same<Eigen::TensorMap<Eigen::Tensor<Complex, 3, Eigen::RowMajor>>, TensorType>::value),
+                            void>::type
   static ContractWWVV(std::vector<PropagatorField> &WWVV,
 			   const TensorType &WW_sd,
 			   const FermionField *vs,
@@ -977,13 +981,14 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
 
 template <class FImpl>
 template <typename TensorType>
-typename std::enable_if<std::is_same<Eigen::Tensor<ComplexD,3>, TensorType>::value, void>::type
+typename std::enable_if<(std::is_same<Eigen::Tensor<ComplexD,3>, TensorType>::value ||
+                         std::is_same<Eigen::TensorMap<Eigen::Tensor<Complex, 3, Eigen::RowMajor>>, TensorType>::value),
+                         void>::type
 A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
 				   const TensorType &WW_sd,
 				   const FermionField *vs,
 				   const FermionField *vd)
 {
-  std::cout << "Start contraction" << std::endl;
   GridBase *grid = vs[0]._grid;
 
   int nd    = grid->_ndimension;
@@ -1023,11 +1028,13 @@ A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
 
 template <class FImpl>
 template <typename TensorType>
-typename std::enable_if<!std::is_same<Eigen::Tensor<ComplexD,3>, TensorType>::value, void>::type
+typename std::enable_if<!(std::is_same<Eigen::Tensor<ComplexD, 3>, TensorType>::value ||
+                          std::is_same<Eigen::TensorMap<Eigen::Tensor<Complex, 3, Eigen::RowMajor>>, TensorType>::value),
+                          void>::type
 A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
-                                   const TensorType &WW_sd,
-                                   const FermionField *vs,
-                                   const FermionField *vd)
+                              const TensorType &WW_sd,
+                              const FermionField *vs,
+                              const FermionField *vd)
 {
   GridBase *grid = vs[0]._grid;
 
@@ -1046,7 +1053,6 @@ A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
   }
 
   for (int t = 0; t < N_t; t++){
-    std::cout << GridLogMessage << "Contraction t = " << t << std::endl;
     buf = WW_sd[t];
     parallel_for(int ss=0;ss<grid->oSites();ss++){
       for(int d_o=0;d_o<N_d;d_o+=d_unroll){

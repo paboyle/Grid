@@ -18,8 +18,7 @@ public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(A2AWeakNonEyePar,
                                     std::string,  propT0,
                                     std::string,  propT1,
-                                    unsigned int, dtmin,
-                                    unsigned int, dtmax,
+                                    std::string,  t0Trans,
                                     std::string,  output);
 };
 
@@ -33,9 +32,8 @@ class TA2AWeakNonEye: public Module<A2AWeakNonEyePar>
       public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Metadata,
                                         Gamma::Algebra, op,
-                                        unsigned int, trace,
-                                        unsigned int, dtmin,
-                                        unsigned int, dtmax);
+                                        unsigned int,   trace,
+                                        std::string,    t0Trans);
     };
     typedef Correlator<Metadata> Result;
 
@@ -51,6 +49,9 @@ class TA2AWeakNonEye: public Module<A2AWeakNonEyePar>
     virtual void setup(void);
     // execution
     virtual void execute(void);
+  private:
+    unsigned int nt_;
+    std::vector<unsigned int> t0Trans_;
 };
 
 MODULE_REGISTER_TMP(A2AWeakNonEye, TA2AWeakNonEye<FIMPL>, MContraction);
@@ -85,14 +86,26 @@ std::vector<std::string> TA2AWeakNonEye<FImpl>::getOutput(void)
 template <typename FImpl>
 void TA2AWeakNonEye<FImpl>::setup(void)
 {
-    int nt = env().getDim(Tp);
-    
+    unsigned int nt = env().getDim(Tp);
+
+    if (par().t0Trans.compare("all") == 0)
+    {
+        t0Trans_.resize(nt);
+        for(unsigned int t = 0; t < nt; t++){t0Trans_[t] = t;}
+        
+    }
+    else
+    {
+        t0Trans_ = strToVec<unsigned int>(par().t0Trans);
+    }
+
+    nt_ = t0Trans_.size();
     envTmp(std::vector<TComplex>, "corrTmp",       1, nt);
     envTmp(std::vector<Complex>,  "corrWing",      1, nt);
     envTmp(std::vector<Complex>,  "corrConnected", 1, nt);
 
-    envTmp(std::vector<PropagatorField>, "propT0G5", 1, nt, envGetGrid(PropagatorField));
-    envTmp(std::vector<PropagatorField>, "propT1G5", 1, nt, envGetGrid(PropagatorField));
+    envTmp(std::vector<PropagatorField>, "propT0G5", 1, nt_, envGetGrid(PropagatorField));
+    envTmp(std::vector<PropagatorField>, "propT1G5", 1, nt_, envGetGrid(PropagatorField));
 
     envTmp(ComplexField, "wingField",      1, envGetGrid(ComplexField));
     envTmp(ComplexField, "connectedField", 1, envGetGrid(ComplexField));
@@ -104,14 +117,12 @@ void TA2AWeakNonEye<FImpl>::execute(void)
 {
     auto &propT0 = envGet(std::vector<PropagatorField>, par().propT0);
     auto &propT1 = envGet(std::vector<PropagatorField>, par().propT1);
-    int dtmin = par().dtmin;
-    int dtmax = par().dtmax;
-    int nt = env().getDim(Tp);
+    unsigned int nt = env().getDim(Tp);
 
     Gamma G5 = Gamma(Gamma::Algebra::Gamma5);
     envGetTmp(std::vector<PropagatorField>, propT0G5);
     envGetTmp(std::vector<PropagatorField>, propT1G5);
-    for (int t = 0; t < nt; t++)
+    for (unsigned int t = 0; t < nt_; t++)
     {
         propT0G5[t] = propT0[t] * G5;
         propT1G5[t] = propT1[t] * G5;
@@ -129,49 +140,44 @@ void TA2AWeakNonEye<FImpl>::execute(void)
 
     LOG(Message) << "Computing A2A weak non-eye diagrams using propagators: "
                  << par().propT0 << " and " << par().propT1 << "." << std::endl;
-    LOG(Message) << " dt " << dtmin << "..." << dtmax << std::endl;
 
     Real two = 2.0;
     for (auto &G : Gamma::gall)
     {
         std::vector<Gamma> GG({G});
-        res.info.op    = G.g;
-        res.info.dtmin = dtmin;
-        res.info.dtmax = dtmax;
-        for(int t = 0; t < nt; t++)
+        res.info.op      = G.g;
+        res.info.t0Trans = par().t0Trans;
+        for(unsigned int t = 0; t < nt; t++)
         {
             corrConnected[t] = 0.0;
             corrWing[t]      = 0.0;
         }
-        for (int t0 = 0; t0 < nt; t0++)
+        for (unsigned int dt0 = 0; dt0 < nt_; dt0++)
         {
-            for (int dt = dtmin; dt < dtmax; dt++)
+            unsigned int t0 = t0Trans_[dt0];
+            A2Autils<FImpl>::ContractFourQuarkColourDiagonal(propT0G5[dt0], propT1G5[dt0], GG, GG, wingField, connectedField);
+
+            sliceSum(connectedField, corrTmp, Tp);
+            for (unsigned int t = 0; t < nt; t++)
             {
-                int t1 = (t0 + dt) % nt;
-                A2Autils<FImpl>::ContractFourQuarkColourDiagonal(propT0G5[t0], propT1G5[t1], GG, GG, wingField, connectedField);
+                corrConnected[t] += two * corrTmp[(t + t0) % nt]()()();
+            }
 
-                sliceSum(connectedField, corrTmp, Tp);
-                for (int t = 0; t < nt; t++)
-                {
-                    corrConnected[t] += two * corrTmp[(t + t0) % nt]()()();
-                }
-
-                sliceSum(wingField, corrTmp, Tp);
-                for (int t = 0; t < nt; t++)
-                {
-                    corrWing[t] += two * corrTmp[(t + t0) % nt]()()();
-                }
+            sliceSum(wingField, corrTmp, Tp);
+            for (unsigned int t = 0; t < nt; t++)
+            {
+                corrWing[t] += two * corrTmp[(t + t0) % nt]()()();
             }
         }
         res.corr.clear();
-        for (int t = 0; t < nt; t++)
+        for (unsigned int t = 0; t < nt; t++)
         {
             res.corr.push_back(corrConnected[t]);
         }
         res.info.trace = 1;
         result.push_back(res);
         res.corr.clear();
-        for (int t = 0; t < nt; t++)
+        for (unsigned int t = 0; t < nt; t++)
         {
             res.corr.push_back(corrWing[t]);
         }

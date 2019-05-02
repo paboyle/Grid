@@ -18,8 +18,7 @@ public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(A2AWeakEyePar,
                                     std::string,  propT0,
                                     std::string,  propLoop,
-                                    unsigned int, dtmin,
-                                    unsigned int, dtmax,
+                                    std::string,  t0Trans,
                                     std::string,  output);
 };
 
@@ -33,9 +32,8 @@ class TA2AWeakEye: public Module<A2AWeakEyePar>
       public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Metadata,
                                         Gamma::Algebra, op,
-                                        unsigned int, trace,
-                                        unsigned int, dtmin,
-                                        unsigned int, dtmax);
+                                        unsigned int,   trace,
+                                        std::string,    t0Trans);
     };
     typedef Correlator<Metadata> Result;
 
@@ -51,6 +49,9 @@ class TA2AWeakEye: public Module<A2AWeakEyePar>
     virtual void setup(void);
     // execution
     virtual void execute(void);
+  private:
+    unsigned int nt_;
+    std::vector<unsigned int> t0Trans_;
 };
 
 MODULE_REGISTER_TMP(A2AWeakEye, TA2AWeakEye<FIMPL>, MContraction);
@@ -85,13 +86,24 @@ std::vector<std::string> TA2AWeakEye<FImpl>::getOutput(void)
 template <typename FImpl>
 void TA2AWeakEye<FImpl>::setup(void)
 {
-    int nt = env().getDim(Tp);
+    unsigned int nt = env().getDim(Tp);
+
+    if (par().t0Trans.compare("all") == 0)
+    {
+        t0Trans_.resize(nt);
+        for(unsigned int t = 0; t < nt; t++){t0Trans_[t] = t;}
+    }
+    else
+    {
+        t0Trans_ = strToVec<unsigned int>(par().t0Trans);
+    }
+    nt_ = t0Trans_.size();
 
     envTmp(std::vector<TComplex>, "corrTmp",    1, nt);
     envTmp(std::vector<Complex>,  "corrSaucer", 1, nt);
     envTmp(std::vector<Complex>,  "corrEye",    1, nt);
 
-    envTmp(std::vector<PropagatorField>, "propT0G5", 1, nt, envGetGrid(PropagatorField));
+    envTmp(std::vector<PropagatorField>, "propT0G5", 1, nt_, envGetGrid(PropagatorField));
 
     envTmp(ComplexField, "saucerField", 1, envGetGrid(ComplexField));
     envTmp(ComplexField, "eyeField",    1, envGetGrid(ComplexField));
@@ -103,16 +115,14 @@ void TA2AWeakEye<FImpl>::execute(void)
 {
     auto &propT0   = envGet(std::vector<PropagatorField>, par().propT0);
     auto &propLoop = envGet(PropagatorField, par().propLoop);
-    int dtmin = par().dtmin;
-    int dtmax = par().dtmax;
 
     GridBase *grid = propT0[0]._grid;
-    int nt = env().getDim(Tp);
+    unsigned int nt = env().getDim(Tp);
 
     // Implicit gamma-5
     auto G5 = Gamma(Gamma::Algebra::Gamma5);
     envGetTmp(std::vector<PropagatorField>, propT0G5);
-    for (int t = 0; t < nt; t++)
+    for (int t = 0; t < nt_; t++)
     {
         propT0G5[t] = propT0[t] * G5;
     }
@@ -129,7 +139,6 @@ void TA2AWeakEye<FImpl>::execute(void)
 
     LOG(Message) << "Computing A2A weak eye diagrams using propagators: "
                  << par().propT0 << " and " << par().propLoop << "." << std::endl;
-    LOG(Message) << " dt " << dtmin << "..." << dtmax << std::endl;
 
     Real two = 2.0;
 
@@ -137,42 +146,42 @@ void TA2AWeakEye<FImpl>::execute(void)
     {
         std::vector<Gamma> GG({G});
         res.info.op = G.g;
-        res.info.dtmin = dtmin;
-        res.info.dtmax = dtmax;
+        res.info.t0Trans = par().t0Trans;
 
-        for (int t = 0; t < nt; t++)
+        for (unsigned int t = 0; t < nt; t++)
         {
             corrSaucer[t] = 0.0;
             corrEye[t] = 0.0;
         }
-        for (int t0 = 0; t0 < nt; t0++)
+        for (unsigned int dt0 = 0; dt0 < nt_; dt0++)
         {
-            A2Autils<FImpl>::ContractFourQuarkColourDiagonal(propT0G5[t0], propLoop, GG, GG, eyeField, saucerField);
+            unsigned int t0 = t0Trans_[dt0];
+            A2Autils<FImpl>::ContractFourQuarkColourDiagonal(propT0G5[dt0], propLoop, GG, GG, eyeField, saucerField);
 
             sliceSum(saucerField, corrTmp, Tp);
 
-            for (int t = 0; t < nt; t++)
+            for (unsigned int t = 0; t < nt; t++)
             {
                 corrSaucer[t] += two * corrTmp[(t + t0) % nt]()()();
             }
 
             sliceSum(eyeField, corrTmp, Tp);
 
-            for (int t = 0; t < nt; t++)
+            for (unsigned int t = 0; t < nt; t++)
             {
                 corrEye[t] += two * corrTmp[(t + t0) % nt]()()();
             }
         }
 
         res.corr.clear();
-        for (int t = 0; t < nt; t++)
+        for (unsigned int t = 0; t < nt; t++)
         {
             res.corr.push_back(corrSaucer[t]);
         }
         res.info.trace = 1;
         result.push_back(res);
         res.corr.clear();
-        for (int t = 0; t < nt; t++)
+        for (unsigned int t = 0; t < nt; t++)
         {
             res.corr.push_back(corrEye[t]);
         }
