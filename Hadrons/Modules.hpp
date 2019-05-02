@@ -38,7 +38,6 @@
 #include <Hadrons/Modules/MContraction/WeakNonEye3pt.hpp>
 #include <Hadrons/Modules/MContraction/A2AWeakNonEye.hpp>
 #include <Hadrons/Modules/MContraction/A2AWeakEye.hpp>
-#include <Hadrons/Modules/MContraction/A2AWeakHamiltonian.hpp>
 #include <Hadrons/Modules/MContraction/Baryon.hpp>
 #include <Hadrons/Modules/MContraction/A2AFourQuarkContraction.hpp>
 #include <Hadrons/Modules/MContraction/A2ALoop.hpp>

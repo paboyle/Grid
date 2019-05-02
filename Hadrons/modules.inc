@@ -37,7 +37,6 @@ modules_cc =\
   Modules/MContraction/Gamma3pt.cc \
   Modules/MContraction/A2ALoop.cc \
   Modules/MContraction/A2AAslashField.cc \
-  Modules/MContraction/A2AWeakHamiltonian.cc \
   Modules/MContraction/A2AWeakEye.cc \
   Modules/MContraction/Meson.cc \
   Modules/MContraction/A2AFourQuarkContraction.cc \
@@ -110,7 +109,6 @@ modules_hpp =\
   Modules/MContraction/WeakNonEye3pt.hpp \
   Modules/MContraction/A2AWeakNonEye.hpp \
   Modules/MContraction/A2AWeakEye.hpp \
-  Modules/MContraction/A2AWeakHamiltonian.hpp \
   Modules/MContraction/Baryon.hpp \
   Modules/MContraction/A2AFourQuarkContraction.hpp \
   Modules/MContraction/A2ALoop.hpp \
