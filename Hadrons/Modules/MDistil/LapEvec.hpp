@@ -205,20 +205,19 @@ void TLapEvec<GImpl>::execute(void)
 
   // Stout smearing
   envGetTmp(GaugeField, Umu_smear);
+  Umu_smear = envGet(GaugeField, sGaugeName); // The smeared field starts off as the Gauge field
+  LOG(Message) << "Initial plaquette: " << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu_smear) << std::endl;
   const StoutParameters &Stout{par().Stout};
   if( Stout.steps )
   {
-    auto &Umu = envGet(GaugeField, sGaugeName);
-    LOG(Message) << "Initial plaquette: " << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu) << std::endl;
-    Umu_smear = Umu;
     envGetTmp(GaugeField, Umu_stout);
     Smear_Stout<PeriodicGimplR> LS(Stout.rho, Tdir); // spatial smearing only
     for (int i = 0; i < Stout.steps; i++) {
       LS.smear(Umu_stout, Umu_smear);
       Umu_smear = Umu_stout;
     }
+    LOG(Message) << "Smeared plaquette: " << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu_smear) << std::endl;
   }
-  LOG(Message) << "Smeared plaquette: " << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu_smear) << std::endl;
 
   ////////////////////////////////////////////////////////////////////////
   // Invert Peardon Nabla operator separately on each time-slice
