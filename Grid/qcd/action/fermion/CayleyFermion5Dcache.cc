@@ -52,7 +52,8 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
   auto chi = chi_i.View();
   int Ls =this->Ls;
   assert(phi.Checkerboard() == psi.Checkerboard());
-  // Flops = 6.0*(Nc*Ns) *Ls*vol
+  // 10 = 3 complex mult + 2 complex add
+  // Flops = 10.0*(Nc*Ns) *Ls*vol (/2 for red black counting)
   M5Dcalls++;
   M5Dtime-=usecond();
 
