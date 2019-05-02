@@ -31,7 +31,6 @@ modules_cc =\
   Modules/MAction/ScaledDWF.cc \
   Modules/MAction/WilsonClover.cc \
   Modules/MContraction/WeakEye3pt.cc \
-  Modules/MContraction/WardIdentity.cc \
   Modules/MContraction/DiscLoop.cc \
   Modules/MContraction/Baryon.cc \
   Modules/MContraction/A2AMesonField.cc \
@@ -106,7 +105,6 @@ modules_hpp =\
   Modules/MContraction/DiscLoop.hpp \
   Modules/MContraction/WeakEye3pt.hpp \
   Modules/MContraction/Meson.hpp \
-  Modules/MContraction/WardIdentity.hpp \
   Modules/MContraction/A2AMesonField.hpp \
   Modules/MContraction/Gamma3pt.hpp \
   Modules/MContraction/WeakNonEye3pt.hpp \

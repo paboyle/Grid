@@ -33,7 +33,6 @@
 #include <Hadrons/Modules/MContraction/DiscLoop.hpp>
 #include <Hadrons/Modules/MContraction/WeakEye3pt.hpp>
 #include <Hadrons/Modules/MContraction/Meson.hpp>
-#include <Hadrons/Modules/MContraction/WardIdentity.hpp>
 #include <Hadrons/Modules/MContraction/A2AMesonField.hpp>
 #include <Hadrons/Modules/MContraction/Gamma3pt.hpp>
 #include <Hadrons/Modules/MContraction/WeakNonEye3pt.hpp>
