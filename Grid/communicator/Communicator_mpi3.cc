@@ -107,8 +107,7 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 //////////////////////////////////
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent,int &srank)    
 {
-  _ndimension = processors.size();
-
+  _ndimension = processors.size();  assert(_ndimension>=1);
   int parent_ndimension = parent._ndimension; assert(_ndimension >= parent._ndimension);
   std::vector<int> parent_processor_coor(_ndimension,0);
   std::vector<int> parent_processors    (_ndimension,1);

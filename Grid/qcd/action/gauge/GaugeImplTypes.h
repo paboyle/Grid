@@ -29,6 +29,14 @@ directory
 #ifndef GRID_GAUGE_IMPL_TYPES_H
 #define GRID_GAUGE_IMPL_TYPES_H
 
+#define CPS_MD_TIME
+
+#ifdef CPS_MD_TIME
+#define HMC_MOMENTUM_DENOMINATOR (2.0)
+#else
+#define HMC_MOMENTUM_DENOMINATOR (1.0)
+#endif
+
 namespace Grid {
 namespace QCD {
 
@@ -89,12 +97,32 @@ public:
   ///////////////////////////////////////////////////////////
   // Move these to another class
   // HMC auxiliary functions
-  static inline void generate_momenta(Field &P, GridParallelRNG &pRNG) {
-    // specific for SU gauge fields
+  static inline void generate_momenta(Field &P, GridParallelRNG &pRNG) 
+  {
+    // Zbigniew Srocinsky thesis:
+    //
+    // P(p) =  N \Prod_{x\mu}e^-{1/2 Tr (p^2_mux)}
+    // 
+    // p_x,mu = c_x,mu,a T_a
+    //
+    // Tr p^2 =  sum_a,x,mu 1/2 (c_x,mu,a)^2
+    //
+    // Which implies P(p) =  N \Prod_{x,\mu,a} e^-{1/4 c_xmua^2  }
+    //
+    //                    =  N \Prod_{x,\mu,a} e^-{1/2 (c_xmua/sqrt{2})^2  }
+    // 
+    // Expect c' = cxmua/sqrt(2) to be a unit variance gaussian.
+    //
+    // Expect cxmua variance sqrt(2).
+    //
+    // Must scale the momentum by sqrt(2) to invoke CPS and UKQCD conventions
+    //
     LinkField Pmu(P._grid);
-    Pmu = zero;
+    Pmu = Zero();
     for (int mu = 0; mu < Nd; mu++) {
       SU<Nrepresentation>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
+      RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR) ;
+      Pmu = Pmu*scale;
       PokeIndex<LorentzIndex>(P, Pmu, mu);
     }
   }

@@ -1,6 +1,8 @@
-# Using Xcode with Grid on Mac OS
+# Using Xcode for Grid on Mac OS
 
-This guide explains how to use Xcode as an IDE on Mac OS.
+This guide explains how to use Xcode as an IDE for Grid on Mac OS.
+
+*NB: this guide, and the screenshots, were generated using Xcode 10.1.*
 
 # Initial setup
 
@@ -27,11 +29,9 @@ Once Xcode is installed, install the Xcode command-line utilities using:
 
     xcode-select --install
 
-*NB: the screenshots from this guide were generated from Xcode 10.1.*
-
 ## 2. Set Grid environment variables
 
-To make sure we can share Xcode projects via git and have them work without requiring modification, we will define Grid environment variables. To make sure these environment variables will be available to the Xcode build system, issue the following command:
+To make sure we can share Xcode projects via git and have them work without requiring modification, we will define Grid environment variables. To make sure these environment variables will be available to the Xcode build system, issue the following shell command:
 
     defaults write com.apple.dt.Xcode UseSanitizedBuildSystemEnvironment -bool NO
 
@@ -100,7 +100,7 @@ NB: Grid does not have any dependencies on fortran, however many standard scient
 
 [OMPI]: https://www.open-mpi.org/software/ompi/v3.1/
 
-    ../configure CC=clang CXX=clang++ F77=gfortran FC=gfortran CXXFLAGS=-g --prefix=$GridPre/openmpi-3.1.3
+    ../configure CC=clang CXX=clang++ F77=gfortran FC=gfortran CXXFLAGS=-g --prefix=$GridPre/openmpi
     make -j 4 all install
 
 (If you don't want to bother with fortran bindings, just don't include the F77 and FC flags)
@@ -149,9 +149,8 @@ There isn't currently a port for [C-LIME][C-LIME], so download the source and th
 
 [C-LIME]: https://usqcd-software.github.io/c-lime/ "C-language API for Lattice QCD Interchange Message Encapsulation / Large Internet Message Encapsulation"
 
-    ../configure --prefix=$GridPre/lime-1.3.2 CC=clang
-    make -j 4
-    make install
+    ../configure --prefix=$GridPre/lime CC=clang
+    make -j 4 all install
 
 ## 5. Install, Configure and Build Grid
 
@@ -171,31 +170,31 @@ or
 
     git clone https://github.com/paboyle/Grid.git
 
-depending on whether you are using https or ssh.
+depending on how many times you like to enter your password.
 
 ### 5.2 Configure Grid
 
 The Xcode build system supports multiple configurations for each project, by default: `Debug` and `Release`, but more configurations can be defined. We will create separate Grid build directories for each configuration, using the Grid **Autoconf** build system to make each configuration. NB: it is **not** necessary to run `make install` on them once they are built (IDE features such as *jump to definition* will work better of you don't).
 
-Below are shown the `configure` script invocations for three recommended configurations. You are free to define more, less or different configurations, but as a minimum, be sure to build a `Debug` configuration.
+Below are shown the `configure` script invocations for three recommended configurations. You are free to define more, fewer or different configurations, but as a minimum, be sure to build a `Debug` configuration.
 
 #### 1. `Debug`
 
 This is the build for every day developing and debugging with Xcode. It uses the Xcode clang c++ compiler, without MPI, and defaults to double-precision. Xcode builds the `Debug` configuration with debug symbols for full debugging:
 
-    ../configure --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre/lime-1.3.2 --enable-simd=GEN --enable-precision=double CXX=clang++ --prefix=$GridPre/GridDebug --enable-comms=none --enable-doxygen-doc
+    ../configure --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre/lime --enable-simd=GEN --enable-precision=double CXX=clang++ --prefix=$GridPre/GridDebug --enable-comms=none --enable-doxygen-doc
 
 #### 2. `Release`
 
 Since Grid itself doesn't really have debug configurations, the release build is recommended to be the same as `Debug`, except using single-precision (handy for validation):
 
-    ../configure --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre/lime-1.3.2 --enable-simd=GEN --enable-precision=single CXX=clang++ --prefix=$GridPre/GridRelease --enable-comms=none --enable-doxygen-doc
+    ../configure --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre/lime --enable-simd=GEN --enable-precision=single CXX=clang++ --prefix=$GridPre/GridRelease --enable-comms=none --enable-doxygen-doc
 
 #### 3. `MPIDebug`
 
 Debug configuration with MPI:
 
-    ../configure --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre/lime-1.3.2 --enable-simd=GEN --enable-precision=double CXX=clang++ --prefix=$GridPre/GridMPIDebug --enable-comms=mpi-auto MPICXX=$GridPre/openmpi-3.1.3/bin/mpicxx --enable-doxygen-doc
+    ../configure --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre/lime --enable-simd=GEN --enable-precision=double CXX=clang++ --prefix=$GridPre/GridMPIDebug --enable-comms=mpi-auto MPICXX=$GridPre/openmpi/bin/mpicxx --enable-doxygen-doc
 
 ### 5.3 Build Grid
 
@@ -253,7 +252,7 @@ Obtain a list of header locations required by Grid by running the following from
 
 Output should look similar to:
 
-    -I$GridPre/openmpi-3.1.3/include -I$GridPkg/include -I$GridPre/lime-1.3.2/include -I$GridPkg/include -I$GridPkg/include -I$GridPkg/include -O3 -g -std=c++11
+    -I$GridPre/openmpi/include -I$GridPkg/include -I$GridPre/lime/include -I$GridPkg/include -I$GridPkg/include -I$GridPkg/include -O3 -g -std=c++11
 
 The header locations follow the `-I` switches. You can ignore the other switches, and you can ignore duplicate entries, which just mean that your package manager has installed multiple packages in the same location.
 
@@ -267,13 +266,13 @@ Set HEADER_SEARCH_PATHS to:
 
 followed by (***the order is important***) the locations reported by `grid-config --cxxflags`, ignoring duplicates, e.g.:
 
-    $GridPre/openmpi-3.1.3/include
+    $GridPre/openmpi/include
     $GridPkg/include
-    $GridPre/lime-1.3.2/include
+    $GridPre/lime/include
 
 **Note: the easiest way to set this value is to put it all on one line, space separated, and edit the text to the right of `HEADER_SEARCH_PATHS`**, i.e.:
 
-    $Grid/build$(CONFIGURATION)/Grid $Grid $Grid/Grid $GridPre/openmpi-3.1.3/include $GridPkg/include $GridPre/lime-1.3.2/include
+    $Grid/build$(CONFIGURATION)/Grid $Grid $Grid/Grid $GridPre/openmpi/include $GridPkg/include $GridPre/lime/include
 
 #### LIBRARY_SEARCH_PATHS
 
@@ -283,11 +282,11 @@ Obtain a list of library locations required by Grid by running the following fro
 
 Output should look similar to:
 
-    -L$GridPre/openmpi-3.1.3/lib -L$GridPkg/lib -L$GridPre/lime-1.3.2/lib -L$GridPkg/lib -L$GridPkg/lib -L$GridPkg/lib
+    -L$GridPre/openmpi/lib -L$GridPkg/lib -L$GridPre/lime/lib -L$GridPkg/lib -L$GridPkg/lib -L$GridPkg/lib
 
 Paste the output ***with `$Grid/build$(CONFIGURATION)/Grid $Grid/build$(CONFIGURATION)/Hadrons ` prepended*** into `LIBRARY_SEARCH_PATHS`:
 
-    $Grid/build$(CONFIGURATION)/Grid $Grid/build$(CONFIGURATION)/Hadrons $GridPre/openmpi-3.1.3/lib $GridPkg/lib $GridPre/lime-1.3.2/lib
+    $Grid/build$(CONFIGURATION)/Grid $Grid/build$(CONFIGURATION)/Hadrons $GridPre/openmpi/lib $GridPkg/lib $GridPre/lime/lib
 
 ### 2. Linking
 
@@ -390,21 +389,31 @@ If you want to build `Grid` and `Hadrons` libraries using Xcode, you will need t
 1. Make new library targets for `Grid` and `Hadrons`
 
 2. Add Grid source folders to your project:
+
     a. Right click project then `Add files to "project" ...`
     b. Choose `$Grid/Grid` folder
     c. Select `Create groups` (`folder references` doesn't work)
-    d. Select `Grid` (containing just the Grid sources, not the entire Git repository) as your target
+    d. Make sure none of the targets are selected
     e. Click `Add`
+    f. Add each source file (not header) in `Grid` and its subdirectories to the `Grid` target (option-command-1, then tick source files)
 
 3. Add Hadrons source folders to your project
-    a. As per `Grid`, but change the target to `Hadrons`
-    b. For each source file in `Archive`, remove them from the target (option-command-1, then untick source files)
-    
-4. Set the following values for each target in `Build Settings`
+
+    a. As per `Grid`, but add each source file in `Hadrons` (except those in `Archive` and `Utilities`) to the `Hadrons` target
+
+4. Set the following values *for the entire project* in `Build Settings`
 
     Group | Variable | Value
     --- | --- | ---
     `Deployment` | `DSTROOT` | `$Grid/build$(CONFIGURATION)` *(do this for the entire project)*
+    `Search Paths` | `LIBRARY_SEARCH_PATHS` | remove `$Grid/build$(CONFIGURATION)/Grid $Grid/build$(CONFIGURATION)/Hadrons` from the start of the path
+
+    This sets the deployment location to the makefile build folders (but by default, targets will have `SKIP_INSTALL` set to `Yes`). The change to the paths is to make sure any executable targets link to the versions of the `Grid` and `Hadrons` libraries just built.  
+
+5. Set the following values for each of the `Grid` and `Hadrons` targets in `Build Settings`
+
+    Group | Variable | Value
+    --- | --- | ---
     `Deployment` | `DEPLOYMENT_LOCATION` | `Yes`
     `Deployment` | `INSTALL_PATH` | `$(PRODUCT_NAME)/`
     `Deployment` | `SKIP_INSTALL` | `No`
@@ -412,11 +421,18 @@ If you want to build `Grid` and `Hadrons` libraries using Xcode, you will need t
     
     This ensures that the libraries are copied back into the build folders when they are made (removing the need to run `make -j 4`)
 
-5. For `Grid`, in `Build Settings` in the `Build Options` group, set:
+6. For `Grid`, in `Build Settings` in the `Build Options` group, set:
 
     Variable | Configuration | Value
     --- | --- | ---
     `EXCLUDED_SOURCE_FILE_NAMES` | Non-MPI configurations (`Debug` and `Release`) | `$(Grid)/Grid/communicator/Communicator_mpi3.cc $(Grid)/Grid/communicator/SharedMemoryMPI.cc` 
     `EXCLUDED_SOURCE_FILE_NAMES` | MPI configurations (`MPIDebug`) | `$(Grid)/Grid/communicator/Communicator_none.cc $(Grid)/Grid/communicator/SharedMemoryNone.cc`
 
+7. Make a new scheme called `Libraries` containing both `Grid` and `Hadrons` targets
+
+    a. Edit the new scheme
+    b. On the Build tab, add both `Grid` and `Hadrons` targets
+
 You should now be able to build and debug any configuration.
+
+Note that with this setup, the Xcode build system is not aware of dependencies of your targets on the grid libraries. So you can modify Grid and/or Hadrons headers if you need to, and build your target without rebuilding the entire Grid and Hadrons Libraries (you can manually force the Libraries to rebuild by making the `Libraries` scheme). You can instead configure target dependencies to `Grid` and `Hadrons` libraries in the Xcode build system, just remember to also remove `-lGrid -lHadrons` from the list under `OTHER_LDFLAGS` for the entire project.
