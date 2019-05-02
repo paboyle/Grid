@@ -33,11 +33,13 @@
 #include <Hadrons/Modules/MContraction/DiscLoop.hpp>
 #include <Hadrons/Modules/MContraction/WeakEye3pt.hpp>
 #include <Hadrons/Modules/MContraction/Meson.hpp>
+#include <Hadrons/Modules/MContraction/WardIdentity.hpp>
 #include <Hadrons/Modules/MContraction/A2AMesonField.hpp>
 #include <Hadrons/Modules/MContraction/Gamma3pt.hpp>
 #include <Hadrons/Modules/MContraction/WeakNonEye3pt.hpp>
 #include <Hadrons/Modules/MContraction/A2AWeakNonEye.hpp>
 #include <Hadrons/Modules/MContraction/A2AWeakEye.hpp>
+#include <Hadrons/Modules/MContraction/A2AWeakHamiltonian.hpp>
 #include <Hadrons/Modules/MContraction/Baryon.hpp>
 #include <Hadrons/Modules/MContraction/A2AFourQuarkContraction.hpp>
 #include <Hadrons/Modules/MContraction/A2ALoop.hpp>
@@ -56,6 +58,7 @@
 #include <Hadrons/Modules/MSolver/A2AVectors.hpp>
 #include <Hadrons/Modules/MSolver/RBPrecCG.hpp>
 #include <Hadrons/Modules/MSolver/LocalCoherenceLanczos.hpp>
+#include <Hadrons/Modules/MSolver/A2ALocalCurrent.hpp>
 #include <Hadrons/Modules/MSolver/MixedPrecisionRBPrecCG.hpp>
 #include <Hadrons/Modules/MNPR/FourQuark.hpp>
 #include <Hadrons/Modules/MNPR/Bilinear.hpp>

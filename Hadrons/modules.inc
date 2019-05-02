@@ -31,12 +31,14 @@ modules_cc =\
   Modules/MAction/ScaledDWF.cc \
   Modules/MAction/WilsonClover.cc \
   Modules/MContraction/WeakEye3pt.cc \
+  Modules/MContraction/WardIdentity.cc \
   Modules/MContraction/DiscLoop.cc \
   Modules/MContraction/Baryon.cc \
   Modules/MContraction/A2AMesonField.cc \
   Modules/MContraction/Gamma3pt.cc \
   Modules/MContraction/A2ALoop.cc \
   Modules/MContraction/A2AAslashField.cc \
+  Modules/MContraction/A2AWeakHamiltonian.cc \
   Modules/MContraction/A2AWeakEye.cc \
   Modules/MContraction/Meson.cc \
   Modules/MContraction/A2AFourQuarkContraction.cc \
@@ -53,6 +55,7 @@ modules_cc =\
   Modules/MSolver/RBPrecCG.cc \
   Modules/MSolver/LocalCoherenceLanczos.cc \
   Modules/MSolver/MixedPrecisionRBPrecCG.cc \
+  Modules/MSolver/A2ALocalCurrent.cc \
   Modules/MSolver/A2AVectors.cc \
   Modules/MSolver/A2AAslashVectors.cc \
   Modules/MNPR/Amputate.cc \
@@ -103,11 +106,13 @@ modules_hpp =\
   Modules/MContraction/DiscLoop.hpp \
   Modules/MContraction/WeakEye3pt.hpp \
   Modules/MContraction/Meson.hpp \
+  Modules/MContraction/WardIdentity.hpp \
   Modules/MContraction/A2AMesonField.hpp \
   Modules/MContraction/Gamma3pt.hpp \
   Modules/MContraction/WeakNonEye3pt.hpp \
   Modules/MContraction/A2AWeakNonEye.hpp \
   Modules/MContraction/A2AWeakEye.hpp \
+  Modules/MContraction/A2AWeakHamiltonian.hpp \
   Modules/MContraction/Baryon.hpp \
   Modules/MContraction/A2AFourQuarkContraction.hpp \
   Modules/MContraction/A2ALoop.hpp \
@@ -126,6 +131,7 @@ modules_hpp =\
   Modules/MSolver/A2AVectors.hpp \
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MSolver/LocalCoherenceLanczos.hpp \
+  Modules/MSolver/A2ALocalCurrent.hpp \
   Modules/MSolver/MixedPrecisionRBPrecCG.hpp \
   Modules/MNPR/FourQuark.hpp \
   Modules/MNPR/Bilinear.hpp \
