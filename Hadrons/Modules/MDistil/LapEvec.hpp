@@ -164,14 +164,13 @@ void TLapEvec<GImpl>::setup(void)
   Environment & e{env()};
   gridHD = e.getGrid();
   gridLD = MakeLowerDimGrid( gridHD );
-  const int Nt{e.getDim(Tdir)};
+  const int Ntlocal{gridHD->LocalDimensions()[Tdir]};
   // Temporaries
-  envTmpLat(GaugeField, "Umu");
   envTmpLat(GaugeField, "Umu_stout");
   envTmpLat(GaugeField, "Umu_smear");
   envTmp(LatticeGaugeField, "UmuNoTime",1,LatticeGaugeField(gridLD));
   envTmp(LatticeColourVector, "src",1,LatticeColourVector(gridLD));
-  envTmp(std::vector<LapEvecs>, "eig",1,std::vector<LapEvecs>(Nt));
+  envTmp(std::vector<LapEvecs>, "eig",1,std::vector<LapEvecs>(Ntlocal));
   // Output objects
   envCreate(LapEvecs, getName(), 1, par().Lanczos.Nvec, gridHD );
 }
@@ -229,14 +228,15 @@ void TLapEvec<GImpl>::execute(void)
   envGetTmp(LatticeColourVector, src);
   const int Ntlocal{gridHD->LocalDimensions()[Tdir]};
   const int Ntfirst{gridHD->LocalStarts()[Tdir]};
-  for(int t = Ntfirst; t < Ntfirst + Ntlocal; t++ ) {
+  uint32_t ConvergenceErrors{0};
+  for(int t = 0; t < Ntlocal; t++ ) {
     LOG(Message) << "------------------------------------------------------------" << std::endl;
-    LOG(Message) << " Compute eigenpack, Timeslice = " << t << " / " << Ntfirst + Ntlocal << std::endl;
+    LOG(Message) << " Compute eigenpack, local timeslice = " << t << " / " << Ntlocal << std::endl;
     LOG(Message) << "------------------------------------------------------------" << std::endl;
     eig[t].resize(LPar.Nk+LPar.Np,gridLD);
     
     // Construct smearing operator
-    ExtractSliceLocal(UmuNoTime,Umu_smear,0,t-Ntfirst,Grid::QCD::Tdir); // switch to 3d/4d objects
+    ExtractSliceLocal(UmuNoTime,Umu_smear,0,t,Grid::QCD::Tdir); // switch to 3d/4d objects
     LinOpPeardonNabla<LatticeColourVector> PeardonNabla(UmuNoTime);
     LOG(Debug) << "Chebyshev preconditioning to order " << ChebPar.PolyOrder
       << " with parameters (alpha,beta) = (" << ChebPar.alpha << "," << ChebPar.beta << ")" << std::endl;
@@ -253,18 +253,24 @@ void TLapEvec<GImpl>::execute(void)
       IRL(PeardonNablaCheby,PeardonNabla,LPar.Nvec,LPar.Nk,LPar.Nk+LPar.Np,LPar.resid,LPar.MaxIt);
     int Nconv = 0;
     IRL.calc(eig[t].eval,eig[t].evec,src,Nconv);
-    assert( Nconv >= LPar.Nvec && "MDistil::LapEvec : Error - not enough eigenvectors converged" );
-    if( Nconv > LPar.Nvec )
+    if( Nconv < LPar.Nvec ) {
+      // NB: Can't assert here since we are processing local slices - i.e. not all nodes would assert
+      ConvergenceErrors = 1;
+      LOG(Error) << "MDistil::LapEvec : Not enough eigenvectors converged. If this occurs in practice, we should modify the eigensolver to iterate once more to ensure the second convergence test does not take us below the requested number of eigenvectors" << std::endl;
+    }
+    if( Nconv != LPar.Nvec )
       eig[t].resize( LPar.Nvec, gridLD );
     RotateEigen( eig[t].evec ); // Rotate the eigenvectors into our phase convention
 
     for (int i=0;i<LPar.Nvec;i++){
       InsertSliceLocal(eig[t].evec[i],eig4d.evec[i],0,t,3);
-      if(t==0)
+      if(t==0 && Ntfirst==0)
         eig4d.eval[i] = eig[t].eval[i]; // TODO: Discuss: is this needed? Is there a better way?
     }
   }
   GridLogIRL.Active( PreviousIRLLogState );
+  gridHD->GlobalSum(ConvergenceErrors);
+  assert(ConvergenceErrors==0 && "The eingensolver failed to find enough eigenvectors on at least one node");
 #if DEBUG
   // Now write out the 4d eigenvectors
   eig4d.record.operatorXml = "<OPERATOR>Distillation</OPERATOR>";
