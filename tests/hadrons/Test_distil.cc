@@ -891,8 +891,7 @@ bool DebugGridTensorTest( void )
 }
 
 bool ConvertPeramb(const char * pszSource, const char * pszDest) {
-  std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
-  Grid::Hadrons::MDistil::PerambTensor p(sIndexNames);
+  Grid::Hadrons::MDistil::PerambTensor p(Hadrons::MDistil::PerambIndexNames);
   p.ReadBinary( pszSource );
   p.write(pszDest);
   return true;
