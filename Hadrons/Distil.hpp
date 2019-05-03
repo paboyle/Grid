@@ -335,7 +335,7 @@ public:
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor() : IndexNames{NumIndices_} {}
   
   // Construct a named tensor without specifying size of each dimension (because it will be loaded from file)
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor(std::array<std::string,NumIndices_> &IndexNames_)
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor(const std::array<std::string,NumIndices_> &IndexNames_)
   : IndexNames{NumIndices_}
   {
     for( int i = 0; i < NumIndices_; i++ )
