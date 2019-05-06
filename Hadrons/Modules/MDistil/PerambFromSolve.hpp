@@ -171,7 +171,7 @@ void TPerambFromSolve<FImpl>::execute(void)
             for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
               ExtractSliceLocal(result_3d,result_nospin,0,t-Ntfirst,Grid::QCD::Tdir);
               for (int ivec = 0; ivec < nvec_reduced; ivec++) {
-                ExtractSliceLocal(evec3d,epack.evec[ivec],0,t,3);
+                ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Grid::QCD::Tdir);
                 pokeSpin(perambulator(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
                 std::cout <<  "perambulator(t, ivec, dk, inoise,dt,ds)(is) = (" << t << "," << ivec << "," << dk << "," << inoise << "," << dt << "," << ds << ")(" << is << ") = " <<  perambulator(t, ivec, dk, inoise,dt,ds)()(is)() << std::endl;
               }

@@ -206,7 +206,7 @@ void TPerambulator<FImpl>::execute(void)
               if( t_inv >= Ntfirst && t_inv < Ntfirst + Ntlocal ) {
                 for (int ik = dk; ik < nvec; ik += LI){
                   for (int is = ds; is < Ns; is += SI){ 
-                    ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv,3);
+                    ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv-Ntfirst,Grid::QCD::Tdir);
                     //tmp3d_nospin = evec3d * noise[inoise + nnoise*(t_inv + Nt*(ik+nvec*is))];
                     tmp3d_nospin = evec3d * noise(inoise, t_inv, ik, is);
                     tmp3d=zero;
@@ -235,7 +235,7 @@ void TPerambulator<FImpl>::execute(void)
               for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
                 ExtractSliceLocal(result_3d,result_nospin,0,t-Ntfirst,Grid::QCD::Tdir);
                 for (int ivec = 0; ivec < nvec; ivec++) {
-                  ExtractSliceLocal(evec3d,epack.evec[ivec],0,t,3);
+                  ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Grid::QCD::Tdir);
                   pokeSpin(perambulator(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
                 }
               }

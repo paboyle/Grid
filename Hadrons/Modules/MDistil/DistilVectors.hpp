@@ -261,7 +261,7 @@ void TDistilVectors<FImpl>::execute(void)
               if( t_inv >= Ntfirst && t_inv < Ntfirst + Ntlocal ) {
                 for (int ik = dk; ik < nvec; ik += LI){
                   for (int is = ds; is < Ns; is += SI){
-                    ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv,3);
+                    ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv-Ntfirst,Grid::QCD::Tdir);
                     //tmp3d_nospin = evec3d * noise[inoise + nnoise*(t_inv + Nt*(ik+nvec*is))];
                     tmp3d_nospin = evec3d * noise(inoise, t_inv, ik, is);
                     tmp3d=zero;
@@ -289,7 +289,7 @@ void TDistilVectors<FImpl>::execute(void)
             for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
               sink_tslice=zero;
               for (int ivec = 0; ivec < nvec; ivec++) {
-                ExtractSliceLocal(evec3d,epack.evec[ivec],0,t,3);
+                ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Grid::QCD::Tdir);
                 sink_tslice += evec3d * perambulator(t, ivec, dk, inoise,dt,ds);
               }
               InsertSliceLocal(sink_tslice,phi[vecindex],0,t-Ntfirst,Grid::QCD::Tdir);
