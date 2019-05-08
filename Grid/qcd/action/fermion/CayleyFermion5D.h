@@ -216,9 +216,13 @@ NAMESPACE_END(Grid);
   template void CayleyFermion5D< A >::MooeeInv    (const FermionField &psi, FermionField &chi); \
   template void CayleyFermion5D< A >::MooeeInvDag (const FermionField &psi, FermionField &chi);
 
+#ifdef GRID_NVCC
+#define  CAYLEY_DPERP_GPU
+#else
 #undef  CAYLEY_DPERP_DENSE
 #define  CAYLEY_DPERP_CACHE
 #undef  CAYLEY_DPERP_LINALG
+#endif
 #define CAYLEY_DPERP_VEC
 
 #endif
