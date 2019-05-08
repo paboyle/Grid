@@ -168,10 +168,10 @@ template<class Impl> void CayleyFermion5D<Impl>::CayleyReport(void)
     std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
     std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
 
-    // Bytes = sizeof(RealD) * (Nc*Ns*Nreim) * Ls * vol * (read+write) (/2 for red black counting)
+    // Bytes = sizeof(Real) * (Nc*Ns*Nreim) * Ls * vol * (read+write) (/2 for red black counting)
     // read = 2 ( psi[ss+s+1] and psi[ss+s-1] count as 1 )
     // write = 1
-    RealD Gbytes = sizeof(RealD) * (Nc*Ns*2) * volume * 3 /2. * 1.e-9;
+    RealD Gbytes = sizeof(Real) * (Nc*Ns*2) * volume * 3 /2. * 1.e-9;
     std::cout << GridLogMessage << "Average bandwidth (GB/s)                 : " << Gbytes/M5Dtime*M5Dcalls*1.e6 << std::endl;
   }
 
