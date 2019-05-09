@@ -64,8 +64,6 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
   M5Dcalls++;
   M5Dtime-=usecond();
   
-  typedef typename SiteSpinor::scalar_object ScalarSiteSpinor;
-  
   accelerator_loopN( sss, sites4d ,{
     uint64_t lane = sss % nsimd;
     uint64_t ss   = Ls * (sss / nsimd);
