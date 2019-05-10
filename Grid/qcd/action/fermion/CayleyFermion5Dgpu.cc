@@ -99,35 +99,37 @@ void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
   auto psi = psi_i.View();
   auto phi = phi_i.View();
   auto chi = chi_i.View();
+  Coeff_t *lower_v = &lower[0];
+  Coeff_t *diag_v  = &diag[0];
+  Coeff_t *upper_v = &upper[0];
   int Ls =this->Ls;
   assert(phi.Checkerboard() == psi.Checkerboard());
 
-  // Flops = 6.0*(Nc*Ns) *Ls*vol
+  const uint64_t nsimd = grid->Nsimd();
+  const uint64_t sites4d = nsimd * grid->oSites() / Ls;
+  
+  // 10 = 3 complex mult + 2 complex add
+  // Flops = 10.0*(Nc*Ns) *Ls*vol (/2 for red black counting)
   M5Dcalls++;
   M5Dtime-=usecond();
 
-  thread_loop( (int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
-    auto tmp = psi[0];
+  accelerator_loopN( sss, sites4d ,{
+    uint64_t lane = sss % nsimd;
+    uint64_t ss   = Ls * (sss / nsimd);
+    
     for(int s=0;s<Ls;s++){
-      if ( s==0 ) {
-	spProj5p(tmp,psi[ss+s+1]);
-	chi[ss+s]=diag[s]*phi[ss+s]+upper[s]*tmp;
-
-	spProj5m(tmp,psi[ss+Ls-1]);
-	chi[ss+s]=chi[ss+s]+lower[s]*tmp;
-      } else if ( s==(Ls-1)) {
-	spProj5p(tmp,psi[ss+0]);
-	chi[ss+s]=diag[s]*phi[ss+s]+upper[s]*tmp;
-
-	spProj5m(tmp,psi[ss+s-1]);
-	chi[ss+s]=chi[ss+s]+lower[s]*tmp;
-      } else { 
-	spProj5p(tmp,psi[ss+s+1]);
-	chi[ss+s]=diag[s]*phi[ss+s]+upper[s]*tmp;
-
-	spProj5m(tmp,psi[ss+s-1]);
-	chi[ss+s]=chi[ss+s]+lower[s]*tmp;
-      }
+      auto res = extractLane(lane,phi[ss+s]);
+      res = diag_v[s]*res;
+      
+      auto tmp = extractLane(lane,psi[ss+(s+1)%Ls]);
+      spProj5p(tmp,tmp);
+      res += upper_v[s]*tmp;
+      
+      tmp = extractLane(lane,psi[ss+(s+Ls-1)%Ls]);
+      spProj5m(tmp,tmp);
+      res += lower_v[s]*tmp;
+      
+      insertLane(lane,chi[ss+s],res);
     }
   });
   M5Dtime+=usecond();
