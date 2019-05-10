@@ -233,6 +233,7 @@ void TEMLepton<FImpl>::execute(void)
     for(tl=0;tl<nt;tl++){
 
 	//shift free propagator to different source positions
+	//account for possible anti-periodic boundary in time
 	proptmp = Cshift(freetmp,Tp, -tl);
 	proptmp = where( tlat < tl, boundary[Tp]*proptmp, proptmp);
 
@@ -280,6 +281,11 @@ void TEMLepton<FImpl>::execute(void)
 	// keep the result for the desired delta t
 	Aslashlep = where(tlat == (tl-par().deltat+nt)%nt, proptmp, Aslashlep);
     }
+
+    //account for possible anti-periodic boundary in time
+    Aslashlep = where( tlat >= nt-par().deltat, boundary[Tp]*Aslashlep, Aslashlep);
+    lep = where( tlat >= nt-par().deltat, boundary[Tp]*lep, lep);
+
 }
 
 END_MODULE_NAMESPACE
