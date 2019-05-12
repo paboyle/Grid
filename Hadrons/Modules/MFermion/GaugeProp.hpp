@@ -111,12 +111,17 @@ void TGaugeProp<FImpl>::setup(void)
 {
     Ls_ = env().getObjectLs(par().solver);
     envCreateLat(PropagatorField, getName());
-    envTmpLat(FermionField, "source", Ls_);
-    envTmpLat(FermionField, "sol", Ls_);
     envTmpLat(FermionField, "tmp");
     if (Ls_ > 1)
     {
+        envTmpLat(FermionField, "source", Ls_);
+        envTmpLat(FermionField, "sol", Ls_);
         envCreateLat(PropagatorField, getName() + "_5d", Ls_);
+    }
+    else
+    {
+       envTmpLat(FermionField, "source");
+       envTmpLat(FermionField, "sol");
     }
 }
 
