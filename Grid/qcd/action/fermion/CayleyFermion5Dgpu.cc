@@ -143,42 +143,59 @@ void CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi_i, FermionField
 
   auto psi = psi_i.View();
   auto chi = chi_i.View();
-
+  Coeff_t *lee_v  = &lee[0];
+  Coeff_t *leem_v = &leem[0];
+  Coeff_t *uee_v  = &uee[0];
+  Coeff_t *ueem_v = &ueem[0];
+  Coeff_t *dee_v  = &dee[0];
+  
   int Ls=this->Ls;
-
+  const uint64_t nsimd = grid->Nsimd();
+  const uint64_t sites4d = nsimd * grid->oSites() / Ls;
+  
+  typedef typename SiteSpinor::scalar_object ScalarSiteSpinor;
+  
   MooeeInvCalls++;
   MooeeInvTime-=usecond();
-
-  thread_loop((int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
-    auto tmp = psi[0];
-
-    // flops = 12*2*Ls + 12*2*Ls + 3*12*Ls + 12*2*Ls  = 12*Ls * (9) = 108*Ls flops
-    // Apply (L^{\prime})^{-1}
-    chi[ss]=psi[ss]; // chi[0]=psi[0]
-    for(int s=1;s<Ls;s++){
-      spProj5p(tmp,chi[ss+s-1]);  
-      chi[ss+s] = psi[ss+s]-lee[s-1]*tmp;
+  
+  accelerator_loopN( sss, sites4d ,{
+    uint64_t lane = sss % nsimd;
+    uint64_t ss   = Ls * (sss / nsimd);
+    ScalarSiteSpinor res, tmp, acc;
+    
+    // X = Nc*Ns
+    // flops = 2X + (Ls-2)(4X + 4X) + 6X + 1 + 2X + (Ls-1)(10X + 1) = -16X + Ls(1+18X) = -192 + 217*Ls flops
+    // Apply (L^{\prime})^{-1} L_m^{-1}
+    res = extractLane(lane,psi[ss]);
+    spProj5m(tmp,res);
+    acc = leem_v[0]*tmp;
+    spProj5p(tmp,res);
+    insertLane(lane,chi[ss],res);
+    
+    for(int s=1;s<Ls-1;s++){
+      res = extractLane(lane,psi[ss+s]);
+      res -= lee_v[s-1]*tmp;
+      spProj5m(tmp,res);
+      acc += leem_v[s]*tmp;
+      spProj5p(tmp,res);
+      insertLane(lane,chi[ss+s],res);
     }
-    // L_m^{-1} 
-    for (int s=0;s<Ls-1;s++){ // Chi[ee] = 1 - sum[s<Ls-1] -leem[s]P_- chi
-      spProj5m(tmp,chi[ss+s]);    
-      chi[ss+Ls-1] = chi[ss+Ls-1] - leem[s]*tmp;
-    }
-    // U_m^{-1} D^{-1}
-    for (int s=0;s<Ls-1;s++){
-      // Chi[s] + 1/d chi[s] 
-      spProj5p(tmp,chi[ss+Ls-1]); 
-      chi[ss+s] = (1.0/dee[s])*chi[ss+s]-(ueem[s]/dee[Ls-1])*tmp;
-    }	
-    chi[ss+Ls-1]= (1.0/dee[Ls-1])*chi[ss+Ls-1];
-      
-    // Apply U^{-1}
+    res = extractLane(lane,psi[ss+Ls-1]);
+    res = res - lee_v[Ls-2]*tmp - acc;
+    
+    // Apply U_m^{-1} D^{-1} U^{-1}
+    res = (1.0/dee_v[Ls-1])*res;
+    insertLane(lane,chi[ss+Ls-1],res);
+    spProj5p(acc,res);
+    spProj5m(tmp,res);
     for (int s=Ls-2;s>=0;s--){
-      spProj5m(tmp,chi[ss+s+1]);  
-      chi[ss+s] = chi[ss+s] - uee[s]*tmp;
+      res = extractLane(lane,chi[ss+s]);
+      res = (1.0/dee_v[s])*res - uee_v[s]*tmp - ueem_v[s]*acc;
+      spProj5m(tmp,res);
+      insertLane(lane,chi[ss+s],res);
     }
   });
-
+  
   MooeeInvTime+=usecond();
 
 }
