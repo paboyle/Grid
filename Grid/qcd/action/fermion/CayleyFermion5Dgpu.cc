@@ -205,48 +205,64 @@ void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi_i, FermionField
 {
   chi_i.Checkerboard()=psi_i.Checkerboard();
   GridBase *grid=psi_i.Grid();
-  int Ls=this->Ls;
-
+  
   auto psi = psi_i.View();
   auto chi = chi_i.View();
-
-  assert(psi.Checkerboard() == psi.Checkerboard());
-
+  Coeff_t *lee_v  = &lee[0];
+  Coeff_t *leem_v = &leem[0];
+  Coeff_t *uee_v  = &uee[0];
+  Coeff_t *ueem_v = &ueem[0];
+  Coeff_t *dee_v  = &dee[0];
+  
+  int Ls=this->Ls;
+  const uint64_t nsimd = grid->Nsimd();
+  const uint64_t sites4d = nsimd * grid->oSites() / Ls;
+  
+  typedef typename SiteSpinor::scalar_object ScalarSiteSpinor;
+  
   MooeeInvCalls++;
   MooeeInvTime-=usecond();
-
-  thread_loop((int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
-
-    auto tmp = psi[0];
-
-    // Apply (U^{\prime})^{-dagger}
-    chi[ss]=psi[ss];
-    for (int s=1;s<Ls;s++){
-      spProj5m(tmp,chi[ss+s-1]);
-      chi[ss+s] = psi[ss+s]-conjugate(uee[s-1])*tmp;
-    }
-    // U_m^{-\dagger} 
-    for (int s=0;s<Ls-1;s++){
-      spProj5p(tmp,chi[ss+s]);
-      chi[ss+Ls-1] = chi[ss+Ls-1] - conjugate(ueem[s])*tmp;
-    }
-
-    // L_m^{-\dagger} D^{-dagger}
-    for (int s=0;s<Ls-1;s++){
-      spProj5m(tmp,chi[ss+Ls-1]);
-      chi[ss+s] = conjugate(1.0/dee[s])*chi[ss+s]-conjugate(leem[s]/dee[Ls-1])*tmp;
-    }	
-    chi[ss+Ls-1]= conjugate(1.0/dee[Ls-1])*chi[ss+Ls-1];
   
-    // Apply L^{-dagger}
+  accelerator_loopN( sss, sites4d ,{
+    uint64_t lane = sss % nsimd;
+    uint64_t ss   = Ls * (sss / nsimd);
+    ScalarSiteSpinor res, tmp, acc;
+    
+    // X = Nc*Ns
+    // flops = 2X + (Ls-2)(4X + 4X) + 6X + 1 + 2X + (Ls-1)(10X + 1) = -16X + Ls(1+18X) = -192 + 217*Ls flops
+    // Apply (U^{\prime})^{-dagger} U_m^{-\dagger}
+    res = extractLane(lane,psi[ss]);
+    spProj5p(tmp,res);
+    acc = conjugate(ueem_v[0])*tmp;
+    spProj5m(tmp,res);
+    insertLane(lane,chi[ss],res);
+    
+    for(int s=1;s<Ls-1;s++){
+      res = extractLane(lane,psi[ss+s]);
+      res -= conjugate(uee_v[s-1])*tmp;
+      spProj5p(tmp,res);
+      acc += conjugate(ueem_v[s])*tmp;
+      spProj5m(tmp,res);
+      insertLane(lane,chi[ss+s],res);
+    }
+    res = extractLane(lane,psi[ss+Ls-1]);
+    res = res - conjugate(uee_v[Ls-2])*tmp - acc;
+    
+    // Apply L_m^{-\dagger} D^{-dagger} L^{-dagger}
+    res = conjugate(1.0/dee_v[Ls-1])*res;
+    insertLane(lane,chi[ss+Ls-1],res);
+    spProj5m(acc,res);
+    spProj5p(tmp,res);
     for (int s=Ls-2;s>=0;s--){
-      spProj5p(tmp,chi[ss+s+1]);
-      chi[ss+s] = chi[ss+s] - conjugate(lee[s])*tmp;
+      res = extractLane(lane,chi[ss+s]);
+      res = conjugate(1.0/dee_v[s])*res - conjugate(lee_v[s])*tmp - conjugate(leem_v[s])*acc;
+      spProj5p(tmp,res);
+      insertLane(lane,chi[ss+s],res);
     }
   });
-
+  
   MooeeInvTime+=usecond();
-
+  
 }
 
 #ifdef CAYLEY_DPERP_GPU
