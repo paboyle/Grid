@@ -107,9 +107,9 @@ int main (int argc, char ** argv)
 
 
 #define BENCH_DW(A,...)			\
-    Dw.CayleyZeroCounters();			\
     Dw. A (__VA_ARGS__);				\
     FGrid->Barrier();				\
+    Dw.CayleyZeroCounters();      \
     t0=usecond();				\
     for(int i=0;i<ncall;i++){			\
       Dw. A (__VA_ARGS__);				\
@@ -121,9 +121,9 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "******************"<<std::endl;
 
 #define BENCH_ZDW(A,in,out)			\
-    zDw.CayleyZeroCounters();			\
     zDw. A (in,out);				\
     FGrid->Barrier();				\
+    zDw.CayleyZeroCounters();      \
     t0=usecond();				\
     for(int i=0;i<ncall;i++){			\
       zDw. A (in,out);				\
@@ -135,9 +135,9 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "******************"<<std::endl;
 
 #define BENCH_DW_SSC(A,in,out)			\
-    Dw.CayleyZeroCounters();			\
     Dw. A (in,out);				\
     FGrid->Barrier();				\
+    Dw.CayleyZeroCounters();      \
     t0=usecond();				\
     for(int i=0;i<ncall;i++){			\
       __SSC_START ;				\
