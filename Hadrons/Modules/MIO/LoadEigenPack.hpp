@@ -127,8 +127,19 @@ void TLoadEigenPack<Pack, GImpl>::setup(void)
 
     if (!par().gaugeXform.empty())
     {
-        envTmp(GaugeMat,    "tmp5dXform", par().Ls, envGetGrid5(Field, par().Ls));
-        envTmp(GaugeMat, "tmp5dXformOdd", par().Ls, envGetRbGrid5(Field, par().Ls));
+        if (par().Ls > 1)
+        {
+            LOG(Message) << "Setup 5d GaugeMat for Ls = " << par().Ls << std::endl;
+            envTmp(GaugeMat,    "tmpXform", par().Ls, envGetGrid5(Field, par().Ls));
+            envTmp(GaugeMat, "tmpXformOdd", par().Ls, envGetRbGrid5(Field, par().Ls));
+        }
+        else
+        {
+            LOG(Message) << "Setup 4d GaugeMat for Ls = " << par().Ls << std::endl;
+            envTmp(GaugeMat,    "tmpXform", par().Ls, envGetGrid(Field));
+            envTmp(GaugeMat, "tmpXformOdd", par().Ls, envGetRbGrid(Field));
+        }
+        
     }
 }
 
@@ -143,22 +154,33 @@ void TLoadEigenPack<Pack, GImpl>::execute(void)
 
     if (!par().gaugeXform.empty())
     {
-        auto &xform = envGet(GaugeMat, par().gaugeXform);
-        envGetTmp(GaugeMat,    tmp5dXform);
-        envGetTmp(GaugeMat, tmp5dXformOdd);
 
-        for (unsigned int j = 0; j < par().Ls; j++)
+        LOG(Message) << "Applying gauge transformation to eigenvectors " << getName()
+                     << " using " << par().gaugeXform << std::endl;
+        auto &xform = envGet(GaugeMat, par().gaugeXform);
+        envGetTmp(GaugeMat,    tmpXform);
+        envGetTmp(GaugeMat, tmpXformOdd);
+
+        if (par().Ls > 1) 
         {
-            InsertSlice(xform, tmp5dXform, j, 0);
+            LOG(Message) << "Creating 5d GaugeMat from " << par().gaugeXform << std::endl;
+            startTimer("5-d gauge transform creation");
+            for (unsigned int j = 0; j < par().Ls; j++)
+            {
+                InsertSlice(xform, tmpXform, j, 0);
+            }
+            stopTimer("5-d gauge transform creation");
         }
 
-        pickCheckerboard(Odd, tmp5dXformOdd, tmp5dXform);
+        pickCheckerboard(Odd, tmpXformOdd, tmpXform);
+        startTimer("Transform application");
         for (unsigned int i = 0; i < par().size; i++)
         {
-            LOG(Message) << "Applying gauge transformation to eigenvector i = " << i << std::endl;
+            LOG(Message) << "Applying gauge transformation to eigenvector i = " << i << "/" << par().size << std::endl;
             epack.evec[i].checkerboard = Odd;
-            epack.evec[i] = tmp5dXformOdd * epack.evec[i];
+            epack.evec[i] = tmpXformOdd * epack.evec[i];
         }
+        stopTimer("Transform application");
     }
 }
 
