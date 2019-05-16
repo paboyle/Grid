@@ -250,7 +250,7 @@ const int Nt_inv{ full_tdil ? 1 : TI }
 
 class BFieldIO: Serializable{
 public:
-  using BaryonTensorSet = Eigen::Tensor<Complex, 7>;
+  using BaryonTensorSet = Eigen::Tensor<ComplexD, 6>;
   GRID_SERIALIZABLE_CLASS_MEMBERS(BFieldIO, BaryonTensorSet, BField );
 };
 

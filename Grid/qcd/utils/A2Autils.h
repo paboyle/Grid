@@ -186,7 +186,7 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat,
 	    auto v2 = conjugate(two[j]._odata[ss]);
             // C = i gamma_2 gamma_4 => C gamma_5 = - i gamma_1 gamma_3
 	    //auto v2g = v2*Gamma(Gamma::Algebra::SigmaXZ);
-            auto v2g=v2;  
+            //auto v2g=v2;  
 
 	    for(int k=0;k<threeBlock;k++){
 
@@ -295,7 +295,7 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat,
     }
   }
 
-  grid->GlobalSumVector(&mat(0,0,0,0,0,0),Nmom*Nt*oneBlock*twoBlock*threeBlock);
+  grid->GlobalSumVector(&mat(0,0,0,0,0,0),Nmom*Nt*oneBlock*twoBlock*threeBlock*4);
 }
 
 

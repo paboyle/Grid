@@ -158,6 +158,7 @@ void TBC2<FImpl>::execute(void)
     auto &one   = envGet(std::vector<FermionField>, par().one);
     auto &two   = envGet(std::vector<FermionField>, par().two);
     auto &three = envGet(std::vector<FermionField>, par().three);
+    const std::string &output{par().output};
 
     int N_1     = one.size();
     int N_2     = two.size();
@@ -172,8 +173,8 @@ void TBC2<FImpl>::execute(void)
     }
 
 
-    int Nmom=1;
-    int Nt=8;
+    int Nmom       = mom_.size(); 
+    const int Nt{env().getDim(Tdir)};
 
     int parity = 1;
     int orthogDim=3;
@@ -199,17 +200,29 @@ void TBC2<FImpl>::execute(void)
         }
         hasPhase_ = true;
         stopTimer("Momentum phases");
-}
+    }
     envCache(std::vector<ComplexField>, momphName_, 1, mom_.size(), envGetGrid(ComplexField));
 
     Eigen::Tensor<ComplexD, 6> m(Nmom,Nt,N_1,N_2,N_3,4);
     A2Autils<FImpl>::NucleonFieldMom(m, &one[0], &two[0], &three[0], ph, parity, orthogDim);
+    //A2Autils<FImpl>::NucleonFieldMom(m, one, two, three, ph, parity, orthogDim);
     for (int is=0 ; is < 4 ; is++){
       for (int t=0 ; t < Nt ; t++){
-        std::cout << "BaryonField(is=" << is << ",t=" << t << ") = " << m(0,t,is,0,0,0) << std::endl;
+        std::cout << "BaryonField(is=" << is << ",t=" << t << ") = " << m(0,t,0,0,0,is) << std::endl;
       }
     }
     
+    BFieldIO BField_save;
+    BField_save.BField = m;
+
+
+    GridCartesian * grid = env().getGrid();
+    if(grid->IsBoss()) {
+      std::string filename ="./" + output + ".h5"; 
+      std::cout << "Writing to file " << filename << std::endl;
+      Grid::Hdf5Writer writer(filename);
+      write(writer,"BaryonField",BField_save.BField);
+    }
 }
 
 END_MODULE_NAMESPACE

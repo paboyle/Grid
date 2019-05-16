@@ -144,7 +144,7 @@ void TBaryon2pt<FImpl>::execute(void)
   //  using BaryonTensorSet = Eigen::Tensor<Complex, 7>;
 
     BFieldIO BFieldL;
-    BFieldL.BField.resize(Nmom,Ngamma,Nt,4,N_1,N_2,N_3);
+    BFieldL.BField.resize(Nmom,Nt,N_1,N_2,N_3,4);
 
     std::string filenameL ="./" + inputL + ".h5"; 
     std::cout << "Reading from file " << filenameL << std::endl;
@@ -152,7 +152,7 @@ void TBaryon2pt<FImpl>::execute(void)
     read(readerL,"BaryonField",BFieldL.BField);
 
     BFieldIO BFieldR;
-    BFieldR.BField.resize(Nmom,Ngamma,Nt,4,N_1,N_2,N_3);
+    BFieldR.BField.resize(Nmom,Nt,N_1,N_2,N_3,4);
 
     std::string filenameR ="./" + inputR + ".h5"; 
     std::cout << "Reading from file " << filenameR << std::endl;
