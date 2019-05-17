@@ -261,8 +261,9 @@ void TBContraction<FImpl>::execute(void)
     }
 
     BFieldIO BField_save;
+#ifdef FELIX_ISSUE
     BField_save.BField = BField3;
-
+#endif
   std::string filename ="./" + output + ".h5"; 
   std::cout << "Writing to file " << filename << std::endl;
   Hdf5Writer writer(filename);
