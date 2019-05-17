@@ -119,6 +119,9 @@ template <typename FImpl>
 void TWall<FImpl>::setup(void)
 {
     envCreateLat(PropagatorField, getName());
+    envCache(Lattice<iScalar<vInteger>>, tName_, 1, envGetGrid(LatticeComplex));
+    envCacheLat(LatticeComplex, momphName_);
+    envTmpLat(LatticeComplex, "coor");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
