@@ -169,8 +169,8 @@ V4q(G) = sum_x ( [ g5 * adj(S'(x,p2)) * g5 * G * S'(x,p1) ]_{si,sj,ci,cj} [ g5 *
                  << std::endl;
      
     // Propogators
-    LatticeSpinColourMatrix                     &Sin = *env().template getObject<LatticeSpinColourMatrix>(par().Sin);
-    LatticeSpinColourMatrix                     &Sout = *env().template getObject<LatticeSpinColourMatrix>(par().Sout);
+    LatticeSpinColourMatrix                     &Sin_unphased = *env().template getObject<LatticeSpinColourMatrix>(par().Sin);
+    LatticeSpinColourMatrix                     &Sout_unphased = *env().template getObject<LatticeSpinColourMatrix>(par().Sout);
     // Averages and inverses
     SpinColourMatrix                            SinAve, SoutAve;
     SpinColourMatrix                            SinInv, SoutInv;
@@ -212,9 +212,10 @@ V4q(G) = sum_x ( [ g5 * adj(S'(x,p2)) * g5 * G * S'(x,p1) ]_{si,sj,ci,cj} [ g5 *
         pdotxin = pdotxin  + (TwoPiL * pin[mu] ) * coor;
         pdotxout= pdotxout + (TwoPiL * pout[mu]) * coor;
     }
-    // Then phase the props
-    Sin = Sin*exp(-Ci*pdotxin); 
-    Sout = Sout*exp(-Ci*pdotxout);
+    // Then phase the props 
+    // new variable so code can be called repeatedly
+    LatticeSpinColourMatrix Sin = Sin_unphased*exp(-Ci*pdotxin); 
+    LatticeSpinColourMatrix Sout = Sout_unphased*exp(-Ci*pdotxout);
     
     ////Set up gamma vector//////////////////////////
     std::vector<Gamma> gammavector;
