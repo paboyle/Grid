@@ -186,20 +186,16 @@ void TBaryon2pt<FImpl>::execute(void)
       Eigen::array<Eigen::IndexPair<int>, 3> product_dims = { Eigen::IndexPair<int>(0,epsilon[pairs[ipair]][0]),Eigen::IndexPair<int>(1,epsilon[pairs[ipair]][1]) ,Eigen::IndexPair<int>(2,epsilon[pairs[ipair]][2])  };
       for (int imom=0 ; imom < Nmom ; imom++){
         std::cout << imom << std::endl;
-        Eigen::Tensor<Complex,6> B6L = BFieldL.BField.chip(imom,0);
-        Eigen::Tensor<Complex,6> B6R = BFieldR.BField.chip(imom,0);
-        for (int ig=0 ; ig < Ngamma ; ig++){
-          Eigen::Tensor<Complex,5> B5L = B6L.chip(ig,0);
-          Eigen::Tensor<Complex,5> B5R = B6R.chip(ig,0);
-          for (int t=0 ; t < Nt ; t++){
-            Eigen::Tensor<Complex,4> B4L = B5L.chip(t,0);
-            Eigen::Tensor<Complex,4> B4R = B5R.chip(tsrc,0);
-            for (int is=0 ; is < 4 ; is++){
-              Eigen::Tensor<Complex,3> B3L = B4L.chip(is,0);
-              Eigen::Tensor<Complex,3> B3R = B4R.chip(is,0);
-              Eigen::Tensor<Complex,0> C2 = B3L.contract(B3R,product_dims);
-              corr(imom,t) += static_cast<Real>(epsilon_sgn[pairs[ipair]])*C2(0);
-            }
+        Eigen::Tensor<Complex,5> B5L = BFieldL.BField.chip(imom,0);
+        Eigen::Tensor<Complex,5> B5R = BFieldR.BField.chip(imom,0);
+        for (int t=0 ; t < Nt ; t++){
+          Eigen::Tensor<Complex,4> B4L = B5L.chip(t,0);
+          Eigen::Tensor<Complex,4> B4R = B5R.chip(tsrc,0);
+          for (int is=0 ; is < 4 ; is++){
+            Eigen::Tensor<Complex,3> B3L = B4L.chip(is,0);
+            Eigen::Tensor<Complex,3> B3R = B4R.chip(is,0);
+            Eigen::Tensor<Complex,0> C2 = B3L.contract(B3R,product_dims);
+            corr(imom,t) += static_cast<Real>(epsilon_sgn[pairs[ipair]])*C2(0);
           }
         }
       }

@@ -183,7 +183,8 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat,
 
        	  for(int j=0;j<twoBlock;j++){
 
-	    auto v2 = conjugate(two[j]._odata[ss]);
+	    //auto v2 = conjugate(two[j]._odata[ss]);
+	    auto v2 = two[j]._odata[ss];
             // C = i gamma_2 gamma_4 => C gamma_5 = - i gamma_1 gamma_3
 	    //auto v2g = v2*Gamma(Gamma::Algebra::SigmaXZ);
             //auto v2g=v2;  
@@ -209,6 +210,13 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat,
                   +           pv1()(s1)(2) * v2()(s2)(0) * gv3()(s2)(1)    
                   -           pv1()(s1)(2) * v2()(s2)(1) * gv3()(s2)(0);    
               }}
+
+              /*if (i+j+k == 0) {
+                Serializable::WriteMember(std::cout, pv1);
+                Serializable::WriteMember(std::cout, v2);
+                Serializable::WriteMember(std::cout, gv3);
+                Serializable::WriteMember(std::cout, vv);
+              }*/
 	    
 	      // After getting the sitewise product do the mom phase loop
               int base = Nmom*i+Nmom*oneBlock*j+Nmom*oneBlock*twoBlock*k+Nmom*oneBlock*twoBlock*threeBlock*r;
