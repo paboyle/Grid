@@ -186,8 +186,16 @@ void TBaryon2pt<FImpl>::execute(void)
       Eigen::array<Eigen::IndexPair<int>, 3> product_dims = { Eigen::IndexPair<int>(0,epsilon[pairs[ipair]][0]),Eigen::IndexPair<int>(1,epsilon[pairs[ipair]][1]) ,Eigen::IndexPair<int>(2,epsilon[pairs[ipair]][2])  };
       for (int imom=0 ; imom < Nmom ; imom++){
         std::cout << imom << std::endl;
-        Eigen::Tensor<Complex,6> B6L = BFieldL.BField.chip(imom,0);
-        Eigen::Tensor<Complex,6> B6R = BFieldR.BField.chip(imom,0);
+        Eigen::Tensor<Complex,6> B6L
+#ifdef FELIX_ISSUE
+        = BFieldL.BField.chip(imom,0)
+#endif
+        ;
+        Eigen::Tensor<Complex,6> B6R
+#ifdef FELIX_ISSUE
+        = BFieldR.BField.chip(imom,0)
+#endif
+        ;
         for (int ig=0 ; ig < Ngamma ; ig++){
           Eigen::Tensor<Complex,5> B5L = B6L.chip(ig,0);
           Eigen::Tensor<Complex,5> B5R = B6R.chip(ig,0);
