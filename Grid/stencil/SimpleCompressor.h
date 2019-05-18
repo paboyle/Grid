@@ -9,7 +9,7 @@ public:
   void Point(int) {};
   accelerator_inline int  CommDatumSize(void) { return sizeof(vobj); }
   accelerator_inline bool DecompressionStep(void) { return false; }
-  accelerator_inline void Compress(vobj *buf,int o,const vobj &in) { buf[o]=in; }
+  template<class cobj> accelerator_inline void Compress(cobj *buf,int o,const cobj &in) { buf[o]=in; }
   accelerator_inline void Exchange(vobj *mp,vobj *vp0,vobj *vp1,Integer type,Integer o){
     exchange(mp[2*o],mp[2*o+1],vp0[o],vp1[o],type);
   }
