@@ -68,11 +68,20 @@ public:
   /*****************************************************/
   /* Compress includes precision change if mpi data is not same */
   /*****************************************************/
+#if 0
   accelerator_inline void Compress(SiteHalfSpinor *buf,Integer o,const SiteSpinor &in) {
     SiteHalfSpinor tmp;
     projector::Proj(tmp,in,mu,dag);
     vstream(buf[o],tmp);
   }
+#else
+  template<class _SiteHalfSpinor, class _SiteSpinor>
+  accelerator_inline void Compress(_SiteHalfSpinor *buf,Integer o,const _SiteSpinor &in) {
+    _SiteHalfSpinor tmp;
+    projector::Proj(tmp,in,mu,dag);
+    vstream(buf[o],tmp);
+  }
+#endif
 
   /*****************************************************/
   /* Exchange includes precision change if mpi data is not same */
@@ -148,8 +157,9 @@ public:
   /*****************************************************/
   /* Compress includes precision change if mpi data is not same */
   /*****************************************************/
-  accelerator_inline void Compress(SiteHalfSpinor *buf,Integer o,const SiteSpinor &in) {
-    SiteHalfSpinor hsp;
+  template<class _SiteHalfSpinor, class _SiteSpinor>
+  accelerator_inline void Compress(_SiteHalfSpinor *buf,Integer o,const _SiteSpinor &in) {
+    _SiteHalfSpinor hsp;
     SiteHalfCommSpinor *hbuf = (SiteHalfCommSpinor *)buf;
     projector::Proj(hsp,in,mu,dag);
     precisionChange((vComplexLow *)&hbuf[o],(vComplexHigh *)&hsp,Nw);
@@ -395,6 +405,9 @@ public:
     this->face_table_computed=1;
     assert(this->u_comm_offset==this->_unified_buffer_size);
     this->halogtime+=usecond();
+#ifdef GRID_NVCC
+    cudaDeviceSynchronize();					
+#endif
   }
 
 };
