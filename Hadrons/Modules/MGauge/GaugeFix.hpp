@@ -42,6 +42,8 @@ BEGIN_HADRONS_NAMESPACE
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MGauge)
 
+GRID_SERIALIZABLE_ENUM(Fix, undef, coulomb, Nd - 1, landau, -1);
+
 class GaugeFixPar: Serializable
 {
 public:
@@ -51,6 +53,7 @@ public:
                                     int, maxiter, 
                                     Real, Omega_tol, 
                                     Real, Phi_tol,
+                                    Fix,  gaugeFix,
                                     bool, Fourier);
 };
 
@@ -115,8 +118,8 @@ void TGaugeFix<GImpl>::execute(void)
 //Loads the gauge and fixes it
 {
     std::cout << "executing" << std::endl;
-    LOG(Message) << "Fixing the Gauge" << std::endl;
-    LOG(Message) << par().gauge << std::endl;
+    LOG(Message) << "Fixing the Gauge " << par().gauge << " using "
+                 << par().gaugeFix << " guage fixing. " << Nd - 1 << std::endl;
     auto &U     = envGet(GaugeField, par().gauge);
     auto &Umu   = envGet(GaugeField, getName());
     auto &xform = envGet(GaugeMat, getName()+"_xform");
@@ -126,9 +129,10 @@ void TGaugeFix<GImpl>::execute(void)
     int  maxiter   = par().maxiter;
     Real Omega_tol = par().Omega_tol;
     Real Phi_tol   = par().Phi_tol;
+    int  gaugeFix  = par().gaugeFix;
     bool Fourier   = par().Fourier;
     Umu = U;
-    FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(Umu,xform,alpha,maxiter,Omega_tol,Phi_tol,Fourier);
+    FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(Umu,xform,alpha,maxiter,Omega_tol,Phi_tol,Fourier,gaugeFix);
     LOG(Message) << "Gauge Fixed" << std::endl;
 }
 
