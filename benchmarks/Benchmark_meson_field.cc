@@ -434,7 +434,7 @@ void sliceInnerProductMesonFieldGamma1(std::vector< std::vector<ComplexD> > &mat
       if (pt == grid->_processor_coor[orthogdim]){
         int ij_dx = i + Lblock * j + Lblock * Rblock * lt;
     	for(int mu=0;mu<Ngamma;mu++){
-	  mat[mu+i*Ngamma+j*Lblock*Ngamma][t] = trace(lsSum[ij_dx]*Gamma(gammas[mu]));
+	  mat[mu+i*Ngamma+j*Lblock*Ngamma][t] = TensorRemove(trace(lsSum[ij_dx]*Gamma(gammas[mu])));
 	}
       }
       else{
@@ -595,7 +595,7 @@ void sliceInnerProductMesonFieldGammaMom(std::vector< std::vector<ComplexD> > &m
 	    mat[ mu
 		+m*Ngamma
 		+i*Nmom*Ngamma
-		+j*Nmom*Ngamma*Lblock][t] = trace(lsSum[ij_dx]*Gamma(gammas[mu]));
+		 +j*Nmom*Ngamma*Lblock][t] = TensorRemove(trace(lsSum[ij_dx]*Gamma(gammas[mu])));
 	  }
 	}
       }
