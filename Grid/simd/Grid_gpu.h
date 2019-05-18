@@ -245,18 +245,18 @@ namespace Optimization {
   struct MultRealPart{
     accelerator_inline float4 operator()(float4 a, float4 b){
       float4 ymm0;
-      ymm0.x = a.y;
-      ymm0.y = a.y;
-      ymm0.z = a.w;
-      ymm0.w = a.w;
+      ymm0.x = a.x;
+      ymm0.y = a.x;
+      ymm0.z = a.z;
+      ymm0.w = a.z;
       return  ymm0*b;
       // ymm0 = _mm_shuffle_ps(a,a,_MM_SELECT_FOUR_FOUR(2,2,0,0)); // ymm0 <- ar ar,
       // return _mm_mul_ps(ymm0,b);                       // ymm0 <- ar bi, ar br
     }
     accelerator_inline double2 operator()(double2 a, double2 b){
       double2 ymm0;
-      ymm0.x = a.y;
-      ymm0.y = a.y;
+      ymm0.x = a.x;
+      ymm0.y = a.x;
       return ymm0*b;
       //      ymm0 = _mm_shuffle_pd(a,a,0x0); // ymm0 <- ar ar, ar,ar b'00,00
       //      return _mm_mul_pd(ymm0,b);      // ymm0 <- ar bi, ar br
@@ -265,17 +265,17 @@ namespace Optimization {
   struct MaddRealPart{
     accelerator_inline float4 operator()(float4 a, float4 b, float4 c){
       float4 ymm0; // =  _mm_shuffle_ps(a,a,_MM_SELECT_FOUR_FOUR(2,2,0,0)); // ymm0 <- ar ar,
-      ymm0.x = a.y;
-      ymm0.y = a.y;
-      ymm0.z = a.w;
-      ymm0.w = a.w;
+      ymm0.x = a.x;
+      ymm0.y = a.x;
+      ymm0.z = a.z;
+      ymm0.w = a.z;
       return c+ymm0*b;
     }
     accelerator_inline double2 operator()(double2 a, double2 b, double2 c){
       //      ymm0 = _mm_shuffle_pd( a, a, 0x0 );
       double2 ymm0;
-      ymm0.x = a.y;
-      ymm0.y = a.y;
+      ymm0.x = a.x;
+      ymm0.y = a.x;
       return c+ymm0*b;
     }
   };

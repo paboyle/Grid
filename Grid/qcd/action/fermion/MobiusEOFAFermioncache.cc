@@ -37,7 +37,7 @@ NAMESPACE_BEGIN(Grid);
 
 template<class Impl>
 void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi_i, const FermionField &phi_i, FermionField &chi_i,
-				  std::vector<Coeff_t> &lower, std::vector<Coeff_t> &diag, std::vector<Coeff_t> &upper)
+				  Vector<Coeff_t> &lower, Vector<Coeff_t> &diag, Vector<Coeff_t> &upper)
 {
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase *grid = psi_i.Grid();
@@ -79,8 +79,8 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi_i, const FermionField 
 
 template<class Impl>
 void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField &psi_i, const FermionField &phi_i, FermionField &chi_i,
-					std::vector<Coeff_t> &lower, std::vector<Coeff_t> &diag, std::vector<Coeff_t> &upper,
-					std::vector<Coeff_t> &shift_coeffs)
+					Vector<Coeff_t> &lower, Vector<Coeff_t> &diag, Vector<Coeff_t> &upper,
+					Vector<Coeff_t> &shift_coeffs)
 {
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase *grid = psi_i.Grid();
@@ -127,7 +127,7 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField &psi_i, const Fermion
 
 template<class Impl>
 void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField &psi_i, const FermionField &phi_i, FermionField &chi_i,
-				     std::vector<Coeff_t> &lower, std::vector<Coeff_t> &diag, std::vector<Coeff_t> &upper)
+				     Vector<Coeff_t> &lower, Vector<Coeff_t> &diag, Vector<Coeff_t> &upper)
 {
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase *grid = psi_i.Grid();
@@ -169,8 +169,8 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField &psi_i, const FermionFie
 
 template<class Impl>
 void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField &psi_i, const FermionField &phi_i, FermionField &chi_i,
-					   std::vector<Coeff_t> &lower, std::vector<Coeff_t> &diag, std::vector<Coeff_t> &upper,
-					   std::vector<Coeff_t> &shift_coeffs)
+					   Vector<Coeff_t> &lower, Vector<Coeff_t> &diag, Vector<Coeff_t> &upper,
+					   Vector<Coeff_t> &shift_coeffs)
 {
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase *grid = psi_i.Grid();

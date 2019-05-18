@@ -108,16 +108,16 @@ public:
   void M5D(const FermionField &psi,
 	   const FermionField &phi,
 	   FermionField &chi,
-	   std::vector<Coeff_t> &lower,
-	   std::vector<Coeff_t> &diag,
-	   std::vector<Coeff_t> &upper);
+	   Vector<Coeff_t> &lower,
+	   Vector<Coeff_t> &diag,
+	   Vector<Coeff_t> &upper);
 
   void M5Ddag(const FermionField &psi,
 	      const FermionField &phi,
 	      FermionField &chi,
-	      std::vector<Coeff_t> &lower,
-	      std::vector<Coeff_t> &diag,
-	      std::vector<Coeff_t> &upper);
+	      Vector<Coeff_t> &lower,
+	      Vector<Coeff_t> &diag,
+	      Vector<Coeff_t> &upper);
 
   void MooeeInternal(const FermionField &in, FermionField &out,int dag,int inv);
   void MooeeInternalCompute(int dag, int inv, Vector<iSinglet<Simd> > & Matp, Vector<iSinglet<Simd> > & Matm);
@@ -149,29 +149,29 @@ public:
   RealD mass;
 
       // Save arguments to SetCoefficientsInternal
-      std::vector<Coeff_t> _gamma;
+      Vector<Coeff_t> _gamma;
       RealD                _zolo_hi;
       RealD                _b;
       RealD                _c;
 
   // Cayley form Moebius (tanh and zolotarev)
-  std::vector<Coeff_t> omega;
-  std::vector<Coeff_t> bs;    // S dependent coeffs
-  std::vector<Coeff_t> cs;
-  std::vector<Coeff_t> as;
+  Vector<Coeff_t> omega;
+  Vector<Coeff_t> bs;    // S dependent coeffs
+  Vector<Coeff_t> cs;
+  Vector<Coeff_t> as;
   // For preconditioning Cayley form
-  std::vector<Coeff_t> bee;
-  std::vector<Coeff_t> cee;
-  std::vector<Coeff_t> aee;
-  std::vector<Coeff_t> beo;
-  std::vector<Coeff_t> ceo;
-  std::vector<Coeff_t> aeo;
+  Vector<Coeff_t> bee;
+  Vector<Coeff_t> cee;
+  Vector<Coeff_t> aee;
+  Vector<Coeff_t> beo;
+  Vector<Coeff_t> ceo;
+  Vector<Coeff_t> aeo;
   // LDU factorisation of the eeoo matrix
-  std::vector<Coeff_t> lee;
-  std::vector<Coeff_t> leem;
-  std::vector<Coeff_t> uee;
-  std::vector<Coeff_t> ueem;
-  std::vector<Coeff_t> dee;
+  Vector<Coeff_t> lee;
+  Vector<Coeff_t> leem;
+  Vector<Coeff_t> uee;
+  Vector<Coeff_t> ueem;
+  Vector<Coeff_t> dee;
 
   // Matrices of 5d ee inverse params
   Vector<iSinglet<Simd> >  MatpInv;
@@ -203,22 +203,26 @@ public:
 protected:
   virtual void SetCoefficientsZolotarev(RealD zolohi,Approx::zolotarev_data *zdata,RealD b,RealD c);
   virtual void SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c);
-  virtual void SetCoefficientsInternal(RealD zolo_hi,std::vector<Coeff_t> & gamma,RealD b,RealD c);
+  virtual void SetCoefficientsInternal(RealD zolo_hi,Vector<Coeff_t> & gamma,RealD b,RealD c);
 };
 
 NAMESPACE_END(Grid);
 
 #define INSTANTIATE_DPERP(A)						\
   template void CayleyFermion5D< A >::M5D(const FermionField &psi,const FermionField &phi,FermionField &chi, \
-					  std::vector<Coeff_t> &lower,std::vector<Coeff_t> &diag,std::vector<Coeff_t> &upper); \
+					  Vector<Coeff_t> &lower,Vector<Coeff_t> &diag,Vector<Coeff_t> &upper); \
   template void CayleyFermion5D< A >::M5Ddag(const FermionField &psi,const FermionField &phi,FermionField &chi,	\
-					     std::vector<Coeff_t> &lower,std::vector<Coeff_t> &diag,std::vector<Coeff_t> &upper); \
+					     Vector<Coeff_t> &lower,Vector<Coeff_t> &diag,Vector<Coeff_t> &upper); \
   template void CayleyFermion5D< A >::MooeeInv    (const FermionField &psi, FermionField &chi); \
   template void CayleyFermion5D< A >::MooeeInvDag (const FermionField &psi, FermionField &chi);
 
+#ifdef GRID_NVCC
+#define  CAYLEY_DPERP_GPU
+#else
 #undef  CAYLEY_DPERP_DENSE
 #define  CAYLEY_DPERP_CACHE
 #undef  CAYLEY_DPERP_LINALG
+#endif
 #define CAYLEY_DPERP_VEC
 
 #endif

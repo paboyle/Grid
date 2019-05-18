@@ -48,7 +48,7 @@ public:
 		 GridCartesian         &FourDimGrid,
 		 GridRedBlackCartesian &FourDimRedBlackGrid,
 		 RealD _mass,RealD _M5,
-		 std::vector<ComplexD> &gamma, RealD b,RealD c,const ImplParams &p= ImplParams()) : 
+		 Vector<ComplexD> &gamma, RealD b,RealD c,const ImplParams &p= ImplParams()) : 
       
     CayleyFermion5D<Impl>(_Umu,
 			  FiveDimGrid,
@@ -59,7 +59,7 @@ public:
   {
     //    RealD eps = 1.0;
     std::cout<<GridLogMessage << "ZMobiusFermion (b="<<b<<",c="<<c<<") with Ls= "<<this->Ls<<" gamma passed in"<<std::endl;
-    std::vector<Coeff_t> zgamma(this->Ls);
+    Vector<Coeff_t> zgamma(this->Ls);
     for(int s=0;s<this->Ls;s++){
       zgamma[s] = gamma[s];
     }

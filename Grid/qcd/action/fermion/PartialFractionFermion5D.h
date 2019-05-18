@@ -93,8 +93,8 @@ protected:
   RealD R;
   RealD amax;
   RealD scale;
-  std::vector<double> p; 
-  std::vector<double> q;
+  Vector<double> p; 
+  Vector<double> q;
 
 };
 

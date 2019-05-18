@@ -40,7 +40,7 @@ NAMESPACE_BEGIN(Grid);
 // Pplus  backwards
 template<class Impl>
 void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi, const FermionField& phi,
-				      FermionField& chi, std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper)
+				      FermionField& chi, Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper)
 {
   Coeff_t one(1.0);
   int Ls = this->Ls;
@@ -60,7 +60,7 @@ void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi, const FermionFiel
 
 template<class Impl>
 void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi, const FermionField& phi,
-					 FermionField& chi, std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper)
+					 FermionField& chi, Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper)
 {
   Coeff_t one(1.0);
   int Ls = this->Ls;

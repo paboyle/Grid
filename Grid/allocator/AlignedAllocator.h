@@ -220,7 +220,10 @@ public:
   #endif
 #endif
   }
-  void construct(pointer __p, const _Tp& __val) { };
+
+  // FIXME: hack for the copy constructor, eventually it must be avoided
+  void construct(pointer __p, const _Tp& __val) { new((void *)__p) _Tp(__val); };
+  //void construct(pointer __p, const _Tp& __val) { };
   void construct(pointer __p) { };
   void destroy(pointer __p) { };
 };

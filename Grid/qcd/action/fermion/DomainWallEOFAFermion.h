@@ -70,10 +70,10 @@ public:
   // Instantiate different versions depending on Impl
   /////////////////////////////////////////////////////
   void M5D(const FermionField& psi, const FermionField& phi, FermionField& chi,
-	   std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper);
+	   Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper);
 
   void M5Ddag(const FermionField& psi, const FermionField& phi, FermionField& chi,
-	      std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper);
+	      Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper);
 
   void MooeeInternal(const FermionField& in, FermionField& out, int dag, int inv);
 
@@ -94,16 +94,16 @@ public:
 			RealD _M5, const ImplParams& p=ImplParams());
 
 protected:
-  void SetCoefficientsInternal(RealD zolo_hi, std::vector<Coeff_t>& gamma, RealD b, RealD c);
+  void SetCoefficientsInternal(RealD zolo_hi, Vector<Coeff_t>& gamma, RealD b, RealD c);
 };
 
 NAMESPACE_END(Grid);
 
 #define INSTANTIATE_DPERP_DWF_EOFA(A)					\
   template void DomainWallEOFAFermion<A>::M5D(const FermionField& psi, const FermionField& phi, FermionField& chi, \
-					      std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper); \
+					      Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper); \
   template void DomainWallEOFAFermion<A>::M5Ddag(const FermionField& psi, const FermionField& phi, FermionField& chi, \
-						 std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper); \
+						 Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper); \
   template void DomainWallEOFAFermion<A>::MooeeInv(const FermionField& psi, FermionField& chi); \
   template void DomainWallEOFAFermion<A>::MooeeInvDag(const FermionField& psi, FermionField& chi);
 
