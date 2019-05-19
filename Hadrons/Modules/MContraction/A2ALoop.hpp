@@ -89,7 +89,7 @@ std::vector<std::string> TA2ALoop<FImpl>::getInput(void)
 template <typename FImpl>
 std::vector<std::string> TA2ALoop<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {};
+    std::vector<std::string> out = {getName()};
     
     return out;
 }
