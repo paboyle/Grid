@@ -132,10 +132,26 @@ public:
       auto psi_v = psi.View();
       auto p_v   = p.View();
       auto r_v   = r.View();
+#ifdef GRID_NVCC
+      const uint64_t nsimd = psi.Grid()->Nsimd();
+      const uint64_t sites = nsimd * psi.Grid()->oSites();
+      accelerator_loopN(sss,sites,{
+        uint64_t lane = sss % nsimd;
+        uint64_t ss   = sss / nsimd;
+        auto psi_l = extractLane(lane,psi_v[ss]);
+        auto p_l   = extractLane(lane,p_v  [ss]);
+        auto r_l   = extractLane(lane,r_v  [ss]);
+        psi_l = a*p_l + psi_l;
+        p_l   = b*p_l + r_l;
+        insertLane(lane,psi_v[ss],psi_l);
+        insertLane(lane,p_v  [ss],p_l  );
+      });
+#else
       accelerator_loop(ss,p_v,{
 	vstream(psi_v[ss], a      *  p_v[ss] + psi_v[ss]);
 	vstream(p_v  [ss], b      *  p_v[ss] + r_v[ss]);
       });
+#endif
       LinearCombTimer.Stop();
       LinalgTimer.Stop();
 
