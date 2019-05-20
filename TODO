@@ -3,36 +3,42 @@
 GPU branch code item work list
 -----------------------------
 
-- Investigate why slower than september
-
-- Common source GPU and CPU generic kernels???
+1) Common source GPU and CPU generic kernels???
    - coalescedRead, coalescedWrite in expressions.
    - Uniform coding between GPU kernels and CPU kernels attempt
 
-- SIMD dirs in stencil
+2) - SIMD dirs in stencil
 
-- Merge develop and test HMC
+3) Merge develop and test HMC
 
-- GPU accelerate EOFA
+4)  GPU accelerate EOFA
 
-- Make GPU offload reductions optionally deterministic
+5) Accelerate the cshift
 
-- Accelerate the cshift
+6) Make GPU offload reductions optionally deterministic -- Gianluca
 
-- Gamma tables on GPU; check this.
+7) Investigate why slower than september
 
-- Mobius kernel fusion.
+Single GPU simd target (VGPU)
 
-- Reread WilsonKernels and check diffs
+8) Gamma tables on GPU; check this.
 
-- thread_loop interface revisit.
-- pragma once uniformly
-- Audit changes
-- Audit NAMESPACE CHANGES
+9) Mobius kernel fusion. -- Gianluca?
 
-- Staggered kernels inline for GPU
+10) Reread WilsonKernels and check diffs
 
-- Single GPU simd target (VGPU)
+11) thread_loop interface revisit.
+  for_n
+  for
+
+12)  pragma once uniformly
+
+13) Audit changes
+
+14) Audit NAMESPACE CHANGES
+
+15) Staggered kernels inline for GPU
+
 
 -----
 Gianluca's changes
