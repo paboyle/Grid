@@ -53,8 +53,6 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
   scalar_type  nrm;
   
   GridBase *grid = left.Grid();
-  
-  Vector<vector_type> sumarray(grid->SumArraySize());
 
   auto left_v = left.View();
   auto right_v=right.View();
@@ -71,6 +69,9 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
   nrm = Reduce(TensorRemove(vnrm));// sum across simd
   
 #else
+  
+  Vector<vector_type> sumarray(grid->SumArraySize());
+  
   thread_loop( (int thr=0;thr<grid->SumArraySize();thr++),{
     int mywork, myoff;
     GridThread::GetWork(left.Grid()->oSites(),thr,mywork,myoff);
@@ -107,22 +108,56 @@ axpy_norm_fast(Lattice<vobj> &z,sobj a,const Lattice<vobj> &x,const Lattice<vobj
 template<class sobj,class vobj> strong_inline RealD 
 axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y) 
 {
-  const int pad = 8;
   z.Checkerboard() = x.Checkerboard();
   conformable(z,x);
   conformable(x,y);
 
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_typeD vector_type;
-  RealD  nrm;
-  
   GridBase *grid = x.Grid();
-  
-  Vector<RealD> sumarray(grid->SumArraySize()*pad);
   
   auto x_v=x.View();
   auto y_v=y.View();
   auto z_v=z.View();
+  
+  RealD  nrm;
+  
+#ifdef GRID_NVCC
+  
+  const uint64_t nsimd = grid->Nsimd();
+  const uint64_t sites = nsimd * grid->oSites();
+  
+  typedef decltype(innerProductD(x_v[0],x_v[0])) inner_t;
+  typedef typename inner_t::scalar_object::Realified real_scalar_type;
+  // inner_tmp is the buffer for the norm computed with a thrust reduction
+  // if the reduction were performed with extractLane instead,
+  // it would be better to create a lattice object built on
+  // a new realified grid
+  Vector<real_scalar_type> inner_tmp(sites);
+  real_scalar_type *inner_tmp_v = &inner_tmp[0];
+  
+  accelerator_loopN( sss, sites ,{
+    uint64_t lane = sss % nsimd;
+    uint64_t ss   = sss / nsimd;
+    
+    auto x_l = extractLane(lane,x_v[ss]);
+    auto y_l = extractLane(lane,y_v[ss]);
+    x_l = a*x_l+b*y_l;
+    insertLane(lane,z_v[ss],x_l);
+    inner_tmp_v[sss] = real(TensorRemove(innerProductD(x_l,x_l)));
+  });
+  
+  thrust::plus<real_scalar_type> binary_sum;
+  nrm = thrust::reduce(thrust::device, &inner_tmp_v[0], &inner_tmp_v[sites], 0., binary_sum);
+  
+#else
+  
+  const int pad = 8;
+  
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_typeD vector_type;
+  
+  Vector<RealD> sumarray(grid->SumArraySize()*pad);
+  
+
   thread_loop( (int thr=0;thr<grid->SumArraySize();thr++),
   {
     int nwork, mywork, myoff;
@@ -142,7 +177,10 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   nrm = 0.0; // sum across threads; linear in thread count but fast
   for(int i=0;i<grid->SumArraySize();i++){
     nrm = nrm+sumarray[i*pad];
-  } 
+  }
+  
+#endif
+  
   z.Grid()->GlobalSum(nrm);
   return nrm; 
 }
