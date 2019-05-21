@@ -10,6 +10,7 @@ Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Guido Cossu <cossu@iroiro-pc.kek.jp>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: neo <cossu@post.kek.jp>
+Author: Michael Marshall <michael.marshall@ed.ac.au>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -89,17 +90,25 @@ template <typename Condition, typename ReturnType> using NotEnableIf = Invoke<st
 ////////////////////////////////////////////////////////
 // Check for complexity with type traits
 template <typename T> struct is_complex : public std::false_type {};
-template <> struct is_complex<std::complex<double> > : public std::true_type {};
-template <> struct is_complex<std::complex<float> > : public std::true_type {};
+template <> struct is_complex<ComplexD> : public std::true_type {};
+template <> struct is_complex<ComplexF> : public std::true_type {};
 
-template <typename T>              using IfReal    = Invoke<std::enable_if<std::is_floating_point<T>::value, int> >;
+template<typename T, typename V=void> struct is_real : public std::false_type {};
+template<typename T> struct is_real<T, typename std::enable_if<std::is_floating_point<T>::value,
+  void>::type> : public std::true_type {};
+
+template<typename T, typename V=void> struct is_integer : public std::false_type {};
+template<typename T> struct is_integer<T, typename std::enable_if<std::is_integral<T>::value,
+  void>::type> : public std::true_type {};
+  
+template <typename T>              using IfReal    = Invoke<std::enable_if<is_real<T>::value, int> >;
 template <typename T>              using IfComplex = Invoke<std::enable_if<is_complex<T>::value, int> >;
-template <typename T>              using IfInteger = Invoke<std::enable_if<std::is_integral<T>::value, int> >;
+template <typename T>              using IfInteger = Invoke<std::enable_if<is_integer<T>::value, int> >;
 template <typename T1,typename T2> using IfSame    = Invoke<std::enable_if<std::is_same<T1,T2>::value, int> >;
 
-template <typename T>              using IfNotReal    = Invoke<std::enable_if<!std::is_floating_point<T>::value, int> >;
+template <typename T>              using IfNotReal    = Invoke<std::enable_if<!is_real<T>::value, int> >;
 template <typename T>              using IfNotComplex = Invoke<std::enable_if<!is_complex<T>::value, int> >;
-template <typename T>              using IfNotInteger = Invoke<std::enable_if<!std::is_integral<T>::value, int> >;
+template <typename T>              using IfNotInteger = Invoke<std::enable_if<!is_integer<T>::value, int> >;
 template <typename T1,typename T2> using IfNotSame    = Invoke<std::enable_if<!std::is_same<T1,T2>::value, int> >;
 
 ////////////////////////////////////////////////////////
@@ -857,8 +866,10 @@ template <typename T>
 struct is_simd : public std::false_type {};
 template <> struct is_simd<vRealF>     : public std::true_type {};
 template <> struct is_simd<vRealD>     : public std::true_type {};
+template <> struct is_simd<vRealH>     : public std::true_type {};
 template <> struct is_simd<vComplexF>  : public std::true_type {};
 template <> struct is_simd<vComplexD>  : public std::true_type {};
+template <> struct is_simd<vComplexH>  : public std::true_type {};
 template <> struct is_simd<vInteger>   : public std::true_type {};
 
 template <typename T> using IfSimd    = Invoke<std::enable_if<is_simd<T>::value, int> >;

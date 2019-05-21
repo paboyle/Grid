@@ -63,8 +63,8 @@ namespace QCD{
 
     public:
       ExactOneFlavourRatioPseudoFermionAction(AbstractEOFAFermion<Impl>& _Lop, AbstractEOFAFermion<Impl>& _Rop,
-        OperatorFunction<FermionField>& S, Params& p, bool use_fc=false) : Lop(_Lop), Rop(_Rop), Solver(S),
-        Phi(_Lop.FermionGrid()), param(p), use_heatbath_forecasting(use_fc)
+        OperatorFunction<FermionField>& S, Params& p, bool use_fc=false) : Lop(_Lop), Rop(_Rop), 
+        Solver(S, false, true), Phi(_Lop.FermionGrid()), param(p), use_heatbath_forecasting(use_fc)
       {
         AlgRemez remez(param.lo, param.hi, param.precision);
 
@@ -234,6 +234,11 @@ namespace QCD{
 
         GaugeField force(Lop.GaugeGrid());
 
+	/////////////////////////////////////////////
+	// PAB: 
+	//   Optional single precision derivative ?
+	/////////////////////////////////////////////
+
         // LH: dSdU = k \chi_{L}^{\dagger} \gamma_{5} R_{5} ( \partial_{x,\mu} D_{w} ) \chi_{L}
         //     \chi_{L} = H(mf)^{-1} \Omega_{-} P_{-} \Phi
         spProj(Phi, spProj_Phi, -1, Lop.Ls);
@@ -244,7 +249,7 @@ namespace QCD{
         Lop.Dtilde(spProj_Phi, Chi);
         G5R5(g5_R5_Chi, Chi);
         Lop.MDeriv(force, g5_R5_Chi, Chi, DaggerNo);
-        dSdU = Lop.k * force;
+        dSdU = -Lop.k * force;
 
         // RH: dSdU = dSdU - k \chi_{R}^{\dagger} \gamma_{5} R_{5} ( \partial_{x,\mu} D_{w} ) \chi_{}
         //     \chi_{R} = ( H(mb) - \Delta_{+}(mf,mb) P_{+} )^{-1} \Omega_{+} P_{+} \Phi
@@ -256,7 +261,7 @@ namespace QCD{
         Rop.Dtilde(spProj_Phi, Chi);
         G5R5(g5_R5_Chi, Chi);
         Lop.MDeriv(force, g5_R5_Chi, Chi, DaggerNo);
-        dSdU = dSdU - Rop.k * force;
+        dSdU = dSdU + Rop.k * force;
       };
   };
 }}

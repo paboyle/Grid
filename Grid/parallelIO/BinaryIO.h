@@ -619,6 +619,7 @@ PARALLEL_CRITICAL
         {
           std::cout << GridLogMessage << "writeLatticeObject: read test checksum failure, re-writing (" << attemptsLeft << " attempt(s) remaining)" << std::endl;
           offset = offsetCopy;
+          parallel_for(uint64_t x=0;x<lsites;x++) munge(scalardata[x],iodata[x]);
         }
         else
         {

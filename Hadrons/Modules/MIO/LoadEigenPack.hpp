@@ -47,16 +47,21 @@ public:
                                     std::string, filestem,
                                     bool, multiFile,
                                     unsigned int, size,
-                                    unsigned int, Ls);
+                                    unsigned int, Ls,
+                                    std::string, gaugeXform);
 };
 
-template <typename Pack>
+template <typename Pack, typename GImpl>
 class TLoadEigenPack: public Module<LoadEigenPackPar>
 {
 public:
     typedef typename Pack::Field   Field;
     typedef typename Pack::FieldIo FieldIo;
     typedef BaseEigenPack<Field>   BasePack;
+
+public:
+    GAUGE_TYPE_ALIASES(GImpl, );
+    typedef typename GImpl::GaugeLinkField GaugeMat;
 public:
     // constructor
     TLoadEigenPack(const std::string name);
@@ -71,31 +76,36 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_TMP(LoadFermionEigenPack, TLoadEigenPack<FermionEigenPack<FIMPL>>, MIO);
+MODULE_REGISTER_TMP(LoadFermionEigenPack, ARG(TLoadEigenPack<FermionEigenPack<FIMPL>, GIMPL>), MIO);
 #ifdef GRID_DEFAULT_PRECISION_DOUBLE
-MODULE_REGISTER_TMP(LoadFermionEigenPackIo32, ARG(TLoadEigenPack<FermionEigenPack<FIMPL, FIMPLF>>), MIO);
+MODULE_REGISTER_TMP(LoadFermionEigenPackIo32, ARG(TLoadEigenPack<FermionEigenPack<FIMPL, FIMPLF>, GIMPL>), MIO);
 #endif
 
 /******************************************************************************
  *                    TLoadEigenPack implementation                           *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-template <typename Pack>
-TLoadEigenPack<Pack>::TLoadEigenPack(const std::string name)
+template <typename Pack, typename GImpl>
+TLoadEigenPack<Pack, GImpl>::TLoadEigenPack(const std::string name)
 : Module<LoadEigenPackPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-template <typename Pack>
-std::vector<std::string> TLoadEigenPack<Pack>::getInput(void)
+template <typename Pack, typename GImpl>
+std::vector<std::string> TLoadEigenPack<Pack, GImpl>::getInput(void)
 {
     std::vector<std::string> in;
+
+    if (!par().gaugeXform.empty())
+    {
+        in = {par().gaugeXform};
+    }
     
     return in;
 }
 
-template <typename Pack>
-std::vector<std::string> TLoadEigenPack<Pack>::getOutput(void)
+template <typename Pack, typename GImpl>
+std::vector<std::string> TLoadEigenPack<Pack, GImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -103,8 +113,8 @@ std::vector<std::string> TLoadEigenPack<Pack>::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-template <typename Pack>
-void TLoadEigenPack<Pack>::setup(void)
+template <typename Pack, typename GImpl>
+void TLoadEigenPack<Pack, GImpl>::setup(void)
 {
     GridBase *gridIo = nullptr;
 
@@ -114,16 +124,64 @@ void TLoadEigenPack<Pack>::setup(void)
     }
     envCreateDerived(BasePack, Pack, getName(), par().Ls, par().size, 
                      envGetRbGrid(Field, par().Ls), gridIo);
+
+    if (!par().gaugeXform.empty())
+    {
+        if (par().Ls > 1)
+        {
+            LOG(Message) << "Setup 5d GaugeMat for Ls = " << par().Ls << std::endl;
+            envTmp(GaugeMat,    "tmpXform", par().Ls, envGetGrid5(Field, par().Ls));
+            envTmp(GaugeMat, "tmpXformOdd", par().Ls, envGetRbGrid5(Field, par().Ls));
+        }
+        else
+        {
+            LOG(Message) << "Setup 4d GaugeMat for Ls = " << par().Ls << std::endl;
+            envTmp(GaugeMat,    "tmpXform", par().Ls, envGetGrid(Field));
+            envTmp(GaugeMat, "tmpXformOdd", par().Ls, envGetRbGrid(Field));
+        }
+        
+    }
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-template <typename Pack>
-void TLoadEigenPack<Pack>::execute(void)
+template <typename Pack, typename GImpl>
+void TLoadEigenPack<Pack, GImpl>::execute(void)
 {
     auto &epack = envGetDerived(BasePack, Pack, getName());
 
     epack.read(par().filestem, par().multiFile, vm().getTrajectory());
     epack.eval.resize(par().size);
+
+    if (!par().gaugeXform.empty())
+    {
+
+        LOG(Message) << "Applying gauge transformation to eigenvectors " << getName()
+                     << " using " << par().gaugeXform << std::endl;
+        auto &xform = envGet(GaugeMat, par().gaugeXform);
+        envGetTmp(GaugeMat,    tmpXform);
+        envGetTmp(GaugeMat, tmpXformOdd);
+
+        if (par().Ls > 1) 
+        {
+            LOG(Message) << "Creating 5d GaugeMat from " << par().gaugeXform << std::endl;
+            startTimer("5-d gauge transform creation");
+            for (unsigned int j = 0; j < par().Ls; j++)
+            {
+                InsertSlice(xform, tmpXform, j, 0);
+            }
+            stopTimer("5-d gauge transform creation");
+        }
+
+        pickCheckerboard(Odd, tmpXformOdd, tmpXform);
+        startTimer("Transform application");
+        for (unsigned int i = 0; i < par().size; i++)
+        {
+            LOG(Message) << "Applying gauge transformation to eigenvector i = " << i << "/" << par().size << std::endl;
+            epack.evec[i].checkerboard = Odd;
+            epack.evec[i] = tmpXformOdd * epack.evec[i];
+        }
+        stopTimer("Transform application");
+    }
 }
 
 END_MODULE_NAMESPACE

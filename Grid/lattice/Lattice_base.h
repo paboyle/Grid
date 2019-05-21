@@ -85,7 +85,7 @@ class LatticeTrinaryExpression :public std::pair<Op,std::tuple<T1,T2,T3> >, publ
 
 void inline conformable(GridBase *lhs,GridBase *rhs)
 {
-  assert(lhs == rhs);
+  assert((lhs == rhs) && " conformable check pointers mismatch ");
 }
 
 template<class vobj>
