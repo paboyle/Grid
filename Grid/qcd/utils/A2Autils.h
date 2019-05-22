@@ -986,17 +986,18 @@ void A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
       for(int t=0;t<N_t;t++){
       for(int s=0;s<N_s;s++){
 	auto tmp1 = vs[s]._odata[ss];
-	vobj tmp2 = zero;
+  vobj tmp2 = zero;
+  vobj tmp3 = zero;
 
 	for(int d=d_o;d<MIN(d_o+d_unroll,N_d);d++){
 	  Scalar_v coeff = WW_sd(t,s,d);
-	  mac(&tmp2 ,& coeff, & vd[d]._odata[ss]);
-	}
+	  tmp3 = conjugate(vd[d]._odata[ss]);
+	  mac(&tmp2, &coeff, &tmp3);
+  }
 
 	//////////////////////////
 	// Fast outer product of tmp1 with a sum of terms suppressed by d_unroll
 	//////////////////////////
-	tmp2 = conjugate(tmp2);
 	for(int s1=0;s1<Ns;s1++){
 	for(int s2=0;s2<Ns;s2++){
 	  WWVV[t]._odata[ss]()(s1,s2)(0,0) += tmp1()(s1)(0)*tmp2()(s2)(0);
