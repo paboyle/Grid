@@ -2,13 +2,28 @@
 TODO: 
 ********************************************************************
 
-- Currently 10 traj per hour
+i) Got mixed precision in 2f and EOFA force and action solves.
+   But need mixed precision in the heatbath solve. Best for Fermop to have a "clone" method, to
+   reduce the number of solver and action objects. Needed ideally for the EOFA heatbath.
+   15% perhaps
+   Combine with 2x trajectory length?
+
+ii) Rational on EOFA HB  -- relax order
+                         -- Test the approx as per David email
+
+Resume / roll.sh 
+
+----------------------------------------------------------------
+
+- 16^3 Currently 10 traj per hour
 
 - EOFA use a different derivative solver from action solver
 - EOFA fix Davids hack to the SchurRedBlack guessing
 
 *** Reduce precision/tolerance  in EOFA with second CG param.                          (10% speed up)
 *** Force gradient - reduced precision solve for the gradient                          (4/3x speedup)
+
+
 *** Need a plan for gauge field update for mixed precision in HMC                      (2x speed up)
     -- Store the single prec action operator.
     -- Clone the gauge field from the operator function argument.

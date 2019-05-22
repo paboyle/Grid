@@ -370,5 +370,18 @@ int main(int argc,char **argv)
   tensorConvTest(rng, SpinMatrix);
   tensorConvTest(rng, SpinVector);
 
+  {
+    HMCparameters HMCparams;
+    HMCparams.StartingType     =std::string("CheckpointStart");
+    HMCparams.StartTrajectory  =7;
+    HMCparams.Trajectories     =1000;
+    HMCparams.NoMetropolisUntil=0;
+    HMCparams.MD.name          =std::string("Force Gradient");
+    HMCparams.MD.MDsteps       = 10;
+    HMCparams.MD.trajL         = 1.0;
+
+    XmlWriter HMCwr("HMCparameters.xml");
+    write(HMCwr,"HMCparameters",HMCparams);
+  }
   Grid_finalize();
 }
