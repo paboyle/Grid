@@ -165,12 +165,13 @@ void Application::parseParameterFile(const std::string parameterFileName)
     pop(reader);
 }
 
-void Application::saveParameterFile(const std::string parameterFileName)
+void Application::saveParameterFile(const std::string parameterFileName, unsigned int prec)
 {
     LOG(Message) << "Saving application to '" << parameterFileName << "'..." << std::endl;
     if (env().getGrid()->IsBoss())
     {
         XmlWriter          writer(parameterFileName);
+        writer.setPrecision(prec);
         ObjectId           id;
         const unsigned int nMod = vm().getNModule();
 
