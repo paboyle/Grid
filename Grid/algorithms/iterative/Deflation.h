@@ -35,7 +35,11 @@ class ZeroGuesser: public LinearFunction<Field> {
 public:
   virtual void operator()(const Field &src, Field &guess) { guess = zero; };
 };
-
+template<class Field>
+class DoNothingGuesser: public LinearFunction<Field> {
+public:
+  virtual void operator()(const Field &src, Field &guess) {  };
+};
 template<class Field>
 class SourceGuesser: public LinearFunction<Field> {
 public:

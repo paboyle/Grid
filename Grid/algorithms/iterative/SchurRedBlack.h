@@ -261,7 +261,7 @@ namespace Grid {
     }     
     
     /////////////////////////////////////////////////////////////
-    // Override in derived. Not virtual as template methods
+    // Override in derived. 
     /////////////////////////////////////////////////////////////
     virtual void RedBlackSource  (Matrix & _Matrix,const Field &src, Field &src_e,Field &src_o)                =0;
     virtual void RedBlackSolution(Matrix & _Matrix,const Field &sol_o, const Field &src_e,Field &sol)          =0;
