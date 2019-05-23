@@ -91,6 +91,7 @@ private:
 };
 
 MODULE_REGISTER_TMP(SeqGamma, TSeqGamma<FIMPL>, MSource);
+MODULE_REGISTER_TMP(ZSeqGamma, TSeqGamma<ZFIMPL>, MSource);
 
 /******************************************************************************
  *                         TSeqGamma implementation                           *
