@@ -64,10 +64,16 @@ public:
     RealD cp, c, a, d, b, ssq, qq;
     //RealD b_pred;
 
-    Field p(src);
-    Field mmp(src);
-    Field r(src);
+    Field p(src.Grid());
+    Field mmp(src.Grid());
+    Field r(src.Grid());
 
+    acceleratorPrefetch(src);
+    acceleratorPrefetch(psi);
+    acceleratorPrefetch(p);
+    acceleratorPrefetch(mmp);
+    acceleratorPrefetch(r);
+    
     // Initial residual computation & set up
     RealD guess = norm2(psi);
     assert(std::isnan(guess) == 0);

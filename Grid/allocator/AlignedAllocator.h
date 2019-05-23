@@ -189,6 +189,7 @@ public:
 #endif
     assert( ptr != (_Tp *)NULL);
 
+#ifndef GRID_NVCC
     /////////////////////////////////////////
     // First touch optimise in threaded loop
     /////////////////////////////////////////
@@ -196,6 +197,7 @@ public:
     thread_loop( (size_type n=0;n<bytes;n+=4096) , {
       cp[n]=0;
     });
+#endif
     return ptr;
   }
 

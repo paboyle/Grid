@@ -186,6 +186,7 @@ public:
   {
     Field tmp(in.Grid());
     tmp.Checkerboard() = in.Checkerboard();
+    acceleratorPrefetch(tmp);
     ni=Mpc(in,tmp);
     no=MpcDag(tmp,out);
   }
@@ -222,6 +223,8 @@ public:
     //	std::cout <<"grid pointers: in.Grid()="<< in.Grid() << " out.Grid()=" << out.Grid() << "  _Mat.Grid=" << _Mat.Grid() << " _Mat.RedBlackGrid=" << _Mat.RedBlackGrid() << std::endl;
     tmp.Checkerboard() = !in.Checkerboard();
 
+    acceleratorPrefetch(tmp);
+    
     _Mat.Meooe(in,tmp);
     _Mat.MooeeInv(tmp,out);
     _Mat.Meooe(out,tmp);
@@ -233,6 +236,8 @@ public:
   virtual  RealD MpcDag   (const Field &in, Field &out){
     Field tmp(in.Grid());
 
+    acceleratorPrefetch(tmp);
+    
     _Mat.MeooeDag(in,tmp);
     _Mat.MooeeInvDag(tmp,out);
     _Mat.MeooeDag(out,tmp);

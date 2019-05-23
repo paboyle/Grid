@@ -225,6 +225,9 @@ void WilsonFermion5D<Impl>::ImportGauge(const GaugeField &_Umu)
   Impl::DoubleStore(GaugeGrid(),Umu,HUmu);
   pickCheckerboard(Even,UmuEven,Umu);
   pickCheckerboard(Odd ,UmuOdd,Umu);
+  acceleratorPrefetch(Umu);
+  acceleratorPrefetch(UmuEven);
+  acceleratorPrefetch(UmuOdd);
 }
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopDir(const FermionField &in, FermionField &out,int dir5,int disp)

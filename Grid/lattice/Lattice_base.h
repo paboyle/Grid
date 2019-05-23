@@ -483,6 +483,34 @@ template<class vobj> std::ostream& operator<< (std::ostream& stream, const Latti
   }
   return stream;
 }
-  
+
+/////////////////////////////////////////
+// PREFETCH to GPU memory
+// no migration is involved if
+// memory hasn't been touched
+/////////////////////////////////////////
+// this will cause CPU pauge faults if
+// CPU is the first device to access memory
+template<typename vobj>
+void acceleratorPrefetch(Lattice<vobj> &latt)
+{
+#ifdef GRID_NVCC
+  int device = -1;
+  cudaGetDevice(&device);
+  auto latt_v = latt.View();
+  cudaMemPrefetchAsync((const void*) &latt_v[0], latt_v.oSites()*sizeof(latt_v[0]), device, NULL);
+#endif
+}
+template<typename vobj>
+void acceleratorPrefetch(const Lattice<vobj> &latt)
+{
+#ifdef GRID_NVCC
+  int device = -1;
+  cudaGetDevice(&device);
+  auto latt_v = latt.View();
+  cudaMemPrefetchAsync((const void*) &latt_v[0], latt_v.oSites()*sizeof(latt_v[0]), device, NULL);
+#endif
+}
+
 NAMESPACE_END(Grid);
 
