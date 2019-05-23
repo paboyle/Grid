@@ -1,6 +1,7 @@
 modules_cc =\
   Modules/MContraction/Baryon.cc \
   Modules/MContraction/Meson.cc \
+  Modules/MContraction/WeakMesonDecayKl2.cc \
   Modules/MContraction/WeakEye3pt.cc \
   Modules/MContraction/A2ALoop.cc \
   Modules/MContraction/WeakNonEye3pt.cc \
@@ -10,11 +11,13 @@ modules_cc =\
   Modules/MContraction/Gamma3pt.cc \
   Modules/MFermion/FreeProp.cc \
   Modules/MFermion/GaugeProp.cc \
+  Modules/MFermion/EMLepton.cc \
   Modules/MSource/Momentum.cc \
   Modules/MSource/Point.cc \
   Modules/MSource/Wall.cc \
   Modules/MSource/SeqConserved.cc \
   Modules/MSource/SeqGamma.cc \
+  Modules/MSource/SeqAslash.cc \
   Modules/MSource/Z2.cc \
   Modules/MSink/Point.cc \
   Modules/MSink/Smear.cc \
@@ -72,10 +75,13 @@ modules_hpp =\
   Modules/MContraction/Meson.hpp \
   Modules/MContraction/DiscLoop.hpp \
   Modules/MContraction/Gamma3pt.hpp \
+  Modules/MContraction/WeakMesonDecayKl2.hpp \
   Modules/MContraction/WeakNonEye3pt.hpp \
   Modules/MFermion/FreeProp.hpp \
   Modules/MFermion/GaugeProp.hpp \
+  Modules/MFermion/EMLepton.hpp \
   Modules/MSource/SeqGamma.hpp \
+  Modules/MSource/SeqAslash.hpp \
   Modules/MSource/Point.hpp \
   Modules/MSource/Wall.hpp \
   Modules/MSource/Z2.hpp \
