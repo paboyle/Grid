@@ -9,7 +9,8 @@ BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
  *                         Gauss                                              *
- * result[n] = 1/(sqrt(2*pi)*width)^dim*exp(-|n|^2/(2*width^2))               *
+ * result[n] = 1/(sqrt(2*pi)*width)^dim                                       *
+ *            * exp(-|n-position|^2/(2*width^2) + i n.mom)                    *
  * where:                                                                     *
  *   n=(n[0],n[1],...,n[dim-1])  (lattice coordinate)                         *
  *   dim=Nd-1                                                                 *
@@ -21,6 +22,7 @@ class GaussPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(GaussPar,
                                     std::string, position,
+                                    std::string, mom,
                                     double,      width);
 };
 
@@ -41,6 +43,7 @@ public:
     virtual void execute(void);
 private:
     std::vector<int> position_;
+    std::vector<int> mom_;
 };
 
 MODULE_REGISTER_TMP(Gauss, TGauss<FIMPL>, MSource);
@@ -75,7 +78,21 @@ std::vector<std::string> TGauss<FImpl>::getOutput(void)
 template <typename FImpl>
 void TGauss<FImpl>::setup(void)
 {
-    
+    auto parse_vector = [](const std::string &momentum, int dim,
+            const std::string &desc)
+    {
+        std::vector<int> res = strToVec<int>(momentum);
+        if(res.size() != dim) {
+            HADRONS_ERROR(Size, desc + " has " + std::to_string(res.size())
+                    + " instead of " + std::to_string(dim) + " components");
+        }
+        return res;
+    };
+    position_ = parse_vector(par().position, env().getNd()-1, "position");
+    mom_      = parse_vector(par().mom,      env().getNd()-1, "momentum");
+
+    envCreateLat(LatticeComplex, getName());
+    envTmpLat(LatticeComplex, "component");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -86,17 +103,18 @@ void TGauss<FImpl>::execute(void)
     envGetTmp(LatticeComplex, component);
     const int dim=env().getNd()-1;
     const double fact=-0.5/std::pow(par().width,2);
-    const std::vector<int> latt_size { env().getGrid()->FullDimensions() };
+    Complex i(0.0, 1.0);
 
-    //exp(fact*|n|^2)
+    //exp(fact*|n|^2 +i n.mom)
     rho=zero;
     for(int mu=0; mu<dim; mu++) {
         LatticeCoordinate(component, mu);
+        rho+=(i*(static_cast<double>(mom_[mu])/env().getDim(mu)))*component;
         //FIXME: the next three lines are very inefficient...
         //       should not need any communication (Cshift) here
-        assert(latt_size[mu]%2==0);
-        component-=Complex(latt_size[mu]/2-1);
-        component=Cshift(component, mu, latt_size[mu]/2-1 -position_[mu]);
+        assert(env().getDim(mu)%2==0);
+        component-=Complex(env().getDim(mu)/2-1);
+        component=Cshift(component, mu, env().getDim(mu)/2-1 -position_[mu]);
         rho+=component*component*fact;
     }
     rho=exp(rho);
