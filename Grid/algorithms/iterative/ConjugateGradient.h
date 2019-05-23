@@ -67,12 +67,6 @@ public:
     Field p(src.Grid());
     Field mmp(src.Grid());
     Field r(src.Grid());
-
-    acceleratorPrefetch(src);
-    acceleratorPrefetch(psi);
-    acceleratorPrefetch(p);
-    acceleratorPrefetch(mmp);
-    acceleratorPrefetch(r);
     
     // Initial residual computation & set up
     RealD guess = norm2(psi);
