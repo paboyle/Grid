@@ -106,7 +106,6 @@ void TGauss<FImpl>::execute(void)
     const double fact=-0.5/std::pow(par().width,2);
     const Complex i(0.0, 1.0);
 
-    //exp(fact*|n|^2 +i n.mom)
     rho=zero;
     for(int mu=0; mu<dim; mu++) {
         LatticeCoordinate(component, mu);
