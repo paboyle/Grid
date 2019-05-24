@@ -54,7 +54,7 @@ TConvolution<FImpl>::TConvolution(const std::string name)
 template <typename FImpl>
 std::vector<std::string> TConvolution<FImpl>::getInput(void)
 {
-    std::vector<std::string> in;
+    std::vector<std::string> in = {par().field1, par().field2};
     
     return in;
 }
