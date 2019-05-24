@@ -118,7 +118,22 @@ void Application::run(void)
     vm().setRunId(getPar().runId);
     vm().printContent();
     env().printContent();
-    schedule();
+    if (getPar().saveSchedule or getPar().scheduleFile.empty())
+    {
+        schedule();
+        if (getPar().saveSchedule)
+        {
+            std::string filename;
+
+            filename = (getPar().scheduleFile.empty()) ? 
+                         "hadrons.sched" : getPar().scheduleFile;
+            saveSchedule(filename);
+        }
+    }
+    else
+    {
+        loadSchedule(getPar().scheduleFile);
+    }
     printSchedule();
     if (!getPar().graphFile.empty())
     {

@@ -601,11 +601,10 @@ VirtualMachine::Program VirtualMachine::schedule(const GeneticPar &par)
     Scheduler scheduler(graph, memPeak, gpar);
     gen = 0;
     scheduler.initPopulation();
-    LOG(Iterative) << "Start: " << sizeString(scheduler.getMinValue()) 
-                   << std::endl;
+    LOG(Message) << "Start: " << sizeString(scheduler.getMinValue()) 
+                 << std::endl;
     do
     {
-        //LOG(Debug) << "Generation " << gen << ":" << std::endl;
         scheduler.nextGeneration();
         if (gen != 0)
         {
@@ -622,8 +621,8 @@ VirtualMachine::Program VirtualMachine::schedule(const GeneticPar &par)
         prevPeak = scheduler.getMinValue();
         if (gen % 10 == 0)
         {
-            LOG(Iterative) << "Generation " << gen << ": "
-                           << sizeString(scheduler.getMinValue()) << std::endl;
+            LOG(Message) << "Generation " << gen << ": "
+                         << sizeString(scheduler.getMinValue()) << std::endl;
         }
         
         gen++;

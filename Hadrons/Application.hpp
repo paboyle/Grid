@@ -57,6 +57,8 @@ public:
                                         VirtualMachine::GeneticPar, genetic,
                                         std::string,                runId,
                                         std::string,                graphFile,
+                                        std::string,                scheduleFile,
+                                        bool,                       saveSchedule,
                                         int,                        parallelWriteMaxRetry);
         GlobalPar(void): parallelWriteMaxRetry{-1} {}
     };
