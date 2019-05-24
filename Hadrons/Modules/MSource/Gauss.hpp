@@ -10,9 +10,10 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                         Gauss                                              *
  * result[n] = 1/(sqrt(2*pi)*width)^dim                                       *
- *            * exp(-|n-position|^2/(2*width^2) + i n.mom)                    *
+ *            * exp(-|n-position|^2/(2*width^2) + i p.n)                      *
  * where:                                                                     *
  *   n=(n[0],n[1],...,n[dim-1])  (lattice coordinate)                         *
+ *   p[i]=2*pi/L[i]*mom[i]                                                    *
  *   dim=Nd-1                                                                 *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MSource)
@@ -103,13 +104,13 @@ void TGauss<FImpl>::execute(void)
     envGetTmp(LatticeComplex, component);
     const int dim=env().getNd()-1;
     const double fact=-0.5/std::pow(par().width,2);
-    Complex i(0.0, 1.0);
+    const Complex i(0.0, 1.0);
 
     //exp(fact*|n|^2 +i n.mom)
     rho=zero;
     for(int mu=0; mu<dim; mu++) {
         LatticeCoordinate(component, mu);
-        rho+=(i*(static_cast<double>(mom_[mu])/env().getDim(mu)))*component;
+        rho+=(i*(mom_[mu]*2*M_PI/env().getDim(mu)))*component;
         //FIXME: the next three lines are very inefficient...
         //       should not need any communication (Cshift) here
         assert(env().getDim(mu)%2==0);
