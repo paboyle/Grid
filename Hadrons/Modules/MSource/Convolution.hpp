@@ -71,7 +71,7 @@ std::vector<std::string> TConvolution<FImpl>::getOutput(void)
 template <typename FImpl>
 void TConvolution<FImpl>::setup(void)
 {
-    envCreateLat(LatticeFermion, getName());
+    envCreateLat(PropagatorField, getName());
     envTmpLat(LatticeComplex, "momfield1");
     envTmp(FFT, "fft", 1, env().getGrid());
 }
@@ -81,8 +81,8 @@ template <typename FImpl>
 void TConvolution<FImpl>::execute(void)
 {
     auto &field1 = envGet(LatticeComplex, par().field1);
-    auto &field2 = envGet(LatticeFermion, par().field2);
-    auto &out    = envGet(LatticeFermion, getName());
+    auto &field2 = envGet(PropagatorField, par().field2);
+    auto &out    = envGet(PropagatorField, getName());
     envGetTmp(LatticeComplex, momfield1);
     envGetTmp(FFT, fft);
 
