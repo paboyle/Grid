@@ -48,4 +48,7 @@ Author: neo <cossu@post.kek.jp>
 #include <Grid/tensors/Tensor_extract_merge.h>
 #include <Grid/tensors/Tensor_logical.h>
 
+// Maybe expect different thread on each SIMD lane
+#include <Grid/tensors/Tensor_SIMT.h>
+
 #endif
