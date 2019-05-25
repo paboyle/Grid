@@ -56,44 +56,6 @@ NAMESPACE_BEGIN(Grid);
 // Gather for when there *is* need to SIMD split with compression
 ///////////////////////////////////////////////////////////////////
 
-#ifdef __CUDA_ARCH__
-//////////////////////////////////////////
-// EExtract and insert slices on the GPU
-//////////////////////////////////////////
-template<class vobj> accelerator_inline
-typename vobj::scalar_object coalescedRead(const vobj & __restrict__ vec)
-{
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-  constexpr int Nsimd = sizeof(vector_type)/sizeof(scalar_type);
-  int lane = threadIdx.x % Nsimd;
-  return extractLane(lane,vec);
-}
-template<class vobj> accelerator_inline
-void coalescedWrite(vobj & __restrict__ vec,const typename vobj::scalar_object & __restrict__ extracted)
-{
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-  constexpr int Nsimd = sizeof(vector_type)/sizeof(scalar_type);
-  int lane = threadIdx.x % Nsimd;
-  insertLane(lane,vec,extracted);
-}
-#else
-//////////////////////////////////////////
-// Trivial mapping of vectors on host
-//////////////////////////////////////////
-template<class vobj> accelerator_inline
-vobj coalescedRead(const vobj & __restrict__ vec)
-{
-  return vec;
-}
-template<class vobj> accelerator_inline
-void coalescedWrite(vobj & __restrict__ vec,const vobj & __restrict__ extracted)
-{
-  vec = extracted;
-}
-#endif
-
 void Gather_plane_table_compute (GridBase *grid,int dimension,int plane,int cbmask,
 				 int off,Vector<std::pair<int,int> > & table);
 
