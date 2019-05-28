@@ -17,14 +17,16 @@ class ConvolutionPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(ConvolutionPar,
                                     std::string, field1,
-                                    std::string, field2);
+                                    std::string, field2,
+                                    std::string, mom);
 };
 
 template <typename FImpl>
 class TConvolution: public Module<ConvolutionPar>
 {
 public:
-    BASIC_TYPE_ALIASES(FImpl,);
+    //BASIC_TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TConvolution(const std::string name);
@@ -37,9 +39,12 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
+private:
+    std::vector<int> mom_;
 };
 
 MODULE_REGISTER_TMP(Convolution, TConvolution<FIMPL>, MSource);
+//MODULE_REGISTER_TMP(ScalarConvolution, TConvolution<ScalarImplCR>, MSource);
 
 /******************************************************************************
  *                 TConvolution implementation                             *
@@ -71,6 +76,13 @@ std::vector<std::string> TConvolution<FImpl>::getOutput(void)
 template <typename FImpl>
 void TConvolution<FImpl>::setup(void)
 {
+     mom_ = strToVec<int>(par().mom);
+     if(mom_.size() != env().getNd()-1) {
+         HADRONS_ERROR(Size, std::string("momentum has ")
+                 + std::to_string(mom_.size()) + " instead of "
+                 + std::to_string(env().getNd()-1) + " components");
+     }
+
     envCreateLat(PropagatorField, getName());
     envTmpLat(LatticeComplex, "momfield1");
     envTmp(FFT, "fft", 1, env().getGrid());
@@ -97,6 +109,12 @@ void TConvolution<FImpl>::execute(void)
     startTimer("momentum-space multiplication");
     out=momfield1*out;
     stopTimer("momentum-space multiplication");
+
+    startTimer("adding momentum");
+    for(int mu=0; mu<env().getNd()-1; mu++) {
+       out=Cshift(out, mu, mom_[mu]);
+    }
+    stopTimer("adding momentum");
 
     startTimer("Fourier transform");
     fft.FFT_dim_mask(out, out, mask, FFT::backward);

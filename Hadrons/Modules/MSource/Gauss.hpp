@@ -10,10 +10,9 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                         Gauss                                              *
  * result[n] = 1/(sqrt(2*pi)*width)^dim                                       *
- *            * exp(-|n-position|^2/(2*width^2) + i p.n)                      *
+ *            * exp(-|n-position|^2/(2*width^2))                              *
  * where:                                                                     *
  *   n=(n[0],n[1],...,n[dim-1])  (lattice coordinate)                         *
- *   p[i]=2*pi/L[i]*mom[i]                                                    *
  *   dim=Nd-1                                                                 *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MSource)
@@ -23,7 +22,6 @@ class GaussPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(GaussPar,
                                     std::string, position,
-                                    std::string, mom,
                                     double,      width);
 };
 
@@ -44,7 +42,6 @@ public:
     virtual void execute(void);
 private:
     std::vector<int> position_;
-    std::vector<int> mom_;
 };
 
 MODULE_REGISTER_TMP(Gauss, TGauss<FIMPL>, MSource);
@@ -79,18 +76,12 @@ std::vector<std::string> TGauss<FImpl>::getOutput(void)
 template <typename FImpl>
 void TGauss<FImpl>::setup(void)
 {
-    auto parse_vector = [](const std::string &momentum, int dim,
-            const std::string &desc)
-    {
-        std::vector<int> res = strToVec<int>(momentum);
-        if(res.size() != dim) {
-            HADRONS_ERROR(Size, desc + " has " + std::to_string(res.size())
-                    + " instead of " + std::to_string(dim) + " components");
-        }
-        return res;
-    };
-    position_ = parse_vector(par().position, env().getNd()-1, "position");
-    mom_      = parse_vector(par().mom,      env().getNd()-1, "momentum");
+     position_ = strToVec<int>(par().position);
+     if(position_.size() != env().getNd()-1) {
+         HADRONS_ERROR(Size, std::string("position has ")
+                 + std::to_string(position_.size()) + " instead of "
+                 + std::to_string(env().getNd()-1) + " components");
+     }
 
     envCreateLat(LatticeComplex, getName());
     envTmpLat(LatticeComplex, "component");
@@ -109,7 +100,6 @@ void TGauss<FImpl>::execute(void)
     rho=zero;
     for(int mu=0; mu<dim; mu++) {
         LatticeCoordinate(component, mu);
-        rho+=(i*(mom_[mu]*2*M_PI/env().getDim(mu)))*component;
         //FIXME: the next three lines are very inefficient...
         //       should not need any communication (Cshift) here
         assert(env().getDim(mu)%2==0);
