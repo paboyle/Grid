@@ -109,11 +109,10 @@ typedef std::vector<typename ComplexField##suffix::vector_object::scalar_object>
 
 #define FERM_TYPE_ALIASES(FImpl, suffix)\
 BASIC_TYPE_ALIASES(FImpl, suffix);\
-typedef FermionOperator<FImpl>                     FMat##suffix;\
-typedef typename FImpl::FermionField               FermionField##suffix;\
-typedef typename FImpl::GaugeField                 GaugeField##suffix;\
-typedef typename FImpl::DoubledGaugeField          DoubledGaugeField##suffix;\
-typedef Lattice<iSpinMatrix<typename FImpl::Simd>> SpinMatrixField##suffix;
+typedef FermionOperator<FImpl>            FMat##suffix;\
+typedef typename FImpl::FermionField      FermionField##suffix;\
+typedef typename FImpl::GaugeField        GaugeField##suffix;\
+typedef typename FImpl::DoubledGaugeField DoubledGaugeField##suffix;
 
 #define GAUGE_TYPE_ALIASES(GImpl, suffix)\
 typedef typename GImpl::GaugeField GaugeField##suffix;
