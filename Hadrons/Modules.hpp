@@ -1,5 +1,6 @@
 #include <Hadrons/Modules/MSource/Gauss.hpp>
 #include <Hadrons/Modules/MSource/Momentum.hpp>
+#include <Hadrons/Modules/MSource/SeqAslash.hpp>
 #include <Hadrons/Modules/MSource/Z2.hpp>
 #include <Hadrons/Modules/MSource/Point.hpp>
 #include <Hadrons/Modules/MSource/SeqGamma.hpp>
@@ -45,6 +46,7 @@
 #include <Hadrons/Modules/MIO/LoadBinary.hpp>
 #include <Hadrons/Modules/MIO/LoadCoarseEigenPack.hpp>
 #include <Hadrons/Modules/MContraction/WeakEye3pt.hpp>
+#include <Hadrons/Modules/MContraction/WeakMesonDecayKl2.hpp>
 #include <Hadrons/Modules/MContraction/Gamma3pt.hpp>
 #include <Hadrons/Modules/MContraction/A2AMesonField.hpp>
 #include <Hadrons/Modules/MContraction/A2ALoop.hpp>
@@ -64,5 +66,6 @@
 #include <Hadrons/Modules/MSolver/MixedPrecisionRBPrecCG.hpp>
 #include <Hadrons/Modules/MFermion/FreeProp.hpp>
 #include <Hadrons/Modules/MFermion/GaugeProp.hpp>
+#include <Hadrons/Modules/MFermion/EMLepton.hpp>
 #include <Hadrons/Modules/MSink/Smear.hpp>
 #include <Hadrons/Modules/MSink/Point.hpp>

@@ -1,0 +1,5 @@
+Version : 0.8.0
+
+- Clang 3.5 and above, ICPC v16 and above, GCC 6.3 and above recommended
+- MPI and MPI3 comms optimisations for KNL and OPA finished
+- Half precision comms

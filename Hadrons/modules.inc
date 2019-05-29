@@ -1,6 +1,7 @@
 modules_cc =\
   Modules/MSource/SeqConserved.cc \
   Modules/MSource/Convolution.cc \
+  Modules/MSource/SeqAslash.cc \
   Modules/MSource/Wall.cc \
   Modules/MSource/Point.cc \
   Modules/MSource/Z2.cc \
@@ -45,6 +46,7 @@ modules_cc =\
   Modules/MIO/LoadCosmHol.cc \
   Modules/MContraction/A2ALoop.cc \
   Modules/MContraction/WeakNonEye3pt.cc \
+  Modules/MContraction/WeakMesonDecayKl2.cc \
   Modules/MContraction/A2AMesonField.cc \
   Modules/MContraction/Gamma3pt.cc \
   Modules/MContraction/Baryon.cc \
@@ -62,12 +64,14 @@ modules_cc =\
   Modules/MSolver/A2AVectors.cc \
   Modules/MFermion/FreeProp.cc \
   Modules/MFermion/GaugeProp.cc \
+  Modules/MFermion/EMLepton.cc \
   Modules/MSink/Smear.cc \
   Modules/MSink/Point.cc
 
 modules_hpp =\
   Modules/MSource/Gauss.hpp \
   Modules/MSource/Momentum.hpp \
+  Modules/MSource/SeqAslash.hpp \
   Modules/MSource/Z2.hpp \
   Modules/MSource/Point.hpp \
   Modules/MSource/SeqGamma.hpp \
@@ -113,6 +117,7 @@ modules_hpp =\
   Modules/MIO/LoadBinary.hpp \
   Modules/MIO/LoadCoarseEigenPack.hpp \
   Modules/MContraction/WeakEye3pt.hpp \
+  Modules/MContraction/WeakMesonDecayKl2.hpp \
   Modules/MContraction/Gamma3pt.hpp \
   Modules/MContraction/A2AMesonField.hpp \
   Modules/MContraction/A2ALoop.hpp \
@@ -132,6 +137,7 @@ modules_hpp =\
   Modules/MSolver/MixedPrecisionRBPrecCG.hpp \
   Modules/MFermion/FreeProp.hpp \
   Modules/MFermion/GaugeProp.hpp \
+  Modules/MFermion/EMLepton.hpp \
   Modules/MSink/Smear.hpp \
   Modules/MSink/Point.hpp
 

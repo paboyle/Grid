@@ -2,11 +2,11 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Utilities/HadronsXmlRun.cc
+Source file: Hadrons/Modules/MFermion/EMLepton.cc
 
 Copyright (C) 2015-2019
 
-Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Vera Guelpers <Vera.Guelpers@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,45 +25,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-
-#include <Hadrons/Application.hpp>
+#include <Hadrons/Modules/MFermion/EMLepton.hpp>
 
 using namespace Grid;
-using namespace QCD;
 using namespace Hadrons;
+using namespace MFermion;
 
-int main(int argc, char *argv[])
-{
-    // parse command line
-    std::string parameterFileName;
-    
-    if (argc < 2)
-    {
-        std::cerr << "usage: " << argv[0] << " <parameter file> [Grid options]";
-        std::cerr << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
-    parameterFileName = argv[1];
-    
-    // initialization
-    Grid_init(&argc, &argv);
-    
-    // execution
-    try
-    {
-        Application application(parameterFileName);
-        
-        application.parseParameterFile(parameterFileName);
-        application.run();
-    }
-    catch (const std::exception& e)
-    {
-        Exceptions::abort(e);
-    }
-    
-    // epilogue
-    LOG(Message) << "Grid is finalizing now" << std::endl;
-    Grid_finalize();
-    
-    return EXIT_SUCCESS;
-}
+template class Grid::Hadrons::MFermion::TEMLepton<FIMPL>;
+
