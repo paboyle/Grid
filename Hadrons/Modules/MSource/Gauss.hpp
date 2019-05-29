@@ -28,6 +28,7 @@ public:
 template <typename FImpl>
 class TGauss: public Module<GaussPar>
 {
+    BASIC_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TGauss(const std::string name);
@@ -83,16 +84,16 @@ void TGauss<FImpl>::setup(void)
                  + std::to_string(env().getNd()-1) + " components");
      }
 
-    envCreateLat(LatticeComplex, getName());
-    envTmpLat(LatticeComplex, "component");
+    envCreateLat(ComplexField, getName());
+    envTmpLat(ComplexField, "component");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TGauss<FImpl>::execute(void)
 {
-    auto &rho = envGet(LatticeComplex, getName());
-    envGetTmp(LatticeComplex, component);
+    auto &rho = envGet(ComplexField, getName());
+    envGetTmp(ComplexField, component);
     const int dim=env().getNd()-1;
     const double fact=-0.5/std::pow(par().width,2);
     const Complex i(0.0, 1.0);
