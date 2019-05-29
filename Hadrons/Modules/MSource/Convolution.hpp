@@ -25,7 +25,6 @@ template <typename FImpl>
 class TConvolution: public Module<ConvolutionPar>
 {
 public:
-    //BASIC_TYPE_ALIASES(FImpl,);
     FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
@@ -44,7 +43,6 @@ private:
 };
 
 MODULE_REGISTER_TMP(Convolution, TConvolution<FIMPL>, MSource);
-//MODULE_REGISTER_TMP(ScalarConvolution, TConvolution<ScalarImplCR>, MSource);
 
 /******************************************************************************
  *                 TConvolution implementation                             *
