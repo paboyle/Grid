@@ -110,11 +110,15 @@ void TConvolution<FImpl>::execute(void)
     out=momfield1*out;
     stopTimer("momentum-space multiplication");
 
-    startTimer("adding momentum");
-    for(int mu=0; mu<env().getNd()-1; mu++) {
-       out=Cshift(out, mu, mom_[mu]);
+    startTimer("inserting momentum");
+    for(int mu=0; mu<env().getNd()-1; mu++)
+    {
+       if(mom_[mu]!=0)
+       {
+          out=Cshift(out, mu, -mom_[mu]);
+       }
     }
-    stopTimer("adding momentum");
+    stopTimer("inserting momentum");
 
     startTimer("Fourier transform");
     fft.FFT_dim_mask(out, out, mask, FFT::backward);
