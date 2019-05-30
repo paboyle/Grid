@@ -43,7 +43,7 @@ BEGIN_HADRONS_NAMESPACE
 *
 *	L(x) = \sum_y S(x,y) i*\gamma_mu*A_mu S(y,xl) \delta_{(tl-x0),dt} 
 *
-* with xl = (0,0,0,tl)
+* with a wall source for the lepton at tl
 *
 * In addition outputs the propagator without photon vertex
 * 
@@ -195,12 +195,9 @@ void TEMLepton<FImpl>::execute(void)
 
     unsigned int tl=0; 
 
-    //point source at (0,0,0,tl)
-    position.clear();
-    for(int tt=0;tt<Nd-1;tt++) position.push_back(0);
-    position.push_back(tl);
-    sourcetmp = zero;
-    pokeSite(id, sourcetmp, position);
+    //wallsource at tl
+    sourcetmp = 1.;
+    sourcetmp = where((tlat == tl), sourcetmp, 0.*sourcetmp);
 
     //free propagator from pt source 
     for (unsigned int s = 0; s < Ns; ++s)
