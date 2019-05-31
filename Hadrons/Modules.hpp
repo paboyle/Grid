@@ -46,6 +46,7 @@
 #include <Hadrons/Modules/MAction/Wilson.hpp>
 #include <Hadrons/Modules/MAction/WilsonClover.hpp>
 #include <Hadrons/Modules/MAction/ZMobiusDWF.hpp>
+#include <Hadrons/Modules/MAction/ImprovedStaggered.hpp>
 #include <Hadrons/Modules/MAction/ScaledDWF.hpp>
 #include <Hadrons/Modules/MScalarSUN/StochFreeField.hpp>
 #include <Hadrons/Modules/MScalarSUN/TwoPointNPR.hpp>

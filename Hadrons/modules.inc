@@ -41,6 +41,7 @@ modules_cc =\
   Modules/MNPR/Bilinear.cc \
   Modules/MNPR/FourQuark.cc \
   Modules/MAction/Wilson.cc \
+  Modules/MAction/ImprovedStaggered.cc \
   Modules/MAction/MobiusDWF.cc \
   Modules/MAction/ZMobiusDWF.cc \
   Modules/MAction/WilsonClover.cc \
@@ -112,6 +113,7 @@ modules_hpp =\
   Modules/MAction/Wilson.hpp \
   Modules/MAction/WilsonClover.hpp \
   Modules/MAction/ZMobiusDWF.hpp \
+  Modules/MAction/ImprovedStaggered.hpp \
   Modules/MAction/ScaledDWF.hpp \
   Modules/MScalarSUN/StochFreeField.hpp \
   Modules/MScalarSUN/TwoPointNPR.hpp \

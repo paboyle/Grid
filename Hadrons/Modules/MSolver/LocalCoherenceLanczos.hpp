@@ -86,9 +86,11 @@ public:
 
 MODULE_REGISTER_TMP(LocalCoherenceLanczos, ARG(TLocalCoherenceLanczos<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
 MODULE_REGISTER_TMP(ZLocalCoherenceLanczos, ARG(TLocalCoherenceLanczos<ZFIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
+MODULE_REGISTER_TMP(StagLocalCoherenceLanczos, ARG(TLocalCoherenceLanczos<StagIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
 #ifdef GRID_DEFAULT_PRECISION_DOUBLE
 MODULE_REGISTER_TMP(LocalCoherenceLanczosIo32, ARG(TLocalCoherenceLanczos<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS, FIMPLF>), MSolver);
 MODULE_REGISTER_TMP(ZLocalCoherenceLanczosIo32, ARG(TLocalCoherenceLanczos<ZFIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS, ZFIMPLF>), MSolver);
+MODULE_REGISTER_TMP(StagLocalCoherenceLanczosIo32, ARG(TLocalCoherenceLanczos<StagIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS, StagIMPLF>), MSolver);
 #endif
 
 /******************************************************************************

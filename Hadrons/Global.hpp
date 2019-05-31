@@ -96,6 +96,13 @@ using Grid::operator>>;
 #define GIMPLF HADRONS_IMPL(GIMPLBASE, F)
 #define GIMPLD HADRONS_IMPL(GIMPLBASE, D)
 
+#ifndef StagIMPLBASE
+#define StagIMPLBASE StaggeredImpl
+#endif
+#define StagIMPL  HADRONS_IMPL(StagIMPLBASE, R)
+#define StagIMPLF HADRONS_IMPL(StagIMPLBASE, F)
+#define StagIMPLD HADRONS_IMPL(StagIMPLBASE, D)
+
 BEGIN_HADRONS_NAMESPACE
 
 // type aliases
