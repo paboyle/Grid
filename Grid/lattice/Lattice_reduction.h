@@ -23,7 +23,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #include <Grid/Grid_Eigen_Dense.h>
 #ifdef GRID_NVCC
-#include <thrust/inner_product.h>
+#include <Grid/lattice/Lattice_reduction_gpu.h>
 #endif
 
 NAMESPACE_BEGIN(Grid);
@@ -35,14 +35,6 @@ template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
   ComplexD nrm = innerProduct(arg,arg);
   return real(nrm); 
 }
-
-#ifdef GRID_NVCC
-template<class T, class R>
-struct innerProductFunctor : public thrust::binary_function<T,T,R>
-{
-  accelerator R operator()(T x, T y) { return innerProduct(x,y); }
-};
-#endif
 
 // Double inner product
 template<class vobj>
@@ -59,14 +51,22 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
 
 #ifdef GRID_NVCC
 
+  const uint64_t nsimd = grid->Nsimd();
+  const uint64_t sites = nsimd * grid->oSites();
+  
   typedef decltype(innerProduct(left_v[0],right_v[0])) inner_t;
-  thrust::plus<inner_t> binary_sum;
-  innerProductFunctor<vobj,inner_t> binary_inner_p;
-  Integer sN = left_v.end();
-  inner_t zero = Zero();
-  // is there a way of using the efficient thrust reduction while maintaining memory coalescing?
-  inner_t vnrm = thrust::inner_product(thrust::device, &left_v[0], &left_v[sN], &right_v[0], zero, binary_sum, binary_inner_p);
-  nrm = Reduce(TensorRemove(vnrm));// sum across simd
+  Lattice<inner_t> inner_tmp(grid);
+  auto inner_tmp_v = inner_tmp.View();
+  
+  accelerator_loopN( sss, sites ,{
+    uint64_t lane = sss % nsimd;
+    uint64_t ss   = sss / nsimd;
+    auto x_l = extractLane(lane,left_v[ss]);
+    auto y_l = extractLane(lane,right_v[ss]);
+    insertLane(lane,inner_tmp_v[ss],innerProduct(x_l,y_l));
+  })
+  
+  nrm = TensorRemove(reduce(inner_tmp));
   
 #else
   
@@ -126,13 +126,8 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   const uint64_t sites = nsimd * grid->oSites();
   
   typedef decltype(innerProductD(x_v[0],x_v[0])) inner_t;
-  typedef typename inner_t::scalar_object::Realified real_scalar_type;
-  // inner_tmp is the buffer for the norm computed with a thrust reduction
-  // if the reduction were performed with extractLane instead,
-  // it would be better to create a lattice object built on
-  // a new realified grid
-  Vector<real_scalar_type> inner_tmp(sites);
-  real_scalar_type *inner_tmp_v = &inner_tmp[0];
+  Lattice<inner_t> inner_tmp(grid);
+  auto inner_tmp_v = inner_tmp.View();
   
   accelerator_loopN( sss, sites ,{
     uint64_t lane = sss % nsimd;
@@ -142,11 +137,10 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
     auto y_l = extractLane(lane,y_v[ss]);
     x_l = a*x_l+b*y_l;
     insertLane(lane,z_v[ss],x_l);
-    inner_tmp_v[sss] = real(TensorRemove(innerProductD(x_l,x_l)));
+    insertLane(lane,inner_tmp_v[ss],innerProductD(x_l,x_l));
   });
   
-  thrust::plus<real_scalar_type> binary_sum;
-  nrm = thrust::reduce(thrust::device, &inner_tmp_v[0], &inner_tmp_v[sites], 0., binary_sum);
+  nrm = real(TensorRemove(reduce(inner_tmp)));
   
 #else
   
@@ -214,6 +208,9 @@ inline auto sum(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr)
 template<class vobj>
 inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
 {
+#ifdef GRID_NVCC
+  return reduce(arg);
+#else
   GridBase *grid=arg.Grid();
   int Nsimd = grid->Nsimd();
   
@@ -250,6 +247,7 @@ inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
   arg.Grid()->GlobalSum(ssum);
   
   return ssum;
+#endif
 }
 
 
