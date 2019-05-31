@@ -240,25 +240,27 @@ static int Grid_is_initialised;
 // Reinit guard
 /////////////////////////////////////////////////////////
 #ifdef GRID_NVCC
+cudaDeviceProp *gpu_props;
+
 void GridGpuInit(void)
 {
   int nDevices;
 
   cudaGetDeviceCount(&nDevices);
+  gpu_props = new cudaDeviceProp[nDevices];
   for (int i = 0; i < nDevices; i++) {
-    cudaDeviceProp prop;
-    cudaGetDeviceProperties(&prop, i);
+    cudaGetDeviceProperties(&gpu_props[i], i);
     printf("Device Number: %d\n", i);
-    printf("  Device name: %s\n", prop.name);
+    printf("  Device name: %s\n", gpu_props[i].name);
     printf("  Memory Clock Rate (KHz): %d\n",
-           prop.memoryClockRate);
+           gpu_props[i].memoryClockRate);
     printf("  Memory Bus Width (bits): %d\n",
-           prop.memoryBusWidth);
+           gpu_props[i].memoryBusWidth);
     printf("  Peak Memory Bandwidth (GB/s): %f\n\n",
-           2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6);
+           2.0*gpu_props[i].memoryClockRate*(gpu_props[i].memoryBusWidth/8)/1.0e6);
 
-#define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("  " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
-#define GPU_PROP(canMapHostMemory)     printf("  " #canMapHostMemory ": %d \n",prop.canMapHostMemory);
+#define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("  " #canMapHostMemory ": " FMT" \n",gpu_props[i].canMapHostMemory);
+#define GPU_PROP(canMapHostMemory)     printf("  " #canMapHostMemory ": %d \n",gpu_props[i].canMapHostMemory);
     GPU_PROP(canMapHostMemory);
     GPU_PROP(canUseHostPointerForRegisteredMem);
     GPU_PROP(globalL1CacheSupported);
