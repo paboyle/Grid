@@ -2,11 +2,12 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MIO/LoadEigenPack.cc
+Source file: Hadrons/Modules/MContraction/WeakMesonDecayKl2.cc
 
-Copyright (C) 2015-2019
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Vera Guelpers <Vera.Guelpers@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,13 +26,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Hadrons/Modules/MIO/LoadEigenPack.hpp>
+#include <Hadrons/Modules/MContraction/WeakMesonDecayKl2.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
-using namespace MIO;
+using namespace MContraction;
 
-template class Grid::Hadrons::MIO::TLoadEigenPack<FermionEigenPack<FIMPL>, GIMPL>;
-#ifdef GRID_DEFAULT_PRECISION_DOUBLE
-template class Grid::Hadrons::MIO::TLoadEigenPack<FermionEigenPack<FIMPL, FIMPLF>, GIMPL>;
-#endif
+template class Grid::Hadrons::MContraction::TWeakMesonDecayKl2<FIMPL>;
+

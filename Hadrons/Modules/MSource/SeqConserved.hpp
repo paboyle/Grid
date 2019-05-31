@@ -104,6 +104,7 @@ private:
 };
 
 MODULE_REGISTER_TMP(SeqConserved, TSeqConserved<FIMPL>, MSource);
+MODULE_REGISTER_TMP(ZSeqConserved, TSeqConserved<ZFIMPL>, MSource);
 
 
 /******************************************************************************

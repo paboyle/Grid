@@ -60,6 +60,9 @@ int main (int argc, char ** argv)
   std::cout<< "* Testing we can gauge fix steep descent a RGT of Unit gauge    *" <<std::endl;
   std::cout<< "*****************************************************************" <<std::endl;
 
+  //  int coulomb_dir = -1;
+  int coulomb_dir = Nd-1;
+
   LatticeGaugeField   Umu(&GRID);
   LatticeGaugeField   Urnd(&GRID);
   LatticeGaugeField   Uorg(&GRID);
@@ -68,6 +71,7 @@ int main (int argc, char ** argv)
 
   LatticeColourMatrix   xform1(&GRID); // Gauge xform
   LatticeColourMatrix   xform2(&GRID); // Gauge xform
+  LatticeColourMatrix   xform3(&GRID); // Gauge xform
   
   SU3::ColdConfiguration(pRNG,Umu); // Unit gauge
   Uorg=Umu;
@@ -127,6 +131,22 @@ int main (int argc, char ** argv)
   plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
   std::cout << " Final plaquette "<<plaq << std::endl;
 
+  std::cout<< "*****************************************************************" <<std::endl;
+  std::cout<< "* Testing Fourier accelerated fixing to coulomb gauge           *" <<std::endl;
+  std::cout<< "*****************************************************************" <<std::endl;
+
+  Umu=Urnd;
+  SU3::HotConfiguration(pRNG,Umu); // Unit gauge
+
+  plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
+  std::cout << " Initial plaquette "<<plaq << std::endl;
+
+  FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(Umu,xform3,alpha,10000,1.0e-12, 1.0e-12,true,coulomb_dir);
+
+  std::cout << Umu<<std::endl;
+
+  plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
+  std::cout << " Final plaquette "<<plaq << std::endl;
 
   Grid_finalize();
 }

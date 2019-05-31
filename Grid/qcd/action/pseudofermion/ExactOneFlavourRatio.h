@@ -58,13 +58,29 @@ namespace QCD{
       bool use_heatbath_forecasting;
       AbstractEOFAFermion<Impl>& Lop; // the basic LH operator
       AbstractEOFAFermion<Impl>& Rop; // the basic RH operator
-      SchurRedBlackDiagMooeeSolve<FermionField> Solver;
+      SchurRedBlackDiagMooeeSolve<FermionField> SolverHB;
+      SchurRedBlackDiagMooeeSolve<FermionField> SolverL;
+      SchurRedBlackDiagMooeeSolve<FermionField> SolverR;
+      SchurRedBlackDiagMooeeSolve<FermionField> DerivativeSolverL;
+      SchurRedBlackDiagMooeeSolve<FermionField> DerivativeSolverR;
       FermionField Phi; // the pseudofermion field for this trajectory
 
     public:
-      ExactOneFlavourRatioPseudoFermionAction(AbstractEOFAFermion<Impl>& _Lop, AbstractEOFAFermion<Impl>& _Rop,
-        OperatorFunction<FermionField>& S, Params& p, bool use_fc=false) : Lop(_Lop), Rop(_Rop), 
-        Solver(S, false, true), Phi(_Lop.FermionGrid()), param(p), use_heatbath_forecasting(use_fc)
+      ExactOneFlavourRatioPseudoFermionAction(AbstractEOFAFermion<Impl>& _Lop, 
+					      AbstractEOFAFermion<Impl>& _Rop,
+					      OperatorFunction<FermionField>& HeatbathCG, 
+					      OperatorFunction<FermionField>& ActionCGL, OperatorFunction<FermionField>& ActionCGR, 
+					      OperatorFunction<FermionField>& DerivCGL , OperatorFunction<FermionField>& DerivCGR, 
+					      Params& p, 
+					      bool use_fc=false) : 
+        Lop(_Lop), 
+	Rop(_Rop), 
+	SolverHB(HeatbathCG,false,true),
+	SolverL(ActionCGL, false, true), SolverR(ActionCGR, false, true), 
+	DerivativeSolverL(DerivCGL, false, true), DerivativeSolverR(DerivCGR, false, true), 
+	Phi(_Lop.FermionGrid()), 
+	param(p), 
+        use_heatbath_forecasting(use_fc)
       {
         AlgRemez remez(param.lo, param.hi, param.precision);
 
@@ -98,6 +114,9 @@ namespace QCD{
       // We generate a Gaussian noise vector \eta, and then compute
       //  \Phi = M_{\rm EOFA}^{-1/2} * \eta
       // using a rational approximation to the inverse square root
+      //
+      // As a check of rational require \Phi^dag M_{EOFA} \Phi == eta^dag M^-1/2^dag M M^-1/2 eta = eta^dag eta
+      //
       virtual void refresh(const GaugeField& U, GridParallelRNG& pRNG)
       {
         Lop.ImportGauge(U);
@@ -118,7 +137,6 @@ namespace QCD{
         RealD scale = std::sqrt(0.5);
         gaussian(pRNG,eta);
         eta = eta * scale;
-        printf("Heatbath source vector: <\\eta|\\eta> = %1.15e\n", norm2(eta));
 
         // \Phi = ( \alpha_{0} + \sum_{k=1}^{N_{p}} \alpha_{l} * \gamma_{l} ) * \eta
         RealD N(PowerNegHalf.norm);
@@ -139,11 +157,11 @@ namespace QCD{
           if(use_heatbath_forecasting){ // Forecast CG guess using solutions from previous poles
             Lop.Mdag(CG_src, Forecast_src);
             CG_soln = Forecast(Lop, Forecast_src, prev_solns);
-            Solver(Lop, CG_src, CG_soln);
+            SolverHB(Lop, CG_src, CG_soln);
             prev_solns.push_back(CG_soln);
           } else {
             CG_soln = zero; // Just use zero as the initial guess
-            Solver(Lop, CG_src, CG_soln);
+            SolverHB(Lop, CG_src, CG_soln);
           }
           Lop.Dtilde(CG_soln, tmp[0]); // We actually solved Cayley preconditioned system: transform back
           tmp[1] = tmp[1] + ( PowerNegHalf.residues[k]*gamma_l*gamma_l*Lop.k ) * tmp[0];
@@ -166,11 +184,11 @@ namespace QCD{
           if(use_heatbath_forecasting){
             Rop.Mdag(CG_src, Forecast_src);
             CG_soln = Forecast(Rop, Forecast_src, prev_solns);
-            Solver(Rop, CG_src, CG_soln);
+            SolverHB(Rop, CG_src, CG_soln);
             prev_solns.push_back(CG_soln);
           } else {
             CG_soln = zero;
-            Solver(Rop, CG_src, CG_soln);
+            SolverHB(Rop, CG_src, CG_soln);
           }
           Rop.Dtilde(CG_soln, tmp[0]); // We actually solved Cayley preconditioned system: transform back
           tmp[1] = tmp[1] - ( PowerNegHalf.residues[k]*gamma_l*gamma_l*Rop.k ) * tmp[0];
@@ -182,7 +200,46 @@ namespace QCD{
         // Reset shift coefficients for energy and force evals
         Lop.RefreshShiftCoefficients(0.0);
         Rop.RefreshShiftCoefficients(-1.0);
+
+	// Bounds check
+	RealD EtaDagEta = norm2(eta);
+	//	RealD PhiDagMPhi= norm2(eta);
+
       };
+
+      void Meofa(const GaugeField& U,const FermionField &phi, FermionField & Mphi) 
+      {
+#if 0
+        Lop.ImportGauge(U);
+        Rop.ImportGauge(U);
+
+        FermionField spProj_Phi(Lop.FermionGrid());
+	FermionField mPhi(Lop.FermionGrid());
+        std::vector<FermionField> tmp(2, Lop.FermionGrid());
+	mPhi = phi;
+	
+        // LH term: S = S - k <\Phi| P_{-} \Omega_{-}^{\dagger} H(mf)^{-1} \Omega_{-} P_{-} |\Phi>
+        spProj(Phi, spProj_Phi, -1, Lop.Ls);
+        Lop.Omega(spProj_Phi, tmp[0], -1, 0);
+        G5R5(tmp[1], tmp[0]);
+        tmp[0] = zero;
+        SolverL(Lop, tmp[1], tmp[0]);
+        Lop.Dtilde(tmp[0], tmp[1]); // We actually solved Cayley preconditioned system: transform back
+        Lop.Omega(tmp[1], tmp[0], -1, 1);
+	mPhi = mPhi -  Lop.k * innerProduct(spProj_Phi, tmp[0]).real();
+
+        // RH term: S = S + k <\Phi| P_{+} \Omega_{+}^{\dagger} ( H(mb)
+        //               - \Delta_{+}(mf,mb) P_{+} )^{-1} \Omega_{-} P_{-} |\Phi>
+        spProj(Phi, spProj_Phi, 1, Rop.Ls);
+        Rop.Omega(spProj_Phi, tmp[0], 1, 0);
+        G5R5(tmp[1], tmp[0]);
+        tmp[0] = zero;
+        SolverR(Rop, tmp[1], tmp[0]);
+        Rop.Dtilde(tmp[0], tmp[1]);
+        Rop.Omega(tmp[1], tmp[0], 1, 1);
+        action += Rop.k * innerProduct(spProj_Phi, tmp[0]).real();
+#endif
+      }
 
       // EOFA action: see Eqn. (10) of arXiv:1706.05843
       virtual RealD S(const GaugeField& U)
@@ -201,7 +258,7 @@ namespace QCD{
         Lop.Omega(spProj_Phi, tmp[0], -1, 0);
         G5R5(tmp[1], tmp[0]);
         tmp[0] = zero;
-        Solver(Lop, tmp[1], tmp[0]);
+        SolverL(Lop, tmp[1], tmp[0]);
         Lop.Dtilde(tmp[0], tmp[1]); // We actually solved Cayley preconditioned system: transform back
         Lop.Omega(tmp[1], tmp[0], -1, 1);
         action -= Lop.k * innerProduct(spProj_Phi, tmp[0]).real();
@@ -212,7 +269,7 @@ namespace QCD{
         Rop.Omega(spProj_Phi, tmp[0], 1, 0);
         G5R5(tmp[1], tmp[0]);
         tmp[0] = zero;
-        Solver(Rop, tmp[1], tmp[0]);
+        SolverR(Rop, tmp[1], tmp[0]);
         Rop.Dtilde(tmp[0], tmp[1]);
         Rop.Omega(tmp[1], tmp[0], 1, 1);
         action += Rop.k * innerProduct(spProj_Phi, tmp[0]).real();
@@ -245,7 +302,7 @@ namespace QCD{
         Lop.Omega(spProj_Phi, Omega_spProj_Phi, -1, 0);
         G5R5(CG_src, Omega_spProj_Phi);
         spProj_Phi = zero;
-        Solver(Lop, CG_src, spProj_Phi);
+        DerivativeSolverL(Lop, CG_src, spProj_Phi);
         Lop.Dtilde(spProj_Phi, Chi);
         G5R5(g5_R5_Chi, Chi);
         Lop.MDeriv(force, g5_R5_Chi, Chi, DaggerNo);
@@ -257,7 +314,7 @@ namespace QCD{
         Rop.Omega(spProj_Phi, Omega_spProj_Phi, 1, 0);
         G5R5(CG_src, Omega_spProj_Phi);
         spProj_Phi = zero;
-        Solver(Rop, CG_src, spProj_Phi);
+        DerivativeSolverR(Rop, CG_src, spProj_Phi);
         Rop.Dtilde(spProj_Phi, Chi);
         G5R5(g5_R5_Chi, Chi);
         Lop.MDeriv(force, g5_R5_Chi, Chi, DaggerNo);

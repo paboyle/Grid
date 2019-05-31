@@ -31,6 +31,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 namespace Grid {
 namespace QCD {
 
+
 template <class Gimpl> 
 class FourierAcceleratedGaugeFixer  : public Gimpl {
  public:
@@ -45,18 +46,21 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
       A[mu] = Ta(U[mu]) * cmi;
     }
   }
-  static void DmuAmu(const std::vector<GaugeMat> &A,GaugeMat &dmuAmu) {
+  static void DmuAmu(const std::vector<GaugeMat> &A,GaugeMat &dmuAmu,int orthog) {
     dmuAmu=zero;
     for(int mu=0;mu<Nd;mu++){
-      dmuAmu = dmuAmu + A[mu] - Cshift(A[mu],mu,-1);
+      if ( mu != orthog ) {
+	dmuAmu = dmuAmu + A[mu] - Cshift(A[mu],mu,-1);
+      }
     }
   }  
-  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false) {
+
+  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false,int orthog=-1) {
     GridBase *grid = Umu._grid;
     GaugeMat xform(grid);
-    SteepestDescentGaugeFix(Umu,xform,alpha,maxiter,Omega_tol,Phi_tol,Fourier);
+    SteepestDescentGaugeFix(Umu,xform,alpha,maxiter,Omega_tol,Phi_tol,Fourier,orthog);
   }
-  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,GaugeMat &xform,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false) {
+  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,GaugeMat &xform,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false,int orthog=-1) {
 
     GridBase *grid = Umu._grid;
 
@@ -71,15 +75,29 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
 
     GaugeMat dmuAmu(grid);
 
+    {
+      Real plaq      =WilsonLoops<Gimpl>::avgPlaquette(Umu);
+      Real link_trace=WilsonLoops<Gimpl>::linkTrace(Umu); 
+      if( (orthog>=0) && (orthog<Nd) ){
+	std::cout << GridLogMessage << " Gauge fixing to Coulomb gauge time="<<orthog<< " plaq= "<<plaq<<" link trace = "<<link_trace<<  std::endl;
+      } else { 
+	std::cout << GridLogMessage << " Gauge fixing to Landau gauge plaq= "<<plaq<<" link trace = "<<link_trace<<  std::endl;
+      }
+    }
     for(int i=0;i<maxiter;i++){
 
       for(int mu=0;mu<Nd;mu++) U[mu]= PeekIndex<LorentzIndex>(Umu,mu);
 
       if ( Fourier==false ) { 
-	trG = SteepestDescentStep(U,xform,alpha,dmuAmu);
+	trG = SteepestDescentStep(U,xform,alpha,dmuAmu,orthog);
       } else { 
-	trG = FourierAccelSteepestDescentStep(U,xform,alpha,dmuAmu);
+	trG = FourierAccelSteepestDescentStep(U,xform,alpha,dmuAmu,orthog);
       }
+
+      //      std::cout << GridLogMessage << "trG   "<< trG<< std::endl;
+      //      std::cout << GridLogMessage << "xform "<< norm2(xform)<< std::endl;
+      //      std::cout << GridLogMessage << "dmuAmu "<< norm2(dmuAmu)<< std::endl;
+
       for(int mu=0;mu<Nd;mu++) PokeIndex<LorentzIndex>(Umu,U[mu],mu);
       // Monitor progress and convergence test 
       // infrequently to minimise cost overhead
@@ -106,14 +124,14 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
       }
     }
   };
-  static Real SteepestDescentStep(std::vector<GaugeMat> &U,GaugeMat &xform,Real & alpha, GaugeMat & dmuAmu) {
+  static Real SteepestDescentStep(std::vector<GaugeMat> &U,GaugeMat &xform,Real & alpha, GaugeMat & dmuAmu,int orthog) {
     GridBase *grid = U[0]._grid;
 
     std::vector<GaugeMat> A(Nd,grid);
     GaugeMat g(grid);
 
     GaugeLinkToLieAlgebraField(U,A);
-    ExpiAlphaDmuAmu(A,g,alpha,dmuAmu);
+    ExpiAlphaDmuAmu(A,g,alpha,dmuAmu,orthog);
 
 
     Real vol = grid->gSites();
@@ -125,7 +143,7 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
     return trG;
   }
 
-  static Real FourierAccelSteepestDescentStep(std::vector<GaugeMat> &U,GaugeMat &xform,Real & alpha, GaugeMat & dmuAmu) {
+  static Real FourierAccelSteepestDescentStep(std::vector<GaugeMat> &U,GaugeMat &xform,Real & alpha, GaugeMat & dmuAmu,int orthog) {
 
     GridBase *grid = U[0]._grid;
 
@@ -144,31 +162,41 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
 
     GaugeLinkToLieAlgebraField(U,A);
 
-    DmuAmu(A,dmuAmu);
+    DmuAmu(A,dmuAmu,orthog);
 
-    theFFT.FFT_all_dim(dmuAmu_p,dmuAmu,FFT::forward);
+    std::vector<int> mask(Nd,1);
+    for(int mu=0;mu<Nd;mu++) if (mu==orthog) mask[mu]=0;
+    theFFT.FFT_dim_mask(dmuAmu_p,dmuAmu,mask,FFT::forward);
 
     //////////////////////////////////
     // Work out Fp = psq_max/ psq...
+    // Avoid singularities in Fp
     //////////////////////////////////
     std::vector<int> latt_size = grid->GlobalDimensions();
     std::vector<int> coor(grid->_ndimension,0);
     for(int mu=0;mu<Nd;mu++) {
-
-      Real TwoPiL =  M_PI * 2.0/ latt_size[mu];
-      LatticeCoordinate(pmu,mu);
-      pmu = TwoPiL * pmu ;
-      psq = psq + 4.0*sin(pmu*0.5)*sin(pmu*0.5); 
+      if ( mu != orthog ) { 
+	Real TwoPiL =  M_PI * 2.0/ latt_size[mu];
+	LatticeCoordinate(pmu,mu);
+	pmu = TwoPiL * pmu ;
+	psq = psq + 4.0*sin(pmu*0.5)*sin(pmu*0.5); 
+      }
     }
 
     Complex psqMax(16.0);
     Fp =  psqMax*one/psq;
 
-    pokeSite(TComplex(1.0),Fp,coor);
-
+    pokeSite(TComplex(16.0),Fp,coor);
+    if( (orthog>=0) && (orthog<Nd) ){
+      for(int t=0;t<grid->GlobalDimensions()[orthog];t++){
+	coor[orthog]=t;
+	pokeSite(TComplex(16.0),Fp,coor);
+      }
+    }
+    
     dmuAmu_p  = dmuAmu_p * Fp; 
 
-    theFFT.FFT_all_dim(dmuAmu,dmuAmu_p,FFT::backward);
+    theFFT.FFT_dim_mask(dmuAmu,dmuAmu_p,mask,FFT::backward);
 
     GaugeMat ciadmam(grid);
     Complex cialpha(0.0,-alpha);
@@ -183,11 +211,11 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
     return trG;
   }
 
-  static void ExpiAlphaDmuAmu(const std::vector<GaugeMat> &A,GaugeMat &g,Real & alpha, GaugeMat &dmuAmu) {
+  static void ExpiAlphaDmuAmu(const std::vector<GaugeMat> &A,GaugeMat &g,Real & alpha, GaugeMat &dmuAmu,int orthog) {
     GridBase *grid = g._grid;
     Complex cialpha(0.0,-alpha);
     GaugeMat ciadmam(grid);
-    DmuAmu(A,dmuAmu);
+    DmuAmu(A,dmuAmu,orthog);
     ciadmam = dmuAmu*cialpha;
     SU<Nc>::taExp(ciadmam,g);
   }  

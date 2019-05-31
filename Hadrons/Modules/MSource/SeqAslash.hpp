@@ -2,12 +2,13 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MSource/SeqGamma.hpp
+Source file: Hadrons/Modules/MSource/SeqAslash.hpp
 
-Copyright (C) 2015-2019
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Lanny91 <andrew.lawson@gmail.com>
+Author: Vera Guelpers <Vera.Guelpers@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -27,8 +28,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_MSource_SeqGamma_hpp_
-#define Hadrons_MSource_SeqGamma_hpp_
+#ifndef Hadrons_MSource_SeqAslash_hpp_
+#define Hadrons_MSource_SeqAslash_hpp_
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
@@ -40,43 +41,45 @@ BEGIN_HADRONS_NAMESPACE
  
  Sequential source
  -----------------------------
- * src_x = q_x * theta(x_3 - tA) * theta(tB - x_3) * gamma * exp(i x.mom)
+ * src_x = q_x * theta(x_3 - tA) * theta(tB - x_3) * i * A_mu g_mu * exp(i x.mom)
  
  * options:
  - q: input propagator (string)
  - tA: begin timeslice (integer)
  - tB: end timesilce (integer)
- - gamma: gamma product to insert (integer)
+ - emField: input photon field (string)
  - mom: momentum insertion, space-separated float sequence (e.g ".1 .2 1. 0.")
  
  */
 
 /******************************************************************************
- *                         SeqGamma                                 *
+ *                         SeqAslash                             *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MSource)
 
-class SeqGammaPar: Serializable
+class SeqAslashPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(SeqGammaPar,
+    GRID_SERIALIZABLE_CLASS_MEMBERS(SeqAslashPar,
                                     std::string,    q,
                                     unsigned int,   tA,
                                     unsigned int,   tB,
-                                    Gamma::Algebra, gamma,
+                                    std::string,    emField,
                                     std::string,    mom);
 };
 
 template <typename FImpl>
-class TSeqGamma: public Module<SeqGammaPar>
+class TSeqAslash: public Module<SeqAslashPar>
 {
 public:
     FERM_TYPE_ALIASES(FImpl,);
 public:
+    typedef PhotonR::GaugeField     EmField;
+public:
     // constructor
-    TSeqGamma(const std::string name);
+    TSeqAslash(const std::string name);
     // destructor
-    virtual ~TSeqGamma(void) {};
+    virtual ~TSeqAslash(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -90,31 +93,30 @@ private:
     std::string momphName_, tName_;
 };
 
-MODULE_REGISTER_TMP(SeqGamma, TSeqGamma<FIMPL>, MSource);
-MODULE_REGISTER_TMP(ZSeqGamma, TSeqGamma<ZFIMPL>, MSource);
+MODULE_REGISTER_TMP(SeqAslash, TSeqAslash<FIMPL>, MSource);
 
 /******************************************************************************
- *                         TSeqGamma implementation                           *
+ *                         TSeqAslash implementation                           *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TSeqGamma<FImpl>::TSeqGamma(const std::string name)
-: Module<SeqGammaPar>(name)
+TSeqAslash<FImpl>::TSeqAslash(const std::string name)
+: Module<SeqAslashPar>(name)
 , momphName_ (name + "_momph")
 , tName_ (name + "_t")
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
-std::vector<std::string> TSeqGamma<FImpl>::getInput(void)
+std::vector<std::string> TSeqAslash<FImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().q};
+    std::vector<std::string> in = {par().q,par().emField};
     
     return in;
 }
 
 template <typename FImpl>
-std::vector<std::string> TSeqGamma<FImpl>::getOutput(void)
+std::vector<std::string> TSeqAslash<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -123,7 +125,7 @@ std::vector<std::string> TSeqGamma<FImpl>::getOutput(void)
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TSeqGamma<FImpl>::setup(void)
+void TSeqAslash<FImpl>::setup(void)
 {
     envCreateLat(PropagatorField, getName());
     envCache(Lattice<iScalar<vInteger>>, tName_, 1, envGetGrid(LatticeComplex));
@@ -133,25 +135,24 @@ void TSeqGamma<FImpl>::setup(void)
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TSeqGamma<FImpl>::execute(void)
+void TSeqAslash<FImpl>::execute(void)
 {
     if (par().tA == par().tB)
     {
-        LOG(Message) << "Generating gamma_" << par().gamma
-                     << " sequential source at t= " << par().tA << std::endl;
+        LOG(Message) << "Generating Aslash sequential source at t= " << par().tA 
+		     << " using the photon field " << par().emField << std::endl; 
     }
     else
     {
-        LOG(Message) << "Generating gamma_" << par().gamma
-                     << " sequential source for "
-                     << par().tA << " <= t <= " << par().tB << std::endl;
+        LOG(Message) << "Generating Aslash sequential source for "
+                     << par().tA << " <= t <= " << par().tB 
+		     << " using the photon field " << par().emField << std::endl;
     }
-    auto  &src = envGet(PropagatorField, getName());
+    auto  &src = envGet(PropagatorField, getName()); src=zero;
     auto  &q   = envGet(PropagatorField, par().q);
     auto  &ph  = envGet(LatticeComplex, momphName_);
     auto  &t   = envGet(Lattice<iScalar<vInteger>>, tName_);
-    Gamma g(par().gamma);
-    
+
     if (!hasPhase_)
     {
         Complex           i(0.0,1.0);
@@ -169,11 +170,17 @@ void TSeqGamma<FImpl>::execute(void)
         LatticeCoordinate(t, Tp);
         hasPhase_ = true;
     }
-    src = where((t >= par().tA) and (t <= par().tB), ph*(g*q), 0.*q);
+    auto &stoch_photon = envGet(EmField,  par().emField);
+    Complex ci(0.0,1.0);
+    for(unsigned int mu=0;mu<=3;mu++)
+    {
+	Gamma gmu(Gamma::gmu[mu]);
+	src = src + where((t >= par().tA) and (t <= par().tB), ci * PeekIndex<LorentzIndex>(stoch_photon, mu) *ph*(gmu*q), 0.*q);
+    }
 }
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MSource_SeqGamma_hpp_
+#endif // Hadrons_MSource_SeqAslash_hpp_

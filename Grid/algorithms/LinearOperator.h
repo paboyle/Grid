@@ -178,7 +178,7 @@ namespace Grid {
     //////////////////////////////////////////////////////////
 
     template<class Field>
-      class SchurOperatorBase :  public LinearOperatorBase<Field> {
+    class SchurOperatorBase :  public LinearOperatorBase<Field> {
     public:
       virtual  RealD Mpc      (const Field &in, Field &out) =0;
       virtual  RealD MpcDag   (const Field &in, Field &out) =0;
@@ -211,10 +211,9 @@ namespace Grid {
       }
     };
     template<class Matrix,class Field>
-      class SchurDiagMooeeOperator :  public SchurOperatorBase<Field> {
-    protected:
-      Matrix &_Mat;
+    class SchurDiagMooeeOperator :  public SchurOperatorBase<Field> {
     public:
+      Matrix &_Mat;
       SchurDiagMooeeOperator (Matrix &Mat): _Mat(Mat){};
       virtual  RealD Mpc      (const Field &in, Field &out) {
       Field tmp(in._grid);

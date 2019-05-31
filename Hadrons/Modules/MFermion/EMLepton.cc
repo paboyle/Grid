@@ -2,11 +2,11 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MIO/LoadEigenPack.cc
+Source file: Hadrons/Modules/MFermion/EMLepton.cc
 
 Copyright (C) 2015-2019
 
-Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Vera Guelpers <Vera.Guelpers@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,13 +25,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Hadrons/Modules/MIO/LoadEigenPack.hpp>
+#include <Hadrons/Modules/MFermion/EMLepton.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
-using namespace MIO;
+using namespace MFermion;
 
-template class Grid::Hadrons::MIO::TLoadEigenPack<FermionEigenPack<FIMPL>, GIMPL>;
-#ifdef GRID_DEFAULT_PRECISION_DOUBLE
-template class Grid::Hadrons::MIO::TLoadEigenPack<FermionEigenPack<FIMPL, FIMPLF>, GIMPL>;
-#endif
+template class Grid::Hadrons::MFermion::TEMLepton<FIMPL>;
+
