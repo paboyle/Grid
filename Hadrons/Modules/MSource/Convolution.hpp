@@ -16,8 +16,8 @@ class ConvolutionPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(ConvolutionPar,
-                                    std::string, field1,
-                                    std::string, field2,
+                                    std::string, field,
+                                    std::string, filter,
                                     std::string, mom);
 };
 
@@ -57,7 +57,7 @@ TConvolution<FImpl>::TConvolution(const std::string name)
 template <typename FImpl>
 std::vector<std::string> TConvolution<FImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().field1, par().field2};
+    std::vector<std::string> in = {par().field, par().filter};
     
     return in;
 }
@@ -82,7 +82,7 @@ void TConvolution<FImpl>::setup(void)
      }
 
     envCreateLat(PropagatorField, getName());
-    envTmpLat(ComplexField, "momfield1");
+    envTmpLat(ComplexField, "momfield");
     envTmp(FFT, "fft", 1, env().getGrid());
 }
 
@@ -90,22 +90,22 @@ void TConvolution<FImpl>::setup(void)
 template <typename FImpl>
 void TConvolution<FImpl>::execute(void)
 {
-    auto &field1 = envGet(ComplexField, par().field1);
-    auto &field2 = envGet(PropagatorField, par().field2);
+    auto &filter = envGet(ComplexField, par().filter);
+    auto &field  = envGet(PropagatorField, par().field);
     auto &out    = envGet(PropagatorField, getName());
-    envGetTmp(ComplexField, momfield1);
+    envGetTmp(ComplexField, momfield);
     envGetTmp(FFT, fft);
 
     std::vector<int> mask(env().getNd(), 1);
     mask.back()=0; //transform only the spatial dimensions
 
     startTimer("Fourier transform");
-    fft.FFT_dim_mask(momfield1, field1, mask, FFT::forward);
-    fft.FFT_dim_mask(out,       field2, mask, FFT::forward);
+    fft.FFT_dim_mask(momfield, filter, mask, FFT::forward);
+    fft.FFT_dim_mask(out,      field, mask, FFT::forward);
     stopTimer("Fourier transform");
 
     startTimer("momentum-space multiplication");
-    out=momfield1*out;
+    out=momfield*out;
     stopTimer("momentum-space multiplication");
 
     startTimer("inserting momentum");
