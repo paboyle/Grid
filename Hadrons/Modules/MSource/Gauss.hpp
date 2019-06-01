@@ -11,6 +11,7 @@ BEGIN_HADRONS_NAMESPACE
  *                         Gauss                                              *
  * result[n] = 1/(sqrt(2*pi)*width)^dim                                       *
  *            * exp(-|n-position|^2/(2*width^2))                              *
+ *            * exp(i*2*pi/L*mom*n)                                           *
  * where:                                                                     *
  *   n=(n[0],n[1],...,n[dim-1])  (lattice coordinate)                         *
  *   dim=Nd-1                                                                 *
@@ -22,6 +23,7 @@ class GaussPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(GaussPar,
                                     std::string, position,
+                                    std::string, mom,
                                     double,      width);
 };
 
@@ -43,9 +45,11 @@ public:
     virtual void execute(void);
 private:
     std::vector<int> position_;
+    std::vector<int> mom_;
 };
 
 MODULE_REGISTER_TMP(Gauss, TGauss<FIMPL>, MSource);
+MODULE_REGISTER_TMP(ScalarGauss, TGauss<ScalarImplCR>, MSource);
 
 /******************************************************************************
  *                 TGauss implementation                             *
@@ -77,40 +81,79 @@ std::vector<std::string> TGauss<FImpl>::getOutput(void)
 template <typename FImpl>
 void TGauss<FImpl>::setup(void)
 {
-     position_ = strToVec<int>(par().position);
-     if(position_.size() != env().getNd()-1) {
-         HADRONS_ERROR(Size, std::string("position has ")
-                 + std::to_string(position_.size()) + " instead of "
-                 + std::to_string(env().getNd()-1) + " components");
-     }
+    auto parse_vector = [](const std::string &vec, int dim,
+            const std::string &desc)
+    {
+        std::vector<int> res = strToVec<int>(vec);
+        if(res.size() != dim) {
+            HADRONS_ERROR(Size, desc + " has "
+                    + std::to_string(res.size()) + " instead of "
+                    + std::to_string(dim) + " components");
+        }
+        return res;
+    };
+    position_ = parse_vector(par().position, env().getNd()-1, "position");
+    mom_      = parse_vector(par().mom,      env().getNd(),   "momentum");
 
-    envCreateLat(ComplexField, getName());
+    envCreateLat(PropagatorField, getName());
     envTmpLat(ComplexField, "component");
+    envTmpLat(ComplexField, "ScalarRho");
+    envTmp(LatticeInteger, "compHelper", 1, envGetGrid(ComplexField));
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TGauss<FImpl>::execute(void)
 {
-    auto &rho = envGet(ComplexField, getName());
+    auto &rho = envGet(PropagatorField, getName());
     envGetTmp(ComplexField, component);
+    envGetTmp(ComplexField, ScalarRho);
+    envGetTmp(LatticeInteger, compHelper);
     const int dim=env().getNd()-1;
-    const double fact=-0.5/std::pow(par().width,2);
+    const Real fact=-0.5/std::pow(par().width,2);
     const Complex i(0.0, 1.0);
+    const SitePropagator idMat=[](){ SitePropagator s; s=1.; return s; }();
 
-    rho=zero;
+    ScalarRho=zero;
     for(int mu=0; mu<dim; mu++) {
-        LatticeCoordinate(component, mu);
-        //FIXME: the next three lines are very inefficient...
-        //       should not need any communication (Cshift) here
         assert(env().getDim(mu)%2==0);
-        component-=Complex(env().getDim(mu)/2-1);
-        component=Cshift(component, mu, env().getDim(mu)/2-1 -position_[mu]);
-        rho+=component*component*fact;
-    }
-    rho=exp(rho);
+        assert(position_[mu]>=0 && position_[mu]<env().getDim(mu));
 
-    rho*=static_cast<Complex>(std::pow(sqrt(2*M_PI)*par().width,dim));
+        const int Lmu=env().getDim(mu);
+        const int LmuHalf=Lmu/2;
+        const int posMu=position_[mu];
+        const vTInteger vTLmuHalf=LmuHalf;
+        const vTInteger vTposMu=posMu;
+
+        LatticeCoordinate(component, mu);
+        LatticeCoordinate(compHelper, mu);
+
+        //spatial dimensions of momentum phase
+        ScalarRho+=(i*(mom_[mu]*2*M_PI/Lmu))*component;
+
+        //Gauss distribution
+        component-=Complex(posMu);
+        compHelper-=vTposMu;
+        if(posMu<Lmu/2)
+        {
+            component=where((compHelper>vTLmuHalf),
+                    component-Complex(Lmu),
+                    component);
+        }
+        else
+        {
+            component=where((compHelper<=-vTLmuHalf),
+                    component+Complex(Lmu),
+                    component);
+        }
+        ScalarRho+=component*component*fact;
+    }
+
+    //time component of momentum phase
+    LatticeCoordinate(component, dim);
+    ScalarRho+=(i*(mom_.at(dim)*2*M_PI/env().getDim(dim)))*component;
+
+    rho=(exp(ScalarRho)*Complex(std::pow(sqrt(2*M_PI)*par().width,dim)))*idMat;
 }
 
 END_MODULE_NAMESPACE
