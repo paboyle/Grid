@@ -24,6 +24,8 @@ public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(GaussPar,
                                     std::string, position,
                                     std::string, mom,
+                                    int,         tA,
+                                    int,         tB,
                                     double,      width);
 };
 
@@ -152,6 +154,9 @@ void TGauss<FImpl>::execute(void)
     //time component of momentum phase
     LatticeCoordinate(component, dim);
     ScalarRho+=(i*(mom_.at(dim)*2*M_PI/env().getDim(dim)))*component;
+    ScalarRho=where((component>=par().tA && component<=tB),
+          ScalarRho,
+          0.*ScalarRho);
 
     rho=(exp(ScalarRho)*Complex(std::pow(sqrt(2*M_PI)*par().width,dim)))*idMat;
 }
