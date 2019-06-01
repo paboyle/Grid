@@ -269,6 +269,25 @@ static const char * FileExtension = ".dat";
 #endif
 
 /******************************************************************************
+ Case insensitive compare of two strings
+ ******************************************************************************/
+
+bool CompareCaseInsensitive( const std::string &s1, const std::string &s2 ) {
+  auto Len = s1.size();
+  bool bSame{ Len == s2.size() };
+  for( int j = 0; bSame && j < Len; j++ ) {
+    wchar_t c1 = s1[j];
+    if( c1 >= 'a' && c1 <= 'z' )
+      c1 -= 'a' - 'A';
+    wchar_t c2 = s2[j];
+    if( c2 >= 'a' && c1 <= 'z' )
+      c2 -= 'a' - 'A';
+    bSame = ( c1 == c2 );
+  }
+  return bSame;
+}
+
+/******************************************************************************
  NamedTensor object
  This is an Eigen::Tensor of type Scalar_ and rank NumIndices_ (row-major order)
  They can be persisted to disk
@@ -299,7 +318,7 @@ public:
                                   );
 public:
   // Named tensors are intended to be a superset of Eigen tensor
-  inline operator ET&() const { return tensor; }
+  inline operator ET&() { return tensor; }
   template<typename... IndexTypes>
   inline const Scalar_& operator()(const std::array<Eigen::Index, NumIndices_> &Indices) const
   { return tensor.operator()(Indices); }
@@ -506,7 +525,7 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::ReadBinary(const std
       std::string s( l, '?' );
       r.read(&s[0], l);
       // skip forward to matching name
-      while( IndexNames[d].size() > 0 && s != IndexNames[d] )
+      while( IndexNames[d].size() > 0 && !CompareCaseInsensitive( s, IndexNames[d] ) )
         assert(++d < NumIndices && "NamedTensor error: dimension name" );
       if( IndexNames[d].size() == 0 )
         IndexNames[d] = s;
@@ -588,21 +607,8 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::write(const char * f
 template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
 bool NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::ValidateIndexNames( int iNumNames, const std::string * MatchNames ) const {
   bool bSame{ iNumNames == NumIndices_ && IndexNames.size() == NumIndices_ };
-  for( int i = 0; bSame && i < NumIndices_; i++ ) {
-    // Case insensitive name compare
-    const int iMatchLen{ static_cast<int>( MatchNames[i].size() ) };
-    const int iNewLen  { static_cast<int>( IndexNames[i].size() ) };
-    bSame = ( iMatchLen == iNewLen );
-    for( int j = 0; bSame && j < iMatchLen; j++ ) {
-      wchar_t c1 = MatchNames[i][j];
-      if( c1 >= 'a' && c1 <= 'z' )
-        c1 -= 'a' - 'A';
-      wchar_t c2 = IndexNames[i][j];
-      if( c2 >= 'a' && c1 <= 'z' )
-        c2 -= 'a' - 'A';
-      bSame = ( c1 == c2 );
-    }
-  }
+  for( int i = 0; bSame && i < NumIndices_; i++ )
+    bSame = CompareCaseInsensitive( MatchNames[i], IndexNames[i] );
   return bSame;
 }
 

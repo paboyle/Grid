@@ -298,7 +298,7 @@ The easiest way to link to all required libraries is to obtain a list of all lib
 
 and pasting the output ***with `-lGrid -lHadrons ` prepended*** (including the `-l` switches) directly into `OTHER_LDFLAGS`, e.g.:
 
-    -lGrid -lHadrons -lmpi -lhdf5_cpp -lz -lcrypto -llime -lfftw3f -lfftw3 -lmpfr -lgmp -lstdc++ -lm -lz -lhdf5
+    -lGrid -lHadrons -lmpi -lhdf5_cpp -lhdf5 -lz -lcrypto -llime -lfftw3f -lfftw3 -lmpfr -lgmp -lm
 
 ## Make additional configurations
 
