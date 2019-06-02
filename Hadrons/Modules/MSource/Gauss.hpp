@@ -115,6 +115,8 @@ void TGauss<FImpl>::execute(void)
     const Real fact=-0.5/std::pow(par().width,2);
     const Complex i(0.0, 1.0);
     const SitePropagator idMat=[](){ SitePropagator s; s=1.; return s; }();
+    const vTInteger vTtA=par().tA;
+    const vTInteger vTtB=par().tB;
 
     ScalarRho=zero;
     for(int mu=0; mu<dim; mu++) {
@@ -154,11 +156,18 @@ void TGauss<FImpl>::execute(void)
     //time component of momentum phase
     LatticeCoordinate(component, dim);
     ScalarRho+=(i*(mom_.at(dim)*2*M_PI/env().getDim(dim)))*component;
-    ScalarRho=where((component>=par().tA && component<=tB),
+
+    //compute scalar result
+    ScalarRho=exp(ScalarRho)*Complex(std::pow(sqrt(2*M_PI)*par().width,-dim));
+
+    //select time slices
+    LatticeCoordinate(compHelper, dim);
+    ScalarRho=where((compHelper>=vTtA && compHelper<=vTtB),
           ScalarRho,
           0.*ScalarRho);
 
-    rho=(exp(ScalarRho)*Complex(std::pow(sqrt(2*M_PI)*par().width,dim)))*idMat;
+    //compute output field rho
+    rho=ScalarRho*idMat;
 }
 
 END_MODULE_NAMESPACE
