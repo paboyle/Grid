@@ -24,8 +24,8 @@ public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(GaussPar,
                                     std::string, position,
                                     std::string, mom,
-                                    int,         tA,
-                                    int,         tB,
+                                    Integer,     tA,
+                                    Integer,     tB,
                                     double,      width);
 };
 
@@ -115,8 +115,6 @@ void TGauss<FImpl>::execute(void)
     const Real fact=-0.5/std::pow(par().width,2);
     const Complex i(0.0, 1.0);
     const SitePropagator idMat=[](){ SitePropagator s; s=1.; return s; }();
-    const vTInteger vTtA=par().tA;
-    const vTInteger vTtB=par().tB;
 
     ScalarRho=zero;
     for(int mu=0; mu<dim; mu++) {
@@ -126,8 +124,6 @@ void TGauss<FImpl>::execute(void)
         const int Lmu=env().getDim(mu);
         const int LmuHalf=Lmu/2;
         const int posMu=position_[mu];
-        const vTInteger vTLmuHalf=LmuHalf;
-        const vTInteger vTposMu=posMu;
 
         LatticeCoordinate(component, mu);
         LatticeCoordinate(compHelper, mu);
@@ -137,16 +133,15 @@ void TGauss<FImpl>::execute(void)
 
         //Gauss distribution
         component-=Complex(posMu);
-        compHelper-=vTposMu;
-        if(posMu<Lmu/2)
+        if(posMu<LmuHalf)
         {
-            component=where((compHelper>vTLmuHalf),
+            component=where((compHelper>Integer(posMu+LmuHalf)),
                     component-Complex(Lmu),
                     component);
         }
         else
         {
-            component=where((compHelper<=-vTLmuHalf),
+            component=where((compHelper<=Integer(posMu-LmuHalf)),
                     component+Complex(Lmu),
                     component);
         }
@@ -162,7 +157,7 @@ void TGauss<FImpl>::execute(void)
 
     //select time slices
     LatticeCoordinate(compHelper, dim);
-    ScalarRho=where((compHelper>=vTtA && compHelper<=vTtB),
+    ScalarRho=where((compHelper>=par().tA && compHelper<=par().tB),
           ScalarRho,
           0.*ScalarRho);
 
