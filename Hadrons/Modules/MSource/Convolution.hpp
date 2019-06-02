@@ -121,7 +121,6 @@ void TConvolution<FImpl>::execute(void)
     startTimer("Fourier transform");
     fft.FFT_dim_mask(out, out, mask, FFT::backward);
     stopTimer("Fourier transform");
-    {std::ofstream f("tmp_conv"); f << out;}
 }
 
 END_MODULE_NAMESPACE
