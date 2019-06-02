@@ -75,10 +75,10 @@ template <typename FImpl>
 void TConvolution<FImpl>::setup(void)
 {
      mom_ = strToVec<int>(par().mom);
-     if(mom_.size() != env().getNd()-1) {
+     if(mom_.size() != env().getNd()) {
          HADRONS_ERROR(Size, std::string("momentum has ")
                  + std::to_string(mom_.size()) + " instead of "
-                 + std::to_string(env().getNd()-1) + " components");
+                 + std::to_string(env().getNd()) + " components");
      }
 
     envCreateLat(PropagatorField, getName());
@@ -109,7 +109,7 @@ void TConvolution<FImpl>::execute(void)
     stopTimer("momentum-space multiplication");
 
     startTimer("inserting momentum");
-    for(int mu=0; mu<env().getNd()-1; mu++)
+    for(int mu=0; mu<env().getNd(); mu++)
     {
        if(mom_[mu]!=0)
        {
@@ -121,6 +121,7 @@ void TConvolution<FImpl>::execute(void)
     startTimer("Fourier transform");
     fft.FFT_dim_mask(out, out, mask, FFT::backward);
     stopTimer("Fourier transform");
+    {std::ofstream f("tmp_conv"); f << out;}
 }
 
 END_MODULE_NAMESPACE
