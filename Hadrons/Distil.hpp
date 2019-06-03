@@ -269,25 +269,6 @@ static const char * FileExtension = ".dat";
 #endif
 
 /******************************************************************************
- Case insensitive compare of two strings
- ******************************************************************************/
-
-bool CompareCaseInsensitive( const std::string &s1, const std::string &s2 ) {
-  auto Len = s1.size();
-  bool bSame{ Len == s2.size() };
-  for( int j = 0; bSame && j < Len; j++ ) {
-    wchar_t c1 = s1[j];
-    if( c1 >= 'a' && c1 <= 'z' )
-      c1 -= 'a' - 'A';
-    wchar_t c2 = s2[j];
-    if( c2 >= 'a' && c1 <= 'z' )
-      c2 -= 'a' - 'A';
-    bSame = ( c1 == c2 );
-  }
-  return bSame;
-}
-
-/******************************************************************************
  NamedTensor object
  This is an Eigen::Tensor of type Scalar_ and rank NumIndices_ (row-major order)
  They can be persisted to disk
@@ -377,6 +358,23 @@ public:
   // Original I/O implementation. This will be removed when we're sure it's no longer needed
   EIGEN_DEPRECATED inline void ReadBinary (const std::string filename); // To be removed
   EIGEN_DEPRECATED inline void WriteBinary(const std::string filename); // To be removed
+
+  // Case insensitive compare of two strings
+  // Pesumably this exists already? Where should this go?
+  static inline bool CompareCaseInsensitive( const std::string &s1, const std::string &s2 ) {
+    auto Len = s1.size();
+    bool bSame{ Len == s2.size() };
+    for( int j = 0; bSame && j < Len; j++ ) {
+      wchar_t c1 = s1[j];
+      if( c1 >= 'a' && c1 <= 'z' )
+        c1 -= 'a' - 'A';
+      wchar_t c2 = s2[j];
+      if( c2 >= 'a' && c1 <= 'z' )
+        c2 -= 'a' - 'A';
+      bSame = ( c1 == c2 );
+    }
+    return bSame;
+  }
 };
 
 // Is this a named tensor
