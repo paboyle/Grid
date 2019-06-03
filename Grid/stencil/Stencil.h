@@ -55,6 +55,45 @@ NAMESPACE_BEGIN(Grid);
 ///////////////////////////////////////////////////////////////////
 // Gather for when there *is* need to SIMD split with compression
 ///////////////////////////////////////////////////////////////////
+
+#ifdef __CUDA_ARCH__
+//////////////////////////////////////////
+// EExtract and insert slices on the GPU
+//////////////////////////////////////////
+template<class vobj> accelerator_inline
+typename vobj::scalar_object coalescedRead(const vobj & __restrict__ vec)
+{
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+  constexpr int Nsimd = sizeof(vector_type)/sizeof(scalar_type);
+  int lane = threadIdx.x % Nsimd;
+  return extractLane(lane,vec);
+}
+template<class vobj> accelerator_inline
+void coalescedWrite(vobj & __restrict__ vec,const typename vobj::scalar_object & __restrict__ extracted)
+{
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+  constexpr int Nsimd = sizeof(vector_type)/sizeof(scalar_type);
+  int lane = threadIdx.x % Nsimd;
+  insertLane(lane,vec,extracted);
+}
+#else
+//////////////////////////////////////////
+// Trivial mapping of vectors on host
+//////////////////////////////////////////
+template<class vobj> accelerator_inline
+vobj coalescedRead(const vobj & __restrict__ vec)
+{
+  return vec;
+}
+template<class vobj> accelerator_inline
+void coalescedWrite(vobj & __restrict__ vec,const vobj & __restrict__ extracted)
+{
+  vec = extracted;
+}
+#endif
+
 void Gather_plane_table_compute (GridBase *grid,int dimension,int plane,int cbmask,
 				 int off,Vector<std::pair<int,int> > & table);
 
@@ -66,11 +105,30 @@ void Gather_plane_simple_table (Vector<std::pair<int,int> >& table,const Lattice
 {
   int num=table.size();
   std::pair<int,int> *table_v = & table[0];
-
   auto rhs_v = rhs.View();
+  //  auto tmp_ucc = coalescedRead(rhs_v[so+table_v[0].second]);
+  //  coalescedWrite(rhs_v[so+table_v[0].second],tmp_ucc);
+#if 1
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+  constexpr int Nsimd = sizeof(vector_type)/sizeof(scalar_type);
+  accelerator_loopNB( ii,num*Nsimd, {
+
+      typedef decltype(coalescedRead(buffer[0])) compressed_t;
+      typedef decltype(coalescedRead(rhs_v [0])) uncompressed_t;
+
+      int i = ii/Nsimd;
+      compressed_t   tmp_c;
+      uncompressed_t tmp_uc = coalescedRead(rhs_v[so+table_v[i].second]);
+      uint64_t o = table_v[i].first;
+      compress.Compress(&tmp_c,0,tmp_uc);
+      coalescedWrite(buffer[off+o],tmp_c);
+  });
+#else
   accelerator_loopN( i,num, {
       compress.Compress(&buffer[off],table_v[i].first,rhs_v[so+table_v[i].second]);
   });
+#endif
 // Further optimisatoin: i) streaming store the result
 //                       ii) software prefetch the first element of the next table entry
 }
@@ -224,7 +282,7 @@ public:
   }
   
   int face_table_computed;
-  Vector<Vector<std::pair<int,int> > > face_table ;
+  std::vector<Vector<std::pair<int,int> > > face_table ;
   Vector<int> surface_list;
 
   Vector<StencilEntry>  _entries; // Resident in managed memory
@@ -259,10 +317,12 @@ public:
   double mergetime;
   double decompresstime;
   double comms_bytes;
+  double shm_bytes;
   double splicetime;
   double nosplicetime;
   double calls;
   std::vector<double> comm_bytes_thr;
+  std::vector<double> shm_bytes_thr;
   std::vector<double> comm_time_thr;
   std::vector<double> comm_enter_thr;
   std::vector<double> comm_leave_thr;
@@ -326,6 +386,8 @@ public:
 						      Packets[i].from_rank,
 						      Packets[i].bytes,i);
 	comm_bytes_thr[mythread] += bytes;
+	shm_bytes_thr[mythread] += 2*Packets[i].bytes-bytes; // Send + Recv.
+
       }
       comm_leave_thr[mythread]= usecond();
       comm_time_thr[mythread] += comm_leave_thr[mythread] - comm_enter_thr[mythread];
@@ -343,11 +405,13 @@ public:
       double t0 = comm_enter_thr[t];
       double t1 = comm_leave_thr[t];
       comms_bytes+=comm_bytes_thr[t];
+      shm_bytes  +=shm_bytes_thr[t];
 
       comm_enter_thr[t] = 0.0;
       comm_leave_thr[t] = 0.0;
       comm_time_thr[t]   = 0.0;
       comm_bytes_thr[t]=0;
+      shm_bytes_thr[t]=0;
 
       if ( first == 0.0 ) first = t0;                   // first is t0
       if ( (t0 > 0.0) && ( t0 < first ) ) first = t0;   // min time seen
@@ -362,12 +426,14 @@ public:
     reqs.resize(Packets.size());
     commtime-=usecond();
     for(int i=0;i<Packets.size();i++){
-      comms_bytes+=_grid->StencilSendToRecvFromBegin(reqs[i],
+      uint64_t bytes=_grid->StencilSendToRecvFromBegin(reqs[i],
 						     Packets[i].send_buf,
 						     Packets[i].to_rank,
 						     Packets[i].recv_buf,
 						     Packets[i].from_rank,
 						     Packets[i].bytes,i);
+      comms_bytes+=bytes;
+      shm_bytes  +=2*Packets[i].bytes-bytes;
     }
   }
 
@@ -391,12 +457,14 @@ public:
       if (mythread < nthreads) {
 	for (int i = mythread; i < Packets.size(); i += nthreads) {
 	  double start = usecond();
-	  comm_bytes_thr[mythread] += _grid->StencilSendToRecvFrom(Packets[i].send_buf,
-								   Packets[i].to_rank,
-								   Packets[i].recv_buf,
-								   Packets[i].from_rank,
-								   Packets[i].bytes,i);
-	  comm_time_thr[mythread] += usecond() - start;
+	  uint64_t bytes= _grid->StencilSendToRecvFrom(Packets[i].send_buf,
+						       Packets[i].to_rank,
+						       Packets[i].recv_buf,
+						       Packets[i].from_rank,
+						       Packets[i].bytes,i);
+	  comm_bytes_thr[mythread] += bytes;
+	  shm_bytes_thr[mythread]  += Packets[i].bytes - bytes;
+	  comm_time_thr[mythread]  += usecond() - start;
 	}
       }
     }
@@ -610,7 +678,8 @@ public:
 		   const std::vector<int> &directions,
 		   const std::vector<int> &distances,
 		   Parameters p) 
-    : comm_bytes_thr(npoints), 
+    : shm_bytes_thr(npoints), 
+      comm_bytes_thr(npoints), 
       comm_enter_thr(npoints),
       comm_leave_thr(npoints), 
       comm_time_thr(npoints)
@@ -1189,6 +1258,7 @@ public:
       comm_bytes_thr[i]=0;
       comm_enter_thr[i]=0;
       comm_leave_thr[i]=0;
+      shm_bytes_thr[i]=0;
     }
     halogtime = 0.;
     mergetime = 0.;
@@ -1197,6 +1267,7 @@ public:
     splicetime = 0.;
     nosplicetime = 0.;
     comms_bytes = 0.;
+    shm_bytes = 0.;
     calls = 0.;
   };
   
@@ -1213,6 +1284,7 @@ public:
       if ( comm_time_thr[i]>0.0 ) {
 	threaded = 1;
 	comms_bytes += comm_bytes_thr[i];
+	shm_bytes   += shm_bytes_thr[i];
 	if (t < comm_time_thr[i]) t = comm_time_thr[i];
       }
     }
@@ -1231,6 +1303,19 @@ public:
 	PRINTIT(commtime);
 	std::cout << GridLogMessage << " Stencil " << comms_bytes/commtime/1000. << " GB/s per rank"<<std::endl;
 	std::cout << GridLogMessage << " Stencil " << comms_bytes/commtime/1000.*NP/NN << " GB/s per node"<<std::endl;
+      }
+      if(shm_bytes>1.0){
+	PRINTIT(shm_bytes); // X bytes + R bytes
+	                    // Double this to include spin projection overhead with 2:1 ratio in wilson
+	auto gatheralltime = gathertime+gathermtime;
+	auto allbytes = comms_bytes+shm_bytes;
+	std::cout << GridLogMessage << " Stencil SHM " << (shm_bytes)/gatheralltime/1000. << " GB/s per rank"<<std::endl;
+	std::cout << GridLogMessage << " Stencil SHM " << (shm_bytes)/gatheralltime/1000.*NP/NN << " GB/s per node"<<std::endl;
+
+	auto membytes = (shm_bytes + comms_bytes/2) // read/write
+	              + (shm_bytes+comms_bytes)/2 * sizeof(vobj)/sizeof(cobj);
+	std::cout << GridLogMessage << " Stencil SHM mem " << (membytes)/gatheralltime/1000. << " GB/s per rank"<<std::endl;
+	std::cout << GridLogMessage << " Stencil SHM mem " << (membytes)/gatheralltime/1000.*NP/NN << " GB/s per node"<<std::endl;
       }
       PRINTIT(mpi3synctime);
       PRINTIT(mpi3synctime_g);

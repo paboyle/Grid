@@ -104,7 +104,6 @@ void WilsonKernels<Impl>::GenericDhopSiteDag(StencilView &st, DoubledGaugeFieldV
 							 SiteHalfSpinor *buf, int sF,
 							 int sU, const FermionFieldView &in, FermionFieldView &out)
 {
-#ifndef GRID_NVCC
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
   SiteHalfSpinor *chi_p;
@@ -122,7 +121,6 @@ void WilsonKernels<Impl>::GenericDhopSiteDag(StencilView &st, DoubledGaugeFieldV
   GENERIC_STENCIL_LEG(Zm,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG(Tm,spProjTm,accumReconTm);
   vstream(out[sF], result);
-#endif
 };
 
 template <class Impl>
@@ -130,7 +128,6 @@ void WilsonKernels<Impl>::GenericDhopSite(StencilView &st, DoubledGaugeFieldView
 						      SiteHalfSpinor *buf, int sF,
 						      int sU, const FermionFieldView &in, FermionFieldView &out) 
 {
-#ifndef GRID_NVCC
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
   SiteHalfSpinor *chi_p;
@@ -148,7 +145,6 @@ void WilsonKernels<Impl>::GenericDhopSite(StencilView &st, DoubledGaugeFieldView
   GENERIC_STENCIL_LEG(Zp,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG(Tp,spProjTm,accumReconTm);
   vstream(out[sF], result);
-#endif
 };
   ////////////////////////////////////////////////////////////////////
   // Interior kernels
@@ -158,7 +154,6 @@ void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilView &st,  DoubledGaugeFi
 							    SiteHalfSpinor *buf, int sF,
 							    int sU, const FermionFieldView &in, FermionFieldView &out)
 {
-#ifndef GRID_NVCC
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
   SiteHalfSpinor *chi_p;
@@ -177,7 +172,6 @@ void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilView &st,  DoubledGaugeFi
   GENERIC_STENCIL_LEG_INT(Zm,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG_INT(Tm,spProjTm,accumReconTm);
   vstream(out[sF], result);
-#endif
 };
 
 template <class Impl>
@@ -185,7 +179,6 @@ void WilsonKernels<Impl>::GenericDhopSiteInt(StencilView &st,  DoubledGaugeField
 							 SiteHalfSpinor *buf, int sF,
 							 int sU, const FermionFieldView &in, FermionFieldView &out) 
 {
-#ifndef GRID_NVCC
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
   SiteHalfSpinor *chi_p;
@@ -203,7 +196,6 @@ void WilsonKernels<Impl>::GenericDhopSiteInt(StencilView &st,  DoubledGaugeField
   GENERIC_STENCIL_LEG_INT(Zp,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG_INT(Tp,spProjTm,accumReconTm);
   vstream(out[sF], result);
-#endif
 };
 ////////////////////////////////////////////////////////////////////
 // Exterior kernels
@@ -213,7 +205,6 @@ void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilView &st,  DoubledGaugeFi
 							    SiteHalfSpinor *buf, int sF,
 							    int sU, const FermionFieldView &in, FermionFieldView &out)
 {
-#ifndef GRID_NVCC
   //  SiteHalfSpinor tmp;
   //  SiteHalfSpinor chi;
   SiteHalfSpinor *chi_p;
@@ -234,7 +225,6 @@ void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilView &st,  DoubledGaugeFi
   if ( nmu ) { 
     out[sF] = out[sF] + result; 
   }
-#endif
 };
 
 template <class Impl>
@@ -242,7 +232,6 @@ void WilsonKernels<Impl>::GenericDhopSiteExt(StencilView &st,  DoubledGaugeField
 							 SiteHalfSpinor *buf, int sF,
 							 int sU, const FermionFieldView &in, FermionFieldView &out) 
 {
-#ifndef GRID_NVCC
   //  SiteHalfSpinor tmp;
   //  SiteHalfSpinor chi;
   SiteHalfSpinor *chi_p;
@@ -263,14 +252,12 @@ void WilsonKernels<Impl>::GenericDhopSiteExt(StencilView &st,  DoubledGaugeField
   if ( nmu ) { 
     out[sF] = out[sF] + result; 
   }
-#endif
 };
 
 template <class Impl>
 void WilsonKernels<Impl>::DhopDirK( StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf, int sF,
 						int sU, const FermionFieldView &in, FermionFieldView &out, int dir, int gamma) 
 {
-#ifndef GRID_NVCC
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
   SiteSpinor result;
@@ -288,7 +275,6 @@ void WilsonKernels<Impl>::DhopDirK( StencilView &st, DoubledGaugeFieldView &U,Si
   GENERIC_DHOPDIR_LEG(Zm,spProjZm,spReconZm);
   GENERIC_DHOPDIR_LEG(Tm,spProjTm,spReconTm);
   vstream(out[sF], result);
-#endif
 }
 
 /*******************************************************************************

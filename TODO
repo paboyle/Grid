@@ -1,32 +1,66 @@
 
+
 GPU branch code item work list
 -----------------------------
 
-TODO:
----------------
+1) Common source GPU and CPU generic kernels???
+   - coalescedRead, coalescedWrite in expressions.
+   - Uniform coding between GPU kernels and CPU kernels attempt
 
-- Make GPU offload reductions optionally deterministic
-- Accelerate the cshift
-- Accelerate non-dslash elements of Mobius; check accelerator_loop uniformly used in fermion operators
-- Gamma tables on GPU
+2) - SIMD dirs in stencil
 
-- Mobius kernel fusion.
-- Reread WilsonKernels and check diffs
+3) Merge develop and test HMC
 
-- thread_loop interface revisit.
-- pragma once uniformly
-- Audit changes
-- Audit NAMESPACE CHANGES
-- Verify HMC one flavour ratio; suspect dH too big; verify timestep with Guido.
-- Staggered kernels inline for GPU
-- Single GPU simd target (VGPU)
+4)  GPU accelerate EOFA
+
+5) Accelerate the cshift
+
+6) Make GPU offload reductions optionally deterministic -- Gianluca
+
+7) Investigate why slower than september
+
+Single GPU simd target (VGPU)
+
+8) Gamma tables on GPU; check this.
+
+9) Mobius kernel fusion. -- Gianluca?
+
+10) Reread WilsonKernels and check diffs
+
+11) thread_loop interface revisit.
+  for_n
+  for
+
+12)  pragma once uniformly
+
+13) Audit changes
+
+14) Audit NAMESPACE CHANGES
+
+15) Staggered kernels inline for GPU
+
+
+-----
+Gianluca's changes
+- Performance impact of construct in aligned allocator???
+- Inner product compare to Summit inner product optimisation
+- CayleyFermion5D.cc - flop count line 166 odd. Shouldn't depend on arch
+-                    - Review Vector use
+- CayleyFermion5D.h  - DperpGPU unify coding style
+---------
+
 - Lebesgue reorder in all kernels
 - merge2 where is it used. Audit routines, comment out and check compile.
 - AVX512 still broken, lebesgue order missing ?
-- Neon ??
+
 
 DONE:
 -----------------------------
+
+- Committed my modifications
+- Accelerate non-dslash elements of Mobius; check accelerator_loop uniformly used in fermion operators
+   - Merged Gianluca modifications
+- Verify HMC one flavour ratio
 - GPU offload reductions: using thrust::reduce?
 - Deprecate JSON.
 - pugixml difficult.

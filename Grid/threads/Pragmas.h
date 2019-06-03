@@ -128,6 +128,17 @@ void LambdaApply(uint64_t base, uint64_t Num, lambda Lambda)
     }								\
   }
 
+#define accelerator_loopNB( iterator, num, ... )			\
+  typedef decltype(num) Iterator;				\
+  if ( num > 0 ) {			                        \
+    auto lambda = [=] accelerator (Iterator iterator) mutable { \
+      __VA_ARGS__;						\
+    };								\
+    Iterator base = 0;						\
+    Iterator num_block  = (num+gpu_threads-1)/gpu_threads;	\
+    LambdaApply<<<num_block,gpu_threads>>>(base,num,lambda);	\
+  }
+
 #define cpu_loop( iterator, range, ... )   thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
 
 template<typename lambda>  __global__

@@ -60,8 +60,8 @@ accelerator_inline int get_my_lane_offset(int Nsimd)
 accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
 {
 #ifdef __CUDA_ARCH__
-  static_assert(sizeof(StencilEntry)==sizeof(uint4),"Unexpected Stencil Entry Size");
-  uint4 * mem_pun  = (uint4 *)mem;
+  static_assert(sizeof(StencilEntry)==sizeof(uint4),"Unexpected Stencil Entry Size"); 
+  uint4 * mem_pun  = (uint4 *)mem; // force 128 bit loads
   uint4 * chip_pun = (uint4 *)&chip;
   * chip_pun = * mem_pun;
 #else 
@@ -73,28 +73,24 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
 #ifdef GPU_VEC
 #if 1
 #define GPU_COALESCED_STENCIL_LEG_PROJ(Dir,spProj)			\
-  synchronise();							\
   if (SE._is_local) {							\
     int mask = Nsimd >> (ptype + 1);					\
     int plane= SE._permute ? (lane ^ mask) : lane;			\
     auto in_l = extractLane(plane,in[SE._offset+s]);			\
     spProj(chi,in_l);							\
   } else {								\
-    chi  = extractLane(lane,buf[SE._offset+s]);			\
+    chi  = extractLane(lane,buf[SE._offset+s]);				\
   }									\
   synchronise();
 #else 
 #define GPU_COALESCED_STENCIL_LEG_PROJ(Dir,spProj)			\
   { int mask = Nsimd >> (ptype + 1);					\
   int plane= SE._permute ? (lane ^ mask) : lane;			\
-  synchronise();							\
   auto in_l = extractLane(plane,in[SE._offset+s]);			\
-  synchronise();							\
   spProj(chi,in_l); }							
 #endif
 #else 
 #define GPU_COALESCED_STENCIL_LEG_PROJ(Dir,spProj)			\
-  synchronise();							\
   if (SE._is_local) {							\
     auto in_t = in[SE._offset+s];					\
     if (SE._permute) {							\
@@ -111,8 +107,8 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
 
 template <class Impl>
 accelerator_inline void WilsonKernels<Impl>::GpuDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U,
-						     SiteHalfSpinor *buf, int Ls, int s,
-						     int sU, const FermionFieldView &in, FermionFieldView &out)
+							    SiteHalfSpinor *buf, int Ls, int s,
+							    int sU, const FermionFieldView &in, FermionFieldView &out)
 {
 #ifdef GPU_VEC
   typename SiteHalfSpinor::scalar_object chi;
@@ -182,7 +178,6 @@ accelerator_inline void WilsonKernels<Impl>::GpuDhopSiteDag(StencilView &st, Dou
     Impl::multLinkGpu(lane,Uchi,U[sU],chi,Tm);
     accumReconTm(result, Uchi);
 
-    synchronise();
 #ifdef GPU_VEC
     insertLane (lane,out[sF],result);
 #else
@@ -268,7 +263,6 @@ accelerator_inline void WilsonKernels<Impl>::GpuDhopSite(StencilView &st, SiteDo
     Impl::multLinkGpu(lane,Uchi,U,chi,Tm);
     accumReconTp(result, Uchi);
 
-    synchronise();
 #ifdef GPU_VEC
     insertLane (lane,out[sF],result);
 #else
