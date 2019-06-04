@@ -87,16 +87,6 @@ public:
 		    Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper,
 		    Vector<Coeff_t>& shift_coeffs);
 
-  void MooeeInternal(const FermionField& in, FermionField& out, int dag, int inv);
-
-  void MooeeInternalCompute(int dag, int inv, Vector<iSinglet<Simd>>& Matp, Vector<iSinglet<Simd>>& Matm);
-
-  void MooeeInternalAsm(const FermionField& in, FermionField& out, int LLs, int site,
-			Vector<iSinglet<Simd>>& Matp, Vector<iSinglet<Simd>>& Matm);
-
-  void MooeeInternalZAsm(const FermionField& in, FermionField& out, int LLs, int site,
-			 Vector<iSinglet<Simd>>& Matp, Vector<iSinglet<Simd>>& Matm);
-
   virtual void RefreshShiftCoefficients(RealD new_shift);
 
   // Constructors
@@ -110,24 +100,5 @@ protected:
 };
 
 NAMESPACE_END(Grid);
-
-#define INSTANTIATE_DPERP_MOBIUS_EOFA(A)				\
-  template void MobiusEOFAFermion<A>::M5D(const FermionField& psi, const FermionField& phi, FermionField& chi, \
-					  Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper); \
-  template void MobiusEOFAFermion<A>::M5D_shift(const FermionField& psi, const FermionField& phi, FermionField& chi, \
-						Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper, Vector<Coeff_t>& shift_coeffs); \
-  template void MobiusEOFAFermion<A>::M5Ddag(const FermionField& psi, const FermionField& phi, FermionField& chi, \
-					     Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper); \
-  template void MobiusEOFAFermion<A>::M5Ddag_shift(const FermionField& psi, const FermionField& phi, FermionField& chi, \
-						   Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper, Vector<Coeff_t>& shift_coeffs); \
-  template void MobiusEOFAFermion<A>::MooeeInv(const FermionField& psi, FermionField& chi); \
-  template void MobiusEOFAFermion<A>::MooeeInv_shift(const FermionField& psi, FermionField& chi); \
-  template void MobiusEOFAFermion<A>::MooeeInvDag(const FermionField& psi, FermionField& chi); \
-  template void MobiusEOFAFermion<A>::MooeeInvDag_shift(const FermionField& psi, FermionField& chi);
-
-#undef  MOBIUS_EOFA_DPERP_DENSE
-#define MOBIUS_EOFA_DPERP_CACHE
-#undef  MOBIUS_EOFA_DPERP_LINALG
-#define MOBIUS_EOFA_DPERP_VEC
 
 #endif
