@@ -178,6 +178,9 @@ void LambdaApply2D(uint64_t Osites, uint64_t Isites, lambda Lambda)
 #define accelerator_loopN( iterator, num, ... )			\
   thread_loop( (auto iterator = 0;iterator<num;iterator++), { __VA_ARGS__ });
 
+#define accelerator_loopNB( iterator, num, ... )			\
+  thread_loop( (auto iterator = 0;iterator<num;iterator++), { __VA_ARGS__ });
+
 #define cpu_loop( iterator, range, ... )				\
   thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
 
