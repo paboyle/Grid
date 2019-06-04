@@ -64,7 +64,7 @@ public:
   
   enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1 };
 
-  static constexpr accelerator_inline int Nsimd(void) { return sizeof(vector_type)/sizeof(scalar_type); } 
+  static accelerator_inline constexpr int Nsimd(void) { return sizeof(vector_type)/sizeof(scalar_type); } 
 
   // Scalar no action
   accelerator iScalar() = default;
@@ -197,7 +197,7 @@ public:
   // get double precision version
   typedef iVector<typename GridTypeMapper<vtype>::DoublePrecision, N> DoublePrecision;
 
-  static constexpr accelerator_inline int Nsimd(void) { return sizeof(vector_type)/sizeof(scalar_type); } 
+  static accelerator_inline constexpr int Nsimd(void) { return sizeof(vector_type)/sizeof(scalar_type); } 
   
   template <class T, typename std::enable_if<!isGridTensor<T>::value, T>::type * = nullptr>
   accelerator_inline auto operator=(T arg) -> iVector<vtype, N> {
@@ -308,7 +308,7 @@ public:
 
   enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1 };
 
-  static constexpr accelerator_inline int Nsimd(void) { return sizeof(vector_type)/sizeof(scalar_type); } 
+  static accelerator_inline constexpr int Nsimd(void) { return sizeof(vector_type)/sizeof(scalar_type); } 
 
   accelerator_inline iMatrix(const Zero &z) { zeroit(*this); };
   accelerator iMatrix() = default;
