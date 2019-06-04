@@ -68,9 +68,7 @@ void Gather_plane_simple_table (Vector<std::pair<int,int> >& table,const Lattice
   int num=table.size();
   std::pair<int,int> *table_v = & table[0];
   auto rhs_v = rhs.View();
-  //  auto tmp_ucc = coalescedRead(rhs_v[so+table_v[0].second]);
-  //  coalescedWrite(rhs_v[so+table_v[0].second],tmp_ucc);
-#if 1
+#ifdef GRID_NVCC
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
   constexpr int Nsimd = sizeof(vector_type)/sizeof(scalar_type);
