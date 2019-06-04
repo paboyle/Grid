@@ -34,10 +34,6 @@ directory
 
 NAMESPACE_BEGIN(Grid);
 
-const std::vector<int> WilsonFermionStatic::directions({0, 1, 2, 3, 0, 1, 2, 3});
-const std::vector<int> WilsonFermionStatic::displacements({1, 1, 1, 1, -1, -1, -1, -1});
-int WilsonFermionStatic::HandOptDslash;
-
 /////////////////////////////////
 // Constructor and gauge import
 /////////////////////////////////
@@ -464,18 +460,10 @@ void WilsonFermion<Impl>::DhopInternalSerial(StencilImpl &st, LebesgueOrder &lo,
   st.HaloExchange(in, compressor);
 
   int Opt = WilsonKernelsStatic::Opt;
-  auto U_v  = U.View();
-  auto in_v = in.View();
-  auto out_v= out.View();
-  auto st_v = st.View();
   if (dag == DaggerYes) {
-    accelerator_loop( sss,in_v, {
-      Kernels::DhopSiteDag(Opt,st_v, U_v, st.CommBuf(), sss, sss, 1, 1, in_v, out_v);
-    });
+    Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out);
   } else {
-    accelerator_loop( sss,in_v, {
-      Kernels::DhopSite(Opt,st_v, U_v, st.CommBuf(), sss, sss, 1, 1, in_v, out_v);
-    });
+    Kernels::DhopKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out);
   }
 };
 /*Change ends */

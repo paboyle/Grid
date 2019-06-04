@@ -456,7 +456,6 @@ template<class Impl> void
 WilsonKernels<Impl>::HandDhopSite(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
 				  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
-#ifndef GRID_NVCC
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -475,16 +474,12 @@ WilsonKernels<Impl>::HandDhopSite(StencilView &st, DoubledGaugeFieldView &U,Site
   HAND_STENCIL_LEG(ZP_PROJ,1,Zm,ZP_RECON_ACCUM);
   HAND_STENCIL_LEG(TP_PROJ,0,Tm,TP_RECON_ACCUM);
   HAND_RESULT(ss);
-#else
-  assert(0);
-#endif
 }
 
 template<class Impl>
 void WilsonKernels<Impl>::HandDhopSiteDag(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
-#ifndef GRID_NVCC
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
 
@@ -502,16 +497,12 @@ void WilsonKernels<Impl>::HandDhopSiteDag(StencilView &st,DoubledGaugeFieldView 
   HAND_STENCIL_LEG(ZM_PROJ,1,Zm,ZM_RECON_ACCUM);
   HAND_STENCIL_LEG(TM_PROJ,0,Tm,TM_RECON_ACCUM);
   HAND_RESULT(ss);
-#else
-  assert(0);
-#endif
 }
 
 template<class Impl> void 
 WilsonKernels<Impl>::HandDhopSiteInt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
 					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
-#ifndef GRID_NVCC
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -530,16 +521,12 @@ WilsonKernels<Impl>::HandDhopSiteInt(StencilView &st,DoubledGaugeFieldView &U,Si
   HAND_STENCIL_LEG_INT(ZP_PROJ,1,Zm,ZP_RECON_ACCUM);
   HAND_STENCIL_LEG_INT(TP_PROJ,0,Tm,TP_RECON_ACCUM);
   HAND_RESULT(ss);
-#else
-  assert(0);
-#endif
 }
 
 template<class Impl>
 void WilsonKernels<Impl>::HandDhopSiteDagInt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 						  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
-#ifndef GRID_NVCC
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
 
@@ -557,23 +544,19 @@ void WilsonKernels<Impl>::HandDhopSiteDagInt(StencilView &st,DoubledGaugeFieldVi
   HAND_STENCIL_LEG_INT(ZM_PROJ,1,Zm,ZM_RECON_ACCUM);
   HAND_STENCIL_LEG_INT(TM_PROJ,0,Tm,TM_RECON_ACCUM);
   HAND_RESULT(ss);
-#else
-  assert(0);
-#endif
 }
 
 template<class Impl> void 
 WilsonKernels<Impl>::HandDhopSiteExt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
 					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
-#ifndef GRID_NVCC
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
 
   HAND_DECLARATIONS(ignore);
 
-  int offset,local,perm, ptype;
+  int offset, ptype;
   StencilEntry *SE;
   int nmu=0;
   ZERO_RESULT;
@@ -586,23 +569,19 @@ WilsonKernels<Impl>::HandDhopSiteExt(StencilView &st,DoubledGaugeFieldView &U,Si
   HAND_STENCIL_LEG_EXT(ZP_PROJ,1,Zm,ZP_RECON_ACCUM);
   HAND_STENCIL_LEG_EXT(TP_PROJ,0,Tm,TP_RECON_ACCUM);
   HAND_RESULT_EXT(ss);
-#else
-  assert(0);
-#endif
 }
 
 template<class Impl>
 void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 						  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
-#ifndef GRID_NVCC
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
 
   HAND_DECLARATIONS(ignore);
 
   StencilEntry *SE;
-  int offset,local,perm, ptype;
+  int offset, ptype;
   int nmu=0;
   ZERO_RESULT;
   HAND_STENCIL_LEG_EXT(XP_PROJ,3,Xp,XP_RECON_ACCUM);
@@ -614,9 +593,6 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilView &st,DoubledGaugeFieldVi
   HAND_STENCIL_LEG_EXT(ZM_PROJ,1,Zm,ZM_RECON_ACCUM);
   HAND_STENCIL_LEG_EXT(TM_PROJ,0,Tm,TM_RECON_ACCUM);
   HAND_RESULT_EXT(ss);
-#else
-  assert(0);
-#endif
 }
 
 ////////////// Wilson ; uses this implementation /////////////////////
@@ -672,3 +648,9 @@ NAMESPACE_END(Grid);
 #undef Chimu_30
 #undef Chimu_31
 #undef Chimu_32
+#undef HAND_STENCIL_LEG
+#undef HAND_STENCIL_LEG_INT
+#undef HAND_STENCIL_LEG_EXT
+#undef HAND_RESULT
+#undef HAND_RESULT_INT
+#undef HAND_RESULT_EXT

@@ -103,8 +103,8 @@ template void WilsonKernels<A>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeF
 
 //INSTANTIATE_ASM(WilsonImplF);
 //INSTANTIATE_ASM(WilsonImplD);
-INSTANTIATE_ASM(GparityWilsonImplF);
-INSTANTIATE_ASM(GparityWilsonImplD);
+//INSTANTIATE_ASM(GparityWilsonImplF);
+//INSTANTIATE_ASM(GparityWilsonImplD);
 //INSTANTIATE_ASM(ZWilsonImplF);
 //INSTANTIATE_ASM(ZWilsonImplD);
 //INSTANTIATE_ASM(DomainWallVec5dImplF);
@@ -116,8 +116,8 @@ INSTANTIATE_ASM(GparityWilsonImplD);
 //INSTANTIATE_ASM(WilsonImplDF);
 //INSTANTIATE_ASM(ZWilsonImplFH);
 //INSTANTIATE_ASM(ZWilsonImplDF);
-INSTANTIATE_ASM(GparityWilsonImplFH);
-INSTANTIATE_ASM(GparityWilsonImplDF);
+//INSTANTIATE_ASM(GparityWilsonImplFH);
+//INSTANTIATE_ASM(GparityWilsonImplDF);
 //INSTANTIATE_ASM(DomainWallVec5dImplFH);
 //INSTANTIATE_ASM(DomainWallVec5dImplDF);
 //INSTANTIATE_ASM(ZDomainWallVec5dImplFH);

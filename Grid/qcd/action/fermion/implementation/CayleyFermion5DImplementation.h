@@ -574,12 +574,12 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,Vector<Coeff_t
     dee[Ls-1] += delta_d;
   }  
 
-  int inv=1;
-  this->MooeeInternalCompute(0,inv,MatpInv,MatmInv);
-  this->MooeeInternalCompute(1,inv,MatpInvDag,MatmInvDag);
+  //  int inv=1;
+  //  this->MooeeInternalCompute(0,inv,MatpInv,MatmInv);
+  //  this->MooeeInternalCompute(1,inv,MatpInvDag,MatmInvDag);
 }
 
-
+#if 0
 template<class Impl>
 void CayleyFermion5D<Impl>::MooeeInternalCompute(int dag, int inv,
 						 Vector<iSinglet<Simd> > & Matp,
@@ -658,7 +658,7 @@ void CayleyFermion5D<Impl>::MooeeInternalCompute(int dag, int inv,
       Matm[LLs*s2+s1] = Vm;
     }}
 }
-
+#endif
 
 NAMESPACE_END(Grid);
 
