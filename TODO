@@ -7,6 +7,10 @@ GPU branch code item work list
    - coalescedRead, coalescedWrite in expressions.
    - Uniform coding between GPU kernels and CPU kernels attempt
 
+-- Figure what to do about "multLinkGpu" etc.. in FermionOperatorImpl.
+-- Gparity is the awkward one
+-- Solve non-Gparity first.
+
 2) - SIMD dirs in stencil
 
 3) Merge develop and test HMC
