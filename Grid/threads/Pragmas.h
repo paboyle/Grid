@@ -184,4 +184,6 @@ void LambdaApply2D(uint64_t Osites, uint64_t Isites, lambda Lambda)
 #define cpu_loop( iterator, range, ... )				\
   thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
 
+#define coalesce_loop( iterator, range, nsimd, ... ) cpu_loop(iterator,range,{__VA_ARGS__})
+
 #endif
