@@ -200,8 +200,8 @@ void G5R5(Lattice<vobj> &z,const Lattice<vobj> &x)
 template<typename vobj>
 void G5C(Lattice<vobj> &z, const Lattice<vobj> &x)
 {
-  GridBase *grid = x._grid;
-  z.checkerboard = x.checkerboard;
+  GridBase *grid = x.Grid();
+  z.Checkerboard() = x.Checkerboard();
   conformable(x, z);
 
   Gamma G5(Gamma::Algebra::Gamma5);
