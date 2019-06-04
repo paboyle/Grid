@@ -41,6 +41,9 @@ class ConjugateGradientMultiShift : public OperatorMultiFunction<Field>,
 				    public OperatorFunction<Field>
 {
 public:                                                
+
+  using OperatorFunction<Field>::operator();
+
   RealD   Tolerance;
   Integer MaxIterations;
     Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion

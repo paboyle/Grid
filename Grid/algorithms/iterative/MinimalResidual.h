@@ -48,11 +48,11 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
 
   void operator()(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi) {
 
-    psi.checkerboard = src.checkerboard;
+    psi.Checkerboard() = src.Checkerboard();
     conformable(psi, src);
 
-    Complex a, c;
-    Real    d;
+    ComplexD a, c;
+    RealD    d;
 
     Field Mr(src);
     Field r(src);

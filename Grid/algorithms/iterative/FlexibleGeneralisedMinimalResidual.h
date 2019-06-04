@@ -55,10 +55,10 @@ class FlexibleGeneralisedMinimalResidual : public OperatorFunction<Field> {
 
   Eigen::MatrixXcd H;
 
-  std::vector<std::complex<double>> y;
-  std::vector<std::complex<double>> gamma;
-  std::vector<std::complex<double>> c;
-  std::vector<std::complex<double>> s;
+  std::vector<ComplexD> y;
+  std::vector<ComplexD> gamma;
+  std::vector<ComplexD> c;
+  std::vector<ComplexD> s;
 
   LinearFunction<Field> &Preconditioner;
 
@@ -176,7 +176,7 @@ class FlexibleGeneralisedMinimalResidual : public OperatorFunction<Field> {
 
       qrUpdate(i);
 
-      cp = std::norm(gamma[i+1]);
+      cp = norm(gamma[i+1]);
 
       std::cout << GridLogIterative << "FlexibleGeneralisedMinimalResidual: Iteration " << IterationCount
                 << " residual " << cp << " target " << rsq << std::endl;
@@ -206,11 +206,11 @@ class FlexibleGeneralisedMinimalResidual : public OperatorFunction<Field> {
     LinalgTimer.Start();
     for (int i = 0; i <= iter; ++i) {
       H(iter, i) = innerProduct(v[i], w);
-      w = w - H(iter, i) * v[i];
+      w = w - ComplexD(H(iter, i)) * v[i];
     }
 
     H(iter, iter + 1) = sqrt(norm2(w));
-    v[iter + 1] = (1. / H(iter, iter + 1)) * w;
+    v[iter + 1] = ComplexD(1. / H(iter, iter + 1)) * w;
     LinalgTimer.Stop();
   }
 
@@ -218,8 +218,8 @@ class FlexibleGeneralisedMinimalResidual : public OperatorFunction<Field> {
 
     QrTimer.Start();
     for (int i = 0; i < iter ; ++i) {
-      auto tmp       = -s[i] * H(iter, i) + c[i] * H(iter, i + 1);
-      H(iter, i)     = std::conj(c[i]) * H(iter, i) + std::conj(s[i]) * H(iter, i + 1);
+      auto tmp       = -s[i] * ComplexD(H(iter, i)) + c[i] * ComplexD(H(iter, i + 1));
+      H(iter, i)     = conjugate(c[i]) * ComplexD(H(iter, i)) + conjugate(s[i]) * ComplexD(H(iter, i + 1));
       H(iter, i + 1) = tmp;
     }
 
@@ -233,7 +233,7 @@ class FlexibleGeneralisedMinimalResidual : public OperatorFunction<Field> {
     H(iter, iter + 1) = 0.;
 
     gamma[iter + 1] = -s[iter] * gamma[iter];
-    gamma[iter]     = std::conj(c[iter]) * gamma[iter];
+    gamma[iter]     = conjugate(c[iter]) * gamma[iter];
     QrTimer.Stop();
   }
 
@@ -243,8 +243,8 @@ class FlexibleGeneralisedMinimalResidual : public OperatorFunction<Field> {
     for (int i = iter; i >= 0; i--) {
       y[i] = gamma[i];
       for (int k = i + 1; k <= iter; k++)
-        y[i] = y[i] - H(k, i) * y[k];
-      y[i] = y[i] / H(i, i);
+        y[i] = y[i] - ComplexD(H(k, i)) * y[k];
+      y[i] = y[i] / ComplexD(H(i, i));
     }
 
     for (int i = 0; i <= iter; i++)

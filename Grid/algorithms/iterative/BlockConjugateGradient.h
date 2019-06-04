@@ -476,7 +476,7 @@ void MaddMatrix(std::vector<Field> &AP, Eigen::MatrixXcd &m , const std::vector<
   for(int b=0;b<Nblock;b++){
     tmp[b]   = Y[b];
     for(int bp=0;bp<Nblock;bp++) {
-      tmp[b] = tmp[b] + (scale*m(bp,b))*X[bp]; 
+      tmp[b] = tmp[b] + scomplex(scale*m(bp,b))*X[bp]; 
     }
   }
   for(int b=0;b<Nblock;b++){
@@ -488,7 +488,7 @@ void MulMatrix(std::vector<Field> &AP, Eigen::MatrixXcd &m , const std::vector<F
   for(int b=0;b<Nblock;b++){
     AP[b] = Zero();
     for(int bp=0;bp<Nblock;bp++) {
-      AP[b] += (m(bp,b))*X[bp]; 
+      AP[b] += scomplex(m(bp,b))*X[bp]; 
     }
   }
 }
