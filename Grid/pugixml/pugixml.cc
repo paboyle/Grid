@@ -14,6 +14,11 @@
 #ifndef SOURCE_PUGIXML_CPP
 #define SOURCE_PUGIXML_CPP
 
+#ifdef __NVCC__
+#pragma push
+#pragma diag_suppress declared_but_not_referenced // suppress "function was declared but never referenced warning"
+#endif
+
 #include "pugixml.h"
 
 #include <stdlib.h>
@@ -12767,6 +12772,10 @@ namespace pugi
 #undef PUGI__ENDSEG
 #undef PUGI__THROW_ERROR
 #undef PUGI__CHECK_ERROR
+
+#ifdef GRID_NVCC
+#pragma pop
+#endif
 
 #endif
 
