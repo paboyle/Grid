@@ -38,6 +38,7 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 #include <Grid/qcd/action/fermion/WilsonCompressor.h>     //used by all wilson type fermions
 NAMESPACE_CHECK(Compressor);
 #include <Grid/qcd/action/fermion/FermionOperatorImpl.h>
+NAMESPACE_CHECK(FermionOperatorImpl);
 #include <Grid/qcd/action/fermion/FermionOperator.h>
 NAMESPACE_CHECK(FermionOperator);
 #include <Grid/qcd/action/fermion/WilsonKernels.h>        //used by all wilson type fermions
@@ -64,10 +65,6 @@ NAMESPACE_CHECK(Kernels);
 
 #define FermOp4dVecTemplateInstantiate(A)		\
   FermOp4dVecTemplateInstantiateNoGP(A)			\
-  template class A<GparityWilsonImplF>;			\
-  template class A<GparityWilsonImplD>;			\
-  template class A<GparityWilsonImplFH>;		\
-  template class A<GparityWilsonImplDF>;		
 
 #define AdjointFermOpTemplateInstantiate(A) \
   template class A<WilsonAdjImplF>; \
@@ -79,20 +76,13 @@ NAMESPACE_CHECK(Kernels);
   template class A<WilsonTwoIndexAntiSymmetricImplF>; \
   template class A<WilsonTwoIndexAntiSymmetricImplD>;
 
-#define FermOp5dVecTemplateInstantiate(A) \
-  template class A<DomainWallVec5dImplF>;	\
-  template class A<DomainWallVec5dImplD>;	\
-  template class A<ZDomainWallVec5dImplF>;	\
-  template class A<ZDomainWallVec5dImplD>;	\
-  template class A<DomainWallVec5dImplFH>;	\
-  template class A<DomainWallVec5dImplDF>;	\
-  template class A<ZDomainWallVec5dImplFH>;	\
-  template class A<ZDomainWallVec5dImplDF>;	
-
 #define FermOpTemplateInstantiate(A) \
- FermOp4dVecTemplateInstantiate(A) \
- FermOp5dVecTemplateInstantiate(A) 
+ FermOp4dVecTemplateInstantiate(A) 
 
-#define GparityFermOpTemplateInstantiate(A) 
+#define GparityFermOpTemplateInstantiate(A) \
+  template class A<GparityWilsonImplF>;			\
+  template class A<GparityWilsonImplD>;			\
+  template class A<GparityWilsonImplFH>;		\
+  template class A<GparityWilsonImplDF>;		
 
 #endif
