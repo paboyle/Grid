@@ -121,10 +121,10 @@ void Gather_plane_exchange_table(Vector<std::pair<int,int> >& table,const Lattic
 struct StencilEntry { 
 #ifdef GRID_NVCC
   uint64_t _byte_offset;       // 8 bytes 
-  uint32_t _offset;            // 8 bytes 
+  uint32_t _offset;            // 4 bytes 
 #else
   uint64_t _byte_offset;       // 8 bytes 
-  uint64_t _offset;            // 4 bytes (8 ever required?)
+  uint64_t _offset;            // 8 bytes (8 ever required?)
 #endif
   uint8_t _is_local;           // 1 bytes 
   uint8_t _permute;            // 1 bytes
@@ -1270,9 +1270,12 @@ public:
 	PRINTIT(shm_bytes); // X bytes + R bytes
 	                    // Double this to include spin projection overhead with 2:1 ratio in wilson
 	auto gatheralltime = gathertime+gathermtime;
-	auto allbytes = comms_bytes+shm_bytes;
 	std::cout << GridLogMessage << " Stencil SHM " << (shm_bytes)/gatheralltime/1000. << " GB/s per rank"<<std::endl;
 	std::cout << GridLogMessage << " Stencil SHM " << (shm_bytes)/gatheralltime/1000.*NP/NN << " GB/s per node"<<std::endl;
+
+	auto all_bytes = comms_bytes+shm_bytes;
+	std::cout << GridLogMessage << " Stencil SHM all" << (all_bytes)/gatheralltime/1000. << " GB/s per rank"<<std::endl;
+	std::cout << GridLogMessage << " Stencil SHM all" << (all_bytes)/gatheralltime/1000.*NP/NN << " GB/s per node"<<std::endl;
 
 	auto membytes = (shm_bytes + comms_bytes/2) // read/write
 	              + (shm_bytes+comms_bytes)/2 * sizeof(vobj)/sizeof(cobj);
