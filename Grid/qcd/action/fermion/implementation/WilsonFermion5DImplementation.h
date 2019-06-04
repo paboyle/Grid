@@ -488,9 +488,9 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   } else {
     int sz=st.surface_list.size();
     thread_loop( (int ss = 0; ss < sz; ss++) ,{
-	int sU = st.surface_list[ss];
-	int sF = LLs * sU;
-	Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
+      int sU = st.surface_list[ss];
+      int sF = LLs * sU;
+      Kernels::DhopSite(Opt,st,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v,0,1);
     });
   }
   DhopComputeTime2+=usecond();
