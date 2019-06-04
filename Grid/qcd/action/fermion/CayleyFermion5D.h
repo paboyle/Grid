@@ -32,32 +32,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
-#if 0
-template<typename T> struct switcheroo   {
-  static inline int iscomplex()  { return 0; }
-
-  template<class vec>
-  static inline vec mult(vec a, vec b) {
-    return real_mult(a,b);
-  }
-};
-template<> struct switcheroo<ComplexD> {
-  static inline int iscomplex()  { return 1; }
-
-  template<class vec>
-  static inline vec mult(vec a, vec b) {
-    return a*b;
-  }
-};
-template<> struct switcheroo<ComplexF> {
-  static inline int iscomplex()  { return 1; }
-  template<class vec>
-  static inline vec mult(vec a, vec b) {
-    return a*b;
-  }
-};
-#endif
-
 template<class Impl>
 class CayleyFermion5D : public WilsonFermion5D<Impl>
 {
@@ -118,19 +92,6 @@ public:
 	      Vector<Coeff_t> &lower,
 	      Vector<Coeff_t> &diag,
 	      Vector<Coeff_t> &upper);
-#if 0
-  void MooeeInternal(const FermionField &in, FermionField &out,int dag,int inv);
-  void MooeeInternalCompute(int dag, int inv, Vector<iSinglet<Simd> > & Matp, Vector<iSinglet<Simd> > & Matm);
-
-  void MooeeInternalAsm(const FermionField &in, FermionField &out,
-			int LLs, int site,
-			Vector<iSinglet<Simd> > &Matp,
-			Vector<iSinglet<Simd> > &Matm);
-  void MooeeInternalZAsm(const FermionField &in, FermionField &out,
-			 int LLs, int site,
-			 Vector<iSinglet<Simd> > &Matp,
-			 Vector<iSinglet<Simd> > &Matm);
-#endif
 
   virtual void   Instantiatable(void)=0;
 
