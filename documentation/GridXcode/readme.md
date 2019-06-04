@@ -119,13 +119,13 @@ Install [MacPorts][MacPorts] if you haven't done so already, and then install pa
 
 These are the `portname`s for mandatory Grid libraries:
 
-* git
+* git-flow-avh
 * gmp
 * mpfr
 
 and these are the `portname`s for optional Grid libraries:
 
-* fftw-3
+* fftw-3-single
 * hdf5
 * lapack
 * doxygen
