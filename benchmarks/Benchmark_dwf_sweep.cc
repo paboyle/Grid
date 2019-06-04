@@ -44,7 +44,6 @@ struct scal {
   };
 
 void benchDw(std::vector<int> & L, int Ls, int threads, int report =0 );
-void benchsDw(std::vector<int> & L, int Ls, int threads, int report=0 );
 
 int main (int argc, char ** argv)
 {
@@ -66,7 +65,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "=========================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking DWF"<<std::endl;
   std::cout<<GridLogMessage << "=========================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "Volume \t\t\tProcs \t Dw \t eoDw \t sDw \t eosDw (Mflop/s)  "<<std::endl;
+  std::cout<<GridLogMessage << "Volume \t\t\tProcs \t Dw \t eoDw   "<<std::endl;
   std::cout<<GridLogMessage << "=========================================================================="<<std::endl;
 
   int Lmax=16;
@@ -83,7 +82,6 @@ int main (int argc, char ** argv)
       }
       std::cout <<Ls<<"\t" ;
       benchDw (latt4,Ls,threads,0);
-      benchsDw(latt4,Ls,threads,0);
       std::cout<<std::endl;
     }
   }
@@ -93,8 +91,6 @@ int main (int argc, char ** argv)
     std::vector<int> latt4(4,16);
     std::cout<<GridLogMessage << "16^4 Dw miss rate"<<std::endl;
     benchDw (latt4,Ls,threads,1);
-    std::cout<<GridLogMessage << "16^4 sDw miss rate"<<std::endl;
-    benchsDw(latt4,Ls,threads,1);
   }
 #endif
   Grid_finalize();
@@ -240,147 +236,5 @@ void benchDw(std::vector<int> & latt4, int Ls, int threads,int report )
   }
 }
 
-#define CHECK_SDW
-void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
-{
-  long unsigned int single_site_flops = 8*Nc*(7+16*Nc);
-
-  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(latt4, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
-  GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
-  GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
-  GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
-
-  GridCartesian         * sUGrid   = SpaceTimeGrid::makeFourDimDWFGrid(latt4,GridDefaultMpi());
-  GridRedBlackCartesian * sUrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(sUGrid);
-  GridCartesian         * sFGrid   = SpaceTimeGrid::makeFiveDimDWFGrid(Ls,UGrid);
-  GridRedBlackCartesian * sFrbGrid = SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(Ls,UGrid);
-
-  std::vector<int> seeds4({1,2,3,4});
-  std::vector<int> seeds5({5,6,7,8});
-
-#ifdef CHECK_SDW
-  GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
-  GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
-  LatticeFermion src   (FGrid); random(RNG5,src);
-  LatticeGaugeField Umu(UGrid); 
-  random(RNG4,Umu);
-#else 
-  LatticeFermion src   (FGrid); src=Zero();
-  LatticeGaugeField Umu(UGrid); Umu=Zero();
-#endif
-
-  LatticeFermion result(FGrid); result=Zero();
-  LatticeFermion    ref(FGrid);    ref=Zero();
-  LatticeFermion    tmp(FGrid);
-  LatticeFermion    err(FGrid);
-
-  ColourMatrix cm = Complex(1.0,0.0);
-
-  LatticeGaugeField Umu5d(FGrid); 
-
-  // replicate across fifth dimension
-  auto Umu5d_v = Umu5d.View();
-  auto Umu_v = Umu.View();
-  for(int ss=0;ss<Umu.Grid()->oSites();ss++){
-    for(int s=0;s<Ls;s++){
-      Umu5d_v[Ls*ss+s] = Umu_v[ss];
-    }
-  }
-
-  //  RealD mass=0.1;
-  RealD M5  =1.8;
-
-  typedef WilsonFermion5D<DomainWallVec5dImplR> WilsonFermion5DR;
-  LatticeFermion ssrc(sFGrid);
-  LatticeFermion sref(sFGrid);
-  LatticeFermion sresult(sFGrid);
-  WilsonFermion5DR sDw(Umu,*sFGrid,*sFrbGrid,*sUGrid,*sUrbGrid,M5);
-  
-  for(int x=0;x<latt4[0];x++){
-  for(int y=0;y<latt4[1];y++){
-  for(int z=0;z<latt4[2];z++){
-  for(int t=0;t<latt4[3];t++){
-  for(int s=0;s<Ls;s++){
-    std::vector<int> site({s,x,y,z,t});
-    SpinColourVector tmp;
-    peekSite(tmp,src,site);
-    pokeSite(tmp,ssrc,site);
-  }}}}}
-
-  double t0=usecond();
-  sDw.Dhop(ssrc,sresult,0);
-  double t1=usecond();
-
-#ifdef TIMERS_OFF
-  int ncall =10;
-#else 
-  int ncall =1+(int) ((5.0*1000*1000)/(t1-t0));
-#endif
-
-#ifdef PERFCOUNT
-  PerformanceCounter Counter(8);
-  Counter.Start();
-#endif
-  t0=usecond();
-  for(int i=0;i<ncall;i++){
-    sDw.Dhop(ssrc,sresult,0);
-  }
-  t1=usecond();
-
-#ifdef PERFCOUNT 
-  Counter.Stop();
-  if ( report ) {
-    Counter.Report();
-  } 
-#endif
-
-  if ( !report){
-    double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-    double flops=single_site_flops*volume*ncall;
-    std::cout<<"\t"<< flops/(t1-t0);
-  }
-
-  LatticeFermion sr_eo(sFGrid);
-  LatticeFermion serr(sFGrid);
-  
-  LatticeFermion ssrc_e (sFrbGrid);
-  LatticeFermion ssrc_o (sFrbGrid);
-  LatticeFermion sr_e   (sFrbGrid);
-  LatticeFermion sr_o   (sFrbGrid);
-      
-  pickCheckerboard(Even,ssrc_e,ssrc);
-  pickCheckerboard(Odd,ssrc_o,ssrc);
-  
-  setCheckerboard(sr_eo,ssrc_o);
-  setCheckerboard(sr_eo,ssrc_e);
-    
-  sr_e = Zero();
-  sr_o = Zero();
-  
-  sDw.DhopEO(ssrc_o,sr_e,DaggerNo);
-#ifdef PERFCOUNT
-  PerformanceCounter CounterSdw(8);
-  CounterSdw.Start();
-#endif
-  t0=usecond();
-  for(int i=0;i<ncall;i++){
-    __SSC_START;
-    sDw.DhopEO(ssrc_o,sr_e,DaggerNo);
-    __SSC_STOP;
-  }
-  t1=usecond();
-#ifdef PERFCOUNT
-  CounterSdw.Stop();
-  if ( report ) { 
-    CounterSdw.Report();
-  }
-#endif
-
-  if ( ! report ) {
-    double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-    double flops=(single_site_flops*volume*ncall)/2.0;
-    std::cout<<"\t"<< flops/(t1-t0);
-  }
-}
 
 

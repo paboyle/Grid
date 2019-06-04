@@ -30,9 +30,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace Grid;
 
-typedef WilsonFermion5D<DomainWallVec5dImplR> WilsonFermion5DR;
-typedef WilsonFermion5D<DomainWallVec5dImplF> WilsonFermion5DF;
-typedef WilsonFermion5D<DomainWallVec5dImplD> WilsonFermion5DD;
 
 std::vector<int> L_list;
 std::vector<int> Ls_list;
@@ -273,6 +270,7 @@ public:
     }
   };
 
+#if 0
   static double DWF5(int Ls,int L)
   {
     //    RealD mass=0.1;
@@ -454,6 +452,7 @@ public:
     }
     return mflops_best;
   }
+#endif
 
   static double DWF(int Ls,int L, double & robust)
   {
@@ -743,23 +742,13 @@ int main (int argc, char ** argv)
   }
 
   if ( do_dwf ) {
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    std::cout<<GridLogMessage << " Domain wall dslash 4D vectorised" <<std::endl;
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    for(int l=0;l<L_list.size();l++){
-      dwf5.push_back(Benchmark::DWF5(Ls,L_list[l]));
-    }
-
-  }
-
-  if ( do_dwf ) {
 
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Summary table Ls="<<Ls <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "L \t\t Wilson \t DWF4 \t DWF5 " <<std::endl;
+  std::cout<<GridLogMessage << "L \t\t Wilson \t DWF4 " <<std::endl;
   for(int l=0;l<L_list.size();l++){
-    std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]<<" \t "<<dwf4[l]<<" \t "<<dwf5[l] <<std::endl;
+    std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]<<" \t "<<dwf4[l] <<std::endl;
   }
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   }
@@ -783,9 +772,9 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Per Node Summary table Ls="<<Ls <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << " L \t\t Wilson\t\t DWF4  \t\t DWF5 " <<std::endl;
+  std::cout<<GridLogMessage << " L \t\t Wilson\t\t DWF4  " <<std::endl;
   for(int l=0;l<L_list.size();l++){
-    std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]/NN<<" \t "<<dwf4[l]/NN<<" \t "<<dwf5[l] /NN<<std::endl;
+    std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]/NN<<" \t "<<dwf4[l]/NN<<std::endl;
   }
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 
@@ -797,7 +786,6 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 
   }
-
 
   Grid_finalize();
 }
