@@ -445,8 +445,6 @@ PartialFractionFermion5D<Impl>::PartialFractionFermion5D(GaugeField &_Umu,
   Approx::zolotarev_free(zdata);
 
 }
- 
-FermOpTemplateInstantiate(PartialFractionFermion5D);
 
 NAMESPACE_END(Grid);
 
