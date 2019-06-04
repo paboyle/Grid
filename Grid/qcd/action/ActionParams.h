@@ -42,13 +42,13 @@ struct GparityWilsonImplParams {
   
 struct WilsonImplParams {
   bool overlapCommsCompute;
-  std::vector<Real> twist_n_2pi_L;
-  std::vector<Complex> boundary_phases;
+  AcceleratorVector<Real,Nd> twist_n_2pi_L;
+  AcceleratorVector<Complex,Nd> boundary_phases;
   WilsonImplParams()  {
     boundary_phases.resize(Nd, 1.0);
       twist_n_2pi_L.resize(Nd, 0.0);
   };
-  WilsonImplParams(const std::vector<Complex> phi) : boundary_phases(phi), overlapCommsCompute(false) {
+  WilsonImplParams(const AcceleratorVector<Complex,Nd> phi) : boundary_phases(phi), overlapCommsCompute(false) {
     twist_n_2pi_L.resize(Nd, 0.0);
   }
 };
