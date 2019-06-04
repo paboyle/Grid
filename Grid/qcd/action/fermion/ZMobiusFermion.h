@@ -26,8 +26,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef  GRID_QCD_ZMOBIUS_FERMION_H
-#define  GRID_QCD_ZMOBIUS_FERMION_H
+#pragma once
 
 #include <Grid/qcd/action/fermion/FermionCore.h>
 
@@ -48,7 +47,7 @@ public:
 		 GridCartesian         &FourDimGrid,
 		 GridRedBlackCartesian &FourDimRedBlackGrid,
 		 RealD _mass,RealD _M5,
-		 Vector<ComplexD> &gamma, RealD b,RealD c,const ImplParams &p= ImplParams()) : 
+		 std::vector<ComplexD> &gamma, RealD b,RealD c,const ImplParams &p= ImplParams()) : 
       
     CayleyFermion5D<Impl>(_Umu,
 			  FiveDimGrid,
@@ -72,4 +71,3 @@ public:
 
 NAMESPACE_END(Grid);
 
-#endif
