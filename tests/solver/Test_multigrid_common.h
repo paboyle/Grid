@@ -30,6 +30,8 @@
 
 namespace Grid {
 
+Zero zero;
+
 // TODO: Can think about having one parameter struct per level and then a
 // vector of these structs. How well would that work together with the
 // serialization strategy of Grid?
@@ -124,7 +126,7 @@ public:
         Seeds[level][d] = (level)*Nd + d + 1;
       }
 
-      Grids.push_back(QCD::SpaceTimeGrid::makeFourDimGrid(tmp, Grids[level - 1]->_simd_layout, GridDefaultMpi()));
+      Grids.push_back(SpaceTimeGrid::makeFourDimGrid(tmp, Grids[level - 1]->_simd_layout, GridDefaultMpi()));
       PRNGs.push_back(GridParallelRNG(Grids[level]));
 
       PRNGs[level].SeedFixedIntegers(Seeds[level]);
@@ -227,8 +229,8 @@ public:
     _SetupCreateSubspaceTimer.Stop();
 
     _SetupProjectToChiralitiesTimer.Start();
-    FineVector tmp1(_Aggregates.subspace[0]._grid);
-    FineVector tmp2(_Aggregates.subspace[0]._grid);
+    FineVector tmp1(_Aggregates.subspace[0].Grid());
+    FineVector tmp2(_Aggregates.subspace[0].Grid());
     for(int n = 0; n < nb; n++) {
       auto tmp1 = _Aggregates.subspace[n];
       G5C(tmp2, _Aggregates.subspace[n]);
@@ -253,7 +255,7 @@ public:
 
   virtual void operator()(FineVector const &in, FineVector &out) {
 
-    conformable(_LevelInfo.Grids[_CurrentLevel], in._grid);
+    conformable(_LevelInfo.Grids[_CurrentLevel], in.Grid());
     conformable(in, out);
 
     // TODO: implement a W-cycle
@@ -273,7 +275,7 @@ public:
     CoarseVector coarseSol(_LevelInfo.Grids[_NextCoarserLevel]);
     coarseSol = zero;
 
-    FineVector fineTmp(in._grid);
+    FineVector fineTmp(in.Grid());
 
     auto maxSmootherIter = _MultiGridParams.smootherMaxOuterIter[_CurrentLevel] * _MultiGridParams.smootherMaxInnerIter[_CurrentLevel];
 
@@ -330,7 +332,7 @@ public:
     CoarseVector coarseSol(_LevelInfo.Grids[_NextCoarserLevel]);
     coarseSol = zero;
 
-    FineVector fineTmp(in._grid);
+    FineVector fineTmp(in.Grid());
 
     auto smootherMaxIter = _MultiGridParams.smootherMaxOuterIter[_CurrentLevel] * _MultiGridParams.smootherMaxInnerIter[_CurrentLevel];
     auto kCycleMaxIter   = _MultiGridParams.kCycleMaxOuterIter[_CurrentLevel] * _MultiGridParams.kCycleMaxInnerIter[_CurrentLevel];
@@ -605,7 +607,7 @@ public:
 
     _SolveTotalTimer.Start();
 
-    conformable(_LevelInfo.Grids[_CurrentLevel], in._grid);
+    conformable(_LevelInfo.Grids[_CurrentLevel], in.Grid());
     conformable(in, out);
 
     auto coarseSolverMaxIter = _MultiGridParams.coarseSolverMaxOuterIter * _MultiGridParams.coarseSolverMaxInnerIter;

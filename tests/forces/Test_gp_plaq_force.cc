@@ -54,10 +54,11 @@ int main (int argc, char ** argv)
   SU3::HotConfiguration(pRNG,U);
   
   double beta = 1.0;
-  double c1   = 0.331;
-
-  //ConjugatePlaqPlusRectangleActionR Action(beta,c1);
   ConjugateWilsonGaugeActionR Action(beta);
+
+  //  double c1   = 0.331;
+  //ConjugatePlaqPlusRectangleActionR Action(beta,c1);
+
   //WilsonGaugeActionR Action(beta);
 
   ComplexD S    = Action.S(U);
