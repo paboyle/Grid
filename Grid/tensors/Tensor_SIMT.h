@@ -35,6 +35,7 @@ NAMESPACE_BEGIN(Grid);
 //////////////////////////////////////////
 // Trivial mapping of vectors on host
 //////////////////////////////////////////
+
 template<class vobj> accelerator_inline
 vobj coalescedRead(const vobj & __restrict__ vec)
 {
@@ -57,23 +58,23 @@ void coalescedWrite(vobj & __restrict__ vec,const vobj & __restrict__ extracted)
   vstream(vec, extracted);
 }
 #else
+accelerator_inline int SIMTlane(int Nsimd){ return threadIdx.x % Nsimd; } // CUDA specific
+
 //////////////////////////////////////////
 // Extract and insert slices on the GPU
 //////////////////////////////////////////
 template<class vobj> accelerator_inline
 typename vobj::scalar_object coalescedRead(const vobj & __restrict__ vec)
 {
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-  constexpr int Nsimd = sizeof(vector_type)/sizeof(scalar_type);
-  int lane = threadIdx.x % Nsimd;
+  const int Nsimd = vobj::Nsimd();
+  int lane = SIMTlane(Nsimd);
   return extractLane(lane,vec);
 }
 template<class vobj> accelerator_inline
 typename vobj::scalar_object coalescedReadPermute(const vobj & __restrict__ vec,int ptype,int doperm)
 {
-  constexpr int Nsimd = vobj::Nsimd();
-  int lane = threadIdx.x % Nsimd;
+  const int Nsimd = vobj::Nsimd();
+  int lane = SIMTlane(Nsimd);
   int mask = Nsimd >> (ptype + 1);		
   int plane= doperm ? lane ^ mask : lane;
   return extractLane(plane,vec);
@@ -81,10 +82,8 @@ typename vobj::scalar_object coalescedReadPermute(const vobj & __restrict__ vec,
 template<class vobj> accelerator_inline
 void coalescedWrite(vobj & __restrict__ vec,const typename vobj::scalar_object & __restrict__ extracted)
 {
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-  constexpr int Nsimd = sizeof(vector_type)/sizeof(scalar_type);
-  int lane = threadIdx.x % Nsimd;
+  const int Nsimd = vobj::Nsimd();
+  int lane = SIMTlane(Nsimd);
   insertLane(lane,vec,extracted);
 }
 #endif
