@@ -27,8 +27,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 			   /*  END LEGAL */
-#ifndef  GRID_QCD_DOMAIN_WALL_EOFA_FERMION_H
-#define  GRID_QCD_DOMAIN_WALL_EOFA_FERMION_H
+#pragma once
 
 #include <Grid/qcd/action/fermion/AbstractEOFAFermion.h>
 
@@ -75,16 +74,6 @@ public:
   void M5Ddag(const FermionField& psi, const FermionField& phi, FermionField& chi,
 	      Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper);
 
-  void MooeeInternal(const FermionField& in, FermionField& out, int dag, int inv);
-
-  void MooeeInternalCompute(int dag, int inv, Vector<iSinglet<Simd>>& Matp, Vector<iSinglet<Simd>>& Matm);
-
-  void MooeeInternalAsm(const FermionField& in, FermionField& out, int LLs, int site,
-			Vector<iSinglet<Simd>>& Matp, Vector<iSinglet<Simd>>& Matm);
-
-  void MooeeInternalZAsm(const FermionField& in, FermionField& out, int LLs, int site,
-			 Vector<iSinglet<Simd>>& Matp, Vector<iSinglet<Simd>>& Matm);
-
   virtual void RefreshShiftCoefficients(RealD new_shift);
 
   // Constructors
@@ -99,17 +88,3 @@ protected:
 
 NAMESPACE_END(Grid);
 
-#define INSTANTIATE_DPERP_DWF_EOFA(A)					\
-  template void DomainWallEOFAFermion<A>::M5D(const FermionField& psi, const FermionField& phi, FermionField& chi, \
-					      Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper); \
-  template void DomainWallEOFAFermion<A>::M5Ddag(const FermionField& psi, const FermionField& phi, FermionField& chi, \
-						 Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper); \
-  template void DomainWallEOFAFermion<A>::MooeeInv(const FermionField& psi, FermionField& chi); \
-  template void DomainWallEOFAFermion<A>::MooeeInvDag(const FermionField& psi, FermionField& chi);
-
-#undef  DOMAIN_WALL_EOFA_DPERP_DENSE
-#define DOMAIN_WALL_EOFA_DPERP_CACHE
-#undef  DOMAIN_WALL_EOFA_DPERP_LINALG
-#define DOMAIN_WALL_EOFA_DPERP_VEC
-
-#endif
