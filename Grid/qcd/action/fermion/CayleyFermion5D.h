@@ -26,13 +26,13 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef  GRID_QCD_CAYLEY_FERMION_H
-#define  GRID_QCD_CAYLEY_FERMION_H
+#pragma once
 
 #include <Grid/qcd/action/fermion/WilsonFermion5D.h>
 
 NAMESPACE_BEGIN(Grid);
 
+#if 0
 template<typename T> struct switcheroo   {
   static inline int iscomplex()  { return 0; }
 
@@ -56,7 +56,7 @@ template<> struct switcheroo<ComplexF> {
     return a*b;
   }
 };
-
+#endif
 
 template<class Impl>
 class CayleyFermion5D : public WilsonFermion5D<Impl>
@@ -81,27 +81,27 @@ public:
   virtual void   M5D   (const FermionField &psi, FermionField &chi);
   virtual void   M5Ddag(const FermionField &psi, FermionField &chi);
 
-      ///////////////////////////////////////////////////////////////
-      // Physical surface field utilities
-      ///////////////////////////////////////////////////////////////
-  virtual void   Dminus(const FermionField &psi, FermionField &chi);
-  virtual void   DminusDag(const FermionField &psi, FermionField &chi);
-      virtual void ExportPhysicalFermionSolution(const FermionField &solution5d,FermionField &exported4d);
-      virtual void ExportPhysicalFermionSource(const FermionField &solution5d, FermionField &exported4d);
-      virtual void ImportPhysicalFermionSource(const FermionField &input4d,FermionField &imported5d);
-      virtual void ImportUnphysicalFermion(const FermionField &solution5d, FermionField &exported4d);
+  ///////////////////////////////////////////////////////////////
+  // Physical surface field utilities
+  ///////////////////////////////////////////////////////////////
+  virtual void Dminus(const FermionField &psi, FermionField &chi);
+  virtual void DminusDag(const FermionField &psi, FermionField &chi);
+  virtual void ExportPhysicalFermionSolution(const FermionField &solution5d,FermionField &exported4d);
+  virtual void ExportPhysicalFermionSource(const FermionField &solution5d, FermionField &exported4d);
+  virtual void ImportPhysicalFermionSource(const FermionField &input4d,FermionField &imported5d);
+  virtual void ImportUnphysicalFermion(const FermionField &solution5d, FermionField &exported4d);
 
-      ///////////////////////////////////////////////////////////////
-      // Support for MADWF tricks
-      ///////////////////////////////////////////////////////////////
-      RealD Mass(void) { return mass; };
-      void  SetMass(RealD _mass) { 
-	mass=_mass; 
-	SetCoefficientsInternal(_zolo_hi,_gamma,_b,_c);  // Reset coeffs
-      } ;
-      void  P(const FermionField &psi, FermionField &chi);
-      void  Pdag(const FermionField &psi, FermionField &chi);
-
+  ///////////////////////////////////////////////////////////////
+  // Support for MADWF tricks
+  ///////////////////////////////////////////////////////////////
+  RealD Mass(void) { return mass; };
+  void  SetMass(RealD _mass) { 
+    mass=_mass; 
+    SetCoefficientsInternal(_zolo_hi,_gamma,_b,_c);  // Reset coeffs
+  } ;
+  void  P(const FermionField &psi, FermionField &chi);
+  void  Pdag(const FermionField &psi, FermionField &chi);
+  
   /////////////////////////////////////////////////////
   // Instantiate different versions depending on Impl
   /////////////////////////////////////////////////////
@@ -118,7 +118,7 @@ public:
 	      Vector<Coeff_t> &lower,
 	      Vector<Coeff_t> &diag,
 	      Vector<Coeff_t> &upper);
-
+#if 0
   void MooeeInternal(const FermionField &in, FermionField &out,int dag,int inv);
   void MooeeInternalCompute(int dag, int inv, Vector<iSinglet<Simd> > & Matp, Vector<iSinglet<Simd> > & Matm);
 
@@ -130,7 +130,7 @@ public:
 			 int LLs, int site,
 			 Vector<iSinglet<Simd> > &Matp,
 			 Vector<iSinglet<Simd> > &Matm);
-
+#endif
 
   virtual void   Instantiatable(void)=0;
 
@@ -148,11 +148,11 @@ public:
   //    protected:
   RealD mass;
 
-      // Save arguments to SetCoefficientsInternal
-      Vector<Coeff_t> _gamma;
-      RealD                _zolo_hi;
-      RealD                _b;
-      RealD                _c;
+  // Save arguments to SetCoefficientsInternal
+  Vector<Coeff_t> _gamma;
+  RealD                _zolo_hi;
+  RealD                _b;
+  RealD                _c;
 
   // Cayley form Moebius (tanh and zolotarev)
   Vector<Coeff_t> omega;
@@ -187,8 +187,6 @@ public:
 		  GridRedBlackCartesian &FourDimRedBlackGrid,
 		  RealD _mass,RealD _M5,const ImplParams &p= ImplParams());
 
-
-
   void CayleyReport(void);
   void CayleyZeroCounters(void);
 
@@ -208,21 +206,3 @@ protected:
 
 NAMESPACE_END(Grid);
 
-#define INSTANTIATE_DPERP(A)						\
-  template void CayleyFermion5D< A >::M5D(const FermionField &psi,const FermionField &phi,FermionField &chi, \
-					  Vector<Coeff_t> &lower,Vector<Coeff_t> &diag,Vector<Coeff_t> &upper); \
-  template void CayleyFermion5D< A >::M5Ddag(const FermionField &psi,const FermionField &phi,FermionField &chi,	\
-					     Vector<Coeff_t> &lower,Vector<Coeff_t> &diag,Vector<Coeff_t> &upper); \
-  template void CayleyFermion5D< A >::MooeeInv    (const FermionField &psi, FermionField &chi); \
-  template void CayleyFermion5D< A >::MooeeInvDag (const FermionField &psi, FermionField &chi);
-
-#ifdef GRID_NVCC
-#define  CAYLEY_DPERP_GPU
-#else
-#undef  CAYLEY_DPERP_DENSE
-#define  CAYLEY_DPERP_CACHE
-#undef  CAYLEY_DPERP_LINALG
-#endif
-#define CAYLEY_DPERP_VEC
-
-#endif
