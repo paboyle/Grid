@@ -375,78 +375,47 @@ void WilsonFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, LebesgueO
 						      const FermionField &in,
 						      FermionField &out, int dag) {
   assert((dag == DaggerNo) || (dag == DaggerYes));
-#ifdef GRID_OMP
+
   Compressor compressor(dag);
   int len =  U.Grid()->oSites();
-  const int LLs =  1;
 
+  /////////////////////////////
+  // Start comms  // Gather intranode and extra node differentiated??
+  /////////////////////////////
+  std::vector<std::vector<CommsRequest_t> > requests;
   st.Prepare();
   st.HaloGather(in,compressor);
+  st.CommunicateBegin(requests);
+
+  /////////////////////////////
+  // Overlap with comms
+  /////////////////////////////
   st.CommsMergeSHM(compressor);
-#pragma omp parallel
-  {
-    int tid = omp_get_thread_num();
-    int nthreads = omp_get_num_threads();
-    int ncomms = CartesianCommunicator::nCommThreads;
-    if (ncomms == -1) ncomms = 1;
-    assert(nthreads > ncomms);
-    if (tid >= ncomms) {
-      nthreads -= ncomms;
-      int ttid  = tid - ncomms;
-      int n     = len;
-      int chunk = n / nthreads;
-      int rem   = n % nthreads;
-      int myblock, myn;
-      if (ttid < rem) {
-        myblock = ttid * chunk + ttid;
-        myn = chunk+1;
-      } else {
-        myblock = ttid*chunk + rem;
-        myn = chunk;
-      }
-      // do the compute
-      auto U_v   = U.View();
-      auto in_v  = in.View();
-      auto out_v = out.View();
-      auto st_v  = st.View();
-      int Opt = WilsonKernelsStatic::Opt;
 
-      if (dag == DaggerYes) {
-        for (int sss = myblock; sss < myblock+myn; ++sss) {
-	  Kernels::DhopSiteDag(Opt,st_v,U_v,st.CommBuf(),sss,sss,1,1,in_v,out_v,1,0);
-	  //	  Kernels::DhopSiteDag(st_v, lo, U_v, st.CommBuf(), sss, sss, 1, 1, in_v, out_v);
-	}
-      } else {
-        for (int sss = myblock; sss < myblock+myn; ++sss) {
-	  Kernels::DhopSite(Opt,st_v,U_v,st.CommBuf(),sss,sss,1,1,in_v,out_v,1,0);
-	  //	  Kernels::DhopSite(st_v, lo, U_v, st.CommBuf(), sss, sss, 1, 1, in_v, out_v);
-	}
-      } 
+  /////////////////////////////
+  // do the compute interior
+  /////////////////////////////
+  int Opt = WilsonKernelsStatic::Opt;
+  if (dag == DaggerYes) {
+    Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out,1,0);
+  } else {
+    Kernels::DhopKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out,1,0);
+  } 
 
-    } else {
-      st.CommunicateThreaded();
-    }
-  }  //pragma
+  /////////////////////////////
+  // Complete comms
+  /////////////////////////////
+  st.CommunicateComplete(requests);
+  st.CommsMerge(compressor);
 
-  {
-    auto U_v   = U.View();
-    auto in_v  = in.View();
-    auto out_v = out.View();
-    auto st_v  =  st.View();
-    int Opt = WilsonKernelsStatic::Opt;
-    if (dag == DaggerYes) {
-      thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++) ,{
-	Kernels::DhopSiteDag(Opt,st_v,U_v,st.CommBuf(),sss,sss,1,1,in_v,out_v,0,1);
-      });
-    } else {
-      thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++) ,{
-	Kernels::DhopSite(Opt,st_v,U_v,st.CommBuf(),sss,sss,1,1,in_v,out_v,0,1);
-      });
-    }
+  /////////////////////////////
+  // do the compute exterior
+  /////////////////////////////
+  if (dag == DaggerYes) {
+    Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out,0,1);
+  } else {
+    Kernels::DhopKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out,0,1);
   }
-#else
-  assert(0);
-#endif
 };
 
 

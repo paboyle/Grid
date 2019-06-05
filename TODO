@@ -3,19 +3,23 @@
 GPU branch code item work list
 -----------------------------
 
+
+
 1) Common source GPU and CPU generic kernels???
    - coalescedRead, coalescedWrite in expressions.
    - Uniform coding between GPU kernels and CPU kernels attempt
+   - Clean up PRAGMAS
 
 -- Figure what to do about "multLinkGpu" etc.. in FermionOperatorImpl.
 -- Gparity is the awkward one
 -- Solve non-Gparity first.
+-- Simplify the operator IMPL support
 
 2) - SIMD dirs in stencil
 
 3) Merge develop and test HMC
 
-4)  GPU accelerate EOFA
+4) GPU accelerate EOFA
 
 5) Accelerate the cshift
 
@@ -42,7 +46,6 @@ Single GPU simd target (VGPU)
 14) Audit NAMESPACE CHANGES
 
 15) Staggered kernels inline for GPU
-
 
 -----
 Gianluca's changes

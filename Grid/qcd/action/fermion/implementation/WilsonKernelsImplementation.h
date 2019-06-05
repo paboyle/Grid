@@ -267,7 +267,6 @@ void WilsonKernels<Impl>::DhopDirK( StencilView &st, DoubledGaugeFieldView &U,Si
   int ptype;
 
   SE = st.GetEntry(ptype, dir, sF);
-  //  GENERIC_DHOPDIR_LEG(Xp,spProjXp,spReconXp);
   if (gamma == Xp) {						
     if (SE->_is_local ) {					
       int perm= SE->_permute;					

@@ -227,8 +227,8 @@ public:
 			   Current curr_type,
 			   unsigned int mu,
 			   unsigned int tmin,
-                             unsigned int tmax,
-			     ComplexField &lattice_cmplx);
+			   unsigned int tmax,
+			   ComplexField &lattice_cmplx);
 };
 
 NAMESPACE_END(Grid);

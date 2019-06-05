@@ -267,11 +267,12 @@ struct getVectorType{
 template<typename T>
 class isSIMDvectorized{
   template<typename U>
-  static typename std::enable_if< !std::is_same< typename GridTypeMapper<typename getVectorType<U>::type>::scalar_type,   
-						 typename GridTypeMapper<typename getVectorType<U>::type>::vector_type>::value, char>::type test(void *);
+  static typename std::enable_if< 
+    !std::is_same< typename GridTypeMapper<typename getVectorType<U>::type>::scalar_type,   
+                   typename GridTypeMapper<typename getVectorType<U>::type>::vector_type>::value, 
+    char>::type test(void *);
 
-  template<typename U>
-  static double test(...);
+  template<typename U> static double test(...);
   
 public:
   enum {value = sizeof(test<T>(0)) == sizeof(char) };

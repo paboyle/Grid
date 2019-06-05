@@ -107,7 +107,7 @@ private:
 					 int Ls,int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
 
   static accelerator void GenericDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-						 int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
       
   static accelerator void GenericDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 						    int sF, int sU, const FermionFieldView &in, FermionFieldView &out);

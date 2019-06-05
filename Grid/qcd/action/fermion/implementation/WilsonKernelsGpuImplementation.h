@@ -73,7 +73,7 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
   return;
 }
 
-#ifdef GPU_VEC
+#if 1
 #define GPU_COALESCED_STENCIL_LEG_PROJ(Dir,spProj)			\
   if (SE._is_local) {							\
     int mask = Nsimd >> (ptype + 1);					\
@@ -96,7 +96,7 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
       spProj(chi, in_t);						\
     }									\
   } else {								\
-    chi  = buf[SE._offset+s];						\
+    chi  = (buf[SE._offset+s];						\
   }									\
   synchronise();
 #endif
@@ -106,15 +106,9 @@ accelerator_inline void WilsonKernels<Impl>::GpuDhopSiteDag(StencilView &st, Sit
 							    SiteHalfSpinor *buf, int Ls, int s,
 							    int sU, const FermionFieldView &in, FermionFieldView &out)
 {
-#ifdef __CUDA_ARCH__
   typename SiteHalfSpinor::scalar_object chi;
   typename SiteHalfSpinor::scalar_object Uchi;
   typename SiteSpinor::scalar_object   result;
-#else 
-  SiteHalfSpinor chi;
-  SiteHalfSpinor Uchi;
-  SiteSpinor     result;
-#endif
 
   typedef typename SiteSpinor::scalar_type scalar_type;
   typedef typename SiteSpinor::vector_type vector_type;
@@ -173,11 +167,7 @@ accelerator_inline void WilsonKernels<Impl>::GpuDhopSiteDag(StencilView &st, Sit
     GPU_COALESCED_STENCIL_LEG_PROJ(Tm,spProjTm); 
     Impl::multLinkGpu(lane,Uchi,U,chi,Tm);
     accumReconTm(result, Uchi);
-#ifdef GPU_VEC
-  insertLane (lane,out[sF],result);
-#else
-  vstream(out[sF], result);
-#endif
+    insertLane (lane,out[sF],result);
   }
 }
 
@@ -186,15 +176,10 @@ accelerator_inline void WilsonKernels<Impl>::GpuDhopSite(StencilView &st, SiteDo
 							 SiteHalfSpinor *buf,  int Ls, int s,
 							 int sU, const FermionFieldView &in, FermionFieldView &out) 
 {
-#ifdef __CUDA_ARCH__
   typename SiteHalfSpinor::scalar_object chi;
   typename SiteHalfSpinor::scalar_object Uchi;
   typename SiteSpinor::scalar_object   result;
-#else 
-  SiteHalfSpinor chi;
-  SiteHalfSpinor Uchi;
-  SiteSpinor     result;
-#endif
+
   typedef typename SiteSpinor::scalar_type scalar_type;
   typedef typename SiteSpinor::vector_type vector_type;
   constexpr int Nsimd = sizeof(vector_type)/sizeof(scalar_type);
@@ -255,11 +240,7 @@ accelerator_inline void WilsonKernels<Impl>::GpuDhopSite(StencilView &st, SiteDo
     Impl::multLinkGpu(lane,Uchi,U,chi,Tm);
     accumReconTp(result, Uchi);
 
-#ifdef GPU_VEC
     insertLane (lane,out[sF],result);
-#else
-  vstream(out[sF], result);
-#endif
   }
 };
 
@@ -287,6 +268,25 @@ GPU_EMPTY(GparityWilsonImplFH);
 GPU_EMPTY(GparityWilsonImplD);
 GPU_EMPTY(GparityWilsonImplDF);
 
+#define KERNEL_CALL(A) \
+      const uint64_t nsimd = Simd::Nsimd(); \
+      const uint64_t    NN = Nsite*Ls*nsimd;\
+      accelerator_loopN( sss, NN, {         \
+	  uint64_t cur  = sss;              \
+	  cur = cur / nsimd;                \
+	  uint64_t   s  = cur%Ls;           \
+	  cur = cur / Ls;                   \
+	  uint64_t   sU = cur;              \
+	  WilsonKernels<Impl>::A(st_v,U_v[sU],buf,Ls,s,sU,in_v,out_v);\
+      });
+ 
+#define HOST_CALL(A) \
+  accelerator_loopN( ss, Ls*Nsite, {					\
+      int sF = ss;							\
+      int sU = ss/Ls;							\
+      WilsonKernels<Impl>::A(st_v,U_v,st.CommBuf(),sF,sU,in_v,out_v);	\
+  });
+
 template <class Impl>
 void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
 				     int Ls, int Nsite, const FermionField &in, FermionField &out,
@@ -297,25 +297,18 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
     auto out_v = out.View();
     auto st_v  =  st.View();
 
-    if ( (Opt == WilsonKernelsStatic::OptGpu) && interior && exterior ) { 
-#define KERNEL_CALL(A) \
-      const uint64_t nsimd = Simd::Nsimd(); \
-      const uint64_t    NN = Nsite*Ls*nsimd;\
-      accelerator_loopN( sss, NN, {         \
-	  uint64_t cur  = sss;              \
-	  cur = cur / nsimd;                \
-	  uint64_t   s  = cur%Ls;           \
-	  cur = cur / Ls;                   \
-	  uint64_t   sU = cur; 
-	  WilsonKernels<Impl>::GpuDhopSite(st_v,U_v[sU],buf,Ls,s,sU,in_v,out_v);
-      });
-    } else { 
-      accelerator_loop( ss, U_v, {
-	int sU = ss;
-        int sF = Ls * sU;
-        WilsonKernels<Impl>::GenericDhopSite(Opt,st_v,U_v,st.CommBuf(),sF,sU,Ls,1,in_v,out_v);
-      });
-    }
+   if( interior && exterior ) { 
+     if (Opt == WilsonKernelsStatic::OptGpu) {
+       KERNEL_CALL(GpuDhopSite);
+     } else {
+       HOST_CALL(GenericDhopSite);
+     }
+   } else if( interior ) {
+     HOST_CALL(GenericDhopSiteInt);
+   } else if( exterior ) { 
+     HOST_CALL(GenericDhopSiteExt);
+   }
+
   }
   template <class Impl>
   void WilsonKernels<Impl>::DhopDagKernel(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
@@ -327,25 +320,16 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
     auto out_v = out.View();
     auto st_v  = st.View();
 
-    if ( (Opt == WilsonKernelsStatic::OptGpu) && interior && exterior ) { 
-      const uint64_t nsimd = Simd::Nsimd();
-      const uint64_t    NN = Nsite*Ls*nsimd;
-      accelerator_loopN( sss, NN, {
-	  uint64_t cur  = sss;
-	  //	  uint64_t lane = cur % nsimd;
-	  cur = cur / nsimd;
-	  uint64_t   s  = cur%Ls;
-	  //	  uint64_t   sF = cur;         
-	  cur = cur / Ls;
-	  uint64_t   sU = cur;
-	  WilsonKernels<Impl>::GpuDhopSiteDag(st_v,U_v[sU],buf,Ls,s,sU,in_v,out_v);
-      });
-    } else { 
-      accelerator_loop( ss, U_v, {
-	int sU = ss;
-	int sF = Ls * sU;
-	WilsonKernels<Impl>::GenericDhopSiteDag(Opt,st,U_v,st.CommBuf(),sF,sU,Ls,1,in_v,out_v);
-      });
+    if( interior && exterior ) { 
+      if (Opt == WilsonKernelsStatic::OptGpu) {
+	KERNEL_CALL(GpuDhopSiteDag);
+      } else {
+	HOST_CALL(GenericDhopSiteDag);
+      }
+    } else if( interior ) {
+      HOST_CALL(GenericDhopSiteDagInt);
+    } else if( exterior ) { 
+      HOST_CALL(GenericDhopSiteDagExt);
     }
   }
 

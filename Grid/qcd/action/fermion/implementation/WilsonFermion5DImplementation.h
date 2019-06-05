@@ -386,11 +386,9 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
                                          const FermionField &in, FermionField &out,int dag)
 {
   DhopTotalTime-=usecond();
-#ifdef GRID_OMP
   if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute )
     DhopInternalOverlappedComms(st,lo,U,in,out,dag);
   else 
-#endif
     DhopInternalSerialComms(st,lo,U,in,out,dag);
   DhopTotalTime+=usecond();
 }
@@ -401,111 +399,70 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 							DoubledGaugeField & U,
 							const FermionField &in, FermionField &out,int dag)
 {
-#ifdef GRID_OMP
   Compressor compressor(dag);
 
   int LLs = in.Grid()->_rdimensions[0];
   int len =  U.Grid()->oSites();
 
+  /////////////////////////////
+  // Start comms  // Gather intranode and extra node differentiated??
+  /////////////////////////////
   DhopFaceTime-=usecond();
   st.HaloExchangeOptGather(in,compressor);
-  st.CommsMergeSHM(compressor);// Could do this inside parallel region overlapped with comms
   DhopFaceTime+=usecond();
 
-  double ctime=0;
-  double ptime=0;
+  DhopCommTime -=usecond();
+  std::vector<std::vector<CommsRequest_t> > requests;
+  st.CommunicateBegin(requests);
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Ugly explicit thread mapping introduced for OPA reasons.
-  //////////////////////////////////////////////////////////////////////////////////////////////////////
-  auto U_v   = U.View();
-  auto in_v  = in.View();
-  auto out_v = out.View();
-  int Opt = WilsonKernelsStatic::Opt;
-#pragma omp parallel reduction(max:ctime) reduction(max:ptime)
-  { 
-    int tid = omp_get_thread_num();
-    int nthreads = omp_get_num_threads();
-    int ncomms = CartesianCommunicator::nCommThreads;
-    if (ncomms == -1) ncomms = 1;
-    assert(nthreads > ncomms);
-    if (tid >= ncomms) {
-      double start = usecond();
-      nthreads -= ncomms;
-      int ttid = tid - ncomms;
-      int n = U.Grid()->oSites();
-      int chunk = n / nthreads;
-      int rem = n % nthreads;
-      int myblock, myn;
-      if (ttid < rem) {
-	myblock = ttid * chunk + ttid;
-	myn = chunk+1;
-      } else {
-	myblock = ttid*chunk + rem;
-	myn = chunk;
-      }
+  /////////////////////////////
+  // Overlap with comms
+  /////////////////////////////
+  DhopFaceTime-=usecond();
+  st.CommsMergeSHM(compressor);// Could do this inside parallel region overlapped with comms
+  DhopFaceTime+=usecond();
       
-      // do the compute
-      if (dag == DaggerYes) {
-	for (int ss = myblock; ss < myblock+myn; ++ss) {
-	  int sU = ss;
-	  int sF = LLs * sU;
- 	  Kernels::DhopSiteDag(Opt,st,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v,1,0);
-	}
-      } else {
-	for (int ss = myblock; ss < myblock+myn; ++ss) {
-	  int sU = ss;
-	  int sF = LLs * sU;
-	  Kernels::DhopSite(Opt,st,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v,1,0);
-	}
-      }
-      ptime = usecond() - start;
-    }
-    {
-      double start = usecond();
-      st.CommunicateThreaded();
-      ctime = usecond() - start;
-    }
+  /////////////////////////////
+  // do the compute interior
+  /////////////////////////////
+  int Opt = WilsonKernelsStatic::Opt; // Why pass this. Kernels should know
+  DhopComputeTime-=usecond();
+  if (dag == DaggerYes) {
+    Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,1,0);
+  } else {
+    Kernels::DhopKernel   (Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,1,0);
   }
-  DhopCommTime += ctime;
-  DhopComputeTime+=ptime;
+  DhopComputeTime+=usecond();
 
-  // First to enter, last to leave timing
-  st.CollateThreads();
+  /////////////////////////////
+  // Complete comms
+  /////////////////////////////
+  st.CommunicateComplete(requests);
+  DhopCommTime   +=usecond();
 
+  /////////////////////////////
+  // do the compute exterior
+  /////////////////////////////
   DhopFaceTime-=usecond();
   st.CommsMerge(compressor);
   DhopFaceTime+=usecond();
 
   DhopComputeTime2-=usecond();
   if (dag == DaggerYes) {
-    int sz=st.surface_list.size();
-    thread_loop( (int ss = 0; ss < sz; ss++) ,{
-      int sU = st.surface_list[ss];
-      int sF = LLs * sU;
-      Kernels::DhopSiteDag(Opt,st,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v,0,1);
-    });
+    Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,0,1);
   } else {
-    int sz=st.surface_list.size();
-    thread_loop( (int ss = 0; ss < sz; ss++) ,{
-      int sU = st.surface_list[ss];
-      int sF = LLs * sU;
-      Kernels::DhopSite(Opt,st,U_v,st.CommBuf(),sF,sU,LLs,1,in_v,out_v,0,1);
-    });
+    Kernels::DhopKernel   (Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,0,1);
   }
   DhopComputeTime2+=usecond();
-#else 
-  assert(0);
-#endif
 }
 
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOrder &lo,
-					 DoubledGaugeField & U,
-					 const FermionField &in, FermionField &out,int dag)
+						    DoubledGaugeField & U,
+						    const FermionField &in, 
+						    FermionField &out,int dag)
 {
-  //  assert((dag==DaggerNo) ||(dag==DaggerYes));
   Compressor compressor(dag);
 
   int LLs = in.Grid()->_rdimensions[0];
@@ -515,24 +472,11 @@ void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOr
   DhopCommTime+=usecond();
   
   DhopComputeTime-=usecond();
-  // Dhop takes the 4d grid from U, and makes a 5d index for fermion
-
-  auto U_v = U.View();
   int Opt = WilsonKernelsStatic::Opt;
   if (dag == DaggerYes) {
-    Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),LLs,U_v.size(),in,out);
-    //    parallel_for (int ss = 0; ss < U.Grid()->oSites(); ss++) {
-    //      int sU = ss;
-    //      int sF = LLs * sU;
-    //      Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
-    //    }
+    Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out);
   } else {
-    Kernels::DhopKernel(Opt,st,U,st.CommBuf(),LLs,U_v.size(),in,out);
-    //    parallel_for (int ss = 0; ss < U.Grid()->oSites(); ss++) {
-    //      int sU = ss;
-    //      int sF = LLs * sU;
-    //      Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
-    //    }
+    Kernels::DhopKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out);
   }
   DhopComputeTime+=usecond();
 }
