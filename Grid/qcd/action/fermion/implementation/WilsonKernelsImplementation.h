@@ -43,11 +43,12 @@ NAMESPACE_BEGIN(Grid);
   SE = st.GetEntry(ptype, Dir, sF);				\
   if (SE->_is_local) {						\
     int perm= SE->_permute;					\
-    auto tmp = coalescedReadPermute(in[SE->_offset],ptype,perm);	\
+    auto tmp = coalescedReadPermute(in[SE->_offset],ptype,perm,lane);	\
     spProj(chi,tmp);						\
   } else {							\
-    chi = coalescedRead(buf[SE->_offset]);			\
+    chi = coalescedRead(buf[SE->_offset],lane);			\
   }								\
+  synchronise();						\
   Impl::multLink(Uchi, U[sU], chi, Dir, SE, st);		\
   Recon(result, Uchi);
   
@@ -55,36 +56,41 @@ NAMESPACE_BEGIN(Grid);
   SE = st.GetEntry(ptype, Dir, sF);				\
   if (SE->_is_local) {						\
     int perm= SE->_permute;					\
-    auto tmp = coalescedReadPermute(in[SE->_offset],ptype,perm);	\
+    auto tmp = coalescedReadPermute(in[SE->_offset],ptype,perm,lane);	\
     spProj(chi,tmp);						\
   } else if ( st.same_node[Dir] ) {				\
-    chi = coalescedRead(buf[SE->_offset]);			\
+    chi = coalescedRead(buf[SE->_offset],lane);			\
   }								\
+  synchronise();						\
   if (SE->_is_local || st.same_node[Dir] ) {			\
     Impl::multLink(Uchi, U[sU], chi, Dir, SE, st);		\
     Recon(result, Uchi);					\
-  }
+  }								\
+  synchronise();						
 
 #define GENERIC_STENCIL_LEG_EXT(Dir,spProj,Recon)		\
   SE = st.GetEntry(ptype, Dir, sF);				\
   if ((!SE->_is_local) && (!st.same_node[Dir]) ) {		\
-    auto chi = coalescedRead(buf[SE->_offset]);			\
+    auto chi = coalescedRead(buf[SE->_offset],lane);		\
     Impl::multLink(Uchi, U[sU], chi, Dir, SE, st);		\
     Recon(result, Uchi);					\
     nmu++;							\
-  }
+  }								\
+  synchronise();						
 
 #define GENERIC_DHOPDIR_LEG(Dir,spProj,Recon)			\
   if (gamma == Dir) {						\
     if (SE->_is_local ) {					\
       int perm= SE->_permute;					\
-      auto tmp = coalescedReadPermute(in[SE->_offset],ptype,perm);	\
+      auto tmp = coalescedReadPermute(in[SE->_offset],ptype,perm,lane);	\
       spProj(chi,tmp);						\
     } else {							\
-      chi = coalescedRead(buf[SE->_offset]);			\
+      chi = coalescedRead(buf[SE->_offset],lane);		\
     }								\
+    synchronise();						\
     Impl::multLink(Uchi, U[sU], chi, dir, SE, st);		\
     Recon(result, Uchi);					\
+    synchronise();						\
   }
 
   ////////////////////////////////////////////////////////////////////
@@ -103,7 +109,8 @@ void WilsonKernels<Impl>::GenericDhopSiteDag(StencilView &st, DoubledGaugeFieldV
   calcSpinor result;
   StencilEntry *SE;
   int ptype;
-
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=SIMTlane(Nsimd);
   GENERIC_STENCIL_LEG(Xp,spProjXp,spReconXp);
   GENERIC_STENCIL_LEG(Yp,spProjYp,accumReconYp);
   GENERIC_STENCIL_LEG(Zp,spProjZp,accumReconZp);
@@ -112,7 +119,7 @@ void WilsonKernels<Impl>::GenericDhopSiteDag(StencilView &st, DoubledGaugeFieldV
   GENERIC_STENCIL_LEG(Ym,spProjYm,accumReconYm);
   GENERIC_STENCIL_LEG(Zm,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG(Tm,spProjTm,accumReconTm);
-  coalescedWrite(out[sF],result);
+  coalescedWrite(out[sF],result,lane);
 };
 
 template <class Impl>
@@ -129,6 +136,8 @@ void WilsonKernels<Impl>::GenericDhopSite(StencilView &st, DoubledGaugeFieldView
   StencilEntry *SE;
   int ptype;
 
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=SIMTlane(Nsimd);
   GENERIC_STENCIL_LEG(Xm,spProjXp,spReconXp);
   GENERIC_STENCIL_LEG(Ym,spProjYp,accumReconYp);
   GENERIC_STENCIL_LEG(Zm,spProjZp,accumReconZp);
@@ -137,7 +146,7 @@ void WilsonKernels<Impl>::GenericDhopSite(StencilView &st, DoubledGaugeFieldView
   GENERIC_STENCIL_LEG(Yp,spProjYm,accumReconYm);
   GENERIC_STENCIL_LEG(Zp,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG(Tp,spProjTm,accumReconTm);
-  coalescedWrite(out[sF], result);
+  coalescedWrite(out[sF], result,lane);
 };
   ////////////////////////////////////////////////////////////////////
   // Interior kernels
@@ -155,6 +164,8 @@ void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilView &st,  DoubledGaugeFi
   calcSpinor result;
   StencilEntry *SE;
   int ptype;
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=SIMTlane(Nsimd);
 
   result=Zero();
   GENERIC_STENCIL_LEG_INT(Xp,spProjXp,accumReconXp);
@@ -165,7 +176,7 @@ void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilView &st,  DoubledGaugeFi
   GENERIC_STENCIL_LEG_INT(Ym,spProjYm,accumReconYm);
   GENERIC_STENCIL_LEG_INT(Zm,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG_INT(Tm,spProjTm,accumReconTm);
-  coalescedWrite(out[sF], result);
+  coalescedWrite(out[sF], result,lane);
 };
 
 template <class Impl>
@@ -175,6 +186,8 @@ void WilsonKernels<Impl>::GenericDhopSiteInt(StencilView &st,  DoubledGaugeField
 {
   typedef decltype(coalescedRead(buf[0])) calcHalfSpinor;
   typedef decltype(coalescedRead(in[0]))  calcSpinor;
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=SIMTlane(Nsimd);
 
   calcHalfSpinor chi;
   //  calcHalfSpinor *chi_p;
@@ -191,7 +204,7 @@ void WilsonKernels<Impl>::GenericDhopSiteInt(StencilView &st,  DoubledGaugeField
   GENERIC_STENCIL_LEG_INT(Yp,spProjYm,accumReconYm);
   GENERIC_STENCIL_LEG_INT(Zp,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG_INT(Tp,spProjTm,accumReconTm);
-  coalescedWrite(out[sF], result);
+  coalescedWrite(out[sF], result,lane);
 };
 ////////////////////////////////////////////////////////////////////
 // Exterior kernels
@@ -209,6 +222,8 @@ void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilView &st,  DoubledGaugeFi
   StencilEntry *SE;
   int ptype;
   int nmu=0;
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=SIMTlane(Nsimd);
   result=Zero();
   GENERIC_STENCIL_LEG_EXT(Xp,spProjXp,accumReconXp);
   GENERIC_STENCIL_LEG_EXT(Yp,spProjYp,accumReconYp);
@@ -219,9 +234,9 @@ void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilView &st,  DoubledGaugeFi
   GENERIC_STENCIL_LEG_EXT(Zm,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG_EXT(Tm,spProjTm,accumReconTm);
   if ( nmu ) { 
-    auto out_t = coalescedRead(out[sF]);
+    auto out_t = coalescedRead(out[sF],lane);
     out_t = out_t + result;
-    coalescedWrite(out[sF],out_t);
+    coalescedWrite(out[sF],out_t,lane);
   }
 };
 
@@ -238,6 +253,8 @@ void WilsonKernels<Impl>::GenericDhopSiteExt(StencilView &st,  DoubledGaugeField
   StencilEntry *SE;
   int ptype;
   int nmu=0;
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=SIMTlane(Nsimd);
   result=Zero();
   GENERIC_STENCIL_LEG_EXT(Xm,spProjXp,accumReconXp);
   GENERIC_STENCIL_LEG_EXT(Ym,spProjYp,accumReconYp);
@@ -248,9 +265,9 @@ void WilsonKernels<Impl>::GenericDhopSiteExt(StencilView &st,  DoubledGaugeField
   GENERIC_STENCIL_LEG_EXT(Zp,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG_EXT(Tp,spProjTm,accumReconTm);
   if ( nmu ) { 
-    auto out_t = coalescedRead(out[sF]);
+    auto out_t = coalescedRead(out[sF],lane);
     out_t = out_t + result;
-    coalescedWrite(out[sF],out_t);
+    coalescedWrite(out[sF],out_t,lane);
   }
 };
 
@@ -265,15 +282,17 @@ void WilsonKernels<Impl>::DhopDirK( StencilView &st, DoubledGaugeFieldView &U,Si
   calcHalfSpinor Uchi;
   StencilEntry *SE;
   int ptype;
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=SIMTlane(Nsimd);
 
   SE = st.GetEntry(ptype, dir, sF);
   if (gamma == Xp) {						
     if (SE->_is_local ) {					
       int perm= SE->_permute;					
-      auto tmp = coalescedReadPermute(in[SE->_offset],ptype,perm);	
+      auto tmp = coalescedReadPermute(in[SE->_offset],ptype,perm,lane);	
       spProjXp(chi,tmp);						
     } else {							
-      chi = coalescedRead(buf[SE->_offset]);			
+      chi = coalescedRead(buf[SE->_offset],lane);			
     }								
     Impl::multLink(Uchi, U[sU], chi, dir, SE, st);		
     spReconXp(result, Uchi);					
@@ -286,7 +305,7 @@ void WilsonKernels<Impl>::DhopDirK( StencilView &st, DoubledGaugeFieldView &U,Si
   GENERIC_DHOPDIR_LEG(Ym,spProjYm,spReconYm);
   GENERIC_DHOPDIR_LEG(Zm,spProjZm,spReconZm);
   GENERIC_DHOPDIR_LEG(Tm,spProjTm,spReconTm);
-  coalescedWrite(out[sF], result);
+  coalescedWrite(out[sF], result,lane);
 }
 
 /*******************************************************************************
@@ -354,37 +373,6 @@ void WilsonKernels<Impl>::ContractConservedCurrentSiteBwd(const SitePropagator &
     q_out -= result;
   }
 }
-
-// G-parity requires more specialised implementation.
-#define NO_CURR_SITE(Impl) \
-template <> \
-void WilsonKernels<Impl>::ContractConservedCurrentSiteFwd(const SitePropagator &q_in_1, \
-							  const SitePropagator &q_in_2, \
-							  SitePropagator &q_out, \
-							  DoubledGaugeFieldView &U, \
-							  unsigned int sU, \
-							  unsigned int mu, \
-							  bool switch_sign) \
-{									\
-  assert(0);								\
-}									\
-template <>								\
-void WilsonKernels<Impl>::ContractConservedCurrentSiteBwd( const SitePropagator &q_in_1, \
-							   const SitePropagator &q_in_2, \
-							   SitePropagator &q_out, \
-							   DoubledGaugeFieldView &U, \
-							   unsigned int mu, \
-							   unsigned int sU, \
-							   bool switch_sign) \
-{									\
-  assert(0);								\
-}
-
-NO_CURR_SITE(GparityWilsonImplF);
-NO_CURR_SITE(GparityWilsonImplD);
-NO_CURR_SITE(GparityWilsonImplFH);
-NO_CURR_SITE(GparityWilsonImplDF);
-
 
 /*******************************************************************************
  * Name: SeqConservedCurrentSiteFwd
