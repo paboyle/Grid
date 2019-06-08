@@ -38,10 +38,6 @@ Author: Vera Guelpers <V.M.Guelpers@soton.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
   
-// S-direction is INNERMOST and takes no part in the parity.
-const std::vector<int> WilsonFermion5DStatic::directions   ({1,2,3,4, 1, 2, 3, 4});
-const std::vector<int> WilsonFermion5DStatic::displacements({1,1,1,1,-1,-1,-1,-1});
-
   // 5d lattice for DWF.
 template<class Impl>
 WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
