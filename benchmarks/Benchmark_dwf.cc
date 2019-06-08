@@ -21,10 +21,13 @@
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
+#define CUDA_PROFILE
+#ifdef CUDA_PROFILE
+#include <cuda_profiler_api.h>
+#endif
 
 using namespace std;
 using namespace Grid;
- ;
 
 template<class d>
 struct scal {
@@ -178,6 +181,7 @@ int main (int argc, char ** argv)
 
   DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   int ncall =1000;
+
   if (1) {
     FGrid->Barrier();
     Dw.ZeroCounters();
@@ -320,7 +324,13 @@ int main (int argc, char ** argv)
     Dw.DhopEO(src_o,r_e,DaggerNo);
     double t0=usecond();
     for(int i=0;i<ncall;i++){
+#ifdef CUDA_PROFILE
+      if(i==10) cudaProfilerStart();
+#endif
       Dw.DhopEO(src_o,r_e,DaggerNo);
+#ifdef CUDA_PROFILE
+      if(i==20) cudaProfilerStop();
+#endif
     }
     double t1=usecond();
     FGrid->Barrier();
