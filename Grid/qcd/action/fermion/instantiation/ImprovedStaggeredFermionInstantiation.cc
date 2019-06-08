@@ -27,13 +27,10 @@ directory
 *************************************************************************************/
 			   /*  END LEGAL */
 #include <Grid.h>
-#include <Grid/qcd/action/fermion/implementation/ImprovedStaggeredFermionImplementation.h>
 
 NAMESPACE_BEGIN(Grid);
 
 const std::vector<int> ImprovedStaggeredFermionStatic::directions({0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3});
 const std::vector<int> ImprovedStaggeredFermionStatic::displacements({1, 1, 1, 1, -1, -1, -1, -1, 3, 3, 3, 3, -3, -3, -3, -3});
-
-FermOpStaggeredTemplateInstantiate(ImprovedStaggeredFermion);
 
 NAMESPACE_END(Grid);

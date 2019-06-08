@@ -29,12 +29,13 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/qcd/action/fermion/FermionCore.h>
-#include <Grid/qcd/action/fermion/implementation/WilsonFermion5DImplementation.h>
+#include <Grid/qcd/action/fermion/WilsonFermion5D.h>
 
 NAMESPACE_BEGIN(Grid);
 
-FermOpTemplateInstantiate(WilsonFermion5D);
-GparityFermOpTemplateInstantiate(WilsonFermion5D);
+// S-direction is INNERMOST and takes no part in the parity.
+const std::vector<int> WilsonFermion5DStatic::directions   ({1,2,3,4, 1, 2, 3, 4});
+const std::vector<int> WilsonFermion5DStatic::displacements({1,1,1,1,-1,-1,-1,-1});
 
 NAMESPACE_END(Grid);
 

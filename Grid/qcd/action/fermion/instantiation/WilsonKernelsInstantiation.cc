@@ -29,23 +29,12 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/qcd/action/fermion/FermionCore.h>
-#include <Grid/qcd/action/fermion/implementation/WilsonKernelsImplementation.h>
-#include <Grid/qcd/action/fermion/implementation/WilsonKernelsAsmImplementation.h>
-#include <Grid/qcd/action/fermion/implementation/WilsonKernelsGpuImplementation.h>
-#include <Grid/qcd/action/fermion/implementation/WilsonKernelsHandImplementation.h>
-#include <Grid/qcd/action/fermion/implementation/WilsonKernelsHandGparityImplementation.h>
 
 NAMESPACE_BEGIN(Grid);
 
 // Move these
 int WilsonKernelsStatic::Opt   = WilsonKernelsStatic::OptGeneric;
 int WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsAndCompute;
-
-// FIXME: Break these out to parallel make
-FermOpTemplateInstantiate(WilsonKernels);
-GparityFermOpTemplateInstantiate(WilsonKernels); // Specialisation in Gparity forces instantiation
-AdjointFermOpTemplateInstantiate(WilsonKernels);
-TwoIndexFermOpTemplateInstantiate(WilsonKernels);
 
 NAMESPACE_END(Grid);
 

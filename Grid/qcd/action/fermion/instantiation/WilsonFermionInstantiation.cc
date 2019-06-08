@@ -29,18 +29,13 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/qcd/action/fermion/FermionCore.h>
-#include <Grid/qcd/action/fermion/implementation/WilsonFermionImplementation.h>
+#include <Grid/qcd/action/fermion/WilsonFermion.h>
 
 NAMESPACE_BEGIN(Grid);
 
 const std::vector<int> WilsonFermionStatic::directions({0, 1, 2, 3, 0, 1, 2, 3});
 const std::vector<int> WilsonFermionStatic::displacements({1, 1, 1, 1, -1, -1, -1, -1});
 int WilsonFermionStatic::HandOptDslash;
-
-FermOpTemplateInstantiate(WilsonFermion);
-AdjointFermOpTemplateInstantiate(WilsonFermion);
-TwoIndexFermOpTemplateInstantiate(WilsonFermion);
-GparityFermOpTemplateInstantiate(WilsonFermion);
 
 NAMESPACE_END(Grid);
 

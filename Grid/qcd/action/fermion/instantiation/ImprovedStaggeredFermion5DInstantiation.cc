@@ -28,17 +28,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 /*  END LEGAL */
 #include <Grid/qcd/action/fermion/FermionCore.h>
 #include <Grid/qcd/action/fermion/ImprovedStaggeredFermion5D.h>
-#include <Grid/qcd/action/fermion/implementation/ImprovedStaggeredFermion5DImplementation.h>
-#include <Grid/perfmon/PerfCount.h>
 
 NAMESPACE_BEGIN(Grid);
   
 // S-direction is INNERMOST and takes no part in the parity.
 const std::vector<int> ImprovedStaggeredFermion5DStatic::directions({1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4});
 const std::vector<int> ImprovedStaggeredFermion5DStatic::displacements({1, 1, 1, 1, -1, -1, -1, -1, 3, 3, 3, 3, -3, -3, -3, -3});
-
-FermOpStaggeredTemplateInstantiate(ImprovedStaggeredFermion5D);
-FermOpStaggeredVec5dTemplateInstantiate(ImprovedStaggeredFermion5D);
   
 NAMESPACE_END(Grid);
 

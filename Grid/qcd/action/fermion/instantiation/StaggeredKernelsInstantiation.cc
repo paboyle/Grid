@@ -27,17 +27,12 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/qcd/action/fermion/FermionCore.h>
-#include <Grid/qcd/action/fermion/implementation/StaggeredKernelsImplementation.h>
-#include <Grid/qcd/action/fermion/implementation/StaggeredKernelsHand.h>
 
 
 NAMESPACE_BEGIN(Grid);
 
 int StaggeredKernelsStatic::Opt= StaggeredKernelsStatic::OptGeneric;
 int StaggeredKernelsStatic::Comms = StaggeredKernelsStatic::CommsAndCompute;
-
-FermOpStaggeredTemplateInstantiate(StaggeredKernels);
-FermOpStaggeredVec5dTemplateInstantiate(StaggeredKernels);
 
 NAMESPACE_END(Grid);
 
