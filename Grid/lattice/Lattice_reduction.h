@@ -59,8 +59,7 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
   auto left_v = left.View();
   auto right_v=right.View();
 
-#ifdef GRID_NVCC
-
+#if 0
   typedef decltype(innerProduct(left_v[0],right_v[0])) inner_t;
   thrust::plus<inner_t> binary_sum;
   innerProductFunctor<vobj,inner_t> binary_inner_p;
@@ -69,7 +68,6 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
   // is there a way of using the efficient thrust reduction while maintaining memory coalescing?
   inner_t vnrm = thrust::inner_product(thrust::device, &left_v[0], &left_v[sN], &right_v[0], zero, binary_sum, binary_inner_p);
   nrm = Reduce(TensorRemove(vnrm));// sum across simd
-  
 #else
   thread_loop( (int thr=0;thr<grid->SumArraySize();thr++),{
     int mywork, myoff;
