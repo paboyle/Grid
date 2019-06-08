@@ -597,21 +597,6 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilView &st,DoubledGaugeFieldVi
 
 ////////////// Wilson ; uses this implementation /////////////////////
 
-#define INSTANTIATE_THEM(A) \
-template void WilsonKernels<A>::HandDhopSite(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,\
-					     int ss,int sU,const FermionFieldView &in, FermionFieldView &out); \
-template void WilsonKernels<A>::HandDhopSiteDag(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
-						int ss,int sU,const FermionFieldView &in, FermionFieldView &out);\
-template void WilsonKernels<A>::HandDhopSiteInt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,\
-						int ss,int sU,const FermionFieldView &in, FermionFieldView &out); \
-template void WilsonKernels<A>::HandDhopSiteDagInt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
-						   int ss,int sU,const FermionFieldView &in, FermionFieldView &out); \
-template void WilsonKernels<A>::HandDhopSiteExt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,\
-						int ss,int sU,const FermionFieldView &in, FermionFieldView &out); \
-template void WilsonKernels<A>::HandDhopSiteDagExt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
-						   int ss,int sU,const FermionFieldView &in, FermionFieldView &out); 
-
-
 NAMESPACE_END(Grid);
 #undef LOAD_CHIMU  
 #undef LOAD_CHI 
