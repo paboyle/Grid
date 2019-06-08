@@ -45,44 +45,4 @@ NAMESPACE_CHECK(FermionOperator);
 #include <Grid/qcd/action/fermion/StaggeredKernels.h>        //used by all wilson type fermions
 NAMESPACE_CHECK(Kernels);
 
-#define FermOpStaggeredTemplateInstantiate(A) \
-  template class A<StaggeredImplF>; \
-  template class A<StaggeredImplD>; 
-
-#define FermOpStaggeredVec5dTemplateInstantiate(A) \
-  template class A<StaggeredVec5dImplF>; \
-  template class A<StaggeredVec5dImplD>; 
-
-#define FermOp4dVecTemplateInstantiateNoGP(A) \
-  template class A<WilsonImplF>;		\
-  template class A<WilsonImplD>;		\
-  template class A<ZWilsonImplF>;		\
-  template class A<ZWilsonImplD>;		\
-  template class A<WilsonImplFH>;		\
-  template class A<WilsonImplDF>;		\
-  template class A<ZWilsonImplFH>;		\
-  template class A<ZWilsonImplDF>;		
-
-#define FermOp4dVecTemplateInstantiate(A)		\
-  FermOp4dVecTemplateInstantiateNoGP(A)			\
-
-#define AdjointFermOpTemplateInstantiate(A) \
-  template class A<WilsonAdjImplF>; \
-  template class A<WilsonAdjImplD>; 
-
-#define TwoIndexFermOpTemplateInstantiate(A) \
-  template class A<WilsonTwoIndexSymmetricImplF>; \
-  template class A<WilsonTwoIndexSymmetricImplD>; \
-  template class A<WilsonTwoIndexAntiSymmetricImplF>; \
-  template class A<WilsonTwoIndexAntiSymmetricImplD>;
-
-#define FermOpTemplateInstantiate(A) \
- FermOp4dVecTemplateInstantiate(A) 
-
-#define GparityFermOpTemplateInstantiate(A) \
-  template class A<GparityWilsonImplF>;			\
-  template class A<GparityWilsonImplD>;			\
-  template class A<GparityWilsonImplFH>;		\
-  template class A<GparityWilsonImplDF>;		
-
 #endif
