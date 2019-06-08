@@ -157,10 +157,34 @@ void LambdaApply2D(uint64_t Osites, uint64_t Isites, lambda Lambda)
     __VA_ARGS__;							\
   };									\
   Iterator num  = range.end() - range.begin();				\
-  Iterator base = range.begin();					\
   Iterator cu_threads= gpu_threads;					\
   Iterator cu_blocks = num*nsimd/cu_threads;				\
   LambdaApply2D<<<cu_blocks,cu_threads>>>(num,(uint64_t)nsimd,lambda);	\
+  cudaDeviceSynchronize();						\
+  cudaError err = cudaGetLastError();					\
+  if ( cudaSuccess != err ) {						\
+    printf("Cuda error %s\n",cudaGetErrorString( err ));		\
+    exit(0);								\
+  }									
+
+template<typename lambda>  __global__
+void LambdaApplySIMT(uint64_t Isites, uint64_t Osites, lambda Lambda)
+{
+  uint64_t isite = threadIdx.y;
+  uint64_t osite = threadIdx.x+blockDim.x*blockIdx.x;
+  if ( (osite <Osites) && (isite<Isites) ) {
+    Lambda(isite,osite);
+  }
+}
+
+#define SIMT_loop( iterator, num, nsimd, ... )				\
+  typedef uint64_t Iterator;						\
+  auto lambda = [=] accelerator (Iterator lane,Iterator iterator) mutable { \
+    __VA_ARGS__;							\
+  };									\
+  dim3 cu_threads(gpu_threads,nsimd);					\
+  dim3 cu_blocks ((num+gpu_threads-1)/gpu_threads);			\
+  LambdaApplySIMT<<<cu_blocks,cu_threads>>>(nsimd,num,lambda);		\
   cudaDeviceSynchronize();						\
   cudaError err = cudaGetLastError();					\
   if ( cudaSuccess != err ) {						\
@@ -185,5 +209,8 @@ void LambdaApply2D(uint64_t Osites, uint64_t Isites, lambda Lambda)
   thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
 
 #define coalesce_loop( iterator, range, nsimd, ... ) cpu_loop(iterator,range,{__VA_ARGS__})
+
+#define SIMT_loop( iterator, num, nsimd, ... ) accelerator_loopN( iterator, num, {__VA_ARGS__})
+
 
 #endif
