@@ -36,13 +36,6 @@ NAMESPACE_BEGIN(Grid);
 //////////////////////////////////////////////////////////////
 // Gpu implementation; thread loop is implicit ; move to header
 //////////////////////////////////////////////////////////////
-accelerator_inline void synchronise(void) 
-{
-#ifdef __CUDA_ARCH__
-  __syncthreads();
-#endif
-  return;
-}
 accelerator_inline int get_my_lanes(int Nsimd) 
 {
 #ifdef __CUDA_ARCH__
@@ -281,10 +274,12 @@ GPU_EMPTY(GparityWilsonImplDF);
       });
  
 #define HOST_CALL(A) \
-  accelerator_loopN( ss, Ls*Nsite, {					\
+  const uint64_t nsimd = Simd::Nsimd();					\
+  const uint64_t    NN = Nsite*Ls;					\
+  SIMT_loop( ss, NN, nsimd, {						\
       int sF = ss;							\
       int sU = ss/Ls;							\
-      WilsonKernels<Impl>::A(st_v,U_v,st.CommBuf(),sF,sU,in_v,out_v);	\
+      WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,in_v,out_v);	\
   });
 
 template <class Impl>
