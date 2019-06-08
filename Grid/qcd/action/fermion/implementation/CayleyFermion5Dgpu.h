@@ -265,20 +265,4 @@ void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi_i, FermionField
   
 }
 
-#ifdef CAYLEY_DPERP_GPU
-INSTANTIATE_DPERP(WilsonImplF);
-INSTANTIATE_DPERP(WilsonImplD);
-INSTANTIATE_DPERP(GparityWilsonImplF);
-INSTANTIATE_DPERP(GparityWilsonImplD);
-INSTANTIATE_DPERP(ZWilsonImplF);
-INSTANTIATE_DPERP(ZWilsonImplD);
-
-INSTANTIATE_DPERP(WilsonImplFH);
-INSTANTIATE_DPERP(WilsonImplDF);
-INSTANTIATE_DPERP(GparityWilsonImplFH);
-INSTANTIATE_DPERP(GparityWilsonImplDF);
-INSTANTIATE_DPERP(ZWilsonImplFH);
-INSTANTIATE_DPERP(ZWilsonImplDF);
-#endif
-
 NAMESPACE_END(Grid);
