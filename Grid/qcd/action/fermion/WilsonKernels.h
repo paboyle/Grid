@@ -38,7 +38,7 @@ NAMESPACE_BEGIN(Grid);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class WilsonKernelsStatic { 
 public:
-  enum { OptGeneric, OptHandUnroll, OptInlineAsm, OptGpu };
+  enum { OptGeneric, OptHandUnroll, OptInlineAsm };
   enum { CommsAndCompute, CommsThenCompute };
   static int Opt;  
   static int Comms;
@@ -100,12 +100,6 @@ public:
 
 private:
   // Specialised variants
-  static accelerator void GpuDhopSite(StencilView &st,  SiteDoubledGaugeField &U, SiteHalfSpinor * buf,
-				      int Ls, int sF,  int sU, const FermionFieldView &in, FermionFieldView &out);
-  
-  static accelerator void GpuDhopSiteDag(StencilView &st,  SiteDoubledGaugeField &U, SiteHalfSpinor * buf,
-					 int Ls,int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
-
   static accelerator void GenericDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
       
@@ -143,25 +137,23 @@ private:
 				int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out);
 
 // Keep Hand unrolled temporarily  
-#if 1
   static accelerator void HandDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-					      int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+				       int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
   static accelerator void HandDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-						 int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
   static accelerator void HandDhopSiteInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-						 int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
   static accelerator void HandDhopSiteDagInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-						    int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+					     int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
   static accelerator void HandDhopSiteExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-						 int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
   
   static accelerator void HandDhopSiteDagExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
-						    int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
-#endif
+					     int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
  public:
  WilsonKernels(const ImplParams &p = ImplParams()) : Base(p){};
 };

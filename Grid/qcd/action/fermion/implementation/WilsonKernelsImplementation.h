@@ -38,6 +38,19 @@ NAMESPACE_BEGIN(Grid);
 ////////////////////////////////////////////
 // Generic implementation; move to different file?
 ////////////////////////////////////////////
+
+accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
+{
+#ifdef __CUDA_ARCH__
+  static_assert(sizeof(StencilEntry)==sizeof(uint4),"Unexpected Stencil Entry Size"); 
+  uint4 * mem_pun  = (uint4 *)mem; // force 128 bit loads
+  uint4 * chip_pun = (uint4 *)&chip;
+  * chip_pun = * mem_pun;
+#else 
+  chip = *mem;
+#endif
+  return;
+}
   
 #define GENERIC_STENCIL_LEG(Dir,spProj,Recon)			\
   SE = st.GetEntry(ptype, Dir, sF);				\

@@ -358,10 +358,7 @@ case ${ax_cv_cxx_compiler_vendor} in
     esac;;
   intel)
     case ${ac_SIMD} in
-      GPU)
-        AC_DEFINE([GPU],[1],[GPU float4 vectors])
-	SIMD_FLAGS='';;
-      VGPU)
+      GPU|VGPU)
         AC_DEFINE([GPU_VEC],[1],[GPU vectorised ])
 	SIMD_FLAGS='';;
       SSE4)
