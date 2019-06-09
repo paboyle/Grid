@@ -66,6 +66,7 @@ void WilsonKernels<IMPLEMENTATION>::ContractConservedCurrentSiteBwd( const SiteP
 
 HAND_SPECIALISE_GPARITY(IMPLEMENTATION);
 
+
 template class WilsonKernels<IMPLEMENTATION>; 
 
 

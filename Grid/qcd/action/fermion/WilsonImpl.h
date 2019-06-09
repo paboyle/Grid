@@ -83,21 +83,22 @@ public:
   static accelerator_inline void multLink(_Spinor &phi,
 					  const SiteDoubledGaugeField &U,
 					  const _Spinor &chi,
-					  int mu,
-					  StencilEntry *SE,
-					  StencilView &St) 
+					  int mu) 
   {
     auto UU = coalescedRead(U(mu));
     mult(&phi(), &UU, &chi());
   }
-    
-  static accelerator_inline void multLinkProp(SitePropagator &phi,
-					      const SiteDoubledGaugeField &U,
-					      const SitePropagator &chi,
-					      int mu) 
+  template<class _Spinor>
+  static accelerator_inline void multLink(_Spinor &phi,
+					  const SiteDoubledGaugeField &U,
+					  const _Spinor &chi,
+					  int mu,
+					  StencilEntry *SE,
+					  StencilView &St) 
   {
-    mult(&phi(), &U(mu), &chi());
+    multLink(phi,U,chi,mu);
   }
+    
       
   template <class ref>
   static accelerator_inline void loadLinkElement(Simd &reg, ref &memory) 

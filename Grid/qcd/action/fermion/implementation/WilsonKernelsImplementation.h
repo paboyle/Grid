@@ -364,19 +364,19 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
      if (Opt == WilsonKernelsStatic::OptGeneric    ) { HOST_CALL(GenericDhopSite); return;}
 #ifndef GRID_NVCC
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { HOST_CALL(HandDhopSite);    return;}
-     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSite);     return;}
+     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSite); printf(".");    return;}
 #endif
    } else if( interior ) {
      if (Opt == WilsonKernelsStatic::OptGeneric    ) { HOST_CALL(GenericDhopSiteInt); return;}
 #ifndef GRID_NVCC
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { HOST_CALL(HandDhopSiteInt);    return;}
-     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteInt);     return;}
+     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteInt); printf("-");    return;}
 #endif
    } else if( exterior ) { 
      if (Opt == WilsonKernelsStatic::OptGeneric    ) { HOST_CALL(GenericDhopSiteExt); return;}
 #ifndef GRID_NVCC
      if (Opt == WilsonKernelsStatic::OptHandUnroll ) { HOST_CALL(HandDhopSiteExt);    return;}
-     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteExt);     return;}
+     if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteExt); printf("+");    return;}
 #endif
    }
    assert(0 && " Kernel optimisation case not covered ");
@@ -440,7 +440,7 @@ void WilsonKernels<Impl>::ContractConservedCurrentSiteFwd(const SitePropagator &
   SitePropagator result, tmp;
   Gamma g5(Gamma::Algebra::Gamma5);
 
-  Impl::multLinkProp(tmp, U[sU], q_in_1, mu);
+  Impl::multLink(tmp, U[sU], q_in_1, mu);
 
   result = g5 * adj(q_in_2) * g5 * WilsonCurrentFwd(tmp, mu);
 
@@ -469,7 +469,7 @@ void WilsonKernels<Impl>::ContractConservedCurrentSiteBwd(const SitePropagator &
   SitePropagator result, tmp;
   Gamma g5(Gamma::Algebra::Gamma5);
 
-  Impl::multLinkProp(tmp, U[sU], q_in_1, mu + Nd);
+  Impl::multLink(tmp, U[sU], q_in_1, mu + Nd);
 
   result = g5 * adj(q_in_2) * g5 * WilsonCurrentBwd(tmp, mu);
   if (switch_sign) {
@@ -496,7 +496,7 @@ void WilsonKernels<Impl>::SeqConservedCurrentSiteFwd(const SitePropagator &q_in,
 {
   SitePropagator result;
   
-  Impl::multLinkProp(result, U[sU], q_in, mu);
+  Impl::multLink(result, U[sU], q_in, mu);
   result = WilsonCurrentFwd(result, mu);
 
   // Zero any unwanted timeslice entries.
@@ -525,7 +525,7 @@ void WilsonKernels<Impl>::SeqConservedCurrentSiteBwd(const SitePropagator &q_in,
                                                      bool switch_sign)
 {
   SitePropagator result;
-  Impl::multLinkProp(result, U[sU], q_in, mu + Nd);
+  Impl::multLink(result, U[sU], q_in, mu + Nd);
   result = WilsonCurrentBwd(result, mu);
 
   // Zero any unwanted timeslice entries.

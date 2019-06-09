@@ -76,6 +76,14 @@ public:
   static accelerator_inline void multLink(_Spinor &phi, 
 					  const SiteDoubledGaugeField &U,
 					  const _Spinor &chi, 
+					  int mu) 
+  {
+    assert(0);
+  } 
+  template<class _Spinor>
+  static accelerator_inline void multLink(_Spinor &phi, 
+					  const SiteDoubledGaugeField &U,
+					  const _Spinor &chi, 
 					  int mu, 
 					  StencilEntry *SE,
 					  StencilView &St) 
@@ -181,14 +189,6 @@ public:
       mult(&phi(1),&U(1)(mu),&chi(1));
     }
 #endif   
-  }
-  // Fixme: Gparity prop * link
-  static accelerator_inline void multLinkProp(SitePropagator &phi, 
-					      const SiteDoubledGaugeField &U,
-					      const SitePropagator &chi, 
-					      int mu)
-  {
-    assert(0);
   }
 
   template <class ref>

@@ -102,19 +102,6 @@ public:
 #endif
   }
 
-  static accelerator_inline void multLinkProp(SitePropagator &phi,
-					      const SiteDoubledGaugeField &U,
-					      const SitePropagator &chi,int mu) 
-  {
-    SiteGaugeLink UU;
-    for (int i = 0; i < Dimension; i++) {
-      for (int j = 0; j < Dimension; j++) {
-        vsplat(UU()()(i, j), U(mu)()(i, j));
-      }
-    }
-    mult(&phi(), &UU(), &chi());
-  }
-
   inline void DoubleStore(GridBase *GaugeGrid, DoubledGaugeField &Uds,const GaugeField &Umu) 
   {
     SiteScalarGaugeField  ScalarUmu;

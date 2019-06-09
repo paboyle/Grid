@@ -6,17 +6,20 @@ GPU branch code item work list
 * 0) Single GPU
 - 128 bit integer table load in GPU code.
 - coalescedRead <- threadIdx.x
+- Gianluca's changes to Cayley into gpu-port
+- GPU accelerate EOFA
 - Clean up PRAGMAS, and SIMT_loop
   thread_loop interface revisit.
   for_n
   for
+- Staggered kernels -> GPU coalesced loop
+- Staggered kernels inline for GPU -- DONE
 
 
-* 2) 5D terms
+* 2) 5D terms & Gianluca
   - Cayley coefficients -> GPU retention or prefetch
-  - Gianluca's changes to Cayley into gpu-port
-  - GPU accelerate EOFA
   - Mobius kernel fusion. -- Gianluca?
+  - Make GPU offload reductions optionally deterministic -- Gianluca
 
 * 3) Comms/NVlink
 - OpenMP tasks to run comms threads. 
@@ -30,12 +33,9 @@ GPU branch code item work list
 
 * 5) Misc
 
-- SIMD dirs in stencil
 - Conserved current clean up.
 - multLinkProp eliminate
-- Staggered kernels -> GPU coalesced loop
-- Staggered kernels inline for GPU -- DONE
-- Make GPU offload reductions optionally deterministic -- Gianluca
+- SIMD dirs in stencil
  
 7) Accelerate the cshift
 
