@@ -3,49 +3,67 @@
 GPU branch code item work list
 -----------------------------
 
-
-
-1) Common source GPU and CPU generic kernels???
-   - coalescedRead, coalescedWrite in expressions.
-   - Uniform coding between GPU kernels and CPU kernels attempt
-   - Clean up PRAGMAS
-
--- Figure what to do about "multLinkGpu" etc.. in FermionOperatorImpl.
--- Gparity is the awkward one
--- Solve non-Gparity first.
--- Simplify the operator IMPL support
-
-2) - SIMD dirs in stencil
-
-3) Merge develop and test HMC
-
-4) GPU accelerate EOFA
-
-5) Accelerate the cshift
-
-6) Make GPU offload reductions optionally deterministic -- Gianluca
-
-7) Investigate why slower than september
-
-Single GPU simd target (VGPU)
-
-8) Gamma tables on GPU; check this.
-
-9) Mobius kernel fusion. -- Gianluca?
-
-10) Reread WilsonKernels and check diffs
-
-11) thread_loop interface revisit.
+* 0) Single GPU
+- 128 bit integer table load in GPU code.
+- coalescedRead <- threadIdx.x
+- Clean up PRAGMAS, and SIMT_loop
+  thread_loop interface revisit.
   for_n
   for
 
-12)  pragma once uniformly
 
-13) Audit changes
+* 2) 5D terms
+  - Cayley coefficients -> GPU retention or prefetch
+  - Gianluca's changes to Cayley into gpu-port
+  - GPU accelerate EOFA
+  - Mobius kernel fusion. -- Gianluca?
 
-14) Audit NAMESPACE CHANGES
+* 3) Comms/NVlink
+- OpenMP tasks to run comms threads. 
+- Single parallel region around both the Kernel call
+  and the comms.
+- Fix the halo exchange SIMT loop
 
-15) Staggered kernels inline for GPU
+* 4) ET enhancements
+- eval -> scalar ops in ET engine
+   - coalescedRead, coalescedWrite in expressions.
+
+* 5) Misc
+
+- SIMD dirs in stencil
+- Conserved current clean up.
+- multLinkProp eliminate
+- Staggered kernels -> GPU coalesced loop
+- Staggered kernels inline for GPU -- DONE
+- Make GPU offload reductions optionally deterministic -- Gianluca
+ 
+7) Accelerate the cshift
+
+8) Merge develop and test HMC
+
+9) Gamma tables on GPU; check this.
+
+10) Audit
+-     pragma once uniformly
+-     Audit NAMESPACE CHANGES
+-     Audit changes
+
+
+=============================================================================================
+-- Figure what to do about "multLinkGpu" etc.. in FermionOperatorImpl. -- DONE
+-- Gparity is the awkward one                                          -- DONE
+-- Solve non-Gparity first.                                            -- DONE
+-- Simplify the operator IMPL support                                  -- DONE
+-- 
+--
+-- Investigate why slower than september     --- DONE
+--
+-- Single GPU simd target (VGPU) --- DONE
+--
+-- Reread WilsonKernels and check diffs -- DONE
+--
+-- Common source GPU and CPU generic kernels???                  ---- DONE
+--   - Uniform coding between GPU kernels and CPU kernels attempt  ---- DONE, got faster !
 
 -----
 Gianluca's changes
