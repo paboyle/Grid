@@ -31,6 +31,49 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #include <Grid/qcd/action/fermion/FermionCore.h>
 
+
+#undef LOAD_CHIMU  
+#undef LOAD_CHI 
+#undef MULT_2SPIN
+#undef PERMUTE_DIR
+#undef XP_PROJ  
+#undef YP_PROJ  
+#undef ZP_PROJ  
+#undef TP_PROJ  
+#undef XM_PROJ  
+#undef YM_PROJ  
+#undef ZM_PROJ  
+#undef TM_PROJ  
+#undef XP_RECON 
+#undef XP_RECON_ACCUM 
+#undef XM_RECON 
+#undef XM_RECON_ACCUM 
+#undef YP_RECON_ACCUM 
+#undef YM_RECON_ACCUM 
+#undef ZP_RECON_ACCUM 
+#undef ZM_RECON_ACCUM 
+#undef TP_RECON_ACCUM 
+#undef TM_RECON_ACCUM 
+#undef ZERO_RESULT				 
+#undef Chimu_00
+#undef Chimu_01
+#undef Chimu_02
+#undef Chimu_10
+#undef Chimu_11
+#undef Chimu_12
+#undef Chimu_20
+#undef Chimu_21
+#undef Chimu_22
+#undef Chimu_30
+#undef Chimu_31
+#undef Chimu_32
+#undef HAND_STENCIL_LEG
+#undef HAND_STENCIL_LEG_INT
+#undef HAND_STENCIL_LEG_EXT
+#undef HAND_RESULT
+#undef HAND_RESULT_INT
+#undef HAND_RESULT_EXT
+
 #define REGISTER
 
 #define LOAD_CHIMU \

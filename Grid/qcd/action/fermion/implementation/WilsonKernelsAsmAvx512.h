@@ -36,7 +36,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     ///////////////////////////////////////////////////////////
 #include <simd/Intel512wilson.h>
 #include <simd/Intel512single.h>
-    
+
+/// Switch off the 5d vectorised code optimisations
+#undef DWFVEC5D
+
 static Vector<vComplexF> signsF;
 
   template<typename vtype>    
@@ -209,6 +212,9 @@ WilsonKernels<ZWilsonImplFH>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFie
 /////////////////////////////////////////////////////////////////
 // Ls vectorised, undag Kernel, single
 /////////////////////////////////////////////////////////////////
+
+#ifdef DWFVEC5D
+
 #undef KERNEL_DAG
 #define INTERIOR_AND_EXTERIOR
 #undef INTERIOR
@@ -343,6 +349,8 @@ template<> void
 WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/implementation/WilsonKernelsAsmBody.h>
+
+#endif  // VEC 5D
 
 #undef COMPLEX_SIGNS
 #undef MAYBEPERM
@@ -510,6 +518,8 @@ WilsonKernels<ZWilsonImplDF>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFie
 /////////////////////////////////////////////////////////////////
 // Ls vectorised, undag Kernel, single
 /////////////////////////////////////////////////////////////////
+#ifdef DWFVEC5D
+
 #undef KERNEL_DAG
 #define INTERIOR_AND_EXTERIOR
 #undef INTERIOR
@@ -625,6 +635,7 @@ WilsonKernels<ZDomainWallVec5dImplDF>::AsmDhopSiteDagInt(StencilView &st, Double
 #undef INTERIOR_AND_EXTERIOR
 #undef INTERIOR
 #define EXTERIOR
+
 template<> void 
 WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
@@ -643,8 +654,63 @@ WilsonKernels<ZDomainWallVec5dImplDF>::AsmDhopSiteDagExt(StencilView &st, Double
 							    int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/implementation/WilsonKernelsAsmBody.h>
 
+#endif  // VEC 5D
+
 #undef COMPLEX_SIGNS
 #undef MAYBEPERM
 #undef MULT_2SPIN
+
+#undef Chi_00
+#undef Chi_01
+#undef Chi_02
+#undef Chi_10
+#undef Chi_11
+#undef Chi_12
+#undef Chi_20
+#undef Chi_21
+#undef Chi_22
+#undef Chi_30
+#undef Chi_31
+#undef Chi_32
+
+#undef UChi_00
+#undef UChi_01
+#undef UChi_02
+#undef UChi_10
+#undef UChi_11
+#undef UChi_12
+#undef UChi_20
+#undef UChi_21
+#undef UChi_22
+#undef UChi_30
+#undef UChi_31
+#undef UChi_32
+
+#undef Psi_00
+#undef Psi_01
+#undef Psi_02
+#undef Psi_10
+#undef Psi_11
+#undef Psi_12
+#undef Psi_20
+#undef Psi_21
+#undef Psi_22
+#undef Psi_30
+#undef Psi_31
+#undef Psi_32
+
+#undef Phi_00
+#undef Phi_01
+#undef Phi_02
+#undef Phi_10
+#undef Phi_11
+#undef Phi_12
+#undef Phi_20
+#undef Phi_21
+#undef Phi_22
+#undef Phi_30
+#undef Phi_31
+#undef Phi_32
+
 
 #endif //AVX512

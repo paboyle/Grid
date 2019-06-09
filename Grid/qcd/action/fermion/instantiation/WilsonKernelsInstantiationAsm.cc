@@ -30,13 +30,14 @@ directory
 /*  END LEGAL */
 #include <Grid/qcd/action/fermion/FermionCore.h>
 #include <Grid/qcd/action/fermion/implementation/WilsonKernelsImplementation.h>
-#include <Grid/qcd/action/fermion/implementation/WilsonKernelsGpuImplementation.h>
-#include <Grid/qcd/action/fermion/implementation/WilsonKernelsHandImplementation.h>
+#include <Grid/qcd/action/fermion/implementation/WilsonKernelsAsmImplementation.h>
 
+////////////////////////////////////////////////////////////////////////
+// Include the specialisations for ASM kernels
+////////////////////////////////////////////////////////////////////////
 NAMESPACE_BEGIN(Grid);
-
-#include "impl.h"
-template class WilsonKernels<IMPLEMENTATION>; 
-
+#include <Grid/qcd/action/fermion/implementation/WilsonKernelsAsmAvx512.h>
+#include <Grid/qcd/action/fermion/implementation/WilsonKernelsAsmQPX.h>
 NAMESPACE_END(Grid);
+
 

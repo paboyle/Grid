@@ -38,52 +38,49 @@ NAMESPACE_BEGIN(Grid);
 
 ///////////////////////////////////////////////////////////
 // Default to no assembler implementation
+// Will specialise to 
 ///////////////////////////////////////////////////////////
 template<class Impl> void 
 WilsonKernels<Impl >::AsmDhopSite(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
-					  int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+				  int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 {
   assert(0);
 }
 
 template<class Impl> void 
 WilsonKernels<Impl >::AsmDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
-					     int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+				     int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 {
   assert(0);
 }
 
 template<class Impl> void 
 WilsonKernels<Impl >::AsmDhopSiteInt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
-					  int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+				     int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 {
   assert(0);
 }
 
 template<class Impl> void 
 WilsonKernels<Impl >::AsmDhopSiteDagInt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
-					     int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+					int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 {
   assert(0);
 }
 
 template<class Impl> void 
 WilsonKernels<Impl >::AsmDhopSiteExt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
-					  int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+				     int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 {
   assert(0);
 }
 
 template<class Impl> void 
 WilsonKernels<Impl >::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
-					     int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+					int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 {
   assert(0);
 }
-
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmAvx512.h>
-#include <qcd/action/fermion/implementation/WilsonKernelsAsmQPX.h>
-
 
 NAMESPACE_END(Grid);
 
