@@ -43,9 +43,9 @@ public:
 
 
   static void NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat, 
-				     const FermionField *one,
-				     const FermionField *two,
-				     const FermionField *three,
+                              const std::vector<FermionField> &one,
+                              const std::vector<FermionField> &two,
+                              const std::vector<FermionField> &three,
 				     const std::vector<ComplexField > &mom,
 				     int parity,
 				     int orthogdim); 
@@ -112,9 +112,9 @@ public:
 
 template<class FImpl>
 void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat, 
-				     const FermionField *one,
-				     const FermionField *two,
-				     const FermionField *three,
+				     const std::vector<FermionField> &one,
+				     const std::vector<FermionField> &two,
+				     const std::vector<FermionField> &three,
 				     const std::vector<ComplexField > &mom,
 				     int parity,
 				     int orthogdim) 

@@ -56,7 +56,7 @@ BEGIN_MODULE_NAMESPACE(MDistil)
     //   3 - s   - free spin index
     //   4 - i   - left  distillation mode index
     //   5 - j   - middle  distillation mode index
-    //   6 - k   - left  distillation mode index
+    //   6 - k   - right  distillation mode index
     // template <typename T>
     // using BaryonTensorSet = Eigen::TensorMap<Eigen::Tensor<T, 7, Eigen::RowMajor>>;
 
@@ -133,6 +133,7 @@ std::vector<std::string> TBC2<FImpl>::getOutput(void)
 template <typename FImpl>
 void TBC2<FImpl>::setup(void)
 {
+  if(!mom_.size()) {
        for (auto &pstr: par().mom)
        {
          auto p = strToVec<Real>(pstr);
@@ -143,8 +144,19 @@ void TBC2<FImpl>::setup(void)
 	 }
 	 mom_.push_back(p);
     }
-    envCache(std::vector<ComplexField>, momphName_, 1, 
-	     par().mom.size(), envGetGrid(ComplexField));	    
+  }
+    //envCache(std::vector<ComplexField>, momphName_, 1, par().mom.size(), envGetGrid(ComplexField));
+  static GridCartesian * MyGrid{env().getGrid()};
+  if( MyGrid == envGetGrid(ComplexField) )
+    LOG(Message) << "envGetGrid(ComplexField) == env().getGrid()" << std::endl;
+  else
+    LOG(Message) << "envGetGrid(ComplexField) != env().getGrid()" << std::endl;
+  envTmp(std::vector<ComplexField>, "ph", 1, std::vector<ComplexField>());
+  envGetTmp(std::vector<ComplexField>, ph);
+  if(!ph.size()) {
+    for (unsigned int j = 0; j < par().mom.size(); ++j)
+      ph.push_back(ComplexField(MyGrid));
+  }
 
     envTmpLat(ComplexField, "coor");
 }
@@ -153,16 +165,14 @@ void TBC2<FImpl>::setup(void)
 template <typename FImpl>
 void TBC2<FImpl>::execute(void)
 {
-
-
     auto &one   = envGet(std::vector<FermionField>, par().one);
     auto &two   = envGet(std::vector<FermionField>, par().two);
     auto &three = envGet(std::vector<FermionField>, par().three);
     const std::string &output{par().output};
 
-    int N_1     = one.size();
-    int N_2     = two.size();
-    int N_3     = three.size();
+    int N_1 = static_cast<int>(one.size());
+    int N_2 = static_cast<int>(two.size());
+    int N_3 = static_cast<int>(three.size());
 
     LOG(Message) << "Computing distillation baryon fields" << std::endl;
     LOG(Message) << "One: '" << par().one << "' Two: '" << par().two  << "' Three: '" << par().three << "'" << std::endl;
@@ -173,13 +183,14 @@ void TBC2<FImpl>::execute(void)
     }
 
 
-    int Nmom       = mom_.size(); 
+    int Nmom = static_cast<int>(mom_.size());
     const int Nt{env().getDim(Tdir)};
 
     int parity = 1;
     int orthogDim=3;
 
-    auto &ph = envGet(std::vector<ComplexField>, momphName_);
+    //auto &ph = envGet(std::vector<ComplexField>, momphName_);
+  envGetTmp(std::vector<ComplexField>, ph);
 
     if (!hasPhase_)
     {
@@ -201,11 +212,11 @@ void TBC2<FImpl>::execute(void)
         hasPhase_ = true;
         stopTimer("Momentum phases");
     }
-    envCache(std::vector<ComplexField>, momphName_, 1, mom_.size(), envGetGrid(ComplexField));
+    //envCache(std::vector<ComplexField>, momphName_, 1, mom_.size(), envGetGrid(ComplexField));
 
     Eigen::Tensor<ComplexD, 6> m(Nmom,Nt,N_1,N_2,N_3,4);
-    A2Autils<FImpl>::NucleonFieldMom(m, &one[0], &two[0], &three[0], ph, parity, orthogDim);
-    //A2Autils<FImpl>::NucleonFieldMom(m, one, two, three, ph, parity, orthogDim);
+    //A2Autils<FImpl>::NucleonFieldMom(m, &one[0], &two[0], &three[0], ph, parity, orthogDim);
+    A2Autils<FImpl>::NucleonFieldMom(m, one, two, three, ph, parity, orthogDim);
     for (int is=0 ; is < 4 ; is++){
       for (int t=0 ; t < Nt ; t++){
         std::cout << "BaryonField(is=" << is << ",t=" << t << ") = " << m(0,t,0,0,0,is) << std::endl;
