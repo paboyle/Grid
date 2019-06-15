@@ -245,7 +245,7 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
     auto B_v = B.View();
     auto Btilde_v = Btilde.View();
     auto st_v = st.View();
-    thread_loop( (int sss = 0; sss < B.Grid()->oSites(); sss++) ,{
+    thread_for( sss, B.Grid()->oSites(), {
       Kernels::DhopDirK(st_v, U_v, st.CommBuf(), sss, sss, B_v, Btilde_v, mu, gamma);
     });
 
@@ -350,7 +350,7 @@ void WilsonFermion<Impl>::DhopDirDisp(const FermionField &in, FermionField &out,
   auto out_v = in.View();
   auto Umu_v = Umu.View();
   auto Stencil_v = Stencil.View();
-  thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++) ,{
+  thread_for(sss, in.Grid()->oSites(),{
     Kernels::DhopDirK(Stencil_v, Umu_v, Stencil.CommBuf(), sss, sss, in_v, out_v, dirdisp, gamma);
   });
 };
@@ -466,7 +466,7 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
   auto q_in_2_v=q_in_2.View();
   auto q_out_v = q_out.View();
   auto Umu_v   =   Umu.View();
-  thread_loop( (unsigned int sU = 0; sU < Umu.Grid()->oSites(); ++sU), {
+  thread_for(sU, Umu.Grid()->oSites(),{
       Kernels::ContractConservedCurrentSiteFwd(tmp1_v[sU],
 					       q_in_2_v[sU],
 					       q_out_v[sU],
@@ -513,13 +513,13 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   auto Umu_v    = Umu.View();
   auto q_out_v  = q_out.View();
 
-  thread_loop( (unsigned int sU = 0; sU < Umu.Grid()->oSites(); ++sU), {
+  thread_for(sU, Umu.Grid()->oSites(), {
 
     // Compute the sequential conserved current insertion only if our simd
     // object contains a timeslice we need.
-    vInteger t_mask   = ((coords_v[sU] >= tmin) &&
-			 (coords_v[sU] <= tmax));
-    Integer timeSlices = Reduce(t_mask);
+    vPredicate t_mask;
+    t_mask() = ((coords_v[sU] >= tmin) && (coords_v[sU] <= tmax));
+    Integer timeSlices = Reduce(t_mask());
 
     if (timeSlices > 0) {
       Kernels::SeqConservedCurrentSiteFwd(tmpFwd_v[sU], 
@@ -528,14 +528,14 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
     }
 
     // Repeat for backward direction.
-    t_mask     = ((coords_v[sU] >= (tmin + tshift)) && 
-		  (coords_v[sU] <= (tmax + tshift)));
+    t_mask()     = ((coords_v[sU] >= (tmin + tshift)) && 
+		    (coords_v[sU] <= (tmax + tshift)));
     
     //if tmax = LLt-1 (last timeslice) include timeslice 0 if the time is shifted (mu=3)	
     unsigned int t0 = 0;
-    if((tmax==LLt-1) && (tshift==1)) t_mask = (t_mask || (coords_v[sU] == t0 ));
+    if((tmax==LLt-1) && (tshift==1)) t_mask() = (t_mask() || (coords_v[sU] == t0 ));
     
-    timeSlices = Reduce(t_mask);
+    timeSlices = Reduce(t_mask());
 
     if (timeSlices > 0) {
       Kernels::SeqConservedCurrentSiteBwd(tmpBwd_v[sU], 
