@@ -31,7 +31,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/iterative/BlockConjugateGradient.h>
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ 
 
 int main (int argc, char ** argv)
 {

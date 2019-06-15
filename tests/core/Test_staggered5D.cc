@@ -30,7 +30,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
 int main (int argc, char ** argv)
 {

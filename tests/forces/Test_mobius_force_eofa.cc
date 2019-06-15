@@ -116,7 +116,7 @@ int main (int argc, char** argv)
     auto U_v      = U.View();
     auto Uprime_v = Uprime.View();
 
-    thread_loop( (auto i=mom_v.begin();i<mom_v.end();i++),{
+    thread_foreach(i,mom_v,{
       Uprime_v[i](mu) =	  U_v[i](mu)
 	+ mom_v[i](mu)*U_v[i](mu)*dt 
 	+ mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt/2.0)

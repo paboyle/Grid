@@ -111,12 +111,11 @@ int main (int argc, char ** argv)
 
     // fourth order exponential approx
 
-#if 0
     auto mom_v    = mom.View();
     auto U_v      = U.View();
     auto Uprime_v = Uprime.View();
 
-    thread_loop( (auto i=mom_v.begin();i<mom_v.end();i++),{
+    thread_foreach( i,mom_v,{
       Uprime_v[i](mu) =	  U_v[i](mu)
 	+ mom_v[i](mu)*U_v[i](mu)*dt 
 	+ mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt/2.0)
@@ -126,22 +125,6 @@ int main (int argc, char ** argv)
 	+ mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt*dt*dt/720.0)
 	;
     });
-#else
-    auto mom_v    = mom.View();
-    auto U_v      = U.View();
-    auto Uprime_v = Uprime.View();
-
-    accelerator_loop( i,mom_v,{
-      Uprime_v[i](mu) =	  U_v[i](mu)
-	+ mom_v[i](mu)*U_v[i](mu)*dt 
-	+ mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt/2.0)
-	+ mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt/6.0)
-	+ mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt/24.0)
-	+ mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt*dt/120.0)
-	+ mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt*dt*dt/720.0)
-	;
-    });
-#endif
   }
   
   Ddwf.ImportGauge(Uprime);

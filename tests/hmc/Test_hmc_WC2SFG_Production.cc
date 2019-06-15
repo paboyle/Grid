@@ -69,7 +69,7 @@ namespace Grid{
 int main(int argc, char **argv)
 {
   using namespace Grid;
-  using namespace Grid::QCD;
+   
 
   typedef Representations< FundamentalRepresentation, TwoIndexSymmetricRepresentation > TheRepresentations;  
 

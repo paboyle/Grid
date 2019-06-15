@@ -29,7 +29,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
 int main(int argc, char **argv)
 {
@@ -109,7 +108,7 @@ int main(int argc, char **argv)
     auto Uprime_v = Uprime.View();
     auto U_v      = U.View();
     auto mom_v    = mom.View();
-    thread_loop( (int ss = 0; ss < mom.Grid()->oSites(); ss++),
+    thread_foreach(ss,mom_v,
     {
       Uprime_v[ss]._internal[mu] = ProjectOnGroup(Exponentiate(mom_v[ss]._internal[mu], dt, 12) * U_v[ss]._internal[mu]);
     });

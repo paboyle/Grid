@@ -29,7 +29,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Grid.h>
 
 using namespace Grid;
-using namespace QCD;
 
 typedef PeriodicGaugeImpl<QedGImplR>  QedPeriodicGImplR;
 typedef PhotonR::GaugeField           EmField;
