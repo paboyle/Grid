@@ -49,11 +49,9 @@ void axpibg5x(Lattice<vobj> &z,const Lattice<vobj> &x,Coeff a,Coeff b)
   Gamma G5(Gamma::Algebra::Gamma5);
   auto x_v = x.View();
   auto z_v = z.View();
-  accelerator_loop( ss, x_v,{
-    vobj tmp;
-    tmp = a*x_v[ss];
-    tmp = tmp + G5*(b*timesI(x_v[ss]));
-    vstream(z_v[ss],tmp);
+  accelerator_for( ss, x_v.size(),vobj::Nsimd(), {
+    auto tmp = a*x_v(ss) + G5*(b*timesI(x_v(ss)));
+    coalescedWrite(z_v[ss],tmp);
   });
 }
 
@@ -69,9 +67,12 @@ void axpby_ssp(Lattice<vobj> &z, Coeff a,const Lattice<vobj> &x,Coeff b,const La
   auto y_v = y.View();
   auto z_v = z.View();
   // FIXME -- need a new class of accelerator_loop to implement this
-  thread_loop( (int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
-    vobj tmp = a*x_v[ss+s]+b*y_v[ss+sp];
-    vstream(z_v[ss+s],tmp);
+  //
+  uint64_t nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,vobj::Nsimd(),{
+    uint64_t ss = sss*Ls;
+    auto tmp = a*x_v(ss+s)+b*y_v(ss+sp);
+    coalescedWrite(z_v[ss+s],tmp);
   });
 }
 
@@ -87,11 +88,11 @@ void ag5xpby_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const L
   auto x_v = x.View();
   auto y_v = y.View();
   auto z_v = z.View();
-  thread_loop((int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
-    vobj tmp;
-    tmp = G5*x_v[ss+s]*a;
-    tmp = tmp + b*y_v[ss+sp];
-    vstream(z_v[ss+s],tmp);
+  uint64_t nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,vobj::Nsimd(),{
+    uint64_t ss = sss*Ls;
+    auto tmp = G5*x_v(ss+s)*a + b*y_v(ss+sp);
+    coalescedWrite(z_v[ss+s],tmp);
   });
 }
 
@@ -107,11 +108,11 @@ void axpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const L
   auto y_v = y.View();
   auto z_v = z.View();
   Gamma G5(Gamma::Algebra::Gamma5);
-  thread_loop((int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
-    vobj tmp;
-    tmp = G5*y_v[ss+sp]*b;
-    tmp = tmp + a*x_v[ss+s];
-    vstream(z_v[ss+s],tmp);
+  uint64_t nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,vobj::Nsimd(),{
+    uint64_t ss = sss*Ls;
+    auto tmp = G5*y_v(ss+sp)*b + a*x_v(ss+s);
+    coalescedWrite(z_v[ss+s],tmp);
   });
 }
 
@@ -128,12 +129,12 @@ void ag5xpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const
   auto y_v = y.View();
   auto z_v = z.View();
   Gamma G5(Gamma::Algebra::Gamma5);
-  thread_loop((int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
-    vobj tmp1;
-    vobj tmp2;
-    tmp1 = a*x_v[ss+s]+b*y_v[ss+sp];
-    tmp2 = G5*tmp1;
-    vstream(z_v[ss+s],tmp2);
+  uint64_t nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,vobj::Nsimd(),{
+    uint64_t ss = sss*Ls;
+    auto tmp1 = a*x_v(ss+s)+b*y_v(ss+sp);
+    auto tmp2 = G5*tmp1;
+    coalescedWrite(z_v[ss+s],tmp2);
   });
 }
 
@@ -149,11 +150,13 @@ void axpby_ssp_pminus(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,co
   auto x_v = x.View();
   auto y_v = y.View();
   auto z_v = z.View();
-  thread_loop((int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
-    vobj tmp;
-    spProj5m(tmp,y_v[ss+sp]);
-    tmp = a*x_v[ss+s]+b*tmp;
-    vstream(z_v[ss+s],tmp);
+  uint64_t nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,vobj::Nsimd(),{
+    uint64_t ss = sss*Ls;
+    decltype(coalescedRead(y_v[ss+sp])) tmp;
+    spProj5m(tmp,y_v(ss+sp));
+    tmp = a*x_v(ss+s)+b*tmp;
+    coalescedWrite(z_v[ss+s],tmp);
   });
 }
 
@@ -168,11 +171,13 @@ void axpby_ssp_pplus(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,con
   auto x_v = x.View();
   auto y_v = y.View();
   auto z_v = z.View();
-  thread_loop((int ss=0;ss<grid->oSites();ss+=Ls),{ // adds Ls
-    vobj tmp;
-    spProj5p(tmp,y_v[ss+sp]);
-    tmp = a*x_v[ss+s]+b*tmp;
-    vstream(z_v[ss+s],tmp);
+  uint64_t nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,vobj::Nsimd(),{
+    uint64_t ss = sss*Ls;
+    decltype(coalescedRead(y_v[ss+sp])) tmp;
+    spProj5p(tmp,y_v(ss+sp));
+    tmp = a*x_v(ss+s)+b*tmp;
+    coalescedWrite(z_v[ss+s],tmp);
   });
 }
 
@@ -186,12 +191,12 @@ void G5R5(Lattice<vobj> &z,const Lattice<vobj> &x)
   Gamma G5(Gamma::Algebra::Gamma5);
   auto x_v = x.View();
   auto z_v = z.View();
-  thread_loop((int ss=0;ss<grid->oSites();ss+=Ls) {
-    vobj tmp;
+  uint64_t nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,vobj::Nsimd(),{
+    uint64_t ss = sss*Ls;
     for(int s=0;s<Ls;s++){
       int sp = Ls-1-s;
-      tmp = G5*x_v[ss+s];
-      vstream(z_v[ss+sp],tmp);
+      coalescedWrite(z_v[ss+sp],G5*x_v(ss+s));
     }
   });
 }
@@ -220,13 +225,13 @@ void G5C(Lattice<iVector<CComplex, nbasis>> &z, const Lattice<iVector<CComplex, 
 
   auto z_v = z.View();
   auto x_v = x.View();
-  thread_loop( (int ss = 0; ss < grid->oSites(); ss++) ,
+  accelerator_for(ss,grid->oSites(),CComplex::Nsimd(),
   {
     for(int n = 0; n < nb; ++n) {
-      z_v[ss](n) = x_v[ss](n);
+      coalescedWrite(z_v[ss](n), x_v(ss)(n));
     }
     for(int n = nb; n < nbasis; ++n) {
-      z_v[ss](n) = -x_v[ss](n);
+      coalescedWrite(z_v[ss](n), -x_v(ss)(n));
     }
   });
 }
