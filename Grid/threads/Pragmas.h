@@ -127,5 +127,6 @@ void LambdaApplySIMT(uint64_t Isites, uint64_t Osites, lambda Lambda)
 #define accelerator_inline strong_inline
 #define accelerator_for(iterator,num,nsimd, ... )   thread_for(iterator, num, { __VA_ARGS__ });
 #define accelerator_forNB(iterator,num,nsimd, ... ) thread_for(iterator, num, { __VA_ARGS__ });
+#define accelerator_barrier(dummy) 
 
 #endif
