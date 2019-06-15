@@ -87,7 +87,7 @@ public:
                                   DoubledGaugeFieldView &U,
                                   unsigned int sU,
                                   unsigned int mu,
-                                  vInteger t_mask,
+                                  vPredicate t_mask,
                                   bool switch_sign = false);
 
   static void SeqConservedCurrentSiteBwd(const SitePropagator &q_in,
@@ -95,7 +95,7 @@ public:
                                   DoubledGaugeFieldView &U,
                                   unsigned int sU,
                                   unsigned int mu,
-                                  vInteger t_mask,
+                                  vPredicate t_mask,
                                   bool switch_sign = false);
 
 private:
