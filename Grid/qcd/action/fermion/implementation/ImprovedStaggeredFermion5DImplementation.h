@@ -30,6 +30,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/qcd/action/fermion/ImprovedStaggeredFermion5D.h>
 #include <Grid/perfmon/PerfCount.h>
 
+#pragma once
+
 NAMESPACE_BEGIN(Grid);
 
 // 5d lattice for DWF.
@@ -223,7 +225,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopDir(const FermionField &in, FermionFi
   auto UUUmu_v = UUUmu.View();
   auto in_v    = in.View();
   auto out_v   = out.View();
-  thread_loop( (int ss=0;ss<Umu.Grid()->oSites();ss++),{
+  thread_for( ss,Umu.Grid()->oSites(),{
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
@@ -380,13 +382,13 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl &
   auto out_v  = out.View();
   if (dag == DaggerYes) {
     int sz=st.surface_list.size();
-    thread_loop( (int ss = 0; ss < sz; ss++) ,{
+    thread_for( ss,sz,{
       int sU = st.surface_list[ss];
       Kernels::DhopSiteDag(st,lo,U_v,UUU_v,st.CommBuf(),LLs,sU,in_v,out_v,0,1); //<----------
     });
   } else {
     int sz=st.surface_list.size();
-    thread_loop( (int ss = 0; ss < sz; ss++) ,{
+    thread_for( ss,sz,{
       int sU = st.surface_list[ss];
       Kernels::DhopSite(st,lo,U_v,UUU_v,st.CommBuf(),LLs,sU,in_v,out_v,0,1);//<----------
     });
@@ -421,12 +423,12 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st,
   auto  in_v  =  in.View();
   auto out_v  = out.View();
   if (dag == DaggerYes) {
-  thread_loop( (int ss = 0; ss < U.Grid()->oSites(); ss++), {
+    thread_for( ss,U.Grid()->oSites(),{
       int sU=ss;
       Kernels::DhopSiteDag(st, lo, U_v, UUU_v, st.CommBuf(), LLs, sU,in_v, out_v);
     });
   } else {
-    thread_loop( (int ss = 0; ss < U.Grid()->oSites(); ss++) ,{
+    thread_for( ss,U.Grid()->oSites(),{
       int sU=ss;
       Kernels::DhopSite(st,lo,U_v,UUU_v,st.CommBuf(),LLs,sU,in_v,out_v);
     });
@@ -442,41 +444,6 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st,
 }
 /*CHANGE END*/
 
-/* ORG
-template<class Impl>
-void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
-						    DoubledGaugeField & U,DoubledGaugeField & UUU,
-						    const FermionField &in, FermionField &out,int dag)
-{
-  Compressor compressor;
-  int LLs = in.Grid()->_rdimensions[0];
-
-  DhopTotalTime -= usecond();
-  DhopCommTime -= usecond();
-  st.HaloExchange(in,compressor);
-  DhopCommTime += usecond();
-  
-  DhopComputeTime -= usecond();
-  auto U_v   =   U.View();
-  auto UUU_v = UUU.View();
-  auto out_v = out.View();
-  auto in_v  =  in.View();
-  // Dhop takes the 4d grid from U, and makes a 5d index for fermion
-  if (dag == DaggerYes) {
-    thread_loop(  (int ss = 0; ss < U.Grid()->oSites(); ss++), {
-      int sU=ss;
-      Kernels::DhopSiteDag(st, lo, U_v, UUU_v, st.CommBuf(), LLs, sU,in_v, out_v);
-    });
-  } else {
-    thread_loop(  (int ss = 0; ss < U.Grid()->oSites(); ss++) ,{
-      int sU=ss;
-      Kernels::DhopSite(st,lo,U_v,UUU_v,st.CommBuf(),LLs,sU,in_v,out_v);
-    });
-  }
-  DhopComputeTime += usecond();
-  DhopTotalTime   += usecond();
-}
-*/
 
 
 template<class Impl>
