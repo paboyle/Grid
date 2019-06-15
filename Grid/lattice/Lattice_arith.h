@@ -41,17 +41,13 @@ void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   auto rhs_v = rhs.View();
   conformable(ret,rhs);
   conformable(lhs,rhs);
-#ifdef STREAMING_STORES
-  accelerator_loop(ss,lhs_v,{
-    obj1 tmp;
-    mult(&tmp,&lhs_v[ss],&rhs_v[ss]);
-    vstream(ret_v[ss],tmp);
+  accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto lhs_t = lhs_v(ss);
+    auto rhs_t = rhs_v(ss);
+    mult(&tmp,&lhs_t,&rhs_t);
+    coalescedWrite(ret_v[ss],tmp);
   });
-#else
-  accelerator_loop(ss,lhs_v,{
-    mult(&ret_v[ss],&lhs_v[ss],&rhs_v[ss]);
-  });
-#endif
 }
   
 template<class obj1,class obj2,class obj3> inline
@@ -62,17 +58,13 @@ void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   auto ret_v = ret.View();
   auto lhs_v = lhs.View();
   auto rhs_v = rhs.View();
-#ifdef STREAMING_STORES
-  accelerator_loop(ss,lhs_v,{
-    obj1 tmp;
-    mac(&tmp,&lhs_v[ss],&rhs_v[ss]);
-    vstream(ret_v[ss],tmp);
+  accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto lhs_t=lhs_v(ss);
+    auto rhs_t=rhs_v(ss);
+    mac(&tmp,&lhs_t,&rhs_t);
+    coalescedWrite(ret_v[ss],tmp);
   });
-#else
-  accelerator_loop(ss,lhs_v,{
-    mac(&ret_v[ss],&lhs_v[ss],&rhs_v[ss]);
-  });
-#endif
 }
   
 template<class obj1,class obj2,class obj3> inline
@@ -83,17 +75,13 @@ void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   auto ret_v = ret.View();
   auto lhs_v = lhs.View();
   auto rhs_v = rhs.View();
-#ifdef STREAMING_STORES
-  accelerator_loop(ss,lhs_v,{
-    obj1 tmp;
-    sub(&tmp,&lhs_v[ss],&rhs_v[ss]);
-    vstream(ret_v[ss],tmp);
+  accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto lhs_t=lhs_v(ss);
+    auto rhs_t=rhs_v(ss);
+    sub(&tmp,&lhs_t,&rhs_t);
+    coalescedWrite(ret_v[ss],tmp);
   });
-#else
-  accelerator_loop(ss,lhs_v,{
-    sub(&ret[ss],&lhs_v[ss],&rhs_v[ss]);
-  });
-#endif
 }
 template<class obj1,class obj2,class obj3> inline
 void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
@@ -103,17 +91,13 @@ void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   auto ret_v = ret.View();
   auto lhs_v = lhs.View();
   auto rhs_v = rhs.View();
-#ifdef STREAMING_STORES
-  accelerator_loop(ss,lhs_v,{
-    obj1 tmp;
-    add(&tmp,&lhs_v[ss],&rhs_v[ss]);
-    vstream(ret_v[ss],tmp);
+  accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto lhs_t=lhs_v(ss);
+    auto rhs_t=rhs_v(ss);
+    add(&tmp,&lhs_t,&rhs_t);
+    coalescedWrite(ret_v[ss],tmp);
   });
-#else
-  accelerator_loop(ss,lhs_v,{
-    add(&ret_v[ss],&lhs_v[ss],&rhs_v[ss]);
-  });
-#endif
 }
   
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -125,10 +109,10 @@ void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   conformable(lhs,ret);
   auto ret_v = ret.View();
   auto lhs_v = lhs.View();
-  accelerator_loop(ss,lhs_v,{
-    obj1 tmp;
-    mult(&tmp,&lhs_v[ss],&rhs);
-    vstream(ret_v[ss],tmp);
+  accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    mult(&tmp,&lhs_v(ss),&rhs);
+    coalescedWrite(ret_v[ss],tmp);
   });
 }
   
@@ -138,10 +122,11 @@ void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   conformable(ret,lhs);
   auto ret_v = ret.View();
   auto lhs_v = lhs.View();
-  accelerator_loop(ss,lhs_v,{
-    obj1 tmp;
-    mac(&tmp,&lhs_v[ss],&rhs);
-    vstream(ret_v[ss],tmp);
+  accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto lhs_t=lhs_v(ss);
+    mac(&tmp,&lhs_t,&rhs);
+    coalescedWrite(ret_v[ss],tmp);
   });
 }
   
@@ -151,17 +136,12 @@ void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   conformable(ret,lhs);
   auto ret_v = ret.View();
   auto lhs_v = lhs.View();
-#ifdef STREAMING_STORES
-  accelerator_loop(ss,lhs_v,{
-    obj1 tmp;
-    sub(&tmp,&lhs_v[ss],&rhs);
-    vstream(ret_v[ss],tmp);
+  accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto lhs_t=lhs_v(ss);
+    sub(&tmp,&lhs_t,&rhs);
+    coalescedWrite(ret_v[ss],tmp);
   });
-#else 
-  accelerator_loop(ss,lhs_v,{
-    sub(&ret_v[ss],&lhs_v[ss],&rhs);
-  });
-#endif
 }
 template<class obj1,class obj2,class obj3> inline
 void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
@@ -169,17 +149,12 @@ void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   conformable(lhs,ret);
   auto ret_v = ret.View();
   auto lhs_v = lhs.View();
-#ifdef STREAMING_STORES
-  accelerator_loop(ss,lhs_v,{
-    obj1 tmp;
-    add(&tmp,&lhs_v[ss],&rhs);
-    vstream(ret_v[ss],tmp);
+  accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto lhs_t=lhs_v(ss);
+    add(&tmp,&lhs_t,&rhs);
+    coalescedWrite(ret_v[ss],tmp);
   });
-#else 
-  accelerator_loop(ss,lhs_v,{
-    add(&ret_v[ss],&lhs_v[ss],&rhs);
-  });
-#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -191,17 +166,12 @@ void mult(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   conformable(ret,rhs);
   auto ret_v = ret.View();
   auto rhs_v = lhs.View();
-#ifdef STREAMING_STORES
-  accelerator_loop(ss,rhs_v,{
-    obj1 tmp;
-    mult(&tmp,&lhs,&rhs_v[ss]);
-    vstream(ret_v[ss],tmp);
+  accelerator_for(ss,rhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto rhs_t=rhs_v(ss);
+    mult(&tmp,&lhs,&rhs_t);
+    coalescedWrite(ret_v[ss],tmp);
   });
-#else 
-  accelerator_loop(ss,rhs_v,{
-    mult(&ret_v[ss],&lhs,&rhs_v[ss]);
-  });
-#endif
 }
   
 template<class obj1,class obj2,class obj3> inline
@@ -210,17 +180,12 @@ void mac(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   conformable(ret,rhs);
   auto ret_v = ret.View();
   auto rhs_v = lhs.View();
-#ifdef STREAMING_STORES
-  accelerator_loop(ss,rhs_v,{
-    obj1 tmp;
-    mac(&tmp,&lhs,&rhs_v[ss]);
-    vstream(ret_v[ss],tmp);
+  accelerator_for(ss,rhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto rhs_t=rhs_v(ss);
+    mac(&tmp,&lhs,&rhs_t);
+    coalescedWrite(ret_v[ss],tmp);
   });
-#else 
-  accelerator_loop(ss,rhs_v,{
-    mac(&ret_v[ss],&lhs,&rhs_v[ss]);
-  });
-#endif
 }
   
 template<class obj1,class obj2,class obj3> inline
@@ -229,17 +194,12 @@ void sub(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   conformable(ret,rhs);
   auto ret_v = ret.View();
   auto rhs_v = lhs.View();
-#ifdef STREAMING_STORES
-  accelerator_loop(ss,rhs_v,{
-    obj1 tmp;
-    sub(&tmp,&lhs,&rhs_v[ss]);
-    vstream(ret_v[ss],tmp);
+  accelerator_for(ss,rhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto rhs_t=rhs_v(ss);
+    sub(&tmp,&lhs,&rhs_t);
+    coalescedWrite(ret_v[ss],tmp);
   });
-#else 
-  accelerator_loop(ss,rhs_v,{
-    sub(&ret_v[ss],&lhs,&rhs_v[ss]);
-  });
-#endif
 }
 template<class obj1,class obj2,class obj3> inline
 void add(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
@@ -247,17 +207,12 @@ void add(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   conformable(ret,rhs);
   auto ret_v = ret.View();
   auto rhs_v = lhs.View();
-#ifdef STREAMING_STORES
-  accelerator_loop(ss,rhs_v,{
-    obj1 tmp;
-    add(&tmp,&lhs,&rhs_v[ss]);
-    vstream(ret_v[ss],tmp);
+  accelerator_for(ss,rhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto rhs_t=rhs_v(ss);
+    add(&tmp,&lhs,&rhs_t);
+    coalescedWrite(ret_v[ss],tmp);
   });
-#else 
-  accelerator_loop(ss,rhs_v,{
-    add(&ret_v[ss],&lhs,&rhs_v[ss]);
-  });
-#endif
 }
   
 template<class sobj,class vobj> inline
@@ -268,16 +223,10 @@ void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &
   auto ret_v = ret.View();
   auto x_v = x.View();
   auto y_v = y.View();
-#ifdef STREAMING_STORES
-  accelerator_loop(ss,x_v,{
-    vobj tmp = a*x_v[ss]+y_v[ss];
-    vstream(ret_v[ss],tmp);
+  accelerator_for(ss,x_v.size(),vobj::Nsimd(),{
+    auto tmp = a*x_v(ss)+y_v(ss);
+    coalescedWrite(ret_v[ss],tmp);
   });
-#else
-  accelerator_loop(ss,x_v,{
-    ret_v[ss]=a*x_v[ss]+y_v[ss];
-  });
-#endif
 }
 template<class sobj,class vobj> inline
 void axpby(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y){
@@ -287,16 +236,10 @@ void axpby(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice
   auto ret_v = ret.View();
   auto x_v = x.View();
   auto y_v = y.View();
-#ifdef STREAMING_STORES
-  accelerator_loop(ss,x_v,{
-    vobj tmp = a*x_v[ss]+b*y_v[ss];
-    vstream(ret_v[ss],tmp);
+  accelerator_for(ss,x_v.size(),vobj::Nsimd(),{
+    auto tmp = a*x_v(ss)+b*y_v(ss);
+    coalescedWrite(ret_v[ss],tmp);
   });
-#else
-  accelerator_loop(ss,x_v,{
-    ret_v[ss]=a*x_v[ss]+b*y_v[ss];
-  });
-#endif
 }
 
 template<class sobj,class vobj> inline
