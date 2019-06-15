@@ -43,8 +43,8 @@ inline Lattice<vobj> transpose(const Lattice<vobj> &lhs){
   Lattice<vobj> ret(lhs.Grid());
   auto ret_v = ret.View();
   auto lhs_v = lhs.View();
-  accelerator_loop(ss,lhs_v,{
-    ret_v[ss] = transpose(lhs_v[ss]);
+  accelerator_for(ss,lhs_v.size(),vobj::Nsimd(),{
+    coalescedWrite(ret_v[ss], transpose(lhs_v(ss)));
   });
   return ret;
 };
@@ -58,8 +58,8 @@ inline auto TransposeIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(transpo
   Lattice<decltype(transposeIndex<Index>(vobj()))> ret(lhs.Grid());
   auto ret_v = ret.View();
   auto lhs_v = lhs.View();
-  accelerator_loop(ss,lhs_v,{
-      ret_v[ss] = transposeIndex<Index>(lhs_v[ss]);
+  accelerator_for(ss,lhs_v.size(),vobj::Nsimd(),{
+    coalescedWrite(ret_v[ss] , transposeIndex<Index>(lhs_v(ss)));
   });
   return ret;
 };
