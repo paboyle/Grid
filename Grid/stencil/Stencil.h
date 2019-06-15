@@ -511,8 +511,9 @@ public:
       HaloGatherDir(source,compress,point,face_idx);
     }
     face_table_computed=1;
-    
     assert(u_comm_offset==_unified_buffer_size);
+
+    accelerator_barrier();
     halogtime+=usecond();
   }
  
@@ -971,7 +972,6 @@ public:
     assert(comm_dim==1);
     assert(shift>=0);
     assert(shift<fd);
-
 
     int buffer_size = _grid->_slice_nblock[dimension]*_grid->_slice_block[dimension];
     
