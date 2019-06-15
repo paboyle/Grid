@@ -75,25 +75,29 @@ public:
     if (grid) conformable(grid, _grid);
     else      grid = _grid;
   };
-#ifndef LATTICE_VIEW_STRICT
-  accelerator_inline vobj       & operator[](size_t i)       { return this->_odata[i]; };
-  accelerator_inline const vobj & operator[](size_t i) const { return this->_odata[i]; };
-#endif
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // A View class which provides accessor to the data.
-// This will be safe to call from accelerator_loops and is trivially copy constructible
+// This will be safe to call from accelerator_for and is trivially copy constructible
 // The copy constructor for this will need to be used by device lambda functions
 /////////////////////////////////////////////////////////////////////////////////////////
 template<class vobj> 
 class LatticeView : public LatticeAccelerator<vobj>
 {
 public:
-#ifdef LATTICE_VIEW_STRICT
-  accelerator_inline vobj       & operator[](size_t i)       { return this->_odata[i]; };
-  accelerator_inline const vobj & operator[](size_t i) const { return this->_odata[i]; };
+
+
+  // Rvalue
+#ifdef __CUDA_ARCH__
+  accelerator_inline const typename vobj::scalar_object operator()(size_t i) const { return coalescedRead(this->_odata[i]); }
+#else 
+  accelerator_inline const vobj & operator()(size_t i) const { return this->_odata[i]; }
 #endif
+
+  accelerator_inline const vobj & operator[](size_t i) const { return this->_odata[i]; };
+  accelerator_inline vobj       & operator[](size_t i)       { return this->_odata[i]; };
+
   accelerator_inline uint64_t begin(void) const { return 0;};
   accelerator_inline uint64_t end(void)   const { return this->_odata_size; };
   accelerator_inline uint64_t size(void)  const { return this->_odata_size; };
@@ -193,14 +197,6 @@ private:
     else 
       this->_odata      = nullptr;
   }
-#if 0
-  void copy_vec(vobj *ptr,uint64_t count)
-  {
-    dealloc();
-    this->_odata = ptr;
-    assert(this->_odata_size == count);
-  }
-#endif
 public:
   /////////////////////////////////////////////////////////////////////////////////
   // Return a view object that may be dereferenced in site loops.
@@ -234,16 +230,10 @@ public:
     this->checkerboard=cb;
 
     auto me  = View();
-#ifdef STREAMING_STORES
-    accelerator_loop(ss,me,{
-      vobj tmp = eval(ss,expr);
-      vstream(me[ss] ,tmp);
+    accelerator_for(ss,me.size(),1,{
+      auto tmp = eval(ss,expr);
+      vstream(me[ss],tmp);
     });
-#else
-    accelerator_loop(ss,me,{
-      me[ss]=eval(ss,expr);
-    });
-#endif
     return *this;
   }
   template <typename Op, typename T1,typename T2> inline Lattice<vobj> & operator=(const LatticeBinaryExpression<Op,T1,T2> &expr)
@@ -259,16 +249,10 @@ public:
     this->checkerboard=cb;
 
     auto me  = View();
-#ifdef STREAMING_STORES
-    accelerator_loop(ss,me,{
-      vobj tmp = eval(ss,expr);
-      vstream(me[ss] ,tmp);
+    accelerator_for(ss,me.size(),1,{
+      auto tmp = eval(ss,expr);
+      vstream(me[ss],tmp);
     });
-#else
-    accelerator_loop(ss,me,{
-      me[ss]=eval(ss,expr);
-    });
-#endif
     return *this;
   }
   template <typename Op, typename T1,typename T2,typename T3> inline Lattice<vobj> & operator=(const LatticeTrinaryExpression<Op,T1,T2,T3> &expr)
@@ -283,16 +267,10 @@ public:
     assert( (cb==Odd) || (cb==Even));
     this->checkerboard=cb;
     auto me  = View();
-#ifdef STREAMING_STORES
-    accelerator_loop(ss,me,{
-      vobj tmp = eval(ss,expr);
-      vstream(me[ss] ,tmp);
+    accelerator_for(ss,me.size(),1,{
+      auto tmp = eval(ss,expr);
+      vstream(me[ss],tmp);
     });
-#else
-    accelerator_loop(ss,me,{
-      me[ss] = eval(ss,expr);
-    });
-#endif
     return *this;
   }
   //GridFromExpression is tricky to do
@@ -344,8 +322,8 @@ public:
 
   template<class sobj> inline Lattice<vobj> & operator = (const sobj & r){
     auto me  = View();
-    accelerator_loop(ss,me,{
-      me[ss]=r;
+    thread_for(ss,me.size(),{
+      me[ss] = r;
     });
     return *this;
   }
@@ -401,8 +379,8 @@ public:
     this->checkerboard = r.Checkerboard();
     auto me =   View();
     auto him= r.View();
-    accelerator_loop(ss,me,{
-      me[ss]=him[ss];
+    accelerator_for(ss,me.size(),vobj::Nsimd(),{
+      coalescedWrite(me[ss],him(ss));
     });
     return *this;
   }
@@ -415,8 +393,8 @@ public:
     conformable(*this,r);
     auto me =   View();
     auto him= r.View();
-    accelerator_loop(ss,me,{
-      me[ss]=him[ss];
+    accelerator_for(ss,me.size(),vobj::Nsimd(),{
+      coalescedWrite(me[ss],him(ss));
     });
     return *this;
   }
