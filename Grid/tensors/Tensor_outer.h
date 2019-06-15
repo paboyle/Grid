@@ -43,7 +43,7 @@ auto outerProduct (const iVector<l,N>& lhs,const iVector<r,N>& rhs) -> iMatrix<d
   for(int c1=0;c1<N;c1++){
     for(int c2=0;c2<N;c2++){
       ret._internal[c1][c2] = outerProduct(lhs._internal[c1],rhs._internal[c2]);
-    }}
+  }}
   return ret;
 }
 
@@ -57,20 +57,13 @@ auto outerProduct (const iScalar<l>& lhs,const iScalar<r>& rhs) -> iScalar<declt
   return ret;
 }
 
-  
-accelerator_inline ComplexF outerProduct(const ComplexF &l, const ComplexF& r)
+template<class CC,IfComplex<CC> = 0>
+accelerator_inline CC outerProduct(const CC &l, const CC& r)
 {
   return l*conj(r);
 }
-accelerator_inline ComplexD outerProduct(const ComplexD &l, const ComplexD& r)
-{
-  return l*conj(r);
-}
-accelerator_inline RealF outerProduct(const RealF &l, const RealF& r)
-{
-  return l*r;
-}
-accelerator_inline RealD outerProduct(const RealD &l, const RealD& r)
+template<class RR,IfReal<RR> = 0>
+accelerator_inline RR outerProduct(const RR &l, const RR& r)
 {
   return l*r;
 }
