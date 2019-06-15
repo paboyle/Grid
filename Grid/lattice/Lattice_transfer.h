@@ -52,7 +52,7 @@ template<class vobj> inline void pickCheckerboard(int cb,Lattice<vobj> &half,con
 
   auto half_v = half.View();
   auto full_v = full.View();
-  thread_loop( (int ss=0;ss<full.Grid()->oSites();ss++),{
+  thread_for(ss, full.Grid()->oSites(),{
     int cbos;
     Coordinate coor;
     full.Grid()->oCoorFromOindex(coor,ss);
@@ -68,7 +68,8 @@ template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Latti
   int cb = half.Checkerboard();
   auto half_v = half.View();
   auto full_v = full.View();
-  thread_loop( (int ss=0;ss<full.Grid()->oSites();ss++), {
+  thread_for(ss,full.Grid()->oSites(),{
+
     Coordinate coor;
     int cbos;
 
@@ -111,8 +112,7 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
   auto fineData_   = fineData.View();
   auto coarseData_ = coarseData.View();
   // Loop over coars parallel, and then loop over fine associated with coarse.
-  thread_loop( (int sf=0;sf<fine->oSites();sf++),{
-
+  thread_for( sf, fine->oSites(), {
     int sc;
     Coordinate coor_c(_ndimension);
     Coordinate coor_f(_ndimension);
@@ -160,7 +160,7 @@ inline void blockZAXPY(Lattice<vobj> &fineZ,
   auto fineY_  = fineY.View();
   auto coarseA_= coarseA.View();
 
-  thread_loop( (int sf=0;sf<fine->oSites();sf++),{
+  thread_for(sf, fine->oSites(), {
     
     int sc;
     Coordinate coor_c(_ndimension);
@@ -196,7 +196,7 @@ inline void blockInnerProduct(Lattice<CComplex> &CoarseInner,
 
   fine_inner = localInnerProduct(fineX,fineY);
   blockSum(coarse_inner,fine_inner);
-  thread_loop( (int ss=0;ss<coarse->oSites();ss++),{
+  thread_for(ss, coarse->oSites(),{
     CoarseInner_[ss] = coarse_inner_[ss];
   });
 }
@@ -233,7 +233,7 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
   auto coarseData_ = coarseData.View();
   auto fineData_   = fineData.View();
 
-  thread_loop( (int sf=0;sf<fine->oSites();sf++),{
+  thread_for(sf,fine->oSites(),{
     int sc;
     Coordinate coor_c(_ndimension);
     Coordinate coor_f(_ndimension);
@@ -321,7 +321,7 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
   auto coarseData_ = coarseData.View();
 
   // Loop with a cache friendly loop ordering
-  thread_loop( (int sf=0;sf<fine->oSites();sf++),{
+  thread_for(sf,fine->oSites(),{
     int sc;
     Coordinate coor_c(_ndimension);
     Coordinate coor_f(_ndimension);
@@ -362,7 +362,7 @@ void localConvert(const Lattice<vobj> &in,Lattice<vvobj> &out)
     assert(ig->lSites() == og->lSites());
   }
 
-  thread_loop( (int idx=0;idx<ig->lSites();idx++),{
+  thread_for(idx, ig->lSites(),{
     sobj s;
     ssobj ss;
 
@@ -400,7 +400,7 @@ void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice
   }
 
   // the above should guarantee that the operations are local
-  thread_loop( (int idx=0;idx<lg->lSites();idx++),{
+  thread_for(idx,lg->lSites(),{
     sobj s;
     Coordinate lcoor(nl);
     Coordinate hcoor(nh);
@@ -441,7 +441,7 @@ void ExtractSlice(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slic
     }
   }
   // the above should guarantee that the operations are local
-  thread_loop((int idx=0;idx<lg->lSites();idx++),{
+  thread_for(idx,lg->lSites(),{
     sobj s;
     Coordinate lcoor(nl);
     Coordinate hcoor(nh);
@@ -482,7 +482,7 @@ void InsertSliceLocal(const Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int
   }
 
   // the above should guarantee that the operations are local
-  thread_loop( (int idx=0;idx<lg->lSites();idx++),{
+  thread_for(idx,lg->lSites(),{
     sobj s;
     Coordinate lcoor(nl);
     Coordinate hcoor(nh);
@@ -519,7 +519,7 @@ void ExtractSliceLocal(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int
   }
 
   // the above should guarantee that the operations are local
-  thread_loop( (int idx=0;idx<lg->lSites();idx++),{
+  thread_for(idx,lg->lSites(),{
     sobj s;
     Coordinate lcoor(nl);
     Coordinate hcoor(nh);
@@ -593,7 +593,7 @@ unvectorizeToLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in)
 
   //loop over outer index
   auto in_v  = in.View();
-  thread_loop( (int in_oidx = 0; in_oidx < in_grid->oSites(); in_oidx++),{ 
+  thread_for(in_oidx,in_grid->oSites(),{
     //Assemble vector of pointers to output elements
     ExtractPointerArray<sobj> out_ptrs(in_nsimd);
 
@@ -640,7 +640,7 @@ unvectorizeToRevLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in)
     in_grid->iCoorFromIindex(in_icoor[lane], lane);
   }
   
-  thread_loop( (int in_oidx = 0; in_oidx < in_grid->oSites(); in_oidx++),{ //loop over outer index
+  thread_for(in_oidx, in_grid->oSites(),{
     //Assemble vector of pointers to output elements
     std::vector<sobj*> out_ptrs(in_nsimd);
 
@@ -686,7 +686,7 @@ vectorizeFromLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
     grid->iCoorFromIindex(icoor[lane],lane);
   }
   auto out_v = out.View();
-  thread_loop( (uint64_t oidx = 0; oidx < grid->oSites(); oidx++),{
+  thread_for(oidx, grid->oSites(),{
     //Assemble vector of pointers to output elements
     ExtractPointerArray<sobj> ptrs(nsimd);
 
@@ -733,7 +733,7 @@ vectorizeFromRevLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
     grid->iCoorFromIindex(icoor[lane],lane);
   }
   
-  thread_loop( (uint64_t oidx = 0; oidx < grid->oSites(); oidx++),{ //loop over outer index
+  thread_for(oidx, grid->oSites(), {
     //Assemble vector of pointers to output elements
     std::vector<sobj*> ptrs(nsimd);
 
@@ -789,7 +789,7 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in)
   unvectorizeToLexOrdArray(in_slex_conv, in);
     
   auto out_v = out.View();
-  thread_loop( (uint64_t out_oidx=0;out_oidx<out_grid->oSites();out_oidx++),{
+  thread_for(out_oidx,out_grid->oSites(),{
     Coordinate out_ocoor(ndim);
     out_grid->oCoorFromOindex(out_ocoor, out_oidx);
 
@@ -906,7 +906,7 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 
   for(int v=0;v<nvector;v++){
     unvectorizeToLexOrdArray(scalardata,full[v]);    
-    thread_loop( (int site=0;site<lsites;site++),{
+    thread_for(site,lsites,{
       alldata[v*lsites+site] = scalardata[site];
     });
   }
@@ -938,7 +938,7 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
       int chunk  = (nvec*fvol)/sP;          assert(chunk*sP == nvec*fvol);
 
       // Loop over reordered data post A2A
-      thread_loop( (int c=0;c<chunk;c++),{
+      thread_for(c, chunk, {
 	Coordinate coor(ndim);
 	for(int m=0;m<M;m++){
 	  for(int s=0;s<sP;s++){
@@ -1057,7 +1057,7 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 	
       {
 	// Loop over reordered data post A2A
-	thread_loop( (int c=0;c<chunk;c++),{
+	thread_for(c, chunk,{
 	  Coordinate coor(ndim);
 	  for(int m=0;m<M;m++){
 	    for(int s=0;s<sP;s++){
@@ -1095,9 +1095,7 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 
   lsites = full_grid->lSites();
   for(int v=0;v<nvector;v++){
-    //    assert(v<full.size());
-    thread_loop( (int site=0;site<lsites;site++),{
-      //      assert(v*lsites+site < alldata.size());
+    thread_for(site, lsites,{
       scalardata[site] = alldata[v*lsites+site];
     });
     vectorizeFromLexOrdArray(scalardata,full[v]);    
