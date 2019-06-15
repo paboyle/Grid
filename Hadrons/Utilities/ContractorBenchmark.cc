@@ -205,7 +205,7 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
         auto nr = a.rows(), nc = a.cols();
         
         res = 0.;
-        thread_loop( (unsigned int i = 0; i < nr; ++i),
+        thread_for(i,nr,
         {
             ComplexD tmp = 0.;
 
@@ -225,7 +225,7 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
         auto nr = a.rows(), nc = a.cols();
         
         res = 0.;
-        thread_loop( (unsigned int j = 0; j < nc; ++j),
+        thread_for(j,nc,
         {
             ComplexD tmp = 0.;
 
@@ -248,7 +248,7 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
     {
         res = 0.;
-        thread_loop( (unsigned int r = 0; r < a.rows(); ++r),
+        thread_for(r,a.rows(),
         {
             ComplexD tmp;
 
@@ -263,7 +263,7 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
     {
         res = 0.;
-        thread_loop( (unsigned int c = 0; c < a.cols(); ++c),
+        thread_for(c,a.cols(),
         {
             ComplexD tmp;
 
@@ -284,7 +284,7 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
     {
         res = 0.;
-        thread_loop( (unsigned int r = 0; r < a.rows(); ++r),
+        thread_for(r,a.rows()
         {
             ComplexD tmp;
 
@@ -299,7 +299,7 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
     {
         res = 0.;
-        thread_loop( (unsigned int c = 0; c < a.cols(); ++c),
+        thread_for(c,a.cols(),
         {
             ComplexD tmp;
 

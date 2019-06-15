@@ -50,7 +50,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 #define BEGIN_HADRONS_NAMESPACE \
 namespace Grid {\
-using namespace QCD;\
 namespace Hadrons {\
 using Grid::operator<<;\
 using Grid::operator>>;

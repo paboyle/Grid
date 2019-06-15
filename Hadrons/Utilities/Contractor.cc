@@ -30,7 +30,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/TimerArray.hpp>
 
 using namespace Grid;
-using namespace QCD;
 using namespace Hadrons;
 
 #define TIME_MOD(t) (((t) + par.global.nt) % par.global.nt)
@@ -353,11 +352,12 @@ int main(int argc, char* argv[])
 
                 tAr.startTimer("Transpose caching");
                 lastTerm[t].resize(ref.rows(), ref.cols());
-                thread_loop( (unsigned int j = 0; j < ref.cols(); ++j),
-                for (unsigned int i = 0; i < ref.rows(); ++i)
-                {
-                    lastTerm[t](i, j) = ref(i, j);
-                });
+                thread_for( j,ref.cols(),{
+                  for (unsigned int i = 0; i < ref.rows(); ++i)
+                  {
+                      lastTerm[t](i, j) = ref(i, j);
+                  }
+		});
                 tAr.stopTimer("Transpose caching");
             }
             bytes = par.global.nt*lastTerm[0].rows()*lastTerm[0].cols()*sizeof(ComplexD);

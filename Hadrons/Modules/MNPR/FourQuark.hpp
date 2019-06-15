@@ -140,7 +140,7 @@ void TFourQuark<FImpl1, FImpl2>::tensorprod(LatticeSpinColourSpinColourMatrix &l
 	    auto  lret_v = lret.View();
 	    auto  a_v = a.View();
 	    auto  b_v = b.View();
-            thread_loop( (auto site=lret_v.begin();site<lret_v.end();site++) ,{
+            thread_foreach( site,lret_v,{
 		vTComplex left;
                 for(int si=0; si < Ns; ++si){
                 for(int sj=0; sj < Ns; ++sj){

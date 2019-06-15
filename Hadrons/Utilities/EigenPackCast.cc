@@ -29,7 +29,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Environment.hpp>
 
 using namespace Grid;
-using namespace QCD;
 using namespace Hadrons;
 
 template <typename FOut, typename FIn>

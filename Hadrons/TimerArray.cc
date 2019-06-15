@@ -28,7 +28,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/TimerArray.hpp>
 
 using namespace Grid;
-using namespace QCD;
 using namespace Hadrons;
 
 void TimerArray::startTimer(const std::string &name)

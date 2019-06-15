@@ -170,7 +170,7 @@ public:
         if ((MatLeft::Options == Eigen::RowMajor) and
             (MatRight::Options == Eigen::ColMajor))
         {
-  	  thread_loop( (unsigned int r = 0; r < a.rows(); ++r),
+  	  thread_for(r,a.rows(),
             {
                 C tmp;
 #ifdef USE_MKL
@@ -186,7 +186,7 @@ public:
         }
         else
 	  {
-            thread_loop( (unsigned int c = 0; c < a.cols(); ++c),
+            thread_for(c,a.cols(),
             {
                 C tmp;
 #ifdef USE_MKL 
@@ -646,13 +646,14 @@ void A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
             bytes    += kernel.bytes(N_iii, N_jjj);
 
             START_TIMER("cache copy");
-            thread_loop_collapse( 5, (int e =0;e<next_;e++),
-            for(int s =0;s< nstr_;s++)
-            for(int t =0;t< nt_;t++)
-            for(int iii=0;iii< N_iii;iii++)
-            for(int jjj=0;jjj< N_jjj;jjj++)
-            {
+            thread_for_collapse( 5,e,next_,{
+              for(int s =0;s< nstr_;s++)
+              for(int t =0;t< nt_;t++)
+              for(int iii=0;iii< N_iii;iii++)
+              for(int jjj=0;jjj< N_jjj;jjj++)
+              {
                 mBlock(e,s,t,ii+iii,jj+jjj) = mCacheBlock(e,s,t,iii,jjj);
+              }
             });
             STOP_TIMER("cache copy");
         }
