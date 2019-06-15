@@ -113,7 +113,7 @@ class BinaryIO {
     {
       uint32_t nersc_csum_thr = 0;
 
-      thread_loop_in_region( (uint64_t local_site = 0; local_site < lsites; local_site++),
+      thread_for_in_region( local_site, lsites, 
       {
         uint32_t *site_buf = (uint32_t *)&fbuf[local_site];
         for (uint64_t j = 0; j < size32; j++)
@@ -148,7 +148,8 @@ class BinaryIO {
       uint32_t scidac_csumb_thr=0;
       uint32_t site_crc=0;
 
-      thread_loop_in_region( (uint64_t local_site=0;local_site<lsites;local_site++),{
+      thread_for_in_region( local_site, lsites, 
+      {
 
 	uint32_t * site_buf = (uint32_t *)&fbuf[local_site];
 
@@ -195,7 +196,7 @@ class BinaryIO {
   {
     uint32_t * f = (uint32_t *)file_object;
     uint64_t count = bytes/sizeof(uint32_t);
-    thread_loop( (uint64_t i=0;i<count;i++),{  
+    thread_for( i, count, {  
       f[i] = ntohl(f[i]);
     });
   }
@@ -206,7 +207,7 @@ class BinaryIO {
     uint32_t f;
 
     uint64_t count = bytes/sizeof(uint32_t);
-    thread_loop( (uint64_t i=0;i<count;i++),{  
+    thread_for(i,count,{
       f = fp[i];
       // got network order and the network to host
       f = ((f&0xFF)<<24) | ((f&0xFF00)<<8) | ((f&0xFF0000)>>8) | ((f&0xFF000000UL)>>24) ; 
@@ -219,7 +220,7 @@ class BinaryIO {
   {
     uint64_t * f = (uint64_t *)file_object;
     uint64_t count = bytes/sizeof(uint64_t);
-    thread_loop( (uint64_t i=0;i<count;i++),{  
+    thread_for( i, count, {
       f[i] = Grid_ntohll(f[i]);
     });
   }
@@ -231,7 +232,7 @@ class BinaryIO {
     uint64_t f,g;
     
     uint64_t count = bytes/sizeof(uint64_t);
-    thread_loop( (uint64_t i=0;i<count;i++),{  
+    thread_for( i, count, {
       f = fp[i];
       // got network order and the network to host
       g = ((f&0xFF)<<24) | ((f&0xFF00)<<8) | ((f&0xFF0000)>>8) | ((f&0xFF000000UL)>>24) ; 
@@ -551,7 +552,7 @@ class BinaryIO {
     GridStopWatch timer; 
     timer.Start();
 
-    thread_loop( (uint64_t x=0;x<lsites;x++), { munge(iodata[x], scalardata[x]); });
+    thread_for(x,lsites, { munge(iodata[x], scalardata[x]); });
 
     vectorizeFromLexOrdArray(scalardata,Umu);    
     grid->Barrier();
@@ -589,7 +590,7 @@ class BinaryIO {
     GridStopWatch timer; timer.Start();
     unvectorizeToLexOrdArray(scalardata,Umu);    
 
-    thread_loop( (uint64_t x=0;x<lsites;x++), { munge(scalardata[x],iodata[x]); });
+    thread_for(x, lsites, { munge(scalardata[x],iodata[x]); });
 
     grid->Barrier();
     timer.Stop();
@@ -661,7 +662,7 @@ class BinaryIO {
 	     nersc_csum,scidac_csuma,scidac_csumb);
 
     timer.Start();
-    thread_loop( (uint64_t lidx=0;lidx<lsites;lidx++), {
+    thread_for(lidx,lsites,{
       std::vector<RngStateType> tmp(RngStateCount);
       std::copy(iodata[lidx].begin(),iodata[lidx].end(),tmp.begin());
       parallel_rng.SetState(tmp,lidx);
@@ -719,11 +720,11 @@ class BinaryIO {
 
     timer.Start();
     std::vector<RNGstate> iodata(lsites);
-    thread_loop( (uint64_t lidx=0;lidx<lsites;lidx++),{
+    thread_for(lidx,lsites,{
       std::vector<RngStateType> tmp(RngStateCount);
       parallel_rng.GetState(tmp,lidx);
       std::copy(tmp.begin(),tmp.end(),iodata[lidx].begin());
-      });
+    });
     timer.Stop();
 
     IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_LEXICOGRAPHIC,
