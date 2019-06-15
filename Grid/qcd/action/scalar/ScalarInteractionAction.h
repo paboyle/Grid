@@ -94,7 +94,7 @@ public:
     for (int mu = 0; mu < Ndim; mu++)
     {
       //  pshift = Cshift(p, mu, +1);  // not efficient, implement with stencils
-      thread_loop( (int i = 0; i < p.Grid()->oSites(); i++),
+      thread_for(i, p.Grid()->oSites(),
       {
         int permute_type;
         StencilEntry *SE;
@@ -153,8 +153,8 @@ public:
       StencilEntry *SE;
       const vobj *temp;
 
-      thread_loop( (int i = 0; i < p.Grid()->oSites(); i++) ,{
-	
+      thread_for(i, p.Grid()->oSites(),
+      {
 	SE = phiStencil.GetEntry(permute_type, point, i);
 	// prefetch next p?
 	  
