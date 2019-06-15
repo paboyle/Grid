@@ -2,8 +2,7 @@
 //#include <Grid/Hadrons/Global.hpp>
 #include <Grid/Eigen/unsupported/CXX11/Tensor>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 #undef DELTA_F_EQ_2
 
@@ -142,12 +141,12 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
   int MFlvol = ld*Lblock*Rblock*Nmom;
 
   Vector<SpinMatrix_v > lvSum(MFrvol);
-  thread_loop( (int r = 0; r < MFrvol; r++),{
+  thread_for( r, MFrvol,{
     lvSum[r] = Zero();
   });
 
   Vector<SpinMatrix_s > lsSum(MFlvol);             
-  thread_loop( (int r = 0; r < MFlvol; r++),{
+  thread_for(r,MFlvol,{
     lsSum[r]=scalar_type(0.0);
   });
 
@@ -157,7 +156,7 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
 
   // potentially wasting cores here if local time extent too small
   if (t_kernel) *t_kernel = -usecond();
-  thread_loop( (int r=0;r<rd;r++),{
+  thread_for(r,rd,{
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
 
@@ -198,9 +197,8 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
     }
   });
 
-
   // Sum across simd lanes in the plane, breaking out orthog dir.
-  thread_loop( (int rt=0;rt<rd;rt++),{
+  thread_for(rt,rd,{
 
     Coordinate icoor(Nd);
     ExtractBuffer<SpinMatrix_s> extracted(Nsimd);               
@@ -234,8 +232,7 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
   // ld loop and local only??
   int pd = grid->_processors[orthogdim];
   int pc = grid->_processor_coor[orthogdim];
-  thread_loop_collapse(2, (int lt=0;lt<ld;lt++), 
-  {
+  thread_for_collapse(2,lt,ld,{
     for(int pt=0;pt<pd;pt++){
       int t = lt + pt*ld;
       if (pt == pc){
@@ -332,12 +329,12 @@ void A2Autils<FImpl>::PionFieldXX(Eigen::Tensor<ComplexD,3> &mat,
   int MFlvol = ld*Lblock*Rblock;
 
   Vector<vector_type > lvSum(MFrvol);
-  thread_loop(  (int r = 0; r < MFrvol; r++),{
+  thread_for(r,MFrvol,{
     lvSum[r] = Zero();
   });
 
   Vector<scalar_type > lsSum(MFlvol);             
-  thread_loop(  (int r = 0; r < MFlvol; r++),{
+  thread_for(r,MFlvol,{
     lsSum[r]=scalar_type(0.0);
   });
 
@@ -345,7 +342,7 @@ void A2Autils<FImpl>::PionFieldXX(Eigen::Tensor<ComplexD,3> &mat,
   int e2=    grid->_slice_block [orthogdim];
   int stride=grid->_slice_stride[orthogdim];
 
-  thread_loop( (int r=0;r<rd;r++),{
+  thread_for(r,rd,{
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
 
@@ -394,7 +391,7 @@ void A2Autils<FImpl>::PionFieldXX(Eigen::Tensor<ComplexD,3> &mat,
   });
 
   // Sum across simd lanes in the plane, breaking out orthog dir.
-  thread_loop( (int rt=0;rt<rd;rt++),{
+  thread_for(rt,rd,{
 
       Coordinate icoor(nd);
     iScalar<vector_type> temp; 
@@ -426,8 +423,7 @@ void A2Autils<FImpl>::PionFieldXX(Eigen::Tensor<ComplexD,3> &mat,
   // ld loop and local only??
   int pd = grid->_processors[orthogdim];
   int pc = grid->_processor_coor[orthogdim];
-  thread_loop_collapse(2,(int lt=0;lt<ld;lt++),
-  {
+  thread_for_collapse(2,lt,ld,{
     for(int pt=0;pt<pd;pt++){
       int t = lt + pt*ld;
       if (pt == pc){
@@ -480,12 +476,12 @@ void A2Autils<FImpl>::PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat,
   int MFlvol = ld*Lblock*Rblock*Nmom;
 
   Vector<vector_type > lvSum(MFrvol);
-  thread_loop(  (int r = 0; r < MFrvol; r++),{
+  thread_for(r,MFrvol,{
     lvSum[r] = Zero();
   });
 
   Vector<scalar_type > lsSum(MFlvol);             
-  thread_loop(  (int r = 0; r < MFlvol; r++),{
+  thread_for(r,MFlvol,{
     lsSum[r]=scalar_type(0.0);
   });
 
@@ -493,7 +489,7 @@ void A2Autils<FImpl>::PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat,
   int e2=    grid->_slice_block [orthogdim];
   int stride=grid->_slice_stride[orthogdim];
 
-  thread_loop( (int r=0;r<rd;r++),{
+  thread_for(r,rd,{
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
 
@@ -542,7 +538,7 @@ void A2Autils<FImpl>::PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat,
 
 
   // Sum across simd lanes in the plane, breaking out orthog dir.
-  thread_loop( (int rt=0;rt<rd;rt++),{
+  thread_for(rt,rd,{
 
     Coordinate icoor(nd);
     iScalar<vector_type> temp; 
@@ -573,10 +569,10 @@ void A2Autils<FImpl>::PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat,
 
   assert(mat.dimension(0) == Nmom);
   assert(mat.dimension(1) == Nt);
-
+ 
   int pd = grid->_processors[orthogdim];
   int pc = grid->_processor_coor[orthogdim];
-  thread_loop_collapse(2,(int lt=0;lt<ld;lt++), {
+  thread_for_collapse(2,lt,ld,{
     for(int pt=0;pt<pd;pt++){
       int t = lt + pt*ld;
       if (pt == pc){
@@ -687,13 +683,13 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
     int MFlvol = ld*Lblock*Rblock*Nem;
 
     Vector<vector_type> lvSum(MFrvol);
-    thread_loop(  (int r = 0; r < MFrvol; r++),
+    thread_for(r,MFrvol,
     {
       lvSum[r] = Zero();
     });
 
     Vector<scalar_type> lsSum(MFlvol);             
-    thread_loop(  (int r = 0; r < MFlvol; r++),
+    thread_for(r,MFlvol,
     {
         lsSum[r] = scalar_type(0.0);
     });
@@ -705,7 +701,7 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
     // Nested parallelism would be ok
     // Wasting cores here. Test case r
     if (t_kernel) *t_kernel = -usecond();
-    thread_loop( (int r=0;r<rd;r++),
+    thread_for(r,rd,
     {
         int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
 
@@ -757,7 +753,7 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
     });
 
     // Sum across simd lanes in the plane, breaking out orthog dir.
-    thread_loop( (int rt=0;rt<rd;rt++),
+    thread_for(rt,rd,
     {
         Coordinate icoor(Nd);
         ExtractBuffer<scalar_type> extracted(Nsimd);               
@@ -786,7 +782,7 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
     // ld loop and local only??
     int pd = grid->_processors[orthogdim];
     int pc = grid->_processor_coor[orthogdim];
-    thread_loop_collapse(2,(int lt=0;lt<ld;lt++),
+    thread_for_collapse(2,lt,ld,
     {
         for(int pt=0;pt<pd;pt++)
         {
@@ -992,7 +988,7 @@ void A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
     WWVV[t] = Zero();
   }
 
-  thread_loop( (int ss=0;ss<grid->oSites();ss++),{
+  thread_for(ss,grid->oSites(),{
     for(int d_o=0;d_o<N_d;d_o+=d_unroll){
       for(int t=0;t<N_t;t++){
       for(int s=0;s<N_s;s++){
@@ -1048,7 +1044,7 @@ void A2Autils<FImpl>::ContractFourQuarkColourDiagonal(const PropagatorField &WWV
   auto WWVV1_v = WWVV1.View();
   auto O_trtr_v= O_trtr.View();
   auto O_fig8_v= O_fig8.View();
-  thread_loop( (int ss=0;ss<grid->oSites();ss++),{
+  thread_for(ss,grid->oSites(),{
 
     typedef typename ComplexField::vector_object vobj;
 
@@ -1093,7 +1089,7 @@ void A2Autils<FImpl>::ContractFourQuarkColourMix(const PropagatorField &WWVV0,
   auto O_trtr_v= O_trtr.View();
   auto O_fig8_v= O_fig8.View();
 
-  thread_loop( (int ss=0;ss<grid->oSites();ss++),{
+  thread_for(ss,grid->oSites(),{
 
     typedef typename ComplexField::vector_object vobj;
 
@@ -1399,5 +1395,5 @@ void A2Autils<FImpl>::DeltaFeq2(int dt_min,int dt_max,
 }
 #endif 
 
-}}
+NAMESPACE_END(Grid);
 
