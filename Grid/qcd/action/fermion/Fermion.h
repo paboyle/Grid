@@ -95,6 +95,7 @@ NAMESPACE_CHECK(WilsonTM5);
 ////////////////////////////////////////////////////////////////////////////////
 // Move this group to a DWF specific tools/algorithms subdir? 
 ////////////////////////////////////////////////////////////////////////////////
+#include <Grid/qcd/action/fermion/SchurDiagTwoKappa.h>
 #include <Grid/qcd/action/fermion/FourierAcceleratedPV.h>
 #include <Grid/qcd/action/fermion/PauliVillarsInverters.h>
 #include <Grid/qcd/action/fermion/Reconstruct5Dprop.h>

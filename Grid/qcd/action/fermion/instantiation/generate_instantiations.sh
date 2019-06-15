@@ -4,9 +4,7 @@ STAG_IMPL_LIST=" \
 	   StaggeredImplF \
 	   StaggeredImplD  "
 
-STAG5_IMPL_LIST=" \
-	   StaggeredVec5dImplF \
-	   StaggeredVec5dImplD "
+STAG5_IMPL_LIST=""
 
 WILSON_IMPL_LIST=" \
 	   WilsonImplF \
@@ -41,7 +39,7 @@ GDWF_IMPL_LIST=" \
 	   GparityWilsonImplDF"
 
 
-IMPL_LIST="$STAG_IMPL_LIST $STAG5_IMPL_LIST $WILSON_IMPL_LIST $DWF_IMPL_LIST $GDWF_IMPL_LIST"
+IMPL_LIST="$STAG_IMPL_LIST  $WILSON_IMPL_LIST $DWF_IMPL_LIST $GDWF_IMPL_LIST"
 
 for impl in $IMPL_LIST
 do
@@ -104,10 +102,3 @@ CC_LIST=" \
   ImprovedStaggeredFermion5DInstantiation \
   StaggeredKernelsInstantiation "
 
-for impl in $STAG5_IMPL_LIST
-do
-for f in $CC_LIST
-do
-  ln -f -s ../$f.cc.master $impl/$f$impl.cc 
-done
-done

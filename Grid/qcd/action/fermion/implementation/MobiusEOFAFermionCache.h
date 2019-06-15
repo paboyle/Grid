@@ -352,7 +352,7 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag(const FermionField &psi_i, FermionFiel
 
     // Apply L^{-dag}
     for(int s=Ls-2; s>=0; s--){
-      spProj5p(tmp, chi[ss+s+1]);
+      spProj5p(tmp, chi(ss+s+1));
       coalescedWrite(chi[ss+s], chi(ss+s) - this->lee[s]*tmp);
     }
   });

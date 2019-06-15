@@ -26,8 +26,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef  _SCHUR_DIAG_TWO_KAPPA_H
-#define  _SCHUR_DIAG_TWO_KAPPA_H
+#pragma once
 
 NAMESPACE_BEGIN(Grid);
 
@@ -54,7 +53,8 @@ public:
     out.Checkerboard() = in.Checkerboard();
     assert(grid->_simd_layout[0] == 1); // should be fine for ZMobius for now
     int Ls = grid->_rdimensions[0];
-    thread_loop( (int ss=0;ss<grid->oSites();ss++),{
+    thread_for(ss, grid->oSites(),
+    {
       vobj tmp = s[ss % Ls]*in[ss];
       vstream(out[ss],tmp);
     });
@@ -99,4 +99,4 @@ public:
 
 NAMESPACE_END(Grid);
 
-#endif
+
