@@ -369,7 +369,7 @@ public:
     int words  = sizeof(scalar_object) / sizeof(scalar_type);
 
     auto l_v = l.View();
-    thread_loop( (int ss=0;ss<osites;ss++), {
+    thread_for( ss, osites, {
       ExtractBuffer<scalar_object> buf(Nsimd);
       for (int m = 0; m < multiplicity; m++) {  // Draw from same generator multiplicity times
 
@@ -419,7 +419,7 @@ public:
     ////////////////////////////////////////////////
 
     // Everybody loops over global volume.
-    thread_loop( (int gidx=0;gidx<_grid->_gsites;gidx++) , {
+    thread_for( gidx, _grid->_gsites, {
 	// Where is it?
 	int rank;
 	int o_idx;
@@ -461,7 +461,7 @@ public:
 	seeders[t] = Reseed(master_engine);
       }
 
-      thread_loop( (int t=0;t<Nthread;t++), {
+      thread_for( t, Nthread, {
 	// set up one per local site in threaded fashion
 	std::vector<uint32_t> newseeds;
 	std::uniform_int_distribution<uint32_t> uid;	
