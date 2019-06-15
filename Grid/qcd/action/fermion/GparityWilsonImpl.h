@@ -225,7 +225,7 @@ public:
       auto Uds_v = Uds.View();
       auto Uconj_v = Uconj.View();
       auto Utmp_v= Utmp.View();
-      thread_loop( (auto ss=U_v.begin();ss<U_v.end();ss++),{
+      thread_foreach(ss,U_v,{
 	Uds_v[ss](0)(mu) = U_v[ss]();
 	Uds_v[ss](1)(mu) = Uconj_v[ss]();
       });
@@ -238,7 +238,7 @@ public:
 	Utmp = where(coor==0,Uconj,Utmp);
       }
 
-      thread_loop((auto ss=Utmp_v.begin();ss<Utmp_v.end();ss++),{
+      thread_foreach(ss,Utmp_v,{
 	Uds_v[ss](0)(mu+4) = Utmp_v[ss]();
       });
           
@@ -247,7 +247,7 @@ public:
 	Utmp = where(coor==0,U,Utmp);
       }
 	  
-      thread_loop((auto ss=Utmp_v.begin();ss<Utmp_v.end();ss++),{
+      thread_foreach(ss,Utmp_v,{
         Uds_v[ss](1)(mu+4) = Utmp_v[ss]();
       });
           
@@ -262,7 +262,7 @@ public:
     auto tmp = TraceIndex<SpinIndex>(outerProduct(Btilde, A));
     auto link_v = link.View();
     auto tmp_v = tmp.View();
-    thread_loop((auto ss = tmp_v.begin(); ss < tmp_v.end(); ss++), {
+    thread_foreach(ss,tmp_v,{
       link_v[ss]() = tmp_v[ss](0, 0) + conjugate(tmp_v[ss](1, 1));
     });
     PokeIndex<LorentzIndex>(mat, link, mu);
@@ -297,7 +297,7 @@ public:
     auto tmp_v = tmp.View();
     auto Atilde_v = Atilde.View();
     auto Btilde_v = Btilde.View();
-    thread_loop((int ss = 0; ss < tmp.Grid()->oSites(); ss++) ,{
+    thread_for(ss,tmp.Grid()->oSites(),{
       for (int s = 0; s < Ls; s++) {
 	int sF = s + Ls * ss;
 	auto ttmp = traceIndex<SpinIndex>(outerProduct(Btilde_v[sF], Atilde_v[sF]));
