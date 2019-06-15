@@ -77,7 +77,7 @@ public:
   static inline void AddLink(Field &U, LinkField &W, int mu) { // U[mu] += W
     auto U_v = U.View();
     auto W_v = W.View();
-    thread_loop ( (auto ss = 0; ss < U.Grid()->oSites(); ss++),{
+    thread_for( ss, U.Grid()->oSites(), {
       U_v[ss](mu) = U_v[ss](mu) + W_v[ss]();
     });
   }
@@ -134,9 +134,10 @@ public:
     //auto start = std::chrono::high_resolution_clock::now();
     auto U_v = U.View();
     auto P_v = P.View();
-    thread_loop( (int ss=0;ss<P.Grid()->oSites();ss++),{
-      for (int mu = 0; mu < Nd; mu++) 
+    thread_for(ss, P.Grid()->oSites(),{
+      for (int mu = 0; mu < Nd; mu++) {
         U_v[ss](mu) = ProjectOnGroup(Exponentiate(P_v[ss](mu), ep, Nexp) * U_v[ss](mu));
+      }
     });
     
     //auto end = std::chrono::high_resolution_clock::now();
