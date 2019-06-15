@@ -958,26 +958,5 @@ template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilImpl &st, 
 #endif
 }
 
-extern template void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
-									DoubledGaugeFieldView &U,
-									DoubledGaugeFieldView &UUU,
-									SiteSpinor *buf, int LLs,
-									int sU, const FermionFieldView &in, FermionFieldView &out,int dag);
-extern template void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
-									DoubledGaugeFieldView &U,
-									DoubledGaugeFieldView &UUU,
-									SiteSpinor *buf, int LLs,
-									int sU, const FermionFieldView &in, FermionFieldView &out,int dag);
-extern template void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
-								   DoubledGaugeFieldView &U,
-								   DoubledGaugeFieldView &UUU,
-								   SiteSpinor *buf, int LLs,
-								   int sU, const FermionFieldView &in, FermionFieldView &out,int dag);
-extern template void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
-								   DoubledGaugeFieldView &U,
-								   DoubledGaugeFieldView &UUU,
-								   SiteSpinor *buf, int LLs,
-								   int sU, const FermionFieldView &in, FermionFieldView &out,int dag);
-
 NAMESPACE_END(Grid);
 
