@@ -34,138 +34,54 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #endif
 
 #define strong_inline     __attribute__((always_inline)) inline
+#define UNROLL  _Pragma("unroll")
+
+//////////////////////////////////////////////////////////////////////////////////
+// New primitives; explicit host thread calls, and accelerator data parallel calls
+//////////////////////////////////////////////////////////////////////////////////
 
 #ifdef _OPENMP
 #define GRID_OMP
 #include <omp.h>
 #endif
 
-#ifdef __NVCC__
-#define GRID_NVCC
-#endif
-
-#define UNROLL  _Pragma("unroll")
-
-//////////////////////////////////////////////////////////////////////////////////
-// New primitives; explicit host thread calls, and accelerator data parallel calls
-//////////////////////////////////////////////////////////////////////////////////
 #ifdef GRID_OMP
-
 #define DO_PRAGMA_(x) _Pragma (#x)
 #define DO_PRAGMA(x) DO_PRAGMA_(x)
-
-#define thread_loop( range , ... )                        DO_PRAGMA(omp parallel for schedule(static))for range { __VA_ARGS__ };
-#define thread_loop_collapse2( range , ... )              DO_PRAGMA(omp parallel for collapse(2))     for range { __VA_ARGS__ };
-#define thread_loop_collapse( N , range , ... )           DO_PRAGMA(omp parallel for collapse ( N ) ) for range { __VA_ARGS__ };
-#define thread_loop_in_region( range , ... )              DO_PRAGMA(omp for schedule(static))         for range { __VA_ARGS__ };
-#define thread_loop_collapse_in_region( N , range , ... ) DO_PRAGMA(omp for collapse ( N ))           for range { __VA_ARGS__ };
-#define thread_region                                     DO_PRAGMA(omp parallel)
-#define thread_critical                                   DO_PRAGMA(omp critical)
 #define thread_num(a) omp_get_thread_num()
 #define thread_max(a) omp_get_max_threads()
-#else
-#define thread_loop( range , ... )                for range { __VA_ARGS__ ; };
-#define thread_loop_collapse2( range , ... )      for range { __VA_ARGS__ ; };
-#define thread_loop_collapse( N , range , ... )  for range { __VA_ARGS__ ; };
-#define thread_region                           
-#define thread_loop_in_region( range , ... )  for range { __VA_ARGS__ ; };
-#define thread_loop_collapse_in_region( N, range , ... ) for range  { __VA_ARGS__ ; };
-
-#define thread_critical                         
+#else 
+#define DO_PRAGMA_(x) 
+#define DO_PRAGMA(x) 
 #define thread_num(a) (0)
 #define thread_max(a) (1)
 #endif
+
+#define naked_for(i,num,...) for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define naked_foreach(i,container,...) for ( uint64_t i=container.begin();i<container.end();i++) { __VA_ARGS__ } ;
+#define thread_for( i, num, ... )                           DO_PRAGMA(omp parallel for schedule(static)) naked_for(i,num,{__VA_ARGS__});
+#define thread_foreach( i, num, ... )                       DO_PRAGMA(omp parallel for schedule(static)) naked_foreach(i,num,{__VA_ARGS__});
+#define thread_for_in_region( i, num, ... )                 DO_PRAGMA(omp for schedule(static))          naked_for(i,num,{__VA_ARGS__});
+#define thread_for_collapse2( i, num, ... )                 DO_PRAGMA(omp parallel for collapse(2))      naked_for(i,num,{__VA_ARGS__});
+#define thread_for_collapse( N , i, num, ... )              DO_PRAGMA(omp parallel for collapse ( N ) )  naked_for(i,num,{__VA_ARGS__});
+#define thread_for_collapse_in_region( N , i, num, ... )    DO_PRAGMA(omp for collapse ( N ))            naked_for(i,num,{__VA_ARGS__});
+#define thread_region                                       DO_PRAGMA(omp parallel)
+#define thread_critical                                     DO_PRAGMA(omp critical)
 
 
 //////////////////////////////////////////////////////////////////////////////////
 // Accelerator primitives; fall back to threading
 //////////////////////////////////////////////////////////////////////////////////
+#ifdef __NVCC__
+#define GRID_NVCC
+#endif
+
 #ifdef GRID_NVCC
 
 extern uint32_t gpu_threads;
 
-template<typename lambda>  __global__
-void LambdaApply(uint64_t base, uint64_t Num, lambda Lambda)
-{
-  uint64_t ss = blockIdx.x*blockDim.x + threadIdx.x;
-  if ( ss < Num ) {
-    Lambda(ss+base);
-  }
-}
-
 #define accelerator        __host__ __device__
 #define accelerator_inline __host__ __device__ inline
-#define accelerator_loop( iterator, range, ... )			\
-  typedef decltype(range.begin()) Iterator;				\
-  auto lambda = [=] accelerator (Iterator iterator) mutable {		\
-    __VA_ARGS__;							\
-  };									\
-  Iterator num  = range.end() - range.begin();				\
-  Iterator base = range.begin();					\
-  Iterator num_block  = (num+gpu_threads-1)/gpu_threads;		\
-  LambdaApply<<<num_block,gpu_threads>>>(base,num,lambda);		\
-  cudaDeviceSynchronize();						\
-  cudaError err = cudaGetLastError();					\
-  if ( cudaSuccess != err ) {						\
-    printf("Cuda error %s\n",cudaGetErrorString( err ));		\
-    exit(0);								\
-  }									
-
-#define accelerator_loopN( iterator, num, ... )			\
-  typedef decltype(num) Iterator;				\
-  if ( num > 0 ) {			                        \
-    auto lambda = [=] accelerator (Iterator iterator) mutable { \
-      __VA_ARGS__;						\
-    };								\
-    Iterator base = 0;						\
-    Iterator num_block  = (num+gpu_threads-1)/gpu_threads;	\
-    LambdaApply<<<num_block,gpu_threads>>>(base,num,lambda);	\
-    cudaDeviceSynchronize();					\
-    cudaError err = cudaGetLastError();				\
-    if ( cudaSuccess != err ) {					\
-      printf("Cuda error %s\n",cudaGetErrorString( err ));	\
-      exit(0);							\
-    }								\
-  }
-
-#define accelerator_loopNB( iterator, num, ... )			\
-  typedef decltype(num) Iterator;				\
-  if ( num > 0 ) {			                        \
-    auto lambda = [=] accelerator (Iterator iterator) mutable { \
-      __VA_ARGS__;						\
-    };								\
-    Iterator base = 0;						\
-    Iterator num_block  = (num+gpu_threads-1)/gpu_threads;	\
-    LambdaApply<<<num_block,gpu_threads>>>(base,num,lambda);	\
-  }
-
-#define cpu_loop( iterator, range, ... )   thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
-
-template<typename lambda>  __global__
-void LambdaApply2D(uint64_t Osites, uint64_t Isites, lambda Lambda)
-{
-  uint64_t site  = threadIdx.x + blockIdx.x*blockDim.x;
-  uint64_t osite = site / Isites;
-  if ( (osite <Osites) ) {
-    Lambda(osite);
-  }
-}
-
-#define coalesce_loop( iterator, range, nsimd, ... )			\
-  typedef uint64_t Iterator;						\
-  auto lambda = [=] accelerator (Iterator iterator) mutable {		\
-    __VA_ARGS__;							\
-  };									\
-  Iterator num  = range.end() - range.begin();				\
-  Iterator cu_threads= gpu_threads;					\
-  Iterator cu_blocks = num*nsimd/cu_threads;				\
-  LambdaApply2D<<<cu_blocks,cu_threads>>>(num,(uint64_t)nsimd,lambda);	\
-  cudaDeviceSynchronize();						\
-  cudaError err = cudaGetLastError();					\
-  if ( cudaSuccess != err ) {						\
-    printf("Cuda error %s\n",cudaGetErrorString( err ));		\
-    exit(0);								\
-  }									
 
 template<typename lambda>  __global__
 void LambdaApplySIMT(uint64_t Isites, uint64_t Osites, lambda Lambda)
@@ -177,40 +93,39 @@ void LambdaApplySIMT(uint64_t Isites, uint64_t Osites, lambda Lambda)
   }
 }
 
-#define SIMT_loop( iterator, num, nsimd, ... )				\
+/////////////////////////////////////////////////////////////////
+// Internal only really... but need to call when 
+/////////////////////////////////////////////////////////////////
+#define accelerator_barrier(dummy)				\
+  {								\
+    cudaDeviceSynchronize();					\
+    cudaError err = cudaGetLastError();				\
+    if ( cudaSuccess != err ) {					\
+      printf("Cuda error %s\n",cudaGetErrorString( err ));	\
+      exit(0);							\
+    }								\
+  }
+
+// Copy the for_each_n style ; Non-blocking variant
+#define accelerator_forNB( iterator, num, nsimd, ... )			\
   typedef uint64_t Iterator;						\
   auto lambda = [=] accelerator (Iterator lane,Iterator iterator) mutable { \
     __VA_ARGS__;							\
   };									\
   dim3 cu_threads(gpu_threads,nsimd);					\
   dim3 cu_blocks ((num+gpu_threads-1)/gpu_threads);			\
-  LambdaApplySIMT<<<cu_blocks,cu_threads>>>(nsimd,num,lambda);		\
-  cudaDeviceSynchronize();						\
-  cudaError err = cudaGetLastError();					\
-  if ( cudaSuccess != err ) {						\
-    printf("Cuda error %s\n",cudaGetErrorString( err ));		\
-    exit(0);								\
-  }									
+  LambdaApplySIMT<<<cu_blocks,cu_threads>>>(nsimd,num,lambda);		
+
+// Copy the for_each_n style ; Non-blocking variant (default
+#define accelerator_for( iterator, num, nsimd, ... )		\
+  accelerator_forNB(iterator, num, nsimd, { __VA_ARGS__ } );	\
+  accelerator_barrier(dummy);
 
 #else
 
 #define accelerator 
 #define accelerator_inline strong_inline
-#define accelerator_loop( iterator, range, ... )			\
-  thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
-
-#define accelerator_loopN( iterator, num, ... )			\
-  thread_loop( (auto iterator = 0;iterator<num;iterator++), { __VA_ARGS__ });
-
-#define accelerator_loopNB( iterator, num, ... )			\
-  thread_loop( (auto iterator = 0;iterator<num;iterator++), { __VA_ARGS__ });
-
-#define cpu_loop( iterator, range, ... )				\
-  thread_loop( (auto iterator = range.begin();iterator<range.end();iterator++), { __VA_ARGS__ });
-
-#define coalesce_loop( iterator, range, nsimd, ... ) cpu_loop(iterator,range,{__VA_ARGS__})
-
-#define SIMT_loop( iterator, num, nsimd, ... ) accelerator_loopN( iterator, num, {__VA_ARGS__})
-
+#define accelerator_for(iterator,num,nsimd, ... )   thread_for(iterator, num, { __VA_ARGS__ });
+#define accelerator_forNB(iterator,num,nsimd, ... ) thread_for(iterator, num, { __VA_ARGS__ });
 
 #endif
