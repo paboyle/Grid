@@ -48,8 +48,8 @@ auto PeekIndex(const Lattice<vobj> &lhs,int i) -> Lattice<decltype(peekIndex<Ind
   ret.Checkerboard()=lhs.Checkerboard();
   auto ret_v = ret.View();
   auto lhs_v = lhs.View();
-  cpu_loop( ss, lhs_v, {
-      ret_v[ss] = peekIndex<Index>(lhs_v[ss],i);
+  thread_for( ss, lhs_v.size(), {
+    ret_v[ss] = peekIndex<Index>(lhs_v[ss],i);
   });
   return ret;
 };
@@ -60,7 +60,7 @@ auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekInd
   ret.Checkerboard()=lhs.Checkerboard();
   auto ret_v = ret.View();
   auto lhs_v = lhs.View();
-  cpu_loop( ss, lhs_v, {
+  thread_for( ss, lhs_v.size(), {
     ret_v[ss] = peekIndex<Index>(lhs_v[ss],i,j);
   });
   return ret;
@@ -74,7 +74,7 @@ void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(vobj()
 {
   auto rhs_v = rhs.View();
   auto lhs_v = lhs.View();
-  cpu_loop( ss, lhs_v, {
+  thread_for( ss, lhs_v.size(), {
     pokeIndex<Index>(lhs_v[ss],rhs_v[ss],i);
   });
 }
@@ -83,7 +83,7 @@ void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(vobj()
 {
   auto rhs_v = rhs.View();
   auto lhs_v = lhs.View();
-  cpu_loop( ss, lhs_v, {
+  thread_for( ss, lhs_v.size(), {
     pokeIndex<Index>(lhs_v[ss],rhs_v[ss],i,j);
   });
 }
