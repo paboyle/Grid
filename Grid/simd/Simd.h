@@ -71,8 +71,8 @@ typedef thrust::complex<RealD> ComplexD;
 typedef thrust::complex<Real>  Complex;
 template<class T> using complex = thrust::complex<T>;
 
-accelerator_inline ComplexD pow(const ComplexD& r,RealD y){ return(thrust::pow(r,y)); }
-accelerator_inline ComplexF pow(const ComplexF& r,RealF y){ return(thrust::pow(r,y)); }
+accelerator_inline ComplexD pow(const ComplexD& r,RealD y){ return(thrust::pow(r,(double)y)); }
+accelerator_inline ComplexF pow(const ComplexF& r,RealF y){ return(thrust::pow(r,(float)y)); }
 #else 
 typedef std::complex<RealF> ComplexF;
 typedef std::complex<RealD> ComplexD;
@@ -104,7 +104,6 @@ accelerator_inline RealD    adj(const RealD  & r){ return r; }
 accelerator_inline ComplexD adj(const ComplexD& r){ return(conjugate(r)); }
 accelerator_inline ComplexF adj(const ComplexF& r ){ return(conjugate(r)); }
 
-
 accelerator_inline RealF real(const RealF  & r){ return r; }
 accelerator_inline RealD real(const RealD  & r){ return r; }
 accelerator_inline RealF real(const ComplexF  & r){ return r.real(); }
@@ -112,8 +111,6 @@ accelerator_inline RealD real(const ComplexD  & r){ return r.real(); }
 
 accelerator_inline RealF imag(const ComplexF  & r){ return r.imag(); }
 accelerator_inline RealD imag(const ComplexD  & r){ return r.imag(); }
-
-
 
 accelerator_inline ComplexD innerProduct(const ComplexD & l, const ComplexD & r) { return conjugate(l)*r; }
 accelerator_inline ComplexF innerProduct(const ComplexF & l, const ComplexF & r) { return conjugate(l)*r; }
@@ -178,6 +175,8 @@ accelerator_inline void vstream(ComplexD &l, const ComplexD &r){ l=r;}
 accelerator_inline void vstream(RealF &l, const RealF &r){ l=r;}
 accelerator_inline void vstream(RealD &l, const RealD &r){ l=r;}
   
+accelerator_inline ComplexD toComplex(const RealD &in) { return ComplexD(in);}
+accelerator_inline ComplexF toComplex(const RealF &in) { return ComplexF(in);}
   
 class Zero{};
 //static Zero Zero();
@@ -186,7 +185,17 @@ template<>            accelerator_inline void zeroit(ComplexF &arg){ arg=0; };
 template<>            accelerator_inline void zeroit(ComplexD &arg){ arg=0; };
 template<>            accelerator_inline void zeroit(RealF &arg)   { arg=0; };
 template<>            accelerator_inline void zeroit(RealD &arg)   { arg=0; };
-  
+
+// More limited Integer support  
+accelerator_inline Integer Reduce(const Integer& r){ return r; }
+accelerator_inline void mac (Integer * __restrict__ y,const Integer * __restrict__ a,const Integer *__restrict__ x){  *y = (*a) * (*x)+(*y); }
+accelerator_inline void mult(Integer * __restrict__ y,const Integer * __restrict__ l,const Integer *__restrict__ r){ *y = (*l) * (*r); }
+accelerator_inline void sub (Integer * __restrict__ y,const Integer * __restrict__ l,const Integer *__restrict__ r){ *y = (*l) - (*r); }
+accelerator_inline void add (Integer * __restrict__ y,const Integer * __restrict__ l,const Integer *__restrict__ r){ *y = (*l) + (*r); }
+accelerator_inline void vstream(Integer &l, const RealD &r){ l=r;}
+template<>            accelerator_inline void zeroit(Integer &arg)   { arg=0; };
+accelerator_inline Integer mod (Integer a,Integer y) { return a%y;}
+//accelerator_inline Integer abs (Integer &a) { return a%y;}
 
 //////////////////////////////////////////////////////////
 // Permute
