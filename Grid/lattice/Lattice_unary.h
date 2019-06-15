@@ -38,8 +38,8 @@ template<class obj> Lattice<obj> pow(const Lattice<obj> &rhs_i,RealD y){
   auto rhs = rhs_i.View();
   auto ret = ret_i.View();
   ret.Checkerboard() = rhs.Checkerboard();
-  accelerator_loop(ss,rhs,{
-    ret[ss]=pow(rhs[ss],y);
+  accelerator_for(ss,rhs.size(),obj::Nsimd(),{
+    coalescedWrite(ret[ss],pow(rhs(ss),y));
   });
   return ret_i;
 }
@@ -48,8 +48,8 @@ template<class obj> Lattice<obj> mod(const Lattice<obj> &rhs_i,Integer y){
   auto rhs = rhs_i.View();
   auto ret = ret_i.View();
   ret.Checkerboard() = rhs.Checkerboard();
-  accelerator_loop(ss,rhs,{
-    ret[ss]=mod(rhs[ss],y);
+  accelerator_for(ss,rhs.size(),obj::Nsimd(),{
+    coalescedWrite(ret[ss],mod(rhs(ss),y));
   });
   return ret_i;
 }
@@ -59,8 +59,8 @@ template<class obj> Lattice<obj> div(const Lattice<obj> &rhs_i,Integer y){
   auto ret = ret_i.View();
   auto rhs = rhs_i.View();
   ret.Checkerboard() = rhs_i.Checkerboard();
-  accelerator_loop(ss,rhs,{
-    ret[ss]=div(rhs[ss],y);
+  accelerator_for(ss,rhs.size(),obj::Nsimd(),{
+    coalescedWrite(ret[ss],div(rhs(ss),y));
   });
   return ret_i;
 }
@@ -70,8 +70,8 @@ template<class obj> Lattice<obj> expMat(const Lattice<obj> &rhs_i, RealD alpha, 
   auto rhs = rhs_i.View();
   auto ret = ret_i.View();
   ret.Checkerboard() = rhs.Checkerboard();
-  accelerator_loop(ss,rhs,{
-    ret[ss]=Exponentiate(rhs[ss],alpha, Nexp);
+  accelerator_for(ss,rhs.size(),obj::Nsimd(),{
+    coalescedWrite(ret[ss],Exponentiate(rhs(ss),alpha, Nexp));
   });
   return ret_i;
 }
