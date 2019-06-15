@@ -232,7 +232,7 @@ public:
     result = source;
     int pc = processor_coor[dim];
     for(int p=0;p<processors[dim];p++) {
-      thread_loop( (int idx=0;idx<sgrid->lSites();idx++), {
+      thread_for(idx, sgrid->lSites(),{
           Coordinate cbuf(Nd);
           sobj s;
 	  sgrid->LocalIndexToLocalCoor(idx,cbuf);
@@ -250,7 +250,7 @@ public:
     int NN=pencil_g.lSites();
     GridStopWatch timer;
     timer.Start();
-    thread_loop( (int idx=0;idx<NN;idx++), {
+    thread_for( idx,NN,{
         Coordinate cbuf(Nd);
 	pencil_g.LocalIndexToLocalCoor(idx, cbuf);
 	if ( cbuf[dim] == 0 ) {  // restricts loop to plane at lcoor[dim]==0
@@ -269,7 +269,7 @@ public:
     flops+= flops_call*NN;
       
     // writing out result
-    thread_loop( (int idx=0;idx<sgrid->lSites();idx++), {
+    thread_for(idx,sgrid->lSites(),{
 	Coordinate clbuf(Nd), cgbuf(Nd);
 	sobj s;
 	sgrid->LocalIndexToLocalCoor(idx,clbuf);
