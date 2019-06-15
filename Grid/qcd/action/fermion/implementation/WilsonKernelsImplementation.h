@@ -320,34 +320,20 @@ void WilsonKernels<Impl>::DhopDirK( StencilView &st, DoubledGaugeFieldView &U,Si
   GENERIC_DHOPDIR_LEG(Tm,spProjTm,spReconTm);
   coalescedWrite(out[sF], result,lane);
 }
-
-
-#define KERNEL_CALL(A) \
-      const uint64_t nsimd = Simd::Nsimd(); \
-      const uint64_t    NN = Nsite*Ls*nsimd;\
-      accelerator_loopN( sss, NN, {         \
-	  uint64_t cur  = sss;              \
-	  cur = cur / nsimd;                \
-	  uint64_t   s  = cur%Ls;           \
-	  cur = cur / Ls;                   \
-	  uint64_t   sU = cur;              \
-	  WilsonKernels<Impl>::A(st_v,U_v[sU],buf,Ls,s,sU,in_v,out_v);\
-      });
  
-#define HOST_CALL(A) \
-  const uint64_t nsimd = Simd::Nsimd();					\
+#define KERNEL_CALL(A) \
   const uint64_t    NN = Nsite*Ls;					\
-  SIMT_loop( ss, NN, nsimd, {						\
+  accelerator_for( ss, NN, Simd::Nsimd(), {				\
       int sF = ss;							\
       int sU = ss/Ls;							\
-      WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,in_v,out_v);	\
+      WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,in_v,out_v);		\
   });
 
-#define ASM_CALL(A) \
-  SIMT_loop( ss, Nsite, {						\
-      int sU = ss;							\
-      int sF = ss*Ls;							\
-      WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,Ls,1,in_v,out_v);	\
+#define ASM_CALL(A)							\
+  thread_for( ss, Nsite, {						\
+    int sU = ss;							\
+    int sF = ss*Ls;							\
+    WilsonKernels<Impl>::A(st_v,U_v,buf,sF,sU,Ls,1,in_v,out_v);		\
   });
 
 template <class Impl>
@@ -361,21 +347,21 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
     auto st_v  =  st.View();
 
    if( interior && exterior ) { 
-     if (Opt == WilsonKernelsStatic::OptGeneric    ) { HOST_CALL(GenericDhopSite); return;}
+     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSite); return;}
 #ifndef GRID_NVCC
-     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { HOST_CALL(HandDhopSite);    return;}
+     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSite);    return;}
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSite); printf(".");    return;}
 #endif
    } else if( interior ) {
-     if (Opt == WilsonKernelsStatic::OptGeneric    ) { HOST_CALL(GenericDhopSiteInt); return;}
+     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSiteInt); return;}
 #ifndef GRID_NVCC
-     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { HOST_CALL(HandDhopSiteInt);    return;}
+     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteInt);    return;}
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteInt); printf("-");    return;}
 #endif
    } else if( exterior ) { 
-     if (Opt == WilsonKernelsStatic::OptGeneric    ) { HOST_CALL(GenericDhopSiteExt); return;}
+     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSiteExt); return;}
 #ifndef GRID_NVCC
-     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { HOST_CALL(HandDhopSiteExt);    return;}
+     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteExt);    return;}
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteExt); printf("+");    return;}
 #endif
    }
@@ -392,21 +378,21 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
     auto st_v  = st.View();
 
    if( interior && exterior ) { 
-     if (Opt == WilsonKernelsStatic::OptGeneric    ) { HOST_CALL(GenericDhopSiteDag); return;}
+     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSiteDag); return;}
 #ifndef GRID_NVCC
-     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { HOST_CALL(HandDhopSiteDag);    return;}
+     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteDag);    return;}
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDag);     return;}
 #endif
    } else if( interior ) {
-     if (Opt == WilsonKernelsStatic::OptGeneric    ) { HOST_CALL(GenericDhopSiteDagInt); return;}
+     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSiteDagInt); return;}
 #ifndef GRID_NVCC
-     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { HOST_CALL(HandDhopSiteDagInt);    return;}
+     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteDagInt);    return;}
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDagInt);     return;}
 #endif
    } else if( exterior ) { 
-     if (Opt == WilsonKernelsStatic::OptGeneric    ) { HOST_CALL(GenericDhopSiteDagExt); return;}
+     if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSiteDagExt); return;}
 #ifndef GRID_NVCC
-     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { HOST_CALL(HandDhopSiteDagExt);    return;}
+     if (Opt == WilsonKernelsStatic::OptHandUnroll ) { KERNEL_CALL(HandDhopSiteDagExt);    return;}
      if (Opt == WilsonKernelsStatic::OptInlineAsm  ) {  ASM_CALL(AsmDhopSiteDagExt);     return;}
 #endif
    }
@@ -491,7 +477,7 @@ void WilsonKernels<Impl>::SeqConservedCurrentSiteFwd(const SitePropagator &q_in,
                                                      DoubledGaugeFieldView &U,
                                                      unsigned int sU,
                                                      unsigned int mu,
-                                                     vInteger t_mask,
+                                                     vPredicate t_mask,
                                                      bool switch_sign)
 {
   SitePropagator result;
@@ -521,7 +507,7 @@ void WilsonKernels<Impl>::SeqConservedCurrentSiteBwd(const SitePropagator &q_in,
                                                      DoubledGaugeFieldView &U,
                                                      unsigned int sU,
                                                      unsigned int mu,
-                                                     vInteger t_mask,
+                                                     vPredicate t_mask,
                                                      bool switch_sign)
 {
   SitePropagator result;
