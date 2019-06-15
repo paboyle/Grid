@@ -70,7 +70,7 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimen
        }
      }
   }
-  thread_loop( (int i=0;i<ent;i++),{
+  thread_for(i,ent,{
     buffer[table[i].first]=rhs_v[table[i].second];
   });
 }
@@ -97,7 +97,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,
 
   auto rhs_v = rhs.View();
   if ( cbmask ==0x3){
-    thread_loop_collapse2( (int n=0;n<e1;n++), {
+    thread_for_collapse(2,n,e1,{
       for(int b=0;b<e2;b++){
 
 	int o      =   n*n1;
@@ -112,7 +112,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,
     // Case of SIMD split AND checker dim cannot currently be hit, except in 
     // Test_cshift_red_black code.
     std::cout << " Dense packed buffer WARNING " <<std::endl;
-    thread_loop_collapse2( (int n=0;n<e1;n++),{
+    thread_for_collapse(2,n,e1,{
       for(int b=0;b<e2;b++){
 
 	int o=n*n1;
@@ -172,7 +172,7 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
   }
   
   auto rhs_v = rhs.View();
-  thread_loop( (int i=0;i<ent;i++), {
+  thread_for(i,ent,{
     rhs_v[table[i].first]=buffer[table[i].second];
   });
 }
@@ -195,7 +195,7 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
 
   if(cbmask ==0x3 ) {
     auto rhs_v = rhs.View();
-    thread_loop_collapse2( (int n=0;n<e1;n++),{
+    thread_for_collapse(2,n,e1,{
       for(int b=0;b<e2;b++){
 	int o      = n*rhs.Grid()->_slice_stride[dimension];
 	int offset = b+n*rhs.Grid()->_slice_block[dimension];
@@ -263,7 +263,7 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
 
   auto rhs_v = rhs.View();
   auto lhs_v = lhs.View();
-  thread_loop( (int i=0;i<ent;i++),{
+  thread_for(i,ent,{
     lhs_v[table[i].first]=rhs_v[table[i].second];
   });
 
@@ -305,7 +305,7 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
 
   auto rhs_v = rhs.View();
   auto lhs_v = lhs.View();
-  thread_loop( (int i=0;i<ent;i++),{
+  thread_for(i,ent,{
     permute(lhs_v[table[i].first],rhs_v[table[i].second],permute_type);
   });
 }
