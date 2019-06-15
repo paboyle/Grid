@@ -27,8 +27,7 @@ Author: AzusaYamaguchi <ayamaguc@staffmail.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef  GRID_QCD_IMPROVED_STAGGERED_FERMION_5D_H
-#define  GRID_QCD_IMPROVED_STAGGERED_FERMION_5D_H
+#pragma once
 
 NAMESPACE_BEGIN(Grid);
 
@@ -230,4 +229,3 @@ public:
 
 NAMESPACE_END(Grid);
 
-#endif
