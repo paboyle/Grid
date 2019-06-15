@@ -128,7 +128,7 @@ public:
     for(int i=0;i<nbasis;i++){
       blockProject(iProj,subspace[i],subspace);
       eProj=Zero(); 
-      thread_loop( (int ss=0;ss<CoarseGrid->oSites();ss++),{
+      thread_for(ss, CoarseGrid->oSites(),{
 	eProj[ss](i)=CComplex(1.0);
       });
       eProj=eProj - iProj;
@@ -275,7 +275,7 @@ public:
     Stencil.HaloExchange(in,compressor);
     auto in_v = in.View();
     auto out_v = in.View();
-    thread_loop( (int ss=0;ss<Grid()->oSites();ss++),{
+    thread_for(ss,Grid()->oSites(),{
       siteVector res = Zero();
       siteVector nbr;
       int ptype;
@@ -328,7 +328,7 @@ public:
 
     auto out_v = out.View();
     auto in_v  = in.View();
-    thread_loop( (int ss=0;ss<Grid()->oSites();ss++),{
+    thread_for(ss,Grid()->oSites(),{
       siteVector res = Zero();
       siteVector nbr;
       int ptype;
@@ -441,7 +441,7 @@ public:
 	auto oProj_v = oProj.View() ;
 	auto A_p     =  A[p].View();
 	auto A_self  = A[self_stencil].View();
-	thread_loop( (int ss=0;ss<Grid()->oSites();ss++),{
+	thread_for(ss, Grid()->oSites(),{
 	  for(int j=0;j<nbasis;j++){
 	    if( disp!= 0 ) {
 	      A_p[ss](j,i) = oProj_v[ss](j);
