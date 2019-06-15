@@ -69,7 +69,6 @@ NAMESPACE_CHECK(Staggered);
 #include <Grid/qcd/action/fermion/ZMobiusFermion.h>
 NAMESPACE_CHECK(DomainWall);
 
-#include <Grid/qcd/action/fermion/SchurDiagTwoKappa.h>
 #include <Grid/qcd/action/fermion/ScaledShamirFermion.h>
 #include <Grid/qcd/action/fermion/MobiusZolotarevFermion.h>
 #include <Grid/qcd/action/fermion/ShamirZolotarevFermion.h>
