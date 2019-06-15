@@ -27,7 +27,8 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/qcd/action/fermion/FermionCore.h>
-
+#include <Grid/qcd/action/fermion/implementation/StaggeredKernelsImplementation.h>
+#include <Grid/qcd/action/fermion/implementation/StaggeredKernelsAsm.h>
 
 NAMESPACE_BEGIN(Grid);
 

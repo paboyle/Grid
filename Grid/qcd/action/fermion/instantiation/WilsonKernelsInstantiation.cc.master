@@ -32,6 +32,12 @@ directory
 #include <Grid/qcd/action/fermion/implementation/WilsonKernelsImplementation.h>
 #include <Grid/qcd/action/fermion/implementation/WilsonKernelsHandImplementation.h>
 
+#ifndef AVX512
+#ifndef QPX
+#include <Grid/qcd/action/fermion/implementation/WilsonKernelsAsmImplementation.h>
+#endif
+#endif
+
 NAMESPACE_BEGIN(Grid);
 
 #include "impl.h"

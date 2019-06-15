@@ -27,6 +27,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/qcd/action/fermion/FermionCore.h>
+
 #include <Grid/qcd/action/fermion/ImprovedStaggeredFermion5D.h>
 #include <Grid/qcd/action/fermion/implementation/ImprovedStaggeredFermion5DImplementation.h>
 #include <Grid/perfmon/PerfCount.h>
@@ -37,6 +38,7 @@ NAMESPACE_BEGIN(Grid);
 template class ImprovedStaggeredFermion5D<IMPLEMENTATION>; 
   
 NAMESPACE_END(Grid);
+
 
 
 
