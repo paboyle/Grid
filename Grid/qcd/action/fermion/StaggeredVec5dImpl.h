@@ -114,7 +114,7 @@ public:
   inline void InsertGaugeField(DoubledGaugeField &U_ds,const GaugeLinkField &U,int mu)
   {
     GridBase *GaugeGrid = U_ds.Grid();
-    thread_loop( (int lidx = 0; lidx < GaugeGrid->lSites(); lidx++), {
+    thread_for(lidx, GaugeGrid->lSites(),{
 
 	SiteScalarGaugeLink   ScalarU;
 	SiteDoubledGaugeField ScalarUds;
