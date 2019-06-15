@@ -68,29 +68,14 @@ void Gather_plane_simple_table (Vector<std::pair<int,int> >& table,const Lattice
   int num=table.size();
   std::pair<int,int> *table_v = & table[0];
   auto rhs_v = rhs.View();
-#ifdef GRID_NVCC
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-  constexpr int Nsimd = sizeof(vector_type)/sizeof(scalar_type);
-  accelerator_loopNB( ii,num*Nsimd, {
-
-      typedef decltype(coalescedRead(buffer[0])) compressed_t;
-      typedef decltype(coalescedRead(rhs_v [0])) uncompressed_t;
-
-      int i = ii/Nsimd;
-      compressed_t   tmp_c;
-      uncompressed_t tmp_uc = coalescedRead(rhs_v[so+table_v[i].second]);
-      uint64_t o = table_v[i].first;
-      compress.Compress(&tmp_c,0,tmp_uc);
-      coalescedWrite(buffer[off+o],tmp_c);
+  accelerator_forNB( i,num, vobj::Nsimd(), {
+    typedef decltype(coalescedRead(buffer[0])) compressed_t;
+    compressed_t   tmp_c;
+    uint64_t o = table_v[i].first;
+    compress.Compress(&tmp_c,0,rhs_v(so+table_v[i].second));
+    coalescedWrite(buffer[off+o],tmp_c);
   });
-#else
-  accelerator_loopN( i,num, {
-      compress.Compress(&buffer[off],table_v[i].first,rhs_v[so+table_v[i].second]);
-  });
-#endif
-// Further optimisatoin: i) streaming store the result
-//                       ii) software prefetch the first element of the next table entry
+// Further optimisatoin: i) software prefetch the first element of the next table entry, prefetch the table
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -110,9 +95,14 @@ void Gather_plane_exchange_table(Vector<std::pair<int,int> >& table,const Lattic
   int so  = plane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane 
 
   auto rhs_v = rhs.View();
-  accelerator_loopN( j,num, {
-    compress.CompressExchange(&pointers[0][0],&pointers[1][0],&rhs_v[0],
-			      j,so+table[2*j].second,so+table[2*j+1].second,type);
+  thread_for(j, num, {
+    compress.CompressExchange(&pointers[0][0],
+			      &pointers[1][0],
+			      &rhs_v[0],
+			      j,
+			      so+table[2*j].second,
+			      so+table[2*j+1].second,
+			      type);
   });
 }
 
@@ -579,7 +569,7 @@ public:
 
       mergetime-=usecond();
     for(int i=0;i<mm.size();i++){	
-      thread_loop( (int o=0;o<mm[i].buffer_size/2;o++),{
+      thread_for(o,mm[i].buffer_size/2,{
 	decompress.Exchange(mm[i].mpointer,
 			    mm[i].vpointers[0],
 			    mm[i].vpointers[1],
@@ -590,7 +580,7 @@ public:
 
     decompresstime-=usecond();
     for(int i=0;i<dd.size();i++){	
-      thread_loop( (int o=0;o<dd[i].buffer_size;o++),{
+      thread_for(o,dd[i].buffer_size,{
 	decompress.Decompress(dd[i].kernel_p,dd[i].mpi_p,o);
       });
     }
