@@ -35,6 +35,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 NAMESPACE_BEGIN(Grid);
 
+ 
 template<class Impl>
 void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi_i, const FermionField &phi_i, FermionField &chi_i,
 				  Vector<Coeff_t> &lower, Vector<Coeff_t> &diag, Vector<Coeff_t> &upper)
@@ -52,25 +53,18 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi_i, const FermionField 
   this->M5Dcalls++;
   this->M5Dtime -= usecond();
 
-  thread_loop( (int ss=0; ss<grid->oSites(); ss+=Ls),{
+  int nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,Simd::Nsimd(),{
+    uint64_t ss = sss*Ls;
+    typedef decltype(coalescedRead(psi[0])) spinor;
+    spinor tmp1;
+    spinor tmp2;
     for(int s=0; s<Ls; s++){
-      auto tmp = psi[0];
-      if(s==0){
-	spProj5m(tmp, psi[ss+s+1]);
-	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5p(tmp, psi[ss+Ls-1]);
-	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
-      } else if(s==(Ls-1)) {
-	spProj5m(tmp, psi[ss+0]);
-	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5p(tmp, psi[ss+s-1]);
-	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
-      } else {
-	spProj5m(tmp, psi[ss+s+1]);
-	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5p(tmp, psi[ss+s-1]);
-	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
-      }
+      uint64_t idx_u = ss+((s+1)%Ls);
+      uint64_t idx_l = ss+((s+Ls-1)%Ls);
+      spProj5m(tmp1, psi(idx_u));
+      spProj5p(tmp2, psi(idx_l));
+      coalescedWrite(chi[ss+s], diag[s]*phi(ss+s) + upper[s]*tmp1 + lower[s]*tmp2);
     }
   });
 
@@ -97,28 +91,23 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField &psi_i, const Fermion
   this->M5Dcalls++;
   this->M5Dtime -= usecond();
 
-  thread_loop( (int ss=0; ss<grid->oSites(); ss+=Ls),{
+  int nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,Simd::Nsimd(),{
+    uint64_t ss = sss*Ls;
+    typedef decltype(coalescedRead(psi[0])) spinor;
+    spinor tmp1;
+    spinor tmp2;
+    spinor tmp;
     for(int s=0; s<Ls; s++){
-      auto tmp = psi[0];
-      if(s==0){
-	spProj5m(tmp, psi[ss+s+1]);
-	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5p(tmp, psi[ss+Ls-1]);
-	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
-      } else if(s==(Ls-1)) {
-	spProj5m(tmp, psi[ss+0]);
-	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5p(tmp, psi[ss+s-1]);
-	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
-      } else {
-	spProj5m(tmp, psi[ss+s+1]);
-	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5p(tmp, psi[ss+s-1]);
-	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
-      }
-      if(this->pm == 1){ spProj5p(tmp, psi[ss+shift_s]); }
-      else{ spProj5m(tmp, psi[ss+shift_s]); }
-      chi[ss+s] = chi[ss+s] + shift_coeffs[s]*tmp;
+      uint64_t idx_u = ss+((s+1)%Ls);
+      uint64_t idx_l = ss+((s+Ls-1)%Ls);
+      spProj5m(tmp1, psi(idx_u));
+      spProj5p(tmp2, psi(idx_l));
+
+      if(this->pm == 1){ spProj5p(tmp, psi(ss+shift_s)); }
+      else             { spProj5m(tmp, psi(ss+shift_s)); }
+
+      coalescedWrite(chi[ss+s], diag[s]*phi(ss+s) + upper[s]*tmp1 +lower[s]*tmp2 + shift_coeffs[s]*tmp);
     }
   });
 
@@ -142,25 +131,19 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField &psi_i, const FermionFie
   this->M5Dcalls++;
   this->M5Dtime -= usecond();
 
-  thread_loop( (int ss=0; ss<grid->oSites(); ss+=Ls),{
-    auto tmp = psi[0];
+  int nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,Simd::Nsimd(), {
+    uint64_t ss = sss*Ls;
+
+    typedef decltype(coalescedRead(psi[0])) spinor;
+    spinor tmp1, tmp2;
+
     for(int s=0; s<Ls; s++){
-      if(s==0) {
-	spProj5p(tmp, psi[ss+s+1]);
-	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5m(tmp, psi[ss+Ls-1]);
-	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
-      } else if(s==(Ls-1)) {
-	spProj5p(tmp, psi[ss+0]);
-	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5m(tmp, psi[ss+s-1]);
-	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
-      } else {
-	spProj5p(tmp, psi[ss+s+1]);
-	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5m(tmp, psi[ss+s-1]);
-	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
-      }
+      uint64_t idx_u = ss+((s+1)%Ls);
+      uint64_t idx_l = ss+((s+Ls-1)%Ls);
+      spProj5p(tmp1, psi(idx_u));
+      spProj5m(tmp2, psi(idx_l));
+      coalescedWrite(chi[ss+s], diag[s]*phi(ss+s) + upper[s]*tmp1 + lower[s]*tmp2);
     }
   });
 
@@ -186,29 +169,29 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField &psi_i, const Ferm
   this->M5Dcalls++;
   this->M5Dtime -= usecond();
 
-  thread_loop( (int ss=0; ss<grid->oSites(); ss+=Ls),{
-    chi[ss+Ls-1] = Zero();
-    auto tmp = psi[0];
+  int nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,Simd::Nsimd(),{
+    uint64_t ss = sss*Ls;
+
+    typedef decltype(coalescedRead(psi[0])) spinor;
+    spinor tmp1, tmp2, tmp;
+    tmp1=Zero();
+    coalescedWrite(chi[ss+Ls-1],tmp1);
+
     for(int s=0; s<Ls; s++){
-      if(s==0) {
-	spProj5p(tmp, psi[ss+s+1]);
-	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5m(tmp, psi[ss+Ls-1]);
-	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
-      } else if(s==(Ls-1)) {
-	spProj5p(tmp, psi[ss+0]);
-	chi[ss+s] = chi[ss+s] + diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5m(tmp, psi[ss+s-1]);
-	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
-      } else {
-	spProj5p(tmp, psi[ss+s+1]);
-	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5m(tmp, psi[ss+s-1]);
-	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
-      }
-      if(this->pm == 1){ spProj5p(tmp, psi[ss+s]); }
-      else{ spProj5m(tmp, psi[ss+s]); }
-      chi[ss+shift_s] = chi[ss+shift_s] + shift_coeffs[s]*tmp;
+
+      uint64_t idx_u = ss+((s+1)%Ls);
+      uint64_t idx_l = ss+((s+Ls-1)%Ls);
+
+      spProj5p(tmp1, psi(idx_u));
+      spProj5m(tmp2, psi(idx_l));
+
+      if(s==(Ls-1)) coalescedWrite(chi[ss+s], chi(ss+s)+ diag[s]*phi(ss+s) + upper[s]*tmp1 + lower[s]*tmp2);
+      else          coalescedWrite(chi[ss+s], diag[s]*phi(ss+s) + upper[s]*tmp1 + lower[s]*tmp2);
+      if(this->pm == 1){ spProj5p(tmp, psi(ss+s)); }
+      else             { spProj5m(tmp, psi(ss+s)); }
+
+      coalescedWrite(chi[ss+shift_s],chi(ss+shift_s)+shift_coeffs[s]*tmp);
     }
   });
 
@@ -229,37 +212,41 @@ void MobiusEOFAFermion<Impl>::MooeeInv(const FermionField &psi_i, FermionField &
   this->MooeeInvCalls++;
   this->MooeeInvTime -= usecond();
 
-  thread_loop( (int ss=0; ss<grid->oSites(); ss+=Ls),{
+  int nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,Simd::Nsimd(),{
 
-    auto tmp = psi[0];
+    uint64_t ss = sss*Ls;
+
+    typedef decltype(coalescedRead(psi[0])) spinor;
+    spinor tmp;
 
     // Apply (L^{\prime})^{-1}
-    chi[ss] = psi[ss]; // chi[0]=psi[0]
+    coalescedWrite(chi[ss], psi(ss)); // chi[0]=psi[0]
     for(int s=1; s<Ls; s++){
-      spProj5p(tmp, chi[ss+s-1]);
-      chi[ss+s] = psi[ss+s] - this->lee[s-1]*tmp;
+      spProj5p(tmp, chi(ss+s-1));
+      coalescedWrite(chi[ss+s], psi(ss+s) - this->lee[s-1]*tmp);
     }
 
     // L_m^{-1}
     for(int s=0; s<Ls-1; s++){ // Chi[ee] = 1 - sum[s<Ls-1] -leem[s]P_- chi
-      spProj5m(tmp, chi[ss+s]);
-      chi[ss+Ls-1] = chi[ss+Ls-1] - this->leem[s]*tmp;
+      spProj5m(tmp, chi(ss+s));
+      coalescedWrite(chi[ss+Ls-1], chi(ss+Ls-1) - this->leem[s]*tmp);
     }
 
     // U_m^{-1} D^{-1}
     for(int s=0; s<Ls-1; s++){ // Chi[s] + 1/d chi[s]
-      spProj5p(tmp, chi[ss+Ls-1]);
-      chi[ss+s] = (1.0/this->dee[s])*chi[ss+s] - (this->ueem[s]/this->dee[Ls-1])*tmp;
+      spProj5p(tmp, chi(ss+Ls-1));
+      coalescedWrite(chi[ss+s], (1.0/this->dee[s])*chi(ss+s) - (this->ueem[s]/this->dee[Ls-1])*tmp);
     }
-    chi[ss+Ls-1] = (1.0/this->dee[Ls-1])*chi[ss+Ls-1];
+    coalescedWrite(chi[ss+Ls-1], (1.0/this->dee[Ls-1])*chi(ss+Ls-1));
 
     // Apply U^{-1}
     for(int s=Ls-2; s>=0; s--){
-      spProj5m(tmp, chi[ss+s+1]);
-      chi[ss+s] = chi[ss+s] - this->uee[s]*tmp;
+      spProj5m(tmp, chi(ss+s+1));
+      coalescedWrite(chi[ss+s], chi(ss+s) - this->uee[s]*tmp);
     }
   });
-
+   
   this->MooeeInvTime += usecond();
 }
 
@@ -272,48 +259,49 @@ void MobiusEOFAFermion<Impl>::MooeeInv_shift(const FermionField &psi_i, FermionF
   auto psi = psi_i.View();
   auto chi = chi_i.View();
 
-
   this->MooeeInvCalls++;
   this->MooeeInvTime -= usecond();
 
-  thread_loop( (int ss=0; ss<grid->oSites(); ss+=Ls),{
+  int nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,Simd::Nsimd(),{
 
-    auto tmp1        = psi[0];
-    auto tmp2        = psi[0];
-    auto tmp2_spProj = psi[0];
+    uint64_t ss = sss*Ls;
+
+    typedef decltype(coalescedRead(psi[0])) spinor;
+    spinor tmp1,tmp2,tmp2_spProj;
 
     // Apply (L^{\prime})^{-1} and accumulate MooeeInv_shift_lc[j]*psi[j] in tmp2
-    chi[ss] = psi[ss]; // chi[0]=psi[0]
-    tmp2 = MooeeInv_shift_lc[0]*psi[ss];
+    coalescedWrite(chi[ss], psi(ss)); // chi[0]=psi[0]
+    tmp2 = MooeeInv_shift_lc[0]*psi(ss);
     for(int s=1; s<Ls; s++){
-      spProj5p(tmp1, chi[ss+s-1]);
-      chi[ss+s] = psi[ss+s] - this->lee[s-1]*tmp1;
-      tmp2 = tmp2 + MooeeInv_shift_lc[s]*psi[ss+s];
+      spProj5p(tmp1, chi(ss+s-1));
+      coalescedWrite(chi[ss+s], psi(ss+s) - this->lee[s-1]*tmp1);
+      tmp2 = tmp2 + MooeeInv_shift_lc[s]*psi(ss+s);
     }
     if(this->pm == 1){ spProj5p(tmp2_spProj, tmp2);}
-    else{ spProj5m(tmp2_spProj, tmp2); }
+    else             { spProj5m(tmp2_spProj, tmp2); }
 
     // L_m^{-1}
     for(int s=0; s<Ls-1; s++){ // Chi[ee] = 1 - sum[s<Ls-1] -leem[s]P_- chi
-      spProj5m(tmp1, chi[ss+s]);
-      chi[ss+Ls-1] = chi[ss+Ls-1] - this->leem[s]*tmp1;
+      spProj5m(tmp1, chi(ss+s));
+      coalescedWrite(chi[ss+Ls-1], chi(ss+Ls-1) - this->leem[s]*tmp1);
     }
 
     // U_m^{-1} D^{-1}
     for(int s=0; s<Ls-1; s++){ // Chi[s] + 1/d chi[s]
-      spProj5p(tmp1, chi[ss+Ls-1]);
-      chi[ss+s] = (1.0/this->dee[s])*chi[ss+s] - (this->ueem[s]/this->dee[Ls-1])*tmp1;
+      spProj5p(tmp1, chi(ss+Ls-1));
+      coalescedWrite(chi[ss+s], (1.0/this->dee[s])*chi(ss+s) - (this->ueem[s]/this->dee[Ls-1])*tmp1);
     }
     // chi[ss+Ls-1] = (1.0/this->dee[Ls-1])*chi[ss+Ls-1] + MooeeInv_shift_norm[Ls-1]*tmp2_spProj;
-    chi[ss+Ls-1] = (1.0/this->dee[Ls-1])*chi[ss+Ls-1];
-    spProj5m(tmp1, chi[ss+Ls-1]);
-    chi[ss+Ls-1] = chi[ss+Ls-1] + MooeeInv_shift_norm[Ls-1]*tmp2_spProj;
+    coalescedWrite(chi[ss+Ls-1], (1.0/this->dee[Ls-1])*chi(ss+Ls-1));
+    spProj5m(tmp1, chi(ss+Ls-1));
+    coalescedWrite(chi[ss+Ls-1], chi(ss+Ls-1) + MooeeInv_shift_norm[Ls-1]*tmp2_spProj);
 
     // Apply U^{-1} and add shift term
     for(int s=Ls-2; s>=0; s--){
-      chi[ss+s] = chi[ss+s] - this->uee[s]*tmp1;
-      spProj5m(tmp1, chi[ss+s]);
-      chi[ss+s] = chi[ss+s] + MooeeInv_shift_norm[s]*tmp2_spProj;
+      coalescedWrite(chi[ss+s] , chi(ss+s) - this->uee[s]*tmp1);
+      spProj5m(tmp1, chi(ss+s));
+      coalescedWrite(chi[ss+s], chi(ss+s) + MooeeInv_shift_norm[s]*tmp2_spProj);
     }
   });
 
@@ -334,34 +322,38 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag(const FermionField &psi_i, FermionFiel
   this->MooeeInvCalls++;
   this->MooeeInvTime -= usecond();
 
-  thread_loop( (int ss=0; ss<grid->oSites(); ss+=Ls),{
+  int nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,Simd::Nsimd(),{
 
-    auto tmp = psi[0];
+    uint64_t ss = sss*Ls;
+
+    typedef decltype(coalescedRead(psi[0])) spinor;
+    spinor tmp;
 
     // Apply (U^{\prime})^{-dag}
-    chi[ss] = psi[ss];
+    coalescedWrite(chi[ss], psi(ss));
     for(int s=1; s<Ls; s++){
-      spProj5m(tmp, chi[ss+s-1]);
-      chi[ss+s] = psi[ss+s] - this->uee[s-1]*tmp;
+      spProj5m(tmp, chi(ss+s-1));
+      coalescedWrite(chi[ss+s], psi(ss+s) - this->uee[s-1]*tmp);
     }
-
+    
     // U_m^{-\dag}
     for(int s=0; s<Ls-1; s++){
-      spProj5p(tmp, chi[ss+s]);
-      chi[ss+Ls-1] = chi[ss+Ls-1] - this->ueem[s]*tmp;
+      spProj5p(tmp, chi(ss+s));
+      coalescedWrite(chi[ss+Ls-1], chi(ss+Ls-1) - this->ueem[s]*tmp);
     }
 
     // L_m^{-\dag} D^{-dag}
     for(int s=0; s<Ls-1; s++){
-      spProj5m(tmp, chi[ss+Ls-1]);
-      chi[ss+s] = (1.0/this->dee[s])*chi[ss+s] - (this->leem[s]/this->dee[Ls-1])*tmp;
+      spProj5m(tmp, chi(ss+Ls-1));
+      coalescedWrite(chi[ss+s], (1.0/this->dee[s])*chi(ss+s) - (this->leem[s]/this->dee[Ls-1])*tmp);
     }
-    chi[ss+Ls-1] = (1.0/this->dee[Ls-1])*chi[ss+Ls-1];
+    coalescedWrite(chi[ss+Ls-1], (1.0/this->dee[Ls-1])*chi(ss+Ls-1));
 
     // Apply L^{-dag}
     for(int s=Ls-2; s>=0; s--){
       spProj5p(tmp, chi[ss+s+1]);
-      chi[ss+s] = chi[ss+s] - this->lee[s]*tmp;
+      coalescedWrite(chi[ss+s], chi(ss+s) - this->lee[s]*tmp);
     }
   });
 
@@ -381,43 +373,46 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag_shift(const FermionField &psi_i, Fermi
   this->MooeeInvCalls++;
   this->MooeeInvTime -= usecond();
 
-  thread_loop( (int ss=0; ss<grid->oSites(); ss+=Ls),{
+  int nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,Simd::Nsimd(),{
 
-    auto tmp1        = psi[0];
-    auto tmp2        = psi[0];
-    auto tmp2_spProj = psi[0];
+    uint64_t ss = sss*Ls;
+
+    typedef decltype(coalescedRead(psi[0])) spinor;
+    spinor tmp1,tmp2,tmp2_spProj;
 
     // Apply (U^{\prime})^{-dag} and accumulate MooeeInvDag_shift_lc[j]*psi[j] in tmp2
-    chi[ss] = psi[ss];
-    tmp2 = MooeeInvDag_shift_lc[0]*psi[ss];
+    coalescedWrite(chi[ss], psi(ss));
+    tmp2 = MooeeInvDag_shift_lc[0]*psi(ss);
     for(int s=1; s<Ls; s++){
-      spProj5m(tmp1, chi[ss+s-1]);
-      chi[ss+s] = psi[ss+s] - this->uee[s-1]*tmp1;
-      tmp2 = tmp2 + MooeeInvDag_shift_lc[s]*psi[ss+s];
+      spProj5m(tmp1, chi(ss+s-1));
+      coalescedWrite(chi[ss+s],psi(ss+s) - this->uee[s-1]*tmp1);
+      tmp2 = tmp2 + MooeeInvDag_shift_lc[s]*psi(ss+s);
     }
+
     if(this->pm == 1){ spProj5p(tmp2_spProj, tmp2);}
-    else{ spProj5m(tmp2_spProj, tmp2); }
+    else             { spProj5m(tmp2_spProj, tmp2);}
 
     // U_m^{-\dag}
     for(int s=0; s<Ls-1; s++){
-      spProj5p(tmp1, chi[ss+s]);
-      chi[ss+Ls-1] = chi[ss+Ls-1] - this->ueem[s]*tmp1;
+      spProj5p(tmp1, chi(ss+s));
+      coalescedWrite(chi[ss+Ls-1], chi(ss+Ls-1) - this->ueem[s]*tmp1);
     }
 
     // L_m^{-\dag} D^{-dag}
     for(int s=0; s<Ls-1; s++){
-      spProj5m(tmp1, chi[ss+Ls-1]);
-      chi[ss+s] = (1.0/this->dee[s])*chi[ss+s] - (this->leem[s]/this->dee[Ls-1])*tmp1;
+      spProj5m(tmp1, chi(ss+Ls-1));
+      coalescedWrite(chi[ss+s], (1.0/this->dee[s])*chi(ss+s) - (this->leem[s]/this->dee[Ls-1])*tmp1);
     }
-    chi[ss+Ls-1] = (1.0/this->dee[Ls-1])*chi[ss+Ls-1];
-    spProj5p(tmp1, chi[ss+Ls-1]);
-    chi[ss+Ls-1] = chi[ss+Ls-1] + MooeeInvDag_shift_norm[Ls-1]*tmp2_spProj;
+    coalescedWrite(chi[ss+Ls-1], (1.0/this->dee[Ls-1])*chi(ss+Ls-1));
+    spProj5p(tmp1, chi(ss+Ls-1));
+    coalescedWrite(chi[ss+Ls-1], chi(ss+Ls-1) + MooeeInvDag_shift_norm[Ls-1]*tmp2_spProj);
 
     // Apply L^{-dag}
     for(int s=Ls-2; s>=0; s--){
-      chi[ss+s] = chi[ss+s] - this->lee[s]*tmp1;
-      spProj5p(tmp1, chi[ss+s]);
-      chi[ss+s] = chi[ss+s] + MooeeInvDag_shift_norm[s]*tmp2_spProj;
+      coalescedWrite(chi[ss+s], chi(ss+s) - this->lee[s]*tmp1);
+      spProj5p(tmp1, chi(ss+s));
+      coalescedWrite(chi[ss+s], chi(ss+s) + MooeeInvDag_shift_norm[s]*tmp2_spProj);
     }
   });
 
