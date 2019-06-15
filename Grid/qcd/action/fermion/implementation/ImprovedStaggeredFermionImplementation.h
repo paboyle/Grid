@@ -254,7 +254,7 @@ void ImprovedStaggeredFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGauge
     auto UUU_v = UUU.View();
     auto B_v   = B.View();
     auto Btilde_v   = Btilde.View();
-    thread_loop( (int sss = 0; sss < B.Grid()->oSites(); sss++), {
+    thread_for(sss,B.Grid()->oSites(),{
       Kernels::DhopDirKernel(st, U_v, UUU_v, st.CommBuf(), sss, sss, B_v, Btilde_v, mu,1);
     });
 
@@ -375,8 +375,8 @@ void ImprovedStaggeredFermion<Impl>::DhopDir(const FermionField &in, FermionFiel
   auto UUUmu_v = UUUmu.View();
   auto in_v    =  in.View();
   auto out_v   = out.View();
-  thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++) , {
-      Kernels::DhopDirKernel(Stencil, Umu_v, UUUmu_v, Stencil.CommBuf(), sss, sss, in_v, out_v, dir, disp);
+  thread_for( sss, in.Grid()->oSites(),{
+    Kernels::DhopDirKernel(Stencil, Umu_v, UUUmu_v, Stencil.CommBuf(), sss, sss, in_v, out_v, dir, disp);
   });
 };
 
@@ -478,13 +478,13 @@ void ImprovedStaggeredFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st
     auto out_v = out.View();
     if (dag == DaggerYes) {
       int sz=st.surface_list.size();
-      thread_loop( (int ss = 0; ss < sz; ss++) ,{
+      thread_for(ss,sz,{
 	int sU = st.surface_list[ss];
 	Kernels::DhopSiteDag(st,lo,U_v,UUU_v,st.CommBuf(),1,sU,in_v,out_v,0,1);
       });
     } else {
       int sz=st.surface_list.size();
-      thread_loop( (int ss = 0; ss < sz; ss++) ,{
+      thread_for(ss,sz,{
 	int sU = st.surface_list[ss];
 	Kernels::DhopSite(st,lo,U_v,UUU_v,st.CommBuf(),1,sU,in_v,out_v,0,1);
       });
@@ -519,11 +519,11 @@ void ImprovedStaggeredFermion<Impl>::DhopInternalSerialComms(StencilImpl &st, Le
   auto out_v = out.View();
   DhopComputeTime -= usecond();
   if (dag == DaggerYes) {
-    thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++), {
+    thread_for(sss, in.Grid()->oSites(),{
       Kernels::DhopSiteDag(st, lo, U_v, UUU_v, st.CommBuf(), 1, sss, in_v, out_v);
     });
   } else {
-    thread_loop( (int sss = 0; sss < in.Grid()->oSites(); sss++), {
+    thread_for(sss, in.Grid()->oSites(),{
       Kernels::DhopSite(st, lo, U_v, UUU_v, st.CommBuf(), 1, sss, in_v, out_v);
     });
   }
