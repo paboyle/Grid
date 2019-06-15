@@ -153,8 +153,8 @@ public:
 	  dbytes=0;
 	  ncomm=0;
 
-	  thread_loop( (int dir=0;dir<8;dir++),{
-
+	  thread_for(dir,8,{
+		     
 	    double tbytes;
 	    int mu =dir % 4;
 

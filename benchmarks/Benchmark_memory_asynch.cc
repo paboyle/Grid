@@ -78,7 +78,7 @@ int main (int argc, char ** argv)
     }
 
     double start=usecond();
-    thread_loop( (int t=0;t<threads;t++),{
+    thread_for(t,threads,{
       auto x_t = x[t].View();
       sum[t] = x_t[0];
       for(int i=0;i<Nloop;i++){

@@ -5,7 +5,6 @@
 "============================================================================="
 
 using namespace Grid;
-using namespace QCD;
 
 int main (int argc, char ** argv)
 {

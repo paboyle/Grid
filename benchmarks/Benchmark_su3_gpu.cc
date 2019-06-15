@@ -71,26 +71,21 @@ int main (int argc, char ** argv)
       auto z_v = z.View();
       const uint64_t Nsite = x_v.size();
       const uint64_t nsimd = vComplex::Nsimd();
-      const uint64_t    NN = Nsite*nsimd;
       for(int64_t i=0;i<Nwarm;i++){
-	accelerator_loopN( sss, NN, {
-	  uint64_t lane = sss % nsimd; 
-	  uint64_t ss   = sss / nsimd;
-	  auto xx = extractLane(lane,x_v[ss]);
-	  auto yy = extractLane(lane,y_v[ss]);
+	accelerator_for( ss, Nsite, nsimd ,{
+	  auto xx = coalescedRead(x_v[ss]);
+	  auto yy = coalescedRead(y_v[ss]);
 	  auto zz = xx*yy;
-	  insertLane(lane,z_v[ss],zz);
+	  coalescedWrite(z_v[ss],zz);
         });
       }
       double start=usecond();
       for(int64_t i=0;i<Nloop;i++){
-	accelerator_loopN( sss, NN, {
-	  uint64_t lane = sss % nsimd; 
-	  uint64_t ss   = sss / nsimd;
-	  auto xx = extractLane(lane,x_v[ss]);
-	  auto yy = extractLane(lane,y_v[ss]);
+	accelerator_for( ss, Nsite, nsimd ,{
+	  auto xx = coalescedRead(x_v[ss]);
+	  auto yy = coalescedRead(y_v[ss]);
 	  auto zz = xx*yy;
-	  insertLane(lane,z_v[ss],zz);
+	  coalescedWrite(z_v[ss],zz);
         });
       }
       double stop=usecond();
@@ -126,26 +121,21 @@ int main (int argc, char ** argv)
       auto z_v = z.View();
       const uint64_t Nsite = x_v.size();
       const uint64_t nsimd = vComplex::Nsimd();
-      const uint64_t    NN = Nsite*nsimd;
       for(int64_t i=0;i<Nwarm;i++){
-	accelerator_loopN( sss, NN, {
-	  uint64_t lane = sss % nsimd; 
-	  uint64_t ss   = sss / nsimd;
-	  auto xx = extractLane(lane,x_v[ss]);
-	  auto yy = extractLane(lane,y_v[ss]);
+	accelerator_for( ss, Nsite, nsimd ,{
+	  auto xx = coalescedRead(x_v[ss]);
+	  auto yy = coalescedRead(y_v[ss]);
 	  auto zz = xx*yy;
-	  insertLane(lane,x_v[ss],zz);
+	  coalescedWrite(x_v[ss],zz);
         });
       }
       double start=usecond();
       for(int64_t i=0;i<Nloop;i++){
-	accelerator_loopN( sss, NN, {
-	  uint64_t lane = sss % nsimd; 
-	  uint64_t ss   = sss / nsimd;
-	  auto xx = extractLane(lane,x_v[ss]);
-	  auto yy = extractLane(lane,y_v[ss]);
+	accelerator_for( ss, Nsite, nsimd ,{
+	  auto xx = coalescedRead(x_v[ss]);
+	  auto yy = coalescedRead(y_v[ss]);
 	  auto zz = xx*yy;
-	  insertLane(lane,x_v[ss],zz);
+	  coalescedWrite(x_v[ss],zz);
         });
       }
       double stop=usecond();
@@ -182,28 +172,23 @@ int main (int argc, char ** argv)
       auto z_v = z.View();
       const uint64_t Nsite = x_v.size();
       const uint64_t nsimd = vComplex::Nsimd();
-      const uint64_t    NN = Nsite*nsimd;
       for(int64_t i=0;i<Nwarm;i++){
-	accelerator_loopN( sss, NN, {
-	  uint64_t lane = sss % nsimd; 
-	  uint64_t ss   = sss / nsimd;
-	  auto xx = extractLane(lane,x_v[ss]);
-	  auto yy = extractLane(lane,y_v[ss]);
-	  auto zz = extractLane(lane,z_v[ss]);
-	  zz = zz + xx * yy;
-	  insertLane(lane,z_v[ss],zz);
+	accelerator_for( ss, Nsite, nsimd ,{
+	  auto xx = coalescedRead(x_v[ss]);
+	  auto yy = coalescedRead(y_v[ss]);
+	  auto zz = coalescedRead(z_v[ss]);
+	  zz = zz+xx*yy;
+	  coalescedWrite(z_v[ss],zz);
         });
       }
       double start=usecond();
       for(int64_t i=0;i<Nloop;i++){
-	accelerator_loopN( sss, NN, {
-	  uint64_t lane = sss % nsimd; 
-	  uint64_t ss   = sss / nsimd;
-	  auto xx = extractLane(lane,x_v[ss]);
-	  auto yy = extractLane(lane,y_v[ss]);
-	  auto zz = extractLane(lane,z_v[ss]);
-	  zz = zz + xx * yy;
-	  insertLane(lane,x_v[ss],zz);
+	accelerator_for( ss, Nsite, nsimd ,{
+	  auto xx = coalescedRead(x_v[ss]);
+	  auto yy = coalescedRead(y_v[ss]);
+	  auto zz = coalescedRead(z_v[ss]);
+	  zz = zz+xx*yy;
+	  coalescedWrite(z_v[ss],zz);
         });
       }
       double stop=usecond();
@@ -241,28 +226,23 @@ int main (int argc, char ** argv)
       auto w_v = z.View();
       const uint64_t Nsite = x_v.size();
       const uint64_t nsimd = vComplex::Nsimd();
-      const uint64_t    NN = Nsite*nsimd;
       for(int64_t i=0;i<Nwarm;i++){
-	accelerator_loopN( sss, NN, {
-	  uint64_t lane = sss % nsimd; 
-	  uint64_t ss   = sss / nsimd;
-	  auto xx = extractLane(lane,x_v[ss]);
-	  auto yy = extractLane(lane,y_v[ss]);
-	  auto zz = extractLane(lane,z_v[ss]);
-	  auto ww = zz + xx * yy;
-	  insertLane(lane,w_v[ss],ww);
+	accelerator_for( ss, Nsite, nsimd ,{
+	  auto xx = coalescedRead(x_v[ss]);
+	  auto yy = coalescedRead(y_v[ss]);
+	  auto zz = coalescedRead(z_v[ss]);
+	  auto ww = zz+xx*yy;
+	  coalescedWrite(w_v[ss],ww);
         });
       }
       double start=usecond();
       for(int64_t i=0;i<Nloop;i++){
-	accelerator_loopN( sss, NN, {
-	  uint64_t lane = sss % nsimd; 
-	  uint64_t ss   = sss / nsimd;
-	  auto xx = extractLane(lane,x_v[ss]);
-	  auto yy = extractLane(lane,y_v[ss]);
-	  auto zz = extractLane(lane,z_v[ss]);
-	  auto ww = zz + xx * yy;
-	  insertLane(lane,w_v[ss],ww);
+	accelerator_for( ss, Nsite, nsimd ,{
+	  auto xx = coalescedRead(x_v[ss]);
+	  auto yy = coalescedRead(y_v[ss]);
+	  auto zz = coalescedRead(z_v[ss]);
+	  auto ww = zz+xx*yy;
+	  coalescedWrite(w_v[ss],ww);
         });
       }
       double stop=usecond();
