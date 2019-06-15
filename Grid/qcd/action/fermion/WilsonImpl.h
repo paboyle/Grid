@@ -180,7 +180,7 @@ public:
     auto tmp_v = tmp.View();
     auto Btilde_v = Btilde.View();
     auto Atilde_v = Atilde.View();
-    thread_loop( (int sss=0;sss<tmp.Grid()->oSites();sss++),{
+    thread_for(sss,tmp.Grid()->oSites(),{
       int sU=sss;
       for(int s=0;s<Ls;s++){
 	int sF = s+Ls*sU;
