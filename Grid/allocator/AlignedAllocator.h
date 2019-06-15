@@ -177,6 +177,7 @@ public:
 	assert(0);
       }
     }
+    assert( ptr != (_Tp *)NULL);
 #else 
     //////////////////////////////////////////////////////////////////////////////////////////
     // 2MB align; could make option probably doesn't need configurability
@@ -186,16 +187,16 @@ public:
   #else
     if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) memalign(GRID_ALLOC_ALIGN,bytes);
   #endif
-#endif
     assert( ptr != (_Tp *)NULL);
 
-    /////////////////////////////////////////
-    // First touch optimise in threaded loop
-    /////////////////////////////////////////
-    uint8_t *cp = (uint8_t *)ptr;
-    thread_loop( (size_type n=0;n<bytes;n+=4096) , {
+    //////////////////////////////////////////////////
+    // First touch optimise in threaded loop 
+    //////////////////////////////////////////////////
+    uint64_t *cp = (uint64_t *)ptr;
+    thread_for(n,bytes/sizeof(uint64_t), { // need only one touch per page
       cp[n]=0;
     });
+#endif
     return ptr;
   }
 
