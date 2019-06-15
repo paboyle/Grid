@@ -26,8 +26,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef  GRID_ALGORITHM_LINEAR_OP_H
-#define  GRID_ALGORITHM_LINEAR_OP_H
+#pragma once 
 
 NAMESPACE_BEGIN(Grid);
 
@@ -496,5 +495,3 @@ public:
 };
 
 NAMESPACE_END(Grid);
-
-#endif

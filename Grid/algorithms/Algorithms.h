@@ -31,6 +31,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 #include <Grid/algorithms/SparseMatrix.h>
 #include <Grid/algorithms/LinearOperator.h>
+#include <Grid/algorithms/SchurDiagTwoKappa.h>
 #include <Grid/algorithms/Preconditioner.h>
 
 #include <Grid/algorithms/approx/Zolotarev.h>
