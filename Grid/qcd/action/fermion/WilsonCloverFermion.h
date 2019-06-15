@@ -265,7 +265,7 @@ private:
     T = Zero();
     auto T_v = T.View();
     auto F_v = F.View();
-    thread_loop( (int i = 0; i < CloverTerm.Grid()->oSites(); i++),
+    thread_for(i, CloverTerm.Grid()->oSites(),
     {
       T_v[i]()(0, 1) = timesMinusI(F_v[i]()());
       T_v[i]()(1, 0) = timesMinusI(F_v[i]()());
@@ -283,7 +283,7 @@ private:
     
     auto T_v = T.View();
     auto F_v = F.View();
-    thread_loop( (int i = 0; i < CloverTerm.Grid()->oSites(); i++),
+    thread_for(i, CloverTerm.Grid()->oSites(),
     {
       T_v[i]()(0, 1) = -F_v[i]()();
       T_v[i]()(1, 0) = F_v[i]()();
@@ -301,9 +301,8 @@ private:
 
     auto T_v = T.View();
     auto F_v = F.View();
-    thread_loop( (int i = 0; i < CloverTerm.Grid()->oSites(); i++),
+    thread_for(i, CloverTerm.Grid()->oSites(),
     {
-
       T_v[i]()(0, 0) = timesMinusI(F_v[i]()());
       T_v[i]()(1, 1) = timesI(F_v[i]()());
       T_v[i]()(2, 2) = timesMinusI(F_v[i]()());
@@ -320,7 +319,7 @@ private:
 
     auto T_v = T.View();
     auto F_v = F.View();
-    thread_loop( (int i = 0; i < CloverTerm.Grid()->oSites(); i++),
+    thread_for(i, CloverTerm.Grid()->oSites(),
     {
       T_v[i]()(0, 1) = timesI(F_v[i]()());
       T_v[i]()(1, 0) = timesI(F_v[i]()());
@@ -338,7 +337,7 @@ private:
     
     auto T_v = T.View();
     auto F_v = F.View();
-    thread_loop( (int i = 0; i < CloverTerm.Grid()->oSites(); i++),
+    thread_for(i, CloverTerm.Grid()->oSites(),
     {
       T_v[i]()(0, 1) = -(F_v[i]()());
       T_v[i]()(1, 0) = (F_v[i]()());
@@ -357,7 +356,7 @@ private:
 
     auto T_v = T.View();
     auto F_v = F.View();
-    thread_loop((int i = 0; i < CloverTerm.Grid()->oSites(); i++),
+    thread_for(i, CloverTerm.Grid()->oSites(),
     {
       T_v[i]()(0, 0) = timesI(F_v[i]()());
       T_v[i]()(1, 1) = timesMinusI(F_v[i]()());
