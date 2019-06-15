@@ -65,7 +65,7 @@ void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, i
   thread_region
   {
     std::vector < vobj , commAllocator<vobj> > B(Nm); // Thread private
-    thread_loop_in_region( (int ss=0;ss < grid->oSites();ss++),{
+    thread_for_in_region(ss, grid->oSites(),{
       for(int j=j0; j<j1; ++j) B[j]=0.;
       
       for(int j=j0; j<j1; ++j){
@@ -89,7 +89,7 @@ void basisRotateJ(Field &result,std::vector<Field> &basis,Eigen::MatrixXd& Qt,in
 
   result.Checkerboard() = basis[0].Checkerboard();
   auto result_v=result.View();
-  thread_loop( (int ss=0;ss < grid->oSites();ss++),{
+  thread_for(ss, grid->oSites(),{
     vobj B = Zero();
     for(int k=k0; k<k1; ++k){
       auto basis_k = basis[k].View();
