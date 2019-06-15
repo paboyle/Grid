@@ -225,7 +225,9 @@ public:
     auto subgroup_v = subgroup.View();
     auto source_v   = source.View();
     auto Determinant_v = Determinant.View();
-    thread_loop( (int ss = 0; ss < grid->oSites(); ss++) ,{
+
+    thread_for(ss, grid->oSites(), {
+
       subgroup_v[ss]()()(0, 0) = source_v[ss]()()(i0, i0);
       subgroup_v[ss]()()(0, 1) = source_v[ss]()()(i0, i1);
       subgroup_v[ss]()()(1, 0) = source_v[ss]()()(i1, i0);
@@ -257,7 +259,8 @@ public:
     dest = 1.0;  // start out with identity
     auto dest_v = dest.View();
     auto subgroup_v = subgroup.View();
-    thread_loop( (int ss = 0; ss < grid->oSites(); ss++) ,{
+    thread_for(ss, grid->oSites(),
+    {
       dest_v[ss]()()(i0, i0) = subgroup_v[ss]()()(0, 0);
       dest_v[ss]()()(i0, i1) = subgroup_v[ss]()()(0, 1);
       dest_v[ss]()()(i1, i0) = subgroup_v[ss]()()(1, 0);
@@ -517,8 +520,8 @@ public:
     a[2] = a123mag * sin_theta * sin(phi);
     a[3] = a123mag * cos_theta;
 
-    ua = toComplex(a[0]) * ident + toComplex(a[1]) * pauli1 +
-      toComplex(a[2]) * pauli2 + toComplex(a[3]) * pauli3;
+    ua = toComplex(a[0]) * ident  + toComplex(a[1]) * pauli1 +
+         toComplex(a[2]) * pauli2 + toComplex(a[3]) * pauli3;
 
     b = 1.0;
     b = where(wheremask, uinv * ua, b);
