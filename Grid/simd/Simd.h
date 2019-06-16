@@ -194,7 +194,9 @@ accelerator_inline void sub (Integer * __restrict__ y,const Integer * __restrict
 accelerator_inline void add (Integer * __restrict__ y,const Integer * __restrict__ l,const Integer *__restrict__ r){ *y = (*l) + (*r); }
 accelerator_inline void vstream(Integer &l, const RealD &r){ l=r;}
 template<>            accelerator_inline void zeroit(Integer &arg)   { arg=0; };
+
 accelerator_inline Integer mod (Integer a,Integer y) { return a%y;}
+accelerator_inline Integer div (Integer a,Integer y) { return a/y;}
 //accelerator_inline Integer abs (Integer &a) { return a%y;}
 
 //////////////////////////////////////////////////////////

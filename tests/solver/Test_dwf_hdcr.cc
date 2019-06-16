@@ -242,7 +242,7 @@ public:
     FineField vec1(src.Grid());
     FineField vec2(src.Grid());
 
-    const Integer block=params.domainsize;
+    const RealD block=params.domainsize;
 
     subset=Zero();
     for(int mu=0;mu<Nd;mu++){

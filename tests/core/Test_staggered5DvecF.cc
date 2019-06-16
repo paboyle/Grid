@@ -33,6 +33,7 @@ using namespace Grid;
 
 int main (int argc, char ** argv)
 {
+#ifndef GRID_NVCC
   Grid_init(&argc,&argv);
 
   auto latt_size   = GridDefaultLatt();
@@ -192,4 +193,5 @@ int main (int argc, char ** argv)
 
 
   Grid_finalize();
+#endif
 }
