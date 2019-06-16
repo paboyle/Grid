@@ -146,6 +146,7 @@ template<class obj,int N> accelerator_inline auto toComplex(const iMatrix<obj,N>
 BINARY_RSCALAR(div,Integer);
 BINARY_RSCALAR(mod,Integer);
 BINARY_RSCALAR(pow,RealD);
+BINARY_RSCALAR(pow,RealF);
 
 #undef UNARY
 #undef BINARY_RSCALAR

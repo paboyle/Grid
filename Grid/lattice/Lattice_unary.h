@@ -38,8 +38,8 @@ template<class obj> Lattice<obj> pow(const Lattice<obj> &rhs_i,RealD y){
   auto rhs = rhs_i.View();
   auto ret = ret_i.View();
   ret.Checkerboard() = rhs.Checkerboard();
-  accelerator_for(ss,rhs.size(),obj::Nsimd(),{
-    coalescedWrite(ret[ss],pow(rhs(ss),y));
+  accelerator_for(ss,rhs.size(),1,{
+      ret[ss]=pow(rhs[ss],y);
   });
   return ret_i;
 }
