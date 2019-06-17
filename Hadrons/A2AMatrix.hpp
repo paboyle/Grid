@@ -466,7 +466,7 @@ void A2AMatrixIo<T>::saveBlock(const T *data,
                          block  = {1, 1, 1}; 
     H5NS::DataSpace      memspace(count.size(), count.data()), dataspace;
     H5NS::DataSet        dataset;
-    size_t               shift;
+    //    size_t               shift;
 
     push(reader, dataname_);
     auto &group = reader.getGroup();
