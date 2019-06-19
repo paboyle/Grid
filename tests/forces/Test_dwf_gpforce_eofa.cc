@@ -89,7 +89,10 @@ int main (int argc, char** argv)
   FermionAction Rop(U, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, mf, mb, -1.0, 1, M5, params);
   OneFlavourRationalParams Params(0.95, 100.0, 5000, 1.0e-12, 12);
   ConjugateGradient<FermionField> CG(1.0e-12, 5000);
-  ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> Meofa(Lop, Rop, CG, Params, true);
+  assert(0 && "MM 2019/06/19 Inserted four extra parameters to make this test compile. Needs to be fixed properly");
+  ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> Meofa(Lop, Rop, CG,
+      CG, CG, CG, CG, // Inserted this line to make this test compile. Needs attention to make sure it works
+                                                                   Params, true);
 
   Meofa.refresh(U, RNG5);
   RealD S = Meofa.S(U); // pdag M p
