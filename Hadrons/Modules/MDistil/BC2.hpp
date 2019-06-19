@@ -223,8 +223,8 @@ void TBC2<FImpl>::execute(void)
       }
     }
     
-    BFieldIO BField_save;
-    BField_save.BField = m;
+    //BFieldIO BField_save;
+    //BField_save.BField = m;
 
 
     GridCartesian * grid = env().getGrid();
@@ -232,7 +232,8 @@ void TBC2<FImpl>::execute(void)
       std::string filename ="./" + output + ".h5"; 
       std::cout << "Writing to file " << filename << std::endl;
       Grid::Hdf5Writer writer(filename);
-      write(writer,"BaryonField",BField_save.BField);
+      //write(writer,"BaryonField",BField_save.BField);
+      write(writer,"BaryonField",m);
     }
 }
 
