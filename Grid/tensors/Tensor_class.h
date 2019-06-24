@@ -149,7 +149,7 @@ class iScalar {
   operator RealD() const {
     return TensorRemove(_internal);
   }
-  template <class U = vtype, class V = scalar_type, IfReal<V> = 0, IfNotSimd<typename GridTypeMapper<U>::vector_type> = 0>
+  template <class U = vtype, class V = scalar_type, IfInteger<V> = 0, IfNotSimd<typename GridTypeMapper<U>::vector_type> = 0>
   operator Integer() const {
     return Integer(TensorRemove(_internal));
   }
