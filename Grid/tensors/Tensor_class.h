@@ -135,21 +135,21 @@ class iScalar {
   strong_inline const vtype &operator()(void) const { return _internal; }
 
   // Type casts meta programmed, must be pure scalar to match TensorRemove
-  template <class U = vtype, class V = scalar_type, IfComplex<V> = 0, IfNotSimd<U> = 0>
+  template <class U = vtype, class V = scalar_type, IfComplex<V> = 0, IfNotSimd<typename GridTypeMapper<U>::vector_type> = 0>
   operator ComplexF() const {
     return (TensorRemove(_internal));
   };
-  template <class U = vtype, class V = scalar_type, IfComplex<V> = 0, IfNotSimd<U> = 0>
+  template <class U = vtype, class V = scalar_type, IfComplex<V> = 0, IfNotSimd<typename GridTypeMapper<U>::vector_type> = 0>
   operator ComplexD() const {
     return (TensorRemove(_internal));
   };
   //  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> =
   //  0> operator RealD    () const { return(real(TensorRemove(_internal))); }
-  template <class U = vtype, class V = scalar_type, IfReal<V> = 0,IfNotSimd<U> = 0>
+  template <class U = vtype, class V = scalar_type, IfReal<V> = 0, IfNotSimd<typename GridTypeMapper<U>::vector_type> = 0>
   operator RealD() const {
     return TensorRemove(_internal);
   }
-  template <class U = vtype, class V = scalar_type, IfInteger<V> = 0, IfNotSimd<U> = 0>
+  template <class U = vtype, class V = scalar_type, IfReal<V> = 0, IfNotSimd<typename GridTypeMapper<U>::vector_type> = 0>
   operator Integer() const {
     return Integer(TensorRemove(_internal));
   }
