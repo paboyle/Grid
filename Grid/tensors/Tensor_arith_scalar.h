@@ -37,7 +37,8 @@ namespace Grid {
 //////////////////////////////////////////////////////////////////////////////////////////
 
 // multiplication by fundamental scalar type
-template<class l, class r> strong_inline typename
+template<class l, class r, typename std::enable_if<is_real<r>{} || is_integer<r>{} || is_complex<r>{},
+r>::type* = nullptr> strong_inline typename
 std::enable_if<std::is_constructible<typename iScalar<l>::scalar_type,
 r>::value, iScalar<l>>::type operator * (const iScalar<l>& lhs, const r& rhs)
 {
@@ -45,11 +46,13 @@ r>::value, iScalar<l>>::type operator * (const iScalar<l>& lhs, const r& rhs)
   typename iScalar<l>::tensor_reduced srhs; srhs=t;
   return lhs*srhs;
 }
-template<class l, class r> strong_inline typename
+template<class l, class r, typename std::enable_if<is_real<l>{} || is_integer<l>{} || is_complex<l>{},
+l>::type* = nullptr> strong_inline typename
 std::enable_if<std::is_constructible<typename iScalar<r>::scalar_type,
 l>::value, iScalar<r>>::type operator * (const l& lhs, const iScalar<r>& rhs) {  return rhs*lhs; }
 
-template<class l, class r, int N> strong_inline typename
+template<class l, class r, int N, typename std::enable_if<is_real<r>{} || is_integer<r>{} || is_complex<r>{},
+r>::type* = nullptr> strong_inline typename
 std::enable_if<std::is_constructible<typename iScalar<l>::scalar_type,
 r>::value, iVector<l,N>>::type operator * (const iVector<l,N>& lhs,const r& rhs)
 {
@@ -57,11 +60,13 @@ r>::value, iVector<l,N>>::type operator * (const iVector<l,N>& lhs,const r& rhs)
   typename iVector<l,N>::tensor_reduced srhs; srhs=t;
   return lhs*srhs;
 }
-template<class l, class r, int N> strong_inline typename
+template<class l, class r, int N, typename std::enable_if<is_real<l>{} || is_integer<l>{} || is_complex<l>{},
+l>::type* = nullptr> strong_inline typename
 std::enable_if<std::is_constructible<typename iScalar<r>::scalar_type,
 l>::value, iVector<r,N>>::type operator * (const l& lhs,const iVector<r,N>& rhs) {  return rhs*lhs; }
 
-template<class l, class r, int N> strong_inline typename
+template<class l, class r, int N, typename std::enable_if<is_real<r>{} || is_integer<r>{} || is_complex<r>{},
+r>::type* = nullptr> strong_inline typename
 std::enable_if<std::is_constructible<typename iScalar<l>::scalar_type,
 r>::value, iMatrix<l,N>>::type operator * (const iMatrix<l,N>& lhs,const r& rhs)
 {
@@ -69,14 +74,16 @@ r>::value, iMatrix<l,N>>::type operator * (const iMatrix<l,N>& lhs,const r& rhs)
   typename iMatrix<l,N>::tensor_reduced srhs; srhs=t;
   return lhs*srhs;
 }
-template<class l, class r, int N> strong_inline typename
+template<class l, class r, int N, typename std::enable_if<is_real<l>{} || is_integer<l>{} || is_complex<l>{},
+l>::type* = nullptr> strong_inline typename
 std::enable_if<std::is_constructible<typename iScalar<r>::scalar_type,
 l>::value, iMatrix<r,N>>::type operator * (const l& lhs,const iMatrix<r,N>& rhs) {  return rhs*lhs; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // addition by fundamental scalar type applies to matrix(down diag) and scalar
 ///////////////////////////////////////////////////////////////////////////////////////////////
-template<class l, class r> strong_inline typename
+template<class l, class r, typename std::enable_if<is_real<r>{} || is_integer<r>{} || is_complex<r>{},
+r>::type* = nullptr> strong_inline typename
 std::enable_if<std::is_constructible<typename iScalar<l>::scalar_type,
 r>::value, iScalar<l>>::type operator + (const iScalar<l>& lhs, const r& rhs)
 {
@@ -84,11 +91,13 @@ r>::value, iScalar<l>>::type operator + (const iScalar<l>& lhs, const r& rhs)
   typename iScalar<l>::tensor_reduced srhs; srhs=t;
   return lhs+srhs;
 }
-template<class l, class r> strong_inline typename
+template<class l, class r, typename std::enable_if<is_real<l>{} || is_integer<l>{} || is_complex<l>{},
+l>::type* = nullptr> strong_inline typename
 std::enable_if<std::is_constructible<typename iScalar<r>::scalar_type,
 l>::value, iScalar<r>>::type operator + (const l& lhs, const iScalar<r>& rhs) {  return rhs+lhs; }
 
-template<class l, class r, int N> strong_inline typename
+template<class l, class r, int N, typename std::enable_if<is_real<r>{} || is_integer<r>{} || is_complex<r>{},
+r>::type* = nullptr> strong_inline typename
 std::enable_if<std::is_constructible<typename iScalar<l>::scalar_type,
 r>::value, iMatrix<l,N>>::type operator + (const iMatrix<l,N>& lhs,const r& rhs)
 {
@@ -96,14 +105,16 @@ r>::value, iMatrix<l,N>>::type operator + (const iMatrix<l,N>& lhs,const r& rhs)
   typename iMatrix<l,N>::tensor_reduced srhs; srhs=t;
   return lhs+srhs;
 }
-template<class l, class r, int N> strong_inline typename
+template<class l, class r, int N, typename std::enable_if<is_real<l>{} || is_integer<l>{} || is_complex<l>{},
+l>::type* = nullptr> strong_inline typename
 std::enable_if<std::is_constructible<typename iScalar<r>::scalar_type,
 l>::value, iMatrix<r,N>>::type operator + (const l& lhs,const iMatrix<r,N>& rhs) {  return rhs+lhs; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // subtraction of fundamental scalar type applies to matrix(down diag) and scalar
 ///////////////////////////////////////////////////////////////////////////////////////////////
-template<class l, class r> strong_inline typename
+template<class l, class r, typename std::enable_if<is_real<r>{} || is_integer<r>{} || is_complex<r>{},
+r>::type* = nullptr> strong_inline typename
 std::enable_if<std::is_constructible<typename iScalar<l>::scalar_type,
 r>::value, iScalar<l>>::type operator - (const iScalar<l>& lhs, const r& rhs)
 {
@@ -111,7 +122,8 @@ r>::value, iScalar<l>>::type operator - (const iScalar<l>& lhs, const r& rhs)
   typename iScalar<l>::tensor_reduced srhs; srhs=t;
   return lhs-srhs;
 }
-template<class l, class r> strong_inline typename
+template<class l, class r, typename std::enable_if<is_real<l>{} || is_integer<l>{} || is_complex<l>{},
+l>::type* = nullptr> strong_inline typename
 std::enable_if<std::is_constructible<typename iScalar<r>::scalar_type,
 l>::value, iScalar<r>>::type operator - (const l& lhs, const iScalar<r>& rhs)
 {
@@ -120,7 +132,8 @@ l>::value, iScalar<r>>::type operator - (const l& lhs, const iScalar<r>& rhs)
   return slhs-rhs;
 }
 
-template<class l, class r, int N> strong_inline typename
+template<class l, class r, int N, typename std::enable_if<is_real<r>{} || is_integer<r>{} || is_complex<r>{},
+r>::type* = nullptr> strong_inline typename
 std::enable_if<std::is_constructible<typename iScalar<l>::scalar_type,
 r>::value, iMatrix<l,N>>::type operator - (const iMatrix<l,N>& lhs,const r& rhs)
 {
@@ -128,7 +141,8 @@ r>::value, iMatrix<l,N>>::type operator - (const iMatrix<l,N>& lhs,const r& rhs)
   typename iMatrix<l,N>::tensor_reduced srhs; srhs=t;
   return lhs-srhs;
 }
-template<class l, class r, int N> strong_inline typename
+template<class l, class r, int N, typename std::enable_if<is_real<l>{} || is_integer<l>{} || is_complex<l>{},
+l>::type* = nullptr> strong_inline typename
 std::enable_if<std::is_constructible<typename iScalar<r>::scalar_type,
 l>::value, iMatrix<r,N>>::type operator - (const l& lhs,const iMatrix<r,N>& rhs)
 {
