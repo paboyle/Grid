@@ -118,7 +118,7 @@ typedef typename FImpl::DoubledGaugeField DoubledGaugeField##suffix;
 typedef typename GImpl::GaugeField GaugeField##suffix;
 
 #define SOLVER_TYPE_ALIASES(FImpl, suffix)\
-typedef Solver<FImpl> Solver##suffix;
+typedef Grid::Hadrons::Solver<FImpl> Solver##suffix;
 
 #define SINK_TYPE_ALIASES(suffix)\
 typedef std::function<SlicedPropagator##suffix\
