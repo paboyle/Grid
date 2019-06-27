@@ -96,12 +96,12 @@ using Grid::operator>>;
 #define GIMPLF HADRONS_IMPL(GIMPLBASE, F)
 #define GIMPLD HADRONS_IMPL(GIMPLBASE, D)
 
-#ifndef StagIMPLBASE
-#define StagIMPLBASE StaggeredImpl
+#ifndef STAGIMPLBASE
+#define STAGIMPLBASE StaggeredImpl // use 4d for impl for now since 5d is Lsvectorised
 #endif
-#define StagIMPL  HADRONS_IMPL(StagIMPLBASE, R)
-#define StagIMPLF HADRONS_IMPL(StagIMPLBASE, F)
-#define StagIMPLD HADRONS_IMPL(StagIMPLBASE, D)
+#define STAGIMPL  HADRONS_IMPL(STAGIMPLBASE, R)
+#define STAGIMPLF HADRONS_IMPL(STAGIMPLBASE, F)
+#define STAGIMPLD HADRONS_IMPL(STAGIMPLBASE, D)
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -240,7 +240,7 @@ void        makeFileDir(const std::string filename, GridBase *g = nullptr);
 
 // default Schur convention
 #ifndef HADRONS_DEFAULT_SCHUR 
-#define HADRONS_DEFAULT_SCHUR DiagTwo
+#define HADRONS_DEFAULT_SCHUR Staggered
 #endif
 #define _HADRONS_SCHUR_OP_(conv) Schur##conv##Operator
 #define HADRONS_SCHUR_OP(conv) _HADRONS_SCHUR_OP_(conv)

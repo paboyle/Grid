@@ -84,6 +84,8 @@ MODULE_REGISTER_TMP(A2AVectors,
     ARG(TA2AVectors<FIMPL, BaseFermionEigenPack<FIMPL>>), MSolver);
 MODULE_REGISTER_TMP(ZA2AVectors, 
     ARG(TA2AVectors<ZFIMPL, BaseFermionEigenPack<ZFIMPL>>), MSolver);
+MODULE_REGISTER_TMP(StagA2AVectors,
+                    ARG(TA2AVectors<STAGIMPL, BaseFermionEigenPack<STAGIMPL>>), MSolver);
 
 /******************************************************************************
  *                       TA2AVectors implementation                           *

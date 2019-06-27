@@ -78,6 +78,7 @@ protected:
 
 MODULE_REGISTER_TMP(RBPrecCG, ARG(TRBPrecCG<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
 MODULE_REGISTER_TMP(ZRBPrecCG, ARG(TRBPrecCG<ZFIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
+MODULE_REGISTER_TMP(StagRBPrecCG, ARG(TRBPrecCG<STAGIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
 
 /******************************************************************************
  *                      TRBPrecCG template implementation                     *

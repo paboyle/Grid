@@ -2,11 +2,13 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MIO/LoadA2AVectors.hpp
+Source file: Hadrons/Modules/MNoise/FullVolumeColorDiagonal.hpp
 
 Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Vera Guelpers <Vera.Guelpers@ed.ac.uk>
+Author: Vera Guelpers <vmg1n14@soton.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,40 +27,38 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef Hadrons_MIO_LoadA2AVectors_hpp_
-#define Hadrons_MIO_LoadA2AVectors_hpp_
+#ifndef Hadrons_MNoise_FullVolumeColorDiagonal_hpp_
+#define Hadrons_MNoise_FullVolumeColorDiagonal_hpp_
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
-#include <Hadrons/A2AVectors.hpp>
+#include <Hadrons/DilutedNoise.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                    Module to load all-to-all vectors                       *
+ *             Generate full volume color diagonal noise                *
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MIO)
+BEGIN_MODULE_NAMESPACE(MNoise)
 
-class LoadA2AVectorsPar: Serializable
+class FullVolumeColorDiagonalPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(LoadA2AVectorsPar,
-                                    std::string,  filestem,
-                                    bool,         multiFile,
-                                    unsigned int, size);
+    GRID_SERIALIZABLE_CLASS_MEMBERS(FullVolumeColorDiagonalPar,
+                                    unsigned int, nsrc);
 };
 
 template <typename FImpl>
-class TLoadA2AVectors: public Module<LoadA2AVectorsPar>
+class TFullVolumeColorDiagonal: public Module<FullVolumeColorDiagonalPar>
 {
 public:
     FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
-    TLoadA2AVectors(const std::string name);
+    TFullVolumeColorDiagonal(const std::string name);
     // destructor
-    virtual ~TLoadA2AVectors(void) {};
+    virtual ~TFullVolumeColorDiagonal(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -68,21 +68,20 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_TMP(LoadA2AVectors, TLoadA2AVectors<FIMPL>, MIO);
-MODULE_REGISTER_TMP(StagLoadA2AVectors, TLoadA2AVectors<STAGIMPL>, MIO);
+MODULE_REGISTER_TMP(FullVolumeColorDiagonal, TFullVolumeColorDiagonal<STAGIMPL>, MNoise);
 
 /******************************************************************************
- *                      TLoadA2AVectors implementation                        *
+ *              TFullVolumeColorDiagonal implementation                  *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TLoadA2AVectors<FImpl>::TLoadA2AVectors(const std::string name)
-: Module<LoadA2AVectorsPar>(name)
+TFullVolumeColorDiagonal<FImpl>::TFullVolumeColorDiagonal(const std::string name)
+: Module<FullVolumeColorDiagonalPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
-std::vector<std::string> TLoadA2AVectors<FImpl>::getInput(void)
+std::vector<std::string> TFullVolumeColorDiagonal<FImpl>::getInput(void)
 {
     std::vector<std::string> in;
     
@@ -90,7 +89,7 @@ std::vector<std::string> TLoadA2AVectors<FImpl>::getInput(void)
 }
 
 template <typename FImpl>
-std::vector<std::string> TLoadA2AVectors<FImpl>::getOutput(void)
+std::vector<std::string> TFullVolumeColorDiagonal<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -99,23 +98,24 @@ std::vector<std::string> TLoadA2AVectors<FImpl>::getOutput(void)
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TLoadA2AVectors<FImpl>::setup(void)
+void TFullVolumeColorDiagonal<FImpl>::setup(void)
 {
-    envCreate(std::vector<FermionField>, getName(), 1, par().size, 
-              envGetGrid(FermionField));
+    envCreateDerived(DilutedNoise<FImpl>, 
+                     FullVolumeColorDiagonalNoise<FImpl>,
+                     getName(), 1, envGetGrid(FermionField), par().nsrc);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TLoadA2AVectors<FImpl>::execute(void)
+void TFullVolumeColorDiagonal<FImpl>::execute(void)
 {
-    auto &vec = envGet(std::vector<FermionField>, getName());
-
-    A2AVectorsIo::read(vec, par().filestem, par().multiFile, vm().getTrajectory());
+    auto &noise = envGet(DilutedNoise<FImpl>, getName());
+    LOG(Message) << "Generating full volume, color diagonal noise" << std::endl;
+    noise.generateNoise(rng4d());
 }
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MIO_LoadA2AVectors_hpp_
+#endif // Hadrons_MNoise_FullVolumeColorDiagonal_hpp_

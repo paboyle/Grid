@@ -33,4 +33,5 @@ using namespace MSolver;
 
 template class Grid::Hadrons::MSolver::TRBPrecCG<FIMPL,HADRONS_DEFAULT_LANCZOS_NBASIS>;
 template class Grid::Hadrons::MSolver::TRBPrecCG<ZFIMPL,HADRONS_DEFAULT_LANCZOS_NBASIS>;
+template class Grid::Hadrons::MSolver::TRBPrecCG<STAGIMPL,HADRONS_DEFAULT_LANCZOS_NBASIS>;
 

@@ -75,7 +75,7 @@ public:
     A2AKernel(void) = default;
     virtual ~A2AKernel(void) = default;
     virtual void operator()(A2AMatrixSet<T> &m, const Field *left, const Field *right,
-                          const unsigned int orthogDim, double &time) = 0;
+                            const unsigned int orthogDim, double &time) = 0;
     virtual double flops(const unsigned int blockSizei, const unsigned int blockSizej) = 0;
     virtual double bytes(const unsigned int blockSizei, const unsigned int blockSizej) = 0;
 };

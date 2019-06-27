@@ -93,6 +93,21 @@ private:
     unsigned int nSrc_;
 };
 
+template <typename FImpl>
+class FullVolumeColorDiagonalNoise: public DilutedNoise<FImpl>
+{
+public:
+    typedef typename FImpl::FermionField FermionField;
+public:
+    // constructor/destructor
+    FullVolumeColorDiagonalNoise(GridCartesian *g, unsigned int n_src);
+    virtual ~FullVolumeColorDiagonalNoise(void) = default;
+    // generate noise
+    virtual void generateNoise(GridParallelRNG &rng);
+private:
+    unsigned int nSrc_;
+};
+
 
 /******************************************************************************
  *                    DilutedNoise template implementation                    *
@@ -239,6 +254,47 @@ void FullVolumeSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng
             {
                 noise[i] = zero;
                 pokeColour(noise[i], etas, c);
+                i++;
+            }
+        }
+    }
+}
+
+/******************************************************************************
+ *        FullVolumeColorDiagonalNoise template implementation           *
+ ******************************************************************************/
+template <typename FImpl>
+FullVolumeColorDiagonalNoise<FImpl>::
+FullVolumeColorDiagonalNoise(GridCartesian *g, unsigned int nSrc)
+: DilutedNoise<FImpl>(g, nSrc*Ns*FImpl::Dimension), nSrc_(nSrc)
+{}
+
+template <typename FImpl>
+void FullVolumeColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng)
+{
+    //typedef decltype(peekColour((*this)[0], 0)) SpinField;
+    
+    auto                       &noise = *this;
+    auto                       g      = this->getGrid();
+    auto                       nd     = g->GlobalDimensions().size();
+    auto                       nc     = FImpl::Dimension;
+    Complex                    shift(1., 1.);
+    LatticeComplex             eta(g);
+    //SpinField                  etas(g);
+    unsigned int               i = 0;
+    
+    bernoulli(rng, eta);
+    eta = (2.*eta - shift)*(1./::sqrt(2.));
+    for (unsigned int n = 0; n < nSrc_; ++n)
+    {
+        //for (unsigned int s = 0; s < Ns; ++s)
+        {
+            //etas = zero;
+            //pokeSpin(etas, eta, s);
+            for (unsigned int c = 0; c < nc; ++c)
+            {
+                noise[i] = zero;
+                pokeColour(noise[i], eta, c);
                 i++;
             }
         }

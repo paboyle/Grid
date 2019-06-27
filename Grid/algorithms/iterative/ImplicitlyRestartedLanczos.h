@@ -194,6 +194,7 @@ template<class Field> class ImplicitlyRestartedLanczosHermOpTester  : public Imp
     std::cout.precision(13);
     std::cout<<GridLogIRL  << "[" << std::setw(3)<<j<<"] "
 	     <<"eval = "<<std::setw(25)<< eval << " (" << eval_poly << ")"
+         <<" evalMaxApprox " << evalMaxApprox
 	     <<" |H B[i] - eval[i]B[i]|^2 / evalMaxApprox^2 " << std::setw(25) << vv
 	     <<std::endl;
 

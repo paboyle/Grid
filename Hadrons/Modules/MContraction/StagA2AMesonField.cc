@@ -2,11 +2,12 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MIO/LoadCoarseEigenPack.cc
+Source file: Hadrons/Modules/MContraction/StagA2AMesonField.cc
 
 Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: paboyle <paboyle@ph.ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,16 +26,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Hadrons/Modules/MIO/LoadCoarseEigenPack.hpp>
+#include <Hadrons/Modules/MContraction/StagA2AMesonField.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
-using namespace MIO;
+using namespace MContraction;
 
-template class Grid::Hadrons::MIO::TLoadCoarseEigenPack<CoarseFermionEigenPack<FIMPL,HADRONS_DEFAULT_LANCZOS_NBASIS>>;
-template class
-Grid::Hadrons::MIO::TLoadCoarseEigenPack<CoarseFermionEigenPack<STAGIMPL,HADRONS_DEFAULT_LANCZOS_NBASIS>>;
-#ifdef GRID_DEFAULT_PRECISION_DOUBLE
-template class Grid::Hadrons::MIO::TLoadCoarseEigenPack<CoarseFermionEigenPack<FIMPL,HADRONS_DEFAULT_LANCZOS_NBASIS, FIMPLF>>;
-template class Grid::Hadrons::MIO::TLoadCoarseEigenPack<CoarseFermionEigenPack<STAGIMPL,HADRONS_DEFAULT_LANCZOS_NBASIS, STAGIMPLF>>;
-#endif
+template class Grid::Hadrons::MContraction::TStagA2AMesonField<STAGIMPL>;

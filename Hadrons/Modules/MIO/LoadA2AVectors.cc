@@ -32,3 +32,4 @@ using namespace Hadrons;
 using namespace MIO;
 
 template class Grid::Hadrons::MIO::TLoadA2AVectors<FIMPL>;
+template class Grid::Hadrons::MIO::TLoadA2AVectors<STAGIMPL>;

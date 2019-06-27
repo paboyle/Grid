@@ -76,9 +76,9 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_TMP(ImprovedStaggered, TImprovedStaggered<StagIMPL>, MAction);
+MODULE_REGISTER_TMP(ImprovedStaggered, TImprovedStaggered<STAGIMPL>, MAction);
 #ifdef GRID_DEFAULT_PRECISION_DOUBLE
-MODULE_REGISTER_TMP(ImprovedStaggeredF, TImprovedStaggered<StagIMPLF>, MAction);
+MODULE_REGISTER_TMP(ImprovedStaggeredF, TImprovedStaggered<STAGIMPLF>, MAction);
 #endif
 
 /******************************************************************************
@@ -118,27 +118,9 @@ void TImprovedStaggered<FImpl>::setup(void)
     auto &grid   = *envGetGrid(FermionField);
     auto &gridRb = *envGetRbGrid(FermionField);
     typename ImprovedStaggeredFermion<FImpl>::ImplParams implParams;
-    //if (!par().boundary.empty())
-    //{
-    //    implParams.boundary_phases = strToVec<Complex>(par().boundary);
-    //}
-    //if (!par().twist.empty())
-    //{
-    //    implParams.twist_n_2pi_L   = strToVec<Real>(par().twist);
-    //}
-    //LOG(Message) << "Fermion boundary conditions: " << implParams.boundary_phases
-    //             << std::endl;
-    //LOG(Message) << "Twists: " << implParams.twist_n_2pi_L
-    //             << std::endl;
-    //if (implParams.boundary_phases.size() != env().getNd())
-    //{
-    //    HADRONS_ERROR(Size, "Wrong number of boundary phase");
-    //}
-    //if (implParams.twist_n_2pi_L.size() != env().getNd())
-    //{
-    //    HADRONS_ERROR(Size, "Wrong number of twist");
-    //}
-    envCreateDerived(FMat, ImprovedStaggeredFermion<FImpl>, getName(), 1, U, U, grid, gridRb,
+    
+    envCreateDerived(FMat, ImprovedStaggeredFermion<FImpl>, getName(), 1, U, U,
+                     grid, gridRb,
                      par().mass, par().c1, par().c2, par().tad, implParams);
 }
 

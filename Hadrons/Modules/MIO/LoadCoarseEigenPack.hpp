@@ -80,9 +80,13 @@ public:
 
 MODULE_REGISTER_TMP(LoadCoarseFermionEigenPack, 
                     ARG(TLoadCoarseEigenPack<CoarseFermionEigenPack<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>>), MIO);
+MODULE_REGISTER_TMP(StagLoadCoarseFermionEigenPack,
+                    ARG(TLoadCoarseEigenPack<CoarseFermionEigenPack<STAGIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>>), MIO);
 #ifdef GRID_DEFAULT_PRECISION_DOUBLE
 MODULE_REGISTER_TMP(LoadCoarseFermionEigenPackIo32, 
                     ARG(TLoadCoarseEigenPack<CoarseFermionEigenPack<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS, FIMPLF>>), MIO);
+MODULE_REGISTER_TMP(StagLoadCoarseFermionEigenPackIo32,
+                    ARG(TLoadCoarseEigenPack<CoarseFermionEigenPack<STAGIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS, STAGIMPLF>>), MIO);
 #endif
 
 /******************************************************************************

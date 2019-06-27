@@ -291,6 +291,17 @@ namespace Grid {
       Field   tmp(grid);
       Field  Mtmp(grid);
 
+        //std::cout<< "rbgrid "<<std::endl;
+        //grid->show_decomposition();
+        //std::cout<< "grid "<<std::endl;
+        //fgrid->show_decomposition();
+        //std::cout<< "src"<<std::endl;
+        //src._grid->show_decomposition();
+        //std::cout<< "src_e"<<std::endl;
+        //src_e._grid->show_decomposition();
+        //std::cout<< "src_o"<<std::endl;
+        //src_o._grid->show_decomposition();
+
       pickCheckerboard(Even,src_e,src);
       pickCheckerboard(Odd ,src_o,src);
 

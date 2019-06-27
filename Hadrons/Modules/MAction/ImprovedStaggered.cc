@@ -4,7 +4,7 @@ using namespace Grid;
 using namespace Hadrons;
 using namespace MAction;
 
-template class Grid::Hadrons::MAction::TImprovedStaggered<StagIMPL>;
+template class Grid::Hadrons::MAction::TImprovedStaggered<STAGIMPL>;
 #ifdef GRID_DEFAULT_PRECISION_DOUBLE
-template class Grid::Hadrons::MAction::TImprovedStaggered<StagIMPLF>;
+template class Grid::Hadrons::MAction::TImprovedStaggered<STAGIMPLF>;
 #endif

@@ -204,7 +204,8 @@ class ImplicitlyRestartedLanczosSmoothedTester  : public ImplicitlyRestartedLanc
     std::cout.precision(13);
     std::cout<<GridLogIRL  << "[" << std::setw(3)<<j<<"] "
 	     <<"eval = "<<std::setw(25)<< eval << " (" << eval_poly << ")"
-	     <<" |H B[i] - eval[i]B[i]|^2 / evalMaxApprox^2 " << std::setw(25) << vv
+         <<" evalMaxApprox " << evalMaxApprox
+         <<" |H B[i] - eval[i]B[i]|^2 / evalMaxApprox^2 " << std::setw(25) << vv
 	     <<std::endl;
     if ( j > nbasis ) eresid = eresid*_coarse_relax_tol;
     if( (vv<eresid*eresid) ) return 1;

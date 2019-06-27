@@ -77,8 +77,10 @@ public:
 };
 
 MODULE_REGISTER_TMP(LoadFermionEigenPack, ARG(TLoadEigenPack<FermionEigenPack<FIMPL>, GIMPL>), MIO);
+MODULE_REGISTER_TMP(StagLoadFermionEigenPack, ARG(TLoadEigenPack<FermionEigenPack<STAGIMPL>, GIMPL>), MIO);
 #ifdef GRID_DEFAULT_PRECISION_DOUBLE
 MODULE_REGISTER_TMP(LoadFermionEigenPackIo32, ARG(TLoadEigenPack<FermionEigenPack<FIMPL, FIMPLF>, GIMPL>), MIO);
+MODULE_REGISTER_TMP(StagLoadFermionEigenPackIo32, ARG(TLoadEigenPack<FermionEigenPack<STAGIMPL, STAGIMPLF>, GIMPL>), MIO);
 #endif
 
 /******************************************************************************
@@ -116,15 +118,25 @@ std::vector<std::string> TLoadEigenPack<Pack, GImpl>::getOutput(void)
 template <typename Pack, typename GImpl>
 void TLoadEigenPack<Pack, GImpl>::setup(void)
 {
-    GridBase *gridIo = nullptr;
+    GridBase *gridIo = nullptr, *grid = nullptr;
 
     if (typeHash<Field>() != typeHash<FieldIo>())
     {
-        gridIo = envGetRbGrid(FieldIo, par().Ls);
+        if(par().Ls > 1){
+            gridIo = envGetRbGrid(FieldIo, par().Ls);
+        }else{
+            gridIo = envGetRbGrid(FieldIo);
+        }
     }
-    envCreateDerived(BasePack, Pack, getName(), par().Ls, par().size, 
-                     envGetRbGrid(Field, par().Ls), gridIo);
-
+    if(par().Ls > 1){
+        grid = envGetRbGrid(Field, par().Ls);
+    }else{
+        grid = envGetRbGrid(Field);
+    }
+    envCreateDerived(BasePack, Pack, getName(),
+                     par().Ls, par().size,
+                     grid, gridIo);
+    
     if (!par().gaugeXform.empty())
     {
         if (par().Ls > 1)

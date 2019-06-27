@@ -351,14 +351,16 @@ void ImprovedStaggeredFermion<Impl>::DhopOE(const FermionField &in, FermionField
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::DhopEO(const FermionField &in, FermionField &out, int dag) {
   DhopCalls+=1;
-    std::cout << "before conformable check " << std::endl;
+  //in._grid->show_decomposition();
+  //_cbgrid->show_decomposition();
+    //std::cout << "before conformable check " << std::endl;
   conformable(in._grid, _cbgrid);    // verifies half grid
-    std::cout << "after conformable check " << std::endl;
-    std::cout << "before conformable check 2" << std::endl;
+    //std::cout << "after conformable check " << std::endl;
+    //std::cout << "before conformable check 2" << std::endl;
   conformable(in._grid, out._grid);  // drops the cb check
-    std::cout << " after conformable check 2" << std::endl;
+    //std::cout << " after conformable check 2" << std::endl;
   assert(in.checkerboard == Odd);
-    std::cout << " after in.cb check " << std::endl;
+    //std::cout << " after in.cb check " << std::endl;
   out.checkerboard = Even;
 
   DhopInternal(StencilOdd, LebesgueEvenOdd, UmuEven, UUUmuEven, in, out, dag);

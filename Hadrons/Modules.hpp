@@ -3,6 +3,7 @@
 #include <Hadrons/Modules/MContraction/A2AAslashField.hpp>
 #include <Hadrons/Modules/MContraction/A2ALoop.hpp>
 #include <Hadrons/Modules/MContraction/A2AMesonField.hpp>
+#include <Hadrons/Modules/MContraction/StagA2AMesonField.hpp>
 #include <Hadrons/Modules/MContraction/Meson.hpp>
 #include <Hadrons/Modules/MContraction/DiscLoop.hpp>
 #include <Hadrons/Modules/MContraction/Gamma3pt.hpp>
@@ -32,6 +33,7 @@
 #include <Hadrons/Modules/MGauge/StochEm.hpp>
 #include <Hadrons/Modules/MGauge/Electrify.hpp>
 #include <Hadrons/Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp>
+#include <Hadrons/Modules/MNoise/FullVolumeColorDiagonal.hpp>
 #include <Hadrons/Modules/MNoise/FullVolumeSpinColorDiagonal.hpp>
 #include <Hadrons/Modules/MUtilities/PrecisionCast.hpp>
 #include <Hadrons/Modules/MUtilities/RandomVectors.hpp>

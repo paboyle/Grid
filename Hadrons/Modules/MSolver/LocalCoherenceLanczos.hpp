@@ -86,11 +86,11 @@ public:
 
 MODULE_REGISTER_TMP(LocalCoherenceLanczos, ARG(TLocalCoherenceLanczos<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
 MODULE_REGISTER_TMP(ZLocalCoherenceLanczos, ARG(TLocalCoherenceLanczos<ZFIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
-MODULE_REGISTER_TMP(StagLocalCoherenceLanczos, ARG(TLocalCoherenceLanczos<StagIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
+MODULE_REGISTER_TMP(StagLocalCoherenceLanczos, ARG(TLocalCoherenceLanczos<STAGIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS>), MSolver);
 #ifdef GRID_DEFAULT_PRECISION_DOUBLE
 MODULE_REGISTER_TMP(LocalCoherenceLanczosIo32, ARG(TLocalCoherenceLanczos<FIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS, FIMPLF>), MSolver);
 MODULE_REGISTER_TMP(ZLocalCoherenceLanczosIo32, ARG(TLocalCoherenceLanczos<ZFIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS, ZFIMPLF>), MSolver);
-MODULE_REGISTER_TMP(StagLocalCoherenceLanczosIo32, ARG(TLocalCoherenceLanczos<StagIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS, StagIMPLF>), MSolver);
+MODULE_REGISTER_TMP(StagLocalCoherenceLanczosIo32, ARG(TLocalCoherenceLanczos<STAGIMPL, HADRONS_DEFAULT_LANCZOS_NBASIS, STAGIMPLF>), MSolver);
 #endif
 
 /******************************************************************************
@@ -124,35 +124,53 @@ template <typename FImpl, int nBasis, typename FImplIo>
 void TLocalCoherenceLanczos<FImpl, nBasis, FImplIo>::setup(void)
 {
     LOG(Message) << "Setting up local coherence Lanczos eigensolver for"
-                 << " action '" << par().action << "' (" << nBasis
-                 << " eigenvectors)..." << std::endl;
+    << " action '" << par().action << "' (" << nBasis
+    << " eigenvectors)..." << std::endl;
     
     unsigned int Ls        = env().getObjectLs(par().action);
     auto         blockSize = strToVec<int>(par().blockSize);
-    GridBase     *gridIo = nullptr, *gridCoarseIo = nullptr;
-
-    if (typeHash<Field>() != typeHash<FieldIo>())
+    GridBase     *grid = nullptr, *gridCoarse = nullptr,
+                 *gridIo = nullptr, *gridCoarseIo = nullptr;
+    
+    if (Ls == 1)
     {
-        gridIo       = envGetRbGrid(FieldIo, Ls);
+        grid = envGetRbGrid(Field);
+        gridCoarse = envGetCoarseGrid(CoarseField, blockSize);
+        if (typeHash<Field>() != typeHash<FieldIo>())
+        {
+            gridIo       = envGetRbGrid(FieldIo);
+        }
+        if (typeHash<CoarseField>() != typeHash<CoarseFieldIo>())
+        {
+            gridCoarseIo = envGetCoarseGrid(CoarseFieldIo, blockSize);
+        }
     }
-    if (typeHash<CoarseField>() != typeHash<CoarseFieldIo>())
+    else
     {
-        gridCoarseIo = envGetCoarseGrid(CoarseFieldIo, blockSize, Ls);
+        grid = envGetRbGrid(Field, Ls);
+        gridCoarse = envGetCoarseGrid(CoarseField, blockSize, Ls);
+        if (typeHash<Field>() != typeHash<FieldIo>())
+        {
+            gridIo       = envGetRbGrid(FieldIo, Ls);
+        }
+        if (typeHash<CoarseField>() != typeHash<CoarseFieldIo>())
+        {
+            gridCoarseIo = envGetCoarseGrid(CoarseFieldIo, blockSize, Ls);
+        }
     }
-
-    auto cg  = envGetCoarseGrid(CoarseField, blockSize, Ls);
+    
     int  cNm = (par().doCoarse) ? par().coarseParams.Nm : 0;
-
-    LOG(Message) << "Coarse grid: " << cg->GlobalDimensions() << std::endl;
+    
+    LOG(Message) << "Coarse grid: " << gridCoarse->GlobalDimensions() << std::endl;
     envCreateDerived(BasePack, CoarsePack, getName(), Ls,
-                     par().fineParams.Nm, cNm, envGetRbGrid(Field, Ls), cg,
+                     par().fineParams.Nm, cNm, grid, gridCoarse,
                      gridIo, gridCoarseIo);
-
+    
     auto &epack = envGetDerived(BasePack, CoarsePack, getName());
-
+    
     envTmp(SchurFMat, "mat", Ls, envGet(FMat, par().action));
     envGetTmp(SchurFMat, mat);
-    envTmp(LCL, "solver", Ls, envGetRbGrid(Field, Ls), cg, mat, 
+    envTmp(LCL, "solver", Ls, grid, gridCoarse, mat,
            Odd, epack.evec, epack.evecCoarse, epack.eval, epack.evalCoarse);
 }
 
