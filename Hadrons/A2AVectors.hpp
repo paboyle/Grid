@@ -323,6 +323,11 @@ void A2AVectorsSchurStaggered<FImpl>::makeLowModeV(FermionField &vout, const Fer
     // v_o = (1/eval) * evec_o
     /////////////////////////////////////////////////////
     sol_o_ = (1.0 / eval) * src_o_;
+    
+    setCheckerboard(vout, sol_e_);
+    assert(sol_e_.checkerboard == Even);
+    setCheckerboard(vout, sol_o_);
+    assert(sol_o_.checkerboard == Odd);
 }
 
 template <typename FImpl>
@@ -351,6 +356,11 @@ void A2AVectorsSchurStaggered<FImpl>::makeLowModeW(FermionField &wout, const Fer
     // v_o = evec_o
     /////////////////////////////////////////////////////
     sol_o_ = src_o_;
+    
+    setCheckerboard(wout, sol_e_);
+    assert(sol_e_.checkerboard == Even);
+    setCheckerboard(wout, sol_o_);
+    assert(sol_o_.checkerboard == Odd);
 }
 
 template <typename FImpl>
