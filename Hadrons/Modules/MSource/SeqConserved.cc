@@ -32,4 +32,4 @@ using namespace Hadrons;
 using namespace MSource;
 
 template class Grid::Hadrons::MSource::TSeqConserved<FIMPL>;
-
+template class Grid::Hadrons::MSource::TSeqConserved<ZFIMPL>;

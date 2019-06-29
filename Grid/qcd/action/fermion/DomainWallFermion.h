@@ -43,7 +43,7 @@ namespace Grid {
      INHERIT_IMPL_TYPES(Impl);
     public:
 
-      void FreePropagator(const FermionField &in,FermionField &out,RealD mass, std::vector<double> twist, bool fiveD) {
+      void FreePropagator(const FermionField &in,FermionField &out,RealD mass,std::vector<Complex> boundary, std::vector<double> twist, bool fiveD) {
 	FermionField in_k(in._grid);
 	FermionField prop_k(in._grid);
 
@@ -55,15 +55,20 @@ namespace Grid {
 	FermionField in_buf(in._grid); in_buf = zero;
 	Scalar ci(0.0,1.0);
 	assert(twist.size() == Nd);//check that twist is Nd
+	assert(boundary.size() == Nd);//check that boundary conditions is Nd
 	int shift = 0;
 	if(fiveD) shift = 1;
 	for(unsigned int nu = 0; nu < Nd; nu++)
 	{
 	  // Shift coordinate lattice index by 1 to account for 5th dimension.
           LatticeCoordinate(coor, nu + shift);
-	  ph = ph + twist[nu]*coor*((1./(in._grid->_fdimensions[nu+shift])));
+	  double boundary_phase = ::acos(real(boundary[nu]));
+	  ph = ph + boundary_phase*coor*((1./(in._grid->_fdimensions[nu+shift])));
+	  //momenta for propagator shifted by twist+boundary
+	  twist[nu] = twist[nu] + boundary_phase/((2.0*M_PI));
 	}
-	in_buf = exp(Scalar(2.0*M_PI)*ci*ph*(-1.0))*in;
+	in_buf = exp(ci*ph*(-1.0))*in;
+
 
 	if(fiveD){//FFT only on temporal and spatial dimensions
           std::vector<int> mask(Nd+1,1); mask[0] = 0;
@@ -76,25 +81,28 @@ namespace Grid {
           this->MomentumSpacePropagatorHt(prop_k,in_k,mass,twist);
 	  theFFT.FFT_all_dim(out,prop_k,FFT::backward);
         }
-
 	//phase for boundary condition
-	out = out * exp(Scalar(2.0*M_PI)*ci*ph);
+	out = out * exp(ci*ph);
       };
 
-      virtual void FreePropagator(const FermionField &in,FermionField &out,RealD mass,std::vector<double> twist) {
+      virtual void FreePropagator(const FermionField &in,FermionField &out,RealD mass,std::vector<Complex> boundary,std::vector<double> twist) {
         bool fiveD = true; //5d propagator by default
-        FreePropagator(in,out,mass,twist,fiveD);
+	FreePropagator(in,out,mass,boundary,twist,fiveD);
       };
 
       virtual void FreePropagator(const FermionField &in,FermionField &out,RealD mass, bool fiveD) {
 	std::vector<double> twist(Nd,0.0); //default: periodic boundarys in all directions
-        FreePropagator(in,out,mass,twist,fiveD);
+	std::vector<Complex> boundary;
+	for(int i=0;i<Nd;i++) boundary.push_back(1);//default: periodic boundary conditions
+	FreePropagator(in,out,mass,boundary,twist,fiveD);
       };
 
       virtual void FreePropagator(const FermionField &in,FermionField &out,RealD mass) {
         bool fiveD = true; //5d propagator by default
-	std::vector<double> twist(Nd,0.0); //default: periodic boundarys in all directions
-        FreePropagator(in,out,mass,twist,fiveD);
+	std::vector<double> twist(Nd,0.0); //default: twist angle 0
+	std::vector<Complex> boundary;
+	for(int i=0;i<Nd;i++) boundary.push_back(1); //default: periodic boundary conditions
+	FreePropagator(in,out,mass,boundary,twist,fiveD);
       };
 
       virtual void   Instantiatable(void) {};

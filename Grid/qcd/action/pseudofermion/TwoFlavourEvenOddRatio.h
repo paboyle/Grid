@@ -46,6 +46,7 @@ namespace Grid{
 
       OperatorFunction<FermionField> &DerivativeSolver;
       OperatorFunction<FermionField> &ActionSolver;
+      OperatorFunction<FermionField> &HeatbathSolver;
 
       FermionField PhiOdd;   // the pseudo fermion field for this trajectory
       FermionField PhiEven;  // the pseudo fermion field for this trajectory
@@ -54,11 +55,18 @@ namespace Grid{
       TwoFlavourEvenOddRatioPseudoFermionAction(FermionOperator<Impl>  &_NumOp, 
                                                 FermionOperator<Impl>  &_DenOp, 
                                                 OperatorFunction<FermionField> & DS,
-                                                OperatorFunction<FermionField> & AS) :
+                                                OperatorFunction<FermionField> & AS ) : 
+      TwoFlavourEvenOddRatioPseudoFermionAction(_NumOp,_DenOp, DS,AS,AS) {};
+
+      TwoFlavourEvenOddRatioPseudoFermionAction(FermionOperator<Impl>  &_NumOp, 
+                                                FermionOperator<Impl>  &_DenOp, 
+                                                OperatorFunction<FermionField> & DS,
+                                                OperatorFunction<FermionField> & AS, OperatorFunction<FermionField> & HS) :
       NumOp(_NumOp), 
       DenOp(_DenOp), 
       DerivativeSolver(DS), 
       ActionSolver(AS),
+      HeatbathSolver(HS),
       PhiEven(_NumOp.FermionRedBlackGrid()),
       PhiOdd(_NumOp.FermionRedBlackGrid()) 
         {
@@ -111,7 +119,7 @@ namespace Grid{
         // Odd det factors
         Mpc.MpcDag(etaOdd,PhiOdd);
         tmp=zero;
-        ActionSolver(Vpc,PhiOdd,tmp);
+        HeatbathSolver(Vpc,PhiOdd,tmp);
         Vpc.Mpc(tmp,PhiOdd);            
 
         // Even det factors

@@ -96,7 +96,7 @@ namespace Grid {
 
       virtual void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m,std::vector<double> twist) { assert(0);};
 
-      virtual void  FreePropagator(const FermionField &in,FermionField &out,RealD mass,std::vector<double> twist) {
+      virtual void  FreePropagator(const FermionField &in,FermionField &out,RealD mass,std::vector<Complex> boundary,std::vector<double> twist) {
 	FFT theFFT((GridCartesian *) in._grid);
 
 	FermionField in_k(in._grid);
@@ -108,24 +108,31 @@ namespace Grid {
 	FermionField in_buf(in._grid); in_buf = zero;
 	Scalar ci(0.0,1.0);
 	assert(twist.size() == Nd);//check that twist is Nd
+	assert(boundary.size() == Nd);//check that boundary conditions is Nd
 	for(unsigned int nu = 0; nu < Nd; nu++)
 	{
           LatticeCoordinate(coor, nu);
-	  ph = ph + twist[nu]*coor*((1./(in._grid->_fdimensions[nu])));
+	  double boundary_phase = ::acos(real(boundary[nu]));
+	  ph = ph + boundary_phase*coor*((1./(in._grid->_fdimensions[nu])));
+	  //momenta for propagator shifted by twist+boundary
+	  twist[nu] = twist[nu] + boundary_phase/((2.0*M_PI));
 	}
-	in_buf = exp(Scalar(-2.0*M_PI)*ci*ph)*in;
+	in_buf = exp(ci*ph*(-1.0))*in;
 
 	theFFT.FFT_all_dim(in_k,in_buf,FFT::forward);
         this->MomentumSpacePropagator(prop_k,in_k,mass,twist);
 	theFFT.FFT_all_dim(out,prop_k,FFT::backward);
 
 	//phase for boundary condition
-	out = out * exp(Scalar(2.0*M_PI)*ci*ph);
+	out = out * exp(ci*ph);
 
       };
+
       virtual void FreePropagator(const FermionField &in,FermionField &out,RealD mass) {
+		std::vector<Complex> boundary;
+		for(int i=0;i<Nd;i++) boundary.push_back(1);//default: periodic boundary conditions
 		std::vector<double> twist(Nd,0.0); //default: periodic boundarys in all directions
-	        FreePropagator(in,out,mass,twist);
+	        FreePropagator(in,out,mass,boundary,twist);
       };
 
       ///////////////////////////////////////////////

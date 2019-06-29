@@ -1,14 +1,54 @@
-* Sign off 2+1f HMC with Hasenbush and strange RHMC
-
-- Wilson plaquette cross checked against CPS and literature GwilsonFnone
-- Timesteps matched
-
-- Use 16^3x32 
-
 ********************************************************************
-* From previous CPS runs:
+TODO: 
 ********************************************************************
 
+i) Got mixed precision in 2f and EOFA force and action solves.
+   But need mixed precision in the heatbath solve. Best for Fermop to have a "clone" method, to
+   reduce the number of solver and action objects. Needed ideally for the EOFA heatbath.
+   15% perhaps
+   Combine with 2x trajectory length?
+
+ii) Rational on EOFA HB  -- relax order
+                         -- Test the approx as per David email
+
+Resume / roll.sh 
+
+----------------------------------------------------------------
+
+- 16^3 Currently 10 traj per hour
+
+- EOFA use a different derivative solver from action solver
+- EOFA fix Davids hack to the SchurRedBlack guessing
+
+*** Reduce precision/tolerance  in EOFA with second CG param.                          (10% speed up)
+*** Force gradient - reduced precision solve for the gradient                          (4/3x speedup)
+
+
+*** Need a plan for gauge field update for mixed precision in HMC                      (2x speed up)
+    -- Store the single prec action operator.
+    -- Clone the gauge field from the operator function argument.
+    -- Build the mixed precision operator dynamically from the passed operator and single prec clone.
+
+*** Mixed precision CG into EOFA portion         
+*** Further reduce precision in forces to 10^-6 ?
+
+*** Overall: a 3x or so is still possible => 500s -> 160s and 20 traj per hour on 16^3.
+
+- Use mixed precision CG in HMC                           
+- SchurRedBlack.h: stop use of operator function; use LinearOperator or similar instead.
+- Or make an OperatorFunction for mixed precision as a wrapper
+
+********************************************************************
+* Signed off 2+1f HMC with Hasenbush and strange RHMC 16^3 x 32 DWF Ls=16 Plaquette 0.5883 ish
+* Signed off 2+1f HMC with Hasenbush and strange EOFA 16^3 x 32 DWF Ls=16 Plaquette 0.5883 ish
+* Wilson plaquette cross checked against CPS and literature GwilsonFnone
+********************************************************************
+
+********************************************************************
+* RHMC: Timesteps & eigenranges matched from previous CPS 16^3 x 32 runs:
+********************************************************************
+
+****
 Strange (m=0.04)  has eigenspan 
 **** 
 16^3 done as 1+1+1 with separate PV's. 

@@ -30,8 +30,11 @@ Author: Christopher Kelly <ckelly@phys.columbia.edu>
 
 namespace Grid {
 
+
   //Mixed precision restarted defect correction CG
-  template<class FieldD,class FieldF, typename std::enable_if< getPrecision<FieldD>::value == 2, int>::type = 0,typename std::enable_if< getPrecision<FieldF>::value == 1, int>::type = 0> 
+  template<class FieldD,class FieldF, 
+    typename std::enable_if< getPrecision<FieldD>::value == 2, int>::type = 0,
+    typename std::enable_if< getPrecision<FieldF>::value == 1, int>::type = 0> 
   class MixedPrecisionConjugateGradient : public LinearFunction<FieldD> {
   public:                                                
     RealD   Tolerance;
@@ -50,7 +53,12 @@ namespace Grid {
     //Option to speed up *inner single precision* solves using a LinearFunction that produces a guess
     LinearFunction<FieldF> *guesser;
     
-    MixedPrecisionConjugateGradient(RealD tol, Integer maxinnerit, Integer maxouterit, GridBase* _sp_grid, LinearOperatorBase<FieldF> &_Linop_f, LinearOperatorBase<FieldD> &_Linop_d) :
+    MixedPrecisionConjugateGradient(RealD tol, 
+				    Integer maxinnerit, 
+				    Integer maxouterit, 
+				    GridBase* _sp_grid, 
+				    LinearOperatorBase<FieldF> &_Linop_f, 
+				    LinearOperatorBase<FieldD> &_Linop_d) :
       Linop_f(_Linop_f), Linop_d(_Linop_d),
       Tolerance(tol), InnerTolerance(tol), MaxInnerIterations(maxinnerit), MaxOuterIterations(maxouterit), SinglePrecGrid(_sp_grid),
       OuterLoopNormMult(100.), guesser(NULL){ };
@@ -148,6 +156,8 @@ namespace Grid {
       std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradient: Total time " << TotalTimer.Elapsed() << " Precision change " << PrecChangeTimer.Elapsed() << " Inner CG total " << InnerCGtimer.Elapsed() << std::endl;
     }
   };
+
+
 
 }
 

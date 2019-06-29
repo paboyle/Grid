@@ -57,6 +57,8 @@ public:
                                         VirtualMachine::GeneticPar, genetic,
                                         std::string,                runId,
                                         std::string,                graphFile,
+                                        std::string,                scheduleFile,
+                                        bool,                       saveSchedule,
                                         int,                        parallelWriteMaxRetry);
         GlobalPar(void): parallelWriteMaxRetry{-1} {}
     };
@@ -79,7 +81,7 @@ public:
     void run(void);
     // XML parameter file I/O
     void parseParameterFile(const std::string parameterFileName);
-    void saveParameterFile(const std::string parameterFileName);
+    void saveParameterFile(const std::string parameterFileName, unsigned int prec=15);
     // schedule computation
     void schedule(void);
     void saveSchedule(const std::string filename);

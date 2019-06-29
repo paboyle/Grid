@@ -49,6 +49,7 @@ public:
                                     std::string, source,
 				    std::string,  action,
 				    double, mass,
+                                    std::string , boundary,
 				    std::string,  twist);
 };
 
@@ -168,8 +169,16 @@ void TFreeProp<FImpl>::execute(void)
         }
         sol = zero;
 	std::vector<double> twist = strToVec<double>(par().twist);
-	if(twist.size() != Nd) HADRONS_ERROR(Size, "number of twist angles does not match number of dimensions");
-	mat.FreePropagator(source,sol,mass,twist);
+	if(twist.size() != Nd)
+	{
+	    HADRONS_ERROR(Size, "number of twist angles does not match number of dimensions");
+	}
+	std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
+	if(boundary.size() != Nd)
+	{
+	    HADRONS_ERROR(Size, "number of boundary conditions does not match number of dimensions");
+	}
+	mat.FreePropagator(source,sol,mass,boundary,twist);
         FermToProp<FImpl>(prop, sol, s, c);
         // create 4D propagators from 5D one if necessary
         if (Ls_ > 1)

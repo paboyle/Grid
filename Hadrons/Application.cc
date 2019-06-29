@@ -118,7 +118,22 @@ void Application::run(void)
     vm().setRunId(getPar().runId);
     vm().printContent();
     env().printContent();
-    schedule();
+    if (getPar().saveSchedule or getPar().scheduleFile.empty())
+    {
+        schedule();
+        if (getPar().saveSchedule)
+        {
+            std::string filename;
+
+            filename = (getPar().scheduleFile.empty()) ? 
+                         "hadrons.sched" : getPar().scheduleFile;
+            saveSchedule(filename);
+        }
+    }
+    else
+    {
+        loadSchedule(getPar().scheduleFile);
+    }
     printSchedule();
     if (!getPar().graphFile.empty())
     {
@@ -165,12 +180,13 @@ void Application::parseParameterFile(const std::string parameterFileName)
     pop(reader);
 }
 
-void Application::saveParameterFile(const std::string parameterFileName)
+void Application::saveParameterFile(const std::string parameterFileName, unsigned int prec)
 {
     LOG(Message) << "Saving application to '" << parameterFileName << "'..." << std::endl;
     if (env().getGrid()->IsBoss())
     {
         XmlWriter          writer(parameterFileName);
+        writer.setPrecision(prec);
         ObjectId           id;
         const unsigned int nMod = vm().getNModule();
 

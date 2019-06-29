@@ -35,22 +35,15 @@ using namespace Hadrons;
 int main(int argc, char *argv[])
 {
     // parse command line
-    std::string parameterFileName, scheduleFileName = "";
+    std::string parameterFileName;
     
     if (argc < 2)
     {
-        std::cerr << "usage: " << argv[0] << " <parameter file> [<precomputed schedule>] [Grid options]";
+        std::cerr << "usage: " << argv[0] << " <parameter file> [Grid options]";
         std::cerr << std::endl;
         std::exit(EXIT_FAILURE);
     }
     parameterFileName = argv[1];
-    if (argc > 2)
-    {
-        if (argv[2][0] != '-')
-        {
-            scheduleFileName = argv[2];
-        }
-    }
     
     // initialization
     Grid_init(&argc, &argv);
@@ -61,10 +54,6 @@ int main(int argc, char *argv[])
         Application application(parameterFileName);
         
         application.parseParameterFile(parameterFileName);
-        if (!scheduleFileName.empty())
-        {
-            application.loadSchedule(scheduleFileName);
-        }
         application.run();
     }
     catch (const std::exception& e)

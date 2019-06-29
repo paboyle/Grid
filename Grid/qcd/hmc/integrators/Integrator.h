@@ -54,7 +54,7 @@ public:
 
   template <class ReaderClass, typename std::enable_if<isReader<ReaderClass>::value, int >::type = 0 >
   IntegratorParameters(ReaderClass & Reader){
-    std::cout << "Reading integrator\n";
+    std::cout << GridLogMessage << "Reading integrator\n";
     read(Reader, "Integrator", *this);
   }
 
@@ -132,7 +132,7 @@ class Integrator {
       double end_full = usecond();
       double time_full  = (end_full - start_full) / 1e3;
       double time_force = (end_force - start_force) / 1e3;
-      std::cout << GridLogIntegrator << "["<<level<<"]["<<a<<"] P update elapsed time: " << time_full << " ms (force: " << time_force << " ms)"  << std::endl;
+      std::cout << GridLogMessage << "["<<level<<"]["<<a<<"] P update elapsed time: " << time_full << " ms (force: " << time_force << " ms)"  << std::endl;
     }
 
     // Force from the other representations
@@ -237,8 +237,7 @@ class Integrator {
       for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
         // get gauge field from the SmearingPolicy and
         // based on the boolean is_smeared in actionID
-        Field& Us =
-            Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
+        Field& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
         as[level].actions.at(actionID)->refresh(Us, pRNG);
       }
 
@@ -251,13 +250,11 @@ class Integrator {
   // over the representations
   struct _S {
     template <class FieldType, class Repr>
-    void operator()(std::vector<Action<FieldType>*> repr_set, Repr& Rep,
-                    int level, RealD& H) {
+    void operator()(std::vector<Action<FieldType>*> repr_set, Repr& Rep, int level, RealD& H) {
       
       for (int a = 0; a < repr_set.size(); ++a) {
         RealD Hterm = repr_set.at(a)->S(Rep.U);
-        std::cout << GridLogMessage << "S Level " << level << " term " << a
-                  << " H Hirep = " << Hterm << std::endl;
+        std::cout << GridLogMessage << "S Level " << level << " term " << a << " H Hirep = " << Hterm << std::endl;
         H += Hterm;
 
       }
@@ -267,9 +264,10 @@ class Integrator {
   // Calculate action
   RealD S(Field& U) {  // here also U not used
 
+    std::cout << GridLogIntegrator << "Integrator action\n";
 
     RealD H = - FieldImplementation::FieldSquareNorm(P)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom
-    std::cout << " Momentum hamiltonian "<< -H<<std::endl;
+
     RealD Hterm;
 
     // Actions
@@ -278,9 +276,9 @@ class Integrator {
         // get gauge field from the SmearingPolicy and
         // based on the boolean is_smeared in actionID
         Field& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
+        std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] action eval " << std::endl;
         Hterm = as[level].actions.at(actionID)->S(Us);
-        std::cout << GridLogMessage << "S Level " << level << " term "
-                  << actionID << " H = " << Hterm << std::endl;
+        std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] H = " << Hterm << std::endl;
         H += Hterm;
       }
       as[level].apply(S_hireps, Representations, level, H);
@@ -305,8 +303,7 @@ class Integrator {
     // Check the clocks all match on all levels
     for (int level = 0; level < as.size(); ++level) {
       assert(fabs(t_U - t_P[level]) < 1.0e-6);  // must be the same
-      std::cout << GridLogIntegrator << " times[" << level
-                << "]= " << t_P[level] << " " << t_U << std::endl;
+      std::cout << GridLogIntegrator << " times[" << level << "]= " << t_P[level] << " " << t_U << std::endl;
     }
 
     // and that we indeed got to the end of the trajectory
