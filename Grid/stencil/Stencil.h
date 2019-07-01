@@ -95,7 +95,7 @@ void Gather_plane_exchange_table(Vector<std::pair<int,int> >& table,const Lattic
   int so  = plane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane 
 
   auto rhs_v = rhs.View();
-  thread_for(j, num, {
+  accelerator_for(j, num, 1, { 
     compress.CompressExchange(&pointers[0][0],
 			      &pointers[1][0],
 			      &rhs_v[0],
@@ -568,7 +568,7 @@ public:
   template<class decompressor>
   void CommsMerge(decompressor decompress,std::vector<Merge> &mm,std::vector<Decompress> &dd) { 
 
-      mergetime-=usecond();
+    mergetime-=usecond();
     for(int i=0;i<mm.size();i++){	
       thread_for(o,mm[i].buffer_size/2,{
 	decompress.Exchange(mm[i].mpointer,
