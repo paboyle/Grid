@@ -248,6 +248,7 @@ void GridGpuInit(void)
   for (int i = 0; i < nDevices; i++) {
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, i);
+    /*
     printf("Device Number: %d\n", i);
     printf("  Device name: %s\n", prop.name);
     printf("  Memory Clock Rate (KHz): %d\n",
@@ -273,6 +274,7 @@ void GridGpuInit(void)
     GPU_PROP(singleToDoublePrecisionPerfRatio);
     GPU_PROP(unifiedAddressing);
     GPU_PROP(warpSize);
+    */
   }
 }
 #endif
@@ -305,6 +307,9 @@ void Grid_init(int *argc,char ***argv)
     Grid_debug_handler_init();
   }
 
+#ifdef GRID_NVCC
+  GridGpuInit();
+#endif
   CartesianCommunicator::Init(argc,argv);
 
   if( !GridCmdOptionExists(*argv,*argv+*argc,"--debug-stdout") ){
@@ -365,9 +370,6 @@ void Grid_init(int *argc,char ***argv)
     std::cout << std::endl;
   }
 
-#ifdef GRID_NVCC
-  GridGpuInit();
-#endif
 
   ////////////////////////////////////
   // Logging
