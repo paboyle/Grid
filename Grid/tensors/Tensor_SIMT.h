@@ -35,7 +35,8 @@ NAMESPACE_BEGIN(Grid);
 accelerator_inline void synchronise(void) 
 {
 #ifdef __CUDA_ARCH__
-  __syncthreads();
+//  __syncthreads();
+  __syncwarp();
 #endif
   return;
 }
@@ -65,7 +66,8 @@ vobj coalescedReadPermute(const vobj & __restrict__ vec,int ptype,int doperm,int
 template<class vobj> accelerator_inline
 void coalescedWrite(vobj & __restrict__ vec,const vobj & __restrict__ extracted,int lane=0)
 {
-  vstream(vec, extracted);
+  //  vstream(vec, extracted);
+  vec = extracted;
 }
 #else
 accelerator_inline int SIMTlane(int Nsimd) { return threadIdx.y; } // CUDA specific
