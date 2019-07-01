@@ -257,6 +257,43 @@ void TPerambulator<FImpl>::execute(void)
     //perambulator.WriteBinary(sPerambName);
     perambulator.write(sPerambName.c_str());
   }
+
+    const int X{grid4d->GlobalDimensions()[0]};
+    const int Y{grid4d->GlobalDimensions()[1]};
+    const int Z{grid4d->GlobalDimensions()[2]};
+    const int T{grid4d->GlobalDimensions()[3]};
+
+
+    if(grid4d->IsBoss()) {
+      Eigen::Tensor<ComplexD, 10> sink(nnoise,LI,Nt_inv,SI,X,Y,Z,T,3,4);
+       
+      for (int inoise = 0; inoise < nnoise; inoise++) {
+        for (int dk = 0; dk < LI; dk++) {
+          for (int dt = 0; dt < Nt_inv; dt++) {
+            for (int ds = 0; ds < SI; ds++) {
+              for (int ix=0; ix < X; ix++) {
+              for (int iy=0; iy < Y; iy++) {
+              for (int iz=0; iz < Z; iz++) {
+              for (int it=0; it < T; it++) {
+                std::vector<int> site({ix,iy,iz,it});
+                for (int ic=0; ic < 3; ic++) {
+                for (int is=0; is < 4; is++) {
+                  //peekSite(sink[inoise,dk,dt,ds,ix,iy,iz,it,ic,is],unsmeared_sink[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))]()(is)(ic),site);  // Build fails when uncommenting
+
+                }}
+              }}}}
+            }
+          }
+        }
+      }
+
+      std::string filename ="./" + par().PerambFileName + "_sink.h5";
+      std::cout << "Writing to file " << filename << std::endl;
+      Grid::Hdf5Writer writer(filename);
+      write(writer,"unsmeared_sink",sink); 
+    }
+
+
 }
 
 END_MODULE_NAMESPACE
