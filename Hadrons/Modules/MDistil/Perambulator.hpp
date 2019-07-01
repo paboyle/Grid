@@ -49,6 +49,8 @@ public:
                                     std::string, solver,
 		                    std::string, noise,
                                     std::string, PerambFileName, //stem!!!
+                                    std::string, UnsmearedSinkFileName, // Filename to save unsmeared sink
+                                    std::string, UnsmearedSinkMultiFile, // One file per vector?
                                     int, nvec,
                                     DistilParameters, Distil);
 };
@@ -125,7 +127,10 @@ void TPerambulator<FImpl>::setup(void)
   grid4d = env().getGrid();
   grid3d = MakeLowerDimGrid(grid4d);
   DISTIL_PARAMETERS_DEFINE( true );
-  
+  const std::string UnsmearedSinkFileName{ par().UnsmearedSinkFileName };
+  if( !UnsmearedSinkFileName.empty() )
+    bool bMulti = ( Hadrons::MDistil::DistilParameters::ParameterDefault( par().UnsmearedSinkMultiFile, 1, true ) != 0 );
+
   envCreate(PerambTensor, getName(), 1, PerambIndexNames,Nt,nvec,LI,nnoise,Nt_inv,SI);
   envCreate(std::vector<FermionField>, getName() + "_unsmeared_sink", 1,
             nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField));
@@ -244,7 +249,7 @@ void TPerambulator<FImpl>::execute(void)
         }
       }
     }
-    }
+  }
   std::cout <<  "perambulator done" << std::endl;
   perambulator.SliceShare( grid3d, grid4d );
 
@@ -258,42 +263,43 @@ void TPerambulator<FImpl>::execute(void)
     perambulator.write(sPerambName.c_str());
   }
 
-    const int X{grid4d->GlobalDimensions()[0]};
-    const int Y{grid4d->GlobalDimensions()[1]};
-    const int Z{grid4d->GlobalDimensions()[2]};
-    const int T{grid4d->GlobalDimensions()[3]};
+  // Save the unsmeared sink as well if requested
+  /*const int X{grid4d->GlobalDimensions()[0]};
+  const int Y{grid4d->GlobalDimensions()[1]};
+  const int Z{grid4d->GlobalDimensions()[2]};
+  const int T{grid4d->GlobalDimensions()[3]};
 
-
-    if(grid4d->IsBoss()) {
-      Eigen::Tensor<ComplexD, 10> sink(nnoise,LI,Nt_inv,SI,X,Y,Z,T,3,4);
-       
-      for (int inoise = 0; inoise < nnoise; inoise++) {
-        for (int dk = 0; dk < LI; dk++) {
-          for (int dt = 0; dt < Nt_inv; dt++) {
-            for (int ds = 0; ds < SI; ds++) {
-              for (int ix=0; ix < X; ix++) {
+  if(grid4d->IsBoss()) {
+    Eigen::Tensor<ComplexD, 10> sink(nnoise,LI,Nt_inv,SI,X,Y,Z,T,3,4);
+    
+    for (int inoise = 0; inoise < nnoise; inoise++) {
+      for (int dk = 0; dk < LI; dk++) {
+        for (int dt = 0; dt < Nt_inv; dt++) {
+          for (int ds = 0; ds < SI; ds++) {
+            for (int ix=0; ix < X; ix++) {
               for (int iy=0; iy < Y; iy++) {
-              for (int iz=0; iz < Z; iz++) {
-              for (int it=0; it < T; it++) {
-                std::vector<int> site({ix,iy,iz,it});
-                for (int ic=0; ic < 3; ic++) {
-                for (int is=0; is < 4; is++) {
-                  //peekSite(sink[inoise,dk,dt,ds,ix,iy,iz,it,ic,is],unsmeared_sink[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))]()(is)(ic),site);  // Build fails when uncommenting
-
-                }}
-              }}}}
-            }
+                for (int iz=0; iz < Z; iz++) {
+                  for (int it=0; it < T; it++) {
+                    std::vector<int> site({ix,iy,iz,it});
+                    for (int ic=0; ic < 3; ic++) {
+                      for (int is=0; is < 4; is++) {
+                        //peekSite(sink[inoise,dk,dt,ds,ix,iy,iz,it,ic,is],unsmeared_sink[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))]()(is)(ic),site);  // Build fails when uncommenting
+                        
+                      }}
+                  }}}}
           }
         }
       }
+    }*/
 
-      std::string filename ="./" + par().PerambFileName + "_sink.h5";
-      std::cout << "Writing to file " << filename << std::endl;
-      Grid::Hdf5Writer writer(filename);
-      write(writer,"unsmeared_sink",sink); 
-    }
-
-
+  const std::string UnsmearedSinkFileName{ par().UnsmearedSinkFileName };
+  if( !UnsmearedSinkFileName.empty() ) {
+    bool bMulti = ( Hadrons::MDistil::DistilParameters::ParameterDefault( par().UnsmearedSinkMultiFile, 1, false ) != 0 );
+    std::cout << "Writing unsmeared sink to " << UnsmearedSinkFileName << std::endl;
+    //Grid::Hdf5Writer writer(filename);
+    //write(writer,"unsmeared_sink",sink);
+    A2AVectorsIo::write(UnsmearedSinkFileName, unsmeared_sink, bMulti, vm().getTrajectory());
+  }
 }
 
 END_MODULE_NAMESPACE
