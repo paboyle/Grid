@@ -97,6 +97,8 @@ public:
       {
 	FFT theFFT((GridCartesian *) in.Grid());
 
+	typedef typename Simd::scalar_type Scalar;
+
 	FermionField in_k(in.Grid());
 	FermionField prop_k(in.Grid());
 
@@ -104,21 +106,21 @@ public:
 	ComplexField coor(in.Grid());
 	ComplexField ph(in.Grid());  ph = Zero();
 	FermionField in_buf(in.Grid()); in_buf = Zero();
-	Complex ci(0.0,1.0);
+	Scalar ci(0.0,1.0);
 	assert(twist.size() == Nd);//check that twist is Nd
 	for(unsigned int nu = 0; nu < Nd; nu++)
 	{
           LatticeCoordinate(coor, nu);
 	  ph = ph + twist[nu]*coor*((1./(in.Grid()->_fdimensions[nu])));
 	}
-	in_buf = exp((Real)(2.0*M_PI)*ci*ph*(-1.0))*in;
+	in_buf = (exp(Scalar(2.0*M_PI)*ci*ph*(-1.0)))*in;
 
 	theFFT.FFT_all_dim(in_k,in_buf,FFT::forward);
         this->MomentumSpacePropagator(prop_k,in_k,mass,twist);
     theFFT.FFT_all_dim(out,prop_k,FFT::backward);
 
 	//phase for boundary condition
-	out = out * exp((Real)(2.0*M_PI)*ci*ph);
+        out = out * exp(Scalar(2.0*M_PI)*ci*ph);
 
       };
       virtual void FreePropagator(const FermionField &in,FermionField &out,RealD mass) {

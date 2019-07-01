@@ -175,8 +175,7 @@ public:
   /*****************************************************/
   /* Have a decompression step if mpi data is not same */
   /*****************************************************/
-  accelerator_inline void Decompress(SiteHalfSpinor *out,
-			 SiteHalfSpinor *in, Integer o){
+  accelerator_inline void Decompress(SiteHalfSpinor *out, SiteHalfSpinor *in, Integer o){
     SiteHalfCommSpinor *hin=(SiteHalfCommSpinor *)in;
     precisionChange((vComplexHigh *)&out[o],(vComplexLow *)&hin[o],Nw);
   }

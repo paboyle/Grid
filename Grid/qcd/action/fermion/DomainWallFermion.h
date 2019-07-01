@@ -51,7 +51,8 @@ public:
 	ComplexField coor(in.Grid());
 	ComplexField ph(in.Grid());  ph = Zero();
 	FermionField in_buf(in.Grid()); in_buf = Zero();
-	Complex ci(0.0,1.0);
+	typedef typename Simd::scalar_type Scalar;
+	Scalar ci(0.0,1.0);
 	assert(twist.size() == Nd);//check that twist is Nd
 	int shift = 0;
 	if(fiveD) shift = 1;
