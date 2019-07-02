@@ -570,7 +570,7 @@ public:
 
     mergetime-=usecond();
     for(int i=0;i<mm.size();i++){	
-      thread_for(o,mm[i].buffer_size/2,{
+      accelerator_for(o,mm[i].buffer_size/2,1,{
 	decompress.Exchange(mm[i].mpointer,
 			    mm[i].vpointers[0],
 			    mm[i].vpointers[1],
@@ -581,7 +581,7 @@ public:
 
     decompresstime-=usecond();
     for(int i=0;i<dd.size();i++){	
-      thread_for(o,dd[i].buffer_size,{
+      accelerator_for(o,dd[i].buffer_size,1,{
 	decompress.Decompress(dd[i].kernel_p,dd[i].mpi_p,o);
       });
     }
