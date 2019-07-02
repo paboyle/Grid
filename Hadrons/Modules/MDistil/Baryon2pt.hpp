@@ -131,15 +131,15 @@ void TBaryon2pt<FImpl>::execute(void)
     const std::string &output{par().output};
 
     int Nmom=1;
-    int Nt=64;
+    int Nt=32;
     int Nc=3; //Num colours
     std::vector<std::vector<int>> epsilon = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
     std::vector<int> epsilon_sgn = {1,1,1,-1,-1,-1};
     int Ngamma=3;
 
-    int N_1=20;
-    int N_2=20;
-    int N_3=20;
+    int N_1=12;
+    int N_2=12;
+    int N_3=12;
 
   //  using BaryonTensorSet = Eigen::Tensor<Complex, 7>;
 
@@ -192,8 +192,8 @@ void TBaryon2pt<FImpl>::execute(void)
           Eigen::Tensor<Complex,4> B4L = B5L.chip(t,0);
           Eigen::Tensor<Complex,4> B4R = B5R.chip(tsrc,0);
           for (int is=0 ; is < 4 ; is++){
-            Eigen::Tensor<Complex,3> B3L = B4L.chip(is,0);
-            Eigen::Tensor<Complex,3> B3R = B4R.chip(is,0);
+            Eigen::Tensor<Complex,3> B3L = B4L.chip(is,3);
+            Eigen::Tensor<Complex,3> B3R = B4R.chip(is,3);
             Eigen::Tensor<Complex,0> C2 = B3L.contract(B3R,product_dims);
             corr(imom,t) += static_cast<Real>(epsilon_sgn[pairs[ipair]])*C2(0);
           }
@@ -204,13 +204,14 @@ void TBaryon2pt<FImpl>::execute(void)
       std::cout << "C2(t=" << t << ") = " << corr(0,t) << std::endl;
     }    
 
-    C2IO C2_save;
+  /*  C2IO C2_save;
     C2_save.C2 = corr;
 
     std::string filename ="./" + output + ".h5"; 
     std::cout << "Writing to file " << filename << std::endl;
     Hdf5Writer writer(filename);
     write(writer,"C2",C2_save.C2);
+  */
 }
 
 END_MODULE_NAMESPACE

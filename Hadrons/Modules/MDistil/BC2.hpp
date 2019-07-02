@@ -190,7 +190,7 @@ void TBC2<FImpl>::execute(void)
     int orthogDim=3;
 
     //auto &ph = envGet(std::vector<ComplexField>, momphName_);
-  envGetTmp(std::vector<ComplexField>, ph);
+    envGetTmp(std::vector<ComplexField>, ph);
 
     if (!hasPhase_)
     {
