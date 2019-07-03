@@ -112,7 +112,7 @@ void TA2ALoop<FImpl>::execute(void)
     loop = zero;
     for (unsigned int i = 0; i < left.size(); ++i)
     {
-        loop += outerProduct(adj(left[i]), right[i]);
+        loop += outerProduct(left[i], right[i]);
     }
 }
 
