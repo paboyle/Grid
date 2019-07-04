@@ -196,6 +196,7 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat,
 	      SpinVector_v vv;
 
               for(int s1=0;s1<Ns;s1++){
+              vv()(s1)() = zero;
 	      for(int s2=0;s2<Ns;s2++){            
 	     /*   vv()(s1)() =  pv1()(s1)(0) * v2g()(s2)(1) * v3()(s2)(2)   //Cross product
                   -           pv1()(s1)(0) * v2g()(s2)(2) * v3()(s2)(1)    
@@ -203,7 +204,7 @@ void A2Autils<FImpl>::NucleonFieldMom(Eigen::Tensor<ComplexD,6> &mat,
                   -           pv1()(s1)(1) * v2g()(s2)(0) * v3()(s2)(2)    
                   +           pv1()(s1)(2) * v2g()(s2)(0) * v3()(s2)(1)    
                   -           pv1()(s1)(2) * v2g()(s2)(1) * v3()(s2)(0);    */
-	        vv()(s1)() =  pv1()(s1)(0) * v2()(s2)(1) * gv3()(s2)(2)   //Cross product
+	        vv()(s1)() +=  pv1()(s1)(0) * v2()(s2)(1) * gv3()(s2)(2)   //Cross product
                   -           pv1()(s1)(0) * v2()(s2)(2) * gv3()(s2)(1)    
                   +           pv1()(s1)(1) * v2()(s2)(2) * gv3()(s2)(0)    
                   -           pv1()(s1)(1) * v2()(s2)(0) * gv3()(s2)(2)    
