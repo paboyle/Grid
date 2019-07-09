@@ -134,10 +134,11 @@ void TNucleon<FImpl1, FImpl2, FImpl3>::execute(void)
    
     // C = i gamma_2 gamma_4 => C gamma_5 = - i gamma_1 gamma_3  
     Gamma Cg5(Gamma::Algebra::SigmaXZ);
-    Gamma g4(Gamma::Algebra::GammaT);
+    Gamma g4(Gamma::Algebra::GammaT); //needed for parity P_\pm = 0.5*(1 \pm \gamma_4)
 
     std::vector<std::vector<int>> epsilon = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
     std::vector<int> epsilon_sgn = {1,1,1,-1,-1,-1};
+    // This is the \delta_{123}^{123} part
     for (int ie_src=0; ie_src < 6 ; ie_src++){
        int c1_src = epsilon[ie_src][0];
        int c2_src = epsilon[ie_src][1];
@@ -146,15 +147,35 @@ void TNucleon<FImpl1, FImpl2, FImpl3>::execute(void)
          int c1_snk = epsilon[ie_snk][0];
          int c2_snk = epsilon[ie_snk][1];
          int c3_snk = epsilon[ie_snk][2];
-         auto f1 = peekColour(q1,c1_snk,c1_src);
-         auto f2 = peekColour(q2,c2_snk,c2_src);
-         auto f3 = peekColour(q3,c3_snk,c3_src);
-         diquark = trace(f2 * Cg5 * f3);
-           //diquark = q2()()(c2,1) * Cg5 * q3()()(c3,2);
-         auto temp = Cg5 * f1 * diquark;
+         auto Dcc = peekColour(q1,c1_snk,c1_src); //D_{gamma' gamma}
+         auto Daa = peekColour(q2,c2_snk,c2_src); //D_{alpha' alpha}
+         auto Dbb = peekColour(q3,c3_snk,c3_src); //D_{beta' beta}
+         diquark = trace(Cg5 * Daa * Cg5 * Dbb); //Daa transposed????
+           //diquark = q2()()(c2,1) * Cg5 * q3()()(c3,2); //Why does this not work??
+         auto temp = Dcc * diquark;
          auto g4_temp = g4 * temp; 
          int parity = 1;
          c += epsilon_sgn[ie_src] * epsilon_sgn[ie_snk] * 0.5 * (double)parity * trace(temp + g4_temp);
+      }
+    }
+
+
+    // This is the \delta_{123}^{213} part
+    for (int ie_src=0; ie_src < 6 ; ie_src++){
+       int c1_src = epsilon[ie_src][0];
+       int c2_src = epsilon[ie_src][1];
+       int c3_src = epsilon[ie_src][2];
+      for (int ie_snk=0; ie_snk < 6 ; ie_snk++){
+         int c1_snk = epsilon[ie_snk][0];
+         int c2_snk = epsilon[ie_snk][1];
+         int c3_snk = epsilon[ie_snk][2];
+         auto Dca = peekColour(q1,c1_snk,c2_src); //D_{gamma' alpha}
+         auto Dac = peekColour(q2,c2_snk,c1_src); //D_{alpha' gamma}
+         auto Dbb = peekColour(q3,c3_snk,c3_src); //D_{beta' beta}
+         auto temp = Dca * Cg5 * Dbb * Cg5 * Dac; //(Dbb*Cg5) transposed???
+         auto g4_temp = g4 * temp; 
+         int parity = 1;
+         c -= epsilon_sgn[ie_src] * epsilon_sgn[ie_snk] * 0.5 * (double)parity * trace(temp + g4_temp);
       }
     }
 
