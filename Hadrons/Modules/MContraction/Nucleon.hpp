@@ -127,11 +127,12 @@ void TNucleon<FImpl1, FImpl2, FImpl3>::execute(void)
     auto       &q2 = envGet(PropagatorField2, par().q2);
     auto       &q3 = envGet(PropagatorField3, par().q2);
     envGetTmp(LatticeComplex, c);
-    //envGetTmp(LatticeComplex, quark2);
-    //envGetTmp(LatticeComplex, quark3);
     envGetTmp(LatticeComplex, diquark);
     Result     result;
-   
+    int nt = env().getDim(Tp);
+    result.corr.resize(nt);
+
+    std::vector<TComplex> buf;
     // C = i gamma_2 gamma_4 => C gamma_5 = - i gamma_1 gamma_3  
     Gamma Cg5(Gamma::Algebra::SigmaXZ);
     Gamma g4(Gamma::Algebra::GammaT); //needed for parity P_\pm = 0.5*(1 \pm \gamma_4)
@@ -179,7 +180,13 @@ void TNucleon<FImpl1, FImpl2, FImpl3>::execute(void)
       }
     }
 
-    // saveResult(par().output, "meson", result);
+   /* sliceSum(c,buf,Tp);
+    for (unsigned int t = 0; t < buf.size(); ++t)
+    {
+        result.corr[t] = TensorRemove(buf[t]);
+    }*/
+
+   // saveResult(par().output, "baryon", result);
 }
 
 END_MODULE_NAMESPACE
