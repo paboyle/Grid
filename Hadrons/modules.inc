@@ -63,6 +63,7 @@ modules_cc =\
   Modules/MContraction/A2AMesonField.cc \
   Modules/MContraction/A2ALoop.cc \
   Modules/MContraction/Gamma3pt.cc \
+  Modules/MContraction/Nucleon.cc \
   Modules/MAction/MobiusDWF.cc \
   Modules/MAction/WilsonClover.cc \
   Modules/MAction/Wilson.cc \
