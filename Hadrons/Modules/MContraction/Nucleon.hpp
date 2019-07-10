@@ -62,7 +62,7 @@ public:
     {
     public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        std::vector<std::vector<std::vector<Complex>>>, corr);
+                                        std::vector<Complex>, corr);
     };
 public:
     // constructor
@@ -183,7 +183,7 @@ void TNucleon<FImpl1, FImpl2, FImpl3>::execute(void)
     sliceSum(c,buf,Tp);
     for (unsigned int t = 0; t < buf.size(); ++t)
     {
-        //result.corr[t] = TensorRemove(buf[t]);
+        result.corr[t] = TensorRemove(buf[t]);
     }
 
     saveResult(par().output, "baryon", result);
