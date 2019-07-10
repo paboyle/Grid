@@ -180,13 +180,13 @@ void TNucleon<FImpl1, FImpl2, FImpl3>::execute(void)
       }
     }
 
-   /* sliceSum(c,buf,Tp);
+    sliceSum(c,buf,Tp);
     for (unsigned int t = 0; t < buf.size(); ++t)
     {
-        result.corr[t] = TensorRemove(buf[t]);
-    }*/
+        //result.corr[t] = TensorRemove(buf[t]);
+    }
 
-   // saveResult(par().output, "baryon", result);
+    saveResult(par().output, "baryon", result);
 }
 
 END_MODULE_NAMESPACE
