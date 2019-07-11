@@ -141,15 +141,16 @@ void TNucleon<FImpl1, FImpl2, FImpl3>::execute(void)
     std::vector<int> epsilon_sgn = {1,1,1,-1,-1,-1};
     // This is the \delta_{123}^{123} part
     for (int ie_src=0; ie_src < 6 ; ie_src++){
-       int c1_src = epsilon[ie_src][0];
-       int c2_src = epsilon[ie_src][1];
-       int c3_src = epsilon[ie_src][2];
+       int c1_src = epsilon[ie_src][0]; //a
+       int c2_src = epsilon[ie_src][1]; //b
+       int c3_src = epsilon[ie_src][2]; //c
       for (int ie_snk=0; ie_snk < 6 ; ie_snk++){
-         int c1_snk = epsilon[ie_snk][0];
-         int c2_snk = epsilon[ie_snk][1];
-         int c3_snk = epsilon[ie_snk][2];
+         int c1_snk = epsilon[ie_snk][0]; //a'
+         int c2_snk = epsilon[ie_snk][1]; //b'
+         int c3_snk = epsilon[ie_snk][2]; //c'
          auto Dcc = peekColour(q1,c1_snk,c1_src); //D_{gamma' gamma}
          auto Daa = peekColour(q2,c2_snk,c2_src); //D_{alpha' alpha}
+         //auto test = transposeSpin(Daa); //Does not work...
          auto Dbb = peekColour(q3,c3_snk,c3_src); //D_{beta' beta}
          diquark = trace(Cg5 * Daa * Cg5 * Dbb); //Daa transposed????
            //diquark = q2()()(c2,1) * Cg5 * q3()()(c3,2); //Why does this not work??
@@ -163,13 +164,13 @@ void TNucleon<FImpl1, FImpl2, FImpl3>::execute(void)
 
     // This is the \delta_{123}^{213} part
     for (int ie_src=0; ie_src < 6 ; ie_src++){
-       int c1_src = epsilon[ie_src][0];
-       int c2_src = epsilon[ie_src][1];
-       int c3_src = epsilon[ie_src][2];
+       int c1_src = epsilon[ie_src][0]; //a
+       int c2_src = epsilon[ie_src][1]; //b
+       int c3_src = epsilon[ie_src][2]; //c
       for (int ie_snk=0; ie_snk < 6 ; ie_snk++){
-         int c1_snk = epsilon[ie_snk][0];
-         int c2_snk = epsilon[ie_snk][1];
-         int c3_snk = epsilon[ie_snk][2];
+         int c1_snk = epsilon[ie_snk][0]; //a'
+         int c2_snk = epsilon[ie_snk][1]; //b'
+         int c3_snk = epsilon[ie_snk][2]; //c'
          auto Dca = peekColour(q1,c1_snk,c2_src); //D_{gamma' alpha}
          auto Dac = peekColour(q2,c2_snk,c1_src); //D_{alpha' gamma}
          auto Dbb = peekColour(q3,c3_snk,c3_src); //D_{beta' beta}
