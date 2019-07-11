@@ -115,6 +115,11 @@ void TNucleon<FImpl1, FImpl2, FImpl3>::setup(void)
     envTmpLat(LatticeComplex, "diquark");
 }
 
+#ifdef DEBUG
+template <typename T> struct DebugShowType { DebugShowType() { T t = (void***) nullptr; } };
+#define DEBUG_SHOW_TYPE(x) DebugShowType<decltype(x)> __DEBUG_SHOW_TYPE__##x
+#endif
+
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl1, typename FImpl2, typename FImpl3>
 void TNucleon<FImpl1, FImpl2, FImpl3>::execute(void)
@@ -150,6 +155,18 @@ void TNucleon<FImpl1, FImpl2, FImpl3>::execute(void)
          int c3_snk = epsilon[ie_snk][2]; //c'
          auto Dcc = peekColour(q1,c1_snk,c1_src); //D_{gamma' gamma}
          auto Daa = peekColour(q2,c2_snk,c2_src); //D_{alpha' alpha}
+        // DEBUG Just defining a few types so I can see what these things are
+        //auto Daa_debug1 = transposeSpin( q1 );
+        // Current compilation settings tell me that FImpl is WilsonImplR (see FermionOperatorImpl.h, line 163)
+        WilsonImplR::PropagatorField &Debug_q_1{ q1 };
+        //DEBUG_SHOW_TYPE( q1 );
+        // The propagator field is an alias for
+        Lattice<iScalar<iMatrix<iMatrix<vComplexD, Nc>, Ns> >> &Debug_q_2{ q1 };
+        // So then Daa is one of these
+        Lattice<iScalar<iMatrix<iScalar<vComplexD>, Ns> >> &Debug_Daa_1{ Daa };
+        // Which means I should be able to do this
+        //Lattice<iScalar<iMatrix<iScalar<vComplexD>, Ns> >> Debug_Daa_2 = transposeSpin(Daa);
+        // END DEBUG
          //auto test = transposeSpin(Daa); //Does not work...
          auto Dbb = peekColour(q3,c3_snk,c3_src); //D_{beta' beta}
          diquark = trace(Cg5 * Daa * Cg5 * Dbb); //Daa transposed????
