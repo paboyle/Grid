@@ -108,13 +108,15 @@ void LambdaApplySIMT(uint64_t Isites, uint64_t Osites, lambda Lambda)
 
 // Copy the for_each_n style ; Non-blocking variant
 #define accelerator_forNB( iterator, num, nsimd, ... )			\
-  typedef uint64_t Iterator;						\
-  auto lambda = [=] accelerator (Iterator lane,Iterator iterator) mutable { \
-    __VA_ARGS__;							\
-  };									\
-  dim3 cu_threads(gpu_threads,nsimd);					\
-  dim3 cu_blocks ((num+gpu_threads-1)/gpu_threads);			\
-  LambdaApplySIMT<<<cu_blocks,cu_threads>>>(nsimd,num,lambda);		
+  {									\
+    typedef uint64_t Iterator;						\
+    auto lambda = [=] accelerator (Iterator lane,Iterator iterator) mutable { \
+      __VA_ARGS__;							\
+    };									\
+    dim3 cu_threads(gpu_threads,nsimd);					\
+    dim3 cu_blocks ((num+gpu_threads-1)/gpu_threads);			\
+    LambdaApplySIMT<<<cu_blocks,cu_threads>>>(nsimd,num,lambda);	\
+  }
 
 // Copy the for_each_n style ; Non-blocking variant (default
 #define accelerator_for( iterator, num, nsimd, ... )		\
