@@ -34,7 +34,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #endif
 
 NAMESPACE_BEGIN(Grid); 
-
+#define header "SharedMemoryMpi: "
 /*Construct from an MPI communicator*/
 void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
 {
@@ -51,8 +51,10 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
   MPI_Comm_rank(WorldShmComm     ,&WorldShmRank);
   MPI_Comm_size(WorldShmComm     ,&WorldShmSize);
 
-  std::cout << " GRID initialisation: World communicator of size " <<WorldSize << std::endl;  
-  std::cout << " GRID initialisation: Node  communicator of size " <<WorldShmSize << std::endl;
+  if ( WorldRank == 0) {
+    std::cout << header " World communicator of size " <<WorldSize << std::endl;  
+    std::cout << header " Node  communicator of size " <<WorldShmSize << std::endl;
+  }
   // WorldShmComm, WorldShmSize, WorldShmRank
 
   // WorldNodes
@@ -140,6 +142,7 @@ int Log2Size(int TwoToPower,int MAXLOG2)
 void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
 {
 #ifdef HYPERCUBE
+#warning "HPE 8600 Hypercube optimisations enabled"
   ////////////////////////////////////////////////////////////////
   // Assert power of two shm_size.
   ////////////////////////////////////////////////////////////////
@@ -180,9 +183,9 @@ void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_M
   }
 
   std::string hname(name);
-  std::cout << "hostname "<<hname<<std::endl;
-  std::cout << "R " << R << " I " << I << " N "<< N
-            << " hypercoor 0x"<<std::hex<<hypercoor<<std::dec<<std::endl;
+  //  std::cout << "hostname "<<hname<<std::endl;
+  //  std::cout << "R " << R << " I " << I << " N "<< N
+  //            << " hypercoor 0x"<<std::hex<<hypercoor<<std::dec<<std::endl;
 
   //////////////////////////////////////////////////////////////////
   // broadcast node 0's base coordinate for this partition.
@@ -321,7 +324,7 @@ void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_M
 #ifdef GRID_MPI3_SHMGET
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
-  std::cout << "SharedMemoryAllocate "<< bytes<< " shmget implementation "<<std::endl;
+  std::cout << header "SharedMemoryAllocate "<< bytes<< " shmget implementation "<<std::endl;
   assert(_ShmSetup==1);
   assert(_ShmAlloc==0);
 
@@ -412,7 +415,9 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     std::cerr << " SharedMemoryMPI.cc cudaMallocManaged failed NULL pointer for " << bytes<<" bytes " << std::endl;
     exit(EXIT_FAILURE);  
   }
-  std::cout << " SharedMemoryMPI.cc cudaMalloc "<< bytes << "bytes at "<< std::hex<< ShmCommBuf <<std::dec<<" for comms buffers " <<std::endl;
+  if ( WorldRank == 0 ){
+    std::cout << header " SharedMemoryMPI.cc cudaMalloc "<< bytes << "bytes at "<< std::hex<< ShmCommBuf <<std::dec<<" for comms buffers " <<std::endl;
+  }
   SharedMemoryZero(ShmCommBuf,bytes);
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -468,7 +473,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 #ifdef GRID_MPI3_SHMMMAP
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
-  std::cout << "SharedMemoryAllocate "<< bytes<< " MMAP implementation "<< GRID_SHM_PATH <<std::endl;
+  std::cout << header "SharedMemoryAllocate "<< bytes<< " MMAP implementation "<< GRID_SHM_PATH <<std::endl;
   assert(_ShmSetup==1);
   assert(_ShmAlloc==0);
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -505,7 +510,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     assert(((uint64_t)ptr&0x3F)==0);
     close(fd);
     WorldShmCommBufs[r] =ptr;
-    //    std::cout << "Set WorldShmCommBufs["<<r<<"]="<<ptr<< "("<< bytes<< "bytes)"<<std::endl;
+    //    std::cout << header "Set WorldShmCommBufs["<<r<<"]="<<ptr<< "("<< bytes<< "bytes)"<<std::endl;
   }
   _ShmAlloc=1;
   _ShmAllocBytes  = bytes;
@@ -515,7 +520,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 #ifdef GRID_MPI3_SHM_NONE
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
-  std::cout << "SharedMemoryAllocate "<< bytes<< " MMAP anonymous implementation "<<std::endl;
+  std::cout << header "SharedMemoryAllocate "<< bytes<< " MMAP anonymous implementation "<<std::endl;
   assert(_ShmSetup==1);
   assert(_ShmAlloc==0);
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -562,7 +567,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 ////////////////////////////////////////////////////////////////////////////////////////////
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 { 
-  std::cout << "SharedMemoryAllocate "<< bytes<< " SHMOPEN implementation "<<std::endl;
+  std::cout << header "SharedMemoryAllocate "<< bytes<< " SHMOPEN implementation "<<std::endl;
   assert(_ShmSetup==1);
   assert(_ShmAlloc==0); 
   MPI_Barrier(WorldShmComm);
