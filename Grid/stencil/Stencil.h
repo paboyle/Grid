@@ -777,7 +777,7 @@ public:
       
       int permute_slice=0;
       if(permute_dim){
-	int wrap = sshift/rd;
+	int wrap = sshift/rd; wrap=wrap % ly; // but it is local anyway
 	int  num = sshift%rd;
 	if ( x< rd-num ) permute_slice=wrap;
 	else permute_slice = (wrap+1)%ly;

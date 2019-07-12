@@ -69,6 +69,11 @@ void coalescedWrite(vobj & __restrict__ vec,const vobj & __restrict__ extracted,
   //  vstream(vec, extracted);
   vec = extracted;
 }
+template<class vobj> accelerator_inline
+void coalescedWriteNonTemporal(vobj & __restrict__ vec,const vobj & __restrict__ extracted,int lane=0)
+{
+  vstream(vec, extracted);
+}
 #else
 accelerator_inline int SIMTlane(int Nsimd) { return threadIdx.y; } // CUDA specific
 
@@ -89,6 +94,11 @@ typename vobj::scalar_object coalescedReadPermute(const vobj & __restrict__ vec,
 }
 template<class vobj> accelerator_inline
 void coalescedWrite(vobj & __restrict__ vec,const typename vobj::scalar_object & __restrict__ extracted,int lane=SIMTlane(vobj::Nsimd()))
+{
+  insertLane(lane,vec,extracted);
+}
+template<class vobj> accelerator_inline
+void coalescedWriteNonTemporal(vobj & __restrict__ vec,const vobj & __restrict__ extracted,int lane=0)
 {
   insertLane(lane,vec,extracted);
 }
