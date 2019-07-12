@@ -315,6 +315,7 @@ public:
 
   //////////////////////////////////////////
   // Comms packet queue for asynch thread
+  // Use OpenMP Tasks for cleaner ???
   //////////////////////////////////////////
   void CommunicateThreaded()
   {
@@ -371,6 +372,9 @@ public:
     }
     commtime+= last-first;
   }
+  ////////////////////////////////////////////////////////////////////////
+  // Non blocking send and receive. Necessarily parallel.
+  ////////////////////////////////////////////////////////////////////////
   void CommunicateBegin(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
     reqs.resize(Packets.size());
@@ -394,41 +398,44 @@ public:
     }
     commtime+=usecond();
   }
+  ////////////////////////////////////////////////////////////////////////
+  // Blocking send and receive. Either sequential or parallel.
+  ////////////////////////////////////////////////////////////////////////
   void Communicate(void)
   {
-    thread_region
-    {
-      // must be called in parallel region
-      int mythread  = thread_num();
-      int maxthreads= thread_max();
-      int nthreads = CartesianCommunicator::nCommThreads;
-      assert(nthreads <= maxthreads);
-      if (nthreads == -1) nthreads = 1;
-      if (mythread < nthreads) {
-	for (int i = mythread; i < Packets.size(); i += nthreads) {
-	  double start = usecond();
-	  uint64_t bytes= _grid->StencilSendToRecvFrom(Packets[i].send_buf,
-						       Packets[i].to_rank,
-						       Packets[i].recv_buf,
-						       Packets[i].from_rank,
-						       Packets[i].bytes,i);
-	  comm_bytes_thr[mythread] += bytes;
-	  shm_bytes_thr[mythread]  += Packets[i].bytes - bytes;
-	  comm_time_thr[mythread]  += usecond() - start;
+    if ( CartesianCommunicator::CommunicatorPolicy == CartesianCommunicator::CommunicatorPolicySequential ){
+      thread_region {
+	// must be called in parallel region
+	int mythread  = thread_num();
+	int maxthreads= thread_max();
+	int nthreads = CartesianCommunicator::nCommThreads;
+	assert(nthreads <= maxthreads);
+	if (nthreads == -1) nthreads = 1;
+	if (mythread < nthreads) {
+	  for (int i = mythread; i < Packets.size(); i += nthreads) {
+	    double start = usecond();
+	    uint64_t bytes= _grid->StencilSendToRecvFrom(Packets[i].send_buf,
+							 Packets[i].to_rank,
+							 Packets[i].recv_buf,
+							 Packets[i].from_rank,
+							 Packets[i].bytes,i);
+	    comm_bytes_thr[mythread] += bytes;
+	    shm_bytes_thr[mythread]  += Packets[i].bytes - bytes;
+	    comm_time_thr[mythread]  += usecond() - start;
+	  }
 	}
       }
+    } else { // Concurrent and non-threaded asynch calls to MPI
+      std::vector<std::vector<CommsRequest_t> > reqs;
+      this->CommunicateBegin(reqs);
+      this->CommunicateComplete(reqs);
     }
-  }
+  }    
   
   template<class compressor> void HaloExchange(const Lattice<vobj> &source,compressor &compress) 
   {
-    std::vector<std::vector<CommsRequest_t> > reqs;
     Prepare();
     HaloGather(source,compress);
-    // Concurrent
-    //CommunicateBegin(reqs);
-    //CommunicateComplete(reqs);
-    // Sequential, possibly threaded
     Communicate();
     CommsMergeSHM(compress); 
     CommsMerge(compress); 
