@@ -1,66 +1,58 @@
 - Lattice_arith - are the mult, mac etc.. still needed after ET engine?
-- LinalgUtils  ssp loop not offloaded
-- Mobius/Domain EOFA cache header implementaiotn has thread_loop
 - ImprovedStaggered accelerate
-- Lattice_reduction - remnant thread_loops must offload. Audit thread_loop in main code for non-accelerated code  
   Lattice_rng
   Lattice_transfer.h
 
-- Stencil.h : Thread loops in exchange code. Need to offload these
-
-- Lebesque order reintroduction. StencilView should have pointer
-
-- accelerate A2Autils
+- accelerate A2Autils -- off critical path for HMC
+- Lebesque order reintroduction. StencilView should have pointer to it
 
 GPU branch code item work list
 -----------------------------
 
-7) Accelerate the cshift
-
+7) Accelerate the cshift & benchmark
 * 0) Single GPU
 - 128 bit integer table load in GPU code.
-- coalescedRead <- threadIdx.x
-- Gianluca's changes to Cayley into gpu-port
-- GPU accelerate EOFA
-- Staggered kernels -> GPU coalesced loop
+- Staggered kernels -> GPU coalesced loop, loop in kernels
 - Staggered kernels inline for GPU -- DONE
 
-
-* 2) 5D terms & Gianluca
+* Gianluca merger
   - Cayley coefficients -> GPU retention or prefetch
-  - Mobius kernel fusion. -- Gianluca?
-  - Make GPU offload reductions optionally deterministic -- Gianluca
+  - Gianluca's changes to Cayley into gpu-port
+  - Mobius kernel fusion.                     -- Gianluca?
+  - Make GPU offload reductions deterministic -- Gianluca merge
+  - Lattice_reduction - remnant thread_loops must offload. Audit thread_loop in main code for non-accelerated code  
 
 * 3) Comms/NVlink
-- OpenMP tasks to run comms threads. 
+- OpenMP tasks to run comms threads. Experiment with it 
 - Remove explicit openMP in staggered. 
-- Single parallel region around both the Kernel call
-  and the comms.
+- Single parallel region around both the Kernel call and the comms.
 - Fix the halo exchange SIMT loop
-- Stencil gather
+- Stencil gather ??
 - SIMD dirs in stencil
 
 * 4) ET enhancements
 - eval -> scalar ops in ET engine
-   - coalescedRead, coalescedWrite in expressions.
+- coalescedRead, coalescedWrite in expressions.
 
 * 5) Misc
-
 - Conserved current clean up.
 - multLinkProp eliminate
- 
 
 8) Merge develop and test HMC
-
-9) Gamma tables on GPU; check this.
-
+9) Gamma tables on GPU; check this. Appear to work, but no idea why. Are these done on CPU?
 10) Audit
 -     pragma once uniformly
 -     Audit NAMESPACE CHANGES
 -     Audit changes
 
-
 =============================================================================================
+- GPU accelerate EOFA                                                  -- DONE
+- LinalgUtils  ssp loop not offloaded                                  -- DONE
+- coalescedRead <- threadIdx.x                                         -- DONE
+- Stencil.h : Thread loops in exchange code. Need to offload these     -- DONE ; pending debug
+- Mobius/Domain EOFA cache header implementaiotn has thread_loop       -- DONE ; pending test
+- Differentiate non-temporal coalescedWrite from temporal              -- DONE
+
 - Clean up PRAGMAS, and SIMT_loop                                      -- DONE
   thread_loop interface revisit.
   _foreach
