@@ -95,13 +95,13 @@ void Gather_plane_exchange_table(Vector<std::pair<int,int> >& table,const Lattic
   int so  = plane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane 
 
   auto rhs_v = rhs.View();
-  accelerator_for(j, num, 1, { 
-    compress.CompressExchange(&pointers[0][0],
-			      &pointers[1][0],
-			      &rhs_v[0],
-			      j,
-			      so+table[2*j].second,
-			      so+table[2*j+1].second,
+  auto p0=&pointers[0][0];
+  auto p1=&pointers[1][0];
+  auto tp=&table[0];
+  accelerator_forNB(j, num, 1, { 
+      compress.CompressExchange(p0,p1, &rhs_v[0], j,
+			      so+tp[2*j  ].second,
+			      so+tp[2*j+1].second,
 			      type);
   });
 }
@@ -570,19 +570,22 @@ public:
 
     mergetime-=usecond();
     for(int i=0;i<mm.size();i++){	
-      thread_for(o,mm[i].buffer_size/2,{
-	decompress.Exchange(mm[i].mpointer,
-			    mm[i].vpointers[0],
-			    mm[i].vpointers[1],
-			    mm[i].type,o);
+      auto mp = &mm[i].mpointer[0];
+      auto vp0= &mm[i].vpointers[0][0];
+      auto vp1= &mm[i].vpointers[1][0];
+      auto type= mm[i].type;
+      accelerator_forNB(o,mm[i].buffer_size/2,1,{
+	  decompress.Exchange(mp,vp0,vp1,type,o);
       });
     }
     mergetime+=usecond();
 
     decompresstime-=usecond();
     for(int i=0;i<dd.size();i++){	
-      thread_for(o,dd[i].buffer_size,{
-	decompress.Decompress(dd[i].kernel_p,dd[i].mpi_p,o);
+      auto kp = dd[i].kernel_p;
+      auto mp = dd[i].mpi_p;
+      accelerator_forNB(o,dd[i].buffer_size,1,{
+	decompress.Decompress(kp,mp,o);
       });
     }
     decompresstime+=usecond();
@@ -719,12 +722,13 @@ public:
 
     _grid->ShmBufferFreeAll();
 
-    u_simd_send_buf.resize(Nsimd);
-    u_simd_recv_buf.resize(Nsimd);
+    int maxl=2;
+    u_simd_send_buf.resize(maxl);
+    u_simd_recv_buf.resize(maxl);
     this->u_send_buf_p=(cobj *)_grid->ShmBufferMalloc(_unified_buffer_size*sizeof(cobj));
     this->u_recv_buf_p=(cobj *)_grid->ShmBufferMalloc(_unified_buffer_size*sizeof(cobj));
 
-    for(int l=0;l<2;l++){
+    for(int l=0;l<maxl;l++){
       u_simd_recv_buf[l] = (cobj *)_grid->ShmBufferMalloc(_unified_buffer_size*sizeof(cobj));
       u_simd_send_buf[l] = (cobj *)_grid->ShmBufferMalloc(_unified_buffer_size*sizeof(cobj));
     }
