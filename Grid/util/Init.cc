@@ -239,116 +239,10 @@ static int Grid_is_initialised;
 /////////////////////////////////////////////////////////
 // Reinit guard
 /////////////////////////////////////////////////////////
-void GridGpuInit(void)
+void GridBanner(void)
 {
-#ifdef GRID_NVCC
-  int nDevices = 1;
-  cudaGetDeviceCount(&nDevices);
-
-  char * localRankStr = NULL;
-
-  int rank = 0, device = 0, world_rank=0; 
-#define ENV_LOCAL_RANK_OMPI    "OMPI_COMM_WORLD_LOCAL_RANK"
-#define ENV_LOCAL_RANK_MVAPICH "MV2_COMM_WORLD_LOCAL_RANK"
-#define ENV_RANK_OMPI          "OMPI_COMM_WORLD_RANK"
-#define ENV_RANK_MVAPICH       "MV2_COMM_WORLD_RANK"
-  // We extract the local rank initialization using an environment variable
-  if ((localRankStr = getenv(ENV_LOCAL_RANK_OMPI)) != NULL)
-  {
-    rank = atoi(localRankStr);		
-    device = rank %nDevices;
-  }
-  if ((localRankStr = getenv(ENV_LOCAL_RANK_MVAPICH)) != NULL)
-  {
-    rank = atoi(localRankStr);		
-    device = rank %nDevices;
-  }
-  if ((localRankStr = getenv(ENV_RANK_OMPI   )) != NULL) { world_rank = atoi(localRankStr);}
-  if ((localRankStr = getenv(ENV_RANK_MVAPICH)) != NULL) { world_rank = atoi(localRankStr);}
-
-
-  cudaSetDevice(device);
-
-  for (int i = 0; i < nDevices; i++) {
-    cudaDeviceProp prop;
-    cudaGetDeviceProperties(&prop, i);
-
-    if ( world_rank == 0) {
-      printf("Device Number: %d\n", i);
-      printf("  Device name: %s\n", prop.name);
-      printf("  Peak Memory Bandwidth (GB/s): %f\n\n",2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6);
-
-#define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("  " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
-#define GPU_PROP(canMapHostMemory)     printf("  " #canMapHostMemory ": %d \n",prop.canMapHostMemory);
-    GPU_PROP(isMultiGpuBoard);
-    GPU_PROP(l2CacheSize);
-    GPU_PROP(managedMemory);
-    GPU_PROP(singleToDoublePrecisionPerfRatio);
-    GPU_PROP(unifiedAddressing);
-    GPU_PROP(warpSize);
-    }
-  }
-#endif
-}
-
-void Grid_init(int *argc,char ***argv)
-{
-  GridGpuInit(); // Must come first to set device prior to MPI init
-
-  assert(Grid_is_initialised == 0);
-
-  GridLogger::GlobalStopWatch.Start();
-
-  std::string arg;
-
-  ////////////////////////////////////
-  // Shared memory block size
-  ////////////////////////////////////
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--shm") ){
-    int MB;
-    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--shm");
-    GridCmdOptionInt(arg,MB);
-    uint64_t MB64 = MB;
-    GlobalSharedMemory::MAX_MPI_SHM_BYTES = MB64*1024LL*1024LL;
-  }
-
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--shm-hugepages") ){
-    GlobalSharedMemory::Hugepages = 1;
-  }
-
-
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-signals") ){
-    Grid_debug_handler_init();
-  }
-
-  CartesianCommunicator::Init(argc,argv);
-
-  if( !GridCmdOptionExists(*argv,*argv+*argc,"--debug-stdout") ){
-    Grid_quiesce_nodes();
-  } else { 
-    FILE *fp;
-    std::ostringstream fname;
-    fname<<"Grid.stdout.";
-    fname<<CartesianCommunicator::RankWorld();
-    fp=freopen(fname.str().c_str(),"w",stdout);
-    assert(fp!=(FILE *)NULL);
-
-    std::ostringstream ename;
-    ename<<"Grid.stderr.";
-    ename<<CartesianCommunicator::RankWorld();
-    fp=freopen(ename.str().c_str(),"w",stderr);
-    assert(fp!=(FILE *)NULL);
-  }
-
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-mem") ){
-    MemoryProfiler::debug = true;
-    MemoryProfiler::stats = &dbgMemStats;
-  }
-
-  ////////////////////////////////////
-  // Banner
-  ////////////////////////////////////
-  if ( CartesianCommunicator::RankWorld() == 0 ) { 
+  static int printed =0;
+  if( !printed ) {
     std::cout <<std::endl;
     std::cout  << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
     std::cout  << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
@@ -379,13 +273,156 @@ void Grid_init(int *argc,char ***argv)
     std::cout << "GNU General Public License for more details."<<std::endl;
     printHash();
     std::cout << std::endl;
+    printed=1;
+  }
+}
+void GridGpuInit(void)
+{
+#ifdef GRID_NVCC
+  int nDevices = 1;
+  cudaGetDeviceCount(&nDevices);
+
+  char * localRankStr = NULL;
+
+  int rank = 0, device = 0, world_rank=0; 
+#define ENV_LOCAL_RANK_OMPI    "OMPI_COMM_WORLD_LOCAL_RANK"
+#define ENV_LOCAL_RANK_MVAPICH "MV2_COMM_WORLD_LOCAL_RANK"
+#define ENV_RANK_OMPI          "OMPI_COMM_WORLD_RANK"
+#define ENV_RANK_MVAPICH       "MV2_COMM_WORLD_RANK"
+  // We extract the local rank initialization using an environment variable
+  if ((localRankStr = getenv(ENV_LOCAL_RANK_OMPI)) != NULL)
+  {
+    rank = atoi(localRankStr);		
+    device = rank %nDevices;
+  }
+  if ((localRankStr = getenv(ENV_LOCAL_RANK_MVAPICH)) != NULL)
+  {
+    rank = atoi(localRankStr);		
+    device = rank %nDevices;
+  }
+  if ((localRankStr = getenv(ENV_RANK_OMPI   )) != NULL) { world_rank = atoi(localRankStr);}
+  if ((localRankStr = getenv(ENV_RANK_MVAPICH)) != NULL) { world_rank = atoi(localRankStr);}
+
+  cudaSetDevice(device);
+  if ( world_rank == 0 ) {
+    GridBanner();
+    printf("GpuInit: ================================================\n");
+    printf("GpuInit: Setting up Cuda Device map before first MPI call\n",nDevices);
+    printf("GpuInit: ================================================\n");
+    printf("GpuInit: Cuda reports %d GPUs on MPI rank 0\n",nDevices);
+  }
+
+  if ( world_rank == 0) {
+    for (int i = 0; i < nDevices; i++) {
+
+#define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("GpuInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
+#define GPU_PROP(canMapHostMemory)             GPU_PROP_FMT(canMapHostMemory,"%d");
+
+      cudaDeviceProp prop; 
+      cudaGetDeviceProperties(&prop, i);
+      printf("GpuInit: ========================\n");
+      printf("GpuInit: Device Number    : %d\n", i);
+      printf("GpuInit: ========================\n");
+      printf("GpuInit: Device identifier: %s\n", prop.name);
+      printf("GpuInit:   Peak Memory Bandwidth (GB/s): %f\n",(float)2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6);
+      GPU_PROP(managedMemory);
+#if 0
+      GPU_PROP(unifiedAddressing);
+      GPU_PROP(isMultiGpuBoard);
+      GPU_PROP(l2CacheSize);
+      GPU_PROP(singleToDoublePrecisionPerfRatio);
+      GPU_PROP(warpSize);
+#endif
+    }
+    printf("GpuInit: ================================================\n");
+  }
+#endif
+}
+
+void Grid_init(int *argc,char ***argv)
+{
+
+  assert(Grid_is_initialised == 0);
+
+  GridLogger::GlobalStopWatch.Start();
+
+  std::string arg;
+
+  //////////////////////////////////////////////////////////
+  // Early intialisation necessities without rank knowledge
+  //////////////////////////////////////////////////////////
+  GridGpuInit(); // Must come first to set device prior to MPI init
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--shm") ){
+    int MB;
+    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--shm");
+    GridCmdOptionInt(arg,MB);
+    uint64_t MB64 = MB;
+    GlobalSharedMemory::MAX_MPI_SHM_BYTES = MB64*1024LL*1024LL;
+  }
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--shm-hugepages") ){
+    GlobalSharedMemory::Hugepages = 1;
+  }
+
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-signals") ){
+    Grid_debug_handler_init();
+  }
+
+  //////////////////////////////////////////////////////////
+  // MPI initialisation
+  //////////////////////////////////////////////////////////
+  CartesianCommunicator::Init(argc,argv);
+
+  ////////////////////////////////////
+  // Banner after MPI (unless GPU)
+  ////////////////////////////////////
+  if ( CartesianCommunicator::RankWorld() == 0 ) { 
+    GridBanner();
+  }
+
+  /////////////////////////////////////////////////////////////////
+  // Rank information can be used to control who logs
+  /////////////////////////////////////////////////////////////////
+  if( !GridCmdOptionExists(*argv,*argv+*argc,"--debug-stdout") ){
+    Grid_quiesce_nodes();
+  } else { 
+    FILE *fp;
+    std::ostringstream fname;
+    fname<<"Grid.stdout.";
+    fname<<CartesianCommunicator::RankWorld();
+    fp=freopen(fname.str().c_str(),"w",stdout);
+    assert(fp!=(FILE *)NULL);
+
+    std::ostringstream ename;
+    ename<<"Grid.stderr.";
+    ename<<CartesianCommunicator::RankWorld();
+    fp=freopen(ename.str().c_str(),"w",stderr);
+    assert(fp!=(FILE *)NULL);
+  }
+  ////////////////////////////////////////////////////
+  // OK to use GridLogMessage etc from here on
+  ////////////////////////////////////////////////////
+  std::cout << GridLogMessage << "================================================ "<<std::endl;
+  std::cout << GridLogMessage << "MPI is initialised and logging filters activated "<<std::endl;
+  std::cout << GridLogMessage << "================================================ "<<std::endl;
+
+  std::cout << GridLogMessage << "Requested "<< GlobalSharedMemory::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
+  if ( GlobalSharedMemory::Hugepages) {
+    std::cout << GridLogMessage << "Mapped stencil comms buffers as MAP_HUGETLB "<<std::endl;
+  }
+
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-mem") ){
+    MemoryProfiler::debug = true;
+    MemoryProfiler::stats = &dbgMemStats;
   }
 
 
   ////////////////////////////////////
   // Logging
   ////////////////////////////////////
-
   std::vector<std::string> logstreams;
   std::string defaultLog("Error,Warning,Message,Performance");
   GridCmdOptionCSL(defaultLog,logstreams);
@@ -491,10 +528,6 @@ void Grid_init(int *argc,char ***argv)
 		  Grid_default_latt,
 		  Grid_default_mpi);
 
-  std::cout << GridLogMessage << "Requesting "<< GlobalSharedMemory::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
-  if ( GlobalSharedMemory::Hugepages) {
-    std::cout << GridLogMessage << "Mapped stencil comms buffers as MAP_HUGETLB "<<std::endl;
-  }
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--decomposition") ){
     std::cout<<GridLogMessage<<"Grid Default Decomposition patterns\n";
