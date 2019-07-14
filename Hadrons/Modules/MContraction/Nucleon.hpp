@@ -158,12 +158,12 @@ void TNucleon<FImpl1, FImpl2, FImpl3>::execute(void)
         // DEBUG Just defining a few types so I can see what these things are
         //auto Daa_debug1 = transposeSpin( q1 );
         // Current compilation settings tell me that FImpl is WilsonImplR (see FermionOperatorImpl.h, line 163)
-        WilsonImplR::PropagatorField &Debug_q_1{ q1 };
+        const WilsonImplR::PropagatorField &Debug_q_1{ q1 };
         //DEBUG_SHOW_TYPE( q1 );
         // The propagator field is an alias for
-        Lattice<iScalar<iMatrix<iMatrix<vComplexD, Nc>, Ns> >> &Debug_q_2{ q1 };
+        const Lattice<iScalar<iMatrix<iMatrix<vComplexD, Nc>, Ns> >> &Debug_q_2{ q1 };
         // So then Daa is one of these
-        Lattice<iScalar<iMatrix<iScalar<vComplexD>, Ns> >> &Debug_Daa_1{ Daa };
+        const Lattice<iScalar<iMatrix<iScalar<vComplexD>, Ns> >> &Debug_Daa_1{ Daa };
         // Which means I should be able to do this
         //Lattice<iScalar<iMatrix<iScalar<vComplexD>, Ns> >> Debug_Daa_2 = transposeSpin(Daa);
         // END DEBUG
