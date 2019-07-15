@@ -7,7 +7,7 @@ Source file: Hadrons/Modules/MContraction/Baryon.hpp
 Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
-Author: Lanny91 <andrew.lawson@gmail.com>
+Author: Felix Erben <felix.erben@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ public:
     {
     public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        std::vector<std::vector<std::vector<Complex>>>, corr);
+                                        std::vector<Complex>, corr);
     };
 public:
     // constructor
@@ -112,13 +112,14 @@ template <typename FImpl1, typename FImpl2, typename FImpl3>
 void TBaryon<FImpl1, FImpl2, FImpl3>::setup(void)
 {
     envTmpLat(LatticeComplex, "c");
+    envTmpLat(LatticeComplex, "diquark");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl1, typename FImpl2, typename FImpl3>
 void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
 {
-    LOG(Message) << "Computing baryon contractions '" << getName() << "' using"
+    LOG(Message) << "Computing nucleon contractions '" << getName() << "' using"
                  << " quarks '" << par().q1 << "', '" << par().q2 << "', and '"
                  << par().q3 << "'" << std::endl;
     
@@ -126,11 +127,116 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     auto       &q2 = envGet(PropagatorField2, par().q2);
     auto       &q3 = envGet(PropagatorField3, par().q2);
     envGetTmp(LatticeComplex, c);
+    envGetTmp(LatticeComplex, diquark);
     Result     result;
-    
-    // FIXME: do contractions
-    
-    // saveResult(par().output, "meson", result);
+    int nt = env().getDim(Tp);
+    result.corr.resize(nt);
+
+    std::vector<TComplex> buf;
+    // C = i gamma_2 gamma_4 => C gamma_5 = - i gamma_1 gamma_3  
+    Gamma GammaA(Gamma::Algebra::Identity); //Still hardcoded 1
+    Gamma GammaB(Gamma::Algebra::SigmaXZ); //Still hardcoded Cg5
+    Gamma g4(Gamma::Algebra::GammaT); //needed for parity P_\pm = 0.5*(1 \pm \gamma_4)
+
+    std::vector<std::vector<int>> epsilon = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
+    std::vector<int> epsilon_sgn = {1,1,1,-1,-1,-1};
+
+    char left[] = "uud";
+    char right[] = "uud";
+    std::vector<int> wick_contraction = {0,0,0,0,0,0};
+
+    for (int ie=0; ie < 6 ; ie++)
+      if (left[0] == right[epsilon[ie][0]] && left[1] == right[epsilon[ie][1]] && left[2] == right[epsilon[ie][2]])
+        wick_contraction[ie]=1;
+
+
+    int parity = 1;
+
+
+    for (int ie_src=0; ie_src < 6 ; ie_src++){
+       int a_src = epsilon[ie_src][0]; //a
+       int b_src = epsilon[ie_src][1]; //b
+       int c_src = epsilon[ie_src][2]; //c
+      for (int ie_snk=0; ie_snk < 6 ; ie_snk++){
+         int a_snk = epsilon[ie_snk][0]; //a'
+         int b_snk = epsilon[ie_snk][1]; //b'
+         int c_snk = epsilon[ie_snk][2]; //c'
+         auto Daa = peekColour(q2,a_snk,a_src); //D_{alpha' alpha}
+         auto Dbb = peekColour(q3,b_snk,b_src); //D_{beta' beta}
+         auto Dcc = peekColour(q1,c_snk,c_src); //D_{gamma' gamma}
+         auto Dab = peekColour(q2,a_snk,b_src); //D_{alpha' beta}
+         auto Dac = peekColour(q2,a_snk,c_src); //D_{alpha' gamma}
+         auto Dba = peekColour(q3,b_snk,a_src); //D_{beta' alpha}
+         auto Dbc = peekColour(q3,b_snk,c_src); //D_{beta' gamma}
+         auto Dca = peekColour(q1,c_snk,a_src); //D_{gamma' alpha}
+         auto Dcb = peekColour(q1,c_snk,b_src); //D_{gamma' beta}
+         // This needs lees peekColours for some baryons, but does not compile - worth the effort?
+         /*if (wick_contraction[0] || wick_contraction[4]) 
+           auto Daa = peekColour(q2,a_snk,a_src); //D_{alpha' alpha}
+         if (wick_contraction[0] || wick_contraction[5]) 
+           auto Dbb = peekColour(q3,b_snk,b_src); //D_{beta' beta}
+         if (wick_contraction[0] || wick_contraction[3]) 
+           auto Dcc = peekColour(q1,c_snk,c_src); //D_{gamma' gamma}
+         if (wick_contraction[1] || wick_contraction[3]) 
+           auto Dab = peekColour(q2,a_snk,b_src); //D_{alpha' beta}
+         if (wick_contraction[2] || wick_contraction[5]) 
+           auto Dac = peekColour(q2,a_snk,c_src); //D_{alpha' gamma}
+         if (wick_contraction[2] || wick_contraction[3]) 
+           auto Dba = peekColour(q3,b_snk,a_src); //D_{beta' alpha}
+         if (wick_contraction[1] || wick_contraction[4]) 
+           auto Dbc = peekColour(q3,b_snk,c_src); //D_{beta' gamma}
+         if (wick_contraction[1] || wick_contraction[5]) 
+           auto Dca = peekColour(q1,c_snk,a_src); //D_{gamma' alpha}
+         if (wick_contraction[2] || wick_contraction[4]) 
+           auto Dcb = peekColour(q1,c_snk,b_src); //D_{gamma' beta}*/
+         // This is the \delta_{123}^{123} part
+         if (wick_contraction[0]){
+           diquark = trace(GammaB * Daa * GammaB * Dbb); //1st GammaB and Daa transposed????
+           auto temp = GammaA * Dcc * diquark;
+           auto g4_temp = GammaA * g4 * temp; 
+           c += epsilon_sgn[ie_src] * epsilon_sgn[ie_snk] * 0.5 * trace(GammaA * temp + (double)parity * g4_temp);
+         }
+         // This is the \delta_{123}^{231} part
+         if (wick_contraction[1]){
+           auto temp = GammaA * Dca * GammaB * Dab * GammaB * Dbc; //Dab transposed???
+           auto g4_temp = GammaA * g4 * temp; 
+           c += epsilon_sgn[ie_src] * epsilon_sgn[ie_snk] * 0.5 * trace(GammaA * temp + (double)parity * g4_temp);
+         }
+         // This is the \delta_{123}^{312} part
+         if (wick_contraction[2]){
+           auto temp = GammaA * Dcb * GammaB * Dba * GammaB * Dac; //both GammaB and Dba transposed???
+           auto g4_temp = GammaA * g4 * temp; 
+           c += epsilon_sgn[ie_src] * epsilon_sgn[ie_snk] * 0.5 * trace(GammaA * temp + (double)parity * g4_temp);
+         }
+         // This is the \delta_{123}^{132} part
+         if (wick_contraction[3]){
+           diquark = trace(GammaB * Dba * GammaB * Dab); //2nd GammaB and Dab transposed????
+           auto temp = GammaA * Dcc * diquark;
+           auto g4_temp = GammaA * g4 * temp; 
+           c -= epsilon_sgn[ie_src] * epsilon_sgn[ie_snk] * 0.5 * trace(GammaA * temp + (double)parity * g4_temp);
+         }
+         // This is the \delta_{123}^{321} part
+         if (wick_contraction[4]){
+           auto temp = GammaA * Dcb * GammaB * Daa * GammaB * Dbc; //1st GammaB and Daa transposed???
+           auto g4_temp = GammaA * g4 * temp; 
+           c -= epsilon_sgn[ie_src] * epsilon_sgn[ie_snk] * 0.5 * trace(GammaA * temp + (double)parity * g4_temp);
+         }
+         // This is the \delta_{123}^{213} part
+         if (wick_contraction[5]){
+           auto temp = GammaA * Dca * GammaB * Dbb * GammaB * Dac; //(Dbb*GammaB) transposed???
+           auto g4_temp = GammaA * g4 * temp; 
+           c -= epsilon_sgn[ie_src] * epsilon_sgn[ie_snk] * 0.5 * trace(GammaA * temp + (double)parity * g4_temp);
+         }
+      }
+    }
+
+    sliceSum(c,buf,Tp);
+    for (unsigned int t = 0; t < buf.size(); ++t)
+    {
+        result.corr[t] = TensorRemove(buf[t]);
+    }
+
+    saveResult(par().output, "baryon", result);
 }
 
 END_MODULE_NAMESPACE
