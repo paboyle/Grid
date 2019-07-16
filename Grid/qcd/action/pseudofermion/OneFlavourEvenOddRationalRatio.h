@@ -28,8 +28,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef QCD_PSEUDOFERMION_ONE_FLAVOUR_EVEN_ODD_RATIONAL_RATIO_H
 #define QCD_PSEUDOFERMION_ONE_FLAVOUR_EVEN_ODD_RATIONAL_RATIO_H
 
-namespace Grid{
-  namespace QCD{
+NAMESPACE_BEGIN(Grid);
 
     ///////////////////////////////////////
     // One flavour rational
@@ -145,7 +144,7 @@ namespace Grid{
 
 	assert(NumOp.ConstEE() == 1);
 	assert(DenOp.ConstEE() == 1);
-	PhiEven = zero;
+	PhiEven = Zero();
 	
       };
 
@@ -245,7 +244,7 @@ namespace Grid{
 
 	RealD ak;
 
-	dSdU = zero;
+	dSdU = Zero();
 
 	// With these building blocks  
 	//  
@@ -282,8 +281,7 @@ namespace Grid{
 
       };
     };
-  }
-}
 
+NAMESPACE_END(Grid);
 
 #endif

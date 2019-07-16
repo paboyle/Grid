@@ -1,3 +1,5 @@
+AUDIT ContractWWVV with respect to develop
+
 - Lattice_arith - are the mult, mac etc.. still needed after ET engine?
 - ImprovedStaggered accelerate
   Lattice_rng

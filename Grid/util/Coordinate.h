@@ -94,7 +94,8 @@ static constexpr int MaxDims = GRID_MAX_LATTICE_DIMENSION;
 
 typedef AcceleratorVector<int,MaxDims> Coordinate;
 
-inline std::ostream & operator<<(std::ostream &os, const Coordinate &v)
+template<class T,int _ndim>
+inline std::ostream & operator<<(std::ostream &os, const AcceleratorVector<T,_ndim> &v)
 {
   os << "[";
   for(int s=0;s<v.size();s++) {

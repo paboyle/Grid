@@ -14,7 +14,7 @@ template<class Field> class PowerMethod
 
   RealD operator()(LinearOperatorBase<Field> &HermOp, const Field &src) 
   { 
-    GridBase *grid = src._grid; 
+    GridBase *grid = src.Grid(); 
     
     // quickly get an idea of the largest eigenvalue to more properly normalize the residuum 
     RealD evalMaxApprox = 0.0; 

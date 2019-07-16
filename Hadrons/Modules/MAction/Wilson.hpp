@@ -122,10 +122,8 @@ void TWilson<FImpl>::setup(void)
     {
         implParams.twist_n_2pi_L   = strToVec<Real>(par().twist);
     }
-    LOG(Message) << "Fermion boundary conditions: " << implParams.boundary_phases
-                 << std::endl;
-    LOG(Message) << "Twists: " << implParams.twist_n_2pi_L
-                 << std::endl;
+    LOG(Message) << "Fermion boundary conditions: " << implParams.boundary_phases << std::endl;
+    LOG(Message) << "Twists: " << implParams.twist_n_2pi_L << std::endl;
     if (implParams.boundary_phases.size() != env().getNd())
     {
         HADRONS_ERROR(Size, "Wrong number of boundary phase");

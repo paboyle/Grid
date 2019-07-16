@@ -86,7 +86,7 @@ int main (int argc, char** argv)
   MobiusEOFAFermionR Rop(U, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, mf, mb, -1.0, 1, M5, b, c);
   OneFlavourRationalParams Params(0.95, 100.0, 5000, 1.0e-12, 12);
   ConjugateGradient<LatticeFermion> CG(1.0e-12, 5000);
-  ExactOneFlavourRatioPseudoFermionAction<WilsonImplR> Meofa(Lop, Rop, CG, Params, false);
+  ExactOneFlavourRatioPseudoFermionAction<WilsonImplR> Meofa(Lop, Rop, CG, CG, CG, CG, CG, Params, false);
 
   Meofa.refresh(U, RNG5);
   RealD S = Meofa.S(U); // pdag M p

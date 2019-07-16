@@ -37,8 +37,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <vector>
 #include <cassert>
 
-namespace Grid {
-  
+NAMESPACE_BEGIN(Grid);
+
   class BinaryWriter: public Writer<BinaryWriter>
   {
   public:
@@ -163,6 +163,6 @@ namespace Grid {
     for( auto i = 0; i < count; ++i)
       read("", buf[i]);
   }
-}
 
+NAMESPACE_END(Grid);
 #endif

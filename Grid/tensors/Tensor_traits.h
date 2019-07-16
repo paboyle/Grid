@@ -20,12 +20,11 @@ Author: Michael Marshall <michael.marshall@ed.ac.au>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#ifndef GRID_MATH_TRAITS_H
-#define GRID_MATH_TRAITS_H
+#pragma once 
 
 #include <type_traits>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
   // Forward declarations
   template<class T>        class iScalar;
@@ -281,7 +280,5 @@ namespace Grid {
 
     enum { value = sizeof(real_scalar_type)/sizeof(float) };
   };
-}
-
-#endif
+NAMESPACE_END(Grid);
 

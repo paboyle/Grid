@@ -37,10 +37,9 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
 
   std::vector<int> seeds({1,2,3,4});
@@ -48,7 +47,7 @@ int main (int argc, char ** argv)
 
   LatticeFermion src(&Grid); random(pRNG,src);
   RealD nrm = norm2(src);
-  LatticeFermion result(&Grid); result=zero;
+  LatticeFermion result(&Grid); result=Zero();
   LatticeGaugeField Umu(&Grid);
   //  SU3::HotConfiguration(pRNG,Umu);
   SU3::ColdConfiguration(Umu);
@@ -58,10 +57,10 @@ int main (int argc, char ** argv)
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
   }
 
-  std::vector<int> site({4,4,0,0});
-  src=zero;
+  Coordinate site({4,4,0,0});
+  src=Zero();
   SpinColourVector scv;
-  scv=zero;
+  scv=Zero();
   scv()(0)(0) = 1.0;
   pokeSite(scv,src,site);
 
