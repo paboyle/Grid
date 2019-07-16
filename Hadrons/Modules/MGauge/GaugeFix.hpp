@@ -4,9 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Modules/MGauge/GaugeFix.hpp
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Nils Asmussen <n.asmussen@soton.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
@@ -41,6 +42,8 @@ BEGIN_HADRONS_NAMESPACE
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MGauge)
 
+GRID_SERIALIZABLE_ENUM(Fix, undef, coulomb, Nd - 1, landau, -1);
+
 class GaugeFixPar: Serializable
 {
 public:
@@ -50,6 +53,7 @@ public:
                                     int, maxiter, 
                                     Real, Omega_tol, 
                                     Real, Phi_tol,
+                                    Fix,  gaugeFix,
                                     bool, Fourier);
 };
 
@@ -58,6 +62,7 @@ class TGaugeFix: public Module<GaugeFixPar>
 {
 public:
     GAUGE_TYPE_ALIASES(GImpl,);
+    typedef typename GImpl::GaugeLinkField GaugeMat;
 public:
     // constructor
     TGaugeFix(const std::string name);
@@ -94,7 +99,7 @@ std::vector<std::string> TGaugeFix<GImpl>::getInput(void)
 template <typename GImpl>
 std::vector<std::string> TGaugeFix<GImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {getName(), getName()+"_xform"};
     return out;
 }
 
@@ -103,6 +108,7 @@ template <typename GImpl>
 void TGaugeFix<GImpl>::setup(void)
 {
     envCreateLat(GaugeField, getName());
+    envCreateLat(GaugeMat, getName()+"_xform");
 }
 
 
@@ -112,19 +118,21 @@ void TGaugeFix<GImpl>::execute(void)
 //Loads the gauge and fixes it
 {
     std::cout << "executing" << std::endl;
-    LOG(Message) << "Fixing the Gauge" << std::endl;
-    LOG(Message) << par().gauge << std::endl;
+    LOG(Message) << "Fixing the Gauge " << par().gauge << " using "
+                 << par().gaugeFix << " guage fixing. " << Nd - 1 << std::endl;
     auto &U     = envGet(GaugeField, par().gauge);
     auto &Umu   = envGet(GaugeField, getName());
+    auto &xform = envGet(GaugeMat, getName()+"_xform");
     LOG(Message) << "Gauge Field fetched" << std::endl;
     //do we allow maxiter etc to be user set?
     Real alpha     = par().alpha;
     int  maxiter   = par().maxiter;
     Real Omega_tol = par().Omega_tol;
     Real Phi_tol   = par().Phi_tol;
+    int  gaugeFix  = par().gaugeFix;
     bool Fourier   = par().Fourier;
-    FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(U,alpha,maxiter,Omega_tol,Phi_tol,Fourier);
     Umu = U;
+    FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(Umu,xform,alpha,maxiter,Omega_tol,Phi_tol,Fourier,gaugeFix);
     LOG(Message) << "Gauge Fixed" << std::endl;
 }
 

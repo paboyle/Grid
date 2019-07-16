@@ -26,15 +26,15 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-			   /*  END LEGAL */
-			   //--------------------------------------------------------------------
+/*  END LEGAL */
+//--------------------------------------------------------------------
 
 
-			   /*! @file Integrator_algorithm.h
-			    * @brief Declaration of classes for the Molecular Dynamics algorithms
-			    *
-			    */
-			   //--------------------------------------------------------------------
+/*! @file Integrator_algorithm.h
+ * @brief Declaration of classes for the Molecular Dynamics algorithms
+ *
+ */
+//--------------------------------------------------------------------
 
 #ifndef INTEGRATOR_ALG_INCLUDED
 #define INTEGRATOR_ALG_INCLUDED
@@ -92,22 +92,17 @@ NAMESPACE_BEGIN(Grid);
  *  P 1/2                            P 1/2
  */
 
-template <class FieldImplementation, class SmearingPolicy,
-          class RepresentationPolicy =
-	  Representations<FundamentalRepresentation> >
-class LeapFrog : public Integrator<FieldImplementation, SmearingPolicy,
-                                   RepresentationPolicy> {
+template <class FieldImplementation, class SmearingPolicy, class RepresentationPolicy = Representations<FundamentalRepresentation> >
+class LeapFrog : public Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy> 
+{
 public:
-  typedef LeapFrog<FieldImplementation, SmearingPolicy, RepresentationPolicy>
-  Algorithm;
+  typedef LeapFrog<FieldImplementation, SmearingPolicy, RepresentationPolicy> Algorithm;
   INHERIT_FIELD_TYPES(FieldImplementation);
 
   std::string integrator_name(){return "LeapFrog";}
 
-  LeapFrog(GridBase* grid, IntegratorParameters Par,
-           ActionSet<Field, RepresentationPolicy>& Aset, SmearingPolicy& Sm)
-    : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(
-									    grid, Par, Aset, Sm){};
+  LeapFrog(GridBase* grid, IntegratorParameters Par, ActionSet<Field, RepresentationPolicy>& Aset, SmearingPolicy& Sm)
+    : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(grid, Par, Aset, Sm){};
 
   void step(Field& U, int level, int _first, int _last) {
     int fl = this->as.size() - 1;
@@ -140,21 +135,17 @@ public:
   }
 };
 
-template <class FieldImplementation, class SmearingPolicy,
-          class RepresentationPolicy =
-	  Representations<FundamentalRepresentation> >
-class MinimumNorm2 : public Integrator<FieldImplementation, SmearingPolicy,
-                                       RepresentationPolicy> {
+template <class FieldImplementation, class SmearingPolicy, class RepresentationPolicy = Representations<FundamentalRepresentation> >
+class MinimumNorm2 : public Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy> 
+{
 private:
   const RealD lambda = 0.1931833275037836;
 
 public:
   INHERIT_FIELD_TYPES(FieldImplementation);
 
-  MinimumNorm2(GridBase* grid, IntegratorParameters Par,
-               ActionSet<Field, RepresentationPolicy>& Aset, SmearingPolicy& Sm)
-    : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(
-									    grid, Par, Aset, Sm){};
+  MinimumNorm2(GridBase* grid, IntegratorParameters Par, ActionSet<Field, RepresentationPolicy>& Aset, SmearingPolicy& Sm)
+    : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(grid, Par, Aset, Sm){};
 
   std::string integrator_name(){return "MininumNorm2";}
 
@@ -201,14 +192,11 @@ public:
   }
 };
 
-template <class FieldImplementation, class SmearingPolicy,
-          class RepresentationPolicy =
-	  Representations<FundamentalRepresentation> >
-class ForceGradient : public Integrator<FieldImplementation, SmearingPolicy,
-                                        RepresentationPolicy> {
+template <class FieldImplementation, class SmearingPolicy, class RepresentationPolicy = Representations<FundamentalRepresentation> >
+class ForceGradient : public Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy> 
+{
 private:
   const RealD lambda = 1.0 / 6.0;
-  ;
   const RealD chi = 1.0 / 72.0;
   const RealD xi = 0.0;
   const RealD theta = 0.0;
@@ -230,8 +218,7 @@ public:
     Field Pfg(U.Grid());
     Ufg = U;
     Pfg = Zero();
-    std::cout << GridLogIntegrator << "FG update " << fg_dt << " " << ep
-              << std::endl;
+    std::cout << GridLogIntegrator << "FG update " << fg_dt << " " << ep << std::endl;
     // prepare_fg; no prediction/result cache for now
     // could relax CG stopping conditions for the
     // derivatives in the small step since the force gets multiplied by
@@ -270,8 +257,7 @@ public:
         this->step(U, level + 1, first_step, 0);
       }
 
-      this->FG_update_P(U, level, 2 * Chi / ((1.0 - 2.0 * lambda) * eps),
-                        (1.0 - 2.0 * lambda) * eps);
+      this->FG_update_P(U, level, 2 * Chi / ((1.0 - 2.0 * lambda) * eps), (1.0 - 2.0 * lambda) * eps);
 
       if (level == fl) {  // lowest level
         this->update_U(U, 0.5 * eps);

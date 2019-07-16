@@ -52,35 +52,40 @@ template<class vobj> static std::string getFormatString (void)
     format = std::string("IEEE64BIG");
   }
   return format;
-}
-////////////////////////////////////////////////////////////////////////////////
-// header specification/interpretation
-////////////////////////////////////////////////////////////////////////////////
-class FieldMetaData : Serializable {
-public:
+};
 
-  GRID_SERIALIZABLE_CLASS_MEMBERS(FieldMetaData,
-				  int, nd,
-				  std::vector<int>, dimension,
-				  std::vector<std::string>, boundary,
-				  int, data_start,
-				  std::string, hdr_version,
-				  std::string, storage_format,
-				  double, link_trace,
-				  double, plaquette,
-				  uint32_t, checksum,
-				  uint32_t, scidac_checksuma,
-				  uint32_t, scidac_checksumb,
-				  unsigned int, sequence_number,
-				  std::string, data_type,
-				  std::string, ensemble_id,
-				  std::string, ensemble_label,
-				  std::string, ildg_lfn,
-				  std::string, creator,
-				  std::string, creator_hardware,
-				  std::string, creation_date,
-				  std::string, archive_date,
-				  std::string, floating_point);
+  ////////////////////////////////////////////////////////////////////////////////
+  // header specification/interpretation
+  ////////////////////////////////////////////////////////////////////////////////
+    class FieldNormMetaData : Serializable {
+    public:
+      GRID_SERIALIZABLE_CLASS_MEMBERS(FieldNormMetaData, double, norm2);
+    };
+    class FieldMetaData : Serializable {
+    public:
+
+      GRID_SERIALIZABLE_CLASS_MEMBERS(FieldMetaData,
+				      int, nd,
+				      std::vector<int>, dimension,
+				      std::vector<std::string>, boundary,
+				      int, data_start,
+				      std::string, hdr_version,
+				      std::string, storage_format,
+				      double, link_trace,
+				      double, plaquette,
+				      uint32_t, checksum,
+				      uint32_t, scidac_checksuma,
+				      uint32_t, scidac_checksumb,
+				      unsigned int, sequence_number,
+				      std::string, data_type,
+				      std::string, ensemble_id,
+				      std::string, ensemble_label,
+				      std::string, ildg_lfn,
+				      std::string, creator,
+				      std::string, creator_hardware,
+				      std::string, creation_date,
+				      std::string, archive_date,
+				      std::string, floating_point);
       // WARNING: non-initialised values might lead to twisted parallel IO
       // issues, std::string are fine because they initliase to size 0
       // as per C++ standard.
@@ -89,7 +94,7 @@ public:
       link_trace(0.), plaquette(0.), checksum(0),
       scidac_checksuma(0), scidac_checksumb(0), sequence_number(0)
       {}
-};
+  };
 
 // PB disable using namespace - this is a header and forces namesapce visibility for all 
 // including files

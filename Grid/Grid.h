@@ -1,4 +1,4 @@
-/*************************************************************************************
+    /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -25,8 +25,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-*************************************************************************************/
-/*  END LEGAL */
+    *************************************************************************************/
+    /*  END LEGAL */
 //
 //  Grid.h
 //  simd
@@ -42,9 +42,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/GridQCDcore.h>
 #include <Grid/qcd/action/Action.h>
 #include <Grid/qcd/utils/GaugeFix.h>
-NAMESPACE_CHECK(GaugeFix);
+#include <Grid/qcd/utils/CovariantSmearing.h>
 #include <Grid/qcd/smearing/Smearing.h>
-NAMESPACE_CHECK(Smearing);
 #include <Grid/parallelIO/MetaData.h>
 #include <Grid/qcd/hmc/HMC_aggregate.h>
 

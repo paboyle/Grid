@@ -4,8 +4,9 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Modules/MSolver/A2AAslashVectors.hpp
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
+Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Vera Guelpers <Vera.Guelpers@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify

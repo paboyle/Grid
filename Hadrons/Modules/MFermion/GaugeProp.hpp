@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Modules/MFermion/GaugeProp.hpp
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Guido Cossu <guido.cossu@ed.ac.uk>
@@ -111,12 +111,17 @@ void TGaugeProp<FImpl>::setup(void)
 {
     Ls_ = env().getObjectLs(par().solver);
     envCreateLat(PropagatorField, getName());
-    envTmpLat(FermionField, "source", Ls_);
-    envTmpLat(FermionField, "sol", Ls_);
     envTmpLat(FermionField, "tmp");
     if (Ls_ > 1)
     {
+        envTmpLat(FermionField, "source", Ls_);
+        envTmpLat(FermionField, "sol", Ls_);
         envCreateLat(PropagatorField, getName() + "_5d", Ls_);
+    }
+    else
+    {
+       envTmpLat(FermionField, "source");
+       envTmpLat(FermionField, "sol");
     }
 }
 

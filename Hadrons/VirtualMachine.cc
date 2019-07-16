@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/VirtualMachine.cc
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -601,11 +601,10 @@ VirtualMachine::Program VirtualMachine::schedule(const GeneticPar &par)
     Scheduler scheduler(graph, memPeak, gpar);
     gen = 0;
     scheduler.initPopulation();
-    LOG(Iterative) << "Start: " << sizeString(scheduler.getMinValue()) 
-                   << std::endl;
+    LOG(Message) << "Start: " << sizeString(scheduler.getMinValue()) 
+                 << std::endl;
     do
     {
-        //LOG(Debug) << "Generation " << gen << ":" << std::endl;
         scheduler.nextGeneration();
         if (gen != 0)
         {
@@ -622,8 +621,8 @@ VirtualMachine::Program VirtualMachine::schedule(const GeneticPar &par)
         prevPeak = scheduler.getMinValue();
         if (gen % 10 == 0)
         {
-            LOG(Iterative) << "Generation " << gen << ": "
-                           << sizeString(scheduler.getMinValue()) << std::endl;
+            LOG(Message) << "Generation " << gen << ": "
+                         << sizeString(scheduler.getMinValue()) << std::endl;
         }
         
         gen++;

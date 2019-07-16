@@ -898,6 +898,79 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const Fe
     merge(qSiteRev, qSiteVec); \
 }
 
+//          psi = chiralProjectPlus(Result_s[Ls/2-1]);
+//          psi+= chiralProjectMinus(Result_s[Ls/2]);
+//         PJ5q+=localInnerProduct(psi,psi);
+
+template<class vobj> 
+Lattice<vobj> spProj5p(const Lattice<vobj> & in)
+{
+  GridBase *grid=in.Grid();
+  Gamma G5(Gamma::Algebra::Gamma5);
+  Lattice<vobj> ret(grid);
+  auto ret_v = ret.View();
+  auto in_v  =  in.View();
+  thread_for(ss,grid->oSites(),{
+    ret_v[ss] = in_v[ss] + G5*in_v[ss];
+  });
+  return ret;
+}
+template<class vobj> 
+Lattice<vobj> spProj5m(const Lattice<vobj> & in)
+{
+  Gamma G5(Gamma::Algebra::Gamma5);
+  GridBase *grid=in.Grid();
+  Lattice<vobj> ret(grid);
+  auto ret_v = ret.View();
+  auto in_v  =  in.View();
+  thread_for(ss,grid->oSites(),{
+    ret_v[ss] = in_v[ss] - G5*in_v[ss];
+  });
+  return ret;
+}
+
+template <class Impl>
+void WilsonFermion5D<Impl>::ContractJ5q(FermionField &q_in,ComplexField &J5q)
+{
+  conformable(GaugeGrid(), J5q.Grid());
+  conformable(q_in.Grid(), FermionGrid());
+
+  // 4d field
+  int Ls = this->Ls;
+  FermionField psi(GaugeGrid());
+  FermionField p_plus (GaugeGrid());
+  FermionField p_minus(GaugeGrid());
+  FermionField p(GaugeGrid());
+
+  ExtractSlice(p_plus , q_in, Ls/2   , 0);
+  ExtractSlice(p_minus, q_in, Ls/2-1 , 0);
+  p_plus = spProj5p(p_plus );
+  p_minus= spProj5m(p_minus);
+  p=p_plus+p_minus;
+  J5q = localInnerProduct(p,p);
+}
+
+template <class Impl>
+void WilsonFermion5D<Impl>::ContractJ5q(PropagatorField &q_in,ComplexField &J5q)
+{
+  conformable(GaugeGrid(), J5q.Grid());
+  conformable(q_in.Grid(), FermionGrid());
+
+  // 4d field
+  int Ls = this->Ls;
+  PropagatorField psi(GaugeGrid());
+  PropagatorField p_plus (GaugeGrid());
+  PropagatorField p_minus(GaugeGrid());
+  PropagatorField p(GaugeGrid());
+
+  ExtractSlice(p_plus , q_in, Ls/2   , 0);
+  ExtractSlice(p_minus, q_in, Ls/2-1 , 0);
+  p_plus = spProj5p(p_plus );
+  p_minus= spProj5m(p_minus);
+  p=p_plus+p_minus;
+  J5q = localInnerProduct(p,p);
+}
+
 template <class Impl>
 void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
                                                      PropagatorField &q_in_2,
@@ -908,6 +981,7 @@ void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
     conformable(q_in_1.Grid(), FermionGrid());
     conformable(q_in_1.Grid(), q_in_2.Grid());
     conformable(_FourDimGrid, q_out.Grid());
+
     PropagatorField tmp1(FermionGrid()), tmp2(FermionGrid());
     unsigned int LLs = q_in_1.Grid()->_rdimensions[0];
     q_out = Zero();
@@ -958,7 +1032,6 @@ void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
         }
     });
 }
-
 
 
 template <class Impl>

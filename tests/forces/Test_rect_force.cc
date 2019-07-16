@@ -57,9 +57,10 @@ int main (int argc, char ** argv)
   SU3::HotConfiguration(pRNG,U);
   
   double beta = 1.0;
-  double c1   = 0.331;
+  double c1   = -0.331;
 
-  PlaqPlusRectangleActionR Action(beta,c1);
+  IwasakiGaugeActionR Action(beta);
+  //  PlaqPlusRectangleActionR Action(beta,c1);
   //  WilsonGaugeActionR Action(beta);
 
   ComplexD S    = Action.S(U);
@@ -91,6 +92,12 @@ int main (int argc, char ** argv)
     auto mom_v    = mom.View();
     thread_foreach(i,mom_v,{ // exp(pmu dt) * Umu
       Uprime_v[i](mu) = U_v[i](mu) + mom_v[i](mu)*U_v[i](mu)*dt ;
+      Uprime_v[i](mu) = U_v[i](mu) + mom_v[i](mu)*U_v[i](mu)*dt 
+	+ mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt/2.0)
+	+ mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt/6.0)
+	+ mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt/24.0)
+	+ mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt*dt/120.0)
+	+ mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt*dt*dt/720.0);
     });
   }
 
@@ -117,6 +124,7 @@ int main (int argc, char ** argv)
   }
   ComplexD dSpred    = sum(dS);
 
+  std::cout << std::setprecision(15)<<std::endl;
   std::cout << GridLogMessage << " S      "<<S<<std::endl;
   std::cout << GridLogMessage << " Sprime "<<Sprime<<std::endl;
   std::cout << GridLogMessage << "dS      "<<Sprime-S<<std::endl;

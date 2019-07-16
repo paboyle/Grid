@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Application.cc
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -31,7 +31,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Modules.hpp>
 
 using namespace Grid;
- 
+using namespace QCD;
 using namespace Hadrons;
 
 #define BIG_SEP "================"
@@ -48,28 +48,32 @@ Application::Application(void)
 {
     initLogger();
     auto dim = GridDefaultLatt(), mpi = GridDefaultMpi(), loc(dim);
-    locVol_ = 1;
-    for (unsigned int d = 0; d < dim.size(); ++d)
+
+    if (dim.size())
     {
-        loc[d]  /= mpi[d];
-        locVol_ *= loc[d];
+        locVol_ = 1;
+        for (unsigned int d = 0; d < dim.size(); ++d)
+        {
+            loc[d]  /= mpi[d];
+            locVol_ *= loc[d];
+        }
+        LOG(Message) << "====== HADRONS APPLICATION INITIALISATION ======" << std::endl;
+        LOG(Message) << "** Dimensions" << std::endl;
+        LOG(Message) << "Global lattice: " << dim << std::endl;
+        LOG(Message) << "MPI partition : " << mpi << std::endl;
+        LOG(Message) << "Local lattice : " << loc << std::endl;
+        LOG(Message) << std::endl;
+        LOG(Message) << "** Default parameters (and associated C macros)" << std::endl;
+        LOG(Message) << "ASCII output precision  : " << MACOUT(DEFAULT_ASCII_PREC) << std::endl;
+        LOG(Message) << "Fermion implementation  : " << MACOUTS(FIMPLBASE) << std::endl;
+        LOG(Message) << "z-Fermion implementation: " << MACOUTS(ZFIMPLBASE) << std::endl;
+        LOG(Message) << "Scalar implementation   : " << MACOUTS(SIMPLBASE) << std::endl;
+        LOG(Message) << "Gauge implementation    : " << MACOUTS(GIMPLBASE) << std::endl;
+        LOG(Message) << "Eigenvector base size   : " 
+                    << MACOUT(HADRONS_DEFAULT_LANCZOS_NBASIS) << std::endl;
+        LOG(Message) << "Schur decomposition     : " << MACOUTS(HADRONS_DEFAULT_SCHUR) << std::endl;
+        LOG(Message) << std::endl;
     }
-    LOG(Message) << "====== HADRONS APPLICATION INITIALISATION ======" << std::endl;
-    LOG(Message) << "** Dimensions" << std::endl;
-    LOG(Message) << "Global lattice: " << dim << std::endl;
-    LOG(Message) << "MPI partition : " << mpi << std::endl;
-    LOG(Message) << "Local lattice : " << loc << std::endl;
-    LOG(Message) << std::endl;
-    LOG(Message) << "** Default parameters (and associated C macros)" << std::endl;
-    LOG(Message) << "ASCII output precision  : " << MACOUT(DEFAULT_ASCII_PREC) << std::endl;
-    LOG(Message) << "Fermion implementation  : " << MACOUTS(FIMPLBASE) << std::endl;
-    LOG(Message) << "z-Fermion implementation: " << MACOUTS(ZFIMPLBASE) << std::endl;
-    LOG(Message) << "Scalar implementation   : " << MACOUTS(SIMPLBASE) << std::endl;
-    LOG(Message) << "Gauge implementation    : " << MACOUTS(GIMPLBASE) << std::endl;
-    LOG(Message) << "Eigenvector base size   : " 
-                 << MACOUT(HADRONS_DEFAULT_LANCZOS_NBASIS) << std::endl;
-    LOG(Message) << "Schur decomposition     : " << MACOUTS(HADRONS_DEFAULT_SCHUR) << std::endl;
-    LOG(Message) << std::endl;
 }
 
 Application::Application(const Application::GlobalPar &par)
@@ -114,7 +118,22 @@ void Application::run(void)
     vm().setRunId(getPar().runId);
     vm().printContent();
     env().printContent();
-    schedule();
+    if (getPar().saveSchedule or getPar().scheduleFile.empty())
+    {
+        schedule();
+        if (getPar().saveSchedule)
+        {
+            std::string filename;
+
+            filename = (getPar().scheduleFile.empty()) ? 
+                         "hadrons.sched" : getPar().scheduleFile;
+            saveSchedule(filename);
+        }
+    }
+    else
+    {
+        loadSchedule(getPar().scheduleFile);
+    }
     printSchedule();
     if (!getPar().graphFile.empty())
     {
@@ -161,29 +180,30 @@ void Application::parseParameterFile(const std::string parameterFileName)
     pop(reader);
 }
 
-void Application::saveParameterFile(const std::string parameterFileName)
+void Application::saveParameterFile(const std::string parameterFileName, unsigned int prec)
 {
     LOG(Message) << "Saving application to '" << parameterFileName << "'..." << std::endl;
     if (env().getGrid()->IsBoss())
     {
-    XmlWriter          writer(parameterFileName);
-    ObjectId           id;
-    const unsigned int nMod = vm().getNModule();
-    
-    write(writer, "parameters", getPar());
-    push(writer, "modules");
-    for (unsigned int i = 0; i < nMod; ++i)
-    {
-        push(writer, "module");
-        id.name = vm().getModuleName(i);
-        id.type = vm().getModule(i)->getRegisteredName();
-        write(writer, "id", id);
-        vm().getModule(i)->saveParameters(writer, "options");
+        XmlWriter          writer(parameterFileName);
+        writer.setPrecision(prec);
+        ObjectId           id;
+        const unsigned int nMod = vm().getNModule();
+
+        write(writer, "parameters", getPar());
+        push(writer, "modules");
+        for (unsigned int i = 0; i < nMod; ++i)
+        {
+            push(writer, "module");
+            id.name = vm().getModuleName(i);
+            id.type = vm().getModule(i)->getRegisteredName();
+            write(writer, "id", id);
+            vm().getModule(i)->saveParameters(writer, "options");
+            pop(writer);
+        }
+        pop(writer);
         pop(writer);
     }
-    pop(writer);
-    pop(writer);
-}
 }
 
 // schedule computation ////////////////////////////////////////////////////////
@@ -202,20 +222,20 @@ void Application::saveSchedule(const std::string filename)
                  << std::endl;
     if (env().getGrid()->IsBoss())
     {
-    TextWriter               writer(filename);
-    std::vector<std::string> program;
-    
-    if (!scheduled_)
-    {
+        TextWriter               writer(filename);
+        std::vector<std::string> program;
+        
+        if (!scheduled_)
+        {
             HADRONS_ERROR(Definition, "Computation not scheduled");
-    }
+        }
 
-    for (auto address: program_)
-    {
-        program.push_back(vm().getModuleName(address));
+        for (auto address: program_)
+        {
+            program.push_back(vm().getModuleName(address));
+        }
+        write(writer, "schedule", program);
     }
-    write(writer, "schedule", program);
-}
 }
 
 void Application::loadSchedule(const std::string filename)

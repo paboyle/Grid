@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Modules/MIO/LoadEigenPack.cc
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -31,7 +31,7 @@ using namespace Grid;
 using namespace Hadrons;
 using namespace MIO;
 
-template class Grid::Hadrons::MIO::TLoadEigenPack<FermionEigenPack<FIMPL>>;
+template class Grid::Hadrons::MIO::TLoadEigenPack<FermionEigenPack<FIMPL>, GIMPL>;
 #ifdef GRID_DEFAULT_PRECISION_DOUBLE
-template class Grid::Hadrons::MIO::TLoadEigenPack<FermionEigenPack<FIMPL, FIMPLF>>;
+template class Grid::Hadrons::MIO::TLoadEigenPack<FermionEigenPack<FIMPL, FIMPLF>, GIMPL>;
 #endif

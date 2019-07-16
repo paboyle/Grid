@@ -52,5 +52,20 @@ for f in $TESTS; do
     echo ${BNAME}_LDADD=-lGrid>> Make.inc
     echo >> Make.inc
 done
+cd ..
 
+
+# HMC Make.inc
+cd $home/HMC
+echo> Make.inc
+TESTS=`ls *.cc`
+TESTLIST=`echo ${TESTS} | sed s/.cc//g `
+echo bin_PROGRAMS = ${TESTLIST} > Make.inc
+echo >> Make.inc
+for f in $TESTS; do
+    BNAME=`basename $f .cc`
+    echo ${BNAME}_SOURCES=$f  >> Make.inc
+    echo ${BNAME}_LDADD=-lGrid>> Make.inc
+    echo >> Make.inc
+done
 cd ..

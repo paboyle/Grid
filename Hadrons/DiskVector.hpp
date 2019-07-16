@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/DiskVector.hpp
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -395,12 +395,26 @@ void DiskVectorBase<T>::cacheInsert(const unsigned int i, const T &obj) const
     auto &freeInd  = *freePtr_;
     auto &loads    = *loadsPtr_;
 
-    evict();
-    index[i] = freeInd.top();
-    freeInd.pop();
-    cache[index.at(i)] = obj;
-    loads.push_back(i);
-    modified[index.at(i)] = false;
+    // cache miss, evict and store
+    if (index.find(i) == index.end())
+    {
+        evict();
+        index[i] = freeInd.top();
+        freeInd.pop();
+        cache[index.at(i)] = obj;
+        loads.push_back(i);
+        modified[index.at(i)] = false;
+    }
+    // cache hit, modify current value
+    else
+    {
+        auto pos = std::find(loads.begin(), loads.end(), i);
+        
+        cache[index.at(i)]    = obj;
+        modified[index.at(i)] = true;
+        loads.erase(pos);
+        loads.push_back(i);
+    }
 
 #ifdef DV_DEBUG
     std::string msg;

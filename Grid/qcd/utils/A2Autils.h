@@ -995,21 +995,20 @@ void A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
 	auto vs_v = vs[s].View();
 	auto tmp1 = vs_v[ss];
 	vobj tmp2 = Zero();
-
+	vobj tmp3 = Zero();
 	for(int d=d_o;d<MIN(d_o+d_unroll,N_d);d++){
-	  Scalar_v coeff = WW_sd(t,s,d);
 	  auto vd_v = vd[d].View();
-	  mac(&tmp2 ,& coeff, & vd_v[ss]);
+	  Scalar_v coeff = WW_sd(t,s,d);
+	  tmp3 = conjugate(vd_v[ss]);
+	  mac(&tmp2, &coeff, &tmp3);
 	}
 
 	//////////////////////////
 	// Fast outer product of tmp1 with a sum of terms suppressed by d_unroll
 	//////////////////////////
-	tmp2 = conjugate(tmp2);
 	auto WWVV_v = WWVV[t].View();
 	for(int s1=0;s1<Ns;s1++){
 	for(int s2=0;s2<Ns;s2++){
-	  
 	  WWVV_v[ss]()(s1,s2)(0,0) += tmp1()(s1)(0)*tmp2()(s2)(0);
 	  WWVV_v[ss]()(s1,s2)(0,1) += tmp1()(s1)(0)*tmp2()(s2)(1);
 	  WWVV_v[ss]()(s1,s2)(0,2) += tmp1()(s1)(0)*tmp2()(s2)(2);

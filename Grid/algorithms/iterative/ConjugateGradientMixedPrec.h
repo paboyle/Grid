@@ -30,36 +30,41 @@ Author: Christopher Kelly <ckelly@phys.columbia.edu>
 
 NAMESPACE_BEGIN(Grid);
 
-//Mixed precision restarted defect correction CG
-template<class FieldD,class FieldF, 
-	 typename std::enable_if< getPrecision<FieldD>::value == 2, int>::type = 0,
-	 typename std::enable_if< getPrecision<FieldF>::value == 1, int>::type = 0> 
-class MixedPrecisionConjugateGradient : public LinearFunction<FieldD> {
-public:                                                
-  RealD   Tolerance;
-  RealD   InnerTolerance; //Initial tolerance for inner CG. Defaults to Tolerance but can be changed
-  Integer MaxInnerIterations;
-  Integer MaxOuterIterations;
-  GridBase* SinglePrecGrid; //Grid for single-precision fields
-  RealD OuterLoopNormMult; //Stop the outer loop and move to a final double prec solve when the residual is OuterLoopNormMult * Tolerance
-  LinearOperatorBase<FieldF> &Linop_f;
-  LinearOperatorBase<FieldD> &Linop_d;
+  //Mixed precision restarted defect correction CG
+  template<class FieldD,class FieldF, 
+    typename std::enable_if< getPrecision<FieldD>::value == 2, int>::type = 0,
+    typename std::enable_if< getPrecision<FieldF>::value == 1, int>::type = 0> 
+  class MixedPrecisionConjugateGradient : public LinearFunction<FieldD> {
+  public:                                                
+    RealD   Tolerance;
+    RealD   InnerTolerance; //Initial tolerance for inner CG. Defaults to Tolerance but can be changed
+    Integer MaxInnerIterations;
+    Integer MaxOuterIterations;
+    GridBase* SinglePrecGrid; //Grid for single-precision fields
+    RealD OuterLoopNormMult; //Stop the outer loop and move to a final double prec solve when the residual is OuterLoopNormMult * Tolerance
+    LinearOperatorBase<FieldF> &Linop_f;
+    LinearOperatorBase<FieldD> &Linop_d;
 
-  Integer TotalInnerIterations; //Number of inner CG iterations
-  Integer TotalOuterIterations; //Number of restarts
-  Integer TotalFinalStepIterations; //Number of CG iterations in final patch-up step
+    Integer TotalInnerIterations; //Number of inner CG iterations
+    Integer TotalOuterIterations; //Number of restarts
+    Integer TotalFinalStepIterations; //Number of CG iterations in final patch-up step
 
-  //Option to speed up *inner single precision* solves using a LinearFunction that produces a guess
-  LinearFunction<FieldF> *guesser;
+    //Option to speed up *inner single precision* solves using a LinearFunction that produces a guess
+    LinearFunction<FieldF> *guesser;
     
-  MixedPrecisionConjugateGradient(RealD tol, Integer maxinnerit, Integer maxouterit, GridBase* _sp_grid, LinearOperatorBase<FieldF> &_Linop_f, LinearOperatorBase<FieldD> &_Linop_d) :
-    Linop_f(_Linop_f), Linop_d(_Linop_d),
-    Tolerance(tol), InnerTolerance(tol), MaxInnerIterations(maxinnerit), MaxOuterIterations(maxouterit), SinglePrecGrid(_sp_grid),
-    OuterLoopNormMult(100.), guesser(NULL){ };
+    MixedPrecisionConjugateGradient(RealD tol, 
+				    Integer maxinnerit, 
+				    Integer maxouterit, 
+				    GridBase* _sp_grid, 
+				    LinearOperatorBase<FieldF> &_Linop_f, 
+				    LinearOperatorBase<FieldD> &_Linop_d) :
+      Linop_f(_Linop_f), Linop_d(_Linop_d),
+      Tolerance(tol), InnerTolerance(tol), MaxInnerIterations(maxinnerit), MaxOuterIterations(maxouterit), SinglePrecGrid(_sp_grid),
+      OuterLoopNormMult(100.), guesser(NULL){ };
 
-  void useGuesser(LinearFunction<FieldF> &g){
-    guesser = &g;
-  }
+    void useGuesser(LinearFunction<FieldF> &g){
+      guesser = &g;
+    }
   
   void operator() (const FieldD &src_d_in, FieldD &sol_d){
     TotalInnerIterations = 0;

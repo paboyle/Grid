@@ -171,144 +171,142 @@ public:
   }
 };
 
-//////////////////////////////////////////////////////////
-// Even Odd Schur decomp operators; there are several
-// ways to introduce the even odd checkerboarding
-//////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////
+    // Even Odd Schur decomp operators; there are several
+    // ways to introduce the even odd checkerboarding
+    //////////////////////////////////////////////////////////
 
-template<class Field>
-class SchurOperatorBase :  public LinearOperatorBase<Field> {
-public:
-  virtual  RealD Mpc      (const Field &in, Field &out) =0;
-  virtual  RealD MpcDag   (const Field &in, Field &out) =0;
-  virtual void MpcDagMpc(const Field &in, Field &out,RealD &ni,RealD &no) 
-  {
-    Field tmp(in.Grid());
-    tmp.Checkerboard() = in.Checkerboard();
-    ni=Mpc(in,tmp);
-    no=MpcDag(tmp,out);
-  }
-  virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
-    out.Checkerboard() = in.Checkerboard();
-    MpcDagMpc(in,out,n1,n2);
-  }
-  virtual void HermOp(const Field &in, Field &out){
-    RealD n1,n2;
-    HermOpAndNorm(in,out,n1,n2);
-  }
-  void Op     (const Field &in, Field &out){
-    Mpc(in,out);
-  }
-  void AdjOp     (const Field &in, Field &out){ 
-    MpcDag(in,out);
-  }
-  // Support for coarsening to a multigrid
-  void OpDiag (const Field &in, Field &out) {
-    assert(0); // must coarsen the unpreconditioned system
-  }
-  void OpDir  (const Field &in, Field &out,int dir,int disp) {
-    assert(0);
-  }
-};
-template<class Matrix,class Field>
-class SchurDiagMooeeOperator :  public SchurOperatorBase<Field> {
-protected:
-  Matrix &_Mat;
-public:
-  SchurDiagMooeeOperator (Matrix &Mat): _Mat(Mat){};
-  virtual  RealD Mpc      (const Field &in, Field &out) {
-    Field tmp(in.Grid());
-    //	std::cout <<"grid pointers: in.Grid()="<< in.Grid() << " out.Grid()=" << out.Grid() << "  _Mat.Grid=" << _Mat.Grid() << " _Mat.RedBlackGrid=" << _Mat.RedBlackGrid() << std::endl;
-    tmp.Checkerboard() = !in.Checkerboard();
+    template<class Field>
+    class SchurOperatorBase :  public LinearOperatorBase<Field> {
+    public:
+      virtual  RealD Mpc      (const Field &in, Field &out) =0;
+      virtual  RealD MpcDag   (const Field &in, Field &out) =0;
+      virtual void MpcDagMpc(const Field &in, Field &out,RealD &ni,RealD &no) {
+      Field tmp(in.Grid());
+      tmp.Checkerboard() = in.Checkerboard();
+	ni=Mpc(in,tmp);
+	no=MpcDag(tmp,out);
+      }
+      virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
+      out.Checkerboard() = in.Checkerboard();
+	MpcDagMpc(in,out,n1,n2);
+      }
+      virtual void HermOp(const Field &in, Field &out){
+	RealD n1,n2;
+	HermOpAndNorm(in,out,n1,n2);
+      }
+      void Op     (const Field &in, Field &out){
+	Mpc(in,out);
+      }
+      void AdjOp     (const Field &in, Field &out){ 
+	MpcDag(in,out);
+      }
+      // Support for coarsening to a multigrid
+      void OpDiag (const Field &in, Field &out) {
+	assert(0); // must coarsen the unpreconditioned system
+      }
+      void OpDir  (const Field &in, Field &out,int dir,int disp) {
+	assert(0);
+      }
+    };
+    template<class Matrix,class Field>
+    class SchurDiagMooeeOperator :  public SchurOperatorBase<Field> {
+    public:
+      Matrix &_Mat;
+      SchurDiagMooeeOperator (Matrix &Mat): _Mat(Mat){};
+      virtual  RealD Mpc      (const Field &in, Field &out) {
+      Field tmp(in.Grid());
+      tmp.Checkerboard() = !in.Checkerboard();
+	//std::cout <<"grid pointers: in._grid="<< in._grid << " out._grid=" << out._grid << "  _Mat.Grid=" << _Mat.Grid() << " _Mat.RedBlackGrid=" << _Mat.RedBlackGrid() << std::endl;
 
-    _Mat.Meooe(in,tmp);
-    _Mat.MooeeInv(tmp,out);
-    _Mat.Meooe(out,tmp);
+	_Mat.Meooe(in,tmp);
+	_Mat.MooeeInv(tmp,out);
+	_Mat.Meooe(out,tmp);
 
       //std::cout << "cb in " << in.Checkerboard() << "  cb out " << out.Checkerboard() << std::endl;
-    _Mat.Mooee(in,out);
-    return axpy_norm(out,-1.0,tmp,out);
-  }
-  virtual  RealD MpcDag   (const Field &in, Field &out){
-    Field tmp(in.Grid());
+	_Mat.Mooee(in,out);
+	return axpy_norm(out,-1.0,tmp,out);
+      }
+      virtual  RealD MpcDag   (const Field &in, Field &out){
+	Field tmp(in.Grid());
 
-    _Mat.MeooeDag(in,tmp);
-    _Mat.MooeeInvDag(tmp,out);
-    _Mat.MeooeDag(out,tmp);
+	_Mat.MeooeDag(in,tmp);
+        _Mat.MooeeInvDag(tmp,out);
+	_Mat.MeooeDag(out,tmp);
 
-    _Mat.MooeeDag(in,out);
-    return axpy_norm(out,-1.0,tmp,out);
-  }
-};
-template<class Matrix,class Field>
-class SchurDiagOneOperator :  public SchurOperatorBase<Field> {
-protected:
-  Matrix &_Mat;
-public:
-  SchurDiagOneOperator (Matrix &Mat): _Mat(Mat){};
+	_Mat.MooeeDag(in,out);
+	return axpy_norm(out,-1.0,tmp,out);
+      }
+    };
+    template<class Matrix,class Field>
+      class SchurDiagOneOperator :  public SchurOperatorBase<Field> {
+    protected:
+      Matrix &_Mat;
+    public:
+      SchurDiagOneOperator (Matrix &Mat): _Mat(Mat){};
 
-  virtual  RealD Mpc      (const Field &in, Field &out) {
-    Field tmp(in.Grid());
+      virtual  RealD Mpc      (const Field &in, Field &out) {
+	Field tmp(in.Grid());
 
-    _Mat.Meooe(in,out);
-    _Mat.MooeeInv(out,tmp);
-    _Mat.Meooe(tmp,out);
-    _Mat.MooeeInv(out,tmp);
+	_Mat.Meooe(in,out);
+	_Mat.MooeeInv(out,tmp);
+	_Mat.Meooe(tmp,out);
+	_Mat.MooeeInv(out,tmp);
 
-    return axpy_norm(out,-1.0,tmp,in);
-  }
-  virtual  RealD MpcDag   (const Field &in, Field &out){
-    Field tmp(in.Grid());
+	return axpy_norm(out,-1.0,tmp,in);
+      }
+      virtual  RealD MpcDag   (const Field &in, Field &out){
+	Field tmp(in.Grid());
 
-    _Mat.MooeeInvDag(in,out);
-    _Mat.MeooeDag(out,tmp);
-    _Mat.MooeeInvDag(tmp,out);
-    _Mat.MeooeDag(out,tmp);
+	_Mat.MooeeInvDag(in,out);
+	_Mat.MeooeDag(out,tmp);
+	_Mat.MooeeInvDag(tmp,out);
+	_Mat.MeooeDag(out,tmp);
 
-    return axpy_norm(out,-1.0,tmp,in);
-  }
-};
-template<class Matrix,class Field>
-class SchurDiagTwoOperator :  public SchurOperatorBase<Field> {
-protected:
-  Matrix &_Mat;
-public:
-  SchurDiagTwoOperator (Matrix &Mat): _Mat(Mat){};
+	return axpy_norm(out,-1.0,tmp,in);
+      }
+    };
+    template<class Matrix,class Field>
+      class SchurDiagTwoOperator :  public SchurOperatorBase<Field> {
+    protected:
+      Matrix &_Mat;
+    public:
+      SchurDiagTwoOperator (Matrix &Mat): _Mat(Mat){};
 
-  virtual  RealD Mpc      (const Field &in, Field &out) {
-    Field tmp(in.Grid());
+      virtual  RealD Mpc      (const Field &in, Field &out) {
+	Field tmp(in.Grid());
 
-    _Mat.MooeeInv(in,out);
-    _Mat.Meooe(out,tmp);
-    _Mat.MooeeInv(tmp,out);
-    _Mat.Meooe(out,tmp);
+	_Mat.MooeeInv(in,out);
+	_Mat.Meooe(out,tmp);
+	_Mat.MooeeInv(tmp,out);
+	_Mat.Meooe(out,tmp);
 
-    return axpy_norm(out,-1.0,tmp,in);
-  }
-  virtual  RealD MpcDag   (const Field &in, Field &out){
-    Field tmp(in.Grid());
+	return axpy_norm(out,-1.0,tmp,in);
+      }
+      virtual  RealD MpcDag   (const Field &in, Field &out){
+	Field tmp(in.Grid());
 
-    _Mat.MeooeDag(in,out);
-    _Mat.MooeeInvDag(out,tmp);
-    _Mat.MeooeDag(tmp,out);
-    _Mat.MooeeInvDag(out,tmp);
+	_Mat.MeooeDag(in,out);
+	_Mat.MooeeInvDag(out,tmp);
+	_Mat.MeooeDag(tmp,out);
+	_Mat.MooeeInvDag(out,tmp);
 
-    return axpy_norm(out,-1.0,tmp,in);
-  }
-};
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Left  handed Moo^-1 ; (Moo - Moe Mee^-1 Meo) psi = eta  -->  ( 1 - Moo^-1 Moe Mee^-1 Meo ) psi = Moo^-1 eta
-// Right handed Moo^-1 ; (Moo - Moe Mee^-1 Meo) Moo^-1 Moo psi = eta  -->  ( 1 - Moe Mee^-1 Meo ) Moo^-1 phi=eta ; psi = Moo^-1 phi
-///////////////////////////////////////////////////////////////////////////////////////////////////
-template<class Matrix,class Field> using SchurDiagOneRH = SchurDiagTwoOperator<Matrix,Field> ;
-template<class Matrix,class Field> using SchurDiagOneLH = SchurDiagOneOperator<Matrix,Field> ;
-///////////////////////////////////////////////////////////////////////////////////////////////////
-//  Staggered use
-///////////////////////////////////////////////////////////////////////////////////////////////////
-template<class Matrix,class Field>
-class SchurStaggeredOperator :  public SchurOperatorBase<Field> {
-protected:
-  Matrix &_Mat;
+	return axpy_norm(out,-1.0,tmp,in);
+      }
+    };
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    // Left  handed Moo^-1 ; (Moo - Moe Mee^-1 Meo) psi = eta  -->  ( 1 - Moo^-1 Moe Mee^-1 Meo ) psi = Moo^-1 eta
+    // Right handed Moo^-1 ; (Moo - Moe Mee^-1 Meo) Moo^-1 Moo psi = eta  -->  ( 1 - Moe Mee^-1 Meo ) Moo^-1 phi=eta ; psi = Moo^-1 phi
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    template<class Matrix,class Field> using SchurDiagOneRH = SchurDiagTwoOperator<Matrix,Field> ;
+    template<class Matrix,class Field> using SchurDiagOneLH = SchurDiagOneOperator<Matrix,Field> ;
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    //  Staggered use
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    template<class Matrix,class Field>
+      class SchurStaggeredOperator :  public SchurOperatorBase<Field> {
+    protected:
+      Matrix &_Mat;
       Field tmp;
       RealD mass;
       double tMpc;

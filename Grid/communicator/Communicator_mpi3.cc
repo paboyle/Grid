@@ -44,10 +44,13 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
   MPI_Initialized(&flag); // needed to coexist with other libs apparently
   if ( !flag ) {
     MPI_Init_thread(argc,argv,MPI_THREAD_MULTIPLE,&provided);
-    //    assert (provided == MPI_THREAD_MULTIPLE);
+
     //If only 1 comms thread we require any threading mode other than SINGLE, but for multiple comms threads we need MULTIPLE
-    if( (nCommThreads == 1 && provided == MPI_THREAD_SINGLE) ||
-        (nCommThreads > 1 && provided != MPI_THREAD_MULTIPLE) ) {
+    if( (nCommThreads == 1) && (provided == MPI_THREAD_SINGLE) ) {
+      assert(0);
+    }
+
+    if( (nCommThreads > 1) && (provided != MPI_THREAD_MULTIPLE) ) {
       assert(0);
     }
   }
@@ -55,9 +58,12 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
   // Never clean up as done once.
   MPI_Comm_dup (MPI_COMM_WORLD,&communicator_world);
 
+  Grid_quiesce_nodes();
   GlobalSharedMemory::Init(communicator_world);
-  GlobalSharedMemory::SharedMemoryAllocate(GlobalSharedMemory::MAX_MPI_SHM_BYTES,
-					   GlobalSharedMemory::Hugepages);
+  GlobalSharedMemory::SharedMemoryAllocate(
+		   GlobalSharedMemory::MAX_MPI_SHM_BYTES,
+		   GlobalSharedMemory::Hugepages);
+  Grid_unquiesce_nodes();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -106,8 +112,7 @@ CartesianCommunicator::CartesianCommunicator(const Coordinate &processors)
 //////////////////////////////////
 CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const CartesianCommunicator &parent,int &srank)    
 {
-  _ndimension = processors.size();
-
+  _ndimension = processors.size();  assert(_ndimension>=1);
   int parent_ndimension = parent._ndimension; assert(_ndimension >= parent._ndimension);
   Coordinate parent_processor_coor(_ndimension,0);
   Coordinate parent_processors    (_ndimension,1);

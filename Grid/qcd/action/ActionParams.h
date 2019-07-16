@@ -57,14 +57,15 @@ struct StaggeredImplParams {
   StaggeredImplParams()  {};
 };
   
-struct OneFlavourRationalParams : Serializable {
-  GRID_SERIALIZABLE_CLASS_MEMBERS(OneFlavourRationalParams, 
-				  RealD, lo, 
-				  RealD, hi, 
-				  int,   MaxIter, 
-				  RealD, tolerance, 
-				  int,   degree, 
-				  int,   precision);
+  struct OneFlavourRationalParams : Serializable {
+    GRID_SERIALIZABLE_CLASS_MEMBERS(OneFlavourRationalParams, 
+				    RealD, lo, 
+				    RealD, hi, 
+				    int,   MaxIter, 
+				    RealD, tolerance, 
+				    int,   degree, 
+				    int,   precision,
+				    int,   BoundsCheckFreq);
     
   // MaxIter and tolerance, vectors??
     
@@ -74,15 +75,17 @@ struct OneFlavourRationalParams : Serializable {
 				int _maxit     = 1000,
 				RealD tol      = 1.0e-8, 
                            	int _degree    = 10,
-				int _precision = 64)
-    : lo(_lo),
-      hi(_hi),
-      MaxIter(_maxit),
-      tolerance(tol),
-      degree(_degree),
-      precision(_precision){};
-};
-
+				int _precision = 64,
+				int _BoundsCheckFreq=20)
+      : lo(_lo),
+	hi(_hi),
+	MaxIter(_maxit),
+	tolerance(tol),
+	degree(_degree),
+        precision(_precision),
+        BoundsCheckFreq(_BoundsCheckFreq){};
+  };
+  
 NAMESPACE_END(Grid);
 
 #endif

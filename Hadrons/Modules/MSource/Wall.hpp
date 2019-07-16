@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Modules/MSource/Wall.hpp
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Lanny91 <andrew.lawson@gmail.com>
@@ -119,6 +119,9 @@ template <typename FImpl>
 void TWall<FImpl>::setup(void)
 {
     envCreateLat(PropagatorField, getName());
+    envCache(Lattice<iScalar<vInteger>>, tName_, 1, envGetGrid(LatticeComplex));
+    envCacheLat(LatticeComplex, momphName_);
+    envTmpLat(LatticeComplex, "coor");
 }
 
 // execution ///////////////////////////////////////////////////////////////////

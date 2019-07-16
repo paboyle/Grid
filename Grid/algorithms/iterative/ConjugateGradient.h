@@ -93,6 +93,8 @@ public:
 
     // Check if guess is really REALLY good :)
     if (cp <= rsq) {
+      std::cout << GridLogMessage << "ConjugateGradient guess is converged already " << std::endl;
+      IterationsToComplete = 0;	
       return;
     }
 
@@ -108,7 +110,7 @@ public:
 
     SolverTimer.Start();
     int k;
-    for (k = 1; k <= MaxIterations*1000; k++) {
+    for (k = 1; k <= MaxIterations; k++) {
       c = cp;
 
       MatrixTimer.Start();
@@ -172,8 +174,7 @@ public:
         return;
       }
     }
-    std::cout << GridLogMessage << "ConjugateGradient did NOT converge"
-              << std::endl;
+    std::cout << GridLogMessage << "ConjugateGradient did NOT converge "<<k<<" / "<< MaxIterations<< std::endl;
 
     if (ErrorOnNoConverge) assert(0);
     IterationsToComplete = k;

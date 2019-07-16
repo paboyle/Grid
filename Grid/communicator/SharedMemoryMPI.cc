@@ -141,8 +141,22 @@ int Log2Size(int TwoToPower,int MAXLOG2)
 }
 void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
 {
-#ifdef HYPERCUBE
-#warning "HPE 8600 Hypercube optimisations enabled"
+  //////////////////////////////////////////////////////////////////////////////
+  // Look and see if it looks like an HPE 8600 based on hostname conventions
+  //////////////////////////////////////////////////////////////////////////////
+  const int namelen = _POSIX_HOST_NAME_MAX;
+  char name[namelen];
+  int R;
+  int I;
+  int N;
+  gethostname(name,namelen);
+  int nscan = sscanf(name,"r%di%dn%d",&R,&I,&N) ;
+
+  if(nscan==3) OptimalCommunicatorHypercube(processors,optimal_comm);
+  else         OptimalCommunicatorSharedMemory(processors,optimal_comm);
+}
+void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
+{
   ////////////////////////////////////////////////////////////////
   // Assert power of two shm_size.
   ////////////////////////////////////////////////////////////////
@@ -208,7 +222,8 @@ void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_M
   ////////////////////////////////////////////////////////////////
   int ndimension              = processors.size();
   std::vector<int> processor_coor(ndimension);
-  std::vector<int> WorldDims = processors;   std::vector<int> ShmDims  (ndimension,1);  std::vector<int> NodeDims (ndimension);
+  std::vector<int> WorldDims = processors.toVector();
+  std::vector<int> ShmDims  (ndimension,1);  std::vector<int> NodeDims (ndimension);
   std::vector<int> ShmCoor  (ndimension);    std::vector<int> NodeCoor (ndimension);    std::vector<int> WorldCoor(ndimension);
   std::vector<int> HyperCoor(ndimension);
   int dim = 0;
@@ -263,7 +278,9 @@ void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_M
   /////////////////////////////////////////////////////////////////
   int ierr= MPI_Comm_split(WorldComm,0,rank,&optimal_comm);
   assert(ierr==0);
-#else 
+}
+void GlobalSharedMemory::OptimalCommunicatorSharedMemory(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
+{
   ////////////////////////////////////////////////////////////////
   // Assert power of two shm_size.
   ////////////////////////////////////////////////////////////////
@@ -316,7 +333,6 @@ void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_M
   /////////////////////////////////////////////////////////////////
   int ierr= MPI_Comm_split(WorldComm,0,rank,&optimal_comm);
   assert(ierr==0);
-#endif
 }
 ////////////////////////////////////////////////////////////////////////////////////////////
 // SHMGET
@@ -347,7 +363,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
         int errsv = errno;
         printf("Errno %d\n",errsv);
         printf("key   %d\n",key);
-        printf("size  %lld\n",size);
+        printf("size  %ld\n",size);
         printf("flags %d\n",flags);
         perror("shmget");
         exit(1);

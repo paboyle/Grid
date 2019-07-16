@@ -99,10 +99,13 @@ namespace Grid {
     OperatorFunction<Field> & _HermitianRBSolver;
     int CBfactorise;
     bool subGuess;
+    bool useSolnAsInitGuess; // if true user-supplied solution vector is used as initial guess for solver
   public:
 
-    SchurRedBlackBase(OperatorFunction<Field> &HermitianRBSolver, const bool initSubGuess = false)  :
-    _HermitianRBSolver(HermitianRBSolver) 
+    SchurRedBlackBase(OperatorFunction<Field> &HermitianRBSolver, const bool initSubGuess = false,
+        const bool _solnAsInitGuess = false)  :
+    _HermitianRBSolver(HermitianRBSolver),
+    useSolnAsInitGuess(_solnAsInitGuess)
     { 
       CBfactorise = 0;
       subtractGuess(initSubGuess);
@@ -156,7 +159,11 @@ namespace Grid {
       if ( subGuess ) guess_save.resize(nblock,grid);
 
       for(int b=0;b<nblock;b++){
-	guess(src_o[b],sol_o[b]); 
+        if(useSolnAsInitGuess) {
+          pickCheckerboard(Odd, sol_o[b], out[b]);
+        } else {
+          guess(src_o[b],sol_o[b]); 
+        }
 
 	if ( subGuess ) { 
 	  guess_save[b] = sol_o[b];
@@ -216,8 +223,11 @@ namespace Grid {
       ////////////////////////////////
       // Construct the guess
       ////////////////////////////////
-      Field   tmp(grid);
-      guess(src_o,sol_o);
+      if(useSolnAsInitGuess) {
+        pickCheckerboard(Odd, sol_o, out);
+      } else {
+        guess(src_o,sol_o);
+      }
 
       Field  guess_save(grid);
       guess_save = sol_o;
@@ -251,7 +261,7 @@ namespace Grid {
     }     
     
     /////////////////////////////////////////////////////////////
-    // Override in derived. Not virtual as template methods
+    // Override in derived. 
     /////////////////////////////////////////////////////////////
     virtual void RedBlackSource  (Matrix & _Matrix,const Field &src, Field &src_e,Field &src_o)                =0;
     virtual void RedBlackSolution(Matrix & _Matrix,const Field &sol_o, const Field &src_e,Field &sol)          =0;
@@ -264,8 +274,9 @@ namespace Grid {
   public:
     typedef CheckerBoardedSparseMatrixBase<Field> Matrix;
 
-    SchurRedBlackStaggeredSolve(OperatorFunction<Field> &HermitianRBSolver, const bool initSubGuess = false) 
-      :    SchurRedBlackBase<Field> (HermitianRBSolver,initSubGuess) 
+    SchurRedBlackStaggeredSolve(OperatorFunction<Field> &HermitianRBSolver, const bool initSubGuess = false,
+        const bool _solnAsInitGuess = false) 
+      :    SchurRedBlackBase<Field> (HermitianRBSolver,initSubGuess,_solnAsInitGuess) 
     {
     }
 
@@ -333,8 +344,9 @@ namespace Grid {
   public:
     typedef CheckerBoardedSparseMatrixBase<Field> Matrix;
 
-    SchurRedBlackDiagMooeeSolve(OperatorFunction<Field> &HermitianRBSolver, const bool initSubGuess = false)  
-      : SchurRedBlackBase<Field> (HermitianRBSolver,initSubGuess) {};
+    SchurRedBlackDiagMooeeSolve(OperatorFunction<Field> &HermitianRBSolver, const bool initSubGuess = false,
+        const bool _solnAsInitGuess = false)  
+      : SchurRedBlackBase<Field> (HermitianRBSolver,initSubGuess,_solnAsInitGuess) {};
 
 
     //////////////////////////////////////////////////////
@@ -405,8 +417,9 @@ namespace Grid {
     /////////////////////////////////////////////////////
     // Wrap the usual normal equations Schur trick
     /////////////////////////////////////////////////////
-  SchurRedBlackDiagTwoSolve(OperatorFunction<Field> &HermitianRBSolver, const bool initSubGuess = false)  
-    : SchurRedBlackBase<Field>(HermitianRBSolver,initSubGuess) {};
+  SchurRedBlackDiagTwoSolve(OperatorFunction<Field> &HermitianRBSolver, const bool initSubGuess = false,
+      const bool _solnAsInitGuess = false)  
+    : SchurRedBlackBase<Field>(HermitianRBSolver,initSubGuess,_solnAsInitGuess) {};
 
     virtual void RedBlackSource(Matrix & _Matrix,const Field &src, Field &src_e,Field &src_o)
     {

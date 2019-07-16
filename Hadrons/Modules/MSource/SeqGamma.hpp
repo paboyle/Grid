@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Modules/MSource/SeqGamma.hpp
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Lanny91 <andrew.lawson@gmail.com>
@@ -91,6 +91,7 @@ private:
 };
 
 MODULE_REGISTER_TMP(SeqGamma, TSeqGamma<FIMPL>, MSource);
+MODULE_REGISTER_TMP(ZSeqGamma, TSeqGamma<ZFIMPL>, MSource);
 
 /******************************************************************************
  *                         TSeqGamma implementation                           *

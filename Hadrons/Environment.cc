@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: Hadrons/Environment.cc
 
-Copyright (C) 2015-2018
+Copyright (C) 2015-2019
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -45,13 +45,11 @@ Environment::Environment(void)
 {
     dim_ = GridDefaultLatt().toVector();
     nd_  = dim_.size();
-    createGrid<vComplex>(1);
     vol_ = 1.;
     for (auto d: dim_)
     {
         vol_ *= d;
     }
-    rng4d_.reset(new GridParallelRNG(getGrid()));
 }
 
 // grids ///////////////////////////////////////////////////////////////////////
@@ -76,8 +74,13 @@ double Environment::getVolume(void) const
 }
 
 // random number generator /////////////////////////////////////////////////////
-GridParallelRNG * Environment::get4dRng(void) const
+GridParallelRNG * Environment::get4dRng(void)
 {
+    if (rng4d_ == nullptr)
+    {
+        rng4d_.reset(new GridParallelRNG(getGrid()));
+    }
+
     return rng4d_.get();
 }
 

@@ -74,7 +74,7 @@ public:
   virtual void deriv(const GaugeField &Umu,GaugeField & dSdU) {
     //extend Ta to include Lorentz indexes
     RealD factor_p = c_plaq/RealD(Nc)*0.5;
-    RealD factor_r =   c_rect/RealD(Nc)*0.5;
+    RealD factor_r = c_rect/RealD(Nc)*0.5;
 
     GridBase *grid = Umu.Grid();
 
