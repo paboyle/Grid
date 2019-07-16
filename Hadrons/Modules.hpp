@@ -49,6 +49,7 @@
 #include <Hadrons/Modules/MContraction/WeakMesonDecayKl2.hpp>
 #include <Hadrons/Modules/MContraction/Gamma3pt.hpp>
 #include <Hadrons/Modules/MContraction/A2AMesonField.hpp>
+#include <Hadrons/Modules/MContraction/A2ASmearedMesonField.hpp>
 #include <Hadrons/Modules/MContraction/A2ALoop.hpp>
 #include <Hadrons/Modules/MContraction/WeakNonEye3pt.hpp>
 #include <Hadrons/Modules/MContraction/DiscLoop.hpp>

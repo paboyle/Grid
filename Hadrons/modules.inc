@@ -48,6 +48,7 @@ modules_cc =\
   Modules/MContraction/WeakNonEye3pt.cc \
   Modules/MContraction/WeakMesonDecayKl2.cc \
   Modules/MContraction/A2AMesonField.cc \
+  Modules/MContraction/A2ASmearedMesonField.cc \
   Modules/MContraction/Gamma3pt.cc \
   Modules/MContraction/Baryon.cc \
   Modules/MContraction/A2AAslashField.cc \
@@ -120,6 +121,7 @@ modules_hpp =\
   Modules/MContraction/WeakMesonDecayKl2.hpp \
   Modules/MContraction/Gamma3pt.hpp \
   Modules/MContraction/A2AMesonField.hpp \
+  Modules/MContraction/A2ASmearedMesonField.hpp \
   Modules/MContraction/A2ALoop.hpp \
   Modules/MContraction/WeakNonEye3pt.hpp \
   Modules/MContraction/DiscLoop.hpp \
