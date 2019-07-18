@@ -213,7 +213,7 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     }
 */
 
-    ContractBaryons(q1,q2,q3,c);
+    BaryonUtils<FIMPL>::ContractBaryons(q1,q2,q3,c);
 
     sliceSum(c,buf,Tp);
 
