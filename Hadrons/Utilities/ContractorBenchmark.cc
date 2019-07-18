@@ -313,7 +313,7 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
     [](ComplexD &res, const MatLeft &a, const MatRight &b)
     {
         res = 0.;
-        thread_for(r,a.rows()
+        thread_for(r,a.rows(),
         {
             ComplexD tmp;
 
