@@ -1,4 +1,6 @@
-AUDIT ContractWWVV with respect to develop
+
+- Make representations code take Gimpl
+- Simplify the HMCand remove modules
 
 - Lattice_arith - are the mult, mac etc.. still needed after ET engine?
 - ImprovedStaggered accelerate
@@ -48,6 +50,7 @@ GPU branch code item work list
 -     Audit changes
 
 =============================================================================================
+AUDIT ContractWWVV with respect to develop    -- DONE
 - GPU accelerate EOFA                                                  -- DONE
 - LinalgUtils  ssp loop not offloaded                                  -- DONE
 - coalescedRead <- threadIdx.x                                         -- DONE
