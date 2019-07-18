@@ -33,7 +33,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
-#include "/home/ferben/code/grid_devel/Grid/Grid/qcd/utils/BaryonUtils.h"
+#include <Grid/qcd/utils/BaryonUtils.h>
 
 BEGIN_HADRONS_NAMESPACE
 
