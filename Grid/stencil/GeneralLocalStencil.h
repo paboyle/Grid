@@ -84,7 +84,6 @@ public:
     Coordinate NbrCoor;
     for(Integer site=0;site<osites;site++){
       for(Integer ii=0;ii<npoints;ii++){
-	Integer Nbr;
 	Integer lex = site*npoints+ii;
 	GeneralStencilEntry SE;
 	////////////////////////////////////////////////

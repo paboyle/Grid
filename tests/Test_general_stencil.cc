@@ -98,7 +98,7 @@ int main(int argc, char ** argv)
 	for(int d=0;d<Nd;d++) shift[d]=0;
 	shift[dir1]=disp1;
 	shift[dir2]=disp2;
-	std::vector<Coordinate> shifts(1,shift);
+	std::vector<Coordinate> shifts(npoint,shift);
 	GeneralLocalStencil gStencil(&Fine,shifts);
 
 	Bar = Cshift(Foo,dir1,disp1);
@@ -106,7 +106,6 @@ int main(int argc, char ** argv)
 
 	// Implement a stencil code that should agree with cshift!
 	for(int i=0;i<Check.Grid()->oSites();i++){
-	  int permute_type;
 	  auto SE = gStencil.GetEntry(0,i);
 	  auto check = Check.View();
 	  auto foo   = Foo.View();

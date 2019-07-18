@@ -359,7 +359,11 @@ public:
 
     ImplicitlyRestartedLanczos<FineField> IRL(ChebyOp,Op,Nstop,Nk,Nm,resid,MaxIt,betastp,MinRes);
 
-    FineField src(_FineGrid); src=1.0; src.Checkerboard() = _checkerboard;
+    FineField src(_FineGrid); 
+    typedef typename FineField::scalar_type Scalar;
+    // src=1.0; 
+    src=Scalar(1.0); 
+    src.Checkerboard() = _checkerboard;
 
     int Nconv;
     IRL.calc(evals_fine,subspace,src,Nconv,false);

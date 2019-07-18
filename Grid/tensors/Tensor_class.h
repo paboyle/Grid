@@ -191,7 +191,7 @@ public:
   static accelerator_inline constexpr int Nsimd(void) { return sizeof(vector_type)/sizeof(scalar_type); } 
 
   template <class T, typename std::enable_if<!isGridTensor<T>::value, T>::type * = nullptr>
-  strong_inline auto operator=(T arg) -> iVector<vtype, N> {
+  accelerator_inline auto operator=(T arg) -> iVector<vtype, N> {
     zeroit(*this);
     for (int i = 0; i < N; i++) _internal[i] = arg;
     return *this;

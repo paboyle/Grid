@@ -1,6 +1,6 @@
 #pragma once
 //#include <Grid/Hadrons/Global.hpp>
-#include <Grid/Eigen/unsupported/CXX11/Tensor>
+#include <Grid/Grid_Eigen_Tensor.h>
 
 NAMESPACE_BEGIN(Grid);
 

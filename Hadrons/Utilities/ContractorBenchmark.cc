@@ -34,6 +34,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 using namespace Grid;
 using namespace Hadrons;
+const int RowMajor = Eigen::RowMajor;
+const int ColMajor = Eigen::ColMajor;
 
 #ifdef GRID_COMMS_MPI3
 #define GET_RANK(rank, nMpi) \
@@ -129,22 +131,22 @@ static inline void zdotuRow(ComplexD &res, const unsigned int aRow,
     const ComplexD *aPt, *bPt;
     unsigned int   aInc, bInc;
 
-    if (MatLeft::Options == Eigen::RowMajor)
+    if (MatLeft::Options == RowMajor)
     {
         aPt  = a.data() + aRow*a.cols();
         aInc = 1;
     }
-    else if (MatLeft::Options == Eigen::ColMajor)
+    else if (MatLeft::Options == ColMajor)
     {
         aPt  = a.data() + aRow;
         aInc = a.rows();
     }
-    if (MatRight::Options == Eigen::RowMajor)
+    if (MatRight::Options == RowMajor)
     {
         bPt  = b.data() + aRow;
         bInc = b.cols();
     }
-    else if (MatRight::Options == Eigen::ColMajor)
+    else if (MatRight::Options == ColMajor)
     {
         bPt  = b.data() + aRow*b.rows();
         bInc = 1;
@@ -159,22 +161,22 @@ static inline void zdotuCol(ComplexD &res, const unsigned int aCol,
     const ComplexD *aPt, *bPt;
     unsigned int   aInc, bInc;
 
-    if (MatLeft::Options == Eigen::RowMajor)
+    if (MatLeft::Options == RowMajor)
     {
         aPt  = a.data() + aCol;
         aInc = a.cols();
     }
-    else if (MatLeft::Options == Eigen::ColMajor)
+    else if (MatLeft::Options == ColMajor)
     {
         aPt  = a.data() + aCol*a.rows();
         aInc = 1;
     }
-    if (MatRight::Options == Eigen::RowMajor)
+    if (MatRight::Options == RowMajor)
     {
         bPt  = b.data() + aCol*b.cols();
         bInc = 1;
     }
-    else if (MatRight::Options == Eigen::ColMajor)
+    else if (MatRight::Options == ColMajor)
     {
         bPt  = b.data() + aCol;
         bInc = b.rows();
@@ -199,20 +201,20 @@ void fullTrBenchmark(const unsigned int ni, const unsigned int nj, const unsigne
     {
         std::cout << "==== tr(A*B) benchmarks" << std::endl;
         std::cout << "A matrices use ";
-        if (MatLeft::Options == Eigen::RowMajor)
+        if (MatLeft::Options == RowMajor)
         {
             std::cout << "row-major ordering" << std::endl;
         }
-        else if (MatLeft::Options == Eigen::ColMajor)
+        else if (MatLeft::Options == ColMajor)
         {
             std::cout << "col-major ordering" << std::endl;
         }
         std::cout << "B matrices use ";
-        if (MatRight::Options == Eigen::RowMajor)
+        if (MatRight::Options == RowMajor)
         {
             std::cout << "row-major ordering" << std::endl;
         }
-        else if (MatRight::Options == Eigen::ColMajor)
+        else if (MatRight::Options == ColMajor)
         {
             std::cout << "col-major ordering" << std::endl;
         }
@@ -359,11 +361,11 @@ void fullMulBenchmark(const unsigned int ni, const unsigned int nj, const unsign
     {
         std::cout << "==== A*B benchmarks" << std::endl;
         std::cout << "all matrices use ";
-        if (Mat::Options == Eigen::RowMajor)
+        if (Mat::Options == RowMajor)
         {
             std::cout << "row-major ordering" << std::endl;
         }
-        else if (Mat::Options == Eigen::ColMajor)
+        else if (Mat::Options == ColMajor)
         {
             std::cout << "col-major ordering" << std::endl;
         }
@@ -386,13 +388,13 @@ void fullMulBenchmark(const unsigned int ni, const unsigned int nj, const unsign
     [](Mat &res, const Mat &a, const Mat &b)
     {
         const ComplexD one(1., 0.), zero(0., 0.);
-        if (Mat::Options == Eigen::RowMajor)
+        if (Mat::Options == RowMajor)
         {
             cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
                         a.cols(), &one, a.data(), a.cols(), b.data(), b.cols(), &zero,
                         res.data(), res.cols());
         }
-        else if (Mat::Options == Eigen::ColMajor)
+        else if (Mat::Options == ColMajor)
         {
             cblas_zgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
                         a.cols(), &one, a.data(), a.rows(), b.data(), b.rows(), &zero,

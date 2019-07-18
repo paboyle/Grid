@@ -48,6 +48,8 @@ namespace Grid{
     typedef typename FermionOperatorD::FermionField FieldD;
     typedef typename FermionOperatorF::FermionField FieldF;
 
+    using OperatorFunction<FieldD>::operator();
+
     RealD   Tolerance;
     RealD   InnerTolerance; //Initial tolerance for inner CG. Defaults to Tolerance but can be changed
     Integer MaxInnerIterations;

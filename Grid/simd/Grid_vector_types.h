@@ -236,7 +236,7 @@ public:
   accelerator Grid_simd() = default;
   accelerator_inline Grid_simd(const Grid_simd &rhs) : v(rhs.v){};  // compiles in movaps
   accelerator_inline Grid_simd(const Grid_simd &&rhs) : v(rhs.v){};
-  accelerator Grid_simd(const Real a) { vsplat(*this, Scalar_type(a)); };
+  accelerator_inline Grid_simd(const Real a) { vsplat(*this, Scalar_type(a)); };
   // Enable if complex type
   template <typename S = Scalar_type> accelerator_inline
   Grid_simd(const typename std::enable_if<is_complex<S>::value, S>::type a) {

@@ -118,7 +118,7 @@ std::vector<std::string> TAmputate<FImpl1, FImpl2>::getOutput(void)
 template <typename Fimpl1, typename Fimpl2>
 SpinColourMatrix TAmputate<Fimpl1, Fimpl2>::invertspincolmat(SpinColourMatrix &scmat)
 {
-    Eigen::MatrixXcf scmat_2d(Ns*Nc,Ns*Nc);
+    Eigen::MatrixXcd scmat_2d(Ns*Nc,Ns*Nc);
     for(int ic=0; ic<Nc; ic++){
     for(int jc=0; jc<Nc; jc++){
         for(int is=0; is<Ns; is++){
@@ -126,7 +126,7 @@ SpinColourMatrix TAmputate<Fimpl1, Fimpl2>::invertspincolmat(SpinColourMatrix &s
             scmat_2d(Ns*ic+is,Ns*jc+js) = scmat()(is,js)(ic,jc);
         }}
     }}      
-    Eigen::MatrixXcf scmat_2d_inv = scmat_2d.inverse();
+    Eigen::MatrixXcd scmat_2d_inv = scmat_2d.inverse();
     SpinColourMatrix scmat_inv;
     for(int ic=0; ic<Nc; ic++){
     for(int jc=0; jc<Nc; jc++){
