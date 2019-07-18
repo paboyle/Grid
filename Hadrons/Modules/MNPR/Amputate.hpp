@@ -109,8 +109,6 @@ template <typename FImpl1, typename FImpl2>
 std::vector<std::string> TAmputate<FImpl1, FImpl2>::getOutput(void)
 {
     std::vector<std::string> output = {getName()};
-    
-    
     return output;
 }
 
@@ -123,7 +121,8 @@ SpinColourMatrix TAmputate<Fimpl1, Fimpl2>::invertspincolmat(SpinColourMatrix &s
     for(int jc=0; jc<Nc; jc++){
         for(int is=0; is<Ns; is++){
         for(int js=0; js<Ns; js++){
-            scmat_2d(Ns*ic+is,Ns*jc+js) = scmat()(is,js)(ic,jc);
+	  auto z =scmat()(is,js)(ic,jc);;
+	  scmat_2d(Ns*ic+is,Ns*jc+js) = std::complex<double>(real(z),imag(z));
         }}
     }}      
     Eigen::MatrixXcd scmat_2d_inv = scmat_2d.inverse();
