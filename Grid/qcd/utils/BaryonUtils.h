@@ -35,9 +35,6 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1,
 						 const PropagatorField &q3,
 						 ComplexField &baryon_corr)
 {
-  assert(gamma0.size()==gamma1.size());
-  int Ng = gamma0.size();
-
   GridBase *grid = q1._grid;
 
   // C = i gamma_2 gamma_4 => C gamma_5 = - i gamma_1 gamma_3 
