@@ -66,7 +66,7 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1,
 
     auto gD1a = GammaA * GammaA * D1;
     auto gD1b = GammaA * g4 * GammaA * D1;
-    auto pD1 = 0.5* (gD1a + (double)parity * dD1b);
+    auto pD1 = 0.5* (gD1a + (double)parity * gD1b);
     auto gD3 = GammaB * D3;
 
     vobj result=zero;

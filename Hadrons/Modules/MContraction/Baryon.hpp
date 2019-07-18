@@ -33,6 +33,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
+#include "/home/ferben/code/grid_devel/Grid/Grid/qcd/utils/BaryonUtils.h"
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -134,7 +135,7 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
 
     std::vector<TComplex> buf;
     // C = i gamma_2 gamma_4 => C gamma_5 = - i gamma_1 gamma_3  
-    Gamma GammaA(Gamma::Algebra::Identity); //Still hardcoded 1
+/*    Gamma GammaA(Gamma::Algebra::Identity); //Still hardcoded 1
     Gamma GammaB(Gamma::Algebra::SigmaXZ); //Still hardcoded Cg5
     Gamma g4(Gamma::Algebra::GammaT); //needed for parity P_\pm = 0.5*(1 \pm \gamma_4)
 
@@ -170,25 +171,6 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
          auto Dbc = peekColour(q3,b_snk,c_src); //D_{beta' gamma}
          auto Dca = peekColour(q1,c_snk,a_src); //D_{gamma' alpha}
          auto Dcb = peekColour(q1,c_snk,b_src); //D_{gamma' beta}
-         // This needs lees peekColours for some baryons, but does not compile - worth the effort?
-         /*if (wick_contraction[0] || wick_contraction[4]) 
-           auto Daa = peekColour(q2,a_snk,a_src); //D_{alpha' alpha}
-         if (wick_contraction[0] || wick_contraction[5]) 
-           auto Dbb = peekColour(q3,b_snk,b_src); //D_{beta' beta}
-         if (wick_contraction[0] || wick_contraction[3]) 
-           auto Dcc = peekColour(q1,c_snk,c_src); //D_{gamma' gamma}
-         if (wick_contraction[1] || wick_contraction[3]) 
-           auto Dab = peekColour(q2,a_snk,b_src); //D_{alpha' beta}
-         if (wick_contraction[2] || wick_contraction[5]) 
-           auto Dac = peekColour(q2,a_snk,c_src); //D_{alpha' gamma}
-         if (wick_contraction[2] || wick_contraction[3]) 
-           auto Dba = peekColour(q3,b_snk,a_src); //D_{beta' alpha}
-         if (wick_contraction[1] || wick_contraction[4]) 
-           auto Dbc = peekColour(q3,b_snk,c_src); //D_{beta' gamma}
-         if (wick_contraction[1] || wick_contraction[5]) 
-           auto Dca = peekColour(q1,c_snk,a_src); //D_{gamma' alpha}
-         if (wick_contraction[2] || wick_contraction[4]) 
-           auto Dcb = peekColour(q1,c_snk,b_src); //D_{gamma' beta}*/
          // This is the \delta_{123}^{123} part
          if (wick_contraction[0]){
            diquark = trace(GammaB * Daa * GammaB * Dbb); //1st GammaB and Daa transposed????
@@ -229,8 +211,12 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
          }
       }
     }
+*/
+
+    ContractBaryons(q1,q2,q3,c);
 
     sliceSum(c,buf,Tp);
+
     for (unsigned int t = 0; t < buf.size(); ++t)
     {
         result.corr[t] = TensorRemove(buf[t]);
