@@ -24,6 +24,8 @@ public:
   static void ContractBaryons(const PropagatorField &q1,
 					 const PropagatorField &q2,
 					 const PropagatorField &q3,
+					 const Gamma GammaA,
+					 const Gamma GammaB,
 					 ComplexField &baryon_corr);
 };
 
@@ -33,19 +35,22 @@ template<class FImpl>
 void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1,
 						 const PropagatorField &q2,
 						 const PropagatorField &q3,
+						 const Gamma GammaA,
+						 const Gamma GammaB,
 						 ComplexField &baryon_corr)
 {
   GridBase *grid = q1._grid;
 
   // C = i gamma_2 gamma_4 => C gamma_5 = - i gamma_1 gamma_3 
-  Gamma GammaA(Gamma::Algebra::Identity); //Still hardcoded 1
-  Gamma GammaB(Gamma::Algebra::SigmaXZ); //Still hardcoded Cg5
+  //Gamma GammaA(Gamma::Algebra::Identity); //Still hardcoded 1
+  //Gamma GammaB(Gamma::Algebra::SigmaXZ); //Still hardcoded Cg5
+  //Gamma GammaB(Gamma::Algebra::GammaZGamma5); //Still hardcoded CgX = i gamma_3 gamma_5
   Gamma g4(Gamma::Algebra::GammaT); //needed for parity P_\pm = 0.5*(1 \pm \gamma_4)
 
   std::vector<std::vector<int>> epsilon = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
   std::vector<int> epsilon_sgn = {1,1,1,-1,-1,-1};
-  char left[] = "uud";
-  char right[] = "uud";
+  char left[] = "sss";
+  char right[] = "sss";
   std::vector<int> wick_contraction = {0,0,0,0,0,0};
 
   for (int ie=0; ie < 6 ; ie++)

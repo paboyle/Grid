@@ -49,6 +49,7 @@ public:
                                     std::string, q1,
                                     std::string, q2,
                                     std::string, q3,
+                                    std::string, gamma,
                                     std::string, output);
 };
 
@@ -132,7 +133,7 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     Result     result;
     int nt = env().getDim(Tp);
     result.corr.resize(nt);
-
+    const std::string gamma{ par().gamma };
     std::vector<TComplex> buf;
     // C = i gamma_2 gamma_4 => C gamma_5 = - i gamma_1 gamma_3  
 /*    Gamma GammaA(Gamma::Algebra::Identity); //Still hardcoded 1
@@ -213,7 +214,22 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     }
 */
 
-    BaryonUtils<FIMPL>::ContractBaryons(q1,q2,q3,c);
+    Gamma GammaA(Gamma::Algebra::Identity);
+    Gamma GammaB(Gamma::Algebra::SigmaXZ); //Still hardcoded Cg5
+    if (gamma.compare("X") ==0){
+      std::cout << "using interpolator C gamma_X";
+      Gamma GammaB(Gamma::Algebra::GammaZGamma5); //Still hardcoded CgX = i gamma_3 gamma_5
+    } 
+    if (gamma.compare("Y") ==0){
+      std::cout << "using interpolator C gamma_Y";
+      Gamma GammaB(Gamma::Algebra::GammaT); //Still hardcoded CgX = - gamma_4
+    } 
+    if (gamma.compare("Z")==0){
+      std::cout << "using interpolator C gamma_Z";
+      Gamma GammaB(Gamma::Algebra::GammaXGamma5); //Still hardcoded CgX = i gamma_1 gamma_5
+    } 
+
+    BaryonUtils<FIMPL>::ContractBaryons(q1,q2,q3,GammaA,GammaB,c);
 
     sliceSum(c,buf,Tp);
 
