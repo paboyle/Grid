@@ -163,13 +163,16 @@ public:
       //
     /////////////////////////////////////////////////////////////////////////////////////
     //      uint64_t skip = site+1;  //   Old init Skipped then drew.  Checked compat with faster init
-      const int shift = 30;
+    const int shift = 30;
 
-    uint64_t skip = site;
+    ////////////////////////////////////////////////////////////////////
+    // Weird compiler bug in Intel 2018.1 under O3 was generating 32bit and not 64 bit left shift.
+    ////////////////////////////////////////////////////////////////////
+    volatile uint64_t skip = site;
 
-      skip = skip<<shift;
+    skip = skip<<shift;
 
-      assert((skip >> shift)==site); // check for overflow
+    assert((skip >> shift)==site); // check for overflow
 
     eng.discard(skip);
     //      std::cout << " Engine  " <<site << " state " <<eng<<std::endl;
