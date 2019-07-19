@@ -73,7 +73,7 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   // Modify the gauge field a little 
   ////////////////////////////////////
-  RealD dt = 0.0001;
+  RealD dt = 0.002;
 
   LatticeColourMatrix mommu(&Grid); 
   LatticeColourMatrix forcemu(&Grid); 
@@ -88,13 +88,7 @@ int main (int argc, char ** argv)
 
     // fourth order exponential approx
     parallel_for(auto i=mom.begin();i<mom.end();i++){ // exp(pmu dt) * Umu
-      Uprime[i](mu) = U[i](mu) + mom[i](mu)*U[i](mu)*dt 
-	+ mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt/2.0)
-	+ mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt/6.0)
-	+ mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt/24.0)
-	+ mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt/120.0)
-	+ mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt*dt/720.0);
-
+      Uprime[i](mu) = U[i](mu) + mom[i](mu)*U[i](mu)*dt ;
     }
   }
 
