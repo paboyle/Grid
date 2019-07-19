@@ -351,6 +351,7 @@ int main(int argc, char **argv) {
   ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> 
     EOFA(Strange_Op_L, Strange_Op_R, 
 	 ActionCG, 
+	 ActionCG,
 	 ActionCG, ActionCG,
 	 DerivativeCG, DerivativeCG, 
 	 OFRp, true);
