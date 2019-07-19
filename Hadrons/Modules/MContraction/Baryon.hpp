@@ -120,19 +120,20 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::setup(void)
   // Translate the full string naming the desired gamma structure into the one we need to use
   const std::string gamma{ par().gamma };
   int iGamma = 0;
+  std::cout << "Gamma input " << gamma << std::endl;
   while( gamma.compare( Gamma::name[iGamma] ) )
     assert( ++iGamma < Gamma::nGamma && "Invalid gamma structure specified" );
   switch( iGamma ) {
     case Gamma::Algebra::GammaX:
-      std::cout << "using interpolator C gamma_X";
+      std::cout << "using interpolator C gamma_X" << std::endl;
       al = Gamma::Algebra::GammaZGamma5; //Still hardcoded CgX = i gamma_3 gamma_5
       break;
     case Gamma::Algebra::GammaY:
-      std::cout << "using interpolator C gamma_Y";
+      std::cout << "using interpolator C gamma_Y" << std::endl;
       al = Gamma::Algebra::GammaT; //Still hardcoded CgX = - gamma_4
       break;
     case Gamma::Algebra::GammaZ:
-      std::cout << "using interpolator C gamma_Z";
+      std::cout << "using interpolator C gamma_Z" << std::endl;
       al = Gamma::Algebra::GammaXGamma5; //Still hardcoded CgX = i gamma_1 gamma_5
       break;
     default:
