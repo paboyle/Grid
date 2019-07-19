@@ -120,9 +120,20 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::setup(void)
   // Translate the full string naming the desired gamma structure into the one we need to use
   const std::string gamma{ par().gamma };
   int iGamma = 0;
-  std::cout << "Gamma input " << gamma << std::endl;
-  while( gamma.compare( Gamma::name[iGamma] ) )
-    assert( ++iGamma < Gamma::nGamma && "Invalid gamma structure specified" );
+  do
+  {
+    const char * pGammaName = Gamma::name[iGamma];
+    int iLen = 0;
+    while( pGammaName[iLen] && pGammaName[iLen] != ' ' )
+      iLen++;
+    if( !gamma.compare( 0, gamma.size(), pGammaName, iLen ) )
+      break;
+  }
+  while( ++iGamma < Gamma::nGamma );
+  if( iGamma >= Gamma::nGamma ) {
+    LOG(Message) << "Unrecognised gamma structure \"" << gamma << "\"" << std::endl;
+    assert( 0 && "Invalid gamma structure specified" );
+  }
   switch( iGamma ) {
     case Gamma::Algebra::GammaX:
       std::cout << "using interpolator C gamma_X" << std::endl;
