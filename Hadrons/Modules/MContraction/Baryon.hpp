@@ -79,6 +79,8 @@ protected:
     virtual void setup(void);
     // execution
     virtual void execute(void);
+    // Which gamma algebra was specified
+    Gamma::Algebra  al;
 };
 
 MODULE_REGISTER_TMP(Baryon, ARG(TBaryon<FIMPL, FIMPL, FIMPL>), MContraction);
@@ -115,6 +117,35 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::setup(void)
 {
     envTmpLat(LatticeComplex, "c");
     envTmpLat(LatticeComplex, "diquark");
+  // Translate the full string naming the desired gamma structure into the one we need to use
+  const std::string gamma{ par().gamma };
+  int iGamma = 0;
+  while( gamma.compare( Gamma::name[iGamma] ) )
+    assert( ++iGamma < Gamma::nGamma && "Invalid gamma structure specified" );
+  switch( iGamma ) {
+    case Gamma::Algebra::GammaX:
+      std::cout << "using interpolator C gamma_X";
+      al = Gamma::Algebra::GammaZGamma5; //Still hardcoded CgX = i gamma_3 gamma_5
+      break;
+    case Gamma::Algebra::GammaY:
+      std::cout << "using interpolator C gamma_Y";
+      al = Gamma::Algebra::GammaT; //Still hardcoded CgX = - gamma_4
+      break;
+    case Gamma::Algebra::GammaZ:
+      std::cout << "using interpolator C gamma_Z";
+      al = Gamma::Algebra::GammaXGamma5; //Still hardcoded CgX = i gamma_1 gamma_5
+      break;
+    default:
+    {
+      LOG(Message) << "Unsupported gamma structure " << gamma << " = " << iGamma << std::endl;
+      assert( 0 && "Unsupported gamma structure" );
+      // or you could do something like
+      al = static_cast<Gamma::Algebra>( iGamma );
+      break;
+    }
+  }
+  LOG(Message) << "Gamma structure " << gamma << " = " << iGamma
+               << " translated to " << Gamma::name[al] << std::endl;
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -214,20 +245,8 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     }
 */
 
-    Gamma GammaA(Gamma::Algebra::Identity);
-    Gamma GammaB(Gamma::Algebra::SigmaXZ); //Still hardcoded Cg5
-    if (gamma.compare("X") ==0){
-      std::cout << "using interpolator C gamma_X";
-      Gamma GammaB(Gamma::Algebra::GammaZGamma5); //Still hardcoded CgX = i gamma_3 gamma_5
-    } 
-    if (gamma.compare("Y") ==0){
-      std::cout << "using interpolator C gamma_Y";
-      Gamma GammaB(Gamma::Algebra::GammaT); //Still hardcoded CgX = - gamma_4
-    } 
-    if (gamma.compare("Z")==0){
-      std::cout << "using interpolator C gamma_Z";
-      Gamma GammaB(Gamma::Algebra::GammaXGamma5); //Still hardcoded CgX = i gamma_1 gamma_5
-    } 
+    const Gamma GammaA{ Gamma::Algebra::Identity };
+    const Gamma GammaB{ al };
 
     BaryonUtils<FIMPL>::ContractBaryons(q1,q2,q3,GammaA,GammaB,c);
 
