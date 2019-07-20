@@ -79,13 +79,13 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "= Benchmarking concurrent halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   header();
-  for(int lat=4;lat<=maxlat;lat+=4){
+  for(int lat=8;lat<=maxlat;lat+=4){
     for(int Ls=8;Ls<=8;Ls*=2){
 
       Coordinate latt_size  ({lat*mpi_layout[0],
-      				    lat*mpi_layout[1],
-      				    lat*mpi_layout[2],
-      				    lat*mpi_layout[3]});
+	                      lat*mpi_layout[1],
+      			      lat*mpi_layout[2],
+      			      lat*mpi_layout[3]});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
       RealD Nrank = Grid._Nprocessors;
@@ -166,10 +166,13 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   header();
 
-  for(int lat=4;lat<=maxlat;lat+=4){
+  for(int lat=8;lat<=maxlat;lat+=4){
     for(int Ls=8;Ls<=8;Ls*=2){
 
-      Coordinate latt_size  ({lat,lat,lat,lat});
+      Coordinate latt_size  ({lat*mpi_layout[0],
+	                      lat*mpi_layout[1],
+      			      lat*mpi_layout[2],
+      			      lat*mpi_layout[3]});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
       RealD Nrank = Grid._Nprocessors;
@@ -257,13 +260,13 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   header();
 
-  for(int lat=4;lat<=maxlat;lat+=4){
+  for(int lat=8;lat<=maxlat;lat+=4){
     for(int Ls=8;Ls<=8;Ls*=2){
 
       Coordinate latt_size  ({lat*mpi_layout[0],
-      				    lat*mpi_layout[1],
-      				    lat*mpi_layout[2],
-      				    lat*mpi_layout[3]});
+	                      lat*mpi_layout[1],
+      			      lat*mpi_layout[2],
+      			      lat*mpi_layout[3]});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
       RealD Nrank = Grid._Nprocessors;
@@ -354,13 +357,13 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   header();
 
-  for(int lat=4;lat<=maxlat;lat+=4){
+  for(int lat=8;lat<=maxlat;lat+=4){
     for(int Ls=8;Ls<=8;Ls*=2){
 
       Coordinate latt_size  ({lat*mpi_layout[0],
-      				    lat*mpi_layout[1],
-      				    lat*mpi_layout[2],
-      				    lat*mpi_layout[3]});
+      			      lat*mpi_layout[1],
+      			      lat*mpi_layout[2],
+      			      lat*mpi_layout[3]});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
       RealD Nrank = Grid._Nprocessors;
@@ -452,7 +455,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   header();
 
-  for(int lat=4;lat<=maxlat;lat+=4){
+  for(int lat=8;lat<=maxlat;lat+=4){
     for(int Ls=8;Ls<=8;Ls*=2){
 
       Coordinate latt_size  ({lat*mpi_layout[0],
