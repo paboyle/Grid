@@ -32,6 +32,7 @@ NAMESPACE_BEGIN(Grid);
 
 // static data
 
+int                 GlobalSharedMemory::HPEhypercube = 1;
 uint64_t            GlobalSharedMemory::MAX_MPI_SHM_BYTES   = 1024LL*1024LL*1024LL; 
 int                 GlobalSharedMemory::Hugepages = 0;
 int                 GlobalSharedMemory::_ShmSetup;

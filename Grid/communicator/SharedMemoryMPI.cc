@@ -36,7 +36,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid); 
 #define header "SharedMemoryMpi: "
 /*Construct from an MPI communicator*/
-int GlobalSharedMemory::HPEhypercube = 1;
 void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
 {
   assert(_ShmSetup==0);
