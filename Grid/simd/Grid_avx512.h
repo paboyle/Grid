@@ -481,82 +481,6 @@ struct Rotate{
 // Some Template specialization
 
 // Hack for CLANG until mm512_reduce_add_ps etc... are implemented in GCC and Clang releases
-#if 0
-#warning "Slow reduction due to incomplete reduce intrinsics"
-//Complex float Reduce
-template<>
-inline Grid::ComplexF Reduce<Grid::ComplexF, __m512>::operator()(__m512 in){
-  __m512 v1,v2;
-  v1=Optimization::Permute::Permute0(in); // avx 512; quad complex single
-  v1= _mm512_add_ps(v1,in);
-  v2=Optimization::Permute::Permute1(v1); 
-  v1 = _mm512_add_ps(v1,v2);
-  v2=Optimization::Permute::Permute2(v1); 
-  v1 = _mm512_add_ps(v1,v2);
-  u512f conv; conv.v = v1;
-  return Grid::ComplexF(conv.f[0],conv.f[1]);
-}
-  
-//Real float Reduce
-template<>
-inline Grid::RealF Reduce<Grid::RealF, __m512>::operator()(__m512 in){
-  __m512 v1,v2;
-  v1 = Optimization::Permute::Permute0(in); // avx 512; octo-double
-  v1 = _mm512_add_ps(v1,in);
-  v2 = Optimization::Permute::Permute1(v1); 
-  v1 = _mm512_add_ps(v1,v2);
-  v2 = Optimization::Permute::Permute2(v1); 
-  v1 = _mm512_add_ps(v1,v2);
-  v2 = Optimization::Permute::Permute3(v1); 
-  v1 = _mm512_add_ps(v1,v2);
-  u512f conv; conv.v=v1;
-  return conv.f[0];
-}
-  
-//Complex double Reduce
-template<>
-inline Grid::ComplexD Reduce<Grid::ComplexD, __m512d>::operator()(__m512d in){
-  __m512d v1;
-  v1 = Optimization::Permute::Permute0(in); // sse 128; paired complex single
-  v1 = _mm512_add_pd(v1,in);
-  v1 = Optimization::Permute::Permute1(in); // sse 128; paired complex single
-  v1 = _mm512_add_pd(v1,in);
-  u512d conv; conv.v = v1;
-  return Grid::ComplexD(conv.f[0],conv.f[1]);
-}
-  
-//Real double Reduce
-template<>
-inline Grid::RealD Reduce<Grid::RealD, __m512d>::operator()(__m512d in){
-  __m512d v1,v2;
-  v1 = Optimization::Permute::Permute0(in); // avx 512; quad double
-  v1 = _mm512_add_pd(v1,in);
-  v2 = Optimization::Permute::Permute1(v1); 
-  v1 = _mm512_add_pd(v1,v2);
-  v2 = Optimization::Permute::Permute2(v1); 
-  v1 = _mm512_add_pd(v1,v2);
-  u512d conv; conv.v = v1;
-  return conv.f[0];
-}
-  
-//Integer Reduce
-template<>
-inline Integer Reduce<Integer, __m512i>::operator()(__m512i in){
-  // No full vector reduce, use AVX to add upper and lower halves of register
-  // and perform AVX reduction.
-  __m256i v1, v2, v3;
-  __m128i u1, u2, ret;
-  v1  = _mm512_castsi512_si256(in);       // upper half
-  v2  = _mm512_extracti32x8_epi32(in, 1); // lower half
-  v3  = _mm256_add_epi32(v1, v2);
-  v1  = _mm256_hadd_epi32(v3, v3);
-  v2  = _mm256_hadd_epi32(v1, v1);
-    u1  = _mm256_castsi256_si128(v2);        // upper half
-    u2  = _mm256_extracti128_si256(v2, 1);  // lower half
-  ret = _mm_add_epi32(u1, u2);
-  return _mm_cvtsi128_si32(ret);
-}
-#else
 //Complex float Reduce
 template<>
 inline Grid::ComplexF Reduce<Grid::ComplexF, __m512>::operator()(__m512 in){
@@ -585,8 +509,6 @@ template<>
 inline Integer Reduce<Integer, __m512i>::operator()(__m512i in){
   return _mm512_reduce_add_epi32(in);
 }
-#endif
-  
   
 NAMESPACE_END(Optimization);
 
