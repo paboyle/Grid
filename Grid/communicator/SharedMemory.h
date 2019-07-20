@@ -59,12 +59,18 @@ class GlobalSharedMemory {
 private:
   static const int     MAXLOG2RANKSPERNODE = 16;            
 
+
   // Init once lock on the buffer allocation
   static int      _ShmSetup;
   static int      _ShmAlloc;
   static uint64_t _ShmAllocBytes;
 
 public:
+  ///////////////////////////////////////
+  // HPE 8600 hypercube optimisation
+  ///////////////////////////////////////
+  static int HPEhypercube;
+
   static int      ShmSetup(void)      { return _ShmSetup; }
   static int      ShmAlloc(void)      { return _ShmAlloc; }
   static uint64_t ShmAllocBytes(void) { return _ShmAllocBytes; }

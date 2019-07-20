@@ -366,6 +366,13 @@ void Grid_init(int *argc,char ***argv)
     GlobalSharedMemory::MAX_MPI_SHM_BYTES = MB64*1024LL*1024LL;
   }
 
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--hypercube") ){
+    int enable;
+    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--hypercube");
+    GridCmdOptionInt(arg,enable);
+    GlobalSharedMemory::HPEhypercube = enable;
+  }
+
   if( GridCmdOptionExists(*argv,*argv+*argc,"--shm-hugepages") ){
     GlobalSharedMemory::Hugepages = 1;
   }

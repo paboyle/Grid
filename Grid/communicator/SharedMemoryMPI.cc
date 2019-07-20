@@ -36,6 +36,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid); 
 #define header "SharedMemoryMpi: "
 /*Construct from an MPI communicator*/
+int GlobalSharedMemory::HPEhypercube = 1;
 void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
 {
   assert(_ShmSetup==0);
@@ -152,8 +153,8 @@ void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_M
   gethostname(name,namelen);
   int nscan = sscanf(name,"r%di%dn%d",&R,&I,&N) ;
 
-  if(nscan==3) OptimalCommunicatorHypercube(processors,optimal_comm);
-  else         OptimalCommunicatorSharedMemory(processors,optimal_comm);
+  if(nscan==3 && HPEhypercube ) OptimalCommunicatorHypercube(processors,optimal_comm);
+  else                          OptimalCommunicatorSharedMemory(processors,optimal_comm);
 }
 void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
 {

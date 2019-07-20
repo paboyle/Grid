@@ -252,7 +252,6 @@ int main(int argc, char **argv) {
   
   double ActionStoppingCondition     = 1e-10;
   double DerivativeStoppingCondition = 1e-7;
-  double DerivativeStoppingConditionLoose = 3e-7;
   double MaxCGIterations = 30000;
 
   ////////////////////////////////////
@@ -289,8 +288,9 @@ int main(int argc, char **argv) {
 
   ConjugateGradient<FermionField>      ActionCG(ActionStoppingCondition,MaxCGIterations);
   ConjugateGradient<FermionField>  DerivativeCG(DerivativeStoppingCondition,MaxCGIterations);
-  const int MX_inner = 5000;
 #ifdef MIXED_PRECISION
+  const int MX_inner = 5000;
+
   // Mixed precision EOFA
   LinearOperatorEOFAD Strange_LinOp_L (Strange_Op_L);
   LinearOperatorEOFAD Strange_LinOp_R (Strange_Op_R);
@@ -386,6 +386,7 @@ int main(int argc, char **argv) {
     ////////////////////////////////////////////////////////////////////////////
     // Mixed precision CG for 2f force
     ////////////////////////////////////////////////////////////////////////////
+    double DerivativeStoppingConditionLoose = 3e-7;
 
     DenominatorsF.push_back(new FermionActionF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_den[h],M5,b,c, ParamsF));
     LinOpD.push_back(new LinearOperatorD(*Denominators[h]));
