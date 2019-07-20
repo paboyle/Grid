@@ -30,7 +30,9 @@ directory
 /*  END LEGAL */
 #include <Grid/Grid.h>
 
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
 #define MIXED_PRECISION
+#endif
 
 namespace Grid{ 
   namespace QCD{
@@ -47,6 +49,8 @@ namespace Grid{
   public:
     typedef typename FermionOperatorD::FermionField FieldD;
     typedef typename FermionOperatorF::FermionField FieldF;
+
+    using OperatorFunction<FieldD>::operator();
 
     RealD   Tolerance;
     RealD   InnerTolerance; //Initial tolerance for inner CG. Defaults to Tolerance but can be changed
