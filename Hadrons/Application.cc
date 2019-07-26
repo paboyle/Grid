@@ -180,7 +180,7 @@ void Application::parseParameterFile(const std::string parameterFileName)
     pop(reader);
 }
 
-void Application::saveParameterFile(const std::string parameterFileName, unsigned int prec)
+void Application::saveParameterFile(const std::string &parameterFileName, const std::vector<std::string> &Except, unsigned int prec)
 {
     LOG(Message) << "Saving application to '" << parameterFileName << "'..." << std::endl;
     if (env().getGrid()->IsBoss())
@@ -194,16 +194,25 @@ void Application::saveParameterFile(const std::string parameterFileName, unsigne
         push(writer, "modules");
         for (unsigned int i = 0; i < nMod; ++i)
         {
-            push(writer, "module");
             id.name = vm().getModuleName(i);
-            id.type = vm().getModule(i)->getRegisteredName();
-            write(writer, "id", id);
-            vm().getModule(i)->saveParameters(writer, "options");
-            pop(writer);
+            if( std::find( Except.begin(), Except.end(), id.name ) == Except.end() )
+            {
+                push(writer, "module");
+                id.type = vm().getModule(i)->getRegisteredName();
+                write(writer, "id", id);
+                vm().getModule(i)->saveParameters(writer, "options");
+                pop(writer);
+            }
         }
         pop(writer);
         pop(writer);
     }
+}
+
+void Application::saveParameterFile(const std::string &parameterFileName, unsigned int prec)
+{
+    const std::vector<std::string> Except;
+    saveParameterFile(parameterFileName, Except, prec);
 }
 
 // schedule computation ////////////////////////////////////////////////////////
