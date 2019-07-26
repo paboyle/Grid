@@ -113,6 +113,13 @@ void DomainWallEOFAFermion<Impl>::MooeeInv(const FermionField& psi_i, FermionFie
   auto chi=chi_i.View();
   int Ls = this->Ls;
 
+  auto plee  = & this->lee[0];
+  auto pdee  = & this->dee[0];
+  auto puee  = & this->uee[0];
+
+  auto pleem = & this->leem[0];
+  auto pueem = & this->ueem[0];
+
   this->MooeeInvCalls++;
   this->MooeeInvTime -= usecond();
   uint64_t nloop=grid->oSites()/Ls;
@@ -126,27 +133,27 @@ void DomainWallEOFAFermion<Impl>::MooeeInv(const FermionField& psi_i, FermionFie
     coalescedWrite(chi[ss],psi(ss)); // chi[0]=psi[0]
     for(int s=1; s<Ls; s++){
       spProj5p(tmp1, chi(ss+s-1));
-      coalescedWrite(chi[ss+s], psi(ss+s) - this->lee[s-1]*tmp1);
+      coalescedWrite(chi[ss+s], psi(ss+s) - plee[s-1]*tmp1);
     }
 
     // L_m^{-1}
     for(int s=0; s<Ls-1; s++){ // Chi[ee] = 1 - sum[s<Ls-1] -leem[s]P_- chi
       spProj5m(tmp1, chi(ss+s));
-      coalescedWrite(chi[ss+Ls-1], chi(ss+Ls-1) - this->leem[s]*tmp1);
+      coalescedWrite(chi[ss+Ls-1], chi(ss+Ls-1) - pleem[s]*tmp1);
     }
 
     // U_m^{-1} D^{-1}
     for(int s=0; s<Ls-1; s++){ // Chi[s] + 1/d chi[s]
       spProj5p(tmp1, chi(ss+Ls-1));
-      coalescedWrite(chi[ss+s], (1.0/this->dee[s])*chi(ss+s) - (this->ueem[s]/this->dee[Ls])*tmp1);
+      coalescedWrite(chi[ss+s], (1.0/pdee[s])*chi(ss+s) - (pueem[s]/pdee[Ls])*tmp1);
     }
     spProj5m(tmp2, chi(ss+Ls-1));
-    coalescedWrite(chi[ss+Ls-1],(1.0/this->dee[Ls])*tmp1 + (1.0/this->dee[Ls-1])*tmp2);
+    coalescedWrite(chi[ss+Ls-1],(1.0/pdee[Ls])*tmp1 + (1.0/pdee[Ls-1])*tmp2);
 
     // Apply U^{-1}
     for(int s=Ls-2; s>=0; s--){
       spProj5m(tmp1, chi(ss+s+1));
-      coalescedWrite(chi[ss+s], chi(ss+s) - this->uee[s]*tmp1);
+      coalescedWrite(chi[ss+s], chi(ss+s) - puee[s]*tmp1);
     }
   });
   this->MooeeInvTime += usecond();
