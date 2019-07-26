@@ -101,7 +101,9 @@ void LambdaApplySIMT(uint64_t Isites, uint64_t Osites, lambda Lambda)
     cudaDeviceSynchronize();					\
     cudaError err = cudaGetLastError();				\
     if ( cudaSuccess != err ) {					\
-      printf("Cuda error %s\n",cudaGetErrorString( err ));	\
+      printf("Cuda error %s \n", cudaGetErrorString( err )); \
+      puts(__FILE__); \
+      printf("Line %d\n",__LINE__);					\
       exit(0);							\
     }								\
   }
