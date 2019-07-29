@@ -230,38 +230,25 @@ void WilsonFermion5D<Impl>::DhopDir(const FermionField &in, FermionField &out,in
   //  assert( (disp==1)||(disp==-1) );
   //  assert( (dir>=0)&&(dir<4) ); //must do x,y,z or t;
 
-  Compressor compressor(DaggerNo);
-  Stencil.HaloExchange(in,compressor);
-  
   int skip = (disp==1) ? 0 : 1;
-
   int dirdisp = dir+skip*4;
   int gamma   = dir+(1-skip)*4;
 
-  assert(dirdisp<=7);
-  assert(dirdisp>=0);
+  Compressor compressor(DaggerNo);
+  Stencil.HaloExchange(in,compressor);
+  
+  uint64_t Nsite = Umu.Grid()->oSites();
+  Kernels::DhopDirKernel(Stencil,Umu,Stencil.CommBuf(),Ls,Nsite,in,out,dirdisp,gamma);
 
-   auto Umu_v = Umu.View();
-   auto in_v  = in.View();
-   auto out_v = out.View();
-   thread_for(ss,Umu.Grid()->oSites(),{
-       //  parallel_for(int ss=0;ss<Umu.Grid()->oSites();ss++){
-    for(int s=0;s<Ls;s++){
-      int sU=ss;
-      int sF = s+Ls*sU; 
-      Kernels::DhopDirK(Stencil,Umu_v,Stencil.CommBuf(),sF,sU,in_v,out_v,dirdisp,gamma);
-      //      Kernels::DhopDir(Stencil,Umu,Stencil.CommBuf(),sF,sU,in,out,dirdisp,gamma);
-    }
-  });
 };
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
-            DoubledGaugeField & U,
-            GaugeField &mat,
-            const FermionField &A,
-            const FermionField &B,
-            int dag)
+					  DoubledGaugeField & U,
+					  GaugeField &mat,
+					  const FermionField &A,
+					  const FermionField &B,
+					  int dag)
 {
   DerivCalls++;
   assert((dag==DaggerNo) ||(dag==DaggerYes));
@@ -296,27 +283,10 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
 
     DerivDhopComputeTime -= usecond();
 
-    auto U_v = U.View();
-    auto Btilde_v = Btilde.View();
-    auto B_v = B.View();
-    int Bsites = B.Grid()->oSites();
     int Usites = U.Grid()->oSites();
-    thread_for(sss, U.Grid()->oSites(),{
-	//    parallel_for (int sss = 0; sss < U.Grid()->oSites(); sss++) {
-      for (int s = 0; s < Ls; s++) {
-        int sU = sss;
-        int sF = s + Ls * sU;
 
-        assert(sF < Bsites);
-        assert(sU < Usites);
+    Kernels::DhopDirKernel(st, U, st.CommBuf(), Ls, Usites, B, Btilde, mu,gamma);
 
-	Kernels::DhopDirK(st, U_v, st.CommBuf(), sF, sU, B_v, Btilde_v, mu, gamma);
-	//        Kernels::DhopDir(st, U, st.CommBuf(), sF, sU, B, Btilde, mu, gamma);
-        ////////////////////////////
-        // spin trace outer product
-        ////////////////////////////
-      }
-    });
     ////////////////////////////
     // spin trace outer product
     ////////////////////////////

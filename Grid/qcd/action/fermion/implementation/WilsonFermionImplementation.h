@@ -238,16 +238,8 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
     int gamma = mu;
     if (!dag) gamma += Nd;
 
-    ////////////////////////
-    // Call the single hop
-    ////////////////////////
-    auto U_v = U.View();
-    auto B_v = B.View();
-    auto Btilde_v = Btilde.View();
-    auto st_v = st.View();
-    thread_for( sss, B.Grid()->oSites(), {
-      Kernels::DhopDirK(st_v, U_v, st.CommBuf(), sss, sss, B_v, Btilde_v, mu, gamma);
-    });
+    int Ls=1;
+    Kernels::DhopDirKernel(st, U, st.CommBuf(), Ls, B.Grid()->oSites(), B, Btilde, mu, gamma);
 
     //////////////////////////////////////////////////
     // spin trace outer product
@@ -332,7 +324,8 @@ void WilsonFermion<Impl>::Mdir(const FermionField &in, FermionField &out, int di
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDir(const FermionField &in, FermionField &out, int dir, int disp) {
+void WilsonFermion<Impl>::DhopDir(const FermionField &in, FermionField &out, int dir, int disp) 
+{
   int skip = (disp == 1) ? 0 : 1;
   int dirdisp = dir + skip * 4;
   int gamma = dir + (1 - skip) * 4;
@@ -346,13 +339,9 @@ void WilsonFermion<Impl>::DhopDirDisp(const FermionField &in, FermionField &out,
   Compressor compressor(dag);
 
   Stencil.HaloExchange(in, compressor);
-  auto in_v = in.View();
-  auto out_v = in.View();
-  auto Umu_v = Umu.View();
-  auto Stencil_v = Stencil.View();
-  thread_for(sss, in.Grid()->oSites(),{
-    Kernels::DhopDirK(Stencil_v, Umu_v, Stencil.CommBuf(), sss, sss, in_v, out_v, dirdisp, gamma);
-  });
+  int Ls=1;
+  int Nsite=in.oSites();
+  Kernels::DhopDirKernel(Stencil, Umu, Stencil.CommBuf(), Ls, Nsite, in, out, dirdisp, gamma);
 };
 
 template <class Impl>

@@ -320,7 +320,26 @@ void WilsonKernels<Impl>::DhopDirK( StencilView &st, DoubledGaugeFieldView &U,Si
   GENERIC_DHOPDIR_LEG(Tm,spProjTm,spReconTm);
   coalescedWrite(out[sF], result,lane);
 }
- 
+
+template <class Impl>
+void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor *buf, int Ls,
+					 int Nsite, const FermionField &in, FermionField &out, int dirdisp, int gamma) 
+{
+  assert(dirdisp<=7);
+  assert(dirdisp>=0);
+
+   auto U_v   = U.View();
+   auto in_v  = in.View();
+   auto out_v = out.View();
+   auto st_v  = st.View();
+   accelerator_for(ss,Nsite,1,{
+    for(int s=0;s<Ls;s++){
+      int sU=ss;
+      int sF = s+Ls*sU; 
+      DhopDirK(st_v,U_v,st.CommBuf(),sF,sU,in_v,out_v,dirdisp,gamma);
+    }
+  });
+} 
 
 #define KERNEL_CALLNB(A) \
   const uint64_t    NN = Nsite*Ls;					\

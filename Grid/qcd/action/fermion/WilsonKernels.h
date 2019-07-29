@@ -60,9 +60,9 @@ public:
 			    int Ls, int Nsite, const FermionField &in, FermionField &out,
 			    int interior=1,int exterior=1) ;
 
-  static accelerator void DhopDirK(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor * buf,
-				   int sF, int sU, const FermionFieldView &in, FermionFieldView &out, int dirdisp, int gamma);
-      
+  static void DhopDirKernel(StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor * buf,
+			    int Ls, int Nsite, const FermionField &in, FermionField &out, int dirdisp, int gamma);
+
   //////////////////////////////////////////////////////////////////////////////
   // Utilities for inserting Wilson conserved current.
   //////////////////////////////////////////////////////////////////////////////
@@ -99,6 +99,10 @@ public:
                                   bool switch_sign = false);
 
 private:
+
+  static accelerator void DhopDirK(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor * buf,
+				   int sF, int sU, const FermionFieldView &in, FermionFieldView &out, int dirdisp, int gamma);
+      
   // Specialised variants
   static accelerator void GenericDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
 					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
