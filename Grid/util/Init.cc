@@ -281,14 +281,17 @@ void GridBanner(void)
     printed=1;
   }
 }
+#ifdef GRID_NVCC
+cudaDeviceProp *gpu_props;
+#endif
 void GridGpuInit(void)
 {
 #ifdef GRID_NVCC
   int nDevices = 1;
   cudaGetDeviceCount(&nDevices);
+  gpu_props = new cudaDeviceProp[nDevices];
 
   char * localRankStr = NULL;
-
   int rank = 0, device = 0, world_rank=0; 
 #define ENV_LOCAL_RANK_OMPI    "OMPI_COMM_WORLD_LOCAL_RANK"
 #define ENV_LOCAL_RANK_MVAPICH "MV2_COMM_WORLD_LOCAL_RANK"
@@ -324,19 +327,21 @@ void GridGpuInit(void)
 #define GPU_PROP(canMapHostMemory)             GPU_PROP_FMT(canMapHostMemory,"%d");
 
       cudaDeviceProp prop; 
-      cudaGetDeviceProperties(&prop, i);
+      //      cudaGetDeviceProperties(&prop, i);
+      cudaGetDeviceProperties(&gpu_props[i], i);
+      prop = gpu_props[i];
       printf("GpuInit: ========================\n");
       printf("GpuInit: Device Number    : %d\n", i);
       printf("GpuInit: ========================\n");
       printf("GpuInit: Device identifier: %s\n", prop.name);
-      printf("GpuInit:   Peak Memory Bandwidth (GB/s): %f\n",(float)2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6);
+      //      printf("GpuInit:   Peak Memory Bandwidth (GB/s): %f\n",(float)2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6);
       GPU_PROP(managedMemory);
+      GPU_PROP(isMultiGpuBoard);
+      GPU_PROP(warpSize);
 #if 0
       GPU_PROP(unifiedAddressing);
-      GPU_PROP(isMultiGpuBoard);
       GPU_PROP(l2CacheSize);
       GPU_PROP(singleToDoublePrecisionPerfRatio);
-      GPU_PROP(warpSize);
 #endif
     }
     printf("GpuInit: ================================================\n");

@@ -108,12 +108,16 @@ void fillScalar(scalar &s,distribution &dist,generator & gen)
 template<class distribution,class generator> 
 void fillScalar(ComplexF &s,distribution &dist, generator &gen)
 {
-  s=ComplexF(dist(gen),dist(gen));
+  //  s=ComplexF(dist(gen),dist(gen));
+  s.real(dist(gen));
+  s.imag(dist(gen));
 }
 template<class distribution,class generator> 
 void fillScalar(ComplexD &s,distribution &dist,generator &gen)
 {
-  s=ComplexD(dist(gen),dist(gen));
+  //  s=ComplexD(dist(gen),dist(gen));
+  s.real(dist(gen));
+  s.imag(dist(gen));
 }
   
 class GridRNGbase {

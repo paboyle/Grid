@@ -23,154 +23,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #include <Grid/Grid_Eigen_Dense.h>
 #ifdef GRID_NVCC
-#include <thrust/inner_product.h>
+#include <Grid/lattice/Lattice_reduction_gpu.h>
 #endif
 
 NAMESPACE_BEGIN(Grid);
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Deterministic Reduction operations
-  ////////////////////////////////////////////////////////////////////////////////////////////////////
-template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
-  ComplexD nrm = innerProduct(arg,arg);
-  return real(nrm); 
-}
-
-#ifdef GRID_NVCC
-template<class T, class R>
-struct innerProductFunctor : public thrust::binary_function<T,T,R>
-{
-  accelerator R operator()(T x, T y) { return innerProduct(x,y); }
-};
-#endif
-
-// Double inner product
-template<class vobj>
-inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right)
-{
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_typeD vector_type;
-  scalar_type  nrm;
-  
-  GridBase *grid = left.Grid();
-  
-  Vector<vector_type> sumarray(grid->SumArraySize());
-
-  auto left_v = left.View();
-  auto right_v=right.View();
-
-#if 0
-  typedef decltype(innerProduct(left_v[0],right_v[0])) inner_t;
-  thrust::plus<inner_t> binary_sum;
-  innerProductFunctor<vobj,inner_t> binary_inner_p;
-  Integer sN = left_v.end();
-  inner_t zero = Zero();
-  // is there a way of using the efficient thrust reduction while maintaining memory coalescing?
-  inner_t vnrm = thrust::inner_product(thrust::device, &left_v[0], &left_v[sN], &right_v[0], zero, binary_sum, binary_inner_p);
-  nrm = Reduce(TensorRemove(vnrm));// sum across simd
-#else
-  thread_for( thr,grid->SumArraySize(),{
-    int mywork, myoff;
-    GridThread::GetWork(left.Grid()->oSites(),thr,mywork,myoff);
-    
-    decltype(innerProductD(left_v[0],right_v[0])) vnrm=Zero(); // private to thread; sub summation
-    for(int ss=myoff;ss<mywork+myoff; ss++){
-      vnrm = vnrm + innerProductD(left_v[ss],right_v[ss]);
-    }
-    sumarray[thr]=TensorRemove(vnrm) ;
-  });
-  
-  vector_type vvnrm; vvnrm=Zero();  // sum across threads
-  for(int i=0;i<grid->SumArraySize();i++){
-    vvnrm = vvnrm+sumarray[i];
-  }
-  nrm = Reduce(vvnrm);// sum across simd
-#endif
-  right.Grid()->GlobalSum(nrm);
-  return nrm;
-}
-
-/////////////////////////
-// Fast axpby_norm
-// z = a x + b y
-// return norm z
-/////////////////////////
-template<class sobj,class vobj> strong_inline RealD 
-axpy_norm_fast(Lattice<vobj> &z,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y) 
-{
-  sobj one(1.0);
-  return axpby_norm_fast(z,a,one,x,y);
-}
-
-template<class sobj,class vobj> strong_inline RealD 
-axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y) 
-{
-  const int pad = 8;
-  z.Checkerboard() = x.Checkerboard();
-  conformable(z,x);
-  conformable(x,y);
-
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_typeD vector_type;
-  RealD  nrm;
-  
-  GridBase *grid = x.Grid();
-  
-  Vector<RealD> sumarray(grid->SumArraySize()*pad);
-  
-  auto x_v=x.View();
-  auto y_v=y.View();
-  auto z_v=z.View();
-  thread_for(thr,grid->SumArraySize(),
-  {
-    int nwork, mywork, myoff;
-    nwork = x.Grid()->oSites();
-    GridThread::GetWork(nwork,thr,mywork,myoff);
-    
-    // private to thread; sub summation
-    decltype(innerProductD(z_v[0],z_v[0])) vnrm=Zero(); 
-    for(int ss=myoff;ss<mywork+myoff; ss++){
-      vobj tmp = a*x_v[ss]+b*y_v[ss];
-      vnrm = vnrm + innerProductD(tmp,tmp);
-      vstream(z_v[ss],tmp);
-    }
-    vstream(sumarray[thr*pad],real(Reduce(TensorRemove(vnrm)))) ;
-  });
-  
-  nrm = 0.0; // sum across threads; linear in thread count but fast
-  for(int i=0;i<grid->SumArraySize();i++){
-    nrm = nrm+sumarray[i*pad];
-  } 
-  z.Grid()->GlobalSum(nrm);
-  return nrm; 
-}
-
- 
-template<class Op,class T1>
-inline auto sum(const LatticeUnaryExpression<Op,T1> & expr)
-  ->typename decltype(expr.op.func(eval(0,expr.arg1)))::scalar_object
-{
-  return sum(closure(expr));
-}
-
-template<class Op,class T1,class T2>
-inline auto sum(const LatticeBinaryExpression<Op,T1,T2> & expr)
-      ->typename decltype(expr.op.func(eval(0,expr.arg1),eval(0,expr.arg2)))::scalar_object
-{
-  return sum(closure(expr));
-}
-
-
-template<class Op,class T1,class T2,class T3>
-inline auto sum(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr)
-  ->typename decltype(expr.op.func(eval(0,expr.arg1),
-				      eval(0,expr.arg2),
-				      eval(0,expr.arg3)
-				      ))::scalar_object
-{
-  return sum(closure(expr));
-}
-
+#ifndef GRID_NVCC
 template<class vobj>
 inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
 {
@@ -211,7 +69,123 @@ inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
   
   return ssum;
 }
+#endif
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Deterministic Reduction operations
+////////////////////////////////////////////////////////////////////////////////////////////////////
+template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
+  ComplexD nrm = innerProduct(arg,arg);
+  return real(nrm); 
+}
+
+// Double inner product
+template<class vobj>
+inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right)
+{
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_typeD vector_type;
+  scalar_type  nrm;
+  
+  GridBase *grid = left.Grid();
+  
+  // Might make all code paths go this way.
+  auto left_v = left.View();
+  auto right_v=right.View();
+
+  const uint64_t nsimd = grid->Nsimd();
+  const uint64_t sites = grid->oSites();
+  
+  typedef decltype(innerProduct(left_v[0],right_v[0])) inner_t;
+  Lattice<inner_t> inner_tmp(grid);
+  auto inner_tmp_v = inner_tmp.View();
+  
+  accelerator_for( ss, sites, nsimd,{
+      auto x_l = left_v(ss);
+      auto y_l = right_v(ss);
+      coalescedWrite(inner_tmp_v[ss],innerProduct(x_l,y_l));
+  })
+
+  nrm = TensorRemove(sum(inner_tmp));
+
+  right.Grid()->GlobalSum(nrm);
+  return nrm;
+}
+
+/////////////////////////
+// Fast axpby_norm
+// z = a x + b y
+// return norm z
+/////////////////////////
+template<class sobj,class vobj> strong_inline RealD 
+axpy_norm_fast(Lattice<vobj> &z,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y) 
+{
+  sobj one(1.0);
+  return axpby_norm_fast(z,a,one,x,y);
+}
+
+template<class sobj,class vobj> strong_inline RealD 
+axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y) 
+{
+  const int pad = 8;
+  z.Checkerboard() = x.Checkerboard();
+  conformable(z,x);
+  conformable(x,y);
+
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_typeD vector_type;
+  RealD  nrm;
+  
+  GridBase *grid = x.Grid();
+
+  auto x_v=x.View();
+  auto y_v=y.View();
+  auto z_v=z.View();
+
+  const uint64_t nsimd = grid->Nsimd();
+  const uint64_t sites = grid->oSites();
+  
+  typedef decltype(innerProduct(x_v[0],y_v[0])) inner_t;
+  Lattice<inner_t> inner_tmp(grid);
+
+  accelerator_for( ss, sites, nsimd,{
+      auto tmp = a*x_v(ss)+b*y_v(ss);
+      coalescedWrite(inner_tmp[ss],innerProduct(tmp,tmp));
+      coalescedWrite(z_v[ss],tmp);
+  })
+  
+  nrm = TensorRemove(sum(inner_tmp));
+
+  z.Grid()->GlobalSum(nrm);
+  return nrm; 
+}
+
+ 
+template<class Op,class T1>
+inline auto sum(const LatticeUnaryExpression<Op,T1> & expr)
+  ->typename decltype(expr.op.func(eval(0,expr.arg1)))::scalar_object
+{
+  return sum(closure(expr));
+}
+
+template<class Op,class T1,class T2>
+inline auto sum(const LatticeBinaryExpression<Op,T1,T2> & expr)
+      ->typename decltype(expr.op.func(eval(0,expr.arg1),eval(0,expr.arg2)))::scalar_object
+{
+  return sum(closure(expr));
+}
+
+
+template<class Op,class T1,class T2,class T3>
+inline auto sum(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr)
+  ->typename decltype(expr.op.func(eval(0,expr.arg1),
+				      eval(0,expr.arg2),
+				      eval(0,expr.arg3)
+				      ))::scalar_object
+{
+  return sum(closure(expr));
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // sliceSum, sliceInnerProduct, sliceAxpy, sliceNorm etc...
