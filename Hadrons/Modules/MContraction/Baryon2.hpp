@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MContraction/Baryon.hpp
+Source file: Hadrons/Modules/MContraction/Baryon2.hpp
 
 Copyright (C) 2015-2019
 
@@ -27,8 +27,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_MContraction_Baryon_hpp_
-#define Hadrons_MContraction_Baryon_hpp_
+#ifndef Hadrons_MContraction_Baryon2_hpp_
+#define Hadrons_MContraction_Baryon2_hpp_
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
@@ -38,14 +38,14 @@ See the full license in the file "LICENSE" in the top level distribution directo
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                               Baryon                                       *
+ *                               Baryon2                                       *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MContraction)
 
-class BaryonPar: Serializable
+class Baryon2Par: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(BaryonPar,
+    GRID_SERIALIZABLE_CLASS_MEMBERS(Baryon2Par,
                                     std::string, q1,
                                     std::string, q2,
                                     std::string, q3,
@@ -54,7 +54,7 @@ public:
 };
 
 template <typename FImpl1, typename FImpl2, typename FImpl3>
-class TBaryon: public Module<BaryonPar>
+class TBaryon2: public Module<Baryon2Par>
 {
 public:
     FERM_TYPE_ALIASES(FImpl1, 1);
@@ -68,9 +68,9 @@ public:
     };
 public:
     // constructor
-    TBaryon(const std::string name);
+    TBaryon2(const std::string name);
     // destructor
-    virtual ~TBaryon(void) {};
+    virtual ~TBaryon2(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -83,20 +83,20 @@ protected:
     Gamma::Algebra  al;
 };
 
-MODULE_REGISTER_TMP(Baryon, ARG(TBaryon<FIMPL, FIMPL, FIMPL>), MContraction);
+MODULE_REGISTER_TMP(Baryon2, ARG(TBaryon2<FIMPL, FIMPL, FIMPL>), MContraction);
 
 /******************************************************************************
- *                         TBaryon implementation                             *
+ *                         TBaryon2 implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl1, typename FImpl2, typename FImpl3>
-TBaryon<FImpl1, FImpl2, FImpl3>::TBaryon(const std::string name)
-: Module<BaryonPar>(name)
+TBaryon2<FImpl1, FImpl2, FImpl3>::TBaryon2(const std::string name)
+: Module<Baryon2Par>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl1, typename FImpl2, typename FImpl3>
-std::vector<std::string> TBaryon<FImpl1, FImpl2, FImpl3>::getInput(void)
+std::vector<std::string> TBaryon2<FImpl1, FImpl2, FImpl3>::getInput(void)
 {
     std::vector<std::string> input = {par().q1, par().q2, par().q3};
     
@@ -104,7 +104,7 @@ std::vector<std::string> TBaryon<FImpl1, FImpl2, FImpl3>::getInput(void)
 }
 
 template <typename FImpl1, typename FImpl2, typename FImpl3>
-std::vector<std::string> TBaryon<FImpl1, FImpl2, FImpl3>::getOutput(void)
+std::vector<std::string> TBaryon2<FImpl1, FImpl2, FImpl3>::getOutput(void)
 {
     std::vector<std::string> out = {};
     
@@ -113,7 +113,7 @@ std::vector<std::string> TBaryon<FImpl1, FImpl2, FImpl3>::getOutput(void)
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl1, typename FImpl2, typename FImpl3>
-void TBaryon<FImpl1, FImpl2, FImpl3>::setup(void)
+void TBaryon2<FImpl1, FImpl2, FImpl3>::setup(void)
 {
     envTmpLat(LatticeComplex, "c");
     envTmpLat(LatticeComplex, "diquark");
@@ -162,7 +162,7 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::setup(void)
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl1, typename FImpl2, typename FImpl3>
-void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
+void TBaryon2<FImpl1, FImpl2, FImpl3>::execute(void)
 {
     LOG(Message) << "Computing baryon contractions '" << getName() << "' using"
                  << " quarks '" << par().q1 << "', and a diquark formed of ('" << par().q2 << "', and '"
@@ -172,7 +172,7 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     auto       &q2 = envGet(PropagatorField2, par().q2);
     auto       &q3 = envGet(PropagatorField3, par().q3);
     envGetTmp(LatticeComplex, c);
-    envGetTmp(LatticeComplex, diquark);
+    //envGetTmp(LatticeComplex, diquark);
     Result     result;
     int nt = env().getDim(Tp);
     result.corr.resize(nt);
@@ -182,7 +182,12 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     const Gamma GammaA{ Gamma::Algebra::Identity };
     const Gamma GammaB{ al };
 
-    BaryonUtils<FIMPL>::ContractBaryons(q1,q2,q3,GammaA,GammaB,c);
+    LatticeSpinColourMatrix diquark;
+
+    diquark = BaryonUtils<FIMPL>::quarkContract13(q2*GammaB,GammaB*q3);
+
+    //result = trace(GammaA*GammaA * traceColour(q1*traceSpin(diquark))) + 2.0 * trace(GammaA*GammaA*traceColour(q1*diquark));
+    result = trace(q1*diquark);
 
     sliceSum(c,buf,Tp);
 
@@ -198,4 +203,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MContraction_Baryon_hpp_
+#endif // Hadrons_MContraction_Baryon2_hpp_

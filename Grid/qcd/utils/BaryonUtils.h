@@ -27,6 +27,9 @@ public:
 					 const Gamma GammaA,
 					 const Gamma GammaB,
 					 ComplexField &baryon_corr);
+ 
+ static LatticeSpinColourMatrix quarkContract13(const PropagatorField &q1,
+			     const PropagatorField &q2);
 };
 
 
@@ -139,19 +142,70 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1,
           }}}
         }	  
 
-        if (ie_src==0 && ie_snk==0){
+        /*if (ie_src==0 && ie_snk==0){
 	  baryon_corr._odata[ss] = result; 
 	} else {
 	  baryon_corr._odata[ss] += result; 
-        }
+        }*/
       
       }
     }
+    baryon_corr._odata[ss] = result; 
+
   } //end loop over lattice sites
 
 
 }
 
+//QDP / CHROMA - style diquark construction
+// (q_out)^{c'c}_{alpha,beta} = epsilon^{abc} epsilon^{a'b'c'} (q1)^{aa'}_{rho alpha}^* (q2)^{bb'}_{rho beta}
+template<class FImpl>
+LatticeSpinColourMatrix BaryonUtils<FImpl>::quarkContract13(const PropagatorField &q1,
+					 const PropagatorField &q2)
+{
+  GridBase *grid = q1._grid;
+
+
+  std::vector<std::vector<int>> epsilon = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
+  std::vector<int> epsilon_sgn = {1,1,1,-1,-1,-1};
+  std::vector<int> wick_contraction = {0,0,0,0,0,0};
+
+  LatticeSpinColourMatrix q_out=zero;
+
+  parallel_for(int ss=0;ss<grid->oSites();ss++){
+
+    typedef typename ComplexField::vector_object vobj;
+
+    auto D1 = q1._odata[ss];
+    auto D2 = q2._odata[ss];
+    //auto D_out = q_out._odata[ss];
+    //D_out=zero;
+ 
+    SpinColourMatrix D_out=zero;
+
+    for (int ie_src=0; ie_src < 6 ; ie_src++){
+      int a_src = epsilon[ie_src][0]; //a
+      int b_src = epsilon[ie_src][1]; //b
+      int c_src = epsilon[ie_src][2]; //c
+      for (int ie_snk=0; ie_snk < 6 ; ie_snk++){
+        int a_snk = epsilon[ie_snk][0]; //a'
+        int b_snk = epsilon[ie_snk][1]; //b'
+        int c_snk = epsilon[ie_snk][2]; //c'
+        for (int alpha=0; alpha<Ns; alpha++){
+        for (int beta=0; beta<Ns; beta++){
+        for (int rho=0; rho<Ns; rho++){
+          D_out()(alpha,beta)(c_snk,c_src) += epsilon_sgn[ie_src] * epsilon_sgn[ie_snk] * D1()(rho,alpha)(a_src,a_snk)*D2()(rho,beta)(b_src,b_snk);
+        }}}
+      }
+    }
+
+    q_out._odata[ss]=D_out;
+
+  } //end loop over lattice sites
+
+  return q_out;
+
+}
 
 
 }}

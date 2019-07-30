@@ -55,6 +55,7 @@ modules_cc =\
   Modules/MContraction/WeakEye3pt.cc \
   Modules/MContraction/Meson.cc \
   Modules/MContraction/A2AAslashField.cc \
+  Modules/MContraction/Baryon2.cc \
   Modules/MContraction/Baryon.cc \
   Modules/MContraction/Nucleon.cc \
   Modules/MContraction/WeakNonEye3pt.cc \
@@ -63,7 +64,6 @@ modules_cc =\
   Modules/MContraction/A2AMesonField.cc \
   Modules/MContraction/A2ALoop.cc \
   Modules/MContraction/Gamma3pt.cc \
-  Modules/MContraction/Nucleon.cc \
   Modules/MAction/MobiusDWF.cc \
   Modules/MAction/WilsonClover.cc \
   Modules/MAction/Wilson.cc \
@@ -138,9 +138,11 @@ modules_hpp =\
   Modules/MContraction/WeakMesonDecayKl2.hpp \
   Modules/MContraction/Nucleon.hpp \
   Modules/MContraction/A2AAslashField.hpp \
+  Modules/MContraction/Baryon2.hpp \
   Modules/MContraction/WeakEye3pt.hpp \
   Modules/MContraction/WeakNonEye3pt.hpp \
   Modules/MContraction/Baryon.hpp \
+  Modules/MContraction/Baryon_old.hpp \
   Modules/MContraction/Meson.hpp \
   Modules/MContraction/A2ALoop.hpp \
   Modules/MContraction/Gamma3pt.hpp \
