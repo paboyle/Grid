@@ -81,8 +81,8 @@ WilsonKernels<Impl >::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,Doubl
   assert(0);
 }
 
-#include <qcd/action/fermion/WilsonKernelsAsmAvx512.h>
-#include <qcd/action/fermion/WilsonKernelsAsmQPX.h>
+#include <Grid/qcd/action/fermion/WilsonKernelsAsmAvx512.h>
+#include <Grid/qcd/action/fermion/WilsonKernelsAsmQPX.h>
 
 #define INSTANTIATE_ASM(A)\
 template void WilsonKernels<A>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,\
