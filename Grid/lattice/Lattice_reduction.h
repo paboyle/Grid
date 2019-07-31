@@ -128,7 +128,6 @@ axpy_norm_fast(Lattice<vobj> &z,sobj a,const Lattice<vobj> &x,const Lattice<vobj
 template<class sobj,class vobj> strong_inline RealD 
 axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y) 
 {
-  const int pad = 8;
   z.Checkerboard() = x.Checkerboard();
   conformable(z,x);
   conformable(x,y);
@@ -148,14 +147,15 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   
   typedef decltype(innerProduct(x_v[0],y_v[0])) inner_t;
   Lattice<inner_t> inner_tmp(grid);
+  auto inner_tmp_v = inner_tmp.View();
 
   accelerator_for( ss, sites, nsimd,{
       auto tmp = a*x_v(ss)+b*y_v(ss);
-      coalescedWrite(inner_tmp[ss],innerProduct(tmp,tmp));
+      coalescedWrite(inner_tmp_v[ss],innerProduct(tmp,tmp));
       coalescedWrite(z_v[ss],tmp);
   })
   
-  nrm = TensorRemove(sum(inner_tmp));
+  nrm = real(TensorRemove(sum(inner_tmp)));
 
   z.Grid()->GlobalSum(nrm);
   return nrm; 
