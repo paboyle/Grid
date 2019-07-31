@@ -345,7 +345,9 @@ void GridGpuInit(void)
 #endif
     }
   }
-  printf("GpuInit: ================================================\n");
+  if ( world_rank == 0 ) {
+    printf("GpuInit: ================================================\n");
+  }
 #endif
 }
 
