@@ -320,15 +320,15 @@ void GridGpuInit(void)
     printf("GpuInit: Cuda reports %d GPUs on MPI rank 0\n",nDevices);
   }
 
-  if ( world_rank == 0) {
-    for (int i = 0; i < nDevices; i++) {
+  for (int i = 0; i < nDevices; i++) {
 
 #define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("GpuInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
 #define GPU_PROP(canMapHostMemory)             GPU_PROP_FMT(canMapHostMemory,"%d");
-
+    
+    //      cudaGetDeviceProperties(&prop, i);
+    cudaGetDeviceProperties(&gpu_props[i], i);
+    if ( world_rank == 0) {
       cudaDeviceProp prop; 
-      //      cudaGetDeviceProperties(&prop, i);
-      cudaGetDeviceProperties(&gpu_props[i], i);
       prop = gpu_props[i];
       printf("GpuInit: ========================\n");
       printf("GpuInit: Device Number    : %d\n", i);
@@ -344,8 +344,8 @@ void GridGpuInit(void)
       GPU_PROP(singleToDoublePrecisionPerfRatio);
 #endif
     }
-    printf("GpuInit: ================================================\n");
   }
+  printf("GpuInit: ================================================\n");
 #endif
 }
 
@@ -622,6 +622,11 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   return;
 };
 
+void Grid_exit_handler(void)
+{
+  BACKTRACEFP(stdout);
+  fflush(stdout);
+}
 void Grid_debug_handler_init(void)
 {
   struct sigaction sa;
@@ -637,6 +642,8 @@ void Grid_debug_handler_init(void)
   sigaction(SIGFPE,&sa,NULL);
   sigaction(SIGKILL,&sa,NULL);
   sigaction(SIGILL,&sa,NULL);
+
+  atexit(Grid_exit_handler);
 }
 
 NAMESPACE_END(Grid);
