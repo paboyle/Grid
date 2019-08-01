@@ -188,9 +188,9 @@ int main (int argc, char ** argv)
 	rbuf[mu].resize(lat*lat*lat*Ls);
 	//	std::cout << " buffers " << std::hex << (uint64_t)&xbuf[mu][0] <<" " << (uint64_t)&rbuf[mu][0] <<std::endl;
       }
+      uint64_t bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
 
       int ncomm;
-      int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
 
       for(int i=0;i<Nloop;i++){
       double start=usecond();
@@ -277,15 +277,15 @@ int main (int argc, char ** argv)
       std::vector<HalfSpinColourVectorD *> xbuf(8);
       std::vector<HalfSpinColourVectorD *> rbuf(8);
       Grid.ShmBufferFreeAll();
+      uint64_t bytes = lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
       for(int d=0;d<8;d++){
-	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	bzero((void *)xbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	bzero((void *)rbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
+	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
+	bzero((void *)xbuf[d],bytes);
+	bzero((void *)rbuf[d],bytes);
       }
 
       int ncomm;
-      int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
 
       double dbytes;
       for(int i=0;i<Nloop;i++){
@@ -374,15 +374,15 @@ int main (int argc, char ** argv)
       std::vector<HalfSpinColourVectorD *> xbuf(8);
       std::vector<HalfSpinColourVectorD *> rbuf(8);
       Grid.ShmBufferFreeAll();
+      uint64_t bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
       for(int d=0;d<8;d++){
-	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	bzero((void *)xbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	bzero((void *)rbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
+	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
+	bzero((void *)xbuf[d],bytes);
+	bzero((void *)rbuf[d],bytes);
       }
 
       int ncomm;
-      int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
       double dbytes;
       for(int i=0;i<Nloop;i++){
 	double start=usecond();
@@ -472,15 +472,16 @@ int main (int argc, char ** argv)
       std::vector<HalfSpinColourVectorD *> xbuf(8);
       std::vector<HalfSpinColourVectorD *> rbuf(8);
       Grid.ShmBufferFreeAll();
+      //      uint64_t bytes = lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
+      uint64_t bytes = 2*1024*1024;
       for(int d=0;d<8;d++){
-	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	bzero((void *)xbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	bzero((void *)rbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
+	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
+	bzero((void *)xbuf[d],bytes);
+	bzero((void *)rbuf[d],bytes);
       }
 
       int ncomm;
-      int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
       double dbytes;
       for(int i=0;i<Nloop;i++){
 	double start=usecond();

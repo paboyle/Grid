@@ -262,7 +262,6 @@ Set HEADER_SEARCH_PATHS to:
 
     $Grid/build$(CONFIGURATION)/Grid
     $Grid
-    $Grid/Grid
 
 followed by (***the order is important***) the locations reported by `grid-config --cxxflags`, ignoring duplicates, e.g.:
 
@@ -272,7 +271,7 @@ followed by (***the order is important***) the locations reported by `grid-confi
 
 **Note: the easiest way to set this value is to put it all on one line, space separated, and edit the text to the right of `HEADER_SEARCH_PATHS`**, i.e.:
 
-    $Grid/build$(CONFIGURATION)/Grid $Grid $Grid/Grid $GridPre/openmpi/include $GridPkg/include $GridPre/lime/include
+    $Grid/build$(CONFIGURATION)/Grid $Grid $GridPre/openmpi/include $GridPkg/include $GridPre/lime/include
 
 #### LIBRARY_SEARCH_PATHS
 
@@ -298,7 +297,7 @@ The easiest way to link to all required libraries is to obtain a list of all lib
 
 and pasting the output ***with `-lGrid -lHadrons ` prepended*** (including the `-l` switches) directly into `OTHER_LDFLAGS`, e.g.:
 
-    -lGrid -lHadrons -lmpi -lhdf5_cpp -lz -lcrypto -llime -lfftw3f -lfftw3 -lmpfr -lgmp -lstdc++ -lm -lz -lhdf5
+    -lGrid -lHadrons -lmpi -lhdf5_cpp -lhdf5 -lz -lcrypto -llime -lfftw3f -lfftw3 -lmpfr -lgmp -lm
 
 ## Make additional configurations
 
