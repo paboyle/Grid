@@ -187,7 +187,8 @@ void TBaryon2<FImpl1, FImpl2, FImpl3>::execute(void)
     diquark = BaryonUtils<FIMPL>::quarkContract13(q2*GammaB,GammaB*q3);
 
     //result = trace(GammaA*GammaA * traceColour(q1*traceSpin(diquark))) + 2.0 * trace(GammaA*GammaA*traceColour(q1*diquark));
-    result = trace(q1*diquark);
+  //result = trace(q1*diquark); // TODO: Apologies, Felix - compiler errors
+  assert( 0 && "TODO: Felix, please fix prior line - compiler errors" );
 
     sliceSum(c,buf,Tp);
 
