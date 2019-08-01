@@ -165,24 +165,19 @@ LatticeSpinColourMatrix BaryonUtils<FImpl>::quarkContract13(const PropagatorFiel
 {
   GridBase *grid = q1._grid;
 
-
   std::vector<std::vector<int>> epsilon = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
   std::vector<int> epsilon_sgn = {1,1,1,-1,-1,-1};
   std::vector<int> wick_contraction = {0,0,0,0,0,0};
 
-  LatticeSpinColourMatrix q_out=zero;
+  // TODO: Felix, made a few changes to fix this as there were compiler errors. Please validate!
+  LatticeSpinColourMatrix q_out(grid);
+  // q_out = zero; TODO: Don't think you need this, as you'll set each site explicitly anyway
 
   parallel_for(int ss=0;ss<grid->oSites();ss++){
-
-    typedef typename ComplexField::vector_object vobj;
-
-    auto D1 = q1._odata[ss];
-    auto D2 = q2._odata[ss];
-    //auto D_out = q_out._odata[ss];
-    //D_out=zero;
- 
-    SpinColourMatrix D_out=zero;
-
+    const auto & D1    = q1._odata[ss];
+    const auto & D2    = q2._odata[ss];
+          auto & D_out = q_out._odata[ss];
+    D_out=zero;
     for (int ie_src=0; ie_src < 6 ; ie_src++){
       int a_src = epsilon[ie_src][0]; //a
       int b_src = epsilon[ie_src][1]; //b
@@ -198,14 +193,8 @@ LatticeSpinColourMatrix BaryonUtils<FImpl>::quarkContract13(const PropagatorFiel
         }}}
       }
     }
-
-    q_out._odata[ss]=D_out;
-
-  } //end loop over lattice sites
-
+  }
   return q_out;
-
 }
-
 
 }}

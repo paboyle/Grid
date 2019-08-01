@@ -142,7 +142,6 @@ modules_hpp =\
   Modules/MContraction/WeakEye3pt.hpp \
   Modules/MContraction/WeakNonEye3pt.hpp \
   Modules/MContraction/Baryon.hpp \
-  Modules/MContraction/Baryon_old.hpp \
   Modules/MContraction/Meson.hpp \
   Modules/MContraction/A2ALoop.hpp \
   Modules/MContraction/Gamma3pt.hpp \

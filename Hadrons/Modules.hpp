@@ -60,7 +60,6 @@
 #include <Hadrons/Modules/MContraction/WeakEye3pt.hpp>
 #include <Hadrons/Modules/MContraction/WeakNonEye3pt.hpp>
 #include <Hadrons/Modules/MContraction/Baryon.hpp>
-#include <Hadrons/Modules/MContraction/Baryon_old.hpp>
 #include <Hadrons/Modules/MContraction/Meson.hpp>
 #include <Hadrons/Modules/MContraction/A2ALoop.hpp>
 #include <Hadrons/Modules/MContraction/Gamma3pt.hpp>

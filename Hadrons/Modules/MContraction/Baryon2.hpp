@@ -182,7 +182,7 @@ void TBaryon2<FImpl1, FImpl2, FImpl3>::execute(void)
     const Gamma GammaA{ Gamma::Algebra::Identity };
     const Gamma GammaB{ al };
 
-    LatticeSpinColourMatrix diquark;
+    LatticeSpinColourMatrix diquark( q1._grid ); // TODO: Felix, I added "q1._grid". I presume this is correct?
 
     diquark = BaryonUtils<FIMPL>::quarkContract13(q2*GammaB,GammaB*q3);
 
