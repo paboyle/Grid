@@ -25,7 +25,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Hadrons/Global.hpp>
+
+#include <Hadrons/Utilities/Contractor.hpp>
 #include <Hadrons/A2AMatrix.hpp>
 #include <Hadrons/DiskVector.hpp>
 #include <Hadrons/TimerArray.hpp>
@@ -33,67 +34,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 using namespace Grid;
 using namespace QCD;
 using namespace Hadrons;
-
-#define TIME_MOD(t) (((t) + par.global.nt) % par.global.nt)
-
-namespace Contractor
-{
-    class TrajRange: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(TrajRange,
-                                        unsigned int, start,
-                                        unsigned int, end,
-                                        unsigned int, step);
-    };
-    
-    class GlobalPar: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(GlobalPar,
-                                        TrajRange, trajCounter,
-                                        unsigned int, nt,
-                                        std::string, diskVectorDir,
-                                        std::string, output);
-    };
-
-    class A2AMatrixPar: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(A2AMatrixPar,
-                                        std::string, file,
-                                        std::string, dataset,
-                                        unsigned int, cacheSize,
-                                        std::string, name);
-    };
-
-    class ProductPar: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(ProductPar,
-                                        std::string, terms,
-                                        std::vector<std::string>, times,
-                                        std::string, translations,
-                                        bool, translationAverage);
-    };
-
-    class CorrelatorResult: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(CorrelatorResult,
-                                        std::vector<Contractor::A2AMatrixPar>,  a2aMatrix,
-                                        ProductPar, contraction,
-                                        std::vector<unsigned int>, times,
-                                        std::vector<ComplexD>, correlator);
-    };
-}
-
-struct ContractorPar
-{
-    Contractor::GlobalPar                  global;
-    std::vector<Contractor::A2AMatrixPar>  a2aMatrix;
-    std::vector<Contractor::ProductPar>    product;
-};
 
 void makeTimeSeq(std::vector<std::vector<unsigned int>> &timeSeq, 
                  const std::vector<std::set<unsigned int>> &times,
@@ -119,10 +59,10 @@ void makeTimeSeq(std::vector<std::vector<unsigned int>> &timeSeq,
 {
     std::vector<unsigned int> current(times.size());
 
-    makeTimeSeq(timeSeq, times, current, times.size());
+  makeTimeSeq(timeSeq, times, current, static_cast<unsigned int>(times.size()));
 }
 
-void saveCorrelator(const Contractor::CorrelatorResult &result, const std::string dir, 
+void saveCorrelator(const Contractor::CorrelatorResult &result, const std::string dir,
                     const unsigned int dt, const unsigned int traj)
 {
     std::string              fileStem = "", filename;
@@ -239,31 +179,52 @@ inline std::ostream & operator<< (std::ostream& s, const Bytes &&b)
 int main(int argc, char* argv[])
 {
     // parse command line
-    std::string   parFilename;
+    std::string parFilename;
+    bool        SimpleCorrelator{ false };
+    int         ArgCount{ 0 };
+    bool        bCmdLineError{ false };
+    for( int i = 1; i < argc; i++ ) {
+        if( argv[i][0] == '-' ) {
+            if( argv[i][1] == 's' && argv[i][2] == 0 )
+                SimpleCorrelator = true;
+            else {
+                std::cerr << "Urecognised switch \"" << argv[i] << "\"" << std::endl;
+                bCmdLineError = true;
+            }
+        } else {
+            switch( ++ArgCount ) {
+                case 1:
+                    parFilename = argv[i];
+                    break;
+                default:
+                    std::cerr << "Unused argument \"" << argv[i] << "\"" << std::endl;
+                    break;
+            }
+        }
+    }
 
-    if (argc != 2)
+    if (ArgCount != 1 or bCmdLineError)
     {
-        std::cerr << "usage: " << argv[0] << " <parameter file>";
-        std::cerr << std::endl;
+        std::cerr << "usage: " << argv[0] << " <parameter file>"
+                     "\n\t-s\tSimple Correlators (only describe A2AMatrices used for contraction)"
+                  << std::endl;
         
         return EXIT_FAILURE;
     }
-    parFilename = argv[1];
 
     // parse parameter file
-    ContractorPar par;
+    Contractor::ContractorPar par;
     unsigned int  nMat, nCont;
     XmlReader     reader(parFilename);
 
     read(reader, "global",    par.global);
     read(reader, "a2aMatrix", par.a2aMatrix);
     read(reader, "product",   par.product);
-    nMat  = par.a2aMatrix.size();
-    nCont = par.product.size();
+    nMat  = static_cast<unsigned int>(par.a2aMatrix.size());
+    nCont = static_cast<unsigned int>(par.product.size());
 
     // create diskvectors
     std::map<std::string, EigenDiskVector<ComplexD>> a2aMat;
-    unsigned int                                     cacheSize;
 
     for (auto &p: par.a2aMatrix)
     {
@@ -282,7 +243,7 @@ int main(int argc, char* argv[])
         for (auto &p: par.a2aMatrix)
         {
             std::string filename = p.file;
-            double      t, size;
+            double      t;
 
             tokenReplace(filename, "traj", traj);
             std::cout << "======== Loading '" << filename << "'" << std::endl;
@@ -306,7 +267,7 @@ int main(int argc, char* argv[])
             std::vector<A2AMatrixTr<ComplexD>>     lastTerm(par.global.nt);
             A2AMatrix<ComplexD>                    prod, buf, tmp;
             TimerArray                             tAr;
-            double                                 fusec, busec, flops, bytes, tusec;
+            double                                 fusec, busec, flops, bytes;
             Contractor::CorrelatorResult           result;             
 
             tAr.startTimer("Total");
@@ -328,7 +289,9 @@ int main(int argc, char* argv[])
             }
             for (auto &m: par.a2aMatrix)
             {
-                if (std::find(result.a2aMatrix.begin(), result.a2aMatrix.end(), m) == result.a2aMatrix.end())
+                // For simple correlators, only include A2AMatrix info for correlators in this contraction
+                if ( ( !SimpleCorrelator or std::find( term.begin(), term.end(), m.name ) != term.end() )
+                  and std::find(result.a2aMatrix.begin(), result.a2aMatrix.end(), m) == result.a2aMatrix.end())
                 {
                     result.a2aMatrix.push_back(m);
                     tokenReplace(result.a2aMatrix.back().file, "traj", traj);
