@@ -35,6 +35,9 @@ using namespace Grid;
 using namespace QCD;
 using namespace Hadrons;
 
+// Separator to be used between contraction terms only (underscores elsewhere)
+std::string Separator{ "_" };
+
 void makeTimeSeq(std::vector<std::vector<unsigned int>> &timeSeq, 
                  const std::vector<std::set<unsigned int>> &times,
                  std::vector<unsigned int> &current,
@@ -70,12 +73,12 @@ void saveCorrelator(const Contractor::CorrelatorResult &result, const std::strin
 
     for (unsigned int i = 0; i < terms.size() - 1; i++)
     {
-        fileStem += terms[i] + "_" + std::to_string(result.times[i]) + "_";
+        fileStem += terms[i] + "_" + std::to_string(result.times[i]) + Separator;
     }
     fileStem += terms.back();
     if (!result.contraction.translationAverage)
     {
-        fileStem += "_dt_" + std::to_string(dt);
+        fileStem += Separator + "dt_" + std::to_string(dt);
     }
     filename = dir + "/" + RESULT_FILE_NAME(fileStem, traj);
     std::cout << "Saving correlator to '" << filename << "'" << std::endl;
@@ -180,18 +183,36 @@ int main(int argc, char* argv[])
 {
     // parse command line
     std::string parFilename;
-    bool        SimpleCorrelator{ false };
+    bool        bOnlyWriteUsedA2AMatrices{ false };
     int         ArgCount{ 0 };
     bool        bCmdLineError{ false };
     for( int i = 1; i < argc; i++ ) {
         if( argv[i][0] == '-' ) {
-            if( argv[i][1] == 's' && argv[i][2] == 0 )
-                SimpleCorrelator = true;
-            else {
+            // Switches
+            bool bSwitchOK = false;
+            switch( argv[i][1] ) {
+                case 'a':
+                    if( argv[i][2] == 0 ) {
+                        bOnlyWriteUsedA2AMatrices = true;
+                        bSwitchOK = true;
+                        std::cout << "Only A2AMatrices used in each contraction will be written" << std::endl;
+                    }
+                    break;
+                case 's':
+                    if( argv[i][2] )
+                        Separator = &argv[i][2];
+                    else
+                        Separator = ".";
+                    bSwitchOK = true;
+                    std::cout << "Using \"" << Separator << "\" as name separator" << std::endl;
+                    break;
+            }
+            if( !bSwitchOK ) {
                 std::cerr << "Urecognised switch \"" << argv[i] << "\"" << std::endl;
                 bCmdLineError = true;
             }
         } else {
+            // Arguments
             switch( ++ArgCount ) {
                 case 1:
                     parFilename = argv[i];
@@ -206,7 +227,9 @@ int main(int argc, char* argv[])
     if (ArgCount != 1 or bCmdLineError)
     {
         std::cerr << "usage: " << argv[0] << " <parameter file>"
-                     "\n\t-s\tSimple Correlators (only describe A2AMatrices used for contraction)"
+                     "\n\t-a\tSimple Correlators (only describe A2AMatrices used for contraction)"
+                     "\n\t-s[sep]\tSeparator \"sep\" used between name components."
+                     "\n\t\tDefaults to \"_\", or \".\" if -s specified without sep"
                   << std::endl;
         
         return EXIT_FAILURE;
@@ -290,7 +313,7 @@ int main(int argc, char* argv[])
             for (auto &m: par.a2aMatrix)
             {
                 // For simple correlators, only include A2AMatrix info for correlators in this contraction
-                if ( ( !SimpleCorrelator or std::find( term.begin(), term.end(), m.name ) != term.end() )
+                if ( ( !bOnlyWriteUsedA2AMatrices or std::find( term.begin(), term.end(), m.name ) != term.end() )
                   and std::find(result.a2aMatrix.begin(), result.a2aMatrix.end(), m) == result.a2aMatrix.end())
                 {
                     result.a2aMatrix.push_back(m);
