@@ -240,7 +240,7 @@ int main(int argc, char* argv[])
     // Log what file we're processing and when we started
     const std::chrono::system_clock::time_point start{ std::chrono::system_clock::now() };
     std::time_t now = std::chrono::system_clock::to_time_t( start );
-    std::cout << "Start " << parFilename << " " << std::ctime( &now ) << std::endl;
+    std::cout << "Start " << parFilename << " " << std::ctime( &now );
 
     // parse parameter file
     Contractor::ContractorPar par;
