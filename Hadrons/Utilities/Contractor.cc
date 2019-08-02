@@ -244,14 +244,13 @@ int main(int argc, char* argv[])
 
     // parse parameter file
     Contractor::ContractorPar par;
-    unsigned int  nMat, nCont;
     XmlReader     reader(parFilename);
 
     read(reader, "global",    par.global);
     read(reader, "a2aMatrix", par.a2aMatrix);
     read(reader, "product",   par.product);
-    nMat  = static_cast<unsigned int>(par.a2aMatrix.size());
-    nCont = static_cast<unsigned int>(par.product.size());
+    const unsigned int nMat  { static_cast<unsigned int>(par.a2aMatrix.size()) };
+    const unsigned int nCont { static_cast<unsigned int>(par.product.size()) };
 
     // create diskvectors
     std::map<std::string, EigenDiskVector<ComplexD>> a2aMat;
@@ -270,13 +269,15 @@ int main(int argc, char* argv[])
         std::cout << ":::::::: Trajectory " << traj << std::endl;
 
         // load data
+        int iSeq = 0;
         for (auto &p: par.a2aMatrix)
         {
             std::string filename = p.file;
             double      t;
 
             tokenReplace(filename, "traj", traj);
-            std::cout << "======== Loading '" << filename << "'" << std::endl;
+            std::cout << "======== Loading '" << filename << "'"
+                      << "\nA2AMatrix " << ++iSeq << " of " << nMat << " = " << p.name << std::endl;
 
             A2AMatrixIo<HADRONS_A2AM_IO_TYPE> a2aIo(filename, p.dataset, par.global.nt);
 
@@ -288,6 +289,7 @@ int main(int argc, char* argv[])
         // contract
         EigenDiskVector<ComplexD>::Matrix buf;
 
+        iSeq = 0;
         for (auto &p: par.product)
         {
             std::vector<std::string>               term = strToVec<std::string>(p.terms);
@@ -301,7 +303,7 @@ int main(int argc, char* argv[])
             Contractor::CorrelatorResult           result;             
 
             tAr.startTimer("Total");
-            std::cout << "======== Contraction tr(";
+            std::cout << "======== Contraction " << ++iSeq << " of " << nCont << " tr(";
             for (unsigned int g = 0; g < term.size(); ++g)
             {
                 std::cout << term[g] << ((g == term.size() - 1) ? ')' : '*');
