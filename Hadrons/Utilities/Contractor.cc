@@ -26,6 +26,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
+#include <chrono>
+#include <ctime>
 #include <Hadrons/Utilities/Contractor.hpp>
 #include <Hadrons/A2AMatrix.hpp>
 #include <Hadrons/DiskVector.hpp>
@@ -73,12 +75,12 @@ void saveCorrelator(const Contractor::CorrelatorResult &result, const std::strin
 
     for (unsigned int i = 0; i < terms.size() - 1; i++)
     {
-        fileStem += terms[i] + "_" + std::to_string(result.times[i]) + Separator;
+        fileStem += terms[i] + Separator + std::to_string(result.times[i]) + Separator;
     }
     fileStem += terms.back();
     if (!result.contraction.translationAverage)
     {
-        fileStem += Separator + "dt_" + std::to_string(dt);
+        fileStem += Separator + "dt" + Separator + std::to_string(dt);
     }
     filename = dir + "/" + RESULT_FILE_NAME(fileStem, traj);
     std::cout << "Saving correlator to '" << filename << "'" << std::endl;
@@ -234,6 +236,11 @@ int main(int argc, char* argv[])
         
         return EXIT_FAILURE;
     }
+
+    // Log what file we're processing and when we started
+    const std::chrono::system_clock::time_point start{ std::chrono::system_clock::now() };
+    std::time_t now = std::chrono::system_clock::to_time_t( start );
+    std::cout << "Start " << parFilename << " " << std::ctime( &now ) << std::endl;
 
     // parse parameter file
     Contractor::ContractorPar par;
@@ -436,6 +443,13 @@ int main(int argc, char* argv[])
             printTimeProfile(tAr.getTimings(), tAr.getTimer("Total"));
         }
     }
-    
+
+    // Mention that we're finished, what the time is and how long it took
+    const std::chrono::system_clock::time_point stop{ std::chrono::system_clock::now() };
+    now = std::chrono::system_clock::to_time_t( stop );
+    const std::chrono::duration<double> duration_seconds = stop - start;
+    const double hours{ ( duration_seconds.count() + 0.5 ) / 3600 };
+    std::cout << "Stop " << parFilename << " " << std::ctime( &now )
+              << "Total duration " << std::fixed << std::setprecision(1) << hours << " hours." << std::endl;
     return EXIT_SUCCESS;
 }
