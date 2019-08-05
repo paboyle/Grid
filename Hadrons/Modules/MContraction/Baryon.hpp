@@ -116,6 +116,12 @@ template <typename FImpl1, typename FImpl2, typename FImpl3>
 void TBaryon<FImpl1, FImpl2, FImpl3>::setup(void)
 {
     envTmpLat(LatticeComplex, "c");
+    envTmpLat(LatticeComplex, "c1");
+    envTmpLat(LatticeComplex, "c2");
+    envTmpLat(LatticeComplex, "c3");
+    envTmpLat(LatticeComplex, "c4");
+    envTmpLat(LatticeComplex, "c5");
+    envTmpLat(LatticeComplex, "c6");
     envTmpLat(LatticeComplex, "diquark");
   // Translate the full string naming the desired gamma structure into the one we need to use
   const std::string gamma{ par().gamma };
@@ -172,26 +178,76 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     auto       &q2 = envGet(PropagatorField2, par().q2);
     auto       &q3 = envGet(PropagatorField3, par().q3);
     envGetTmp(LatticeComplex, c);
+    envGetTmp(LatticeComplex, c1);
+    envGetTmp(LatticeComplex, c2);
+    envGetTmp(LatticeComplex, c3);
+    envGetTmp(LatticeComplex, c4);
+    envGetTmp(LatticeComplex, c5);
+    envGetTmp(LatticeComplex, c6);
     envGetTmp(LatticeComplex, diquark);
     Result     result;
     int nt = env().getDim(Tp);
     result.corr.resize(nt);
     const std::string gamma{ par().gamma };
     std::vector<TComplex> buf;
+    
+    Result     result1;
+    Result     result2;
+    Result     result3;
+    Result     result4;
+    Result     result5;
+    Result     result6;
+    result1.corr.resize(nt);
+    result2.corr.resize(nt);
+    result3.corr.resize(nt);
+    result4.corr.resize(nt);
+    result5.corr.resize(nt);
+    result6.corr.resize(nt);
+    std::vector<TComplex> buf1;
+    std::vector<TComplex> buf2;
+    std::vector<TComplex> buf3;
+    std::vector<TComplex> buf4;
+    std::vector<TComplex> buf5;
+    std::vector<TComplex> buf6;
 
     const Gamma GammaA{ Gamma::Algebra::Identity };
     const Gamma GammaB{ al };
 
-    BaryonUtils<FIMPL>::ContractBaryons(q1,q2,q3,GammaA,GammaB,c);
+    //BaryonUtils<FIMPL>::ContractBaryons(q1,q2,q3,GammaA,GammaB,c);
+    BaryonUtils<FIMPL>::ContractBaryons_debug(q1,q2,q3,GammaA,GammaB,c1,c2,c3,c4,c5,c6,c);
 
     sliceSum(c,buf,Tp);
+    sliceSum(c1,buf1,Tp);
+    sliceSum(c2,buf2,Tp);
+    sliceSum(c3,buf3,Tp);
+    sliceSum(c4,buf4,Tp);
+    sliceSum(c5,buf5,Tp);
+    sliceSum(c6,buf6,Tp);
 
     for (unsigned int t = 0; t < buf.size(); ++t)
     {
         result.corr[t] = TensorRemove(buf[t]);
+        result1.corr[t] = TensorRemove(buf1[t]);
+        result2.corr[t] = TensorRemove(buf2[t]);
+        result3.corr[t] = TensorRemove(buf3[t]);
+        result4.corr[t] = TensorRemove(buf4[t]);
+        result5.corr[t] = TensorRemove(buf5[t]);
+        result6.corr[t] = TensorRemove(buf6[t]);
     }
 
+    std::string ostr1{ par().output + "_1"};
+    std::string ostr2{ par().output + "_2"};
+    std::string ostr3{ par().output + "_3"};
+    std::string ostr4{ par().output + "_4"};
+    std::string ostr5{ par().output + "_5"};
+    std::string ostr6{ par().output + "_6"};
     saveResult(par().output, "baryon", result);
+    saveResult(ostr1, "baryon1", result1);
+    saveResult(ostr2, "baryon2", result2);
+    saveResult(ostr3, "baryon3", result3);
+    saveResult(ostr4, "baryon4", result4);
+    saveResult(ostr5, "baryon5", result5);
+    saveResult(ostr6, "baryon6", result6);
 }
 
 END_MODULE_NAMESPACE

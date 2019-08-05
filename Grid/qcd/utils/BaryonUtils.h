@@ -41,11 +41,8 @@ public:
 					 const Gamma GammaB,
 					 ComplexField &baryon_corr);
  
-// static PropagatorField quarkContract13(const PropagatorField &q1,
-//			     const PropagatorField &q2);
- static void quarkContract13(const PropagatorField &q1,
-			     const PropagatorField &q2,
-                             PropagatorField &q_out);
+ static LatticeSpinColourMatrix quarkContract13(const PropagatorField &q1,
+			     const PropagatorField &q2);
 };
 
 
@@ -319,31 +316,23 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1,
 //QDP / CHROMA - style diquark construction
 // (q_out)^{c'c}_{alpha,beta} = epsilon^{abc} epsilon^{a'b'c'} (q1)^{aa'}_{rho alpha}^* (q2)^{bb'}_{rho beta}
 template<class FImpl>
-//typename FImpl::PropagatorField BaryonUtils<FImpl>::quarkContract13(const PropagatorField &q1,
-//					 const PropagatorField &q2)
-void BaryonUtils<FImpl>::quarkContract13(const PropagatorField &q1,
-					 const PropagatorField &q2,
-                                         PropagatorField &q_out)
+LatticeSpinColourMatrix BaryonUtils<FImpl>::quarkContract13(const PropagatorField &q1,
+					 const PropagatorField &q2)
 {
   GridBase *grid = q1._grid;
-
 
   std::vector<std::vector<int>> epsilon = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
   std::vector<int> epsilon_sgn = {1,1,1,-1,-1,-1};
 
-  //PropagatorField q_out;//=zero;
+  // TODO: Felix, made a few changes to fix this as there were compiler errors. Please validate!
+  LatticeSpinColourMatrix q_out(grid);
+  // q_out = zero; TODO: Don't think you need this, as you'll set each site explicitly anyway
 
   parallel_for(int ss=0;ss<grid->oSites();ss++){
-
-    typedef typename ComplexField::vector_object vobj;
-
-    auto D1 = q1._odata[ss];
-    auto D2 = q2._odata[ss];
-    //auto D_out = q_out._odata[ss];
-    //D_out=zero;
- 
-    pobj D_out=zero;
-
+    const auto & D1    = q1._odata[ss];
+    const auto & D2    = q2._odata[ss];
+          auto & D_out = q_out._odata[ss];
+    D_out=zero;
     for (int ie_src=0; ie_src < 6 ; ie_src++){
       int a_src = epsilon[ie_src][0]; //a
       int b_src = epsilon[ie_src][1]; //b
@@ -359,14 +348,10 @@ void BaryonUtils<FImpl>::quarkContract13(const PropagatorField &q1,
         }}}
       }
     }
+ } //end loop over lattice sites
 
-    q_out._odata[ss]=D_out;
 
-  } //end loop over lattice sites
-
-  //return q_out;
-
+  return q_out;
 }
-
 
 }}

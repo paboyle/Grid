@@ -143,8 +143,9 @@ void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,
   gethostname(name,namelen);
   int nscan = sscanf(name,"r%di%dn%d",&R,&I,&N) ;
 
-  if(nscan==3) OptimalCommunicatorHypercube(processors,optimal_comm);
-  else         OptimalCommunicatorSharedMemory(processors,optimal_comm);
+  //  if(nscan==3) OptimalCommunicatorHypercube(processors,optimal_comm);
+  //  else         OptimalCommunicatorSharedMemory(processors,optimal_comm);
+  OptimalCommunicatorSharedMemory(processors,optimal_comm);
 }
 void GlobalSharedMemory::OptimalCommunicatorHypercube(const std::vector<int> &processors,Grid_MPI_Comm & optimal_comm)
 {

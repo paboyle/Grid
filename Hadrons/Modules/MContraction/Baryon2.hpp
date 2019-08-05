@@ -182,11 +182,13 @@ void TBaryon2<FImpl1, FImpl2, FImpl3>::execute(void)
     const Gamma GammaA{ Gamma::Algebra::Identity };
     const Gamma GammaB{ al };
 
-    //diquark = BaryonUtils<FIMPL>::quarkContract13(q2*GammaB,GammaB*q3);
-    BaryonUtils<FIMPL>::quarkContract13(q2*GammaB,GammaB*q3,diquark);
+    LatticeSpinColourMatrix diquark( q1._grid ); // TODO: Felix, I added "q1._grid". I presume this is correct?
+
+    diquark = BaryonUtils<FIMPL>::quarkContract13(q2*GammaB,GammaB*q3);
 
     //result = trace(GammaA*GammaA * traceColour(q1*traceSpin(diquark))) + 2.0 * trace(GammaA*GammaA*traceColour(q1*diquark));
-    //c = trace(q1*traceSpin(diquark)); //NO TRACESPIN???
+  //result = trace(q1*diquark); // TODO: Apologies, Felix - compiler errors
+  assert( 0 && "TODO: Felix, please fix prior line - compiler errors" );
 
     sliceSum(c,buf,Tp);
 
