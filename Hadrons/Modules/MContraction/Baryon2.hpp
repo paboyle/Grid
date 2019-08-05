@@ -116,7 +116,7 @@ template <typename FImpl1, typename FImpl2, typename FImpl3>
 void TBaryon2<FImpl1, FImpl2, FImpl3>::setup(void)
 {
     envTmpLat(LatticeComplex, "c");
-    envTmpLat(LatticeComplex, "diquark");
+    envTmpLat(PropagatorField1, "diquark");
   // Translate the full string naming the desired gamma structure into the one we need to use
   const std::string gamma{ par().gamma };
   int iGamma = 0;
@@ -172,7 +172,7 @@ void TBaryon2<FImpl1, FImpl2, FImpl3>::execute(void)
     auto       &q2 = envGet(PropagatorField2, par().q2);
     auto       &q3 = envGet(PropagatorField3, par().q3);
     envGetTmp(LatticeComplex, c);
-    //envGetTmp(LatticeComplex, diquark);
+    envGetTmp(PropagatorField1, diquark); //ACTUALLY MIX OF 2 AND 3!!!!
     Result     result;
     int nt = env().getDim(Tp);
     result.corr.resize(nt);
@@ -182,12 +182,11 @@ void TBaryon2<FImpl1, FImpl2, FImpl3>::execute(void)
     const Gamma GammaA{ Gamma::Algebra::Identity };
     const Gamma GammaB{ al };
 
-    LatticeSpinColourMatrix diquark;
-
-    diquark = BaryonUtils<FIMPL>::quarkContract13(q2*GammaB,GammaB*q3);
+    //diquark = BaryonUtils<FIMPL>::quarkContract13(q2*GammaB,GammaB*q3);
+    BaryonUtils<FIMPL>::quarkContract13(q2*GammaB,GammaB*q3,diquark);
 
     //result = trace(GammaA*GammaA * traceColour(q1*traceSpin(diquark))) + 2.0 * trace(GammaA*GammaA*traceColour(q1*diquark));
-    result = trace(q1*diquark);
+    //c = trace(q1*traceSpin(diquark)); //NO TRACESPIN???
 
     sliceSum(c,buf,Tp);
 
