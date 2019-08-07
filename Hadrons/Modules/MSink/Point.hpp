@@ -75,6 +75,7 @@ private:
 
 MODULE_REGISTER_TMP(Point,       TPoint<FIMPL>,        MSink);
 MODULE_REGISTER_TMP(ScalarPoint, TPoint<ScalarImplCR>, MSink);
+MODULE_REGISTER_TMP(StagPoint, TPoint<STAGIMPL>, MSink);
 
 /******************************************************************************
  *                          TPoint implementation                             *

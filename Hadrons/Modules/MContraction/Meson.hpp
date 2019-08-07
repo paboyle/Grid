@@ -104,6 +104,7 @@ protected:
 };
 
 MODULE_REGISTER_TMP(Meson, ARG(TMeson<FIMPL, FIMPL>), MContraction);
+//MODULE_REGISTER_TMP(StagMeson, ARG(TMeson<STAGIMPL, STAGIMPL>), MContraction);
 
 /******************************************************************************
  *                           TMeson implementation                            *

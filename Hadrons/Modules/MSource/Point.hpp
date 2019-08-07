@@ -81,6 +81,7 @@ protected:
 
 MODULE_REGISTER_TMP(Point,       TPoint<FIMPL>,        MSource);
 MODULE_REGISTER_TMP(ScalarPoint, TPoint<ScalarImplCR>, MSource);
+MODULE_REGISTER_TMP(StagPoint, TPoint<STAGIMPL>, MSource);
 
 /******************************************************************************
  *                       TPoint template implementation                       *

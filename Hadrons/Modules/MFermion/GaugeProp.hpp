@@ -76,8 +76,33 @@ private:
     Solver       *solver_{nullptr};
 };
 
+template <typename FImpl>
+class TStagGaugeProp: public Module<GaugePropPar>
+{
+public:
+    FERM_TYPE_ALIASES(FImpl,);
+    SOLVER_TYPE_ALIASES(FImpl,);
+public:
+    // constructor
+    TStagGaugeProp(const std::string name);
+    // destructor
+    virtual ~TStagGaugeProp(void) {};
+    // dependency relation
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+protected:
+    // setup
+    virtual void setup(void);
+    // execution
+    virtual void execute(void);
+private:
+    unsigned int Ls_;
+    Solver       *solver_{nullptr};
+};
+
 MODULE_REGISTER_TMP(GaugeProp, TGaugeProp<FIMPL>, MFermion);
 MODULE_REGISTER_TMP(ZGaugeProp, TGaugeProp<ZFIMPL>, MFermion);
+MODULE_REGISTER_TMP(StagGaugeProp, TStagGaugeProp<STAGIMPL>, MFermion);
 
 /******************************************************************************
  *                      TGaugeProp implementation                             *
@@ -188,6 +213,117 @@ void TGaugeProp<FImpl>::execute(void)
         }
     }
 }
+
+
+
+/******************************************************************************
+ *                      TStagGaugeProp implementation                             *
+ ******************************************************************************/
+// constructor /////////////////////////////////////////////////////////////////
+template <typename FImpl>
+TStagGaugeProp<FImpl>::TStagGaugeProp(const std::string name)
+: Module<GaugePropPar>(name)
+{}
+
+// dependencies/products ///////////////////////////////////////////////////////
+template <typename FImpl>
+std::vector<std::string> TStagGaugeProp<FImpl>::getInput(void)
+{
+    std::vector<std::string> in = {par().source, par().solver};
+    
+    return in;
+}
+
+template <typename FImpl>
+std::vector<std::string> TStagGaugeProp<FImpl>::getOutput(void)
+{
+    std::vector<std::string> out = {getName(), getName() + "_5d"};
+    
+    return out;
+}
+
+// setup ///////////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TStagGaugeProp<FImpl>::setup(void)
+{
+    Ls_ = env().getObjectLs(par().solver);
+    envCreateLat(PropagatorField, getName());
+    envTmpLat(FermionField, "tmp");
+    if (Ls_ > 1)
+    {
+        envTmpLat(FermionField, "source", Ls_);
+        envTmpLat(FermionField, "sol", Ls_);
+        envCreateLat(PropagatorField, getName() + "_5d", Ls_);
+    }
+    else
+    {
+        envTmpLat(FermionField, "source");
+        envTmpLat(FermionField, "sol");
+    }
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TStagGaugeProp<FImpl>::execute(void)
+{
+    LOG(Message) << "Computing quark propagator '" << getName() << "'"
+    << std::endl;
+    
+    std::string propName = (Ls_ == 1) ? getName() : (getName() + "_5d");
+    auto        &prop    = envGet(PropagatorField, propName);
+    auto        &fullSrc = envGet(PropagatorField, par().source);
+    auto        &solver  = envGet(Solver, par().solver);
+    auto        &mat     = solver.getFMat();
+    
+    envGetTmp(FermionField, source);
+    envGetTmp(FermionField, sol);
+    envGetTmp(FermionField, tmp);
+    LOG(Message) << "Inverting using solver '" << par().solver
+    << "' on source '" << par().source << "'" << std::endl;
+    for (unsigned int c = 0; c < FImpl::Dimension; ++c)
+    {
+        LOG(Message) << "Inversion for color= " << c << std::endl;
+        // source conversion for 4D sources
+        LOG(Message) << "Import source" << std::endl;
+        if (!env().isObject5d(par().source))
+        {
+            if (Ls_ == 1)
+            {
+                PropToFerm<FImpl>(source, fullSrc, c);
+            }
+            else
+            {
+                PropToFerm<FImpl>(tmp, fullSrc, c);
+                    mat.ImportPhysicalFermionSource(tmp, source);
+                }
+            }
+        // source conversion for 5D sources
+        else
+        {
+            if (Ls_ != env().getObjectLs(par().source))
+            {
+                HADRONS_ERROR(Size, "Ls mismatch between quark action and source");
+            }
+            else
+            {
+                PropToFerm<FImpl>(source, fullSrc, c);
+            }
+        }
+        LOG(Message) << "Solve" << std::endl;
+        sol = zero;
+        solver(sol, source);
+        LOG(Message) << "Export solution" << std::endl;
+        FermToProp<FImpl>(prop, sol, c);
+        // create 4D propagators from 5D one if necessary
+        if (Ls_ > 1)
+        {
+            PropagatorField &p4d = envGet(PropagatorField, getName());
+            mat.ExportPhysicalFermionSolution(sol, tmp);
+            FermToProp<FImpl>(p4d, tmp, c);
+        }
+    }
+}
+
 
 END_MODULE_NAMESPACE
 
