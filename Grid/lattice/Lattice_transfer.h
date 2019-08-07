@@ -112,7 +112,7 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
   auto fineData_   = fineData.View();
   auto coarseData_ = coarseData.View();
   // Loop over coars parallel, and then loop over fine associated with coarse.
-  thread_for( sf, fine->oSites(), {
+  nestable_thread_for( sf, fine->oSites() ) {
     int sc;
     Coordinate coor_c(_ndimension);
     Coordinate coor_f(_ndimension);
@@ -126,7 +126,7 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
 	coarseData_[sc](i)=coarseData_[sc](i) + innerProduct(Basis_[sf],fineData_[sf]);
       }
     }
-  });
+  }
   return;
 }
 
@@ -233,7 +233,7 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
   auto coarseData_ = coarseData.View();
   auto fineData_   = fineData.View();
 
-  thread_for(sf,fine->oSites(),{
+  nestable_thread_for(sf,fine->oSites()) {
     int sc;
     Coordinate coor_c(_ndimension);
     Coordinate coor_f(_ndimension);
@@ -246,7 +246,7 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
       coarseData_[sc]=coarseData_[sc]+fineData_[sf];
     }
 
-  });
+  }
   return;
 }
 

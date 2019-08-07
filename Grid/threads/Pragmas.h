@@ -8,6 +8,7 @@
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: gfilaci <g.filaci@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -57,9 +58,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define thread_max(a) (1)
 #endif
 
-#define naked_for(i,num,...) for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define naked_naked_for(i,num) for ( uint64_t i=0;i<num;i++)
+#define naked_for(i,num,...) naked_naked_for(i,num) { __VA_ARGS__ } ;
 #define naked_foreach(i,container,...) for ( uint64_t i=container.begin();i<container.end();i++) { __VA_ARGS__ } ;
 #define thread_for( i, num, ... )                           DO_PRAGMA(omp parallel for schedule(static)) naked_for(i,num,{__VA_ARGS__});
+#define nestable_thread_for(i,num)                          DO_PRAGMA(omp parallel for schedule(static)) naked_naked_for(i,num)
 #define thread_foreach( i, num, ... )                       DO_PRAGMA(omp parallel for schedule(static)) naked_foreach(i,num,{__VA_ARGS__});
 #define thread_for_in_region( i, num, ... )                 DO_PRAGMA(omp for schedule(static))          naked_for(i,num,{__VA_ARGS__});
 #define thread_for_collapse2( i, num, ... )                 DO_PRAGMA(omp parallel for collapse(2))      naked_for(i,num,{__VA_ARGS__});
