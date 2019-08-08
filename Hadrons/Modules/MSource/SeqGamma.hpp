@@ -232,6 +232,7 @@ void TStagSeqGamma<FImpl>::setup(void)
     envCreateLat(PropagatorField, getName());
     envCache(Lattice<iScalar<vInteger>>, tName_, 1, envGetGrid(LatticeComplex));
     envCacheLat(LatticeComplex, momphName_);
+    envCacheLat(LatticeComplex, stagPhaseName_);
     envTmpLat(LatticeComplex, "coor");
 }
 
@@ -253,7 +254,7 @@ void TStagSeqGamma<FImpl>::execute(void)
     auto  &src = envGet(PropagatorField, getName());
     auto  &q   = envGet(PropagatorField, par().q);
     auto  &ph  = envGet(LatticeComplex, momphName_);
-    auto  &stag_ph  = envGet(LatticeComplex, momphName_);
+    auto  &stag_ph  = envGet(LatticeComplex, stagPhaseName_);
     auto  &t   = envGet(Lattice<iScalar<vInteger>>, tName_);
     
     if (!hasPhase_)
@@ -292,6 +293,7 @@ void TStagSeqGamma<FImpl>::execute(void)
             std::cout << par().gamma << " not implemented for staggered fermon seq. source" << std::endl;
             assert(0);
         }
+        
         LatticeCoordinate(t, Tp);
         hasPhase_ = true;
     }
