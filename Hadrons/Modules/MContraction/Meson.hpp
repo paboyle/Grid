@@ -334,7 +334,7 @@ template <typename FImpl1, typename FImpl2>
 void TStagMeson<FImpl1, FImpl2>::setup(void)
 {
     envTmpLat(LatticeComplex, "c");
-    
+    envTmpLat(LatticeComplex, "phase");
     parseGammaString();
     int Ngam=gammaList.size();
     // grid can't handle real * prop, so use complex
