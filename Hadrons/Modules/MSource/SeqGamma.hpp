@@ -276,10 +276,13 @@ void TStagSeqGamma<FImpl>::execute(void)
         // Pretty cute implementation, if I may say so myself (!) (-PAB)
         // Staggered Phase.
         stag_ph = 1.0;
+        envTmpLat(LatticeInteger, "x");
         envGetTmp(LatticeInteger,x);
         LatticeCoordinate(x,0);
+        envTmpLat(LatticeInteger, "y");
         envGetTmp(LatticeInteger,y);
         LatticeCoordinate(y,1);
+        envTmpLat(LatticeInteger, "z");
         envGetTmp(LatticeInteger,z);
         LatticeCoordinate(z,2);
         // local taste non-singlet ops from Degrand and Detar, tab. 11.2

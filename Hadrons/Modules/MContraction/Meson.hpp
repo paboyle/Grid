@@ -337,48 +337,55 @@ void TStagMeson<FImpl1, FImpl2>::setup(void)
     envTmpLat(LatticeComplex, "phase");
     parseGammaString();
     int Ngam=gammaList.size();
+
     // grid can't handle real * prop, so use complex
-    envTmp(std::vector<LatticeComplex>,  "stag_ph", 1, Ngam,
-           LatticeComplex(env().getGrid()));
-    envGetTmp(std::vector<LatticeComplex>, stag_ph);
+    envTmp(std::vector<LatticeComplex>,  "stag_ph", 1, Ngam,LatticeComplex(env().getGrid()));
+    envGetTmp(std::vector<LatticeComplex>,stag_ph);
     envGetTmp(LatticeComplex, phase);
     // based on phases in Grid/qcd/action/fermion/FermionOperatorImpl.h
     // Pretty cute implementation, if I may say so myself (!) (-PAB)
     // Staggered Phases (dirac gamma's).
+    envTmpLat(LatticeInteger, "x");
     envGetTmp(LatticeInteger,x);
     LatticeCoordinate(x,0);
+    envTmpLat(LatticeInteger, "y");
     envGetTmp(LatticeInteger,y);
     LatticeCoordinate(y,1);
+    envTmpLat(LatticeInteger, "z");
     envGetTmp(LatticeInteger,z);
     LatticeCoordinate(z,2);
     // local taste non-singlet ops from Degrand and Detar, tab. 11.2
     // including parity partners
     // need to check these are consistent with Dirac op phases
-    
+
     for(int i=0; i < gammaList.size(); i++){
         switch(gammaList[i]) {
                 
             case Gamma::Algebra::GammaX  :
                 phase = 1.0;
                 phase = where( mod(x,2)==(Integer)0, phase, -phase);
-                stag_ph.push_back(phase);
+                //stag_ph.push_back(phase);
+                stag_ph[i] = phase;
                 break;
                 
             case Gamma::Algebra::GammaY  :
                 phase = 1.0;
                 phase = where( mod(y,2)==(Integer)0, phase, -phase);
-                stag_ph.push_back(phase);
+                //stag_ph.push_back(phase);
+                stag_ph[i] = phase;
                 break;
                 
             case Gamma::Algebra::GammaZ  :
                 phase = 1.0;
                 phase = where( mod(z,2)==(Integer)0, phase, -phase);
-                stag_ph.push_back(phase);
+                //stag_ph.push_back(phase);
+                stag_ph[i] = phase;
                 break;
 
             case Gamma::Algebra::Gamma5  :
                 phase = 1.0;
-                stag_ph.push_back(phase);
+                stag_ph[i] = phase;
+                //stag_ph.push_back(phase);
                 break;
 
             default :
@@ -424,6 +431,7 @@ void TStagMeson<FImpl1, FImpl2>::execute(void)
         auto &q2 = envGet(PropagatorField2, par().q2);
         
         envGetTmp(LatticeComplex, c);
+        
         LOG(Message) << "(using sink '" << par().sink << "')" << std::endl;
         for (unsigned int i = 0; i < result.size(); ++i)
         {
@@ -433,14 +441,12 @@ void TStagMeson<FImpl1, FImpl2>::execute(void)
             if (ns == "MSource")
             {
                 PropagatorField1 &sink = envGet(PropagatorField1, par().sink);
-                
                 c = trace(StagMesonConnected(q1, q2, stag_ph[i], stag_ph[i])*sink);
                 sliceSum(c, buf, Tp);
             }
             else if (ns == "MSink")
             {
                 SinkFnScalar &sink = envGet(SinkFnScalar, par().sink);
-                
                 c   = trace(StagMesonConnected(q1, q2, stag_ph[i], stag_ph[i]));
                 buf = sink(c);
             }
