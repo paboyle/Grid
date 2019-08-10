@@ -276,15 +276,10 @@ void TStagSeqGamma<FImpl>::execute(void)
         // Pretty cute implementation, if I may say so myself (!) (-PAB)
         // Staggered Phase.
         stag_ph = 1.0;
-        envTmpLat(LatticeInteger, "x");
-        envGetTmp(LatticeInteger,x);
-        LatticeCoordinate(x,0);
-        envTmpLat(LatticeInteger, "y");
-        envGetTmp(LatticeInteger,y);
-        LatticeCoordinate(y,1);
-        envTmpLat(LatticeInteger, "z");
-        envGetTmp(LatticeInteger,z);
-        LatticeCoordinate(z,2);
+        Lattice<iScalar<vInteger> > x(env().getGrid()); LatticeCoordinate(x,0);
+        Lattice<iScalar<vInteger> > y(env().getGrid()); LatticeCoordinate(y,1);
+        Lattice<iScalar<vInteger> > z(env().getGrid()); LatticeCoordinate(z,2);
+        //Lattice<iScalar<vInteger> > t(env().getGrid()); LatticeCoordinate(t,3);
         // local taste non-singlet ops from Degrand and Detar, tab. 11.2
         // including parity partners
         // need to check these are consistent with Dirac op phases

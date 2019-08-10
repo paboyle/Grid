@@ -34,6 +34,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
+#include <Hadrons/Modules/MSource/Point.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -68,6 +69,7 @@ public:
                                     std::string, q2,
                                     std::string, gammas,
                                     std::string, sink,
+                                    std::string, source,
                                     std::string, output);
 };
 
@@ -140,6 +142,7 @@ protected:
     virtual void execute(void);
 private:
     std::vector<Gamma::Algebra>        gammaList;
+    std::vector<ComplexF> stag_phase_source;
 };
 MODULE_REGISTER_TMP(Meson, ARG(TMeson<FIMPL, FIMPL>), MContraction);
 MODULE_REGISTER_TMP(StagMeson, ARG(TStagMeson<STAGIMPL, STAGIMPL>), MContraction);
@@ -294,7 +297,7 @@ TStagMeson<FImpl1, FImpl2>::TStagMeson(const std::string name)
 template <typename FImpl1, typename FImpl2>
 std::vector<std::string> TStagMeson<FImpl1, FImpl2>::getInput(void)
 {
-    std::vector<std::string> input = {par().q1, par().q2, par().sink};
+    std::vector<std::string> input = {par().q1, par().q2, par().sink, par().source};
     
     return input;
 }
@@ -335,57 +338,64 @@ void TStagMeson<FImpl1, FImpl2>::setup(void)
 {
     envTmpLat(LatticeComplex, "c");
     envTmpLat(LatticeComplex, "phase");
+    envGetTmp(LatticeComplex, phase);
     parseGammaString();
     int Ngam=gammaList.size();
 
     // grid can't handle real * prop, so use complex
-    envTmp(std::vector<LatticeComplex>,  "stag_ph", 1, Ngam,LatticeComplex(env().getGrid()));
-    envGetTmp(std::vector<LatticeComplex>,stag_ph);
-    envGetTmp(LatticeComplex, phase);
+    envTmp(std::vector<LatticeComplex>,  "stag_phase_sink", 1, Ngam,
+           LatticeComplex(env().getGrid()));
+    envGetTmp(std::vector<LatticeComplex>,stag_phase_sink);
+    stag_phase_source.resize(Ngam);
+    
     // based on phases in Grid/qcd/action/fermion/FermionOperatorImpl.h
     // Pretty cute implementation, if I may say so myself (!) (-PAB)
     // Staggered Phases (dirac gamma's).
-    envTmpLat(LatticeInteger, "x");
-    envGetTmp(LatticeInteger,x);
-    LatticeCoordinate(x,0);
-    envTmpLat(LatticeInteger, "y");
-    envGetTmp(LatticeInteger,y);
-    LatticeCoordinate(y,1);
-    envTmpLat(LatticeInteger, "z");
-    envGetTmp(LatticeInteger,z);
-    LatticeCoordinate(z,2);
+    Lattice<iScalar<vInteger> > x(env().getGrid()); LatticeCoordinate(x,0);
+    Lattice<iScalar<vInteger> > y(env().getGrid()); LatticeCoordinate(y,1);
+    Lattice<iScalar<vInteger> > z(env().getGrid()); LatticeCoordinate(z,2);
+    Lattice<iScalar<vInteger> > t(env().getGrid()); LatticeCoordinate(t,3);
+    // first do the "hermiticity" phase from taking adjoint, (-1)^(x-y)
+    // sink
+    phase=1.0;
+    phase = where( mod(x,2)==(Integer)0, phase,-phase);
+    phase = where( mod(y,2)==(Integer)0, phase,-phase);
+    phase = where( mod(z,2)==(Integer)0, phase,-phase);
+    phase = where( mod(t,2)==(Integer)0, phase,-phase);
+    // source
+    std::vector<int> location = strToVec<int>(
+        static_cast<MSource::StagPoint *>(vm().getModule(par().source))->par().position);
+    phase = where(location[0]%2==(Integer)0, phase, -phase);
+    phase = where(location[1]%2==(Integer)0, phase, -phase);
+    phase = where(location[2]%2==(Integer)0, phase, -phase);
+    phase = where(location[3]%2==(Integer)0, phase, -phase);
+
     // local taste non-singlet ops from Degrand and Detar, tab. 11.2
     // including parity partners
     // need to check these are consistent with Dirac op phases
-
     for(int i=0; i < gammaList.size(); i++){
+        
+        stag_phase_sink[i] = 1.0;
+        stag_phase_source[i] = 1.0;
+        
         switch(gammaList[i]) {
                 
             case Gamma::Algebra::GammaX  :
-                phase = 1.0;
-                phase = where( mod(x,2)==(Integer)0, phase, -phase);
-                //stag_ph.push_back(phase);
-                stag_ph[i] = phase;
+                stag_phase_sink[i] = where( mod(x,2)==(Integer)0, stag_phase_sink[i], -stag_phase_sink[i]);
+                if(location[0]%2==0) stag_phase_source[i]= -stag_phase_source[i];
                 break;
                 
             case Gamma::Algebra::GammaY  :
-                phase = 1.0;
-                phase = where( mod(y,2)==(Integer)0, phase, -phase);
-                //stag_ph.push_back(phase);
-                stag_ph[i] = phase;
+                stag_phase_sink[i] = where( mod(y,2)==(Integer)0, stag_phase_sink[i], -stag_phase_sink[i]);
+                if(location[1]%2==0) stag_phase_source[i]= -stag_phase_source[i];
                 break;
                 
             case Gamma::Algebra::GammaZ  :
-                phase = 1.0;
-                phase = where( mod(z,2)==(Integer)0, phase, -phase);
-                //stag_ph.push_back(phase);
-                stag_ph[i] = phase;
+                stag_phase_sink[i] = where( mod(z,2)==(Integer)0, stag_phase_sink[i], -stag_phase_sink[i]);
+                if(location[2]%2==0) stag_phase_source[i] = -stag_phase_source[i];
                 break;
 
             case Gamma::Algebra::Gamma5  :
-                phase = 1.0;
-                stag_ph[i] = phase;
-                //stag_ph.push_back(phase);
                 break;
 
             default :
@@ -410,7 +420,7 @@ void TStagMeson<FImpl1, FImpl2>::execute(void)
     std::vector<Result>    result;
     int                    nt = env().getDim(Tp);
     // staggered gammas
-    envGetTmp(std::vector<LatticeComplex>,stag_ph);
+    envGetTmp(std::vector<LatticeComplex>,stag_phase_sink);
     
     result.resize(gammaList.size());
     for (unsigned int i = 0; i < result.size(); ++i)
@@ -431,6 +441,9 @@ void TStagMeson<FImpl1, FImpl2>::execute(void)
         auto &q2 = envGet(PropagatorField2, par().q2);
         
         envGetTmp(LatticeComplex, c);
+        envGetTmp(LatticeComplex, phase);
+        
+        //LOG(Message) << "(source position '" << location << "')" << std::endl;
         
         LOG(Message) << "(using sink '" << par().sink << "')" << std::endl;
         for (unsigned int i = 0; i < result.size(); ++i)
@@ -441,13 +454,13 @@ void TStagMeson<FImpl1, FImpl2>::execute(void)
             if (ns == "MSource")
             {
                 PropagatorField1 &sink = envGet(PropagatorField1, par().sink);
-                c = trace(StagMesonConnected(q1, q2, stag_ph[i], stag_ph[i])*sink);
+                c = trace(StagMesonConnected(q1, q2, stag_phase_sink[i], stag_phase_source[i]));
                 sliceSum(c, buf, Tp);
             }
             else if (ns == "MSink")
             {
                 SinkFnScalar &sink = envGet(SinkFnScalar, par().sink);
-                c   = trace(StagMesonConnected(q1, q2, stag_ph[i], stag_ph[i]));
+                c   = trace(StagMesonConnected(q1, q2, stag_phase_sink[i], stag_phase_source[i]));
                 buf = sink(c);
             }
             for (unsigned int t = 0; t < buf.size(); ++t)
