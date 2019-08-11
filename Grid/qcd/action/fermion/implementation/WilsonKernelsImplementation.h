@@ -332,7 +332,7 @@ void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,S
    auto in_v  = in.View();
    auto out_v = out.View();
    auto st_v  = st.View();
-   accelerator_for(ss,Nsite,1,{
+   accelerator_for(ss,Nsite,Simd::Nsimd(),{
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
