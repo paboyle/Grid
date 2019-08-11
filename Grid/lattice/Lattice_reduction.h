@@ -22,15 +22,15 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #pragma once
 
 #include <Grid/Grid_Eigen_Dense.h>
+
+
 #ifdef GRID_NVCC
 #include <Grid/lattice/Lattice_reduction_gpu.h>
 #endif
 
 NAMESPACE_BEGIN(Grid);
-
-#ifndef GRID_NVCC
 template<class vobj>
-inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
+inline typename vobj::scalar_object sum_cpu(const Lattice<vobj> &arg)
 {
   GridBase *grid=arg.Grid();
   int Nsimd = grid->Nsimd();
@@ -69,8 +69,16 @@ inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
   
   return ssum;
 }
-#endif
 
+template<class vobj>
+inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
+{
+#ifdef GRID_NVCC
+  return sum_gpu(arg);
+#else
+  return sum_cpu(arg);
+#endif  
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Deterministic Reduction operations
@@ -109,7 +117,7 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
 
   nrm = TensorRemove(sum(inner_tmp));
 
-  right.Grid()->GlobalSum(nrm);
+  //  right.Grid()->GlobalSum(nrm);
   return nrm;
 }
 
@@ -157,7 +165,7 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   
   nrm = real(TensorRemove(sum(inner_tmp)));
 
-  z.Grid()->GlobalSum(nrm);
+  //  z.Grid()->GlobalSum(nrm);
   return nrm; 
 }
 

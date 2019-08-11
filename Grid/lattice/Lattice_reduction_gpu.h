@@ -180,7 +180,7 @@ __global__ void reduceKernel(const LatticeView<vobj> lat, typename vobj::scalar_
 }
 
 template <class vobj>
-inline typename vobj::scalar_object sum(const Lattice<vobj> &lat) 
+inline typename vobj::scalar_object sum_gpu(const Lattice<vobj> &lat) 
 {
   
   LatticeView<vobj> lat_v = lat.View();
