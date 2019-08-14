@@ -28,11 +28,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #pragma once
 
-#include <Grid.h>
+#include <Grid/Grid.h>
 
 #ifdef AVX512
-#include <simd/Intel512common.h>
-#include <simd/Intel512avx.h>
+#include <Grid/simd/Intel512common.h>
+#include <Grid/simd/Intel512avx.h>
 #endif
 
 // Interleave operations from two directions
@@ -681,7 +681,7 @@ void StaggeredKernels<Impl>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo,
   gauge3 =(uint64_t)&UU[sU]( T ); 
   
   // This is the single precision 5th direction vectorised kernel
-#include <simd/Intel512single.h>
+#include <Grid/simd/Intel512single.h>
 template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
 								    DoubledGaugeFieldView &U,
 								    DoubledGaugeFieldView &UUU,
@@ -735,7 +735,7 @@ template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilImpl 
    
 }
 
-#include <simd/Intel512double.h>
+#include <Grid/simd/Intel512double.h>
 template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
 								    DoubledGaugeFieldView &U,
 								    DoubledGaugeFieldView &UUU,
@@ -820,7 +820,7 @@ template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilImpl 
 
   // This is the single precision 5th direction vectorised kernel
 
-#include <simd/Intel512single.h>
+#include <Grid/simd/Intel512single.h>
 template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
 							       DoubledGaugeFieldView &U,
 							       DoubledGaugeFieldView &UUU,
@@ -889,7 +889,7 @@ template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilImpl &st, 
 #endif
 }
 
-#include <simd/Intel512double.h>
+#include <Grid/simd/Intel512double.h>
 template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
 							       DoubledGaugeFieldView &U,
 							       DoubledGaugeFieldView &UUU,
