@@ -82,13 +82,11 @@ __device__ void reduceBlock(volatile sobj *sdata, sobj mySum, const Iterator tid
   __syncthreads();
 }
 
-template <class vobj, class Iterator>
-__device__ void reduceBlocks(const LatticeView<vobj> g_idata, typename vobj::scalar_object *g_odata, Iterator n) {
-  
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-  typedef typename vobj::scalar_object sobj;
-  constexpr Iterator nsimd = sizeof(vector_type)/sizeof(scalar_type);
+
+template <class vobj, class sobj, class Iterator>
+__device__ void reduceBlocks(const vobj *g_idata, sobj *g_odata, Iterator n) 
+{
+  constexpr Iterator nsimd = vobj::Nsimd();
   
   Iterator blockSize = blockDim.x;
   
@@ -109,13 +107,16 @@ __device__ void reduceBlocks(const LatticeView<vobj> g_idata, typename vobj::sca
     Iterator lane = i % nsimd;
     Iterator ss   = i / nsimd;
     auto tmp = extractLane(lane,g_idata[ss]);
-    mySum += tmp;
+    sobj tmpD;
+    tmpD=tmp;
+    mySum   +=tmpD;
     
     if (i + blockSize < n) {
       lane = (i+blockSize) % nsimd;
       ss   = (i+blockSize) / nsimd;
       tmp = extractLane(lane,g_idata[ss]);
-      mySum += tmp;
+      tmpD = tmp;
+      mySum += tmpD;
     }
     i += gridSize;
   }
@@ -126,9 +127,8 @@ __device__ void reduceBlocks(const LatticeView<vobj> g_idata, typename vobj::sca
   if (tid == 0) g_odata[blockIdx.x] = sdata[0];
 }
 
-template <class vobj, class Iterator>
-__global__ void reduceKernel(const LatticeView<vobj> lat, typename vobj::scalar_object *buffer, Iterator n) {
-  typedef typename vobj::scalar_object sobj;
+template <class vobj, class sobj,class Iterator>
+__global__ void reduceKernel(const vobj *lat, sobj *buffer, Iterator n) {
   
   Iterator blockSize = blockDim.x;
   
@@ -179,32 +179,26 @@ __global__ void reduceKernel(const LatticeView<vobj> lat, typename vobj::scalar_
   }
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Possibly promote to double and sum
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <class vobj>
-inline typename vobj::scalar_object sum_gpu(const Lattice<vobj> &lat) 
+inline typename vobj::scalar_objectD sumD_gpu(const vobj *lat, Integer osites) 
 {
+  typedef typename vobj::scalar_objectD sobj;
+  typedef decltype(lat) Iterator;
   
-  LatticeView<vobj> lat_v = lat.View();
-  
-  typedef typename vobj::scalar_object sobj;
-  typedef decltype(lat_v.begin()) Iterator;
-  
-  Iterator size = lat.Grid()->lSites();
-  
-  Iterator numThreads, numBlocks;
+  Integer nsimd= vobj::Nsimd();
+  Integer size = osites*nsimd;
+
+  Integer numThreads, numBlocks;
   getNumBlocksAndThreads(size, sizeof(sobj), numThreads, numBlocks);
-  Iterator smemSize = numThreads * sizeof(sobj);
-  /*  
-  std::cout << GridLogDebug << "Starting reduction with:" << std::endl;
-  std::cout << GridLogDebug << "\tsize       = " << size << std::endl;
-  std::cout << GridLogDebug << "\tnumThreads = " << numThreads << std::endl;
-  std::cout << GridLogDebug << "\tnumBlocks  = " << numBlocks << std::endl;
-  std::cout << GridLogDebug << "\tsmemSize   = " << smemSize << std::endl;
-  */
+  Integer smemSize = numThreads * sizeof(sobj);
 
   Vector<sobj> buffer(numBlocks);
   sobj *buffer_v = &buffer[0];
   
-  reduceKernel<<< numBlocks, numThreads, smemSize >>>(lat_v, buffer_v, size);
+  reduceKernel<<< numBlocks, numThreads, smemSize >>>(lat, buffer_v, size);
   cudaDeviceSynchronize();
   
   cudaError err = cudaGetLastError();
@@ -212,10 +206,21 @@ inline typename vobj::scalar_object sum_gpu(const Lattice<vobj> &lat)
     printf("Cuda error %s\n",cudaGetErrorString( err ));
     exit(0);
   }
-  
   auto result = buffer_v[0];
-  lat.Grid()->GlobalSum(result);
   return result;
 }
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Return as same precision as input performing reduction in double precision though
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+template <class vobj>
+inline typename vobj::scalar_object sum_gpu(const vobj *lat, Integer osites) 
+{
+  typedef typename vobj::scalar_object sobj;
+  sobj result;
+  result = sumD_gpu(lat,osites);
+  return result;
+}
+
+
 
 NAMESPACE_END(Grid);

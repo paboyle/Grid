@@ -29,55 +29,58 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #endif
 
 NAMESPACE_BEGIN(Grid);
+
+//////////////////////////////////////////////////////
+// FIXME this should promote to double and accumulate
+//////////////////////////////////////////////////////
 template<class vobj>
-inline typename vobj::scalar_object sum_cpu(const Lattice<vobj> &arg)
+inline typename vobj::scalar_object sum_cpu(const vobj *arg, Integer osites)
 {
-  GridBase *grid=arg.Grid();
-  int Nsimd = grid->Nsimd();
-  
-  Vector<vobj> sumarray(grid->SumArraySize());
-  for(int i=0;i<grid->SumArraySize();i++){
+  typedef typename vobj::scalar_object  sobj;
+
+  const int Nsimd = vobj::Nsimd();
+  const int nthread = GridThread::GetThreads();
+
+  Vector<sobj> sumarray(nthread);
+  for(int i=0;i<nthread;i++){
     sumarray[i]=Zero();
   }
   
-  auto arg_v=arg.View();
-  thread_for(thr,grid->SumArraySize(), {
+  thread_for(thr,nthread, {
     int nwork, mywork, myoff;
-    nwork = grid->oSites();
+    nwork = osites;
     GridThread::GetWork(nwork,thr,mywork,myoff);
-    
     vobj vvsum=Zero();
     for(int ss=myoff;ss<mywork+myoff; ss++){
-      vvsum = vvsum + arg_v[ss];
+      vvsum = vvsum + arg[ss];
     }
-    sumarray[thr]=vvsum;
+    sumarray[thr]=Reduce(vvsum);
   });
   
-  vobj vsum=Zero();  // sum across threads
-  for(int i=0;i<grid->SumArraySize();i++){
-    vsum = vsum+sumarray[i];
+  sobj ssum=Zero();  // sum across threads
+  for(int i=0;i<nthread;i++){
+    ssum = ssum+sumarray[i];
   } 
-  
-  typedef typename vobj::scalar_object sobj;
-  sobj ssum=Zero();
-  
-  ExtractBuffer<sobj>               buf(Nsimd);
-  extract(vsum,buf);
-  
-  for(int i=0;i<Nsimd;i++) ssum = ssum + buf[i];
-  arg.Grid()->GlobalSum(ssum);
   
   return ssum;
 }
-
+template<class vobj>
+inline typename vobj::scalar_object sum(const vobj *arg, Integer osites)
+{
+#ifdef GRID_NVCC
+  return sum_gpu(arg,osites);
+#else
+  return sum_cpu(arg,osites);
+#endif  
+}
 template<class vobj>
 inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
 {
-#ifdef GRID_NVCC
-  return sum_gpu(arg);
-#else
-  return sum_cpu(arg);
-#endif  
+  auto arg_v = arg.View();
+  Integer osites = arg.Grid()->oSites();
+  auto ssum= sum(&arg_v[0],osites);
+  arg.Grid()->GlobalSum(ssum);
+  return ssum;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -94,7 +97,7 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
 {
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_typeD vector_type;
-  scalar_type  nrm;
+  ComplexD  nrm;
   
   GridBase *grid = left.Grid();
   
@@ -104,20 +107,43 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
 
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
+
+  typename vobj::scalar_object  f;
+  typename vobj::scalar_objectD d;
+  f=Zero();
+  d=f;
   
+#ifdef GRID_NVCC
+  // GPU - SIMT lane compliance...
   typedef decltype(innerProduct(left_v[0],right_v[0])) inner_t;
-  Lattice<inner_t> inner_tmp(grid);
-  auto inner_tmp_v = inner_tmp.View();
+  Vector<inner_t> inner_tmp(sites);
+  auto inner_tmp_v = &inner_tmp[0];
   
+
   accelerator_for( ss, sites, nsimd,{
       auto x_l = left_v(ss);
       auto y_l = right_v(ss);
       coalescedWrite(inner_tmp_v[ss],innerProduct(x_l,y_l));
   })
 
-  nrm = TensorRemove(sum(inner_tmp));
+  // This is in single precision and fails some tests
+  // Need a sumD that sums in double
+  nrm = TensorRemove(sumD_gpu(inner_tmp_v,sites));  
+#else
+  // CPU 
+  typedef decltype(innerProductD(left_v[0],right_v[0])) inner_t;
+  Vector<inner_t> inner_tmp(sites);
+  auto inner_tmp_v = &inner_tmp[0];
+  
+  accelerator_for( ss, sites, nsimd,{
+      auto x_l = left_v[ss];
+      auto y_l = right_v[ss];
+      inner_tmp_v[ss]=innerProductD(x_l,y_l);
+  })
+  nrm = TensorRemove(sum(inner_tmp_v,sites));
+#endif
+  grid->GlobalSum(nrm);
 
-  //  right.Grid()->GlobalSum(nrm);
   return nrm;
 }
 
@@ -153,19 +179,34 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
   
+#ifdef GRID_NVCC
+  // GPU
   typedef decltype(innerProduct(x_v[0],y_v[0])) inner_t;
-  Lattice<inner_t> inner_tmp(grid);
-  auto inner_tmp_v = inner_tmp.View();
+  Vector<inner_t> inner_tmp(sites);
+  auto inner_tmp_v = &inner_tmp[0];
 
   accelerator_for( ss, sites, nsimd,{
       auto tmp = a*x_v(ss)+b*y_v(ss);
       coalescedWrite(inner_tmp_v[ss],innerProduct(tmp,tmp));
       coalescedWrite(z_v[ss],tmp);
-  })
-  
-  nrm = real(TensorRemove(sum(inner_tmp)));
+  });
 
-  //  z.Grid()->GlobalSum(nrm);
+  nrm = real(TensorRemove(sumD_gpu(inner_tmp_v,sites)));
+#else
+  // CPU 
+  typedef decltype(innerProductD(x_v[0],y_v[0])) inner_t;
+  Vector<inner_t> inner_tmp(sites);
+  auto inner_tmp_v = &inner_tmp[0];
+  
+  accelerator_for( ss, sites, nsimd,{
+      auto tmp = a*x_v(ss)+b*y_v(ss);
+      inner_tmp_v[ss]=innerProductD(tmp,tmp);
+      z_v[ss]=tmp;
+  });
+  // Already promoted to double
+  nrm = real(TensorRemove(sum(inner_tmp_v,sites)));
+#endif
+  grid->GlobalSum(nrm);
   return nrm; 
 }
 
