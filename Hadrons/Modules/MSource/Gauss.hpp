@@ -114,6 +114,7 @@ void TGauss<FImpl>::execute(void)
     const int dim=env().getNd()-1;
     const Real fact=-0.5/std::pow(par().width,2);
     const Complex i(0.0, 1.0);
+    const Real Pi(M_PI);
     const SitePropagator idMat=[](){ SitePropagator s; s=1.; return s; }();
 
     ScalarRho=zero;
@@ -129,7 +130,7 @@ void TGauss<FImpl>::execute(void)
         LatticeCoordinate(compHelper, mu);
 
         //spatial dimensions of momentum phase
-        ScalarRho+=(i*(mom_[mu]*2*M_PI/Lmu))*component;
+        ScalarRho+=(i*(mom_[mu]*2*Pi/Lmu))*component;
 
         //Gauss distribution
         component-=Complex(posMu);
@@ -150,10 +151,10 @@ void TGauss<FImpl>::execute(void)
 
     //time component of momentum phase
     LatticeCoordinate(component, dim);
-    ScalarRho+=(i*(mom_.at(dim)*2*M_PI/env().getDim(dim)))*component;
+    ScalarRho+=(i*(mom_.at(dim)*2*Pi/env().getDim(dim)))*component;
 
     //compute scalar result
-    ScalarRho=exp(ScalarRho)*Complex(std::pow(sqrt(2*M_PI)*par().width,-dim));
+    ScalarRho=exp(ScalarRho)*Complex(std::pow(sqrt(2*Pi)*par().width,-dim));
 
     //select time slices
     LatticeCoordinate(compHelper, dim);
