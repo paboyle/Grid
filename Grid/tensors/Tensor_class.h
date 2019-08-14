@@ -47,9 +47,11 @@ class GridTensorBase {};
   using element = vtype; \
   using scalar_type     = typename Traits::scalar_type; \
   using vector_type     = typename Traits::vector_type; \
+  using scalar_typeD    = typename Traits::scalar_typeD; \
   using vector_typeD    = typename Traits::vector_typeD; \
   using tensor_reduced  = typename Traits::tensor_reduced; \
   using scalar_object   = typename Traits::scalar_object; \
+  using scalar_objectD  = typename Traits::scalar_objectD; \
   using Complexified    = typename Traits::Complexified; \
   using Realified       = typename Traits::Realified; \
   using DoublePrecision = typename Traits::DoublePrecision; \
@@ -149,7 +151,7 @@ public:
 
   // Convert elements
   template <class ttype>
-  accelerator_inline iScalar<vtype> operator=(iScalar<ttype> &&arg) {
+  accelerator_inline iScalar<vtype> operator=(const iScalar<ttype> &arg) {
     _internal = arg._internal;
     return *this;
   }
@@ -200,6 +202,14 @@ public:
   accelerator iVector() = default;
   accelerator_inline iVector(const Zero &z) { zeroit(*this); };
 
+  template<class other>
+  accelerator_inline iVector<vtype, N> &operator=(const iVector<other,N> &him)
+  {
+    for (int i = 0; i < N; i++) {
+      _internal[i] = him._internal[i];
+    }    
+    return *this;
+  } 
   accelerator_inline iVector<vtype, N> &operator=(const Zero &hero) {
     zeroit(*this);
     return *this;
@@ -296,10 +306,12 @@ public:
   accelerator_inline iMatrix(const Zero &z) { zeroit(*this); };
   accelerator iMatrix() = default;
 
-  accelerator_inline iMatrix &operator=(const iMatrix &rhs) {
+  // Allow for type conversion.
+  template<class other>
+  accelerator_inline iMatrix &operator=(const iMatrix<other,N> &rhs) {
     for (int i = 0; i < N; i++)
       for (int j = 0; j < N; j++) 
-	vstream(_internal[i][j], rhs._internal[i][j]);
+	_internal[i][j] = rhs._internal[i][j];
     return *this;
   };
 
