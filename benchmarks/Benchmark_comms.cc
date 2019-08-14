@@ -277,17 +277,8 @@ int main (int argc, char ** argv)
       Grid.ShmBufferFreeAll();
       uint64_t bytes = lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
       for(int d=0;d<8;d++){
-<<<<<<< HEAD
-	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	//	bzero((void *)xbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	//	bzero((void *)rbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-=======
 	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
 	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
-	bzero((void *)xbuf[d],bytes);
-	bzero((void *)rbuf[d],bytes);
->>>>>>> develop
       }
 
       int ncomm;
@@ -381,17 +372,8 @@ int main (int argc, char ** argv)
       Grid.ShmBufferFreeAll();
       uint64_t bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
       for(int d=0;d<8;d++){
-<<<<<<< HEAD
-	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	//	bzero((void *)xbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	//	bzero((void *)rbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-=======
 	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
 	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
-	bzero((void *)xbuf[d],bytes);
-	bzero((void *)rbuf[d],bytes);
->>>>>>> develop
       }
 
       int ncomm;
