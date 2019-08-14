@@ -46,18 +46,7 @@ int main (int argc, char ** argv)
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
   
-  // Want a different conf at every run
-  // First create an instance of an engine.
-  std::random_device rnd_device;
-  // Specify the engine and distribution.
-  std::mt19937 mersenne_engine(rnd_device());
-  std::uniform_int_distribution<int> dist(1, 100);
-  
-  auto gen = std::bind(dist, mersenne_engine);
-  std::vector<int> seeds4(4);
-  generate(begin(seeds4), end(seeds4), gen);
-  
-  //std::vector<int> seeds4({1,2,3,5});
+  std::vector<int> seeds4({1,2,3,5});
   std::vector<int> seeds5({5,6,7,8});
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
@@ -155,6 +144,7 @@ int main (int argc, char ** argv)
 
   ComplexD dSpred    = sum(dS);
 
+  std::cout << std::setprecision(14);
   std::cout << GridLogMessage << " S      "<<S<<std::endl;
   std::cout << GridLogMessage << " Sprime "<<Sprime<<std::endl;
   std::cout << GridLogMessage << "dS      "<<Sprime-S<<std::endl;
