@@ -1,30 +1,31 @@
+=========================================================
+General
+=========================================================
 
 - Make representations code take Gimpl
 - Simplify the HMCand remove modules
-
 - Lattice_arith - are the mult, mac etc.. still needed after ET engine?
-- ImprovedStaggered accelerate
-  Lattice_rng
-  Lattice_transfer.h
-
+- Lattice_rng
+- Lattice_transfer.h
 - accelerate A2Autils -- off critical path for HMC
-- Lebesque order reintroduction. StencilView should have pointer to it
 
+=========================================================
 GPU branch code item work list
------------------------------
+=========================================================
 
-7) Accelerate the cshift & benchmark
+* sum_cpu promote to double during summation for increased precisoin.
+* Introduce sumD & ReduceD 
+* GPU sum is probably better currently.
+
+* Accelerate the cshift & benchmark
+
 * 0) Single GPU
 - 128 bit integer table load in GPU code.
-- Staggered kernels -> GPU coalesced loop, loop in kernels
-- Staggered kernels inline for GPU -- DONE
-
-* Gianluca merger
-  - Cayley coefficients -> GPU retention or prefetch
+  - ImprovedStaggered accelerate & measure perf
   - Gianluca's changes to Cayley into gpu-port
   - Mobius kernel fusion.                     -- Gianluca?
-  - Make GPU offload reductions deterministic -- Gianluca merge
-  - Lattice_reduction - remnant thread_loops must offload. Audit thread_loop in main code for non-accelerated code  
+  - Lebesque order reintroduction. StencilView should have pointer to it
+  - Lebesgue reorder in all kernels
 
 * 3) Comms/NVlink
 - OpenMP tasks to run comms threads. Experiment with it 
@@ -43,12 +44,24 @@ GPU branch code item work list
 - multLinkProp eliminate
 
 8) Merge develop and test HMC
+
 9) Gamma tables on GPU; check this. Appear to work, but no idea why. Are these done on CPU?
+
 10) Audit
 -     pragma once uniformly
 -     Audit NAMESPACE CHANGES
 -     Audit changes
 
+-----
+Gianluca's changes
+- Performance impact of construct in aligned allocator???
+---------
+
+- merge2 where is it used. Audit routines, comment out and check compile.
+
+-----------------------------
+DONE:
+-----------------------------
 =============================================================================================
 AUDIT ContractWWVV with respect to develop    -- DONE
 - GPU accelerate EOFA                                                  -- DONE
@@ -63,6 +76,12 @@ AUDIT ContractWWVV with respect to develop    -- DONE
   _foreach
   _for
 
+- Staggered kernels -> GPU coalesced loop, loop in kernels -- DONE
+- Staggered kernels inline for GPU -- DONE
+
+-- Common source GPU and CPU generic kernels???                  ---- DONE
+--   - Uniform coding between GPU kernels and CPU kernels attempt  ---- DONE, got faster !
+
 -- Figure what to do about "multLinkGpu" etc.. in FermionOperatorImpl. -- DONE
 -- Gparity is the awkward one                                          -- DONE
 -- Solve non-Gparity first.                                            -- DONE
@@ -75,25 +94,17 @@ AUDIT ContractWWVV with respect to develop    -- DONE
 --
 -- Reread WilsonKernels and check diffs -- DONE
 --
--- Common source GPU and CPU generic kernels???                  ---- DONE
---   - Uniform coding between GPU kernels and CPU kernels attempt  ---- DONE, got faster !
 
------
-Gianluca's changes
-- Performance impact of construct in aligned allocator???
-- Inner product compare to Summit inner product optimisation
-- CayleyFermion5D.cc - flop count line 166 odd. Shouldn't depend on arch
--                    - Review Vector use
-- CayleyFermion5D.h  - DperpGPU unify coding style
----------
-
-- Lebesgue reorder in all kernels
-- merge2 where is it used. Audit routines, comment out and check compile.
 - AVX512 still broken, lebesgue order missing ?
 
-
-DONE:
------------------------------
+* Gianluca merger
+  - Cayley coefficients -> GPU retention or prefetch
+  - Make GPU offload reductions deterministic -- Gianluca merge
+  - Lattice_reduction - remnant thread_loops must offload. Audit thread_loop in main code for non-accelerated code  
+  - Inner product compare to Summit inner product optimisation
+  - CayleyFermion5D.cc - flop count line 166 odd. Shouldn't depend on arch
+  -                    - Review Vector use
+  - CayleyFermion5D.h  - DperpGPU unify coding style
 
 - Committed my modifications
 - Accelerate non-dslash elements of Mobius; check accelerator_loop uniformly used in fermion operators
