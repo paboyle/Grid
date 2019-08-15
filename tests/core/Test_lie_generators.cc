@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
   AdjointRep<Nc> AdjRep(grid);
 
   // AdjointRepresentation has the predefined number of colours Nc
-  Representations<FundamentalRepresentation, AdjointRepresentation, TwoIndexSymmetricRepresentation> RepresentationTypes(grid);  
+  //  Representations<FundamentalRepresentation, AdjointRepresentation, TwoIndexSymmetricRepresentation> RepresentationTypes(grid);  
 
   
   LatticeGaugeField U(grid), V(grid);
