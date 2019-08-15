@@ -107,11 +107,6 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
 
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
-
-  typename vobj::scalar_object  f;
-  typename vobj::scalar_objectD d;
-  f=Zero();
-  d=f;
   
 #ifdef GRID_NVCC
   // GPU - SIMT lane compliance...
