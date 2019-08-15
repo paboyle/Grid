@@ -28,8 +28,8 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #pragma once
-namespace Grid {
-namespace QCD {
+
+NAMESPACE_BEGIN(Grid);
 
   template<typename M>
     void get_real_const_bc(M& m, RealD& _b, RealD& _c) {
@@ -63,8 +63,8 @@ class FourierAcceleratedPV {
    : dwfPV(_dwfPV), Umu(_Umu), cg(_cg), group_in_s(_group_in_s) 
   {
     assert( dwfPV.FermionGrid()->_fdimensions[0] % (2*group_in_s) == 0);
-    grid5D = QCD::SpaceTimeGrid::makeFiveDimGrid(2*group_in_s, (GridCartesian*)Umu._grid);
-    gridRB5D = QCD::SpaceTimeGrid::makeFiveDimRedBlackGrid(2*group_in_s, (GridCartesian*)Umu._grid);
+    grid5D   = SpaceTimeGrid::makeFiveDimGrid(2*group_in_s, (GridCartesian*)Umu.Grid());
+    gridRB5D = SpaceTimeGrid::makeFiveDimRedBlackGrid(2*group_in_s, (GridCartesian*)Umu.Grid());
   }
 
   void rotatePV(const Vi& _src, Vi& dst, bool forward) const {
@@ -72,13 +72,13 @@ class FourierAcceleratedPV {
     GridStopWatch gsw1, gsw2;
 
     typedef typename Vi::scalar_type Coeff_t;
-    int Ls = dst._grid->_fdimensions[0];
+    int Ls = dst.Grid()->_fdimensions[0];
 
-    Vi _tmp(dst._grid);
+    Vi _tmp(dst.Grid());
     double phase = M_PI / (double)Ls;
     Coeff_t bzero(0.0,0.0);
 
-    FFT theFFT((GridCartesian*)dst._grid);
+    FFT theFFT((GridCartesian*)dst.Grid());
 
     if (!forward) {
       gsw1.Start();
@@ -115,7 +115,7 @@ class FourierAcceleratedPV {
     std::cout << GridLogMessage << "Fourier-Accelerated Outer Pauli Villars"<<std::endl;
 
     typedef typename Vi::scalar_type Coeff_t;
-    int Ls = _dst._grid->_fdimensions[0];
+    int Ls = _dst.Grid()->_fdimensions[0];
 
     GridStopWatch gswT;
     gswT.Start();
@@ -126,12 +126,12 @@ class FourierAcceleratedPV {
     
     // U(true) Rightinv TMinv U(false) = Minv
 
-    Vi _src_diag(_dst._grid);
+    Vi _src_diag(_dst.Grid());
     Vi _src_diag_slice(dwfPV.GaugeGrid());
     Vi _dst_diag_slice(dwfPV.GaugeGrid());
     Vi _src_diag_slices(grid5D);
     Vi _dst_diag_slices(grid5D);
-    Vi _dst_diag(_dst._grid);
+    Vi _dst_diag(_dst.Grid());
 
     rotatePV(_src,_src_diag,false);
 
@@ -163,7 +163,7 @@ class FourierAcceleratedPV {
       for (int sidx=0;sidx<group_in_s;sidx++) {
 
 	int s = sgroup*group_in_s + sidx;
-	int sprime = Ls-s-1;
+	//	int sprime = Ls-s-1;
 
 	RealD phase = M_PI / (RealD)Ls * (2.0 * s + 1.0);
 	RealD cosp = ::cos(phase);
@@ -196,7 +196,7 @@ class FourierAcceleratedPV {
 
       GridStopWatch gsw;
       gsw.Start();
-      _dst_diag_slices = zero; // zero guess
+      _dst_diag_slices = Zero(); // zero guess
       sol(tm,_src_diag_slices,_dst_diag_slices);
       gsw.Stop();
       std::cout << GridLogMessage << "Solve[sgroup=" << sgroup << "] completed in " << gsw.Elapsed() << ", " << gswA.Elapsed() << std::endl;
@@ -212,7 +212,7 @@ class FourierAcceleratedPV {
 
 	// now rotate with inverse of
 	Coeff_t pA = b + c*cosp;
-	Coeff_t pB = - Coeff_t(0.0,1.0)*c*sinp;
+	Coeff_t pB = - Coeff_t(0.0,1.0)*Coeff_t(c*sinp);
 	Coeff_t pABden = pA*pA - pB*pB;
 	// (pA + pB * G5) * (pA - pB*G5) = (pA^2 - pB^2)
       
@@ -234,4 +234,5 @@ class FourierAcceleratedPV {
   }
 
 };
-}}
+NAMESPACE_END(Grid);
+

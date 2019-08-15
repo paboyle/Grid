@@ -129,7 +129,7 @@ LatticeSpinColourMatrix TBilinear<FImpl1, FImpl2>::PhaseProps(LatticeSpinColourM
     LatticeComplex      pdotx(grid),  coor(grid);
     std::vector<int>   latt_size = grid->_fdimensions; 
     Complex             Ci(0.0,1.0);
-    pdotx=zero;
+    pdotx=Zero();
     for (unsigned int mu = 0; mu < 4; ++mu)
     {
         Real TwoPiL =  M_PI * 2.0/ latt_size[mu];
@@ -187,8 +187,8 @@ q = (p1-p2)
 
     //
 
-    pdotxin=zero;
-    pdotxout=zero;
+    pdotxin=Zero();
+    pdotxout=Zero();
     for (unsigned int mu = 0; mu < 4; ++mu)
     {
         Real TwoPiL =  M_PI * 2.0/ latt_size[mu];

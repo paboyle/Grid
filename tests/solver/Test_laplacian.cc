@@ -29,16 +29,16 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian     RBGrid(&Grid);
 
@@ -56,11 +56,11 @@ int main (int argc, char ** argv)
   // Source and result in the algebra
   // needed for the second test
   AVector src_vec(&Grid); random(pRNG, src_vec);
-  AVector result_vec(&Grid); result_vec = zero;
+  AVector result_vec(&Grid); result_vec = Zero();
   
   LatticeColourMatrix src(&Grid); 
   SU<Nc>::FundamentalLieAlgebraMatrix(src_vec, src);
-  LatticeColourMatrix result(&Grid); result=zero;
+  LatticeColourMatrix result(&Grid); result=Zero();
 
 
   // Generate a field of adjoint matrices

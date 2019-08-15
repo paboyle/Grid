@@ -29,17 +29,14 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
-
- 
 
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian     RBGrid(&Grid);
@@ -93,7 +90,6 @@ int main (int argc, char ** argv)
   RealD dt = 0.0001;
   RealD Hmom = 0.0;
   RealD Hmomprime = 0.0;
-  RealD Hmompp    = 0.0;
   LatticeColourMatrix mommu(&Grid); 
   LatticeColourMatrix forcemu(&Grid); 
   LatticeGaugeField mom(&Grid); 
@@ -109,16 +105,18 @@ int main (int argc, char ** argv)
     PokeIndex<LorentzIndex>(mom,mommu,mu);
 
     // fourth order exponential approx
-    parallel_for(auto i=mom.begin();i<mom.end();i++) {
-      Uprime[i](mu)  =	  U[i](mu);
-      Uprime[i](mu) += mom[i](mu)*U[i](mu)*dt ;
-      Uprime[i](mu) += mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt/2.0);
-      Uprime[i](mu) += mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt/6.0);
-      Uprime[i](mu) += mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt/24.0);
-      Uprime[i](mu) += mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt/120.0);
-      Uprime[i](mu) += mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt*dt/720.0);
-    }
-
+    auto U_v = U.View();
+    auto mom_v = mom.View();
+    auto Uprime_v = Uprime.View();
+    thread_foreach( i,mom_v,{
+      Uprime_v[i](mu)  =	  U_v[i](mu);
+      Uprime_v[i](mu) += mom_v[i](mu)*U_v[i](mu)*dt ;
+      Uprime_v[i](mu) += mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt/2.0);
+      Uprime_v[i](mu) += mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt/6.0);
+      Uprime_v[i](mu) += mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt/24.0);
+      Uprime_v[i](mu) += mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt*dt/120.0);
+      Uprime_v[i](mu) += mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt*dt*dt/720.0);
+    });
   }
 
   std::cout << GridLogMessage <<"Initial mom hamiltonian is "<< Hmom <<std::endl;
@@ -130,7 +128,6 @@ int main (int argc, char ** argv)
   //////////////////////////////////////////////
   // Use derivative to estimate dS
   //////////////////////////////////////////////
-
 
   for(int mu=0;mu<Nd;mu++){
     std::cout << "" <<std::endl;
@@ -144,9 +141,9 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage<< " dsdumu + dag  " << norm2(mommu)<<std::endl;
   }
 
-  LatticeComplex dS(&Grid); dS = zero;
-  LatticeComplex dSmom(&Grid); dSmom = zero;
-  LatticeComplex dSmom2(&Grid); dSmom2 = zero;
+  LatticeComplex dS(&Grid); dS = Zero();
+  LatticeComplex dSmom(&Grid); dSmom = Zero();
+  LatticeComplex dSmom2(&Grid); dSmom2 = Zero();
   
   for(int mu=0;mu<Nd;mu++){
     mommu   = PeekIndex<LorentzIndex>(UdSdU,mu);

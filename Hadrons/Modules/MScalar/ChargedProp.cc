@@ -149,7 +149,7 @@ void TChargedProp::execute(void)
                      << RESULT_FILE_NAME(par().output, vm().getTrajectory()) << "'..."
                      << std::endl;
         result.projection.resize(par().outputMom.size());
-        result.lattice_size = env().getGrid()->_fdimensions;
+        result.lattice_size = env().getGrid()->FullDimensions().toVector();
         result.mass = par().mass;
         result.charge = q;
         siteCoor.resize(env().getNd());
@@ -160,11 +160,11 @@ void TChargedProp::execute(void)
             LOG(Message) << "Calculating (" << par().outputMom[i_p]
                          << ") momentum projection" << std::endl;
 
-            result.projection[i_p].corr_0.resize(env().getGrid()->_fdimensions[env().getNd()-1]);
-            result.projection[i_p].corr.resize(env().getGrid()->_fdimensions[env().getNd()-1]);
-            result.projection[i_p].corr_Q.resize(env().getGrid()->_fdimensions[env().getNd()-1]);
-            result.projection[i_p].corr_Sun.resize(env().getGrid()->_fdimensions[env().getNd()-1]);
-            result.projection[i_p].corr_Tad.resize(env().getGrid()->_fdimensions[env().getNd()-1]);
+            result.projection[i_p].corr_0.resize(env().getGrid()->FullDimensions()[env().getNd()-1]);
+            result.projection[i_p].corr.resize(env().getGrid()->FullDimensions()[env().getNd()-1]);
+            result.projection[i_p].corr_Q.resize(env().getGrid()->FullDimensions()[env().getNd()-1]);
+            result.projection[i_p].corr_Sun.resize(env().getGrid()->FullDimensions()[env().getNd()-1]);
+            result.projection[i_p].corr_Tad.resize(env().getGrid()->FullDimensions()[env().getNd()-1]);
 
             for (unsigned int j = 0; j < env().getNd()-1; ++j)
             {
@@ -226,7 +226,7 @@ void TChargedProp::makeCaches(void)
 	}
     if (!phasesDone_)
     {
-        std::vector<int> &l = env().getGrid()->_fdimensions;
+        auto l = env().getGrid()->FullDimensions();
         Complex          ci(0.0,1.0);
         
         LOG(Message) << "Caching shift phases..." << std::endl;
@@ -259,7 +259,7 @@ void TChargedProp::momD1(ScalarField &s, FFT &fft)
     envGetTmp(ScalarField, result);
     envGetTmp(ScalarField, Amu);
 
-    result = zero;
+    result = Zero();
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         Amu = peekLorentz(A, mu);
@@ -289,7 +289,7 @@ void TChargedProp::momD2(ScalarField &s, FFT &fft)
     envGetTmp(ScalarField, result);
     envGetTmp(ScalarField, Amu);
 
-    result = zero;
+    result = Zero();
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         Amu = peekLorentz(A, mu);

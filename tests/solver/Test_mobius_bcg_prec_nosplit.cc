@@ -31,7 +31,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/iterative/BlockConjugateGradient.h>
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ 
 
 int main (int argc, char ** argv)
 {
@@ -43,11 +43,11 @@ int main (int argc, char ** argv)
 
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  auto latt_size   = GridDefaultLatt();
+  auto simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  auto mpi_layout  = GridDefaultMpi();
 
-  std::vector<ComplexD> boundary_phases(Nd,1.);
+  std::vector<Complex> boundary_phases(Nd,1.);
   boundary_phases[Nd-1]=-1.;
   params.boundary_phases = boundary_phases;
 
@@ -72,7 +72,7 @@ int main (int argc, char ** argv)
   FermionField tmp(FGrid);
   std::cout << GridLogMessage << "Made the Fermion Fields"<<std::endl;
 
-  for(int s=0;s<nrhs;s++) result[s]=zero;
+  for(int s=0;s<nrhs;s++) result[s]=Zero();
   GridParallelRNG pRNG5(FGrid);  pRNG5.SeedFixedIntegers(seeds);
   for(int s=0;s<nrhs;s++) {
     random(pRNG5,src[s]);
@@ -116,7 +116,7 @@ int main (int argc, char ** argv)
   ConjugateGradient<FermionField> CG((stp),100000);
 
   for(int rhs=0;rhs<1;rhs++){
-    result[rhs] = zero;
+    result[rhs] = Zero();
     CG(HermOp,src[rhs],result[rhs]);
   }
 
@@ -129,7 +129,7 @@ int main (int argc, char ** argv)
   /////////////////////////////////////////////////////////////
   int blockDim = 0;//not used for BlockCGVec
   for(int s=0;s<nrhs;s++){
-    result[s]=zero;
+    result[s]=Zero();
   }
 
 

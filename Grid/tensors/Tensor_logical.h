@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,32 +23,31 @@ Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
-#ifndef GRID_TENSOR_LOGICAL_H
-#define GRID_TENSOR_LOGICAL_H
+*************************************************************************************/
+/*  END LEGAL */
+#pragma once
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-#define LOGICAL_BINOP(Op)\
-template<class v> strong_inline iScalar<v> operator Op (const iScalar<v>& lhs,const iScalar<v>& rhs) \
-{\
-  iScalar<v> ret;\
-  ret._internal = lhs._internal Op rhs._internal ;\
-  return ret;\
-}\
-template<class l> strong_inline iScalar<l> operator Op (const iScalar<l>& lhs,Integer rhs) \
-{\
-  typename iScalar<l>::scalar_type t; t=rhs;\
-  typename iScalar<l>::tensor_reduced srhs; srhs=t;\
-  return lhs Op srhs;\
-}\
-template<class l> strong_inline iScalar<l> operator Op (Integer lhs,const iScalar<l>& rhs) \
-{\
-  typename iScalar<l>::scalar_type t;t=lhs;\
-  typename iScalar<l>::tensor_reduced slhs;slhs=t;\
-  return slhs Op rhs;\
-}
+#define LOGICAL_BINOP(Op)						\
+  template<class v> accelerator_inline iScalar<v> operator Op (const iScalar<v>& lhs,const iScalar<v>& rhs) \
+  {									\
+    iScalar<v> ret;							\
+    ret._internal = lhs._internal Op rhs._internal ;			\
+    return ret;								\
+  }									\
+  template<class l> accelerator_inline iScalar<l> operator Op (const iScalar<l>& lhs,Integer rhs) \
+  {									\
+    typename iScalar<l>::scalar_type t; t=rhs;				\
+    typename iScalar<l>::tensor_reduced srhs; srhs=t;			\
+    return lhs Op srhs;							\
+  }									\
+  template<class l> accelerator_inline iScalar<l> operator Op (Integer lhs,const iScalar<l>& rhs) \
+  {									\
+    typename iScalar<l>::scalar_type t;t=lhs;				\
+    typename iScalar<l>::tensor_reduced slhs;slhs=t;			\
+    return slhs Op rhs;							\
+  }
 
 LOGICAL_BINOP(|);
 LOGICAL_BINOP(&);
@@ -56,13 +55,13 @@ LOGICAL_BINOP(||);
 LOGICAL_BINOP(&&);
 
 template <class T>
-strong_inline bool operator==(const iScalar<T> &t1, const iScalar<T> &t2)
+accelerator_inline bool operator==(const iScalar<T> &t1, const iScalar<T> &t2)
 {
   return (t1._internal == t2._internal);
 }
 
 template <class T, int N>
-strong_inline bool operator==(const iVector<T, N> &t1, const iVector<T, N> &t2)
+accelerator_inline bool operator==(const iVector<T, N> &t1, const iVector<T, N> &t2)
 {
   bool res = true;
 
@@ -75,7 +74,7 @@ strong_inline bool operator==(const iVector<T, N> &t1, const iVector<T, N> &t2)
 }
 
 template <class T, int N>
-strong_inline bool operator==(const iMatrix<T, N> &t1, const iMatrix<T, N> &t2)
+accelerator_inline bool operator==(const iMatrix<T, N> &t1, const iMatrix<T, N> &t2)
 {
   bool res = true;
 
@@ -88,5 +87,6 @@ strong_inline bool operator==(const iMatrix<T, N> &t1, const iMatrix<T, N> &t2)
   return res;
 }
 
-}
-#endif
+NAMESPACE_END(Grid);
+
+

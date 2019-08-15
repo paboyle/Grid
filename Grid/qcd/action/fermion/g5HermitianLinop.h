@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,13 +23,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef G5_HERMITIAN_LINOP
 #define G5_HERMITIAN_LINOP
 
-namespace Grid {
-  namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 ////////////////////////////////////////////////////////////////////
 // Wrap an already herm matrix
@@ -46,12 +45,12 @@ public:
     HermOp(in,out);
   }
   void OpDiag (const Field &in, Field &out) {
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
     _Mat.Mdiag(in,tmp);
     G5R5(out,tmp);
   }
   void OpDir  (const Field &in, Field &out,int dir,int disp) {
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
     _Mat.Mdir(in,tmp,dir,disp);
     G5R5(out,tmp);
   }
@@ -68,7 +67,7 @@ public:
     n2=real(dot);
   }
   void HermOp(const Field &in, Field &out){
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
     _Mat.M(in,tmp);
     G5R5(out,tmp);
   }
@@ -80,7 +79,7 @@ class Gamma5HermitianLinearOperator : public LinearOperatorBase<Field> {
   Matrix &_Mat;
   Gamma g5;
 public:
-    Gamma5HermitianLinearOperator(Matrix &Mat): _Mat(Mat), g5(Gamma::Algebra::Gamma5) {};
+  Gamma5HermitianLinearOperator(Matrix &Mat): _Mat(Mat), g5(Gamma::Algebra::Gamma5) {};
   void Op     (const Field &in, Field &out){
     HermOp(in,out);
   }
@@ -88,12 +87,12 @@ public:
     HermOp(in,out);
   }
   void OpDiag (const Field &in, Field &out) {
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
     _Mat.Mdiag(in,tmp);
     out=g5*tmp;
   }
   void OpDir  (const Field &in, Field &out,int dir,int disp) {
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
     _Mat.Mdir(in,tmp,dir,disp);
     out=g5*tmp;
   }
@@ -110,12 +109,11 @@ public:
     n2=real(dot);
   }
   void HermOp(const Field &in, Field &out){
-    Field tmp(in._grid);
+    Field tmp(in.Grid());
     _Mat.M(in,tmp);
     out=g5*tmp;
   }
 };
 
-
-}}
+NAMESPACE_END(Grid);
 #endif

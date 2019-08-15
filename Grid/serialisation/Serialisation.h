@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,8 +24,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_SERIALISATION_READER_H
 #define GRID_SERIALISATION_READER_H
 
@@ -36,7 +36,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include "BinaryIO.h"
 #include "TextIO.h"
 #include "XmlIO.h"
+#ifndef GRID_NVCC
 #include "JSON_IO.h"
+#endif
 
 #ifdef HAVE_HDF5
 #include "Hdf5IO.h"
@@ -50,8 +52,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 //////////////////////////////////////////
 // Select the default serialiser use ifdef's
 //////////////////////////////////////////
-namespace Grid {
-  typedef XmlReader DefaultReader;
-  typedef XmlWriter DefaultWriter;
-}
+NAMESPACE_BEGIN(Grid);
+typedef XmlReader DefaultReader;
+typedef XmlWriter DefaultWriter;
+NAMESPACE_END(Grid);
 #endif

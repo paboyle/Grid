@@ -29,9 +29,8 @@ directory
 /*
   @brief Declares base smearing class Smear
  */
-#ifndef BASE_SMEAR_
-#define BASE_SMEAR_
-
+#pragma once
+NAMESPACE_BEGIN(Grid);
 template <class Gimpl>
 class Smear{
 public:
@@ -41,4 +40,5 @@ public:
   virtual void smear     (GaugeField&,const GaugeField&)const = 0;
   virtual void derivative(GaugeField&, const GaugeField&,const GaugeField&) const = 0;
 };
-#endif
+NAMESPACE_END(Grid);
+

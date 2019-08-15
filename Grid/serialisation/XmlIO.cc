@@ -28,9 +28,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/GridCore.h>
 
-using namespace Grid;
+NAMESPACE_BEGIN(Grid);
 
-void Grid::xmlCheckParse(const pugi::xml_parse_result &result, const std::string name)
+void xmlCheckParse(const pugi::xml_parse_result &result, const std::string name)
 {
   if (!result) 
   {
@@ -115,7 +115,7 @@ XmlReader::XmlReader(const std::string &s,  const bool isBuffer,
     xmlCheckParse(result, "file '" + fileName_ + "'");
   }
   if ( toplev == std::string("") ) {
-  node_ = doc_;
+    node_ = doc_;
   } else { 
     node_ = doc_.child(toplev.c_str());
   }
@@ -186,3 +186,4 @@ void XmlReader::readDefault(const std::string &s, std::string &output)
     output = ""; 
   }
 }
+NAMESPACE_END(Grid);

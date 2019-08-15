@@ -30,7 +30,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 
 int main (int argc, char ** argv)
@@ -40,18 +40,12 @@ int main (int argc, char ** argv)
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
-  std::vector<int> latt4 = GridDefaultLatt();
+  Coordinate latt4 = GridDefaultLatt();
   const int Ls=16;
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
-
-  std::cout << GridLogMessage << "Making Vec5d innermost grids"<<std::endl;
-  GridCartesian         * sUGrid   = SpaceTimeGrid::makeFourDimDWFGrid(GridDefaultLatt(),GridDefaultMpi());
-  GridRedBlackCartesian * sUrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(sUGrid);
-  GridCartesian         * sFGrid   = SpaceTimeGrid::makeFiveDimDWFGrid(Ls,UGrid);
-  GridRedBlackCartesian * sFrbGrid = SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(Ls,UGrid);
 
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
@@ -65,7 +59,7 @@ int main (int argc, char ** argv)
 
   RealD mass=0.1;
   RealD M5  =1.8;
-  RealD NP = UGrid->_Nprocessors;
+  //  RealD NP = UGrid->_Nprocessors;
 
 
   if (1)
@@ -76,13 +70,20 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionR::Dhop "<<std::endl;
     std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
 
-    GridParallelRNG RNG5(FGrid);
+    GridParallelRNG RNG5(FGrid); RNG5.SeedFixedIntegers(seeds5);
     LatticeFermion src(FGrid); random(RNG5,src);
     LatticeFermion result(FGrid);
 
     DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
     double t0,t1;
-
+    
+    typedef typename DomainWallFermionR::Coeff_t Coeff_t;
+    Vector<Coeff_t> diag = Dw.bs;
+    Vector<Coeff_t> upper= Dw.cs;
+    Vector<Coeff_t> lower= Dw.cs;
+    upper[Ls-1]=-Dw.mass*upper[Ls-1];
+    lower[0]   =-Dw.mass*lower[0];
+    
     LatticeFermion r_eo(FGrid);
     LatticeFermion src_e (FrbGrid);
     LatticeFermion src_o (FrbGrid);
@@ -95,17 +96,17 @@ int main (int argc, char ** argv)
     setCheckerboard(r_eo,src_o);
     setCheckerboard(r_eo,src_e);
     
-    r_e = zero;
-    r_o = zero;
+    r_e = Zero();
+    r_o = Zero();
 
 
-#define BENCH_DW(A,in,out)			\
-    Dw.CayleyZeroCounters();			\
-    Dw. A (in,out);				\
+#define BENCH_DW(A,...)			\
+    Dw. A (__VA_ARGS__);				\
     FGrid->Barrier();				\
+    Dw.CayleyZeroCounters();      \
     t0=usecond();				\
     for(int i=0;i<ncall;i++){			\
-      Dw. A (in,out);				\
+      Dw. A (__VA_ARGS__);				\
     }						\
     t1=usecond();				\
     FGrid->Barrier();				\
@@ -114,9 +115,9 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "******************"<<std::endl;
 
 #define BENCH_ZDW(A,in,out)			\
-    zDw.CayleyZeroCounters();			\
     zDw. A (in,out);				\
     FGrid->Barrier();				\
+    zDw.CayleyZeroCounters();      \
     t0=usecond();				\
     for(int i=0;i<ncall;i++){			\
       zDw. A (in,out);				\
@@ -128,9 +129,9 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "******************"<<std::endl;
 
 #define BENCH_DW_SSC(A,in,out)			\
-    Dw.CayleyZeroCounters();			\
     Dw. A (in,out);				\
     FGrid->Barrier();				\
+    Dw.CayleyZeroCounters();      \
     t0=usecond();				\
     for(int i=0;i<ncall;i++){			\
       __SSC_START ;				\
@@ -143,78 +144,12 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "Called " #A " "<< (t1-t0)/ncall<<" us"<<std::endl;\
     std::cout<<GridLogMessage << "******************"<<std::endl;
 
-#define BENCH_DW_MEO(A,in,out)			\
-    Dw.CayleyZeroCounters();			\
-    Dw. A (in,out,0);				\
-    FGrid->Barrier();				\
-    t0=usecond();				\
-    for(int i=0;i<ncall;i++){			\
-      Dw. A (in,out,0);				\
-    }						\
-    t1=usecond();				\
-    FGrid->Barrier();				\
-    Dw.CayleyReport();					\
-    std::cout<<GridLogMessage << "Called " #A " "<< (t1-t0)/ncall<<" us"<<std::endl;\
-    std::cout<<GridLogMessage << "******************"<<std::endl;
-
-    BENCH_DW_MEO(Dhop    ,src,result);
-    BENCH_DW_MEO(DhopEO  ,src_o,r_e);
+    BENCH_DW(Dhop    ,src,result,0);
+    BENCH_DW(DhopEO  ,src_o,r_e,0);
     BENCH_DW(Meooe   ,src_o,r_e);
+    BENCH_DW(M5D     ,src_o,src_o,r_e,lower,diag,upper);
     BENCH_DW(Mooee   ,src_o,r_o);
     BENCH_DW(MooeeInv,src_o,r_o);
-
-  }
-
-  if (1)
-  {
-    const int ncall=1000;
-
-    std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
-    std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionVec5dR::Dhop "<<std::endl;
-    std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
-
-    GridParallelRNG RNG5(sFGrid);
-    LatticeFermion src(sFGrid); random(RNG5,src);
-    LatticeFermion sref(sFGrid);
-    LatticeFermion result(sFGrid);
-
-
-    std::cout<<GridLogMessage << "Constructing Vec5D Dw "<<std::endl;
-    DomainWallFermionVec5dR Dw(Umu,*sFGrid,*sFrbGrid,*sUGrid,*sUrbGrid,mass,M5);
-
-    RealD b=1.5;// Scale factor b+c=2, b-c=1
-    RealD c=0.5;
-    std::vector<ComplexD> gamma(Ls,std::complex<double>(1.0,0.0));
-    ZMobiusFermionVec5dR zDw(Umu,*sFGrid,*sFrbGrid,*sUGrid,*sUrbGrid,mass,M5,gamma,b,c);
-
-    std::cout<<GridLogMessage << "Calling Dhop "<<std::endl;
-    FGrid->Barrier();
-
-    double t0,t1;
-
-    LatticeFermion r_eo(sFGrid);
-    LatticeFermion src_e (sFrbGrid);
-    LatticeFermion src_o (sFrbGrid);
-    LatticeFermion r_e   (sFrbGrid);
-    LatticeFermion r_o   (sFrbGrid);
-    
-    pickCheckerboard(Even,src_e,src);
-    pickCheckerboard(Odd,src_o,src);
-    
-    setCheckerboard(r_eo,src_o);
-    setCheckerboard(r_eo,src_e);
-    
-    r_e = zero;
-    r_o = zero;
-
-    BENCH_DW_MEO(Dhop    ,src,result);
-    BENCH_DW_MEO(DhopEO  ,src_o,r_e);
-    BENCH_DW_SSC(Meooe   ,src_o,r_e);
-    BENCH_DW(Mooee   ,src_o,r_o);
-    BENCH_DW(MooeeInv,src_o,r_o);
-
-    BENCH_ZDW(Mooee   ,src_o,r_o);
-    BENCH_ZDW(MooeeInv,src_o,r_o);
 
   }
 

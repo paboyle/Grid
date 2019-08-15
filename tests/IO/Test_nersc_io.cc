@@ -31,7 +31,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 
 int main (int argc, char ** argv)
@@ -40,18 +40,17 @@ int main (int argc, char ** argv)
 
   std::cout <<GridLogMessage<< " main "<<std::endl;
 
-  std::vector<int> simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
   //std::vector<int> latt_size  ({48,48,48,96});
   //std::vector<int> latt_size  ({32,32,32,32});
-  std::vector<int> latt_size  ({16,16,16,32});
-  std::vector<int> clatt_size  ({4,4,4,8});
+  Coordinate latt_size  ({16,16,16,32});
+  Coordinate clatt_size  ({4,4,4,8});
   int orthodir=3;
   int orthosz =latt_size[orthodir];
     
   GridCartesian     Fine(latt_size,simd_layout,mpi_layout);
   GridCartesian     Coarse(clatt_size,simd_layout,mpi_layout);
-
 
   GridParallelRNG   pRNGa(&Fine);
   GridParallelRNG   pRNGb(&Fine);
@@ -106,7 +105,7 @@ int main (int argc, char ** argv)
 
   // Painful ; fix syntactical niceness
   LatticeComplex LinkTrace(&Fine);
-  LinkTrace=zero;
+  LinkTrace=Zero();
   for(int mu=0;mu<Nd;mu++){
     LinkTrace = LinkTrace + trace(U[mu]);
   }
@@ -115,7 +114,7 @@ int main (int argc, char ** argv)
   LatticeComplex Plaq(&Fine);
   LatticeComplex cPlaq(&Coarse);
 
-  Plaq = zero;
+  Plaq = Zero();
 #if 1
   for(int mu=1;mu<Nd;mu++){
     for(int nu=0;nu<mu;nu++){
@@ -131,7 +130,7 @@ int main (int argc, char ** argv)
   int Nt = Plaq_T.size();
 
   TComplex Plaq_T_sum; 
-  Plaq_T_sum=zero;
+  Plaq_T_sum=Zero();
   for(int t=0;t<Nt;t++){
     Plaq_T_sum = Plaq_T_sum+Plaq_T[t];
     Complex Pt=TensorRemove(Plaq_T[t]);

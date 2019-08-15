@@ -117,7 +117,7 @@ void TGauss<FImpl>::execute(void)
     const Real Pi(M_PI);
     const SitePropagator idMat=[](){ SitePropagator s; s=1.; return s; }();
 
-    ScalarRho=zero;
+    ScalarRho=Zero();
     for(int mu=0; mu<dim; mu++) {
         assert(env().getDim(mu)%2==0);
         assert(position_[mu]>=0 && position_[mu]<env().getDim(mu));

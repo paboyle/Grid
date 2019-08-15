@@ -27,8 +27,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #pragma once
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 template<class Field>
 class PauliVillarsSolverUnprec
@@ -90,6 +89,4 @@ class PauliVillarsSolverFourierAccel
   };
 };
 
-
-}
-}
+NAMESPACE_END(Grid);

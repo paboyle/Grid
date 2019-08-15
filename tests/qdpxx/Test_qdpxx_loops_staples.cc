@@ -63,7 +63,7 @@ public:
 
     std::vector<int> x(4);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr._grid->GlobalDimensions();
+    std::vector<int> gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -274,7 +274,7 @@ double calc_grid_p(Grid::QCD::LatticeGaugeField & Umu)
 {
   std::vector<int> seeds4({1,2,3,4});
 
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu._grid;
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu.Grid();
   Grid::GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
 
   Grid::QCD::SU3::HotConfiguration(RNG4,Umu);
@@ -291,7 +291,7 @@ double calc_grid_p(Grid::QCD::LatticeGaugeField & Umu)
 } 
 double calc_grid_r(Grid::QCD::LatticeGaugeField & Umu)
 {
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu._grid;
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu.Grid();
 
   Grid::QCD::PlaqPlusRectangleActionR Wilson(0.0,c1); // Just take beta = 0.0
   
@@ -299,7 +299,7 @@ double calc_grid_r(Grid::QCD::LatticeGaugeField & Umu)
 } 
 double calc_grid_IW(Grid::QCD::LatticeGaugeField & Umu)
 {
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu._grid;
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu.Grid();
 
   Grid::QCD::IwasakiGaugeActionR Iwasaki(beta);
   
@@ -307,7 +307,7 @@ double calc_grid_IW(Grid::QCD::LatticeGaugeField & Umu)
 } 
 double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 {
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu._grid;
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu.Grid();
 
   std::vector<Grid::QCD::LatticeColourMatrix> U(4,UGrid);
   for(int mu=0;mu<Nd;mu++){
@@ -611,7 +611,7 @@ void check_grid_r_staple(Grid::QCD::LatticeGaugeField & Umu)
 
   std::vector<int> seeds4({1,2,3,4});
 
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu._grid;
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu.Grid();
 
   Grid::QCD::PlaqPlusRectangleActionR Wilson(0.0,c1); // Just take beta = 0.0
 
@@ -650,7 +650,7 @@ void check_grid_p_staple(Grid::QCD::LatticeGaugeField & Umu)
 
   std::vector<int> seeds4({1,2,3,4});
 
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu._grid;
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu.Grid();
 
   Grid::QCD::PlaqPlusRectangleActionR Wilson(1.0,0.0); // Just take c1 = 0.0
 

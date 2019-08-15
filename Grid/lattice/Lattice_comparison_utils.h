@@ -26,10 +26,10 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#ifndef GRID_COMPARISON_H
-#define GRID_COMPARISON_H
 
-namespace Grid {
+#pragma once
+
+NAMESPACE_BEGIN(Grid);
 
   /////////////////////////////////////////
   // This implementation is a bit poor.
@@ -44,42 +44,42 @@ namespace Grid {
   //
   template<class lobj,class robj> class veq {
   public:
-    vInteger operator()(const lobj &lhs, const robj &rhs)
+    accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) == (rhs);
     }
   };
   template<class lobj,class robj> class vne {
   public:
-    vInteger operator()(const lobj &lhs, const robj &rhs)
+    accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) != (rhs);
     }
   };
   template<class lobj,class robj> class vlt {
   public:
-    vInteger operator()(const lobj &lhs, const robj &rhs)
+    accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) < (rhs);
     }
   };
   template<class lobj,class robj> class vle {
   public:
-    vInteger operator()(const lobj &lhs, const robj &rhs)
+    accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) <= (rhs);
     }
   };
   template<class lobj,class robj> class vgt {
   public:
-    vInteger operator()(const lobj &lhs, const robj &rhs)
+    accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) > (rhs);
     }
   };
   template<class lobj,class robj> class vge {
     public:
-    vInteger operator()(const lobj &lhs, const robj &rhs)
+    accelerator vInteger operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) >= (rhs);
     }
@@ -88,42 +88,42 @@ namespace Grid {
   // Generic list of functors
   template<class lobj,class robj> class seq {
   public:
-    Integer operator()(const lobj &lhs, const robj &rhs)
+    accelerator Integer operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) == (rhs);
     }
   };
   template<class lobj,class robj> class sne {
   public:
-    Integer operator()(const lobj &lhs, const robj &rhs)
+    accelerator Integer operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) != (rhs);
     }
   };
   template<class lobj,class robj> class slt {
   public:
-    Integer operator()(const lobj &lhs, const robj &rhs)
+    accelerator Integer operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) < (rhs);
     }
   };
   template<class lobj,class robj> class sle {
   public:
-    Integer operator()(const lobj &lhs, const robj &rhs)
+    accelerator Integer operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) <= (rhs);
     }
   };
   template<class lobj,class robj> class sgt {
   public:
-    Integer operator()(const lobj &lhs, const robj &rhs)
+    accelerator Integer operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) > (rhs);
     }
   };
   template<class lobj,class robj> class sge {
   public:
-    Integer operator()(const lobj &lhs, const robj &rhs)
+    accelerator Integer operator()(const lobj &lhs, const robj &rhs)
     { 
       return (lhs) >= (rhs);
     }
@@ -133,12 +133,12 @@ namespace Grid {
   // Integer and real get extra relational functions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   template<class sfunctor, class vsimd,IfNotComplex<vsimd> = 0> 
-    inline vInteger Comparison(sfunctor sop,const vsimd & lhs, const vsimd & rhs)
+    accelerator_inline vInteger Comparison(sfunctor sop,const vsimd & lhs, const vsimd & rhs)
     {
       typedef typename vsimd::scalar_type scalar;
-      std::vector<scalar> vlhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
-      std::vector<scalar> vrhs(vsimd::Nsimd());
-      std::vector<Integer> vpred(vsimd::Nsimd());
+      ExtractBuffer<scalar> vlhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
+      ExtractBuffer<scalar> vrhs(vsimd::Nsimd());
+      ExtractBuffer<Integer> vpred(vsimd::Nsimd());
       vInteger ret;
       extract<vsimd,scalar>(lhs,vlhs);
       extract<vsimd,scalar>(rhs,vrhs);
@@ -150,11 +150,11 @@ namespace Grid {
     }
 
   template<class sfunctor, class vsimd,IfNotComplex<vsimd> = 0> 
-    inline vInteger Comparison(sfunctor sop,const vsimd & lhs, const typename vsimd::scalar_type & rhs)
+    accelerator_inline vInteger Comparison(sfunctor sop,const vsimd & lhs, const typename vsimd::scalar_type & rhs)
     {
       typedef typename vsimd::scalar_type scalar;
-      std::vector<scalar> vlhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
-      std::vector<Integer> vpred(vsimd::Nsimd());
+      ExtractBuffer<scalar> vlhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
+      ExtractBuffer<Integer> vpred(vsimd::Nsimd());
       vInteger ret;
       extract<vsimd,scalar>(lhs,vlhs);
       for(int s=0;s<vsimd::Nsimd();s++){
@@ -165,11 +165,11 @@ namespace Grid {
     }
 
   template<class sfunctor, class vsimd,IfNotComplex<vsimd> = 0> 
-    inline vInteger Comparison(sfunctor sop,const typename vsimd::scalar_type & lhs, const vsimd & rhs)
+    accelerator_inline vInteger Comparison(sfunctor sop,const typename vsimd::scalar_type & lhs, const vsimd & rhs)
     {
       typedef typename vsimd::scalar_type scalar;
-      std::vector<scalar> vrhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
-      std::vector<Integer> vpred(vsimd::Nsimd());
+      ExtractBuffer<scalar> vrhs(vsimd::Nsimd());   // Use functors to reduce this to single implementation
+      ExtractBuffer<Integer> vpred(vsimd::Nsimd());
       vInteger ret;
       extract<vsimd,scalar>(rhs,vrhs);
       for(int s=0;s<vsimd::Nsimd();s++){
@@ -181,30 +181,30 @@ namespace Grid {
 
 #define DECLARE_RELATIONAL_EQ(op,functor) \
   template<class vsimd,IfSimd<vsimd> = 0>\
-    inline vInteger operator op (const vsimd & lhs, const vsimd & rhs)\
+    accelerator_inline vInteger operator op (const vsimd & lhs, const vsimd & rhs)\
     {\
       typedef typename vsimd::scalar_type scalar;\
       return Comparison(functor<scalar,scalar>(),lhs,rhs);\
     }\
   template<class vsimd,IfSimd<vsimd> = 0>\
-    inline vInteger operator op (const vsimd & lhs, const typename vsimd::scalar_type & rhs) \
+    accelerator_inline vInteger operator op (const vsimd & lhs, const typename vsimd::scalar_type & rhs) \
     {\
       typedef typename vsimd::scalar_type scalar;\
       return Comparison(functor<scalar,scalar>(),lhs,rhs);\
     }\
   template<class vsimd,IfSimd<vsimd> = 0>\
-    inline vInteger operator op (const typename vsimd::scalar_type & lhs, const vsimd & rhs) \
+    accelerator_inline vInteger operator op (const typename vsimd::scalar_type & lhs, const vsimd & rhs) \
     {\
       typedef typename vsimd::scalar_type scalar;\
       return Comparison(functor<scalar,scalar>(),lhs,rhs);\
     }\
   template<class vsimd>\
-    inline vInteger operator op(const iScalar<vsimd> &lhs,const typename vsimd::scalar_type &rhs) \
+    accelerator_inline vInteger operator op(const iScalar<vsimd> &lhs,const typename vsimd::scalar_type &rhs) \
     {									\
       return lhs._internal op rhs;					\
     }									\
   template<class vsimd>\
-    inline vInteger operator op(const typename vsimd::scalar_type &lhs,const iScalar<vsimd> &rhs) \
+    accelerator_inline vInteger operator op(const typename vsimd::scalar_type &lhs,const iScalar<vsimd> &rhs) \
     {									\
       return lhs op rhs._internal;					\
     }									\
@@ -212,7 +212,7 @@ namespace Grid {
 #define DECLARE_RELATIONAL(op,functor) \
   DECLARE_RELATIONAL_EQ(op,functor)    \
   template<class vsimd>\
-    inline vInteger operator op(const iScalar<vsimd> &lhs,const iScalar<vsimd> &rhs)\
+    accelerator_inline vInteger operator op(const iScalar<vsimd> &lhs,const iScalar<vsimd> &rhs)\
     {									\
       return lhs._internal op rhs._internal;				\
     }									
@@ -226,7 +226,7 @@ DECLARE_RELATIONAL(!=,sne);
 
 #undef DECLARE_RELATIONAL
 
-}
+NAMESPACE_END(Grid);
 
 
-#endif
+

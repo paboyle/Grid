@@ -37,14 +37,18 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 // Abstract base interface
 ////////////////////////////////////////////
 #include <Grid/qcd/action/ActionCore.h>
+NAMESPACE_CHECK(ActionCore);
 ////////////////////////////////////////////////////////////////////////
 // Fermion actions; prevent coupling fermion.cc files to other headers
 ////////////////////////////////////////////////////////////////////////
 #include <Grid/qcd/action/fermion/FermionCore.h>
+NAMESPACE_CHECK(FermionCore);
 #include <Grid/qcd/action/fermion/Fermion.h>
+NAMESPACE_CHECK(Fermion);
 ////////////////////////////////////////
 // Pseudo fermion combinations for HMC
 ////////////////////////////////////////
 #include <Grid/qcd/action/pseudofermion/PseudoFermion.h>
+NAMESPACE_CHECK(PseudoFermion);
 
 #endif

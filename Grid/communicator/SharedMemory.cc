@@ -28,10 +28,11 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 #include <Grid/GridCore.h>
 
-namespace Grid { 
+NAMESPACE_BEGIN(Grid); 
 
 // static data
 
+int                 GlobalSharedMemory::HPEhypercube = 1;
 uint64_t            GlobalSharedMemory::MAX_MPI_SHM_BYTES   = 1024LL*1024LL*1024LL; 
 int                 GlobalSharedMemory::Hugepages = 0;
 int                 GlobalSharedMemory::_ShmSetup;
@@ -76,6 +77,7 @@ void *SharedMemory::ShmBufferMalloc(size_t bytes){
     std::cout<< " Current value is " << (heap_size/(1024*1024)) <<std::endl;
     assert(heap_bytes<heap_size);
   }
+  //std::cerr << "ShmBufferMalloc "<<std::hex<< ptr<<" - "<<((uint64_t)ptr+bytes)<<std::dec<<std::endl;
   return ptr;
 }
 void SharedMemory::ShmBufferFreeAll(void) { 
@@ -84,9 +86,9 @@ void SharedMemory::ShmBufferFreeAll(void) {
 }
 void *SharedMemory::ShmBufferSelf(void)
 {
+  //std::cerr << "ShmBufferSelf "<<ShmRank<<" "<<std::hex<< ShmCommBufs[ShmRank] <<std::dec<<std::endl;
   return ShmCommBufs[ShmRank];
 }
 
+NAMESPACE_END(Grid); 
 
-
-}

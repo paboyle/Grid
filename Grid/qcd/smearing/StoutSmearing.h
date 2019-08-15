@@ -2,19 +2,17 @@
   @file stoutSmear.hpp
   @brief Declares Stout smearing class
 */
-#ifndef STOUT_SMEAR_
-#define STOUT_SMEAR_
+#pragma once
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 /*!  @brief Stout smearing of link variable. */
 template <class Gimpl>
 class Smear_Stout : public Smear<Gimpl> {
- private:
+private:
   const Smear<Gimpl>* SmearBase;
 
- public:
+public:
   INHERIT_GIMPL_TYPES(Gimpl)
 
   Smear_Stout(Smear<Gimpl>* base) : SmearBase(base) {
@@ -29,8 +27,8 @@ class Smear_Stout : public Smear<Gimpl> {
   ~Smear_Stout() {}  // delete SmearBase...
 
   void smear(GaugeField& u_smr, const GaugeField& U) const {
-    GaugeField C(U._grid);
-    GaugeLinkField tmp(U._grid), iq_mu(U._grid), Umu(U._grid);
+    GaugeField C(U.Grid());
+    GaugeLinkField tmp(U.Grid()), iq_mu(U.Grid()), Umu(U.Grid());
 
     std::cout << GridLogDebug << "Stout smearing started\n";
 
@@ -41,8 +39,8 @@ class Smear_Stout : public Smear<Gimpl> {
       tmp = peekLorentz(C, mu);
       Umu = peekLorentz(U, mu);
       iq_mu = Ta(
-          tmp *
-          adj(Umu));  // iq_mu = Ta(Omega_mu) to match the signs with the paper
+		 tmp *
+		 adj(Umu));  // iq_mu = Ta(Omega_mu) to match the signs with the paper
       exponentiate_iQ(tmp, iq_mu);
       pokeLorentz(u_smr, tmp * Umu, mu);  // u_smr = exp(iQ_mu)*U_mu
     }
@@ -71,7 +69,7 @@ class Smear_Stout : public Smear<Gimpl> {
     // the i sign is coming from outside
     // input matrix is anti-hermitian NOT hermitian
 
-    GridBase* grid = iQ._grid;
+    GridBase* grid = iQ.Grid();
     GaugeLinkField unity(grid);
     unity = 1.0;
 
@@ -93,7 +91,7 @@ class Smear_Stout : public Smear<Gimpl> {
     Complex one_over_three = 1.0 / 3.0;
     Complex one_over_two = 1.0 / 2.0;
 
-    GridBase* grid = u._grid;
+    GridBase* grid = u.Grid();
     LatticeComplex c0(grid), c1(grid), tmp(grid), c0max(grid), theta(grid);
 
     // sign in c0 from the conventions on the Ta
@@ -105,14 +103,14 @@ class Smear_Stout : public Smear<Gimpl> {
     c0max = 2.0 * pow(tmp, 1.5);
 
     theta = acos(c0 / c0max) *
-            one_over_three;  // divide by three here, now leave as it is
+      one_over_three;  // divide by three here, now leave as it is
     u = sqrt(tmp) * cos(theta);
     w = sqrt(c1) * sin(theta);
   }
 
   void set_fj(LatticeComplex& f0, LatticeComplex& f1, LatticeComplex& f2,
               const LatticeComplex& u, const LatticeComplex& w) const {
-    GridBase* grid = u._grid;
+    GridBase* grid = u.Grid();
     LatticeComplex xi0(grid), u2(grid), w2(grid), cosw(grid);
     LatticeComplex fden(grid);
     LatticeComplex h0(grid), h1(grid), h2(grid);
@@ -130,7 +128,7 @@ class Smear_Stout : public Smear<Gimpl> {
     e2iu = cos(2.0 * u) + timesI(sin(2.0 * u));
 
     h0 = e2iu * (u2 - w2) +
-         emiu * ((8.0 * u2 * cosw) + (2.0 * u * (3.0 * u2 + w2) * ixi0));
+      emiu * ((8.0 * u2 * cosw) + (2.0 * u * (3.0 * u2 + w2) * ixi0));
     h1 = e2iu * (2.0 * u) - emiu * ((2.0 * u * cosw) - (3.0 * u2 - w2) * ixi0);
     h2 = e2iu - emiu * (cosw + (3.0 * u) * ixi0);
 
@@ -154,7 +152,6 @@ class Smear_Stout : public Smear<Gimpl> {
     return cos(w) / (w * w) - sin(w) / (w * w * w);
   }
 };
-}
-}
 
-#endif
+NAMESPACE_END(Grid);
+

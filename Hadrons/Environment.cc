@@ -31,7 +31,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/ModuleFactory.hpp>
 
 using namespace Grid;
-using namespace QCD;
+ 
 using namespace Hadrons;
 
 #define ERROR_NO_ADDRESS(address)\
@@ -43,7 +43,7 @@ HADRONS_ERROR_REF(ObjectDefinition, "no object with address " + std::to_string(a
 // constructor /////////////////////////////////////////////////////////////////
 Environment::Environment(void)
 {
-    dim_ = GridDefaultLatt();
+    dim_ = GridDefaultLatt().toVector();
     nd_  = dim_.size();
     vol_ = 1.;
     for (auto d: dim_)

@@ -1,9 +1,8 @@
 #pragma once
 //#include <Grid/Hadrons/Global.hpp>
-#include <Grid/Eigen/unsupported/CXX11/Tensor>
+#include <Grid/Grid_Eigen_Tensor.h>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 #undef DELTA_F_EQ_2
 
@@ -122,7 +121,7 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
   int Lblock = mat.dimension(3); 
   int Rblock = mat.dimension(4);
 
-  GridBase *grid = lhs_wi[0]._grid;
+  GridBase *grid = lhs_wi[0].Grid();
   
   const int    Nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
@@ -142,14 +141,14 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
   int MFlvol = ld*Lblock*Rblock*Nmom;
 
   Vector<SpinMatrix_v > lvSum(MFrvol);
-  parallel_for (int r = 0; r < MFrvol; r++){
-    lvSum[r] = zero;
-  }
+  thread_for( r, MFrvol,{
+    lvSum[r] = Zero();
+  });
 
   Vector<SpinMatrix_s > lsSum(MFlvol);             
-  parallel_for (int r = 0; r < MFlvol; r++){
+  thread_for(r,MFlvol,{
     lsSum[r]=scalar_type(0.0);
-  }
+  });
 
   int e1=    grid->_slice_nblock[orthogdim];
   int e2=    grid->_slice_block [orthogdim];
@@ -157,7 +156,7 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
 
   // potentially wasting cores here if local time extent too small
   if (t_kernel) *t_kernel = -usecond();
-  parallel_for(int r=0;r<rd;r++){
+  thread_for(r,rd,{
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
 
@@ -168,12 +167,14 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
 
 	for(int i=0;i<Lblock;i++){
 
-	  auto left = conjugate(lhs_wi[i]._odata[ss]);
+	  auto lhs_v = lhs_wi[i].View();
+	  auto left = conjugate(lhs_v[ss]);
 
 	  for(int j=0;j<Rblock;j++){
 
 	    SpinMatrix_v vv;
-	    auto right = rhs_vj[j]._odata[ss];
+	    auto rhs_v = rhs_vj[j].View();
+	    auto right = rhs_v[ss];
 	    for(int s1=0;s1<Ns;s1++){
 	    for(int s2=0;s2<Ns;s2++){
 	      vv()(s1,s2)() = left()(s2)(0) * right()(s1)(0)
@@ -185,7 +186,8 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
 	    int base = Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*r;
 	    for ( int m=0;m<Nmom;m++){
 	      int idx = m+base;
-	      auto phase = mom[m]._odata[ss];
+	      auto mom_v = mom[m].View();
+	      auto phase = mom_v[ss];
 	      mac(&lvSum[idx],&vv,&phase);
 	    }
 	  
@@ -193,14 +195,13 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
 	}
       }
     }
-  }
-
+  });
 
   // Sum across simd lanes in the plane, breaking out orthog dir.
-  parallel_for(int rt=0;rt<rd;rt++){
+  thread_for(rt,rd,{
 
-    std::vector<int> icoor(Nd);
-    std::vector<SpinMatrix_s> extracted(Nsimd);               
+    Coordinate icoor(Nd);
+    ExtractBuffer<SpinMatrix_s> extracted(Nsimd);               
 
     for(int i=0;i<Lblock;i++){
     for(int j=0;j<Rblock;j++){
@@ -222,7 +223,7 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
 
       }
     }}}
-  }
+  });
   if (t_kernel) *t_kernel += usecond();
   assert(mat.dimension(0) == Nmom);
   assert(mat.dimension(1) == Ngamma);
@@ -231,8 +232,7 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
   // ld loop and local only??
   int pd = grid->_processors[orthogdim];
   int pc = grid->_processor_coor[orthogdim];
-  parallel_for_nest2(int lt=0;lt<ld;lt++)
-  {
+  thread_for_collapse(2,lt,ld,{
     for(int pt=0;pt<pd;pt++){
       int t = lt + pt*ld;
       if (pt == pc){
@@ -260,7 +260,7 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
 	}
       }
     }
-  }
+  });
 
   ////////////////////////////////////////////////////////////////////
   // This global sum is taking as much as 50% of time on 16 nodes
@@ -311,7 +311,7 @@ void A2Autils<FImpl>::PionFieldXX(Eigen::Tensor<ComplexD,3> &mat,
   int Lblock = mat.dimension(1); 
   int Rblock = mat.dimension(2);
 
-  GridBase *grid = wi[0]._grid;
+  GridBase *grid = wi[0].Grid();
   
   const int    nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
@@ -329,20 +329,20 @@ void A2Autils<FImpl>::PionFieldXX(Eigen::Tensor<ComplexD,3> &mat,
   int MFlvol = ld*Lblock*Rblock;
 
   Vector<vector_type > lvSum(MFrvol);
-  parallel_for (int r = 0; r < MFrvol; r++){
-    lvSum[r] = zero;
-  }
+  thread_for(r,MFrvol,{
+    lvSum[r] = Zero();
+  });
 
   Vector<scalar_type > lsSum(MFlvol);             
-  parallel_for (int r = 0; r < MFlvol; r++){
+  thread_for(r,MFlvol,{
     lsSum[r]=scalar_type(0.0);
-  }
+  });
 
   int e1=    grid->_slice_nblock[orthogdim];
   int e2=    grid->_slice_block [orthogdim];
   int stride=grid->_slice_stride[orthogdim];
 
-  parallel_for(int r=0;r<rd;r++){
+  thread_for(r,rd,{
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
 
@@ -353,7 +353,8 @@ void A2Autils<FImpl>::PionFieldXX(Eigen::Tensor<ComplexD,3> &mat,
 
 	for(int i=0;i<Lblock;i++){
 
-	  auto w = conjugate(wi[i]._odata[ss]);
+	  auto wi_v = wi[i].View();
+	  auto w = conjugate(wi_v[ss]);
 	  if (g5) {
 	    w()(2)(0) = - w()(2)(0);
 	    w()(2)(1) = - w()(2)(1);
@@ -363,8 +364,9 @@ void A2Autils<FImpl>::PionFieldXX(Eigen::Tensor<ComplexD,3> &mat,
 	    w()(3)(2) = - w()(3)(2);
 	  }
 	  for(int j=0;j<Rblock;j++){
-
-	    auto v = vj[j]._odata[ss];
+	    
+	    auto vj_v=vj[j].View();
+	    auto v  = vj_v[ss];
 	    auto vv = v()(0)(0);
 
 	    vv =      w()(0)(0) * v()(0)(0)// Gamma5 Dirac basis explicitly written out
@@ -386,14 +388,14 @@ void A2Autils<FImpl>::PionFieldXX(Eigen::Tensor<ComplexD,3> &mat,
 	}
       }
     }
-  }
+  });
 
   // Sum across simd lanes in the plane, breaking out orthog dir.
-  parallel_for(int rt=0;rt<rd;rt++){
+  thread_for(rt,rd,{
 
-    std::vector<int> icoor(nd);
+      Coordinate icoor(nd);
     iScalar<vector_type> temp; 
-    std::vector<iScalar<scalar_type> > extracted(Nsimd);               
+    ExtractBuffer<iScalar<scalar_type> > extracted(Nsimd);               
 
     for(int i=0;i<Lblock;i++){
     for(int j=0;j<Rblock;j++){
@@ -415,14 +417,13 @@ void A2Autils<FImpl>::PionFieldXX(Eigen::Tensor<ComplexD,3> &mat,
 
       }
     }}
-  }
+  });
 
   assert(mat.dimension(0) == Nt);
   // ld loop and local only??
   int pd = grid->_processors[orthogdim];
   int pc = grid->_processor_coor[orthogdim];
-  parallel_for_nest2(int lt=0;lt<ld;lt++)
-  {
+  thread_for_collapse(2,lt,ld,{
     for(int pt=0;pt<pd;pt++){
       int t = lt + pt*ld;
       if (pt == pc){
@@ -441,7 +442,7 @@ void A2Autils<FImpl>::PionFieldXX(Eigen::Tensor<ComplexD,3> &mat,
 	}
       }
     }
-  }
+  });
 
   grid->GlobalSumVector(&mat(0,0,0),Nt*Lblock*Rblock);
 }
@@ -456,7 +457,7 @@ void A2Autils<FImpl>::PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat,
   int Lblock = mat.dimension(2); 
   int Rblock = mat.dimension(3);
 
-  GridBase *grid = wi[0]._grid;
+  GridBase *grid = wi[0].Grid();
   
   const int    nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
@@ -475,20 +476,20 @@ void A2Autils<FImpl>::PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat,
   int MFlvol = ld*Lblock*Rblock*Nmom;
 
   Vector<vector_type > lvSum(MFrvol);
-  parallel_for (int r = 0; r < MFrvol; r++){
-    lvSum[r] = zero;
-  }
+  thread_for(r,MFrvol,{
+    lvSum[r] = Zero();
+  });
 
   Vector<scalar_type > lsSum(MFlvol);             
-  parallel_for (int r = 0; r < MFlvol; r++){
+  thread_for(r,MFlvol,{
     lsSum[r]=scalar_type(0.0);
-  }
+  });
 
   int e1=    grid->_slice_nblock[orthogdim];
   int e2=    grid->_slice_block [orthogdim];
   int stride=grid->_slice_stride[orthogdim];
 
-  parallel_for(int r=0;r<rd;r++){
+  thread_for(r,rd,{
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
 
@@ -499,11 +500,13 @@ void A2Autils<FImpl>::PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat,
 
 	for(int i=0;i<Lblock;i++){
 
-	  auto w = conjugate(wi[i]._odata[ss]);
+	  auto wi_v = wi[i].View();
+	  auto w = conjugate(wi_v[ss]);
 
 	  for(int j=0;j<Rblock;j++){
-
-	    auto v = vj[j]._odata[ss];
+	    
+	    auto vj_v = vj[j].View();
+	    auto v = vj_v[ss];
 
 	    auto vv = w()(0)(0) * v()(0)(0)// Gamma5 Dirac basis explicitly written out
 	      +       w()(0)(1) * v()(0)(1)
@@ -523,22 +526,23 @@ void A2Autils<FImpl>::PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat,
 	    int base = Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*r;
 	    for ( int m=0;m<Nmom;m++){
 	      int idx = m+base;
-	      auto phase = mom[m]._odata[ss];
+	      auto mom_v = mom[m].View();
+	      auto phase = mom_v[ss];
 	      mac(&lvSum[idx],&vv,&phase()()());
 	    }
 	  }
 	}
       }
     }
-  }
+  });
 
 
   // Sum across simd lanes in the plane, breaking out orthog dir.
-  parallel_for(int rt=0;rt<rd;rt++){
+  thread_for(rt,rd,{
 
-    std::vector<int> icoor(nd);
+    Coordinate icoor(nd);
     iScalar<vector_type> temp; 
-    std::vector<iScalar<scalar_type> > extracted(Nsimd);               
+    ExtractBuffer<iScalar<scalar_type> > extracted(Nsimd);               
 
     for(int i=0;i<Lblock;i++){
     for(int j=0;j<Rblock;j++){
@@ -561,15 +565,14 @@ void A2Autils<FImpl>::PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat,
 
       }
     }}}
-  }
+  });
 
   assert(mat.dimension(0) == Nmom);
   assert(mat.dimension(1) == Nt);
-
+ 
   int pd = grid->_processors[orthogdim];
   int pc = grid->_processor_coor[orthogdim];
-  parallel_for_nest2(int lt=0;lt<ld;lt++)
-  {
+  thread_for_collapse(2,lt,ld,{
     for(int pt=0;pt<pd;pt++){
       int t = lt + pt*ld;
       if (pt == pc){
@@ -592,7 +595,7 @@ void A2Autils<FImpl>::PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat,
 	}
       }
     }
-  }
+  });
 
   grid->GlobalSumVector(&mat(0,0,0,0),Nmom*Nt*Lblock*Rblock);
 }
@@ -660,7 +663,7 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
     int Lblock = mat.dimension(3); 
     int Rblock = mat.dimension(4);
 
-    GridBase *grid = lhs_wi[0]._grid;
+    GridBase *grid = lhs_wi[0].Grid();
     
     const int    Nd = grid->_ndimension;
     const int Nsimd = grid->Nsimd();
@@ -680,16 +683,16 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
     int MFlvol = ld*Lblock*Rblock*Nem;
 
     Vector<vector_type> lvSum(MFrvol);
-    parallel_for (int r = 0; r < MFrvol; r++)
+    thread_for(r,MFrvol,
     {
-        lvSum[r] = zero;
-    }
+      lvSum[r] = Zero();
+    });
 
     Vector<scalar_type> lsSum(MFlvol);             
-    parallel_for (int r = 0; r < MFlvol; r++)
+    thread_for(r,MFlvol,
     {
         lsSum[r] = scalar_type(0.0);
-    }
+    });
 
     int e1=    grid->_slice_nblock[orthogdim];
     int e2=    grid->_slice_block [orthogdim];
@@ -698,7 +701,7 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
     // Nested parallelism would be ok
     // Wasting cores here. Test case r
     if (t_kernel) *t_kernel = -usecond();
-    parallel_for(int r=0;r<rd;r++)
+    thread_for(r,rd,
     {
         int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
 
@@ -709,17 +712,19 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
 
             for(int i=0;i<Lblock;i++)
             {
-                auto left = conjugate(lhs_wi[i]._odata[ss]);
+  	        auto wi_v = lhs_wi[i].View();
+                auto left = conjugate(wi_v[ss]);
 
                 for(int j=0;j<Rblock;j++)
                 {
                     SpinMatrix_v vv;
-                    auto right = rhs_vj[j]._odata[ss];
+		    auto vj_v  = rhs_vj[j].View();
+                    auto right = vj_v[ss];
 
                     for(int s1=0;s1<Ns;s1++)
                     for(int s2=0;s2<Ns;s2++)
                     {
-                        vv()(s1,s2)() = left()(s2)(0) * right()(s1)(0)
+		          vv()(s1,s2)() = left()(s2)(0) * right()(s1)(0)
                                         + left()(s2)(1) * right()(s1)(1)
                                         + left()(s2)(2) * right()(s1)(2);
                     }
@@ -729,9 +734,11 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
 
                     for ( int m=0;m<Nem;m++)
                     {
+  		        auto emB0_v = emB0[m].View();
+  		        auto emB1_v = emB1[m].View();
                         int idx  = m+base;
-                        auto b0  = emB0[m]._odata[ss];
-                        auto b1  = emB1[m]._odata[ss];
+                        auto b0  = emB0_v[ss];
+                        auto b1  = emB1_v[ss];
                         auto cb0 = conjugate(b0);
                         auto cb1 = conjugate(b1);
 
@@ -743,13 +750,13 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
                 }
             }
         }
-    }
+    });
 
     // Sum across simd lanes in the plane, breaking out orthog dir.
-    parallel_for(int rt=0;rt<rd;rt++)
+    thread_for(rt,rd,
     {
-        std::vector<int> icoor(Nd);
-        std::vector<scalar_type> extracted(Nsimd);               
+        Coordinate icoor(Nd);
+        ExtractBuffer<scalar_type> extracted(Nsimd);               
 
         for(int i=0;i<Lblock;i++)
         for(int j=0;j<Rblock;j++)
@@ -769,13 +776,13 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
                 lsSum[ij_ldx]=lsSum[ij_ldx]+extracted[idx];
             }
         }
-    }
+    });
     if (t_kernel) *t_kernel += usecond();
 
     // ld loop and local only??
     int pd = grid->_processors[orthogdim];
     int pc = grid->_processor_coor[orthogdim];
-    parallel_for_nest2(int lt=0;lt<ld;lt++)
+    thread_for_collapse(2,lt,ld,
     {
         for(int pt=0;pt<pd;pt++)
         {
@@ -803,7 +810,7 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
                 }
             }
         }
-    }
+    });
     if (t_gsum) *t_gsum = -usecond();
     grid->GlobalSumVector(&mat(0,0,0,0,0),Nem*Nt*Lblock*Rblock);
     if (t_gsum) *t_gsum += usecond();
@@ -967,9 +974,9 @@ void A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
 				   const FermionField *vs,
 				   const FermionField *vd)
 {
-  GridBase *grid = vs[0]._grid;
+  GridBase *grid = vs[0].Grid();
 
-  int nd    = grid->_ndimension;
+  //  int nd    = grid->_ndimension;
   int Nsimd = grid->Nsimd();
   int N_t   = WW_sd.dimension(0);
   int N_s = WW_sd.dimension(1); 
@@ -978,42 +985,44 @@ void A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
   int d_unroll = 32;// Empirical optimisation
 
   for(int t=0;t<N_t;t++){
-    WWVV[t] = zero;
+    WWVV[t] = Zero();
   }
 
-  parallel_for(int ss=0;ss<grid->oSites();ss++){
+  thread_for(ss,grid->oSites(),{
     for(int d_o=0;d_o<N_d;d_o+=d_unroll){
       for(int t=0;t<N_t;t++){
       for(int s=0;s<N_s;s++){
-	auto tmp1 = vs[s]._odata[ss];
-  vobj tmp2 = zero;
-  vobj tmp3 = zero;
-
+	auto vs_v = vs[s].View();
+	auto tmp1 = vs_v[ss];
+	vobj tmp2 = Zero();
+	vobj tmp3 = Zero();
 	for(int d=d_o;d<MIN(d_o+d_unroll,N_d);d++){
+	  auto vd_v = vd[d].View();
 	  Scalar_v coeff = WW_sd(t,s,d);
-	  tmp3 = conjugate(vd[d]._odata[ss]);
+	  tmp3 = conjugate(vd_v[ss]);
 	  mac(&tmp2, &coeff, &tmp3);
-  }
+	}
 
 	//////////////////////////
 	// Fast outer product of tmp1 with a sum of terms suppressed by d_unroll
 	//////////////////////////
+	auto WWVV_v = WWVV[t].View();
 	for(int s1=0;s1<Ns;s1++){
 	for(int s2=0;s2<Ns;s2++){
-	  WWVV[t]._odata[ss]()(s1,s2)(0,0) += tmp1()(s1)(0)*tmp2()(s2)(0);
-	  WWVV[t]._odata[ss]()(s1,s2)(0,1) += tmp1()(s1)(0)*tmp2()(s2)(1);
-	  WWVV[t]._odata[ss]()(s1,s2)(0,2) += tmp1()(s1)(0)*tmp2()(s2)(2);
-	  WWVV[t]._odata[ss]()(s1,s2)(1,0) += tmp1()(s1)(1)*tmp2()(s2)(0);
-	  WWVV[t]._odata[ss]()(s1,s2)(1,1) += tmp1()(s1)(1)*tmp2()(s2)(1);
-	  WWVV[t]._odata[ss]()(s1,s2)(1,2) += tmp1()(s1)(1)*tmp2()(s2)(2);
-	  WWVV[t]._odata[ss]()(s1,s2)(2,0) += tmp1()(s1)(2)*tmp2()(s2)(0);
-	  WWVV[t]._odata[ss]()(s1,s2)(2,1) += tmp1()(s1)(2)*tmp2()(s2)(1);
-	  WWVV[t]._odata[ss]()(s1,s2)(2,2) += tmp1()(s1)(2)*tmp2()(s2)(2);
+	  WWVV_v[ss]()(s1,s2)(0,0) += tmp1()(s1)(0)*tmp2()(s2)(0);
+	  WWVV_v[ss]()(s1,s2)(0,1) += tmp1()(s1)(0)*tmp2()(s2)(1);
+	  WWVV_v[ss]()(s1,s2)(0,2) += tmp1()(s1)(0)*tmp2()(s2)(2);
+	  WWVV_v[ss]()(s1,s2)(1,0) += tmp1()(s1)(1)*tmp2()(s2)(0);
+	  WWVV_v[ss]()(s1,s2)(1,1) += tmp1()(s1)(1)*tmp2()(s2)(1);
+	  WWVV_v[ss]()(s1,s2)(1,2) += tmp1()(s1)(1)*tmp2()(s2)(2);
+	  WWVV_v[ss]()(s1,s2)(2,0) += tmp1()(s1)(2)*tmp2()(s2)(0);
+	  WWVV_v[ss]()(s1,s2)(2,1) += tmp1()(s1)(2)*tmp2()(s2)(1);
+	  WWVV_v[ss]()(s1,s2)(2,2) += tmp1()(s1)(2)*tmp2()(s2)(2);
 	}}
 
       }}
     }
-  }
+  });
 }
 
 
@@ -1028,17 +1037,21 @@ void A2Autils<FImpl>::ContractFourQuarkColourDiagonal(const PropagatorField &WWV
   assert(gamma0.size()==gamma1.size());
   int Ng = gamma0.size();
 
-  GridBase *grid = WWVV0._grid;
+  GridBase *grid = WWVV0.Grid();
 
-  parallel_for(int ss=0;ss<grid->oSites();ss++){
+  auto WWVV0_v = WWVV0.View();
+  auto WWVV1_v = WWVV1.View();
+  auto O_trtr_v= O_trtr.View();
+  auto O_fig8_v= O_fig8.View();
+  thread_for(ss,grid->oSites(),{
 
     typedef typename ComplexField::vector_object vobj;
 
     vobj v_trtr;
     vobj v_fig8;
 
-    auto VV0 = WWVV0._odata[ss];
-    auto VV1 = WWVV1._odata[ss];
+    auto VV0 = WWVV0_v[ss];
+    auto VV1 = WWVV1_v[ss];
     
     for(int g=0;g<Ng;g++){
 
@@ -1046,15 +1059,15 @@ void A2Autils<FImpl>::ContractFourQuarkColourDiagonal(const PropagatorField &WWV
       v_fig8 = trace(VV0 * gamma0[g] * VV1 * gamma1[g]);
 
       if ( g==0 ) {
-	O_trtr._odata[ss] = v_trtr; 
-	O_fig8._odata[ss] = v_fig8;
+	O_trtr_v[ss] = v_trtr; 
+	O_fig8_v[ss] = v_fig8;
       } else { 
-	O_trtr._odata[ss]+= v_trtr; 
-	O_fig8._odata[ss]+= v_fig8;
+	O_trtr_v[ss]+= v_trtr; 
+	O_fig8_v[ss]+= v_fig8;
       }
       
     }
-  }
+  });
 }
 
 template<class FImpl>
@@ -1068,22 +1081,27 @@ void A2Autils<FImpl>::ContractFourQuarkColourMix(const PropagatorField &WWVV0,
   assert(gamma0.size()==gamma1.size());
   int Ng = gamma0.size();
 
-  GridBase *grid = WWVV0._grid;
+  GridBase *grid = WWVV0.Grid();
 
-  parallel_for(int ss=0;ss<grid->oSites();ss++){
+  auto WWVV0_v = WWVV0.View();
+  auto WWVV1_v = WWVV1.View();
+  auto O_trtr_v= O_trtr.View();
+  auto O_fig8_v= O_fig8.View();
+
+  thread_for(ss,grid->oSites(),{
 
     typedef typename ComplexField::vector_object vobj;
 
-    auto VV0 = WWVV0._odata[ss];
-    auto VV1 = WWVV1._odata[ss];
+    auto VV0 = WWVV0_v[ss];
+    auto VV1 = WWVV1_v[ss];
     
     for(int g=0;g<Ng;g++){
 
       auto VV0G = VV0 * gamma0[g];  // Spin multiply
       auto VV1G = VV1 * gamma1[g];
 
-      vobj v_trtr=zero;
-      vobj v_fig8=zero;
+      vobj v_trtr=Zero();
+      vobj v_fig8=Zero();
 
       /////////////////////////////////////////
       // Colour mixed
@@ -1134,15 +1152,15 @@ Bag [8,4]  fig8 (-227.58,3.58808e-17) trtr (-32.5776,1.83286e-17)     //  - 1602
       }}}}
 
       if ( g==0 ) {
-	O_trtr._odata[ss] = v_trtr; 
-	O_fig8._odata[ss] = v_fig8;
+	O_trtr_v[ss] = v_trtr; 
+	O_fig8_v[ss] = v_fig8;
       } else { 
-	O_trtr._odata[ss]+= v_trtr; 
-	O_fig8._odata[ss]+= v_fig8;
+	O_trtr_v[ss]+= v_trtr; 
+	O_fig8_v[ss]+= v_fig8;
       }
       
     }
-  }
+  });
 }
 
 #ifdef DELTA_F_EQ_2
@@ -1164,7 +1182,7 @@ void A2Autils<FImpl>::DeltaFeq2(int dt_min,int dt_max,
 				const FermionField *vd,
 				int orthogdim)
 {
-  GridBase *grid = vs[0]._grid;
+  GridBase *grid = vs[0].Grid();
 
   LOG(Message) << "Computing A2A DeltaF=2 graph" << std::endl;
 
@@ -1216,32 +1234,32 @@ void A2Autils<FImpl>::DeltaFeq2(int dt_min,int dt_max,
     denom_P(t) =ComplexD(0.0);
   }
 
-  ComplexField D0(grid);   D0 = zero; // <P|A0> correlator from each wall
-  ComplexField D1(grid);   D1 = zero;
+  ComplexField D0(grid);   D0 = Zero(); // <P|A0> correlator from each wall
+  ComplexField D1(grid);   D1 = Zero();
 
-  ComplexField O1_trtr(grid);  O1_trtr = zero;
-  ComplexField O2_trtr(grid);  O2_trtr = zero;
-  ComplexField O3_trtr(grid);  O3_trtr = zero;
-  ComplexField O4_trtr(grid);  O4_trtr = zero;
-  ComplexField O5_trtr(grid);  O5_trtr = zero;
+  ComplexField O1_trtr(grid);  O1_trtr = Zero();
+  ComplexField O2_trtr(grid);  O2_trtr = Zero();
+  ComplexField O3_trtr(grid);  O3_trtr = Zero();
+  ComplexField O4_trtr(grid);  O4_trtr = Zero();
+  ComplexField O5_trtr(grid);  O5_trtr = Zero();
 
-  ComplexField O1_fig8(grid);  O1_fig8 = zero;
-  ComplexField O2_fig8(grid);  O2_fig8 = zero;
-  ComplexField O3_fig8(grid);  O3_fig8 = zero;
-  ComplexField O4_fig8(grid);  O4_fig8 = zero;
-  ComplexField O5_fig8(grid);  O5_fig8 = zero;
+  ComplexField O1_fig8(grid);  O1_fig8 = Zero();
+  ComplexField O2_fig8(grid);  O2_fig8 = Zero();
+  ComplexField O3_fig8(grid);  O3_fig8 = Zero();
+  ComplexField O4_fig8(grid);  O4_fig8 = Zero();
+  ComplexField O5_fig8(grid);  O5_fig8 = Zero();
 
-  ComplexField VV_trtr(grid);  VV_trtr = zero;
-  ComplexField AA_trtr(grid);  AA_trtr = zero;
-  ComplexField SS_trtr(grid);  SS_trtr = zero;
-  ComplexField PP_trtr(grid);  PP_trtr = zero;
-  ComplexField TT_trtr(grid);  TT_trtr = zero;
+  ComplexField VV_trtr(grid);  VV_trtr = Zero();
+  ComplexField AA_trtr(grid);  AA_trtr = Zero();
+  ComplexField SS_trtr(grid);  SS_trtr = Zero();
+  ComplexField PP_trtr(grid);  PP_trtr = Zero();
+  ComplexField TT_trtr(grid);  TT_trtr = Zero();
 
-  ComplexField VV_fig8(grid);  VV_fig8 = zero;
-  ComplexField AA_fig8(grid);  AA_fig8 = zero;
-  ComplexField SS_fig8(grid);  SS_fig8 = zero;
-  ComplexField PP_fig8(grid);  PP_fig8 = zero;
-  ComplexField TT_fig8(grid);  TT_fig8 = zero;
+  ComplexField VV_fig8(grid);  VV_fig8 = Zero();
+  ComplexField AA_fig8(grid);  AA_fig8 = Zero();
+  ComplexField SS_fig8(grid);  SS_fig8 = Zero();
+  ComplexField PP_fig8(grid);  PP_fig8 = Zero();
+  ComplexField TT_fig8(grid);  TT_fig8 = Zero();
 
   //////////////////////////////////////////////////
   // Used to store appropriate correlation funcs
@@ -1376,5 +1394,5 @@ void A2Autils<FImpl>::DeltaFeq2(int dt_min,int dt_max,
 }
 #endif 
 
-}}
+NAMESPACE_END(Grid);
 

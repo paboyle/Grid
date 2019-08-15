@@ -31,7 +31,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/TimerArray.hpp>
 
 using namespace Grid;
-using namespace QCD;
 using namespace Hadrons;
 
 #define TIME_MOD(t) (((t) + par.global.nt) % par.global.nt)
@@ -252,18 +251,18 @@ int main(int argc, char* argv[])
 
     // parse parameter file
     ContractorPar par;
-    unsigned int  nMat, nCont;
+    //    unsigned int  nMat,nCont;
     XmlReader     reader(parFilename);
 
     read(reader, "global",    par.global);
     read(reader, "a2aMatrix", par.a2aMatrix);
     read(reader, "product",   par.product);
-    nMat  = par.a2aMatrix.size();
-    nCont = par.product.size();
+    //    nMat  = par.a2aMatrix.size();
+    //    nCont = par.product.size();
 
     // create diskvectors
     std::map<std::string, EigenDiskVector<ComplexD>> a2aMat;
-    unsigned int                                     cacheSize;
+    //    unsigned int                                     cacheSize;
 
     for (auto &p: par.a2aMatrix)
     {
@@ -282,7 +281,8 @@ int main(int argc, char* argv[])
         for (auto &p: par.a2aMatrix)
         {
             std::string filename = p.file;
-            double      t, size;
+            double      t;
+	    //	    double  size;
 
             tokenReplace(filename, "traj", traj);
             std::cout << "======== Loading '" << filename << "'" << std::endl;
@@ -306,7 +306,8 @@ int main(int argc, char* argv[])
             std::vector<A2AMatrixTr<ComplexD>>     lastTerm(par.global.nt);
             A2AMatrix<ComplexD>                    prod, buf, tmp;
             TimerArray                             tAr;
-            double                                 fusec, busec, flops, bytes, tusec;
+            double                                 fusec, busec, flops, bytes;
+	    //	    double  tusec;
             Contractor::CorrelatorResult           result;             
 
             tAr.startTimer("Total");
@@ -352,11 +353,12 @@ int main(int argc, char* argv[])
 
                 tAr.startTimer("Transpose caching");
                 lastTerm[t].resize(ref.rows(), ref.cols());
-                parallel_for (unsigned int j = 0; j < ref.cols(); ++j)
-                for (unsigned int i = 0; i < ref.rows(); ++i)
-                {
-                    lastTerm[t](i, j) = ref(i, j);
-                }
+                thread_for( j,ref.cols(),{
+                  for (unsigned int i = 0; i < ref.rows(); ++i)
+                  {
+                      lastTerm[t](i, j) = ref(i, j);
+                  }
+		});
                 tAr.stopTimer("Transpose caching");
             }
             bytes = par.global.nt*lastTerm[0].rows()*lastTerm[0].cols()*sizeof(ComplexD);

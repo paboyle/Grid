@@ -25,11 +25,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef FERMIONOPERATOR_MODULES_H
 #define FERMIONOPERATOR_MODULES_H
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 ////////////////////////////////////
 //  Fermion operators
@@ -37,19 +37,19 @@ namespace Grid {
 template < class Product>
 class FermionOperatorModuleBase : public HMCModuleBase<Product>{
 public:
-  virtual void AddGridPair(QCD::GridModule&) = 0;
+  virtual void AddGridPair(GridModule&) = 0;
 };
 
 template <template <typename> class FOType, class FermionImpl, class FOPar>
 class FermionOperatorModule
-    : public Parametrized<FOPar>,
-      public FermionOperatorModuleBase<QCD::FermionOperator<FermionImpl> > {
+  : public Parametrized<FOPar>,
+    public FermionOperatorModuleBase<FermionOperator<FermionImpl> > {
 
 protected:
   std::unique_ptr< FOType<FermionImpl> > FOPtr;
-  std::vector< QCD::GridModule* >    GridRefs;
- public:
-  typedef HMCModuleBase< QCD::FermionOperator<FermionImpl> > Base;
+  std::vector< GridModule* >    GridRefs;
+public:
+  typedef HMCModuleBase< FermionOperator<FermionImpl> > Base;
   typedef typename Base::Product Product;
 
   FermionOperatorModule(FOPar Par) : Parametrized<FOPar>(Par) {}
@@ -57,7 +57,7 @@ protected:
   template <class ReaderClass>
   FermionOperatorModule(Reader<ReaderClass>& Reader) : Parametrized<FOPar>(Reader){};
 
-  void AddGridPair(QCD::GridModule &Mod){
+  void AddGridPair(GridModule &Mod){
     if (GridRefs.size()>1){
       std::cout << GridLogError << "Adding too many Grids to the FermionOperatorModule" << std::endl;
       exit(1);
@@ -65,9 +65,9 @@ protected:
     GridRefs.push_back(&Mod);
 
     if (Ls()){
-      GridRefs.push_back(new QCD::GridModule());
-      GridRefs[1]->set_full(QCD::SpaceTimeGrid::makeFiveDimGrid(Ls(),GridRefs[0]->get_full()));
-      GridRefs[1]->set_rb(QCD::SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls(),GridRefs[0]->get_full()));
+      GridRefs.push_back(new GridModule());
+      GridRefs[1]->set_full(SpaceTimeGrid::makeFiveDimGrid(Ls(),GridRefs[0]->get_full()));
+      GridRefs[1]->set_rb(SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls(),GridRefs[0]->get_full()));
     }
   }
 
@@ -85,7 +85,7 @@ protected:
     return FOPtr.get();
   }
 
- private:
+private:
   virtual void initialize() = 0;
 };
 
@@ -94,8 +94,8 @@ protected:
 // Factory
 template <char const *str, class FermionImpl, class ReaderClass >
 class HMC_FermionOperatorModuleFactory
-    : public Factory < FermionOperatorModuleBase<QCD::FermionOperator<FermionImpl> > ,  Reader<ReaderClass> > {
- public:
+  : public Factory < FermionOperatorModuleBase<FermionOperator<FermionImpl> > ,  Reader<ReaderClass> > {
+public:
   // use SINGLETON FUNCTOR MACRO HERE
   typedef Reader<ReaderClass> TheReader;
 
@@ -106,10 +106,10 @@ class HMC_FermionOperatorModuleFactory
     return e;
   }
 
- private:
+private:
   HMC_FermionOperatorModuleFactory(void) = default;
-    std::string obj_type() const {
-        return std::string(str);
+  std::string obj_type() const {
+    return std::string(str);
   }
 };
 
@@ -117,13 +117,13 @@ class HMC_FermionOperatorModuleFactory
 
 
 extern char fermionop_string[];
-namespace QCD{
+
 
 // Modules
 class WilsonFermionParameters : Serializable {
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(WilsonFermionParameters,
-    RealD, mass);
+				  RealD, mass);
 };
 
 
@@ -143,13 +143,13 @@ class WilsonFermionModule: public FermionOperatorModule<WilsonFermion, FermionIm
 
 
 class MobiusFermionParameters : Serializable {
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(MobiusFermionParameters,
-    RealD, mass,
-    RealD, M5,
-    RealD, b,
-    RealD, c,
-    unsigned int, Ls);
+				  RealD, mass,
+				  RealD, M5,
+				  RealD, b,
+				  RealD, c,
+				  unsigned int, Ls);
 };
 
 template <class FermionImpl >
@@ -174,11 +174,11 @@ class MobiusFermionModule: public FermionOperatorModule<MobiusFermion, FermionIm
 
 
 class DomainWallFermionParameters : Serializable {
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(DomainWallFermionParameters,
-    RealD, mass,
-    RealD, M5,
-    unsigned int, Ls);
+				  RealD, mass,
+				  RealD, M5,
+				  unsigned int, Ls);
 };
 
 template <class FermionImpl >
@@ -196,22 +196,22 @@ class DomainWallFermionModule: public FermionOperatorModule<DomainWallFermion, F
     auto GridMod5d = this->GridRefs[1];
     typename FermionImpl::GaugeField U(GridMod->get_full());
     this->FOPtr.reset(new DomainWallFermion<FermionImpl>( U, *(GridMod->get_full()), *(GridMod->get_rb()),
-                                                      *(GridMod5d->get_full()), *(GridMod5d->get_rb()),
-                                                      this->Par_.mass, this->Par_.M5));
+							  *(GridMod5d->get_full()), *(GridMod5d->get_rb()),
+							  this->Par_.mass, this->Par_.M5));
   }
 };
 
 
 class DomainWallEOFAFermionParameters : Serializable {
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(DomainWallEOFAFermionParameters,
-    RealD, mq1,
-    RealD, mq2,
-    RealD, mq3,
-    RealD, shift,
-    int, pm,
-    RealD, M5,
-    unsigned int, Ls);
+				  RealD, mq1,
+				  RealD, mq2,
+				  RealD, mq3,
+				  RealD, shift,
+				  int, pm,
+				  RealD, M5,
+				  unsigned int, Ls);
 };
 
 template <class FermionImpl >
@@ -229,15 +229,12 @@ class DomainWallEOFAFermionModule: public FermionOperatorModule<DomainWallEOFAFe
     auto GridMod5d = this->GridRefs[1];
     typename FermionImpl::GaugeField U(GridMod->get_full());
     this->FOPtr.reset(new DomainWallEOFAFermion<FermionImpl>( U, *(GridMod->get_full()), *(GridMod->get_rb()),
-                                                      *(GridMod5d->get_full()), *(GridMod5d->get_rb()),
-                                                      this->Par_.mq1, this->Par_.mq2, this->Par_.mq3,
-                                                      this->Par_.shift, this->Par_.pm, this->Par_.M5));
+							      *(GridMod5d->get_full()), *(GridMod5d->get_rb()),
+							      this->Par_.mq1, this->Par_.mq2, this->Par_.mq3,
+							      this->Par_.shift, this->Par_.pm, this->Par_.M5));
   }
 };
 
-
-} // QCD
-} // Grid
-
+NAMESPACE_END(Grid);
 
 #endif //FERMIONOPERATOR_MODULES_H

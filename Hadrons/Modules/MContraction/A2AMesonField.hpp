@@ -258,7 +258,7 @@ void TA2AMesonField<FImpl>::execute(void)
             std::vector<Real> p;
 
             envGetTmp(ComplexField, coor);
-            ph[j] = zero;
+            ph[j] = Zero();
             for(unsigned int mu = 0; mu < mom_[j].size(); mu++)
             {
                 LatticeCoordinate(coor, mu);

@@ -156,7 +156,7 @@ void TA2AAslashVectors<FImpl>::execute(void)
                  << par().vector << " and the photon field " << par().emField << std::endl;
     for(unsigned int i=0; i<Nmodes; i++)
     {
-        v4dtmp = zero;
+        v4dtmp = Zero();
         startTimer("Multiply Aslash");
         for(unsigned int mu=0;mu<=3;mu++)
         {

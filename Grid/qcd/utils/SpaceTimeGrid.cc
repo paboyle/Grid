@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,18 +23,17 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #include <Grid/GridCore.h>
 #include <Grid/GridQCDcore.h>
 
-namespace Grid { 
-  namespace QCD {
+NAMESPACE_BEGIN(Grid); 
 
 /////////////////////////////////////////////////////////////////
 // Public interface
 /////////////////////////////////////////////////////////////////
-GridCartesian *SpaceTimeGrid::makeFourDimGrid(const std::vector<int> & latt,const std::vector<int> &simd,const std::vector<int> &mpi)
+GridCartesian *SpaceTimeGrid::makeFourDimGrid(const Coordinate & latt,const Coordinate &simd,const Coordinate &mpi)
 {
   return new GridCartesian(latt,simd,mpi); 
 }
@@ -42,23 +41,23 @@ GridRedBlackCartesian *SpaceTimeGrid::makeFourDimRedBlackGrid(const GridCartesia
 {
   return new GridRedBlackCartesian(FourDimGrid); 
 }
-GridCartesian *SpaceTimeGrid::makeFourDimDWFGrid(const std::vector<int> & latt,const std::vector<int> &mpi)
+GridCartesian *SpaceTimeGrid::makeFourDimDWFGrid(const Coordinate & latt,const Coordinate &mpi)
 {
-  std::vector<int> simd(4,1);
+  Coordinate simd(4,1);
   return makeFourDimGrid(latt,simd,mpi);
 }
 GridCartesian         *SpaceTimeGrid::makeFiveDimGrid(int Ls,const GridCartesian *FourDimGrid)
 {
   int N4=FourDimGrid->_ndimension;
 
-  std::vector<int> latt5(1,Ls);
-  std::vector<int> simd5(1,1);
-  std::vector<int>  mpi5(1,1);
+  Coordinate latt5(1,Ls);
+  Coordinate simd5(1,1);
+  Coordinate  mpi5(1,1);
   
   for(int d=0;d<N4;d++){
     latt5.push_back(FourDimGrid->_fdimensions[d]);
     simd5.push_back(FourDimGrid->_simd_layout[d]);
-     mpi5.push_back(FourDimGrid->_processors[d]);
+    mpi5.push_back(FourDimGrid->_processors[d]);
   }
   return new GridCartesian(latt5,simd5,mpi5,*FourDimGrid); 
 }
@@ -68,9 +67,9 @@ GridRedBlackCartesian *SpaceTimeGrid::makeFiveDimRedBlackGrid(int Ls,const GridC
 {
   int N4=FourDimGrid->_ndimension;
   int cbd=1;
-  std::vector<int>   cb5(1,0);
+  Coordinate   cb5(1,0);
   for(int d=0;d<N4;d++){
-      cb5.push_back(  1);
+    cb5.push_back(  1);
   }
   GridCartesian *tmp = makeFiveDimGrid(Ls,FourDimGrid);
   GridRedBlackCartesian *ret = new GridRedBlackCartesian(tmp,cb5,cbd); 
@@ -84,14 +83,14 @@ GridCartesian         *SpaceTimeGrid::makeFiveDimDWFGrid(int Ls,const GridCartes
   int N4    = FourDimGrid->_ndimension;
   int nsimd = FourDimGrid->Nsimd();
 
-  std::vector<int> latt5(1,Ls);
-  std::vector<int> simd5(1,nsimd);
-  std::vector<int>  mpi5(1,1);
+  Coordinate latt5(1,Ls);
+  Coordinate simd5(1,nsimd);
+  Coordinate  mpi5(1,1);
   
   for(int d=0;d<N4;d++){
     latt5.push_back(FourDimGrid->_fdimensions[d]);
     simd5.push_back(1);
-     mpi5.push_back(FourDimGrid->_processors[d]);
+    mpi5.push_back(FourDimGrid->_processors[d]);
   }
   return new GridCartesian(latt5,simd5,mpi5,*FourDimGrid); 
 }
@@ -103,9 +102,9 @@ GridRedBlackCartesian *SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(int Ls,const Gr
 {
   int N4=FourDimGrid->_ndimension;
   int cbd=1;
-  std::vector<int>   cb5(1,0);
+  Coordinate   cb5(1,0);
   for(int d=0;d<N4;d++){
-      cb5.push_back(1);
+    cb5.push_back(1);
   }
   GridCartesian *tmp         = makeFiveDimDWFGrid(Ls,FourDimGrid);
   GridRedBlackCartesian *ret = new GridRedBlackCartesian(tmp,cb5,cbd); 
@@ -113,5 +112,4 @@ GridRedBlackCartesian *SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(int Ls,const Gr
   return ret;
 }
 
-
-}}
+NAMESPACE_END(Grid);

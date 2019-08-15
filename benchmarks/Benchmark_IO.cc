@@ -6,7 +6,6 @@
 #endif
 
 using namespace Grid;
-using namespace QCD;
 
 std::string filestem(const int l)
 {

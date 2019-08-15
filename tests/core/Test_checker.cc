@@ -30,7 +30,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 template<class d>
 struct scal {
@@ -56,7 +56,7 @@ int main (int argc, char ** argv)
 
   assert(argc >= 5);
   
-  std::vector<int> latt(4,0);
+  Coordinate latt(4,0);
   latt[0] = toint(argv[1]);
   latt[1] = toint(argv[2]);
   latt[2] = toint(argv[3]);
@@ -65,7 +65,7 @@ int main (int argc, char ** argv)
   const int Ls= toint(argv[5]);
   
   std::cout << "Lattice size (" << latt[0] << "," << latt[1] << "," << latt[2] << "," << latt[3] << ") Ls=" << Ls << std::endl;
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
   std::cout << "SIMD layout (" << simd_layout[0] << "," << simd_layout[1] << "," << simd_layout[2] << "," << simd_layout[3] << ")" << std::endl;
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(latt, simd_layout,GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
@@ -85,8 +85,8 @@ int main (int argc, char ** argv)
   LatticeType src_o(FrbGrid);
   pickCheckerboard(Odd,src_o,src);
 
-  std::vector<int> site(5);
-  std::vector<int> cbsite(5);
+  Coordinate site(5);
+  Coordinate cbsite(5);
   typedef typename GridTypeMapper<LatticeType::vector_object>::scalar_object sobj;
 
   // std::cout << "sizeof(vobj) " << sizeof(LatticeType::vector_object) << std::endl;
@@ -98,7 +98,7 @@ int main (int argc, char ** argv)
       for(site[3]=0;site[3]<latt[2];site[3]++){
 	for(site[2]=0;site[2]<latt[1];site[2]++){
 	  for(site[1]=0;site[1]<latt[0];site[1]++){
-	    if(src_o._grid->CheckerBoard(site) != src_o.checkerboard)
+	    if(src_o.Grid()->CheckerBoard(site) != src_o.Checkerboard())
 	      continue;
 
 	    std::cout << "Site (" << site[0] << "," << site[1] << "," << site[2] << "," << site[3] << "," << site[4] << ")" << std::endl;
@@ -128,7 +128,7 @@ int main (int argc, char ** argv)
 
 
   
-  // LatticeFermion result(FGrid); result=zero;
+  // LatticeFermion result(FGrid); result=Zero();
   // LatticeGaugeField Umu(UGrid); 
 
   // SU3::HotConfiguration(RNG4,Umu);
@@ -145,7 +145,7 @@ int main (int argc, char ** argv)
   // LatticeFermion    src_o(FrbGrid);
   // LatticeFermion result_o(FrbGrid);
   // pickCheckerboard(Odd,src_o,src);
-  // result_o=zero;
+  // result_o=Zero();
 
   // SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOpEO(Ddwf);
   // ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);

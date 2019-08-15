@@ -26,8 +26,7 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef SCIDAC_CHECKPOINTER
-#define SCIDAC_CHECKPOINTER
+#pragma once
 
 #ifdef HAVE_LIME
 
@@ -35,9 +34,7 @@ directory
 #include <sstream>
 #include <string>
 
-namespace Grid {
-namespace QCD {
-
+NAMESPACE_BEGIN(Grid);
 // For generic fields
 template <class Implementation, class Metadata>
 class ScidacHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
@@ -78,7 +75,7 @@ class ScidacHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
     if ((traj % Params.saveInterval) == 0) {
       std::string config, rng;
       this->build_filenames(traj, Params, config, rng);
-      GridBase *grid = U._grid;
+      GridBase *grid = U.Grid();
       uint32_t nersc_csum,scidac_csuma,scidac_csumb;
       BinaryIO::writeRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
       ScidacWriter _ScidacWriter(grid->IsBoss());
@@ -115,8 +112,8 @@ class ScidacHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
 	      << std::dec << std::endl;
   };
 };
-}
-}
+NAMESPACE_END(Grid);
+
 
 #endif  // HAVE_LIME
-#endif  // ILDG_CHECKPOINTER
+

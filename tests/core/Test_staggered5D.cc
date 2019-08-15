@@ -30,15 +30,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   std::cout << GridLogMessage << "Making s innermost grids"<<std::endl;
 
@@ -69,10 +68,10 @@ int main (int argc, char ** argv)
 
   random(pRNG5,src);
 
-  FermionField result(FGrid); result=zero;
-  FermionField    ref(FGrid);    ref=zero;
-  FermionField    tmp(FGrid);    tmp=zero;
-  FermionField    err(FGrid);    tmp=zero;
+  FermionField result(FGrid); result=Zero();
+  FermionField    ref(FGrid);    ref=Zero();
+  FermionField    tmp(FGrid);    tmp=Zero();
+  FermionField    err(FGrid);    tmp=Zero();
   FermionField phi   (FGrid); random(pRNG5,phi);
   FermionField chi   (FGrid); random(pRNG5,chi);
 
@@ -89,9 +88,11 @@ int main (int argc, char ** argv)
   // replicate across fifth dimension
   ////////////////////////////////////
   LatticeGaugeField Umu5d(FGrid); 
-  for(int ss=0;ss<Umu._grid->oSites();ss++){
+  auto umu5d = Umu5d.View();
+  auto umu   = Umu.View();
+  for(int ss=0;ss<Umu.Grid()->oSites();ss++){
     for(int s=0;s<Ls;s++){
-      Umu5d._odata[Ls*ss+s] = Umu._odata[ss];
+      umu5d[Ls*ss+s] = umu[ss];
     }
   }
 
@@ -107,7 +108,7 @@ int main (int argc, char ** argv)
   RealD u0=1.0;
 
   { // Simple improved staggered implementation
-    ref = zero;
+    ref = Zero();
     RealD c1tad = 0.5*c1/u0;
     RealD c2tad = 0.5*c2/u0/u0/u0;
 

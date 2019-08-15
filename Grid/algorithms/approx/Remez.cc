@@ -298,7 +298,7 @@ void AlgRemez::stpini(bigfloat *step) {
 // Search for error maxima and minima
 void AlgRemez::search(bigfloat *step) {
   bigfloat a, q, xm, ym, xn, yn, xx0, xx1;
-  int i, j, meq, emsign, ensign, steps;
+  int i, meq, emsign, ensign, steps;
 
   meq = neq + 1;
   bigfloat *yy = new bigfloat[meq];
@@ -306,7 +306,6 @@ void AlgRemez::search(bigfloat *step) {
   bigfloat eclose = 1.0e30;
   bigfloat farther = 0l;
 
-  j = 1;
   xx0 = apstrt;
 
   for (i = 0; i < meq; i++) {

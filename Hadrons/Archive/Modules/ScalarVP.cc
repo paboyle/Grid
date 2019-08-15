@@ -269,7 +269,7 @@ void TScalarVP::execute(void)
     if (!par().output.empty())
     {
         outputData.projection.resize(par().outputMom.size());
-        outputData.lattice_size = env().getGrid()->_fdimensions;
+        outputData.lattice_size = env().getGrid()->FullDimensions().toVector();
         outputData.mass = static_cast<TChargedProp *>(vm().getModule(par().scalarProp))->par().mass;
         outputData.charge = q;
         for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
@@ -476,7 +476,7 @@ void TScalarVP::makeCaches(void)
     {
         LOG(Message) << "Caching phases for momentum projections..."
                      << std::endl;
-        std::vector<int> &l = env().getGrid()->_fdimensions;
+        auto l = env().getGrid()->FullDimensions();
         Complex          ci(0.0,1.0);
 
         // Calculate phase factors
@@ -484,7 +484,7 @@ void TScalarVP::makeCaches(void)
         {
             std::vector<int> mom = strToVec<int>(par().outputMom[i_p]);
             auto &momph_ip = envGet(ScalarField, momPhaseName_[i_p]);
-            momph_ip = zero;
+            momph_ip = Zero();
             for (unsigned int j = 0; j < env().getNd()-1; ++j)
             {
                 Real twoPiL = M_PI*2./l[j];
@@ -541,7 +541,7 @@ void TScalarVP::momD1(ScalarField &s, FFT &fft)
     envGetTmp(ScalarField, result);
     envGetTmp(ScalarField, Amu);
 
-    result = zero;
+    result = Zero();
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         Amu = peekLorentz(A, mu);

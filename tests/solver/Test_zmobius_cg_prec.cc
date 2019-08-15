@@ -30,7 +30,7 @@ directory
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 template <class d>
 struct scal {
@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
   LatticeFermion src(FGrid);
   random(RNG5, src);
   LatticeFermion result(FGrid);
-  result = zero;
+  result = Zero();
   LatticeGaugeField Umu(UGrid);
 
   SU3::HotConfiguration(RNG4, Umu);
@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
 
   RealD mass = 0.01;
   RealD M5 = 1.8;
-  std::vector < std::complex<double>  > omegas;
+  std::vector < ComplexD  > omegas;
 #if 0
   for(int i=0;i<Ls;i++){
     double imag = 0.;
@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
   LatticeFermion src_o(FrbGrid);
   LatticeFermion result_o(FrbGrid);
   pickCheckerboard(Odd, src_o, src);
-  result_o = zero;
+  result_o = Zero();
 
   GridStopWatch CGTimer;
 

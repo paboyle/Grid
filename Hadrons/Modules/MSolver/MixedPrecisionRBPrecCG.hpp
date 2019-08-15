@@ -68,6 +68,7 @@ private:
     class OperatorFunctionWrapper: public OperatorFunction<Field>
     {
     public:
+        using OperatorFunction<Field>::operator();
         OperatorFunctionWrapper(LinearFunction<Field> &fn): fn_(fn) {};
         virtual ~OperatorFunctionWrapper(void) = default;
         virtual void operator()(LinearOperatorBase<Field> &op, 

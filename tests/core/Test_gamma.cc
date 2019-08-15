@@ -29,9 +29,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
-using namespace std;
 using namespace Grid;
-using namespace QCD;
 
 static constexpr double                      tolerance = 1.0e-6;
 static std::array<SpinMatrix, Gamma::nGamma> testAlgebra;
@@ -66,28 +64,28 @@ void createTestAlgebra(void)
   SpinMatrix                testg5;
   const Complex             I(0., 1.), mI(0., -1.);
   
-  testg[0] = zero;
+  testg[0] = Zero();
   testg[0]()(0, 3) = I;
   testg[0]()(1, 2) = I;
   testg[0]()(2, 1) = mI;
   testg[0]()(3, 0) = mI;
   std::cout << GridLogMessage << "test GammaX= " << std::endl;
   print(testg[0]);
-  testg[1] = zero;
+  testg[1] = Zero();
   testg[1]()(0, 3) = -1.;
   testg[1]()(1, 2) = 1.;
   testg[1]()(2, 1) = 1.;
   testg[1]()(3, 0) = -1.;
   std::cout << GridLogMessage << "test GammaY= " << std::endl;
   print(testg[1]);
-  testg[2] = zero;
+  testg[2] = Zero();
   testg[2]()(0, 2) = I;
   testg[2]()(1, 3) = mI;
   testg[2]()(2, 0) = mI;
   testg[2]()(3, 1) = I;
   std::cout << GridLogMessage << "test GammaZ= " << std::endl;
   print(testg[2]);
-  testg[3] = zero;
+  testg[3] = Zero();
   testg[3]()(0, 2) = 1.;
   testg[3]()(1, 3) = 1.;
   testg[3]()(2, 0) = 1.;
@@ -142,7 +140,6 @@ void checkGamma(const Gamma::Algebra a, GridSerialRNG &rng)
   SpinVector v;
   SpinMatrix m, &testg = testAlgebra[a];
   Gamma      g(a);
-  bool       pass = true;
   
   random(rng, v);
   random(rng, m);
@@ -161,7 +158,6 @@ void checkProd(const Gamma::Algebra a, const Gamma::Algebra b)
 {
   SpinMatrix gm, testg = testAlgebra[a]*testAlgebra[b];
   Gamma      g = Gamma(a)*Gamma(b);
-  bool       pass = true;
   
   std::cout << GridLogMessage << "Checking " << Gamma::name[a] << " * "
             << Gamma::name[b] << ": ";
@@ -175,7 +171,6 @@ void checkAdj(const Gamma::Algebra a)
 {
   SpinMatrix gm, testg = adj(testAlgebra[a]);
   Gamma      g(adj(Gamma(a)));
-  bool       pass = true;
   
   std::cout << GridLogMessage << "Checking adj(" << Gamma::name[a] << "): ";
   gm = 1.0;
@@ -217,7 +212,6 @@ void checkGammaL(const Gamma::Algebra a, GridSerialRNG &rng)
   SpinVector v;
   SpinMatrix m, &testg = testAlgebra[a], pl;
   GammaL     gl(a);
-  bool       pass = true;
   
   random(rng, v);
   random(rng, m);
@@ -238,9 +232,9 @@ int main(int argc, char *argv[])
 {
   Grid_init(&argc,&argv);
   
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
   
   GridCartesian Grid(latt_size,simd_layout,mpi_layout);
   GridSerialRNG sRNG;

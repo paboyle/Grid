@@ -109,8 +109,6 @@ template <typename FImpl1, typename FImpl2>
 std::vector<std::string> TAmputate<FImpl1, FImpl2>::getOutput(void)
 {
     std::vector<std::string> output = {getName()};
-    
-    
     return output;
 }
 
@@ -118,15 +116,16 @@ std::vector<std::string> TAmputate<FImpl1, FImpl2>::getOutput(void)
 template <typename Fimpl1, typename Fimpl2>
 SpinColourMatrix TAmputate<Fimpl1, Fimpl2>::invertspincolmat(SpinColourMatrix &scmat)
 {
-    Eigen::MatrixXcf scmat_2d(Ns*Nc,Ns*Nc);
+    Eigen::MatrixXcd scmat_2d(Ns*Nc,Ns*Nc);
     for(int ic=0; ic<Nc; ic++){
     for(int jc=0; jc<Nc; jc++){
         for(int is=0; is<Ns; is++){
         for(int js=0; js<Ns; js++){
-            scmat_2d(Ns*ic+is,Ns*jc+js) = scmat()(is,js)(ic,jc);
+	  auto z =scmat()(is,js)(ic,jc);;
+	  scmat_2d(Ns*ic+is,Ns*jc+js) = std::complex<double>(real(z),imag(z));
         }}
     }}      
-    Eigen::MatrixXcf scmat_2d_inv = scmat_2d.inverse();
+    Eigen::MatrixXcd scmat_2d_inv = scmat_2d.inverse();
     SpinColourMatrix scmat_inv;
     for(int ic=0; ic<Nc; ic++){
     for(int jc=0; jc<Nc; jc++){
@@ -163,8 +162,8 @@ void TAmputate<FImpl1, FImpl2>::execute(void)
     read(reader,"vertex", vertex);
     LOG(Message) << "vertex read" << std::endl;
 
-    pdotxin=zero;
-    pdotxout=zero;
+    pdotxin=Zero();
+    pdotxout=Zero();
     for (unsigned int mu = 0; mu < 4; ++mu)
     {
         Real TwoPiL =  M_PI * 2.0/ latt_size[mu];

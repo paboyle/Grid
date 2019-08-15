@@ -30,7 +30,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 
 #include "Grid/util/Profiling.h"
@@ -61,12 +61,13 @@ int main (int argc, char ** argv)
     perfProfiling = true;
   }
 
-  long unsigned int single_site_flops = 8*QCD::Nc*(7+16*QCD::Nc);
+  long unsigned int single_site_flops = 8*Nc*(7+16*Nc);
 
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  auto latt_size   = GridDefaultLatt();
+  auto simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  auto mpi_layout  = GridDefaultMpi();
+
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian     RBGrid(&Grid);
 
@@ -77,7 +78,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid floating point word size is REALF"<< sizeof(RealF)<<std::endl;
   std::cout<<GridLogMessage << "Grid floating point word size is REALD"<< sizeof(RealD)<<std::endl;
   std::cout<<GridLogMessage << "Grid floating point word size is REAL"<< sizeof(Real)<<std::endl;
-  std::cout<<GridLogMessage << "Grid number of colours : "<< QCD::Nc <<std::endl;
+  std::cout<<GridLogMessage << "Grid number of colours : "<< Nc <<std::endl;
   std::cout<<GridLogMessage << "Benchmarking Wilson operator in the fundamental representation" << std::endl;
 
 
@@ -87,10 +88,10 @@ int main (int argc, char ** argv)
   //  pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
 
   LatticeFermion src   (&Grid); random(pRNG,src);
-  LatticeFermion result(&Grid); result=zero;
-  LatticeFermion    ref(&Grid);    ref=zero;
-  LatticeFermion    tmp(&Grid);    tmp=zero;
-  LatticeFermion    err(&Grid);    tmp=zero;
+  LatticeFermion result(&Grid); result=Zero();
+  LatticeFermion    ref(&Grid);    ref=Zero();
+  LatticeFermion    tmp(&Grid);    tmp=Zero();
+  LatticeFermion    err(&Grid);    tmp=Zero();
   LatticeGaugeField Umu(&Grid); random(pRNG,Umu);
   std::vector<LatticeColourMatrix> U(4,&Grid);
 
@@ -101,12 +102,12 @@ int main (int argc, char ** argv)
 
   // Only one non-zero (y)
 #if 0
-  Umu=zero;
+  Umu=Zero();
   Complex cone(1.0,0.0);
   for(int nn=0;nn<Nd;nn++){
     random(pRNG,U[nn]);
     if(1) {
-      if (nn!=2) { U[nn]=zero; std::cout<<GridLogMessage << "zeroing gauge field in dir "<<nn<<std::endl; }
+      if (nn!=2) { U[nn]=Zero(); std::cout<<GridLogMessage << "zeroing gauge field in dir "<<nn<<std::endl; }
       //      else       { U[nn]= cone;std::cout<<GridLogMessage << "unit gauge field in dir "<<nn<<std::endl; }
       else       { std::cout<<GridLogMessage << "random gauge field in dir "<<nn<<std::endl; }
     }
@@ -119,18 +120,26 @@ int main (int argc, char ** argv)
   }
   
   { // Naive wilson implementation
-    ref = zero;
+    ref = Zero();
     for(int mu=0;mu<Nd;mu++){
       //    ref =  src + Gamma(Gamma::Algebra::GammaX)* src ; // 1-gamma_x
       tmp = U[mu]*Cshift(src,mu,1);
-      for(int i=0;i<ref._odata.size();i++){
-	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
+      {
+	auto ref_v = ref.View();
+	auto tmp_v = tmp.View();
+	for(int i=0;i<ref_v.size();i++){
+	  ref_v[i]+= tmp_v[i] - Gamma(Gmu[mu])*tmp_v[i]; ;
+	}
       }
 
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu,-1);
-      for(int i=0;i<ref._odata.size();i++){
-	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
+      {
+	auto ref_v = ref.View();
+	auto tmp_v = tmp.View();
+	for(int i=0;i<ref_v.size();i++){
+	  ref_v[i]+= tmp_v[i] + Gamma(Gmu[mu])*tmp_v[i]; ;
+	}
       }
     }
   }
@@ -138,7 +147,6 @@ int main (int argc, char ** argv)
   RealD mass=0.1;
 
   typename WilsonFermionR::ImplParams params; 
-  params.overlapCommsCompute = overlapComms;
 
   WilsonFermionR Dw(Umu,Grid,RBGrid,mass,params);
   
@@ -165,7 +173,7 @@ int main (int argc, char ** argv)
 
   }
 
-
+  
   std::cout<<GridLogMessage << "Called Dw"<<std::endl;
   std::cout<<GridLogMessage << "flops per site " << single_site_flops << std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
@@ -179,27 +187,38 @@ int main (int argc, char ** argv)
   for(int ss=0;ss<0;ss++ ){
     for(int i=0;i<Ns;i++){
       for(int j=0;j<Nc;j++){
-	ComplexF * ref_p = (ComplexF *)&ref._odata[ss]()(i)(j);
-	ComplexF * res_p = (ComplexF *)&result._odata[ss]()(i)(j);
+	auto ref_v = ref.View();
+	auto result_v = result.View();
+	ComplexF * ref_p = (ComplexF *)&ref_v[ss]()(i)(j);
+	ComplexF * res_p = (ComplexF *)&result_v[ss]()(i)(j);
 	std::cout<<GridLogMessage << ss<< " "<<i<<" "<<j<<" "<< (*ref_p)<<" " <<(*res_p)<<std::endl;
       }
     }
   }
 
   { // Naive wilson dag implementation
-    ref = zero;
+    ref = Zero();
     for(int mu=0;mu<Nd;mu++){
+
 
       //    ref =  src - Gamma(Gamma::Algebra::GammaX)* src ; // 1+gamma_x
       tmp = U[mu]*Cshift(src,mu,1);
-      for(int i=0;i<ref._odata.size();i++){
-	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
+      {
+	auto ref_v = ref.View();
+	auto tmp_v = tmp.View();
+	for(int i=0;i<ref_v.size();i++){
+	  ref_v[i]+= tmp_v[i] + Gamma(Gmu[mu])*tmp_v[i]; ;
+	}
       }
 
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu,-1);
-      for(int i=0;i<ref._odata.size();i++){
-	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
+      {
+	auto ref_v = ref.View();
+	auto tmp_v = tmp.View();
+	for(int i=0;i<ref_v.size();i++){
+	  ref_v[i]+= tmp_v[i] - Gamma(Gmu[mu])*tmp_v[i]; ;
+	}
       }
     }
   }

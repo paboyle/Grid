@@ -1,3 +1,4 @@
+#ifndef __NVCC__
 /*
     __ _____ _____ _____
  __|  |   __|     |   | |  JSON for Modern C++
@@ -18917,4 +18918,5 @@ inline nlohmann::json::json_pointer operator "" _json_pointer(const char* s, std
 #undef NLOHMANN_BASIC_JSON_TPL
 
 
+#endif
 #endif

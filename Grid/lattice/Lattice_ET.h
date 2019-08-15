@@ -27,7 +27,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef GRID_LATTICE_ET_H
 #define GRID_LATTICE_ET_H
 
@@ -36,13 +36,13 @@ directory
 #include <typeinfo>
 #include <vector>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 ////////////////////////////////////////////////////
 // Predicated where support
 ////////////////////////////////////////////////////
 template <class iobj, class vobj, class robj>
-inline vobj predicatedWhere(const iobj &predicate, const vobj &iftrue,
+accelerator_inline vobj predicatedWhere(const iobj &predicate, const vobj &iftrue,
                             const robj &iffalse) {
   typename std::remove_const<vobj>::type ret;
 
@@ -51,11 +51,10 @@ inline vobj predicatedWhere(const iobj &predicate, const vobj &iftrue,
   typedef typename vobj::vector_type vector_type;
 
   const int Nsimd = vobj::vector_type::Nsimd();
-  const int words = sizeof(vobj) / sizeof(vector_type);
 
-  std::vector<Integer> mask(Nsimd);
-  std::vector<scalar_object> truevals(Nsimd);
-  std::vector<scalar_object> falsevals(Nsimd);
+  ExtractBuffer<Integer> mask(Nsimd);
+  ExtractBuffer<scalar_object> truevals(Nsimd);
+  ExtractBuffer<scalar_object> falsevals(Nsimd);
 
   extract(iftrue, truevals);
   extract(iffalse, falsevals);
@@ -69,158 +68,148 @@ inline vobj predicatedWhere(const iobj &predicate, const vobj &iftrue,
   return ret;
 }
 
-////////////////////////////////////////////
-// recursive evaluation of expressions; Could
-// switch to generic approach with variadics, a la
-// Antonin's Lat Sim but the repack to variadic with popped
-// from tuple is hideous; C++14 introduces std::make_index_sequence for this
-////////////////////////////////////////////
-
-// leaf eval of lattice ; should enable if protect using traits
-
-template <typename T>
-using is_lattice = std::is_base_of<LatticeBase, T>;
-
-template <typename T>
-using is_lattice_expr = std::is_base_of<LatticeExpressionBase, T>;
-
-template <typename T> using is_lattice_expr = std::is_base_of<LatticeExpressionBase,T >;
-
+/////////////////////////////////////////////////////
 //Specialization of getVectorType for lattices
+/////////////////////////////////////////////////////
 template<typename T>
 struct getVectorType<Lattice<T> >{
   typedef typename Lattice<T>::vector_object type;
 };
- 
-template<class sobj>
-inline sobj eval(const unsigned int ss, const sobj &arg)
+
+////////////////////////////////////////////
+//--  recursive evaluation of expressions; --
+// handle leaves of syntax tree
+///////////////////////////////////////////////////
+template<class sobj> accelerator_inline 
+sobj eval(const uint64_t ss, const sobj &arg)
 {
   return arg;
 }
-template <class lobj>
-inline const lobj &eval(const unsigned int ss, const Lattice<lobj> &arg) {
-  return arg._odata[ss];
+
+template <class lobj> accelerator_inline 
+const lobj & eval(const uint64_t ss, const LatticeView<lobj> &arg) 
+{
+  return arg[ss];
+}
+template <class lobj> accelerator_inline 
+const lobj & eval(const uint64_t ss, const Lattice<lobj> &arg) 
+{
+  auto view = arg.View();
+  return view[ss];
 }
 
-// handle nodes in syntax tree
-template <typename Op, typename T1>
-auto inline eval(
-    const unsigned int ss,
-    const LatticeUnaryExpression<Op, T1> &expr)  // eval one operand
-    -> decltype(expr.first.func(eval(ss, std::get<0>(expr.second)))) {
-  return expr.first.func(eval(ss, std::get<0>(expr.second)));
+///////////////////////////////////////////////////
+// handle nodes in syntax tree- eval one operand
+///////////////////////////////////////////////////
+template <typename Op, typename T1> accelerator_inline 
+auto eval(const uint64_t ss, const LatticeUnaryExpression<Op, T1> &expr)  
+  -> decltype(expr.op.func( eval(ss, expr.arg1)))
+{
+  return expr.op.func( eval(ss, expr.arg1) );
 }
-
-template <typename Op, typename T1, typename T2>
-auto inline eval(
-    const unsigned int ss,
-    const LatticeBinaryExpression<Op, T1, T2> &expr)  // eval two operands
-    -> decltype(expr.first.func(eval(ss, std::get<0>(expr.second)),
-                                eval(ss, std::get<1>(expr.second)))) {
-  return expr.first.func(eval(ss, std::get<0>(expr.second)),
-                         eval(ss, std::get<1>(expr.second)));
+///////////////////////
+// eval two operands
+///////////////////////
+template <typename Op, typename T1, typename T2> accelerator_inline
+auto eval(const uint64_t ss, const LatticeBinaryExpression<Op, T1, T2> &expr)  
+  -> decltype(expr.op.func( eval(ss,expr.arg1),eval(ss,expr.arg2)))
+{
+  return expr.op.func( eval(ss,expr.arg1), eval(ss,expr.arg2) );
 }
-
-template <typename Op, typename T1, typename T2, typename T3>
-auto inline eval(const unsigned int ss,
-                 const LatticeTrinaryExpression<Op, T1, T2, T3>
-                     &expr)  // eval three operands
-    -> decltype(expr.first.func(eval(ss, std::get<0>(expr.second)),
-                                eval(ss, std::get<1>(expr.second)),
-                                eval(ss, std::get<2>(expr.second)))) {
-  return expr.first.func(eval(ss, std::get<0>(expr.second)),
-                         eval(ss, std::get<1>(expr.second)),
-                         eval(ss, std::get<2>(expr.second)));
+///////////////////////
+// eval three operands
+///////////////////////
+template <typename Op, typename T1, typename T2, typename T3> accelerator_inline
+auto eval(const uint64_t ss, const LatticeTrinaryExpression<Op, T1, T2, T3> &expr)  
+  -> decltype(expr.op.func(eval(ss, expr.arg1), eval(ss, expr.arg2), eval(ss, expr.arg3)))
+{
+  return expr.op.func(eval(ss, expr.arg1), eval(ss, expr.arg2), eval(ss, expr.arg3));
 }
 
 //////////////////////////////////////////////////////////////////////////
 // Obtain the grid from an expression, ensuring conformable. This must follow a
-// tree recursion
+// tree recursion; must retain grid pointer in the LatticeView class which sucks
+// Use a different method, and make it void *.
+// Perhaps a conformable method.
 //////////////////////////////////////////////////////////////////////////
-template <class T1,
-          typename std::enable_if<is_lattice<T1>::value, T1>::type * = nullptr>
-inline void GridFromExpression(GridBase *&grid, const T1 &lat)  // Lattice leaf
+template <class T1,typename std::enable_if<is_lattice<T1>::value, T1>::type * = nullptr>
+accelerator_inline void GridFromExpression(GridBase *&grid, const T1 &lat)  // Lattice leaf
 {
-  if (grid) {
-    conformable(grid, lat._grid);
-  }
-  grid = lat._grid;
+  lat.Conformable(grid);
 }
-template <class T1,
-          typename std::enable_if<!is_lattice<T1>::value, T1>::type * = nullptr>
-inline void GridFromExpression(GridBase *&grid,
-                               const T1 &notlat)  // non-lattice leaf
+
+template <class T1,typename std::enable_if<!is_lattice<T1>::value, T1>::type * = nullptr>
+accelerator_inline 
+void GridFromExpression(GridBase *&grid,const T1 &notlat)  // non-lattice leaf
 {}
+
 template <typename Op, typename T1>
-inline void GridFromExpression(GridBase *&grid,
-                               const LatticeUnaryExpression<Op, T1> &expr) {
-  GridFromExpression(grid, std::get<0>(expr.second));  // recurse
+accelerator_inline 
+void GridFromExpression(GridBase *&grid,const LatticeUnaryExpression<Op, T1> &expr) 
+{
+  GridFromExpression(grid, expr.arg1);  // recurse
 }
 
 template <typename Op, typename T1, typename T2>
-inline void GridFromExpression(
-    GridBase *&grid, const LatticeBinaryExpression<Op, T1, T2> &expr) {
-  GridFromExpression(grid, std::get<0>(expr.second));  // recurse
-  GridFromExpression(grid, std::get<1>(expr.second));
+accelerator_inline 
+void GridFromExpression(GridBase *&grid, const LatticeBinaryExpression<Op, T1, T2> &expr) 
+{
+  GridFromExpression(grid, expr.arg1);  // recurse
+  GridFromExpression(grid, expr.arg2);
 }
 template <typename Op, typename T1, typename T2, typename T3>
-inline void GridFromExpression(
-    GridBase *&grid, const LatticeTrinaryExpression<Op, T1, T2, T3> &expr) {
-  GridFromExpression(grid, std::get<0>(expr.second));  // recurse
-  GridFromExpression(grid, std::get<1>(expr.second));
-  GridFromExpression(grid, std::get<2>(expr.second));
+accelerator_inline 
+void GridFromExpression(GridBase *&grid, const LatticeTrinaryExpression<Op, T1, T2, T3> &expr) 
+{
+  GridFromExpression(grid, expr.arg1);  // recurse
+  GridFromExpression(grid, expr.arg2);  // recurse
+  GridFromExpression(grid, expr.arg3);  // recurse
 }
 
 //////////////////////////////////////////////////////////////////////////
 // Obtain the CB from an expression, ensuring conformable. This must follow a
 // tree recursion
 //////////////////////////////////////////////////////////////////////////
-template <class T1,
-          typename std::enable_if<is_lattice<T1>::value, T1>::type * = nullptr>
+template <class T1,typename std::enable_if<is_lattice<T1>::value, T1>::type * = nullptr>
 inline void CBFromExpression(int &cb, const T1 &lat)  // Lattice leaf
 {
   if ((cb == Odd) || (cb == Even)) {
-    assert(cb == lat.checkerboard);
+    assert(cb == lat.Checkerboard());
   }
-  cb = lat.checkerboard;
-  //  std::cout<<GridLogMessage<<"Lattice leaf cb "<<cb<<std::endl;
+  cb = lat.Checkerboard();
 }
-template <class T1,
-          typename std::enable_if<!is_lattice<T1>::value, T1>::type * = nullptr>
+template <class T1,typename std::enable_if<!is_lattice<T1>::value, T1>::type * = nullptr>
 inline void CBFromExpression(int &cb, const T1 &notlat)  // non-lattice leaf
 {
-  //  std::cout<<GridLogMessage<<"Non lattice leaf cb"<<cb<<std::endl;
-}
-template <typename Op, typename T1>
-inline void CBFromExpression(int &cb,
-                             const LatticeUnaryExpression<Op, T1> &expr) {
-  CBFromExpression(cb, std::get<0>(expr.second));  // recurse
-  //  std::cout<<GridLogMessage<<"Unary node cb "<<cb<<std::endl;
 }
 
-template <typename Op, typename T1, typename T2>
-inline void CBFromExpression(int &cb,
-                             const LatticeBinaryExpression<Op, T1, T2> &expr) {
-  CBFromExpression(cb, std::get<0>(expr.second));  // recurse
-  CBFromExpression(cb, std::get<1>(expr.second));
-  //  std::cout<<GridLogMessage<<"Binary node cb "<<cb<<std::endl;
+template <typename Op, typename T1> inline 
+void CBFromExpression(int &cb,const LatticeUnaryExpression<Op, T1> &expr) 
+{
+  CBFromExpression(cb, expr.arg1);  // recurse AST
+}
+
+template <typename Op, typename T1, typename T2> inline 
+void CBFromExpression(int &cb,const LatticeBinaryExpression<Op, T1, T2> &expr) 
+{
+  CBFromExpression(cb, expr.arg1);  // recurse AST
+  CBFromExpression(cb, expr.arg2);  // recurse AST
 }
 template <typename Op, typename T1, typename T2, typename T3>
-inline void CBFromExpression(
-    int &cb, const LatticeTrinaryExpression<Op, T1, T2, T3> &expr) {
-  CBFromExpression(cb, std::get<0>(expr.second));  // recurse
-  CBFromExpression(cb, std::get<1>(expr.second));
-  CBFromExpression(cb, std::get<2>(expr.second));
-  //  std::cout<<GridLogMessage<<"Trinary node cb "<<cb<<std::endl;
+inline void CBFromExpression(int &cb, const LatticeTrinaryExpression<Op, T1, T2, T3> &expr) 
+{
+  CBFromExpression(cb, expr.arg1);  // recurse AST
+  CBFromExpression(cb, expr.arg2);  // recurse AST
+  CBFromExpression(cb, expr.arg3);  // recurse AST
 }
 
 ////////////////////////////////////////////
 // Unary operators and funcs
 ////////////////////////////////////////////
-#define GridUnopClass(name, ret)                                          \
-  template <class arg>                                                    \
-  struct name {                                                           \
-    static auto inline func(const arg a) -> decltype(ret) { return ret; } \
+#define GridUnopClass(name, ret)					\
+  template <class arg>							\
+  struct name {								\
+    static auto accelerator_inline func(const arg a) -> decltype(ret) { return ret; } \
   };
 
 GridUnopClass(UnarySub, -a);
@@ -250,19 +239,21 @@ GridUnopClass(UnaryExp, exp(a));
 ////////////////////////////////////////////
 // Binary operators
 ////////////////////////////////////////////
-#define GridBinOpClass(name, combination)                      \
-  template <class left, class right>                           \
-  struct name {                                                \
-    static auto inline func(const left &lhs, const right &rhs) \
-        -> decltype(combination) const {                       \
-      return combination;                                      \
-    }                                                          \
-  }
+#define GridBinOpClass(name, combination)			\
+  template <class left, class right>				\
+  struct name {							\
+    static auto accelerator_inline				\
+    func(const left &lhs, const right &rhs)			\
+      -> decltype(combination) const				\
+    {								\
+      return combination;					\
+    }								\
+  };
+
 GridBinOpClass(BinaryAdd, lhs + rhs);
 GridBinOpClass(BinarySub, lhs - rhs);
 GridBinOpClass(BinaryMul, lhs *rhs);
 GridBinOpClass(BinaryDiv, lhs /rhs);
-
 GridBinOpClass(BinaryAnd, lhs &rhs);
 GridBinOpClass(BinaryOr, lhs | rhs);
 GridBinOpClass(BinaryAndAnd, lhs &&rhs);
@@ -271,92 +262,71 @@ GridBinOpClass(BinaryOrOr, lhs || rhs);
 ////////////////////////////////////////////////////
 // Trinary conditional op
 ////////////////////////////////////////////////////
-#define GridTrinOpClass(name, combination)                                     \
-  template <class predicate, class left, class right>                          \
-  struct name {                                                                \
-    static auto inline func(const predicate &pred, const left &lhs,            \
-                            const right &rhs) -> decltype(combination) const { \
-      return combination;                                                      \
-    }                                                                          \
-  }
+#define GridTrinOpClass(name, combination)				\
+  template <class predicate, class left, class right>			\
+  struct name {								\
+    static auto accelerator_inline					\
+    func(const predicate &pred, const left &lhs, const right &rhs)	\
+      -> decltype(combination) const					\
+    {									\
+      return combination;						\
+    }									\
+  };
 
-GridTrinOpClass(
-    TrinaryWhere,
-    (predicatedWhere<predicate, typename std::remove_reference<left>::type,
-                     typename std::remove_reference<right>::type>(pred, lhs,
-                                                                  rhs)));
+GridTrinOpClass(TrinaryWhere,
+		(predicatedWhere<predicate, 
+		 typename std::remove_reference<left>::type,
+		 typename std::remove_reference<right>::type>(pred, lhs,rhs)));
 
 ////////////////////////////////////////////
 // Operator syntactical glue
 ////////////////////////////////////////////
 
-#define GRID_UNOP(name) name<decltype(eval(0, arg))>
-#define GRID_BINOP(name) name<decltype(eval(0, lhs)), decltype(eval(0, rhs))>
-#define GRID_TRINOP(name) \
-  name<decltype(eval(0, pred)), decltype(eval(0, lhs)), decltype(eval(0, rhs))>
+#define GRID_UNOP(name)   name<decltype(eval(0, arg))>
+#define GRID_BINOP(name)  name<decltype(eval(0, lhs)), decltype(eval(0, rhs))>
+#define GRID_TRINOP(name) name<decltype(eval(0, pred)), decltype(eval(0, lhs)), decltype(eval(0, rhs))>
 
-#define GRID_DEF_UNOP(op, name)                                             \
-  template <typename T1,                                                    \
-            typename std::enable_if<is_lattice<T1>::value ||                \
-                                        is_lattice_expr<T1>::value,         \
-                                    T1>::type * = nullptr>                  \
-  inline auto op(const T1 &arg)                                             \
-      ->decltype(LatticeUnaryExpression<GRID_UNOP(name), const T1 &>(       \
-          std::make_pair(GRID_UNOP(name)(), std::forward_as_tuple(arg)))) { \
-    return LatticeUnaryExpression<GRID_UNOP(name), const T1 &>(             \
-        std::make_pair(GRID_UNOP(name)(), std::forward_as_tuple(arg)));     \
+#define GRID_DEF_UNOP(op, name)						\
+  template <typename T1, typename std::enable_if<is_lattice<T1>::value||is_lattice_expr<T1>::value,T1>::type * = nullptr> \
+  inline auto op(const T1 &arg) ->decltype(LatticeUnaryExpression<GRID_UNOP(name),T1>(GRID_UNOP(name)(), arg)) \
+  {									\
+    return     LatticeUnaryExpression<GRID_UNOP(name),T1>(GRID_UNOP(name)(), arg); \
   }
 
-#define GRID_BINOP_LEFT(op, name)                                             \
-  template <typename T1, typename T2,                                         \
-            typename std::enable_if<is_lattice<T1>::value ||                  \
-                                        is_lattice_expr<T1>::value,           \
-                                    T1>::type * = nullptr>                    \
-  inline auto op(const T1 &lhs, const T2 &rhs)                                \
-      ->decltype(                                                             \
-          LatticeBinaryExpression<GRID_BINOP(name), const T1 &, const T2 &>(  \
-              std::make_pair(GRID_BINOP(name)(),                              \
-                             std::forward_as_tuple(lhs, rhs)))) {             \
-    return LatticeBinaryExpression<GRID_BINOP(name), const T1 &, const T2 &>( \
-        std::make_pair(GRID_BINOP(name)(), std::forward_as_tuple(lhs, rhs))); \
+#define GRID_BINOP_LEFT(op, name)					\
+  template <typename T1, typename T2,					\
+            typename std::enable_if<is_lattice<T1>::value||is_lattice_expr<T1>::value,T1>::type * = nullptr> \
+  inline auto op(const T1 &lhs, const T2 &rhs)				\
+    ->decltype(LatticeBinaryExpression<GRID_BINOP(name),T1,T2>(GRID_BINOP(name)(),lhs,rhs)) \
+  {									\
+    return     LatticeBinaryExpression<GRID_BINOP(name),T1,T2>(GRID_BINOP(name)(),lhs,rhs);\
   }
 
-#define GRID_BINOP_RIGHT(op, name)                                            \
-  template <typename T1, typename T2,                                         \
-            typename std::enable_if<!is_lattice<T1>::value &&                 \
-                                        !is_lattice_expr<T1>::value,          \
-                                    T1>::type * = nullptr,                    \
-            typename std::enable_if<is_lattice<T2>::value ||                  \
-                                        is_lattice_expr<T2>::value,           \
-                                    T2>::type * = nullptr>                    \
-  inline auto op(const T1 &lhs, const T2 &rhs)                                \
-      ->decltype(                                                             \
-          LatticeBinaryExpression<GRID_BINOP(name), const T1 &, const T2 &>(  \
-              std::make_pair(GRID_BINOP(name)(),                              \
-                             std::forward_as_tuple(lhs, rhs)))) {             \
-    return LatticeBinaryExpression<GRID_BINOP(name), const T1 &, const T2 &>( \
-        std::make_pair(GRID_BINOP(name)(), std::forward_as_tuple(lhs, rhs))); \
+#define GRID_BINOP_RIGHT(op, name)					\
+  template <typename T1, typename T2,					\
+            typename std::enable_if<!is_lattice<T1>::value&&!is_lattice_expr<T1>::value,T1>::type * = nullptr, \
+            typename std::enable_if< is_lattice<T2>::value|| is_lattice_expr<T2>::value,T2>::type * = nullptr> \
+  inline auto op(const T1 &lhs, const T2 &rhs)				\
+    ->decltype(LatticeBinaryExpression<GRID_BINOP(name),T1,T2>(GRID_BINOP(name)(),lhs, rhs)) \
+  {									\
+    return     LatticeBinaryExpression<GRID_BINOP(name),T1,T2>(GRID_BINOP(name)(),lhs, rhs); \
   }
 
-#define GRID_DEF_BINOP(op, name) \
-  GRID_BINOP_LEFT(op, name);     \
+#define GRID_DEF_BINOP(op, name)		\
+  GRID_BINOP_LEFT(op, name);			\
   GRID_BINOP_RIGHT(op, name);
 
-#define GRID_DEF_TRINOP(op, name)                                              \
-  template <typename T1, typename T2, typename T3>                             \
-  inline auto op(const T1 &pred, const T2 &lhs, const T3 &rhs)                 \
-      ->decltype(                                                              \
-          LatticeTrinaryExpression<GRID_TRINOP(name), const T1 &, const T2 &,  \
-                                   const T3 &>(std::make_pair(                 \
-              GRID_TRINOP(name)(), std::forward_as_tuple(pred, lhs, rhs)))) {  \
-    return LatticeTrinaryExpression<GRID_TRINOP(name), const T1 &, const T2 &, \
-                                    const T3 &>(std::make_pair(                \
-        GRID_TRINOP(name)(), std::forward_as_tuple(pred, lhs, rhs)));          \
+#define GRID_DEF_TRINOP(op, name)					\
+  template <typename T1, typename T2, typename T3>			\
+  inline auto op(const T1 &pred, const T2 &lhs, const T3 &rhs)		\
+    ->decltype(LatticeTrinaryExpression<GRID_TRINOP(name),T1,T2,T3>(GRID_TRINOP(name)(),pred, lhs, rhs)) \
+  {									\
+    return LatticeTrinaryExpression<GRID_TRINOP(name),T1,T2,T3>(GRID_TRINOP(name)(),pred, lhs, rhs); \
   }
+
 ////////////////////////
 // Operator definitions
 ////////////////////////
-
 GRID_DEF_UNOP(operator-, UnarySub);
 GRID_DEF_UNOP(Not, UnaryNot);
 GRID_DEF_UNOP(operator!, UnaryNot);
@@ -400,29 +370,27 @@ GRID_DEF_TRINOP(where, TrinaryWhere);
 /////////////////////////////////////////////////////////////
 template <class Op, class T1>
 auto closure(const LatticeUnaryExpression<Op, T1> &expr)
-    -> Lattice<decltype(expr.first.func(eval(0, std::get<0>(expr.second))))> {
-  Lattice<decltype(expr.first.func(eval(0, std::get<0>(expr.second))))> ret(
-      expr);
+  -> Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> 
+{
+  Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> ret(expr);
   return ret;
 }
 template <class Op, class T1, class T2>
 auto closure(const LatticeBinaryExpression<Op, T1, T2> &expr)
-    -> Lattice<decltype(expr.first.func(eval(0, std::get<0>(expr.second)),
-                                        eval(0, std::get<1>(expr.second))))> {
-  Lattice<decltype(expr.first.func(eval(0, std::get<0>(expr.second)),
-                                   eval(0, std::get<1>(expr.second))))>
-      ret(expr);
+  -> Lattice<decltype(expr.op.func(eval(0, expr.arg1),eval(0, expr.arg2)))> 
+{
+  Lattice<decltype(expr.op.func(eval(0, expr.arg1),eval(0, expr.arg2)))> ret(expr);
   return ret;
 }
 template <class Op, class T1, class T2, class T3>
 auto closure(const LatticeTrinaryExpression<Op, T1, T2, T3> &expr)
-    -> Lattice<decltype(expr.first.func(eval(0, std::get<0>(expr.second)),
-                                        eval(0, std::get<1>(expr.second)),
-                                        eval(0, std::get<2>(expr.second))))> {
-  Lattice<decltype(expr.first.func(eval(0, std::get<0>(expr.second)),
-                                   eval(0, std::get<1>(expr.second)),
-                                   eval(0, std::get<2>(expr.second))))>
-      ret(expr);
+  -> Lattice<decltype(expr.op.func(eval(0, expr.arg1),
+				   eval(0, expr.arg2),
+				   eval(0, expr.arg3)))> 
+{
+  Lattice<decltype(expr.op.func(eval(0, expr.arg1),
+				eval(0, expr.arg2),
+				eval(0, expr.arg3)))>  ret(expr);
   return ret;
 }
 
@@ -433,34 +401,7 @@ auto closure(const LatticeTrinaryExpression<Op, T1, T2, T3> &expr)
 #undef GRID_DEF_UNOP
 #undef GRID_DEF_BINOP
 #undef GRID_DEF_TRINOP
-}
 
-#if 0
-using namespace Grid;
-        
- int main(int argc,char **argv){
-   
-   Lattice<double> v1(16);
-   Lattice<double> v2(16);
-   Lattice<double> v3(16);
-
-   BinaryAdd<double,double> tmp;
-   LatticeBinaryExpression<BinaryAdd<double,double>,Lattice<double> &,Lattice<double> &> 
-     expr(std::make_pair(tmp,
-    std::forward_as_tuple(v1,v2)));
-   tmp.func(eval(0,v1),eval(0,v2));
-
-   auto var = v1+v2;
-   std::cout<<GridLogMessage<<typeid(var).name()<<std::endl;
-
-   v3=v1+v2;
-   v3=v1+v2+v1*v2;
- };
-
-void testit(Lattice<double> &v1,Lattice<double> &v2,Lattice<double> &v3)
-{
-   v3=v1+v2+v1*v2;
-}
-#endif
+NAMESPACE_END(Grid);
 
 #endif

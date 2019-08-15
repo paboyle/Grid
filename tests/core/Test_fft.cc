@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Grid.h>
 
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 int main (int argc, char ** argv)
 {
@@ -38,9 +38,9 @@ int main (int argc, char ** argv)
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout( { vComplexD::Nsimd(),1,1,1});
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout( { vComplexD::Nsimd(),1,1,1});
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   int vol = 1;
   for(int d=0;d<latt_size.size();d++){
@@ -60,7 +60,7 @@ int main (int argc, char ** argv)
   LatticeSpinMatrixD    S(&GRID);
   LatticeSpinMatrixD    Stilde(&GRID);
   
-  std::vector<int> p({1,3,2,3});
+  Coordinate p({1,3,2,3});
 
   one = ComplexD(1.0,0.0);
   zz  = ComplexD(0.0,0.0);
@@ -71,7 +71,7 @@ int main (int argc, char ** argv)
   std::cout<<"*************************************************"<<std::endl;
   std::cout<<"Testing Fourier from of known plane wave         "<<std::endl;
   std::cout<<"*************************************************"<<std::endl;
-  C=zero;
+  C=Zero();
   for(int mu=0;mu<4;mu++){
     RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
     LatticeCoordinate(coor,mu);
@@ -80,7 +80,7 @@ int main (int argc, char ** argv)
 
   C = exp(C*ci);
   Csav = C;
-  S=zero;
+  S=Zero();
   S = S+C;
 
   FFT theFFT(&GRID);
@@ -92,12 +92,12 @@ int main (int argc, char ** argv)
   theFFT.FFT_dim(Ctilde,Ctilde,2,FFT::forward); std::cout << theFFT.MFlops()<<" Mflops "<<std::endl;
   theFFT.FFT_dim(Ctilde,Ctilde,3,FFT::forward); std::cout << theFFT.MFlops()<<" Mflops "<<std::endl;
 
-  //  C=zero;
+  //  C=Zero();
   //  Ctilde = where(abs(Ctilde)<1.0e-10,C,Ctilde);
   TComplexD cVol;
   cVol()()() = vol;
 
-  Cref=zero;
+  Cref=Zero();
   pokeSite(cVol,Cref,p);
   //  std::cout <<"Ctilde "<< Ctilde <<std::endl;
   //  std::cout <<"Cref   "<< Cref <<std::endl;
@@ -121,9 +121,9 @@ int main (int argc, char ** argv)
   theFFT.FFT_dim(Stilde,S,3,FFT::forward); std::cout << theFFT.MFlops()<<" mflops "<<std::endl;
 
   SpinMatrixD Sp; 
-  Sp = zero; Sp = Sp+cVol;
+  Sp = Zero(); Sp = Sp+cVol;
 
-  S=zero;
+  S=Zero();
   pokeSite(Sp,S,p);
 
   S= S-Stilde;
@@ -139,7 +139,7 @@ int main (int argc, char ** argv)
   LatticeGaugeFieldD Umu(&GRID);
 
   SU3::ColdConfiguration(pRNG,Umu); // Unit gauge
-  //  Umu=zero;
+  //  Umu=Zero();
   ////////////////////////////////////////////////////
   // Wilson test
   ////////////////////////////////////////////////////
@@ -225,13 +225,13 @@ int main (int argc, char ** argv)
       Gamma::Algebra::GammaT,
       Gamma::Algebra::Gamma5
     };
-    LatticeFermionD    Kinetic(FGrid); Kinetic = zero;
+    LatticeFermionD    Kinetic(FGrid); Kinetic = Zero();
     LatticeComplexD    kmu(FGrid); 
     LatticeInteger     scoor(FGrid); 
-    LatticeComplexD    sk (FGrid); sk = zero;
-    LatticeComplexD    sk2(FGrid); sk2= zero;
-    LatticeComplexD    W(FGrid); W= zero;
-    //      LatticeComplexD    a(FGrid); a= zero;
+    LatticeComplexD    sk (FGrid); sk = Zero();
+    LatticeComplexD    sk2(FGrid); sk2= Zero();
+    LatticeComplexD    W(FGrid); W= Zero();
+    //      LatticeComplexD    a(FGrid); a= Zero();
     LatticeComplexD    one(FGrid); one =ComplexD(1.0,0.0);
     ComplexD ci(0.0,1.0);
     
@@ -294,8 +294,8 @@ int main (int argc, char ** argv)
     LatticeFermionD    ref(&GRID);
     LatticeFermionD    diff(&GRID);
 
-    std::vector<int> point(4,0);
-    src=zero;
+    Coordinate point(4,0);
+    src=Zero();
     SpinColourVectorD ferm; gaussian(sRNG,ferm);
     pokeSite(ferm,src,point);
 
@@ -314,9 +314,9 @@ int main (int argc, char ** argv)
 
     Gamma G5(Gamma::Algebra::Gamma5);
 
-    LatticeFermionD    src5(FGrid); src5=zero;
+    LatticeFermionD    src5(FGrid); src5=Zero();
     LatticeFermionD    tmp5(FGrid); 
-    LatticeFermionD    result5(FGrid); result5=zero;
+    LatticeFermionD    result5(FGrid); result5=Zero();
     LatticeFermionD    result4(&GRID); 
     const int sdir=0;
 
@@ -374,8 +374,8 @@ int main (int argc, char ** argv)
     LatticeFermionD    ref(&GRID);
     LatticeFermionD    diff(&GRID);
 
-    std::vector<int> point(4,0);
-    src=zero;
+    Coordinate point(4,0);
+    src=Zero();
     SpinColourVectorD ferm; gaussian(sRNG,ferm);
     pokeSite(ferm,src,point);
 
@@ -394,9 +394,9 @@ int main (int argc, char ** argv)
 
     Gamma G5(Gamma::Algebra::Gamma5);
 
-    LatticeFermionD    src5(FGrid); src5=zero;
+    LatticeFermionD    src5(FGrid); src5=Zero();
     LatticeFermionD    tmp5(FGrid); 
-    LatticeFermionD    result5(FGrid); result5=zero;
+    LatticeFermionD    result5(FGrid); result5=Zero();
     LatticeFermionD    result4(&GRID); 
     const int sdir=0;
 
@@ -449,8 +449,8 @@ int main (int argc, char ** argv)
     typedef Photon<QEDGimplTypesD>       QEDGaction;
 
     QEDGaction Maxwell(QEDGaction::FEYNMAN_L);
-    QEDGaction::GaugeField Prop(&GRID);Prop=zero;
-    QEDGaction::GaugeField Source(&GRID);Source=zero;
+    QEDGaction::GaugeField Prop(&GRID);Prop=Zero();
+    QEDGaction::GaugeField Source(&GRID);Source=Zero();
 
     Maxwell.FreePropagator (Source,Prop);
     std::cout << " MaxwellFree propagator\n";

@@ -28,25 +28,26 @@ directory
 /*  END LEGAL */
 //--------------------------------------------------------------------
 //--------------------------------------------------------------------
-#ifndef HMC_AGGREGATE_INCLUDED
-#define HMC_AGGREGATE_INCLUDED
+#pragma once
 
 #include <string>
 
 #include <Grid/qcd/observables/hmc_observable.h>
 #include <Grid/qcd/hmc/HMC.h>
 
-
 // annoying location; should move this ?
 #include <Grid/parallelIO/IldgIOtypes.h>
 #include <Grid/parallelIO/IldgIO.h>
 #include <Grid/parallelIO/NerscIO.h>
+NAMESPACE_CHECK(Ildg);
 
 #include <Grid/qcd/hmc/checkpointers/CheckPointers.h>
 #include <Grid/qcd/hmc/HMCModules.h>
 #include <Grid/qcd/modules/mods.h>
+NAMESPACE_CHECK(HMCmodules);
 #include <Grid/qcd/hmc/HMCResourceManager.h>
+NAMESPACE_CHECK(HMCresourcemanager);
 #include <Grid/qcd/hmc/GenericHMCrunner.h>
 #include <Grid/qcd/hmc/HMCRunnerModule.h>
+NAMESPACE_CHECK(HMCrunner);
 
-#endif

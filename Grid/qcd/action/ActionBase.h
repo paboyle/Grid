@@ -27,19 +27,18 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 
 #ifndef ACTION_BASE_H
 #define ACTION_BASE_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 template <class GaugeField >
 class Action 
 {
 
- public:
+public:
   bool is_smeared = false;
   // Heatbath?
   virtual void refresh(const GaugeField& U, GridParallelRNG& pRNG) = 0; // refresh pseudofermions
@@ -50,7 +49,6 @@ class Action
   virtual ~Action(){}
 };
 
-}
-}
+NAMESPACE_END(Grid);
 
 #endif // ACTION_BASE_H
