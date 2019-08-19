@@ -354,6 +354,6 @@ public:
   }
 };
 
-NAMESPACE_END(QCD);
+NAMESPACE_END(Grid);
 
 #endif
