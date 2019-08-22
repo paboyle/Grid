@@ -60,166 +60,245 @@ template<class l,int N> accelerator_inline iMatrix<l,N> operator * (const typena
 ////////////////////////////////////////////////////////////////////
 // Double support; cast to "scalar_type" through constructor
 ////////////////////////////////////////////////////////////////////
-template<class l> accelerator_inline iScalar<l> operator * (const iScalar<l>& lhs,double rhs) 
+
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0> 
+accelerator_inline iScalar<l> operator * (const iScalar<l>& lhs,double rhs) 
 {
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,double>::value,int>::type i=0;
   typename iScalar<l>::scalar_type t; t=rhs;
   typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs*srhs;
 }
-template<class l> accelerator_inline iScalar<l> operator * (double lhs,const iScalar<l>& rhs) {  return rhs*lhs; }
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iScalar<l> operator * (double lhs,const iScalar<l>& rhs) 
+{ 
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,double>::value,int>::type i=0;
+  return rhs*lhs; 
+}
 
-template<class l,int N> accelerator_inline iVector<l,N> operator * (const iVector<l,N>& lhs,double rhs) 
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iVector<l,N> operator * (const iVector<l,N>& lhs,double rhs) 
 {
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,double>::value,int>::type i=0;
   typename iScalar<l>::scalar_type t;t=rhs;
   typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs*srhs;
 }
-template<class l,int N> accelerator_inline iVector<l,N> operator * (double lhs,const iVector<l,N>& rhs) {  return rhs*lhs; }
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iVector<l,N> operator * (double lhs,const iVector<l,N>& rhs) 
+{ 
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,double>::value,int>::type i=0;
+  return rhs*lhs; 
+}
 
-template<class l,int N> accelerator_inline iMatrix<l,N> operator * (const iMatrix<l,N>& lhs,double rhs) 
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator * (const iMatrix<l,N>& lhs,double rhs) 
 {
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,double>::value,int>::type i=0;
   typename iScalar<l>::scalar_type t;t=rhs;
   typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs*srhs;
 }
-template<class l,int N> accelerator_inline iMatrix<l,N> operator * (double lhs,const iMatrix<l,N>& rhs) {  return rhs*lhs; }
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator * (double lhs,const iMatrix<l,N>& rhs) 
+{  
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,double>::value,int>::type i=0;
+  return rhs*lhs; 
+}
 
 ////////////////////////////////////////////////////////////////////
 // Complex support; cast to "scalar_type" through constructor
 ////////////////////////////////////////////////////////////////////
-template<class l> accelerator_inline iScalar<l> operator * (const iScalar<l>& lhs,ComplexD rhs) 
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iScalar<l> operator * (const iScalar<l>& lhs,ComplexD rhs) 
 {
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,ComplexD>::value,int>::type i=0;
   typename iScalar<l>::scalar_type t;t=rhs;
   typename iScalar<l>::tensor_reduced srhs;srhs=t;
   
-  
   return lhs*srhs;
 }
-template<class l> accelerator_inline iScalar<l> operator * (ComplexD lhs,const iScalar<l>& rhs) {  return rhs*lhs; }
-
-template<class l,int N> accelerator_inline iVector<l,N> operator * (const iVector<l,N>& lhs,ComplexD rhs) 
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iScalar<l> operator * (ComplexD lhs,const iScalar<l>& rhs) 
 {
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,ComplexD>::value,int>::type i=0;
+  return rhs*lhs; 
+}
+
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iVector<l,N> operator * (const iVector<l,N>& lhs,ComplexD rhs) 
+{
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,ComplexD>::value,int>::type i=0;
   typename iScalar<l>::scalar_type t;t=rhs;
   typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs*srhs;
 }
-template<class l,int N> accelerator_inline iVector<l,N> operator * (ComplexD lhs,const iVector<l,N>& rhs) {  return rhs*lhs; }
-
-template<class l,int N> accelerator_inline iMatrix<l,N> operator * (const iMatrix<l,N>& lhs,ComplexD rhs) 
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iVector<l,N> operator * (ComplexD lhs,const iVector<l,N>& rhs) 
 {
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,ComplexD>::value,int>::type i=0;
+  return rhs*lhs; 
+}
+
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator * (const iMatrix<l,N>& lhs,ComplexD rhs) 
+{
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,ComplexD>::value,int>::type i=0;
   typename iScalar<l>::scalar_type t;t=rhs;
   typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs*srhs;
 }
-template<class l,int N> accelerator_inline iMatrix<l,N> operator * (ComplexD lhs,const iMatrix<l,N>& rhs) {  return rhs*lhs; }
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator * (ComplexD lhs,const iMatrix<l,N>& rhs) 
+{ 
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,ComplexD>::value,int>::type i=0;
+  return rhs*lhs; 
+}
 
 ////////////////////////////////////////////////////////////////////
 // Integer support; cast to "scalar_type" through constructor
 ////////////////////////////////////////////////////////////////////
-template<class l> accelerator_inline iScalar<l> operator * (const iScalar<l>& lhs,Integer rhs) 
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iScalar<l> operator * (const iScalar<l>& lhs,Integer rhs) 
 {
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,ComplexD>::value,int>::type i=0;
   typename iScalar<l>::scalar_type t;  t=rhs;
   typename iScalar<l>::tensor_reduced srhs; srhs=t;
   return lhs*srhs;
 }
-template<class l> accelerator_inline iScalar<l> operator * (Integer lhs,const iScalar<l>& rhs) {  return rhs*lhs; }
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iScalar<l> operator * (Integer lhs,const iScalar<l>& rhs) 
+{  
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,Integer>::value,int>::type i=0;
+  return rhs*lhs; 
+}
 
-template<class l,int N> accelerator_inline iVector<l,N> operator * (const iVector<l,N>& lhs,Integer rhs) 
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iVector<l,N> operator * (const iVector<l,N>& lhs,Integer rhs) 
 {
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,Integer>::value,int>::type i=0;
   typename iScalar<l>::scalar_type t;t=rhs;
   typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs*srhs;
 }
-template<class l,int N> accelerator_inline iVector<l,N> operator * (Integer lhs,const iVector<l,N>& rhs) {  return rhs*lhs; }
-
-template<class l,int N> accelerator_inline iMatrix<l,N> operator * (const iMatrix<l,N>& lhs,Integer rhs) 
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iVector<l,N> operator * (Integer lhs,const iVector<l,N>& rhs) 
 {
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,Integer>::value,int>::type i=0;
+  return rhs*lhs; 
+}
+
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator * (const iMatrix<l,N>& lhs,Integer rhs) 
+{
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,Integer>::value,int>::type i=0;
   typename iScalar<l>::scalar_type t;t=rhs;
   typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs*srhs;
 }
-template<class l,int N> accelerator_inline iMatrix<l,N> operator * (Integer lhs,const iMatrix<l,N>& rhs) {  return rhs*lhs; }
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator * (Integer lhs,const iMatrix<l,N>& rhs) 
+{
+  //  typename std::enable_if<!std::is_same<typename iScalar<l>::scalar_type,Integer>::value,int>::type i=0;
+  return rhs*lhs; 
+}
 
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // addition by fundamental scalar type applies to matrix(down diag) and scalar
 ///////////////////////////////////////////////////////////////////////////////////////////////
-template<class l> accelerator_inline iScalar<l> operator + (const iScalar<l>& lhs,const typename iScalar<l>::scalar_type rhs) 
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iScalar<l> operator + (const iScalar<l>& lhs,const typename iScalar<l>::scalar_type rhs) 
 {
   typename iScalar<l>::tensor_reduced srhs; srhs=rhs;
   return lhs+srhs;
 }
-template<class l> accelerator_inline iScalar<l> operator + (const typename iScalar<l>::scalar_type lhs,const iScalar<l>& rhs) {  return rhs+lhs; }
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iScalar<l> operator + (const typename iScalar<l>::scalar_type lhs,const iScalar<l>& rhs) {  return rhs+lhs; }
 
-template<class l,int N> accelerator_inline iMatrix<l,N> operator + (const iMatrix<l,N>& lhs,const typename iScalar<l>::scalar_type rhs) 
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator + (const iMatrix<l,N>& lhs,const typename iScalar<l>::scalar_type rhs) 
 {
   typename iMatrix<l,N>::tensor_reduced srhs; srhs=rhs;
   return lhs+srhs;
 }
-template<class l,int N> accelerator_inline iMatrix<l,N> operator + (const typename iScalar<l>::scalar_type lhs,const iMatrix<l,N>& rhs) {  return rhs+lhs; }
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator + (const typename iScalar<l>::scalar_type lhs,const iMatrix<l,N>& rhs) {  return rhs+lhs; }
 
 ////////////////////////////////////////////////////////////////////
 // Double support; cast to "scalar_type" through constructor
 ////////////////////////////////////////////////////////////////////
-template<class l> accelerator_inline iScalar<l> operator + (const iScalar<l>& lhs,double rhs) 
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iScalar<l> operator + (const iScalar<l>& lhs,double rhs) 
 {
   typename iScalar<l>::scalar_type t; t=rhs;
   typename iScalar<l>::tensor_reduced srhs; srhs=t;
   return lhs+srhs;
 }
-template<class l> accelerator_inline iScalar<l> operator + (double lhs,const iScalar<l>& rhs) {  return rhs+lhs; }
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iScalar<l> operator + (double lhs,const iScalar<l>& rhs) {  return rhs+lhs; }
 
-template<class l,int N> accelerator_inline iMatrix<l,N> operator + (const iMatrix<l,N>& lhs,double rhs) 
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator + (const iMatrix<l,N>& lhs,double rhs) 
 {
   typename iScalar<l>::scalar_type t;t=rhs;
   typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs+srhs;
 }
-template<class l,int N> accelerator_inline iMatrix<l,N> operator + (double lhs,const iMatrix<l,N>& rhs) {  return rhs+lhs; }
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator + (double lhs,const iMatrix<l,N>& rhs) {  return rhs+lhs; }
 
 
 // Integer support cast to scalar type through constructor
 
 
-template<class l> accelerator_inline iScalar<l> operator + (const iScalar<l>& lhs,Integer rhs) 
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iScalar<l> operator + (const iScalar<l>& lhs,Integer rhs) 
 {
   typename iScalar<l>::scalar_type t; t=rhs;
   typename iScalar<l>::tensor_reduced srhs; srhs=t;
   return lhs+srhs;
 }
 
-template<class l> accelerator_inline iScalar<l> operator + (Integer lhs,const iScalar<l>& rhs) {  return rhs+lhs; }
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iScalar<l> operator + (Integer lhs,const iScalar<l>& rhs) {  return rhs+lhs; }
 
-template<class l,int N> accelerator_inline iMatrix<l,N> operator + (const iMatrix<l,N>& lhs,Integer rhs) 
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator + (const iMatrix<l,N>& lhs,Integer rhs) 
 {
   typename iScalar<l>::scalar_type t;t=rhs;
   typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs+srhs;
 }
-template<class l,int N> accelerator_inline iMatrix<l,N> operator + (Integer lhs,const iMatrix<l,N>& rhs) {  return rhs+lhs; }
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator + (Integer lhs,const iMatrix<l,N>& rhs) {  return rhs+lhs; }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // subtraction of fundamental scalar type applies to matrix(down diag) and scalar
 ///////////////////////////////////////////////////////////////////////////////////////////////
-template<class l> accelerator_inline iScalar<l> operator - (const iScalar<l>& lhs,const typename iScalar<l>::scalar_type rhs) 
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iScalar<l> operator - (const iScalar<l>& lhs,const typename iScalar<l>::scalar_type rhs) 
 {
   typename iScalar<l>::tensor_reduced srhs; srhs=rhs;
   return lhs-srhs;
 }
-template<class l> accelerator_inline iScalar<l> operator - (const typename iScalar<l>::scalar_type lhs,const iScalar<l>& rhs) 
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iScalar<l> operator - (const typename iScalar<l>::scalar_type lhs,const iScalar<l>& rhs) 
 {
   typename iScalar<l>::tensor_reduced slhs;slhs=lhs;
   return slhs-rhs;
 }
 
-template<class l,int N> accelerator_inline iMatrix<l,N> operator - (const iMatrix<l,N>& lhs,const typename iScalar<l>::scalar_type rhs) 
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator - (const iMatrix<l,N>& lhs,const typename iScalar<l>::scalar_type rhs) 
 {
   typename iScalar<l>::tensor_reduced srhs; srhs=rhs;
   return lhs-srhs;
 }
-template<class l,int N> accelerator_inline iMatrix<l,N> operator - (const typename iScalar<l>::scalar_type lhs,const iMatrix<l,N>& rhs) 
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator - (const typename iScalar<l>::scalar_type lhs,const iMatrix<l,N>& rhs) 
 {
   typename iScalar<l>::tensor_reduced slhs;slhs=lhs;
   return slhs-rhs;
@@ -228,26 +307,30 @@ template<class l,int N> accelerator_inline iMatrix<l,N> operator - (const typena
 ////////////////////////////////////////////////////////////////////
 // Double support; cast to "scalar_type" through constructor
 ////////////////////////////////////////////////////////////////////
-template<class l> accelerator_inline iScalar<l> operator - (const iScalar<l>& lhs,double rhs) 
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iScalar<l> operator - (const iScalar<l>& lhs,double rhs) 
 {
   typename iScalar<l>::scalar_type t; t=rhs;
   typename iScalar<l>::tensor_reduced srhs; srhs=t;
   return lhs-srhs;
 }
-template<class l> accelerator_inline iScalar<l> operator - (double lhs,const iScalar<l>& rhs) 
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iScalar<l> operator - (double lhs,const iScalar<l>& rhs) 
 {
   typename iScalar<l>::scalar_type t(lhs);
   typename iScalar<l>::tensor_reduced slhs;slhs=t;
   return slhs-rhs;
 }
 
-template<class l,int N> accelerator_inline iMatrix<l,N> operator - (const iMatrix<l,N>& lhs,double rhs) 
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator - (const iMatrix<l,N>& lhs,double rhs) 
 {
   typename iScalar<l>::scalar_type t;t=rhs;
   typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs-srhs;
 }
-template<class l,int N> accelerator_inline iMatrix<l,N> operator - (double lhs,const iMatrix<l,N>& rhs) 
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator - (double lhs,const iMatrix<l,N>& rhs) 
 {
   typename iScalar<l>::scalar_type t(lhs);
   typename iScalar<l>::tensor_reduced slhs;slhs=t;
@@ -257,25 +340,29 @@ template<class l,int N> accelerator_inline iMatrix<l,N> operator - (double lhs,c
 ////////////////////////////////////////////////////////////////////
 // Integer support; cast to "scalar_type" through constructor
 ////////////////////////////////////////////////////////////////////
-template<class l> accelerator_inline iScalar<l> operator - (const iScalar<l>& lhs,Integer rhs) 
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iScalar<l> operator - (const iScalar<l>& lhs,Integer rhs) 
 {
   typename iScalar<l>::scalar_type t; t=rhs;
   typename iScalar<l>::tensor_reduced srhs; srhs=t;
   return lhs-srhs;
 }
-template<class l> accelerator_inline iScalar<l> operator - (Integer lhs,const iScalar<l>& rhs) 
+template<class l,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iScalar<l> operator - (Integer lhs,const iScalar<l>& rhs) 
 {
   typename iScalar<l>::scalar_type t;t=lhs;
   typename iScalar<l>::tensor_reduced slhs;slhs=t;
   return slhs-rhs;
 }
-template<class l,int N> accelerator_inline iMatrix<l,N> operator - (const iMatrix<l,N>& lhs,Integer rhs) 
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator - (const iMatrix<l,N>& lhs,Integer rhs) 
 {
   typename iScalar<l>::scalar_type t;t=rhs;
   typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs-srhs;
 }
-template<class l,int N> accelerator_inline iMatrix<l,N> operator - (Integer lhs,const iMatrix<l,N>& rhs) 
+template<class l,int N,IfNotSame<typename iScalar<l>::scalar_type,double> = 0>  
+accelerator_inline iMatrix<l,N> operator - (Integer lhs,const iMatrix<l,N>& rhs) 
 {
   typename iScalar<l>::scalar_type t;t=lhs;
   typename iScalar<l>::tensor_reduced slhs;slhs=t;
