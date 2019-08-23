@@ -57,14 +57,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define thread_max(a) (1)
 #endif
 
-#define naked_for(i,num,...) for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
-#define naked_foreach(i,container,...) for ( uint64_t i=container.begin();i<container.end();i++) { __VA_ARGS__ } ;
-#define thread_for( i, num, ... )                           DO_PRAGMA(omp parallel for schedule(static)) naked_for(i,num,{__VA_ARGS__});
-#define thread_foreach( i, num, ... )                       DO_PRAGMA(omp parallel for schedule(static)) naked_foreach(i,num,{__VA_ARGS__});
-#define thread_for_in_region( i, num, ... )                 DO_PRAGMA(omp for schedule(static))          naked_for(i,num,{__VA_ARGS__});
-#define thread_for_collapse2( i, num, ... )                 DO_PRAGMA(omp parallel for collapse(2))      naked_for(i,num,{__VA_ARGS__});
-#define thread_for_collapse( N , i, num, ... )              DO_PRAGMA(omp parallel for collapse ( N ) )  naked_for(i,num,{__VA_ARGS__});
-#define thread_for_collapse_in_region( N , i, num, ... )    DO_PRAGMA(omp for collapse ( N ))            naked_for(i,num,{__VA_ARGS__});
+#define thread_for( i, num, ... )                           DO_PRAGMA(omp parallel for schedule(static)) for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define thread_foreach( i, container, ... )                 DO_PRAGMA(omp parallel for schedule(static)) for ( uint64_t i=container.begin();i<container.end();i++) { __VA_ARGS__ } ;
+#define thread_for_in_region( i, num, ... )                 DO_PRAGMA(omp for schedule(static))          for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define thread_for_collapse2( i, num, ... )                 DO_PRAGMA(omp parallel for collapse(2))      for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define thread_for_collapse( N , i, num, ... )              DO_PRAGMA(omp parallel for collapse ( N ) )  for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define thread_for_collapse_in_region( N , i, num, ... )    DO_PRAGMA(omp for collapse ( N ))            for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
 #define thread_region                                       DO_PRAGMA(omp parallel)
 #define thread_critical                                     DO_PRAGMA(omp critical)
 
