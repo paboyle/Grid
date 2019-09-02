@@ -55,6 +55,10 @@ CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
   auto chi = chi_i.View();
   assert(phi.Checkerboard() == psi.Checkerboard());
 
+  auto pdiag = &diag[0];
+  auto pupper = &upper[0];
+  auto plower = &lower[0];
+
   int Ls =this->Ls;
 
   // 10 = 3 complex mult + 2 complex add
@@ -72,7 +76,7 @@ CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
       uint64_t idx_l = ss+((s+Ls-1)%Ls);
       spProj5m(tmp1,psi(idx_u));
       spProj5p(tmp2,psi(idx_l));
-      coalescedWrite(chi[ss+s],diag[s]*phi(ss+s)+upper[s]*tmp1+lower[s]*tmp2);
+      coalescedWrite(chi[ss+s],pdiag[s]*phi(ss+s)+pupper[s]*tmp1+plower[s]*tmp2);
     }
   });
   M5Dtime+=usecond();
@@ -94,6 +98,10 @@ CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
   auto chi = chi_i.View();
   assert(phi.Checkerboard() == psi.Checkerboard());
 
+  auto pdiag = &diag[0];
+  auto pupper = &upper[0];
+  auto plower = &lower[0];
+
   int Ls=this->Ls;
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
@@ -110,7 +118,7 @@ CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
       uint64_t idx_l = ss+((s+Ls-1)%Ls);
       spProj5p(tmp1,psi(idx_u));
       spProj5m(tmp2,psi(idx_l));
-      coalescedWrite(chi[ss+s],diag[s]*phi(ss+s)+upper[s]*tmp1+lower[s]*tmp2);
+      coalescedWrite(chi[ss+s],pdiag[s]*phi(ss+s)+pupper[s]*tmp1+plower[s]*tmp2);
     }
   });
   M5Dtime+=usecond();

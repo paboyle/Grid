@@ -11,6 +11,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
 Author: paboyle <paboyle@ph.ed.ac.uk>
 Author: David Murphy <dmurphy@phys.columbia.edu>
+Author: Gianluca Filaci <g.filaci@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -49,6 +50,9 @@ void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi_i, const FermionFi
   auto psi = psi_i.View();
   auto chi = chi_i.View();
   assert(phi.Checkerboard() == psi.Checkerboard());
+  auto pdiag = &diag[0];
+  auto pupper = &upper[0];
+  auto plower = &lower[0];
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   this->M5Dcalls++;
   this->M5Dtime -= usecond();
@@ -63,7 +67,7 @@ void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi_i, const FermionFi
       uint64_t idx_l = ss+((s+Ls-1)%Ls);
       spProj5m(tmp1, psi(idx_u));
       spProj5p(tmp2, psi(idx_l));
-      coalescedWrite(chi[ss+s], diag[s]*phi(ss+s) + upper[s]*tmp1 + lower[s]*tmp2);
+      coalescedWrite(chi[ss+s], pdiag[s]*phi(ss+s) + pupper[s]*tmp1 + plower[s]*tmp2);
     }
   });
 
@@ -82,6 +86,9 @@ void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi_i, const Fermio
   auto phi = phi_i.View();
   auto chi = chi_i.View();
   assert(phi.Checkerboard() == psi.Checkerboard());
+  auto pdiag = &diag[0];
+  auto pupper = &upper[0];
+  auto plower = &lower[0];
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   this->M5Dcalls++;
@@ -97,7 +104,7 @@ void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi_i, const Fermio
       uint64_t idx_l = ss+((s+Ls-1)%Ls);
       spProj5p(tmp1, psi(idx_u));
       spProj5m(tmp2, psi(idx_l));
-      coalescedWrite(chi[ss+s], diag[s]*phi(ss+s) + upper[s]*tmp1 + lower[s]*tmp2);
+      coalescedWrite(chi[ss+s], pdiag[s]*phi(ss+s) + pupper[s]*tmp1 + plower[s]*tmp2);
     }
   });
 

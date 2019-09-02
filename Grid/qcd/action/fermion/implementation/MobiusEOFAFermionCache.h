@@ -11,6 +11,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
 Author: paboyle <paboyle@ph.ed.ac.uk>
 Author: David Murphy <dmurphy@phys.columbia.edu>
+Author: Gianluca Filaci <g.filaci@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -49,6 +50,10 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi_i, const FermionField 
 
   assert(phi.Checkerboard() == psi.Checkerboard());
 
+  auto pdiag = &diag[0];
+  auto pupper = &upper[0];
+  auto plower = &lower[0];
+
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   this->M5Dcalls++;
   this->M5Dtime -= usecond();
@@ -64,7 +69,7 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi_i, const FermionField 
       uint64_t idx_l = ss+((s+Ls-1)%Ls);
       spProj5m(tmp1, psi(idx_u));
       spProj5p(tmp2, psi(idx_l));
-      coalescedWrite(chi[ss+s], diag[s]*phi(ss+s) + upper[s]*tmp1 + lower[s]*tmp2);
+      coalescedWrite(chi[ss+s], pdiag[s]*phi(ss+s) + pupper[s]*tmp1 + plower[s]*tmp2);
     }
   });
 
@@ -88,6 +93,11 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField &psi_i, const Fermion
 
   assert(phi.Checkerboard() == psi.Checkerboard());
 
+  auto pdiag = &diag[0];
+  auto pupper = &upper[0];
+  auto plower = &lower[0];
+  auto pshift_coeffs = &shift_coeffs[0];
+
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   this->M5Dcalls++;
   this->M5Dtime -= usecond();
@@ -108,7 +118,7 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField &psi_i, const Fermion
       if(pm == 1){ spProj5p(tmp, psi(ss+shift_s)); }
       else       { spProj5m(tmp, psi(ss+shift_s)); }
 
-      coalescedWrite(chi[ss+s], diag[s]*phi(ss+s) + upper[s]*tmp1 +lower[s]*tmp2 + shift_coeffs[s]*tmp);
+      coalescedWrite(chi[ss+s], pdiag[s]*phi(ss+s) + pupper[s]*tmp1 +plower[s]*tmp2 + pshift_coeffs[s]*tmp);
     }
   });
 
@@ -128,6 +138,10 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField &psi_i, const FermionFie
 
   assert(phi.Checkerboard() == psi.Checkerboard());
 
+  auto pdiag = &diag[0];
+  auto pupper = &upper[0];
+  auto plower = &lower[0];
+
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   this->M5Dcalls++;
   this->M5Dtime -= usecond();
@@ -144,7 +158,7 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField &psi_i, const FermionFie
       uint64_t idx_l = ss+((s+Ls-1)%Ls);
       spProj5p(tmp1, psi(idx_u));
       spProj5m(tmp2, psi(idx_l));
-      coalescedWrite(chi[ss+s], diag[s]*phi(ss+s) + upper[s]*tmp1 + lower[s]*tmp2);
+      coalescedWrite(chi[ss+s], pdiag[s]*phi(ss+s) + pupper[s]*tmp1 + plower[s]*tmp2);
     }
   });
 
@@ -165,6 +179,11 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField &psi_i, const Ferm
   auto chi = chi_i.View();
 
   assert(phi.Checkerboard() == psi.Checkerboard());
+
+  auto pdiag = &diag[0];
+  auto pupper = &upper[0];
+  auto plower = &lower[0];
+  auto pshift_coeffs = &shift_coeffs[0];
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   this->M5Dcalls++;
@@ -189,12 +208,12 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField &psi_i, const Ferm
       spProj5p(tmp1, psi(idx_u));
       spProj5m(tmp2, psi(idx_l));
 
-      if(s==(Ls-1)) coalescedWrite(chi[ss+s], chi(ss+s)+ diag[s]*phi(ss+s) + upper[s]*tmp1 + lower[s]*tmp2);
-      else          coalescedWrite(chi[ss+s], diag[s]*phi(ss+s) + upper[s]*tmp1 + lower[s]*tmp2);
+      if(s==(Ls-1)) coalescedWrite(chi[ss+s], chi(ss+s)+ pdiag[s]*phi(ss+s) + pupper[s]*tmp1 + plower[s]*tmp2);
+      else          coalescedWrite(chi[ss+s], pdiag[s]*phi(ss+s) + pupper[s]*tmp1 + plower[s]*tmp2);
       if(pm == 1){ spProj5p(tmp, psi(ss+s)); }
       else       { spProj5m(tmp, psi(ss+s)); }
 
-      coalescedWrite(chi[ss+shift_s],chi(ss+shift_s)+shift_coeffs[s]*tmp);
+      coalescedWrite(chi[ss+shift_s],chi(ss+shift_s)+pshift_coeffs[s]*tmp);
     }
   });
 
