@@ -148,7 +148,7 @@ CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi_i, FermionField &chi
   accelerator_for(sss,nloop,Simd::Nsimd(),{
     uint64_t ss=sss*Ls;
     typedef decltype(coalescedRead(psi[0])) spinor;
-    spinor tmp, acc, res;;
+    spinor tmp, acc, res;
 
     // X = Nc*Ns
     // flops = 2X + (Ls-2)(4X + 4X) + 6X + 1 + 2X + (Ls-1)(10X + 1) = -16X + Ls(1+18X) = -192 + 217*Ls flops
