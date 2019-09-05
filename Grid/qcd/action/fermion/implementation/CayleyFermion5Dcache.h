@@ -216,7 +216,7 @@ CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi_i, FermionField &chi
 
     // X = Nc*Ns
     // flops = 2X + (Ls-2)(4X + 4X) + 6X + 1 + 2X + (Ls-1)(10X + 1) = -16X + Ls(1+18X) = -192 + 217*Ls flops
-    // Apply (L^{\prime})^{-1} L_m^{-1}
+    // Apply (U^{\prime})^{-dagger} U_m^{-\dagger}
     res = psi(ss);
     spProj5p(tmp,res);
     acc = conjugate(pueem[0])*tmp;
@@ -233,7 +233,7 @@ CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi_i, FermionField &chi
     }
     res = psi(ss+Ls-1) - conjugate(puee[Ls-2])*tmp - acc;
     
-    // Apply U_m^{-1} D^{-1} U^{-1}
+    // Apply L_m^{-\dagger} D^{-dagger} L^{-dagger}
     res = (1.0/pdee[Ls-1])*res;
     coalescedWrite(chi[ss+Ls-1],res);
     spProj5m(acc,res);

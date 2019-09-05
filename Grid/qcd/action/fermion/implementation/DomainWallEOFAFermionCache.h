@@ -131,36 +131,37 @@ void DomainWallEOFAFermion<Impl>::MooeeInv(const FermionField& psi_i, FermionFie
   this->MooeeInvTime -= usecond();
   uint64_t nloop=grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
-    auto ss=sss*Ls;
+    uint64_t ss=sss*Ls;
     typedef decltype(coalescedRead(psi[0])) spinor;
-    spinor tmp1,tmp2;
+    spinor tmp, acc, res;
 
-    // flops = 12*2*Ls + 12*2*Ls + 3*12*Ls + 12*2*Ls  = 12*Ls * (9) = 108*Ls flops
-    // Apply (L^{\prime})^{-1}
-    coalescedWrite(chi[ss],psi(ss)); // chi[0]=psi[0]
-    for(int s=1; s<Ls; s++){
-      spProj5p(tmp1, chi(ss+s-1));
-      coalescedWrite(chi[ss+s], psi(ss+s) - plee[s-1]*tmp1);
+    // Apply (L^{\prime})^{-1} L_m^{-1}
+    res = psi(ss);
+    spProj5m(tmp,res);
+    acc = pleem[0]*tmp;
+    spProj5p(tmp,res);
+    coalescedWrite(chi[ss],res);
+    
+    for(int s=1;s<Ls-1;s++){
+      res = psi(ss+s);
+      res -= plee[s-1]*tmp;
+      spProj5m(tmp,res);
+      acc += pleem[s]*tmp;
+      spProj5p(tmp,res);
+      coalescedWrite(chi[ss+s],res);
     }
-
-    // L_m^{-1}
-    for(int s=0; s<Ls-1; s++){ // Chi[ee] = 1 - sum[s<Ls-1] -leem[s]P_- chi
-      spProj5m(tmp1, chi(ss+s));
-      coalescedWrite(chi[ss+Ls-1], chi(ss+Ls-1) - pleem[s]*tmp1);
-    }
-
-    // U_m^{-1} D^{-1}
-    for(int s=0; s<Ls-1; s++){ // Chi[s] + 1/d chi[s]
-      spProj5p(tmp1, chi(ss+Ls-1));
-      coalescedWrite(chi[ss+s], (1.0/pdee[s])*chi(ss+s) - (pueem[s]/pdee[Ls])*tmp1);
-    }
-    spProj5m(tmp2, chi(ss+Ls-1));
-    coalescedWrite(chi[ss+Ls-1],(1.0/pdee[Ls])*tmp1 + (1.0/pdee[Ls-1])*tmp2);
-
-    // Apply U^{-1}
-    for(int s=Ls-2; s>=0; s--){
-      spProj5m(tmp1, chi(ss+s+1));
-      coalescedWrite(chi[ss+s], chi(ss+s) - puee[s]*tmp1);
+    res = psi(ss+Ls-1) - plee[Ls-2]*tmp - acc;
+    
+    // Apply U_m^{-1} D^{-1} U^{-1}
+    acc = (1.0/pdee[Ls  ])*res;
+    tmp = (1.0/pdee[Ls-1])*res;
+    spProj5p(acc,acc);
+    spProj5m(tmp,tmp);
+    coalescedWrite(chi[ss+Ls-1], acc + tmp);
+    for (int s=Ls-2;s>=0;s--){
+      res = (1.0/pdee[s])*chi(ss+s) - puee[s]*tmp - pueem[s]*acc;
+      spProj5m(tmp,res);
+      coalescedWrite(chi[ss+s],res);
     }
   });
   this->MooeeInvTime += usecond();
@@ -188,35 +189,37 @@ void DomainWallEOFAFermion<Impl>::MooeeInvDag(const FermionField& psi_i, Fermion
   this->MooeeInvTime -= usecond();
   auto nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
+    uint64_t ss=sss*Ls;
     typedef decltype(coalescedRead(psi[0])) spinor;
-    spinor tmp1,tmp2;
-    auto ss=sss*Ls;
+    spinor tmp, acc, res;
 
-    // Apply (U^{\prime})^{-dagger}
-    coalescedWrite(chi[ss], psi(ss));
-    for(int s=1; s<Ls; s++){
-      spProj5m(tmp1, chi(ss+s-1));
-      coalescedWrite(chi[ss+s], psi(ss+s) - conjugate(puee[s-1])*tmp1);
+    // Apply (U^{\prime})^{-dagger} U_m^{-\dagger} 
+    res = psi(ss);
+    spProj5p(tmp,res);
+    acc = conjugate(pueem[0])*tmp;
+    spProj5m(tmp,res);
+    coalescedWrite(chi[ss],res);
+    
+    for(int s=1;s<Ls-1;s++){
+      res = psi(ss+s);
+      res -= conjugate(puee[s-1])*tmp;
+      spProj5p(tmp,res);
+      acc += conjugate(pueem[s])*tmp;
+      spProj5m(tmp,res);
+      coalescedWrite(chi[ss+s],res);
     }
-
-    // U_m^{-\dagger}
-    for(int s=0; s<Ls-1; s++){
-      spProj5p(tmp1, chi(ss+s));
-      coalescedWrite(chi[ss+Ls-1], chi(ss+Ls-1) - conjugate(pueem[s])*tmp1);
-    }
-
-    // L_m^{-\dagger} D^{-dagger}
-    for(int s=0; s<Ls-1; s++){
-      spProj5m(tmp1, chi(ss+Ls-1));
-      coalescedWrite(chi[ss+s] ,conjugate(1.0/pdee[s])*chi(ss+s) - conjugate(pleem[s]/pdee[Ls-1])*tmp1);
-    }
-    spProj5p(tmp2, chi(ss+Ls-1));
-    coalescedWrite(chi[ss+Ls-1], conjugate(1.0/pdee[Ls-1])*tmp1 + conjugate(1.0/pdee[Ls])*tmp2);
-
-    // Apply L^{-dagger}
-    for(int s=Ls-2; s>=0; s--){
-      spProj5p(tmp1, chi(ss+s+1));
-      coalescedWrite(chi[ss+s],chi(ss+s) - conjugate(plee[s])*tmp1);
+    res = psi(ss+Ls-1) - conjugate(puee[Ls-2])*tmp - acc;
+    
+    // Apply L_m^{-\dagger} D^{-dagger} L^{-dagger}
+    acc = conjugate(1.0/pdee[Ls-1])*res;
+    tmp = conjugate(1.0/pdee[Ls  ])*res;
+    spProj5m(acc,acc);
+    spProj5p(tmp,tmp);
+    coalescedWrite(chi[ss+Ls-1], acc + tmp);
+    for (int s=Ls-2;s>=0;s--){
+      res = conjugate(1.0/pdee[s])*chi(ss+s) - conjugate(plee[s])*tmp - conjugate(pleem[s])*acc;
+      spProj5p(tmp,res);
+      coalescedWrite(chi[ss+s],res);
     }
   });
 

@@ -244,7 +244,7 @@ void MobiusEOFAFermion<Impl>::MooeeInv(const FermionField &psi_i, FermionField &
   accelerator_for(sss,nloop,Simd::Nsimd(),{
     uint64_t ss=sss*Ls;
     typedef decltype(coalescedRead(psi[0])) spinor;
-    spinor tmp, acc, res, tmp2_spProj;
+    spinor tmp, acc, res;
 
     // X = Nc*Ns
     // flops = 2X + (Ls-2)(4X + 4X) + 6X + 1 + 2X + (Ls-1)(10X + 1) = -16X + Ls(1+18X) = -192 + 217*Ls flops
@@ -368,13 +368,13 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag(const FermionField &psi_i, FermionFiel
 
   int nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,Simd::Nsimd(),{
-uint64_t ss=sss*Ls;
+    uint64_t ss=sss*Ls;
     typedef decltype(coalescedRead(psi[0])) spinor;
     spinor tmp, acc, res;
 
     // X = Nc*Ns
     // flops = 2X + (Ls-2)(4X + 4X) + 6X + 1 + 2X + (Ls-1)(10X + 1) = -16X + Ls(1+18X) = -192 + 217*Ls flops
-    // Apply (L^{\prime})^{-1} L_m^{-1}
+    // Apply (U^{\prime})^{-dagger} U_m^{-\dagger}
     res = psi(ss);
     spProj5p(tmp,res);
     acc = pueem[0]*tmp;
@@ -391,7 +391,7 @@ uint64_t ss=sss*Ls;
     }
     res = psi(ss+Ls-1) - puee[Ls-2]*tmp - acc;
     
-    // Apply U_m^{-1} D^{-1} U^{-1}
+    // Apply L_m^{-\dagger} D^{-dagger} L^{-dagger}
     res = (1.0/pdee[Ls-1])*res;
     coalescedWrite(chi[ss+Ls-1],res);
     spProj5m(acc,res);
@@ -402,7 +402,6 @@ uint64_t ss=sss*Ls;
       coalescedWrite(chi[ss+s],res);
     }
   });
-
   this->MooeeInvTime += usecond();
 }
 
@@ -433,7 +432,7 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag_shift(const FermionField &psi_i, Fermi
       typedef decltype(coalescedRead(psi[0])) spinor;
       spinor tmp, acc, res, tmp_spProj;
 
-      // Apply (L^{\prime})^{-1} L_m^{-1}
+      // Apply (U^{\prime})^{-dagger} U_m^{-\dagger}
       res = psi(ss);
       spProj5p(tmp,res);
       acc = pueem[0]*tmp;
@@ -458,7 +457,7 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag_shift(const FermionField &psi_i, Fermi
 
       res = res - puee[Ls-2]*tmp - acc;
 
-      // Apply U_m^{-1} D^{-1} U^{-1}
+      // Apply L_m^{-\dagger} D^{-dagger} L^{-dagger}
       res = (1.0/pdee[Ls-1])*res;
       spProj5m(acc,res);
       spProj5p(tmp,res);
