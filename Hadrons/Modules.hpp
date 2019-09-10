@@ -39,7 +39,6 @@
 #include <Hadrons/Modules/MUtilities/PrecisionCast.hpp>
 #include <Hadrons/Modules/MDistil/Noises.hpp>
 #include <Hadrons/Modules/MDistil/Perambulator.hpp>
-#include <Hadrons/Modules/MDistil/BC2.hpp>
 #include <Hadrons/Modules/MDistil/g5_multiply.hpp>
 #include <Hadrons/Modules/MDistil/PerambFromSolve.hpp>
 #include <Hadrons/Modules/MDistil/Baryon2pt.hpp>
@@ -56,7 +55,6 @@
 #include <Hadrons/Modules/MContraction/WeakMesonDecayKl2.hpp>
 #include <Hadrons/Modules/MContraction/Nucleon.hpp>
 #include <Hadrons/Modules/MContraction/A2AAslashField.hpp>
-#include <Hadrons/Modules/MContraction/Baryon2.hpp>
 #include <Hadrons/Modules/MContraction/WeakEye3pt.hpp>
 #include <Hadrons/Modules/MContraction/WeakNonEye3pt.hpp>
 #include <Hadrons/Modules/MContraction/Baryon.hpp>
