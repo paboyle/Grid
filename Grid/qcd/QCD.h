@@ -479,6 +479,30 @@ namespace QCD {
         }
     }
     
+    //template <class Prop, class Ferm>
+    template <class Fimpl>
+    void PropToFerm(typename Fimpl::FermionField &f,
+                    const typename Fimpl::PropagatorField &p,
+                    const int c)
+    {
+        for(int i = 0; i < Fimpl::Dimension; ++i)
+        {
+            pokeColour(f, peekColour(p, i, c), i);
+        }
+    }
+    
+    //template <class Prop, class Ferm>
+    template <class Fimpl>
+    void FermToProp(typename Fimpl::PropagatorField &p,
+                    const typename Fimpl::FermionField &f,
+                    const int c)
+    {
+        for(int i = 0; i < Fimpl::Dimension; ++i)
+        {
+            pokeColour(p, peekColour(f, i), i, c);
+        }
+    }
+    
     //////////////////////////////////////////////
     // transpose array and scalar
     //////////////////////////////////////////////

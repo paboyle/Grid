@@ -66,6 +66,7 @@ namespace QCD{
       FermionField Phi; // the pseudofermion field for this trajectory
 
     public:
+
       ExactOneFlavourRatioPseudoFermionAction(AbstractEOFAFermion<Impl>& _Lop, 
 					      AbstractEOFAFermion<Impl>& _Rop,
 					      OperatorFunction<FermionField>& HeatbathCG, 

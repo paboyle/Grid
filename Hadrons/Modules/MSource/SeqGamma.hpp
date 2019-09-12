@@ -90,8 +90,32 @@ private:
     std::string momphName_, tName_;
 };
 
+template <typename FImpl>
+class TStagSeqGamma: public Module<SeqGammaPar>
+{
+public:
+    FERM_TYPE_ALIASES(FImpl,);
+public:
+    // constructor
+    TStagSeqGamma(const std::string name);
+    // destructor
+    virtual ~TStagSeqGamma(void) {};
+    // dependency relation
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+protected:
+    // setup
+    virtual void setup(void);
+    // execution
+    virtual void execute(void);
+private:
+    bool        hasPhase_{false};
+    std::string momphName_, tName_, stagPhaseName_;
+};
+
 MODULE_REGISTER_TMP(SeqGamma, TSeqGamma<FIMPL>, MSource);
 MODULE_REGISTER_TMP(ZSeqGamma, TSeqGamma<ZFIMPL>, MSource);
+MODULE_REGISTER_TMP(StagSeqGamma, TStagSeqGamma<STAGIMPL>, MSource);
 
 /******************************************************************************
  *                         TSeqGamma implementation                           *
@@ -170,6 +194,108 @@ void TSeqGamma<FImpl>::execute(void)
         hasPhase_ = true;
     }
     src = where((t >= par().tA) and (t <= par().tB), ph*(g*q), 0.*q);
+}
+
+/******************************************************************************
+ *                         TStagSeqGamma implementation                           *
+ ******************************************************************************/
+// constructor /////////////////////////////////////////////////////////////////
+template <typename FImpl>
+TStagSeqGamma<FImpl>::TStagSeqGamma(const std::string name)
+: Module<SeqGammaPar>(name)
+, momphName_ (name + "_momph")
+, tName_ (name + "_t")
+, stagPhaseName_ (name + "_stagphase")
+{}
+
+// dependencies/products ///////////////////////////////////////////////////////
+template <typename FImpl>
+std::vector<std::string> TStagSeqGamma<FImpl>::getInput(void)
+{
+    std::vector<std::string> in = {par().q};
+    
+    return in;
+}
+
+template <typename FImpl>
+std::vector<std::string> TStagSeqGamma<FImpl>::getOutput(void)
+{
+    std::vector<std::string> out = {getName()};
+    
+    return out;
+}
+
+// setup ///////////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TStagSeqGamma<FImpl>::setup(void)
+{
+    envCreateLat(PropagatorField, getName());
+    envCache(Lattice<iScalar<vInteger>>, tName_, 1, envGetGrid(LatticeComplex));
+    envCacheLat(LatticeComplex, momphName_);
+    envCacheLat(LatticeComplex, stagPhaseName_);
+    envTmpLat(LatticeComplex, "coor");
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TStagSeqGamma<FImpl>::execute(void)
+{
+    if (par().tA == par().tB)
+    {
+        LOG(Message) << "Generating gamma_" << par().gamma
+        << " sequential source at t= " << par().tA << std::endl;
+    }
+    else
+    {
+        LOG(Message) << "Generating gamma_" << par().gamma
+        << " sequential source for "
+        << par().tA << " <= t <= " << par().tB << std::endl;
+    }
+    auto  &src = envGet(PropagatorField, getName());
+    auto  &q   = envGet(PropagatorField, par().q);
+    auto  &ph  = envGet(LatticeComplex, momphName_);
+    auto  &stag_ph  = envGet(LatticeComplex, stagPhaseName_);
+    auto  &t   = envGet(Lattice<iScalar<vInteger>>, tName_);
+    
+    if (!hasPhase_)
+    {
+        Complex           i(0.0,1.0);
+        std::vector<Real> p;
+        
+        envGetTmp(LatticeComplex, coor);
+        p  = strToVec<Real>(par().mom);
+        ph = zero;
+        for(unsigned int mu = 0; mu < env().getNd(); mu++)
+        {
+            LatticeCoordinate(coor, mu);
+            ph = ph + (p[mu]/env().getDim(mu))*coor;
+        }
+        ph = exp((Real)(2*M_PI)*i*ph);
+        
+        // based on phases in Grid/qcd/action/fermion/FermionOperatorImpl.h
+        // Pretty cute implementation, if I may say so myself (!) (-PAB)
+        // Staggered Phase.
+        stag_ph = 1.0;
+        Lattice<iScalar<vInteger> > x(env().getGrid()); LatticeCoordinate(x,0);
+        Lattice<iScalar<vInteger> > y(env().getGrid()); LatticeCoordinate(y,1);
+        Lattice<iScalar<vInteger> > z(env().getGrid()); LatticeCoordinate(z,2);
+        //Lattice<iScalar<vInteger> > t(env().getGrid()); LatticeCoordinate(t,3);
+        // local taste non-singlet ops from Degrand and Detar, tab. 11.2
+        // including parity partners
+        // need to check these are consistent with Dirac op phases
+        if ( par().gamma == Gamma::Algebra::Gamma5 ) stag_ph = 1.0;
+        else if ( par().gamma == Gamma::Algebra::GammaX ) stag_ph = where( mod(x,2)==(Integer)0, stag_ph,-stag_ph);
+        else if ( par().gamma == Gamma::Algebra::GammaY ) stag_ph = where( mod(y,2)==(Integer)0, stag_ph,-stag_ph);
+        else if ( par().gamma == Gamma::Algebra::GammaZ ) stag_ph = where( mod(z,2)==(Integer)0, stag_ph,-stag_ph);
+        else {
+            std::cout << par().gamma << " not implemented for staggered fermon seq. source" << std::endl;
+            assert(0);
+        }
+        
+        LatticeCoordinate(t, Tp);
+        hasPhase_ = true;
+    }
+    src = where((t >= par().tA) and (t <= par().tB), ph*stag_ph*q, 0.*q);
 }
 
 END_MODULE_NAMESPACE

@@ -30,7 +30,9 @@ directory
 /*  END LEGAL */
 #include <Grid/Grid.h>
 
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
 #define MIXED_PRECISION
+#endif
 
 namespace Grid{ 
   namespace QCD{
@@ -346,6 +348,7 @@ int main(int argc, char **argv) {
 #else
   ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> 
     EOFA(Strange_Op_L, Strange_Op_R, 
+	 ActionCG,
 	 ActionCG, ActionCG,
 	 DerivativeCG, DerivativeCG,
 	 OFRp, true);
