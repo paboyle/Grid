@@ -34,6 +34,8 @@ namespace Grid {
 template<class Field>
 class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<Field> {
  public:
+  using OperatorFunction<Field>::operator();
+
   bool ErrorOnNoConverge; // Throw an assert when CAGMRES fails to converge,
                           // defaults to true
 
@@ -52,10 +54,10 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
 
   Eigen::MatrixXcd H;
 
-  std::vector<std::complex<double>> y;
-  std::vector<std::complex<double>> gamma;
-  std::vector<std::complex<double>> c;
-  std::vector<std::complex<double>> s;
+  std::vector<ComplexD> y;
+  std::vector<ComplexD> gamma;
+  std::vector<ComplexD> c;
+  std::vector<ComplexD> s;
 
   CommunicationAvoidingGeneralisedMinimalResidual(RealD   tol,
                                                   Integer maxit,
@@ -76,7 +78,7 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
 
     std::cout << GridLogWarning << "This algorithm currently doesn't differ from regular GMRES" << std::endl;
 
-    psi.checkerboard = src.checkerboard;
+    psi.Checkerboard() = src.Checkerboard();
     conformable(psi, src);
 
     RealD guess = norm2(psi);
@@ -86,7 +88,7 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
     RealD ssq = norm2(src);
     RealD rsq = Tolerance * Tolerance * ssq;
 
-    Field r(src._grid);
+    Field r(src.Grid());
 
     std::cout << std::setprecision(4) << std::scientific;
     std::cout << GridLogIterative << "CommunicationAvoidingGeneralisedMinimalResidual: guess " << guess << std::endl;
@@ -142,11 +144,11 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
 
     RealD cp = 0;
 
-    Field w(src._grid);
-    Field r(src._grid);
+    Field w(src.Grid());
+    Field r(src.Grid());
 
     // this should probably be made a class member so that it is only allocated once, not in every restart
-    std::vector<Field> v(RestartLength + 1, src._grid); for (auto &elem : v) elem = zero;
+    std::vector<Field> v(RestartLength + 1, src.Grid()); for (auto &elem : v) elem = Zero();
 
     MatrixTimer.Start();
     LinOp.Op(psi, w);
@@ -157,7 +159,9 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
 
     gamma[0] = sqrt(norm2(r));
 
-    v[0] = (1. / gamma[0]) * r;
+    ComplexD scale = 1.0/gamma[0];
+    v[0] = scale * r;
+
     LinalgTimer.Stop();
 
     for (int i=0; i<RestartLength; i++) {
@@ -168,7 +172,7 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
 
       qrUpdate(i);
 
-      cp = std::norm(gamma[i+1]);
+      cp = norm(gamma[i+1]);
 
       std::cout << GridLogIterative << "CommunicationAvoidingGeneralisedMinimalResidual: Iteration " << IterationCount
                 << " residual " << cp << " target " << rsq << std::endl;
@@ -194,11 +198,11 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
     LinalgTimer.Start();
     for (int i = 0; i <= iter; ++i) {
       H(iter, i) = innerProduct(v[i], w);
-      w = w - H(iter, i) * v[i];
+      w = w - ComplexD(H(iter, i)) * v[i];
     }
 
     H(iter, iter + 1) = sqrt(norm2(w));
-    v[iter + 1] = (1. / H(iter, iter + 1)) * w;
+    v[iter + 1] = ComplexD(1. / H(iter, iter + 1)) * w;
     LinalgTimer.Stop();
   }
 
@@ -206,13 +210,13 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
 
     QrTimer.Start();
     for (int i = 0; i < iter ; ++i) {
-      auto tmp       = -s[i] * H(iter, i) + c[i] * H(iter, i + 1);
-      H(iter, i)     = std::conj(c[i]) * H(iter, i) + std::conj(s[i]) * H(iter, i + 1);
+      auto tmp       = -s[i] * ComplexD(H(iter, i)) + c[i] * ComplexD(H(iter, i + 1));
+      H(iter, i)     = conjugate(c[i]) * ComplexD(H(iter, i)) + conjugate(s[i]) * ComplexD(H(iter, i + 1));
       H(iter, i + 1) = tmp;
     }
 
     // Compute new Givens Rotation
-    ComplexD nu = sqrt(std::norm(H(iter, iter)) + std::norm(H(iter, iter + 1)));
+    auto nu     = sqrt(std::norm(H(iter, iter)) + std::norm(H(iter, iter + 1)));
     c[iter]     = H(iter, iter) / nu;
     s[iter]     = H(iter, iter + 1) / nu;
 
@@ -221,7 +225,7 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
     H(iter, iter + 1) = 0.;
 
     gamma[iter + 1] = -s[iter] * gamma[iter];
-    gamma[iter]     = std::conj(c[iter]) * gamma[iter];
+    gamma[iter]     = conjugate(c[iter]) * gamma[iter];
     QrTimer.Stop();
   }
 
@@ -231,8 +235,8 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
     for (int i = iter; i >= 0; i--) {
       y[i] = gamma[i];
       for (int k = i + 1; k <= iter; k++)
-        y[i] = y[i] - H(k, i) * y[k];
-      y[i] = y[i] / H(i, i);
+        y[i] = y[i] - ComplexD(H(k, i)) * y[k];
+      y[i] = y[i] / ComplexD(H(i, i));
     }
 
     for (int i = 0; i <= iter; i++)

@@ -38,8 +38,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #ifndef QCD_PSEUDOFERMION_EXACT_ONE_FLAVOUR_RATIO_H
 #define QCD_PSEUDOFERMION_EXACT_ONE_FLAVOUR_RATIO_H
 
-namespace Grid{
-namespace QCD{
+NAMESPACE_BEGIN(Grid);
 
   ///////////////////////////////////////////////////////////////
   // Exact one flavour implementation of DWF determinant ratio //
@@ -66,6 +65,14 @@ namespace QCD{
       FermionField Phi; // the pseudofermion field for this trajectory
 
     public:
+
+      ExactOneFlavourRatioPseudoFermionAction(AbstractEOFAFermion<Impl>& _Lop, 
+					      AbstractEOFAFermion<Impl>& _Rop,
+					      OperatorFunction<FermionField>& CG, 
+					      Params& p, 
+					      bool use_fc=false) 
+	: ExactOneFlavourRatioPseudoFermionAction(_Lop,_Rop,CG,CG,CG,CG,CG,p,use_fc) {};
+	
       ExactOneFlavourRatioPseudoFermionAction(AbstractEOFAFermion<Impl>& _Lop, 
 					      AbstractEOFAFermion<Impl>& _Rop,
 					      OperatorFunction<FermionField>& HeatbathCG, 
@@ -150,7 +157,7 @@ namespace QCD{
         spProj(eta, tmp[0], -1, Lop.Ls);
         Lop.Omega(tmp[0], tmp[1], -1, 0);
         G5R5(CG_src, tmp[1]);
-        tmp[1] = zero;
+        tmp[1] = Zero();
         for(int k=0; k<param.degree; ++k){
           gamma_l = 1.0 / ( 1.0 + PowerNegHalf.poles[k] );
           Lop.RefreshShiftCoefficients(-gamma_l);
@@ -160,7 +167,7 @@ namespace QCD{
             SolverHB(Lop, CG_src, CG_soln);
             prev_solns.push_back(CG_soln);
           } else {
-            CG_soln = zero; // Just use zero as the initial guess
+            CG_soln = Zero(); // Just use zero as the initial guess
             SolverHB(Lop, CG_src, CG_soln);
           }
           Lop.Dtilde(CG_soln, tmp[0]); // We actually solved Cayley preconditioned system: transform back
@@ -176,7 +183,7 @@ namespace QCD{
         spProj(eta, tmp[0], 1, Rop.Ls);
         Rop.Omega(tmp[0], tmp[1], 1, 0);
         G5R5(CG_src, tmp[1]);
-        tmp[1] = zero;
+        tmp[1] = Zero();
         if(use_heatbath_forecasting){ prev_solns.clear(); } // empirically, LH solns don't help for RH solves
         for(int k=0; k<param.degree; ++k){
           gamma_l = 1.0 / ( 1.0 + PowerNegHalf.poles[k] );
@@ -187,7 +194,7 @@ namespace QCD{
             SolverHB(Rop, CG_src, CG_soln);
             prev_solns.push_back(CG_soln);
           } else {
-            CG_soln = zero;
+            CG_soln = Zero();
             SolverHB(Rop, CG_src, CG_soln);
           }
           Rop.Dtilde(CG_soln, tmp[0]); // We actually solved Cayley preconditioned system: transform back
@@ -222,7 +229,7 @@ namespace QCD{
         spProj(Phi, spProj_Phi, -1, Lop.Ls);
         Lop.Omega(spProj_Phi, tmp[0], -1, 0);
         G5R5(tmp[1], tmp[0]);
-        tmp[0] = zero;
+        tmp[0] = Zero();
         SolverL(Lop, tmp[1], tmp[0]);
         Lop.Dtilde(tmp[0], tmp[1]); // We actually solved Cayley preconditioned system: transform back
         Lop.Omega(tmp[1], tmp[0], -1, 1);
@@ -233,7 +240,7 @@ namespace QCD{
         spProj(Phi, spProj_Phi, 1, Rop.Ls);
         Rop.Omega(spProj_Phi, tmp[0], 1, 0);
         G5R5(tmp[1], tmp[0]);
-        tmp[0] = zero;
+        tmp[0] = Zero();
         SolverR(Rop, tmp[1], tmp[0]);
         Rop.Dtilde(tmp[0], tmp[1]);
         Rop.Omega(tmp[1], tmp[0], 1, 1);
@@ -257,7 +264,7 @@ namespace QCD{
         spProj(Phi, spProj_Phi, -1, Lop.Ls);
         Lop.Omega(spProj_Phi, tmp[0], -1, 0);
         G5R5(tmp[1], tmp[0]);
-        tmp[0] = zero;
+        tmp[0] = Zero();
         SolverL(Lop, tmp[1], tmp[0]);
         Lop.Dtilde(tmp[0], tmp[1]); // We actually solved Cayley preconditioned system: transform back
         Lop.Omega(tmp[1], tmp[0], -1, 1);
@@ -268,7 +275,7 @@ namespace QCD{
         spProj(Phi, spProj_Phi, 1, Rop.Ls);
         Rop.Omega(spProj_Phi, tmp[0], 1, 0);
         G5R5(tmp[1], tmp[0]);
-        tmp[0] = zero;
+        tmp[0] = Zero();
         SolverR(Rop, tmp[1], tmp[0]);
         Rop.Dtilde(tmp[0], tmp[1]);
         Rop.Omega(tmp[1], tmp[0], 1, 1);
@@ -301,7 +308,7 @@ namespace QCD{
         spProj(Phi, spProj_Phi, -1, Lop.Ls);
         Lop.Omega(spProj_Phi, Omega_spProj_Phi, -1, 0);
         G5R5(CG_src, Omega_spProj_Phi);
-        spProj_Phi = zero;
+        spProj_Phi = Zero();
         DerivativeSolverL(Lop, CG_src, spProj_Phi);
         Lop.Dtilde(spProj_Phi, Chi);
         G5R5(g5_R5_Chi, Chi);
@@ -313,7 +320,7 @@ namespace QCD{
         spProj(Phi, spProj_Phi, 1, Rop.Ls);
         Rop.Omega(spProj_Phi, Omega_spProj_Phi, 1, 0);
         G5R5(CG_src, Omega_spProj_Phi);
-        spProj_Phi = zero;
+        spProj_Phi = Zero();
         DerivativeSolverR(Rop, CG_src, spProj_Phi);
         Rop.Dtilde(spProj_Phi, Chi);
         G5R5(g5_R5_Chi, Chi);
@@ -321,6 +328,7 @@ namespace QCD{
         dSdU = dSdU + Rop.k * force;
       };
   };
-}}
+
+NAMESPACE_END(Grid);
 
 #endif

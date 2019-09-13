@@ -31,15 +31,15 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 int main (int argc, char** argv)
 {
   Grid_init(&argc, &argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   const int Ls = 8;
 
@@ -86,7 +86,7 @@ int main (int argc, char** argv)
   MobiusEOFAFermionR Rop(U, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, mf, mb, -1.0, 1, M5, b, c);
   OneFlavourRationalParams Params(0.95, 100.0, 5000, 1.0e-12, 12);
   ConjugateGradient<LatticeFermion> CG(1.0e-12, 5000);
-  ExactOneFlavourRatioPseudoFermionAction<WilsonImplR> Meofa(Lop, Rop, CG, Params, false);
+  ExactOneFlavourRatioPseudoFermionAction<WilsonImplR> Meofa(Lop, Rop, CG, CG, CG, CG, CG, Params, false);
 
   Meofa.refresh(U, RNG5);
   RealD S = Meofa.S(U); // pdag M p
@@ -112,13 +112,20 @@ int main (int argc, char** argv)
     PokeIndex<LorentzIndex>(mom, mommu, mu);
 
     // fourth order exponential approx
-    parallel_for(auto i=mom.begin(); i<mom.end(); i++){
-      Uprime[i](mu) = U[i](mu) + mom[i](mu)*U[i](mu)*dt + mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt/2.0)
-                        + mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt/6.0)
-                        + mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt/24.0)
-                        + mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt/120.0)
-                        + mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt*dt/720.0);
-    }
+    auto mom_v    = mom.View();
+    auto U_v      = U.View();
+    auto Uprime_v = Uprime.View();
+
+    thread_foreach(i,mom_v,{
+      Uprime_v[i](mu) =	  U_v[i](mu)
+	+ mom_v[i](mu)*U_v[i](mu)*dt 
+	+ mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt/2.0)
+	+ mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt/6.0)
+	+ mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt/24.0)
+	+ mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt*dt/120.0)
+	+ mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt*dt*dt/720.0)
+	;
+    });
   }
 
   /*Ddwf.ImportGauge(Uprime);
@@ -132,7 +139,7 @@ int main (int argc, char** argv)
   //////////////////////////////////////////////
 
   LatticeComplex dS(UGrid);
-  dS = zero;
+  dS = Zero();
   for(int mu=0; mu<Nd; mu++){
     mommu = PeekIndex<LorentzIndex>(UdSdU, mu);
     mommu = Ta(mommu)*2.0;

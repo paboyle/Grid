@@ -27,349 +27,440 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
-#ifndef GRID_LATTICE_BASE_H
-#define GRID_LATTICE_BASE_H
+			   /*  END LEGAL */
+#pragma once 
 
 #define STREAMING_STORES
 
-namespace Grid {
-
-// TODO: 
-//       mac,real,imag
-
-// Functionality:
-//     -=,+=,*=,()
-//     add,+,sub,-,mult,mac,*
-//     adj,conjugate
-//     real,imag
-//     transpose,transposeIndex  
-//     trace,traceIndex
-//     peekIndex
-//     innerProduct,outerProduct,
-//     localNorm2
-//     localInnerProduct
+NAMESPACE_BEGIN(Grid);
 
 extern int GridCshiftPermuteMap[4][16];
 
-////////////////////////////////////////////////
-// Basic expressions used in Expression Template
-////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
+// Base class which can be used by traits to pick up behaviour
+///////////////////////////////////////////////////////////////////
+class LatticeBase {};
 
-class LatticeBase
+/////////////////////////////////////////////////////////////////////////////////////////
+// Conformable checks; same instance of Grid required
+/////////////////////////////////////////////////////////////////////////////////////////
+void accelerator_inline conformable(GridBase *lhs,GridBase *rhs)
 {
-public:
-    virtual ~LatticeBase(void) = default;
-    GridBase *_grid;
-};
-    
-class LatticeExpressionBase {};
-
-template <typename Op, typename T1>                           
-class LatticeUnaryExpression  : public std::pair<Op,std::tuple<T1> > , public LatticeExpressionBase {
- public:
- LatticeUnaryExpression(const std::pair<Op,std::tuple<T1> > &arg): std::pair<Op,std::tuple<T1> >(arg) {};
-};
-
-template <typename Op, typename T1, typename T2>              
-class LatticeBinaryExpression : public std::pair<Op,std::tuple<T1,T2> > , public LatticeExpressionBase {
- public:
- LatticeBinaryExpression(const std::pair<Op,std::tuple<T1,T2> > &arg): std::pair<Op,std::tuple<T1,T2> >(arg) {};
-};
-
-template <typename Op, typename T1, typename T2, typename T3> 
-class LatticeTrinaryExpression :public std::pair<Op,std::tuple<T1,T2,T3> >, public LatticeExpressionBase {
- public:
- LatticeTrinaryExpression(const std::pair<Op,std::tuple<T1,T2,T3> > &arg): std::pair<Op,std::tuple<T1,T2,T3> >(arg) {};
-};
-
-void inline conformable(GridBase *lhs,GridBase *rhs)
-{
-  assert((lhs == rhs) && " conformable check pointers mismatch ");
+  assert(lhs == rhs);
 }
 
-template<class vobj>
-class Lattice : public LatticeBase
+////////////////////////////////////////////////////////////////////////////
+// Minimal base class containing only data valid to access from accelerator
+// _odata will be a managed pointer in CUDA
+////////////////////////////////////////////////////////////////////////////
+// Force access to lattice through a view object.
+// prevents writing of code that will not offload to GPU, but perhaps annoyingly
+// strict since host could could in principle direct access through the lattice object
+// Need to decide programming model.
+#define LATTICE_VIEW_STRICT
+template<class vobj> class LatticeAccelerator : public LatticeBase
+{
+protected:
+  GridBase *_grid;
+  int checkerboard;
+  vobj     *_odata;    // A managed pointer
+  uint64_t _odata_size;    
+public:
+  accelerator_inline LatticeAccelerator() : checkerboard(0), _odata(nullptr), _odata_size(0), _grid(nullptr) { }; 
+  accelerator_inline uint64_t oSites(void) const { return _odata_size; };
+  accelerator_inline int  Checkerboard(void) const { return checkerboard; };
+  accelerator_inline int &Checkerboard(void) { return this->checkerboard; }; // can assign checkerboard on a container, not a view
+  accelerator_inline void Conformable(GridBase * &grid) const
+  { 
+    if (grid) conformable(grid, _grid);
+    else      grid = _grid;
+  };
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// A View class which provides accessor to the data.
+// This will be safe to call from accelerator_for and is trivially copy constructible
+// The copy constructor for this will need to be used by device lambda functions
+/////////////////////////////////////////////////////////////////////////////////////////
+template<class vobj> 
+class LatticeView : public LatticeAccelerator<vobj>
 {
 public:
-    int checkerboard;
-    Vector<vobj> _odata;
-    
-    // to pthread need a computable loop where loop induction is not required
-    int begin(void) { return 0;};
-    int end(void)   { return _odata.size(); }
-    vobj & operator[](int i) { return _odata[i]; };
-    const vobj & operator[](int i) const { return _odata[i]; };
 
+
+  // Rvalue
+#ifdef __CUDA_ARCH__
+  accelerator_inline const typename vobj::scalar_object operator()(size_t i) const { return coalescedRead(this->_odata[i]); }
+#else 
+  accelerator_inline const vobj & operator()(size_t i) const { return this->_odata[i]; }
+#endif
+
+  accelerator_inline const vobj & operator[](size_t i) const { return this->_odata[i]; };
+  accelerator_inline vobj       & operator[](size_t i)       { return this->_odata[i]; };
+
+  accelerator_inline uint64_t begin(void) const { return 0;};
+  accelerator_inline uint64_t end(void)   const { return this->_odata_size; };
+  accelerator_inline uint64_t size(void)  const { return this->_odata_size; };
+
+  LatticeView(const LatticeAccelerator<vobj> &refer_to_me) : LatticeAccelerator<vobj> (refer_to_me)
+  {
+  }
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// Lattice expression types used by ET to assemble the AST
+// 
+// Need to be able to detect code paths according to the whether a lattice object or not
+// so introduce some trait type things
+/////////////////////////////////////////////////////////////////////////////////////////
+
+class LatticeExpressionBase {};
+
+template <typename T> using is_lattice = std::is_base_of<LatticeBase, T>;
+template <typename T> using is_lattice_expr = std::is_base_of<LatticeExpressionBase,T >;
+
+template<class T, bool isLattice> struct ViewMapBase { typedef T Type; };
+template<class T>                 struct ViewMapBase<T,true> { typedef LatticeView<typename T::vector_object> Type; };
+template<class T> using ViewMap = ViewMapBase<T,std::is_base_of<LatticeBase, T>::value >;
+
+template <typename Op, typename _T1>                           
+class LatticeUnaryExpression : public  LatticeExpressionBase 
+{
 public:
-    typedef typename vobj::scalar_type scalar_type;
-    typedef typename vobj::vector_type vector_type;
-    typedef vobj vector_object;
-   
+  typedef typename ViewMap<_T1>::Type T1;
+  Op op;
+  T1 arg1;
+  LatticeUnaryExpression(Op _op,const _T1 &_arg1) : op(_op), arg1(_arg1) {};
+};
+
+template <typename Op, typename _T1, typename _T2>              
+class LatticeBinaryExpression : public LatticeExpressionBase 
+{
+public:
+  typedef typename ViewMap<_T1>::Type T1;
+  typedef typename ViewMap<_T2>::Type T2;
+  Op op;
+  T1 arg1;
+  T2 arg2;
+  LatticeBinaryExpression(Op _op,const _T1 &_arg1,const _T2 &_arg2) : op(_op), arg1(_arg1), arg2(_arg2) {};
+};
+
+template <typename Op, typename _T1, typename _T2, typename _T3> 
+class LatticeTrinaryExpression : public LatticeExpressionBase 
+{
+public:
+  typedef typename ViewMap<_T1>::Type T1;
+  typedef typename ViewMap<_T2>::Type T2;
+  typedef typename ViewMap<_T3>::Type T3;
+  Op op;
+  T1 arg1;
+  T2 arg2;
+  T3 arg3;
+  LatticeTrinaryExpression(Op _op,const _T1 &_arg1,const _T2 &_arg2,const _T3 &_arg3) : op(_op), arg1(_arg1), arg2(_arg2), arg3(_arg3) {};
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// The real lattice class, with normal copy and assignment semantics.
+// This contains extra (host resident) grid pointer data that may be accessed by host code
+/////////////////////////////////////////////////////////////////////////////////////////
+template<class vobj>
+class Lattice : public LatticeAccelerator<vobj>
+{
+public:
+  GridBase *Grid(void) const { return this->_grid; }
+  ///////////////////////////////////////////////////
+  // Member types
+  ///////////////////////////////////////////////////
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+  typedef vobj vector_object;
+
+private:
+  void dealloc(void)
+  {
+    alignedAllocator<vobj> alloc;
+    if( this->_odata_size ) {
+      alloc.deallocate(this->_odata,this->_odata_size);
+      this->_odata=nullptr;
+      this->_odata_size=0;
+    }
+  }
+  void resize(uint64_t size)
+  {
+    alignedAllocator<vobj> alloc;
+    if ( this->_odata_size != size ) {
+      dealloc();
+    }
+    this->_odata_size = size;
+    if ( size ) 
+      this->_odata      = alloc.allocate(this->_odata_size);
+    else 
+      this->_odata      = nullptr;
+  }
+public:
+  /////////////////////////////////////////////////////////////////////////////////
+  // Return a view object that may be dereferenced in site loops.
+  // The view is trivially copy constructible and may be copied to an accelerator device
+  // in device lambdas
+  /////////////////////////////////////////////////////////////////////////////////
+  LatticeView<vobj> View (void) const 
+  {
+    LatticeView<vobj> accessor(*( (LatticeAccelerator<vobj> *) this));
+    return accessor;
+  }
+  
+  ~Lattice() { 
+    if ( this->_odata_size ) {
+      dealloc();
+    }
+   }
   ////////////////////////////////////////////////////////////////////////////////
   // Expression Template closure support
   ////////////////////////////////////////////////////////////////////////////////
-  template <typename Op, typename T1>                         strong_inline Lattice<vobj> & operator=(const LatticeUnaryExpression<Op,T1> &expr)
+  template <typename Op, typename T1> inline Lattice<vobj> & operator=(const LatticeUnaryExpression<Op,T1> &expr)
   {
     GridBase *egrid(nullptr);
     GridFromExpression(egrid,expr);
     assert(egrid!=nullptr);
-    conformable(_grid,egrid);
+    conformable(this->_grid,egrid);
 
     int cb=-1;
     CBFromExpression(cb,expr);
     assert( (cb==Odd) || (cb==Even));
-    checkerboard=cb;
+    this->checkerboard=cb;
 
-    parallel_for(int ss=0;ss<_grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      vobj tmp = eval(ss,expr);
-      vstream(_odata[ss] ,tmp);
-#else
-      _odata[ss]=eval(ss,expr);
-#endif
-    }
+    auto me  = View();
+    accelerator_for(ss,me.size(),1,{
+      auto tmp = eval(ss,expr);
+      vstream(me[ss],tmp);
+    });
     return *this;
   }
-  template <typename Op, typename T1,typename T2> strong_inline Lattice<vobj> & operator=(const LatticeBinaryExpression<Op,T1,T2> &expr)
+  template <typename Op, typename T1,typename T2> inline Lattice<vobj> & operator=(const LatticeBinaryExpression<Op,T1,T2> &expr)
   {
     GridBase *egrid(nullptr);
     GridFromExpression(egrid,expr);
     assert(egrid!=nullptr);
-    conformable(_grid,egrid);
+    conformable(this->_grid,egrid);
 
     int cb=-1;
     CBFromExpression(cb,expr);
     assert( (cb==Odd) || (cb==Even));
-    checkerboard=cb;
+    this->checkerboard=cb;
 
-    parallel_for(int ss=0;ss<_grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      vobj tmp = eval(ss,expr);
-      vstream(_odata[ss] ,tmp);
-#else
-      _odata[ss]=eval(ss,expr);
-#endif
-    }
+    auto me  = View();
+    accelerator_for(ss,me.size(),1,{
+      auto tmp = eval(ss,expr);
+      vstream(me[ss],tmp);
+    });
     return *this;
   }
-  template <typename Op, typename T1,typename T2,typename T3> strong_inline Lattice<vobj> & operator=(const LatticeTrinaryExpression<Op,T1,T2,T3> &expr)
+  template <typename Op, typename T1,typename T2,typename T3> inline Lattice<vobj> & operator=(const LatticeTrinaryExpression<Op,T1,T2,T3> &expr)
   {
     GridBase *egrid(nullptr);
     GridFromExpression(egrid,expr);
     assert(egrid!=nullptr);
-    conformable(_grid,egrid);
+    conformable(this->_grid,egrid);
 
     int cb=-1;
     CBFromExpression(cb,expr);
     assert( (cb==Odd) || (cb==Even));
-    checkerboard=cb;
-
-    parallel_for(int ss=0;ss<_grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      //vobj tmp = eval(ss,expr);
-      vstream(_odata[ss] ,eval(ss,expr));
-#else
-      _odata[ss] = eval(ss,expr);
-#endif
-    }
+    this->checkerboard=cb;
+    auto me  = View();
+    accelerator_for(ss,me.size(),1,{
+      auto tmp = eval(ss,expr);
+      vstream(me[ss],tmp);
+    });
     return *this;
   }
   //GridFromExpression is tricky to do
   template<class Op,class T1>
-    Lattice(const LatticeUnaryExpression<Op,T1> & expr) {
-    _grid = nullptr;
-    GridFromExpression(_grid,expr);
-    assert(_grid!=nullptr);
+  Lattice(const LatticeUnaryExpression<Op,T1> & expr) {
+    this->_grid = nullptr;
+    GridFromExpression(this->_grid,expr);
+    assert(this->_grid!=nullptr);
 
     int cb=-1;
     CBFromExpression(cb,expr);
     assert( (cb==Odd) || (cb==Even));
-    checkerboard=cb;
+    this->checkerboard=cb;
 
-    _odata.resize(_grid->oSites());
-    parallel_for(int ss=0;ss<_grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      vobj tmp = eval(ss,expr);
-      vstream(_odata[ss] ,tmp);
-#else
-      _odata[ss]=eval(ss,expr);
-#endif
-    }
-  };
+    resize(this->_grid->oSites());
+
+    *this = expr;
+  }
   template<class Op,class T1, class T2>
   Lattice(const LatticeBinaryExpression<Op,T1,T2> & expr) {
-    _grid = nullptr;
-    GridFromExpression(_grid,expr);
-    assert(_grid!=nullptr);
+    this->_grid = nullptr;
+    GridFromExpression(this->_grid,expr);
+    assert(this->_grid!=nullptr);
 
     int cb=-1;
     CBFromExpression(cb,expr);
     assert( (cb==Odd) || (cb==Even));
-    checkerboard=cb;
+    this->checkerboard=cb;
 
-    _odata.resize(_grid->oSites());
-    parallel_for(int ss=0;ss<_grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      vobj tmp = eval(ss,expr);
-      vstream(_odata[ss] ,tmp);
-#else
-      _odata[ss]=eval(ss,expr);
-#endif
-    }
-  };
+    resize(this->_grid->oSites());
+
+    *this = expr;
+  }
   template<class Op,class T1, class T2, class T3>
   Lattice(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr) {
-    _grid = nullptr;
-    GridFromExpression(_grid,expr);
-    assert(_grid!=nullptr);
+    this->_grid = nullptr;
+    GridFromExpression(this->_grid,expr);
+    assert(this->_grid!=nullptr);
 
     int cb=-1;
     CBFromExpression(cb,expr);
     assert( (cb==Odd) || (cb==Even));
-    checkerboard=cb;
+    this->checkerboard=cb;
 
-    _odata.resize(_grid->oSites());
-    parallel_for(int ss=0;ss<_grid->oSites();ss++){
-      vstream(_odata[ss] ,eval(ss,expr));
-    }
-  };
+    resize(this->_grid->oSites());
+
+    *this = expr;
+  }
+
+  template<class sobj> inline Lattice<vobj> & operator = (const sobj & r){
+    auto me  = View();
+    thread_for(ss,me.size(),{
+      me[ss] = r;
+    });
+    return *this;
+  }
 
   //////////////////////////////////////////////////////////////////
-  // Constructor requires "grid" passed.
-  // what about a default grid?
-  //////////////////////////////////////////////////////////////////
-  Lattice(GridBase *grid) : _odata(grid->oSites()) {
-    _grid = grid;
-    //        _odata.reserve(_grid->oSites());
-    //        _odata.resize(_grid->oSites());
-    //      std::cout << "Constructing lattice object with Grid pointer "<<_grid<<std::endl;
-    assert((((uint64_t)&_odata[0])&0xF) ==0);
-    checkerboard=0;
+  // Follow rule of five, with Constructor requires "grid" passed
+  // to user defined constructor
+  ///////////////////////////////////////////
+  // user defined constructor
+  ///////////////////////////////////////////
+  Lattice(GridBase *grid) { 
+    this->_grid = grid;
+    resize(this->_grid->oSites());
+    assert((((uint64_t)&this->_odata[0])&0xF) ==0);
+    this->checkerboard=0;
   }
   
-  Lattice(const Lattice& r){ // copy constructor
-    _grid = r._grid;
-    checkerboard = r.checkerboard;
-    _odata.resize(_grid->oSites());// essential
-    parallel_for(int ss=0;ss<_grid->oSites();ss++){
-      _odata[ss]=r._odata[ss];
-    }  	
-  }
-
-  Lattice(Lattice&& r){ // move constructor
-    _grid = r._grid;
-    checkerboard = r.checkerboard;
-    _odata=std::move(r._odata);
-  }
-  
-  inline Lattice<vobj> & operator = (Lattice<vobj> && r)
-  {
-    _grid        = r._grid;
-    checkerboard = r.checkerboard;
-    _odata       =std::move(r._odata);
-    return *this;
-  }
-
-  inline Lattice<vobj> & operator = (const Lattice<vobj> & r){
-    _grid        = r._grid;
-    checkerboard = r.checkerboard;
-    _odata.resize(_grid->oSites());// essential
-    
-    parallel_for(int ss=0;ss<_grid->oSites();ss++){
-      _odata[ss]=r._odata[ss];
-    }  	
-    return *this;
-  }
-
-  template<class robj> strong_inline Lattice<vobj> & operator = (const Lattice<robj> & r){
-    this->checkerboard = r.checkerboard;
-    conformable(*this,r);
-    
-    parallel_for(int ss=0;ss<_grid->oSites();ss++){
-      this->_odata[ss]=r._odata[ss];
-    }
-    return *this;
-  }
-
-  virtual ~Lattice(void) = default;
+  //  virtual ~Lattice(void) = default;
     
   void reset(GridBase* grid) {
-    if (_grid != grid) {
-      _grid = grid;
-      _odata.resize(grid->oSites());
-      checkerboard = 0;
+    if (this->_grid != grid) {
+      this->_grid = grid;
+      this->_odata.resize(grid->oSites());
+      this->checkerboard = 0;
     }
   }
-  
-
-  template<class sobj> strong_inline Lattice<vobj> & operator = (const sobj & r){
-    parallel_for(int ss=0;ss<_grid->oSites();ss++){
-      this->_odata[ss]=r;
-    }
+  ///////////////////////////////////////////
+  // copy constructor
+  ///////////////////////////////////////////
+  Lattice(const Lattice& r){ 
+    //    std::cout << "Lattice constructor(const Lattice &) "<<this<<std::endl; 
+    this->_grid = r.Grid();
+    resize(this->_grid->oSites());
+    *this = r;
+  }
+  ///////////////////////////////////////////
+  // move constructor
+  ///////////////////////////////////////////
+  Lattice(Lattice && r){ 
+    this->_grid = r.Grid();
+    this->_odata      = r._odata;
+    this->_odata_size = r._odata_size;
+    this->checkerboard= r.Checkerboard();
+    r._odata      = nullptr;
+    r._odata_size = 0;
+  }
+  ///////////////////////////////////////////
+  // assignment template
+  ///////////////////////////////////////////
+  template<class robj> inline Lattice<vobj> & operator = (const Lattice<robj> & r){
+    typename std::enable_if<!std::is_same<robj,vobj>::value,int>::type i=0;
+    conformable(*this,r);
+    this->checkerboard = r.Checkerboard();
+    auto me =   View();
+    auto him= r.View();
+    accelerator_for(ss,me.size(),vobj::Nsimd(),{
+      coalescedWrite(me[ss],him(ss));
+    });
     return *this;
   }
-  
-  
+
+  ///////////////////////////////////////////
+  // Copy assignment 
+  ///////////////////////////////////////////
+  inline Lattice<vobj> & operator = (const Lattice<vobj> & r){
+    this->checkerboard = r.Checkerboard();
+    conformable(*this,r);
+    auto me =   View();
+    auto him= r.View();
+    accelerator_for(ss,me.size(),vobj::Nsimd(),{
+      coalescedWrite(me[ss],him(ss));
+    });
+    return *this;
+  }
+  ///////////////////////////////////////////
+  // Move assignment possible if same type
+  ///////////////////////////////////////////
+  inline Lattice<vobj> & operator = (Lattice<vobj> && r){
+
+    resize(0); // deletes if appropriate
+    this->_grid       = r.Grid();
+    this->_odata      = r._odata;
+    this->_odata_size = r._odata_size;
+    this->checkerboard= r.Checkerboard();
+
+    r._odata      = nullptr;
+    r._odata_size = 0;
+    
+    return *this;
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // *=,+=,-= operators inherit behvour from correspond */+/- operation
-  template<class T> strong_inline Lattice<vobj> &operator *=(const T &r) {
+  /////////////////////////////////////////////////////////////////////////////
+  template<class T> inline Lattice<vobj> &operator *=(const T &r) {
     *this = (*this)*r;
     return *this;
   }
   
-  template<class T> strong_inline Lattice<vobj> &operator -=(const T &r) {
+  template<class T> inline Lattice<vobj> &operator -=(const T &r) {
     *this = (*this)-r;
     return *this;
   }
-  template<class T> strong_inline Lattice<vobj> &operator +=(const T &r) {
+  template<class T> inline Lattice<vobj> &operator +=(const T &r) {
     *this = (*this)+r;
     return *this;
   }
-}; // class Lattice
-  
-  template<class vobj> std::ostream& operator<< (std::ostream& stream, const Lattice<vobj> &o){
-    std::vector<int> gcoor;
-    typedef typename vobj::scalar_object sobj;
-    sobj ss;
-    for(int g=0;g<o._grid->_gsites;g++){
-      o._grid->GlobalIndexToGlobalCoor(g,gcoor);
-      peekSite(ss,o,gcoor);
-      stream<<"[";
-      for(int d=0;d<gcoor.size();d++){
-	stream<<gcoor[d];
-	if(d!=gcoor.size()-1) stream<<",";
-      }
-      stream<<"]\t";
-      stream<<ss<<std::endl;
-    }
-    return stream;
+
+  friend inline void swap(Lattice &l, Lattice &r) { 
+    conformable(l,r);
+    LatticeAccelerator<vobj> tmp;
+    LatticeAccelerator<vobj> *lp = (LatticeAccelerator<vobj> *)&l;
+    LatticeAccelerator<vobj> *rp = (LatticeAccelerator<vobj> *)&r;
+    tmp = *lp;    *lp=*rp;    *rp=tmp;
   }
-  
+
+}; // class Lattice
+
+template<class vobj> std::ostream& operator<< (std::ostream& stream, const Lattice<vobj> &o){
+  typedef typename vobj::scalar_object sobj;
+  for(int g=0;g<o.Grid()->_gsites;g++){
+
+    Coordinate gcoor;
+    o.Grid()->GlobalIndexToGlobalCoor(g,gcoor);
+
+    sobj ss;
+    peekSite(ss,o,gcoor);
+    stream<<"[";
+    for(int d=0;d<gcoor.size();d++){
+      stream<<gcoor[d];
+      if(d!=gcoor.size()-1) stream<<",";
+    }
+    stream<<"]\t";
+    stream<<ss<<std::endl;
+  }
+  return stream;
 }
+  
+NAMESPACE_END(Grid);
 
-
-
-#include "Lattice_conformable.h"
-#define GRID_LATTICE_EXPRESSION_TEMPLATES
-#ifdef  GRID_LATTICE_EXPRESSION_TEMPLATES
-#include "Lattice_ET.h"
-#else 
-#include "Lattice_overload.h"
-#endif
-#include "Lattice_arith.h"
-#include "Lattice_trace.h"
-#include "Lattice_transpose.h"
-#include "Lattice_local.h"
-#include "Lattice_reduction.h"
-#include "Lattice_peekpoke.h"
-#include "Lattice_reality.h"
-#include "Lattice_comparison_utils.h"
-#include "Lattice_comparison.h"
-#include "Lattice_coordinate.h"
-#include "Lattice_where.h"
-#include "Lattice_rng.h"
-#include "Lattice_unary.h"
-#include "Lattice_transfer.h"
-
-
-#endif

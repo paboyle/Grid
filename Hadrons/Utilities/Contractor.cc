@@ -347,11 +347,12 @@ int main(int argc, char* argv[])
 
                 tAr.startTimer("Transpose caching");
                 lastTerm[t].resize(ref.rows(), ref.cols());
-                parallel_for (unsigned int j = 0; j < ref.cols(); ++j)
-                for (unsigned int i = 0; i < ref.rows(); ++i)
-                {
-                    lastTerm[t](i, j) = ref(i, j);
-                }
+                thread_for( j,ref.cols(),{
+                    for (unsigned int i = 0; i < ref.rows(); ++i)
+                    {
+                        lastTerm[t](i, j) = ref(i, j);
+                    }
+                });
                 tAr.stopTimer("Transpose caching");
             }
             bytes = par.global.nt*lastTerm[0].rows()*lastTerm[0].cols()*sizeof(ComplexD);

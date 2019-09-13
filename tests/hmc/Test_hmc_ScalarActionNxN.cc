@@ -45,7 +45,7 @@ class ScalarActionParameters : Serializable {
 }
 
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 template <class Impl>
 class MagMeas : public HmcObservable<typename Impl::Field> {
@@ -88,7 +88,8 @@ public:
 };
 
 int main(int argc, char **argv) {
-  typedef Grid::JSONReader       Serialiser;
+  //typedef Grid::JSONReader       Serialiser;
+  typedef Grid::XmlReader       Serialiser;
   
   Grid_init(&argc, &argv);
   int threads = GridThread::GetThreads();
@@ -126,7 +127,7 @@ int main(int argc, char **argv) {
   ScalarGrid.set_rb(new GridRedBlackCartesian(ScalarGrid.get_full()));
   TheHMC.Resources.AddGrid("scalar", ScalarGrid);
   std::cout << "Lattice size : " << GridDefaultLatt() << std::endl;
-  
+
   ScalarActionParameters SPar(Reader);
 
   // Checkpointer definition

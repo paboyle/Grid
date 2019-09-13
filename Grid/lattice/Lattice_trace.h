@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,8 +23,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_LATTICE_TRACE_H
 #define GRID_LATTICE_TRACE_H
 
@@ -32,36 +32,38 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 // Tracing, transposing, peeking, poking
 ///////////////////////////////////////////////
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Trace
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    template<class vobj>
-    inline auto trace(const Lattice<vobj> &lhs)
-      -> Lattice<decltype(trace(lhs._odata[0]))>
-    {
-      Lattice<decltype(trace(lhs._odata[0]))> ret(lhs._grid);
-      parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-            ret._odata[ss] = trace(lhs._odata[ss]);
-        }
-        return ret;
-    };
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Trace
+////////////////////////////////////////////////////////////////////////////////////////////////////
+template<class vobj>
+inline auto trace(const Lattice<vobj> &lhs)  -> Lattice<decltype(trace(vobj()))>
+{
+  Lattice<decltype(trace(vobj()))> ret(lhs.Grid());
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  accelerator_for( ss, lhs_v.size(), vobj::Nsimd(), {
+    coalescedWrite(ret_v[ss], trace(lhs_v(ss)));
+  });
+  return ret;
+};
     
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Trace Index level dependent operation
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    template<int Index,class vobj>
-    inline auto TraceIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<Index>(lhs._odata[0]))>
-    {
-      Lattice<decltype(traceIndex<Index>(lhs._odata[0]))> ret(lhs._grid);
-      parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-	ret._odata[ss] = traceIndex<Index>(lhs._odata[ss]);
-      }
-      return ret;
-    };
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Trace Index level dependent operation
+////////////////////////////////////////////////////////////////////////////////////////////////////
+template<int Index,class vobj>
+inline auto TraceIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<Index>(vobj()))>
+{
+  Lattice<decltype(traceIndex<Index>(vobj()))> ret(lhs.Grid());
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  accelerator_for( ss, lhs_v.size(), vobj::Nsimd(), {
+    coalescedWrite(ret_v[ss], traceIndex<Index>(lhs_v(ss)));
+  });
+  return ret;
+};
 
-
-}
+NAMESPACE_END(Grid);
 #endif
 

@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,233 +23,235 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_LATTICE_ARITH_H
 #define GRID_LATTICE_ARITH_H
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////
-  //  avoid copy back routines for mult, mac, sub, add
-  //////////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class obj1,class obj2,class obj3> strong_inline
-    void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
-    ret.checkerboard = lhs.checkerboard;
-    conformable(ret,rhs);
-    conformable(lhs,rhs);
-    parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      obj1 tmp;
-      mult(&tmp,&lhs._odata[ss],&rhs._odata[ss]);
-      vstream(ret._odata[ss],tmp);
-#else
-      mult(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
-#endif
-    }
-  }
-  
-  template<class obj1,class obj2,class obj3> strong_inline
-    void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
-    ret.checkerboard = lhs.checkerboard;
-    conformable(ret,rhs);
-    conformable(lhs,rhs);
-    parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      obj1 tmp;
-      mac(&tmp,&lhs._odata[ss],&rhs._odata[ss]);
-      vstream(ret._odata[ss],tmp);
-#else
-      mac(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
-#endif
-    }
-  }
-  
-  template<class obj1,class obj2,class obj3> strong_inline
-    void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
-    ret.checkerboard = lhs.checkerboard;
-    conformable(ret,rhs);
-    conformable(lhs,rhs);
-    parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      obj1 tmp;
-      sub(&tmp,&lhs._odata[ss],&rhs._odata[ss]);
-      vstream(ret._odata[ss],tmp);
-#else
-      sub(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
-#endif
-    }
-  }
-  template<class obj1,class obj2,class obj3> strong_inline
-    void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
-    ret.checkerboard = lhs.checkerboard;
-    conformable(ret,rhs);
-    conformable(lhs,rhs);
-    parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      obj1 tmp;
-      add(&tmp,&lhs._odata[ss],&rhs._odata[ss]);
-      vstream(ret._odata[ss],tmp);
-#else
-      add(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
-#endif
-    }
-  }
-  
-  //////////////////////////////////////////////////////////////////////////////////////////////////////
-  //  avoid copy back routines for mult, mac, sub, add
-  //////////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class obj1,class obj2,class obj3> strong_inline
-    void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
-    ret.checkerboard = lhs.checkerboard;
-    conformable(lhs,ret);
-    parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-      obj1 tmp;
-      mult(&tmp,&lhs._odata[ss],&rhs);
-      vstream(ret._odata[ss],tmp);
-    }
-  }
-  
-  template<class obj1,class obj2,class obj3> strong_inline
-    void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
-    ret.checkerboard = lhs.checkerboard;
-    conformable(ret,lhs);
-    parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-      obj1 tmp;
-      mac(&tmp,&lhs._odata[ss],&rhs);
-      vstream(ret._odata[ss],tmp);
-    }
-  }
-  
-  template<class obj1,class obj2,class obj3> strong_inline
-    void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
-    ret.checkerboard = lhs.checkerboard;
-    conformable(ret,lhs);
-    parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      obj1 tmp;
-      sub(&tmp,&lhs._odata[ss],&rhs);
-      vstream(ret._odata[ss],tmp);
-#else 
-      sub(&ret._odata[ss],&lhs._odata[ss],&rhs);
-#endif
-    }
-  }
-  template<class obj1,class obj2,class obj3> strong_inline
-    void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
-    ret.checkerboard = lhs.checkerboard;
-    conformable(lhs,ret);
-    parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      obj1 tmp;
-      add(&tmp,&lhs._odata[ss],&rhs);
-      vstream(ret._odata[ss],tmp);
-#else 
-      add(&ret._odata[ss],&lhs._odata[ss],&rhs);
-#endif
-    }
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////
-  //  avoid copy back routines for mult, mac, sub, add
-  //////////////////////////////////////////////////////////////////////////////////////////////////////
-    template<class obj1,class obj2,class obj3> strong_inline
-    void mult(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
-    ret.checkerboard = rhs.checkerboard;
-    conformable(ret,rhs);
-    parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      obj1 tmp;
-      mult(&tmp,&lhs,&rhs._odata[ss]);
-      vstream(ret._odata[ss],tmp);
-#else 
-      mult(&ret._odata[ss],&lhs,&rhs._odata[ss]);
-#endif
-    }
-  }
-  
-  template<class obj1,class obj2,class obj3> strong_inline
-    void mac(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
-    ret.checkerboard = rhs.checkerboard;
-    conformable(ret,rhs);
-    parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      obj1 tmp;
-      mac(&tmp,&lhs,&rhs._odata[ss]);
-      vstream(ret._odata[ss],tmp);
-#else 
-      mac(&ret._odata[ss],&lhs,&rhs._odata[ss]);
-#endif
-    }
-  }
-  
-  template<class obj1,class obj2,class obj3> strong_inline
-    void sub(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
-    ret.checkerboard = rhs.checkerboard;
-    conformable(ret,rhs);
-    parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      obj1 tmp;
-      sub(&tmp,&lhs,&rhs._odata[ss]);
-      vstream(ret._odata[ss],tmp);
-#else 
-      sub(&ret._odata[ss],&lhs,&rhs._odata[ss]);
-#endif
-    }
-  }
-  template<class obj1,class obj2,class obj3> strong_inline
-    void add(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
-    ret.checkerboard = rhs.checkerboard;
-    conformable(ret,rhs);
-    parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      obj1 tmp;
-      add(&tmp,&lhs,&rhs._odata[ss]);
-      vstream(ret._odata[ss],tmp);
-#else 
-      add(&ret._odata[ss],&lhs,&rhs._odata[ss]);
-#endif
-    }
-  }
-  
-  template<class sobj,class vobj> strong_inline
-  void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y){
-    ret.checkerboard = x.checkerboard;
-    conformable(ret,x);
-    conformable(x,y);
-    parallel_for(int ss=0;ss<x._grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      vobj tmp = a*x._odata[ss]+y._odata[ss];
-      vstream(ret._odata[ss],tmp);
-#else
-      ret._odata[ss]=a*x._odata[ss]+y._odata[ss];
-#endif
-    }
-  }
-  template<class sobj,class vobj> strong_inline
-  void axpby(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y){
-    ret.checkerboard = x.checkerboard;
-    conformable(ret,x);
-    conformable(x,y);
-    parallel_for(int ss=0;ss<x._grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      vobj tmp = a*x._odata[ss]+b*y._odata[ss];
-      vstream(ret._odata[ss],tmp);
-#else
-      ret._odata[ss]=a*x._odata[ss]+b*y._odata[ss];
-#endif
-    }
-  }
-
-  template<class sobj,class vobj> strong_inline
-  RealD axpy_norm(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y){
-    return axpy_norm_fast(ret,a,x,y);
-  }
-  template<class sobj,class vobj> strong_inline
-  RealD axpby_norm(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y){
-    return axpby_norm_fast(ret,a,b,x,y);
-  }
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//  avoid copy back routines for mult, mac, sub, add
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+template<class obj1,class obj2,class obj3> inline
+void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
+  ret.Checkerboard() = lhs.Checkerboard();
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  auto rhs_v = rhs.View();
+  conformable(ret,rhs);
+  conformable(lhs,rhs);
+  accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto lhs_t = lhs_v(ss);
+    auto rhs_t = rhs_v(ss);
+    mult(&tmp,&lhs_t,&rhs_t);
+    coalescedWrite(ret_v[ss],tmp);
+  });
 }
+  
+template<class obj1,class obj2,class obj3> inline
+void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
+  ret.Checkerboard() = lhs.Checkerboard();
+  conformable(ret,rhs);
+  conformable(lhs,rhs);
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  auto rhs_v = rhs.View();
+  accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto lhs_t=lhs_v(ss);
+    auto rhs_t=rhs_v(ss);
+    mac(&tmp,&lhs_t,&rhs_t);
+    coalescedWrite(ret_v[ss],tmp);
+  });
+}
+  
+template<class obj1,class obj2,class obj3> inline
+void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
+  ret.Checkerboard() = lhs.Checkerboard();
+  conformable(ret,rhs);
+  conformable(lhs,rhs);
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  auto rhs_v = rhs.View();
+  accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto lhs_t=lhs_v(ss);
+    auto rhs_t=rhs_v(ss);
+    sub(&tmp,&lhs_t,&rhs_t);
+    coalescedWrite(ret_v[ss],tmp);
+  });
+}
+template<class obj1,class obj2,class obj3> inline
+void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
+  ret.Checkerboard() = lhs.Checkerboard();
+  conformable(ret,rhs);
+  conformable(lhs,rhs);
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  auto rhs_v = rhs.View();
+  accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto lhs_t=lhs_v(ss);
+    auto rhs_t=rhs_v(ss);
+    add(&tmp,&lhs_t,&rhs_t);
+    coalescedWrite(ret_v[ss],tmp);
+  });
+}
+  
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//  avoid copy back routines for mult, mac, sub, add
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+template<class obj1,class obj2,class obj3> inline
+void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
+  ret.Checkerboard() = lhs.Checkerboard();
+  conformable(lhs,ret);
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    mult(&tmp,&lhs_v(ss),&rhs);
+    coalescedWrite(ret_v[ss],tmp);
+  });
+}
+  
+template<class obj1,class obj2,class obj3> inline
+void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
+  ret.Checkerboard() = lhs.Checkerboard();
+  conformable(ret,lhs);
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto lhs_t=lhs_v(ss);
+    mac(&tmp,&lhs_t,&rhs);
+    coalescedWrite(ret_v[ss],tmp);
+  });
+}
+  
+template<class obj1,class obj2,class obj3> inline
+void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
+  ret.Checkerboard() = lhs.Checkerboard();
+  conformable(ret,lhs);
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto lhs_t=lhs_v(ss);
+    sub(&tmp,&lhs_t,&rhs);
+    coalescedWrite(ret_v[ss],tmp);
+  });
+}
+template<class obj1,class obj2,class obj3> inline
+void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
+  ret.Checkerboard() = lhs.Checkerboard();
+  conformable(lhs,ret);
+  auto ret_v = ret.View();
+  auto lhs_v = lhs.View();
+  accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto lhs_t=lhs_v(ss);
+    add(&tmp,&lhs_t,&rhs);
+    coalescedWrite(ret_v[ss],tmp);
+  });
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//  avoid copy back routines for mult, mac, sub, add
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+template<class obj1,class obj2,class obj3> inline
+void mult(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
+  ret.Checkerboard() = rhs.Checkerboard();
+  conformable(ret,rhs);
+  auto ret_v = ret.View();
+  auto rhs_v = lhs.View();
+  accelerator_for(ss,rhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto rhs_t=rhs_v(ss);
+    mult(&tmp,&lhs,&rhs_t);
+    coalescedWrite(ret_v[ss],tmp);
+  });
+}
+  
+template<class obj1,class obj2,class obj3> inline
+void mac(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
+  ret.Checkerboard() = rhs.Checkerboard();
+  conformable(ret,rhs);
+  auto ret_v = ret.View();
+  auto rhs_v = lhs.View();
+  accelerator_for(ss,rhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto rhs_t=rhs_v(ss);
+    mac(&tmp,&lhs,&rhs_t);
+    coalescedWrite(ret_v[ss],tmp);
+  });
+}
+  
+template<class obj1,class obj2,class obj3> inline
+void sub(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
+  ret.Checkerboard() = rhs.Checkerboard();
+  conformable(ret,rhs);
+  auto ret_v = ret.View();
+  auto rhs_v = lhs.View();
+  accelerator_for(ss,rhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto rhs_t=rhs_v(ss);
+    sub(&tmp,&lhs,&rhs_t);
+    coalescedWrite(ret_v[ss],tmp);
+  });
+}
+template<class obj1,class obj2,class obj3> inline
+void add(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
+  ret.Checkerboard() = rhs.Checkerboard();
+  conformable(ret,rhs);
+  auto ret_v = ret.View();
+  auto rhs_v = lhs.View();
+  accelerator_for(ss,rhs_v.size(),obj1::Nsimd(),{
+    decltype(coalescedRead(obj1())) tmp;
+    auto rhs_t=rhs_v(ss);
+    add(&tmp,&lhs,&rhs_t);
+    coalescedWrite(ret_v[ss],tmp);
+  });
+}
+  
+template<class sobj,class vobj> inline
+void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y){
+  ret.Checkerboard() = x.Checkerboard();
+  conformable(ret,x);
+  conformable(x,y);
+  auto ret_v = ret.View();
+  auto x_v = x.View();
+  auto y_v = y.View();
+  accelerator_for(ss,x_v.size(),vobj::Nsimd(),{
+    auto tmp = a*x_v(ss)+y_v(ss);
+    coalescedWrite(ret_v[ss],tmp);
+  });
+}
+template<class sobj,class vobj> inline
+void axpby(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y){
+  ret.Checkerboard() = x.Checkerboard();
+  conformable(ret,x);
+  conformable(x,y);
+  auto ret_v = ret.View();
+  auto x_v = x.View();
+  auto y_v = y.View();
+  accelerator_for(ss,x_v.size(),vobj::Nsimd(),{
+    auto tmp = a*x_v(ss)+b*y_v(ss);
+    coalescedWrite(ret_v[ss],tmp);
+  });
+}
+
+template<class sobj,class vobj> inline
+RealD axpy_norm(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y)
+{
+    return axpy_norm_fast(ret,a,x,y);
+}
+template<class sobj,class vobj> inline
+RealD axpby_norm(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y)
+{
+    return axpby_norm_fast(ret,a,b,x,y);
+}
+
+NAMESPACE_END(Grid);
 #endif

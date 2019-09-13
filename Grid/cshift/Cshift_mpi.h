@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,33 +24,33 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef _GRID_CSHIFT_MPI_H_
 #define _GRID_CSHIFT_MPI_H_
 
 
-namespace Grid { 
+NAMESPACE_BEGIN(Grid); 
 
 template<class vobj> Lattice<vobj> Cshift(const Lattice<vobj> &rhs,int dimension,int shift)
 {
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;
 
-  Lattice<vobj> ret(rhs._grid); 
+  Lattice<vobj> ret(rhs.Grid()); 
   
-  int fd = rhs._grid->_fdimensions[dimension];
-  int rd = rhs._grid->_rdimensions[dimension];
+  int fd = rhs.Grid()->_fdimensions[dimension];
+  int rd = rhs.Grid()->_rdimensions[dimension];
 
   // Map to always positive shift modulo global full dimension.
   shift = (shift+fd)%fd;
 
-  ret.checkerboard = rhs._grid->CheckerBoardDestination(rhs.checkerboard,shift,dimension);
+  ret.Checkerboard() = rhs.Grid()->CheckerBoardDestination(rhs.Checkerboard(),shift,dimension);
         
   // the permute type
-  int simd_layout     = rhs._grid->_simd_layout[dimension];
-  int comm_dim        = rhs._grid->_processors[dimension] >1 ;
-  int splice_dim      = rhs._grid->_simd_layout[dimension]>1 && (comm_dim);
+  int simd_layout     = rhs.Grid()->_simd_layout[dimension];
+  int comm_dim        = rhs.Grid()->_processors[dimension] >1 ;
+  int splice_dim      = rhs.Grid()->_simd_layout[dimension]>1 && (comm_dim);
 
 
   if ( !comm_dim ) {
@@ -70,10 +70,10 @@ template<class vobj> void Cshift_comms(Lattice<vobj>& ret,const Lattice<vobj> &r
 {
   int sshift[2];
 
-  sshift[0] = rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,Even);
-  sshift[1] = rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,Odd);
+  sshift[0] = rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Even);
+  sshift[1] = rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Odd);
 
-  //  std::cout << "Cshift_comms dim "<<dimension<<"cb "<<rhs.checkerboard<<"shift "<<shift<<" sshift " << sshift[0]<<" "<<sshift[1]<<std::endl;
+  //  std::cout << "Cshift_comms dim "<<dimension<<"cb "<<rhs.Checkerboard()<<"shift "<<shift<<" sshift " << sshift[0]<<" "<<sshift[1]<<std::endl;
   if ( sshift[0] == sshift[1] ) {
     //    std::cout << "Single pass Cshift_comms" <<std::endl;
     Cshift_comms(ret,rhs,dimension,shift,0x3);
@@ -88,8 +88,8 @@ template<class vobj> void Cshift_comms_simd(Lattice<vobj>& ret,const Lattice<vob
 {
   int sshift[2];
 
-  sshift[0] = rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,Even);
-  sshift[1] = rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,Odd);
+  sshift[0] = rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Even);
+  sshift[1] = rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Odd);
 
   //std::cout << "Cshift_comms_simd dim "<<dimension<<"cb "<<rhs.checkerboard<<"shift "<<shift<<" sshift " << sshift[0]<<" "<<sshift[1]<<std::endl;
   if ( sshift[0] == sshift[1] ) {
@@ -107,25 +107,25 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;
 
-  GridBase *grid=rhs._grid;
-  Lattice<vobj> temp(rhs._grid);
+  GridBase *grid=rhs.Grid();
+  Lattice<vobj> temp(rhs.Grid());
 
-  int fd              = rhs._grid->_fdimensions[dimension];
-  int rd              = rhs._grid->_rdimensions[dimension];
-  int pd              = rhs._grid->_processors[dimension];
-  int simd_layout     = rhs._grid->_simd_layout[dimension];
-  int comm_dim        = rhs._grid->_processors[dimension] >1 ;
+  int fd              = rhs.Grid()->_fdimensions[dimension];
+  int rd              = rhs.Grid()->_rdimensions[dimension];
+  int pd              = rhs.Grid()->_processors[dimension];
+  int simd_layout     = rhs.Grid()->_simd_layout[dimension];
+  int comm_dim        = rhs.Grid()->_processors[dimension] >1 ;
   assert(simd_layout==1);
   assert(comm_dim==1);
   assert(shift>=0);
   assert(shift<fd);
   
-  int buffer_size = rhs._grid->_slice_nblock[dimension]*rhs._grid->_slice_block[dimension];
+  int buffer_size = rhs.Grid()->_slice_nblock[dimension]*rhs.Grid()->_slice_block[dimension];
   commVector<vobj> send_buf(buffer_size);
   commVector<vobj> recv_buf(buffer_size);
 
   int cb= (cbmask==0x2)? Odd : Even;
-  int sshift= rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,cb);
+  int sshift= rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,cb);
 
   for(int x=0;x<rd;x++){       
 
@@ -145,7 +145,7 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
 
       Gather_plane_simple (rhs,send_buf,dimension,sx,cbmask);
 
-      int rank           = grid->_processor;
+      //      int rank           = grid->_processor;
       int recv_from_rank;
       int xmit_to_rank;
       grid->ShiftedRanks(dimension,comm_proc,xmit_to_rank,recv_from_rank);
@@ -165,7 +165,7 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
 
 template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
 {
-  GridBase *grid=rhs._grid;
+  GridBase *grid=rhs.Grid();
   const int Nsimd = grid->Nsimd();
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_object scalar_object;
@@ -193,21 +193,21 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
   // Simd direction uses an extract/merge pair
   ///////////////////////////////////////////////
   int buffer_size = grid->_slice_nblock[dimension]*grid->_slice_block[dimension];
-  int words = sizeof(vobj)/sizeof(vector_type);
+  //  int words = sizeof(vobj)/sizeof(vector_type);
 
   std::vector<commVector<scalar_object> >   send_buf_extract(Nsimd,commVector<scalar_object>(buffer_size) );
   std::vector<commVector<scalar_object> >   recv_buf_extract(Nsimd,commVector<scalar_object>(buffer_size) );
 
   int bytes = buffer_size*sizeof(scalar_object);
 
-  std::vector<scalar_object *>  pointers(Nsimd); // 
-  std::vector<scalar_object *> rpointers(Nsimd); // received pointers
+  ExtractPointerArray<scalar_object>  pointers(Nsimd); // 
+  ExtractPointerArray<scalar_object> rpointers(Nsimd); // received pointers
 
   ///////////////////////////////////////////
   // Work out what to send where
   ///////////////////////////////////////////
   int cb    = (cbmask==0x2)? Odd : Even;
-  int sshift= grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,cb);
+  int sshift= grid->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,cb);
 
   // loop over outer coord planes orthog to dim
   for(int x=0;x<rd;x++){       
@@ -257,6 +257,8 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
     Scatter_plane_merge(ret,rpointers,dimension,x,cbmask);
   }
 
- }
 }
+
+NAMESPACE_END(Grid); 
+
 #endif

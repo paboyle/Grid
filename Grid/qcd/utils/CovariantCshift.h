@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,13 +24,13 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef QCD_UTILS_COVARIANT_CSHIFT_H
 #define QCD_UTILS_COVARIANT_CSHIFT_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
+
 ////////////////////////////////////////////////////////////////////////
 // Low performance implementation of CovariantCshift API
 ////////////////////////////////////////////////////////////////////////
@@ -39,8 +39,8 @@ namespace QCD {
 namespace PeriodicBC { 
 
   template<class covariant,class gauge> Lattice<covariant> CovShiftForward(const Lattice<gauge> &Link, 
-									    int mu,
-									    const Lattice<covariant> &field)
+									   int mu,
+									   const Lattice<covariant> &field)
   {
     return Link*Cshift(field,mu,1);// moves towards negative mu
   }
@@ -48,7 +48,7 @@ namespace PeriodicBC {
 									    int mu,
 									    const Lattice<covariant> &field)
   {
-    Lattice<covariant> tmp(field._grid);
+    Lattice<covariant> tmp(field.Grid());
     tmp = adj(Link)*field;
     return Cshift(tmp,mu,-1);// moves towards positive mu
   }
@@ -73,21 +73,21 @@ namespace ConjugateBC {
   //                      U  U^* U^* U^T U^adj =  U  (U U U^dag U^T )^*
   //                                           =  U  (U U U^dag)^* ( U^T )^*
   //
-  // So covariant shift rule: conjugate inward shifted plane when crossing boundary applies.
+  // So covariant shift rule: Conjugate inward shifted plane when crossing boundary applies.
   //
-  // This conjugate should be applied to BOTH the link and the covariant field on backward shift
+  // This Conjugate should be applied to BOTH the link and the covariant field on backward shift
   // boundary wrap.
   // 
   //      |  |              
   // xxxxxxxxxxxxxxxxx         
-  //      |  | <---- this link is conjugated, and the path leading into it. Segment crossing in and out is double conjugated.
+  //      |  | <---- this link is Conjugated, and the path leading into it. Segment crossing in and out is double Conjugated.
   //       -- 
   //    ------->
   template<class covariant,class gauge> Lattice<covariant> CovShiftForward(const Lattice<gauge> &Link, 
-									    int mu,
-									    const Lattice<covariant> &field)
+									   int mu,
+									   const Lattice<covariant> &field)
   {
-    GridBase * grid = Link._grid;
+    GridBase * grid = Link.Grid();
 
     int Lmu = grid->GlobalDimensions()[mu]-1;
 
@@ -106,7 +106,7 @@ namespace ConjugateBC {
 									    int mu,
 									    const Lattice<covariant> &field)
   {
-    GridBase * grid = field._grid;
+    GridBase * grid = field.Grid();
 
     int Lmu = grid->GlobalDimensions()[mu]-1;
 
@@ -122,9 +122,8 @@ namespace ConjugateBC {
     return Cshift(tmp,mu,-1);// moves towards positive mu
   }
 
-
 }
 
 
-}}
+NAMESPACE_END(Grid);
 #endif

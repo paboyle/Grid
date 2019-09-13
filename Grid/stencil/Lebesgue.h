@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,57 +24,58 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_LEBESGUE_H
 #define GRID_LEBESGUE_H
 
 #include<vector>
 
 // Lebesgue, Morton, Z-graph ordering assistance
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
   
-  class LebesgueOrder { 
-  public:
+class LebesgueOrder { 
+public:
 
-    typedef int32_t IndexInteger;
-    
-    static int UseLebesgueOrder;
-    GridBase *grid;
+  typedef int32_t IndexInteger;
+  static int UseLebesgueOrder;
+  GridBase *grid;
 
-  public:
-    LebesgueOrder(GridBase *_grid);
+public:
+  LebesgueOrder(GridBase *_grid);
 
-    inline IndexInteger Reorder(IndexInteger ss) { 
-      return _LebesgueReorder[ss] ;
-    };
+  inline IndexInteger Reorder(IndexInteger ss) { 
+    return _LebesgueReorder[ss] ;
+  };
 
-    ////////////////////////////
-    // Space filling fractal for cache oblivious
-    ////////////////////////////
-    void ZGraph(void);
-    IndexInteger alignup(IndexInteger n);
+  ////////////////////////////
+  // Space filling fractal for cache oblivious
+  ////////////////////////////
+  void ZGraph(void);
+  IndexInteger alignup(IndexInteger n);
 
-    /////////////////////////////////
-    // Cartesian stencil blocking strategy
-    /////////////////////////////////
-    static std::vector<int> Block;
-    void NoBlocking(void);
-    void CartesianBlocking(void);
-    void IterateO(int ND,int dim,
-		  std::vector<IndexInteger> & xo,
-		  std::vector<IndexInteger> & xi,
-		  std::vector<IndexInteger> &dims);
-    void IterateI(int ND,int dim,
-		  std::vector<IndexInteger> & xo,
-		  std::vector<IndexInteger> & xi,
-		  std::vector<IndexInteger> &dims);
+  /////////////////////////////////
+  // Cartesian stencil blocking strategy
+  /////////////////////////////////
+  static std::vector<int> Block;
+  void NoBlocking(void);
+  void CartesianBlocking(void);
+  void IterateO(int ND,int dim,
+		Coordinate & xo,
+		Coordinate & xi,
+		Coordinate &dims);
+  void IterateI(int ND,int dim,
+		Coordinate & xo,
+		Coordinate & xi,
+		Coordinate &dims);
 
-    void ThreadInterleave(void);
+  void ThreadInterleave(void);
 
-  private:
-    std::vector<IndexInteger> _LebesgueReorder;
+private:
+  Vector<IndexInteger> _LebesgueReorder;
 
-  };    
-}
+};    
+
+NAMESPACE_END(Grid);
+
 #endif

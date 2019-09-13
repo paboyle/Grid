@@ -31,11 +31,9 @@
   @file StoutSmearing.h
   @brief Declares Stout smearing class
 */
-#ifndef STOUT_SMEAR_
-#define STOUT_SMEAR_
+#pragma once
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 /*!  @brief Stout smearing of link variable. */
 template <class Gimpl>
@@ -90,8 +88,8 @@ public:
   ~Smear_Stout() {}  // delete SmearBase...
 
   void smear(GaugeField& u_smr, const GaugeField& U) const {
-    GaugeField C(U._grid);
-    GaugeLinkField tmp(U._grid), iq_mu(U._grid), Umu(U._grid);
+    GaugeField C(U.Grid());
+    GaugeLinkField tmp(U.Grid()), iq_mu(U.Grid()), Umu(U.Grid());
 
     std::cout << GridLogDebug << "Stout smearing started" << std::endl;
 
@@ -136,7 +134,7 @@ public:
     // the i sign is coming from outside
     // input matrix is anti-hermitian NOT hermitian
 
-    GridBase* grid = iQ._grid;
+    GridBase* grid = iQ.Grid();
     GaugeLinkField unity(grid);
     unity = 1.0;
 
@@ -159,7 +157,7 @@ public:
     Complex one_over_three = 1.0 / 3.0;
     Complex one_over_two = 1.0 / 2.0;
 
-    GridBase* grid = u._grid;
+    GridBase* grid = u.Grid();
     LatticeComplex c0(grid), c1(grid), tmp(grid), c0max(grid), theta(grid);
 
     // sign in c0 from the conventions on the Ta
@@ -178,7 +176,7 @@ public:
 
   void set_fj(LatticeComplex& f0, LatticeComplex& f1, LatticeComplex& f2,
               const LatticeComplex& u, const LatticeComplex& w) const {
-    GridBase* grid = u._grid;
+    GridBase* grid = u.Grid();
     LatticeComplex xi0(grid), u2(grid), w2(grid), cosw(grid);
     LatticeComplex fden(grid);
     LatticeComplex h0(grid), h1(grid), h2(grid);
@@ -219,7 +217,5 @@ public:
     return cos(w) / (w * w) - sin(w) / (w * w * w);
   }
 };
-}
-}
 
-#endif
+NAMESPACE_END(Grid);

@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,16 +24,15 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_LOCAL_COHERENCE_IRL_H
 #define GRID_LOCAL_COHERENCE_IRL_H
 
-namespace Grid { 
-
+NAMESPACE_BEGIN(Grid); 
 
 struct LanczosParams : Serializable {
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(LanczosParams,
 				  ChebyParams, Cheby,/*Chebyshev*/
 				  int, Nstop,    /*Vecs in Lanczos must converge Nstop < Nk < Nm*/
@@ -46,7 +45,7 @@ struct LanczosParams : Serializable {
 };
 
 struct LocalCoherenceLanczosParams : Serializable {
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(LocalCoherenceLanczosParams,
 				  bool, saveEvecs,
 				  bool, doFine,
@@ -59,7 +58,7 @@ struct LocalCoherenceLanczosParams : Serializable {
 				  RealD        , coarse_relax_tol,
 				  std::vector<int>, blockSize,
 				  std::string, config,
-				  std::vector < std::complex<double>  >, omega,
+				  std::vector < ComplexD  >, omega,
 				  RealD, mass,
 				  RealD, M5);
 };
@@ -83,14 +82,14 @@ public:
   };
 
   void operator()(const CoarseField& in, CoarseField& out) {
-    GridBase *FineGrid = subspace[0]._grid;    
-    int   checkerboard = subspace[0].checkerboard;
-      
-    FineField fin (FineGrid);     fin.checkerboard= checkerboard;
-    FineField fout(FineGrid);   fout.checkerboard = checkerboard;
+    GridBase *FineGrid = subspace[0].Grid();    
+    int   checkerboard = subspace[0].Checkerboard();
+
+    FineField fin (FineGrid);     fin.Checkerboard()= checkerboard;
+    FineField fout(FineGrid);   fout.Checkerboard() = checkerboard;
 
     blockPromote(in,fin,subspace);       std::cout<<GridLogIRL<<"ProjectedHermop : Promote to fine"<<std::endl;
-    _Linop.HermOp(fin,fout);             std::cout<<GridLogIRL<<"ProjectedHermop : HermOp (fine) "<<std::endl;
+    _Linop.HermOp(fin,fout);                   std::cout<<GridLogIRL<<"ProjectedHermop : HermOp (fine) "<<std::endl;
     blockProject(out,fout,subspace);     std::cout<<GridLogIRL<<"ProjectedHermop : Project to coarse "<<std::endl;
   }
 };
@@ -117,12 +116,12 @@ public:
   {  };
 
   void operator()(const CoarseField& in, CoarseField& out) {
-    
-    GridBase *FineGrid = subspace[0]._grid;    
-    int   checkerboard = subspace[0].checkerboard;
 
-    FineField fin (FineGrid); fin.checkerboard =checkerboard;
-    FineField fout(FineGrid);fout.checkerboard =checkerboard;
+    GridBase *FineGrid = subspace[0].Grid();    
+    int   checkerboard = subspace[0].Checkerboard();
+
+    FineField fin (FineGrid); fin.Checkerboard() =checkerboard;
+    FineField fout(FineGrid);fout.Checkerboard() =checkerboard;
     
     blockPromote(in,fin,subspace);             std::cout<<GridLogIRL<<"ProjectedFunctionHermop : Promote to fine"<<std::endl;
     _poly(_Linop,fin,fout);                    std::cout<<GridLogIRL<<"ProjectedFunctionHermop : Poly "<<std::endl;
@@ -133,7 +132,7 @@ public:
 template<class Fobj,class CComplex,int nbasis>
 class ImplicitlyRestartedLanczosSmoothedTester  : public ImplicitlyRestartedLanczosTester<Lattice<iVector<CComplex,nbasis > > >
 {
- public:
+public:
   typedef iVector<CComplex,nbasis >           CoarseSiteVector;
   typedef Lattice<CoarseSiteVector>           CoarseField;
   typedef Lattice<CComplex>   CoarseScalar; // used for inner products on fine field
@@ -142,7 +141,7 @@ class ImplicitlyRestartedLanczosSmoothedTester  : public ImplicitlyRestartedLanc
   LinearFunction<CoarseField> & _Poly;
   OperatorFunction<FineField>   & _smoother;
   LinearOperatorBase<FineField> &_Linop;
-  RealD                          _coarse_relax_tol;
+  RealD                             _coarse_relax_tol;
   std::vector<FineField>        &_subspace;
   
   ImplicitlyRestartedLanczosSmoothedTester(LinearFunction<CoarseField>   &Poly,
@@ -182,10 +181,10 @@ class ImplicitlyRestartedLanczosSmoothedTester  : public ImplicitlyRestartedLanc
   }
   int ReconstructEval(int j,RealD eresid,CoarseField &B, RealD &eval,RealD evalMaxApprox)
   {
-    GridBase *FineGrid = _subspace[0]._grid;    
-    int checkerboard   = _subspace[0].checkerboard;
-    FineField fB(FineGrid);fB.checkerboard =checkerboard;
-    FineField fv(FineGrid);fv.checkerboard =checkerboard;
+    GridBase *FineGrid = _subspace[0].Grid();    
+    int checkerboard   = _subspace[0].Checkerboard();
+    FineField fB(FineGrid);fB.Checkerboard() =checkerboard;
+    FineField fv(FineGrid);fv.Checkerboard() =checkerboard;
 
     blockPromote(B,fv,_subspace);  
     
@@ -305,11 +304,11 @@ public:
     int Nk = nbasis;
     subspace.resize(Nk,_FineGrid);
     subspace[0]=1.0;
-    subspace[0].checkerboard=_checkerboard;
+    subspace[0].Checkerboard()=_checkerboard;
     normalise(subspace[0]);
     PlainHermOp<FineField>    Op(_FineOp);
     for(int k=1;k<Nk;k++){
-      subspace[k].checkerboard=_checkerboard;
+      subspace[k].Checkerboard()=_checkerboard;
       Op(subspace[k-1],subspace[k]);
       normalise(subspace[k]);
     }
@@ -360,7 +359,11 @@ public:
 
     ImplicitlyRestartedLanczos<FineField> IRL(ChebyOp,Op,Nstop,Nk,Nm,resid,MaxIt,betastp,MinRes);
 
-    FineField src(_FineGrid); src=1.0; src.checkerboard = _checkerboard;
+    FineField src(_FineGrid); 
+    typedef typename FineField::scalar_type Scalar;
+    // src=1.0; 
+    src=Scalar(1.0); 
+    src.Checkerboard() = _checkerboard;
 
     int Nconv;
     IRL.calc(evals_fine,subspace,src,Nconv,false);
@@ -402,5 +405,5 @@ public:
   }
 };
 
-}
+NAMESPACE_END(Grid);
 #endif

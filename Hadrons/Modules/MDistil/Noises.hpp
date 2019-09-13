@@ -110,7 +110,7 @@ template <typename FImpl>
 void TNoises<FImpl>::setup(void)
 {
   const int Nt{env().getDim(Tdir)};
-  const int Ns{Grid::QCD::Ns};
+  //const int Ns{Grid::Ns};
   const int nnoise{par().nnoise};
   const int nvec{par().nvec};
   const int TI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().TI, Nt, true) };
@@ -123,7 +123,7 @@ template <typename FImpl>
 void TNoises<FImpl>::execute(void)
 {
   const int Nt{env().getDim(Tdir)};
-  const int Ns{Grid::QCD::Ns};
+  //const int Ns{Grid::Ns};
   const int nnoise{par().nnoise};
   const int nvec{par().nvec};
   const int TI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().TI, Nt, false) };

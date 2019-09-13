@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,58 +24,55 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef  GRID_QCD_MOBIUS_ZOLOTAREV_FERMION_H
 #define  GRID_QCD_MOBIUS_ZOLOTAREV_FERMION_H
 
 #include <Grid/qcd/action/fermion/FermionCore.h>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-  namespace QCD {
+template<class Impl>
+class MobiusZolotarevFermion : public CayleyFermion5D<Impl>
+{
+public:
+  INHERIT_IMPL_TYPES(Impl);
+public:
 
-    template<class Impl>
-    class MobiusZolotarevFermion : public CayleyFermion5D<Impl>
-    {
-    public:
-     INHERIT_IMPL_TYPES(Impl);
-    public:
-
-      virtual void   Instantiatable(void) {};
-      // Constructors
-       MobiusZolotarevFermion(GaugeField &_Umu,
-			      GridCartesian         &FiveDimGrid,
-			      GridRedBlackCartesian &FiveDimRedBlackGrid,
-			      GridCartesian         &FourDimGrid,
-			      GridRedBlackCartesian &FourDimRedBlackGrid,
-			      RealD _mass,RealD _M5,
-			      RealD b, RealD c,
-			      RealD lo, RealD hi,const ImplParams &p= ImplParams()) : 
+  virtual void   Instantiatable(void) {};
+  // Constructors
+  MobiusZolotarevFermion(GaugeField &_Umu,
+			 GridCartesian         &FiveDimGrid,
+			 GridRedBlackCartesian &FiveDimRedBlackGrid,
+			 GridCartesian         &FourDimGrid,
+			 GridRedBlackCartesian &FourDimRedBlackGrid,
+			 RealD _mass,RealD _M5,
+			 RealD b, RealD c,
+			 RealD lo, RealD hi,const ImplParams &p= ImplParams()) : 
       
-      CayleyFermion5D<Impl>(_Umu,
-			    FiveDimGrid,
-			    FiveDimRedBlackGrid,
-			    FourDimGrid,
-			    FourDimRedBlackGrid,_mass,_M5,p)
+    CayleyFermion5D<Impl>(_Umu,
+			  FiveDimGrid,
+			  FiveDimRedBlackGrid,
+			  FourDimGrid,
+			  FourDimRedBlackGrid,_mass,_M5,p)
 
-      {
-	RealD eps = lo/hi;
+  {
+    RealD eps = lo/hi;
 
-	Approx::zolotarev_data *zdata = Approx::zolotarev(eps,this->Ls,0);
-	assert(zdata->n==this->Ls);
+    Approx::zolotarev_data *zdata = Approx::zolotarev(eps,this->Ls,0);
+    assert(zdata->n==this->Ls);
 
-	std::cout<<GridLogMessage << "MobiusZolotarevFermion (b="<<b<<",c="<<c<<") with Ls= "<<this->Ls<<" Zolotarev range ["<<lo<<","<<hi<<"]"<<std::endl;
+    std::cout<<GridLogMessage << "MobiusZolotarevFermion (b="<<b<<",c="<<c<<") with Ls= "<<this->Ls<<" Zolotarev range ["<<lo<<","<<hi<<"]"<<std::endl;
 	
-	// Call base setter
-	this->SetCoefficientsZolotarev(hi,zdata,b,c);
+    // Call base setter
+    this->SetCoefficientsZolotarev(hi,zdata,b,c);
  
-	Approx::zolotarev_free(zdata);
-      }
-
-    };
-
+    Approx::zolotarev_free(zdata);
   }
-}
+
+};
+
+NAMESPACE_END(Grid);
 
 #endif

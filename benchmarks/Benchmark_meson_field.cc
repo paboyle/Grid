@@ -30,8 +30,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
-
 
 #include "Grid/util/Profiling.h"
 
@@ -48,7 +46,7 @@ void sliceInnerProductMesonField(std::vector< std::vector<ComplexD> > &mat,
   int Lblock = lhs.size();
   int Rblock = rhs.size();
 
-  GridBase *grid = lhs[0]._grid;
+  GridBase *grid = lhs[0].Grid();
   
   const int    Nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
@@ -67,9 +65,9 @@ void sliceInnerProductMesonField(std::vector< std::vector<ComplexD> > &mat,
   // sum across these down to scalars
   // splitting the SIMD
   std::vector<vector_type,alignedAllocator<vector_type> > lvSum(rd*Lblock*Rblock);
-  parallel_for (int r = 0; r < rd * Lblock * Rblock; r++){
-    lvSum[r] = zero;
-  }
+  thread_for(r, rd * Lblock * Rblock,{
+    lvSum[r] = Zero();
+  });
 
   std::vector<scalar_type > lsSum(ld*Lblock*Rblock,scalar_type(0.0));             
 
@@ -79,7 +77,7 @@ void sliceInnerProductMesonField(std::vector< std::vector<ComplexD> > &mat,
   
   std::cout << GridLogMessage << " Entering first parallel loop "<<std::endl;
   // Parallelise over t-direction doesn't expose as much parallelism as needed for KNL
-  parallel_for(int r=0;r<rd;r++){
+  thread_for(r,rd,{
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
 
@@ -87,10 +85,12 @@ void sliceInnerProductMesonField(std::vector< std::vector<ComplexD> > &mat,
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
 	for(int i=0;i<Lblock;i++){
-	  auto left = conjugate(lhs[i]._odata[ss]);
+	  auto lhs_v = lhs[i].View();
+	  auto left = conjugate(lhs_v[ss]);
 	  for(int j=0;j<Rblock;j++){
 	    int idx = i+Lblock*j+Lblock*Rblock*r;
-	    auto right = rhs[j]._odata[ss];
+	    auto rhs_v = rhs[j].View();
+	    auto right = rhs_v[ss];
 	    vector_type vv = left()(0)(0) * right()(0)(0)
 	      +              left()(0)(1) * right()(0)(1)
 	      +              left()(0)(2) * right()(0)(2)
@@ -108,19 +108,19 @@ void sliceInnerProductMesonField(std::vector< std::vector<ComplexD> > &mat,
 	}
       }
     }
-  }
+  });
 
   std::cout << GridLogMessage << " Entering second parallel loop "<<std::endl;
   // Sum across simd lanes in the plane, breaking out orthog dir.
-  parallel_for(int rt=0;rt<rd;rt++){
-
-    std::vector<int> icoor(Nd);
+  thread_for(rt,rd,{
+    
+    Coordinate icoor(Nd);
 
     for(int i=0;i<Lblock;i++){
     for(int j=0;j<Rblock;j++){
 
       iScalar<vector_type> temp; 
-      std::vector<iScalar<scalar_type> > extracted(Nsimd);               
+      ExtractBuffer<iScalar<scalar_type> > extracted(Nsimd);               
 
       temp._internal = lvSum[i+Lblock*j+Lblock*Rblock*rt];
 
@@ -137,7 +137,7 @@ void sliceInnerProductMesonField(std::vector< std::vector<ComplexD> > &mat,
 
       }
     }}
-  }
+  });
 
   std::cout << GridLogMessage << " Entering non parallel loop "<<std::endl;
   for(int t=0;t<fd;t++)
@@ -174,7 +174,7 @@ void sliceInnerProductMesonFieldGamma(std::vector< std::vector<ComplexD> > &mat,
   int Lblock = lhs.size();
   int Rblock = rhs.size();
 
-  GridBase *grid = lhs[0]._grid;
+  GridBase *grid = lhs[0].Grid();
   
   const int    Nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
@@ -197,14 +197,14 @@ void sliceInnerProductMesonFieldGamma(std::vector< std::vector<ComplexD> > &mat,
   int MFlvol = ld*Lblock*Rblock*Ngamma;
 
   std::vector<vector_type,alignedAllocator<vector_type> > lvSum(MFrvol);
-  parallel_for (int r = 0; r < MFrvol; r++){
-    lvSum[r] = zero;
-  }
+  thread_for(r,MFrvol,{
+    lvSum[r] = Zero();
+  });
 
   std::vector<scalar_type > lsSum(MFlvol);             
-  parallel_for (int r = 0; r < MFlvol; r++){
+  thread_for( r,MFlvol,{
     lsSum[r]=scalar_type(0.0);
-  }
+  });
 
   int e1=    grid->_slice_nblock[orthogdim];
   int e2=    grid->_slice_block [orthogdim];
@@ -213,7 +213,7 @@ void sliceInnerProductMesonFieldGamma(std::vector< std::vector<ComplexD> > &mat,
   std::cout << GridLogMessage << " Entering first parallel loop "<<std::endl;
 
   // Parallelise over t-direction doesn't expose as much parallelism as needed for KNL
-  parallel_for(int r=0;r<rd;r++){
+  thread_for(r,rd,{
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
 
@@ -221,11 +221,13 @@ void sliceInnerProductMesonFieldGamma(std::vector< std::vector<ComplexD> > &mat,
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
 	for(int i=0;i<Lblock;i++){
-	    auto left = conjugate(lhs[i]._odata[ss]);
-	    for(int j=0;j<Rblock;j++){
+ 	  auto lhs_v=lhs[i].View();
+	  auto left = conjugate(lhs_v[ss]);
+	  for(int j=0;j<Rblock;j++){
 	  for(int mu=0;mu<Ngamma;mu++){
-
-        auto right = Gamma(gammas[mu])*rhs[j]._odata[ss];
+	    
+	    auto rhs_v = rhs[j].View();
+	    auto right = Gamma(gammas[mu])*rhs_v[ss];
 
 	      vector_type vv = left()(0)(0) * right()(0)(0)
 		+              left()(0)(1) * right()(0)(1)
@@ -248,15 +250,15 @@ void sliceInnerProductMesonFieldGamma(std::vector< std::vector<ComplexD> > &mat,
 	}
       }
     }
-  }
+  });
 
   std::cout << GridLogMessage << " Entering second parallel loop "<<std::endl;
   // Sum across simd lanes in the plane, breaking out orthog dir.
-  parallel_for(int rt=0;rt<rd;rt++){
+  thread_for(rt,rd,{
 
     iScalar<vector_type> temp; 
-    std::vector<int> icoor(Nd);
-    std::vector<iScalar<scalar_type> > extracted(Nsimd);               
+    Coordinate icoor(Nd);
+    ExtractBuffer<iScalar<scalar_type> > extracted(Nsimd);               
 
     for(int i=0;i<Lblock;i++){
     for(int j=0;j<Rblock;j++){
@@ -278,7 +280,7 @@ void sliceInnerProductMesonFieldGamma(std::vector< std::vector<ComplexD> > &mat,
 
       }
     }}}
-  }
+  });
 
   std::cout << GridLogMessage << " Entering non parallel loop "<<std::endl;
   for(int t=0;t<fd;t++)
@@ -320,7 +322,7 @@ void sliceInnerProductMesonFieldGamma1(std::vector< std::vector<ComplexD> > &mat
   int Lblock = lhs.size();
   int Rblock = rhs.size();
 
-  GridBase *grid = lhs[0]._grid;
+  GridBase *grid = lhs[0].Grid();
   
   const int    Nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
@@ -343,14 +345,14 @@ void sliceInnerProductMesonFieldGamma1(std::vector< std::vector<ComplexD> > &mat
   int MFlvol = ld*Lblock*Rblock;
 
   Vector<SpinMatrix_v > lvSum(MFrvol);
-  parallel_for (int r = 0; r < MFrvol; r++){
-    lvSum[r] = zero;
-  }
+  thread_for(r,MFrvol,{
+    lvSum[r] = Zero();
+  });
 
   Vector<SpinMatrix_s > lsSum(MFlvol);             
-  parallel_for (int r = 0; r < MFlvol; r++){
+  thread_for(r,MFlvol,{
     lsSum[r]=scalar_type(0.0);
-  }
+  });
 
   int e1=    grid->_slice_nblock[orthogdim];
   int e2=    grid->_slice_block [orthogdim];
@@ -359,7 +361,7 @@ void sliceInnerProductMesonFieldGamma1(std::vector< std::vector<ComplexD> > &mat
   std::cout << GridLogMessage << " Entering first parallel loop "<<std::endl;
 
   // Parallelise over t-direction doesn't expose as much parallelism as needed for KNL
-  parallel_for(int r=0;r<rd;r++){
+  thread_for(r,rd,{
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
 
@@ -367,12 +369,14 @@ void sliceInnerProductMesonFieldGamma1(std::vector< std::vector<ComplexD> > &mat
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
 	for(int i=0;i<Lblock;i++){
-
-	  auto left = conjugate(lhs[i]._odata[ss]);
+	  
+	  auto lhs_v=lhs[i].View();
+	  auto left = conjugate(lhs_v[ss]);
 	  for(int j=0;j<Rblock;j++){
 
 	    SpinMatrix_v vv;
-	    auto right = rhs[j]._odata[ss];
+	    auto rhs_v = rhs[j].View();
+	    auto right = rhs_v[ss];
 	    for(int s1=0;s1<Ns;s1++){
 	    for(int s2=0;s2<Ns;s2++){
 	     vv()(s2,s1)() = left()(s1)(0) * right()(s2)(0)
@@ -388,14 +392,14 @@ void sliceInnerProductMesonFieldGamma1(std::vector< std::vector<ComplexD> > &mat
 	  }
 	}
       }
-    }
+  });
 
   std::cout << GridLogMessage << " Entering second parallel loop "<<std::endl;
   // Sum across simd lanes in the plane, breaking out orthog dir.
-  parallel_for(int rt=0;rt<rd;rt++){
+  thread_for(rt,rd,{
 
-    std::vector<int> icoor(Nd);
-    std::vector<SpinMatrix_s> extracted(Nsimd);               
+    Coordinate icoor(Nd);
+    ExtractBuffer<SpinMatrix_s> extracted(Nsimd);               
 
     for(int i=0;i<Lblock;i++){
     for(int j=0;j<Rblock;j++){
@@ -416,10 +420,10 @@ void sliceInnerProductMesonFieldGamma1(std::vector< std::vector<ComplexD> > &mat
 
       }
     }}
-  }
+  });
 
   std::cout << GridLogMessage << " Entering third parallel loop "<<std::endl;
-  parallel_for(int t=0;t<fd;t++)
+  thread_for(t,fd,
   {
     int pt = t / ld; // processor plane
     int lt = t % ld;
@@ -428,7 +432,7 @@ void sliceInnerProductMesonFieldGamma1(std::vector< std::vector<ComplexD> > &mat
       if (pt == grid->_processor_coor[orthogdim]){
         int ij_dx = i + Lblock * j + Lblock * Rblock * lt;
     	for(int mu=0;mu<Ngamma;mu++){
-	  mat[mu+i*Ngamma+j*Lblock*Ngamma][t] = trace(lsSum[ij_dx]*Gamma(gammas[mu]));
+	  mat[mu+i*Ngamma+j*Lblock*Ngamma][t] = TensorRemove(trace(lsSum[ij_dx]*Gamma(gammas[mu])));
 	}
       }
       else{
@@ -437,7 +441,7 @@ void sliceInnerProductMesonFieldGamma1(std::vector< std::vector<ComplexD> > &mat
 	}
       }
     }}
-  }
+  });
   std::cout << GridLogMessage << " Done "<<std::endl;
   // defer sum over nodes.
   return;
@@ -460,7 +464,7 @@ void sliceInnerProductMesonFieldGammaMom(std::vector< std::vector<ComplexD> > &m
   int Lblock = lhs.size();
   int Rblock = rhs.size();
 
-  GridBase *grid = lhs[0]._grid;
+  GridBase *grid = lhs[0].Grid();
   
   const int    Nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
@@ -484,14 +488,16 @@ void sliceInnerProductMesonFieldGammaMom(std::vector< std::vector<ComplexD> > &m
   int MFlvol = ld*Lblock*Rblock*Nmom;
 
   Vector<SpinMatrix_v > lvSum(MFrvol);
-  parallel_for (int r = 0; r < MFrvol; r++){
-    lvSum[r] = zero;
-  }
+  thread_for(r,MFrvol,
+  {
+    lvSum[r] = Zero();
+  });
 
   Vector<SpinMatrix_s > lsSum(MFlvol);             
-  parallel_for (int r = 0; r < MFlvol; r++){
+  thread_for(r,MFlvol,
+  {
     lsSum[r]=scalar_type(0.0);
-  }
+  });
 
   int e1=    grid->_slice_nblock[orthogdim];
   int e2=    grid->_slice_block [orthogdim];
@@ -500,7 +506,8 @@ void sliceInnerProductMesonFieldGammaMom(std::vector< std::vector<ComplexD> > &m
   std::cout << GridLogMessage << " Entering first parallel loop "<<std::endl;
 
   // Parallelise over t-direction doesn't expose as much parallelism as needed for KNL
-  parallel_for(int r=0;r<rd;r++){
+  thread_for(r,rd,
+  {
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
 
@@ -511,11 +518,13 @@ void sliceInnerProductMesonFieldGammaMom(std::vector< std::vector<ComplexD> > &m
 
 	for(int i=0;i<Lblock;i++){
 
-	  auto left = conjugate(lhs[i]._odata[ss]);
+	  auto lhs_v = lhs[i].View();
+	  auto left = conjugate(lhs_v[ss]);
 	  for(int j=0;j<Rblock;j++){
 
 	    SpinMatrix_v vv;
-	    auto right = rhs[j]._odata[ss];
+	    auto rhs_v = rhs[j].View();
+	    auto right = rhs_v[ss];
 	    for(int s1=0;s1<Ns;s1++){
 	    for(int s2=0;s2<Ns;s2++){
 	      vv()(s1,s2)() = left()(s1)(0) * right()(s2)(0)
@@ -528,7 +537,8 @@ void sliceInnerProductMesonFieldGammaMom(std::vector< std::vector<ComplexD> > &m
 	    // Trigger unroll
 	    for ( int m=0;m<Nmom;m++){
 	      int idx = m+base;
-	      auto phase = mom[m]._odata[ss];
+	      auto mom_v = mom[m].View();
+	      auto phase = mom_v[ss];
 	      mac(&lvSum[idx],&vv,&phase);
 	    }
 	  
@@ -536,14 +546,15 @@ void sliceInnerProductMesonFieldGammaMom(std::vector< std::vector<ComplexD> > &m
 	}
       }
     }
-  }
+  });
 
   std::cout << GridLogMessage << " Entering second parallel loop "<<std::endl;
   // Sum across simd lanes in the plane, breaking out orthog dir.
-  parallel_for(int rt=0;rt<rd;rt++){
+  thread_for(rt,rd,
+  {
 
-    std::vector<int> icoor(Nd);
-    std::vector<SpinMatrix_s> extracted(Nsimd);               
+    Coordinate icoor(Nd);
+    ExtractBuffer<SpinMatrix_s> extracted(Nsimd);               
 
 
     for(int i=0;i<Lblock;i++){
@@ -566,10 +577,10 @@ void sliceInnerProductMesonFieldGammaMom(std::vector< std::vector<ComplexD> > &m
 
       }
     }}}
-  }
+  });
 
   std::cout << GridLogMessage << " Entering third parallel loop "<<std::endl;
-  parallel_for(int t=0;t<fd;t++)
+  thread_for(t,fd,
   {
     int pt = t / ld; // processor plane
     int lt = t % ld;
@@ -582,7 +593,7 @@ void sliceInnerProductMesonFieldGammaMom(std::vector< std::vector<ComplexD> > &m
 	    mat[ mu
 		+m*Ngamma
 		+i*Nmom*Ngamma
-		+j*Nmom*Ngamma*Lblock][t] = trace(lsSum[ij_dx]*Gamma(gammas[mu]));
+		 +j*Nmom*Ngamma*Lblock][t] = TensorRemove(trace(lsSum[ij_dx]*Gamma(gammas[mu])));
 	  }
 	}
       }
@@ -593,7 +604,7 @@ void sliceInnerProductMesonFieldGammaMom(std::vector< std::vector<ComplexD> > &m
 	}}
       }
     }}
-  }
+  });
   std::cout << GridLogMessage << " Done "<<std::endl;
   // defer sum over nodes.
   return;
@@ -637,9 +648,9 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  auto latt_size   = GridDefaultLatt();
+  auto simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  auto mpi_layout  = GridDefaultMpi();
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   
   const int Nmom=7;

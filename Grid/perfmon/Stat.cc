@@ -2,7 +2,7 @@
 #include <Grid/perfmon/PerfCount.h>
 #include <Grid/perfmon/Stat.h>
 
-namespace Grid { 
+NAMESPACE_BEGIN(Grid); 
 
 bool PmuStat::pmu_initialized=false;
 
@@ -175,39 +175,39 @@ void PmuStat::KNLevsetup(const char *ename, int &fd, int event, int umask)
 }
 
 
- void PmuStat::KNLsetup(void){
+void PmuStat::KNLsetup(void){
 
-   int ret;
-   char fname[1024];
+  int ret;
+  char fname[1024];
 
-   // MC RPQ inserts and WPQ inserts (reads & writes)
-   for (int mc = 0; mc < NMC; ++mc)
-     {
-       ::snprintf(fname, sizeof(fname), "/sys/devices/uncore_imc_%d",mc);
-       // RPQ Inserts
-       KNLevsetup(fname, gbl.mc_rd[mc], 0x1, 0x1);
-       // WPQ Inserts
-       KNLevsetup(fname, gbl.mc_wr[mc], 0x2, 0x1);
-     }
-   // EDC RPQ inserts and WPQ inserts
-   for (int edc=0; edc < NEDC; ++edc)
-     {
-       ::snprintf(fname, sizeof(fname), "/sys/devices/uncore_edc_eclk_%d",edc);
-       // RPQ inserts
-       KNLevsetup(fname, gbl.edc_rd[edc], 0x1, 0x1);
-       // WPQ inserts
-       KNLevsetup(fname, gbl.edc_wr[edc], 0x2, 0x1);
-     }
-   // EDC HitE, HitM, MissE, MissM
-   for (int edc=0; edc < NEDC; ++edc)
-     {
-       ::snprintf(fname, sizeof(fname), "/sys/devices/uncore_edc_uclk_%d", edc);
-       KNLevsetup(fname, gbl.edc_hite[edc], 0x2, 0x1);
-       KNLevsetup(fname, gbl.edc_hitm[edc], 0x2, 0x2);
-       KNLevsetup(fname, gbl.edc_misse[edc], 0x2, 0x4);
-       KNLevsetup(fname, gbl.edc_missm[edc], 0x2, 0x8);
-     }
- }
+  // MC RPQ inserts and WPQ inserts (reads & writes)
+  for (int mc = 0; mc < NMC; ++mc)
+    {
+      ::snprintf(fname, sizeof(fname), "/sys/devices/uncore_imc_%d",mc);
+      // RPQ Inserts
+      KNLevsetup(fname, gbl.mc_rd[mc], 0x1, 0x1);
+      // WPQ Inserts
+      KNLevsetup(fname, gbl.mc_wr[mc], 0x2, 0x1);
+    }
+  // EDC RPQ inserts and WPQ inserts
+  for (int edc=0; edc < NEDC; ++edc)
+    {
+      ::snprintf(fname, sizeof(fname), "/sys/devices/uncore_edc_eclk_%d",edc);
+      // RPQ inserts
+      KNLevsetup(fname, gbl.edc_rd[edc], 0x1, 0x1);
+      // WPQ inserts
+      KNLevsetup(fname, gbl.edc_wr[edc], 0x2, 0x1);
+    }
+  // EDC HitE, HitM, MissE, MissM
+  for (int edc=0; edc < NEDC; ++edc)
+    {
+      ::snprintf(fname, sizeof(fname), "/sys/devices/uncore_edc_uclk_%d", edc);
+      KNLevsetup(fname, gbl.edc_hite[edc], 0x2, 0x1);
+      KNLevsetup(fname, gbl.edc_hitm[edc], 0x2, 0x2);
+      KNLevsetup(fname, gbl.edc_misse[edc], 0x2, 0x4);
+      KNLevsetup(fname, gbl.edc_missm[edc], 0x2, 0x8);
+    }
+}
 
 uint64_t PmuStat::KNLreadctr(int fd)
 {
@@ -242,4 +242,5 @@ void PmuStat::KNLreadctrs(ctrs &c)
 }
 
 #endif
-}
+NAMESPACE_END(Grid); 
+

@@ -30,15 +30,15 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian     RBGrid(&Grid);
 
@@ -57,10 +57,10 @@ int main (int argc, char ** argv)
   FermionField src   (&Grid); random(pRNG,src);
   FermionField phi   (&Grid); random(pRNG,phi);
   FermionField chi   (&Grid); random(pRNG,chi);
-  FermionField result(&Grid); result=zero;
-  FermionField    ref(&Grid);    ref=zero;
-  FermionField    tmp(&Grid);    tmp=zero;
-  FermionField    err(&Grid);    tmp=zero;
+  FermionField result(&Grid); result=Zero();
+  FermionField    ref(&Grid);    ref=Zero();
+  FermionField    tmp(&Grid);    tmp=Zero();
+  FermionField    err(&Grid);    tmp=Zero();
   LatticeGaugeField Umu(&Grid); SU3::HotConfiguration(pRNG,Umu);
   std::vector<LatticeColourMatrix> U(4,&Grid);
 
@@ -70,7 +70,7 @@ int main (int argc, char ** argv)
   }  
 
   // Only one non-zero (y)
-  Umu=zero;
+  Umu=Zero();
   for(int nn=0;nn<Nd;nn++){
     random(pRNG,U[nn]);
     std::cout<<GridLogMessage<<"U[nn]"<<norm2(U[nn])<<std::endl;

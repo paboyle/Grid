@@ -76,6 +76,7 @@ template <typename FImpl>
 class TBContraction: public Module<BContractionPar>
 {
 public:
+  using W = WilsonImplR; // Debug so I can see type info for default FImpl
     FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
@@ -174,15 +175,25 @@ void TBContraction<FImpl>::execute(void)
     int Bindex;
     int Nc=3; //Num colours
 
-    FermionField tmp1(grid3d);
-    FermionField tmp2(grid3d);
-    FermionField tmp3(grid3d);
+    FermionField ftmp1(grid3d);
+    FermionField ftmp2(grid3d);
+    FermionField ftmp3(grid3d);
+    LatticeView<typename FImpl::SiteSpinor> tmp1{ ftmp1 };
+    LatticeView<typename FImpl::SiteSpinor> tmp2{ ftmp2 };
+    LatticeView<typename FImpl::SiteSpinor> tmp3{ ftmp3 };
     //std::complex<double> * tmp33 = reinterpret_cast<std::complex<double> *>(&(tmp3[0]()(0)(0)));
 
+#ifdef THIS_IS_NAUGHTY_TODO_FIXME
+  // The reinterpret_cast gets rid of SIMD attributes
+  // Plus other badness - e.g. we perhaps shouldn't explicitly say SpinColourVector
+  // ... but rather use some correct FIMPL types
+  // REVIEW WITH PETER
+#endif
+  
     SpinColourVector * tmp11 = reinterpret_cast<SpinColourVector *>(&(tmp1[0]()(0)(0)));
     SpinColourVector * tmp22 = reinterpret_cast<SpinColourVector *>(&(tmp2[0]()(0)(0)));
     SpinColourVector * tmp33 = reinterpret_cast<SpinColourVector *>(&(tmp3[0]()(0)(0)));
-   
+
     SpinVector tmp11s; 
     SpinVector tmp22s; 
     SpinVector tmp33s; 
@@ -225,10 +236,10 @@ void TBContraction<FImpl>::execute(void)
           for (int imom=0 ; imom < Nmom ; imom++){
             for (int t=0 ; t < Nt ; t++){
               Bindex = i1 + N_1*(i2 + N_2*(i3 + N_3*(imom+Nmom*t)));
-	      ExtractSliceLocal(tmp1,one[i1],0,t,3);
-	      ExtractSliceLocal(tmp2,two[i2],0,t,3);
-	      ExtractSliceLocal(tmp3,three[i3],0,t,3);
-              parallel_for (unsigned int sU = 0; sU < grid3d->oSites(); ++sU)
+	      ExtractSliceLocal(ftmp1,one[i1],0,t,3);
+	      ExtractSliceLocal(ftmp2,two[i2],0,t,3);
+	      ExtractSliceLocal(ftmp3,three[i3],0,t,3);
+              accelerator_for(sU, grid3d->oSites(), grid3d->Nsimd(),
               {
                 for (int ie=0 ; ie < 6 ; ie++){
 		  // Why does peekColour not work????
@@ -248,7 +259,7 @@ void TBContraction<FImpl>::execute(void)
                     }
   		  }
 		}
-  	      }
+              } );
             }
 	  }
 	}

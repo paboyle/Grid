@@ -25,11 +25,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef SOLVER_MODULES_H
 #define SOLVER_MODULES_H
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////
 //       Operator Functions (Solvers)
@@ -37,9 +37,9 @@ namespace Grid {
 
 template <template <typename> class SolverType, class Field, class SPar>
 class SolverModule
-    : public Parametrized<SPar>,
-      public HMCModuleBase<OperatorFunction<Field> > {
- public:
+  : public Parametrized<SPar>,
+    public HMCModuleBase<OperatorFunction<Field> > {
+public:
   typedef HMCModuleBase< OperatorFunction<Field> > Base;
   typedef typename Base::Product Product;
 
@@ -60,7 +60,7 @@ class SolverModule
     return SolverPtr.get();
   }
 
- private:
+private:
   virtual void initialize() = 0;
 };
 
@@ -68,8 +68,8 @@ class SolverModule
 // Factory
 template <char const *str, class Field, class ReaderClass >
 class HMC_SolverModuleFactory
-    : public Factory < HMCModuleBase<OperatorFunction<Field> > ,  Reader<ReaderClass> > {
- public:
+  : public Factory < HMCModuleBase<OperatorFunction<Field> > ,  Reader<ReaderClass> > {
+public:
   // use SINGLETON FUNCTOR MACRO HERE
   typedef Reader<ReaderClass> TheReader; 
 
@@ -80,20 +80,20 @@ class HMC_SolverModuleFactory
     return e;
   }
 
- private:
+private:
   HMC_SolverModuleFactory(void) = default;
-    std::string obj_type() const {
-        return std::string(str);
+  std::string obj_type() const {
+    return std::string(str);
   }
 };
 
 
 
 class SolverParameters : Serializable {
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(SolverParameters,
-    RealD, tolerance,
-    RealD, max_iterations);
+				  RealD, tolerance,
+				  RealD, max_iterations);
   // add error on no convergence?
 };
 
@@ -101,8 +101,8 @@ class SolverParameters : Serializable {
 class SolverObjName: Serializable {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(SolverObjName, 
-  std::string, name,
-  SolverParameters, parameters);
+				  std::string, name,
+				  SolverParameters, parameters);
 
 };
 
@@ -132,7 +132,7 @@ class ConjugateResidualModule: public SolverModule<ConjugateResidual, Field, Sol
 };
 
 extern char solver_string[];
-} // Grid
 
+NAMESPACE_END(Grid);
 
 #endif //SOLVER_MODULES_H

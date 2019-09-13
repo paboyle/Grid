@@ -31,7 +31,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Modules.hpp>
 
 using namespace Grid;
-using namespace QCD;
 using namespace Hadrons;
 
 #define BIG_SEP "================"

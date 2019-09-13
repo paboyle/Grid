@@ -2,7 +2,7 @@
 #include <sstream>
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 template<class d>
 struct scal {
@@ -36,7 +36,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
   std::cout<<GridLogMessage << "Ls = " << Ls << std::endl;
 
-  std::vector<int> latt4 = GridDefaultLatt();
+  Coordinate latt4 = GridDefaultLatt();
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
@@ -56,8 +56,8 @@ int main (int argc, char ** argv)
   RealD N2 = 1.0/::sqrt(norm2(src));
   src = src*N2;
 
-  GparityLatticeFermionF result(FGrid); result=zero;
-  GparityLatticeFermionF    ref(FGrid);    ref=zero;
+  GparityLatticeFermionF result(FGrid); result=Zero();
+  GparityLatticeFermionF    ref(FGrid);    ref=Zero();
   GparityLatticeFermionF    tmp(FGrid);
   GparityLatticeFermionF    err(FGrid);
 

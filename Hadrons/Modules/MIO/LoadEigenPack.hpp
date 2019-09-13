@@ -177,7 +177,7 @@ void TLoadEigenPack<Pack, GImpl>::execute(void)
         for (unsigned int i = 0; i < par().size; i++)
         {
             LOG(Message) << "Applying gauge transformation to eigenvector i = " << i << "/" << par().size << std::endl;
-            epack.evec[i].checkerboard = Odd;
+            epack.evec[i].Checkerboard() = Odd;
             epack.evec[i] = tmpXformOdd * epack.evec[i];
         }
         stopTimer("Transform application");

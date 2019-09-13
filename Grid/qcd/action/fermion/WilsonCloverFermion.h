@@ -27,15 +27,11 @@
     *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef GRID_QCD_WILSON_CLOVER_FERMION_H
-#define GRID_QCD_WILSON_CLOVER_FERMION_H
+#pragma once
 
 #include <Grid/Grid.h>
 
-namespace Grid
-{
-namespace QCD
-{
+NAMESPACE_BEGIN(Grid);
 
 ///////////////////////////////////////////////////////////////////
 // Wilson Clover
@@ -131,22 +127,22 @@ public:
   // Derivative parts unpreconditioned pseudofermions
   void MDeriv(GaugeField &force, const FermionField &X, const FermionField &Y, int dag)
   {
-    conformable(X._grid, Y._grid);
-    conformable(X._grid, force._grid);
-    GaugeLinkField force_mu(force._grid), lambda(force._grid);
-    GaugeField clover_force(force._grid);
-    PropagatorField Lambda(force._grid);
+    conformable(X.Grid(), Y.Grid());
+    conformable(X.Grid(), force.Grid());
+    GaugeLinkField force_mu(force.Grid()), lambda(force.Grid());
+    GaugeField clover_force(force.Grid());
+    PropagatorField Lambda(force.Grid());
 
     // Guido: Here we are hitting some performance issues:
     // need to extract the components of the DoubledGaugeField
     // for each call
     // Possible solution
     // Create a vector object to store them? (cons: wasting space)
-    std::vector<GaugeLinkField> U(Nd, this->Umu._grid);
+    std::vector<GaugeLinkField> U(Nd, this->Umu.Grid());
 
     Impl::extractLinkField(U, this->Umu);
 
-    force = zero;
+    force = Zero();
     // Derivative of the Wilson hopping term
     this->DhopDeriv(force, X, Y, dag);
 
@@ -179,10 +175,10 @@ public:
     */
 
     int count = 0;
-    clover_force = zero;
+    clover_force = Zero();
     for (int mu = 0; mu < 4; mu++)
     {
-      force_mu = zero;
+      force_mu = Zero();
       for (int nu = 0; nu < 4; nu++)
       {
         if (mu == nu)
@@ -212,8 +208,8 @@ public:
   // Computing C_{\mu \nu}(x) as in Eq.(B.39) in Zbigniew Sroczynski's PhD thesis
   GaugeLinkField Cmunu(std::vector<GaugeLinkField> &U, GaugeLinkField &lambda, int mu, int nu)
   {
-    conformable(lambda._grid, U[0]._grid);
-    GaugeLinkField out(lambda._grid), tmp(lambda._grid);
+    conformable(lambda.Grid(), U[0].Grid());
+    GaugeLinkField out(lambda.Grid()), tmp(lambda.Grid());
     // insertion in upper staple
     // please check redundancy of shift operations
 
@@ -266,102 +262,113 @@ private:
   // using the DeGrand-Rossi basis for the gamma matrices
   CloverFieldType fillCloverYZ(const GaugeLinkField &F)
   {
-    CloverFieldType T(F._grid);
-    T = zero;
-    PARALLEL_FOR_LOOP
-    for (int i = 0; i < CloverTerm._grid->oSites(); i++)
+    CloverFieldType T(F.Grid());
+    T = Zero();
+    auto T_v = T.View();
+    auto F_v = F.View();
+    thread_for(i, CloverTerm.Grid()->oSites(),
     {
-      T._odata[i]()(0, 1) = timesMinusI(F._odata[i]()());
-      T._odata[i]()(1, 0) = timesMinusI(F._odata[i]()());
-      T._odata[i]()(2, 3) = timesMinusI(F._odata[i]()());
-      T._odata[i]()(3, 2) = timesMinusI(F._odata[i]()());
-    }
+      T_v[i]()(0, 1) = timesMinusI(F_v[i]()());
+      T_v[i]()(1, 0) = timesMinusI(F_v[i]()());
+      T_v[i]()(2, 3) = timesMinusI(F_v[i]()());
+      T_v[i]()(3, 2) = timesMinusI(F_v[i]()());
+    });
 
     return T;
   }
 
   CloverFieldType fillCloverXZ(const GaugeLinkField &F)
   {
-    CloverFieldType T(F._grid);
-    T = zero;
-    PARALLEL_FOR_LOOP
-    for (int i = 0; i < CloverTerm._grid->oSites(); i++)
+    CloverFieldType T(F.Grid());
+    T = Zero();
+    
+    auto T_v = T.View();
+    auto F_v = F.View();
+    thread_for(i, CloverTerm.Grid()->oSites(),
     {
-      T._odata[i]()(0, 1) = -F._odata[i]()();
-      T._odata[i]()(1, 0) = F._odata[i]()();
-      T._odata[i]()(2, 3) = -F._odata[i]()();
-      T._odata[i]()(3, 2) = F._odata[i]()();
-    }
+      T_v[i]()(0, 1) = -F_v[i]()();
+      T_v[i]()(1, 0) = F_v[i]()();
+      T_v[i]()(2, 3) = -F_v[i]()();
+      T_v[i]()(3, 2) = F_v[i]()();
+    });
 
     return T;
   }
 
   CloverFieldType fillCloverXY(const GaugeLinkField &F)
   {
-    CloverFieldType T(F._grid);
-    T = zero;
-    PARALLEL_FOR_LOOP
-    for (int i = 0; i < CloverTerm._grid->oSites(); i++)
-    {
+    CloverFieldType T(F.Grid());
+    T = Zero();
 
-      T._odata[i]()(0, 0) = timesMinusI(F._odata[i]()());
-      T._odata[i]()(1, 1) = timesI(F._odata[i]()());
-      T._odata[i]()(2, 2) = timesMinusI(F._odata[i]()());
-      T._odata[i]()(3, 3) = timesI(F._odata[i]()());
-    }
+    auto T_v = T.View();
+    auto F_v = F.View();
+    thread_for(i, CloverTerm.Grid()->oSites(),
+    {
+      T_v[i]()(0, 0) = timesMinusI(F_v[i]()());
+      T_v[i]()(1, 1) = timesI(F_v[i]()());
+      T_v[i]()(2, 2) = timesMinusI(F_v[i]()());
+      T_v[i]()(3, 3) = timesI(F_v[i]()());
+    });
 
     return T;
   }
 
   CloverFieldType fillCloverXT(const GaugeLinkField &F)
   {
-    CloverFieldType T(F._grid);
-    T = zero;
-    PARALLEL_FOR_LOOP
-    for (int i = 0; i < CloverTerm._grid->oSites(); i++)
+    CloverFieldType T(F.Grid());
+    T = Zero();
+
+    auto T_v = T.View();
+    auto F_v = F.View();
+    thread_for(i, CloverTerm.Grid()->oSites(),
     {
-      T._odata[i]()(0, 1) = timesI(F._odata[i]()());
-      T._odata[i]()(1, 0) = timesI(F._odata[i]()());
-      T._odata[i]()(2, 3) = timesMinusI(F._odata[i]()());
-      T._odata[i]()(3, 2) = timesMinusI(F._odata[i]()());
-    }
+      T_v[i]()(0, 1) = timesI(F_v[i]()());
+      T_v[i]()(1, 0) = timesI(F_v[i]()());
+      T_v[i]()(2, 3) = timesMinusI(F_v[i]()());
+      T_v[i]()(3, 2) = timesMinusI(F_v[i]()());
+    });
 
     return T;
   }
 
   CloverFieldType fillCloverYT(const GaugeLinkField &F)
   {
-    CloverFieldType T(F._grid);
-    T = zero;
-    PARALLEL_FOR_LOOP
-    for (int i = 0; i < CloverTerm._grid->oSites(); i++)
+    CloverFieldType T(F.Grid());
+    T = Zero();
+    
+    auto T_v = T.View();
+    auto F_v = F.View();
+    thread_for(i, CloverTerm.Grid()->oSites(),
     {
-      T._odata[i]()(0, 1) = -(F._odata[i]()());
-      T._odata[i]()(1, 0) = (F._odata[i]()());
-      T._odata[i]()(2, 3) = (F._odata[i]()());
-      T._odata[i]()(3, 2) = -(F._odata[i]()());
-    }
+      T_v[i]()(0, 1) = -(F_v[i]()());
+      T_v[i]()(1, 0) = (F_v[i]()());
+      T_v[i]()(2, 3) = (F_v[i]()());
+      T_v[i]()(3, 2) = -(F_v[i]()());
+    });
 
     return T;
   }
 
   CloverFieldType fillCloverZT(const GaugeLinkField &F)
   {
-    CloverFieldType T(F._grid);
-    T = zero;
-    PARALLEL_FOR_LOOP
-    for (int i = 0; i < CloverTerm._grid->oSites(); i++)
+    CloverFieldType T(F.Grid());
+
+    T = Zero();
+
+    auto T_v = T.View();
+    auto F_v = F.View();
+    thread_for(i, CloverTerm.Grid()->oSites(),
     {
-      T._odata[i]()(0, 0) = timesI(F._odata[i]()());
-      T._odata[i]()(1, 1) = timesMinusI(F._odata[i]()());
-      T._odata[i]()(2, 2) = timesMinusI(F._odata[i]()());
-      T._odata[i]()(3, 3) = timesI(F._odata[i]()());
-    }
+      T_v[i]()(0, 0) = timesI(F_v[i]()());
+      T_v[i]()(1, 1) = timesMinusI(F_v[i]()());
+      T_v[i]()(2, 2) = timesMinusI(F_v[i]()());
+      T_v[i]()(3, 3) = timesI(F_v[i]()());
+    });
 
     return T;
   }
 };
-}
-}
+NAMESPACE_END(Grid);
 
-#endif // GRID_QCD_WILSON_CLOVER_FERMION_H
+
+

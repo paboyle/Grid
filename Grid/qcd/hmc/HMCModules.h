@@ -26,21 +26,19 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef GRID_HMC_MODULES
 #define GRID_HMC_MODULES
 
-
 #include "HMC_GridModules.h"
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 ////////////////////////////////////////////////////////////////////
 struct RNGModuleParameters: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(RNGModuleParameters,
-  std::string, serial_seeds,
-  std::string, parallel_seeds,);
+				  std::string, serial_seeds,
+				  std::string, parallel_seeds,);
 
   std::vector<int> getSerialSeeds(){return strToVec<int>(serial_seeds);}
   std::vector<int> getParallelSeeds(){return strToVec<int>(parallel_seeds);}
@@ -56,9 +54,9 @@ struct RNGModuleParameters: Serializable {
 
 // Random number generators module
 class RNGModule{
-   GridSerialRNG sRNG_;
-   std::unique_ptr<GridParallelRNG> pRNG_;
-   RNGModuleParameters Params_;
+  GridSerialRNG sRNG_;
+  std::unique_ptr<GridParallelRNG> pRNG_;
+  RNGModuleParameters Params_;
 
 public:
 
@@ -93,19 +91,16 @@ public:
 /// Smearing module
 template <class ImplementationPolicy>
 class SmearingModule{
-   virtual void get_smearing();
+virtual void get_smearing();
 };
 
 template <class ImplementationPolicy>
 class StoutSmearingModule: public SmearingModule<ImplementationPolicy>{
-   SmearedConfiguration<ImplementationPolicy> SmearingPolicy;
+SmearedConfiguration<ImplementationPolicy> SmearingPolicy;
 };
 
 */
 
-
-
-}  // namespace QCD
-}  // namespace Grid
+NAMESPACE_END(Grid);
 
 #endif  // GRID_HMC_MODULES

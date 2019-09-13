@@ -69,7 +69,7 @@ namespace Grid{
 int main(int argc, char **argv)
 {
   using namespace Grid;
-  using namespace Grid::QCD;
+   
 
   typedef Representations< FundamentalRepresentation, TwoIndexSymmetricRepresentation > TheRepresentations;  
 
@@ -83,7 +83,8 @@ int main(int argc, char **argv)
   typedef WilsonTwoIndexSymmetricImplR FermionImplPolicy; // gauge field implemetation for the pseudofermions
   typedef WilsonCloverTwoIndexSymmetricFermionR FermionAction; // type of lattice fermions (Wilson, DW, ...)
   typedef typename FermionAction::FermionField FermionField;
-  typedef Grid::JSONReader Serialiser;
+  //typedef Grid::JSONReader Serialiser;
+  typedef Grid::XmlReader Serialiser;
 
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   HMCWrapper TheHMC;

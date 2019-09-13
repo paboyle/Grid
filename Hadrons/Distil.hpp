@@ -84,7 +84,7 @@ inline void SliceShare( GridBase * gridLowDim, GridBase * gridHighDim, void * Bu
   const int iNumDims{(const int)gridHighDim->_gdimensions.size()};
   assert(iNumDims == gridLowDim->_gdimensions.size());
   int dimSpreadOut = -1;
-  std::vector<int> coor(iNumDims);
+  Coordinate coor(iNumDims);
   for( int i = 0 ; i < iNumDims ; i++ ) {
     coor[i] = gridHighDim->_processor_coor[i];
     if( gridLowDim->_gdimensions[i] != gridHighDim->_gdimensions[i] ) {
@@ -147,7 +147,7 @@ protected: // I don't really mind if _gf is messed with ... so make this public?
   std::vector<Lattice<iColourMatrix<vCoeff_t> > > U;
 public:
   // Construct this operator given a gauge field and the number of dimensions it should act on
-  LinOpPeardonNabla( GaugeField& gf, int dimSpatial = Grid::QCD::Tdir ) : /*_gf(gf),*/ nd{dimSpatial} {
+  LinOpPeardonNabla( GaugeField& gf, int dimSpatial = Tdir ) : /*_gf(gf),*/ nd{dimSpatial} {
     assert(dimSpatial>=1);
     for( int mu = 0 ; mu < nd ; mu++ )
       U.push_back(PeekIndex<LorentzIndex>(gf,mu));
@@ -155,12 +155,12 @@ public:
   
   // Apply this operator to "in", return result in "out"
   void operator()(const Field& in, Field& out) {
-    assert( nd <= in._grid->Nd() );
+    assert( nd <= in.Grid()->Nd() );
     conformable( in, out );
     out = ( ( Real ) ( 2 * nd ) ) * in;
-    Field _tmp(in._grid);
+    Field _tmp(in.Grid());
     typedef typename GaugeField::vector_type vCoeff_t;
-    //Lattice<iColourMatrix<vCoeff_t> > U(in._grid);
+    //Lattice<iColourMatrix<vCoeff_t> > U(in.Grid());
     for( int mu = 0 ; mu < nd ; mu++ ) {
       //U = PeekIndex<LorentzIndex>(_gf,mu);
       out -= U[mu] * Cshift( in, mu, 1);
@@ -238,7 +238,7 @@ struct DistilParameters: Serializable {
 #define DISTIL_PARAMETERS_DEFINE( inSetup ) \
 const int Nt{env().getDim(Tdir)}; \
 const int nvec{par().nvec}; \
-const int Ns{Grid::QCD::Ns}; \
+const int Ns{Ns}; \
 const int nnoise{par().Distil.nnoise}; \
 const int tsrc{par().Distil.tsrc}; \
 const int TI{par().Distil.getTI(env(), inSetup)}; \
@@ -646,11 +646,11 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::read(const char * fi
 inline GridCartesian * MakeLowerDimGrid( GridCartesian * gridHD )
 {
   int nd{static_cast<int>(gridHD->_ndimension)};
-  std::vector<int> latt_size   = gridHD->_gdimensions;
+  Coordinate latt_size   = gridHD->_gdimensions;
   latt_size[nd-1] = 1;
-  std::vector<int> simd_layout = GridDefaultSimd(nd-1, vComplex::Nsimd());
+  Coordinate simd_layout = GridDefaultSimd(nd-1, vComplex::Nsimd());
   simd_layout.push_back( 1 );
-  std::vector<int> mpi_layout  = gridHD->_processors;
+  Coordinate mpi_layout  = gridHD->_processors;
   mpi_layout[nd-1] = 1;
   GridCartesian * gridLD = new GridCartesian(latt_size,simd_layout,mpi_layout,*gridHD);
   return gridLD;
@@ -664,8 +664,8 @@ inline GridCartesian * MakeLowerDimGrid( GridCartesian * gridHD )
 inline void RotateEigen(std::vector<LatticeColourVector> & evec)
 {
   ColourVector cv0;
-  auto grid = evec[0]._grid;
-  std::vector<int> siteFirst(grid->Nd(),0);
+  auto grid = evec[0].Grid();
+  Coordinate siteFirst(grid->Nd(),0);
   peekSite(cv0, evec[0], siteFirst);
   auto & cplx0 = cv0()()(0);
   if( std::imag(cplx0) == 0 )

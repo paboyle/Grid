@@ -23,12 +23,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #include <Grid/GridCore.h>
 #include <Grid/communicator/SharedMemory.h>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 Grid_MPI_Comm       CartesianCommunicator::communicator_world;
 
@@ -44,10 +44,15 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
   MPI_Initialized(&flag); // needed to coexist with other libs apparently
   if ( !flag ) {
     MPI_Init_thread(argc,argv,MPI_THREAD_MULTIPLE,&provided);
+
     //If only 1 comms thread we require any threading mode other than SINGLE, but for multiple comms threads we need MULTIPLE
-    if( (nCommThreads == 1 && provided == MPI_THREAD_SINGLE) ||
-        (nCommThreads > 1 && provided != MPI_THREAD_MULTIPLE) )
+    if( (nCommThreads == 1) && (provided == MPI_THREAD_SINGLE) ) {
       assert(0);
+    }
+
+    if( (nCommThreads > 1) && (provided != MPI_THREAD_MULTIPLE) ) {
+      assert(0);
+    }
   }
 
   // Never clean up as done once.
@@ -69,14 +74,14 @@ void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest
   int ierr=MPI_Cart_shift(communicator,dim,shift,&source,&dest);
   assert(ierr==0);
 }
-int CartesianCommunicator::RankFromProcessorCoor(std::vector<int> &coor)
+int CartesianCommunicator::RankFromProcessorCoor(Coordinate &coor)
 {
   int rank;
   int ierr=MPI_Cart_rank  (communicator, &coor[0], &rank);
   assert(ierr==0);
   return rank;
 }
-void  CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &coor)
+void  CartesianCommunicator::ProcessorCoorFromRank(int rank, Coordinate &coor)
 {
   coor.resize(_ndimension);
   int ierr=MPI_Cart_coords  (communicator, rank, _ndimension,&coor[0]);
@@ -86,7 +91,7 @@ void  CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &c
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Initialises from communicator_world
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors) 
+CartesianCommunicator::CartesianCommunicator(const Coordinate &processors) 
 {
   MPI_Comm optimal_comm;
   ////////////////////////////////////////////////////
@@ -105,12 +110,12 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 //////////////////////////////////
 // Try to subdivide communicator
 //////////////////////////////////
-CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent,int &srank)    
+CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const CartesianCommunicator &parent,int &srank)    
 {
   _ndimension = processors.size();  assert(_ndimension>=1);
   int parent_ndimension = parent._ndimension; assert(_ndimension >= parent._ndimension);
-  std::vector<int> parent_processor_coor(_ndimension,0);
-  std::vector<int> parent_processors    (_ndimension,1);
+  Coordinate parent_processor_coor(_ndimension,0);
+  Coordinate parent_processors    (_ndimension,1);
 
   // Can make 5d grid from 4d etc...
   int pad = _ndimension-parent_ndimension;
@@ -133,9 +138,9 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   int Nchild = Nparent/childsize;
   assert (childsize * Nchild == Nparent);
 
-  std::vector<int> ccoor(_ndimension); // coor within subcommunicator
-  std::vector<int> scoor(_ndimension); // coor of split within parent
-  std::vector<int> ssize(_ndimension); // coor of split within parent
+  Coordinate ccoor(_ndimension); // coor within subcommunicator
+  Coordinate scoor(_ndimension); // coor of split within parent
+  Coordinate ssize(_ndimension); // coor of split within parent
 
   for(int d=0;d<_ndimension;d++){
     ccoor[d] = parent_processor_coor[d] % processors[d];
@@ -151,36 +156,6 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
 
   MPI_Comm comm_split;
   if ( Nchild > 1 ) { 
-
-    if(0){
-      std::cout << GridLogMessage<<"Child communicator of "<< std::hex << parent.communicator << std::dec<<std::endl;
-      std::cout << GridLogMessage<<" parent grid["<< parent._ndimension<<"]    ";
-      for(int d=0;d<parent._ndimension;d++)  std::cout << parent._processors[d] << " ";
-      std::cout<<std::endl;
-      
-      std::cout << GridLogMessage<<" child grid["<< _ndimension <<"]    ";
-      for(int d=0;d<processors.size();d++)  std::cout << processors[d] << " ";
-      std::cout<<std::endl;
-      
-      std::cout << GridLogMessage<<" old rank "<< parent._processor<<" coor ["<< parent._ndimension <<"]    ";
-      for(int d=0;d<parent._ndimension;d++)  std::cout << parent._processor_coor[d] << " ";
-      std::cout<<std::endl;
-      
-      std::cout << GridLogMessage<<" new split "<< srank<<" scoor ["<< _ndimension <<"]    ";
-      for(int d=0;d<processors.size();d++)  std::cout << scoor[d] << " ";
-      std::cout<<std::endl;
-      
-      std::cout << GridLogMessage<<" new rank "<< crank<<" coor ["<< _ndimension <<"]    ";
-      for(int d=0;d<processors.size();d++)  std::cout << ccoor[d] << " ";
-      std::cout<<std::endl;
-
-      //////////////////////////////////////////////////////////////////////////////////////////////////////
-      // Declare victory
-      //////////////////////////////////////////////////////////////////////////////////////////////////////
-      std::cout << GridLogMessage<<"Divided communicator "<< parent._Nprocessors<<" into "
-		<< Nchild <<" communicators with " << childsize << " ranks"<<std::endl;
-      std::cout << " Split communicator " <<comm_split <<std::endl;
-    }
 
     ////////////////////////////////////////////////////////////////
     // Split the communicator
@@ -203,7 +178,7 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   // Take the right SHM buffers
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   SetCommunicator(comm_split);
-  
+
   ///////////////////////////////////////////////
   // Free the temp communicator 
   ///////////////////////////////////////////////
@@ -220,7 +195,7 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   }
 }
 
-void CartesianCommunicator::InitFromMPICommunicator(const std::vector<int> &processors, MPI_Comm communicator_base)
+void CartesianCommunicator::InitFromMPICommunicator(const Coordinate &processors, MPI_Comm communicator_base)
 {
   ////////////////////////////////////////////////////
   // Creates communicator, and the communicator_halo
@@ -237,7 +212,7 @@ void CartesianCommunicator::InitFromMPICommunicator(const std::vector<int> &proc
     _Nprocessors*=_processors[i];
   }
 
-  std::vector<int> periodic(_ndimension,1);
+  Coordinate periodic(_ndimension,1);
   MPI_Cart_create(communicator_base, _ndimension,&_processors[0],&periodic[0],0,&communicator);
   MPI_Comm_rank(communicator,&_processor);
   MPI_Cart_coords(communicator,_processor,_ndimension,&_processor_coor[0]);
@@ -474,7 +449,7 @@ void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
 
 void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,uint64_t words,uint64_t bytes)
 {
-  std::vector<int> row(_ndimension,1);
+  Coordinate row(_ndimension,1);
   assert(dim>=0 && dim<_ndimension);
 
   //  Split the communicator
@@ -503,7 +478,6 @@ void CartesianCommunicator::AllToAll(void  *in,void *out,uint64_t words,uint64_t
   MPI_Type_free(&object);
 }
 
+NAMESPACE_END(Grid);
 
-
-}
 

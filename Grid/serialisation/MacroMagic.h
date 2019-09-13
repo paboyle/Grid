@@ -42,8 +42,6 @@ THE SOFTWARE.
 */
 ///////////////////////////////////////////
 
-#define strong_inline __attribute__((always_inline)) inline
-
 #ifndef MAX
 #define MAX(x,y) ((x)>(y)?(x):(y))
 #define MIN(x,y) ((x)>(y)?(y):(x))
@@ -109,10 +107,11 @@ THE SOFTWARE.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define GRID_MACRO_MEMBER(A,B)        A B;
+
 #define GRID_MACRO_COMP_MEMBER(A,B) result = (result and CompareMember(lhs. B, rhs. B));
 #define GRID_MACRO_OS_WRITE_MEMBER(A,B) os<< #A <<" " #B << " = "; WriteMember( os, obj. B ); os << " ; " <<std::endl;
-#define GRID_MACRO_READ_MEMBER(A,B) Grid::read(RD,#B,obj. B);
-#define GRID_MACRO_WRITE_MEMBER(A,B) Grid::write(WR,#B,obj. B);
+#define GRID_MACRO_READ_MEMBER(A,B) ::Grid::read(RD,#B,obj. B);
+#define GRID_MACRO_WRITE_MEMBER(A,B) ::Grid::write(WR,#B,obj. B);
 
 #define GRID_SERIALIZABLE_CLASS_MEMBERS(cname,...)\
   std::string SerialisableClassName(void) const {return std::string(#cname);}	\
@@ -127,7 +126,7 @@ template <typename T>\
 static inline void read(Reader<T> &RD,const std::string &s, cname &obj){	\
   if (!push(RD,s))\
   {\
-    std::cout << Grid::GridLogWarning << "IO: Cannot open node '" << s << "'" << std::endl;\
+    std::cout << ::Grid::GridLogWarning << "IO: Cannot open node '" << s << "'" << std::endl; \
     return;\
   };\
   GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_READ_MEMBER,__VA_ARGS__))	\
@@ -147,12 +146,12 @@ friend inline bool operator==(const cname &lhs, const cname &rhs) {\
 
 #define GRID_ENUM_TYPE(obj) std::remove_reference<decltype(obj)>::type
 #define GRID_MACRO_ENUMVAL(A,B) A = B,
-#define GRID_MACRO_ENUMCASE(A,B) case GRID_ENUM_TYPE(obj)::A: Grid::write(WR,s,#A); break;
+#define GRID_MACRO_ENUMCASE(A,B) case GRID_ENUM_TYPE(obj)::A: ::Grid::write(WR,s,#A); break;
 #define GRID_MACRO_ENUMTEST(A,B) else if (buf == #A) {obj = GRID_ENUM_TYPE(obj)::A;}
 #define GRID_MACRO_ENUMCASEIO(A,B) case GRID_ENUM_TYPE(obj)::A: os << #A; break;
 
 #define GRID_SERIALIZABLE_ENUM(name,undefname,...)\
-class name: public Grid::Serializable\
+class name: public ::Grid::Serializable	  \
 {\
 public:\
   enum\
@@ -161,28 +160,28 @@ public:\
     undefname = -1\
   };\
 public:\
-  name(void): value_(undefname) {};\
-  name(int value): value_(value) {};\
+  accelerator name(void)     : value_(undefname) {};		\
+  accelerator name(int value): value_(value) {};			\
   template <typename T>\
-  static inline void write(Grid::Writer<T> &WR,const std::string &s, const name &obj)\
+  static inline void write(::Grid::Writer<T> &WR,const std::string &s, const name &obj) \
   {\
     switch (obj.value_)\
     {\
       GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_ENUMCASE,__VA_ARGS__))\
-      default: Grid::write(WR,s,#undefname); break;\
+      default: ::Grid::write(WR,s,#undefname); break;\
     }\
   }\
   \
   template <typename T>\
-  static inline void read(Grid::Reader<T> &RD,const std::string &s, name &obj)\
+  static inline void read(::Grid::Reader<T> &RD,const std::string &s, name &obj)\
   {\
     std::string buf;\
-    Grid::read(RD, s, buf);\
+    ::Grid::read(RD, s, buf);\
     if (buf == #undefname) {obj = name::undefname;}\
     GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_ENUMTEST,__VA_ARGS__))\
     else {obj = name::undefname;}\
   }\
-  inline operator int(void) const\
+  accelerator_inline operator int(void) const\
   {\
     return value_;\
   }\

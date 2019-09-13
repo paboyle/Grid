@@ -49,14 +49,14 @@ namespace Grid
   DEFINE_HDF5_NATIVE_TYPES;
   
   template <typename R>
-  class Hdf5Type<std::complex<R>>
+  class Hdf5Type<Grid::complex<R> >
   {
   public:
     static inline const H5NS::DataType & type(void)
     {
       if (typePtr_ == nullptr)
       {
-        typePtr_.reset(new H5NS::CompType(sizeof(std::complex<R>)));
+        typePtr_.reset(new H5NS::CompType(sizeof(Grid::complex<R>)));
         typePtr_->insertMember("re", 0,         Hdf5Type<R>::type());
         typePtr_->insertMember("im", sizeof(R), Hdf5Type<R>::type());
       }
@@ -69,7 +69,8 @@ namespace Grid
   };
   
   template <typename R>
-  std::unique_ptr<H5NS::CompType> Hdf5Type<std::complex<R>>::typePtr_ = nullptr;
+  std::unique_ptr<H5NS::CompType> Hdf5Type<Grid::complex<R>>::typePtr_ = nullptr;
+
 }
 
 #undef HDF5_NATIVE_TYPE

@@ -25,8 +25,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
   See the full license in the file "LICENSE" in the top level distribution
   directory
-  *************************************************************************************/
-/*  END LEGAL */
+*************************************************************************************/
+			   /*  END LEGAL */
 #ifndef HMC_RESOURCE_MANAGER_H
 #define HMC_RESOURCE_MANAGER_H
 
@@ -64,15 +64,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
     }                                                                    \
   }
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 // HMC Resource manager
 template <class ImplementationPolicy>
 class HMCResourceManager {
-  typedef HMCModuleBase< QCD::BaseHmcCheckpointer<ImplementationPolicy> > CheckpointerBaseModule;
-  typedef HMCModuleBase< QCD::HmcObservable<typename ImplementationPolicy::Field> > ObservableBaseModule;
-  typedef ActionModuleBase< QCD::Action<typename ImplementationPolicy::Field>, GridModule > ActionBaseModule;
+  typedef HMCModuleBase< BaseHmcCheckpointer<ImplementationPolicy> > CheckpointerBaseModule;
+  typedef HMCModuleBase< HmcObservable<typename ImplementationPolicy::Field> > ObservableBaseModule;
+  typedef ActionModuleBase< Action<typename ImplementationPolicy::Field>, GridModule > ActionBaseModule;
 
   // Named storage for grid pairs (std + red-black)
   std::unordered_map<std::string, GridModule> Grids;
@@ -101,7 +100,7 @@ class HMCResourceManager {
   }
 
 
- public:
+public:
   HMCResourceManager() : have_RNG(false), have_CheckPointer(false) {}
 
   template <class ReaderClass, class vector_type = vComplex >
@@ -151,13 +150,13 @@ class HMCResourceManager {
     }
 
     if(!Read.push("Level")){// push must check if the node exist
-         std::cout << "Level not found" << std::endl; 
+      std::cout << "Level not found" << std::endl; 
       exit(1);
     }
     do
-    {
-      fill_ActionsLevel(Read); 
-    }
+      {
+	fill_ActionsLevel(Read); 
+      }
     while(Read.push("Level"));
 
     Read.pop();
@@ -268,10 +267,10 @@ class HMCResourceManager {
 
   RegisterLoadCheckPointerFunction(Binary);
   RegisterLoadCheckPointerFunction(Nersc);
-  #ifdef HAVE_LIME
+#ifdef HAVE_LIME
   RegisterLoadCheckPointerFunction(ILDG);
   RegisterLoadCheckPointerMetadataFunction(Scidac);
-  #endif
+#endif
 
   ////////////////////////////////////////////////////////
   // Observables
@@ -297,7 +296,7 @@ class HMCResourceManager {
 
 
 private:
-   // this private
+  // this private
   template <class ReaderClass >
   void fill_ActionsLevel(ReaderClass &Read){
     // Actions set
@@ -322,7 +321,7 @@ private:
 
 
 };
-}
-}
+
+NAMESPACE_END(Grid);
 
 #endif  // HMC_RESOURCE_MANAGER_H

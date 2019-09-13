@@ -236,7 +236,7 @@ void TLapEvec<GImpl>::execute(void)
     eig[t].resize(LPar.Nk+LPar.Np,gridLD);
     
     // Construct smearing operator
-    ExtractSliceLocal(UmuNoTime,Umu_smear,0,t,Grid::QCD::Tdir); // switch to 3d/4d objects
+    ExtractSliceLocal(UmuNoTime,Umu_smear,0,t,Tdir); // switch to 3d/4d objects
     LinOpPeardonNabla<LatticeColourVector> PeardonNabla(UmuNoTime);
     LOG(Debug) << "Chebyshev preconditioning to order " << ChebPar.PolyOrder
       << " with parameters (alpha,beta) = (" << ChebPar.alpha << "," << ChebPar.beta << ")" << std::endl;
@@ -263,7 +263,7 @@ void TLapEvec<GImpl>::execute(void)
     RotateEigen( eig[t].evec ); // Rotate the eigenvectors into our phase convention
 
     for (int i=0;i<LPar.Nvec;i++){
-      InsertSliceLocal(eig[t].evec[i],eig4d.evec[i],0,t,Grid::QCD::Tdir);
+      InsertSliceLocal(eig[t].evec[i],eig4d.evec[i],0,t,Tdir);
       if(t==0 && Ntfirst==0)
         eig4d.eval[i] = eig[t].eval[i]; // TODO: Discuss: is this needed? Is there a better way?
     }

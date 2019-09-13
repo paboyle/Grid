@@ -28,8 +28,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef QCD_PSEUDOFERMION_ONE_FLAVOUR_RATIONAL_H
 #define QCD_PSEUDOFERMION_ONE_FLAVOUR_RATIONAL_H
 
-namespace Grid{
-  namespace QCD{
+NAMESPACE_BEGIN(Grid);
 
     ///////////////////////////////////////
     // One flavour rational
@@ -196,7 +195,7 @@ namespace Grid{
 
 	msCG(MdagMOp,Phi,MPhi_k);
 
-	dSdU = zero;
+	dSdU = Zero();
 	for(int k=0;k<Npole;k++){
 
 	  RealD ak = PowerNegHalf.residues[k];
@@ -214,8 +213,7 @@ namespace Grid{
 
       };
     };
-  }
-}
 
+NAMESPACE_END(Grid);
 
 #endif

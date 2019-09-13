@@ -30,7 +30,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 int main (int argc, char ** argv)
 {
@@ -42,10 +42,10 @@ int main (int argc, char ** argv)
 
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
-  std::vector<int> mpi_split (mpi_layout.size(),1);
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
+  Coordinate mpi_split (mpi_layout.size(),1);
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
@@ -91,7 +91,7 @@ int main (int argc, char ** argv)
   FermionField tmp(FGrid);
 
   for(int s=0;s<nrhs;s++) random(pRNG5,src[s]);
-  for(int s=0;s<nrhs;s++) result[s]=zero;
+  for(int s=0;s<nrhs;s++) result[s]=Zero();
 
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
 
@@ -203,7 +203,7 @@ int main (int argc, char ** argv)
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOp(Ddwf);
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOpCk(Dchk);
   ConjugateGradient<FermionField> CG((1.0e-5/(me+1)),10000);
-  s_res = zero;
+  s_res = Zero();
   CG(HermOp,s_src,s_res);
 
   /////////////////////////////////////////////////////////////

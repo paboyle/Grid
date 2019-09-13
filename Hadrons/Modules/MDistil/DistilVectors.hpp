@@ -187,10 +187,10 @@ void TDistilVectors<FImpl>::setup(void)
     envCreate(std::vector<FermionField>,   SinkName, 1, nnoise*LI*SI*Nt_inv, envGetGrid(FermionField));
 
   grid4d = env().getGrid();
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
-  std::vector<int> simd_layout_3 = GridDefaultSimd(Nd-1, vComplex::Nsimd());
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
+  Coordinate simd_layout_3 = GridDefaultSimd(Nd-1, vComplex::Nsimd());
   latt_size[Nd-1] = 1;
   simd_layout_3.push_back( 1 );
   mpi_layout[Nd-1] = 1;
@@ -233,7 +233,7 @@ void TDistilVectors<FImpl>::execute(void)
   const int Ntlocal{ grid4d->LocalDimensions()[3] };
   const int Ntfirst{ grid4d->LocalStarts()[3] };
 
-  const int Ns{ Grid::QCD::Ns };
+  const int Ns{ Ns };
   const int Nt{ env().getDim(Tdir) };
   const int TI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().TI, Nt, false ) };
   const int LI{ static_cast<int>( perambulator.tensor.dimension(2) ) };
@@ -254,20 +254,20 @@ void TDistilVectors<FImpl>::execute(void)
         for( int dt = 0; dt < Nt_inv; dt++ ) {
           for( int ds = 0; ds < SI; ds++ ) {
             vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * SI*dt;
-            rho[vecindex] = zero;
-            tmp3d_nospin = zero;
+            rho[vecindex] = 0;
+            tmp3d_nospin = 0;
             for (int it = dt; it < Nt; it += TI){
               if (full_tdil) t_inv = tsrc; else t_inv = it;
               if( t_inv >= Ntfirst && t_inv < Ntfirst + Ntlocal ) {
                 for (int ik = dk; ik < nvec; ik += LI){
                   for (int is = ds; is < Ns; is += SI){
-                    ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv-Ntfirst,Grid::QCD::Tdir);
+                    ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv-Ntfirst,Tdir);
                     //tmp3d_nospin = evec3d * noise[inoise + nnoise*(t_inv + Nt*(ik+nvec*is))];
                     tmp3d_nospin = evec3d * noise(inoise, t_inv, ik, is);
-                    tmp3d=zero;
+                    tmp3d=0;
                     pokeSpin(tmp3d,tmp3d_nospin,is);
-                    tmp2=zero;
-                    InsertSliceLocal(tmp3d,tmp2,0,t_inv-Ntfirst,Grid::QCD::Tdir);
+                    tmp2=0;
+                    InsertSliceLocal(tmp3d,tmp2,0,t_inv-Ntfirst,Tdir);
                     rho[vecindex] += tmp2;
                   }
                 }
@@ -285,14 +285,14 @@ void TDistilVectors<FImpl>::execute(void)
         for( int dt = 0; dt < Nt_inv; dt++ ) {
           for( int ds = 0; ds < SI; ds++ ) {
             vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * SI*dt;
-            phi[vecindex] = zero;
+            phi[vecindex] = 0;
             for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
-              sink_tslice=zero;
+              sink_tslice=0;
               for (int ivec = 0; ivec < nvec; ivec++) {
-                ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Grid::QCD::Tdir);
+                ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Tdir);
                 sink_tslice += evec3d * perambulator(t, ivec, dk, inoise,dt,ds);
               }
-              InsertSliceLocal(sink_tslice,phi[vecindex],0,t-Ntfirst,Grid::QCD::Tdir);
+              InsertSliceLocal(sink_tslice,phi[vecindex],0,t-Ntfirst,Tdir);
             }
           }
         }

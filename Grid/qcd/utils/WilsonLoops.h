@@ -33,8 +33,8 @@ directory
 /*  END LEGAL */
 #ifndef QCD_UTILS_WILSON_LOOPS_H
 #define QCD_UTILS_WILSON_LOOPS_H
-namespace Grid {
-namespace QCD {
+
+NAMESPACE_BEGIN(Grid);
 
 // Common wilson loop observables
 template <class Gimpl> class WilsonLoops : public Gimpl {
@@ -57,16 +57,16 @@ public:
     // purpose of deriving
     // from Gimpl.
     /*
-    plaq = Gimpl::CovShiftBackward(
-        U[mu], mu, Gimpl::CovShiftBackward(
-                       U[nu], nu, Gimpl::CovShiftForward(U[mu], mu, U[nu])));
-                       */
+      plaq = Gimpl::CovShiftBackward(
+      U[mu], mu, Gimpl::CovShiftBackward(
+      U[nu], nu, Gimpl::CovShiftForward(U[mu], mu, U[nu])));
+    */
     // _
     //|< _|
     plaq = Gimpl::CovShiftForward(U[mu],mu,
-           Gimpl::CovShiftForward(U[nu],nu,
-           Gimpl::CovShiftBackward(U[mu],mu,
-           Gimpl::CovShiftIdentityBackward(U[nu], nu))));
+				  Gimpl::CovShiftForward(U[nu],nu,
+							 Gimpl::CovShiftBackward(U[mu],mu,
+										 Gimpl::CovShiftIdentityBackward(U[nu], nu))));
 
 
 
@@ -78,7 +78,7 @@ public:
   static void traceDirPlaquette(ComplexField &plaq,
                                 const std::vector<GaugeMat> &U, const int mu,
                                 const int nu) {
-    GaugeMat sp(U[0]._grid);
+    GaugeMat sp(U[0].Grid());
     dirPlaquette(sp, U, mu, nu);
     plaq = trace(sp);
   }
@@ -87,8 +87,8 @@ public:
   //////////////////////////////////////////////////
   static void sitePlaquette(ComplexField &Plaq,
                             const std::vector<GaugeMat> &U) {
-    ComplexField sitePlaq(U[0]._grid);
-    Plaq = zero;
+    ComplexField sitePlaq(U[0].Grid());
+    Plaq = Zero();
     for (int mu = 1; mu < Nd; mu++) {
       for (int nu = 0; nu < mu; nu++) {
         traceDirPlaquette(sitePlaq, U, mu, nu);
@@ -100,13 +100,13 @@ public:
   // sum over all x,y,z,t and over all planes of plaquette
   //////////////////////////////////////////////////
   static RealD sumPlaquette(const GaugeLorentz &Umu) {
-    std::vector<GaugeMat> U(Nd, Umu._grid);
+    std::vector<GaugeMat> U(Nd, Umu.Grid());
     // inefficient here
     for (int mu = 0; mu < Nd; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
     }
 
-    ComplexField Plaq(Umu._grid);
+    ComplexField Plaq(Umu.Grid());
 
     sitePlaquette(Plaq, U);
     auto Tp = sum(Plaq);
@@ -120,7 +120,7 @@ public:
   //////////////////////////////////////////////////
   static RealD avgPlaquette(const GaugeLorentz &Umu) {
     RealD sumplaq = sumPlaquette(Umu);
-    double vol = Umu._grid->gSites();
+    double vol = Umu.Grid()->gSites();
     double faces = (1.0 * Nd * (Nd - 1)) / 2.0;
     return sumplaq / vol / faces / Nc; // Nd , Nc dependent... FIXME
   }
@@ -130,12 +130,12 @@ public:
   // average over all x,y,z the temporal loop
   //////////////////////////////////////////////////
   static ComplexD avgPolyakovLoop(const GaugeField &Umu) {  //assume Nd=4
-    GaugeMat Ut(Umu._grid), P(Umu._grid);
+    GaugeMat Ut(Umu.Grid()), P(Umu.Grid());
     ComplexD out;
-    int T = Umu._grid->GlobalDimensions()[3];
-    int X = Umu._grid->GlobalDimensions()[0];
-    int Y = Umu._grid->GlobalDimensions()[1];
-    int Z = Umu._grid->GlobalDimensions()[2];
+    int T = Umu.Grid()->GlobalDimensions()[3];
+    int X = Umu.Grid()->GlobalDimensions()[0];
+    int Y = Umu.Grid()->GlobalDimensions()[1];
+    int Z = Umu.Grid()->GlobalDimensions()[2];
 
     Ut = peekLorentz(Umu,3); //Select temporal direction
     P = Ut;
@@ -151,10 +151,10 @@ public:
   // average over traced single links
   //////////////////////////////////////////////////
   static RealD linkTrace(const GaugeLorentz &Umu) {
-    std::vector<GaugeMat> U(Nd, Umu._grid);
+    std::vector<GaugeMat> U(Nd, Umu.Grid());
 
-    ComplexField Tr(Umu._grid);
-    Tr = zero;
+    ComplexField Tr(Umu.Grid());
+    Tr = Zero();
     for (int mu = 0; mu < Nd; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
       Tr = Tr + trace(U[mu]);
@@ -163,7 +163,7 @@ public:
     auto Tp = sum(Tr);
     auto p = TensorRemove(Tp);
 
-    double vol = Umu._grid->gSites();
+    double vol = Umu.Grid()->gSites();
 
     return p.real() / vol / 4.0 / 3.0;
   };
@@ -174,13 +174,13 @@ public:
   static void Staple(GaugeMat &staple, const GaugeLorentz &Umu, int mu,
                      int nu) {
 
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
 
     std::vector<GaugeMat> U(Nd, grid);
     for (int d = 0; d < Nd; d++) {
       U[d] = PeekIndex<LorentzIndex>(Umu, d);
     }
-    staple = zero;
+    staple = Zero();
 
     if (nu != mu) {
 
@@ -194,11 +194,11 @@ public:
       //
 
       staple += Gimpl::ShiftStaple(
-          Gimpl::CovShiftForward(
-              U[nu], nu,
-              Gimpl::CovShiftBackward(
-                  U[mu], mu, Gimpl::CovShiftIdentityBackward(U[nu], nu))),
-          mu);
+				   Gimpl::CovShiftForward(
+							  U[nu], nu,
+							  Gimpl::CovShiftBackward(
+										  U[mu], mu, Gimpl::CovShiftIdentityBackward(U[nu], nu))),
+				   mu);
 
       //  __
       // |
@@ -206,23 +206,23 @@ public:
       //
       //
       staple += Gimpl::ShiftStaple(
-          Gimpl::CovShiftBackward(U[nu], nu,
-                                  Gimpl::CovShiftBackward(U[mu], mu, U[nu])),
-          mu);
+				   Gimpl::CovShiftBackward(U[nu], nu,
+							   Gimpl::CovShiftBackward(U[mu], mu, U[nu])),
+				   mu);
     }
   }
 
 
-// For the force term
+  // For the force term
 /*
-static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
-    GridBase *grid = Umu._grid;
+  static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
+    GridBase *grid = Umu.Grid();
     std::vector<GaugeMat> U(Nd, grid);
     for (int d = 0; d < Nd; d++) {
       // this operation is taking too much time
       U[d] = PeekIndex<LorentzIndex>(Umu, d);
     }
-    staple = zero;
+    staple = Zero();
     GaugeMat tmp1(grid);
     GaugeMat tmp2(grid);
 
@@ -237,20 +237,20 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
       }
     }
     staple = U[mu]*staple;
-}
+  }
 */
   //////////////////////////////////////////////////
   // the sum over all staples on each site
   //////////////////////////////////////////////////
   static void Staple(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
 
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
 
     std::vector<GaugeMat> U(Nd, grid);
     for (int d = 0; d < Nd; d++) {
       U[d] = PeekIndex<LorentzIndex>(Umu, d);
     }
-    staple = zero;
+    staple = Zero();
 
     for (int nu = 0; nu < Nd; nu++) {
 
@@ -266,11 +266,11 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
         //
      
         staple += Gimpl::ShiftStaple(
-            Gimpl::CovShiftForward(
-                U[nu], nu,
-                Gimpl::CovShiftBackward(
-                    U[mu], mu, Gimpl::CovShiftIdentityBackward(U[nu], nu))),
-            mu);
+				     Gimpl::CovShiftForward(
+							    U[nu], nu,
+							    Gimpl::CovShiftBackward(
+										    U[mu], mu, Gimpl::CovShiftIdentityBackward(U[nu], nu))),
+				     mu);
 
         //  __
         // |
@@ -279,8 +279,8 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
         //
 
         staple += Gimpl::ShiftStaple(
-            Gimpl::CovShiftBackward(U[nu], nu,
-                                    Gimpl::CovShiftBackward(U[mu], mu, U[nu])), mu);
+				     Gimpl::CovShiftBackward(U[nu], nu,
+							     Gimpl::CovShiftBackward(U[mu], mu, U[nu])), mu);
       }
     }
   }
@@ -291,7 +291,7 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
   static void StapleUpper(GaugeMat &staple, const GaugeLorentz &Umu, int mu,
                           int nu) {
     if (nu != mu) {
-      GridBase *grid = Umu._grid;
+      GridBase *grid = Umu.Grid();
 
       std::vector<GaugeMat> U(Nd, grid);
       for (int d = 0; d < Nd; d++) {
@@ -308,11 +308,11 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
       //
 
       staple = Gimpl::ShiftStaple(
-          Gimpl::CovShiftForward(
-              U[nu], nu,
-              Gimpl::CovShiftBackward(
-                  U[mu], mu, Gimpl::CovShiftIdentityBackward(U[nu], nu))),
-          mu);
+				  Gimpl::CovShiftForward(
+							 U[nu], nu,
+							 Gimpl::CovShiftBackward(
+										 U[mu], mu, Gimpl::CovShiftIdentityBackward(U[nu], nu))),
+				  mu);
     }
   }
 
@@ -322,7 +322,7 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
   static void StapleLower(GaugeMat &staple, const GaugeLorentz &Umu, int mu,
                           int nu) {
     if (nu != mu) {
-      GridBase *grid = Umu._grid;
+      GridBase *grid = Umu.Grid();
 
       std::vector<GaugeMat> U(Nd, grid);
       for (int d = 0; d < Nd; d++) {
@@ -339,7 +339,7 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
       //
       //
       staple = Gimpl::ShiftStaple(
-          Gimpl::CovShiftBackward(U[nu], nu,
+				  Gimpl::CovShiftBackward(U[nu], nu,
                                   Gimpl::CovShiftBackward(U[mu], mu, U[nu])),
           mu);
 
@@ -350,18 +350,18 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
   //  Field Strength
   //////////////////////////////////////////////////////
   static void FieldStrength(GaugeMat &FS, const GaugeLorentz &Umu, int mu, int nu){
-      // Fmn +--<--+  Ut +--<--+
-      //     |     |     |     |
+    // Fmn +--<--+  Ut +--<--+
+    //     |     |     |     |
       //  (x)+-->--+     +-->--+(x)  - h.c.
-      //     |     |     |     |
-      //     +--<--+     +--<--+
+    //     |     |     |     |
+    //     +--<--+     +--<--+
 
-      GaugeMat Vup(Umu._grid), Vdn(Umu._grid);
-      StapleUpper(Vup, Umu, mu, nu);
-      StapleLower(Vdn, Umu, mu, nu);
-      GaugeMat v = Vup - Vdn;
-      GaugeMat u = PeekIndex<LorentzIndex>(Umu, mu);  // some redundant copies
-      GaugeMat vu = v*u;
+    GaugeMat Vup(Umu.Grid()), Vdn(Umu.Grid());
+    StapleUpper(Vup, Umu, mu, nu);
+    StapleLower(Vdn, Umu, mu, nu);
+    GaugeMat v = Vup - Vdn;
+    GaugeMat u = PeekIndex<LorentzIndex>(Umu, mu);  // some redundant copies
+    GaugeMat vu = v*u;
       //FS = 0.25*Ta(u*v + Cshift(vu, mu, -1));
       FS = (u*v + Cshift(vu, mu, -1));
       FS = 0.125*(FS - adj(FS));
@@ -371,13 +371,13 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
     // 4d topological charge
     assert(Nd==4);
     // Bx = -iF(y,z), By = -iF(z,y), Bz = -iF(x,y)
-    GaugeMat Bx(U._grid), By(U._grid), Bz(U._grid);
+    GaugeMat Bx(U.Grid()), By(U.Grid()), Bz(U.Grid());
     FieldStrength(Bx, U, Ydir, Zdir);
     FieldStrength(By, U, Zdir, Xdir);
     FieldStrength(Bz, U, Xdir, Ydir);
 
     // Ex = -iF(t,x), Ey = -iF(t,y), Ez = -iF(t,z)
-    GaugeMat Ex(U._grid), Ey(U._grid), Ez(U._grid);
+    GaugeMat Ex(U.Grid()), Ey(U.Grid()), Ez(U.Grid());
     FieldStrength(Ex, U, Tdir, Xdir);
     FieldStrength(Ey, U, Tdir, Ydir);
     FieldStrength(Ez, U, Tdir, Zdir);
@@ -396,26 +396,26 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
   static void dirRectangle(GaugeMat &rect, const std::vector<GaugeMat> &U,
                            const int mu, const int nu) {
     rect = Gimpl::CovShiftForward(
-               U[mu], mu, Gimpl::CovShiftForward(U[mu], mu, U[nu])) * // ->->|
-           adj(Gimpl::CovShiftForward(
-               U[nu], nu, Gimpl::CovShiftForward(U[mu], mu, U[mu])));
+				  U[mu], mu, Gimpl::CovShiftForward(U[mu], mu, U[nu])) * // ->->|
+      adj(Gimpl::CovShiftForward(
+				 U[nu], nu, Gimpl::CovShiftForward(U[mu], mu, U[mu])));
     rect = rect +
-           Gimpl::CovShiftForward(
-               U[mu], mu, Gimpl::CovShiftForward(U[nu], nu, U[nu])) * // ->||
-               adj(Gimpl::CovShiftForward(
-                   U[nu], nu, Gimpl::CovShiftForward(U[nu], nu, U[mu])));
+      Gimpl::CovShiftForward(
+			     U[mu], mu, Gimpl::CovShiftForward(U[nu], nu, U[nu])) * // ->||
+      adj(Gimpl::CovShiftForward(
+				 U[nu], nu, Gimpl::CovShiftForward(U[nu], nu, U[mu])));
   }
   static void traceDirRectangle(ComplexField &rect,
                                 const std::vector<GaugeMat> &U, const int mu,
                                 const int nu) {
-    GaugeMat sp(U[0]._grid);
+    GaugeMat sp(U[0].Grid());
     dirRectangle(sp, U, mu, nu);
     rect = trace(sp);
   }
   static void siteRectangle(ComplexField &Rect,
                             const std::vector<GaugeMat> &U) {
-    ComplexField siteRect(U[0]._grid);
-    Rect = zero;
+    ComplexField siteRect(U[0].Grid());
+    Rect = Zero();
     for (int mu = 1; mu < Nd; mu++) {
       for (int nu = 0; nu < mu; nu++) {
         traceDirRectangle(siteRect, U, mu, nu);
@@ -428,13 +428,13 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
   // sum over all x,y,z,t and over all planes of plaquette
   //////////////////////////////////////////////////
   static RealD sumRectangle(const GaugeLorentz &Umu) {
-    std::vector<GaugeMat> U(Nd, Umu._grid);
+    std::vector<GaugeMat> U(Nd, Umu.Grid());
 
     for (int mu = 0; mu < Nd; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
     }
 
-    ComplexField Rect(Umu._grid);
+    ComplexField Rect(Umu.Grid());
 
     siteRectangle(Rect, U);
 
@@ -449,7 +449,7 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
 
     RealD sumrect = sumRectangle(Umu);
 
-    double vol = Umu._grid->gSites();
+    double vol = Umu.Grid()->gSites();
 
     double faces = (1.0 * Nd * (Nd - 1)); // 2 distinct orientations summed
 
@@ -473,9 +473,9 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
   static void RectStapleOptimised(GaugeMat &Stap, std::vector<GaugeMat> &U2,
                                   std::vector<GaugeMat> &U, int mu) {
 
-    Stap = zero;
+    Stap = Zero();
 
-    GridBase *grid = U[0]._grid;
+    GridBase *grid = U[0].Grid();
 
     GaugeMat Staple2x1(grid);
     GaugeMat tmp(grid);
@@ -552,14 +552,14 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
 
   static void RectStapleUnoptimised(GaugeMat &Stap, const GaugeLorentz &Umu,
                                     int mu) {
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
 
     std::vector<GaugeMat> U(Nd, grid);
     for (int d = 0; d < Nd; d++) {
       U[d] = PeekIndex<LorentzIndex>(Umu, d);
     }
 
-    Stap = zero;
+    Stap = Zero();
 
     for (int nu = 0; nu < Nd; nu++) {
       if (nu != mu) {
@@ -567,52 +567,52 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
         //          |    __ |
         //
         Stap += Gimpl::ShiftStaple(
-            Gimpl::CovShiftForward(
-                U[mu], mu,
-                Gimpl::CovShiftForward(
-                    U[nu], nu,
-                    Gimpl::CovShiftBackward(
-                        U[mu], mu,
-                        Gimpl::CovShiftBackward(
-                            U[mu], mu,
-                            Gimpl::CovShiftIdentityBackward(U[nu], nu))))),
-            mu);
+				   Gimpl::CovShiftForward(
+							  U[mu], mu,
+							  Gimpl::CovShiftForward(
+										 U[nu], nu,
+										 Gimpl::CovShiftBackward(
+													 U[mu], mu,
+													 Gimpl::CovShiftBackward(
+																 U[mu], mu,
+																 Gimpl::CovShiftIdentityBackward(U[nu], nu))))),
+				   mu);
 
         //              __
         //          |__ __ |
 
         Stap += Gimpl::ShiftStaple(
-            Gimpl::CovShiftForward(
-                U[mu], mu,
-                Gimpl::CovShiftBackward(
-                    U[nu], nu,
-                    Gimpl::CovShiftBackward(
-                        U[mu], mu, Gimpl::CovShiftBackward(U[mu], mu, U[nu])))),
-            mu);
+				   Gimpl::CovShiftForward(
+							  U[mu], mu,
+							  Gimpl::CovShiftBackward(
+										  U[nu], nu,
+										  Gimpl::CovShiftBackward(
+													  U[mu], mu, Gimpl::CovShiftBackward(U[mu], mu, U[nu])))),
+				   mu);
 
         //           __
         //          |__ __ |
 
         Stap += Gimpl::ShiftStaple(
-            Gimpl::CovShiftBackward(
-                U[nu], nu,
-                Gimpl::CovShiftBackward(
-                    U[mu], mu,
-                    Gimpl::CovShiftBackward(
-                        U[mu], mu, Gimpl::CovShiftForward(U[nu], nu, U[mu])))),
-            mu);
+				   Gimpl::CovShiftBackward(
+							   U[nu], nu,
+							   Gimpl::CovShiftBackward(
+										   U[mu], mu,
+										   Gimpl::CovShiftBackward(
+													   U[mu], mu, Gimpl::CovShiftForward(U[nu], nu, U[mu])))),
+				   mu);
 
         //           __ ___
         //          |__    |
 
         Stap += Gimpl::ShiftStaple(
-            Gimpl::CovShiftForward(
-                U[nu], nu,
-                Gimpl::CovShiftBackward(
-                    U[mu], mu,
-                    Gimpl::CovShiftBackward(
-                        U[mu], mu, Gimpl::CovShiftBackward(U[nu], nu, U[mu])))),
-            mu);
+				   Gimpl::CovShiftForward(
+							  U[nu], nu,
+							  Gimpl::CovShiftBackward(
+										  U[mu], mu,
+										  Gimpl::CovShiftBackward(
+													  U[mu], mu, Gimpl::CovShiftBackward(U[nu], nu, U[mu])))),
+				   mu);
 
         //       --
         //      |  |
@@ -620,16 +620,16 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
         //      |  |
 
         Stap += Gimpl::ShiftStaple(
-            Gimpl::CovShiftForward(
-                U[nu], nu,
-                Gimpl::CovShiftForward(
-                    U[nu], nu,
-                    Gimpl::CovShiftBackward(
-                        U[mu], mu,
-                        Gimpl::CovShiftBackward(
-                            U[nu], nu,
-                            Gimpl::CovShiftIdentityBackward(U[nu], nu))))),
-            mu);
+				   Gimpl::CovShiftForward(
+							  U[nu], nu,
+							  Gimpl::CovShiftForward(
+										 U[nu], nu,
+										 Gimpl::CovShiftBackward(
+													 U[mu], mu,
+													 Gimpl::CovShiftBackward(
+																 U[nu], nu,
+																 Gimpl::CovShiftIdentityBackward(U[nu], nu))))),
+				   mu);
 
         //      |  |
         //
@@ -637,13 +637,13 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
         //       --
 
         Stap += Gimpl::ShiftStaple(
-            Gimpl::CovShiftBackward(
-                U[nu], nu,
-                Gimpl::CovShiftBackward(
-                    U[nu], nu,
-                    Gimpl::CovShiftBackward(
-                        U[mu], mu, Gimpl::CovShiftForward(U[nu], nu, U[nu])))),
-            mu);
+				   Gimpl::CovShiftBackward(
+							   U[nu], nu,
+							   Gimpl::CovShiftBackward(
+										   U[nu], nu,
+										   Gimpl::CovShiftBackward(
+													   U[mu], mu, Gimpl::CovShiftForward(U[nu], nu, U[nu])))),
+				   mu);
       }
     }
   }
@@ -679,7 +679,7 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
                                 const std::vector<GaugeMat> &U,
                                 const int Rmu, const int Rnu,
                                 const int mu, const int nu) {
-    GaugeMat sp(U[0]._grid);
+    GaugeMat sp(U[0].Grid());
     wilsonLoop(sp, U, Rmu, Rnu, mu, nu);
     wl = trace(sp);
   }
@@ -689,9 +689,9 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
   static void siteWilsonLoop(LatticeComplex &Wl,
                             const std::vector<GaugeMat> &U,
                             const int R1, const int R2) {
-    LatticeComplex siteWl(U[0]._grid);
-    Wl = zero;
-    for (int mu = 1; mu < U[0]._grid->_ndimension; mu++) {
+    LatticeComplex siteWl(U[0].Grid());
+    Wl = Zero();
+    for (int mu = 1; mu < U[0].Grid()->_ndimension; mu++) {
       for (int nu = 0; nu < mu; nu++) {
         traceWilsonLoop(siteWl, U, R1, R2, mu, nu);
         Wl = Wl + siteWl;
@@ -707,11 +707,11 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
   static void siteTimelikeWilsonLoop(LatticeComplex &Wl,
                             const std::vector<GaugeMat> &U,
                             const int R1, const int R2) {
-    LatticeComplex siteWl(U[0]._grid);
+    LatticeComplex siteWl(U[0].Grid());
 
-    int ndim = U[0]._grid->_ndimension;
+    int ndim = U[0].Grid()->_ndimension;
 
-    Wl = zero;
+    Wl = Zero();
     for (int nu = 0; nu < ndim - 1; nu++) {
       traceWilsonLoop(siteWl, U, R1, R2, ndim-1, nu);
       Wl = Wl + siteWl;
@@ -723,10 +723,10 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
   static void siteSpatialWilsonLoop(LatticeComplex &Wl,
                             const std::vector<GaugeMat> &U,
                             const int R1, const int R2) {
-    LatticeComplex siteWl(U[0]._grid);
+    LatticeComplex siteWl(U[0].Grid());
 
-    Wl = zero;
-    for (int mu = 1; mu < U[0]._grid->_ndimension - 1; mu++) {
+    Wl = Zero();
+    for (int mu = 1; mu < U[0].Grid()->_ndimension - 1; mu++) {
       for (int nu = 0; nu < mu; nu++) {
         traceWilsonLoop(siteWl, U, R1, R2, mu, nu);
         Wl = Wl + siteWl;
@@ -740,13 +740,13 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
   //////////////////////////////////////////////////
   static Real sumWilsonLoop(const GaugeLorentz &Umu,
                             const int R1, const int R2) {
-    std::vector<GaugeMat> U(4, Umu._grid);
+    std::vector<GaugeMat> U(4, Umu.Grid());
 
-    for (int mu = 0; mu < Umu._grid->_ndimension; mu++) {
+    for (int mu = 0; mu < Umu.Grid()->_ndimension; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
     }
 
-    LatticeComplex Wl(Umu._grid);
+    LatticeComplex Wl(Umu.Grid());
 
     siteWilsonLoop(Wl, U, R1, R2);
 
@@ -759,13 +759,13 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
   //////////////////////////////////////////////////
   static Real sumTimelikeWilsonLoop(const GaugeLorentz &Umu,
                             const int R1, const int R2) {
-    std::vector<GaugeMat> U(4, Umu._grid);
+    std::vector<GaugeMat> U(4, Umu.Grid());
 
-    for (int mu = 0; mu < Umu._grid->_ndimension; mu++) {
+    for (int mu = 0; mu < Umu.Grid()->_ndimension; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
     }
 
-    LatticeComplex Wl(Umu._grid);
+    LatticeComplex Wl(Umu.Grid());
 
     siteTimelikeWilsonLoop(Wl, U, R1, R2);
 
@@ -778,13 +778,13 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
   //////////////////////////////////////////////////
   static Real sumSpatialWilsonLoop(const GaugeLorentz &Umu,
                             const int R1, const int R2) {
-    std::vector<GaugeMat> U(4, Umu._grid);
+    std::vector<GaugeMat> U(4, Umu.Grid());
 
-    for (int mu = 0; mu < Umu._grid->_ndimension; mu++) {
+    for (int mu = 0; mu < Umu.Grid()->_ndimension; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
     }
 
-    LatticeComplex Wl(Umu._grid);
+    LatticeComplex Wl(Umu.Grid());
 
     siteSpatialWilsonLoop(Wl, U, R1, R2);
 
@@ -797,9 +797,9 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
   //////////////////////////////////////////////////
   static Real avgWilsonLoop(const GaugeLorentz &Umu,
                             const int R1, const int R2) {
-    int ndim = Umu._grid->_ndimension;
+    int ndim = Umu.Grid()->_ndimension;
     Real sumWl = sumWilsonLoop(Umu, R1, R2);
-    Real vol = Umu._grid->gSites();
+    Real vol = Umu.Grid()->gSites();
     Real faces = 1.0 * ndim * (ndim - 1);
     return sumWl / vol / faces / Nc; // Nc dependent... FIXME
   }
@@ -808,9 +808,9 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
   //////////////////////////////////////////////////
   static Real avgTimelikeWilsonLoop(const GaugeLorentz &Umu,
                             const int R1, const int R2) {
-    int ndim = Umu._grid->_ndimension;
+    int ndim = Umu.Grid()->_ndimension;
     Real sumWl = sumTimelikeWilsonLoop(Umu, R1, R2);
-    Real vol = Umu._grid->gSites();
+    Real vol = Umu.Grid()->gSites();
     Real faces = 1.0 * (ndim - 1);
     return sumWl / vol / faces / Nc; // Nc dependent... FIXME
   }
@@ -819,9 +819,9 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
   //////////////////////////////////////////////////
   static Real avgSpatialWilsonLoop(const GaugeLorentz &Umu,
                             const int R1, const int R2) {
-    int ndim = Umu._grid->_ndimension;
+    int ndim = Umu.Grid()->_ndimension;
     Real sumWl = sumSpatialWilsonLoop(Umu, R1, R2);
-    Real vol = Umu._grid->gSites();
+    Real vol = Umu.Grid()->gSites();
     Real faces = 1.0 * (ndim - 1) * (ndim - 2);
     return sumWl / vol / faces / Nc; // Nc dependent... FIXME
   }
@@ -831,7 +831,7 @@ typedef WilsonLoops<PeriodicGimplR> ColourWilsonLoops;
 typedef WilsonLoops<PeriodicGimplR> U1WilsonLoops;
 typedef WilsonLoops<PeriodicGimplR> SU2WilsonLoops;
 typedef WilsonLoops<PeriodicGimplR> SU3WilsonLoops;
-}
-}
+
+NAMESPACE_END(Grid);
 
 #endif

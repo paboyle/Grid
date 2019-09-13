@@ -48,7 +48,7 @@ namespace Grid
   class XmlWriter: public Writer<XmlWriter>
   {    
   public:
-    XmlWriter(const std::string &fileName, std::string toplev = std::string("grid") );
+    XmlWriter(const std::string &fileName,std::string toplev = std::string("grid") );
     virtual ~XmlWriter(void);
     void push(const std::string &s);
     void pushXmlString(const std::string &s);
@@ -79,11 +79,11 @@ namespace Grid
     bool nextElement(const std::string &s = "");
     template <typename U>
     void readDefault(const std::string &s, U &output);
-    template <typename U>
-    void readDefault(const std::string &s, std::vector<U> &output);
+    template <typename U>    void readDefault(const std::string &s, std::vector<U> &output);
     template <typename U>
     void readMultiDim(const std::string &s, std::vector<U> &buf, std::vector<size_t> &dim);
     void readCurrentSubtree(std::string &s);
+
   private:
     void checkParse(const pugi::xml_parse_result &result, const std::string name);
   private:
@@ -109,9 +109,9 @@ namespace Grid
   {
     std::ostringstream os;
     
-    if (getPrecision())
+    if (this->getPrecision())
     {
-      os.precision(getPrecision());
+      os.precision(this->getPrecision());
     }
     if (isScientific())
     {
@@ -166,6 +166,7 @@ namespace Grid
   }
 
   // Reader template implementation ////////////////////////////////////////////
+  template <> void XmlReader::readDefault(const std::string &s, std::string &output);
   template <typename U>
   void XmlReader::readDefault(const std::string &s, U &output)
   {
@@ -174,9 +175,6 @@ namespace Grid
     readDefault(s, buf);
     fromString(output, buf);
   }
-  
-  template <>
-  void XmlReader::readDefault(const std::string &s, std::string &output);
   
   template <typename U>
   void XmlReader::readDefault(const std::string &s, std::vector<U> &output)

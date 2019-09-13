@@ -33,7 +33,7 @@ Author: Guido Cossu <guido.cossu@ed.ac.uk>
 #include <type_traits>
 #include <Grid/tensors/Tensors.h>
 #include <Grid/serialisation/VectorUtils.h>
-#include <Grid/Eigen/unsupported/CXX11/Tensor>
+#include <Grid/Grid_Eigen_Tensor.h>
 
 namespace Grid {
   namespace EigenIO {

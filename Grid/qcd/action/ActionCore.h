@@ -31,29 +31,37 @@ directory
 #define QCD_ACTION_CORE
 
 #include <Grid/qcd/action/ActionBase.h>
+NAMESPACE_CHECK(ActionBase);
 #include <Grid/qcd/action/ActionSet.h>
+NAMESPACE_CHECK(ActionSet);
 #include <Grid/qcd/action/ActionParams.h>
+NAMESPACE_CHECK(ActionParams);
 
 ////////////////////////////////////////////
 // Gauge Actions
 ////////////////////////////////////////////
 #include <Grid/qcd/action/gauge/Gauge.h>
+NAMESPACE_CHECK(Gauge);
 
 ////////////////////////////////////////////
 // Fermion prereqs
 ////////////////////////////////////////////
 #include <Grid/qcd/action/fermion/FermionCore.h>
+NAMESPACE_CHECK(ActionFermionCore);
 
 ////////////////////////////////////////////
 // Scalar Actions
 ////////////////////////////////////////////
 #include <Grid/qcd/action/scalar/Scalar.h>
+NAMESPACE_CHECK(Scalar);
 
 ////////////////////////////////////////////
 // Utility functions
 ////////////////////////////////////////////
 #include <Grid/qcd/utils/Metric.h>
+NAMESPACE_CHECK(Metric);
 #include <Grid/qcd/utils/CovariantLaplacian.h>
+NAMESPACE_CHECK(CovariantLaplacian);
 
 
 

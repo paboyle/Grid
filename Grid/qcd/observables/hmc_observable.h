@@ -27,10 +27,9 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef HMC_OBSERVABLE_H
-#define HMC_OBSERVABLE_H
+#pragma once
 
-namespace Grid{
+NAMESPACE_BEGIN(Grid);
 
 template <class Field>
 class HmcObservable {
@@ -41,11 +40,14 @@ class HmcObservable {
                                   GridParallelRNG &pRNG) = 0;
 };
 
-}  // namespace Grid
+NAMESPACE_END(Grid);
 
+NAMESPACE_CHECK(HmcObs);
 #include "plaquette.h"
+NAMESPACE_CHECK(Plaq);
 #include "topological_charge.h"
+NAMESPACE_CHECK(Topo);
 #include "polyakov_loop.h"
+NAMESPACE_CHECK(Polyakov);
 
 
-#endif  //  HMC_OBSERVABLE_H

@@ -35,8 +35,9 @@ directory
 
 
 int main(int argc, char **argv) {
+#ifndef GRID_NVCC
   using namespace Grid;
-  using namespace Grid::QCD;
+
 
   // Here change the allowed (higher) representations
   typedef Representations< FundamentalRepresentation, AdjointRepresentation , TwoIndexSymmetricRepresentation> TheRepresentations;
@@ -133,7 +134,7 @@ int main(int argc, char **argv) {
   TheHMC.Run();  // no smearing
 
   Grid_finalize();
-
+#endif
 } // main
 
 

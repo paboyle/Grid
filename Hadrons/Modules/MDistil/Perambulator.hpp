@@ -203,27 +203,27 @@ void TPerambulator<FImpl>::execute(void)
         for (int dt = 0; dt < Nt_inv; dt++) {
           for (int ds = 0; ds < SI; ds++) {
             std::cout <<  "LapH source vector from noise " << inoise << " and dilution component (d_k,d_t,d_alpha) : (" << dk << ","<< dt << "," << ds << ")" << std::endl;
-            dist_source = zero;
-            tmp3d_nospin = zero;
-            evec3d = zero;
+            dist_source = 0;
+            tmp3d_nospin = 0;
+            evec3d = 0;
             for (int it = dt; it < Nt; it += TI){
               if (full_tdil) t_inv = tsrc; else t_inv = it;
               if( t_inv >= Ntfirst && t_inv < Ntfirst + Ntlocal ) {
                 for (int ik = dk; ik < nvec; ik += LI){
                   for (int is = ds; is < Ns; is += SI){ 
-                    ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv-Ntfirst,Grid::QCD::Tdir);
+                    ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv-Ntfirst,Tdir);
                     //tmp3d_nospin = evec3d * noise[inoise + nnoise*(t_inv + Nt*(ik+nvec*is))];
                     tmp3d_nospin = evec3d * noise(inoise, t_inv, ik, is);
-                    tmp3d=zero;
+                    tmp3d=0;
                     pokeSpin(tmp3d,tmp3d_nospin,is);
-                    tmp2=zero;
-                    InsertSliceLocal(tmp3d,tmp2,0,t_inv-Ntfirst,Grid::QCD::Tdir);
+                    tmp2=0;
+                    InsertSliceLocal(tmp3d,tmp2,0,t_inv-Ntfirst,Tdir);
                     dist_source += tmp2;
                   }
                 }
               }
             }
-            result=zero;
+            result=0;
 	    v4dtmp = dist_source;
 	    if (Ls_ == 1){
 	      solver(result, v4dtmp);
@@ -238,9 +238,9 @@ void TPerambulator<FImpl>::execute(void)
             for (int is = 0; is < Ns; is++) {
               result_nospin = peekSpin(result,is);
               for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
-                ExtractSliceLocal(result_3d,result_nospin,0,t-Ntfirst,Grid::QCD::Tdir);
+                ExtractSliceLocal(result_3d,result_nospin,0,t-Ntfirst,Tdir);
                 for (int ivec = 0; ivec < nvec; ivec++) {
-                  ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Grid::QCD::Tdir);
+                  ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Tdir);
                   pokeSpin(perambulator(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
                 }
               }

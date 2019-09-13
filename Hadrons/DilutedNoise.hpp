@@ -165,7 +165,7 @@ TimeDilutedSpinColorDiagonalNoise<FImpl>::
 TimeDilutedSpinColorDiagonalNoise(GridCartesian *g)
 : DilutedNoise<FImpl>(g)
 {
-    nt_ = this->getGrid()->GlobalDimensions().back();
+    nt_ = this->getGrid()->GlobalDimensions().size();
     this->resize(nt_*Ns*FImpl::Dimension);
 }
 
@@ -192,11 +192,11 @@ void TimeDilutedSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rn
         etaCut = where((tLat == t), eta, 0.*eta);
         for (unsigned int s = 0; s < Ns; ++s)
         {
-            etas = zero;
-            pokeSpin(etas, etaCut, s);
+	    etas = Zero();
+	    pokeSpin(etas, etaCut, s);
             for (unsigned int c = 0; c < nc; ++c)
             {
-                noise[i] = zero;
+  	        noise[i] = Zero();
                 pokeColour(noise[i], etas, c);
                 i++;
             }
@@ -233,11 +233,11 @@ void FullVolumeSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng
     {
         for (unsigned int s = 0; s < Ns; ++s)
         {
-            etas = zero;
+  	    etas = Zero();
             pokeSpin(etas, eta, s);
             for (unsigned int c = 0; c < nc; ++c)
             {
-                noise[i] = zero;
+	        noise[i] = Zero();
                 pokeColour(noise[i], etas, c);
                 i++;
             }

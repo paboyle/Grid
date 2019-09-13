@@ -33,7 +33,7 @@ namespace Grid {
 template<class Field>
 class ZeroGuesser: public LinearFunction<Field> {
 public:
-  virtual void operator()(const Field &src, Field &guess) { guess = zero; };
+    virtual void operator()(const Field &src, Field &guess) { guess = Zero(); };
 };
 template<class Field>
 class DoNothingGuesser: public LinearFunction<Field> {
@@ -60,14 +60,14 @@ public:
   DeflatedGuesser(const std::vector<Field> & _evec,const std::vector<RealD> & _eval) : evec(_evec), eval(_eval) {};
 
   virtual void operator()(const Field &src,Field &guess) {
-    guess = zero;
+    guess = Zero();
     assert(evec.size()==eval.size());
     auto N = evec.size();
     for (int i=0;i<N;i++) {
       const Field& tmp = evec[i];
       axpy(guess,TensorRemove(innerProduct(tmp,src)) / eval[i],tmp,guess);
     }
-    guess.checkerboard = src.checkerboard;
+    guess.Checkerboard() = src.Checkerboard();
   }
 };
 
@@ -90,15 +90,15 @@ public:
   
   void operator()(const FineField &src,FineField &guess) { 
     int N = (int)evec_coarse.size();
-    CoarseField src_coarse(evec_coarse[0]._grid);
-    CoarseField guess_coarse(evec_coarse[0]._grid);    guess_coarse = zero;
+    CoarseField src_coarse(evec_coarse[0].Grid());
+    CoarseField guess_coarse(evec_coarse[0].Grid());    guess_coarse = Zero();
     blockProject(src_coarse,src,subspace);    
     for (int i=0;i<N;i++) {
       const CoarseField & tmp = evec_coarse[i];
       axpy(guess_coarse,TensorRemove(innerProduct(tmp,src_coarse)) / eval_coarse[i],tmp,guess_coarse);
     }
     blockPromote(guess_coarse,guess,subspace);
-    guess.checkerboard = src.checkerboard;
+    guess.Checkerboard() = src.Checkerboard();
   };
 };
 

@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,17 +23,17 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_QCD_SPACE_TIME_GRID_H
 #define GRID_QCD_SPACE_TIME_GRID_H
-namespace Grid {
-namespace QCD {
+
+NAMESPACE_BEGIN(Grid);
 
 class SpaceTimeGrid {
- public:
+public:
 
-  static GridCartesian         *makeFourDimGrid(const std::vector<int> & latt,const std::vector<int> &simd,const std::vector<int> &mpi);
+  static GridCartesian         *makeFourDimGrid(const Coordinate & latt,const Coordinate &simd,const Coordinate &mpi);
   static GridRedBlackCartesian *makeFourDimRedBlackGrid       (const GridCartesian *FourDimGrid);
 
   static GridCartesian         *makeFiveDimGrid        (int Ls,const GridCartesian *FourDimGrid);
@@ -41,10 +41,10 @@ class SpaceTimeGrid {
 
   static GridCartesian         *makeFiveDimDWFGrid        (int Ls,const GridCartesian *FourDimGrid);
   static GridRedBlackCartesian *makeFiveDimDWFRedBlackGrid(int Ls,const GridCartesian *FourDimGrid);
-  static GridCartesian         *makeFourDimDWFGrid        (const std::vector<int> & latt,const std::vector<int> &mpi);
+  static GridCartesian         *makeFourDimDWFGrid        (const Coordinate & latt,const Coordinate &mpi);
 
 };
 
-}}
+NAMESPACE_END(Grid);
 
 #endif

@@ -5,8 +5,7 @@
 
 #include <array>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 class Gamma {
   public:
@@ -51,11 +50,11 @@ class Gamma {
     static const std::array<const Gamma, 16>                     gall;
     Algebra                                                      g;
   public:
-    Gamma(Algebra initg): g(initg) {}  
+  accelerator Gamma(Algebra initg): g(initg) {}  
 };
 
 template<class vtype>
-inline void multMinusGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multMinusGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = -rhs(0);
   ret(1) = -rhs(1);
@@ -64,7 +63,7 @@ inline void multMinusGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &r
 };
 
 template<class vtype>
-inline void lmultMinusGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultMinusGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -76,7 +75,7 @@ inline void lmultMinusGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &
 };
 
 template<class vtype>
-inline void rmultMinusGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultMinusGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -88,7 +87,7 @@ inline void rmultMinusGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &
 };
 
 template<class vtype>
-inline void multGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = rhs(0);
   ret(1) = rhs(1);
@@ -97,7 +96,7 @@ inline void multGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void lmultGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -109,7 +108,7 @@ inline void lmultGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void rmultGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -121,7 +120,7 @@ inline void rmultGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void multMinusGammaT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multMinusGammaT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = -rhs(2);
   ret(1) = -rhs(3);
@@ -130,7 +129,7 @@ inline void multMinusGammaT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &r
 };
 
 template<class vtype>
-inline void lmultMinusGammaT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultMinusGammaT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -142,7 +141,7 @@ inline void lmultMinusGammaT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &
 };
 
 template<class vtype>
-inline void rmultMinusGammaT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultMinusGammaT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -154,7 +153,7 @@ inline void rmultMinusGammaT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &
 };
 
 template<class vtype>
-inline void multGammaT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multGammaT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = rhs(2);
   ret(1) = rhs(3);
@@ -163,7 +162,7 @@ inline void multGammaT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void lmultGammaT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultGammaT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -175,7 +174,7 @@ inline void lmultGammaT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void rmultGammaT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultGammaT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -187,7 +186,7 @@ inline void rmultGammaT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void multMinusGammaTGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multMinusGammaTGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = rhs(2);
   ret(1) = rhs(3);
@@ -196,7 +195,7 @@ inline void multMinusGammaTGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, 
 };
 
 template<class vtype>
-inline void lmultMinusGammaTGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultMinusGammaTGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -208,7 +207,7 @@ inline void lmultMinusGammaTGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype,
 };
 
 template<class vtype>
-inline void rmultMinusGammaTGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultMinusGammaTGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -220,7 +219,7 @@ inline void rmultMinusGammaTGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype,
 };
 
 template<class vtype>
-inline void multGammaTGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multGammaTGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = -rhs(2);
   ret(1) = -rhs(3);
@@ -229,7 +228,7 @@ inline void multGammaTGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &
 };
 
 template<class vtype>
-inline void lmultGammaTGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultGammaTGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -241,7 +240,7 @@ inline void lmultGammaTGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void rmultGammaTGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultGammaTGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -253,7 +252,7 @@ inline void rmultGammaTGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void multMinusGammaX(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multMinusGammaX(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = timesMinusI(rhs(3));
   ret(1) = timesMinusI(rhs(2));
@@ -262,7 +261,7 @@ inline void multMinusGammaX(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &r
 };
 
 template<class vtype>
-inline void lmultMinusGammaX(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultMinusGammaX(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -274,7 +273,7 @@ inline void lmultMinusGammaX(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &
 };
 
 template<class vtype>
-inline void rmultMinusGammaX(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultMinusGammaX(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -286,7 +285,7 @@ inline void rmultMinusGammaX(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &
 };
 
 template<class vtype>
-inline void multGammaX(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multGammaX(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = timesI(rhs(3));
   ret(1) = timesI(rhs(2));
@@ -295,7 +294,7 @@ inline void multGammaX(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void lmultGammaX(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultGammaX(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -307,7 +306,7 @@ inline void lmultGammaX(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void rmultGammaX(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultGammaX(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -319,7 +318,7 @@ inline void rmultGammaX(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void multMinusGammaXGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multMinusGammaXGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = timesI(rhs(3));
   ret(1) = timesI(rhs(2));
@@ -328,7 +327,7 @@ inline void multMinusGammaXGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, 
 };
 
 template<class vtype>
-inline void lmultMinusGammaXGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultMinusGammaXGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -340,7 +339,7 @@ inline void lmultMinusGammaXGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype,
 };
 
 template<class vtype>
-inline void rmultMinusGammaXGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultMinusGammaXGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -352,7 +351,7 @@ inline void rmultMinusGammaXGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype,
 };
 
 template<class vtype>
-inline void multGammaXGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multGammaXGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = timesMinusI(rhs(3));
   ret(1) = timesMinusI(rhs(2));
@@ -361,7 +360,7 @@ inline void multGammaXGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &
 };
 
 template<class vtype>
-inline void lmultGammaXGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultGammaXGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -373,7 +372,7 @@ inline void lmultGammaXGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void rmultGammaXGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultGammaXGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -385,7 +384,7 @@ inline void rmultGammaXGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void multMinusGammaY(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multMinusGammaY(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = rhs(3);
   ret(1) = -rhs(2);
@@ -394,7 +393,7 @@ inline void multMinusGammaY(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &r
 };
 
 template<class vtype>
-inline void lmultMinusGammaY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultMinusGammaY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -406,7 +405,7 @@ inline void lmultMinusGammaY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &
 };
 
 template<class vtype>
-inline void rmultMinusGammaY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultMinusGammaY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -418,7 +417,7 @@ inline void rmultMinusGammaY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &
 };
 
 template<class vtype>
-inline void multGammaY(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multGammaY(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = -rhs(3);
   ret(1) = rhs(2);
@@ -427,7 +426,7 @@ inline void multGammaY(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void lmultGammaY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultGammaY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -439,7 +438,7 @@ inline void lmultGammaY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void rmultGammaY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultGammaY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -451,7 +450,7 @@ inline void rmultGammaY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void multMinusGammaYGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multMinusGammaYGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = -rhs(3);
   ret(1) = rhs(2);
@@ -460,7 +459,7 @@ inline void multMinusGammaYGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, 
 };
 
 template<class vtype>
-inline void lmultMinusGammaYGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultMinusGammaYGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -472,7 +471,7 @@ inline void lmultMinusGammaYGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype,
 };
 
 template<class vtype>
-inline void rmultMinusGammaYGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultMinusGammaYGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -484,7 +483,7 @@ inline void rmultMinusGammaYGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype,
 };
 
 template<class vtype>
-inline void multGammaYGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multGammaYGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = rhs(3);
   ret(1) = -rhs(2);
@@ -493,7 +492,7 @@ inline void multGammaYGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &
 };
 
 template<class vtype>
-inline void lmultGammaYGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultGammaYGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -505,7 +504,7 @@ inline void lmultGammaYGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void rmultGammaYGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultGammaYGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -517,7 +516,7 @@ inline void rmultGammaYGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void multMinusGammaZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multMinusGammaZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = timesMinusI(rhs(2));
   ret(1) = timesI(rhs(3));
@@ -526,7 +525,7 @@ inline void multMinusGammaZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &r
 };
 
 template<class vtype>
-inline void lmultMinusGammaZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultMinusGammaZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -538,7 +537,7 @@ inline void lmultMinusGammaZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &
 };
 
 template<class vtype>
-inline void rmultMinusGammaZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultMinusGammaZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -550,7 +549,7 @@ inline void rmultMinusGammaZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &
 };
 
 template<class vtype>
-inline void multGammaZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multGammaZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = timesI(rhs(2));
   ret(1) = timesMinusI(rhs(3));
@@ -559,7 +558,7 @@ inline void multGammaZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void lmultGammaZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultGammaZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -571,7 +570,7 @@ inline void lmultGammaZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void rmultGammaZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultGammaZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -583,7 +582,7 @@ inline void rmultGammaZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void multMinusGammaZGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multMinusGammaZGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = timesI(rhs(2));
   ret(1) = timesMinusI(rhs(3));
@@ -592,7 +591,7 @@ inline void multMinusGammaZGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, 
 };
 
 template<class vtype>
-inline void lmultMinusGammaZGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultMinusGammaZGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -604,7 +603,7 @@ inline void lmultMinusGammaZGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype,
 };
 
 template<class vtype>
-inline void rmultMinusGammaZGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultMinusGammaZGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -616,7 +615,7 @@ inline void rmultMinusGammaZGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype,
 };
 
 template<class vtype>
-inline void multGammaZGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multGammaZGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = timesMinusI(rhs(2));
   ret(1) = timesI(rhs(3));
@@ -625,7 +624,7 @@ inline void multGammaZGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &
 };
 
 template<class vtype>
-inline void lmultGammaZGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultGammaZGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -637,7 +636,7 @@ inline void lmultGammaZGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void rmultGammaZGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultGammaZGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -649,7 +648,7 @@ inline void rmultGammaZGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void multMinusIdentity(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multMinusIdentity(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = -rhs(0);
   ret(1) = -rhs(1);
@@ -658,7 +657,7 @@ inline void multMinusIdentity(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> 
 };
 
 template<class vtype>
-inline void lmultMinusIdentity(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultMinusIdentity(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -670,7 +669,7 @@ inline void lmultMinusIdentity(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns>
 };
 
 template<class vtype>
-inline void rmultMinusIdentity(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultMinusIdentity(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -682,7 +681,7 @@ inline void rmultMinusIdentity(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns>
 };
 
 template<class vtype>
-inline void multIdentity(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multIdentity(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = rhs(0);
   ret(1) = rhs(1);
@@ -691,7 +690,7 @@ inline void multIdentity(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void lmultIdentity(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultIdentity(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -703,7 +702,7 @@ inline void lmultIdentity(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs
 };
 
 template<class vtype>
-inline void rmultIdentity(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultIdentity(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -715,7 +714,7 @@ inline void rmultIdentity(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs
 };
 
 template<class vtype>
-inline void multMinusSigmaXT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multMinusSigmaXT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = timesMinusI(rhs(1));
   ret(1) = timesMinusI(rhs(0));
@@ -724,7 +723,7 @@ inline void multMinusSigmaXT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &
 };
 
 template<class vtype>
-inline void lmultMinusSigmaXT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultMinusSigmaXT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -736,7 +735,7 @@ inline void lmultMinusSigmaXT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void rmultMinusSigmaXT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultMinusSigmaXT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -748,7 +747,7 @@ inline void rmultMinusSigmaXT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void multSigmaXT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multSigmaXT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = timesI(rhs(1));
   ret(1) = timesI(rhs(0));
@@ -757,7 +756,7 @@ inline void multSigmaXT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void lmultSigmaXT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultSigmaXT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -769,7 +768,7 @@ inline void lmultSigmaXT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void rmultSigmaXT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultSigmaXT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -781,7 +780,7 @@ inline void rmultSigmaXT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void multMinusSigmaXY(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multMinusSigmaXY(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = timesI(rhs(0));
   ret(1) = timesMinusI(rhs(1));
@@ -790,7 +789,7 @@ inline void multMinusSigmaXY(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &
 };
 
 template<class vtype>
-inline void lmultMinusSigmaXY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultMinusSigmaXY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -802,7 +801,7 @@ inline void lmultMinusSigmaXY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void rmultMinusSigmaXY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultMinusSigmaXY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -814,7 +813,7 @@ inline void rmultMinusSigmaXY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void multSigmaXY(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multSigmaXY(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = timesMinusI(rhs(0));
   ret(1) = timesI(rhs(1));
@@ -823,7 +822,7 @@ inline void multSigmaXY(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void lmultSigmaXY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultSigmaXY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -835,7 +834,7 @@ inline void lmultSigmaXY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void rmultSigmaXY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultSigmaXY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -847,7 +846,7 @@ inline void rmultSigmaXY(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void multMinusSigmaXZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multMinusSigmaXZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = rhs(1);
   ret(1) = -rhs(0);
@@ -856,7 +855,7 @@ inline void multMinusSigmaXZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &
 };
 
 template<class vtype>
-inline void lmultMinusSigmaXZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultMinusSigmaXZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -868,7 +867,7 @@ inline void lmultMinusSigmaXZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void rmultMinusSigmaXZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultMinusSigmaXZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -880,7 +879,7 @@ inline void rmultMinusSigmaXZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void multSigmaXZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multSigmaXZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = -rhs(1);
   ret(1) = rhs(0);
@@ -889,7 +888,7 @@ inline void multSigmaXZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void lmultSigmaXZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultSigmaXZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -901,7 +900,7 @@ inline void lmultSigmaXZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void rmultSigmaXZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultSigmaXZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -913,7 +912,7 @@ inline void rmultSigmaXZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void multMinusSigmaYT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multMinusSigmaYT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = rhs(1);
   ret(1) = -rhs(0);
@@ -922,7 +921,7 @@ inline void multMinusSigmaYT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &
 };
 
 template<class vtype>
-inline void lmultMinusSigmaYT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultMinusSigmaYT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -934,7 +933,7 @@ inline void lmultMinusSigmaYT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void rmultMinusSigmaYT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultMinusSigmaYT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -946,7 +945,7 @@ inline void rmultMinusSigmaYT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void multSigmaYT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multSigmaYT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = -rhs(1);
   ret(1) = rhs(0);
@@ -955,7 +954,7 @@ inline void multSigmaYT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void lmultSigmaYT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultSigmaYT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -967,7 +966,7 @@ inline void lmultSigmaYT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void rmultSigmaYT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultSigmaYT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -979,7 +978,7 @@ inline void rmultSigmaYT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void multMinusSigmaYZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multMinusSigmaYZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = timesI(rhs(1));
   ret(1) = timesI(rhs(0));
@@ -988,7 +987,7 @@ inline void multMinusSigmaYZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &
 };
 
 template<class vtype>
-inline void lmultMinusSigmaYZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultMinusSigmaYZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -1000,7 +999,7 @@ inline void lmultMinusSigmaYZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void rmultMinusSigmaYZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultMinusSigmaYZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -1012,7 +1011,7 @@ inline void rmultMinusSigmaYZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void multSigmaYZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multSigmaYZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = timesMinusI(rhs(1));
   ret(1) = timesMinusI(rhs(0));
@@ -1021,7 +1020,7 @@ inline void multSigmaYZ(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void lmultSigmaYZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultSigmaYZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -1033,7 +1032,7 @@ inline void lmultSigmaYZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void rmultSigmaYZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultSigmaYZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -1045,7 +1044,7 @@ inline void rmultSigmaYZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void multMinusSigmaZT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multMinusSigmaZT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = timesMinusI(rhs(0));
   ret(1) = timesI(rhs(1));
@@ -1054,7 +1053,7 @@ inline void multMinusSigmaZT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &
 };
 
 template<class vtype>
-inline void lmultMinusSigmaZT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultMinusSigmaZT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -1066,7 +1065,7 @@ inline void lmultMinusSigmaZT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void rmultMinusSigmaZT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultMinusSigmaZT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -1078,7 +1077,7 @@ inline void rmultMinusSigmaZT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 };
 
 template<class vtype>
-inline void multSigmaZT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
+accelerator_inline void multSigmaZT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
   ret(0) = timesI(rhs(0));
   ret(1) = timesMinusI(rhs(1));
@@ -1087,7 +1086,7 @@ inline void multSigmaZT(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void lmultSigmaZT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void lmultSigmaZT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -1099,7 +1098,7 @@ inline void lmultSigmaZT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype>
-inline void rmultSigmaZT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
+accelerator_inline void rmultSigmaZT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
@@ -1111,7 +1110,7 @@ inline void rmultSigmaZT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 };
 
 template<class vtype> 
-inline auto operator*(const Gamma &G, const iVector<vtype, Ns> &arg)
+accelerator_inline auto operator*(const Gamma &G, const iVector<vtype, Ns> &arg)
 ->typename std::enable_if<matchGridTensorIndex<iVector<vtype, Ns>, SpinorIndex>::value, iVector<vtype, Ns>>::type
 {
   iVector<vtype, Ns> ret;
@@ -1189,7 +1188,7 @@ inline auto operator*(const Gamma &G, const iVector<vtype, Ns> &arg)
 }
 
 template<class vtype> 
-inline auto operator*(const Gamma &G, const iMatrix<vtype, Ns> &arg)
+accelerator_inline auto operator*(const Gamma &G, const iMatrix<vtype, Ns> &arg)
 ->typename std::enable_if<matchGridTensorIndex<iMatrix<vtype, Ns>, SpinorIndex>::value, iMatrix<vtype, Ns>>::type
 {
   iMatrix<vtype, Ns> ret;
@@ -1267,7 +1266,7 @@ inline auto operator*(const Gamma &G, const iMatrix<vtype, Ns> &arg)
 }
 
 template<class vtype> 
-inline auto operator*(const iMatrix<vtype, Ns> &arg, const Gamma &G)
+accelerator_inline auto operator*(const iMatrix<vtype, Ns> &arg, const Gamma &G)
 ->typename std::enable_if<matchGridTensorIndex<iMatrix<vtype, Ns>, SpinorIndex>::value, iMatrix<vtype, Ns>>::type
 {
   iMatrix<vtype, Ns> ret;
@@ -1344,6 +1343,6 @@ inline auto operator*(const iMatrix<vtype, Ns> &arg, const Gamma &G)
   return ret;
 }
 
-}}
+NAMESPACE_END(Grid);
 
 #endif // GRID_QCD_GAMMA_H
