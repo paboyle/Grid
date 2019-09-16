@@ -51,6 +51,7 @@ modules_cc =\
   Modules/MContraction/A2AMesonField.cc \
   Modules/MContraction/Gamma3pt.cc \
   Modules/MContraction/A2AAslashField.cc \
+  Modules/MContraction/Baryon.cc \
   Modules/MContraction/DiscLoop.cc \
   Modules/MContraction/Meson.cc \
   Modules/MContraction/Nucleon.cc \
@@ -135,6 +136,7 @@ modules_hpp =\
   Modules/MContraction/WeakNonEye3pt.hpp \
   Modules/MContraction/DiscLoop.hpp \
   Modules/MContraction/A2AAslashField.hpp \
+  Modules/MContraction/Baryon.hpp \
   Modules/MContraction/Meson.hpp \
   Modules/MContraction/Nucleon.hpp \
   Modules/MContraction/SelfContract.hpp \
