@@ -146,8 +146,8 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     Gamma GammaB = ggB[0];
     std::vector<TComplex> buf;
     const int  parity {par().parity};
-    const char quarks_snk[]{par().quarks_snk.c_str()};
-    const char quarks_src[]{par().quarks_src.c_str()};
+    const char * quarks_snk{par().quarks_snk.c_str()};
+    const char * quarks_src{par().quarks_src.c_str()};
 
     BaryonUtils<FIMPL>::ContractBaryons(q1_src,q2_src,q3_src,GammaA,GammaB,quarks_snk,quarks_src,parity,c);
 
