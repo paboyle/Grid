@@ -1431,8 +1431,9 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
     int Lblock = mat.dimension(3);
     int Rblock = mat.dimension(4);
     
-    GridBase *grid = lhs_wi[0]._grid;
-    
+    //GridBase *grid = lhs_wi[0]._grid;
+    GridBase *grid = lhs_wi[0].Grid();    
+
     const int    Nd = grid->_ndimension;
     const int Nsimd = grid->Nsimd();
     
@@ -1451,14 +1452,20 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
     int MFlvol = ld*Lblock*Rblock*Nmom;
     
     Vector<Singlet_v > lvSum(MFrvol);
-    parallel_for (int r = 0; r < MFrvol; r++){
-        lvSum[r] = zero;
-    }
+    thread_for(r, MFrvol,{
+      lvSum[r] = Zero();
+    });
+    //parallel_for (int r = 0; r < MFrvol; r++){
+    //    lvSum[r] = zero;
+    //}
     
     Vector<Singlet_s > lsSum(MFlvol);
-    parallel_for (int r = 0; r < MFlvol; r++){
-        lsSum[r]=scalar_type(0.0);
-    }
+    thread_for(r, MFlvol,{
+      lsSum[r]=scalar_type(0.0);
+    });
+    //parallel_for (int r = 0; r < MFlvol; r++){
+    //    lsSum[r]=scalar_type(0.0);
+    //}
     
     int e1=    grid->_slice_nblock[orthogdim];
     int e2=    grid->_slice_block [orthogdim];
@@ -1490,7 +1497,8 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
             std::cout << gammas[mu] << " not implemented for staggered fermion meson field" << std::endl;
             assert(0);
         }
-        parallel_for(int r=0;r<rd;r++){
+        thread_for(r, rd,{
+        //parallel_for(int r=0;r<rd;r++){
             
             int so=r*grid->_ostride[orthogdim]; // base offset for start of plane
             
@@ -1501,13 +1509,17 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
                     
                     for(int i=0;i<Lblock;i++){
                         
-                        auto left = conjugate(lhs_wi[i]._odata[ss]);
-                        
+                        //auto left = conjugate(lhs_wi[i]._odata[ss]);
+                        auto wi_v  = lhs_wi[i].View();
+                        auto left = conjugate(wi_v[ss]);
+
                         for(int j=0;j<Rblock;j++){
                             
                             Singlet_v vv;
-                            auto right = rhs_vj[j]._odata[ss];
-                            
+                            //auto right = rhs_vj[j]._odata[ss];
+                            auto vj_v = rhs_vj[j].View();
+                            auto right = vj_v[ss];
+ 
                             vv()()() = left()()(0) * right()()(0)
                                      + left()()(1) * right()()(1)
                                      + left()()(2) * right()()(2);
@@ -1516,21 +1528,26 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
                             int base = Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*r;
                             for ( int m=0;m<Nmom;m++){
                                 int idx = m+base;
-                                auto phase = mom[m]._odata[ss] * stagphase._odata[ss];
+                                //auto phase = mom[m]._odata[ss] * stagphase._odata[ss];
+                                auto mom_v = mom[m].View();
+                                auto stagphase_v = stagphase.View();
+                                auto phase = mom_v[ss] * stagphase_v[ss];
                                 mac(&lvSum[idx],&vv,&phase);
                             }
                         }
                     }
                 }
             }
-        }
+        });
     
     
         // Sum across simd lanes in the plane, breaking out orthog dir.
-        parallel_for(int rt=0;rt<rd;rt++){
-            
-            std::vector<int> icoor(Nd);
-            std::vector<Singlet_s> extracted(Nsimd);
+        thread_for(rt, rd,{
+        //parallel_for(int rt=0;rt<rd;rt++){
+            Coordinate icoor(Nd);
+            //std::vector<int> icoor(Nd);
+            //std::vector<Singlet_s> extracted(Nsimd);
+            ExtractBuffer<Singlet_s> extracted(Nsimd);
             
             for(int i=0;i<Lblock;i++){
                 for(int j=0;j<Rblock;j++){
@@ -1552,7 +1569,7 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
                             
                         }
                     }}}
-        }
+        });
         if (t_kernel) *t_kernel += usecond();
         assert(mat.dimension(0) == Nmom);
         assert(mat.dimension(1) == Ngamma);
@@ -1561,8 +1578,9 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
         // ld loop and local only??
         int pd = grid->_processors[orthogdim];
         int pc = grid->_processor_coor[orthogdim];
-        parallel_for_nest2(int lt=0;lt<ld;lt++)
-        {
+        thread_for_collapse(2,lt,ld,{
+        //parallel_for_nest2(int lt=0;lt<ld;lt++)
+        //{
             for(int pt=0;pt<pd;pt++){
                 int t = lt + pt*ld;
                 if (pt == pc){
@@ -1585,7 +1603,7 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
                     }
                 }
             }
-        }
+        });
     } // end loop on gamma
     ////////////////////////////////////////////////////////////////////
     // This global sum is taking as much as 50% of time on 16 nodes
@@ -1599,4 +1617,3 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
 
 NAMESPACE_END(Grid);
     
-}}

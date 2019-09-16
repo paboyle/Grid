@@ -293,7 +293,8 @@ void FullVolumeColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng)
             //pokeSpin(etas, eta, s);
             for (unsigned int c = 0; c < nc; ++c)
             {
-                noise[i] = zero;
+                //noise[i] = zero;
+                noise[i] = Zero();
                 pokeColour(noise[i], eta, c);
                 i++;
             }

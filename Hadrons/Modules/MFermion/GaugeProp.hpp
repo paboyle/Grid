@@ -310,7 +310,8 @@ void TStagGaugeProp<FImpl>::execute(void)
             }
         }
         LOG(Message) << "Solve" << std::endl;
-        sol = zero;
+        //sol = zero;
+        sol = Zero();
         solver(sol, source);
         LOG(Message) << "Export solution" << std::endl;
         FermToProp<FImpl>(prop, sol, c);

@@ -308,7 +308,7 @@ template <typename FImpl>
 void A2AVectorsSchurStaggered<FImpl>::makeLowModeV(FermionField &vout, const FermionField &evec, const Real &eval)
 {
     src_o_ = evec;
-    src_o_.checkerboard = Odd;
+    src_o_.Checkerboard() = Odd;
     pickCheckerboard(Even, sol_e_, vout);
     pickCheckerboard(Odd, sol_o_, vout);
     
@@ -325,9 +325,9 @@ void A2AVectorsSchurStaggered<FImpl>::makeLowModeV(FermionField &vout, const Fer
     sol_o_ = (1.0 / eval) * src_o_;
     
     setCheckerboard(vout, sol_e_);
-    assert(sol_e_.checkerboard == Even);
+    assert(sol_e_.Checkerboard() == Even);
     setCheckerboard(vout, sol_o_);
-    assert(sol_o_.checkerboard == Odd);
+    assert(sol_o_.Checkerboard() == Odd);
 }
 
 template <typename FImpl>
@@ -341,7 +341,7 @@ template <typename FImpl>
 void A2AVectorsSchurStaggered<FImpl>::makeLowModeW(FermionField &wout, const FermionField &evec, const Real &eval)
 {
     src_o_ = evec;
-    src_o_.checkerboard = Odd;
+    src_o_.Checkerboard() = Odd;
     pickCheckerboard(Even, sol_e_, wout);
     pickCheckerboard(Odd, sol_o_, wout);
     
@@ -358,9 +358,9 @@ void A2AVectorsSchurStaggered<FImpl>::makeLowModeW(FermionField &wout, const Fer
     sol_o_ = src_o_;
     
     setCheckerboard(wout, sol_e_);
-    assert(sol_e_.checkerboard == Even);
+    assert(sol_e_.Checkerboard() == Even);
     setCheckerboard(wout, sol_o_);
-    assert(sol_o_.checkerboard == Odd);
+    assert(sol_o_.Checkerboard() == Odd);
 }
 
 template <typename FImpl>
@@ -386,7 +386,7 @@ void A2AVectorsSchurStaggered<FImpl>::makeHighModeV5D(FermionField &vout_4d,
                                                       FermionField &vout_5d,
                                                       const FermionField &noise)
 {
-    if (noise._grid->Dimensions() == fGrid_->Dimensions() - 1)
+    if (noise.Grid()->Dimensions() == fGrid_->Dimensions() - 1)
     {
         action_.ImportPhysicalFermionSource(noise, tmp5_);
     }
@@ -410,7 +410,7 @@ void A2AVectorsSchurStaggered<FImpl>::makeHighModeW5D(FermionField &wout_4d,
                                                     FermionField &wout_5d,
                                                     const FermionField &noise)
 {
-    if (noise._grid->Dimensions() == fGrid_->Dimensions() - 1)
+    if (noise.Grid()->Dimensions() == fGrid_->Dimensions() - 1)
     {
         action_.ImportUnphysicalFermion(noise, wout_5d);
         wout_4d = noise;
