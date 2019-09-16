@@ -54,6 +54,7 @@
 #include <Hadrons/Modules/MContraction/WeakNonEye3pt.hpp>
 #include <Hadrons/Modules/MContraction/DiscLoop.hpp>
 #include <Hadrons/Modules/MContraction/A2AAslashField.hpp>
+#include <Hadrons/Modules/MContraction/Baryon.hpp>
 #include <Hadrons/Modules/MContraction/Meson.hpp>
 #include <Hadrons/Modules/MDistil/DistilVectors.hpp>
 #include <Hadrons/Modules/MDistil/LapEvec.hpp>
