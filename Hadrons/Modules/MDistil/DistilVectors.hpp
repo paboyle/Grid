@@ -233,7 +233,6 @@ void TDistilVectors<FImpl>::execute(void)
   const int Ntlocal{ grid4d->LocalDimensions()[3] };
   const int Ntfirst{ grid4d->LocalStarts()[3] };
 
-  const int Ns{ Ns };
   const int Nt{ env().getDim(Tdir) };
   const int TI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().TI, Nt, false ) };
   const int LI{ static_cast<int>( perambulator.tensor.dimension(2) ) };

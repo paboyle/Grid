@@ -238,7 +238,6 @@ struct DistilParameters: Serializable {
 #define DISTIL_PARAMETERS_DEFINE( inSetup ) \
 const int Nt{env().getDim(Tdir)}; \
 const int nvec{par().nvec}; \
-const int Ns{Ns}; \
 const int nnoise{par().Distil.nnoise}; \
 const int tsrc{par().Distil.tsrc}; \
 const int TI{par().Distil.getTI(env(), inSetup)}; \

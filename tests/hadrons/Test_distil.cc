@@ -1058,7 +1058,7 @@ int main(int argc, char *argv[])
   static const char XmlFileName[] = "test_distil.xml";
   application.saveParameterFile( XmlFileName );
 
-  const std::vector<int> &lat{GridDefaultLatt()};
+  const Grid::Coordinate &lat{GridDefaultLatt()};
   if( lat.size() == 4 && lat[0] == 4 && lat[1] == 4 && lat[2] == 4 && lat[3] == 8 )
     application.run();
   else
