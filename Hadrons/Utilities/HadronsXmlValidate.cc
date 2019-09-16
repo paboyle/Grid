@@ -32,7 +32,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <string>
 
 using namespace Grid;
-using namespace QCD;
 using namespace Hadrons;
 
 // Does the specified file exist?
