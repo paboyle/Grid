@@ -1,5 +1,34 @@
+/*************************************************************************************
+ 
+ Grid physics library, www.github.com/paboyle/Grid
+ 
+ Source file: ./lib/qcd/smearing/StoutSmearing.h
+ 
+ Copyright (C) 2019
+ 
+ Author: unknown
+ Author: Felix Erben <ferben@ed.ac.uk>
+ Author: Michael Marshall <Michael.Marshall@ed.ac.uk>
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ 
+ See the full license in the file "LICENSE" in the top level distribution
+ directory
+ *************************************************************************************/
 /*
-  @file stoutSmear.hpp
+  @file StoutSmearing.h
   @brief Declares Stout smearing class
 */
 #pragma once
@@ -9,20 +38,52 @@ NAMESPACE_BEGIN(Grid);
 /*!  @brief Stout smearing of link variable. */
 template <class Gimpl>
 class Smear_Stout : public Smear<Gimpl> {
-private:
-  const Smear<Gimpl>* SmearBase;
+ private:
+  int OrthogDim = -1;
+  const std::vector<double> SmearRho{};
+  // Smear<Gimpl>* ownership semantics:
+  //    Smear<Gimpl>* passed in to constructor are owned by caller, so we don't delete them here
+  //    Smear<Gimpl>* created within constructor need to be deleted as part of the destructor
+  const std::unique_ptr<Smear<Gimpl>> OwnedBase; // deleted at destruction
+  const Smear<Gimpl>* SmearBase; // Not owned by this object, so not deleted at destruction
 
+  // only anticipated to be used from default constructor
+  inline static std::vector<double> rho3D(double rho, int orthogdim){
+    std::vector<double> rho3d(Nd*Nd);
+    for (int mu=0; mu<Nd; mu++)
+      for (int nu=0; nu<Nd; nu++)
+        rho3d[mu + Nd * nu] = (mu == nu || mu == orthogdim || nu == orthogdim) ? 0.0 : rho;
+    return rho3d;
+  };
+  
 public:
   INHERIT_GIMPL_TYPES(Gimpl)
 
-  Smear_Stout(Smear<Gimpl>* base) : SmearBase(base) {
-    assert(Nc == 3);//                  "Stout smearing currently implemented only for Nc==3");
+  /*! Stout smearing with base explicitly specified */
+  Smear_Stout(Smear<Gimpl>* base) : SmearBase{base} {
+    std::cout << GridLogDebug << "Stout smearing constructor : Smear_Stout(Smear<Gimpl>* base)" << std::endl
+    assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
   }
 
-  /*! Default constructor */
-  Smear_Stout(double rho = 1.0) : SmearBase(new Smear_APE<Gimpl>(rho)) {
-    assert(Nc == 3);//                  "Stout smearing currently implemented only for Nc==3");
+  /*! Construct stout smearing object from explicitly specified rho matrix */
+  Smear_Stout(const std::vector<double>& rho_)
+    : OwnedBase{new Smear_APE<Gimpl>(rho_)}, SmearBase{OwnedBase.get()} {
+    std::cout << GridLogDebug << "Stout smearing constructor : Smear_Stout(const std::vector<double>& " << rho_ << " )" << std::endl
+    assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
+    }
+
+  /*! Default constructor. rho is constant in all directions, optionally except for orthogonal dimension */
+  Smear_Stout(double rho, int orthogdim = -1)
+  //: OwnedBase{(orthogdim<0 || orthogdim>=Nd) ? new Smear_APE<Gimpl>(rho) : new Smear_APE<Gimpl>(rho3D(rho,orthogdim))},
+  : OrthogDim{orthogdim}, SmearRho{ rho3D(rho,orthogdim) }, OwnedBase{ new Smear_APE<Gimpl>(SmearRho) }, SmearBase{OwnedBase.get()} {
+    std::cout << GridLogDebug << "Stout smearing constructor : Smear_StoutSmear_Stout(double " << rho << ", int " << OrthogDim << " )\nrho3d=" << SmearRho << std::endl;
+    assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
   }
+
+  /*
+  Smear_Stout(double rho = 1.0) : SmearBase(new Smear_APE<Gimpl>(rho)) {
+    assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
+  }*/
 
   ~Smear_Stout() {}  // delete SmearBase...
 
@@ -30,21 +91,25 @@ public:
     GaugeField C(U.Grid());
     GaugeLinkField tmp(U.Grid()), iq_mu(U.Grid()), Umu(U.Grid());
 
-    std::cout << GridLogDebug << "Stout smearing started\n";
+    std::cout << GridLogDebug << "Stout smearing started" << std::endl;
 
     // Smear the configurations
     SmearBase->smear(C, U);
 
     for (int mu = 0; mu < Nd; mu++) {
-      tmp = peekLorentz(C, mu);
-      Umu = peekLorentz(U, mu);
-      iq_mu = Ta(
-		 tmp *
-		 adj(Umu));  // iq_mu = Ta(Omega_mu) to match the signs with the paper
-      exponentiate_iQ(tmp, iq_mu);
+      if( mu == OrthogDim )
+        tmp = 1.0;
+      else {
+        tmp = peekLorentz(C, mu);
+        Umu = peekLorentz(U, mu);
+        iq_mu = Ta(
+                   tmp *
+                   adj(Umu));  // iq_mu = Ta(Omega_mu) to match the signs with the paper
+        exponentiate_iQ(tmp, iq_mu);
+      }
       pokeLorentz(u_smr, tmp * Umu, mu);  // u_smr = exp(iQ_mu)*U_mu
     }
-    std::cout << GridLogDebug << "Stout smearing completed\n";
+    std::cout << GridLogDebug << "Stout smearing completed" << std::endl;
   };
 
   void derivative(GaugeField& SigmaTerm, const GaugeField& iLambda,
@@ -80,6 +145,7 @@ public:
     iQ2 = iQ * iQ;
     iQ3 = iQ * iQ2;
 
+    //We should check sgn(c0) here already and then apply eq (34) from 0311018
     set_uw(u, w, iQ2, iQ3);
     set_fj(f0, f1, f2, u, w);
 
@@ -103,7 +169,7 @@ public:
     c0max = 2.0 * pow(tmp, 1.5);
 
     theta = acos(c0 / c0max) *
-      one_over_three;  // divide by three here, now leave as it is
+            one_over_three;  // divide by three here, now leave as it is
     u = sqrt(tmp) * cos(theta);
     w = sqrt(c1) * sin(theta);
   }
@@ -128,7 +194,7 @@ public:
     e2iu = cos(2.0 * u) + timesI(sin(2.0 * u));
 
     h0 = e2iu * (u2 - w2) +
-      emiu * ((8.0 * u2 * cosw) + (2.0 * u * (3.0 * u2 + w2) * ixi0));
+         emiu * ((8.0 * u2 * cosw) + (2.0 * u * (3.0 * u2 + w2) * ixi0));
     h1 = e2iu * (2.0 * u) - emiu * ((2.0 * u * cosw) - (3.0 * u2 - w2) * ixi0);
     h2 = e2iu - emiu * (cosw + (3.0 * u) * ixi0);
 
@@ -139,9 +205,8 @@ public:
   }
 
   LatticeComplex func_xi0(const LatticeComplex& w) const {
-    // Define a function to do the check
-    // if( w < 1e-4 ) std::cout << GridLogWarning<< "[Smear_stout] w too small:
-    // "<< w <<"\n";
+    // Definition from arxiv 0311018
+    //if (abs(w) < 0.05) {w2 = w*w; return 1.0 - w2/6.0 * (1.0-w2/20.0 * (1.0-w2/42.0));}
     return sin(w) / w;
   }
 
@@ -154,4 +219,3 @@ public:
 };
 
 NAMESPACE_END(Grid);
-

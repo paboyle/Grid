@@ -44,16 +44,26 @@ modules_cc =\
   Modules/MIO/LoadCoarseEigenPack.cc \
   Modules/MIO/LoadEigenPack.cc \
   Modules/MIO/LoadCosmHol.cc \
+  Modules/MIO/LoadPerambulator.cc \
   Modules/MContraction/A2ALoop.cc \
   Modules/MContraction/WeakNonEye3pt.cc \
   Modules/MContraction/WeakMesonDecayKl2.cc \
   Modules/MContraction/A2AMesonField.cc \
   Modules/MContraction/Gamma3pt.cc \
-  Modules/MContraction/Baryon.cc \
   Modules/MContraction/A2AAslashField.cc \
   Modules/MContraction/DiscLoop.cc \
   Modules/MContraction/Meson.cc \
+  Modules/MContraction/Nucleon.cc \
+  Modules/MContraction/SelfContract.cc \
   Modules/MContraction/WeakEye3pt.cc \
+  Modules/MDistil/BContraction.cc \
+  Modules/MDistil/Baryon2pt.cc \
+  Modules/MDistil/DistilVectors.cc \
+  Modules/MDistil/LapEvec.cc \
+  Modules/MDistil/Noises.cc \
+  Modules/MDistil/PerambFromSolve.cc \
+  Modules/MDistil/Perambulator.cc \
+  Modules/MDistil/g5_multiply.cc \
   Modules/MNPR/Bilinear.cc \
   Modules/MNPR/FourQuark.cc \
   Modules/MNPR/Amputate.cc \
@@ -116,6 +126,7 @@ modules_hpp =\
   Modules/MIO/LoadNersc.hpp \
   Modules/MIO/LoadBinary.hpp \
   Modules/MIO/LoadCoarseEigenPack.hpp \
+  Modules/MIO/LoadPerambulator.hpp \
   Modules/MContraction/WeakEye3pt.hpp \
   Modules/MContraction/WeakMesonDecayKl2.hpp \
   Modules/MContraction/Gamma3pt.hpp \
@@ -124,8 +135,17 @@ modules_hpp =\
   Modules/MContraction/WeakNonEye3pt.hpp \
   Modules/MContraction/DiscLoop.hpp \
   Modules/MContraction/A2AAslashField.hpp \
-  Modules/MContraction/Baryon.hpp \
   Modules/MContraction/Meson.hpp \
+  Modules/MContraction/Nucleon.hpp \
+  Modules/MContraction/SelfContract.hpp \
+  Modules/MDistil/BContraction.hpp \
+  Modules/MDistil/Baryon2pt.hpp \
+  Modules/MDistil/DistilVectors.hpp \
+  Modules/MDistil/LapEvec.hpp \
+  Modules/MDistil/Noises.hpp \
+  Modules/MDistil/PerambFromSolve.hpp \
+  Modules/MDistil/Perambulator.hpp \
+  Modules/MDistil/g5_multiply.hpp \
   Modules/MNPR/FourQuark.hpp \
   Modules/MNPR/Bilinear.hpp \
   Modules/MNPR/Amputate.hpp \

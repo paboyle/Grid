@@ -36,4 +36,74 @@ BEGIN_HADRONS_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
+#define BEGIN_CONTRACTOR_NAMESPACE namespace Contractor{
+BEGIN_CONTRACTOR_NAMESPACE
+
+using Grid::Serializable;
+using Grid::Reader;
+using Grid::Writer;
+using Grid::ComplexD;
+
+class TrajRange: Serializable
+{
+public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(TrajRange,
+                                  unsigned int, start,
+                                  unsigned int, end,
+                                  unsigned int, step);
+};
+
+class GlobalPar: Serializable
+{
+public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(GlobalPar,
+                                  TrajRange, trajCounter,
+                                  unsigned int, nt,
+                                  std::string, diskVectorDir,
+                                  std::string, output);
+};
+
+class A2AMatrixPar: Serializable
+{
+public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(A2AMatrixPar,
+                                  std::string, file,
+                                  std::string, dataset,
+                                  unsigned int, cacheSize,
+                                  std::string, name);
+};
+
+class ProductPar: Serializable
+{
+public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(ProductPar,
+                                  std::string, terms,
+                                  std::vector<std::string>, times,
+                                  std::string, translations,
+                                  bool, translationAverage);
+};
+
+class CorrelatorResult: Serializable
+{
+public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(CorrelatorResult,
+                                  std::vector<Contractor::A2AMatrixPar>,  a2aMatrix,
+                                  ProductPar, contraction,
+                                  std::vector<unsigned int>, times,
+                                  std::vector<ComplexD>, correlator);
+};
+
+struct ContractorPar
+{
+  Contractor::GlobalPar                  global;
+  std::vector<Contractor::A2AMatrixPar>  a2aMatrix;
+  std::vector<Contractor::ProductPar>    product;
+};
+
+// Useful ... so long as there's a ContractorPar named par in scope
+#define TIME_MOD(t) (((t) + par.global.nt) % par.global.nt)
+
+#define END_CONTRACTOR_NAMESPACE }
+END_CONTRACTOR_NAMESPACE
+
 #endif // Hadrons_Contractor_hpp_

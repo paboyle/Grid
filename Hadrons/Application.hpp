@@ -81,7 +81,8 @@ public:
     void run(void);
     // XML parameter file I/O
     void parseParameterFile(const std::string parameterFileName);
-    void saveParameterFile(const std::string parameterFileName, unsigned int prec=15);
+    void saveParameterFile(const std::string &parameterFileName, unsigned int prec=15);
+    void saveParameterFile(const std::string &parameterFileName, const std::vector<std::string> &Except, unsigned int prec=15);
     // schedule computation
     void schedule(void);
     void saveSchedule(const std::string filename);

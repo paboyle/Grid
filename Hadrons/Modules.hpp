@@ -43,6 +43,7 @@
 #include <Hadrons/Modules/MIO/LoadA2AVectors.hpp>
 #include <Hadrons/Modules/MIO/LoadEigenPack.hpp>
 #include <Hadrons/Modules/MIO/LoadNersc.hpp>
+#include <Hadrons/Modules/MIO/LoadPerambulator.hpp>
 #include <Hadrons/Modules/MIO/LoadBinary.hpp>
 #include <Hadrons/Modules/MIO/LoadCoarseEigenPack.hpp>
 #include <Hadrons/Modules/MContraction/WeakEye3pt.hpp>
@@ -53,8 +54,17 @@
 #include <Hadrons/Modules/MContraction/WeakNonEye3pt.hpp>
 #include <Hadrons/Modules/MContraction/DiscLoop.hpp>
 #include <Hadrons/Modules/MContraction/A2AAslashField.hpp>
-#include <Hadrons/Modules/MContraction/Baryon.hpp>
 #include <Hadrons/Modules/MContraction/Meson.hpp>
+#include <Hadrons/Modules/MContraction/Nucleon.hpp>
+#include <Hadrons/Modules/MContraction/SelfContract.hpp>
+#include <Hadrons/Modules/MDistil/BContraction.hpp>
+#include <Hadrons/Modules/MDistil/Baryon2pt.hpp>
+#include <Hadrons/Modules/MDistil/DistilVectors.hpp>
+#include <Hadrons/Modules/MDistil/LapEvec.hpp>
+#include <Hadrons/Modules/MDistil/Noises.hpp>
+#include <Hadrons/Modules/MDistil/PerambFromSolve.hpp>
+#include <Hadrons/Modules/MDistil/Perambulator.hpp>
+#include <Hadrons/Modules/MDistil/g5_multiply.hpp>
 #include <Hadrons/Modules/MNPR/FourQuark.hpp>
 #include <Hadrons/Modules/MNPR/Bilinear.hpp>
 #include <Hadrons/Modules/MNPR/Amputate.hpp>
