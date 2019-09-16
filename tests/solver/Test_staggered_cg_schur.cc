@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 template<class d>
 struct scal {
@@ -49,9 +49,9 @@ int main (int argc, char ** argv)
   typename ImprovedStaggeredFermionR::ImplParams params; 
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian     RBGrid(&Grid);
 
@@ -61,7 +61,7 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu(&Grid); SU3::HotConfiguration(pRNG,Umu);
 
   FermionField    src(&Grid); random(pRNG,src);
-  FermionField result(&Grid); result=zero;
+  FermionField result(&Grid); result=Zero();
   FermionField  resid(&Grid); 
 
   RealD mass=0.1;

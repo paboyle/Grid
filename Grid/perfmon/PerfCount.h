@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -25,8 +25,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_PERFCOUNT_H
 #define GRID_PERFCOUNT_H
 
@@ -47,7 +47,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <x86intrin.h>
 #endif
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 #ifdef __linux__
 static long perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
@@ -84,11 +84,14 @@ inline uint64_t cyclecount(void){
 
 #ifdef __bgq__
 inline uint64_t cyclecount(void){ 
-   uint64_t tmp;
-   asm volatile ("mfspr %0,0x10C" : "=&r" (tmp)  );
-   return tmp;
+  uint64_t tmp;
+  asm volatile ("mfspr %0,0x10C" : "=&r" (tmp)  );
+  return tmp;
 }
 #elif defined __x86_64__
+#ifdef GRID_NVCC
+accelerator_inline uint64_t __rdtsc(void) {  return 0; }
+#endif
 inline uint64_t cyclecount(void){ 
   return __rdtsc();
   //  unsigned int dummy;
@@ -97,7 +100,7 @@ inline uint64_t cyclecount(void){
 #else
 
 inline uint64_t cyclecount(void){ 
-   return 0;
+  return 0;
 }
 
 #endif
@@ -212,7 +215,7 @@ public:
       ::ioctl(cyclefd, PERF_EVENT_IOC_DISABLE, 0);
       ign=::read(fd, &count, sizeof(long long));
       ign+=::read(cyclefd, &cycles, sizeof(long long));
-      assert(ign=2*sizeof(long long));
+      assert(ign==2*sizeof(long long));
     }
     elapsed = cyclecount() - begin;
 #else
@@ -225,8 +228,8 @@ public:
     int N = PerformanceCounterConfigs[PCT].normalisation;
     const char * sn = PerformanceCounterConfigs[N].name ;
     const char * sc = PerformanceCounterConfigs[PCT].name;
-      std::printf("tsc = %llu %s = %llu  %s = %20llu\n (%s/%s) rate = %lf\n", elapsed,sn ,cycles, 
-		  sc, count, sc,sn, (double)count/(double)cycles);
+    std::printf("tsc = %llu %s = %llu  %s = %20llu\n (%s/%s) rate = %lf\n", elapsed,sn ,cycles, 
+		sc, count, sc,sn, (double)count/(double)cycles);
 #else
     std::printf("%llu cycles \n", elapsed );
 #endif
@@ -241,5 +244,6 @@ public:
 
 };
 
-}
+NAMESPACE_END(Grid);
+
 #endif

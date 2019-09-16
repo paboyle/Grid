@@ -115,10 +115,10 @@ void TVPCounterTerms::execute(void)
 
     // Phases and hat{p}^2
     auto &phatsq = envGet(ScalarField, phatsqName_);
-    std::vector<int> &l = env().getGrid()->_fdimensions;
+    Coordinate l = env().getGrid()->FullDimensions();
     
     LOG(Message) << "Calculating shift phases..." << std::endl;
-    phatsq = zero;
+    phatsq = Zero();
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         Real    twoPiL = M_PI*2./l[mu];
@@ -156,7 +156,7 @@ void TVPCounterTerms::execute(void)
     if (!par().output.empty())
     {
         outputData.projection.resize(par().outputMom.size());
-        outputData.lattice_size = env().getGrid()->_fdimensions;
+        outputData.lattice_size = env().getGrid()->FullDimensions().toVector();
         outputData.mass = par().mass;
         for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
         {
@@ -172,7 +172,7 @@ void TVPCounterTerms::execute(void)
             }
             // Calculate phase factors
             auto &momph_ip = envGet(ScalarField, momPhaseName_[i_p]);
-            momph_ip = zero;
+            momph_ip = Zero();
             for (unsigned int j = 0; j < env().getNd()-1; ++j)
             {
                 Real twoPiL = M_PI*2./l[j];

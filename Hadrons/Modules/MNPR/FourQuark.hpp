@@ -116,41 +116,30 @@ std::vector<std::string> TFourQuark<FImpl1, FImpl2>::getOutput(void)
 template <typename FImpl1, typename FImpl2>
 void TFourQuark<FImpl1, FImpl2>::tensorprod(LatticeSpinColourSpinColourMatrix &lret, LatticeSpinColourMatrix a, LatticeSpinColourMatrix b)
 {
-#if 0
-            parallel_for(auto site=lret.begin();site<lret.end();site++) {
-                for (int si; si < 4; ++si){
-                for(int sj; sj <4; ++sj){
-                    for (int ci; ci < 3; ++ci){
-                    for (int cj; cj < 3; ++cj){
-                        for (int sk; sk < 4; ++sk){
-                        for(int sl; sl <4; ++sl){
-                            for (int ck; ck < 3; ++ck){
-                            for (int cl; cl < 3; ++cl){
-                        lret[site]()(si,sj)(ci,cj)(sk,sl)(ck,cl)=a[site]()(si,sj)(ci,cj)*b[site]()(sk,sl)(ck,cl);
-                            }}
-                        }}
-                    }}
-                }}
-        }
-#else 
             // FIXME ; is there a general need for this construct ? In which case we should encapsulate the
             //         below loops in a helper function.
             //LOG(Message) << "sp co mat a is - " << a << std::endl;
             //LOG(Message) << "sp co mat b is - " << b << std::endl;
-            parallel_for(auto site=lret.begin();site<lret.end();site++) {
-            vTComplex left;
+	    auto  lret_v = lret.View();
+	    auto  a_v = a.View();
+	    auto  b_v = b.View();
+#ifdef GRID_NVCC
+#warning "NVCC problem: Removed impossibly slow compile of simple NPR host code in FourQuark.hpp"
+#else
+            thread_foreach( site,lret_v,{
+		vTComplex left;
                 for(int si=0; si < Ns; ++si){
                 for(int sj=0; sj < Ns; ++sj){
                     for (int ci=0; ci < Nc; ++ci){
                     for (int cj=0; cj < Nc; ++cj){
                       //LOG(Message) << "si, sj, ci, cj -  " << si << ", " << sj  << ", "<< ci  << ", "<< cj << std::endl;
-                      left()()() = a[site]()(si,sj)(ci,cj);
+                      left()()() = a_v[site]()(si,sj)(ci,cj);
                       //LOG(Message) << left << std::endl;
-                      lret[site]()(si,sj)(ci,cj)=left()*b[site]();
+                      lret_v[site]()(si,sj)(ci,cj)=left()*b_v[site]();
                     }}
                 }}
-            }
-#endif      
+	      });
+#endif
 }
 
 
@@ -168,6 +157,7 @@ void TFourQuark<FImpl1, FImpl2>::setup(void)
 template <typename FImpl1, typename FImpl2>
 void TFourQuark<FImpl1, FImpl2>::execute(void)
 {
+#ifndef GRID_NVCC
 
 /*********************************************************************************
 
@@ -219,8 +209,8 @@ We have up to 256 of these including the offdiag (G1 != G2).
     //Sout = Grid::QCD::PropUtils::PhaseProps(Sout,pout);
     
     //find p.x for in and out so phase can be accounted for in propagators
-    pdotxin=zero;
-    pdotxout=zero;
+    pdotxin=Zero();
+    pdotxout=Zero();
     for (unsigned int mu = 0; mu < 4; ++mu)
     {
         Real TwoPiL =  M_PI * 2.0/ latt_size[mu];
@@ -231,7 +221,6 @@ We have up to 256 of these including the offdiag (G1 != G2).
     Sin = Sin*exp(-Ci*pdotxin); //phase corrections
     Sout = Sout*exp(-Ci*pdotxout);
 
-
     //Set up Gammas 
     std::vector<Gamma> gammavector;
      for( int i=1; i<Gamma::nGamma; i+=2){
@@ -239,7 +228,7 @@ We have up to 256 of these including the offdiag (G1 != G2).
          gammavector.push_back(Gamma(gam));
        }
     
-    lret = zero;
+    lret = Zero();
     if (fullbasis == true){ // all combinations of mu and nu
         result.fourquark.resize(Gamma::nGamma/2*Gamma::nGamma/2);
         for( int mu=0; mu<Gamma::nGamma/2; mu++){ 
@@ -248,7 +237,7 @@ We have up to 256 of these including the offdiag (G1 != G2).
                 LatticeSpinColourMatrix     bilinear_nu(env().getGrid());
                 bilinear_nu = g5*adj(Sout)*g5*gammavector[nu]*Sin;
                 LOG(Message) << "bilinear_nu for nu = " << nu << " is - " << bilinear_mu << std::endl;
-                result.fourquark[mu*Gamma::nGamma/2 + nu] = zero;
+                result.fourquark[mu*Gamma::nGamma/2 + nu] = Zero();
                 tensorprod(lret,bilinear_mu,bilinear_nu);
                 result.fourquark[mu*Gamma::nGamma/2 + nu] = sum(lret);
             }
@@ -259,12 +248,13 @@ We have up to 256 of these including the offdiag (G1 != G2).
         //for( int mu=0; mu<Gamma::nGamma/2; mu++ ){
             bilinear_mu = g5*adj(Sout)*g5*gammavector[mu]*Sin;
             //LOG(Message) << "bilinear_mu for mu = " << mu << " is - " << bilinear_mu << std::endl;
-            result.fourquark[mu] = zero;
+            result.fourquark[mu] = Zero();
             tensorprod(lret,bilinear_mu,bilinear_mu); //tensor outer product
             result.fourquark[mu] = sum(lret);
         }
     }
     write(writer, "fourquark", result.fourquark);
+#endif
 }
 
 END_MODULE_NAMESPACE

@@ -132,7 +132,7 @@ void TDiv<SImpl>::execute(void)
     std::cout << std::endl;
 
     auto &div = envGet(ComplexField, getName());
-    div = zero;
+    div = Zero();
     for (unsigned int mu = 0; mu < nd; ++mu)
     {
         auto &op = envGet(ComplexField, par().op[mu]);

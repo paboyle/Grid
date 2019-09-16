@@ -28,7 +28,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 #include <Grid/GridCore.h>
 
-namespace Grid { 
+NAMESPACE_BEGIN(Grid); 
 
 /*Construct from an MPI communicator*/
 void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
@@ -47,7 +47,7 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
   _ShmSetup=1;
 }
 
-void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,Grid_MPI_Comm & optimal_comm)
+void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
 {
   optimal_comm = WorldComm;
 }
@@ -84,10 +84,10 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   _ShmAlloc=1;
 };
 
-  ////////////////////////////////////////////////////////
-  // Global shared functionality finished
-  // Now move to per communicator functionality
-  ////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////
+// Global shared functionality finished
+// Now move to per communicator functionality
+////////////////////////////////////////////////////////
 void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
 {
   assert(GlobalSharedMemory::ShmAlloc()==1);
@@ -125,4 +125,5 @@ void *SharedMemory::ShmBufferTranslate(int rank,void * local_p)
 SharedMemory::~SharedMemory()
 {};
 
-}
+NAMESPACE_END(Grid); 
+

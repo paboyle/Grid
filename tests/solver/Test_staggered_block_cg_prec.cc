@@ -30,7 +30,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 template<class d>
 struct scal {
@@ -54,9 +54,9 @@ int main (int argc, char ** argv)
 
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
@@ -72,7 +72,7 @@ int main (int argc, char ** argv)
 #if 1
   random(pRNG5,src);
 #else
-  src=zero;
+  src=Zero();
   ComplexField coor(FGrid);
   LatticeCoordinate(coor,0);
   for(int ss=0;ss<FGrid->oSites();ss++){
@@ -84,7 +84,7 @@ int main (int argc, char ** argv)
   }
 #endif
   FermionField src_o(FrbGrid);   pickCheckerboard(Odd,src_o,src);
-  FermionField result_o(FrbGrid); result_o=zero; 
+  FermionField result_o(FrbGrid); result_o=Zero(); 
   RealD nrm = norm2(src);
 
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
@@ -117,8 +117,8 @@ int main (int argc, char ** argv)
   FermionField src4d_o(UrbGrid);   pickCheckerboard(Odd,src4d_o,src4d);
   FermionField result4d_o(UrbGrid); 
 
+  result4d_o=Zero();
   double deodoe_flops=(16*(3*(6+8+8)) + 15*3*2)*volume; // == 66*16 +  == 1146
-  result4d_o=zero;
   {
     double t1=usecond();
     CG(HermOp4d,src4d_o,result4d_o);
@@ -138,7 +138,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Calling 5d CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   Ds.ZeroCounters();
-  result_o=zero;
+  result_o=Zero();
   {
     double t1=usecond();
     CG(HermOp,src_o,result_o);
@@ -157,7 +157,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Calling multiRHS CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   Ds.ZeroCounters();
-  result_o=zero;
+  result_o=Zero();
   {
     double t1=usecond();
     mCG(HermOp,src_o,result_o);
@@ -177,7 +177,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Calling Block CGrQ for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   Ds.ZeroCounters();
-  result_o=zero;
+  result_o=Zero();
   {
     double t1=usecond();
     BCGrQ(HermOp,src_o,result_o);
@@ -196,7 +196,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Calling Block CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   Ds.ZeroCounters();
-  result_o=zero;
+  result_o=Zero();
   {
     double t1=usecond();
     BCG(HermOp,src_o,result_o);
@@ -216,7 +216,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   std::vector<FermionField> src_v   (Ls,UrbGrid);
   std::vector<FermionField> result_v(Ls,UrbGrid);
-  for(int s=0;s<Ls;s++) result_v[s] = zero;
+  for(int s=0;s<Ls;s++) result_v[s] = Zero();
   for(int s=0;s<Ls;s++) {
     FermionField src4(UGrid);
     ExtractSlice(src4,src,s,0);

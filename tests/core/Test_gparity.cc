@@ -31,7 +31,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 //typedef GparityDomainWallFermionD GparityDiracOp;
 //typedef DomainWallFermionD StandardDiracOp;
@@ -84,18 +84,18 @@ int main (int argc, char ** argv)
   //const int L =4;
   //std::vector<int> latt_2f(Nd,L);
 
-  std::vector<int> latt_2f = GridDefaultLatt();
-  std::vector<int> latt_1f(latt_2f); latt_1f[nu] = 2*latt_2f[nu];
+  Coordinate latt_2f = GridDefaultLatt();
+  Coordinate latt_1f(latt_2f); latt_1f[nu] = 2*latt_2f[nu];
   int L = latt_2f[nu];
 
 
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexType::Nsimd());
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplexType::Nsimd());
 
   std::cout << GridLogMessage << "SIMD layout: ";
   for(int i=0;i<simd_layout.size();i++) std::cout << simd_layout[i] << " ";
   std::cout << std::endl;
   
-  std::vector<int> mpi_layout  = GridDefaultMpi(); //node layout
+  Coordinate mpi_layout  = GridDefaultMpi(); //node layout
 
   GridCartesian         * UGrid_1f   = SpaceTimeGrid::makeFourDimGrid(latt_1f, simd_layout, mpi_layout);
   GridRedBlackCartesian * UrbGrid_1f = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid_1f);
@@ -127,7 +127,7 @@ int main (int argc, char ** argv)
   tmpsrc=src*2.0;
   PokeIndex<0>(src_2f,tmpsrc,1);
 
-  StandardFermionField result_1f(FGrid_1f); result_1f=zero;
+  StandardFermionField result_1f(FGrid_1f); result_1f=Zero();
   StandardGaugeField Umu_1f(UGrid_1f); 
   Replicate(Umu_2f,Umu_1f);
 
@@ -166,7 +166,7 @@ int main (int argc, char ** argv)
   StandardFermionField    src_o_1f(FrbGrid_1f);
   StandardFermionField result_o_1f(FrbGrid_1f);
   pickCheckerboard(Odd,src_o_1f,src_1f);
-  result_o_1f=zero;
+  result_o_1f=Zero();
 
   SchurDiagMooeeOperator<StandardDiracOp,StandardFermionField> HermOpEO(Ddwf);
   ConjugateGradient<StandardFermionField> CG(1.0e-8,10000);
@@ -258,18 +258,18 @@ int main (int argc, char ** argv)
 
   }
 
-  GparityFermionField result_2f(FGrid_2f); result_2f=zero;
+  GparityFermionField result_2f(FGrid_2f); result_2f=Zero();
   GparityFermionField    src_o_2f(FrbGrid_2f);
   GparityFermionField result_o_2f(FrbGrid_2f);
   pickCheckerboard(Odd,src_o_2f,src_2f);
-  result_o_2f=zero;
+  result_o_2f=Zero();
 
   ConjugateGradient<GparityFermionField> CG2f(1.0e-8,10000);
   SchurDiagMooeeOperator<GparityDiracOp,GparityFermionField> HermOpEO2f(GPDdwf);
   CG2f(HermOpEO2f,src_o_2f,result_o_2f);
 
-  std::cout << "2f cb "<<result_o_2f.checkerboard<<std::endl;
-  std::cout << "1f cb "<<result_o_1f.checkerboard<<std::endl;
+  std::cout << "2f cb "<<result_o_2f.Checkerboard()<<std::endl;
+  std::cout << "1f cb "<<result_o_1f.Checkerboard()<<std::endl;
 
   std::cout << " result norms " <<norm2(result_o_2f)<<" " <<norm2(result_o_1f)<<std::endl;
 
@@ -278,14 +278,14 @@ int main (int argc, char ** argv)
   StandardFermionField    res0  (FGrid_2f); 
   StandardFermionField    res1  (FGrid_2f); 
 
-  res0=zero;
-  res1=zero;
+  res0=Zero();
+  res1=Zero();
 
   res0o = PeekIndex<0>(result_o_2f,0);
   res1o = PeekIndex<0>(result_o_2f,1);
 
-  std::cout << "res cb "<<res0o.checkerboard<<std::endl;
-  std::cout << "res cb "<<res1o.checkerboard<<std::endl;
+  std::cout << "res cb "<<res0o.Checkerboard()<<std::endl;
+  std::cout << "res cb "<<res1o.Checkerboard()<<std::endl;
 
   setCheckerboard(res0,res0o);
   setCheckerboard(res1,res1o);
@@ -298,7 +298,7 @@ int main (int argc, char ** argv)
 
   replica = where( xcoor_1f5 >= Integer(L), replica1,replica0 );
 
-  replica0 = zero;
+  replica0 = Zero();
   setCheckerboard(replica0,result_o_1f);
 
   std::cout << "Norm2 solutions is " <<norm2(replica)<<" "<< norm2(replica0)<<std::endl;

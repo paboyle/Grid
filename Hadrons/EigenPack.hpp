@@ -180,7 +180,7 @@ namespace EigenPackIo
                           const unsigned int size, bool multiFile, 
                           GridBase *gridIo = nullptr)
     {
-        GridBase             *grid = evec[0]._grid;
+        GridBase             *grid = evec[0].Grid();
         std::unique_ptr<TIo> ioBuf{nullptr}; 
         std::unique_ptr<T>   testBuf{nullptr};
         ScidacWriter         binWriter(grid->IsBoss());

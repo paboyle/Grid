@@ -1,23 +1,22 @@
 /*
  *  Policy classes for the HMC
  *  Author: Guido Cossu
-*/
+ */
 
 #ifndef ADJOINT_H
 #define ADJOINT_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 /*
-* This is an helper class for the HMC
-* Should contain only the data for the adjoint representation
-* and the facility to convert from the fundamental -> adjoint
-*/
+ * This is an helper class for the HMC
+ * Should contain only the data for the adjoint representation
+ * and the facility to convert from the fundamental -> adjoint
+ */
 
 template <int ncolour>
 class AdjointRep {
- public:
+public:
   // typdef to be used by the Representations class in HMC to get the
   // types for the higher representation fields
   typedef typename SU_Adjoint<ncolour>::LatticeAdjMatrix LatticeMatrix;
@@ -38,13 +37,13 @@ class AdjointRep {
     // where t^a is the generator in the fundamental
     // T_F is 1/2 for the fundamental representation
     conformable(U, Uin);
-    U = zero;
-    LatticeColourMatrix tmp(Uin._grid);
+    U = Zero();
+    LatticeColourMatrix tmp(Uin.Grid());
 
     Vector<typename SU<ncolour>::Matrix> ta(Dimension);
 
     // Debug lines
-    // LatticeMatrix uno(Uin._grid);
+    // LatticeMatrix uno(Uin.Grid());
     // uno = 1.0;
     ////////////////
 
@@ -64,29 +63,29 @@ class AdjointRep {
       // Check matrix U_mu, must be real orthogonal
       // reality
       /*
-      LatticeMatrix Ucheck = U_mu - conjugate(U_mu);
-      std::cout << GridLogMessage << "Reality check: " << norm2(Ucheck) <<
-      std::endl;
+	LatticeMatrix Ucheck = U_mu - conjugate(U_mu);
+	std::cout << GridLogMessage << "Reality check: " << norm2(Ucheck) <<
+	std::endl;
 
-      Ucheck = U_mu * adj(U_mu) - uno;
-      std::cout << GridLogMessage << "orthogonality check: " << norm2(Ucheck) <<
-      std::endl;
+	Ucheck = U_mu * adj(U_mu) - uno;
+	std::cout << GridLogMessage << "orthogonality check: " << norm2(Ucheck) <<
+	std::endl;
       */
     }
   }
 
   LatticeGaugeField RtoFundamentalProject(const LatticeField &in,
                                           Real scale = 1.0) const {
-    LatticeGaugeField out(in._grid);
-    out = zero;
+    LatticeGaugeField out(in.Grid());
+    out = Zero();
 
     for (int mu = 0; mu < Nd; mu++) {
-      LatticeColourMatrix out_mu(in._grid);  // fundamental representation
+      LatticeColourMatrix out_mu(in.Grid());  // fundamental representation
       LatticeMatrix in_mu = peekLorentz(in, mu);
 
-      out_mu = zero;
+      out_mu = Zero();
 
-      typename SU<ncolour>::LatticeAlgebraVector h(in._grid);
+      typename SU<ncolour>::LatticeAlgebraVector h(in.Grid());
       projectOnAlgebra(h, in_mu, double(Nc) * 2.0);  // factor C(r)/C(fund)
       FundamentalLieAlgebraMatrix(h, out_mu);   // apply scale only once
       pokeLorentz(out, out_mu, mu);
@@ -96,21 +95,21 @@ class AdjointRep {
     return out;
   }
 
- private:
+private:
   void projectOnAlgebra(typename SU<ncolour>::LatticeAlgebraVector &h_out,
                         const LatticeMatrix &in, Real scale = 1.0) const {
     SU_Adjoint<ncolour>::projectOnAlgebra(h_out, in, scale);
   }
 
   void FundamentalLieAlgebraMatrix(
-      typename SU<ncolour>::LatticeAlgebraVector &h,
-      typename SU<ncolour>::LatticeMatrix &out, Real scale = 1.0) const {
+				   typename SU<ncolour>::LatticeAlgebraVector &h,
+				   typename SU<ncolour>::LatticeMatrix &out, Real scale = 1.0) const {
     SU<ncolour>::FundamentalLieAlgebraMatrix(h, out, scale);
   }
 };
 
 typedef AdjointRep<Nc> AdjointRepresentation;
-}
-}
+
+NAMESPACE_END(Grid);
 
 #endif

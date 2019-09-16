@@ -29,7 +29,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Grid.h>
 
 using namespace Grid;
-using namespace QCD;
 
 typedef PeriodicGaugeImpl<QedGImplR>  QedPeriodicGImplR;
 typedef PhotonR::GaugeField           EmField;
@@ -45,9 +44,9 @@ int main(int argc, char *argv[])
   std::cout << GridLogMessage << "Grid initialized" << std::endl;
   
   // QED stuff
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(4, vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(4, vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
   GridCartesian    grid(latt_size,simd_layout,mpi_layout);
   GridParallelRNG  pRNG(&grid);
   PhotonR          photon(&grid, PhotonR::Gauge::coulomb, PhotonR::ZmScheme::qedL);
@@ -77,7 +76,7 @@ int main(int argc, char *argv[])
 
       std::cout << GridLogMessage << "Spatial zero-mode norm 2" << std::endl;
       sliceSum(a, zm, grid.Nd() - 1);
-      for (unsigned int t = 0; t < latt_size.back(); ++t)
+      for (unsigned int t = 0; t < latt_size.size(); ++t)
       {
         std::cout << GridLogMessage << "t = " << t << " " << std::sqrt(norm2(zm[t])) << std::endl;
       }
@@ -85,7 +84,7 @@ int main(int argc, char *argv[])
       // Calculate divergence
       EmComp diva(&grid), amu(&grid);
 
-      diva = zero;
+      diva = Zero();
       for (unsigned int mu = 0; mu < grid.Nd(); ++mu)
       {
         amu   = peekLorentz(a, mu);

@@ -28,13 +28,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
-using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
-
-typedef WilsonFermion5D<DomainWallVec5dImplR> WilsonFermion5DR;
-typedef WilsonFermion5D<DomainWallVec5dImplF> WilsonFermion5DF;
-typedef WilsonFermion5D<DomainWallVec5dImplD> WilsonFermion5DD;
 
 
 std::vector<int> L_list;
@@ -112,8 +106,8 @@ public:
     int nmu=0;
     int maxlat=32;
 
-    std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
-    std::vector<int> mpi_layout  = GridDefaultMpi();
+    Coordinate simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
+    Coordinate mpi_layout  = GridDefaultMpi();
 
     for(int mu=0;mu<Nd;mu++) if (mpi_layout[mu]>1) nmu++;
 
@@ -128,7 +122,7 @@ public:
     for(int lat=4;lat<=maxlat;lat+=4){
       for(int Ls=8;Ls<=8;Ls*=2){
 
-	std::vector<int> latt_size  ({lat*mpi_layout[0],
+	Coordinate latt_size  ({lat*mpi_layout[0],
 	      lat*mpi_layout[1],
 	      lat*mpi_layout[2],
 	      lat*mpi_layout[3]});
@@ -158,11 +152,9 @@ public:
 
 	  dbytes=0;
 	  ncomm=0;
-#ifdef GRID_OMP
-#pragma omp parallel for num_threads(Grid::CartesianCommunicator::nCommThreads)
-#endif
-	  for(int dir=0;dir<8;dir++){
 
+	  thread_for(dir,8,{
+		     
 	    double tbytes;
 	    int mu =dir % 4;
 
@@ -177,26 +169,15 @@ public:
 		int comm_proc = mpi_layout[mu]-1;
 		Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
 	      }
-#ifdef GRID_OMP
-	int tid = omp_get_thread_num(); 
-#else 
-        int tid = dir;
-#endif
 	      tbytes= Grid.StencilSendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,
 						 (void *)&rbuf[dir][0], recv_from_rank,
-						 bytes,tid);
-	  
-#ifdef GRID_OMP
-#pragma omp atomic
-#endif
-	      ncomm++;
-
-#ifdef GRID_OMP
-#pragma omp atomic
-#endif
-	      dbytes+=tbytes;
+						 bytes,dir);
+	      thread_critical {
+		ncomm++;
+		dbytes+=tbytes;
+	      }
 	    }
-	  }
+          });
 	  Grid.Barrier();
 	  double stop=usecond();
 	  t_time[i] = stop-start; // microseconds
@@ -209,7 +190,7 @@ public:
 
 	dbytes=dbytes*ppn;
 	double xbytes    = dbytes*0.5;
-	double rbytes    = dbytes*0.5;
+	//	double rbytes    = dbytes*0.5;
 	double bidibytes = dbytes;
 
 	std::cout<<GridLogMessage << std::setw(4) << lat<<"\t"<<Ls<<"\t"
@@ -233,8 +214,8 @@ public:
     typedef Lattice< iVector< vReal,Nvec> > LatticeVec;
     typedef iVector<vReal,Nvec> Vec;
 
-    std::vector<int> simd_layout = GridDefaultSimd(Nd,vReal::Nsimd());
-    std::vector<int> mpi_layout  = GridDefaultMpi();
+    Coordinate simd_layout = GridDefaultSimd(Nd,vReal::Nsimd());
+    Coordinate mpi_layout  = GridDefaultMpi();
 
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << "= Benchmarking a*x + y bandwidth"<<std::endl;
@@ -242,7 +223,7 @@ public:
     std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<"\t\t seconds"<< "\t\tGB/s / node"<<std::endl;
     std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
   
-    uint64_t NP;
+    //    uint64_t NP;
     uint64_t NN;
 
 
@@ -252,11 +233,11 @@ public:
     GridSerialRNG          sRNG;      sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
     for(int lat=8;lat<=lmax;lat+=4){
 
-      std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
+      Coordinate latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
       int64_t vol= latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
-      NP= Grid.RankCount();
+      //      NP= Grid.RankCount();
       NN =Grid.NodeCount();
 
       Vec rn ; random(sRNG,rn);
@@ -271,8 +252,11 @@ public:
       double start=usecond();
       for(int i=0;i<Nloop;i++){
 	z=a*x-y;
-        x._odata[0]=z._odata[0]; // force serial dependency to prevent optimise away
-        y._odata[4]=z._odata[4];
+	auto x_v = x.View();
+	auto y_v = y.View();
+	auto z_v = z.View();
+        x_v[0]=z_v[0]; // force serial dependency to prevent optimise away
+        y_v[4]=z_v[4];
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
@@ -286,9 +270,10 @@ public:
     }
   };
 
+#if 0
   static double DWF5(int Ls,int L)
   {
-    RealD mass=0.1;
+    //    RealD mass=0.1;
     RealD M5  =1.8;
 
     double mflops;
@@ -300,25 +285,25 @@ public:
     // Set/Get the layout & grid size
     ///////////////////////////////////////////////////////
     int threads = GridThread::GetThreads();
-    std::vector<int> mpi = GridDefaultMpi(); assert(mpi.size()==4);
-    std::vector<int> local({L,L,L,L});
+    Coordinate mpi = GridDefaultMpi(); assert(mpi.size()==4);
+    Coordinate local({L,L,L,L});
 
-    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(std::vector<int>({64,64,64,64}), 
+    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(Coordinate({64,64,64,64}), 
 								       GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
     uint64_t NP = TmpGrid->RankCount();
     uint64_t NN = TmpGrid->NodeCount();
     NN_global=NN;
     uint64_t SHM=NP/NN;
 
-    std::vector<int> internal;
-    if      ( SHM == 1 )   internal = std::vector<int>({1,1,1,1});
-    else if ( SHM == 2 )   internal = std::vector<int>({2,1,1,1});
-    else if ( SHM == 4 )   internal = std::vector<int>({2,2,1,1});
-    else if ( SHM == 8 )   internal = std::vector<int>({2,2,2,1});
+    Coordinate internal;
+    if      ( SHM == 1 )   internal = Coordinate({1,1,1,1});
+    else if ( SHM == 2 )   internal = Coordinate({2,1,1,1});
+    else if ( SHM == 4 )   internal = Coordinate({2,2,1,1});
+    else if ( SHM == 8 )   internal = Coordinate({2,2,2,1});
     else assert(0);
 
-    std::vector<int> nodes({mpi[0]/internal[0],mpi[1]/internal[1],mpi[2]/internal[2],mpi[3]/internal[3]});
-    std::vector<int> latt4({local[0]*nodes[0],local[1]*nodes[1],local[2]*nodes[2],local[3]*nodes[3]});
+    Coordinate nodes({mpi[0]/internal[0],mpi[1]/internal[1],mpi[2]/internal[2],mpi[3]/internal[3]});
+    Coordinate latt4({local[0]*nodes[0],local[1]*nodes[1],local[2]*nodes[2],local[3]*nodes[3]});
 
     ///////// Welcome message ////////////
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
@@ -347,8 +332,11 @@ public:
     std::cout << GridLogMessage << "Initialised RNGs" << std::endl;
 
     ///////// Source preparation ////////////
-    LatticeFermion src   (sFGrid); random(RNG5,src);
+    LatticeFermion src   (sFGrid); 
     LatticeFermion tmp   (sFGrid);
+    std::cout << GridLogMessage << "allocated src and tmp" << std::endl;
+    random(RNG5,src);
+    std::cout << GridLogMessage << "intialised random source" << std::endl;
 
     RealD N2 = 1.0/::sqrt(norm2(src));
     src = src*N2;
@@ -376,19 +364,19 @@ public:
 #endif
       controls Cases [] = {
 #ifdef AVX512
-	{ QCD::WilsonKernelsStatic::OptInlineAsm , QCD::WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
-	{ QCD::WilsonKernelsStatic::OptInlineAsm , QCD::WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptInlineAsm ,  WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptInlineAsm ,  WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  },
 #endif
-	{ QCD::WilsonKernelsStatic::OptHandUnroll, QCD::WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
-	{ QCD::WilsonKernelsStatic::OptHandUnroll, QCD::WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  },
-	{ QCD::WilsonKernelsStatic::OptGeneric   , QCD::WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
-	{ QCD::WilsonKernelsStatic::OptGeneric   , QCD::WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  }
+	{  WilsonKernelsStatic::OptHandUnroll,  WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptHandUnroll,  WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptGeneric   ,  WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptGeneric   ,  WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  }
       }; 
 
       for(int c=0;c<num_cases;c++) {
 
-	QCD::WilsonKernelsStatic::Comms = Cases[c].CommsOverlap;
-	QCD::WilsonKernelsStatic::Opt   = Cases[c].Opt;
+	 WilsonKernelsStatic::Comms = Cases[c].CommsOverlap;
+	 WilsonKernelsStatic::Opt   = Cases[c].Opt;
 	CartesianCommunicator::SetCommunicatorPolicy(Cases[c].CommsAsynch);
 
 	std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
@@ -464,6 +452,7 @@ public:
     }
     return mflops_best;
   }
+#endif
 
   static double DWF(int Ls,int L, double & robust)
   {
@@ -479,25 +468,25 @@ public:
     // Set/Get the layout & grid size
     ///////////////////////////////////////////////////////
     int threads = GridThread::GetThreads();
-    std::vector<int> mpi = GridDefaultMpi(); assert(mpi.size()==4);
-    std::vector<int> local({L,L,L,L});
+    Coordinate mpi = GridDefaultMpi(); assert(mpi.size()==4);
+    Coordinate local({L,L,L,L});
 
-    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(std::vector<int>({64,64,64,64}), 
+    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(Coordinate({64,64,64,64}), 
 								       GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
     uint64_t NP = TmpGrid->RankCount();
     uint64_t NN = TmpGrid->NodeCount();
     NN_global=NN;
     uint64_t SHM=NP/NN;
 
-    std::vector<int> internal;
-    if      ( SHM == 1 )   internal = std::vector<int>({1,1,1,1});
-    else if ( SHM == 2 )   internal = std::vector<int>({2,1,1,1});
-    else if ( SHM == 4 )   internal = std::vector<int>({2,2,1,1});
-    else if ( SHM == 8 )   internal = std::vector<int>({2,2,2,1});
+    Coordinate internal;
+    if      ( SHM == 1 )   internal = Coordinate({1,1,1,1});
+    else if ( SHM == 2 )   internal = Coordinate({2,1,1,1});
+    else if ( SHM == 4 )   internal = Coordinate({2,2,1,1});
+    else if ( SHM == 8 )   internal = Coordinate({2,2,2,1});
     else assert(0);
 
-    std::vector<int> nodes({mpi[0]/internal[0],mpi[1]/internal[1],mpi[2]/internal[2],mpi[3]/internal[3]});
-    std::vector<int> latt4({local[0]*nodes[0],local[1]*nodes[1],local[2]*nodes[2],local[3]*nodes[3]});
+    Coordinate nodes({mpi[0]/internal[0],mpi[1]/internal[1],mpi[2]/internal[2],mpi[3]/internal[3]});
+    Coordinate latt4({local[0]*nodes[0],local[1]*nodes[1],local[2]*nodes[2],local[3]*nodes[3]});
 
     ///////// Welcome message ////////////
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
@@ -531,9 +520,11 @@ public:
     LatticeFermion tmp   (FGrid);
 
     RealD N2 = 1.0/::sqrt(norm2(src));
+    std::cout<<GridLogMessage << "Normalising src  "<< N2 <<std::endl;
     src = src*N2;
     
     LatticeGaugeField Umu(UGrid);  SU3::HotConfiguration(RNG4,Umu); 
+    
 
     DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
@@ -543,12 +534,14 @@ public:
     {
       LatticeGaugeField Umu5d(FGrid); 
       std::vector<LatticeColourMatrix> U(4,FGrid);
-      for(int ss=0;ss<Umu._grid->oSites();ss++){
+      auto Umu_v = Umu.View();
+      auto Umu5d_v = Umu5d.View();
+      for(int ss=0;ss<Umu.Grid()->oSites();ss++){
 	for(int s=0;s<Ls;s++){
-	  Umu5d._odata[Ls*ss+s] = Umu._odata[ss];
+	  Umu5d_v[Ls*ss+s] = Umu_v[ss];
 	}
       }
-      ref = zero;
+      ref = Zero();
       for(int mu=0;mu<Nd;mu++){
 	U[mu] = PeekIndex<LorentzIndex>(Umu5d,mu);
       }
@@ -584,19 +577,19 @@ public:
 #endif
       controls Cases [] = {
 #ifdef AVX512
-	{ QCD::WilsonKernelsStatic::OptInlineAsm , QCD::WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
-	{ QCD::WilsonKernelsStatic::OptInlineAsm , QCD::WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptInlineAsm ,  WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptInlineAsm ,  WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  },
 #endif
-	{ QCD::WilsonKernelsStatic::OptHandUnroll, QCD::WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
-	{ QCD::WilsonKernelsStatic::OptHandUnroll, QCD::WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  },
-	{ QCD::WilsonKernelsStatic::OptGeneric   , QCD::WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
-	{ QCD::WilsonKernelsStatic::OptGeneric   , QCD::WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  }
+	{  WilsonKernelsStatic::OptHandUnroll,  WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptHandUnroll,  WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptGeneric   ,  WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptGeneric   ,  WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  }
       }; 
 
       for(int c=0;c<num_cases;c++) {
-
-	QCD::WilsonKernelsStatic::Comms = Cases[c].CommsOverlap;
-	QCD::WilsonKernelsStatic::Opt   = Cases[c].Opt;
+	
+	WilsonKernelsStatic::Comms = Cases[c].CommsOverlap;
+	WilsonKernelsStatic::Opt   = Cases[c].Opt;
 	CartesianCommunicator::SetCommunicatorPolicy(Cases[c].CommsAsynch);
 
 	std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
@@ -663,8 +656,10 @@ public:
 	setCheckerboard(r_eo,r_o);
 	setCheckerboard(r_eo,r_e);
 	err = r_eo-ref; 
-	std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-	assert((norm2(err)<1.0e-4));
+	RealD absref = norm2(ref);
+	RealD abserr = norm2(err);
+	std::cout<<GridLogMessage << "norm diff   "<< abserr << " / " << absref<<std::endl;
+	assert(abserr<1.0e-4);
 
       }
       robust = mflops_worst/mflops_best;
@@ -710,10 +705,10 @@ int main (int argc, char ** argv)
   }
 #if 1
   int sel=2;
-  std::vector<int> L_list({8,12,16,24});
+  Coordinate L_list({8,12,16,24});
 #else
   int sel=1;
-  std::vector<int> L_list({8,12});
+  Coordinate L_list({8,12});
 #endif
   int selm1=sel-1;
   std::vector<double> robust_list;
@@ -729,7 +724,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     for(int l=0;l<L_list.size();l++){
       double robust;
-      wilson.push_back(Benchmark::DWF(1,L_list[l],robust));
+      wilson.push_back(Benchmark::DWF(Ls,L_list[l],robust));
     }
   }
 
@@ -747,23 +742,13 @@ int main (int argc, char ** argv)
   }
 
   if ( do_dwf ) {
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    std::cout<<GridLogMessage << " Domain wall dslash 4D vectorised" <<std::endl;
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    for(int l=0;l<L_list.size();l++){
-      dwf5.push_back(Benchmark::DWF5(Ls,L_list[l]));
-    }
-
-  }
-
-  if ( do_dwf ) {
 
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Summary table Ls="<<Ls <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "L \t\t Wilson \t DWF4 \t DWF5 " <<std::endl;
+  std::cout<<GridLogMessage << "L \t\t Wilson \t DWF4 " <<std::endl;
   for(int l=0;l<L_list.size();l++){
-    std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]<<" \t "<<dwf4[l]<<" \t "<<dwf5[l] <<std::endl;
+    std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]<<" \t "<<dwf4[l] <<std::endl;
   }
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   }
@@ -787,9 +772,9 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Per Node Summary table Ls="<<Ls <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << " L \t\t Wilson\t\t DWF4  \t\t DWF5 " <<std::endl;
+  std::cout<<GridLogMessage << " L \t\t Wilson\t\t DWF4  " <<std::endl;
   for(int l=0;l<L_list.size();l++){
-    std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]/NN<<" \t "<<dwf4[l]/NN<<" \t "<<dwf5[l] /NN<<std::endl;
+    std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]/NN<<" \t "<<dwf4[l]/NN<<std::endl;
   }
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 
@@ -801,7 +786,6 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 
   }
-
 
   Grid_finalize();
 }

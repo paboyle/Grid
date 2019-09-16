@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -25,34 +25,33 @@ Author: Vera Guelpers <V.M.Guelpers@soton.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef  GRID_QCD_DOMAIN_WALL_FERMION_H
 #define  GRID_QCD_DOMAIN_WALL_FERMION_H
 
 #include <Grid/qcd/action/fermion/FermionCore.h>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-  namespace QCD {
+template<class Impl>
+class DomainWallFermion : public CayleyFermion5D<Impl>
+{
+public:
+  INHERIT_IMPL_TYPES(Impl);
+public:
 
-    template<class Impl>
-    class DomainWallFermion : public CayleyFermion5D<Impl>
-    {
-    public:
-     INHERIT_IMPL_TYPES(Impl);
-    public:
+  void FreePropagator(const FermionField &in,FermionField &out,RealD mass,std::vector<Complex> boundary, std::vector<double> twist, bool fiveD) {
+	FermionField in_k(in.Grid());
+	FermionField prop_k(in.Grid());
 
-      void FreePropagator(const FermionField &in,FermionField &out,RealD mass,std::vector<Complex> boundary, std::vector<double> twist, bool fiveD) {
-	FermionField in_k(in._grid);
-	FermionField prop_k(in._grid);
-
-	FFT theFFT((GridCartesian *) in._grid);
+	FFT theFFT((GridCartesian *) in.Grid());
 
 	//phase for boundary condition
-	ComplexField coor(in._grid);
-	ComplexField ph(in._grid);  ph = zero;
-	FermionField in_buf(in._grid); in_buf = zero;
+	ComplexField coor(in.Grid());
+	ComplexField ph(in.Grid());  ph = Zero();
+	FermionField in_buf(in.Grid()); in_buf = Zero();
+	typedef typename Simd::scalar_type Scalar;
 	Scalar ci(0.0,1.0);
 	assert(twist.size() == Nd);//check that twist is Nd
 	assert(boundary.size() == Nd);//check that boundary conditions is Nd
@@ -63,12 +62,11 @@ namespace Grid {
 	  // Shift coordinate lattice index by 1 to account for 5th dimension.
           LatticeCoordinate(coor, nu + shift);
 	  double boundary_phase = ::acos(real(boundary[nu]));
-	  ph = ph + boundary_phase*coor*((1./(in._grid->_fdimensions[nu+shift])));
+	  ph = ph + boundary_phase*coor*((1./(in.Grid()->_fdimensions[nu+shift])));
 	  //momenta for propagator shifted by twist+boundary
 	  twist[nu] = twist[nu] + boundary_phase/((2.0*M_PI));
 	}
 	in_buf = exp(ci*ph*(-1.0))*in;
-
 
 	if(fiveD){//FFT only on temporal and spatial dimensions
           std::vector<int> mask(Nd+1,1); mask[0] = 0;
@@ -82,7 +80,7 @@ namespace Grid {
 	  theFFT.FFT_all_dim(out,prop_k,FFT::backward);
         }
 	//phase for boundary condition
-	out = out * exp(ci*ph);
+	out = out * exp(Scalar(2.0*M_PI)*ci*ph);
       };
 
       virtual void FreePropagator(const FermionField &in,FermionField &out,RealD mass,std::vector<Complex> boundary,std::vector<double> twist) {
@@ -105,38 +103,37 @@ namespace Grid {
 	FreePropagator(in,out,mass,boundary,twist,fiveD);
       };
 
-      virtual void   Instantiatable(void) {};
-      // Constructors
-      DomainWallFermion(GaugeField &_Umu,
-			GridCartesian         &FiveDimGrid,
-			GridRedBlackCartesian &FiveDimRedBlackGrid,
-			GridCartesian         &FourDimGrid,
-			GridRedBlackCartesian &FourDimRedBlackGrid,
-			RealD _mass,RealD _M5,const ImplParams &p= ImplParams()) : 
+  virtual void   Instantiatable(void) {};
+  // Constructors
+  DomainWallFermion(GaugeField &_Umu,
+		    GridCartesian         &FiveDimGrid,
+		    GridRedBlackCartesian &FiveDimRedBlackGrid,
+		    GridCartesian         &FourDimGrid,
+		    GridRedBlackCartesian &FourDimRedBlackGrid,
+		    RealD _mass,RealD _M5,const ImplParams &p= ImplParams()) : 
 
 
-      CayleyFermion5D<Impl>(_Umu,
-			    FiveDimGrid,
-			    FiveDimRedBlackGrid,
-			    FourDimGrid,
-			    FourDimRedBlackGrid,_mass,_M5,p)
+    CayleyFermion5D<Impl>(_Umu,
+			  FiveDimGrid,
+			  FiveDimRedBlackGrid,
+			  FourDimGrid,
+			  FourDimRedBlackGrid,_mass,_M5,p)
 
-      {
-	RealD eps = 1.0;
+  {
+    RealD eps = 1.0;
 
-	Approx::zolotarev_data *zdata = Approx::higham(eps,this->Ls);// eps is ignored for higham
-	assert(zdata->n==this->Ls);
+    Approx::zolotarev_data *zdata = Approx::higham(eps,this->Ls);// eps is ignored for higham
+    assert(zdata->n==this->Ls);
 	
-	std::cout<<GridLogMessage << "DomainWallFermion with Ls="<<this->Ls<<std::endl;
-	// Call base setter
-	this->SetCoefficientsTanh(zdata,1.0,0.0);
+    //    std::cout<<GridLogMessage << "DomainWallFermion with Ls="<<this->Ls<<std::endl;
+    // Call base setter
+    this->SetCoefficientsTanh(zdata,1.0,0.0);
 
-	Approx::zolotarev_free(zdata);
-      }
-
-    };
-
+    Approx::zolotarev_free(zdata);
   }
-}
+
+};
+
+NAMESPACE_END(Grid);
 
 #endif

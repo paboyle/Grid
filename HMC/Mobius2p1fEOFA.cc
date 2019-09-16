@@ -50,6 +50,8 @@ namespace Grid{
     typedef typename FermionOperatorD::FermionField FieldD;
     typedef typename FermionOperatorF::FermionField FieldF;
 
+    using OperatorFunction<FieldD>::operator();
+
     RealD   Tolerance;
     RealD   InnerTolerance; //Initial tolerance for inner CG. Defaults to Tolerance but can be changed
     Integer MaxInnerIterations;
@@ -117,7 +119,7 @@ namespace Grid{
       typedef typename FermionOperatorD::GaugeLinkField GaugeLinkFieldD;
 
       GridBase * GridPtrF = SinglePrecGrid4;
-      GridBase * GridPtrD = FermOpD.Umu._grid;
+      GridBase * GridPtrD = FermOpD.Umu.Grid();
       GaugeFieldF     U_f  (GridPtrF);
       GaugeLinkFieldF Umu_f(GridPtrF);
       //      std::cout << " Dim gauge field "<<GridPtrF->Nd()<<std::endl; // 4d
@@ -241,10 +243,10 @@ int main(int argc, char **argv) {
   auto FGrid     = SpaceTimeGrid::makeFiveDimGrid(Ls,GridPtr);
   auto FrbGrid   = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,GridPtr);
 
-  std::vector<int> latt  = GridDefaultLatt();
-  std::vector<int> mpi   = GridDefaultMpi();
-  std::vector<int> simdF = GridDefaultSimd(Nd,vComplexF::Nsimd());
-  std::vector<int> simdD = GridDefaultSimd(Nd,vComplexD::Nsimd());
+  Coordinate latt  = GridDefaultLatt();
+  Coordinate mpi   = GridDefaultMpi();
+  Coordinate simdF = GridDefaultSimd(Nd,vComplexF::Nsimd());
+  Coordinate simdD = GridDefaultSimd(Nd,vComplexD::Nsimd());
   auto GridPtrF   = SpaceTimeGrid::makeFourDimGrid(latt,simdF,mpi);
   auto GridRBPtrF = SpaceTimeGrid::makeFourDimRedBlackGrid(GridPtrF);
   auto FGridF     = SpaceTimeGrid::makeFiveDimGrid(Ls,GridPtrF);
@@ -350,7 +352,7 @@ int main(int argc, char **argv) {
     EOFA(Strange_Op_L, Strange_Op_R, 
 	 ActionCG,
 	 ActionCG, ActionCG,
-	 DerivativeCG, DerivativeCG,
+	 DerivativeCG, DerivativeCG, 
 	 OFRp, true);
 #endif
   Level1.push_back(&EOFA);

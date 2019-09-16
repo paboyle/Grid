@@ -60,7 +60,7 @@ public:
 
     std::vector<int> x(4);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr._grid->GlobalDimensions();
+    std::vector<int> gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -95,7 +95,7 @@ public:
 
     std::vector<int> x(4);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr._grid->GlobalDimensions();
+    std::vector<int> gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -130,7 +130,7 @@ public:
 
     std::vector<int> x(5);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr._grid->GlobalDimensions();
+    std::vector<int> gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -162,7 +162,7 @@ public:
 
     std::vector<int> x(5);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr._grid->GlobalDimensions();
+    std::vector<int> gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -265,12 +265,12 @@ int main (int argc,char **argv )
       std::cout << "Norm of Grid Asqtad multiply "<<Grid::norm2(res_grid)<<std::endl;
       
       /*
-      std::cout << " site 0 of Uthin  "<<uthin._odata[0] <<std::endl;
-      std::cout << " site 0 of Utriple"<<utriple._odata[0] <<std::endl;
-      std::cout << " site 0 of Ufat   "<<ufat._odata[0] <<std::endl;
+      std::cout << " site 0 of Uthin  "<<uthin[0] <<std::endl;
+      std::cout << " site 0 of Utriple"<<utriple[0] <<std::endl;
+      std::cout << " site 0 of Ufat   "<<ufat[0] <<std::endl;
 
-      std::cout << " site 0 of Grid   "<<res_grid._odata[0] <<std::endl;
-      std::cout << " site 0 of Chroma "<<res_chroma._odata[0] <<std::endl;
+      std::cout << " site 0 of Grid   "<<res_grid[0] <<std::endl;
+      std::cout << " site 0 of Chroma "<<res_chroma[0] <<std::endl;
       */
 
       res_chroma=res_chroma - res_grid;
@@ -327,11 +327,11 @@ void calc_chroma(GaugeField & lat, GaugeField &uthin, GaugeField &ufat, FermionF
 void make_gauge(GaugeField & Umu,FermionField &src)
 {
   using namespace Grid;
-  using namespace Grid::QCD;
+   ;
 
   std::vector<int> seeds4({1,2,3,4});
 
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu._grid;
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu.Grid();
   Grid::GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
   Grid::QCD::SU3::HotConfiguration(RNG4,Umu);
   Grid::gaussian(RNG4,src);
@@ -340,9 +340,9 @@ void make_gauge(GaugeField & Umu,FermionField &src)
 void calc_grid(GaugeField & Uthin, GaugeField & Utriple, GaugeField & Ufat, FermionField &src, FermionField &res,int dag)
 {
   using namespace Grid;
-  using namespace Grid::QCD;
+   ;
 
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Uthin._grid;
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Uthin.Grid();
   Grid::GridRedBlackCartesian * UrbGrid = Grid::QCD::SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
 
   Grid::QCD::ImprovedStaggeredFermionR Dstag(Uthin,Utriple,Ufat,*UGrid,*UrbGrid,mq*2.0);

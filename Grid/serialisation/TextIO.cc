@@ -29,11 +29,9 @@
     /*  END LEGAL */
 #include <Grid/GridCore.h>
 
-using namespace Grid;
-
 #define GRID_TEXT_INDENT 2      //number of spaces for indentation of levels
 
-
+NAMESPACE_BEGIN(Grid);
 // Writer implementation ///////////////////////////////////////////////////////
 TextWriter::TextWriter(const std::string &fileName)
 : file_(fileName, std::ios::out)
@@ -103,3 +101,4 @@ void TextReader::readDefault(const std::string &s, std::string &output)
     output.clear();
     getline(file_, output);
 }
+NAMESPACE_END(Grid);

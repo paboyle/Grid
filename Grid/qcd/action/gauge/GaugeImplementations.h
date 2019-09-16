@@ -25,14 +25,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef GRID_QCD_GAUGE_IMPLEMENTATIONS_H
 #define GRID_QCD_GAUGE_IMPLEMENTATIONS_H
 
 #include "GaugeImplTypes.h"
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 // Composition with smeared link, bc's etc.. probably need multiple inheritance
 // Variable precision "S" and variable Nc
@@ -42,7 +41,7 @@ public:
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Support needed for the assembly of loops including all boundary condition
-  // effects such as conjugate bcs
+  // effects such as Conjugate bcs
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   template <class covariant>
@@ -97,7 +96,7 @@ public:
 
   static inline GaugeLinkField
   CovShiftIdentityBackward(const GaugeLinkField &Link, int mu) {
-    GridBase *grid = Link._grid;
+    GridBase *grid = Link.Grid();
     int Lmu = grid->GlobalDimensions()[mu] - 1;
 
     Lattice<iScalar<vInteger>> coor(grid);
@@ -114,7 +113,7 @@ public:
   }
 
   static inline GaugeLinkField ShiftStaple(const GaugeLinkField &Link, int mu) {
-    GridBase *grid = Link._grid;
+    GridBase *grid = Link.Grid();
     int Lmu = grid->GlobalDimensions()[mu] - 1;
 
     Lattice<iScalar<vInteger>> coor(grid);
@@ -141,8 +140,6 @@ typedef ConjugateGaugeImpl<GimplTypesR> ConjugateGimplR; // Real.. whichever pre
 typedef ConjugateGaugeImpl<GimplTypesF> ConjugateGimplF; // Float
 typedef ConjugateGaugeImpl<GimplTypesD> ConjugateGimplD; // Double
 
-
-}
-}
+NAMESPACE_END(Grid);
 
 #endif

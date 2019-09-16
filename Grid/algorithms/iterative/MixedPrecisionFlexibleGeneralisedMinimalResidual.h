@@ -34,6 +34,9 @@ namespace Grid {
 template<class FieldD, class FieldF, typename std::enable_if<getPrecision<FieldD>::value == 2, int>::type = 0, typename std::enable_if< getPrecision<FieldF>::value == 1, int>::type = 0>
 class MixedPrecisionFlexibleGeneralisedMinimalResidual : public OperatorFunction<FieldD> {
  public:
+
+  using OperatorFunction<FieldD>::operator();
+
   bool ErrorOnNoConverge; // Throw an assert when MPFGMRES fails to converge,
                           // defaults to true
 
@@ -54,10 +57,10 @@ class MixedPrecisionFlexibleGeneralisedMinimalResidual : public OperatorFunction
 
   Eigen::MatrixXcd H;
 
-  std::vector<std::complex<double>> y;
-  std::vector<std::complex<double>> gamma;
-  std::vector<std::complex<double>> c;
-  std::vector<std::complex<double>> s;
+  std::vector<ComplexD> y;
+  std::vector<ComplexD> gamma;
+  std::vector<ComplexD> c;
+  std::vector<ComplexD> s;
 
   GridBase* SinglePrecGrid;
 
@@ -84,7 +87,7 @@ class MixedPrecisionFlexibleGeneralisedMinimalResidual : public OperatorFunction
 
   void operator()(LinearOperatorBase<FieldD> &LinOp, const FieldD &src, FieldD &psi) {
 
-    psi.checkerboard = src.checkerboard;
+    psi.Checkerboard() = src.Checkerboard();
     conformable(psi, src);
 
     RealD guess = norm2(psi);
@@ -94,7 +97,7 @@ class MixedPrecisionFlexibleGeneralisedMinimalResidual : public OperatorFunction
     RealD ssq = norm2(src);
     RealD rsq = Tolerance * Tolerance * ssq;
 
-    FieldD r(src._grid);
+    FieldD r(src.Grid());
 
     std::cout << std::setprecision(4) << std::scientific;
     std::cout << GridLogIterative << "MPFGMRES: guess " << guess << std::endl;
@@ -154,12 +157,12 @@ class MixedPrecisionFlexibleGeneralisedMinimalResidual : public OperatorFunction
 
     RealD cp = 0;
 
-    FieldD w(src._grid);
-    FieldD r(src._grid);
+    FieldD w(src.Grid());
+    FieldD r(src.Grid());
 
     // these should probably be made class members so that they are only allocated once, not in every restart
-    std::vector<FieldD> v(RestartLength + 1, src._grid); for (auto &elem : v) elem = zero;
-    std::vector<FieldD> z(RestartLength + 1, src._grid); for (auto &elem : z) elem = zero;
+    std::vector<FieldD> v(RestartLength + 1, src.Grid()); for (auto &elem : v) elem = Zero();
+    std::vector<FieldD> z(RestartLength + 1, src.Grid()); for (auto &elem : z) elem = Zero();
 
     MatrixTimer.Start();
     LinOp.Op(psi, w);
@@ -181,7 +184,7 @@ class MixedPrecisionFlexibleGeneralisedMinimalResidual : public OperatorFunction
 
       qrUpdate(i);
 
-      cp = std::norm(gamma[i+1]);
+      cp = norm(gamma[i+1]);
 
       std::cout << GridLogIterative << "MPFGMRES: Iteration " << IterationCount
                 << " residual " << cp << " target " << rsq << std::endl;
@@ -223,11 +226,11 @@ class MixedPrecisionFlexibleGeneralisedMinimalResidual : public OperatorFunction
     LinalgTimer.Start();
     for (int i = 0; i <= iter; ++i) {
       H(iter, i) = innerProduct(v[i], w);
-      w = w - H(iter, i) * v[i];
+      w = w - ComplexD(H(iter, i)) * v[i];
     }
 
     H(iter, iter + 1) = sqrt(norm2(w));
-    v[iter + 1] = (1. / H(iter, iter + 1)) * w;
+    v[iter + 1] = ComplexD(1. / H(iter, iter + 1)) * w;
     LinalgTimer.Stop();
   }
 
@@ -235,13 +238,13 @@ class MixedPrecisionFlexibleGeneralisedMinimalResidual : public OperatorFunction
 
     QrTimer.Start();
     for (int i = 0; i < iter ; ++i) {
-      auto tmp       = -s[i] * H(iter, i) + c[i] * H(iter, i + 1);
-      H(iter, i)     = std::conj(c[i]) * H(iter, i) + std::conj(s[i]) * H(iter, i + 1);
+      auto tmp       = -s[i] * ComplexD(H(iter, i)) + c[i] * ComplexD(H(iter, i + 1));
+      H(iter, i)     = conjugate(c[i]) * ComplexD(H(iter, i)) + conjugate(s[i]) * ComplexD(H(iter, i + 1));
       H(iter, i + 1) = tmp;
     }
 
     // Compute new Givens Rotation
-    ComplexD nu = sqrt(std::norm(H(iter, iter)) + std::norm(H(iter, iter + 1)));
+    auto nu = sqrt(std::norm(H(iter, iter)) + std::norm(H(iter, iter + 1)));
     c[iter]     = H(iter, iter) / nu;
     s[iter]     = H(iter, iter + 1) / nu;
 
@@ -250,7 +253,7 @@ class MixedPrecisionFlexibleGeneralisedMinimalResidual : public OperatorFunction
     H(iter, iter + 1) = 0.;
 
     gamma[iter + 1] = -s[iter] * gamma[iter];
-    gamma[iter]     = std::conj(c[iter]) * gamma[iter];
+    gamma[iter]     = conjugate(c[iter]) * gamma[iter];
     QrTimer.Stop();
   }
 
@@ -260,8 +263,8 @@ class MixedPrecisionFlexibleGeneralisedMinimalResidual : public OperatorFunction
     for (int i = iter; i >= 0; i--) {
       y[i] = gamma[i];
       for (int k = i + 1; k <= iter; k++)
-        y[i] = y[i] - H(k, i) * y[k];
-      y[i] = y[i] / H(i, i);
+        y[i] = y[i] - ComplexD(H(k, i)) * y[k];
+      y[i] = y[i] / ComplexD(H(i, i));
     }
 
     for (int i = 0; i <= iter; i++)

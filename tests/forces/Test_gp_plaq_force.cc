@@ -29,15 +29,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  auto latt_size   = GridDefaultLatt();
+  auto simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  auto mpi_layout  = GridDefaultMpi();
 
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian     RBGrid(&Grid);
@@ -55,10 +54,11 @@ int main (int argc, char ** argv)
   SU3::HotConfiguration(pRNG,U);
   
   double beta = 1.0;
-  double c1   = 0.331;
-
-  //ConjugatePlaqPlusRectangleActionR Action(beta,c1);
   ConjugateWilsonGaugeActionR Action(beta);
+
+  //  double c1   = 0.331;
+  //ConjugatePlaqPlusRectangleActionR Action(beta,c1);
+
   //WilsonGaugeActionR Action(beta);
 
   ComplexD S    = Action.S(U);
@@ -85,9 +85,12 @@ int main (int argc, char ** argv)
     PokeIndex<LorentzIndex>(mom,mommu,mu);
 
     // fourth order exponential approx
-    parallel_for(auto i=mom.begin();i<mom.end();i++){ // exp(pmu dt) * Umu
-      Uprime[i](mu) = U[i](mu) + mom[i](mu)*U[i](mu)*dt ;
-    }
+    auto Uprime_v = Uprime.View();
+    auto U_v = U.View();
+    auto mom_v = mom.View();
+    thread_foreach(i,mom_v,{ // exp(pmu dt) * Umu
+      Uprime_v[i](mu) = U_v[i](mu) + mom_v[i](mu)*U_v[i](mu)*dt ;
+    });
   }
 
   ComplexD Sprime    = Action.S(Uprime);
@@ -96,7 +99,7 @@ int main (int argc, char ** argv)
   // Use derivative to estimate dS
   //////////////////////////////////////////////
 
-  LatticeComplex dS(&Grid); dS = zero;
+  LatticeComplex dS(&Grid); dS = Zero();
 
   for(int mu=0;mu<Nd;mu++){
 

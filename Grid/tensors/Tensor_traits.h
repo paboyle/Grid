@@ -20,12 +20,11 @@ Author: Michael Marshall <michael.marshall@ed.ac.au>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#ifndef GRID_MATH_TRAITS_H
-#define GRID_MATH_TRAITS_H
+#pragma once 
 
 #include <type_traits>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
   // Forward declarations
   template<class T>        class iScalar;
@@ -73,50 +72,60 @@ namespace Grid {
 
   template<> struct GridTypeMapper<RealF> : public GridTypeMapper_Base {
     typedef RealF scalar_type;
+    typedef RealD scalar_typeD;
     typedef RealF vector_type;
     typedef RealD vector_typeD;
     typedef RealF tensor_reduced ;
     typedef RealF scalar_object;
+    typedef RealD scalar_objectD;
     typedef ComplexF Complexified;
     typedef RealF Realified;
     typedef RealD DoublePrecision;
   };
   template<> struct GridTypeMapper<RealD> : public GridTypeMapper_Base {
     typedef RealD scalar_type;
+    typedef RealD scalar_typeD;
     typedef RealD vector_type;
     typedef RealD vector_typeD;
     typedef RealD tensor_reduced;
     typedef RealD scalar_object;
+    typedef RealD scalar_objectD;
     typedef ComplexD Complexified;
     typedef RealD Realified;
     typedef RealD DoublePrecision;
   };
   template<> struct GridTypeMapper<ComplexF> : public GridTypeMapper_Base {
     typedef ComplexF scalar_type;
+    typedef ComplexD scalar_typeD;
     typedef ComplexF vector_type;
     typedef ComplexD vector_typeD;
     typedef ComplexF tensor_reduced;
     typedef ComplexF scalar_object;
+    typedef ComplexD scalar_objectD;
     typedef ComplexF Complexified;
     typedef RealF Realified;
     typedef ComplexD DoublePrecision;
   };
   template<> struct GridTypeMapper<ComplexD> : public GridTypeMapper_Base {
     typedef ComplexD scalar_type;
+    typedef ComplexD scalar_typeD;
     typedef ComplexD vector_type;
     typedef ComplexD vector_typeD;
     typedef ComplexD tensor_reduced;
     typedef ComplexD scalar_object;
+    typedef ComplexD scalar_objectD;
     typedef ComplexD Complexified;
     typedef RealD Realified;
     typedef ComplexD DoublePrecision;
   };
   template<> struct GridTypeMapper<Integer> : public GridTypeMapper_Base {
     typedef Integer scalar_type;
+    typedef Integer scalar_typeD;
     typedef Integer vector_type;
     typedef Integer vector_typeD;
     typedef Integer tensor_reduced;
     typedef Integer scalar_object;
+    typedef Integer scalar_objectD;
     typedef void Complexified;
     typedef void Realified;
     typedef void DoublePrecision;
@@ -124,20 +133,24 @@ namespace Grid {
 
   template<> struct GridTypeMapper<vRealF> : public GridTypeMapper_Base {
     typedef RealF  scalar_type;
+    typedef RealD  scalar_typeD;
     typedef vRealF vector_type;
     typedef vRealD vector_typeD;
     typedef vRealF tensor_reduced;
     typedef RealF  scalar_object;
+    typedef RealD  scalar_objectD;
     typedef vComplexF Complexified;
     typedef vRealF Realified;
     typedef vRealD DoublePrecision;
   };
   template<> struct GridTypeMapper<vRealD> : public GridTypeMapper_Base {
     typedef RealD  scalar_type;
+    typedef RealD  scalar_typeD;
     typedef vRealD vector_type;
     typedef vRealD vector_typeD;
     typedef vRealD tensor_reduced;
     typedef RealD  scalar_object;
+    typedef RealD  scalar_objectD;
     typedef vComplexD Complexified;
     typedef vRealD Realified;
     typedef vRealD DoublePrecision;
@@ -145,10 +158,12 @@ namespace Grid {
   template<> struct GridTypeMapper<vRealH> : public GridTypeMapper_Base {
     // Fixme this is incomplete until Grid supports fp16 or bfp16 arithmetic types
     typedef RealF  scalar_type;
+    typedef RealD  scalar_typeD;
     typedef vRealH vector_type;
     typedef vRealD vector_typeD;
     typedef vRealH tensor_reduced;
     typedef RealF  scalar_object;
+    typedef RealD  scalar_objectD;
     typedef vComplexH Complexified;
     typedef vRealH Realified;
     typedef vRealD DoublePrecision;
@@ -156,40 +171,48 @@ namespace Grid {
   template<> struct GridTypeMapper<vComplexH> : public GridTypeMapper_Base {
     // Fixme this is incomplete until Grid supports fp16 or bfp16 arithmetic types
     typedef ComplexF  scalar_type;
+    typedef ComplexD  scalar_typeD;
     typedef vComplexH vector_type;
     typedef vComplexD vector_typeD;
     typedef vComplexH tensor_reduced;
     typedef ComplexF  scalar_object;
+    typedef ComplexD  scalar_objectD;
     typedef vComplexH Complexified;
     typedef vRealH Realified;
     typedef vComplexD DoublePrecision;
   };
   template<> struct GridTypeMapper<vComplexF> : public GridTypeMapper_Base {
     typedef ComplexF  scalar_type;
+    typedef ComplexD  scalar_typeD;
     typedef vComplexF vector_type;
     typedef vComplexD vector_typeD;
     typedef vComplexF tensor_reduced;
     typedef ComplexF  scalar_object;
+    typedef ComplexD  scalar_objectD;
     typedef vComplexF Complexified;
     typedef vRealF Realified;
     typedef vComplexD DoublePrecision;
   };
   template<> struct GridTypeMapper<vComplexD> : public GridTypeMapper_Base {
     typedef ComplexD  scalar_type;
+    typedef ComplexD  scalar_typeD;
     typedef vComplexD vector_type;
     typedef vComplexD vector_typeD;
     typedef vComplexD tensor_reduced;
     typedef ComplexD  scalar_object;
+    typedef ComplexD  scalar_objectD;
     typedef vComplexD Complexified;
     typedef vRealD Realified;
     typedef vComplexD DoublePrecision;
   };
   template<> struct GridTypeMapper<vInteger> : public GridTypeMapper_Base {
     typedef  Integer scalar_type;
+    typedef  Integer scalar_typeD;
     typedef vInteger vector_type;
     typedef vInteger vector_typeD;
     typedef vInteger tensor_reduced;
     typedef  Integer scalar_object;
+    typedef  Integer scalar_objectD;
     typedef void Complexified;
     typedef void Realified;
     typedef void DoublePrecision;
@@ -199,6 +222,7 @@ namespace Grid {
   using BaseTraits   = GridTypeMapper<T>; \
   using scalar_type  = typename BaseTraits::scalar_type; \
   using vector_type  = typename BaseTraits::vector_type; \
+  using scalar_typeD = typename BaseTraits::scalar_typeD; \
   using vector_typeD = typename BaseTraits::vector_typeD; \
   static constexpr int TensorLevel = BaseTraits::TensorLevel + 1
 
@@ -206,6 +230,7 @@ namespace Grid {
     GridTypeMapper_RepeatedTypes;
     using tensor_reduced  = iScalar<typename BaseTraits::tensor_reduced>;
     using scalar_object   = iScalar<typename BaseTraits::scalar_object>;
+    using scalar_objectD  = iScalar<typename BaseTraits::scalar_objectD>;
     using Complexified    = iScalar<typename BaseTraits::Complexified>;
     using Realified       = iScalar<typename BaseTraits::Realified>;
     using DoublePrecision = iScalar<typename BaseTraits::DoublePrecision>;
@@ -219,6 +244,7 @@ namespace Grid {
     GridTypeMapper_RepeatedTypes;
     using tensor_reduced  = iScalar<typename BaseTraits::tensor_reduced>;
     using scalar_object   = iVector<typename BaseTraits::scalar_object,   N>;
+    using scalar_objectD  = iVector<typename BaseTraits::scalar_objectD,  N>;
     using Complexified    = iVector<typename BaseTraits::Complexified,    N>;
     using Realified       = iVector<typename BaseTraits::Realified,       N>;
     using DoublePrecision = iVector<typename BaseTraits::DoublePrecision, N>;
@@ -232,6 +258,7 @@ namespace Grid {
     GridTypeMapper_RepeatedTypes;
     using tensor_reduced  = iScalar<typename BaseTraits::tensor_reduced>;
     using scalar_object   = iMatrix<typename BaseTraits::scalar_object,   N>;
+    using scalar_objectD  = iMatrix<typename BaseTraits::scalar_objectD,  N>;
     using Complexified    = iMatrix<typename BaseTraits::Complexified,    N>;
     using Realified       = iMatrix<typename BaseTraits::Realified,       N>;
     using DoublePrecision = iMatrix<typename BaseTraits::DoublePrecision, N>;
@@ -281,7 +308,5 @@ namespace Grid {
 
     enum { value = sizeof(real_scalar_type)/sizeof(float) };
   };
-}
-
-#endif
+NAMESPACE_END(Grid);
 

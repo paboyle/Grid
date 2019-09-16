@@ -43,7 +43,7 @@ public:
 			    T& chi, 
 			    const Real& width, int Iterations, int orthog)
   {
-    GridBase *grid = chi._grid;
+    GridBase *grid = chi.Grid();
     T psi(grid);
 
     ////////////////////////////////////////////////////////////////////////////////////

@@ -1,8 +1,166 @@
-TODO:
----------------
+=========================================================
+General
+=========================================================
 
-Code item work list
+- Make representations code take Gimpl
+- Simplify the HMCand remove modules
+- Lattice_arith - are the mult, mac etc.. still needed after ET engine?
+- Lattice_rng
+- Lattice_transfer.h
+- accelerate A2Autils -- off critical path for HMC
 
+=========================================================
+GPU branch code item work list
+=========================================================
+
+* sum_cpu promote to double during summation for increased precisoin.
+* Introduce sumD & ReduceD 
+* GPU sum is probably better currently.
+
+* Accelerate the cshift & benchmark
+
+* 0) Single GPU
+- 128 bit integer table load in GPU code.
+  - ImprovedStaggered accelerate & measure perf
+  - Gianluca's changes to Cayley into gpu-port
+  - Mobius kernel fusion.                     -- Gianluca?
+  - Lebesque order reintroduction. StencilView should have pointer to it
+  - Lebesgue reorder in all kernels
+
+* 3) Comms/NVlink
+- OpenMP tasks to run comms threads. Experiment with it 
+- Remove explicit openMP in staggered. 
+- Single parallel region around both the Kernel call and the comms.
+- Fix the halo exchange SIMT loop
+- Stencil gather ??
+- SIMD dirs in stencil
+
+* 4) ET enhancements
+- eval -> scalar ops in ET engine
+- coalescedRead, coalescedWrite in expressions.
+
+* 5) Misc
+- Conserved current clean up.
+- multLinkProp eliminate
+
+8) Merge develop and test HMC
+
+9) Gamma tables on GPU; check this. Appear to work, but no idea why. Are these done on CPU?
+
+10) Audit
+-     pragma once uniformly
+-     Audit NAMESPACE CHANGES
+-     Audit changes
+
+-----
+Gianluca's changes
+- Performance impact of construct in aligned allocator???
+---------
+
+- merge2 where is it used. Audit routines, comment out and check compile.
+
+-----------------------------
+DONE:
+-----------------------------
+=============================================================================================
+AUDIT ContractWWVV with respect to develop    -- DONE
+- GPU accelerate EOFA                                                  -- DONE
+- LinalgUtils  ssp loop not offloaded                                  -- DONE
+- coalescedRead <- threadIdx.x                                         -- DONE
+- Stencil.h : Thread loops in exchange code. Need to offload these     -- DONE ; pending debug
+- Mobius/Domain EOFA cache header implementaiotn has thread_loop       -- DONE ; pending test
+- Differentiate non-temporal coalescedWrite from temporal              -- DONE
+
+- Clean up PRAGMAS, and SIMT_loop                                      -- DONE
+  thread_loop interface revisit.
+  _foreach
+  _for
+
+- Staggered kernels -> GPU coalesced loop, loop in kernels -- DONE
+- Staggered kernels inline for GPU -- DONE
+
+-- Common source GPU and CPU generic kernels???                  ---- DONE
+--   - Uniform coding between GPU kernels and CPU kernels attempt  ---- DONE, got faster !
+
+-- Figure what to do about "multLinkGpu" etc.. in FermionOperatorImpl. -- DONE
+-- Gparity is the awkward one                                          -- DONE
+-- Solve non-Gparity first.                                            -- DONE
+-- Simplify the operator IMPL support                                  -- DONE
+-- 
+--
+-- Investigate why slower than september     --- DONE
+--
+-- Single GPU simd target (VGPU) --- DONE
+--
+-- Reread WilsonKernels and check diffs -- DONE
+--
+
+- AVX512 still broken, lebesgue order missing ?
+
+* Gianluca merger
+  - Cayley coefficients -> GPU retention or prefetch
+  - Make GPU offload reductions deterministic -- Gianluca merge
+  - Lattice_reduction - remnant thread_loops must offload. Audit thread_loop in main code for non-accelerated code  
+  - Inner product compare to Summit inner product optimisation
+  - CayleyFermion5D.cc - flop count line 166 odd. Shouldn't depend on arch
+  -                    - Review Vector use
+  - CayleyFermion5D.h  - DperpGPU unify coding style
+
+- Committed my modifications
+- Accelerate non-dslash elements of Mobius; check accelerator_loop uniformly used in fermion operators
+   - Merged Gianluca modifications
+- Verify HMC one flavour ratio
+- GPU offload reductions: using thrust::reduce?
+- Deprecate JSON.
+- pugixml difficult.
+- Eigen problematic.
+- Audit HMC timestep / traj length size
+- GPU offload reductions; thrust initial ; inclusive_scan vs reduce?
+- Pragmas.h - prune and remove strong_inline (?)
+- GPU offload reductions; thrust initial ; inclusive_scan vs reduce?
+- Remove old parallel_for macros, fix errors
+- - Need (1) omp parallel for     <-- thread_loop
+- -      (2) omp for
+- -      (3) omp for collapse(n)
+- -      (4) omp parallel for collapse(n)
+- - Only (1) has a natural mirror in accelerator_loop
+- - Nested loop macros get cumbersome made a generic interface for N deep
+- - Don't like thread_region and thread_loop_in_region
+- - Could replace with 
+
+    thread_nested(1, 
+      for {
+
+      }
+    );
+    thread_nested(2,
+      for (){
+        for (){
+
+	}
+      }
+    );
+
+    and same "in_region".
+
+
+-----------------------------
+Physics item work list:
+-----------------------------
+
+2)- Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
+4)- Multigrid Wilson and DWF, compare to other Multigrid implementations
+5)- HDCR resume
+
+-----------------------------
+
+
+Nov 2018
+
+1)- BG/Q port and check ; Andrew says ok.
+3)- Physical propagator interface  -- DONE
+
+DONE
 a) namespaces & indentation
  GRID_BEGIN_NAMESPACE();
  GRID_END_NAMESPACE();
@@ -15,14 +173,6 @@ b) GPU branch
 - Virtual function audit
 - Start port once Nvidia box is up
 - Cut down volume of code for first port? How?
-
-Physics item work list:
-
-1)- BG/Q port and check ; Andrew says ok.
-2)- Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
-3)- Physical propagator interface
-4)- Multigrid Wilson and DWF, compare to other Multigrid implementations
-5)- HDCR resume
 
 ----------------------------
 Recent DONE 
@@ -162,6 +312,8 @@ RECENT
 
 
 DONE:
+
+
 - MultiArray -- MultiRHS done
 - ConjugateGradientMultiShift -- DONE
 - MCR                         -- DONE

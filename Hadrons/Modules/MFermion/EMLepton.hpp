@@ -219,7 +219,7 @@ void TEMLepton<FImpl>::execute(void)
 	    // 5D source if action is 5d
 	    mat.ImportPhysicalFermionSource(tmp, source);
 	}
-        sol = zero;
+        sol = Zero();
 	mat.FreePropagator(source,sol,mass,boundary,twist);
 	if (Ls_ == 1)
 	{
@@ -257,14 +257,14 @@ void TEMLepton<FImpl>::execute(void)
 	proptmp = where( tlat < tl, boundary[Tp]*proptmp, proptmp);
 
         // i*A_mu*gamma_mu
-        sourcetmp = zero;
+        sourcetmp = Zero();
         for(unsigned int mu=0;mu<=3;mu++)
         {
 	    Gamma gmu(Gamma::gmu[mu]);
 	    sourcetmp +=  ci * PeekIndex<LorentzIndex>(stoch_photon, mu) *  (gmu * proptmp );
         }
 
-        proptmp = zero;
+        proptmp = Zero();
 
         //sequential propagator from i*Aslash*S
         LOG(Message) << "Sequential propagator for t= " << tl << std::endl;
@@ -281,7 +281,7 @@ void TEMLepton<FImpl>::execute(void)
 		// 5D source if action is 5d
 		mat.ImportPhysicalFermionSource(tmp, source);
 	    }
-            sol = zero;
+            sol = Zero();
 	    mat.FreePropagator(source,sol,mass,boundary,twist);
 	    if (Ls_ == 1)
 	    {

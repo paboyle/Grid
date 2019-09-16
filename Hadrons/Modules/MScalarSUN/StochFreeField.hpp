@@ -154,7 +154,7 @@ void TStochFreeField<SImpl>::execute(void)
     LOG(Message) << "Generating random momentum-space field" << std::endl;
     envGetTmp(Field, phift);
     envGetTmp(ComplexField, ca);
-    phift = zero;
+    phift = Zero();
     for (int a = 0; a < Nadj; ++a) 
     {
         Site ta;

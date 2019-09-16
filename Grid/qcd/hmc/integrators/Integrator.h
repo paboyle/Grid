@@ -27,33 +27,29 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
-//--------------------------------------------------------------------
+			   /*  END LEGAL */
+			   //--------------------------------------------------------------------
 #ifndef INTEGRATOR_INCLUDED
 #define INTEGRATOR_INCLUDED
 
 #include <memory>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 class IntegratorParameters: Serializable {
 public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(IntegratorParameters,
-                std::string, name,      // name of the integrator
-    unsigned int, MDsteps,  // number of outer steps
-    RealD, trajL,           // trajectory length
-  )
+  GRID_SERIALIZABLE_CLASS_MEMBERS(IntegratorParameters,
+				  std::string, name,      // name of the integrator
+				  unsigned int, MDsteps,  // number of outer steps
+				  RealD, trajL)           // trajectory length
 
   IntegratorParameters(int MDsteps_ = 10, RealD trajL_ = 1.0)
-      : MDsteps(MDsteps_),
-        trajL(trajL_){
-        // empty body constructor
-  };
-
+  : MDsteps(MDsteps_),
+    trajL(trajL_) {};
 
   template <class ReaderClass, typename std::enable_if<isReader<ReaderClass>::value, int >::type = 0 >
-  IntegratorParameters(ReaderClass & Reader){
+  IntegratorParameters(ReaderClass & Reader)
+  {
     std::cout << GridLogMessage << "Reading integrator\n";
     read(Reader, "Integrator", *this);
   }
@@ -69,7 +65,7 @@ public:
 /*! @brief Class for Molecular Dynamics management */
 template <class FieldImplementation, class SmearingPolicy, class RepresentationPolicy>
 class Integrator {
- protected:
+protected:
   typedef typename FieldImplementation::Field MomentaField;  //for readability
   typedef typename FieldImplementation::Field Field;
 
@@ -84,7 +80,8 @@ class Integrator {
 
   const ActionSet<Field, RepresentationPolicy> as;
 
-  void update_P(Field& U, int level, double ep) {
+  void update_P(Field& U, int level, double ep) 
+  {
     t_P[level] += ep;
     update_P(P, U, level, ep);
 
@@ -93,16 +90,17 @@ class Integrator {
 
   // to be used by the actionlevel class to iterate
   // over the representations
-  struct _updateP {
+  struct _updateP 
+  {
     template <class FieldType, class GF, class Repr>
     void operator()(std::vector<Action<FieldType>*> repr_set, Repr& Rep,
                     GF& Mom, GF& U, double ep) {
       for (int a = 0; a < repr_set.size(); ++a) {
-        FieldType forceR(U._grid);
+        FieldType forceR(U.Grid());
         // Implement smearing only for the fundamental representation now
         repr_set.at(a)->deriv(Rep.U, forceR);
         GF force = Rep.RtoFundamentalProject(forceR);  // Ta for the fundamental rep
-        Real force_abs = std::sqrt(norm2(force)/(U._grid->gSites()));
+        Real force_abs = std::sqrt(norm2(force)/(U.Grid()->gSites()));
         std::cout << GridLogIntegrator << "Hirep Force average: " << force_abs << std::endl;
 	Mom -= force * ep* HMC_MOMENTUM_DENOMINATOR;; 
       }
@@ -115,8 +113,8 @@ class Integrator {
 
     for (int a = 0; a < as[level].actions.size(); ++a) {
       double start_full = usecond();
-      Field force(U._grid);
-      conformable(U._grid, Mom._grid);
+      Field force(U.Grid());
+      conformable(U.Grid(), Mom.Grid());
 
       Field& Us = Smearer.get_U(as[level].actions.at(a)->is_smeared);
       double start_force = usecond();
@@ -126,7 +124,7 @@ class Integrator {
       if (as[level].actions.at(a)->is_smeared) Smearer.smeared_force(force);
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
       double end_force = usecond();
-      Real force_abs = std::sqrt(norm2(force)/U._grid->gSites());
+      Real force_abs = std::sqrt(norm2(force)/U.Grid()->gSites());
       std::cout << GridLogIntegrator << "["<<level<<"]["<<a<<"] Force average: " << force_abs << std::endl;
       Mom -= force * ep* HMC_MOMENTUM_DENOMINATOR;; 
       double end_full = usecond();
@@ -139,7 +137,8 @@ class Integrator {
     as[level].apply(update_P_hireps, Representations, Mom, U, ep);
   }
 
-  void update_U(Field& U, double ep) {
+  void update_U(Field& U, double ep) 
+  {
     update_U(P, U, ep);
 
     t_U += ep;
@@ -147,7 +146,8 @@ class Integrator {
     std::cout << GridLogIntegrator << "   " << "[" << fl << "] U " << " dt " << ep << " : t_U " << t_U << std::endl;
   }
   
-  void update_U(MomentaField& Mom, Field& U, double ep) {
+  void update_U(MomentaField& Mom, Field& U, double ep) 
+  {
     // exponential of Mom*U in the gauge fields case
     FieldImplementation::update_field(Mom, U, ep);
 
@@ -160,16 +160,17 @@ class Integrator {
 
   virtual void step(Field& U, int level, int first, int last) = 0;
 
- public:
+public:
   Integrator(GridBase* grid, IntegratorParameters Par,
              ActionSet<Field, RepresentationPolicy>& Aset,
              SmearingPolicy& Sm)
-      : Params(Par),
-        as(Aset),
-        P(grid),
-        levels(Aset.size()),
-        Smearer(Sm),
-        Representations(grid) {
+    : Params(Par),
+      as(Aset),
+      P(grid),
+      levels(Aset.size()),
+      Smearer(Sm),
+      Representations(grid) 
+  {
     t_P.resize(levels, 0.0);
     t_U = 0.0;
     // initialization of smearer delegated outside of Integrator
@@ -179,26 +180,29 @@ class Integrator {
 
   virtual std::string integrator_name() = 0;
 
-  void print_parameters(){
+  void print_parameters()
+  {
     std::cout << GridLogMessage << "[Integrator] Name : "<< integrator_name() << std::endl;
     Params.print_parameters();
   }
 
-  void print_actions(){
-        std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::" << std::endl;
-        std::cout << GridLogMessage << "[Integrator] Action summary: "<<std::endl;
-        for (int level = 0; level < as.size(); ++level) {
-                std::cout << GridLogMessage << "[Integrator] ---- Level: "<< level << std::endl;
-                for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
-                        std::cout << GridLogMessage << "["<< as[level].actions.at(actionID)->action_name() << "] ID: " << actionID << std::endl;
-                        std::cout << as[level].actions.at(actionID)->LogParameters();
-                }
-        }
-        std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::"<< std::endl;
+  void print_actions()
+  {
+    std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::" << std::endl;
+    std::cout << GridLogMessage << "[Integrator] Action summary: "<<std::endl;
+    for (int level = 0; level < as.size(); ++level) {
+      std::cout << GridLogMessage << "[Integrator] ---- Level: "<< level << std::endl;
+      for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+	std::cout << GridLogMessage << "["<< as[level].actions.at(actionID)->action_name() << "] ID: " << actionID << std::endl;
+	std::cout << as[level].actions.at(actionID)->LogParameters();
+      }
+    }
+    std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::"<< std::endl;
 
   }
 
-  void reverse_momenta(){
+  void reverse_momenta()
+  {
     P *= -1.0;
   }
 
@@ -211,14 +215,15 @@ class Integrator {
       for (int a = 0; a < repr_set.size(); ++a){
         repr_set.at(a)->refresh(Rep.U, pRNG);
       
-      std::cout << GridLogDebug << "Hirep refreshing pseudofermions" << std::endl;
-    }
+	std::cout << GridLogDebug << "Hirep refreshing pseudofermions" << std::endl;
+      }
     }
   } refresh_hireps{};
 
   // Initialization of momenta and actions
-  void refresh(Field& U, GridParallelRNG& pRNG) {
-    assert(P._grid == U._grid);
+  void refresh(Field& U, GridParallelRNG& pRNG) 
+  {
+    assert(P.Grid() == U.Grid());
     std::cout << GridLogIntegrator << "Integrator refresh\n";
 
     FieldImplementation::generate_momenta(P, pRNG);
@@ -262,7 +267,8 @@ class Integrator {
   } S_hireps{};
 
   // Calculate action
-  RealD S(Field& U) {  // here also U not used
+  RealD S(Field& U) 
+  {  // here also U not used
 
     std::cout << GridLogIntegrator << "Integrator action\n";
 
@@ -287,7 +293,8 @@ class Integrator {
     return H;
   }
 
-  void integrate(Field& U) {
+  void integrate(Field& U) 
+  {
     // reset the clocks
     t_U = 0;
     for (int level = 0; level < as.size(); ++level) {
@@ -311,11 +318,9 @@ class Integrator {
 
   }
 
-
-  
-
 };
-}
-}
+
+NAMESPACE_END(Grid);
+
 #endif  // INTEGRATOR_INCLUDED
 

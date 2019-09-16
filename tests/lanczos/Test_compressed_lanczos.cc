@@ -36,7 +36,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
 template<class Fobj,class CComplex,int nbasis>
 class LocalCoherenceLanczosScidac : public LocalCoherenceLanczos<Fobj,CComplex,nbasis>
@@ -58,7 +57,7 @@ public:
   {
     assert(this->subspace.size()==nbasis);
     emptyUserRecord record;
-    Grid::QCD::ScidacWriter WR(this->_FineGrid->IsBoss());
+    Grid::ScidacWriter WR(this->_FineGrid->IsBoss());
     WR.open(evecs_file);
     for(int k=0;k<nbasis;k++) {
       WR.writeScidacFieldRecord(this->subspace[k],record);
@@ -82,10 +81,10 @@ public:
     
     std::cout << GridLogIRL<< "checkpointFineRestore:  Reading evecs from "<<evecs_file<<std::endl;
     emptyUserRecord record;
-    Grid::QCD::ScidacReader RD ;
+    Grid::ScidacReader RD ;
     RD.open(evecs_file);
     for(int k=0;k<nbasis;k++) {
-      this->subspace[k].checkerboard=this->_checkerboard;
+      this->subspace[k].Checkerboard()=this->_checkerboard;
       RD.readScidacFieldRecord(this->subspace[k],record);
       
     }
@@ -96,7 +95,7 @@ public:
   {
     int n = this->evec_coarse.size();
     emptyUserRecord record;
-    Grid::QCD::ScidacWriter WR(this->_CoarseGrid->IsBoss());
+    Grid::ScidacWriter WR(this->_CoarseGrid->IsBoss());
     WR.open(evecs_file);
     for(int k=0;k<n;k++) {
       WR.writeScidacFieldRecord(this->evec_coarse[k],record);
@@ -119,7 +118,7 @@ public:
     assert(this->evals_coarse.size()==nvec);
     emptyUserRecord record;
     std::cout << GridLogIRL<< "checkpointCoarseRestore:  Reading evecs from "<<evecs_file<<std::endl;
-    Grid::QCD::ScidacReader RD ;
+    Grid::ScidacReader RD ;
     RD.open(evecs_file);
     for(int k=0;k<nvec;k++) {
       RD.readScidacFieldRecord(this->evec_coarse[k],record);
@@ -150,7 +149,7 @@ int main (int argc, char ** argv) {
   int     Ls = (int)Params.omega.size();
   RealD mass = Params.mass;
   RealD M5   = Params.M5;
-  std::vector<int> blockSize = Params.blockSize;
+  auto blockSize = Params.blockSize;
 
   // Grids
   GridCartesian         * UGrid     = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(),
@@ -160,11 +159,10 @@ int main (int argc, char ** argv) {
   GridCartesian         * FGrid     = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid   = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
-  std::vector<int> fineLatt     = GridDefaultLatt();
+  auto fineLatt     = GridDefaultLatt();
   int dims=fineLatt.size();
   assert(blockSize.size()==dims+1);
-  std::vector<int> coarseLatt(dims);
-  std::vector<int> coarseLatt5d ;
+  Coordinate coarseLatt(dims);
 
   for (int d=0;d<coarseLatt.size();d++){
     coarseLatt[d] = fineLatt[d]/blockSize[d];    assert(coarseLatt[d]*blockSize[d]==fineLatt[d]);

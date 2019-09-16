@@ -27,37 +27,35 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 
 #ifndef GRID_QCD_ACTION_PARAMS_H
 #define GRID_QCD_ACTION_PARAMS_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
-  // These can move into a params header and be given MacroMagic serialisation
-  struct GparityWilsonImplParams {
-    bool overlapCommsCompute;
-    std::vector<int> twists;
-    GparityWilsonImplParams() : twists(Nd, 0), overlapCommsCompute(false){};
-  };
+// These can move into a params header and be given MacroMagic serialisation
+struct GparityWilsonImplParams {
+  Coordinate twists;
+  GparityWilsonImplParams() : twists(Nd, 0) {};
+};
   
-  struct WilsonImplParams {
-    bool overlapCommsCompute;
-    std::vector<Real> twist_n_2pi_L;
-    std::vector<Complex> boundary_phases;
-    WilsonImplParams() : overlapCommsCompute(false) {
-      boundary_phases.resize(Nd, 1.0);
+struct WilsonImplParams {
+  bool overlapCommsCompute;
+  AcceleratorVector<Real,Nd> twist_n_2pi_L;
+  AcceleratorVector<Complex,Nd> boundary_phases;
+  WilsonImplParams()  {
+    boundary_phases.resize(Nd, 1.0);
       twist_n_2pi_L.resize(Nd, 0.0);
-    };
-    WilsonImplParams(const std::vector<Complex> phi) : boundary_phases(phi), overlapCommsCompute(false) {
-      twist_n_2pi_L.resize(Nd, 0.0);
-    }
   };
+  WilsonImplParams(const AcceleratorVector<Complex,Nd> phi) : boundary_phases(phi), overlapCommsCompute(false) {
+    twist_n_2pi_L.resize(Nd, 0.0);
+  }
+};
 
-  struct StaggeredImplParams {
-    StaggeredImplParams()  {};
-  };
+struct StaggeredImplParams {
+  StaggeredImplParams()  {};
+};
   
   struct OneFlavourRationalParams : Serializable {
     GRID_SERIALIZABLE_CLASS_MEMBERS(OneFlavourRationalParams, 
@@ -69,10 +67,10 @@ namespace QCD {
 				    int,   precision,
 				    int,   BoundsCheckFreq);
     
-    // MaxIter and tolerance, vectors??
+  // MaxIter and tolerance, vectors??
     
-    // constructor 
-    OneFlavourRationalParams(	RealD _lo      = 0.0, 
+  // constructor 
+  OneFlavourRationalParams(	RealD _lo      = 0.0, 
 				RealD _hi      = 1.0, 
 				int _maxit     = 1000,
 				RealD tol      = 1.0e-8, 
@@ -88,11 +86,6 @@ namespace QCD {
         BoundsCheckFreq(_BoundsCheckFreq){};
   };
   
-  
-}
-}
-
-
-
+NAMESPACE_END(Grid);
 
 #endif

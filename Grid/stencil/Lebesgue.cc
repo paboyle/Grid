@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,12 +24,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #include <Grid/GridCore.h>
 #include <algorithm>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 int LebesgueOrder::UseLebesgueOrder;
 #ifdef KNL
@@ -62,19 +62,19 @@ LebesgueOrder::LebesgueOrder(GridBase *_grid)
 }
 void LebesgueOrder::ThreadInterleave(void)
 {
-  std::vector<IndexInteger> reorder = _LebesgueReorder;
-  std::vector<IndexInteger> throrder;
+  Vector<IndexInteger> reorder = _LebesgueReorder;
+  Vector<IndexInteger> throrder;
   int vol = _LebesgueReorder.size();
   int threads = GridThread::GetThreads();
   int blockbits=3;
-  int blocklen = 8;
-  int msk      = 0x7;
+  //  int blocklen = 8;
+  //  int msk      = 0x7;
 
   for(int t=0;t<threads;t++){
     for(int ss=0;ss<vol;ss++){
-       if ( ( ss >> blockbits) % threads == t ) { 
-         throrder.push_back(reorder[ss]);
-       }
+      if ( ( ss >> blockbits) % threads == t ) { 
+	throrder.push_back(reorder[ss]);
+      }
     }
   }
   _LebesgueReorder = throrder;
@@ -100,9 +100,9 @@ void LebesgueOrder::CartesianBlocking(void)
   assert(ND==4);
   assert(ND==Block.size());
 
-  std::vector<IndexInteger> dims(ND);
-  std::vector<IndexInteger> xo(ND,0);
-  std::vector<IndexInteger> xi(ND,0);
+  Coordinate dims(ND);
+  Coordinate xo(ND,0);
+  Coordinate xi(ND,0);
 
   for(IndexInteger mu=0;mu<ND;mu++){
     dims[mu] = grid->_rdimensions[mu];
@@ -112,9 +112,9 @@ void LebesgueOrder::CartesianBlocking(void)
 };
 
 void LebesgueOrder::IterateO(int ND,int dim,
-	      std::vector<IndexInteger> & xo,
-	      std::vector<IndexInteger> & xi,
-	      std::vector<IndexInteger> &dims)
+			     Coordinate & xo,
+			     Coordinate & xi,
+			     Coordinate &dims)
 {
   for(xo[dim]=0;xo[dim]<dims[dim];xo[dim]+=Block[dim]){
     if ( dim > 0 ) {
@@ -126,21 +126,21 @@ void LebesgueOrder::IterateO(int ND,int dim,
 };
 
 void LebesgueOrder::IterateI(int ND,
-	      int dim,
-	      std::vector<IndexInteger> & xo,
-	      std::vector<IndexInteger> & xi,
-	      std::vector<IndexInteger> &dims)
+			     int dim,
+			     Coordinate & xo,
+			     Coordinate & xi,
+			     Coordinate &dims)
 {
-  std::vector<IndexInteger> x(ND);
+  Coordinate x(ND);
   for(xi[dim]=0;xi[dim]<std::min(dims[dim]-xo[dim],Block[dim]);xi[dim]++){
     if ( dim > 0 ) {
       IterateI(ND,dim-1,xo,xi,dims);
     } else {
       for(int d=0;d<ND;d++){
 	x[d]=xi[d]+xo[d];
-//	std::cout << x[d]<<" ";
+	//	std::cout << x[d]<<" ";
       }
-//      std::cout << "\n";
+      //      std::cout << "\n";
       IndexInteger index;
       Lexicographic::IndexFromCoor(x,index,grid->_rdimensions);
       _LebesgueReorder.push_back(index);
@@ -157,8 +157,8 @@ void LebesgueOrder::ZGraph(void)
   const IndexInteger one=1;
 
   IndexInteger ND = grid->_ndimension;
-  std::vector<IndexInteger> dims(ND);
-  std::vector<IndexInteger> adims(ND);
+  Coordinate dims(ND);
+  Coordinate adims(ND);
   std::vector<std::vector<IndexInteger> > bitlist(ND);
   
   for(IndexInteger mu=0;mu<ND;mu++){
@@ -227,16 +227,17 @@ void LebesgueOrder::ZGraph(void)
   assert( _LebesgueReorder.size() == vol );
 
   /*
-  std::vector<int> coor(4);
-  for(IndexInteger asite=0;asite<vol;asite++){
+    std::vector<int> coor(4);
+    for(IndexInteger asite=0;asite<vol;asite++){
     grid->oCoorFromOindex (coor,_LebesgueReorder[asite]);
-      std::cout << " site "<<asite << "->" << _LebesgueReorder[asite]<< " = ["
-		<< coor[0]<<","
-		<< coor[1]<<","
-		<< coor[2]<<","
-		<< coor[3]<<"]"
-		<<std::endl;
-  }
+    std::cout << " site "<<asite << "->" << _LebesgueReorder[asite]<< " = ["
+    << coor[0]<<","
+    << coor[1]<<","
+    << coor[2]<<","
+    << coor[3]<<"]"
+    <<std::endl;
+    }
   */
 }
-}
+NAMESPACE_END(Grid);
+

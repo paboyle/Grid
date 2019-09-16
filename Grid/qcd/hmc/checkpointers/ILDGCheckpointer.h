@@ -25,7 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef ILDG_CHECKPOINTER
 #define ILDG_CHECKPOINTER
 
@@ -35,16 +35,15 @@ directory
 #include <sstream>
 #include <string>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 // Only for Gauge fields
 template <class Implementation>
 class ILDGHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
- private:
+private:
   CheckpointerParameters Params;
 
- public:
+public:
   INHERIT_GIMPL_TYPES(Implementation);
 
   ILDGHmcCheckpointer(const CheckpointerParameters &Params_) { initialize(Params_); }
@@ -74,7 +73,7 @@ class ILDGHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
     if ((traj % Params.saveInterval) == 0) {
       std::string config, rng;
       this->build_filenames(traj, Params, config, rng);
-      GridBase *grid = U._grid;
+      GridBase *grid = U.Grid();
       uint32_t nersc_csum,scidac_csuma,scidac_csumb;
       BinaryIO::writeRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
       IldgWriter _IldgWriter(grid->IsBoss());
@@ -117,8 +116,8 @@ class ILDGHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
 	      << std::dec << std::endl;
   };
 };
-}
-}
+
+NAMESPACE_END(Grid);
 
 #endif  // HAVE_LIME
 #endif  // ILDG_CHECKPOINTER

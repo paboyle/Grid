@@ -24,8 +24,7 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef GRID_ILDG_IO_H
-#define GRID_ILDG_IO_H
+#pragma once
 
 #ifdef HAVE_LIME
 #include <algorithm>
@@ -43,8 +42,7 @@ extern "C" {
 #include "lime.h"
 }
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 #define GRID_FIELD_NORM "FieldNormMetaData"
 #define GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) \
@@ -140,7 +138,7 @@ assert(GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) < 1.0e-5);
    /////////////////////////////////////
    // Scidac Private File structure
    /////////////////////////////////////
-   _scidacFile              = scidacFile(field._grid);
+   _scidacFile              = scidacFile(field.Grid());
 
    /////////////////////////////////////
    // Scidac Private Record structure
@@ -227,10 +225,10 @@ class GridLimeReader : public BinaryIO {
 
 	//	std::cout << GridLogMessage<< " readLimeLatticeBinaryObject matches ! " <<std::endl;
 
-	uint64_t PayloadSize = sizeof(sobj) * field._grid->_gsites;
+	uint64_t PayloadSize = sizeof(sobj) * field.Grid()->_gsites;
 
 	//	std::cout << "R sizeof(sobj)= " <<sizeof(sobj)<<std::endl;
-	//	std::cout << "R Gsites " <<field._grid->_gsites<<std::endl;
+	//	std::cout << "R Gsites " <<field.Grid()->_gsites<<std::endl;
 	//	std::cout << "R Payload expected " <<PayloadSize<<std::endl;
 	//	std::cout << "R file size " <<file_bytes <<std::endl;
 
@@ -406,7 +404,7 @@ class GridLimeWriter : public BinaryIO
   ////////////////////////////////////////////////////
   // Write a generic lattice field and csum
   // This routine is Collectively called by all nodes
-  // in communicator used by the field._grid
+  // in communicator used by the field.Grid()
   ////////////////////////////////////////////////////
   template<class vobj>
   void writeLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name)
@@ -425,8 +423,8 @@ class GridLimeWriter : public BinaryIO
     //  v) Continue writing scidac record.
     ////////////////////////////////////////////////////////////////////
     
-    GridBase *grid = field._grid;
-    assert(boss_node == field._grid->IsBoss() );
+    GridBase *grid = field.Grid();
+    assert(boss_node == field.Grid()->IsBoss() );
 
     FieldNormMetaData FNMD; FNMD.norm2 = norm2(field);
 
@@ -443,7 +441,7 @@ class GridLimeWriter : public BinaryIO
     }
     
     //    std::cout << "W sizeof(sobj)"      <<sizeof(sobj)<<std::endl;
-    //    std::cout << "W Gsites "           <<field._grid->_gsites<<std::endl;
+    //    std::cout << "W Gsites "           <<field.Grid()->_gsites<<std::endl;
     //    std::cout << "W Payload expected " <<PayloadSize<<std::endl;
 
     ////////////////////////////////////////////////
@@ -515,7 +513,7 @@ class ScidacWriter : public GridLimeWriter {
   void writeScidacFieldRecord(Lattice<vobj> &field,userRecord _userRecord,
                               const unsigned int recordScientificPrec = 0) 
   {
-    GridBase * grid = field._grid;
+    GridBase * grid = field.Grid();
 
     ////////////////////////////////////////
     // fill the Grid header
@@ -557,7 +555,7 @@ class ScidacReader : public GridLimeReader {
   void readScidacFieldRecord(Lattice<vobj> &field,userRecord &_userRecord) 
   {
     typedef typename vobj::scalar_object sobj;
-    GridBase * grid = field._grid;
+    GridBase * grid = field.Grid();
 
     ////////////////////////////////////////
     // fill the Grid header
@@ -624,7 +622,7 @@ class IldgWriter : public ScidacWriter {
   template <class vsimd>
   void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,int sequence,std::string LFN,std::string description) 
   {
-    GridBase * grid = Umu._grid;
+    GridBase * grid = Umu.Grid();
     typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
     typedef iLorentzColourMatrix<vsimd> vobj;
     typedef typename vobj::scalar_object sobj;
@@ -717,9 +715,9 @@ class IldgReader : public GridLimeReader {
     typedef LorentzColourMatrixF fobj;
     typedef LorentzColourMatrixD dobj;
 
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
 
-    std::vector<int> dims = Umu._grid->FullDimensions();
+    Coordinate dims = Umu.Grid()->FullDimensions();
 
     assert(dims.size()==4);
 
@@ -853,6 +851,7 @@ class IldgReader : public GridLimeReader {
     // Minimally must find binary segment and checksum
     // Since this is an ILDG reader require ILDG format
     //////////////////////////////////////////////////////
+    assert(found_ildgLFN);
     assert(found_ildgBinary);
     assert(found_ildgFormat);
     assert(found_scidacChecksum);
@@ -930,9 +929,9 @@ class IldgReader : public GridLimeReader {
   }
  };
 
-}}
+NAMESPACE_END(Grid);
+
 
 //HAVE_LIME
 #endif
 
-#endif

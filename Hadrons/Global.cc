@@ -29,7 +29,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Global.hpp>
 
 using namespace Grid;
-using namespace QCD;
 using namespace Hadrons;
 
 HadronsLogger Hadrons::HadronsLogError(1,"Error");
@@ -77,7 +76,7 @@ size_t Hadrons::typeHash(const std::type_info *info)
     return info->hash_code();
 }
 
-constexpr unsigned int maxNameSize = 1024u;
+//constexpr unsigned int maxNameSize = 1024u;
 
 std::string Hadrons::typeName(const std::type_info *info)
 {

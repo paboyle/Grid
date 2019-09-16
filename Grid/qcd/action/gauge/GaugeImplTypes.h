@@ -29,6 +29,9 @@ directory
 #ifndef GRID_GAUGE_IMPL_TYPES_H
 #define GRID_GAUGE_IMPL_TYPES_H
 
+
+NAMESPACE_BEGIN(Grid);
+
 #define CPS_MD_TIME
 
 #ifdef CPS_MD_TIME
@@ -36,9 +39,6 @@ directory
 #else
 #define HMC_MOMENTUM_DENOMINATOR (1.0)
 #endif
-
-namespace Grid {
-namespace QCD {
 
 ////////////////////////////////////////////////////////////////////////
 // Implementation dependent gauge types
@@ -85,13 +85,12 @@ public:
 
 
   // Move this elsewhere? FIXME
-  static inline void AddLink(Field &U, LinkField &W,
-                                  int mu) { // U[mu] += W
-    PARALLEL_FOR_LOOP
-    for (auto ss = 0; ss < U._grid->oSites(); ss++) {
-      U._odata[ss]._internal[mu] =
-          U._odata[ss]._internal[mu] + W._odata[ss]._internal;
-    }
+  static inline void AddLink(Field &U, LinkField &W, int mu) { // U[mu] += W
+    auto U_v = U.View();
+    auto W_v = W.View();
+    thread_for( ss, U.Grid()->oSites(), {
+      U_v[ss](mu) = U_v[ss](mu) + W_v[ss]();
+    });
   }
 
   ///////////////////////////////////////////////////////////
@@ -111,13 +110,12 @@ public:
     //
     //                    =  N \Prod_{x,\mu,a} e^-{1/2 (c_xmua/sqrt{2})^2  }
     // 
-    // Expect c' = cxmua/sqrt(2) to be a unit variance gaussian.
     //
     // Expect cxmua variance sqrt(2).
     //
     // Must scale the momentum by sqrt(2) to invoke CPS and UKQCD conventions
     //
-    LinkField Pmu(P._grid);
+    LinkField Pmu(P.Grid());
     Pmu = Zero();
     for (int mu = 0; mu < Nd; mu++) {
       SU<Nrepresentation>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
@@ -133,10 +131,13 @@ public:
     //static std::chrono::duration<double> diff;
 
     //auto start = std::chrono::high_resolution_clock::now();
-    parallel_for(int ss=0;ss<P._grid->oSites();ss++){
-      for (int mu = 0; mu < Nd; mu++) 
-        U[ss]._internal[mu] = ProjectOnGroup(Exponentiate(P[ss]._internal[mu], ep, Nexp) * U[ss]._internal[mu]);
-    }
+    auto U_v = U.View();
+    auto P_v = P.View();
+    thread_for(ss, P.Grid()->oSites(),{
+      for (int mu = 0; mu < Nd; mu++) {
+        U_v[ss](mu) = ProjectOnGroup(Exponentiate(P_v[ss](mu), ep, Nexp) * U_v[ss](mu));
+      }
+    });
     
     //auto end = std::chrono::high_resolution_clock::now();
    // diff += end - start;
@@ -144,13 +145,13 @@ public:
   }
 
   static inline RealD FieldSquareNorm(Field& U){
-    LatticeComplex Hloc(U._grid);
-    Hloc = zero;
+    LatticeComplex Hloc(U.Grid());
+    Hloc = Zero();
     for (int mu = 0; mu < Nd; mu++) {
       auto Umu = PeekIndex<LorentzIndex>(U, mu);
       Hloc += trace(Umu * Umu);
     }
-    Complex Hsum = sum(Hloc);
+    auto Hsum = TensorRemove(sum(Hloc));
     return Hsum.real();
   }
 
@@ -176,8 +177,6 @@ typedef GaugeImplTypes<vComplex, SU<Nc>::AdjointDimension> GimplAdjointTypesR;
 typedef GaugeImplTypes<vComplexF, SU<Nc>::AdjointDimension> GimplAdjointTypesF;
 typedef GaugeImplTypes<vComplexD, SU<Nc>::AdjointDimension> GimplAdjointTypesD;
 
-
-} // QCD
-} // Grid
+NAMESPACE_END(Grid);
 
 #endif // GRID_GAUGE_IMPL_TYPES_H

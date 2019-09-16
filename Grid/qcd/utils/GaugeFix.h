@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     grid` physics library, www.github.com/paboyle/Grid 
 
@@ -22,19 +22,19 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 //#include <Grid/Grid.h>
 
 #ifndef GRID_QCD_GAUGE_FIX_H
 #define GRID_QCD_GAUGE_FIX_H
-namespace Grid {
-namespace QCD {
+
+NAMESPACE_BEGIN(Grid);
 
 
 template <class Gimpl> 
 class FourierAcceleratedGaugeFixer  : public Gimpl {
- public:
+public:
   INHERIT_GIMPL_TYPES(Gimpl);
 
   typedef typename Gimpl::GaugeLinkField GaugeMat;
@@ -47,7 +47,7 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
     }
   }
   static void DmuAmu(const std::vector<GaugeMat> &A,GaugeMat &dmuAmu,int orthog) {
-    dmuAmu=zero;
+    dmuAmu=Zero();
     for(int mu=0;mu<Nd;mu++){
       if ( mu != orthog ) {
 	dmuAmu = dmuAmu + A[mu] - Cshift(A[mu],mu,-1);
@@ -56,13 +56,13 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
   }  
 
   static void SteepestDescentGaugeFix(GaugeLorentz &Umu,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false,int orthog=-1) {
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
     GaugeMat xform(grid);
     SteepestDescentGaugeFix(Umu,xform,alpha,maxiter,Omega_tol,Phi_tol,Fourier,orthog);
   }
   static void SteepestDescentGaugeFix(GaugeLorentz &Umu,GaugeMat &xform,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol,bool Fourier=false,int orthog=-1) {
 
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
 
     Real org_plaq      =WilsonLoops<Gimpl>::avgPlaquette(Umu);
     Real org_link_trace=WilsonLoops<Gimpl>::linkTrace(Umu); 
@@ -72,7 +72,6 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
     xform=1.0;
 
     std::vector<GaugeMat> U(Nd,grid);
-
     GaugeMat dmuAmu(grid);
 
     {
@@ -125,7 +124,7 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
     }
   };
   static Real SteepestDescentStep(std::vector<GaugeMat> &U,GaugeMat &xform,Real & alpha, GaugeMat & dmuAmu,int orthog) {
-    GridBase *grid = U[0]._grid;
+    GridBase *grid = U[0].Grid();
 
     std::vector<GaugeMat> A(Nd,grid);
     GaugeMat g(grid);
@@ -145,14 +144,14 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
 
   static Real FourierAccelSteepestDescentStep(std::vector<GaugeMat> &U,GaugeMat &xform,Real & alpha, GaugeMat & dmuAmu,int orthog) {
 
-    GridBase *grid = U[0]._grid;
+    GridBase *grid = U[0].Grid();
 
     Real vol = grid->gSites();
 
     FFT theFFT((GridCartesian *)grid);
 
     LatticeComplex  Fp(grid);
-    LatticeComplex  psq(grid); psq=zero;
+    LatticeComplex  psq(grid); psq=Zero();
     LatticeComplex  pmu(grid); 
     LatticeComplex   one(grid); one = Complex(1.0,0.0);
 
@@ -172,8 +171,8 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
     // Work out Fp = psq_max/ psq...
     // Avoid singularities in Fp
     //////////////////////////////////
-    std::vector<int> latt_size = grid->GlobalDimensions();
-    std::vector<int> coor(grid->_ndimension,0);
+    Coordinate latt_size = grid->GlobalDimensions();
+    Coordinate coor(grid->_ndimension,0);
     for(int mu=0;mu<Nd;mu++) {
       if ( mu != orthog ) { 
 	Real TwoPiL =  M_PI * 2.0/ latt_size[mu];
@@ -212,7 +211,7 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
   }
 
   static void ExpiAlphaDmuAmu(const std::vector<GaugeMat> &A,GaugeMat &g,Real & alpha, GaugeMat &dmuAmu,int orthog) {
-    GridBase *grid = g._grid;
+    GridBase *grid = g.Grid();
     Complex cialpha(0.0,-alpha);
     GaugeMat ciadmam(grid);
     DmuAmu(A,dmuAmu,orthog);
@@ -221,6 +220,6 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
   }  
 };
 
-}
-}
+NAMESPACE_END(Grid);
+
 #endif

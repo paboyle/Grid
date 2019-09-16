@@ -38,5 +38,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/qcd/spin/Spin.h>
 #include <Grid/qcd/utils/Utils.h>
 #include <Grid/qcd/representations/Representations.h>
+NAMESPACE_CHECK(GridQCDCore);
 
 #endif

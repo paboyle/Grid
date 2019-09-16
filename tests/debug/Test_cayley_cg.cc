@@ -30,19 +30,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
-template<class d>
-struct scal {
-  d internal;
-};
 
-  Gamma::Algebra Gmu [] = {
-    Gamma::Algebra::GammaX,
-    Gamma::Algebra::GammaY,
-    Gamma::Algebra::GammaZ,
-    Gamma::Algebra::GammaT
-  };
+
 
 template<class What> 
 void  TestCGinversions(What & Ddwf, 
@@ -184,7 +174,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"OverlapWilsonCayleyTanhFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
-  OverlapWilsonCayleyTanhFermionR Dov (Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+  OverlapWilsonCayleyTanhFermionR Dov(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
   OverlapWilsonCayleyTanhFermionF DovF(UmuF,*FGridF,*FrbGridF,*UGridF,*UrbGridF,mass,M5,1.0);
   TestCGinversions<OverlapWilsonCayleyTanhFermionR>(Dov,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
   TestReconstruct5DFA<OverlapWilsonCayleyTanhFermionR,OverlapWilsonCayleyTanhFermionF>(Dov,DovF,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
@@ -225,7 +215,7 @@ void  TestCGunprec(What & Ddwf,
 		   GridParallelRNG *RNG5)
 {
   LatticeFermion src   (FGrid); random(*RNG5,src);
-  LatticeFermion result(FGrid); result=zero;
+  LatticeFermion result(FGrid); result=Zero();
 
   MdagMLinearOperator<What,LatticeFermion> HermOp(Ddwf);
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
@@ -244,7 +234,7 @@ void  TestCGprec(What & Ddwf,
   LatticeFermion    src_o(FrbGrid);
   LatticeFermion result_o(FrbGrid);
   pickCheckerboard(Odd,src_o,src);
-  result_o=zero;
+  result_o=Zero();
 
   SchurDiagMooeeOperator<What,LatticeFermion> HermOpEO(Ddwf);
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
@@ -261,7 +251,7 @@ void  TestReconstruct5D(What & Ddwf,
 			GridParallelRNG *RNG5)
 {
   LatticeFermion src4   (UGrid); random(*RNG4,src4);
-  LatticeFermion res4   (UGrid); res4 = zero;
+  LatticeFermion res4   (UGrid); res4 = Zero();
 
   LatticeFermion src   (FGrid);
   LatticeFermion src_NE(FGrid);
@@ -332,7 +322,7 @@ void  TestReconstruct5DFA(What & Ddwf,
 			  GridParallelRNG *RNG5)
 {
   LatticeFermion src4   (UGrid); random(*RNG4,src4);
-  LatticeFermion res4   (UGrid); res4 = zero;
+  LatticeFermion res4   (UGrid); res4 = Zero();
 
   LatticeFermion src   (FGrid);
   LatticeFermion src_NE(FGrid);
@@ -402,7 +392,7 @@ void  TestCGschur(What & Ddwf,
 		   GridParallelRNG *RNG5)
 {
   LatticeFermion src   (FGrid); random(*RNG5,src);
-  LatticeFermion result(FGrid); result=zero;
+  LatticeFermion result(FGrid); result=Zero();
 
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
   SchurRedBlackDiagMooeeSolve<LatticeFermion> SchurSolver(CG);

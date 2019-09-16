@@ -23,7 +23,7 @@ Author: Richard Rollins <rprollins@users.noreply.github.com>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 template<class d>
 struct scal {
@@ -37,8 +37,6 @@ Gamma::Algebra Gmu [] = {
     Gamma::Algebra::GammaT
 };
 
-bool overlapComms = false;
-
 void bench_wilson (
 		   LatticeFermion &    src,
 		   LatticeFermion & result,
@@ -49,12 +47,10 @@ void bench_wilson (
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
-  if( GridCmdOptionExists(argv,argv+argc,"--asynch") ){ overlapComms = true; }
   typename WilsonFermionR::ImplParams params;
-  params.overlapCommsCompute = overlapComms;
 
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
   std::vector<int> seeds({1,2,3,4});
   RealD mass = 0.1;
 
@@ -62,7 +58,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage<< "* Kernel options --dslash-generic, --dslash-unroll, --dslash-asm" <<std::endl;
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
-  std::cout << GridLogMessage<< "* Number of colours "<< QCD::Nc <<std::endl;
+  std::cout << GridLogMessage<< "* Number of colours "<< Nc <<std::endl;
   std::cout << GridLogMessage<< "* Benchmarking WilsonFermionR::Dhop                  "<<std::endl;
   std::cout << GridLogMessage<< "* Vectorising space-time by "<<vComplex::Nsimd()<<std::endl;
   if ( sizeof(Real)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
@@ -86,33 +82,32 @@ int main (int argc, char ** argv)
   if ( getenv("DMIN") ) dmin=atoi(getenv("DMIN"));
   for (int L=8; L<=Lmax; L*=2)
     {
-      std::vector<int> latt_size = std::vector<int>(4,L);
+      Coordinate latt_size = Coordinate(4,L);
       for(int d=4; d>dmin; d--)
 	{
 	  if ( d<=3 ) { latt_size[d] *= 2; }
 
 	  std::cout << GridLogMessage;
-	  std::copy( latt_size.begin(), --latt_size.end(), std::ostream_iterator<int>( std::cout, std::string("x").c_str() ) );
-	  std::cout << latt_size.back() << "\t\t";
+	  std::cout << latt_size;
 
 	  GridCartesian           Grid(latt_size,simd_layout,mpi_layout);
 	  GridRedBlackCartesian RBGrid(&Grid);
 
 	  GridParallelRNG  pRNG(&Grid); pRNG.SeedFixedIntegers(seeds);
 	  LatticeGaugeField Umu(&Grid); random(pRNG,Umu);
-	  LatticeFermion        src(&Grid); random(pRNG,src);
+	  LatticeFermion    src(&Grid); random(pRNG,src);
 	  LatticeFermion    src_o(&RBGrid); pickCheckerboard(Odd,src_o,src);
-	  LatticeFermion     result(&Grid); result=zero;
-	  LatticeFermion result_e(&RBGrid); result_e=zero;
+	  LatticeFermion     result(&Grid); result=Zero();
+	  LatticeFermion result_e(&RBGrid); result_e=Zero();
 
 	  double volume = std::accumulate(latt_size.begin(),latt_size.end(),1,std::multiplies<int>());
 
 	  WilsonFermionR Dw(Umu,Grid,RBGrid,mass,params);
-
+      
     // Full operator      
 	  bench_wilson(src,result,Dw,volume,DaggerNo);
 	  bench_wilson(src,result,Dw,volume,DaggerYes);
-    std::cout << "\t";
+	  std::cout << "\t";
     // EO
 	  bench_wilson(src,result,Dw,volume,DaggerNo);
 	  bench_wilson(src,result,Dw,volume,DaggerYes);
@@ -132,7 +127,7 @@ void bench_wilson (
 		   int const           dag )
 {
   int ncall    = 1000;
-  long unsigned int single_site_flops = 8*QCD::Nc*(7+16*QCD::Nc);
+  long unsigned int single_site_flops = 8*Nc*(7+16*Nc);
   double t0    = usecond();
   for(int i=0; i<ncall; i++) { Dw.Dhop(src,result,dag); }
   double t1    = usecond();
@@ -148,7 +143,7 @@ void bench_wilson_eo (
 		   int const           dag )
 {
   int ncall    = 1000;
-  long unsigned int single_site_flops = 8*QCD::Nc*(7+16*QCD::Nc);
+  long unsigned int single_site_flops = 8*Nc*(7+16*Nc);
   double t0    = usecond();
   for(int i=0; i<ncall; i++) { Dw.DhopEO(src,result,dag); }
   double t1    = usecond();

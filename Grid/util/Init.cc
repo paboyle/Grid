@@ -26,8 +26,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 /****************************************************************************/
 /* pab: Signal magic. Processor state dump is x86-64 specific               */
 /****************************************************************************/
@@ -57,8 +57,9 @@ static int
 feenableexcept (unsigned int excepts)
 {
   static fenv_t fenv;
-  unsigned int new_excepts = excepts & FE_ALL_EXCEPT,
-    old_excepts;  // previous masks
+  unsigned int new_excepts = excepts & FE_ALL_EXCEPT;
+  unsigned int old_excepts;  // previous masks
+  int iold_excepts;  // previous masks
 
   if ( fegetenv (&fenv) ) return -1;
   old_excepts = fenv.__control & FE_ALL_EXCEPT;
@@ -67,40 +68,43 @@ feenableexcept (unsigned int excepts)
   fenv.__control &= ~new_excepts;
   fenv.__mxcsr   &= ~(new_excepts << 7);
 
-  return ( fesetenv (&fenv) ? -1 : old_excepts );
+  iold_excepts  = (int) old_excepts;
+  return ( fesetenv (&fenv) ? -1 : iold_excepts );
 }
 #endif
 
-namespace Grid {
+uint32_t gpu_threads=8;
 
+NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////////////
 // Convenience functions to access stadard command line arg
 // driven parallelism controls
 //////////////////////////////////////////////////////
-static std::vector<int> Grid_default_latt;
-static std::vector<int> Grid_default_mpi;
+static Coordinate Grid_default_latt;
+static Coordinate Grid_default_mpi;
 
 int GridThread::_threads =1;
 int GridThread::_hyperthreads=1;
 int GridThread::_cores=1;
 
-const std::vector<int> &GridDefaultLatt(void)     {return Grid_default_latt;};
-const std::vector<int> &GridDefaultMpi(void)      {return Grid_default_mpi;};
-const std::vector<int> GridDefaultSimd(int dims,int nsimd)
+
+const Coordinate &GridDefaultLatt(void)     {return Grid_default_latt;};
+const Coordinate &GridDefaultMpi(void)      {return Grid_default_mpi;};
+const Coordinate GridDefaultSimd(int dims,int nsimd)
 {
-    std::vector<int> layout(dims);
-    int nn=nsimd;
-    for(int d=dims-1;d>=0;d--){
-      if ( nn>=2) {
-	layout[d]=2;
-	nn/=2;
-      } else {
-	layout[d]=1;
-      }
+  Coordinate layout(dims);
+  int nn=nsimd;
+  for(int d=dims-1;d>=0;d--){
+    if ( nn>=2) {
+      layout[d]=2;
+      nn/=2;
+    } else {
+      layout[d]=1;
     }
-    assert(nn==1);
-    return layout;
+  }
+  assert(nn==1);
+  return layout;
 }
 
 ////////////////////////////////////////////////////////////
@@ -119,7 +123,7 @@ bool GridCmdOptionExists(char** begin, char** end, const std::string& option)
 {
   return std::find(begin, end, option) != end;
 }
-  // Comma separated list
+// Comma separated list
 void GridCmdOptionCSL(std::string str,std::vector<std::string> & vec)
 {
   size_t pos = 0;
@@ -137,7 +141,8 @@ void GridCmdOptionCSL(std::string str,std::vector<std::string> & vec)
   return;
 }
 
-void GridCmdOptionIntVector(std::string &str,std::vector<int> & vec)
+template<class VectorInt>
+void GridCmdOptionIntVector(std::string &str,VectorInt & vec)
 {
   vec.resize(0);
   std::stringstream ss(str);
@@ -159,11 +164,11 @@ void GridCmdOptionInt(std::string &str,int & val)
 
 
 void GridParseLayout(char **argv,int argc,
-		     std::vector<int> &latt,
-		     std::vector<int> &mpi)
+		     Coordinate &latt_c,
+		     Coordinate &mpi_c)
 {
-  mpi =std::vector<int>({1,1,1,1});
-  latt=std::vector<int>({8,8,8,8});
+  auto mpi =std::vector<int>({1,1,1,1});
+  auto latt=std::vector<int>({8,8,8,8});
 
   GridThread::SetMaxThreads();
 
@@ -187,15 +192,40 @@ void GridParseLayout(char **argv,int argc,
     assert(ompthreads.size()==1);
     GridThread::SetThreads(ompthreads[0]);
   }
+  if( GridCmdOptionExists(argv,argv+argc,"--gpu-threads") ){
+    std::vector<int> gputhreads(0);
+#ifndef GRID_NVCC
+    std::cout << GridLogWarning << "'--gpu-threads' option used but Grid was"
+              << " not compiled with GPU support" << std::endl;
+#endif
+    arg= GridCmdOptionPayload(argv,argv+argc,"--gpu-threads");
+    GridCmdOptionIntVector(arg,gputhreads);
+    assert(gputhreads.size()==1);
+    gpu_threads=gputhreads[0];
+  }
+
   if( GridCmdOptionExists(argv,argv+argc,"--cores") ){
     int cores;
     arg= GridCmdOptionPayload(argv,argv+argc,"--cores");
     GridCmdOptionInt(arg,cores);
     GridThread::SetCores(cores);
   }
+  // Copy back into coordinate format
+  int nd = mpi.size();
+  assert(latt.size()==nd);
+  latt_c.resize(nd);
+   mpi_c.resize(nd);
+  for(int d=0;d<nd;d++){
+    latt_c[d] = latt[d];
+     mpi_c[d] = mpi[d];
+  } 
 }
 
-std::string GridCmdVectorIntToString(const std::vector<int> & vec){
+template<class VectorInt>
+std::string GridCmdVectorIntToString(const VectorInt & vec_in){
+  int sz = vec_in.size();
+  std::vector<int> vec(sz);
+  for(int s=0;s<sz;s++) vec[s] = vec_in[s];
   std::ostringstream oss;
   std::copy(vec.begin(), vec.end(),std::ostream_iterator<int>(oss, " "));
   return oss.str();
@@ -203,63 +233,16 @@ std::string GridCmdVectorIntToString(const std::vector<int> & vec){
 /////////////////////////////////////////////////////////
 // Reinit guard
 /////////////////////////////////////////////////////////
-static int Grid_is_initialised = 0;
 static MemoryStats dbgMemStats;
+static int Grid_is_initialised;
 
-void Grid_init(int *argc,char ***argv)
+/////////////////////////////////////////////////////////
+// Reinit guard
+/////////////////////////////////////////////////////////
+void GridBanner(void)
 {
-  GridLogger::GlobalStopWatch.Start();
-
-  std::string arg;
-
-  ////////////////////////////////////
-  // Shared memory block size
-  ////////////////////////////////////
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--shm") ){
-    int MB;
-    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--shm");
-    GridCmdOptionInt(arg,MB);
-    uint64_t MB64 = MB;
-    GlobalSharedMemory::MAX_MPI_SHM_BYTES = MB64*1024LL*1024LL;
-  }
-
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--shm-hugepages") ){
-    GlobalSharedMemory::Hugepages = 1;
-  }
-
-
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-signals") ){
-    Grid_debug_handler_init();
-  }
-
-  CartesianCommunicator::Init(argc,argv);
-
-  if( !GridCmdOptionExists(*argv,*argv+*argc,"--debug-stdout") ){
-    Grid_quiesce_nodes();
-  } else { 
-    FILE *fp;
-    std::ostringstream fname;
-    fname<<"Grid.stdout.";
-    fname<<CartesianCommunicator::RankWorld();
-    fp=freopen(fname.str().c_str(),"w",stdout);
-    assert(fp!=(FILE *)NULL);
-
-    std::ostringstream ename;
-    ename<<"Grid.stderr.";
-    ename<<CartesianCommunicator::RankWorld();
-    fp=freopen(ename.str().c_str(),"w",stderr);
-    assert(fp!=(FILE *)NULL);
-  }
-
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-mem") ){
-    MemoryProfiler::debug = true;
-    MemoryProfiler::stats = &dbgMemStats;
-  }
-
-  ////////////////////////////////////
-  // Banner
-  ////////////////////////////////////
-  if ( CartesianCommunicator::RankWorld() == 0 ) { 
+  static int printed =0;
+  if( !printed ) {
     std::cout <<std::endl;
     std::cout  << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
     std::cout  << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
@@ -289,19 +272,175 @@ void Grid_init(int *argc,char ***argv)
     std::cout << "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"<<std::endl;
     std::cout << "GNU General Public License for more details."<<std::endl;
     printHash();
-  #ifdef GRID_BUILD_REF
-  #define _GRID_BUILD_STR(x) #x
-  #define GRID_BUILD_STR(x) _GRID_BUILD_STR(x)
+#ifdef GRID_BUILD_REF
+#define _GRID_BUILD_STR(x) #x
+#define GRID_BUILD_STR(x) _GRID_BUILD_STR(x)
     std::cout << "Build " << GRID_BUILD_STR(GRID_BUILD_REF) << std::endl;
-  #endif
+#endif
     std::cout << std::endl;
+    printed=1;
+  }
+}
+#ifdef GRID_NVCC
+cudaDeviceProp *gpu_props;
+#endif
+void GridGpuInit(void)
+{
+#ifdef GRID_NVCC
+  int nDevices = 1;
+  cudaGetDeviceCount(&nDevices);
+  gpu_props = new cudaDeviceProp[nDevices];
+
+  char * localRankStr = NULL;
+  int rank = 0, device = 0, world_rank=0; 
+#define ENV_LOCAL_RANK_OMPI    "OMPI_COMM_WORLD_LOCAL_RANK"
+#define ENV_LOCAL_RANK_MVAPICH "MV2_COMM_WORLD_LOCAL_RANK"
+#define ENV_RANK_OMPI          "OMPI_COMM_WORLD_RANK"
+#define ENV_RANK_MVAPICH       "MV2_COMM_WORLD_RANK"
+  // We extract the local rank initialization using an environment variable
+  if ((localRankStr = getenv(ENV_LOCAL_RANK_OMPI)) != NULL)
+  {
+    rank = atoi(localRankStr);		
+    device = rank %nDevices;
+  }
+  if ((localRankStr = getenv(ENV_LOCAL_RANK_MVAPICH)) != NULL)
+  {
+    rank = atoi(localRankStr);		
+    device = rank %nDevices;
+  }
+  if ((localRankStr = getenv(ENV_RANK_OMPI   )) != NULL) { world_rank = atoi(localRankStr);}
+  if ((localRankStr = getenv(ENV_RANK_MVAPICH)) != NULL) { world_rank = atoi(localRankStr);}
+
+  cudaSetDevice(device);
+  if ( world_rank == 0 ) {
+    GridBanner();
+    printf("GpuInit: ================================================\n");
+    printf("GpuInit: Setting up Cuda Device map before first MPI call\n",nDevices);
+    printf("GpuInit: ================================================\n");
+    printf("GpuInit: Cuda reports %d GPUs on MPI rank 0\n",nDevices);
   }
 
+  for (int i = 0; i < nDevices; i++) {
+
+#define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("GpuInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
+#define GPU_PROP(canMapHostMemory)             GPU_PROP_FMT(canMapHostMemory,"%d");
+    
+    //      cudaGetDeviceProperties(&prop, i);
+    cudaGetDeviceProperties(&gpu_props[i], i);
+    if ( world_rank == 0) {
+      cudaDeviceProp prop; 
+      prop = gpu_props[i];
+      printf("GpuInit: ========================\n");
+      printf("GpuInit: Device Number    : %d\n", i);
+      printf("GpuInit: ========================\n");
+      printf("GpuInit: Device identifier: %s\n", prop.name);
+      //      printf("GpuInit:   Peak Memory Bandwidth (GB/s): %f\n",(float)2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6);
+      GPU_PROP(managedMemory);
+      GPU_PROP(isMultiGpuBoard);
+      GPU_PROP(warpSize);
+#if 0
+      GPU_PROP(unifiedAddressing);
+      GPU_PROP(l2CacheSize);
+      GPU_PROP(singleToDoublePrecisionPerfRatio);
+#endif
+    }
+  }
+  if ( world_rank == 0 ) {
+    printf("GpuInit: ================================================\n");
+  }
+#endif
+}
+
+void Grid_init(int *argc,char ***argv)
+{
+
+  assert(Grid_is_initialised == 0);
+
+  GridLogger::GlobalStopWatch.Start();
+
+  std::string arg;
+
+  //////////////////////////////////////////////////////////
+  // Early intialisation necessities without rank knowledge
+  //////////////////////////////////////////////////////////
+  GridGpuInit(); // Must come first to set device prior to MPI init
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--shm") ){
+    int MB;
+    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--shm");
+    GridCmdOptionInt(arg,MB);
+    uint64_t MB64 = MB;
+    GlobalSharedMemory::MAX_MPI_SHM_BYTES = MB64*1024LL*1024LL;
+  }
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--hypercube") ){
+    int enable;
+    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--hypercube");
+    GridCmdOptionInt(arg,enable);
+    GlobalSharedMemory::HPEhypercube = enable;
+  }
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--shm-hugepages") ){
+    GlobalSharedMemory::Hugepages = 1;
+  }
+
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-signals") ){
+    Grid_debug_handler_init();
+  }
+
+  //////////////////////////////////////////////////////////
+  // MPI initialisation
+  //////////////////////////////////////////////////////////
+  CartesianCommunicator::Init(argc,argv);
+
+  ////////////////////////////////////
+  // Banner after MPI (unless GPU)
+  ////////////////////////////////////
+  if ( CartesianCommunicator::RankWorld() == 0 ) { 
+    GridBanner();
+  }
+
+  /////////////////////////////////////////////////////////////////
+  // Rank information can be used to control who logs
+  /////////////////////////////////////////////////////////////////
+  if( !GridCmdOptionExists(*argv,*argv+*argc,"--debug-stdout") ){
+    Grid_quiesce_nodes();
+  } else { 
+    FILE *fp;
+    std::ostringstream fname;
+    fname<<"Grid.stdout.";
+    fname<<CartesianCommunicator::RankWorld();
+    fp=freopen(fname.str().c_str(),"w",stdout);
+    assert(fp!=(FILE *)NULL);
+
+    std::ostringstream ename;
+    ename<<"Grid.stderr.";
+    ename<<CartesianCommunicator::RankWorld();
+    fp=freopen(ename.str().c_str(),"w",stderr);
+    assert(fp!=(FILE *)NULL);
+  }
+  ////////////////////////////////////////////////////
+  // OK to use GridLogMessage etc from here on
+  ////////////////////////////////////////////////////
+  std::cout << GridLogMessage << "================================================ "<<std::endl;
+  std::cout << GridLogMessage << "MPI is initialised and logging filters activated "<<std::endl;
+  std::cout << GridLogMessage << "================================================ "<<std::endl;
+
+  std::cout << GridLogMessage << "Requested "<< GlobalSharedMemory::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
+  if ( GlobalSharedMemory::Hugepages) {
+    std::cout << GridLogMessage << "Mapped stencil comms buffers as MAP_HUGETLB "<<std::endl;
+  }
+
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-mem") ){
+    MemoryProfiler::debug = true;
+    MemoryProfiler::stats = &dbgMemStats;
+  }
 
   ////////////////////////////////////
   // Logging
   ////////////////////////////////////
-
   std::vector<std::string> logstreams;
   std::string defaultLog("Error,Warning,Message,Performance");
   GridCmdOptionCSL(defaultLog,logstreams);
@@ -359,23 +498,23 @@ void Grid_init(int *argc,char ***argv)
   ////////////////////////////////////
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-unroll") ){
-    QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptHandUnroll;
-    QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptHandUnroll;
+    WilsonKernelsStatic::Opt=WilsonKernelsStatic::OptHandUnroll;
+    StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptHandUnroll;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-asm") ){
-    QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptInlineAsm;
-    QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptInlineAsm;
+    WilsonKernelsStatic::Opt=WilsonKernelsStatic::OptInlineAsm;
+    StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptInlineAsm;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-generic") ){
-    QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptGeneric;
-    QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptGeneric;
+    WilsonKernelsStatic::Opt=WilsonKernelsStatic::OptGeneric;
+    StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptGeneric;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-overlap") ){
-    QCD::WilsonKernelsStatic::Comms = QCD::WilsonKernelsStatic::CommsAndCompute;
-    QCD::StaggeredKernelsStatic::Comms = QCD::StaggeredKernelsStatic::CommsAndCompute;
+    WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsAndCompute;
+    StaggeredKernelsStatic::Comms = StaggeredKernelsStatic::CommsAndCompute;
   } else {
-    QCD::WilsonKernelsStatic::Comms = QCD::WilsonKernelsStatic::CommsThenCompute;
-    QCD::StaggeredKernelsStatic::Comms = QCD::StaggeredKernelsStatic::CommsThenCompute;
+    WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsThenCompute;
+    StaggeredKernelsStatic::Comms = StaggeredKernelsStatic::CommsThenCompute;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-concurrent") ){
     CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicyConcurrent);
@@ -407,10 +546,6 @@ void Grid_init(int *argc,char ***argv)
 		  Grid_default_latt,
 		  Grid_default_mpi);
 
-  std::cout << GridLogMessage << "Requesting "<< GlobalSharedMemory::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
-  if ( GlobalSharedMemory::Hugepages) {
-    std::cout << GridLogMessage << "Mapped stencil comms buffers as MAP_HUGETLB "<<std::endl;
-  }
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--decomposition") ){
     std::cout<<GridLogMessage<<"Grid Default Decomposition patterns\n";
@@ -421,8 +556,6 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"\tvComplexF      : "<<sizeof(vComplexF)*8 <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vComplexF::Nsimd()))<<std::endl;
     std::cout<<GridLogMessage<<"\tvComplexD      : "<<sizeof(vComplexD)*8 <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vComplexD::Nsimd()))<<std::endl;
   }
-
-
   Grid_is_initialised = 1;
 }
 
@@ -436,13 +569,14 @@ void Grid_finalize(void)
 #if defined (GRID_COMMS_SHMEM)
   shmem_finalize();
 #endif
+  Grid_is_initialised = 0;
 }
 
 void GridLogLayout() {
-    std::cout << GridLogMessage << "Grid Layout\n";
-    std::cout << GridLogMessage << "\tGlobal lattice size  : "<< GridCmdVectorIntToString(GridDefaultLatt()) << std::endl;
-    std::cout << GridLogMessage << "\tOpenMP threads       : "<< GridThread::GetThreads() <<std::endl;
-    std::cout << GridLogMessage << "\tMPI tasks            : "<< GridCmdVectorIntToString(GridDefaultMpi()) << std::endl;
+  std::cout << GridLogMessage << "Grid Layout\n";
+  std::cout << GridLogMessage << "\tGlobal lattice size  : "<< GridCmdVectorIntToString(GridDefaultLatt()) << std::endl;
+  std::cout << GridLogMessage << "\tOpenMP threads       : "<< GridThread::GetThreads() <<std::endl;
+  std::cout << GridLogMessage << "\tMPI tasks            : "<< GridCmdVectorIntToString(GridDefaultMpi()) << std::endl;
 }
 
 void * Grid_backtrace_buffer[_NBACKTRACE];
@@ -490,9 +624,14 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   return;
 };
 
+void Grid_exit_handler(void)
+{
+  BACKTRACEFP(stdout);
+  fflush(stdout);
+}
 void Grid_debug_handler_init(void)
 {
-  struct sigaction sa,osa;
+  struct sigaction sa;
   sigemptyset (&sa.sa_mask);
   sa.sa_sigaction= Grid_sa_signal_handler;
   sa.sa_flags    = SA_SIGINFO;
@@ -505,5 +644,8 @@ void Grid_debug_handler_init(void)
   sigaction(SIGFPE,&sa,NULL);
   sigaction(SIGKILL,&sa,NULL);
   sigaction(SIGILL,&sa,NULL);
+
+  atexit(Grid_exit_handler);
 }
-}
+
+NAMESPACE_END(Grid);

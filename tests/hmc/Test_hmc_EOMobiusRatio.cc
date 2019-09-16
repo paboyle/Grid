@@ -73,7 +73,7 @@ namespace Grid{
 
 int main(int argc, char **argv) {
   using namespace Grid;
-  using namespace Grid::QCD;
+   ;
 
   Grid_init(&argc, &argv);
   int threads = GridThread::GetThreads();
@@ -86,8 +86,8 @@ int main(int argc, char **argv) {
   typedef MobiusFermionR FermionAction;
   typedef typename FermionAction::FermionField FermionField;
   // Serialiser
-  //typedef Grid::XmlReader       Serialiser;
-  typedef Grid::JSONReader       Serialiser;
+  typedef Grid::XmlReader       Serialiser;
+  //typedef Grid::JSONReader       Serialiser;
   
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   HMCWrapper TheHMC;

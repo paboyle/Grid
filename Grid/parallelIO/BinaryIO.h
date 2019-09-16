@@ -26,8 +26,7 @@
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#ifndef GRID_BINARY_IO_H
-#define GRID_BINARY_IO_H
+#pragma once
 
 #if defined(GRID_COMMS_MPI) || defined(GRID_COMMS_MPI3) || defined(GRID_COMMS_MPIT) 
 #define USE_MPI_IO
@@ -42,8 +41,7 @@
 #include <arpa/inet.h>
 #include <algorithm>
 
-namespace Grid { 
-
+NAMESPACE_BEGIN(Grid);
 
 /////////////////////////////////////////////////////////////////////////////////
 // Byte reversal garbage
@@ -91,7 +89,7 @@ class BinaryIO {
   {
     typedef typename vobj::scalar_object sobj;
 
-    GridBase *grid = lat._grid;
+    GridBase *grid = lat.Grid();
     uint64_t lsites = grid->lSites();
 
     std::vector<sobj> scalardata(lsites); 
@@ -111,21 +109,20 @@ class BinaryIO {
       lsites = 1;
     }
 
-PARALLEL_REGION
+    thread_region
     {
       uint32_t nersc_csum_thr = 0;
 
-PARALLEL_FOR_LOOP_INTERN
-      for (uint64_t local_site = 0; local_site < lsites; local_site++)
+      thread_for_in_region( local_site, lsites, 
       {
         uint32_t *site_buf = (uint32_t *)&fbuf[local_site];
         for (uint64_t j = 0; j < size32; j++)
         {
           nersc_csum_thr = nersc_csum_thr + site_buf[j];
         }
-      }
+      });
 
-PARALLEL_CRITICAL
+      thread_critical
       {
         nersc_csum += nersc_csum_thr;
       }
@@ -134,28 +131,25 @@ PARALLEL_CRITICAL
 
   template<class fobj> static inline void ScidacChecksum(GridBase *grid,std::vector<fobj> &fbuf,uint32_t &scidac_csuma,uint32_t &scidac_csumb)
   {
-    const uint64_t size32 = sizeof(fobj)/sizeof(uint32_t);
-
-
     int nd = grid->_ndimension;
 
     uint64_t lsites              =grid->lSites();
     if (fbuf.size()==1) {
       lsites=1;
     }
-    std::vector<int> local_vol   =grid->LocalDimensions();
-    std::vector<int> local_start =grid->LocalStarts();
-    std::vector<int> global_vol  =grid->FullDimensions();
+    Coordinate local_vol   =grid->LocalDimensions();
+    Coordinate local_start =grid->LocalStarts();
+    Coordinate global_vol  =grid->FullDimensions();
 
-PARALLEL_REGION
+    thread_region
     { 
-      std::vector<int> coor(nd);
+      Coordinate coor(nd);
       uint32_t scidac_csuma_thr=0;
       uint32_t scidac_csumb_thr=0;
       uint32_t site_crc=0;
 
-PARALLEL_FOR_LOOP_INTERN
-      for(uint64_t local_site=0;local_site<lsites;local_site++){
+      thread_for_in_region( local_site, lsites, 
+      {
 
 	uint32_t * site_buf = (uint32_t *)&fbuf[local_site];
 
@@ -182,9 +176,9 @@ PARALLEL_FOR_LOOP_INTERN
 	//	std::cout << "Site "<<local_site << std::hex<<site_buf[0] <<site_buf[1]<<std::dec <<std::endl;
 	scidac_csuma_thr ^= site_crc<<gsite29 | site_crc>>(32-gsite29);
 	scidac_csumb_thr ^= site_crc<<gsite31 | site_crc>>(32-gsite31);
-      }
+      });
 
-PARALLEL_CRITICAL
+      thread_critical
       {
 	scidac_csuma^= scidac_csuma_thr;
 	scidac_csumb^= scidac_csumb_thr;
@@ -202,9 +196,9 @@ PARALLEL_CRITICAL
   {
     uint32_t * f = (uint32_t *)file_object;
     uint64_t count = bytes/sizeof(uint32_t);
-    parallel_for(uint64_t i=0;i<count;i++){  
+    thread_for( i, count, {  
       f[i] = ntohl(f[i]);
-    }
+    });
   }
   // LE must Swap and switch to host
   static inline void le32toh_v(void *file_object,uint64_t bytes)
@@ -212,13 +206,13 @@ PARALLEL_CRITICAL
     uint32_t *fp = (uint32_t *)file_object;
 
     uint64_t count = bytes/sizeof(uint32_t);
-    parallel_for(uint64_t i=0;i<count;i++){  
+    thread_for(i,count,{
       uint32_t f;
       f = fp[i];
       // got network order and the network to host
       f = ((f&0xFF)<<24) | ((f&0xFF00)<<8) | ((f&0xFF0000)>>8) | ((f&0xFF000000UL)>>24) ; 
       fp[i] = ntohl(f);
-    }
+    });
   }
 
   // BE is same as network
@@ -226,9 +220,9 @@ PARALLEL_CRITICAL
   {
     uint64_t * f = (uint64_t *)file_object;
     uint64_t count = bytes/sizeof(uint64_t);
-    parallel_for(uint64_t i=0;i<count;i++){  
+    thread_for( i, count, {
       f[i] = Grid_ntohll(f[i]);
-    }
+    });
   }
   
   // LE must swap and switch;
@@ -236,7 +230,7 @@ PARALLEL_CRITICAL
   {
     uint64_t *fp = (uint64_t *)file_object;
     uint64_t count = bytes/sizeof(uint64_t);
-    parallel_for(uint64_t i=0;i<count;i++){  
+    thread_for( i, count, {
       uint64_t f,g;
       f = fp[i];
       // got network order and the network to host
@@ -245,7 +239,7 @@ PARALLEL_CRITICAL
       f = f >> 32;
       g|= ((f&0xFF)<<24) | ((f&0xFF00)<<8) | ((f&0xFF0000)>>8) | ((f&0xFF000000UL)>>24) ; 
       fp[i] = Grid_ntohll(g);
-    }
+    });
   }
   /////////////////////////////////////////////////////////////////////////////
   // Real action:
@@ -281,13 +275,13 @@ PARALLEL_CRITICAL
     int nrank                = grid->ProcessorCount();
     int myrank               = grid->ThisRank();
 
-    std::vector<int>  psizes = grid->ProcessorGrid(); 
-    std::vector<int>  pcoor  = grid->ThisProcessorCoor();
-    std::vector<int> gLattice= grid->GlobalDimensions();
-    std::vector<int> lLattice= grid->LocalDimensions();
+    Coordinate  psizes = grid->ProcessorGrid(); 
+    Coordinate  pcoor  = grid->ThisProcessorCoor();
+    Coordinate gLattice= grid->GlobalDimensions();
+    Coordinate lLattice= grid->LocalDimensions();
 
-    std::vector<int> lStart(ndim);
-    std::vector<int> gStart(ndim);
+    Coordinate lStart(ndim);
+    Coordinate gStart(ndim);
 
     // Flatten the file
     uint64_t lsites = grid->lSites();
@@ -546,7 +540,7 @@ PARALLEL_CRITICAL
     typedef typename vobj::scalar_object sobj;
     typedef typename vobj::Realified::scalar_type word;    word w=0;
 
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
     uint64_t lsites = grid->lSites();
 
     std::vector<sobj> scalardata(lsites); 
@@ -558,7 +552,7 @@ PARALLEL_CRITICAL
     GridStopWatch timer; 
     timer.Start();
 
-    parallel_for(uint64_t x=0;x<lsites;x++) munge(iodata[x], scalardata[x]);
+    thread_for(x,lsites, { munge(iodata[x], scalardata[x]); });
 
     vectorizeFromLexOrdArray(scalardata,Umu);    
     grid->Barrier();
@@ -582,7 +576,7 @@ PARALLEL_CRITICAL
   {
     typedef typename vobj::scalar_object sobj;
     typedef typename vobj::Realified::scalar_type word;    word w=0;
-    GridBase *grid = Umu._grid;
+    GridBase *grid = Umu.Grid();
     uint64_t lsites = grid->lSites(), offsetCopy = offset;
     int attemptsLeft = std::max(0, BinaryIO::latticeWriteMaxRetry);
     bool checkWrite = (BinaryIO::latticeWriteMaxRetry >= 0);
@@ -596,7 +590,7 @@ PARALLEL_CRITICAL
     GridStopWatch timer; timer.Start();
     unvectorizeToLexOrdArray(scalardata,Umu);    
 
-    parallel_for(uint64_t x=0;x<lsites;x++) munge(scalardata[x],iodata[x]);
+    thread_for(x, lsites, { munge(scalardata[x],iodata[x]); });
 
     grid->Barrier();
     timer.Stop();
@@ -619,7 +613,7 @@ PARALLEL_CRITICAL
         {
           std::cout << GridLogMessage << "writeLatticeObject: read test checksum failure, re-writing (" << attemptsLeft << " attempt(s) remaining)" << std::endl;
           offset = offsetCopy;
-          parallel_for(uint64_t x=0;x<lsites;x++) munge(scalardata[x],iodata[x]);
+          thread_for(x,lsites, { munge(scalardata[x],iodata[x]); });
         }
         else
         {
@@ -637,8 +631,8 @@ PARALLEL_CRITICAL
   /////////////////////////////////////////////////////////////////////////////
   // Read a RNG;  use IOobject and lexico map to an array of state 
   //////////////////////////////////////////////////////////////////////////////////////
-  static inline void readRNG(GridSerialRNG &serial,
-			     GridParallelRNG &parallel,
+  static inline void readRNG(GridSerialRNG &serial_rng,
+			     GridParallelRNG &parallel_rng,
 			     std::string file,
 			     uint64_t offset,
 			     uint32_t &nersc_csum,
@@ -652,7 +646,7 @@ PARALLEL_CRITICAL
 
     std::string format = "IEEE32BIG";
 
-    GridBase *grid = parallel._grid;
+    GridBase *grid = parallel_rng.Grid();
     uint64_t gsites = grid->gSites();
     uint64_t lsites = grid->lSites();
 
@@ -669,11 +663,11 @@ PARALLEL_CRITICAL
 	     nersc_csum,scidac_csuma,scidac_csumb);
 
     timer.Start();
-    parallel_for(uint64_t lidx=0;lidx<lsites;lidx++){
+    thread_for(lidx,lsites,{
       std::vector<RngStateType> tmp(RngStateCount);
       std::copy(iodata[lidx].begin(),iodata[lidx].end(),tmp.begin());
-      parallel.SetState(tmp,lidx);
-    }
+      parallel_rng.SetState(tmp,lidx);
+      });
     timer.Stop();
 
     iodata.resize(1);
@@ -683,7 +677,7 @@ PARALLEL_CRITICAL
     {
       std::vector<RngStateType> tmp(RngStateCount);
       std::copy(iodata[0].begin(),iodata[0].end(),tmp.begin());
-      serial.SetState(tmp,0);
+      serial_rng.SetState(tmp,0);
     }
 
     nersc_csum   = nersc_csum   + nersc_csum_tmp;
@@ -699,8 +693,8 @@ PARALLEL_CRITICAL
   /////////////////////////////////////////////////////////////////////////////
   // Write a RNG; lexico map to an array of state and use IOobject
   //////////////////////////////////////////////////////////////////////////////////////
-  static inline void writeRNG(GridSerialRNG &serial,
-			      GridParallelRNG &parallel,
+  static inline void writeRNG(GridSerialRNG &serial_rng,
+			      GridParallelRNG &parallel_rng,
 			      std::string file,
 			      uint64_t offset,
 			      uint32_t &nersc_csum,
@@ -712,7 +706,7 @@ PARALLEL_CRITICAL
     const int RngStateCount = GridSerialRNG::RngStateCount;
     typedef std::array<RngStateType,RngStateCount> RNGstate;
 
-    GridBase *grid = parallel._grid;
+    GridBase *grid = parallel_rng.Grid();
     uint64_t gsites = grid->gSites();
     uint64_t lsites = grid->lSites();
 
@@ -727,11 +721,11 @@ PARALLEL_CRITICAL
 
     timer.Start();
     std::vector<RNGstate> iodata(lsites);
-    parallel_for(uint64_t lidx=0;lidx<lsites;lidx++){
+    thread_for(lidx,lsites,{
       std::vector<RngStateType> tmp(RngStateCount);
-      parallel.GetState(tmp,lidx);
+      parallel_rng.GetState(tmp,lidx);
       std::copy(tmp.begin(),tmp.end(),iodata[lidx].begin());
-    }
+    });
     timer.Stop();
 
     IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_LEXICOGRAPHIC,
@@ -739,7 +733,7 @@ PARALLEL_CRITICAL
     iodata.resize(1);
     {
       std::vector<RngStateType> tmp(RngStateCount);
-      serial.GetState(tmp,0);
+      serial_rng.GetState(tmp,0);
       std::copy(tmp.begin(),tmp.end(),iodata[0].begin());
     }
     IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_MASTER_APPEND,
@@ -756,5 +750,4 @@ PARALLEL_CRITICAL
   }
 };
 
-}
-#endif
+NAMESPACE_END(Grid);

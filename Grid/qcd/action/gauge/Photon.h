@@ -27,11 +27,9 @@ Copyright (C) 2015-2018
  See the full license in the file "LICENSE" in the top level distribution directory
  *************************************************************************************/
 /*  END LEGAL */
-#ifndef QCD_PHOTON_ACTION_H
-#define QCD_PHOTON_ACTION_H
+#pragma once
 
-namespace Grid{
-namespace QCD{
+NAMESPACE_BEGIN(Grid);
 
   template <class S>
   class QedGImpl
@@ -119,9 +117,9 @@ namespace QCD{
   void Photon<GImpl>::makeSpatialNorm(LatticeInteger &spNrm)
   {
     LatticeInteger   coor(grid_);
-    std::vector<int> l = grid_->FullDimensions();
+    auto l = grid_->FullDimensions();
 
-    spNrm = zero;
+    spNrm = Zero();
     for(int mu = 0; mu < grid_->Nd() - 1; mu++)
     {
       LatticeCoordinate(coor, mu);
@@ -134,7 +132,7 @@ namespace QCD{
   void Photon<GImpl>::makeKHat(std::vector<GaugeLinkField> &khat)
   {
     const unsigned int nd = grid_->Nd();
-    std::vector<int>   l  = grid_->FullDimensions();
+    auto l  = grid_->FullDimensions();
     Complex            ci(0., 1.);
 
     khat.resize(nd, grid_);
@@ -153,10 +151,10 @@ namespace QCD{
     std::vector<GaugeLinkField> khat;
     GaugeLinkField              lone(grid_);
     const unsigned int          nd = grid_->Nd();
-    std::vector<int>            zm(nd, 0);
+    Coordinate zm(nd, 0);
     ScalarSite                  one = ScalarComplex(1., 0.), z = ScalarComplex(0., 0.);
     
-    out = zero;
+    out = Zero();
     makeKHat(khat);
     for(int mu = 0; mu < nd; mu++)
     {
@@ -175,7 +173,7 @@ namespace QCD{
     {
       case ZmScheme::qedTL:
       {
-        std::vector<int> zm(grid_->Nd(), 0);
+        Coordinate zm(grid_->Nd(), 0);
         ScalarSite       z = ScalarComplex(0., 0.);
         
         pokeSite(z, out, zm);
@@ -208,7 +206,7 @@ namespace QCD{
     LatticeInteger              spNrm(grid_);
     std::vector<GaugeLinkField> khat, a(nd, grid_), aProj(nd, grid_);
 
-    invKHat = zero;
+    invKHat = Zero();
     makeSpatialNorm(spNrm);
     makeKHat(khat);
     for (unsigned int mu = 0; mu < nd; ++mu)
@@ -222,9 +220,9 @@ namespace QCD{
     cst     = ScalarComplex(1., 0.);
     invKHat = where(spNrm == Integer(0), cst, invKHat);
     invKHat = cst/invKHat;
-    cst     = zero;
+    cst     = Zero();
     invKHat = where(spNrm == Integer(0), cst, invKHat);
-    spdiv   = zero;
+    spdiv   = Zero();
     for (unsigned int nu = 0; nu < nd - 1; ++nu)
     {
       spdiv += conjugate(khat[nu])*a[nu];
@@ -272,7 +270,7 @@ namespace QCD{
   void Photon<GImpl>::StochasticWeight(GaugeLinkField &weight)
   {
     const unsigned int nd  = grid_->Nd();
-    std::vector<int>   l   = grid_->FullDimensions();
+    auto  l   = grid_->FullDimensions();
     Integer            vol = 1;
 
     for(unsigned int mu = 0; mu < nd; mu++)
@@ -327,5 +325,5 @@ namespace QCD{
     out = real(out);
   }
   
-}}
-#endif
+NAMESPACE_END(Grid);
+

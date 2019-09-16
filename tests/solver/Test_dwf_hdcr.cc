@@ -33,7 +33,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 class myclass: Serializable {
 public:
@@ -93,13 +93,12 @@ public:
 
   void PowerMethod(const FineField &in) {
 
-    FineField p1(in._grid);
-    FineField p2(in._grid);
+    FineField p1(in.Grid());
+    FineField p2(in.Grid());
 
     MdagMLinearOperator<Matrix,FineField>   fMdagMOp(_FineMatrix);
 
     p1=in;
-    RealD absp2;
     for(int i=0;i<20;i++){
       RealD absp1=std::sqrt(norm2(p1));
       fMdagMOp.HermOp(p1,p2);// this is the G5 herm bit      
@@ -137,9 +136,9 @@ public:
     MdagMLinearOperator<CoarseOperator,CoarseVector>     MdagMOp(_CoarseOperator);
     MdagMLinearOperator<Matrix,FineField>               fMdagMOp(_FineMatrix);
 
-    FineField tmp(in._grid);
-    FineField res(in._grid);
-    FineField Min(in._grid);
+    FineField tmp(in.Grid());
+    FineField res(in.Grid());
+    FineField Min(in.Grid());
 
     // Monitor completeness of low mode space
     _Aggregates.ProjectToSubspace  (Csrc,in);
@@ -158,7 +157,7 @@ public:
     _FineOperator.Op(Min,tmp);
     tmp = in - tmp;   // in - A Min
 
-    Csol=zero;
+    Csol=Zero();
     _Aggregates.ProjectToSubspace  (Csrc,tmp);
     HermOp.AdjOp(Csrc,Ctmp);// Normal equations
     CG(MdagMOp,Ctmp,Csol);
@@ -193,7 +192,7 @@ public:
 
     CoarseVector Csrc(_CoarseOperator.Grid());
     CoarseVector Ctmp(_CoarseOperator.Grid());
-    CoarseVector Csol(_CoarseOperator.Grid()); Csol=zero;
+    CoarseVector Csol(_CoarseOperator.Grid()); Csol=Zero();
 
     ConjugateGradient<CoarseVector>  CG(1.0e-10,100000);
     ConjugateGradient<FineField>    fCG(3.0e-2,1000);
@@ -202,9 +201,9 @@ public:
     MdagMLinearOperator<CoarseOperator,CoarseVector>     MdagMOp(_CoarseOperator);
     ShiftedMdagMLinearOperator<Matrix,FineField>        fMdagMOp(_FineMatrix,0.1);
 
-    FineField tmp(in._grid);
-    FineField res(in._grid);
-    FineField Qin(in._grid);
+    FineField tmp(in.Grid());
+    FineField res(in.Grid());
+    FineField Qin(in.Grid());
 
     // Monitor completeness of low mode space
     //    _Aggregates.ProjectToSubspace  (Csrc,in);
@@ -235,17 +234,17 @@ public:
 
   void SAP (const FineField & src,FineField & psi){
 
-    Lattice<iScalar<vInteger> > coor(src._grid);
-    Lattice<iScalar<vInteger> > subset(src._grid);
+    Lattice<iScalar<vInteger> > coor(src.Grid());
+    Lattice<iScalar<vInteger> > subset(src.Grid());
     
-    FineField r(src._grid);
-    FineField zz(src._grid); zz=zero;
-    FineField vec1(src._grid);
-    FineField vec2(src._grid);
+    FineField r(src.Grid());
+    FineField zz(src.Grid()); zz=Zero();
+    FineField vec1(src.Grid());
+    FineField vec2(src.Grid());
 
-    const Integer block=params.domainsize;
+    const RealD block=params.domainsize;
 
-    subset=zero;
+    subset=Zero();
     for(int mu=0;mu<Nd;mu++){
       LatticeCoordinate(coor,mu+1);
       coor = div(coor,block);
@@ -295,8 +294,8 @@ public:
 
   void SmootherTest (const FineField & in){
     
-    FineField vec1(in._grid);
-    FineField vec2(in._grid);
+    FineField vec1(in.Grid());
+    FineField vec2(in.Grid());
     RealD lo[3] = { 0.5, 1.0, 2.0};
 
     //    MdagMLinearOperator<Matrix,FineField>        fMdagMOp(_FineMatrix);
@@ -327,7 +326,7 @@ public:
 
     CoarseVector Csrc(_CoarseOperator.Grid());
     CoarseVector Ctmp(_CoarseOperator.Grid());
-    CoarseVector Csol(_CoarseOperator.Grid()); Csol=zero;
+    CoarseVector Csol(_CoarseOperator.Grid()); Csol=Zero();
 
     ConjugateGradient<CoarseVector>  CG(3.0e-3,100000);
     //    ConjugateGradient<FineField>    fCG(3.0e-2,1000);
@@ -337,8 +336,8 @@ public:
     //    MdagMLinearOperator<Matrix,FineField>        fMdagMOp(_FineMatrix);
     ShiftedMdagMLinearOperator<Matrix,FineField> fMdagMOp(_SmootherMatrix,0.0);
 
-    FineField vec1(in._grid);
-    FineField vec2(in._grid);
+    FineField vec1(in.Grid());
+    FineField vec2(in.Grid());
 
     //    Chebyshev<FineField> Cheby    (0.5,70.0,30,InverseApproximation);
     //    Chebyshev<FineField> ChebyAccu(0.5,70.0,30,InverseApproximation);
@@ -407,15 +406,15 @@ public:
 
     CoarseVector Csrc(_CoarseOperator.Grid());
     CoarseVector Ctmp(_CoarseOperator.Grid());
-    CoarseVector Csol(_CoarseOperator.Grid()); Csol=zero;
+    CoarseVector Csol(_CoarseOperator.Grid()); Csol=Zero();
 
     ConjugateGradient<CoarseVector>  CG(1.0e-3,100000);
 
     HermitianLinearOperator<CoarseOperator,CoarseVector>  HermOp(_CoarseOperator);
     MdagMLinearOperator<CoarseOperator,CoarseVector>     MdagMOp(_CoarseOperator);
 
-    FineField vec1(in._grid);
-    FineField vec2(in._grid);
+    FineField vec1(in.Grid());
+    FineField vec2(in.Grid());
 
     _Aggregates.ProjectToSubspace  (Csrc,in);
     _Aggregates.PromoteFromSubspace(Csrc,out);
@@ -490,7 +489,7 @@ int main (int argc, char ** argv)
   std::vector<int> block ({2,2,2,2});
   const int nbasis= 32;
 
-  std::vector<int> clatt = GridDefaultLatt();
+  auto clatt = GridDefaultLatt();
   for(int d=0;d<clatt.size();d++){
     clatt[d] = clatt[d]/block[d];
   }
@@ -507,8 +506,8 @@ int main (int argc, char ** argv)
   Gamma g5(Gamma::Algebra::Gamma5);
 
   LatticeFermion    src(FGrid); gaussian(RNG5,src);// src=src+g5*src;
-  LatticeFermion result(FGrid); result=zero;
-  LatticeFermion    ref(FGrid); ref=zero;
+  LatticeFermion result(FGrid); result=Zero();
+  LatticeFermion    ref(FGrid); ref=Zero();
   LatticeFermion    tmp(FGrid);
   LatticeFermion    err(FGrid);
   LatticeGaugeField Umu(UGrid); 
@@ -523,7 +522,7 @@ int main (int argc, char ** argv)
 
   if ( params.domaindecompose ) { 
     Lattice<iScalar<vInteger> > coor(UGrid);
-    zz=zero;
+    zz=Zero();
     for(int mu=0;mu<Nd;mu++){
       LatticeCoordinate(coor,mu);
       U = PeekIndex<LorentzIndex>(Umu,mu);
@@ -536,7 +535,7 @@ int main (int argc, char ** argv)
   //  SU3::ColdConfiguration(RNG4,Umu);
   //  SU3::TepidConfiguration(RNG4,Umu);
   //  SU3::HotConfiguration(RNG4,Umu);
-  //  Umu=zero;
+  //  Umu=Zero();
 
   RealD mass=params.mq;
   RealD M5=1.8;
@@ -574,7 +573,7 @@ int main (int argc, char ** argv)
 //    result =     Aggregates.subspace[i];
 //    Aggregates.subspace[i]=result+g5*result;
 //  }
-  result=zero;
+  result=Zero();
   
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Building coarse representation of Indef operator" <<std::endl;
@@ -590,7 +589,7 @@ int main (int argc, char ** argv)
   CoarseVector c_src (Coarse5d);
   CoarseVector c_res (Coarse5d);
   gaussian(CRNG,c_src);
-  c_res=zero;
+  c_res=Zero();
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Solving posdef-CG on coarse space "<< std::endl;
@@ -661,7 +660,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Building a two level DDPGCR "<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   //  PrecGeneralisedConjugateResidual<LatticeFermion> PGCRDD(1.0e-8,100000,PreconDD,8,128);
-  //  result=zero;
+  //  result=Zero();
   //  std::cout<<GridLogMessage<<"checking norm src "<<norm2(src)<<std::endl;
   //  PGCRDD(HermIndefOp,src,result);
 
@@ -670,7 +669,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   PrecGeneralisedConjugateResidual<LatticeFermion> PGCR(1.0e-8,100000,Precon,8,8);
   std::cout<<GridLogMessage<<"checking norm src "<<norm2(src)<<std::endl;
-  result=zero;
+  result=Zero();
   PGCR(HermIndefOp,src,result);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
@@ -682,7 +681,7 @@ int main (int argc, char ** argv)
   LatticeFermion    src_o(FrbGrid);
   LatticeFermion result_o(FrbGrid);
   pickCheckerboard(Odd,src_o,src);
-  result_o=zero;
+  result_o=Zero();
 
   pCG(HermOpEO,src_o,result_o);
 

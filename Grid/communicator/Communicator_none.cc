@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,11 +23,11 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #include <Grid/GridCore.h>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Info that is setup once and indept of cartesian layout
@@ -38,18 +38,18 @@ void CartesianCommunicator::Init(int *argc, char *** arv)
 {
   GlobalSharedMemory::Init(communicator_world);
   GlobalSharedMemory::SharedMemoryAllocate(
-		   GlobalSharedMemory::MAX_MPI_SHM_BYTES,
-		   GlobalSharedMemory::Hugepages);
+					   GlobalSharedMemory::MAX_MPI_SHM_BYTES,
+					   GlobalSharedMemory::Hugepages);
 }
 
-CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent,int &srank) 
+CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const CartesianCommunicator &parent,int &srank) 
   : CartesianCommunicator(processors) 
 {
   srank=0;
   SetCommunicator(communicator_world);
 }
 
-CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
+CartesianCommunicator::CartesianCommunicator(const Coordinate &processors)
 {
   _processors = processors;
   _ndimension = processors.size();  assert(_ndimension>=1);
@@ -122,8 +122,8 @@ int  CartesianCommunicator::RankWorld(void){return 0;}
 void CartesianCommunicator::Barrier(void){}
 void CartesianCommunicator::Broadcast(int root,void* data, int bytes) {}
 void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes) { }
-int  CartesianCommunicator::RankFromProcessorCoor(std::vector<int> &coor) {  return 0;}
-void CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &coor){  coor = _processor_coor; }
+int  CartesianCommunicator::RankFromProcessorCoor(Coordinate &coor) {  return 0;}
+void CartesianCommunicator::ProcessorCoorFromRank(int rank, Coordinate &coor){  coor = _processor_coor; }
 void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest)
 {
   source =0;
@@ -160,6 +160,6 @@ void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsReque
 
 void CartesianCommunicator::StencilBarrier(void){};
 
+NAMESPACE_END(Grid);
 
-}
 

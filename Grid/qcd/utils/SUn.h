@@ -28,16 +28,15 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef QCD_UTIL_SUN_H
 #define QCD_UTIL_SUN_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 template <int ncolour>
 class SU {
- public:
+public:
   static const int Dimension = ncolour;
   static const int AdjointDimension = ncolour * ncolour - 1;
   static int su2subgroups(void) { return (ncolour * (ncolour - 1)) / 2; }
@@ -48,7 +47,7 @@ class SU {
   using iSU2Matrix = iScalar<iScalar<iMatrix<vtype, 2> > >;
   template <typename vtype>
   using iSUnAlgebraVector =
-      iScalar<iScalar<iVector<vtype, AdjointDimension> > >;
+    iScalar<iScalar<iVector<vtype, AdjointDimension> > >;
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Types can be accessed as SU<2>::Matrix , SU<2>::vSUnMatrix,
@@ -163,7 +162,7 @@ class SU {
   
   template <class cplx>
   static void generatorSigmaY(int su2Index, iSUnMatrix<cplx> &ta) {
-    ta = zero;
+    ta = Zero();
     int i1, i2;
     su2SubGroupIndex(i1, i2, su2Index);
     ta()()(i1, i2) = 1.0;
@@ -173,7 +172,7 @@ class SU {
   
   template <class cplx>
   static void generatorSigmaX(int su2Index, iSUnMatrix<cplx> &ta) {
-    ta = zero;
+    ta = Zero();
     cplx i(0.0, 1.0);
     int i1, i2;
     su2SubGroupIndex(i1, i2, su2Index);
@@ -185,7 +184,7 @@ class SU {
   template <class cplx>
   static void generatorDiagonal(int diagIndex, iSUnMatrix<cplx> &ta) {
     // diag ({1, 1, ..., 1}(k-times), -k, 0, 0, ...)
-    ta = zero;
+    ta = Zero();
     int k = diagIndex + 1;                  // diagIndex starts from 0
     for (int i = 0; i <= diagIndex; i++) {  // k iterations
       ta()()(i, i) = 1.0;
@@ -218,28 +217,32 @@ class SU {
                          Lattice<iSU2Matrix<vcplx> > &subgroup,
                          const Lattice<iSUnMatrix<vcplx> > &source,
                          int su2_index) {
-    GridBase *grid(source._grid);
+    GridBase *grid(source.Grid());
     conformable(subgroup, source);
     conformable(subgroup, Determinant);
     int i0, i1;
     su2SubGroupIndex(i0, i1, su2_index);
+    auto subgroup_v = subgroup.View();
+    auto source_v   = source.View();
+    auto Determinant_v = Determinant.View();
 
-    parallel_for (int ss = 0; ss < grid->oSites(); ss++) {
-      subgroup._odata[ss]()()(0, 0) = source._odata[ss]()()(i0, i0);
-      subgroup._odata[ss]()()(0, 1) = source._odata[ss]()()(i0, i1);
-      subgroup._odata[ss]()()(1, 0) = source._odata[ss]()()(i1, i0);
-      subgroup._odata[ss]()()(1, 1) = source._odata[ss]()()(i1, i1);
+    thread_for(ss, grid->oSites(), {
 
-      iSU2Matrix<vcplx> Sigma = subgroup._odata[ss];
+      subgroup_v[ss]()()(0, 0) = source_v[ss]()()(i0, i0);
+      subgroup_v[ss]()()(0, 1) = source_v[ss]()()(i0, i1);
+      subgroup_v[ss]()()(1, 0) = source_v[ss]()()(i1, i0);
+      subgroup_v[ss]()()(1, 1) = source_v[ss]()()(i1, i1);
+
+      iSU2Matrix<vcplx> Sigma = subgroup_v[ss];
 
       Sigma = Sigma - adj(Sigma) + trace(adj(Sigma));
 
-      subgroup._odata[ss] = Sigma;
+      subgroup_v[ss] = Sigma;
 
       // this should be purely real
-      Determinant._odata[ss] =
-          Sigma()()(0, 0) * Sigma()()(1, 1) - Sigma()()(0, 1) * Sigma()()(1, 0);
-    }
+      Determinant_v[ss] =
+	Sigma()()(0, 0) * Sigma()()(1, 1) - Sigma()()(0, 1) * Sigma()()(1, 0);
+    });
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////
@@ -248,18 +251,21 @@ class SU {
   template <class vcplx>
   static void su2Insert(const Lattice<iSU2Matrix<vcplx> > &subgroup,
                         Lattice<iSUnMatrix<vcplx> > &dest, int su2_index) {
-    GridBase *grid(dest._grid);
+    GridBase *grid(dest.Grid());
     conformable(subgroup, dest);
     int i0, i1;
     su2SubGroupIndex(i0, i1, su2_index);
 
     dest = 1.0;  // start out with identity
-    parallel_for (int ss = 0; ss < grid->oSites(); ss++) {
-      dest._odata[ss]()()(i0, i0) = subgroup._odata[ss]()()(0, 0);
-      dest._odata[ss]()()(i0, i1) = subgroup._odata[ss]()()(0, 1);
-      dest._odata[ss]()()(i1, i0) = subgroup._odata[ss]()()(1, 0);
-      dest._odata[ss]()()(i1, i1) = subgroup._odata[ss]()()(1, 1);
-    }
+    auto dest_v = dest.View();
+    auto subgroup_v = subgroup.View();
+    thread_for(ss, grid->oSites(),
+    {
+      dest_v[ss]()()(i0, i0) = subgroup_v[ss]()()(0, 0);
+      dest_v[ss]()()(i0, i1) = subgroup_v[ss]()()(0, 1);
+      dest_v[ss]()()(i1, i0) = subgroup_v[ss]()()(1, 0);
+      dest_v[ss]()()(i1, i1) = subgroup_v[ss]()()(1, 1);
+    });
   }
 
   ///////////////////////////////////////////////
@@ -272,16 +278,14 @@ class SU {
   // in action.
   //
   ///////////////////////////////////////////////
-  static void SubGroupHeatBath(
-      GridSerialRNG &sRNG, GridParallelRNG &pRNG,
-      RealD beta,  // coeff multiplying staple in action (with no 1/Nc)
-      LatticeMatrix &link,
-      const LatticeMatrix &barestaple,  // multiplied by action coeffs so th
-      int su2_subgroup, int nheatbath, LatticeInteger &wheremask) {
-    GridBase *grid = link._grid;
+  static void SubGroupHeatBath(GridSerialRNG &sRNG, GridParallelRNG &pRNG,
+			       RealD beta,  // coeff multiplying staple in action (with no 1/Nc)
+			       LatticeMatrix &link,
+			       const LatticeMatrix &barestaple,  // multiplied by action coeffs so th
+			       int su2_subgroup, int nheatbath, LatticeInteger &wheremask) 
+  {
+    GridBase *grid = link.Grid();
 
-    int ntrials = 0;
-    int nfails = 0;
     const RealD twopi = 2.0 * M_PI;
 
     LatticeMatrix staple(grid);
@@ -292,8 +296,7 @@ class SU {
     V = link * staple;
 
     // Subgroup manipulation in the lie algebra space
-    LatticeSU2Matrix u(
-        grid);  // Kennedy pendleton "u" real projected normalised Sigma
+    LatticeSU2Matrix u(grid);  // Kennedy pendleton "u" real projected normalised Sigma
     LatticeSU2Matrix uinv(grid);
     LatticeSU2Matrix ua(grid);  // a in pauli form
     LatticeSU2Matrix b(grid);   // rotated matrix after hb
@@ -302,11 +305,11 @@ class SU {
     LatticeComplex ones(grid);
     ones = 1.0;
     LatticeComplex zeros(grid);
-    zeros = zero;
+    zeros = Zero();
     LatticeReal rones(grid);
     rones = 1.0;
     LatticeReal rzeros(grid);
-    rzeros = zero;
+    rzeros = Zero();
     LatticeComplex udet(grid);  // determinant of real(staple)
     LatticeInteger mask_true(grid);
     mask_true = 1;
@@ -314,41 +317,41 @@ class SU {
     mask_false = 0;
 
     /*
-  PLB 156 P393 (1985) (Kennedy and Pendleton)
+      PLB 156 P393 (1985) (Kennedy and Pendleton)
 
-  Note: absorb "beta" into the def of sigma compared to KP paper; staple
-  passed to this routine has "beta" already multiplied in
+      Note: absorb "beta" into the def of sigma compared to KP paper; staple
+      passed to this routine has "beta" already multiplied in
 
-  Action linear in links h and of form:
+      Action linear in links h and of form:
 
       beta S = beta  Sum_p (1 - 1/Nc Re Tr Plaq )
 
-  Writing Sigma = 1/Nc (beta Sigma') where sum over staples is "Sigma' "
+      Writing Sigma = 1/Nc (beta Sigma') where sum over staples is "Sigma' "
 
-       beta S = const - beta/Nc Re Tr h Sigma'
-              = const - Re Tr h Sigma
+      beta S = const - beta/Nc Re Tr h Sigma'
+      = const - Re Tr h Sigma
 
-  Decompose h and Sigma into (1, sigma_j) ; h_i real, h^2=1, Sigma_i complex
-  arbitrary.
+      Decompose h and Sigma into (1, sigma_j) ; h_i real, h^2=1, Sigma_i complex
+      arbitrary.
 
       Tr h Sigma = h_i Sigma_j Tr (sigma_i sigma_j)  = h_i Sigma_j 2 delta_ij
-   Re Tr h Sigma = 2 h_j Re Sigma_j
+      Re Tr h Sigma = 2 h_j Re Sigma_j
 
-  Normalised re Sigma_j = xi u_j
+      Normalised re Sigma_j = xi u_j
 
-  With u_j a unit vector and U can be in SU(2);
+      With u_j a unit vector and U can be in SU(2);
 
-  Re Tr h Sigma = 2 h_j Re Sigma_j = 2 xi (h.u)
+      Re Tr h Sigma = 2 h_j Re Sigma_j = 2 xi (h.u)
 
-  4xi^2 = Det [ Sig - Sig^dag  + 1 Tr Sigdag]
-   u   = 1/2xi [ Sig - Sig^dag  + 1 Tr Sigdag]
+      4xi^2 = Det [ Sig - Sig^dag  + 1 Tr Sigdag]
+      u   = 1/2xi [ Sig - Sig^dag  + 1 Tr Sigdag]
 
-   xi = sqrt(Det)/2;
+      xi = sqrt(Det)/2;
 
-  Write a= u h in SU(2); a has pauli decomp a_j;
+      Write a= u h in SU(2); a has pauli decomp a_j;
 
-  Note: Product b' xi is unvariant because scaling Sigma leaves
-        normalised vector "u" fixed; Can rescale Sigma so b' = 1.
+      Note: Product b' xi is unvariant because scaling Sigma leaves
+      normalised vector "u" fixed; Can rescale Sigma so b' = 1.
     */
 
     ////////////////////////////////////////////////////////
@@ -386,7 +389,7 @@ class SU {
 
     xi = 0.5 * sqrt(udet);  // 4xi^2 = Det [ Sig - Sig^dag  + 1 Tr Sigdag]
     u = 0.5 * u *
-        pow(xi, -1.0);  //  u   = 1/2xi [ Sig - Sig^dag  + 1 Tr Sigdag]
+      pow(xi, -1.0);  //  u   = 1/2xi [ Sig - Sig^dag  + 1 Tr Sigdag]
 
     // Debug test for sanity
     uinv = adj(u);
@@ -394,36 +397,36 @@ class SU {
     assert(norm2(b) < 1.0e-4);
 
     /*
-  Measure: Haar measure dh has d^4a delta(1-|a^2|)
-  In polars:
-    da = da0 r^2 sin theta dr dtheta dphi delta( 1 - r^2 -a0^2)
-       = da0 r^2 sin theta dr dtheta dphi delta( (sqrt(1-a0^) - r)(sqrt(1-a0^) +
-  r) )
-       = da0 r/2 sin theta dr dtheta dphi delta( (sqrt(1-a0^) - r) )
+      Measure: Haar measure dh has d^4a delta(1-|a^2|)
+      In polars:
+      da = da0 r^2 sin theta dr dtheta dphi delta( 1 - r^2 -a0^2)
+      = da0 r^2 sin theta dr dtheta dphi delta( (sqrt(1-a0^) - r)(sqrt(1-a0^) +
+      r) )
+      = da0 r/2 sin theta dr dtheta dphi delta( (sqrt(1-a0^) - r) )
 
-  Action factor Q(h) dh  = e^-S[h]  dh =  e^{  xi Tr uh} dh    // beta enters
-  through xi
-                                       =  e^{2 xi (h.u)} dh
-                                       =  e^{2 xi h0u0}.e^{2 xi h1u1}.e^{2 xi
-  h2u2}.e^{2 xi h3u3} dh
+      Action factor Q(h) dh  = e^-S[h]  dh =  e^{  xi Tr uh} dh    // beta enters
+      through xi
+      =  e^{2 xi (h.u)} dh
+      =  e^{2 xi h0u0}.e^{2 xi h1u1}.e^{2 xi
+      h2u2}.e^{2 xi h3u3} dh
 
-  Therefore for each site, take xi for that site
-  i) generate  |a0|<1 with dist
-     (1-a0^2)^0.5 e^{2 xi a0 } da0
+      Therefore for each site, take xi for that site
+      i) generate  |a0|<1 with dist
+      (1-a0^2)^0.5 e^{2 xi a0 } da0
 
-  Take alpha = 2 xi  = 2 xi [ recall 2 beta/Nc unmod staple norm]; hence 2.0/Nc
-  factor in Chroma ]
-  A. Generate two uniformly distributed pseudo-random numbers R and R', R'',
-  R''' in the unit interval;
-  B. Set X = -(ln R)/alpha, X' =-(ln R')/alpha;
-  C. Set C = cos^2(2pi R"), with R" another uniform random number in [0,1] ;
-  D. Set A = XC;
-  E. Let d  = X'+A;
-  F. If R'''^2 :> 1 - 0.5 d,  go back to A;
-  G. Set a0 = 1 - d;
+      Take alpha = 2 xi  = 2 xi [ recall 2 beta/Nc unmod staple norm]; hence 2.0/Nc
+      factor in Chroma ]
+      A. Generate two uniformly distributed pseudo-random numbers R and R', R'',
+      R''' in the unit interval;
+      B. Set X = -(ln R)/alpha, X' =-(ln R')/alpha;
+      C. Set C = cos^2(2pi R"), with R" another uniform random number in [0,1] ;
+      D. Set A = XC;
+      E. Let d  = X'+A;
+      F. If R'''^2 :> 1 - 0.5 d,  go back to A;
+      G. Set a0 = 1 - d;
 
-  Note that in step D setting B ~ X - A and using B in place of A in step E will
-  generate a second independent a 0 value.
+      Note that in step D setting B ~ X - A and using B in place of A in step E will
+      generate a second independent a 0 value.
     */
 
     /////////////////////////////////////////////////////////
@@ -435,13 +438,13 @@ class SU {
     RealD numSites = sum(rtmp);
     RealD numAccepted;
     LatticeInteger Accepted(grid);
-    Accepted = zero;
+    Accepted = Zero();
     LatticeInteger newlyAccepted(grid);
 
     std::vector<LatticeReal> xr(4, grid);
     std::vector<LatticeReal> a(4, grid);
     LatticeReal d(grid);
-    d = zero;
+    d = Zero();
     LatticeReal alpha(grid);
 
     //    std::cout<<GridLogMessage<<"xi "<<xi <<std::endl;
@@ -478,7 +481,7 @@ class SU {
       LatticeInteger ione(grid);
       ione = 1;
       LatticeInteger izero(grid);
-      izero = zero;
+      izero = Zero();
 
       newlyAccepted = where(xrsq < thresh, ione, izero);
       Accepted = where(newlyAccepted, newlyAccepted, Accepted);
@@ -493,7 +496,7 @@ class SU {
     } while ((numAccepted < numSites) && (hit < nheatbath));
 
     // G. Set a0 = 1 - d;
-    a[0] = zero;
+    a[0] = Zero();
     a[0] = where(wheremask, 1.0 - d, a[0]);
 
     //////////////////////////////////////////
@@ -517,7 +520,7 @@ class SU {
     a[2] = a123mag * sin_theta * sin(phi);
     a[3] = a123mag * cos_theta;
 
-    ua = toComplex(a[0]) * ident + toComplex(a[1]) * pauli1 +
+    ua = toComplex(a[0]) * ident  + toComplex(a[1]) * pauli1 +
          toComplex(a[2]) * pauli2 + toComplex(a[3]) * pauli3;
 
     b = 1.0;
@@ -531,7 +534,7 @@ class SU {
     // Debug Checks
     // SU2 check
     LatticeSU2Matrix check(grid);  // rotated matrix after hb
-    u = zero;
+    u = Zero();
     check = ua * adj(ua) - 1.0;
     check = where(Accepted, check, u);
     assert(norm2(check) < 1.0e-4);
@@ -541,7 +544,7 @@ class SU {
     assert(norm2(check) < 1.0e-4);
 
     LatticeMatrix Vcheck(grid);
-    Vcheck = zero;
+    Vcheck = Zero();
     Vcheck = where(Accepted, V * adj(V) - 1.0, Vcheck);
     //    std::cout<<GridLogMessage << "SU3 check " <<norm2(Vcheck)<<std::endl;
     assert(norm2(Vcheck) < 1.0e-4);
@@ -607,7 +610,7 @@ class SU {
   template <typename LatticeMatrixType>
   static void LieRandomize(GridParallelRNG &pRNG, LatticeMatrixType &out,
                            double scale = 1.0) {
-    GridBase *grid = out._grid;
+    GridBase *grid = out.Grid();
 
     typedef typename LatticeMatrixType::vector_type vector_type;
     typedef typename LatticeMatrixType::scalar_type scalar_type;
@@ -616,16 +619,16 @@ class SU {
 
     typedef Lattice<vTComplexType> LatticeComplexType;
     typedef typename GridTypeMapper<
-        typename LatticeMatrixType::vector_object>::scalar_object MatrixType;
+      typename LatticeMatrixType::vector_object>::scalar_object MatrixType;
 
     LatticeComplexType ca(grid);
     LatticeMatrixType lie(grid);
     LatticeMatrixType la(grid);
     ComplexD ci(0.0, scale);
-    ComplexD cone(1.0, 0.0);
+    //    ComplexD cone(1.0, 0.0);
     MatrixType ta;
 
-    lie = zero;
+    lie = Zero();
     for (int a = 0; a < AdjointDimension; a++) {
       random(pRNG, ca);
 
@@ -644,13 +647,13 @@ class SU {
   static void GaussianFundamentalLieAlgebraMatrix(GridParallelRNG &pRNG,
                                                   LatticeMatrix &out,
                                                   Real scale = 1.0) {
-    GridBase *grid = out._grid;
+    GridBase *grid = out.Grid();
     LatticeReal ca(grid);
     LatticeMatrix la(grid);
     Complex ci(0.0, scale);
     Matrix ta;
 
-    out = zero;
+    out = Zero();
     for (int a = 0; a < AdjointDimension; a++) {
       gaussian(pRNG, ca);
       generator(a, ta);
@@ -664,11 +667,11 @@ class SU {
                                           LatticeMatrix &out,
                                           Real scale = 1.0) {
     conformable(h, out);
-    GridBase *grid = out._grid;
+    GridBase *grid = out.Grid();
     LatticeMatrix la(grid);
     Matrix ta;
 
-    out = zero;
+    out = Zero();
     for (int a = 0; a < AdjointDimension; a++) {
       generator(a, ta);
       la = peekColour(h, a) * timesI(ta) * scale;
@@ -687,10 +690,11 @@ class SU {
 /*
  * Adjoint rep gauge xform
  */
+
   template<typename GaugeField,typename GaugeMat>
   static void GaugeTransform( GaugeField &Umu, GaugeMat &g){
-    GridBase *grid = Umu._grid;
-    conformable(grid,g._grid);
+    GridBase *grid = Umu.Grid();
+    conformable(grid,g.Grid());
 
     GaugeMat U(grid);
     GaugeMat ag(grid); ag = adj(g);
@@ -702,8 +706,8 @@ class SU {
     }
   }
   template<typename GaugeMat>
-    static void GaugeTransform( std::vector<GaugeMat> &U, GaugeMat &g){
-    GridBase *grid = g._grid;
+  static void GaugeTransform( std::vector<GaugeMat> &U, GaugeMat &g){
+    GridBase *grid = g.Grid();
     GaugeMat ag(grid); ag = adj(g);
     for(int mu=0;mu<Nd;mu++){
       U[mu] = g*U[mu]*Cshift(ag, mu, 1);
@@ -719,7 +723,7 @@ class SU {
   // inverse operation: FundamentalLieAlgebraMatrix
   static void projectOnAlgebra(LatticeAlgebraVector &h_out, const LatticeMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
-    h_out = zero;
+    h_out = Zero();
     Matrix Ta;
 
     for (int a = 0; a < AdjointDimension; a++) {
@@ -735,7 +739,7 @@ class SU {
     typedef iSUnMatrix<vector_type> vMatrixType;
     typedef Lattice<vMatrixType> LatticeMatrixType;
 
-    LatticeMatrixType Umu(out._grid);
+    LatticeMatrixType Umu(out.Grid());
     for (int mu = 0; mu < Nd; mu++) {
       LieRandomize(pRNG, Umu, 1.0);
       PokeIndex<LorentzIndex>(out, Umu, mu);
@@ -747,7 +751,7 @@ class SU {
     typedef iSUnMatrix<vector_type> vMatrixType;
     typedef Lattice<vMatrixType> LatticeMatrixType;
 
-    LatticeMatrixType Umu(out._grid);
+    LatticeMatrixType Umu(out.Grid());
     for(int mu=0;mu<Nd;mu++){
       LieRandomize(pRNG,Umu,0.01);
       PokeIndex<LorentzIndex>(out,Umu,mu);
@@ -759,7 +763,7 @@ class SU {
     typedef iSUnMatrix<vector_type> vMatrixType;
     typedef Lattice<vMatrixType> LatticeMatrixType;
 
-    LatticeMatrixType Umu(out._grid);
+    LatticeMatrixType Umu(out.Grid());
     Umu=1.0;
     for(int mu=0;mu<Nd;mu++){
       PokeIndex<LorentzIndex>(out,Umu,mu);
@@ -778,7 +782,7 @@ class SU {
   static void taExp(const LatticeMatrixType &x, LatticeMatrixType &ex) {
     typedef typename LatticeMatrixType::scalar_type ComplexType;
 
-    LatticeMatrixType xn(x._grid);
+    LatticeMatrixType xn(x.Grid());
     RealD nfac = 1.0;
 
     xn = x;
@@ -801,6 +805,5 @@ typedef SU<5> SU5;
 
 typedef SU<Nc> FundamentalMatrices;
 
-}
-}
+NAMESPACE_END(Grid);
 #endif

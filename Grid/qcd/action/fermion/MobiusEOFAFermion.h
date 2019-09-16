@@ -26,108 +26,79 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef  GRID_QCD_MOBIUS_EOFA_FERMION_H
 #define  GRID_QCD_MOBIUS_EOFA_FERMION_H
 
 #include <Grid/qcd/action/fermion/AbstractEOFAFermion.h>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
-  template<class Impl>
-  class MobiusEOFAFermion : public AbstractEOFAFermion<Impl>
-  {
-    public:
-      INHERIT_IMPL_TYPES(Impl);
+template<class Impl>
+class MobiusEOFAFermion : public AbstractEOFAFermion<Impl>
+{
+public:
+  INHERIT_IMPL_TYPES(Impl);
 
-    public:
-      // Shift operator coefficients for red-black preconditioned Mobius EOFA
-      std::vector<Coeff_t> Mooee_shift;
-      std::vector<Coeff_t> MooeeInv_shift_lc;
-      std::vector<Coeff_t> MooeeInv_shift_norm;
-      std::vector<Coeff_t> MooeeInvDag_shift_lc;
-      std::vector<Coeff_t> MooeeInvDag_shift_norm;
+public:
+  // Shift operator coefficients for red-black preconditioned Mobius EOFA
+  Vector<Coeff_t> Mooee_shift;
+  Vector<Coeff_t> MooeeInv_shift_lc;
+  Vector<Coeff_t> MooeeInv_shift_norm;
+  Vector<Coeff_t> MooeeInvDag_shift_lc;
+  Vector<Coeff_t> MooeeInvDag_shift_norm;
 
-      virtual void Instantiatable(void) {};
+  virtual void Instantiatable(void) {};
 
-      // EOFA-specific operations
-      virtual void  Omega            (const FermionField& in, FermionField& out, int sign, int dag);
-      virtual void  Dtilde           (const FermionField& in, FermionField& out);
-      virtual void  DtildeInv        (const FermionField& in, FermionField& out);
+  // EOFA-specific operations
+  virtual void  Omega            (const FermionField& in, FermionField& out, int sign, int dag);
+  virtual void  Dtilde           (const FermionField& in, FermionField& out);
+  virtual void  DtildeInv        (const FermionField& in, FermionField& out);
 
-      // override multiply
-      virtual RealD M                (const FermionField& in, FermionField& out);
-      virtual RealD Mdag             (const FermionField& in, FermionField& out);
+  // override multiply
+  virtual RealD M                (const FermionField& in, FermionField& out);
+  virtual RealD Mdag             (const FermionField& in, FermionField& out);
 
-      // half checkerboard operations
-      virtual void  Mooee            (const FermionField& in, FermionField& out);
-      virtual void  MooeeDag         (const FermionField& in, FermionField& out);
-      virtual void  MooeeInv         (const FermionField& in, FermionField& out);
-      virtual void  MooeeInv_shift   (const FermionField& in, FermionField& out);
-      virtual void  MooeeInvDag      (const FermionField& in, FermionField& out);
-      virtual void  MooeeInvDag_shift(const FermionField& in, FermionField& out);
+  // half checkerboard operations
+  virtual void  Mooee            (const FermionField& in, FermionField& out);
+  virtual void  MooeeDag         (const FermionField& in, FermionField& out);
+  virtual void  MooeeInv         (const FermionField& in, FermionField& out);
+  virtual void  MooeeInv_shift   (const FermionField& in, FermionField& out);
+  virtual void  MooeeInvDag      (const FermionField& in, FermionField& out);
+  virtual void  MooeeInvDag_shift(const FermionField& in, FermionField& out);
 
-      virtual void   M5D             (const FermionField& psi, FermionField& chi);
-      virtual void   M5Ddag          (const FermionField& psi, FermionField& chi);
+  virtual void   M5D             (const FermionField& psi, FermionField& chi);
+  virtual void   M5Ddag          (const FermionField& psi, FermionField& chi);
 
-      /////////////////////////////////////////////////////
-      // Instantiate different versions depending on Impl
-      /////////////////////////////////////////////////////
-      void M5D(const FermionField& psi, const FermionField& phi, FermionField& chi,
-        std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper);
+  /////////////////////////////////////////////////////
+  // Instantiate different versions depending on Impl
+  /////////////////////////////////////////////////////
+  void M5D(const FermionField& psi, const FermionField& phi, FermionField& chi,
+	   Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper);
 
-      void M5D_shift(const FermionField& psi, const FermionField& phi, FermionField& chi,
-        std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper,
-        std::vector<Coeff_t>& shift_coeffs);
+  void M5D_shift(const FermionField& psi, const FermionField& phi, FermionField& chi,
+		 Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper,
+		 Vector<Coeff_t>& shift_coeffs);
 
-      void M5Ddag(const FermionField& psi, const FermionField& phi, FermionField& chi,
-        std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper);
+  void M5Ddag(const FermionField& psi, const FermionField& phi, FermionField& chi,
+	      Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper);
 
-      void M5Ddag_shift(const FermionField& psi, const FermionField& phi, FermionField& chi,
-        std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper,
-        std::vector<Coeff_t>& shift_coeffs);
+  void M5Ddag_shift(const FermionField& psi, const FermionField& phi, FermionField& chi,
+		    Vector<Coeff_t>& lower, Vector<Coeff_t>& diag, Vector<Coeff_t>& upper,
+		    Vector<Coeff_t>& shift_coeffs);
 
-      void MooeeInternal(const FermionField& in, FermionField& out, int dag, int inv);
+  virtual void RefreshShiftCoefficients(RealD new_shift);
 
-      void MooeeInternalCompute(int dag, int inv, Vector<iSinglet<Simd>>& Matp, Vector<iSinglet<Simd>>& Matm);
+  // Constructors
+  MobiusEOFAFermion(GaugeField& _Umu, GridCartesian& FiveDimGrid, GridRedBlackCartesian& FiveDimRedBlackGrid,
+		    GridCartesian& FourDimGrid, GridRedBlackCartesian& FourDimRedBlackGrid,
+		    RealD _mq1, RealD _mq2, RealD _mq3, RealD _shift, int pm,
+		    RealD _M5, RealD _b, RealD _c, const ImplParams& p=ImplParams());
 
-      void MooeeInternalAsm(const FermionField& in, FermionField& out, int LLs, int site,
-        Vector<iSinglet<Simd>>& Matp, Vector<iSinglet<Simd>>& Matm);
+protected:
+  void SetCoefficientsPrecondShiftOps(void);
+};
 
-      void MooeeInternalZAsm(const FermionField& in, FermionField& out, int LLs, int site,
-        Vector<iSinglet<Simd>>& Matp, Vector<iSinglet<Simd>>& Matm);
-
-      virtual void RefreshShiftCoefficients(RealD new_shift);
-
-      // Constructors
-      MobiusEOFAFermion(GaugeField& _Umu, GridCartesian& FiveDimGrid, GridRedBlackCartesian& FiveDimRedBlackGrid,
-        GridCartesian& FourDimGrid, GridRedBlackCartesian& FourDimRedBlackGrid,
-        RealD _mq1, RealD _mq2, RealD _mq3, RealD _shift, int pm,
-        RealD _M5, RealD _b, RealD _c, const ImplParams& p=ImplParams());
-
-    protected:
-      void SetCoefficientsPrecondShiftOps(void);
-  };
-}}
-
-#define INSTANTIATE_DPERP_MOBIUS_EOFA(A)\
-template void MobiusEOFAFermion<A>::M5D(const FermionField& psi, const FermionField& phi, FermionField& chi, \
-  std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper); \
-template void MobiusEOFAFermion<A>::M5D_shift(const FermionField& psi, const FermionField& phi, FermionField& chi, \
-  std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper, std::vector<Coeff_t>& shift_coeffs); \
-template void MobiusEOFAFermion<A>::M5Ddag(const FermionField& psi, const FermionField& phi, FermionField& chi, \
-  std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper); \
-template void MobiusEOFAFermion<A>::M5Ddag_shift(const FermionField& psi, const FermionField& phi, FermionField& chi, \
-  std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper, std::vector<Coeff_t>& shift_coeffs); \
-template void MobiusEOFAFermion<A>::MooeeInv(const FermionField& psi, FermionField& chi); \
-template void MobiusEOFAFermion<A>::MooeeInv_shift(const FermionField& psi, FermionField& chi); \
-template void MobiusEOFAFermion<A>::MooeeInvDag(const FermionField& psi, FermionField& chi); \
-template void MobiusEOFAFermion<A>::MooeeInvDag_shift(const FermionField& psi, FermionField& chi);
-
-#undef  MOBIUS_EOFA_DPERP_DENSE
-#define MOBIUS_EOFA_DPERP_CACHE
-#undef  MOBIUS_EOFA_DPERP_LINALG
-#define MOBIUS_EOFA_DPERP_VEC
+NAMESPACE_END(Grid);
 
 #endif

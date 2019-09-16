@@ -30,7 +30,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 int main (int argc, char ** argv)
 {
@@ -43,10 +43,10 @@ int main (int argc, char ** argv)
 
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
-  std::vector<int> mpi_split (mpi_layout.size(),1);
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
+  Coordinate mpi_split (mpi_layout.size(),1);
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), 
 								   GridDefaultSimd(Nd,vComplex::Nsimd()),
@@ -97,11 +97,11 @@ int main (int argc, char ** argv)
   FermionField tmp(FGrid);
   std::cout << GridLogMessage << "Made the Fermion Fields"<<std::endl;
 
-  for(int s=0;s<nrhs;s++) result[s]=zero;
+  for(int s=0;s<nrhs;s++) result[s]=Zero();
 #undef LEXICO_TEST
 #ifdef LEXICO_TEST
   {
-    LatticeFermion lex(FGrid);  lex = zero;
+    LatticeFermion lex(FGrid);  lex = Zero();
     LatticeFermion ftmp(FGrid);
     Integer stride =10000;
     double nrm;
@@ -138,7 +138,7 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage << "Intialised 4D RNG "<<std::endl;
     SU3::HotConfiguration(pRNG,Umu);
     std::cout << GridLogMessage << "Intialised the HOT Gauge Field"<<std::endl;
-    //    std::cout << " Site zero "<< Umu._odata[0]   <<std::endl;
+    //    std::cout << " Site zero "<< Umu[0]   <<std::endl;
   } else { 
     SU3::ColdConfiguration(Umu);
     std::cout << GridLogMessage << "Intialised the COLD Gauge Field"<<std::endl;
@@ -163,7 +163,7 @@ int main (int argc, char ** argv)
   FermionField s_src_tmp(SFGrid);
   FermionField s_src_diff(SFGrid);
   {
-    LatticeFermion lex(SFGrid);  lex = zero;
+    LatticeFermion lex(SFGrid);  lex = Zero();
     LatticeFermion ftmp(SFGrid);
     Integer stride =10000;
     double nrm;
@@ -199,7 +199,7 @@ int main (int argc, char ** argv)
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOp(Ddwf);
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOpCk(Dchk);
   ConjugateGradient<FermionField> CG((stp),10000);
-  s_res = zero;
+  s_res = Zero();
   CG(HermOp,s_src,s_res);
 
   std::cout << GridLogMessage << " split residual norm "<<norm2(s_res)<<std::endl;
@@ -228,7 +228,7 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage<<" resid["<<n<<"]  "<< norm2(tmp)/norm2(src[n])<<std::endl;
   }
 
-  for(int s=0;s<nrhs;s++) result[s]=zero;
+  for(int s=0;s<nrhs;s++) result[s]=Zero();
   int blockDim = 0;//not used for BlockCGVec
   BlockConjugateGradient<FermionField>    BCGV  (BlockCGVec,blockDim,stp,10000);
   BCGV.PrintInterval=10;

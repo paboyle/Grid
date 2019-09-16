@@ -30,7 +30,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 template<class d>
 struct scal {
@@ -54,9 +54,9 @@ int main (int argc, char ** argv)
 
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
@@ -68,7 +68,7 @@ int main (int argc, char ** argv)
   GridParallelRNG pRNG5(FGrid);  pRNG5.SeedFixedIntegers(seeds);
 
   FermionField src(FGrid); random(pRNG5,src);
-  FermionField result(FGrid); result=zero;
+  FermionField result(FGrid); result=Zero();
   RealD nrm = norm2(src);
 
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
@@ -98,7 +98,7 @@ int main (int argc, char ** argv)
   ImprovedStaggeredFermionR Ds4d(Umu,Umu,*UGrid,*UrbGrid,mass,c1,c2,u0);
   MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> HermOp4d(Ds4d);
   FermionField src4d(UGrid); random(pRNG,src4d);
-  FermionField result4d(UGrid); result4d=zero;
+  FermionField result4d(UGrid); result4d=Zero();
 
   double deodoe_flops=(16*(3*(6+8+8)) + 15*3*2)*volume; // == 66*16 +  == 1146
   {
@@ -118,7 +118,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   std::cout << GridLogMessage << " Calling 5d CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
-  result=zero;
+  result=Zero();
 {
   Ds.ZeroCounters();
   double t1=usecond();
@@ -136,7 +136,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   std::cout << GridLogMessage << " Calling multiRHS CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
-  result=zero;
+  result=Zero();
   Ds.ZeroCounters();
 {
   double t1=usecond();
@@ -154,7 +154,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   std::cout << GridLogMessage << " Calling Block CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
-  result=zero;
+  result=Zero();
   Ds.ZeroCounters();
 {
   double t1=usecond();

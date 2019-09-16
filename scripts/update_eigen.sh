@@ -7,6 +7,7 @@ fi
 ARC=$1
 
 INITDIR=`pwd`
+
 rm -f Grid/Eigen
 rm -rf Eigen
 
@@ -33,3 +34,4 @@ find -L Eigen -type f -print | sed 's/^/  /;$q;s/$/ \\/' >> ${INITDIR}/Grid/Eige
 # back to home
 ###################################
 cd ${INITDIR}
+
