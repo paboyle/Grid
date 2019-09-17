@@ -34,6 +34,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 #include <Grid/qcd/utils/BaryonUtils.h>
+#include <Grid/qcd/utils/A2Autils.h>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -134,24 +135,49 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
                  << " ) and parity " << par().parity << "." << std::endl;
     
     auto       &q1_src = envGet(PropagatorField1, par().q1_src);
+    LOG(Message) << "1" << std::endl;
     auto       &q2_src = envGet(PropagatorField2, par().q2_src);
     auto       &q3_src = envGet(PropagatorField3, par().q3_src);
     envGetTmp(LatticeComplex, c);
     Result     result;
     int nt = env().getDim(Tp);
     result.corr.resize(nt);
+    LOG(Message) << "2" << std::endl;
     std::vector<Gamma::Algebra> ggA = strToVec<Gamma::Algebra>(par().GammaA);
-    Gamma GammaA = ggA[0];
+    LOG(Message) << "3" << std::endl;
+    Gamma GammaA(ggA[0]);
+    LOG(Message) << "4" << std::endl;
     std::vector<Gamma::Algebra> ggB = strToVec<Gamma::Algebra>(par().GammaB);
-    Gamma GammaB = ggB[0];
+    Gamma GammaB(ggB[0]);
     std::vector<TComplex> buf;
     const int  parity {par().parity};
+    LOG(Message) << "5" << std::endl;
     const char * quarks_snk{par().quarks_snk.c_str()};
+    LOG(Message) << "6" << std::endl;
     const char * quarks_src{par().quarks_src.c_str()};
+    LOG(Message) << "quarks_snk " << quarks_snk[0] << quarks_snk[1] << quarks_snk[2] <<  std::endl;
+    LOG(Message) << "GammaA " << (GammaA.g) <<  std::endl;
+    LOG(Message) << "GammaB " << (GammaB.g) <<  std::endl;
 
-    BaryonUtils<FIMPL>::ContractBaryons(q1_src,q2_src,q3_src,GammaA,GammaB,quarks_snk,quarks_src,parity,c);
+    GridCartesian *Ugrid = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(),GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
+    LatticePropagator q(Ugrid);
+    GridParallelRNG RNG4(Ugrid);
+    gaussian(RNG4,q);
+    Gamma gA = Gamma(Gamma::Algebra::Identity);
+    Gamma gB = Gamma(Gamma::Algebra::Gamma5);
+    int p=1;
+    char * om = "sss";
+    LatticeComplex c2(Ugrid);
+
+    //BaryonUtils<FIMPL>::ContractBaryons(q1_src,q2_src,q3_src,GammaA,GammaB,quarks_snk,quarks_src,parity,c);
+    BaryonUtils<FIMPL>::ContractBaryons(q,q,q,gA,gB,om,om,p,c);
+    std::vector<Gamma> GA={gA};
+    std::vector<Gamma> GB={gB};
+    //A2Autils<FIMPL>::ContractFourQuarkColourMix(q,q,GA,GB,c,c2);
+    LOG(Message) << "survived ContractBaryons" << std::endl;
 
     sliceSum(c,buf,Tp);
+    LOG(Message) << "survived sliceSum" << std::endl;
 
     for (unsigned int t = 0; t < buf.size(); ++t)
     {

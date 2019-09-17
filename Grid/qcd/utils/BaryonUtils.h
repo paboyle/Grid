@@ -53,8 +53,8 @@ public:
 					 const PropagatorField &q3_src,
 					 const Gamma GammaA,
 					 const Gamma GammaB,
-					 const char quarks_snk[],
-					 const char quarks_src[],
+					 const char * quarks_snk,
+					 const char * quarks_src,
 					 const int parity,
 					 ComplexField &baryon_corr);
  
@@ -67,12 +67,15 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_src,
 						 const PropagatorField &q3_src,
 						 const Gamma GammaA,
 						 const Gamma GammaB,
-						 const char quarks_snk[],
-						 const char quarks_src[],
+						 const char * quarks_snk,
+						 const char * quarks_src,
 						 const int parity,
 						 ComplexField &baryon_corr)
 {
-
+  std::cout << "quarks_snk " << quarks_snk[0] << quarks_snk[1] << quarks_snk[2] <<  std::endl;
+    std::cout << "GammaA " << (GammaA.g) <<  std::endl;
+    std::cout << "GammaB " << (GammaB.g) <<  std::endl;
+ 
   assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
 
   GridBase *grid = q1_src.Grid();
@@ -88,12 +91,16 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_src,
       wick_contraction[ie]=1;
 
   typedef typename ComplexField::vector_object vobj;
-  LatticeView<vobj> vbaryon_corr{ baryon_corr };
-  accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+  auto vbaryon_corr= baryon_corr.View();
+  auto v1 = q1_src.View();
+  auto v2 = q2_src.View();
+  auto v3 = q3_src.View();
 
-    LatticeView<pobj> v1(q1_src);
-    LatticeView<pobj> v2(q2_src);
-    LatticeView<pobj> v3(q3_src);
+      std::cout << "wick contract "  << wick_contraction <<  std::endl;
+    int count=0;
+ // accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+  thread_for(ss,grid->oSites(),{
+
     auto D1 = v1[ss];
     auto D2 = v2[ss];
     auto D3 = v3[ss];
@@ -103,7 +110,11 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_src,
     auto pD1 = 0.5* (gD1a + (double)parity * gD1b);
     auto gD3 = GammaB * D3;
 
-    vobj result{ 0 };
+    vobj result=Zero();
+    if (count<10){
+      std::cout << "outside epsilon "  << count <<  std::endl;
+      count++;
+    }
     
     for (int ie_src=0; ie_src < 6 ; ie_src++){
       int a_src = epsilon[ie_src][0]; //a
@@ -132,6 +143,7 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_src,
           }}}
         }	  
         //This is the \delta_{456}^{312} part
+       // for(int test=0;test<3;test++){
 	if (wick_contraction[2]){
           auto gD3g = gD3 * GammaB;
 	  for (int alpha_snk=0; alpha_snk<Ns; alpha_snk++){
@@ -149,6 +161,7 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_src,
 	    result()()() -= epsilon_sgn[ie_src] * epsilon_sgn[ie_snk] * pD1()(gamma_src,gamma_src)(c_snk,c_src)*D2()(alpha_snk,beta_src)(a_snk,b_src)*gD3g()(alpha_snk,beta_src)(b_snk,a_src);
           }}}
         }	  
+       // }
         //This is the \delta_{456}^{321} part
 	if (wick_contraction[4]){
           auto D2g = D2 * GammaB;
