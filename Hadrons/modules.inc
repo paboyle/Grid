@@ -54,8 +54,6 @@ modules_cc =\
   Modules/MContraction/Baryon.cc \
   Modules/MContraction/DiscLoop.cc \
   Modules/MContraction/Meson.cc \
-  Modules/MContraction/Nucleon.cc \
-  Modules/MContraction/SelfContract.cc \
   Modules/MContraction/WeakEye3pt.cc \
   Modules/MDistil/BContraction.cc \
   Modules/MDistil/Baryon2pt.cc \
@@ -64,7 +62,6 @@ modules_cc =\
   Modules/MDistil/Noises.cc \
   Modules/MDistil/PerambFromSolve.cc \
   Modules/MDistil/Perambulator.cc \
-  Modules/MDistil/g5_multiply.cc \
   Modules/MNPR/Bilinear.cc \
   Modules/MNPR/FourQuark.cc \
   Modules/MNPR/Amputate.cc \
@@ -138,8 +135,6 @@ modules_hpp =\
   Modules/MContraction/A2AAslashField.hpp \
   Modules/MContraction/Baryon.hpp \
   Modules/MContraction/Meson.hpp \
-  Modules/MContraction/Nucleon.hpp \
-  Modules/MContraction/SelfContract.hpp \
   Modules/MDistil/BContraction.hpp \
   Modules/MDistil/Baryon2pt.hpp \
   Modules/MDistil/DistilVectors.hpp \
@@ -147,7 +142,6 @@ modules_hpp =\
   Modules/MDistil/Noises.hpp \
   Modules/MDistil/PerambFromSolve.hpp \
   Modules/MDistil/Perambulator.hpp \
-  Modules/MDistil/g5_multiply.hpp \
   Modules/MNPR/FourQuark.hpp \
   Modules/MNPR/Bilinear.hpp \
   Modules/MNPR/Amputate.hpp \
