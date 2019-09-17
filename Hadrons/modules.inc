@@ -60,7 +60,6 @@ modules_cc =\
   Modules/MDistil/Noises.cc \
   Modules/MDistil/PerambFromSolve.cc \
   Modules/MDistil/Perambulator.cc \
-  Modules/MDistil/g5_multiply.cc \
   Modules/MNPR/Bilinear.cc \
   Modules/MNPR/FourQuark.cc \
   Modules/MNPR/Amputate.cc \
@@ -139,7 +138,6 @@ modules_hpp =\
   Modules/MDistil/Noises.hpp \
   Modules/MDistil/PerambFromSolve.hpp \
   Modules/MDistil/Perambulator.hpp \
-  Modules/MDistil/g5_multiply.hpp \
   Modules/MNPR/FourQuark.hpp \
   Modules/MNPR/Bilinear.hpp \
   Modules/MNPR/Amputate.hpp \
