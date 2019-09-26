@@ -111,10 +111,10 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_src,
     auto gD3 = GammaB * D3;
 
     vobj result=Zero();
-    if (count<10){
+   /* if (count<10){
       std::cout << "outside epsilon "  << count <<  std::endl;
       count++;
-    }
+    }*/
     
     for (int ie_src=0; ie_src < 6 ; ie_src++){
       int a_src = epsilon[ie_src][0]; //a
@@ -143,7 +143,6 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_src,
           }}}
         }	  
         //This is the \delta_{456}^{312} part
-       // for(int test=0;test<3;test++){
 	if (wick_contraction[2]){
           auto gD3g = gD3 * GammaB;
 	  for (int alpha_snk=0; alpha_snk<Ns; alpha_snk++){
@@ -161,7 +160,6 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_src,
 	    result()()() -= epsilon_sgn[ie_src] * epsilon_sgn[ie_snk] * pD1()(gamma_src,gamma_src)(c_snk,c_src)*D2()(alpha_snk,beta_src)(a_snk,b_src)*gD3g()(alpha_snk,beta_src)(b_snk,a_src);
           }}}
         }	  
-       // }
         //This is the \delta_{456}^{321} part
 	if (wick_contraction[4]){
           auto D2g = D2 * GammaB;
