@@ -96,10 +96,9 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_src,
   auto v2 = q2_src.View();
   auto v3 = q3_src.View();
 
-      std::cout << "wick contract "  << wick_contraction <<  std::endl;
-    int count=0;
  // accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
-  thread_for(ss,grid->oSites(),{
+  //thread_for(ss,grid->oSites(),{
+  for(int ss=0; ss < grid->oSites(); ss++){
 
     auto D1 = v1[ss];
     auto D2 = v2[ss];
@@ -111,10 +110,6 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_src,
     auto gD3 = GammaB * D3;
 
     vobj result=Zero();
-   /* if (count<10){
-      std::cout << "outside epsilon "  << count <<  std::endl;
-      count++;
-    }*/
     
     for (int ie_src=0; ie_src < 6 ; ie_src++){
       int a_src = epsilon[ie_src][0]; //a
@@ -182,6 +177,6 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_src,
     }
     vbaryon_corr[ss] = result; 
 
-  } );//end loop over lattice sites
+  } // );//end loop over lattice sites
 }
 NAMESPACE_END(Grid);
