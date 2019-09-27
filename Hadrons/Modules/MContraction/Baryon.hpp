@@ -34,7 +34,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 #include <Grid/qcd/utils/BaryonUtils.h>
-#include <Grid/qcd/utils/A2Autils.h>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -147,19 +146,58 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     std::vector<Gamma::Algebra> ggB = strToVec<Gamma::Algebra>(par().GammaB);
     Gamma GammaB(ggB[0]);
     std::vector<TComplex> buf;
+    vTComplex cs;
     const int  parity {par().parity};
     const char * quarks_snk{par().quarks_snk.c_str()};
     const char * quarks_src{par().quarks_src.c_str()};
 
-    BaryonUtils<FIMPL>::ContractBaryons(q1_src,q2_src,q3_src,GammaA,GammaB,quarks_snk,quarks_src,parity,c);
-
-    //sliceSum(c,buf,Tp);
-    SinkFnScalar &sink = envGet(SinkFnScalar, par().sink);
-    buf = sink(c);
-
-    for (unsigned int t = 0; t < buf.size(); ++t)
+    if (envHasType(SlicedPropagator1, par().q1_src) and
+        envHasType(SlicedPropagator2, par().q2_src) and
+        envHasType(SlicedPropagator3, par().q3_src))
     {
-        result.corr[t] = TensorRemove(buf[t]);
+        auto &q1_src = envGet(SlicedPropagator1, par().q1_src);
+        auto &q2_src = envGet(SlicedPropagator2, par().q2_src);
+        auto &q3_src = envGet(SlicedPropagator3, par().q3_src);
+        
+        LOG(Message) << "(propagator already sinked)" << std::endl;
+        for (unsigned int t = 0; t < buf.size(); ++t)
+        {
+            //TODO: Get this to compile without the casts. Templates? 
+            //BaryonUtils<FIMPL>::ContractBaryons_Sliced(*reinterpret_cast<Grid::iScalar<Grid::iMatrix<Grid::iMatrix<Grid::vComplex, 3>, 4>>*>(&q1_src[t]),*reinterpret_cast<Grid::iScalar<Grid::iMatrix<Grid::iMatrix<Grid::vComplex, 3>, 4>>*>(&q2_src[t]),*reinterpret_cast<Grid::iScalar<Grid::iMatrix<Grid::iMatrix<Grid::vComplex, 3>, 4>>*>(&q3_src[t]),GammaA,GammaB,quarks_snk,quarks_src,parity,cs);
+            //result.corr[t] = TensorRemove(*reinterpret_cast<Grid::TComplex*>(&cs));
+      //      BaryonUtils<FIMPL>::ContractBaryons_Sliced(q1_src[t],q2_src[t],q3_src[t],GammaA,GammaB,quarks_snk,quarks_src,parity,cs);
+    //        result.corr[t] = TensorRemove(cs);
+        }
+    }
+    else
+    {
+        std::string ns;
+                
+        ns = vm().getModuleNamespace(env().getObjectModule(par().sink));
+        if (ns == "MSource")
+        {
+         //TODO: Understand what this is and then get it to compile. Hopefully no new function needed. The following lines are from the Meson.hpp module.
+        /*    PropagatorField1 &sink = envGet(PropagatorField1, par().sink);
+                
+            c = trace(mesonConnected(q1, q2, gSnk, gSrc)*sink);
+            sliceSum(c, buf, Tp); */
+// My attempt at some code, which doesn't work. I also don't know whether anything like this is what we want here.
+           /* BaryonUtils<FIMPL>::ContractBaryons(q1_src,q2_src,q3_src,GammaA,GammaB,quarks_snk,quarks_src,parity,c);
+            PropagatorField1 &sink = envGet(PropagatorField1, par().sink);
+            auto test = trace(c*sink);     
+            sliceSum(test, buf, Tp); */
+        }
+        else if (ns == "MSink")
+        {
+            BaryonUtils<FIMPL>::ContractBaryons(q1_src,q2_src,q3_src,GammaA,GammaB,quarks_snk,quarks_src,parity,c);
+
+            SinkFnScalar &sink = envGet(SinkFnScalar, par().sink);
+            buf = sink(c);
+        } 
+        for (unsigned int t = 0; t < buf.size(); ++t)
+        {
+            result.corr[t] = TensorRemove(buf[t]);
+        }
     }
 
     saveResult(par().output, "baryon", result);
