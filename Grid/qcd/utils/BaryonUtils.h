@@ -43,21 +43,18 @@ public:
   typedef typename FImpl::PropagatorField PropagatorField;
 
   typedef typename FImpl::SitePropagator pobj;
-    typedef typename ComplexField::vector_object vobj;
- /* typedef typename FImpl::SiteSpinor vobj;
-  typedef typename vobj::scalar_object sobj;
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-*/
+  typedef typename ComplexField::vector_object vobj;
+
   private: 
-  static void baryon_site(const pobj &D1,
-				 const pobj &D2,
-				 const pobj &D3,
+  template <class mobj, class robj>
+  static void baryon_site(const mobj &D1,
+				 const mobj &D2,
+				 const mobj &D3,
 				 const Gamma GammaA,
 				 const Gamma GammaB,
 				 const int parity,
-				 const std::vector<int> wick_contractions,
-  				 vobj &result);
+				 const std::vector<int> &wick_contractions,
+  				 robj &result);
   public:
   static void ContractBaryons(const PropagatorField &q1_src,
 				 const PropagatorField &q2_src,
@@ -68,36 +65,35 @@ public:
 				 const char * quarks_src,
 				 const int parity,
 				 ComplexField &baryon_corr);
- /* template<class T1,class T2,class T3> 
-  static void ContractBaryons_Sliced(const T1 &D1,
-				 const T2 &D2,
-				 const T3 &D3,*/
-  static void ContractBaryons_Sliced(const pobj &D1,
-				 const pobj &D2,
-				 const pobj &D3,
+  template <class mobj, class robj>
+  static void ContractBaryons_Sliced(const mobj &D1,
+				 const mobj &D2,
+				 const mobj &D3,
 				 const Gamma GammaA,
 				 const Gamma GammaB,
 				 const char * quarks_snk,
 				 const char * quarks_src,
 				 const int parity,
-				 vobj &result);
+				 robj &result);
 };
 
-template<class FImpl>
-void BaryonUtils<FImpl>::baryon_site(const pobj &D1,
-						 const pobj &D2,
-						 const pobj &D3,
+template <class FImpl>
+template <class mobj, class robj>
+void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
+						 const mobj &D2,
+						 const mobj &D3,
 						 const Gamma GammaA,
 						 const Gamma GammaB,
 						 const int parity,
-						 const std::vector<int> wick_contraction,
-						 vobj &result)
+						 const std::vector<int> &wick_contraction,
+						 robj &result)
 {
 
   Gamma g4(Gamma::Algebra::GammaT); //needed for parity P_\pm = 0.5*(1 \pm \gamma_4)
 
-  std::vector<std::vector<int>> epsilon = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
-  std::vector<int> epsilon_sgn = {1,1,1,-1,-1,-1};
+
+  static const int epsilon[6][3] = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
+  static const int epsilon_sgn[6]= {1,1,1,-1,-1,-1};
 
     auto gD1a = GammaA * GammaA * D1;
     auto gD1b = GammaA * g4 * GammaA * D1;
@@ -206,8 +202,8 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_src,
   auto v3 = q3_src.View();
 
  // accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
-  //thread_for(ss,grid->oSites(),{
-  for(int ss=0; ss < grid->oSites(); ss++){
+  thread_for(ss,grid->oSites(),{
+  //for(int ss=0; ss < grid->oSites(); ss++){
 
     auto D1 = v1[ss];
     auto D2 = v2[ss];
@@ -216,22 +212,23 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_src,
     vobj result=Zero();
     baryon_site(D1,D2,D3,GammaA,GammaB,parity,wick_contraction,result);
     vbaryon_corr[ss] = result; 
-  } // );//end loop over lattice sites
+  }  );//end loop over lattice sites
 }
 /*template<class FImpl,class T1,class T2,class T3>
 void BaryonUtils<FImpl>::ContractBaryons_Sliced(const T1 &D1,
 						 const T2 &D2,
 						 const T3 &D3,*/
-template<class FImpl>
-void BaryonUtils<FImpl>::ContractBaryons_Sliced(const pobj &D1,
-						 const pobj &D2,
-						 const pobj &D3,
+template <class FImpl>
+template <class mobj, class robj>
+void BaryonUtils<FImpl>::ContractBaryons_Sliced(const mobj &D1,
+						 const mobj &D2,
+						 const mobj &D3,
 						 const Gamma GammaA,
 						 const Gamma GammaB,
 						 const char * quarks_snk,
 						 const char * quarks_src,
 						 const int parity,
-						 vobj &result)
+						 robj &result)
 {
  
   assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
