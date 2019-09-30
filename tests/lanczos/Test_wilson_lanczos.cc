@@ -30,7 +30,7 @@ directory
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 typedef WilsonFermionR FermionOp;
 typedef typename WilsonFermionR::FermionField FermionField;
@@ -71,8 +71,6 @@ int main(int argc, char** argv) {
 */
 
   RealD mass = -0.1;
-  RealD M5 = 1.8;
-  RealD mob_b = 1.5;
   FermionOp WilsonOperator(Umu,*FGrid,*FrbGrid,mass);
   MdagMLinearOperator<FermionOp,LatticeFermion> HermOp(WilsonOperator); /// <-----
   //SchurDiagTwoOperator<FermionOp,FermionField> HermOp(WilsonOperator);
@@ -98,7 +96,7 @@ int main(int argc, char** argv) {
   gaussian(RNG5, src);
   std::vector<FermionField> evec(Nm, FGrid);
   for (int i = 0; i < 1; i++) {
-    std::cout << i << " / " << Nm << " grid pointer " << evec[i]._grid
+    std::cout << i << " / " << Nm << " grid pointer " << evec[i].Grid()
               << std::endl;
   };
 

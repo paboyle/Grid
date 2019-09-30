@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -25,13 +25,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef  GRID_QCD_WILSON_COMPRESSOR_H
 #define  GRID_QCD_WILSON_COMPRESSOR_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 // optimised versions supporting half precision too
@@ -43,9 +42,9 @@ class WilsonCompressorTemplate;
 
 template<class _HCspinor,class _Hspinor,class _Spinor, class projector>
 class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
-  typename std::enable_if<std::is_same<_HCspinor,_Hspinor>::value>::type >
+				typename std::enable_if<std::is_same<_HCspinor,_Hspinor>::value>::type >
 {
- public:
+public:
   
   int mu,dag;  
 
@@ -62,15 +61,16 @@ class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
   typedef typename SiteHalfSpinor::vector_type     vComplexHigh;
   constexpr static int Nw=sizeof(SiteHalfSpinor)/sizeof(vComplexHigh);
 
-  inline int CommDatumSize(void) {
+  accelerator_inline int CommDatumSize(void) {
     return sizeof(SiteHalfCommSpinor);
   }
 
   /*****************************************************/
   /* Compress includes precision change if mpi data is not same */
   /*****************************************************/
-  inline void Compress(SiteHalfSpinor * __restrict__ buf,Integer o,const SiteSpinor &in) {
-    SiteHalfSpinor tmp;
+  template<class _SiteHalfSpinor, class _SiteSpinor>
+  accelerator_inline void Compress(_SiteHalfSpinor *buf,Integer o,const _SiteSpinor &in) {
+    _SiteHalfSpinor tmp;
     projector::Proj(tmp,in,mu,dag);
     vstream(buf[o],tmp);
   }
@@ -78,10 +78,10 @@ class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
   /*****************************************************/
   /* Exchange includes precision change if mpi data is not same */
   /*****************************************************/
-  inline void Exchange(SiteHalfSpinor * __restrict__ mp,
-                       const SiteHalfSpinor * __restrict__ vp0,
-                       const SiteHalfSpinor * __restrict__ vp1,
-		       Integer type,Integer o){
+  accelerator_inline void Exchange(SiteHalfSpinor *mp,
+				   const SiteHalfSpinor * __restrict__ vp0,
+				   const SiteHalfSpinor * __restrict__ vp1,
+				   Integer type,Integer o){
     SiteHalfSpinor tmp1;
     SiteHalfSpinor tmp2;
     exchange(tmp1,tmp2,vp0[o],vp1[o],type);
@@ -92,19 +92,21 @@ class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
   /*****************************************************/
   /* Have a decompression step if mpi data is not same */
   /*****************************************************/
-  inline void Decompress(SiteHalfSpinor * __restrict__ out,
-			 SiteHalfSpinor * __restrict__ in, Integer o) {    
+  accelerator_inline void Decompress(SiteHalfSpinor * __restrict__ out,
+				     SiteHalfSpinor * __restrict__ in, Integer o) {    
     assert(0);
   }
 
   /*****************************************************/
   /* Compress Exchange                                 */
   /*****************************************************/
-  inline void CompressExchange(SiteHalfSpinor * __restrict__ out0,
-			       SiteHalfSpinor * __restrict__ out1,
-			       const SiteSpinor * __restrict__ in,
-			       Integer j,Integer k, Integer m,Integer type){
-    SiteHalfSpinor temp1, temp2,temp3,temp4;
+  accelerator_inline void CompressExchange(SiteHalfSpinor * __restrict__ out0,
+					   SiteHalfSpinor * __restrict__ out1,
+					   const SiteSpinor * __restrict__ in,
+					   Integer j,Integer k, Integer m,Integer type)
+  {
+    SiteHalfSpinor temp1, temp2;
+    SiteHalfSpinor temp3, temp4;
     projector::Proj(temp1,in[k],mu,dag);
     projector::Proj(temp2,in[m],mu,dag);
     exchange(temp3,temp4,temp1,temp2,type);
@@ -115,15 +117,15 @@ class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
   /*****************************************************/
   /* Pass the info to the stencil */
   /*****************************************************/
-  inline bool DecompressionStep(void) { return false; }
+  accelerator_inline bool DecompressionStep(void) { return false; }
 
 };
 
 template<class _HCspinor,class _Hspinor,class _Spinor, class projector>
 class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
-  typename std::enable_if<!std::is_same<_HCspinor,_Hspinor>::value>::type >
+				typename std::enable_if<!std::is_same<_HCspinor,_Hspinor>::value>::type >
 {
- public:
+public:
   
   int mu,dag;  
 
@@ -140,15 +142,16 @@ class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
   typedef typename SiteHalfSpinor::vector_type     vComplexHigh;
   constexpr static int Nw=sizeof(SiteHalfSpinor)/sizeof(vComplexHigh);
 
-  inline int CommDatumSize(void) {
+  accelerator_inline int CommDatumSize(void) {
     return sizeof(SiteHalfCommSpinor);
   }
 
   /*****************************************************/
   /* Compress includes precision change if mpi data is not same */
   /*****************************************************/
-  inline void Compress(SiteHalfSpinor *buf,Integer o,const SiteSpinor &in) {
-    SiteHalfSpinor hsp;
+  template<class _SiteHalfSpinor, class _SiteSpinor>
+  accelerator_inline void Compress(_SiteHalfSpinor *buf,Integer o,const _SiteSpinor &in) {
+    _SiteHalfSpinor hsp;
     SiteHalfCommSpinor *hbuf = (SiteHalfCommSpinor *)buf;
     projector::Proj(hsp,in,mu,dag);
     precisionChange((vComplexLow *)&hbuf[o],(vComplexHigh *)&hsp,Nw);
@@ -157,7 +160,7 @@ class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
   /*****************************************************/
   /* Exchange includes precision change if mpi data is not same */
   /*****************************************************/
-  inline void Exchange(SiteHalfSpinor *mp,
+  accelerator_inline void Exchange(SiteHalfSpinor *mp,
                        SiteHalfSpinor *vp0,
                        SiteHalfSpinor *vp1,
 		       Integer type,Integer o){
@@ -172,8 +175,7 @@ class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
   /*****************************************************/
   /* Have a decompression step if mpi data is not same */
   /*****************************************************/
-  inline void Decompress(SiteHalfSpinor *out,
-			 SiteHalfSpinor *in, Integer o){
+  accelerator_inline void Decompress(SiteHalfSpinor *out, SiteHalfSpinor *in, Integer o){
     SiteHalfCommSpinor *hin=(SiteHalfCommSpinor *)in;
     precisionChange((vComplexHigh *)&out[o],(vComplexLow *)&hin[o],Nw);
   }
@@ -181,7 +183,7 @@ class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
   /*****************************************************/
   /* Compress Exchange                                 */
   /*****************************************************/
-  inline void CompressExchange(SiteHalfSpinor *out0,
+  accelerator_inline void CompressExchange(SiteHalfSpinor *out0,
 			       SiteHalfSpinor *out1,
 			       const SiteSpinor *in,
 			       Integer j,Integer k, Integer m,Integer type){
@@ -198,19 +200,19 @@ class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
   /*****************************************************/
   /* Pass the info to the stencil */
   /*****************************************************/
-  inline bool DecompressionStep(void) { return true; }
+  accelerator_inline bool DecompressionStep(void) { return true; }
 
 };
 
 #define DECLARE_PROJ(Projector,Compressor,spProj)			\
   class Projector {							\
   public:								\
-    template<class hsp,class fsp>					\
-    static void Proj(hsp &result,const fsp &in,int mu,int dag){			\
-      spProj(result,in);						\
-    }									\
+  template<class hsp,class fsp>						\
+  static accelerator void Proj(hsp &result,const fsp &in,int mu,int dag){ \
+    spProj(result,in);							\
+  }									\
   };									\
-template<typename HCS,typename HS,typename S> using Compressor = WilsonCompressorTemplate<HCS,HS,S,Projector>;
+  template<typename HCS,typename HS,typename S> using Compressor = WilsonCompressorTemplate<HCS,HS,S,Projector>;
 
 DECLARE_PROJ(WilsonXpProjector,WilsonXpCompressor,spProjXp);
 DECLARE_PROJ(WilsonYpProjector,WilsonYpCompressor,spProjYp);
@@ -222,9 +224,9 @@ DECLARE_PROJ(WilsonZmProjector,WilsonZmCompressor,spProjZm);
 DECLARE_PROJ(WilsonTmProjector,WilsonTmCompressor,spProjTm);
 
 class WilsonProjector {
- public:
+public:
   template<class hsp,class fsp>
-  static void Proj(hsp &result,const fsp &in,int mu,int dag){
+  static accelerator void Proj(hsp &result,const fsp &in,int mu,int dag){
     int mudag=dag? mu : (mu+Nd)%(2*Nd);
     switch(mudag) {
     case Xp:	spProjXp(result,in);	break;
@@ -243,9 +245,14 @@ template<typename HCS,typename HS,typename S> using WilsonCompressor = WilsonCom
 
 // Fast comms buffer manipulation which should inline right through (avoid direction
 // dependent logic that prevents inlining
-template<class vobj,class cobj>
-class WilsonStencil : public CartesianStencil<vobj,cobj> {
+template<class vobj,class cobj,class Parameters>
+class WilsonStencil : public CartesianStencil<vobj,cobj,Parameters> {
 public:
+
+  typedef CartesianStencil<vobj,cobj,Parameters> Base;
+  typedef typename Base::View_type View_type;
+  typedef typename Base::StencilVector StencilVector;
+
   double timer0;
   double timer1;
   double timer2;
@@ -274,16 +281,40 @@ public:
     if ( timer4 ) std::cout << GridLogMessage << " timer4 " <<timer4 <<std::endl;
   }
 
+  std::vector<int> surface_list;
+
   WilsonStencil(GridBase *grid,
 		int npoints,
 		int checkerboard,
 		const std::vector<int> &directions,
-		const std::vector<int> &distances)  
-    : CartesianStencil<vobj,cobj> (grid,npoints,checkerboard,directions,distances) 
+		const std::vector<int> &distances,Parameters p)  
+    : CartesianStencil<vobj,cobj,Parameters> (grid,npoints,checkerboard,directions,distances,p) 
   { 
     ZeroCountersi();
+    surface_list.resize(0);
+    this->same_node.resize(npoints);
   };
 
+  void BuildSurfaceList(int Ls,int vol4){
+
+    // find same node for SHM
+    // Here we know the distance is 1 for WilsonStencil
+    for(int point=0;point<this->_npoints;point++){
+      this->same_node[point] = this->SameNode(point);
+    }
+    
+    for(int site = 0 ;site< vol4;site++){
+      int local = 1;
+      for(int point=0;point<this->_npoints;point++){
+	if( (!this->GetNodeLocal(site*Ls,point)) && (!this->same_node[point]) ){ 
+	  local = 0;
+	}
+      }
+      if(local == 0) { 
+	surface_list.push_back(site);
+      }
+    }
+  }
 
   template < class compressor>
   void HaloExchangeOpt(const Lattice<vobj> &source,compressor &compress) 
@@ -292,8 +323,6 @@ public:
     this->HaloExchangeOptGather(source,compress);
     double t1=usecond();
     // Asynchronous MPI calls multidirectional, Isend etc...
-    //    this->CommunicateBegin(reqs);
-    //    this->CommunicateComplete(reqs);
     // Non-overlapped directions within a thread. Asynchronous calls except MPI3, threaded up to comm threads ways.
     this->Communicate();
     double t2=usecond(); timer1 += t2-t1;
@@ -327,7 +356,7 @@ public:
     this->_grid->StencilBarrier();
     this->mpi3synctime_g+=usecond();
 
-    assert(source._grid==this->_grid);
+    assert(source.Grid()==this->_grid);
     this->halogtime-=usecond();
     
     this->u_comm_offset=0;
@@ -365,9 +394,10 @@ public:
     this->face_table_computed=1;
     assert(this->u_comm_offset==this->_unified_buffer_size);
     this->halogtime+=usecond();
+    accelerator_barrier();
   }
 
- };
+};
 
-}} // namespace close
+NAMESPACE_END(Grid);
 #endif

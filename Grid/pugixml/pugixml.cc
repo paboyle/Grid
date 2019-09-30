@@ -14,7 +14,12 @@
 #ifndef SOURCE_PUGIXML_CPP
 #define SOURCE_PUGIXML_CPP
 
-#include <Grid/pugixml/pugixml.h>
+#ifdef __NVCC__
+#pragma push
+#pragma diag_suppress declared_but_not_referenced // suppress "function was declared but never referenced warning"
+#endif
+
+#include "pugixml.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -202,7 +207,7 @@ PUGI__NS_BEGIN
 	// Without a template<> we'll get multiple definitions of the same static
 	template <typename T> allocation_function xml_memory_management_function_storage<T>::allocate = default_allocate;
 	template <typename T> deallocation_function xml_memory_management_function_storage<T>::deallocate = default_deallocate;
-
+        template struct xml_memory_management_function_storage<int>;
 	typedef xml_memory_management_function_storage<int> xml_memory;
 PUGI__NS_END
 
@@ -12767,6 +12772,10 @@ namespace pugi
 #undef PUGI__ENDSEG
 #undef PUGI__THROW_ERROR
 #undef PUGI__CHECK_ERROR
+
+#ifdef GRID_NVCC
+#pragma pop
+#endif
 
 #endif
 

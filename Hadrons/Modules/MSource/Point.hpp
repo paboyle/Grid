@@ -132,7 +132,7 @@ void TPoint<FImpl>::execute(void)
                       + " components (must have " + std::to_string(env().getNd()) + ")");
     }
     id  = 1.;
-    src = zero;
+    src = Zero();
     pokeSite(id, src, position);
 }
 

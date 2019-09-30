@@ -30,126 +30,123 @@ Author: paboyle <paboyle@ph.ed.ac.uk> ; NB Christoph did similar in GPT
 #include <Grid/qcd/action/fermion/FermionCore.h>
 #include <Grid/qcd/action/fermion/WilsonFermion.h>
 
-
-namespace Grid {
-
-  namespace QCD {
+NAMESPACE_BEGIN(Grid);
     
-    template<class Impl>
-      class WilsonTMFermion5D : public WilsonFermion5D<Impl>
-      {
-      public:
-	INHERIT_IMPL_TYPES(Impl);
-      public:
-
-	virtual void   Instantiatable(void) {};
-
-	// Constructors
-        WilsonTMFermion5D(GaugeField &_Umu,
-			  GridCartesian         &Fgrid,
-			  GridRedBlackCartesian &Frbgrid, 
-			  GridCartesian         &Ugrid,
-			  GridRedBlackCartesian &Urbgrid, 
-			  const std::vector<RealD> _mass,
-			  const std::vector<RealD> _mu,
-			  const ImplParams &p= ImplParams()
-			  ) :
-	WilsonFermion5D<Impl>(_Umu,
-			      Fgrid,
-			      Frbgrid,
-			      Ugrid,
-			      Urbgrid,
-			      4.0,p)
-	
-	  {
-	    update(_mass,_mu);
-	  }
-
-	virtual void Meooe(const FermionField &in, FermionField &out) {
-	  if (in.checkerboard == Odd) {
-	    this->DhopEO(in, out, DaggerNo);
-	  } else {
-	    this->DhopOE(in, out, DaggerNo);
-	  }
-	}
-
-	virtual void MeooeDag(const FermionField &in, FermionField &out) {
-	  if (in.checkerboard == Odd) {
-	    this->DhopEO(in, out, DaggerYes);
-	  } else {
-	    this->DhopOE(in, out, DaggerYes);
-	  }
-	}	
-	
-	// allow override for twisted mass and clover
-	virtual void Mooee(const FermionField &in, FermionField &out) {
-	  out.checkerboard = in.checkerboard;
-	  //axpibg5x(out,in,a,b); // out = a*in + b*i*G5*in
-	  for (int s=0;s<(int)this->mass.size();s++) {
-	    ComplexD a = 4.0+this->mass[s];
-	    ComplexD b(0.0,this->mu[s]);
-	    axpbg5y_ssp(out,a,in,b,in,s,s);
-	  }
-	}
-
-	virtual void MooeeDag(const FermionField &in, FermionField &out) {
-	  out.checkerboard = in.checkerboard;
-	  for (int s=0;s<(int)this->mass.size();s++) {
-	    ComplexD a = 4.0+this->mass[s];
-	    ComplexD b(0.0,-this->mu[s]);
-	    axpbg5y_ssp(out,a,in,b,in,s,s);
-	  }
-	}
-	virtual void MooeeInv(const FermionField &in, FermionField &out) {
-	  for (int s=0;s<(int)this->mass.size();s++) {
-	    RealD m    = this->mass[s];
-	    RealD tm   = this->mu[s];
-	    RealD mtil = 4.0+this->mass[s];
-	    RealD sq   = mtil*mtil+tm*tm;
-	    ComplexD a    = mtil/sq;
-	    ComplexD b(0.0, -tm /sq);
-	    axpbg5y_ssp(out,a,in,b,in,s,s);
-	  }
-	}
-	virtual void MooeeInvDag(const FermionField &in, FermionField &out) {
-	  for (int s=0;s<(int)this->mass.size();s++) {
-	    RealD m    = this->mass[s];
-	    RealD tm   = this->mu[s];
-	    RealD mtil = 4.0+this->mass[s];
-	    RealD sq   = mtil*mtil+tm*tm;
-	    ComplexD a    = mtil/sq;
-	    ComplexD b(0.0,tm /sq);
-	    axpbg5y_ssp(out,a,in,b,in,s,s);
-	  }
-	}
-
-	virtual RealD M(const FermionField &in, FermionField &out) {
-	  out.checkerboard = in.checkerboard;
-	  this->Dhop(in, out, DaggerNo);
-	  FermionField tmp(out._grid);
-	  for (int s=0;s<(int)this->mass.size();s++) {
-	    ComplexD a = 4.0+this->mass[s];
-	    ComplexD b(0.0,this->mu[s]);
-	    axpbg5y_ssp(tmp,a,in,b,in,s,s);
-	  }
-	  return axpy_norm(out, 1.0, tmp, out);
-	}
-	
-	// needed for fast PV
-	void update(const std::vector<RealD>& _mass, const std::vector<RealD>& _mu) {
-	  assert(_mass.size() == _mu.size());
-	  assert(_mass.size() == this->FermionGrid()->_fdimensions[0]);
-	  this->mass = _mass;
-	  this->mu = _mu;
-	}
-	
-      private:
-	std::vector<RealD> mu;
-	std::vector<RealD> mass;
-	
-      };
+template<class Impl>
+class WilsonTMFermion5D : public WilsonFermion5D<Impl>
+{
+ public:
+  INHERIT_IMPL_TYPES(Impl);
+ public:
+  
+  virtual void   Instantiatable(void) {};
+  
+  // Constructors
+ WilsonTMFermion5D(GaugeField &_Umu,
+		   GridCartesian         &Fgrid,
+		   GridRedBlackCartesian &Frbgrid, 
+		   GridCartesian         &Ugrid,
+		   GridRedBlackCartesian &Urbgrid, 
+		   const std::vector<RealD> _mass,
+		   const std::vector<RealD> _mu,
+		   const ImplParams &p= ImplParams()
+		   ) :
+  WilsonFermion5D<Impl>(_Umu,
+			Fgrid,
+			Frbgrid,
+			Ugrid,
+			Urbgrid,
+			4.0,p)
    
-    typedef WilsonTMFermion5D<WilsonImplF> WilsonTMFermion5DF; 
-    typedef WilsonTMFermion5D<WilsonImplD> WilsonTMFermion5DD; 
+    {
+      update(_mass,_mu);
+    }
+  
+  virtual void Meooe(const FermionField &in, FermionField &out) {
+    if (in.Checkerboard() == Odd) {
+      this->DhopEO(in, out, DaggerNo);
+    } else {
+      this->DhopOE(in, out, DaggerNo);
+    }
+  }
+  
+  virtual void MeooeDag(const FermionField &in, FermionField &out) {
+    if (in.Checkerboard() == Odd) {
+      this->DhopEO(in, out, DaggerYes);
+    } else {
+      this->DhopOE(in, out, DaggerYes);
+    }
+  }	
+  
+  // allow override for twisted mass and clover
+  virtual void Mooee(const FermionField &in, FermionField &out) {
+    out.Checkerboard() = in.Checkerboard();
+    //axpibg5x(out,in,a,b); // out = a*in + b*i*G5*in
+    for (int s=0;s<(int)this->mass.size();s++) {
+      ComplexD a = 4.0+this->mass[s];
+      ComplexD b(0.0,this->mu[s]);
+      axpbg5y_ssp(out,a,in,b,in,s,s);
+    }
+  }
+  
+  virtual void MooeeDag(const FermionField &in, FermionField &out) {
+    out.Checkerboard() = in.Checkerboard();
+    for (int s=0;s<(int)this->mass.size();s++) {
+      ComplexD a = 4.0+this->mass[s];
+      ComplexD b(0.0,-this->mu[s]);
+      axpbg5y_ssp(out,a,in,b,in,s,s);
+    }
+  }
+  virtual void MooeeInv(const FermionField &in, FermionField &out) {
+    for (int s=0;s<(int)this->mass.size();s++) {
+      RealD m    = this->mass[s];
+      RealD tm   = this->mu[s];
+      RealD mtil = 4.0+this->mass[s];
+      RealD sq   = mtil*mtil+tm*tm;
+      ComplexD a    = mtil/sq;
+      ComplexD b(0.0, -tm /sq);
+      axpbg5y_ssp(out,a,in,b,in,s,s);
+    }
+  }
+  virtual void MooeeInvDag(const FermionField &in, FermionField &out) {
+    for (int s=0;s<(int)this->mass.size();s++) {
+      RealD m    = this->mass[s];
+      RealD tm   = this->mu[s];
+      RealD mtil = 4.0+this->mass[s];
+      RealD sq   = mtil*mtil+tm*tm;
+      ComplexD a    = mtil/sq;
+      ComplexD b(0.0,tm /sq);
+      axpbg5y_ssp(out,a,in,b,in,s,s);
+    }
+  }
+  
+  virtual RealD M(const FermionField &in, FermionField &out) {
+    out.Checkerboard() = in.Checkerboard();
+    this->Dhop(in, out, DaggerNo);
+    FermionField tmp(out.Grid());
+    for (int s=0;s<(int)this->mass.size();s++) {
+      ComplexD a = 4.0+this->mass[s];
+      ComplexD b(0.0,this->mu[s]);
+      axpbg5y_ssp(tmp,a,in,b,in,s,s);
+    }
+    return axpy_norm(out, 1.0, tmp, out);
+  }
+  
+  // needed for fast PV
+  void update(const std::vector<RealD>& _mass, const std::vector<RealD>& _mu) {
+    assert(_mass.size() == _mu.size());
+    assert(_mass.size() == this->FermionGrid()->_fdimensions[0]);
+    this->mass = _mass;
+    this->mu = _mu;
+  }
+  
+ private:
+  std::vector<RealD> mu;
+  std::vector<RealD> mass;
+  
+};
+   
+typedef WilsonTMFermion5D<WilsonImplF> WilsonTMFermion5DF; 
+typedef WilsonTMFermion5D<WilsonImplD> WilsonTMFermion5DD; 
 
-}}
+NAMESPACE_END(Grid);

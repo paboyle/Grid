@@ -27,19 +27,17 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
-#ifndef GRID_QCD_DHOP_H
-#define GRID_QCD_DHOP_H
+			   /*  END LEGAL */
+#pragma once
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Helper routines that implement Wilson stencil for a single site.
-  // Common to both the WilsonFermion and WilsonFermion5D
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Helper routines that implement Wilson stencil for a single site.
+// Common to both the WilsonFermion and WilsonFermion5D
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class WilsonKernelsStatic { 
- public:
+public:
   enum { OptGeneric, OptHandUnroll, OptInlineAsm };
   enum { CommsAndCompute, CommsThenCompute };
   static int Opt;  
@@ -47,235 +45,123 @@ class WilsonKernelsStatic {
 };
  
 template<class Impl> class WilsonKernels : public FermionOperator<Impl> , public WilsonKernelsStatic { 
- public:
-   
+public:
+
   INHERIT_IMPL_TYPES(Impl);
   typedef FermionOperator<Impl> Base;
    
 public:
 
-  template <bool EnableBool = true>
-  typename std::enable_if<Impl::isFundamental==true && Nc == 3 &&EnableBool, void>::type
-  DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-		   int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out,int interior=1,int exterior=1) 
-  {
-    bgq_l1p_optimisation(1);
-    switch(Opt) {
-#if defined(AVX512) || defined (QPX)
-    case OptInlineAsm:
-      if(interior&&exterior) WilsonKernels<Impl>::AsmDhopSite   (st,lo,U,buf,sF,sU,Ls,Ns,in,out);
-      else if (interior)     WilsonKernels<Impl>::AsmDhopSiteInt(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
-      else if (exterior)     WilsonKernels<Impl>::AsmDhopSiteExt(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
-      else assert(0);
-      break;
-#endif
-    case OptHandUnroll:
-         for (int site = 0; site < Ns; site++) {
-	   for (int s = 0; s < Ls; s++) {
-	     if(interior&&exterior) WilsonKernels<Impl>::HandDhopSite(st,lo,U,buf,sF,sU,in,out);
-	     else if (interior)     WilsonKernels<Impl>::HandDhopSiteInt(st,lo,U,buf,sF,sU,in,out);
-	     else if (exterior)     WilsonKernels<Impl>::HandDhopSiteExt(st,lo,U,buf,sF,sU,in,out);
-	     sF++;
-	   }
-	   sU++;
-         }
-      break;
-    case OptGeneric:
-         for (int site = 0; site < Ns; site++) {
-	   for (int s = 0; s < Ls; s++) {
-	     if(interior&&exterior) WilsonKernels<Impl>::GenericDhopSite(st,lo,U,buf,sF,sU,in,out);
-	     else if (interior)     WilsonKernels<Impl>::GenericDhopSiteInt(st,lo,U,buf,sF,sU,in,out);
-	     else if (exterior)     WilsonKernels<Impl>::GenericDhopSiteExt(st,lo,U,buf,sF,sU,in,out);
-	     else assert(0);
-	     sF++;
-	   }
-	   sU++;
-       } 
-      break;
-    default:
-      assert(0);
-    }
-    bgq_l1p_optimisation(0);
-  }
-     
-  template <bool EnableBool = true>
-  typename std::enable_if<(Impl::isFundamental==false || (Impl::isFundamental==true && Nc != 3)) && EnableBool, void>::type
-  DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-	   int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out,int interior=1,int exterior=1 ) {
-    // no kernel choice  
-    for (int site = 0; site < Ns; site++) {
-      for (int s = 0; s < Ls; s++) {
-	if(interior&&exterior) WilsonKernels<Impl>::GenericDhopSite(st,lo,U,buf,sF,sU,in,out);
-	else if (interior)     WilsonKernels<Impl>::GenericDhopSiteInt(st,lo,U,buf,sF,sU,in,out);
-	else if (exterior)     WilsonKernels<Impl>::GenericDhopSiteExt(st,lo,U,buf,sF,sU,in,out);
-	else assert(0);
-	sF++;
-      }
-      sU++;
-    }
-  }
-     
-  template <bool EnableBool = true>
-  typename std::enable_if<Impl::isFundamental==true && Nc == 3 && EnableBool,void>::type
-  DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-	      int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out,int interior=1,int exterior=1) 
-{
-    bgq_l1p_optimisation(1);
-    switch(Opt) {
-#if defined(AVX512) || defined (QPX)
-    case OptInlineAsm:
-      if(interior&&exterior) WilsonKernels<Impl>::AsmDhopSiteDag   (st,lo,U,buf,sF,sU,Ls,Ns,in,out);
-      else if (interior)     WilsonKernels<Impl>::AsmDhopSiteDagInt(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
-      else if (exterior)     WilsonKernels<Impl>::AsmDhopSiteDagExt(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
-      else assert(0);
-      break;
-#endif
-    case OptHandUnroll:
-      for (int site = 0; site < Ns; site++) {
-	for (int s = 0; s < Ls; s++) {
-	  if(interior&&exterior) WilsonKernels<Impl>::HandDhopSiteDag(st,lo,U,buf,sF,sU,in,out);
-	  else if (interior)     WilsonKernels<Impl>::HandDhopSiteDagInt(st,lo,U,buf,sF,sU,in,out);
-	  else if (exterior)     WilsonKernels<Impl>::HandDhopSiteDagExt(st,lo,U,buf,sF,sU,in,out);
-	  else assert(0);
-	  sF++;
-	}
-	sU++;
-      }
-      break;
-    case OptGeneric:
-      for (int site = 0; site < Ns; site++) {
-	for (int s = 0; s < Ls; s++) {
-	  if(interior&&exterior) WilsonKernels<Impl>::GenericDhopSiteDag(st,lo,U,buf,sF,sU,in,out);
-	  else if (interior)     WilsonKernels<Impl>::GenericDhopSiteDagInt(st,lo,U,buf,sF,sU,in,out);
-	  else if (exterior)     WilsonKernels<Impl>::GenericDhopSiteDagExt(st,lo,U,buf,sF,sU,in,out);
-	  else assert(0);
-	  sF++;
-	}
-	sU++;
-      }
-      break;
-    default:
-      assert(0);
-    }
-    bgq_l1p_optimisation(0);
-  }
+  static void DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
+			 int Ls, int Nsite, const FermionField &in, FermionField &out,
+			 int interior=1,int exterior=1) ;
 
-  template <bool EnableBool = true>
-  typename std::enable_if<(Impl::isFundamental==false || (Impl::isFundamental==true && Nc != 3)) && EnableBool,void>::type
-  DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,SiteHalfSpinor * buf,
-		      int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out,int interior=1,int exterior=1) {
+  static void DhopDagKernel(int Opt,StencilImpl &st,  DoubledGaugeField &U, SiteHalfSpinor * buf,
+			    int Ls, int Nsite, const FermionField &in, FermionField &out,
+			    int interior=1,int exterior=1) ;
 
-    for (int site = 0; site < Ns; site++) {
-      for (int s = 0; s < Ls; s++) {
-	if(interior&&exterior) WilsonKernels<Impl>::GenericDhopSiteDag(st,lo,U,buf,sF,sU,in,out);
-	else if (interior)     WilsonKernels<Impl>::GenericDhopSiteDagInt(st,lo,U,buf,sF,sU,in,out);
-	else if (exterior)     WilsonKernels<Impl>::GenericDhopSiteDagExt(st,lo,U,buf,sF,sU,in,out);
-	else assert(0);
-	sF++;
-      }
-      sU++;
-    }
-  }
+  static void DhopDirKernel(StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor * buf,
+			    int Ls, int Nsite, const FermionField &in, FermionField &out, int dirdisp, int gamma);
 
-  void DhopDir(StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor * buf,
-		       int sF, int sU, const FermionField &in, FermionField &out, int dirdisp, int gamma);
-      
   //////////////////////////////////////////////////////////////////////////////
   // Utilities for inserting Wilson conserved current.
   //////////////////////////////////////////////////////////////////////////////
-  void ContractConservedCurrentSiteFwd(const SitePropagator &q_in_1,
+  static void ContractConservedCurrentSiteFwd(const SitePropagator &q_in_1,
                                        const SitePropagator &q_in_2,
                                        SitePropagator &q_out,
-                                       DoubledGaugeField &U,
+                                       DoubledGaugeFieldView &U,
                                        unsigned int sU,
                                        unsigned int mu,
                                        bool switch_sign = false);
-  void ContractConservedCurrentSiteBwd(const SitePropagator &q_in_1,
+
+  static void ContractConservedCurrentSiteBwd(const SitePropagator &q_in_1,
                                        const SitePropagator &q_in_2,
                                        SitePropagator &q_out,
-                                       DoubledGaugeField &U,
+                                       DoubledGaugeFieldView &U,
                                        unsigned int sU,
                                        unsigned int mu,
                                        bool switch_sign = false);
-  void SeqConservedCurrentSiteFwd(const SitePropagator &q_in, 
+
+  static void SeqConservedCurrentSiteFwd(const SitePropagator &q_in, 
                                   SitePropagator &q_out,
-                                  DoubledGaugeField &U,
+                                  DoubledGaugeFieldView &U,
                                   unsigned int sU,
                                   unsigned int mu,
-                                  vInteger t_mask,
+                                  vPredicate t_mask,
                                   bool switch_sign = false);
-  void SeqConservedCurrentSiteBwd(const SitePropagator &q_in,
+
+  static void SeqConservedCurrentSiteBwd(const SitePropagator &q_in,
                                   SitePropagator &q_out,
-                                  DoubledGaugeField &U,
+                                  DoubledGaugeFieldView &U,
                                   unsigned int sU,
                                   unsigned int mu,
-                                  vInteger t_mask,
+                                  vPredicate t_mask,
                                   bool switch_sign = false);
 
 private:
-     // Specialised variants
-  void GenericDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-		       int sF, int sU, const FermionField &in, FermionField &out);
+
+  static accelerator void DhopDirK(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor * buf,
+				   int sF, int sU, const FermionFieldView &in, FermionFieldView &out, int dirdisp, int gamma);
       
-  void GenericDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			  int sF, int sU, const FermionField &in, FermionField &out);
-
-  void GenericDhopSiteInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			  int sF, int sU, const FermionField &in, FermionField &out);
+  // Specialised variants
+  static accelerator void GenericDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
       
-  void GenericDhopSiteDagInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			     int sF, int sU, const FermionField &in, FermionField &out);
-
-  void GenericDhopSiteExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			  int sF, int sU, const FermionField &in, FermionField &out);
+  static accelerator void GenericDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+						    int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  
+  static accelerator void GenericDhopSiteInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+						    int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
       
-  void GenericDhopSiteDagExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			     int sF, int sU, const FermionField &in, FermionField &out);
-
-
-  void AsmDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-		   int sF, int sU, int Ls, int Ns, const FermionField &in,FermionField &out);
-
-  void AsmDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-		      int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out);
-
-  void AsmDhopSiteInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-		      int sF, int sU, int Ls, int Ns, const FermionField &in,FermionField &out);
-
-  void AsmDhopSiteDagInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			 int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out);
-
-  void AsmDhopSiteExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-		      int sF, int sU, int Ls, int Ns, const FermionField &in,FermionField &out);
-
-  void AsmDhopSiteDagExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			 int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out);
-
-
-  void HandDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-		    int sF, int sU, const FermionField &in, FermionField &out);
-
-  void HandDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-		       int sF, int sU, const FermionField &in, FermionField &out);
+  static accelerator void GenericDhopSiteDagInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+						int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  
+  static accelerator void GenericDhopSiteExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					     int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
       
-  void HandDhopSiteInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-		       int sF, int sU, const FermionField &in, FermionField &out);
-  
-  void HandDhopSiteDagInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			  int sF, int sU, const FermionField &in, FermionField &out);
-  
-  void HandDhopSiteExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-		       int sF, int sU, const FermionField &in, FermionField &out);
-  
-  void HandDhopSiteDagExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			  int sF, int sU, const FermionField &in, FermionField &out);
-  
-public:
+  static accelerator void GenericDhopSiteDagExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+						       int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
 
-  WilsonKernels(const ImplParams &p = ImplParams());
+  static void AsmDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+			  int sF, int sU, int Ls, int Nsite, const FermionFieldView &in,FermionFieldView &out);
+  
+  static void AsmDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+			     int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out);
+  
+  static void AsmDhopSiteInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+			     int sF, int sU, int Ls, int Nsite, const FermionFieldView &in,FermionFieldView &out);
+  
+  static void AsmDhopSiteDagInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out);
+  
+  static void AsmDhopSiteExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+			     int sF, int sU, int Ls, int Nsite, const FermionFieldView &in,FermionFieldView &out);
+  
+  static void AsmDhopSiteDagExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				int sF, int sU, int Ls, int Nsite, const FermionFieldView &in, FermionFieldView &out);
 
+// Keep Hand unrolled temporarily  
+  static accelerator void HandDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+				       int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  
+  static accelerator void HandDhopSiteDag(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  
+  static accelerator void HandDhopSiteInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  
+  static accelerator void HandDhopSiteDagInt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					     int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  
+  static accelerator void HandDhopSiteExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					  int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+  
+  static accelerator void HandDhopSiteDagExt(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
+					     int sF, int sU, const FermionFieldView &in, FermionFieldView &out);
+ public:
+ WilsonKernels(const ImplParams &p = ImplParams()) : Base(p){};
 };
     
-}}
+NAMESPACE_END(Grid);
 
-#endif
+

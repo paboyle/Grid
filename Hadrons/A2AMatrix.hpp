@@ -167,10 +167,12 @@ public:
     template <typename C, typename MatLeft, typename MatRight>
     static inline void accTrMul(C &acc, const MatLeft &a, const MatRight &b)
     {
-        if ((MatLeft::Options == Eigen::RowMajor) and
-            (MatRight::Options == Eigen::ColMajor))
+        const int RowMajor = Eigen::RowMajor;
+        const int ColMajor = Eigen::ColMajor;
+        if ((MatLeft::Options  == RowMajor) and
+            (MatRight::Options == ColMajor))
         {
-            parallel_for (unsigned int r = 0; r < a.rows(); ++r)
+  	  thread_for(r,a.rows(),
             {
                 C tmp;
 #ifdef USE_MKL
@@ -178,15 +180,15 @@ public:
 #else
                 tmp = a.row(r).conjugate().dot(b.col(r));
 #endif
-                parallel_critical
+                thread_critical
                 {
                     acc += tmp;
                 }
-            }
+            });
         }
         else
-        {
-            parallel_for (unsigned int c = 0; c < a.cols(); ++c)
+	  {
+            thread_for(c,a.cols(),
             {
                 C tmp;
 #ifdef USE_MKL 
@@ -194,11 +196,11 @@ public:
 #else
                 tmp = a.col(c).conjugate().dot(b.row(c));
 #endif
-                parallel_critical
+                thread_critical
                 {
                     acc += tmp;
                 }
-            }
+            });
         }
     }
 
@@ -218,18 +220,20 @@ public:
                            const Mat<ComplexD, Opts...> &b)
     {
         static const ComplexD one(1., 0.), zero(0., 0.);
+        const int RowMajor = Eigen::RowMajor;
+        const int ColMajor = Eigen::ColMajor;
 
         if ((res.rows() != a.rows()) or (res.cols() != b.cols()))
         {
             res.resize(a.rows(), b.cols());
         }
-        if (Mat<ComplexD, Opts...>::Options == Eigen::RowMajor)
+        if (Mat<ComplexD, Opts...>::Options == RowMajor)
         {
             cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
                         a.cols(), &one, a.data(), a.cols(), b.data(), b.cols(), &zero,
                         res.data(), res.cols());
         }
-        else if (Mat<ComplexD, Opts...>::Options == Eigen::ColMajor)
+        else if (Mat<ComplexD, Opts...>::Options == ColMajor)
         {
             cblas_zgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
                         a.cols(), &one, a.data(), a.rows(), b.data(), b.rows(), &zero,
@@ -243,18 +247,20 @@ public:
                            const Mat<ComplexF, Opts...> &b)
     {
         static const ComplexF one(1., 0.), zero(0., 0.);
+        const int RowMajor = Eigen::RowMajor;
+        const int ColMajor = Eigen::ColMajor;
 
         if ((res.rows() != a.rows()) or (res.cols() != b.cols()))
         {
             res.resize(a.rows(), b.cols());
         }
-        if (Mat<ComplexF, Opts...>::Options == Eigen::RowMajor)
+        if (Mat<ComplexF, Opts...>::Options == RowMajor)
         {
             cblas_cgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
                         a.cols(), &one, a.data(), a.cols(), b.data(), b.cols(), &zero,
                         res.data(), res.cols());
         }
-        else if (Mat<ComplexF, Opts...>::Options == Eigen::ColMajor)
+        else if (Mat<ComplexF, Opts...>::Options == ColMajor)
         {
             cblas_cgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
                         a.cols(), &one, a.data(), a.rows(), b.data(), b.rows(), &zero,
@@ -281,22 +287,25 @@ private:
                                     unsigned int &bInc, const unsigned int aRow, 
                                     const MatLeft &a, const MatRight &b)
     {
-        if (MatLeft::Options == Eigen::RowMajor)
+        const int RowMajor = Eigen::RowMajor;
+        const int ColMajor = Eigen::ColMajor;
+
+        if (MatLeft::Options == RowMajor)
         {
             aPt  = a.data() + aRow*a.cols();
             aInc = 1;
         }
-        else if (MatLeft::Options == Eigen::ColMajor)
+        else if (MatLeft::Options == ColMajor)
         {
             aPt  = a.data() + aRow;
             aInc = a.rows();
         }
-        if (MatRight::Options == Eigen::RowMajor)
+        if (MatRight::Options == RowMajor)
         {
             bPt  = b.data() + aRow;
             bInc = b.cols();
         }
-        else if (MatRight::Options == Eigen::ColMajor)
+        else if (MatRight::Options == ColMajor)
         {
             bPt  = b.data() + aRow*b.rows();
             bInc = 1;
@@ -309,22 +318,24 @@ private:
                                     unsigned int &bInc, const unsigned int aCol, 
                                     const MatLeft &a, const MatRight &b)
     {
-        if (MatLeft::Options == Eigen::RowMajor)
+        const int RowMajor = Eigen::RowMajor;
+        const int ColMajor = Eigen::ColMajor;
+        if (MatLeft::Options == RowMajor)
         {
             aPt  = a.data() + aCol;
             aInc = a.cols();
         }
-        else if (MatLeft::Options == Eigen::ColMajor)
+        else if (MatLeft::Options == ColMajor)
         {
             aPt  = a.data() + aCol*a.rows();
             aInc = 1;
         }
-        if (MatRight::Options == Eigen::RowMajor)
+        if (MatRight::Options == RowMajor)
         {
             bPt  = b.data() + aCol*b.cols();
             bInc = 1;
         }
-        else if (MatRight::Options == Eigen::ColMajor)
+        else if (MatRight::Options == ColMajor)
         {
             bPt  = b.data() + aCol;
             bInc = b.rows();
@@ -466,7 +477,7 @@ void A2AMatrixIo<T>::saveBlock(const T *data,
                          block  = {1, 1, 1}; 
     H5NS::DataSpace      memspace(count.size(), count.data()), dataspace;
     H5NS::DataSet        dataset;
-    size_t               shift;
+    //    size_t               shift;
 
     push(reader, dataname_);
     auto &group = reader.getGroup();
@@ -665,14 +676,15 @@ void A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
             bytes    += kernel.bytes(N_iii, N_jjj);
 
             START_TIMER("cache copy");
-            parallel_for_nest5(int e =0;e<next_;e++)
-            for(int s =0;s< nstr_;s++)
-            for(int t =0;t< nt_;t++)
-            for(int iii=0;iii< N_iii;iii++)
-            for(int jjj=0;jjj< N_jjj;jjj++)
-            {
+            thread_for_collapse( 5,e,next_,{
+              for(int s =0;s< nstr_;s++)
+              for(int t =0;t< nt_;t++)
+              for(int iii=0;iii< N_iii;iii++)
+              for(int jjj=0;jjj< N_jjj;jjj++)
+              {
                 mBlock(e,s,t,ii+iii,jj+jjj) = mCacheBlock(e,s,t,iii,jjj);
-            }
+              }
+            });
             STOP_TIMER("cache copy");
         }
 

@@ -26,8 +26,9 @@
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
+#ifndef __NVCC__
 
-using namespace Grid;
+NAMESPACE_BEGIN(Grid);
 
 // Writer implementation ///////////////////////////////////////////////////////
 JSONWriter::JSONWriter(const std::string &fileName)
@@ -73,20 +74,16 @@ void JSONWriter::delete_comma()
 // compiles fine with clang
 // have to wrap in the Grid namespace
 // annoying, but necessary for TravisCI
-namespace Grid
+void JSONWriter::writeDefault(const std::string &s,	const std::string &x)
 {
-  void JSONWriter::writeDefault(const std::string &s,	const std::string &x)
-  {
     //std::cout << "JSONWriter::writeDefault(string) : " << s <<  std::endl;
-    std::ostringstream os;
-    os << std::boolalpha << x;
-    if (s.size())
-      ss_ << "\""<< s << "\" : \"" << os.str() << "\" ," ;
-    else
-     ss_ << os.str() << " ," ;
-  }
-}// namespace Grid 
-
+  std::ostringstream os;
+  os << std::boolalpha << x;
+  if (s.size())
+    ss_ << "\""<< s << "\" : \"" << os.str() << "\" ," ;
+  else
+    ss_ << os.str() << " ," ;
+}
 
 // Reader implementation ///////////////////////////////////////////////////////
 JSONReader::JSONReader(const std::string &fileName)
@@ -151,7 +148,7 @@ bool JSONReader::nextElement(const std::string &s)
   //}
 
   jcur_ = *it_; 
-  //cout << "JSONReader::nextElement(string) : " << s << " : "<< jcur_ << endl;
+  //cout << "JSONReader::nextElement(std::string) : " << s << " : "<< jcur_ << endl;
   //return true;
 
     return false;
@@ -171,3 +168,5 @@ void JSONReader::readDefault(const std::string &s, std::string &output)
     output = jcur_;    
   }
 }
+NAMESPACE_END(Grid);
+#endif

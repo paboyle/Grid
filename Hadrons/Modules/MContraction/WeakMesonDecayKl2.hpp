@@ -156,7 +156,7 @@ void TWeakMesonDecayKl2<FImpl>::execute(void)
     std::vector<SpinMatrix> res_summed;
     Result                  r;
 
-    auto &res    = envGet(PropagatorField, getName()); res = zero;
+    auto &res    = envGet(PropagatorField, getName()); res = Zero();
     auto &q1     = envGet(PropagatorField, par().q1);
     auto &q2     = envGet(PropagatorField, par().q2);
     auto &lepton = envGet(PropagatorField, par().lepton);
@@ -166,7 +166,7 @@ void TWeakMesonDecayKl2<FImpl>::execute(void)
 
     for (unsigned int mu = 0; mu < 4; ++mu)
     {
-        c = zero;
+        c = Zero();
         //hadronic part: trace(q1*adj(q2)*g5*gL[mu]) 
         c = trace(q1*adj(q2)*g5*GammaL(Gamma::gmu[mu]));
         prop_buf = 1.;

@@ -142,7 +142,7 @@ void TTrKinetic<SImpl>::execute(void)
     auto               &sumkin = envGet(ComplexField, varName(getName(), "sum"));
 
     envGetTmp(std::vector<Field>, der);
-    sumkin = zero;
+    sumkin = Zero();
     if (!par().output.empty())
     {
         result.type = par().type;

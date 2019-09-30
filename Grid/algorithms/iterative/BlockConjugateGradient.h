@@ -27,11 +27,9 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef GRID_BLOCK_CONJUGATE_GRADIENT_H
-#define GRID_BLOCK_CONJUGATE_GRADIENT_H
+#pragma once
 
-
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 enum BlockCGtype { BlockCG, BlockCGrQ, CGmultiRHS, BlockCGVec, BlockCGrQVec };
 
@@ -154,12 +152,12 @@ virtual void operator()(LinearOperatorBase<Field> &Linop, const std::vector<Fiel
 void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X) 
 {
   int Orthog = blockDim; // First dimension is block dim; this is an assumption
-  Nblock = B._grid->_fdimensions[Orthog];
+  Nblock = B.Grid()->_fdimensions[Orthog];
 /* FAKE */
   Nblock=8;
   std::cout<<GridLogMessage<<" Block Conjugate Gradient : Orthog "<<Orthog<<" Nblock "<<Nblock<<std::endl;
 
-  X.checkerboard = B.checkerboard;
+  X.Checkerboard() = B.Checkerboard();
   conformable(X, B);
 
   Field tmp(B);
@@ -334,11 +332,11 @@ void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X)
 void CGmultiRHSsolve(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi) 
 {
   int Orthog = blockDim; // First dimension is block dim
-  Nblock = Src._grid->_fdimensions[Orthog];
+  Nblock = Src.Grid()->_fdimensions[Orthog];
 
   std::cout<<GridLogMessage<<"MultiRHS Conjugate Gradient : Orthog "<<Orthog<<" Nblock "<<Nblock<<std::endl;
 
-  Psi.checkerboard = Src.checkerboard;
+  Psi.Checkerboard() = Src.Checkerboard();
   conformable(Psi, Src);
 
   Field P(Src);
@@ -478,7 +476,7 @@ void MaddMatrix(std::vector<Field> &AP, Eigen::MatrixXcd &m , const std::vector<
   for(int b=0;b<Nblock;b++){
     tmp[b]   = Y[b];
     for(int bp=0;bp<Nblock;bp++) {
-      tmp[b] = tmp[b] + (scale*m(bp,b))*X[bp]; 
+      tmp[b] = tmp[b] + scomplex(scale*m(bp,b))*X[bp]; 
     }
   }
   for(int b=0;b<Nblock;b++){
@@ -488,9 +486,9 @@ void MaddMatrix(std::vector<Field> &AP, Eigen::MatrixXcd &m , const std::vector<
 void MulMatrix(std::vector<Field> &AP, Eigen::MatrixXcd &m , const std::vector<Field> &X){
   // Should make this cache friendly with site outermost, parallel_for
   for(int b=0;b<Nblock;b++){
-    AP[b] = zero;
+    AP[b] = Zero();
     for(int bp=0;bp<Nblock;bp++) {
-      AP[b] += (m(bp,b))*X[bp]; 
+      AP[b] += scomplex(m(bp,b))*X[bp]; 
     }
   }
 }
@@ -517,7 +515,7 @@ void BlockCGrQsolveVec(LinearOperatorBase<Field> &Linop, const std::vector<Field
   std::cout<<GridLogMessage<<" Block Conjugate Gradient Vec rQ : Nblock "<<Nblock<<std::endl;
 
   for(int b=0;b<Nblock;b++){ 
-    X[b].checkerboard = B[b].checkerboard;
+    X[b].Checkerboard() = B[b].Checkerboard();
     conformable(X[b], B[b]);
     conformable(X[b], X[0]); 
   }
@@ -690,9 +688,7 @@ void BlockCGrQsolveVec(LinearOperatorBase<Field> &Linop, const std::vector<Field
   IterationsToComplete = k;
 }
 
-
-
 };
 
-}
-#endif
+NAMESPACE_END(Grid);
+

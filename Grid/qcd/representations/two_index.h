@@ -1,13 +1,12 @@
 /*
  *  Policy classes for the HMC
  *  Authors: Guido Cossu, David Preti
-*/
+ */
 
 #ifndef SUN2INDEX_H_H
 #define SUN2INDEX_H_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 /*
  * This is an helper class for the HMC
@@ -23,7 +22,7 @@ namespace QCD {
 
 template <int ncolour, TwoIndexSymmetry S>
 class TwoIndexRep {
- public:
+public:
   // typdef to be used by the Representations class in HMC to get the
   // types for the higher representation fields
   typedef typename SU_TwoIndex<ncolour, S>::LatticeTwoIndexMatrix LatticeMatrix;
@@ -41,8 +40,8 @@ class TwoIndexRep {
     // get the U in TwoIndexRep
     // (U)_{(ij)(lk)} = tr [ adj(e^(ij)) U e^(lk) transpose(U) ]
     conformable(U, Uin);
-    U = zero;
-    LatticeColourMatrix tmp(Uin._grid);
+    U = Zero();
+    LatticeColourMatrix tmp(Uin.Grid());
 
     Vector<typename SU<ncolour>::Matrix> eij(Dimension);
 
@@ -63,16 +62,16 @@ class TwoIndexRep {
 
   LatticeGaugeField RtoFundamentalProject(const LatticeField &in,
                                           Real scale = 1.0) const {
-    LatticeGaugeField out(in._grid);
-    out = zero;
+    LatticeGaugeField out(in.Grid());
+    out = Zero();
 
     for (int mu = 0; mu < Nd; mu++) {
-      LatticeColourMatrix out_mu(in._grid);  // fundamental representation
+      LatticeColourMatrix out_mu(in.Grid());  // fundamental representation
       LatticeMatrix in_mu = peekLorentz(in, mu);
 
-      out_mu = zero;
+      out_mu = Zero();
 
-      typename SU<ncolour>::LatticeAlgebraVector h(in._grid);
+      typename SU<ncolour>::LatticeAlgebraVector h(in.Grid());
       projectOnAlgebra(h, in_mu, double(Nc + 2 * S));  // factor T(r)/T(fund)
       FundamentalLieAlgebraMatrix(h, out_mu);          // apply scale only once
       pokeLorentz(out, out_mu, mu);
@@ -80,21 +79,22 @@ class TwoIndexRep {
     return out;
   }
 
- private:
+private:
   void projectOnAlgebra(typename SU<ncolour>::LatticeAlgebraVector &h_out,
                         const LatticeMatrix &in, Real scale = 1.0) const {
     SU_TwoIndex<ncolour, S>::projectOnAlgebra(h_out, in, scale);
   }
 
   void FundamentalLieAlgebraMatrix(
-      typename SU<ncolour>::LatticeAlgebraVector &h,
-      typename SU<ncolour>::LatticeMatrix &out, Real scale = 1.0) const {
+				   typename SU<ncolour>::LatticeAlgebraVector &h,
+				   typename SU<ncolour>::LatticeMatrix &out, Real scale = 1.0) const {
     SU<ncolour>::FundamentalLieAlgebraMatrix(h, out, scale);
   }
 };
 
 typedef TwoIndexRep<Nc, Symmetric> TwoIndexSymmetricRepresentation;
 typedef TwoIndexRep<Nc, AntiSymmetric> TwoIndexAntiSymmetricRepresentation;
-}
-}
+
+NAMESPACE_END(Grid);
+
 #endif

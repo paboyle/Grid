@@ -33,6 +33,8 @@ namespace Grid {
 
 template<class Field> class MinimalResidual : public OperatorFunction<Field> {
  public:
+  using OperatorFunction<Field>::operator();
+
   bool ErrorOnNoConverge; // throw an assert when the MR fails to converge.
                           // Defaults true.
   RealD   Tolerance;
@@ -46,11 +48,11 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
 
   void operator()(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi) {
 
-    psi.checkerboard = src.checkerboard;
+    psi.Checkerboard() = src.Checkerboard();
     conformable(psi, src);
 
-    Complex a, c;
-    Real    d;
+    ComplexD a, c;
+    RealD    d;
 
     Field Mr(src);
     Field r(src);
@@ -71,7 +73,6 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
     std::cout << std::setprecision(4) << std::scientific;
     std::cout << GridLogIterative << "MinimalResidual: guess " << guess << std::endl;
     std::cout << GridLogIterative << "MinimalResidual:   src " << ssq << std::endl;
-    std::cout << GridLogIterative << "MinimalResidual:    mp " << d << std::endl;
     std::cout << GridLogIterative << "MinimalResidual:  cp,r " << cp << std::endl;
 
     if (cp <= rsq) {

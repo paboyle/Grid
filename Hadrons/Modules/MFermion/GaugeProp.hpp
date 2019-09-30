@@ -174,8 +174,8 @@ void TGaugeProp<FImpl>::execute(void)
                 PropToFerm<FImpl>(source, fullSrc, s, c);
             }
         }
+        sol = Zero();
         LOG(Message) << "Solve" << std::endl;
-        sol = zero;
         solver(sol, source);
         LOG(Message) << "Export solution" << std::endl;
         FermToProp<FImpl>(prop, sol, s, c);

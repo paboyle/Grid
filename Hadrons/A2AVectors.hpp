@@ -128,7 +128,7 @@ template <typename FImpl>
 void A2AVectorsSchurDiagTwo<FImpl>::makeLowModeV(FermionField &vout, const FermionField &evec, const Real &eval)
 {
     src_o_ = evec;
-    src_o_.checkerboard = Odd;
+    src_o_.Checkerboard() = Odd;
     pickCheckerboard(Even, sol_e_, vout);
     pickCheckerboard(Odd, sol_o_, vout);
 
@@ -136,25 +136,25 @@ void A2AVectorsSchurDiagTwo<FImpl>::makeLowModeV(FermionField &vout, const Fermi
     // v_ie = -(1/eval_i) * MeeInv Meo MooInv evec_i
     /////////////////////////////////////////////////////
     action_.MooeeInv(src_o_, tmp_);
-    assert(tmp_.checkerboard == Odd);
+    assert(tmp_.Checkerboard() == Odd);
     action_.Meooe(tmp_, sol_e_);
-    assert(sol_e_.checkerboard == Even);
+    assert(sol_e_.Checkerboard() == Even);
     action_.MooeeInv(sol_e_, tmp_);
-    assert(tmp_.checkerboard == Even);
+    assert(tmp_.Checkerboard() == Even);
     sol_e_ = (-1.0 / eval) * tmp_;
-    assert(sol_e_.checkerboard == Even);
+    assert(sol_e_.Checkerboard() == Even);
 
     /////////////////////////////////////////////////////
     // v_io = (1/eval_i) * MooInv evec_i
     /////////////////////////////////////////////////////
     action_.MooeeInv(src_o_, tmp_);
-    assert(tmp_.checkerboard == Odd);
+    assert(tmp_.Checkerboard() == Odd);
     sol_o_ = (1.0 / eval) * tmp_;
-    assert(sol_o_.checkerboard == Odd);
+    assert(sol_o_.Checkerboard() == Odd);
     setCheckerboard(vout, sol_e_);
-    assert(sol_e_.checkerboard == Even);
+    assert(sol_e_.Checkerboard() == Even);
     setCheckerboard(vout, sol_o_);
-    assert(sol_o_.checkerboard == Odd);
+    assert(sol_o_.Checkerboard() == Odd);
 }
 
 template <typename FImpl>
@@ -168,7 +168,7 @@ template <typename FImpl>
 void A2AVectorsSchurDiagTwo<FImpl>::makeLowModeW(FermionField &wout, const FermionField &evec, const Real &eval)
 {
     src_o_ = evec;
-    src_o_.checkerboard = Odd;
+    src_o_.Checkerboard() = Odd;
     pickCheckerboard(Even, sol_e_, wout);
     pickCheckerboard(Odd, sol_o_, wout);
 
@@ -176,22 +176,22 @@ void A2AVectorsSchurDiagTwo<FImpl>::makeLowModeW(FermionField &wout, const Fermi
     // w_ie = - MeeInvDag MoeDag Doo evec_i
     /////////////////////////////////////////////////////
     op_.Mpc(src_o_, tmp_);
-    assert(tmp_.checkerboard == Odd);
+    assert(tmp_.Checkerboard() == Odd);
     action_.MeooeDag(tmp_, sol_e_);
-    assert(sol_e_.checkerboard == Even);
+    assert(sol_e_.Checkerboard() == Even);
     action_.MooeeInvDag(sol_e_, tmp_);
-    assert(tmp_.checkerboard == Even);
+    assert(tmp_.Checkerboard() == Even);
     sol_e_ = (-1.0) * tmp_;
 
     /////////////////////////////////////////////////////
     // w_io = Doo evec_i
     /////////////////////////////////////////////////////
     op_.Mpc(src_o_, sol_o_);
-    assert(sol_o_.checkerboard == Odd);
+    assert(sol_o_.Checkerboard() == Odd);
     setCheckerboard(wout, sol_e_);
-    assert(sol_e_.checkerboard == Even);
+    assert(sol_e_.Checkerboard() == Even);
     setCheckerboard(wout, sol_o_);
-    assert(sol_o_.checkerboard == Odd);
+    assert(sol_o_.Checkerboard() == Odd);
 }
 
 template <typename FImpl>
@@ -217,7 +217,7 @@ void A2AVectorsSchurDiagTwo<FImpl>::makeHighModeV5D(FermionField &vout_4d,
                                                     FermionField &vout_5d, 
                                                     const FermionField &noise)
 {
-    if (noise._grid->Dimensions() == fGrid_->Dimensions() - 1)
+    if (noise.Grid()->Dimensions() == fGrid_->Dimensions() - 1)
     {
         action_.ImportPhysicalFermionSource(noise, tmp5_);
     }
@@ -241,7 +241,7 @@ void A2AVectorsSchurDiagTwo<FImpl>::makeHighModeW5D(FermionField &wout_4d,
                                                     FermionField &wout_5d, 
                                                     const FermionField &noise)
 {
-    if (noise._grid->Dimensions() == fGrid_->Dimensions() - 1)
+    if (noise.Grid()->Dimensions() == fGrid_->Dimensions() - 1)
     {
         action_.ImportUnphysicalFermion(noise, wout_5d);
         wout_4d = noise;
@@ -261,7 +261,7 @@ void A2AVectorsIo::write(const std::string fileStem, std::vector<Field> &vec,
                          const bool multiFile, const int trajectory)
 {
     Record       record;
-    GridBase     *grid = vec[0]._grid;
+    GridBase     *grid = vec[0].Grid();
     ScidacWriter binWriter(grid->IsBoss());
     std::string  filename = vecFilename(fileStem, trajectory, multiFile);
 

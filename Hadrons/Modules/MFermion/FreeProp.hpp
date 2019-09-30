@@ -167,7 +167,7 @@ void TFreeProp<FImpl>::execute(void)
                 PropToFerm<FImpl>(source, fullSrc, s, c);
             }
         }
-        sol = zero;
+        sol = Zero();
 	std::vector<double> twist = strToVec<double>(par().twist);
 	if(twist.size() != Nd)
 	{

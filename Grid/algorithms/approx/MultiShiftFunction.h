@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef MULTI_SHIFT_FUNCTION
 #define MULTI_SHIFT_FUNCTION
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 class MultiShiftFunction {
 public:
@@ -63,5 +63,5 @@ public:
   }
 
 };
-}
+NAMESPACE_END(Grid);
 #endif

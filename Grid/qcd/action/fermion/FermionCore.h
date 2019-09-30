@@ -36,58 +36,13 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 // Fermion prereqs
 ////////////////////////////////////////////
 #include <Grid/qcd/action/fermion/WilsonCompressor.h>     //used by all wilson type fermions
+NAMESPACE_CHECK(Compressor);
 #include <Grid/qcd/action/fermion/FermionOperatorImpl.h>
+NAMESPACE_CHECK(FermionOperatorImpl);
 #include <Grid/qcd/action/fermion/FermionOperator.h>
+NAMESPACE_CHECK(FermionOperator);
 #include <Grid/qcd/action/fermion/WilsonKernels.h>        //used by all wilson type fermions
 #include <Grid/qcd/action/fermion/StaggeredKernels.h>        //used by all wilson type fermions
-
-#define FermOpStaggeredTemplateInstantiate(A) \
-  template class A<StaggeredImplF>; \
-  template class A<StaggeredImplD>; 
-
-#define FermOpStaggeredVec5dTemplateInstantiate(A) \
-  template class A<StaggeredVec5dImplF>; \
-  template class A<StaggeredVec5dImplD>; 
-
-#define FermOp4dVecTemplateInstantiate(A) \
-  template class A<WilsonImplF>;		\
-  template class A<WilsonImplD>;		\
-  template class A<ZWilsonImplF>;		\
-  template class A<ZWilsonImplD>;		\
-  template class A<GparityWilsonImplF>;		\
-  template class A<GparityWilsonImplD>;		\
-  template class A<WilsonImplFH>;		\
-  template class A<WilsonImplDF>;		\
-  template class A<ZWilsonImplFH>;		\
-  template class A<ZWilsonImplDF>;		\
-  template class A<GparityWilsonImplFH>;		\
-  template class A<GparityWilsonImplDF>;		
-
-
-#define AdjointFermOpTemplateInstantiate(A) \
-  template class A<WilsonAdjImplF>; \
-  template class A<WilsonAdjImplD>; 
-
-#define TwoIndexFermOpTemplateInstantiate(A) \
-  template class A<WilsonTwoIndexSymmetricImplF>; \
-  template class A<WilsonTwoIndexSymmetricImplD>; \
-  template class A<WilsonTwoIndexAntiSymmetricImplF>; \
-  template class A<WilsonTwoIndexAntiSymmetricImplD>;
-
-#define FermOp5dVecTemplateInstantiate(A) \
-  template class A<DomainWallVec5dImplF>;	\
-  template class A<DomainWallVec5dImplD>;	\
-  template class A<ZDomainWallVec5dImplF>;	\
-  template class A<ZDomainWallVec5dImplD>;	\
-  template class A<DomainWallVec5dImplFH>;	\
-  template class A<DomainWallVec5dImplDF>;	\
-  template class A<ZDomainWallVec5dImplFH>;	\
-  template class A<ZDomainWallVec5dImplDF>;	
-
-#define FermOpTemplateInstantiate(A) \
- FermOp4dVecTemplateInstantiate(A) \
- FermOp5dVecTemplateInstantiate(A) 
-
-#define GparityFermOpTemplateInstantiate(A) 
+NAMESPACE_CHECK(Kernels);
 
 #endif

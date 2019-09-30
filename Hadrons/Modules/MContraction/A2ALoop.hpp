@@ -109,7 +109,7 @@ void TA2ALoop<FImpl>::execute(void)
     auto &left  = envGet(std::vector<FermionField>, par().left);
     auto &right = envGet(std::vector<FermionField>, par().right);
 
-    loop = zero;
+    loop = Zero();
     for (unsigned int i = 0; i < left.size(); ++i)
     {
         loop += outerProduct(left[i], right[i]);

@@ -3,31 +3,26 @@
 
   @brief Declares the GaugeConfiguration class
 */
-#ifndef GAUGE_CONFIG_
-#define GAUGE_CONFIG_
+#pragma once
 
-namespace Grid
-{
-
-namespace QCD
-{
+NAMESPACE_BEGIN(Grid);
 
 //trivial class for no smearing
-template <class Impl>
+template< class Impl >
 class NoSmearing
 {
 public:
   INHERIT_FIELD_TYPES(Impl);
 
-  Field *ThinField;
+  Field* ThinField;
 
-  NoSmearing() : ThinField(NULL) {}
+  NoSmearing(): ThinField(NULL) {}
 
-  void set_Field(Field &U) { ThinField = &U; }
+  void set_Field(Field& U) { ThinField = &U; }
 
-  void smeared_force(Field &) const {}
+  void smeared_force(Field&) const {}
 
-  Field &get_SmearedU() { return *ThinField; }
+  Field& get_SmearedU() { return *ThinField; }
 
   Field &get_U(bool smeared = false)
   {
@@ -61,7 +56,7 @@ private:
   //====================================================================
   void fill_smearedSet(GaugeField &U)
   {
-    ThinLinks = &U; // attach the smearing routine to the field U
+    ThinLinks = &U;  // attach the smearing routine to the field U
 
     // check the pointer is not null
     if (ThinLinks == NULL)
@@ -72,7 +67,7 @@ private:
     {
       std::cout << GridLogDebug
                 << "[SmearedConfiguration] Filling SmearedSet\n";
-      GaugeField previous_u(ThinLinks->_grid);
+      GaugeField previous_u(ThinLinks->Grid());
 
       previous_u = *ThinLinks;
       for (int smearLvl = 0; smearLvl < smearingLevels; ++smearLvl)
@@ -88,10 +83,10 @@ private:
     }
   }
   //====================================================================
-  GaugeField AnalyticSmearedForce(const GaugeField &SigmaKPrime,
-                                  const GaugeField &GaugeK) const
+  GaugeField AnalyticSmearedForce(const GaugeField& SigmaKPrime,
+                                  const GaugeField& GaugeK) const 
   {
-    GridBase *grid = GaugeK._grid;
+    GridBase* grid = GaugeK.Grid();
     GaugeField C(grid), SigmaK(grid), iLambda(grid);
     GaugeLinkField iLambda_mu(grid);
     GaugeLinkField iQ(grid), e_iQ(grid);
@@ -99,8 +94,8 @@ private:
     GaugeLinkField GaugeKmu(grid), Cmu(grid);
 
     StoutSmearing.BaseSmear(C, GaugeK);
-    SigmaK = zero;
-    iLambda = zero;
+    SigmaK = Zero();
+    iLambda = Zero();
 
     for (int mu = 0; mu < Nd; mu++)
     {
@@ -113,7 +108,7 @@ private:
       pokeLorentz(iLambda, iLambda_mu, mu);
     }
     StoutSmearing.derivative(SigmaK, iLambda,
-                             GaugeK); // derivative of SmearBase
+                             GaugeK);  // derivative of SmearBase
     return SigmaK;
   }
 
@@ -124,11 +119,11 @@ private:
   }
 
   //====================================================================
-  void set_iLambda(GaugeLinkField &iLambda, GaugeLinkField &e_iQ,
-                   const GaugeLinkField &iQ, const GaugeLinkField &Sigmap,
-                   const GaugeLinkField &GaugeK) const
+  void set_iLambda(GaugeLinkField& iLambda, GaugeLinkField& e_iQ,
+                   const GaugeLinkField& iQ, const GaugeLinkField& Sigmap,
+                   const GaugeLinkField& GaugeK) const 
   {
-    GridBase *grid = iQ._grid;
+    GridBase* grid = iQ.Grid();
     GaugeLinkField iQ2(grid), iQ3(grid), B1(grid), B2(grid), USigmap(grid);
     GaugeLinkField unity(grid);
     unity = 1.0;
@@ -141,7 +136,7 @@ private:
     LatticeComplex r01(grid), r11(grid), r21(grid), r02(grid), r12(grid);
     LatticeComplex r22(grid), tr1(grid), tr2(grid);
     LatticeComplex b10(grid), b11(grid), b12(grid), b20(grid), b21(grid),
-        b22(grid);
+      b22(grid);
     LatticeComplex LatticeUnitComplex(grid);
 
     LatticeUnitComplex = 1.0;
@@ -165,19 +160,19 @@ private:
     e2iu = cos(2.0 * u) + timesI(sin(2.0 * u));
 
     r01 = (2.0 * u + timesI(2.0 * (u2 - w2))) * e2iu +
-          emiu * ((16.0 * u * cosw + 2.0 * u * (3.0 * u2 + w2) * xi0) +
-                  timesI(-8.0 * u2 * cosw + 2.0 * (9.0 * u2 + w2) * xi0));
+      emiu * ((16.0 * u * cosw + 2.0 * u * (3.0 * u2 + w2) * xi0) +
+	      timesI(-8.0 * u2 * cosw + 2.0 * (9.0 * u2 + w2) * xi0));
 
     r11 = (2.0 * LatticeUnitComplex + timesI(4.0 * u)) * e2iu +
-          emiu * ((-2.0 * cosw + (3.0 * u2 - w2) * xi0) +
-                  timesI((2.0 * u * cosw + 6.0 * u * xi0)));
+      emiu * ((-2.0 * cosw + (3.0 * u2 - w2) * xi0) +
+	      timesI((2.0 * u * cosw + 6.0 * u * xi0)));
 
     r21 =
-        2.0 * timesI(e2iu) + emiu * (-3.0 * u * xi0 + timesI(cosw - 3.0 * xi0));
+      2.0 * timesI(e2iu) + emiu * (-3.0 * u * xi0 + timesI(cosw - 3.0 * xi0));
 
     r02 = -2.0 * e2iu +
-          emiu * (-8.0 * u2 * xi0 +
-                  timesI(2.0 * u * (cosw + xi0 + 3.0 * u2 * xi1)));
+      emiu * (-8.0 * u2 * xi0 +
+	      timesI(2.0 * u * (cosw + xi0 + 3.0 * u2 * xi1)));
 
     r12 = emiu * (2.0 * u * xi0 + timesI(-cosw - xi0 + 3.0 * u2 * xi1));
 
@@ -211,19 +206,19 @@ private:
     GaugeLinkField USQ = USigmap * iQ;
 
     GaugeLinkField iGamma = tr1 * iQ - timesI(tr2) * iQ2 +
-                            timesI(f1) * USigmap + f2 * QUS + f2 * USQ;
+      timesI(f1) * USigmap + f2 * QUS + f2 * USQ;
 
     iLambda = Ta(iGamma);
   }
 
   //====================================================================
 public:
-  GaugeField *
+  GaugeField*
       ThinLinks; /* Pointer to the thin links configuration */
 
   /* Standard constructor */
-  SmearedConfiguration(GridCartesian *UGrid, unsigned int Nsmear,
-                       Smear_Stout<Gimpl> &Stout)
+  SmearedConfiguration(GridCartesian* UGrid, unsigned int Nsmear,
+                       Smear_Stout<Gimpl>& Stout)
       : smearingLevels(Nsmear), StoutSmearing(Stout), ThinLinks(NULL)
   {
     for (unsigned int i = 0; i < smearingLevels; ++i)
@@ -232,7 +227,7 @@ public:
 
   /*! For just thin links */
   SmearedConfiguration()
-      : smearingLevels(0), StoutSmearing(), SmearedSet(), ThinLinks(NULL) {}
+    : smearingLevels(0), StoutSmearing(), SmearedSet(), ThinLinks(NULL) {}
 
   // attach the smeared routines to the thin links U and fill the smeared set
   void set_Field(GaugeField &U)
@@ -251,7 +246,7 @@ public:
     {
       double start = usecond();
       GaugeField force = SigmaTilde; // actually = U*SigmaTilde
-      GaugeLinkField tmp_mu(SigmaTilde._grid);
+      GaugeLinkField tmp_mu(SigmaTilde.Grid());
 
       for (int mu = 0; mu < Nd; mu++)
       {
@@ -273,11 +268,11 @@ public:
       double end = usecond();
       double time = (end - start)/ 1e3;
       std::cout << GridLogMessage << "Smearing force in " << time << " ms" << std::endl;  
-    } // if smearingLevels = 0 do nothing
+    }  // if smearingLevels = 0 do nothing
   }
   //====================================================================
 
-  GaugeField &get_SmearedU() { return SmearedSet[smearingLevels - 1]; }
+  GaugeField& get_SmearedU() { return SmearedSet[smearingLevels - 1]; }
 
   GaugeField &get_U(bool smeared = false)
   {
@@ -287,7 +282,7 @@ public:
       if (smearingLevels)
       {
         RealD impl_plaq =
-            WilsonLoops<Gimpl>::avgPlaquette(SmearedSet[smearingLevels - 1]);
+	  WilsonLoops<Gimpl>::avgPlaquette(SmearedSet[smearingLevels - 1]);
         std::cout << GridLogDebug << "getting Usmr Plaq: " << impl_plaq
                   << std::endl;
         return get_SmearedU();
@@ -309,7 +304,6 @@ public:
     }
   }
 };
-}
-}
 
-#endif
+NAMESPACE_END(Grid);
+

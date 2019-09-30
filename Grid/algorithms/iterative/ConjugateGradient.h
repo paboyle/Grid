@@ -27,11 +27,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef GRID_CONJUGATE_GRADIENT_H
 #define GRID_CONJUGATE_GRADIENT_H
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 /////////////////////////////////////////////////////////////
 // Base classes for iterative processes based on operators
@@ -40,7 +40,10 @@ namespace Grid {
 
 template <class Field>
 class ConjugateGradient : public OperatorFunction<Field> {
- public:
+public:
+
+  using OperatorFunction<Field>::operator();
+
   bool ErrorOnNoConverge;  // throw an assert when the CG fails to converge.
                            // Defaults true.
   RealD Tolerance;
@@ -48,17 +51,18 @@ class ConjugateGradient : public OperatorFunction<Field> {
   Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
   
   ConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true)
-      : Tolerance(tol),
-        MaxIterations(maxit),
-        ErrorOnNoConverge(err_on_no_conv){};
+    : Tolerance(tol),
+      MaxIterations(maxit),
+      ErrorOnNoConverge(err_on_no_conv){};
 
   void operator()(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi) {
 
+    psi.Checkerboard() = src.Checkerboard();
 
-    psi.checkerboard = src.checkerboard;
     conformable(psi, src);
 
-    RealD cp, c, a, d, b, ssq, qq, b_pred;
+    RealD cp, c, a, d, b, ssq, qq;
+    //RealD b_pred;
 
     Field p(src);
     Field mmp(src);
@@ -70,7 +74,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
 
     
     Linop.HermOpAndNorm(psi, mmp, d, b);
-
+    
     r = src - mmp;
     p = r;
 
@@ -127,10 +131,13 @@ class ConjugateGradient : public OperatorFunction<Field> {
       b = cp / c;
 
       LinearCombTimer.Start();
-      parallel_for(int ss=0;ss<src._grid->oSites();ss++){
-	vstream(psi[ss], a      *  p[ss] + psi[ss]);
-	vstream(p  [ss], b      *  p[ss] + r[ss]);
-      }
+      auto psi_v = psi.View();
+      auto p_v   = p.View();
+      auto r_v   = r.View();
+      accelerator_for(ss,p_v.size(), Field::vector_object::Nsimd(),{
+	  coalescedWrite(psi_v[ss], a      *  p_v(ss) + psi_v(ss));
+	  coalescedWrite(p_v[ss]  , b      *  p_v(ss) + r_v  (ss));
+      });
       LinearCombTimer.Stop();
       LinalgTimer.Stop();
 
@@ -143,12 +150,12 @@ class ConjugateGradient : public OperatorFunction<Field> {
         Linop.HermOpAndNorm(psi, mmp, d, qq);
         p = mmp - src;
 
-        RealD srcnorm = sqrt(norm2(src));
-        RealD resnorm = sqrt(norm2(p));
+        RealD srcnorm = std::sqrt(norm2(src));
+        RealD resnorm = std::sqrt(norm2(p));
         RealD true_residual = resnorm / srcnorm;
 
         std::cout << GridLogMessage << "ConjugateGradient Converged on iteration " << k << std::endl;
-        std::cout << GridLogMessage << "\tComputed residual " << sqrt(cp / ssq)<<std::endl;
+        std::cout << GridLogMessage << "\tComputed residual " << std::sqrt(cp / ssq)<<std::endl;
 	std::cout << GridLogMessage << "\tTrue residual " << true_residual<<std::endl;
 	std::cout << GridLogMessage << "\tTarget " << Tolerance << std::endl;
 
@@ -174,5 +181,5 @@ class ConjugateGradient : public OperatorFunction<Field> {
 
   }
 };
-}
+NAMESPACE_END(Grid);
 #endif

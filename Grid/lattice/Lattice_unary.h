@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -26,59 +26,55 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_LATTICE_UNARY_H
 #define GRID_LATTICE_UNARY_H
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-  template<class obj> Lattice<obj> pow(const Lattice<obj> &rhs,RealD y){
-    Lattice<obj> ret(rhs._grid);
-    ret.checkerboard = rhs.checkerboard;
-    conformable(ret,rhs);
-    parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
-      ret._odata[ss]=pow(rhs._odata[ss],y);
-    }
-    return ret;
-  }
-  template<class obj> Lattice<obj> mod(const Lattice<obj> &rhs,Integer y){
-    Lattice<obj> ret(rhs._grid);
-    ret.checkerboard = rhs.checkerboard;
-    conformable(ret,rhs);
-    parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
-      ret._odata[ss]=mod(rhs._odata[ss],y);
-    }
-    return ret;
-  }
-
-  template<class obj> Lattice<obj> div(const Lattice<obj> &rhs,Integer y){
-    Lattice<obj> ret(rhs._grid);
-    ret.checkerboard = rhs.checkerboard;
-    conformable(ret,rhs);
-    parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
-      ret._odata[ss]=div(rhs._odata[ss],y);
-    }
-    return ret;
-  }
-
-  template<class obj> Lattice<obj> expMat(const Lattice<obj> &rhs, RealD alpha, Integer Nexp = DEFAULT_MAT_EXP){
-    Lattice<obj> ret(rhs._grid);
-    ret.checkerboard = rhs.checkerboard;
-    conformable(ret,rhs);
-    parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
-      ret._odata[ss]=Exponentiate(rhs._odata[ss],alpha, Nexp);
-    }
-
-    return ret;
-
-    
-    
-
-    
-  }
-
-
-
+template<class obj> Lattice<obj> pow(const Lattice<obj> &rhs_i,RealD y){
+  Lattice<obj> ret_i(rhs_i.Grid());
+  auto rhs = rhs_i.View();
+  auto ret = ret_i.View();
+  ret.Checkerboard() = rhs.Checkerboard();
+  accelerator_for(ss,rhs.size(),1,{
+      ret[ss]=pow(rhs[ss],y);
+  });
+  return ret_i;
 }
+template<class obj> Lattice<obj> mod(const Lattice<obj> &rhs_i,Integer y){
+  Lattice<obj> ret_i(rhs_i.Grid());
+  auto rhs = rhs_i.View();
+  auto ret = ret_i.View();
+  ret.Checkerboard() = rhs.Checkerboard();
+  accelerator_for(ss,rhs.size(),obj::Nsimd(),{
+    coalescedWrite(ret[ss],mod(rhs(ss),y));
+  });
+  return ret_i;
+}
+
+template<class obj> Lattice<obj> div(const Lattice<obj> &rhs_i,Integer y){
+  Lattice<obj> ret_i(rhs_i.Grid());
+  auto ret = ret_i.View();
+  auto rhs = rhs_i.View();
+  ret.Checkerboard() = rhs_i.Checkerboard();
+  accelerator_for(ss,rhs.size(),obj::Nsimd(),{
+    coalescedWrite(ret[ss],div(rhs(ss),y));
+  });
+  return ret_i;
+}
+
+template<class obj> Lattice<obj> expMat(const Lattice<obj> &rhs_i, RealD alpha, Integer Nexp = DEFAULT_MAT_EXP){
+  Lattice<obj> ret_i(rhs_i.Grid());
+  auto rhs = rhs_i.View();
+  auto ret = ret_i.View();
+  ret.Checkerboard() = rhs.Checkerboard();
+  accelerator_for(ss,rhs.size(),obj::Nsimd(),{
+    coalescedWrite(ret[ss],Exponentiate(rhs(ss),alpha, Nexp));
+  });
+  return ret_i;
+}
+
+NAMESPACE_END(Grid);
 #endif

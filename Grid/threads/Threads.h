@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,50 +24,17 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
-#ifndef GRID_THREADS_H
-#define GRID_THREADS_H
+*************************************************************************************/
+/*  END LEGAL */
+#pragma once 
 
-#ifdef _OPENMP
-#define GRID_OMP
-#endif
 
-#define UNROLL  _Pragma("unroll")
-
-#ifdef GRID_OMP
-#include <omp.h>
-
-#define PARALLEL_FOR_LOOP        _Pragma("omp parallel for schedule(static)")
-#define PARALLEL_FOR_LOOP_INTERN _Pragma("omp for schedule(static)")
-#define PARALLEL_NESTED_LOOP2 _Pragma("omp parallel for collapse(2)")
-#define PARALLEL_NESTED_LOOP5 _Pragma("omp parallel for collapse(5)")
-#define PARALLEL_REGION       _Pragma("omp parallel")
-#define PARALLEL_CRITICAL     _Pragma("omp critical")
-#else
-#define PARALLEL_FOR_LOOP
-#define PARALLEL_FOR_LOOP_INTERN
-#define PARALLEL_FOR_LOOP_REDUCE(op, var)
-#define PARALLEL_NESTED_LOOP2
-#define PARALLEL_NESTED_LOOP5
-#define PARALLEL_REGION
-#define PARALLEL_CRITICAL
-#endif
-
-#define parallel_region    PARALLEL_REGION
-#define parallel_for       PARALLEL_FOR_LOOP for
-#define parallel_for_internal PARALLEL_FOR_LOOP_INTERN for
-#define parallel_for_nest2 PARALLEL_NESTED_LOOP2 for
-#define parallel_for_nest5 PARALLEL_NESTED_LOOP5 for
-#define parallel_critical PARALLEL_CRITICAL
-
-namespace Grid {
-
-  // Introduce a class to gain deterministic bit reproducible reduction.
-  // make static; perhaps just a namespace is required.
+// Introduce a class to gain deterministic bit reproducible reduction.
+// make static; perhaps just a namespace is required.
+NAMESPACE_BEGIN(Grid);
 
 class GridThread {
- public:
+public:
   static int _threads;
   static int _hyperthreads;
   static int _cores;
@@ -89,7 +56,6 @@ class GridThread {
   };
   static void SetMaxThreads(void) { 
 #ifdef GRID_OMP
-    //    setenv("KMP_AFFINITY","balanced",1);
     _threads = omp_get_max_threads();
     omp_set_num_threads(_threads);
 #else 
@@ -134,11 +100,11 @@ class GridThread {
   
   template<class obj> static void ThreadSum( std::vector<obj> &sum_array,obj &val,int me){
     sum_array[me] = val;
-    val=zero;
+    val=Zero();
     ThreadBarrier();
     for(int i=0;i<_threads;i++) val+= sum_array[i];
     ThreadBarrier();
-  };
+  }
 
   static void bcopy(const void *src, void *dst, size_t len) {
 #ifdef GRID_OMP
@@ -158,5 +124,5 @@ class GridThread {
 
 };
 
-}
-#endif
+NAMESPACE_END(Grid);
+

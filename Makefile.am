@@ -11,6 +11,6 @@ tests-local: all
 bench-local: all
 check-local: all
 
-AM_CXXFLAGS += -I$(top_builddir)/include
+AM_CXXFLAGS += -I$(top_builddir)
 
 ACLOCAL_AMFLAGS = -I m4

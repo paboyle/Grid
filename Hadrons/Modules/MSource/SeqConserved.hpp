@@ -141,7 +141,7 @@ void TSeqConserved<FImpl>::setup(void)
 {
     auto Ls_ = env().getObjectLs(par().action);
     envCreateLat(PropagatorField, getName(), Ls_);
-    envTmpLat(PropagatorField, "src_tmp");
+    envTmpLat(PropagatorField, "src_tmp",Ls_);
     envCacheLat(LatticeComplex, SeqmomphName_);
     envTmpLat(LatticeComplex, "coor");
     envTmpLat(LatticeComplex, "latt_compl");
@@ -175,14 +175,14 @@ void TSeqConserved<FImpl>::execute(void)
     auto &mat = envGet(FMat, par().action);
     envGetTmp(LatticeComplex, latt_compl);
 
-    src = zero;
+    src = Zero();
 
     //exp(ipx)
     auto &mom_phase = envGet(LatticeComplex, SeqmomphName_);
     if (!SeqhasPhase_)
     {    
         std::vector<Real> mom = strToVec<Real>(par().mom);
-        mom_phase = zero;
+        mom_phase = Zero();
         Complex           i(0.0,1.0);
         envGetTmp(LatticeComplex, coor);
         for(unsigned int mu = 0; mu < env().getNd(); mu++)

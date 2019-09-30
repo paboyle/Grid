@@ -31,7 +31,7 @@
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ 
 
 int main(int argc, char **argv) {
 
@@ -50,8 +50,8 @@ int main(int argc, char **argv) {
 
   // clang-format off
   LatticeFermionD       src_d(FGrid_d); gaussian(fPRNG, src_d);
-  LatticeFermionD resultMGD_d(FGrid_d); resultMGD_d = zero;
-  LatticeFermionD resultMGF_d(FGrid_d); resultMGF_d = zero;
+  LatticeFermionD resultMGD_d(FGrid_d); resultMGD_d = Zero();
+  LatticeFermionD resultMGF_d(FGrid_d); resultMGF_d = Zero();
   LatticeGaugeFieldD    Umu_d(FGrid_d); SU3::HotConfiguration(fPRNG, Umu_d);
   LatticeGaugeFieldF    Umu_f(FGrid_f); precisionChange(Umu_f, Umu_d);
   // clang-format on
@@ -141,8 +141,8 @@ int main(int argc, char **argv) {
 
     // clang-format off
     LatticeFermionF src_f(FGrid_f);    precisionChange(src_f, src_d);
-    LatticeFermionF resMGF_f(FGrid_f); resMGF_f = zero;
-    LatticeFermionD resMGD_d(FGrid_d); resMGD_d = zero;
+    LatticeFermionF resMGF_f(FGrid_f); resMGF_f = Zero();
+    LatticeFermionD resMGD_d(FGrid_d); resMGD_d = Zero();
     // clang-format on
 
     (*MGPreconDw_f)(src_f, resMGF_f);

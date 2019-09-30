@@ -29,8 +29,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef QCD_PSEUDOFERMION_TWO_FLAVOUR_EVEN_ODD_RATIO_H
 #define QCD_PSEUDOFERMION_TWO_FLAVOUR_EVEN_ODD_RATIO_H
 
-namespace Grid{
-  namespace QCD{
+NAMESPACE_BEGIN(Grid);
 
     ///////////////////////////////////////
     // Two flavour ratio
@@ -118,7 +117,7 @@ namespace Grid{
 
         // Odd det factors
         Mpc.MpcDag(etaOdd,PhiOdd);
-        tmp=zero;
+        tmp=Zero();
         HeatbathSolver(Vpc,PhiOdd,tmp);
         Vpc.Mpc(tmp,PhiOdd);            
 
@@ -146,7 +145,7 @@ namespace Grid{
         FermionField Y(NumOp.FermionRedBlackGrid());
 
         Vpc.MpcDag(PhiOdd,Y);           // Y= Vdag phi
-        X=zero;
+        X=Zero();
         ActionSolver(Mpc,Y,X);          // X= (MdagM)^-1 Vdag phi
         //Mpc.Mpc(X,Y);                   // Y=  Mdag^-1 Vdag phi
         // Multiply by Ydag
@@ -182,13 +181,13 @@ namespace Grid{
         FermionField  Y(NumOp.FermionRedBlackGrid());
 
         // This assignment is necessary to be compliant with the HMC grids
-	GaugeField force(dSdU._grid);
+	GaugeField force(dSdU.Grid());
 
         //Y=Vdag phi
         //X = (Mdag M)^-1 V^dag phi
         //Y = (Mdag)^-1 V^dag  phi
         Vpc.MpcDag(PhiOdd,Y);          // Y= Vdag phi
-        X=zero;
+        X=Zero();
         DerivativeSolver(Mpc,Y,X);     // X= (MdagM)^-1 Vdag phi
         Mpc.Mpc(X,Y);                  // Y=  Mdag^-1 Vdag phi
 
@@ -212,6 +211,5 @@ namespace Grid{
         
       };
     };
-  }
-}
+NAMESPACE_END(Grid);
 #endif

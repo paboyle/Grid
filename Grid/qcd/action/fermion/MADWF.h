@@ -27,8 +27,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #pragma once
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 template <class Fieldi, class Fieldo,IfNotSame<Fieldi,Fieldo> X=0>
 inline void convert(const Fieldi &from,Fieldo &to) 
@@ -109,7 +108,7 @@ class MADWF
     std::cout << GridLogMessage << " b    " <<norm2(b)<<std::endl;
 
     defect = b;
-    sol5=zero;
+    sol5=Zero();
     for (int i=0;i<maxiter;i++) {
 
       ///////////////////////////////////////
@@ -122,7 +121,7 @@ class MADWF
       ////////////////////////////////////////////////
       // Solve the inner system with surface term c0
       ////////////////////////////////////////////////
-      ci = zero;  
+      ci = Zero();  
       convert(c0,c0i); // Possible precison change
       InsertSlice(c0i,ci,0, 0);
 
@@ -190,4 +189,4 @@ class MADWF
 
 };
 
-}}
+NAMESPACE_END(Grid);
