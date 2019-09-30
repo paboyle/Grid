@@ -6,7 +6,7 @@
 
     Copyright (C) 2017
 
-    Author: Guido Cossu <guido.cossu@ed.ac.uk>
+    Author: Felix Erben <felix.erben@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

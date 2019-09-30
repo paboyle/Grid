@@ -7,7 +7,6 @@
  Copyright (C) 2019
  
  Author: Felix Erben <felix.erben@ed.ac.uk>
- Author: Michael Marshall <Michael.Marshall@ed.ac.uk>
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
