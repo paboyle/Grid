@@ -187,8 +187,8 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_src,
 
   Gamma g4(Gamma::Algebra::GammaT); //needed for parity P_\pm = 0.5*(1 \pm \gamma_4)
 
-  std::vector<std::vector<int>> epsilon = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
-  std::vector<int> epsilon_sgn = {1,1,1,-1,-1,-1};
+  static const int epsilon[6][3] = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
+  static const int epsilon_sgn[6]= {1,1,1,-1,-1,-1};
   std::vector<int> wick_contraction = {0,0,0,0,0,0};
 
   for (int ie=0; ie < 6 ; ie++)
@@ -214,10 +214,6 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_src,
     vbaryon_corr[ss] = result; 
   }  );//end loop over lattice sites
 }
-/*template<class FImpl,class T1,class T2,class T3>
-void BaryonUtils<FImpl>::ContractBaryons_Sliced(const T1 &D1,
-						 const T2 &D2,
-						 const T3 &D3,*/
 template <class FImpl>
 template <class mobj, class robj>
 void BaryonUtils<FImpl>::ContractBaryons_Sliced(const mobj &D1,
@@ -235,8 +231,8 @@ void BaryonUtils<FImpl>::ContractBaryons_Sliced(const mobj &D1,
 
   Gamma g4(Gamma::Algebra::GammaT); //needed for parity P_\pm = 0.5*(1 \pm \gamma_4)
 
-  std::vector<std::vector<int>> epsilon = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
-  std::vector<int> epsilon_sgn = {1,1,1,-1,-1,-1};
+  static const int epsilon[6][3] = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
+  static const int epsilon_sgn[6]= {1,1,1,-1,-1,-1};
   std::vector<int> wick_contraction = {0,0,0,0,0,0};
 
   for (int ie=0; ie < 6 ; ie++)

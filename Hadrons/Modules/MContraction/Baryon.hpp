@@ -134,9 +134,6 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
                  << par().q3_src << "') at the source and (Gamma^A,Gamma^B) = ( " << par().GammaA << " , " << par().GammaB 
                  << " ) and parity " << par().parity << "." << std::endl;
     
-    auto       &q1_src = envGet(PropagatorField1, par().q1_src);
-    auto       &q2_src = envGet(PropagatorField2, par().q2_src);
-    auto       &q3_src = envGet(PropagatorField3, par().q3_src);
     envGetTmp(LatticeComplex, c);
     Result     result;
     int nt = env().getDim(Tp);
@@ -168,6 +165,9 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     }
     else
     {
+       auto       &q1_src = envGet(PropagatorField1, par().q1_src);
+       auto       &q2_src = envGet(PropagatorField2, par().q2_src);
+       auto       &q3_src = envGet(PropagatorField3, par().q3_src);
         std::string ns;
                 
         ns = vm().getModuleNamespace(env().getObjectModule(par().sink));
