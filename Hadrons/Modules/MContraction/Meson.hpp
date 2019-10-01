@@ -349,30 +349,23 @@ void TStagMeson<FImpl1, FImpl2>::setup(void)
     stag_phase_source.resize(Ngam);
     
     // based on phases in Grid/qcd/action/fermion/FermionOperatorImpl.h
-    // Pretty cute implementation, if I may say so myself (!) (-PAB)
     // Staggered Phases (dirac gamma's).
-    Lattice<iScalar<vInteger> > x(env().getGrid()); LatticeCoordinate(x,0);
-    Lattice<iScalar<vInteger> > y(env().getGrid()); LatticeCoordinate(y,1);
-    Lattice<iScalar<vInteger> > z(env().getGrid()); LatticeCoordinate(z,2);
-    Lattice<iScalar<vInteger> > t(env().getGrid()); LatticeCoordinate(t,3);
+    //Lattice<iScalar<vInteger> > x(env().getGrid()); LatticeCoordinate(x,0);
+    //Lattice<iScalar<vInteger> > y(env().getGrid()); LatticeCoordinate(y,1);
+    //Lattice<iScalar<vInteger> > z(env().getGrid()); LatticeCoordinate(z,2);
+    //Lattice<iScalar<vInteger> > t(env().getGrid()); LatticeCoordinate(t,3);
+    //Lattice<iScalar<vInteger> > lin(env().getGrid()); lin=x+y+z+t;
     // first do the "hermiticity" phase from taking adjoint, (-1)^(x-y)
     // sink
-    phase=1.0;
-    phase = where( mod(x,2)==(Integer)0, phase,-phase);
-    phase = where( mod(y,2)==(Integer)0, phase,-phase);
-    phase = where( mod(z,2)==(Integer)0, phase,-phase);
-    phase = where( mod(t,2)==(Integer)0, phase,-phase);
+    //phase=1.0;
+    //phase = where( mod(lin,2)==(Integer)0, phase,-phase);
     // source
     std::vector<int> location = strToVec<int>(
         static_cast<MSource::StagPoint *>(vm().getModule(par().source))->par().position);
-    phase = where(location[0]%2==(Integer)0, phase, -phase);
-    phase = where(location[1]%2==(Integer)0, phase, -phase);
-    phase = where(location[2]%2==(Integer)0, phase, -phase);
-    phase = where(location[3]%2==(Integer)0, phase, -phase);
+    //phase = where((location[0]+location[1]+location[2]+location[3])%2==(Integer)0, phase, -phase);
 
-    // local taste non-singlet ops from Degrand and Detar, tab. 11.2
-    // including parity partners
-    // need to check these are consistent with Dirac op phases
+    // local taste non-singlet ops, including ``Hermiticity" phase,
+    // see Tab. 11.2 in Degrand and Detar
     for(int i=0; i < gammaList.size(); i++){
         
         stag_phase_sink[i] = 1.0;
@@ -441,7 +434,7 @@ void TStagMeson<FImpl1, FImpl2>::execute(void)
         auto &q2 = envGet(PropagatorField2, par().q2);
         
         envGetTmp(LatticeComplex, c);
-        envGetTmp(LatticeComplex, phase);
+        //envGetTmp(LatticeComplex, phase);
         
         //LOG(Message) << "(source position '" << location << "')" << std::endl;
         

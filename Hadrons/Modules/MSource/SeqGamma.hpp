@@ -273,20 +273,22 @@ void TStagSeqGamma<FImpl>::execute(void)
         ph = exp((Real)(2*M_PI)*i*ph);
         
         // based on phases in Grid/qcd/action/fermion/FermionOperatorImpl.h
-        // Pretty cute implementation, if I may say so myself (!) (-PAB)
-        // Staggered Phase.
+        // Staggered Phase does not include (-1)^x from "hermiticity" trans.
         stag_ph = 1.0;
         Lattice<iScalar<vInteger> > x(env().getGrid()); LatticeCoordinate(x,0);
         Lattice<iScalar<vInteger> > y(env().getGrid()); LatticeCoordinate(y,1);
         Lattice<iScalar<vInteger> > z(env().getGrid()); LatticeCoordinate(z,2);
-        //Lattice<iScalar<vInteger> > t(env().getGrid()); LatticeCoordinate(t,3);
-        // local taste non-singlet ops from Degrand and Detar, tab. 11.2
-        // including parity partners
-        // need to check these are consistent with Dirac op phases
-        if ( par().gamma == Gamma::Algebra::Gamma5 ) stag_ph = 1.0;
-        else if ( par().gamma == Gamma::Algebra::GammaX ) stag_ph = where( mod(x,2)==(Integer)0, stag_ph,-stag_ph);
-        else if ( par().gamma == Gamma::Algebra::GammaY ) stag_ph = where( mod(y,2)==(Integer)0, stag_ph,-stag_ph);
-        else if ( par().gamma == Gamma::Algebra::GammaZ ) stag_ph = where( mod(z,2)==(Integer)0, stag_ph,-stag_ph);
+        Lattice<iScalar<vInteger> > t(env().getGrid()); LatticeCoordinate(t,3);
+        Lattice<iScalar<vInteger> > lin_x(env().getGrid()); lin_x=y+z+t;
+        Lattice<iScalar<vInteger> > lin_y(env().getGrid()); lin_y=x+z+t;
+        Lattice<iScalar<vInteger> > lin_z(env().getGrid()); lin_z=x+y+t;
+        Lattice<iScalar<vInteger> > lin_5(env().getGrid()); lin_5=x+y+z+t;
+        
+        // local taste non-singlet ops from Degrand and Detar, Tab. 11.2
+        if ( par().gamma == Gamma::Algebra::Gamma5 )      stag_ph = where( mod(lin_5,2)==(Integer)0, stag_ph,-stag_ph);
+        else if ( par().gamma == Gamma::Algebra::GammaX ) stag_ph = where( mod(lin_x,2)==(Integer)0, stag_ph,-stag_ph);
+        else if ( par().gamma == Gamma::Algebra::GammaY ) stag_ph = where( mod(lin_y,2)==(Integer)0, stag_ph,-stag_ph);
+        else if ( par().gamma == Gamma::Algebra::GammaZ ) stag_ph = where( mod(lin_z,2)==(Integer)0, stag_ph,-stag_ph);
         else {
             std::cout << par().gamma << " not implemented for staggered fermon seq. source" << std::endl;
             assert(0);

@@ -1451,23 +1451,28 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
     
     // based on phases in Grid/qcd/action/fermion/FermionOperatorImpl.h
     // Pretty cute implementation, if I may say so myself (!) (-PAB)
-    // Staggered Phase.
-    Lattice<iScalar<vInteger> > coor(grid);
+    // Staggered Phases for local, taste non-singlet meson operators.
+    // See Degrand and Detar, Ch 11.2
+    
+    //Lattice<iScalar<vInteger> > coor(grid);
     Lattice<iScalar<vInteger> > x(grid); LatticeCoordinate(x,0);
     Lattice<iScalar<vInteger> > y(grid); LatticeCoordinate(y,1);
     Lattice<iScalar<vInteger> > z(grid); LatticeCoordinate(z,2);
+    Lattice<iScalar<vInteger> > t(grid); LatticeCoordinate(t,3);
     
+    Lattice<iScalar<vInteger> > lin_x(grid); lin_x=y+z+t;
+    Lattice<iScalar<vInteger> > lin_y(grid); lin_y=x+z+t;
+    Lattice<iScalar<vInteger> > lin_z(grid); lin_z=x+y+t;
+    Lattice<iScalar<vInteger> > lin_5(grid); lin_5=x+y+z+t;
+
     for (int mu = 0; mu < Ngamma; mu++) {
         
         ComplexField stagphase(grid);   stagphase=1.0;
         
-        // local taste non-singlet ops from Degrand and Detar, tab. 11.2
-        // including parity partners
-        // need to check these are consistent with Dirac op phases
-        if ( gammas[mu] == Gamma::Algebra::Gamma5 ) stagphase = 1;
-        else if ( gammas[mu] == Gamma::Algebra::GammaX ) stagphase = where( mod(x,2)==(Integer)0, stagphase,-stagphase);
-        else if ( gammas[mu] == Gamma::Algebra::GammaY ) stagphase = where( mod(y,2)==(Integer)0, stagphase,-stagphase);
-        else if ( gammas[mu] == Gamma::Algebra::GammaZ ) stagphase = where( mod(z,2)==(Integer)0, stagphase,-stagphase);
+        if ( gammas[mu] == Gamma::Algebra::Gamma5 ) stagphase = where( mod(lin_5,2)==(Integer)0, stagphase,-stagphase);
+        else if ( gammas[mu] == Gamma::Algebra::GammaX ) stagphase = where( mod(lin_x,2)==(Integer)0, stagphase,-stagphase);
+        else if ( gammas[mu] == Gamma::Algebra::GammaY ) stagphase = where( mod(lin_y,2)==(Integer)0, stagphase,-stagphase);
+        else if ( gammas[mu] == Gamma::Algebra::GammaZ ) stagphase = where( mod(lin_z,2)==(Integer)0, stagphase,-stagphase);
         else {
             std::cout << gammas[mu] << " not implemented for staggered fermion meson field" << std::endl;
             assert(0);
