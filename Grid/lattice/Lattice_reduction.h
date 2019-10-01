@@ -19,22 +19,76 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#ifndef GRID_LATTICE_REDUCTION_H
-#define GRID_LATTICE_REDUCTION_H
+#pragma once
 
 #include <Grid/Grid_Eigen_Dense.h>
 
-namespace Grid {
-#ifdef GRID_WARN_SUBOPTIMAL
-#warning "Optimisation alert all these reduction loops are NOT threaded "
-#endif     
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Deterministic Reduction operations
-  ////////////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef GRID_NVCC
+#include <Grid/lattice/Lattice_reduction_gpu.h>
+#endif
+
+NAMESPACE_BEGIN(Grid);
+
+//////////////////////////////////////////////////////
+// FIXME this should promote to double and accumulate
+//////////////////////////////////////////////////////
+template<class vobj>
+inline typename vobj::scalar_object sum_cpu(const vobj *arg, Integer osites)
+{
+  typedef typename vobj::scalar_object  sobj;
+
+  const int Nsimd = vobj::Nsimd();
+  const int nthread = GridThread::GetThreads();
+
+  Vector<sobj> sumarray(nthread);
+  for(int i=0;i<nthread;i++){
+    sumarray[i]=Zero();
+  }
+  
+  thread_for(thr,nthread, {
+    int nwork, mywork, myoff;
+    nwork = osites;
+    GridThread::GetWork(nwork,thr,mywork,myoff);
+    vobj vvsum=Zero();
+    for(int ss=myoff;ss<mywork+myoff; ss++){
+      vvsum = vvsum + arg[ss];
+    }
+    sumarray[thr]=Reduce(vvsum);
+  });
+  
+  sobj ssum=Zero();  // sum across threads
+  for(int i=0;i<nthread;i++){
+    ssum = ssum+sumarray[i];
+  } 
+  
+  return ssum;
+}
+template<class vobj>
+inline typename vobj::scalar_object sum(const vobj *arg, Integer osites)
+{
+#ifdef GRID_NVCC
+  return sum_gpu(arg,osites);
+#else
+  return sum_cpu(arg,osites);
+#endif  
+}
+template<class vobj>
+inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
+{
+  auto arg_v = arg.View();
+  Integer osites = arg.Grid()->oSites();
+  auto ssum= sum(&arg_v[0],osites);
+  arg.Grid()->GlobalSum(ssum);
+  return ssum;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Deterministic Reduction operations
+////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
-  auto nrm = innerProduct(arg,arg);
-  return std::real(nrm); 
+  ComplexD nrm = innerProduct(arg,arg);
+  return real(nrm); 
 }
 
 // Double inner product
@@ -43,32 +97,49 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
 {
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_typeD vector_type;
-  GridBase *grid = left._grid;
-  const int pad = 8;
-
-  ComplexD  inner;
-  Vector<ComplexD> sumarray(grid->SumArraySize()*pad);
-
-  parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
-    int nwork, mywork, myoff;
-    GridThread::GetWork(left._grid->oSites(),thr,mywork,myoff);
-    
-    decltype(innerProductD(left._odata[0],right._odata[0])) vinner=zero; // private to thread; sub summation
-    for(int ss=myoff;ss<mywork+myoff; ss++){
-      vinner = vinner + innerProductD(left._odata[ss],right._odata[ss]);
-    }
-    // All threads sum across SIMD; reduce serial work at end
-    // one write per cacheline with streaming store
-    ComplexD tmp = Reduce(TensorRemove(vinner)) ;
-    vstream(sumarray[thr*pad],tmp);
-  }
+  ComplexD  nrm;
   
-  inner=0.0;
-  for(int i=0;i<grid->SumArraySize();i++){
-    inner = inner+sumarray[i*pad];
-  } 
-  right._grid->GlobalSum(inner);
-  return inner;
+  GridBase *grid = left.Grid();
+  
+  // Might make all code paths go this way.
+  auto left_v = left.View();
+  auto right_v=right.View();
+
+  const uint64_t nsimd = grid->Nsimd();
+  const uint64_t sites = grid->oSites();
+  
+#ifdef GRID_NVCC
+  // GPU - SIMT lane compliance...
+  typedef decltype(innerProduct(left_v[0],right_v[0])) inner_t;
+  Vector<inner_t> inner_tmp(sites);
+  auto inner_tmp_v = &inner_tmp[0];
+  
+
+  accelerator_for( ss, sites, nsimd,{
+      auto x_l = left_v(ss);
+      auto y_l = right_v(ss);
+      coalescedWrite(inner_tmp_v[ss],innerProduct(x_l,y_l));
+  })
+
+  // This is in single precision and fails some tests
+  // Need a sumD that sums in double
+  nrm = TensorRemove(sumD_gpu(inner_tmp_v,sites));  
+#else
+  // CPU 
+  typedef decltype(innerProductD(left_v[0],right_v[0])) inner_t;
+  Vector<inner_t> inner_tmp(sites);
+  auto inner_tmp_v = &inner_tmp[0];
+  
+  accelerator_for( ss, sites, nsimd,{
+      auto x_l = left_v[ss];
+      auto y_l = right_v[ss];
+      inner_tmp_v[ss]=innerProductD(x_l,y_l);
+  })
+  nrm = TensorRemove(sum(inner_tmp_v,sites));
+#endif
+  grid->GlobalSum(nrm);
+
+  return nrm;
 }
 
 /////////////////////////
@@ -86,8 +157,7 @@ axpy_norm_fast(Lattice<vobj> &z,sobj a,const Lattice<vobj> &x,const Lattice<vobj
 template<class sobj,class vobj> strong_inline RealD 
 axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y) 
 {
-  const int pad = 8;
-  z.checkerboard = x.checkerboard;
+  z.Checkerboard() = x.Checkerboard();
   conformable(z,x);
   conformable(x,y);
 
@@ -95,43 +165,57 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   typedef typename vobj::vector_typeD vector_type;
   RealD  nrm;
   
-  GridBase *grid = x._grid;
+  GridBase *grid = x.Grid();
+
+  auto x_v=x.View();
+  auto y_v=y.View();
+  auto z_v=z.View();
+
+  const uint64_t nsimd = grid->Nsimd();
+  const uint64_t sites = grid->oSites();
   
-  Vector<RealD> sumarray(grid->SumArraySize()*pad);
+#ifdef GRID_NVCC
+  // GPU
+  typedef decltype(innerProduct(x_v[0],y_v[0])) inner_t;
+  Vector<inner_t> inner_tmp(sites);
+  auto inner_tmp_v = &inner_tmp[0];
+
+  accelerator_for( ss, sites, nsimd,{
+      auto tmp = a*x_v(ss)+b*y_v(ss);
+      coalescedWrite(inner_tmp_v[ss],innerProduct(tmp,tmp));
+      coalescedWrite(z_v[ss],tmp);
+  });
+
+  nrm = real(TensorRemove(sumD_gpu(inner_tmp_v,sites)));
+#else
+  // CPU 
+  typedef decltype(innerProductD(x_v[0],y_v[0])) inner_t;
+  Vector<inner_t> inner_tmp(sites);
+  auto inner_tmp_v = &inner_tmp[0];
   
-  parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
-    int nwork, mywork, myoff;
-    GridThread::GetWork(x._grid->oSites(),thr,mywork,myoff);
-    
-    // private to thread; sub summation
-    decltype(innerProductD(z._odata[0],z._odata[0])) vnrm=zero; 
-    for(int ss=myoff;ss<mywork+myoff; ss++){
-      vobj tmp = a*x._odata[ss]+b*y._odata[ss];
-      vnrm = vnrm + innerProductD(tmp,tmp);
-      vstream(z._odata[ss],tmp);
-    }
-    vstream(sumarray[thr*pad],real(Reduce(TensorRemove(vnrm)))) ;
-  }
-  
-  nrm = 0.0; // sum across threads; linear in thread count but fast
-  for(int i=0;i<grid->SumArraySize();i++){
-    nrm = nrm+sumarray[i*pad];
-  } 
-  z._grid->GlobalSum(nrm);
+  accelerator_for( ss, sites, nsimd,{
+      auto tmp = a*x_v(ss)+b*y_v(ss);
+      inner_tmp_v[ss]=innerProductD(tmp,tmp);
+      z_v[ss]=tmp;
+  });
+  // Already promoted to double
+  nrm = real(TensorRemove(sum(inner_tmp_v,sites)));
+#endif
+  grid->GlobalSum(nrm);
   return nrm; 
 }
 
  
 template<class Op,class T1>
 inline auto sum(const LatticeUnaryExpression<Op,T1> & expr)
-  ->typename decltype(expr.first.func(eval(0,std::get<0>(expr.second))))::scalar_object
+  ->typename decltype(expr.op.func(eval(0,expr.arg1)))::scalar_object
 {
   return sum(closure(expr));
 }
 
 template<class Op,class T1,class T2>
 inline auto sum(const LatticeBinaryExpression<Op,T1,T2> & expr)
-      ->typename decltype(expr.first.func(eval(0,std::get<0>(expr.second)),eval(0,std::get<1>(expr.second))))::scalar_object
+      ->typename decltype(expr.op.func(eval(0,expr.arg1),eval(0,expr.arg2)))::scalar_object
 {
   return sum(closure(expr));
 }
@@ -139,53 +223,13 @@ inline auto sum(const LatticeBinaryExpression<Op,T1,T2> & expr)
 
 template<class Op,class T1,class T2,class T3>
 inline auto sum(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr)
-  ->typename decltype(expr.first.func(eval(0,std::get<0>(expr.second)),
-				      eval(0,std::get<1>(expr.second)),
-				      eval(0,std::get<2>(expr.second))
+  ->typename decltype(expr.op.func(eval(0,expr.arg1),
+				      eval(0,expr.arg2),
+				      eval(0,expr.arg3)
 				      ))::scalar_object
 {
   return sum(closure(expr));
 }
-
-template<class vobj>
-inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
-{
-  GridBase *grid=arg._grid;
-  int Nsimd = grid->Nsimd();
-  
-  std::vector<vobj,alignedAllocator<vobj> > sumarray(grid->SumArraySize());
-  for(int i=0;i<grid->SumArraySize();i++){
-    sumarray[i]=zero;
-  }
-  
-  parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
-    int nwork, mywork, myoff;
-    GridThread::GetWork(grid->oSites(),thr,mywork,myoff);
-    
-    vobj vvsum=zero;
-    for(int ss=myoff;ss<mywork+myoff; ss++){
-      vvsum = vvsum + arg._odata[ss];
-    }
-    sumarray[thr]=vvsum;
-  }
-  
-  vobj vsum=zero;  // sum across threads
-  for(int i=0;i<grid->SumArraySize();i++){
-    vsum = vsum+sumarray[i];
-  } 
-  
-  typedef typename vobj::scalar_object sobj;
-  sobj ssum=zero;
-  
-  std::vector<sobj>               buf(Nsimd);
-  extract(vsum,buf);
-  
-  for(int i=0;i<Nsimd;i++) ssum = ssum + buf[i];
-  arg._grid->GlobalSum(ssum);
-  
-  return ssum;
-}
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // sliceSum, sliceInnerProduct, sliceAxpy, sliceNorm etc...
@@ -199,7 +243,7 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   // But easily avoided by using double precision fields
   ///////////////////////////////////////////////////////
   typedef typename vobj::scalar_object sobj;
-  GridBase  *grid = Data._grid;
+  GridBase  *grid = Data.Grid();
   assert(grid!=NULL);
 
   const int    Nd = grid->_ndimension;
@@ -212,13 +256,13 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   int ld=grid->_ldimensions[orthogdim];
   int rd=grid->_rdimensions[orthogdim];
 
-  std::vector<vobj,alignedAllocator<vobj> > lvSum(rd); // will locally sum vectors first
-  std::vector<sobj> lsSum(ld,zero);                    // sum across these down to scalars
-  std::vector<sobj> extracted(Nsimd);                  // splitting the SIMD
+  Vector<vobj> lvSum(rd); // will locally sum vectors first
+  Vector<sobj> lsSum(ld,Zero());                    // sum across these down to scalars
+  ExtractBuffer<sobj> extracted(Nsimd);                  // splitting the SIMD
 
   result.resize(fd); // And then global sum to return the same vector to every node 
   for(int r=0;r<rd;r++){
-    lvSum[r]=zero;
+    lvSum[r]=Zero();
   }
 
   int e1=    grid->_slice_nblock[orthogdim];
@@ -227,20 +271,19 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
 
   // sum over reduced dimension planes, breaking out orthog dir
   // Parallel over orthog direction
-  parallel_for(int r=0;r<rd;r++){
-
+  auto Data_v=Data.View();
+  thread_for( r,rd, {
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
-
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
-	lvSum[r]=lvSum[r]+Data._odata[ss];
+	lvSum[r]=lvSum[r]+Data_v[ss];
       }
     }
-  }
+  });
 
   // Sum across simd lanes in the plane, breaking out orthog dir.
-  std::vector<int> icoor(Nd);
+  Coordinate icoor(Nd);
 
   for(int rt=0;rt<rd;rt++){
 
@@ -265,7 +308,7 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
     if ( pt == grid->_processor_coor[orthogdim] ) {
       gsum=lsSum[lt];
     } else {
-      gsum=zero;
+      gsum=Zero();
     }
 
     grid->GlobalSum(gsum);
@@ -292,9 +335,9 @@ static void localSliceInnerProductVector(std::vector<ComplexD> &result, const La
   // std::cout << GridLogMessage << "Start prep" << std::endl;
   typedef typename vobj::vector_type   vector_type;
   typedef typename vobj::scalar_type   scalar_type;
-  GridBase  *grid = lhs._grid;
+  GridBase  *grid = lhs.Grid();
   assert(grid!=NULL);
-  conformable(grid,rhs._grid);
+  conformable(grid,rhs.Grid());
 
   const int    Nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
@@ -307,14 +350,14 @@ static void localSliceInnerProductVector(std::vector<ComplexD> &result, const La
   int rd=grid->_rdimensions[orthogdim];
   // std::cout << GridLogMessage << "Start alloc" << std::endl;
 
-  std::vector<vector_type,alignedAllocator<vector_type> > lvSum(rd); // will locally sum vectors first
+  Vector<vector_type> lvSum(rd); // will locally sum vectors first
   lsSum.resize(ld,scalar_type(0.0));                    // sum across these down to scalars
-  std::vector<iScalar<scalar_type>> extracted(Nsimd);   // splitting the SIMD  
+  ExtractBuffer<iScalar<scalar_type> > extracted(Nsimd);   // splitting the SIMD  
   // std::cout << GridLogMessage << "End alloc" << std::endl;
 
   result.resize(fd); // And then global sum to return the same vector to every node for IO to file
   for(int r=0;r<rd;r++){
-    lvSum[r]=zero;
+    lvSum[r]=Zero();
   }
 
   int e1=    grid->_slice_nblock[orthogdim];
@@ -323,23 +366,24 @@ static void localSliceInnerProductVector(std::vector<ComplexD> &result, const La
   // std::cout << GridLogMessage << "End prep" << std::endl;
   // std::cout << GridLogMessage << "Start parallel inner product, _rd = " << rd << std::endl;
   vector_type vv;
-  parallel_for(int r=0;r<rd;r++)
-  {
+  auto l_v=lhs.View();
+  auto r_v=rhs.View();
+  thread_for( r,rd,{
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
 
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
         int ss = so + n * stride + b;
-        vv = TensorRemove(innerProduct(lhs._odata[ss], rhs._odata[ss]));
+        vv = TensorRemove(innerProduct(l_v[ss], r_v[ss]));
         lvSum[r] = lvSum[r] + vv;
       }
     }
-  }
+  });
   // std::cout << GridLogMessage << "End parallel inner product" << std::endl;
 
   // Sum across simd lanes in the plane, breaking out orthog dir.
-  std::vector<int> icoor(Nd);
+  Coordinate icoor(Nd);
   for(int rt=0;rt<rd;rt++){
 
     iScalar<vector_type> temp; 
@@ -362,7 +406,7 @@ template <class vobj>
 static void globalSliceInnerProductVector(std::vector<ComplexD> &result, const Lattice<vobj> &lhs, std::vector<typename vobj::scalar_type> &lsSum, int orthogdim)
 {
   typedef typename vobj::scalar_type scalar_type;
-  GridBase *grid = lhs._grid;
+  GridBase *grid = lhs.Grid();
   int fd = result.size();
   int ld = lsSum.size();
   // sum over nodes.
@@ -388,9 +432,9 @@ static void sliceInnerProductVector( std::vector<ComplexD> & result, const Latti
 {
   typedef typename vobj::vector_type   vector_type;
   typedef typename vobj::scalar_type   scalar_type;
-  GridBase  *grid = lhs._grid;
+  GridBase  *grid = lhs.Grid();
   assert(grid!=NULL);
-  conformable(grid,rhs._grid);
+  conformable(grid,rhs.Grid());
 
   const int    Nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
@@ -402,34 +446,36 @@ static void sliceInnerProductVector( std::vector<ComplexD> & result, const Latti
   int ld=grid->_ldimensions[orthogdim];
   int rd=grid->_rdimensions[orthogdim];
 
-  std::vector<vector_type,alignedAllocator<vector_type> > lvSum(rd); // will locally sum vectors first
-  std::vector<scalar_type > lsSum(ld,scalar_type(0.0));                    // sum across these down to scalars
-  std::vector<iScalar<scalar_type> > extracted(Nsimd);                  // splitting the SIMD
+  Vector<vector_type> lvSum(rd); // will locally sum vectors first
+  Vector<scalar_type > lsSum(ld,scalar_type(0.0));                    // sum across these down to scalars
+  ExtractBuffer<iScalar<scalar_type> > extracted(Nsimd);   // splitting the SIMD  
 
   result.resize(fd); // And then global sum to return the same vector to every node for IO to file
   for(int r=0;r<rd;r++){
-    lvSum[r]=zero;
+    lvSum[r]=Zero();
   }
 
   int e1=    grid->_slice_nblock[orthogdim];
   int e2=    grid->_slice_block [orthogdim];
   int stride=grid->_slice_stride[orthogdim];
 
-  parallel_for(int r=0;r<rd;r++){
+  auto lhv=lhs.View();
+  auto rhv=rhs.View();
+  thread_for( r,rd,{
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
 
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
-	vector_type vv = TensorRemove(innerProduct(lhs._odata[ss],rhs._odata[ss]));
+	vector_type vv = TensorRemove(innerProduct(lhv[ss],rhv[ss]));
 	lvSum[r]=lvSum[r]+vv;
       }
     }
-  }
+  });
 
   // Sum across simd lanes in the plane, breaking out orthog dir.
-  std::vector<int> icoor(Nd);
+  Coordinate icoor(Nd);
   for(int rt=0;rt<rd;rt++){
 
     iScalar<vector_type> temp; 
@@ -470,7 +516,7 @@ static void sliceNorm (std::vector<RealD> &sn,const Lattice<vobj> &rhs,int Ortho
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
   
-  int Nblock = rhs._grid->GlobalDimensions()[Orthog];
+  int Nblock = rhs.Grid()->GlobalDimensions()[Orthog];
   std::vector<ComplexD> ip(Nblock);
   sn.resize(Nblock);
   
@@ -492,7 +538,7 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
   
   scalar_type zscale(scale);
 
-  GridBase *grid  = X._grid;
+  GridBase *grid  = X.Grid();
 
   int Nsimd  =grid->Nsimd();
   int Nblock =grid->GlobalDimensions()[orthogdim];
@@ -505,8 +551,7 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
   int e2     =grid->_slice_block [orthogdim];
   int stride =grid->_slice_stride[orthogdim];
 
-  std::vector<int> icoor;
-
+  Coordinate icoor;
   for(int r=0;r<rd;r++){
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
@@ -522,12 +567,15 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
 
     tensor_reduced at; at=av;
 
-    parallel_for_nest2(int n=0;n<e1;n++){
+    auto Rv=R.View();
+    auto Xv=X.View();
+    auto Yv=Y.View();
+    thread_for_collapse(2, n, e1, {
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
-	R._odata[ss] = at*X._odata[ss]+Y._odata[ss];
+	Rv[ss] = at*Xv[ss]+Yv[ss];
       }
-    }
+    });
   }
 };
 
@@ -559,18 +607,18 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
-  int Nblock = X._grid->GlobalDimensions()[Orthog];
+  int Nblock = X.Grid()->GlobalDimensions()[Orthog];
 
-  GridBase *FullGrid  = X._grid;
+  GridBase *FullGrid  = X.Grid();
   //  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
 
   //  Lattice<vobj> Xslice(SliceGrid);
   //  Lattice<vobj> Rslice(SliceGrid);
 
   assert( FullGrid->_simd_layout[Orthog]==1);
-  int nh =  FullGrid->_ndimension;
+  //  int nh =  FullGrid->_ndimension;
   //  int nl = SliceGrid->_ndimension;
-  int nl = nh-1;
+  //  int nl = nh-1;
 
   //FIXME package in a convenient iterator
   //Should loop over a plane orthogonal to direction "Orthog"
@@ -578,28 +626,31 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
   int block =FullGrid->_slice_block [Orthog];
   int nblock=FullGrid->_slice_nblock[Orthog];
   int ostride=FullGrid->_ostride[Orthog];
-#pragma omp parallel 
-  {
-    std::vector<vobj> s_x(Nblock);
 
-#pragma omp for collapse(2)
-    for(int n=0;n<nblock;n++){
-    for(int b=0;b<block;b++){
+  auto X_v=X.View();
+  auto Y_v=Y.View();
+  auto R_v=R.View();
+  thread_region
+  {
+    Vector<vobj> s_x(Nblock);
+
+    thread_for_collapse_in_region(2, n,nblock, {
+     for(int b=0;b<block;b++){
       int o  = n*stride + b;
 
       for(int i=0;i<Nblock;i++){
-	s_x[i] = X[o+i*ostride];
+	s_x[i] = X_v[o+i*ostride];
       }
 
       vobj dot;
       for(int i=0;i<Nblock;i++){
-	dot = Y[o+i*ostride];
+	dot = Y_v[o+i*ostride];
 	for(int j=0;j<Nblock;j++){
 	  dot = dot + s_x[j]*(scale*aa(j,i));
 	}
-	R[o+i*ostride]=dot;
+	R_v[o+i*ostride]=dot;
       }
-    }}
+    }});
   }
 };
 
@@ -610,17 +661,17 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
-  int Nblock = X._grid->GlobalDimensions()[Orthog];
+  int Nblock = X.Grid()->GlobalDimensions()[Orthog];
 
-  GridBase *FullGrid  = X._grid;
+  GridBase *FullGrid  = X.Grid();
   //  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
   //  Lattice<vobj> Xslice(SliceGrid);
   //  Lattice<vobj> Rslice(SliceGrid);
 
   assert( FullGrid->_simd_layout[Orthog]==1);
-  int nh =  FullGrid->_ndimension;
+  //  int nh =  FullGrid->_ndimension;
   //  int nl = SliceGrid->_ndimension;
-  int nl=1;
+  //  int nl=1;
 
   //FIXME package in a convenient iterator
   //Should loop over a plane orthogonal to direction "Orthog"
@@ -628,17 +679,19 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
   int block =FullGrid->_slice_block [Orthog];
   int nblock=FullGrid->_slice_nblock[Orthog];
   int ostride=FullGrid->_ostride[Orthog];
-#pragma omp parallel 
+  auto R_v = R.View();
+  auto X_v = X.View();
+  thread_region
   {
     std::vector<vobj> s_x(Nblock);
 
-#pragma omp for collapse(2)
-    for(int n=0;n<nblock;n++){
+
+    thread_for_collapse_in_region( 2 ,n,nblock,{
     for(int b=0;b<block;b++){
       int o  = n*stride + b;
 
       for(int i=0;i<Nblock;i++){
-	s_x[i] = X[o+i*ostride];
+	s_x[i] = X_v[o+i*ostride];
       }
 
       vobj dot;
@@ -647,11 +700,10 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
 	for(int j=1;j<Nblock;j++){
 	  dot = dot + s_x[j]*(scale*aa(j,i));
 	}
-	R[o+i*ostride]=dot;
+	R_v[o+i*ostride]=dot;
       }
-    }}
+    }});
   }
-
 };
 
 
@@ -662,7 +714,7 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
   
-  GridBase *FullGrid  = lhs._grid;
+  GridBase *FullGrid  = lhs.Grid();
   //  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
   
   int Nblock = FullGrid->GlobalDimensions()[Orthog];
@@ -673,9 +725,9 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
   mat = Eigen::MatrixXcd::Zero(Nblock,Nblock);
 
   assert( FullGrid->_simd_layout[Orthog]==1);
-  int nh =  FullGrid->_ndimension;
+  //  int nh =  FullGrid->_ndimension;
   //  int nl = SliceGrid->_ndimension;
-  int nl = nh-1;
+  //  int nl = nh-1;
 
   //FIXME package in a convenient iterator
   //Should loop over a plane orthogonal to direction "Orthog"
@@ -686,31 +738,33 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
 
   typedef typename vobj::vector_typeD vector_typeD;
 
-#pragma omp parallel 
+  auto lhs_v=lhs.View();
+  auto rhs_v=rhs.View();
+  thread_region
   {
     std::vector<vobj> Left(Nblock);
     std::vector<vobj> Right(Nblock);
     Eigen::MatrixXcd  mat_thread = Eigen::MatrixXcd::Zero(Nblock,Nblock);
 
-#pragma omp for collapse(2)
-    for(int n=0;n<nblock;n++){
+    thread_for_collapse_in_region( 2, n,nblock,{
     for(int b=0;b<block;b++){
 
       int o  = n*stride + b;
 
       for(int i=0;i<Nblock;i++){
-	Left [i] = lhs[o+i*ostride];
-	Right[i] = rhs[o+i*ostride];
+	Left [i] = lhs_v[o+i*ostride];
+	Right[i] = rhs_v[o+i*ostride];
       }
 
       for(int i=0;i<Nblock;i++){
       for(int j=0;j<Nblock;j++){
 	auto tmp = innerProduct(Left[i],Right[j]);
 	auto rtmp = TensorRemove(tmp);
-	mat_thread(i,j) += Reduce(rtmp);
+	auto red  =  Reduce(rtmp);
+	mat_thread(i,j) += std::complex<double>(real(red),imag(red));
       }}
-    }}
-#pragma omp critical
+    }});
+    thread_critical
     {
       mat += mat_thread;
     }  
@@ -726,8 +780,8 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
   return;
 }
 
-} /*END NAMESPACE GRID*/
-#endif
+NAMESPACE_END(Grid);
+
 
 
 

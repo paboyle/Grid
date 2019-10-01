@@ -1,7 +1,6 @@
 #pragma once
 
-namespace Grid{
-  namespace QCD{
+NAMESPACE_BEGIN(Grid);
 
     template<class Field>
     void HighBoundCheck(LinearOperatorBase<Field> &HermOp, 
@@ -20,7 +19,7 @@ namespace Grid{
 						       Field &GaussNoise,
 						       MultiShiftFunction &PowerNegHalf) 
     {
-      GridBase *FermionGrid = GaussNoise._grid;
+      GridBase *FermionGrid = GaussNoise.Grid();
 
       Field X(FermionGrid);
       Field Y(FermionGrid);
@@ -49,5 +48,5 @@ namespace Grid{
       assert( (std::sqrt(Nd/Nx)<tol) && " InverseSqrtBoundsCheck ");
     }
 
-  }
-}
+NAMESPACE_END(Grid);
+

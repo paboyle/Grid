@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Grid.h>
 
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 int main (int argc, char ** argv)
 {
@@ -67,7 +67,7 @@ int main (int argc, char ** argv)
   neg = -pos;
   zz  = ComplexD(0.0,0.0);
 
-  Charge=zero;
+  Charge=Zero();
   
   // Parallel plate capacitor
   {
@@ -90,7 +90,7 @@ int main (int argc, char ** argv)
   std::vector<LatticeComplexD> k(4,&GRID);
   LatticeComplexD ksq(&GRID);
 
-  ksq=zero;
+  ksq=Zero();
   for(int mu=0;mu<nd;mu++) {
     
     Integer L=latt_size[mu];

@@ -47,7 +47,7 @@ namespace Grid{
 
 int main(int argc, char **argv) {
   using namespace Grid;
-  using namespace Grid::QCD;
+   
 
   Grid_init(&argc, &argv);
   GridLogLayout();
@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
   // Typedefs to simplify notation
   typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
   HMCWrapper TheHMC;
-  typedef Grid::JSONReader       Serialiser;
+  typedef Grid::XmlReader       Serialiser;
 
   // Grid from the command line
   TheHMC.Resources.AddFourDimGrid("gauge");

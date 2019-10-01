@@ -126,7 +126,7 @@ void TMomentum<FImpl>::execute(void)
     LOG(Message) << " " << std::endl;
     //get the momentum from parameters
     p  = strToVec<Real>(par().mom);
-    C = zero;
+    C = Zero();
     LOG(Message) << "momentum converted from string - " << std::to_string(p[0]) <<std::to_string(p[1]) <<std::to_string(p[2]) <<   std::to_string(p[3]) << std::endl;
     for(int mu=0;mu<4;mu++){
     Real TwoPiL =  M_PI * 2.0/ latt_size[mu];

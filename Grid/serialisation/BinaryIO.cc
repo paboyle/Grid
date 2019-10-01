@@ -28,7 +28,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/GridCore.h>
 
-using namespace Grid;
+NAMESPACE_BEGIN(Grid);
 
 // Writer implementation ///////////////////////////////////////////////////////
 BinaryWriter::BinaryWriter(const std::string &fileName)
@@ -68,3 +68,5 @@ void BinaryReader::readDefault(const std::string &s, std::string &output)
     output.resize(sz);
     file_.read((char *)output.data(), sz);
 }
+
+NAMESPACE_END(Grid);

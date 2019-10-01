@@ -18,7 +18,7 @@ template <typename Field>
 void limeWrite(const std::string filestem, Field &vec)
 {
   emptyUserRecord   record;
-  QCD::ScidacWriter binWriter(vec._grid->IsBoss());
+  ScidacWriter binWriter(vec.Grid()->IsBoss());
 
   binWriter.open(filestem + ".bin");
   binWriter.writeScidacFieldRecord(vec, record);
@@ -29,7 +29,7 @@ template <typename Field>
 void limeRead(Field &vec, const std::string filestem)
 {
   emptyUserRecord   record;
-  QCD::ScidacReader binReader;
+  ScidacReader binReader;
 
   binReader.open(filestem + ".bin");
   binReader.readScidacFieldRecord(vec, record);
@@ -44,18 +44,18 @@ inline void makeGrid(std::shared_ptr<GridBase> &gPt,
   {
     if (Ls > 1)
     {
-      gPt.reset(QCD::SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls, gBasePt.get()));
+      gPt.reset(SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls, gBasePt.get()));
     }
     else
     {
-      gPt.reset(QCD::SpaceTimeGrid::makeFourDimRedBlackGrid(gBasePt.get()));
+      gPt.reset(SpaceTimeGrid::makeFourDimRedBlackGrid(gBasePt.get()));
     }
   }
   else
   {
     if (Ls > 1)
     {
-        gPt.reset(QCD::SpaceTimeGrid::makeFiveDimGrid(Ls, gBasePt.get()));
+        gPt.reset(SpaceTimeGrid::makeFiveDimGrid(Ls, gBasePt.get()));
     }
     else
     {
@@ -65,13 +65,13 @@ inline void makeGrid(std::shared_ptr<GridBase> &gPt,
 }
 
 template <typename Field>
-void writeBenchmark(const std::vector<int> &latt, const std::string filename,
+void writeBenchmark(const Coordinate &latt, const std::string filename,
                     const WriterFn<Field> &write, 
                     const unsigned int Ls = 1, const bool rb = false)
 {
   auto                           mpi  = GridDefaultMpi();
   auto                           simd = GridDefaultSimd(latt.size(), Field::vector_type::Nsimd());
-  std::shared_ptr<GridCartesian> gBasePt(QCD::SpaceTimeGrid::makeFourDimGrid(latt, simd, mpi));
+  std::shared_ptr<GridCartesian> gBasePt(SpaceTimeGrid::makeFourDimGrid(latt, simd, mpi));
   std::shared_ptr<GridBase>      gPt;
 
   makeGrid(gPt, gBasePt, Ls, rb);
@@ -85,13 +85,13 @@ void writeBenchmark(const std::vector<int> &latt, const std::string filename,
 }
 
 template <typename Field>
-void readBenchmark(const std::vector<int> &latt, const std::string filename,
+void readBenchmark(const Coordinate &latt, const std::string filename,
                    const ReaderFn<Field> &read, 
                    const unsigned int Ls = 1, const bool rb = false)
 {
   auto                           mpi  = GridDefaultMpi();
   auto                           simd = GridDefaultSimd(latt.size(), Field::vector_type::Nsimd());
-  std::shared_ptr<GridCartesian> gBasePt(QCD::SpaceTimeGrid::makeFourDimGrid(latt, simd, mpi));
+  std::shared_ptr<GridCartesian> gBasePt(SpaceTimeGrid::makeFourDimGrid(latt, simd, mpi));
   std::shared_ptr<GridBase>      gPt;
 
   makeGrid(gPt, gBasePt, Ls, rb);

@@ -30,7 +30,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 int main (int argc, char ** argv)
 {
@@ -41,8 +41,8 @@ int main (int argc, char ** argv)
   typedef iVector<vReal,Nvec> Vec;
 
 
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vReal::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vReal::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
@@ -58,13 +58,13 @@ int main (int argc, char ** argv)
 
     int Nloop=lmax*4/lat;
 
-    std::vector<int> latt_size  ({2*mpi_layout[0],2*mpi_layout[1],4*mpi_layout[2],lat*mpi_layout[3]});
+    Coordinate latt_size  ({2*mpi_layout[0],2*mpi_layout[1],4*mpi_layout[2],lat*mpi_layout[3]});
 
     GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
     int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3]*threads;
 
-    Vec tsum; tsum = zero;
+    Vec tsum; tsum = Zero();
 
     GridParallelRNG          pRNG(&Grid);      
     pRNG.SeedFixedIntegers(std::vector<int>({56,17,89,101}));
@@ -78,16 +78,16 @@ int main (int argc, char ** argv)
     }
 
     double start=usecond();
-    parallel_for(int t=0;t<threads;t++){
-
-      sum[t] = x[t]._odata[0];
+    thread_for(t,threads,{
+      auto x_t = x[t].View();
+      sum[t] = x_t[0];
       for(int i=0;i<Nloop;i++){
-	for(auto ss=x[t].begin();ss<x[t].end();ss++){
-	  sum[t] = sum[t]+x[t]._odata[ss];
+	for(auto ss=x_t.begin();ss<x_t.end();ss++){
+	  sum[t] = sum[t]+x_t[ss];
 	}
       }
       stop[t]=usecond();
-    }
+    });
 
     double max_stop=stop[0];
     double min_stop=stop[0];

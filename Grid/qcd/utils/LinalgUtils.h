@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -25,13 +25,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
-#ifndef GRID_QCD_LINALG_UTILS_H
-#define GRID_QCD_LINALG_UTILS_H
+*************************************************************************************/
+/*  END LEGAL */
+#pragma once
 
-namespace Grid{
-namespace QCD{
+NAMESPACE_BEGIN(Grid);
+
 ////////////////////////////////////////////////////////////////////////
 //This file brings additional linear combination assist that is helpful
 //to QCD such as chiral projectors and spin matrices applied to one of the inputs.
@@ -42,170 +41,200 @@ namespace QCD{
 template<class vobj,class Coeff>
 void axpibg5x(Lattice<vobj> &z,const Lattice<vobj> &x,Coeff a,Coeff b)
 {
-  z.checkerboard = x.checkerboard;
+  z.Checkerboard() = x.Checkerboard();
   conformable(x,z);
 
-  GridBase *grid=x._grid;
+  GridBase *grid=x.Grid();
 
   Gamma G5(Gamma::Algebra::Gamma5);
-  parallel_for(int ss=0;ss<grid->oSites();ss++){
-    vobj tmp;
-    tmp = a*x._odata[ss];
-    tmp = tmp + G5*(b*timesI(x._odata[ss]));
-    vstream(z._odata[ss],tmp);
-  }
+  auto x_v = x.View();
+  auto z_v = z.View();
+  accelerator_for( ss, x_v.size(),vobj::Nsimd(), {
+    auto tmp = a*x_v(ss) + G5*(b*timesI(x_v(ss)));
+    coalescedWrite(z_v[ss],tmp);
+  });
 }
 
 template<class vobj,class Coeff> 
 void axpby_ssp(Lattice<vobj> &z, Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
-  z.checkerboard = x.checkerboard;
+  z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
-  GridBase *grid=x._grid;
+  GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
-  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
-    vobj tmp = a*x._odata[ss+s]+b*y._odata[ss+sp];
-    vstream(z._odata[ss+s],tmp);
-  }
+  auto x_v = x.View();
+  auto y_v = y.View();
+  auto z_v = z.View();
+  // FIXME -- need a new class of accelerator_loop to implement this
+  //
+  uint64_t nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,vobj::Nsimd(),{
+    uint64_t ss = sss*Ls;
+    auto tmp = a*x_v(ss+s)+b*y_v(ss+sp);
+    coalescedWrite(z_v[ss+s],tmp);
+  });
 }
 
 template<class vobj,class Coeff> 
 void ag5xpby_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
-  z.checkerboard = x.checkerboard;
+  z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
-  GridBase *grid=x._grid;
+  GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
-
   Gamma G5(Gamma::Algebra::Gamma5);
-  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
-    vobj tmp;
-    tmp = G5*x._odata[ss+s]*a;
-    tmp = tmp + b*y._odata[ss+sp];
-    vstream(z._odata[ss+s],tmp);
-  }
+  auto x_v = x.View();
+  auto y_v = y.View();
+  auto z_v = z.View();
+  uint64_t nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,vobj::Nsimd(),{
+    uint64_t ss = sss*Ls;
+    auto tmp = G5*x_v(ss+s)*a + b*y_v(ss+sp);
+    coalescedWrite(z_v[ss+s],tmp);
+  });
 }
 
 template<class vobj,class Coeff> 
 void axpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
-  z.checkerboard = x.checkerboard;
+  z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
-  GridBase *grid=x._grid;
+  GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
+  auto x_v = x.View();
+  auto y_v = y.View();
+  auto z_v = z.View();
   Gamma G5(Gamma::Algebra::Gamma5);
-  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
-    vobj tmp;
-    tmp = G5*y._odata[ss+sp]*b;
-    tmp = tmp + a*x._odata[ss+s];
-    vstream(z._odata[ss+s],tmp);
-  }
+  uint64_t nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,vobj::Nsimd(),{
+    uint64_t ss = sss*Ls;
+    auto tmp = G5*y_v(ss+sp)*b + a*x_v(ss+s);
+    coalescedWrite(z_v[ss+s],tmp);
+  });
 }
 
 template<class vobj,class Coeff> 
 void ag5xpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
-  z.checkerboard = x.checkerboard;
+  z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
-  GridBase *grid=x._grid;
+  GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
 
+  auto x_v = x.View();
+  auto y_v = y.View();
+  auto z_v = z.View();
   Gamma G5(Gamma::Algebra::Gamma5);
-  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
-    vobj tmp1;
-    vobj tmp2;
-    tmp1 = a*x._odata[ss+s]+b*y._odata[ss+sp];
-    tmp2 = G5*tmp1;
-    vstream(z._odata[ss+s],tmp2);
-  }
+  uint64_t nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,vobj::Nsimd(),{
+    uint64_t ss = sss*Ls;
+    auto tmp1 = a*x_v(ss+s)+b*y_v(ss+sp);
+    auto tmp2 = G5*tmp1;
+    coalescedWrite(z_v[ss+s],tmp2);
+  });
 }
 
 template<class vobj,class Coeff> 
 void axpby_ssp_pminus(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
-  z.checkerboard = x.checkerboard;
+  z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
-  GridBase *grid=x._grid;
+  GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
-  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
-    vobj tmp;
-    spProj5m(tmp,y._odata[ss+sp]);
-    tmp = a*x._odata[ss+s]+b*tmp;
-    vstream(z._odata[ss+s],tmp);
-  }
+
+  auto x_v = x.View();
+  auto y_v = y.View();
+  auto z_v = z.View();
+  uint64_t nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,vobj::Nsimd(),{
+    uint64_t ss = sss*Ls;
+    decltype(coalescedRead(y_v[ss+sp])) tmp;
+    spProj5m(tmp,y_v(ss+sp));
+    tmp = a*x_v(ss+s)+b*tmp;
+    coalescedWrite(z_v[ss+s],tmp);
+  });
 }
 
 template<class vobj,class Coeff> 
 void axpby_ssp_pplus(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
-  z.checkerboard = x.checkerboard;
+  z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
-  GridBase *grid=x._grid;
+  GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
-  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
-    vobj tmp;
-    spProj5p(tmp,y._odata[ss+sp]);
-    tmp = a*x._odata[ss+s]+b*tmp;
-    vstream(z._odata[ss+s],tmp);
-  }
+  auto x_v = x.View();
+  auto y_v = y.View();
+  auto z_v = z.View();
+  uint64_t nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,vobj::Nsimd(),{
+    uint64_t ss = sss*Ls;
+    decltype(coalescedRead(y_v[ss+sp])) tmp;
+    spProj5p(tmp,y_v(ss+sp));
+    tmp = a*x_v(ss+s)+b*tmp;
+    coalescedWrite(z_v[ss+s],tmp);
+  });
 }
 
 template<class vobj> 
 void G5R5(Lattice<vobj> &z,const Lattice<vobj> &x)
 {
-  GridBase *grid=x._grid;
-  z.checkerboard = x.checkerboard;
+  GridBase *grid=x.Grid();
+  z.Checkerboard() = x.Checkerboard();
   conformable(x,z);
   int Ls = grid->_rdimensions[0];
   Gamma G5(Gamma::Algebra::Gamma5);
-  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls) {
-    vobj tmp;
+  auto x_v = x.View();
+  auto z_v = z.View();
+  uint64_t nloop = grid->oSites()/Ls;
+  accelerator_for(sss,nloop,vobj::Nsimd(),{
+    uint64_t ss = sss*Ls;
     for(int s=0;s<Ls;s++){
       int sp = Ls-1-s;
-      tmp = G5*x._odata[ss+s];
-      vstream(z._odata[ss+sp],tmp);
+      coalescedWrite(z_v[ss+sp],G5*x_v(ss+s));
     }
-  }
-}
+  });
 }
 
 // I explicitly need these outside the QCD namespace
 template<typename vobj>
 void G5C(Lattice<vobj> &z, const Lattice<vobj> &x)
 {
-  GridBase *grid = x._grid;
-  z.checkerboard = x.checkerboard;
+  GridBase *grid = x.Grid();
+  z.Checkerboard() = x.Checkerboard();
   conformable(x, z);
 
-  QCD::Gamma G5(QCD::Gamma::Algebra::Gamma5);
+  Gamma G5(Gamma::Algebra::Gamma5);
   z = G5 * x;
 }
 
 template<class CComplex, int nbasis>
 void G5C(Lattice<iVector<CComplex, nbasis>> &z, const Lattice<iVector<CComplex, nbasis>> &x)
 {
-  GridBase *grid = x._grid;
-  z.checkerboard = x.checkerboard;
+  GridBase *grid = x.Grid();
+  z.Checkerboard() = x.Checkerboard();
   conformable(x, z);
 
   static_assert(nbasis % 2 == 0, "");
   int nb = nbasis / 2;
 
-  parallel_for(int ss = 0; ss < grid->oSites(); ss++) {
+  auto z_v = z.View();
+  auto x_v = x.View();
+  accelerator_for(ss,grid->oSites(),CComplex::Nsimd(),
+  {
     for(int n = 0; n < nb; ++n) {
-      z._odata[ss](n) = x._odata[ss](n);
+      coalescedWrite(z_v[ss](n), x_v(ss)(n));
     }
     for(int n = nb; n < nbasis; ++n) {
-      z._odata[ss](n) = -x._odata[ss](n);
+      coalescedWrite(z_v[ss](n), -x_v(ss)(n));
     }
-  }
+  });
 }
 
-}
-#endif 
+NAMESPACE_END(Grid);
+

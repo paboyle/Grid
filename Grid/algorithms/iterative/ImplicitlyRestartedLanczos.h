@@ -35,7 +35,7 @@ Author: Christoph Lehner <clehner@bnl.gov>
 //#include <zlib.h>
 #include <sys/stat.h>
 
-namespace Grid { 
+NAMESPACE_BEGIN(Grid); 
 
   ////////////////////////////////////////////////////////
   // Move following 100 LOC to lattice/Lattice_basis.h
@@ -52,26 +52,31 @@ void basisOrthogonalize(std::vector<Field> &basis,Field &w,int k)
 template<class Field>
 void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, int k0,int k1,int Nm) 
 {
+  typedef decltype(basis[0].View()) View;
+  auto tmp_v = basis[0].View();
+  std::vector<View> basis_v(basis.size(),tmp_v);
   typedef typename Field::vector_object vobj;
-  GridBase* grid = basis[0]._grid;
+  GridBase* grid = basis[0].Grid();
       
-  parallel_region
-  {
+  for(int k=0;k<basis.size();k++){
+    basis_v[k] = basis[k].View();
+  }
 
+  thread_region
+  {
     std::vector < vobj , commAllocator<vobj> > B(Nm); // Thread private
-       
-    parallel_for_internal(int ss=0;ss < grid->oSites();ss++){
+    thread_for_in_region(ss, grid->oSites(),{
       for(int j=j0; j<j1; ++j) B[j]=0.;
       
       for(int j=j0; j<j1; ++j){
 	for(int k=k0; k<k1; ++k){
-	  B[j] +=Qt(j,k) * basis[k]._odata[ss];
+	  B[j] +=Qt(j,k) * basis_v[k][ss];
 	}
       }
       for(int j=j0; j<j1; ++j){
-	  basis[j]._odata[ss] = B[j];
+	basis_v[j][ss] = B[j];
       }
-    }
+    });
   }
 }
 
@@ -80,16 +85,18 @@ template<class Field>
 void basisRotateJ(Field &result,std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j, int k0,int k1,int Nm) 
 {
   typedef typename Field::vector_object vobj;
-  GridBase* grid = basis[0]._grid;
+  GridBase* grid = basis[0].Grid();
 
-  result.checkerboard = basis[0].checkerboard;
-  parallel_for(int ss=0;ss < grid->oSites();ss++){
-    vobj B = zero;
+  result.Checkerboard() = basis[0].Checkerboard();
+  auto result_v=result.View();
+  thread_for(ss, grid->oSites(),{
+    vobj B = Zero();
     for(int k=k0; k<k1; ++k){
-      B +=Qt(j,k) * basis[k]._odata[ss];
+      auto basis_k = basis[k].View();
+      B +=Qt(j,k) * basis_k[ss];
     }
-    result._odata[ss] = B;
-  }
+    result_v[ss] = B;
+  });
 }
 
 template<class Field>
@@ -119,7 +126,7 @@ void basisReorderInPlace(std::vector<Field> &_v,std::vector<RealD>& sort_vals, s
 
       assert(idx[i] > i);     assert(j!=idx.size());      assert(idx[j]==i);
 
-      std::swap(_v[i]._odata,_v[idx[i]]._odata); // should use vector move constructor, no data copy
+      swap(_v[i],_v[idx[i]]); // should use vector move constructor, no data copy
       std::swap(sort_vals[i],sort_vals[idx[i]]);
 
       idx[j] = idx[i];
@@ -148,6 +155,19 @@ void basisSortInPlace(std::vector<Field> & _v,std::vector<RealD>& sort_vals, boo
     std::reverse(idx.begin(), idx.end());
   
   basisReorderInPlace(_v,sort_vals,idx);
+}
+
+// PAB: faster to compute the inner products first then fuse loops.
+// If performance critical can improve.
+template<class Field>
+void basisDeflate(const std::vector<Field> &_v,const std::vector<RealD>& eval,const Field& src_orig,Field& result) {
+  result = Zero();
+  assert(_v.size()==eval.size());
+  int N = (int)_v.size();
+  for (int i=0;i<N;i++) {
+    Field& tmp = _v[i];
+    axpy(result,TensorRemove(innerProduct(tmp,src_orig)) / eval[i],tmp,result);
+  }
 }
 
 /////////////////////////////////////////////////////////////
@@ -290,8 +310,7 @@ public:
   template<typename T>  static RealD normalise(T& v) 
   {
     RealD nn = norm2(v);
-      
-    nn = sqrt(nn);
+    nn = std::sqrt(nn);
     v = v * (1.0/nn);
     return nn;
   }
@@ -323,8 +342,8 @@ until convergence
 */
   void calc(std::vector<RealD>& eval, std::vector<Field>& evec,  const Field& src, int& Nconv, bool reverse=false)
   {
-    GridBase *grid = src._grid;
-    assert(grid == evec[0]._grid);
+    GridBase *grid = src.Grid();
+    assert(grid == evec[0].Grid());
     
     GridLogIRL.TimingMode(1);
     std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
@@ -449,7 +468,7 @@ until convergence
       assert(k2<Nm);      assert(k2<Nm);      assert(k1>0);
 
       basisRotate(evec,Qt,k1-1,k2+1,0,Nm,Nm); /// big constraint on the basis
-      std::cout<<GridLogIRL <<"basisRotated  by Qt"<<std::endl;
+      std::cout<<GridLogIRL <<"basisRotated  by Qt *"<<k1-1<<","<<k2+1<<")"<<std::endl;
       
       ////////////////////////////////////////////////////
       // Compressed vector f and beta(k2)
@@ -457,7 +476,7 @@ until convergence
       f *= Qt(k2-1,Nm-1);
       f += lme[k2-1] * evec[k2];
       beta_k = norm2(f);
-      beta_k = sqrt(beta_k);
+      beta_k = std::sqrt(beta_k);
       std::cout<<GridLogIRL<<" beta(k) = "<<beta_k<<std::endl;
 	  
       RealD betar = 1.0/beta_k;
@@ -480,7 +499,7 @@ until convergence
 
 	std::cout << GridLogIRL << "Test convergence: rotate subset of vectors to test convergence " << std::endl;
 
-	Field B(grid); B.checkerboard = evec[0].checkerboard;
+	Field B(grid); B.Checkerboard() = evec[0].Checkerboard();
 
 	//  power of two search pattern;  not every evalue in eval2 is assessed.
 	int allconv =1;
@@ -518,7 +537,7 @@ until convergence
 	
   converged:
     {
-      Field B(grid); B.checkerboard = evec[0].checkerboard;
+      Field B(grid); B.Checkerboard() = evec[0].Checkerboard();
       basisRotate(evec,Qt,0,Nk,0,Nk,Nm);	    
       std::cout << GridLogIRL << " Rotated basis"<<std::endl;
       Nconv=0;
@@ -810,7 +829,7 @@ void diagonalize_QR(std::vector<RealD>& lmd, std::vector<RealD>& lme,
     
     // determination of 2x2 leading submatrix
     RealD dsub = lmd[kmax-1]-lmd[kmax-2];
-    RealD dd = sqrt(dsub*dsub + 4.0*lme[kmax-2]*lme[kmax-2]);
+    RealD dd = std::sqrt(dsub*dsub + 4.0*lme[kmax-2]*lme[kmax-2]);
     RealD Dsh = 0.5*(lmd[kmax-2]+lmd[kmax-1] +dd*(dsub/fabs(dsub)));
     // (Dsh: shift)
     
@@ -841,5 +860,6 @@ void diagonalize_QR(std::vector<RealD>& lmd, std::vector<RealD>& lme,
   abort();
 }
 };
-}
+
+NAMESPACE_END(Grid);
 #endif

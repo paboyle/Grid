@@ -32,12 +32,12 @@ Author: Michael Marshall <michael.marshall@ed.ac.uk>
 #include <typeinfo>
 
 using namespace Grid;
-using namespace Grid::QCD;
 
 GRID_SERIALIZABLE_ENUM(myenum, undef, red, 1, blue, 2, green, 3);
 
 class myclass: Serializable {
 public:
+
   GRID_SERIALIZABLE_CLASS_MEMBERS(myclass,
                           myenum, e,
                           std::vector<myenum>, ve,
@@ -47,8 +47,8 @@ public:
                           bool , b,
                           std::vector<double>, array,
                           std::vector<std::vector<double> >, twodimarray,
-                          std::vector<std::vector<std::vector<Complex> > >, cmplx3darray,
-                          SpinColourMatrix, scm
+			  std::vector<std::vector<std::vector<Complex> > >, cmplx3darray,
+			  SpinColourMatrix, scm
                           );
   myclass() {}
   myclass(int i)
@@ -311,8 +311,8 @@ int main(int argc,char **argv)
   ioTest<TextWriter, TextReader>("iotest.dat", obj, "text   (object)           ");
   ioTest<TextWriter, TextReader>("iotest.dat", vec, "text   (vector of objects)");
   //// text
-  ioTest<JSONWriter, JSONReader>("iotest.json", obj,  "JSON   (object)           ");
-  ioTest<JSONWriter, JSONReader>("iotest.json", vec,  "JSON   (vector of objects)");
+  //  ioTest<JSONWriter, JSONReader>("iotest.json", obj,  "JSON   (object)           ");
+  //  ioTest<JSONWriter, JSONReader>("iotest.json", vec,  "JSON   (vector of objects)");
 
   //// HDF5
 #ifdef HAVE_HDF5

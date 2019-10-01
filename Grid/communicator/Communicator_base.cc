@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,15 +23,15 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #include <Grid/GridCore.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <limits.h>
 #include <sys/mman.h>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 ///////////////////////////////////////////////////////////////
 // Info that is setup once and indept of cartesian layout
@@ -47,8 +47,8 @@ int                      CartesianCommunicator::Dimensions(void)        { return
 int                      CartesianCommunicator::IsBoss(void)            { return _processor==0; };
 int                      CartesianCommunicator::BossRank(void)          { return 0; };
 int                      CartesianCommunicator::ThisRank(void)          { return _processor; };
-const std::vector<int> & CartesianCommunicator::ThisProcessorCoor(void) { return _processor_coor; };
-const std::vector<int> & CartesianCommunicator::ProcessorGrid(void)     { return _processors; };
+const Coordinate & CartesianCommunicator::ThisProcessorCoor(void) { return _processor_coor; };
+const Coordinate & CartesianCommunicator::ProcessorGrid(void)     { return _processors; };
 int                      CartesianCommunicator::ProcessorCount(void)    { return _Nprocessors; };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -72,5 +72,6 @@ void CartesianCommunicator::GlobalSumVector(ComplexD *c,int N)
   GlobalSumVector((double *)c,2*N);
 }
   
-}
+NAMESPACE_END(Grid);
+
 

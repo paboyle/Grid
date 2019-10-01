@@ -133,7 +133,6 @@ void GeneticScheduler<V, T>::nextGeneration(void)
     //LOG(Debug) << "Starting population:\n" << *this << std::endl;
     
     // random mutations
-    //PARALLEL_FOR_LOOP
     for (unsigned int i = 0; i < par_.popSize; ++i)
     {
         doMutation();
@@ -141,7 +140,6 @@ void GeneticScheduler<V, T>::nextGeneration(void)
     //LOG(Debug) << "After mutations:\n" << *this << std::endl;
     
     // mating
-    //PARALLEL_FOR_LOOP
     for (unsigned int i = 0; i < par_.popSize/2; ++i)
     {
         doCrossover();
@@ -177,7 +175,7 @@ void GeneticScheduler<V, T>::doCrossover(void)
     Gene c1, c2;
     
     crossover(c1, c2, p1, p2);
-    PARALLEL_CRITICAL
+    thread_critical
     {
         population_.insert(std::make_pair(func_(c1), c1));
         population_.insert(std::make_pair(func_(c2), c2));
@@ -197,7 +195,7 @@ void GeneticScheduler<V, T>::doMutation(void)
         
         std::advance(it, pdis(gen_));
         mutation(m, it->second);
-        PARALLEL_CRITICAL
+	thread_critical
         {
             population_.insert(std::make_pair(func_(m), m));
         }

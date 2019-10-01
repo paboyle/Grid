@@ -27,11 +27,9 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef HMC_POLYAKOV_H
-#define HMC_POLYAKOV_H
+#pragma once
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 // this is only defined for a gauge theory
 template <class Impl>
@@ -62,7 +60,4 @@ class PolyakovLogger : public HmcObservable<typename Impl::Field> {
   }
 };
 
-}  // namespace QCD
-}  // namespace Grid
-
-#endif  // HMC_POLYAKOV_H
+NAMESPACE_END(Grid);

@@ -70,7 +70,7 @@ namespace Grid{
 
 int main(int argc, char **argv) {
   using namespace Grid;
-  using namespace Grid::QCD;
+   
 
   // Here change the allowed (higher) representations
   typedef Representations< FundamentalRepresentation, TwoIndexAntiSymmetricRepresentation> TheRepresentations;
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
   typedef WilsonCloverTwoIndexAntiSymmetricFermionR ASymmFermionAction; 
   typedef typename ASymmFermionAction::FermionField ASymmFermionField;
 
-  typedef Grid::JSONReader Serialiser;
+  typedef Grid::XmlReader Serialiser;
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   HMCWrapper TheHMC;
   

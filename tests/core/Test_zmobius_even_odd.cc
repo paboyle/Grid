@@ -30,7 +30,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
 template<class d>
 struct scal {
@@ -52,7 +51,6 @@ int main (int argc, char ** argv)
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
-
   const int Ls=10;
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
@@ -68,25 +66,25 @@ int main (int argc, char ** argv)
   LatticeFermion src   (FGrid); random(RNG5,src);
   LatticeFermion phi   (FGrid); random(RNG5,phi);
   LatticeFermion chi   (FGrid); random(RNG5,chi);
-  LatticeFermion result(FGrid); result=zero;
-  LatticeFermion    ref(FGrid);    ref=zero;
-  LatticeFermion    tmp(FGrid);    tmp=zero;
-  LatticeFermion    err(FGrid);    tmp=zero;
+  LatticeFermion result(FGrid); result=Zero();
+  LatticeFermion    ref(FGrid);    ref=Zero();
+  LatticeFermion    tmp(FGrid);    tmp=Zero();
+  LatticeFermion    err(FGrid);    tmp=Zero();
   LatticeGaugeField Umu(UGrid); random(RNG4,Umu);
   std::vector<LatticeColourMatrix> U(4,UGrid);
 
   // Only one non-zero (y)
-  Umu=zero;
+  Umu=Zero();
   for(int nn=0;nn<Nd;nn++){
     random(RNG4,U[nn]);
     if ( nn>0 ) 
-      U[nn]=zero;
+      U[nn]=Zero();
     PokeIndex<LorentzIndex>(Umu,U[nn],nn);
   }
 
   RealD mass=0.1;
   RealD M5  =1.8;
-  std::vector < std::complex<double>  > omegas;
+  std::vector < ComplexD  > omegas;
 #if 0
   for(int i=0;i<Ls;i++){
     double imag = 0.;
@@ -107,9 +105,25 @@ int main (int argc, char ** argv)
   omegas.push_back( std::complex<double>(0.0686324988446592,0.0550658530827402) );
   omegas.push_back( std::complex<double>(0.0686324988446592,-0.0550658530827402) );
 #endif
-
-  ZMobiusFermionR Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, omegas,1.,0.);
-//  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  /*
+  argument types are: (Grid::LatticeGaugeField, 
+		       Grid::GridCartesian, 
+		       Grid::GridRedBlackCartesian, 
+		       Grid::GridCartesian, 
+		       Grid::GridRedBlackCartesian, 
+		       Grid::RealD, 
+		       Grid::RealD, 
+		       std::__1::vector<std::__1::complex<double>, 
+		       std::__1::allocator<std::__1::complex<double>>>, double, double)
+  ZMobiusFermion(GaugeField &_Umu,
+		 GridCartesian         &FiveDimGrid,
+		 GridRedBlackCartesian &FiveDimRedBlackGrid,
+		 GridCartesian         &FourDimGrid,
+		 GridRedBlackCartesian &FourDimRedBlackGrid,
+		 RealD _mass,RealD _M5,
+		 std::vector<ComplexD> &gamma, RealD b,RealD c,const ImplParams &p= ImplParams()) : 
+  */
+  ZMobiusFermionR Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, omegas,RealD(1.),RealD(0.));
 
   LatticeFermion src_e (FrbGrid);
   LatticeFermion src_o (FrbGrid);

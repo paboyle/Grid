@@ -37,3 +37,4 @@ template class Grid::Hadrons::MScalarSUN::TTransProj<ScalarNxNAdjImplR<4>>;
 template class Grid::Hadrons::MScalarSUN::TTransProj<ScalarNxNAdjImplR<5>>;
 template class Grid::Hadrons::MScalarSUN::TTransProj<ScalarNxNAdjImplR<6>>;
 
+    

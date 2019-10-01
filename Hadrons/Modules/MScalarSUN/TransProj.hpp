@@ -145,7 +145,7 @@ void TTransProj<SImpl>::execute(void)
     envGetTmp(ComplexField, buf1);
     envGetTmp(ComplexField, buf2);
     envGetTmp(ComplexField, lap);
-    lap = zero;
+    lap = Zero();
     if (!par().output.empty())
     {
         result.type = par().type;

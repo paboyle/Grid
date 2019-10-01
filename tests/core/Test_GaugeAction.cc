@@ -31,7 +31,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 
 /* For Metropolis */
@@ -59,10 +59,10 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
 
-  std::vector<int> simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
-  std::vector<int> latt_size  ({16,16,16,32});
-  std::vector<int> clatt_size  ({4,4,4,8});
+  Coordinate simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size  ({16,16,16,32});
+  Coordinate clatt_size  ({4,4,4,8});
   int orthodir=3;
   int orthosz =latt_size[orthodir];
     
@@ -84,7 +84,7 @@ int main (int argc, char ** argv)
 
   // Painful ; fix syntactical niceness : to check reader
   LatticeComplex LinkTrace(&Fine);
-  LinkTrace=zero;
+  LinkTrace=Zero();
   for(int mu=0;mu<Nd;mu++){
     LinkTrace = LinkTrace + trace(U[mu]);
   }
@@ -110,7 +110,7 @@ int main (int argc, char ** argv)
 
   LatticeComplex Plaq(&Fine);
   LatticeComplex cPlaq(&Coarse);
-  Plaq = zero;
+  Plaq = Zero();
   for(int mu=1;mu<Nd;mu++){
     for(int nu=0;nu<mu;nu++){
       Plaq = Plaq + trace(PeriodicBC::CovShiftForward(U[mu],mu,U[nu])*adj(PeriodicBC::CovShiftForward(U[nu],nu,U[mu])));
@@ -127,7 +127,7 @@ int main (int argc, char ** argv)
 
 
   TComplex Plaq_T_sum; 
-  Plaq_T_sum=zero;
+  Plaq_T_sum=Zero();
   for(int t=0;t<Nt;t++){
     Plaq_T_sum = Plaq_T_sum+Plaq_T[t];
     Complex Pt=TensorRemove(Plaq_T[t]);

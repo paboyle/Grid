@@ -25,18 +25,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-
-
-// TODO
-// 1) move includes into SharedMemory.cc
-//
-// 2) split shared memory into a) optimal communicator creation from comm world
-// 
-//                             b) shared memory buffers container
-//                                -- static globally shared; init once
-//                                -- per instance set of buffers.
-//                                   
-
 #pragma once 
 
 #include <Grid/GridCore.h>
@@ -57,26 +45,32 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <numaif.h>
 #endif
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 #if defined (GRID_COMMS_MPI3) 
-  typedef MPI_Comm    Grid_MPI_Comm;
-  typedef MPI_Request CommsRequest_t;
+typedef MPI_Comm    Grid_MPI_Comm;
+typedef MPI_Request CommsRequest_t;
 #else 
-  typedef int CommsRequest_t;
-  typedef int Grid_MPI_Comm;
+typedef int CommsRequest_t;
+typedef int Grid_MPI_Comm;
 #endif
 
 class GlobalSharedMemory {
- private:
+private:
   static const int     MAXLOG2RANKSPERNODE = 16;            
+
 
   // Init once lock on the buffer allocation
   static int      _ShmSetup;
   static int      _ShmAlloc;
   static uint64_t _ShmAllocBytes;
 
- public:
+public:
+  ///////////////////////////////////////
+  // HPE 8600 hypercube optimisation
+  ///////////////////////////////////////
+  static int HPEhypercube;
+
   static int      ShmSetup(void)      { return _ShmSetup; }
   static int      ShmAlloc(void)      { return _ShmAlloc; }
   static uint64_t ShmAllocBytes(void) { return _ShmAllocBytes; }
@@ -102,14 +96,16 @@ class GlobalSharedMemory {
   // Create an optimal reordered communicator that makes MPI_Cart_create get it right
   //////////////////////////////////////////////////////////////////////////////////////
   static void Init(Grid_MPI_Comm comm); // Typically MPI_COMM_WORLD
-  static void OptimalCommunicator(const std::vector<int> &processors,Grid_MPI_Comm & optimal_comm);  // Turns MPI_COMM_WORLD into right layout for Cartesian
-  static void OptimalCommunicatorHypercube(const std::vector<int> &processors,Grid_MPI_Comm & optimal_comm);  // Turns MPI_COMM_WORLD into right layout for Cartesian
-  static void OptimalCommunicatorSharedMemory(const std::vector<int> &processors,Grid_MPI_Comm & optimal_comm);  // Turns MPI_COMM_WORLD into right layout for Cartesian
+  static void OptimalCommunicator            (const Coordinate &processors,Grid_MPI_Comm & optimal_comm);  // Turns MPI_COMM_WORLD into right layout for Cartesian
+  static void OptimalCommunicatorHypercube   (const Coordinate &processors,Grid_MPI_Comm & optimal_comm);  // Turns MPI_COMM_WORLD into right layout for Cartesian
+  static void OptimalCommunicatorSharedMemory(const Coordinate &processors,Grid_MPI_Comm & optimal_comm);  // Turns MPI_COMM_WORLD into right layout for Cartesian
   ///////////////////////////////////////////////////
   // Provide shared memory facilities off comm world
   ///////////////////////////////////////////////////
   static void SharedMemoryAllocate(uint64_t bytes, int flags);
   static void SharedMemoryFree(void);
+  static void SharedMemoryCopy(void *dest,const void *src,size_t bytes);
+  static void SharedMemoryZero(void *dest,size_t bytes);
 
 };
 
@@ -118,14 +114,14 @@ class GlobalSharedMemory {
 //////////////////////////////
 class SharedMemory 
 {
- private:
+private:
   static const int     MAXLOG2RANKSPERNODE = 16;            
 
   size_t heap_top;
   size_t heap_bytes;
   size_t heap_size;
 
- protected:
+protected:
 
   Grid_MPI_Comm    ShmComm; // for barriers
   int    ShmRank; 
@@ -133,7 +129,7 @@ class SharedMemory
   std::vector<void *> ShmCommBufs;
   std::vector<int>    ShmRanks;// Mapping comm ranks to Shm ranks
 
- public:
+public:
   SharedMemory() {};
   ~SharedMemory();
   ///////////////////////////////////////////////////////////////////////////////////////
@@ -150,6 +146,7 @@ class SharedMemory
   // Call on any instance
   ///////////////////////////////////////////////////
   void SharedMemoryTest(void);
+  
   void *ShmBufferSelf(void);
   void *ShmBuffer    (int rank);
   void *ShmBufferTranslate(int rank,void * local_p);
@@ -164,4 +161,5 @@ class SharedMemory
 
 };
 
-}
+NAMESPACE_END(Grid);
+

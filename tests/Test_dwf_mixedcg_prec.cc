@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 template<class d>
 struct scal {
@@ -67,7 +67,7 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
 
   LatticeFermionD    src(FGrid); random(RNG5,src);
-  LatticeFermionD result(FGrid); result=zero;
+  LatticeFermionD result(FGrid); result=Zero();
   LatticeGaugeFieldD Umu(UGrid);
   LatticeGaugeFieldF Umu_f(UGrid_f); 
   
@@ -84,10 +84,10 @@ int main (int argc, char ** argv)
   LatticeFermionD result_o(FrbGrid);
   LatticeFermionD result_o_2(FrbGrid);
   pickCheckerboard(Odd,src_o,src);
-  result_o.checkerboard = Odd;
-  result_o = zero;
-  result_o_2.checkerboard = Odd;
-  result_o_2 = zero;
+  result_o.Checkerboard() = Odd;
+  result_o = Zero();
+  result_o_2.Checkerboard() = Odd;
+  result_o_2 = Zero();
 
   SchurDiagMooeeOperator<DomainWallFermionD,LatticeFermionD> HermOpEO(Ddwf);
   SchurDiagMooeeOperator<DomainWallFermionF,LatticeFermionF> HermOpEO_f(Ddwf_f);
@@ -131,6 +131,6 @@ int main (int argc, char ** argv)
   }
   #endif
 
-
+  
   Grid_finalize();
 }

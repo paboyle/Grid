@@ -49,7 +49,7 @@ public:
                                     double                           , M5,
                                     double                           , b,
                                     double                           , c,
-                                    std::vector<std::complex<double>>, omega,
+                                    std::vector<std::complex<double> >, omega,
                                     std::string                      , boundary,
                                     std::string                      , twist);
 };
@@ -126,6 +126,8 @@ void TZMobiusDWF<FImpl>::setup(void)
     auto &grb5 = *envGetRbGrid(FermionField, par().Ls);
     auto omega = par().omega;
     typename ZMobiusFermion<FImpl>::ImplParams implParams;
+    
+
     if (!par().boundary.empty())
     {
         implParams.boundary_phases = strToVec<Complex>(par().boundary);
@@ -134,10 +136,8 @@ void TZMobiusDWF<FImpl>::setup(void)
     {
         implParams.twist_n_2pi_L   = strToVec<Real>(par().twist);
     }
-    LOG(Message) << "Fermion boundary conditions: " << implParams.boundary_phases
-                 << std::endl;
-    LOG(Message) << "Twists: " << implParams.twist_n_2pi_L
-                 << std::endl;
+    LOG(Message) << "Fermion boundary conditions: " << implParams.boundary_phases << std::endl;
+    LOG(Message) << "Twists: " << implParams.twist_n_2pi_L << std::endl;
     if (implParams.boundary_phases.size() != env().getNd())
     {
         HADRONS_ERROR(Size, "Wrong number of boundary phase");
@@ -146,9 +146,17 @@ void TZMobiusDWF<FImpl>::setup(void)
     {
         HADRONS_ERROR(Size, "Wrong number of twist");
     }
-    envCreateDerived(FMat, ZMobiusFermion<FImpl>, getName(), par().Ls, U, g5,
-                     grb5, g4, grb4, par().mass, par().M5, omega,
-                     par().b, par().c, implParams);
+
+    assert(par().Ls==omega.size());
+    int Ls=par().Ls;
+    std::vector<ComplexD> _omega(Ls);
+    for(int i=0;i<Ls;i++){
+      _omega[i] = omega[i];
+    }
+    envCreateDerived(FMat, ZMobiusFermion<FImpl>, getName(), par().Ls,
+		     U, g5, grb5, g4, grb4, 
+		     par().mass, par().M5, 
+		     _omega, par().b, par().c, implParams);
 }
 
 // execution ///////////////////////////////////////////////////////////////////

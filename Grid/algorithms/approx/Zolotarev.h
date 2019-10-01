@@ -1,12 +1,12 @@
 /* -*- Mode: C; comment-column: 22; fill-column: 79; -*- */
 
 #ifdef __cplusplus
-namespace Grid {
-namespace Approx {
+#include <Grid/Namespace.h>
+NAMESPACE_BEGIN(Grid);
+NAMESPACE_BEGIN(Approx);
 #endif
 
 #define HVERSION Header Time-stamp: <14-OCT-2004 09:26:51.00 adk@MISSCONTRARY>
-
 
 #ifndef ZOLOTAREV_INTERNAL
 #ifndef PRECISION
@@ -83,5 +83,6 @@ void zolotarev_free(zolotarev_data *zdata);
 #endif
 
 #ifdef __cplusplus
-}}
+NAMESPACE_END(Approx);
+NAMESPACE_END(Grid);
 #endif

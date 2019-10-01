@@ -25,13 +25,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
+#pragma once 
 
-#ifndef COVARIANT_LAPLACIAN_H
-#define COVARIANT_LAPLACIAN_H
-
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 struct LaplacianParams : Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(LaplacianParams, 
@@ -80,19 +77,19 @@ class LaplacianAdjointField: public Metric<typename Impl::Field> {
   MultiShiftFunction PowerHalf;    
   MultiShiftFunction PowerInvHalf;    
 
- public:
+public:
   INHERIT_GIMPL_TYPES(Impl);
 
   LaplacianAdjointField(GridBase* grid, OperatorFunction<GaugeField>& S, LaplacianParams& p, const RealD k = 1.0)
-      : U(Nd, grid), Solver(S), param(p), kappa(k){
-        AlgRemez remez(param.lo,param.hi,param.precision);
-        std::cout<<GridLogMessage << "Generating degree "<<param.degree<<" for x^(1/2)"<<std::endl;
-        remez.generateApprox(param.degree,1,2);
-        PowerHalf.Init(remez,param.tolerance,false);
-        PowerInvHalf.Init(remez,param.tolerance,true);
+    : U(Nd, grid), Solver(S), param(p), kappa(k){
+    AlgRemez remez(param.lo,param.hi,param.precision);
+    std::cout<<GridLogMessage << "Generating degree "<<param.degree<<" for x^(1/2)"<<std::endl;
+    remez.generateApprox(param.degree,1,2);
+    PowerHalf.Init(remez,param.tolerance,false);
+    PowerInvHalf.Init(remez,param.tolerance,true);
         
 
-      };
+  };
 
   void Mdir(const GaugeField&, GaugeField&, int, int){ assert(0);}
   void Mdiag(const GaugeField&, GaugeField&){ assert(0);}
@@ -109,14 +106,14 @@ class LaplacianAdjointField: public Metric<typename Impl::Field> {
     //GaugeField herm = in + adj(in);
     //std::cout << "AHermiticity: " << norm2(herm) << std::endl;
 
-    GaugeLinkField tmp(in._grid);
-    GaugeLinkField tmp2(in._grid);
-    GaugeLinkField sum(in._grid);
+    GaugeLinkField tmp(in.Grid());
+    GaugeLinkField tmp2(in.Grid());
+    GaugeLinkField sum(in.Grid());
 
     for (int nu = 0; nu < Nd; nu++) {
-      sum = zero;
+      sum = Zero();
       GaugeLinkField in_nu = PeekIndex<LorentzIndex>(in, nu);
-      GaugeLinkField out_nu(out._grid);
+      GaugeLinkField out_nu(out.Grid());
       for (int mu = 0; mu < Nd; mu++) {
         tmp = U[mu] * Cshift(in_nu, mu, +1) * adj(U[mu]);
         tmp2 = adj(U[mu]) * in_nu * U[mu];
@@ -132,8 +129,8 @@ class LaplacianAdjointField: public Metric<typename Impl::Field> {
     RealD factor = -kappa / (double(4 * Nd));
     
     for (int mu = 0; mu < Nd; mu++){
-      GaugeLinkField der_mu(der._grid);
-      der_mu = zero;
+      GaugeLinkField der_mu(der.Grid());
+      der_mu = Zero();
       for (int nu = 0; nu < Nd; nu++){
         GaugeLinkField in_nu = PeekIndex<LorentzIndex>(in, nu);
         der_mu += U[mu] * Cshift(in_nu, mu, 1) * adj(U[mu]) * in_nu;
@@ -151,8 +148,8 @@ class LaplacianAdjointField: public Metric<typename Impl::Field> {
     RealD factor = -kappa / (double(4 * Nd));
 
     for (int mu = 0; mu < Nd; mu++) {
-      GaugeLinkField der_mu(der._grid);
-      der_mu = zero;
+      GaugeLinkField der_mu(der.Grid());
+      der_mu = Zero();
       for (int nu = 0; nu < Nd; nu++) {
         GaugeLinkField left_nu = PeekIndex<LorentzIndex>(left, nu);
         GaugeLinkField right_nu = PeekIndex<LorentzIndex>(right, nu);
@@ -169,7 +166,7 @@ class LaplacianAdjointField: public Metric<typename Impl::Field> {
   }
 
   void MSquareRoot(GaugeField& P){
-    GaugeField Gp(P._grid);
+    GaugeField Gp(P.Grid());
     HermitianLinearOperator<LaplacianAdjointField<Impl>,GaugeField> HermOp(*this);
     ConjugateGradientMultiShift<GaugeField> msCG(param.MaxIter,PowerHalf);
     msCG(HermOp,P,Gp);
@@ -177,7 +174,7 @@ class LaplacianAdjointField: public Metric<typename Impl::Field> {
   }
 
   void MInvSquareRoot(GaugeField& P){
-    GaugeField Gp(P._grid);
+    GaugeField Gp(P.Grid());
     HermitianLinearOperator<LaplacianAdjointField<Impl>,GaugeField> HermOp(*this);
     ConjugateGradientMultiShift<GaugeField> msCG(param.MaxIter,PowerInvHalf);
     msCG(HermOp,P,Gp);
@@ -186,12 +183,9 @@ class LaplacianAdjointField: public Metric<typename Impl::Field> {
 
 
 
- private:
+private:
   RealD kappa;
   std::vector<GaugeLinkField> U;
 };
 
-}
-}
-
-#endif
+NAMESPACE_END(Grid);

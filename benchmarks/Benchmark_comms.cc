@@ -29,7 +29,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
 struct time_statistics{
   double mean;
@@ -61,8 +60,8 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
@@ -79,13 +78,13 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "= Benchmarking concurrent halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   header();
-  for(int lat=4;lat<=maxlat;lat+=4){
+  for(int lat=8;lat<=maxlat;lat+=4){
     for(int Ls=8;Ls<=8;Ls*=2){
 
-      std::vector<int> latt_size  ({lat*mpi_layout[0],
-      				    lat*mpi_layout[1],
-      				    lat*mpi_layout[2],
-      				    lat*mpi_layout[3]});
+      Coordinate latt_size  ({lat*mpi_layout[0],
+	                      lat*mpi_layout[1],
+      			      lat*mpi_layout[2],
+      			      lat*mpi_layout[3]});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
       RealD Nrank = Grid._Nprocessors;
@@ -166,14 +165,13 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   header();
 
-  for(int lat=4;lat<=maxlat;lat+=4){
+  for(int lat=8;lat<=maxlat;lat+=4){
     for(int Ls=8;Ls<=8;Ls*=2){
 
-      std::vector<int> latt_size  ({lat*mpi_layout[0],
-                                    lat*mpi_layout[1],
-                                    lat*mpi_layout[2],
-                                    lat*mpi_layout[3]});
-
+      Coordinate latt_size  ({lat*mpi_layout[0],
+	                      lat*mpi_layout[1],
+      			      lat*mpi_layout[2],
+      			      lat*mpi_layout[3]});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
       RealD Nrank = Grid._Nprocessors;
@@ -261,13 +259,13 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   header();
 
-  for(int lat=4;lat<=maxlat;lat+=4){
+  for(int lat=8;lat<=maxlat;lat+=4){
     for(int Ls=8;Ls<=8;Ls*=2){
 
-      std::vector<int> latt_size  ({lat*mpi_layout[0],
-      				    lat*mpi_layout[1],
-      				    lat*mpi_layout[2],
-      				    lat*mpi_layout[3]});
+      Coordinate latt_size  ({lat*mpi_layout[0],
+	                      lat*mpi_layout[1],
+      			      lat*mpi_layout[2],
+      			      lat*mpi_layout[3]});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
       RealD Nrank = Grid._Nprocessors;
@@ -281,8 +279,6 @@ int main (int argc, char ** argv)
       for(int d=0;d<8;d++){
 	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
 	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
-	bzero((void *)xbuf[d],bytes);
-	bzero((void *)rbuf[d],bytes);
       }
 
       int ncomm;
@@ -338,7 +334,7 @@ int main (int argc, char ** argv)
 
       dbytes=dbytes*ppn;
       double xbytes    = dbytes*0.5;
-      double rbytes    = dbytes*0.5;
+      //      double rbytes    = dbytes*0.5;
       double bidibytes = dbytes;
 
       std::cout<<GridLogMessage << std::setw(4) << lat<<"\t"<<Ls<<"\t"
@@ -358,13 +354,13 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   header();
 
-  for(int lat=4;lat<=maxlat;lat+=4){
+  for(int lat=8;lat<=maxlat;lat+=4){
     for(int Ls=8;Ls<=8;Ls*=2){
 
-      std::vector<int> latt_size  ({lat*mpi_layout[0],
-      				    lat*mpi_layout[1],
-      				    lat*mpi_layout[2],
-      				    lat*mpi_layout[3]});
+      Coordinate latt_size  ({lat*mpi_layout[0],
+      			      lat*mpi_layout[1],
+      			      lat*mpi_layout[2],
+      			      lat*mpi_layout[3]});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
       RealD Nrank = Grid._Nprocessors;
@@ -378,8 +374,6 @@ int main (int argc, char ** argv)
       for(int d=0;d<8;d++){
 	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
 	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
-	bzero((void *)xbuf[d],bytes);
-	bzero((void *)rbuf[d],bytes);
       }
 
       int ncomm;
@@ -435,7 +429,7 @@ int main (int argc, char ** argv)
 
       dbytes=dbytes*ppn;
       double xbytes    = dbytes*0.5;
-      double rbytes    = dbytes*0.5;
+      //      double rbytes    = dbytes*0.5;
       double bidibytes = dbytes;
 
 
@@ -456,13 +450,13 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   header();
 
-  for(int lat=4;lat<=maxlat;lat+=4){
+  for(int lat=8;lat<=maxlat;lat+=4){
     for(int Ls=8;Ls<=8;Ls*=2){
 
-      std::vector<int> latt_size  ({lat*mpi_layout[0],
-      				    lat*mpi_layout[1],
-      				    lat*mpi_layout[2],
-      				    lat*mpi_layout[3]});
+      Coordinate latt_size  ({lat*mpi_layout[0],
+    	                      lat*mpi_layout[1],
+                              lat*mpi_layout[2],
+	                      lat*mpi_layout[3]});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
       RealD Nrank = Grid._Nprocessors;
@@ -472,13 +466,10 @@ int main (int argc, char ** argv)
       std::vector<HalfSpinColourVectorD *> xbuf(8);
       std::vector<HalfSpinColourVectorD *> rbuf(8);
       Grid.ShmBufferFreeAll();
-      //      uint64_t bytes = lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
-      uint64_t bytes = 2*1024*1024;
+      uint64_t bytes = lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
       for(int d=0;d<8;d++){
 	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
 	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(bytes);
-	bzero((void *)xbuf[d],bytes);
-	bzero((void *)rbuf[d],bytes);
       }
 
       int ncomm;
@@ -490,8 +481,7 @@ int main (int argc, char ** argv)
 	dbytes=0;
 	ncomm=0;
 
-#pragma omp parallel for num_threads(Grid::CartesianCommunicator::nCommThreads)
-	for(int dir=0;dir<8;dir++){
+	thread_for(dir,8,{
 
 	  double tbytes;
 	  int mu =dir % 4;
@@ -512,10 +502,9 @@ int main (int argc, char ** argv)
 	    tbytes= Grid.StencilSendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,
 					       (void *)&rbuf[dir][0], recv_from_rank, bytes,tid);
 
-#pragma omp atomic
-	    dbytes+=tbytes;
+	    thread_critical { dbytes+=tbytes; }
 	  }
-	}
+        });
 	Grid.Barrier();
 	double stop=usecond();
 	t_time[i] = stop-start; // microseconds
@@ -525,7 +514,7 @@ int main (int argc, char ** argv)
 
       dbytes=dbytes*ppn;
       double xbytes    = dbytes*0.5;
-      double rbytes    = dbytes*0.5;
+      //      double rbytes    = dbytes*0.5;
       double bidibytes = dbytes;
 
 

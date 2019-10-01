@@ -36,7 +36,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
 template<class Fobj,class CComplex,int nbasis>
 class LocalCoherenceLanczosScidac : public LocalCoherenceLanczos<Fobj,CComplex,nbasis>
@@ -59,7 +58,7 @@ public:
 #ifdef HAVE_LIME
     assert(this->subspace.size()==nbasis);
     emptyUserRecord record;
-    Grid::QCD::ScidacWriter WR(this->_FineGrid->IsBoss());
+    Grid::ScidacWriter WR(this->_FineGrid->IsBoss());
     WR.open(evecs_file);
     for(int k=0;k<nbasis;k++) {
       WR.writeScidacFieldRecord(this->subspace[k],record);
@@ -87,7 +86,7 @@ public:
     
     std::cout << GridLogIRL<< "checkpointFineRestore:  Reading evecs from "<<evecs_file<<std::endl;
     emptyUserRecord record;
-    Grid::QCD::ScidacReader RD ;
+    Grid::ScidacReader RD ;
     RD.open(evecs_file);
     for(int k=0;k<nbasis;k++) {
       this->subspace[k].checkerboard=this->_checkerboard;
@@ -105,7 +104,7 @@ public:
 #ifdef HAVE_LIME
     int n = this->evec_coarse.size();
     emptyUserRecord record;
-    Grid::QCD::ScidacWriter WR(this->_CoarseGrid->IsBoss());
+    Grid::ScidacWriter WR(this->_CoarseGrid->IsBoss());
     WR.open(evecs_file);
     for(int k=0;k<n;k++) {
       WR.writeScidacFieldRecord(this->evec_coarse[k],record);
@@ -132,7 +131,7 @@ public:
     assert(this->evals_coarse.size()==nvec);
     emptyUserRecord record;
     std::cout << GridLogIRL<< "checkpointCoarseRestore:  Reading evecs from "<<evecs_file<<std::endl;
-    Grid::QCD::ScidacReader RD ;
+    Grid::ScidacReader RD ;
     RD.open(evecs_file);
     for(int k=0;k<nvec;k++) {
       RD.readScidacFieldRecord(this->evec_coarse[k],record);
@@ -169,7 +168,7 @@ int main (int argc, char ** argv) {
   std::vector<int> blockSize = Params.blockSize;
   std::vector<int> latt({32,32,32,32});
   uint64_t     vol = Ls*latt[0]*latt[1]*latt[2]*latt[3];
-  double   mat_flop= 2.0*1320.0*vol;    
+  //  double   mat_flop= 2.0*1320.0*vol;    
   // Grids
   GridCartesian         * UGrid     = SpaceTimeGrid::makeFourDimGrid(latt,
 								     GridDefaultSimd(Nd,vComplex::Nsimd()),
@@ -217,8 +216,8 @@ int main (int argc, char ** argv) {
   LanczosParams fine  =Params.FineParams;  
   LanczosParams coarse=Params.CoarseParams;  
 
-  const int Ns1 = fine.Nstop;   const int Ns2 = coarse.Nstop;
-  const int Nk1 = fine.Nk;      const int Nk2 = coarse.Nk;
+  const int Ns1 = fine.Nstop;   //const int Ns2 = coarse.Nstop;
+  const int Nk1 = fine.Nk;      //const int Nk2 = coarse.Nk;
   const int Nm1 = fine.Nm;      const int Nm2 = coarse.Nm;
 
   std::cout << GridLogMessage << "Keep " << fine.Nstop   << " fine   vectors" << std::endl;

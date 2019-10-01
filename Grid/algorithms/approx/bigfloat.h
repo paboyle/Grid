@@ -10,10 +10,12 @@
 #ifndef INCLUDED_BIGFLOAT_H
 #define INCLUDED_BIGFLOAT_H
 
-
+#define __GMP_WITHIN_CONFIGURE
 #include <gmp.h>
 #include <mpf2mpfr.h>
 #include <mpfr.h>
+#undef  __GMP_WITHIN_CONFIGURE
+
 class bigfloat {
 
 private:

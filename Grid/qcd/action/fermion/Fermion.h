@@ -23,10 +23,9 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
-#ifndef  GRID_QCD_FERMION_H
-#define  GRID_QCD_FERMION_H
+*************************************************************************************/
+/*  END LEGAL */
+#pragma once
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Explicit explicit template instantiation is still required in the .cc files
@@ -50,12 +49,17 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 ////////////////////////////////////////////
 
 #include <Grid/qcd/action/fermion/WilsonFermion.h>       // 4d wilson like
-#include <Grid/qcd/action/fermion/WilsonTMFermion.h>     // 4d wilson like
+NAMESPACE_CHECK(Wilson);
+#include <Grid/qcd/action/fermion/WilsonTMFermion.h>       // 4d wilson like
+NAMESPACE_CHECK(WilsonTM);
 #include <Grid/qcd/action/fermion/WilsonCloverFermion.h> // 4d wilson clover fermions
+NAMESPACE_CHECK(WilsonClover);
 #include <Grid/qcd/action/fermion/WilsonFermion5D.h>     // 5d base used by all 5d overlap types
+NAMESPACE_CHECK(Wilson5D);
 
 #include <Grid/qcd/action/fermion/ImprovedStaggeredFermion.h>
 #include <Grid/qcd/action/fermion/ImprovedStaggeredFermion5D.h>
+NAMESPACE_CHECK(Staggered);
 
 #include <Grid/qcd/action/fermion/CayleyFermion5D.h>     // Cayley types
 #include <Grid/qcd/action/fermion/DomainWallFermion.h>
@@ -63,7 +67,8 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 #include <Grid/qcd/action/fermion/MobiusFermion.h>
 #include <Grid/qcd/action/fermion/MobiusEOFAFermion.h>
 #include <Grid/qcd/action/fermion/ZMobiusFermion.h>
-#include <Grid/qcd/action/fermion/SchurDiagTwoKappa.h>
+NAMESPACE_CHECK(DomainWall);
+
 #include <Grid/qcd/action/fermion/ScaledShamirFermion.h>
 #include <Grid/qcd/action/fermion/MobiusZolotarevFermion.h>
 #include <Grid/qcd/action/fermion/ShamirZolotarevFermion.h>
@@ -75,6 +80,7 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 #include <Grid/qcd/action/fermion/PartialFractionFermion5D.h>                 // Partial fraction
 #include <Grid/qcd/action/fermion/OverlapWilsonPartialFractionTanhFermion.h>
 #include <Grid/qcd/action/fermion/OverlapWilsonPartialFractionZolotarevFermion.h>
+NAMESPACE_CHECK(Overlap);
 ///////////////////////////////////////////////////////////////////////////////
 // G5 herm -- this has to live in QCD since dirac matrix is not in the broader sector of code
 ///////////////////////////////////////////////////////////////////////////////
@@ -84,14 +90,17 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 // Fourier accelerated Pauli Villars inverse support
 ///////////////////////////////////////////////////////////////////////////////
 #include <Grid/qcd/action/fermion/WilsonTMFermion5D.h>   
+NAMESPACE_CHECK(WilsonTM5);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Move this group to a DWF specific tools/algorithms subdir? 
 ////////////////////////////////////////////////////////////////////////////////
+#include <Grid/qcd/action/fermion/SchurDiagTwoKappa.h>
 #include <Grid/qcd/action/fermion/FourierAcceleratedPV.h>
 #include <Grid/qcd/action/fermion/PauliVillarsInverters.h>
 #include <Grid/qcd/action/fermion/Reconstruct5Dprop.h>
 #include <Grid/qcd/action/fermion/MADWF.h>
+NAMESPACE_CHECK(DWFutils);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // More maintainable to maintain the following typedef list centrally, as more "impl" targets
@@ -99,8 +108,7 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Cayley 5d
-namespace Grid {
-  namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 typedef WilsonFermion<WilsonImplR> WilsonFermionR;
 typedef WilsonFermion<WilsonImplF> WilsonFermionF;
@@ -186,46 +194,6 @@ typedef ZMobiusFermion<ZWilsonImplFH> ZMobiusFermionFH;
 typedef ZMobiusFermion<ZWilsonImplDF> ZMobiusFermionDF;
 
 // Ls vectorised
-typedef DomainWallFermion<DomainWallVec5dImplR> DomainWallFermionVec5dR;
-typedef DomainWallFermion<DomainWallVec5dImplF> DomainWallFermionVec5dF;
-typedef DomainWallFermion<DomainWallVec5dImplD> DomainWallFermionVec5dD;
-
-typedef DomainWallFermion<DomainWallVec5dImplRL> DomainWallFermionVec5dRL;
-typedef DomainWallFermion<DomainWallVec5dImplFH> DomainWallFermionVec5dFH;
-typedef DomainWallFermion<DomainWallVec5dImplDF> DomainWallFermionVec5dDF;
-
-typedef DomainWallEOFAFermion<DomainWallVec5dImplR> DomainWallEOFAFermionVec5dR;
-typedef DomainWallEOFAFermion<DomainWallVec5dImplF> DomainWallEOFAFermionVec5dF;
-typedef DomainWallEOFAFermion<DomainWallVec5dImplD> DomainWallEOFAFermionVec5dD;
-
-typedef DomainWallEOFAFermion<DomainWallVec5dImplRL> DomainWallEOFAFermionVec5dRL;
-typedef DomainWallEOFAFermion<DomainWallVec5dImplFH> DomainWallEOFAFermionVec5dFH;
-typedef DomainWallEOFAFermion<DomainWallVec5dImplDF> DomainWallEOFAFermionVec5dDF;
-
-typedef MobiusFermion<DomainWallVec5dImplR> MobiusFermionVec5dR;
-typedef MobiusFermion<DomainWallVec5dImplF> MobiusFermionVec5dF;
-typedef MobiusFermion<DomainWallVec5dImplD> MobiusFermionVec5dD;
-
-typedef MobiusFermion<DomainWallVec5dImplRL> MobiusFermionVec5dRL;
-typedef MobiusFermion<DomainWallVec5dImplFH> MobiusFermionVec5dFH;
-typedef MobiusFermion<DomainWallVec5dImplDF> MobiusFermionVec5dDF;
-
-typedef MobiusEOFAFermion<DomainWallVec5dImplR> MobiusEOFAFermionVec5dR;
-typedef MobiusEOFAFermion<DomainWallVec5dImplF> MobiusEOFAFermionVec5dF;
-typedef MobiusEOFAFermion<DomainWallVec5dImplD> MobiusEOFAFermionVec5dD;
-
-typedef MobiusEOFAFermion<DomainWallVec5dImplRL> MobiusEOFAFermionVec5dRL;
-typedef MobiusEOFAFermion<DomainWallVec5dImplFH> MobiusEOFAFermionVec5dFH;
-typedef MobiusEOFAFermion<DomainWallVec5dImplDF> MobiusEOFAFermionVec5dDF;
-
-typedef ZMobiusFermion<ZDomainWallVec5dImplR> ZMobiusFermionVec5dR;
-typedef ZMobiusFermion<ZDomainWallVec5dImplF> ZMobiusFermionVec5dF;
-typedef ZMobiusFermion<ZDomainWallVec5dImplD> ZMobiusFermionVec5dD;
-
-typedef ZMobiusFermion<ZDomainWallVec5dImplRL> ZMobiusFermionVec5dRL;
-typedef ZMobiusFermion<ZDomainWallVec5dImplFH> ZMobiusFermionVec5dFH;
-typedef ZMobiusFermion<ZDomainWallVec5dImplDF> ZMobiusFermionVec5dDF;
-
 typedef ScaledShamirFermion<WilsonImplR> ScaledShamirFermionR;
 typedef ScaledShamirFermion<WilsonImplF> ScaledShamirFermionF;
 typedef ScaledShamirFermion<WilsonImplD> ScaledShamirFermionD;
@@ -318,12 +286,13 @@ typedef ImprovedStaggeredFermion5D<StaggeredImplR> ImprovedStaggeredFermion5DR;
 typedef ImprovedStaggeredFermion5D<StaggeredImplF> ImprovedStaggeredFermion5DF;
 typedef ImprovedStaggeredFermion5D<StaggeredImplD> ImprovedStaggeredFermion5DD;
 
+#ifndef GRID_NVCC
 typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplR> ImprovedStaggeredFermionVec5dR;
 typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplF> ImprovedStaggeredFermionVec5dF;
 typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplD> ImprovedStaggeredFermionVec5dD;
+#endif
 
-
-  }}
+NAMESPACE_END(Grid);
 
 ////////////////////
 // Scalar QED actions
@@ -332,4 +301,4 @@ typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplD> ImprovedStaggeredFermion
 #include <Grid/qcd/action/scalar/Scalar.h>
 #include <Grid/qcd/action/gauge/Photon.h>
 
-#endif
+

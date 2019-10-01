@@ -148,7 +148,7 @@ void TSeqAslash<FImpl>::execute(void)
                      << par().tA << " <= t <= " << par().tB 
 		     << " using the photon field " << par().emField << std::endl;
     }
-    auto  &src = envGet(PropagatorField, getName()); src=zero;
+    auto  &src = envGet(PropagatorField, getName()); src=Zero();
     auto  &q   = envGet(PropagatorField, par().q);
     auto  &ph  = envGet(LatticeComplex, momphName_);
     auto  &t   = envGet(Lattice<iScalar<vInteger>>, tName_);
@@ -160,7 +160,7 @@ void TSeqAslash<FImpl>::execute(void)
 
         envGetTmp(LatticeComplex, coor);
         p  = strToVec<Real>(par().mom);
-        ph = zero;
+        ph = Zero();
         for(unsigned int mu = 0; mu < env().getNd(); mu++)
         {
             LatticeCoordinate(coor, mu);
