@@ -1408,8 +1408,8 @@ void A2Autils<FImpl>::DeltaFeq2(int dt_min,int dt_max,
 }
 #endif 
 
-// staggered mesons
-// only the goldstone pion is implemented for now.
+// local, taste-nonsignlet staggered mesons
+// only the goldstone pion and gamma_{x,y,z} implemented for now.
 template <class FImpl>
 template <typename TensorType>
 void A2Autils<FImpl>::StagMesonField(TensorType &mat,
