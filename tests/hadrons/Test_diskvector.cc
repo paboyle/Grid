@@ -28,7 +28,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/DiskVector.hpp>
 
 using namespace Grid;
-using namespace Grid::QCD;
 using namespace Grid::Hadrons;
 
 GRID_SERIALIZABLE_ENUM(Enum, undef, red, 1, blue, 2, green, 3);

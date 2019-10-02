@@ -27,8 +27,7 @@ directory
 *************************************************************************************/
 #pragma once
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 template <class Gimpl> class CovariantSmearing : public Gimpl 
 {
@@ -84,4 +83,5 @@ public:
     }
   }
 };
-}}
+
+NAMESPACE_END(Grid);

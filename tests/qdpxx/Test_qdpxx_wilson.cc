@@ -35,8 +35,8 @@
 double mq = 0.1;
 
 // Define Wilson Types
-typedef Grid::QCD::WilsonImplR::FermionField FermionField;
-typedef Grid::QCD::LatticeGaugeField GaugeField;
+typedef Grid::WilsonImplR::FermionField FermionField;
+typedef Grid::LatticeGaugeField GaugeField;
 
 enum ChromaAction
 {
@@ -56,7 +56,7 @@ public:
   static void ImportGauge(GaugeField &gr,
                           QDP::multi1d<QDP::LatticeColorMatrix> &ch)
   {
-    Grid::QCD::LorentzColourMatrix LCM;
+    Grid::LorentzColourMatrix LCM;
     Grid::Complex cc;
     QDP::ColorMatrix cm;
     QDP::Complex c;
@@ -101,7 +101,7 @@ public:
   static void ExportGauge(GaugeField &gr,
                           QDP::multi1d<QDP::LatticeColorMatrix> &ch)
   {
-    Grid::QCD::LorentzColourMatrix LCM;
+    Grid::LorentzColourMatrix LCM;
     Grid::Complex cc;
     QDP::ColorMatrix cm;
     QDP::Complex c;
@@ -145,10 +145,10 @@ public:
   }
 
   // Specific for Wilson Fermions
-  static void ImportFermion(Grid::QCD::LatticeFermion &gr,
+  static void ImportFermion(Grid::LatticeFermion &gr,
                             QDP::LatticeFermion &ch)
   {
-    Grid::QCD::SpinColourVector F;
+    Grid::SpinColourVector F;
     Grid::Complex c;
 
     QDP::Fermion cF;
@@ -195,10 +195,10 @@ public:
   }
 
   // Specific for 4d Wilson fermions
-  static void ExportFermion(Grid::QCD::LatticeFermion &gr,
+  static void ExportFermion(Grid::LatticeFermion &gr,
                             QDP::LatticeFermion &ch)
   {
-    Grid::QCD::SpinColourVector F;
+    Grid::SpinColourVector F;
     Grid::Complex c;
 
     QDP::Fermion cF;
@@ -342,19 +342,18 @@ void calc_chroma(ChromaAction action, GaugeField &lat, FermionField &src, Fermio
 void make_gauge(GaugeField &Umu, FermionField &src)
 {
   using namespace Grid;
-  using namespace Grid::QCD;
 
   std::vector<int> seeds4({1, 2, 3, 4});
 
   Grid::GridCartesian *UGrid = (Grid::GridCartesian *)Umu._grid;
   Grid::GridParallelRNG RNG4(UGrid);
   RNG4.SeedFixedIntegers(seeds4);
-  Grid::QCD::SU3::HotConfiguration(RNG4, Umu);
+  Grid::SU3::HotConfiguration(RNG4, Umu);
 
   // Fermion field
   Grid::gaussian(RNG4, src);
   /*
-  Grid::QCD::SpinColourVector F;
+  Grid::SpinColourVector F;
   Grid::Complex c;
 
   
@@ -391,13 +390,12 @@ void make_gauge(GaugeField &Umu, FermionField &src)
   */
 }
 
-void calc_grid(ChromaAction action, Grid::QCD::LatticeGaugeField &Umu, Grid::QCD::LatticeFermion &src, Grid::QCD::LatticeFermion &res, int dag)
+void calc_grid(ChromaAction action, Grid::LatticeGaugeField &Umu, Grid::LatticeFermion &src, Grid::LatticeFermion &res, int dag)
 {
   using namespace Grid;
-  using namespace Grid::QCD;
 
   Grid::GridCartesian *UGrid = (Grid::GridCartesian *)Umu._grid;
-  Grid::GridRedBlackCartesian *UrbGrid = Grid::QCD::SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
+  Grid::GridRedBlackCartesian *UrbGrid = Grid::SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
 
   Grid::RealD _mass = mq;
 
@@ -409,7 +407,7 @@ void calc_grid(ChromaAction action, Grid::QCD::LatticeGaugeField &Umu, Grid::QCD
     anis.xi_0 = 2.0;
     anis.nu = 1.0;
     WilsonImplParams iParam;
-    Grid::QCD::WilsonFermionR Wf(Umu, *UGrid, *UrbGrid, _mass, iParam, anis);
+    Grid::WilsonFermionR Wf(Umu, *UGrid, *UrbGrid, _mass, iParam, anis);
 
     std::cout << Grid::GridLogMessage << " Calling Grid Wilson Fermion multiply " << std::endl;
 
@@ -430,7 +428,7 @@ void calc_grid(ChromaAction action, Grid::QCD::LatticeGaugeField &Umu, Grid::QCD
     anis.xi_0 = 2.0;
     anis.nu = 1.0;
     WilsonImplParams CloverImplParam;
-    Grid::QCD::WilsonCloverFermionR Wf(Umu, *UGrid, *UrbGrid, _mass, _csw_r, _csw_t, anis, CloverImplParam);
+    Grid::WilsonCloverFermionR Wf(Umu, *UGrid, *UrbGrid, _mass, _csw_r, _csw_t, anis, CloverImplParam);
     Wf.ImportGauge(Umu);
 
     std::cout << Grid::GridLogMessage << " Calling Grid Wilson Clover Fermion multiply " << std::endl;
@@ -458,9 +456,9 @@ int main(int argc, char **argv)
    * Setup Grid
    *********************************************************/
   Grid::Grid_init(&argc, &argv);
-  Grid::GridCartesian *UGrid = Grid::QCD::SpaceTimeGrid::makeFourDimGrid(Grid::GridDefaultLatt(),
-                                                                         Grid::GridDefaultSimd(Grid::QCD::Nd, Grid::vComplex::Nsimd()),
-                                                                         Grid::GridDefaultMpi());
+  Grid::GridCartesian *UGrid = Grid::SpaceTimeGrid::makeFourDimGrid(Grid::GridDefaultLatt(),
+                                                                    Grid::GridDefaultSimd(Grid::Nd, Grid::vComplex::Nsimd()),
+                                                                    Grid::GridDefaultMpi());
 
   std::vector<int> gd = UGrid->GlobalDimensions();
   QDP::multi1d<int> nrow(QDP::Nd);
