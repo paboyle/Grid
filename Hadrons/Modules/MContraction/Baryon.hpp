@@ -51,9 +51,11 @@ public:
                                     std::string, q3_src,
                                     std::string, GammaA,
                                     std::string, GammaB,
+/*                                    std::vector<std::string>, quarks,
+                                    std::vector<double>, prefactors,*/
                                     std::string, quarks_snk,
                                     std::string, quarks_src,
-                                    int, parity,
+                                    int, parity, //=1
                                     std::string, sink,
                                     std::string, output);
 };
@@ -123,18 +125,37 @@ template <typename FImpl1, typename FImpl2, typename FImpl3>
 void TBaryon<FImpl1, FImpl2, FImpl3>::setup(void)
 {
     envTmpLat(LatticeComplex, "c");
+    envTmpLat(LatticeComplex, "c2");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl1, typename FImpl2, typename FImpl3>
 void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
 {
+
+    //std::vector<std::string> quarks = {"sud","dus"};
+    //std::vector<float> prefactors = {2.0, 1.0};
+    std::vector<std::string> quarks;
+    std::string qq = "sud dus";
+    quarks = strToVec<std::string>(qq);    
+    std::vector<double> prefactors;
+    std::string pp = "2.0 -1.0";
+    prefactors = strToVec<double>(pp);    
+
+    int nQ=quarks.size();
+    for (int iQ1 = 0; iQ1 < nQ; iQ1++){
+        for (int iQ2 = 0; iQ2 < nQ; iQ2++){
+            LOG(Message) << prefactors[iQ1]*prefactors[iQ2] << "*<" << quarks[iQ1] << "|" << quarks[iQ2] << ">" << std::endl;
+        }
+    }
+
     LOG(Message) << "Computing baryon contraction '" << getName() << "' < " << par().quarks_snk << " | " << par().quarks_src << " > using"
                  << " quarks '" << par().q1_src << "', and a diquark formed of ('" << par().q2_src << "', and '"
                  << par().q3_src << "') at the source and (Gamma^A,Gamma^B) = ( " << par().GammaA << " , " << par().GammaB 
                  << " ) and parity " << par().parity << "." << std::endl;
     
     envGetTmp(LatticeComplex, c);
+    envGetTmp(LatticeComplex, c2);
     Result     result;
     int nt = env().getDim(Tp);
     result.corr.resize(nt);
@@ -144,6 +165,7 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     Gamma GammaB(ggB[0]);
     std::vector<TComplex> buf;
     TComplex cs;
+    TComplex ch;
     const int  parity {par().parity};
     const char * quarks_snk{par().quarks_snk.c_str()};
     const char * quarks_src{par().quarks_src.c_str()};
@@ -159,7 +181,15 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
         LOG(Message) << "(propagator already sinked)" << std::endl;
         for (unsigned int t = 0; t < buf.size(); ++t)
         {
-            BaryonUtils<FIMPL>::ContractBaryons_Sliced(q1_src[t],q2_src[t],q3_src[t],GammaA,GammaB,quarks_snk,quarks_src,parity,cs);
+            cs = Zero();
+            for (int iQ1 = 0; iQ1 < nQ; iQ1++){
+                for (int iQ2 = 0; iQ2 < nQ; iQ2++){
+                    BaryonUtils<FIMPL>::ContractBaryons_Sliced(q1_src[t],q2_src[t],q3_src[t],GammaA,GammaB,quarks[iQ1].c_str(),quarks[iQ2].c_str(),parity,ch);
+                    cs += prefactors[iQ1]*prefactors[iQ2]*ch;
+                }
+            }
+                    
+          /*  BaryonUtils<FIMPL>::ContractBaryons_Sliced(q1_src[t],q2_src[t],q3_src[t],GammaA,GammaB,quarks_snk,quarks_src,parity,cs);*/
             result.corr[t] = TensorRemove(cs);
         }
     }
@@ -173,14 +203,28 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
         ns = vm().getModuleNamespace(env().getObjectModule(par().sink));
         if (ns == "MSource")
         {
-            BaryonUtils<FIMPL>::ContractBaryons(q1_src,q2_src,q3_src,GammaA,GammaB,quarks_snk,quarks_src,parity,c);
+            c=Zero();
+            for (int iQ1 = 0; iQ1 < nQ; iQ1++){
+                for (int iQ2 = 0; iQ2 < nQ; iQ2++){
+                    BaryonUtils<FIMPL>::ContractBaryons(q1_src,q2_src,q3_src,GammaA,GammaB,quarks[iQ1].c_str(),quarks[iQ2].c_str(),parity,c2);
+                    c+=prefactors[iQ1]*prefactors[iQ2]*c2;
+                }
+            }
+   //            BaryonUtils<FIMPL>::ContractBaryons(q1_src,q2_src,q3_src,GammaA,GammaB,quarks_snk,quarks_src,parity,c);
             PropagatorField1 &sink = envGet(PropagatorField1, par().sink);
             auto test = closure(trace(sink*c));     
             sliceSum(test, buf, Tp); 
         }
         else if (ns == "MSink")
         {
-            BaryonUtils<FIMPL>::ContractBaryons(q1_src,q2_src,q3_src,GammaA,GammaB,quarks_snk,quarks_src,parity,c);
+            c=Zero();
+            for (int iQ1 = 0; iQ1 < nQ; iQ1++){
+                for (int iQ2 = 0; iQ2 < nQ; iQ2++){
+                    BaryonUtils<FIMPL>::ContractBaryons(q1_src,q2_src,q3_src,GammaA,GammaB,quarks[iQ1].c_str(),quarks[iQ2].c_str(),parity,c2);
+                    c+=prefactors[iQ1]*prefactors[iQ2]*c2;
+                }
+            }
+            //BaryonUtils<FIMPL>::ContractBaryons(q1_src,q2_src,q3_src,GammaA,GammaB,quarks_snk,quarks_src,parity,c);
             SinkFnScalar &sink = envGet(SinkFnScalar, par().sink);
             buf = sink(c);
         } 
