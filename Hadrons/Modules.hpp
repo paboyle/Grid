@@ -56,8 +56,6 @@
 #include <Hadrons/Modules/MContraction/A2AAslashField.hpp>
 #include <Hadrons/Modules/MContraction/Baryon.hpp>
 #include <Hadrons/Modules/MContraction/Meson.hpp>
-#include <Hadrons/Modules/MDistil/BContraction.hpp>
-#include <Hadrons/Modules/MDistil/Baryon2pt.hpp>
 #include <Hadrons/Modules/MDistil/DistilVectors.hpp>
 #include <Hadrons/Modules/MDistil/LapEvec.hpp>
 #include <Hadrons/Modules/MDistil/Noises.hpp>

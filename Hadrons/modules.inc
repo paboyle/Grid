@@ -55,8 +55,6 @@ modules_cc =\
   Modules/MContraction/DiscLoop.cc \
   Modules/MContraction/Meson.cc \
   Modules/MContraction/WeakEye3pt.cc \
-  Modules/MDistil/BContraction.cc \
-  Modules/MDistil/Baryon2pt.cc \
   Modules/MDistil/DistilVectors.cc \
   Modules/MDistil/LapEvec.cc \
   Modules/MDistil/Noises.cc \
@@ -135,8 +133,6 @@ modules_hpp =\
   Modules/MContraction/A2AAslashField.hpp \
   Modules/MContraction/Baryon.hpp \
   Modules/MContraction/Meson.hpp \
-  Modules/MDistil/BContraction.hpp \
-  Modules/MDistil/Baryon2pt.hpp \
   Modules/MDistil/DistilVectors.hpp \
   Modules/MDistil/LapEvec.hpp \
   Modules/MDistil/Noises.hpp \
