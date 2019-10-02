@@ -92,7 +92,7 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 
 
   static const int epsilon[6][3] = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
-  static const int epsilon_sgn[6]= {1,1,1,-1,-1,-1};
+  static const Complex epsilon_sgn[6]= {1,1,1,-1,-1,-1};
 
     auto gD1a = GammaA * GammaA * D1;
     auto gD1b = GammaA * g4 * GammaA * D1;
