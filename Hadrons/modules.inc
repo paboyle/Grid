@@ -8,6 +8,7 @@ modules_cc =\
   Modules/MSource/Gauss.cc \
   Modules/MSource/SeqGamma.cc \
   Modules/MSource/Momentum.cc \
+  Modules/MSource/MomentumPhase.cc \
   Modules/MScalarSUN/TwoPoint.cc \
   Modules/MScalarSUN/TransProj.cc \
   Modules/MScalarSUN/TwoPointNPR.cc \
@@ -77,6 +78,7 @@ modules_cc =\
 modules_hpp =\
   Modules/MSource/Gauss.hpp \
   Modules/MSource/Momentum.hpp \
+  Modules/MSource/MomentumPhase.hpp \
   Modules/MSource/SeqAslash.hpp \
   Modules/MSource/Z2.hpp \
   Modules/MSource/Point.hpp \

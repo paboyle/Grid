@@ -1,5 +1,6 @@
 #include <Hadrons/Modules/MSource/Gauss.hpp>
 #include <Hadrons/Modules/MSource/Momentum.hpp>
+#include <Hadrons/Modules/MSource/MomentumPhase.hpp>
 #include <Hadrons/Modules/MSource/SeqAslash.hpp>
 #include <Hadrons/Modules/MSource/Z2.hpp>
 #include <Hadrons/Modules/MSource/Point.hpp>
