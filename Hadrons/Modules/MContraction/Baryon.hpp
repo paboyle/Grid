@@ -46,16 +46,14 @@ class BaryonPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(BaryonPar,
-                                    std::string, q1_src,
-                                    std::string, q2_src,
-                                    std::string, q3_src,
+                                    std::string, q1,
+                                    std::string, q2,
+                                    std::string, q3,
                                     std::string, GammaA,
                                     std::string, GammaB,
-/*                                    std::vector<std::string>, quarks,
-                                    std::vector<double>, prefactors,*/
-                                    std::string, quarks_snk,
-                                    std::string, quarks_src,
-                                    int, parity, //=1
+                                    std::string, quarks,
+                                    std::string, prefactors,
+                                    std::string, parity,
                                     std::string, sink,
                                     std::string, output);
 };
@@ -107,7 +105,7 @@ TBaryon<FImpl1, FImpl2, FImpl3>::TBaryon(const std::string name)
 template <typename FImpl1, typename FImpl2, typename FImpl3>
 std::vector<std::string> TBaryon<FImpl1, FImpl2, FImpl3>::getInput(void)
 {
-    std::vector<std::string> input = {par().q1_src, par().q2_src, par().q3_src, par().sink};
+    std::vector<std::string> input = {par().q1, par().q2, par().q3, par().sink};
     
     return input;
 }
@@ -133,26 +131,22 @@ template <typename FImpl1, typename FImpl2, typename FImpl3>
 void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
 {
 
-    //std::vector<std::string> quarks = {"sud","dus"};
-    //std::vector<float> prefactors = {2.0, 1.0};
-    std::vector<std::string> quarks;
-    std::string qq = "sud dus";
-    quarks = strToVec<std::string>(qq);    
-    std::vector<double> prefactors;
-    std::string pp = "2.0 -1.0";
-    prefactors = strToVec<double>(pp);    
-
+    std::vector<std::string> quarks = strToVec<std::string>(par().quarks);    
+    std::vector<double> prefactors = strToVec<double>(par().prefactors);    
     int nQ=quarks.size();
-    for (int iQ1 = 0; iQ1 < nQ; iQ1++){
-        for (int iQ2 = 0; iQ2 < nQ; iQ2++){
-            LOG(Message) << prefactors[iQ1]*prefactors[iQ2] << "*<" << quarks[iQ1] << "|" << quarks[iQ2] << ">" << std::endl;
-        }
-    }
+    const int  parity {par().parity.size()>0 ? std::stoi(par().parity) : 1};
 
-    LOG(Message) << "Computing baryon contraction '" << getName() << "' < " << par().quarks_snk << " | " << par().quarks_src << " > using"
-                 << " quarks '" << par().q1_src << "', and a diquark formed of ('" << par().q2_src << "', and '"
-                 << par().q3_src << "') at the source and (Gamma^A,Gamma^B) = ( " << par().GammaA << " , " << par().GammaB 
-                 << " ) and parity " << par().parity << "." << std::endl;
+    assert(prefactors.size()==nQ && "number of prefactors needs to match number of quark-structures.");
+    for (int iQ = 0; iQ < nQ; iQ++)
+        assert(quarks[iQ].size()==3 && "quark-structures must consist of 3 quarks each.");
+
+    LOG(Message) << "Computing baryon contractions '" << getName() << "'" << std::endl;
+    for (int iQ1 = 0; iQ1 < nQ; iQ1++)
+        for (int iQ2 = 0; iQ2 < nQ; iQ2++)
+            LOG(Message) << prefactors[iQ1]*prefactors[iQ2] << "*<" << quarks[iQ1] << "|" << quarks[iQ2] << ">" << std::endl;
+    LOG(Message) << " using quarks" << par().q1 << "', " << par().q2 << "', and '"
+                 << par().q3 << "' and (Gamma^A,Gamma^B) = ( " << par().GammaA << " , " << par().GammaB 
+                 << " ) and parity " << parity << " using sink " << par().sink << "." << std::endl;
     
     envGetTmp(LatticeComplex, c);
     envGetTmp(LatticeComplex, c2);
@@ -166,17 +160,14 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     std::vector<TComplex> buf;
     TComplex cs;
     TComplex ch;
-    const int  parity {par().parity};
-    const char * quarks_snk{par().quarks_snk.c_str()};
-    const char * quarks_src{par().quarks_src.c_str()};
 
-    if (envHasType(SlicedPropagator1, par().q1_src) and
-        envHasType(SlicedPropagator2, par().q2_src) and
-        envHasType(SlicedPropagator3, par().q3_src))
+    if (envHasType(SlicedPropagator1, par().q1) and
+        envHasType(SlicedPropagator2, par().q2) and
+        envHasType(SlicedPropagator3, par().q3))
     {
-        auto &q1_src = envGet(SlicedPropagator1, par().q1_src);
-        auto &q2_src = envGet(SlicedPropagator2, par().q2_src);
-        auto &q3_src = envGet(SlicedPropagator3, par().q3_src);
+        auto &q1 = envGet(SlicedPropagator1, par().q1);
+        auto &q2 = envGet(SlicedPropagator2, par().q2);
+        auto &q3 = envGet(SlicedPropagator3, par().q3);
         
         LOG(Message) << "(propagator already sinked)" << std::endl;
         for (unsigned int t = 0; t < buf.size(); ++t)
@@ -184,20 +175,18 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
             cs = Zero();
             for (int iQ1 = 0; iQ1 < nQ; iQ1++){
                 for (int iQ2 = 0; iQ2 < nQ; iQ2++){
-                    BaryonUtils<FIMPL>::ContractBaryons_Sliced(q1_src[t],q2_src[t],q3_src[t],GammaA,GammaB,quarks[iQ1].c_str(),quarks[iQ2].c_str(),parity,ch);
+                    BaryonUtils<FIMPL>::ContractBaryons_Sliced(q1[t],q2[t],q3[t],GammaA,GammaB,quarks[iQ1].c_str(),quarks[iQ2].c_str(),parity,ch);
                     cs += prefactors[iQ1]*prefactors[iQ2]*ch;
                 }
             }
-                    
-          /*  BaryonUtils<FIMPL>::ContractBaryons_Sliced(q1_src[t],q2_src[t],q3_src[t],GammaA,GammaB,quarks_snk,quarks_src,parity,cs);*/
             result.corr[t] = TensorRemove(cs);
         }
     }
     else
     {
-       auto       &q1_src = envGet(PropagatorField1, par().q1_src);
-       auto       &q2_src = envGet(PropagatorField2, par().q2_src);
-       auto       &q3_src = envGet(PropagatorField3, par().q3_src);
+       auto       &q1 = envGet(PropagatorField1, par().q1);
+       auto       &q2 = envGet(PropagatorField2, par().q2);
+       auto       &q3 = envGet(PropagatorField3, par().q3);
         std::string ns;
                 
         ns = vm().getModuleNamespace(env().getObjectModule(par().sink));
@@ -206,11 +195,10 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
             c=Zero();
             for (int iQ1 = 0; iQ1 < nQ; iQ1++){
                 for (int iQ2 = 0; iQ2 < nQ; iQ2++){
-                    BaryonUtils<FIMPL>::ContractBaryons(q1_src,q2_src,q3_src,GammaA,GammaB,quarks[iQ1].c_str(),quarks[iQ2].c_str(),parity,c2);
+                    BaryonUtils<FIMPL>::ContractBaryons(q1,q2,q3,GammaA,GammaB,quarks[iQ1].c_str(),quarks[iQ2].c_str(),parity,c2);
                     c+=prefactors[iQ1]*prefactors[iQ2]*c2;
                 }
             }
-   //            BaryonUtils<FIMPL>::ContractBaryons(q1_src,q2_src,q3_src,GammaA,GammaB,quarks_snk,quarks_src,parity,c);
             PropagatorField1 &sink = envGet(PropagatorField1, par().sink);
             auto test = closure(trace(sink*c));     
             sliceSum(test, buf, Tp); 
@@ -220,11 +208,10 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
             c=Zero();
             for (int iQ1 = 0; iQ1 < nQ; iQ1++){
                 for (int iQ2 = 0; iQ2 < nQ; iQ2++){
-                    BaryonUtils<FIMPL>::ContractBaryons(q1_src,q2_src,q3_src,GammaA,GammaB,quarks[iQ1].c_str(),quarks[iQ2].c_str(),parity,c2);
+                    BaryonUtils<FIMPL>::ContractBaryons(q1,q2,q3,GammaA,GammaB,quarks[iQ1].c_str(),quarks[iQ2].c_str(),parity,c2);
                     c+=prefactors[iQ1]*prefactors[iQ2]*c2;
                 }
             }
-            //BaryonUtils<FIMPL>::ContractBaryons(q1_src,q2_src,q3_src,GammaA,GammaB,quarks_snk,quarks_src,parity,c);
             SinkFnScalar &sink = envGet(SinkFnScalar, par().sink);
             buf = sink(c);
         } 
