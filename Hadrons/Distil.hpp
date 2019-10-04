@@ -230,9 +230,6 @@ struct DistilParameters: Serializable {
     }
     return i;
   }
-
-  int getTI( const Environment & env, bool bCalledFromSetup ) const {
-    return ParameterDefault( TI, env.getDim(Tdir), bCalledFromSetup ); }
 };
 
 #define DISTIL_PARAMETERS_DEFINE( inSetup ) \
@@ -240,9 +237,9 @@ const int Nt{env().getDim(Tdir)}; \
 const int nvec{par().nvec}; \
 const int nnoise{par().Distil.nnoise}; \
 const int tsrc{par().Distil.tsrc}; \
-const int TI{par().Distil.getTI(env(), inSetup)}; \
+const int TI{Hadrons::MDistil::DistilParameters::ParameterDefault(par().Distil.TI, Nt,   inSetup)}; \
 const int LI{Hadrons::MDistil::DistilParameters::ParameterDefault(par().Distil.LI, nvec, inSetup)}; \
-const int SI{Hadrons::MDistil::DistilParameters::ParameterDefault(par().Distil.SI, Ns, inSetup)}; \
+const int SI{Hadrons::MDistil::DistilParameters::ParameterDefault(par().Distil.SI, Ns,   inSetup)}; \
 const bool full_tdil{ TI == Nt }; \
 const bool exact_distillation{ full_tdil && LI == nvec }; \
 const int Nt_inv{ full_tdil ? 1 : TI }
