@@ -64,7 +64,7 @@ void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, i
 
   thread_region
   {
-    std::vector < vobj , commAllocator<vobj> > B(Nm); // Thread private
+    std::vector < vobj > B(Nm); // Thread private
     thread_for_in_region(ss, grid->oSites(),{
       for(int j=j0; j<j1; ++j) B[j]=0.;
       

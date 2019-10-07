@@ -80,7 +80,7 @@ public:
 	  theFFT.FFT_all_dim(out,prop_k,FFT::backward);
         }
 	//phase for boundary condition
-	out = out * exp(Scalar(2.0*M_PI)*ci*ph);
+	out = out * exp(ci*ph);
       };
 
       virtual void FreePropagator(const FermionField &in,FermionField &out,RealD mass,std::vector<Complex> boundary,std::vector<double> twist) {
