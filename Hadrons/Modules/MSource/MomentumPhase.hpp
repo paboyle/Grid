@@ -140,7 +140,7 @@ void TMomentumPhase<FImpl>::execute(void)
 
         envGetTmp(LatticeComplex, coor);
         p  = strToVec<Real>(par().mom);
-        ph = Zero();
+        ph = zero;
         for(unsigned int mu = 0; mu < env().getNd(); mu++)
         {
             LatticeCoordinate(coor, mu);
