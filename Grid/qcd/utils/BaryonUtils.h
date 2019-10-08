@@ -31,8 +31,6 @@
 
 NAMESPACE_BEGIN(Grid);
 
-#undef DELTA_F_EQ_2
-
 template <typename FImpl>
 class BaryonUtils 
 {
@@ -43,6 +41,9 @@ public:
 
   typedef typename FImpl::SitePropagator pobj;
   typedef typename ComplexField::vector_object vobj;
+  
+  static constexpr int epsilon[6][3] = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
+  static constexpr Complex epsilon_sgn[6]= {1,1,1,-1,-1,-1};
 
   private: 
   template <class mobj, class robj>
@@ -52,7 +53,7 @@ public:
 				 const Gamma GammaA,
 				 const Gamma GammaB,
 				 const int parity,
-				 const std::vector<int> &wick_contractions,
+				 const int * wick_contractions,
   				 robj &result);
   public:
   static void ContractBaryons(const PropagatorField &q1_src,
@@ -77,6 +78,11 @@ public:
 };
 
 template <class FImpl>
+constexpr int BaryonUtils<FImpl>::epsilon[6][3];
+template <class FImpl>
+constexpr Complex BaryonUtils<FImpl>::epsilon_sgn[6];
+
+template <class FImpl>
 template <class mobj, class robj>
 void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 						 const mobj &D2,
@@ -84,15 +90,11 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 						 const Gamma GammaA,
 						 const Gamma GammaB,
 						 const int parity,
-						 const std::vector<int> &wick_contraction,
+						 const int * wick_contraction,
 						 robj &result)
 {
 
   Gamma g4(Gamma::Algebra::GammaT); //needed for parity P_\pm = 0.5*(1 \pm \gamma_4)
-
-
-  static const int epsilon[6][3] = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
-  static const Complex epsilon_sgn[6]= {1,1,1,-1,-1,-1};
 
     auto gD1a = GammaA * GammaA * D1;
     auto gD1b = GammaA * g4 * GammaA * D1;
@@ -176,7 +178,7 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_src,
 						 const int parity,
 						 ComplexField &baryon_corr)
 {
-  std::cout << "quarks_snk " << quarks_snk[0] << quarks_snk[1] << quarks_snk[2] <<  std::endl;
+  std::cout << "Contraction <" << quarks_snk[0] << quarks_snk[1] << quarks_snk[2] << "|" << quarks_src[0] << quarks_src[1] << quarks_src[2] << ">" << std::endl;
     std::cout << "GammaA " << (GammaA.g) <<  std::endl;
     std::cout << "GammaB " << (GammaB.g) <<  std::endl;
  
@@ -184,17 +186,10 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_src,
 
   GridBase *grid = q1_src.Grid();
 
-  Gamma g4(Gamma::Algebra::GammaT); //needed for parity P_\pm = 0.5*(1 \pm \gamma_4)
-
-  static const int epsilon[6][3] = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
-  static const int epsilon_sgn[6]= {1,1,1,-1,-1,-1};
-  std::vector<int> wick_contraction = {0,0,0,0,0,0};
-
+  int wick_contraction[6];
   for (int ie=0; ie < 6 ; ie++)
-    if (quarks_src[0] == quarks_snk[epsilon[ie][0]] && quarks_src[1] == quarks_snk[epsilon[ie][1]] && quarks_src[2] == quarks_snk[epsilon[ie][2]])
-      wick_contraction[ie]=1;
+    wick_contraction[ie] = (quarks_src[0] == quarks_snk[epsilon[ie][0]] && quarks_src[1] == quarks_snk[epsilon[ie][1]] && quarks_src[2] == quarks_snk[epsilon[ie][2]]) ? 1 : 0;
 
-//  typedef typename ComplexField::vector_object vobj;
   auto vbaryon_corr= baryon_corr.View();
   auto v1 = q1_src.View();
   auto v2 = q2_src.View();
@@ -225,18 +220,15 @@ void BaryonUtils<FImpl>::ContractBaryons_Sliced(const mobj &D1,
 						 const int parity,
 						 robj &result)
 {
+  std::cout << "Contraction <" << quarks_snk[0] << quarks_snk[1] << quarks_snk[2] << "|" << quarks_src[0] << quarks_src[1] << quarks_src[2] << ">" << std::endl;
+    std::cout << "GammaA " << (GammaA.g) <<  std::endl;
+    std::cout << "GammaB " << (GammaB.g) <<  std::endl;
  
   assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
 
-  Gamma g4(Gamma::Algebra::GammaT); //needed for parity P_\pm = 0.5*(1 \pm \gamma_4)
-
-  static const int epsilon[6][3] = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
-  static const int epsilon_sgn[6]= {1,1,1,-1,-1,-1};
-  std::vector<int> wick_contraction = {0,0,0,0,0,0};
-
+  int wick_contraction[6];
   for (int ie=0; ie < 6 ; ie++)
-    if (quarks_src[0] == quarks_snk[epsilon[ie][0]] && quarks_src[1] == quarks_snk[epsilon[ie][1]] && quarks_src[2] == quarks_snk[epsilon[ie][2]])
-      wick_contraction[ie]=1;
+    wick_contraction[ie] = (quarks_src[0] == quarks_snk[epsilon[ie][0]] && quarks_src[1] == quarks_snk[epsilon[ie][1]] && quarks_src[2] == quarks_snk[epsilon[ie][2]]) ? 1 : 0;
 
      result=Zero();
      baryon_site(D1,D2,D3,GammaA,GammaB,parity,wick_contraction,result);

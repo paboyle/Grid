@@ -71,6 +71,11 @@ public:
     {
     public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
+                                        Gamma::Algebra, gammaA,
+                                        Gamma::Algebra, gammaB,
+                                        std::string, quarks,
+                                        std::string, prefactors,
+                                        int, parity,
                                         std::vector<Complex>, corr);
     };
 public:
@@ -144,15 +149,14 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     for (int iQ1 = 0; iQ1 < nQ; iQ1++)
         for (int iQ2 = 0; iQ2 < nQ; iQ2++)
             LOG(Message) << prefactors[iQ1]*prefactors[iQ2] << "*<" << quarks[iQ1] << "|" << quarks[iQ2] << ">" << std::endl;
-    LOG(Message) << " using quarks" << par().q1 << "', " << par().q2 << "', and '"
+    LOG(Message) << " using quarks " << par().q1 << "', " << par().q2 << "', and '"
                  << par().q3 << "' and (Gamma^A,Gamma^B) = ( " << par().GammaA << " , " << par().GammaB 
                  << " ) and parity " << parity << " using sink " << par().sink << "." << std::endl;
+        
     
     envGetTmp(LatticeComplex, c);
     envGetTmp(LatticeComplex, c2);
-    Result     result;
     int nt = env().getDim(Tp);
-    result.corr.resize(nt);
     std::vector<Gamma::Algebra> ggA = strToVec<Gamma::Algebra>(par().GammaA);
     Gamma GammaA(ggA[0]);
     std::vector<Gamma::Algebra> ggB = strToVec<Gamma::Algebra>(par().GammaB);
@@ -160,6 +164,14 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     std::vector<TComplex> buf;
     TComplex cs;
     TComplex ch;
+
+    Result     result;
+    result.corr.resize(nt);
+    result.gammaA = ggA[0];
+    result.gammaB = ggB[0];
+    result.parity = parity;
+    result.quarks = par().quarks;
+    result.prefactors = par().prefactors;
 
     if (envHasType(SlicedPropagator1, par().q1) and
         envHasType(SlicedPropagator2, par().q2) and

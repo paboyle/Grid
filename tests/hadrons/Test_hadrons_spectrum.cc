@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
     // run setup ///////////////////////////////////////////////////////////////
     Application              application;
     std::vector<std::string> flavour = {"l", "s", "c1", "c2", "c3"};
+    std::vector<std::string> flavour_baryon = {"l", "s", "a", "b", "c"}; //needs to be a single character
     std::vector<double>      mass    = {.01, .04, .2  , .25 , .3  };
     
     // global parameters
@@ -134,6 +135,11 @@ int main(int argc, char *argv[])
         barPar.q1     = "Qpt_" + flavour[i];
         barPar.q2     = "Qpt_" + flavour[j];
         barPar.q3     = "Qpt_" + flavour[k];
+        barPar.GammaA     = "Identity";
+        barPar.GammaB     = "GammaZGamma5"; //C*GammaX
+        barPar.quarks     = flavour_baryon[i] + flavour_baryon[j] + flavour_baryon[k];
+        barPar.prefactors     = "1.0";
+        barPar.sink    = "sink";
         application.createModule<MContraction::Baryon>(
             "baryon_pt_" + flavour[i] + flavour[j] + flavour[k], barPar);
     }
