@@ -75,7 +75,7 @@ public:
                                     std::string,  q1,
                                     std::string,  q2,
                                     std::string,  q3,
-                                    std::string,  gammas,
+                                    std::string,  gamma,
                                     unsigned int, tSnk,
                                     std::string,  output);
 };
@@ -149,7 +149,7 @@ void TGamma3pt<FImpl1, FImpl2, FImpl3>::parseGammaString(std::vector<Gamma::Alge
 {
     gammaList.clear();
     // Determine gamma matrices to insert at source/sink.
-    if (par().gammas.compare("all") == 0)
+    if (par().gamma.compare("all") == 0)
     {
         // Do all contractions.
         for (unsigned int i = 1; i < Gamma::nGamma; i += 2)
@@ -160,7 +160,7 @@ void TGamma3pt<FImpl1, FImpl2, FImpl3>::parseGammaString(std::vector<Gamma::Alge
     else
     {
         // Parse individual contractions from input string.
-        gammaList = strToVec<Gamma::Algebra>(par().gammas);
+        gammaList = strToVec<Gamma::Algebra>(par().gamma);
     } 
 }
 // execution ///////////////////////////////////////////////////////////////////
@@ -169,7 +169,7 @@ void TGamma3pt<FImpl1, FImpl2, FImpl3>::execute(void)
 {
     LOG(Message) << "Computing 3pt contractions '" << getName() << "' using"
                  << " quarks '" << par().q1 << "', '" << par().q2 << "' and '"
-                 << par().q3 << "', with " << par().gammas << " insertions." 
+                 << par().q3 << "', with " << par().gamma << " insertions." 
                  << std::endl;
 
     // Initialise variables. q2 and q3 are normal propagators, q1 may be 
