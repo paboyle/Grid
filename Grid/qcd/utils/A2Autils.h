@@ -112,7 +112,7 @@ public:
 			int orthogdim);
 #endif
 private:
-  inline static void OuterProductWWVV(std::vector<PropagatorField> &WWVV,
+  inline static void OuterProductWWVV(PropagatorField &WWVV,
                                const vobj &lhs,
                                const vobj &rhs,
                                const int Ns, const int ss);
@@ -1028,8 +1028,7 @@ A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
   //////////////////////////
   // Fast outer product of tmp1 with a sum of terms suppressed by d_unroll
   //////////////////////////
-  auto WWVV_v = WWVV[t].View();
-  OuterProductWWVV(WWVV_v, tmp1, tmp2, Ns, ss);
+  OuterProductWWVV(WWVV[t], tmp1, tmp2, Ns, ss);
 
       }}
     }
@@ -1046,7 +1045,7 @@ A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
                               const FermionField *vs,
                               const FermionField *vd)
 {
-  GridBase *grid = vs[0]._grid;
+  GridBase *grid = vs[0].Grid();
 
   int nd    = grid->_ndimension;
   int Nsimd = grid->Nsimd();
@@ -1059,7 +1058,7 @@ A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
   Eigen::Matrix<Complex, -1, -1, Eigen::RowMajor> buf;
 
   for(int t=0;t<N_t;t++){
-    WWVV[t] = zero;
+    WWVV[t] = Zero();
   }
 
   for (int t = 0; t < N_t; t++){
@@ -1082,7 +1081,7 @@ A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
     //////////////////////////
     // Fast outer product of tmp1 with a sum of terms suppressed by d_unroll
     //////////////////////////
-    OuterProductWWVV(WWVV, tmp1, tmp2, Ns, ss);
+    OuterProductWWVV(WWVV[t], tmp1, tmp2, Ns, ss);
       }}
     });
   }
@@ -1092,19 +1091,20 @@ template <class FImpl>
 inline void A2Autils<FImpl>::OuterProductWWVV(PropagatorField &WWVV,
                                              const vobj &lhs,
                                              const vobj &rhs,
-                                             const int Ns, const int ss, const int t)
+                                             const int Ns, const int ss)
 {
+  auto WWVV_v = WWVV.View();
   for (int s1 = 0; s1 < Ns; s1++){
     for (int s2 = 0; s2 < Ns; s2++){
-      WWVV[ss]()(s1,s2)(0, 0) += lhs()(s1)(0) * rhs()(s2)(0);
-      WWVV[ss]()(s1,s2)(0, 1) += lhs()(s1)(0) * rhs()(s2)(1);
-      WWVV[ss]()(s1,s2)(0, 2) += lhs()(s1)(0) * rhs()(s2)(2);
-      WWVV[ss]()(s1,s2)(1, 0) += lhs()(s1)(1) * rhs()(s2)(0);
-      WWVV[ss]()(s1,s2)(1, 1) += lhs()(s1)(1) * rhs()(s2)(1);
-      WWVV[ss]()(s1,s2)(1, 2) += lhs()(s1)(1) * rhs()(s2)(2);
-      WWVV[ss]()(s1,s2)(2, 0) += lhs()(s1)(2) * rhs()(s2)(0);
-      WWVV[ss]()(s1,s2)(2, 1) += lhs()(s1)(2) * rhs()(s2)(1);
-      WWVV[ss]()(s1,s2)(2, 2) += lhs()(s1)(2) * rhs()(s2)(2);
+      WWVV_v[ss]()(s1,s2)(0, 0) += lhs()(s1)(0) * rhs()(s2)(0);
+      WWVV_v[ss]()(s1,s2)(0, 1) += lhs()(s1)(0) * rhs()(s2)(1);
+      WWVV_v[ss]()(s1,s2)(0, 2) += lhs()(s1)(0) * rhs()(s2)(2);
+      WWVV_v[ss]()(s1,s2)(1, 0) += lhs()(s1)(1) * rhs()(s2)(0);
+      WWVV_v[ss]()(s1,s2)(1, 1) += lhs()(s1)(1) * rhs()(s2)(1);
+      WWVV_v[ss]()(s1,s2)(1, 2) += lhs()(s1)(1) * rhs()(s2)(2);
+      WWVV_v[ss]()(s1,s2)(2, 0) += lhs()(s1)(2) * rhs()(s2)(0);
+      WWVV_v[ss]()(s1,s2)(2, 1) += lhs()(s1)(2) * rhs()(s2)(1);
+      WWVV_v[ss]()(s1,s2)(2, 2) += lhs()(s1)(2) * rhs()(s2)(2);
     }
   }
 }
