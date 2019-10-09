@@ -349,12 +349,7 @@ void TStagMeson<FImpl1, FImpl2>::setup(void)
     Lattice<iScalar<vInteger> > x(env().getGrid()); LatticeCoordinate(x,0);
     Lattice<iScalar<vInteger> > y(env().getGrid()); LatticeCoordinate(y,1);
     Lattice<iScalar<vInteger> > z(env().getGrid()); LatticeCoordinate(z,2);
-    Lattice<iScalar<vInteger> > t(env().getGrid()); LatticeCoordinate(t,3);
-    Lattice<iScalar<vInteger> > lin_x(env().getGrid()); lin_x=y+z+t;
-    Lattice<iScalar<vInteger> > lin_y(env().getGrid()); lin_y=x+z+t;
-    Lattice<iScalar<vInteger> > lin_z(env().getGrid()); lin_z=x+y+t;
-    Lattice<iScalar<vInteger> > lin_5(env().getGrid()); lin_5=x+y+z+t;
-
+    
     // coordinate of source
     std::vector<int> src_coor = strToVec<int>(static_cast<MSource::StagPoint *>(vm().getModule(par().source))->par().position);
     // local taste non-singlet ops, including ``Hermiticity" phase,
@@ -367,23 +362,21 @@ void TStagMeson<FImpl1, FImpl2>::setup(void)
         switch(gammaList[i]) {
                 
             case Gamma::Algebra::GammaX  :
-                stag_phase_sink[i] = where( mod(lin_x,2)==(Integer)0, stag_phase_sink[i], -stag_phase_sink[i]);
-                if((src_coor[1]+src_coor[2]+src_coor[3])%2) stag_phase_source[i]= -stag_phase_source[i];
+                stag_phase_sink[i] = where( mod(x,2)==(Integer)0, stag_phase_sink[i], -stag_phase_sink[i]);
+                if((src_coor[0])%2) stag_phase_source[i]= -stag_phase_source[i];
                 break;
                 
             case Gamma::Algebra::GammaY  :
-                stag_phase_sink[i] = where( mod(lin_y,2)==(Integer)0, stag_phase_sink[i], -stag_phase_sink[i]);
-                if((src_coor[0]+src_coor[2]+src_coor[3])%2) stag_phase_source[i]= -stag_phase_source[i];
+                stag_phase_sink[i] = where( mod(y,2)==(Integer)0, stag_phase_sink[i], -stag_phase_sink[i]);
+                if((src_coor[1])%2) stag_phase_source[i]= -stag_phase_source[i];
                 break;
                 
             case Gamma::Algebra::GammaZ  :
-                stag_phase_sink[i] = where( mod(lin_z,2)==(Integer)0, stag_phase_sink[i], -stag_phase_sink[i]);
-                if((src_coor[0]+src_coor[1]+src_coor[3])%2) stag_phase_source[i] = -stag_phase_source[i];
+                stag_phase_sink[i] = where( mod(z,2)==(Integer)0, stag_phase_sink[i], -stag_phase_sink[i]);
+                if((src_coor[2])%2) stag_phase_source[i] = -stag_phase_source[i];
                 break;
 
             case Gamma::Algebra::Gamma5  :
-                stag_phase_sink[i] = where( mod(lin_5,2)==(Integer)0, stag_phase_sink[i], -stag_phase_sink[i]);
-                if((src_coor[0]+src_coor[1]+src_coor[2]+src_coor[3])%2) stag_phase_source[i] = -stag_phase_source[i];
                 break;
 
             default :
