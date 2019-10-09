@@ -135,23 +135,49 @@ void TBaryon<FImpl1, FImpl2,FImpl3>::parseGammaString(std::vector<GammaABPair> &
     
     std::string gammaString = par().gammas;
     //Shorthands for standard baryon operators
-    gammaString = regex_replace(gammaString, std::regex("j12"),"Identity SigmaXZ");
-    gammaString = regex_replace(gammaString, std::regex("j32X"),"Identity GammaZGamma5");
-    gammaString = regex_replace(gammaString, std::regex("j32Y"),"Identity GammaT");
-    gammaString = regex_replace(gammaString, std::regex("j32Z"),"Identity GammaXGamma5");
+    gammaString = regex_replace(gammaString, std::regex("j12"),"(Identity SigmaXZ)");
+    gammaString = regex_replace(gammaString, std::regex("j32X"),"(Identity GammaZGamma5)");
+    gammaString = regex_replace(gammaString, std::regex("j32Y"),"(Identity GammaT)");
+    gammaString = regex_replace(gammaString, std::regex("j32Z"),"(Identity GammaXGamma5)");
     //Shorthands for less common baryon operators
-    gammaString = regex_replace(gammaString, std::regex("j12_alt1"),"Gamma5 SigmaYT");
-    gammaString = regex_replace(gammaString, std::regex("j12_alt2"),"Identity GammaYGamma5");
-  
-    std::vector<GammaAB> gamma_help;
-    gamma_help = strToVec<GammaAB>(gammaString);
-    LOG(Message) << gamma_help.size() << " " << gamma_help.size()%2 << std::endl;
-    assert(gamma_help.size()%2==0 && "need even number of gamma-pairs.");
-    gammaList.resize(gamma_help.size()/2);
+    gammaString = regex_replace(gammaString, std::regex("j12_alt1"),"(Gamma5 SigmaYT)");
+    gammaString = regex_replace(gammaString, std::regex("j12_alt2"),"(Identity GammaYGamma5)");
+    
+    //A single gamma matrix 
+    std::regex rex_g("([0-9a-zA-Z]+)");
+    //The full string we expect
+    std::regex rex("( *\\(( *\\(([0-9a-zA-Z]+) +([0-9a-zA-Z]+) *\\)){2} *\\) *)+");
+    std::smatch sm;
+    std::regex_match(gammaString, sm, rex);
+    assert(sm[0].matched && "invalid gamma structure.");
 
-    for (int i = 0; i < gamma_help.size()/2; i++){
-        gammaList[i].first=gamma_help[2*i];
-        gammaList[i].second=gamma_help[2*i+1];
+    auto gamma_begin = std::sregex_iterator(gammaString.begin(), gammaString.end(), rex_g);
+    auto gamma_end = std::sregex_iterator();
+
+    //couldn't find out how to count the size in the iterator, other than looping through it...
+    int nGamma=0;
+    for (std::sregex_iterator i = gamma_begin; i != gamma_end; ++i) {
+	nGamma++;
+    }   
+    gammaList.resize(nGamma/4);
+    std::vector<std::string> gS;
+    gS.resize(nGamma);
+    //even more ugly workarounds here...
+    int iG=0;
+    for (std::sregex_iterator i = gamma_begin; i != gamma_end; ++i) {
+        std::smatch match = *i;                                                 
+        gS[iG] = match.str(); 
+	iG++;
+    }
+    for (int i = 0; i < gammaList.size(); i++){
+	std::vector<Gamma::Algebra> gS1 = strToVec<Gamma::Algebra>(gS[4*i]);
+	std::vector<Gamma::Algebra> gS2 = strToVec<Gamma::Algebra>(gS[4*i+1]);
+	std::vector<Gamma::Algebra> gS3 = strToVec<Gamma::Algebra>(gS[4*i+2]);
+	std::vector<Gamma::Algebra> gS4 = strToVec<Gamma::Algebra>(gS[4*i+3]);
+        gammaList[i].first.first=gS1[0];
+        gammaList[i].first.second=gS2[0];
+        gammaList[i].second.first=gS3[0];
+        gammaList[i].second.second=gS4[0];
     }
 }
 
@@ -201,8 +227,8 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     for (unsigned int i = 0; i < result.size(); ++i)
     {
         result[i].gammaA_left = gammaList[i].first.first;
-        result[i].gammaA_left = gammaList[i].first.first;
-        result[i].gammaB_right = gammaList[i].second.second;
+        result[i].gammaB_left = gammaList[i].first.second;
+        result[i].gammaA_right = gammaList[i].second.first;
         result[i].gammaB_right = gammaList[i].second.second;
         result[i].corr.resize(nt);
         result[i].parity = parity;
