@@ -42,6 +42,9 @@ BEGIN_HADRONS_NAMESPACE
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MContraction)
 
+typedef std::pair<Gamma::Algebra, Gamma::Algebra> GammaAB;
+typedef std::pair<GammaAB, GammaAB> GammaABPair;
+
 class BaryonPar: Serializable
 {
 public:
@@ -49,8 +52,7 @@ public:
                                     std::string, q1,
                                     std::string, q2,
                                     std::string, q3,
-                                    std::string, GammaA,
-                                    std::string, GammaB,
+                                    std::string, gammas,
                                     std::string, quarks,
                                     std::string, prefactors,
                                     std::string, parity,
@@ -71,8 +73,10 @@ public:
     {
     public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        Gamma::Algebra, gammaA,
-                                        Gamma::Algebra, gammaB,
+                                        Gamma::Algebra, gammaA_left,
+                                        Gamma::Algebra, gammaB_left,
+                                        Gamma::Algebra, gammaA_right,
+                                        Gamma::Algebra, gammaB_right,
                                         std::string, quarks,
                                         std::string, prefactors,
                                         int, parity,
@@ -86,6 +90,7 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+    virtual void parseGammaString(std::vector<GammaABPair> &gammaList);
 protected:
     // setup
     virtual void setup(void);
@@ -123,6 +128,33 @@ std::vector<std::string> TBaryon<FImpl1, FImpl2, FImpl3>::getOutput(void)
     return out;
 }
 
+template <typename FImpl1, typename FImpl2, typename FImpl3>
+void TBaryon<FImpl1, FImpl2,FImpl3>::parseGammaString(std::vector<GammaABPair> &gammaList)
+{
+    gammaList.clear();
+    
+    std::string gammaString = par().gammas;
+    //Shorthands for standard baryon operators
+    gammaString = regex_replace(gammaString, std::regex("j12"),"Identity SigmaXZ");
+    gammaString = regex_replace(gammaString, std::regex("j32X"),"Identity GammaZGamma5");
+    gammaString = regex_replace(gammaString, std::regex("j32Y"),"Identity GammaT");
+    gammaString = regex_replace(gammaString, std::regex("j32Z"),"Identity GammaXGamma5");
+    //Shorthands for less common baryon operators
+    gammaString = regex_replace(gammaString, std::regex("j12_alt1"),"Gamma5 SigmaYT");
+    gammaString = regex_replace(gammaString, std::regex("j12_alt2"),"Identity GammaYGamma5");
+  
+    std::vector<GammaAB> gamma_help;
+    gamma_help = strToVec<GammaAB>(gammaString);
+    LOG(Message) << gamma_help.size() << " " << gamma_help.size()%2 << std::endl;
+    assert(gamma_help.size()%2==0 && "need even number of gamma-pairs.");
+    gammaList.resize(gamma_help.size()/2);
+
+    for (int i = 0; i < gamma_help.size()/2; i++){
+        gammaList[i].first=gamma_help[2*i];
+        gammaList[i].second=gamma_help[2*i+1];
+    }
+}
+
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl1, typename FImpl2, typename FImpl3>
 void TBaryon<FImpl1, FImpl2, FImpl3>::setup(void)
@@ -141,6 +173,9 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     int nQ=quarks.size();
     const int  parity {par().parity.size()>0 ? std::stoi(par().parity) : 1};
 
+    std::vector<GammaABPair> gammaList;
+    parseGammaString(gammaList);
+
     assert(prefactors.size()==nQ && "number of prefactors needs to match number of quark-structures.");
     for (int iQ = 0; iQ < nQ; iQ++)
         assert(quarks[iQ].size()==3 && "quark-structures must consist of 3 quarks each.");
@@ -149,29 +184,31 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     for (int iQ1 = 0; iQ1 < nQ; iQ1++)
         for (int iQ2 = 0; iQ2 < nQ; iQ2++)
             LOG(Message) << prefactors[iQ1]*prefactors[iQ2] << "*<" << quarks[iQ1] << "|" << quarks[iQ2] << ">" << std::endl;
-    LOG(Message) << " using quarks " << par().q1 << "', " << par().q2 << "', and '"
-                 << par().q3 << "' and (Gamma^A,Gamma^B) = ( " << par().GammaA << " , " << par().GammaB 
-                 << " ) and parity " << parity << " using sink " << par().sink << "." << std::endl;
+    LOG(Message) << " using quarks " << par().q1 << "', " << par().q2 << "', and '" << par().q3 << std::endl;
+     for (int iG = 0; iG < gammaList.size(); iG++)
+         LOG(Message) << "' with (Gamma^A,Gamma^B)_left = ( " << gammaList[iG].first.first << " , " << gammaList[iG].first.second << "') and (Gamma^A,Gamma^B)_right = ( " << gammaList[iG].second.first << " , " << gammaList[iG].second.second << ")" << std::endl; 
+      LOG(Message) << "and parity " << parity << " using sink " << par().sink << "." << std::endl;
         
-    
     envGetTmp(LatticeComplex, c);
     envGetTmp(LatticeComplex, c2);
     int nt = env().getDim(Tp);
-    std::vector<Gamma::Algebra> ggA = strToVec<Gamma::Algebra>(par().GammaA);
-    Gamma GammaA(ggA[0]);
-    std::vector<Gamma::Algebra> ggB = strToVec<Gamma::Algebra>(par().GammaB);
-    Gamma GammaB(ggB[0]);
     std::vector<TComplex> buf;
     TComplex cs;
     TComplex ch;
 
-    Result     result;
-    result.corr.resize(nt);
-    result.gammaA = ggA[0];
-    result.gammaB = ggB[0];
-    result.parity = parity;
-    result.quarks = par().quarks;
-    result.prefactors = par().prefactors;
+    std::vector<Result>    result;
+    result.resize(gammaList.size());
+    for (unsigned int i = 0; i < result.size(); ++i)
+    {
+        result[i].gammaA_left = gammaList[i].first.first;
+        result[i].gammaA_left = gammaList[i].first.first;
+        result[i].gammaB_right = gammaList[i].second.second;
+        result[i].gammaB_right = gammaList[i].second.second;
+        result[i].corr.resize(nt);
+        result[i].parity = parity;
+        result[i].quarks = par().quarks;
+        result[i].prefactors = par().prefactors;
+    }
 
     if (envHasType(SlicedPropagator1, par().q1) and
         envHasType(SlicedPropagator2, par().q2) and
@@ -180,56 +217,71 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
         auto &q1 = envGet(SlicedPropagator1, par().q1);
         auto &q2 = envGet(SlicedPropagator2, par().q2);
         auto &q3 = envGet(SlicedPropagator3, par().q3);
-        
-        LOG(Message) << "(propagator already sinked)" << std::endl;
-        for (unsigned int t = 0; t < buf.size(); ++t)
+        for (unsigned int i = 0; i < result.size(); ++i)
         {
-            cs = Zero();
-            for (int iQ1 = 0; iQ1 < nQ; iQ1++){
-                for (int iQ2 = 0; iQ2 < nQ; iQ2++){
-                    BaryonUtils<FIMPL>::ContractBaryons_Sliced(q1[t],q2[t],q3[t],GammaA,GammaB,quarks[iQ1].c_str(),quarks[iQ2].c_str(),parity,ch);
-                    cs += prefactors[iQ1]*prefactors[iQ2]*ch;
+            Gamma gAl(gammaList[i].first.first);
+            Gamma gBl(gammaList[i].first.second);
+            Gamma gAr(gammaList[i].second.first);
+            Gamma gBr(gammaList[i].second.second);
+        
+            LOG(Message) << "(propagator already sinked)" << std::endl;
+            for (unsigned int t = 0; t < buf.size(); ++t)
+            {
+                cs = Zero();
+                for (int iQ1 = 0; iQ1 < nQ; iQ1++){
+                    for (int iQ2 = 0; iQ2 < nQ; iQ2++){
+                        BaryonUtils<FIMPL>::ContractBaryons_Sliced(q1[t],q2[t],q3[t],gAl,gBl,gAr,gBr,quarks[iQ1].c_str(),quarks[iQ2].c_str(),parity,ch);
+                        cs += prefactors[iQ1]*prefactors[iQ2]*ch;
+                    }
                 }
+                result[i].corr[t] = TensorRemove(cs);
             }
-            result.corr[t] = TensorRemove(cs);
         }
     }
     else
     {
-       auto       &q1 = envGet(PropagatorField1, par().q1);
-       auto       &q2 = envGet(PropagatorField2, par().q2);
-       auto       &q3 = envGet(PropagatorField3, par().q3);
-        std::string ns;
+        auto       &q1 = envGet(PropagatorField1, par().q1);
+        auto       &q2 = envGet(PropagatorField2, par().q2);
+        auto       &q3 = envGet(PropagatorField3, par().q3);
+        for (unsigned int i = 0; i < result.size(); ++i)
+        {
+            Gamma gAl(gammaList[i].first.first);
+            Gamma gBl(gammaList[i].first.second);
+            Gamma gAr(gammaList[i].second.first);
+            Gamma gBr(gammaList[i].second.second);
+        
+            std::string ns;
                 
-        ns = vm().getModuleNamespace(env().getObjectModule(par().sink));
-        if (ns == "MSource")
-        {
-            c=Zero();
-            for (int iQ1 = 0; iQ1 < nQ; iQ1++){
-                for (int iQ2 = 0; iQ2 < nQ; iQ2++){
-                    BaryonUtils<FIMPL>::ContractBaryons(q1,q2,q3,GammaA,GammaB,quarks[iQ1].c_str(),quarks[iQ2].c_str(),parity,c2);
-                    c+=prefactors[iQ1]*prefactors[iQ2]*c2;
+            ns = vm().getModuleNamespace(env().getObjectModule(par().sink));
+            if (ns == "MSource")
+            {
+                c=Zero();
+                for (int iQ1 = 0; iQ1 < nQ; iQ1++){
+                    for (int iQ2 = 0; iQ2 < nQ; iQ2++){
+                        BaryonUtils<FIMPL>::ContractBaryons(q1,q2,q3,gAl,gBl,gAr,gBr,quarks[iQ1].c_str(),quarks[iQ2].c_str(),parity,c2);
+                        c+=prefactors[iQ1]*prefactors[iQ2]*c2;
+                    }
                 }
+                PropagatorField1 &sink = envGet(PropagatorField1, par().sink);
+                auto test = closure(trace(sink*c));     
+                sliceSum(test, buf, Tp); 
             }
-            PropagatorField1 &sink = envGet(PropagatorField1, par().sink);
-            auto test = closure(trace(sink*c));     
-            sliceSum(test, buf, Tp); 
-        }
-        else if (ns == "MSink")
-        {
-            c=Zero();
-            for (int iQ1 = 0; iQ1 < nQ; iQ1++){
-                for (int iQ2 = 0; iQ2 < nQ; iQ2++){
-                    BaryonUtils<FIMPL>::ContractBaryons(q1,q2,q3,GammaA,GammaB,quarks[iQ1].c_str(),quarks[iQ2].c_str(),parity,c2);
-                    c+=prefactors[iQ1]*prefactors[iQ2]*c2;
+            else if (ns == "MSink")
+            {
+                c=Zero();
+                for (int iQ1 = 0; iQ1 < nQ; iQ1++){
+                    for (int iQ2 = 0; iQ2 < nQ; iQ2++){
+                        BaryonUtils<FIMPL>::ContractBaryons(q1,q2,q3,gAl,gBl,gAr,gBr,quarks[iQ1].c_str(),quarks[iQ2].c_str(),parity,c2);
+                        c+=prefactors[iQ1]*prefactors[iQ2]*c2;
+                    }
                 }
+                SinkFnScalar &sink = envGet(SinkFnScalar, par().sink);
+                buf = sink(c);
+            } 
+            for (unsigned int t = 0; t < buf.size(); ++t)
+            {
+                result[i].corr[t] = TensorRemove(buf[t]);
             }
-            SinkFnScalar &sink = envGet(SinkFnScalar, par().sink);
-            buf = sink(c);
-        } 
-        for (unsigned int t = 0; t < buf.size(); ++t)
-        {
-            result.corr[t] = TensorRemove(buf[t]);
         }
     }
 

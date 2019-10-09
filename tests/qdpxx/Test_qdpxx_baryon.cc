@@ -479,51 +479,49 @@ void calc_grid(Grid::LatticeGaugeField &Umu, Grid::LatticePropagator &qU, Grid::
 
   Grid::GridCartesian *UGrid = (Grid::GridCartesian *)Umu.Grid();
 
-  
   Grid::Gamma G_A = Grid::Gamma(Grid::Gamma::Algebra::Identity);
   Grid::Gamma G_B = Grid::Gamma(Grid::Gamma::Algebra::GammaZGamma5); // OmegaX: C*GammaX = i* GammaZ*Gamma5
-  char quarks[] = "sss";
 
   Grid::LatticeComplex c(UGrid);
   Grid::LatticeComplex c1(UGrid);
 
   if(! baryon.compare("OmegaX")){
-    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qS,qS,qS,G_A,G_B,quarks,quarks,1,c);  
+    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qS,qS,qS,G_A,G_B,G_A,G_B,"sss","sss",1,c);  
     c*=0.5;
     std::cout << "Grid-Omega factor 2 larger than Chroma-Omega!!!" << std::endl; 
   } else if (! baryon.compare("OmegaY")){
     G_B = Grid::Gamma(Grid::Gamma::Algebra::GammaT);
-    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qS,qS,qS,G_A,G_B,quarks,quarks,1,c);  
+    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qS,qS,qS,G_A,G_B,G_A,G_B,"sss","sss",1,c);  
     c*=0.5;
     std::cout << "Grid-Omega factor 2 larger than Chroma-Omega!!!" << std::endl; 
   } else if (! baryon.compare("OmegaZ")){
     G_B = Grid::Gamma(Grid::Gamma::Algebra::GammaXGamma5);
-    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qS,qS,qS,G_A,G_B,quarks,quarks,1,c);  
+    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qS,qS,qS,G_A,G_B,G_A,G_B,"sss","sss",1,c);  
     c*=0.5;
     std::cout << "Grid-Omega factor 2 larger than Chroma-Omega!!!" << std::endl; 
   } else if (! baryon.compare("Proton")){
     G_B = Grid::Gamma(Grid::Gamma::Algebra::SigmaXZ);
-    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qU,qD,qU,G_A,G_B,"udu","udu",1,c); 
+    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qU,qD,qU,G_A,G_B,G_A,G_B,"udu","udu",1,c); 
     std::cout << "UKHadron-Proton has flipped diquarks in original code." << std::endl; 
   } else if (! baryon.compare("Lambda")){
     G_B = Grid::Gamma(Grid::Gamma::Algebra::SigmaXZ);
-    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qS,qU,qD,G_A,G_B,"sud","sud",1,c1); //<ud>s 
+    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qS,qU,qD,G_A,G_B,G_A,G_B,"sud","sud",1,c1); //<ud>s 
     c = 4.*c1; 
-    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qD,qU,qS,G_A,G_B,"dus","dus",1,c1); //<us>d 
+    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qD,qU,qS,G_A,G_B,G_A,G_B,"dus","dus",1,c1); //<us>d 
     c += c1; 
-    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qU,qD,qS,G_A,G_B,"uds","uds",1,c1); //<ds>u  
+    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qU,qD,qS,G_A,G_B,G_A,G_B,"uds","uds",1,c1); //<ds>u  
     c += c1; 
-    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qD,qU,qS,G_A,G_B,"sud","dus",1,c1); //(sud) 
+    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qD,qU,qS,G_A,G_B,G_A,G_B,"dus","sud",1,c1); //(sud) 
     c += 2.*c1; 
-    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qU,qD,qS,G_A,G_B,"sud","uds",1,c1); //(sdu) 
+    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qU,qD,qS,G_A,G_B,G_A,G_B,"uds","sud",1,c1); //(sdu) 
     c -= 2.*c1; 
-    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qS,qU,qD,G_A,G_B,"dus","sud",1,c1); //(dus) 
+    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qS,qU,qD,G_A,G_B,G_A,G_B,"sud","dus",1,c1); //(dus) 
     c += 2.*c1; 
-    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qU,qD,qS,G_A,G_B,"dus","uds",1,c1); //-(dsu) 
+    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qU,qD,qS,G_A,G_B,G_A,G_B,"uds","dus",1,c1); //-(dsu) 
     c -= c1; 
-    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qS,qU,qD,G_A,G_B,"uds","sud",1,c1); //(uds) 
+    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qS,qU,qD,G_A,G_B,G_A,G_B,"sud","uds",1,c1); //(uds) 
     c -= 2.*c1; 
-    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qD,qU,qS,G_A,G_B,"uds","dus",1,c1); //-(usd) 
+    BaryonUtils<Grid::WilsonImplR>::ContractBaryons(qD,qU,qS,G_A,G_B,G_A,G_B,"dus","uds",1,c1); //-(usd) 
     c -= c1; 
     std::cout << "UKHadron-Lambda has flipped diquarks in original code." << std::endl; 
   } else {
