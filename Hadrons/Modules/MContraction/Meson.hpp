@@ -142,7 +142,7 @@ protected:
     virtual void execute(void);
 private:
     std::vector<Gamma::Algebra>        gammaList;
-    std::vector<int>                   stag_phase_source;
+    std::vector<Integer>               stag_phase_source;
 };
 MODULE_REGISTER_TMP(Meson, ARG(TMeson<FIMPL, FIMPL>), MContraction);
 MODULE_REGISTER_TMP(StagMeson, ARG(TStagMeson<STAGIMPL, STAGIMPL>), MContraction);
