@@ -32,20 +32,6 @@ The calculation requires three propagators:
 
 *******************************************************************************/
 
-// We need to preempt the defaul fermion stuff,
-// which gets loaded from Global.hpp by Application.hpp
-// #ifndef FIMPLBASE
-// #define FIMPLBASE WilsonImpl
-// #endif
-
-// #ifndef FIMPLBASE
-// #define FIMPLBASE StaggeredImpl
-// #endif
-
-// #ifndef ZFIMPLBASE
-// #define ZFIMPLBASE ZWilsonImpl
-// #endif
-
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>
 
@@ -85,7 +71,7 @@ int main(int argc, char *argv[])
     MIO::LoadNerscPar ldNerscPar;
     ldNerscPar.file = "config/ckpoint_lat";
     application.createModule<MIO::LoadNersc>("gauge", ldNerscPar);
-
+    
     // set fermion boundary conditions to be periodic space, antiperiodic time.
     std::string boundary = "1 1 1 -1";
     std::string twist = "0. 0. 0. 0.";
@@ -120,11 +106,11 @@ int main(int argc, char *argv[])
     srcName = "point_origin";
     application.createModule<MSource::StagPoint>(srcName, pointPar);
 
-    // scalar sink, no momentum injected
+    // point sink, no momentum injected
     MSink::Point::Par sinkPar;
     sinkPar.mom = "0 0 0";
     std::string sinkName = "sink";
-    application.createModule<MSink::ScalarPoint>(sinkName, sinkPar);
+    application.createModule<MSink::StagPoint>(sinkName, sinkPar);
 
     // Propagator from origin to (x,y,z,t) via point source at origin
     quarkName       = "quark_0t";
@@ -193,7 +179,7 @@ int main(int argc, char *argv[])
     application.createModule<MContraction::StagMeson>(mesName, mesPar);
 
     // execution
-    application.saveParameterFile("meson4ptV2.xml");
+    application.saveParameterFile("test_staggered.xml");
     application.run();
     
     // epilogue
