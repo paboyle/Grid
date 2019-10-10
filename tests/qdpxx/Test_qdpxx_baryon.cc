@@ -572,7 +572,7 @@ int main(int argc, char **argv)
   PropagatorField strange(UGrid);
   std::vector<ComplexD> res_chroma;
   std::vector<Grid::Complex> res_grid;
-  std::vector<Grid::Complex> difference;
+  Grid::Complex res_chroma_g;
 
   std::vector<std::string> baryons({"OmegaX","OmegaY","OmegaZ","Proton","Lambda"});
   int nBaryon=baryons.size();
@@ -592,9 +592,10 @@ int main(int argc, char **argv)
       for(int t=0;t<res_chroma.size();t++){
         std::cout << " Grid baryon "<<t<<" "<< res_grid[t] << std::endl;
       }
-     /* for(int t=0;t<res_chroma.size();t++){
-        std::cout << " Difference "<<t<<" "<< res_chroma[t] - res_grid[t] << std::endl;
-      }*/
+      for(int t=0;t<res_chroma.size();t++){
+	res_chroma_g = Grid::Complex(toDouble(real(res_chroma[t])), toDouble(imag(res_chroma[t])));
+        std::cout << " Difference "<<t<<" "<< res_chroma_g - res_grid[t] << std::endl;
+      }
 
       std::cout << "Finished test " << std::endl;
 
