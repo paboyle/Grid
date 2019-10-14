@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
         barPar.q1     = "Qpt_" + flavour[i];
         barPar.q2     = "Qpt_" + flavour[j];
         barPar.q3     = "Qpt_" + flavour[k];
-        barPar.gammas     = "(j12) (j12) (j32X) (j32Y)";
+        barPar.gammas     = "(j12 j12) (j32X j32Y)";
         barPar.quarks     = flavour_baryon[i] + flavour_baryon[j] + flavour_baryon[k];
         barPar.prefactors     = "1.0";
         barPar.sink    = "sink";
