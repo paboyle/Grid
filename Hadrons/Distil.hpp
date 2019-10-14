@@ -1,6 +1,6 @@
 /*************************************************************************************
  
- Grid physics library, www.github.com/paboyle/Grid
+ grid physics library, www.github.com/paboyle/Grid
  
  Source file: Hadrons/Modules/MDistil/Distil.hpp
 
@@ -663,13 +663,24 @@ inline void RotateEigen(std::vector<LatticeColourVector> & evec)
   auto grid = evec[0].Grid();
   Coordinate siteFirst(grid->Nd(),0);
   peekSite(cv0, evec[0], siteFirst);
-  auto & cplx0 = cv0()()(0);
+  Grid::Complex cplx0 = cv0()()(0);
+#ifdef GRID_NVCC
+  if( cplx0.imag() == 0 )
+#else
   if( std::imag(cplx0) == 0 )
+#endif
     std::cout << GridLogMessage << "RotateEigen() : Site 0 : " << cplx0 << " => already meets phase convention" << std::endl;
   else {
-    const auto cplx0_mag = std::abs(cplx0);
-    const auto phase = std::conj(cplx0 / cplx0_mag);
-    std::cout << GridLogMessage << "RotateEigen() : Site 0 : |" << cplx0 << "|=" << cplx0_mag << " => phase=" << (std::arg(phase) / 3.14159265) << " pi" << std::endl;
+#ifdef GRID_NVCC
+    const Real cplx0_mag = thrust::abs(cplx0);
+    const Grid::Complex phase = thrust::conj(cplx0 / cplx0_mag);
+    const Real argphase = thrust::arg(phase);
+#else
+    const Real cplx0_mag = std::abs(cplx0);
+    const Grid::Complex phase = std::conj(cplx0 / cplx0_mag);
+    const Real argphase = std::arg(phase);
+#endif
+    std::cout << GridLogMessage << "RotateEigen() : Site 0 : |" << cplx0 << "|=" << cplx0_mag << " => phase=" << (argphase / 3.14159265) << " pi" << std::endl;
     {
       // TODO: Only really needed on the master slice
       for( int k = 0 ; k < evec.size() ; k++ )
