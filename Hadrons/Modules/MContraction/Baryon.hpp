@@ -69,19 +69,19 @@ public:
     FERM_TYPE_ALIASES(FImpl3, 3);
     BASIC_TYPE_ALIASES(ScalarImplCR, Scalar);
     SINK_TYPE_ALIASES(Scalar);
-    class Result: Serializable
+    class Metadata: Serializable
     {
     public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Metadata,
                                         Gamma::Algebra, gammaA_left,
                                         Gamma::Algebra, gammaB_left,
                                         Gamma::Algebra, gammaA_right,
                                         Gamma::Algebra, gammaB_right,
                                         std::string, quarks,
                                         std::string, prefactors,
-                                        int, parity,
-                                        std::vector<Complex>, corr);
+                                        int, parity);
     };
+    typedef Correlator<Metadata> Result;
 public:
     // constructor
     TBaryon(const std::string name);
@@ -136,11 +136,11 @@ void TBaryon<FImpl1, FImpl2,FImpl3>::parseGammaString(std::vector<GammaABPair> &
     std::string gammaString = par().gammas;
     //Shorthands for standard baryon operators
     gammaString = regex_replace(gammaString, std::regex("j12"),"(Identity SigmaXZ)");
-    gammaString = regex_replace(gammaString, std::regex("j32X"),"(Identity GammaZGamma5)");
+    gammaString = regex_replace(gammaString, std::regex("j32X"),"(Identity MinusGammaZGamma5)");
     gammaString = regex_replace(gammaString, std::regex("j32Y"),"(Identity GammaT)");
     gammaString = regex_replace(gammaString, std::regex("j32Z"),"(Identity GammaXGamma5)");
     //Shorthands for less common baryon operators
-    gammaString = regex_replace(gammaString, std::regex("j12_alt1"),"(Gamma5 SigmaYT)");
+    gammaString = regex_replace(gammaString, std::regex("j12_alt1"),"(Gamma5 MinusSigmaYT)");
     gammaString = regex_replace(gammaString, std::regex("j12_alt2"),"(Identity GammaYGamma5)");
     
     //A single gamma matrix 
@@ -154,11 +154,13 @@ void TBaryon<FImpl1, FImpl2,FImpl3>::parseGammaString(std::vector<GammaABPair> &
     auto gamma_begin = std::sregex_iterator(gammaString.begin(), gammaString.end(), rex_g);
     auto gamma_end = std::sregex_iterator();
 
+    int nGamma = std::distance(gamma_begin, gamma_end); 
     //couldn't find out how to count the size in the iterator, other than looping through it...
-    int nGamma=0;
+  /*  int nGamma=0;
     for (std::sregex_iterator i = gamma_begin; i != gamma_end; ++i) {
 	nGamma++;
-    }   
+    }
+*/   
     gammaList.resize(nGamma/4);
     std::vector<std::string> gS;
     gS.resize(nGamma);
@@ -222,19 +224,11 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     TComplex cs;
     TComplex ch;
 
-    std::vector<Result>    result;
-    result.resize(gammaList.size());
-    for (unsigned int i = 0; i < result.size(); ++i)
-    {
-        result[i].gammaA_left = gammaList[i].first.first;
-        result[i].gammaB_left = gammaList[i].first.second;
-        result[i].gammaA_right = gammaList[i].second.first;
-        result[i].gammaB_right = gammaList[i].second.second;
-        result[i].corr.resize(nt);
-        result[i].parity = parity;
-        result[i].quarks = par().quarks;
-        result[i].prefactors = par().prefactors;
-    }
+    std::vector<Result> result;
+    Result              r;
+    r.info.parity = parity;
+    r.info.quarks = par().quarks;
+    r.info.prefactors = par().prefactors;
 
     if (envHasType(SlicedPropagator1, par().q1) and
         envHasType(SlicedPropagator2, par().q2) and
@@ -243,14 +237,20 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
         auto &q1 = envGet(SlicedPropagator1, par().q1);
         auto &q2 = envGet(SlicedPropagator2, par().q2);
         auto &q3 = envGet(SlicedPropagator3, par().q3);
-        for (unsigned int i = 0; i < result.size(); ++i)
+        for (unsigned int i = 0; i < gammaList.size(); ++i)
         {
+            r.info.gammaA_left = gammaList[i].first.first;
+            r.info.gammaB_left = gammaList[i].first.second;
+            r.info.gammaA_right = gammaList[i].second.first;
+            r.info.gammaB_right = gammaList[i].second.second;
+
             Gamma gAl(gammaList[i].first.first);
             Gamma gBl(gammaList[i].first.second);
             Gamma gAr(gammaList[i].second.first);
             Gamma gBr(gammaList[i].second.second);
         
             LOG(Message) << "(propagator already sinked)" << std::endl;
+            r.corr.clear();
             for (unsigned int t = 0; t < buf.size(); ++t)
             {
                 cs = Zero();
@@ -260,8 +260,9 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
                         cs += prefactors[iQ1]*prefactors[iQ2]*ch;
                     }
                 }
-                result[i].corr[t] = TensorRemove(cs);
+                r.corr.push_back(TensorRemove(cs));
             }
+            result.push_back(r);
         }
     }
     else
@@ -269,8 +270,13 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
         auto       &q1 = envGet(PropagatorField1, par().q1);
         auto       &q2 = envGet(PropagatorField2, par().q2);
         auto       &q3 = envGet(PropagatorField3, par().q3);
-        for (unsigned int i = 0; i < result.size(); ++i)
+        for (unsigned int i = 0; i < gammaList.size(); ++i)
         {
+            r.info.gammaA_left = gammaList[i].first.first;
+            r.info.gammaB_left = gammaList[i].first.second;
+            r.info.gammaA_right = gammaList[i].second.first;
+            r.info.gammaB_right = gammaList[i].second.second;
+
             Gamma gAl(gammaList[i].first.first);
             Gamma gBl(gammaList[i].first.second);
             Gamma gAr(gammaList[i].second.first);
@@ -304,10 +310,12 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
                 SinkFnScalar &sink = envGet(SinkFnScalar, par().sink);
                 buf = sink(c);
             } 
+            r.corr.clear();
             for (unsigned int t = 0; t < buf.size(); ++t)
             {
-                result[i].corr[t] = TensorRemove(buf[t]);
+                r.corr.push_back(TensorRemove(buf[t]));
             }
+            result.push_back(r);
         }
     }
 
