@@ -111,7 +111,11 @@ template <typename FImpl>
 void TLoadPerambulator<FImpl>::execute(void)
 {
   auto &perambulator = envGet(MDistil::PerambTensor, getName());
-  const std::string sPerambName{par().PerambFileName + "." + std::to_string(vm().getTrajectory())};
+  std::string sPerambName{ par().PerambFileName };
+  if( sPerambName.empty() )
+    sPerambName = getName();
+  sPerambName.append( 1, '.' );
+  sPerambName.append( std::to_string( vm().getTrajectory() ) );
   perambulator.read(sPerambName.c_str());
 }
 
