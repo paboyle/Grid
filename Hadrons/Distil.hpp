@@ -1,6 +1,6 @@
 /*************************************************************************************
  
- grid physics library, www.github.com/paboyle/Grid
+ Grid physics library, www.github.com/paboyle/Grid
  
  Source file: Hadrons/Modules/MDistil/Distil.hpp
 
