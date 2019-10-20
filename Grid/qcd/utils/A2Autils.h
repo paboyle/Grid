@@ -649,7 +649,7 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
 	      int ij_dx = m+Nmom*i + Nmom*Lblock * j + Nmom*Lblock * Rblock * lt;
 	      for(int mu=0;mu<Ngamma;mu++){
 		// this is a bit slow
-		mat(m,mu,t,i,j) = trace(lsSum[ij_dx]*Gamma(gammas[mu]));
+		mat(m,mu,t,i,j) = (trace(lsSum[ij_dx]*Gamma(gammas[mu])))()()();
 	      }
 	    }
 	  }

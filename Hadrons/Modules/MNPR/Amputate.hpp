@@ -187,7 +187,7 @@ void TAmputate<FImpl1, FImpl2>::execute(void)
     result.Vamp.resize(Gamma::nGamma/2);
     for( int mu=0; mu < Gamma::nGamma/2; mu++){
         Gamma::Algebra gam = mu;
-        result.Vamp[mu] = 1/12.0*trace(adj(Gamma(mu*2+1))*g5*Sout_inv*g5*vertex[mu]*Sin_inv);
+        result.Vamp[mu] = 1/12.0*trace(adj(Gamma(mu*2+1))*g5*Sout_inv*g5*vertex[mu]*Sin_inv)()()();
         LOG(Message) << "Vamp[" << mu << "] - " << result.Vamp[mu] << std::endl;
         }
 }
