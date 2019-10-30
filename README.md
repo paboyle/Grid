@@ -49,6 +49,10 @@ GCC   v4.9.x (recommended)
 
 GCC   v6.3 and later
 
+### Specific machine compilation instructions - Summit, Tesseract
+
+[The Wiki contains specific instructions for some Summit, Tesseract and GPU compilation](https://github.com/paboyle/Grid/wiki)
+
 ### Important: 
 
 Some versions of GCC appear to have a bug under high optimisation (-O2, -O3).

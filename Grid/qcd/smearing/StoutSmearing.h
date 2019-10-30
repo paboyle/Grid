@@ -40,7 +40,7 @@ template <class Gimpl>
 class Smear_Stout : public Smear<Gimpl> {
  private:
   int OrthogDim = -1;
-  const std::vector<double> SmearRho{};
+  const std::vector<double> SmearRho;
   // Smear<Gimpl>* ownership semantics:
   //    Smear<Gimpl>* passed in to constructor are owned by caller, so we don't delete them here
   //    Smear<Gimpl>* created within constructor need to be deleted as part of the destructor
@@ -61,7 +61,6 @@ public:
 
   /*! Stout smearing with base explicitly specified */
   Smear_Stout(Smear<Gimpl>* base) : SmearBase{base} {
-    std::cout << GridLogDebug << "Stout smearing constructor : Smear_Stout(Smear<Gimpl>* base)" << std::endl
     assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
   }
 
@@ -73,17 +72,10 @@ public:
     }
 
   /*! Default constructor. rho is constant in all directions, optionally except for orthogonal dimension */
-  Smear_Stout(double rho, int orthogdim = -1)
-  //: OwnedBase{(orthogdim<0 || orthogdim>=Nd) ? new Smear_APE<Gimpl>(rho) : new Smear_APE<Gimpl>(rho3D(rho,orthogdim))},
+  Smear_Stout(double rho = 1.0, int orthogdim = -1)
   : OrthogDim{orthogdim}, SmearRho{ rho3D(rho,orthogdim) }, OwnedBase{ new Smear_APE<Gimpl>(SmearRho) }, SmearBase{OwnedBase.get()} {
-    std::cout << GridLogDebug << "Stout smearing constructor : Smear_StoutSmear_Stout(double " << rho << ", int " << OrthogDim << " )\nrho3d=" << SmearRho << std::endl;
     assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
   }
-
-  /*
-  Smear_Stout(double rho = 1.0) : SmearBase(new Smear_APE<Gimpl>(rho)) {
-    assert(Nc == 3 && "Stout smearing currently implemented only for Nc==3");
-  }*/
 
   ~Smear_Stout() {}  // delete SmearBase...
 
@@ -91,14 +83,14 @@ public:
     GaugeField C(U.Grid());
     GaugeLinkField tmp(U.Grid()), iq_mu(U.Grid()), Umu(U.Grid());
 
-    std::cout << GridLogDebug << "Stout smearing started" << std::endl;
+    std::cout << GridLogDebug << "Stout smearing started\n";
 
     // Smear the configurations
     SmearBase->smear(C, U);
 
     for (int mu = 0; mu < Nd; mu++) {
       if( mu == OrthogDim )
-        tmp = 1.0;
+        tmp = 1.0;  // Don't smear in the orthogonal direction
       else {
         tmp = peekLorentz(C, mu);
         Umu = peekLorentz(U, mu);
@@ -109,7 +101,7 @@ public:
       }
       pokeLorentz(u_smr, tmp * Umu, mu);  // u_smr = exp(iQ_mu)*U_mu
     }
-    std::cout << GridLogDebug << "Stout smearing completed" << std::endl;
+    std::cout << GridLogDebug << "Stout smearing completed\n";
   };
 
   void derivative(GaugeField& SigmaTerm, const GaugeField& iLambda,
@@ -169,7 +161,7 @@ public:
     c0max = 2.0 * pow(tmp, 1.5);
 
     theta = acos(c0 / c0max) *
-            one_over_three;  // divide by three here, now leave as it is
+      one_over_three;  // divide by three here, now leave as it is
     u = sqrt(tmp) * cos(theta);
     w = sqrt(c1) * sin(theta);
   }
@@ -194,7 +186,7 @@ public:
     e2iu = cos(2.0 * u) + timesI(sin(2.0 * u));
 
     h0 = e2iu * (u2 - w2) +
-         emiu * ((8.0 * u2 * cosw) + (2.0 * u * (3.0 * u2 + w2) * ixi0));
+      emiu * ((8.0 * u2 * cosw) + (2.0 * u * (3.0 * u2 + w2) * ixi0));
     h1 = e2iu * (2.0 * u) - emiu * ((2.0 * u * cosw) - (3.0 * u2 - w2) * ixi0);
     h2 = e2iu - emiu * (cosw + (3.0 * u) * ixi0);
 
