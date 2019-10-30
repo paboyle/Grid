@@ -57,7 +57,8 @@ BEGIN_HADRONS_NAMESPACE
  *   - q1: sink smeared propagator, source at i
  *   - q2: propagator, source at i
  *   - q3: propagator, source at f
- *   - gamma: gamma matrix to insert
+ *   - gammas: gamma matrices to insert
+ *             (space-separated strings e.g. "GammaT GammaX GammaY") 
  *   - tSnk: sink position for propagator q1.
  *
  */
@@ -71,12 +72,12 @@ class Gamma3ptPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(Gamma3ptPar,
-                                    std::string,    q1,
-                                    std::string,    q2,
-                                    std::string,    q3,
-                                    Gamma::Algebra, gamma,
-                                    unsigned int,   tSnk,
-                                    std::string,    output);
+                                    std::string,  q1,
+                                    std::string,  q2,
+                                    std::string,  q3,
+                                    std::string,  gamma,
+                                    unsigned int, tSnk,
+                                    std::string,  output);
 };
 
 template <typename FImpl1, typename FImpl2, typename FImpl3>
@@ -100,6 +101,7 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+    virtual void parseGammaString(std::vector<Gamma::Algebra> &gammaList);
 protected:
     // setup
     virtual void setup(void);
@@ -142,37 +144,67 @@ void TGamma3pt<FImpl1, FImpl2, FImpl3>::setup(void)
     envTmpLat(LatticeComplex, "c");
 }
 
+template <typename FImpl1, typename FImpl2, typename FImpl3>
+void TGamma3pt<FImpl1, FImpl2, FImpl3>::parseGammaString(std::vector<Gamma::Algebra> &gammaList)
+{
+    gammaList.clear();
+    // Determine gamma matrices to insert at source/sink.
+    if (par().gamma.compare("all") == 0)
+    {
+        // Do all contractions.
+        for (unsigned int i = 1; i < Gamma::nGamma; i += 2)
+        {
+            gammaList.push_back((Gamma::Algebra)i);
+        }
+    }
+    else
+    {
+        // Parse individual contractions from input string.
+        gammaList = strToVec<Gamma::Algebra>(par().gamma);
+    } 
+}
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl1, typename FImpl2, typename FImpl3>
 void TGamma3pt<FImpl1, FImpl2, FImpl3>::execute(void)
 {
     LOG(Message) << "Computing 3pt contractions '" << getName() << "' using"
                  << " quarks '" << par().q1 << "', '" << par().q2 << "' and '"
-                 << par().q3 << "', with " << par().gamma << " insertion." 
+                 << par().q3 << "', with " << par().gamma << " insertions." 
                  << std::endl;
 
     // Initialise variables. q2 and q3 are normal propagators, q1 may be 
     // sink smeared.
-    auto                  &q1 = envGet(SlicedPropagator1, par().q1);
-    auto                  &q2 = envGet(PropagatorField2, par().q2);
-    auto                  &q3 = envGet(PropagatorField2, par().q3);
-    Gamma                 g5(Gamma::Algebra::Gamma5);
-    Gamma                 gamma(par().gamma);
-    std::vector<TComplex> buf;
-    Result                result;
+    auto                        &q1 = envGet(SlicedPropagator1, par().q1);
+    auto                        &q2 = envGet(PropagatorField2, par().q2);
+    auto                        &q3 = envGet(PropagatorField2, par().q3);
+    Gamma                       g5(Gamma::Algebra::Gamma5);
+    std::vector<Gamma::Algebra> gammaList;
+    std::vector<TComplex>       buf;
+    std::vector<Result>         result;
+    int                         nt = env().getDim(Tp);
+
+
+    parseGammaString(gammaList);
+    result.resize(gammaList.size());
+    for (unsigned int i = 0; i < result.size(); ++i)
+    {
+        result[i].gamma = gammaList[i];
+        result[i].corr.resize(nt);
+    }
     
     // Extract relevant timeslice of sinked propagator q1, then contract &
     // sum over all spacial positions of gamma insertion.
     SitePropagator1 q1Snk = q1[par().tSnk];
     envGetTmp(LatticeComplex, c);
-    c = trace(g5*q1Snk*adj(q2)*(g5*gamma)*q3);
-    sliceSum(c, buf, Tp);
-
-    result.gamma = par().gamma;
-    result.corr.resize(buf.size());
-    for (unsigned int t = 0; t < buf.size(); ++t)
+    for (unsigned int i = 0; i < result.size(); ++i)
     {
-        result.corr[t] = TensorRemove(buf[t]);
+        Gamma gamma(gammaList[i]);
+        c = trace(g5*q1Snk*adj(q2)*(g5*gamma)*q3);
+        sliceSum(c, buf, Tp);
+        for (unsigned int t = 0; t < buf.size(); ++t)
+        {
+            result[i].corr[t] = TensorRemove(buf[t]);
+        }
     }
     saveResult(par().output, "gamma3pt", result);
 }
