@@ -27,51 +27,24 @@ See the full license in the file "LICENSE" in the top level distribution directo
 /*  END LEGAL */
 
 #include <Hadrons/Application.hpp>
-#include <sys/stat.h>
-#include <fstream>
-#include <string>
 
 using namespace Grid;
+using namespace QCD;
 using namespace Hadrons;
-
-// Does the specified file exist?
-bool FileExists(const std::string& Filename)
-{
-  struct stat buf;
-  return stat(Filename.c_str(), &buf) != -1;
-}
-
-void Shorten( Application &app, const std::string &FileList, const std::string OutFileName )
-{
-  std::vector<std::string> Except;
-  std::ifstream list{ FileList };
-  for( std::string s; std::getline(list, s); ) {
-    //const std::string::size_type l{ s.find_first_of( '.' ) };
-    //if( l != std::string::npos )
-      //s.resize( l );
-    if( s.length() )
-      Except.push_back( s );
-  }
-  std::sort( Except.begin(), Except.end() );
-  for( const std::string &s : Except )
-    std::cout << s << std::endl;
-  app.saveParameterFile( OutFileName, Except );
-}
 
 int main(int argc, char *argv[])
 {
     // parse command line
     std::string parameterFileName;
     
-    if (argc != 2 && argc != 4)
+    if (argc != 2)
     {
-        std::cerr << "usage: " << argv[0] << " <parameter file> [filelist.txt output.xml]";
+        std::cerr << "usage: " << argv[0] << " <parameter file>";
         std::cerr << std::endl;
         std::exit(EXIT_FAILURE);
     }
     parameterFileName = argv[1];
-    if( argc == 4 )
-        Grid_init(&argc, &argv);
+    
     try
     {
         Application application(parameterFileName);
@@ -81,22 +54,11 @@ int main(int argc, char *argv[])
         vm.getModuleGraph();
         LOG(Message) << "Application valid (check XML warnings though)" 
                      << std::endl;
-      if( argc == 4 ) {
-        const std::string FileList{ argv[3] };
-        const std::string OutFileName{ argv[2] };
-        if( !FileExists( FileList ) )
-          std::cout << "File list \"" << FileList << "\" does not exist" << std::endl;
-        else {
-          Shorten( application, FileList, OutFileName );
-        }
-      }
     }
     catch (const std::exception& e)
     {
         Exceptions::abort(e);
     }
-    if( argc == 4 )
-        Grid_finalize();
-
+    
     return EXIT_SUCCESS;
 }
