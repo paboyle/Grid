@@ -51,7 +51,7 @@ BEGIN_MODULE_NAMESPACE(MDistil)
 struct StoutParameters: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(StoutParameters,
                                   int, steps,
-                                  double, rho) // TODO: change name of this to rho
+                                  double, rho) 
   StoutParameters() = default;
   template <class ReaderClass> StoutParameters(Reader<ReaderClass>& Reader){read(Reader,"StoutSmearing",*this);}
 };
@@ -243,7 +243,7 @@ void TLapEvec<GImpl>::execute(void)
     Chebyshev<LatticeColourVector> Cheb(ChebPar.alpha,ChebPar.beta,ChebPar.PolyOrder);
     
     // Construct source vector according to Test_dwf_compressed_lanczos.cc
-    src = 11.0;
+    src = 11.0;  //TODO: Why hard-coded 11?
     RealD nn = norm2(src);
     nn = Grid::sqrt(nn);
     src = src * (1.0/nn);

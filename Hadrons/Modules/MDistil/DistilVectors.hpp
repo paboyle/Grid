@@ -198,7 +198,6 @@ void TDistilVectors<FImpl>::setup(void)
   
   
   envTmp(LatticeSpinColourVector, "tmp2",1,LatticeSpinColourVector(grid4d));
-  //envTmp(LatticeColourVector, "tmp_nospin",1,LatticeColourVector(grid4d));
   envTmp(LatticeSpinColourVector, "tmp3d",1,LatticeSpinColourVector(grid3d));
   envTmp(LatticeColourVector, "tmp3d_nospin",1,LatticeColourVector(grid3d));
   envTmp(LatticeSpinColourVector, "sink_tslice",1,LatticeSpinColourVector(grid3d));
@@ -261,7 +260,6 @@ void TDistilVectors<FImpl>::execute(void)
                 for (int ik = dk; ik < nvec; ik += LI){
                   for (int is = ds; is < Ns; is += SI){
                     ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv-Ntfirst,Tdir);
-                    //tmp3d_nospin = evec3d * noise[inoise + nnoise*(t_inv + Nt*(ik+nvec*is))];
                     tmp3d_nospin = evec3d * noise(inoise, t_inv, ik, is);
                     tmp3d=0;
                     pokeSpin(tmp3d,tmp3d_nospin,is);

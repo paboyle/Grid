@@ -132,7 +132,7 @@ void TNoises<FImpl>::execute(void)
   if( UniqueIdentifier.length() == 0 ) {
     UniqueIdentifier = getName();
   }
-  UniqueIdentifier.append( std::to_string( vm().getTrajectory() ) ); //maybe add more??
+  UniqueIdentifier.append( std::to_string( vm().getTrajectory() ) ); 
   
   GridSerialRNG sRNG;
   sRNG.SeedUniqueString(UniqueIdentifier);
@@ -143,13 +143,11 @@ void TNoises<FImpl>::execute(void)
       for( int ivec = 0; ivec < nvec; ivec++ ) {
         for( int is = 0; is < Ns; is++ ) {
           if( exact_distillation )
-            //noise[inoise + nnoise*(t + Nt*(ivec+nvec*is))] = 1.;
             noise(inoise, t, ivec, is) = 1.;
           else{
             random(sRNG,rn);
             // We could use a greater number of complex roots of unity
             // ... but this seems to work well
-            //noise[inoise + nnoise*(t + Nt*(ivec+nvec*is))] = (rn > 0.5) ? -1 : 1;
             noise(inoise, t, ivec, is) = (rn > 0.5) ? -1 : 1;
           }
         }

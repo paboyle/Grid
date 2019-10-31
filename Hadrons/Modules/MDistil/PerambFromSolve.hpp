@@ -126,7 +126,6 @@ void TPerambFromSolve<FImpl>::setup(void)
   const int LI_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().LI_reduced, LI, true) };
   grid4d = env().getGrid();
   grid3d = MakeLowerDimGrid(grid4d);
-  //std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
   envCreate(PerambTensor, getName(), 1, PerambIndexNames,Nt,nvec_reduced,LI_reduced,nnoise,Nt_inv,SI);
   envCreate(NoiseTensor, getName() + "_noise", 1, nnoise, Nt, nvec, Ns );
   envTmp(LatticeColourVector, "result_3d",1,LatticeColourVector(grid3d));
@@ -173,7 +172,7 @@ void TPerambFromSolve<FImpl>::execute(void)
               for (int ivec = 0; ivec < nvec_reduced; ivec++) {
                 ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Tdir);
                 pokeSpin(perambulator(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
-                std::cout <<  "perambulator(t, ivec, dk, inoise,dt,ds)(is) = (" << t << "," << ivec << "," << dk << "," << inoise << "," << dt << "," << ds << ")(" << is << ") = " <<  perambulator(t, ivec, dk, inoise,dt,ds)()(is)() << std::endl;
+                LOG(Message) <<  "perambulator(t, ivec, dk, inoise,dt,ds)(is) = (" << t << "," << ivec << "," << dk << "," << inoise << "," << dt << "," << ds << ")(" << is << ") = " <<  perambulator(t, ivec, dk, inoise,dt,ds)()(is)() << std::endl;
               }
             }
           }
@@ -188,7 +187,6 @@ void TPerambFromSolve<FImpl>::execute(void)
       sPerambName = getName();
     sPerambName.append( "." );
     sPerambName.append( std::to_string(vm().getTrajectory()));
-    //perambulator.WriteBinary(sPerambName);
     perambulator.write(sPerambName.c_str());
   }
 }
