@@ -155,6 +155,37 @@ void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_M
   if(nscan==3 && HPEhypercube ) OptimalCommunicatorHypercube(processors,optimal_comm);
   else                          OptimalCommunicatorSharedMemory(processors,optimal_comm);
 }
+static inline int divides(int a,int b)
+{
+  return ( b == ( (b/a)*a ) );
+}
+void GlobalSharedMemory::GetShmDims(const Coordinate &WorldDims,Coordinate &ShmDims)
+{
+  ////////////////////////////////////////////////////////////////
+  // Assert power of two shm_size.
+  ////////////////////////////////////////////////////////////////
+  int log2size = Log2Size(WorldShmSize,MAXLOG2RANKSPERNODE);
+  assert(log2size != -1);
+
+  int ndimension = WorldDims.size();
+  ShmDims=Coordinate(ndimension,1);
+
+  std::vector<int> primes({2,3,5});
+
+  int dim = 0;
+  int AutoShmSize = 1;
+  while(AutoShmSize != WorldShmSize) {
+    for(int p=0;p<primes.size();p++) {
+      int prime=primes[p];
+      if ( divides(prime,WorldDims[dim]/ShmDims[dim]) ) {
+	AutoShmSize*=prime;
+	ShmDims[dim]*=prime;
+	break;
+      }
+    }
+    dim=(dim+1) %ndimension;
+  }
+}
 void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
 {
   ////////////////////////////////////////////////////////////////
@@ -221,17 +252,13 @@ void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processo
   // in a maximally symmetrical way
   ////////////////////////////////////////////////////////////////
   int ndimension              = processors.size();
-  std::vector<int> processor_coor(ndimension);
-  std::vector<int> WorldDims = processors.toVector();
-  std::vector<int> ShmDims  (ndimension,1);  std::vector<int> NodeDims (ndimension);
-  std::vector<int> ShmCoor  (ndimension);    std::vector<int> NodeCoor (ndimension);    std::vector<int> WorldCoor(ndimension);
-  std::vector<int> HyperCoor(ndimension);
-  int dim = 0;
-  for(int l2=0;l2<log2size;l2++){
-    while ( (WorldDims[dim] / ShmDims[dim]) <= 1 ) dim=(dim+1)%ndimension;
-    ShmDims[dim]*=2;
-    dim=(dim+1)%ndimension;
-    }
+  Coordinate processor_coor(ndimension);
+  Coordinate WorldDims = processors;
+  Coordinate ShmDims  (ndimension);  Coordinate NodeDims (ndimension);
+  Coordinate ShmCoor  (ndimension);    Coordinate NodeCoor (ndimension);    Coordinate WorldCoor(ndimension);
+  Coordinate HyperCoor(ndimension);
+
+  GetShmDims(WorldDims,ShmDims);
 
   ////////////////////////////////////////////////////////////////
   // Establish torus of processes and nodes with sub-blockings
@@ -281,11 +308,6 @@ void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processo
 }
 void GlobalSharedMemory::OptimalCommunicatorSharedMemory(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
 {
-  ////////////////////////////////////////////////////////////////
-  // Assert power of two shm_size.
-  ////////////////////////////////////////////////////////////////
-  int log2size = Log2Size(WorldShmSize,MAXLOG2RANKSPERNODE);
-  assert(log2size != -1);
 
   ////////////////////////////////////////////////////////////////
   // Identify subblock of ranks on node spreading across dims
@@ -293,15 +315,10 @@ void GlobalSharedMemory::OptimalCommunicatorSharedMemory(const Coordinate &proce
   ////////////////////////////////////////////////////////////////
   int ndimension              = processors.size();
   Coordinate processor_coor(ndimension);
-  Coordinate WorldDims = processors; Coordinate ShmDims(ndimension,1);  Coordinate NodeDims (ndimension);
+  Coordinate WorldDims = processors; Coordinate ShmDims(ndimension);  Coordinate NodeDims (ndimension);
   Coordinate ShmCoor(ndimension);    Coordinate NodeCoor(ndimension);   Coordinate WorldCoor(ndimension);
-  int dim = 0;
-  for(int l2=0;l2<log2size;l2++){
-    while ( (WorldDims[dim] / ShmDims[dim]) <= 1 ) dim=(dim+1)%ndimension;
-    ShmDims[dim]*=2;
-    dim=(dim+1)%ndimension;
-  }
 
+  GetShmDims(WorldDims,ShmDims);
   ////////////////////////////////////////////////////////////////
   // Establish torus of processes and nodes with sub-blockings
   ////////////////////////////////////////////////////////////////
@@ -418,7 +435,11 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   // e.g. DGX1, supermicro board, 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
   //  cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, device1, device2);
+#ifdef GRID_IBM_SUMMIT
+  std::cout << header << "flag IBM_SUMMIT disabled CUDA set device: ensure jsrun is used correctly" <<std::endl;
+#else
   cudaSetDevice(WorldShmRank);
+#endif
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Each MPI rank should allocate our own buffer
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////

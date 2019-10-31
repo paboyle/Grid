@@ -292,7 +292,7 @@ void GridGpuInit(void)
   gpu_props = new cudaDeviceProp[nDevices];
 
   char * localRankStr = NULL;
-  int rank = 0, device = 0, world_rank=0; 
+  int rank = 0, world_rank=0; 
 #define ENV_LOCAL_RANK_OMPI    "OMPI_COMM_WORLD_LOCAL_RANK"
 #define ENV_LOCAL_RANK_MVAPICH "MV2_COMM_WORLD_LOCAL_RANK"
 #define ENV_RANK_OMPI          "OMPI_COMM_WORLD_RANK"
@@ -301,23 +301,16 @@ void GridGpuInit(void)
   if ((localRankStr = getenv(ENV_LOCAL_RANK_OMPI)) != NULL)
   {
     rank = atoi(localRankStr);		
-    device = rank %nDevices;
   }
   if ((localRankStr = getenv(ENV_LOCAL_RANK_MVAPICH)) != NULL)
   {
     rank = atoi(localRankStr);		
-    device = rank %nDevices;
   }
   if ((localRankStr = getenv(ENV_RANK_OMPI   )) != NULL) { world_rank = atoi(localRankStr);}
   if ((localRankStr = getenv(ENV_RANK_MVAPICH)) != NULL) { world_rank = atoi(localRankStr);}
 
-  cudaSetDevice(device);
   if ( world_rank == 0 ) {
     GridBanner();
-    printf("GpuInit: ================================================\n");
-    printf("GpuInit: Setting up Cuda Device map before first MPI call\n",nDevices);
-    printf("GpuInit: ================================================\n");
-    printf("GpuInit: Cuda reports %d GPUs on MPI rank 0\n",nDevices);
   }
 
   for (int i = 0; i < nDevices; i++) {
@@ -325,7 +318,6 @@ void GridGpuInit(void)
 #define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("GpuInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
 #define GPU_PROP(canMapHostMemory)             GPU_PROP_FMT(canMapHostMemory,"%d");
     
-    //      cudaGetDeviceProperties(&prop, i);
     cudaGetDeviceProperties(&gpu_props[i], i);
     if ( world_rank == 0) {
       cudaDeviceProp prop; 
@@ -334,15 +326,13 @@ void GridGpuInit(void)
       printf("GpuInit: Device Number    : %d\n", i);
       printf("GpuInit: ========================\n");
       printf("GpuInit: Device identifier: %s\n", prop.name);
-      //      printf("GpuInit:   Peak Memory Bandwidth (GB/s): %f\n",(float)2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6);
+
       GPU_PROP(managedMemory);
       GPU_PROP(isMultiGpuBoard);
       GPU_PROP(warpSize);
-#if 0
-      GPU_PROP(unifiedAddressing);
-      GPU_PROP(l2CacheSize);
-      GPU_PROP(singleToDoublePrecisionPerfRatio);
-#endif
+      //      GPU_PROP(unifiedAddressing);
+      //      GPU_PROP(l2CacheSize);
+      //      GPU_PROP(singleToDoublePrecisionPerfRatio);
     }
   }
   if ( world_rank == 0 ) {

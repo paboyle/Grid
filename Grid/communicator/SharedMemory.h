@@ -41,9 +41,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <sys/shm.h>
 #include <sys/mman.h>
 #include <zlib.h>
-#ifdef HAVE_NUMAIF_H
-#include <numaif.h>
-#endif
 
 NAMESPACE_BEGIN(Grid);
 
@@ -99,6 +96,7 @@ public:
   static void OptimalCommunicator            (const Coordinate &processors,Grid_MPI_Comm & optimal_comm);  // Turns MPI_COMM_WORLD into right layout for Cartesian
   static void OptimalCommunicatorHypercube   (const Coordinate &processors,Grid_MPI_Comm & optimal_comm);  // Turns MPI_COMM_WORLD into right layout for Cartesian
   static void OptimalCommunicatorSharedMemory(const Coordinate &processors,Grid_MPI_Comm & optimal_comm);  // Turns MPI_COMM_WORLD into right layout for Cartesian
+  static void GetShmDims(const Coordinate &WorldDims,Coordinate &ShmDims);
   ///////////////////////////////////////////////////
   // Provide shared memory facilities off comm world
   ///////////////////////////////////////////////////
