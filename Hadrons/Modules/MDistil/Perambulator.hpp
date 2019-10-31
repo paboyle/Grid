@@ -202,7 +202,7 @@ void TPerambulator<FImpl>::execute(void)
       for (int dk = 0; dk < LI; dk++) {
         for (int dt = 0; dt < Nt_inv; dt++) {
           for (int ds = 0; ds < SI; ds++) {
-            std::cout <<  "LapH source vector from noise " << inoise << " and dilution component (d_k,d_t,d_alpha) : (" << dk << ","<< dt << "," << ds << ")" << std::endl;
+            LOG(Message) <<  "LapH source vector from noise " << inoise << " and dilution component (d_k,d_t,d_alpha) : (" << dk << ","<< dt << "," << ds << ")" << std::endl;
             dist_source = 0;
             tmp3d_nospin = 0;
             evec3d = 0;
@@ -250,7 +250,7 @@ void TPerambulator<FImpl>::execute(void)
       }
     }
   }
-  std::cout <<  "perambulator done" << std::endl;
+  LOG(Message) <<  "perambulator done" << std::endl;
   perambulator.SliceShare( grid3d, grid4d );
 
   if(grid4d->IsBoss()) {
@@ -295,7 +295,7 @@ void TPerambulator<FImpl>::execute(void)
   const std::string UnsmearedSinkFileName{ par().UnsmearedSinkFileName };
   if( !UnsmearedSinkFileName.empty() ) {
     bool bMulti = ( Hadrons::MDistil::DistilParameters::ParameterDefault( par().UnsmearedSinkMultiFile, 1, false ) != 0 );
-    std::cout << "Writing unsmeared sink to " << UnsmearedSinkFileName << std::endl;
+    LOG(Message) << "Writing unsmeared sink to " << UnsmearedSinkFileName << std::endl;
     //Grid::Hdf5Writer writer(filename);
     //write(writer,"unsmeared_sink",sink);
     A2AVectorsIo::write(UnsmearedSinkFileName, unsmeared_sink, bMulti, vm().getTrajectory());
