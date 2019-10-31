@@ -178,8 +178,8 @@ public:
 private:
   void dealloc(void)
   {
-    alignedAllocator<vobj> alloc;
     if( this->_odata_size ) {
+      alignedAllocator<vobj> alloc;
       alloc.deallocate(this->_odata,this->_odata_size);
       this->_odata=nullptr;
       this->_odata_size=0;
@@ -187,15 +187,17 @@ private:
   }
   void resize(uint64_t size)
   {
-    alignedAllocator<vobj> alloc;
     if ( this->_odata_size != size ) {
+      alignedAllocator<vobj> alloc;
+
       dealloc();
+      
+      this->_odata_size = size;
+      if ( size ) 
+	this->_odata      = alloc.allocate(this->_odata_size);
+      else 
+	this->_odata      = nullptr;
     }
-    this->_odata_size = size;
-    if ( size ) 
-      this->_odata      = alloc.allocate(this->_odata_size);
-    else 
-      this->_odata      = nullptr;
   }
 public:
   /////////////////////////////////////////////////////////////////////////////////
@@ -346,7 +348,7 @@ public:
   void reset(GridBase* grid) {
     if (this->_grid != grid) {
       this->_grid = grid;
-      this->_odata.resize(grid->oSites());
+      this->resize(grid->oSites());
       this->checkerboard = 0;
     }
   }
