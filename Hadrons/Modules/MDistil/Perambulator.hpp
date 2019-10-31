@@ -48,9 +48,9 @@ public:
                                     std::string, lapevec,
                                     std::string, solver,
 		                    std::string, noise,
-                                    std::string, PerambFileName, //stem!!!
-                                    std::string, UnsmearedSinkFileName, // Filename to save unsmeared sink
-                                    std::string, UnsmearedSinkMultiFile, // One file per vector?
+                                    std::string, PerambFileName, 
+                                    std::string, UnsmearedSinkFileName, 
+                                    std::string, UnsmearedSinkMultiFile, 
                                     int, nvec,
                                     DistilParameters, Distil);
 };
@@ -212,7 +212,6 @@ void TPerambulator<FImpl>::execute(void)
                 for (int ik = dk; ik < nvec; ik += LI){
                   for (int is = ds; is < Ns; is += SI){ 
                     ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv-Ntfirst,Tdir);
-                    //tmp3d_nospin = evec3d * noise[inoise + nnoise*(t_inv + Nt*(ik+nvec*is))];
                     tmp3d_nospin = evec3d * noise(inoise, t_inv, ik, is);
                     tmp3d=0;
                     pokeSpin(tmp3d,tmp3d_nospin,is);
@@ -233,7 +232,7 @@ void TPerambulator<FImpl>::execute(void)
 	       mat.ExportPhysicalFermionSolution(v5dtmp_sol, v4dtmp);
 	       result = v4dtmp;
 	    }
-            if ((1)) // comment out if unsmeared sink is too large???
+            if( !UnsmearedSinkFileName.empty() ) 
               unsmeared_sink[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))] = result;
             for (int is = 0; is < Ns; is++) {
               result_nospin = peekSpin(result,is);
@@ -259,45 +258,13 @@ void TPerambulator<FImpl>::execute(void)
       sPerambName = getName();
     sPerambName.append( "." );
     sPerambName.append( std::to_string(vm().getTrajectory()));
-    //perambulator.WriteBinary(sPerambName);
     perambulator.write(sPerambName.c_str());
   }
-
-  // Save the unsmeared sink as well if requested
-  /*const int X{grid4d->GlobalDimensions()[0]};
-  const int Y{grid4d->GlobalDimensions()[1]};
-  const int Z{grid4d->GlobalDimensions()[2]};
-  const int T{grid4d->GlobalDimensions()[3]};
-
-  if(grid4d->IsBoss()) {
-    Eigen::Tensor<ComplexD, 10> sink(nnoise,LI,Nt_inv,SI,X,Y,Z,T,3,4);
-    
-    for (int inoise = 0; inoise < nnoise; inoise++) {
-      for (int dk = 0; dk < LI; dk++) {
-        for (int dt = 0; dt < Nt_inv; dt++) {
-          for (int ds = 0; ds < SI; ds++) {
-            for (int ix=0; ix < X; ix++) {
-              for (int iy=0; iy < Y; iy++) {
-                for (int iz=0; iz < Z; iz++) {
-                  for (int it=0; it < T; it++) {
-                    std::vector<int> site({ix,iy,iz,it});
-                    for (int ic=0; ic < 3; ic++) {
-                      for (int is=0; is < 4; is++) {
-                        //peekSite(sink[inoise,dk,dt,ds,ix,iy,iz,it,ic,is],unsmeared_sink[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))]()(is)(ic),site);  // Build fails when uncommenting
-                        
-                      }}
-                  }}}}
-          }
-        }
-      }
-    }*/
 
   const std::string UnsmearedSinkFileName{ par().UnsmearedSinkFileName };
   if( !UnsmearedSinkFileName.empty() ) {
     bool bMulti = ( Hadrons::MDistil::DistilParameters::ParameterDefault( par().UnsmearedSinkMultiFile, 1, false ) != 0 );
     LOG(Message) << "Writing unsmeared sink to " << UnsmearedSinkFileName << std::endl;
-    //Grid::Hdf5Writer writer(filename);
-    //write(writer,"unsmeared_sink",sink);
     A2AVectorsIo::write(UnsmearedSinkFileName, unsmeared_sink, bMulti, vm().getTrajectory());
   }
 }
