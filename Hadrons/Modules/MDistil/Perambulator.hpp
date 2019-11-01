@@ -33,12 +33,11 @@
 #include <Hadrons/Distil.hpp>
 
 BEGIN_HADRONS_NAMESPACE
-
+BEGIN_MODULE_NAMESPACE(MDistil)
 
 /******************************************************************************
  *                             Perambulator                                    *
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MDistil)
 
 class PerambulatorPar: Serializable
 {
@@ -254,20 +253,43 @@ void TPerambulator<FImpl>::execute(void)
             }
         }
     }
-    LOG(Message) <<  "perambulator done" << std::endl;
-    perambulator.SliceShare( grid3d, grid4d );
-    
-    if(grid4d->IsBoss())
+    // Now share my timeslice data with other members of the grid
+    const int NumSlices{grid4d->_processors[Tdir] / grid3d->_processors[Tdir]};
+    if (NumSlices > 1)
     {
-        std::string sPerambName{par().PerambFileName};
-        if( sPerambName.length() == 0 )
+        LOG(Debug) <<  "Sharing perambulator data with other nodes" << std::endl;
+        const int MySlice {grid4d->_processor_coor[Tdir]};
+        const int SliceCount {static_cast<int>(perambulator.tensor.size()/NumSlices)};
+        PerambTensor::Scalar * const MyData {perambulator.tensor.data()+MySlice*SliceCount};
+        Coordinate coor(Nd);
+        for (int i = 0 ; i < Tdir ; i++) coor[i] = grid4d->_processor_coor[i];
+        std::vector<CommsRequest_t> reqs(0);
+        for (int i = 1; i < NumSlices ; i++)
+        {
+            coor[Tdir] = (MySlice+i)%NumSlices;
+            const int SendRank { grid4d->RankFromProcessorCoor(coor) };
+            const int RecvSlice { ( MySlice - i + NumSlices ) % NumSlices };
+            coor[Tdir] = RecvSlice;
+            const auto RecvRank = grid4d->RankFromProcessorCoor(coor);
+            grid4d->SendToRecvFromBegin(reqs,MyData,SendRank, perambulator.tensor.data()
+                                        + RecvSlice*SliceCount,RecvRank,SliceCount*sizeof(PerambTensor::Scalar));
+        }
+        grid4d->SendToRecvFromComplete(reqs);
+    }
+    
+    // Save the perambulator to disk from the boss node
+    if (grid4d->IsBoss())
+    {
+        std::string sPerambName {par().PerambFileName};
+        if (sPerambName.empty())
             sPerambName = getName();
-        sPerambName.append( "." );
-        sPerambName.append( std::to_string(vm().getTrajectory()));
+        sPerambName.append(".");
+        sPerambName.append(std::to_string(vm().getTrajectory()));
         perambulator.write(sPerambName.c_str());
     }
     
-    if( !UnsmearedSinkFileName.empty() )
+    //Save the unsmeared sinks if filename specified
+    if (!UnsmearedSinkFileName.empty())
     {
         bool bMulti = ( Hadrons::MDistil::DistilParameters::ParameterDefault( par().UnsmearedSinkMultiFile, 1, false ) != 0 );
         LOG(Message) << "Writing unsmeared sink to " << UnsmearedSinkFileName << std::endl;
@@ -276,7 +298,6 @@ void TPerambulator<FImpl>::execute(void)
 }
 
 END_MODULE_NAMESPACE
-
 END_HADRONS_NAMESPACE
 
 #endif // Hadrons_MDistil_Perambulator_hpp_

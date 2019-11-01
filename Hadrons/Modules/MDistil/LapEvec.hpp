@@ -186,6 +186,67 @@ void TLapEvec<GImpl>::Cleanup(void)
   gridHD = nullptr;
 }
 
+/*************************************************************************************
+
+ -Grad^2 (Peardon, 2009, pg 2, equation 3, https://arxiv.org/abs/0905.2160)
+ Field      Type of field the operator will be applied to
+ GaugeField Gauge field the operator will smear using
+ 
+ *************************************************************************************/
+
+template<typename Field, typename GaugeField=LatticeGaugeField>
+class Laplacian3D : public LinearOperatorBase<Field>, public LinearFunction<Field> {
+  typedef typename GaugeField::vector_type vCoeff_t;
+protected: // I don't really mind if _gf is messed with ... so make this public?
+  //GaugeField & _gf;
+  int          nd; // number of spatial dimensions
+  std::vector<Lattice<iColourMatrix<vCoeff_t> > > U;
+public:
+  // Construct this operator given a gauge field and the number of dimensions it should act on
+  Laplacian3D( GaugeField& gf, int dimSpatial = Tdir ) : /*_gf(gf),*/ nd{dimSpatial} {
+    assert(dimSpatial>=1);
+    for( int mu = 0 ; mu < nd ; mu++ )
+      U.push_back(PeekIndex<LorentzIndex>(gf,mu));
+      }
+  
+  // Apply this operator to "in", return result in "out"
+  void operator()(const Field& in, Field& out) {
+    assert( nd <= in.Grid()->Nd() );
+    conformable( in, out );
+    out = ( ( Real ) ( 2 * nd ) ) * in;
+    Field _tmp(in.Grid());
+    typedef typename GaugeField::vector_type vCoeff_t;
+    //Lattice<iColourMatrix<vCoeff_t> > U(in.Grid());
+    for( int mu = 0 ; mu < nd ; mu++ ) {
+      //U = PeekIndex<LorentzIndex>(_gf,mu);
+      out -= U[mu] * Cshift( in, mu, 1);
+      _tmp = adj( U[mu] ) * in;
+      out -= Cshift(_tmp,mu,-1);
+    }
+  }
+  
+  void OpDiag (const Field &in, Field &out) { assert(0); };
+  void OpDir  (const Field &in, Field &out,int dir,int disp) { assert(0); };
+  void Op     (const Field &in, Field &out) { assert(0); };
+  void AdjOp  (const Field &in, Field &out) { assert(0); };
+  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2) { assert(0); };
+  void HermOp(const Field &in, Field &out) { operator()(in,out); };
+};
+
+template<typename Field>
+class Laplacian3DHerm : public LinearFunction<Field> {
+public:
+  OperatorFunction<Field>   & _poly;
+  LinearOperatorBase<Field> &_Linop;
+  
+  Laplacian3DHerm(OperatorFunction<Field> & poly,LinearOperatorBase<Field>& linop)
+  : _poly{poly}, _Linop{linop} {}
+  
+  void operator()(const Field& in, Field& out) {
+    _poly(_Linop,in,out);
+  }
+};
+
 /******************************************************************************
  Calculate low-mode eigenvalues of the Laplacian
  ******************************************************************************/

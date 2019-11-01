@@ -38,135 +38,12 @@
 #include <Hadrons/A2AVectors.hpp>
 #include <Hadrons/DilutedNoise.hpp>
 
-/******************************************************************************
- This potentially belongs in CartesianCommunicator
- ******************************************************************************/
-
-BEGIN_MODULE_NAMESPACE(Grid)
-inline void SliceShare( GridBase * gridLowDim, GridBase * gridHighDim, void * Buffer, int BufferSize )
-{
-  // Work out which dimension is the spread-out dimension
-  assert(gridLowDim);
-  assert(gridHighDim);
-  const int iNumDims{(const int)gridHighDim->_gdimensions.size()};
-  assert(iNumDims == gridLowDim->_gdimensions.size());
-  int dimSpreadOut = -1;
-  Coordinate coor(iNumDims);
-  for( int i = 0 ; i < iNumDims ; i++ ) {
-    coor[i] = gridHighDim->_processor_coor[i];
-    if( gridLowDim->_gdimensions[i] != gridHighDim->_gdimensions[i] ) {
-      assert( dimSpreadOut == -1 );
-      assert( gridLowDim->_processors[i] == 1 ); // easiest assumption to make for now
-      dimSpreadOut = i;
-    }
-  }
-  if( dimSpreadOut != -1 && gridHighDim->_processors[dimSpreadOut] != gridLowDim->_processors[dimSpreadOut] ) {
-    // Make sure the same number of data elements exist on each slice
-    const int NumSlices{gridHighDim->_processors[dimSpreadOut] / gridLowDim->_processors[dimSpreadOut]};
-    assert(gridHighDim->_processors[dimSpreadOut] == gridLowDim->_processors[dimSpreadOut] * NumSlices);
-    const int SliceSize{BufferSize/NumSlices};
-    //CCC_DEBUG_DUMP(Buffer, NumSlices, SliceSize);
-    assert(BufferSize == SliceSize * NumSlices);
-//#ifndef USE_LOCAL_SLICES
-//    assert(0); // Can't do this without MPI (should really test whether MPI is defined)
-//#else
-    const auto MyRank = gridHighDim->ThisRank();
-    std::vector<CommsRequest_t> reqs(0);
-    int MySlice{coor[dimSpreadOut]};
-    char * const _buffer{(char *)Buffer};
-    char * const MyData{_buffer + MySlice * SliceSize};
-    for(int i = 1; i < NumSlices ; i++ ){
-      int SendSlice = ( MySlice + i ) % NumSlices;
-      int RecvSlice = ( MySlice - i + NumSlices ) % NumSlices;
-      char * const RecvData{_buffer + RecvSlice * SliceSize};
-      coor[dimSpreadOut] = SendSlice;
-      const auto SendRank = gridHighDim->RankFromProcessorCoor(coor);
-      coor[dimSpreadOut] = RecvSlice;
-      const auto RecvRank = gridHighDim->RankFromProcessorCoor(coor);
-      std::cout << GridLogMessage << "Send slice " << MySlice << " (" << MyRank << ") to " << SendSlice << " (" << SendRank
-      << "), receive slice from " << RecvSlice << " (" << RecvRank << ")" << std::endl;
-      gridHighDim->SendToRecvFromBegin(reqs,MyData,SendRank,RecvData,RecvRank,SliceSize);
-      //memcpy(RecvData,MyData,SliceSize); // Debug
-    }
-    gridHighDim->SendToRecvFromComplete(reqs);
-    std::cout << GridLogMessage << "Slice data shared." << std::endl;
-    //CCC_DEBUG_DUMP(Buffer, NumSlices, SliceSize);
-//#endif
-  }
-}
-
-/*************************************************************************************
-
- Not sure where the right home for this is? But presumably in Grid
- 
- -Grad^2 (Peardon, 2009, pg 2, equation 3, https://arxiv.org/abs/0905.2160)
- Field      Type of field the operator will be applied to
- GaugeField Gauge field the operator will smear using
- 
- *************************************************************************************/
-
-template<typename Field, typename GaugeField=LatticeGaugeField>
-class Laplacian3D : public LinearOperatorBase<Field>, public LinearFunction<Field> {
-  typedef typename GaugeField::vector_type vCoeff_t;
-protected: // I don't really mind if _gf is messed with ... so make this public?
-  //GaugeField & _gf;
-  int          nd; // number of spatial dimensions
-  std::vector<Lattice<iColourMatrix<vCoeff_t> > > U;
-public:
-  // Construct this operator given a gauge field and the number of dimensions it should act on
-  Laplacian3D( GaugeField& gf, int dimSpatial = Tdir ) : /*_gf(gf),*/ nd{dimSpatial} {
-    assert(dimSpatial>=1);
-    for( int mu = 0 ; mu < nd ; mu++ )
-      U.push_back(PeekIndex<LorentzIndex>(gf,mu));
-      }
-  
-  // Apply this operator to "in", return result in "out"
-  void operator()(const Field& in, Field& out) {
-    assert( nd <= in.Grid()->Nd() );
-    conformable( in, out );
-    out = ( ( Real ) ( 2 * nd ) ) * in;
-    Field _tmp(in.Grid());
-    typedef typename GaugeField::vector_type vCoeff_t;
-    //Lattice<iColourMatrix<vCoeff_t> > U(in.Grid());
-    for( int mu = 0 ; mu < nd ; mu++ ) {
-      //U = PeekIndex<LorentzIndex>(_gf,mu);
-      out -= U[mu] * Cshift( in, mu, 1);
-      _tmp = adj( U[mu] ) * in;
-      out -= Cshift(_tmp,mu,-1);
-    }
-  }
-  
-  void OpDiag (const Field &in, Field &out) { assert(0); };
-  void OpDir  (const Field &in, Field &out,int dir,int disp) { assert(0); };
-  void Op     (const Field &in, Field &out) { assert(0); };
-  void AdjOp  (const Field &in, Field &out) { assert(0); };
-  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2) { assert(0); };
-  void HermOp(const Field &in, Field &out) { operator()(in,out); };
-};
-
-template<typename Field>
-class Laplacian3DHerm : public LinearFunction<Field> {
-public:
-  OperatorFunction<Field>   & _poly;
-  LinearOperatorBase<Field> &_Linop;
-  
-  Laplacian3DHerm(OperatorFunction<Field> & poly,LinearOperatorBase<Field>& linop)
-  : _poly{poly}, _Linop{linop} {}
-  
-  void operator()(const Field& in, Field& out) {
-    _poly(_Linop,in,out);
-  }
-};
-
-END_MODULE_NAMESPACE // Grid
+BEGIN_HADRONS_NAMESPACE
+BEGIN_MODULE_NAMESPACE(MDistil)
 
 /******************************************************************************
  Common elements for distillation
  ******************************************************************************/
-
-BEGIN_HADRONS_NAMESPACE
-
-BEGIN_MODULE_NAMESPACE(MDistil)
 
 using LapEvecs = Grid::Hadrons::EigenPack<LatticeColourVector>;
 
@@ -182,7 +59,7 @@ struct DistilParameters: Serializable {
                                   std::string, SI )
   DistilParameters() = default;
   template <class ReaderClass> DistilParameters(Reader<ReaderClass>& Reader){read(Reader,"Distil",*this);}
-
+  
   // Numeric parameter is allowed to be empty (in which case it = Default),
   // but assert during setup() if specified but not numeric
   
@@ -213,7 +90,7 @@ const int Nt_inv{ full_tdil ? 1 : TI }
 
 /******************************************************************************
  Default for distillation file operations. For now only used by NamedTensor
-******************************************************************************/
+ ******************************************************************************/
 
 #ifdef HAVE_HDF5
 using Default_Reader = Grid::Hdf5Reader;
@@ -235,7 +112,7 @@ static const char * FileExtension = ".dat";
  Configuration number
  Noise unique string
  Distillation parameters
-
+ 
  ******************************************************************************/
 
 template<typename Scalar_, int NumIndices_>
@@ -271,7 +148,7 @@ public:
     assert(sizeof...(otherDimensions) + 1 == NumIndices_ && "NamedTensor: dimensions != tensor rank");
     return tensor.operator()(std::array<Eigen::Index, NumIndices_>{{firstDimension, otherDimensions...}});
   }
-
+  
   // Construct a named tensor explicitly specifying size of each dimension
   template<typename... IndexTypes>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor(const std::array<std::string,NumIndices_> &IndexNames_, Eigen::Index firstDimension, IndexTypes... otherDimensions)
@@ -281,8 +158,8 @@ public:
     assert(sizeof...(otherDimensions) + 1 == NumIndices_ && "NamedTensor: dimensions != tensor rank");
     for( int i = 0; i < NumIndices_; i++ )
       IndexNames[i] = IndexNames_[i];
-  }
-
+      }
+  
   // Default constructor (assumes tensor will be loaded from file)
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor() : IndexNames{NumIndices_} {}
   
@@ -292,15 +169,10 @@ public:
   {
     for( int i = 0; i < NumIndices_; i++ )
       IndexNames[i] = IndexNames_[i];
-  }
+      }
   
-  // Share data for timeslices we calculated with other nodes
-  inline void SliceShare( GridCartesian * gridLowDim, GridCartesian * gridHighDim ) {
-    Grid::SliceShare( gridLowDim, gridHighDim, tensor.data(), (int) (tensor.size() * sizeof(Scalar_)));
-  }
-
   bool ValidateIndexNames( std::size_t NumNames, const std::string * MatchNames ) const;
-
+  
   // Read/Write in any format
   template<typename Reader> inline void read (Reader &r, const char * pszTag = nullptr);
   template<typename Writer> inline void write(Writer &w, const char * pszTag = nullptr) const;
@@ -330,7 +202,7 @@ template<typename Writer>
 void NamedTensor<Scalar_, NumIndices_>::write(Writer &w, const char * pszTag)const{
   if( pszTag == nullptr )
     pszTag = "NamedTensor";
-  LOG(Message) << "Writing NamedTensor to tag  " << pszTag << std::endl;
+  LOG(Message) << "Writing NamedTensor to tag " << pszTag << std::endl;
   write(w, pszTag, *this);
 }
 
@@ -353,8 +225,8 @@ bool NamedTensor<Scalar_, NumIndices_>::ValidateIndexNames( std::size_t NumNames
   for( std::size_t i = 0; bSame && i < NumIndices_; i++ )
   {
     bSame = MatchNames[i].size() == IndexNames[i].size()
-            && std::equal( MatchNames[i].begin(), MatchNames[i].end(), IndexNames[i].begin(),
-                          [](const char & c1, const char & c2){ return c1 == c2 || std::toupper(c1) == std::toupper(c2); });
+    && std::equal( MatchNames[i].begin(), MatchNames[i].end(), IndexNames[i].begin(),
+                  [](const char & c1, const char & c2){ return c1 == c2 || std::toupper(c1) == std::toupper(c2); });
   }
   return bSame;
 }
