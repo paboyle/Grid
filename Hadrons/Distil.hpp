@@ -299,7 +299,7 @@ public:
     Grid::SliceShare( gridLowDim, gridHighDim, tensor.data(), (int) (tensor.size() * sizeof(Scalar_)));
   }
 
-  bool ValidateIndexNames( int iNumNames, const std::string * MatchNames ) const;
+  bool ValidateIndexNames( std::size_t NumNames, const std::string * MatchNames ) const;
 
   // Read/Write in any format
   template<typename Reader> inline void read (Reader &r, const char * pszTag = nullptr);
@@ -307,23 +307,6 @@ public:
   // Read/Write in default format, i.e. HDF5 if present, else binary
   inline void read (const char * filename, const char * pszTag = nullptr);
   inline void write(const char * filename, const char * pszTag = nullptr) const;
-
-  // Case insensitive compare of two strings
-  // Pesumably this exists already? Where should this go?
-  static inline bool CompareCaseInsensitive( const std::string &s1, const std::string &s2 ) {
-    auto Len = s1.size();
-    bool bSame{ Len == s2.size() };
-    for( int j = 0; bSame && j < Len; j++ ) {
-      wchar_t c1 = s1[j];
-      if( c1 >= 'a' && c1 <= 'z' )
-        c1 -= 'a' - 'A';
-      wchar_t c2 = s2[j];
-      if( c2 >= 'a' && c1 <= 'z' )
-        c2 -= 'a' - 'A';
-      bSame = ( c1 == c2 );
-    }
-    return bSame;
-  }
 };
 
 // Is this a named tensor
@@ -365,10 +348,14 @@ void NamedTensor<Scalar_, NumIndices_>::write(const char * filename, const char 
  ******************************************************************************/
 
 template<typename Scalar_, int NumIndices_>
-bool NamedTensor<Scalar_, NumIndices_>::ValidateIndexNames( int iNumNames, const std::string * MatchNames ) const {
-  bool bSame{ iNumNames == NumIndices_ && IndexNames.size() == NumIndices_ };
-  for( int i = 0; bSame && i < NumIndices_; i++ )
-    bSame = CompareCaseInsensitive( MatchNames[i], IndexNames[i] );
+bool NamedTensor<Scalar_, NumIndices_>::ValidateIndexNames( std::size_t NumNames, const std::string * MatchNames ) const {
+  bool bSame{ NumNames == NumIndices_ && IndexNames.size() == NumIndices_ };
+  for( std::size_t i = 0; bSame && i < NumIndices_; i++ )
+  {
+    bSame = MatchNames[i].size() == IndexNames[i].size()
+            && std::equal( MatchNames[i].begin(), MatchNames[i].end(), IndexNames[i].begin(),
+                          [](const char & c1, const char & c2){ return c1 == c2 || std::toupper(c1) == std::toupper(c2); });
+  }
   return bSame;
 }
 
