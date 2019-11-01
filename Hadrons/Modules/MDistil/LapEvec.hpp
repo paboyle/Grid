@@ -219,7 +219,7 @@ void TLapEvec<GImpl>::execute(void)
   }
 
   ////////////////////////////////////////////////////////////////////////
-  // Invert Peardon Nabla operator separately on each time-slice
+  // Invert nabla operator separately on each time-slice
   ////////////////////////////////////////////////////////////////////////
   
   auto & eig4d = envGet(LapEvecs, getName() );
@@ -237,7 +237,7 @@ void TLapEvec<GImpl>::execute(void)
     
     // Construct smearing operator
     ExtractSliceLocal(UmuNoTime,Umu_smear,0,t,Tdir); // switch to 3d/4d objects
-    LinOpPeardonNabla<LatticeColourVector> PeardonNabla(UmuNoTime);
+    Laplacian3D<LatticeColourVector> Nabla(UmuNoTime);
     LOG(Debug) << "Chebyshev preconditioning to order " << ChebPar.PolyOrder
       << " with parameters (alpha,beta) = (" << ChebPar.alpha << "," << ChebPar.beta << ")" << std::endl;
     Chebyshev<LatticeColourVector> Cheb(ChebPar.alpha,ChebPar.beta,ChebPar.PolyOrder);
@@ -248,9 +248,9 @@ void TLapEvec<GImpl>::execute(void)
     nn = Grid::sqrt(nn);
     src = src * (1.0/nn);
 
-    LinOpPeardonNablaHerm<LatticeColourVector> PeardonNablaCheby(Cheb,PeardonNabla);
+    Laplacian3DHerm<LatticeColourVector> NablaCheby(Cheb,Nabla);
     ImplicitlyRestartedLanczos<LatticeColourVector>
-      IRL(PeardonNablaCheby,PeardonNabla,LPar.Nvec,LPar.Nk,LPar.Nk+LPar.Np,LPar.resid,LPar.MaxIt);
+      IRL(NablaCheby,Nabla,LPar.Nvec,LPar.Nk,LPar.Nk+LPar.Np,LPar.resid,LPar.MaxIt);
     int Nconv = 0;
     IRL.calc(eig[t].eval,eig[t].evec,src,Nconv);
     if( Nconv < LPar.Nvec ) {

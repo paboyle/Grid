@@ -133,7 +133,8 @@ void TNoises<FImpl>::execute(void)
     UniqueIdentifier = getName();
   }
   UniqueIdentifier.append( std::to_string( vm().getTrajectory() ) ); 
-  
+
+  // We use our own seeds so we can specify different noises per quark
   GridSerialRNG sRNG;
   sRNG.SeedUniqueString(UniqueIdentifier);
   Real rn;

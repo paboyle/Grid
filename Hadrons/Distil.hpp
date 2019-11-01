@@ -39,39 +39,6 @@
 #include <Hadrons/DilutedNoise.hpp>
 
 /******************************************************************************
- A consistent set of cross-platform methods for big endian <-> host byte ordering
- I imagine this exists already?
- This can be removed once the (deprecated) NamedTensor::ReadBinary & WriteBinary methods are deleted
- ******************************************************************************/
-
-#if defined(__linux__)
-#  include <endian.h>
-#elif defined(__FreeBSD__) || defined(__NetBSD__)
-#  include <sys/endian.h>
-#elif defined(__OpenBSD__)
-#  include <sys/types.h>
-#  define be16toh(x) betoh16(x)
-#  define be32toh(x) betoh32(x)
-#  define be64toh(x) betoh64(x)
-#elif defined(__APPLE__)
-#include <libkern/OSByteOrder.h>
-#define htobe16(x) OSSwapHostToBigInt16(x)
-#define htole16(x) OSSwapHostToLittleInt16(x)
-#define be16toh(x) OSSwapBigToHostInt16(x)
-#define le16toh(x) OSSwapLittleToHostInt16(x)
-
-#define htobe32(x) OSSwapHostToBigInt32(x)
-#define htole32(x) OSSwapHostToLittleInt32(x)
-#define be32toh(x) OSSwapBigToHostInt32(x)
-#define le32toh(x) OSSwapLittleToHostInt32(x)
-
-#define htobe64(x) OSSwapHostToBigInt64(x)
-#define htole64(x) OSSwapHostToLittleInt64(x)
-#define be64toh(x) OSSwapBigToHostInt64(x)
-#define le64toh(x) OSSwapLittleToHostInt64(x)
-#endif
-
-/******************************************************************************
  This potentially belongs in CartesianCommunicator
  ******************************************************************************/
 
@@ -139,7 +106,7 @@ inline void SliceShare( GridBase * gridLowDim, GridBase * gridHighDim, void * Bu
  *************************************************************************************/
 
 template<typename Field, typename GaugeField=LatticeGaugeField>
-class LinOpPeardonNabla : public LinearOperatorBase<Field>, public LinearFunction<Field> {
+class Laplacian3D : public LinearOperatorBase<Field>, public LinearFunction<Field> {
   typedef typename GaugeField::vector_type vCoeff_t;
 protected: // I don't really mind if _gf is messed with ... so make this public?
   //GaugeField & _gf;
@@ -147,7 +114,7 @@ protected: // I don't really mind if _gf is messed with ... so make this public?
   std::vector<Lattice<iColourMatrix<vCoeff_t> > > U;
 public:
   // Construct this operator given a gauge field and the number of dimensions it should act on
-  LinOpPeardonNabla( GaugeField& gf, int dimSpatial = Tdir ) : /*_gf(gf),*/ nd{dimSpatial} {
+  Laplacian3D( GaugeField& gf, int dimSpatial = Tdir ) : /*_gf(gf),*/ nd{dimSpatial} {
     assert(dimSpatial>=1);
     for( int mu = 0 ; mu < nd ; mu++ )
       U.push_back(PeekIndex<LorentzIndex>(gf,mu));
@@ -178,12 +145,12 @@ public:
 };
 
 template<typename Field>
-class LinOpPeardonNablaHerm : public LinearFunction<Field> {
+class Laplacian3DHerm : public LinearFunction<Field> {
 public:
   OperatorFunction<Field>   & _poly;
   LinearOperatorBase<Field> &_Linop;
   
-  LinOpPeardonNablaHerm(OperatorFunction<Field> & poly,LinearOperatorBase<Field>& linop)
+  Laplacian3DHerm(OperatorFunction<Field> & poly,LinearOperatorBase<Field>& linop)
   : _poly{poly}, _Linop{linop} {}
   
   void operator()(const Field& in, Field& out) {
@@ -244,12 +211,6 @@ const bool full_tdil{ TI == Nt }; \
 const bool exact_distillation{ full_tdil && LI == nvec }; \
 const int Nt_inv{ full_tdil ? 1 : TI }
 
-class BFieldIO: Serializable{
-public:
-  using BaryonTensorSet = Eigen::Tensor<ComplexD, 6>;
-  GRID_SERIALIZABLE_CLASS_MEMBERS(BFieldIO, BaryonTensorSet, BField );
-};
-
 /******************************************************************************
  Default for distillation file operations. For now only used by NamedTensor
 ******************************************************************************/
@@ -268,9 +229,6 @@ static const char * FileExtension = ".dat";
  NamedTensor object
  This is an Eigen::Tensor of type Scalar_ and rank NumIndices_ (row-major order)
  They can be persisted to disk
- Scalar_ objects are assumed to be composite objects of size Endian_Scalar_Size.
- (Disable big-endian by setting Endian_Scalar_Size=1).
- NB: Endian_Scalar_Size will disappear when ReadBinary & WriteBinary retired
  IndexNames contains one name for each index, and IndexNames are validated on load.
  WHAT TO SAVE / VALIDATE ON LOAD (Override to warn instead of assert on load)
  Ensemble string
@@ -280,20 +238,18 @@ static const char * FileExtension = ".dat";
 
  ******************************************************************************/
 
-template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size_ = sizeof(Scalar_)>
+template<typename Scalar_, int NumIndices_>
 class NamedTensor : Serializable
 {
 public:
   using Scalar = Scalar_;
   static constexpr int NumIndices = NumIndices_;
-  static constexpr uint16_t Endian_Scalar_Size = Endian_Scalar_Size_;
   using ET = Eigen::Tensor<Scalar_, NumIndices_, Eigen::RowMajor>;
   using Index = typename ET::Index;
   GRID_SERIALIZABLE_CLASS_MEMBERS(NamedTensor
                                   , ET, tensor
                                   , std::vector<std::string>, IndexNames
                                   );
-public:
   // Named tensors are intended to be a superset of Eigen tensor
   inline operator ET&() { return tensor; }
   template<typename... IndexTypes>
@@ -351,9 +307,6 @@ public:
   // Read/Write in default format, i.e. HDF5 if present, else binary
   inline void read (const char * filename, const char * pszTag = nullptr);
   inline void write(const char * filename, const char * pszTag = nullptr) const;
-  // Original I/O implementation. This will be removed when we're sure it's no longer needed
-  EIGEN_DEPRECATED inline void ReadBinary (const std::string filename); // To be removed
-  EIGEN_DEPRECATED inline void WriteBinary(const std::string filename); // To be removed
 
   // Case insensitive compare of two strings
   // Pesumably this exists already? Where should this go?
@@ -375,218 +328,31 @@ public:
 
 // Is this a named tensor
 template<typename T, typename V = void> struct is_named_tensor : public std::false_type {};
-template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size_> struct is_named_tensor<NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size_>> : public std::true_type {};
-template<typename T> struct is_named_tensor<T, typename std::enable_if<std::is_base_of<NamedTensor<typename T::Scalar, T::NumIndices, T::Endian_Scalar_Size_>, T>::value>::type> : public std::true_type {};
+template<typename Scalar_, int NumIndices_> struct is_named_tensor<NamedTensor<Scalar_, NumIndices_>> : public std::true_type {};
+template<typename T> struct is_named_tensor<T, typename std::enable_if<std::is_base_of<NamedTensor<typename T::Scalar, T::NumIndices>, T>::value>::type> : public std::true_type {};
 
 /******************************************************************************
  PerambTensor object
- Endian_Scalar_Size can be removed once (deprecated) NamedTensor::ReadBinary & WriteBinary methods deleted
  ******************************************************************************/
 
-//template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size = sizeof(Scalar_)>
-using PerambTensor = NamedTensor<SpinVector, 6, sizeof(Real)>;
+using PerambTensor = NamedTensor<SpinVector, 6>;
 static const std::array<std::string, 6> PerambIndexNames{"nT", "nVec", "LI", "nNoise", "nT_inv", "SI"};
-
-/******************************************************************************
- Save NamedTensor binary format (NB: On-disk format is Big Endian)
- Assumes the Scalar_ objects are contiguous (no padding)
- ******************************************************************************/
-
-template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
-void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::WriteBinary(const std::string filename) {
-  LOG(Message) << "Writing NamedTensor to \"" << filename << "\"" << std::endl;
-  std::ofstream w(filename, std::ios::binary);
-  // Enforce assumption that the scalar is composed of fundamental elements of size Endian_Scalar_Size
-  assert((Endian_Scalar_Size == 1 || Endian_Scalar_Size == 2 || Endian_Scalar_Size == 4 || Endian_Scalar_Size == 8 )
-         && "NamedTensor error: Endian_Scalar_Size should be 1, 2, 4 or 8");
-  assert((sizeof(Scalar_) % Endian_Scalar_Size) == 0 && "NamedTensor error: Scalar_ is not composed of Endian_Scalar_Size" );
-  // Size of the data (in bytes)
-  const uint32_t Scalar_Size{sizeof(Scalar_)};
-  const auto NumElements = tensor.size();
-  const std::streamsize TotalDataSize{static_cast<std::streamsize>(NumElements * Scalar_Size)};
-  uint64_t u64 = htobe64(static_cast<uint64_t>(TotalDataSize));
-  w.write(reinterpret_cast<const char *>(&u64), sizeof(u64));
-  // Size of a Scalar_
-  uint32_t u32{htobe32(Scalar_Size)};
-  w.write(reinterpret_cast<const char *>(&u32), sizeof(u32));
-  // Endian_Scalar_Size
-  uint16_t u16{htobe16(Endian_Scalar_Size)};
-  w.write(reinterpret_cast<const char *>(&u16), sizeof(u16));
-  // number of dimensions which aren't 1
-  u16 = static_cast<uint16_t>(this->NumIndices);
-  for( auto dim : tensor.dimensions() )
-    if( dim == 1 )
-      u16--;
-  u16 = htobe16( u16 );
-  w.write(reinterpret_cast<const char *>(&u16), sizeof(u16));
-  // dimensions together with names
-  int d = 0;
-  for( auto dim : tensor.dimensions() ) {
-    if( dim != 1 ) {
-      // size of this dimension
-      u16 = htobe16( static_cast<uint16_t>( dim ) );
-      w.write(reinterpret_cast<const char *>(&u16), sizeof(u16));
-      // length of this dimension name
-      u16 = htobe16( static_cast<uint16_t>( IndexNames[d].size() ) );
-      w.write(reinterpret_cast<const char *>(&u16), sizeof(u16));
-      // dimension name
-      w.write(IndexNames[d].c_str(), IndexNames[d].size());
-    }
-    d++;
-  }
-  // Actual data
-  char * const pStart{reinterpret_cast<char *>(tensor.data())};
-  // Swap to network byte order in place (alternative is to copy memory - still slow)
-  void * const pEnd{pStart + TotalDataSize};
-  if(Endian_Scalar_Size == 8)
-    for(uint64_t * p = reinterpret_cast<uint64_t *>(pStart) ; p < pEnd ; p++ )
-      * p = htobe64( * p );
-  else if(Endian_Scalar_Size == 4)
-    for(uint32_t * p = reinterpret_cast<uint32_t *>(pStart) ; p < pEnd ; p++ )
-      * p = htobe32( * p );
-  else if(Endian_Scalar_Size == 2)
-    for(uint16_t * p = reinterpret_cast<uint16_t *>(pStart) ; p < pEnd ; p++ )
-      * p = htobe16( * p );
-  w.write(pStart, TotalDataSize);
-  // Swap back from network byte order
-  if(Endian_Scalar_Size == 8)
-    for(uint64_t * p = reinterpret_cast<uint64_t *>(pStart) ; p < pEnd ; p++ )
-      * p = be64toh( * p );
-  else if(Endian_Scalar_Size == 4)
-    for(uint32_t * p = reinterpret_cast<uint32_t *>(pStart) ; p < pEnd ; p++ )
-      * p = be32toh( * p );
-  else if(Endian_Scalar_Size == 2)
-    for(uint16_t * p = reinterpret_cast<uint16_t *>(pStart) ; p < pEnd ; p++ )
-      * p = be16toh( * p );
-  // checksum
-#ifdef USE_IPP
-  u32 = htobe32(GridChecksum::crc32c(tensor.data(), TotalDataSize));
-#else
-  u32 = htobe32(GridChecksum::crc32(tensor.data(), TotalDataSize));
-#endif
-  w.write(reinterpret_cast<const char *>(&u32), sizeof(u32));
-}
-
-/******************************************************************************
- Load NamedTensor binary format (NB: On-disk format is Big Endian)
- Assumes the Scalar_ objects are contiguous (no padding)
- ******************************************************************************/
-
-template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
-void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::ReadBinary(const std::string filename) {
-  LOG(Message) << "Reading NamedTensor from \"" << filename << "\"" << std::endl;
-  std::ifstream r(filename, std::ios::binary);
-  // Enforce assumption that the scalar is composed of fundamental elements of size Endian_Scalar_Size
-  assert((Endian_Scalar_Size == 1 || Endian_Scalar_Size == 2 || Endian_Scalar_Size == 4 || Endian_Scalar_Size == 8 )
-         && "NamedTensor error: Endian_Scalar_Size should be 1, 2, 4 or 8");
-  assert((sizeof(Scalar_) % Endian_Scalar_Size) == 0 && "NamedTensor error: Scalar_ is not composed of Endian_Scalar_Size" );
-  // Size of the data in bytes
-  const uint32_t Scalar_Size{sizeof(Scalar_)};
-  Index NumElements{tensor.size()};
-  std::streamsize TotalDataSize{static_cast<std::streamsize>(NumElements * Scalar_Size)};
-  uint64_t u64;
-  r.read(reinterpret_cast<char *>(&u64), sizeof(u64));
-  assert( TotalDataSize == 0 || TotalDataSize == be64toh( u64 ) && "NamedTensor error: Size of the data in bytes" );
-  // Size of a Scalar_
-  uint32_t u32;
-  r.read(reinterpret_cast<char *>(&u32), sizeof(u32));
-  assert( Scalar_Size == be32toh( u32 ) && "NamedTensor error: sizeof(Scalar_)");
-  // Endian_Scalar_Size
-  uint16_t u16;
-  r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
-  assert( Endian_Scalar_Size == be16toh( u16 ) && "NamedTensor error: Scalar_Unit_size");
-  // number of dimensions which aren't 1
-  uint16_t NumFileDimensions;
-  r.read(reinterpret_cast<char *>(&NumFileDimensions), sizeof(NumFileDimensions));
-  NumFileDimensions = be16toh( NumFileDimensions );
-  /*for( auto dim : tensor.dimensions() )
-    if( dim == 1 )
-      u16++;*/
-  assert( ( TotalDataSize == 0 && this->NumIndices >= NumFileDimensions || this->NumIndices == NumFileDimensions )
-         && "NamedTensor error: number of dimensions which aren't 1" );
-  if( TotalDataSize == 0 ) {
-    // Read each dimension, using names to skip past dimensions == 1
-    std::array<Index,NumIndices_> NewDimensions;
-    for( Index &i : NewDimensions ) i = 1;
-    int d = 0;
-    for( int FileDimension = 0; FileDimension < NumFileDimensions; FileDimension++ ) {
-      // read dimension
-      uint16_t thisDim;
-      r.read(reinterpret_cast<char *>(&thisDim), sizeof(thisDim));
-      // read dimension name
-      r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
-      size_t l = be16toh( u16 );
-      std::string s( l, '?' );
-      r.read(&s[0], l);
-      // skip forward to matching name
-      while( IndexNames[d].size() > 0 && !CompareCaseInsensitive( s, IndexNames[d] ) )
-        assert(++d < NumIndices && "NamedTensor error: dimension name" );
-      if( IndexNames[d].size() == 0 )
-        IndexNames[d] = s;
-      NewDimensions[d++] = be16toh( thisDim );
-    }
-    tensor.resize(NewDimensions);
-    NumElements = 1;
-    for( Index i : NewDimensions ) NumElements *= i;
-    TotalDataSize = NumElements * Scalar_Size;
-  } else {
-    // dimensions together with names
-    const auto & TensorDims = tensor.dimensions();
-    for( int d = 0; d < NumIndices_; d++ ) {
-      // size of dimension
-      r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
-      u16 = be16toh( u16 );
-      assert( TensorDims[d] == u16 && "size of dimension" );
-      // length of dimension name
-      r.read(reinterpret_cast<char *>(&u16), sizeof(u16));
-      size_t l = be16toh( u16 );
-      assert( l == IndexNames[d].size() && "NamedTensor error: length of dimension name" );
-      // dimension name
-      std::string s( l, '?' );
-      r.read(&s[0], l);
-      assert( s == IndexNames[d] && "NamedTensor error: dimension name" );
-    }
-  }
-  // Actual data
-  char * const pStart{reinterpret_cast<char *>(tensor.data())};
-  void * const pEnd{pStart + TotalDataSize};
-  r.read(pStart,TotalDataSize);
-  // Swap back from network byte order
-  if(Endian_Scalar_Size == 8)
-    for(uint64_t * p = reinterpret_cast<uint64_t *>(pStart) ; p < pEnd ; p++ )
-      * p = be64toh( * p );
-  else if(Endian_Scalar_Size == 4)
-    for(uint32_t * p = reinterpret_cast<uint32_t *>(pStart) ; p < pEnd ; p++ )
-      * p = be32toh( * p );
-  else if(Endian_Scalar_Size == 2)
-    for(uint16_t * p = reinterpret_cast<uint16_t *>(pStart) ; p < pEnd ; p++ )
-      * p = be16toh( * p );
-  // checksum
-  r.read(reinterpret_cast<char *>(&u32), sizeof(u32));
-  u32 = be32toh( u32 );
-#ifdef USE_IPP
-  u32 -= GridChecksum::crc32c(tensor.data(), TotalDataSize);
-#else
-  u32 -= GridChecksum::crc32(tensor.data(), TotalDataSize);
-#endif
-  assert( u32 == 0 && "NamedTensor error: PerambTensor checksum invalid");
-}
 
 /******************************************************************************
  Write NamedTensor
  ******************************************************************************/
 
-template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
+template<typename Scalar_, int NumIndices_>
 template<typename Writer>
-void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::write(Writer &w, const char * pszTag)const{
+void NamedTensor<Scalar_, NumIndices_>::write(Writer &w, const char * pszTag)const{
   if( pszTag == nullptr )
     pszTag = "NamedTensor";
   LOG(Message) << "Writing NamedTensor to tag  " << pszTag << std::endl;
   write(w, pszTag, *this);
 }
 
-template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
-void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::write(const char * filename, const char * pszTag)const{
+template<typename Scalar_, int NumIndices_>
+void NamedTensor<Scalar_, NumIndices_>::write(const char * filename, const char * pszTag)const{
   std::string sFileName{filename};
   sFileName.append( MDistil::FileExtension );
   LOG(Message) << "Writing NamedTensor to file " << sFileName << std::endl;
@@ -598,8 +364,8 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::write(const char * f
  Validate named tensor index names
  ******************************************************************************/
 
-template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
-bool NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::ValidateIndexNames( int iNumNames, const std::string * MatchNames ) const {
+template<typename Scalar_, int NumIndices_>
+bool NamedTensor<Scalar_, NumIndices_>::ValidateIndexNames( int iNumNames, const std::string * MatchNames ) const {
   bool bSame{ iNumNames == NumIndices_ && IndexNames.size() == NumIndices_ };
   for( int i = 0; bSame && i < NumIndices_; i++ )
     bSame = CompareCaseInsensitive( MatchNames[i], IndexNames[i] );
@@ -610,9 +376,9 @@ bool NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::ValidateIndexNames( 
  Read NamedTensor
  ******************************************************************************/
 
-template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
+template<typename Scalar_, int NumIndices_>
 template<typename Reader>
-void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::read(Reader &r, const char * pszTag) {
+void NamedTensor<Scalar_, NumIndices_>::read(Reader &r, const char * pszTag) {
   if( pszTag == nullptr )
     pszTag = "NamedTensor";
   // Grab index names and dimensions
@@ -626,8 +392,8 @@ void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::read(Reader &r, cons
   assert( ValidateIndexNames( OldIndexNames.size(), &OldIndexNames[0] ) && "NamedTensor::load dimension name" );
 }
 
-template<typename Scalar_, int NumIndices_, uint16_t Endian_Scalar_Size>
-void NamedTensor<Scalar_, NumIndices_, Endian_Scalar_Size>::read(const char * filename, const char * pszTag) {
+template<typename Scalar_, int NumIndices_>
+void NamedTensor<Scalar_, NumIndices_>::read(const char * filename, const char * pszTag) {
   std::string sFileName{filename};
   sFileName.append( MDistil::FileExtension );
   LOG(Message) << "Reading NamedTensor from file " << sFileName << std::endl;
@@ -664,19 +430,14 @@ inline void RotateEigen(std::vector<LatticeColourVector> & evec)
   Coordinate siteFirst(grid->Nd(),0);
   peekSite(cv0, evec[0], siteFirst);
   Grid::Complex cplx0 = cv0()()(0);
-#ifdef GRID_NVCC
   if( cplx0.imag() == 0 )
-#else
-  if( std::imag(cplx0) == 0 )
-#endif
     std::cout << GridLogMessage << "RotateEigen() : Site 0 : " << cplx0 << " => already meets phase convention" << std::endl;
   else {
+    const Real cplx0_mag = Grid::abs(cplx0);
 #ifdef GRID_NVCC
-    const Real cplx0_mag = thrust::abs(cplx0);
     const Grid::Complex phase = thrust::conj(cplx0 / cplx0_mag);
     const Real argphase = thrust::arg(phase);
 #else
-    const Real cplx0_mag = std::abs(cplx0);
     const Grid::Complex phase = std::conj(cplx0 / cplx0_mag);
     const Real argphase = std::arg(phase);
 #endif
