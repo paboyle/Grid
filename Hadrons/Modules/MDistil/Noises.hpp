@@ -82,17 +82,13 @@ TNoises<FImpl>::TNoises(const std::string name)
 template <typename FImpl>
 std::vector<std::string> TNoises<FImpl>::getInput(void)
 {
-    std::vector<std::string> in;
-    
-    return in;
+    return {};
 }
 
 template <typename FImpl>
 std::vector<std::string> TNoises<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
-    
-    return out;
+    return {getName()};
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
@@ -100,52 +96,49 @@ std::vector<std::string> TNoises<FImpl>::getOutput(void)
 template <typename FImpl>
 void TNoises<FImpl>::setup(void)
 {
-  const int Nt{env().getDim(Tdir)};
-  const int nnoise{par().nnoise};
-  const int nvec{par().nvec};
-  const int TI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().TI, Nt, true) };
-  const int LI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().LI, nvec, true) };
-  envCreate(NoiseTensor, getName(), 1, nnoise, Nt, nvec, Ns);
+    const int Nt{env().getDim(Tdir)};
+    const int nnoise{par().nnoise};
+    const int nvec{par().nvec};
+    envCreate(NoiseTensor, getName(), 1, nnoise, Nt, nvec, Ns);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TNoises<FImpl>::execute(void)
 {
-  const int Nt{env().getDim(Tdir)};
-  const int nnoise{par().nnoise};
-  const int nvec{par().nvec};
-  const int TI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().TI, Nt, false) };
-  const int LI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().LI, nvec, false) };
-  const bool full_tdil{ TI == Nt }; \
-  const bool exact_distillation{ full_tdil && LI == nvec }; \
-  std::string UniqueIdentifier{par().UniqueIdentifier};
-  if( UniqueIdentifier.length() == 0 ) {
-    UniqueIdentifier = getName();
-  }
-  UniqueIdentifier.append( std::to_string( vm().getTrajectory() ) ); 
-
-  // We use our own seeds so we can specify different noises per quark
-  GridSerialRNG sRNG;
-  sRNG.SeedUniqueString(UniqueIdentifier);
-  Real rn;
-  auto &noise = envGet(NoiseTensor, getName());
-  for( int inoise = 0; inoise < nnoise; inoise++ ) {
-    for( int t = 0; t < Nt; t++ ) {
-      for( int ivec = 0; ivec < nvec; ivec++ ) {
-        for( int is = 0; is < Ns; is++ ) {
-          if( exact_distillation )
-            noise(inoise, t, ivec, is) = 1.;
-          else{
-            random(sRNG,rn);
-            // We could use a greater number of complex roots of unity
-            // ... but this seems to work well
-            noise(inoise, t, ivec, is) = (rn > 0.5) ? -1 : 1;
-          }
+    const int Nt{env().getDim(Tdir)};
+    const int nnoise{par().nnoise};
+    const int nvec{par().nvec};
+    const int TI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().TI, Nt, false) };
+    const int LI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().LI, nvec, false) };
+    const bool full_tdil{ TI == Nt }; \
+    const bool exact_distillation{ full_tdil && LI == nvec }; \
+    std::string UniqueIdentifier{par().UniqueIdentifier};
+    if (UniqueIdentifier.empty())
+        UniqueIdentifier = getName();
+    UniqueIdentifier.append( std::to_string( vm().getTrajectory() ) );
+    
+    // We use our own seeds so we can specify different noises per quark
+    GridSerialRNG sRNG;
+    sRNG.SeedUniqueString(UniqueIdentifier);
+    Real rn;
+    auto &noise = envGet(NoiseTensor, getName());
+    for (int inoise = 0; inoise < nnoise; inoise++) {
+        for (int t = 0; t < Nt; t++) {
+            for (int ivec = 0; ivec < nvec; ivec++) {
+                for (int is = 0; is < Ns; is++) {
+                    if (exact_distillation)
+                        noise(inoise, t, ivec, is) = 1.;
+                    else{
+                        random(sRNG,rn);
+                        // We could use a greater number of complex roots of unity
+                        // ... but this seems to work well
+                        noise(inoise, t, ivec, is) = (rn > 0.5) ? -1 : 1;
+                    }
+                }
+            }
         }
-      }
     }
-  }
 }
 
 END_MODULE_NAMESPACE

@@ -126,7 +126,7 @@ void TPerambulator<FImpl>::setup(void)
     grid3d = MakeLowerDimGrid(grid4d);
     DISTIL_PARAMETERS_DEFINE( true );
     const std::string UnsmearedSinkFileName{ par().UnsmearedSinkFileName };
-    if( !UnsmearedSinkFileName.empty() )
+    if (!UnsmearedSinkFileName.empty())
         bool bMulti = ( Hadrons::MDistil::DistilParameters::ParameterDefault( par().UnsmearedSinkMultiFile, 1, true ) != 0 );
     
     envCreate(PerambTensor, getName(), 1, Nt,nvec,LI,nnoise,Nt_inv,SI);
@@ -152,7 +152,7 @@ void TPerambulator<FImpl>::setup(void)
 template <typename FImpl>
 void TPerambulator<FImpl>::Cleanup(void)
 {
-    if( grid3d != nullptr )
+    if (grid3d != nullptr)
     {
         delete grid3d;
         grid3d = nullptr;
@@ -185,67 +185,62 @@ void TPerambulator<FImpl>::execute(void)
     const int Ntlocal{grid4d->LocalDimensions()[3]};
     const int Ntfirst{grid4d->LocalStarts()[3]};
     const std::string UnsmearedSinkFileName{ par().UnsmearedSinkFileName };
-    
+
+    for (int inoise = 0; inoise < nnoise; inoise++)
     {
-        int t_inv;
-        for (int inoise = 0; inoise < nnoise; inoise++)
+        for (int dk = 0; dk < LI; dk++)
         {
-            for (int dk = 0; dk < LI; dk++)
+            for (int dt = 0; dt < Nt_inv; dt++)
             {
-                for (int dt = 0; dt < Nt_inv; dt++)
+                for (int ds = 0; ds < SI; ds++)
                 {
-                    for (int ds = 0; ds < SI; ds++)
+                    LOG(Message) <<  "LapH source vector from noise " << inoise << " and dilution component (d_k,d_t,d_alpha) : (" << dk << ","<< dt << "," << ds << ")" << std::endl;
+                    dist_source = 0;
+                    tmp3d_nospin = 0;
+                    evec3d = 0;
+                    for (int it = dt; it < Nt; it += TI)
                     {
-                        LOG(Message) <<  "LapH source vector from noise " << inoise << " and dilution component (d_k,d_t,d_alpha) : (" << dk << ","<< dt << "," << ds << ")" << std::endl;
-                        dist_source = 0;
-                        tmp3d_nospin = 0;
-                        evec3d = 0;
-                        for (int it = dt; it < Nt; it += TI)
+                        const int t_inv{full_tdil ? tsrc : it};
+                        if( t_inv >= Ntfirst && t_inv < Ntfirst + Ntlocal )
                         {
-                            if (full_tdil) t_inv = tsrc; else t_inv = it;
-                            if( t_inv >= Ntfirst && t_inv < Ntfirst + Ntlocal )
+                            for (int ik = dk; ik < nvec; ik += LI)
                             {
-                                for (int ik = dk; ik < nvec; ik += LI)
+                                for (int is = ds; is < Ns; is += SI)
                                 {
-                                    for (int is = ds; is < Ns; is += SI)
-                                    {
-                                        ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv-Ntfirst,Tdir);
-                                        tmp3d_nospin = evec3d * noise(inoise, t_inv, ik, is);
-                                        tmp3d=0;
-                                        pokeSpin(tmp3d,tmp3d_nospin,is);
-                                        tmp2=0;
-                                        InsertSliceLocal(tmp3d,tmp2,0,t_inv-Ntfirst,Tdir);
-                                        dist_source += tmp2;
-                                    }
+                                    ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv-Ntfirst,Tdir);
+                                    tmp3d_nospin = evec3d * noise(inoise, t_inv, ik, is);
+                                    tmp3d=0;
+                                    pokeSpin(tmp3d,tmp3d_nospin,is);
+                                    tmp2=0;
+                                    InsertSliceLocal(tmp3d,tmp2,0,t_inv-Ntfirst,Tdir);
+                                    dist_source += tmp2;
                                 }
                             }
                         }
-                        result=0;
-                        v4dtmp = dist_source;
-                        if (Ls_ == 1)
+                    }
+                    result=0;
+                    v4dtmp = dist_source;
+                    if (Ls_ == 1)
+                        solver(result, v4dtmp);
+                    else
+                    {
+                        mat.ImportPhysicalFermionSource(v4dtmp, v5dtmp);
+                        solver(v5dtmp_sol, v5dtmp);
+                        mat.ExportPhysicalFermionSolution(v5dtmp_sol, v4dtmp);
+                        result = v4dtmp;
+                    }
+                    if (!UnsmearedSinkFileName.empty())
+                        unsmeared_sink[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))] = result;
+                    for (int is = 0; is < Ns; is++)
+                    {
+                        result_nospin = peekSpin(result,is);
+                        for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++)
                         {
-                            solver(result, v4dtmp);
-                        }
-                        else
-                        {
-                            mat.ImportPhysicalFermionSource(v4dtmp, v5dtmp);
-                            solver(v5dtmp_sol, v5dtmp);
-                            mat.ExportPhysicalFermionSolution(v5dtmp_sol, v4dtmp);
-                            result = v4dtmp;
-                        }
-                        if( !UnsmearedSinkFileName.empty() )
-                            unsmeared_sink[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))] = result;
-                        for (int is = 0; is < Ns; is++)
-                        {
-                            result_nospin = peekSpin(result,is);
-                            for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++)
+                            ExtractSliceLocal(result_3d,result_nospin,0,t-Ntfirst,Tdir);
+                            for (int ivec = 0; ivec < nvec; ivec++)
                             {
-                                ExtractSliceLocal(result_3d,result_nospin,0,t-Ntfirst,Tdir);
-                                for (int ivec = 0; ivec < nvec; ivec++)
-                                {
-                                    ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Tdir);
-                                    pokeSpin(perambulator.tensor(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
-                                }
+                                ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Tdir);
+                                pokeSpin(perambulator.tensor(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
                             }
                         }
                     }

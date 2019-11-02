@@ -69,11 +69,11 @@ public:
     // execution
     virtual void execute(void);
 protected:
-	GridCartesian * grid3d; // Owned by me, so I must delete it
-	GridCartesian * grid4d;
+    GridCartesian * grid3d; // Owned by me, so I must delete it
+    GridCartesian * grid4d;
 protected:
-	    virtual void Cleanup(void);
-
+    virtual void Cleanup(void);
+    
 };
 
 MODULE_REGISTER_TMP(PerambFromSolve, TPerambFromSolve<FIMPL>, MDistil);
@@ -90,100 +90,98 @@ TPerambFromSolve<FImpl>::TPerambFromSolve(const std::string name)
 template <typename FImpl>
 TPerambFromSolve<FImpl>::~TPerambFromSolve(void)
 {
-  Cleanup();
+    Cleanup();
 };
-
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
 std::vector<std::string> TPerambFromSolve<FImpl>::getInput(void)
 {
-  return std::vector<std::string>{ par().solve, par().eigenPack };
+    return std::vector<std::string>{ par().solve, par().eigenPack };
 }
 
 template <typename FImpl>
 std::vector<std::string> TPerambFromSolve<FImpl>::getOutput(void)
 {
-  return std::vector<std::string>{ getName() };
+    return std::vector<std::string>{ getName() };
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TPerambFromSolve<FImpl>::setup(void)
 {
-  Cleanup();
-  DISTIL_PARAMETERS_DEFINE( true );
-  const int nvec_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().nvec_reduced, nvec, true) };
-  const int LI_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().LI_reduced, LI, true) };
-  grid4d = env().getGrid();
-  grid3d = MakeLowerDimGrid(grid4d);
-  envCreate(PerambTensor, getName(), 1, Nt,nvec_reduced,LI_reduced,nnoise,Nt_inv,SI);
-  envCreate(NoiseTensor, getName() + "_noise", 1, nnoise, Nt, nvec, Ns );
-  envTmp(LatticeColourVector, "result_3d",1,LatticeColourVector(grid3d));
-  envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
-  envTmpLat(LatticeColourVector, "result_nospin");
+    Cleanup();
+    DISTIL_PARAMETERS_DEFINE( true );
+    const int nvec_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().nvec_reduced, nvec, true) };
+    const int LI_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().LI_reduced, LI, true) };
+    grid4d = env().getGrid();
+    grid3d = MakeLowerDimGrid(grid4d);
+    envCreate(PerambTensor, getName(), 1, Nt,nvec_reduced,LI_reduced,nnoise,Nt_inv,SI);
+    envCreate(NoiseTensor, getName() + "_noise", 1, nnoise, Nt, nvec, Ns );
+    envTmp(LatticeColourVector, "result_3d",1,LatticeColourVector(grid3d));
+    envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
+    envTmpLat(LatticeColourVector, "result_nospin");
 }
 
 template <typename FImpl>
 void TPerambFromSolve<FImpl>::Cleanup(void)
 {
-  if( grid3d != nullptr ) {
-    delete grid3d;
-    grid3d = nullptr;
-  }
-  grid4d = nullptr;
+    if (grid3d != nullptr)
+    {
+        delete grid3d;
+        grid3d = nullptr;
+    }
+    grid4d = nullptr;
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TPerambFromSolve<FImpl>::execute(void)
 {
-  GridCartesian * grid4d = env().getGrid();
-  const int Ntlocal{grid4d->LocalDimensions()[3]};
-  const int Ntfirst{grid4d->LocalStarts()[3]};
-  DISTIL_PARAMETERS_DEFINE( false );
-  const int nvec_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().nvec_reduced, nvec, false) };
-  const int LI_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().LI_reduced, LI, false) };
-  auto &perambulator = envGet(PerambTensor, getName());
-  auto &solve       = envGet(std::vector<FermionField>, par().solve);
-  auto &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
-
-  envGetTmp(LatticeColourVector, result_nospin);
-  envGetTmp(LatticeColourVector, result_3d);
-  envGetTmp(LatticeColourVector, evec3d);
-
-  for (int inoise = 0; inoise < nnoise; inoise++) {
-    for (int dk = 0; dk < LI_reduced; dk++) {
-      for (int dt = 0; dt < Nt_inv; dt++) {
-        for (int ds = 0; ds < SI; ds++) {
-          for (int is = 0; is < Ns; is++) {
-            result_nospin = peekSpin(solve[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))],is);
-            for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
-              ExtractSliceLocal(result_3d,result_nospin,0,t-Ntfirst,Tdir);
-              for (int ivec = 0; ivec < nvec_reduced; ivec++) {
-                ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Tdir);
-                pokeSpin(perambulator.tensor(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
-                LOG(Message) <<  "perambulator(t, ivec, dk, inoise,dt,ds)(is) = (" << t << "," << ivec << "," << dk << "," << inoise << "," << dt << "," << ds << ")(" << is << ") = " <<  perambulator.tensor(t, ivec, dk, inoise,dt,ds)()(is)() << std::endl;
-              }
+    GridCartesian * grid4d = env().getGrid();
+    const int Ntlocal{grid4d->LocalDimensions()[3]};
+    const int Ntfirst{grid4d->LocalStarts()[3]};
+    DISTIL_PARAMETERS_DEFINE( false );
+    const int nvec_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().nvec_reduced, nvec, false) };
+    const int LI_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().LI_reduced, LI, false) };
+    auto &perambulator = envGet(PerambTensor, getName());
+    auto &solve       = envGet(std::vector<FermionField>, par().solve);
+    auto &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
+    
+    envGetTmp(LatticeColourVector, result_nospin);
+    envGetTmp(LatticeColourVector, result_3d);
+    envGetTmp(LatticeColourVector, evec3d);
+    
+    for (int inoise = 0; inoise < nnoise; inoise++) {
+        for (int dk = 0; dk < LI_reduced; dk++) {
+            for (int dt = 0; dt < Nt_inv; dt++) {
+                for (int ds = 0; ds < SI; ds++) {
+                    for (int is = 0; is < Ns; is++) {
+                        result_nospin = peekSpin(solve[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))],is);
+                        for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
+                            ExtractSliceLocal(result_3d,result_nospin,0,t-Ntfirst,Tdir);
+                            for (int ivec = 0; ivec < nvec_reduced; ivec++) {
+                                ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Tdir);
+                                pokeSpin(perambulator.tensor(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
+                                LOG(Message) <<  "perambulator(t, ivec, dk, inoise,dt,ds)(is) = (" << t << "," << ivec << "," << dk << "," << inoise << "," << dt << "," << ds << ")(" << is << ") = " <<  perambulator.tensor(t, ivec, dk, inoise,dt,ds)()(is)() << std::endl;
+                            }
+                        }
+                    }
+                }
             }
-          }
         }
-      }
     }
-  }
-
-  if(grid4d->IsBoss()) {
-    std::string sPerambName{par().PerambFileName};
-    if( sPerambName.length() == 0 )
-      sPerambName = getName();
-    sPerambName.append( "." );
-    sPerambName.append( std::to_string(vm().getTrajectory()));
-    perambulator.write(sPerambName.c_str());
-  }
+    if(grid4d->IsBoss())
+    {
+        std::string sPerambName{par().PerambFileName};
+        if (sPerambName.empty())
+            sPerambName = getName();
+        sPerambName.append( "." );
+        sPerambName.append( std::to_string(vm().getTrajectory()));
+        perambulator.write(sPerambName.c_str());
+    }
 }
 
 END_MODULE_NAMESPACE
-
 END_HADRONS_NAMESPACE
-
 #endif // Hadrons_MDistil_PerambFromSolve_hpp_
