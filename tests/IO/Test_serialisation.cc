@@ -30,7 +30,6 @@ Author: Michael Marshall <michael.marshall@ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 #include <typeinfo>
-#include <Hadrons/Distil.hpp>
 
 using namespace Grid;
 
