@@ -7,6 +7,7 @@
 #include <Hadrons/Modules/MIO/LoadA2AMatrixDiskVector.hpp>
 #include <Hadrons/Modules/MIO/LoadCoarseEigenPack.hpp>
 #include <Hadrons/Modules/MIO/LoadNersc.hpp>
+#include <Hadrons/Modules/MIO/LoadPerambulator.hpp>
 #include <Hadrons/Modules/MIO/LoadBinary.hpp>
 #include <Hadrons/Modules/MAction/ZMobiusDWF.hpp>
 #include <Hadrons/Modules/MAction/MobiusDWF.hpp>
@@ -29,6 +30,11 @@
 #include <Hadrons/Modules/MContraction/Baryon.hpp>
 #include <Hadrons/Modules/MContraction/WeakEye3pt.hpp>
 #include <Hadrons/Modules/MContraction/A2ALoop.hpp>
+#include <Hadrons/Modules/MDistil/DistilVectors.hpp>
+#include <Hadrons/Modules/MDistil/LapEvec.hpp>
+#include <Hadrons/Modules/MDistil/Noises.hpp>
+#include <Hadrons/Modules/MDistil/PerambFromSolve.hpp>
+#include <Hadrons/Modules/MDistil/Perambulator.hpp>
 #include <Hadrons/Modules/MSink/Point.hpp>
 #include <Hadrons/Modules/MSink/Smear.hpp>
 #include <Hadrons/Modules/MScalarSUN/StochFreeField.hpp>

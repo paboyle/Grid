@@ -16,6 +16,7 @@ modules_cc =\
   Modules/MAction/WilsonClover.cc \
   Modules/MAction/MobiusDWF.cc \
   Modules/MUtilities/RandomVectors.cc \
+  Modules/MIO/LoadPerambulator.cc \
   Modules/MUtilities/PrecisionCast.cc \
   Modules/MNoise/FullVolumeSpinColorDiagonal.cc \
   Modules/MNoise/TimeDilutedSpinColorDiagonal.cc \
@@ -30,6 +31,11 @@ modules_cc =\
   Modules/MContraction/Baryon.cc \
   Modules/MContraction/WeakMesonDecayKl2.cc \
   Modules/MContraction/Meson.cc \
+  Modules/MDistil/DistilVectors.cc \
+  Modules/MDistil/LapEvec.cc \
+  Modules/MDistil/Noises.cc \
+  Modules/MDistil/PerambFromSolve.cc \
+  Modules/MDistil/Perambulator.cc \
   Modules/MSink/Point.cc \
   Modules/MSink/Smear.cc \
   Modules/MScalarSUN/TrPhi.cc \
@@ -81,6 +87,7 @@ modules_hpp =\
   Modules/MIO/LoadCoarseEigenPack.hpp \
   Modules/MIO/LoadNersc.hpp \
   Modules/MIO/LoadBinary.hpp \
+  Modules/MIO/LoadPerambulator.hpp \
   Modules/MAction/ZMobiusDWF.hpp \
   Modules/MAction/MobiusDWF.hpp \
   Modules/MAction/Wilson.hpp \
@@ -100,6 +107,11 @@ modules_hpp =\
   Modules/MContraction/A2AAslashField.hpp \
   Modules/MContraction/A2AFourQuarkContraction.hpp \
   Modules/MContraction/Baryon.hpp \
+  Modules/MDistil/DistilVectors.hpp \
+  Modules/MDistil/LapEvec.hpp \
+  Modules/MDistil/Noises.hpp \
+  Modules/MDistil/PerambFromSolve.hpp \
+  Modules/MDistil/Perambulator.hpp \
   Modules/MContraction/WeakEye3pt.hpp \
   Modules/MContraction/A2ALoop.hpp \
   Modules/MSink/Point.hpp \
@@ -144,4 +156,3 @@ modules_hpp =\
   Modules/MScalar/ChargedProp.hpp \
   Modules/MScalar/Scalar.hpp \
   Modules/MScalar/FreeProp.hpp
-
