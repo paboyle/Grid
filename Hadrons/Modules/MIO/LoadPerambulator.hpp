@@ -30,18 +30,14 @@
 #ifndef Hadrons_MIO_LoadPerambulator_hpp_
 #define Hadrons_MIO_LoadPerambulator_hpp_
 
-#include <Hadrons/Global.hpp>
-#include <Hadrons/Module.hpp>
-#include <Hadrons/ModuleFactory.hpp>
-#include <Hadrons/EigenPack.hpp>
-#include <Hadrons/Distil.hpp>
+#include <Hadrons/Modules/MDistil/DistilCommon.hpp>
 
 BEGIN_HADRONS_NAMESPACE
+BEGIN_MODULE_NAMESPACE(MIO)
 
 /******************************************************************************
  *                         LoadPerambulator                                 *
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MIO)
 
 class LoadPerambulatorPar: Serializable
 {
@@ -103,7 +99,7 @@ void TLoadPerambulator<FImpl>::setup(void)
 {
   DISTIL_PARAMETERS_DEFINE( true );
   //std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
-  envCreate(MDistil::PerambTensor, getName(), 1, MDistil::PerambIndexNames,Nt,nvec,LI,nnoise,Nt_inv,SI);
+  envCreate(MDistil::PerambTensor, getName(), 1, Nt,nvec,LI,nnoise,Nt_inv,SI);
 }
 
 // execution ///////////////////////////////////////////////////////////////////

@@ -30,7 +30,7 @@
 #ifndef Hadrons_MDistil_Perambulator_hpp_
 #define Hadrons_MDistil_Perambulator_hpp_
 
-#include <Hadrons/Distil.hpp>
+#include <Hadrons/Modules/MDistil/DistilCommon.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 BEGIN_MODULE_NAMESPACE(MDistil)
@@ -129,7 +129,7 @@ void TPerambulator<FImpl>::setup(void)
     if( !UnsmearedSinkFileName.empty() )
         bool bMulti = ( Hadrons::MDistil::DistilParameters::ParameterDefault( par().UnsmearedSinkMultiFile, 1, true ) != 0 );
     
-    envCreate(PerambTensor, getName(), 1, PerambIndexNames,Nt,nvec,LI,nnoise,Nt_inv,SI);
+    envCreate(PerambTensor, getName(), 1, Nt,nvec,LI,nnoise,Nt_inv,SI);
     envCreate(std::vector<FermionField>, getName() + "_unsmeared_sink", 1,
               nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField));
     
@@ -244,7 +244,7 @@ void TPerambulator<FImpl>::execute(void)
                                 for (int ivec = 0; ivec < nvec; ivec++)
                                 {
                                     ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Tdir);
-                                    pokeSpin(perambulator(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
+                                    pokeSpin(perambulator.tensor(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
                                 }
                             }
                         }

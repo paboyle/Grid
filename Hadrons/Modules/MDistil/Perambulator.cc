@@ -34,3 +34,14 @@ using namespace Hadrons;
 using namespace MDistil;
 
 template class Grid::Hadrons::MDistil::TPerambulator<FIMPL>;
+
+// Global constants for distillation
+
+const std::string Grid::Hadrons::MDistil::PerambTensorName{ "Perambulator" };
+const std::array<std::string, 6> Grid::Hadrons::MDistil::PerambIndexNames{"nT", "nVec", "LI", "nNoise", "nT_inv", "SI"};
+
+#ifdef HAVE_HDF5
+extern const std::string Grid::Hadrons::NamedTensorFileExtension{".h5"};
+#else
+extern const std::string Grid::Hadrons::NamedTensorFileExtension{".dat"};
+#endif

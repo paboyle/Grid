@@ -30,23 +30,14 @@
 #ifndef Hadrons_MDistil_PerambFromSolve_hpp_
 #define Hadrons_MDistil_PerambFromSolve_hpp_
 
-#include <Hadrons/Global.hpp>
-#include <Hadrons/Module.hpp>
-#include <Hadrons/ModuleFactory.hpp>
-#include <Hadrons/Solver.hpp>
-#include <Hadrons/EigenPack.hpp>
-#include <Hadrons/A2AVectors.hpp>
-#include <Hadrons/DilutedNoise.hpp>
+#include <Hadrons/Modules/MDistil/DistilCommon.hpp>
 
-// These are members of Distillation
-#include <Hadrons/Distil.hpp>
- 
 BEGIN_HADRONS_NAMESPACE
+BEGIN_MODULE_NAMESPACE(MDistil)
 
 /******************************************************************************
  *                         PerambFromSolve                                 *
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MDistil)
 
 class PerambFromSolvePar: Serializable
 {
@@ -126,7 +117,7 @@ void TPerambFromSolve<FImpl>::setup(void)
   const int LI_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().LI_reduced, LI, true) };
   grid4d = env().getGrid();
   grid3d = MakeLowerDimGrid(grid4d);
-  envCreate(PerambTensor, getName(), 1, PerambIndexNames,Nt,nvec_reduced,LI_reduced,nnoise,Nt_inv,SI);
+  envCreate(PerambTensor, getName(), 1, Nt,nvec_reduced,LI_reduced,nnoise,Nt_inv,SI);
   envCreate(NoiseTensor, getName() + "_noise", 1, nnoise, Nt, nvec, Ns );
   envTmp(LatticeColourVector, "result_3d",1,LatticeColourVector(grid3d));
   envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
@@ -171,8 +162,8 @@ void TPerambFromSolve<FImpl>::execute(void)
               ExtractSliceLocal(result_3d,result_nospin,0,t-Ntfirst,Tdir);
               for (int ivec = 0; ivec < nvec_reduced; ivec++) {
                 ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Tdir);
-                pokeSpin(perambulator(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
-                LOG(Message) <<  "perambulator(t, ivec, dk, inoise,dt,ds)(is) = (" << t << "," << ivec << "," << dk << "," << inoise << "," << dt << "," << ds << ")(" << is << ") = " <<  perambulator(t, ivec, dk, inoise,dt,ds)()(is)() << std::endl;
+                pokeSpin(perambulator.tensor(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
+                LOG(Message) <<  "perambulator(t, ivec, dk, inoise,dt,ds)(is) = (" << t << "," << ivec << "," << dk << "," << inoise << "," << dt << "," << ds << ")(" << is << ") = " <<  perambulator.tensor(t, ivec, dk, inoise,dt,ds)()(is)() << std::endl;
               }
             }
           }

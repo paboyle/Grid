@@ -30,24 +30,15 @@
 #ifndef Hadrons_MDistil_DistilVectors_hpp_
 #define Hadrons_MDistil_DistilVectors_hpp_
 
-#include <Hadrons/Global.hpp>
-#include <Hadrons/Module.hpp>
-#include <Hadrons/ModuleFactory.hpp>
-#include <Hadrons/Solver.hpp>
-#include <Hadrons/EigenPack.hpp>
-#include <Hadrons/A2AVectors.hpp>
-#include <Hadrons/DilutedNoise.hpp>
-
-// These are members of Distillation
-#include <Hadrons/Distil.hpp>
+#include <Hadrons/Modules/MDistil/DistilCommon.hpp>
 
 BEGIN_HADRONS_NAMESPACE
+BEGIN_MODULE_NAMESPACE(MDistil)
 
 /******************************************************************************
  *                         DistilVectors                                      *
  *                (Create rho and/or phi vectors)                             *
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MDistil)
 
 class DistilVectorsPar: Serializable
 {
@@ -166,7 +157,7 @@ void TDistilVectors<FImpl>::setup(void)
   auto &perambulator = envGet(PerambTensor, PerambulatorName);
 
   // We expect the perambulator to have been created with these indices
-  assert( perambulator.ValidateIndexNames( PerambIndexNames.size(), &PerambIndexNames[0] ) && "Perambulator index names bad" );
+  assert( perambulator.ValidateIndexNames() && "Perambulator index names bad" );
 
   const int Nt{ env().getDim(Tdir) };
   assert( Nt == static_cast<int>( perambulator.tensor.dimension(0) ) && "PerambTensor time dimensionality bad" );
@@ -287,7 +278,7 @@ void TDistilVectors<FImpl>::execute(void)
               sink_tslice=0;
               for (int ivec = 0; ivec < nvec; ivec++) {
                 ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Tdir);
-                sink_tslice += evec3d * perambulator(t, ivec, dk, inoise,dt,ds);
+                sink_tslice += evec3d * perambulator.tensor(t, ivec, dk, inoise,dt,ds);
               }
               InsertSliceLocal(sink_tslice,phi[vecindex],0,t-Ntfirst,Tdir);
             }

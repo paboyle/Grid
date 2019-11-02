@@ -30,16 +30,9 @@
 #ifndef Hadrons_MDistil_LapEvec_hpp_
 #define Hadrons_MDistil_LapEvec_hpp_
 
-#include <Hadrons/Global.hpp>
-#include <Hadrons/Module.hpp>
-#include <Hadrons/ModuleFactory.hpp>
-#include <Hadrons/EigenPack.hpp>
-
-// These are members of Distillation
-#include <Hadrons/Distil.hpp>
+#include <Hadrons/Modules/MDistil/DistilCommon.hpp>
 
 BEGIN_HADRONS_NAMESPACE
-
 BEGIN_MODULE_NAMESPACE(MDistil)
 
 /******************************************************************************

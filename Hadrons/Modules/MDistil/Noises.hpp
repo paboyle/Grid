@@ -30,23 +30,14 @@
 #ifndef Hadrons_MDistil_Noises_hpp_
 #define Hadrons_MDistil_Noises_hpp_
 
-#include <Hadrons/Global.hpp>
-#include <Hadrons/Module.hpp>
-#include <Hadrons/ModuleFactory.hpp>
-#include <Hadrons/Solver.hpp>
-#include <Hadrons/EigenPack.hpp>
-#include <Hadrons/A2AVectors.hpp>
-#include <Hadrons/DilutedNoise.hpp>
-
-// These are members of Distillation
- #include <Hadrons/Distil.hpp>
+#include <Hadrons/Modules/MDistil/DistilCommon.hpp>
 
 BEGIN_HADRONS_NAMESPACE
+BEGIN_MODULE_NAMESPACE(MDistil)
 
 /******************************************************************************
  *                         Noises                                 *
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MDistil)
 
 class NoisesPar: Serializable
 {

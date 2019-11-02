@@ -30,6 +30,7 @@ Author: Michael Marshall <michael.marshall@ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 #include <typeinfo>
+#include <Hadrons/Distil.hpp>
 
 using namespace Grid;
 
@@ -252,6 +253,14 @@ void tensorConvTestFn(GridSerialRNG &rng, const std::string label)
 }
 
 #define tensorConvTest(rng, type) tensorConvTestFn<type>(rng, #type)
+static const std::string TheyCallMeLurve{"That's not my name"};
+static const std::string Coco{"Coco the dancing seal"};
+static const std::array<std::string,2> GreatestShowOnEarth{ "Burnum", "Burnum" };
+
+using MyPerambTensor = Grid::Hadrons::NamedTensor<SpinVector, 6, Grid::Hadrons::MDistil::PerambTensorName, Grid::Hadrons::MDistil::PerambIndexNames>;
+static const std::string MPTName{ "Perambulator" };
+static const std::array<std::string, 6> MPTIndexNames{"nT", "nVec", "LI", "nNoise", "nT_inv", "SI"};
+using MyPerambTensor2 = Grid::Hadrons::NamedTensor<SpinVector, 6, MPTName, MPTIndexNames>;
 
 int main(int argc,char **argv)
 {
@@ -383,5 +392,33 @@ int main(int argc,char **argv)
     XmlWriter HMCwr("HMCparameters.xml");
     write(HMCwr,"HMCparameters",HMCparams);
   }
+
+  using Tst1=Hadrons::NamedTensor<double,2,Coco,GreatestShowOnEarth>;
+  using Tst2=Hadrons::NamedTensor<double,2,TheyCallMeLurve,GreatestShowOnEarth>;
+  using Tst3=Hadrons::NamedTensor<double,2,TheyCallMeLurve,GreatestShowOnEarth>;
+  std::cout << "typeid(Tst1)=" << typeid(Tst1).name() << std::endl;
+  std::cout << "typeid(Tst2)=" << typeid(Tst2).name() << std::endl;
+  std::cout << "typeid(Tst3)=" << typeid(Tst3).name() << std::endl;
+  std::cout << "Tst1 is " << ( typeid(Tst1) == typeid(Tst2) ? "" : "not " )
+            << "the same as Tst2" << std::endl;
+  std::cout << "Tst3 is " << ( typeid(Tst3) == typeid(Tst2) ? "" : "not " )
+            << "the same as Tst2" << std::endl;
+  std::cout << "typeid(PerambTensor)=" << typeid(Grid::Hadrons::MDistil::PerambTensor).name() << std::endl;
+  std::cout << "typeid(MyPerambTensor)=" << typeid(MyPerambTensor).name() << std::endl;
+  std::cout << "Grid::Hadrons::MDistil::PerambTensor is "
+  << ( typeid(Grid::Hadrons::MDistil::PerambTensor) == typeid(MyPerambTensor) ? "" : "not " )
+  << "the same as MyPerambTensor" << std::endl;
+  std::cout << "Grid::Hadrons::MDistil::PerambTensor is "
+  << ( typeid(Grid::Hadrons::MDistil::PerambTensor) == typeid(MyPerambTensor2) ? "" : "not " )
+  << "the same as MyPerambTensor2" << std::endl;
+
+  const std::string FileOriginal{"Peramb.3000"};
+  const std::string FileCopy{"Peramb_deleteme.3000"};
+  MyPerambTensor p;
+  p.read(FileOriginal,true,std::string("NamedTensor"));
+  //p.IndexNames[3] = "Lemons " + p.IndexNames[3];
+  p.write(FileCopy);
+  p.read(FileCopy,false);
+  p.read(FileCopy);
   Grid_finalize();
 }
