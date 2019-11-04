@@ -240,7 +240,7 @@ void TPerambulator<FImpl>::execute(void)
                             for (int ivec = 0; ivec < nvec; ivec++)
                             {
                                 ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Tdir);
-                                pokeSpin(perambulator.tensor(t, ivec, dk, inoise,dt,ds),innerProduct(evec3d, result_3d),is);
+                                pokeSpin(perambulator.tensor(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
                             }
                         }
                     }

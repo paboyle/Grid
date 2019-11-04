@@ -115,11 +115,12 @@ inline void RotateEigen(std::vector<LatticeColourVector> & evec)
     if( cplx0.imag() == 0 )
         std::cout << GridLogMessage << "RotateEigen() : Site 0 : " << cplx0 << " => already meets phase convention" << std::endl;
     else {
-        const Real cplx0_mag = Grid::abs(cplx0);
 #ifdef GRID_NVCC
+        const Real cplx0_mag = thrust::abs(cplx0);
         const Grid::Complex phase = thrust::conj(cplx0 / cplx0_mag);
         const Real argphase = thrust::arg(phase);
 #else
+        const Real cplx0_mag = std::abs(cplx0);
         const Grid::Complex phase = std::conj(cplx0 / cplx0_mag);
         const Real argphase = std::arg(phase);
 #endif
