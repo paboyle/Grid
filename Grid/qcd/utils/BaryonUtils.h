@@ -43,7 +43,7 @@ public:
   typedef typename ComplexField::vector_object vobj;
   
   static constexpr int epsilon[6][3] = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
-  static constexpr Complex epsilon_sgn[6]= {1,1,1,-1,-1,-1};
+  static constexpr int epsilon_sgn[6]= {1,1,1,-1,-1,-1};
 
   private: 
   template <class mobj, class robj>
@@ -86,7 +86,7 @@ public:
 template <class FImpl>
 constexpr int BaryonUtils<FImpl>::epsilon[6][3];
 template <class FImpl>
-constexpr Complex BaryonUtils<FImpl>::epsilon_sgn[6];
+constexpr int BaryonUtils<FImpl>::epsilon_sgn[6];
 
 template <class FImpl>
 template <class mobj, class robj>
@@ -123,7 +123,7 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
 	  for (int beta_left=0; beta_left<Ns; beta_left++){
 	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-	    result()()() += epsilon_sgn[ie_left] * epsilon_sgn[ie_right] * pD1()(gamma_left,gamma_left)(c_right,c_left)*D2g()(alpha_right,beta_left)(a_right,a_left)*gD3()(alpha_right,beta_left)(b_right,b_left);
+	    result()()() += static_cast<Complex>(epsilon_sgn[ie_left] * epsilon_sgn[ie_right]) * pD1()(gamma_left,gamma_left)(c_right,c_left)*D2g()(alpha_right,beta_left)(a_right,a_left)*gD3()(alpha_right,beta_left)(b_right,b_left);
           }}}
   	}	  
         //This is the \delta_{456}^{231} part
@@ -132,7 +132,7 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
 	  for (int beta_left=0; beta_left<Ns; beta_left++){
 	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-	    result()()() += epsilon_sgn[ie_left] * epsilon_sgn[ie_right] * pD1g()(gamma_left,beta_left)(c_right,a_left)*D2()(alpha_right,beta_left)(a_right,b_left)*gD3()(alpha_right,gamma_left)(b_right,c_left);
+	    result()()() += static_cast<Complex>(epsilon_sgn[ie_left] * epsilon_sgn[ie_right]) * pD1g()(gamma_left,beta_left)(c_right,a_left)*D2()(alpha_right,beta_left)(a_right,b_left)*gD3()(alpha_right,gamma_left)(b_right,c_left);
           }}}
         }	  
         //This is the \delta_{456}^{312} part
@@ -141,7 +141,7 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
 	  for (int beta_left=0; beta_left<Ns; beta_left++){
 	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-	    result()()() += epsilon_sgn[ie_left] * epsilon_sgn[ie_right] * pD1()(gamma_left,beta_left)(c_right,b_left)*D2()(alpha_right,gamma_left)(a_right,c_left)*gD3g()(alpha_right,beta_left)(b_right,a_left);
+	    result()()() += static_cast<Complex>(epsilon_sgn[ie_left] * epsilon_sgn[ie_right]) * pD1()(gamma_left,beta_left)(c_right,b_left)*D2()(alpha_right,gamma_left)(a_right,c_left)*gD3g()(alpha_right,beta_left)(b_right,a_left);
           }}}
         }	  
         //This is the \delta_{456}^{132} part
@@ -150,7 +150,7 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
 	  for (int beta_left=0; beta_left<Ns; beta_left++){
 	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-	    result()()() -= epsilon_sgn[ie_left] * epsilon_sgn[ie_right] * pD1()(gamma_left,gamma_left)(c_right,c_left)*D2()(alpha_right,beta_left)(a_right,b_left)*gD3g()(alpha_right,beta_left)(b_right,a_left);
+	    result()()() -= static_cast<Complex>(epsilon_sgn[ie_left] * epsilon_sgn[ie_right]) * pD1()(gamma_left,gamma_left)(c_right,c_left)*D2()(alpha_right,beta_left)(a_right,b_left)*gD3g()(alpha_right,beta_left)(b_right,a_left);
           }}}
         }	  
         //This is the \delta_{456}^{321} part
@@ -159,7 +159,7 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
 	  for (int beta_left=0; beta_left<Ns; beta_left++){
 	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-	    result()()() -= epsilon_sgn[ie_left] * epsilon_sgn[ie_right] * pD1()(gamma_left,beta_left)(c_right,b_left)*D2g()(alpha_right,beta_left)(a_right,a_left)*gD3()(alpha_right,gamma_left)(b_right,c_left);
+	    result()()() -= static_cast<Complex>(epsilon_sgn[ie_left] * epsilon_sgn[ie_right]) * pD1()(gamma_left,beta_left)(c_right,b_left)*D2g()(alpha_right,beta_left)(a_right,a_left)*gD3()(alpha_right,gamma_left)(b_right,c_left);
           }}}
         }	  
         //This is the \delta_{456}^{213} part
@@ -168,7 +168,7 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
 	  for (int beta_left=0; beta_left<Ns; beta_left++){
 	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-	    result()()() -= epsilon_sgn[ie_left] * epsilon_sgn[ie_right] * pD1g()(gamma_left,beta_left)(c_right,a_left)*D2()(alpha_right,gamma_left)(a_right,c_left)*gD3()(alpha_right,beta_left)(b_right,b_left);
+	    result()()() -= static_cast<Complex>(epsilon_sgn[ie_left] * epsilon_sgn[ie_right]) * pD1g()(gamma_left,beta_left)(c_right,a_left)*D2()(alpha_right,gamma_left)(a_right,c_left)*gD3()(alpha_right,beta_left)(b_right,b_left);
           }}}
         }	  
       }
