@@ -119,8 +119,6 @@ void TNoises<FImpl>::execute(void)
     UniqueIdentifier.append( std::to_string( vm().getTrajectory() ) );
     
     // We use our own seeds so we can specify different noises per quark
-    GridSerialRNG sRNG;
-    sRNG.SeedUniqueString(UniqueIdentifier);
     Real rn;
     auto &noise = envGet(NoiseTensor, getName());
     for (int inoise = 0; inoise < nnoise; inoise++) {
@@ -130,7 +128,7 @@ void TNoises<FImpl>::execute(void)
                     if (exact_distillation)
                         noise(inoise, t, ivec, is) = 1.;
                     else{
-                        random(sRNG,rn);
+                        random(rngSerial(),rn);
                         // We could use a greater number of complex roots of unity
                         // ... but this seems to work well
                         noise(inoise, t, ivec, is) = (rn > 0.5) ? -1 : 1;
