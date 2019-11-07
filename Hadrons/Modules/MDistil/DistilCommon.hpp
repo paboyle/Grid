@@ -42,6 +42,23 @@ BEGIN_MODULE_NAMESPACE(MDistil)
 
 /******************************************************************************
  Distillation code that is common across modules
+
+ Documentation on how t use this code available at
+
+ *  https://aportelli.github.io/Hadrons-doc/#/mdistil  *
+ 
+ Notation for (stochastic) DistilParameters taken from 1104.3870:
+
+ TI is interlaced dilution in time (corresponding to Nt = time-dimension of the lattice)
+ LI is interlaced dilution in laplacian-eigenvector space (corresponding to nvec)
+ SI is interlaced dilution in spin (corresponding to Ns, taken from Grid, usually Ns=4)
+
+ This code automatically computes perambulators using exact distillation if
+ *   (TI,LI,SI) = (Nt,nvec,Ns)   *
+ In this case, nnoise=1 and Noises is set to an array of values =1 as well.
+ tsrc then specifies the only timeslice on which the sources are supported.
+ (( for stochastic distillation, the vaue of tsrc has no meaning in this code ))
+
  ******************************************************************************/
 
 struct DistilParameters: Serializable {
