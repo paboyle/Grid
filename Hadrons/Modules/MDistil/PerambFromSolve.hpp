@@ -36,7 +36,12 @@ BEGIN_HADRONS_NAMESPACE
 BEGIN_MODULE_NAMESPACE(MDistil)
 
 /******************************************************************************
- *                         PerambFromSolve                                 *
+ *                         PerambFromSolve 
+
+  This module computes a perambulator from an already completed solve. 
+  Optionally, the number of eigenvectors used in the perambulator and the 
+  parameter LI can be chosen to be lower than the ones in the solve, allowing 
+  for a study of the signal with different values of nvec.
  ******************************************************************************/
 
 class PerambFromSolvePar: Serializable
