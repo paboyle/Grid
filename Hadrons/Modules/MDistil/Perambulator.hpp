@@ -208,7 +208,7 @@ void TPerambulator<FImpl>::execute(void)
                                 for (int is = ds; is < Ns; is += SI)
                                 {
                                     ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv-Ntfirst,Tdir);
-                                    tmp3d_nospin = evec3d * noise(inoise, t_inv, ik, is);
+                                    tmp3d_nospin = evec3d * noise.tensor(inoise, t_inv, ik, is);
                                     tmp3d=0;
                                     pokeSpin(tmp3d,tmp3d_nospin,is);
                                     tmp2=0;
@@ -276,8 +276,6 @@ void TPerambulator<FImpl>::execute(void)
     if (grid4d->IsBoss())
     {
         std::string sPerambName {par().PerambFileName};
-        if (sPerambName.empty())
-            sPerambName = getName();
         sPerambName.append(".");
         sPerambName.append(std::to_string(vm().getTrajectory()));
         perambulator.write(sPerambName.c_str());

@@ -45,9 +45,9 @@ public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(NoisesPar,
                                     int, nnoise,
                                     int, nvec,
-                                    std::string, UniqueIdentifier,
                                     std::string, TI,
-                                    std::string, LI)
+                                    std::string, LI,
+                                    std::string, NoiseFileName)
 };
 
 template <typename FImpl>
@@ -113,10 +113,6 @@ void TNoises<FImpl>::execute(void)
     const int LI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().LI, nvec, false) };
     const bool full_tdil{ TI == Nt }; \
     const bool exact_distillation{ full_tdil && LI == nvec }; \
-    std::string UniqueIdentifier{par().UniqueIdentifier};
-    if (UniqueIdentifier.empty())
-        UniqueIdentifier = getName();
-    UniqueIdentifier.append( std::to_string( vm().getTrajectory() ) );
     
     // We use our own seeds so we can specify different noises per quark
     Real rn;
@@ -126,16 +122,23 @@ void TNoises<FImpl>::execute(void)
             for (int ivec = 0; ivec < nvec; ivec++) {
                 for (int is = 0; is < Ns; is++) {
                     if (exact_distillation)
-                        noise(inoise, t, ivec, is) = 1.;
+                        noise.tensor(inoise, t, ivec, is) = 1.;
                     else{
                         random(rngSerial(),rn);
                         // We could use a greater number of complex roots of unity
                         // ... but this seems to work well
-                        noise(inoise, t, ivec, is) = (rn > 0.5) ? -1 : 1;
+                        noise.tensor(inoise, t, ivec, is) = (rn > 0.5) ? -1 : 1;
                     }
                 }
             }
         }
+    }
+    if (env().getGrid()->IsBoss())
+    {
+        std::string sName {par().NoiseFileName};
+        sName.append(".");
+        sName.append(std::to_string(vm().getTrajectory()));
+        noise.write(sName.c_str());
     }
 }
 

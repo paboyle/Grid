@@ -37,18 +37,18 @@ BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
  NamedTensor
- This is an Eigen::Tensor of type Scalar_ and rank NumIndices_ (row-major order)
- They can be persisted to disk in tag Name_, and IndexNames are validated on load.
- TODO: WHAT TO SAVE / VALIDATE ON LOAD (Override to warn instead of assert on load)
- Ensemble string
- Configuration number
- Noise unique string
- Distillation parameters
+ Eigen::Tensor of type Scalar_ and rank NumIndices_ (row-major order), together with a name for each index.
+ Index names are mutable, but tensor dimensionality is not (size of each dimension is mutable).
+ They can be persisted to / restored from disk, by default using tag Name.
+ During restore from disk, these validations are performed:
+   1) Tensor dimensionality must match
+   2) IndexNames are validated against current values
+   3) If the tensor has non-zero size, the tensor being loaded must have same extent in each dimension
  ******************************************************************************/
 
 extern const std::string NamedTensorFileExtension;
 
-template<typename Scalar_, int NumIndices_, const std::string &Name_, const std::array<std::string,NumIndices_> &IndexNames_>
+template<typename Scalar_, int NumIndices_>
 class NamedTensor : Serializable
 {
 public:
@@ -59,40 +59,40 @@ public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(NamedTensor,
                                     ET,                       tensor,
                                     std::vector<std::string>, IndexNames );
-    
-    // Get the default index names as std::vector
-    std::vector<std::string> DefaultIndexNames()
-    {
-        std::vector<std::string> names{NumIndices_};
-        for (std::size_t i = 0; i < NumIndices_; i++)
-            names[i] = IndexNames_[i];
-        return names;
-    }
-    
+
+    // Name of the object and Index names as set in the constructor
+    const std::string              &Name;
+    const std::vector<std::string> &DefaultIndexNames;
+
+    virtual ~NamedTensor(){};
     // Default constructor (assumes tensor will be loaded from file)
-    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor() : IndexNames{DefaultIndexNames()} {}
+    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor(const std::string &Name_, const std::vector<std::string> &IndexNames_)
+    : IndexNames{IndexNames_}, Name{Name_}, DefaultIndexNames{IndexNames_} {}
     
     // Construct a named tensor explicitly specifying size of each dimension
     template<typename... IndexTypes>
-    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor(Eigen::Index firstDimension, IndexTypes... otherDimensions)
-    : tensor(firstDimension, otherDimensions...), IndexNames{DefaultIndexNames()}
+    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor(const std::string &Name_, const std::vector<std::string> &IndexNames_,
+                                                      Eigen::Index firstDimension, IndexTypes... otherDimensions)
+    : tensor(firstDimension, otherDimensions...), IndexNames{IndexNames_}, Name{Name_}, DefaultIndexNames{IndexNames_}
     {
         assert(sizeof...(otherDimensions) + 1 == NumIndices_ && "NamedTensor: dimensions != tensor rank");
     }
-    
+
     // Do my index names match the default for my type?
-    bool ValidateIndexNames() const
+    bool ValidateIndexNames( const std::vector<std::string> &CheckNames ) const
     {
+        assert( CheckNames.size() == NumIndices_ && "Bug: CheckNames don't match NumIndices_" );
         bool bSame{ IndexNames.size() == NumIndices_ };
         for( std::size_t i = 0; bSame && i < NumIndices_; i++ )
         {
-            bSame = IndexNames[i].size() == IndexNames_[i].size()
-            && std::equal( IndexNames[i].begin(), IndexNames[i].end(), IndexNames_[i].begin(),
+            bSame = IndexNames[i].size() == CheckNames[i].size()
+            && std::equal( IndexNames[i].begin(), IndexNames[i].end(), CheckNames[i].begin(),
                           [](const char & c1, const char & c2){ return c1 == c2 || std::toupper(c1) == std::toupper(c2); });
         }
         return bSame;
     }
-    
+    bool ValidateIndexNames() const { return ValidateIndexNames(DefaultIndexNames); }
+
 #ifdef HAVE_HDF5
     using Default_Reader = Grid::Hdf5Reader;
     using Default_Writer = Grid::Hdf5Writer;
@@ -101,40 +101,40 @@ public:
     using Default_Writer = Grid::BinaryWriter;
 #endif
     
-    template<typename Writer> void write(Writer &w, const std::string &Tag = Name_) const
-    { write(w, Tag, *this); }
-    
-    inline void write(const std::string &filename, const std::string &Tag = Name_) const
+    void write(const std::string &FileName, const std::string &Tag) const
     {
-        std::string sFileName{filename};
-        sFileName.append( NamedTensorFileExtension );
-        LOG(Message) << "Writing " << Name_ << " to file " << sFileName << " tag " << Tag << std::endl;
-        Default_Writer w( sFileName );
-        write( w, Tag );
+        std::string FileName_{FileName};
+        FileName_.append( NamedTensorFileExtension );
+        LOG(Message) << "Writing " << Name << " to file " << FileName_ << " tag " << Tag << std::endl;
+        Default_Writer w( FileName_ );
+        write( w, Tag, *this );
     }
-    
-    // Read and validate index names
-    template<typename Reader> void read(Reader &r, bool bValidate = true, const std::string &Tag = Name_)
+    void write(const std::string &FileName) const { return write(FileName, Name); }
+
+    // Read tensor.
+    // Validate:
+    //  1) index names (if requested)
+    //  2) index dimensions (if they are non-zero when called)
+    template<typename Reader> void read(Reader &r, bool bValidate, const std::string &Tag)
     {
         // Grab index names and dimensions
         std::vector<std::string> OldIndexNames{std::move(IndexNames)};
-        typename ET::Dimensions OldDimensions{tensor.dimensions()};
+        const typename ET::Dimensions OldDimensions{tensor.dimensions()};
         read(r, Tag, *this);
         const typename ET::Dimensions & NewDimensions{tensor.dimensions()};
         for (int i = 0; i < NumIndices_; i++)
             assert(OldDimensions[i] == 0 || OldDimensions[i] == NewDimensions[i] && "NamedTensor::read dimension size");
         if (bValidate)
-            assert(ValidateIndexNames() && "NamedTensor::read dimension name");
+            assert(ValidateIndexNames(OldIndexNames) && "NamedTensor::read dimension name");
     }
-    
-    inline void read (const std::string &filename, bool bValidate = true, const std::string &Tag = Name_)
+    template<typename Reader> void read(Reader &r, bool bValidate = true) { read(r, bValidate, Name); }
+
+    inline void read (const std::string &FileName, bool bValidate, const std::string &Tag)
     {
-        std::string sFileName{filename};
-        sFileName.append( NamedTensorFileExtension );
-        LOG(Message) << "Reading " << Name_ << " from file " << sFileName << " tag " << Tag << std::endl;
-        Default_Reader r(sFileName);
+        Default_Reader r(FileName + NamedTensorFileExtension);
         read(r, bValidate, Tag);
     }
+    inline void read (const std::string &FileName, bool bValidate= true) { return read(FileName, bValidate, Name); }
 };
 
 /******************************************************************************
@@ -147,11 +147,34 @@ BEGIN_MODULE_NAMESPACE(MDistil)
 using LapEvecs = Grid::Hadrons::EigenPack<LatticeColourVector>;
 
 // Noise vector (index order: nnoise, nt, nvec, ns)
-using NoiseTensor = Eigen::Tensor<Complex, 4, Eigen::RowMajor>;
 
-extern const std::string PerambTensorName;
-extern const std::array<std::string, 6> PerambIndexNames;
-using PerambTensor = NamedTensor<SpinVector, 6, PerambTensorName, PerambIndexNames>;
+class NoiseTensor : public NamedTensor<Complex, 4>
+{
+    static const std::string               Name_;
+    static const std::vector<std::string>  DefaultIndexNames_;
+    public:
+    // Default constructor (assumes tensor will be loaded from file)
+    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NoiseTensor() : NamedTensor{Name_, DefaultIndexNames_} {}
+
+    // Construct a named tensor explicitly specifying size of each dimension
+    template<typename... IndexTypes>
+    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NoiseTensor(Eigen::Index nNoise, Eigen::Index nT, Eigen::Index nVec, Eigen::Index nS)
+    : NamedTensor{Name_, DefaultIndexNames_, nNoise, nT, nVec, nS} {}
+};
+
+class PerambTensor : public NamedTensor<SpinVector, 6>
+{
+    static const std::string               Name_;
+    static const std::vector<std::string>  DefaultIndexNames_;
+    public:
+    // Default constructor (assumes tensor will be loaded from file)
+    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE PerambTensor() : NamedTensor{Name_, DefaultIndexNames_} {}
+
+    // Construct a named tensor explicitly specifying size of each dimension
+    template<typename... IndexTypes>
+    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE PerambTensor(Eigen::Index nT, Eigen::Index nVec, Eigen::Index LI, Eigen::Index nNoise, Eigen::Index nT_inv, Eigen::Index SI)
+    : NamedTensor{Name_, DefaultIndexNames_, nT, nVec, LI, nNoise, nT_inv, SI} {}
+};
 
 END_MODULE_NAMESPACE
 END_HADRONS_NAMESPACE
