@@ -143,11 +143,6 @@ template <typename GImpl>
 std::vector<std::string> TLapEvec<GImpl>::getInput(void)
 {
     sGaugeName = par().gauge;
-    if (sGaugeName.empty())
-    {
-        sGaugeName = getName();
-        sGaugeName.append( "_gauge" );
-    }
     return std::vector<std::string>{ sGaugeName };
 }
 

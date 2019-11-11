@@ -106,23 +106,8 @@ template <typename FImpl>
 std::vector<std::string> TDistilVectors<FImpl>::getInput(void)
 {
     PerambulatorName = par().perambulator;
-    if (PerambulatorName.empty())
-    {
-        PerambulatorName = getName();
-        PerambulatorName.append("_peramb");
-    }
     NoiseVectorName = par().noise;
-    if (NoiseVectorName.empty())
-    {
-        NoiseVectorName = PerambulatorName;
-        NoiseVectorName.append("_noise");
-    }
     LapEvecName = par().lapevec;
-    if (LapEvecName.empty())
-    {
-        LapEvecName = PerambulatorName;
-        LapEvecName.append("_lapevec");
-    }
     return { PerambulatorName, NoiseVectorName, LapEvecName };
 }
 
