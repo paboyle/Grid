@@ -2,7 +2,7 @@
  
  Grid physics library, www.github.com/paboyle/Grid
  
- Source file: Hadrons/Modules/MDistil/LoadPerambulator.hpp
+ Source file: Hadrons/Modules/MDistil/LoadDistilNoise.hpp
  
  Copyright (C) 2019
  
@@ -27,8 +27,8 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_MIO_LoadPerambulator_hpp_
-#define Hadrons_MIO_LoadPerambulator_hpp_
+#ifndef Hadrons_MIO_LoadDistilNoise_hpp_
+#define Hadrons_MIO_LoadDistilNoise_hpp_
 
 #include <Hadrons/Modules/MDistil/DistilCommon.hpp>
 
@@ -36,26 +36,26 @@ BEGIN_HADRONS_NAMESPACE
 BEGIN_MODULE_NAMESPACE(MIO)
 
 /******************************************************************************
- *                         LoadPerambulator                                 *
+ *                         LoadDistilNoise                                 *
  ******************************************************************************/
 
-class LoadPerambulatorPar: Serializable
+class LoadDistilNoisePar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(LoadPerambulatorPar,
-                                        std::string, PerambFileName, //stem!!!
+    GRID_SERIALIZABLE_CLASS_MEMBERS(LoadDistilNoisePar,
+                                        std::string, NoiseFileName,
 	                                int, nvec,
 	                                MDistil::DistilParameters, Distil);
 };
 
 template <typename FImpl>
-class TLoadPerambulator: public Module<LoadPerambulatorPar>
+class TLoadDistilNoise: public Module<LoadDistilNoisePar>
 {
 public:
     // constructor
-    TLoadPerambulator(const std::string name);
+    TLoadDistilNoise(const std::string name);
     // destructor
-    virtual ~TLoadPerambulator(void) {};
+    virtual ~TLoadDistilNoise(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -65,20 +65,20 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_TMP(LoadPerambulator, TLoadPerambulator<FIMPL>, MIO);
+MODULE_REGISTER_TMP(LoadDistilNoise, TLoadDistilNoise<FIMPL>, MIO);
 
 /******************************************************************************
- *                 TLoadPerambulator implementation                             *
+ *                 TLoadDistilNoise implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TLoadPerambulator<FImpl>::TLoadPerambulator(const std::string name)
-: Module<LoadPerambulatorPar>(name)
+TLoadDistilNoise<FImpl>::TLoadDistilNoise(const std::string name)
+: Module<LoadDistilNoisePar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
-std::vector<std::string> TLoadPerambulator<FImpl>::getInput(void)
+std::vector<std::string> TLoadDistilNoise<FImpl>::getInput(void)
 {
     std::vector<std::string> in;
     
@@ -86,7 +86,7 @@ std::vector<std::string> TLoadPerambulator<FImpl>::getInput(void)
 }
 
 template <typename FImpl>
-std::vector<std::string> TLoadPerambulator<FImpl>::getOutput(void)
+std::vector<std::string> TLoadDistilNoise<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -95,26 +95,25 @@ std::vector<std::string> TLoadPerambulator<FImpl>::getOutput(void)
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TLoadPerambulator<FImpl>::setup(void)
+void TLoadDistilNoise<FImpl>::setup(void)
 {
   DISTIL_PARAMETERS_DEFINE( true );
-  //std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
-  envCreate(MDistil::PerambTensor, getName(), 1, Nt,nvec,LI,nnoise,Nt_inv,SI);
+  envCreate(MDistil::NoiseTensor, getName(), 1, nnoise, Nt, nvec, Ns);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TLoadPerambulator<FImpl>::execute(void)
+void TLoadDistilNoise<FImpl>::execute(void)
 {
-  auto &perambulator = envGet(MDistil::PerambTensor, getName());
-  std::string sPerambName{ par().PerambFileName };
-  sPerambName.append( 1, '.' );
-  sPerambName.append( std::to_string( vm().getTrajectory() ) );
-  perambulator.read(sPerambName.c_str());
+  auto &noises = envGet(MDistil::NoiseTensor, getName());
+  std::string sNoiseName{ par().NoiseFileName };
+  sNoiseName.append( 1, '.' );
+  sNoiseName.append( std::to_string( vm().getTrajectory() ) );
+  noises.read(sNoiseName.c_str());
 }
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MIO_LoadPerambulator_hpp_
+#endif // Hadrons_MIO_LoadDistilNoise_hpp_
