@@ -38,6 +38,14 @@ BEGIN_MODULE_NAMESPACE(MDistil)
 /******************************************************************************
  
  Laplacian eigenvectors - parameters
+
+ Computes the eigenvectors of the 3D-Laplacian, built from stout-smeared 
+ gauge links with the specified number of steps and smearing parameter rho. 
+ The smearing is only applied to the spatial components of the gauge field,
+ i.e. rho_{4i} = rho_{i4} = rho_{44} = 0. 
+
+ Chebyshev-preconditioning is needed for convergence of the nvec lowest 
+ eigenvectors.
  
  ******************************************************************************/
 

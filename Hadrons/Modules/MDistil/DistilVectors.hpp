@@ -169,7 +169,7 @@ void TDistilVectors<FImpl>::setup(void)
     const int SI{ static_cast<int>( perambulator.tensor.dimension(5) ) };
     const int Nt_inv{ static_cast<int>( perambulator.tensor.dimension(4) ) };
     const int nnoise{ static_cast<int>( perambulator.tensor.dimension(3) ) };
-    assert( nnoise >= static_cast<int>( noise.dimension(0) ) && "Not enough noise vectors for perambulator" );
+    assert( nnoise >= static_cast<int>( noise.tensor.dimension(0) ) && "Not enough noise vectors for perambulator" );
     // Nvec defaults to what's in the perambulator unless overriden
     const int nvec_per{ static_cast<int>( perambulator.tensor.dimension(1) ) };
     const int nvec{Hadrons::MDistil::DistilParameters::ParameterDefault(par().nvec, nvec_per, true) };
@@ -254,7 +254,7 @@ void TDistilVectors<FImpl>::execute(void)
                                 for (int ik = dk; ik < nvec; ik += LI){
                                     for (int is = ds; is < Ns; is += SI){
                                         ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv-Ntfirst,Tdir);
-                                        tmp3d_nospin = evec3d * noise(inoise, t_inv, ik, is);
+                                        tmp3d_nospin = evec3d * noise.tensor(inoise, t_inv, ik, is);
                                         tmp3d=0;
                                         pokeSpin(tmp3d,tmp3d_nospin,is);
                                         tmp2=0;
