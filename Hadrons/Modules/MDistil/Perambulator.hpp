@@ -49,8 +49,7 @@ public:
                                     std::string, PerambFileName,
                                     std::string, UnsmearedSinkFileName,
                                     std::string, UnsmearedSinkMultiFile,
-                                    int, nvec,
-                                    DistilParameters, Distil);
+                                    MDistil::DistilParameters, DistilPar);
 };
 
 template <typename FImpl>
@@ -106,8 +105,6 @@ std::vector<std::string> TPerambulator<FImpl>::getInput(void)
 {
     sLapEvecName = par().lapevec;
     sNoiseName = par().noise;
-    if( sNoiseName.length() == 0 )
-        sNoiseName = getName() + "_noise";
     return {sLapEvecName, par().solver, sNoiseName };
 }
 
@@ -124,23 +121,32 @@ void TPerambulator<FImpl>::setup(void)
     Cleanup();
     grid4d = env().getGrid();
     grid3d = MakeLowerDimGrid(grid4d);
-    DISTIL_PARAMETERS_DEFINE( true );
+    const int Nt{env().getDim(Tdir)}; 
+    const int nvec{par().DistilPar.nvec}; 
+    const int nnoise{par().DistilPar.nnoise}; 
+    const int tsrc{par().DistilPar.tsrc}; 
+    const int TI{par().DistilPar.TI}; 
+    const int LI{par().DistilPar.LI}; 
+    const int SI{par().DistilPar.SI}; 
+    const bool full_tdil{ TI == Nt }; 
+    const int Nt_inv{ full_tdil ? 1 : TI };
     const std::string UnsmearedSinkFileName{ par().UnsmearedSinkFileName };
     if (!UnsmearedSinkFileName.empty())
-        bool bMulti = ( Hadrons::MDistil::DistilParameters::ParameterDefault( par().UnsmearedSinkMultiFile, 1, true ) != 0 );
+        //bool bMulti = ( Hadrons::MDistil::DistilParameters::ParameterDefault( par().UnsmearedSinkMultiFile, 1, true ) != 0 );
+        bool bMulti = 0;
     
     envCreate(PerambTensor, getName(), 1, Nt,nvec,LI,nnoise,Nt_inv,SI);
     envCreate(std::vector<FermionField>, getName() + "_unsmeared_sink", 1,
               nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField));
     
-    envTmpLat(LatticeSpinColourVector, "dist_source");
-    envTmpLat(LatticeSpinColourVector, "tmp2");
-    envTmpLat(LatticeSpinColourVector, "result");
-    envTmpLat(LatticeColourVector, "result_nospin");
-    envTmp(LatticeSpinColourVector, "tmp3d",1,LatticeSpinColourVector(grid3d));
-    envTmp(LatticeColourVector, "tmp3d_nospin",1,LatticeColourVector(grid3d));
-    envTmp(LatticeColourVector, "result_3d",1,LatticeColourVector(grid3d));
-    envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
+    envTmpLat(LatticeSpinColourVector,   "dist_source");
+    envTmpLat(LatticeSpinColourVector,   "source4d");
+    envTmp(LatticeSpinColourVector,      "source3d",1,LatticeSpinColourVector(grid3d));
+    envTmp(LatticeColourVector,          "source3d_nospin",1,LatticeColourVector(grid3d));
+    envTmpLat(LatticeSpinColourVector,   "result4d");
+    envTmpLat(LatticeColourVector,       "result4d_nospin");
+    envTmp(LatticeColourVector,          "result3d_nospin",1,LatticeColourVector(grid3d));
+    envTmp(LatticeColourVector,          "evec3d",1,LatticeColourVector(grid3d));
     
     Ls_ = env().getObjectLs(par().solver);
     envTmpLat(FermionField, "v4dtmp");
@@ -164,7 +170,16 @@ void TPerambulator<FImpl>::Cleanup(void)
 template <typename FImpl>
 void TPerambulator<FImpl>::execute(void)
 {
-    DISTIL_PARAMETERS_DEFINE( false );
+    const int Nt{env().getDim(Tdir)}; 
+    const int nvec{par().DistilPar.nvec}; 
+    const int nnoise{par().DistilPar.nnoise}; 
+    const int tsrc{par().DistilPar.tsrc}; 
+    const int TI{par().DistilPar.TI}; 
+    const int LI{par().DistilPar.LI}; 
+    const int SI{par().DistilPar.SI}; 
+    const bool full_tdil{ TI == Nt }; 
+    const int Nt_inv{ full_tdil ? 1 : TI };
+
     auto &solver=envGet(Solver, par().solver);
     auto &mat = solver.getFMat();
     envGetTmp(FermionField, v4dtmp);
@@ -175,12 +190,12 @@ void TPerambulator<FImpl>::execute(void)
     auto &epack = envGet(LapEvecs, sLapEvecName);
     auto &unsmeared_sink = envGet(std::vector<FermionField>, getName() + "_unsmeared_sink");
     envGetTmp(LatticeSpinColourVector, dist_source);
-    envGetTmp(LatticeSpinColourVector, tmp2);
-    envGetTmp(LatticeSpinColourVector, result);
-    envGetTmp(LatticeColourVector, result_nospin);
-    envGetTmp(LatticeSpinColourVector, tmp3d);
-    envGetTmp(LatticeColourVector, tmp3d_nospin);
-    envGetTmp(LatticeColourVector, result_3d);
+    envGetTmp(LatticeSpinColourVector, source4d);
+    envGetTmp(LatticeSpinColourVector, source3d);
+    envGetTmp(LatticeColourVector, source3d_nospin);
+    envGetTmp(LatticeSpinColourVector, result4d);
+    envGetTmp(LatticeColourVector, result4d_nospin);
+    envGetTmp(LatticeColourVector, result3d_nospin);
     envGetTmp(LatticeColourVector, evec3d);
     const int Ntlocal{grid4d->LocalDimensions()[3]};
     const int Ntfirst{grid4d->LocalStarts()[3]};
@@ -196,7 +211,7 @@ void TPerambulator<FImpl>::execute(void)
                 {
                     LOG(Message) <<  "LapH source vector from noise " << inoise << " and dilution component (d_k,d_t,d_alpha) : (" << dk << ","<< dt << "," << ds << ")" << std::endl;
                     dist_source = 0;
-                    tmp3d_nospin = 0;
+                    source3d_nospin = 0;
                     evec3d = 0;
                     for (int it = dt; it < Nt; it += TI)
                     {
@@ -208,39 +223,39 @@ void TPerambulator<FImpl>::execute(void)
                                 for (int is = ds; is < Ns; is += SI)
                                 {
                                     ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv-Ntfirst,Tdir);
-                                    tmp3d_nospin = evec3d * noise.tensor(inoise, t_inv, ik, is);
-                                    tmp3d=0;
-                                    pokeSpin(tmp3d,tmp3d_nospin,is);
-                                    tmp2=0;
-                                    InsertSliceLocal(tmp3d,tmp2,0,t_inv-Ntfirst,Tdir);
-                                    dist_source += tmp2;
+                                    source3d_nospin = evec3d * noise.tensor(inoise, t_inv, ik, is);
+                                    source3d=0;
+                                    pokeSpin(source3d,source3d_nospin,is);
+                                    source4d=0;
+                                    InsertSliceLocal(source3d,source4d,0,t_inv-Ntfirst,Tdir);
+                                    dist_source += source4d;
                                 }
                             }
                         }
                     }
-                    result=0;
+                    result4d=0;
                     v4dtmp = dist_source;
                     if (Ls_ == 1)
-                        solver(result, v4dtmp);
+                        solver(result4d, v4dtmp);
                     else
                     {
                         mat.ImportPhysicalFermionSource(v4dtmp, v5dtmp);
                         solver(v5dtmp_sol, v5dtmp);
                         mat.ExportPhysicalFermionSolution(v5dtmp_sol, v4dtmp);
-                        result = v4dtmp;
+                        result4d = v4dtmp;
                     }
                     if (!UnsmearedSinkFileName.empty())
-                        unsmeared_sink[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))] = result;
+                        unsmeared_sink[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))] = result4d;
                     for (int is = 0; is < Ns; is++)
                     {
-                        result_nospin = peekSpin(result,is);
+                        result4d_nospin = peekSpin(result4d,is);
                         for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++)
                         {
-                            ExtractSliceLocal(result_3d,result_nospin,0,t-Ntfirst,Tdir);
-                            for (int ivec = 0; ivec < nvec; ivec++)
+                            ExtractSliceLocal(result3d_nospin,result4d_nospin,0,t-Ntfirst,Tdir); 
+			    for (int ivec = 0; ivec < nvec; ivec++)
                             {
                                 ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Tdir);
-                                pokeSpin(perambulator.tensor(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
+                                pokeSpin(perambulator.tensor(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result3d_nospin)),is);
                             }
                         }
                     }
@@ -284,7 +299,8 @@ void TPerambulator<FImpl>::execute(void)
     //Save the unsmeared sinks if filename specified
     if (!UnsmearedSinkFileName.empty())
     {
-        bool bMulti = ( Hadrons::MDistil::DistilParameters::ParameterDefault( par().UnsmearedSinkMultiFile, 1, false ) != 0 );
+       // bool bMulti = ( Hadrons::MDistil::DistilParameters::ParameterDefault( par().UnsmearedSinkMultiFile, 1, false ) != 0 );
+        bool bMulti =0;
         LOG(Message) << "Writing unsmeared sink to " << UnsmearedSinkFileName << std::endl;
         A2AVectorsIo::write(UnsmearedSinkFileName, unsmeared_sink, bMulti, vm().getTrajectory());
     }

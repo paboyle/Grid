@@ -47,11 +47,9 @@ public:
                                     std::string, noise,
                                     std::string, perambulator,
                                     std::string, lapevec,
-                                    std::string, source,
-                                    std::string, sink,
-                                    int, tsrc,
-                                    std::string, nvec,
-                                    std::string, TI)
+                                    std::string, rho,
+                                    std::string, phi,
+                                    MDistil::DistilParameters, DistilPar);
 };
 
 template <typename FImpl>
@@ -80,10 +78,10 @@ public:
     std::string PerambulatorName;
     std::string NoiseVectorName;
     std::string LapEvecName;
-    bool bMakeSource;
-    bool bMakeSink;
-    std::string SourceName;
-    std::string SinkName;
+    bool bMakeRho;
+    bool bMakePhi;
+    std::string RhoName;
+    std::string PhiName;
 };
 
 MODULE_REGISTER_TMP(DistilVectors, TDistilVectors<FIMPL>, MDistil);
@@ -131,24 +129,24 @@ std::vector<std::string> TDistilVectors<FImpl>::getInput(void)
 template <typename FImpl>
 std::vector<std::string> TDistilVectors<FImpl>::getOutput(void)
 {
-    SourceName  = par().source;
-    SinkName    = par().sink;
-    bMakeSource = ( SourceName.size() > 0 );
-    bMakeSink   = (   SinkName.size() > 0 );
-    if (!bMakeSource && !bMakeSink)
+    RhoName  = par().rho;
+    PhiName  = par().phi;
+    bMakeRho = ( RhoName.size() > 0 );
+    bMakePhi = ( PhiName.size() > 0 );
+    if (!bMakeRho && !bMakePhi)
     {
-        SourceName = getName();
-        SinkName   = SourceName;
-        SourceName.append("_rho");
-        SinkName.append("_phi");
-        bMakeSource = true;
-        bMakeSink   = true;
+        RhoName = getName();
+        PhiName = RhoName;
+        RhoName.append("_rho");
+        PhiName.append("_phi");
+        bMakeRho = true;
+        bMakePhi = true;
     }
     std::vector<std::string> out;
-    if (bMakeSource)
-        out.push_back(SourceName);
-    if (bMakeSink)
-        out.push_back(SinkName);
+    if (bMakeRho)
+        out.push_back(RhoName);
+    if (bMakePhi)
+        out.push_back(PhiName);
     return out;
 }
 
@@ -157,28 +155,25 @@ template <typename FImpl>
 void TDistilVectors<FImpl>::setup(void)
 {
     Cleanup();
-    auto &noise        = envGet(NoiseTensor, NoiseVectorName);
+    auto &noise        = envGet(NoiseTensor,  NoiseVectorName);
     auto &perambulator = envGet(PerambTensor, PerambulatorName);
     
     // We expect the perambulator to have been created with these indices
     assert( perambulator.ValidateIndexNames() && "Perambulator index names bad" );
     
-    const int Nt{ env().getDim(Tdir) };
-    assert( Nt == static_cast<int>( perambulator.tensor.dimension(0) ) && "PerambTensor time dimensionality bad" );
-    const int LI{ static_cast<int>( perambulator.tensor.dimension(2) ) };
-    const int SI{ static_cast<int>( perambulator.tensor.dimension(5) ) };
-    const int Nt_inv{ static_cast<int>( perambulator.tensor.dimension(4) ) };
-    const int nnoise{ static_cast<int>( perambulator.tensor.dimension(3) ) };
-    assert( nnoise >= static_cast<int>( noise.tensor.dimension(0) ) && "Not enough noise vectors for perambulator" );
-    // Nvec defaults to what's in the perambulator unless overriden
-    const int nvec_per{ static_cast<int>( perambulator.tensor.dimension(1) ) };
-    const int nvec{Hadrons::MDistil::DistilParameters::ParameterDefault(par().nvec, nvec_per, true) };
-    assert( nvec <= nvec_per && "Not enough distillation sub-space vectors" );
+    const int Nt{env().getDim(Tdir)}; 
+    const int nvec{par().DistilPar.nvec}; 
+    const int nnoise{par().DistilPar.nnoise}; 
+    const int TI{par().DistilPar.TI}; 
+    const int LI{par().DistilPar.LI}; 
+    const int SI{par().DistilPar.SI}; 
+    const bool full_tdil{ TI == Nt }; 
+    const int Nt_inv{ full_tdil ? 1 : TI };
     
-    if (bMakeSource)
-        envCreate(std::vector<FermionField>, SourceName, 1, nnoise*LI*SI*Nt_inv, envGetGrid(FermionField));
-    if (bMakeSink)
-        envCreate(std::vector<FermionField>,   SinkName, 1, nnoise*LI*SI*Nt_inv, envGetGrid(FermionField));
+    if (bMakeRho)
+        envCreate(std::vector<FermionField>, RhoName, 1, nnoise*LI*SI*Nt_inv, envGetGrid(FermionField));
+    if (bMakePhi)
+        envCreate(std::vector<FermionField>,   PhiName, 1, nnoise*LI*SI*Nt_inv, envGetGrid(FermionField));
     
     grid4d = env().getGrid();
     Coordinate latt_size   = GridDefaultLatt();
@@ -189,10 +184,10 @@ void TDistilVectors<FImpl>::setup(void)
     mpi_layout[Nd-1] = 1;
     grid3d = MakeLowerDimGrid(grid4d);
     
-    envTmp(LatticeSpinColourVector, "tmp2",1,LatticeSpinColourVector(grid4d));
-    envTmp(LatticeSpinColourVector, "tmp3d",1,LatticeSpinColourVector(grid3d));
-    envTmp(LatticeColourVector, "tmp3d_nospin",1,LatticeColourVector(grid3d));
-    envTmp(LatticeSpinColourVector, "sink_tslice",1,LatticeSpinColourVector(grid3d));
+    envTmp(LatticeSpinColourVector, "source4d",1,LatticeSpinColourVector(grid4d));
+    envTmp(LatticeSpinColourVector, "source3d",1,LatticeSpinColourVector(grid3d));
+    envTmp(LatticeColourVector, "source3d_nospin",1,LatticeColourVector(grid3d));
+    envTmp(LatticeSpinColourVector, "sink3d",1,LatticeSpinColourVector(grid3d));
     envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
 }
 
@@ -216,50 +211,49 @@ void TDistilVectors<FImpl>::execute(void)
     auto &perambulator = envGet(PerambTensor, PerambulatorName);
     auto &epack        = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, LapEvecName);
     
-    envGetTmp(LatticeSpinColourVector, tmp2);
-    envGetTmp(LatticeSpinColourVector, tmp3d);
-    envGetTmp(LatticeColourVector,     tmp3d_nospin);
-    envGetTmp(LatticeSpinColourVector, sink_tslice);
+    envGetTmp(LatticeSpinColourVector, source4d);
+    envGetTmp(LatticeSpinColourVector, source3d);
+    envGetTmp(LatticeColourVector,     source3d_nospin);
+    envGetTmp(LatticeSpinColourVector, sink3d);
     envGetTmp(LatticeColourVector,     evec3d);
     
     const int Ntlocal{ grid4d->LocalDimensions()[3] };
     const int Ntfirst{ grid4d->LocalStarts()[3] };
     
-    const int Nt{ env().getDim(Tdir) };
-    const int TI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().TI, Nt, false ) };
-    const int LI{ static_cast<int>( perambulator.tensor.dimension(2) ) };
-    const int SI{ static_cast<int>( perambulator.tensor.dimension(5) ) };
-    const int Nt_inv{ static_cast<int>( perambulator.tensor.dimension(4) ) };
-    const int nnoise{ static_cast<int>( perambulator.tensor.dimension(3) ) };
-    // Nvec defaults to what's in the perambulator unless overriden
-    const int nvec{Hadrons::MDistil::DistilParameters::ParameterDefault(par().nvec, static_cast<int>( perambulator.tensor.dimension(1) ), false)};
-    const int tsrc{ par().tsrc };
-    const bool full_tdil{ TI==Nt };
+    const int Nt{env().getDim(Tdir)}; 
+    const int nvec{par().DistilPar.nvec}; 
+    const int nnoise{par().DistilPar.nnoise}; 
+    const int tsrc{par().DistilPar.tsrc}; 
+    const int TI{par().DistilPar.TI}; 
+    const int LI{par().DistilPar.LI}; 
+    const int SI{par().DistilPar.SI}; 
+    const bool full_tdil{ TI == Nt }; 
+    const int Nt_inv{ full_tdil ? 1 : TI };
     
     int vecindex;
     int t_inv;
-    if (bMakeSource)
+    if (bMakeRho)
     {
-        auto &rho = envGet(std::vector<FermionField>, SourceName);
+        auto &rho = envGet(std::vector<FermionField>, RhoName);
         for (int inoise = 0; inoise < nnoise; inoise++) {
             for (int dk = 0; dk < LI; dk++) {
                 for (int dt = 0; dt < Nt_inv; dt++) {
                     for (int ds = 0; ds < SI; ds++) {
                         vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * SI*dt;
                         rho[vecindex] = 0;
-                        tmp3d_nospin = 0;
+                        source3d_nospin = 0;
                         for (int it = dt; it < Nt; it += TI){
                             if (full_tdil) t_inv = tsrc; else t_inv = it;
                             if (t_inv >= Ntfirst && t_inv < Ntfirst + Ntlocal) {
                                 for (int ik = dk; ik < nvec; ik += LI){
                                     for (int is = ds; is < Ns; is += SI){
                                         ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv-Ntfirst,Tdir);
-                                        tmp3d_nospin = evec3d * noise.tensor(inoise, t_inv, ik, is);
-                                        tmp3d=0;
-                                        pokeSpin(tmp3d,tmp3d_nospin,is);
-                                        tmp2=0;
-                                        InsertSliceLocal(tmp3d,tmp2,0,t_inv-Ntfirst,Tdir);
-                                        rho[vecindex] += tmp2;
+                                        source3d_nospin = evec3d * noise.tensor(inoise, t_inv, ik, is);
+                                        source3d=0;
+                                        pokeSpin(source3d,source3d_nospin,is);
+                                        source4d=0;
+                                        InsertSliceLocal(source3d,source4d,0,t_inv-Ntfirst,Tdir);
+                                        rho[vecindex] += source4d;
                                     }
                                 }
                             }
@@ -269,8 +263,8 @@ void TDistilVectors<FImpl>::execute(void)
             }
         }
     }
-    if (bMakeSink) {
-        auto &phi = envGet(std::vector<FermionField>, SinkName);
+    if (bMakePhi) {
+        auto &phi = envGet(std::vector<FermionField>, PhiName);
         for (int inoise = 0; inoise < nnoise; inoise++) {
             for (int dk = 0; dk < LI; dk++) {
                 for (int dt = 0; dt < Nt_inv; dt++) {
@@ -278,12 +272,12 @@ void TDistilVectors<FImpl>::execute(void)
                         vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * SI*dt;
                         phi[vecindex] = 0;
                         for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
-                            sink_tslice=0;
+                            sink3d=0;
                             for (int ivec = 0; ivec < nvec; ivec++) {
                                 ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Tdir);
-                                sink_tslice += evec3d * perambulator.tensor(t, ivec, dk, inoise,dt,ds);
+                                sink3d += evec3d * perambulator.tensor(t, ivec, dk, inoise,dt,ds);
                             }
-                            InsertSliceLocal(sink_tslice,phi[vecindex],0,t-Ntfirst,Tdir);
+                            InsertSliceLocal(sink3d,phi[vecindex],0,t-Ntfirst,Tdir);
                         }
                     }
                 }

@@ -44,8 +44,7 @@ class LoadDistilNoisePar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(LoadDistilNoisePar,
                                         std::string, NoiseFileName,
-	                                int, nvec,
-	                                MDistil::DistilParameters, Distil);
+                                        MDistil::DistilParameters, DistilPar);
 };
 
 template <typename FImpl>
@@ -97,8 +96,10 @@ std::vector<std::string> TLoadDistilNoise<FImpl>::getOutput(void)
 template <typename FImpl>
 void TLoadDistilNoise<FImpl>::setup(void)
 {
-  DISTIL_PARAMETERS_DEFINE( true );
-  envCreate(MDistil::NoiseTensor, getName(), 1, nnoise, Nt, nvec, Ns);
+    const int Nt{env().getDim(Tdir)}; 
+    const int nvec{par().DistilPar.nvec}; 
+    const int nnoise{par().DistilPar.nnoise}; 
+    envCreate(MDistil::NoiseTensor, getName(), 1, nnoise, Nt, nvec, Ns);
 }
 
 // execution ///////////////////////////////////////////////////////////////////

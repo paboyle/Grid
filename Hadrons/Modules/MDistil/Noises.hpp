@@ -43,10 +43,7 @@ class NoisesPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(NoisesPar,
-                                    int, nnoise,
-                                    int, nvec,
-                                    std::string, TI,
-                                    std::string, LI,
+                                    MDistil::DistilParameters, DistilPar,
                                     std::string, NoiseFileName)
 };
 
@@ -96,9 +93,9 @@ std::vector<std::string> TNoises<FImpl>::getOutput(void)
 template <typename FImpl>
 void TNoises<FImpl>::setup(void)
 {
-    const int Nt{env().getDim(Tdir)};
-    const int nnoise{par().nnoise};
-    const int nvec{par().nvec};
+    const int Nt{env().getDim(Tdir)}; 
+    const int nvec{par().DistilPar.nvec}; 
+    const int nnoise{par().DistilPar.nnoise}; 
     envCreate(NoiseTensor, getName(), 1, nnoise, Nt, nvec, Ns);
 }
 
@@ -107,12 +104,12 @@ template <typename FImpl>
 void TNoises<FImpl>::execute(void)
 {
     const int Nt{env().getDim(Tdir)};
-    const int nnoise{par().nnoise};
-    const int nvec{par().nvec};
-    const int TI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().TI, Nt, false) };
-    const int LI{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().LI, nvec, false) };
-    const bool full_tdil{ TI == Nt }; \
-    const bool exact_distillation{ full_tdil && LI == nvec }; \
+    const int nnoise{par().DistilPar.nnoise};
+    const int nvec{par().DistilPar.nvec};
+    const int TI{par().DistilPar.TI};
+    const int LI{par().DistilPar.LI};
+    const bool full_tdil{ TI == Nt }; 
+    const bool exact_distillation{ full_tdil && LI == nvec }; 
     
     // We use our own seeds so we can specify different noises per quark
     Real rn;

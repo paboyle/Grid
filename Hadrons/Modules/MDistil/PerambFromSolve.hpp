@@ -51,10 +51,9 @@ public:
                                     std::string, eigenPack,
                                     std::string, PerambFileName,
                                     std::string, solve,
-                                    int, nvec,
                                     std::string, nvec_reduced,
                                     std::string, LI_reduced,
-                                    DistilParameters, Distil);
+                                    MDistil::DistilParameters, DistilPar);
 };
 
 template <typename FImpl>
@@ -116,16 +115,23 @@ template <typename FImpl>
 void TPerambFromSolve<FImpl>::setup(void)
 {
     Cleanup();
-    DISTIL_PARAMETERS_DEFINE( true );
-    const int nvec_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().nvec_reduced, nvec, true) };
-    const int LI_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().LI_reduced, LI, true) };
+    const int Nt{env().getDim(Tdir)}; 
+    const int nvec{par().DistilPar.nvec}; 
+    const int nnoise{par().DistilPar.nnoise}; 
+    const int LI{par().DistilPar.LI}; 
+    const int TI{par().DistilPar.TI}; 
+    const int SI{par().DistilPar.SI}; 
+    const bool full_tdil{ TI == Nt }; 
+    const int Nt_inv{ full_tdil ? 1 : TI };
+    const int nvec_reduced{ par().nvec_reduced.empty() ? nvec:std::stoi(par().nvec_reduced)};
+    const int LI_reduced{ par().LI_reduced.empty() ? LI:std::stoi(par().LI_reduced)};
     grid4d = env().getGrid();
     grid3d = MakeLowerDimGrid(grid4d);
     envCreate(PerambTensor, getName(), 1, Nt,nvec_reduced,LI_reduced,nnoise,Nt_inv,SI);
     envCreate(NoiseTensor, getName() + "_noise", 1, nnoise, Nt, nvec, Ns );
-    envTmp(LatticeColourVector, "result_3d",1,LatticeColourVector(grid3d));
+    envTmp(LatticeColourVector, "result3d_nospin",1,LatticeColourVector(grid3d));
     envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
-    envTmpLat(LatticeColourVector, "result_nospin");
+    envTmpLat(LatticeColourVector, "result4d_nospin");
 }
 
 template <typename FImpl>
@@ -146,28 +152,42 @@ void TPerambFromSolve<FImpl>::execute(void)
     GridCartesian * grid4d = env().getGrid();
     const int Ntlocal{grid4d->LocalDimensions()[3]};
     const int Ntfirst{grid4d->LocalStarts()[3]};
-    DISTIL_PARAMETERS_DEFINE( false );
-    const int nvec_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().nvec_reduced, nvec, false) };
-    const int LI_reduced{ Hadrons::MDistil::DistilParameters::ParameterDefault( par().LI_reduced, LI, false) };
-    auto &perambulator = envGet(PerambTensor, getName());
-    auto &solve       = envGet(std::vector<FermionField>, par().solve);
-    auto &epack   = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
+    const int Nt{env().getDim(Tdir)}; 
+    const int nvec{par().DistilPar.nvec}; 
+    const int nnoise{par().DistilPar.nnoise}; 
+    const int TI{par().DistilPar.TI}; 
+    const int LI{par().DistilPar.LI}; 
+    const int SI{par().DistilPar.SI}; 
+    const bool full_tdil{ TI == Nt }; 
+    const int Nt_inv{ full_tdil ? 1 : TI };
+    const int nvec_reduced{ par().nvec_reduced.empty() ? nvec:std::stoi(par().nvec_reduced)};
+    const int LI_reduced{ par().LI_reduced.empty() ? LI:std::stoi(par().LI_reduced)};
+    auto &perambulator  = envGet(PerambTensor, getName());
+    auto &solve         = envGet(std::vector<FermionField>, par().solve);
+    auto &epack         = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
     
-    envGetTmp(LatticeColourVector, result_nospin);
-    envGetTmp(LatticeColourVector, result_3d);
+    envGetTmp(LatticeColourVector, result4d_nospin);
+    envGetTmp(LatticeColourVector, result3d_nospin);
     envGetTmp(LatticeColourVector, evec3d);
     
-    for (int inoise = 0; inoise < nnoise; inoise++) {
-        for (int dk = 0; dk < LI_reduced; dk++) {
-            for (int dt = 0; dt < Nt_inv; dt++) {
-                for (int ds = 0; ds < SI; ds++) {
-                    for (int is = 0; is < Ns; is++) {
-                        result_nospin = peekSpin(solve[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))],is);
-                        for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
-                            ExtractSliceLocal(result_3d,result_nospin,0,t-Ntfirst,Tdir);
-                            for (int ivec = 0; ivec < nvec_reduced; ivec++) {
+    for (int inoise = 0; inoise < nnoise; inoise++)
+    {
+        for (int dk = 0; dk < LI_reduced; dk++)
+       	{
+            for (int dt = 0; dt < Nt_inv; dt++)
+	    {
+                for (int ds = 0; ds < SI; ds++)
+	       	{
+                    for (int is = 0; is < Ns; is++)
+		    {
+                        result4d_nospin = peekSpin(solve[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))],is);
+                        for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++)
+		       	{
+                            ExtractSliceLocal(result3d_nospin,result4d_nospin,0,t-Ntfirst,Tdir);
+                            for (int ivec = 0; ivec < nvec_reduced; ivec++)
+			    {
                                 ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Tdir);
-                                pokeSpin(perambulator.tensor(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result_3d)),is);
+                                pokeSpin(perambulator.tensor(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result3d_nospin)),is);
                                 LOG(Message) <<  "perambulator(t, ivec, dk, inoise,dt,ds)(is) = (" << t << "," << ivec << "," << dk << "," << inoise << "," << dt << "," << ds << ")(" << is << ") = " <<  perambulator.tensor(t, ivec, dk, inoise,dt,ds)()(is)() << std::endl;
                             }
                         }
@@ -179,8 +199,6 @@ void TPerambFromSolve<FImpl>::execute(void)
     if(grid4d->IsBoss())
     {
         std::string sPerambName{par().PerambFileName};
-        if (sPerambName.empty())
-            sPerambName = getName();
         sPerambName.append( "." );
         sPerambName.append( std::to_string(vm().getTrajectory()));
         perambulator.write(sPerambName.c_str());

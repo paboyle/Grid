@@ -70,6 +70,7 @@
 #include <Hadrons/Modules/MDistil/Noises.hpp>
 #include <Hadrons/Modules/MDistil/LapEvec.hpp>
 #include <Hadrons/Modules/MDistil/Perambulator.hpp>
+#include <Hadrons/Modules/MDistil/DistilPar.hpp>
 #include <Hadrons/Modules/MDistil/DistilCommon.hpp>
 #include <Hadrons/Modules/MAction/ZMobiusDWF.hpp>
 #include <Hadrons/Modules/MAction/ScaledDWF.hpp>

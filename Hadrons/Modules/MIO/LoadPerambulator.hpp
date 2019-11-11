@@ -43,9 +43,8 @@ class LoadPerambulatorPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(LoadPerambulatorPar,
-                                        std::string, PerambFileName, //stem!!!
-	                                int, nvec,
-	                                MDistil::DistilParameters, Distil);
+                                        std::string, PerambFileName,
+                                        MDistil::DistilParameters, DistilPar);
 };
 
 template <typename FImpl>
@@ -97,8 +96,16 @@ std::vector<std::string> TLoadPerambulator<FImpl>::getOutput(void)
 template <typename FImpl>
 void TLoadPerambulator<FImpl>::setup(void)
 {
-  DISTIL_PARAMETERS_DEFINE( true );
-  //std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
+    const int Nt{env().getDim(Tdir)}; 
+    const int nvec{par().DistilPar.nvec}; 
+    const int nnoise{par().DistilPar.nnoise}; 
+    const int tsrc{par().DistilPar.tsrc}; 
+    const int TI{par().DistilPar.TI}; 
+    const int LI{par().DistilPar.LI}; 
+    const int SI{par().DistilPar.SI}; 
+    const bool full_tdil{ TI == Nt }; 
+    const bool exact_distillation{ full_tdil && LI == nvec }; 
+    const int Nt_inv{ full_tdil ? 1 : TI };
   envCreate(MDistil::PerambTensor, getName(), 1, Nt,nvec,LI,nnoise,Nt_inv,SI);
 }
 

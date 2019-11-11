@@ -63,41 +63,13 @@ BEGIN_MODULE_NAMESPACE(MDistil)
 
 struct DistilParameters: Serializable {
     GRID_SERIALIZABLE_CLASS_MEMBERS(DistilParameters,
+                                    int, nvec,
                                     int, nnoise,
                                     int, tsrc,
-                                    std::string, TI,
-                                    std::string, LI,
-                                    std::string, SI )
-    DistilParameters() = default;
-    template <class ReaderClass> DistilParameters(Reader<ReaderClass>& Reader){read(Reader,"Distil",*this);}
-    
-    // Numeric parameter is allowed to be empty (in which case it = Default),
-    // but assert during setup() if specified but not numeric
-    
-    static int ParameterDefault( const std::string & s, int Default, bool bCalledFromSetup )
-    {
-        int i = Default;
-        if( s.length() > 0 ) {
-            std::istringstream ss( s );
-            ss >> i;
-            if( bCalledFromSetup )
-                assert( !ss.fail() && "Parameter should either be empty or integer" );
-        }
-        return i;
-    }
+                                    int, TI,
+                                    int, LI,
+                                    int, SI )
 };
-
-#define DISTIL_PARAMETERS_DEFINE( inSetup ) \
-const int Nt{env().getDim(Tdir)}; \
-const int nvec{par().nvec}; \
-const int nnoise{par().Distil.nnoise}; \
-const int tsrc{par().Distil.tsrc}; \
-const int TI{Hadrons::MDistil::DistilParameters::ParameterDefault(par().Distil.TI, Nt,   inSetup)}; \
-const int LI{Hadrons::MDistil::DistilParameters::ParameterDefault(par().Distil.LI, nvec, inSetup)}; \
-const int SI{Hadrons::MDistil::DistilParameters::ParameterDefault(par().Distil.SI, Ns,   inSetup)}; \
-const bool full_tdil{ TI == Nt }; \
-const bool exact_distillation{ full_tdil && LI == nvec }; \
-const int Nt_inv{ full_tdil ? 1 : TI }
 
 /******************************************************************************
  Make a lower dimensional grid in preparation for local slice operations
