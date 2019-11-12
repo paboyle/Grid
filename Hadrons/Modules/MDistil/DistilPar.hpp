@@ -27,7 +27,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-##ifndef Hadrons_MDistil_DistilPar_hpp_
+#ifndef Hadrons_MDistil_DistilPar_hpp_
 #define Hadrons_MDistil_DistilPar_hpp_
 
 #include <Hadrons/Global.hpp>
