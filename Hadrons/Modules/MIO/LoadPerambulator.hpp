@@ -44,7 +44,7 @@ class LoadPerambulatorPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(LoadPerambulatorPar,
                                         std::string, PerambFileName,
-                                        std::string, DistilPar);
+                                        std::string, DistilParams);
 };
 
 template <typename FImpl>
@@ -62,8 +62,6 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
-protected:
-    std::string DParName;
 };
 
 MODULE_REGISTER_TMP(LoadPerambulator, TLoadPerambulator<FIMPL>, MIO);
@@ -73,42 +71,30 @@ MODULE_REGISTER_TMP(LoadPerambulator, TLoadPerambulator<FIMPL>, MIO);
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TLoadPerambulator<FImpl>::TLoadPerambulator(const std::string name)
-: Module<LoadPerambulatorPar>(name)
-{}
+TLoadPerambulator<FImpl>::TLoadPerambulator(const std::string name) : Module<LoadPerambulatorPar>(name) {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
 std::vector<std::string> TLoadPerambulator<FImpl>::getInput(void)
 {
-    DParName = par().DistilPar;
-    return { par().PerambFileName, DParName };
+    return {par().PerambFileName, par().DistilParams};
 }
 
 template <typename FImpl>
 std::vector<std::string> TLoadPerambulator<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
-    
-    return out;
+    return {getName()};
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TLoadPerambulator<FImpl>::setup(void)
 {
-    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
+    const MDistil::DistilParameters &dp{envGet(MDistil::DistilParameters,  par().DistilParams)};
     const int Nt{env().getDim(Tdir)}; 
-    const int nvec{DPar.nvec}; 
-    const int nnoise{DPar.nnoise}; 
-    const int tsrc{DPar.tsrc}; 
-    const int TI{DPar.TI}; 
-    const int LI{DPar.LI}; 
-    const int SI{DPar.SI}; 
-    const bool full_tdil{ TI == Nt }; 
-    const bool exact_distillation{ full_tdil && LI == nvec }; 
-    const int Nt_inv{ full_tdil ? 1 : TI };
-  envCreate(MDistil::PerambTensor, getName(), 1, Nt,nvec,LI,nnoise,Nt_inv,SI);
+    const bool full_tdil{ dp.TI == Nt };
+    const int Nt_inv{ full_tdil ? 1 : dp.TI };
+    envCreate(MDistil::PerambTensor, getName(), 1, Nt,dp.nvec,dp.LI,dp.nnoise,Nt_inv,dp.SI);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -123,7 +109,5 @@ void TLoadPerambulator<FImpl>::execute(void)
 }
 
 END_MODULE_NAMESPACE
-
 END_HADRONS_NAMESPACE
-
-#endif // Hadrons_MIO_LoadPerambulator_hpp_
+#endif

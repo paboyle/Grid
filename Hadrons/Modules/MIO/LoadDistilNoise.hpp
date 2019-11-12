@@ -44,7 +44,7 @@ class LoadDistilNoisePar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(LoadDistilNoisePar,
                                         std::string, NoiseFileName,
-                                        std::string, DistilPar);
+                                        std::string, DistilParams);
 };
 
 template <typename FImpl>
@@ -62,8 +62,6 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
-protected:
-    std::string DParName;
 };
 
 MODULE_REGISTER_TMP(LoadDistilNoise, TLoadDistilNoise<FIMPL>, MIO);
@@ -73,36 +71,28 @@ MODULE_REGISTER_TMP(LoadDistilNoise, TLoadDistilNoise<FIMPL>, MIO);
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TLoadDistilNoise<FImpl>::TLoadDistilNoise(const std::string name)
-: Module<LoadDistilNoisePar>(name)
-{}
+TLoadDistilNoise<FImpl>::TLoadDistilNoise(const std::string name) : Module<LoadDistilNoisePar>(name) {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
 std::vector<std::string> TLoadDistilNoise<FImpl>::getInput(void)
 {
-    DParName = par().DistilPar;
-    return { par().NoiseFileName, DParName };
-    
+    return {par().NoiseFileName, par().DistilParams};
 }
 
 template <typename FImpl>
 std::vector<std::string> TLoadDistilNoise<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
-    
-    return out;
+    return {getName()};
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TLoadDistilNoise<FImpl>::setup(void)
 {
-    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
-    const int Nt{env().getDim(Tdir)}; 
-    const int nvec{DPar.nvec}; 
-    const int nnoise{DPar.nnoise}; 
-    envCreate(MDistil::NoiseTensor, getName(), 1, nnoise, Nt, nvec, Ns);
+    const MDistil::DistilParameters &dp{envGet(MDistil::DistilParameters,  par().DistilParams)};
+    const int Nt{env().getDim(Tdir)};
+    envCreate(MDistil::NoiseTensor, getName(), 1, dp.nnoise, Nt, dp.nvec, Ns);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -117,7 +107,5 @@ void TLoadDistilNoise<FImpl>::execute(void)
 }
 
 END_MODULE_NAMESPACE
-
 END_HADRONS_NAMESPACE
-
-#endif // Hadrons_MIO_LoadDistilNoise_hpp_
+#endif
