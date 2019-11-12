@@ -18,6 +18,7 @@ class DistilParPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(DistilParPar,
+                                    int, nvec,
                                     int, nnoise,
                                     int, tsrc,
                                     int, TI,
@@ -74,7 +75,7 @@ std::vector<std::string> TDistilPar<FImpl>::getOutput(void)
 template <typename FImpl>
 void TDistilPar<FImpl>::setup(void)
 {
-    
+ //   envCreate(Hadrons::MDistil::DistilParameters, getName(), 1); //DOES NOT WORK
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -82,11 +83,12 @@ template <typename FImpl>
 void TDistilPar<FImpl>::execute(void)
 {
     Hadrons::MDistil::DistilParameters &out = envGet(Hadrons::MDistil::DistilParameters, getName());
+  /*  out.nvec=par().nvec;
     out.nnoise=par().nnoise;
     out.tsrc=par().tsrc;
     out.TI=par().TI;
     out.LI=par().LI;
-    out.SI=par().SI;
+    out.SI=par().SI; */
 }
 
 END_MODULE_NAMESPACE

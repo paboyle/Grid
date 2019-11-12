@@ -53,7 +53,7 @@ public:
                                     std::string, solve,
                                     std::string, nvec_reduced,
                                     std::string, LI_reduced,
-                                    MDistil::DistilParameters, DistilPar);
+                                    std::string, DistilPar);
 };
 
 template <typename FImpl>
@@ -75,6 +75,8 @@ public:
 protected:
     GridCartesian * grid3d; // Owned by me, so I must delete it
     GridCartesian * grid4d;
+    //other members
+    std::string DParName;
 protected:
     virtual void Cleanup(void);
     
@@ -101,7 +103,9 @@ TPerambFromSolve<FImpl>::~TPerambFromSolve(void)
 template <typename FImpl>
 std::vector<std::string> TPerambFromSolve<FImpl>::getInput(void)
 {
-    return std::vector<std::string>{ par().solve, par().eigenPack };
+    //return std::vector<std::string>{ par().solve, par().eigenPack };
+    DParName = par().DistilPar;
+    return {par().solve, par().eigenPack, DParName };
 }
 
 template <typename FImpl>
@@ -115,12 +119,13 @@ template <typename FImpl>
 void TPerambFromSolve<FImpl>::setup(void)
 {
     Cleanup();
+    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
     const int Nt{env().getDim(Tdir)}; 
-    const int nvec{par().DistilPar.nvec}; 
-    const int nnoise{par().DistilPar.nnoise}; 
-    const int LI{par().DistilPar.LI}; 
-    const int TI{par().DistilPar.TI}; 
-    const int SI{par().DistilPar.SI}; 
+    const int nvec{DPar.nvec}; 
+    const int nnoise{DPar.nnoise}; 
+    const int LI{DPar.LI}; 
+    const int TI{DPar.TI}; 
+    const int SI{DPar.SI}; 
     const bool full_tdil{ TI == Nt }; 
     const int Nt_inv{ full_tdil ? 1 : TI };
     const int nvec_reduced{ par().nvec_reduced.empty() ? nvec:std::stoi(par().nvec_reduced)};
@@ -152,12 +157,13 @@ void TPerambFromSolve<FImpl>::execute(void)
     GridCartesian * grid4d = env().getGrid();
     const int Ntlocal{grid4d->LocalDimensions()[3]};
     const int Ntfirst{grid4d->LocalStarts()[3]};
+    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
     const int Nt{env().getDim(Tdir)}; 
-    const int nvec{par().DistilPar.nvec}; 
-    const int nnoise{par().DistilPar.nnoise}; 
-    const int TI{par().DistilPar.TI}; 
-    const int LI{par().DistilPar.LI}; 
-    const int SI{par().DistilPar.SI}; 
+    const int nvec{DPar.nvec}; 
+    const int nnoise{DPar.nnoise}; 
+    const int TI{DPar.TI}; 
+    const int LI{DPar.LI}; 
+    const int SI{DPar.SI}; 
     const bool full_tdil{ TI == Nt }; 
     const int Nt_inv{ full_tdil ? 1 : TI };
     const int nvec_reduced{ par().nvec_reduced.empty() ? nvec:std::stoi(par().nvec_reduced)};

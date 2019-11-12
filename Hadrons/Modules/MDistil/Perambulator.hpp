@@ -49,7 +49,7 @@ public:
                                     std::string, PerambFileName,
                                     std::string, UnsmearedSinkFileName,
                                     std::string, UnsmearedSinkMultiFile,
-                                    MDistil::DistilParameters, DistilPar);
+                                    std::string, DistilPar);
 };
 
 template <typename FImpl>
@@ -79,6 +79,7 @@ protected:
     unsigned int Ls_;
     std::string sLapEvecName;
     std::string sNoiseName;
+    std::string DParName;
 };
 
 MODULE_REGISTER_TMP(Perambulator, TPerambulator<FIMPL>, MDistil);
@@ -105,7 +106,8 @@ std::vector<std::string> TPerambulator<FImpl>::getInput(void)
 {
     sLapEvecName = par().lapevec;
     sNoiseName = par().noise;
-    return {sLapEvecName, par().solver, sNoiseName };
+    DParName = par().DistilPar;
+    return {sLapEvecName, par().solver, sNoiseName, DParName };
 }
 
 template <typename FImpl>
@@ -121,13 +123,14 @@ void TPerambulator<FImpl>::setup(void)
     Cleanup();
     grid4d = env().getGrid();
     grid3d = MakeLowerDimGrid(grid4d);
+    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
     const int Nt{env().getDim(Tdir)}; 
-    const int nvec{par().DistilPar.nvec}; 
-    const int nnoise{par().DistilPar.nnoise}; 
-    const int tsrc{par().DistilPar.tsrc}; 
-    const int TI{par().DistilPar.TI}; 
-    const int LI{par().DistilPar.LI}; 
-    const int SI{par().DistilPar.SI}; 
+    const int nvec{DPar.nvec}; 
+    const int nnoise{DPar.nnoise}; 
+    const int tsrc{DPar.tsrc}; 
+    const int TI{DPar.TI}; 
+    const int LI{DPar.LI}; 
+    const int SI{DPar.SI}; 
     const bool full_tdil{ TI == Nt }; 
     const int Nt_inv{ full_tdil ? 1 : TI };
     const std::string UnsmearedSinkFileName{ par().UnsmearedSinkFileName };
@@ -170,13 +173,14 @@ void TPerambulator<FImpl>::Cleanup(void)
 template <typename FImpl>
 void TPerambulator<FImpl>::execute(void)
 {
+    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
     const int Nt{env().getDim(Tdir)}; 
-    const int nvec{par().DistilPar.nvec}; 
-    const int nnoise{par().DistilPar.nnoise}; 
-    const int tsrc{par().DistilPar.tsrc}; 
-    const int TI{par().DistilPar.TI}; 
-    const int LI{par().DistilPar.LI}; 
-    const int SI{par().DistilPar.SI}; 
+    const int nvec{DPar.nvec}; 
+    const int nnoise{DPar.nnoise}; 
+    const int tsrc{DPar.tsrc}; 
+    const int TI{DPar.TI}; 
+    const int LI{DPar.LI}; 
+    const int SI{DPar.SI}; 
     const bool full_tdil{ TI == Nt }; 
     const int Nt_inv{ full_tdil ? 1 : TI };
 

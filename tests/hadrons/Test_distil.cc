@@ -58,6 +58,10 @@ void test_Global(Application &application)
   globalPar.trajCounter.end   = 1120;
   globalPar.trajCounter.step  = 20;
   globalPar.runId             = "test";
+  globalPar.graphFile         = "";
+  globalPar.scheduleFile      = "";
+  globalPar.saveSchedule      = "false";
+  globalPar.parallelWriteMaxRetry      = -1;
   application.setPar(globalPar);
 }
 
@@ -65,10 +69,9 @@ void test_Global(Application &application)
 // Create a random gauge with the correct name
 /////////////////////////////////////////////////////////////
 
-std::string test_Gauge(Application &application, const char * pszBaseName )
+std::string test_Gauge(Application &application )
 {
-  std::string sGaugeName{ pszBaseName };
-  sGaugeName.append( "_gauge" );
+  std::string sGaugeName{ "gauge" };
   application.createModule<MGauge::Random>( sGaugeName );
   return sGaugeName;
 }
@@ -80,8 +83,9 @@ std::string test_Gauge(Application &application, const char * pszBaseName )
 void test_LapEvec(Application &application)
 {
   const char szModuleName[] = "LapEvec";
-  test_Gauge( application, szModuleName );
+  test_Gauge( application );
   MDistil::LapEvecPar p;
+  p.gauge = "gauge";
   p.Stout.steps = 3;
   p.Stout.rho = 0.2;
   p.Cheby.PolyOrder = 11;
@@ -117,7 +121,7 @@ std::string test_Solver(Application &application, const char * pSuffix = nullptr
     sActionName.append( pSuffix );
   }
   MAction::DWF::Par actionPar;
-  actionPar.gauge = "LapEvec_gauge";
+  actionPar.gauge = "gauge";
   actionPar.Ls    = 16;
   actionPar.M5    = 1.8;
   actionPar.mass  = 0.005;
@@ -134,14 +138,30 @@ std::string test_Solver(Application &application, const char * pSuffix = nullptr
 }
 
 /////////////////////////////////////////////////////////////
+// DistilParameters
+/////////////////////////////////////////////////////////////
+
+std::string test_DPar(Application &application) {
+  // DistilVectors parameters
+  MDistil::DistilParPar DistilPar;
+  DistilPar.nvec = 5;
+  DistilPar.nnoise = 1;
+  DistilPar.tsrc = 0;
+  DistilPar.LI = 5;
+  DistilPar.TI = 8;
+  DistilPar.SI = 4;
+  std::string sDParName{"DPar_l"};
+  application.createModule<MDistil::DistilPar>(sDParName,DistilPar);
+  return sDParName;
+}
+/////////////////////////////////////////////////////////////
 // Noises
 /////////////////////////////////////////////////////////////
 
 std::string test_Noises(Application &application, const std::string &sNoiseBaseName ) {
   // DistilVectors parameters
   MDistil::NoisesPar NoisePar;
-  NoisePar.nnoise = 1;
-  NoisePar.nvec = 5;
+  NoisePar.DistilPar = "DPar_l";
   std::string sNoiseName{sNoiseBaseName + "_noise"};
   application.createModule<MDistil::Noises>(sNoiseName,NoisePar);
   return sNoiseName;
@@ -164,9 +184,7 @@ void test_LoadPerambulators( Application &application, const char * pszSuffix = 
   std::string sModuleName{ PerambulatorName( pszSuffix ) };
   MIO::LoadPerambulator::Par PerambPar;
   PerambPar.PerambFileName = sModuleName;
-  PerambPar.Distil.tsrc = 0;
-  PerambPar.Distil.nnoise = 1;
-  PerambPar.nvec = 5;
+  PerambPar.DistilPar = "DPar_l";
   test_Noises(application, sModuleName); // I want these written after solver stuff
   application.createModule<MIO::LoadPerambulator>( sModuleName, PerambPar );
 }
@@ -179,9 +197,7 @@ void test_Perambulators( Application &application, const char * pszSuffix = null
   PerambPar.lapevec = "LapEvec";
   PerambPar.PerambFileName = sModuleName;
   PerambPar.solver = test_Solver( application, pszSuffix );
-  PerambPar.Distil.tsrc = 0;
-  PerambPar.Distil.nnoise = 1;
-  PerambPar.nvec = 5;
+  PerambPar.DistilPar = "DPar_l";
   test_Noises(application, sModuleName); // I want these written after solver stuff
   application.createModule<MDistil::Perambulator>( sModuleName, PerambPar );
 }
@@ -202,9 +218,7 @@ void test_DistilVectors(Application &application, const char * pszSuffix = nullp
   DistilVecPar.noise = sPerambName + "_noise";
   DistilVecPar.perambulator = sPerambName;
   DistilVecPar.lapevec = "LapEvec";
-  DistilVecPar.tsrc = 0;
-  if( pszNvec )
-    DistilVecPar.nvec = pszNvec;
+  DistilVecPar.DistilPar = "DPar_l";
   application.createModule<MDistil::DistilVectors>(sModuleName,DistilVecPar);
 }
 
@@ -331,15 +345,17 @@ int main(int argc, char *argv[])
       LOG(Message) << "Computing Meson 2pt-function" << std::endl;
       test_Global( application );
       test_LapEvec( application );
-      test_Perambulators( application );
-      test_DistilVectors( application );
-      test_MesonField( application, "Phi", "_phi" );
-      test_MesonField( application, "Rho", "_rho" );
+      test_DPar( application );
+      //test_Perambulators( application );
+      //test_DistilVectors( application );
+      //test_MesonField( application, "Phi", "_phi" );
+      //test_MesonField( application, "Rho", "_rho" );
       break;
     case 1:
       LOG(Message) << "Computing Meson 2pt-function by loading perambulators" << std::endl;
       test_Global( application );
       test_LapEvec( application );
+      test_DPar( application );
       test_LoadPerambulators( application );
       test_DistilVectors( application );
       test_MesonField( application, "Phi", "_phi" );
@@ -349,6 +365,7 @@ int main(int argc, char *argv[])
       LOG(Message) << "Computing Meson 2pt-function for two quark flavours" << std::endl;
       test_Global( application );
       test_LapEvec( application );
+      test_DPar( application );
       test_Perambulators( application );
       test_DistilVectors( application );
       test_Perambulators( application, "S" );
@@ -360,6 +377,7 @@ int main(int argc, char *argv[])
       LOG(Message) << "Computing Meson 2pt-function with current insertion" << std::endl;
       test_Global( application );
       test_LapEvec( application );
+      test_DPar( application );
       test_Perambulators( application );
       test_MesonSink( application );
       break;

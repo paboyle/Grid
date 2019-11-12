@@ -43,7 +43,7 @@ class NoisesPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(NoisesPar,
-                                    MDistil::DistilParameters, DistilPar,
+                                    std::string, DistilPar,
                                     std::string, NoiseFileName)
 };
 
@@ -62,6 +62,8 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
+protected:
+    std::string DParName;
 };
 
 MODULE_REGISTER_TMP(Noises, TNoises<FIMPL>, MDistil);
@@ -79,7 +81,8 @@ TNoises<FImpl>::TNoises(const std::string name)
 template <typename FImpl>
 std::vector<std::string> TNoises<FImpl>::getInput(void)
 {
-    return {};
+    DParName = par().DistilPar;
+    return { DParName };
 }
 
 template <typename FImpl>
@@ -93,9 +96,10 @@ std::vector<std::string> TNoises<FImpl>::getOutput(void)
 template <typename FImpl>
 void TNoises<FImpl>::setup(void)
 {
+    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
     const int Nt{env().getDim(Tdir)}; 
-    const int nvec{par().DistilPar.nvec}; 
-    const int nnoise{par().DistilPar.nnoise}; 
+    const int nvec{DPar.nvec}; 
+    const int nnoise{DPar.nnoise}; 
     envCreate(NoiseTensor, getName(), 1, nnoise, Nt, nvec, Ns);
 }
 
@@ -103,11 +107,12 @@ void TNoises<FImpl>::setup(void)
 template <typename FImpl>
 void TNoises<FImpl>::execute(void)
 {
+    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
     const int Nt{env().getDim(Tdir)};
-    const int nnoise{par().DistilPar.nnoise};
-    const int nvec{par().DistilPar.nvec};
-    const int TI{par().DistilPar.TI};
-    const int LI{par().DistilPar.LI};
+    const int nnoise{DPar.nnoise};
+    const int nvec{DPar.nvec};
+    const int TI{DPar.TI};
+    const int LI{DPar.LI};
     const bool full_tdil{ TI == Nt }; 
     const bool exact_distillation{ full_tdil && LI == nvec }; 
     

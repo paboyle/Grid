@@ -49,7 +49,7 @@ public:
                                     std::string, lapevec,
                                     std::string, rho,
                                     std::string, phi,
-                                    MDistil::DistilParameters, DistilPar);
+                                    std::string, DistilPar);
 };
 
 template <typename FImpl>
@@ -78,6 +78,7 @@ public:
     std::string PerambulatorName;
     std::string NoiseVectorName;
     std::string LapEvecName;
+    std::string DParName;
     bool bMakeRho;
     bool bMakePhi;
     std::string RhoName;
@@ -108,7 +109,8 @@ std::vector<std::string> TDistilVectors<FImpl>::getInput(void)
     PerambulatorName = par().perambulator;
     NoiseVectorName = par().noise;
     LapEvecName = par().lapevec;
-    return { PerambulatorName, NoiseVectorName, LapEvecName };
+    DParName = par().DistilPar;
+    return { PerambulatorName, NoiseVectorName, LapEvecName, DParName };
 }
 
 template <typename FImpl>
@@ -142,16 +144,17 @@ void TDistilVectors<FImpl>::setup(void)
     Cleanup();
     auto &noise        = envGet(NoiseTensor,  NoiseVectorName);
     auto &perambulator = envGet(PerambTensor, PerambulatorName);
+    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
     
     // We expect the perambulator to have been created with these indices
     assert( perambulator.ValidateIndexNames() && "Perambulator index names bad" );
     
     const int Nt{env().getDim(Tdir)}; 
-    const int nvec{par().DistilPar.nvec}; 
-    const int nnoise{par().DistilPar.nnoise}; 
-    const int TI{par().DistilPar.TI}; 
-    const int LI{par().DistilPar.LI}; 
-    const int SI{par().DistilPar.SI}; 
+    const int nvec{DPar.nvec}; 
+    const int nnoise{DPar.nnoise}; 
+    const int TI{DPar.TI}; 
+    const int LI{DPar.LI}; 
+    const int SI{DPar.SI}; 
     const bool full_tdil{ TI == Nt }; 
     const int Nt_inv{ full_tdil ? 1 : TI };
     
@@ -195,6 +198,7 @@ void TDistilVectors<FImpl>::execute(void)
     auto &noise        = envGet(NoiseTensor, NoiseVectorName);
     auto &perambulator = envGet(PerambTensor, PerambulatorName);
     auto &epack        = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, LapEvecName);
+    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
     
     envGetTmp(LatticeSpinColourVector, source4d);
     envGetTmp(LatticeSpinColourVector, source3d);
@@ -206,12 +210,12 @@ void TDistilVectors<FImpl>::execute(void)
     const int Ntfirst{ grid4d->LocalStarts()[3] };
     
     const int Nt{env().getDim(Tdir)}; 
-    const int nvec{par().DistilPar.nvec}; 
-    const int nnoise{par().DistilPar.nnoise}; 
-    const int tsrc{par().DistilPar.tsrc}; 
-    const int TI{par().DistilPar.TI}; 
-    const int LI{par().DistilPar.LI}; 
-    const int SI{par().DistilPar.SI}; 
+    const int nvec{DPar.nvec}; 
+    const int nnoise{DPar.nnoise}; 
+    const int tsrc{DPar.tsrc}; 
+    const int TI{DPar.TI}; 
+    const int LI{DPar.LI}; 
+    const int SI{DPar.SI}; 
     const bool full_tdil{ TI == Nt }; 
     const int Nt_inv{ full_tdil ? 1 : TI };
     

@@ -44,7 +44,7 @@ class LoadPerambulatorPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(LoadPerambulatorPar,
                                         std::string, PerambFileName,
-                                        MDistil::DistilParameters, DistilPar);
+                                        std::string, DistilPar);
 };
 
 template <typename FImpl>
@@ -62,6 +62,8 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
+protected:
+    std::string DParName;
 };
 
 MODULE_REGISTER_TMP(LoadPerambulator, TLoadPerambulator<FIMPL>, MIO);
@@ -79,9 +81,8 @@ TLoadPerambulator<FImpl>::TLoadPerambulator(const std::string name)
 template <typename FImpl>
 std::vector<std::string> TLoadPerambulator<FImpl>::getInput(void)
 {
-    std::vector<std::string> in;
-    
-    return in;
+    DParName = par().DistilPar;
+    return { par().PerambFileName, DParName };
 }
 
 template <typename FImpl>
@@ -96,13 +97,14 @@ std::vector<std::string> TLoadPerambulator<FImpl>::getOutput(void)
 template <typename FImpl>
 void TLoadPerambulator<FImpl>::setup(void)
 {
+    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
     const int Nt{env().getDim(Tdir)}; 
-    const int nvec{par().DistilPar.nvec}; 
-    const int nnoise{par().DistilPar.nnoise}; 
-    const int tsrc{par().DistilPar.tsrc}; 
-    const int TI{par().DistilPar.TI}; 
-    const int LI{par().DistilPar.LI}; 
-    const int SI{par().DistilPar.SI}; 
+    const int nvec{DPar.nvec}; 
+    const int nnoise{DPar.nnoise}; 
+    const int tsrc{DPar.tsrc}; 
+    const int TI{DPar.TI}; 
+    const int LI{DPar.LI}; 
+    const int SI{DPar.SI}; 
     const bool full_tdil{ TI == Nt }; 
     const bool exact_distillation{ full_tdil && LI == nvec }; 
     const int Nt_inv{ full_tdil ? 1 : TI };

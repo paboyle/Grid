@@ -44,7 +44,7 @@ class LoadDistilNoisePar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(LoadDistilNoisePar,
                                         std::string, NoiseFileName,
-                                        MDistil::DistilParameters, DistilPar);
+                                        std::string, DistilPar);
 };
 
 template <typename FImpl>
@@ -62,6 +62,8 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
+protected:
+    std::string DParName;
 };
 
 MODULE_REGISTER_TMP(LoadDistilNoise, TLoadDistilNoise<FIMPL>, MIO);
@@ -79,9 +81,9 @@ TLoadDistilNoise<FImpl>::TLoadDistilNoise(const std::string name)
 template <typename FImpl>
 std::vector<std::string> TLoadDistilNoise<FImpl>::getInput(void)
 {
-    std::vector<std::string> in;
+    DParName = par().DistilPar;
+    return { par().NoiseFileName, DParName };
     
-    return in;
 }
 
 template <typename FImpl>
@@ -96,9 +98,10 @@ std::vector<std::string> TLoadDistilNoise<FImpl>::getOutput(void)
 template <typename FImpl>
 void TLoadDistilNoise<FImpl>::setup(void)
 {
+    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
     const int Nt{env().getDim(Tdir)}; 
-    const int nvec{par().DistilPar.nvec}; 
-    const int nnoise{par().DistilPar.nnoise}; 
+    const int nvec{DPar.nvec}; 
+    const int nnoise{DPar.nnoise}; 
     envCreate(MDistil::NoiseTensor, getName(), 1, nnoise, Nt, nvec, Ns);
 }
 
