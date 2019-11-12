@@ -69,6 +69,8 @@ struct DistilParameters: Serializable {
                                     int, TI,
                                     int, LI,
                                     int, SI )
+    DistilParameters() = default;
+    DistilParameters( const DistilParameters &p ) = default; // member-wise copy
 };
 
 /******************************************************************************

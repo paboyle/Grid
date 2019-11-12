@@ -48,7 +48,6 @@ public:
                                     std::string, noise,
                                     std::string, PerambFileName,
                                     std::string, UnsmearedSinkFileName,
-                                    std::string, UnsmearedSinkMultiFile,
                                     std::string, DistilPar);
 };
 
@@ -77,9 +76,6 @@ protected:
     GridCartesian * grid4d; // Owned by environment (so I won't delete it)
     // Other members
     unsigned int Ls_;
-    std::string sLapEvecName;
-    std::string sNoiseName;
-    std::string DParName;
 };
 
 MODULE_REGISTER_TMP(Perambulator, TPerambulator<FIMPL>, MDistil);
@@ -104,10 +100,7 @@ TPerambulator<FImpl>::~TPerambulator(void)
 template <typename FImpl>
 std::vector<std::string> TPerambulator<FImpl>::getInput(void)
 {
-    sLapEvecName = par().lapevec;
-    sNoiseName = par().noise;
-    DParName = par().DistilPar;
-    return {sLapEvecName, par().solver, sNoiseName, DParName };
+    return {par().lapevec, par().solver, par().noise, par().DistilPar};
 }
 
 template <typename FImpl>
@@ -123,24 +116,14 @@ void TPerambulator<FImpl>::setup(void)
     Cleanup();
     grid4d = env().getGrid();
     grid3d = MakeLowerDimGrid(grid4d);
-    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
-    const int Nt{env().getDim(Tdir)}; 
-    const int nvec{DPar.nvec}; 
-    const int nnoise{DPar.nnoise}; 
-    const int tsrc{DPar.tsrc}; 
-    const int TI{DPar.TI}; 
-    const int LI{DPar.LI}; 
-    const int SI{DPar.SI}; 
-    const bool full_tdil{ TI == Nt }; 
-    const int Nt_inv{ full_tdil ? 1 : TI };
-    const std::string UnsmearedSinkFileName{ par().UnsmearedSinkFileName };
-    if (!UnsmearedSinkFileName.empty())
-        //bool bMulti = ( Hadrons::MDistil::DistilParameters::ParameterDefault( par().UnsmearedSinkMultiFile, 1, true ) != 0 );
-        bool bMulti = 0;
-    
-    envCreate(PerambTensor, getName(), 1, Nt,nvec,LI,nnoise,Nt_inv,SI);
+    const DistilParameters &dp = envGet(DistilParameters, par().DistilPar);
+    const int  Nt{env().getDim(Tdir)};
+    const bool full_tdil{ dp.TI == Nt };
+    const int  Nt_inv{ full_tdil ? 1 : dp.TI };
+
+    envCreate(PerambTensor, getName(), 1, Nt, dp.nvec, dp.LI, dp.nnoise, Nt_inv, dp.SI);
     envCreate(std::vector<FermionField>, getName() + "_unsmeared_sink", 1,
-              nnoise*LI*Ns*Nt_inv, envGetGrid(FermionField));
+              dp.nnoise*dp.LI*Ns*Nt_inv, envGetGrid(FermionField));
     
     envTmpLat(LatticeSpinColourVector,   "dist_source");
     envTmpLat(LatticeSpinColourVector,   "source4d");
@@ -173,8 +156,8 @@ void TPerambulator<FImpl>::Cleanup(void)
 template <typename FImpl>
 void TPerambulator<FImpl>::execute(void)
 {
-    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
-    const int Nt{env().getDim(Tdir)}; 
+    const DistilParameters &DPar{ envGet(DistilParameters, par().DistilPar) };
+    const int Nt{env().getDim(Tdir)};
     const int nvec{DPar.nvec}; 
     const int nnoise{DPar.nnoise}; 
     const int tsrc{DPar.tsrc}; 
@@ -189,9 +172,9 @@ void TPerambulator<FImpl>::execute(void)
     envGetTmp(FermionField, v4dtmp);
     envGetTmp(FermionField, v5dtmp);
     envGetTmp(FermionField, v5dtmp_sol);
-    auto &noise = envGet(NoiseTensor, sNoiseName);
+    auto &noise = envGet(NoiseTensor, par().noise);
     auto &perambulator = envGet(PerambTensor, getName());
-    auto &epack = envGet(LapEvecs, sLapEvecName);
+    auto &epack = envGet(LapEvecs, par().lapevec);
     auto &unsmeared_sink = envGet(std::vector<FermionField>, getName() + "_unsmeared_sink");
     envGetTmp(LatticeSpinColourVector, dist_source);
     envGetTmp(LatticeSpinColourVector, source4d);

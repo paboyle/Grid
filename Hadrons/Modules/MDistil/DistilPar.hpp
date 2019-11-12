@@ -13,21 +13,8 @@ BEGIN_HADRONS_NAMESPACE
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MDistil)
 
-
-class DistilParPar: Serializable
-{
-public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(DistilParPar,
-                                    int, nvec,
-                                    int, nnoise,
-                                    int, tsrc,
-                                    int, TI,
-                                    int, LI,
-                                    int, SI );
-};
-
 template <typename FImpl>
-class TDistilPar: public Module<DistilParPar>
+class TDistilPar: public Module<DistilParameters>
 {
 public:
     // constructor
@@ -51,44 +38,34 @@ MODULE_REGISTER_TMP(DistilPar, TDistilPar<FIMPL>, MDistil);
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
 TDistilPar<FImpl>::TDistilPar(const std::string name)
-: Module<DistilParPar>(name)
+: Module<DistilParameters>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
 std::vector<std::string> TDistilPar<FImpl>::getInput(void)
 {
-    std::vector<std::string> in;
-    
-    return in;
+    return {};
 }
 
 template <typename FImpl>
 std::vector<std::string> TDistilPar<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
-    
-    return out;
+    return {getName()};
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TDistilPar<FImpl>::setup(void)
 {
- //   envCreate(Hadrons::MDistil::DistilParameters, getName(), 1); //DOES NOT WORK
+    envCreate(DistilParameters, getName(), 1, par() );
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TDistilPar<FImpl>::execute(void)
 {
-    Hadrons::MDistil::DistilParameters &out = envGet(Hadrons::MDistil::DistilParameters, getName());
-  /*  out.nvec=par().nvec;
-    out.nnoise=par().nnoise;
-    out.tsrc=par().tsrc;
-    out.TI=par().TI;
-    out.LI=par().LI;
-    out.SI=par().SI; */
+    // Nothing to do. setup() created and initialised the output object
 }
 
 END_MODULE_NAMESPACE
