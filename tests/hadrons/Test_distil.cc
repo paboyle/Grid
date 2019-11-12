@@ -143,7 +143,8 @@ std::string test_Solver(Application &application, const char * pSuffix = nullptr
 
 std::string test_DPar(Application &application) {
   // DistilVectors parameters
-  MDistil::DistilParPar DistilPar;
+  //MDistil::DistilParPar DistilPar;
+  MDistil::DistilParameters DistilPar;
   DistilPar.nvec = 5;
   DistilPar.nnoise = 1;
   DistilPar.tsrc = 0;
@@ -162,7 +163,8 @@ std::string test_Noises(Application &application, const std::string &sNoiseBaseN
   // DistilVectors parameters
   MDistil::NoisesPar NoisePar;
   NoisePar.DistilPar = "DPar_l";
-  std::string sNoiseName{sNoiseBaseName + "_noise"};
+  NoisePar.NoiseFileName = "noise";
+  std::string sNoiseName{"noise"};
   application.createModule<MDistil::Noises>(sNoiseName,NoisePar);
   return sNoiseName;
 }
@@ -198,6 +200,7 @@ void test_Perambulators( Application &application, const char * pszSuffix = null
   PerambPar.PerambFileName = sModuleName;
   PerambPar.solver = test_Solver( application, pszSuffix );
   PerambPar.DistilPar = "DPar_l";
+  PerambPar.noise = "noise";
   test_Noises(application, sModuleName); // I want these written after solver stuff
   application.createModule<MDistil::Perambulator>( sModuleName, PerambPar );
 }
@@ -215,7 +218,9 @@ void test_DistilVectors(Application &application, const char * pszSuffix = nullp
   if( pszSuffix )
     sPerambName.append( pszSuffix );
   MDistil::DistilVectors::Par DistilVecPar;
-  DistilVecPar.noise = sPerambName + "_noise";
+  DistilVecPar.noise = "noise";
+  DistilVecPar.rho = "rho";
+  DistilVecPar.phi = "phi";
   DistilVecPar.perambulator = sPerambName;
   DistilVecPar.lapevec = "LapEvec";
   DistilVecPar.DistilPar = "DPar_l";
@@ -253,7 +258,7 @@ void test_MesonField(Application &application, const char * pszFileSuffix,
   if( pszObjectRight == nullptr )
     pszObjectRight = pszObjectLeft;
   MContraction::A2AMesonField::Par A2AMesonFieldPar;
-  A2AMesonFieldPar.left="DistilVecs";
+  A2AMesonFieldPar.left="";
   A2AMesonFieldPar.right=A2AMesonFieldPar.left;
   A2AMesonFieldPar.left.append( pszObjectLeft );
   A2AMesonFieldPar.right.append( pszObjectRight );
@@ -346,10 +351,10 @@ int main(int argc, char *argv[])
       test_Global( application );
       test_LapEvec( application );
       test_DPar( application );
-      //test_Perambulators( application );
-      //test_DistilVectors( application );
-      //test_MesonField( application, "Phi", "_phi" );
-      //test_MesonField( application, "Rho", "_rho" );
+      test_Perambulators( application );
+      test_DistilVectors( application );
+      test_MesonField( application, "Phi", "phi" );
+      test_MesonField( application, "Rho", "rho" );
       break;
     case 1:
       LOG(Message) << "Computing Meson 2pt-function by loading perambulators" << std::endl;
@@ -358,8 +363,8 @@ int main(int argc, char *argv[])
       test_DPar( application );
       test_LoadPerambulators( application );
       test_DistilVectors( application );
-      test_MesonField( application, "Phi", "_phi" );
-      test_MesonField( application, "Rho", "_rho" );
+      test_MesonField( application, "Phi", "phi" );
+      test_MesonField( application, "Rho", "rho" );
       break;
     case 2:
       LOG(Message) << "Computing Meson 2pt-function for two quark flavours" << std::endl;
