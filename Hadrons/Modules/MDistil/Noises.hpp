@@ -43,7 +43,7 @@ class NoisesPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(NoisesPar,
-                                    std::string, DistilPar,
+                                    std::string, DistilParams,
                                     std::string, NoiseFileName)
 };
 
@@ -62,8 +62,6 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
-protected:
-    std::string DParName;
 };
 
 MODULE_REGISTER_TMP(Noises, TNoises<FIMPL>, MDistil);
@@ -73,16 +71,13 @@ MODULE_REGISTER_TMP(Noises, TNoises<FIMPL>, MDistil);
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TNoises<FImpl>::TNoises(const std::string name)
-: Module<NoisesPar>(name)
-{}
+TNoises<FImpl>::TNoises(const std::string name) : Module<NoisesPar>(name) {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
 std::vector<std::string> TNoises<FImpl>::getInput(void)
 {
-    DParName = par().DistilPar;
-    return { DParName };
+    return {par().DistilParams};
 }
 
 template <typename FImpl>
@@ -96,32 +91,26 @@ std::vector<std::string> TNoises<FImpl>::getOutput(void)
 template <typename FImpl>
 void TNoises<FImpl>::setup(void)
 {
-    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
+    const DistilParameters &dp{envGet(DistilParameters, par().DistilParams)};
     const int Nt{env().getDim(Tdir)}; 
-    const int nvec{DPar.nvec}; 
-    const int nnoise{DPar.nnoise}; 
-    envCreate(NoiseTensor, getName(), 1, nnoise, Nt, nvec, Ns);
+    envCreate(NoiseTensor, getName(), 1, dp.nnoise, Nt, dp.nvec, Ns);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TNoises<FImpl>::execute(void)
 {
-    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
+    const DistilParameters &dp{envGet(DistilParameters, par().DistilParams)};
     const int Nt{env().getDim(Tdir)};
-    const int nnoise{DPar.nnoise};
-    const int nvec{DPar.nvec};
-    const int TI{DPar.TI};
-    const int LI{DPar.LI};
-    const bool full_tdil{ TI == Nt }; 
-    const bool exact_distillation{ full_tdil && LI == nvec }; 
+    const bool full_tdil{ dp.TI == Nt };
+    const bool exact_distillation{ full_tdil && dp.LI == dp.nvec };
     
     // We use our own seeds so we can specify different noises per quark
     Real rn;
     auto &noise = envGet(NoiseTensor, getName());
-    for (int inoise = 0; inoise < nnoise; inoise++) {
+    for (int inoise = 0; inoise < dp.nnoise; inoise++) {
         for (int t = 0; t < Nt; t++) {
-            for (int ivec = 0; ivec < nvec; ivec++) {
+            for (int ivec = 0; ivec < dp.nvec; ivec++) {
                 for (int is = 0; is < Ns; is++) {
                     if (exact_distillation)
                         noise.tensor(inoise, t, ivec, is) = 1.;
@@ -146,4 +135,4 @@ void TNoises<FImpl>::execute(void)
 
 END_MODULE_NAMESPACE
 END_HADRONS_NAMESPACE
-#endif // Hadrons_MDistil_Noises_hpp_
+#endif

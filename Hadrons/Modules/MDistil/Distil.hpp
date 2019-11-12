@@ -30,6 +30,9 @@
 #ifndef Hadrons_MDistil_Distil_hpp_
 #define Hadrons_MDistil_Distil_hpp_
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 #include <Hadrons/NamedTensor.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
@@ -43,7 +46,7 @@ BEGIN_MODULE_NAMESPACE(MDistil)
 /******************************************************************************
  Distillation code that is common across modules
 
- Documentation on how t use this code available at
+ Documentation on how to use this code available at
 
  *  https://aportelli.github.io/Hadrons-doc/#/mdistil  *
  
@@ -119,7 +122,7 @@ inline void RotateEigen(std::vector<LatticeColourVector> & evec)
         //const Grid::Complex phase = std::conj(cplx0 / cplx0_mag);
         const Real argphase = std::arg(phase);
 #endif
-        std::cout << GridLogMessage << "RotateEigen() : Site 0 : |" << cplx0 << "|=" << cplx0_mag << " => phase=" << (argphase / 3.14159265) << " pi" << std::endl;
+        std::cout << GridLogMessage << "RotateEigen() : Site 0 : |" << cplx0 << "|=" << cplx0_mag << " => phase=" << (argphase / M_PI) << " pi" << std::endl;
         {
             // TODO: Only really needed on the master slice
             for( int k = 0 ; k < evec.size() ; k++ )
@@ -137,4 +140,4 @@ inline void RotateEigen(std::vector<LatticeColourVector> & evec)
 
 END_MODULE_NAMESPACE
 END_HADRONS_NAMESPACE
-#endif // Hadrons_MDistil_Distil_hpp_
+#endif

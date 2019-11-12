@@ -48,7 +48,7 @@ public:
                                     std::string, noise,
                                     std::string, PerambFileName,
                                     std::string, UnsmearedSinkFileName,
-                                    std::string, DistilPar);
+                                    std::string, DistilParams);
 };
 
 template <typename FImpl>
@@ -69,12 +69,7 @@ public:
     // execution
     virtual void execute(void);
 protected:
-    virtual void Cleanup(void);
-protected:
-    // These variables are created in setup() and freed in Cleanup()
-    GridCartesian * grid3d; // Owned by me, so I must delete it
-    GridCartesian * grid4d; // Owned by environment (so I won't delete it)
-    // Other members
+    std::unique_ptr<GridCartesian> grid3d; // Owned by me, so I must delete it
     unsigned int Ls_;
 };
 
@@ -85,22 +80,13 @@ MODULE_REGISTER_TMP(Perambulator, TPerambulator<FIMPL>, MDistil);
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TPerambulator<FImpl>::TPerambulator(const std::string name)
-: grid3d{nullptr}, grid4d{nullptr}, Module<PerambulatorPar>(name)
-{}
-
-// destructor
-template <typename FImpl>
-TPerambulator<FImpl>::~TPerambulator(void)
-{
-    Cleanup();
-};
+TPerambulator<FImpl>::TPerambulator(const std::string name) : Module<PerambulatorPar>(name) {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
 std::vector<std::string> TPerambulator<FImpl>::getInput(void)
 {
-    return {par().lapevec, par().solver, par().noise, par().DistilPar};
+    return {par().lapevec, par().solver, par().noise, par().DistilParams};
 }
 
 template <typename FImpl>
@@ -113,10 +99,8 @@ std::vector<std::string> TPerambulator<FImpl>::getOutput(void)
 template <typename FImpl>
 void TPerambulator<FImpl>::setup(void)
 {
-    Cleanup();
-    grid4d = env().getGrid();
-    grid3d = MakeLowerDimGrid(grid4d);
-    const DistilParameters &dp = envGet(DistilParameters, par().DistilPar);
+    grid3d.reset( MakeLowerDimGrid( env().getGrid() ) );
+    const DistilParameters &dp = envGet(DistilParameters, par().DistilParams);
     const int  Nt{env().getDim(Tdir)};
     const bool full_tdil{ dp.TI == Nt };
     const int  Nt_inv{ full_tdil ? 1 : dp.TI };
@@ -127,12 +111,12 @@ void TPerambulator<FImpl>::setup(void)
     
     envTmpLat(LatticeSpinColourVector,   "dist_source");
     envTmpLat(LatticeSpinColourVector,   "source4d");
-    envTmp(LatticeSpinColourVector,      "source3d",1,LatticeSpinColourVector(grid3d));
-    envTmp(LatticeColourVector,          "source3d_nospin",1,LatticeColourVector(grid3d));
+    envTmp(LatticeSpinColourVector,      "source3d",1,LatticeSpinColourVector(grid3d.get()));
+    envTmp(LatticeColourVector,          "source3d_nospin",1,LatticeColourVector(grid3d.get()));
     envTmpLat(LatticeSpinColourVector,   "result4d");
     envTmpLat(LatticeColourVector,       "result4d_nospin");
-    envTmp(LatticeColourVector,          "result3d_nospin",1,LatticeColourVector(grid3d));
-    envTmp(LatticeColourVector,          "evec3d",1,LatticeColourVector(grid3d));
+    envTmp(LatticeColourVector,          "result3d_nospin",1,LatticeColourVector(grid3d.get()));
+    envTmp(LatticeColourVector,          "evec3d",1,LatticeColourVector(grid3d.get()));
     
     Ls_ = env().getObjectLs(par().solver);
     envTmpLat(FermionField, "v4dtmp");
@@ -140,23 +124,11 @@ void TPerambulator<FImpl>::setup(void)
     envTmpLat(FermionField, "v5dtmp_sol", Ls_);
 }
 
-// clean up any temporaries created by setup (that aren't stored in the environment)
-template <typename FImpl>
-void TPerambulator<FImpl>::Cleanup(void)
-{
-    if (grid3d != nullptr)
-    {
-        delete grid3d;
-        grid3d = nullptr;
-    }
-    grid4d = nullptr;
-}
-
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TPerambulator<FImpl>::execute(void)
 {
-    const DistilParameters &DPar{ envGet(DistilParameters, par().DistilPar) };
+    const DistilParameters &DPar{ envGet(DistilParameters, par().DistilParams) };
     const int Nt{env().getDim(Tdir)};
     const int nvec{DPar.nvec}; 
     const int nnoise{DPar.nnoise}; 
@@ -184,6 +156,7 @@ void TPerambulator<FImpl>::execute(void)
     envGetTmp(LatticeColourVector, result4d_nospin);
     envGetTmp(LatticeColourVector, result3d_nospin);
     envGetTmp(LatticeColourVector, evec3d);
+    GridCartesian * const grid4d{ env().getGrid() }; // Owned by environment (so I won't delete it)
     const int Ntlocal{grid4d->LocalDimensions()[3]};
     const int Ntfirst{grid4d->LocalStarts()[3]};
     const std::string UnsmearedSinkFileName{ par().UnsmearedSinkFileName };
@@ -286,10 +259,8 @@ void TPerambulator<FImpl>::execute(void)
     //Save the unsmeared sinks if filename specified
     if (!UnsmearedSinkFileName.empty())
     {
-       // bool bMulti = ( Hadrons::MDistil::DistilParameters::ParameterDefault( par().UnsmearedSinkMultiFile, 1, false ) != 0 );
-        bool bMulti =0;
         LOG(Message) << "Writing unsmeared sink to " << UnsmearedSinkFileName << std::endl;
-        A2AVectorsIo::write(UnsmearedSinkFileName, unsmeared_sink, bMulti, vm().getTrajectory());
+        A2AVectorsIo::write(UnsmearedSinkFileName, unsmeared_sink, false, vm().getTrajectory());
     }
 }
 

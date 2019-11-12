@@ -111,12 +111,7 @@ public:
     // execution
     virtual void execute(void);
 protected:
-    // These variables are created in setup() and freed in Cleanup()
-    GridCartesian * gridLD; // Owned by me, so I must delete it
-    GridCartesian * gridHD; // Owned by environment (so I won't delete it)
-    std::string sGaugeName;
-protected:
-    virtual void Cleanup(void);
+    std::unique_ptr<GridCartesian> gridLD; // Owned by me, so I must delete it
 };
 
 MODULE_REGISTER_TMP(LapEvec, TLapEvec<GIMPL>, MDistil);
@@ -127,61 +122,36 @@ MODULE_REGISTER_TMP(LapEvec, TLapEvec<GIMPL>, MDistil);
 
 // constructor /////////////////////////////////////////////////////////////////
 template <typename GImpl>
-TLapEvec<GImpl>::TLapEvec(const std::string name) : gridLD{nullptr}, Module<LapEvecPar>(name)
-{
-}
-
-// destructor /////////////////////////////////////////////////////////////////
-template <typename GImpl>
-TLapEvec<GImpl>::~TLapEvec()
-{
-    Cleanup();
-}
+TLapEvec<GImpl>::TLapEvec(const std::string name) : Module<LapEvecPar>(name) {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename GImpl>
 std::vector<std::string> TLapEvec<GImpl>::getInput(void)
 {
-    sGaugeName = par().gauge;
-    return std::vector<std::string>{ sGaugeName };
+    return std::vector<std::string>{par().gauge};
 }
 
 template <typename GImpl>
 std::vector<std::string> TLapEvec<GImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()}; // This is the higher dimensional eigenpack
-    return out;
+    return {getName()}; // This is the higher dimensional eigenpack
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename GImpl>
 void TLapEvec<GImpl>::setup(void)
 {
-    Cleanup();
-    Environment & e{env()};
-    gridHD = e.getGrid();
-    gridLD = MakeLowerDimGrid( gridHD );
+    GridCartesian * gridHD = env().getGrid();
+    gridLD.reset(MakeLowerDimGrid(gridHD));
     const int Ntlocal{gridHD->LocalDimensions()[Tdir]};
     // Temporaries
     envTmpLat(GaugeField, "Umu_stout");
     envTmpLat(GaugeField, "Umu_smear");
-    envTmp(LatticeGaugeField, "UmuNoTime",1,LatticeGaugeField(gridLD));
-    envTmp(LatticeColourVector, "src",1,LatticeColourVector(gridLD));
+    envTmp(LatticeGaugeField, "UmuNoTime",1,LatticeGaugeField(gridLD.get()));
+    envTmp(LatticeColourVector, "src",1,LatticeColourVector(gridLD.get()));
     envTmp(std::vector<LapEvecs>, "eig",1,std::vector<LapEvecs>(Ntlocal));
     // Output objects
-    envCreate(LapEvecs, getName(), 1, par().Lanczos.Nvec, gridHD );
-}
-
-// clean up any temporaries created by setup (that aren't stored in the environment)
-template <typename GImpl>
-void TLapEvec<GImpl>::Cleanup(void)
-{
-    if (gridLD != nullptr)
-    {
-        delete gridLD;
-        gridLD = nullptr;
-    }
-    gridHD = nullptr;
+    envCreate(LapEvecs, getName(), 1, par().Lanczos.Nvec, gridHD);
 }
 
 /*************************************************************************************
@@ -260,7 +230,7 @@ void TLapEvec<GImpl>::execute(void)
     
     // Stout smearing
     envGetTmp(GaugeField, Umu_smear);
-    Umu_smear = envGet(GaugeField, sGaugeName); // The smeared field starts off as the Gauge field
+    Umu_smear = envGet(GaugeField, par().gauge); // The smeared field starts off as the Gauge field
     LOG(Message) << "Initial plaquette: " << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu_smear) << std::endl;
     const StoutParameters &Stout{par().Stout};
     if( Stout.steps )
@@ -282,6 +252,7 @@ void TLapEvec<GImpl>::execute(void)
     envGetTmp(std::vector<LapEvecs>, eig);   // Eigenpack for each timeslice
     envGetTmp(LatticeGaugeField, UmuNoTime); // Gauge field without time dimension
     envGetTmp(LatticeColourVector, src);
+    GridCartesian * gridHD = env().getGrid();
     const int Ntlocal{gridHD->LocalDimensions()[Tdir]};
     const int Ntfirst{gridHD->LocalStarts()[Tdir]};
     uint32_t ConvergenceErrors{0};
@@ -290,7 +261,7 @@ void TLapEvec<GImpl>::execute(void)
         LOG(Message) << "------------------------------------------------------------" << std::endl;
         LOG(Message) << " Compute eigenpack, local timeslice = " << t << " / " << Ntlocal << std::endl;
         LOG(Message) << "------------------------------------------------------------" << std::endl;
-        eig[t].resize(LPar.Nk+LPar.Np,gridLD);
+        eig[t].resize(LPar.Nk+LPar.Np,gridLD.get());
         
         // Construct smearing operator
         ExtractSliceLocal(UmuNoTime,Umu_smear,0,t,Tdir); // switch to 3d/4d objects
@@ -317,7 +288,7 @@ void TLapEvec<GImpl>::execute(void)
             LOG(Error) << "MDistil::LapEvec : Not enough eigenvectors converged. If this occurs in practice, we should modify the eigensolver to iterate once more to ensure the second convergence test does not take us below the requested number of eigenvectors" << std::endl;
         }
         if( Nconv != LPar.Nvec )
-            eig[t].resize( LPar.Nvec, gridLD );
+            eig[t].resize(LPar.Nvec, gridLD.get());
         RotateEigen( eig[t].evec ); // Rotate the eigenvectors into our phase convention
         
         for (int i=0;i<LPar.Nvec;i++){

@@ -49,7 +49,7 @@ public:
                                     std::string, lapevec,
                                     std::string, rho,
                                     std::string, phi,
-                                    std::string, DistilPar);
+                                    std::string, DistilParams);
 };
 
 template <typename FImpl>
@@ -69,18 +69,9 @@ public:
     // execution
     virtual void execute(void);
 protected:
-    // These variables are created in setup() and freed in Cleanup()
-    GridCartesian * grid3d; // Owned by me, so I must delete it
-    GridCartesian * grid4d; // Owned by environment (so I won't delete it)
-    virtual void Cleanup(void);
+    std::unique_ptr<GridCartesian> grid3d; // Owned by me, so I must delete it
 public:
     // These variables contain parameters
-    std::string PerambulatorName;
-    std::string NoiseVectorName;
-    std::string LapEvecName;
-    std::string DParName;
-    bool bMakeRho;
-    bool bMakePhi;
     std::string RhoName;
     std::string PhiName;
 };
@@ -92,47 +83,31 @@ MODULE_REGISTER_TMP(DistilVectors, TDistilVectors<FIMPL>, MDistil);
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TDistilVectors<FImpl>::TDistilVectors(const std::string name)
-:  grid3d{nullptr}, grid4d{nullptr}, Module<DistilVectorsPar>(name)
-{}
-// destructor
-template <typename FImpl>
-TDistilVectors<FImpl>::~TDistilVectors(void)
-{
-    Cleanup();
-};
+TDistilVectors<FImpl>::TDistilVectors(const std::string name) : Module<DistilVectorsPar>(name) {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
 std::vector<std::string> TDistilVectors<FImpl>::getInput(void)
 {
-    PerambulatorName = par().perambulator;
-    NoiseVectorName = par().noise;
-    LapEvecName = par().lapevec;
-    DParName = par().DistilPar;
-    return { PerambulatorName, NoiseVectorName, LapEvecName, DParName };
+    return {par().noise,par().perambulator,par().lapevec,par().DistilParams};
 }
 
 template <typename FImpl>
 std::vector<std::string> TDistilVectors<FImpl>::getOutput(void)
 {
-    RhoName  = par().rho;
-    PhiName  = par().phi;
-    bMakeRho = ( RhoName.size() > 0 );
-    bMakePhi = ( PhiName.size() > 0 );
-    if (!bMakeRho && !bMakePhi)
+    RhoName = par().rho;
+    PhiName = par().phi;
+    if (RhoName.empty() && PhiName.empty())
     {
         RhoName = getName();
         PhiName = RhoName;
         RhoName.append("_rho");
         PhiName.append("_phi");
-        bMakeRho = true;
-        bMakePhi = true;
     }
     std::vector<std::string> out;
-    if (bMakeRho)
+    if (!RhoName.empty())
         out.push_back(RhoName);
-    if (bMakePhi)
+    if (!PhiName.empty())
         out.push_back(PhiName);
     return out;
 }
@@ -141,64 +116,45 @@ std::vector<std::string> TDistilVectors<FImpl>::getOutput(void)
 template <typename FImpl>
 void TDistilVectors<FImpl>::setup(void)
 {
-    Cleanup();
-    auto &noise        = envGet(NoiseTensor,  NoiseVectorName);
-    auto &perambulator = envGet(PerambTensor, PerambulatorName);
-    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
-    
     // We expect the perambulator to have been created with these indices
-    assert( perambulator.ValidateIndexNames() && "Perambulator index names bad" );
+    auto &perambulator = envGet(PerambTensor, par().perambulator);
+    if (!perambulator.ValidateIndexNames())
+        HADRONS_ERROR(Range,"Perambulator index names bad");
+
+    const DistilParameters &dp{envGet(DistilParameters, par().DistilParams)};
+    const int Nt{env().getDim(Tdir)};
+    const bool full_tdil{ dp.TI == Nt };
+    const int Nt_inv{ full_tdil ? 1 : dp.TI };
     
-    const int Nt{env().getDim(Tdir)}; 
-    const int nvec{DPar.nvec}; 
-    const int nnoise{DPar.nnoise}; 
-    const int TI{DPar.TI}; 
-    const int LI{DPar.LI}; 
-    const int SI{DPar.SI}; 
-    const bool full_tdil{ TI == Nt }; 
-    const int Nt_inv{ full_tdil ? 1 : TI };
+    if (!RhoName.empty())
+        envCreate(std::vector<FermionField>, RhoName, 1, dp.nnoise*dp.LI*dp.SI*Nt_inv, envGetGrid(FermionField));
+    if (!PhiName.empty())
+        envCreate(std::vector<FermionField>, PhiName, 1, dp.nnoise*dp.LI*dp.SI*Nt_inv, envGetGrid(FermionField));
     
-    if (bMakeRho)
-        envCreate(std::vector<FermionField>, RhoName, 1, nnoise*LI*SI*Nt_inv, envGetGrid(FermionField));
-    if (bMakePhi)
-        envCreate(std::vector<FermionField>,   PhiName, 1, nnoise*LI*SI*Nt_inv, envGetGrid(FermionField));
-    
-    grid4d = env().getGrid();
     Coordinate latt_size   = GridDefaultLatt();
     Coordinate mpi_layout  = GridDefaultMpi();
     Coordinate simd_layout_3 = GridDefaultSimd(Nd-1, vComplex::Nsimd());
     latt_size[Nd-1] = 1;
     simd_layout_3.push_back( 1 );
     mpi_layout[Nd-1] = 1;
-    grid3d = MakeLowerDimGrid(grid4d);
+    GridCartesian * const grid4d{env().getGrid()};
+    grid3d.reset(MakeLowerDimGrid(grid4d));
     
     envTmp(LatticeSpinColourVector, "source4d",1,LatticeSpinColourVector(grid4d));
-    envTmp(LatticeSpinColourVector, "source3d",1,LatticeSpinColourVector(grid3d));
-    envTmp(LatticeColourVector, "source3d_nospin",1,LatticeColourVector(grid3d));
-    envTmp(LatticeSpinColourVector, "sink3d",1,LatticeSpinColourVector(grid3d));
-    envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
-}
-
-// clean up any temporaries created by setup (that aren't stored in the environment)
-template <typename FImpl>
-void TDistilVectors<FImpl>::Cleanup(void)
-{
-    if ( grid3d != nullptr)
-    {
-        delete grid3d;
-        grid3d = nullptr;
-    }
-    grid4d = nullptr;
+    envTmp(LatticeSpinColourVector, "source3d",1,LatticeSpinColourVector(grid3d.get()));
+    envTmp(LatticeColourVector, "source3d_nospin",1,LatticeColourVector(grid3d.get()));
+    envTmp(LatticeSpinColourVector, "sink3d",1,LatticeSpinColourVector(grid3d.get()));
+    envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d.get()));
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TDistilVectors<FImpl>::execute(void)
 {
-    auto &noise        = envGet(NoiseTensor, NoiseVectorName);
-    auto &perambulator = envGet(PerambTensor, PerambulatorName);
-    auto &epack        = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, LapEvecName);
-    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
+    auto &noise        = envGet(NoiseTensor,  par().noise);
+    auto &perambulator = envGet(PerambTensor, par().perambulator);
+    auto &epack        = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().lapevec);
+    const DistilParameters &DPar{envGet(DistilParameters, par().DistilParams)};
     
     envGetTmp(LatticeSpinColourVector, source4d);
     envGetTmp(LatticeSpinColourVector, source3d);
@@ -206,6 +162,7 @@ void TDistilVectors<FImpl>::execute(void)
     envGetTmp(LatticeSpinColourVector, sink3d);
     envGetTmp(LatticeColourVector,     evec3d);
     
+    GridCartesian * const grid4d{env().getGrid()};
     const int Ntlocal{ grid4d->LocalDimensions()[3] };
     const int Ntfirst{ grid4d->LocalStarts()[3] };
     
@@ -221,7 +178,7 @@ void TDistilVectors<FImpl>::execute(void)
     
     int vecindex;
     int t_inv;
-    if (bMakeRho)
+    if (!RhoName.empty())
     {
         auto &rho = envGet(std::vector<FermionField>, RhoName);
         for (int inoise = 0; inoise < nnoise; inoise++) {
@@ -252,7 +209,7 @@ void TDistilVectors<FImpl>::execute(void)
             }
         }
     }
-    if (bMakePhi) {
+    if (!PhiName.empty()) {
         auto &phi = envGet(std::vector<FermionField>, PhiName);
         for (int inoise = 0; inoise < nnoise; inoise++) {
             for (int dk = 0; dk < LI; dk++) {

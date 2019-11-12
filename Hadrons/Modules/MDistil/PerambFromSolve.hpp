@@ -51,9 +51,9 @@ public:
                                     std::string, eigenPack,
                                     std::string, PerambFileName,
                                     std::string, solve,
-                                    std::string, nvec_reduced,
-                                    std::string, LI_reduced,
-                                    std::string, DistilPar);
+                                    int, nvec_reduced,
+                                    int, LI_reduced,
+                                    std::string, DistilParams);
 };
 
 template <typename FImpl>
@@ -73,13 +73,7 @@ public:
     // execution
     virtual void execute(void);
 protected:
-    GridCartesian * grid3d; // Owned by me, so I must delete it
-    GridCartesian * grid4d;
-    //other members
-    std::string DParName;
-protected:
-    virtual void Cleanup(void);
-    
+    std::unique_ptr<GridCartesian> grid3d; // Owned by me, so I must delete it
 };
 
 MODULE_REGISTER_TMP(PerambFromSolve, TPerambFromSolve<FIMPL>, MDistil);
@@ -89,65 +83,35 @@ MODULE_REGISTER_TMP(PerambFromSolve, TPerambFromSolve<FIMPL>, MDistil);
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TPerambFromSolve<FImpl>::TPerambFromSolve(const std::string name)
-:grid3d{nullptr}, grid4d{nullptr}, Module<PerambFromSolvePar>(name)
-{}
-//destructor
-template <typename FImpl>
-TPerambFromSolve<FImpl>::~TPerambFromSolve(void)
-{
-    Cleanup();
-};
+TPerambFromSolve<FImpl>::TPerambFromSolve(const std::string name) : Module<PerambFromSolvePar>(name){}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
 std::vector<std::string> TPerambFromSolve<FImpl>::getInput(void)
 {
-    //return std::vector<std::string>{ par().solve, par().eigenPack };
-    DParName = par().DistilPar;
-    return {par().solve, par().eigenPack, DParName };
+    return {par().solve, par().eigenPack, par().DistilParams};
 }
 
 template <typename FImpl>
 std::vector<std::string> TPerambFromSolve<FImpl>::getOutput(void)
 {
-    return std::vector<std::string>{ getName() };
+    return std::vector<std::string>{getName()};
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TPerambFromSolve<FImpl>::setup(void)
 {
-    Cleanup();
-    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
-    const int Nt{env().getDim(Tdir)}; 
-    const int nvec{DPar.nvec}; 
-    const int nnoise{DPar.nnoise}; 
-    const int LI{DPar.LI}; 
-    const int TI{DPar.TI}; 
-    const int SI{DPar.SI}; 
-    const bool full_tdil{ TI == Nt }; 
-    const int Nt_inv{ full_tdil ? 1 : TI };
-    const int nvec_reduced{ par().nvec_reduced.empty() ? nvec:std::stoi(par().nvec_reduced)};
-    const int LI_reduced{ par().LI_reduced.empty() ? LI:std::stoi(par().LI_reduced)};
-    grid4d = env().getGrid();
-    grid3d = MakeLowerDimGrid(grid4d);
-    envCreate(PerambTensor, getName(), 1, Nt,nvec_reduced,LI_reduced,nnoise,Nt_inv,SI);
-    envCreate(NoiseTensor, getName() + "_noise", 1, nnoise, Nt, nvec, Ns );
-    envTmp(LatticeColourVector, "result3d_nospin",1,LatticeColourVector(grid3d));
-    envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d));
+    const DistilParameters & dp{envGet(MDistil::DistilParameters, par().DistilParams)};
+    const int Nt{env().getDim(Tdir)};
+    const bool full_tdil{ dp.TI == Nt };
+    const int Nt_inv{ full_tdil ? 1 : dp.TI };
+    grid3d.reset( MakeLowerDimGrid( env().getGrid() ) );
+    envCreate(PerambTensor, getName(), 1, Nt,par().nvec_reduced,par().LI_reduced,dp.nnoise,Nt_inv,dp.SI);
+    envCreate(NoiseTensor, getName() + "_noise", 1, dp.nnoise, Nt, dp.nvec, Ns );
+    envTmp(LatticeColourVector, "result3d_nospin",1,LatticeColourVector(grid3d.get()));
+    envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d.get()));
     envTmpLat(LatticeColourVector, "result4d_nospin");
-}
-
-template <typename FImpl>
-void TPerambFromSolve<FImpl>::Cleanup(void)
-{
-    if (grid3d != nullptr)
-    {
-        delete grid3d;
-        grid3d = nullptr;
-    }
-    grid4d = nullptr;
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -157,17 +121,12 @@ void TPerambFromSolve<FImpl>::execute(void)
     GridCartesian * grid4d = env().getGrid();
     const int Ntlocal{grid4d->LocalDimensions()[3]};
     const int Ntfirst{grid4d->LocalStarts()[3]};
-    auto &DPar         = envGet(MDistil::DistilParameters,  DParName);
-    const int Nt{env().getDim(Tdir)}; 
-    const int nvec{DPar.nvec}; 
-    const int nnoise{DPar.nnoise}; 
-    const int TI{DPar.TI}; 
-    const int LI{DPar.LI}; 
-    const int SI{DPar.SI}; 
-    const bool full_tdil{ TI == Nt }; 
-    const int Nt_inv{ full_tdil ? 1 : TI };
-    const int nvec_reduced{ par().nvec_reduced.empty() ? nvec:std::stoi(par().nvec_reduced)};
-    const int LI_reduced{ par().LI_reduced.empty() ? LI:std::stoi(par().LI_reduced)};
+    const DistilParameters &dp{envGet(DistilParameters, par().DistilParams)};
+    const int Nt{env().getDim(Tdir)};
+    const bool full_tdil{ dp.TI == Nt };
+    const int Nt_inv{ full_tdil ? 1 : dp.TI };
+    const int nvec_reduced{par().nvec_reduced};
+    const int LI_reduced{par().LI_reduced};
     auto &perambulator  = envGet(PerambTensor, getName());
     auto &solve         = envGet(std::vector<FermionField>, par().solve);
     auto &epack         = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
@@ -176,17 +135,17 @@ void TPerambFromSolve<FImpl>::execute(void)
     envGetTmp(LatticeColourVector, result3d_nospin);
     envGetTmp(LatticeColourVector, evec3d);
     
-    for (int inoise = 0; inoise < nnoise; inoise++)
+    for (int inoise = 0; inoise < dp.nnoise; inoise++)
     {
         for (int dk = 0; dk < LI_reduced; dk++)
        	{
             for (int dt = 0; dt < Nt_inv; dt++)
 	    {
-                for (int ds = 0; ds < SI; ds++)
+                for (int ds = 0; ds < dp.SI; ds++)
 	       	{
                     for (int is = 0; is < Ns; is++)
 		    {
-                        result4d_nospin = peekSpin(solve[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))],is);
+                        result4d_nospin = peekSpin(solve[inoise+dp.nnoise*(dk+dp.LI*(dt+Nt_inv*ds))],is);
                         for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++)
 		       	{
                             ExtractSliceLocal(result3d_nospin,result4d_nospin,0,t-Ntfirst,Tdir);

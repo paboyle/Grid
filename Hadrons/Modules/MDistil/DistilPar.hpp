@@ -33,11 +33,11 @@
 #include <Hadrons/Modules/MDistil/Distil.hpp>
 
 BEGIN_HADRONS_NAMESPACE
+BEGIN_MODULE_NAMESPACE(MDistil)
 
 /******************************************************************************
  *                         DistilPar                                 *
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MDistil)
 
 template <typename FImpl>
 class TDistilPar: public Module<DistilParameters>
@@ -63,9 +63,7 @@ MODULE_REGISTER_TMP(DistilPar, TDistilPar<FIMPL>, MDistil);
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TDistilPar<FImpl>::TDistilPar(const std::string name)
-: Module<DistilParameters>(name)
-{}
+TDistilPar<FImpl>::TDistilPar(const std::string name) : Module<DistilParameters>(name) {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
@@ -95,7 +93,5 @@ void TDistilPar<FImpl>::execute(void)
 }
 
 END_MODULE_NAMESPACE
-
 END_HADRONS_NAMESPACE
-
-#endif // Hadrons_MDistil_DistilPar_hpp_
+#endif
