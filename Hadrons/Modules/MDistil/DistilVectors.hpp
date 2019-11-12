@@ -60,7 +60,7 @@ public:
     // constructor
     TDistilVectors(const std::string name);
     // destructor
-    virtual ~TDistilVectors(void);
+    virtual ~TDistilVectors(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

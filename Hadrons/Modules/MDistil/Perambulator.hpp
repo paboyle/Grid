@@ -60,7 +60,7 @@ public:
     // constructor
     TPerambulator(const std::string name);
     // destructor
-    virtual ~TPerambulator(void);
+    virtual ~TPerambulator(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

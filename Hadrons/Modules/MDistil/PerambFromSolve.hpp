@@ -64,7 +64,7 @@ public:
     // constructor
     TPerambFromSolve(const std::string name);
     // destructor
-    virtual ~TPerambFromSolve(void);
+    virtual ~TPerambFromSolve(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

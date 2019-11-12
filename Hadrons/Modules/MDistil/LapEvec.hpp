@@ -102,7 +102,7 @@ public:
     // constructor
     TLapEvec(const std::string name);
     // destructor
-    virtual ~TLapEvec(void);
+    virtual ~TLapEvec(void) {};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
