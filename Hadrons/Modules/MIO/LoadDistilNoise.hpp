@@ -30,7 +30,7 @@
 #ifndef Hadrons_MIO_LoadDistilNoise_hpp_
 #define Hadrons_MIO_LoadDistilNoise_hpp_
 
-#include <Hadrons/Modules/MDistil/DistilCommon.hpp>
+#include <Hadrons/Modules/MDistil/Distil.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 BEGIN_MODULE_NAMESPACE(MIO)

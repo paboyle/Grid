@@ -2,7 +2,7 @@
  
  Grid physics library, www.github.com/paboyle/Grid
  
- Source file: Hadrons/Modules/MDistil/DistilCommon.hpp
+ Source file: Hadrons/Modules/MDistil/Distil.hpp
  
  Copyright (C) 2015-2019
  
@@ -27,10 +27,10 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_MDistil_DistilCommon_hpp_
-#define Hadrons_MDistil_DistilCommon_hpp_
+#ifndef Hadrons_MDistil_Distil_hpp_
+#define Hadrons_MDistil_Distil_hpp_
 
-#include <Hadrons/Distil.hpp>
+#include <Hadrons/NamedTensor.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 #include <Hadrons/Solver.hpp>
@@ -105,14 +105,18 @@ inline void RotateEigen(std::vector<LatticeColourVector> & evec)
     Grid::Complex cplx0 = cv0()()(0);
     if( cplx0.imag() == 0 )
         std::cout << GridLogMessage << "RotateEigen() : Site 0 : " << cplx0 << " => already meets phase convention" << std::endl;
-    else {
+    else
+    {
+        const Real cplx0_mag = Grid::sqrt(cplx0.real()*cplx0.real()+cplx0.imag()*cplx0.imag());
+        Grid::Complex phase{cplx0 / Grid::Complex(cplx0_mag, 0) };
+        phase.imag(-phase.imag());
 #ifdef GRID_NVCC
-        const Real cplx0_mag = thrust::abs(cplx0);
-        const Grid::Complex phase = thrust::conj(cplx0 / cplx0_mag);
+        //const Real cplx0_mag = thrust::abs(cplx0);
+        //const Grid::Complex phase = thrust::conj(cplx0 / cplx0_mag);
         const Real argphase = thrust::arg(phase);
 #else
-        const Real cplx0_mag = std::abs(cplx0);
-        const Grid::Complex phase = std::conj(cplx0 / cplx0_mag);
+        //const Real cplx0_mag = std::abs(cplx0);
+        //const Grid::Complex phase = std::conj(cplx0 / cplx0_mag);
         const Real argphase = std::arg(phase);
 #endif
         std::cout << GridLogMessage << "RotateEigen() : Site 0 : |" << cplx0 << "|=" << cplx0_mag << " => phase=" << (argphase / 3.14159265) << " pi" << std::endl;
@@ -133,4 +137,4 @@ inline void RotateEigen(std::vector<LatticeColourVector> & evec)
 
 END_MODULE_NAMESPACE
 END_HADRONS_NAMESPACE
-#endif // Hadrons_MDistil_DistilCommon_hpp_
+#endif // Hadrons_MDistil_Distil_hpp_

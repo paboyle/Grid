@@ -30,10 +30,7 @@
 #ifndef Hadrons_MDistil_DistilPar_hpp_
 #define Hadrons_MDistil_DistilPar_hpp_
 
-#include <Hadrons/Global.hpp>
-#include <Hadrons/Module.hpp>
-#include <Hadrons/ModuleFactory.hpp>
-#include <Hadrons/Modules/MDistil/DistilCommon.hpp>
+#include <Hadrons/Modules/MDistil/Distil.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
