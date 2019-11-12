@@ -51,8 +51,8 @@ public:
                                     std::string, eigenPack,
                                     std::string, PerambFileName,
                                     std::string, solve,
-                                    int, nvec_reduced,
-                                    int, LI_reduced,
+                                    std::string, nvec_reduced,
+                                    std::string, LI_reduced,
                                     std::string, DistilParams);
 };
 
@@ -107,7 +107,9 @@ void TPerambFromSolve<FImpl>::setup(void)
     const bool full_tdil{ dp.TI == Nt };
     const int Nt_inv{ full_tdil ? 1 : dp.TI };
     grid3d.reset( MakeLowerDimGrid( env().getGrid() ) );
-    envCreate(PerambTensor, getName(), 1, Nt,par().nvec_reduced,par().LI_reduced,dp.nnoise,Nt_inv,dp.SI);
+    const int nvec_reduced{par().nvec_reduced.empty() ? dp.nvec : std::stoi(par().nvec_reduced)};
+    const int LI_reduced{  par().LI_reduced.empty()   ? dp.LI   : std::stoi(par().LI_reduced)};
+    envCreate(PerambTensor, getName(), 1, Nt,nvec_reduced,LI_reduced,dp.nnoise,Nt_inv,dp.SI);
     envCreate(NoiseTensor, getName() + "_noise", 1, dp.nnoise, Nt, dp.nvec, Ns );
     envTmp(LatticeColourVector, "result3d_nospin",1,LatticeColourVector(grid3d.get()));
     envTmp(LatticeColourVector, "evec3d",1,LatticeColourVector(grid3d.get()));
@@ -125,8 +127,8 @@ void TPerambFromSolve<FImpl>::execute(void)
     const int Nt{env().getDim(Tdir)};
     const bool full_tdil{ dp.TI == Nt };
     const int Nt_inv{ full_tdil ? 1 : dp.TI };
-    const int nvec_reduced{par().nvec_reduced};
-    const int LI_reduced{par().LI_reduced};
+    const int nvec_reduced{par().nvec_reduced.empty() ? dp.nvec : std::stoi(par().nvec_reduced)};
+    const int LI_reduced{  par().LI_reduced.empty()   ? dp.LI   : std::stoi(par().LI_reduced)};
     auto &perambulator  = envGet(PerambTensor, getName());
     auto &solve         = envGet(std::vector<FermionField>, par().solve);
     auto &epack         = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
