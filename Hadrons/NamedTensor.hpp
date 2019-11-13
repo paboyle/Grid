@@ -72,12 +72,12 @@ public:
     // Construct a named tensor explicitly specifying size of each dimension
     template<typename... IndexTypes>
     EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor(const std::string &Name,
-                                                      const std::array<std::string, NumIndices> &indexNames,
+                                                      const std::array<std::string, NumIndices_> &indexNames,
                                                       Eigen::Index firstDimension, IndexTypes... otherDimensions)
     : tensor(firstDimension, otherDimensions...),
       IndexNames{indexNames.begin(), indexNames.end()}, Name_{Name}, DefaultIndexNames_{indexNames}
     {
-        if(sizeof...(otherDimensions) + 1 != NumIndices)
+        if(sizeof...(otherDimensions) + 1 != NumIndices_)
             HADRONS_ERROR(Argument, "NamedTensor: dimensions != tensor rank");
     }
 
