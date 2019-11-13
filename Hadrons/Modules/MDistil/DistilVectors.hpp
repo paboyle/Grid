@@ -154,7 +154,7 @@ void TDistilVectors<FImpl>::execute(void)
     auto &noise        = envGet(NoiseTensor,  par().noise);
     auto &perambulator = envGet(PerambTensor, par().perambulator);
     auto &epack        = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().lapevec);
-    const DistilParameters &DPar{envGet(DistilParameters, par().DistilParams)};
+    const DistilParameters &dp{envGet(DistilParameters, par().DistilParams)};
     
     envGetTmp(LatticeSpinColourVector, source4d);
     envGetTmp(LatticeSpinColourVector, source3d);
@@ -167,12 +167,12 @@ void TDistilVectors<FImpl>::execute(void)
     const int Ntfirst{ grid4d->LocalStarts()[3] };
     
     const int Nt{env().getDim(Tdir)}; 
-    const int nvec{DPar.nvec}; 
-    const int nnoise{DPar.nnoise}; 
-    const int tsrc{DPar.tsrc}; 
-    const int TI{DPar.TI}; 
-    const int LI{DPar.LI}; 
-    const int SI{DPar.SI}; 
+    const int nvec{dp.nvec}; 
+    const int nnoise{dp.nnoise}; 
+    const int tsrc{dp.tsrc}; 
+    const int TI{dp.TI}; 
+    const int LI{dp.LI}; 
+    const int SI{dp.SI}; 
     const bool full_tdil{ TI == Nt }; 
     const int Nt_inv{ full_tdil ? 1 : TI };
     
