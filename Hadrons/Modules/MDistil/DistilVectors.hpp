@@ -180,7 +180,7 @@ void TDistilVectors<FImpl>::execute(void)
 		{
                     for (int ds = 0; ds < dp.SI; ds++) 
 		    {
-                        vecindex = inoise + dp.nnoise * dk + dp.nnoise * dp.LI * ds + dp.nnoise *dp.LI * dp.SI*dt;
+                        vecindex = inoise + dp.nnoise * (dk + dp.LI * (ds + dp.SI * dt));
                         rho[vecindex] = 0;
                         for (int it = dt; it < Nt; it += dp.TI)
 			{
@@ -218,7 +218,7 @@ void TDistilVectors<FImpl>::execute(void)
 		{
                     for (int ds = 0; ds < dp.SI; ds++) 
 		    {
-                        vecindex = inoise + dp.nnoise * dk + dp.nnoise * dp.LI * ds + dp.nnoise *dp.LI *dp. SI*dt;
+                        vecindex = inoise + dp.nnoise * (dk + dp.LI * (ds + dp.SI * dt));
                         phi[vecindex] = 0;
                         for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) 
 			{

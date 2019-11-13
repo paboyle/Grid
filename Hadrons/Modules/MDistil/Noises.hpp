@@ -92,7 +92,8 @@ template <typename FImpl>
 void TNoises<FImpl>::setup(void)
 {
     const DistilParameters &dp{envGet(DistilParameters, par().DistilParams)};
-    const int Nt{env().getDim(Tdir)}; 
+    const int Nt{env().getDim(Tdir)};
+    std::cout << dp.nnoise << dp.nvec << Nt << Ns << std::endl; 
     envCreate(NoiseTensor, getName(), 1, dp.nnoise, Nt, dp.nvec, Ns);
 }
 
