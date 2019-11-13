@@ -99,7 +99,7 @@ std::vector<std::string> TDistilVectors<FImpl>::getOutput(void)
     PhiName = par().phi;
     if (RhoName.empty() && PhiName.empty())
     {
-        HADRONS_ERROR(Range,"No output specified");
+        HADRONS_ERROR(Argument,"No output specified");
     }
     std::vector<std::string> out;
     if (!RhoName.empty())
