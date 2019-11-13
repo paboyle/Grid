@@ -130,14 +130,8 @@ void TPerambulator<FImpl>::execute(void)
 {
     const DistilParameters &dp{ envGet(DistilParameters, par().DistilParams) };
     const int Nt{env().getDim(Tdir)};
-    const int nvec{dp.nvec}; 
-    const int nnoise{dp.nnoise}; 
-    const int tsrc{dp.tsrc}; 
-    const int TI{dp.TI}; 
-    const int LI{dp.LI}; 
-    const int SI{dp.SI}; 
-    const bool full_tdil{ TI == Nt }; 
-    const int Nt_inv{ full_tdil ? 1 : TI };
+    const bool full_tdil{ dp.TI == Nt }; 
+    const int Nt_inv{ full_tdil ? 1 : dp.TI };
 
     auto &solver=envGet(Solver, par().solver);
     auto &mat = solver.getFMat();
@@ -161,26 +155,25 @@ void TPerambulator<FImpl>::execute(void)
     const int Ntfirst{grid4d->LocalStarts()[3]};
     const std::string UnsmearedSinkFileName{ par().UnsmearedSinkFileName };
 
-    for (int inoise = 0; inoise < nnoise; inoise++)
+    for (int inoise = 0; inoise < dp.nnoise; inoise++)
     {
-        for (int dk = 0; dk < LI; dk++)
+        for (int dk = 0; dk < dp.LI; dk++)
         {
             for (int dt = 0; dt < Nt_inv; dt++)
             {
-                for (int ds = 0; ds < SI; ds++)
+                for (int ds = 0; ds < dp.SI; ds++)
                 {
                     LOG(Message) <<  "LapH source vector from noise " << inoise << " and dilution component (d_k,d_t,d_alpha) : (" << dk << ","<< dt << "," << ds << ")" << std::endl;
                     dist_source = 0;
-                    source3d_nospin = 0;
                     evec3d = 0;
-                    for (int it = dt; it < Nt; it += TI)
+                    for (int it = dt; it < Nt; it += dp.TI)
                     {
-                        const int t_inv{full_tdil ? tsrc : it};
+                        const int t_inv{full_tdil ? dp.tsrc : it};
                         if( t_inv >= Ntfirst && t_inv < Ntfirst + Ntlocal )
                         {
-                            for (int ik = dk; ik < nvec; ik += LI)
+                            for (int ik = dk; ik < dp.nvec; ik += dp.LI)
                             {
-                                for (int is = ds; is < Ns; is += SI)
+                                for (int is = ds; is < Ns; is += dp.SI)
                                 {
                                     ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv-Ntfirst,Tdir);
                                     source3d_nospin = evec3d * noise.tensor(inoise, t_inv, ik, is);
@@ -205,14 +198,14 @@ void TPerambulator<FImpl>::execute(void)
                         result4d = v4dtmp;
                     }
                     if (!UnsmearedSinkFileName.empty())
-                        unsmeared_sink[inoise+nnoise*(dk+LI*(dt+Nt_inv*ds))] = result4d;
+                        unsmeared_sink[inoise+dp.nnoise*(dk+dp.LI*(dt+Nt_inv*ds))] = result4d;
                     for (int is = 0; is < Ns; is++)
                     {
                         result4d_nospin = peekSpin(result4d,is);
                         for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++)
                         {
                             ExtractSliceLocal(result3d_nospin,result4d_nospin,0,t-Ntfirst,Tdir); 
-			    for (int ivec = 0; ivec < nvec; ivec++)
+			    for (int ivec = 0; ivec < dp.nvec; ivec++)
                             {
                                 ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Tdir);
                                 pokeSpin(perambulator.tensor(t, ivec, dk, inoise,dt,ds),static_cast<Complex>(innerProduct(evec3d, result3d_nospin)),is);

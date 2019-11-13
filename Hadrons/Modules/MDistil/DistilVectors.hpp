@@ -164,32 +164,33 @@ void TDistilVectors<FImpl>::execute(void)
     const int Ntfirst{ grid4d->LocalStarts()[3] };
     
     const int Nt{env().getDim(Tdir)}; 
-    const int nvec{dp.nvec}; 
-    const int nnoise{dp.nnoise}; 
-    const int tsrc{dp.tsrc}; 
-    const int TI{dp.TI}; 
-    const int LI{dp.LI}; 
-    const int SI{dp.SI}; 
-    const bool full_tdil{ TI == Nt }; 
-    const int Nt_inv{ full_tdil ? 1 : TI };
+    const bool full_tdil{ dp.TI == Nt }; 
+    const int Nt_inv{ full_tdil ? 1 : dp.TI };
     
     int vecindex;
     int t_inv;
     if (!RhoName.empty())
     {
         auto &rho = envGet(std::vector<FermionField>, RhoName);
-        for (int inoise = 0; inoise < nnoise; inoise++) {
-            for (int dk = 0; dk < LI; dk++) {
-                for (int dt = 0; dt < Nt_inv; dt++) {
-                    for (int ds = 0; ds < SI; ds++) {
-                        vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * SI*dt;
+        for (int inoise = 0; inoise < dp.nnoise; inoise++) 
+	{
+            for (int dk = 0; dk < dp.LI; dk++) 
+	    {
+                for (int dt = 0; dt < Nt_inv; dt++) 
+		{
+                    for (int ds = 0; ds < dp.SI; ds++) 
+		    {
+                        vecindex = inoise + dp.nnoise * dk + dp.nnoise * dp.LI * ds + dp.nnoise *dp.LI * dp.SI*dt;
                         rho[vecindex] = 0;
-                        source3d_nospin = 0;
-                        for (int it = dt; it < Nt; it += TI){
-                            if (full_tdil) t_inv = tsrc; else t_inv = it;
-                            if (t_inv >= Ntfirst && t_inv < Ntfirst + Ntlocal) {
-                                for (int ik = dk; ik < nvec; ik += LI){
-                                    for (int is = ds; is < Ns; is += SI){
+                        for (int it = dt; it < Nt; it += dp.TI)
+			{
+                            const int t_inv{full_tdil ? dp.tsrc : it};
+                            if (t_inv >= Ntfirst && t_inv < Ntfirst + Ntlocal) 
+			    {
+                                for (int ik = dk; ik < dp.nvec; ik += dp.LI)
+				{
+                                    for (int is = ds; is < Ns; is += dp.SI)
+				    {
                                         ExtractSliceLocal(evec3d,epack.evec[ik],0,t_inv-Ntfirst,Tdir);
                                         source3d_nospin = evec3d * noise.tensor(inoise, t_inv, ik, is);
                                         source3d=0;
@@ -206,17 +207,24 @@ void TDistilVectors<FImpl>::execute(void)
             }
         }
     }
-    if (!PhiName.empty()) {
+    if (!PhiName.empty()) 
+    {
         auto &phi = envGet(std::vector<FermionField>, PhiName);
-        for (int inoise = 0; inoise < nnoise; inoise++) {
-            for (int dk = 0; dk < LI; dk++) {
-                for (int dt = 0; dt < Nt_inv; dt++) {
-                    for (int ds = 0; ds < SI; ds++) {
-                        vecindex = inoise + nnoise * dk + nnoise * LI * ds + nnoise *LI * SI*dt;
+        for (int inoise = 0; inoise < dp.nnoise; inoise++) 
+	{
+            for (int dk = 0; dk < dp.LI; dk++) 
+	    {
+                for (int dt = 0; dt < Nt_inv; dt++) 
+		{
+                    for (int ds = 0; ds < dp.SI; ds++) 
+		    {
+                        vecindex = inoise + dp.nnoise * dk + dp.nnoise * dp.LI * ds + dp.nnoise *dp.LI *dp. SI*dt;
                         phi[vecindex] = 0;
-                        for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) {
+                        for (int t = Ntfirst; t < Ntfirst + Ntlocal; t++) 
+			{
                             sink3d=0;
-                            for (int ivec = 0; ivec < nvec; ivec++) {
+                            for (int ivec = 0; ivec < dp.nvec; ivec++) 
+			    {
                                 ExtractSliceLocal(evec3d,epack.evec[ivec],0,t-Ntfirst,Tdir);
                                 sink3d += evec3d * perambulator.tensor(t, ivec, dk, inoise,dt,ds);
                             }

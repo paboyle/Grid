@@ -142,17 +142,15 @@ std::string test_Solver(Application &application, const char * pSuffix = nullptr
 /////////////////////////////////////////////////////////////
 
 std::string test_DPar(Application &application) {
-  // DistilVectors parameters
-  //MDistil::DistilParPar DistilPar;
-  MDistil::DistilParameters DistilPar;
-  DistilPar.nvec = 5;
-  DistilPar.nnoise = 1;
-  DistilPar.tsrc = 0;
-  DistilPar.LI = 5;
-  DistilPar.TI = 8;
-  DistilPar.SI = 4;
+  MDistil::DistilPar DPar;
+  DPar.nvec = 5;
+  DPar.nnoise = 1;
+  DPar.tsrc = 0;
+  DPar.LI = 5;
+  DPar.TI = 8;
+  DPar.SI = 4;
   std::string sDParName{"DPar_l"};
-  application.createModule<MDistil::DistilPar>(sDParName,DistilPar);
+  application.createModule<MDistil::DistilPar>(sDParName,DPar);
   return sDParName;
 }
 /////////////////////////////////////////////////////////////
@@ -160,9 +158,8 @@ std::string test_DPar(Application &application) {
 /////////////////////////////////////////////////////////////
 
 std::string test_Noises(Application &application, const std::string &sNoiseBaseName ) {
-  // DistilVectors parameters
   MDistil::NoisesPar NoisePar;
-  NoisePar.DistilPar = "DPar_l";
+  NoisePar.DistilParams = "DPar_l";
   NoisePar.NoiseFileName = "noise";
   std::string sNoiseName{"noise"};
   application.createModule<MDistil::Noises>(sNoiseName,NoisePar);
@@ -186,7 +183,7 @@ void test_LoadPerambulators( Application &application, const char * pszSuffix = 
   std::string sModuleName{ PerambulatorName( pszSuffix ) };
   MIO::LoadPerambulator::Par PerambPar;
   PerambPar.PerambFileName = sModuleName;
-  PerambPar.DistilPar = "DPar_l";
+  PerambPar.DistilParams = "DPar_l";
   test_Noises(application, sModuleName); // I want these written after solver stuff
   application.createModule<MIO::LoadPerambulator>( sModuleName, PerambPar );
 }
@@ -199,7 +196,7 @@ void test_Perambulators( Application &application, const char * pszSuffix = null
   PerambPar.lapevec = "LapEvec";
   PerambPar.PerambFileName = sModuleName;
   PerambPar.solver = test_Solver( application, pszSuffix );
-  PerambPar.DistilPar = "DPar_l";
+  PerambPar.DistilParams = "DPar_l";
   PerambPar.noise = "noise";
   test_Noises(application, sModuleName); // I want these written after solver stuff
   application.createModule<MDistil::Perambulator>( sModuleName, PerambPar );
@@ -223,7 +220,7 @@ void test_DistilVectors(Application &application, const char * pszSuffix = nullp
   DistilVecPar.phi = "phi";
   DistilVecPar.perambulator = sPerambName;
   DistilVecPar.lapevec = "LapEvec";
-  DistilVecPar.DistilPar = "DPar_l";
+  DistilVecPar.DistilParams = "DPar_l";
   application.createModule<MDistil::DistilVectors>(sModuleName,DistilVecPar);
 }
 
