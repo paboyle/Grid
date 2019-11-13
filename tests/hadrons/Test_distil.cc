@@ -142,7 +142,7 @@ std::string test_Solver(Application &application, const char * pSuffix = nullptr
 /////////////////////////////////////////////////////////////
 
 std::string test_DPar(Application &application) {
-  MDistil::DistilPar DPar;
+  MDistil::DistilParameters DPar;
   DPar.nvec = 5;
   DPar.nnoise = 1;
   DPar.tsrc = 0;
