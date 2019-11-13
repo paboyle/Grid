@@ -128,14 +128,14 @@ void TPerambulator<FImpl>::setup(void)
 template <typename FImpl>
 void TPerambulator<FImpl>::execute(void)
 {
-    const DistilParameters &DPar{ envGet(DistilParameters, par().DistilParams) };
+    const DistilParameters &dp{ envGet(DistilParameters, par().DistilParams) };
     const int Nt{env().getDim(Tdir)};
-    const int nvec{DPar.nvec}; 
-    const int nnoise{DPar.nnoise}; 
-    const int tsrc{DPar.tsrc}; 
-    const int TI{DPar.TI}; 
-    const int LI{DPar.LI}; 
-    const int SI{DPar.SI}; 
+    const int nvec{dp.nvec}; 
+    const int nnoise{dp.nnoise}; 
+    const int tsrc{dp.tsrc}; 
+    const int TI{dp.TI}; 
+    const int LI{dp.LI}; 
+    const int SI{dp.SI}; 
     const bool full_tdil{ TI == Nt }; 
     const int Nt_inv{ full_tdil ? 1 : TI };
 

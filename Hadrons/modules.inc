@@ -67,7 +67,6 @@ modules_cc =\
   Modules/MDistil/DistilVectors.cc \
   Modules/MDistil/DistilPar.cc \
   Modules/MDistil/LapEvec.cc \
-  Modules/MDistil/DistilParameters.cc \
   Modules/MDistil/Perambulator.cc \
   Modules/MDistil/Noises.cc \
   Modules/MAction/MobiusDWF.cc \
@@ -154,7 +153,6 @@ modules_hpp =\
   Modules/MDistil/LapEvec.hpp \
   Modules/MDistil/Perambulator.hpp \
   Modules/MDistil/DistilPar.hpp \
-  Modules/MDistil/DistilCommon.hpp \
   Modules/MAction/ZMobiusDWF.hpp \
   Modules/MAction/ScaledDWF.hpp \
   Modules/MAction/WilsonClover.hpp \
