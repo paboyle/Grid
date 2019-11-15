@@ -41,7 +41,13 @@ BEGIN_MODULE_NAMESPACE(MDistil)
   This module computes a perambulator from an already completed solve. 
   Optionally, the number of eigenvectors used in the perambulator and the 
   parameter LI can be chosen to be lower than the ones in the solve, allowing 
-  for a study of the signal with different values of nvec.
+  for a study of the signal with different values of nvec. 
+
+  LI_reduced  : value of LI actually used in the computation
+  nvec_reduced: value of nvec actually used in the computation
+  LI          : value of LI used to compute the 'solve'
+  nvec        : value of nvec used to compute the 'solve'
+
  ******************************************************************************/
 
 class PerambFromSolvePar: Serializable
@@ -107,8 +113,8 @@ void TPerambFromSolve<FImpl>::setup(void)
     const bool full_tdil{ dp.TI == Nt };
     const int Nt_inv{ full_tdil ? 1 : dp.TI };
     grid3d.reset( MakeLowerDimGrid( env().getGrid() ) );
-    const int nvec_reduced{par().nvec_reduced.empty() ? dp.nvec : std::stoi(par().nvec_reduced)};
-    const int LI_reduced{  par().LI_reduced.empty()   ? dp.LI   : std::stoi(par().LI_reduced)};
+    const int nvec_reduced{par().nvec_reduced};
+    const int LI_reduced{  par().LI_reduced};
     envCreate(PerambTensor, getName(), 1, Nt,nvec_reduced,LI_reduced,dp.nnoise,Nt_inv,dp.SI);
     envCreate(NoiseTensor, getName() + "_noise", 1, dp.nnoise, Nt, dp.nvec, Ns );
     envTmp(LatticeColourVector, "result3d_nospin",1,LatticeColourVector(grid3d.get()));
