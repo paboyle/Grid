@@ -57,8 +57,8 @@ public:
                                     std::string, eigenPack,
                                     std::string, PerambFileName,
                                     std::string, solve,
-                                    std::string, nvec_reduced,
-                                    std::string, LI_reduced,
+                                    int, nvec_reduced,
+                                    int, LI_reduced,
                                     std::string, DistilParams);
 };
 
@@ -133,8 +133,8 @@ void TPerambFromSolve<FImpl>::execute(void)
     const int Nt{env().getDim(Tdir)};
     const bool full_tdil{ dp.TI == Nt };
     const int Nt_inv{ full_tdil ? 1 : dp.TI };
-    const int nvec_reduced{par().nvec_reduced.empty() ? dp.nvec : std::stoi(par().nvec_reduced)};
-    const int LI_reduced{  par().LI_reduced.empty()   ? dp.LI   : std::stoi(par().LI_reduced)};
+    const int nvec_reduced{par().nvec_reduced};
+    const int LI_reduced{  par().LI_reduced};
     auto &perambulator  = envGet(PerambTensor, getName());
     auto &solve         = envGet(std::vector<FermionField>, par().solve);
     auto &epack         = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);

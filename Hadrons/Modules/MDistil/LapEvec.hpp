@@ -299,7 +299,10 @@ void TLapEvec<GImpl>::execute(void)
     }
     GridLogIRL.Active( PreviousIRLLogState );
     gridHD->GlobalSum(ConvergenceErrors);
-    assert(ConvergenceErrors==0 && "The eingensolver failed to find enough eigenvectors on at least one node");
+    if(!ConvergenceErrors==0)
+    {
+        HADRONS_ERROR(Program,"The eingensolver failed to find enough eigenvectors on at least one node");
+    }
 #if DEBUG
     // Now write out the 4d eigenvectors
     eig4d.record.operatorXml = "<OPERATOR>Distillation</OPERATOR>";
