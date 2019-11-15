@@ -65,13 +65,13 @@ public:
     const std::array<std::string, NumIndices_> &DefaultIndexNames_;
 
     // Default constructor (assumes tensor will be loaded from file)
-    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor(const std::string &Name,
+    NamedTensor(const std::string &Name,
                                                       const std::array<std::string, NumIndices_> &indexNames)
     : IndexNames{indexNames.begin(), indexNames.end()}, Name_{Name}, DefaultIndexNames_{indexNames} {}
     
     // Construct a named tensor explicitly specifying size of each dimension
     template<typename... IndexTypes>
-    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NamedTensor(const std::string &Name,
+    NamedTensor(const std::string &Name,
                                                       const std::array<std::string, NumIndices_> &indexNames,
                                                       Eigen::Index firstDimension, IndexTypes... otherDimensions)
     : tensor(firstDimension, otherDimensions...),
