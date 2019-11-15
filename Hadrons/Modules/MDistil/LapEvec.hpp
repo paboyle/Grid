@@ -181,13 +181,13 @@ public:
         assert( nd <= in.Grid()->Nd() );
         conformable( in, out );
         out = ( ( Real ) ( 2 * nd ) ) * in;
-        Field _tmp(in.Grid());
+        Field tmp_(in.Grid());
         typedef typename GaugeField::vector_type vCoeff_t;
         for (int mu = 0 ; mu < nd ; mu++)
         {
             out -= U[mu] * Cshift( in, mu, 1);
-            _tmp = adj( U[mu] ) * in;
-            out -= Cshift(_tmp,mu,-1);
+            tmp_ = adj( U[mu] ) * in;
+            out -= Cshift(tmp_,mu,-1);
         }
     }
     
@@ -202,13 +202,13 @@ public:
 template<typename Field>
 class Laplacian3DHerm : public LinearFunction<Field> {
 public:
-    OperatorFunction<Field>   & _poly;
-    LinearOperatorBase<Field> &_Linop;
+    OperatorFunction<Field>   & poly_;
+    LinearOperatorBase<Field> &Linop_;
     Laplacian3DHerm(OperatorFunction<Field> & poly,LinearOperatorBase<Field>& linop)
-    : _poly{poly}, _Linop{linop} {}
+    : poly_{poly}, Linop_{linop} {}
     void operator()(const Field& in, Field& out)
     {
-        _poly(_Linop,in,out);
+        poly_(Linop_,in,out);
     }
 };
 
