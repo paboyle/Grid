@@ -78,7 +78,9 @@ public:
       IndexNames{indexNames.begin(), indexNames.end()}, Name_{Name}, DefaultIndexNames_{indexNames}
     {
         if(sizeof...(otherDimensions) + 1 != NumIndices_)
+	{
             HADRONS_ERROR(Argument, "NamedTensor: dimensions != tensor rank");
+	}
     }
 
     // Do my index names match the default for my type?

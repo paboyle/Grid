@@ -116,7 +116,9 @@ void TDistilVectors<FImpl>::setup(void)
     // We expect the perambulator to have been created with these indices
     auto &perambulator = envGet(PerambTensor, par().perambulator);
     if (!perambulator.ValidateIndexNames())
+    {
         HADRONS_ERROR(Range,"Perambulator index names bad");
+    }
 
     const DistilParameters &dp{envGet(DistilParameters, par().DistilParams)};
     const int Nt{env().getDim(Tdir)};
