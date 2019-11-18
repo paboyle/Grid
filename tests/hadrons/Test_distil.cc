@@ -90,7 +90,7 @@ void test_LapEvec(Application &application)
   p.Stout.rho = 0.2;
   p.Cheby.PolyOrder = 11;
   p.Cheby.alpha = 0.55;
-  p.Cheby.beta = 12.5;
+  p.Cheby.beta = 35.5;
   p.Lanczos.Nvec = 5;
   p.Lanczos.Nk = 6;
   p.Lanczos.Np = 2;
@@ -180,9 +180,9 @@ std::string PerambulatorName( const char * pszSuffix = nullptr )
 
 void test_LoadPerambulators( Application &application, const char * pszSuffix = nullptr )
 {
-  std::string sModuleName{ PerambulatorName( pszSuffix ) };
+  std::string sModuleName{ "Peramb_load" };
   MIO::LoadPerambulator::Par PerambPar;
-  PerambPar.PerambFileName = sModuleName;
+  PerambPar.PerambFileName = "Peramb";
   PerambPar.DistilParams = "DPar_l";
   test_Noises(application, sModuleName); // I want these written after solver stuff
   application.createModule<MIO::LoadPerambulator>( sModuleName, PerambPar );
@@ -359,29 +359,9 @@ int main(int argc, char *argv[])
       test_LapEvec( application );
       test_DPar( application );
       test_LoadPerambulators( application );
-      test_DistilVectors( application );
+      test_DistilVectors( application, "_load" );
       test_MesonField( application, "Phi", "phi" );
       test_MesonField( application, "Rho", "rho" );
-      break;
-    case 2:
-      LOG(Message) << "Computing Meson 2pt-function for two quark flavours" << std::endl;
-      test_Global( application );
-      test_LapEvec( application );
-      test_DPar( application );
-      test_Perambulators( application );
-      test_DistilVectors( application );
-      test_Perambulators( application, "S" );
-      test_DistilVectors( application, "S" );
-      test_MesonField( application, "SPhi", "S_phi" );
-      test_MesonField( application, "SRho", "S_rho" );
-      break;
-    case 3:
-      LOG(Message) << "Computing Meson 2pt-function with current insertion" << std::endl;
-      test_Global( application );
-      test_LapEvec( application );
-      test_DPar( application );
-      test_Perambulators( application );
-      test_MesonSink( application );
       break;
   }
   // execution

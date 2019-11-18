@@ -77,7 +77,7 @@ TLoadDistilNoise<FImpl>::TLoadDistilNoise(const std::string name) : Module<LoadD
 template <typename FImpl>
 std::vector<std::string> TLoadDistilNoise<FImpl>::getInput(void)
 {
-    return {par().NoiseFileName, par().DistilParams};
+    return {par().DistilParams};
 }
 
 template <typename FImpl>

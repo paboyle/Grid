@@ -77,7 +77,7 @@ TLoadPerambulator<FImpl>::TLoadPerambulator(const std::string name) : Module<Loa
 template <typename FImpl>
 std::vector<std::string> TLoadPerambulator<FImpl>::getInput(void)
 {
-    return {par().PerambFileName, par().DistilParams};
+    return {par().DistilParams};
 }
 
 template <typename FImpl>
