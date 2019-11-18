@@ -74,6 +74,7 @@ public:
     typedef std::unique_ptr<GridCartesian>         GridPt;
     typedef std::unique_ptr<GridRedBlackCartesian> GridRbPt;
     typedef std::unique_ptr<GridParallelRNG>       RngPt;
+    typedef std::unique_ptr<GridSerialRNG>         SerialRngPt;
     enum class Storage {object, cache, temporary};
 private:
     struct ObjInfo
@@ -114,6 +115,7 @@ public:
     double                  getVolume(void) const;
     // random number generator
     GridParallelRNG *       get4dRng(void);
+    GridSerialRNG *         getSerialRng(void);
     // general memory management
     void                    addObject(const std::string name,
                                       const int moduleAddress = -1);
@@ -183,6 +185,7 @@ private:
     unsigned int                        nd_;
     // random number generator
     RngPt                               rng4d_{nullptr};
+    SerialRngPt                         rngSerial_{nullptr};
     // object store
     std::vector<ObjInfo>                object_;
     std::map<std::string, unsigned int> objectAddress_;
