@@ -142,7 +142,7 @@ template <typename GImpl>
 void TLapEvec<GImpl>::setup(void)
 {
     GridCartesian * gridHD = env().getGrid();
-    gridLD.reset(MakeLowerDimGrid(gridHD));
+    MakeLowerDimGrid(gridLD,gridHD);
     const int Ntlocal{gridHD->LocalDimensions()[Tdir]};
     // Temporaries
     envTmpLat(GaugeField, "Umu_stout");
@@ -305,7 +305,7 @@ void TLapEvec<GImpl>::execute(void)
     }
     GridLogIRL.Active( PreviousIRLLogState );
     gridHD->GlobalSum(ConvergenceErrors);
-    if(!ConvergenceErrors==0)
+    if(ConvergenceErrors!=0)
     {
         HADRONS_ERROR(Program,"The eingensolver failed to find enough eigenvectors on at least one node");
     }

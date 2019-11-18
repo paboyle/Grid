@@ -99,7 +99,7 @@ std::vector<std::string> TPerambulator<FImpl>::getOutput(void)
 template <typename FImpl>
 void TPerambulator<FImpl>::setup(void)
 {
-    grid3d.reset( MakeLowerDimGrid( env().getGrid() ) );
+    MakeLowerDimGrid(grid3d, env().getGrid());
     const DistilParameters &dp = envGet(DistilParameters, par().DistilParams);
     const int  Nt{env().getDim(Tdir)};
     const bool full_tdil{ dp.TI == Nt };

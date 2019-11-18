@@ -112,7 +112,7 @@ void TPerambFromSolve<FImpl>::setup(void)
     const int Nt{env().getDim(Tdir)};
     const bool full_tdil{ dp.TI == Nt };
     const int Nt_inv{ full_tdil ? 1 : dp.TI };
-    grid3d.reset( MakeLowerDimGrid( env().getGrid() ) );
+    MakeLowerDimGrid( grid3d, env().getGrid() );
     const int nvec_reduced{par().nvec_reduced};
     const int LI_reduced{  par().LI_reduced};
     envCreate(PerambTensor, getName(), 1, Nt,nvec_reduced,LI_reduced,dp.nnoise,Nt_inv,dp.SI);
