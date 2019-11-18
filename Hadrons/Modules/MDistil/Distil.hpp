@@ -30,9 +30,6 @@
 #ifndef Hadrons_MDistil_Distil_hpp_
 #define Hadrons_MDistil_Distil_hpp_
 
-#define _USE_MATH_DEFINES
-#include <math.h>
-
 #include <Hadrons/NamedTensor.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
@@ -72,15 +69,13 @@ struct DistilParameters: Serializable {
                                     int, TI,
                                     int, LI,
                                     int, SI )
-    DistilParameters() = default;
-    DistilParameters( const DistilParameters &p ) = default; // member-wise copy
 };
 
 /******************************************************************************
  Make a lower dimensional grid in preparation for local slice operations
  ******************************************************************************/
 
-inline GridCartesian * MakeLowerDimGrid( GridCartesian * gridHD )
+inline void MakeLowerDimGrid( std::unique_ptr<GridCartesian> &up, GridCartesian * gridHD )
 {
     int nd{static_cast<int>(gridHD->_ndimension)};
     Coordinate latt_size   = gridHD->_gdimensions;
@@ -89,8 +84,7 @@ inline GridCartesian * MakeLowerDimGrid( GridCartesian * gridHD )
     simd_layout.push_back( 1 );
     Coordinate mpi_layout  = gridHD->_processors;
     mpi_layout[nd-1] = 1;
-    GridCartesian * gridLD = new GridCartesian(latt_size,simd_layout,mpi_layout,*gridHD);
-    return gridLD;
+    up.reset( new GridCartesian(latt_size,simd_layout,mpi_layout,*gridHD) );
 }
 
 /*************************************************************************************

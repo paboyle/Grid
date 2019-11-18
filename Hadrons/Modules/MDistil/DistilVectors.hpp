@@ -137,7 +137,7 @@ void TDistilVectors<FImpl>::setup(void)
     simd_layout_3.push_back( 1 );
     mpi_layout[Nd-1] = 1;
     GridCartesian * const grid4d{env().getGrid()};
-    grid3d.reset(MakeLowerDimGrid(grid4d));
+    MakeLowerDimGrid(grid3d, grid4d);
     
     envTmp(LatticeSpinColourVector, "source4d",1,LatticeSpinColourVector(grid4d));
     envTmp(LatticeSpinColourVector, "source3d",1,LatticeSpinColourVector(grid3d.get()));
@@ -170,7 +170,6 @@ void TDistilVectors<FImpl>::execute(void)
     const int Nt_inv{ full_tdil ? 1 : dp.TI };
     
     int vecindex;
-    int t_inv;
     if (!RhoName.empty())
     {
         auto &rho = envGet(std::vector<FermionField>, RhoName);
