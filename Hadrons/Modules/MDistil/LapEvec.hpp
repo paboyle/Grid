@@ -171,14 +171,20 @@ public:
     // Construct this operator given a gauge field and the number of dimensions it should act on
     Laplacian3D( GaugeField& gf, int dimSpatial = Tdir ) : nd{dimSpatial}
     {
-        assert(dimSpatial>=1);
+        if (dimSpatial<1)
+        {
+            HADRONS_ERROR(Range,"Must be at least one spatial dimension");
+        }
         for (int mu = 0 ; mu < nd ; mu++)
             U.push_back(PeekIndex<LorentzIndex>(gf,mu));
     }
     
     // Apply this operator to "in", return result in "out"
     void operator()(const Field& in, Field& out) {
-        assert( nd <= in.Grid()->Nd() );
+        if (nd > in.Grid()->Nd())
+        {
+            HADRONS_ERROR(Range,"nd too large");
+        }
         conformable( in, out );
         out = ( ( Real ) ( 2 * nd ) ) * in;
         Field tmp_(in.Grid());
@@ -191,11 +197,11 @@ public:
         }
     }
     
-    void OpDiag (const Field &in, Field &out) { assert(0); };
-    void OpDir  (const Field &in, Field &out,int dir,int disp) { assert(0); };
-    void Op     (const Field &in, Field &out) { assert(0); };
-    void AdjOp  (const Field &in, Field &out) { assert(0); };
-    void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2) { assert(0); };
+    void OpDiag (const Field &in, Field &out) { HADRONS_ERROR(Definition, "OpDiag() undefined"); };
+    void OpDir  (const Field &in, Field &out,int dir,int disp) { HADRONS_ERROR(Definition, "OpDir() undefined"); };
+    void Op     (const Field &in, Field &out) { HADRONS_ERROR(Definition, "Op() undefined"); };
+    void AdjOp  (const Field &in, Field &out) { HADRONS_ERROR(Definition, "AdjOp() undefined"); };
+    void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2) { HADRONS_ERROR(Definition, "HermOpAndNorm() undefined"); };
     void HermOp(const Field &in, Field &out) { operator()(in,out); };
 };
 

@@ -128,9 +128,13 @@ public:
         const typename ET::Dimensions & NewDimensions{tensor.dimensions()};
         for (int i = 0; i < NumIndices_; i++)
             if(OldDimensions[i] && OldDimensions[i] != NewDimensions[i])
+            {
                 HADRONS_ERROR(Size,"NamedTensor::read dimension size");
+            }
         if (bValidate && !ValidateIndexNames(OldIndexNames))
+        {
             HADRONS_ERROR(Definition,"NamedTensor::read dimension name");
+        }
     }
     template<typename Reader> void read(Reader &r, bool bValidate = true) { read(r, bValidate, Name_); }
 
