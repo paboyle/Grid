@@ -94,12 +94,14 @@ public:
 
     virtual double flops(const unsigned int blockSizei, const unsigned int blockSizej)
     {
+        // needs to be updated for staggered
         return vol_*(2*8.0+6.0+8.0*mom_.size())*blockSizei*blockSizej*gamma_.size();
     }
 
     virtual double bytes(const unsigned int blockSizei, const unsigned int blockSizej)
     {
-        return vol_*(12.0*sizeof(T))*blockSizei*blockSizej
+        // 3.0 ? for colors
+        return vol_*(3.0*sizeof(T))*blockSizei*blockSizej
                +  vol_*(2.0*sizeof(T)*mom_.size())*blockSizei*blockSizej*gamma_.size();
     }
 private:

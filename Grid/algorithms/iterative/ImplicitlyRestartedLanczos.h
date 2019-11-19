@@ -503,25 +503,28 @@ until convergence
 
 	//  power of two search pattern;  not every evalue in eval2 is assessed.
 	int allconv =1;
-	for(int jj = 1; jj<=Nstop; jj*=2){
+    //for(int jj = 1; jj<=Nstop; jj*=2){
+    for(int jj = 1; jj<=Nstop; jj++){
 	  int j = Nstop-jj;
 	  RealD e = eval2_copy[j]; // Discard the evalue
-	  basisRotateJ(B,evec,Qt,j,0,Nk,Nm);	    
+	  basisRotateJ(B,evec,Qt,j,0,Nk,Nm);
+        
 	  if( !_Tester.TestConvergence(j,eresid,B,e,evalMaxApprox) ) {
 	    allconv=0;
 	  }
+      else{Nconv++;}
 	}
 	// Do evec[0] for good measure
 	{ 
 	  int j=0;
 	  RealD e = eval2_copy[0]; 
 	  basisRotateJ(B,evec,Qt,j,0,Nk,Nm);	    
-	  if( !_Tester.TestConvergence(j,eresid,B,e,evalMaxApprox) ) allconv=0;
+        if( !_Tester.TestConvergence(j,eresid,B,e,evalMaxApprox) ) {allconv=0;}else{Nconv++;}
 	}
-	if ( allconv ) Nconv = Nstop;
+	//if ( allconv ) Nconv = Nstop;
 
 	// test if we converged, if so, terminate
-	std::cout<<GridLogIRL<<" #modes converged: >= "<<Nconv<<"/"<<Nstop<<std::endl;
+	std::cout<<GridLogIRL<<" #modes converged: "<<Nconv<<"/ Nstop "<<Nstop<<std::endl;
 	//	if( Nconv>=Nstop || beta_k < betastp){
 	if( Nconv>=Nstop){
 	  goto converged;

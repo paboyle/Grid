@@ -2,12 +2,11 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MSolver/A2AVectors.cc
+Source file: Hadrons/Modules/MIO/LoadIldg.cc
 
-Copyright (C) 2015-2019
+Copyright (C) 2015-2018
 
-Author: Antonin Portelli <antonin.portelli@me.com>
-Author: fionnoh <fionnoh@gmail.com>
+Author: William Jay <wjay@fnal.gov>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,12 +25,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Hadrons/Modules/MSolver/A2AVectors.hpp>
+#include <Hadrons/Modules/MIO/LoadIldg.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
-using namespace MSolver;
+using namespace MIO;
 
-template class Grid::Hadrons::MSolver::TA2AVectors<FIMPL, BaseFermionEigenPack<FIMPL>>;
-template class Grid::Hadrons::MSolver::TA2AVectors<ZFIMPL, BaseFermionEigenPack<ZFIMPL>>;
-template class Grid::Hadrons::MSolver::TStagA2AVectors<STAGIMPL, BaseFermionEigenPack<STAGIMPL>>;
+template class Grid::Hadrons::MIO::TLoadIldg<GIMPL>;

@@ -120,6 +120,7 @@ modules_hpp =\
   Modules/MIO/LoadA2AVectors.hpp \
   Modules/MIO/LoadEigenPack.hpp \
   Modules/MIO/LoadNersc.hpp \
+  Modules/MIO/LoadIldg.hpp \
   Modules/MIO/LoadBinary.hpp \
   Modules/MIO/LoadCoarseEigenPack.hpp \
   Modules/MContraction/WeakEye3pt.hpp \

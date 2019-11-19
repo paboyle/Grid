@@ -80,13 +80,13 @@ public:
     A2AVectorsSchurStaggered(FMat &action, Solver &solver);
     virtual ~A2AVectorsSchurStaggered(void) = default;
     void makeLowModeV(FermionField &vout,
-                      const FermionField &evec, const Real &eval);
+                      const FermionField &evec, const ComplexD eval, const Integer sign=0);
     void makeLowModeV5D(FermionField &vout_4d, FermionField &vout_5d,
-                        const FermionField &evec, const Real &eval);
+                        const FermionField &evec, const ComplexD eval, const Integer sign=0);
     void makeLowModeW(FermionField &wout,
-                      const FermionField &evec, const Real &eval);
+                      const FermionField &evec, const ComplexD eval, const Integer sign=0);
     void makeLowModeW5D(FermionField &wout_4d, FermionField &wout_5d,
-                        const FermionField &evec, const Real &eval);
+                        const FermionField &evec, const ComplexD eval, const Integer sign=0);
     void makeHighModeV(FermionField &vout, const FermionField &noise);
     void makeHighModeV5D(FermionField &vout_4d, FermionField &vout_5d,
                          const FermionField &noise_5d);
@@ -305,24 +305,33 @@ A2AVectorsSchurStaggered<FImpl>::A2AVectorsSchurStaggered(FMat &action, Solver &
 
 
 template <typename FImpl>
-void A2AVectorsSchurStaggered<FImpl>::makeLowModeV(FermionField &vout, const FermionField &evec, const Real &eval)
+void A2AVectorsSchurStaggered<FImpl>::makeLowModeV(FermionField &vout,
+                                                   const FermionField &evec,
+                                                   const ComplexD eval,
+                                                   const Integer sign)
 {
+    ComplexD eval_ = eval;
+    // evec_o = -evec_o ?
+    if(sign){eval_=conjugate(eval);}
     src_o_ = evec;
     src_o_.Checkerboard() = Odd;
     pickCheckerboard(Even, sol_e_, vout);
     pickCheckerboard(Odd, sol_o_, vout);
     
     /////////////////////////////////////////////////////
-    // v_e = (1/eval) * (-i/eval * Meo evec_o)
+    /// v_e = (1/eval^(*)) * (-i/eval * Meo evec_o)
     /////////////////////////////////////////////////////
     action_.Meooe(src_o_, tmp_);
-    Complex minusI(0,-1);
-    sol_e_ = minusI / ( eval * eval ) * tmp_;
+    ComplexD minusI(0, -1.0);
+    ComplexD cc = minusI/eval/eval_;
+    sol_e_ = cc * tmp_;
     
     /////////////////////////////////////////////////////
-    // v_o = (1/eval) * evec_o
+    /// v_o = (1/eval^(*)) * evec_o
     /////////////////////////////////////////////////////
-    sol_o_ = (1.0 / eval) * src_o_;
+    cc = 1.0/eval_;
+    sol_o_ = cc * src_o_;
+    if(sign){sol_o_ = -sol_o_;}
     
     setCheckerboard(vout, sol_e_);
     assert(sol_e_.Checkerboard() == Even);
@@ -331,14 +340,21 @@ void A2AVectorsSchurStaggered<FImpl>::makeLowModeV(FermionField &vout, const Fer
 }
 
 template <typename FImpl>
-void A2AVectorsSchurStaggered<FImpl>::makeLowModeV5D(FermionField &vout_4d, FermionField &vout_5d, const FermionField &evec, const Real &eval)
+void A2AVectorsSchurStaggered<FImpl>::makeLowModeV5D(FermionField &vout_4d,
+                                                     FermionField &vout_5d,
+                                                     const FermionField &evec,
+                                                     const ComplexD eval,
+                                                     const Integer sign)
 {
-    makeLowModeV(vout_5d, evec, eval);
+    makeLowModeV(vout_5d, evec, eval, sign);
     action_.ExportPhysicalFermionSolution(vout_5d, vout_4d);
 }
 
 template <typename FImpl>
-void A2AVectorsSchurStaggered<FImpl>::makeLowModeW(FermionField &wout, const FermionField &evec, const Real &eval)
+void A2AVectorsSchurStaggered<FImpl>::makeLowModeW(FermionField &wout,
+                                                   const FermionField &evec,
+                                                   const ComplexD eval,
+                                                   const Integer sign)
 {
     src_o_ = evec;
     src_o_.Checkerboard() = Odd;
@@ -346,16 +362,18 @@ void A2AVectorsSchurStaggered<FImpl>::makeLowModeW(FermionField &wout, const Fer
     pickCheckerboard(Odd, sol_o_, wout);
     
     /////////////////////////////////////////////////////
-    // v_e = (-i/eval * Meo evec_o)
+    /// v_e = (-i/eval * Meo evec_o)
     /////////////////////////////////////////////////////
     action_.Meooe(src_o_, tmp_);
-    Complex minusI(0,-1);
-    sol_e_ = minusI / eval * tmp_;
+    ComplexD minusI(0, -1.0);
+    ComplexD cc = minusI/eval;
+    sol_e_ = cc * tmp_;
     
     /////////////////////////////////////////////////////
-    // v_o = evec_o
+    /// v_o = evec_o
     /////////////////////////////////////////////////////
     sol_o_ = src_o_;
+    if(sign){sol_o_ = -sol_o_;}
     
     setCheckerboard(wout, sol_e_);
     assert(sol_e_.Checkerboard() == Even);
@@ -365,11 +383,12 @@ void A2AVectorsSchurStaggered<FImpl>::makeLowModeW(FermionField &wout, const Fer
 
 template <typename FImpl>
 void A2AVectorsSchurStaggered<FImpl>::makeLowModeW5D(FermionField &wout_4d,
-                                                   FermionField &wout_5d,
-                                                   const FermionField &evec,
-                                                   const Real &eval)
+                                                     FermionField &wout_5d,
+                                                     const FermionField &evec,
+                                                     const ComplexD eval,
+                                                     const Integer sign)
 {
-    makeLowModeW(tmp5_, evec, eval);
+    makeLowModeW(tmp5_, evec, eval, sign);
     action_.DminusDag(tmp5_, wout_5d);
     action_.ExportPhysicalFermionSource(wout_5d, wout_4d);
 }
