@@ -80,13 +80,13 @@ public:
     A2AVectorsSchurStaggered(FMat &action, Solver &solver);
     virtual ~A2AVectorsSchurStaggered(void) = default;
     void makeLowModeV(FermionField &vout,
-                      const FermionField &evec, const ComplexD eval, const Integer sign=0);
+                      const FermionField &evec, const ComplexD eval, const int sign=0);
     void makeLowModeV5D(FermionField &vout_4d, FermionField &vout_5d,
-                        const FermionField &evec, const ComplexD eval, const Integer sign=0);
+                        const FermionField &evec, const ComplexD eval, const int sign=0);
     void makeLowModeW(FermionField &wout,
-                      const FermionField &evec, const ComplexD eval, const Integer sign=0);
+                      const FermionField &evec, const ComplexD eval, const int sign=0);
     void makeLowModeW5D(FermionField &wout_4d, FermionField &wout_5d,
-                        const FermionField &evec, const ComplexD eval, const Integer sign=0);
+                        const FermionField &evec, const ComplexD eval, const int sign=0);
     void makeHighModeV(FermionField &vout, const FermionField &noise);
     void makeHighModeV5D(FermionField &vout_4d, FermionField &vout_5d,
                          const FermionField &noise_5d);
@@ -308,7 +308,7 @@ template <typename FImpl>
 void A2AVectorsSchurStaggered<FImpl>::makeLowModeV(FermionField &vout,
                                                    const FermionField &evec,
                                                    const ComplexD eval,
-                                                   const Integer sign)
+                                                   const int sign)
 {
     ComplexD eval_ = eval;
     // evec_o = -evec_o ?
@@ -319,11 +319,11 @@ void A2AVectorsSchurStaggered<FImpl>::makeLowModeV(FermionField &vout,
     pickCheckerboard(Odd, sol_o_, vout);
     
     /////////////////////////////////////////////////////
-    /// v_e = (1/eval^(*)) * (-i/eval * Meo evec_o)
+    /// v_e = (1/eval^(*)) * (-i/Im(eval) * Meo evec_o)
     /////////////////////////////////////////////////////
     action_.Meooe(src_o_, tmp_);
     ComplexD minusI(0, -1.0);
-    ComplexD cc = minusI/eval/eval_;
+    ComplexD cc = minusI/eval.imag()/eval_;
     sol_e_ = cc * tmp_;
     
     /////////////////////////////////////////////////////
@@ -344,7 +344,7 @@ void A2AVectorsSchurStaggered<FImpl>::makeLowModeV5D(FermionField &vout_4d,
                                                      FermionField &vout_5d,
                                                      const FermionField &evec,
                                                      const ComplexD eval,
-                                                     const Integer sign)
+                                                     const int sign)
 {
     makeLowModeV(vout_5d, evec, eval, sign);
     action_.ExportPhysicalFermionSolution(vout_5d, vout_4d);
@@ -354,7 +354,7 @@ template <typename FImpl>
 void A2AVectorsSchurStaggered<FImpl>::makeLowModeW(FermionField &wout,
                                                    const FermionField &evec,
                                                    const ComplexD eval,
-                                                   const Integer sign)
+                                                   const int sign)
 {
     src_o_ = evec;
     src_o_.Checkerboard() = Odd;
@@ -366,7 +366,7 @@ void A2AVectorsSchurStaggered<FImpl>::makeLowModeW(FermionField &wout,
     /////////////////////////////////////////////////////
     action_.Meooe(src_o_, tmp_);
     ComplexD minusI(0, -1.0);
-    ComplexD cc = minusI/eval;
+    ComplexD cc = minusI/eval.imag();
     sol_e_ = cc * tmp_;
     
     /////////////////////////////////////////////////////
@@ -386,7 +386,7 @@ void A2AVectorsSchurStaggered<FImpl>::makeLowModeW5D(FermionField &wout_4d,
                                                      FermionField &wout_5d,
                                                      const FermionField &evec,
                                                      const ComplexD eval,
-                                                     const Integer sign)
+                                                     const int sign)
 {
     makeLowModeW(tmp5_, evec, eval, sign);
     action_.DminusDag(tmp5_, wout_5d);
