@@ -244,19 +244,20 @@ void TStagSeqGamma<FImpl>::execute(void)
     {
         LOG(Message) << "Generating gamma_" << par().gamma
         << " sequential source at t= " << par().tA << std::endl;
+        LOG(Message) << "Using propagator " << par().q << std::endl;
     }
     else
     {
         LOG(Message) << "Generating gamma_" << par().gamma
         << " sequential source for "
         << par().tA << " <= t <= " << par().tB << std::endl;
+        LOG(Message) << "Using propagator " << par().q << std::endl;
     }
     auto  &src = envGet(PropagatorField, getName());
     auto  &q   = envGet(PropagatorField, par().q);
     auto  &ph  = envGet(LatticeComplex, momphName_);
     auto  &stag_ph  = envGet(LatticeComplex, stagPhaseName_);
-    auto  &t   = envGet(Lattice<iScalar<vInteger>>, tName_);
-    
+    Lattice<iScalar<vInteger> > t(env().getGrid()); LatticeCoordinate(t,3);
     if (!hasPhase_)
     {
         Complex           i(0.0,1.0);
@@ -272,7 +273,7 @@ void TStagSeqGamma<FImpl>::execute(void)
             ph = ph + (p[mu]/env().getDim(mu))*coor;
         }
         ph = exp((Real)(2*M_PI)*i*ph);
-        
+        LOG(Message) << "Computing staggered phase." << std::endl;
         // based on phases in Grid/qcd/action/fermion/FermionOperatorImpl.h
         // Staggered Phase does not include (-1)^x from "hermiticity" trans.
         stag_ph = 1.0;

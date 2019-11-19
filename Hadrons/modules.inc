@@ -43,6 +43,7 @@ modules_cc =\
   Modules/MUtilities/RandomVectors.cc \
   Modules/MIO/LoadA2AVectors.cc \
   Modules/MIO/LoadNersc.cc \
+  Modules/MIO/LoadIldg.cc \
   Modules/MIO/LoadBinary.cc \
   Modules/MIO/LoadCoarseEigenPack.cc \
   Modules/MIO/LoadEigenPack.cc \
