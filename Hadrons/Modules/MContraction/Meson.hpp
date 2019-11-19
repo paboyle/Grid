@@ -142,7 +142,7 @@ protected:
     virtual void execute(void);
 private:
     std::vector<Gamma::Algebra>        gammaList;
-    std::vector<Integer>               stag_phase_source;
+    std::vector<RealD>               stag_phase_source;
 };
 MODULE_REGISTER_TMP(Meson, ARG(TMeson<FIMPL, FIMPL>), MContraction);
 MODULE_REGISTER_TMP(StagMeson, ARG(TStagMeson<STAGIMPL, STAGIMPL>), MContraction);
@@ -355,10 +355,11 @@ void TStagMeson<FImpl1, FImpl2>::setup(void)
     // local taste non-singlet ops, including ``Hermiticity" phase,
     // see Tab. 11.2 in Degrand and Detar
     for(int i=0; i < gammaList.size(); i++){
-        
+
         stag_phase_sink[i] = 1.0;
         stag_phase_source[i] = 1.0;
         
+        LOG(Message) << "Using gamma: " << gammaList[i] << std::endl;
         switch(gammaList[i]) {
                 
             case Gamma::Algebra::GammaX  :
