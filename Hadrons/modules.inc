@@ -43,6 +43,7 @@ modules_cc =\
   Modules/MUtilities/RandomVectors.cc \
   Modules/MIO/LoadA2AVectors.cc \
   Modules/MIO/LoadNersc.cc \
+  Modules/MIO/LoadIldg.cc \
   Modules/MIO/LoadBinary.cc \
   Modules/MIO/LoadCoarseEigenPack.cc \
   Modules/MIO/LoadEigenPack.cc \
@@ -120,6 +121,7 @@ modules_hpp =\
   Modules/MIO/LoadA2AVectors.hpp \
   Modules/MIO/LoadEigenPack.hpp \
   Modules/MIO/LoadNersc.hpp \
+  Modules/MIO/LoadIldg.hpp \
   Modules/MIO/LoadBinary.hpp \
   Modules/MIO/LoadCoarseEigenPack.hpp \
   Modules/MContraction/WeakEye3pt.hpp \
