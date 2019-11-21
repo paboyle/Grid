@@ -41,9 +41,12 @@ public:
 
   typedef typename FImpl::SitePropagator pobj;
   typedef typename ComplexField::vector_object vobj;
-  
+
+  typedef Lattice<iSpinMatrix<typename FImpl::Simd>> SpinMatrixField;
+  typedef typename SpinMatrixField::vector_object sobj;
+
   static constexpr int epsilon[6][3] = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
-  static constexpr Complex epsilon_sgn[6]= {1,1,1,-1,-1,-1};
+  static constexpr int epsilon_sgn[6]= {1,1,1,-1,-1,-1};
 
   private: 
   template <class mobj, class robj>
@@ -81,12 +84,70 @@ public:
 				 const char * quarks_right,
 				 const int parity,
 				 robj &result);
+  private: 
+  template <class mobj, class mobj2, class robj>
+  static void Sigma_to_Nucleon_Q1_Eye_site(const mobj &Dq_loop,
+						 const mobj2 &Du_spec,
+						 const mobj &Dd_xf,
+						 const mobj &Ds_xi,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_sigma,
+		                 		 const Gamma GammaB_nucl,
+						 const int parity,
+						 robj &result);
+  template <class mobj, class mobj2, class robj>
+  static void Sigma_to_Nucleon_Q1_NonEye_site(const mobj &Du_xi,
+						 const mobj &Du_xf,
+						 const mobj2 &Du_spec,
+						 const mobj &Dd_xf,
+						 const mobj &Ds_xi,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_sigma,
+		                 		 const Gamma GammaB_nucl,
+						 const int parity,
+						 robj &result);
+
+
+  template <class mobj, class mobj2, class robj>
+  static void Sigma_to_Nucleon_Q2_Eye_site(const mobj &Dq_loop,
+						 const mobj2 &Du_spec,
+						 const mobj &Dd_xf,
+						 const mobj &Ds_xi,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_sigma,
+		                 		 const Gamma GammaB_nucl,
+						 const int parity,
+						 robj &result);
+  template <class mobj, class mobj2, class robj>
+  static void Sigma_to_Nucleon_Q2_NonEye_site(const mobj &Du_xi,
+						 const mobj &Du_xf,
+						 const mobj2 &Du_spec,
+						 const mobj &Dd_xf,
+						 const mobj &Ds_xi,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_sigma,
+		                 		 const Gamma GammaB_nucl,
+						 const int parity,
+						 robj &result);
+  public:
+  template <class mobj>
+  static void Sigma_to_Nucleon(const PropagatorField &qq_xi,
+				 const PropagatorField &qq_xf,
+				 const mobj &Du_spec,
+				 const PropagatorField &qd_xf,
+				 const PropagatorField &qs_xi,
+				 const Gamma Gamma_H,
+				 const Gamma GammaB_sigma,
+				 const Gamma GammaB_nucl,
+				 const int parity,
+		                 const std::string op,
+				 SpinMatrixField &stn_corr);
 };
 
 template <class FImpl>
 constexpr int BaryonUtils<FImpl>::epsilon[6][3];
 template <class FImpl>
-constexpr Complex BaryonUtils<FImpl>::epsilon_sgn[6];
+constexpr int BaryonUtils<FImpl>::epsilon_sgn[6];
 
 template <class FImpl>
 template <class mobj, class robj>
@@ -123,7 +184,7 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
 	  for (int beta_left=0; beta_left<Ns; beta_left++){
 	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-	    result()()() += epsilon_sgn[ie_left] * epsilon_sgn[ie_right] * pD1()(gamma_left,gamma_left)(c_right,c_left)*D2g()(alpha_right,beta_left)(a_right,a_left)*gD3()(alpha_right,beta_left)(b_right,b_left);
+	    result()()() += static_cast<Complex>(epsilon_sgn[ie_left] * epsilon_sgn[ie_right]) * pD1()(gamma_left,gamma_left)(c_right,c_left)*D2g()(alpha_right,beta_left)(a_right,a_left)*gD3()(alpha_right,beta_left)(b_right,b_left);
           }}}
   	}	  
         //This is the \delta_{456}^{231} part
@@ -132,7 +193,7 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
 	  for (int beta_left=0; beta_left<Ns; beta_left++){
 	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-	    result()()() += epsilon_sgn[ie_left] * epsilon_sgn[ie_right] * pD1g()(gamma_left,beta_left)(c_right,a_left)*D2()(alpha_right,beta_left)(a_right,b_left)*gD3()(alpha_right,gamma_left)(b_right,c_left);
+	    result()()() += static_cast<Complex>(epsilon_sgn[ie_left] * epsilon_sgn[ie_right]) * pD1g()(gamma_left,beta_left)(c_right,a_left)*D2()(alpha_right,beta_left)(a_right,b_left)*gD3()(alpha_right,gamma_left)(b_right,c_left);
           }}}
         }	  
         //This is the \delta_{456}^{312} part
@@ -141,7 +202,7 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
 	  for (int beta_left=0; beta_left<Ns; beta_left++){
 	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-	    result()()() += epsilon_sgn[ie_left] * epsilon_sgn[ie_right] * pD1()(gamma_left,beta_left)(c_right,b_left)*D2()(alpha_right,gamma_left)(a_right,c_left)*gD3g()(alpha_right,beta_left)(b_right,a_left);
+	    result()()() += static_cast<Complex>(epsilon_sgn[ie_left] * epsilon_sgn[ie_right]) * pD1()(gamma_left,beta_left)(c_right,b_left)*D2()(alpha_right,gamma_left)(a_right,c_left)*gD3g()(alpha_right,beta_left)(b_right,a_left);
           }}}
         }	  
         //This is the \delta_{456}^{132} part
@@ -150,7 +211,7 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
 	  for (int beta_left=0; beta_left<Ns; beta_left++){
 	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-	    result()()() -= epsilon_sgn[ie_left] * epsilon_sgn[ie_right] * pD1()(gamma_left,gamma_left)(c_right,c_left)*D2()(alpha_right,beta_left)(a_right,b_left)*gD3g()(alpha_right,beta_left)(b_right,a_left);
+	    result()()() -= static_cast<Complex>(epsilon_sgn[ie_left] * epsilon_sgn[ie_right]) * pD1()(gamma_left,gamma_left)(c_right,c_left)*D2()(alpha_right,beta_left)(a_right,b_left)*gD3g()(alpha_right,beta_left)(b_right,a_left);
           }}}
         }	  
         //This is the \delta_{456}^{321} part
@@ -159,7 +220,7 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
 	  for (int beta_left=0; beta_left<Ns; beta_left++){
 	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-	    result()()() -= epsilon_sgn[ie_left] * epsilon_sgn[ie_right] * pD1()(gamma_left,beta_left)(c_right,b_left)*D2g()(alpha_right,beta_left)(a_right,a_left)*gD3()(alpha_right,gamma_left)(b_right,c_left);
+	    result()()() -= static_cast<Complex>(epsilon_sgn[ie_left] * epsilon_sgn[ie_right]) * pD1()(gamma_left,beta_left)(c_right,b_left)*D2g()(alpha_right,beta_left)(a_right,a_left)*gD3()(alpha_right,gamma_left)(b_right,c_left);
           }}}
         }	  
         //This is the \delta_{456}^{213} part
@@ -168,7 +229,7 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
 	  for (int beta_left=0; beta_left<Ns; beta_left++){
 	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-	    result()()() -= epsilon_sgn[ie_left] * epsilon_sgn[ie_right] * pD1g()(gamma_left,beta_left)(c_right,a_left)*D2()(alpha_right,gamma_left)(a_right,c_left)*gD3()(alpha_right,beta_left)(b_right,b_left);
+	    result()()() -= static_cast<Complex>(epsilon_sgn[ie_left] * epsilon_sgn[ie_right]) * pD1g()(gamma_left,beta_left)(c_right,a_left)*D2()(alpha_right,gamma_left)(a_right,c_left)*gD3()(alpha_right,beta_left)(b_right,b_left);
           }}}
         }	  
       }
@@ -249,4 +310,246 @@ void BaryonUtils<FImpl>::ContractBaryons_Sliced(const mobj &D1,
      result=Zero();
      baryon_site(D1,D2,D3,GammaA_left,GammaB_left,GammaA_right,GammaB_right,parity,wick_contraction,result);
 }
+
+/***********************************************************************
+ * End of Baryon 2pt-function code.                                    *
+ *                                                                     *
+ * The following code is for Sigma -> N rare hypeon decays             *
+ **********************************************************************/
+
+/* Dq_loop is a quark line from x_H to x_H
+ * Du_spec is a quark line from x_i to x_f
+ * Dd_xf is a quark line from x_H to x_f
+ * Ds_xi is a quark line from x_H to x_i */
+template <class FImpl>
+template <class mobj, class mobj2, class robj>
+void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_Eye_site(const mobj &Dq_loop,
+						 const mobj2 &Du_spec,
+						 const mobj &Dd_xf,
+						 const mobj &Ds_xi,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_sigma,
+		                 		 const Gamma GammaB_nucl,
+						 const int parity,
+						 robj &result)
+{
+
+  Gamma g5(Gamma::Algebra::Gamma5); 
+
+  auto DuG = Du_spec * GammaB_nucl;
+  // Gamma^B * Ds * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
+  auto GDsGDd = GammaB_sigma * Ds_xi * Gamma_H * g5 * adj(Dd_xf) * g5;
+  // Dq_loop * \gamma_\mu^L
+  auto DqG = Dq_loop * Gamma_H;
+
+  for (int ie_n=0; ie_n < 6 ; ie_n++){
+    int a_n = epsilon[ie_n][0]; //a
+    int b_n = epsilon[ie_n][1]; //b
+    int c_n = epsilon[ie_n][2]; //c
+    for (int ie_s=0; ie_s < 6 ; ie_s++){
+      int a_s = epsilon[ie_s][0]; //a'
+      int b_s = epsilon[ie_s][1]; //b'
+      int c_s = epsilon[ie_s][2]; //c'
+      for (int j=0; j<Nc; j++){
+      for (int alpha_s=0; alpha_s<Ns; alpha_s++){
+      for (int beta_n=0; beta_n<Ns; beta_n++){
+      for (int tau2=0; tau2<Ns; tau2++){
+      for (int gamma_s=0; gamma_s<Ns; gamma_s++){
+      for (int gamma_n=0; gamma_n<Ns; gamma_n++){
+        result()(gamma_s,gamma_n)() += static_cast<Complex>(epsilon_sgn[ie_n] * epsilon_sgn[ie_s]) * GDsGDd()(alpha_s,beta_n)(b_s,b_n) * DqG()(tau2,tau2)(j,j) * DuG()(alpha_s, beta_n)(a_s,a_n) * Du_spec()(gamma_s,gamma_n)(c_s,c_n);
+        result()(gamma_s,gamma_n)() -= static_cast<Complex>(epsilon_sgn[ie_n] * epsilon_sgn[ie_s]) * GDsGDd()(alpha_s,beta_n)(b_s,b_n) * DqG()(tau2,tau2)(j,j) * DuG()(gamma_s, beta_n)(c_s,a_n) * Du_spec()(alpha_s,gamma_n)(a_s,c_n);
+      }}}}}}
+    }
+  }
+}
+
+/* Du_xi is a quark line from x_H to x_i
+ * Du_xf is a quark line from x_H to x_f
+ * Du_spec is a quark line from x_i to x_f
+ * Dd_xf is a quark line from x_H to x_f
+ * Ds_xi is a quark line from x_H to x_i */
+template <class FImpl>
+template <class mobj, class mobj2, class robj>
+void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_NonEye_site(const mobj &Du_xi,
+						 const mobj &Du_xf,
+						 const mobj2 &Du_spec,
+						 const mobj &Dd_xf,
+						 const mobj &Ds_xi,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_sigma,
+		                 		 const Gamma GammaB_nucl,
+						 const int parity,
+						 robj &result)
+{
+
+  Gamma g5(Gamma::Algebra::Gamma5); 
+
+  auto DuG = Du_spec * GammaB_nucl;
+  auto adjDu = g5 * adj(Du_xf) * g5;
+  auto adjDuG = adjDu * GammaB_nucl;
+  // Gamma^B * Ds * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
+  auto GDsGDd = GammaB_sigma * Ds_xi * Gamma_H * g5 * adj(Dd_xf) * g5;
+  // Dq_loop * \gamma_\mu^L
+  auto DuGH = Du_xi * Gamma_H;
+
+  for (int ie_n=0; ie_n < 6 ; ie_n++){
+    int a_n = epsilon[ie_n][0]; //a
+    int b_n = epsilon[ie_n][1]; //b
+    int c_n = epsilon[ie_n][2]; //c
+    for (int ie_s=0; ie_s < 6 ; ie_s++){
+      int a_s = epsilon[ie_s][0]; //a'
+      int b_s = epsilon[ie_s][1]; //b'
+      int c_s = epsilon[ie_s][2]; //c'
+      for (int j=0; j<Nc; j++){
+      for (int alpha_s=0; alpha_s<Ns; alpha_s++){
+      for (int beta_n=0; beta_n<Ns; beta_n++){
+      for (int tau2=0; tau2<Ns; tau2++){
+      for (int gamma_s=0; gamma_s<Ns; gamma_s++){
+      for (int gamma_n=0; gamma_n<Ns; gamma_n++){
+        result()(gamma_s,gamma_n)() += static_cast<Complex>(epsilon_sgn[ie_n] * epsilon_sgn[ie_s]) * GDsGDd()(alpha_s,beta_n)(b_s,b_n) * DuGH()(alpha_s,tau2)(a_s,j) * DuG()(gamma_s, beta_n)(c_s,a_n) * adjDu()(tau2,gamma_n)(j,c_n);
+        result()(gamma_s,gamma_n)() += static_cast<Complex>(epsilon_sgn[ie_n] * epsilon_sgn[ie_s]) * GDsGDd()(alpha_s,beta_n)(b_s,b_n) * DuGH()(gamma_s,tau2)(c_s,j) * adjDuG()(tau2, beta_n)(j,a_n) * Du_spec()(alpha_s,gamma_n)(a_s,c_n);
+        result()(gamma_s,gamma_n)() -= static_cast<Complex>(epsilon_sgn[ie_n] * epsilon_sgn[ie_s]) * GDsGDd()(alpha_s,beta_n)(b_s,b_n) * DuGH()(alpha_s,tau2)(a_s,j) * adjDuG()(tau2, beta_n)(j,a_n) * Du_spec()(gamma_s,gamma_n)(c_s,c_n);
+        result()(gamma_s,gamma_n)() -= static_cast<Complex>(epsilon_sgn[ie_n] * epsilon_sgn[ie_s]) * GDsGDd()(alpha_s,beta_n)(b_s,b_n) * DuGH()(gamma_s,tau2)(c_s,j) * DuG()(alpha_s, beta_n)(a_s,a_n) * adjDu()(tau2,gamma_n)(j,c_n);
+      }}}}}}
+    }
+  }
+}
+
+//Equivalent to "One-trace"
+template <class FImpl>
+template <class mobj, class mobj2, class robj>
+void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q2_Eye_site(const mobj &Dq_loop,
+						 const mobj2 &Du_spec,
+						 const mobj &Dd_xf,
+						 const mobj &Ds_xi,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_sigma,
+		                 		 const Gamma GammaB_nucl,
+						 const int parity,
+						 robj &result)
+{
+
+  Gamma g5(Gamma::Algebra::Gamma5); 
+
+  auto DuG = Du_spec * GammaB_nucl;
+  // Gamma^B * Ds * \gamma_\mu^L
+  auto GDsG = GammaB_sigma * Ds_xi * Gamma_H;
+  // Dq_loop * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
+  auto DqGDd = Dq_loop * Gamma_H * g5 * adj(Dd_xf) * g5;
+
+  for (int ie_n=0; ie_n < 6 ; ie_n++){
+    int a_n = epsilon[ie_n][0]; //a
+    int b_n = epsilon[ie_n][1]; //b
+    int c_n = epsilon[ie_n][2]; //c
+    for (int ie_s=0; ie_s < 6 ; ie_s++){
+      int a_s = epsilon[ie_s][0]; //a'
+      int b_s = epsilon[ie_s][1]; //b'
+      int c_s = epsilon[ie_s][2]; //c'
+      for (int i=0; i<Nc; i++){
+      for (int alpha_s=0; alpha_s<Ns; alpha_s++){
+      for (int beta_n=0; beta_n<Ns; beta_n++){
+      for (int tau=0; tau<Ns; tau++){
+      for (int gamma_s=0; gamma_s<Ns; gamma_s++){
+      for (int gamma_n=0; gamma_n<Ns; gamma_n++){
+        result()(gamma_s,gamma_n)() -= static_cast<Complex>(epsilon_sgn[ie_n] * epsilon_sgn[ie_s]) * GDsG()(alpha_s,tau)(b_s,i) * DqGDd()(tau,beta_n)(i,b_n) * DuG()(alpha_s, beta_n)(a_s,a_n) * Du_spec()(gamma_s,gamma_n)(c_s,c_n);
+        result()(gamma_s,gamma_n)() += static_cast<Complex>(epsilon_sgn[ie_n] * epsilon_sgn[ie_s]) * GDsG()(alpha_s,tau)(b_s,i) * DqGDd()(tau,beta_n)(i,b_n) * DuG()(gamma_s, beta_n)(c_s,a_n) * Du_spec()(alpha_s,gamma_n)(a_s,c_n);
+      }}}}}}
+    }
+  }
+}
+
+template <class FImpl>
+template <class mobj, class mobj2, class robj>
+void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q2_NonEye_site(const mobj &Du_xi,
+						 const mobj &Du_xf,
+						 const mobj2 &Du_spec,
+						 const mobj &Dd_xf,
+						 const mobj &Ds_xi,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_sigma,
+		                 		 const Gamma GammaB_nucl,
+						 const int parity,
+						 robj &result)
+{
+
+  Gamma g5(Gamma::Algebra::Gamma5); 
+
+  auto DuG = Du_spec * GammaB_nucl;
+  auto adjDu = g5 * adj(Du_xf) * g5;
+  auto adjDuG = adjDu * GammaB_nucl;
+  // Gamma^B * Ds * \gamma_\mu^L
+  auto GDsG = GammaB_sigma * Ds_xi * Gamma_H;
+  // Du * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
+  auto DuGDd = Du_xi * Gamma_H * g5 * adj(Dd_xf) * g5;
+
+  for (int ie_n=0; ie_n < 6 ; ie_n++){
+    int a_n = epsilon[ie_n][0]; //a
+    int b_n = epsilon[ie_n][1]; //b
+    int c_n = epsilon[ie_n][2]; //c
+    for (int ie_s=0; ie_s < 6 ; ie_s++){
+      int a_s = epsilon[ie_s][0]; //a'
+      int b_s = epsilon[ie_s][1]; //b'
+      int c_s = epsilon[ie_s][2]; //c'
+      for (int i=0; i<Nc; i++){
+      for (int alpha_s=0; alpha_s<Ns; alpha_s++){
+      for (int beta_n=0; beta_n<Ns; beta_n++){
+      for (int tau=0; tau<Ns; tau++){
+      for (int gamma_s=0; gamma_s<Ns; gamma_s++){
+      for (int gamma_n=0; gamma_n<Ns; gamma_n++){
+        result()(gamma_s,gamma_n)() -= static_cast<Complex>(epsilon_sgn[ie_n] * epsilon_sgn[ie_s]) * GDsG()(alpha_s,tau)(b_s,i) * DuGDd()(alpha_s,beta_n)(a_s,b_n) * DuG()(gamma_s, beta_n)(c_s,a_n) * adjDu()(tau,gamma_n)(i,c_n);
+        result()(gamma_s,gamma_n)() -= static_cast<Complex>(epsilon_sgn[ie_n] * epsilon_sgn[ie_s]) * GDsG()(alpha_s,tau)(b_s,i) * DuGDd()(gamma_s,beta_n)(c_s,b_n) * adjDuG()(tau, beta_n)(i,a_n) * Du_spec()(alpha_s,gamma_n)(a_s,c_n);
+        result()(gamma_s,gamma_n)() += static_cast<Complex>(epsilon_sgn[ie_n] * epsilon_sgn[ie_s]) * GDsG()(alpha_s,tau)(b_s,i) * DuGDd()(alpha_s,beta_n)(a_s,b_n) * adjDuG()(tau, beta_n)(i,a_n) * Du_spec()(gamma_s,gamma_n)(c_s,c_n);
+        result()(gamma_s,gamma_n)() += static_cast<Complex>(epsilon_sgn[ie_n] * epsilon_sgn[ie_s]) * GDsG()(alpha_s,tau)(b_s,i) * DuGDd()(gamma_s,beta_n)(c_s,b_n) * DuG()(alpha_s, beta_n)(a_s,a_n) * adjDu()(tau,gamma_n)(i,c_n);
+      }}}}}}
+    }
+  }
+}
+
+
+template<class FImpl>
+template <class mobj>
+void BaryonUtils<FImpl>::Sigma_to_Nucleon(const PropagatorField &qq_xi,
+						 const PropagatorField &qq_xf,
+						 const mobj &Du_spec,
+						 const PropagatorField &qd_xf,
+						 const PropagatorField &qs_xi,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_sigma,
+		                 		 const Gamma GammaB_nucl,
+						 const int parity,
+						 const std::string op,
+						 SpinMatrixField &stn_corr)
+{
+  assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
+
+  GridBase *grid = qs_xi.Grid();
+
+  auto vcorr= stn_corr.View();
+  auto vq_xi = qq_xi.View();
+  auto vq_xf = qq_xf.View();
+  auto vd_xf = qd_xf.View();
+  auto vs_xi = qs_xi.View();
+
+ // accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+  thread_for(ss,grid->oSites(),{
+    auto Dq_xi = vq_xi[ss];
+    auto Dq_xf = vq_xf[ss];
+    auto Dd_xf = vd_xf[ss];
+    auto Ds_xi = vs_xi[ss];
+    sobj result=Zero();
+    if(op == "Q1_NonEye"){
+      Sigma_to_Nucleon_Q1_NonEye_site(Dq_xi,Dq_xf,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,parity,result);
+    } else if(op == "Q1_Eye"){
+      Sigma_to_Nucleon_Q1_Eye_site(Dq_xi,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,parity,result);
+    } else if(op == "Q2_NonEye"){
+      Sigma_to_Nucleon_Q2_NonEye_site(Dq_xi,Dq_xf,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,parity,result);
+    } else if(op == "Q2_Eye"){
+      Sigma_to_Nucleon_Q2_Eye_site(Dq_xi,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,parity,result);
+    } else {
+      assert(0 && "Weak Operator not correctly specified");
+    }
+      vcorr[ss] = result; 
+  }  );//end loop over lattice sites
+}
+
 NAMESPACE_END(Grid);
