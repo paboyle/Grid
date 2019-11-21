@@ -155,6 +155,35 @@ void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_M
   if(nscan==3 && HPEhypercube ) OptimalCommunicatorHypercube(processors,optimal_comm);
   else                          OptimalCommunicatorSharedMemory(processors,optimal_comm);
 }
+static inline int divides(int a,int b)
+{
+  return ( b == ( (b/a)*a ) );
+}
+void GlobalSharedMemory::GetShmDims(const Coordinate &WorldDims,Coordinate &ShmDims)
+{
+  ////////////////////////////////////////////////////////////////
+  // Powers of 2,3,5 only in prime decomposition for now
+  ////////////////////////////////////////////////////////////////
+  int ndimension = WorldDims.size();
+  ShmDims=Coordinate(ndimension,1);
+
+  std::vector<int> primes({2,3,5});
+
+  int dim = 0;
+  int AutoShmSize = 1;
+  while(AutoShmSize != WorldShmSize) {
+    for(int p=0;p<primes.size();p++) {
+      int prime=primes[p];
+      if ( divides(prime,WorldDims[dim]/ShmDims[dim])
+        && divides(prime,WorldShmSize/AutoShmSize)  ) {
+	AutoShmSize*=prime;
+	ShmDims[dim]*=prime;
+	break;
+      }
+    }
+    dim=(dim+1) %ndimension;
+  }
+}
 void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
 {
   ////////////////////////////////////////////////////////////////
@@ -221,17 +250,13 @@ void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processo
   // in a maximally symmetrical way
   ////////////////////////////////////////////////////////////////
   int ndimension              = processors.size();
-  std::vector<int> processor_coor(ndimension);
-  std::vector<int> WorldDims = processors.toVector();
-  std::vector<int> ShmDims  (ndimension,1);  std::vector<int> NodeDims (ndimension);
-  std::vector<int> ShmCoor  (ndimension);    std::vector<int> NodeCoor (ndimension);    std::vector<int> WorldCoor(ndimension);
-  std::vector<int> HyperCoor(ndimension);
-  int dim = 0;
-  for(int l2=0;l2<log2size;l2++){
-    while ( (WorldDims[dim] / ShmDims[dim]) <= 1 ) dim=(dim+1)%ndimension;
-    ShmDims[dim]*=2;
-    dim=(dim+1)%ndimension;
-    }
+  Coordinate processor_coor(ndimension);
+  Coordinate WorldDims = processors;
+  Coordinate ShmDims  (ndimension);  Coordinate NodeDims (ndimension);
+  Coordinate ShmCoor  (ndimension);    Coordinate NodeCoor (ndimension);    Coordinate WorldCoor(ndimension);
+  Coordinate HyperCoor(ndimension);
+
+  GetShmDims(WorldDims,ShmDims);
 
   ////////////////////////////////////////////////////////////////
   // Establish torus of processes and nodes with sub-blockings
@@ -282,26 +307,15 @@ void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processo
 void GlobalSharedMemory::OptimalCommunicatorSharedMemory(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
 {
   ////////////////////////////////////////////////////////////////
-  // Assert power of two shm_size.
-  ////////////////////////////////////////////////////////////////
-  int log2size = Log2Size(WorldShmSize,MAXLOG2RANKSPERNODE);
-  assert(log2size != -1);
-
-  ////////////////////////////////////////////////////////////////
   // Identify subblock of ranks on node spreading across dims
   // in a maximally symmetrical way
   ////////////////////////////////////////////////////////////////
   int ndimension              = processors.size();
   Coordinate processor_coor(ndimension);
-  Coordinate WorldDims = processors; Coordinate ShmDims(ndimension,1);  Coordinate NodeDims (ndimension);
+  Coordinate WorldDims = processors; Coordinate ShmDims(ndimension);  Coordinate NodeDims (ndimension);
   Coordinate ShmCoor(ndimension);    Coordinate NodeCoor(ndimension);   Coordinate WorldCoor(ndimension);
-  int dim = 0;
-  for(int l2=0;l2<log2size;l2++){
-    while ( (WorldDims[dim] / ShmDims[dim]) <= 1 ) dim=(dim+1)%ndimension;
-    ShmDims[dim]*=2;
-    dim=(dim+1)%ndimension;
-  }
 
+  GetShmDims(WorldDims,ShmDims);
   ////////////////////////////////////////////////////////////////
   // Establish torus of processes and nodes with sub-blockings
   ////////////////////////////////////////////////////////////////
@@ -418,7 +432,14 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   // e.g. DGX1, supermicro board, 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
   //  cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, device1, device2);
-  cudaSetDevice(WorldShmRank);
+
+#ifdef GRID_IBM_SUMMIT
+  // IBM Jsrun makes cuda Device numbering screwy and not match rank
+    std::cout << "IBM Summit or similar - NOT setting device to WorldShmRank"<<std::endl;
+#else
+    std::cout << "setting device to WorldShmRank"<<std::endl;
+    cudaSetDevice(WorldShmRank);
+#endif
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Each MPI rank should allocate our own buffer
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -445,7 +466,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     // If it is me, pass around the IPC access key
     //////////////////////////////////////////////////
     cudaIpcMemHandle_t handle;
-
+    
     if ( r==WorldShmRank ) { 
       err = cudaIpcGetMemHandle(&handle,ShmCommBuf);
       if ( err !=  cudaSuccess) {
@@ -713,6 +734,24 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
 
   std::vector<int> ranks(size);   for(int r=0;r<size;r++) ranks[r]=r;
   MPI_Group_translate_ranks (FullGroup,size,&ranks[0],ShmGroup, &ShmRanks[0]); 
+
+#ifdef GRID_IBM_SUMMIT
+  // Hide the shared memory path between sockets 
+  // if even number of nodes
+  if ( (ShmSize & 0x1)==0 ) {
+    int SocketSize = ShmSize/2;
+    int mySocket = ShmRank/SocketSize; 
+    for(int r=0;r<size;r++){
+      int hisRank=ShmRanks[r];
+      if ( hisRank!= MPI_UNDEFINED ) {
+	int hisSocket=hisRank/SocketSize;
+	if ( hisSocket != mySocket ) {
+	  ShmRanks[r] = MPI_UNDEFINED;
+	}
+      }
+    }
+  }
+#endif
 
   SharedMemoryTest();
 }

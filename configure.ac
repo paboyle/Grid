@@ -67,7 +67,6 @@ AC_CHECK_HEADERS(malloc/malloc.h)
 AC_CHECK_HEADERS(malloc.h)
 AC_CHECK_HEADERS(endian.h)
 AC_CHECK_HEADERS(execinfo.h)
-AC_CHECK_HEADERS(numaif.h)
 AC_CHECK_DECLS([ntohll],[], [], [[#include <arpa/inet.h>]])
 AC_CHECK_DECLS([be64toh],[], [], [[#include <arpa/inet.h>]])
 
@@ -136,6 +135,18 @@ case ${ac_SFW_FP16} in
       AC_MSG_ERROR(["SFW FP16 option not supported ${ac_SFW_FP16}"]);;
 esac
 
+############### SUMMIT JSRUN
+AC_ARG_ENABLE([summit],
+    [AC_HELP_STRING([--enable-summit=yes|no], [enable IBMs jsrun resource manager for SUMMIT])],
+    [ac_JSRUN=${enable_summit}], [ac_SUMMIT=no])
+case ${ac_SUMMIT} in
+    no);;
+    yes)
+      AC_DEFINE([GRID_IBM_SUMMIT],[1],[Let JSRUN manage the GPU device allocation]);;
+    *)
+      AC_DEFINE([GRID_IBM_SUMMIT],[1],[Let JSRUN manage the GPU device allocation]);;
+esac
+
 ############### Intel libraries
 AC_ARG_ENABLE([mkl],
     [AC_HELP_STRING([--enable-mkl=yes|no|prefix], [enable Intel MKL for LAPACK & FFTW])],
@@ -173,19 +184,6 @@ AC_ARG_WITH([hdf5],
     [AM_CXXFLAGS="-I$with_hdf5/include $AM_CXXFLAGS"]
     [AM_LDFLAGS="-L$with_hdf5/lib $AM_LDFLAGS"])
 
-############### first-touch
-AC_ARG_ENABLE([numa],
-    [AC_HELP_STRING([--enable-numa=yes|no|prefix], [enable first touch numa opt])],
-    [ac_NUMA=${enable_NUMA}],[ac_NUMA=no])
-
-case ${ac_NUMA} in
-    no)
-        ;;
-    yes)
-        AC_DEFINE([GRID_NUMA],[1],[First touch numa locality]);;
-    *)
-        AC_DEFINE([GRID_NUMA],[1],[First touch numa locality]);;
-esac
 
 ############### Checks for library functions
 CXXFLAGS_CPY=$CXXFLAGS
@@ -241,10 +239,6 @@ AC_SEARCH_LIBS([crc32], [z],
                [have_zlib=true] [LIBS="${LIBS} -lz"],
 	       [AC_MSG_ERROR(zlib library was not found in your system.)])
 
-AC_SEARCH_LIBS([move_pages], [numa],
-               [AC_DEFINE([HAVE_LIBNUMA], [1], [Define to 1 if you have the `LIBNUMA' library])]
-               [have_libnuma=true] [LIBS="${LIBS} -lnuma"],
-	       [AC_MSG_WARN(libnuma library was not found in your system. Some optimisations will not apply)])
 
 AC_SEARCH_LIBS([H5Fopen], [hdf5_cpp],
                [AC_DEFINE([HAVE_HDF5], [1], [Define to 1 if you have the `HDF5' library])]
@@ -261,9 +255,9 @@ AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=code],
 
 AC_ARG_ENABLE([gen-simd-width],
             [AS_HELP_STRING([--enable-gen-simd-width=size],
-            [size (in bytes) of the generic SIMD vectors (default: 32)])],
+            [size (in bytes) of the generic SIMD vectors (default: 64)])],
             [ac_gen_simd_width=$enable_gen_simd_width],
-            [ac_gen_simd_width=32])
+            [ac_gen_simd_width=64])
 
 AC_ARG_ENABLE([gen-scalar],
             [AS_HELP_STRING([--enable-gen-scalar=yes|no],
