@@ -199,7 +199,7 @@ void TMeson<FImpl1, FImpl2>::execute(void)
             Gamma gSnk(gammaList[i].first);
             Gamma gSrc(gammaList[i].second);
             
-            for (unsigned int t = 0; t < buf.size(); ++t)
+            for (unsigned int t = 0; t < nt; ++t)
             {
                 result[i].corr[t] = TensorRemove(trace(mesonConnected(q1[t], q2[t], gSnk, gSrc)));
             }
