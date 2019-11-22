@@ -1233,7 +1233,7 @@ public:
   };
   
   void Report(void) {
-#define AVERAGE(A) _grid->GlobalSum(A);A/=NP;
+#define AVERAGE(A) 
 #define PRINTIT(A) AVERAGE(A); std::cout << GridLogMessage << " Stencil " << #A << " "<< A/calls<<std::endl;
     RealD NP = _grid->_Nprocessors;
     RealD NN = _grid->NodeCount();
@@ -1281,11 +1281,13 @@ public:
 	std::cout << GridLogMessage << " Stencil SHM mem " << (membytes)/gatheralltime/1000. << " GB/s per rank"<<std::endl;
 	std::cout << GridLogMessage << " Stencil SHM mem " << (membytes)/gatheralltime/1000.*NP/NN << " GB/s per node"<<std::endl;
       }
+      /*
       PRINTIT(mpi3synctime);
       PRINTIT(mpi3synctime_g);
       PRINTIT(shmmergetime);
       PRINTIT(splicetime);
       PRINTIT(nosplicetime);
+      */
     }
 #undef PRINTIT
 #undef AVERAGE
