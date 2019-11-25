@@ -70,6 +70,7 @@
 #include <Hadrons/Modules/MSolver/MixedPrecisionRBPrecCG.hpp>
 #include <Hadrons/Modules/MFermion/FreeProp.hpp>
 #include <Hadrons/Modules/MFermion/GaugeProp.hpp>
+#include <Hadrons/Modules/MFermion/GaugeSpectProp.hpp>
 #include <Hadrons/Modules/MFermion/EMLepton.hpp>
 #include <Hadrons/Modules/MSink/Smear.hpp>
 #include <Hadrons/Modules/MSink/Point.hpp>

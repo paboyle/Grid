@@ -1503,7 +1503,6 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
             assert(0);
         }
         thread_for(r, rd,{
-        //parallel_for(int r=0;r<rd;r++){
             
             int so=r*grid->_ostride[orthogdim]; // base offset for start of plane
             
@@ -1511,7 +1510,8 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
                 for(int b=0;b<e2;b++){
                     
                     int ss= so+n*stride+b;
-                    
+                    std::cout<< "ss= " << ss << std::endl;
+                    if(ss)break;
                     for(int i=0;i<Lblock;i++){
                         
                         //auto left = conjugate(lhs_wi[i]._odata[ss]);
@@ -1584,8 +1584,7 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
         int pd = grid->_processors[orthogdim];
         int pc = grid->_processor_coor[orthogdim];
         thread_for_collapse(2,lt,ld,{
-        //parallel_for_nest2(int lt=0;lt<ld;lt++)
-        //{
+            
             for(int pt=0;pt<pd;pt++){
                 int t = lt + pt*ld;
                 if (pt == pc){

@@ -315,6 +315,7 @@ void TStagGaugeProp<FImpl>::execute(void)
         solver(sol, source);
         LOG(Message) << "Export solution" << std::endl;
         FermToProp<FImpl>(prop, sol, c);
+        //std::cout<< "color " << c << " sol= " << sol << std::endl;
         // create 4D propagators from 5D one if necessary
         if (Ls_ > 1)
         {

@@ -68,6 +68,7 @@ modules_cc =\
   Modules/MSolver/A2AVectors.cc \
   Modules/MFermion/FreeProp.cc \
   Modules/MFermion/GaugeProp.cc \
+  Modules/MFermion/GaugeSpectProp.cc \
   Modules/MFermion/EMLepton.cc \
   Modules/MSink/Smear.cc \
   Modules/MSink/Point.cc
@@ -145,6 +146,7 @@ modules_hpp =\
   Modules/MSolver/MixedPrecisionRBPrecCG.hpp \
   Modules/MFermion/FreeProp.hpp \
   Modules/MFermion/GaugeProp.hpp \
+  Modules/MFermion/GaugeSpectProp.hpp \
   Modules/MFermion/EMLepton.hpp \
   Modules/MSink/Smear.hpp \
   Modules/MSink/Point.hpp

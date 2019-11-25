@@ -80,13 +80,13 @@ public:
     A2AVectorsSchurStaggered(FMat &action, Solver &solver);
     virtual ~A2AVectorsSchurStaggered(void) = default;
     void makeLowModeV(FermionField &vout,
-                      const FermionField &evec, const ComplexD eval, const int sign=0);
+                      const FermionField &evec, const std::complex<double> eval, const int sign=0);
     void makeLowModeV5D(FermionField &vout_4d, FermionField &vout_5d,
-                        const FermionField &evec, const ComplexD eval, const int sign=0);
+                        const FermionField &evec, const std::complex<double> eval, const int sign=0);
     void makeLowModeW(FermionField &wout,
-                      const FermionField &evec, const ComplexD eval, const int sign=0);
+                      const FermionField &evec, const std::complex<double> eval, const int sign=0);
     void makeLowModeW5D(FermionField &wout_4d, FermionField &wout_5d,
-                        const FermionField &evec, const ComplexD eval, const int sign=0);
+                        const FermionField &evec, const std::complex<double> eval, const int sign=0);
     void makeHighModeV(FermionField &vout, const FermionField &noise);
     void makeHighModeV5D(FermionField &vout_4d, FermionField &vout_5d,
                          const FermionField &noise_5d);
@@ -307,7 +307,7 @@ A2AVectorsSchurStaggered<FImpl>::A2AVectorsSchurStaggered(FMat &action, Solver &
 template <typename FImpl>
 void A2AVectorsSchurStaggered<FImpl>::makeLowModeV(FermionField &vout,
                                                    const FermionField &evec,
-                                                   const ComplexD eval,
+                                                   const std::complex<double> eval,
                                                    const int sign)
 {
     ComplexD eval_ = eval;
@@ -343,7 +343,7 @@ template <typename FImpl>
 void A2AVectorsSchurStaggered<FImpl>::makeLowModeV5D(FermionField &vout_4d,
                                                      FermionField &vout_5d,
                                                      const FermionField &evec,
-                                                     const ComplexD eval,
+                                                     const std::complex<double> eval,
                                                      const int sign)
 {
     makeLowModeV(vout_5d, evec, eval, sign);
@@ -353,7 +353,7 @@ void A2AVectorsSchurStaggered<FImpl>::makeLowModeV5D(FermionField &vout_4d,
 template <typename FImpl>
 void A2AVectorsSchurStaggered<FImpl>::makeLowModeW(FermionField &wout,
                                                    const FermionField &evec,
-                                                   const ComplexD eval,
+                                                   const std::complex<double> eval,
                                                    const int sign)
 {
     src_o_ = evec;
@@ -385,7 +385,7 @@ template <typename FImpl>
 void A2AVectorsSchurStaggered<FImpl>::makeLowModeW5D(FermionField &wout_4d,
                                                      FermionField &wout_5d,
                                                      const FermionField &evec,
-                                                     const ComplexD eval,
+                                                     const std::complex<double> eval,
                                                      const int sign)
 {
     makeLowModeW(tmp5_, evec, eval, sign);
