@@ -131,7 +131,18 @@ public:
 						 robj &result);
   public:
   template <class mobj>
-  static void Sigma_to_Nucleon(const PropagatorField &qq_xi,
+  static void Sigma_to_Nucleon_Eye(const PropagatorField &qq_loop,
+				 const mobj &Du_spec,
+				 const PropagatorField &qd_xf,
+				 const PropagatorField &qs_xi,
+				 const Gamma Gamma_H,
+				 const Gamma GammaB_sigma,
+				 const Gamma GammaB_nucl,
+				 const int parity,
+		                 const std::string op,
+				 SpinMatrixField &stn_corr);
+  template <class mobj>
+  static void Sigma_to_Nucleon_NonEye(const PropagatorField &qq_xi,
 				 const PropagatorField &qq_xf,
 				 const mobj &Du_spec,
 				 const PropagatorField &qd_xf,
@@ -505,10 +516,48 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q2_NonEye_site(const mobj &Du_xi,
   }
 }
 
+template<class FImpl>
+template <class mobj>
+void BaryonUtils<FImpl>::Sigma_to_Nucleon_Eye(const PropagatorField &qq_loop,
+						 const mobj &Du_spec,
+						 const PropagatorField &qd_xf,
+						 const PropagatorField &qs_xi,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_sigma,
+		                 		 const Gamma GammaB_nucl,
+						 const int parity,
+						 const std::string op,
+						 SpinMatrixField &stn_corr)
+{
+  assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
+
+  GridBase *grid = qs_xi.Grid();
+
+  auto vcorr= stn_corr.View();
+  auto vq_loop = qq_loop.View();
+  auto vd_xf = qd_xf.View();
+  auto vs_xi = qs_xi.View();
+
+ // accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+  thread_for(ss,grid->oSites(),{
+    auto Dq_loop = vq_loop[ss];
+    auto Dd_xf = vd_xf[ss];
+    auto Ds_xi = vs_xi[ss];
+    sobj result=Zero();
+    if(op == "Q1"){
+      Sigma_to_Nucleon_Q1_Eye_site(Dq_loop,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,parity,result);
+    } else if(op == "Q2"){
+      Sigma_to_Nucleon_Q2_Eye_site(Dq_loop,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,parity,result);
+    } else {
+      assert(0 && "Weak Operator not correctly specified");
+    }
+      vcorr[ss] = result; 
+  }  );//end loop over lattice sites
+}
 
 template<class FImpl>
 template <class mobj>
-void BaryonUtils<FImpl>::Sigma_to_Nucleon(const PropagatorField &qq_xi,
+void BaryonUtils<FImpl>::Sigma_to_Nucleon_NonEye(const PropagatorField &qq_xi,
 						 const PropagatorField &qq_xf,
 						 const mobj &Du_spec,
 						 const PropagatorField &qd_xf,
@@ -537,14 +586,10 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon(const PropagatorField &qq_xi,
     auto Dd_xf = vd_xf[ss];
     auto Ds_xi = vs_xi[ss];
     sobj result=Zero();
-    if(op == "Q1_NonEye"){
+    if(op == "Q1"){
       Sigma_to_Nucleon_Q1_NonEye_site(Dq_xi,Dq_xf,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,parity,result);
-    } else if(op == "Q1_Eye"){
-      Sigma_to_Nucleon_Q1_Eye_site(Dq_xi,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,parity,result);
-    } else if(op == "Q2_NonEye"){
+    } else if(op == "Q2"){
       Sigma_to_Nucleon_Q2_NonEye_site(Dq_xi,Dq_xf,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,parity,result);
-    } else if(op == "Q2_Eye"){
-      Sigma_to_Nucleon_Q2_Eye_site(Dq_xi,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,parity,result);
     } else {
       assert(0 && "Weak Operator not correctly specified");
     }
