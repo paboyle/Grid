@@ -205,7 +205,7 @@ public:
 
     RealD scale;
 
-    ConjugateGradient<FineField> CG(1.0e-2,10000);
+    ConjugateGradient<FineField> CG(1.0e-2,100,false);
     FineField noise(FineGrid);
     FineField Mn(FineGrid);
 
