@@ -64,6 +64,12 @@ BEGIN_HADRONS_NAMESPACE
  * analogously to the rare-kaon naming, the left diagram is named 'one-trace' and
  * the diagram on the right 'two-trace'
  * 
+ * Propagators:
+ *  * qu_xi,   source at xi 
+ *  * qu_xf,   source at xf
+ *  * qu_spec, source at xi
+ *  * qd_xf,   source at xf 
+ *  * qs_xi,   source at xi
  */
 BEGIN_MODULE_NAMESPACE(MContraction)
 
@@ -76,7 +82,7 @@ public:
                                     std::string, qu_spec,
                                     std::string, qd_xf,
                                     std::string, qs_xi,
-                                    unsigned int,   tOut,
+                                    unsigned int,   xf,
                                     std::string, parity,
                                     std::string, sink,
                                     std::string, output);
@@ -186,7 +192,7 @@ void TSigmaToNucleonNonEye<FImpl1, FImpl2, FImpl3, FImpl4>::execute(void)
     auto &qu_spec    = envGet(SlicedPropagator2, par().qu_spec);
     auto &qd_xf      = envGet(PropagatorField3, par().qd_xf);
     auto &qs_xi      = envGet(PropagatorField4, par().qs_xi);
-    auto qut         = qu_spec[par().tOut];
+    auto qut         = qu_spec[par().xf];
     for (auto &G: Gamma::gall)
     {
       r.info.gamma_H = G.g;
