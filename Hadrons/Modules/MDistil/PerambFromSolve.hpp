@@ -54,7 +54,7 @@ class PerambFromSolvePar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(PerambFromSolvePar,
-                                    std::string, eigenPack,
+                                    std::string, lapevec,
                                     std::string, PerambFileName,
                                     std::string, solve,
                                     int, nvec_reduced,
@@ -95,7 +95,7 @@ TPerambFromSolve<FImpl>::TPerambFromSolve(const std::string name) : Module<Peram
 template <typename FImpl>
 std::vector<std::string> TPerambFromSolve<FImpl>::getInput(void)
 {
-    return {par().solve, par().eigenPack, par().DistilParams};
+    return {par().solve, par().lapevec, par().DistilParams};
 }
 
 template <typename FImpl>
@@ -137,7 +137,7 @@ void TPerambFromSolve<FImpl>::execute(void)
     const int LI_reduced{  par().LI_reduced};
     auto &perambulator  = envGet(PerambTensor, getName());
     auto &solve         = envGet(std::vector<FermionField>, par().solve);
-    auto &epack         = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().eigenPack);
+    auto &epack         = envGet(Grid::Hadrons::EigenPack<LatticeColourVector>, par().lapevec);
     
     envGetTmp(LatticeColourVector, result4d_nospin);
     envGetTmp(LatticeColourVector, result3d_nospin);

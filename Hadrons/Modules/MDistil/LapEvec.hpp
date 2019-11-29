@@ -85,7 +85,8 @@ struct LapEvecPar: Serializable {
                                     ,std::string,         gauge
                                     ,StoutParameters,     Stout
                                     ,ChebyshevParameters, Cheby
-                                    ,LanczosParameters,   Lanczos)
+                                    ,LanczosParameters,   Lanczos
+                                    ,std::string,         FileName)
 };
 
 /******************************************************************************
@@ -309,15 +310,22 @@ void TLapEvec<GImpl>::execute(void)
     {
         HADRONS_ERROR(Program,"The eingensolver failed to find enough eigenvectors on at least one node");
     }
-#if DEBUG
     // Now write out the 4d eigenvectors
-    eig4d.record.operatorXml = "<OPERATOR>Distillation</OPERATOR>";
-    eig4d.record.solverXml = "<SOLVER>CG</SOLVER>";
-    std::string sEigenPackName(getName());
-    sEigenPackName.append(".");
-    sEigenPackName.append(std::to_string(vm().getTrajectory()));
-    eig4d.write(sEigenPackName,false);
-#endif
+    std::string sEigenPackName(par().FileName);
+    if( !sEigenPackName.empty() )
+    {
+        eig4d.record.solverXml = parString();
+        ModuleBase * b{vm().getModule(par().gauge)};
+        std::string sOperatorXml{ "<module><id><type>" };
+        sOperatorXml.append( b->getRegisteredName() );
+        sOperatorXml.append( "</type></id><options>" );
+        sOperatorXml.append( b->parString() );
+        sOperatorXml.append( "</options></module>" );
+        eig4d.record.operatorXml = sOperatorXml;
+        sEigenPackName.append(".");
+        sEigenPackName.append(std::to_string(vm().getTrajectory()));
+        eig4d.write(sEigenPackName,false);
+    }
 }
 
 END_MODULE_NAMESPACE
