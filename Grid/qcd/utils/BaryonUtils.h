@@ -42,8 +42,8 @@ public:
   typedef typename FImpl::SitePropagator pobj;
   typedef typename ComplexField::vector_object vobj;
   
-  static constexpr int epsilon[6][3] = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
-  static constexpr Complex epsilon_sgn[6]= {1,1,1,-1,-1,-1};
+  static const int epsilon[6][3] ;
+  static const Complex epsilon_sgn[6];
 
   private: 
   template <class mobj, class robj>
@@ -83,10 +83,15 @@ public:
 				 robj &result);
 };
 
-template <class FImpl>
-constexpr int BaryonUtils<FImpl>::epsilon[6][3];
-template <class FImpl>
-constexpr Complex BaryonUtils<FImpl>::epsilon_sgn[6];
+template <class FImpl> 
+const int BaryonUtils<FImpl>::epsilon[6][3] = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
+template <class FImpl> 
+const Complex BaryonUtils<FImpl>::epsilon_sgn[6] = {Complex(1),
+						    Complex(1),
+						    Complex(1),
+						    Complex(-1),
+						    Complex(-1),
+						    Complex(-1)};
 
 template <class FImpl>
 template <class mobj, class robj>

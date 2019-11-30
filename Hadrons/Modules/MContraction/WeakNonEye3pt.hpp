@@ -144,7 +144,7 @@ void TWeakNonEye3pt<FImpl>::execute(void)
 {
     LOG(Message) << "Computing mesonic weak 3pt contractions, non-eye topologies" << std::endl;
     LOG(Message) << "gIn : " << par().gammaIn << std::endl;
-    LOG(Message) << "gOut: " << par().gammaIn << std::endl;
+    LOG(Message) << "gOut: " << par().gammaOut << std::endl;
     LOG(Message) << "ql  : " << par().qLeft << std::endl;
     LOG(Message) << "qbl : " << par().qBarLeft << std::endl;
     LOG(Message) << "qr  : " << par().qRight << std::endl;

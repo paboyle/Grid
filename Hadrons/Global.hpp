@@ -272,7 +272,7 @@ struct Correlator: Serializable
 {
     GRID_SERIALIZABLE_CLASS_MEMBERS(ARG(Correlator<Metadata, Scalar>),
                                     Metadata,             info,
-                                    std::vector<Complex>, corr);
+                                    std::vector<Scalar>, corr);
 };
 
 END_HADRONS_NAMESPACE
