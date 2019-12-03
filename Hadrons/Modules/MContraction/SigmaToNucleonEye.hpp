@@ -90,7 +90,7 @@ public:
     FERM_TYPE_ALIASES(FImpl1, 1);
     FERM_TYPE_ALIASES(FImpl2, 2);
     FERM_TYPE_ALIASES(FImpl3, 3);
-    FERM_TYPE_ALIASES(FImpl3, 4);
+    FERM_TYPE_ALIASES(FImpl4, 4);
     BASIC_TYPE_ALIASES(ScalarImplCR, Scalar);
     SINK_TYPE_ALIASES(Scalar);
     typedef typename SpinMatrixField1::vector_object::scalar_object SpinMatrix;
