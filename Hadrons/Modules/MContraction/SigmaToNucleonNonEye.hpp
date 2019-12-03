@@ -44,8 +44,8 @@ BEGIN_HADRONS_NAMESPACE
  * Sigma-to-Nucleon 3-pt diagrams, non-eye topologies.
  * 
  * Schematic:     
- *           qs_xi         qd_xf           |            qs_xi          qd_xf
- *          /--<--¬       /--<--¬          |          /--<--¬         /--<--¬       
+ *           qs_xi         qu_xf           |            qs_xi          qd_xf
+ *          /-->--¬       /-->--¬          |          /-->--¬         /-->--¬       
  *         /       \     /       \         |         /       \       /       \      
  *        /         \   /         \        |        /         \     /         \     
  *       /           \ /           \       |       /           \   /           \    
@@ -55,7 +55,7 @@ BEGIN_HADRONS_NAMESPACE
  *     |  \         /   \         / |      |      |  \       /       \       /  |
  *     |   \       /     \       /  |      |      |   \-->--/         \-->--/   |   
  *      \   \-->--/       \-->--/  /       |       \   qu_xi           qu_xf   /
- *       \    qu_xf         qu_xf /        |        \                         /
+ *       \    qu_xi         qd_xf /        |        \                         /
  *        \                      /         |         \                       /
  *         \--------->----------/          |          \--------->-----------/
  *                 qu_spec                 |                  qu_spec
