@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
     EyePar.qu_spec = "Qpt_u_spec";
     EyePar.qd_xf   = "Qpt_l_4";
     EyePar.qs_xi   = "Qpt_s_0";
-    EyePar.tOut    = 0;
+    EyePar.xf    = 4;
     EyePar.sink    = "sink";
     application.createModule<MContraction::SigmaToNucleonEye>("SigmaToNucleonEye_u", EyePar);
     EyePar.output  = "SigmaToNucleon/Eye_c";
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
     NonEyePar.qu_spec = "Qpt_u_spec";
     NonEyePar.qd_xf   = "Qpt_l_4";
     NonEyePar.qs_xi   = "Qpt_s_0";
-    NonEyePar.tOut    = 0;
+    NonEyePar.xf    = 4;
     NonEyePar.sink    = "sink";
     application.createModule<MContraction::SigmaToNucleonNonEye>("SigmaToNucleonNonEye", NonEyePar);
 

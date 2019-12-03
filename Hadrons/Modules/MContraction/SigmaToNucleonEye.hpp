@@ -78,7 +78,6 @@ public:
                                     std::string, qd_xf,
                                     std::string, qs_xi,
                                     unsigned int,   xf,
-                                    std::string, parity,
                                     std::string, sink,
                                     std::string, output);
 };
@@ -103,8 +102,7 @@ public:
                                         Gamma::Algebra, gammaB_sigma,
                                         Gamma::Algebra, gammaA_nucl,
                                         Gamma::Algebra, gammaB_nucl,
-                                        int, trace,
-                                        int, parity);
+                                        int, trace);
     };
     typedef Correlator<Metadata, SpinMatrix> Result;
 public:
@@ -163,20 +161,18 @@ void TSigmaToNucleonEye<FImpl1, FImpl2, FImpl3, FImpl4>::setup(void)
 template <typename FImpl1, typename FImpl2, typename FImpl3, typename FImpl4>
 void TSigmaToNucleonEye<FImpl1, FImpl2, FImpl3, FImpl4>::execute(void)
 {
-    const int  parity {par().parity.size()>0 ? std::stoi(par().parity) : 1};
     const Gamma GammaB(Gamma::Algebra::SigmaXZ); // C*gamma_5
     const Gamma Id(Gamma::Algebra::Identity); // C*gamma_5
 
     LOG(Message) << "Computing sigma-to-nucleon contractions '" << getName() << "'" << std::endl;
     LOG(Message) << "' with (Gamma^A,Gamma^B)_sigma = ( Identity, C*gamma_5 ) and (Gamma^A,Gamma^B)_nucl = ( Identity, C*gamma_5 )" << std::endl; 
-    LOG(Message) << "and parity " << parity << " using sink " << par().sink << "." << std::endl;
+    LOG(Message) << " using sink " << par().sink << "." << std::endl;
         
     envGetTmp(SpinMatrixField1, c);
     std::vector<SpinMatrix> buf;
 
     std::vector<Result> result;
     Result              r;
-    r.info.parity       = parity;
     r.info.gammaA_sigma = Id.g;
     r.info.gammaB_sigma = GammaB.g;
     r.info.gammaA_nucl  = Id.g;
@@ -192,7 +188,7 @@ void TSigmaToNucleonEye<FImpl1, FImpl2, FImpl3, FImpl4>::execute(void)
       r.info.gamma_H = G.g;
       //Operator Q1, equivalent to the two-trace case in the rare-kaons module
       c=Zero();
-      BaryonUtils<FIMPL>::Sigma_to_Nucleon_Eye(qq_loop,qut,qd_xf,qs_xi,G,GammaB,GammaB,parity,"Q1",c);
+      BaryonUtils<FIMPL>::Sigma_to_Nucleon_Eye(qq_loop,qut,qd_xf,qs_xi,G,GammaB,GammaB,"Q1",c);
       sliceSum(c,buf,Tp);
       r.corr.clear();
       for (unsigned int t = 0; t < buf.size(); ++t)
@@ -203,7 +199,7 @@ void TSigmaToNucleonEye<FImpl1, FImpl2, FImpl3, FImpl4>::execute(void)
       result.push_back(r);
       //Operator Q2, equivalent to the one-trace case in the rare-kaons module
       c=Zero();
-      BaryonUtils<FIMPL>::Sigma_to_Nucleon_Eye(qq_loop,qut,qd_xf,qs_xi,G,GammaB,GammaB,parity,"Q2",c);
+      BaryonUtils<FIMPL>::Sigma_to_Nucleon_Eye(qq_loop,qut,qd_xf,qs_xi,G,GammaB,GammaB,"Q2",c);
       sliceSum(c,buf,Tp);
       r.corr.clear();
       for (unsigned int t = 0; t < buf.size(); ++t)

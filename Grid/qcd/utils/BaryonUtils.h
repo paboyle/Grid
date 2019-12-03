@@ -93,7 +93,6 @@ public:
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
-						 const int parity,
 						 robj &result);
   template <class mobj, class mobj2, class robj>
   static void Sigma_to_Nucleon_Q1_NonEye_site(const mobj &Du_xi,
@@ -104,7 +103,6 @@ public:
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
-						 const int parity,
 						 robj &result);
 
 
@@ -116,7 +114,6 @@ public:
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
-						 const int parity,
 						 robj &result);
   template <class mobj, class mobj2, class robj>
   static void Sigma_to_Nucleon_Q2_NonEye_site(const mobj &Du_xi,
@@ -127,7 +124,6 @@ public:
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
-						 const int parity,
 						 robj &result);
   public:
   template <class mobj>
@@ -138,7 +134,6 @@ public:
 				 const Gamma Gamma_H,
 				 const Gamma GammaB_sigma,
 				 const Gamma GammaB_nucl,
-				 const int parity,
 		                 const std::string op,
 				 SpinMatrixField &stn_corr);
   template <class mobj>
@@ -150,7 +145,6 @@ public:
 				 const Gamma Gamma_H,
 				 const Gamma GammaB_sigma,
 				 const Gamma GammaB_nucl,
-				 const int parity,
 		                 const std::string op,
 				 SpinMatrixField &stn_corr);
 };
@@ -341,7 +335,6 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_Eye_site(const mobj &Dq_loop,
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
-						 const int parity,
 						 robj &result)
 {
 
@@ -394,7 +387,6 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_NonEye_site(const mobj &Du_xi,
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
-						 const int parity,
 						 robj &result)
 {
 
@@ -449,7 +441,6 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q2_Eye_site(const mobj &Dq_loop,
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
-						 const int parity,
 						 robj &result)
 {
 
@@ -497,7 +488,6 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q2_NonEye_site(const mobj &Du_xi,
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
-						 const int parity,
 						 robj &result)
 {
 
@@ -551,12 +541,9 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Eye(const PropagatorField &qq_loop,
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
-						 const int parity,
 						 const std::string op,
 						 SpinMatrixField &stn_corr)
 {
-  assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
-
   GridBase *grid = qs_xi.Grid();
 
   auto vcorr= stn_corr.View();
@@ -571,9 +558,9 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Eye(const PropagatorField &qq_loop,
     auto Ds_xi = vs_xi[ss];
     sobj result=Zero();
     if(op == "Q1"){
-      Sigma_to_Nucleon_Q1_Eye_site(Dq_loop,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,parity,result);
+      Sigma_to_Nucleon_Q1_Eye_site(Dq_loop,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,result);
     } else if(op == "Q2"){
-      Sigma_to_Nucleon_Q2_Eye_site(Dq_loop,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,parity,result);
+      Sigma_to_Nucleon_Q2_Eye_site(Dq_loop,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,result);
     } else {
       assert(0 && "Weak Operator not correctly specified");
     }
@@ -591,12 +578,9 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_NonEye(const PropagatorField &qq_xi,
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
-						 const int parity,
 						 const std::string op,
 						 SpinMatrixField &stn_corr)
 {
-  assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
-
   GridBase *grid = qs_xi.Grid();
 
   auto vcorr= stn_corr.View();
@@ -613,9 +597,9 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_NonEye(const PropagatorField &qq_xi,
     auto Ds_xi = vs_xi[ss];
     sobj result=Zero();
     if(op == "Q1"){
-      Sigma_to_Nucleon_Q1_NonEye_site(Dq_xi,Dq_xf,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,parity,result);
+      Sigma_to_Nucleon_Q1_NonEye_site(Dq_xi,Dq_xf,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,result);
     } else if(op == "Q2"){
-      Sigma_to_Nucleon_Q2_NonEye_site(Dq_xi,Dq_xf,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,parity,result);
+      Sigma_to_Nucleon_Q2_NonEye_site(Dq_xi,Dq_xf,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,result);
     } else {
       assert(0 && "Weak Operator not correctly specified");
     }
