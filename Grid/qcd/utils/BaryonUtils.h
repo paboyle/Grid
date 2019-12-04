@@ -365,7 +365,7 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_Eye_site(const mobj &Dq_loop,
         for (int tau2=0; tau2<Ns; tau2++){
         for (int j=0; j<Nc; j++){
           auto DqG_tt_jj = DqG()(tau2,tau2)(j,j);
-          auto ee_GDGDDG = static_cast<Complex>(epsilon_sgn[ie_n] * epsilon_sgn[ie_s]) * GDsGDd_ab_bb * DqG_tt_jj;
+          auto ee_GDGDDG = epsilon_sgn[ie_n] * epsilon_sgn[ie_s] * GDsGDd_ab_bb * DqG_tt_jj;
           for (int gamma_s=0; gamma_s<Ns; gamma_s++){
           for (int gamma_n=0; gamma_n<Ns; gamma_n++){
             result()(gamma_s,gamma_n)() += ee_GDGDDG * DuG()(alpha_s, beta_n)(a_s,a_n) * Du_spec()(gamma_s,gamma_n)(c_s,c_n);
