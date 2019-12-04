@@ -136,15 +136,15 @@ case ${ac_SFW_FP16} in
 esac
 
 ############### SUMMIT JSRUN
-AC_ARG_ENABLE([jsrun],
-    [AC_HELP_STRING([--enable-jsrun=yes|no], [enable IBMs jsrun resource manager for SUMMIT])],
-    [ac_JSRUN=${enable_jsrun}], [ac_JSRUN=no])
-case ${ac_JSRUN} in
+AC_ARG_ENABLE([summit],
+    [AC_HELP_STRING([--enable-summit=yes|no], [enable IBMs jsrun resource manager for SUMMIT])],
+    [ac_JSRUN=${enable_summit}], [ac_SUMMIT=no])
+case ${ac_SUMMIT} in
+    no);;
     yes)
       AC_DEFINE([GRID_IBM_SUMMIT],[1],[Let JSRUN manage the GPU device allocation]);;
-    no);;
     *)
-      AC_MSG_ERROR(["JSRUN option not supported ${ac_JSRUN}"]);;
+      AC_DEFINE([GRID_IBM_SUMMIT],[1],[Let JSRUN manage the GPU device allocation]);;
 esac
 
 ############### Intel libraries
@@ -255,7 +255,7 @@ AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=code],
 
 AC_ARG_ENABLE([gen-simd-width],
             [AS_HELP_STRING([--enable-gen-simd-width=size],
-            [size (in bytes) of the generic SIMD vectors (default: 32)])],
+            [size (in bytes) of the generic SIMD vectors (default: 64)])],
             [ac_gen_simd_width=$enable_gen_simd_width],
             [ac_gen_simd_width=64])
 

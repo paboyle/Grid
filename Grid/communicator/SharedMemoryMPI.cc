@@ -162,11 +162,8 @@ static inline int divides(int a,int b)
 void GlobalSharedMemory::GetShmDims(const Coordinate &WorldDims,Coordinate &ShmDims)
 {
   ////////////////////////////////////////////////////////////////
-  // Assert power of two shm_size.
+  // Powers of 2,3,5 only in prime decomposition for now
   ////////////////////////////////////////////////////////////////
-  int log2size = Log2Size(WorldShmSize,MAXLOG2RANKSPERNODE);
-  assert(log2size != -1);
-
   int ndimension = WorldDims.size();
   ShmDims=Coordinate(ndimension,1);
 
@@ -177,7 +174,8 @@ void GlobalSharedMemory::GetShmDims(const Coordinate &WorldDims,Coordinate &ShmD
   while(AutoShmSize != WorldShmSize) {
     for(int p=0;p<primes.size();p++) {
       int prime=primes[p];
-      if ( divides(prime,WorldDims[dim]/ShmDims[dim]) ) {
+      if ( divides(prime,WorldDims[dim]/ShmDims[dim])
+        && divides(prime,WorldShmSize/AutoShmSize)  ) {
 	AutoShmSize*=prime;
 	ShmDims[dim]*=prime;
 	break;
@@ -308,7 +306,6 @@ void GlobalSharedMemory::OptimalCommunicatorHypercube(const Coordinate &processo
 }
 void GlobalSharedMemory::OptimalCommunicatorSharedMemory(const Coordinate &processors,Grid_MPI_Comm & optimal_comm)
 {
-
   ////////////////////////////////////////////////////////////////
   // Identify subblock of ranks on node spreading across dims
   // in a maximally symmetrical way
@@ -435,10 +432,13 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   // e.g. DGX1, supermicro board, 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
   //  cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, device1, device2);
+
 #ifdef GRID_IBM_SUMMIT
-  std::cout << header << "flag IBM_SUMMIT disabled CUDA set device: ensure jsrun is used correctly" <<std::endl;
+  // IBM Jsrun makes cuda Device numbering screwy and not match rank
+    std::cout << "IBM Summit or similar - NOT setting device to WorldShmRank"<<std::endl;
 #else
-  cudaSetDevice(WorldShmRank);
+    std::cout << "setting device to WorldShmRank"<<std::endl;
+    cudaSetDevice(WorldShmRank);
 #endif
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Each MPI rank should allocate our own buffer
@@ -466,7 +466,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     // If it is me, pass around the IPC access key
     //////////////////////////////////////////////////
     cudaIpcMemHandle_t handle;
-
+    
     if ( r==WorldShmRank ) { 
       err = cudaIpcGetMemHandle(&handle,ShmCommBuf);
       if ( err !=  cudaSuccess) {
@@ -734,6 +734,24 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
 
   std::vector<int> ranks(size);   for(int r=0;r<size;r++) ranks[r]=r;
   MPI_Group_translate_ranks (FullGroup,size,&ranks[0],ShmGroup, &ShmRanks[0]); 
+
+#ifdef GRID_IBM_SUMMIT
+  // Hide the shared memory path between sockets 
+  // if even number of nodes
+  if ( (ShmSize & 0x1)==0 ) {
+    int SocketSize = ShmSize/2;
+    int mySocket = ShmRank/SocketSize; 
+    for(int r=0;r<size;r++){
+      int hisRank=ShmRanks[r];
+      if ( hisRank!= MPI_UNDEFINED ) {
+	int hisSocket=hisRank/SocketSize;
+	if ( hisSocket != mySocket ) {
+	  ShmRanks[r] = MPI_UNDEFINED;
+	}
+      }
+    }
+  }
+#endif
 
   SharedMemoryTest();
 }

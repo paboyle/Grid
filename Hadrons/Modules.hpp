@@ -50,8 +50,10 @@
 #include <Hadrons/Modules/MIO/LoadBinary.hpp>
 #include <Hadrons/Modules/MIO/LoadNersc.hpp>
 #include <Hadrons/Modules/MIO/LoadEigenPack.hpp>
+#include <Hadrons/Modules/MIO/LoadDistilNoise.hpp>
 #include <Hadrons/Modules/MIO/LoadA2AMatrixDiskVector.hpp>
 #include <Hadrons/Modules/MIO/LoadCoarseEigenPack.hpp>
+#include <Hadrons/Modules/MIO/LoadPerambulator.hpp>
 #include <Hadrons/Modules/MIO/LoadA2AVectors.hpp>
 #include <Hadrons/Modules/MIO/LoadCosmHol.hpp>
 #include <Hadrons/Modules/MScalarSUN/TwoPointNPR.hpp>
@@ -65,6 +67,13 @@
 #include <Hadrons/Modules/MScalarSUN/StochFreeField.hpp>
 #include <Hadrons/Modules/MScalarSUN/Div.hpp>
 #include <Hadrons/Modules/MScalarSUN/TrKinetic.hpp>
+#include <Hadrons/Modules/MDistil/PerambFromSolve.hpp>
+#include <Hadrons/Modules/MDistil/Distil.hpp>
+#include <Hadrons/Modules/MDistil/DistilVectors.hpp>
+#include <Hadrons/Modules/MDistil/Noises.hpp>
+#include <Hadrons/Modules/MDistil/LapEvec.hpp>
+#include <Hadrons/Modules/MDistil/Perambulator.hpp>
+#include <Hadrons/Modules/MDistil/DistilPar.hpp>
 #include <Hadrons/Modules/MAction/ZMobiusDWF.hpp>
 #include <Hadrons/Modules/MAction/ScaledDWF.hpp>
 #include <Hadrons/Modules/MAction/WilsonClover.hpp>

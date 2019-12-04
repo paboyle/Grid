@@ -48,7 +48,9 @@ modules_cc =\
   Modules/MNoise/FullVolumeSpinColorDiagonal.cc \
   Modules/MIO/LoadA2AVectors.cc \
   Modules/MIO/LoadBinary.cc \
+  Modules/MIO/LoadPerambulator.cc \
   Modules/MIO/LoadA2AMatrixDiskVector.cc \
+  Modules/MIO/LoadDistilNoise.cc \
   Modules/MIO/LoadNersc.cc \
   Modules/MIO/LoadCoarseEigenPack.cc \
   Modules/MIO/LoadCosmHol.cc \
@@ -63,6 +65,12 @@ modules_cc =\
   Modules/MScalarSUN/TrKinetic.cc \
   Modules/MScalarSUN/StochFreeField.cc \
   Modules/MScalarSUN/TrMag.cc \
+  Modules/MDistil/PerambFromSolve.cc \
+  Modules/MDistil/DistilVectors.cc \
+  Modules/MDistil/DistilPar.cc \
+  Modules/MDistil/LapEvec.cc \
+  Modules/MDistil/Perambulator.cc \
+  Modules/MDistil/Noises.cc \
   Modules/MAction/MobiusDWF.cc \
   Modules/MAction/DWF.cc \
   Modules/MAction/ScaledDWF.cc \
@@ -126,8 +134,10 @@ modules_hpp =\
   Modules/MIO/LoadBinary.hpp \
   Modules/MIO/LoadNersc.hpp \
   Modules/MIO/LoadEigenPack.hpp \
+  Modules/MIO/LoadDistilNoise.hpp \
   Modules/MIO/LoadA2AMatrixDiskVector.hpp \
   Modules/MIO/LoadCoarseEigenPack.hpp \
+  Modules/MIO/LoadPerambulator.hpp \
   Modules/MIO/LoadA2AVectors.hpp \
   Modules/MIO/LoadCosmHol.hpp \
   Modules/MScalarSUN/TwoPointNPR.hpp \
@@ -141,6 +151,13 @@ modules_hpp =\
   Modules/MScalarSUN/StochFreeField.hpp \
   Modules/MScalarSUN/Div.hpp \
   Modules/MScalarSUN/TrKinetic.hpp \
+  Modules/MDistil/PerambFromSolve.hpp \
+  Modules/MDistil/Distil.hpp \
+  Modules/MDistil/DistilVectors.hpp \
+  Modules/MDistil/Noises.hpp \
+  Modules/MDistil/LapEvec.hpp \
+  Modules/MDistil/Perambulator.hpp \
+  Modules/MDistil/DistilPar.hpp \
   Modules/MAction/ZMobiusDWF.hpp \
   Modules/MAction/ScaledDWF.hpp \
   Modules/MAction/WilsonClover.hpp \
