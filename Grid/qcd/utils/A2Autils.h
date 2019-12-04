@@ -1452,17 +1452,17 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
     int MFlvol = ld*Lblock*Rblock*Nmom;
     
     Vector<Singlet_v > lvSum(MFrvol);
-    thread_for(r, MFrvol,{
-      lvSum[r] = Zero();
-    });
+    // thread_for(r, MFrvol,{
+    //   lvSum[r] = Zero();
+    // });
     //parallel_for (int r = 0; r < MFrvol; r++){
     //    lvSum[r] = zero;
     //}
     
     Vector<Singlet_s > lsSum(MFlvol);
-    thread_for(r, MFlvol,{
-      lsSum[r]=scalar_type(0.0);
-    });
+    // thread_for(r, MFlvol,{
+    //   lsSum[r]=scalar_type(0.0);
+    // });
     //parallel_for (int r = 0; r < MFlvol; r++){
     //    lsSum[r]=scalar_type(0.0);
     //}
@@ -1491,7 +1491,13 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
     Lattice<iScalar<vInteger> > lin_5(grid); lin_5=x+y+z+t;
 
     for (int mu = 0; mu < Ngamma; mu++) {
-        
+        // Re-initialize working variables before starting on a new gamma
+        thread_for(r, MFrvol,{
+          lvSum[r] = Zero();
+        });  
+        thread_for(r, MFlvol,{
+          lsSum[r]=scalar_type(0.0);
+        });
         ComplexField stagphase(grid);   stagphase=1.0;
         
         if ( gammas[mu] == Gamma::Algebra::Gamma5 ) stagphase = where( mod(lin_5,2)==(Integer)0, stagphase,-stagphase);
@@ -1510,8 +1516,6 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
                 for(int b=0;b<e2;b++){
                     
                     int ss= so+n*stride+b;
-                    std::cout<< "ss= " << ss << std::endl;
-                    if(ss)break;
                     for(int i=0;i<Lblock;i++){
                         
                         //auto left = conjugate(lhs_wi[i]._odata[ss]);
