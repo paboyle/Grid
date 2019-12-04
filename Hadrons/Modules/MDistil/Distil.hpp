@@ -90,7 +90,6 @@ inline void MakeLowerDimGrid( std::unique_ptr<GridCartesian> &up, GridCartesian 
 /*************************************************************************************
  Rotate eigenvectors into our phase convention
  First component of first eigenvector is real and positive
- TODO: Should this be in Distil.hpp?
  *************************************************************************************/
 
 inline void RotateEigen(std::vector<LatticeColourVector> & evec)
@@ -113,12 +112,9 @@ inline void RotateEigen(std::vector<LatticeColourVector> & evec)
             for( int k = 0 ; k < evec.size() ; k++ )
                 evec[k] *= phase;
             // Get rid of the rounding error in imaginary phase on the very first site
-            if(grid->IsBoss())
-            {
-                peekSite(cv0, evec[0], siteFirst);
-                cv0()()(0).imag(0); // this should be zero after the phase multiply - force it to be so
-                pokeLocalSite(cv0, evec[0], siteFirst);
-            }
+            peekSite(cv0, evec[0], siteFirst);
+            cv0()()(0).imag(0); // this should be zero after the phase multiply - force it to be so
+            pokeSite(cv0, evec[0], siteFirst);
         }
     }
 }
