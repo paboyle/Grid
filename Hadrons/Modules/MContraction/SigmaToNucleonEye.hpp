@@ -94,11 +94,11 @@ public:
     {
     public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Metadata,
-                                        Gamma::Algebra, gamma_H,
-                                        Gamma::Algebra, gammaA_sigma,
-                                        Gamma::Algebra, gammaB_sigma,
-                                        Gamma::Algebra, gammaA_nucl,
-                                        Gamma::Algebra, gammaB_nucl,
+                                        Gamma::Algebra, gammaH,
+                                        Gamma::Algebra, gammaASigma,
+                                        Gamma::Algebra, gammaBSigma,
+                                        Gamma::Algebra, gammaANucl,
+                                        Gamma::Algebra, gammaBNucl,
                                         int, trace);
     };
     typedef Correlator<Metadata, SpinMatrix> Result;
@@ -170,10 +170,10 @@ void TSigmaToNucleonEye<FImpl>::execute(void)
 
     std::vector<Result> result;
     Result              r;
-    r.info.gammaA_sigma = Id.g;
-    r.info.gammaB_sigma = GammaB.g;
-    r.info.gammaA_nucl  = Id.g;
-    r.info.gammaB_nucl  = GammaB.g;
+    r.info.gammaASigma = Id.g;
+    r.info.gammaBSigma = GammaB.g;
+    r.info.gammaANucl  = Id.g;
+    r.info.gammaBNucl  = GammaB.g;
 
     auto &qqLoop    = envGet(PropagatorField, par().qqLoop);
     auto &quSpec    = envGet(SlicedPropagator, par().quSpec);
@@ -182,7 +182,7 @@ void TSigmaToNucleonEye<FImpl>::execute(void)
     auto qut         = quSpec[par().tf];
     for (auto &G: Gamma::gall)
     {
-      r.info.gamma_H = G.g;
+      r.info.gammaH = G.g;
       //Operator Q1, equivalent to the two-trace case in the rare-kaons module
       c=Zero();
       BaryonUtils<FIMPL>::Sigma_to_Nucleon_Eye(qqLoop,qut,qdTf,qsTi,G,GammaB,GammaB,"Q1",c);
@@ -207,7 +207,7 @@ void TSigmaToNucleonEye<FImpl>::execute(void)
       result.push_back(r);
     }
 
-    saveResult(par().output, "StN_Eye", result);
+    saveResult(par().output, "stnEye", result);
 
 }
 

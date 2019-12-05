@@ -99,11 +99,11 @@ public:
     {
     public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Metadata,
-                                        Gamma::Algebra, gamma_H,
-                                        Gamma::Algebra, gammaA_sigma,
-                                        Gamma::Algebra, gammaB_sigma,
-                                        Gamma::Algebra, gammaA_nucl,
-                                        Gamma::Algebra, gammaB_nucl,
+                                        Gamma::Algebra, gammaH,
+                                        Gamma::Algebra, gammaASigma,
+                                        Gamma::Algebra, gammaBSigma,
+                                        Gamma::Algebra, gammaANucl,
+                                        Gamma::Algebra, gammaBNucl,
                                         int, trace);
     };
     typedef Correlator<Metadata, SpinMatrix> Result;
@@ -175,10 +175,10 @@ void TSigmaToNucleonNonEye<FImpl>::execute(void)
 
     std::vector<Result> result;
     Result              r;
-    r.info.gammaA_sigma = Id.g;
-    r.info.gammaB_sigma = GammaB.g;
-    r.info.gammaA_nucl  = Id.g;
-    r.info.gammaB_nucl  = GammaB.g;
+    r.info.gammaASigma = Id.g;
+    r.info.gammaBSigma = GammaB.g;
+    r.info.gammaANucl  = Id.g;
+    r.info.gammaBNucl  = GammaB.g;
 
     auto &quTi      = envGet(PropagatorField, par().quTi);
     auto &quTf      = envGet(PropagatorField, par().quTf);
@@ -213,7 +213,7 @@ void TSigmaToNucleonNonEye<FImpl>::execute(void)
       result.push_back(r);
     }
 
-    saveResult(par().output, "StN_NonEye", result);
+    saveResult(par().output, "stnNonEye", result);
 
 }
 
