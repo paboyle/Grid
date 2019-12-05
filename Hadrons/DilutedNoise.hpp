@@ -52,6 +52,7 @@ public:
     const std::vector<FermionField> & getNoise(void) const;
     const FermionField &              operator[](const unsigned int i) const;
     FermionField &                    operator[](const unsigned int i);
+    void                              normalise(Real norm);
     void                              resize(const unsigned int nNoise);
     unsigned int                      size(void) const;
     GridCartesian                     *getGrid(void) const;
@@ -93,6 +94,21 @@ private:
     unsigned int nSrc_;
 };
 
+template <typename FImpl>
+class SparseSpinColorDiagonalNoise: public DilutedNoise<FImpl>
+{
+public:
+    typedef typename FImpl::FermionField FermionField;
+public:
+    // constructor/destructor
+    SparseSpinColorDiagonalNoise(GridCartesian *g, unsigned int n_src, unsigned int n_sparse);
+    virtual ~SparseSpinColorDiagonalNoise(void) = default;
+    // generate noise
+    virtual void generateNoise(GridParallelRNG &rng);
+private:
+    unsigned int nSrc_;
+    unsigned int nSparse_;
+};
 
 /******************************************************************************
  *                    DilutedNoise template implementation                    *
@@ -136,6 +152,15 @@ typename DilutedNoise<FImpl>::FermionField &
 DilutedNoise<FImpl>::operator[](const unsigned int i)
 {
     return noise_[i];
+}
+
+template <typename FImpl>
+void DilutedNoise<FImpl>::normalise(Real norm)
+{
+    for(int i=0;i<noise_.size();i++)
+    {
+        noise_[i] = norm*noise_[i];
+    }
 }
 
 template <typename FImpl>
@@ -243,6 +268,87 @@ void FullVolumeSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng
             }
         }
     }
+}
+
+/******************************************************************************
+ *        SparseSpinColorDiagonalNoise template implementation           *
+ ******************************************************************************/
+template <typename FImpl>
+SparseSpinColorDiagonalNoise<FImpl>::
+SparseSpinColorDiagonalNoise(GridCartesian *g, unsigned int nSrc, unsigned int nSparse)
+: DilutedNoise<FImpl>(g, nSrc*Ns*FImpl::Dimension), nSrc_(nSrc), nSparse_(nSparse)
+{}
+
+template <typename FImpl>
+void SparseSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng)
+{
+    typedef decltype(peekColour((*this)[0], 0)) SpinField;
+
+    auto                       &noise = *this;
+    auto                       g      = this->getGrid();
+    auto                       nd     = g->GlobalDimensions().size();
+    auto                       nc     = FImpl::Dimension;
+    LatticeInteger             coor(g), coorTot(g); coorTot = 0.;
+    Complex                    shift(1., 1.);
+    LatticeComplex             eta(g), etaSparse(g);
+    SpinField                  etas(g);
+    unsigned int               i = 0;
+    unsigned int               j = 0;
+    unsigned int               nSrc_ec;
+    
+    if(nSrc_%nSparse_==0)
+    {
+         nSrc_ec = nSrc_/nSparse_;
+    }
+    else
+    {
+         nSrc_ec = (nSrc_ - nSrc_%nSparse_)/nSparse_;
+    }
+
+    for (unsigned int n = 0; n < nSrc_; ++n)
+    {
+        bernoulli(rng, eta);
+        eta = (2.*eta - shift)*(1./::sqrt(2.));
+
+        if(nSparse_ != 1)
+        { 
+        assert(g->GlobalDimensions()[1]%nSparse_ == 0);
+        // # 0 # 0
+        // 0 # 0 #
+        // # 0 # 0
+        // 0 # 0 #
+
+        coorTot = 0;
+
+            for(unsigned int d = 0; d < nd; ++d) 
+            {
+                LatticeCoordinate(coor, d);
+                coorTot = coorTot + coor;
+            }
+            coorTot = coorTot + j;
+            eta = where(mod(coorTot,nSparse_), 0.*eta, eta);
+            
+        }
+        
+        for (unsigned int s = 0; s < Ns; ++s)
+        {
+            etas = Zero();
+            pokeSpin(etas, eta, s);
+            for (unsigned int c = 0; c < nc; ++c)
+            {
+                noise[i] = Zero();
+                pokeColour(noise[i], etas, c);
+                
+                i++;
+                
+                /**/ 
+            
+            }
+        }
+        ((n+1)%nSrc_ec == 0) ? j++: 0;
+    }
+    Real norm = sqrt(1./nSrc_ec);
+    this->normalise(norm);
 }
 
 END_HADRONS_NAMESPACE
