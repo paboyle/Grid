@@ -84,6 +84,16 @@ GridParallelRNG * Environment::get4dRng(void)
     return rng4d_.get();
 }
 
+GridSerialRNG * Environment::getSerialRng(void)
+{
+    if (rngSerial_ == nullptr)
+    {
+        rngSerial_.reset(new GridSerialRNG());
+    }
+
+    return rngSerial_.get();
+}
+
 // general memory management ///////////////////////////////////////////////////
 void Environment::addObject(const std::string name, const int moduleAddress)
 {

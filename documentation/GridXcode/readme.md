@@ -119,13 +119,13 @@ Install [MacPorts][MacPorts] if you haven't done so already, and then install pa
 
 These are the `portname`s for mandatory Grid libraries:
 
-* git
+* git-flow-avh
 * gmp
 * mpfr
 
 and these are the `portname`s for optional Grid libraries:
 
-* fftw-3
+* fftw-3-single
 * hdf5
 * lapack
 * doxygen
@@ -369,7 +369,7 @@ Instead:
 
 3. From a terminal session, locate and run your executable using `mpirun` (*the mangled name of the project build products will not be exactly the same as this example*):
 
-    `$GridPre/openmpi-3.1.3/bin/mpirun -np 2 ~/Library/Developer/Xcode/DerivedData/HelloGrid-fiyyuveptaqelbbvllomcgjyvghr/Build/Products/Debug/HelloGrid --grid 4.4.4.8 --mpi 1.1.1.2`
+    `$GridPre/openmpi/bin/mpirun -np 2 ~/Library/Developer/Xcode/DerivedData/HelloGrid-fiyyuveptaqelbbvllomcgjyvghr/Build/Products/Debug/HelloGrid --grid 4.4.4.8 --mpi 1.1.1.2`
 
     The Xcode debugger will attach to the first process.
 

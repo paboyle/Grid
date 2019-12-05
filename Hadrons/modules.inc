@@ -30,9 +30,17 @@ modules_cc =\
   Modules/MIO/LoadBinary.cc \
   Modules/MIO/LoadCoarseEigenPack.cc \
   Modules/MIO/LoadCosmHol.cc \
+  Modules/MIO/LoadPerambulator.cc \
   Modules/MIO/LoadA2AVectors.cc \
   Modules/MIO/LoadNersc.cc \
   Modules/MIO/LoadA2AMatrixDiskVector.cc \
+  Modules/MIO/LoadDistilNoise.cc \
+  Modules/MDistil/PerambFromSolve.cc \
+  Modules/MDistil/Perambulator.cc \
+  Modules/MDistil/LapEvec.cc \
+  Modules/MDistil/DistilPar.cc \
+  Modules/MDistil/DistilVectors.cc \
+  Modules/MDistil/Noises.cc \
   Modules/MNoise/TimeDilutedSpinColorDiagonal.cc \
   Modules/MNoise/SparseSpinColorDiagonal.cc \
   Modules/MNoise/FullVolumeSpinColorDiagonal.cc \
@@ -104,10 +112,19 @@ modules_hpp =\
   Modules/MIO/LoadCosmHol.hpp \
   Modules/MIO/LoadEigenPack.hpp \
   Modules/MIO/LoadA2AMatrixDiskVector.hpp \
+  Modules/MIO/LoadPerambulator.hpp \
   Modules/MIO/LoadNersc.hpp \
   Modules/MIO/LoadCoarseEigenPack.hpp \
+  Modules/MIO/LoadDistilNoise.hpp \
   Modules/MIO/LoadBinary.hpp \
   Modules/MIO/LoadA2AVectors.hpp \
+  Modules/MDistil/PerambFromSolve.hpp \
+  Modules/MDistil/Perambulator.hpp \
+  Modules/MDistil/DistilPar.hpp \
+  Modules/MDistil/Noises.hpp \
+  Modules/MDistil/DistilVectors.hpp \
+  Modules/MDistil/Distil.hpp \
+  Modules/MDistil/LapEvec.hpp \
   Modules/MNoise/FullVolumeSpinColorDiagonal.hpp \
   Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp \
   Modules/MNoise/SparseSpinColorDiagonal.hpp \
