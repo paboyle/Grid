@@ -88,18 +88,18 @@ public:
   template <class mobj, class mobj2, class robj>
   static void Sigma_to_Nucleon_Q1_Eye_site(const mobj &Dq_loop,
 						 const mobj2 &Du_spec,
-						 const mobj &Dd_xf,
-						 const mobj &Ds_xi,
+						 const mobj &Dd_tf,
+						 const mobj &Ds_ti,
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
 						 robj &result);
   template <class mobj, class mobj2, class robj>
-  static void Sigma_to_Nucleon_Q1_NonEye_site(const mobj &Du_xi,
-						 const mobj &Du_xf,
+  static void Sigma_to_Nucleon_Q1_NonEye_site(const mobj &Du_ti,
+						 const mobj &Du_tf,
 						 const mobj2 &Du_spec,
-						 const mobj &Dd_xf,
-						 const mobj &Ds_xi,
+						 const mobj &Dd_tf,
+						 const mobj &Ds_ti,
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
@@ -109,18 +109,18 @@ public:
   template <class mobj, class mobj2, class robj>
   static void Sigma_to_Nucleon_Q2_Eye_site(const mobj &Dq_loop,
 						 const mobj2 &Du_spec,
-						 const mobj &Dd_xf,
-						 const mobj &Ds_xi,
+						 const mobj &Dd_tf,
+						 const mobj &Ds_ti,
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
 						 robj &result);
   template <class mobj, class mobj2, class robj>
-  static void Sigma_to_Nucleon_Q2_NonEye_site(const mobj &Du_xi,
-						 const mobj &Du_xf,
+  static void Sigma_to_Nucleon_Q2_NonEye_site(const mobj &Du_ti,
+						 const mobj &Du_tf,
 						 const mobj2 &Du_spec,
-						 const mobj &Dd_xf,
-						 const mobj &Ds_xi,
+						 const mobj &Dd_tf,
+						 const mobj &Ds_ti,
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
@@ -129,19 +129,19 @@ public:
   template <class mobj>
   static void Sigma_to_Nucleon_Eye(const PropagatorField &qq_loop,
 				 const mobj &Du_spec,
-				 const PropagatorField &qd_xf,
-				 const PropagatorField &qs_xi,
+				 const PropagatorField &qd_tf,
+				 const PropagatorField &qs_ti,
 				 const Gamma Gamma_H,
 				 const Gamma GammaB_sigma,
 				 const Gamma GammaB_nucl,
 		                 const std::string op,
 				 SpinMatrixField &stn_corr);
   template <class mobj>
-  static void Sigma_to_Nucleon_NonEye(const PropagatorField &qq_xi,
-				 const PropagatorField &qq_xf,
+  static void Sigma_to_Nucleon_NonEye(const PropagatorField &qq_ti,
+				 const PropagatorField &qq_tf,
 				 const mobj &Du_spec,
-				 const PropagatorField &qd_xf,
-				 const PropagatorField &qs_xi,
+				 const PropagatorField &qd_tf,
+				 const PropagatorField &qs_ti,
 				 const Gamma Gamma_H,
 				 const Gamma GammaB_sigma,
 				 const Gamma GammaB_nucl,
@@ -327,16 +327,16 @@ void BaryonUtils<FImpl>::ContractBaryons_Sliced(const mobj &D1,
  * The following code is for Sigma -> N rare hypeon decays             *
  **********************************************************************/
 
-/* Dq_loop is a quark line from x_H to x_H
- * Du_spec is a quark line from x_i to x_f
- * Dd_xf is a quark line from x_H to x_f
- * Ds_xi is a quark line from x_H to x_i */
+/* Dq_loop is a quark line from t_H to t_H
+ * Du_spec is a quark line from t_i to t_f
+ * Dd_tf is a quark line from t_H to t_f
+ * Ds_ti is a quark line from t_H to t_i */
 template <class FImpl>
 template <class mobj, class mobj2, class robj>
 void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_Eye_site(const mobj &Dq_loop,
 						 const mobj2 &Du_spec,
-						 const mobj &Dd_xf,
-						 const mobj &Ds_xi,
+						 const mobj &Dd_tf,
+						 const mobj &Ds_ti,
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
@@ -347,7 +347,7 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_Eye_site(const mobj &Dq_loop,
 
   auto DuG = Du_spec * GammaB_nucl;
   // Gamma^B * Ds * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
-  auto GDsGDd = GammaB_sigma * Ds_xi * Gamma_H * g5 * adj(Dd_xf) * g5;
+  auto GDsGDd = GammaB_sigma * Ds_ti * Gamma_H * g5 * adj(Dd_tf) * g5;
   // Dq_loop * \gamma_\mu^L
   auto DqG = Dq_loop * Gamma_H;
 
@@ -377,18 +377,18 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_Eye_site(const mobj &Dq_loop,
   }
 }
 
-/* Du_xi is a quark line from x_H to x_i
- * Du_xf is a quark line from x_H to x_f
- * Du_spec is a quark line from x_i to x_f
- * Dd_xf is a quark line from x_H to x_f
- * Ds_xi is a quark line from x_H to x_i */
+/* Du_ti is a quark line from t_H to t_i
+ * Du_tf is a quark line from t_H to t_f
+ * Du_spec is a quark line from t_i to t_f
+ * Dd_tf is a quark line from t_H to t_f
+ * Ds_ti is a quark line from t_H to t_i */
 template <class FImpl>
 template <class mobj, class mobj2, class robj>
-void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_NonEye_site(const mobj &Du_xi,
-						 const mobj &Du_xf,
+void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_NonEye_site(const mobj &Du_ti,
+						 const mobj &Du_tf,
 						 const mobj2 &Du_spec,
-						 const mobj &Dd_xf,
-						 const mobj &Ds_xi,
+						 const mobj &Dd_tf,
+						 const mobj &Ds_ti,
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
@@ -398,12 +398,12 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_NonEye_site(const mobj &Du_xi,
   Gamma g5(Gamma::Algebra::Gamma5); 
 
   auto DuG = Du_spec * GammaB_nucl;
-  auto adjDu = g5 * adj(Du_xf) * g5;
+  auto adjDu = g5 * adj(Du_tf) * g5;
   auto adjDuG = adjDu * GammaB_nucl;
   // Gamma^B * Ds * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
-  auto GDsGDd = GammaB_sigma * Ds_xi * Gamma_H * g5 * adj(Dd_xf) * g5;
+  auto GDsGDd = GammaB_sigma * Ds_ti * Gamma_H * g5 * adj(Dd_tf) * g5;
   // Dq_loop * \gamma_\mu^L
-  auto DuGH = Du_xi * Gamma_H;
+  auto DuGH = Du_ti * Gamma_H;
 
   for (int ie_n=0; ie_n < 6 ; ie_n++){
     int a_n = epsilon[ie_n][0]; //a
@@ -441,8 +441,8 @@ template <class FImpl>
 template <class mobj, class mobj2, class robj>
 void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q2_Eye_site(const mobj &Dq_loop,
 						 const mobj2 &Du_spec,
-						 const mobj &Dd_xf,
-						 const mobj &Ds_xi,
+						 const mobj &Dd_tf,
+						 const mobj &Ds_ti,
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
@@ -453,9 +453,9 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q2_Eye_site(const mobj &Dq_loop,
 
   auto DuG = Du_spec * GammaB_nucl;
   // Gamma^B * Ds * \gamma_\mu^L
-  auto GDsG = GammaB_sigma * Ds_xi * Gamma_H;
+  auto GDsG = GammaB_sigma * Ds_ti * Gamma_H;
   // Dq_loop * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
-  auto DqGDd = Dq_loop * Gamma_H * g5 * adj(Dd_xf) * g5;
+  auto DqGDd = Dq_loop * Gamma_H * g5 * adj(Dd_tf) * g5;
 
   for (int ie_n=0; ie_n < 6 ; ie_n++){
     int a_n = epsilon[ie_n][0]; //a
@@ -485,11 +485,11 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q2_Eye_site(const mobj &Dq_loop,
 
 template <class FImpl>
 template <class mobj, class mobj2, class robj>
-void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q2_NonEye_site(const mobj &Du_xi,
-						 const mobj &Du_xf,
+void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q2_NonEye_site(const mobj &Du_ti,
+						 const mobj &Du_tf,
 						 const mobj2 &Du_spec,
-						 const mobj &Dd_xf,
-						 const mobj &Ds_xi,
+						 const mobj &Dd_tf,
+						 const mobj &Ds_ti,
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
@@ -499,12 +499,12 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q2_NonEye_site(const mobj &Du_xi,
   Gamma g5(Gamma::Algebra::Gamma5); 
 
   auto DuG = Du_spec * GammaB_nucl;
-  auto adjDu = g5 * adj(Du_xf) * g5;
+  auto adjDu = g5 * adj(Du_tf) * g5;
   auto adjDuG = adjDu * GammaB_nucl;
   // Gamma^B * Ds * \gamma_\mu^L
-  auto GDsG = GammaB_sigma * Ds_xi * Gamma_H;
+  auto GDsG = GammaB_sigma * Ds_ti * Gamma_H;
   // Du * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
-  auto DuGDd = Du_xi * Gamma_H * g5 * adj(Dd_xf) * g5;
+  auto DuGDd = Du_ti * Gamma_H * g5 * adj(Dd_tf) * g5;
 
   for (int ie_n=0; ie_n < 6 ; ie_n++){
     int a_n = epsilon[ie_n][0]; //a
@@ -541,31 +541,31 @@ template<class FImpl>
 template <class mobj>
 void BaryonUtils<FImpl>::Sigma_to_Nucleon_Eye(const PropagatorField &qq_loop,
 						 const mobj &Du_spec,
-						 const PropagatorField &qd_xf,
-						 const PropagatorField &qs_xi,
+						 const PropagatorField &qd_tf,
+						 const PropagatorField &qs_ti,
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
 						 const std::string op,
 						 SpinMatrixField &stn_corr)
 {
-  GridBase *grid = qs_xi.Grid();
+  GridBase *grid = qs_ti.Grid();
 
   auto vcorr= stn_corr.View();
   auto vq_loop = qq_loop.View();
-  auto vd_xf = qd_xf.View();
-  auto vs_xi = qs_xi.View();
+  auto vd_tf = qd_tf.View();
+  auto vs_ti = qs_ti.View();
 
  // accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
   thread_for(ss,grid->oSites(),{
     auto Dq_loop = vq_loop[ss];
-    auto Dd_xf = vd_xf[ss];
-    auto Ds_xi = vs_xi[ss];
+    auto Dd_tf = vd_tf[ss];
+    auto Ds_ti = vs_ti[ss];
     sobj result=Zero();
     if(op == "Q1"){
-      Sigma_to_Nucleon_Q1_Eye_site(Dq_loop,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,result);
+      Sigma_to_Nucleon_Q1_Eye_site(Dq_loop,Du_spec,Dd_tf,Ds_ti,Gamma_H,GammaB_sigma,GammaB_nucl,result);
     } else if(op == "Q2"){
-      Sigma_to_Nucleon_Q2_Eye_site(Dq_loop,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,result);
+      Sigma_to_Nucleon_Q2_Eye_site(Dq_loop,Du_spec,Dd_tf,Ds_ti,Gamma_H,GammaB_sigma,GammaB_nucl,result);
     } else {
       assert(0 && "Weak Operator not correctly specified");
     }
@@ -575,36 +575,36 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Eye(const PropagatorField &qq_loop,
 
 template<class FImpl>
 template <class mobj>
-void BaryonUtils<FImpl>::Sigma_to_Nucleon_NonEye(const PropagatorField &qq_xi,
-						 const PropagatorField &qq_xf,
+void BaryonUtils<FImpl>::Sigma_to_Nucleon_NonEye(const PropagatorField &qq_ti,
+						 const PropagatorField &qq_tf,
 						 const mobj &Du_spec,
-						 const PropagatorField &qd_xf,
-						 const PropagatorField &qs_xi,
+						 const PropagatorField &qd_tf,
+						 const PropagatorField &qs_ti,
 				                 const Gamma Gamma_H,
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
 						 const std::string op,
 						 SpinMatrixField &stn_corr)
 {
-  GridBase *grid = qs_xi.Grid();
+  GridBase *grid = qs_ti.Grid();
 
   auto vcorr= stn_corr.View();
-  auto vq_xi = qq_xi.View();
-  auto vq_xf = qq_xf.View();
-  auto vd_xf = qd_xf.View();
-  auto vs_xi = qs_xi.View();
+  auto vq_ti = qq_ti.View();
+  auto vq_tf = qq_tf.View();
+  auto vd_tf = qd_tf.View();
+  auto vs_ti = qs_ti.View();
 
  // accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
   thread_for(ss,grid->oSites(),{
-    auto Dq_xi = vq_xi[ss];
-    auto Dq_xf = vq_xf[ss];
-    auto Dd_xf = vd_xf[ss];
-    auto Ds_xi = vs_xi[ss];
+    auto Dq_ti = vq_ti[ss];
+    auto Dq_tf = vq_tf[ss];
+    auto Dd_tf = vd_tf[ss];
+    auto Ds_ti = vs_ti[ss];
     sobj result=Zero();
     if(op == "Q1"){
-      Sigma_to_Nucleon_Q1_NonEye_site(Dq_xi,Dq_xf,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,result);
+      Sigma_to_Nucleon_Q1_NonEye_site(Dq_ti,Dq_tf,Du_spec,Dd_tf,Ds_ti,Gamma_H,GammaB_sigma,GammaB_nucl,result);
     } else if(op == "Q2"){
-      Sigma_to_Nucleon_Q2_NonEye_site(Dq_xi,Dq_xf,Du_spec,Dd_xf,Ds_xi,Gamma_H,GammaB_sigma,GammaB_nucl,result);
+      Sigma_to_Nucleon_Q2_NonEye_site(Dq_ti,Dq_tf,Du_spec,Dd_tf,Ds_ti,Gamma_H,GammaB_sigma,GammaB_nucl,result);
     } else {
       assert(0 && "Weak Operator not correctly specified");
     }

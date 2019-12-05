@@ -121,24 +121,24 @@ int main(int argc, char *argv[])
 
     MContraction::SigmaToNucleonEye::Par EyePar;
     EyePar.output  = "SigmaToNucleon/Eye_u";
-    EyePar.qq_loop = "Qpt_l_loop";
-    EyePar.qu_spec = "Qpt_u_spec";
-    EyePar.qd_xf   = "Qpt_l_4";
-    EyePar.qs_xi   = "Qpt_s_0";
-    EyePar.xf    = 4;
+    EyePar.qqLoop = "Qpt_l_loop";
+    EyePar.quSpec = "Qpt_u_spec";
+    EyePar.qdTf   = "Qpt_l_4";
+    EyePar.qsTi   = "Qpt_s_0";
+    EyePar.tf    = 4;
     EyePar.sink    = "sink";
     application.createModule<MContraction::SigmaToNucleonEye>("SigmaToNucleonEye_u", EyePar);
     EyePar.output  = "SigmaToNucleon/Eye_c";
-    EyePar.qq_loop = "Qpt_c_loop";
+    EyePar.qqLoop = "Qpt_c_loop";
     application.createModule<MContraction::SigmaToNucleonEye>("SigmaToNucleonEye_c", EyePar);
     MContraction::SigmaToNucleonNonEye::Par NonEyePar;
     NonEyePar.output  = "SigmaToNucleon/NonEye";
-    NonEyePar.qu_xi = "Qpt_l_0";
-    NonEyePar.qu_xf = "Qpt_l_4";
-    NonEyePar.qu_spec = "Qpt_u_spec";
-    NonEyePar.qd_xf   = "Qpt_l_4";
-    NonEyePar.qs_xi   = "Qpt_s_0";
-    NonEyePar.xf    = 4;
+    NonEyePar.quTi = "Qpt_l_0";
+    NonEyePar.quTf = "Qpt_l_4";
+    NonEyePar.quSpec = "Qpt_u_spec";
+    NonEyePar.qdTf   = "Qpt_l_4";
+    NonEyePar.qsTi   = "Qpt_s_0";
+    NonEyePar.tf    = 4;
     NonEyePar.sink    = "sink";
     application.createModule<MContraction::SigmaToNucleonNonEye>("SigmaToNucleonNonEye", NonEyePar);
 
