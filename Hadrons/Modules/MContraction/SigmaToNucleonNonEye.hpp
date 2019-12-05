@@ -44,7 +44,7 @@ BEGIN_HADRONS_NAMESPACE
  * Sigma-to-Nucleon 3-pt diagrams, non-eye topologies.
  * 
  * Schematic:     
- *           qs_xi         qu_xf           |            qs_xi          qd_xf
+ *            qsTi          quTf           |            qsTi            qdTf
  *          /-->--¬       /-->--¬          |          /-->--¬         /-->--¬       
  *         /       \     /       \         |         /       \       /       \      
  *        /         \   /         \        |        /         \     /         \     
@@ -54,22 +54,22 @@ BEGIN_HADRONS_NAMESPACE
  *     | \           / \           /|      |      | \         /     \         / |   
  *     |  \         /   \         / |      |      |  \       /       \       /  |
  *     |   \       /     \       /  |      |      |   \-->--/         \-->--/   |   
- *      \   \-->--/       \-->--/  /       |       \   qu_xi           qu_xf   /
- *       \    qu_xi         qd_xf /        |        \                         /
+ *      \   \-->--/       \-->--/  /       |       \   quTi            quTf    /
+ *       \    quTi          qdTf  /        |        \                         /
  *        \                      /         |         \                       /
  *         \--------->----------/          |          \--------->-----------/
- *                 qu_spec                 |                  qu_spec
+ *                 quSpec                  |                  quSpec
  *
  *
  * analogously to the rare-kaon naming, the left diagram is named 'one-trace' and
  * the diagram on the right 'two-trace'
  * 
  * Propagators:
- *  * qu_xi,   source at xi 
- *  * qu_xf,   source at xf
- *  * qu_spec, source at xi
- *  * qd_xf,   source at xf 
- *  * qs_xi,   source at xi
+ *  * quTi,   source at ti 
+ *  * quTf,   source at tf
+ *  * quSpec, source at ti
+ *  * qdTf,   source at tf 
+ *  * qsTi,   source at ti
  */
 BEGIN_MODULE_NAMESPACE(MContraction)
 
@@ -77,12 +77,12 @@ class SigmaToNucleonNonEyePar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(SigmaToNucleonNonEyePar,
-                                    std::string, qu_xi,
-                                    std::string, qu_xf,
-                                    std::string, qu_spec,
-                                    std::string, qd_xf,
-                                    std::string, qs_xi,
-                                    unsigned int,   xf,
+                                    std::string, quTi,
+                                    std::string, quTf,
+                                    std::string, quSpec,
+                                    std::string, qdTf,
+                                    std::string, qsTi,
+                                    unsigned int,   tf,
                                     std::string, sink,
                                     std::string, output);
 };
@@ -139,7 +139,7 @@ TSigmaToNucleonNonEye<FImpl>::TSigmaToNucleonNonEye(const std::string name)
 template <typename FImpl>
 std::vector<std::string> TSigmaToNucleonNonEye<FImpl>::getInput(void)
 {
-    std::vector<std::string> input = {par().qu_xi, par().qu_xf, par().qu_spec, par().qd_xf, par().qs_xi, par().sink};
+    std::vector<std::string> input = {par().quTi, par().quTf, par().quSpec, par().qdTf, par().qsTi, par().sink};
     
     return input;
 }
@@ -180,18 +180,18 @@ void TSigmaToNucleonNonEye<FImpl>::execute(void)
     r.info.gammaA_nucl  = Id.g;
     r.info.gammaB_nucl  = GammaB.g;
 
-    auto &qu_xi      = envGet(PropagatorField, par().qu_xi);
-    auto &qu_xf      = envGet(PropagatorField, par().qu_xf);
-    auto &qu_spec    = envGet(SlicedPropagator, par().qu_spec);
-    auto &qd_xf      = envGet(PropagatorField, par().qd_xf);
-    auto &qs_xi      = envGet(PropagatorField, par().qs_xi);
-    auto qut         = qu_spec[par().xf];
+    auto &quTi      = envGet(PropagatorField, par().quTi);
+    auto &quTf      = envGet(PropagatorField, par().quTf);
+    auto &quSpec    = envGet(SlicedPropagator, par().quSpec);
+    auto &qdTf      = envGet(PropagatorField, par().qdTf);
+    auto &qsTi      = envGet(PropagatorField, par().qsTi);
+    auto qut         = quSpec[par().tf];
     for (auto &G: Gamma::gall)
     {
       r.info.gamma_H = G.g;
       //Operator Q1, equivalent to the two-trace case in the rare-kaons module
       c=Zero();
-      BaryonUtils<FIMPL>::Sigma_to_Nucleon_NonEye(qu_xi,qu_xf,qut,qd_xf,qs_xi,G,GammaB,GammaB,"Q1",c);
+      BaryonUtils<FIMPL>::Sigma_to_Nucleon_NonEye(quTi,quTf,qut,qdTf,qsTi,G,GammaB,GammaB,"Q1",c);
       sliceSum(c,buf,Tp);
       r.corr.clear();
       for (unsigned int t = 0; t < buf.size(); ++t)
@@ -202,7 +202,7 @@ void TSigmaToNucleonNonEye<FImpl>::execute(void)
       result.push_back(r);
       //Operator Q2, equivalent to the one-trace case in the rare-kaons module
       c=Zero();
-      BaryonUtils<FIMPL>::Sigma_to_Nucleon_NonEye(qu_xi,qu_xf,qut,qd_xf,qs_xi,G,GammaB,GammaB,"Q2",c);
+      BaryonUtils<FIMPL>::Sigma_to_Nucleon_NonEye(quTi,quTf,qut,qdTf,qsTi,G,GammaB,GammaB,"Q2",c);
       sliceSum(c,buf,Tp);
       r.corr.clear();
       for (unsigned int t = 0; t < buf.size(); ++t)
