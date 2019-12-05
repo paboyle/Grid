@@ -87,17 +87,14 @@ public:
                                     std::string, output);
 };
 
-template <typename FImpl1, typename FImpl2, typename FImpl3, typename FImpl4>
+template <typename FImpl>
 class TSigmaToNucleonNonEye: public Module<SigmaToNucleonNonEyePar>
 {
 public:
-    FERM_TYPE_ALIASES(FImpl1, 1);
-    FERM_TYPE_ALIASES(FImpl2, 2);
-    FERM_TYPE_ALIASES(FImpl3, 3);
-    FERM_TYPE_ALIASES(FImpl4, 4);
+    FERM_TYPE_ALIASES(FImpl,);
     BASIC_TYPE_ALIASES(ScalarImplCR, Scalar);
     SINK_TYPE_ALIASES(Scalar);
-    typedef typename SpinMatrixField1::vector_object::scalar_object SpinMatrix;
+    typedef typename SpinMatrixField::vector_object::scalar_object SpinMatrix;
     class Metadata: Serializable
     {
     public:
@@ -127,28 +124,28 @@ protected:
     Gamma::Algebra  al;
 };
 
-MODULE_REGISTER_TMP(SigmaToNucleonNonEye, ARG(TSigmaToNucleonNonEye<FIMPL, FIMPL, FIMPL, FIMPL>), MContraction);
+MODULE_REGISTER_TMP(SigmaToNucleonNonEye, ARG(TSigmaToNucleonNonEye<FIMPL>), MContraction);
 
 /******************************************************************************
  *                         TSigmaToNucleonNonEye implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-template <typename FImpl1, typename FImpl2, typename FImpl3, typename FImpl4>
-TSigmaToNucleonNonEye<FImpl1, FImpl2, FImpl3, FImpl4>::TSigmaToNucleonNonEye(const std::string name)
+template <typename FImpl>
+TSigmaToNucleonNonEye<FImpl>::TSigmaToNucleonNonEye(const std::string name)
 : Module<SigmaToNucleonNonEyePar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-template <typename FImpl1, typename FImpl2, typename FImpl3, typename FImpl4>
-std::vector<std::string> TSigmaToNucleonNonEye<FImpl1, FImpl2, FImpl3, FImpl4>::getInput(void)
+template <typename FImpl>
+std::vector<std::string> TSigmaToNucleonNonEye<FImpl>::getInput(void)
 {
     std::vector<std::string> input = {par().qu_xi, par().qu_xf, par().qu_spec, par().qd_xf, par().qs_xi, par().sink};
     
     return input;
 }
 
-template <typename FImpl1, typename FImpl2, typename FImpl3, typename FImpl4>
-std::vector<std::string> TSigmaToNucleonNonEye<FImpl1, FImpl2, FImpl3, FImpl4>::getOutput(void)
+template <typename FImpl>
+std::vector<std::string> TSigmaToNucleonNonEye<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {};
     
@@ -156,15 +153,15 @@ std::vector<std::string> TSigmaToNucleonNonEye<FImpl1, FImpl2, FImpl3, FImpl4>::
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-template <typename FImpl1, typename FImpl2, typename FImpl3, typename FImpl4>
-void TSigmaToNucleonNonEye<FImpl1, FImpl2, FImpl3, FImpl4>::setup(void)
+template <typename FImpl>
+void TSigmaToNucleonNonEye<FImpl>::setup(void)
 {
-    envTmpLat(SpinMatrixField1, "c");
+    envTmpLat(SpinMatrixField, "c");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-template <typename FImpl1, typename FImpl2, typename FImpl3, typename FImpl4>
-void TSigmaToNucleonNonEye<FImpl1, FImpl2, FImpl3, FImpl4>::execute(void)
+template <typename FImpl>
+void TSigmaToNucleonNonEye<FImpl>::execute(void)
 {
     const Gamma GammaB(Gamma::Algebra::SigmaXZ); // C*gamma_5
     const Gamma Id(Gamma::Algebra::Identity); // C*gamma_5
@@ -173,7 +170,7 @@ void TSigmaToNucleonNonEye<FImpl1, FImpl2, FImpl3, FImpl4>::execute(void)
     LOG(Message) << "' with (Gamma^A,Gamma^B)_sigma = ( Identity, C*gamma_5 ) and (Gamma^A,Gamma^B)_nucl = ( Identity, C*gamma_5 )" << std::endl; 
     LOG(Message) << " using sink " << par().sink << "." << std::endl;
         
-    envGetTmp(SpinMatrixField1, c);
+    envGetTmp(SpinMatrixField, c);
     std::vector<SpinMatrix> buf;
 
     std::vector<Result> result;
@@ -183,11 +180,11 @@ void TSigmaToNucleonNonEye<FImpl1, FImpl2, FImpl3, FImpl4>::execute(void)
     r.info.gammaA_nucl  = Id.g;
     r.info.gammaB_nucl  = GammaB.g;
 
-    auto &qu_xi      = envGet(PropagatorField1, par().qu_xi);
-    auto &qu_xf      = envGet(PropagatorField1, par().qu_xf);
-    auto &qu_spec    = envGet(SlicedPropagator2, par().qu_spec);
-    auto &qd_xf      = envGet(PropagatorField3, par().qd_xf);
-    auto &qs_xi      = envGet(PropagatorField4, par().qs_xi);
+    auto &qu_xi      = envGet(PropagatorField, par().qu_xi);
+    auto &qu_xf      = envGet(PropagatorField, par().qu_xf);
+    auto &qu_spec    = envGet(SlicedPropagator, par().qu_spec);
+    auto &qd_xf      = envGet(PropagatorField, par().qd_xf);
+    auto &qs_xi      = envGet(PropagatorField, par().qs_xi);
     auto qut         = qu_spec[par().xf];
     for (auto &G: Gamma::gall)
     {

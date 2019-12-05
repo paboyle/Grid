@@ -4,4 +4,4 @@ using namespace Grid;
 using namespace Hadrons;
 using namespace MContraction;
 
-template class Grid::Hadrons::MContraction::TSigmaToNucleonEye<FIMPL,FIMPL,FIMPL,FIMPL>;
+template class Grid::Hadrons::MContraction::TSigmaToNucleonEye<FIMPL>;
