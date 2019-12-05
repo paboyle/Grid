@@ -188,7 +188,7 @@ void TSigmaToNucleonNonEye<FImpl>::execute(void)
     auto qut         = quSpec[par().tf];
     for (auto &G: Gamma::gall)
     {
-      r.info.gamma_H = G.g;
+      r.info.gammaH = G.g;
       //Operator Q1, equivalent to the two-trace case in the rare-kaons module
       c=Zero();
       BaryonUtils<FIMPL>::Sigma_to_Nucleon_NonEye(quTi,quTf,qut,qdTf,qsTi,G,GammaB,GammaB,"Q1",c);
