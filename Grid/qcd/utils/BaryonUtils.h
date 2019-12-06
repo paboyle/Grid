@@ -329,8 +329,8 @@ void BaryonUtils<FImpl>::ContractBaryons_Sliced(const mobj &D1,
 
 /* Dq_loop is a quark line from t_H to t_H
  * Du_spec is a quark line from t_i to t_f
- * Dd_tf is a quark line from t_H to t_f
- * Ds_ti is a quark line from t_H to t_i */
+ * Dd_tf is a quark line from t_f to t_H
+ * Ds_ti is a quark line from t_i to t_H */
 template <class FImpl>
 template <class mobj, class mobj2, class robj>
 void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_Eye_site(const mobj &Dq_loop,
@@ -377,11 +377,11 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_Eye_site(const mobj &Dq_loop,
   }
 }
 
-/* Du_ti is a quark line from t_H to t_i
- * Du_tf is a quark line from t_H to t_f
+/* Du_ti is a quark line from t_i to t_H
+ * Du_tf is a quark line from t_f to t_H
  * Du_spec is a quark line from t_i to t_f
- * Dd_tf is a quark line from t_H to t_f
- * Ds_ti is a quark line from t_H to t_i */
+ * Dd_tf is a quark line from t_f to t_H
+ * Ds_ti is a quark line from t_i to t_H */
 template <class FImpl>
 template <class mobj, class mobj2, class robj>
 void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_NonEye_site(const mobj &Du_ti,
@@ -437,6 +437,10 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_NonEye_site(const mobj &Du_ti,
 }
 
 //Equivalent to "One-trace"
+/* Dq_loop is a quark line from t_H to t_H
+ * Du_spec is a quark line from t_i to t_f
+ * Dd_tf is a quark line from t_f to t_H
+ * Ds_ti is a quark line from t_i to t_H */
 template <class FImpl>
 template <class mobj, class mobj2, class robj>
 void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q2_Eye_site(const mobj &Dq_loop,
@@ -483,6 +487,11 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q2_Eye_site(const mobj &Dq_loop,
   }
 }
 
+/* Du_ti is a quark line from t_i to t_H
+ * Du_tf is a quark line from t_f to t_H
+ * Du_spec is a quark line from t_i to t_f
+ * Dd_tf is a quark line from t_f to t_H
+ * Ds_ti is a quark line from t_i to t_H */
 template <class FImpl>
 template <class mobj, class mobj2, class robj>
 void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q2_NonEye_site(const mobj &Du_ti,
