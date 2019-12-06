@@ -12,6 +12,8 @@
 #include <Hadrons/Modules/MContraction/DiscLoop.hpp>
 #include <Hadrons/Modules/MContraction/Gamma3pt.hpp>
 #include <Hadrons/Modules/MContraction/Meson.hpp>
+#include <Hadrons/Modules/MContraction/SigmaToNucleonEye.hpp>
+#include <Hadrons/Modules/MContraction/SigmaToNucleonNonEye.hpp>
 #include <Hadrons/Modules/MContraction/WeakEye3pt.hpp>
 #include <Hadrons/Modules/MContraction/WeakMesonDecayKl2.hpp>
 #include <Hadrons/Modules/MContraction/WeakNonEye3pt.hpp>

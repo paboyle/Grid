@@ -13,6 +13,8 @@ modules_cc =\
   Modules/MContraction/DiscLoop.cc \
   Modules/MContraction/Gamma3pt.cc \
   Modules/MContraction/Meson.cc \
+  Modules/MContraction/SigmaToNucleonEye.cc \
+  Modules/MContraction/SigmaToNucleonNonEye.cc \
   Modules/MContraction/WeakEye3pt.cc \
   Modules/MContraction/WeakMesonDecayKl2.cc \
   Modules/MContraction/WeakNonEye3pt.cc \
@@ -95,6 +97,8 @@ modules_hpp =\
   Modules/MContraction/DiscLoop.hpp \
   Modules/MContraction/Gamma3pt.hpp \
   Modules/MContraction/Meson.hpp \
+  Modules/MContraction/SigmaToNucleonEye.hpp \
+  Modules/MContraction/SigmaToNucleonNonEye.hpp \
   Modules/MContraction/WeakEye3pt.hpp \
   Modules/MContraction/WeakMesonDecayKl2.hpp \
   Modules/MContraction/WeakNonEye3pt.hpp \
