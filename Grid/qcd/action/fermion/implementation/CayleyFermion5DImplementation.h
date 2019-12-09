@@ -382,16 +382,6 @@ void CayleyFermion5D<Impl>::MeooeDag    (const FermionField &psi, FermionField &
   MeooeDag5D(this->tmp(),chi); 
 }
 
--void  CayleyFermion5D<Impl>::Mdir (const FermionField &psi, FermionField &chi,int dir,int disp){
-  -  Meo5D(psi,this->tmp());
-  +void  CayleyFermion5D<Impl>::Mdir (const FermionField &psi, FermionField &chi,int dir,int disp)
-    +{
-    // Apply 4d dslash fragment
-    -  this->DhopDir(this->tmp(),chi,dir,disp);
-    +  this->DhopDir(tmp,chi,dir,disp);
-  }
-
-
 template<class Impl>
 void  CayleyFermion5D<Impl>::Mdir (const FermionField &psi, FermionField &chi,int dir,int disp)
 {
