@@ -171,6 +171,32 @@ public:
   }
 };
 
+template<class Matrix,class Field>
+class NonHermitianLinearOperator : public LinearOperatorBase<Field> {
+  Matrix &_Mat;
+public:
+  NonHermitianLinearOperator(Matrix &Mat): _Mat(Mat){};
+  // Support for coarsening to a multigrid
+  void OpDiag (const Field &in, Field &out) {
+    _Mat.Mdiag(in,out);
+  }
+  void OpDir  (const Field &in, Field &out,int dir,int disp) {
+    _Mat.Mdir(in,out,dir,disp);
+  }
+  void Op     (const Field &in, Field &out){
+    _Mat.M(in,out);
+  }
+  void AdjOp     (const Field &in, Field &out){
+    _Mat.Mdag(in,out);
+  }
+  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
+    assert(0);
+  }
+  void HermOp(const Field &in, Field &out){
+    assert(0);
+  }
+};
+
     //////////////////////////////////////////////////////////
     // Even Odd Schur decomp operators; there are several
     // ways to introduce the even odd checkerboarding
