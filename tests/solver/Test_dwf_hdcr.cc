@@ -1,4 +1,4 @@
-    /*************************************************************************************
+   /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -111,11 +111,7 @@ public:
   }
 
   void operator()(const FineField &in, FineField & out) {
-    if ( params.domaindecompose ) {
-      operatorSAP(in,out);
-    } else { 
-      operatorCheby(in,out);
-    }
+    operatorCheby(in,out);
   }
 
     ////////////////////////////////////////////////////////////////////////
@@ -232,66 +228,6 @@ public:
   }
 #endif
 
-  void SAP (const FineField & src,FineField & psi){
-
-    Lattice<iScalar<vInteger> > coor(src.Grid());
-    Lattice<iScalar<vInteger> > subset(src.Grid());
-    
-    FineField r(src.Grid());
-    FineField zz(src.Grid()); zz=Zero();
-    FineField vec1(src.Grid());
-    FineField vec2(src.Grid());
-
-    const RealD block=params.domainsize;
-
-    subset=Zero();
-    for(int mu=0;mu<Nd;mu++){
-      LatticeCoordinate(coor,mu+1);
-      coor = div(coor,block);
-      subset = subset+coor;
-    }
-    subset = mod(subset,(Integer)2);
-    
-    ShiftedMdagMLinearOperator<Matrix,FineField> fMdagMOp(_SmootherMatrix,0.0);
-    Chebyshev<FineField> Cheby  (params.lo,params.hi,params.order,InverseApproximation);
-
-    RealD resid;
-    for(int i=0;i<params.steps;i++){
-      
-      // Even domain residual
-      _FineOperator.Op(psi,vec1);// this is the G5 herm bit
-      r= src - vec1 ;
-      resid = norm2(r) /norm2(src); 
-      std::cout << "SAP "<<i<<" resid "<<resid<<std::endl;
-
-      // Even domain solve
-      r= where(subset==(Integer)0,r,zz);
-      _SmootherOperator.AdjOp(r,vec1);
-      Cheby(fMdagMOp,vec1,vec2);    // solves  MdagM = g5 M g5M
-      psi = psi + vec2;  
-
-      // Odd domain residual
-      _FineOperator.Op(psi,vec1);// this is the G5 herm bit
-      r= src - vec1 ;
-      r= where(subset==(Integer)1,r,zz);
-
-      resid = norm2(r) /norm2(src); 
-      std::cout << "SAP "<<i<<" resid "<<resid<<std::endl;
-      
-      // Odd domain solve
-      _SmootherOperator.AdjOp(r,vec1);
-      Cheby(fMdagMOp,vec1,vec2);    // solves  MdagM = g5 M g5M
-      psi = psi + vec2;  
-
-      _FineOperator.Op(psi,vec1);// this is the G5 herm bit
-      r= src - vec1 ;
-      resid = norm2(r) /norm2(src); 
-      std::cout << "SAP "<<i<<" resid "<<resid<<std::endl;
-
-    }
-
-  };
-
   void SmootherTest (const FineField & in){
     
     FineField vec1(in.Grid());
@@ -307,6 +243,8 @@ public:
 
     for(int ilo=0;ilo<3;ilo++){
       for(int ord=5;ord<50;ord*=2){
+
+	std::cout << " lo "<<lo[ilo]<<" order "<<ord<<std::endl;
 
 	_SmootherOperator.AdjOp(in,vec1);
 
@@ -329,7 +267,6 @@ public:
     CoarseVector Csol(_CoarseOperator.Grid()); Csol=Zero();
 
     ConjugateGradient<CoarseVector>  CG(3.0e-3,100000);
-    //    ConjugateGradient<FineField>    fCG(3.0e-2,1000);
 
     HermitianLinearOperator<CoarseOperator,CoarseVector>  HermOp(_CoarseOperator);
     MdagMLinearOperator<CoarseOperator,CoarseVector>     MdagMOp(_CoarseOperator);
@@ -339,14 +276,11 @@ public:
     FineField vec1(in.Grid());
     FineField vec2(in.Grid());
 
-    //    Chebyshev<FineField> Cheby    (0.5,70.0,30,InverseApproximation);
-    //    Chebyshev<FineField> ChebyAccu(0.5,70.0,30,InverseApproximation);
     Chebyshev<FineField> Cheby    (params.lo,params.hi,params.order,InverseApproximation);
     Chebyshev<FineField> ChebyAccu(params.lo,params.hi,params.order,InverseApproximation);
-    //    Cheby.JacksonSmooth();
-    //    ChebyAccu.JacksonSmooth();
 
-    //    _Aggregates.ProjectToSubspace  (Csrc,in);
+    _Aggregates.ProjectToSubspace  (Csrc,in);
+
     //    _Aggregates.PromoteFromSubspace(Csrc,out);
     //    std::cout<<GridLogMessage<<"Completeness: "<<std::sqrt(norm2(out)/norm2(in))<<std::endl;
     
@@ -366,8 +300,6 @@ public:
     _SmootherOperator.AdjOp(in,vec1);// this is the G5 herm bit
     ChebyAccu(fMdagMOp,vec1,out);    // solves  MdagM = g5 M g5M
 
-    std::cout<<GridLogMessage << "Smoother norm "<<norm2(out)<<std::endl;
-
     // Update with residual for out
     _FineOperator.Op(out,vec1);// this is the G5 herm bit
     vec1  = in - vec1;   // tmp  = in - A Min
@@ -377,10 +309,11 @@ public:
     std::cout<<GridLogMessage << "Smoother resid "<<std::sqrt(r/Ni)<< " " << r << " " << Ni <<std::endl;
     
     _Aggregates.ProjectToSubspace  (Csrc,vec1);
-    HermOp.AdjOp(Csrc,Ctmp);// Normal equations
+    
+    HermOp.AdjOp(Csrc,Ctmp);// Normal equations // This appears to be zero.
     CG(MdagMOp,Ctmp,Csol);
     _Aggregates.PromoteFromSubspace(Csol,vec1); // Ass^{-1} [in - A Min]_s
-                                             // Q = Q[in - A Min]  
+                                                // Q = Q[in - A Min]  
     out = out+vec1;
 
     // Three preconditioner smoothing -- hermitian if C3 = C1
@@ -399,69 +332,6 @@ public:
     vec1  = in - vec1;   // tmp  = in - A Min
     r=norm2(vec1);
     std::cout<<GridLogMessage << "Smoother resid "<<std::sqrt(r/Ni)<<std::endl;
-
-  }
-
-  void operatorSAP(const FineField &in, FineField & out) {
-
-    CoarseVector Csrc(_CoarseOperator.Grid());
-    CoarseVector Ctmp(_CoarseOperator.Grid());
-    CoarseVector Csol(_CoarseOperator.Grid()); Csol=Zero();
-
-    ConjugateGradient<CoarseVector>  CG(1.0e-3,100000);
-
-    HermitianLinearOperator<CoarseOperator,CoarseVector>  HermOp(_CoarseOperator);
-    MdagMLinearOperator<CoarseOperator,CoarseVector>     MdagMOp(_CoarseOperator);
-
-    FineField vec1(in.Grid());
-    FineField vec2(in.Grid());
-
-    _Aggregates.ProjectToSubspace  (Csrc,in);
-    _Aggregates.PromoteFromSubspace(Csrc,out);
-    std::cout<<GridLogMessage<<"Completeness: "<<std::sqrt(norm2(out)/norm2(in))<<std::endl;
-    
-
-    // To make a working smoother for indefinite operator
-    // must multiply by "Mdag" (ouch loses all low mode content)
-    // and apply to poly approx of (mdagm)^-1.
-    // so that we end up with an odd polynomial.
-    SAP(in,out);
-
-    // Update with residual for out
-    _FineOperator.Op(out,vec1);// this is the G5 herm bit
-    vec1  = in - vec1;   // tmp  = in - A Min
-
-    RealD r = norm2(vec1);
-    RealD Ni = norm2(in);
-    std::cout<<GridLogMessage << "SAP resid "<<std::sqrt(r/Ni)<< " " << r << " " << Ni <<std::endl;
-    
-    _Aggregates.ProjectToSubspace  (Csrc,vec1);
-    HermOp.AdjOp(Csrc,Ctmp);// Normal equations
-    CG(MdagMOp,Ctmp,Csol);
-    _Aggregates.PromoteFromSubspace(Csol,vec1); // Ass^{-1} [in - A Min]_s
-                                             // Q = Q[in - A Min]  
-    out = out+vec1;
-
-    // Three preconditioner smoothing -- hermitian if C3 = C1
-    // Recompute error
-    _FineOperator.Op(out,vec1);// this is the G5 herm bit
-    vec1  = in - vec1;   // tmp  = in - A Min
-    r=norm2(vec1);
-
-    std::cout<<GridLogMessage << "Coarse resid "<<std::sqrt(r/Ni)<<std::endl;
-
-    // Reapply smoother
-    SAP(vec1,vec2);
-    out =out+vec2;
-
-
-    // Update with residual for out
-    _FineOperator.Op(out,vec1);// this is the G5 herm bit
-    vec1  = in - vec1;   // tmp  = in - A Min
-
-    r = norm2(vec1);
-    Ni = norm2(in);
-    std::cout<<GridLogMessage << "SAP resid(post) "<<std::sqrt(r/Ni)<< " " << r << " " << Ni <<std::endl;
 
   }
 
@@ -559,8 +429,9 @@ int main (int argc, char ** argv)
   assert ( (nbasis & 0x1)==0);
   int nb=nbasis/2;
   std::cout<<GridLogMessage << " nbasis/2 = "<<nb<<std::endl;
-  Aggregates.CreateSubspace(RNG5,HermDefOp,nb);
+  //  Aggregates.CreateSubspace(RNG5,HermDefOp,nb);
   //  Aggregates.CreateSubspaceLanczos(RNG5,HermDefOp,nb);
+  Aggregates.CreateSubspaceChebyshev(RNG5,HermDefOp,nb);
   for(int n=0;n<nb;n++){
     G5R5(Aggregates.subspace[n+nb],Aggregates.subspace[n]);
     std::cout<<GridLogMessage<<n<<" subspace "<<norm2(Aggregates.subspace[n+nb])<<" "<<norm2(Aggregates.subspace[n]) <<std::endl;
@@ -580,7 +451,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> HermIndefOp(Ddwf);
   Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> HermIndefOpDD(DdwfDD);
-  CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LDOp(*Coarse5d);
+  CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LDOp(*Coarse5d,1); // Hermitian matrix
   LDOp.CoarsenOperator(FGrid,HermIndefOp,Aggregates);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
@@ -596,14 +467,14 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   MdagMLinearOperator<CoarseOperator,CoarseVector> PosdefLdop(LDOp);
   ConjugateGradient<CoarseVector> CG(1.0e-6,100000);
-  //  CG(PosdefLdop,c_src,c_res);
+  CG(PosdefLdop,c_src,c_res);
 
-  //  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  //  std::cout<<GridLogMessage << "Solving indef-MCR on coarse space "<< std::endl;
-  //  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  //  HermitianLinearOperator<CoarseOperator,CoarseVector> HermIndefLdop(LDOp);
-  //  ConjugateResidual<CoarseVector> MCR(1.0e-6,100000);
-  //MCR(HermIndefLdop,c_src,c_res);
+    std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+    std::cout<<GridLogMessage << "Solving indef-MCR on coarse space "<< std::endl;
+    std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+//    HermitianLinearOperator<CoarseOperator,CoarseVector> HermIndefLdop(LDOp);
+//    ConjugateResidual<CoarseVector> MCR(1.0e-6,100000);
+//    MCR(HermIndefLdop,c_src,c_res);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Building deflation preconditioner "<< std::endl;
@@ -613,38 +484,48 @@ int main (int argc, char ** argv)
 											   HermIndefOp,Ddwf,
 											   HermIndefOp,Ddwf);
 
-  MultiGridPreconditioner <vSpinColourVector,vTComplex,nbasis,DomainWallFermionR> PreconDD(Aggregates, LDOp,
-											   HermIndefOp,Ddwf,
-											   HermIndefOpDD,DdwfDD);
-  TrivialPrecon<LatticeFermion> simple;
+  //  MultiGridPreconditioner <vSpinColourVector,vTComplex,nbasis,DomainWallFermionR> PreconDD(Aggregates, LDOp,
+  //											   HermIndefOp,Ddwf,
+  //											   HermIndefOpDD,DdwfDD);
+  //  TrivialPrecon<LatticeFermion> simple;
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Testing smoother efficacy"<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  //  Precon.SmootherTest(src);
+  Precon.SmootherTest(src);
 
-  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  std::cout<<GridLogMessage << "Testing DD smoother efficacy"<< std::endl;
-  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  //  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  //  std::cout<<GridLogMessage << "Testing DD smoother efficacy"<< std::endl;
+  //  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   //  PreconDD.SmootherTest(src);
 
-  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  std::cout<<GridLogMessage << "Testing SAP smoother efficacy"<< std::endl;
-  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  //  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  //  std::cout<<GridLogMessage << "Testing SAP smoother efficacy"<< std::endl;
+  //  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   //  PreconDD.SAP(src,result);
 
-  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  std::cout<<GridLogMessage << "Unprec CG "<< std::endl;
-  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  //  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  //  std::cout<<GridLogMessage << "Unprec CG "<< std::endl;
+  //  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
 
   //  TrivialPrecon<LatticeFermion> simple;
   //  ConjugateGradient<LatticeFermion> fCG(1.0e-8,100000);
   //  fCG(HermDefOp,src,result);
-  //  exit(0);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  std::cout<<GridLogMessage << "Testing GCR on indef matrix "<< std::endl;
+  std::cout<<GridLogMessage << "Red Black Prec CG "<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  LatticeFermion    src_o(FrbGrid);
+  LatticeFermion result_o(FrbGrid);
+  pickCheckerboard(Odd,src_o,src);
+  result_o=Zero();
+  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOpEO(Ddwf);
+  ConjugateGradient<LatticeFermion> pCG(1.0e-8,10000);
+  //  pCG(HermOpEO,src_o,result_o);
+
+  //  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  //  std::cout<<GridLogMessage << "Testing GCR on indef matrix "<< std::endl;
+  //  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   //  PrecGeneralisedConjugateResidual<LatticeFermion> UPGCR(1.0e-8,100000,simple,8,128);
   //  UPGCR(HermIndefOp,src,result);
 
@@ -656,9 +537,9 @@ int main (int argc, char ** argv)
   Precon.PowerMethod(src);
 
 
-  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  std::cout<<GridLogMessage << "Building a two level DDPGCR "<< std::endl;
-  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  //  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  //  std::cout<<GridLogMessage << "Building a two level DDPGCR "<< std::endl;
+  //  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   //  PrecGeneralisedConjugateResidual<LatticeFermion> PGCRDD(1.0e-8,100000,PreconDD,8,128);
   //  result=Zero();
   //  std::cout<<GridLogMessage<<"checking norm src "<<norm2(src)<<std::endl;
@@ -671,20 +552,6 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"checking norm src "<<norm2(src)<<std::endl;
   result=Zero();
   PGCR(HermIndefOp,src,result);
-
-  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  std::cout<<GridLogMessage << "Red Black Prec CG "<< std::endl;
-  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOpEO(Ddwf);
-  ConjugateGradient<LatticeFermion> pCG(1.0e-8,10000);
-
-  LatticeFermion    src_o(FrbGrid);
-  LatticeFermion result_o(FrbGrid);
-  pickCheckerboard(Odd,src_o,src);
-  result_o=Zero();
-
-  pCG(HermOpEO,src_o,result_o);
-
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Done "<< std::endl;

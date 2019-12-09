@@ -236,6 +236,39 @@ public:
     Orthogonalise();
 
   }
+
+  virtual void CreateSubspaceChebyshev(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,int nn=nbasis) {
+
+    RealD scale;
+
+
+    Chebyshev<FineField> Cheb(0.1,64.0,900);
+
+    FineField noise(FineGrid);
+    FineField Mn(FineGrid);
+
+    for(int b=0;b<nn;b++){
+	
+      gaussian(RNG,noise);
+      scale = std::pow(norm2(noise),-0.5); 
+      noise=noise*scale;
+
+      hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<b<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
+
+      Cheb(hermop,noise,Mn);
+
+      scale = std::pow(norm2(Mn),-0.5); 
+      Mn=Mn*scale;
+      subspace[b]   = Mn;
+
+      hermop.Op(Mn,noise); std::cout<<GridLogMessage << "filtered["<<b<<"] <f|MdagM|f> "<<norm2(noise)<<std::endl;
+
+    }
+
+    Orthogonalise();
+
+  }
+
 };
 // Fine Object == (per site) type of fine field
 // nbasis      == number of deflation vectors
@@ -255,6 +288,7 @@ public:
   ////////////////////
   Geometry         geom;
   GridBase *       _grid; 
+  int hermitian;
 
   CartesianStencil<siteVector,siteVector,int> Stencil; 
 
@@ -271,10 +305,11 @@ public:
     conformable(_grid,in.Grid());
     conformable(in.Grid(),out.Grid());
 
+    RealD Nin = norm2(in);
     SimpleCompressor<siteVector> compressor;
     Stencil.HaloExchange(in,compressor);
     auto in_v = in.View();
-    auto out_v = in.View();
+    auto out_v = out.View();
     thread_for(ss,Grid()->oSites(),{
       siteVector res = Zero();
       siteVector nbr;
@@ -296,19 +331,23 @@ public:
       }
       vstream(out_v[ss],res);
     });
-    return norm2(out);
+    RealD Nout= norm2(out);
+    return Nout;
   };
 
-  RealD Mdag (const CoarseVector &in, CoarseVector &out){
-    // // corresponds to Petrov-Galerkin coarsening
-    // return M(in,out);
-    
-    // corresponds to Galerkin coarsening
-    CoarseVector tmp(Grid());
-    G5C(tmp, in);
-    M(tmp, out);
-    G5C(out, out);
-    return norm2(out);
+  RealD Mdag (const CoarseVector &in, CoarseVector &out)
+  {
+    if(hermitian) {
+      // corresponds to Petrov-Galerkin coarsening
+      return M(in,out);
+    } else {
+      // corresponds to Galerkin coarsening
+      CoarseVector tmp(Grid());
+      G5C(tmp, in); 
+      M(tmp, out);
+      G5C(out, out);
+      return norm2(out);
+    }
   };
 
   void Mdir(const CoarseVector &in, CoarseVector &out, int dir, int disp){
@@ -356,10 +395,11 @@ public:
   };
 
   
- CoarsenedMatrix(GridCartesian &CoarseGrid) 	: 
+ CoarsenedMatrix(GridCartesian &CoarseGrid, int hermitian_=0) 	: 
 
     _grid(&CoarseGrid),
     geom(CoarseGrid._ndimension),
+    hermitian(hermitian_),
     Stencil(&CoarseGrid,geom.npoint,Even,geom.directions,geom.displacements,0),
     A(geom.npoint,&CoarseGrid)
   {

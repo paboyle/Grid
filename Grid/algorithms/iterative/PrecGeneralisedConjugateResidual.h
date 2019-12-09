@@ -86,7 +86,7 @@ public:
 
       cp=GCRnStep(Linop,src,psi,rsq);
 
-      std::cout<<GridLogMessage<<"VPGCR("<<mmax<<","<<nstep<<") "<< steps <<" steps cp = "<<cp<<std::endl;
+      std::cout<<GridLogMessage<<"VPGCR("<<mmax<<","<<nstep<<") "<< steps <<" steps cp = "<<cp<<" target "<<rsq <<std::endl;
 
       if(cp<rsq) {
 
@@ -134,6 +134,9 @@ public:
     std::vector<Field> p(mmax,grid);
     std::vector<RealD> qq(mmax);
       
+    std::cout<<GridLogIterative<< " ************** "<< std::endl;
+    std::cout<<GridLogIterative<< "   GCRnStep("<<nstep<<")"<<std::endl;
+    std::cout<<GridLogIterative<< " ************** "<< std::endl;
 
     //////////////////////////////////
     // initial guess x0 is taken as nonzero.
@@ -143,25 +146,32 @@ public:
     Linop.HermOpAndNorm(psi,Az,zAz,zAAz); 
     MatTimer.Stop();
     
+
     LinalgTimer.Start();
     r=src-Az;
     LinalgTimer.Stop();
+    std::cout<<GridLogIterative<< " GCRnStep true residual r = src - A psi   "<<norm2(r) <<std::endl;
     
     /////////////////////
     // p = Prec(r)
     /////////////////////
+
+    std::cout<<GridLogIterative<< " GCRnStep apply preconditioner z= M^-1 r "<< std::endl;
+    std::cout<<GridLogIterative<< " --------------------------------------- "<< std::endl;
     PrecTimer.Start();
     Preconditioner(r,z);
     PrecTimer.Stop();
+    std::cout<<GridLogIterative<< " --------------------------------------- "<< std::endl;
+    std::cout<<GridLogIterative<< " GCRnStep called Preconditioner z "<< norm2(z) <<std::endl;
 
-    MatTimer.Start();
-    Linop.HermOp(z,tmp); 
-    MatTimer.Stop();
+    //    MatTimer.Start();
+    //    Linop.HermOp(z,tmp); 
+    //    MatTimer.Stop();
 
-    LinalgTimer.Start();
-    ttmp=tmp;
-    tmp=tmp-r;
-    LinalgTimer.Stop();
+    //    LinalgTimer.Start();
+    //    ttmp=tmp;
+    //    tmp=tmp-r;
+    //    LinalgTimer.Stop();
 
     /*
       std::cout<<GridLogMessage<<r<<std::endl;
@@ -175,10 +185,12 @@ public:
     MatTimer.Stop();
 
     LinalgTimer.Start();
+
     //p[0],q[0],qq[0] 
     p[0]= z;
     q[0]= Az;
     qq[0]= zAAz;
+    std::cout<<GridLogIterative<< " GCRnStep p0=z, q0 = A p0 " <<std::endl;
     
     cp =norm2(r);
     LinalgTimer.Stop();
@@ -200,24 +212,26 @@ public:
       cp = axpy_norm(r,-a,q[peri_k],r);
       LinalgTimer.Stop();
 
+      std::cout<<GridLogMessage<< " VPGCR_step["<<steps<<"]  resid " << cp << " target " <<rsq<<std::endl; 
+
       if((k==nstep-1)||(cp<rsq)){
 	return cp;
       }
 
-      std::cout<<GridLogMessage<< " VPGCR_step["<<steps<<"]  resid " <<sqrt(cp/rsq)<<std::endl; 
 
+      std::cout<<GridLogIterative<< " GCRnStep apply preconditioner z= M^-1 r "<< std::endl;
+      std::cout<<GridLogIterative<< " --------------------------------------- "<< std::endl;
       PrecTimer.Start();
       Preconditioner(r,z);// solve Az = r
       PrecTimer.Stop();
+      std::cout<<GridLogIterative<< " --------------------------------------- "<< std::endl;
+      std::cout<<GridLogIterative<< " GCRnStep called Preconditioner z "<< norm2(z) <<std::endl;
 
       MatTimer.Start();
       Linop.HermOpAndNorm(z,Az,zAz,zAAz);
-      Linop.HermOp(z,tmp);
       MatTimer.Stop();
 
       LinalgTimer.Start();
-      tmp=tmp-r;
-      std::cout<<GridLogMessage<< " Preconditioner resid " <<sqrt(norm2(tmp)/norm2(r))<<std::endl; 
 
       q[peri_kp]=Az;
       p[peri_kp]=z;
