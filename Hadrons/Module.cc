@@ -93,3 +93,18 @@ GridParallelRNG & ModuleBase::rng4d(void)
 
     return r;
 }
+
+GridSerialRNG & ModuleBase::rngSerial(void)
+{
+    auto &r = *env().getSerialRng();
+
+    if (makeSeedString() != seed_)
+    {
+        seed_ = makeSeedString();
+        LOG(Message) << "Seeding Serial RNG " << &r << " with string '" 
+                     << seed_ << "'" << std::endl;
+        r.SeedUniqueString(seed_);
+    }
+
+    return r;
+}

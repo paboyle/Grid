@@ -1,7 +1,6 @@
 /*************************************************************************************
 
 Grid physics library, www.github.com/paboyle/Grid 
-
 Source file: Hadrons/Module.hpp
 
 Copyright (C) 2015-2019
@@ -196,6 +195,7 @@ protected:
     DEFINE_VM_ALIAS;
     // RNG seeded from module string
     GridParallelRNG &rng4d(void);
+    GridSerialRNG &rngSerial(void);
 private:
     std::string makeSeedString(void);
 private:

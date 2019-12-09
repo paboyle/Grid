@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-EIGEN_URL='http://bitbucket.org/eigen/eigen/get/3.3.7.tar.bz2'
+EIGEN_URL='https://gitlab.com/libeigen/eigen/-/archive/3.3.7/eigen-3.3.7.tar.bz2'
 
 echo "-- deploying Eigen source..."
 ARC=`basename ${EIGEN_URL}`
