@@ -29,7 +29,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Application.hpp>
 
 using namespace Grid;
-using namespace QCD;
 using namespace Hadrons;
 
 int main(int argc, char *argv[])

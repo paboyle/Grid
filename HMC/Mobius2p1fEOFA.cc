@@ -34,8 +34,7 @@ directory
 #define MIXED_PRECISION
 #endif
 
-namespace Grid{ 
-  namespace QCD{
+NAMESPACE_BEGIN(Grid);
 
   /*
    * Need a plan for gauge field update for mixed precision in HMC                      (2x speed up)
@@ -163,11 +162,11 @@ namespace Grid{
       MPCG(src,psi);
     }
   };
-}};
+
+NAMESPACE_END(Grid);
 
 int main(int argc, char **argv) {
   using namespace Grid;
-  using namespace Grid::QCD;
 
   Grid_init(&argc, &argv);
   int threads = GridThread::GetThreads();
