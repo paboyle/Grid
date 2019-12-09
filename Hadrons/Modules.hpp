@@ -1,8 +1,8 @@
 #include <Hadrons/Modules/MAction/DWF.hpp>
 #include <Hadrons/Modules/MAction/MobiusDWF.hpp>
 #include <Hadrons/Modules/MAction/ScaledDWF.hpp>
-#include <Hadrons/Modules/MAction/Wilson.hpp>
 #include <Hadrons/Modules/MAction/WilsonClover.hpp>
+#include <Hadrons/Modules/MAction/Wilson.hpp>
 #include <Hadrons/Modules/MAction/ZMobiusDWF.hpp>
 #include <Hadrons/Modules/MContraction/A2AAslashField.hpp>
 #include <Hadrons/Modules/MContraction/A2AFourQuarkContraction.hpp>
@@ -33,8 +33,8 @@
 #include <Hadrons/Modules/MGauge/Random.hpp>
 #include <Hadrons/Modules/MGauge/StochEm.hpp>
 #include <Hadrons/Modules/MGauge/StoutSmearing.hpp>
-#include <Hadrons/Modules/MGauge/Unit.hpp>
 #include <Hadrons/Modules/MGauge/UnitEm.hpp>
+#include <Hadrons/Modules/MGauge/Unit.hpp>
 #include <Hadrons/Modules/MIO/LoadA2AMatrixDiskVector.hpp>
 #include <Hadrons/Modules/MIO/LoadA2AVectors.hpp>
 #include <Hadrons/Modules/MIO/LoadBinary.hpp>
@@ -44,12 +44,12 @@
 #include <Hadrons/Modules/MIO/LoadEigenPack.hpp>
 #include <Hadrons/Modules/MIO/LoadNersc.hpp>
 #include <Hadrons/Modules/MIO/LoadPerambulator.hpp>
-#include <Hadrons/Modules/MNPR/Amputate.hpp>
-#include <Hadrons/Modules/MNPR/Bilinear.hpp>
-#include <Hadrons/Modules/MNPR/FourQuark.hpp>
 #include <Hadrons/Modules/MNoise/FullVolumeSpinColorDiagonal.hpp>
 #include <Hadrons/Modules/MNoise/SparseSpinColorDiagonal.hpp>
 #include <Hadrons/Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp>
+#include <Hadrons/Modules/MNPR/Amputate.hpp>
+#include <Hadrons/Modules/MNPR/Bilinear.hpp>
+#include <Hadrons/Modules/MNPR/FourQuark.hpp>
 #include <Hadrons/Modules/MScalar/ChargedProp.hpp>
 #include <Hadrons/Modules/MScalar/FreeProp.hpp>
 #include <Hadrons/Modules/MScalar/Scalar.hpp>
@@ -57,10 +57,10 @@
 #include <Hadrons/Modules/MScalarSUN/EMT.hpp>
 #include <Hadrons/Modules/MScalarSUN/Grad.hpp>
 #include <Hadrons/Modules/MScalarSUN/StochFreeField.hpp>
+#include <Hadrons/Modules/MScalarSUN/TransProj.hpp>
 #include <Hadrons/Modules/MScalarSUN/TrKinetic.hpp>
 #include <Hadrons/Modules/MScalarSUN/TrMag.hpp>
 #include <Hadrons/Modules/MScalarSUN/TrPhi.hpp>
-#include <Hadrons/Modules/MScalarSUN/TransProj.hpp>
 #include <Hadrons/Modules/MScalarSUN/TwoPoint.hpp>
 #include <Hadrons/Modules/MScalarSUN/TwoPointNPR.hpp>
 #include <Hadrons/Modules/MScalarSUN/Utils.hpp>
@@ -74,6 +74,7 @@
 #include <Hadrons/Modules/MSolver/RBPrecCG.hpp>
 #include <Hadrons/Modules/MSource/Convolution.hpp>
 #include <Hadrons/Modules/MSource/Gauss.hpp>
+#include <Hadrons/Modules/MSource/JacobiSmear.hpp>
 #include <Hadrons/Modules/MSource/Momentum.hpp>
 #include <Hadrons/Modules/MSource/MomentumPhase.hpp>
 #include <Hadrons/Modules/MSource/Point.hpp>
