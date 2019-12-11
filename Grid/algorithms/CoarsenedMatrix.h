@@ -128,7 +128,7 @@ public:
     for(int i=0;i<nbasis;i++){
       blockProject(iProj,subspace[i],subspace);
       eProj=Zero(); 
-      thread_for(ss, CoarseGrid->oSites(),{
+      accelerator_for(ss, CoarseGrid->oSites(),1,{
 	eProj[ss](i)=CComplex(1.0);
       });
       eProj=eProj - iProj;
@@ -307,10 +307,12 @@ public:
 
     RealD Nin = norm2(in);
     SimpleCompressor<siteVector> compressor;
+
     Stencil.HaloExchange(in,compressor);
+
     auto in_v = in.View();
     auto out_v = out.View();
-    thread_for(ss,Grid()->oSites(),{
+    accelerator_for(ss,Grid()->oSites(),1,{
       siteVector res = Zero();
       siteVector nbr;
       int ptype;
@@ -331,6 +333,7 @@ public:
       }
       vstream(out_v[ss],res);
     });
+
     RealD Nout= norm2(out);
     return Nout;
   };
@@ -356,6 +359,7 @@ public:
     conformable(in.Grid(),out.Grid());
     
     SimpleCompressor<siteVector> compressor;
+
     Stencil.HaloExchange(in,compressor);
     
     auto point = [dir, disp](){
@@ -367,7 +371,7 @@ public:
 
     auto out_v = out.View();
     auto in_v  = in.View();
-    thread_for(ss,Grid()->oSites(),{
+    accelerator_for(ss,Grid()->oSites(),1,{
       siteVector res = Zero();
       siteVector nbr;
       int ptype;
