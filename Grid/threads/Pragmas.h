@@ -43,6 +43,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifdef _OPENMP
 #define GRID_OMP
 #include <omp.h>
+#warning "Grid is using OpenMP for host loops"
 #endif
 
 #ifdef GRID_OMP
