@@ -32,7 +32,6 @@
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
 int main(int argc, char **argv) {
 

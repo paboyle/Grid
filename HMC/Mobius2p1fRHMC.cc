@@ -31,7 +31,6 @@ directory
 
 int main(int argc, char **argv) {
   using namespace Grid;
-  using namespace Grid::QCD;
 
   Grid_init(&argc, &argv);
   int threads = GridThread::GetThreads();
@@ -44,18 +43,18 @@ int main(int argc, char **argv) {
   typedef typename FermionAction::FermionField FermionField;
 
   typedef Grid::XmlReader       Serialiser;
-  
+
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   IntegratorParameters MD;
-  //  typedef GenericHMCRunner<LeapFrog> HMCWrapper; 
+  //  typedef GenericHMCRunner<LeapFrog> HMCWrapper;
   //  MD.name    = std::string("Leap Frog");
-  //  typedef GenericHMCRunner<ForceGradient> HMCWrapper; 
+  //  typedef GenericHMCRunner<ForceGradient> HMCWrapper;
   //  MD.name    = std::string("Force Gradient");
-  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper; 
+  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;
   MD.name    = std::string("MinimumNorm2");
   MD.MDsteps = 20;
   MD.trajL   = 1.0;
-  
+
   HMCparameters HMCparams;
   HMCparams.StartTrajectory  = 30;
   HMCparams.Trajectories     = 200;
@@ -68,7 +67,7 @@ int main(int argc, char **argv) {
 
   // Grid from the command line arguments --grid and --mpi
   TheHMC.Resources.AddFourDimGrid("gauge"); // use default simd lanes decomposition
-  
+
   CheckpointerParameters CPparams;
   CPparams.config_prefix = "ckpoint_EODWF_lat";
   CPparams.rng_prefix    = "ckpoint_EODWF_rng";
@@ -82,7 +81,7 @@ int main(int argc, char **argv) {
   TheHMC.Resources.SetRNGSeeds(RNGpar);
 
   // Construct observables
-  // here there is too much indirection 
+  // here there is too much indirection
   typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
   TheHMC.Resources.AddObservable<PlaqObs>();
   //////////////////////////////////////////////
@@ -93,11 +92,11 @@ int main(int argc, char **argv) {
   Real strange_mass = 0.04;
   Real pv_mass      = 1.0;
   RealD M5  = 1.8;
-  RealD b   = 1.0; 
+  RealD b   = 1.0;
   RealD c   = 0.0;
-  
+
   // FIXME:
-  // Same in MC and MD 
+  // Same in MC and MD
   // Need to mix precision too
   OneFlavourRationalParams OFRp;
   OFRp.lo       = 4.0e-3;
@@ -122,7 +121,7 @@ int main(int argc, char **argv) {
   // These lines are unecessary if BC are all periodic
   std::vector<Complex> boundary = {1,1,1,-1};
   FermionAction::ImplParams Params(boundary);
-  
+
   double StoppingCondition = 1e-10;
   double MaxCGIterations = 30000;
   ConjugateGradient<FermionField>  CG(StoppingCondition,MaxCGIterations);

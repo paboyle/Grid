@@ -281,6 +281,9 @@ case ${CXX} in
     CXX="nvcc -x cu "
     CXXLD="nvcc -link"
     CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing -Xcompiler -Wno-unusable-partial-specialization --expt-extended-lambda --expt-relaxed-constexpr"
+    if test $ac_openmp = yes; then
+       CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
+    fi
     ;;
   *)
     CXXLD=${CXX}
