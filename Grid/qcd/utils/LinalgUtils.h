@@ -201,7 +201,6 @@ void G5R5(Lattice<vobj> &z,const Lattice<vobj> &x)
   });
 }
 
-// I explicitly need these outside the QCD namespace
 template<typename vobj>
 void G5C(Lattice<vobj> &z, const Lattice<vobj> &x)
 {

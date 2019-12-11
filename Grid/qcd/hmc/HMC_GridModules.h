@@ -97,7 +97,6 @@ protected:
 ////////////////////////////////////
 // Classes for the user
 ////////////////////////////////////
-// Note: the space time grid should be out of the QCD namespace
 template <class vector_type>
 class GridFourDimModule : public GridModule
 {
