@@ -105,7 +105,7 @@ class MixedPrecisionBiCGSTAB : public LinearFunction<FieldD>
       for(outer_iter = 0; outer_iter < MaxOuterIterations; outer_iter++)
       {
         // Compute double precision rsd and also new RHS vector.
-        Linop_d.HermOp(sol_d, tmp_d);
+        Linop_d.Op(sol_d, tmp_d);
         RealD norm = axpy_norm(src_d, -1., tmp_d, src_d_in); //src_d is residual vector
         
         std::cout << GridLogMessage << "MixedPrecisionBiCGSTAB: Outer iteration " << outer_iter << " residual " << norm << " target " << stop << std::endl;

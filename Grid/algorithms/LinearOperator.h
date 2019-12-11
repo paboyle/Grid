@@ -322,7 +322,7 @@ public:
     };
 
     template<class Field>
-    class HermitianSchurOperatorBase :  public LinearOperatorBase<Field> 
+    class NonHermitianSchurOperatorBase :  public LinearOperatorBase<Field> 
     {
       public:
         virtual RealD Mpc      (const Field& in, Field& out) = 0;
@@ -334,16 +334,10 @@ public:
 	        no = MpcDag(tmp,out);
         }
         virtual void HermOpAndNorm(const Field& in, Field& out, RealD& n1, RealD& n2) {
-          out.Checkerboard() = in.Checkerboard();
-
-          Mpc(in, out);
-          
-          ComplexD dot = innerProduct(in,out); n1 = real(dot);
-          n2 = norm2(out);
+          assert(0);
         }
         virtual void HermOp(const Field& in, Field& out) {
-          RealD n1, n2;
-          HermOpAndNorm(in, out, n1, n2);
+          assert(0);
         }
         void Op(const Field& in, Field& out) {
           Mpc(in, out);
@@ -361,11 +355,11 @@ public:
     };
 
     template<class Matrix, class Field>
-    class HermitianSchurDiagMooeeOperator :  public HermitianSchurOperatorBase<Field> 
+    class NonHermitianSchurDiagMooeeOperator :  public NonHermitianSchurOperatorBase<Field> 
     {
       public:
         Matrix& _Mat;
-        HermitianSchurDiagMooeeOperator(Matrix& Mat): _Mat(Mat){};
+        NonHermitianSchurDiagMooeeOperator(Matrix& Mat): _Mat(Mat){};
         virtual RealD Mpc(const Field& in, Field& out) {
           Field tmp(in.Grid());
           tmp.Checkerboard() = !in.Checkerboard();
@@ -392,13 +386,13 @@ public:
     };
     
     template<class Matrix,class Field>
-    class HermitianSchurDiagOneOperator : public HermitianSchurOperatorBase<Field> 
+    class NonHermitianSchurDiagOneOperator : public NonHermitianSchurOperatorBase<Field> 
     {
       protected:
         Matrix &_Mat;
     
       public:
-        HermitianSchurDiagOneOperator (Matrix& Mat): _Mat(Mat){};
+        NonHermitianSchurDiagOneOperator (Matrix& Mat): _Mat(Mat){};
         virtual RealD Mpc(const Field& in, Field& out) {
 	        Field tmp(in.Grid());
 
@@ -422,13 +416,13 @@ public:
     };
 
     template<class Matrix, class Field>
-    class HermitianSchurDiagTwoOperator : public HermitianSchurOperatorBase<Field> 
+    class NonHermitianSchurDiagTwoOperator : public NonHermitianSchurOperatorBase<Field> 
     {
       protected:
         Matrix& _Mat;
     
       public:
-        HermitianSchurDiagTwoOperator(Matrix& Mat): _Mat(Mat){};
+        NonHermitianSchurDiagTwoOperator(Matrix& Mat): _Mat(Mat){};
 
         virtual RealD Mpc(const Field& in, Field& out) {
           Field tmp(in.Grid());

@@ -72,7 +72,7 @@ int main (int argc, char ** argv)
   RealD csw_t = 1.0;
   WilsonCloverFermionR Dw(Umu, Grid, RBGrid, mass, csw_r, csw_t);
 
-  HermitianLinearOperator<WilsonCloverFermionR,LatticeFermion> HermOp(Dw);
+  NonHermitianLinearOperator<WilsonCloverFermionR,LatticeFermion> HermOp(Dw);
   BiCGSTAB<LatticeFermion> CG(1.0e-8,10000);
   CG(HermOp,src,result);
 

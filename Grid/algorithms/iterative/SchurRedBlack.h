@@ -405,14 +405,14 @@ namespace Grid {
     }
   };
 
-  template<class Field> class HermitianSchurRedBlackDiagMooeeSolve : public SchurRedBlackBase<Field> 
+  template<class Field> class NonHermitianSchurRedBlackDiagMooeeSolve : public SchurRedBlackBase<Field> 
   {
     public:
       typedef CheckerBoardedSparseMatrixBase<Field> Matrix;
 
-      HermitianSchurRedBlackDiagMooeeSolve(OperatorFunction<Field>& HermitianRBSolver, const bool initSubGuess = false,
+      NonHermitianSchurRedBlackDiagMooeeSolve(OperatorFunction<Field>& RBSolver, const bool initSubGuess = false,
           const bool _solnAsInitGuess = false)  
-      : SchurRedBlackBase<Field>(HermitianRBSolver, initSubGuess, _solnAsInitGuess) {};
+      : SchurRedBlackBase<Field>(RBSolver, initSubGuess, _solnAsInitGuess) {};
 
       //////////////////////////////////////////////////////
       // Override RedBlack specialisation
@@ -458,14 +458,14 @@ namespace Grid {
 
       virtual void RedBlackSolve(Matrix& _Matrix, const Field& src_o, Field& sol_o)
       {
-        HermitianSchurDiagMooeeOperator<Matrix,Field> _HermOpEO(_Matrix);
-        this->_HermitianRBSolver(_HermOpEO, src_o, sol_o);  assert(sol_o.Checkerboard() == Odd);
+        NonHermitianSchurDiagMooeeOperator<Matrix,Field> _OpEO(_Matrix);
+        this->_HermitianRBSolver(_OpEO, src_o, sol_o);  assert(sol_o.Checkerboard() == Odd);
       }
 
       virtual void RedBlackSolve(Matrix& _Matrix, const std::vector<Field>& src_o, std::vector<Field>& sol_o)
       {
-        HermitianSchurDiagMooeeOperator<Matrix,Field> _HermOpEO(_Matrix);
-        this->_HermitianRBSolver(_HermOpEO, src_o, sol_o); 
+        NonHermitianSchurDiagMooeeOperator<Matrix,Field> _OpEO(_Matrix);
+        this->_HermitianRBSolver(_OpEO, src_o, sol_o); 
       }
   };
 
@@ -547,7 +547,7 @@ namespace Grid {
     }
   };
 
-  template<class Field> class HermitianSchurRedBlackDiagTwoSolve : public SchurRedBlackBase<Field> 
+  template<class Field> class NonHermitianSchurRedBlackDiagTwoSolve : public SchurRedBlackBase<Field> 
   {
     public:
       typedef CheckerBoardedSparseMatrixBase<Field> Matrix;
@@ -555,9 +555,9 @@ namespace Grid {
       /////////////////////////////////////////////////////
       // Wrap the usual normal equations Schur trick
       /////////////////////////////////////////////////////
-      HermitianSchurRedBlackDiagTwoSolve(OperatorFunction<Field>& HermitianRBSolver, const bool initSubGuess = false,
+      NonHermitianSchurRedBlackDiagTwoSolve(OperatorFunction<Field>& RBSolver, const bool initSubGuess = false,
           const bool _solnAsInitGuess = false)  
-      : SchurRedBlackBase<Field>(HermitianRBSolver, initSubGuess, _solnAsInitGuess) {};
+      : SchurRedBlackBase<Field>(RBSolver, initSubGuess, _solnAsInitGuess) {};
 
       virtual void RedBlackSource(Matrix& _Matrix, const Field& src, Field& src_e, Field& src_o)
       {
@@ -606,14 +606,14 @@ namespace Grid {
 
       virtual void RedBlackSolve(Matrix& _Matrix, const Field& src_o, Field& sol_o)
       {
-        HermitianSchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
-        this->_HermitianRBSolver(_HermOpEO, src_o, sol_o);
+        NonHermitianSchurDiagTwoOperator<Matrix,Field> _OpEO(_Matrix);
+        this->_HermitianRBSolver(_OpEO, src_o, sol_o);
       };
 
       virtual void RedBlackSolve(Matrix& _Matrix, const std::vector<Field>& src_o,  std::vector<Field>& sol_o)
       {
-        SchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
-        this->_HermitianRBSolver(_HermOpEO, src_o, sol_o); 
+        NonHermitianSchurDiagTwoOperator<Matrix,Field> _OpEO(_Matrix);
+        this->_HermitianRBSolver(_OpEO, src_o, sol_o); 
       }
   };
 }

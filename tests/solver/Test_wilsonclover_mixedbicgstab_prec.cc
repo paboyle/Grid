@@ -80,16 +80,16 @@ int main (int argc, char ** argv)
   result_o_2.Checkerboard() = Odd;
   result_o_2 = Zero();
 
-  HermitianSchurDiagMooeeOperator<WilsonCloverFermionD, LatticeFermionD> HermOpEO_d(Dw_d);
-  HermitianSchurDiagMooeeOperator<WilsonCloverFermionF, LatticeFermionF> HermOpEO_f(Dw_f);
+  NonHermitianSchurDiagMooeeOperator<WilsonCloverFermionD, LatticeFermionD> NonHermOpEO_d(Dw_d);
+  NonHermitianSchurDiagMooeeOperator<WilsonCloverFermionF, LatticeFermionF> NonHermOpEO_f(Dw_f);
 
   std::cout << GridLogMessage << "::::::::::::: Starting mixed CG" << std::endl;
-  MixedPrecisionBiCGSTAB<LatticeFermionD, LatticeFermionF> mCG(1.0e-8, 10000, 50, FrbGrid_f, HermOpEO_f, HermOpEO_d);
+  MixedPrecisionBiCGSTAB<LatticeFermionD, LatticeFermionF> mCG(1.0e-8, 10000, 50, FrbGrid_f, NonHermOpEO_f, NonHermOpEO_d);
   mCG(src_o, result_o);
 
   std::cout << GridLogMessage << "::::::::::::: Starting regular CG" << std::endl;
   BiCGSTAB<LatticeFermionD> CG(1.0e-8, 10000);
-  CG(HermOpEO_d, src_o, result_o_2);
+  CG(NonHermOpEO_d, src_o, result_o_2);
 
   LatticeFermionD diff_o(FrbGrid_d);
   RealD diff = axpy_norm(diff_o, -1.0, result_o, result_o_2);

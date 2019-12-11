@@ -77,7 +77,7 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd, src_o, src);
   result_o = Zero();
 
-  HermitianSchurDiagMooeeOperator<WilsonCloverFermionR,LatticeFermion> HermOp(Dw);
+  NonHermitianSchurDiagMooeeOperator<WilsonCloverFermionR,LatticeFermion> HermOp(Dw);
   BiCGSTAB<LatticeFermion> CG(1.0e-8,10000);
   CG(HermOp, src_o, result_o);
 

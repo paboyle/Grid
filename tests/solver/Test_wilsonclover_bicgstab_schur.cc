@@ -73,7 +73,7 @@ int main (int argc, char ** argv)
   WilsonCloverFermionR Dw(Umu, Grid, RBGrid, mass, csw_r, csw_t);
 
   BiCGSTAB<LatticeFermion> CG(1.0e-8,10000);
-  HermitianSchurRedBlackDiagMooeeSolve<LatticeFermion> SchurSolver(CG);
+  NonHermitianSchurRedBlackDiagMooeeSolve<LatticeFermion> SchurSolver(CG);
 
   SchurSolver(Dw, src, result);
 

@@ -62,7 +62,7 @@ class BiCGSTAB : public OperatorFunction<Field>
       conformable(psi, src);
 
       RealD cp(0), rho(1), rho_prev(0), alpha(1), beta(0), omega(1);
-      RealD a(0), bo(0), d(0), b(0), ssq(0), qq(0);
+      RealD a(0), bo(0), b(0), ssq(0);
 
       Field p(src);
       Field r(src);
@@ -79,7 +79,8 @@ class BiCGSTAB : public OperatorFunction<Field>
       RealD guess = norm2(psi);
       assert(std::isnan(guess) == 0);
     
-      Linop.HermOpAndNorm(psi, v, d, b);
+      Linop.Op(psi, v);
+      b = norm2(v);
 
       r = src - v;
       rhat = r;
@@ -131,7 +132,7 @@ class BiCGSTAB : public OperatorFunction<Field>
         LinalgTimer.Stop();
 
         MatrixTimer.Start();
-        Linop.HermOp(p,v);
+        Linop.Op(p,v);
         MatrixTimer.Stop();
 
         LinalgTimer.Start();
@@ -155,7 +156,7 @@ class BiCGSTAB : public OperatorFunction<Field>
         LinalgTimer.Stop();
 
         MatrixTimer.Start();
-        Linop.HermOp(s,t);
+        Linop.Op(s,t);
         MatrixTimer.Stop();
 
         LinalgTimer.Start();
@@ -181,7 +182,7 @@ class BiCGSTAB : public OperatorFunction<Field>
         if(cp <= rsq) 
         {
           SolverTimer.Stop();
-          Linop.HermOpAndNorm(psi, v, d, qq);
+          Linop.Op(psi, v);
           p = v - src;
 
           RealD srcnorm = sqrt(norm2(src));
