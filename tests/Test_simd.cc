@@ -784,7 +784,6 @@ int main (int argc, char ** argv)
     std::cout <<" OK ! "<<std::endl;
 
     // Double to Half
-#ifdef USE_FP16
     std::cout << GridLogMessage<< "Double to half" ;
     precisionChange(&H[0],&D[0],Ndp);
     precisionChange(&DD[0],&H[0],Ndp);
@@ -813,7 +812,7 @@ int main (int argc, char ** argv)
       assert( tmp < 1.0e-3 ); 
     }
     std::cout <<" OK ! "<<std::endl;
-#endif
+
   }
   Grid_finalize();
 }
