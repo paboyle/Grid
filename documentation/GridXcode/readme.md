@@ -98,10 +98,12 @@ Download the latest version of [Open MPI][OMPI] version 3.1 (I used 3.1.5) and b
 
 [OMPI]: https://www.open-mpi.org/software/ompi/v3.1/
 
-    ../configure CC=clang CXX=clang++ CXXFLAGS=-g --prefix=$GridPre
+    ../configure CC=clang CXX=clang++ CXXFLAGS=-g --prefix=$GridPre/bin
     make -j 4 all install
 
-NB: Grid does not have any dependencies on fortran, however many standard scientific packages do, so you may wish to download GNU fortran (e.g. MacPorts ``gfortran`` package) and add the following to your configure invocation:
+***Note the `/bin` at the end of the prefix - this is required. As a quirk of the OpenMPI installer, `--prefix` must point to the `bin` subdirectory, with other files installed in `$GridPre/include`, `$GridPre/lib`, `$GridPre/share`, etc.***
+
+Grid does not have any dependencies on fortran, however many standard scientific packages do, so you may wish to download GNU fortran (e.g. MacPorts ``gfortran`` package) and add the following to your configure invocation:
 
     F77=gfortran FC=gfortran
 
@@ -194,7 +196,7 @@ Since Grid itself doesn't really have debug configurations, the release build is
 
 Debug configuration with MPI:
 
-    ../configure CXX=clang++ --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre --enable-simd=GEN --enable-precision=double --prefix=$GridPre/GridMPIDebug --enable-comms=mpi-auto MPICXX=$GridPre/mpicxx
+    ../configure CXX=clang++ --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre --enable-simd=GEN --enable-precision=double --prefix=$GridPre/GridMPIDebug --enable-comms=mpi-auto MPICXX=$GridPre/bin/mpicxx
 
 ### 5.3 Build Grid
 
