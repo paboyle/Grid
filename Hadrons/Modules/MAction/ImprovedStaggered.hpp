@@ -46,7 +46,7 @@ class ImprovedStaggeredPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(ImprovedStaggeredPar,
                                     std::string, gauge,
-                                    //std::string, gauge,
+                                    std::string, gaugefat,
                                     double     , mass,
                                     double     , c1,
                                     double     , c2,
@@ -94,7 +94,7 @@ TImprovedStaggered<FImpl>::TImprovedStaggered(const std::string name)
 template <typename FImpl>
 std::vector<std::string> TImprovedStaggered<FImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().gauge};
+    std::vector<std::string> in = {par().gauge, par().gaugefat};
     
     return in;
 }
@@ -115,11 +115,12 @@ void TImprovedStaggered<FImpl>::setup(void)
                  << " using gauge field '" << par().gauge << "'" << std::endl;
                  
     auto &U      = envGet(GaugeField, par().gauge);
+    auto &Ufat   = envGet(GaugeField, par().gaugefat);
     auto &grid   = *envGetGrid(FermionField);
     auto &gridRb = *envGetRbGrid(FermionField);
     typename ImprovedStaggeredFermion<FImpl>::ImplParams implParams;
     
-    envCreateDerived(FMat, ImprovedStaggeredFermion<FImpl>, getName(), 1, U, U,
+    envCreateDerived(FMat, ImprovedStaggeredFermion<FImpl>, getName(), 1, U, Ufat,
                      grid, gridRb,
                      par().mass, par().c1, par().c2, par().tad, implParams);
 }

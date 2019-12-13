@@ -19,6 +19,7 @@
 #include <Hadrons/Modules/MScalarSUN/TrMag.hpp>
 #include <Hadrons/Modules/MScalarSUN/TwoPointNPR.hpp>
 #include <Hadrons/Modules/MScalarSUN/TransProj.hpp>
+#include <Hadrons/Modules/MNoise/TimeDilutedColorDiagonal.hpp>
 #include <Hadrons/Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp>
 #include <Hadrons/Modules/MNoise/FullVolumeColorDiagonal.hpp>
 #include <Hadrons/Modules/MNoise/FullVolumeSpinColorDiagonal.hpp>

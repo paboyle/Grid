@@ -79,6 +79,21 @@ private:
 };
 
 template <typename FImpl>
+class TimeDilutedColorDiagonalNoise: public DilutedNoise<FImpl>
+{
+public:
+    typedef typename FImpl::FermionField FermionField;
+public:
+    // constructor/destructor
+    TimeDilutedColorDiagonalNoise(GridCartesian *g);
+    virtual ~TimeDilutedColorDiagonalNoise(void) = default;
+    // generate noise
+    virtual void generateNoise(GridParallelRNG &rng);
+private:
+    unsigned int nt_;
+};
+
+template <typename FImpl>
 class FullVolumeSpinColorDiagonalNoise: public DilutedNoise<FImpl>
 {
 public:
@@ -220,6 +235,53 @@ void TimeDilutedSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rn
 }
 
 /******************************************************************************
+ *        TimeDilutedColorDiagonalNoise template implementation           *
+ ******************************************************************************/
+template <typename FImpl>
+TimeDilutedColorDiagonalNoise<FImpl>::
+TimeDilutedColorDiagonalNoise(GridCartesian *g)
+: DilutedNoise<FImpl>(g)
+{
+    nt_ = this->getGrid()->GlobalDimensions().size();
+    this->resize(nt_*FImpl::Dimension);
+}
+
+template <typename FImpl>
+void TimeDilutedColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng)
+{
+    typedef decltype(peekColour((*this)[0], 0)) SpinField;
+    
+    auto                       &noise = *this;
+    auto                       g      = this->getGrid();
+    auto                       nd     = g->GlobalDimensions().size();
+    auto                       nc     = FImpl::Dimension;
+    Complex                    shift(1., 1.);
+    Lattice<iScalar<vInteger>> tLat(g);
+    LatticeComplex             eta(g), etaCut(g);
+    SpinField                  etas(g);
+    unsigned int               i = 0;
+    
+    LatticeCoordinate(tLat, nd - 1);
+    bernoulli(rng, eta);
+    eta = (2.*eta - shift)*(1./::sqrt(2.));
+    for (unsigned int t = 0; t < nt_; ++t)
+    {
+        etaCut = where((tLat == t), eta, 0.*eta);
+        //for (unsigned int s = 0; s < Ns; ++s)
+        //{
+            //etas = Zero();
+            //pokeSpin(etas, etaCut, s);
+            for (unsigned int c = 0; c < nc; ++c)
+            {
+                noise[i] = Zero();
+                pokeColour(noise[i], eta, c);
+                i++;
+            }
+        //}
+    }
+}
+
+/******************************************************************************
  *        FullVolumeSpinColorDiagonalNoise template implementation           *
  ******************************************************************************/
 template <typename FImpl>
@@ -266,7 +328,7 @@ void FullVolumeSpinColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng
 template <typename FImpl>
 FullVolumeColorDiagonalNoise<FImpl>::
 FullVolumeColorDiagonalNoise(GridCartesian *g, unsigned int nSrc)
-: DilutedNoise<FImpl>(g, nSrc*Ns*FImpl::Dimension), nSrc_(nSrc)
+: DilutedNoise<FImpl>(g, nSrc*FImpl::Dimension), nSrc_(nSrc)
 {}
 
 template <typename FImpl>
@@ -288,7 +350,7 @@ void FullVolumeColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng)
     for (unsigned int n = 0; n < nSrc_; ++n)
     {
         //for (unsigned int s = 0; s < Ns; ++s)
-        {
+        //{
             //etas = zero;
             //pokeSpin(etas, eta, s);
             for (unsigned int c = 0; c < nc; ++c)
@@ -298,7 +360,7 @@ void FullVolumeColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng)
                 pokeColour(noise[i], eta, c);
                 i++;
             }
-        }
+        //}
     }
 }
 

@@ -21,6 +21,7 @@ modules_cc =\
   Modules/MScalarSUN/TrMag.cc \
   Modules/MNoise/FullVolumeSpinColorDiagonal.cc \
   Modules/MNoise/FullVolumeColorDiagonal.cc \
+  Modules/MNoise/TimeDilutedColorDiagonal.cc \
   Modules/MNoise/TimeDilutedSpinColorDiagonal.cc \
   Modules/MScalar/FreeProp.cc \
   Modules/MScalar/ChargedProp.cc \
@@ -95,6 +96,7 @@ modules_hpp =\
   Modules/MScalarSUN/TrMag.hpp \
   Modules/MScalarSUN/TwoPointNPR.hpp \
   Modules/MScalarSUN/TransProj.hpp \
+  Modules/MNoise/TimeDilutedColorDiagonal.hpp \
   Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp \
   Modules/MNoise/FullVolumeSpinColorDiagonal.hpp \
   Modules/MNoise/FullVolumeColorDiagonal.hpp \
