@@ -240,7 +240,7 @@ public:
   // 
   // World of possibilities here. 
   // Experiments
-  // i)  Use inverse iteration method equivaleent with Chebyshve
+  // i)  Use inverse iteration method equivaleent with Chebyshev
   // ii) Multiply by Fourier phases
   // iii) Multiply by Fourier phases and refilter
   //
@@ -248,10 +248,31 @@ public:
 
     RealD scale;
 
-    const int dependent=4;
+    const int dependent=16;
 
-    Chebyshev<FineField> ChebDependent(1.0,64.0,100);
-    Chebyshev<FineField> ChebFilt     (0.1,64.0,900);
+    Chebyshev<FineField> ChebFilt     (0.03,64.0,500);
+    Chebyshev<FineField> ChebDependent(0.01,64.0,200);
+
+#if 0
+    auto latt_size = FineGrid->GlobalDimensions();
+    Coordinate Fourier[dependent] =  {
+      Coordinate({0, 0,0,0,0}),
+      Coordinate({0, 1,0,0,0}),
+      Coordinate({0,-1,0,0,0}),
+      Coordinate({0,0, 1,0,0}),
+      Coordinate({0,0,-1,0,0}),
+      Coordinate({0,0,0, 1,0}),
+      Coordinate({0,0,0,-1,0}),
+      Coordinate({0,0,0,0, 1}),
+      Coordinate({0,0,0,0,-1})
+    };
+    
+    ComplexD ci(0.0,1.0);
+    Lattice<CComplex> C(FineGrid);   
+    Lattice<CComplex> coor(FineGrid);   
+    FineField save(FineGrid);
+    FineField tmp (FineGrid);
+#endif
 
     FineField noise(FineGrid);
     FineField Mn(FineGrid);
@@ -262,16 +283,29 @@ public:
       gaussian(RNG,noise);
       scale = std::pow(norm2(noise),-0.5); 
       noise=noise*scale;
+      //      save=noise;
 
       // Initial matrix element
       hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<bb<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
 
-      for(int b=bb;b<bb+dependent;b++) {
+      int dep=0;
+      for(int b=bb;b<MIN(bb+dependent,nn);b++) {
 
 	// Filter
 	if(b==bb) {
 	  ChebFilt(hermop,noise,Mn);
 	} else { 
+#if 0
+	  C=Zero();
+	  for(int mu=0;mu<5;mu++){
+	    RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
+	    LatticeCoordinate(coor,mu);
+	    C = C + (TwoPiL * Fourier[dep][mu]) * coor;
+	  }
+	  C = exp(C*ci); // Fourier phase
+	  noise=C*save;
+	  hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<b<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
+#endif
 	  ChebDependent(hermop,noise,Mn);
 	}
 
@@ -290,11 +324,7 @@ public:
 	noise = Mn; // Already normaliseed
 	// c) noise = fourier_phase * Mn; // etc..
 
-	if ( b<bb+dependent-1 ) { 
-	  hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<b<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
-	}
-
-
+	dep++;
       }
     }
 
@@ -482,7 +512,7 @@ public:
 
       for(int p=0;p<geom.npoint;p++){ 
 
-	std::cout << GridLogMessage<< "CoarsenMatrix direction "<<p << std::endl;
+	//	std::cout << GridLogMessage<< "CoarsenMatrix direction "<<p << std::endl;
 	int dir   = geom.directions[p];
 	int disp  = geom.displacements[p];
 
@@ -496,7 +526,7 @@ public:
 	else  {
 	  linop.OpDir(phi,Mphi,dir,disp); 
 	}
-	std::cout << GridLogMessage<< "CoarsenMatrix direction "<<p << "Mdir done "<< std::endl;
+	//	std::cout << GridLogMessage<< "CoarsenMatrix direction "<<p << "Mdir done "<< std::endl;
 
 	////////////////////////////////////////////////////////////////////////
 	// Pick out contributions coming from this cell and neighbour cell
@@ -513,11 +543,11 @@ public:
 	} else {
 	  assert(0);
 	}
-	std::cout << GridLogMessage<< "CoarsenMatrix direction "<<p << "selected "<< std::endl;
+	//	std::cout << GridLogMessage<< "CoarsenMatrix direction "<<p << "selected "<< std::endl;
 
 	Subspace.ProjectToSubspace(iProj,iblock);
 	Subspace.ProjectToSubspace(oProj,oblock);
-	std::cout << GridLogMessage<< "CoarsenMatrix direction "<<p << "proojected "<< std::endl;
+	//	std::cout << GridLogMessage<< "CoarsenMatrix direction "<<p << "proojected "<< std::endl;
 
 	// 4x gain possible in this loop. Profile and identify time loss.
 	// i)  Assume Hermiticity, upper diagonal only (2x)
