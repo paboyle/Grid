@@ -111,7 +111,10 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
 
   auto fineData_   = fineData.View();
   auto coarseData_ = coarseData.View();
-  // Loop over coars parallel, and then loop over fine associated with coarse.
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // To make this lock free, loop over coars parallel, and then loop over fine associated with coarse.
+  // Otherwise do finee inner product per site, and make the update atomic
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
   thread_for( sf, fine->oSites(), {
     int sc;
     Coordinate coor_c(_ndimension);
@@ -120,10 +123,11 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
     for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
     Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
-    thread_critical {
-      for(int i=0;i<nbasis;i++) {
-	auto Basis_      = Basis[i].View();
-	coarseData_[sc](i)=coarseData_[sc](i) + innerProduct(Basis_[sf],fineData_[sf]);
+    for(int i=0;i<nbasis;i++) {
+      auto Basis_      = Basis[i].View();
+      auto ip          = innerProduct(Basis_[sf],fineData_[sf]);
+      thread_critical {
+	coarseData_[sc](i)=coarseData_[sc](i) + ip;
       }
     }
   });
@@ -160,7 +164,7 @@ inline void blockZAXPY(Lattice<vobj> &fineZ,
   auto fineY_  = fineY.View();
   auto coarseA_= coarseA.View();
 
-  thread_for(sf, fine->oSites(), {
+  accelerator_for(sf, fine->oSites(), 1, {
     
     int sc;
     Coordinate coor_c(_ndimension);
@@ -196,7 +200,7 @@ inline void blockInnerProduct(Lattice<CComplex> &CoarseInner,
 
   fine_inner = localInnerProduct(fineX,fineY);
   blockSum(coarse_inner,fine_inner);
-  thread_for(ss, coarse->oSites(),{
+  accelerator_for(ss, coarse->oSites(), 1, {
     CoarseInner_[ss] = coarse_inner_[ss];
   });
 }
@@ -321,7 +325,7 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
   auto coarseData_ = coarseData.View();
 
   // Loop with a cache friendly loop ordering
-  thread_for(sf,fine->oSites(),{
+  acceelerator_for(sf,fine->oSites(),1,{
     int sc;
     Coordinate coor_c(_ndimension);
     Coordinate coor_f(_ndimension);

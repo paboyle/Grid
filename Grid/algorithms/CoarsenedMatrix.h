@@ -253,27 +253,6 @@ public:
     Chebyshev<FineField> ChebFilt     (0.03,64.0,500);
     Chebyshev<FineField> ChebDependent(0.01,64.0,200);
 
-#if 0
-    auto latt_size = FineGrid->GlobalDimensions();
-    Coordinate Fourier[dependent] =  {
-      Coordinate({0, 0,0,0,0}),
-      Coordinate({0, 1,0,0,0}),
-      Coordinate({0,-1,0,0,0}),
-      Coordinate({0,0, 1,0,0}),
-      Coordinate({0,0,-1,0,0}),
-      Coordinate({0,0,0, 1,0}),
-      Coordinate({0,0,0,-1,0}),
-      Coordinate({0,0,0,0, 1}),
-      Coordinate({0,0,0,0,-1})
-    };
-    
-    ComplexD ci(0.0,1.0);
-    Lattice<CComplex> C(FineGrid);   
-    Lattice<CComplex> coor(FineGrid);   
-    FineField save(FineGrid);
-    FineField tmp (FineGrid);
-#endif
-
     FineField noise(FineGrid);
     FineField Mn(FineGrid);
 
@@ -295,17 +274,6 @@ public:
 	if(b==bb) {
 	  ChebFilt(hermop,noise,Mn);
 	} else { 
-#if 0
-	  C=Zero();
-	  for(int mu=0;mu<5;mu++){
-	    RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
-	    LatticeCoordinate(coor,mu);
-	    C = C + (TwoPiL * Fourier[dep][mu]) * coor;
-	  }
-	  C = exp(C*ci); // Fourier phase
-	  noise=C*save;
-	  hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<b<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
-#endif
 	  ChebDependent(hermop,noise,Mn);
 	}
 
