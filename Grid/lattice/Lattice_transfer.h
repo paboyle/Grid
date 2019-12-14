@@ -106,6 +106,7 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
     block_r[d] = fine->_rdimensions[d] / coarse->_rdimensions[d];
     assert(block_r[d]*coarse->_rdimensions[d] == fine->_rdimensions[d]);
   }
+  int blockVol = fine->oSites()/coarse->oSites();
 
   coarseData=Zero();
 
@@ -113,20 +114,26 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
   auto coarseData_ = coarseData.View();
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   // To make this lock free, loop over coars parallel, and then loop over fine associated with coarse.
-  // Otherwise do finee inner product per site, and make the update atomic
+  // Otherwise do fine inner product per site, and make the update atomic
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
-  thread_for( sf, fine->oSites(), {
-    int sc;
-    Coordinate coor_c(_ndimension);
-    Coordinate coor_f(_ndimension);
-    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
-    for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+  accelerator_for( sc, coarse->oSites(), {
 
-    for(int i=0;i<nbasis;i++) {
-      auto Basis_      = Basis[i].View();
-      auto ip          = innerProduct(Basis_[sf],fineData_[sf]);
-      thread_critical {
+    Coordinate coor_c(_ndimension);
+    Lexicographic::CoorFromIndex(coor_c,sc,coarse->_rdimensions);  // Block coordinate
+    coarseData_[sc]=Zero();
+
+    for(int sb=0;sb<blockVol;sb++){
+
+      Coordinate coor_b(_ndimension);
+      Coordinate coor_f(_ndimension);
+
+      Lexicographic::CoorFromIndex(coor_b,sb,block_r);
+      for(int d=0;d<_ndimension;d++) coor_f[d]=coor_c[d]*block_r[d]+coor_b[d];
+      Lexicographic::IndexFromCoor(coor_f,sf,fine->_rdimensions);
+
+      for(int i=0;i<nbasis;i++) {
+	auto Basis_      = Basis[i].View();
+	auto ip          = innerProduct(Basis_[sf],fineData_[sf]);
 	coarseData_[sc](i)=coarseData_[sc](i) + ip;
       }
     }
@@ -230,23 +237,29 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
   for(int d=0 ; d<_ndimension;d++){
     block_r[d] = fine->_rdimensions[d] / coarse->_rdimensions[d];
   }
+  int blockVol = fine->oSites()/coarse->oSites();
 
   // Turn this around to loop threaded over sc and interior loop 
   // over sf would thread better
-  coarseData=Zero();
   auto coarseData_ = coarseData.View();
   auto fineData_   = fineData.View();
 
-  thread_for(sf,fine->oSites(),{
-    int sc;
+  accelerator_for(sc,coarse->oSites(),1,{
+
+    // One thread per sub block
     Coordinate coor_c(_ndimension);
-    Coordinate coor_f(_ndimension);
-    
-    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
-    for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
-    
-    thread_critical { 
+    Lexicographic::CoorFromIndex(coor_c,sc,coarse->_rdimensions);  // Block coordinate
+    coarseData_[sc]=Zero();
+
+    for(int sb=0;sb<blockVol;sb++){
+      
+      int sf;
+      Coordinate coor_b(_ndimension);
+      Coordinate coor_f(_ndimension);
+      Lexicographic::CoorFromIndex(coor_b,sb,block_r);               // Block sub coordinate
+      for(int d=0;d<_ndimension;d++) coor_f[d]=coor_c[d]*block_r[d] + coor_b[d];
+      Lexicographic::IndexFromCoor(coor_f,sf,fine->_rdimensions);
+
       coarseData_[sc]=coarseData_[sc]+fineData_[sf];
     }
 
