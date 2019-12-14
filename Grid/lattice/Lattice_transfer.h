@@ -325,7 +325,7 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
   auto coarseData_ = coarseData.View();
 
   // Loop with a cache friendly loop ordering
-  acceelerator_for(sf,fine->oSites(),1,{
+  accelerator_for(sf,fine->oSites(),1,{
     int sc;
     Coordinate coor_c(_ndimension);
     Coordinate coor_f(_ndimension);
