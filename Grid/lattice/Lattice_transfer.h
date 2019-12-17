@@ -1,5 +1,4 @@
 /*************************************************************************************
-
     Grid physics library, www.github.com/paboyle/Grid 
 
     Source file: ./lib/lattice/Lattice_transfer.h
@@ -83,12 +82,35 @@ template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Latti
   });
 }
   
-
 template<class vobj,class CComplex,int nbasis>
 inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
+			  const             Lattice<vobj>   &fineData,
+			  const std::vector<Lattice<vobj> > &Basis)
+{
+  GridBase * fine  = fineData.Grid();
+  GridBase * coarse= coarseData.Grid();
+
+  Lattice<CComplex> ip(coarse); 
+
+  //  auto fineData_   = fineData.View();
+  auto coarseData_ = coarseData.View();
+  auto ip_         = ip.View();
+  for(int v=0;v<nbasis;v++) {
+    blockInnerProduct(ip,Basis[v],fineData);
+    accelerator_for( sc, coarse->oSites(), vobj::Nsimd(), {
+	coalescedWrite(coarseData_[sc](v),ip_(sc));
+      });
+  }
+}
+
+template<class vobj,class CComplex,int nbasis>
+inline void blockProject1(Lattice<iVector<CComplex,nbasis > > &coarseData,
 			 const             Lattice<vobj>   &fineData,
 			 const std::vector<Lattice<vobj> > &Basis)
 {
+  typedef iVector<CComplex,nbasis > coarseSiteData;
+  coarseSiteData elide;
+  typedef decltype(coalescedRead(elide)) ScalarComplex;
   GridBase * fine  = fineData.Grid();
   GridBase * coarse= coarseData.Grid();
   int  _ndimension = coarse->_ndimension;
@@ -116,11 +138,17 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
   // To make this lock free, loop over coars parallel, and then loop over fine associated with coarse.
   // Otherwise do fine inner product per site, and make the update atomic
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
-  accelerator_for( sc, coarse->oSites(), {
+  accelerator_for( sci, nbasis*coarse->oSites(), vobj::Nsimd(), {
+
+    auto sc=sci/nbasis;
+    auto i=sci%nbasis;
+    auto Basis_      = Basis[i].View();
 
     Coordinate coor_c(_ndimension);
     Lexicographic::CoorFromIndex(coor_c,sc,coarse->_rdimensions);  // Block coordinate
-    coarseData_[sc]=Zero();
+
+    int sf;
+    decltype(innerProduct(Basis_(sf),fineData_(sf))) reduce=Zero();
 
     for(int sb=0;sb<blockVol;sb++){
 
@@ -130,13 +158,10 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
       Lexicographic::CoorFromIndex(coor_b,sb,block_r);
       for(int d=0;d<_ndimension;d++) coor_f[d]=coor_c[d]*block_r[d]+coor_b[d];
       Lexicographic::IndexFromCoor(coor_f,sf,fine->_rdimensions);
-
-      for(int i=0;i<nbasis;i++) {
-	auto Basis_      = Basis[i].View();
-	auto ip          = innerProduct(Basis_[sf],fineData_[sf]);
-	coarseData_[sc](i)=coarseData_[sc](i) + ip;
-      }
+      
+      reduce=reduce+innerProduct(Basis_(sf),fineData_(sf));
     }
+    coalescedWrite(coarseData_[sc](i),reduce);
   });
   return;
 }
@@ -313,6 +338,7 @@ inline void blockOrthogonalise(Lattice<CComplex> &ip,std::vector<Lattice<vobj> >
   }
 }
 
+#if 0
 template<class vobj,class CComplex,int nbasis>
 inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
 			 Lattice<vobj>   &fineData,
@@ -349,13 +375,35 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
 
     for(int i=0;i<nbasis;i++) {
       auto basis_ = Basis[i].View();
-      if(i==0) fineData_[sf]=coarseData_[sc](i) *basis_[sf];
-      else     fineData_[sf]=fineData_[sf]+coarseData_[sc](i)*basis_[sf];
+      if(i==0) fineData_[sf]=coarseData_[sc](i) *basis_[sf]);
+      else     fineData_[sf]=fineData_[sf]+coarseData_[sc](i)*basis_[sf]);
     }
   });
   return;
   
 }
+#else
+template<class vobj,class CComplex,int nbasis>
+inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
+			 Lattice<vobj>   &fineData,
+			 const std::vector<Lattice<vobj> > &Basis)
+{
+  GridBase * fine  = fineData.Grid();
+  GridBase * coarse= coarseData.Grid();
+
+  fineData=Zero();
+  for(int i=0;i<nbasis;i++) {
+    Lattice<iScalar<CComplex> > ip = PeekIndex<0>(coarseData,i);
+    Lattice<CComplex> cip(coarse);
+    auto cip_ = cip.View();
+    auto  ip_ =  ip.View();
+    accelerator_for(sc,coarse->oSites(),1,{
+      cip_[sc] = ip_[sc]();
+    });
+    blockZAXPY<vobj,CComplex >(fineData,cip,Basis[i],fineData);
+  }
+}
+#endif
 
 // Useful for precision conversion, or indeed anything where an operator= does a conversion on scalars.
 // Simd layouts need not match since we use peek/poke Local
