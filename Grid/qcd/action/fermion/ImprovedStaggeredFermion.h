@@ -127,6 +127,15 @@ public:
 			   GridRedBlackCartesian &Hgrid, RealD _mass,
 			   RealD _c1, RealD _c2,RealD _u0,
 			   const ImplParams &p = ImplParams());
+  //////////////////////////////////////////////////////////////////////////
+  // Grid own interface Constructor. You probably want to use this one
+  //////////////////////////////////////////////////////////////////////////
+  ImprovedStaggeredFermion(GaugeField &_Uthin,
+                           GaugeField &_Ufat, GaugeField &_Ulong,
+                           GridCartesian &Fgrid, GridRedBlackCartesian &Hgrid,
+                           RealD _mass,
+                           RealD _c1, RealD _c2,RealD _u0,
+                           const ImplParams &p = ImplParams());
 
   //////////////////////////////////////////////////////////////////////////
   // MILC constructor no gauge fields
