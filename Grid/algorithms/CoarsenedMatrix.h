@@ -117,8 +117,8 @@ public:
     CoarseScalar InnerProd(CoarseGrid); 
     std::cout << GridLogMessage <<" Block Gramm-Schmidt pass 1"<<std::endl;
     blockOrthogonalise(InnerProd,subspace);
-    std::cout << GridLogMessage <<" Block Gramm-Schmidt pass 2"<<std::endl; // Really have to do twice? Yuck
-    blockOrthogonalise(InnerProd,subspace);
+    //    std::cout << GridLogMessage <<" Block Gramm-Schmidt pass 2"<<std::endl; // Really have to do twice? Yuck
+    //    blockOrthogonalise(InnerProd,subspace);
     //      std::cout << GridLogMessage <<" Gramm-Schmidt checking orthogonality"<<std::endl;
     //      CheckOrthogonal();
   } 
@@ -137,11 +137,15 @@ public:
     std::cout<<GridLogMessage <<"CheckOrthog done"<<std::endl;
   }
   void ProjectToSubspace(CoarseVector &CoarseVec,const FineField &FineVec){
+    //    std::cout << GridLogMessage<< "BlockPromote"<<std::endl;
     blockProject(CoarseVec,FineVec,subspace);
+    //    std::cout << GridLogMessage<< "BlockPromote"<<std::endl;
   }
   void PromoteFromSubspace(const CoarseVector &CoarseVec,FineField &FineVec){
     FineVec.Checkerboard() = subspace[0].Checkerboard();
+    //    std::cout << GridLogMessage<< "BlockPromote"<<std::endl;
     blockPromote(CoarseVec,FineVec,subspace);
+    //    std::cout << GridLogMessage<< "BlockPromote done"<<std::endl;
   }
   void CreateSubspaceRandom(GridParallelRNG &RNG){
     for(int i=0;i<nbasis;i++){
@@ -262,12 +266,10 @@ public:
       gaussian(RNG,noise);
       scale = std::pow(norm2(noise),-0.5); 
       noise=noise*scale;
-      //      save=noise;
 
       // Initial matrix element
       hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<bb<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
 
-      int dep=0;
       for(int b=bb;b<MIN(bb+dependent,nn);b++) {
 
 	// Filter
@@ -283,16 +285,13 @@ public:
 
 	// set this new vector
 	subspace[b]   = Mn;
-	
+
 	// new matrix element
 	hermop.Op(Mn,noise); std::cout<<GridLogMessage << "filtered["<<b<<"] <f|MdagM|f> "<<norm2(noise)<<std::endl;
-	
-	// Dependent vector rule
-	// a) noise = A. Mn;
-	noise = Mn; // Already normaliseed
-	// c) noise = fourier_phase * Mn; // etc..
 
-	dep++;
+	// Dependent vector rule
+	noise = Mn; // Already normaliseed
+
       }
     }
 
@@ -310,7 +309,7 @@ public:
   typedef iVector<CComplex,nbasis >             siteVector;
   typedef Lattice<siteVector>                 CoarseVector;
   typedef Lattice<iMatrix<CComplex,nbasis > > CoarseMatrix;
-
+  typedef iMatrix<CComplex,nbasis >  Cobj;
   typedef Lattice< CComplex >   CoarseScalar; // used for inner products on fine field
   typedef Lattice<Fobj >        FineField;
 
@@ -336,36 +335,70 @@ public:
     conformable(_grid,in.Grid());
     conformable(in.Grid(),out.Grid());
 
-    RealD Nin = norm2(in);
+
+    //    RealD Nin = norm2(in);
     SimpleCompressor<siteVector> compressor;
 
+    double comms_usec = -usecond();
     Stencil.HaloExchange(in,compressor);
+    comms_usec += usecond();
 
     auto in_v = in.View();
     auto out_v = out.View();
-    accelerator_for(ss,Grid()->oSites(),1,{
-      siteVector res = Zero();
-      siteVector nbr;
+    typedef LatticeView<Cobj> Aview;
+
+    Vector<Aview> AcceleratorViewContainer;
+    for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer.push_back(A[p].View());
+    Aview *Aview_p = & AcceleratorViewContainer[0];
+
+    const int Nsimd = CComplex::Nsimd();
+
+    typedef decltype(coalescedRead(in_v[0])) calcVector;
+
+    GridStopWatch ArithmeticTimer;
+    int osites=Grid()->oSites();
+    double flops = osites*Nsimd*nbasis*nbasis*8.0*geom.npoint;
+    double bytes = osites*nbasis*nbasis*geom.npoint*sizeof(CComplex);
+    double usecs =-usecond();
+
+    assert(geom.npoint==9);
+
+    accelerator_for(ss, Grid()->oSites(), Nsimd, {
+	
+      calcVector res = Zero();
+      calcVector nbr;
       int ptype;
       StencilEntry *SE;
-      for(int point=0;point<geom.npoint;point++){
+
+      int lane=SIMTlane(Nsimd);
+      for(int point=0;point<9;point++){
 
 	SE=Stencil.GetEntry(ptype,point,ss);
 	  
-	if(SE->_is_local&&SE->_permute) { 
-	  permute(nbr,in_v[SE->_offset],ptype);
-	} else if(SE->_is_local) { 
-	  nbr = in_v[SE->_offset];
+	if(SE->_is_local) { 
+	  nbr = coalescedReadPermute(in_v[SE->_offset],ptype,SE->_permute,lane);
 	} else {
-	  nbr = Stencil.CommBuf()[SE->_offset];
+	  nbr = coalescedRead(Stencil.CommBuf()[SE->_offset],lane);
 	}
-	auto A_point = A[point].View();
-	res = res + A_point[ss]*nbr;
-      }
-      vstream(out_v[ss],res);
-    });
+	synchronise();
 
+	auto A = coalescedRead(Aview_p[point][ss]);
+	res = res + A*nbr;
+      }
+      coalescedWrite(out_v[ss],res,lane);
+    });
+    usecs +=usecond();
+
+    double nrm_usec=-usecond();
     RealD Nout= norm2(out);
+    nrm_usec+=usecond();
+    /*
+        std::cout << GridLogMessage << "\tNorm        " << nrm_usec << " us" <<std::endl;
+        std::cout << GridLogMessage << "\tHalo        " << comms_usec << " us" <<std::endl;
+        std::cout << GridLogMessage << "\tMatrix      " << usecs << " us" <<std::endl;
+        std::cout << GridLogMessage << "\t  mflop/s   " << flops/usecs<<std::endl;
+        std::cout << GridLogMessage << "\t  MB/s      " << bytes/usecs<<std::endl;
+    */
     return Nout;
   };
 
@@ -459,7 +492,7 @@ public:
 
     std::cout << GridLogMessage<< "CoarsenMatrix" << std::endl;
     // Orthogonalise the subblocks over the basis
-    blockOrthogonalise(InnerProd,Subspace.subspace);
+    //    blockOrthogonalise(InnerProd,Subspace.subspace);
     std::cout << GridLogMessage<< "CoarsenMatrix orthogonalised" << std::endl;
 
     // Compute the matrix elements of linop between this orthonormal
