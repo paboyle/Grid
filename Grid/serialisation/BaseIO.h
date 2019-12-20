@@ -318,7 +318,7 @@ namespace Grid {
       TotalDims[TensorRank + i] = Traits::Dimension(i);
 
     // If the Tensor isn't in Row-Major order, then we'll need to copy it's data
-    const bool CopyData{NumElements > 1 && ETensor::Layout != Eigen::StorageOptions::RowMajor};
+    const bool CopyData{NumElements > 1 && static_cast<int>( ETensor::Layout ) != static_cast<int>( Eigen::StorageOptions::RowMajor )};
     const Scalar * pWriteBuffer;
     std::vector<Scalar> CopyBuffer;
     const Index TotalNumElements = NumElements * Traits::count;

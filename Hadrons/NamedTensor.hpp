@@ -159,9 +159,9 @@ using LapEvecs = Grid::Hadrons::EigenPack<LatticeColourVector>;
 
 class NoiseTensor : public NamedTensor<Complex, 4>
 {
+    public:
     static const std::string                Name__;
     static const std::array<std::string, 4> DefaultIndexNames__;
-    public:
     // Default constructor (assumes tensor will be loaded from file)
     EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE NoiseTensor() : NamedTensor{Name__, DefaultIndexNames__} {}
 
@@ -173,9 +173,9 @@ class NoiseTensor : public NamedTensor<Complex, 4>
 
 class PerambTensor : public NamedTensor<SpinVector, 6>
 {
+    public:
     static const std::string                Name__;
     static const std::array<std::string, 6> DefaultIndexNames__;
-    public:
     // Default constructor (assumes tensor will be loaded from file)
     EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE PerambTensor() : NamedTensor{Name__, DefaultIndexNames__} {}
 
