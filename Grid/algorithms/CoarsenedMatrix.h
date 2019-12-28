@@ -117,8 +117,8 @@ public:
     CoarseScalar InnerProd(CoarseGrid); 
     std::cout << GridLogMessage <<" Block Gramm-Schmidt pass 1"<<std::endl;
     blockOrthogonalise(InnerProd,subspace);
-    //    std::cout << GridLogMessage <<" Block Gramm-Schmidt pass 2"<<std::endl; // Really have to do twice? Yuck
-    //    blockOrthogonalise(InnerProd,subspace);
+    std::cout << GridLogMessage <<" Block Gramm-Schmidt pass 2"<<std::endl; // Really have to do twice? Yuck
+    blockOrthogonalise(InnerProd,subspace);
     //      std::cout << GridLogMessage <<" Gramm-Schmidt checking orthogonality"<<std::endl;
     //      CheckOrthogonal();
   } 
@@ -150,7 +150,7 @@ public:
   void CreateSubspaceRandom(GridParallelRNG &RNG){
     for(int i=0;i<nbasis;i++){
       random(RNG,subspace[i]);
-      std::cout<<GridLogMessage<<" norm subspace["<<i<<"] "<<norm2(subspace[i])<<std::endl;
+      //      std::cout<<GridLogMessage<<" norm subspace["<<i<<"] "<<norm2(subspace[i])<<std::endl;
     }
     Orthogonalise();
   }
@@ -248,14 +248,16 @@ public:
   // ii) Multiply by Fourier phases
   // iii) Multiply by Fourier phases and refilter
   //
-  virtual void CreateSubspaceChebyshev(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,int nn=nbasis) {
+  virtual void CreateSubspaceChebyshev(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,
+				       int nn,
+				       double hi,
+				       std::vector<double> &lo,
+				       std::vector<int>    &order
+				       ) {
 
     RealD scale;
 
-    const int dependent=16;
-
-    Chebyshev<FineField> ChebFilt     (0.03,64.0,500);
-    Chebyshev<FineField> ChebDependent(0.01,64.0,200);
+    const int dependent=lo.size();
 
     FineField noise(FineGrid);
     FineField Mn(FineGrid);
@@ -269,15 +271,12 @@ public:
 
       // Initial matrix element
       hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<bb<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
-
+      int bbb=0;
       for(int b=bb;b<MIN(bb+dependent,nn);b++) {
 
 	// Filter
-	if(b==bb) {
-	  ChebFilt(hermop,noise,Mn);
-	} else { 
-	  ChebDependent(hermop,noise,Mn);
-	}
+	Chebyshev<FineField> Cheb(lo[bbb],hi,order[bbb]); bbb++;
+	Cheb(hermop,noise,Mn);
 
 	// normalise
 	scale = std::pow(norm2(Mn),-0.5); 
@@ -354,6 +353,7 @@ public:
     const int Nsimd = CComplex::Nsimd();
 
     typedef decltype(coalescedRead(in_v[0])) calcVector;
+    typedef decltype(coalescedRead(in_v[0](0))) calcComplex;
 
     GridStopWatch ArithmeticTimer;
     int osites=Grid()->oSites();
@@ -361,17 +361,18 @@ public:
     double bytes = osites*nbasis*nbasis*geom.npoint*sizeof(CComplex);
     double usecs =-usecond();
 
-    assert(geom.npoint==9);
+    // assert(geom.npoint==9);
 
-    accelerator_for(ss, Grid()->oSites(), Nsimd, {
-	
-      calcVector res = Zero();
+    accelerator_for(sss, Grid()->oSites()*nbasis, Nsimd, {
+      int ss = sss/nbasis;
+      int b  = sss%nbasis;
+      calcComplex res = Zero();
       calcVector nbr;
       int ptype;
       StencilEntry *SE;
 
       int lane=SIMTlane(Nsimd);
-      for(int point=0;point<9;point++){
+      for(int point=0;point<geom.npoint;point++){
 
 	SE=Stencil.GetEntry(ptype,point,ss);
 	  
@@ -382,16 +383,18 @@ public:
 	}
 	synchronise();
 
-	auto A = coalescedRead(Aview_p[point][ss]);
-	res = res + A*nbr;
+	for(int bb=0;bb<nbasis;bb++) {
+	  res = res + coalescedRead(Aview_p[point][ss](b,bb))*nbr(bb);
+	}
       }
-      coalescedWrite(out_v[ss],res,lane);
+      coalescedWrite(out_v[ss](b),res,lane);
     });
     usecs +=usecond();
 
     double nrm_usec=-usecond();
     RealD Nout= norm2(out);
     nrm_usec+=usecond();
+
     /*
         std::cout << GridLogMessage << "\tNorm        " << nrm_usec << " us" <<std::endl;
         std::cout << GridLogMessage << "\tHalo        " << comms_usec << " us" <<std::endl;
@@ -418,20 +421,45 @@ public:
   };
 
   void Mdir(const CoarseVector &in, CoarseVector &out, int dir, int disp){
-    
+
     conformable(_grid,in.Grid());
     conformable(in.Grid(),out.Grid());
     
     SimpleCompressor<siteVector> compressor;
 
     Stencil.HaloExchange(in,compressor);
-    
-    auto point = [dir, disp](){
+
+    int ndim = in.Grid()->Nd();
+
+    //////////////
+    // 4D action like wilson
+    // 0+ => 0 
+    // 0- => 1
+    // 1+ => 2 
+    // 1- => 3
+    // etc..
+    //////////////
+    // 5D action like DWF
+    // 1+ => 0 
+    // 1- => 1
+    // 2+ => 2 
+    // 2- => 3
+    // etc..
+
+    auto point = [dir, disp, ndim](){
       if(dir == 0 and disp == 0)
 	return 8;
-      else
+      else if ( ndim==4 ) { 
 	return (4 * dir + 1 - disp) / 2;
+      } else { 
+	return (4 * (dir-1) + 1 - disp) / 2;
+      }
     }();
+
+    typedef LatticeView<Cobj> Aview;
+    Vector<Aview> AcceleratorViewContainer;
+    for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer.push_back(A[p].View());
+    Aview *Aview_p = & AcceleratorViewContainer[0];
 
     auto out_v = out.View();
     auto in_v  = in.View();
@@ -451,11 +479,11 @@ public:
 	nbr = Stencil.CommBuf()[SE->_offset];
       }
 
-      auto A_point = A[point].View();
-      res = res + A_point[ss]*nbr;
+      res = res + Aview_p[point][ss]*nbr;
       
-      vstream(out_v[ss],res);
+      out_v[ss]=res;
     });
+
   };
 
   void Mdiag(const CoarseVector &in, CoarseVector &out){
@@ -493,7 +521,7 @@ public:
     std::cout << GridLogMessage<< "CoarsenMatrix" << std::endl;
     // Orthogonalise the subblocks over the basis
     //    blockOrthogonalise(InnerProd,Subspace.subspace);
-    std::cout << GridLogMessage<< "CoarsenMatrix orthogonalised" << std::endl;
+    //    std::cout << GridLogMessage<< "CoarsenMatrix orthogonalised" << std::endl;
 
     // Compute the matrix elements of linop between this orthonormal
     // set of vectors.
@@ -509,7 +537,7 @@ public:
     for(int i=0;i<nbasis;i++){
       phi=Subspace.subspace[i];
 	
-      std::cout<<GridLogMessage<<"("<<i<<") "<<std::endl;
+      //      std::cout<<GridLogMessage<<"("<<i<<") "<<std::endl;
 
       for(int p=0;p<geom.npoint;p++){ 
 
