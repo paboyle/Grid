@@ -94,6 +94,24 @@ public:
     Coeffs.assign(0.,order);
     Coeffs[order-1] = 1.;
   };
+  
+  // PB - more efficient low pass drops high modes above the low as 1/x uses all Chebyshev's.
+  // Similar kick effect below the threshold as Lanczos filter approach
+  void InitLowPass(RealD _lo,RealD _hi,int _order)
+  {
+    lo=_lo;
+    hi=_hi;
+    order=_order;
+      
+    if(order < 2) exit(-1);
+    Coeffs.resize(order);
+    for(int j=0;j<order;j++){
+      RealD k=(order-1.0);
+      RealD s=std::cos( j*M_PI*(k+0.5)/order );
+      Coeffs[j] = s * 2.0/order;
+    }
+    
+  };
 
   void Init(RealD _lo,RealD _hi,int _order, RealD (* func)(RealD))
   {
