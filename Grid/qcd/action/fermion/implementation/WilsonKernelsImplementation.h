@@ -91,8 +91,7 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
   }								\
   synchronise();						
 
-#define GENERIC_DHOPDIR_LEG(Dir,spProj,Recon)			\
-  if (gamma == Dir) {						\
+#define GENERIC_DHOPDIR_LEG_BODY(Dir,spProj,Recon)		\
     if (SE->_is_local ) {					\
       int perm= SE->_permute;					\
       auto tmp = coalescedReadPermute(in[SE->_offset],ptype,perm,lane);	\
@@ -102,9 +101,13 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
     }								\
     synchronise();						\
     Impl::multLink(Uchi, U[sU], chi, dir, SE, st);		\
-    Recon(result, Uchi);					\
-    synchronise();						\
+    Recon(result, Uchi);					
+
+#define GENERIC_DHOPDIR_LEG(Dir,spProj,Recon)			\
+  if (gamma == Dir) {						\
+    GENERIC_DHOPDIR_LEG_BODY(Dir,spProj,Recon);			\
   }
+
 
   ////////////////////////////////////////////////////////////////////
   // All legs kernels ; comms then compute
@@ -284,7 +287,36 @@ void WilsonKernels<Impl>::GenericDhopSiteExt(StencilView &st,  DoubledGaugeField
   }
 };
 
-template <class Impl>
+#define DhopDirMacro(Dir,spProj,spRecon)	\
+  template <class Impl>							\
+  void WilsonKernels<Impl>::DhopDir##Dir(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf, int sF, \
+					 int sU, const FermionFieldView &in, FermionFieldView &out, int dir) \
+  {									\
+  typedef decltype(coalescedRead(buf[0])) calcHalfSpinor;		\
+  typedef decltype(coalescedRead(in[0]))  calcSpinor;			\
+  calcHalfSpinor chi;							\
+  calcSpinor result;							\
+  calcHalfSpinor Uchi;							\
+  StencilEntry *SE;							\
+  int ptype;								\
+  const int Nsimd = SiteHalfSpinor::Nsimd();				\
+  const int lane=SIMTlane(Nsimd);					\
+									\
+  SE = st.GetEntry(ptype, dir, sF);					\
+  GENERIC_DHOPDIR_LEG_BODY(Dir,spProj,spRecon);				\
+  coalescedWrite(out[sF], result,lane);					\
+  }									
+
+DhopDirMacro(Xp,spProjXp,spReconXp);
+DhopDirMacro(Yp,spProjYp,spReconYp);
+DhopDirMacro(Zp,spProjZp,spReconZp);
+DhopDirMacro(Tp,spProjTp,spReconTp);
+DhopDirMacro(Xm,spProjXm,spReconXm);
+DhopDirMacro(Ym,spProjYm,spReconYm);
+DhopDirMacro(Zm,spProjZm,spReconZm);
+DhopDirMacro(Tm,spProjTm,spReconTm);
+
+template <class Impl> 
 void WilsonKernels<Impl>::DhopDirK( StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf, int sF,
 				    int sU, const FermionFieldView &in, FermionFieldView &out, int dir, int gamma) 
 {
@@ -299,18 +331,7 @@ void WilsonKernels<Impl>::DhopDirK( StencilView &st, DoubledGaugeFieldView &U,Si
   const int lane=SIMTlane(Nsimd);
 
   SE = st.GetEntry(ptype, dir, sF);
-  if (gamma == Xp) {						
-    if (SE->_is_local ) {					
-      int perm= SE->_permute;					
-      auto tmp = coalescedReadPermute(in[SE->_offset],ptype,perm,lane);	
-      spProjXp(chi,tmp);						
-    } else {							
-      chi = coalescedRead(buf[SE->_offset],lane);			
-    }								
-    Impl::multLink(Uchi, U[sU], chi, dir, SE, st);		
-    spReconXp(result, Uchi);					
-  }
-
+  GENERIC_DHOPDIR_LEG(Xp,spProjXp,spReconXp);
   GENERIC_DHOPDIR_LEG(Yp,spProjYp,spReconYp);
   GENERIC_DHOPDIR_LEG(Zp,spProjZp,spReconZp);
   GENERIC_DHOPDIR_LEG(Tp,spProjTp,spReconTp);
@@ -332,13 +353,28 @@ void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,S
    auto in_v  = in.View();
    auto out_v = out.View();
    auto st_v  = st.View();
-   accelerator_for(ss,Nsite,Simd::Nsimd(),{
-    for(int s=0;s<Ls;s++){
-      int sU=ss;
-      int sF = s+Ls*sU; 
-      DhopDirK(st_v,U_v,st.CommBuf(),sF,sU,in_v,out_v,dirdisp,gamma);
-    }
-  });
+#define LoopBody(Dir)				\
+   if (gamma==Dir) {				\
+     accelerator_forNB(ss,Nsite,Simd::Nsimd(),{	\
+       for(int s=0;s<Ls;s++){			\
+	 int sU=ss;				\
+	 int sF = s+Ls*sU;						\
+	 DhopDir##Dir(st_v,U_v,st.CommBuf(),sF,sU,in_v,out_v,dirdisp);\
+       }							       \
+       });							       \
+   }
+
+   LoopBody(Xp);
+   LoopBody(Yp);
+   LoopBody(Zp);
+   LoopBody(Tp);
+
+   LoopBody(Xm);
+   LoopBody(Ym);
+   LoopBody(Zm);
+   LoopBody(Tm);
+
+#undef LoopBody
 } 
 
 #define KERNEL_CALLNB(A) \
