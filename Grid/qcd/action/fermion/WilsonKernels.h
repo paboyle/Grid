@@ -102,6 +102,15 @@ private:
 
   static accelerator void DhopDirK(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor * buf,
 				   int sF, int sU, const FermionFieldView &in, FermionFieldView &out, int dirdisp, int gamma);
+
+  static accelerator void DhopDirXp(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,int sF,int sU,const FermionFieldView &in,FermionFieldView &out,int dirdisp);
+  static accelerator void DhopDirYp(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,int sF,int sU,const FermionFieldView &in,FermionFieldView &out,int dirdisp);
+  static accelerator void DhopDirZp(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,int sF,int sU,const FermionFieldView &in,FermionFieldView &out,int dirdisp);
+  static accelerator void DhopDirTp(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,int sF,int sU,const FermionFieldView &in,FermionFieldView &out,int dirdisp);
+  static accelerator void DhopDirXm(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,int sF,int sU,const FermionFieldView &in,FermionFieldView &out,int dirdisp);
+  static accelerator void DhopDirYm(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,int sF,int sU,const FermionFieldView &in,FermionFieldView &out,int dirdisp);
+  static accelerator void DhopDirZm(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,int sF,int sU,const FermionFieldView &in,FermionFieldView &out,int dirdisp);
+  static accelerator void DhopDirTm(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,int sF,int sU,const FermionFieldView &in,FermionFieldView &out,int dirdisp);
       
   // Specialised variants
   static accelerator void GenericDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,
