@@ -135,8 +135,8 @@ public:
     CoarseVector Ctmp(_CoarseOperator.Grid());
     CoarseVector Csol(_CoarseOperator.Grid());
 
-    ConjugateGradient<CoarseVector>  CG(1.0e-3,1000,false);
-    ConjugateGradient<FineField>    fCG(1.0e-3,15,false);
+    ConjugateGradient<CoarseVector>  CG(1.0e-3,100,false);
+    ConjugateGradient<FineField>    fCG(1.0e-3,10,false);
 
     HermitianLinearOperator<CoarseOperator,CoarseVector>  HermOp(_CoarseOperator);
     MdagMLinearOperator<CoarseOperator,CoarseVector>     MdagMOp(_CoarseOperator);
@@ -165,7 +165,7 @@ public:
 
     _Aggregates.ProjectToSubspace  (Csrc,tmp);
     HermOp.AdjOp(Csrc,Ctmp);// Normal equations
-    Csol=Zero();
+    _Guess(Ctmp,Csol);
     CG(MdagMOp,Ctmp,Csol);
 
     HermOp.Op(Csol,Ctmp);
@@ -274,9 +274,10 @@ public:
 
     CoarseVector Csrc(_CoarseOperator.Grid());
     CoarseVector Ctmp(_CoarseOperator.Grid());
+    CoarseVector Ctmp1(_CoarseOperator.Grid());
     CoarseVector Csol(_CoarseOperator.Grid()); 
     
-    ConjugateGradient<CoarseVector>  CG(3.0e-2,100000);
+    ConjugateGradient<CoarseVector>  CG(5.0e-2,100000);
 
     HermitianLinearOperator<CoarseOperator,CoarseVector>  HermOp(_CoarseOperator);
     MdagMLinearOperator<CoarseOperator,CoarseVector>     MdagMOp(_CoarseOperator);
@@ -323,10 +324,20 @@ public:
     _Aggregates.ProjectToSubspace  (Csrc,vec1);
     std::cout<<GridLogMessage << "ProjectToSubspaceDone" <<std::endl;
     
-    HermOp.AdjOp(Csrc,Ctmp);// Normal equations // This appears to be zero.
+    HermOp.AdjOp(Csrc,Ctmp1);// Normal equations
 
-    _Guess(Ctmp,Csol);
-    CG(MdagMOp,Ctmp,Csol);
+    _Guess(Ctmp1,Csol);
+    CG(MdagMOp,Ctmp1,Csol);
+
+    //////////////////////////////
+    // Recompute true residual
+    //////////////////////////////
+    MdagMOp.HermOp(Csol,Ctmp);
+    Ctmp = Ctmp1 - Ctmp;      // r=Csrc - M^dagM sol // This is already computed inside CG
+    HermOp.AdjOp(Ctmp,Ctmp1);// Normal equations
+    _Guess(Ctmp1,Ctmp);      // sol = sol' + MdagM^-1 (Csrc' - MdagM sol')
+    Csol = Csol + Ctmp;
+
     std::cout<<GridLogMessage << "PromoteFromSubspace" <<std::endl;
     _Aggregates.PromoteFromSubspace(Csol,vec1); // Ass^{-1} [in - A Min]_s
                                                 // Q = Q[in - A Min]  
@@ -452,36 +463,17 @@ int main (int argc, char ** argv)
   Subspace Aggregates(Coarse5d,FGrid,0);
 
   assert ( (nbasis & 0x1)==0);
-  int nb=nbasis/2;
-  std::cout<<GridLogMessage << " nbasis/2 = "<<nb<<std::endl;
-  //  Aggregates.CreateSubspace(RNG5,HermDefOp,nb);
-  //  Aggregates.CreateSubspaceLanczos(RNG5,HermDefOp,nb);
 
-  double f_first = 0.03;
-  double f_div   = 1.2;
-  std::vector<double> f_lo(nb);
-  f_lo[0] = f_first;
-  for(int b=1;b<nb;b++) {
-    f_lo[b] = f_lo[b-1]/f_div;
+  {
+    int nb=nbasis/2;
+    std::cout<<GridLogMessage << " nbasis/2 = "<<nb<<std::endl;
+
+   Aggregates.CreateSubspaceChebyshev(RNG5,HermDefOp,nb,60.0,0.02,500,110);
+    for(int n=0;n<nb;n++){
+      G5R5(Aggregates.subspace[n+nb],Aggregates.subspace[n]);
+    }
   }
-  std::vector<int> f_ord(nb,200);
-  f_ord[0]=500;
 
-  Aggregates.CreateSubspaceChebyshev(RNG5,HermDefOp,nb,60.0,f_lo,f_ord);
-  for(int n=0;n<nb;n++){
-    G5R5(Aggregates.subspace[n+nb],Aggregates.subspace[n]);
-    //    std::cout<<GridLogMessage<<n<<" subspace "<<norm2(Aggregates.subspace[n+nb])<<" "<<norm2(Aggregates.subspace[n]) <<std::endl;
-  }
-  //  for(int n=0;n<nbasis;n++){
-  //    std::cout<<GridLogMessage << "vec["<<n<<"] = "<<norm2(Aggregates.subspace[n])  <<std::endl;
-  //  }
-
-
-//  for(int i=0;i<nbasis;i++){
-//    result =     Aggregates.subspace[i];
-//    Aggregates.subspace[i]=result+g5*result;
-//  }
-  result=Zero();
   
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Building coarse representation of Indef operator" <<std::endl;
@@ -490,10 +482,12 @@ int main (int argc, char ** argv)
   Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> HermIndefOpDD(DdwfDD);
   CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LDOp(*Coarse5d,1); // Hermitian matrix
   LDOp.CoarsenOperator(FGrid,HermIndefOp,Aggregates);
+  exit(0);
 
   CoarseVector c_src (Coarse5d);
   CoarseVector c_res (Coarse5d);
   gaussian(CRNG,c_src);
+  result=Zero();
   c_res=Zero();
 
   //////////////////////////////////////////////////
@@ -515,12 +509,12 @@ int main (int argc, char ** argv)
 
   double c_first = 0.2;
   double c_div   = 1.2;
-  std::vector<double> c_lo(nb);
+  std::vector<double> c_lo(nbasis/2);
   c_lo[0] = c_first;
-  for(int b=1;b<nb;b++) {
+  for(int b=1;b<nbasis/2;b++) {
     c_lo[b] = c_lo[b-1]/c_div;
   }
-  std::vector<int> c_ord(nb,200);
+  std::vector<int> c_ord(nbasis/2,200);
   c_ord[0]=500;
 
 #define RECURSIVE_MULTIGRID
@@ -562,14 +556,15 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << " Running coarse grid Lanczos "<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   MdagMLinearOperator<Level1Op,CoarseVector> IRLHermOp(LDOp);
-  Chebyshev<CoarseVector> IRLCheby(0.01,14,161);
+  Chebyshev<CoarseVector> IRLCheby(0.005,16.0,51);
+  //  IRLCheby.InitLowPass(0.01,18.0,51);
   FunctionHermOp<CoarseVector> IRLOpCheby(IRLCheby,IRLHermOp);
      PlainHermOp<CoarseVector> IRLOp    (IRLHermOp);
 
-  int Nstop=32;
-  int Nk=32;
+     int Nstop=24;
+     int Nk=24;
   int Nm=48;
-  ImplicitlyRestartedLanczos<CoarseVector> IRL(IRLOpCheby,IRLOp,Nstop,Nk,Nm,1.0e-4,20);
+  ImplicitlyRestartedLanczos<CoarseVector> IRL(IRLOpCheby,IRLOp,Nstop,Nk,Nm,1.0e-3,20);
   int Nconv;
   std::vector<RealD>          eval(Nm);
   std::vector<CoarseVector>   evec(Nm,Coarse5d);
