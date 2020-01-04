@@ -63,7 +63,7 @@ public:
     //// report back
     std::cout<<GridLogMessage<<"directions    :";
     for(int d=0;d<npoint;d++) std::cout<< directions[d]<< " ";
-    std::cout <<std::endl;
+    std::cout<<std::endl;
     std::cout<<GridLogMessage<<"displacements :";
     for(int d=0;d<npoint;d++) std::cout<< displacements[d]<< " ";
     std::cout<<std::endl;
@@ -117,8 +117,8 @@ public:
     CoarseScalar InnerProd(CoarseGrid); 
     std::cout << GridLogMessage <<" Block Gramm-Schmidt pass 1"<<std::endl;
     blockOrthogonalise(InnerProd,subspace);
-    std::cout << GridLogMessage <<" Block Gramm-Schmidt pass 2"<<std::endl; // Really have to do twice? Yuck
-    blockOrthogonalise(InnerProd,subspace);
+    //    std::cout << GridLogMessage <<" Block Gramm-Schmidt pass 2"<<std::endl; // Really have to do twice? Yuck
+    //    blockOrthogonalise(InnerProd,subspace);
     //      std::cout << GridLogMessage <<" Gramm-Schmidt checking orthogonality"<<std::endl;
     //      CheckOrthogonal();
   } 
@@ -152,59 +152,8 @@ public:
       random(RNG,subspace[i]);
       //      std::cout<<GridLogMessage<<" norm subspace["<<i<<"] "<<norm2(subspace[i])<<std::endl;
     }
-    Orthogonalise();
   }
 
-  /*
-    virtual void CreateSubspaceLanczos(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,int nn=nbasis) 
-    {
-    // Run a Lanczos with sloppy convergence
-    const int Nstop = nn;
-    const int Nk = nn+20;
-    const int Np = nn+20;
-    const int Nm = Nk+Np;
-    const int MaxIt= 10000;
-    RealD resid = 1.0e-3;
-
-    Chebyshev<FineField> Cheb(0.5,64.0,21);
-    ImplicitlyRestartedLanczos<FineField> IRL(hermop,Cheb,Nstop,Nk,Nm,resid,MaxIt);
-    //	IRL.lock = 1;
-
-    FineField noise(FineGrid); gaussian(RNG,noise);
-    FineField tmp(FineGrid); 
-    std::vector<RealD>     eval(Nm);
-    std::vector<FineField> evec(Nm,FineGrid);
-
-    int Nconv;
-    IRL.calc(eval,evec,
-    noise,
-    Nconv);
-
-    // pull back nn vectors
-    for(int b=0;b<nn;b++){
-
-    subspace[b]   = evec[b];
-
-    std::cout << GridLogMessage <<"subspace["<<b<<"] = "<<norm2(subspace[b])<<std::endl;
-
-    hermop.Op(subspace[b],tmp); 
-    std::cout<<GridLogMessage << "filtered["<<b<<"] <f|MdagM|f> "<<norm2(tmp)<<std::endl;
-
-    noise = tmp -  sqrt(eval[b])*subspace[b] ;
-
-    std::cout<<GridLogMessage << " lambda_"<<b<<" = "<< eval[b] <<"  ;  [ M - Lambda ]_"<<b<<" vec_"<<b<<"  = " <<norm2(noise)<<std::endl;
-
-    noise = tmp +  eval[b]*subspace[b] ;
-
-    std::cout<<GridLogMessage << " lambda_"<<b<<" = "<< eval[b] <<"  ;  [ M - Lambda ]_"<<b<<" vec_"<<b<<"  = " <<norm2(noise)<<std::endl;
-
-    }
-    Orthogonalise();
-    for(int b=0;b<nn;b++){
-    std::cout << GridLogMessage <<"subspace["<<b<<"] = "<<norm2(subspace[b])<<std::endl;
-    }
-    }
-  */
   virtual void CreateSubspace(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,int nn=nbasis) {
 
     RealD scale;
@@ -236,69 +185,94 @@ public:
       subspace[b]   = noise;
 
     }
-
-    Orthogonalise();
-
   }
 
   // 
   // World of possibilities here. 
-  // Experiments
-  // i)  Use inverse iteration method equivaleent with Chebyshev
-  // ii) Multiply by Fourier phases
-  // iii) Multiply by Fourier phases and refilter
   //
   virtual void CreateSubspaceChebyshev(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,
 				       int nn,
 				       double hi,
-				       std::vector<double> &lo,
-				       std::vector<int>    &order
+				       double lo,
+				       int order,
+				       int orderstep
 				       ) {
 
     RealD scale;
 
-    const int dependent=lo.size();
-
     FineField noise(FineGrid);
     FineField Mn(FineGrid);
+    FineField tmp(FineGrid);
 
-    for(int bb=0;bb<nn;bb+=dependent){
-      
-      // New normalised noise
-      gaussian(RNG,noise);
-      scale = std::pow(norm2(noise),-0.5); 
-      noise=noise*scale;
+    // New normalised noise
+    gaussian(RNG,noise);
+    scale = std::pow(norm2(noise),-0.5); 
+    noise=noise*scale;
 
-      // Initial matrix element
-      hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<bb<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
-      int bbb=0;
-      for(int b=bb;b<MIN(bb+dependent,nn);b++) {
+    // Initial matrix element
+    hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise <n|MdagM|n> "<<norm2(Mn)<<std::endl;
 
-	// Filter
-	Chebyshev<FineField> Cheb(lo[bbb],hi,order[bbb]); bbb++;
-	Cheb(hermop,noise,Mn);
-
-	// normalise
-	scale = std::pow(norm2(Mn),-0.5); 
-	Mn=Mn*scale;
-
-	// set this new vector
-	subspace[b]   = Mn;
-
-	// new matrix element
-	hermop.Op(Mn,noise); std::cout<<GridLogMessage << "filtered["<<b<<"] <f|MdagM|f> "<<norm2(noise)<<std::endl;
-
-	// Dependent vector rule
-	noise = Mn; // Already normaliseed
-
-      }
+    int b =0;
+    {
+      // Filter
+      Chebyshev<FineField> Cheb(lo,hi,order);
+      Cheb(hermop,noise,Mn);
+      // normalise
+      scale = std::pow(norm2(Mn),-0.5); 	Mn=Mn*scale;
+      subspace[b]   = Mn;
+      hermop.Op(Mn,tmp); 
+      std::cout<<GridLogMessage << "filt ["<<b<<"] <n|MdagM|n> "<<norm2(tmp)<<std::endl;
+      b++;
     }
 
-    Orthogonalise();
+    // Generate a full sequence of Chebyshevs
+    {
+      lo=0;
+      noise=Mn;
 
+      FineField T0(FineGrid); T0 = noise;  
+      FineField T1(FineGrid); 
+      FineField T2(FineGrid);
+      FineField y(FineGrid);
+      
+      FineField *Tnm = &T0;
+      FineField *Tn  = &T1;
+      FineField *Tnp = &T2;
+
+      // Tn=T1 = (xscale M + mscale)in
+      RealD xscale = 2.0/(hi-lo);
+      RealD mscale = -(hi+lo)/(hi-lo);
+      hermop.HermOp(T0,y);
+      T1=y*xscale+noise*mscale;
+
+      for(int n=2;n<=orderstep*(nn-1);n++){
+	
+	hermop.HermOp(*Tn,y);
+
+	y=xscale*y+mscale*(*Tn);
+	
+	*Tnp=2.0*y-(*Tnm);
+
+	if ( (n%orderstep)==0 ) {
+	  Mn=*Tnp;
+	  scale = std::pow(norm2(Mn),-0.5);         Mn=Mn*scale;
+	  subspace[b] = Mn;
+	  hermop.Op(Mn,tmp); 
+	  std::cout<<GridLogMessage << "filt ["<<b<<"] <n|MdagM|n> "<<norm2(tmp)<<std::endl;
+	  b++;
+	}
+
+	// Cycle pointers to avoid copies
+	FineField *swizzle = Tnm;
+	Tnm    =Tn;
+	Tn     =Tnp;
+	Tnp    =swizzle;
+	  
+      }
+    }
   }
-
 };
+
 // Fine Object == (per site) type of fine field
 // nbasis      == number of deflation vectors
 template<class Fobj,class CComplex,int nbasis>
@@ -511,6 +485,7 @@ public:
     FineField     tmp(FineGrid);
     FineField     zz(FineGrid); zz=Zero();
     FineField    Mphi(FineGrid);
+    std::vector<FineField>     Mphi_p(geom.npoint,FineGrid);
 
     Lattice<iScalar<vInteger> > coor(FineGrid);
 
@@ -518,10 +493,9 @@ public:
     CoarseVector oProj(Grid()); 
     CoarseScalar InnerProd(Grid()); 
 
-    std::cout << GridLogMessage<< "CoarsenMatrix" << std::endl;
+
     // Orthogonalise the subblocks over the basis
-    //    blockOrthogonalise(InnerProd,Subspace.subspace);
-    //    std::cout << GridLogMessage<< "CoarsenMatrix orthogonalised" << std::endl;
+    blockOrthogonalise(InnerProd,Subspace.subspace);
 
     // Compute the matrix elements of linop between this orthonormal
     // set of vectors.
@@ -536,12 +510,21 @@ public:
 
     for(int i=0;i<nbasis;i++){
       phi=Subspace.subspace[i];
-	
-      //      std::cout<<GridLogMessage<<"("<<i<<") "<<std::endl;
 
       for(int p=0;p<geom.npoint;p++){ 
 
-	//	std::cout << GridLogMessage<< "CoarsenMatrix direction "<<p << std::endl;
+	int dir   = geom.directions[p];
+	int disp  = geom.displacements[p];
+
+	std::cout << GridLogMessage<< "CoarsenMatrix vector "<<i<<" stencil point "<<p << std::endl;
+	if ( disp==0 ) linop.OpDiag(phi,Mphi_p[p]);
+	else           linop.OpDir (phi,Mphi_p[p],dir,disp); 
+	std::cout << GridLogMessage<< "CoarsenMatrix vector "<<i<<" applied" << std::endl;
+      }
+      for(int p=0;p<geom.npoint;p++){ 
+
+	Mphi = Mphi_p[p];
+
 	int dir   = geom.directions[p];
 	int disp  = geom.displacements[p];
 
@@ -549,13 +532,6 @@ public:
 
 	LatticeCoordinate(coor,dir);
 
-	if ( disp==0 ){
-	  linop.OpDiag(phi,Mphi);
-	}
-	else  {
-	  linop.OpDir(phi,Mphi,dir,disp); 
-	}
-	//	std::cout << GridLogMessage<< "CoarsenMatrix direction "<<p << "Mdir done "<< std::endl;
 
 	////////////////////////////////////////////////////////////////////////
 	// Pick out contributions coming from this cell and neighbour cell
@@ -572,18 +548,19 @@ public:
 	} else {
 	  assert(0);
 	}
-	//	std::cout << GridLogMessage<< "CoarsenMatrix direction "<<p << "selected "<< std::endl;
 
+	// Could do local inner products,
+	// and then block pick the IP's.
+	// Ideally write a routine to do two masked block sums at once
+	std::cout << GridLogMessage<< "CoarsenMatrix picked "<<p<< std::endl;
 	Subspace.ProjectToSubspace(iProj,iblock);
 	Subspace.ProjectToSubspace(oProj,oblock);
-	//	std::cout << GridLogMessage<< "CoarsenMatrix direction "<<p << "proojected "<< std::endl;
+	std::cout << GridLogMessage<< "CoarsenMatrix projected"<<p<< std::endl;
 
 	// 4x gain possible in this loop. Profile and identify time loss.
 	// i)  Assume Hermiticity, upper diagonal only (2x)
 	// ii) Local inner product, then pick the local inners and sum. (2x)
-	//
-	//	  blockProject(iProj,iblock,Subspace.subspace);
-	//	  blockProject(oProj,oblock,Subspace.subspace);
+
 	auto iProj_v = iProj.View() ;
 	auto oProj_v = oProj.View() ;
 	auto A_p     =  A[p].View();
@@ -596,6 +573,7 @@ public:
 	    A_self[ss](j,i) =	A_self[ss](j,i) + iProj_v[ss](j);
 	  }
 	});
+
       }
     }
 
@@ -620,7 +598,15 @@ public:
     std::cout<<GridLogMessage<< iProj <<std::endl;
     std::cout<<GridLogMessage<<"Computed Coarse Operator"<<std::endl;
 #endif
-      //      ForceHermitian();
+    /*
+    if(hermitian) {
+      std::cout << GridLogMessage << " ForceHermitian "<<std::endl;
+      ForceHermitian();
+    }
+    for(int p=0;p<geom.npoint;p++){
+      std::cout << GridLogMessage<< " dir "<< norm2(A[p]) <<std::endl;
+    }
+    */
       // AssertHermitian();
       // ForceDiagonal();
   }
