@@ -47,6 +47,7 @@ public:
   }
   virtual  void Mdiag    (const Field &in, Field &out)=0;
   virtual  void Mdir     (const Field &in, Field &out,int dir, int disp)=0;
+  virtual  void MdirAll  (const Field &in, std::vector<Field> &out)=0;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -56,12 +57,12 @@ template<class Field> class CheckerBoardedSparseMatrixBase : public SparseMatrix
 public:
   virtual GridBase *RedBlackGrid(void)=0;
 
-      //////////////////////////////////////////////////////////////////////
-      // Query the even even properties to make algorithmic decisions
-      //////////////////////////////////////////////////////////////////////
-      virtual RealD  Mass(void)        { return 0.0; };
-      virtual int    ConstEE(void)     { return 1; }; // Disable assumptions unless overridden
-      virtual int    isTrivialEE(void) { return 0; }; // by a derived class that knows better
+  //////////////////////////////////////////////////////////////////////
+  // Query the even even properties to make algorithmic decisions
+  //////////////////////////////////////////////////////////////////////
+  virtual RealD  Mass(void)        { return 0.0; };
+  virtual int    ConstEE(void)     { return 1; }; // Disable assumptions unless overridden
+  virtual int    isTrivialEE(void) { return 0; }; // by a derived class that knows better
 
   // half checkerboard operaions
   virtual  void Meooe    (const Field &in, Field &out)=0;

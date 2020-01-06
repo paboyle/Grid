@@ -47,6 +47,7 @@ public:
   // Support for coarsening to a multigrid
   virtual void OpDiag (const Field &in, Field &out) = 0; // Abstract base
   virtual void OpDir  (const Field &in, Field &out,int dir,int disp) = 0; // Abstract base
+  virtual void OpDirAll  (const Field &in, std::vector<Field> &out) = 0; // Abstract base
 
   virtual void Op     (const Field &in, Field &out) = 0; // Abstract base
   virtual void AdjOp  (const Field &in, Field &out) = 0; // Abstract base
@@ -83,6 +84,9 @@ public:
   void OpDir  (const Field &in, Field &out,int dir,int disp) {
     _Mat.Mdir(in,out,dir,disp);
   }
+  void OpDirAll  (const Field &in, std::vector<Field> &out){
+    _Mat.MdirAll(in,out);
+  };
   void Op     (const Field &in, Field &out){
     _Mat.M(in,out);
   }
@@ -116,6 +120,9 @@ public:
     _Mat.Mdir(in,out,dir,disp);
     assert(0);
   }
+  void OpDirAll  (const Field &in, std::vector<Field> &out){
+    assert(0);
+  };
   void Op     (const Field &in, Field &out){
     _Mat.M(in,out);
     assert(0);
@@ -154,6 +161,9 @@ public:
   void OpDir  (const Field &in, Field &out,int dir,int disp) {
     _Mat.Mdir(in,out,dir,disp);
   }
+  void OpDirAll  (const Field &in, std::vector<Field> &out){
+    _Mat.MdirAll(in,out);
+  };
   void Op     (const Field &in, Field &out){
     _Mat.M(in,out);
   }
@@ -183,6 +193,9 @@ public:
   void OpDir  (const Field &in, Field &out,int dir,int disp) {
     _Mat.Mdir(in,out,dir,disp);
   }
+  void OpDirAll  (const Field &in, std::vector<Field> &out){
+    _Mat.MdirAll(in,out);
+  };
   void Op     (const Field &in, Field &out){
     _Mat.M(in,out);
   }
@@ -234,6 +247,9 @@ public:
       void OpDir  (const Field &in, Field &out,int dir,int disp) {
 	assert(0);
       }
+      void OpDirAll  (const Field &in, std::vector<Field> &out){
+	assert(0);
+      };
     };
     template<class Matrix,class Field>
     class SchurDiagMooeeOperator :  public SchurOperatorBase<Field> {

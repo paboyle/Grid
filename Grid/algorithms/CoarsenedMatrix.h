@@ -35,14 +35,13 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 class Geometry {
-  //    int dimension;
 public:
   int npoint;
   std::vector<int> directions   ;
   std::vector<int> displacements;
 
   Geometry(int _d)  {
-  
+    
     int base = (_d==5) ? 1:0;
 
     // make coarse grid stencil for 4d , not 5d
@@ -187,9 +186,10 @@ public:
     }
   }
 
-  // 
-  // World of possibilities here. 
-  //
+  ////////////////////////////////////////////////////////////////////////////////////////////////
+  // World of possibilities here. But have tried quite a lot of experiments (250+ jobs run on Summit)
+  // and this is the best I found
+  ////////////////////////////////////////////////////////////////////////////////////////////////
   virtual void CreateSubspaceChebyshev(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,
 				       int nn,
 				       double hi,
@@ -249,11 +249,18 @@ public:
 	
 	hermop.HermOp(*Tn,y);
 
-	y=xscale*y+mscale*(*Tn);
-	
-	*Tnp=2.0*y-(*Tnm);
+	auto y_v = y.View();
+	auto Tn_v = Tn->View();
+	auto Tnp_v = Tnp->View();
+	auto Tnm_v = Tnm->View();
+	accelerator_forNB(ss, FineGrid->oSites(), Nsimd, {
+	  coalescedWrite(y_v[ss],xscale*y_v(ss)+mscale*Tn_v(ss));
+	  coalescedWrite(Tnp_v[ss],2.0*y_v(ss)-Tnm_v(ss));
+        });
 
-	if ( (n%orderstep)==0 ) {
+	// Possible more fine grained control is needed than a linear sweep,
+	// but huge productivity gain if this is simple algorithm and not a tunable
+	if ( (n%orderstep)==0 ) { 
 	  Mn=*Tnp;
 	  scale = std::pow(norm2(Mn),-0.5);         Mn=Mn*scale;
 	  subspace[b] = Mn;
@@ -270,6 +277,7 @@ public:
 	  
       }
     }
+    assert(b==nn);
   }
 };
 
@@ -393,42 +401,15 @@ public:
       return norm2(out);
     }
   };
-
-  void Mdir(const CoarseVector &in, CoarseVector &out, int dir, int disp){
-
-    conformable(_grid,in.Grid());
-    conformable(in.Grid(),out.Grid());
-    
+  void MdirComms(const CoarseVector &in)
+  {
     SimpleCompressor<siteVector> compressor;
-
     Stencil.HaloExchange(in,compressor);
-
-    int ndim = in.Grid()->Nd();
-
-    //////////////
-    // 4D action like wilson
-    // 0+ => 0 
-    // 0- => 1
-    // 1+ => 2 
-    // 1- => 3
-    // etc..
-    //////////////
-    // 5D action like DWF
-    // 1+ => 0 
-    // 1- => 1
-    // 2+ => 2 
-    // 2- => 3
-    // etc..
-
-    auto point = [dir, disp, ndim](){
-      if(dir == 0 and disp == 0)
-	return 8;
-      else if ( ndim==4 ) { 
-	return (4 * dir + 1 - disp) / 2;
-      } else { 
-	return (4 * (dir-1) + 1 - disp) / 2;
-      }
-    }();
+  }
+  void MdirCalc(const CoarseVector &in, CoarseVector &out, int point)
+  {
+    conformable(_grid,in.Grid());
+    conformable(_grid,out.Grid());
 
     typedef LatticeView<Cobj> Aview;
     Vector<Aview> AcceleratorViewContainer;
@@ -458,10 +439,54 @@ public:
       out_v[ss]=res;
     });
 
+  }
+  void MdirAll(const CoarseVector &in,std::vector<CoarseVector> &out)
+  {
+    this->MdirComms(in);
+    int ndir=geom.npoint-1;
+    assert(out.size()==ndir);
+    for(int p=0;p<ndir;p++){
+      MdirCalc(in,out[p],p);
+    }
+  };
+  void Mdir(const CoarseVector &in, CoarseVector &out, int dir, int disp){
+
+    this->MdirComms(in);
+
+    int ndim = in.Grid()->Nd();
+
+    //////////////
+    // 4D action like wilson
+    // 0+ => 0 
+    // 0- => 1
+    // 1+ => 2 
+    // 1- => 3
+    // etc..
+    //////////////
+    // 5D action like DWF
+    // 1+ => 0 
+    // 1- => 1
+    // 2+ => 2 
+    // 2- => 3
+    // etc..
+    auto point = [dir, disp, ndim](){
+      if(dir == 0 and disp == 0)
+	return 8;
+      else if ( ndim==4 ) { 
+	return (4 * dir + 1 - disp) / 2;
+      } else { 
+	return (4 * (dir-1) + 1 - disp) / 2;
+      }
+    }();
+
+    MdirCalc(in,out,point);
+
   };
 
-  void Mdiag(const CoarseVector &in, CoarseVector &out){
-    Mdir(in, out, 0, 0); // use the self coupling (= last) point of the stencil
+  void Mdiag(const CoarseVector &in, CoarseVector &out)
+  {
+    int point=geom.npoint-1;
+    MdirCalc(in, out, point); // No comms
   };
 
   
@@ -511,16 +536,12 @@ public:
     for(int i=0;i<nbasis;i++){
       phi=Subspace.subspace[i];
 
-      for(int p=0;p<geom.npoint;p++){ 
+      std::cout << GridLogMessage<< "CoarsenMatrix vector "<<i<<" OpDir " << std::endl;
+      linop.OpDirAll(phi,Mphi_p);
+      std::cout << GridLogMessage<< "CoarsenMatrix vector "<<i<<" OpDir calculated" << std::endl;
+      linop.OpDiag  (phi,Mphi_p[geom.npoint-1]);
+      std::cout << GridLogMessage<< "CoarsenMatrix vector "<<i<<" OpDiag calculated" << std::endl;
 
-	int dir   = geom.directions[p];
-	int disp  = geom.displacements[p];
-
-	std::cout << GridLogMessage<< "CoarsenMatrix vector "<<i<<" stencil point "<<p << std::endl;
-	if ( disp==0 ) linop.OpDiag(phi,Mphi_p[p]);
-	else           linop.OpDir (phi,Mphi_p[p],dir,disp); 
-	std::cout << GridLogMessage<< "CoarsenMatrix vector "<<i<<" applied" << std::endl;
-      }
       for(int p=0;p<geom.npoint;p++){ 
 
 	Mphi = Mphi_p[p];
