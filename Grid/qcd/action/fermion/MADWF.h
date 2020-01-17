@@ -40,6 +40,11 @@ inline void convert(const Fieldi &from,Fieldo &to)
   to=from;
 }
 
+struct MADWFinnerIterCallbackBase{
+  virtual void operator()(const RealD current_resid){}
+  virtual ~MADWFinnerIterCallbackBase(){}
+};
+
 template<class Matrixo,class Matrixi,class PVinverter,class SchurSolver, class Guesser> 
 class MADWF 
 {
@@ -56,24 +61,30 @@ class MADWF
 
   RealD target_resid;
   int   maxiter;
- public:
 
+  //operator() is called on "callback" at the end of every inner iteration. This allows for example the adjustment of the inner
+  //tolerance to speed up subsequent iteration
+  MADWFinnerIterCallbackBase* callback;
+  
+ public:
   MADWF(Matrixo &_Mato,
-	Matrixi &_Mati, 
-	PVinverter &_PauliVillarsSolvero, 
+	Matrixi &_Mati,
+	PVinverter &_PauliVillarsSolvero,
 	SchurSolver &_SchurSolveri,
 	Guesser & _Guesseri,
 	RealD resid,
-	int _maxiter) :
+	int _maxiter,
+	MADWFinnerIterCallbackBase* _callback = NULL) :
 
   Mato(_Mato),Mati(_Mati),
     SchurSolveri(_SchurSolveri),
-    PauliVillarsSolvero(_PauliVillarsSolvero),Guesseri(_Guesseri)
-  {   
-    target_resid=resid;
-    maxiter     =_maxiter; 
-  };
-
+    PauliVillarsSolvero(_PauliVillarsSolvero),Guesseri(_Guesseri),
+    callback(_callback)
+    {
+      target_resid=resid;
+      maxiter     =_maxiter;
+    };
+   
   void operator() (const FermionFieldo &src4,FermionFieldo &sol5)
   {
     std::cout << GridLogMessage<< " ************************************************" << std::endl;
@@ -177,6 +188,8 @@ class MADWF
        std::cout << GridLogMessage << "Residual " << i << ": " << resid  << std::endl;
        std::cout << GridLogMessage << "***************************************" <<std::endl;
 
+       if(callback != NULL) (*callback)(resid);       
+       
        if (resid < target_resid) {
 	 return;
        }
