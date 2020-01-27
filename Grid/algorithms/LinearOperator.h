@@ -97,8 +97,7 @@ public:
     _Mat.MdagM(in,out,n1,n2);
   }
   void HermOp(const Field &in, Field &out){
-    RealD n1,n2;
-    HermOpAndNorm(in,out,n1,n2);
+    _Mat.MdagM(in,out);
   }
 };
 
@@ -172,7 +171,6 @@ public:
   }
   void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
     _Mat.M(in,out);
-	
     ComplexD dot= innerProduct(in,out); n1=real(dot);
     n2=norm2(out);
   }
