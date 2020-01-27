@@ -246,23 +246,8 @@ void WilsonFermion5D<Impl>::DhopDirAll(const FermionField &in, std::vector<Fermi
 {
   Compressor compressor(DaggerNo);
   Stencil.HaloExchange(in,compressor);
-
-  assert( (out.size()==8)||(out.size()==9));
-  for(int dir5=1;dir5<=4;dir5++) {
-    for(int disp=-1;disp<=1;disp+=2){
-      int dir = dir5-1; // Maps to the ordering above in "directions" that is passed to stencil
-                    // we drop off the innermost fifth dimension
-      assert( (disp==1)||(disp==-1) );
-      assert( (dir>=0)&&(dir<4) ); //must do x,y,z or t;
-      
-      int skip = (disp==1) ? 0 : 1;
-      int dirdisp = dir+skip*4;
-      int gamma   = dir+(1-skip)*4;
-
-      uint64_t Nsite = Umu.Grid()->oSites();
-      Kernels::DhopDirKernel(Stencil,Umu,Stencil.CommBuf(),Ls,Nsite,in,out[dirdisp],dirdisp,gamma);
-    }
-  }
+  uint64_t Nsite = Umu.Grid()->oSites();
+  Kernels::DhopDirAll(Stencil,Umu,Stencil.CommBuf(),Ls,Nsite,in,out);
 };
 
 
