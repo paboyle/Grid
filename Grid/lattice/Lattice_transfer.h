@@ -196,7 +196,7 @@ inline void blockZAXPY(Lattice<vobj> &fineZ,
   auto fineY_  = fineY.View();
   auto coarseA_= coarseA.View();
 
-  accelerator_for(sf, fine->oSites(), 1, {
+  accelerator_for(sf, fine->oSites(), CComplex::Nsimd(), {
     
     int sc;
     Coordinate coor_c(_ndimension);
@@ -207,7 +207,7 @@ inline void blockZAXPY(Lattice<vobj> &fineZ,
     Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
     // z = A x + y
-    fineZ_[sf]=coarseA_[sc]*fineX_[sf]+fineY_[sf];
+    coalescedWrite(fineZ_[sf],coarseA_(sc)*fineX_(sf)+fineY_(sf));
 
   });
 
@@ -397,8 +397,8 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
     Lattice<CComplex> cip(coarse);
     auto cip_ = cip.View();
     auto  ip_ =  ip.View();
-    accelerator_for(sc,coarse->oSites(),1,{
-      cip_[sc] = ip_[sc]();
+    accelerator_forNB(sc,coarse->oSites(),CComplex::Nsimd(),{
+	coalescedWrite(cip_[sc], ip_(sc)());
     });
     blockZAXPY<vobj,CComplex >(fineData,cip,Basis[i],fineData);
   }
