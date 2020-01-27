@@ -343,6 +343,38 @@ void WilsonKernels<Impl>::DhopDirK( StencilView &st, DoubledGaugeFieldView &U,Si
 }
 
 template <class Impl>
+void WilsonKernels<Impl>::DhopDirAll( StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor *buf, int Ls,
+				      int Nsite, const FermionField &in, std::vector<FermionField> &out) 
+{
+   auto U_v   = U.View();
+   auto in_v  = in.View();
+   auto st_v  = st.View();
+
+   auto out_Xm = out[0].View();
+   auto out_Ym = out[1].View();
+   auto out_Zm = out[2].View();
+   auto out_Tm = out[3].View();
+   auto out_Xp = out[4].View();
+   auto out_Yp = out[5].View();
+   auto out_Zp = out[6].View();
+   auto out_Tp = out[7].View();
+
+   accelerator_forNB(sss,Nsite*Ls,Simd::Nsimd(),{
+      int sU=sss/Ls;				
+      int sF =sss;				
+      DhopDirXm(st_v,U_v,st.CommBuf(),sF,sU,in_v,out_Xm,0);
+      DhopDirYm(st_v,U_v,st.CommBuf(),sF,sU,in_v,out_Ym,1);
+      DhopDirZm(st_v,U_v,st.CommBuf(),sF,sU,in_v,out_Zm,2);
+      DhopDirTm(st_v,U_v,st.CommBuf(),sF,sU,in_v,out_Tm,3);
+      DhopDirXp(st_v,U_v,st.CommBuf(),sF,sU,in_v,out_Xp,4);
+      DhopDirYp(st_v,U_v,st.CommBuf(),sF,sU,in_v,out_Yp,5);
+      DhopDirZp(st_v,U_v,st.CommBuf(),sF,sU,in_v,out_Zp,6);
+      DhopDirTp(st_v,U_v,st.CommBuf(),sF,sU,in_v,out_Tp,7);
+   });
+}
+
+
+template <class Impl>
 void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor *buf, int Ls,
 					 int Nsite, const FermionField &in, FermionField &out, int dirdisp, int gamma) 
 {
@@ -354,7 +386,7 @@ void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,S
    auto out_v = out.View();
    auto st_v  = st.View();
 #define LoopBody(Dir)				\
-   if (gamma==Dir) {				\
+   case Dir :			\
      accelerator_forNB(ss,Nsite,Simd::Nsimd(),{	\
        for(int s=0;s<Ls;s++){			\
 	 int sU=ss;				\
@@ -362,8 +394,9 @@ void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,S
 	 DhopDir##Dir(st_v,U_v,st.CommBuf(),sF,sU,in_v,out_v,dirdisp);\
        }							       \
        });							       \
-   }
+     break;
 
+   switch(gamma){
    LoopBody(Xp);
    LoopBody(Yp);
    LoopBody(Zp);
@@ -373,7 +406,10 @@ void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,S
    LoopBody(Ym);
    LoopBody(Zm);
    LoopBody(Tm);
-
+   default:
+     assert(0);
+     break;
+   }
 #undef LoopBody
 } 
 
