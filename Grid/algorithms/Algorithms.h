@@ -35,6 +35,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 #include <Grid/algorithms/approx/Zolotarev.h>
 #include <Grid/algorithms/approx/Chebyshev.h>
+#include <Grid/algorithms/approx/JacobiPolynomial.h>
 #include <Grid/algorithms/approx/Remez.h>
 #include <Grid/algorithms/approx/MultiShiftFunction.h>
 #include <Grid/algorithms/approx/Forecast.h>
