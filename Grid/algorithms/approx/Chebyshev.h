@@ -252,20 +252,20 @@ public:
     RealD xscale = 2.0/(hi-lo);
     RealD mscale = -(hi+lo)/(hi-lo);
     Linop.HermOp(T0,y);
-    T1=y*xscale+in*mscale;
+    axpby(T1,xscale,mscale,y,in);
 
     // sum = .5 c[0] T0 + c[1] T1
-    out = (0.5*Coeffs[0])*T0 + Coeffs[1]*T1;
+    //    out = ()*T0 + Coeffs[1]*T1;
+    axpby(out,0.5*Coeffs[0],Coeffs[1],T0,T1);
     for(int n=2;n<order;n++){
 	
       Linop.HermOp(*Tn,y);
-
-      y=xscale*y+mscale*(*Tn);
-
-      *Tnp=2.0*y-(*Tnm);
-
-      out=out+Coeffs[n]* (*Tnp);
-
+      //     y=xscale*y+mscale*(*Tn);
+      //      *Tnp=2.0*y-(*Tnm);
+      //      out=out+Coeffs[n]* (*Tnp);
+      axpby(y,xscale,mscale,y,(*Tn));
+      axpby(*Tnp,2.0,-1.0,y,(*Tnm));
+      axpy(out,Coeffs[n],*Tnp,out);
       // Cycle pointers to avoid copies
       Field *swizzle = Tnm;
       Tnm    =Tn;
