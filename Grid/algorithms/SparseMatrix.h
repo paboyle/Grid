@@ -45,6 +45,10 @@ public:
     ni=M(in,tmp);
     no=Mdag(tmp,out);
   }
+  virtual void  MdagM(const Field &in, Field &out) {
+    RealD ni, no;
+    MdagM(in,out,ni,no);
+  }
   virtual  void Mdiag    (const Field &in, Field &out)=0;
   virtual  void Mdir     (const Field &in, Field &out,int dir, int disp)=0;
   virtual  void MdirAll  (const Field &in, std::vector<Field> &out)=0;
