@@ -412,7 +412,6 @@ void ImprovedStaggeredFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st
 #ifdef GRID_OMP
   Compressor compressor; 
   int len =  U.Grid()->oSites();
-  const int LLs =  1;
 
   DhopTotalTime   -= usecond();
 
