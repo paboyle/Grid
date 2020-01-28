@@ -72,6 +72,7 @@ modules_cc =\
   Modules/MSolver/RBPrecCG.cc \
   Modules/MSource/Convolution.cc \
   Modules/MSource/Gauss.cc \
+  Modules/MSource/JacobiSmear.cc \
   Modules/MSource/Momentum.cc \
   Modules/MSource/MomentumPhase.cc \
   Modules/MSource/Point.cc \
@@ -161,6 +162,7 @@ modules_hpp =\
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MSource/Convolution.hpp \
   Modules/MSource/Gauss.hpp \
+  Modules/MSource/JacobiSmear.hpp \
   Modules/MSource/Momentum.hpp \
   Modules/MSource/MomentumPhase.hpp \
   Modules/MSource/Point.hpp \

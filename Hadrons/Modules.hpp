@@ -75,6 +75,7 @@
 #include <Hadrons/Modules/MSolver/RBPrecCG.hpp>
 #include <Hadrons/Modules/MSource/Convolution.hpp>
 #include <Hadrons/Modules/MSource/Gauss.hpp>
+#include <Hadrons/Modules/MSource/JacobiSmear.hpp>
 #include <Hadrons/Modules/MSource/Momentum.hpp>
 #include <Hadrons/Modules/MSource/MomentumPhase.hpp>
 #include <Hadrons/Modules/MSource/Point.hpp>

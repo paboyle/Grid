@@ -31,6 +31,7 @@ nobase_libHadrons_a_HEADERS = \
 	Module.hpp                \
 	Modules.hpp               \
 	ModuleFactory.hpp         \
+        NamedTensor.hpp           \
 	Solver.hpp                \
 	TimerArray.hpp            \
 	VirtualMachine.hpp        \

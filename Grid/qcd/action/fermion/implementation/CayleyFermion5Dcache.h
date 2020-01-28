@@ -10,6 +10,7 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Gianluca Filaci <g.filaci@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -54,6 +55,10 @@ CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
   auto chi = chi_i.View();
   assert(phi.Checkerboard() == psi.Checkerboard());
 
+  auto pdiag = &diag[0];
+  auto pupper = &upper[0];
+  auto plower = &lower[0];
+
   int Ls =this->Ls;
 
   // 10 = 3 complex mult + 2 complex add
@@ -71,7 +76,7 @@ CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
       uint64_t idx_l = ss+((s+Ls-1)%Ls);
       spProj5m(tmp1,psi(idx_u));
       spProj5p(tmp2,psi(idx_l));
-      coalescedWrite(chi[ss+s],diag[s]*phi(ss+s)+upper[s]*tmp1+lower[s]*tmp2);
+      coalescedWrite(chi[ss+s],pdiag[s]*phi(ss+s)+pupper[s]*tmp1+plower[s]*tmp2);
     }
   });
   M5Dtime+=usecond();
@@ -93,6 +98,10 @@ CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
   auto chi = chi_i.View();
   assert(phi.Checkerboard() == psi.Checkerboard());
 
+  auto pdiag = &diag[0];
+  auto pupper = &upper[0];
+  auto plower = &lower[0];
+
   int Ls=this->Ls;
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
@@ -109,7 +118,7 @@ CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
       uint64_t idx_l = ss+((s+Ls-1)%Ls);
       spProj5p(tmp1,psi(idx_u));
       spProj5m(tmp2,psi(idx_l));
-      coalescedWrite(chi[ss+s],diag[s]*phi(ss+s)+upper[s]*tmp1+lower[s]*tmp2);
+      coalescedWrite(chi[ss+s],pdiag[s]*phi(ss+s)+pupper[s]*tmp1+plower[s]*tmp2);
     }
   });
   M5Dtime+=usecond();
@@ -139,39 +148,41 @@ CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi_i, FermionField &chi
   accelerator_for(sss,nloop,Simd::Nsimd(),{
     uint64_t ss=sss*Ls;
     typedef decltype(coalescedRead(psi[0])) spinor;
-    spinor tmp;
+    spinor tmp, acc, res;
 
-    // flops = 12*2*Ls + 12*2*Ls + 3*12*Ls + 12*2*Ls  = 12*Ls * (9) = 108*Ls flops
-    // Apply (L^{\prime})^{-1}
-    coalescedWrite(chi[ss],psi(ss)); // chi[0]=psi[0]
-    for(int s=1;s<Ls;s++){
-      spProj5p(tmp,chi(ss+s-1));  
-      coalescedWrite(chi[ss+s] , psi(ss+s)-plee[s-1]*tmp);
+    // X = Nc*Ns
+    // flops = 2X + (Ls-2)(4X + 4X) + 6X + 1 + 2X + (Ls-1)(10X + 1) = -16X + Ls(1+18X) = -192 + 217*Ls flops
+    // Apply (L^{\prime})^{-1} L_m^{-1}
+    res = psi(ss);
+    spProj5m(tmp,res);
+    acc = pleem[0]*tmp;
+    spProj5p(tmp,res);
+    coalescedWrite(chi[ss],res);
+    
+    for(int s=1;s<Ls-1;s++){
+      res = psi(ss+s);
+      res -= plee[s-1]*tmp;
+      spProj5m(tmp,res);
+      acc += pleem[s]*tmp;
+      spProj5p(tmp,res);
+      coalescedWrite(chi[ss+s],res);
     }
-
-    // L_m^{-1} 
-    for (int s=0;s<Ls-1;s++){ // Chi[ee] = 1 - sum[s<Ls-1] -pleem[s]P_- chi
-      spProj5m(tmp,chi(ss+s));    
-      coalescedWrite(chi[ss+Ls-1], chi(ss+Ls-1) - pleem[s]*tmp);
-    }
-
-    // U_m^{-1} D^{-1}
-    for (int s=0;s<Ls-1;s++){
-      // Chi[s] + 1/d chi[s] 
-      spProj5p(tmp,chi(ss+Ls-1)); 
-      coalescedWrite(chi[ss+s], (1.0/pdee[s])*chi(ss+s)-(pueem[s]/pdee[Ls-1])*tmp);
-    }	
-    coalescedWrite(chi[ss+Ls-1], (1.0/pdee[Ls-1])*chi(ss+Ls-1));
-      
-    // Apply U^{-1}
+    res = psi(ss+Ls-1) - plee[Ls-2]*tmp - acc;
+    
+    // Apply U_m^{-1} D^{-1} U^{-1}
+    res = (1.0/pdee[Ls-1])*res;
+    coalescedWrite(chi[ss+Ls-1],res);
+    spProj5p(acc,res);
+    spProj5m(tmp,res);
     for (int s=Ls-2;s>=0;s--){
-      spProj5m(tmp,chi(ss+s+1));  
-      coalescedWrite(chi[ss+s], chi(ss+s) - puee[s]*tmp);
+      res = (1.0/pdee[s])*chi(ss+s) - puee[s]*tmp - pueem[s]*acc;
+      spProj5m(tmp,res);
+      coalescedWrite(chi[ss+s],res);
     }
   });
 
   MooeeInvTime+=usecond();
-
+  
 }
 
 template<class Impl>
@@ -201,31 +212,36 @@ CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi_i, FermionField &chi
   accelerator_for(sss,nloop,Simd::Nsimd(),{
     uint64_t ss=sss*Ls;
     typedef decltype(coalescedRead(psi[0])) spinor;
-    spinor tmp;
+    spinor tmp, acc, res;
 
-    // Apply (U^{\prime})^{-dagger}
-    coalescedWrite(chi[ss],psi(ss));
-    for (int s=1;s<Ls;s++){
-      spProj5m(tmp,chi(ss+s-1));
-      coalescedWrite(chi[ss+s], psi(ss+s)-conjugate(puee[s-1])*tmp);
+    // X = Nc*Ns
+    // flops = 2X + (Ls-2)(4X + 4X) + 6X + 1 + 2X + (Ls-1)(10X + 1) = -16X + Ls(1+18X) = -192 + 217*Ls flops
+    // Apply (U^{\prime})^{-dagger} U_m^{-\dagger}
+    res = psi(ss);
+    spProj5p(tmp,res);
+    acc = conjugate(pueem[0])*tmp;
+    spProj5m(tmp,res);
+    coalescedWrite(chi[ss],res);
+    
+    for(int s=1;s<Ls-1;s++){
+      res = psi(ss+s);
+      res -= conjugate(puee[s-1])*tmp;
+      spProj5p(tmp,res);
+      acc += conjugate(pueem[s])*tmp;
+      spProj5m(tmp,res);
+      coalescedWrite(chi[ss+s],res);
     }
-    // U_m^{-\dagger} 
-    for (int s=0;s<Ls-1;s++){
-      spProj5p(tmp,chi(ss+s));
-      coalescedWrite(chi[ss+Ls-1], chi(ss+Ls-1) - conjugate(pueem[s])*tmp);
-    }
-
-    // L_m^{-\dagger} D^{-dagger}
-    for (int s=0;s<Ls-1;s++){
-      spProj5m(tmp,chi(ss+Ls-1));
-      coalescedWrite(chi[ss+s], conjugate(1.0/pdee[s])*chi(ss+s)-conjugate(pleem[s]/pdee[Ls-1])*tmp);
-    }	
-    coalescedWrite(chi[ss+Ls-1], conjugate(1.0/pdee[Ls-1])*chi(ss+Ls-1));
-  
-    // Apply L^{-dagger}
+    res = psi(ss+Ls-1) - conjugate(puee[Ls-2])*tmp - acc;
+    
+    // Apply L_m^{-\dagger} D^{-dagger} L^{-dagger}
+    res = conjugate(1.0/pdee[Ls-1])*res;
+    coalescedWrite(chi[ss+Ls-1],res);
+    spProj5m(acc,res);
+    spProj5p(tmp,res);
     for (int s=Ls-2;s>=0;s--){
-      spProj5p(tmp,chi(ss+s+1));
-      coalescedWrite(chi[ss+s], chi(ss+s) - conjugate(plee[s])*tmp);
+      res = conjugate(1.0/pdee[s])*chi(ss+s) - conjugate(plee[s])*tmp - conjugate(pleem[s])*acc;
+      spProj5p(tmp,res);
+      coalescedWrite(chi[ss+s],res);
     }
   });
   MooeeInvTime+=usecond();
