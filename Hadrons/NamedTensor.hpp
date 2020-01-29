@@ -185,6 +185,20 @@ class PerambTensor : public NamedTensor<SpinVector, 6>
     : NamedTensor{Name__, DefaultIndexNames__, nT, nVec, LI, nNoise, nT_inv, SI} {}
 };
 
+class TimesliceEvals : public NamedTensor<RealD, 2>
+{
+    public:
+    static const std::string                Name__;
+    static const std::array<std::string, 2> DefaultIndexNames__;
+    // Default constructor (assumes tensor will be loaded from file)
+    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TimesliceEvals() : NamedTensor{Name__, DefaultIndexNames__} {}
+
+    // Construct a named tensor explicitly specifying size of each dimension
+    template<typename... IndexTypes>
+    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TimesliceEvals(Eigen::Index nT, Eigen::Index nVec)
+    : NamedTensor{Name__, DefaultIndexNames__, nT, nVec} {}
+};
+
 END_MODULE_NAMESPACE
 END_HADRONS_NAMESPACE
 #endif // Hadrons_NamedTensor_hpp_
