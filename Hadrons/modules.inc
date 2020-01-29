@@ -44,24 +44,25 @@ modules_cc =\
   Modules/MIO/LoadEigenPack.cc \
   Modules/MIO/LoadNersc.cc \
   Modules/MIO/LoadPerambulator.cc \
-  Modules/MNoise/FullVolumeSpinColorDiagonal.cc \
-  Modules/MNoise/SparseSpinColorDiagonal.cc \
-  Modules/MNoise/TimeDilutedSpinColorDiagonal.cc \
   Modules/MNPR/Amputate.cc \
   Modules/MNPR/Bilinear.cc \
   Modules/MNPR/FourQuark.cc \
+  Modules/MNoise/FullVolumeSpinColorDiagonal.cc \
+  Modules/MNoise/SparseSpinColorDiagonal.cc \
+  Modules/MNoise/TimeDilutedSpinColorDiagonal.cc \
   Modules/MScalar/ChargedProp.cc \
   Modules/MScalar/FreeProp.cc \
   Modules/MScalarSUN/Div.cc \
   Modules/MScalarSUN/EMT.cc \
   Modules/MScalarSUN/Grad.cc \
   Modules/MScalarSUN/StochFreeField.cc \
-  Modules/MScalarSUN/TransProj.cc \
   Modules/MScalarSUN/TrKinetic.cc \
   Modules/MScalarSUN/TrMag.cc \
   Modules/MScalarSUN/TrPhi.cc \
+  Modules/MScalarSUN/TransProj.cc \
   Modules/MScalarSUN/TwoPoint.cc \
   Modules/MScalarSUN/TwoPointNPR.cc \
+  Modules/MScalarSUN/WilsonFlow.cc \
   Modules/MSink/Point.cc \
   Modules/MSink/Smear.cc \
   Modules/MSolver/A2AAslashVectors.cc \
@@ -87,8 +88,8 @@ modules_hpp =\
   Modules/MAction/DWF.hpp \
   Modules/MAction/MobiusDWF.hpp \
   Modules/MAction/ScaledDWF.hpp \
-  Modules/MAction/WilsonClover.hpp \
   Modules/MAction/Wilson.hpp \
+  Modules/MAction/WilsonClover.hpp \
   Modules/MAction/ZMobiusDWF.hpp \
   Modules/MContraction/A2AAslashField.hpp \
   Modules/MContraction/A2AFourQuarkContraction.hpp \
@@ -119,8 +120,8 @@ modules_hpp =\
   Modules/MGauge/Random.hpp \
   Modules/MGauge/StochEm.hpp \
   Modules/MGauge/StoutSmearing.hpp \
-  Modules/MGauge/UnitEm.hpp \
   Modules/MGauge/Unit.hpp \
+  Modules/MGauge/UnitEm.hpp \
   Modules/MIO/LoadA2AMatrixDiskVector.hpp \
   Modules/MIO/LoadA2AVectors.hpp \
   Modules/MIO/LoadBinary.hpp \
@@ -130,12 +131,12 @@ modules_hpp =\
   Modules/MIO/LoadEigenPack.hpp \
   Modules/MIO/LoadNersc.hpp \
   Modules/MIO/LoadPerambulator.hpp \
-  Modules/MNoise/FullVolumeSpinColorDiagonal.hpp \
-  Modules/MNoise/SparseSpinColorDiagonal.hpp \
-  Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp \
   Modules/MNPR/Amputate.hpp \
   Modules/MNPR/Bilinear.hpp \
   Modules/MNPR/FourQuark.hpp \
+  Modules/MNoise/FullVolumeSpinColorDiagonal.hpp \
+  Modules/MNoise/SparseSpinColorDiagonal.hpp \
+  Modules/MNoise/TimeDilutedSpinColorDiagonal.hpp \
   Modules/MScalar/ChargedProp.hpp \
   Modules/MScalar/FreeProp.hpp \
   Modules/MScalar/Scalar.hpp \
@@ -143,13 +144,14 @@ modules_hpp =\
   Modules/MScalarSUN/EMT.hpp \
   Modules/MScalarSUN/Grad.hpp \
   Modules/MScalarSUN/StochFreeField.hpp \
-  Modules/MScalarSUN/TransProj.hpp \
   Modules/MScalarSUN/TrKinetic.hpp \
   Modules/MScalarSUN/TrMag.hpp \
   Modules/MScalarSUN/TrPhi.hpp \
+  Modules/MScalarSUN/TransProj.hpp \
   Modules/MScalarSUN/TwoPoint.hpp \
   Modules/MScalarSUN/TwoPointNPR.hpp \
   Modules/MScalarSUN/Utils.hpp \
+  Modules/MScalarSUN/WilsonFlow.hpp \
   Modules/MSink/Point.hpp \
   Modules/MSink/Smear.hpp \
   Modules/MSolver/A2AAslashVectors.hpp \
