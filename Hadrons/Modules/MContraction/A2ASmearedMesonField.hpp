@@ -324,6 +324,7 @@ void TA2ASmearedMesonField<FImpl>::setup(void)
         envGetGrid(FermionField));
     envTmp(std::vector<FermionField>, "right", 1, size_r,
         envGetGrid(FermionField));
+    envTmpLat(ComplexField, "tmp_dist");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -538,6 +539,7 @@ void TA2ASmearedMesonField<FImpl>::smearing_weight(
         const std::vector<int> &mom)
 {
     using std::get;
+    envGetTmp(ComplexField, tmp_dist);
     assert(out.size() == distributionsNames_.size()*smearMom.size());
     const int numSpatialDims=env().getNd()-1;
     const int timeDim=env().getNd()-1;
@@ -565,7 +567,9 @@ void TA2ASmearedMesonField<FImpl>::smearing_weight(
             }
             *out_it=dist_right;
             multidim_Cshift_inplace(*out_it, totalShift);
-            *out_it=*out_it * dist_left * invSpVol;
+            tmp_dist=dist_left;
+            multidim_Cshift_inplace(tmp_dist, msmear);
+            *out_it=*out_it * tmp_dist * invSpVol;
             out_it++;
         }
     }
