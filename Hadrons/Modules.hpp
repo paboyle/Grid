@@ -17,6 +17,7 @@
 #include <Hadrons/Modules/MContraction/WeakEye3pt.hpp>
 #include <Hadrons/Modules/MContraction/WeakMesonDecayKl2.hpp>
 #include <Hadrons/Modules/MContraction/WeakNonEye3pt.hpp>
+#include <Hadrons/Modules/MContraction/XiToSigmaEye.hpp>
 #include <Hadrons/Modules/MDistil/Distil.hpp>
 #include <Hadrons/Modules/MDistil/DistilPar.hpp>
 #include <Hadrons/Modules/MDistil/DistilVectors.hpp>

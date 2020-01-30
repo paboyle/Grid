@@ -690,23 +690,22 @@ void BaryonUtils<FImpl>::Xi_to_Sigma_Q1_Eye_site(const mobj &Dq_loop,
   auto GDq = Gamma_H * Dq_loop;
 
   for (int ie_s=0; ie_s < 6 ; ie_s++){
-    int a_s = epsilon[ie_n][0]; //a
-    int b_s = epsilon[ie_n][1]; //b
-    int c_s = epsilon[ie_n][2]; //c
+    int a_s = epsilon[ie_s][0]; //a
+    int b_s = epsilon[ie_s][1]; //b
+    int c_s = epsilon[ie_s][2]; //c
     for (int ie_x=0; ie_x < 6 ; ie_x++){
-      int a_x = epsilon[ie_s][0]; //a'
-      int b_x = epsilon[ie_s][1]; //b'
-      int c_x = epsilon[ie_s][2]; //c'
+      int a_x = epsilon[ie_x][0]; //a'
+      int b_x = epsilon[ie_x][1]; //b'
+      int c_x = epsilon[ie_x][2]; //c'
       for (int sigma2=0; sigma2<Ns; sigma2++){
       for (int j=0; j<Nc; j++){
         auto GDq_jj_ss=GDq()(sigma2,sigma2)(j,j);
         auto ee_GD = epsilon_sgn[ie_s] * epsilon_sgn[ie_x] * GDq_jj_ss;
         for (int alpha_x=0; alpha_x<Ns; alpha_x++){
         for (int beta_s=0; beta_s<Ns; beta_s++){
-          auto GDsGDd_ab_bb = GDsGDd()(alpha_s,beta_n)(b_s,b_n);
-          auto DqG_tt_jj = DqG()(tau2,tau2)(j,j);
-        for (int gamma_s=0; gamma_s<Ns; gamma_s++){
-        for (int gamma_n=0; gamma_n<Ns; gamma_n++){
+          auto GDsGDd_ab_bb = GDsGDd()(alpha_x,beta_s)(b_x,b_s);
+          for (int gamma_x=0; gamma_x<Ns; gamma_x++){
+          for (int gamma_s=0; gamma_s<Ns; gamma_s++){
             result()(gamma_x,gamma_s)() -= ee_GD * Dd_spec()(gamma_x, gamma_s)(c_x,c_s) * GDsGDdG()(alpha_x, beta_s)(b_x,a_s) * Ds_spec()(alpha_x, beta_s)(a_x, b_s);
             result()(gamma_x,gamma_s)() += ee_GD * DdG()(gamma_x, beta_s)(c_x,a_s) * GDsGDd()(alpha_x, gamma_s)(b_x,c_s) * Ds_spec()(alpha_x, beta_s)(a_x, b_s);
             result()(gamma_x,gamma_s)() += ee_GD * Dd_spec()(gamma_x, gamma_s)(c_x,c_s) * DsGDdG()(alpha_x, beta_s)(a_x,a_s) * GDs()(alpha_x, beta_s)(b_x, b_s);
@@ -741,7 +740,7 @@ void BaryonUtils<FImpl>::Xi_to_Sigma_Q2_Eye_site(const mobj &Dq_loop,
   auto DdG = Dd_spec * GammaB_sigma;
   auto GDs = GammaB_xi * Ds_spec;
   //  Ds * gamma_mu^L * Dq * \gamma_\mu^L * Dd
-  auto DsGDqGDd = Ds_xi * Gamma_H * Dq_loop * Gamma_H * Dd_tf;
+  auto DsGDqGDd = Ds_ti * Gamma_H * Dq_loop * Gamma_H * Dd_tf;
   //  Ds * gamma_mu^L * Dq * \gamma_\mu^L * Dd * GammaB
   auto DsGDqGDdG = DsGDqGDd * GammaB_sigma;
   //  GammaB * Ds * gamma_mu^L * Dq * \gamma_\mu^L * Dd
@@ -750,28 +749,27 @@ void BaryonUtils<FImpl>::Xi_to_Sigma_Q2_Eye_site(const mobj &Dq_loop,
   auto GDsGDqGDdG = GammaB_xi * DsGDqGDdG; 
 
   for (int ie_s=0; ie_s < 6 ; ie_s++){
-    int a_s = epsilon[ie_n][0]; //a
-    int b_s = epsilon[ie_n][1]; //b
-    int c_s = epsilon[ie_n][2]; //c
+    int a_s = epsilon[ie_s][0]; //a
+    int b_s = epsilon[ie_s][1]; //b
+    int c_s = epsilon[ie_s][2]; //c
     for (int ie_x=0; ie_x < 6 ; ie_x++){
-      int a_x = epsilon[ie_s][0]; //a'
-      int b_x = epsilon[ie_s][1]; //b'
-      int c_x = epsilon[ie_s][2]; //c'
-        auto ee = epsilon_sgn[ie_s] * epsilon_sgn[ie_x];
-        for (int alpha_x=0; alpha_x<Ns; alpha_x++){
-        for (int beta_s=0; beta_s<Ns; beta_s++){
-          auto Ds_ab_ab = Ds_spec()(alpha_x, beta_s)(a_x,b_s);
-          auto GDs_ab_bb = GDs()(alpha_x, beta_s)(b_x,b_s);
-          auto DsGDqGDdG_ab_aa = DsGDqGDdG()(alpha_x, beta_s)(a_x,a_s);
-          auto GDsGDqGDdG_ab_ba = GDsGDqGDdG()(alpha_x, beta_s)(a_x,b_s);
-      	  for (int gamma_s=0; gamma_s<Ns; gamma_s++){
-          for (int gamma_n=0; gamma_n<Ns; gamma_n++){
-            result()(gamma_x,gamma_s)() -= ee * Dd_spec()(gamma_x, gamma_s)(c_x,c_s) * GDsGDqGDdG_ab_ba * Ds_ab_ab;
-            result()(gamma_x,gamma_s)() += ee * DdG()(gamma_x, beta_s)(c_x,a_s) * GDsGDqGDd()(alpha_x,gamma_s)(b_x,c_s) * Ds_ab_ab;
-            result()(gamma_x,gamma_s)() += ee * Dd_spec()(gamma_x, gamma_s)(c_x,c_s) * DsGDqGDdG_ab_aa * GDs_ab_bb;
-            result()(gamma_x,gamma_s)() -= ee * DdG()(gamma_x, beta_s)(c_x,a_s) * DsGDqGDd()(alpha_x,gamma_s)(a_x,c_s) * GDs_ab_bb;
-          }}
-	}}
+      int a_x = epsilon[ie_x][0]; //a'
+      int b_x = epsilon[ie_x][1]; //b'
+      int c_x = epsilon[ie_x][2]; //c'
+      auto ee = epsilon_sgn[ie_s] * epsilon_sgn[ie_x];
+      for (int alpha_x=0; alpha_x<Ns; alpha_x++){
+      for (int beta_s=0; beta_s<Ns; beta_s++){
+        auto Ds_ab_ab = Ds_spec()(alpha_x, beta_s)(a_x,b_s);
+        auto GDs_ab_bb = GDs()(alpha_x, beta_s)(b_x,b_s);
+        auto DsGDqGDdG_ab_aa = DsGDqGDdG()(alpha_x, beta_s)(a_x,a_s);
+        auto GDsGDqGDdG_ab_ba = GDsGDqGDdG()(alpha_x, beta_s)(a_x,b_s);
+        for (int gamma_x=0; gamma_x<Ns; gamma_x++){
+        for (int gamma_s=0; gamma_s<Ns; gamma_s++){
+          result()(gamma_x,gamma_s)() -= ee * Dd_spec()(gamma_x, gamma_s)(c_x,c_s) * GDsGDqGDdG_ab_ba * Ds_ab_ab;
+          result()(gamma_x,gamma_s)() += ee * DdG()(gamma_x, beta_s)(c_x,a_s) * GDsGDqGDd()(alpha_x,gamma_s)(b_x,c_s) * Ds_ab_ab;
+          result()(gamma_x,gamma_s)() += ee * Dd_spec()(gamma_x, gamma_s)(c_x,c_s) * DsGDqGDdG_ab_aa * GDs_ab_bb;
+          result()(gamma_x,gamma_s)() -= ee * DdG()(gamma_x, beta_s)(c_x,a_s) * DsGDqGDd()(alpha_x,gamma_s)(a_x,c_s) * GDs_ab_bb;
+        }}
       }}
     }
   }

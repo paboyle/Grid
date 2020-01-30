@@ -18,6 +18,7 @@ modules_cc =\
   Modules/MContraction/WeakEye3pt.cc \
   Modules/MContraction/WeakMesonDecayKl2.cc \
   Modules/MContraction/WeakNonEye3pt.cc \
+  Modules/MContraction/XiToSigmaEye.cc \
   Modules/MDistil/DistilPar.cc \
   Modules/MDistil/DistilVectors.cc \
   Modules/MDistil/LapEvec.cc \
@@ -103,6 +104,7 @@ modules_hpp =\
   Modules/MContraction/WeakEye3pt.hpp \
   Modules/MContraction/WeakMesonDecayKl2.hpp \
   Modules/MContraction/WeakNonEye3pt.hpp \
+  Modules/MContraction/XiToSigmaEye.hpp \
   Modules/MDistil/Distil.hpp \
   Modules/MDistil/DistilPar.hpp \
   Modules/MDistil/DistilVectors.hpp \
