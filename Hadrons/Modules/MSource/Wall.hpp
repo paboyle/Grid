@@ -122,6 +122,15 @@ void TWall<FImpl>::setup(void)
     envCache(Lattice<iScalar<vInteger>>, tName_, 1, envGetGrid(LatticeComplex));
     envCacheLat(LatticeComplex, momphName_);
     envTmpLat(LatticeComplex, "coor");
+    auto  &src = envGet(PropagatorField, getName());
+    const auto NumDims = src.Grid()->Dimensions();
+    // Don't break existing scripts as long as they specified zero momentum in time dimension
+    std::vector<Real> p = strToVec<Real>(par().mom);
+    if (!(p.size() == NumDims - 1 || (p.size() == NumDims && p[NumDims - 1] == 0)))
+    {
+        HADRONS_ERROR(Size, "momentum has " + std::to_string(p.size())
+                      + " components (must have " + std::to_string(NumDims - 1) + ")");
+    }
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -143,7 +152,8 @@ void TWall<FImpl>::execute(void)
         envGetTmp(LatticeComplex, coor);
         p  = strToVec<Real>(par().mom);
         ph = Zero();
-        for(unsigned int mu = 0; mu < env().getNd(); mu++)
+        const auto NumDims = src.Grid()->Dimensions();
+        for(unsigned int mu = 0; mu < NumDims - 1; mu++)
         {
             LatticeCoordinate(coor, mu);
             ph = ph + (p[mu]/env().getDim(mu))*coor;
