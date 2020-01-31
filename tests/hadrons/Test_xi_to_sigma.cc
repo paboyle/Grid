@@ -116,35 +116,30 @@ int main(int argc, char *argv[])
 
     MSink::Smear::Par smearPar;
     smearPar.q="Qpt_l_0";
-    smearPar.sink = "sink_spec";
-    application.createModule<MSink::Smear>("Qpt_u_spec",smearPar);
+    smearPar.sink = "sink_spec_d";
+    application.createModule<MSink::Smear>("Qpt_d_spec",smearPar);
    
+    MSink::Smear::Par smearPar;
+    smearPar.q="Qpt_s_0";
+    smearPar.sink = "sink_spec_s";
+    application.createModule<MSink::Smear>("Qpt_s_spec",smearPar);
 
-    MContraction::SigmaToNucleonEye::Par EyePar;
-    EyePar.output  = "SigmaToNucleon/Eye_u";
+    MContraction::XiToSigmaEye::Par EyePar;
+    EyePar.output  = "XiToSigma/Eye_u";
     EyePar.qqLoop = "Qpt_l_loop";
-    EyePar.quSpec = "Qpt_u_spec";
+    EyePar.qdSpec = "Qpt_d_spec";
     EyePar.qdTf   = "Qpt_l_4";
+    EyePar.qsSpec = "Qpt_s_spec";
     EyePar.qsTi   = "Qpt_s_0";
     EyePar.tf    = 4;
     EyePar.sink    = "sink";
-    application.createModule<MContraction::SigmaToNucleonEye>("SigmaToNucleonEye_u", EyePar);
-    EyePar.output  = "SigmaToNucleon/Eye_c";
+    application.createModule<MContraction::XiToSigmaEye>("XiToSigmaEye_u", EyePar);
+    EyePar.output  = "XiToSigma/Eye_c";
     EyePar.qqLoop = "Qpt_c_loop";
-    application.createModule<MContraction::SigmaToNucleonEye>("SigmaToNucleonEye_c", EyePar);
-    MContraction::SigmaToNucleonNonEye::Par NonEyePar;
-    NonEyePar.output  = "SigmaToNucleon/NonEye";
-    NonEyePar.quTi = "Qpt_l_0";
-    NonEyePar.quTf = "Qpt_l_4";
-    NonEyePar.quSpec = "Qpt_u_spec";
-    NonEyePar.qdTf   = "Qpt_l_4";
-    NonEyePar.qsTi   = "Qpt_s_0";
-    NonEyePar.tf    = 4;
-    NonEyePar.sink    = "sink";
-    application.createModule<MContraction::SigmaToNucleonNonEye>("SigmaToNucleonNonEye", NonEyePar);
+    application.createModule<MContraction::XiToSigmaEye>("XiToSigmaEye_c", EyePar);
 
     // execution
-    application.saveParameterFile("stn.xml");
+    application.saveParameterFile("xts.xml");
     application.run();
     
     // epilogue

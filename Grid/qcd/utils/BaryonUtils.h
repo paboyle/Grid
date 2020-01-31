@@ -681,7 +681,7 @@ void BaryonUtils<FImpl>::Xi_to_Sigma_Q1_Eye_site(const mobj &Dq_loop,
   //  Ds * \gamma_\mu^L * Dd
   auto DsGDd = Ds_ti * Gamma_H * Dd_tf;
   // Ds * \gamma_\mu^L * Dd * \Gamma^B
-  auto GDsGDd = GammaB_sigma * DsGDd;
+  auto GDsGDd = GammaB_xi * DsGDd;
   // Ds * \gamma_\mu^L * Dd * \Gamma^B
   auto DsGDdG = DsGDd * GammaB_sigma;
   // Gamma^B * Ds * \gamma_\mu^L * Dd * \Gamma^B
@@ -762,7 +762,7 @@ void BaryonUtils<FImpl>::Xi_to_Sigma_Q2_Eye_site(const mobj &Dq_loop,
         auto Ds_ab_ab = Ds_spec()(alpha_x, beta_s)(a_x,b_s);
         auto GDs_ab_bb = GDs()(alpha_x, beta_s)(b_x,b_s);
         auto DsGDqGDdG_ab_aa = DsGDqGDdG()(alpha_x, beta_s)(a_x,a_s);
-        auto GDsGDqGDdG_ab_ba = GDsGDqGDdG()(alpha_x, beta_s)(a_x,b_s);
+        auto GDsGDqGDdG_ab_ba = GDsGDqGDdG()(alpha_x, beta_s)(b_x,a_s);
         for (int gamma_x=0; gamma_x<Ns; gamma_x++){
         for (int gamma_s=0; gamma_s<Ns; gamma_s++){
           result()(gamma_x,gamma_s)() -= ee * Dd_spec()(gamma_x, gamma_s)(c_x,c_s) * GDsGDqGDdG_ab_ba * Ds_ab_ab;
