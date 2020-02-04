@@ -116,12 +116,10 @@ int main(int argc, char *argv[])
 
     MSink::Smear::Par smearPar;
     smearPar.q="Qpt_l_0";
-    smearPar.sink = "sink_spec_d";
+    smearPar.sink = "sink_spec";
     application.createModule<MSink::Smear>("Qpt_d_spec",smearPar);
-   
-    MSink::Smear::Par smearPar;
     smearPar.q="Qpt_s_0";
-    smearPar.sink = "sink_spec_s";
+    smearPar.sink = "sink_spec";
     application.createModule<MSink::Smear>("Qpt_s_spec",smearPar);
 
     MContraction::XiToSigmaEye::Par EyePar;
