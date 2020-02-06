@@ -53,7 +53,7 @@ inline void blockMaskedInnerProduct(Lattice<CComplex> &CoarseInner,
 {
   typedef decltype(innerProduct(vobj(),vobj())) dotp;
 
-  GridBase *coarse(CoarseInner1.Grid());
+  GridBase *coarse(CoarseInner.Grid());
   GridBase *fine  (fineX.Grid());
 
   Lattice<dotp> fine_inner(fine); fine_inner.Checkerboard() = fineX.Checkerboard();
