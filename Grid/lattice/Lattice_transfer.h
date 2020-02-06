@@ -439,6 +439,44 @@ void localConvert(const Lattice<vobj> &in,Lattice<vvobj> &out)
   });
 }
 
+template<class vobj>
+void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate FromLowerLeft, Coordinate ToLowerLeft, Coordinate RegionSize)
+{
+  typedef typename vobj::scalar_object sobj;
+
+  GridBase *Fg = From.Grid();
+  GridBase *Tg = To.Grid();
+  int nF = Fg->_ndimension;
+  int nT = Tg->_ndimension;
+  int nd = nF;
+  assert(nF == nT);
+
+  for(int d=0;d<nd;d++){
+    assert(Fg->_processors[d]  == Tg->_processors[d]);
+    //    assert(Fg->_ldimensions[d] == Tg->_ldimensions[d]);
+  }
+
+  // the above should guarantee that the operations are local
+  thread_for(idx,Fg->lSites(),{
+    sobj s;
+    Coordinate Fcoor(nd);
+    Coordinate Tcoor(nd);
+    Fg->LocalIndexToLocalCoor(idx,Fcoor);
+    int in_region=1;
+    // can now repromote to threaded loop
+    for(int d=0;d<nd;d++){
+      if ( (Fcoor[d] < FromLowerLeft[d]) || (Fcoor[d]>=FromLowerLeft[d]+RegionSize[d]) ){ 
+	in_region=0;
+      }
+      Tcoor[d] = ToLowerLeft[d]+ Fcoor[d]-FromLowerLeft[d];
+    }
+    if (in_region) {
+      peekLocalSite(s,From,Fcoor);
+      pokeLocalSite(s,To  ,Tcoor);
+    }
+  });
+}
+
 
 template<class vobj>
 void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int orthog)
