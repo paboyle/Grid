@@ -377,14 +377,17 @@ until convergence
     {
       auto src_n = src;
       auto tmp = src;
+      std::cout << GridLogIRL << " IRL source norm " << norm2(src) << std::endl;
       const int _MAX_ITER_IRL_MEVAPP_ = 50;
       for (int i=0;i<_MAX_ITER_IRL_MEVAPP_;i++) {
 	normalise(src_n);
 	_HermOp(src_n,tmp);
+	//	std::cout << GridLogMessage<< tmp<<std::endl; exit(0);
+	//	std::cout << GridLogIRL << " _HermOp " << norm2(tmp) << std::endl;
 	RealD vnum = real(innerProduct(src_n,tmp)); // HermOp.
 	RealD vden = norm2(src_n);
 	RealD na = vnum/vden;
-	if (fabs(evalMaxApprox/na - 1.0) < 0.05)
+	if (fabs(evalMaxApprox/na - 1.0) < 0.0001)
 	  i=_MAX_ITER_IRL_MEVAPP_;
 	evalMaxApprox = na;
 	std::cout << GridLogIRL << " Approximation of largest eigenvalue: " << evalMaxApprox << std::endl;
