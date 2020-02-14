@@ -76,6 +76,7 @@ modules_cc =\
 
 modules_hpp =\
   Modules/MContraction/StagA2AMesonField.hpp \
+  Modules/MContraction/StagA2AMesonFieldCC.hpp \
   Modules/MSource/Gauss.hpp \
   Modules/MSource/Momentum.hpp \
   Modules/MSource/SeqAslash.hpp \

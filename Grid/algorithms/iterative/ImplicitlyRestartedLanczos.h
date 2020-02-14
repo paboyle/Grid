@@ -62,9 +62,12 @@ void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, i
     basis_v[k] = basis[k].View();
   }
 
+  std::vector < vobj , commAllocator<vobj> > Bt(thread_max() * Nm); // Thread private
+    
   thread_region
   {
-    std::vector < vobj , commAllocator<vobj> > B(Nm); // Thread private
+    vobj* B = Bt.data() + Nm * thread_num();
+
     thread_for_in_region(ss, grid->oSites(),{
       for(int j=j0; j<j1; ++j) B[j]=0.;
       
@@ -214,7 +217,6 @@ template<class Field> class ImplicitlyRestartedLanczosHermOpTester  : public Imp
     std::cout.precision(13);
     std::cout<<GridLogIRL  << "[" << std::setw(3)<<j<<"] "
 	     <<"eval = "<<std::setw(25)<< eval << " (" << eval_poly << ")"
-         <<" evalMaxApprox " << evalMaxApprox
 	     <<" |H B[i] - eval[i]B[i]|^2 / evalMaxApprox^2 " << std::setw(25) << vv
 	     <<std::endl;
 
@@ -364,28 +366,27 @@ until convergence
     std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
 	
     assert(Nm <= evec.size() && Nm <= eval.size());
+    
     // quickly get an idea of the largest eigenvalue to more properly normalize the residuum
     RealD evalMaxApprox = 0.0;
     {
-        auto src_n = src;
-        auto tmp = src;
-        
-        const int _MAX_ITER_IRL_MEVAPP_ = 50;
-        
-        for (int i=0;i<_MAX_ITER_IRL_MEVAPP_;i++) {
-            normalise(src_n);
-            _HermOp(src_n,tmp);
-            RealD vnum = real(innerProduct(src_n,tmp)); // HermOp.
-            RealD vden = norm2(src_n);
-            RealD na = vnum/vden;
-            if (fabs(evalMaxApprox/na - 1.0) < 0.05)
-                i=_MAX_ITER_IRL_MEVAPP_;
-            evalMaxApprox = na;
-            std::cout << GridLogIRL << " Approximation of largest eigenvalue: " << evalMaxApprox << std::endl;
-            src_n = tmp;
-        }
+      auto src_n = src;
+      auto tmp = src;
+      const int _MAX_ITER_IRL_MEVAPP_ = 50;
+      for (int i=0;i<_MAX_ITER_IRL_MEVAPP_;i++) {
+	normalise(src_n);
+	_HermOp(src_n,tmp);
+	RealD vnum = real(innerProduct(src_n,tmp)); // HermOp.
+	RealD vden = norm2(src_n);
+	RealD na = vnum/vden;
+	if (fabs(evalMaxApprox/na - 1.0) < 0.05)
+	  i=_MAX_ITER_IRL_MEVAPP_;
+	evalMaxApprox = na;
+	std::cout << GridLogIRL << " Approximation of largest eigenvalue: " << evalMaxApprox << std::endl;
+	src_n = tmp;
+      }
     }
-      
+	
     std::vector<RealD> lme(Nm);  
     std::vector<RealD> lme2(Nm);
     std::vector<RealD> eval2(Nm);
@@ -503,28 +504,25 @@ until convergence
 
 	//  power of two search pattern;  not every evalue in eval2 is assessed.
 	int allconv =1;
-    //for(int jj = 1; jj<=Nstop; jj*=2){
-    for(int jj = 1; jj<=Nstop; jj++){
+	for(int jj = 1; jj<=Nstop; jj*=2){
 	  int j = Nstop-jj;
 	  RealD e = eval2_copy[j]; // Discard the evalue
-	  basisRotateJ(B,evec,Qt,j,0,Nk,Nm);
-        
+	  basisRotateJ(B,evec,Qt,j,0,Nk,Nm);	    
 	  if( !_Tester.TestConvergence(j,eresid,B,e,evalMaxApprox) ) {
 	    allconv=0;
 	  }
-      else{Nconv++;}
 	}
 	// Do evec[0] for good measure
 	{ 
 	  int j=0;
 	  RealD e = eval2_copy[0]; 
 	  basisRotateJ(B,evec,Qt,j,0,Nk,Nm);	    
-        if( !_Tester.TestConvergence(j,eresid,B,e,evalMaxApprox) ) {allconv=0;}else{Nconv++;}
+	  if( !_Tester.TestConvergence(j,eresid,B,e,evalMaxApprox) ) allconv=0;
 	}
-	//if ( allconv ) Nconv = Nstop;
+	if ( allconv ) Nconv = Nstop;
 
 	// test if we converged, if so, terminate
-	std::cout<<GridLogIRL<<" #modes converged: "<<Nconv<<"/ Nstop "<<Nstop<<std::endl;
+	std::cout<<GridLogIRL<<" #modes converged: >= "<<Nconv<<"/"<<Nstop<<std::endl;
 	//	if( Nconv>=Nstop || beta_k < betastp){
 	if( Nconv>=Nstop){
 	  goto converged;
