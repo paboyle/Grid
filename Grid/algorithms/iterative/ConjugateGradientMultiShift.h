@@ -46,15 +46,19 @@ public:
 
   RealD   Tolerance;
   Integer MaxIterations;
-    Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
+  std::vector<int> IterationsToComplete;
+  //    Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
   int verbose;
   MultiShiftFunction shifts;
+  std::vector<RealD> TrueResiduals;
 
   ConjugateGradientMultiShift(Integer maxit,MultiShiftFunction &_shifts) : 
     MaxIterations(maxit),
     shifts(_shifts)
   { 
     verbose=1;
+    IterationsToComplete.resize(_shifts.order);
+    TrueResiduals.resize(_shifts.order);
   }
 
   void operator() (LinearOperatorBase<Field> &Linop, const Field &src, Field &psi)
@@ -125,6 +129,17 @@ public:
     // Residuals "r" are src
     // First search direction "p" is also src
     cp = norm2(src);
+
+    // Handle trivial case of zero src.
+    if( cp == 0. ){
+      for(int s=0;s<nshift;s++){
+	psi[s] = 0;
+	IterationsToComplete[s] = 1;
+	TrueResiduals[s] = 0.;
+      }
+      return;
+    }
+
     for(int s=0;s<nshift;s++){
       rsq[s] = cp * mresidual[s] * mresidual[s];
       std::cout<<GridLogMessage<<"ConjugateGradientMultiShift: shift "<<s
@@ -270,6 +285,7 @@ public:
       for(int s=0;s<nshift;s++){
       
 	if ( (!converged[s]) ){
+	  IterationsToComplete[s] = k;
 	
 	  RealD css  = c * z[s][iz]* z[s][iz];
 	
@@ -299,7 +315,8 @@ public:
 	  axpy(r,-alpha[s],src,tmp);
 	  RealD rn = norm2(r);
 	  RealD cn = norm2(src);
-	  std::cout<<GridLogMessage<<"CGMultiShift: shift["<<s<<"] true residual "<<std::sqrt(rn/cn)<<std::endl;
+	  TrueResiduals[s] = std::sqrt(rn/cn);
+	  std::cout<<GridLogMessage<<"CGMultiShift: shift["<<s<<"] true residual "<< TrueResiduals[s] <<std::endl;
 	}
 
       std::cout << GridLogMessage << "Time Breakdown "<<std::endl;
@@ -308,7 +325,7 @@ public:
       std::cout << GridLogMessage << "\tMarix    " << MatrixTimer.Elapsed()     <<std::endl;
       std::cout << GridLogMessage << "\tShift    " << ShiftTimer.Elapsed()     <<std::endl;
 
-      IterationsToComplete = k;	
+      //      IterationsToComplete = k;	
 
 	return;
       }
