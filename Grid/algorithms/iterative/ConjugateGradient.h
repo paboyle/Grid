@@ -85,7 +85,7 @@ public:
 
     // Handle trivial case of zero src
     if (ssq == 0.){
-      psi = 0;
+      psi = Zero();
       IterationsToComplete = 1;
       TrueResidual = 0.;
       return;
@@ -102,7 +102,7 @@ public:
 
     // Check if guess is really REALLY good :)
     if (cp <= rsq) {
-      TrueResidual = sqrt(a/ssq);
+      TrueResidual = std::sqrt(a/ssq);
       std::cout << GridLogMessage << "ConjugateGradient guess is converged already " << std::endl;
       IterationsToComplete = 0;	
       return;

@@ -308,7 +308,7 @@ void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X)
       Linop.HermOp(X, AD);
       AD = AD-B;
       TrueResidual = std::sqrt(norm2(AD)/norm2(B));
-      std::cout << GridLogMessage <<"\t True residual is " << TrueResidual <<std::endl;
+      std::cout << GridLogMessage <<"\tTrue residual is " << TrueResidual <<std::endl;
 
       std::cout << GridLogMessage << "Time Breakdown "<<std::endl;
       std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed()     <<std::endl;
@@ -656,7 +656,7 @@ void BlockCGrQsolveVec(LinearOperatorBase<Field> &Linop, const std::vector<Field
       if ( rr > max_resid ) max_resid = rr;
     }
 
-    std::cout << GridLogIterative << "\t Block Iteration "<<k<<" ave resid "<< sqrt(rrsum/sssum) << " max "<< sqrt(max_resid) <<std::endl;
+    std::cout << GridLogIterative << "\t Block Iteration "<<k<<" ave resid "<< std::sqrt(rrsum/sssum) << " max "<< std::sqrt(max_resid) <<std::endl;
 
     if ( max_resid < Tolerance*Tolerance ) { 
 
@@ -672,7 +672,7 @@ void BlockCGrQsolveVec(LinearOperatorBase<Field> &Linop, const std::vector<Field
       for(int b=0;b<Nblock;b++) Linop.HermOp(X[b], AD[b]);
       for(int b=0;b<Nblock;b++) AD[b] = AD[b]-B[b];
       TrueResidual = std::sqrt(normv(AD)/normv(B));
-      std::cout << GridLogMessage <<"\t True residual is " << TrueResidual <<std::endl;
+      std::cout << GridLogMessage << "\tTrue residual is " << TrueResidual <<std::endl;
 
       std::cout << GridLogMessage << "Time Breakdown "<<std::endl;
       std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed()     <<std::endl;
