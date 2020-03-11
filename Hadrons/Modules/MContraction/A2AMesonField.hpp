@@ -231,6 +231,11 @@ void TA2AMesonField<FImpl>::execute(void)
     int block      = par().block;
     int cacheBlock = par().cacheBlock;
 
+    if (N_i < block || N_j < block)
+    {
+        HADRONS_ERROR(Range, "blockSize must not exceed size of input vector.");
+    }
+
     LOG(Message) << "Computing all-to-all meson fields" << std::endl;
     LOG(Message) << "Left: '" << par().left << "' Right: '" << par().right << "'" << std::endl;
     LOG(Message) << "Momenta:" << std::endl;
