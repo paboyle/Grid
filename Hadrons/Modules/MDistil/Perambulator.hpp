@@ -102,7 +102,7 @@ std::vector<std::string> TPerambulator<FImpl>::getOutput(void)
     if( !UnsmearedSinkFileName.empty() )
     {
         objName.append( UnsmearedSink );
-        output.emplace_back( objName );
+        output.push_back( objName );
     }
     return output;
 }
