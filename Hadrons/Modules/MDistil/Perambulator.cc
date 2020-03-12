@@ -34,6 +34,7 @@ using namespace Hadrons;
 using namespace MDistil;
 
 template class Grid::Hadrons::MDistil::TPerambulator<FIMPL>;
+template class Grid::Hadrons::MDistil::TPerambulator<ZFIMPL>;
 
 BEGIN_HADRONS_NAMESPACE
 
