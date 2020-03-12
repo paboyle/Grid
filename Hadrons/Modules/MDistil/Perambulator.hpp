@@ -74,7 +74,7 @@ protected:
 };
 
 MODULE_REGISTER_TMP(Perambulator, TPerambulator<FIMPL>, MDistil);
-MODULE_REGISTER_TMP(Perambulator, TPerambulator<ZFIMPL>, MDistil);
+MODULE_REGISTER_TMP(ZPerambulator, TPerambulator<ZFIMPL>, MDistil);
 
 /******************************************************************************
  *                 TPerambulator implementation                             *
