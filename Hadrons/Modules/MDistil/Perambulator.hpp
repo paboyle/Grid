@@ -74,6 +74,7 @@ protected:
 };
 
 MODULE_REGISTER_TMP(Perambulator, TPerambulator<FIMPL>, MDistil);
+MODULE_REGISTER_TMP(ZPerambulator, TPerambulator<ZFIMPL>, MDistil);
 
 /******************************************************************************
  *                 TPerambulator implementation                             *
@@ -102,7 +103,7 @@ std::vector<std::string> TPerambulator<FImpl>::getOutput(void)
     if( !UnsmearedSinkFileName.empty() )
     {
         objName.append( UnsmearedSink );
-        output.emplace_back( objName );
+        output.push_back( objName );
     }
     return output;
 }
