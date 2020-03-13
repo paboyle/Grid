@@ -97,6 +97,23 @@ namespace Grid {
     template<typename T, typename V = void> struct is_tensor_variable : public std::false_type {};
     template<typename T> struct is_tensor_variable<T, typename std::enable_if<is_tensor<T>::value
         && !is_tensor_fixed<T>::value>::type> : public std::true_type {};
+
+    // Helper functions to get the ultimate scalar inside a tensor, and corresponding size
+    template <typename ET>
+    inline typename std::enable_if<is_tensor<ET>::value, const typename ET::Index>::type
+    getScalarCount(const ET &eigenTensor) { return eigenTensor.size() * Traits<ET>::count; }
+    template <typename ET>
+    inline typename std::enable_if<is_tensor_of_scalar<ET>::value, const typename ET::Scalar *>::type
+    getFirstScalar(const ET &eigenTensor) { return eigenTensor.data(); }
+    template <typename ET>
+    inline typename std::enable_if<is_tensor_of_scalar<ET>::value, typename ET::Scalar *>::type
+    getFirstScalar(ET &eigenTensor) { return eigenTensor.data(); }
+    template <typename ET>
+    inline typename std::enable_if<is_tensor_of_container<ET>::value, const typename Traits<ET>::scalar_type *>::type
+    getFirstScalar(const ET &eigenTensor) { return eigenTensor.data()->begin(); }
+    template <typename ET>
+    inline typename std::enable_if<is_tensor_of_container<ET>::value, typename Traits<ET>::scalar_type *>::type
+    getFirstScalar(ET &eigenTensor) { return eigenTensor.data()->begin(); }
   }
 
   // Abstract writer/reader classes ////////////////////////////////////////////
@@ -128,23 +145,6 @@ namespace Grid {
     typename std::enable_if<EigenIO::is_tensor<ETensor>::value>::type
     write(const std::string &s, const ETensor &output);
 
-    // Helper functions for Scalar vs Container specialisations
-    template <typename ETensor>
-    inline typename std::enable_if<EigenIO::is_tensor_of_scalar<ETensor>::value,
-    const typename ETensor::Scalar *>::type
-    getFirstScalar(const ETensor &output)
-    {
-      return output.data();
-    }
-    
-    template <typename ETensor>
-    inline typename std::enable_if<EigenIO::is_tensor_of_container<ETensor>::value,
-    const typename EigenIO::Traits<ETensor>::scalar_type *>::type
-    getFirstScalar(const ETensor &output)
-    {
-      return output.data()->begin();
-    }
-    
     template <typename S>
     inline typename std::enable_if<EigenIO::is_scalar<S>::value, void>::type
     copyScalars(S * &pCopy, const S &Source)
@@ -318,12 +318,12 @@ namespace Grid {
       TotalDims[TensorRank + i] = Traits::Dimension(i);
 
     // If the Tensor isn't in Row-Major order, then we'll need to copy it's data
-    const bool CopyData{NumElements > 1 && ETensor::Layout != Eigen::StorageOptions::RowMajor};
+    const bool CopyData{NumElements > 1 && static_cast<int>( ETensor::Layout ) != static_cast<int>( Eigen::StorageOptions::RowMajor )};
     const Scalar * pWriteBuffer;
     std::vector<Scalar> CopyBuffer;
     const Index TotalNumElements = NumElements * Traits::count;
     if( !CopyData ) {
-      pWriteBuffer = getFirstScalar( output );
+      pWriteBuffer = EigenIO::getFirstScalar( output );
     } else {
       // Regardless of the Eigen::Tensor storage order, the copy will be Row Major
       CopyBuffer.resize( TotalNumElements );
