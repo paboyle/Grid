@@ -39,6 +39,7 @@ directory
 #include <Grid/parallelIO/IldgIOtypes.h>
 #include <Grid/parallelIO/IldgIO.h>
 #include <Grid/parallelIO/NerscIO.h>
+#include <Grid/parallelIO/OpenQcdIO.h>
 NAMESPACE_CHECK(Ildg);
 
 #include <Grid/qcd/hmc/checkpointers/CheckPointers.h>
