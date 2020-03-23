@@ -67,6 +67,10 @@ public:
     field.dimension[2] = header.Nz;
     field.dimension[3] = header.Nt;
 
+    std::cout << GridLogDebug << "header: " << header << std::endl;
+    std::cout << GridLogDebug << "grid dimensions: " << grid->_fdimensions << std::endl;
+    std::cout << GridLogDebug << "file dimensions: " << field.dimension << std::endl;
+
     assert(grid->_ndimension == Nd);
     for(int d = 0; d < Nd; d++)
       assert(grid->_fdimensions[d] == field.dimension[d]);
@@ -80,73 +84,140 @@ public:
   static inline void readConfiguration(Lattice<iLorentzColourMatrix<vsimd>>& Umu,
                                        FieldMetaData&                        header,
                                        std::string                           file) {
+    typedef Lattice<iDoubleStoredColourMatrix<vsimd>> DoubleStoredGaugeField;
+
+    assert(Ns == 4 and Nd == 4 and Nc == 3);
+
     auto grid = dynamic_cast<GridCartesian*>(Umu.Grid());
-    assert(grid != nullptr);
-    assert((grid->_ndimension == Nd) && (Nd == 4));
+    assert(grid != nullptr); assert(grid->_ndimension == Nd);
 
     uint64_t offset = readHeader(file, Umu.Grid(), header);
+
     FieldMetaData clone(header);
 
-    // NOTE: This version is suboptimal because we read in the full file on every rank
-    std::vector<ColourMatrix> data(grid->gSites() * 4);
-    {
-      auto fin = std::fstream(file, std::ios::in | std::ios::binary);
-      fin.seekg(offset);
-      fin.read((char *)data.data(), data.size() * sizeof(ColourMatrix));
-      fin.close();
-    }
+    std::string format("IEEE64"); // they always store little endian double precsision
+    uint32_t    nersc_csum, scidac_csuma, scidac_csumb;
 
-    // global lattice size
-    Coordinate fdim = grid->FullDimensions();
+    GridCartesian*         grid_openqcd = createOpenQcdGrid(grid);
+    GridRedBlackCartesian* grid_rb      = SpaceTimeGrid::makeFourDimRedBlackGrid(grid);
 
-    // coordinate of this process
-    Coordinate pcoor;
-    grid->ProcessorCoorFromRank(CartesianCommunicator::RankWorld(), pcoor);
+    typedef DoubleStoredColourMatrixD                                              fobj;
+    typedef typename DoubleStoredGaugeField::vector_object::scalar_object          sobj;
+    typedef typename DoubleStoredGaugeField::vector_object::Realified::scalar_type word;
 
-    // loop over local indices
-    thread_for(idx, grid->lSites(), {
-      // convert local index to global coordinate
-      Coordinate lcoor, gcoor;
-      grid->LocalIndexToLocalCoor(idx, lcoor);
-      grid->ProcessorCoorLocalCoorToGlobalCoor(pcoor, lcoor, gcoor);
+    word w = 0;
 
-      // openQCD stores links attached to odd sites
-      bool neg = (gcoor[Xdir] + gcoor[Ydir] + gcoor[Zdir] + gcoor[Tdir]) % 2 != 1;
+    std::vector<fobj> iodata(grid_openqcd->lSites()); // Munge, checksum, byte order in here
+    std::vector<sobj> scalardata(grid->lSites());
 
-      LorentzColourMatrix site_data;
-      for (int mu = 0; mu < 4; ++mu) {
-        // determine the site at which it is stored
-        Coordinate c = gcoor;
-        if (neg)
-          c[mu] = (c[mu] + 1) % grid->FullDimensions()[mu];
+    IOobject(w, grid_openqcd, iodata, file, offset, format, BINARYIO_READ | BINARYIO_LEXICOGRAPHIC,
+             nersc_csum, scidac_csuma, scidac_csumb);
 
-        // site-index in the OpenQCD format (which uses t,x,y,z order)
-        int openqcd_idx = (c[Tdir] * fdim[Xdir] * fdim[Ydir] * fdim[Zdir]
-                        +  c[Xdir] * fdim[Ydir] * fdim[Zdir]
-                        +  c[Ydir] * fdim[Zdir]
-                        +  c[Zdir])/2;
-        int openqcd_mu = (mu + 1) % 4;
+    GridStopWatch timer;
+    timer.Start();
 
-        // pick the colour-matrix out
-        site_data(mu) =
-            data[8 * openqcd_idx + 2 * openqcd_mu + (neg ? 1 : 0)]();
-      }
+    DoubleStoredGaugeField Umu_ds(grid);
 
-      pokeLocalSite(site_data, Umu, lcoor);
+    auto munge = GaugeDoubleStoredMunger<DoubleStoredColourMatrixD, DoubleStoredColourMatrix>();
+
+    Coordinate ldim = grid->LocalDimensions();
+    thread_for(idx_g, grid->lSites(), {
+        Coordinate coor;
+        grid->LocalIndexToLocalCoor(idx_g, coor);
+
+        bool isOdd = grid_rb->CheckerBoard(coor) == Odd;
+
+        if(!isOdd) continue;
+
+        int idx_o = (coor[Tdir] * ldim[Xdir] * ldim[Ydir] * ldim[Zdir]
+                  +  coor[Xdir] * ldim[Ydir] * ldim[Zdir]
+                  +  coor[Ydir] * ldim[Zdir]
+                  +  coor[Zdir])/2;
+
+        munge(iodata[idx_o], scalardata[idx_g]);
     });
+
+    grid->Barrier(); timer.Stop();
+    std::cout << Grid::GridLogMessage << "OpenQcdIO::readConfiguration: munge overhead " << timer.Elapsed() << std::endl;
+
+    timer.Reset(); timer.Start();
+
+    vectorizeFromLexOrdArray(scalardata, Umu_ds);
+
+    grid->Barrier(); timer.Stop();
+    std::cout << Grid::GridLogMessage << "OpenQcdIO::readConfiguration: vectorize overhead " << timer.Elapsed() << std::endl;
+
+    timer.Reset(); timer.Start();
+
+    undoDoubleStore(Umu, Umu_ds);
+
+    grid->Barrier(); timer.Stop();
+    std::cout << Grid::GridLogMessage << "OpenQcdIO::readConfiguration: redistribute overhead " << timer.Elapsed() << std::endl;
 
     GaugeStatistics(Umu, clone);
 
-    std::cout << GridLogMessage << "OpenQcd Configuration " << file << " plaquette "
-              << std::setprecision(15)
-              << clone.plaquette << " header " << header.plaquette
-              << " difference " << fabs(clone.plaquette - header.plaquette)
-              << std::endl;
+    RealD plaq_diff = fabs(clone.plaquette - header.plaquette);
 
-    if(fabs(clone.plaquette - header.plaquette) >= 1.0e-5) std::cout << " Plaquette mismatch " << std::endl;
-    assert(fabs(clone.plaquette - header.plaquette) < 1.0e-5);
+    // clang-format off
+    std::cout << GridLogMessage << "OpenQcd Configuration " << file
+              << " plaquette " << clone.plaquette
+              << " header " << header.plaquette
+              << " difference " << plaq_diff
+              << std::endl;
+    // clang-format on
+
+    RealD precTol = (getPrecision<vsimd>::value == 1) ? 2e-7 : 2e-15;
+    RealD tol     = precTol * std::sqrt(grid->_Nprocessors); // taken from RQCD chroma code
+
+    if(plaq_diff >= tol)
+      std::cout << " Plaquette mismatch (diff = " << plaq_diff << ", tol = " << tol << ")" << std::endl;
+    assert(plaq_diff < tol);
 
     std::cout << GridLogMessage << "OpenQcd Configuration " << file << " and plaquette agree" << std::endl;
+  }
+
+  template<class vsimd>
+  static inline void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd>>& Umu,
+                                        std::string                           file) {
+    std::cout << GridLogError << "Writing to openQCD file format is not implemented" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+private:
+  static inline GridCartesian* createOpenQcdGrid(GridCartesian* grid) {
+    // exploit GridCartesian to be able to still use IOobject
+    Coordinate gdim  = grid->GlobalDimensions();
+    Coordinate ldim  = grid->LocalDimensions();
+    Coordinate pcoor = grid->ThisProcessorCoor();
+
+    // openqcd does rb on the z direction
+    gdim[Zdir] /= 2;
+    ldim[Zdir] /= 2;
+
+    // and has the order T X Y Z (from slowest to fastest)
+    std::swap(gdim[Xdir], gdim[Zdir]);
+    std::swap(ldim[Xdir], ldim[Zdir]);
+    std::swap(pcoor[Xdir], pcoor[Zdir]);
+
+    GridCartesian* ret   = SpaceTimeGrid::makeFourDimGrid(gdim, grid->_simd_layout, grid->ProcessorGrid());
+    ret->_ldimensions    = ldim;
+    ret->_processor_coor = pcoor;
+    return ret;
+  }
+
+  template<class vsimd>
+  static inline void undoDoubleStore(Lattice<iLorentzColourMatrix<vsimd>>&            Umu,
+                                     Lattice<iDoubleStoredColourMatrix<vsimd>> const& Umu_ds) {
+    conformable(Umu.Grid(), Umu_ds.Grid());
+    Lattice<iColourMatrix<vsimd>> U(Umu.Grid());
+
+    // they store T+, T-, X+, X-, Y+, Y-, Z+, Z-
+    for(int mu_g = 0; mu_g < Nd; ++mu_g) {
+      int mu_o = (mu_g + 1) % Nd;
+      U        = PeekIndex<LorentzIndex>(Umu_ds, 2 * mu_o)
+               + Cshift(PeekIndex<LorentzIndex>(Umu_ds, 2 * mu_o + 1), mu_g, +1);
+      PokeIndex<LorentzIndex>(Umu, U, mu_g);
+    }
   }
 };
 

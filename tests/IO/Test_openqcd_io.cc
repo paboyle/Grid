@@ -28,28 +28,57 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 #include <Grid/Grid.h>
 
+#if defined(GRID_COMMS_NONE)
+#error This test requires Grid compiled with MPI
+#endif
+
 using namespace Grid;
 
 int main(int argc, char** argv) {
   Grid_init(&argc, &argv);
 
-  GridCartesian* grid = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(),
-                                                       GridDefaultSimd(Nd, vComplexD::Nsimd()),
-                                                       GridDefaultMpi());
+  auto simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
+  auto mpi_layout  = GridDefaultMpi();
+  auto latt_size   = GridDefaultLatt();
 
-  LatticeGaugeField Umu(grid);
+  GridCartesian grid(latt_size, simd_layout, mpi_layout);
 
-  FieldMetaData header;
+  GridParallelRNG pRNG(&grid);
 
-  if(!Grid::GridCmdOptionExists(argv, argv + argc, "--config")) {
-    std::cout << GridLogError << "You need to use --config /path/to/openqcd_config" << std::endl;
-    abort();
+  pRNG.SeedFixedIntegers(std::vector<int>({45, 12, 81, 9}));
+
+  LatticeGaugeField Umu_ref(&grid);
+  LatticeGaugeField Umu_me(&grid);
+  LatticeGaugeField Umu_diff(&grid);
+
+  FieldMetaData header_ref;
+  FieldMetaData header_me;
+
+  Umu_ref = Zero();
+  Umu_me  = Zero();
+
+  std::string file("/home/daniel/configs/openqcd/test_16x8_pbcn6");
+
+  if(GridCmdOptionExists(argv, argv + argc, "--config")) {
+    file = GridCmdOptionPayload(argv, argv + argc, "--config");
+    std::cout << "file: " << file << std::endl;
+    assert(!file.empty());
   }
 
-  std::string file = Grid::GridCmdOptionPayload(argv, argv + argc, "--config");
-  assert(!file.empty());
+  OpenQcdIOChromaReference::readConfiguration(Umu_ref, header_ref, file);
+  OpenQcdIO::readConfiguration(Umu_me, header_me, file);
 
-  OpenQcdIO::readConfiguration(Umu, header, file);
+  std::cout << GridLogMessage << header_ref << std::endl;
+  std::cout << GridLogMessage << header_me << std::endl;
+
+  Umu_diff = Umu_ref - Umu_me;
+
+  // clang-format off
+  std::cout << GridLogMessage
+            << "norm2(Umu_ref) = " << norm2(Umu_ref)
+            << " norm2(Umu_me) = " << norm2(Umu_me)
+            << " norm2(Umu_diff) = " << norm2(Umu_diff) << std::endl;
+  // clang-format on
 
   Grid_finalize();
 }
