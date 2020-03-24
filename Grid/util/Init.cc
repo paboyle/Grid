@@ -162,6 +162,13 @@ void GridCmdOptionInt(std::string &str,int & val)
   return;
 }
 
+// ypj [add]
+void GridCmdOptionFloat(std::string &str,double & val)
+{
+  std::stringstream ss(str);
+  ss>>val;
+  return;
+}
 
 void GridParseLayout(char **argv,int argc,
 		     Coordinate &latt_c,

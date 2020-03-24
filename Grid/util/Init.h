@@ -56,7 +56,9 @@ std::string GridCmdVectorIntToString(const VectorInt & vec);
 void GridCmdOptionCSL(std::string str,std::vector<std::string> & vec);
 template<class VectorInt>
 void GridCmdOptionIntVector(std::string &str,VectorInt & vec);
-
+// ypj [add]
+void GridCmdOptionInt(std::string &str,int & val);
+void GridCmdOptionFloat(std::string &str,double & val);
 
 void GridParseLayout(char **argv,int argc,
 		     std::vector<int> &latt,
