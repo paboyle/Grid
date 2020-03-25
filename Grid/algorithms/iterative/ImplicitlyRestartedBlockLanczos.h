@@ -180,7 +180,7 @@ public:
           Glog<<"orthogonalize after: "<<j<<" of "<<k<<" "<< ip <<std::endl;
       }
     }
-    normalize(w,if_print);
+    assert(normalize(w,if_print) != 0);
   }
   void reorthogonalize(Field& w, std::vector<Field>& evec, int k)
   {

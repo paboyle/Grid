@@ -363,7 +363,7 @@ int main (int argc, char ** argv)
   std::vector<RealD> eval(JP.Nm);
   
   std::vector<FermionField> src(JP.Nu,FrbGrid);
-if (1)
+if (0)
 {
   std::cout << GridLogMessage << "Using RNG5"<<std::endl;
   FermionField src_tmp(FGrid);
