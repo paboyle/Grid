@@ -74,6 +74,7 @@ protected:
 };
 
 MODULE_REGISTER_TMP(Perambulator, TPerambulator<FIMPL>, MDistil);
+MODULE_REGISTER_TMP(ZPerambulator, TPerambulator<ZFIMPL>, MDistil);
 
 /******************************************************************************
  *                 TPerambulator implementation                             *
@@ -89,10 +90,22 @@ std::vector<std::string> TPerambulator<FImpl>::getInput(void)
     return {par().lapevec, par().solver, par().noise, par().DistilParams};
 }
 
+static const std::string UnsmearedSink{ "_unsmeared_sink" };
+
 template <typename FImpl>
 std::vector<std::string> TPerambulator<FImpl>::getOutput(void)
 {
-    return {getName(), getName() + "_unsmeared_sink"};
+    // Always return perambulator with name of module
+    std::string objName{ getName() };
+    std::vector<std::string> output{ objName };
+    // If unsmeared sink is specified, then output that as well
+    const std::string UnsmearedSinkFileName{ par().UnsmearedSinkFileName };
+    if( !UnsmearedSinkFileName.empty() )
+    {
+        objName.append( UnsmearedSink );
+        output.push_back( objName );
+    }
+    return output;
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
@@ -105,9 +118,15 @@ void TPerambulator<FImpl>::setup(void)
     const bool full_tdil{ dp.TI == Nt };
     const int  Nt_inv{ full_tdil ? 1 : dp.TI };
 
-    envCreate(PerambTensor, getName(), 1, Nt, dp.nvec, dp.LI, dp.nnoise, Nt_inv, dp.SI);
-    envCreate(std::vector<FermionField>, getName() + "_unsmeared_sink", 1,
-              dp.nnoise*dp.LI*Ns*Nt_inv, envGetGrid(FermionField));
+    std::string objName{ getName() };
+    envCreate(PerambTensor, objName, 1, Nt, dp.nvec, dp.LI, dp.nnoise, Nt_inv, dp.SI);
+    const std::string UnsmearedSinkFileName{ par().UnsmearedSinkFileName };
+    if( !UnsmearedSinkFileName.empty() )
+    {
+        objName.append( UnsmearedSink );
+        envCreate(std::vector<FermionField>, objName, 1, dp.nnoise*dp.LI*Ns*Nt_inv,
+                  envGetGrid(FermionField));
+    }
     
     envTmpLat(LatticeSpinColourVector,   "dist_source");
     envTmpLat(LatticeSpinColourVector,   "source4d");
@@ -139,9 +158,12 @@ void TPerambulator<FImpl>::execute(void)
     envGetTmp(FermionField, v5dtmp);
     envGetTmp(FermionField, v5dtmp_sol);
     auto &noise = envGet(NoiseTensor, par().noise);
-    auto &perambulator = envGet(PerambTensor, getName());
+    std::string objName{ getName() };
+    auto &perambulator = envGet(PerambTensor, objName);
     auto &epack = envGet(LapEvecs, par().lapevec);
-    auto &unsmeared_sink = envGet(std::vector<FermionField>, getName() + "_unsmeared_sink");
+    objName.append( UnsmearedSink );
+    const std::string UnsmearedSinkFileName{ par().UnsmearedSinkFileName };
+    const bool bSaveUnsmearedSink( !UnsmearedSinkFileName.empty() );
     envGetTmp(LatticeSpinColourVector, dist_source);
     envGetTmp(LatticeSpinColourVector, source4d);
     envGetTmp(LatticeSpinColourVector, source3d);
@@ -153,7 +175,6 @@ void TPerambulator<FImpl>::execute(void)
     GridCartesian * const grid4d{ env().getGrid() }; // Owned by environment (so I won't delete it)
     const int Ntlocal{grid4d->LocalDimensions()[3]};
     const int Ntfirst{grid4d->LocalStarts()[3]};
-    const std::string UnsmearedSinkFileName{ par().UnsmearedSinkFileName };
 
     for (int inoise = 0; inoise < dp.nnoise; inoise++)
     {
@@ -197,8 +218,11 @@ void TPerambulator<FImpl>::execute(void)
                         mat.ExportPhysicalFermionSolution(v5dtmp_sol, v4dtmp);
                         result4d = v4dtmp;
                     }
-                    if (!UnsmearedSinkFileName.empty())
+                    if( bSaveUnsmearedSink )
+                    {
+                        auto &unsmeared_sink = envGet(std::vector<FermionField>, objName);
                         unsmeared_sink[inoise+dp.nnoise*(dk+dp.LI*(dt+Nt_inv*ds))] = result4d;
+                    }
                     for (int is = 0; is < Ns; is++)
                     {
                         result4d_nospin = peekSpin(result4d,is);
@@ -250,9 +274,10 @@ void TPerambulator<FImpl>::execute(void)
     }
     
     //Save the unsmeared sinks if filename specified
-    if (!UnsmearedSinkFileName.empty())
+    if (bSaveUnsmearedSink)
     {
         LOG(Message) << "Writing unsmeared sink to " << UnsmearedSinkFileName << std::endl;
+        auto &unsmeared_sink = envGet(std::vector<FermionField>, objName);
         A2AVectorsIo::write(UnsmearedSinkFileName, unsmeared_sink, false, vm().getTrajectory());
     }
 }

@@ -263,6 +263,11 @@ void TLapEvec<GImpl>::execute(void)
     const int Ntlocal{gridHD->LocalDimensions()[Tdir]};
     const int Ntfirst{gridHD->LocalStarts()[Tdir]};
     uint32_t ConvergenceErrors{0};
+    const int NtFull{env().getDim(Tdir)};
+    TimesliceEvals Evals{ NtFull, LPar.Nvec };
+    for (int t = 0; t < NtFull; t++)
+        for (int v = 0; v < LPar.Nvec; v++)
+            Evals.tensor( t, v ) = 0;
     for (int t = 0; t < Ntlocal; t++ )
     {
         LOG(Message) << "------------------------------------------------------------" << std::endl;
@@ -302,6 +307,8 @@ void TLapEvec<GImpl>::execute(void)
             InsertSliceLocal(eig[t].evec[i],eig4d.evec[i],0,t,Tdir);
             if(t==0 && Ntfirst==0)
                 eig4d.eval[i] = eig[t].eval[i]; // TODO: Discuss: is this needed? Is there a better way?
+            if(gridLD->IsBoss()) // Only do this on one node per timeslice, so a global sum will work
+                Evals.tensor(t + Ntfirst,i) = eig[t].eval[i];
         }
     }
     GridLogIRL.Active( PreviousIRLLogState );
@@ -322,9 +329,21 @@ void TLapEvec<GImpl>::execute(void)
         sOperatorXml.append( b->parString() );
         sOperatorXml.append( "</options></module>" );
         eig4d.record.operatorXml = sOperatorXml;
-        sEigenPackName.append(".");
-        sEigenPackName.append(std::to_string(vm().getTrajectory()));
+        sEigenPackName.append(1, '.');
+        std::size_t NameLen{ sEigenPackName.length() };
+        const std::string sTrajNum{std::to_string(vm().getTrajectory())};
+        sEigenPackName.append(sTrajNum);
         eig4d.write(sEigenPackName,false);
+        // Communicate eig[t].evec to boss-node, save into new object evecs
+        gridHD->GlobalSumVector(EigenIO::getFirstScalar(Evals.tensor),
+                                static_cast<int>(EigenIO::getScalarCount(Evals.tensor)));
+        if(gridHD->IsBoss())
+        {
+            sEigenPackName.resize(NameLen);
+            sEigenPackName.append("evals.");
+            sEigenPackName.append(sTrajNum);
+            Evals.write( sEigenPackName );
+        }
     }
 }
 

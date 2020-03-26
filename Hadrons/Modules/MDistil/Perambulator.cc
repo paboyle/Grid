@@ -34,6 +34,7 @@ using namespace Hadrons;
 using namespace MDistil;
 
 template class Grid::Hadrons::MDistil::TPerambulator<FIMPL>;
+template class Grid::Hadrons::MDistil::TPerambulator<ZFIMPL>;
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -52,6 +53,9 @@ const std::array<std::string, 4> NoiseTensor::DefaultIndexNames__{"nNoise", "nT"
 
 const std::string                PerambTensor::Name__{"Perambulator"};
 const std::array<std::string, 6> PerambTensor::DefaultIndexNames__{"nT", "nVec", "LI", "nNoise", "nT_inv", "SI"};
+
+const std::string                TimesliceEvals::Name__{"TimesliceEigenValues"};
+const std::array<std::string, 2> TimesliceEvals::DefaultIndexNames__{"nT", "nVec"};
 
 END_MODULE_NAMESPACE
 END_HADRONS_NAMESPACE
