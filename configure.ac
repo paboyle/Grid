@@ -617,7 +617,6 @@ AC_CONFIG_FILES(tests/IO/Makefile)
 AC_CONFIG_FILES(tests/core/Makefile)
 AC_CONFIG_FILES(tests/debug/Makefile)
 AC_CONFIG_FILES(tests/forces/Makefile)
-AC_CONFIG_FILES(tests/hadrons/Makefile)
 AC_CONFIG_FILES(tests/hmc/Makefile)
 AC_CONFIG_FILES(tests/solver/Makefile)
 AC_CONFIG_FILES(tests/lanczos/Makefile)
@@ -625,8 +624,6 @@ AC_CONFIG_FILES(tests/smearing/Makefile)
 AC_CONFIG_FILES(tests/qdpxx/Makefile)
 AC_CONFIG_FILES(tests/testu01/Makefile)
 AC_CONFIG_FILES(benchmarks/Makefile)
-AC_CONFIG_FILES(Hadrons/Makefile)
-AC_CONFIG_FILES(Hadrons/Utilities/Makefile)
 AC_OUTPUT
 
 echo ""

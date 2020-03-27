@@ -1,5 +1,5 @@
 # additional include paths necessary to compile the C++ library
-SUBDIRS = Grid HMC Hadrons benchmarks tests
+SUBDIRS = Grid HMC benchmarks tests
 
 include $(top_srcdir)/doxygen.inc
 
