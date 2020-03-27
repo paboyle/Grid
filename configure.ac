@@ -153,7 +153,7 @@ AC_ARG_ENABLE([mkl],
     [ac_MKL=${enable_mkl}], [ac_MKL=no])
 AC_ARG_ENABLE([ipp],
     [AC_HELP_STRING([--enable-ipp=yes|no|prefix], [enable Intel IPP for fast CRC32C])],
-    [ac_IPP=${enable_mkl}], [ac_IPP=no])
+    [ac_IPP=${enable_ipp}], [ac_IPP=no])
 
 case ${ac_MKL} in
     no)
