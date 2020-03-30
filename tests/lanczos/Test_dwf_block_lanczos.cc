@@ -357,8 +357,8 @@ int main (int argc, char ** argv)
                                                      JP.Nu, JP.Nk, JP.Nm,
                                                      JP.resid,
                                                      JP.MaxIter,
-						     IRLdiagonaliseWithEigen);
-//						     IRLdiagonaliseWithLAPACK);
+						     IRBLdiagonaliseWithEigen);
+//						     IRBLdiagonaliseWithLAPACK);
   
   std::vector<RealD> eval(JP.Nm);
   
