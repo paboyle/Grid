@@ -110,7 +110,7 @@ private:
   std::string cname = std::string("ImplicitlyRestartedBlockLanczos");
   int MaxIter;   // Max iterations
   int Nstop;     // Number of evecs checked for convergence
-  int Nu;        // Numbeer of vecs in the unit block
+  int Nu;        // Number of vecs in the unit block
   int Nk;        // Number of converged sought
   int Nm;        // total number of vectors
   int Nblock_k;    // Nk/Nu
@@ -129,7 +129,15 @@ private:
   GridRedBlackCartesian * f_grid;
   GridRedBlackCartesian * sf_grid;
   int mrhs;
-
+  /////////////////////////
+  // BLAS objects
+  /////////////////////////
+#ifdef GRID_NVCC
+  cudaError_t cudaStat;
+  cuDoubleComplex *w_acc, *evec_acc, *c_acc;
+#endif
+  int Nevec_acc; // Number of eigenvectors stored in the buffer evec_acc
+  
   /////////////////////////
   // Constructor
   /////////////////////////
@@ -154,7 +162,8 @@ public:
       Nblock_m(_Nm/_Nu), Nblock_k(_Nk/_Nu),
       //eresid(_eresid),  MaxIter(10),
       eresid(_eresid),  MaxIter(_MaxIter),
-      diagonalisation(_diagonalisation),split_test(0)
+      diagonalisation(_diagonalisation),split_test(0),
+      Nevec_acc(_Nu)
   { assert( (Nk%Nu==0) && (Nm%Nu==0) ); };
 
   ////////////////////////////////
@@ -225,7 +234,7 @@ public:
   }
 
 
-  void orthogonalize_blas(std::vector<Field>& w, int _Nu, std::vector<Field>& evec, int _R, int _print=0) 
+  void orthogonalize_blas(std::vector<Field>& w, std::vector<Field>& evec, int R, int do_print=0) 
   { 
 #ifdef GRID_NVCC
     Glog << "cuBLAS orthogonalize" << std::endl;
@@ -237,105 +246,86 @@ public:
     typedef typename Field::scalar_type MyComplex;
     
     GridBase *grid = w[0].Grid();
-    //grid->show_decomposition();
-    //const uint64_t nsimd = grid->Nsimd();
     const uint64_t sites = grid->lSites();
-      
-    //auto w_v = w[0].View();
-    //cuDoubleComplex *z = reinterpret_cast<cuDoubleComplex*>(&w_v._odata[0]);
-    //cuDoubleComplex *z = w_v._odata._internal;
-    //thread_for(ss,w_v.size(),{
-    //    Glog << w_v[ss] << std::endl;
-    //});
-    //w_v[0]
-    //exit(0);
-    //scalar_type *z = (scalar_type *)&w_v[0]; // OK
-    //cuDoubleComplex *z = reinterpret_cast<cuDoubleComplex *>(&w_v[0]); // OK
-  
-    cudaError_t cudaStat;
+
+    int Nbatch = R/Nevec_acc;
+    assert( R%Nevec_acc == 0 );
+    Glog << "nBatch, Nevec_acc, R, Nu = " 
+         << Nbatch << "," << Nevec_acc << "," << R << "," << Nu << std::endl;
     
-    cuDoubleComplex *w_acc, *evec_acc, *c_acc;
-    
-    cudaStat = cudaMallocManaged((void **)&w_acc, _Nu*sites*12*sizeof(cuDoubleComplex));
-    Glog << cudaStat << std::endl;
-    cudaStat = cudaMallocManaged((void **)&evec_acc, _R*sites*12*sizeof(cuDoubleComplex));
-    Glog << cudaStat << std::endl;
-    cudaStat = cudaMallocManaged((void **)&c_acc, _Nu*_R*12*sizeof(cuDoubleComplex));
-    Glog << cudaStat << std::endl;
-    
-    Glog << "cuBLAS prepare array"<< std::endl;
 #if 0 // a trivial test
-    for (int col=0; col<_Nu; ++col) {
+    for (int col=0; col<Nu; ++col) {
       for (size_t row=0; row<sites*12; ++row) {
         w_acc[col*sites*12+row].x = 1.0;
         w_acc[col*sites*12+row].y = 0.0;
       }
     }
-   
-    for (int col=0; col<_R; ++col) {
-      for (size_t row=0; row<sites*12; ++row) {
-        evec_acc[col*sites*12+row].x = 1.0;
-        evec_acc[col*sites*12+row].y = 0.0;
-      }
-    }
 #else 
-    for (int col=0; col<_Nu; ++col) {
+    for (int col=0; col<Nu; ++col) {
       auto w_v = w[col].View();
       cuDoubleComplex *z = reinterpret_cast<cuDoubleComplex*>(&w_v[0]);
       for (size_t row=0; row<sites*12; ++row) {
-        //w_acc[col*sites*12+row].x = z[2*row];
-        //w_acc[col*sites*12+row].y = z[2*row+1];
         w_acc[col*sites*12+row] = z[row];
       }
     }
-   
-    for (int col=0; col<_R; ++col) {
-      auto evec_v = evec[col].View();
-      cuDoubleComplex *z = reinterpret_cast<cuDoubleComplex*>(&evec_v[0]);
-      for (size_t row=0; row<sites*12; ++row) {
-        //evec_acc[col*sites*12+row].x = z[2*row];
-        //evec_acc[col*sites*12+row].y = z[2*row+1];
-        evec_acc[col*sites*12+row] = z[row];
-      }
-    }
-#endif 
-    Glog << "cuBLAS prepare array done"<< std::endl;
-    
-    Glog << "cuBLAS Zgemm"<< std::endl;
-    
+#endif
     cublasHandle_t handle;
     cublasStatus_t stat;
     
     stat = cublasCreate(&handle);
-    cuDoubleComplex alpha = make_cuDoubleComplex(1.0,0.0);
-    cuDoubleComplex beta = make_cuDoubleComplex(0.0,0.0);
-    stat = cublasZgemm(handle, CUBLAS_OP_C, CUBLAS_OP_N, _R, _Nu, 12*sites,
-                       &alpha, evec_acc, 12*sites, w_acc, 12*sites,  &beta, c_acc, _R);
-    Glog << stat << std::endl;
-    
-    grid->GlobalSumVector((double*)c_acc,2*_Nu*_R);
 
-    cublasDestroy(handle);
+    Glog << "cuBLAS Zgemm"<< std::endl;
+    
+    for (int b=0; b<Nbatch; ++b) {
+#if 0 // a trivial test
+      for (int col=0; col<Nevec_acc; ++col) {
+        for (size_t row=0; row<sites*12; ++row) {
+          evec_acc[col*sites*12+row].x = 1.0;
+          evec_acc[col*sites*12+row].y = 0.0;
+        }
+      }
+#else 
+      for (int col=0; col<Nevec_acc; ++col) {
+        auto evec_v = evec[b*Nevec_acc+col].View();
+        cuDoubleComplex *z = reinterpret_cast<cuDoubleComplex*>(&evec_v[0]);
+        for (size_t row=0; row<sites*12; ++row) {
+          evec_acc[col*sites*12+row] = z[row];
+        }
+      }
+#endif 
+      cuDoubleComplex alpha = make_cuDoubleComplex(1.0,0.0);
+      cuDoubleComplex beta = make_cuDoubleComplex(0.0,0.0);
+      stat = cublasZgemm(handle, CUBLAS_OP_C, CUBLAS_OP_N, Nevec_acc, Nu, 12*sites,
+                         &alpha, 
+                         evec_acc, 12*sites, w_acc, 12*sites,  
+                         &beta, 
+                         c_acc, Nevec_acc);
+      //Glog << stat << std::endl;
+      
+      grid->GlobalSumVector((double*)c_acc,2*Nu*Nevec_acc);
+      
+      for (int i=0; i<Nu; ++i) {
+        for (size_t j=0; j<Nevec_acc; ++j) {
+          cuDoubleComplex z = c_acc[i*Nevec_acc+j];
+          MyComplex ip(z.x,z.y);
+          if (do_print) {
+            Glog << "<evec,w>[" << j << "," << i << "] = " 
+                 << z.x << " + i " << z.y << std::endl;
+          }
+          w[i] = w[i] - ip * evec[b*Nevec_acc+j];
+        }
+        //assert(normalize(w[i],do_print)!=0);
+      }
+    }
+
+    for (int i=0; i<Nu; ++i) {
+      assert(normalize(w[i],do_print)!=0);
+    }
     
     Glog << "cuBLAS Zgemm done"<< std::endl;
     
-    for (int i=0; i<_Nu; ++i) {
-      for (size_t j=0; j<_R; ++j) {
-        cuDoubleComplex z = c_acc[i*_R+j];
-        MyComplex ip(z.x,z.y);
-        if (_print) {
-          Glog << "<evec,w>[" << j << "," << i << "] = " 
-               << z.x << " + i " << z.y << std::endl;
-        }
-        w[i] = w[i] - ip * evec[j];
-      }
-      assert(normalize(w[i],_print)!=0);
-    }
+    cublasDestroy(handle);
     
-    cudaFree(w_acc);
-    cudaFree(evec_acc);
-    cudaFree(c_acc);
-
     Glog << "cuBLAS orthogonalize done" << std::endl;
 #else
     Glog << "BLAS wrapper is not implemented" << std::endl;
@@ -411,6 +401,21 @@ for( int i =0;i<total;i++){
             std::vector<Field>& evec, 
             const std::vector<Field>& src, int& Nconv, LanczosType Impl)
   {
+#ifdef GRID_NVCC
+    GridBase *grid = src[0].Grid();
+    grid->show_decomposition();
+    
+    // set eigenvector buffers for the cuBLAS calls
+    //const uint64_t nsimd = grid->Nsimd();
+    const uint64_t sites = grid->lSites();
+    
+    cudaStat = cudaMallocManaged((void **)&w_acc, Nu*sites*12*sizeof(cuDoubleComplex));
+    //Glog << cudaStat << std::endl;
+    cudaStat = cudaMallocManaged((void **)&evec_acc, Nevec_acc*sites*12*sizeof(cuDoubleComplex));
+    //Glog << cudaStat << std::endl;
+    cudaStat = cudaMallocManaged((void **)&c_acc, Nu*Nevec_acc*sizeof(cuDoubleComplex));
+    //Glog << cudaStat << std::endl;
+#endif
     switch (Impl) {
       case LanczosType::irbl: 
         calc_irbl(eval,evec,src,Nconv);
@@ -420,6 +425,12 @@ for( int i =0;i<total;i++){
         calc_rbl(eval,evec,src,Nconv);
         break;
     }
+#ifdef GRID_NVCC
+    // free eigenvector buffers for the cuBLAS calls
+    cudaFree(w_acc);
+    cudaFree(evec_acc);
+    cudaFree(c_acc);
+#endif
   }
 
   void calc_irbl(std::vector<RealD>& eval,  
@@ -919,8 +930,8 @@ if(!split_test){
       orthogonalize(w[u],evec,R);
     }
 #else
-      //orthogonalize(w,Nu,evec,R);
-      orthogonalize_blas(w,Nu,evec,R);
+    //orthogonalize(w,Nu,evec,R);
+    orthogonalize_blas(w,evec,R);
 #endif
     // QR part
     for (int u=1; u<Nu; ++u) {
