@@ -303,7 +303,7 @@ public:
       //Glog << stat << std::endl;
       
       grid->GlobalSumVector((double*)c_acc,2*Nu*Nevec_acc);
-      
+#if 0      
       for (int i=0; i<Nu; ++i) {
         for (size_t j=0; j<Nevec_acc; ++j) {
           cuDoubleComplex z = c_acc[i*Nevec_acc+j];
@@ -314,10 +314,27 @@ public:
           }
           w[i] = w[i] - ip * evec[b*Nevec_acc+j];
         }
-        //assert(normalize(w[i],do_print)!=0);
+      }
+#else
+      alpha = make_cuDoubleComplex(-1.0,0.0);
+      beta = make_cuDoubleComplex(1.0,0.0);
+      stat = cublasZgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, 12*sites, Nu, Nevec_acc,
+                         &alpha, 
+                         evec_acc, 12*sites, c_acc, Nevec_acc,  
+                         &beta, 
+                         w_acc, 12*sites);
+      //Glog << stat << std::endl;
+#endif
+    }
+#if 1    
+    for (int col=0; col<Nu; ++col) {
+      auto w_v = w[col].View();
+      cuDoubleComplex *z = reinterpret_cast<cuDoubleComplex*>(&w_v[0]);
+      for (size_t row=0; row<sites*12; ++row) {
+        z[row] = w_acc[col*sites*12+row];
       }
     }
-
+#endif
     for (int i=0; i<Nu; ++i) {
       assert(normalize(w[i],do_print)!=0);
     }
