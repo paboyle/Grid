@@ -772,7 +772,7 @@ struct Rotate{
 };
 
 // =======================================================================
-/* SVE ACLE reduce does not compile, check later
+// SVE ACLE reduce does not compile, check later
 
 // tree-based reduction
 #define svred(pg, v)\
@@ -786,7 +786,7 @@ template <typename Out_type, typename In_type>
 struct Reduce{
   //Need templated class to overload output type
   //General form must generate error if compiled
-  inline Out_type operator()(In_type &in){
+  inline Out_type operator()(In_type in){
     printf("Error, using wrong Reduce function\n");
     exit(1);
     return 0;
@@ -856,11 +856,11 @@ inline Integer Reduce<Integer, veci>::operator()(veci in){
 }
 
 #undef svred
-*/
+
 
 // =======================================================================
 
-
+/*
 #define acc(v, a, off, step, n)\
 for (unsigned int i = off; i < n; i += step)\
 {\
@@ -931,7 +931,7 @@ inline Integer Reduce<Integer, veci>::operator()(veci in){
 }
 
 #undef acc  // EIGEN compatibility
-
+*/
 
 NAMESPACE_END(Optimization)
 
