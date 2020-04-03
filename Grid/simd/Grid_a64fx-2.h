@@ -30,6 +30,10 @@
 // Using SVE ACLE
 /////////////////////////////////////////////////////
 
+#ifndef GEN_SIMD_WIDTH
+#define GEN_SIMD_WIDTH 64u
+#endif
+
 static_assert(GEN_SIMD_WIDTH % 64u == 0, "A64FX SIMD vector size is 64 bytes");
 
 #ifdef __ARM_FEATURE_SVE
