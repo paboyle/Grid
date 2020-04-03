@@ -251,17 +251,17 @@ struct Vstore{
   }
 };
 
-  struct Vstream{
-    // Real
-    template <typename T>
-    inline void operator()(T * a, vec<T> b){
+struct Vstream{
+  // Real
+  template <typename T>
+  inline void operator()(T * a, vec<T> b){
 
-      svbool_t pg1 = acle<T>::pg1();
-      typename acle<T>::vt b_v = svld1(pg1, b.v);
-      svstnt1(pg1, a, b_v);
-      //svst1(pg1, a, b_v);
-    }
-  };
+    svbool_t pg1 = acle<T>::pg1();
+    typename acle<T>::vt b_v = svld1(pg1, b.v);
+    svstnt1(pg1, a, b_v);
+    //svst1(pg1, a, b_v);
+  }
+};
 
   struct Vset{
     // Complex
@@ -293,7 +293,6 @@ struct Vstore{
 // Arithmetic operations
 /////////////////////////////////////////////////////
 
-
 struct Sum{
   template <typename T>
   inline vec<T> operator()(vec<T> a, vec<T> b){
@@ -323,7 +322,6 @@ struct Sub{
     return out;
   }
 };
-
 
 struct Mult{
   template <typename T>
@@ -431,7 +429,6 @@ struct Conj{
   }
 };
 
-
 struct TimesMinusI{
   // Complex
   template <typename T>
@@ -471,7 +468,6 @@ struct TimesI{
     return out;
   }
 };
-
 
 struct PrecisionChange {
   static inline vech StoH (const vecf &sa,const vecf &sb) {
@@ -578,7 +574,6 @@ struct PrecisionChange {
   }
 };
 
-
 struct Exchange{
 
   // Exchange0 is valid for arbitrary SVE vector length
@@ -645,7 +640,6 @@ struct Exchange{
     return;
   }
 };
-
 
 struct Permute{
 
@@ -771,9 +765,6 @@ struct Rotate{
   }
 };
 
-// =======================================================================
-// SVE ACLE reduce does not compile, check later
-
 // tree-based reduction
 #define svred(pg, v)\
 svaddv(pg, v);
@@ -856,82 +847,6 @@ inline Integer Reduce<Integer, veci>::operator()(veci in){
 }
 
 #undef svred
-
-
-// =======================================================================
-
-/*
-#define acc(v, a, off, step, n)\
-for (unsigned int i = off; i < n; i += step)\
-{\
-  a += v[i];\
-}
-
-template <typename Out_type, typename In_type>
-struct Reduce{
-  //Need templated class to overload output type
-  //General form must generate error if compiled
-  inline Out_type operator()(In_type in){
-    printf("Error, using wrong Reduce function\n");
-    exit(1);
-    return 0;
-  }
-};
-
-//Complex float Reduce
-template <>
-inline Grid::ComplexF Reduce<Grid::ComplexF, vecf>::operator()(vecf in){
-  float a = 0.f, b = 0.f;
-
-  acc(in.v, a, 0, 2, W<float>::r);
-  acc(in.v, b, 1, 2, W<float>::r);
-
-  return Grid::ComplexF(a, b);
-}
-
-//Real float Reduce
-template<>
-inline Grid::RealF Reduce<Grid::RealF, vecf>::operator()(vecf in){
-  float a = 0.;
-
-  acc(in.v, a, 0, 1, W<float>::r);
-
-  return a;
-}
-
-//Complex double Reduce
-template<>
-inline Grid::ComplexD Reduce<Grid::ComplexD, vecd>::operator()(vecd in){
-  double a = 0., b = 0.;
-
-  acc(in.v, a, 0, 2, W<double>::r);
-  acc(in.v, b, 1, 2, W<double>::r);
-
-  return Grid::ComplexD(a, b);
-}
-
-//Real double Reduce
-template<>
-inline Grid::RealD Reduce<Grid::RealD, vecd>::operator()(vecd in){
-  double a = 0.f;
-
-  acc(in.v, a, 0, 1, W<double>::r);
-
-  return a;
-}
-
-//Integer Reduce
-template<>
-inline Integer Reduce<Integer, veci>::operator()(veci in){
-  Integer a = 0;
-
-  acc(in.v, a, 0, 1, W<Integer>::r);
-
-  return a;
-}
-
-#undef acc  // EIGEN compatibility
-*/
 
 NAMESPACE_END(Optimization)
 
