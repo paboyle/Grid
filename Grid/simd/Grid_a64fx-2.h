@@ -772,7 +772,7 @@ struct Rotate{
 };
 
 // =======================================================================
-// SVE ACLE reduce does not compile, check later
+/* SVE ACLE reduce does not compile, check later
 
 // tree-based reduction
 #define svred(pg, v)\
@@ -856,11 +856,11 @@ inline Integer Reduce<Integer, veci>::operator()(veci in){
 }
 
 #undef svred
-// */
+*/
 
 // =======================================================================
 
-/*
+
 #define acc(v, a, off, step, n)\
 for (unsigned int i = off; i < n; i += step)\
 {\
@@ -931,7 +931,7 @@ inline Integer Reduce<Integer, veci>::operator()(veci in){
 }
 
 #undef acc  // EIGEN compatibility
-*/
+
 
 NAMESPACE_END(Optimization)
 
