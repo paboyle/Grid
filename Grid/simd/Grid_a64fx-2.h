@@ -2,17 +2,11 @@
 
     Grid physics library, www.github.com/paboyle/Grid
 
-    Source file: ./lib/simd/Grid_a64fx-1.h
+    Source file: Grid_a64fx-2.h
 
     Copyright (C) 2020
 
-Author: Nils Meyer          <nils.meyer@ur.de>
-
-    Copyright (C) 2015
-    Copyright (C) 2017
-
-Author: Antonin Portelli <antonin.portelli@me.com>
-        Andrew Lawson    <andrew.lawson1991@gmail.com>
+    Author: Nils Meyer          <nils.meyer@ur.de>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -47,8 +41,8 @@ static_assert(GEN_SIMD_WIDTH % 64u == 0, "A64FX SIMD vector size is 64 bytes");
   #pragma error "Missing SVE feature"
 #endif /* __ARM_FEATURE_SVE */
 
-namespace Grid {
-namespace Optimization {
+NAMESPACE_BEGIN(Grid);
+NAMESPACE_BEGIN(Optimization);
 
   // type traits giving the number of elements for each vector type
   template <typename T> struct W;
@@ -83,12 +77,12 @@ namespace Optimization {
   typedef vec<uint16_t>  vech; // half precision comms
   typedef vec<Integer>   veci;
 
-}} // Grid::Optimization
-
+NAMESPACE_END(Optimization)
+NAMESPACE_END(Grid)
 
 // low-level API
-namespace Grid {
-namespace Optimization {
+NAMESPACE_BEGIN(Grid);
+NAMESPACE_BEGIN(Optimization);
 
 template <typename T>
 struct acle{};
@@ -242,21 +236,16 @@ struct Vsplat{
   }
 };
 
-  struct Vstore{
-    // Real
-    template <typename T>
-    inline void operator()(vec<T> a, T *D){
+struct Vstore{
+  // Real
+  template <typename T>
+  inline void operator()(vec<T> a, T *D){
 
-      svbool_t pg1 = acle<T>::pg1();
-      typename acle<T>::vt a_v = svld1(pg1, (typename acle<T>::pt*)&a.v);
-    // NOTE illegal '&' here causes SIGBUS at runtime, related to  CAS-35230-H2H6T1
-      // svst1(pg1, (typename acle<T>::pt*)&D, a_v);
-      svst1(pg1, D, a_v);
-
-      // non temporal version
-      //svstnt1(pg1, D, a_v);
-    }
-  };
+    svbool_t pg1 = acle<T>::pg1();
+    typename acle<T>::vt a_v = svld1(pg1, (typename acle<T>::pt*)&a.v);
+    svst1(pg1, D, a_v);
+  }
+};
 
   struct Vstream{
     // Real
@@ -265,7 +254,6 @@ struct Vsplat{
 
       svbool_t pg1 = acle<T>::pg1();
       typename acle<T>::vt b_v = svld1(pg1, b.v);
-      // FIXME non-temporal store causes compiler crash  CAS-35230-H2H6T1
       svstnt1(pg1, a, b_v);
       //svst1(pg1, a, b_v);
     }
@@ -297,40 +285,40 @@ struct Vsplat{
     }
   };
 
-  /////////////////////////////////////////////////////
-  // Arithmetic operations
-  /////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+// Arithmetic operations
+/////////////////////////////////////////////////////
 
 
-  struct Sum{
-    template <typename T>
-    inline vec<T> operator()(vec<T> a, vec<T> b){
+struct Sum{
+  template <typename T>
+  inline vec<T> operator()(vec<T> a, vec<T> b){
 
-      vec<T> out;
-      svbool_t pg1 = acle<T>::pg1();
-      typename acle<T>::vt a_v = svld1(pg1, a.v);
-      typename acle<T>::vt b_v = svld1(pg1, b.v);
-      typename acle<T>::vt r_v = svadd_x(pg1, a_v, b_v);
-      svst1(pg1, out.v, r_v);
+    vec<T> out;
+    svbool_t pg1 = acle<T>::pg1();
+    typename acle<T>::vt a_v = svld1(pg1, a.v);
+    typename acle<T>::vt b_v = svld1(pg1, b.v);
+    typename acle<T>::vt r_v = svadd_x(pg1, a_v, b_v);
+    svst1(pg1, out.v, r_v);
 
-      return out;
-    }
-  };
+    return out;
+  }
+};
 
-  struct Sub{
-    template <typename T>
-    inline vec<T> operator()(vec<T> a, vec<T> b){
+struct Sub{
+  template <typename T>
+  inline vec<T> operator()(vec<T> a, vec<T> b){
 
-      vec<T> out;
-      svbool_t pg1 = acle<T>::pg1();
-      typename acle<T>::vt a_v = svld1(pg1, a.v);
-      typename acle<T>::vt b_v = svld1(pg1, b.v);
-      typename acle<T>::vt r_v = svsub_x(pg1, a_v, b_v);
-      svst1(pg1, out.v, r_v);
+    vec<T> out;
+    svbool_t pg1 = acle<T>::pg1();
+    typename acle<T>::vt a_v = svld1(pg1, a.v);
+    typename acle<T>::vt b_v = svld1(pg1, b.v);
+    typename acle<T>::vt r_v = svsub_x(pg1, a_v, b_v);
+    svst1(pg1, out.v, r_v);
 
-      return out;
-    }
-  };
+    return out;
+  }
+};
 
 
 struct Mult{
@@ -440,45 +428,45 @@ struct Conj{
 };
 
 
-  struct TimesMinusI{
-    // Complex
-    template <typename T>
-    inline vec<T> operator()(vec<T> a, vec<T> b){
+struct TimesMinusI{
+  // Complex
+  template <typename T>
+  inline vec<T> operator()(vec<T> a, vec<T> b){
 
-      vec<T> out;
-      const vec<typename acle<T>::uint> tbl_swap = acle<T>::tbl_swap();
-      svbool_t pg1 = acle<T>::pg1();
-      svbool_t pg_odd = acle<T>::pg_odd();
+    vec<T> out;
+    const vec<typename acle<T>::uint> tbl_swap = acle<T>::tbl_swap();
+    svbool_t pg1 = acle<T>::pg1();
+    svbool_t pg_odd = acle<T>::pg_odd();
 
-      typename acle<T>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-      typename acle<T>::vt a_v = svld1(pg1, a.v);
-      a_v = svtbl(a_v, tbl_swap_v);
-      typename acle<T>::vt r_v = svneg_x(pg_odd, a_v);
-      svst1(pg1, out.v, r_v);
+    typename acle<T>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
+    typename acle<T>::vt a_v = svld1(pg1, a.v);
+    a_v = svtbl(a_v, tbl_swap_v);
+    typename acle<T>::vt r_v = svneg_x(pg_odd, a_v);
+    svst1(pg1, out.v, r_v);
 
-      return out;
-    }
-  };
+    return out;
+  }
+};
 
-  struct TimesI{
-    // Complex
-    template <typename T>
-    inline vec<T> operator()(vec<T> a, vec<T> b){
+struct TimesI{
+  // Complex
+  template <typename T>
+  inline vec<T> operator()(vec<T> a, vec<T> b){
 
-      vec<T> out;
-      const vec<typename acle<T>::uint> tbl_swap = acle<T>::tbl_swap();
-      svbool_t pg1 = acle<T>::pg1();
-      svbool_t pg_even = acle<T>::pg_even();
+    vec<T> out;
+    const vec<typename acle<T>::uint> tbl_swap = acle<T>::tbl_swap();
+    svbool_t pg1 = acle<T>::pg1();
+    svbool_t pg_even = acle<T>::pg_even();
 
-      typename acle<T>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-      typename acle<T>::vt a_v = svld1(pg1, a.v);
-      a_v = svtbl(a_v, tbl_swap_v);
-      typename acle<T>::vt r_v = svneg_x(pg_even, a_v);
-      svst1(pg1, out.v, r_v);
+    typename acle<T>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
+    typename acle<T>::vt a_v = svld1(pg1, a.v);
+    a_v = svtbl(a_v, tbl_swap_v);
+    typename acle<T>::vt r_v = svneg_x(pg_even, a_v);
+    svst1(pg1, out.v, r_v);
 
-      return out;
-    }
-  };
+    return out;
+  }
+};
 
 
 struct PrecisionChange {
@@ -587,71 +575,71 @@ struct PrecisionChange {
 };
 
 
-  struct Exchange{
+struct Exchange{
 
-    // Exchange0 is valid for arbitrary SVE vector length
-    template <typename T>
-    static inline void Exchange0(vec<T> &out1, vec<T> &out2, const vec<T> &in1, const vec<T> &in2){
+  // Exchange0 is valid for arbitrary SVE vector length
+  template <typename T>
+  static inline void Exchange0(vec<T> &out1, vec<T> &out2, const vec<T> &in1, const vec<T> &in2){
 
-      svbool_t pg1 = acle<T>::pg1();
-      typename acle<T>::vt a1_v = svld1(pg1, in1.v);
-      typename acle<T>::vt a2_v = svld1(pg1, in2.v);
-      typename acle<T>::vt r1_v = svext(a1_v, a1_v, (uint64_t)W<T>::c);
-      r1_v = svext(r1_v, a2_v, (uint64_t)W<T>::c);
-      typename acle<T>::vt r2_v = svext(a2_v, a2_v, (uint64_t)W<T>::c);
-      r2_v = svext(a1_v, r2_v, (uint64_t)W<T>::c);
-      svst1(pg1, out1.v, r1_v);
-      svst1(pg1, out2.v, r2_v);
-    }
+    svbool_t pg1 = acle<T>::pg1();
+    typename acle<T>::vt a1_v = svld1(pg1, in1.v);
+    typename acle<T>::vt a2_v = svld1(pg1, in2.v);
+    typename acle<T>::vt r1_v = svext(a1_v, a1_v, (uint64_t)W<T>::c);
+    r1_v = svext(r1_v, a2_v, (uint64_t)W<T>::c);
+    typename acle<T>::vt r2_v = svext(a2_v, a2_v, (uint64_t)W<T>::c);
+    r2_v = svext(a1_v, r2_v, (uint64_t)W<T>::c);
+    svst1(pg1, out1.v, r1_v);
+    svst1(pg1, out2.v, r2_v);
+  }
 
 
-    template <typename T>
-    static inline void Exchange1(vec<T> &out1, vec<T> &out2, const vec<T> &in1, const vec<T> &in2){
+  template <typename T>
+  static inline void Exchange1(vec<T> &out1, vec<T> &out2, const vec<T> &in1, const vec<T> &in2){
 
-      svbool_t pg4 = acle<double>::pg4();
-      typename acle<double>::vt4 in1_v4 = svld4(pg4, (typename acle<double>::pt*)in1.v);
-      typename acle<double>::vt4 in2_v4 = svld4(pg4, (typename acle<double>::pt*)in2.v);
-      typename acle<double>::vt4 out1_v4;
-      typename acle<double>::vt4 out2_v4;
-      out1_v4.v0 = in1_v4.v0;
-      out1_v4.v1 = in1_v4.v1;
-      out1_v4.v2 = in2_v4.v0;
-      out1_v4.v3 = in2_v4.v1;
-      out2_v4.v0 = in1_v4.v2;
-      out2_v4.v1 = in1_v4.v3;
-      out2_v4.v2 = in2_v4.v2;
-      out2_v4.v3 = in2_v4.v3;
-      svst4(pg4, (typename acle<double>::pt*)out1.v, out1_v4);
-      svst4(pg4, (typename acle<double>::pt*)out2.v, out2_v4);
-    }
+    svbool_t pg4 = acle<double>::pg4();
+    typename acle<double>::vt4 in1_v4 = svld4(pg4, (typename acle<double>::pt*)in1.v);
+    typename acle<double>::vt4 in2_v4 = svld4(pg4, (typename acle<double>::pt*)in2.v);
+    typename acle<double>::vt4 out1_v4;
+    typename acle<double>::vt4 out2_v4;
+    out1_v4.v0 = in1_v4.v0;
+    out1_v4.v1 = in1_v4.v1;
+    out1_v4.v2 = in2_v4.v0;
+    out1_v4.v3 = in2_v4.v1;
+    out2_v4.v0 = in1_v4.v2;
+    out2_v4.v1 = in1_v4.v3;
+    out2_v4.v2 = in2_v4.v2;
+    out2_v4.v3 = in2_v4.v3;
+    svst4(pg4, (typename acle<double>::pt*)out1.v, out1_v4);
+    svst4(pg4, (typename acle<double>::pt*)out2.v, out2_v4);
+  }
 
-    template <typename T>
-    static inline void Exchange2(vec<T> &out1, vec<T> &out2, const vec<T> &in1, const vec<T> &in2){
+  template <typename T>
+  static inline void Exchange2(vec<T> &out1, vec<T> &out2, const vec<T> &in1, const vec<T> &in2){
 
-      svbool_t pg1 = acle<double>::pg1();
-      typename acle<double>::vt a1_v = svld1(pg1, (typename acle<double>::pt*)in1.v);
-      typename acle<double>::vt a2_v = svld1(pg1, (typename acle<double>::pt*)in2.v);
-      typename acle<double>::vt r1_v = svtrn1(a1_v, a2_v);
-      typename acle<double>::vt r2_v = svtrn2(a1_v, a2_v);
-      svst1(pg1, (typename acle<double>::pt*)out1.v, r1_v);
-      svst1(pg1, (typename acle<double>::pt*)out2.v, r2_v);
-    }
+    svbool_t pg1 = acle<double>::pg1();
+    typename acle<double>::vt a1_v = svld1(pg1, (typename acle<double>::pt*)in1.v);
+    typename acle<double>::vt a2_v = svld1(pg1, (typename acle<double>::pt*)in2.v);
+    typename acle<double>::vt r1_v = svtrn1(a1_v, a2_v);
+    typename acle<double>::vt r2_v = svtrn2(a1_v, a2_v);
+    svst1(pg1, (typename acle<double>::pt*)out1.v, r1_v);
+    svst1(pg1, (typename acle<double>::pt*)out2.v, r2_v);
+  }
 
-    static inline void Exchange3(vecf &out1, vecf &out2, const vecf &in1, const vecf &in2){
+  static inline void Exchange3(vecf &out1, vecf &out2, const vecf &in1, const vecf &in2){
 
-      svbool_t pg1 = acle<float>::pg1();
-      typename acle<float>::vt a1_v = svld1(pg1, in1.v);
-      typename acle<float>::vt a2_v = svld1(pg1, in2.v);
-      typename acle<float>::vt r1_v = svtrn1(a1_v, a2_v);
-      typename acle<float>::vt r2_v = svtrn2(a1_v, a2_v);
-      svst1(pg1, out1.v, r1_v);
-      svst1(pg1, out2.v, r2_v);
-    }
+    svbool_t pg1 = acle<float>::pg1();
+    typename acle<float>::vt a1_v = svld1(pg1, in1.v);
+    typename acle<float>::vt a2_v = svld1(pg1, in2.v);
+    typename acle<float>::vt r1_v = svtrn1(a1_v, a2_v);
+    typename acle<float>::vt r2_v = svtrn2(a1_v, a2_v);
+    svst1(pg1, out1.v, r1_v);
+    svst1(pg1, out2.v, r2_v);
+  }
 
-    static inline void Exchange3(vecd &out1, vecd &out2, const vecd &in1, const vecd &in2){
-      assert(0);
-      return;
-    }
+  static inline void Exchange3(vecd &out1, vecd &out2, const vecd &in1, const vecd &in2){
+    assert(0);
+    return;
+  }
 };
 
 
@@ -780,7 +768,7 @@ struct Rotate{
 };
 
 // =======================================================================
-/* SVE ACLE reducedoes not compile, check later
+// SVE ACLE reduce does not compile, check later
 
 // tree-based reduction
 #define svred(pg, v)\
@@ -864,11 +852,11 @@ inline Integer Reduce<Integer, veci>::operator()(veci in){
 }
 
 #undef svred
-*/
+// */
 
 // =======================================================================
 
-
+/*
 #define acc(v, a, off, step, n)\
 for (unsigned int i = off; i < n; i += step)\
 {\
@@ -939,39 +927,39 @@ inline Integer Reduce<Integer, veci>::operator()(veci in){
 }
 
 #undef acc  // EIGEN compatibility
+*/
 
-
-} // Optimization
+NAMESPACE_END(Optimization)
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types
 
-  typedef Optimization::vech SIMD_Htype; // Reduced precision type
-  typedef Optimization::vecf SIMD_Ftype; // Single precision type
-  typedef Optimization::vecd SIMD_Dtype; // Double precision type
-  typedef Optimization::veci SIMD_Itype; // Integer type
+typedef Optimization::vech SIMD_Htype; // Reduced precision type
+typedef Optimization::vecf SIMD_Ftype; // Single precision type
+typedef Optimization::vecd SIMD_Dtype; // Double precision type
+typedef Optimization::veci SIMD_Itype; // Integer type
 
-  // prefetch utilities
-  inline void v_prefetch0(int size, const char *ptr){};
-  inline void prefetch_HINT_T0(const char *ptr){};
+// prefetch utilities
+inline void v_prefetch0(int size, const char *ptr){};
+inline void prefetch_HINT_T0(const char *ptr){};
 
-  // Function name aliases
-  typedef Optimization::Vsplat   VsplatSIMD;
-  typedef Optimization::Vstore   VstoreSIMD;
-  typedef Optimization::Vset     VsetSIMD;
-  typedef Optimization::Vstream  VstreamSIMD;
-  template <typename S, typename T> using ReduceSIMD = Optimization::Reduce<S,T>;
+// Function name aliases
+typedef Optimization::Vsplat   VsplatSIMD;
+typedef Optimization::Vstore   VstoreSIMD;
+typedef Optimization::Vset     VsetSIMD;
+typedef Optimization::Vstream  VstreamSIMD;
+template <typename S, typename T> using ReduceSIMD = Optimization::Reduce<S,T>;
 
-  // Arithmetic operations
-  typedef Optimization::Sum         SumSIMD;
-  typedef Optimization::Sub         SubSIMD;
-  typedef Optimization::Div         DivSIMD;
-  typedef Optimization::Mult        MultSIMD;
-  typedef Optimization::MultComplex MultComplexSIMD;
-  typedef Optimization::MultRealPart MultRealPartSIMD;
-  typedef Optimization::MaddRealPart MaddRealPartSIMD;
-  typedef Optimization::Conj        ConjSIMD;
-  typedef Optimization::TimesMinusI TimesMinusISIMD;
-  typedef Optimization::TimesI      TimesISIMD;
+// Arithmetic operations
+typedef Optimization::Sum         SumSIMD;
+typedef Optimization::Sub         SubSIMD;
+typedef Optimization::Div         DivSIMD;
+typedef Optimization::Mult        MultSIMD;
+typedef Optimization::MultComplex MultComplexSIMD;
+typedef Optimization::MultRealPart MultRealPartSIMD;
+typedef Optimization::MaddRealPart MaddRealPartSIMD;
+typedef Optimization::Conj        ConjSIMD;
+typedef Optimization::TimesMinusI TimesMinusISIMD;
+typedef Optimization::TimesI      TimesISIMD;
 
-}
+NAMESPACE_END(Grid)
