@@ -66,7 +66,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define PERMUTE_DIR3                   PERM3_A64FXf  
 // DECLARATIONS
 #define DECLARATIONS_A64FXf  \
-    const uint32_t lut[4][8] = { \
+    const uint32_t lut[4][16] = { \
         {8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7}, \
         {4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11}, \
         {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13}, \
