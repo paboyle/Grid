@@ -505,7 +505,7 @@ WilsonKernels<ZWilsonImplDF>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFie
 
 
 // KNL stuff
-//#undef MAYBEPERM
+#undef MAYBEPERM
 //#undef MULT_2SPIN
 #define MAYBEPERM(A,B)
 //#define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN_LS(ptr,pf)
