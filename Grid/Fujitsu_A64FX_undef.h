@@ -56,6 +56,8 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #undef TM_PROJMEM
 #undef XP_RECON
 #undef XM_RECON
+#undef XP_RECON_ACCUM
+#undef XM_RECON_ACCUM
 #undef YM_RECON_ACCUM
 #undef ZM_RECON_ACCUM
 #undef TM_RECON_ACCUM
