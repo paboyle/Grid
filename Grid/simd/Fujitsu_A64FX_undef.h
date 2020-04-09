@@ -41,6 +41,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #undef COMPLEX_SIGNS
 #undef LOAD64
 #undef SAVE_RESULT
+#undef ADD_RESULT
 #undef MULT_2SPIN_DIR_PF
 #undef MAYBEPERM
 #undef LOAD_CHI
@@ -55,6 +56,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #undef TM_PROJMEM
 #undef XP_RECON
 #undef XM_RECON
+#undef XM_RECON_ACCUM
 #undef YM_RECON_ACCUM
 #undef ZM_RECON_ACCUM
 #undef TM_RECON_ACCUM

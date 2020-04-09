@@ -30,13 +30,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 /*  END LEGAL */
 #pragma once
 
-#if defined(A64FXINTRIN)
-#pragma message("A64FX Wilson kernels intrin")
-#else
-#pragma message("A64FX Wilson kernels asm")
-#endif
-
 #if defined(A64FX)
+
+// undefine everything
+#include <simd/Fujitsu_A64FX_undef.h>
+
     ///////////////////////////////////////////////////////////
     // If we are A64FX specialise the single precision routine
     ///////////////////////////////////////////////////////////
@@ -45,7 +43,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #else
 #include <simd/Fujitsu_A64FX_asm_single.h>
 #endif
-
 
 /// Switch off the 5d vectorised code optimisations
 #undef DWFVEC5D

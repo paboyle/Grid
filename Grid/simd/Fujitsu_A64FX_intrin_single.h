@@ -43,6 +43,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define MAYBEPERM(A,perm)              if (perm) { A ; }  
 #define LOAD_CHI(base)                 LOAD_CHI_A64FXf(base)  
 #define ZERO_PSI                       ZERO_PSI_A64FXf  
+#define ADD_RESULT(base,base)          LOAD_CHIMU_A64FXf(base); ADD_RESULT_INTERNAL_A64FXf; RESULT_A64FXf(base)  
 #define XP_PROJMEM(base)               LOAD_CHIMU_A64FXf(base);   XP_PROJ_A64FXf  
 #define YP_PROJMEM(base)               LOAD_CHIMU_A64FXf(base);   YP_PROJ_A64FXf  
 #define ZP_PROJMEM(base)               LOAD_CHIMU_A64FXf(base);   ZP_PROJ_A64FXf  
@@ -53,6 +54,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define TM_PROJMEM(base)               LOAD_CHIMU_A64FXf(base);   TM_PROJ_A64FXf  
 #define XP_RECON                       XP_RECON_A64FXf  
 #define XM_RECON                       XM_RECON_A64FXf  
+#define XM_RECON_ACCUM                 XM_RECON_ACCUM_A64FXf  
 #define YM_RECON_ACCUM                 YM_RECON_ACCUM_A64FXf  
 #define ZM_RECON_ACCUM                 ZM_RECON_ACCUM_A64FXf  
 #define TM_RECON_ACCUM                 TM_RECON_ACCUM_A64FXf  
@@ -573,4 +575,19 @@ Author: Nils Meyer <nils.meyer@ur.de>
     result_30 = __svzero(result_30); \
     result_31 = __svzero(result_31); \
     result_32 = __svzero(result_32); 
+
+// ADD_RESULT_INTERNAL
+#define ADD_RESULT_INTERNAL_A64FXf  \
+    result_00 = svadd_x(pg1, result_00, Chimu_00); \
+    result_01 = svadd_x(pg1, result_01, Chimu_01); \
+    result_02 = svadd_x(pg1, result_02, Chimu_02); \
+    result_10 = svadd_x(pg1, result_10, Chimu_10); \
+    result_11 = svadd_x(pg1, result_11, Chimu_11); \
+    result_12 = svadd_x(pg1, result_12, Chimu_12); \
+    result_20 = svadd_x(pg1, result_20, Chimu_20); \
+    result_21 = svadd_x(pg1, result_21, Chimu_21); \
+    result_22 = svadd_x(pg1, result_22, Chimu_22); \
+    result_30 = svadd_x(pg1, result_30, Chimu_30); \
+    result_31 = svadd_x(pg1, result_31, Chimu_31); \
+    result_32 = svadd_x(pg1, result_32, Chimu_32); 
 
