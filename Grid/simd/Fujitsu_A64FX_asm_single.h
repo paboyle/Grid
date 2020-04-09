@@ -295,7 +295,7 @@ asm ( \
 // MULT_2SPIN
 #define MULT_2SPIN_A64FXf(A)  \
 { \
-    const auto & ref(U[sU][A]); \
+    const auto & ref(U[sU](A)); \
 asm ( \
     "ld1d { z24.f }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
     "ld1d { z25.f }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \

@@ -261,7 +261,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 // MULT_2SPIN
 #define MULT_2SPIN_A64FXd(A)  \
 { \
-    const auto & ref(U[sU][A]); \
+    const auto & ref(U[sU](A)); \
     U_00 = svld1(pg1, (float64_t*)((uint64_t)&ref[2][0] + -6 * 64));  \
     U_10 = svld1(pg1, (float64_t*)((uint64_t)&ref[2][0] + -3 * 64));  \
     U_20 = svld1(pg1, (float64_t*)((uint64_t)&ref[2][0] + 0 * 64));  \
