@@ -84,18 +84,18 @@ asm ( \
 #define RESULT_A64FXf(base)  \
 { \
 asm ( \
-    "stnt1d { z0.s }, p5, [%[storeptr], -6, mul vl] \n\t" \
-    "stnt1d { z1.s }, p5, [%[storeptr], -5, mul vl] \n\t" \
-    "stnt1d { z2.s }, p5, [%[storeptr], -4, mul vl] \n\t" \
-    "stnt1d { z3.s }, p5, [%[storeptr], -3, mul vl] \n\t" \
-    "stnt1d { z4.s }, p5, [%[storeptr], -2, mul vl] \n\t" \
-    "stnt1d { z5.s }, p5, [%[storeptr], -1, mul vl] \n\t" \
-    "stnt1d { z6.s }, p5, [%[storeptr], 0, mul vl] \n\t" \
-    "stnt1d { z7.s }, p5, [%[storeptr], 1, mul vl] \n\t" \
-    "stnt1d { z8.s }, p5, [%[storeptr], 2, mul vl] \n\t" \
-    "stnt1d { z9.s }, p5, [%[storeptr], 3, mul vl] \n\t" \
-    "stnt1d { z10.s }, p5, [%[storeptr], 4, mul vl] \n\t" \
-    "stnt1d { z11.s }, p5, [%[storeptr], 5, mul vl] \n\t" \
+    "stnt1w { z0.s }, p5, [%[storeptr], -6, mul vl] \n\t" \
+    "stnt1w { z1.s }, p5, [%[storeptr], -5, mul vl] \n\t" \
+    "stnt1w { z2.s }, p5, [%[storeptr], -4, mul vl] \n\t" \
+    "stnt1w { z3.s }, p5, [%[storeptr], -3, mul vl] \n\t" \
+    "stnt1w { z4.s }, p5, [%[storeptr], -2, mul vl] \n\t" \
+    "stnt1w { z5.s }, p5, [%[storeptr], -1, mul vl] \n\t" \
+    "stnt1w { z6.s }, p5, [%[storeptr], 0, mul vl] \n\t" \
+    "stnt1w { z7.s }, p5, [%[storeptr], 1, mul vl] \n\t" \
+    "stnt1w { z8.s }, p5, [%[storeptr], 2, mul vl] \n\t" \
+    "stnt1w { z9.s }, p5, [%[storeptr], 3, mul vl] \n\t" \
+    "stnt1w { z10.s }, p5, [%[storeptr], 4, mul vl] \n\t" \
+    "stnt1w { z11.s }, p5, [%[storeptr], 5, mul vl] \n\t" \
     :  \
     : [storeptr] "r" (base + 2 * 3 * 64) \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
@@ -155,12 +155,12 @@ asm ( \
 #define LOAD_CHI_A64FXf(base)  \
 { \
 asm ( \
-    "ld1d { z12.s }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
-    "ld1d { z13.s }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
-    "ld1d { z14.s }, p5/z, [%[fetchptr], -4, mul vl] \n\t" \
-    "ld1d { z15.s }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
-    "ld1d { z16.s }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
-    "ld1d { z17.s }, p5/z, [%[fetchptr], -1, mul vl] \n\t" \
+    "ld1w { z12.s }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
+    "ld1w { z13.s }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
+    "ld1w { z14.s }, p5/z, [%[fetchptr], -4, mul vl] \n\t" \
+    "ld1w { z15.s }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
+    "ld1w { z16.s }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
+    "ld1w { z17.s }, p5/z, [%[fetchptr], -1, mul vl] \n\t" \
     :  \
     : [fetchptr] "r" (base + 2 * 3 * 64) \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
@@ -171,18 +171,18 @@ asm ( \
 { \
 asm ( \
     "ptrue p5.s \n\t" \
-    "ld1d { z12.s }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
-    "ld1d { z27.s }, p5/z, [%[fetchptr], 3, mul vl] \n\t" \
-    "ld1d { z15.s }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
-    "ld1d { z24.s }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
-    "ld1d { z13.s }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
-    "ld1d { z28.s }, p5/z, [%[fetchptr], 4, mul vl] \n\t" \
-    "ld1d { z16.s }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
-    "ld1d { z25.s }, p5/z, [%[fetchptr], 1, mul vl] \n\t" \
-    "ld1d { z14.s }, p5/z, [%[fetchptr], -4, mul vl] \n\t" \
-    "ld1d { z29.s }, p5/z, [%[fetchptr], 5, mul vl] \n\t" \
-    "ld1d { z17.s }, p5/z, [%[fetchptr], -1, mul vl] \n\t" \
-    "ld1d { z26.s }, p5/z, [%[fetchptr], 2, mul vl] \n\t" \
+    "ld1w { z12.s }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
+    "ld1w { z27.s }, p5/z, [%[fetchptr], 3, mul vl] \n\t" \
+    "ld1w { z15.s }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
+    "ld1w { z24.s }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
+    "ld1w { z13.s }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
+    "ld1w { z28.s }, p5/z, [%[fetchptr], 4, mul vl] \n\t" \
+    "ld1w { z16.s }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
+    "ld1w { z25.s }, p5/z, [%[fetchptr], 1, mul vl] \n\t" \
+    "ld1w { z14.s }, p5/z, [%[fetchptr], -4, mul vl] \n\t" \
+    "ld1w { z29.s }, p5/z, [%[fetchptr], 5, mul vl] \n\t" \
+    "ld1w { z17.s }, p5/z, [%[fetchptr], -1, mul vl] \n\t" \
+    "ld1w { z26.s }, p5/z, [%[fetchptr], 2, mul vl] \n\t" \
     :  \
     : [fetchptr] "r" (base + 2 * 3 * 64) \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
@@ -194,18 +194,18 @@ asm ( \
     const SiteSpinor & ref(in[offset]); \
 asm ( \
     "ptrue p5.s \n\t" \
-    "ld1d { z12.s }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
-    "ld1d { z24.s }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
-    "ld1d { z13.s }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
-    "ld1d { z25.s }, p5/z, [%[fetchptr], 1, mul vl] \n\t" \
-    "ld1d { z14.s }, p5/z, [%[fetchptr], -4, mul vl] \n\t" \
-    "ld1d { z26.s }, p5/z, [%[fetchptr], 2, mul vl] \n\t" \
-    "ld1d { z15.s }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
-    "ld1d { z27.s }, p5/z, [%[fetchptr], 3, mul vl] \n\t" \
-    "ld1d { z16.s }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
-    "ld1d { z28.s }, p5/z, [%[fetchptr], 4, mul vl] \n\t" \
-    "ld1d { z17.s }, p5/z, [%[fetchptr], -1, mul vl] \n\t" \
-    "ld1d { z29.s }, p5/z, [%[fetchptr], 5, mul vl] \n\t" \
+    "ld1w { z12.s }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
+    "ld1w { z24.s }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
+    "ld1w { z13.s }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
+    "ld1w { z25.s }, p5/z, [%[fetchptr], 1, mul vl] \n\t" \
+    "ld1w { z14.s }, p5/z, [%[fetchptr], -4, mul vl] \n\t" \
+    "ld1w { z26.s }, p5/z, [%[fetchptr], 2, mul vl] \n\t" \
+    "ld1w { z15.s }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
+    "ld1w { z27.s }, p5/z, [%[fetchptr], 3, mul vl] \n\t" \
+    "ld1w { z16.s }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
+    "ld1w { z28.s }, p5/z, [%[fetchptr], 4, mul vl] \n\t" \
+    "ld1w { z17.s }, p5/z, [%[fetchptr], -1, mul vl] \n\t" \
+    "ld1w { z29.s }, p5/z, [%[fetchptr], 5, mul vl] \n\t" \
     :  \
     : [fetchptr] "r" (&ref[2][0]) \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
@@ -217,18 +217,18 @@ asm ( \
     const SiteSpinor & ref(in[offset]); \
 asm ( \
     "ptrue p5.s \n\t" \
-    "ld1d { z12.s }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
-    "ld1d { z27.s }, p5/z, [%[fetchptr], 3, mul vl] \n\t" \
-    "ld1d { z13.s }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
-    "ld1d { z28.s }, p5/z, [%[fetchptr], 4, mul vl] \n\t" \
-    "ld1d { z14.s }, p5/z, [%[fetchptr], -4, mul vl] \n\t" \
-    "ld1d { z29.s }, p5/z, [%[fetchptr], 5, mul vl] \n\t" \
-    "ld1d { z15.s }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
-    "ld1d { z24.s }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
-    "ld1d { z16.s }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
-    "ld1d { z25.s }, p5/z, [%[fetchptr], 1, mul vl] \n\t" \
-    "ld1d { z17.s }, p5/z, [%[fetchptr], -1, mul vl] \n\t" \
-    "ld1d { z26.s }, p5/z, [%[fetchptr], 2, mul vl] \n\t" \
+    "ld1w { z12.s }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
+    "ld1w { z27.s }, p5/z, [%[fetchptr], 3, mul vl] \n\t" \
+    "ld1w { z13.s }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
+    "ld1w { z28.s }, p5/z, [%[fetchptr], 4, mul vl] \n\t" \
+    "ld1w { z14.s }, p5/z, [%[fetchptr], -4, mul vl] \n\t" \
+    "ld1w { z29.s }, p5/z, [%[fetchptr], 5, mul vl] \n\t" \
+    "ld1w { z15.s }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
+    "ld1w { z24.s }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
+    "ld1w { z16.s }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
+    "ld1w { z25.s }, p5/z, [%[fetchptr], 1, mul vl] \n\t" \
+    "ld1w { z17.s }, p5/z, [%[fetchptr], -1, mul vl] \n\t" \
+    "ld1w { z26.s }, p5/z, [%[fetchptr], 2, mul vl] \n\t" \
     :  \
     : [fetchptr] "r" (&ref[2][0]) \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
@@ -237,7 +237,7 @@ asm ( \
 // PERM0
 #define PERM0_A64FXf  \
 asm ( \
-    "ld1d { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ld1w { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
     "tbl z12.s, { z12.s }, z30.s \n\t"  \
     "tbl z13.s, { z13.s }, z30.s \n\t"  \
     "tbl z14.s, { z14.s }, z30.s \n\t"  \
@@ -252,7 +252,7 @@ asm ( \
 // PERM1
 #define PERM1_A64FXf  \
 asm ( \
-    "ld1d { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ld1w { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
     "tbl z12.s, { z12.s }, z30.s \n\t"  \
     "tbl z13.s, { z13.s }, z30.s \n\t"  \
     "tbl z14.s, { z14.s }, z30.s \n\t"  \
@@ -267,7 +267,7 @@ asm ( \
 // PERM2
 #define PERM2_A64FXf  \
 asm ( \
-    "ld1d { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ld1w { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
     "tbl z12.s, { z12.s }, z30.s \n\t"  \
     "tbl z13.s, { z13.s }, z30.s \n\t"  \
     "tbl z14.s, { z14.s }, z30.s \n\t"  \
@@ -282,7 +282,7 @@ asm ( \
 // PERM3
 #define PERM3_A64FXf  \
 asm ( \
-    "ld1d { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ld1w { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
     "tbl z12.s, { z12.s }, z30.s \n\t"  \
     "tbl z13.s, { z13.s }, z30.s \n\t"  \
     "tbl z14.s, { z14.s }, z30.s \n\t"  \
@@ -299,12 +299,12 @@ asm ( \
 { \
     const auto & ref(U[sU](A)); uint64_t baseU = (uint64_t)&ref; \
 asm ( \
-    "ld1d { z24.s }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
-    "ld1d { z25.s }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
-    "ld1d { z26.s }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
-    "ld1d { z27.s }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
-    "ld1d { z28.s }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
-    "ld1d { z29.s }, p5/z, [%[fetchptr], 1, mul vl] \n\t" \
+    "ld1w { z24.s }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
+    "ld1w { z25.s }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
+    "ld1w { z26.s }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
+    "ld1w { z27.s }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
+    "ld1w { z28.s }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
+    "ld1w { z29.s }, p5/z, [%[fetchptr], 1, mul vl] \n\t" \
     "fmov z18.s , 0 \n\t" \
     "fmov z21.s , 0 \n\t" \
     "fmov z19.s , 0 \n\t" \
@@ -323,9 +323,9 @@ asm ( \
     "fcmla z22.s, p5/m, z25.s, z15.s, 90 \n\t" \
     "fcmla z20.s, p5/m, z26.s, z12.s, 90 \n\t" \
     "fcmla z23.s, p5/m, z26.s, z15.s, 90 \n\t" \
-    "ld1d { z24.s }, p5/z, [%[fetchptr], -4, mul vl] \n\t" \
-    "ld1d { z25.s }, p5/z, [%[fetchptr], -1, mul vl] \n\t" \
-    "ld1d { z26.s }, p5/z, [%[fetchptr], 2, mul vl] \n\t" \
+    "ld1w { z24.s }, p5/z, [%[fetchptr], -4, mul vl] \n\t" \
+    "ld1w { z25.s }, p5/z, [%[fetchptr], -1, mul vl] \n\t" \
+    "ld1w { z26.s }, p5/z, [%[fetchptr], 2, mul vl] \n\t" \
     "fcmla z18.s, p5/m, z27.s, z13.s, 0 \n\t" \
     "fcmla z21.s, p5/m, z27.s, z16.s, 0 \n\t" \
     "fcmla z19.s, p5/m, z28.s, z13.s, 0 \n\t" \
@@ -359,7 +359,7 @@ asm ( \
 #define XP_PROJ_A64FXf  \
 { \
 asm ( \
-    "ld1d { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ld1w { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
     "fcadd z12.s, p5/m, z12.s, z27.s, 90 \n\t" \
     "fcadd z13.s, p5/m, z13.s, z28.s, 90 \n\t" \
     "fcadd z14.s, p5/m, z14.s, z29.s, 90 \n\t" \
@@ -380,12 +380,12 @@ asm ( \
     "fcadd z9.s, p5/m, z9.s, z18.s, 270 \n\t" \
     "fcadd z10.s, p5/m, z10.s, z19.s, 270 \n\t" \
     "fcadd z11.s, p5/m, z11.s, z20.s, 270 \n\t" \
-    "mov z0.s, z18.s \n\t" \
-    "mov z1.s, z19.s \n\t" \
-    "mov z2.s, z20.s \n\t" \
-    "mov z3.s, z21.s \n\t" \
-    "mov z4.s, z22.s \n\t" \
-    "mov z5.s, z23.s \n\t" \
+    "mov z0.s, p5/m, z18.s \n\t" \
+    "mov z1.s, p5/m, z19.s \n\t" \
+    "mov z2.s, p5/m, z20.s \n\t" \
+    "mov z3.s, p5/m, z21.s \n\t" \
+    "mov z4.s, p5/m, z22.s \n\t" \
+    "mov z5.s, p5/m, z23.s \n\t" \
     :  \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
@@ -415,7 +415,7 @@ asm ( \
 #define YP_PROJ_A64FXf  \
 { \
 asm ( \
-    "ld1d { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ld1w { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
     "fsub z12.s, p5/m, z12.s, z27.s \n\t" \
     "fsub z13.s, p5/m, z13.s, z28.s \n\t" \
     "fsub z14.s, p5/m, z14.s, z29.s \n\t" \
@@ -431,7 +431,7 @@ asm ( \
 #define ZP_PROJ_A64FXf  \
 { \
 asm ( \
-    "ld1d { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ld1w { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
     "fcadd z12.s, p5/m, z12.s, z24.s, 90 \n\t" \
     "fcadd z13.s, p5/m, z13.s, z25.s, 90 \n\t" \
     "fcadd z14.s, p5/m, z14.s, z26.s, 90 \n\t" \
@@ -447,7 +447,7 @@ asm ( \
 #define TP_PROJ_A64FXf  \
 { \
 asm ( \
-    "ld1d { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ld1w { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
     "fadd z12.s, p5/m, z12.s, z24.s \n\t"  \
     "fadd z13.s, p5/m, z13.s, z25.s \n\t"  \
     "fadd z14.s, p5/m, z14.s, z26.s \n\t"  \
@@ -463,7 +463,7 @@ asm ( \
 #define XM_PROJ_A64FXf  \
 { \
 asm ( \
-    "ld1d { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ld1w { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
     "fcadd z12.s, p5/m, z12.s, z27.s, 270 \n\t" \
     "fcadd z13.s, p5/m, z13.s, z28.s, 270 \n\t" \
     "fcadd z14.s, p5/m, z14.s, z29.s, 270 \n\t" \
@@ -484,12 +484,12 @@ asm ( \
     "fcadd z9.s, p5/m, z9.s, z18.s, 90 \n\t" \
     "fcadd z10.s, p5/m, z10.s, z19.s, 90 \n\t" \
     "fcadd z11.s, p5/m, z11.s, z20.s, 90 \n\t" \
-    "mov z0.s, z18.s \n\t" \
-    "mov z1.s, z19.s \n\t" \
-    "mov z2.s, z20.s \n\t" \
-    "mov z3.s, z21.s \n\t" \
-    "mov z4.s, z22.s \n\t" \
-    "mov z5.s, z23.s \n\t" \
+    "mov z0.s, p5/m, z18.s \n\t" \
+    "mov z1.s, p5/m, z19.s \n\t" \
+    "mov z2.s, p5/m, z20.s \n\t" \
+    "mov z3.s, p5/m, z21.s \n\t" \
+    "mov z4.s, p5/m, z22.s \n\t" \
+    "mov z5.s, p5/m, z23.s \n\t" \
     :  \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
@@ -499,7 +499,7 @@ asm ( \
 #define YM_PROJ_A64FXf  \
 { \
 asm ( \
-    "ld1d { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ld1w { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
     "fadd z12.s, p5/m, z12.s, z27.s \n\t"  \
     "fadd z13.s, p5/m, z13.s, z28.s \n\t"  \
     "fadd z14.s, p5/m, z14.s, z29.s \n\t"  \
@@ -515,7 +515,7 @@ asm ( \
 #define ZM_PROJ_A64FXf  \
 { \
 asm ( \
-    "ld1d { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ld1w { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
     "fcadd z12.s, p5/m, z12.s, z24.s, 270 \n\t" \
     "fcadd z13.s, p5/m, z13.s, z25.s, 270 \n\t" \
     "fcadd z14.s, p5/m, z14.s, z26.s, 270 \n\t" \
@@ -531,7 +531,7 @@ asm ( \
 #define TM_PROJ_A64FXf  \
 { \
 asm ( \
-    "ld1d { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ld1w { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
     "fsub z12.s, p5/m, z12.s, z24.s \n\t" \
     "fsub z13.s, p5/m, z13.s, z25.s \n\t" \
     "fsub z14.s, p5/m, z14.s, z26.s \n\t" \
@@ -552,12 +552,12 @@ asm ( \
     "fcadd z6.s, p5/m, z6.s, z21.s, 90 \n\t" \
     "fcadd z7.s, p5/m, z7.s, z22.s, 90 \n\t" \
     "fcadd z8.s, p5/m, z8.s, z23.s, 90 \n\t" \
-    "mov z0.s, z18.s \n\t" \
-    "mov z1.s, z19.s \n\t" \
-    "mov z2.s, z20.s \n\t" \
-    "mov z3.s, z21.s \n\t" \
-    "mov z4.s, z22.s \n\t" \
-    "mov z5.s, z23.s \n\t" \
+    "mov z0.s, p5/m, z18.s \n\t" \
+    "mov z1.s, p5/m, z19.s \n\t" \
+    "mov z2.s, p5/m, z20.s \n\t" \
+    "mov z3.s, p5/m, z21.s \n\t" \
+    "mov z4.s, p5/m, z22.s \n\t" \
+    "mov z5.s, p5/m, z23.s \n\t" \
     :  \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \

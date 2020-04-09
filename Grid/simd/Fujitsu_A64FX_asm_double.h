@@ -367,12 +367,12 @@ asm ( \
     "fcadd z9.d, p5/m, z9.d, z18.d, 270 \n\t" \
     "fcadd z10.d, p5/m, z10.d, z19.d, 270 \n\t" \
     "fcadd z11.d, p5/m, z11.d, z20.d, 270 \n\t" \
-    "mov z0.d, z18.d \n\t" \
-    "mov z1.d, z19.d \n\t" \
-    "mov z2.d, z20.d \n\t" \
-    "mov z3.d, z21.d \n\t" \
-    "mov z4.d, z22.d \n\t" \
-    "mov z5.d, z23.d \n\t" \
+    "mov z0.d, p5/m, z18.d \n\t" \
+    "mov z1.d, p5/m, z19.d \n\t" \
+    "mov z2.d, p5/m, z20.d \n\t" \
+    "mov z3.d, p5/m, z21.d \n\t" \
+    "mov z4.d, p5/m, z22.d \n\t" \
+    "mov z5.d, p5/m, z23.d \n\t" \
     :  \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
@@ -470,12 +470,12 @@ asm ( \
     "fcadd z9.d, p5/m, z9.d, z18.d, 90 \n\t" \
     "fcadd z10.d, p5/m, z10.d, z19.d, 90 \n\t" \
     "fcadd z11.d, p5/m, z11.d, z20.d, 90 \n\t" \
-    "mov z0.d, z18.d \n\t" \
-    "mov z1.d, z19.d \n\t" \
-    "mov z2.d, z20.d \n\t" \
-    "mov z3.d, z21.d \n\t" \
-    "mov z4.d, z22.d \n\t" \
-    "mov z5.d, z23.d \n\t" \
+    "mov z0.d, p5/m, z18.d \n\t" \
+    "mov z1.d, p5/m, z19.d \n\t" \
+    "mov z2.d, p5/m, z20.d \n\t" \
+    "mov z3.d, p5/m, z21.d \n\t" \
+    "mov z4.d, p5/m, z22.d \n\t" \
+    "mov z5.d, p5/m, z23.d \n\t" \
     :  \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
@@ -538,12 +538,12 @@ asm ( \
     "fcadd z6.d, p5/m, z6.d, z21.d, 90 \n\t" \
     "fcadd z7.d, p5/m, z7.d, z22.d, 90 \n\t" \
     "fcadd z8.d, p5/m, z8.d, z23.d, 90 \n\t" \
-    "mov z0.d, z18.d \n\t" \
-    "mov z1.d, z19.d \n\t" \
-    "mov z2.d, z20.d \n\t" \
-    "mov z3.d, z21.d \n\t" \
-    "mov z4.d, z22.d \n\t" \
-    "mov z5.d, z23.d \n\t" \
+    "mov z0.d, p5/m, z18.d \n\t" \
+    "mov z1.d, p5/m, z19.d \n\t" \
+    "mov z2.d, p5/m, z20.d \n\t" \
+    "mov z3.d, p5/m, z21.d \n\t" \
+    "mov z4.d, p5/m, z22.d \n\t" \
+    "mov z5.d, p5/m, z23.d \n\t" \
     :  \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \

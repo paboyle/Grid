@@ -229,7 +229,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 }
 // PERM0
 #define PERM0_A64FXf  \
-    table0 = svld1(pg1, (uint32_t*)&lut[0]);  \
+    table0 = svld1(pg1, (float32_t*)&lut[0]);  \
     Chi_00 = svtbl(Chi_00, table0);    \
     Chi_01 = svtbl(Chi_01, table0);    \
     Chi_02 = svtbl(Chi_02, table0);    \
@@ -239,7 +239,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 
 // PERM1
 #define PERM1_A64FXf  \
-    table0 = svld1(pg1, (uint32_t*)&lut[1]);  \
+    table0 = svld1(pg1, (float32_t*)&lut[1]);  \
     Chi_00 = svtbl(Chi_00, table0);    \
     Chi_01 = svtbl(Chi_01, table0);    \
     Chi_02 = svtbl(Chi_02, table0);    \
@@ -249,7 +249,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 
 // PERM2
 #define PERM2_A64FXf  \
-    table0 = svld1(pg1, (uint32_t*)&lut[2]);  \
+    table0 = svld1(pg1, (float32_t*)&lut[2]);  \
     Chi_00 = svtbl(Chi_00, table0);    \
     Chi_01 = svtbl(Chi_01, table0);    \
     Chi_02 = svtbl(Chi_02, table0);    \
@@ -259,7 +259,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 
 // PERM3
 #define PERM3_A64FXf  \
-    table0 = svld1(pg1, (uint32_t*)&lut[3]);  \
+    table0 = svld1(pg1, (float32_t*)&lut[3]);  \
     Chi_00 = svtbl(Chi_00, table0);    \
     Chi_01 = svtbl(Chi_01, table0);    \
     Chi_02 = svtbl(Chi_02, table0);    \
@@ -326,7 +326,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 // XP_PROJ
 #define XP_PROJ_A64FXf  \
 { \
-    table0 = svld1(pg1, (uint32_t*)&lut[3]);  \
+    table0 = svld1(pg1, (float32_t*)&lut[3]);  \
     Chi_00 = svcadd_x(pg1, Chimu_00, Chimu_30, 90);   \
     Chi_01 = svcadd_x(pg1, Chimu_01, Chimu_31, 90);   \
     Chi_02 = svcadd_x(pg1, Chimu_02, Chimu_32, 90);   \
@@ -367,7 +367,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 // YP_PROJ
 #define YP_PROJ_A64FXf  \
 { \
-    table0 = svld1(pg1, (uint32_t*)&lut[2]);  \
+    table0 = svld1(pg1, (float32_t*)&lut[2]);  \
     Chi_00 = svsub_x(pg1, Chimu_00, Chimu_30);  \
     Chi_01 = svsub_x(pg1, Chimu_01, Chimu_31);  \
     Chi_02 = svsub_x(pg1, Chimu_02, Chimu_32);  \
@@ -378,7 +378,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 // ZP_PROJ
 #define ZP_PROJ_A64FXf  \
 { \
-    table0 = svld1(pg1, (uint32_t*)&lut[1]);  \
+    table0 = svld1(pg1, (float32_t*)&lut[1]);  \
     Chi_00 = svcadd_x(pg1, Chimu_00, Chimu_20, 90);   \
     Chi_01 = svcadd_x(pg1, Chimu_01, Chimu_21, 90);   \
     Chi_02 = svcadd_x(pg1, Chimu_02, Chimu_22, 90);   \
@@ -389,7 +389,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 // TP_PROJ
 #define TP_PROJ_A64FXf  \
 { \
-    table0 = svld1(pg1, (uint32_t*)&lut[0]);  \
+    table0 = svld1(pg1, (float32_t*)&lut[0]);  \
     Chi_00 = svadd_x(pg1, Chimu_00, Chimu_20);  \
     Chi_01 = svadd_x(pg1, Chimu_01, Chimu_21);  \
     Chi_02 = svadd_x(pg1, Chimu_02, Chimu_22);  \
@@ -400,7 +400,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 // XM_PROJ
 #define XM_PROJ_A64FXf  \
 { \
-    table0 = svld1(pg1, (uint32_t*)&lut[3]);  \
+    table0 = svld1(pg1, (float32_t*)&lut[3]);  \
     Chi_00 = svcadd_x(pg1, Chimu_00, Chimu_30, 270);   \
     Chi_01 = svcadd_x(pg1, Chimu_01, Chimu_31, 270);   \
     Chi_02 = svcadd_x(pg1, Chimu_02, Chimu_32, 270);   \
@@ -426,7 +426,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 // YM_PROJ
 #define YM_PROJ_A64FXf  \
 { \
-    table0 = svld1(pg1, (uint32_t*)&lut[2]);  \
+    table0 = svld1(pg1, (float32_t*)&lut[2]);  \
     Chi_00 = svadd_x(pg1, Chimu_00, Chimu_30);  \
     Chi_01 = svadd_x(pg1, Chimu_01, Chimu_31);  \
     Chi_02 = svadd_x(pg1, Chimu_02, Chimu_32);  \
@@ -437,7 +437,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 // ZM_PROJ
 #define ZM_PROJ_A64FXf  \
 { \
-    table0 = svld1(pg1, (uint32_t*)&lut[1]);  \
+    table0 = svld1(pg1, (float32_t*)&lut[1]);  \
     Chi_00 = svcadd_x(pg1, Chimu_00, Chimu_20, 270);   \
     Chi_01 = svcadd_x(pg1, Chimu_01, Chimu_21, 270);   \
     Chi_02 = svcadd_x(pg1, Chimu_02, Chimu_22, 270);   \
@@ -448,7 +448,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 // TM_PROJ
 #define TM_PROJ_A64FXf  \
 { \
-    table0 = svld1(pg1, (uint32_t*)&lut[0]);  \
+    table0 = svld1(pg1, (float32_t*)&lut[0]);  \
     Chi_00 = svsub_x(pg1, Chimu_00, Chimu_20);  \
     Chi_01 = svsub_x(pg1, Chimu_01, Chimu_21);  \
     Chi_02 = svsub_x(pg1, Chimu_02, Chimu_22);  \

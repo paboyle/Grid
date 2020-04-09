@@ -30,7 +30,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 /*  END LEGAL */
 #pragma once
 
-#if defined(A64FX)
+#if defined(DSLASHA64FX)
 
 // undefine everything
 #include <simd/Fujitsu_A64FX_undef.h>
@@ -38,7 +38,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     ///////////////////////////////////////////////////////////
     // If we are A64FX specialise the single precision routine
     ///////////////////////////////////////////////////////////
-#if defined(A64FXINTRIN)
+#if defined(DSLASHINTRIN)
 #include <simd/Fujitsu_A64FX_intrin_single.h>
 #else
 #include <simd/Fujitsu_A64FX_asm_single.h>

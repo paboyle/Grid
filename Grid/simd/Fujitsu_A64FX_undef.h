@@ -32,6 +32,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #undef PREFETCH_GAUGE_L1
 #undef PREFETCH_CHIMU_L2
 #undef PREFETCH_GAUGE_L2
+#undef PREFETCH_GAUGE_L1_INTERNAL
 #undef PF_GAUGE
 #undef PREFETCH1_CHIMU
 #undef PREFETCH_CHIMU
