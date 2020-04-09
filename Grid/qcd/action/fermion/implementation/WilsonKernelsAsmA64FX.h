@@ -355,7 +355,7 @@ WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSiteDagExt(StencilView &st, Double
 // If we are A64FX specialise the double precision routine
 ///////////////////////////////////////////////////////////
 
-#if defined(A64FXINTRIN)
+#if defined(DSLASHINTRIN)
 #include <simd/Fujitsu_A64FX_intrin_double.h>
 #else
 #include <simd/Fujitsu_A64FX_asm_double.h>
