@@ -35,7 +35,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define PREFETCH_CHIMU(A)  
 #define LOCK_GAUGE(A)  
 #define UNLOCK_GAUGE(A)  
-#define MASK_REGS                      DECLARATIONS_A64FXd(A)  
+#define MASK_REGS                      DECLARATIONS_A64FXd  
 #define COMPLEX_SIGNS(A)  
 #define LOAD64(A,B)  
 #define SAVE_RESULT(A,B)               RESULT_A64FXd(A)  
@@ -65,7 +65,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define PERMUTE_DIR2                   PERM2_A64FXd  
 #define PERMUTE_DIR3                   PERM3_A64FXd  
 // DECLARATIONS
-#define DECLARATIONS_A64FXd(x)  \
+#define DECLARATIONS_A64FXd  \
     const uint64_t lut[4][8] = { \
         {4, 5, 6, 7, 0, 1, 2, 3}, \
         {2, 3, 0, 1, 6, 7, 4, 5}, \
