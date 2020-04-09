@@ -43,7 +43,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define MAYBEPERM(A,perm)              if (perm) { A ; }  
 #define LOAD_CHI(base)                 LOAD_CHI_A64FXd(base)  
 #define ZERO_PSI                       ZERO_PSI_A64FXd  
-#define ADD_RESULT(A,B)  
+#define ADD_RESULT(base,basep)         LOAD_CHI_A64FXd(base); ADD_RESULT_INTERNAL_A64FXd; RESULT_A64FXd(base)  
 #define XP_PROJMEM(base)               LOAD_CHIMU_A64FXd(base);   XP_PROJ_A64FXd  
 #define YP_PROJMEM(base)               LOAD_CHIMU_A64FXd(base);   YP_PROJ_A64FXd  
 #define ZP_PROJMEM(base)               LOAD_CHIMU_A64FXd(base);   ZP_PROJ_A64FXd  
@@ -566,4 +566,19 @@ Author: Nils Meyer <nils.meyer@ur.de>
     result_30 = __svzero(result_30); \
     result_31 = __svzero(result_31); \
     result_32 = __svzero(result_32); 
+
+// ADD_RESULT_INTERNAL
+#define ADD_RESULT_INTERNAL_A64FXd  \
+    result_00 = svadd_x(pg1, result_00, Chimu_00); \
+    result_01 = svadd_x(pg1, result_01, Chimu_01); \
+    result_02 = svadd_x(pg1, result_02, Chimu_02); \
+    result_10 = svadd_x(pg1, result_10, Chimu_10); \
+    result_11 = svadd_x(pg1, result_11, Chimu_11); \
+    result_12 = svadd_x(pg1, result_12, Chimu_12); \
+    result_20 = svadd_x(pg1, result_20, Chimu_20); \
+    result_21 = svadd_x(pg1, result_21, Chimu_21); \
+    result_22 = svadd_x(pg1, result_22, Chimu_22); \
+    result_30 = svadd_x(pg1, result_30, Chimu_30); \
+    result_31 = svadd_x(pg1, result_31, Chimu_31); \
+    result_32 = svadd_x(pg1, result_32, Chimu_32); 
 

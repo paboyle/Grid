@@ -43,7 +43,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define MAYBEPERM(A,perm)              if (perm) { A ; }  
 #define LOAD_CHI(base)                 LOAD_CHI_A64FXf(base)  
 #define ZERO_PSI                       ZERO_PSI_A64FXf  
-#define ADD_RESULT(A,B)  
+#define ADD_RESULT(base,basep)         LOAD_CHI_A64FXf(base); ADD_RESULT_INTERNAL_A64FXf; RESULT_A64FXf(base)  
 #define XP_PROJMEM(base)               LOAD_CHIMU_A64FXf(base);   XP_PROJ_A64FXf  
 #define YP_PROJMEM(base)               LOAD_CHIMU_A64FXf(base);   YP_PROJ_A64FXf  
 #define ZP_PROJMEM(base)               LOAD_CHIMU_A64FXf(base);   ZP_PROJ_A64FXf  
@@ -700,6 +700,26 @@ asm ( \
     "fmov z9.f , 0 \n\t" \
     "fmov z10.f , 0 \n\t" \
     "fmov z11.f , 0 \n\t" \
+    :  \
+    :  \
+    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
+); 
+
+// ADD_RESULT_INTERNAL
+#define ADD_RESULT_INTERNAL_A64FXf  \
+asm ( \
+    "fadd z0.f, p5/m, z0.f, z12.f \n\t"  \
+    "fadd z1.f, p5/m, z1.f, z13.f \n\t"  \
+    "fadd z2.f, p5/m, z2.f, z14.f \n\t"  \
+    "fadd z3.f, p5/m, z3.f, z15.f \n\t"  \
+    "fadd z4.f, p5/m, z4.f, z16.f \n\t"  \
+    "fadd z5.f, p5/m, z5.f, z17.f \n\t"  \
+    "fadd z6.f, p5/m, z6.f, z24.f \n\t"  \
+    "fadd z7.f, p5/m, z7.f, z25.f \n\t"  \
+    "fadd z8.f, p5/m, z8.f, z26.f \n\t"  \
+    "fadd z9.f, p5/m, z9.f, z27.f \n\t"  \
+    "fadd z10.f, p5/m, z10.f, z28.f \n\t"  \
+    "fadd z11.f, p5/m, z11.f, z29.f \n\t"  \
     :  \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
