@@ -54,7 +54,6 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define TM_PROJMEM(base)               LOAD_CHIMU_A64FXf(base);   TM_PROJ_A64FXf  
 #define XP_RECON                       XP_RECON_A64FXf  
 #define XM_RECON                       XM_RECON_A64FXf  
-#define XP_RECON_ACCUM                 XP_RECON_ACCUM_A64FXf  
 #define XM_RECON_ACCUM                 XM_RECON_ACCUM_A64FXf  
 #define YM_RECON_ACCUM                 YM_RECON_ACCUM_A64FXf  
 #define ZM_RECON_ACCUM                 ZM_RECON_ACCUM_A64FXf  
