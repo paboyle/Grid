@@ -283,7 +283,7 @@ asm ( \
 // MULT_2SPIN
 #define MULT_2SPIN_A64FXd(A)  \
 { \
-    const auto & ref(U[sU](A)); \
+    const auto & ref(U[sU](A)); uint64_t baseU = (uint64_t)&ref; \
 asm ( \
     "ld1d { z24.d }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
     "ld1d { z25.d }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
@@ -337,7 +337,7 @@ asm ( \
     "fcmla z20.d, p5/m, z26.d, z14.d, 90 \n\t" \
     "fcmla z23.d, p5/m, z26.d, z17.d, 90 \n\t" \
     :  \
-    : [fetchptr] "r" ((uint64_t)&ref[2][0]) \
+    : [fetchptr] "r" (base + 2 * 3 * 64) \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
 ); \
 }
