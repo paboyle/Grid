@@ -43,7 +43,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define MAYBEPERM(A,perm)              if (perm) { A ; }  
 #define LOAD_CHI(base)                 LOAD_CHI_A64FXd(base)  
 #define ZERO_PSI                       ZERO_PSI_A64FXd  
-#define ADD_RESULT(base,basep)         LOAD_CHI_A64FXd(base); ADD_RESULT_INTERNAL_A64FXd; RESULT_A64FXd(base)  
+#define ADD_RESULT(base,base)          LOAD_CHIMU_A64FXd(base); ADD_RESULT_INTERNAL_A64FXd; RESULT_A64FXd(base)  
 #define XP_PROJMEM(base)               LOAD_CHIMU_A64FXd(base);   XP_PROJ_A64FXd  
 #define YP_PROJMEM(base)               LOAD_CHIMU_A64FXd(base);   YP_PROJ_A64FXd  
 #define ZP_PROJMEM(base)               LOAD_CHIMU_A64FXd(base);   ZP_PROJ_A64FXd  
