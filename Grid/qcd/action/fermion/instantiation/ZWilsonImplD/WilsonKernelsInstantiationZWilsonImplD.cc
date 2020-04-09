@@ -34,7 +34,9 @@ directory
 
 #ifndef AVX512
 #ifndef QPX
+#ifndef A64FX
 #include <Grid/qcd/action/fermion/implementation/WilsonKernelsAsmImplementation.h>
+#endif
 #endif
 #endif
 

@@ -30,7 +30,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 /*  END LEGAL */
 #pragma once
 
-#if defined(DSLASHA64FX)
+#if defined(A64FX)
+
+#pragma message("invoking A64FX Dslash")
 
 // undefine everything
 #include <simd/Fujitsu_A64FX_undef.h>
@@ -194,9 +196,9 @@ WilsonKernels<ZWilsonImplFH>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFie
 						int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
 #include <qcd/action/fermion/implementation/WilsonKernelsAsmBody.h>
 
-#undef MAYBEPERM
+//#undef MAYBEPERM
 //#undef MULT_2SPIN
-#define MAYBEPERM(A,B)
+//#define MAYBEPERM(A,B)
 //#define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN_LS(ptr,pf)
 
 /////////////////////////////////////////////////////////////////
@@ -346,7 +348,7 @@ WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSiteDagExt(StencilView &st, Double
 //#undef MAYBEPERM
 //#undef MULT_2SPIN
 
-// undefine everything
+// undefine 
 #include <simd/Fujitsu_A64FX_undef.h>
 
 ///////////////////////////////////////////////////////////
@@ -359,7 +361,7 @@ WilsonKernels<ZDomainWallVec5dImplFH>::AsmDhopSiteDagExt(StencilView &st, Double
 #include <simd/Fujitsu_A64FX_asm_double.h>
 #endif
 
-// KNL stuff
+// former KNL 
 //#define MAYBEPERM(A,perm) if (perm) { A ; }
 //#define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN(ptr,pf)
 //#define COMPLEX_SIGNS(isigns) vComplexD *isigns = &signsD[0];
