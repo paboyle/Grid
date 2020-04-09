@@ -262,12 +262,12 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define MULT_2SPIN_A64FXd(A)  \
 { \
     const auto & ref(U[sU](A)); uint64_t baseU = (uint64_t)&ref; \
-    U_00 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -6 * 64));  \
-    U_10 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -3 * 64));  \
-    U_20 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 0 * 64));  \
-    U_01 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -5 * 64));  \
-    U_11 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -2 * 64));  \
-    U_21 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 1 * 64));  \
+    U_00 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -6 * 64));  \
+    U_10 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -3 * 64));  \
+    U_20 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + 0 * 64));  \
+    U_01 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -5 * 64));  \
+    U_11 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -2 * 64));  \
+    U_21 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + 1 * 64));  \
     UChi_00 = __svzero(UChi_00); \
     UChi_10 = __svzero(UChi_10); \
     UChi_01 = __svzero(UChi_01); \
@@ -286,9 +286,9 @@ Author: Nils Meyer <nils.meyer@ur.de>
     UChi_11 = svcmla_x(pg1, UChi_11, U_10, Chi_10, 90); \
     UChi_02 = svcmla_x(pg1, UChi_02, U_20, Chi_00, 90); \
     UChi_12 = svcmla_x(pg1, UChi_12, U_20, Chi_10, 90); \
-    U_00 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -4 * 64));  \
-    U_10 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -1 * 64));  \
-    U_20 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 2 * 64));  \
+    U_00 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -4 * 64));  \
+    U_10 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -1 * 64));  \
+    U_20 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + 2 * 64));  \
     UChi_00 = svcmla_x(pg1, UChi_00, U_01, Chi_01, 0); \
     UChi_10 = svcmla_x(pg1, UChi_10, U_01, Chi_11, 0); \
     UChi_01 = svcmla_x(pg1, UChi_01, U_11, Chi_01, 0); \
