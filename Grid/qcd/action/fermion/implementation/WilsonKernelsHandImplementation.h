@@ -656,7 +656,7 @@ std::cout << "Chi_12 -- " <<  Chi_12 << std::endl; \
     std::cout << "result_22 -- " <<  result_22 << std::endl; \
     std::cout << "result_30 -- " <<  result_30 << std::endl; \
     std::cout << "result_31 -- " <<  result_31 << std::endl; \
-    std::cout << "result_32 -- " <<  result_32 << std::endl;
+    std::cout << "result_32 -- " <<  result_32 << std::endl;\
   }
 
 #define HAND_RESULT_EXT(ss)			\
@@ -686,7 +686,7 @@ std::cout << "Chi_12 -- " <<  Chi_12 << std::endl; \
     std::cout << "result_22 -- " <<  result_22 << std::endl; \
     std::cout << "result_30 -- " <<  result_30 << std::endl; \
     std::cout << "result_31 -- " <<  result_31 << std::endl; \
-    std::cout << "result_32 -- " <<  result_32 << std::endl;
+    std::cout << "result_32 -- " <<  result_32 << std::endl;\
   }
 
 
