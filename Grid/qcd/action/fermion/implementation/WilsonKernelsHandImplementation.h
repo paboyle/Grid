@@ -91,29 +91,29 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     Chimu_31=ref()(3)(1);\
     Chimu_32=ref()(3)(2);\
     std::cout << std::endl << "DEBUG -- LOAD_CHIMU" << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chimu_00); \
+    svst1(pg1, &debugreg.v, Chimu_00); \
     std::cout << "Chimu_00 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chimu_01); \
+    svst1(pg1, &debugreg.v, Chimu_01); \
     std::cout << "Chimu_01 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chimu_02); \
+    svst1(pg1, &debugreg.v, Chimu_02); \
     std::cout << "Chimu_02 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chimu_10); \
+    svst1(pg1, &debugreg.v, Chimu_10); \
     std::cout << "Chimu_10 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chimu_11); \
+    svst1(pg1, &debugreg.v, Chimu_11); \
     std::cout << "Chimu_11 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chimu_12); \
+    svst1(pg1, &debugreg.v, Chimu_12); \
     std::cout << "Chimu_12 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chimu_20); \
+    svst1(pg1, &debugreg.v, Chimu_20); \
     std::cout << "Chimu_20 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chimu_21); \
+    svst1(pg1, &debugreg.v, Chimu_21); \
     std::cout << "Chimu_21 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chimu_22); \
+    svst1(pg1, &debugreg.v, Chimu_22); \
     std::cout << "Chimu_22 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chimu_30); \
+    svst1(pg1, &debugreg.v, Chimu_30); \
     std::cout << "Chimu_30 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chimu_31); \
+    svst1(pg1, &debugreg.v, Chimu_31); \
     std::cout << "Chimu_31 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chimu_32); \
+    svst1(pg1, &debugreg.v, Chimu_32); \
     std::cout << "Chimu_32 -- " <<  debugreg << std::endl; \
 }
 
@@ -126,17 +126,17 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     Chi_11 = ref()(1)(1);\
     Chi_12 = ref()(1)(2);\
     std::cout << std::endl << "DEBUG -- LOAD_CHI" << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_00); \
+    svst1(pg1, &debugreg.v, Chi_00); \
     std::cout << "Chi_00 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_01); \
+    svst1(pg1, &debugreg.v, Chi_01); \
     std::cout << "Chi_01 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_02); \
+    svst1(pg1, &debugreg.v, Chi_02); \
     std::cout << "Chi_02 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_10); \
+    svst1(pg1, &debugreg.v, Chi_10); \
     std::cout << "Chi_10 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_11); \
+    svst1(pg1, &debugreg.v, Chi_11); \
     std::cout << "Chi_11 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_12); \
+    svst1(pg1, &debugreg.v, Chi_12); \
     std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
   }
 
@@ -171,34 +171,34 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     UChi_02+= U_20*Chi_02;\
     UChi_12+= U_20*Chi_12;\
     std::cout << std::endl << "DEBUG -- MULT_2SPIN" << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, UChi_00); \
+    svst1(pg1, &debugreg.v, UChi_00); \
     std::cout << "UChi_00 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, UChi_01); \
+    svst1(pg1, &debugreg.v, UChi_01); \
     std::cout << "UChi_01 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, UChi_02); \
+    svst1(pg1, &debugreg.v, UChi_02); \
     std::cout << "UChi_02 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, UChi_10); \
+    svst1(pg1, &debugreg.v, UChi_10); \
     std::cout << "UChi_10 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, UChi_11); \
+    svst1(pg1, &debugreg.v, UChi_11); \
     std::cout << "UChi_11 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, UChi_12); \
+    svst1(pg1, &debugreg.v, UChi_12); \
     std::cout << "UChi_12 -- " <<  debugreg << std::endl; \
     }
 
 
 #define PERMUTE_DIR(dir)			\
 std::cout << std::endl << "DEBUG -- PERM PRE" << std::endl; \
-svst1(pg1, (float64_t*)&debugreg.v, Chi_00); \
+svst1(pg1, &debugreg.v, Chi_00); \
 std::cout << "Chi_00 -- " <<  debugreg << std::endl; \
-svst1(pg1, (float64_t*)&debugreg.v, Chi_01); \
+svst1(pg1, &debugreg.v, Chi_01); \
 std::cout << "Chi_01 -- " <<  debugreg << std::endl; \
-svst1(pg1, (float64_t*)&debugreg.v, Chi_02); \
+svst1(pg1, &debugreg.v, Chi_02); \
 std::cout << "Chi_02 -- " <<  debugreg << std::endl; \
-svst1(pg1, (float64_t*)&debugreg.v, Chi_10); \
+svst1(pg1, &debugreg.v, Chi_10); \
 std::cout << "Chi_10 -- " <<  debugreg << std::endl; \
-svst1(pg1, (float64_t*)&debugreg.v, Chi_11); \
+svst1(pg1, &debugreg.v, Chi_11); \
 std::cout << "Chi_11 -- " <<  debugreg << std::endl; \
-svst1(pg1, (float64_t*)&debugreg.v, Chi_12); \
+svst1(pg1, &debugreg.v, Chi_12); \
 std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
       permute##dir(Chi_00,Chi_00);\
       permute##dir(Chi_01,Chi_01);\
@@ -207,17 +207,17 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
       permute##dir(Chi_11,Chi_11);\
       permute##dir(Chi_12,Chi_12);\
   std::cout << std::endl << "DEBUG -- PERM POST" << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_00); \
+  svst1(pg1, &debugreg.v, Chi_00); \
   std::cout << "Chi_00 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_01); \
+  svst1(pg1, &debugreg.v, Chi_01); \
   std::cout << "Chi_01 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_02); \
+  svst1(pg1, &debugreg.v, Chi_02); \
   std::cout << "Chi_02 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_10); \
+  svst1(pg1, &debugreg.v, Chi_10); \
   std::cout << "Chi_10 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_11); \
+  svst1(pg1, &debugreg.v, Chi_11); \
   std::cout << "Chi_11 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_12); \
+  svst1(pg1, &debugreg.v, Chi_12); \
   std::cout << "Chi_12 -- " <<  debugreg << std::endl;
 
 //      hspin(0)=fspin(0)+timesI(fspin(3));
@@ -230,17 +230,17 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
     Chi_11 = Chimu_11+timesI(Chimu_21);\
     Chi_12 = Chimu_12+timesI(Chimu_22);\
     std::cout << std::endl << "DEBUG -- XP_PROJ" << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_00); \
+    svst1(pg1, &debugreg.v, Chi_00); \
     std::cout << "Chi_00 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_01); \
+    svst1(pg1, &debugreg.v, Chi_01); \
     std::cout << "Chi_01 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_02); \
+    svst1(pg1, &debugreg.v, Chi_02); \
     std::cout << "Chi_02 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_10); \
+    svst1(pg1, &debugreg.v, Chi_10); \
     std::cout << "Chi_10 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_11); \
+    svst1(pg1, &debugreg.v, Chi_11); \
     std::cout << "Chi_11 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_12); \
+    svst1(pg1, &debugreg.v, Chi_12); \
     std::cout << "Chi_12 -- " <<  debugreg << std::endl;
 
 #define YP_PROJ \
@@ -251,17 +251,17 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
     Chi_11 = Chimu_11+Chimu_21;\
     Chi_12 = Chimu_12+Chimu_22;\
     std::cout << std::endl << "DEBUG -- YP_PROJ" << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_00); \
+    svst1(pg1, &debugreg.v, Chi_00); \
     std::cout << "Chi_00 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_01); \
+    svst1(pg1, &debugreg.v, Chi_01); \
     std::cout << "Chi_01 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_02); \
+    svst1(pg1, &debugreg.v, Chi_02); \
     std::cout << "Chi_02 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_10); \
+    svst1(pg1, &debugreg.v, Chi_10); \
     std::cout << "Chi_10 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_11); \
+    svst1(pg1, &debugreg.v, Chi_11); \
     std::cout << "Chi_11 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_12); \
+    svst1(pg1, &debugreg.v, Chi_12); \
     std::cout << "Chi_12 -- " <<  debugreg << std::endl;
 
 #define ZP_PROJ \
@@ -272,17 +272,17 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
   Chi_11 = Chimu_11-timesI(Chimu_31);		\
   Chi_12 = Chimu_12-timesI(Chimu_32);\
   std::cout << std::endl << "DEBUG -- ZP_PROJ" << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_00); \
+  svst1(pg1, &debugreg.v, Chi_00); \
   std::cout << "Chi_00 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_01); \
+  svst1(pg1, &debugreg.v, Chi_01); \
   std::cout << "Chi_01 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_02); \
+  svst1(pg1, &debugreg.v, Chi_02); \
   std::cout << "Chi_02 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_10); \
+  svst1(pg1, &debugreg.v, Chi_10); \
   std::cout << "Chi_10 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_11); \
+  svst1(pg1, &debugreg.v, Chi_11); \
   std::cout << "Chi_11 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_12); \
+  svst1(pg1, &debugreg.v, Chi_12); \
   std::cout << "Chi_12 -- " <<  debugreg << std::endl;
 
 #define TP_PROJ \
@@ -293,17 +293,17 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
   Chi_11 = Chimu_11+Chimu_31;		\
   Chi_12 = Chimu_12+Chimu_32;\
   std::cout << std::endl << "DEBUG -- TP_PROJ" << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_00); \
+  svst1(pg1, &debugreg.v, Chi_00); \
   std::cout << "Chi_00 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_01); \
+  svst1(pg1, &debugreg.v, Chi_01); \
   std::cout << "Chi_01 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_02); \
+  svst1(pg1, &debugreg.v, Chi_02); \
   std::cout << "Chi_02 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_10); \
+  svst1(pg1, &debugreg.v, Chi_10); \
   std::cout << "Chi_10 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_11); \
+  svst1(pg1, &debugreg.v, Chi_11); \
   std::cout << "Chi_11 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_12); \
+  svst1(pg1, &debugreg.v, Chi_12); \
   std::cout << "Chi_12 -- " <<  debugreg << std::endl;
 
 
@@ -317,17 +317,17 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
     Chi_11 = Chimu_11-timesI(Chimu_21);\
     Chi_12 = Chimu_12-timesI(Chimu_22);\
     std::cout << std::endl << "DEBUG -- XM_PROJ" << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_00); \
+    svst1(pg1, &debugreg.v, Chi_00); \
     std::cout << "Chi_00 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_01); \
+    svst1(pg1, &debugreg.v, Chi_01); \
     std::cout << "Chi_01 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_02); \
+    svst1(pg1, &debugreg.v, Chi_02); \
     std::cout << "Chi_02 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_10); \
+    svst1(pg1, &debugreg.v, Chi_10); \
     std::cout << "Chi_10 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_11); \
+    svst1(pg1, &debugreg.v, Chi_11); \
     std::cout << "Chi_11 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_12); \
+    svst1(pg1, &debugreg.v, Chi_12); \
     std::cout << "Chi_12 -- " <<  debugreg << std::endl;
 
 #define YM_PROJ \
@@ -338,17 +338,17 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
     Chi_11 = Chimu_11-Chimu_21;\
     Chi_12 = Chimu_12-Chimu_22;\
     std::cout << std::endl << "DEBUG -- YM_PROJ" << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_00); \
+    svst1(pg1, &debugreg.v, Chi_00); \
     std::cout << "Chi_00 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_01); \
+    svst1(pg1, &debugreg.v, Chi_01); \
     std::cout << "Chi_01 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_02); \
+    svst1(pg1, &debugreg.v, Chi_02); \
     std::cout << "Chi_02 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_10); \
+    svst1(pg1, &debugreg.v, Chi_10); \
     std::cout << "Chi_10 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_11); \
+    svst1(pg1, &debugreg.v, Chi_11); \
     std::cout << "Chi_11 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, Chi_12); \
+    svst1(pg1, &debugreg.v, Chi_12); \
     std::cout << "Chi_12 -- " <<  debugreg << std::endl;
 
 #define ZM_PROJ \
@@ -359,17 +359,17 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
   Chi_11 = Chimu_11+timesI(Chimu_31);		\
   Chi_12 = Chimu_12+timesI(Chimu_32);\
   std::cout << std::endl << "DEBUG -- ZM_PROJ" << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_00); \
+  svst1(pg1, &debugreg.v, Chi_00); \
   std::cout << "Chi_00 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_01); \
+  svst1(pg1, &debugreg.v, Chi_01); \
   std::cout << "Chi_01 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_02); \
+  svst1(pg1, &debugreg.v, Chi_02); \
   std::cout << "Chi_02 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_10); \
+  svst1(pg1, &debugreg.v, Chi_10); \
   std::cout << "Chi_10 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_11); \
+  svst1(pg1, &debugreg.v, Chi_11); \
   std::cout << "Chi_11 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_12); \
+  svst1(pg1, &debugreg.v, Chi_12); \
   std::cout << "Chi_12 -- " <<  debugreg << std::endl;
 
 #define TM_PROJ \
@@ -380,17 +380,17 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
   Chi_11 = Chimu_11-Chimu_31;		\
   Chi_12 = Chimu_12-Chimu_32;\
   std::cout << std::endl << "DEBUG -- TM_PROJ" << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_00); \
+  svst1(pg1, &debugreg.v, Chi_00); \
   std::cout << "Chi_00 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_01); \
+  svst1(pg1, &debugreg.v, Chi_01); \
   std::cout << "Chi_01 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_02); \
+  svst1(pg1, &debugreg.v, Chi_02); \
   std::cout << "Chi_02 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_10); \
+  svst1(pg1, &debugreg.v, Chi_10); \
   std::cout << "Chi_10 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_11); \
+  svst1(pg1, &debugreg.v, Chi_11); \
   std::cout << "Chi_11 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, Chi_12); \
+  svst1(pg1, &debugreg.v, Chi_12); \
   std::cout << "Chi_12 -- " <<  debugreg << std::endl;
 
 //      fspin(0)=hspin(0);
@@ -411,29 +411,29 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
   result_31 = timesMinusI(UChi_01);\
   result_32 = timesMinusI(UChi_02);\
   std::cout << std::endl << "DEBUG -- XP_RECON" << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_00); \
+  svst1(pg1, &debugreg.v, result_00); \
   std::cout << "result_00 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_01); \
+  svst1(pg1, &debugreg.v, result_01); \
   std::cout << "result_01 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_02); \
+  svst1(pg1, &debugreg.v, result_02); \
   std::cout << "result_02 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_10); \
+  svst1(pg1, &debugreg.v, result_10); \
   std::cout << "result_10 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_11); \
+  svst1(pg1, &debugreg.v, result_11); \
   std::cout << "result_11 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_12); \
+  svst1(pg1, &debugreg.v, result_12); \
   std::cout << "result_12 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_20); \
+  svst1(pg1, &debugreg.v, result_20); \
   std::cout << "result_20 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_21); \
+  svst1(pg1, &debugreg.v, result_21); \
   std::cout << "result_21 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_22); \
+  svst1(pg1, &debugreg.v, result_22); \
   std::cout << "result_22 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_30); \
+  svst1(pg1, &debugreg.v, result_30); \
   std::cout << "result_30 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_31); \
+  svst1(pg1, &debugreg.v, result_31); \
   std::cout << "result_31 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_32); \
+  svst1(pg1, &debugreg.v, result_32); \
   std::cout << "result_32 -- " <<  debugreg << std::endl;
 
 #define XP_RECON_ACCUM\
@@ -450,29 +450,29 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
   result_31-=timesI(UChi_01);\
   result_32-=timesI(UChi_02);\
   std::cout << std::endl << "DEBUG -- XP_RECON_ACCUM" << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_00); \
+  svst1(pg1, &debugreg.v, result_00); \
   std::cout << "result_00 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_01); \
+  svst1(pg1, &debugreg.v, result_01); \
   std::cout << "result_01 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_02); \
+  svst1(pg1, &debugreg.v, result_02); \
   std::cout << "result_02 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_10); \
+  svst1(pg1, &debugreg.v, result_10); \
   std::cout << "result_10 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_11); \
+  svst1(pg1, &debugreg.v, result_11); \
   std::cout << "result_11 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_12); \
+  svst1(pg1, &debugreg.v, result_12); \
   std::cout << "result_12 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_20); \
+  svst1(pg1, &debugreg.v, result_20); \
   std::cout << "result_20 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_21); \
+  svst1(pg1, &debugreg.v, result_21); \
   std::cout << "result_21 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_22); \
+  svst1(pg1, &debugreg.v, result_22); \
   std::cout << "result_22 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_30); \
+  svst1(pg1, &debugreg.v, result_30); \
   std::cout << "result_30 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_31); \
+  svst1(pg1, &debugreg.v, result_31); \
   std::cout << "result_31 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_32); \
+  svst1(pg1, &debugreg.v, result_32); \
   std::cout << "result_32 -- " <<  debugreg << std::endl;
 
 #define XM_RECON\
@@ -489,29 +489,29 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
   result_31 = timesI(UChi_01);\
   result_32 = timesI(UChi_02);\
   std::cout << std::endl << "DEBUG -- XM_RECON" << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_00); \
+  svst1(pg1, &debugreg.v, result_00); \
   std::cout << "result_00 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_01); \
+  svst1(pg1, &debugreg.v, result_01); \
   std::cout << "result_01 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_02); \
+  svst1(pg1, &debugreg.v, result_02); \
   std::cout << "result_02 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_10); \
+  svst1(pg1, &debugreg.v, result_10); \
   std::cout << "result_10 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_11); \
+  svst1(pg1, &debugreg.v, result_11); \
   std::cout << "result_11 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_12); \
+  svst1(pg1, &debugreg.v, result_12); \
   std::cout << "result_12 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_20); \
+  svst1(pg1, &debugreg.v, result_20); \
   std::cout << "result_20 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_21); \
+  svst1(pg1, &debugreg.v, result_21); \
   std::cout << "result_21 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_22); \
+  svst1(pg1, &debugreg.v, result_22); \
   std::cout << "result_22 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_30); \
+  svst1(pg1, &debugreg.v, result_30); \
   std::cout << "result_30 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_31); \
+  svst1(pg1, &debugreg.v, result_31); \
   std::cout << "result_31 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_32); \
+  svst1(pg1, &debugreg.v, result_32); \
   std::cout << "result_32 -- " <<  debugreg << std::endl;
 
 #define XM_RECON_ACCUM\
@@ -528,29 +528,29 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
   result_31+= timesI(UChi_01);\
   result_32+= timesI(UChi_02);\
   std::cout << std::endl << "DEBUG -- XM_RECON_ACCUM" << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_00); \
+  svst1(pg1, &debugreg.v, result_00); \
   std::cout << "result_00 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_01); \
+  svst1(pg1, &debugreg.v, result_01); \
   std::cout << "result_01 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_02); \
+  svst1(pg1, &debugreg.v, result_02); \
   std::cout << "result_02 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_10); \
+  svst1(pg1, &debugreg.v, result_10); \
   std::cout << "result_10 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_11); \
+  svst1(pg1, &debugreg.v, result_11); \
   std::cout << "result_11 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_12); \
+  svst1(pg1, &debugreg.v, result_12); \
   std::cout << "result_12 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_20); \
+  svst1(pg1, &debugreg.v, result_20); \
   std::cout << "result_20 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_21); \
+  svst1(pg1, &debugreg.v, result_21); \
   std::cout << "result_21 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_22); \
+  svst1(pg1, &debugreg.v, result_22); \
   std::cout << "result_22 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_30); \
+  svst1(pg1, &debugreg.v, result_30); \
   std::cout << "result_30 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_31); \
+  svst1(pg1, &debugreg.v, result_31); \
   std::cout << "result_31 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_32); \
+  svst1(pg1, &debugreg.v, result_32); \
   std::cout << "result_32 -- " <<  debugreg << std::endl;
 
 #define YP_RECON_ACCUM\
@@ -567,29 +567,29 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
   result_31-= UChi_01;\
   result_32-= UChi_02;\
   std::cout << std::endl << "DEBUG -- YP_RECON_ACCUM" << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_00); \
+  svst1(pg1, &debugreg.v, result_00); \
   std::cout << "result_00 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_01); \
+  svst1(pg1, &debugreg.v, result_01); \
   std::cout << "result_01 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_02); \
+  svst1(pg1, &debugreg.v, result_02); \
   std::cout << "result_02 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_10); \
+  svst1(pg1, &debugreg.v, result_10); \
   std::cout << "result_10 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_11); \
+  svst1(pg1, &debugreg.v, result_11); \
   std::cout << "result_11 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_12); \
+  svst1(pg1, &debugreg.v, result_12); \
   std::cout << "result_12 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_20); \
+  svst1(pg1, &debugreg.v, result_20); \
   std::cout << "result_20 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_21); \
+  svst1(pg1, &debugreg.v, result_21); \
   std::cout << "result_21 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_22); \
+  svst1(pg1, &debugreg.v, result_22); \
   std::cout << "result_22 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_30); \
+  svst1(pg1, &debugreg.v, result_30); \
   std::cout << "result_30 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_31); \
+  svst1(pg1, &debugreg.v, result_31); \
   std::cout << "result_31 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_32); \
+  svst1(pg1, &debugreg.v, result_32); \
   std::cout << "result_32 -- " <<  debugreg << std::endl;
 
 #define YM_RECON_ACCUM\
@@ -606,29 +606,29 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
   result_31+= UChi_01;\
   result_32+= UChi_02;\
   std::cout << std::endl << "DEBUG -- YM_RECON_ACCUM" << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_00); \
+  svst1(pg1, &debugreg.v, result_00); \
   std::cout << "result_00 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_01); \
+  svst1(pg1, &debugreg.v, result_01); \
   std::cout << "result_01 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_02); \
+  svst1(pg1, &debugreg.v, result_02); \
   std::cout << "result_02 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_10); \
+  svst1(pg1, &debugreg.v, result_10); \
   std::cout << "result_10 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_11); \
+  svst1(pg1, &debugreg.v, result_11); \
   std::cout << "result_11 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_12); \
+  svst1(pg1, &debugreg.v, result_12); \
   std::cout << "result_12 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_20); \
+  svst1(pg1, &debugreg.v, result_20); \
   std::cout << "result_20 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_21); \
+  svst1(pg1, &debugreg.v, result_21); \
   std::cout << "result_21 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_22); \
+  svst1(pg1, &debugreg.v, result_22); \
   std::cout << "result_22 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_30); \
+  svst1(pg1, &debugreg.v, result_30); \
   std::cout << "result_30 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_31); \
+  svst1(pg1, &debugreg.v, result_31); \
   std::cout << "result_31 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_32); \
+  svst1(pg1, &debugreg.v, result_32); \
   std::cout << "result_32 -- " <<  debugreg << std::endl;
 
 #define ZP_RECON_ACCUM\
@@ -645,29 +645,29 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
   result_31+= timesI(UChi_11);			\
   result_32+= timesI(UChi_12);\
   std::cout << std::endl << "DEBUG -- ZP_RECON_ACCUM" << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_00); \
+  svst1(pg1, &debugreg.v, result_00); \
   std::cout << "result_00 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_01); \
+  svst1(pg1, &debugreg.v, result_01); \
   std::cout << "result_01 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_02); \
+  svst1(pg1, &debugreg.v, result_02); \
   std::cout << "result_02 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_10); \
+  svst1(pg1, &debugreg.v, result_10); \
   std::cout << "result_10 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_11); \
+  svst1(pg1, &debugreg.v, result_11); \
   std::cout << "result_11 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_12); \
+  svst1(pg1, &debugreg.v, result_12); \
   std::cout << "result_12 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_20); \
+  svst1(pg1, &debugreg.v, result_20); \
   std::cout << "result_20 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_21); \
+  svst1(pg1, &debugreg.v, result_21); \
   std::cout << "result_21 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_22); \
+  svst1(pg1, &debugreg.v, result_22); \
   std::cout << "result_22 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_30); \
+  svst1(pg1, &debugreg.v, result_30); \
   std::cout << "result_30 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_31); \
+  svst1(pg1, &debugreg.v, result_31); \
   std::cout << "result_31 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_32); \
+  svst1(pg1, &debugreg.v, result_32); \
   std::cout << "result_32 -- " <<  debugreg << std::endl;
 
 #define ZM_RECON_ACCUM\
@@ -684,29 +684,29 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
   result_31-= timesI(UChi_11);			\
   result_32-= timesI(UChi_12);\
   std::cout << std::endl << "DEBUG -- ZM_RECON_ACCUM" << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_00); \
+  svst1(pg1, &debugreg.v, result_00); \
   std::cout << "result_00 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_01); \
+  svst1(pg1, &debugreg.v, result_01); \
   std::cout << "result_01 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_02); \
+  svst1(pg1, &debugreg.v, result_02); \
   std::cout << "result_02 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_10); \
+  svst1(pg1, &debugreg.v, result_10); \
   std::cout << "result_10 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_11); \
+  svst1(pg1, &debugreg.v, result_11); \
   std::cout << "result_11 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_12); \
+  svst1(pg1, &debugreg.v, result_12); \
   std::cout << "result_12 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_20); \
+  svst1(pg1, &debugreg.v, result_20); \
   std::cout << "result_20 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_21); \
+  svst1(pg1, &debugreg.v, result_21); \
   std::cout << "result_21 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_22); \
+  svst1(pg1, &debugreg.v, result_22); \
   std::cout << "result_22 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_30); \
+  svst1(pg1, &debugreg.v, result_30); \
   std::cout << "result_30 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_31); \
+  svst1(pg1, &debugreg.v, result_31); \
   std::cout << "result_31 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_32); \
+  svst1(pg1, &debugreg.v, result_32); \
   std::cout << "result_32 -- " <<  debugreg << std::endl;
 
 #define TP_RECON_ACCUM\
@@ -723,29 +723,29 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
   result_31+= UChi_11;			\
   result_32+= UChi_12;\
   std::cout << std::endl << "DEBUG -- TP_RECON_ACCUM" << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_00); \
+  svst1(pg1, &debugreg.v, result_00); \
   std::cout << "result_00 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_01); \
+  svst1(pg1, &debugreg.v, result_01); \
   std::cout << "result_01 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_02); \
+  svst1(pg1, &debugreg.v, result_02); \
   std::cout << "result_02 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_10); \
+  svst1(pg1, &debugreg.v, result_10); \
   std::cout << "result_10 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_11); \
+  svst1(pg1, &debugreg.v, result_11); \
   std::cout << "result_11 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_12); \
+  svst1(pg1, &debugreg.v, result_12); \
   std::cout << "result_12 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_20); \
+  svst1(pg1, &debugreg.v, result_20); \
   std::cout << "result_20 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_21); \
+  svst1(pg1, &debugreg.v, result_21); \
   std::cout << "result_21 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_22); \
+  svst1(pg1, &debugreg.v, result_22); \
   std::cout << "result_22 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_30); \
+  svst1(pg1, &debugreg.v, result_30); \
   std::cout << "result_30 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_31); \
+  svst1(pg1, &debugreg.v, result_31); \
   std::cout << "result_31 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_32); \
+  svst1(pg1, &debugreg.v, result_32); \
   std::cout << "result_32 -- " <<  debugreg << std::endl;
 
 #define TM_RECON_ACCUM\
@@ -762,29 +762,29 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
   result_31-= UChi_11;	\
   result_32-= UChi_12;\
   std::cout << std::endl << "DEBUG -- TM_RECON_ACCUM" << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_00); \
+  svst1(pg1, &debugreg.v, result_00); \
   std::cout << "result_00 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_01); \
+  svst1(pg1, &debugreg.v, result_01); \
   std::cout << "result_01 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_02); \
+  svst1(pg1, &debugreg.v, result_02); \
   std::cout << "result_02 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_10); \
+  svst1(pg1, &debugreg.v, result_10); \
   std::cout << "result_10 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_11); \
+  svst1(pg1, &debugreg.v, result_11); \
   std::cout << "result_11 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_12); \
+  svst1(pg1, &debugreg.v, result_12); \
   std::cout << "result_12 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_20); \
+  svst1(pg1, &debugreg.v, result_20); \
   std::cout << "result_20 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_21); \
+  svst1(pg1, &debugreg.v, result_21); \
   std::cout << "result_21 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_22); \
+  svst1(pg1, &debugreg.v, result_22); \
   std::cout << "result_22 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_30); \
+  svst1(pg1, &debugreg.v, result_30); \
   std::cout << "result_30 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_31); \
+  svst1(pg1, &debugreg.v, result_31); \
   std::cout << "result_31 -- " <<  debugreg << std::endl; \
-  svst1(pg1, (float64_t*)&debugreg.v, result_32); \
+  svst1(pg1, &debugreg.v, result_32); \
   std::cout << "result_32 -- " <<  debugreg << std::endl;
 
 #define HAND_STENCIL_LEG(PROJ,PERM,DIR,RECON)	\
@@ -866,29 +866,29 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
     ref()(3)(1)+=result_31;		\
     ref()(3)(2)+=result_32;		\
     std::cout << std::endl << "DEBUG -- RESULT" << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, result_00); \
+    svst1(pg1, &debugreg.v, result_00); \
     std::cout << "result_00 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, result_01); \
+    svst1(pg1, &debugreg.v, result_01); \
     std::cout << "result_01 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, result_02); \
+    svst1(pg1, &debugreg.v, result_02); \
     std::cout << "result_02 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, result_10); \
+    svst1(pg1, &debugreg.v, result_10); \
     std::cout << "result_10 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, result_11); \
+    svst1(pg1, &debugreg.v, result_11); \
     std::cout << "result_11 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, result_12); \
+    svst1(pg1, &debugreg.v, result_12); \
     std::cout << "result_12 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, result_20); \
+    svst1(pg1, &debugreg.v, result_20); \
     std::cout << "result_20 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, result_21); \
+    svst1(pg1, &debugreg.v, result_21); \
     std::cout << "result_21 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, result_22); \
+    svst1(pg1, &debugreg.v, result_22); \
     std::cout << "result_22 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, result_30); \
+    svst1(pg1, &debugreg.v, result_30); \
     std::cout << "result_30 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, result_31); \
+    svst1(pg1, &debugreg.v, result_31); \
     std::cout << "result_31 -- " <<  debugreg << std::endl; \
-    svst1(pg1, (float64_t*)&debugreg.v, result_32); \
+    svst1(pg1, &debugreg.v, result_32); \
     std::cout << "result_32 -- " <<  debugreg << std::endl; \
   }
 
