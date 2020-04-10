@@ -234,12 +234,12 @@ CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi_i, FermionField &chi
     res = psi(ss+Ls-1) - conjugate(puee[Ls-2])*tmp - acc;
     
     // Apply L_m^{-\dagger} D^{-dagger} L^{-dagger}
-    res = (1.0/pdee[Ls-1])*res;
+    res = conjugate(1.0/pdee[Ls-1])*res;
     coalescedWrite(chi[ss+Ls-1],res);
     spProj5m(acc,res);
     spProj5p(tmp,res);
     for (int s=Ls-2;s>=0;s--){
-      res = (1.0/pdee[s])*chi(ss+s) - conjugate(plee[s])*tmp - conjugate(pleem[s])*acc;
+      res = conjugate(1.0/pdee[s])*chi(ss+s) - conjugate(plee[s])*tmp - conjugate(pleem[s])*acc;
       spProj5p(tmp,res);
       coalescedWrite(chi[ss+s],res);
     }
