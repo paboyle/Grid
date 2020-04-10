@@ -43,6 +43,11 @@ NAMESPACE_BEGIN(Grid);
 template<class Field>
 void basisOrthogonalize(std::vector<Field> &basis,Field &w,int k) 
 {
+  // If assume basis[j] are already orthonormal,
+  // can take all inner products in parallel saving 2x bandwidth
+  // Save 3x bandwidth on the second line of loop.
+  // perhaps 2.5x speed up.
+  // 2x overall in Multigrid Lanczos  
   for(int j=0; j<k; ++j){
     auto ip = innerProduct(basis[j],w);
     w = w - ip*basis[j];
@@ -282,7 +287,7 @@ public:
 			    RealD _eresid, // resid in lmdue deficit 
 			    int _MaxIter, // Max iterations
 			    RealD _betastp=0.0, // if beta(k) < betastp: converged
-			    int _MinRestart=1, int _orth_period = 1,
+			    int _MinRestart=0, int _orth_period = 1,
 			    IRLdiagonalisation _diagonalisation= IRLdiagonaliseWithEigen) :
     SimpleTester(HermOp), _PolyOp(PolyOp),      _HermOp(HermOp), _Tester(Tester),
     Nstop(_Nstop)  ,      Nk(_Nk),      Nm(_Nm),
@@ -347,7 +352,7 @@ until convergence
     GridBase *grid = src.Grid();
     assert(grid == evec[0].Grid());
     
-    GridLogIRL.TimingMode(1);
+    //    GridLogIRL.TimingMode(1);
     std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
     std::cout << GridLogIRL <<" ImplicitlyRestartedLanczos::calc() starting iteration 0 /  "<< MaxIter<< std::endl;
     std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
@@ -577,11 +582,11 @@ until convergence
 /* Saad PP. 195
 1. Choose an initial vector v1 of 2-norm unity. Set β1 ≡ 0, v0 ≡ 0
 2. For k = 1,2,...,m Do:
-3. wk:=Avk−βkv_{k−1}      
-4. αk:=(wk,vk)       // 
-5. wk:=wk−αkvk       // wk orthog vk 
-6. βk+1 := ∥wk∥2. If βk+1 = 0 then Stop
-7. vk+1 := wk/βk+1
+3. wk:=Avk - b_k v_{k-1}      
+4. ak:=(wk,vk)       // 
+5. wk:=wk-akvk       // wk orthog vk 
+6. bk+1 := ||wk||_2. If b_k+1 = 0 then Stop
+7. vk+1 := wk/b_k+1
 8. EndDo
  */
   void step(std::vector<RealD>& lmd,
@@ -589,6 +594,7 @@ until convergence
 	    std::vector<Field>& evec,
 	    Field& w,int Nm,int k)
   {
+    std::cout<<GridLogIRL << "Lanczos step " <<k<<std::endl;
     const RealD tiny = 1.0e-20;
     assert( k< Nm );
 
@@ -600,20 +606,20 @@ until convergence
 
     if(k>0) w -= lme[k-1] * evec[k-1];
 
-    ComplexD zalph = innerProduct(evec_k,w); // 4. αk:=(wk,vk)
+    ComplexD zalph = innerProduct(evec_k,w);
     RealD     alph = real(zalph);
 
-    w = w - alph * evec_k;// 5. wk:=wk−αkvk
+    w = w - alph * evec_k;
 
-    RealD beta = normalise(w); // 6. βk+1 := ∥wk∥2. If βk+1 = 0 then Stop
-    // 7. vk+1 := wk/βk+1
+    RealD beta = normalise(w); 
 
     lmd[k] = alph;
     lme[k] = beta;
 
-    if (k>0 && k % orth_period == 0) {
+    if ( (k>0) && ( (k % orth_period) == 0 )) {
+      std::cout<<GridLogIRL << "Orthogonalising " <<k<<std::endl;
       orthogonalize(w,evec,k); // orthonormalise
-      std::cout<<GridLogIRL << "Orthogonalised " <<std::endl;
+      std::cout<<GridLogIRL << "Orthogonalised " <<k<<std::endl;
     }
 
     if(k < Nm-1) evec[k+1] = w;
@@ -621,6 +627,8 @@ until convergence
     std::cout<<GridLogIRL << "alpha[" << k << "] = " << zalph << " beta[" << k << "] = "<<beta<<std::endl;
     if ( beta < tiny ) 
       std::cout<<GridLogIRL << " beta is tiny "<<beta<<std::endl;
+
+    std::cout<<GridLogIRL << "Lanczos step complete " <<k<<std::endl;
   }
 
   void diagonalize_Eigen(std::vector<RealD>& lmd, std::vector<RealD>& lme, 

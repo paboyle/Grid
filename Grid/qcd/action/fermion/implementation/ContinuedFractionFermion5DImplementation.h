@@ -143,6 +143,25 @@ void  ContinuedFractionFermion5D<Impl>::Mdir (const FermionField &psi, FermionFi
   }
 }
 template<class Impl>
+void  ContinuedFractionFermion5D<Impl>::MdirAll (const FermionField &psi, std::vector<FermionField> &chi)
+{
+  int Ls = this->Ls;
+
+  this->DhopDirAll(psi,chi); // Dslash on diagonal. g5 Dslash is hermitian
+
+  for(int p=0;p<chi.size();p++){
+    int sign=1;
+    for(int s=0;s<Ls;s++){
+      if ( s==(Ls-1) ){
+	ag5xpby_ssp(chi[p],Beta[s]*ZoloHiInv,chi[p],0.0,chi[p],s,s);
+      } else {
+	ag5xpby_ssp(chi[p],cc[s]*Beta[s]*sign*ZoloHiInv,chi[p],0.0,chi[p],s,s);
+      }
+      sign=-sign; 
+    }
+  }
+}
+template<class Impl>
 void   ContinuedFractionFermion5D<Impl>::Meooe       (const FermionField &psi, FermionField &chi)
 {
   int Ls = this->Ls;

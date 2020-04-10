@@ -33,26 +33,30 @@ NAMESPACE_BEGIN(Grid);
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // Take a matrix and form an NE solver calling a Herm solver
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-template<class Field> class NormalEquations : public OperatorFunction<Field>{
+template<class Field> class NormalEquations {
 private:
   SparseMatrixBase<Field> & _Matrix;
   OperatorFunction<Field> & _HermitianSolver;
-
+  LinearFunction<Field>   & _Guess;
 public:
 
   /////////////////////////////////////////////////////
   // Wrap the usual normal equations trick
   /////////////////////////////////////////////////////
-  NormalEquations(SparseMatrixBase<Field> &Matrix, OperatorFunction<Field> &HermitianSolver) 
-    :  _Matrix(Matrix), _HermitianSolver(HermitianSolver) {}; 
+ NormalEquations(SparseMatrixBase<Field> &Matrix, OperatorFunction<Field> &HermitianSolver,
+		 LinearFunction<Field> &Guess) 
+   :  _Matrix(Matrix), _HermitianSolver(HermitianSolver), _Guess(Guess) {}; 
 
   void operator() (const Field &in, Field &out){
  
     Field src(in.Grid());
+    Field tmp(in.Grid());
 
+    MdagMLinearOperator<SparseMatrixBase<Field>,Field> MdagMOp(_Matrix);
     _Matrix.Mdag(in,src);
-    _HermitianSolver(src,out);  // Mdag M out = Mdag in
- 
+    _Guess(src,out);
+    _HermitianSolver(MdagMOp,src,out);  // Mdag M out = Mdag in
+
   }     
 };
 
