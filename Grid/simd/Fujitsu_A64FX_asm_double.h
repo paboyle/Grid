@@ -2,7 +2,7 @@
 
     Grid physics library, www.github.com/paboyle/Grid
 
-    Source file: XXX
+    Source file: Fujitsu_A64FX_asm_double.h
 
     Copyright (C) 2020
 
@@ -40,9 +40,9 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define LOAD64(A,B)  
 #define SAVE_RESULT(A,B)               RESULT_A64FXd(A)  
 #define MULT_2SPIN_DIR_PF(A,B)         MULT_2SPIN_A64FXd(A)  
-#define MAYBEPERM(A,perm)              if (perm) { A ; }  
+#define MAYBEPERM(A,perm)              { A ; }  
 #define LOAD_CHI(base)                 LOAD_CHI_A64FXd(base)  
-#define ZERO_PSI                       ZERO_PSI_A64FXd  
+#define ZERO_PSI  
 #define ADD_RESULT(base,basep)         LOAD_CHIMU_A64FXd(base); ADD_RESULT_INTERNAL_A64FXd; RESULT_A64FXd(base)  
 #define XP_PROJMEM(base)               LOAD_CHIMU_A64FXd(base);   XP_PROJ_A64FXd  
 #define YP_PROJMEM(base)               LOAD_CHIMU_A64FXd(base);   YP_PROJ_A64FXd  
@@ -62,10 +62,10 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define YP_RECON_ACCUM                 YP_RECON_ACCUM_A64FXd  
 #define ZP_RECON_ACCUM                 ZP_RECON_ACCUM_A64FXd  
 #define TP_RECON_ACCUM                 TP_RECON_ACCUM_A64FXd  
-#define PERMUTE_DIR0                   PERM0_A64FXd  
-#define PERMUTE_DIR1                   PERM1_A64FXd  
-#define PERMUTE_DIR2                   PERM2_A64FXd  
-#define PERMUTE_DIR3                   PERM3_A64FXd  
+#define PERMUTE_DIR0                   LOAD_TABLE0; if (perm) { PERM0_A64FXd; }  
+#define PERMUTE_DIR1                   LOAD_TABLE1; if (perm) { PERM1_A64FXd; }  
+#define PERMUTE_DIR2                   LOAD_TABLE2; if (perm) { PERM2_A64FXd; }  
+#define PERMUTE_DIR3  
 // DECLARATIONS
 #define DECLARATIONS_A64FXd  \
     const uint64_t lut[4][8] = { \
@@ -155,14 +155,14 @@ asm ( \
 #define LOAD_CHI_A64FXd(base)  \
 { \
 asm ( \
-    "ld1d { z12.d }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
-    "ld1d { z13.d }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
-    "ld1d { z14.d }, p5/z, [%[fetchptr], -4, mul vl] \n\t" \
-    "ld1d { z15.d }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
-    "ld1d { z16.d }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
-    "ld1d { z17.d }, p5/z, [%[fetchptr], -1, mul vl] \n\t" \
+    "ld1d { z12.d }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
+    "ld1d { z13.d }, p5/z, [%[fetchptr], 1, mul vl] \n\t" \
+    "ld1d { z14.d }, p5/z, [%[fetchptr], 2, mul vl] \n\t" \
+    "ld1d { z15.d }, p5/z, [%[fetchptr], 3, mul vl] \n\t" \
+    "ld1d { z16.d }, p5/z, [%[fetchptr], 4, mul vl] \n\t" \
+    "ld1d { z17.d }, p5/z, [%[fetchptr], 5, mul vl] \n\t" \
     :  \
-    : [fetchptr] "r" (base + 2 * 3 * 64) \
+    : [fetchptr] "r" (base) \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
 ); \
 }
@@ -234,40 +234,45 @@ asm ( \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
 ); \
 }
-// PERM0
-#define PERM0_A64FXd  \
+// LOAD_TABLE0
+#define LOAD_TABLE0  \
 asm ( \
     "ld1d { z30.d }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
-    "tbl z12.d, { z12.d }, z30.d \n\t"  \
-    "tbl z13.d, { z13.d }, z30.d \n\t"  \
-    "tbl z14.d, { z14.d }, z30.d \n\t"  \
-    "tbl z15.d, { z15.d }, z30.d \n\t"  \
-    "tbl z16.d, { z16.d }, z30.d \n\t"  \
-    "tbl z17.d, { z17.d }, z30.d \n\t"  \
     :  \
     : [tableptr] "r" (&lut[0]),[index] "i" (0) \
     : "memory","cc","p5","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
 ); 
 
-// PERM1
-#define PERM1_A64FXd  \
+// LOAD_TABLE1
+#define LOAD_TABLE1  \
 asm ( \
     "ld1d { z30.d }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
-    "tbl z12.d, { z12.d }, z30.d \n\t"  \
-    "tbl z13.d, { z13.d }, z30.d \n\t"  \
-    "tbl z14.d, { z14.d }, z30.d \n\t"  \
-    "tbl z15.d, { z15.d }, z30.d \n\t"  \
-    "tbl z16.d, { z16.d }, z30.d \n\t"  \
-    "tbl z17.d, { z17.d }, z30.d \n\t"  \
     :  \
     : [tableptr] "r" (&lut[0]),[index] "i" (1) \
     : "memory","cc","p5","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
 ); 
 
-// PERM2
-#define PERM2_A64FXd  \
+// LOAD_TABLE2
+#define LOAD_TABLE2  \
 asm ( \
     "ld1d { z30.d }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    :  \
+    : [tableptr] "r" (&lut[0]),[index] "i" (2) \
+    : "memory","cc","p5","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
+); 
+
+// LOAD_TABLE3
+#define LOAD_TABLE3  \
+asm ( \
+    "ld1d { z30.d }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    :  \
+    : [tableptr] "r" (&lut[0]),[index] "i" (3) \
+    : "memory","cc","p5","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
+); 
+
+// PERM0
+#define PERM0_A64FXd  \
+asm ( \
     "tbl z12.d, { z12.d }, z30.d \n\t"  \
     "tbl z13.d, { z13.d }, z30.d \n\t"  \
     "tbl z14.d, { z14.d }, z30.d \n\t"  \
@@ -275,8 +280,36 @@ asm ( \
     "tbl z16.d, { z16.d }, z30.d \n\t"  \
     "tbl z17.d, { z17.d }, z30.d \n\t"  \
     :  \
-    : [tableptr] "r" (&lut[0]),[index] "i" (2) \
-    : "memory","cc","p5","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
+    :  \
+    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
+); 
+
+// PERM1
+#define PERM1_A64FXd  \
+asm ( \
+    "tbl z12.d, { z12.d }, z30.d \n\t"  \
+    "tbl z13.d, { z13.d }, z30.d \n\t"  \
+    "tbl z14.d, { z14.d }, z30.d \n\t"  \
+    "tbl z15.d, { z15.d }, z30.d \n\t"  \
+    "tbl z16.d, { z16.d }, z30.d \n\t"  \
+    "tbl z17.d, { z17.d }, z30.d \n\t"  \
+    :  \
+    :  \
+    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
+); 
+
+// PERM2
+#define PERM2_A64FXd  \
+asm ( \
+    "tbl z12.d, { z12.d }, z30.d \n\t"  \
+    "tbl z13.d, { z13.d }, z30.d \n\t"  \
+    "tbl z14.d, { z14.d }, z30.d \n\t"  \
+    "tbl z15.d, { z15.d }, z30.d \n\t"  \
+    "tbl z16.d, { z16.d }, z30.d \n\t"  \
+    "tbl z17.d, { z17.d }, z30.d \n\t"  \
+    :  \
+    :  \
+    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
 ); 
 
 // PERM3
@@ -287,23 +320,24 @@ asm ( \
 { \
     const auto & ref(U[sU](A)); uint64_t baseU = (uint64_t)&ref; \
 asm ( \
+    "ptrue p5.d \n\t" \
     "ld1d { z24.d }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
     "ld1d { z25.d }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
     "ld1d { z26.d }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
     "ld1d { z27.d }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
     "ld1d { z28.d }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
     "ld1d { z29.d }, p5/z, [%[fetchptr], 1, mul vl] \n\t" \
-    "fmov z18.d , 0 \n\t" \
-    "fmov z21.d , 0 \n\t" \
-    "fmov z19.d , 0 \n\t" \
-    "fmov z22.d , 0 \n\t" \
-    "fmov z20.d , 0 \n\t" \
-    "fmov z23.d , 0 \n\t" \
+    "movprfx z18.d, p5/m, z31.d \n\t" \
     "fcmla z18.d, p5/m, z24.d, z12.d, 0 \n\t" \
+    "movprfx z21.d, p5/m, z31.d \n\t" \
     "fcmla z21.d, p5/m, z24.d, z15.d, 0 \n\t" \
+    "movprfx z19.d, p5/m, z31.d \n\t" \
     "fcmla z19.d, p5/m, z25.d, z12.d, 0 \n\t" \
+    "movprfx z22.d, p5/m, z31.d \n\t" \
     "fcmla z22.d, p5/m, z25.d, z15.d, 0 \n\t" \
+    "movprfx z20.d, p5/m, z31.d \n\t" \
     "fcmla z20.d, p5/m, z26.d, z12.d, 0 \n\t" \
+    "movprfx z23.d, p5/m, z31.d \n\t" \
     "fcmla z23.d, p5/m, z26.d, z15.d, 0 \n\t" \
     "fcmla z18.d, p5/m, z24.d, z12.d, 90 \n\t" \
     "fcmla z21.d, p5/m, z24.d, z15.d, 90 \n\t" \
@@ -347,6 +381,7 @@ asm ( \
 #define XP_PROJ_A64FXd  \
 { \
 asm ( \
+    "ptrue p5.d \n\t" \
     "fcadd z12.d, p5/m, z12.d, z27.d, 90 \n\t" \
     "fcadd z13.d, p5/m, z13.d, z28.d, 90 \n\t" \
     "fcadd z14.d, p5/m, z14.d, z29.d, 90 \n\t" \
@@ -361,11 +396,17 @@ asm ( \
 // XP_RECON
 #define XP_RECON_A64FXd  \
 asm ( \
+    "movprfx z6.d, p5/m, z31.d \n\t" \
     "fcadd z6.d, p5/m, z6.d, z21.d, 270 \n\t" \
+    "movprfx z7.d, p5/m, z31.d \n\t" \
     "fcadd z7.d, p5/m, z7.d, z22.d, 270 \n\t" \
+    "movprfx z8.d, p5/m, z31.d \n\t" \
     "fcadd z8.d, p5/m, z8.d, z23.d, 270 \n\t" \
+    "movprfx z9.d, p5/m, z31.d \n\t" \
     "fcadd z9.d, p5/m, z9.d, z18.d, 270 \n\t" \
+    "movprfx z10.d, p5/m, z31.d \n\t" \
     "fcadd z10.d, p5/m, z10.d, z19.d, 270 \n\t" \
+    "movprfx z11.d, p5/m, z31.d \n\t" \
     "fcadd z11.d, p5/m, z11.d, z20.d, 270 \n\t" \
     "mov z0.d, p5/m, z18.d \n\t" \
     "mov z1.d, p5/m, z19.d \n\t" \
@@ -402,7 +443,7 @@ asm ( \
 #define YP_PROJ_A64FXd  \
 { \
 asm ( \
-    "ld1d { z30.d }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ptrue p5.d \n\t" \
     "fsub z12.d, p5/m, z12.d, z27.d \n\t" \
     "fsub z13.d, p5/m, z13.d, z28.d \n\t" \
     "fsub z14.d, p5/m, z14.d, z29.d \n\t" \
@@ -410,15 +451,15 @@ asm ( \
     "fadd z16.d, p5/m, z16.d, z25.d \n\t"  \
     "fadd z17.d, p5/m, z17.d, z26.d \n\t"  \
     :  \
-    : [tableptr] "r" (&lut[0]),[index] "i" (2) \
-    : "memory","cc","p5","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
+    :  \
+    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
 ); \
 }
 // ZP_PROJ
 #define ZP_PROJ_A64FXd  \
 { \
 asm ( \
-    "ld1d { z30.d }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ptrue p5.d \n\t" \
     "fcadd z12.d, p5/m, z12.d, z24.d, 90 \n\t" \
     "fcadd z13.d, p5/m, z13.d, z25.d, 90 \n\t" \
     "fcadd z14.d, p5/m, z14.d, z26.d, 90 \n\t" \
@@ -426,15 +467,15 @@ asm ( \
     "fcadd z16.d, p5/m, z16.d, z28.d, 270 \n\t" \
     "fcadd z17.d, p5/m, z17.d, z29.d, 270 \n\t" \
     :  \
-    : [tableptr] "r" (&lut[0]),[index] "i" (1) \
-    : "memory","cc","p5","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
+    :  \
+    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
 ); \
 }
 // TP_PROJ
 #define TP_PROJ_A64FXd  \
 { \
 asm ( \
-    "ld1d { z30.d }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ptrue p5.d \n\t" \
     "fadd z12.d, p5/m, z12.d, z24.d \n\t"  \
     "fadd z13.d, p5/m, z13.d, z25.d \n\t"  \
     "fadd z14.d, p5/m, z14.d, z26.d \n\t"  \
@@ -442,14 +483,15 @@ asm ( \
     "fadd z16.d, p5/m, z16.d, z28.d \n\t"  \
     "fadd z17.d, p5/m, z17.d, z29.d \n\t"  \
     :  \
-    : [tableptr] "r" (&lut[0]),[index] "i" (0) \
-    : "memory","cc","p5","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
+    :  \
+    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
 ); \
 }
 // XM_PROJ
 #define XM_PROJ_A64FXd  \
 { \
 asm ( \
+    "ptrue p5.d \n\t" \
     "fcadd z12.d, p5/m, z12.d, z27.d, 270 \n\t" \
     "fcadd z13.d, p5/m, z13.d, z28.d, 270 \n\t" \
     "fcadd z14.d, p5/m, z14.d, z29.d, 270 \n\t" \
@@ -464,11 +506,17 @@ asm ( \
 // XM_RECON
 #define XM_RECON_A64FXd  \
 asm ( \
+    "movprfx z6.d, p5/m, z31.d \n\t" \
     "fcadd z6.d, p5/m, z6.d, z21.d, 90 \n\t" \
+    "movprfx z7.d, p5/m, z31.d \n\t" \
     "fcadd z7.d, p5/m, z7.d, z22.d, 90 \n\t" \
+    "movprfx z8.d, p5/m, z31.d \n\t" \
     "fcadd z8.d, p5/m, z8.d, z23.d, 90 \n\t" \
+    "movprfx z9.d, p5/m, z31.d \n\t" \
     "fcadd z9.d, p5/m, z9.d, z18.d, 90 \n\t" \
+    "movprfx z10.d, p5/m, z31.d \n\t" \
     "fcadd z10.d, p5/m, z10.d, z19.d, 90 \n\t" \
+    "movprfx z11.d, p5/m, z31.d \n\t" \
     "fcadd z11.d, p5/m, z11.d, z20.d, 90 \n\t" \
     "mov z0.d, p5/m, z18.d \n\t" \
     "mov z1.d, p5/m, z19.d \n\t" \
@@ -485,7 +533,7 @@ asm ( \
 #define YM_PROJ_A64FXd  \
 { \
 asm ( \
-    "ld1d { z30.d }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ptrue p5.d \n\t" \
     "fadd z12.d, p5/m, z12.d, z27.d \n\t"  \
     "fadd z13.d, p5/m, z13.d, z28.d \n\t"  \
     "fadd z14.d, p5/m, z14.d, z29.d \n\t"  \
@@ -493,15 +541,15 @@ asm ( \
     "fsub z16.d, p5/m, z16.d, z25.d \n\t" \
     "fsub z17.d, p5/m, z17.d, z26.d \n\t" \
     :  \
-    : [tableptr] "r" (&lut[0]),[index] "i" (2) \
-    : "memory","cc","p5","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
+    :  \
+    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
 ); \
 }
 // ZM_PROJ
 #define ZM_PROJ_A64FXd  \
 { \
 asm ( \
-    "ld1d { z30.d }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ptrue p5.d \n\t" \
     "fcadd z12.d, p5/m, z12.d, z24.d, 270 \n\t" \
     "fcadd z13.d, p5/m, z13.d, z25.d, 270 \n\t" \
     "fcadd z14.d, p5/m, z14.d, z26.d, 270 \n\t" \
@@ -509,15 +557,15 @@ asm ( \
     "fcadd z16.d, p5/m, z16.d, z28.d, 90 \n\t" \
     "fcadd z17.d, p5/m, z17.d, z29.d, 90 \n\t" \
     :  \
-    : [tableptr] "r" (&lut[0]),[index] "i" (1) \
-    : "memory","cc","p5","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
+    :  \
+    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
 ); \
 }
 // TM_PROJ
 #define TM_PROJ_A64FXd  \
 { \
 asm ( \
-    "ld1d { z30.d }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ptrue p5.d \n\t" \
     "fsub z12.d, p5/m, z12.d, z24.d \n\t" \
     "fsub z13.d, p5/m, z13.d, z25.d \n\t" \
     "fsub z14.d, p5/m, z14.d, z26.d \n\t" \
@@ -525,8 +573,8 @@ asm ( \
     "fsub z16.d, p5/m, z16.d, z28.d \n\t" \
     "fsub z17.d, p5/m, z17.d, z29.d \n\t" \
     :  \
-    : [tableptr] "r" (&lut[0]),[index] "i" (0) \
-    : "memory","cc","p5","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
+    :  \
+    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
 ); \
 }
 // XM_RECON_ACCUM
@@ -538,12 +586,12 @@ asm ( \
     "fcadd z6.d, p5/m, z6.d, z21.d, 90 \n\t" \
     "fcadd z7.d, p5/m, z7.d, z22.d, 90 \n\t" \
     "fcadd z8.d, p5/m, z8.d, z23.d, 90 \n\t" \
-    "mov z0.d, p5/m, z18.d \n\t" \
-    "mov z1.d, p5/m, z19.d \n\t" \
-    "mov z2.d, p5/m, z20.d \n\t" \
-    "mov z3.d, p5/m, z21.d \n\t" \
-    "mov z4.d, p5/m, z22.d \n\t" \
-    "mov z5.d, p5/m, z23.d \n\t" \
+    "fadd z0.d, p5/m, z0.d, z18.d \n\t"  \
+    "fadd z1.d, p5/m, z1.d, z19.d \n\t"  \
+    "fadd z2.d, p5/m, z2.d, z20.d \n\t"  \
+    "fadd z3.d, p5/m, z3.d, z21.d \n\t"  \
+    "fadd z4.d, p5/m, z4.d, z22.d \n\t"  \
+    "fadd z5.d, p5/m, z5.d, z23.d \n\t"  \
     :  \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
