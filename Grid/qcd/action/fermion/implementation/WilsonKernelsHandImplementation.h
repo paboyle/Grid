@@ -581,7 +581,7 @@ std::cout << "Chi_12 -- " <<  Chi_12 << std::endl; \
   std::cout << "result_22 -- " <<  result_22 << std::endl; \
   std::cout << "result_30 -- " <<  result_30 << std::endl; \
   std::cout << "result_31 -- " <<  result_31 << std::endl; \
-  std::cout << "result_32 -- " <<  result_32 << std::endl; 
+  std::cout << "result_32 -- " <<  result_32 << std::endl;
 
 #define HAND_STENCIL_LEG(PROJ,PERM,DIR,RECON)	\
   SE=st.GetEntry(ptype,DIR,ss);			\
@@ -644,6 +644,19 @@ std::cout << "Chi_12 -- " <<  Chi_12 << std::endl; \
     vstream(ref()(3)(0),result_30);		\
     vstream(ref()(3)(1),result_31);		\
     vstream(ref()(3)(2),result_32);		\
+    std::cout << std::endl << "DEBUG -- RESULT" << std::endl; \
+    std::cout << "result_00 -- " <<  result_00 << std::endl; \
+    std::cout << "result_01 -- " <<  result_01 << std::endl; \
+    std::cout << "result_02 -- " <<  result_02 << std::endl; \
+    std::cout << "result_10 -- " <<  result_10 << std::endl; \
+    std::cout << "result_11 -- " <<  result_11 << std::endl; \
+    std::cout << "result_12 -- " <<  result_12 << std::endl; \
+    std::cout << "result_20 -- " <<  result_20 << std::endl; \
+    std::cout << "result_21 -- " <<  result_21 << std::endl; \
+    std::cout << "result_22 -- " <<  result_22 << std::endl; \
+    std::cout << "result_30 -- " <<  result_30 << std::endl; \
+    std::cout << "result_31 -- " <<  result_31 << std::endl; \
+    std::cout << "result_32 -- " <<  result_32 << std::endl;
   }
 
 #define HAND_RESULT_EXT(ss)			\
@@ -661,31 +674,19 @@ std::cout << "Chi_12 -- " <<  Chi_12 << std::endl; \
     ref()(3)(0)+=result_30;		\
     ref()(3)(1)+=result_31;		\
     ref()(3)(2)+=result_32;		\
-    std::cout << std::endl << "DEBUG -- RESULT" << std::endl; \
-    svst1(pg1, &debugreg.v, result_00); \
-    std::cout << "result_00 -- " <<  debugreg << std::endl; \
-    svst1(pg1, &debugreg.v, result_01); \
-    std::cout << "result_01 -- " <<  debugreg << std::endl; \
-    svst1(pg1, &debugreg.v, result_02); \
-    std::cout << "result_02 -- " <<  debugreg << std::endl; \
-    svst1(pg1, &debugreg.v, result_10); \
-    std::cout << "result_10 -- " <<  debugreg << std::endl; \
-    svst1(pg1, &debugreg.v, result_11); \
-    std::cout << "result_11 -- " <<  debugreg << std::endl; \
-    svst1(pg1, &debugreg.v, result_12); \
-    std::cout << "result_12 -- " <<  debugreg << std::endl; \
-    svst1(pg1, &debugreg.v, result_20); \
-    std::cout << "result_20 -- " <<  debugreg << std::endl; \
-    svst1(pg1, &debugreg.v, result_21); \
-    std::cout << "result_21 -- " <<  debugreg << std::endl; \
-    svst1(pg1, &debugreg.v, result_22); \
-    std::cout << "result_22 -- " <<  debugreg << std::endl; \
-    svst1(pg1, &debugreg.v, result_30); \
-    std::cout << "result_30 -- " <<  debugreg << std::endl; \
-    svst1(pg1, &debugreg.v, result_31); \
-    std::cout << "result_31 -- " <<  debugreg << std::endl; \
-    svst1(pg1, &debugreg.v, result_32); \
-    std::cout << "result_32 -- " <<  debugreg << std::endl; \
+    std::cout << std::endl << "DEBUG -- RESULT EXT" << std::endl; \
+    std::cout << "result_00 -- " <<  result_00 << std::endl; \
+    std::cout << "result_01 -- " <<  result_01 << std::endl; \
+    std::cout << "result_02 -- " <<  result_02 << std::endl; \
+    std::cout << "result_10 -- " <<  result_10 << std::endl; \
+    std::cout << "result_11 -- " <<  result_11 << std::endl; \
+    std::cout << "result_12 -- " <<  result_12 << std::endl; \
+    std::cout << "result_20 -- " <<  result_20 << std::endl; \
+    std::cout << "result_21 -- " <<  result_21 << std::endl; \
+    std::cout << "result_22 -- " <<  result_22 << std::endl; \
+    std::cout << "result_30 -- " <<  result_30 << std::endl; \
+    std::cout << "result_31 -- " <<  result_31 << std::endl; \
+    std::cout << "result_32 -- " <<  result_32 << std::endl;
   }
 
 
