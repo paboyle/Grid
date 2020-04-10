@@ -924,7 +924,9 @@ std::cout << "Chi_12 -- " <<  debugreg << std::endl; \
   Simd U_01;					\
   Simd U_11;					\
   Simd U_21;\
-  Simd debugreg;
+  Simd debugreg;\
+  svbool_t pg1;        \
+  pg1 = svptrue_b64();        \
 
 #define ZERO_RESULT				\
   result_00=Zero();				\
