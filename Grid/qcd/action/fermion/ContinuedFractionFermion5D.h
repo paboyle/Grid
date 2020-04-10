@@ -62,14 +62,15 @@ public:
 
   // Efficient support for multigrid coarsening
   virtual void  Mdir (const FermionField &in, FermionField &out,int dir,int disp);
+  virtual void  MdirAll(const FermionField &in, std::vector<FermionField> &out);
 
-      ///////////////////////////////////////////////////////////////
-      // Physical surface field utilities
-      ///////////////////////////////////////////////////////////////
-      //      virtual void Dminus(const FermionField &psi, FermionField &chi);     // Inherit trivial case
-      //      virtual void DminusDag(const FermionField &psi, FermionField &chi);  // Inherit trivial case
-      virtual void ExportPhysicalFermionSolution(const FermionField &solution5d,FermionField &exported4d);
-      virtual void ImportPhysicalFermionSource  (const FermionField &input4d,FermionField &imported5d);
+  ///////////////////////////////////////////////////////////////
+  // Physical surface field utilities
+  ///////////////////////////////////////////////////////////////
+  //      virtual void Dminus(const FermionField &psi, FermionField &chi);     // Inherit trivial case
+  //      virtual void DminusDag(const FermionField &psi, FermionField &chi);  // Inherit trivial case
+  virtual void ExportPhysicalFermionSolution(const FermionField &solution5d,FermionField &exported4d);
+  virtual void ImportPhysicalFermionSource  (const FermionField &input4d,FermionField &imported5d);
 
   // Constructors
   ContinuedFractionFermion5D(GaugeField &_Umu,

@@ -71,7 +71,6 @@ public:
     // Initial residual computation & set up
     RealD guess = norm2(psi);
     assert(std::isnan(guess) == 0);
-
     
     Linop.HermOpAndNorm(psi, mmp, d, b);
     
@@ -154,18 +153,18 @@ public:
         RealD resnorm = std::sqrt(norm2(p));
         RealD true_residual = resnorm / srcnorm;
 
-        std::cout << GridLogMessage << "ConjugateGradient Converged on iteration " << k << std::endl;
-        std::cout << GridLogMessage << "\tComputed residual " << std::sqrt(cp / ssq)<<std::endl;
-	std::cout << GridLogMessage << "\tTrue residual " << true_residual<<std::endl;
-	std::cout << GridLogMessage << "\tTarget " << Tolerance << std::endl;
+        std::cout << GridLogMessage << "ConjugateGradient Converged on iteration " << k 
+		  << "\tComputed residual " << std::sqrt(cp / ssq)
+		  << "\tTrue residual " << true_residual
+		  << "\tTarget " << Tolerance << std::endl;
 
-        std::cout << GridLogMessage << "Time breakdown "<<std::endl;
-	std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tInner      " << InnerTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
+        std::cout << GridLogIterative << "Time breakdown "<<std::endl;
+	std::cout << GridLogIterative << "\tElapsed    " << SolverTimer.Elapsed() <<std::endl;
+	std::cout << GridLogIterative << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
+	std::cout << GridLogIterative << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
+	std::cout << GridLogIterative << "\tInner      " << InnerTimer.Elapsed() <<std::endl;
+	std::cout << GridLogIterative << "\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
+	std::cout << GridLogIterative << "\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
 
         if (ErrorOnNoConverge) assert(true_residual / Tolerance < 10000.0);
 

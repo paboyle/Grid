@@ -94,6 +94,24 @@ public:
     Coeffs.assign(0.,order);
     Coeffs[order-1] = 1.;
   };
+  
+  // PB - more efficient low pass drops high modes above the low as 1/x uses all Chebyshev's.
+  // Similar kick effect below the threshold as Lanczos filter approach
+  void InitLowPass(RealD _lo,RealD _hi,int _order)
+  {
+    lo=_lo;
+    hi=_hi;
+    order=_order;
+      
+    if(order < 2) exit(-1);
+    Coeffs.resize(order);
+    for(int j=0;j<order;j++){
+      RealD k=(order-1.0);
+      RealD s=std::cos( j*M_PI*(k+0.5)/order );
+      Coeffs[j] = s * 2.0/order;
+    }
+    
+  };
 
   void Init(RealD _lo,RealD _hi,int _order, RealD (* func)(RealD))
   {
@@ -234,20 +252,20 @@ public:
     RealD xscale = 2.0/(hi-lo);
     RealD mscale = -(hi+lo)/(hi-lo);
     Linop.HermOp(T0,y);
-    T1=y*xscale+in*mscale;
+    axpby(T1,xscale,mscale,y,in);
 
     // sum = .5 c[0] T0 + c[1] T1
-    out = (0.5*Coeffs[0])*T0 + Coeffs[1]*T1;
+    //    out = ()*T0 + Coeffs[1]*T1;
+    axpby(out,0.5*Coeffs[0],Coeffs[1],T0,T1);
     for(int n=2;n<order;n++){
 	
       Linop.HermOp(*Tn,y);
-
-      y=xscale*y+mscale*(*Tn);
-
-      *Tnp=2.0*y-(*Tnm);
-
-      out=out+Coeffs[n]* (*Tnp);
-
+      //     y=xscale*y+mscale*(*Tn);
+      //      *Tnp=2.0*y-(*Tnm);
+      //      out=out+Coeffs[n]* (*Tnp);
+      axpby(y,xscale,mscale,y,(*Tn));
+      axpby(*Tnp,2.0,-1.0,y,(*Tnm));
+      axpy(out,Coeffs[n],*Tnp,out);
       // Cycle pointers to avoid copies
       Field *swizzle = Tnm;
       Tnm    =Tn;
