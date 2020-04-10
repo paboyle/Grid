@@ -198,6 +198,7 @@ public:
         }
     }
     
+    void OpDirAll  (const Field &in, std::vector<Field> &out){ HADRONS_ERROR(Definition, "OpDirAll() undefined"); };
     void OpDiag (const Field &in, Field &out) { HADRONS_ERROR(Definition, "OpDiag() undefined"); };
     void OpDir  (const Field &in, Field &out,int dir,int disp) { HADRONS_ERROR(Definition, "OpDir() undefined"); };
     void Op     (const Field &in, Field &out) { HADRONS_ERROR(Definition, "Op() undefined"); };
