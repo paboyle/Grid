@@ -118,7 +118,7 @@ public:
 
     }
     GCRLogLevel<<"Variable Preconditioned GCR did not converge"<<std::endl;
-    assert(0);
+    //    assert(0);
   }
 
   RealD GCRnStep(const Field &src, Field &psi,RealD rsq){

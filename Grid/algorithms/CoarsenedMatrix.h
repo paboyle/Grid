@@ -46,16 +46,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 template<class vobj,class CComplex>
-inline void blockMaskedInnerProduct(Lattice<CComplex> &CoarseInner1,
-				    Lattice<CComplex> &CoarseInner2,
-				    const Lattice<decltype(innerProduct(vobj(),vobj()))> &FineMask1,
-				    const Lattice<decltype(innerProduct(vobj(),vobj()))> &FineMask2,
+inline void blockMaskedInnerProduct(Lattice<CComplex> &CoarseInner,
+				    const Lattice<decltype(innerProduct(vobj(),vobj()))> &FineMask,
 				    const Lattice<vobj> &fineX,
 				    const Lattice<vobj> &fineY)
 {
   typedef decltype(innerProduct(vobj(),vobj())) dotp;
 
-  GridBase *coarse(CoarseInner1.Grid());
+  GridBase *coarse(CoarseInner.Grid());
   GridBase *fine  (fineX.Grid());
 
   Lattice<dotp> fine_inner(fine); fine_inner.Checkerboard() = fineX.Checkerboard();
@@ -64,12 +62,8 @@ inline void blockMaskedInnerProduct(Lattice<CComplex> &CoarseInner1,
   // Multiply could be fused with innerProduct
   // Single block sum kernel could do both masks.
   fine_inner = localInnerProduct(fineX,fineY);
-
-  mult(fine_inner_msk, fine_inner,FineMask1);
-  blockSum(CoarseInner1,fine_inner_msk);
-
-  mult(fine_inner_msk, fine_inner,FineMask2);
-  blockSum(CoarseInner2,fine_inner_msk);
+  mult(fine_inner_msk, fine_inner,FineMask);
+  blockSum(CoarseInner,fine_inner_msk);
 }
 
 
@@ -794,7 +788,7 @@ public:
 
     Lattice<iScalar<vInteger> > coor (FineGrid);
     Lattice<iScalar<vInteger> > bcoor(FineGrid);
-    Lattice<iScalar<vInteger> > bcb  (FineGrid);
+    Lattice<iScalar<vInteger> > bcb  (FineGrid); bcb = Zero();
 
     CoarseVector iProj(Grid()); 
     CoarseVector oProj(Grid()); 
@@ -868,7 +862,7 @@ public:
 	
 	  for(int j=0;j<nbasis;j++){
 	    
-	    blockMaskedInnerProduct(iZProj,oZProj,imask,omask,Subspace.subspace[j],Mphi);
+	    blockMaskedInnerProduct(oZProj,omask,Subspace.subspace[j],Mphi);
 	    
 	    auto iZProj_v = iZProj.View() ;
 	    auto oZProj_v = oZProj.View() ;
@@ -876,6 +870,8 @@ public:
 	    auto A_self  = A[self_stencil].View();
 
 	    accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{ coalescedWrite(A_p[ss](j,i),oZProj_v(ss)); });
+	    //      if( disp!= 0 ) { accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{ coalescedWrite(A_p[ss](j,i),oZProj_v(ss)); });}
+	    //	    accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{ coalescedWrite(A_self[ss](j,i),A_self(ss)(j,i)+iZProj_v(ss)); });
 
 	  }
 	}
@@ -886,9 +882,8 @@ public:
       ///////////////////////////////////////////
       {
 	mult(tmp,phi,evenmask);  linop.Op(tmp,Mphie);
-	mult(tmp,phi,oddmask );   linop.Op(tmp,Mphio);
+	mult(tmp,phi,oddmask );  linop.Op(tmp,Mphio);
 
-	//	tmp = Mphie*evenmask + Mphio*oddmask;
 	{
 	  auto tmp_      = tmp.View();
 	  auto evenmask_ = evenmask.View();
@@ -904,15 +899,17 @@ public:
 
 	auto SelfProj_ = SelfProj.View();
 	auto A_self  = A[self_stencil].View();
+
 	accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{
 	  for(int j=0;j<nbasis;j++){
 	    coalescedWrite(A_self[ss](j,i), SelfProj_(ss)(j));
 	  }
 	});
+
       }
     }
     if(hermitian) {
-      std::cout << GridLogMessage << " ForceHermitian "<<std::endl;
+      std::cout << GridLogMessage << " ForceHermitian, new code "<<std::endl;
       ForceHermitian();
     }
       // AssertHermitian();

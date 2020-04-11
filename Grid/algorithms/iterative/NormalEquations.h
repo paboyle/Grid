@@ -60,5 +60,53 @@ public:
   }     
 };
 
+template<class Field> class HPDSolver {
+private:
+  LinearOperatorBase<Field> & _Matrix;
+  OperatorFunction<Field> & _HermitianSolver;
+  LinearFunction<Field>   & _Guess;
+public:
+
+  /////////////////////////////////////////////////////
+  // Wrap the usual normal equations trick
+  /////////////////////////////////////////////////////
+ HPDSolver(LinearOperatorBase<Field> &Matrix,
+	   OperatorFunction<Field> &HermitianSolver,
+	   LinearFunction<Field> &Guess) 
+   :  _Matrix(Matrix), _HermitianSolver(HermitianSolver), _Guess(Guess) {}; 
+
+  void operator() (const Field &in, Field &out){
+ 
+    _Guess(in,out);
+    _HermitianSolver(_Matrix,in,out);  // Mdag M out = Mdag in
+
+  }     
+};
+
+
+template<class Field> class MdagMSolver {
+private:
+  SparseMatrixBase<Field> & _Matrix;
+  OperatorFunction<Field> & _HermitianSolver;
+  LinearFunction<Field>   & _Guess;
+public:
+
+  /////////////////////////////////////////////////////
+  // Wrap the usual normal equations trick
+  /////////////////////////////////////////////////////
+ MdagMSolver(SparseMatrixBase<Field> &Matrix, OperatorFunction<Field> &HermitianSolver,
+	     LinearFunction<Field> &Guess) 
+   :  _Matrix(Matrix), _HermitianSolver(HermitianSolver), _Guess(Guess) {}; 
+
+  void operator() (const Field &in, Field &out){
+ 
+    MdagMLinearOperator<SparseMatrixBase<Field>,Field> MdagMOp(_Matrix);
+    _Guess(in,out);
+
+    _HermitianSolver(MdagMOp,in,out);  // Mdag M out = Mdag in
+
+  }     
+};
+
 NAMESPACE_END(Grid);
 #endif

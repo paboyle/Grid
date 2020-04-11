@@ -336,7 +336,7 @@ public:
     };
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     // Left  handed Moo^-1 ; (Moo - Moe Mee^-1 Meo) psi = eta  -->  ( 1 - Moo^-1 Moe Mee^-1 Meo ) psi = Moo^-1 eta
-    // Right handed Moo^-1 ; (Moo - Moe Mee^-1 Meo) Moo^-1 Moo psi = eta  -->  ( 1 - Moe Mee^-1 Meo ) Moo^-1 phi=eta ; psi = Moo^-1 phi
+    // Right handed Moo^-1 ; (Moo - Moe Mee^-1 Meo) Moo^-1 Moo psi = eta  -->  ( 1 - Moe Mee^-1 Meo Moo^-1) phi=eta ; psi = Moo^-1 phi
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     template<class Matrix,class Field> using SchurDiagOneRH = SchurDiagTwoOperator<Matrix,Field> ;
     template<class Matrix,class Field> using SchurDiagOneLH = SchurDiagOneOperator<Matrix,Field> ;

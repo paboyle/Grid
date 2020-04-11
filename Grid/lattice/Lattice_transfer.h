@@ -439,6 +439,67 @@ void localConvert(const Lattice<vobj> &in,Lattice<vvobj> &out)
   });
 }
 
+template<class vobj>
+void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate FromLowerLeft, Coordinate ToLowerLeft, Coordinate RegionSize)
+{
+  typedef typename vobj::scalar_object sobj;
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+
+  static const int words=sizeof(vobj)/sizeof(vector_type);
+
+  GridBase *Fg = From.Grid();
+  GridBase *Tg = To.Grid();
+  assert(!Fg->_isCheckerBoarded);
+  assert(!Tg->_isCheckerBoarded);
+  int Nsimd = Fg->Nsimd();
+  int nF = Fg->_ndimension;
+  int nT = Tg->_ndimension;
+  int nd = nF;
+  assert(nF == nT);
+
+  for(int d=0;d<nd;d++){
+    assert(Fg->_processors[d]  == Tg->_processors[d]);
+  }
+
+  // the above should guarantee that the operations are local
+  Coordinate ldf = Fg->_ldimensions;
+  Coordinate rdf = Fg->_rdimensions;
+  Coordinate isf = Fg->_istride;
+  Coordinate osf = Fg->_ostride;
+  Coordinate rdt = Tg->_rdimensions;
+  Coordinate ist = Tg->_istride;
+  Coordinate ost = Tg->_ostride;
+  auto t_v = To.View();
+  auto f_v = From.View();
+  accelerator_for(idx,Fg->lSites(),1,{
+    sobj s;
+    Coordinate Fcoor(nd);
+    Coordinate Tcoor(nd);
+    Lexicographic::CoorFromIndex(Fcoor,idx,ldf);
+    int in_region=1;
+    for(int d=0;d<nd;d++){
+      if ( (Fcoor[d] < FromLowerLeft[d]) || (Fcoor[d]>=FromLowerLeft[d]+RegionSize[d]) ){ 
+	in_region=0;
+      }
+      Tcoor[d] = ToLowerLeft[d]+ Fcoor[d]-FromLowerLeft[d];
+    }
+    if (in_region) {
+      Integer idx_f = 0; for(int d=0;d<nd;d++) idx_f+=isf[d]*(Fcoor[d]/rdf[d]);
+      Integer idx_t = 0; for(int d=0;d<nd;d++) idx_t+=ist[d]*(Tcoor[d]/rdt[d]);
+      Integer odx_f = 0; for(int d=0;d<nd;d++) odx_f+=osf[d]*(Fcoor[d]%rdf[d]);
+      Integer odx_t = 0; for(int d=0;d<nd;d++) odx_t+=ost[d]*(Tcoor[d]%rdt[d]);
+      scalar_type * fp = (scalar_type *)&f_v[odx_f];
+      scalar_type * tp = (scalar_type *)&t_v[odx_t];
+      for(int w=0;w<words;w++){
+	tp[idx_t+w*Nsimd] = fp[idx_f+w*Nsimd];  // FIXME IF RRII layout, type pun no worke
+      }
+      //      peekLocalSite(s,From,Fcoor);
+      //      pokeLocalSite(s,To  ,Tcoor);
+    }
+  });
+}
+
 
 template<class vobj>
 void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int orthog)
