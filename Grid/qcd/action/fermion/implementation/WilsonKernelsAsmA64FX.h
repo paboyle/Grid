@@ -30,7 +30,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 /*  END LEGAL */
 #pragma once
 
-#if defined(A64FX)
+#if defined(A64FXASM)
 
 #pragma message("invoking A64FX Dslash")
 

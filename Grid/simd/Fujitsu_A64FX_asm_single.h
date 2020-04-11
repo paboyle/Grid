@@ -454,7 +454,6 @@ asm ( \
 #define YP_PROJ_A64FXf  \
 { \
 asm ( \
-    "ptrue p5.s \n\t" \
     "fsub z12.s, p5/m, z12.s, z27.s \n\t" \
     "fsub z13.s, p5/m, z13.s, z28.s \n\t" \
     "fsub z14.s, p5/m, z14.s, z29.s \n\t" \
@@ -470,7 +469,6 @@ asm ( \
 #define ZP_PROJ_A64FXf  \
 { \
 asm ( \
-    "ptrue p5.s \n\t" \
     "fcadd z12.s, p5/m, z12.s, z24.s, 90 \n\t" \
     "fcadd z13.s, p5/m, z13.s, z25.s, 90 \n\t" \
     "fcadd z14.s, p5/m, z14.s, z26.s, 90 \n\t" \
@@ -486,7 +484,6 @@ asm ( \
 #define TP_PROJ_A64FXf  \
 { \
 asm ( \
-    "ptrue p5.s \n\t" \
     "fadd z12.s, p5/m, z12.s, z24.s \n\t"  \
     "fadd z13.s, p5/m, z13.s, z25.s \n\t"  \
     "fadd z14.s, p5/m, z14.s, z26.s \n\t"  \
@@ -502,7 +499,6 @@ asm ( \
 #define XM_PROJ_A64FXf  \
 { \
 asm ( \
-    "ptrue p5.s \n\t" \
     "fcadd z12.s, p5/m, z12.s, z27.s, 270 \n\t" \
     "fcadd z13.s, p5/m, z13.s, z28.s, 270 \n\t" \
     "fcadd z14.s, p5/m, z14.s, z29.s, 270 \n\t" \
@@ -544,7 +540,6 @@ asm ( \
 #define YM_PROJ_A64FXf  \
 { \
 asm ( \
-    "ptrue p5.s \n\t" \
     "fadd z12.s, p5/m, z12.s, z27.s \n\t"  \
     "fadd z13.s, p5/m, z13.s, z28.s \n\t"  \
     "fadd z14.s, p5/m, z14.s, z29.s \n\t"  \
@@ -560,7 +555,6 @@ asm ( \
 #define ZM_PROJ_A64FXf  \
 { \
 asm ( \
-    "ptrue p5.s \n\t" \
     "fcadd z12.s, p5/m, z12.s, z24.s, 270 \n\t" \
     "fcadd z13.s, p5/m, z13.s, z25.s, 270 \n\t" \
     "fcadd z14.s, p5/m, z14.s, z26.s, 270 \n\t" \
@@ -691,7 +685,6 @@ asm ( \
 // TP_RECON_ACCUM
 #define TP_RECON_ACCUM_A64FXf  \
 asm ( \
-    "ptrue p5.s \n\t" \
     "fadd z0.s, p5/m, z0.s, z18.s \n\t"  \
     "fadd z6.s, p5/m, z6.s, z18.s \n\t"  \
     "fadd z1.s, p5/m, z1.s, z19.s \n\t"  \

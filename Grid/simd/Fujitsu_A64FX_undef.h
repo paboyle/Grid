@@ -69,3 +69,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #undef PERMUTE_DIR1
 #undef PERMUTE_DIR2
 #undef PERMUTE_DIR3
+#undef LOAD_TABLE0
+#undef LOAD_TABLE1
+#undef LOAD_TABLE2
+#undef LOAD_TABLE3
