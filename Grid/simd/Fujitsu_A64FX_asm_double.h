@@ -26,20 +26,20 @@ Author: Nils Meyer <nils.meyer@ur.de>
 *************************************************************************************/
 /*  END LEGAL */
 #define LOAD_CHIMU_A64FXd(x)           LOAD_CHIMU_INTERLEAVED_A64FXd(x)  
-#define PREFETCH_CHIMU_L1(A)  
-#define PREFETCH_GAUGE_L1(A)  
-#define PREFETCH_CHIMU_L2(A)  
-#define PREFETCH_GAUGE_L2(A)  
+#define PREFETCH_CHIMU_L1(A)           PREFETCH_CHIMU_L1_INTERNAL_A64FXd(A)  
+#define PREFETCH_GAUGE_L1(A)           PREFETCH_GAUGE_L1_INTERNAL_A64FXd(A)  
+#define PREFETCH_CHIMU_L2(A)           PREFETCH_CHIMU_L2_INTERNAL_A64FXd(A)  
+#define PREFETCH_GAUGE_L2(A)           PREFETCH_GAUGE_L2_INTERNAL_A64FXd(A)  
 #define PF_GAUGE(A)  
-#define PREFETCH1_CHIMU(A)  
-#define PREFETCH_CHIMU(A)  
+#define PREFETCH1_CHIMU(A)             PREFETCH_CHIMU_L1(A)  
+#define PREFETCH_CHIMU(A)              PREFETCH_CHIMU_L1(A)  
 #define LOCK_GAUGE(A)  
 #define UNLOCK_GAUGE(A)  
 #define MASK_REGS                      DECLARATIONS_A64FXd  
 #define COMPLEX_SIGNS(A)  
 #define LOAD64(A,B)  
 #define SAVE_RESULT(A,B)               RESULT_A64FXd(A)  
-#define MULT_2SPIN_DIR_PF(A,B)         MULT_2SPIN_A64FXd(A)  
+#define MULT_2SPIN_DIR_PF(A,B)         PREFETCH_GAUGE_L1(A); PREFETCH_CHIMU_L2(B); MULT_2SPIN_A64FXd(A); if ((A == 0) || (A == 4)) { PREFETCH_GAUGE_L2(A); }  
 #define MAYBEPERM(A,perm)              { A ; }  
 #define LOAD_CHI(base)                 LOAD_CHI_A64FXd(base)  
 #define ZERO_PSI  
@@ -105,9 +105,9 @@ asm ( \
 #define PREFETCH_CHIMU_L2_INTERNAL_A64FXd(base)  \
 { \
 asm ( \
-    "prfd PLDL2STRM, p5, [%[fetchptr], 0, MUL VL] \n\t" \
-    "prfd PLDL2STRM, p5, [%[fetchptr], 4, MUL VL] \n\t" \
-    "prfd PLDL2STRM, p5, [%[fetchptr], 8, MUL VL] \n\t" \
+    "prfd PLDL2STRM, p5, [%[fetchptr], 0, mul vl] \n\t" \
+    "prfd PLDL2STRM, p5, [%[fetchptr], 4, mul vl] \n\t" \
+    "prfd PLDL2STRM, p5, [%[fetchptr], 8, mul vl] \n\t" \
     :  \
     : [fetchptr] "r" (base) \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
@@ -117,9 +117,9 @@ asm ( \
 #define PREFETCH_CHIMU_L1_INTERNAL_A64FXd(base)  \
 { \
 asm ( \
-    "prfd PLDL1STRM, p5, [%[fetchptr], 0, MUL VL] \n\t" \
-    "prfd PLDL1STRM, p5, [%[fetchptr], 4, MUL VL] \n\t" \
-    "prfd PLDL1STRM, p5, [%[fetchptr], 8, MUL VL] \n\t" \
+    "prfd PLDL1STRM, p5, [%[fetchptr], 0, mul vl] \n\t" \
+    "prfd PLDL1STRM, p5, [%[fetchptr], 4, mul vl] \n\t" \
+    "prfd PLDL1STRM, p5, [%[fetchptr], 8, mul vl] \n\t" \
     :  \
     : [fetchptr] "r" (base) \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
@@ -128,24 +128,30 @@ asm ( \
 // PREFETCH_GAUGE_L2 (prefetch to L2)
 #define PREFETCH_GAUGE_L2_INTERNAL_A64FXd(A)  \
 { \
-    const auto & ref(U[sUn][A]); uint64_t baseU = (uint64_t)&ref[0][0]; \
+    const auto & ref(U[sUn](A)); uint64_t baseU = (uint64_t)&ref + 3 * 3 * 64; \
 asm ( \
-    "prfd PLDL2STRM, p5, [%[fetchptr], 0, MUL VL] \n\t" \
-    "prfd PLDL2STRM, p5, [%[fetchptr], 4, MUL VL] \n\t" \
-    "prfd PLDL2STRM, p5, [%[fetchptr], 8, MUL VL] \n\t" \
+    "prfd PLDL2STRM, p5, [%[fetchptr], -4, mul vl] \n\t" \
+    "prfd PLDL2STRM, p5, [%[fetchptr], 0, mul vl] \n\t" \
+    "prfd PLDL2STRM, p5, [%[fetchptr], 4, mul vl] \n\t" \
+    "prfd PLDL2STRM, p5, [%[fetchptr], 8, mul vl] \n\t" \
+    "prfd PLDL2STRM, p5, [%[fetchptr], 12, mul vl] \n\t" \
+    "prfd PLDL2STRM, p5, [%[fetchptr], 16, mul vl] \n\t" \
+    "prfd PLDL2STRM, p5, [%[fetchptr], 20, mul vl] \n\t" \
+    "prfd PLDL2STRM, p5, [%[fetchptr], 24, mul vl] \n\t" \
+    "prfd PLDL2STRM, p5, [%[fetchptr], 28, mul vl] \n\t" \
     :  \
     : [fetchptr] "r" (baseU) \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
 ); \
 }
 // PREFETCH_GAUGE_L1 (prefetch to L1)
-#define PREFETCH_GAUGE_L1_INTERNAL(A)_A64FXd  \
+#define PREFETCH_GAUGE_L1_INTERNAL_A64FXd(A)  \
 { \
-    const auto & ref(U[sU][A]); uint64_t baseU = (uint64_t)&ref[0][0]; \
+    const auto & ref(U[sU](A)); uint64_t baseU = (uint64_t)&ref; \
 asm ( \
-    "prfd PLDL1STRM, p5, [%[fetchptr], 0, MUL VL] \n\t" \
-    "prfd PLDL1STRM, p5, [%[fetchptr], 4, MUL VL] \n\t" \
-    "prfd PLDL1STRM, p5, [%[fetchptr], 8, MUL VL] \n\t" \
+    "prfd PLDL1STRM, p5, [%[fetchptr], 0, mul vl] \n\t" \
+    "prfd PLDL1STRM, p5, [%[fetchptr], 4, mul vl] \n\t" \
+    "prfd PLDL1STRM, p5, [%[fetchptr], 8, mul vl] \n\t" \
     :  \
     : [fetchptr] "r" (baseU) \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \

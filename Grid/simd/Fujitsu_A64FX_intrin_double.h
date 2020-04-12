@@ -26,20 +26,20 @@ Author: Nils Meyer <nils.meyer@ur.de>
 *************************************************************************************/
 /*  END LEGAL */
 #define LOAD_CHIMU_A64FXd(x)           LOAD_CHIMU_INTERLEAVED_A64FXd(x)  
-#define PREFETCH_CHIMU_L1(A)  
-#define PREFETCH_GAUGE_L1(A)  
-#define PREFETCH_CHIMU_L2(A)  
-#define PREFETCH_GAUGE_L2(A)  
+#define PREFETCH_CHIMU_L1(A)           PREFETCH_CHIMU_L1_INTERNAL_A64FXd(A)  
+#define PREFETCH_GAUGE_L1(A)           PREFETCH_GAUGE_L1_INTERNAL_A64FXd(A)  
+#define PREFETCH_CHIMU_L2(A)           PREFETCH_CHIMU_L2_INTERNAL_A64FXd(A)  
+#define PREFETCH_GAUGE_L2(A)           PREFETCH_GAUGE_L2_INTERNAL_A64FXd(A)  
 #define PF_GAUGE(A)  
-#define PREFETCH1_CHIMU(A)  
-#define PREFETCH_CHIMU(A)  
+#define PREFETCH1_CHIMU(A)             PREFETCH_CHIMU_L1(A)  
+#define PREFETCH_CHIMU(A)              PREFETCH_CHIMU_L1(A)  
 #define LOCK_GAUGE(A)  
 #define UNLOCK_GAUGE(A)  
 #define MASK_REGS                      DECLARATIONS_A64FXd  
 #define COMPLEX_SIGNS(A)  
 #define LOAD64(A,B)  
 #define SAVE_RESULT(A,B)               RESULT_A64FXd(A)  
-#define MULT_2SPIN_DIR_PF(A,B)         MULT_2SPIN_A64FXd(A)  
+#define MULT_2SPIN_DIR_PF(A,B)         PREFETCH_GAUGE_L1(A); PREFETCH_CHIMU_L2(B); MULT_2SPIN_A64FXd(A); if ((A == 0) || (A == 4)) { PREFETCH_GAUGE_L2(A); }  
 #define MAYBEPERM(A,perm)              { A ; }  
 #define LOAD_CHI(base)                 LOAD_CHI_A64FXd(base)  
 #define ZERO_PSI  
@@ -154,15 +154,21 @@ Author: Nils Meyer <nils.meyer@ur.de>
 // PREFETCH_GAUGE_L2 (prefetch to L2)
 #define PREFETCH_GAUGE_L2_INTERNAL_A64FXd(A)  \
 { \
-    const auto & ref(U[sUn][A]); uint64_t baseU = (uint64_t)&ref[0][0]; \
+    const auto & ref(U[sUn](A)); uint64_t baseU = (uint64_t)&ref + 3 * 3 * 64; \
+    svprfd(pg1, (int64_t*)(baseU + -256), SV_PLDL2STRM); \
     svprfd(pg1, (int64_t*)(baseU + 0), SV_PLDL2STRM); \
     svprfd(pg1, (int64_t*)(baseU + 256), SV_PLDL2STRM); \
     svprfd(pg1, (int64_t*)(baseU + 512), SV_PLDL2STRM); \
+    svprfd(pg1, (int64_t*)(baseU + 768), SV_PLDL2STRM); \
+    svprfd(pg1, (int64_t*)(baseU + 1024), SV_PLDL2STRM); \
+    svprfd(pg1, (int64_t*)(baseU + 1280), SV_PLDL2STRM); \
+    svprfd(pg1, (int64_t*)(baseU + 1536), SV_PLDL2STRM); \
+    svprfd(pg1, (int64_t*)(baseU + 1792), SV_PLDL2STRM); \
 }
 // PREFETCH_GAUGE_L1 (prefetch to L1)
-#define PREFETCH_GAUGE_L1_INTERNAL(A)_A64FXd  \
+#define PREFETCH_GAUGE_L1_INTERNAL_A64FXd(A)  \
 { \
-    const auto & ref(U[sU][A]); uint64_t baseU = (uint64_t)&ref[0][0]; \
+    const auto & ref(U[sU](A)); uint64_t baseU = (uint64_t)&ref; \
     svprfd(pg1, (int64_t*)(baseU + 0), SV_PLDL1STRM); \
     svprfd(pg1, (int64_t*)(baseU + 256), SV_PLDL1STRM); \
     svprfd(pg1, (int64_t*)(baseU + 512), SV_PLDL1STRM); \
