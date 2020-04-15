@@ -47,7 +47,7 @@ ALTERNATIVE_LOADS = False
 # must use with my_wilson4.h and my_wilson4pf.h
 
 ALTERNATIVE_REGISTER_MAPPING = False
-ALTERNATIVE_REGISTER_MAPPING = not ALTERNATIVE_REGISTER_MAPPING
+#ALTERNATIVE_REGISTER_MAPPING = not ALTERNATIVE_REGISTER_MAPPING
 
 if ALTERNATIVE_REGISTER_MAPPING == True:
     ALTERNATIVE_LOADS = False
@@ -229,15 +229,25 @@ class Register:
         gpr = d['asmtableptr']
 
         cast = 'uint64_t'
-        asm_opcode = 'ld1d'
+        #asm_opcode = 'ld1d'
+        #if PRECISION == 'single':
+        #   asm_opcode = 'ld1w'
+        #    cast = 'uint32_t'
+        asm_opcode = 'ldr'
         if PRECISION == 'single':
-            asm_opcode = 'ld1w'
+            asm_opcode = 'ldr'
             cast = 'uint32_t'
 
         d['I'] += F'    {self.name} = svld1(pg1, ({cast}*)&lut[{t}]);  \\\n'
 
         # using immediate index break-out works
-        d['A'] += F'    "{asm_opcode} {{ {self.asmregwithsuffix} }}, {pg1.asmreg}/z, [%[tableptr], %[index], mul vl] \\n\\t" \\\n'
+        if asm_opcode == 'ldr':
+            # ldr version
+            d['A'] += F'    "{asm_opcode} {self.asmreg}, [%[tableptr], %[index], mul vl] \\n\\t" \\\n'
+        else:
+            # ld1 version
+            d['A'] += F'    "{asm_opcode} {{ {self.asmregwithsuffix} }}, {pg1.asmreg}/z, [%[tableptr], %[index], mul vl] \\n\\t" \\\n'
+
         d['asminput'].append(F'[tableptr] "r" (&lut[0])')
         d['asminput'].append(F'[index] "i" ({t})')
         d['asmclobber'].append(F'"memory"')
@@ -249,9 +259,14 @@ class Register:
         indices = re.findall(r'\d+', address)
         index = (int(indices[0]) - offset) * colors + int(indices[1])
 
-        asm_opcode = 'ld1d'
+        #asm_opcode = 'ld1d'
+        #if PRECISION == 'single':
+        #asm_opcode = 'ld1w'
+        #    cast = 'float32_t'
+
+        asm_opcode = 'ldr'
         if PRECISION == 'single':
-            asm_opcode = 'ld1w'
+            asm_opcode = 'ldr'
             cast = 'float32_t'
 
         gpr = d['asmfetchbaseptr']
@@ -259,9 +274,13 @@ class Register:
         if (target in ['ALL', 'C']):
             d['C'] += F'    {self.name} = {address};        \\\n'
         if (target in ['ALL', 'I']):
+#            d['I'] += F'    {self.name} = svldnt1(pg1, ({cast}*)({intrinfetchbase} + {index} * 64));  \\\n'
             d['I'] += F'    {self.name} = svld1(pg1, ({cast}*)({intrinfetchbase} + {index} * 64));  \\\n'
         if (target in ['ALL', 'A']):
-            d['A'] += F'    "{asm_opcode} {{ {self.asmregwithsuffix} }}, {pg1.asmreg}/z, [%[fetchptr], {index}, mul vl] \\n\\t" \\\n'
+            if asm_opcode == 'ldr':
+                d['A'] += F'    "{asm_opcode} {self.asmreg}, [%[fetchptr], {index}, mul vl] \\n\\t" \\\n'
+            else:
+                d['A'] += F'    "{asm_opcode} {{ {self.asmregwithsuffix} }}, {pg1.asmreg}/z, [%[fetchptr], {index}, mul vl] \\n\\t" \\\n'
 
     def store(self, address, cast='float64_t', colors=3, offset=STORE_BASE_PTR_COLOR_OFFSET):
         global d
@@ -269,16 +288,24 @@ class Register:
         indices = re.findall(r'\d+', address)
         index = (int(indices[0]) - offset) * colors + int(indices[1])
 
-        asm_opcode = 'stnt1d'
+        #asm_opcode = 'stnt1d'
+        #if PRECISION == 'single':
+        #    asm_opcode = 'stnt1w'
+        #    cast = 'float32_t'
+        asm_opcode = 'str'
         if PRECISION == 'single':
-            asm_opcode = 'stnt1w'
+            asm_opcode = 'str'
             cast = 'float32_t'
 
         intrinstorebase = d['intrinstorebase']
 
         d['C'] += F'    {address} = {self.name};        \\\n'
-        d['I'] += F'    svstnt1(pg1, ({cast}*)({intrinstorebase} + {index} * 64), {self.name});  \\\n'
-        d['A'] += F'    "{asm_opcode} {{ {self.asmregwithsuffix} }}, {pg1.asmreg}, [%[storeptr], {index}, mul vl] \\n\\t" \\\n'
+        #d['I'] += F'    svstnt1(pg1, ({cast}*)({intrinstorebase} + {index} * 64), {self.name});  \\\n'
+        d['I'] += F'    svst1(pg1, ({cast}*)({intrinstorebase} + {index} * 64), {self.name});  \\\n'
+        if asm_opcode == 'str':
+            d['A'] += F'    "{asm_opcode} {self.asmreg}, [%[storeptr], {index}, mul vl] \\n\\t" \\\n'
+        else:
+            d['A'] += F'    "{asm_opcode} {{ {self.asmregwithsuffix} }}, {pg1.asmreg}, [%[storeptr], {index}, mul vl] \\n\\t" \\\n'
 
     def movestr(self, str):
         global d
@@ -621,7 +648,16 @@ def prefetch_L2_store(address, offset):
 
     d['I'] += F'    svprfd(pg1, (int64_t*)({address} + {offset * multiplier * 64}), SV_{policy}); \\\n'
     d['A'] += F'    "prfd {policy}, {pg1.asmreg}, [%[fetchptr], {offset * multiplier}, mul vl] \\n\\t" \\\n'
-    #d['A'] +=
+
+def prefetch_L1_store(address, offset):
+    global d
+    multiplier = 4  # offset in CL, have to multiply by 4
+    policy = "PSTL1STRM"     # weak
+    #policy = "PSTL2KEEP"     # strong
+
+    d['I'] += F'    svprfd(pg1, (int64_t*)({address} + {offset * multiplier * 64}), SV_{policy}); \\\n'
+    d['A'] += F'    "prfd {policy}, {pg1.asmreg}, [%[fetchptr], {offset * multiplier}, mul vl] \\n\\t" \\\n'
+
 
 def asmopen():
     #write('asm volatile ( \\', target='A')
@@ -878,9 +914,11 @@ if PREFETCH:
     define(F'PREFETCH_GAUGE_L2(A)           PREFETCH_GAUGE_L2_INTERNAL_{PRECSUFFIX}(A)')
     define(F'PF_GAUGE(A)')
     define(F'PREFETCH_RESULT_L2_STORE(A)    PREFETCH_RESULT_L2_STORE_INTERNAL_{PRECSUFFIX}(A)')
+    define(F'PREFETCH_RESULT_L1_STORE(A)    PREFETCH_RESULT_L1_STORE_INTERNAL_{PRECSUFFIX}(A)')
     define(F'PREFETCH1_CHIMU(A)             PREFETCH_CHIMU_L1(A)')
 #    define(F'PREFETCH1_CHIMU(A)')
     define(F'PREFETCH_CHIMU(A)              PREFETCH_CHIMU_L1(A)')
+#    define(F'PREFETCH_CHIMU(A)')
 else:
     define(F'PREFETCH_CHIMU_L1(A)')
     define(F'PREFETCH_GAUGE_L1(A)')
@@ -897,8 +935,9 @@ define(F'UNLOCK_GAUGE(A)')
 define(F'MASK_REGS                      DECLARATIONS_{PRECSUFFIX}')
 define(F'COMPLEX_SIGNS(A)')
 define(F'LOAD64(A,B)')
-#define(F'SAVE_RESULT(A,B)               RESULT_{PRECSUFFIX}(A); PREFETCH_RESULT_L2_STORE(B);')
-define(F'SAVE_RESULT(A,B)               RESULT_{PRECSUFFIX}(A); PREFETCH_CHIMU_L1(B);')
+# prefetch chimu here is useless, because already done in last leg
+#define(F'SAVE_RESULT(A,B)               RESULT_{PRECSUFFIX}(A);')
+define(F'SAVE_RESULT(A,B)               RESULT_{PRECSUFFIX}(A); PREFETCH_RESULT_L2_STORE(B);')
 if PREFETCH:
     definemultiline(F'MULT_2SPIN_DIR_PF(A,B)        ')
     write (F'                                       MULT_2SPIN_{PRECSUFFIX}(A); \\')
@@ -2156,8 +2195,7 @@ asmclose()
 #debugall('ZERO_PSI', group='result')
 newline()
 
-d['factor'] = 0
-# prefetch store spinors into L2 cache
+# prefetch store spinors to L2 cache
 d['factor'] = 0
 d['cycles_PREFETCH_L2'] += 0 * d['factor']
 write('// PREFETCH_RESULT_L2_STORE (prefetch store to L2)')
@@ -2172,6 +2210,23 @@ prefetch_L2_store(F"base", 2)
 asmclose()
 curlyclose()
 newline()
+
+# prefetch store spinors to L1 cache
+d['factor'] = 0
+d['cycles_PREFETCH_L1'] += 0 * d['factor']
+write('// PREFETCH_RESULT_L1_STORE (prefetch store to L1)')
+definemultiline(F'PREFETCH_RESULT_L1_STORE_INTERNAL_{PRECSUFFIX}(base)')
+curlyopen()
+fetch_base_ptr(F"base")
+asmopen()
+fetch_base_ptr(F"base", target='A')
+prefetch_L1_store(F"base", 0)
+prefetch_L1_store(F"base", 1)
+prefetch_L1_store(F"base", 2)
+asmclose()
+curlyclose()
+newline()
+
 
 d['factor'] = 0
 write('// ADD_RESULT_INTERNAL')
