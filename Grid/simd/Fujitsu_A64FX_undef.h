@@ -37,6 +37,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #undef PREFETCH1_CHIMU
 #undef PREFETCH_CHIMU
 #undef PREFETCH_RESULT_L2_STORE
+#undef PREFETCH_RESULT_L1_STORE
 #undef LOAD_GAUGE
 #undef LOCK_GAUGE
 #undef UNLOCK_GAUGE

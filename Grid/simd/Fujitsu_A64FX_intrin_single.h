@@ -32,6 +32,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define PREFETCH_GAUGE_L2(A)           PREFETCH_GAUGE_L2_INTERNAL_A64FXf(A)  
 #define PF_GAUGE(A)  
 #define PREFETCH_RESULT_L2_STORE(A)    PREFETCH_RESULT_L2_STORE_INTERNAL_A64FXf(A)  
+#define PREFETCH_RESULT_L1_STORE(A)    PREFETCH_RESULT_L1_STORE_INTERNAL_A64FXf(A)  
 #define PREFETCH1_CHIMU(A)             PREFETCH_CHIMU_L1(A)  
 #define PREFETCH_CHIMU(A)              PREFETCH_CHIMU_L1(A)  
 #define LOCK_GAUGE(A)  
@@ -39,7 +40,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define MASK_REGS                      DECLARATIONS_A64FXf  
 #define COMPLEX_SIGNS(A)  
 #define LOAD64(A,B)  
-#define SAVE_RESULT(A,B)               RESULT_A64FXf(A); PREFETCH_CHIMU_L1(B);  
+#define SAVE_RESULT(A,B)               RESULT_A64FXf(A); PREFETCH_RESULT_L2_STORE(B);  
 #define MULT_2SPIN_DIR_PF(A,B)          \
                                        MULT_2SPIN_A64FXf(A); \
                                        PREFETCH_CHIMU_L2(B); \
@@ -119,27 +120,27 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define Chimu_10 Chi_10  
 #define Chimu_11 Chi_11  
 #define Chimu_12 Chi_12  
-#define Chimu_20 U_00  
-#define Chimu_21 U_10  
-#define Chimu_22 U_20  
-#define Chimu_30 U_01  
-#define Chimu_31 U_11  
-#define Chimu_32 U_21  
+#define Chimu_20 UChi_00  
+#define Chimu_21 UChi_01  
+#define Chimu_22 UChi_02  
+#define Chimu_30 UChi_10  
+#define Chimu_31 UChi_11  
+#define Chimu_32 UChi_12  
 // RESULT
 #define RESULT_A64FXf(base)  \
 { \
-    svstnt1(pg1, (float32_t*)(base + 2 * 3 * 64 + -6 * 64), result_00);  \
-    svstnt1(pg1, (float32_t*)(base + 2 * 3 * 64 + -5 * 64), result_01);  \
-    svstnt1(pg1, (float32_t*)(base + 2 * 3 * 64 + -4 * 64), result_02);  \
-    svstnt1(pg1, (float32_t*)(base + 2 * 3 * 64 + -3 * 64), result_10);  \
-    svstnt1(pg1, (float32_t*)(base + 2 * 3 * 64 + -2 * 64), result_11);  \
-    svstnt1(pg1, (float32_t*)(base + 2 * 3 * 64 + -1 * 64), result_12);  \
-    svstnt1(pg1, (float32_t*)(base + 2 * 3 * 64 + 0 * 64), result_20);  \
-    svstnt1(pg1, (float32_t*)(base + 2 * 3 * 64 + 1 * 64), result_21);  \
-    svstnt1(pg1, (float32_t*)(base + 2 * 3 * 64 + 2 * 64), result_22);  \
-    svstnt1(pg1, (float32_t*)(base + 2 * 3 * 64 + 3 * 64), result_30);  \
-    svstnt1(pg1, (float32_t*)(base + 2 * 3 * 64 + 4 * 64), result_31);  \
-    svstnt1(pg1, (float32_t*)(base + 2 * 3 * 64 + 5 * 64), result_32);  \
+    svst1(pg1, (float32_t*)(base + 2 * 3 * 64 + -6 * 64), result_00);  \
+    svst1(pg1, (float32_t*)(base + 2 * 3 * 64 + -5 * 64), result_01);  \
+    svst1(pg1, (float32_t*)(base + 2 * 3 * 64 + -4 * 64), result_02);  \
+    svst1(pg1, (float32_t*)(base + 2 * 3 * 64 + -3 * 64), result_10);  \
+    svst1(pg1, (float32_t*)(base + 2 * 3 * 64 + -2 * 64), result_11);  \
+    svst1(pg1, (float32_t*)(base + 2 * 3 * 64 + -1 * 64), result_12);  \
+    svst1(pg1, (float32_t*)(base + 2 * 3 * 64 + 0 * 64), result_20);  \
+    svst1(pg1, (float32_t*)(base + 2 * 3 * 64 + 1 * 64), result_21);  \
+    svst1(pg1, (float32_t*)(base + 2 * 3 * 64 + 2 * 64), result_22);  \
+    svst1(pg1, (float32_t*)(base + 2 * 3 * 64 + 3 * 64), result_30);  \
+    svst1(pg1, (float32_t*)(base + 2 * 3 * 64 + 4 * 64), result_31);  \
+    svst1(pg1, (float32_t*)(base + 2 * 3 * 64 + 5 * 64), result_32);  \
 }
 // PREFETCH_CHIMU_L2 (prefetch to L2)
 #define PREFETCH_CHIMU_L2_INTERNAL_A64FXf(base)  \
@@ -601,6 +602,13 @@ Author: Nils Meyer <nils.meyer@ur.de>
     svprfd(pg1, (int64_t*)(base + 0), SV_PSTL2STRM); \
     svprfd(pg1, (int64_t*)(base + 256), SV_PSTL2STRM); \
     svprfd(pg1, (int64_t*)(base + 512), SV_PSTL2STRM); \
+}
+// PREFETCH_RESULT_L1_STORE (prefetch store to L1)
+#define PREFETCH_RESULT_L1_STORE_INTERNAL_A64FXf(base)  \
+{ \
+    svprfd(pg1, (int64_t*)(base + 0), SV_PSTL1STRM); \
+    svprfd(pg1, (int64_t*)(base + 256), SV_PSTL1STRM); \
+    svprfd(pg1, (int64_t*)(base + 512), SV_PSTL1STRM); \
 }
 // ADD_RESULT_INTERNAL
 #define ADD_RESULT_INTERNAL_A64FXf  \

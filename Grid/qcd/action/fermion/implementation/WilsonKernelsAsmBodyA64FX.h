@@ -102,7 +102,6 @@ Author: Nils Meyer <nils.meyer@ur.de>
       base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
       PREFETCH_CHIMU(base);						\
       MULT_2SPIN_DIR_PF(Dir,basep);					\
-      PREFETCH_GAUGE_L1(NxtDir); \
       RECON;								\
 
 #define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
@@ -318,7 +317,9 @@ Author: Nils Meyer <nils.meyer@ur.de>
       //      if (nmu!=0) std::cout << "EXT "<<sU<<std::endl;
 #endif
       base = (uint64_t) &out[ss];
-      basep= st.GetPFInfo(nent,plocal); nent++;
+      basep= st.GetPFInfo(nent,plocal); ent++;
+      basep = (uint64_t) &out[ssn];
+      RESULT(base,basep);
 
 #ifdef SHOW
       std::cout << "Dir = FINAL        " <<  WHERE<< std::endl;;
@@ -330,8 +331,6 @@ Author: Nils Meyer <nils.meyer@ur.de>
       std::cout << "----------------------------------------------------" << std::endl;
 #endif
 
-      //basep = (uint64_t) &out[ssn];
-      RESULT(base,basep);
     }
     ssU++;
     UNLOCK_GAUGE(0);

@@ -32,6 +32,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define PREFETCH_GAUGE_L2(A)           PREFETCH_GAUGE_L2_INTERNAL_A64FXf(A)  
 #define PF_GAUGE(A)  
 #define PREFETCH_RESULT_L2_STORE(A)    PREFETCH_RESULT_L2_STORE_INTERNAL_A64FXf(A)  
+#define PREFETCH_RESULT_L1_STORE(A)    PREFETCH_RESULT_L1_STORE_INTERNAL_A64FXf(A)  
 #define PREFETCH1_CHIMU(A)             PREFETCH_CHIMU_L1(A)  
 #define PREFETCH_CHIMU(A)              PREFETCH_CHIMU_L1(A)  
 #define LOCK_GAUGE(A)  
@@ -39,7 +40,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define MASK_REGS                      DECLARATIONS_A64FXf  
 #define COMPLEX_SIGNS(A)  
 #define LOAD64(A,B)  
-#define SAVE_RESULT(A,B)               RESULT_A64FXf(A); PREFETCH_CHIMU_L1(B);  
+#define SAVE_RESULT(A,B)               RESULT_A64FXf(A); PREFETCH_RESULT_L2_STORE(B);  
 #define MULT_2SPIN_DIR_PF(A,B)          \
                                        MULT_2SPIN_A64FXf(A); \
                                        PREFETCH_CHIMU_L2(B); \
@@ -88,18 +89,18 @@ asm ( \
 #define RESULT_A64FXf(base)  \
 { \
 asm ( \
-    "stnt1w { z0.s }, p5, [%[storeptr], -6, mul vl] \n\t" \
-    "stnt1w { z1.s }, p5, [%[storeptr], -5, mul vl] \n\t" \
-    "stnt1w { z2.s }, p5, [%[storeptr], -4, mul vl] \n\t" \
-    "stnt1w { z3.s }, p5, [%[storeptr], -3, mul vl] \n\t" \
-    "stnt1w { z4.s }, p5, [%[storeptr], -2, mul vl] \n\t" \
-    "stnt1w { z5.s }, p5, [%[storeptr], -1, mul vl] \n\t" \
-    "stnt1w { z6.s }, p5, [%[storeptr], 0, mul vl] \n\t" \
-    "stnt1w { z7.s }, p5, [%[storeptr], 1, mul vl] \n\t" \
-    "stnt1w { z8.s }, p5, [%[storeptr], 2, mul vl] \n\t" \
-    "stnt1w { z9.s }, p5, [%[storeptr], 3, mul vl] \n\t" \
-    "stnt1w { z10.s }, p5, [%[storeptr], 4, mul vl] \n\t" \
-    "stnt1w { z11.s }, p5, [%[storeptr], 5, mul vl] \n\t" \
+    "str z0, [%[storeptr], -6, mul vl] \n\t" \
+    "str z1, [%[storeptr], -5, mul vl] \n\t" \
+    "str z2, [%[storeptr], -4, mul vl] \n\t" \
+    "str z3, [%[storeptr], -3, mul vl] \n\t" \
+    "str z4, [%[storeptr], -2, mul vl] \n\t" \
+    "str z5, [%[storeptr], -1, mul vl] \n\t" \
+    "str z6, [%[storeptr], 0, mul vl] \n\t" \
+    "str z7, [%[storeptr], 1, mul vl] \n\t" \
+    "str z8, [%[storeptr], 2, mul vl] \n\t" \
+    "str z9, [%[storeptr], 3, mul vl] \n\t" \
+    "str z10, [%[storeptr], 4, mul vl] \n\t" \
+    "str z11, [%[storeptr], 5, mul vl] \n\t" \
     :  \
     : [storeptr] "r" (base + 2 * 3 * 64) \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
@@ -165,12 +166,12 @@ asm ( \
 #define LOAD_CHI_A64FXf(base)  \
 { \
 asm ( \
-    "ld1w { z12.s }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
-    "ld1w { z13.s }, p5/z, [%[fetchptr], 1, mul vl] \n\t" \
-    "ld1w { z14.s }, p5/z, [%[fetchptr], 2, mul vl] \n\t" \
-    "ld1w { z15.s }, p5/z, [%[fetchptr], 3, mul vl] \n\t" \
-    "ld1w { z16.s }, p5/z, [%[fetchptr], 4, mul vl] \n\t" \
-    "ld1w { z17.s }, p5/z, [%[fetchptr], 5, mul vl] \n\t" \
+    "ldr z12, [%[fetchptr], 0, mul vl] \n\t" \
+    "ldr z13, [%[fetchptr], 1, mul vl] \n\t" \
+    "ldr z14, [%[fetchptr], 2, mul vl] \n\t" \
+    "ldr z15, [%[fetchptr], 3, mul vl] \n\t" \
+    "ldr z16, [%[fetchptr], 4, mul vl] \n\t" \
+    "ldr z17, [%[fetchptr], 5, mul vl] \n\t" \
     :  \
     : [fetchptr] "r" (base) \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
@@ -181,18 +182,18 @@ asm ( \
 { \
 asm ( \
     "ptrue p5.s \n\t" \
-    "ld1w { z12.s }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
-    "ld1w { z27.s }, p5/z, [%[fetchptr], 3, mul vl] \n\t" \
-    "ld1w { z15.s }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
-    "ld1w { z24.s }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
-    "ld1w { z13.s }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
-    "ld1w { z28.s }, p5/z, [%[fetchptr], 4, mul vl] \n\t" \
-    "ld1w { z16.s }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
-    "ld1w { z25.s }, p5/z, [%[fetchptr], 1, mul vl] \n\t" \
-    "ld1w { z14.s }, p5/z, [%[fetchptr], -4, mul vl] \n\t" \
-    "ld1w { z29.s }, p5/z, [%[fetchptr], 5, mul vl] \n\t" \
-    "ld1w { z17.s }, p5/z, [%[fetchptr], -1, mul vl] \n\t" \
-    "ld1w { z26.s }, p5/z, [%[fetchptr], 2, mul vl] \n\t" \
+    "ldr z12, [%[fetchptr], -6, mul vl] \n\t" \
+    "ldr z21, [%[fetchptr], 3, mul vl] \n\t" \
+    "ldr z15, [%[fetchptr], -3, mul vl] \n\t" \
+    "ldr z18, [%[fetchptr], 0, mul vl] \n\t" \
+    "ldr z13, [%[fetchptr], -5, mul vl] \n\t" \
+    "ldr z22, [%[fetchptr], 4, mul vl] \n\t" \
+    "ldr z16, [%[fetchptr], -2, mul vl] \n\t" \
+    "ldr z19, [%[fetchptr], 1, mul vl] \n\t" \
+    "ldr z14, [%[fetchptr], -4, mul vl] \n\t" \
+    "ldr z23, [%[fetchptr], 5, mul vl] \n\t" \
+    "ldr z17, [%[fetchptr], -1, mul vl] \n\t" \
+    "ldr z20, [%[fetchptr], 2, mul vl] \n\t" \
     :  \
     : [fetchptr] "r" (base + 2 * 3 * 64) \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
@@ -204,18 +205,18 @@ asm ( \
     const SiteSpinor & ref(in[offset]); \
 asm ( \
     "ptrue p5.s \n\t" \
-    "ld1w { z12.s }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
-    "ld1w { z24.s }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
-    "ld1w { z13.s }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
-    "ld1w { z25.s }, p5/z, [%[fetchptr], 1, mul vl] \n\t" \
-    "ld1w { z14.s }, p5/z, [%[fetchptr], -4, mul vl] \n\t" \
-    "ld1w { z26.s }, p5/z, [%[fetchptr], 2, mul vl] \n\t" \
-    "ld1w { z15.s }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
-    "ld1w { z27.s }, p5/z, [%[fetchptr], 3, mul vl] \n\t" \
-    "ld1w { z16.s }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
-    "ld1w { z28.s }, p5/z, [%[fetchptr], 4, mul vl] \n\t" \
-    "ld1w { z17.s }, p5/z, [%[fetchptr], -1, mul vl] \n\t" \
-    "ld1w { z29.s }, p5/z, [%[fetchptr], 5, mul vl] \n\t" \
+    "ldr z12, [%[fetchptr], -6, mul vl] \n\t" \
+    "ldr z18, [%[fetchptr], 0, mul vl] \n\t" \
+    "ldr z13, [%[fetchptr], -5, mul vl] \n\t" \
+    "ldr z19, [%[fetchptr], 1, mul vl] \n\t" \
+    "ldr z14, [%[fetchptr], -4, mul vl] \n\t" \
+    "ldr z20, [%[fetchptr], 2, mul vl] \n\t" \
+    "ldr z15, [%[fetchptr], -3, mul vl] \n\t" \
+    "ldr z21, [%[fetchptr], 3, mul vl] \n\t" \
+    "ldr z16, [%[fetchptr], -2, mul vl] \n\t" \
+    "ldr z22, [%[fetchptr], 4, mul vl] \n\t" \
+    "ldr z17, [%[fetchptr], -1, mul vl] \n\t" \
+    "ldr z23, [%[fetchptr], 5, mul vl] \n\t" \
     :  \
     : [fetchptr] "r" (&ref[2][0]) \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
@@ -227,18 +228,18 @@ asm ( \
     const SiteSpinor & ref(in[offset]); \
 asm ( \
     "ptrue p5.s \n\t" \
-    "ld1w { z12.s }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
-    "ld1w { z27.s }, p5/z, [%[fetchptr], 3, mul vl] \n\t" \
-    "ld1w { z13.s }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
-    "ld1w { z28.s }, p5/z, [%[fetchptr], 4, mul vl] \n\t" \
-    "ld1w { z14.s }, p5/z, [%[fetchptr], -4, mul vl] \n\t" \
-    "ld1w { z29.s }, p5/z, [%[fetchptr], 5, mul vl] \n\t" \
-    "ld1w { z15.s }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
-    "ld1w { z24.s }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
-    "ld1w { z16.s }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
-    "ld1w { z25.s }, p5/z, [%[fetchptr], 1, mul vl] \n\t" \
-    "ld1w { z17.s }, p5/z, [%[fetchptr], -1, mul vl] \n\t" \
-    "ld1w { z26.s }, p5/z, [%[fetchptr], 2, mul vl] \n\t" \
+    "ldr z12, [%[fetchptr], -6, mul vl] \n\t" \
+    "ldr z21, [%[fetchptr], 3, mul vl] \n\t" \
+    "ldr z13, [%[fetchptr], -5, mul vl] \n\t" \
+    "ldr z22, [%[fetchptr], 4, mul vl] \n\t" \
+    "ldr z14, [%[fetchptr], -4, mul vl] \n\t" \
+    "ldr z23, [%[fetchptr], 5, mul vl] \n\t" \
+    "ldr z15, [%[fetchptr], -3, mul vl] \n\t" \
+    "ldr z18, [%[fetchptr], 0, mul vl] \n\t" \
+    "ldr z16, [%[fetchptr], -2, mul vl] \n\t" \
+    "ldr z19, [%[fetchptr], 1, mul vl] \n\t" \
+    "ldr z17, [%[fetchptr], -1, mul vl] \n\t" \
+    "ldr z20, [%[fetchptr], 2, mul vl] \n\t" \
     :  \
     : [fetchptr] "r" (&ref[2][0]) \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
@@ -247,7 +248,7 @@ asm ( \
 // LOAD_TABLE0
 #define LOAD_TABLE0  \
 asm ( \
-    "ld1w { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ldr z30, [%[tableptr], %[index], mul vl] \n\t" \
     :  \
     : [tableptr] "r" (&lut[0]),[index] "i" (0) \
     : "memory","cc","p5","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
@@ -256,7 +257,7 @@ asm ( \
 // LOAD_TABLE1
 #define LOAD_TABLE1  \
 asm ( \
-    "ld1w { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ldr z30, [%[tableptr], %[index], mul vl] \n\t" \
     :  \
     : [tableptr] "r" (&lut[0]),[index] "i" (1) \
     : "memory","cc","p5","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
@@ -265,7 +266,7 @@ asm ( \
 // LOAD_TABLE2
 #define LOAD_TABLE2  \
 asm ( \
-    "ld1w { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ldr z30, [%[tableptr], %[index], mul vl] \n\t" \
     :  \
     : [tableptr] "r" (&lut[0]),[index] "i" (2) \
     : "memory","cc","p5","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
@@ -274,7 +275,7 @@ asm ( \
 // LOAD_TABLE3
 #define LOAD_TABLE3  \
 asm ( \
-    "ld1w { z30.s }, p5/z, [%[tableptr], %[index], mul vl] \n\t" \
+    "ldr z30, [%[tableptr], %[index], mul vl] \n\t" \
     :  \
     : [tableptr] "r" (&lut[0]),[index] "i" (3) \
     : "memory","cc","p5","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
@@ -342,12 +343,12 @@ asm ( \
 { \
 asm ( \
     "ptrue p5.s \n\t" \
-    "ld1w { z24.s }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
-    "ld1w { z25.s }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
-    "ld1w { z26.s }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
-    "ld1w { z27.s }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
-    "ld1w { z28.s }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
-    "ld1w { z29.s }, p5/z, [%[fetchptr], 1, mul vl] \n\t" \
+    "ldr z24, [%[fetchptr], -6, mul vl] \n\t" \
+    "ldr z25, [%[fetchptr], -3, mul vl] \n\t" \
+    "ldr z26, [%[fetchptr], 0, mul vl] \n\t" \
+    "ldr z27, [%[fetchptr], -5, mul vl] \n\t" \
+    "ldr z28, [%[fetchptr], -2, mul vl] \n\t" \
+    "ldr z29, [%[fetchptr], 1, mul vl] \n\t" \
     :  \
     : [fetchptr] "r" (baseU + 2 * 3 * 64) \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
@@ -358,12 +359,12 @@ asm ( \
 { \
     const auto & ref(U[sU](A)); uint64_t baseU = (uint64_t)&ref; \
 asm ( \
-    "ld1w { z24.s }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
-    "ld1w { z25.s }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
-    "ld1w { z26.s }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
-    "ld1w { z27.s }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
-    "ld1w { z28.s }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
-    "ld1w { z29.s }, p5/z, [%[fetchptr], 1, mul vl] \n\t" \
+    "ldr z24, [%[fetchptr], -6, mul vl] \n\t" \
+    "ldr z25, [%[fetchptr], -3, mul vl] \n\t" \
+    "ldr z26, [%[fetchptr], 0, mul vl] \n\t" \
+    "ldr z27, [%[fetchptr], -5, mul vl] \n\t" \
+    "ldr z28, [%[fetchptr], -2, mul vl] \n\t" \
+    "ldr z29, [%[fetchptr], 1, mul vl] \n\t" \
     "movprfx z18.s, p5/m, z31.s \n\t" \
     "fcmla z18.s, p5/m, z24.s, z12.s, 0 \n\t" \
     "movprfx z21.s, p5/m, z31.s \n\t" \
@@ -382,9 +383,9 @@ asm ( \
     "fcmla z22.s, p5/m, z25.s, z15.s, 90 \n\t" \
     "fcmla z20.s, p5/m, z26.s, z12.s, 90 \n\t" \
     "fcmla z23.s, p5/m, z26.s, z15.s, 90 \n\t" \
-    "ld1w { z24.s }, p5/z, [%[fetchptr], -4, mul vl] \n\t" \
-    "ld1w { z25.s }, p5/z, [%[fetchptr], -1, mul vl] \n\t" \
-    "ld1w { z26.s }, p5/z, [%[fetchptr], 2, mul vl] \n\t" \
+    "ldr z24, [%[fetchptr], -4, mul vl] \n\t" \
+    "ldr z25, [%[fetchptr], -1, mul vl] \n\t" \
+    "ldr z26, [%[fetchptr], 2, mul vl] \n\t" \
     "fcmla z18.s, p5/m, z27.s, z13.s, 0 \n\t" \
     "fcmla z21.s, p5/m, z27.s, z16.s, 0 \n\t" \
     "fcmla z19.s, p5/m, z28.s, z13.s, 0 \n\t" \
@@ -419,12 +420,12 @@ asm ( \
 { \
 asm ( \
     "ptrue p5.s \n\t" \
-    "fcadd z12.s, p5/m, z12.s, z27.s, 90 \n\t" \
-    "fcadd z13.s, p5/m, z13.s, z28.s, 90 \n\t" \
-    "fcadd z14.s, p5/m, z14.s, z29.s, 90 \n\t" \
-    "fcadd z15.s, p5/m, z15.s, z24.s, 90 \n\t" \
-    "fcadd z16.s, p5/m, z16.s, z25.s, 90 \n\t" \
-    "fcadd z17.s, p5/m, z17.s, z26.s, 90 \n\t" \
+    "fcadd z12.s, p5/m, z12.s, z21.s, 90 \n\t" \
+    "fcadd z13.s, p5/m, z13.s, z22.s, 90 \n\t" \
+    "fcadd z14.s, p5/m, z14.s, z23.s, 90 \n\t" \
+    "fcadd z15.s, p5/m, z15.s, z18.s, 90 \n\t" \
+    "fcadd z16.s, p5/m, z16.s, z19.s, 90 \n\t" \
+    "fcadd z17.s, p5/m, z17.s, z20.s, 90 \n\t" \
     :  \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
@@ -480,12 +481,12 @@ asm ( \
 #define YP_PROJ_A64FXf  \
 { \
 asm ( \
-    "fsub z12.s, p5/m, z12.s, z27.s \n\t" \
-    "fsub z13.s, p5/m, z13.s, z28.s \n\t" \
-    "fsub z14.s, p5/m, z14.s, z29.s \n\t" \
-    "fadd z15.s, p5/m, z15.s, z24.s \n\t"  \
-    "fadd z16.s, p5/m, z16.s, z25.s \n\t"  \
-    "fadd z17.s, p5/m, z17.s, z26.s \n\t"  \
+    "fsub z12.s, p5/m, z12.s, z21.s \n\t" \
+    "fsub z13.s, p5/m, z13.s, z22.s \n\t" \
+    "fsub z14.s, p5/m, z14.s, z23.s \n\t" \
+    "fadd z15.s, p5/m, z15.s, z18.s \n\t"  \
+    "fadd z16.s, p5/m, z16.s, z19.s \n\t"  \
+    "fadd z17.s, p5/m, z17.s, z20.s \n\t"  \
     :  \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
@@ -495,12 +496,12 @@ asm ( \
 #define ZP_PROJ_A64FXf  \
 { \
 asm ( \
-    "fcadd z12.s, p5/m, z12.s, z24.s, 90 \n\t" \
-    "fcadd z13.s, p5/m, z13.s, z25.s, 90 \n\t" \
-    "fcadd z14.s, p5/m, z14.s, z26.s, 90 \n\t" \
-    "fcadd z15.s, p5/m, z15.s, z27.s, 270 \n\t" \
-    "fcadd z16.s, p5/m, z16.s, z28.s, 270 \n\t" \
-    "fcadd z17.s, p5/m, z17.s, z29.s, 270 \n\t" \
+    "fcadd z12.s, p5/m, z12.s, z18.s, 90 \n\t" \
+    "fcadd z13.s, p5/m, z13.s, z19.s, 90 \n\t" \
+    "fcadd z14.s, p5/m, z14.s, z20.s, 90 \n\t" \
+    "fcadd z15.s, p5/m, z15.s, z21.s, 270 \n\t" \
+    "fcadd z16.s, p5/m, z16.s, z22.s, 270 \n\t" \
+    "fcadd z17.s, p5/m, z17.s, z23.s, 270 \n\t" \
     :  \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
@@ -510,12 +511,12 @@ asm ( \
 #define TP_PROJ_A64FXf  \
 { \
 asm ( \
-    "fadd z12.s, p5/m, z12.s, z24.s \n\t"  \
-    "fadd z13.s, p5/m, z13.s, z25.s \n\t"  \
-    "fadd z14.s, p5/m, z14.s, z26.s \n\t"  \
-    "fadd z15.s, p5/m, z15.s, z27.s \n\t"  \
-    "fadd z16.s, p5/m, z16.s, z28.s \n\t"  \
-    "fadd z17.s, p5/m, z17.s, z29.s \n\t"  \
+    "fadd z12.s, p5/m, z12.s, z18.s \n\t"  \
+    "fadd z13.s, p5/m, z13.s, z19.s \n\t"  \
+    "fadd z14.s, p5/m, z14.s, z20.s \n\t"  \
+    "fadd z15.s, p5/m, z15.s, z21.s \n\t"  \
+    "fadd z16.s, p5/m, z16.s, z22.s \n\t"  \
+    "fadd z17.s, p5/m, z17.s, z23.s \n\t"  \
     :  \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
@@ -525,12 +526,12 @@ asm ( \
 #define XM_PROJ_A64FXf  \
 { \
 asm ( \
-    "fcadd z12.s, p5/m, z12.s, z27.s, 270 \n\t" \
-    "fcadd z13.s, p5/m, z13.s, z28.s, 270 \n\t" \
-    "fcadd z14.s, p5/m, z14.s, z29.s, 270 \n\t" \
-    "fcadd z15.s, p5/m, z15.s, z24.s, 270 \n\t" \
-    "fcadd z16.s, p5/m, z16.s, z25.s, 270 \n\t" \
-    "fcadd z17.s, p5/m, z17.s, z26.s, 270 \n\t" \
+    "fcadd z12.s, p5/m, z12.s, z21.s, 270 \n\t" \
+    "fcadd z13.s, p5/m, z13.s, z22.s, 270 \n\t" \
+    "fcadd z14.s, p5/m, z14.s, z23.s, 270 \n\t" \
+    "fcadd z15.s, p5/m, z15.s, z18.s, 270 \n\t" \
+    "fcadd z16.s, p5/m, z16.s, z19.s, 270 \n\t" \
+    "fcadd z17.s, p5/m, z17.s, z20.s, 270 \n\t" \
     :  \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
@@ -566,12 +567,12 @@ asm ( \
 #define YM_PROJ_A64FXf  \
 { \
 asm ( \
-    "fadd z12.s, p5/m, z12.s, z27.s \n\t"  \
-    "fadd z13.s, p5/m, z13.s, z28.s \n\t"  \
-    "fadd z14.s, p5/m, z14.s, z29.s \n\t"  \
-    "fsub z15.s, p5/m, z15.s, z24.s \n\t" \
-    "fsub z16.s, p5/m, z16.s, z25.s \n\t" \
-    "fsub z17.s, p5/m, z17.s, z26.s \n\t" \
+    "fadd z12.s, p5/m, z12.s, z21.s \n\t"  \
+    "fadd z13.s, p5/m, z13.s, z22.s \n\t"  \
+    "fadd z14.s, p5/m, z14.s, z23.s \n\t"  \
+    "fsub z15.s, p5/m, z15.s, z18.s \n\t" \
+    "fsub z16.s, p5/m, z16.s, z19.s \n\t" \
+    "fsub z17.s, p5/m, z17.s, z20.s \n\t" \
     :  \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
@@ -581,12 +582,12 @@ asm ( \
 #define ZM_PROJ_A64FXf  \
 { \
 asm ( \
-    "fcadd z12.s, p5/m, z12.s, z24.s, 270 \n\t" \
-    "fcadd z13.s, p5/m, z13.s, z25.s, 270 \n\t" \
-    "fcadd z14.s, p5/m, z14.s, z26.s, 270 \n\t" \
-    "fcadd z15.s, p5/m, z15.s, z27.s, 90 \n\t" \
-    "fcadd z16.s, p5/m, z16.s, z28.s, 90 \n\t" \
-    "fcadd z17.s, p5/m, z17.s, z29.s, 90 \n\t" \
+    "fcadd z12.s, p5/m, z12.s, z18.s, 270 \n\t" \
+    "fcadd z13.s, p5/m, z13.s, z19.s, 270 \n\t" \
+    "fcadd z14.s, p5/m, z14.s, z20.s, 270 \n\t" \
+    "fcadd z15.s, p5/m, z15.s, z21.s, 90 \n\t" \
+    "fcadd z16.s, p5/m, z16.s, z22.s, 90 \n\t" \
+    "fcadd z17.s, p5/m, z17.s, z23.s, 90 \n\t" \
     :  \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
@@ -597,12 +598,12 @@ asm ( \
 { \
 asm ( \
     "ptrue p5.s \n\t" \
-    "fsub z12.s, p5/m, z12.s, z24.s \n\t" \
-    "fsub z13.s, p5/m, z13.s, z25.s \n\t" \
-    "fsub z14.s, p5/m, z14.s, z26.s \n\t" \
-    "fsub z15.s, p5/m, z15.s, z27.s \n\t" \
-    "fsub z16.s, p5/m, z16.s, z28.s \n\t" \
-    "fsub z17.s, p5/m, z17.s, z29.s \n\t" \
+    "fsub z12.s, p5/m, z12.s, z18.s \n\t" \
+    "fsub z13.s, p5/m, z13.s, z19.s \n\t" \
+    "fsub z14.s, p5/m, z14.s, z20.s \n\t" \
+    "fsub z15.s, p5/m, z15.s, z21.s \n\t" \
+    "fsub z16.s, p5/m, z16.s, z22.s \n\t" \
+    "fsub z17.s, p5/m, z17.s, z23.s \n\t" \
     :  \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
@@ -781,6 +782,18 @@ asm ( \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
 ); \
 }
+// PREFETCH_RESULT_L1_STORE (prefetch store to L1)
+#define PREFETCH_RESULT_L1_STORE_INTERNAL_A64FXf(base)  \
+{ \
+asm ( \
+    "prfd PSTL1STRM, p5, [%[fetchptr], 0, mul vl] \n\t" \
+    "prfd PSTL1STRM, p5, [%[fetchptr], 4, mul vl] \n\t" \
+    "prfd PSTL1STRM, p5, [%[fetchptr], 8, mul vl] \n\t" \
+    :  \
+    : [fetchptr] "r" (base) \
+    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
+); \
+}
 // ADD_RESULT_INTERNAL
 #define ADD_RESULT_INTERNAL_A64FXf  \
 asm ( \
@@ -790,12 +803,12 @@ asm ( \
     "fadd z3.s, p5/m, z3.s, z15.s \n\t"  \
     "fadd z4.s, p5/m, z4.s, z16.s \n\t"  \
     "fadd z5.s, p5/m, z5.s, z17.s \n\t"  \
-    "fadd z6.s, p5/m, z6.s, z24.s \n\t"  \
-    "fadd z7.s, p5/m, z7.s, z25.s \n\t"  \
-    "fadd z8.s, p5/m, z8.s, z26.s \n\t"  \
-    "fadd z9.s, p5/m, z9.s, z27.s \n\t"  \
-    "fadd z10.s, p5/m, z10.s, z28.s \n\t"  \
-    "fadd z11.s, p5/m, z11.s, z29.s \n\t"  \
+    "fadd z6.s, p5/m, z6.s, z18.s \n\t"  \
+    "fadd z7.s, p5/m, z7.s, z19.s \n\t"  \
+    "fadd z8.s, p5/m, z8.s, z20.s \n\t"  \
+    "fadd z9.s, p5/m, z9.s, z21.s \n\t"  \
+    "fadd z10.s, p5/m, z10.s, z22.s \n\t"  \
+    "fadd z11.s, p5/m, z11.s, z23.s \n\t"  \
     :  \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
