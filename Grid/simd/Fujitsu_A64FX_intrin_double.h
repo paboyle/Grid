@@ -31,6 +31,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define PREFETCH_CHIMU_L2(A)           PREFETCH_CHIMU_L2_INTERNAL_A64FXd(A)  
 #define PREFETCH_GAUGE_L2(A)           PREFETCH_GAUGE_L2_INTERNAL_A64FXd(A)  
 #define PF_GAUGE(A)  
+#define PREFETCH_RESULT_L2_STORE(A)    PREFETCH_RESULT_L2_STORE_INTERNAL_A64FXd(A)  
 #define PREFETCH1_CHIMU(A)             PREFETCH_CHIMU_L1(A)  
 #define PREFETCH_CHIMU(A)              PREFETCH_CHIMU_L1(A)  
 #define LOCK_GAUGE(A)  
@@ -38,8 +39,11 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define MASK_REGS                      DECLARATIONS_A64FXd  
 #define COMPLEX_SIGNS(A)  
 #define LOAD64(A,B)  
-#define SAVE_RESULT(A,B)               RESULT_A64FXd(A)  
-#define MULT_2SPIN_DIR_PF(A,B)         PREFETCH_GAUGE_L1(A); PREFETCH_CHIMU_L2(B); MULT_2SPIN_A64FXd(A); if ((A == 0) || (A == 4)) { PREFETCH_GAUGE_L2(A); }  
+#define SAVE_RESULT(A,B)               RESULT_A64FXd(A); PREFETCH_CHIMU_L1(B);  
+#define MULT_2SPIN_DIR_PF(A,B)          \
+                                       MULT_2SPIN_A64FXd(A); \
+                                       PREFETCH_CHIMU_L2(B); \
+                                       if (s == 0) { if ((A == 0) || (A == 4)) { PREFETCH_GAUGE_L2(A); } }
 #define MAYBEPERM(A,perm)              { A ; }  
 #define LOAD_CHI(base)                 LOAD_CHI_A64FXd(base)  
 #define ZERO_PSI  
@@ -279,6 +283,17 @@ Author: Nils Meyer <nils.meyer@ur.de>
 // PERM3
 #define PERM3_A64FXd  
 
+// LOAD_GAUGE
+#define LOAD_GAUGE  \
+    const auto & ref(U[sU](A)); uint64_t baseU = (uint64_t)&ref; \
+{ \
+    U_00 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -6 * 64));  \
+    U_10 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -3 * 64));  \
+    U_20 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + 0 * 64));  \
+    U_01 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -5 * 64));  \
+    U_11 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -2 * 64));  \
+    U_21 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + 1 * 64));  \
+}
 // MULT_2SPIN
 #define MULT_2SPIN_A64FXd(A)  \
 { \
@@ -574,6 +589,13 @@ Author: Nils Meyer <nils.meyer@ur.de>
     result_31 = __svzero(result_31); \
     result_32 = __svzero(result_32); 
 
+// PREFETCH_RESULT_L2_STORE (prefetch store to L2)
+#define PREFETCH_RESULT_L2_STORE_INTERNAL_A64FXd(base)  \
+{ \
+    svprfd(pg1, (int64_t*)(base + 0), SV_PSTL2STRM); \
+    svprfd(pg1, (int64_t*)(base + 256), SV_PSTL2STRM); \
+    svprfd(pg1, (int64_t*)(base + 512), SV_PSTL2STRM); \
+}
 // ADD_RESULT_INTERNAL
 #define ADD_RESULT_INTERNAL_A64FXd  \
     result_00 = svadd_x(pg1, result_00, Chimu_00); \

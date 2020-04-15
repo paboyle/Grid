@@ -61,6 +61,29 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define DIR7_RECON   TP_RECON_ACCUM
 #endif
 
+//using namespace std;
+
+#undef SHOW
+//#define SHOW
+
+#undef WHERE
+
+#ifdef INTERIOR_AND_EXTERIOR
+#define WHERE "INT_AND_EXT"
+#endif
+
+#ifdef INTERIOR
+#define WHERE "INT"
+#endif
+
+#ifdef EXTERIOR
+#define WHERE "EXT"
+#endif
+
+//#pragma message("here")
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Comms then compute kernel
 ////////////////////////////////////////////////////////////////////////////////
@@ -69,16 +92,17 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
       basep = st.GetPFInfo(nent,plocal); nent++;			\
       if ( local ) {							\
-	LOAD64(%r10,isigns);						\
+    /* PREFETCH_GAUGE_L1(Dir); slightly worse performance */ \
 	PROJ(base);							\
+    /* PREFETCH_GAUGE_L1(Dir); slightly worse performance */ \
 	MAYBEPERM(PERMUTE_DIR,perm);					\
       } else {								\
 	LOAD_CHI(base);							\
       }									\
-      MULT_2SPIN_DIR_PF(Dir,basep);					\
       base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
       PREFETCH_CHIMU(base);						\
-      LOAD64(%r10,isigns);						\
+      MULT_2SPIN_DIR_PF(Dir,basep);					\
+      PREFETCH_GAUGE_L1(NxtDir); \
       RECON;								\
 
 #define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
@@ -99,17 +123,15 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
       basep = st.GetPFInfo(nent,plocal); nent++;			\
       if ( local ) {							\
-	LOAD64(%r10,isigns);						\
 	PROJ(base);							\
 	MAYBEPERM(PERMUTE_DIR,perm);					\
       }else if ( st.same_node[Dir] ) {LOAD_CHI(base);}			\
-    base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
       if ( local || st.same_node[Dir] ) {				\
 	MULT_2SPIN_DIR_PF(Dir,basep);					\
-    PREFETCH_CHIMU(base);						\
-	LOAD64(%r10,isigns);						\
 	RECON;								\
-      } else { PREFETCH_CHIMU(base); }						
+      }									\
+      base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
+      PREFETCH_CHIMU(base);						\
 
 #define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
   base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
@@ -132,7 +154,6 @@ Author: Nils Meyer <nils.meyer@ur.de>
   if((!local)&&(!st.same_node[Dir]) ) {					\
     LOAD_CHI(base);							\
     MULT_2SPIN_DIR_PF(Dir,base);					\
-    LOAD64(%r10,isigns);						\
     RECON;								\
     nmu++;								\
   }
@@ -144,7 +165,6 @@ Author: Nils Meyer <nils.meyer@ur.de>
   if((!local)&&(!st.same_node[Dir]) ) {					\
     LOAD_CHI(base);							\
     MULT_2SPIN_DIR_PF(Dir,base);					\
-    LOAD64(%r10,isigns);						\
     RECON;								\
     nmu++;								\
   }
@@ -159,7 +179,6 @@ Author: Nils Meyer <nils.meyer@ur.de>
   uint64_t basep;
   const uint64_t plocal =(uint64_t) & in[0];
 
-  COMPLEX_SIGNS(isigns);
   MASK_REGS;
   int nmax=U.oSites();
   for(int site=0;site<Ns;site++) {
@@ -181,15 +200,118 @@ Author: Nils Meyer <nils.meyer@ur.de>
       int  ent=ss*8;// 2*Ndim
       int nent=ssn*8;
 
+      uint64_t delta_base, delta_base_p;
+
    ASM_LEG_XP(Xp,Yp,PERMUTE_DIR3,DIR0_PROJMEM,DIR0_RECON);
+
+#ifdef SHOW
+      float rescale = 64. * 12.;
+      std::cout << "=================================================================" << std::endl;
+      std::cout << "ss = " << ss << "   ssn = " << ssn << std::endl;
+      std::cout << "sU = " << sU << "   ssU = " << ssU << std::endl;
+      std::cout << " " << std::endl;
+
+
+      std::cout << "Dir = " << Xp << "        "  << WHERE<< std::endl;
+
+      std::cout << "ent  nent  local  perm       = " << ent << "  " << nent << "  " << local << "  "  << perm << std::endl;
+      std::cout << "st.same_node[Dir] = " << st.same_node[Xp] << std::endl;
+      std::cout << "base              = " << (base - plocal)/rescale << std::endl;
+      std::cout << "Basep             = " << (basep - plocal)/rescale << std::endl;
+      //printf("U                 = %llu\n", (uint64_t)&[sU](Dir));
+      std::cout << "----------------------------------------------------" << std::endl;
+#endif
+
       ASM_LEG(Yp,Zp,PERMUTE_DIR2,DIR1_PROJMEM,DIR1_RECON);
+
+#ifdef SHOW
+      std::cout << "Dir = " << Yp << "        "  << WHERE<< std::endl;
+
+      std::cout << "ent  nent  local  perm       = " << ent << "  " << nent << "  " << local << "  "  << perm << std::endl;
+      std::cout << "st.same_node[Dir] = " << st.same_node[Yp] << std::endl;
+      std::cout << "base              = " << (base - plocal)/rescale << std::endl;
+      std::cout << "Basep             = " << (basep - plocal)/rescale << std::endl;
+      //printf("U                 = %llu\n", (uint64_t)&[sU](Dir));
+      std::cout << "----------------------------------------------------" << std::endl;
+#endif
+
       ASM_LEG(Zp,Tp,PERMUTE_DIR1,DIR2_PROJMEM,DIR2_RECON);
+
+#ifdef SHOW
+      std::cout << "Dir = " << Zp << "        "  << WHERE<< std::endl;
+
+      std::cout << "ent  nent  local  perm       = " << ent << "  " << nent << "  " << local << "  "  << perm << std::endl;
+      std::cout << "st.same_node[Dir] = " << st.same_node[Zp] << std::endl;
+      std::cout << "base              = " << (base - plocal)/rescale << std::endl;
+      std::cout << "Basep             = " << (basep - plocal)/rescale << std::endl;
+      //printf("U                 = %llu\n", (uint64_t)&[sU](Dir));
+      std::cout << "----------------------------------------------------" << std::endl;
+#endif
+
       ASM_LEG(Tp,Xm,PERMUTE_DIR0,DIR3_PROJMEM,DIR3_RECON);
 
+#ifdef SHOW
+      std::cout << "Dir = " << Tp << "        "  << WHERE<< std::endl;
+
+      std::cout << "ent  nent  local  perm       = " << ent << "  " << nent << "  " << local << "  "  << perm << std::endl;
+      std::cout << "st.same_node[Dir] = " << st.same_node[Tp] << std::endl;
+      std::cout << "base              = " << (base - plocal)/rescale << std::endl;
+      std::cout << "Basep             = " << (basep - plocal)/rescale << std::endl;
+      //printf("U                 = %llu\n", (uint64_t)&[sU](Dir));
+      std::cout << "----------------------------------------------------" << std::endl;
+#endif
+
       ASM_LEG(Xm,Ym,PERMUTE_DIR3,DIR4_PROJMEM,DIR4_RECON);
+
+#ifdef SHOW
+      std::cout << "Dir = " << Xm << "        "  << WHERE<< std::endl;
+
+      std::cout << "ent  nent  local  perm       = " << ent << "  " << nent << "  " << local << "  "  << perm << std::endl;
+      std::cout << "st.same_node[Dir] = " << st.same_node[Xm] << std::endl;
+      std::cout << "base              = " << (base - plocal)/rescale << std::endl;
+      std::cout << "Basep             = " << (basep - plocal)/rescale << std::endl;
+      //printf("U                 = %llu\n", (uint64_t)&[sU](Dir));
+      std::cout << "----------------------------------------------------" << std::endl;
+#endif
+
       ASM_LEG(Ym,Zm,PERMUTE_DIR2,DIR5_PROJMEM,DIR5_RECON);
+
+#ifdef SHOW
+      std::cout << "Dir = " << Ym << "        "  << WHERE<< std::endl;
+
+      std::cout << "ent  nent  local  perm       = " << ent << "  " << nent << "  " << local << "  "  << perm << std::endl;
+      std::cout << "st.same_node[Dir] = " << st.same_node[Ym] << std::endl;
+      std::cout << "base              = " << (base - plocal)/rescale << std::endl;
+      std::cout << "Basep             = " << (basep - plocal)/rescale << std::endl;
+      //printf("U                 = %llu\n", (uint64_t)&[sU](Dir));
+      std::cout << "----------------------------------------------------" << std::endl;
+#endif
+
       ASM_LEG(Zm,Tm,PERMUTE_DIR1,DIR6_PROJMEM,DIR6_RECON);
+
+#ifdef SHOW
+      std::cout << "Dir = " << Zm << "        "  << WHERE<< std::endl;
+
+      std::cout << "ent  nent  local  perm       = " << ent << "  " << nent << "  " << local << "  "  << perm << std::endl;
+      std::cout << "st.same_node[Dir] = " << st.same_node[Zm] << std::endl;
+      std::cout << "base              = " << (base - plocal)/rescale << std::endl;
+      std::cout << "Basep             = " << (basep - plocal)/rescale << std::endl;
+      //printf("U                 = %llu\n", (uint64_t)&[sU](Dir));
+      std::cout << "----------------------------------------------------" << std::endl;
+#endif
+
       ASM_LEG(Tm,Xp,PERMUTE_DIR0,DIR7_PROJMEM,DIR7_RECON);
+
+#ifdef SHOW
+      std::cout << "Dir = " << Tm << "        "  << WHERE<< std::endl;
+
+      std::cout << "ent  nent  local  perm       = " << ent << "  " << nent << "  " << local << "  "  << perm << std::endl;
+      std::cout << "st.same_node[Dir] = " << st.same_node[Tm] << std::endl;
+      std::cout << "base              = " << (base - plocal)/rescale << std::endl;
+      std::cout << "Basep             = " << (basep - plocal)/rescale << std::endl;
+      //printf("U                 = %llu\n", (uint64_t)&[sU](Dir));
+      std::cout << "----------------------------------------------------" << std::endl;
+#endif
 
 #ifdef EXTERIOR
       if (nmu==0) break;
@@ -197,6 +319,18 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #endif
       base = (uint64_t) &out[ss];
       basep= st.GetPFInfo(nent,plocal); nent++;
+
+#ifdef SHOW
+      std::cout << "Dir = FINAL        " <<  WHERE<< std::endl;;
+
+      base_ss = base;
+      std::cout << "base              = " << (base - (uint64_t) &out[0])/rescale << std::endl;
+      std::cout << "Basep             = " << (basep - plocal)/rescale << std::endl;
+      //printf("U                 = %llu\n", (uint64_t)&[sU](Dir));
+      std::cout << "----------------------------------------------------" << std::endl;
+#endif
+
+      //basep = (uint64_t) &out[ssn];
       RESULT(base,basep);
     }
     ssU++;

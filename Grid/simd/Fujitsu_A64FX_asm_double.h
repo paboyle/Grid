@@ -31,6 +31,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define PREFETCH_CHIMU_L2(A)           PREFETCH_CHIMU_L2_INTERNAL_A64FXd(A)  
 #define PREFETCH_GAUGE_L2(A)           PREFETCH_GAUGE_L2_INTERNAL_A64FXd(A)  
 #define PF_GAUGE(A)  
+#define PREFETCH_RESULT_L2_STORE(A)    PREFETCH_RESULT_L2_STORE_INTERNAL_A64FXd(A)  
 #define PREFETCH1_CHIMU(A)             PREFETCH_CHIMU_L1(A)  
 #define PREFETCH_CHIMU(A)              PREFETCH_CHIMU_L1(A)  
 #define LOCK_GAUGE(A)  
@@ -38,8 +39,11 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define MASK_REGS                      DECLARATIONS_A64FXd  
 #define COMPLEX_SIGNS(A)  
 #define LOAD64(A,B)  
-#define SAVE_RESULT(A,B)               RESULT_A64FXd(A)  
-#define MULT_2SPIN_DIR_PF(A,B)         PREFETCH_GAUGE_L1(A); PREFETCH_CHIMU_L2(B); MULT_2SPIN_A64FXd(A); if ((A == 0) || (A == 4)) { PREFETCH_GAUGE_L2(A); }  
+#define SAVE_RESULT(A,B)               RESULT_A64FXd(A); PREFETCH_CHIMU_L1(B);  
+#define MULT_2SPIN_DIR_PF(A,B)          \
+                                       MULT_2SPIN_A64FXd(A); \
+                                       PREFETCH_CHIMU_L2(B); \
+                                       if (s == 0) { if ((A == 0) || (A == 4)) { PREFETCH_GAUGE_L2(A); } }
 #define MAYBEPERM(A,perm)              { A ; }  
 #define LOAD_CHI(base)                 LOAD_CHI_A64FXd(base)  
 #define ZERO_PSI  
@@ -321,12 +325,28 @@ asm ( \
 // PERM3
 #define PERM3_A64FXd  
 
+// LOAD_GAUGE
+#define LOAD_GAUGE  \
+    const auto & ref(U[sU](A)); uint64_t baseU = (uint64_t)&ref; \
+{ \
+asm ( \
+    "ptrue p5.d \n\t" \
+    "ld1d { z24.d }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
+    "ld1d { z25.d }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
+    "ld1d { z26.d }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
+    "ld1d { z27.d }, p5/z, [%[fetchptr], -5, mul vl] \n\t" \
+    "ld1d { z28.d }, p5/z, [%[fetchptr], -2, mul vl] \n\t" \
+    "ld1d { z29.d }, p5/z, [%[fetchptr], 1, mul vl] \n\t" \
+    :  \
+    : [fetchptr] "r" (baseU + 2 * 3 * 64) \
+    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
+); \
+}
 // MULT_2SPIN
 #define MULT_2SPIN_A64FXd(A)  \
 { \
     const auto & ref(U[sU](A)); uint64_t baseU = (uint64_t)&ref; \
 asm ( \
-    "ptrue p5.d \n\t" \
     "ld1d { z24.d }, p5/z, [%[fetchptr], -6, mul vl] \n\t" \
     "ld1d { z25.d }, p5/z, [%[fetchptr], -3, mul vl] \n\t" \
     "ld1d { z26.d }, p5/z, [%[fetchptr], 0, mul vl] \n\t" \
@@ -738,6 +758,18 @@ asm ( \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
 ); 
 
+// PREFETCH_RESULT_L2_STORE (prefetch store to L2)
+#define PREFETCH_RESULT_L2_STORE_INTERNAL_A64FXd(base)  \
+{ \
+asm ( \
+    "prfd PSTL2STRM, p5, [%[fetchptr], 0, mul vl] \n\t" \
+    "prfd PSTL2STRM, p5, [%[fetchptr], 4, mul vl] \n\t" \
+    "prfd PSTL2STRM, p5, [%[fetchptr], 8, mul vl] \n\t" \
+    :  \
+    : [fetchptr] "r" (base) \
+    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
+); \
+}
 // ADD_RESULT_INTERNAL
 #define ADD_RESULT_INTERNAL_A64FXd  \
 asm ( \
