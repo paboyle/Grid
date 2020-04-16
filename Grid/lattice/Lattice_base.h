@@ -173,6 +173,7 @@ public:
   ///////////////////////////////////////////////////
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
+  typedef typename vobj::scalar_object scalar_object;
   typedef vobj vector_object;
 
 private:

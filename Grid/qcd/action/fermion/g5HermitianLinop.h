@@ -54,6 +54,14 @@ public:
     _Mat.Mdir(in,tmp,dir,disp);
     G5R5(out,tmp);
   }
+  void OpDirAll(const Field &in, std::vector<Field> &out) {
+    Field tmp(in.Grid());
+    _Mat.MdirAll(in,out);
+    for(int p=0;p<out.size();p++) {
+      tmp=out[p];
+      G5R5(out[p],tmp);
+    }
+  }
 
   void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
 
@@ -95,6 +103,12 @@ public:
     Field tmp(in.Grid());
     _Mat.Mdir(in,tmp,dir,disp);
     out=g5*tmp;
+  }
+  void OpDirAll(const Field &in, std::vector<Field> &out) {
+    _Mat.MdirAll(in,out);
+    for(int p=0;p<out.size();p++) {
+      out[p]=g5*out[p];
+    }
   }
 
   void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){

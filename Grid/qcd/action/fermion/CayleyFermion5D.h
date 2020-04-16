@@ -101,7 +101,8 @@ public:
   virtual void MeoDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
 
   // Efficient support for multigrid coarsening
-  virtual void  Mdir (const FermionField &in, FermionField &out,int dir,int disp);
+  virtual void  Mdir   (const FermionField &in, FermionField &out,int dir,int disp);
+  virtual void  MdirAll(const FermionField &in, std::vector<FermionField> &out);
 
   void   Meooe5D       (const FermionField &in, FermionField &out);
   void   MeooeDag5D    (const FermionField &in, FermionField &out);

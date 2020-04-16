@@ -153,7 +153,7 @@ AC_ARG_ENABLE([mkl],
     [ac_MKL=${enable_mkl}], [ac_MKL=no])
 AC_ARG_ENABLE([ipp],
     [AC_HELP_STRING([--enable-ipp=yes|no|prefix], [enable Intel IPP for fast CRC32C])],
-    [ac_IPP=${enable_mkl}], [ac_IPP=no])
+    [ac_IPP=${enable_ipp}], [ac_IPP=no])
 
 case ${ac_MKL} in
     no)
@@ -280,7 +280,8 @@ case ${CXX} in
 #    CXXLD="nvcc -v -link"
     CXX="nvcc -x cu "
     CXXLD="nvcc -link"
-    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing -Xcompiler -Wno-unusable-partial-specialization --expt-extended-lambda --expt-relaxed-constexpr"
+#    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing -Xcompiler -Wno-unusable-partial-specialization --expt-extended-lambda --expt-relaxed-constexpr"
+    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr"
     if test $ac_openmp = yes; then
        CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
     fi
@@ -617,7 +618,6 @@ AC_CONFIG_FILES(tests/IO/Makefile)
 AC_CONFIG_FILES(tests/core/Makefile)
 AC_CONFIG_FILES(tests/debug/Makefile)
 AC_CONFIG_FILES(tests/forces/Makefile)
-AC_CONFIG_FILES(tests/hadrons/Makefile)
 AC_CONFIG_FILES(tests/hmc/Makefile)
 AC_CONFIG_FILES(tests/solver/Makefile)
 AC_CONFIG_FILES(tests/lanczos/Makefile)
@@ -625,8 +625,6 @@ AC_CONFIG_FILES(tests/smearing/Makefile)
 AC_CONFIG_FILES(tests/qdpxx/Makefile)
 AC_CONFIG_FILES(tests/testu01/Makefile)
 AC_CONFIG_FILES(benchmarks/Makefile)
-AC_CONFIG_FILES(Hadrons/Makefile)
-AC_CONFIG_FILES(Hadrons/Utilities/Makefile)
 AC_OUTPUT
 
 echo ""

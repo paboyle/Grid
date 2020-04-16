@@ -38,10 +38,11 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 NAMESPACE_BEGIN(Grid);
 
+#define GCRLogLevel std::cout << GridLogMessage <<std::string(level,'\t')<< " Level "<<level<<" " 
+
 template<class Field>
-class PrecGeneralisedConjugateResidual : public OperatorFunction<Field> {
+class PrecGeneralisedConjugateResidual : public LinearFunction<Field> {
 public:                                                
-  using OperatorFunction<Field>::operator();
 
   RealD   Tolerance;
   Integer MaxIterations;
@@ -49,23 +50,29 @@ public:
   int mmax;
   int nstep;
   int steps;
+  int level;
   GridStopWatch PrecTimer;
   GridStopWatch MatTimer;
   GridStopWatch LinalgTimer;
 
-  LinearFunction<Field> &Preconditioner;
+  LinearFunction<Field>     &Preconditioner;
+  LinearOperatorBase<Field> &Linop;
 
-  PrecGeneralisedConjugateResidual(RealD tol,Integer maxit,LinearFunction<Field> &Prec,int _mmax,int _nstep) : 
+  void Level(int lv) { level=lv; };
+
+  PrecGeneralisedConjugateResidual(RealD tol,Integer maxit,LinearOperatorBase<Field> &_Linop,LinearFunction<Field> &Prec,int _mmax,int _nstep) : 
     Tolerance(tol), 
     MaxIterations(maxit),
+    Linop(_Linop),
     Preconditioner(Prec),
     mmax(_mmax),
     nstep(_nstep)
   { 
+    level=1;
     verbose=1;
   };
 
-  void operator() (LinearOperatorBase<Field> &Linop,const Field &src, Field &psi){
+  void operator() (const Field &src, Field &psi){
 
     psi=Zero();
     RealD cp, ssq,rsq;
@@ -84,9 +91,9 @@ public:
     steps=0;
     for(int k=0;k<MaxIterations;k++){
 
-      cp=GCRnStep(Linop,src,psi,rsq);
+      cp=GCRnStep(src,psi,rsq);
 
-      std::cout<<GridLogMessage<<"VPGCR("<<mmax<<","<<nstep<<") "<< steps <<" steps cp = "<<cp<<" target "<<rsq <<std::endl;
+      GCRLogLevel <<"PGCR("<<mmax<<","<<nstep<<") "<< steps <<" steps cp = "<<cp<<" target "<<rsq <<std::endl;
 
       if(cp<rsq) {
 
@@ -95,24 +102,26 @@ public:
 	Linop.HermOp(psi,r);
 	axpy(r,-1.0,src,r);
 	RealD tr = norm2(r);
-	std::cout<<GridLogMessage<<"PrecGeneralisedConjugateResidual: Converged on iteration " <<steps
+	GCRLogLevel<<"PGCR: Converged on iteration " <<steps
 		 << " computed residual "<<sqrt(cp/ssq)
 		 << " true residual "    <<sqrt(tr/ssq)
 		 << " target "           <<Tolerance <<std::endl;
 
-	std::cout<<GridLogMessage<<"VPGCR Time elapsed: Total  "<< SolverTimer.Elapsed() <<std::endl;
-	std::cout<<GridLogMessage<<"VPGCR Time elapsed: Precon "<<   PrecTimer.Elapsed() <<std::endl;
-	std::cout<<GridLogMessage<<"VPGCR Time elapsed: Matrix "<<    MatTimer.Elapsed() <<std::endl;
-	std::cout<<GridLogMessage<<"VPGCR Time elapsed: Linalg "<< LinalgTimer.Elapsed() <<std::endl;
+	GCRLogLevel<<"PGCR Time elapsed: Total  "<< SolverTimer.Elapsed() <<std::endl;
+	/*
+	  GCRLogLevel<<"PGCR Time elapsed: Precon "<<   PrecTimer.Elapsed() <<std::endl;
+	  GCRLogLevel<<"PGCR Time elapsed: Matrix "<<    MatTimer.Elapsed() <<std::endl;
+	  GCRLogLevel<<"PGCR Time elapsed: Linalg "<< LinalgTimer.Elapsed() <<std::endl;
+	*/
 	return;
       }
 
     }
-    std::cout<<GridLogMessage<<"Variable Preconditioned GCR did not converge"<<std::endl;
-    assert(0);
+    GCRLogLevel<<"Variable Preconditioned GCR did not converge"<<std::endl;
+    //    assert(0);
   }
 
-  RealD GCRnStep(LinearOperatorBase<Field> &Linop,const Field &src, Field &psi,RealD rsq){
+  RealD GCRnStep(const Field &src, Field &psi,RealD rsq){
 
     RealD cp;
     RealD a, b;
@@ -134,9 +143,7 @@ public:
     std::vector<Field> p(mmax,grid);
     std::vector<RealD> qq(mmax);
       
-    std::cout<<GridLogIterative<< " ************** "<< std::endl;
-    std::cout<<GridLogIterative<< "   GCRnStep("<<nstep<<")"<<std::endl;
-    std::cout<<GridLogIterative<< " ************** "<< std::endl;
+    GCRLogLevel<< "PGCR nStep("<<nstep<<")"<<std::endl;
 
     //////////////////////////////////
     // initial guess x0 is taken as nonzero.
@@ -150,35 +157,15 @@ public:
     LinalgTimer.Start();
     r=src-Az;
     LinalgTimer.Stop();
-    std::cout<<GridLogIterative<< " GCRnStep true residual r = src - A psi   "<<norm2(r) <<std::endl;
+    GCRLogLevel<< "PGCR true residual r = src - A psi   "<<norm2(r) <<std::endl;
     
     /////////////////////
     // p = Prec(r)
     /////////////////////
 
-    std::cout<<GridLogIterative<< " GCRnStep apply preconditioner z= M^-1 r "<< std::endl;
-    std::cout<<GridLogIterative<< " --------------------------------------- "<< std::endl;
     PrecTimer.Start();
     Preconditioner(r,z);
     PrecTimer.Stop();
-    std::cout<<GridLogIterative<< " --------------------------------------- "<< std::endl;
-    std::cout<<GridLogIterative<< " GCRnStep called Preconditioner z "<< norm2(z) <<std::endl;
-
-    //    MatTimer.Start();
-    //    Linop.HermOp(z,tmp); 
-    //    MatTimer.Stop();
-
-    //    LinalgTimer.Start();
-    //    ttmp=tmp;
-    //    tmp=tmp-r;
-    //    LinalgTimer.Stop();
-
-    /*
-      std::cout<<GridLogMessage<<r<<std::endl;
-      std::cout<<GridLogMessage<<z<<std::endl;
-      std::cout<<GridLogMessage<<ttmp<<std::endl;
-      std::cout<<GridLogMessage<<tmp<<std::endl;
-    */
 
     MatTimer.Start();
     Linop.HermOpAndNorm(z,Az,zAz,zAAz); 
@@ -190,7 +177,6 @@ public:
     p[0]= z;
     q[0]= Az;
     qq[0]= zAAz;
-    std::cout<<GridLogIterative<< " GCRnStep p0=z, q0 = A p0 " <<std::endl;
     
     cp =norm2(r);
     LinalgTimer.Stop();
@@ -212,20 +198,16 @@ public:
       cp = axpy_norm(r,-a,q[peri_k],r);
       LinalgTimer.Stop();
 
-      std::cout<<GridLogMessage<< " VPGCR_step["<<steps<<"]  resid " << cp << " target " <<rsq<<std::endl; 
+      GCRLogLevel<< "PGCR step["<<steps<<"]  resid " << cp << " target " <<rsq<<std::endl; 
 
       if((k==nstep-1)||(cp<rsq)){
 	return cp;
       }
 
 
-      std::cout<<GridLogIterative<< " GCRnStep apply preconditioner z= M^-1 r "<< std::endl;
-      std::cout<<GridLogIterative<< " --------------------------------------- "<< std::endl;
       PrecTimer.Start();
       Preconditioner(r,z);// solve Az = r
       PrecTimer.Stop();
-      std::cout<<GridLogIterative<< " --------------------------------------- "<< std::endl;
-      std::cout<<GridLogIterative<< " GCRnStep called Preconditioner z "<< norm2(z) <<std::endl;
 
       MatTimer.Start();
       Linop.HermOpAndNorm(z,Az,zAz,zAAz);
