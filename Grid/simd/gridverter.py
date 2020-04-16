@@ -115,37 +115,9 @@ STORE_BASE_PTR_COLOR_OFFSET = 2
 # 256 bytes * 2.2 GHz = 563.2 GB/s (base 10), 524 GB/s (base 2)
 
 OPT = """
-#ifdef INTERIOR
-
-#define ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
-      basep = st.GetPFInfo(nent,plocal); nent++;			\
-      if ( local ) {							\
---	LOAD64(%r10,isigns);						\
-	PROJ(base);							\
-++ PF_GAUGE(Dir);                         \
-	MAYBEPERM(PERMUTE_DIR,perm);					\
-      } else if ( st.same_node[Dir] ) {
-    LOAD_CHI(base);
-++ PF_GAUGE(Dir);
-      }			\
-    base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
-      if ( local || st.same_node[Dir] ) {				\
-	MULT_2SPIN_DIR_PF(Dir,basep);					\
-    PREFETCH_CHIMU(base);						\
---	LOAD64(%r10,isigns);						\
-	RECON;								\
-      } else { PREFETCH_CHIMU(base); }
-
-#define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
-  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
---  PF_GAUGE(Xp);								\
-  PREFETCH1_CHIMU(base);						\
-  { ZERO_PSI; }								\
-  ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)
-
-#define RESULT(base,basep) SAVE_RESULT(base,basep);
-
-#endif
+* interleave prefetching and compute in MULT_2SPIN
+* could test storing U's in MULT_2SPIN to L1d, might be beneficial for life time cache lines
+* structure reordering: MAYBEPERM after MULT_2SPIN ?
 """
 
 filename = 'XXX'
@@ -905,7 +877,8 @@ if ALTERNATIVE_LOADS == True:
     define(F'LOAD_CHIMU_0312_PLUG    LOAD_CHIMU_0312_{PRECSUFFIX}')
     define(F'LOAD_CHIMU(x)')
 else:
-    define(F'LOAD_CHIMU_{PRECSUFFIX}(x)           LOAD_CHIMU_INTERLEAVED_{PRECSUFFIX}(x)')
+    #define(F'LOAD_CHIMU_{PRECSUFFIX}(x)           LOAD_CHIMU_INTERLEAVED_{PRECSUFFIX}(x)')
+    define(F'LOAD_CHIMU(base)               LOAD_CHIMU_INTERLEAVED_{PRECSUFFIX}(base)')
 
 if PREFETCH:
     define(F'PREFETCH_CHIMU_L1(A)           PREFETCH_CHIMU_L1_INTERNAL_{PRECSUFFIX}(A)')
@@ -935,39 +908,22 @@ define(F'UNLOCK_GAUGE(A)')
 define(F'MASK_REGS                      DECLARATIONS_{PRECSUFFIX}')
 define(F'COMPLEX_SIGNS(A)')
 define(F'LOAD64(A,B)')
-# prefetch chimu here is useless, because already done in last leg
-#define(F'SAVE_RESULT(A,B)               RESULT_{PRECSUFFIX}(A);')
-define(F'SAVE_RESULT(A,B)               RESULT_{PRECSUFFIX}(A); PREFETCH_RESULT_L2_STORE(B);')
-if PREFETCH:
-    definemultiline(F'MULT_2SPIN_DIR_PF(A,B)        ')
-    write (F'                                       MULT_2SPIN_{PRECSUFFIX}(A); \\')
-    write (F'                                       PREFETCH_CHIMU_L2(B); \\')
-    write (F'                                       if (s == 0) {{ if ((A == 0) || (A == 4)) {{ PREFETCH_GAUGE_L2(A); }} }}')
-
-#    definemultiline(F'MULT_2SPIN_DIR_PF(A,B)        PREFETCH_GAUGE_L1(A);')
-#    write (F'                                       PREFETCH_CHIMU_L2(B); \\')
-#    write (F'                                       MULT_2SPIN_{PRECSUFFIX}(A); \\')
-#    write (F'                                       if (s == 0) {{ if ((A == 0) || (A == 4)) {{ PREFETCH_GAUGE_L2(A); }} }}')
-    newline()
-else:
-    define(F'MULT_2SPIN_DIR_PF(A,B)         MULT_2SPIN_{PRECSUFFIX}(A)')
-# break out maybeperm in permutes
-#define(F'MAYBEPERM(A,perm)              if (perm) {{ A ; }}')
-define(F'MAYBEPERM(A,perm)              {{ A ; }}')
+define(F'SAVE_RESULT(A,B)               RESULT_{PRECSUFFIX}(A); PREFETCH_RESULT_L2_STORE(B)')
+define(F'MULT_2SPIN_1(Dir)              MULT_2SPIN_1_{PRECSUFFIX}(Dir)')
+define(F'MULT_2SPIN_2                   MULT_2SPIN_2_{PRECSUFFIX}')
 define(F'LOAD_CHI(base)                 LOAD_CHI_{PRECSUFFIX}(base)')
 # don't need zero psi, everything is done in recons
 #define(F'ZERO_PSI                       ZERO_PSI_{PRECSUFFIX}')
-define(F'ZERO_PSI')
-define(F'ADD_RESULT(base,basep)         LOAD_CHIMU_{PRECSUFFIX}(base); ADD_RESULT_INTERNAL_{PRECSUFFIX}; RESULT_{PRECSUFFIX}(base)')
+define(F'ADD_RESULT(base,basep)         LOAD_CHIMU(base); ADD_RESULT_INTERNAL_{PRECSUFFIX}; RESULT_{PRECSUFFIX}(base)')
 # loads projections
-define(F'XP_PROJMEM(base)               LOAD_CHIMU_{PRECSUFFIX}(base);   XP_PROJ_{PRECSUFFIX}')
-define(F'YP_PROJMEM(base)               LOAD_CHIMU_{PRECSUFFIX}(base);   YP_PROJ_{PRECSUFFIX}')
-define(F'ZP_PROJMEM(base)               LOAD_CHIMU_{PRECSUFFIX}(base);   ZP_PROJ_{PRECSUFFIX}')
-define(F'TP_PROJMEM(base)               LOAD_CHIMU_{PRECSUFFIX}(base);   TP_PROJ_{PRECSUFFIX}')
-define(F'XM_PROJMEM(base)               LOAD_CHIMU_{PRECSUFFIX}(base);   XM_PROJ_{PRECSUFFIX}')
-define(F'YM_PROJMEM(base)               LOAD_CHIMU_{PRECSUFFIX}(base);   YM_PROJ_{PRECSUFFIX}')
-define(F'ZM_PROJMEM(base)               LOAD_CHIMU_{PRECSUFFIX}(base);   ZM_PROJ_{PRECSUFFIX}')
-define(F'TM_PROJMEM(base)               LOAD_CHIMU_{PRECSUFFIX}(base);   TM_PROJ_{PRECSUFFIX}')
+define(F'XP_PROJ                        XP_PROJ_{PRECSUFFIX}')
+define(F'YP_PROJ                        YP_PROJ_{PRECSUFFIX}')
+define(F'ZP_PROJ                        ZP_PROJ_{PRECSUFFIX}')
+define(F'TP_PROJ                        TP_PROJ_{PRECSUFFIX}')
+define(F'XM_PROJ                        XM_PROJ_{PRECSUFFIX}')
+define(F'YM_PROJ                        YM_PROJ_{PRECSUFFIX}')
+define(F'ZM_PROJ                        ZM_PROJ_{PRECSUFFIX}')
+define(F'TM_PROJ                        TM_PROJ_{PRECSUFFIX}')
 # recons
 define(F'XP_RECON                       XP_RECON_{PRECSUFFIX}')
 define(F'XM_RECON                       XM_RECON_{PRECSUFFIX}')
@@ -979,14 +935,21 @@ define(F'XP_RECON_ACCUM                 XP_RECON_ACCUM_{PRECSUFFIX}')
 define(F'YP_RECON_ACCUM                 YP_RECON_ACCUM_{PRECSUFFIX}')
 define(F'ZP_RECON_ACCUM                 ZP_RECON_ACCUM_{PRECSUFFIX}')
 define(F'TP_RECON_ACCUM                 TP_RECON_ACCUM_{PRECSUFFIX}')
-# permutes
-define(F'PERMUTE_DIR0                   LOAD_TABLE0; if (perm) {{ PERM0_{PRECSUFFIX}; }}')
-define(F'PERMUTE_DIR1                   LOAD_TABLE1; if (perm) {{ PERM1_{PRECSUFFIX}; }}')
-define(F'PERMUTE_DIR2                   LOAD_TABLE2; if (perm) {{ PERM2_{PRECSUFFIX}; }}')
+# new permutes
+define(F'PERMUTE_DIR0                   0')
+define(F'PERMUTE_DIR1                   1')
+define(F'PERMUTE_DIR2                   2')
+define(F'PERMUTE_DIR3                   3')
+define(F'PERMUTE                        PERMUTE_{PRECSUFFIX};')
+# load table
+#define(F'MAYBEPERM(A,perm)              if (perm) {{ A ; }}')
 if PRECISION == 'double':
-    define(F'PERMUTE_DIR3')
+    define(F'LOAD_TABLE(Dir)                if (Dir == 0) {{ LOAD_TABLE0; }} else if (Dir == 1) {{ LOAD_TABLE1; }} else if (Dir == 2) {{ LOAD_TABLE2; }}')
+    define(F'MAYBEPERM(Dir,perm)            if (Dir != 3) {{ if (perm) {{ PERMUTE; }} }}')
 else:
-    define(F'PERMUTE_DIR3                   LOAD_TABLE3; if (perm) {{ PERM3_{PRECSUFFIX}; }}')
+    define(F'LOAD_TABLE(Dir)                if (Dir == 0) {{ LOAD_TABLE0; }} else if (Dir == 1) {{ LOAD_TABLE1 }} else if (Dir == 2) {{ LOAD_TABLE2; }} else if (Dir == 3) {{ LOAD_TABLE3; }}')
+    define(F'MAYBEPERM(A,perm)              if (perm) {{ PERMUTE; }}')
+
 
 
 write('// DECLARATIONS')
@@ -1040,20 +1003,14 @@ U_01.declare()
 U_11.declare()
 U_21.declare()          # 6   -> 30 regs
 
-# all true
+# all predications true
 pg1.declare()
 if PRECISION == 'double':
     pg1.movestr('svptrue_b64()')
 else:
     pg1.movestr('svptrue_b32()')
 
-# even elements only
-#pg2.declare()
-#pg2.movestr('svzip1_b64(svptrue_b64(), svpfalse_b())')
-
-# preload tables
-# 0: swap
-# 1: permute 1
+# tables
 if PRECISION == 'double':
     write('    svuint64_t table0; \\', target='I')   #      -> 31 regs
 else:
@@ -1061,10 +1018,10 @@ else:
 
 zero0.declare()
 
+# zero register
 asmopen()
 zero0.zero(zeroreg=True)
 asmclose()
-
 newline()
 
 define('Chimu_00 Chi_00', target='I')
@@ -1087,7 +1044,6 @@ else: # wilson4.h
     define('Chimu_30 U_01', target='I')
     define('Chimu_31 U_11', target='I')
     define('Chimu_32 U_21', target='I')
-
 newline()
 
 
@@ -1380,47 +1336,11 @@ table0.loadtable(3)
 asmclose()
 newline()
 
-# 8 directions = 6x permutations
-d['factor'] = 2     # factor is 0
-d['cycles_PERM'] += 6 * d['factor']
-write('// PERM0')
-definemultiline(F'PERM0_{PRECSUFFIX}')
-debugall('PERM0 PRE', group='Chi')
-asmopen()
-#table0.loadtable(0)
-Chi_00.permute(0, table0)
-Chi_01.permute(0, table0)
-Chi_02.permute(0, table0)
-Chi_10.permute(0, table0)
-Chi_11.permute(0, table0)
-Chi_12.permute(0, table0)
-asmclose()
-debugall('PERM0 POST', group='Chi')
-newline()
-
 d['factor'] = 2     # factor is 2
 d['cycles_PERM'] += 6 * d['factor']
-write('// PERM1')
-definemultiline(F'PERM1_{PRECSUFFIX}')
-debugall('PERM1 PRE', group='Chi')
-asmopen()
-#table0.loadtable(1)
-Chi_00.permute(1, table0)
-Chi_01.permute(1, table0)
-Chi_02.permute(1, table0)
-Chi_10.permute(1, table0)
-Chi_11.permute(1, table0)
-Chi_12.permute(1, table0)
-asmclose()
-debugall('PERM1 POST', group='Chi')
-newline()
-
-d['factor'] = 2     # factor is 2
-# PERM2 = swap real and imaginary
-d['cycles_PERM'] += 6 * d['factor']
-write('// PERM2')
-definemultiline(F'PERM2_{PRECSUFFIX}')
-debugall('PERM2 PRE', group='Chi')
+write('// PERMUTE')
+definemultiline(F'PERMUTE_{PRECSUFFIX}')
+debugall('PERM PRE', group='Chi')
 asmopen()
 #table0.loadtable(2)
 Chi_00.permute(2, table0)
@@ -1430,26 +1350,7 @@ Chi_10.permute(2, table0)
 Chi_11.permute(2, table0)
 Chi_12.permute(2, table0)
 asmclose()
-debugall('PERM2 POST', group='Chi')
-newline()
-
-# PERM3 = identity (DP), so exclude from counting
-d['factor'] = 0
-d['cycles_PERM'] += 6 * d['factor']
-write('// PERM3')
-definemultiline(F'PERM3_{PRECSUFFIX}')
-if PRECISION == 'single':
-    debugall('PERM3 PRE', group='Chi')
-    asmopen()
-    #table0.loadtable(3)
-    Chi_00.permute(3, table0)
-    Chi_01.permute(3, table0)
-    Chi_02.permute(3, table0)
-    Chi_10.permute(3, table0)
-    Chi_11.permute(3, table0)
-    Chi_12.permute(3, table0)
-    asmclose()
-    debugall('PERM3 POST', group='Chi')
+debugall('PERM POST', group='Chi')
 newline()
 
 write('// LOAD_GAUGE')
@@ -1473,7 +1374,7 @@ if ASM_LOAD_GAUGE:
 asmclose()
 curlyclose()
 newline()
-# XXXXXX remove loads
+
 d['factor'] = 8    # MULT_2SPIN executes 1 time per direction = 8 times total
 # assume all U loads are hidden
 # FCMLA issue latency = 2 cycles
@@ -1482,7 +1383,7 @@ d['factor'] = 8    # MULT_2SPIN executes 1 time per direction = 8 times total
 # 6 rounds of FCMLA, each with 6 FCMLA -> 21 - 6*2 = 9
 d['cycles_MULT_2SPIN'] += 6 * 21 * d['factor']
 write('// MULT_2SPIN')
-definemultiline(F'MULT_2SPIN_{PRECSUFFIX}(A)')
+definemultiline(F'MULT_2SPIN_1_{PRECSUFFIX}(A)')
 curlyopen()
 #write('    const auto & ref(U[sU][A]); \\')
 if GRIDBENCH:   # referencing differs in Grid and GridBench
@@ -1541,7 +1442,15 @@ if ASM_LOAD_GAUGE:
     U_00.load("ref[0][2]")      # U_00, U_10, U_20 overloaded
     U_10.load("ref[1][2]")      # early load
     U_20.load("ref[2][2]")      # A -->
+asmclose()
+debugall('MULT_2SPIN_1', group='UChi')
+curlyclose()
+newline()
 
+write('// MULT_2SPIN_BACKEND')
+definemultiline(F'MULT_2SPIN_2_{PRECSUFFIX}')
+curlyopen()
+asmopen()
 # round 3
 UChi_00.mac0(U_01, Chi_01)  # armclang separates fcmla(..., 0) and
 UChi_10.mac0(U_01, Chi_11)  #                    fcmla(..., 90)
@@ -1571,7 +1480,7 @@ UChi_11.mac1(U_10, Chi_12)
 UChi_02.mac1(U_20, Chi_02)
 UChi_12.mac1(U_20, Chi_12)
 asmclose()
-debugall('MULT_2SPIN', group='UChi')
+debugall('MULT_2SPIN_2', group='UChi')
 curlyclose()
 newline()
 
@@ -1587,7 +1496,7 @@ if ALTERNATIVE_LOADS == True:
     write('    LOAD_CHIMU_0312_PLUG \\')
 curlyopen()
 asmopen()
-pg1.loadpredication()
+#pg1.loadpredication()
 Chi_00.addTimesI(Chimu_00, Chimu_30)
 Chi_01.addTimesI(Chimu_01, Chimu_31)
 Chi_02.addTimesI(Chimu_02, Chimu_32)

@@ -26,14 +26,14 @@ Author: Nils Meyer <nils.meyer@ur.de>
 *************************************************************************************/
 /*  END LEGAL */
 #ifdef KERNEL_DAG
-#define DIR0_PROJMEM(base) XP_PROJMEM(base);
-#define DIR1_PROJMEM(base) YP_PROJMEM(base);
-#define DIR2_PROJMEM(base) ZP_PROJMEM(base);
-#define DIR3_PROJMEM(base) TP_PROJMEM(base);
-#define DIR4_PROJMEM(base) XM_PROJMEM(base);
-#define DIR5_PROJMEM(base) YM_PROJMEM(base);
-#define DIR6_PROJMEM(base) ZM_PROJMEM(base);
-#define DIR7_PROJMEM(base) TM_PROJMEM(base);
+#define DIR0_PROJ    XP_PROJ
+#define DIR1_PROJ    YP_PROJ
+#define DIR2_PROJ    ZP_PROJ
+#define DIR3_PROJ    TP_PROJ
+#define DIR4_PROJ    XM_PROJ
+#define DIR5_PROJ    YM_PROJ
+#define DIR6_PROJ    ZM_PROJ
+#define DIR7_PROJ    TM_PROJ
 #define DIR0_RECON   XP_RECON
 #define DIR1_RECON   YP_RECON_ACCUM
 #define DIR2_RECON   ZP_RECON_ACCUM
@@ -43,14 +43,14 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define DIR6_RECON   ZM_RECON_ACCUM
 #define DIR7_RECON   TM_RECON_ACCUM
 #else
-#define DIR0_PROJMEM(base) XM_PROJMEM(base);
-#define DIR1_PROJMEM(base) YM_PROJMEM(base);
-#define DIR2_PROJMEM(base) ZM_PROJMEM(base);
-#define DIR3_PROJMEM(base) TM_PROJMEM(base);
-#define DIR4_PROJMEM(base) XP_PROJMEM(base);
-#define DIR5_PROJMEM(base) YP_PROJMEM(base);
-#define DIR6_PROJMEM(base) ZP_PROJMEM(base);
-#define DIR7_PROJMEM(base) TP_PROJMEM(base);
+#define DIR0_PROJ    XM_PROJ
+#define DIR1_PROJ    YM_PROJ
+#define DIR2_PROJ    ZM_PROJ
+#define DIR3_PROJ    TM_PROJ
+#define DIR4_PROJ    XP_PROJ
+#define DIR5_PROJ    YP_PROJ
+#define DIR6_PROJ    ZP_PROJ
+#define DIR7_PROJ    TP_PROJ
 #define DIR0_RECON   XM_RECON
 #define DIR1_RECON   YM_RECON_ACCUM
 #define DIR2_RECON   ZM_RECON_ACCUM
@@ -91,23 +91,28 @@ Author: Nils Meyer <nils.meyer@ur.de>
 
 #define ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
       basep = st.GetPFInfo(nent,plocal); nent++;			\
-      if ( local ) {							\
-    /* PREFETCH_GAUGE_L1(Dir); slightly worse performance */ \
-	PROJ(base);							\
-    /* PREFETCH_GAUGE_L1(Dir); slightly worse performance */ \
-	MAYBEPERM(PERMUTE_DIR,perm);					\
-      } else {								\
-	LOAD_CHI(base);							\
-      }									\
+      if ( local ) {							            \
+    LOAD_CHIMU(base);                                       \
+    LOAD_TABLE(PERMUTE_DIR);                                \
+    PROJ;							                        \
+    MAYBEPERM(PERMUTE_DIR,perm);					        \
+      } else {								                \
+	LOAD_CHI(base);							                \
+      }									                    \
       base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
-      PREFETCH_CHIMU(base);						\
-      MULT_2SPIN_DIR_PF(Dir,basep);					\
-      RECON;								\
+    MULT_2SPIN_1(Dir);					                    \
+    PREFETCH_CHIMU(base);                                   \
+    PREFETCH_CHIMU_L2(basep);                               \
+    /* PREFETCH_GAUGE_L1(NxtDir); */                        \
+    MULT_2SPIN_2;					                        \
+    if (s == 0) {                                           \
+      if ((Dir == 0) || (Dir == 4)) { PREFETCH_GAUGE_L2(Dir); } \
+    }                                                       \
+    RECON;								                    \
 
-#define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
-  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
-  PF_GAUGE(Xp);								\
-  PREFETCH1_CHIMU(base);						\
+#define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)	    \
+  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++; \
+  PREFETCH1_CHIMU(base);						            \
   ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)
 
 #define RESULT(base,basep) SAVE_RESULT(base,basep);
@@ -121,22 +126,28 @@ Author: Nils Meyer <nils.meyer@ur.de>
 
 #define ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
       basep = st.GetPFInfo(nent,plocal); nent++;			\
-      if ( local ) {							\
-	PROJ(base);							\
-	MAYBEPERM(PERMUTE_DIR,perm);					\
-      }else if ( st.same_node[Dir] ) {LOAD_CHI(base);}			\
-      if ( local || st.same_node[Dir] ) {				\
-	MULT_2SPIN_DIR_PF(Dir,basep);					\
-	RECON;								\
-      }									\
+      if ( local ) {							            \
+    LOAD_CHIMU(base);                                       \
+    LOAD_TABLE(PERMUTE_DIR);                                \
+    PROJ;							                        \
+    MAYBEPERM(PERMUTE_DIR,perm);					        \
+      }else if ( st.same_node[Dir] ) {LOAD_CHI(base);}	    \
       base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
-      PREFETCH_CHIMU(base);						\
+      if ( local || st.same_node[Dir] ) {				    \
+    MULT_2SPIN_1(Dir);					                    \
+    PREFETCH_CHIMU(base);                                   \
+    /* PREFETCH_GAUGE_L1(NxtDir); */                        \
+    MULT_2SPIN_2;					                        \
+    if (s == 0) {                                           \
+       if ((Dir == 0) || (Dir == 4)) { PREFETCH_GAUGE_L2(Dir); } \
+    }                                                       \
+    RECON;								                    \
+    PREFETCH_CHIMU_L2(basep);                               \
+      } else { PREFETCH_CHIMU(base); }								                    \
 
 #define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
   base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
-  PF_GAUGE(Xp);								\
   PREFETCH1_CHIMU(base);						\
-  { ZERO_PSI; }								\
   ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)
 
 #define RESULT(base,basep) SAVE_RESULT(base,basep);
@@ -149,23 +160,34 @@ Author: Nils Meyer <nils.meyer@ur.de>
 
 
 #define ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
-  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
-  if((!local)&&(!st.same_node[Dir]) ) {					\
-    LOAD_CHI(base);							\
-    MULT_2SPIN_DIR_PF(Dir,base);					\
-    RECON;								\
-    nmu++;								\
+  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++; \
+  if((!local)&&(!st.same_node[Dir]) ) {					    \
+    LOAD_CHI(base);							                \
+    MULT_2SPIN_1(Dir);					                    \
+    PREFETCH_CHIMU(base);                                   \
+    /* PREFETCH_GAUGE_L1(NxtDir); */                        \
+    MULT_2SPIN_2;					                        \
+    if (s == 0) {                                           \
+      if ((Dir == 0) || (Dir == 4)) { PREFETCH_GAUGE_L2(Dir); } \
+    }                                                       \
+    RECON;								                    \
+    nmu++;								                    \
   }
 
-#define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
-  nmu=0;								\
-  { ZERO_PSI;}								\
-  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
-  if((!local)&&(!st.same_node[Dir]) ) {					\
-    LOAD_CHI(base);							\
-    MULT_2SPIN_DIR_PF(Dir,base);					\
-    RECON;								\
-    nmu++;								\
+#define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)	    \
+  nmu=0;								                    \
+  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;\
+  if((!local)&&(!st.same_node[Dir]) ) {					    \
+    LOAD_CHI(base);							                \
+    MULT_2SPIN_1(Dir);					                    \
+    PREFETCH_CHIMU(base);                                   \
+    /* PREFETCH_GAUGE_L1(NxtDir); */                        \
+    MULT_2SPIN_2;					                        \
+    if (s == 0) {                                           \
+      if ((Dir == 0) || (Dir == 4)) { PREFETCH_GAUGE_L2(Dir); } \
+    }                                                       \
+    RECON;								                    \
+    nmu++;								                    \
   }
 
 #define RESULT(base,basep) if (nmu){ ADD_RESULT(base,base);}
@@ -201,7 +223,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 
       uint64_t delta_base, delta_base_p;
 
-   ASM_LEG_XP(Xp,Yp,PERMUTE_DIR3,DIR0_PROJMEM,DIR0_RECON);
+   ASM_LEG_XP(Xp,Yp,PERMUTE_DIR3,DIR0_PROJ,DIR0_RECON);
 
 #ifdef SHOW
       float rescale = 64. * 12.;
@@ -221,7 +243,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
       std::cout << "----------------------------------------------------" << std::endl;
 #endif
 
-      ASM_LEG(Yp,Zp,PERMUTE_DIR2,DIR1_PROJMEM,DIR1_RECON);
+      ASM_LEG(Yp,Zp,PERMUTE_DIR2,DIR1_PROJ,DIR1_RECON);
 
 #ifdef SHOW
       std::cout << "Dir = " << Yp << "        "  << WHERE<< std::endl;
@@ -234,7 +256,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
       std::cout << "----------------------------------------------------" << std::endl;
 #endif
 
-      ASM_LEG(Zp,Tp,PERMUTE_DIR1,DIR2_PROJMEM,DIR2_RECON);
+      ASM_LEG(Zp,Tp,PERMUTE_DIR1,DIR2_PROJ,DIR2_RECON);
 
 #ifdef SHOW
       std::cout << "Dir = " << Zp << "        "  << WHERE<< std::endl;
@@ -247,7 +269,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
       std::cout << "----------------------------------------------------" << std::endl;
 #endif
 
-      ASM_LEG(Tp,Xm,PERMUTE_DIR0,DIR3_PROJMEM,DIR3_RECON);
+      ASM_LEG(Tp,Xm,PERMUTE_DIR0,DIR3_PROJ,DIR3_RECON);
 
 #ifdef SHOW
       std::cout << "Dir = " << Tp << "        "  << WHERE<< std::endl;
@@ -260,7 +282,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
       std::cout << "----------------------------------------------------" << std::endl;
 #endif
 
-      ASM_LEG(Xm,Ym,PERMUTE_DIR3,DIR4_PROJMEM,DIR4_RECON);
+      ASM_LEG(Xm,Ym,PERMUTE_DIR3,DIR4_PROJ,DIR4_RECON);
 
 #ifdef SHOW
       std::cout << "Dir = " << Xm << "        "  << WHERE<< std::endl;
@@ -273,7 +295,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
       std::cout << "----------------------------------------------------" << std::endl;
 #endif
 
-      ASM_LEG(Ym,Zm,PERMUTE_DIR2,DIR5_PROJMEM,DIR5_RECON);
+      ASM_LEG(Ym,Zm,PERMUTE_DIR2,DIR5_PROJ,DIR5_RECON);
 
 #ifdef SHOW
       std::cout << "Dir = " << Ym << "        "  << WHERE<< std::endl;
@@ -286,7 +308,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
       std::cout << "----------------------------------------------------" << std::endl;
 #endif
 
-      ASM_LEG(Zm,Tm,PERMUTE_DIR1,DIR6_PROJMEM,DIR6_RECON);
+      ASM_LEG(Zm,Tm,PERMUTE_DIR1,DIR6_PROJ,DIR6_RECON);
 
 #ifdef SHOW
       std::cout << "Dir = " << Zm << "        "  << WHERE<< std::endl;
@@ -299,7 +321,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
       std::cout << "----------------------------------------------------" << std::endl;
 #endif
 
-      ASM_LEG(Tm,Xp,PERMUTE_DIR0,DIR7_PROJMEM,DIR7_RECON);
+      ASM_LEG(Tm,Xp,PERMUTE_DIR0,DIR7_PROJ,DIR7_RECON);
 
 #ifdef SHOW
       std::cout << "Dir = " << Tm << "        "  << WHERE<< std::endl;
@@ -337,14 +359,14 @@ Author: Nils Meyer <nils.meyer@ur.de>
   }
 }
 
-#undef DIR0_PROJMEM
-#undef DIR1_PROJMEM
-#undef DIR2_PROJMEM
-#undef DIR3_PROJMEM
-#undef DIR4_PROJMEM
-#undef DIR5_PROJMEM
-#undef DIR6_PROJMEM
-#undef DIR7_PROJMEM
+#undef DIR0_PROJ
+#undef DIR1_PROJ
+#undef DIR2_PROJ
+#undef DIR3_PROJ
+#undef DIR4_PROJ
+#undef DIR5_PROJ
+#undef DIR6_PROJ
+#undef DIR7_PROJ
 #undef DIR0_RECON
 #undef DIR1_RECON
 #undef DIR2_RECON

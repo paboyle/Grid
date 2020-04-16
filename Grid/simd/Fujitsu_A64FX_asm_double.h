@@ -25,7 +25,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#define LOAD_CHIMU_A64FXd(x)           LOAD_CHIMU_INTERLEAVED_A64FXd(x)  
+#define LOAD_CHIMU(base)               LOAD_CHIMU_INTERLEAVED_A64FXd(base)  
 #define PREFETCH_CHIMU_L1(A)           PREFETCH_CHIMU_L1_INTERNAL_A64FXd(A)  
 #define PREFETCH_GAUGE_L1(A)           PREFETCH_GAUGE_L1_INTERNAL_A64FXd(A)  
 #define PREFETCH_CHIMU_L2(A)           PREFETCH_CHIMU_L2_INTERNAL_A64FXd(A)  
@@ -40,23 +40,19 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define MASK_REGS                      DECLARATIONS_A64FXd  
 #define COMPLEX_SIGNS(A)  
 #define LOAD64(A,B)  
-#define SAVE_RESULT(A,B)               RESULT_A64FXd(A); PREFETCH_RESULT_L2_STORE(B);  
-#define MULT_2SPIN_DIR_PF(A,B)          \
-                                       MULT_2SPIN_A64FXd(A); \
-                                       PREFETCH_CHIMU_L2(B); \
-                                       if (s == 0) { if ((A == 0) || (A == 4)) { PREFETCH_GAUGE_L2(A); } }
-#define MAYBEPERM(A,perm)              { A ; }  
+#define SAVE_RESULT(A,B)               RESULT_A64FXd(A); PREFETCH_RESULT_L2_STORE(B)  
+#define MULT_2SPIN_1(Dir)              MULT_2SPIN_1_A64FXd(Dir)  
+#define MULT_2SPIN_2                   MULT_2SPIN_2_A64FXd  
 #define LOAD_CHI(base)                 LOAD_CHI_A64FXd(base)  
-#define ZERO_PSI  
-#define ADD_RESULT(base,basep)         LOAD_CHIMU_A64FXd(base); ADD_RESULT_INTERNAL_A64FXd; RESULT_A64FXd(base)  
-#define XP_PROJMEM(base)               LOAD_CHIMU_A64FXd(base);   XP_PROJ_A64FXd  
-#define YP_PROJMEM(base)               LOAD_CHIMU_A64FXd(base);   YP_PROJ_A64FXd  
-#define ZP_PROJMEM(base)               LOAD_CHIMU_A64FXd(base);   ZP_PROJ_A64FXd  
-#define TP_PROJMEM(base)               LOAD_CHIMU_A64FXd(base);   TP_PROJ_A64FXd  
-#define XM_PROJMEM(base)               LOAD_CHIMU_A64FXd(base);   XM_PROJ_A64FXd  
-#define YM_PROJMEM(base)               LOAD_CHIMU_A64FXd(base);   YM_PROJ_A64FXd  
-#define ZM_PROJMEM(base)               LOAD_CHIMU_A64FXd(base);   ZM_PROJ_A64FXd  
-#define TM_PROJMEM(base)               LOAD_CHIMU_A64FXd(base);   TM_PROJ_A64FXd  
+#define ADD_RESULT(base,basep)         LOAD_CHIMU(base); ADD_RESULT_INTERNAL_A64FXd; RESULT_A64FXd(base)  
+#define XP_PROJ                        XP_PROJ_A64FXd  
+#define YP_PROJ                        YP_PROJ_A64FXd  
+#define ZP_PROJ                        ZP_PROJ_A64FXd  
+#define TP_PROJ                        TP_PROJ_A64FXd  
+#define XM_PROJ                        XM_PROJ_A64FXd  
+#define YM_PROJ                        YM_PROJ_A64FXd  
+#define ZM_PROJ                        ZM_PROJ_A64FXd  
+#define TM_PROJ                        TM_PROJ_A64FXd  
 #define XP_RECON                       XP_RECON_A64FXd  
 #define XM_RECON                       XM_RECON_A64FXd  
 #define XM_RECON_ACCUM                 XM_RECON_ACCUM_A64FXd  
@@ -67,10 +63,13 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define YP_RECON_ACCUM                 YP_RECON_ACCUM_A64FXd  
 #define ZP_RECON_ACCUM                 ZP_RECON_ACCUM_A64FXd  
 #define TP_RECON_ACCUM                 TP_RECON_ACCUM_A64FXd  
-#define PERMUTE_DIR0                   LOAD_TABLE0; if (perm) { PERM0_A64FXd; }  
-#define PERMUTE_DIR1                   LOAD_TABLE1; if (perm) { PERM1_A64FXd; }  
-#define PERMUTE_DIR2                   LOAD_TABLE2; if (perm) { PERM2_A64FXd; }  
-#define PERMUTE_DIR3  
+#define PERMUTE_DIR0                   0  
+#define PERMUTE_DIR1                   1  
+#define PERMUTE_DIR2                   2  
+#define PERMUTE_DIR3                   3  
+#define PERMUTE                        PERMUTE_A64FXd;  
+#define LOAD_TABLE(Dir)                if (Dir == 0) { LOAD_TABLE0; } else if (Dir == 1) { LOAD_TABLE1; } else if (Dir == 2) { LOAD_TABLE2; }  
+#define MAYBEPERM(Dir,perm)            if (Dir != 3) { if (perm) { PERMUTE; } }  
 // DECLARATIONS
 #define DECLARATIONS_A64FXd  \
     const uint64_t lut[4][8] = { \
@@ -281,8 +280,8 @@ asm ( \
     : "memory","cc","p5","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
 ); 
 
-// PERM0
-#define PERM0_A64FXd  \
+// PERMUTE
+#define PERMUTE_A64FXd  \
 asm ( \
     "tbl z12.d, { z12.d }, z30.d \n\t"  \
     "tbl z13.d, { z13.d }, z30.d \n\t"  \
@@ -294,37 +293,6 @@ asm ( \
     :  \
     : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
 ); 
-
-// PERM1
-#define PERM1_A64FXd  \
-asm ( \
-    "tbl z12.d, { z12.d }, z30.d \n\t"  \
-    "tbl z13.d, { z13.d }, z30.d \n\t"  \
-    "tbl z14.d, { z14.d }, z30.d \n\t"  \
-    "tbl z15.d, { z15.d }, z30.d \n\t"  \
-    "tbl z16.d, { z16.d }, z30.d \n\t"  \
-    "tbl z17.d, { z17.d }, z30.d \n\t"  \
-    :  \
-    :  \
-    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
-); 
-
-// PERM2
-#define PERM2_A64FXd  \
-asm ( \
-    "tbl z12.d, { z12.d }, z30.d \n\t"  \
-    "tbl z13.d, { z13.d }, z30.d \n\t"  \
-    "tbl z14.d, { z14.d }, z30.d \n\t"  \
-    "tbl z15.d, { z15.d }, z30.d \n\t"  \
-    "tbl z16.d, { z16.d }, z30.d \n\t"  \
-    "tbl z17.d, { z17.d }, z30.d \n\t"  \
-    :  \
-    :  \
-    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
-); 
-
-// PERM3
-#define PERM3_A64FXd  
 
 // LOAD_GAUGE
 #define LOAD_GAUGE  \
@@ -344,7 +312,7 @@ asm ( \
 ); \
 }
 // MULT_2SPIN
-#define MULT_2SPIN_A64FXd(A)  \
+#define MULT_2SPIN_1_A64FXd(A)  \
 { \
     const auto & ref(U[sU](A)); uint64_t baseU = (uint64_t)&ref; \
 asm ( \
@@ -375,6 +343,15 @@ asm ( \
     "ldr z24, [%[fetchptr], -4, mul vl] \n\t" \
     "ldr z25, [%[fetchptr], -1, mul vl] \n\t" \
     "ldr z26, [%[fetchptr], 2, mul vl] \n\t" \
+    :  \
+    : [fetchptr] "r" (baseU + 2 * 3 * 64) \
+    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
+); \
+}
+// MULT_2SPIN_BACKEND
+#define MULT_2SPIN_2_A64FXd  \
+{ \
+asm ( \
     "fcmla z18.d, p5/m, z27.d, z13.d, 0 \n\t" \
     "fcmla z21.d, p5/m, z27.d, z16.d, 0 \n\t" \
     "fcmla z19.d, p5/m, z28.d, z13.d, 0 \n\t" \
@@ -400,15 +377,14 @@ asm ( \
     "fcmla z20.d, p5/m, z26.d, z14.d, 90 \n\t" \
     "fcmla z23.d, p5/m, z26.d, z17.d, 90 \n\t" \
     :  \
-    : [fetchptr] "r" (baseU + 2 * 3 * 64) \
-    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31","memory" \
+    :  \
+    : "p5","cc","z0","z1","z2","z3","z4","z5","z6","z7","z8","z9","z10","z11","z12","z13","z14","z15","z16","z17","z18","z19","z20","z21","z22","z23","z24","z25","z26","z27","z28","z29","z30","z31" \
 ); \
 }
 // XP_PROJ
 #define XP_PROJ_A64FXd  \
 { \
 asm ( \
-    "ptrue p5.d \n\t" \
     "fcadd z12.d, p5/m, z12.d, z21.d, 90 \n\t" \
     "fcadd z13.d, p5/m, z13.d, z22.d, 90 \n\t" \
     "fcadd z14.d, p5/m, z14.d, z23.d, 90 \n\t" \
