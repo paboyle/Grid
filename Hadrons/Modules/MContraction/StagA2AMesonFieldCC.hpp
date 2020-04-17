@@ -34,6 +34,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 #include <Hadrons/A2AMatrix.hpp>
+#include <Hadrons/utils_memory.h>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -48,6 +49,7 @@ public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(StagA2AMesonFieldCCPar,
                                     int, cacheBlock,
                                     int, block,
+                                    int, size,
                                     std::string, gauge,
                                     std::string, left,
                                     std::string, right,
@@ -178,6 +180,7 @@ std::vector<std::string> TStagA2AMesonFieldCC<FImpl>::getOutput(void)
 template <typename FImpl>
 void TStagA2AMesonFieldCC<FImpl>::setup(void)
 {
+    printMem("Begin StagMesonFieldCC setup() ", env().getGrid()->ThisRank());
     gamma_.clear();
     mom_.clear();
     if (par().gammas == "all")
@@ -219,10 +222,15 @@ void TStagA2AMesonFieldCC<FImpl>::setup(void)
     }
     envCache(std::vector<ComplexField>, momphName_, 1, 
              par().mom.size(), envGetGrid(ComplexField));
+    printMem("StagMesonFieldCC setup(): after envCache ", env().getGrid()->ThisRank());
     envTmpLat(ComplexField, "coor");
+    printMem("StagMesonFieldCC setup(): after envTmpLat ", env().getGrid()->ThisRank());
     envTmp(Computation, "computation", 1, envGetGrid(FermionField), 
            env().getNd() - 1, mom_.size(), gamma_.size(), par().block, 
            par().cacheBlock, this);
+    printMem("StagMesonFieldCC setup(): after envTmp ", env().getGrid()->ThisRank());
+    //envCreate(std::vector<FermionField>, "v_shift", 1, par().size, envGetGrid(FermionField));
+    printMem("End StagMesonFieldCC setup() ", env().getGrid()->ThisRank());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -231,12 +239,12 @@ void TStagA2AMesonFieldCC<FImpl>::execute(void)
 {
     auto &left  = envGet(std::vector<FermionField>, par().left);
     auto &right = envGet(std::vector<FermionField>, par().right);
-    auto &temp = envGet(std::vector<FermionField>, par().right);
+    //auto &shift = envGet(std::vector<FermionField>, "v_shift");
     auto &U = envGet(LatticeGaugeField, par().gauge);
-    
     int nt         = env().getDim().back();
     int N_i        = left.size();
     int N_j        = right.size();
+    //assert(shift.size() == N_j);
     int ngamma     = gamma_.size();
     assert(ngamma==1);// do one at a time
     int nmom       = mom_.size();
@@ -320,27 +328,24 @@ void TStagA2AMesonFieldCC<FImpl>::execute(void)
     for(int mu=0;mu<Nd;mu++){
         Umu[mu] = PeekIndex<LorentzIndex>(U,mu);
     }
-    //int num_vec = right.size();
-    //std::vector<FermionField> temp(num_vec, right[0].Grid());
+
     // spatial gamma's only
-    
     int mu;
-    if(gamma_[0]==GammaX)mu=0;
-    else if(gamma_[0]==GammaY)mu=1;
-    else if(gammas_[0]==GammaZ)mu=2;
+    if(gamma_[0]==Gamma::Algebra::GammaX)mu=0;
+    else if(gamma_[0]==Gamma::Algebra::GammaY)mu=1;
+    else if(gamma_[0]==Gamma::Algebra::GammaZ)mu=2;
     else assert(0);
-    
-    for(int j=0;j<num_vec;j++)
-        temp[j] = Umu[mu]*Cshift(right[j], mu, 1);
+    for(int j=0;j<N_j;j++)
+        right[j] = Umu[mu]*Cshift(right[j], mu, 1);
+        //shift[j] = Umu[mu]*Cshift(right[j], mu, 1);
     
     Kernel      kernel(U, gamma_, ph, envGetGrid(FermionField));
 
     envGetTmp(Computation, computation);
-    computation.execute(left, temp, kernel, ionameFn, filenameFn, metadataFn);
+    computation.execute(left, right, kernel, ionameFn, filenameFn, metadataFn);
+    //computation.execute(left, shift, kernel, ionameFn, filenameFn, metadataFn);
 
 }
-
-
 
 END_MODULE_NAMESPACE
 
