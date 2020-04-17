@@ -8,6 +8,7 @@
 
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Christoph Lehner <christoph@lhnr.de>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -194,6 +195,78 @@ auto innerProductD (const iScalar<l>& lhs,const iScalar<r>& rhs) -> iScalar<decl
   ret._internal = innerProductD(lhs._internal,rhs._internal);
   return ret;
 }
+
+
+//////////////////////////////////////
+// innerProductD2: precision promotion without inner sum
+//////////////////////////////////////
+accelerator_inline vComplexD2 TensorRemove(const vComplexD2 & x) { return x; };
+accelerator_inline vRealD2 TensorRemove(const vRealD2 & x) { return x; };
+
+accelerator_inline ComplexD innerProductD2(const ComplexF &l,const ComplexF &r){  return innerProduct(l,r); }
+accelerator_inline ComplexD innerProductD2(const ComplexD &l,const ComplexD &r){  return innerProduct(l,r); }
+accelerator_inline RealD    innerProductD2(const RealD    &l,const RealD    &r){  return innerProduct(l,r); }
+accelerator_inline RealD    innerProductD2(const RealF    &l,const RealF    &r){  return innerProduct(l,r); }
+
+accelerator_inline vComplexD innerProductD2(const vComplexD &l,const vComplexD &r){  return innerProduct(l,r); }
+accelerator_inline vRealD    innerProductD2(const vRealD    &l,const vRealD    &r){  return innerProduct(l,r); }
+
+accelerator_inline vComplexD2 innerProductD2(const vComplexF &l,const vComplexF &r)
+{  
+  vComplexD la,lb;
+  vComplexD ra,rb;
+  Optimization::PrecisionChange::StoD(l.v,la.v,lb.v);
+  Optimization::PrecisionChange::StoD(r.v,ra.v,rb.v);
+  vComplexD2 ret;
+  ret._internal[0] = innerProduct(la,ra);
+  ret._internal[1] = innerProduct(lb,rb);
+  return ret;
+}
+accelerator_inline vRealD2 innerProductD2(const vRealF &l,const vRealF &r)
+{  
+  vRealD la,lb;
+  vRealD ra,rb;
+  Optimization::PrecisionChange::StoD(l.v,la.v,lb.v);
+  Optimization::PrecisionChange::StoD(r.v,ra.v,rb.v);
+  vRealD2 ret;
+  ret._internal[0]=innerProduct(la,ra);
+  ret._internal[1]=innerProduct(lb,rb); 
+  return ret;
+}
+
+// Now do it for vector, matrix, scalar
+template<class l,class r,int N> accelerator_inline
+  auto innerProductD2 (const iVector<l,N>& lhs,const iVector<r,N>& rhs) -> iScalar<decltype(innerProductD2(lhs._internal[0],rhs._internal[0]))>
+{
+  typedef decltype(innerProductD2(lhs._internal[0],rhs._internal[0])) ret_t;
+  iScalar<ret_t> ret;
+  zeroit(ret);
+  for(int c1=0;c1<N;c1++){
+    ret._internal += innerProductD2(lhs._internal[c1],rhs._internal[c1]);
+  }
+  return ret;
+}
+template<class l,class r,int N> accelerator_inline
+  auto innerProductD2 (const iMatrix<l,N>& lhs,const iMatrix<r,N>& rhs) -> iScalar<decltype(innerProductD2(lhs._internal[0][0],rhs._internal[0][0]))>
+{
+  typedef decltype(innerProductD2(lhs._internal[0][0],rhs._internal[0][0])) ret_t;
+  iScalar<ret_t> ret;
+  ret=Zero();
+  for(int c1=0;c1<N;c1++){
+    for(int c2=0;c2<N;c2++){
+      ret._internal+=innerProductD2(lhs._internal[c1][c2],rhs._internal[c1][c2]);
+    }}
+  return ret;
+}
+template<class l,class r> accelerator_inline
+  auto innerProductD2 (const iScalar<l>& lhs,const iScalar<r>& rhs) -> iScalar<decltype(innerProductD2(lhs._internal,rhs._internal))>
+{
+  typedef decltype(innerProductD2(lhs._internal,rhs._internal)) ret_t;
+  iScalar<ret_t> ret;
+  ret._internal = innerProductD2(lhs._internal,rhs._internal);
+  return ret;
+}
+
 //////////////////////
 // Keep same precison
 //////////////////////
