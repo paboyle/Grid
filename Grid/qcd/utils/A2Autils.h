@@ -1700,6 +1700,7 @@ void A2Autils<FImpl>::StagMesonFieldCC(TensorType &mat,
 
     //std::vector<FermionField> temp(Rblock, grid);
     //int mu;
+    int n=0; //doing one gamma mu (point split dir) at a time
     //for (int n = 0; n < Ngamma; n++) {
 
         //if ( gammas[n] == Gamma::Algebra::GammaX ) mu=0;
