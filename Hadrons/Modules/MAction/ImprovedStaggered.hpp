@@ -112,8 +112,14 @@ std::vector<std::string> TImprovedStaggered<FImpl>::getOutput(void)
 template <typename FImpl>
 void TImprovedStaggered<FImpl>::setup(void)
 {
-    LOG(Message) << "Setting up ImprovedStaggered fermion matrix with m= " << par().mass
-                 << " using gauge field '" << par().gauge << "'" << std::endl;
+    LOG(Message) << "Setting up ImprovedStaggered fermion matrix." << std::endl;
+    LOG(Message) << "Using m=" << par().mass << std::endl;
+    LOG(Message) << "Using c1=" << par().c1 << std::endl;
+    LOG(Message) << "Using c2=" << par().c2 << std::endl;
+    LOG(Message) << "Using tadpole u0=" << par().tad << std::endl;
+    LOG(Message) << "Using thin links: " << par().gauge << std::endl;
+    LOG(Message) << "Using fat links: " << par().gaugefat << std::endl;
+    LOG(Message) << "Using long links: " << par().gaugelong << std::endl;
                  
     auto &U      = envGet(GaugeField, par().gauge);
     auto &Ufat   = envGet(GaugeField, par().gaugefat);
