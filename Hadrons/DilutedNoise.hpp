@@ -242,15 +242,15 @@ TimeDilutedColorDiagonalNoise<FImpl>::
 TimeDilutedColorDiagonalNoise(GridCartesian *g)
 : DilutedNoise<FImpl>(g)
 {
-    nt_ = this->getGrid()->GlobalDimensions().size();
+    Coordinate dims = this->getGrid()->GlobalDimensions();
+    std::cout << "using global dims = " << dims << " in TimeDilutedColorDiagNoise" << std::endl;
+    nt_ = dims[3];
     this->resize(nt_*FImpl::Dimension);
 }
 
 template <typename FImpl>
 void TimeDilutedColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng)
 {
-    typedef decltype(peekColour((*this)[0], 0)) SpinField;
-    
     auto                       &noise = *this;
     auto                       g      = this->getGrid();
     auto                       nd     = g->GlobalDimensions().size();
@@ -258,7 +258,6 @@ void TimeDilutedColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng)
     Complex                    shift(1., 1.);
     Lattice<iScalar<vInteger>> tLat(g);
     LatticeComplex             eta(g), etaCut(g);
-    SpinField                  etas(g);
     unsigned int               i = 0;
     
     LatticeCoordinate(tLat, nd - 1);
@@ -267,17 +266,12 @@ void TimeDilutedColorDiagonalNoise<FImpl>::generateNoise(GridParallelRNG &rng)
     for (unsigned int t = 0; t < nt_; ++t)
     {
         etaCut = where((tLat == t), eta, 0.*eta);
-        //for (unsigned int s = 0; s < Ns; ++s)
-        //{
-            //etas = Zero();
-            //pokeSpin(etas, etaCut, s);
-            for (unsigned int c = 0; c < nc; ++c)
-            {
-                noise[i] = Zero();
-                pokeColour(noise[i], eta, c);
-                i++;
-            }
-        //}
+        for (unsigned int c = 0; c < nc; ++c)
+        {
+            noise[i] = Zero();
+            pokeColour(noise[i], eta, c);
+            i++;
+        }
     }
 }
 
