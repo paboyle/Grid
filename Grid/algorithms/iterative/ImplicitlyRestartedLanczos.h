@@ -50,37 +50,93 @@ void basisOrthogonalize(std::vector<Field> &basis,Field &w,int k)
 }
 
 template<class Field>
-void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, int k0,int k1,int Nm) 
+void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, int k0,int k1,int Nm)
 {
-  typedef decltype(basis[0].View()) View;
-  auto tmp_v = basis[0].View();
-  std::vector<View> basis_v(basis.size(),tmp_v);
-  typedef typename Field::vector_object vobj;
-  GridBase* grid = basis[0].Grid();
-      
-  for(int k=0;k<basis.size();k++){
-    basis_v[k] = basis[k].View();
-  }
-
-  std::vector < vobj , commAllocator<vobj> > Bt(thread_max() * Nm); // Thread private
+    typedef decltype(basis[0].View()) View;
+    auto tmp_v = basis[0].View();
+    Vector<View> basis_v(basis.size(),tmp_v);
+    typedef typename Field::vector_object vobj;
+    GridBase* grid = basis[0].Grid();
     
-  thread_region
-  {
-    vobj* B = Bt.data() + Nm * thread_num();
-
-    thread_for_in_region(ss, grid->oSites(),{
-      for(int j=j0; j<j1; ++j) B[j]=0.;
-      
-      for(int j=j0; j<j1; ++j){
-	for(int k=k0; k<k1; ++k){
-	  B[j] +=Qt(j,k) * basis_v[k][ss];
-	}
-      }
-      for(int j=j0; j<j1; ++j){
-	basis_v[j][ss] = B[j];
-      }
-    });
-  }
+    for(int k=0;k<basis.size();k++){
+        basis_v[k] = basis[k].View();
+    }
+#if 0
+    std::vector < vobj , commAllocator<vobj> > Bt(thread_max() * Nm); // Thread private
+    thread_region
+    {
+        vobj* B = Bt.data() + Nm * thread_num();
+        
+        thread_for_in_region(ss, grid->oSites(),{
+            for(int j=j0; j<j1; ++j) B[j]=0.;
+            
+            for(int j=j0; j<j1; ++j){
+                for(int k=k0; k<k1; ++k){
+                    B[j] +=Qt(j,k) * basis_v[k][ss];
+                }
+            }
+            for(int j=j0; j<j1; ++j){
+                basis_v[j][ss] = B[j];
+            }
+        });
+    }
+#else
+    
+    int nrot = j1-j0;
+    
+    
+    uint64_t oSites   =grid->oSites();
+    uint64_t siteBlock=(grid->oSites()+nrot-1)/nrot; // Maximum 1 additional vector overhead
+    
+    //  printf("BasisRotate %d %d nrot %d siteBlock %d\n",j0,j1,nrot,siteBlock);
+    
+    Vector <vobj> Bt(siteBlock * nrot);
+    auto Bp=&Bt[0];
+    
+    // GPU readable copy of Eigen matrix
+    Vector<double> Qt_jv(Nm*Nm);
+    double *Qt_p = & Qt_jv[0];
+    for(int k=0;k<Nm;++k){
+        for(int j=0;j<Nm;++j){
+            Qt_p[j*Nm+k]=Qt(j,k);
+        }
+    }
+    
+    // Block the loop to keep storage footprint down
+    vobj zz=Zero();
+    for(uint64_t s=0;s<oSites;s+=siteBlock){
+        
+        // remaining work in this block
+        int ssites=MIN(siteBlock,oSites-s);
+        
+        // zero out the accumulators
+        accelerator_for(ss,siteBlock*nrot,vobj::Nsimd(),{
+            auto z=coalescedRead(zz);
+            coalescedWrite(Bp[ss],z);
+        });
+        
+        accelerator_for(sj,ssites*nrot,vobj::Nsimd(),{
+            
+            int j =sj%nrot;
+            int jj  =j0+j;
+            int ss =sj/nrot;
+            int sss=ss+s;
+            
+            for(int k=k0; k<k1; ++k){
+                auto tmp = coalescedRead(Bp[ss*nrot+j]);
+                coalescedWrite(Bp[ss*nrot+j],tmp+ Qt_p[jj*Nm+k] * coalescedRead(basis_v[k][sss]));
+            }
+        });
+        
+        accelerator_for(sj,ssites*nrot,vobj::Nsimd(),{
+            int j =sj%nrot;
+            int jj  =j0+j;
+            int ss =sj/nrot;
+            int sss=ss+s;
+            coalescedWrite(basis_v[jj][sss],coalescedRead(Bp[ss*nrot+j]));
+        });
+    }
+#endif
 }
 
 // Extract a single rotated vector

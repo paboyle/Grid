@@ -1681,12 +1681,13 @@ void A2Autils<FImpl>::StagMesonFieldCC(TensorType &mat,
     Vector<Singlet_v > lvSum(MFrvol);
     Vector<Singlet_s > lsSum(MFlvol);
     
+    //do shift and mult outside of A2Autils
     // U_mu(x) right(x+mu)
-    FermionField Urpl(grid);
-    std::vector<LatticeColourMatrix> U(4,grid);
-    for(int mu=0;mu<Nd;mu++){
-        U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
-    }
+    //FermionField Urpl(grid);
+    //std::vector<LatticeColourMatrix> U(4,grid);
+    //for(int mu=0;mu<Nd;mu++){
+    //    U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
+    //}
     
     int e1=    grid->_slice_nblock[orthogdim];
     int e2=    grid->_slice_block [orthogdim];
@@ -1696,8 +1697,19 @@ void A2Autils<FImpl>::StagMesonFieldCC(TensorType &mat,
     if (t_kernel) *t_kernel = -usecond();
     
     // do x,y,z dirs
-    for (int mu = 0; mu < 3; mu++) {
-        
+
+    //std::vector<FermionField> temp(Rblock, grid);
+    //int mu;
+    //for (int n = 0; n < Ngamma; n++) {
+
+        //if ( gammas[n] == Gamma::Algebra::GammaX ) mu=0;
+        //else if ( gammas[n] == Gamma::Algebra::GammaY ) mu=1;
+        //else if ( gammas[n] == Gamma::Algebra::GammaZ ) mu=2;
+        //else {
+          //std::cout << gammas[n] << " not implemented for staggered fermion conserverd current meson field" << std::endl;
+          //assert(0);
+        //}
+
         // Re-initialize working variables before starting on a new gamma
         thread_for(r, MFrvol,{
             lvSum[r] = Zero();
@@ -1705,8 +1717,15 @@ void A2Autils<FImpl>::StagMesonFieldCC(TensorType &mat,
         thread_for(r, MFlvol,{
             lsSum[r]=scalar_type(0.0);
         });
-        
-        
+       
+ 
+        // do shift outside of A2AUtils.h
+        //std::cout << GridLogMessage << "Cshift * Umu " << std::endl;
+        //cshift must be outside thread loop
+        //for(int j=0;j<Rblock;j++)
+        //   temp[j] = U[mu]*Cshift(rhs_vj[j], mu, 1);
+        //std::cout << GridLogMessage << "Cshift * Umu finished " << std::endl;
+
         thread_for(r, rd,{
             
             int so=r*grid->_ostride[orthogdim]; // base offset for start of plane
@@ -1722,10 +1741,11 @@ void A2Autils<FImpl>::StagMesonFieldCC(TensorType &mat,
                         
                         for(int j=0;j<Rblock;j++){
 
-                            Urpl = U[mu] * Cshift(rhs_vj[j], mu, 1);
+                            //Urpl = temp[j];
                             
-                            auto vjplU = Urpl.View();
-                            auto right = vjplU[ss];
+                            auto vjplU_v = rhs_vj[j].View();
+                            //auto vjplU = temp[j].View();
+                            auto right = vjplU_v[ss];
                             
                             Singlet_v vv;
                             vv()()() = left()()(0) * right()()(0)
@@ -1793,7 +1813,7 @@ void A2Autils<FImpl>::StagMesonFieldCC(TensorType &mat,
                         for(int j=0;j<Rblock;j++){
                             for(int m=0;m<Nmom;m++){
                                 int ij_dx = m+Nmom*i + Nmom*Lblock * j + Nmom*Lblock * Rblock * lt;
-                                mat(m,mu,t,i,j) = lsSum[ij_dx];
+                                mat(m,n,t,i,j) = lsSum[ij_dx];
                             }
                         }
                     }
@@ -1802,14 +1822,14 @@ void A2Autils<FImpl>::StagMesonFieldCC(TensorType &mat,
                     for(int i=0;i<Lblock;i++){
                         for(int j=0;j<Rblock;j++){
                             for(int m=0;m<Nmom;m++){
-                                mat(m,mu,t,i,j) =zz;
+                                mat(m,n,t,i,j) =zz;
                             }
                         }
                     }
                 }
             }
-        });
-    } // end loop on gamma
+        }); 
+    //} // end loop on gamma
     ////////////////////////////////////////////////////////////////////
     // This global sum is taking as much as 50% of time on 16 nodes
     // Vector size is 7 x 16 x 32 x 16 x 16 x sizeof(complex) = 2MB - 60MB depending on volume
