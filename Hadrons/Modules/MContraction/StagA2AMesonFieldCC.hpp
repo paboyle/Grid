@@ -34,7 +34,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 #include <Hadrons/A2AMatrix.hpp>
-#include <Hadrons/utils_memory.h>
+//#include <Hadrons/utils_memory.h>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -180,7 +180,7 @@ std::vector<std::string> TStagA2AMesonFieldCC<FImpl>::getOutput(void)
 template <typename FImpl>
 void TStagA2AMesonFieldCC<FImpl>::setup(void)
 {
-    printMem("Begin StagMesonFieldCC setup() ", env().getGrid()->ThisRank());
+    //printMem("Begin StagMesonFieldCC setup() ", env().getGrid()->ThisRank());
     gamma_.clear();
     mom_.clear();
     if (par().gammas == "all")
@@ -222,15 +222,15 @@ void TStagA2AMesonFieldCC<FImpl>::setup(void)
     }
     envCache(std::vector<ComplexField>, momphName_, 1, 
              par().mom.size(), envGetGrid(ComplexField));
-    printMem("StagMesonFieldCC setup(): after envCache ", env().getGrid()->ThisRank());
+    //printMem("StagMesonFieldCC setup(): after envCache ", env().getGrid()->ThisRank());
     envTmpLat(ComplexField, "coor");
-    printMem("StagMesonFieldCC setup(): after envTmpLat ", env().getGrid()->ThisRank());
+    //printMem("StagMesonFieldCC setup(): after envTmpLat ", env().getGrid()->ThisRank());
     envTmp(Computation, "computation", 1, envGetGrid(FermionField), 
            env().getNd() - 1, mom_.size(), gamma_.size(), par().block, 
            par().cacheBlock, this);
-    printMem("StagMesonFieldCC setup(): after envTmp ", env().getGrid()->ThisRank());
+    //printMem("StagMesonFieldCC setup(): after envTmp ", env().getGrid()->ThisRank());
     //envCreate(std::vector<FermionField>, "v_shift", 1, par().size, envGetGrid(FermionField));
-    printMem("End StagMesonFieldCC setup() ", env().getGrid()->ThisRank());
+    //printMem("End StagMesonFieldCC setup() ", env().getGrid()->ThisRank());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
