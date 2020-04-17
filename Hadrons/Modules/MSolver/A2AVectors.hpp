@@ -36,7 +36,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/EigenPack.hpp>
 #include <Hadrons/A2AVectors.hpp>
 #include <Hadrons/DilutedNoise.hpp>
-#include <Hadrons/utils_memory.h>
+//#include <Hadrons/utils_memory.h>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -342,14 +342,14 @@ void TStagA2AVectors<FImpl, Pack>::setup(void)
         envTmpLat(FermionField, "f5", Ls);
     }
     envTmp(A2A, "a2a", 1, action, solver);
-    printMem("StagA2AVectors setup() ", env().getGrid()->ThisRank());
+    //printMem("StagA2AVectors setup() ", env().getGrid()->ThisRank());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl, typename Pack>
 void TStagA2AVectors<FImpl, Pack>::execute(void)
 {
-    printMem("Begin StagA2AVectors execute() ", env().getGrid()->ThisRank());
+    //printMem("Begin StagA2AVectors execute() ", env().getGrid()->ThisRank());
     std::string sub_string = (Nl_ > 0) ? "_subtract" : "";
     auto        &action    = envGet(FMat, par().action);
     auto        &solver    = envGet(Solver, par().solver + sub_string);
@@ -461,7 +461,7 @@ void TStagA2AVectors<FImpl, Pack>::execute(void)
         A2AVectorsIo::write(par().output + "_w", w, par().multiFile, vm().getTrajectory());
         stopTimer("W I/O");
     }
-    printMem("End StagA2AVectors execute() ", env().getGrid()->ThisRank());
+    //printMem("End StagA2AVectors execute() ", env().getGrid()->ThisRank());
 }
 
 
@@ -547,14 +547,14 @@ void TStagLowA2AVectors<FImpl, Pack>::setup(void)
         envTmpLat(FermionField, "f5", Ls);
     }
     //envTmp(A2A, "a2a", 1, action);
-    printMem("StagLowA2AVectors setup() ", env().getGrid()->ThisRank());
+    //printMem("StagLowA2AVectors setup() ", env().getGrid()->ThisRank());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl, typename Pack>
 void TStagLowA2AVectors<FImpl, Pack>::execute(void)
 {
-    printMem("Begin StagLowA2AVectors execute() ", env().getGrid()->ThisRank());
+    //printMem("Begin StagLowA2AVectors execute() ", env().getGrid()->ThisRank());
     std::string sub_string = (Nl_ > 0) ? "_subtract" : "";
     auto        &action    = envGet(FMat, par().action);
     auto        &v         = envGet(std::vector<FermionField>, getName() + "_v");
@@ -619,7 +619,7 @@ void TStagLowA2AVectors<FImpl, Pack>::execute(void)
         A2AVectorsIo::write(par().output + "_w", w, par().multiFile, vm().getTrajectory());
         stopTimer("W I/O");
     }
-    printMem("End StagLowA2AVectors execute() ", env().getGrid()->ThisRank());
+    //printMem("End StagLowA2AVectors execute() ", env().getGrid()->ThisRank());
 }
 
 
