@@ -231,12 +231,14 @@ void TStagA2AMesonFieldCC<FImpl>::execute(void)
 {
     auto &left  = envGet(std::vector<FermionField>, par().left);
     auto &right = envGet(std::vector<FermionField>, par().right);
+    auto &temp = envGet(std::vector<FermionField>, par().right);
     auto &U = envGet(LatticeGaugeField, par().gauge);
     
     int nt         = env().getDim().back();
     int N_i        = left.size();
     int N_j        = right.size();
     int ngamma     = gamma_.size();
+    assert(ngamma==1);// do one at a time
     int nmom       = mom_.size();
     int block      = par().block;
     int cacheBlock = par().cacheBlock;
@@ -313,10 +315,29 @@ void TStagA2AMesonFieldCC<FImpl>::execute(void)
         return md;
     };
 
+    // U_mu(x) right(x+mu)
+    std::vector<LatticeColourMatrix> Umu(4,U.Grid());
+    for(int mu=0;mu<Nd;mu++){
+        Umu[mu] = PeekIndex<LorentzIndex>(U,mu);
+    }
+    //int num_vec = right.size();
+    //std::vector<FermionField> temp(num_vec, right[0].Grid());
+    // spatial gamma's only
+    
+    int mu;
+    if(gamma_[0]==GammaX)mu=0;
+    else if(gamma_[0]==GammaY)mu=1;
+    else if(gammas_[0]==GammaZ)mu=2;
+    else assert(0);
+    
+    for(int j=0;j<num_vec;j++)
+        temp[j] = Umu[mu]*Cshift(right[j], mu, 1);
+    
     Kernel      kernel(U, gamma_, ph, envGetGrid(FermionField));
 
     envGetTmp(Computation, computation);
-    computation.execute(left, right, kernel, ionameFn, filenameFn, metadataFn);
+    computation.execute(left, temp, kernel, ionameFn, filenameFn, metadataFn);
+
 }
 
 
