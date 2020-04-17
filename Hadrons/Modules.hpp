@@ -1,4 +1,5 @@
 #include <Hadrons/Modules/MContraction/StagA2AMesonField.hpp>
+#include <Hadrons/Modules/MContraction/StagA2AMesonFieldCC.hpp>
 #include <Hadrons/Modules/MSource/Gauss.hpp>
 #include <Hadrons/Modules/MSource/Momentum.hpp>
 #include <Hadrons/Modules/MSource/SeqAslash.hpp>

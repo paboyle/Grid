@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: Hadrons/Modules/MContraction/StagA2AMesonField.hpp
+Source file: Hadrons/Modules/MContraction/StagA2AMesonFieldCC.hpp
 
 Copyright (C) 2015-2019
 
@@ -27,8 +27,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef Hadrons_MContraction_StagA2AMesonField_hpp_
-#define Hadrons_MContraction_StagA2AMesonField_hpp_
+#ifndef Hadrons_MContraction_StagA2AMesonFieldCC_hpp_
+#define Hadrons_MContraction_StagA2AMesonFieldCC_hpp_
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
@@ -42,12 +42,13 @@ BEGIN_HADRONS_NAMESPACE
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MContraction)
 
-class StagA2AMesonFieldPar: Serializable
+class StagA2AMesonFieldCCPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(StagA2AMesonFieldPar,
+    GRID_SERIALIZABLE_CLASS_MEMBERS(StagA2AMesonFieldCCPar,
                                     int, cacheBlock,
                                     int, block,
+                                    std::string, gauge,
                                     std::string, left,
                                     std::string, right,
                                     std::string, output,
@@ -55,24 +56,25 @@ public:
                                     std::vector<std::string>, mom);
 };
 
-class StagA2AMesonFieldMetadata: Serializable
+class StagA2AMesonFieldCCMetadata: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(StagA2AMesonFieldMetadata,
+    GRID_SERIALIZABLE_CLASS_MEMBERS(StagA2AMesonFieldCCMetadata,
                                     std::vector<RealF>, momentum,
                                     Gamma::Algebra, gamma);
 };
 
 template <typename T, typename FImpl>
-class StagMesonFieldKernel: public A2AKernel<T, typename FImpl::FermionField>
+class StagMesonFieldCCKernel: public A2AKernel<T, typename FImpl::FermionField>
 {
 public:
     typedef typename FImpl::FermionField FermionField;
 public:
-    StagMesonFieldKernel(const std::vector<Gamma::Algebra> &gamma,
-                         const std::vector<LatticeComplex> &mom,
-                         GridBase *grid)
-    : gamma_(gamma), mom_(mom), grid_(grid)
+    StagMesonFieldCCKernel(const LatticeGaugeField &U,
+                           const std::vector<Gamma::Algebra> &gamma,
+                           const std::vector<LatticeComplex> &mom,
+                           GridBase *grid)
+    : U_(U), gamma_(gamma), mom_(mom), grid_(grid)
     {
         vol_ = 1.;
         for (auto &d: grid_->GlobalDimensions())
@@ -81,7 +83,7 @@ public:
         }
     }
 
-    virtual ~StagMesonFieldKernel(void) = default;
+    virtual ~StagMesonFieldCCKernel(void) = default;
     
     void operator()(A2AMatrixSet<T> &m,
                             const FermionField *left,
@@ -89,7 +91,7 @@ public:
                             const unsigned int orthogDim,
                             double &t)
     {
-        A2Autils<FImpl>::StagMesonField(m, left, right, gamma_, mom_, orthogDim, &t);
+        A2Autils<FImpl>::StagMesonFieldCC(m, U_, left, right, gamma_, mom_, orthogDim, &t);
     }
     
     virtual double flops(const unsigned int blockSizei, const unsigned int blockSizej)
@@ -105,6 +107,7 @@ public:
                +  vol_*(2.0*sizeof(T)*mom_.size())*blockSizei*blockSizej*gamma_.size();
     }
 private:
+    const LatticeGaugeField &U_;
     const std::vector<Gamma::Algebra> &gamma_;
     const std::vector<LatticeComplex> &mom_;
     GridBase                          *grid_;
@@ -112,20 +115,20 @@ private:
 };
 
 template <typename FImpl>
-class TStagA2AMesonField : public Module<StagA2AMesonFieldPar>
+class TStagA2AMesonFieldCC : public Module<StagA2AMesonFieldCCPar>
 {
 public:
     FERM_TYPE_ALIASES(FImpl,);
     typedef A2AMatrixBlockComputation<Complex, 
                                       FermionField, 
-                                      StagA2AMesonFieldMetadata,
+                                      StagA2AMesonFieldCCMetadata,
                                       HADRONS_A2AM_IO_TYPE> Computation;
-    typedef StagMesonFieldKernel<Complex, FImpl> Kernel;
+    typedef StagMesonFieldCCKernel<Complex, FImpl> Kernel;
 public:
     // constructor
-    TStagA2AMesonField(const std::string name);
+    TStagA2AMesonFieldCC(const std::string name);
     // destructor
-    virtual ~TStagA2AMesonField(void){};
+    virtual ~TStagA2AMesonFieldCC(void){};
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -138,32 +141,33 @@ private:
     std::string                        momphName_;
     std::vector<Gamma::Algebra>        gamma_;
     std::vector<std::vector<Real>>     mom_;
+    //LatticeGaugeField                  U_;
 };
 
-MODULE_REGISTER(StagA2AMesonField, ARG(TStagA2AMesonField<STAGIMPL>), MContraction);
+MODULE_REGISTER(StagA2AMesonFieldCC, ARG(TStagA2AMesonFieldCC<STAGIMPL>), MContraction);
 
 /******************************************************************************
-*                  TStagA2AMesonField implementation                             *
+*                  TStagA2AMesonFieldCC implementation                             *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TStagA2AMesonField<FImpl>::TStagA2AMesonField(const std::string name)
-: Module<StagA2AMesonFieldPar>(name)
+TStagA2AMesonFieldCC<FImpl>::TStagA2AMesonFieldCC(const std::string name)
+: Module<StagA2AMesonFieldCCPar>(name)
 , momphName_(name + "_momph")
 {
 }
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
-std::vector<std::string> TStagA2AMesonField<FImpl>::getInput(void)
+std::vector<std::string> TStagA2AMesonFieldCC<FImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().left, par().right};
+    std::vector<std::string> in = {par().gauge, par().left, par().right};
 
     return in;
 }
 
 template <typename FImpl>
-std::vector<std::string> TStagA2AMesonField<FImpl>::getOutput(void)
+std::vector<std::string> TStagA2AMesonFieldCC<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {};
 
@@ -172,7 +176,7 @@ std::vector<std::string> TStagA2AMesonField<FImpl>::getOutput(void)
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TStagA2AMesonField<FImpl>::setup(void)
+void TStagA2AMesonFieldCC<FImpl>::setup(void)
 {
     gamma_.clear();
     mom_.clear();
@@ -223,15 +227,18 @@ void TStagA2AMesonField<FImpl>::setup(void)
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TStagA2AMesonField<FImpl>::execute(void)
+void TStagA2AMesonFieldCC<FImpl>::execute(void)
 {
     auto &left  = envGet(std::vector<FermionField>, par().left);
     auto &right = envGet(std::vector<FermionField>, par().right);
-
+    auto &temp = envGet(std::vector<FermionField>, par().right);
+    auto &U = envGet(LatticeGaugeField, par().gauge);
+    
     int nt         = env().getDim().back();
     int N_i        = left.size();
     int N_j        = right.size();
     int ngamma     = gamma_.size();
+    assert(ngamma==1);// do one at a time
     int nmom       = mom_.size();
     int block      = par().block;
     int cacheBlock = par().cacheBlock;
@@ -297,7 +304,7 @@ void TStagA2AMesonField<FImpl>::execute(void)
 
     auto metadataFn = [this](const unsigned int m, const unsigned int g)
     {
-        StagA2AMesonFieldMetadata md;
+        StagA2AMesonFieldCCMetadata md;
 
         for (auto pmu: mom_[m])
         {
@@ -308,10 +315,29 @@ void TStagA2AMesonField<FImpl>::execute(void)
         return md;
     };
 
-    Kernel      kernel(gamma_, ph, envGetGrid(FermionField));
+    // U_mu(x) right(x+mu)
+    std::vector<LatticeColourMatrix> Umu(4,U.Grid());
+    for(int mu=0;mu<Nd;mu++){
+        Umu[mu] = PeekIndex<LorentzIndex>(U,mu);
+    }
+    //int num_vec = right.size();
+    //std::vector<FermionField> temp(num_vec, right[0].Grid());
+    // spatial gamma's only
+    
+    int mu;
+    if(gamma_[0]==GammaX)mu=0;
+    else if(gamma_[0]==GammaY)mu=1;
+    else if(gammas_[0]==GammaZ)mu=2;
+    else assert(0);
+    
+    for(int j=0;j<num_vec;j++)
+        temp[j] = Umu[mu]*Cshift(right[j], mu, 1);
+    
+    Kernel      kernel(U, gamma_, ph, envGetGrid(FermionField));
 
     envGetTmp(Computation, computation);
-    computation.execute(left, right, kernel, ionameFn, filenameFn, metadataFn);
+    computation.execute(left, temp, kernel, ionameFn, filenameFn, metadataFn);
+
 }
 
 
@@ -320,4 +346,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MContraction_StagA2AMesonField_hpp_
+#endif // Hadrons_MContraction_StagA2AMesonFieldCC_hpp_

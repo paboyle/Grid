@@ -50,34 +50,93 @@ void basisOrthogonalize(std::vector<Field> &basis,Field &w,int k)
 }
 
 template<class Field>
-void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, int k0,int k1,int Nm) 
+void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, int k0,int k1,int Nm)
 {
-  typedef decltype(basis[0].View()) View;
-  auto tmp_v = basis[0].View();
-  std::vector<View> basis_v(basis.size(),tmp_v);
-  typedef typename Field::vector_object vobj;
-  GridBase* grid = basis[0].Grid();
-      
-  for(int k=0;k<basis.size();k++){
-    basis_v[k] = basis[k].View();
-  }
-
-  thread_region
-  {
-    std::vector < vobj , commAllocator<vobj> > B(Nm); // Thread private
-    thread_for_in_region(ss, grid->oSites(),{
-      for(int j=j0; j<j1; ++j) B[j]=0.;
-      
-      for(int j=j0; j<j1; ++j){
-	for(int k=k0; k<k1; ++k){
-	  B[j] +=Qt(j,k) * basis_v[k][ss];
-	}
-      }
-      for(int j=j0; j<j1; ++j){
-	basis_v[j][ss] = B[j];
-      }
-    });
-  }
+    typedef decltype(basis[0].View()) View;
+    auto tmp_v = basis[0].View();
+    Vector<View> basis_v(basis.size(),tmp_v);
+    typedef typename Field::vector_object vobj;
+    GridBase* grid = basis[0].Grid();
+    
+    for(int k=0;k<basis.size();k++){
+        basis_v[k] = basis[k].View();
+    }
+#if 0
+    std::vector < vobj , commAllocator<vobj> > Bt(thread_max() * Nm); // Thread private
+    thread_region
+    {
+        vobj* B = Bt.data() + Nm * thread_num();
+        
+        thread_for_in_region(ss, grid->oSites(),{
+            for(int j=j0; j<j1; ++j) B[j]=0.;
+            
+            for(int j=j0; j<j1; ++j){
+                for(int k=k0; k<k1; ++k){
+                    B[j] +=Qt(j,k) * basis_v[k][ss];
+                }
+            }
+            for(int j=j0; j<j1; ++j){
+                basis_v[j][ss] = B[j];
+            }
+        });
+    }
+#else
+    
+    int nrot = j1-j0;
+    
+    
+    uint64_t oSites   =grid->oSites();
+    uint64_t siteBlock=(grid->oSites()+nrot-1)/nrot; // Maximum 1 additional vector overhead
+    
+    //  printf("BasisRotate %d %d nrot %d siteBlock %d\n",j0,j1,nrot,siteBlock);
+    
+    Vector <vobj> Bt(siteBlock * nrot);
+    auto Bp=&Bt[0];
+    
+    // GPU readable copy of Eigen matrix
+    Vector<double> Qt_jv(Nm*Nm);
+    double *Qt_p = & Qt_jv[0];
+    for(int k=0;k<Nm;++k){
+        for(int j=0;j<Nm;++j){
+            Qt_p[j*Nm+k]=Qt(j,k);
+        }
+    }
+    
+    // Block the loop to keep storage footprint down
+    vobj zz=Zero();
+    for(uint64_t s=0;s<oSites;s+=siteBlock){
+        
+        // remaining work in this block
+        int ssites=MIN(siteBlock,oSites-s);
+        
+        // zero out the accumulators
+        accelerator_for(ss,siteBlock*nrot,vobj::Nsimd(),{
+            auto z=coalescedRead(zz);
+            coalescedWrite(Bp[ss],z);
+        });
+        
+        accelerator_for(sj,ssites*nrot,vobj::Nsimd(),{
+            
+            int j =sj%nrot;
+            int jj  =j0+j;
+            int ss =sj/nrot;
+            int sss=ss+s;
+            
+            for(int k=k0; k<k1; ++k){
+                auto tmp = coalescedRead(Bp[ss*nrot+j]);
+                coalescedWrite(Bp[ss*nrot+j],tmp+ Qt_p[jj*Nm+k] * coalescedRead(basis_v[k][sss]));
+            }
+        });
+        
+        accelerator_for(sj,ssites*nrot,vobj::Nsimd(),{
+            int j =sj%nrot;
+            int jj  =j0+j;
+            int ss =sj/nrot;
+            int sss=ss+s;
+            coalescedWrite(basis_v[jj][sss],coalescedRead(Bp[ss*nrot+j]));
+        });
+    }
+#endif
 }
 
 // Extract a single rotated vector
@@ -214,7 +273,6 @@ template<class Field> class ImplicitlyRestartedLanczosHermOpTester  : public Imp
     std::cout.precision(13);
     std::cout<<GridLogIRL  << "[" << std::setw(3)<<j<<"] "
 	     <<"eval = "<<std::setw(25)<< eval << " (" << eval_poly << ")"
-         <<" evalMaxApprox " << evalMaxApprox
 	     <<" |H B[i] - eval[i]B[i]|^2 / evalMaxApprox^2 " << std::setw(25) << vv
 	     <<std::endl;
 
@@ -364,28 +422,27 @@ until convergence
     std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
 	
     assert(Nm <= evec.size() && Nm <= eval.size());
+    
     // quickly get an idea of the largest eigenvalue to more properly normalize the residuum
     RealD evalMaxApprox = 0.0;
     {
-        auto src_n = src;
-        auto tmp = src;
-        
-        const int _MAX_ITER_IRL_MEVAPP_ = 50;
-        
-        for (int i=0;i<_MAX_ITER_IRL_MEVAPP_;i++) {
-            normalise(src_n);
-            _HermOp(src_n,tmp);
-            RealD vnum = real(innerProduct(src_n,tmp)); // HermOp.
-            RealD vden = norm2(src_n);
-            RealD na = vnum/vden;
-            if (fabs(evalMaxApprox/na - 1.0) < 0.05)
-                i=_MAX_ITER_IRL_MEVAPP_;
-            evalMaxApprox = na;
-            std::cout << GridLogIRL << " Approximation of largest eigenvalue: " << evalMaxApprox << std::endl;
-            src_n = tmp;
-        }
+      auto src_n = src;
+      auto tmp = src;
+      const int _MAX_ITER_IRL_MEVAPP_ = 50;
+      for (int i=0;i<_MAX_ITER_IRL_MEVAPP_;i++) {
+	normalise(src_n);
+	_HermOp(src_n,tmp);
+	RealD vnum = real(innerProduct(src_n,tmp)); // HermOp.
+	RealD vden = norm2(src_n);
+	RealD na = vnum/vden;
+	if (fabs(evalMaxApprox/na - 1.0) < 0.05)
+	  i=_MAX_ITER_IRL_MEVAPP_;
+	evalMaxApprox = na;
+	std::cout << GridLogIRL << " Approximation of largest eigenvalue: " << evalMaxApprox << std::endl;
+	src_n = tmp;
+      }
     }
-      
+	
     std::vector<RealD> lme(Nm);  
     std::vector<RealD> lme2(Nm);
     std::vector<RealD> eval2(Nm);
@@ -503,28 +560,25 @@ until convergence
 
 	//  power of two search pattern;  not every evalue in eval2 is assessed.
 	int allconv =1;
-    //for(int jj = 1; jj<=Nstop; jj*=2){
-    for(int jj = 1; jj<=Nstop; jj++){
+	for(int jj = 1; jj<=Nstop; jj*=2){
 	  int j = Nstop-jj;
 	  RealD e = eval2_copy[j]; // Discard the evalue
-	  basisRotateJ(B,evec,Qt,j,0,Nk,Nm);
-        
+	  basisRotateJ(B,evec,Qt,j,0,Nk,Nm);	    
 	  if( !_Tester.TestConvergence(j,eresid,B,e,evalMaxApprox) ) {
 	    allconv=0;
 	  }
-      else{Nconv++;}
 	}
 	// Do evec[0] for good measure
 	{ 
 	  int j=0;
 	  RealD e = eval2_copy[0]; 
 	  basisRotateJ(B,evec,Qt,j,0,Nk,Nm);	    
-        if( !_Tester.TestConvergence(j,eresid,B,e,evalMaxApprox) ) {allconv=0;}else{Nconv++;}
+	  if( !_Tester.TestConvergence(j,eresid,B,e,evalMaxApprox) ) allconv=0;
 	}
-	//if ( allconv ) Nconv = Nstop;
+	if ( allconv ) Nconv = Nstop;
 
 	// test if we converged, if so, terminate
-	std::cout<<GridLogIRL<<" #modes converged: "<<Nconv<<"/ Nstop "<<Nstop<<std::endl;
+	std::cout<<GridLogIRL<<" #modes converged: >= "<<Nconv<<"/"<<Nstop<<std::endl;
 	//	if( Nconv>=Nstop || beta_k < betastp){
 	if( Nconv>=Nstop){
 	  goto converged;

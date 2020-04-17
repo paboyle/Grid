@@ -205,12 +205,14 @@ public:
             //    PokeIndex<LorentzIndex>(Uds, Udag, mu + 4);
             
             //
+#if 1 // MILC (stores -w^dgr(x+2)W^dgr(x+1)W^dgr(x). must use c2=-1)
+            U  = PeekIndex<LorentzIndex>(Ulong, mu);
+            UUU = adj( U );
+            UUUdag = Cshift(U, mu, -3);
+#else // USUAL
             UUU  = PeekIndex<LorentzIndex>(Ulong, mu);
-            //UU = Gimpl::CovShiftForward(U,mu,U);
-            //UUU= Gimpl::CovShiftForward(U,mu,UU);
-            
             UUUdag = adj( Cshift(UUU, mu, -3));
-            
+#endif
             UUU    = UUU    *phases;
             UUUdag = UUUdag *phases;
             
