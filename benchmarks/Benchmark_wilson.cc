@@ -152,6 +152,7 @@ int main (int argc, char ** argv)
   
   std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
   int ncall=1000;
+  //int ncall=1;
   double t0=usecond();
   for(int i=0;i<ncall;i++){
     Dw.Dhop(src,result,0);
@@ -173,12 +174,14 @@ int main (int argc, char ** argv)
 
   }
 
+  double data = (volume * 180 * 64 / 4 * ncall) / (1024.*1024.*1024.);
   
   std::cout<<GridLogMessage << "Called Dw"<<std::endl;
   std::cout<<GridLogMessage << "flops per site " << single_site_flops << std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
   std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
   std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
+  std::cout<<GridLogMessage << "GiB/s (base 2) =   "<< 1000000. * data/((t1-t0))<<std::endl;
   err = ref-result; 
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
 

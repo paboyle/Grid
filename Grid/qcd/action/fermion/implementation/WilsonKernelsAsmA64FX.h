@@ -32,7 +32,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #if defined(A64FXASM)
 
-#pragma message("invoking A64FX Dslash")
+// include here if A64FX was not defined
+#ifndef A64FX
+#include <arm_sve.h>
+#endif
+
+#pragma message("specialize A64FX Dslash")
 
 // undefine everything
 #include <simd/Fujitsu_A64FX_undef.h>

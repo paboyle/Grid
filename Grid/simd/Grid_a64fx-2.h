@@ -385,7 +385,7 @@ struct MultComplex{
     svbool_t pg1 = acle<T>::pg1();
     typename acle<T>::vt a_v = svld1(pg1, a.v);
     typename acle<T>::vt b_v = svld1(pg1, b.v);
-    typename acle<T>::vt z_v = __svzero(z_v);
+    typename acle<T>::vt z_v = acle<T>::zero();
 
     // using FCMLA
     typename acle<T>::vt r_v = svcmla_x(pg1, z_v, a_v, b_v, 90);

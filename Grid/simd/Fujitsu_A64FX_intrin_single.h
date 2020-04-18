@@ -38,8 +38,6 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define LOCK_GAUGE(A)  
 #define UNLOCK_GAUGE(A)  
 #define MASK_REGS                      DECLARATIONS_A64FXf  
-#define COMPLEX_SIGNS(A)  
-#define LOAD64(A,B)  
 #define SAVE_RESULT(A,B)               RESULT_A64FXf(A); PREFETCH_RESULT_L2_STORE(B)  
 #define MULT_2SPIN_1(Dir)              MULT_2SPIN_1_A64FXf(Dir)  
 #define MULT_2SPIN_2                   MULT_2SPIN_2_A64FXf  
@@ -111,7 +109,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
     pg1 = svptrue_b32();        \
     svuint32_t table0; \
     svfloat32_t zero0;        \
-    zero0 = __svzero(zero0); 
+    zero0 = svdup_f32(0.); 
 
 #define Chimu_00 Chi_00  
 #define Chimu_01 Chi_01  
@@ -559,18 +557,18 @@ Author: Nils Meyer <nils.meyer@ur.de>
 
 // ZERO_PSI
 #define ZERO_PSI_A64FXf  \
-    result_00 = __svzero(result_00); \
-    result_01 = __svzero(result_01); \
-    result_02 = __svzero(result_02); \
-    result_10 = __svzero(result_10); \
-    result_11 = __svzero(result_11); \
-    result_12 = __svzero(result_12); \
-    result_20 = __svzero(result_20); \
-    result_21 = __svzero(result_21); \
-    result_22 = __svzero(result_22); \
-    result_30 = __svzero(result_30); \
-    result_31 = __svzero(result_31); \
-    result_32 = __svzero(result_32); 
+    result_00 = svdup_f32(0.); \
+    result_01 = svdup_f32(0.); \
+    result_02 = svdup_f32(0.); \
+    result_10 = svdup_f32(0.); \
+    result_11 = svdup_f32(0.); \
+    result_12 = svdup_f32(0.); \
+    result_20 = svdup_f32(0.); \
+    result_21 = svdup_f32(0.); \
+    result_22 = svdup_f32(0.); \
+    result_30 = svdup_f32(0.); \
+    result_31 = svdup_f32(0.); \
+    result_32 = svdup_f32(0.); 
 
 // PREFETCH_RESULT_L2_STORE (prefetch store to L2)
 #define PREFETCH_RESULT_L2_STORE_INTERNAL_A64FXf(base)  \

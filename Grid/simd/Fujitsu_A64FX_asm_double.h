@@ -38,8 +38,6 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define LOCK_GAUGE(A)  
 #define UNLOCK_GAUGE(A)  
 #define MASK_REGS                      DECLARATIONS_A64FXd  
-#define COMPLEX_SIGNS(A)  
-#define LOAD64(A,B)  
 #define SAVE_RESULT(A,B)               RESULT_A64FXd(A); PREFETCH_RESULT_L2_STORE(B)  
 #define MULT_2SPIN_1(Dir)              MULT_2SPIN_1_A64FXd(Dir)  
 #define MULT_2SPIN_2                   MULT_2SPIN_2_A64FXd  
