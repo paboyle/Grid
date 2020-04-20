@@ -1,5 +1,4 @@
 /*************************************************************************************
-
     Grid physics library, www.github.com/paboyle/Grid 
 
     Source file: ./lib/lattice/Lattice_transfer.h
@@ -83,12 +82,35 @@ template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Latti
   });
 }
   
-
 template<class vobj,class CComplex,int nbasis>
 inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
+			  const             Lattice<vobj>   &fineData,
+			  const std::vector<Lattice<vobj> > &Basis)
+{
+  GridBase * fine  = fineData.Grid();
+  GridBase * coarse= coarseData.Grid();
+
+  Lattice<CComplex> ip(coarse); 
+
+  //  auto fineData_   = fineData.View();
+  auto coarseData_ = coarseData.View();
+  auto ip_         = ip.View();
+  for(int v=0;v<nbasis;v++) {
+    blockInnerProduct(ip,Basis[v],fineData);
+    accelerator_for( sc, coarse->oSites(), vobj::Nsimd(), {
+	coalescedWrite(coarseData_[sc](v),ip_(sc));
+      });
+  }
+}
+
+template<class vobj,class CComplex,int nbasis>
+inline void blockProject1(Lattice<iVector<CComplex,nbasis > > &coarseData,
 			 const             Lattice<vobj>   &fineData,
 			 const std::vector<Lattice<vobj> > &Basis)
 {
+  typedef iVector<CComplex,nbasis > coarseSiteData;
+  coarseSiteData elide;
+  typedef decltype(coalescedRead(elide)) ScalarComplex;
   GridBase * fine  = fineData.Grid();
   GridBase * coarse= coarseData.Grid();
   int  _ndimension = coarse->_ndimension;
@@ -106,26 +128,40 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
     block_r[d] = fine->_rdimensions[d] / coarse->_rdimensions[d];
     assert(block_r[d]*coarse->_rdimensions[d] == fine->_rdimensions[d]);
   }
+  int blockVol = fine->oSites()/coarse->oSites();
 
   coarseData=Zero();
 
   auto fineData_   = fineData.View();
   auto coarseData_ = coarseData.View();
-  // Loop over coars parallel, and then loop over fine associated with coarse.
-  thread_for( sf, fine->oSites(), {
-    int sc;
-    Coordinate coor_c(_ndimension);
-    Coordinate coor_f(_ndimension);
-    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
-    for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // To make this lock free, loop over coars parallel, and then loop over fine associated with coarse.
+  // Otherwise do fine inner product per site, and make the update atomic
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
+  accelerator_for( sci, nbasis*coarse->oSites(), vobj::Nsimd(), {
 
-    thread_critical {
-      for(int i=0;i<nbasis;i++) {
-	auto Basis_      = Basis[i].View();
-	coarseData_[sc](i)=coarseData_[sc](i) + innerProduct(Basis_[sf],fineData_[sf]);
-      }
+    auto sc=sci/nbasis;
+    auto i=sci%nbasis;
+    auto Basis_      = Basis[i].View();
+
+    Coordinate coor_c(_ndimension);
+    Lexicographic::CoorFromIndex(coor_c,sc,coarse->_rdimensions);  // Block coordinate
+
+    int sf;
+    decltype(innerProduct(Basis_(sf),fineData_(sf))) reduce=Zero();
+
+    for(int sb=0;sb<blockVol;sb++){
+
+      Coordinate coor_b(_ndimension);
+      Coordinate coor_f(_ndimension);
+
+      Lexicographic::CoorFromIndex(coor_b,sb,block_r);
+      for(int d=0;d<_ndimension;d++) coor_f[d]=coor_c[d]*block_r[d]+coor_b[d];
+      Lexicographic::IndexFromCoor(coor_f,sf,fine->_rdimensions);
+      
+      reduce=reduce+innerProduct(Basis_(sf),fineData_(sf));
     }
+    coalescedWrite(coarseData_[sc](i),reduce);
   });
   return;
 }
@@ -160,7 +196,7 @@ inline void blockZAXPY(Lattice<vobj> &fineZ,
   auto fineY_  = fineY.View();
   auto coarseA_= coarseA.View();
 
-  thread_for(sf, fine->oSites(), {
+  accelerator_for(sf, fine->oSites(), CComplex::Nsimd(), {
     
     int sc;
     Coordinate coor_c(_ndimension);
@@ -171,7 +207,7 @@ inline void blockZAXPY(Lattice<vobj> &fineZ,
     Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
     // z = A x + y
-    fineZ_[sf]=coarseA_[sc]*fineX_[sf]+fineY_[sf];
+    coalescedWrite(fineZ_[sf],coarseA_(sc)*fineX_(sf)+fineY_(sf));
 
   });
 
@@ -196,7 +232,7 @@ inline void blockInnerProduct(Lattice<CComplex> &CoarseInner,
 
   fine_inner = localInnerProduct(fineX,fineY);
   blockSum(coarse_inner,fine_inner);
-  thread_for(ss, coarse->oSites(),{
+  accelerator_for(ss, coarse->oSites(), 1, {
     CoarseInner_[ss] = coarse_inner_[ss];
   });
 }
@@ -226,23 +262,29 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
   for(int d=0 ; d<_ndimension;d++){
     block_r[d] = fine->_rdimensions[d] / coarse->_rdimensions[d];
   }
+  int blockVol = fine->oSites()/coarse->oSites();
 
   // Turn this around to loop threaded over sc and interior loop 
   // over sf would thread better
-  coarseData=Zero();
   auto coarseData_ = coarseData.View();
   auto fineData_   = fineData.View();
 
-  thread_for(sf,fine->oSites(),{
-    int sc;
+  accelerator_for(sc,coarse->oSites(),1,{
+
+    // One thread per sub block
     Coordinate coor_c(_ndimension);
-    Coordinate coor_f(_ndimension);
-    
-    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
-    for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
-    
-    thread_critical { 
+    Lexicographic::CoorFromIndex(coor_c,sc,coarse->_rdimensions);  // Block coordinate
+    coarseData_[sc]=Zero();
+
+    for(int sb=0;sb<blockVol;sb++){
+      
+      int sf;
+      Coordinate coor_b(_ndimension);
+      Coordinate coor_f(_ndimension);
+      Lexicographic::CoorFromIndex(coor_b,sb,block_r);               // Block sub coordinate
+      for(int d=0;d<_ndimension;d++) coor_f[d]=coor_c[d]*block_r[d] + coor_b[d];
+      Lexicographic::IndexFromCoor(coor_f,sf,fine->_rdimensions);
+
       coarseData_[sc]=coarseData_[sc]+fineData_[sf];
     }
 
@@ -296,6 +338,7 @@ inline void blockOrthogonalise(Lattice<CComplex> &ip,std::vector<Lattice<vobj> >
   }
 }
 
+#if 0
 template<class vobj,class CComplex,int nbasis>
 inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
 			 Lattice<vobj>   &fineData,
@@ -321,7 +364,7 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
   auto coarseData_ = coarseData.View();
 
   // Loop with a cache friendly loop ordering
-  thread_for(sf,fine->oSites(),{
+  accelerator_for(sf,fine->oSites(),1,{
     int sc;
     Coordinate coor_c(_ndimension);
     Coordinate coor_f(_ndimension);
@@ -332,13 +375,35 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
 
     for(int i=0;i<nbasis;i++) {
       auto basis_ = Basis[i].View();
-      if(i==0) fineData_[sf]=coarseData_[sc](i) *basis_[sf];
-      else     fineData_[sf]=fineData_[sf]+coarseData_[sc](i)*basis_[sf];
+      if(i==0) fineData_[sf]=coarseData_[sc](i) *basis_[sf]);
+      else     fineData_[sf]=fineData_[sf]+coarseData_[sc](i)*basis_[sf]);
     }
   });
   return;
   
 }
+#else
+template<class vobj,class CComplex,int nbasis>
+inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
+			 Lattice<vobj>   &fineData,
+			 const std::vector<Lattice<vobj> > &Basis)
+{
+  GridBase * fine  = fineData.Grid();
+  GridBase * coarse= coarseData.Grid();
+
+  fineData=Zero();
+  for(int i=0;i<nbasis;i++) {
+    Lattice<iScalar<CComplex> > ip = PeekIndex<0>(coarseData,i);
+    Lattice<CComplex> cip(coarse);
+    auto cip_ = cip.View();
+    auto  ip_ =  ip.View();
+    accelerator_forNB(sc,coarse->oSites(),CComplex::Nsimd(),{
+	coalescedWrite(cip_[sc], ip_(sc)());
+    });
+    blockZAXPY<vobj,CComplex >(fineData,cip,Basis[i],fineData);
+  }
+}
+#endif
 
 // Useful for precision conversion, or indeed anything where an operator= does a conversion on scalars.
 // Simd layouts need not match since we use peek/poke Local
@@ -371,6 +436,67 @@ void localConvert(const Lattice<vobj> &in,Lattice<vvobj> &out)
     peekLocalSite(s,in,lcoor);
     ss=s;
     pokeLocalSite(ss,out,lcoor);
+  });
+}
+
+template<class vobj>
+void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate FromLowerLeft, Coordinate ToLowerLeft, Coordinate RegionSize)
+{
+  typedef typename vobj::scalar_object sobj;
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+
+  static const int words=sizeof(vobj)/sizeof(vector_type);
+
+  GridBase *Fg = From.Grid();
+  GridBase *Tg = To.Grid();
+  assert(!Fg->_isCheckerBoarded);
+  assert(!Tg->_isCheckerBoarded);
+  int Nsimd = Fg->Nsimd();
+  int nF = Fg->_ndimension;
+  int nT = Tg->_ndimension;
+  int nd = nF;
+  assert(nF == nT);
+
+  for(int d=0;d<nd;d++){
+    assert(Fg->_processors[d]  == Tg->_processors[d]);
+  }
+
+  // the above should guarantee that the operations are local
+  Coordinate ldf = Fg->_ldimensions;
+  Coordinate rdf = Fg->_rdimensions;
+  Coordinate isf = Fg->_istride;
+  Coordinate osf = Fg->_ostride;
+  Coordinate rdt = Tg->_rdimensions;
+  Coordinate ist = Tg->_istride;
+  Coordinate ost = Tg->_ostride;
+  auto t_v = To.View();
+  auto f_v = From.View();
+  accelerator_for(idx,Fg->lSites(),1,{
+    sobj s;
+    Coordinate Fcoor(nd);
+    Coordinate Tcoor(nd);
+    Lexicographic::CoorFromIndex(Fcoor,idx,ldf);
+    int in_region=1;
+    for(int d=0;d<nd;d++){
+      if ( (Fcoor[d] < FromLowerLeft[d]) || (Fcoor[d]>=FromLowerLeft[d]+RegionSize[d]) ){ 
+	in_region=0;
+      }
+      Tcoor[d] = ToLowerLeft[d]+ Fcoor[d]-FromLowerLeft[d];
+    }
+    if (in_region) {
+      Integer idx_f = 0; for(int d=0;d<nd;d++) idx_f+=isf[d]*(Fcoor[d]/rdf[d]);
+      Integer idx_t = 0; for(int d=0;d<nd;d++) idx_t+=ist[d]*(Tcoor[d]/rdt[d]);
+      Integer odx_f = 0; for(int d=0;d<nd;d++) odx_f+=osf[d]*(Fcoor[d]%rdf[d]);
+      Integer odx_t = 0; for(int d=0;d<nd;d++) odx_t+=ost[d]*(Tcoor[d]%rdt[d]);
+      scalar_type * fp = (scalar_type *)&f_v[odx_f];
+      scalar_type * tp = (scalar_type *)&t_v[odx_t];
+      for(int w=0;w<words;w++){
+	tp[idx_t+w*Nsimd] = fp[idx_f+w*Nsimd];  // FIXME IF RRII layout, type pun no worke
+      }
+      //      peekLocalSite(s,From,Fcoor);
+      //      pokeLocalSite(s,To  ,Tcoor);
+    }
   });
 }
 

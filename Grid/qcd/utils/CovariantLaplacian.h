@@ -92,6 +92,7 @@ public:
   };
 
   void Mdir(const GaugeField&, GaugeField&, int, int){ assert(0);}
+  void MdirAll(const GaugeField&, std::vector<GaugeField> &){ assert(0);}
   void Mdiag(const GaugeField&, GaugeField&){ assert(0);}
 
   void ImportGauge(const GaugeField& _U) {

@@ -39,8 +39,8 @@ These are the environment variables we will define for Grid:
 
 Variable | Typical Value | Use
 --- | --- | ---
-`Grid` | `/Users/user_id/src/Grid` | Path to grid source
-`GridPre` | `/Users/user_id/bin` | Path to install directory containing grid pre-requisites built from source
+`Grid` | `$HOME/src/Grid` | Path to grid source
+`GridPre` | `$HOME/.local` | Path to install directory containing grid pre-requisites built from source
 `GridPkg` | **MacPorts**=`/opt/local`, **Homebrew**=`/usr/local` | Path to package manager install directory
 
 Choose either of the following ways to do this, and when you're done, log out and in again. To check these have been set:
@@ -54,7 +54,7 @@ Choose either of the following ways to do this, and when you're done, log out an
 
 ```apple script
 do shell script "launchctl setenv Grid $HOME/src/Grid
-launchctl setenv GridPre $HOME/bin
+launchctl setenv GridPre $HOME/.local
 launchctl setenv GridPkg /opt/local"
 ```
 
@@ -82,7 +82,7 @@ Make the file `environment.plist` in `~/Library/LaunchAgents` with the following
 <string>sh</string>
 <string>-c</string>
 <string>launchctl setenv Grid $HOME/src/Grid
-launchctl setenv GridPre $HOME/bin
+launchctl setenv GridPre $HOME/.local
 launchctl setenv GridPkg /opt/local</string>
 
 </array>
@@ -94,16 +94,18 @@ launchctl setenv GridPkg /opt/local</string>
 
 ## 3. Install and build Open MPI -- ***optional***
 
-Download the latest version of [Open MPI][OMPI] version 3.1 (I used 3.1.3).
-
-NB: Grid does not have any dependencies on fortran, however many standard scientific packages do, so you may as well download GNU fortran (e.g. MacPorts ``gfortran`` package) and build Open MPI like so:
+Download the latest version of [Open MPI][OMPI] version 3.1 (I used 3.1.5) and build it like so:
 
 [OMPI]: https://www.open-mpi.org/software/ompi/v3.1/
 
-    ../configure CC=clang CXX=clang++ F77=gfortran FC=gfortran CXXFLAGS=-g --prefix=$GridPre/openmpi
+    ../configure CC=clang CXX=clang++ CXXFLAGS=-g --prefix=$GridPre/bin
     make -j 4 all install
 
-(If you don't want to bother with fortran bindings, just don't include the F77 and FC flags)
+***Note the `/bin` at the end of the prefix - this is required. As a quirk of the OpenMPI installer, `--prefix` must point to the `bin` subdirectory, with other files installed in `$GridPre/include`, `$GridPre/lib`, `$GridPre/share`, etc.***
+
+Grid does not have any dependencies on fortran, however many standard scientific packages do, so you may wish to download GNU fortran (e.g. MacPorts ``gfortran`` package) and add the following to your configure invocation:
+
+    F77=gfortran FC=gfortran
 
 ## 4. Install and build Grid pre-requisites
 
@@ -121,17 +123,17 @@ These are the `portname`s for mandatory Grid libraries:
 
 * git-flow-avh
 * gmp
+* hdf5
 * mpfr
 
 and these are the `portname`s for optional Grid libraries:
 
 * fftw-3-single
-* hdf5
 * lapack
 * doxygen
 * OpenBLAS
 
-***Please update this list with any packages I've missed! ... and double-check whether OpenBLAS is really for Grid***
+***Please update this list with any packages I've missed! ... and double-check whether OpenBLAS is really for Grid. NB: lapack doesn't seem to work. Should it be scalapack?***
 
 ### 2. [Homebrew][Homebrew]
 
@@ -149,7 +151,7 @@ There isn't currently a port for [C-LIME][C-LIME], so download the source and th
 
 [C-LIME]: https://usqcd-software.github.io/c-lime/ "C-language API for Lattice QCD Interchange Message Encapsulation / Large Internet Message Encapsulation"
 
-    ../configure --prefix=$GridPre/lime CC=clang
+    ../configure CC=clang --prefix=$GridPre
     make -j 4 all install
 
 ## 5. Install, Configure and Build Grid
@@ -182,19 +184,19 @@ Below are shown the `configure` script invocations for three recommended configu
 
 This is the build for every day developing and debugging with Xcode. It uses the Xcode clang c++ compiler, without MPI, and defaults to double-precision. Xcode builds the `Debug` configuration with debug symbols for full debugging:
 
-    ../configure --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre/lime --enable-simd=GEN --enable-precision=double CXX=clang++ --prefix=$GridPre/GridDebug --enable-comms=none --enable-doxygen-doc
+    ../configure CXX=clang++ --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre --enable-simd=GEN --enable-precision=double --prefix=$GridPre/GridDebug --enable-comms=none
 
 #### 2. `Release`
 
 Since Grid itself doesn't really have debug configurations, the release build is recommended to be the same as `Debug`, except using single-precision (handy for validation):
 
-    ../configure --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre/lime --enable-simd=GEN --enable-precision=single CXX=clang++ --prefix=$GridPre/GridRelease --enable-comms=none --enable-doxygen-doc
+    ../configure CXX=clang++ --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre --enable-simd=GEN --enable-precision=single --prefix=$GridPre/GridRelease --enable-comms=none
 
 #### 3. `MPIDebug`
 
 Debug configuration with MPI:
 
-    ../configure --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre/lime --enable-simd=GEN --enable-precision=double CXX=clang++ --prefix=$GridPre/GridMPIDebug --enable-comms=mpi-auto MPICXX=$GridPre/openmpi/bin/mpicxx --enable-doxygen-doc
+    ../configure CXX=clang++ --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre --enable-simd=GEN --enable-precision=double --prefix=$GridPre/GridMPIDebug --enable-comms=mpi-auto MPICXX=$GridPre/bin/mpicxx
 
 ### 5.3 Build Grid
 
@@ -250,9 +252,9 @@ Obtain a list of header locations required by Grid by running the following from
 
     ./grid-config --cxxflags
 
-Output should look similar to:
+Output should look similar to (but will likely include duplicates):
 
-    -I$GridPre/openmpi/include -I$GridPkg/include -I$GridPre/lime/include -I$GridPkg/include -I$GridPkg/include -I$GridPkg/include -O3 -g -std=c++11
+    -I$GridPre/include -I$GridPkg/include -O3 -g -std=c++11
 
 The header locations follow the `-I` switches. You can ignore the other switches, and you can ignore duplicate entries, which just mean that your package manager has installed multiple packages in the same location.
 
@@ -265,13 +267,12 @@ Set HEADER_SEARCH_PATHS to:
 
 followed by (***the order is important***) the locations reported by `grid-config --cxxflags`, ignoring duplicates, e.g.:
 
-    $GridPre/openmpi/include
+    $GridPre/include
     $GridPkg/include
-    $GridPre/lime/include
-
+    
 **Note: the easiest way to set this value is to put it all on one line, space separated, and edit the text to the right of `HEADER_SEARCH_PATHS`**, i.e.:
 
-    $Grid/build$(CONFIGURATION)/Grid $Grid $GridPre/openmpi/include $GridPkg/include $GridPre/lime/include
+    $Grid/build$(CONFIGURATION)/Grid $Grid $GridPre/include $GridPkg/include
 
 #### LIBRARY_SEARCH_PATHS
 
@@ -279,13 +280,13 @@ Obtain a list of library locations required by Grid by running the following fro
 
     ./grid-config --ldflags
 
-Output should look similar to:
+Output should look similar to (but will likely include duplicates):
 
-    -L$GridPre/openmpi/lib -L$GridPkg/lib -L$GridPre/lime/lib -L$GridPkg/lib -L$GridPkg/lib -L$GridPkg/lib
+    -L$GridPre/lib -L$GridPkg/lib
 
 Paste the output ***with `$Grid/build$(CONFIGURATION)/Grid $Grid/build$(CONFIGURATION)/Hadrons ` prepended*** into `LIBRARY_SEARCH_PATHS`:
 
-    $Grid/build$(CONFIGURATION)/Grid $Grid/build$(CONFIGURATION)/Hadrons $GridPre/openmpi/lib $GridPkg/lib $GridPre/lime/lib
+    $Grid/build$(CONFIGURATION)/Grid $Grid/build$(CONFIGURATION)/Hadrons $GridPre/lib $GridPkg/lib
 
 ### 2. Linking
 
@@ -369,7 +370,7 @@ Instead:
 
 3. From a terminal session, locate and run your executable using `mpirun` (*the mangled name of the project build products will not be exactly the same as this example*):
 
-    `$GridPre/openmpi/bin/mpirun -np 2 ~/Library/Developer/Xcode/DerivedData/HelloGrid-fiyyuveptaqelbbvllomcgjyvghr/Build/Products/Debug/HelloGrid --grid 4.4.4.8 --mpi 1.1.1.2`
+    `$GridPre/bin/mpirun -np 2 ~/Library/Developer/Xcode/DerivedData/HelloGrid-fiyyuveptaqelbbvllomcgjyvghr/Build/Products/Debug/HelloGrid --grid 4.4.4.8 --mpi 1.1.1.2`
 
     The Xcode debugger will attach to the first process.
 

@@ -30,12 +30,12 @@ template<class Field> class PowerMethod
       RealD vden = norm2(src_n); 
       RealD na = vnum/vden; 
       
-      if ( (fabs(evalMaxApprox/na - 1.0) < 0.01) || (i==_MAX_ITER_EST_-1) ) { 
+      if ( (fabs(evalMaxApprox/na - 1.0) < 0.001) || (i==_MAX_ITER_EST_-1) ) { 
  	evalMaxApprox = na; 
+	std::cout << GridLogMessage << " Approximation of largest eigenvalue: " << evalMaxApprox << std::endl;
  	return evalMaxApprox; 
       } 
       evalMaxApprox = na; 
-      std::cout << GridLogMessage << " Approximation of largest eigenvalue: " << evalMaxApprox << std::endl;
       src_n = tmp;
     }
     assert(0);

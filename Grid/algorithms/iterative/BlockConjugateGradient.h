@@ -52,6 +52,7 @@ class BlockConjugateGradient : public OperatorFunction<Field> {
   Integer MaxIterations;
   Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
   Integer PrintInterval; //GridLogMessages or Iterative
+  RealD TrueResidual;
   
   BlockConjugateGradient(BlockCGtype cgtype,int _Orthog,RealD tol, Integer maxit, bool err_on_no_conv = true)
     : Tolerance(tol), CGtype(cgtype),   blockDim(_Orthog),  MaxIterations(maxit), ErrorOnNoConverge(err_on_no_conv),PrintInterval(100)
@@ -306,7 +307,8 @@ void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X)
 
       Linop.HermOp(X, AD);
       AD = AD-B;
-      std::cout << GridLogMessage <<"\t True residual is " << std::sqrt(norm2(AD)/norm2(B)) <<std::endl;
+      TrueResidual = std::sqrt(norm2(AD)/norm2(B));
+      std::cout << GridLogMessage <<"\tTrue residual is " << TrueResidual <<std::endl;
 
       std::cout << GridLogMessage << "Time Breakdown "<<std::endl;
       std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed()     <<std::endl;
@@ -442,7 +444,8 @@ void CGmultiRHSsolve(LinearOperatorBase<Field> &Linop, const Field &Src, Field &
 
       Linop.HermOp(Psi, AP);
       AP = AP-Src;
-      std::cout <<GridLogMessage << "\tTrue residual is " << std::sqrt(norm2(AP)/norm2(Src)) <<std::endl;
+      TrueResidual = std::sqrt(norm2(AP)/norm2(Src));
+      std::cout <<GridLogMessage << "\tTrue residual is " << TrueResidual <<std::endl;
 
       std::cout << GridLogMessage << "Time Breakdown "<<std::endl;
       std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed()     <<std::endl;
@@ -653,7 +656,7 @@ void BlockCGrQsolveVec(LinearOperatorBase<Field> &Linop, const std::vector<Field
       if ( rr > max_resid ) max_resid = rr;
     }
 
-    std::cout << GridLogIterative << "\t Block Iteration "<<k<<" ave resid "<< sqrt(rrsum/sssum) << " max "<< sqrt(max_resid) <<std::endl;
+    std::cout << GridLogIterative << "\t Block Iteration "<<k<<" ave resid "<< std::sqrt(rrsum/sssum) << " max "<< std::sqrt(max_resid) <<std::endl;
 
     if ( max_resid < Tolerance*Tolerance ) { 
 
@@ -668,7 +671,8 @@ void BlockCGrQsolveVec(LinearOperatorBase<Field> &Linop, const std::vector<Field
 
       for(int b=0;b<Nblock;b++) Linop.HermOp(X[b], AD[b]);
       for(int b=0;b<Nblock;b++) AD[b] = AD[b]-B[b];
-      std::cout << GridLogMessage <<"\t True residual is " << std::sqrt(normv(AD)/normv(B)) <<std::endl;
+      TrueResidual = std::sqrt(normv(AD)/normv(B));
+      std::cout << GridLogMessage << "\tTrue residual is " << TrueResidual <<std::endl;
 
       std::cout << GridLogMessage << "Time Breakdown "<<std::endl;
       std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed()     <<std::endl;

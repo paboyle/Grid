@@ -403,6 +403,10 @@ namespace Optimization {
     accelerator_inline GpuVectorRD operator()(GpuVectorRD a, GpuVectorRD b){
       return a/b;
     }
+    accelerator_inline GpuVectorI operator()(GpuVectorI a, GpuVectorI b){
+      return a/b;
+    }
+
     // Danger -- element wise divide fro complex, not complex div. 
     // See Grid_vector_types.h lines around 735, applied after "toReal"
     accelerator_inline GpuVectorCF operator()(GpuVectorCF a, GpuVectorCF b){

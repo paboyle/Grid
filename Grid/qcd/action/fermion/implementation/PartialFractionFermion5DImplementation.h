@@ -31,7 +31,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
-template<class Impl>
+ template<class Impl>
 void  PartialFractionFermion5D<Impl>::Mdir (const FermionField &psi, FermionField &chi,int dir,int disp){
   // this does both dag and undag but is trivial; make a common helper routing
   int Ls = this->Ls;
@@ -45,8 +45,25 @@ void  PartialFractionFermion5D<Impl>::Mdir (const FermionField &psi, FermionFiel
     ag5xpby_ssp(chi, scale,chi,0.0,chi,s+1,s+1); 
   }
   ag5xpby_ssp(chi,p[nblock]*scale/amax,chi,0.0,chi,Ls-1,Ls-1);
-
 }
+template<class Impl>
+void  PartialFractionFermion5D<Impl>::MdirAll (const FermionField &psi, std::vector<FermionField> &chi){
+  // this does both dag and undag but is trivial; make a common helper routing
+  int Ls = this->Ls;
+
+  this->DhopDirAll(psi,chi);
+
+  for(int point=0;point<chi.size();point++){
+    int nblock=(Ls-1)/2;
+    for(int b=0;b<nblock;b++){
+      int s = 2*b;
+      ag5xpby_ssp(chi[point],-scale,chi[point],0.0,chi[point],s,s); 
+      ag5xpby_ssp(chi[point], scale,chi[point],0.0,chi[point],s+1,s+1); 
+    }
+    ag5xpby_ssp(chi[point],p[nblock]*scale/amax,chi[point],0.0,chi[point],Ls-1,Ls-1);
+  }
+}
+
 template<class Impl>
 void   PartialFractionFermion5D<Impl>::Meooe_internal(const FermionField &psi, FermionField &chi,int dag)
 {
