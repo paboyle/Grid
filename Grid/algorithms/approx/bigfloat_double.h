@@ -25,6 +25,10 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+
+#ifndef INCLUDED_BIGFLOAT_DOUBLE_H
+#define INCLUDED_BIGFLOAT_DOUBLE_H
+
 #include <math.h>
 
 typedef double mfloat; 
@@ -185,5 +189,7 @@ public:
 
   //  friend bigfloat& random(void);
 };
+
+#endif
 
 
