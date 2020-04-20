@@ -592,6 +592,8 @@ struct Exchange{
   }
 
 
+
+/* FIXME use svcreate etc. or switch to table lookup directly 
   template <typename T>
   static inline void Exchange1(vec<T> &out1, vec<T> &out2, const vec<T> &in1, const vec<T> &in2){
 
@@ -611,6 +613,29 @@ struct Exchange{
     svst4(pg4, (typename acle<double>::pt*)out1.v, out1_v4);
     svst4(pg4, (typename acle<double>::pt*)out2.v, out2_v4);
   }
+*/ 
+
+  #define VECTOR_FOR(i, w, inc)                   \
+  for (unsigned int i = 0; i < w; i += inc)
+ 
+  template <typename T>
+  static inline void Exchange1(vec<T> &out1, vec<T> &out2, const vec<T> &in1, const vec<T> &in2){
+    // FIXME
+    const int n = 1;
+    const int w = W<T>::r;
+    unsigned int mask = w >> (n + 1);
+    //      std::cout << " Exchange "<<n<<" nsimd "<<w<<" mask 0x" <<std::hex<<mask<<std::dec<<std::endl;
+    VECTOR_FOR(i, w, 1) {       
+      int j1 = i&(~mask);
+      if  ( (i&mask) == 0 ) { out1.v[i]=in1.v[j1];}
+      else                  { out1.v[i]=in2.v[j1];}
+      int j2 = i|mask;
+      if  ( (i&mask) == 0 ) { out2.v[i]=in1.v[j2];}
+      else                  { out2.v[i]=in2.v[j2];}
+    }     
+  }
+
+  #undef VECTOR_FOR
 
   template <typename T>
   static inline void Exchange2(vec<T> &out1, vec<T> &out2, const vec<T> &in1, const vec<T> &in2){
