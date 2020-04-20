@@ -39,6 +39,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/approx/Remez.h>
 #include <Grid/algorithms/approx/MultiShiftFunction.h>
 #include <Grid/algorithms/approx/Forecast.h>
+#include <Grid/algorithms/approx/RemezGeneral.h>
+#include <Grid/algorithms/approx/ZMobius.h>
 
 #include <Grid/algorithms/iterative/Deflation.h>
 #include <Grid/algorithms/iterative/ConjugateGradient.h>
