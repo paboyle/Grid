@@ -286,6 +286,10 @@ case ${CXX} in
        CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
     fi
     ;;
+  g++-10.0.1)
+  # removed -fno-strict-aliasing for gcc 10 dev build only
+  CXXFLAGS="$CXXFLAGS"
+  ;;
   *)
     CXXLD=${CXX}
     CXXFLAGS="$CXXFLAGS -fno-strict-aliasing"
