@@ -6,6 +6,12 @@ NAMESPACE_BEGIN(Grid);
 MemoryStats *MemoryProfiler::stats = nullptr;
 bool         MemoryProfiler::debug = false;
 
+#ifdef GRID_NVCC
+#define SMALL_LIMIT (0)
+#else
+#define SMALL_LIMIT (4096)
+#endif
+
 #ifdef POINTER_CACHE
 int PointerCache::victim;
 
@@ -13,7 +19,7 @@ PointerCache::PointerCacheEntry PointerCache::Entries[PointerCache::Ncache];
 
 void *PointerCache::Insert(void *ptr,size_t bytes) {
 
-  if (bytes < 4096 ) return ptr;
+  if (bytes < SMALL_LIMIT ) return ptr;
 
 #ifdef GRID_OMP
   assert(omp_in_parallel()==0);
@@ -50,7 +56,7 @@ void *PointerCache::Insert(void *ptr,size_t bytes) {
 
 void *PointerCache::Lookup(size_t bytes) {
 
-  if (bytes < 4096 ) return NULL;
+  if (bytes < SMALL_LIMIT ) return NULL;
 
 #ifdef GRID_OMP
   assert(omp_in_parallel()==0);

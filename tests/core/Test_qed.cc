@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 
       std::cout << GridLogMessage << "Spatial zero-mode norm 2" << std::endl;
       sliceSum(a, zm, grid.Nd() - 1);
-      for (unsigned int t = 0; t < latt_size.size(); ++t)
+      for (unsigned int t = 0; t < latt_size[Tp]; ++t)
       {
         std::cout << GridLogMessage << "t = " << t << " " << std::sqrt(norm2(zm[t])) << std::endl;
       }

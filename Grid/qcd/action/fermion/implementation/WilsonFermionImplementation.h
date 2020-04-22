@@ -319,28 +319,51 @@ void WilsonFermion<Impl>::DhopEO(const FermionField &in, FermionField &out,int d
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::Mdir(const FermionField &in, FermionField &out, int dir, int disp) {
+void WilsonFermion<Impl>::Mdir(const FermionField &in, FermionField &out, int dir, int disp) 
+{
   DhopDir(in, out, dir, disp);
+}
+template <class Impl>
+void WilsonFermion<Impl>::MdirAll(const FermionField &in, std::vector<FermionField> &out) 
+{
+  DhopDirAll(in, out);
 }
 
 template <class Impl>
 void WilsonFermion<Impl>::DhopDir(const FermionField &in, FermionField &out, int dir, int disp) 
 {
+  Compressor compressor(DaggerNo);
+  Stencil.HaloExchange(in, compressor);
+
   int skip = (disp == 1) ? 0 : 1;
   int dirdisp = dir + skip * 4;
   int gamma = dir + (1 - skip) * 4;
 
-  DhopDirDisp(in, out, dirdisp, gamma, DaggerNo);
+  DhopDirCalc(in, out, dirdisp, gamma, DaggerNo);
 };
-
 template <class Impl>
-void WilsonFermion<Impl>::DhopDirDisp(const FermionField &in, FermionField &out,int dirdisp, int gamma, int dag) 
+void WilsonFermion<Impl>::DhopDirAll(const FermionField &in, std::vector<FermionField> &out) 
 {
-  Compressor compressor(dag);
-
+  Compressor compressor(DaggerNo);
   Stencil.HaloExchange(in, compressor);
+
+  assert((out.size()==8)||(out.size()==9)); 
+  for(int dir=0;dir<Nd;dir++){
+    for(int disp=-1;disp<=1;disp+=2){
+
+      int skip = (disp == 1) ? 0 : 1;
+      int dirdisp = dir + skip * 4;
+      int gamma = dir + (1 - skip) * 4;
+
+      DhopDirCalc(in, out[dirdisp], dirdisp, gamma, DaggerNo);
+    }
+  }
+}
+template <class Impl>
+void WilsonFermion<Impl>::DhopDirCalc(const FermionField &in, FermionField &out,int dirdisp, int gamma, int dag) 
+{
   int Ls=1;
-  int Nsite=in.oSites();
+  uint64_t Nsite=in.oSites();
   Kernels::DhopDirKernel(Stencil, Umu, Stencil.CommBuf(), Ls, Nsite, in, out, dirdisp, gamma);
 };
 
@@ -348,7 +371,8 @@ template <class Impl>
 void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
                                        DoubledGaugeField &U,
                                        const FermionField &in,
-                                       FermionField &out, int dag) {
+                                       FermionField &out, int dag) 
+{
 #ifdef GRID_OMP
   if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute )
     DhopInternalOverlappedComms(st,lo,U,in,out,dag);

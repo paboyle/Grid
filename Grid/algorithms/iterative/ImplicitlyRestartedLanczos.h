@@ -43,6 +43,11 @@ NAMESPACE_BEGIN(Grid);
 template<class Field>
 void basisOrthogonalize(std::vector<Field> &basis,Field &w,int k) 
 {
+  // If assume basis[j] are already orthonormal,
+  // can take all inner products in parallel saving 2x bandwidth
+  // Save 3x bandwidth on the second line of loop.
+  // perhaps 2.5x speed up.
+  // 2x overall in Multigrid Lanczos  
   for(int j=0; j<k; ++j){
     auto ip = innerProduct(basis[j],w);
     w = w - ip*basis[j];
@@ -54,16 +59,15 @@ void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, i
 {
   typedef decltype(basis[0].View()) View;
   auto tmp_v = basis[0].View();
-  std::vector<View> basis_v(basis.size(),tmp_v);
+  Vector<View> basis_v(basis.size(),tmp_v);
   typedef typename Field::vector_object vobj;
   GridBase* grid = basis[0].Grid();
-      
+
   for(int k=0;k<basis.size();k++){
     basis_v[k] = basis[k].View();
   }
-
+#if 0
   std::vector < vobj , commAllocator<vobj> > Bt(thread_max() * Nm); // Thread private
-
   thread_region
   {
     vobj* B = Bt.data() + Nm * thread_num();
@@ -81,24 +85,89 @@ void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, i
       }
     });
   }
+#else
+
+  int nrot = j1-j0;
+
+
+  uint64_t oSites   =grid->oSites();
+  uint64_t siteBlock=(grid->oSites()+nrot-1)/nrot; // Maximum 1 additional vector overhead
+
+  //  printf("BasisRotate %d %d nrot %d siteBlock %d\n",j0,j1,nrot,siteBlock);
+
+  Vector <vobj> Bt(siteBlock * nrot); 
+  auto Bp=&Bt[0];
+
+  // GPU readable copy of Eigen matrix
+  Vector<double> Qt_jv(Nm*Nm);
+  double *Qt_p = & Qt_jv[0];
+  for(int k=0;k<Nm;++k){
+    for(int j=0;j<Nm;++j){
+      Qt_p[j*Nm+k]=Qt(j,k);
+    }
+  }
+
+  // Block the loop to keep storage footprint down
+  vobj zz=Zero();
+  for(uint64_t s=0;s<oSites;s+=siteBlock){
+
+    // remaining work in this block
+    int ssites=MIN(siteBlock,oSites-s);
+
+    // zero out the accumulators
+    accelerator_for(ss,siteBlock*nrot,vobj::Nsimd(),{
+	auto z=coalescedRead(zz);
+	coalescedWrite(Bp[ss],z);
+    });
+
+    accelerator_for(sj,ssites*nrot,vobj::Nsimd(),{
+	
+      int j =sj%nrot;
+      int jj  =j0+j;
+      int ss =sj/nrot;
+      int sss=ss+s;
+
+      for(int k=k0; k<k1; ++k){
+	auto tmp = coalescedRead(Bp[ss*nrot+j]);
+	coalescedWrite(Bp[ss*nrot+j],tmp+ Qt_p[jj*Nm+k] * coalescedRead(basis_v[k][sss]));
+      }
+    });
+
+    accelerator_for(sj,ssites*nrot,vobj::Nsimd(),{
+      int j =sj%nrot;
+      int jj  =j0+j;
+      int ss =sj/nrot;
+      int sss=ss+s;
+      coalescedWrite(basis_v[jj][sss],coalescedRead(Bp[ss*nrot+j]));
+    });
+  }
+#endif
 }
 
 // Extract a single rotated vector
 template<class Field>
 void basisRotateJ(Field &result,std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j, int k0,int k1,int Nm) 
 {
+  typedef decltype(basis[0].View()) View;
   typedef typename Field::vector_object vobj;
   GridBase* grid = basis[0].Grid();
 
   result.Checkerboard() = basis[0].Checkerboard();
   auto result_v=result.View();
-  thread_for(ss, grid->oSites(),{
-    vobj B = Zero();
+  Vector<View> basis_v(basis.size(),result_v);
+  for(int k=0;k<basis.size();k++){
+    basis_v[k] = basis[k].View();
+  }
+  vobj zz=Zero();
+  Vector<double> Qt_jv(Nm);
+  double * Qt_j = & Qt_jv[0];
+  for(int k=0;k<Nm;++k) Qt_j[k]=Qt(j,k);
+  accelerator_for(ss, grid->oSites(),vobj::Nsimd(),{
+    auto B=coalescedRead(zz);
     for(int k=k0; k<k1; ++k){
-      auto basis_k = basis[k].View();
-      B +=Qt(j,k) * basis_k[ss];
+      B +=Qt_j[k] * coalescedRead(basis_v[k][ss]);
     }
-    result_v[ss] = B;
+    coalescedWrite(result_v[ss], B);
   });
 }
 
@@ -282,7 +351,7 @@ public:
 			    RealD _eresid, // resid in lmdue deficit 
 			    int _MaxIter, // Max iterations
 			    RealD _betastp=0.0, // if beta(k) < betastp: converged
-			    int _MinRestart=1, int _orth_period = 1,
+			    int _MinRestart=0, int _orth_period = 1,
 			    IRLdiagonalisation _diagonalisation= IRLdiagonaliseWithEigen) :
     SimpleTester(HermOp), _PolyOp(PolyOp),      _HermOp(HermOp), _Tester(Tester),
     Nstop(_Nstop)  ,      Nk(_Nk),      Nm(_Nm),
@@ -298,7 +367,7 @@ public:
 			       RealD _eresid, // resid in lmdue deficit 
 			       int _MaxIter, // Max iterations
 			       RealD _betastp=0.0, // if beta(k) < betastp: converged
-			       int _MinRestart=1, int _orth_period = 1,
+			       int _MinRestart=0, int _orth_period = 1,
 			       IRLdiagonalisation _diagonalisation= IRLdiagonaliseWithEigen) :
     SimpleTester(HermOp),  _PolyOp(PolyOp),      _HermOp(HermOp), _Tester(SimpleTester),
     Nstop(_Nstop)  ,      Nk(_Nk),      Nm(_Nm),
@@ -347,7 +416,7 @@ until convergence
     GridBase *grid = src.Grid();
     assert(grid == evec[0].Grid());
     
-    GridLogIRL.TimingMode(1);
+    //    GridLogIRL.TimingMode(1);
     std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
     std::cout << GridLogIRL <<" ImplicitlyRestartedLanczos::calc() starting iteration 0 /  "<< MaxIter<< std::endl;
     std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
@@ -372,14 +441,17 @@ until convergence
     {
       auto src_n = src;
       auto tmp = src;
+      std::cout << GridLogIRL << " IRL source norm " << norm2(src) << std::endl;
       const int _MAX_ITER_IRL_MEVAPP_ = 50;
       for (int i=0;i<_MAX_ITER_IRL_MEVAPP_;i++) {
 	normalise(src_n);
 	_HermOp(src_n,tmp);
+	//	std::cout << GridLogMessage<< tmp<<std::endl; exit(0);
+	//	std::cout << GridLogIRL << " _HermOp " << norm2(tmp) << std::endl;
 	RealD vnum = real(innerProduct(src_n,tmp)); // HermOp.
 	RealD vden = norm2(src_n);
 	RealD na = vnum/vden;
-	if (fabs(evalMaxApprox/na - 1.0) < 0.05)
+	if (fabs(evalMaxApprox/na - 1.0) < 0.0001)
 	  i=_MAX_ITER_IRL_MEVAPP_;
 	evalMaxApprox = na;
 	std::cout << GridLogIRL << " Approximation of largest eigenvalue: " << evalMaxApprox << std::endl;
@@ -577,11 +649,11 @@ until convergence
 /* Saad PP. 195
 1. Choose an initial vector v1 of 2-norm unity. Set β1 ≡ 0, v0 ≡ 0
 2. For k = 1,2,...,m Do:
-3. wk:=Avk−βkv_{k−1}      
-4. αk:=(wk,vk)       // 
-5. wk:=wk−αkvk       // wk orthog vk 
-6. βk+1 := ∥wk∥2. If βk+1 = 0 then Stop
-7. vk+1 := wk/βk+1
+3. wk:=Avk - b_k v_{k-1}      
+4. ak:=(wk,vk)       // 
+5. wk:=wk-akvk       // wk orthog vk 
+6. bk+1 := ||wk||_2. If b_k+1 = 0 then Stop
+7. vk+1 := wk/b_k+1
 8. EndDo
  */
   void step(std::vector<RealD>& lmd,
@@ -589,6 +661,7 @@ until convergence
 	    std::vector<Field>& evec,
 	    Field& w,int Nm,int k)
   {
+    std::cout<<GridLogIRL << "Lanczos step " <<k<<std::endl;
     const RealD tiny = 1.0e-20;
     assert( k< Nm );
 
@@ -600,20 +673,20 @@ until convergence
 
     if(k>0) w -= lme[k-1] * evec[k-1];
 
-    ComplexD zalph = innerProduct(evec_k,w); // 4. αk:=(wk,vk)
+    ComplexD zalph = innerProduct(evec_k,w);
     RealD     alph = real(zalph);
 
-    w = w - alph * evec_k;// 5. wk:=wk−αkvk
+    w = w - alph * evec_k;
 
-    RealD beta = normalise(w); // 6. βk+1 := ∥wk∥2. If βk+1 = 0 then Stop
-    // 7. vk+1 := wk/βk+1
+    RealD beta = normalise(w); 
 
     lmd[k] = alph;
     lme[k] = beta;
 
-    if (k>0 && k % orth_period == 0) {
+    if ( (k>0) && ( (k % orth_period) == 0 )) {
+      std::cout<<GridLogIRL << "Orthogonalising " <<k<<std::endl;
       orthogonalize(w,evec,k); // orthonormalise
-      std::cout<<GridLogIRL << "Orthogonalised " <<std::endl;
+      std::cout<<GridLogIRL << "Orthogonalised " <<k<<std::endl;
     }
 
     if(k < Nm-1) evec[k+1] = w;
@@ -621,6 +694,8 @@ until convergence
     std::cout<<GridLogIRL << "alpha[" << k << "] = " << zalph << " beta[" << k << "] = "<<beta<<std::endl;
     if ( beta < tiny ) 
       std::cout<<GridLogIRL << " beta is tiny "<<beta<<std::endl;
+
+    std::cout<<GridLogIRL << "Lanczos step complete " <<k<<std::endl;
   }
 
   void diagonalize_Eigen(std::vector<RealD>& lmd, std::vector<RealD>& lme, 
