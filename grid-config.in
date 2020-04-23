@@ -19,8 +19,8 @@ Known values for OPTION are:
   --help       display this help and exit
   --version    output version information
   --git        print git revision
-  --cxx        print c++ compiler and compiler flags
-  --cxxld      print c++ linker   and linker   flags
+  --cxx        print c++ compiler (may include some flags and spaces)
+  --cxxld      print c++ linker   (may include some flags and spaces)
 
 EOF
   
