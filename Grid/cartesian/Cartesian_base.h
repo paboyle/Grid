@@ -47,19 +47,18 @@ public:
   // Give Lattice access
   template<class object> friend class Lattice;
 
-  GridBase(const Coordinate & processor_grid) : CartesianCommunicator(processor_grid) {}; 
+  GridBase(const Coordinate & processor_grid) : CartesianCommunicator(processor_grid) { LocallyPeriodic=0;}; 
 
   GridBase(const Coordinate & processor_grid,
 	   const CartesianCommunicator &parent,
 	   int &split_rank) 
-    : CartesianCommunicator(processor_grid,parent,split_rank) {};
+    : CartesianCommunicator(processor_grid,parent,split_rank) {LocallyPeriodic=0;};
 
   GridBase(const Coordinate & processor_grid,
 	   const CartesianCommunicator &parent) 
-    : CartesianCommunicator(processor_grid,parent,dummy) {};
+    : CartesianCommunicator(processor_grid,parent,dummy) {LocallyPeriodic=0;};
 
   virtual ~GridBase() = default;
-
 
   // Physics Grid information.
   Coordinate _simd_layout;// Which dimensions get relayed out over simd lanes.
@@ -80,7 +79,8 @@ public:
   Coordinate _lstart;     // local start of array in gcoors _processor_coor[d]*_ldimensions[d]
   Coordinate _lend  ;     // local end of array in gcoors   _processor_coor[d]*_ldimensions[d]+_ldimensions_[d]-1
 
-    bool _isCheckerBoarded; 
+  bool _isCheckerBoarded; 
+  int        LocallyPeriodic;
 
 public:
 

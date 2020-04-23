@@ -103,6 +103,7 @@ public:
   // Multigrid assistance; force term uses too
   ///////////////////////////////////////////////////////////////
   void Mdir(const FermionField &in, FermionField &out, int dir, int disp);
+  void MdirAll(const FermionField &in, std::vector<FermionField> &out);
   void DhopDir(const FermionField &in, FermionField &out, int dir, int disp);
 
   ///////////////////////////////////////////////////////////////

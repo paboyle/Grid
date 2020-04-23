@@ -362,12 +362,19 @@ void ImprovedStaggeredFermion<Impl>::DhopEO(const FermionField &in, FermionField
 }
 
 template <class Impl>
-void ImprovedStaggeredFermion<Impl>::Mdir(const FermionField &in, FermionField &out, int dir, int disp) {
+void ImprovedStaggeredFermion<Impl>::Mdir(const FermionField &in, FermionField &out, int dir, int disp) 
+{
   DhopDir(in, out, dir, disp);
+}
+template <class Impl>
+void ImprovedStaggeredFermion<Impl>::MdirAll(const FermionField &in, std::vector<FermionField> &out) 
+{
+  assert(0); // Not implemented yet
 }
 
 template <class Impl>
-void ImprovedStaggeredFermion<Impl>::DhopDir(const FermionField &in, FermionField &out, int dir, int disp) {
+void ImprovedStaggeredFermion<Impl>::DhopDir(const FermionField &in, FermionField &out, int dir, int disp) 
+{
 
   Compressor compressor;
   Stencil.HaloExchange(in, compressor);
@@ -379,6 +386,7 @@ void ImprovedStaggeredFermion<Impl>::DhopDir(const FermionField &in, FermionFiel
     Kernels::DhopDirKernel(Stencil, Umu_v, UUUmu_v, Stencil.CommBuf(), sss, sss, in_v, out_v, dir, disp);
   });
 };
+
 
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
@@ -404,7 +412,6 @@ void ImprovedStaggeredFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st
 #ifdef GRID_OMP
   Compressor compressor; 
   int len =  U.Grid()->oSites();
-  const int LLs =  1;
 
   DhopTotalTime   -= usecond();
 

@@ -49,8 +49,13 @@ NAMESPACE_BEGIN(Grid);
 #ifdef POINTER_CACHE
 class PointerCache {
 private:
-
+/*Pinning pages is costly*/
+/*Could maintain separate large and small allocation caches*/
+#ifdef GRID_NVCC 
+  static const int Ncache=128;
+#else
   static const int Ncache=8;
+#endif
   static int victim;
 
   typedef struct { 
@@ -62,7 +67,6 @@ private:
   static PointerCacheEntry Entries[Ncache];
 
 public:
-
 
   static void *Insert(void *ptr,size_t bytes) ;
   static void *Lookup(size_t bytes) ;
@@ -170,13 +174,14 @@ public:
     // Unified (managed) memory
     ////////////////////////////////////
     if ( ptr == (_Tp *) NULL ) {
+      //      printf(" alignedAllocater cache miss %ld bytes ",bytes);      BACKTRACEFP(stdout);
       auto err = cudaMallocManaged((void **)&ptr,bytes);
       if( err != cudaSuccess ) {
 	ptr = (_Tp *) NULL;
 	std::cerr << " cudaMallocManaged failed for " << bytes<<" bytes " <<cudaGetErrorString(err)<< std::endl;
 	assert(0);
       }
-    }
+    } 
     assert( ptr != (_Tp *)NULL);
 #else 
     //////////////////////////////////////////////////////////////////////////////////////////

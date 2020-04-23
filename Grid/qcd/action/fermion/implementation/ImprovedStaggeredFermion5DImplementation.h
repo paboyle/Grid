@@ -538,8 +538,14 @@ void ImprovedStaggeredFermion5D<Impl>::ZeroCounters(void)
 // Implement the general interface. Here we use SAME mass on all slices
 /////////////////////////////////////////////////////////////////////////
 template <class Impl>
-void ImprovedStaggeredFermion5D<Impl>::Mdir(const FermionField &in, FermionField &out, int dir, int disp) {
+void ImprovedStaggeredFermion5D<Impl>::Mdir(const FermionField &in, FermionField &out, int dir, int disp) 
+{
   DhopDir(in, out, dir, disp);
+}
+template <class Impl>
+void ImprovedStaggeredFermion5D<Impl>::MdirAll(const FermionField &in, std::vector<FermionField> &out) 
+{
+  assert(0);
 }
 template <class Impl>
 RealD ImprovedStaggeredFermion5D<Impl>::M(const FermionField &in, FermionField &out) {

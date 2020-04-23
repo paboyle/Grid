@@ -241,6 +241,15 @@ void WilsonFermion5D<Impl>::DhopDir(const FermionField &in, FermionField &out,in
   Kernels::DhopDirKernel(Stencil,Umu,Stencil.CommBuf(),Ls,Nsite,in,out,dirdisp,gamma);
 
 };
+template<class Impl>
+void WilsonFermion5D<Impl>::DhopDirAll(const FermionField &in, std::vector<FermionField> &out)
+{
+  Compressor compressor(DaggerNo);
+  Stencil.HaloExchange(in,compressor);
+  uint64_t Nsite = Umu.Grid()->oSites();
+  Kernels::DhopDirAll(Stencil,Umu,Stencil.CommBuf(),Ls,Nsite,in,out);
+};
+
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,

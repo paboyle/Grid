@@ -120,6 +120,17 @@ class ConjugateGradientModule: public SolverModule<ConjugateGradient, Field, Sol
 };
 
 template <class Field >
+class BiCGSTABModule: public SolverModule<BiCGSTAB, Field, SolverParameters> {
+  typedef SolverModule<BiCGSTAB, Field, SolverParameters> SolverBase;
+  using SolverBase::SolverBase; // for constructors
+
+  // acquire resource
+  virtual void initialize(){
+    this->SolverPtr.reset(new BiCGSTAB<Field>(this->Par_.tolerance, this->Par_.max_iterations, true));
+  }
+};
+
+template <class Field >
 class ConjugateResidualModule: public SolverModule<ConjugateResidual, Field, SolverParameters> {
   typedef SolverModule<ConjugateResidual, Field, SolverParameters> SolverBase;
   using SolverBase::SolverBase; // for constructors

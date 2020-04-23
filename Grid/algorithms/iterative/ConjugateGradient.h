@@ -49,6 +49,7 @@ public:
   RealD Tolerance;
   Integer MaxIterations;
   Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
+  RealD TrueResidual;
   
   ConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true)
     : Tolerance(tol),
@@ -71,7 +72,6 @@ public:
     // Initial residual computation & set up
     RealD guess = norm2(psi);
     assert(std::isnan(guess) == 0);
-
     
     Linop.HermOpAndNorm(psi, mmp, d, b);
     
@@ -81,6 +81,14 @@ public:
     a = norm2(p);
     cp = a;
     ssq = norm2(src);
+
+    // Handle trivial case of zero src
+    if (ssq == 0.){
+      psi = Zero();
+      IterationsToComplete = 1;
+      TrueResidual = 0.;
+      return;
+    }
 
     std::cout << GridLogIterative << std::setprecision(8) << "ConjugateGradient: guess " << guess << std::endl;
     std::cout << GridLogIterative << std::setprecision(8) << "ConjugateGradient:   src " << ssq << std::endl;
@@ -93,6 +101,7 @@ public:
 
     // Check if guess is really REALLY good :)
     if (cp <= rsq) {
+      TrueResidual = std::sqrt(a/ssq);
       std::cout << GridLogMessage << "ConjugateGradient guess is converged already " << std::endl;
       IterationsToComplete = 0;	
       return;
@@ -142,7 +151,7 @@ public:
       LinalgTimer.Stop();
 
       std::cout << GridLogIterative << "ConjugateGradient: Iteration " << k
-                << " residual^2 " << sqrt(cp/ssq) << " target " << Tolerance << std::endl;
+                << " residual " << sqrt(cp/ssq) << " target " << Tolerance << std::endl;
 
       // Stopping condition
       if (cp <= rsq) {
@@ -154,26 +163,33 @@ public:
         RealD resnorm = std::sqrt(norm2(p));
         RealD true_residual = resnorm / srcnorm;
 
-        std::cout << GridLogMessage << "ConjugateGradient Converged on iteration " << k << std::endl;
-        std::cout << GridLogMessage << "\tComputed residual " << std::sqrt(cp / ssq)<<std::endl;
-	std::cout << GridLogMessage << "\tTrue residual " << true_residual<<std::endl;
-	std::cout << GridLogMessage << "\tTarget " << Tolerance << std::endl;
+        std::cout << GridLogMessage << "ConjugateGradient Converged on iteration " << k 
+		  << "\tComputed residual " << std::sqrt(cp / ssq)
+		  << "\tTrue residual " << true_residual
+		  << "\tTarget " << Tolerance << std::endl;
 
-        std::cout << GridLogMessage << "Time breakdown "<<std::endl;
-	std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tInner      " << InnerTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
-	std::cout << GridLogMessage << "\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
+        std::cout << GridLogIterative << "Time breakdown "<<std::endl;
+	std::cout << GridLogIterative << "\tElapsed    " << SolverTimer.Elapsed() <<std::endl;
+	std::cout << GridLogIterative << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
+	std::cout << GridLogIterative << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
+	std::cout << GridLogIterative << "\tInner      " << InnerTimer.Elapsed() <<std::endl;
+	std::cout << GridLogIterative << "\tAxpyNorm   " << AxpyNormTimer.Elapsed() <<std::endl;
+	std::cout << GridLogIterative << "\tLinearComb " << LinearCombTimer.Elapsed() <<std::endl;
 
         if (ErrorOnNoConverge) assert(true_residual / Tolerance < 10000.0);
 
 	IterationsToComplete = k;	
+	TrueResidual = true_residual;
 
         return;
       }
     }
+    // Failed. Calculate true residual before giving up                                                         
+    Linop.HermOpAndNorm(psi, mmp, d, qq);
+    p = mmp - src;
+
+    TrueResidual = sqrt(norm2(p)/ssq);
+
     std::cout << GridLogMessage << "ConjugateGradient did NOT converge "<<k<<" / "<< MaxIterations<< std::endl;
 
     if (ErrorOnNoConverge) assert(0);

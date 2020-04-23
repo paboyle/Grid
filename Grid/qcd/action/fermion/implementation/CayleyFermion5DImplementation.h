@@ -389,6 +389,14 @@ void  CayleyFermion5D<Impl>::Mdir (const FermionField &psi, FermionField &chi,in
   Meo5D(psi,tmp);
   this->DhopDir(tmp,chi,dir,disp);
 }
+template<class Impl>
+void  CayleyFermion5D<Impl>::MdirAll(const FermionField &psi, std::vector<FermionField> &out)
+{
+  FermionField tmp(psi.Grid());
+  Meo5D(psi,tmp);
+  this->DhopDirAll(tmp,out);
+}
+
 // force terms; five routines; default to Dhop on diagonal
 template<class Impl>
 void CayleyFermion5D<Impl>::MDeriv  (GaugeField &mat,const FermionField &U,const FermionField &V,int dag)

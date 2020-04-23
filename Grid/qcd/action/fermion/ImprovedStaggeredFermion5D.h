@@ -86,7 +86,8 @@ public:
   void   MooeeDag    (const FermionField &in, FermionField &out);
   void   MooeeInvDag (const FermionField &in, FermionField &out);
 
-  void   Mdir   (const FermionField &in, FermionField &out,int dir,int disp);
+  void Mdir   (const FermionField &in, FermionField &out,int dir,int disp);
+  void MdirAll(const FermionField &in, std::vector<FermionField> &out);
   void DhopDir(const FermionField &in, FermionField &out,int dir,int disp);
 
   // These can be overridden by fancy 5d chiral action

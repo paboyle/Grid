@@ -37,19 +37,18 @@ template<class iobj> inline void LatticeCoordinate(Lattice<iobj> &l,int mu)
   GridBase *grid = l.Grid();
   int Nsimd = grid->iSites();
 
-  Coordinate gcoor;
-  ExtractBuffer<scalar_type> mergebuf(Nsimd);
-
-  vector_type vI;
   auto l_v = l.View();
-  for(int o=0;o<grid->oSites();o++){
+  thread_for( o, grid->oSites(), {
+    vector_type vI;
+    Coordinate gcoor;
+    ExtractBuffer<scalar_type> mergebuf(Nsimd);
     for(int i=0;i<grid->iSites();i++){
       grid->RankIndexToGlobalCoor(grid->ThisRank(),o,i,gcoor);
       mergebuf[i]=(Integer)gcoor[mu];
     }
     merge<vector_type,scalar_type>(vI,mergebuf);
     l_v[o]=vI;
-  }
+  });
 };
 
 // LatticeCoordinate();
