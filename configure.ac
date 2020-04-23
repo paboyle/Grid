@@ -199,7 +199,7 @@ if test "${ac_MKL}x" != "nox"; then
 fi
 
 if test "${ac_IPP}x" != "nox"; then
-     AC_SEARCH_LIBS([ippsCRC32C_8u], [ippdc], 
+     AC_SEARCH_LIBS([ippsCRC32C_8u], [ippdc],
                    [LIBS="${LIBS} -lippdc -lippvm -lipps -lippcore"],
                    [AC_MSG_ERROR("Intel IPP enabled but library not found")])
 fi
@@ -274,8 +274,8 @@ case ${ac_gen_scalar} in
 esac
 
 ##################### Compiler dependent choices
-case ${CXX} in 
-  nvcc) 
+case ${CXX} in
+  nvcc)
 #    CXX="nvcc -keep -v -x cu "
 #    CXXLD="nvcc -v -link"
     CXX="nvcc -x cu "
@@ -286,11 +286,17 @@ case ${CXX} in
        CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
     fi
     ;;
+  g++-10.0.1)
+    CXXLD=${CXX}
+    # removed no-strict-aliasing flag here; only VLA tested
+    CXXFLAGS="$CXXFLAGS -msve-vector-bits=512"
+  armclang++)
+    CXXLD=${CXX}
+    # removed no-strict-aliasing flag here; no loop unrolling for VLA
+    CXXFLAGS="$CXXFLAGS -fno-unroll-loops -mllvm -vectorizer-min-trip-count=2"
   *)
     CXXLD=${CXX}
-    #
-    #CXXFLAGS="$CXXFLAGS -fno-strict-aliasing"
-    CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$CXXFLAGS -fno-strict-aliasing"
     ;;
 esac
 
@@ -632,4 +638,3 @@ AC_OUTPUT
 echo ""
 cat grid.configure.summary
 echo ""
-
