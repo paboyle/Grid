@@ -68,7 +68,7 @@ while test $# -gt 0; do
     ;;
     
     --cxxld)
-      echo @CXXLD@
+      echo @GRID_CXXLD@
     ;;
     
     --ldflags)
