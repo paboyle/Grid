@@ -605,6 +605,7 @@ template <class Impl>
 void ImprovedStaggeredFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
 								PropagatorField &q_in_2,
 								PropagatorField &q_out,
+								PropagatorField &src,
 								Current curr_type,
 								unsigned int mu)
 {
@@ -614,11 +615,12 @@ void ImprovedStaggeredFermion5D<Impl>::ContractConservedCurrent(PropagatorField 
 template <class Impl>
 void ImprovedStaggeredFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 							   PropagatorField &q_out,
+							   PropagatorField &src,
 							   Current curr_type,
 							   unsigned int mu, 
 							   unsigned int tmin,
-                                              unsigned int tmax,
-					      ComplexField &lattice_cmplx)
+							   unsigned int tmax,
+							   ComplexField &lattice_cmplx)
 {
   assert(0);
 

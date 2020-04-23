@@ -176,6 +176,7 @@ void TSeqConserved<FImpl>::execute(void)
     envGetTmp(LatticeComplex, latt_compl);
 
     src = Zero();
+    auto zz = src;
 
     //exp(ipx)
     auto &mom_phase = envGet(LatticeComplex, SeqmomphName_);
@@ -215,8 +216,8 @@ void TSeqConserved<FImpl>::execute(void)
             latt_compl = mom_phase;
         } 
 
-    	mat.SeqConservedCurrent(q, src_tmp, par().curr_type, mu, 
-                             par().tA, par().tB, latt_compl);
+    	mat.SeqConservedCurrent(q, src_tmp, zz, par().curr_type, mu, 
+				par().tA, par().tB, latt_compl);
 	src += src_tmp;
 
     }	

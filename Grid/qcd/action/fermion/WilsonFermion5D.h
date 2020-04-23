@@ -213,25 +213,7 @@ public:
     
   // Comms buffer
   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;
-    
-  ///////////////////////////////////////////////////////////////
-  // Conserved current utilities
-  ///////////////////////////////////////////////////////////////
-  void ContractConservedCurrent(PropagatorField &q_in_1,
-				PropagatorField &q_in_2,
-				PropagatorField &q_out,
-				Current curr_type, 
-				unsigned int mu);
-  void SeqConservedCurrent(PropagatorField &q_in,
-			   PropagatorField &q_out,
-			   Current curr_type,
-			   unsigned int mu,
-			   unsigned int tmin,
-			   unsigned int tmax,
-			   ComplexField &lattice_cmplx);
 
-  void ContractJ5q(PropagatorField &q_in,ComplexField &J5q);
-  void ContractJ5q(FermionField &q_in,ComplexField &J5q);
 
 };
 
