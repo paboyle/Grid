@@ -118,8 +118,11 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
 #ifdef GEN
   #if defined(A64FX) // breakout A64FX SVE ACLE here
     //#pragma message("building for A64FX / SVE ACLE")
-    #if defined(clang)
+    #if defined(HOTFIX)
+      #pragma message("applying armclang hotfix")
       #define ARMCLANGHOTFIX // armclang 20.0 compiles, but binaries give wrong results without hotfix
+    #else
+      #pragma message("not applying armclang hotfix")
     #endif
     #include <arm_sve.h>
     #include "Grid_a64fx-2.h"

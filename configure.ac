@@ -289,8 +289,8 @@ case ${CXX} in
   *)
     CXXLD=${CXX}
     #
-    #CXXFLAGS="$CXXFLAGS -fno-strict-aliasing"
-    CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$CXXFLAGS -fno-strict-aliasing"
+    #CXXFLAGS="$CXXFLAGS"
     ;;
 esac
 
