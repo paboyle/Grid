@@ -200,6 +200,7 @@ auto innerProductD (const iScalar<l>& lhs,const iScalar<r>& rhs) -> iScalar<decl
 //////////////////////////////////////
 // innerProductD2: precision promotion without inner sum
 //////////////////////////////////////
+
 accelerator_inline vComplexD2 TensorRemove(const vComplexD2 & x) { return x; };
 accelerator_inline vRealD2 TensorRemove(const vRealD2 & x) { return x; };
 

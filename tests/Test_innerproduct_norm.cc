@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
 
     sw_res.Reset();
     sw_res.Start();
-    for(int i = 0; i < nIter; ++i) { innerProduct_norm(ip_d_res, norm2_d_res, x_d, y_d); }
+    for(int i = 0; i < nIter; ++i) { innerProductNorm(ip_d_res, norm2_d_res, x_d, y_d); }
     sw_res.Stop();
 
     diff_ip_d    = ip_d_ref - ip_d_res;
@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
 
     sw_res.Reset();
     sw_res.Start();
-    for(int i = 0; i < nIter; ++i) { innerProduct_norm(ip_f_res, norm2_f_res, x_f, y_f); }
+    for(int i = 0; i < nIter; ++i) { innerProductNorm(ip_f_res, norm2_f_res, x_f, y_f); }
     sw_res.Stop();
 
     diff_ip_f    = ip_f_ref - ip_f_res;

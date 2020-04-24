@@ -38,9 +38,27 @@ NAMESPACE_BEGIN(Grid);
   template<class T, int N> struct isGridTensor<iVector<T, N>> : public std::true_type  { static constexpr bool notvalue = false; };
   template<class T, int N> struct isGridTensor<iMatrix<T, N>> : public std::true_type  { static constexpr bool notvalue = false; };
 
-  // To store double-precision data in single-precision grids for precision promoted localInnerProductD
+  // Traits to identify scalars
+  template<typename T>     struct isGridScalar                : public std::false_type { static constexpr bool notvalue = true; };
+  template<class T>        struct isGridScalar<iScalar<T>>    : public std::true_type  { static constexpr bool notvalue = false; };
+
+  // Store double-precision data in single-precision grids for precision promoted localInnerProductD
+  typedef iVector<ComplexD,2> ComplexD2;
   typedef iVector<vComplexD,2> vComplexD2;
+  typedef iVector<RealD,2> RealD2;
   typedef iVector<vRealD,2> vRealD2;
+
+  // Traits to identify fundamental data types
+  template<typename T>     struct isGridFundamental                : public std::false_type { static constexpr bool notvalue = true; };
+  template<>               struct isGridFundamental<vComplexF>     : public std::true_type  { static constexpr bool notvalue = false; };
+  template<>               struct isGridFundamental<vComplexD>     : public std::true_type  { static constexpr bool notvalue = false; };
+  template<>               struct isGridFundamental<vRealF>        : public std::true_type  { static constexpr bool notvalue = false; };
+  template<>               struct isGridFundamental<vRealD>        : public std::true_type  { static constexpr bool notvalue = false; };
+  template<>               struct isGridFundamental<ComplexF>      : public std::true_type  { static constexpr bool notvalue = false; };
+  template<>               struct isGridFundamental<ComplexD>      : public std::true_type  { static constexpr bool notvalue = false; };
+  template<>               struct isGridFundamental<RealF>         : public std::true_type  { static constexpr bool notvalue = false; };
+  template<>               struct isGridFundamental<RealD>         : public std::true_type  { static constexpr bool notvalue = false; };
+
 
 //////////////////////////////////////////////////////////////////////////////////
 // Want to recurse: GridTypeMapper<Matrix<vComplexD> >::scalar_type == ComplexD.
@@ -86,7 +104,7 @@ NAMESPACE_BEGIN(Grid);
     typedef ComplexF Complexified;
     typedef RealF Realified;
     typedef RealD DoublePrecision;
-    typedef RealD DoublePrecision2;
+    typedef RealD2 DoublePrecision2;
   };
   template<> struct GridTypeMapper<RealD> : public GridTypeMapper_Base {
     typedef RealD scalar_type;
@@ -112,7 +130,7 @@ NAMESPACE_BEGIN(Grid);
     typedef ComplexF Complexified;
     typedef RealF Realified;
     typedef ComplexD DoublePrecision;
-    typedef ComplexD DoublePrecision2;
+    typedef ComplexD2 DoublePrecision2;
   };
   template<> struct GridTypeMapper<ComplexD> : public GridTypeMapper_Base {
     typedef ComplexD scalar_type;
