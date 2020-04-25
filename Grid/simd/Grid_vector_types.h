@@ -118,11 +118,10 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
 #ifdef GEN
   #if defined(A64FX) // breakout A64FX SVE ACLE here
     //#pragma message("building for A64FX / SVE ACLE")
-    #if defined(HOTFIX)
-      #pragma message("applying armclang hotfix")
-      #define ARMCLANGHOTFIX // armclang 20.0 compiles, but binaries give wrong results without hotfix
-    #else
-      #pragma message("not applying armclang hotfix")
+    #if defined(ARMCLANGCOMPAT)
+      #pragma message("applying armclang fix")
+    //#else
+    //  #pragma message("not applying armclang fix")
     #endif
     #include <arm_sve.h>
     #include "Grid_a64fx-2.h"
@@ -241,7 +240,7 @@ public:
     return sizeof(Vector_type) / sizeof(Scalar_type);
   }
 
-#ifdef ARMCLANGHOTFIX
+#ifdef ARMCLANGCOMPAT
   accelerator_inline Grid_simd &operator=(const Grid_simd &&rhs) {
     svint8_t tmp = svld1(svptrue_b8(), (int8_t*)&(rhs.v));
     svst1(svptrue_b8(), (int8_t*)this, tmp);
