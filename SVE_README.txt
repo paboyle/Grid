@@ -10,4 +10,21 @@ armclang 20.0 VLA
 must use armclang 20.0 with HOTFIX applied, otherwise Benchmark_wilson gives wrong result
 
 
-what about "-fno-strict-aliasing" ?
+armclang 20.1 VLA
+
+../configure --with-lime=/home/men04359/lime/c-lime --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=none --enable-openmp CXX=armclang++ CC=armclang CXXFLAGS="-std=c++11 -mcpu=a64fx -DA64FX -DA64FXASM -DDSLASHINTRIN" LDFLAGS=-static GRID_LDFLAGS=-static MPI_CXXLDFLAGS=-static
+
+HOTFIX unknown
+
+
+
+Fujitsu FCC
+
+../configure --with-lime=$HOME/grid-a64fx/lime/c-lime --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=none --enable-openmp --with-mpfr=/home/users/gre/gre-1/grid-a64fx/mpfr-build/install CXX=FCC CC=fcc CXXFLAGS="-Nclang -Kfast -DA64FX -DA64FXASM -DDSLASHINTRIN"
+
+
+
+
+
+what about "-fno-strict-aliasing" in general?
+
