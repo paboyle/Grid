@@ -553,6 +553,7 @@ inline void BaryonUtils<FImpl>::BaryonSiteHelper<maxMask>::function(const unsign
 						 const int parity,
 						 robj &result)
 {
+    assert(mask <= maxMask);
     if (mask == maxMask)
     {
         baryon_site_template<maxMask,decltype(D1),decltype(result)>(D1, D2, D3, GammaA_left, GammaB_left, GammaA_right, GammaB_right, parity, result);
