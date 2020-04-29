@@ -644,6 +644,7 @@ void CayleyFermion5D<Impl>::ContractConservedCurrent( PropagatorField &q_in_1,
 						      Current curr_type,
 						      unsigned int mu)
 {
+#ifndef GRID_NVCC
   Gamma::Algebra Gmu [] = {
     Gamma::Algebra::GammaX,
     Gamma::Algebra::GammaY,
@@ -762,6 +763,7 @@ void CayleyFermion5D<Impl>::ContractConservedCurrent( PropagatorField &q_in_1,
     else          q_out +=     C;
     
   }
+#endif
 }
 
 template <class Impl>
@@ -826,7 +828,7 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   }
 #endif
 
-#if 1
+#ifndef GRID_NVCC
   ////////////////////////////////////////////////
   // GENERAL CAYLEY CASE
   ////////////////////////////////////////////////
