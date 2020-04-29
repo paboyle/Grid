@@ -57,18 +57,34 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   const int Ls=10;
-  std::vector < ComplexD  > omegas(10,ComplexD(1.0,0.0));
-  std::vector < ComplexD  > omegasrev(10,ComplexD(1.0,0.0));
-  omegas.push_back( std::complex<double>(0.0686324988446592,0.0550658530827402) );
-  omegas.push_back( std::complex<double>(0.0686324988446592,-0.0550658530827402) );
+  std::vector < ComplexD  > omegas;
+  std::vector < ComplexD  > omegasrev(Ls);
+
+#if 1
   omegas.push_back( std::complex<double>(1.45806438985048,-0) );
   omegas.push_back( std::complex<double>(0.830951166685955,-0) );
   omegas.push_back( std::complex<double>(0.341985020453729,-0) );
   omegas.push_back( std::complex<double>(0.126074299502912,-0) );
+  //  omegas.push_back( std::complex<double>(0.0686324988446592,0.0550658530827402) );
+  //  omegas.push_back( std::complex<double>(0.0686324988446592,-0.0550658530827402) );
+  omegas.push_back( std::complex<double>(0.0686324988446592,0));
+  omegas.push_back( std::complex<double>(0.0686324988446592,0));
   omegas.push_back( std::complex<double>(0.0990136651962626,-0) );
   omegas.push_back( std::complex<double>(0.21137902619029,-0) );
   omegas.push_back( std::complex<double>(0.542352409156791,-0) );
   omegas.push_back( std::complex<double>(1.18231318389348,-0) );
+#else 
+  omegas.push_back( std::complex<double>(0.8,0.0));
+  omegas.push_back( std::complex<double>(1.1,0.0));
+  omegas.push_back( std::complex<double>(1.2,0.0));
+  omegas.push_back( std::complex<double>(1.3,0.0));
+  omegas.push_back( std::complex<double>(0.5,0.2));
+  omegas.push_back( std::complex<double>(0.5,-0.2));
+  omegas.push_back( std::complex<double>(0.8,0.0));
+  omegas.push_back( std::complex<double>(1.1,0.0));
+  omegas.push_back( std::complex<double>(1.2,0.0));
+  omegas.push_back( std::complex<double>(1.3,0.0));
+#endif
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), 
 								   GridDefaultSimd(Nd,vComplex::Nsimd()),
@@ -92,10 +108,10 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
 
   LatticeGaugeField Umu(UGrid);
-  //  SU3::ColdConfiguration(Umu);
-  SU3::HotConfiguration(RNG4,Umu);
+  SU3::ColdConfiguration(Umu);
+  //  SU3::HotConfiguration(RNG4,Umu);
 
-  RealD mass=0.2;
+  RealD mass=0.3;
   RealD M5  =1.0;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"DomainWallFermion test"<<std::endl;
@@ -105,7 +121,7 @@ int main (int argc, char ** argv)
 
   RealD b=1.5;// Scale factor b+c=2, b-c=1
   RealD c=0.5;
-  std::vector<ComplexD> gamma(Ls,ComplexD(1.0,0.0));
+  //  std::vector<ComplexD> gamma(Ls,ComplexD(1.0,0.0));
 
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"MobiusFermion test"<<std::endl;
@@ -119,12 +135,11 @@ int main (int argc, char ** argv)
   ScaledShamirFermionR Dsham(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,2.0);
   TestConserved<ScaledShamirFermionR>(Dsham,Dsham,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
-
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"ZMobiusFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
-
-  for(int s=0;s<Ls;s++) omegasrev[s]=omegas[Ls-1-s];
+  for(int s=0;s<Ls;s++) omegasrev[s]=conjugate(omegas[Ls-1-s]);
+  //  for(int s=0;s<Ls;s++) omegasrev[s]=omegas[Ls-1-s];
   ZMobiusFermionR ZDmob(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,omegas,b,c);
   ZMobiusFermionR ZDmobrev(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,omegasrev,b,c);
 
@@ -136,13 +151,14 @@ int main (int argc, char ** argv)
 
 
 template<class Action> 
-void  TestConserved(Action & Ddwf, Action & Ddwfrev, 
-		       LatticeGaugeField &Umu,
-		       GridCartesian         * FGrid,	       GridRedBlackCartesian * FrbGrid,
-		       GridCartesian         * UGrid,	       GridRedBlackCartesian * UrbGrid,
-		       RealD mass, RealD M5,
-		       GridParallelRNG *RNG4,
-		       GridParallelRNG *RNG5)
+void  TestConserved(Action & Ddwf, 
+		    Action & Ddwfrev, 
+		    LatticeGaugeField &Umu,
+		    GridCartesian         * FGrid,	       GridRedBlackCartesian * FrbGrid,
+		    GridCartesian         * UGrid,	       GridRedBlackCartesian * UrbGrid,
+		    RealD mass, RealD M5,
+		    GridParallelRNG *RNG4,
+		    GridParallelRNG *RNG5)
 {
   int Ls=Ddwf.Ls;
 
@@ -155,7 +171,10 @@ void  TestConserved(Action & Ddwf, Action & Ddwfrev,
   LatticePropagator prop5rev(FGrid); 
   LatticePropagator prop4(UGrid); 
   LatticePropagator Axial_mu(UGrid); 
+  LatticePropagator Vector_mu(UGrid); 
   LatticeComplex    PA (UGrid); 
+  LatticeComplex    SV (UGrid); 
+  LatticeComplex    VV (UGrid); 
   LatticeComplex    PJ5q(UGrid);
   LatticeComplex    PP (UGrid);
   LatticePropagator seqprop(UGrid); 
@@ -167,7 +186,7 @@ void  TestConserved(Action & Ddwf, Action & Ddwfrev,
   
   MdagMLinearOperator<Action,LatticeFermion> HermOp(Ddwf);
   MdagMLinearOperator<Action,LatticeFermion> HermOprev(Ddwfrev);
-  ConjugateGradient<LatticeFermion> CG(1.0e-12,10000);
+  ConjugateGradient<LatticeFermion> CG(1.0e-16,100000);
   for(int s=0;s<Nd;s++){
     for(int c=0;c<Nc;c++){
       LatticeFermion src4  (UGrid); 
@@ -188,12 +207,12 @@ void  TestConserved(Action & Ddwf, Action & Ddwfrev,
       Ddwf.ExportPhysicalFermionSolution(result5,result4);
       FermToProp<Action>(prop4,result4,s,c);
 
+      Ddwfrev.ImportPhysicalFermionSource(src4,src5);
       Ddwfrev.Mdag(src5,Mdagsrc5);
       CG(HermOprev,Mdagsrc5,result5);
       FermToProp<Action>(prop5rev,result5,s,c);
     }
   }
-
 
 #if 1
   auto curr = Current::Axial;
@@ -206,14 +225,14 @@ void  TestConserved(Action & Ddwf, Action & Ddwfrev,
 
   LatticeComplex    ph (UGrid); ph=1.0;
 
-  Ddwfrev.SeqConservedCurrent(prop5rev,
-			      seqsrc,
-			      phys_src,
-			      curr,
-			      mu_J,
-			      t_J,
-			      t_J,// whole lattice
-			      ph);
+  Ddwf.SeqConservedCurrent(prop5,
+			   seqsrc,
+			   phys_src,
+			   curr,
+			   mu_J,
+			   t_J,
+			   t_J,// whole lattice
+			   ph);
 
   for(int s=0;s<Nd;s++){
     for(int c=0;c<Nc;c++){
@@ -235,25 +254,35 @@ void  TestConserved(Action & Ddwf, Action & Ddwfrev,
   }
   
   Gamma g5(Gamma::Algebra::Gamma5);
+  Gamma gT(Gamma::Algebra::GammaT);
 
   std::vector<TComplex> sumPA;
+  std::vector<TComplex> sumSV;
+  std::vector<TComplex> sumVV;
   std::vector<TComplex> sumPP;
   std::vector<TComplex> sumPJ5q;
-
   
   Ddwf.ContractConservedCurrent(prop5rev,prop5,Axial_mu,phys_src,Current::Axial,Tdir);
-  //Ddwf.ContractConservedCurrent(prop5rev,prop5,Axial_mu,Current::Axial,Tdir);
+  Ddwf.ContractConservedCurrent(prop5rev,prop5,Vector_mu,phys_src,Current::Vector,Tdir);
   Ddwf.ContractJ5q(prop5,PJ5q);
   
   PA       = trace(g5*Axial_mu);
+  SV       = trace(Vector_mu);
+  VV       = trace(gT*Vector_mu);
   PP       = trace(adj(prop4)*prop4);
   
   // Spatial sum
   sliceSum(PA,sumPA,Tdir);
+  sliceSum(SV,sumSV,Tdir);
+  sliceSum(VV,sumVV,Tdir);
   sliceSum(PP,sumPP,Tdir);
   sliceSum(PJ5q,sumPJ5q,Tdir);
 
   int Nt=sumPA.size();
+  for(int t=0;t<Nt;t++){
+    std::cout <<" SV "<<real(TensorRemove(sumSV[t]));
+    std::cout <<" VV "<<real(TensorRemove(sumVV[t]))<<std::endl;
+  }
   for(int t=0;t<Nt;t++){
     std::cout <<" PAc "<<real(TensorRemove(sumPA[t]));
     std::cout <<" PJ5q "<<real(TensorRemove(sumPJ5q[t]));
@@ -280,7 +309,6 @@ void  TestConserved(Action & Ddwf, Action & Ddwfrev,
     test_S = trace(qSite*g);
     test_V = trace(qSite*g*Gamma::gmu[mu_J]);
 
-    //    Ddwf.ContractConservedCurrent(prop5rev,prop5,cur,phys_src,Current::Axial,mu_J);
     Ddwf.ContractConservedCurrent(prop5rev,prop5,cur,phys_src,curr,mu_J);
     
     c = trace(cur*g);
@@ -292,7 +320,8 @@ void  TestConserved(Action & Ddwf, Action & Ddwfrev,
     sliceSum(c, check_buf, Tp);
     check_V = TensorRemove(check_buf[t_J]);
 
-    std::cout<<GridLogMessage << "Test S  = " << abs(test_S)   << std::endl;
+    
+    std::cout<<GridLogMessage << std::setprecision(14)<<"Test S  = " << abs(test_S)   << std::endl;
     std::cout<<GridLogMessage << "Test V  = " << abs(test_V) << std::endl;
     std::cout<<GridLogMessage << "Check S = " << abs(check_S) << std::endl;
     std::cout<<GridLogMessage << "Check V = " << abs(check_V) << std::endl;
@@ -308,7 +337,8 @@ void  TestConserved(Action & Ddwf, Action & Ddwfrev,
 
 }
 
-/*
+      /*
+#if 0
 template<class Action> 
 void  TestConserved1(Action & Ddwf, Action & Ddwfrev, 
 		       LatticeGaugeField &Umu,
@@ -437,6 +467,8 @@ void  TestConserved1(Action & Ddwf, Action & Ddwfrev,
       // Mobius parameters
       auto b=Ddwf.bs[s];
       auto c=Ddwf.cs[s];
+      assert(Ddwfrev.bs[sr]==Ddwf.bs[s]);
+      assert(Ddwfrev.cs[sr]==Ddwf.cs[s]);
 
       LatticePropagator tmp(UGrid); 
 
@@ -459,9 +491,6 @@ void  TestConserved1(Action & Ddwf, Action & Ddwfrev,
       auto bpc = 0.5/(b+c);
       C = bpc*localInnerProduct(gp5d,gus_p5d);
       C-= bpc*localInnerProduct(gp5d,us_p5d);
-              
-      b=Ddwf.bs[s];
-      c=Ddwf.cs[s];
 
       if (s == 0) {
 	p5d    =(b*Pm(R_TmLsGq0)     + c*Pp(R_TmLsGq0  )    + b*Pp(R_TmLsGq[1]) + c*Pm(R_TmLsGq[1]));
@@ -536,9 +565,8 @@ void  TestConserved1(Action & Ddwf, Action & Ddwfrev,
     std::cout <<real(TensorRemove(sumPA[t]-sumPA[(t-1+Nt)%Nt] - 2.0*(Ddwf.mass*sumPP[t] + sumPJ5q[t]) ))<<"\n";
   }
 }
-*/
+#endif
       // Verify solution with independent true residual
-      /*
       LatticeGaugeField Umu5d(FGrid); 
       std::vector<LatticeColourMatrix> U(4,FGrid);
       {
