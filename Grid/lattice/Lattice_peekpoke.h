@@ -156,7 +156,7 @@ void peekSite(sobj &s,const Lattice<vobj> &l,const Coordinate &site){
 // Peek a scalar object from the SIMD array
 //////////////////////////////////////////////////////////
 template<class vobj,class sobj>
-accelerator_inline void peekLocalSite(sobj &s,const Lattice<vobj> &l,Coordinate &site){
+inline void peekLocalSite(sobj &s,const Lattice<vobj> &l,Coordinate &site){
         
   GridBase *grid = l.Grid();
 
@@ -185,7 +185,7 @@ accelerator_inline void peekLocalSite(sobj &s,const Lattice<vobj> &l,Coordinate 
 };
 
 template<class vobj,class sobj>
-accelerator_inline void pokeLocalSite(const sobj &s,Lattice<vobj> &l,Coordinate &site){
+inline void pokeLocalSite(const sobj &s,Lattice<vobj> &l,Coordinate &site){
 
   GridBase *grid=l.Grid();
 
