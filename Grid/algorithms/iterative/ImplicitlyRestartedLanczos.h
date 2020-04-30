@@ -108,7 +108,6 @@ void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, i
   }
 
   // Block the loop to keep storage footprint down
-  vobj zz=Zero();
   for(uint64_t s=0;s<oSites;s+=siteBlock){
 
     // remaining work in this block
@@ -116,7 +115,8 @@ void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, i
 
     // zero out the accumulators
     accelerator_for(ss,siteBlock*nrot,vobj::Nsimd(),{
-	auto z=coalescedRead(zz);
+	auto z=coalescedRead(Bp[ss]);
+	z=Zero();
 	coalescedWrite(Bp[ss],z);
     });
 
@@ -158,12 +158,12 @@ void basisRotateJ(Field &result,std::vector<Field> &basis,Eigen::MatrixXd& Qt,in
   for(int k=0;k<basis.size();k++){
     basis_v[k] = basis[k].View();
   }
-  vobj zz=Zero();
   Vector<double> Qt_jv(Nm);
   double * Qt_j = & Qt_jv[0];
   for(int k=0;k<Nm;++k) Qt_j[k]=Qt(j,k);
   accelerator_for(ss, grid->oSites(),vobj::Nsimd(),{
-    auto B=coalescedRead(zz);
+    auto B=coalescedRead(basis_v[k0][ss]);
+    B=Zero();
     for(int k=k0; k<k1; ++k){
       B +=Qt_j[k] * coalescedRead(basis_v[k][ss]);
     }
