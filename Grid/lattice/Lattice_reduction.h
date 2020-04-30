@@ -234,7 +234,7 @@ innerProductNorm(ComplexD& ip, RealD &nrm, const Lattice<vobj> &left,const Latti
   accelerator_for( ss, sites, nsimd,{
       auto left_tmp = left_v(ss);
       coalescedWrite(inner_tmp_v[ss],innerProduct(left_tmp,right_v(ss)));
-      coalescedWrite(norm_tmp_v[ss],innerProduct(left_tmp,left_tmp)));
+      coalescedWrite(norm_tmp_v[ss],innerProduct(left_tmp,left_tmp));
   });
 
   tmp[0] = TensorRemove(sumD_gpu(inner_tmp_v,sites));
