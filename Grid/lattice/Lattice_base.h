@@ -80,8 +80,10 @@ public:
   // Advise that the data is used infrequently.  This can
   // significantly influence performance of bulk storage.
   accelerator_inline void AdviseInfrequentUse() {
-#ifdef __CUDA_ARCH__
+#ifdef GRID_NVCC
+#ifndef __CUDA_ARCH__ // only on host
     cudaMemAdvise(_odata,_odata_size*sizeof(vobj),cudaMemAdviseSetPreferredLocation,cudaCpuDeviceId);
+#endif
 #endif
   };
 };
