@@ -9,6 +9,7 @@ Copyright (C) 2015
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Christoph Lehner <christoph@lhnr.de>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -74,6 +75,14 @@ public:
   { 
     if (grid) conformable(grid, _grid);
     else      grid = _grid;
+  };
+
+  // Advise that the data is used infrequently.  This can
+  // significantly influence performance of bulk storage.
+  accelerator_inline void AdviseInfrequentUse() {
+#ifdef __CUDA_ARCH__
+    cudaMemAdvise(_odata,_odata_size*sizeof(vobj),cudaMemAdviseSetPreferredLocation,cudaCpuDeviceId);
+#endif
   };
 };
 
