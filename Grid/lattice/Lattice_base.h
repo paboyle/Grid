@@ -51,6 +51,14 @@ void accelerator_inline conformable(GridBase *lhs,GridBase *rhs)
 }
 
 ////////////////////////////////////////////////////////////////////////////
+// Advise for memory management
+////////////////////////////////////////////////////////////////////////////
+enum LatticeAcceleratorAdvise {
+  AdviseInfrequentUse = 0x1    // Advise that the data is used infrequently.  This can
+                               // significantly influence performance of bulk storage.
+};
+
+////////////////////////////////////////////////////////////////////////////
 // Minimal base class containing only data valid to access from accelerator
 // _odata will be a managed pointer in CUDA
 ////////////////////////////////////////////////////////////////////////////
@@ -77,12 +85,12 @@ public:
     else      grid = _grid;
   };
 
-  // Advise that the data is used infrequently.  This can
-  // significantly influence performance of bulk storage.
-  accelerator_inline void AdviseInfrequentUse() {
+  accelerator_inline void Advise(int advise) {
 #ifdef GRID_NVCC
 #ifndef __CUDA_ARCH__ // only on host
-    cudaMemAdvise(_odata,_odata_size*sizeof(vobj),cudaMemAdviseSetPreferredLocation,cudaCpuDeviceId);
+    if (advise & AdviseInfrequentUse) {
+      cudaMemAdvise(_odata,_odata_size*sizeof(vobj),cudaMemAdviseSetPreferredLocation,cudaCpuDeviceId);
+    }
 #endif
 #endif
   };
