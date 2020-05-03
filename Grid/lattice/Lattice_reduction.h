@@ -5,6 +5,7 @@
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Christoph Lehner <christoph@lhnr.de>
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -93,7 +94,7 @@ template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
 
 // Double inner product
 template<class vobj>
-inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right)
+inline ComplexD rankInnerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right)
 {
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_typeD vector_type;
@@ -137,10 +138,17 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
   })
   nrm = TensorRemove(sum(inner_tmp_v,sites));
 #endif
-  grid->GlobalSum(nrm);
-
   return nrm;
 }
+
+template<class vobj>
+inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right) {
+  GridBase *grid = left.Grid();
+  ComplexD nrm = rankInnerProduct(left,right);
+  grid->GlobalSum(nrm);
+  return nrm;
+}
+
 
 /////////////////////////
 // Fast axpby_norm
