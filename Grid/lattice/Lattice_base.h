@@ -51,7 +51,7 @@ void accelerator_inline conformable(GridBase *lhs,GridBase *rhs)
 }
 
 ////////////////////////////////////////////////////////////////////////////
-// Advise for memory management
+// Advise the LatticeAccelerator class
 ////////////////////////////////////////////////////////////////////////////
 enum LatticeAcceleratorAdvise {
   AdviseInfrequentUse = 0x1    // Advise that the data is used infrequently.  This can
