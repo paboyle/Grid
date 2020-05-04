@@ -103,8 +103,8 @@ inline ComplexD rankInnerProduct(const Lattice<vobj> &left,const Lattice<vobj> &
   GridBase *grid = left.Grid();
   
   // Might make all code paths go this way.
-  auto left_v = left.View();
-  auto right_v=right.View();
+  auto left_v = left.AcceleratorView(ViewRead);
+  auto right_v=right.AcceleratorView(ViewRead);
 
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
@@ -175,9 +175,9 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   
   GridBase *grid = x.Grid();
 
-  auto x_v=x.View();
-  auto y_v=y.View();
-  auto z_v=z.View();
+  auto x_v=x.AcceleratorView(ViewRead);
+  auto y_v=y.AcceleratorView(ViewRead);
+  auto z_v=z.AcceleratorView(ViewWrite);
 
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
@@ -224,8 +224,8 @@ innerProductNorm(ComplexD& ip, RealD &nrm, const Lattice<vobj> &left,const Latti
 
   GridBase *grid = left.Grid();
 
-  auto left_v=left.View();
-  auto right_v=right.View();
+  auto left_v=left.AcceleratorView(ViewRead);
+  auto right_v=right.AcceleratorView(ViewRead);
 
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
