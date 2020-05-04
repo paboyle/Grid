@@ -148,15 +148,19 @@ public:
   virtual void ContractConservedCurrent(PropagatorField &q_in_1,
 					PropagatorField &q_in_2,
 					PropagatorField &q_out,
+					PropagatorField &phys_src,
 					Current curr_type,
-					unsigned int mu)=0;
+					unsigned int mu)
+  {assert(0);};
   virtual void SeqConservedCurrent(PropagatorField &q_in, 
 				   PropagatorField &q_out,
+				   PropagatorField &phys_src,
 				   Current curr_type,
 				   unsigned int mu,
 				   unsigned int tmin, 
 				   unsigned int tmax,
-				   ComplexField &lattice_cmplx)=0;
+				   ComplexField &lattice_cmplx)
+  {assert(0);};
 
       // Only reimplemented in Wilson5D 
       // Default to just a zero correlation function

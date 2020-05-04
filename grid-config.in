@@ -19,6 +19,8 @@ Known values for OPTION are:
   --help       display this help and exit
   --version    output version information
   --git        print git revision
+  --cxx        print c++ compiler (may include some flags and spaces)
+  --cxxld      print c++ linker   (may include some flags and spaces)
 
 EOF
   
@@ -63,6 +65,10 @@ while test $# -gt 0; do
     
     --cxx)
       echo @GRID_CXX@
+    ;;
+    
+    --cxxld)
+      echo @GRID_CXXLD@
     ;;
     
     --ldflags)
