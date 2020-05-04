@@ -226,7 +226,7 @@ AC_SEARCH_LIBS([fftw_execute], [fftw3],
 AC_SEARCH_LIBS([limeCreateReader], [lime],
                [AC_DEFINE([HAVE_LIME], [1], [Define to 1 if you have the `LIME' library])]
                [have_lime=true],
-	             [AC_MSG_ERROR(LIME library was not found in your system.)])
+	             [AC_MSG_WARN(LIME library was not found in your system.)])
 
 AC_SEARCH_LIBS([SHA256_Init], [crypto],
                [AC_DEFINE([HAVE_CRYPTO], [1], [Define to 1 if you have the `OpenSSL' library])]
