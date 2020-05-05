@@ -21,7 +21,7 @@
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
 #define CUDA_PROFILE
 #endif
 

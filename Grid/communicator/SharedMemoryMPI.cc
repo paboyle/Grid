@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/GridCore.h>
 #include <pwd.h>
 
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
 #include <cuda_runtime_api.h>
 #endif
 
@@ -413,7 +413,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Hugetlbfs mapping intended
 ////////////////////////////////////////////////////////////////////////////////////////////
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
   void * ShmCommBuf ; 
@@ -433,13 +433,6 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
   //  cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, device1, device2);
 
-#ifdef GRID_IBM_SUMMIT
-  // IBM Jsrun makes cuda Device numbering screwy and not match rank
-    std::cout << "IBM Summit or similar - NOT setting device to WorldShmRank"<<std::endl;
-#else
-    std::cout << "setting device to WorldShmRank"<<std::endl;
-    cudaSetDevice(WorldShmRank);
-#endif
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Each MPI rank should allocate our own buffer
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -677,7 +670,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 /////////////////////////////////////////////////////////////////////////
 void GlobalSharedMemory::SharedMemoryZero(void *dest,size_t bytes)
 {
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
   cudaMemset(dest,0,bytes);
 #else
   bzero(dest,bytes);
@@ -685,7 +678,7 @@ void GlobalSharedMemory::SharedMemoryZero(void *dest,size_t bytes)
 }
 void GlobalSharedMemory::SharedMemoryCopy(void *dest,const void *src,size_t bytes)
 {
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
   cudaMemcpy(dest,src,bytes,cudaMemcpyDefault);
 #else   
   bcopy(src,dest,bytes);

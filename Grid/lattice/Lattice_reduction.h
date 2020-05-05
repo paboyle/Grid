@@ -24,7 +24,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Grid_Eigen_Dense.h>
 
 
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
 #include <Grid/lattice/Lattice_reduction_gpu.h>
 #endif
 
@@ -67,7 +67,7 @@ inline typename vobj::scalar_object sum_cpu(const vobj *arg, Integer osites)
 template<class vobj>
 inline typename vobj::scalar_object sum(const vobj *arg, Integer osites)
 {
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
   return sum_gpu(arg,osites);
 #else
   return sum_cpu(arg,osites);
@@ -108,7 +108,7 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
   
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
   // GPU - SIMT lane compliance...
   typedef decltype(innerProduct(left_v[0],right_v[0])) inner_t;
   Vector<inner_t> inner_tmp(sites);
@@ -174,7 +174,7 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
   
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
   // GPU
   typedef decltype(innerProduct(x_v[0],y_v[0])) inner_t;
   Vector<inner_t> inner_tmp(sites);

@@ -74,6 +74,10 @@ feenableexcept (unsigned int excepts)
 #endif
 
 uint32_t gpu_threads=8;
+#ifdef GRID_SYCL
+cl::sycl::queue *theGridAccelerator;
+#endif
+
 
 NAMESPACE_BEGIN(Grid);
 
@@ -194,7 +198,7 @@ void GridParseLayout(char **argv,int argc,
   }
   if( GridCmdOptionExists(argv,argv+argc,"--gpu-threads") ){
     std::vector<int> gputhreads(0);
-#ifndef GRID_NVCC
+#ifndef GRID_CUDA
     std::cout << GridLogWarning << "'--gpu-threads' option used but Grid was"
               << " not compiled with GPU support" << std::endl;
 #endif
@@ -281,12 +285,10 @@ void GridBanner(void)
     printed=1;
   }
 }
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
 cudaDeviceProp *gpu_props;
-#endif
 void GridGpuInit(void)
 {
-#ifdef GRID_NVCC
   int nDevices = 1;
   cudaGetDeviceCount(&nDevices);
   gpu_props = new cudaDeviceProp[nDevices];
@@ -335,11 +337,70 @@ void GridGpuInit(void)
       //      GPU_PROP(singleToDoublePrecisionPerfRatio);
     }
   }
+#ifdef GRID_IBM_SUMMIT
+  // IBM Jsrun makes cuda Device numbering screwy and not match rank
+  if ( world_rank == 0 )  printf("GpuInit: IBM Summit or similar - NOT setting device to node rank\n");
+#else
+  if ( world_rank == 0 )  printf("GpuInit: setting device to node rank\n");
+  cudaSetDevice(rank);
+#endif
+  if ( world_rank == 0 )  printf("GpuInit: ================================================\n");
+}
+#endif
+#ifdef GRID_SYCL
+void GridGpuInit(void)
+{
+  int nDevices = 1;
+  cl::sycl::gpu_selector selector;
+  cl::sycl::device selectedDevice { selector };
+  theGridAccelerator = new sycl::queue (selectedDevice);
+
+  char * localRankStr = NULL;
+  int rank = 0, world_rank=0; 
+#define ENV_LOCAL_RANK_OMPI    "OMPI_COMM_WORLD_LOCAL_RANK"
+#define ENV_LOCAL_RANK_MVAPICH "MV2_COMM_WORLD_LOCAL_RANK"
+#define ENV_RANK_OMPI          "OMPI_COMM_WORLD_RANK"
+#define ENV_RANK_MVAPICH       "MV2_COMM_WORLD_RANK"
+  // We extract the local rank initialization using an environment variable
+  if ((localRankStr = getenv(ENV_LOCAL_RANK_OMPI)) != NULL)
+  {
+    rank = atoi(localRankStr);		
+  }
+  if ((localRankStr = getenv(ENV_LOCAL_RANK_MVAPICH)) != NULL)
+  {
+    rank = atoi(localRankStr);		
+  }
+  if ((localRankStr = getenv(ENV_RANK_OMPI   )) != NULL) { world_rank = atoi(localRankStr);}
+  if ((localRankStr = getenv(ENV_RANK_MVAPICH)) != NULL) { world_rank = atoi(localRankStr);}
+
+  if ( world_rank == 0 ) {
+    GridBanner();
+  }
+  /*
+  for (int i = 0; i < nDevices; i++) {
+
+#define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("GpuInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
+#define GPU_PROP(canMapHostMemory)             GPU_PROP_FMT(canMapHostMemory,"%d");
+    
+    cudaGetDeviceProperties(&gpu_props[i], i);
+    if ( world_rank == 0) {
+      cudaDeviceProp prop; 
+      prop = gpu_props[i];
+      printf("GpuInit: ========================\n");
+      printf("GpuInit: Device Number    : %d\n", i);
+      printf("GpuInit: ========================\n");
+      printf("GpuInit: Device identifier: %s\n", prop.name);
+    }
+  }
+  */
   if ( world_rank == 0 ) {
     printf("GpuInit: ================================================\n");
   }
-#endif
 }
+#endif
+#if (!defined(GRID_CUDA)) && (!defined(GRID_SYCL))
+void GridGpuInit(void){}
+#endif
 
 void Grid_init(int *argc,char ***argv)
 {

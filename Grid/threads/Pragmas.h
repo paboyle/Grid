@@ -68,15 +68,16 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 
 //////////////////////////////////////////////////////////////////////////////////
-// Accelerator primitives; fall back to threading
+// Accelerator primitives; fall back to threading if not CUDA or SYCL
 //////////////////////////////////////////////////////////////////////////////////
-#ifdef __NVCC__
-#define GRID_NVCC
-#endif
 
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
 
 extern uint32_t gpu_threads;
+
+#ifdef __CUDA_ARCH__
+#define GRID_SIMT
+#endif
 
 #define accelerator        __host__ __device__
 #define accelerator_inline __host__ __device__ inline
@@ -123,7 +124,47 @@ void LambdaApplySIMT(uint64_t Isites, uint64_t Osites, lambda Lambda)
   accelerator_forNB(iterator, num, nsimd, { __VA_ARGS__ } );	\
   accelerator_barrier(dummy);
 
-#else
+#endif
+
+#ifdef GRID_SYCL
+
+#ifdef __SYCL_DEVICE_ONLY__
+#define GRID_SIMT
+#endif
+
+#include <CL/sycl.hpp>
+#include <CL/sycl/usm.hpp>
+
+extern cl::sycl::queue *theGridAccelerator;
+
+extern uint32_t gpu_threads;
+
+#define accelerator 
+#define accelerator_inline strong_inline
+
+#define accelerator_forNB(iterator,num,nsimd, ... )			\
+  theGridAccelerator->submit([&](cl::sycl::handler &cgh) {		\
+      cl::sycl::range<3> local {gpu_threads,1,nsimd};			\
+      cl::sycl::range<3> global{(unsigned long)num,1,(unsigned long)nsimd}; \
+      cgh.parallel_for<class dslash>(					\
+      cl::sycl::nd_range<3>(global,local),            \
+      [=] (cl::sycl::nd_item<3> item) mutable {       \
+      auto iterator = item.get_global_id(0);	      \
+      auto lane     = item.get_global_id(2);	      \
+      { __VA_ARGS__ };				      \
+     });	   			              \
+    });
+
+#define accelerator_barrier(dummy) theGridAccelerator->wait();
+
+#define accelerator_for( iterator, num, nsimd, ... )		\
+  accelerator_forNB(iterator, num, nsimd, { __VA_ARGS__ } );	\
+  accelerator_barrier(dummy);
+
+
+#endif
+
+#if ( (!defined(GRID_SYCL)) && (!defined(GRID_CUDA)) )
 
 #define accelerator 
 #define accelerator_inline strong_inline

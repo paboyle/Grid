@@ -41,7 +41,7 @@ int main (int argc, char ** argv)
 #define LADD (8)
 
   int64_t Nwarm=20;
-  int64_t Nloop=500;
+  int64_t Nloop=50;
 
   Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   Coordinate mpi_layout  = GridDefaultMpi();

@@ -89,7 +89,7 @@ public:
 
 
   // Rvalue
-#ifdef __CUDA_ARCH__
+#ifdef GRID_SIMT
   accelerator_inline const typename vobj::scalar_object operator()(size_t i) const { return coalescedRead(this->_odata[i]); }
 #else 
   accelerator_inline const vobj & operator()(size_t i) const { return this->_odata[i]; }
@@ -211,7 +211,7 @@ public:
     LatticeView<vobj> accessor(*( (LatticeAccelerator<vobj> *) this));
     return accessor;
   }
-  
+
   ~Lattice() { 
     if ( this->_odata_size ) {
       dealloc();

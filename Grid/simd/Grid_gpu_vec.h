@@ -142,7 +142,7 @@ typedef GpuVector<NSIMD_Integer,  Integer     > GpuVectorI;
 accelerator_inline float half2float(half h)
 {
   float f;
-#ifdef __CUDA_ARCH__
+#ifdef GRID_SIMT
   f = __half2float(h);
 #else 
   //f = __half2float(h);
@@ -156,7 +156,7 @@ accelerator_inline float half2float(half h)
 accelerator_inline half float2half(float f)
 {
   half h;
-#ifdef __CUDA_ARCH__
+#ifdef GRID_SIMT
   h = __float2half(f);
 #else
   Grid_half hh = sfw_float_to_half(f);

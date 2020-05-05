@@ -15,12 +15,12 @@
 #ifdef __NVCC__
 #pragma push
 #pragma diag_suppress code_is_unreachable
-#pragma push_macro("__CUDA_ARCH__")
+#pragma push_macro("GRID_SIMT")
 #pragma push_macro("__NVCC__")
 #pragma push_macro("__CUDACC__")
 #undef __NVCC__
 #undef __CUDACC__
-#undef __CUDA_ARCH__
+#undef GRID_SIMT
 #define __NVCC__REDEFINE__
 #endif 
 
@@ -41,7 +41,7 @@
 #ifdef __NVCC__REDEFINE__
 #pragma pop_macro("__CUDACC__")
 #pragma pop_macro("__NVCC__")
-#pragma pop_macro("__CUDA_ARCH__")
+#pragma pop_macro("GRID_SIMT")
 #pragma pop
 #endif
 

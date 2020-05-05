@@ -34,14 +34,16 @@ NAMESPACE_BEGIN(Grid);
 //accelerator_inline void SIMTsynchronise(void) 
 accelerator_inline void synchronise(void) 
 {
-#ifdef __CUDA_ARCH__
+#ifdef GRID_SIMT
+#ifdef GRID_CUDA
 //  __syncthreads();
   __syncwarp();
+#endif
 #endif
   return;
 }
 
-#ifndef __CUDA_ARCH__
+#ifndef GRID_SIMT
 //////////////////////////////////////////
 // Trivial mapping of vectors on host
 //////////////////////////////////////////
@@ -75,7 +77,13 @@ void coalescedWriteNonTemporal(vobj & __restrict__ vec,const vobj & __restrict__
   vstream(vec, extracted);
 }
 #else
+#ifdef GRID_CUDA
 accelerator_inline int SIMTlane(int Nsimd) { return threadIdx.y; } // CUDA specific
+#endif
+#ifdef GRID_SYCL
+//accelerator_inline int SIMTlane(int Nsimd) { return __spirv_BuiltInGlobalInvocationId[2]; } //SYCL specific
+accelerator_inline int SIMTlane(int Nsimd) { return __spirv::initLocalInvocationId<3, cl::sycl::id<3>>()[2]; } // SYCL specific
+#endif
 
 //////////////////////////////////////////
 // Extract and insert slices on the GPU

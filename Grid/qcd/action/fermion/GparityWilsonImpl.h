@@ -96,7 +96,7 @@ public:
     int sl        = St._simd_layout[direction];
     Coordinate icoor;
 
-#ifdef __CUDA_ARCH__
+#ifdef GRID_SIMT
     _Spinor tmp;
 
     const int Nsimd =SiteDoubledGaugeField::Nsimd();

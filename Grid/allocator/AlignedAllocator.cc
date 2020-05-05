@@ -6,7 +6,7 @@ NAMESPACE_BEGIN(Grid);
 MemoryStats *MemoryProfiler::stats = nullptr;
 bool         MemoryProfiler::debug = false;
 
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
 #define SMALL_LIMIT (0)
 #else
 #define SMALL_LIMIT (4096)

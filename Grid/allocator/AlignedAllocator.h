@@ -51,11 +51,8 @@ class PointerCache {
 private:
 /*Pinning pages is costly*/
 /*Could maintain separate large and small allocation caches*/
-#ifdef GRID_NVCC 
+
   static const int Ncache=128;
-#else
-  static const int Ncache=8;
-#endif
   static int victim;
 
   typedef struct { 
@@ -169,7 +166,7 @@ public:
     pointer ptr = nullptr;
 #endif
 
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
     ////////////////////////////////////
     // Unified (managed) memory
     ////////////////////////////////////
@@ -183,7 +180,13 @@ public:
       }
     } 
     assert( ptr != (_Tp *)NULL);
-#else 
+#endif
+
+#ifdef GRID_SYCL
+    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) malloc_shared(bytes,*theGridAccelerator);
+#endif    
+
+#if ( !defined(GRID_CUDA)) && (!defined(GRID_SYCL))
     //////////////////////////////////////////////////////////////////////////////////////////
     // 2MB align; could make option probably doesn't need configurability
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -193,14 +196,6 @@ public:
     if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) memalign(GRID_ALLOC_ALIGN,bytes);
   #endif
     assert( ptr != (_Tp *)NULL);
-
-    //////////////////////////////////////////////////
-    // First touch optimise in threaded loop 
-    //////////////////////////////////////////////////
-    uint64_t *cp = (uint64_t *)ptr;
-    thread_for(n,bytes/sizeof(uint64_t), { // need only one touch per page
-      cp[n]=0;
-    });
 #endif
     return ptr;
   }
@@ -216,9 +211,14 @@ public:
     pointer __freeme = __p;
 #endif
 
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
     if ( __freeme ) cudaFree((void *)__freeme);
-#else 
+#endif
+#ifdef GRID_SYCL
+    if ( __freeme ) free((void *)__freeme,*theGridAccelerator);
+#endif    
+
+#if ( !defined(GRID_CUDA)) && (!defined(GRID_SYCL))
   #ifdef HAVE_MM_MALLOC_H
     if ( __freeme ) _mm_free((void *)__freeme); 
   #else

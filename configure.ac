@@ -147,6 +147,19 @@ case ${ac_SUMMIT} in
       AC_DEFINE([GRID_IBM_SUMMIT],[1],[Let JSRUN manage the GPU device allocation]);;
 esac
 
+############### SYCL
+AC_ARG_ENABLE([sycl],
+    [AC_HELP_STRING([--enable-sycl=yes|no], [enable SYCL])],
+    [ac_JSRUN=${enable_sycl}], [ac_SYCL=no])
+case ${ac_SYCL} in
+    no);;
+    yes)
+      AC_DEFINE([GRID_SYCL],[1],[Use SYCL offload]);;
+    *)
+      AC_DEFINE([GRID_SYCL],[1],[Use SYCL offload]);;
+esac
+
+
 ############### Intel libraries
 AC_ARG_ENABLE([mkl],
     [AC_HELP_STRING([--enable-mkl=yes|no|prefix], [enable Intel MKL for LAPACK & FFTW])],

@@ -107,7 +107,7 @@ void Gather_plane_exchange_table(Vector<std::pair<int,int> >& table,const Lattic
 }
 
 struct StencilEntry { 
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
   uint64_t _byte_offset;       // 8 bytes 
   uint32_t _offset;            // 4 bytes 
 #else
