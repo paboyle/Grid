@@ -14,6 +14,7 @@ std::string filestem(const int l)
 
 int main (int argc, char ** argv)
 {
+#ifdef HAVE_LIME
   Grid_init(&argc,&argv);
 
   int64_t threads = GridThread::GetThreads();
@@ -42,6 +43,6 @@ int main (int argc, char ** argv)
   }
 
   Grid_finalize();
-
+#endif
   return EXIT_SUCCESS;
 }
