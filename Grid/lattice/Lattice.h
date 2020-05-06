@@ -43,4 +43,4 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/lattice/Lattice_rng.h>
 #include <Grid/lattice/Lattice_unary.h>
 #include <Grid/lattice/Lattice_transfer.h>
-
+#include <Grid/lattice/Lattice_basis.h>

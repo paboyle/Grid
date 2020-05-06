@@ -116,7 +116,6 @@ public:
     int target;
     cudaGetDevice(&target);
     cudaMemPrefetchAsync(_odata,_odata_size*sizeof(vobj),target);
-    //std::cout<< GridLogMessage << "To Device " << target << std::endl;
 #endif
 #endif
   };
@@ -125,7 +124,6 @@ public:
 #ifdef GRID_NVCC
 #ifndef __CUDA_ARCH__ // only on host
     cudaMemPrefetchAsync(_odata,_odata_size*sizeof(vobj),cudaCpuDeviceId);
-    //std::cout<< GridLogMessage << "To Host" << std::endl;
 #endif
 #endif
   };
@@ -425,7 +423,6 @@ public:
   // copy constructor
   ///////////////////////////////////////////
   Lattice(const Lattice& r){ 
-    //    std::cout << "Lattice constructor(const Lattice &) "<<this<<std::endl; 
     this->_grid = r.Grid();
     resize(this->_grid->oSites());
     *this = r;
@@ -448,7 +445,6 @@ public:
     typename std::enable_if<!std::is_same<robj,vobj>::value,int>::type i=0;
     conformable(*this,r);
     this->checkerboard = r.Checkerboard();
-    //std::cout << GridLogMessage << "Copy other" << std::endl;
     auto me =   AcceleratorView(ViewWrite);
     auto him= r.AcceleratorView(ViewRead);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
@@ -463,7 +459,6 @@ public:
   inline Lattice<vobj> & operator = (const Lattice<vobj> & r){
     this->checkerboard = r.Checkerboard();
     conformable(*this,r);
-    //std::cout << GridLogMessage << "Copy same" << std::endl;
     auto me =   AcceleratorView(ViewWrite);
     auto him= r.AcceleratorView(ViewRead);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
