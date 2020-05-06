@@ -25,6 +25,11 @@ Fujitsu FCC
 
 
 
+Fujitsu FCC w/ MPI
+
+../configure --with-lime=$HOME/grid-a64fx/lime/c-lime --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=mpi --enable-openmp --with-mpfr=/home/users/gre/gre-1/grid-a64fx/mpfr-build/install CXX=mpiFCC CC=mpifcc CXXFLAGS="-Nclang -Kfast -DA64FX -DA64FXASM -DDSLASHINTRIN"
+
+
 
 
 what about "-fno-strict-aliasing" in general?
