@@ -146,7 +146,7 @@ public:
     int ieee32big = (format == std::string("IEEE32BIG"));
     int ieee32    = (format == std::string("IEEE32"));
     int ieee64big = (format == std::string("IEEE64BIG"));
-    int ieee64    = (format == std::string("IEEE64"));
+    int ieee64    = (format == std::string("IEEE64") || format == std::string("IEEE64LITTLE"));
 
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
     // depending on datatype, set up munger;

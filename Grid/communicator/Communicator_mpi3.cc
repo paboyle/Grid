@@ -255,6 +255,10 @@ void CartesianCommunicator::GlobalSum(uint64_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT64_T,MPI_SUM,communicator);
   assert(ierr==0);
 }
+void CartesianCommunicator::GlobalSumVector(uint64_t* u,int N){
+  int ierr=MPI_Allreduce(MPI_IN_PLACE,u,N,MPI_UINT64_T,MPI_SUM,communicator);
+  assert(ierr==0);
+}
 void CartesianCommunicator::GlobalXOR(uint32_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_BXOR,communicator);
   assert(ierr==0);

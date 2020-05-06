@@ -9,6 +9,7 @@ Copyright (C) 2015
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Christoph Lehner <christoph@lhnr.de>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -50,6 +51,26 @@ void accelerator_inline conformable(GridBase *lhs,GridBase *rhs)
 }
 
 ////////////////////////////////////////////////////////////////////////////
+// Advise the LatticeAccelerator class
+////////////////////////////////////////////////////////////////////////////
+enum LatticeAcceleratorAdvise {
+  AdviseInfrequentUse = 0x1,    // Advise that the data is used infrequently.  This can
+                                // significantly influence performance of bulk storage.
+  AdviseReadMostly = 0x2,       // Data will mostly be read.  On some architectures
+                                // enables read-only copies of memory to be kept on
+                                // host and device.
+};
+
+////////////////////////////////////////////////////////////////////////////
+// View Access Mode
+////////////////////////////////////////////////////////////////////////////
+enum ViewMode {
+  ViewRead = 0x1,
+  ViewWrite = 0x2,
+  ViewReadWrite = 0x3
+};
+
+////////////////////////////////////////////////////////////////////////////
 // Minimal base class containing only data valid to access from accelerator
 // _odata will be a managed pointer in CUDA
 ////////////////////////////////////////////////////////////////////////////
@@ -74,6 +95,37 @@ public:
   { 
     if (grid) conformable(grid, _grid);
     else      grid = _grid;
+  };
+
+  accelerator_inline void Advise(int advise) {
+#ifdef GRID_NVCC
+#ifndef __CUDA_ARCH__ // only on host
+    if (advise & AdviseInfrequentUse) {
+      cudaMemAdvise(_odata,_odata_size*sizeof(vobj),cudaMemAdviseSetPreferredLocation,cudaCpuDeviceId);
+    }
+    if (advise & AdviseReadMostly) {
+      cudaMemAdvise(_odata,_odata_size*sizeof(vobj),cudaMemAdviseSetReadMostly,-1);
+    }
+#endif
+#endif
+  };
+
+  accelerator_inline void AcceleratorPrefetch(int accessMode = ViewReadWrite) { // will use accessMode in future
+#ifdef GRID_NVCC
+#ifndef __CUDA_ARCH__ // only on host
+    int target;
+    cudaGetDevice(&target);
+    cudaMemPrefetchAsync(_odata,_odata_size*sizeof(vobj),target);
+#endif
+#endif
+  };
+
+  accelerator_inline void HostPrefetch(int accessMode = ViewReadWrite) { // will use accessMode in future
+#ifdef GRID_NVCC
+#ifndef __CUDA_ARCH__ // only on host
+    cudaMemPrefetchAsync(_odata,_odata_size*sizeof(vobj),cudaCpuDeviceId);
+#endif
+#endif
   };
 };
 
@@ -206,9 +258,23 @@ public:
   // The view is trivially copy constructible and may be copied to an accelerator device
   // in device lambdas
   /////////////////////////////////////////////////////////////////////////////////
-  LatticeView<vobj> View (void) const 
+  LatticeView<vobj> View (void) const // deprecated, should pick AcceleratorView for accelerator_for
+  {                                   //                     and HostView        for thread_for
+    LatticeView<vobj> accessor(*( (LatticeAccelerator<vobj> *) this));
+    return accessor;
+  }
+
+  LatticeView<vobj> AcceleratorView(int mode = ViewReadWrite) const 
   {
     LatticeView<vobj> accessor(*( (LatticeAccelerator<vobj> *) this));
+    accessor.AcceleratorPrefetch(mode);
+    return accessor;
+  }
+
+  LatticeView<vobj> HostView(int mode = ViewReadWrite) const 
+  {
+    LatticeView<vobj> accessor(*( (LatticeAccelerator<vobj> *) this));
+    accessor.HostPrefetch(mode);
     return accessor;
   }
   
@@ -232,7 +298,7 @@ public:
     assert( (cb==Odd) || (cb==Even));
     this->checkerboard=cb;
 
-    auto me  = View();
+    auto me  = AcceleratorView(ViewWrite);
     accelerator_for(ss,me.size(),1,{
       auto tmp = eval(ss,expr);
       vstream(me[ss],tmp);
@@ -251,7 +317,7 @@ public:
     assert( (cb==Odd) || (cb==Even));
     this->checkerboard=cb;
 
-    auto me  = View();
+    auto me  = AcceleratorView(ViewWrite);
     accelerator_for(ss,me.size(),1,{
       auto tmp = eval(ss,expr);
       vstream(me[ss],tmp);
@@ -269,7 +335,7 @@ public:
     CBFromExpression(cb,expr);
     assert( (cb==Odd) || (cb==Even));
     this->checkerboard=cb;
-    auto me  = View();
+    auto me  = AcceleratorView(ViewWrite);
     accelerator_for(ss,me.size(),1,{
       auto tmp = eval(ss,expr);
       vstream(me[ss],tmp);
@@ -357,7 +423,6 @@ public:
   // copy constructor
   ///////////////////////////////////////////
   Lattice(const Lattice& r){ 
-    //    std::cout << "Lattice constructor(const Lattice &) "<<this<<std::endl; 
     this->_grid = r.Grid();
     resize(this->_grid->oSites());
     *this = r;
@@ -380,8 +445,8 @@ public:
     typename std::enable_if<!std::is_same<robj,vobj>::value,int>::type i=0;
     conformable(*this,r);
     this->checkerboard = r.Checkerboard();
-    auto me =   View();
-    auto him= r.View();
+    auto me =   AcceleratorView(ViewWrite);
+    auto him= r.AcceleratorView(ViewRead);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       coalescedWrite(me[ss],him(ss));
     });
@@ -394,8 +459,8 @@ public:
   inline Lattice<vobj> & operator = (const Lattice<vobj> & r){
     this->checkerboard = r.Checkerboard();
     conformable(*this,r);
-    auto me =   View();
-    auto him= r.View();
+    auto me =   AcceleratorView(ViewWrite);
+    auto him= r.AcceleratorView(ViewRead);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       coalescedWrite(me[ss],him(ss));
     });
