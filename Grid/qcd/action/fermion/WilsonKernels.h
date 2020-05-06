@@ -66,41 +66,6 @@ public:
   static void DhopDirKernel(StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor * buf,
 			    int Ls, int Nsite, const FermionField &in, FermionField &out, int dirdisp, int gamma);
 
-  //////////////////////////////////////////////////////////////////////////////
-  // Utilities for inserting Wilson conserved current.
-  //////////////////////////////////////////////////////////////////////////////
-  static void ContractConservedCurrentSiteFwd(const SitePropagator &q_in_1,
-                                       const SitePropagator &q_in_2,
-                                       SitePropagator &q_out,
-                                       DoubledGaugeFieldView &U,
-                                       unsigned int sU,
-                                       unsigned int mu,
-                                       bool switch_sign = false);
-
-  static void ContractConservedCurrentSiteBwd(const SitePropagator &q_in_1,
-                                       const SitePropagator &q_in_2,
-                                       SitePropagator &q_out,
-                                       DoubledGaugeFieldView &U,
-                                       unsigned int sU,
-                                       unsigned int mu,
-                                       bool switch_sign = false);
-
-  static void SeqConservedCurrentSiteFwd(const SitePropagator &q_in, 
-                                  SitePropagator &q_out,
-                                  DoubledGaugeFieldView &U,
-                                  unsigned int sU,
-                                  unsigned int mu,
-                                  vPredicate t_mask,
-                                  bool switch_sign = false);
-
-  static void SeqConservedCurrentSiteBwd(const SitePropagator &q_in,
-                                  SitePropagator &q_out,
-                                  DoubledGaugeFieldView &U,
-                                  unsigned int sU,
-                                  unsigned int mu,
-                                  vPredicate t_mask,
-                                  bool switch_sign = false);
-
 private:
 
   static accelerator_inline void DhopDirK(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor * buf,

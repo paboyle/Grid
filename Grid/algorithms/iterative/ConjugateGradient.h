@@ -49,6 +49,7 @@ public:
   RealD Tolerance;
   Integer MaxIterations;
   Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
+  RealD TrueResidual;
   
   ConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true)
     : Tolerance(tol),
@@ -81,6 +82,14 @@ public:
     cp = a;
     ssq = norm2(src);
 
+    // Handle trivial case of zero src
+    if (ssq == 0.){
+      psi = Zero();
+      IterationsToComplete = 1;
+      TrueResidual = 0.;
+      return;
+    }
+
     std::cout << GridLogIterative << std::setprecision(8) << "ConjugateGradient: guess " << guess << std::endl;
     std::cout << GridLogIterative << std::setprecision(8) << "ConjugateGradient:   src " << ssq << std::endl;
     std::cout << GridLogIterative << std::setprecision(8) << "ConjugateGradient:    mp " << d << std::endl;
@@ -92,6 +101,7 @@ public:
 
     // Check if guess is really REALLY good :)
     if (cp <= rsq) {
+      TrueResidual = std::sqrt(a/ssq);
       std::cout << GridLogMessage << "ConjugateGradient guess is converged already " << std::endl;
       IterationsToComplete = 0;	
       return;
@@ -141,7 +151,7 @@ public:
       LinalgTimer.Stop();
 
       std::cout << GridLogIterative << "ConjugateGradient: Iteration " << k
-                << " residual^2 " << sqrt(cp/ssq) << " target " << Tolerance << std::endl;
+                << " residual " << sqrt(cp/ssq) << " target " << Tolerance << std::endl;
 
       // Stopping condition
       if (cp <= rsq) {
@@ -169,10 +179,17 @@ public:
         if (ErrorOnNoConverge) assert(true_residual / Tolerance < 10000.0);
 
 	IterationsToComplete = k;	
+	TrueResidual = true_residual;
 
         return;
       }
     }
+    // Failed. Calculate true residual before giving up                                                         
+    Linop.HermOpAndNorm(psi, mmp, d, qq);
+    p = mmp - src;
+
+    TrueResidual = sqrt(norm2(p)/ssq);
+
     std::cout << GridLogMessage << "ConjugateGradient did NOT converge "<<k<<" / "<< MaxIterations<< std::endl;
 
     if (ErrorOnNoConverge) assert(0);

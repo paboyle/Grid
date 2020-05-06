@@ -41,6 +41,7 @@ public:
   static const int Dimension = Representation::Dimension;
   static const bool isFundamental = Representation::isFundamental;
   static const bool LsVectorised=false;
+  static const bool isGparity=false;
   static const int Nhcs = Options::Nhcs;
 
   typedef PeriodicGaugeImpl<GaugeImplTypes<S, Dimension > > Gimpl;
@@ -98,8 +99,21 @@ public:
   {
     multLink(phi,U,chi,mu);
   }
-    
-      
+
+  template<class _SpinorField> 
+  inline void multLinkField(_SpinorField & out,
+			    const DoubledGaugeField &Umu,
+			    const _SpinorField & phi,
+			    int mu)
+  {
+    auto out_v= out.View();
+    auto phi_v= phi.View();
+    auto Umu_v= Umu.View();
+    thread_for(sss,out.Grid()->oSites(),{
+	multLink(out_v[sss],Umu_v[sss],phi_v[sss],mu);
+    });
+  }
+					   
   template <class ref>
   static accelerator_inline void loadLinkElement(Simd &reg, ref &memory) 
   {

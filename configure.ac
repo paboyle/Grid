@@ -226,7 +226,7 @@ AC_SEARCH_LIBS([fftw_execute], [fftw3],
 AC_SEARCH_LIBS([limeCreateReader], [lime],
                [AC_DEFINE([HAVE_LIME], [1], [Define to 1 if you have the `LIME' library])]
                [have_lime=true],
-	             [AC_MSG_ERROR(LIME library was not found in your system.)])
+	             [AC_MSG_WARN(LIME library was not found in your system.)])
 
 AC_SEARCH_LIBS([SHA256_Init], [crypto],
                [AC_DEFINE([HAVE_CRYPTO], [1], [Define to 1 if you have the `OpenSSL' library])]
@@ -547,6 +547,7 @@ DX_INIT_DOXYGEN([$PACKAGE_NAME], [doxygen.cfg])
 ############### Ouput
 cwd=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${cwd}
 GRID_CXX="$CXX"
+GRID_CXXLD="$CXXLD"
 GRID_CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
 GRID_LDFLAGS="$AM_LDFLAGS $LDFLAGS"
 GRID_LIBS=$LIBS
@@ -561,6 +562,7 @@ AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CXXFLAGS])
 AC_SUBST([AM_LDFLAGS])
 AC_SUBST([GRID_CXX])
+AC_SUBST([GRID_CXXLD])
 AC_SUBST([GRID_CXXFLAGS])
 AC_SUBST([GRID_LDFLAGS])
 AC_SUBST([GRID_LIBS])

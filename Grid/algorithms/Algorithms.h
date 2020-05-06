@@ -39,14 +39,18 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/approx/Remez.h>
 #include <Grid/algorithms/approx/MultiShiftFunction.h>
 #include <Grid/algorithms/approx/Forecast.h>
+#include <Grid/algorithms/approx/RemezGeneral.h>
+#include <Grid/algorithms/approx/ZMobius.h>
 
 #include <Grid/algorithms/iterative/Deflation.h>
 #include <Grid/algorithms/iterative/ConjugateGradient.h>
+#include <Grid/algorithms/iterative/BiCGSTAB.h>
 #include <Grid/algorithms/iterative/ConjugateResidual.h>
 #include <Grid/algorithms/iterative/NormalEquations.h>
 #include <Grid/algorithms/iterative/SchurRedBlack.h>
 #include <Grid/algorithms/iterative/ConjugateGradientMultiShift.h>
 #include <Grid/algorithms/iterative/ConjugateGradientMixedPrec.h>
+#include <Grid/algorithms/iterative/BiCGSTABMixedPrec.h>
 #include <Grid/algorithms/iterative/BlockConjugateGradient.h>
 #include <Grid/algorithms/iterative/ConjugateGradientReliableUpdate.h>
 #include <Grid/algorithms/iterative/MinimalResidual.h>

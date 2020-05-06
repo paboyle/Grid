@@ -38,6 +38,7 @@ public:
  static const bool isFundamental = Representation::isFundamental;
  static const int Nhcs = Options::Nhcs;
  static const bool LsVectorised=false;
+ static const bool isGparity=true;
 
  typedef ConjugateGaugeImpl< GaugeImplTypes<S,Dimension> > Gimpl;
  INHERIT_GIMPL_TYPES(Gimpl);
@@ -46,7 +47,7 @@ public:
  typedef typename Options::template PrecisionMapper<Simd>::LowerPrecVector SimdL;
       
  template <typename vtype> using iImplSpinor            = iVector<iVector<iVector<vtype, Dimension>, Ns>,   Ngp>;
- template <typename vtype> using iImplPropagator        = iVector<iMatrix<iMatrix<vtype, Dimension>, Ns>,   Ngp>;
+ template <typename vtype> using iImplPropagator        = iMatrix<iMatrix<iMatrix<vtype, Dimension>, Ns>,   Ngp>;
  template <typename vtype> using iImplHalfSpinor        = iVector<iVector<iVector<vtype, Dimension>, Nhs>,  Ngp>;
  template <typename vtype> using iImplHalfCommSpinor    = iVector<iVector<iVector<vtype, Dimension>, Nhcs>, Ngp>;
  template <typename vtype> using iImplDoubledGaugeField = iVector<iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>, Ngp>;
@@ -80,6 +81,7 @@ public:
   {
     assert(0);
   } 
+
   template<class _Spinor>
   static accelerator_inline void multLink(_Spinor &phi, 
 					  const SiteDoubledGaugeField &U,
@@ -189,6 +191,16 @@ public:
       mult(&phi(1),&U(1)(mu),&chi(1));
     }
 #endif   
+  }
+
+
+  template<class _SpinorField>
+  inline void multLinkField(_SpinorField & out,
+			    const DoubledGaugeField &Umu,
+			    const _SpinorField & phi,
+			    int mu)
+  {
+    assert(0);
   }
 
   template <class ref>
