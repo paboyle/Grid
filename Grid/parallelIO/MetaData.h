@@ -302,6 +302,30 @@ struct GaugeSimpleUnmunger {
 };
 
 template<class fobj,class sobj>
+struct GaugeDoubleStoredMunger{
+  void operator()(fobj &in, sobj &out) {
+    for (int mu = 0; mu < Nds; mu++) {
+      for (int i = 0; i < Nc; i++) {
+        for (int j = 0; j < Nc; j++) {
+          out(mu)()(i, j) = in(mu)()(i, j);
+        }}
+    }
+  };
+};
+
+template <class fobj, class sobj>
+struct GaugeDoubleStoredUnmunger {
+  void operator()(sobj &in, fobj &out) {
+    for (int mu = 0; mu < Nds; mu++) {
+      for (int i = 0; i < Nc; i++) {
+        for (int j = 0; j < Nc; j++) {
+          out(mu)()(i, j) = in(mu)()(i, j);
+        }}
+    }
+  };
+};
+
+template<class fobj,class sobj>
 struct Gauge3x2munger{
   void operator() (fobj &in,sobj &out){
     for(int mu=0;mu<Nd;mu++){

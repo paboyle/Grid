@@ -2,7 +2,7 @@
 #define Benchmark_IO_hpp_
 
 #include <Grid/Grid.h>
-
+#ifdef HAVE_LIME
 #define MSG std::cout << GridLogMessage
 #define SEP \
 "============================================================================="
@@ -104,4 +104,5 @@ void readBenchmark(const Coordinate &latt, const std::string filename,
 
 }
 
+#endif //LIME
 #endif // Benchmark_IO_hpp_

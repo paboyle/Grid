@@ -9,6 +9,7 @@ Copyright (C) 2015
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: neo <cossu@post.kek.jp>
+Author: Christoph Lehner <christoph@lhnr.de
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -94,7 +95,7 @@ const lobj & eval(const uint64_t ss, const LatticeView<lobj> &arg)
 template <class lobj> accelerator_inline 
 const lobj & eval(const uint64_t ss, const Lattice<lobj> &arg) 
 {
-  auto view = arg.View();
+  auto view = arg.AcceleratorView(ViewRead);
   return view[ss];
 }
 

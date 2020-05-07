@@ -600,6 +600,7 @@ template <class Impl>
 void ImprovedStaggeredFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
 							      PropagatorField &q_in_2,
 							      PropagatorField &q_out,
+							      PropagatorField &src,
 							      Current curr_type,
 							      unsigned int mu)
 {
@@ -609,6 +610,7 @@ void ImprovedStaggeredFermion<Impl>::ContractConservedCurrent(PropagatorField &q
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                                                          PropagatorField &q_out,
+                                                         PropagatorField &src,
                                                          Current curr_type,
                                                          unsigned int mu, 
                                                          unsigned int tmin,

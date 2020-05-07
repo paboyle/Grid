@@ -179,15 +179,17 @@ public:
   void ContractConservedCurrent(PropagatorField &q_in_1,
                                 PropagatorField &q_in_2,
                                 PropagatorField &q_out,
+                                PropagatorField &phys_src,
                                 Current curr_type,
                                 unsigned int mu);
   void SeqConservedCurrent(PropagatorField &q_in,
                            PropagatorField &q_out,
+                           PropagatorField &phys_src,
                            Current curr_type,
                            unsigned int mu, 
                            unsigned int tmin,
-                             unsigned int tmax,
-			     ComplexField &lattice_cmplx);
+			   unsigned int tmax,
+			   ComplexField &lattice_cmplx);
 };
 
 typedef WilsonFermion<WilsonImplF> WilsonFermionF;

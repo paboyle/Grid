@@ -459,6 +459,7 @@ template <class Impl>
 void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
                                                    PropagatorField &q_in_2,
                                                    PropagatorField &q_out,
+                                                   PropagatorField &src,
                                                    Current curr_type,
                                                    unsigned int mu)
 {
@@ -466,6 +467,7 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
   conformable(_grid, q_in_1.Grid());
   conformable(_grid, q_in_2.Grid());
   conformable(_grid, q_out.Grid());
+#if 0
   PropagatorField tmp1(_grid), tmp2(_grid);
   q_out = Zero();
 
@@ -489,12 +491,15 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
 					       q_out_v[sU],
 					       Umu_v, sU, mu);
   });
+#else
+#endif
 }
 
 
 template <class Impl>
 void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in, 
                                               PropagatorField &q_out,
+                                              PropagatorField &src,
                                               Current curr_type,
                                               unsigned int mu,
                                               unsigned int tmin, 
@@ -503,6 +508,7 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 {
   conformable(_grid, q_in.Grid());
   conformable(_grid, q_out.Grid());
+#if 0
 
   //  Lattice<iSinglet<Simd>> ph(_grid), coor(_grid);
   Complex i(0.0,1.0);
@@ -556,6 +562,8 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 					  Umu_v, sU, mu, t_mask);
     }
   });
+#else
+#endif
 }
 
 NAMESPACE_END(Grid);

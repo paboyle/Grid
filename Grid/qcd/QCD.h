@@ -133,23 +133,23 @@ typedef iSpinColourMatrix<vComplex >    vSpinColourMatrix;
 typedef iSpinColourMatrix<vComplexF>    vSpinColourMatrixF;
 typedef iSpinColourMatrix<vComplexD>    vSpinColourMatrixD;
 
-    // SpinColourSpinColour matrix
-    typedef iSpinColourSpinColourMatrix<Complex  >    SpinColourSpinColourMatrix;
-    typedef iSpinColourSpinColourMatrix<ComplexF >    SpinColourSpinColourMatrixF;
-    typedef iSpinColourSpinColourMatrix<ComplexD >    SpinColourSpinColourMatrixD;
+// SpinColourSpinColour matrix
+typedef iSpinColourSpinColourMatrix<Complex  >    SpinColourSpinColourMatrix;
+typedef iSpinColourSpinColourMatrix<ComplexF >    SpinColourSpinColourMatrixF;
+typedef iSpinColourSpinColourMatrix<ComplexD >    SpinColourSpinColourMatrixD;
 
-    typedef iSpinColourSpinColourMatrix<vComplex >    vSpinColourSpinColourMatrix;
-    typedef iSpinColourSpinColourMatrix<vComplexF>    vSpinColourSpinColourMatrixF;
-    typedef iSpinColourSpinColourMatrix<vComplexD>    vSpinColourSpinColourMatrixD;
+typedef iSpinColourSpinColourMatrix<vComplex >    vSpinColourSpinColourMatrix;
+typedef iSpinColourSpinColourMatrix<vComplexF>    vSpinColourSpinColourMatrixF;
+typedef iSpinColourSpinColourMatrix<vComplexD>    vSpinColourSpinColourMatrixD;
 
-    // SpinColourSpinColour matrix
-    typedef iSpinColourSpinColourMatrix<Complex  >    SpinColourSpinColourMatrix;
-    typedef iSpinColourSpinColourMatrix<ComplexF >    SpinColourSpinColourMatrixF;
-    typedef iSpinColourSpinColourMatrix<ComplexD >    SpinColourSpinColourMatrixD;
+// SpinColourSpinColour matrix
+typedef iSpinColourSpinColourMatrix<Complex  >    SpinColourSpinColourMatrix;
+typedef iSpinColourSpinColourMatrix<ComplexF >    SpinColourSpinColourMatrixF;
+typedef iSpinColourSpinColourMatrix<ComplexD >    SpinColourSpinColourMatrixD;
 
-    typedef iSpinColourSpinColourMatrix<vComplex >    vSpinColourSpinColourMatrix;
-    typedef iSpinColourSpinColourMatrix<vComplexF>    vSpinColourSpinColourMatrixF;
-    typedef iSpinColourSpinColourMatrix<vComplexD>    vSpinColourSpinColourMatrixD;
+typedef iSpinColourSpinColourMatrix<vComplex >    vSpinColourSpinColourMatrix;
+typedef iSpinColourSpinColourMatrix<vComplexF>    vSpinColourSpinColourMatrixF;
+typedef iSpinColourSpinColourMatrix<vComplexD>    vSpinColourSpinColourMatrixD;
 
 // LorentzColour
 typedef iLorentzColourMatrix<Complex  > LorentzColourMatrix;
@@ -443,16 +443,16 @@ template<class vobj> void pokeLorentz(vobj &lhs,const decltype(peekIndex<Lorentz
 //////////////////////////////////////////////
 // Fermion <-> propagator assignements
 //////////////////////////////////////////////
-    //template <class Prop, class Ferm>
-    template <class Fimpl>
-      void FermToProp(typename Fimpl::PropagatorField &p, const typename Fimpl::FermionField &f, const int s, const int c)
+//template <class Prop, class Ferm>
+template <class Fimpl>
+void FermToProp(typename Fimpl::PropagatorField &p, const typename Fimpl::FermionField &f, const int s, const int c)
 {
   for(int j = 0; j < Ns; ++j)
     {
       auto pjs = peekSpin(p, j, s);
       auto fj  = peekSpin(f, j);
             
-            for(int i = 0; i < Fimpl::Dimension; ++i)
+      for(int i = 0; i < Fimpl::Dimension; ++i)
 	{
 	  pokeColour(pjs, peekColour(fj, i), i, c);
 	}
@@ -460,16 +460,16 @@ template<class vobj> void pokeLorentz(vobj &lhs,const decltype(peekIndex<Lorentz
     }
 }
     
-    //template <class Prop, class Ferm>
-    template <class Fimpl>
-      void PropToFerm(typename Fimpl::FermionField &f, const typename Fimpl::PropagatorField &p, const int s, const int c)
+//template <class Prop, class Ferm>
+template <class Fimpl>
+void PropToFerm(typename Fimpl::FermionField &f, const typename Fimpl::PropagatorField &p, const int s, const int c)
 {
   for(int j = 0; j < Ns; ++j)
     {
       auto pjs = peekSpin(p, j, s);
       auto fj  = peekSpin(f, j);
             
-            for(int i = 0; i < Fimpl::Dimension; ++i)
+      for(int i = 0; i < Fimpl::Dimension; ++i)
 	{
 	  pokeColour(fj, peekColour(pjs, i, c), i);
 	}
