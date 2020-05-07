@@ -49,6 +49,8 @@ typedef svfloat16_t vech __attribute__((arm_sve_vector_bits(512)));
 typedef svfloat32_t vecf __attribute__((arm_sve_vector_bits(512)));
 typedef svfloat64_t vecd __attribute__((arm_sve_vector_bits(512)));
 typedef svuint32_t  veci __attribute__((arm_sve_vector_bits(512)));
+typedef svuint32_t  lutf __attribute__((arm_sve_vector_bits(512))); // LUTs for float
+typedef svuint64_t  lutd __attribute__((arm_sve_vector_bits(512))); // LUTs for double
 #else
 #pragma error("Oops. Wrong or undefined SVE vector size?")
 #endif /* __ARM_FEATURE_SVE_BITS */
@@ -109,21 +111,24 @@ struct acle<double>{
   typedef svuint64_t svuint;
 
   static inline pred pg1(){return svptrue_b64();}
-  static inline vec<uint64_t> tbl_swap(){
-      const vec<uint64_t> t = {1, 0, 3, 2, 5, 4, 7, 6};
-      return t;
+  static inline lutd tbl_swap(){
+      const uint64_t t[8] = {1, 0, 3, 2, 5, 4, 7, 6};
+      pred pg1 = svptrue_b64();
+      return svld1(pg1, t);
   }
-  static inline vec<uint64_t> tbl0(){
-      const vec<uint64_t> t = {4, 5, 6, 7, 0, 1, 2, 3};
-      return t;
+  static inline lutd tbl0(){
+      const uint64_t t[8] = {4, 5, 6, 7, 0, 1, 2, 3};
+      pred pg1 = svptrue_b64();
+      return svld1(pg1, t);
   }
-  static inline vec<uint64_t> tbl1(){
-      const vec<uint64_t> t = {2, 3, 0, 1, 6, 7, 4, 5};
-      return t;
+  static inline lutd tbl1(){
+      const uint64_t t[8] = {2, 3, 0, 1, 6, 7, 4, 5};
+      pred pg1 = svptrue_b64();
+      return svld1(pg1, t);
   }
   static inline pred pg_even(){return svzip1_b64(svptrue_b64(), svpfalse_b());}
   static inline pred pg_odd() {return svzip1_b64(svpfalse_b(), svptrue_b64());}
-  static inline svfloat64_t zero(){return svdup_f64(0.);}
+  static inline vecd zero(){return svdup_f64(0.);}
 };
 
 template <>
@@ -136,25 +141,29 @@ struct acle<float>{
 
   static inline pred pg1(){return svptrue_b32();}
   // exchange neighboring elements
-  static inline vec<uint32_t> tbl_swap(){
-      const vec<uint32_t> t = {1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14};
-      return t;
+  static inline lutf tbl_swap(){
+      const uint32_t t[16] = {1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14};
+      pred pg1 = svptrue_b32();
+      return svld1(pg1, t);
   }
-  static inline vec<uint32_t> tbl0(){
-      const vec<uint32_t> t = {8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7};
-      return t;
+  static inline lutf tbl0(){
+      const uint32_t t[16] = {8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7};
+      pred pg1 = svptrue_b32();
+      return svld1(pg1, t);
   }
   static inline vec<uint32_t> tbl1(){
-      const vec<uint32_t> t = {4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11};
-      return t;
+      const lutf = {4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11};
+      pred pg1 = svptrue_b32();
+      return svld1(pg1, t);
   }
   static inline vec<uint32_t> tbl2(){
-      const vec<uint32_t> t = {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13};
-      return t;
+      const lutf = {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13};
+      pred pg1 = svptrue_b32();
+      return svld1(pg1, t);
   }
   static inline pred pg_even(){return svzip1_b32(svptrue_b32(), svpfalse_b());}
   static inline pred pg_odd() {return svzip1_b32(svpfalse_b(), svptrue_b32());}
-  static inline svfloat32_t zero(){return svdup_f32(0.);}
+  static inline vecf zero(){return svdup_f32(0.);}
 };
 
 template <>
@@ -167,7 +176,7 @@ struct acle<uint16_t>{
   static inline pred pg1(){return svptrue_b16();}
   static inline pred pg_even(){return svzip1_b16(svptrue_b16(), svpfalse_b());}
   static inline pred pg_odd() {return svzip1_b16(svpfalse_b(), svptrue_b16());}
-  static inline svfloat16_t zero(){return svdup_f16(0.);}
+  static inline vech zero(){return svdup_f16(0.);}
 };
 
 template <>
@@ -180,7 +189,6 @@ struct acle<Integer>{
 
   //static inline svbool_t pg1(){return svptrue_b16();}
   static inline pred pg1(){return svptrue_b32();}
-  static inline pred pg2(){return svptrue_pat_b32(SV_VL8);}
   static inline pred pg_even(){return svzip1_b32(svptrue_b32(), svpfalse_b());}
   static inline pred pg_odd() {return svzip1_b32(svpfalse_b(), svptrue_b32());}
 };
@@ -416,24 +424,20 @@ struct Conj{
 struct TimesMinusI{
   // Complex float
   inline vecf operator()(vecf a, vecf b){
-    const vec<typename acle<float>::uint> tbl_swap = acle<float>::tbl_swap();
+    lutf tbl_swap = acle<float>::tbl_swap();
     pred pg1 = acle<float>::pg1();
     pred pg_odd = acle<float>::pg_odd();
 
-    typename acle<float>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    vecf a_v = svld1(pg1, a.v);
-    a_v = svtbl(a_v, tbl_swap_v);
+    vecf a_v = svtbl(a, tbl_swap);
     return svneg_x(pg_odd, a_v);
   }
   // Complex double
   inline vecd operator()(vecd a, vecd b){
-    const vec<typename acle<double>::uint> tbl_swap = acle<double>::tbl_swap();
+    lutd tbl_swap = acle<double>::tbl_swap();
     pred pg1 = acle<double>::pg1();
     pred pg_odd = acle<double>::pg_odd();
 
-    typename acle<double>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    vecd a_v = svld1(pg1, a.v);
-    a_v = svtbl(a_v, tbl_swap_v);
+    vecd a_v = svtbl(a, tbl_swap);
     return svneg_x(pg_odd, a_v);
   }
 };
@@ -441,24 +445,20 @@ struct TimesMinusI{
 struct TimesI{
   // Complex float
   inline vecf operator()(vecf a, vecf b){
-    const vec<typename acle<float>::uint> tbl_swap = acle<T>::tbl_swap();
+    lutf tbl_swap = acle<T>::tbl_swap();
     pred pg1 = acle<float>::pg1();
     pred pg_even = acle<float>::pg_even();
 
-    typename acle<float>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    vecf a_v = svld1(pg1, a.v);
-    a_v = svtbl(a_v, tbl_swap_v);
+    vecf a_v = svtbl(a, tbl_swap);
     return svneg_x(pg_even, a_v);
   }
   // Complex double
   inline vecd operator()(vecd a, vecd b){
-    const vec<typename acle<double>::uint> tbl_swap = acle<double>::tbl_swap();
+    lutd tbl_swap = acle<double>::tbl_swap();
     pred pg1 = acle<double>::pg1();
     pred pg_even = acle<double>::pg_even();
 
-    typename acle<double>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    vecd a_v = svld1(pg1, a.v);
-    a_v = svtbl(a_v, tbl_swap_v);
+    vecd a_v = svtbl(a, tbl_swap);
     return svneg_x(pg_even, a_v);
   }
 };
@@ -642,22 +642,16 @@ struct Permute{
     return svext(in, in, (uint64_t)(16u / 2u));
   }
   static inline vecf Permute1(vecf in) {
-    const vec<typename acle<float>::uint> tbl_swap = acle<float>::tbl1();
-    pred pg1 = acle<float>::pg1();
-    typename acle<float>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    return svtbl(in, tbl_swap_v);
+    lutf tbl_swap = acle<float>::tbl1();
+    return svtbl(in, tbl_swap);
   }
   static inline vecf Permute2(vecf in) {
-    const vec<typename acle<float>::uint> tbl_swap = acle<float>::tbl2();
-    pred pg1 = acle<float>::pg1();
-    typename acle<float>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    return svtbl(in, tbl_swap_v);
+    lutf tbl_swap = acle<float>::tbl2();
+    return svtbl(in, tbl_swap);
   }
   static inline vecf Permute3(vecf in) {
-    const vec<typename acle<float>::uint> tbl_swap = acle<float>::tbl_swap();
-    pred pg1 = acle<float>::pg1();
-    typename acle<float>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    return svtbl(in, tbl_swap_v);
+    lutf tbl_swap = acle<float>::tbl_swap();
+    return svtbl(in, tbl_swap);
   }
 
   // double
@@ -665,17 +659,12 @@ struct Permute{
     return svext(in, in, (uint64_t)(8u / 2u));
   }
   static inline vecd Permute1(vecd in) {
-
-    const vec<typename acle<double>::uint> tbl_swap = acle<double>::tbl1();
-    pred pg1 = acle<double>::pg1();
-    typename acle<double>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    return svtbl(in, tbl_swap_v);
+    lutd tbl_swap = acle<double>::tbl1();
+    return svtbl(in, tbl_swap);
   }
   static inline vecd Permute2(vecd in) {
-    const vec<typename acle<double>::uint> tbl_swap = acle<double>::tbl_swap();
-    pred pg1 = acle<double>::pg1();
-    typename acle<double>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    return svtbl(in, tbl_swap_v);
+    lutd tbl_swap = acle<double>::tbl_swap();
+    return svtbl(in, tbl_swap);
   }
   static inline vecd Permute3(vecd in) {
     return in;
@@ -776,7 +765,6 @@ inline Grid::RealD Reduce<Grid::RealD, vecd>::operator()(vecd in){
   pred pg1 = acle<double>::pg1();
   return svred(pg1, in);
 }
-
 //Integer Reduce
 template <>
 inline Integer Reduce<Integer, veci>::operator()(veci in){
