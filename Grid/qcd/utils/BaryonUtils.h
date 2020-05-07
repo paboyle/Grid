@@ -46,44 +46,20 @@ public:
   typedef typename SpinMatrixField::vector_object sobj;
 
   static const int epsilon[6][3] ;
-  static const double epsilon_sgn[6];
+  static const Complex epsilon_sgn[6];
 
   private: 
   template <class mobj, class robj>
-  static inline void baryon_site(unsigned int mask, const mobj &D1,
-						 const mobj &D2,
-						 const mobj &D3,
-				                 const Gamma GammaA_left,
-				                 const Gamma GammaB_left,
-				                 const Gamma GammaA_right,
-		                 		 const Gamma GammaB_right,
-						 const int parity,
-						 robj &result);
-  template <unsigned int mask, class mobj, class robj>
-  static inline void baryon_site(const mobj &D1,
-						 const mobj &D2,
-						 const mobj &D3,
-				                 const Gamma GammaA_left,
-				                 const Gamma GammaB_left,
-				                 const Gamma GammaA_right,
-		                 		 const Gamma GammaB_right,
-						 const int parity,
-						 robj &result);
-						 
-  template <unsigned int maxMask>
-  struct BaryonSiteHelper
-  {
-  template <class mobj, class robj>
-    static inline void function(const unsigned int mask, const mobj &D1,
-						 const mobj &D2,
-						 const mobj &D3,
-				                 const Gamma GammaA_left,
-				                 const Gamma GammaB_left,
-				                 const Gamma GammaA_right,
-		                 		 const Gamma GammaB_right,
-						 const int parity,
-						 robj &result);
-						 };
+  static void baryon_site(const mobj &D1,
+				 const mobj &D2,
+				 const mobj &D3,
+				 const Gamma GammaA_left,
+				 const Gamma GammaB_left,
+				 const Gamma GammaA_right,
+				 const Gamma GammaB_right,
+				 const int parity,
+				 const int * wick_contractions,
+  				 robj &result);
   public:
   static void ContractBaryons(const PropagatorField &q1_left,
 				 const PropagatorField &q2_left,
@@ -176,11 +152,17 @@ public:
 template <class FImpl> 
 const int BaryonUtils<FImpl>::epsilon[6][3] = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
 template <class FImpl> 
-const double BaryonUtils<FImpl>::epsilon_sgn[6] = {1.0,1.0,1.0,-1.0,-1.0,-1.0};
+const Complex BaryonUtils<FImpl>::epsilon_sgn[6] = {Complex(1),
+						    Complex(1),
+						    Complex(1),
+						    Complex(-1),
+						    Complex(-1),
+						    Complex(-1)};
 
+//This is the old version
 template <class FImpl>
-template <unsigned int mask, class mobj, class robj>
-inline void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
+template <class mobj, class robj>
+void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 						 const mobj &D2,
 						 const mobj &D3,
 				                 const Gamma GammaA_left,
@@ -188,14 +170,9 @@ inline void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 				                 const Gamma GammaA_right,
 		                 		 const Gamma GammaB_right,
 						 const int parity,
+						 const int * wick_contraction,
 						 robj &result)
 {
-    constexpr bool wick_contraction_0 = ((mask & (1 << 5)) >> 5);
-    constexpr bool wick_contraction_1 = ((mask & (1 << 4)) >> 4);
-    constexpr bool wick_contraction_2 = ((mask & (1 << 3)) >> 3);
-    constexpr bool wick_contraction_3 = ((mask & (1 << 2)) >> 2);
-    constexpr bool wick_contraction_4 = ((mask & (1 << 1)) >> 1);
-    constexpr bool wick_contraction_5 = ((mask & (1 << 0)) >> 0);
 
   Gamma g4(Gamma::Algebra::GammaT); //needed for parity P_\pm = 0.5*(1 \pm \gamma_4)
 
@@ -216,83 +193,76 @@ inline void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
         int a_right = epsilon[ie_right][0]; //a'
         int b_right = epsilon[ie_right][1]; //b'
         int c_right = epsilon[ie_right][2]; //c'
-	double ee = epsilon_sgn[ie_left] * epsilon_sgn[ie_right];
-        //All parts together
+	Complex ee = epsilon_sgn[ie_left] * epsilon_sgn[ie_right];
+        //This is the \delta_{456}^{123} part
+	if (wick_contraction[0]){
 	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
             auto eepD1 = ee * pD1()(gamma_left,gamma_left)(c_right,c_left);
 	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
+	  for (int beta_left=0; beta_left<Ns; beta_left++){
+	    auto D2g_ab = D2g()(alpha_right,beta_left)(a_right,a_left);
+	    auto gD3_ab = gD3()(alpha_right,beta_left)(b_right,b_left);
+	        result()()() += eepD1*D2g_ab*gD3_ab;
+          }}}
+  	}	  
+        //This is the \delta_{456}^{231} part
+	if (wick_contraction[1]){
+	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
+	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
             auto gD3_ag = gD3()(alpha_right,gamma_left)(b_right,c_left);
+	  for (int beta_left=0; beta_left<Ns; beta_left++){
+            auto eepD1g_gb = ee * pD1g()(gamma_left,beta_left)(c_right,a_left);
+	    auto D2_ab = D2()(alpha_right,beta_left)(a_right,b_left);
+		result()()() += eepD1g_gb*D2_ab*gD3_ag;
+          }}}
+        }	  
+        //This is the \delta_{456}^{312} part
+	if (wick_contraction[2]){
+	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
+	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
+	    auto D2_ag = D2()(alpha_right,gamma_left)(a_right,c_left);
+	  for (int beta_left=0; beta_left<Ns; beta_left++){
+            auto eepD1_gb = ee * pD1()(gamma_left,beta_left)(c_right,b_left);
+	    auto gD3g_ab = gD3g()(alpha_right,beta_left)(b_right,a_left);
+		result()()() += eepD1_gb*D2_ag*gD3g_ab;
+          }}}
+        }	  
+        //This is the \delta_{456}^{132} part
+	if (wick_contraction[3]){
+	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
+            auto eepD1 = ee * pD1()(gamma_left,gamma_left)(c_right,c_left);
+	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
+	  for (int beta_left=0; beta_left<Ns; beta_left++){
+	    auto D2_ab = D2()(alpha_right,beta_left)(a_right,b_left);
+	    auto gD3g_ab = gD3g()(alpha_right,beta_left)(b_right,a_left);
+    		result()()() -= eepD1*D2_ab*gD3g_ab;
+          }}}
+        }	  
+        //This is the \delta_{456}^{321} part
+	if (wick_contraction[4]){
+	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
+	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
+            auto gD3_ag = gD3()(alpha_right,gamma_left)(b_right,c_left);
+	  for (int beta_left=0; beta_left<Ns; beta_left++){
+            auto eepD1_gb = ee * pD1()(gamma_left,beta_left)(c_right,b_left);
+	    auto D2g_ab = D2g()(alpha_right,beta_left)(a_right,a_left);
+		result()()() -= eepD1_gb*D2g_ab*gD3_ag;
+          }}}
+        }	  
+        //This is the \delta_{456}^{213} part
+	if (wick_contraction[5]){
+	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
+	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
 	    auto D2_ag = D2()(alpha_right,gamma_left)(a_right,c_left);
 	  for (int beta_left=0; beta_left<Ns; beta_left++){
             auto eepD1g_gb = ee * pD1g()(gamma_left,beta_left)(c_right,a_left);
-            auto eepD1_gb = ee * pD1()(gamma_left,beta_left)(c_right,b_left);
-	    auto D2g_ab = D2g()(alpha_right,beta_left)(a_right,a_left);
-	    auto D2_ab = D2()(alpha_right,beta_left)(a_right,b_left);
 	    auto gD3_ab = gD3()(alpha_right,beta_left)(b_right,b_left);
-	    auto gD3g_ab = gD3g()(alpha_right,beta_left)(b_right,a_left);
-	    if(wick_contraction_0){
-	      result()()() += eepD1*D2g_ab*gD3_ab;
-	    }
-  	    if(wick_contraction_1){
-		    result()()() += eepD1g_gb*D2_ab*gD3_ag;
-	    }
-	    if(wick_contraction_2){
-		    result()()() += eepD1_gb*D2_ag*gD3g_ab;
-	    }
-            if(wick_contraction_3){
-    		result()()() -= eepD1*D2_ab*gD3g_ab;
-	    }
-    	    if(wick_contraction_4){
-		result()()() -= eepD1_gb*D2g_ab*gD3_ag;
-	    }
-            if(wick_contraction_5){
     	        result()()() -= eepD1g_gb*D2_ag*gD3_ab;
-            }
-  	  }}}
+          }}}
+        }	  
       }
     }
 }
-
-template <class FImpl>
-template <unsigned int maxMask>
-template <class mobj, class robj>
-inline void BaryonUtils<FImpl>::BaryonSiteHelper<maxMask>::function(const unsigned int mask, const mobj &D1,
-						 const mobj &D2,
-						 const mobj &D3,
-				                 const Gamma GammaA_left,
-				                 const Gamma GammaB_left,
-				                 const Gamma GammaA_right,
-		                 		 const Gamma GammaB_right,
-						 const int parity,
-						 robj &result)
-{
-    assert(mask <= maxMask);
-    if (mask == maxMask)
-    {
-        baryon_site<maxMask,decltype(D1),decltype(result)>(D1, D2, D3, GammaA_left, GammaB_left, GammaA_right, GammaB_right, parity, result);
-    }
-    else
-    {
-        BaryonSiteHelper<(maxMask>0) ? maxMask-1 : 0>::function(mask, D1, D2, D3, GammaA_left, GammaB_left, GammaA_right, GammaB_right, parity, result);
-    }
-}
-
-// top-level function
-template <class FImpl>
-template <class mobj, class robj>
-inline void BaryonUtils<FImpl>::baryon_site(const unsigned int mask, const mobj &D1,
-						 const mobj &D2,
-						 const mobj &D3,
-				                 const Gamma GammaA_left,
-				                 const Gamma GammaB_left,
-				                 const Gamma GammaA_right,
-		                 		 const Gamma GammaB_right,
-						 const int parity,
-						 robj &result)
-{
-    BaryonSiteHelper<63>::function(mask, D1, D2, D3, GammaA_left, GammaB_left, GammaA_right, GammaB_right, parity, result);
-}
-
 
 template<class FImpl>
 void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
@@ -307,30 +277,30 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
 						 const int parity,
 						 ComplexField &baryon_corr)
 {
-   
-    assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
-    assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
 
-    std::cout << "Contraction <" << quarks_right[0] << quarks_right[1] << quarks_right[2] << "|" << quarks_left[0] << quarks_left[1] << quarks_left[2] << ">" << std::endl;
+  assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
+  assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
+
+  std::cout << "Contraction <" << quarks_right[0] << quarks_right[1] << quarks_right[2] << "|" << quarks_left[0] << quarks_left[1] << quarks_left[2] << ">" << std::endl;
     std::cout << "GammaA (left) " << (GammaA_left.g) <<  std::endl;
     std::cout << "GammaB (left) " << (GammaB_left.g) <<  std::endl;
     std::cout << "GammaA (right) " << (GammaA_right.g) <<  std::endl;
     std::cout << "GammaB (right) " << (GammaB_right.g) <<  std::endl;
  
-    assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
+  assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
 
-    GridBase *grid = q1_left.Grid();
+  GridBase *grid = q1_left.Grid();
 
-    int wick_id;
-    for (int ie=0; ie < 6 ; ie++)
-      wick_id = ((quarks_left[0] == quarks_right[epsilon[ie][0]] && quarks_left[1] == quarks_right[epsilon[ie][1]] && quarks_left[2] == quarks_right[epsilon[ie][2]]) ? 1 : 0) << (5-ie);
+  int wick_contraction[6];
+  for (int ie=0; ie < 6 ; ie++)
+    wick_contraction[ie] = (quarks_left[0] == quarks_right[epsilon[ie][0]] && quarks_left[1] == quarks_right[epsilon[ie][1]] && quarks_left[2] == quarks_right[epsilon[ie][2]]) ? 1 : 0;
 
-    auto vbaryon_corr= baryon_corr.View();
-    auto v1 = q1_left.View();
-    auto v2 = q2_left.View();
-    auto v3 = q3_left.View();
+  auto vbaryon_corr= baryon_corr.View();
+  auto v1 = q1_left.View();
+  auto v2 = q2_left.View();
+  auto v3 = q3_left.View();
 
-    // accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+ // accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
   thread_for(ss,grid->oSites(),{
   //for(int ss=0; ss < grid->oSites(); ss++){
 
@@ -339,10 +309,9 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
     auto D3 = v3[ss];
 
     vobj result=Zero();
-    baryon_site(wick_id,D1,D2,D3,GammaA_left,GammaB_left,GammaA_right,GammaB_right,parity,result);
+    baryon_site(D1,D2,D3,GammaA_left,GammaB_left,GammaA_right,GammaB_right,parity,wick_contraction,result);
     vbaryon_corr[ss] = result; 
   }  );//end loop over lattice sites
-
 }
 template <class FImpl>
 template <class mobj, class robj>
@@ -359,23 +328,23 @@ void BaryonUtils<FImpl>::ContractBaryons_Sliced(const mobj &D1,
 						 robj &result)
 {
 
-    assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
-    assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
-    
-    std::cout << "Contraction <" << quarks_right[0] << quarks_right[1] << quarks_right[2] << "|" << quarks_left[0] << quarks_left[1] << quarks_left[2] << ">" << std::endl;
+  assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
+  assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
+
+  std::cout << "Contraction <" << quarks_right[0] << quarks_right[1] << quarks_right[2] << "|" << quarks_left[0] << quarks_left[1] << quarks_left[2] << ">" << std::endl;
     std::cout << "GammaA (left) " << (GammaA_left.g) <<  std::endl;
     std::cout << "GammaB (left) " << (GammaB_left.g) <<  std::endl;
     std::cout << "GammaA (right) " << (GammaA_right.g) <<  std::endl;
     std::cout << "GammaB (right) " << (GammaB_right.g) <<  std::endl;
  
-    assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
+  assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
 
-    int wick_id;
-    for (int ie=0; ie < 6 ; ie++)
-      wick_id = ((quarks_left[0] == quarks_right[epsilon[ie][0]] && quarks_left[1] == quarks_right[epsilon[ie][1]] && quarks_left[2] == quarks_right[epsilon[ie][2]]) ? 1 : 0) << (5-ie);
-  
-    result=Zero();
-    baryon_site(wick_id,D1,D2,D3,GammaA_left,GammaB_left,GammaA_right,GammaB_right,parity,result);
+  int wick_contraction[6];
+  for (int ie=0; ie < 6 ; ie++)
+    wick_contraction[ie] = (quarks_left[0] == quarks_right[epsilon[ie][0]] && quarks_left[1] == quarks_right[epsilon[ie][1]] && quarks_left[2] == quarks_right[epsilon[ie][2]]) ? 1 : 0;
+
+     result=Zero();
+     baryon_site<decltype(D1),decltype(result)>(D1,D2,D3,GammaA_left,GammaB_left,GammaA_right,GammaB_right,parity,wick_contraction,result);
 }
 
 /***********************************************************************
