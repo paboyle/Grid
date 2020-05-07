@@ -37,13 +37,21 @@
 static_assert(GEN_SIMD_WIDTH % 64u == 0, "A64FX SIMD vector size is 64 bytes");
 
 #ifdef __ARM_FEATURE_SVE
-  #ifdef __clang__
-    //#pragma message("Using clang compiler")
-    #include <arm_sve.h>
-  #endif
+  #include <arm_sve.h>
 #else
   #pragma error "Missing SVE feature"
 #endif /* __ARM_FEATURE_SVE */
+
+// gcc 10 features
+#if __ARM_FEATURE_SVE_BITS==512
+typedef svbool_t    pred __attribute__((arm_sve_vector_bits(512)));
+typedef svfloat16_t vech __attribute__((arm_sve_vector_bits(512)));
+typedef svfloat32_t vecf __attribute__((arm_sve_vector_bits(512)));
+typedef svfloat64_t vecd __attribute__((arm_sve_vector_bits(512)));
+typedef svuint32_t  veci __attribute__((arm_sve_vector_bits(512)));
+#else
+#pragma error("Oops. Wrong or undefined SVE vector size?")
+#endif /* __ARM_FEATURE_SVE_BITS */
 
 NAMESPACE_BEGIN(Grid);
 NAMESPACE_BEGIN(Optimization);
@@ -100,9 +108,7 @@ struct acle<double>{
   typedef uint64_t uint;
   typedef svuint64_t svuint;
 
-  static inline svbool_t pg1(){return svptrue_b64();}
-  static inline svbool_t pg2(){return svptrue_pat_b64(SV_VL4);}
-  static inline svbool_t pg4(){return svptrue_pat_b64(SV_VL2);}
+  static inline pred pg1(){return svptrue_b64();}
   static inline vec<uint64_t> tbl_swap(){
       const vec<uint64_t> t = {1, 0, 3, 2, 5, 4, 7, 6};
       return t;
@@ -115,8 +121,8 @@ struct acle<double>{
       const vec<uint64_t> t = {2, 3, 0, 1, 6, 7, 4, 5};
       return t;
   }
-  static inline svbool_t pg_even(){return svzip1_b64(svptrue_b64(), svpfalse_b());}
-  static inline svbool_t pg_odd() {return svzip1_b64(svpfalse_b(), svptrue_b64());}
+  static inline pred pg_even(){return svzip1_b64(svptrue_b64(), svpfalse_b());}
+  static inline pred pg_odd() {return svzip1_b64(svpfalse_b(), svptrue_b64());}
   static inline svfloat64_t zero(){return svdup_f64(0.);}
 };
 
@@ -128,8 +134,7 @@ struct acle<float>{
   typedef uint32_t uint;
   typedef svuint32_t svuint;
 
-  static inline svbool_t pg1(){return svptrue_b32();}
-  static inline svbool_t pg2(){return svptrue_pat_b32(SV_VL8);}
+  static inline pred pg1(){return svptrue_b32();}
   // exchange neighboring elements
   static inline vec<uint32_t> tbl_swap(){
       const vec<uint32_t> t = {1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14};
@@ -147,8 +152,8 @@ struct acle<float>{
       const vec<uint32_t> t = {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13};
       return t;
   }
-  static inline svbool_t pg_even(){return svzip1_b32(svptrue_b32(), svpfalse_b());}
-  static inline svbool_t pg_odd() {return svzip1_b32(svpfalse_b(), svptrue_b32());}
+  static inline pred pg_even(){return svzip1_b32(svptrue_b32(), svpfalse_b());}
+  static inline pred pg_odd() {return svzip1_b32(svpfalse_b(), svptrue_b32());}
   static inline svfloat32_t zero(){return svdup_f32(0.);}
 };
 
@@ -159,10 +164,9 @@ struct acle<uint16_t>{
   typedef uint16_t uint;
   typedef svuint16_t svuint;
 
-  static inline svbool_t pg1(){return svptrue_b16();}
-  static inline svbool_t pg2(){return svptrue_pat_b16(SV_VL16);}
-  static inline svbool_t pg_even(){return svzip1_b16(svptrue_b16(), svpfalse_b());}
-  static inline svbool_t pg_odd() {return svzip1_b16(svpfalse_b(), svptrue_b16());}
+  static inline pred pg1(){return svptrue_b16();}
+  static inline pred pg_even(){return svzip1_b16(svptrue_b16(), svpfalse_b());}
+  static inline pred pg_odd() {return svzip1_b16(svpfalse_b(), svptrue_b16());}
   static inline svfloat16_t zero(){return svdup_f16(0.);}
 };
 
@@ -175,10 +179,10 @@ struct acle<Integer>{
   typedef svuint32_t svuint;
 
   //static inline svbool_t pg1(){return svptrue_b16();}
-  static inline svbool_t pg1(){return svptrue_b32();}
-  static inline svbool_t pg2(){return svptrue_pat_b32(SV_VL8);}
-  static inline svbool_t pg_even(){return svzip1_b32(svptrue_b32(), svpfalse_b());}
-  static inline svbool_t pg_odd() {return svzip1_b32(svpfalse_b(), svptrue_b32());}
+  static inline pred pg1(){return svptrue_b32();}
+  static inline pred pg2(){return svptrue_pat_b32(SV_VL8);}
+  static inline pred pg_even(){return svzip1_b32(svptrue_b32(), svpfalse_b());}
+  static inline pred pg_odd() {return svzip1_b32(svpfalse_b(), svptrue_b32());}
 };
 
 // ---------------------------------------------------
@@ -186,132 +190,91 @@ struct acle<Integer>{
 struct Vsplat{
   // Complex float
   inline vecf operator()(float a, float b){
-
-    typename acle<float>::vt a_v = svdup_f32(a);
-    typename acle<float>::vt b_v = svdup_f32(b);
-    typename acle<float>::vt r_v = svzip1(a_v, b_v);
-    return r_v;
+    vecf a_v = svdup_f32(a);
+    vecf b_v = svdup_f32(b);
+    return svzip1(a_v, b_v);
   }
-
   // Real float
   inline vecf operator()(float a){
-
-    typename acle<float>::vt r_v = svdup_f32(a);
-    return r_v;
+    return svdup_f32(a);
   }
-
- // Complex double
+  // Complex double
   inline vecd operator()(double a, double b){
-
-    typename acle<double>::vt a_v = svdup_f64(a);
-    typename acle<double>::vt b_v = svdup_f64(b);
-    typename acle<double>::vt r_v = svzip1(a_v, b_v);
-    return r_v;
+    vecd a_v = svdup_f64(a);
+    vecd b_v = svdup_f64(b);
+    return svzip1(a_v, b_v);
   }
-
   // Real double
   inline vecd operator()(double a){
-
-    vecd out;
-    typename acle<double>::vt r_v = svdup_f64(a);
-    return r_v;
+    return svdup_f64(a);
   }
-
   // Integer
   inline veci operator()(Integer a){
-
     // Add check whether Integer is really a uint32_t???
-    typename acle<Integer>::vt r_v = svdup_u32(a);
-    return r_v;
+    return svdup_u32(a);
   }
 };
 
 struct Vstore{
   // Real float
   inline void operator()(vecf a, float *D){
-
-    svbool_t pg1 = acle<float>::pg1();
-    //typename acle<float>::vt a_v = svld1(pg1, (typename acle<T>::pt*)&a.v);
+    pred pg1 = acle<float>::pg1();
     svst1(pg1, D, a);
   }
   // Real double
   inline void operator()(vecd a, double *D){
-
-    svbool_t pg1 = acle<double>::pg1();
-    //typename acle<float>::vt a_v = svld1(pg1, (typename acle<T>::pt*)&a.v);
+    pred pg1 = acle<double>::pg1();
     svst1(pg1, D, a);
   }
   // Real float
   inline void operator()(veci a, Integer *D){
-
-    svbool_t pg1 = acle<Integer>::pg1();
-    //typename acle<float>::vt a_v = svld1(pg1, (typename acle<T>::pt*)&a.v);
+    pred pg1 = acle<Integer>::pg1();
     svst1(pg1, D, a);
   }
-
 };
 
 struct Vstream{
   // Real float
   inline void operator()(float * a, vecf b){
-
-    svbool_t pg1 = acle<float>::pg1();
-    //typename acle<T>::vt b_v = svld1(pg1, b.v);
+    pred pg1 = acle<float>::pg1();
     svstnt1(pg1, a, b);
-    //svst1(pg1, a, b_v);
+    //svst1(pg1, a, b);
   }
   // Real double
   inline void operator()(double * a, vecd b){
-
-    svbool_t pg1 = acle<double>::pg1();
-    //typename acle<T>::vt b_v = svld1(pg1, b.v);
+    pred pg1 = acle<double>::pg1();
     svstnt1(pg1, a, b);
-    //svst1(pg1, a, b_v);
+    //svst1(pg1, a, b);
   }
 };
 
-  struct Vset{
-    // Complex float
-    inline vecf operator()(Grid::ComplexF *a){
-
-      svbool_t pg1 = acle<float>::pg1();
-      typename acle<float>::vt a_v = svld1(pg1, (float*)a);
-
-      return a_v;
-    }
-    // Complex double
-    inline vecd operator()(Grid::ComplexD *a){
-
-      svbool_t pg1 = acle<double>::pg1();
-      typename acle<double>::vt a_v = svld1(pg1, (double*)a);
-
-      return a_v;
-    }
-    // Real float
-    inline vecf operator()(float *a){
-
-      svbool_t pg1 = acle<float>::pg1();
-      typename acle<float>::vt a_v = svld1(pg1, a);
-
-      return a_v;
-    }
-    // Real double
-    inline vecd operator()(double *a){
-
-      svbool_t pg1 = acle<double>::pg1();
-      typename acle<double>::vt a_v = svld1(pg1, a);
-
-      return a_v;
-    }
-    // Integer
-    inline veci operator()(Integer *a){
-
-      svbool_t pg1 = acle<Integer>::pg1();
-      typename acle<Integer>::vt a_v = svld1(pg1, a);
-
-      return a_v;
-    }
-  };
+struct Vset{
+  // Complex float
+  inline vecf operator()(Grid::ComplexF *a){
+    pred pg1 = acle<float>::pg1();
+    return svld1(pg1, (float*)a);
+  }
+  // Complex double
+  inline vecd operator()(Grid::ComplexD *a){
+    pred pg1 = acle<double>::pg1();
+    return svld1(pg1, (double*)a);
+  }
+  // Real float
+  inline vecf operator()(float *a){
+    pred pg1 = acle<float>::pg1();
+    return svld1(pg1, a);
+  }
+  // Real double
+  inline vecd operator()(double *a){
+    pred pg1 = acle<double>::pg1();
+    return svld1(pg1, a);
+  }
+  // Integer
+  inline veci operator()(Integer *a){
+    pred pg1 = acle<Integer>::pg1();
+    return svld1(pg1, a);
+  }
+};
 
 /////////////////////////////////////////////////////
 // Arithmetic operations
@@ -320,54 +283,36 @@ struct Vstream{
 struct Sum{
   // Complex/real float
   inline vecf operator()(vecf a, vecf b){
-
-    svbool_t pg1 = acle<float>::pg1();
-    typename acle<float>::vt r_v = svadd_x(pg1, a, b);
-
-    return r_v;
+    pred pg1 = acle<float>::pg1();
+    return svadd_x(pg1, a, b);
   }
   // Complex/real double
   inline vecd operator()(vecd a, vecd b){
-
-    svbool_t pg1 = acle<double>::pg1();
-    typename acle<double>::vt r_v = svadd_x(pg1, a, b);
-
-    return r_v;
+    pred pg1 = acle<double>::pg1();
+    return svadd_x(pg1, a, b);
   }
   // Integer
   inline veci operator()(veci a, veci b){
-
-    svbool_t pg1 = acle<Integer>::pg1();
-    typename acle<Integer>::vt r_v = svadd_x(pg1, a, b);
-
-    return r_v;
+    pred pg1 = acle<Integer>::pg1();
+    return svadd_x(pg1, a, b);
   }
 };
 
 struct Sub{
   // Complex/real float
   inline vecf operator()(vecf a, vecf b){
-
-    svbool_t pg1 = acle<float>::pg1();
-    typename acle<float>::vt r_v = svsub_x(pg1, a, b);
-
-    return r_v;
+    pred pg1 = acle<float>::pg1();
+    return svsub_x(pg1, a, b);
   }
   // Complex/real double
   inline vecd operator()(vecd a, vecd b){
-
-    svbool_t pg1 = acle<double>::pg1();
-    typename acle<double>::vt r_v = svsub_x(pg1, a, b);
-
-    return r_v;
+    pred pg1 = acle<double>::pg1();
+    return svsub_x(pg1, a, b);
   }
   // Integer
   inline veci operator()(veci a, veci b){
-
-    svbool_t pg1 = acle<Integer>::pg1();
-    typename acle<Integer>::vt r_v = svsub_x(pg1, a, b);
-
-    return r_v;
+    pred pg1 = acle<Integer>::pg1();
+    return svsub_x(pg1, a, b);
   }
 
 };
@@ -375,75 +320,50 @@ struct Sub{
 struct Mult{
   // Real float
   inline vecf operator()(vecf a, vecf b){
-
-    svbool_t pg1 = acle<float>::pg1();
-    typename acle<float>::vt r_v = svmul_x(pg1, a, b);
-
-    return r_v;
+    pred pg1 = acle<float>::pg1();
+    return svmul_x(pg1, a, b);
   }
   // Real double
   inline vecd operator()(vecd a, vecd b){
-
-    svbool_t pg1 = acle<double>::pg1();
-    typename acle<double>::vt r_v = svmul_x(pg1, a, b);
-
-    return r_v;
+    pred pg1 = acle<double>::pg1();
+    return svmul_x(pg1, a, b);
   }
   // Integer
   inline veci operator()(veci a, veci b){
-
-    svbool_t pg1 = acle<Integer>::pg1();
-    typename acle<Integer>::vt r_v = svmul_x(pg1, a, b);
-
-    return r_v;
+    pred pg1 = acle<Integer>::pg1();
+    return svmul_x(pg1, a, b);
   }
 };
 
 struct MultRealPart{
   // Complex float
   inline vecf operator()(vecf a, vecf b){
-
-    svbool_t pg1 = acle<float>::pg1();
-
+    pred pg1 = acle<float>::pg1();
     // using FCMLA
-    typename acle<float>::vt z_v = acle<float>::zero();
-    typename acle<float>::vt r_v = svcmla_x(pg1, z_v, a, b, 0);
-
-    return r_v;
+    vecf z_v = acle<float>::zero();
+    return svcmla_x(pg1, z_v, a, b, 0);
   }
   // Complex double
   inline vecd operator()(vecd a, vecd b){
-
-    svbool_t pg1 = acle<double>::pg1();
-
+    pred pg1 = acle<double>::pg1();
     // using FCMLA
-    typename acle<double>::vt z_v = acle<double>::zero();
-    typename acle<double>::vt r_v = svcmla_x(pg1, z_v, a, b, 0);
-
-    return r_v;
+    vecd z_v = acle<double>::zero();
+    return svcmla_x(pg1, z_v, a, b, 0);
   }
 };
 
 struct MaddRealPart{
   // Complex float
   inline vecf operator()(vecf a, vecf b, vecf c){
-
-    svbool_t pg1 = acle<float>::pg1();
-
+    pred pg1 = acle<float>::pg1();
     // using FCMLA
-    typename acle<float>::vt r_v = svcmla_x(pg1, c, a, b, 0);
-
-    return r_v;
+    return svcmla_x(pg1, c, a, b, 0);
   }
   // Complex double
   inline vecd operator()(vecd a, vecd b, vecd c){
-
-    svbool_t pg1 = acle<double>::pg1();
-
+    pred pg1 = acle<double>::pg1();
     // using FCMLA
-    typename acle<double>::vt r_v = svcmla_x(pg1, c, a, b, 0);
-
-    return r_v;
+    return svcmla_x(pg1, c, a, b, 0);
   }
 };
 
@@ -451,162 +371,122 @@ struct MultComplex{
   // Complex a*b
   // Complex float
   inline vecf operator()(vecf a, vecf b){
-
-    svbool_t pg1 = acle<float>::pg1();
-    typename acle<float>::vt z = acle<float>::zero();
-
+    pred pg1 = acle<float>::pg1();
+    vecf z = acle<float>::zero();
     // using FCMLA
-    typename acle<float>::vt r_v = svcmla_x(pg1, z, a, b, 90);
-    r_v = svcmla_x(pg1, r_v, a, b, 0);
-
-    return r_v;
+    vecf r_v = svcmla_x(pg1, z, a, b, 0);
+    return svcmla_x(pg1, r_v, a, b, 90);
   }
   // Complex double
   inline vecd operator()(vecd a, vecd b){
-
-    svbool_t pg1 = acle<double>::pg1();
-    typename acle<double>::vt z = acle<double>::zero();
-
+    pred pg1 = acle<double>::pg1();
+    vecd z = acle<double>::zero();
     // using FCMLA
-    typename acle<double>::vt r_v = svcmla_x(pg1, z, a, b, 90);
-    r_v = svcmla_x(pg1, r_v, a, b, 0);
-
-    return r_v;
+    vecd r_v = svcmla_x(pg1, z, a, b, 90);
+    return svcmla_x(pg1, r_v, a, b, 0);
   }
 };
 
 struct Div{
   // Real float
   inline vecf operator()(vecf a, vecf b){
-
-    svbool_t pg1 = acle<float>::pg1();
-    typename acle<float>::vt r_v = svdiv_x(pg1, a, b);
-
-    return r_v;
+    pred pg1 = acle<float>::pg1();
+    return svdiv_x(pg1, a, b);
   }
   // Real double
   inline vecf operator()(vecf a, vecf b){
-
-    svbool_t pg1 = acle<double>::pg1();
-    typename acle<double>::vt r_v = svdiv_x(pg1, a, b);
-
-    return r_v;
+    pred pg1 = acle<double>::pg1();
+    return svdiv_x(pg1, a, b);
   }
 };
 
 struct Conj{
   // Complex float
   inline vecf operator()(vecf a){
-
-    svbool_t pg_odd = acle<float>::pg_odd();
-    typename acle<T>::vt r_v = svneg_x(pg_odd, a);
-
-    return r_v;
+    pred pg_odd = acle<float>::pg_odd();
+    return svneg_x(pg_odd, a);
   }
   // Complex double
   inline vecd operator()(vecd a){
-
-    svbool_t pg_odd = acle<T>::pg_odd();
-    typename acle<T>::vt r_v = svneg_x(pg_odd, a);
-
-    return r_v;
+    pred pg_odd = acle<T>::pg_odd();
+    return svneg_x(pg_odd, a);
   }
 };
 
 struct TimesMinusI{
   // Complex float
   inline vecf operator()(vecf a, vecf b){
-
     const vec<typename acle<float>::uint> tbl_swap = acle<float>::tbl_swap();
-    svbool_t pg1 = acle<float>::pg1();
-    svbool_t pg_odd = acle<float>::pg_odd();
+    pred pg1 = acle<float>::pg1();
+    pred pg_odd = acle<float>::pg_odd();
 
     typename acle<float>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    typename acle<float>::vt a_v = svld1(pg1, a.v);
+    vecf a_v = svld1(pg1, a.v);
     a_v = svtbl(a_v, tbl_swap_v);
-    typename acle<float>::vt r_v = svneg_x(pg_odd, a_v);
-
-    return r_v;
+    return svneg_x(pg_odd, a_v);
   }
   // Complex double
   inline vecd operator()(vecd a, vecd b){
-
     const vec<typename acle<double>::uint> tbl_swap = acle<double>::tbl_swap();
-    svbool_t pg1 = acle<double>::pg1();
-    svbool_t pg_odd = acle<double>::pg_odd();
+    pred pg1 = acle<double>::pg1();
+    pred pg_odd = acle<double>::pg_odd();
 
     typename acle<double>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    typename acle<double>::vt a_v = svld1(pg1, a.v);
+    vecd a_v = svld1(pg1, a.v);
     a_v = svtbl(a_v, tbl_swap_v);
-    typename acle<double>::vt r_v = svneg_x(pg_odd, a_v);
-
-    return r_v;
+    return svneg_x(pg_odd, a_v);
   }
 };
 
 struct TimesI{
   // Complex float
   inline vecf operator()(vecf a, vecf b){
-
     const vec<typename acle<float>::uint> tbl_swap = acle<T>::tbl_swap();
-    svbool_t pg1 = acle<float>::pg1();
-    svbool_t pg_even = acle<float>::pg_even();
+    pred pg1 = acle<float>::pg1();
+    pred pg_even = acle<float>::pg_even();
 
     typename acle<float>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    typename acle<float>::vt a_v = svld1(pg1, a.v);
+    vecf a_v = svld1(pg1, a.v);
     a_v = svtbl(a_v, tbl_swap_v);
-    typename acle<float>::vt r_v = svneg_x(pg_even, a_v);
-
-    return r_v;
+    return svneg_x(pg_even, a_v);
   }
   // Complex double
   inline vecd operator()(vecd a, vecd b){
-
     const vec<typename acle<double>::uint> tbl_swap = acle<double>::tbl_swap();
-    svbool_t pg1 = acle<double>::pg1();
-    svbool_t pg_even = acle<double>::pg_even();
+    pred pg1 = acle<double>::pg1();
+    pred pg_even = acle<double>::pg_even();
 
     typename acle<double>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    typename acle<double>::vt a_v = svld1(pg1, a.v);
+    vecd a_v = svld1(pg1, a.v);
     a_v = svtbl(a_v, tbl_swap_v);
-    typename acle<double>::vt r_v = svneg_x(pg_even, a_v);
-
-    return r_v;
+    return svneg_x(pg_even, a_v);
   }
 };
 
 struct PrecisionChange {
   static inline vech StoH (vecf sa, vecf sb) {
-
-    svbool_t pg1s = acle<float>::pg1();
-    typename acle<uint16_t>::vt ha_v = svcvt_f16_x(pg1s, sa);
-    typename acle<uint16_t>::vt hb_v = svcvt_f16_x(pg1s, sb);
-    typename acle<uint16_t>::vt r_v = svuzp1(ha_v, hb_v);
-
-    return r_v;
+    pred pg1s = acle<float>::pg1();
+    vech ha_v = svcvt_f16_x(pg1s, sa);
+    vech hb_v = svcvt_f16_x(pg1s, sb);
+    return svuzp1(ha_v, hb_v);
   }
   static inline void HtoS(vech h,vecf &sa,vecf &sb) {
-
-    svbool_t pg1s = acle<float>::pg1();
-    typename acle<uint16_t>::vt ha_v = svzip1(h, h);
-    typename acle<uint16_t>::vt hb_v = svzip2(h, h);
+    pred pg1s = acle<float>::pg1();
+    vech ha_v = svzip1(h, h);
+    vech hb_v = svzip2(h, h);
     sa = svcvt_f32_x(pg1s, ha);
     sb = svcvt_f32_x(pg1s, hb);
   }
   static inline vecf DtoS (vecd a,vecd b) {
-
-    svbool_t pg1d = acle<double>::pg1();
-    typename acle<float>::vt sa_v = svcvt_f32_x(pg1d, a);
-    typename acle<float>::vt sb_v = svcvt_f32_x(pg1d, b);
-    typename acle<float>::vt r_v = svuzp1(sa_v, sb_v);
-
-    return r_v;
+    pred pg1d = acle<double>::pg1();
+    vecf sa_v = svcvt_f32_x(pg1d, a);
+    vecf sb_v = svcvt_f32_x(pg1d, b);
+    return svuzp1(sa_v, sb_v);
   }
   static inline void StoD (vecf s,vecd &a,vecd &b) {
-
-    svbool_t pg1d = acle<double>::pg1();
-    typename acle<float>::vt sa_v = svzip1(s, s);
-    typename acle<float>::vt sb_v = svzip2(s, s);
+    pred pg1d = acle<double>::pg1();
+    vecf sa_v = svzip1(s, s);
+    vecf sb_v = svzip2(s, s);
     a = svcvt_f64_x(pg1d, sa_v);
     b = svcvt_f64_x(pg1d, sb_v);
   }
@@ -759,69 +639,43 @@ struct Exchange{
 struct Permute{
   // float
   static inline vecf Permute0(vecf in) {
-
-    typename acle<float>::vt r_v = svext(a_v, a_v, (uint64_t)(W<float>::r / 2u));
-
-    return r_v;
+    return svext(in, in, (uint64_t)(16u / 2u));
   }
   static inline vecf Permute1(vecf in) {
-
     const vec<typename acle<float>::uint> tbl_swap = acle<float>::tbl1();
-    svbool_t pg1 = acle<float>::pg1();
-    typename acle<float>::vt a_v = svld1(pg1, in.v);
+    pred pg1 = acle<float>::pg1();
     typename acle<float>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    typename acle<float>::vt r_v = svtbl(a_v, tbl_swap_v);
-
-    return r_v;
+    return svtbl(in, tbl_swap_v);
   }
   static inline vecf Permute2(vecf in) {
-
     const vec<typename acle<float>::uint> tbl_swap = acle<float>::tbl2();
-    svbool_t pg1 = acle<float>::pg1();
-    typename acle<float>::vt a_v = svld1(pg1, in.v);
+    pred pg1 = acle<float>::pg1();
     typename acle<float>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    typename acle<float>::vt r_v = svtbl(a_v, tbl_swap_v);
-
-    return r_v;
+    return svtbl(in, tbl_swap_v);
   }
   static inline vecf Permute3(vecf in) {
-
     const vec<typename acle<float>::uint> tbl_swap = acle<float>::tbl_swap();
-    svbool_t pg1 = acle<float>::pg1();
-    typename acle<float>::vt a_v = svld1(pg1, in.v);
+    pred pg1 = acle<float>::pg1();
     typename acle<float>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    typename acle<float>::vt r_v = svtbl(a_v, tbl_swap_v);
-    svst1(pg1, out.v, r_v);
-
-    return r_v;
+    return svtbl(in, tbl_swap_v);
   }
 
   // double
   static inline vecd Permute0(vecd in) {
-
-    typename acle<double>::vt r_v = svext(a_v, a_v, (uint64_t)(W<double>::r / 2u));
-
-    return r_v;
+    return svext(in, in, (uint64_t)(8u / 2u));
   }
   static inline vecd Permute1(vecd in) {
 
     const vec<typename acle<double>::uint> tbl_swap = acle<double>::tbl1();
-    svbool_t pg1 = acle<double>::pg1();
-    typename acle<double>::vt a_v = svld1(pg1, in.v);
+    pred pg1 = acle<double>::pg1();
     typename acle<double>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    typename acle<double>::vt r_v = svtbl(a_v, tbl_swap_v);
-
-    return r_v;
+    return svtbl(in, tbl_swap_v);
   }
   static inline vecd Permute2(vecd in) {
-
     const vec<typename acle<double>::uint> tbl_swap = acle<double>::tbl_swap();
-    svbool_t pg1 = acle<double>::pg1();
-    typename acle<double>::vt a_v = svld1(pg1, in.v);
+    pred pg1 = acle<double>::pg1();
     typename acle<double>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
-    typename acle<double>::vt r_v = svtbl(a_v, tbl_swap_v);
-
-    return r_v;
+    return svtbl(in, tbl_swap_v);
   }
   static inline vecd Permute3(vecd in) {
     return in;
@@ -867,14 +721,10 @@ struct Rotate{
   }
 
   template <int n> static inline vecf tRotate(vecf in){
-
-    typename acle<float>::vt r_v = svext(in, in, (uint64_t)(n%W<float>::r));
-    return r_v;
+    return svext(in, in, (uint64_t)(n%16u));
   }
   template <int n> static inline vecd tRotate(vecd in){
-
-    typename acle<float>::vt r_v = svext(in, in, (uint64_t)(n%W<double>::r));
-    return r_v;
+    return svext(in, in, (uint64_t)(n%8u));
   }
 };
 
@@ -896,72 +746,55 @@ struct Reduce{
     return 0;
   }
 };
-
 //Complex float Reduce
 template <>
 inline Grid::ComplexF Reduce<Grid::ComplexF, vecf>::operator()(vecf in){
-
-  svbool_t pg_even = acle<float>::pg_even();
-  svbool_t pg_odd  = acle<float>::pg_odd();
+  pred pg_even = acle<float>::pg_even();
+  pred pg_odd  = acle<float>::pg_odd();
   float a = svred(pg_even, in);
   float b = svred(pg_odd, in);
-
   return Grid::ComplexF(a, b);
 }
-
 //Real float Reduce
 template <>
 inline Grid::RealF Reduce<Grid::RealF, vecf>::operator()(vecf in){
-
-  svbool_t pg1 = acle<float>::pg1();
-  float a = svred(pg1, in);
-
-  return a;
+  pred pg1 = acle<float>::pg1();
+  return svred(pg1, in);
 }
-
 //Complex double Reduce
 template <>
 inline Grid::ComplexD Reduce<Grid::ComplexD, vecd>::operator()(vecd in){
-
-  svbool_t pg_even = acle<double>::pg_even();
-  svbool_t pg_odd  = acle<double>::pg_odd();
+  pred pg_even = acle<double>::pg_even();
+  pred pg_odd  = acle<double>::pg_odd();
   double a = svred(pg_even, in);
   double b = svred(pg_odd, in);
-
   return Grid::ComplexD(a, b);
 }
-
 //Real double Reduce
 template <>
 inline Grid::RealD Reduce<Grid::RealD, vecd>::operator()(vecd in){
-
-  svbool_t pg1 = acle<double>::pg1();
-  double a = svred(pg1, in);
-
-  return a;
+  pred pg1 = acle<double>::pg1();
+  return svred(pg1, in);
 }
 
 //Integer Reduce
 template <>
 inline Integer Reduce<Integer, veci>::operator()(veci in){
-
-  svbool_t pg1 = acle<Integer>::pg1();
-  Integer a = svred(pg1, in);
-
-  return a;
+  pred pg1 = acle<Integer>::pg1();
+  return svred(pg1, in);
 }
 
 #undef svred
 
-NAMESPACE_END(Optimization)
+NAMESPACE_END(Optimization);
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types
 
-typedef Optimization::vech SIMD_Htype; // Reduced precision type
-typedef Optimization::vecf SIMD_Ftype; // Single precision type
-typedef Optimization::vecd SIMD_Dtype; // Double precision type
-typedef Optimization::veci SIMD_Itype; // Integer type
+typedef vech SIMD_Htype; // Reduced precision type
+typedef vecf SIMD_Ftype; // Single precision type
+typedef vecd SIMD_Dtype; // Double precision type
+typedef veci SIMD_Itype; // Integer type
 
 // prefetch utilities
 inline void v_prefetch0(int size, const char *ptr){};
