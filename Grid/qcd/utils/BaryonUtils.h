@@ -584,6 +584,10 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Eye(const PropagatorField &qq_loop,
 						 const std::string op,
 						 SpinMatrixField &stn_corr)
 {
+
+  assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
+  assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
+
   GridBase *grid = qs_ti.Grid();
 
   auto vcorr= stn_corr.View();
@@ -621,6 +625,10 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_NonEye(const PropagatorField &qq_ti,
 						 const std::string op,
 						 SpinMatrixField &stn_corr)
 {
+
+  assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
+  assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
+
   GridBase *grid = qs_ti.Grid();
 
   auto vcorr= stn_corr.View();
