@@ -44,6 +44,7 @@ static_assert(GEN_SIMD_WIDTH % 64u == 0, "A64FX SIMD vector size is 64 bytes");
 
 // gcc 10 features
 #if __ARM_FEATURE_SVE_BITS==512
+#pragma message("Fixed-size SVE ACLE")
 typedef svbool_t    pred __attribute__((arm_sve_vector_bits(512)));
 typedef svfloat16_t vech __attribute__((arm_sve_vector_bits(512)));
 typedef svfloat32_t vecf __attribute__((arm_sve_vector_bits(512)));
@@ -52,47 +53,8 @@ typedef svuint32_t  veci __attribute__((arm_sve_vector_bits(512)));
 typedef svuint32_t  lutf __attribute__((arm_sve_vector_bits(512))); // LUTs for float
 typedef svuint64_t  lutd __attribute__((arm_sve_vector_bits(512))); // LUTs for double
 #else
-#pragma error("Oops. Wrong or undefined SVE vector size?")
+#pragma error("Oops. Illegal SVE vector size!?")
 #endif /* __ARM_FEATURE_SVE_BITS */
-
-NAMESPACE_BEGIN(Grid);
-NAMESPACE_BEGIN(Optimization);
-
-  // type traits giving the number of elements for each vector type
-  template <typename T> struct W;
-  template <> struct W<double> {
-    constexpr static unsigned int c = GEN_SIMD_WIDTH/16u;
-    constexpr static unsigned int r = GEN_SIMD_WIDTH/8u;
-  };
-  template <> struct W<float> {
-    constexpr static unsigned int c = GEN_SIMD_WIDTH/8u;
-    constexpr static unsigned int r = GEN_SIMD_WIDTH/4u;
-  };
-  template <> struct W<Integer> {
-    constexpr static unsigned int r = GEN_SIMD_WIDTH/4u;
-  };
-  template <> struct W<uint16_t> {
-    constexpr static unsigned int c = GEN_SIMD_WIDTH/4u;
-    constexpr static unsigned int r = GEN_SIMD_WIDTH/2u;
-  };
-  template <> struct W<uint64_t> {
-    constexpr static unsigned int c = GEN_SIMD_WIDTH/16u;
-    constexpr static unsigned int r = GEN_SIMD_WIDTH/8u;
-  };
-
-  // SIMD vector types
-  template <typename T>
-  struct vec {
-    alignas(GEN_SIMD_WIDTH) T v[W<T>::r];
-  };
-
-  typedef vec<float>     vecf;
-  typedef vec<double>    vecd;
-  typedef vec<uint16_t>  vech; // half precision comms
-  typedef vec<Integer>   veci;
-
-NAMESPACE_END(Optimization)
-NAMESPACE_END(Grid)
 
 // low-level API
 NAMESPACE_BEGIN(Grid);
@@ -103,13 +65,6 @@ struct acle{};
 
 template <>
 struct acle<double>{
-  typedef svfloat64_t vt;
-  typedef svfloat64x2_t vt2;
-  typedef svfloat64x4_t vt4;
-  typedef float64_t pt;
-  typedef uint64_t uint;
-  typedef svuint64_t svuint;
-
   static inline pred pg1(){return svptrue_b64();}
   static inline lutd tbl_swap(){
       const uint64_t t[8] = {1, 0, 3, 2, 5, 4, 7, 6};
@@ -133,12 +88,6 @@ struct acle<double>{
 
 template <>
 struct acle<float>{
-  typedef svfloat32_t vt;
-  typedef svfloat32x2_t vt2;
-  typedef float32_t pt;
-  typedef uint32_t uint;
-  typedef svuint32_t svuint;
-
   static inline pred pg1(){return svptrue_b32();}
   // exchange neighboring elements
   static inline lutf tbl_swap(){
@@ -168,11 +117,6 @@ struct acle<float>{
 
 template <>
 struct acle<uint16_t>{
-  typedef svfloat16_t vt;
-  typedef float16_t pt;
-  typedef uint16_t uint;
-  typedef svuint16_t svuint;
-
   static inline pred pg1(){return svptrue_b16();}
   static inline pred pg_even(){return svzip1_b16(svptrue_b16(), svpfalse_b());}
   static inline pred pg_odd() {return svzip1_b16(svpfalse_b(), svptrue_b16());}
@@ -181,12 +125,6 @@ struct acle<uint16_t>{
 
 template <>
 struct acle<Integer>{
-  typedef svuint32_t vt;
-  typedef svuint32x2_t vt2;
-  typedef Integer pt;
-  typedef uint32_t uint;
-  typedef svuint32_t svuint;
-
   //static inline svbool_t pg1(){return svptrue_b16();}
   static inline pred pg1(){return svptrue_b32();}
   static inline pred pg_even(){return svzip1_b32(svptrue_b32(), svpfalse_b());}
@@ -542,10 +480,56 @@ struct PrecisionChange {
   }
 };
 
-// %%%% TODO -----------------
+// %%%% FIXME -----------------
 
 struct Exchange{
+  // float
+  static inline void Exchange0(vecf &out1, vecf &out2, vecf in1, vecf in2){
+    vecf r1_v = svext(in1, in1, (uint64_t)8u);
+    vecf r2_v = svext(in2, in2, (uint64_t)8u);
+    out1 = svext(r1_v, in2, (uint64_t)8u);
+    out2 = svext(a1_v, r2_v, (uint64_t)8u);
+  }
+  static inline void Exchange1(vecf &out1, vecf &out2, vecf in1, vecf in2){
+    // FIXME
+    out1 = in1;
+    out2 = in2;
+  }
+  static inline void Exchange2(vecf &out1, vecf &out2, vecf in1, vecf in2){
+    // FIXME
+    out1 = in1;
+    out2 = in2;
+    //out1 = (vecf)svtrn1((vecd)in1, (vecd)in2);
+    //out2 = (vecf)svtrn2((vecd)in1, (vecd)in2);
+  }
+  static inline void Exchange3(vecf &out1, vecf &out2, vecf in1, vecf in2){
+    out1 = svtrn1(in1, in2);
+    out2 = svtrn2(in1, in2);
+  }
 
+  // double
+  static inline void Exchange0(vecd &out1, vecd &out2, vecd in1, vecd in2){
+    vecd r1_v = svext(in1, in1, (uint64_t)4u);
+    vecd r2_v = svext(in2, in2, (uint64_t)4u);
+    out1 = svext(r1_v, in2, (uint64_t)4u);
+    out2 = svext(a1_v, r2_v, (uint64_t)4u);
+  }
+  static inline void Exchange1(vecd &out1, vecd &out2, vecd in1, vecd in2){
+    // FIXME
+    out1 = in1;
+    out2 = in2;
+  }
+  static inline void Exchange2(vecd &out1, vecd &out2, vecd in1, vecd in2){
+    out1 = svtrn1(in1, in2);
+    out2 = svtrn2(in1, in2);
+  }
+  static inline void Exchange3(vecd &out1, vecd &out2, vecd in1, vecd in2){
+    assert(0);
+    return;
+  }
+
+  // old
+/*
   // Exchange0 is valid for arbitrary SVE vector length
   template <typename T>
   static inline void Exchange0(vec<T> &out1, vec<T> &out2, const vec<T> &in1, const vec<T> &in2){
@@ -563,7 +547,7 @@ struct Exchange{
 
 
 
-/* FIXME use svcreate etc. or switch to table lookup directly
+// FIXME use svcreate etc. or switch to table lookup directly
   template <typename T>
   static inline void Exchange1(vec<T> &out1, vec<T> &out2, const vec<T> &in1, const vec<T> &in2){
 
@@ -583,7 +567,7 @@ struct Exchange{
     svst4(pg4, (typename acle<double>::pt*)out1.v, out1_v4);
     svst4(pg4, (typename acle<double>::pt*)out2.v, out2_v4);
   }
-*/
+
 
   #define VECTOR_FOR(i, w, inc)                   \
   for (unsigned int i = 0; i < w; i += inc)
@@ -634,6 +618,7 @@ struct Exchange{
     assert(0);
     return;
   }
+  */
 };
 
 struct Permute{
