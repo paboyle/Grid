@@ -115,10 +115,6 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
 #include "Grid_generic.h"
 #endif
 */
-// A64FX with gcc 10
-#ifdef A64FXGCC
-  #include "Grid_a64fx-fixedsize.h"
-#else
 
 #ifdef GEN
   #if defined(A64FX) || defined(A64FXFIXEDSIZE) // breakout A64FX SVE ACLE here
