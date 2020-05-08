@@ -2,7 +2,7 @@
 
     Grid physics library, www.github.com/paboyle/Grid
 
-    Source file: Grid_a64fx-2.h
+    Source file: Grid_a64fx-fixedsize.h
 
     Copyright (C) 2020
 
@@ -30,11 +30,11 @@
 // Using SVE ACLE
 /////////////////////////////////////////////////////
 
-#ifndef GEN_SIMD_WIDTH
-#define GEN_SIMD_WIDTH 64u
-#endif
+//#ifndef GEN_SIMD_WIDTH
+//#define GEN_SIMD_WIDTH 64u
+//#endif
 
-static_assert(GEN_SIMD_WIDTH % 64u == 0, "A64FX SIMD vector size is 64 bytes");
+//static_assert(GEN_SIMD_WIDTH % 64u == 0, "A64FX SIMD vector size is 64 bytes");
 
 #ifdef __ARM_FEATURE_SVE
   #include <arm_sve.h>
@@ -100,13 +100,13 @@ struct acle<float>{
       pred pg1 = svptrue_b32();
       return svld1(pg1, t);
   }
-  static inline vec<uint32_t> tbl1(){
-      const lutf = {4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11};
+  static inline lutf tbl1(){
+      const uint32_t t[16] = {4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11};
       pred pg1 = svptrue_b32();
       return svld1(pg1, t);
   }
-  static inline vec<uint32_t> tbl2(){
-      const lutf = {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13};
+  static inline lutf tbl2(){
+      const uint32_t t[16] = {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13};
       pred pg1 = svptrue_b32();
       return svld1(pg1, t);
   }
@@ -264,6 +264,16 @@ struct Sub{
 };
 
 struct Mult{
+  // Real float fma
+  inline void mac(vecf &a, vecf b, vecf c){
+    pred pg1 = acle<float>::pg1();
+    a = svmad_x(pg1, b, c, a);
+  }
+  // Real double fma
+  inline void mac(vecd &a, vecd b, vecd c){
+    pred pg1 = acle<double>::pg1();
+    a = svmad_x(pg1, b, c, a);
+  }
   // Real float
   inline vecf operator()(vecf a, vecf b){
     pred pg1 = acle<float>::pg1();
