@@ -43,6 +43,10 @@
   #pragma error "Missing SVE feature"
 #endif /* __ARM_FEATURE_SVE */
 
+// low-level API
+NAMESPACE_BEGIN(Grid);
+NAMESPACE_BEGIN(Optimization);
+
 // gcc 10 features
 #if __ARM_FEATURE_SVE_BITS==512
 #pragma message("Fixed-size SVE ACLE")
@@ -57,9 +61,6 @@ typedef svuint64_t  lutd __attribute__((arm_sve_vector_bits(512))); // LUTs for 
 #pragma error("Oops. Illegal SVE vector size!?")
 #endif /* __ARM_FEATURE_SVE_BITS */
 
-// low-level API
-NAMESPACE_BEGIN(Grid);
-NAMESPACE_BEGIN(Optimization);
 
 template <typename T>
 struct acle{};
@@ -775,10 +776,10 @@ NAMESPACE_END(Optimization);
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types
 
-typedef vech SIMD_Htype; // Reduced precision type
-typedef vecf SIMD_Ftype; // Single precision type
-typedef vecd SIMD_Dtype; // Double precision type
-typedef veci SIMD_Itype; // Integer type
+typedef Optimization::vech SIMD_Htype; // Reduced precision type
+typedef Optimization::vecf SIMD_Ftype; // Single precision type
+typedef Optimization::vecd SIMD_Dtype; // Double precision type
+typedef Optimization::veci SIMD_Itype; // Integer type
 
 // prefetch utilities
 inline void v_prefetch0(int size, const char *ptr){};
