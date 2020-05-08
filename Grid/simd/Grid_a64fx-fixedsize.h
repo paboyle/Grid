@@ -355,7 +355,7 @@ struct Div{
     return svdiv_x(pg1, a, b);
   }
   // Real double
-  inline vecf operator()(vecf a, vecf b){
+  inline vecd operator()(vecd a, vecd b){
     pred pg1 = acle<double>::pg1();
     return svdiv_x(pg1, a, b);
   }
@@ -369,7 +369,7 @@ struct Conj{
   }
   // Complex double
   inline vecd operator()(vecd a){
-    pred pg_odd = acle<T>::pg_odd();
+    pred pg_odd = acle<double>::pg_odd();
     return svneg_x(pg_odd, a);
   }
 };
@@ -398,7 +398,7 @@ struct TimesMinusI{
 struct TimesI{
   // Complex float
   inline vecf operator()(vecf a, vecf b){
-    lutf tbl_swap = acle<T>::tbl_swap();
+    lutf tbl_swap = acle<float>::tbl_swap();
     pred pg1 = acle<float>::pg1();
     pred pg_even = acle<float>::pg_even();
 
