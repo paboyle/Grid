@@ -737,7 +737,7 @@ struct Reduce{
 };
 //Complex float Reduce
 template <>
-inline Grid::ComplexF Reduce<Grid::ComplexF, vecf>::operator()(vecf in){
+inline Grid::ComplexF Reduce<Grid::ComplexF, svfloat32_t>::operator()(svfloat32_t in){
   pred pg_even = acle<float>::pg_even();
   pred pg_odd  = acle<float>::pg_odd();
   float a = svred(pg_even, in);
@@ -746,13 +746,13 @@ inline Grid::ComplexF Reduce<Grid::ComplexF, vecf>::operator()(vecf in){
 }
 //Real float Reduce
 template <>
-inline Grid::RealF Reduce<Grid::RealF, vecf>::operator()(vecf in){
+inline Grid::RealF Reduce<Grid::RealF, svfloat32_t>::operator()(svfloat32_t in){
   pred pg1 = acle<float>::pg1();
   return svred(pg1, in);
 }
 //Complex double Reduce
 template <>
-inline Grid::ComplexD Reduce<Grid::ComplexD, vecd>::operator()(vecd in){
+inline Grid::ComplexD Reduce<Grid::ComplexD, svfloat64_t>::operator()(svfloat64_t in){
   pred pg_even = acle<double>::pg_even();
   pred pg_odd  = acle<double>::pg_odd();
   double a = svred(pg_even, in);
@@ -761,13 +761,13 @@ inline Grid::ComplexD Reduce<Grid::ComplexD, vecd>::operator()(vecd in){
 }
 //Real double Reduce
 template <>
-inline Grid::RealD Reduce<Grid::RealD, vecd>::operator()(vecd in){
+inline Grid::RealD Reduce<Grid::RealD, svfloat64_t>::operator()(svfloat64_t in){
   pred pg1 = acle<double>::pg1();
   return svred(pg1, in);
 }
 //Integer Reduce
 template <>
-inline Integer Reduce<Integer, veci>::operator()(veci in){
+inline Integer Reduce<Integer, svuint32_t>::operator()(svuint32_t in){
   pred pg1 = acle<Integer>::pg1();
   return svred(pg1, in);
 }
