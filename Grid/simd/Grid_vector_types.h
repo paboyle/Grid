@@ -117,7 +117,7 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
 */
 #ifdef GEN
   #if defined(A64FX) // breakout A64FX SVE ACLE here
-    //#pragma message("building for A64FX / SVE ACLE")
+    #pragma message("building for A64FX / SVE ACLE VLA")
     #if defined(ARMCLANGCOMPAT)
       #pragma message("applying armclang fix")
     //#else
@@ -126,6 +126,7 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
     #include <arm_sve.h>
     #include "Grid_a64fx-2.h"
   #else
+    #pragma message("building for A64FX / GEN")
     #include "Grid_generic.h"
   #endif
 #endif
