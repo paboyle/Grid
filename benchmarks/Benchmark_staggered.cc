@@ -88,25 +88,6 @@ int main (int argc, char ** argv)
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
   }
   ref = Zero();
-  /*  
-  { // Naive wilson implementation
-    ref = Zero();
-    for(int mu=0;mu<Nd;mu++){
-      //    ref =  src + Gamma(Gamma::GammaX)* src ; // 1-gamma_x
-      tmp = U[mu]*Cshift(src,mu,1);
-      for(int i=0;i<ref._odata.size();i++){
-	ref[i]+= tmp[i] - Gamma(Gmu[mu])*tmp[i]; ;
-      }
-
-      tmp =adj(U[mu])*src;
-      tmp =Cshift(tmp,mu,-1);
-      for(int i=0;i<ref._odata.size();i++){
-	ref[i]+= tmp[i] + Gamma(Gmu[mu])*tmp[i]; ;
-      }
-    }
-  }
-  ref = -0.5*ref;
-  */
 
   RealD mass=0.1;
   RealD c1=9.0/8.0;
