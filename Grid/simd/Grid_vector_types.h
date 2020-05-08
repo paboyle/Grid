@@ -119,24 +119,28 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
 #ifdef A64FXGCC
   #include "Grid_a64fx-fixedsize.h"
 #else
-  #ifdef GEN
-    #if defined(A64FX) // breakout A64FX SVE ACLE here
+
+#ifdef GEN
+  #if defined(A64FX) || defined(A64FXGCC) // breakout A64FX SVE ACLE here
+    #include <arm_sve.h>
+    if defined(A64FX) // VLA
       #pragma message("building for A64FX / SVE ACLE VLA")
       #if defined(ARMCLANGCOMPAT)
         #pragma message("applying armclang fix")
       //#else
-      //  #pragma message("not applying armclang fix")
+        //#pragma message("not applying armclang fix")
       #endif
-      #include <arm_sve.h>
       #include "Grid_a64fx-2.h"
-    #else
-      #pragma message("building for A64FX / GEN")
-      #include "Grid_generic.h"
+    #endif
+    #if defined(A64FXFIXEDSIZE) // fixed size data types
+      #include "Grid_a64fx-fixedsize.h"
     #endif
   #else
-    #pragma error("Undefined architecture")
+    #pragma message("building for GEN") // generic
+    #include "Grid_generic.h"
   #endif
 #endif
+
 
 #ifdef SSE4
 #include "Grid_sse4.h"

@@ -36,12 +36,14 @@
 
 //static_assert(GEN_SIMD_WIDTH % 64u == 0, "A64FX SIMD vector size is 64 bytes");
 
+/*
 #ifdef __ARM_FEATURE_SVE
   #pragma message("Yes, we have SVE feature")
   #include <arm_sve.h>
 #else
   #pragma error "Missing SVE feature"
 #endif /* __ARM_FEATURE_SVE */
+
 
 // gcc 10 features
 #if __ARM_FEATURE_SVE_BITS==512
@@ -58,7 +60,7 @@ typedef svuint64_t  lutd __attribute__((arm_sve_vector_bits(512))); // LUTs for 
 #endif /* __ARM_FEATURE_SVE_BITS */
 
 // safety definition, not sure if it's necessary
-#define GEN_SIMD_WIDTH 64u
+//#define GEN_SIMD_WIDTH 64u
 
 // low-level API
 NAMESPACE_BEGIN(Grid);
