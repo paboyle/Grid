@@ -958,7 +958,16 @@ accelerator_inline void precisionChange(vRealD    *out,vRealF    *in,int nvec)
   assert((nvec&0x1)==0);
   for(int m=0;m*2<nvec;m++){
     int n=m*2;
-    Optimization::PrecisionChange::StoD(in[m].v,out[n].v,out[n+1].v);
+    // A64FXFIXEDSIZE FIXME
+    // function call results in compile-time error:
+    // In function ‘void Grid::precisionChange(Grid::vRealD*, Grid::vRealF*, int)’:
+    // .../Grid_vector_types.h:961:56: error:
+    // cannot bind non-const lvalue reference of type ‘vecd&’ {aka ‘svfloat64_t&’}
+    // to an rvalue of type ‘vecd’ {aka ‘svfloat64_t’}
+    // 961 |     Optimization::PrecisionChange::StoD(in[m].v,out[n].v,out[n+1].v);
+    //  |                                                 ~~~~~~~^
+    // Optimization::PrecisionChange::StoD(in[m].v,out[n].v,out[n+1].v);
+    Optimization::PrecisionChange::StoD(in[m].v,&out[n].v,&out[n+1].v);
   }
 }
 accelerator_inline void precisionChange(vRealD    *out,vRealH    *in,int nvec)
