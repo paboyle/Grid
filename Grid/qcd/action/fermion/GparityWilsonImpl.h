@@ -100,7 +100,7 @@ public:
     _Spinor tmp;
 
     const int Nsimd =SiteDoubledGaugeField::Nsimd();
-    int s = SIMTlane(Nsimd);
+    int s = acceleratorSIMTlane(Nsimd);
     St.iCoorFromIindex(icoor,s);
 
     int mmu = mu % Nd;

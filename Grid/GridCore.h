@@ -49,7 +49,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/log/Log.h>
 #include <Grid/allocator/AlignedAllocator.h>
 #include <Grid/simd/Simd.h>
-#include <Grid/threads/Threads.h>
+#include <Grid/threads/ThreadReduction.h>
 #include <Grid/serialisation/Serialisation.h>
 #include <Grid/util/Sha.h>
 #include <Grid/communicator/Communicator.h> 

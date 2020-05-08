@@ -461,8 +461,8 @@ public:
     }
 
     {
-      // Obtain one reseeded generator per thread
-      int Nthread = GridThread::GetThreads();
+      // Obtain one reseeded generator per thread      
+      int Nthread = 32; // Hardwire a good level or parallelism
       std::vector<RngEngine> seeders(Nthread);
       for(int t=0;t<Nthread;t++){
 	seeders[t] = Reseed(master_engine);

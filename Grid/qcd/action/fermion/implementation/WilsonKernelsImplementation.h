@@ -63,7 +63,7 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
   } else {							\
     chi = coalescedRead(buf[SE->_offset],lane);			\
   }								\
-  synchronise();						\
+  acceleratorSynchronise();						\
   Impl::multLink(Uchi, U[sU], chi, Dir, SE, st);		\
   Recon(result, Uchi);
   
@@ -76,12 +76,12 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
   } else if ( st.same_node[Dir] ) {				\
     chi = coalescedRead(buf[SE->_offset],lane);			\
   }								\
-  synchronise();						\
+  acceleratorSynchronise();						\
   if (SE->_is_local || st.same_node[Dir] ) {			\
     Impl::multLink(Uchi, U[sU], chi, Dir, SE, st);		\
     Recon(result, Uchi);					\
   }								\
-  synchronise();						
+  acceleratorSynchronise();						
 
 #define GENERIC_STENCIL_LEG_EXT(Dir,spProj,Recon)		\
   SE = st.GetEntry(ptype, Dir, sF);				\
@@ -91,7 +91,7 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
     Recon(result, Uchi);					\
     nmu++;							\
   }								\
-  synchronise();						
+  acceleratorSynchronise();						
 
 #define GENERIC_DHOPDIR_LEG_BODY(Dir,spProj,Recon)		\
     if (SE->_is_local ) {					\
@@ -101,7 +101,7 @@ accelerator_inline void get_stencil(StencilEntry * mem, StencilEntry &chip)
     } else {							\
       chi = coalescedRead(buf[SE->_offset],lane);		\
     }								\
-    synchronise();						\
+    acceleratorSynchronise();					\
     Impl::multLink(Uchi, U[sU], chi, dir, SE, st);		\
     Recon(result, Uchi);					
 
@@ -128,7 +128,7 @@ void WilsonKernels<Impl>::GenericDhopSiteDag(StencilView &st, DoubledGaugeFieldV
   StencilEntry *SE;
   int ptype;
   const int Nsimd = SiteHalfSpinor::Nsimd();
-  const int lane=SIMTlane(Nsimd);
+  const int lane=acceleratorSIMTlane(Nsimd);
   GENERIC_STENCIL_LEG(Xp,spProjXp,spReconXp);
   GENERIC_STENCIL_LEG(Yp,spProjYp,accumReconYp);
   GENERIC_STENCIL_LEG(Zp,spProjZp,accumReconZp);
@@ -155,7 +155,7 @@ void WilsonKernels<Impl>::GenericDhopSite(StencilView &st, DoubledGaugeFieldView
   int ptype;
 
   const int Nsimd = SiteHalfSpinor::Nsimd();
-  const int lane=SIMTlane(Nsimd);
+  const int lane=acceleratorSIMTlane(Nsimd);
   GENERIC_STENCIL_LEG(Xm,spProjXp,spReconXp);
   GENERIC_STENCIL_LEG(Ym,spProjYp,accumReconYp);
   GENERIC_STENCIL_LEG(Zm,spProjZp,accumReconZp);
@@ -183,7 +183,7 @@ void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilView &st,  DoubledGaugeFi
   StencilEntry *SE;
   int ptype;
   const int Nsimd = SiteHalfSpinor::Nsimd();
-  const int lane=SIMTlane(Nsimd);
+  const int lane=acceleratorSIMTlane(Nsimd);
 
   result=Zero();
   GENERIC_STENCIL_LEG_INT(Xp,spProjXp,accumReconXp);
@@ -205,7 +205,7 @@ void WilsonKernels<Impl>::GenericDhopSiteInt(StencilView &st,  DoubledGaugeField
   typedef decltype(coalescedRead(buf[0])) calcHalfSpinor;
   typedef decltype(coalescedRead(in[0]))  calcSpinor;
   const int Nsimd = SiteHalfSpinor::Nsimd();
-  const int lane=SIMTlane(Nsimd);
+  const int lane=acceleratorSIMTlane(Nsimd);
 
   calcHalfSpinor chi;
   //  calcHalfSpinor *chi_p;
@@ -241,7 +241,7 @@ void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilView &st,  DoubledGaugeFi
   int ptype;
   int nmu=0;
   const int Nsimd = SiteHalfSpinor::Nsimd();
-  const int lane=SIMTlane(Nsimd);
+  const int lane=acceleratorSIMTlane(Nsimd);
   result=Zero();
   GENERIC_STENCIL_LEG_EXT(Xp,spProjXp,accumReconXp);
   GENERIC_STENCIL_LEG_EXT(Yp,spProjYp,accumReconYp);
@@ -272,7 +272,7 @@ void WilsonKernels<Impl>::GenericDhopSiteExt(StencilView &st,  DoubledGaugeField
   int ptype;
   int nmu=0;
   const int Nsimd = SiteHalfSpinor::Nsimd();
-  const int lane=SIMTlane(Nsimd);
+  const int lane=acceleratorSIMTlane(Nsimd);
   result=Zero();
   GENERIC_STENCIL_LEG_EXT(Xm,spProjXp,accumReconXp);
   GENERIC_STENCIL_LEG_EXT(Ym,spProjYp,accumReconYp);
@@ -302,7 +302,7 @@ void WilsonKernels<Impl>::GenericDhopSiteExt(StencilView &st,  DoubledGaugeField
   StencilEntry *SE;							\
   int ptype;								\
   const int Nsimd = SiteHalfSpinor::Nsimd();				\
-  const int lane=SIMTlane(Nsimd);					\
+  const int lane=acceleratorSIMTlane(Nsimd);					\
 									\
   SE = st.GetEntry(ptype, dir, sF);					\
   GENERIC_DHOPDIR_LEG_BODY(Dir,spProj,spRecon);				\
@@ -330,7 +330,7 @@ void WilsonKernels<Impl>::DhopDirK( StencilView &st, DoubledGaugeFieldView &U,Si
   StencilEntry *SE;
   int ptype;
   const int Nsimd = SiteHalfSpinor::Nsimd();
-  const int lane=SIMTlane(Nsimd);
+  const int lane=acceleratorSIMTlane(Nsimd);
 
   SE = st.GetEntry(ptype, dir, sF);
   GENERIC_DHOPDIR_LEG(Xp,spProjXp,spReconXp);

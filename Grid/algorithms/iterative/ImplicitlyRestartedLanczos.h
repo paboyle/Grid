@@ -60,6 +60,7 @@ void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, i
   typedef decltype(basis[0].View()) View;
   auto tmp_v = basis[0].View();
   Vector<View> basis_v(basis.size(),tmp_v);
+  View *basis_vp = &basis_v[0];
   typedef typename Field::vector_object vobj;
   GridBase* grid = basis[0].Grid();
 
@@ -129,7 +130,7 @@ void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, i
 
       for(int k=k0; k<k1; ++k){
 	auto tmp = coalescedRead(Bp[ss*nrot+j]);
-	coalescedWrite(Bp[ss*nrot+j],tmp+ Qt_p[jj*Nm+k] * coalescedRead(basis_v[k][sss]));
+	coalescedWrite(Bp[ss*nrot+j],tmp+ Qt_p[jj*Nm+k] * coalescedRead(basis_vp[k][sss]));
       }
     });
 
@@ -138,7 +139,7 @@ void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, i
       int jj  =j0+j;
       int ss =sj/nrot;
       int sss=ss+s;
-      coalescedWrite(basis_v[jj][sss],coalescedRead(Bp[ss*nrot+j]));
+      coalescedWrite(basis_vp[jj][sss],coalescedRead(Bp[ss*nrot+j]));
     });
   }
 #endif
@@ -155,6 +156,7 @@ void basisRotateJ(Field &result,std::vector<Field> &basis,Eigen::MatrixXd& Qt,in
   result.Checkerboard() = basis[0].Checkerboard();
   auto result_v=result.View();
   Vector<View> basis_v(basis.size(),result_v);
+  View * basis_vp = &basis_v[0];
   for(int k=0;k<basis.size();k++){
     basis_v[k] = basis[k].View();
   }
@@ -162,10 +164,10 @@ void basisRotateJ(Field &result,std::vector<Field> &basis,Eigen::MatrixXd& Qt,in
   double * Qt_j = & Qt_jv[0];
   for(int k=0;k<Nm;++k) Qt_j[k]=Qt(j,k);
   accelerator_for(ss, grid->oSites(),vobj::Nsimd(),{
-    auto B=coalescedRead(basis_v[k0][ss]);
+    auto B=coalescedRead(basis_vp[k0][ss]);
     B=Zero();
     for(int k=k0; k<k1; ++k){
-      B +=Qt_j[k] * coalescedRead(basis_v[k][ss]);
+      B +=Qt_j[k] * coalescedRead(basis_vp[k][ss]);
     }
     coalescedWrite(result_v[ss], B);
   });

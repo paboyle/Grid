@@ -29,28 +29,16 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_ALIGNED_ALLOCATOR_H
 #define GRID_ALIGNED_ALLOCATOR_H
 
-#ifdef HAVE_MALLOC_MALLOC_H
-#include <malloc/malloc.h>
-#endif
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
-
-#ifdef HAVE_MM_MALLOC_H
-#include <mm_malloc.h>
-#endif
-
-#define POINTER_CACHE
-#define GRID_ALLOC_ALIGN (2*1024*1024)
 
 NAMESPACE_BEGIN(Grid);
 
-// Move control to configure.ac and Config.h?
+/*Move control to configure.ac and Config.h*/
+#define POINTER_CACHE
+/*Pinning pages is costly*/
+/*Could maintain separate large and small allocation caches*/
 #ifdef POINTER_CACHE
 class PointerCache {
 private:
-/*Pinning pages is costly*/
-/*Could maintain separate large and small allocation caches*/
 
   static const int Ncache=128;
   static int victim;
@@ -159,44 +147,16 @@ public:
     size_type bytes = __n*sizeof(_Tp);
     profilerAllocate(bytes);
 
-
 #ifdef POINTER_CACHE
     _Tp *ptr = (_Tp *) PointerCache::Lookup(bytes);
 #else
     pointer ptr = nullptr;
 #endif
 
-#ifdef GRID_CUDA
-    ////////////////////////////////////
-    // Unified (managed) memory
-    ////////////////////////////////////
-    if ( ptr == (_Tp *) NULL ) {
-      //      printf(" alignedAllocater cache miss %ld bytes ",bytes);      BACKTRACEFP(stdout);
-      auto err = cudaMallocManaged((void **)&ptr,bytes);
-      if( err != cudaSuccess ) {
-	ptr = (_Tp *) NULL;
-	std::cerr << " cudaMallocManaged failed for " << bytes<<" bytes " <<cudaGetErrorString(err)<< std::endl;
-	assert(0);
-      }
-    } 
-    assert( ptr != (_Tp *)NULL);
-#endif
+    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) acceleratorAllocShared(bytes);
 
-#ifdef GRID_SYCL
-    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) malloc_shared(bytes,*theGridAccelerator);
-#endif    
-
-#if ( !defined(GRID_CUDA)) && (!defined(GRID_SYCL))
-    //////////////////////////////////////////////////////////////////////////////////////////
-    // 2MB align; could make option probably doesn't need configurability
-    //////////////////////////////////////////////////////////////////////////////////////////
-  #ifdef HAVE_MM_MALLOC_H
-    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) _mm_malloc(bytes,GRID_ALLOC_ALIGN);
-  #else
-    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) memalign(GRID_ALLOC_ALIGN,bytes);
-  #endif
     assert( ptr != (_Tp *)NULL);
-#endif
+
     return ptr;
   }
 
@@ -211,20 +171,7 @@ public:
     pointer __freeme = __p;
 #endif
 
-#ifdef GRID_CUDA
-    if ( __freeme ) cudaFree((void *)__freeme);
-#endif
-#ifdef GRID_SYCL
-    if ( __freeme ) free((void *)__freeme,*theGridAccelerator);
-#endif    
-
-#if ( !defined(GRID_CUDA)) && (!defined(GRID_SYCL))
-  #ifdef HAVE_MM_MALLOC_H
-    if ( __freeme ) _mm_free((void *)__freeme); 
-  #else
-    if ( __freeme ) free((void *)__freeme);
-  #endif
-#endif
+    if ( __freeme ) acceleratorFreeShared((void *)__freeme);
   }
 
   // FIXME: hack for the copy constructor, eventually it must be avoided
