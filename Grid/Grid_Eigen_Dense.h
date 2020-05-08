@@ -12,25 +12,26 @@
 #endif
 
 /* NVCC save and restore compile environment*/
-#ifdef __NVCC__
+#ifdef GRID_CUDA
 #pragma push
 #pragma diag_suppress code_is_unreachable
-#pragma push_macro("GRID_SIMT")
+#pragma push_macro("__CUDA_ARCH__")
 #pragma push_macro("__NVCC__")
 #pragma push_macro("__CUDACC__")
+#undef __CUDA_ARCH__
 #undef __NVCC__
 #undef __CUDACC__
-#undef GRID_SIMT
 #define __NVCC__REDEFINE__
 #endif 
 
 /* SYCL save and restore compile environment*/
-#ifdef __SYCL_DEVICE_ONLY__  
+#ifdef GRID_SYCL
 #pragma push
 #pragma push_macro("__SYCL_DEVICE_ONLY__")
 #undef __SYCL_DEVICE_ONLY__
-#undef EIGEN_USE_SYCL
 #define EIGEN_DONT_VECTORIZE
+//#undef EIGEN_USE_SYCL
+#define __SYCL__REDEFINE__
 #endif
 
 

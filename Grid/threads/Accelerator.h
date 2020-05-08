@@ -73,6 +73,10 @@ void     acceleratorThreads(uint32_t);
 //////////////////////////////////////////////
 // CUDA acceleration
 //////////////////////////////////////////////
+#ifdef __NVCC__
+#define GRID_CUDA
+#endif
+
 #ifdef GRID_CUDA
 
 #ifdef __CUDA_ARCH__
@@ -114,7 +118,7 @@ inline void *acceleratorAllocShared(size_t bytes)
   void *ptr=NULL;
   auto err = cudaMallocManaged((void **)&ptr,bytes);
   if( err != cudaSuccess ) {
-    ptr = (_Tp *) NULL;
+    ptr = (void *) NULL;
     printf(" cudaMallocManaged failed for %d %s \n",bytes,cudaGetErrorString(err));
   }
   return ptr;
@@ -124,7 +128,7 @@ inline void *acceleratorAllocDevice(size_t bytes)
   void *ptr=NULL;
   auto err = cudaMalloc((void **)&ptr,bytes);
   if( err != cudaSuccess ) {
-    ptr = (_Tp *) NULL;
+    ptr = (void *) NULL;
     printf(" cudaMalloc failed for %d %s \n",bytes,cudaGetErrorString(err));
   }
   return ptr;
@@ -232,7 +236,7 @@ inline void *acceleratorAllocShared(size_t bytes)
   void *ptr=NULL;
   auto err = hipMallocManaged((void **)&ptr,bytes);
   if( err != hipSuccess ) {
-    ptr = (_Tp *) NULL;
+    ptr = (void *) NULL;
     printf(" hipMallocManaged failed for %d %s \n",bytes,hipGetErrorString(err));
   }
   return ptr;
@@ -242,7 +246,7 @@ inline void *acceleratorAllocDevice(size_t bytes)
   void *ptr=NULL;
   auto err = hipMalloc((void **)&ptr,bytes);
   if( err != hipSuccess ) {
-    ptr = (_Tp *) NULL;
+    ptr = (void *) NULL;
     printf(" hipMalloc failed for %d %s \n",bytes,hipGetErrorString(err));
   }
   return ptr;
