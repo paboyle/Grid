@@ -40,6 +40,7 @@ NAMESPACE_BEGIN(Grid);
 
 template<class vobj> inline Lattice<vobj> adj(const Lattice<vobj> &lhs){
   Lattice<vobj> ret(lhs.Grid());
+  ret.Checkerboard()=lhs.Checkerboard();
   auto lhs_v = lhs.View();
   auto ret_v = ret.View();
   accelerator_for( ss, lhs_v.size(), vobj::Nsimd(), {
@@ -50,6 +51,7 @@ template<class vobj> inline Lattice<vobj> adj(const Lattice<vobj> &lhs){
 
 template<class vobj> inline Lattice<vobj> conjugate(const Lattice<vobj> &lhs){
   Lattice<vobj> ret(lhs.Grid());
+  ret.Checkerboard() = lhs.Checkerboard();
   auto lhs_v = lhs.View();
   auto ret_v = ret.View();
   accelerator_for( ss, lhs_v.size(), vobj::Nsimd(), {
