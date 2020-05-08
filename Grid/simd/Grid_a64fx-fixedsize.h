@@ -526,7 +526,7 @@ struct Exchange{
     vecd r1_v = svext(in1, in1, (uint64_t)4u);
     vecd r2_v = svext(in2, in2, (uint64_t)4u);
     out1 = svext(r1_v, in2, (uint64_t)4u);
-    out2 = svext(a1_v, r2_v, (uint64_t)4u);
+    out2 = svext(in1, r2_v, (uint64_t)4u);
   }
   static inline void Exchange1(vecd &out1, vecd &out2, vecd in1, vecd in2){
     // FIXME
