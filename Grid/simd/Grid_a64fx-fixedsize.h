@@ -43,6 +43,9 @@
   #pragma error "Missing SVE feature"
 #endif /* __ARM_FEATURE_SVE */
 
+// safety definition, not sure if it's important
+#define GEN_SIMD_WIDTH 64u
+
 // low-level API
 NAMESPACE_BEGIN(Grid);
 NAMESPACE_BEGIN(Optimization);
