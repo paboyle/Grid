@@ -364,6 +364,9 @@ public:
         void OpDir(const Field& in, Field& out, int dir, int disp) {
           assert(0);
         }
+        void OpDirAll(const Field& in, std::vector<Field>& out){
+          assert(0);
+        };
     };
 
     template<class Matrix, class Field>
