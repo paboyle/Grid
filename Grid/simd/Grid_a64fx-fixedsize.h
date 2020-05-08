@@ -427,8 +427,8 @@ struct PrecisionChange {
     pred pg1s = acle<float>::pg1();
     vech ha_v = svzip1(h, h);
     vech hb_v = svzip2(h, h);
-    sa = svcvt_f32_x(pg1s, ha);
-    sb = svcvt_f32_x(pg1s, hb);
+    sa = svcvt_f32_x(pg1s, ha_v);
+    sb = svcvt_f32_x(pg1s, hb_v);
   }
   static inline vecf DtoS (vecd a,vecd b) {
     pred pg1d = acle<double>::pg1();
