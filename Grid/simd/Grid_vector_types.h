@@ -121,7 +121,7 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
 #else
 
 #ifdef GEN
-  #if defined(A64FX) || defined(A64FXGCC) // breakout A64FX SVE ACLE here
+  #if defined(A64FX) || defined(A64FXFIXEDSIZE) // breakout A64FX SVE ACLE here
     #include <arm_sve.h>
     if defined(A64FX) // VLA
       #pragma message("building for A64FX / SVE ACLE VLA")
