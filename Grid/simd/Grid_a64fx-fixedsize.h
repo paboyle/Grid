@@ -436,7 +436,7 @@ struct PrecisionChange {
     vecf sb_v = svcvt_f32_x(pg1d, b);
     return svuzp1(sa_v, sb_v);
   }
-  static inline void StoD (vecf s,vecd &a,vecd &b) {
+  static inline void StoD (svfloat32_t s,svfloat64_t &a,svfloat64_t &b) {
     pred pg1d = acle<double>::pg1();
     vecf sa_v = svzip1(s, s);
     vecf sb_v = svzip2(s, s);

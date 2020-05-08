@@ -967,7 +967,7 @@ accelerator_inline void precisionChange(vRealD    *out,vRealF    *in,int nvec)
     // 961 |     Optimization::PrecisionChange::StoD(in[m].v,out[n].v,out[n+1].v);
     //  |                                                 ~~~~~~~^
     // Optimization::PrecisionChange::StoD(in[m].v,out[n].v,out[n+1].v);
-    Optimization::PrecisionChange::StoD(in[m].v,&out[n].v,&out[n+1].v);
+    Optimization::PrecisionChange::StoD(in[m].v,out[n].v,out[n+1].v);
   }
 }
 accelerator_inline void precisionChange(vRealD    *out,vRealH    *in,int nvec)
