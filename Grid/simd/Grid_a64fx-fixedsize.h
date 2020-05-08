@@ -37,6 +37,7 @@
 //static_assert(GEN_SIMD_WIDTH % 64u == 0, "A64FX SIMD vector size is 64 bytes");
 
 #ifdef __ARM_FEATURE_SVE
+  #pragma message("Yes, we have SVE feature")
   #include <arm_sve.h>
 #else
   #pragma error "Missing SVE feature"
