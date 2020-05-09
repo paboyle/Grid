@@ -70,6 +70,17 @@ typedef svuint64_t  lutd __attribute__((arm_sve_vector_bits(512))); // LUTs for 
 NAMESPACE_BEGIN(Grid);
 NAMESPACE_BEGIN(Optimization);
 
+// convenience union types for tables eliminate loads
+union ulutf {
+  lutf v;
+  uint32_t s[16];
+};
+
+union ulutd {
+  lutd v;
+  uint64_t s[8];
+};
+
 template <typename T>
 struct acle{};
 
@@ -77,19 +88,31 @@ template <>
 struct acle<double>{
   static inline pred pg1(){return svptrue_b64();}
   static inline lutd tbl_swap(){
+    /*
       const uint64_t t[8] = {1, 0, 3, 2, 5, 4, 7, 6};
       pred pg1 = svptrue_b64();
       return svld1(pg1, t);
+    */
+    const ulutd t = { .s = {1, 0, 3, 2, 5, 4, 7, 6} };
+    return t.v;
   }
   static inline lutd tbl0(){
+    /*
       const uint64_t t[8] = {4, 5, 6, 7, 0, 1, 2, 3};
       pred pg1 = svptrue_b64();
       return svld1(pg1, t);
+    */
+    const ulutd t = { .s = {4, 5, 6, 7, 0, 1, 2, 3} };
+    return t.v;
   }
   static inline lutd tbl1(){
+    /*
       const uint64_t t[8] = {2, 3, 0, 1, 6, 7, 4, 5};
       pred pg1 = svptrue_b64();
       return svld1(pg1, t);
+    */
+    const ulutd t = { .s = {2, 3, 0, 1, 6, 7, 4, 5} };
+    return t.v;
   }
   static inline pred pg_even(){return svzip1_b64(svptrue_b64(), svpfalse_b());}
   static inline pred pg_odd() {return svzip1_b64(svpfalse_b(), svptrue_b64());}
@@ -101,24 +124,40 @@ struct acle<float>{
   static inline pred pg1(){return svptrue_b32();}
   // exchange neighboring elements
   static inline lutf tbl_swap(){
+    /*
       const uint32_t t[16] = {1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14};
       pred pg1 = svptrue_b32();
       return svld1(pg1, t);
+    */
+    const ulutf t = { .s = {1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14} };
+    return t.v;
   }
   static inline lutf tbl0(){
+    /*
       const uint32_t t[16] = {8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7};
       pred pg1 = svptrue_b32();
       return svld1(pg1, t);
+    */
+    const ulutf t = { .s = {8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7} };
+    return t.v;
   }
   static inline lutf tbl1(){
+    /*
       const uint32_t t[16] = {4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11};
       pred pg1 = svptrue_b32();
       return svld1(pg1, t);
+    */
+    const ulutf t = { .s = {4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11} };
+    return t.v;
   }
   static inline lutf tbl2(){
+    /*
       const uint32_t t[16] = {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13};
       pred pg1 = svptrue_b32();
       return svld1(pg1, t);
+    */
+    const ulutf t = { .s = {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13} };
+    return t.v;
   }
   static inline pred pg_even(){return svzip1_b32(svptrue_b32(), svpfalse_b());}
   static inline pred pg_odd() {return svzip1_b32(svpfalse_b(), svptrue_b32());}
