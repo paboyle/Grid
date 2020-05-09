@@ -6,8 +6,8 @@
 
     Copyright (C) 2020
 
-    Authors: Nils Meyer         <nils.meyer@ur.de>           Regensburg University
-             Richard Sandiford  <richard.sandiford@arm.com>  Arm
+    Author: Nils Meyer         <nils.meyer@ur.de>           Regensburg University
+    Author: Richard Sandiford  <richard.sandiford@arm.com>  Arm
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -101,29 +101,14 @@ template <>
 struct acle<double>{
   static inline pred pg1(){return svptrue_b64();}
   static inline lutd tbl_swap(){
-    /*
-      const uint64_t t[8] = {1, 0, 3, 2, 5, 4, 7, 6};
-      pred pg1 = svptrue_b64();
-      return svld1(pg1, t);
-    */
     const ulutd t = { .s = {1, 0, 3, 2, 5, 4, 7, 6} };
     return t.v;
   }
   static inline lutd tbl0(){
-    /*
-      const uint64_t t[8] = {4, 5, 6, 7, 0, 1, 2, 3};
-      pred pg1 = svptrue_b64();
-      return svld1(pg1, t);
-    */
     const ulutd t = { .s = {4, 5, 6, 7, 0, 1, 2, 3} };
     return t.v;
   }
   static inline lutd tbl1(){
-    /*
-      const uint64_t t[8] = {2, 3, 0, 1, 6, 7, 4, 5};
-      pred pg1 = svptrue_b64();
-      return svld1(pg1, t);
-    */
     const ulutd t = { .s = {2, 3, 0, 1, 6, 7, 4, 5} };
     return t.v;
   }
@@ -137,38 +122,18 @@ struct acle<float>{
   static inline pred pg1(){return svptrue_b32();}
   // exchange neighboring elements
   static inline lutf tbl_swap(){
-    /*
-      const uint32_t t[16] = {1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14};
-      pred pg1 = svptrue_b32();
-      return svld1(pg1, t);
-    */
     const ulutf t = { .s = {1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14} };
     return t.v;
   }
   static inline lutf tbl0(){
-    /*
-      const uint32_t t[16] = {8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7};
-      pred pg1 = svptrue_b32();
-      return svld1(pg1, t);
-    */
     const ulutf t = { .s = {8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7} };
     return t.v;
   }
   static inline lutf tbl1(){
-    /*
-      const uint32_t t[16] = {4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11};
-      pred pg1 = svptrue_b32();
-      return svld1(pg1, t);
-    */
     const ulutf t = { .s = {4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11} };
     return t.v;
   }
   static inline lutf tbl2(){
-    /*
-      const uint32_t t[16] = {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13};
-      pred pg1 = svptrue_b32();
-      return svld1(pg1, t);
-    */
     const ulutf t = { .s = {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13} };
     return t.v;
   }
@@ -400,8 +365,8 @@ struct MultComplex{
     pred pg1 = acle<double>::pg1();
     vecd z = acle<double>::zero();
     // using FCMLA
-    vecd r_v = svcmla_x(pg1, z, a, b, 90);
-    return svcmla_x(pg1, r_v, a, b, 0);
+    vecd r_v = svcmla_x(pg1, z, a, b, 0);
+    return svcmla_x(pg1, r_v, a, b, 90);
   }
 };
 
