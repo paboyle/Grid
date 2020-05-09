@@ -6,7 +6,8 @@
 
     Copyright (C) 2020
 
-    Author: Nils Meyer          <nils.meyer@ur.de>
+    Authors: Nils Meyer         <nils.meyer@ur.de>           Regensburg University
+             Richard Sandiford  <richard.sandiford@arm.com>  Arm
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,12 +28,12 @@
     /*  END LEGAL */
 
 /////////////////////////////////////////////////////
-// Using SVE ACLE
+// Using SVE ACLE with fixed-size data types
 /////////////////////////////////////////////////////
 
 /* TODO
- * Exchange
- * prefetching
+ * Exchange1
+ * prefetches
 */
 
 //#ifndef GEN_SIMD_WIDTH
@@ -80,6 +81,18 @@ union ulutd {
   lutd v;
   uint64_t s[8];
 };
+
+// FIXME convenience union types for Exchange1
+union uvecf {
+  vecf v;
+  float32_t s[16];
+};
+
+union uvecd {
+  vecd v;
+  float64_t s[8];
+};
+
 
 template <typename T>
 struct acle{};
@@ -539,7 +552,8 @@ struct PrecisionChange {
   }
 };
 
-// %%%% FIXME -----------------
+#define VECTOR_FOR(i, w, inc)                   \
+for (unsigned int i = 0; i < w; i += inc)
 
 struct Exchange{
   // float
@@ -551,15 +565,28 @@ struct Exchange{
   }
   static inline void Exchange1(vecf &out1, vecf &out2, vecf in1, vecf in2){
     // FIXME
-    out1 = in1;
-    out2 = in2;
+    uvecf v1 = { .v = in1 };
+    uvecf v2 = { .v = in2 };
+    uvecf o1, o2;
+
+    const int n = 1;
+    const int w = 16; // w = W<T>::r
+    unsigned int mask = w >> (n + 1);
+    //      std::cout << " Exchange "<<n<<" nsimd "<<w<<" mask 0x" <<std::hex<<mask<<std::dec<<std::endl;
+    VECTOR_FOR(i, w, 1) {
+      int j1 = i&(~mask);
+      if  ( (i&mask) == 0 ) { o1.s[i]=v1.s[j1];}
+      else                  { o1.s[i]=v2.s[j1];}
+      int j2 = i|mask;
+      if  ( (i&mask) == 0 ) { o2.s[i]=v1.s[j2];}
+      else                  { o2.s[i]=v2.s[j2];}
+    }
+    out1 = o1.v;
+    out2 = o2.v;
   }
   static inline void Exchange2(vecf &out1, vecf &out2, vecf in1, vecf in2){
-    // FIXME
-    out1 = in1;
-    out2 = in2;
-    //out1 = (vecf)svtrn1((vecd)in1, (vecd)in2);
-    //out2 = (vecf)svtrn2((vecd)in1, (vecd)in2);
+    out1 = (vecf)svtrn1((vecd)in1, (vecd)in2);
+    out2 = (vecf)svtrn2((vecd)in1, (vecd)in2);
   }
   static inline void Exchange3(vecf &out1, vecf &out2, vecf in1, vecf in2){
     out1 = svtrn1(in1, in2);
@@ -575,8 +602,25 @@ struct Exchange{
   }
   static inline void Exchange1(vecd &out1, vecd &out2, vecd in1, vecd in2){
     // FIXME
-    out1 = in1;
-    out2 = in2;
+    uvecd v1 = { .v = in1 };
+    uvecd v2 = { .v = in2 };
+    uvecd o1, o2;
+
+    const int n = 1;
+    const int w = 8; // w = W<T>::r
+    unsigned int mask = w >> (n + 1);
+    //      std::cout << " Exchange "<<n<<" nsimd "<<w<<" mask 0x" <<std::hex<<mask<<std::dec<<std::endl;
+    VECTOR_FOR(i, w, 1) {
+      int j1 = i&(~mask);
+      if  ( (i&mask) == 0 ) { o1.s[i]=v1.s[j1];}
+      else                  { o1.s[i]=v2.s[j1];}
+      int j2 = i|mask;
+      if  ( (i&mask) == 0 ) { o2.s[i]=v1.s[j2];}
+      else                  { o2.s[i]=v2.s[j2];}
+    }
+
+    out1 = o1.v;
+    out2 = o2.v;
   }
   static inline void Exchange2(vecd &out1, vecd &out2, vecd in1, vecd in2){
     out1 = svtrn1(in1, in2);
@@ -586,99 +630,9 @@ struct Exchange{
     assert(0);
     return;
   }
-
-  // old
-/*
-  // Exchange0 is valid for arbitrary SVE vector length
-  template <typename T>
-  static inline void Exchange0(vec<T> &out1, vec<T> &out2, const vec<T> &in1, const vec<T> &in2){
-
-    svbool_t pg1 = acle<T>::pg1();
-    typename acle<T>::vt a1_v = svld1(pg1, in1.v);
-    typename acle<T>::vt a2_v = svld1(pg1, in2.v);
-    typename acle<T>::vt r1_v = svext(a1_v, a1_v, (uint64_t)W<T>::c);
-    r1_v = svext(r1_v, a2_v, (uint64_t)W<T>::c);
-    typename acle<T>::vt r2_v = svext(a2_v, a2_v, (uint64_t)W<T>::c);
-    r2_v = svext(a1_v, r2_v, (uint64_t)W<T>::c);
-    svst1(pg1, out1.v, r1_v);
-    svst1(pg1, out2.v, r2_v);
-  }
-
-
-
-// FIXME use svcreate etc. or switch to table lookup directly
-  template <typename T>
-  static inline void Exchange1(vec<T> &out1, vec<T> &out2, const vec<T> &in1, const vec<T> &in2){
-
-    svbool_t pg4 = acle<double>::pg4();
-    typename acle<double>::vt4 in1_v4 = svld4(pg4, (typename acle<double>::pt*)in1.v);
-    typename acle<double>::vt4 in2_v4 = svld4(pg4, (typename acle<double>::pt*)in2.v);
-    typename acle<double>::vt4 out1_v4;
-    typename acle<double>::vt4 out2_v4;
-    out1_v4.v0 = in1_v4.v0;
-    out1_v4.v1 = in1_v4.v1;
-    out1_v4.v2 = in2_v4.v0;
-    out1_v4.v3 = in2_v4.v1;
-    out2_v4.v0 = in1_v4.v2;
-    out2_v4.v1 = in1_v4.v3;
-    out2_v4.v2 = in2_v4.v2;
-    out2_v4.v3 = in2_v4.v3;
-    svst4(pg4, (typename acle<double>::pt*)out1.v, out1_v4);
-    svst4(pg4, (typename acle<double>::pt*)out2.v, out2_v4);
-  }
-
-
-  #define VECTOR_FOR(i, w, inc)                   \
-  for (unsigned int i = 0; i < w; i += inc)
-
-  template <typename T>
-  static inline void Exchange1(vec<T> &out1, vec<T> &out2, const vec<T> &in1, const vec<T> &in2){
-    // FIXME
-    const int n = 1;
-    const int w = W<T>::r;
-    unsigned int mask = w >> (n + 1);
-    //      std::cout << " Exchange "<<n<<" nsimd "<<w<<" mask 0x" <<std::hex<<mask<<std::dec<<std::endl;
-    VECTOR_FOR(i, w, 1) {
-      int j1 = i&(~mask);
-      if  ( (i&mask) == 0 ) { out1.v[i]=in1.v[j1];}
-      else                  { out1.v[i]=in2.v[j1];}
-      int j2 = i|mask;
-      if  ( (i&mask) == 0 ) { out2.v[i]=in1.v[j2];}
-      else                  { out2.v[i]=in2.v[j2];}
-    }
-  }
-
-  #undef VECTOR_FOR
-
-  template <typename T>
-  static inline void Exchange2(vec<T> &out1, vec<T> &out2, const vec<T> &in1, const vec<T> &in2){
-
-    svbool_t pg1 = acle<double>::pg1();
-    typename acle<double>::vt a1_v = svld1(pg1, (typename acle<double>::pt*)in1.v);
-    typename acle<double>::vt a2_v = svld1(pg1, (typename acle<double>::pt*)in2.v);
-    typename acle<double>::vt r1_v = svtrn1(a1_v, a2_v);
-    typename acle<double>::vt r2_v = svtrn2(a1_v, a2_v);
-    svst1(pg1, (typename acle<double>::pt*)out1.v, r1_v);
-    svst1(pg1, (typename acle<double>::pt*)out2.v, r2_v);
-  }
-
-  static inline void Exchange3(vecf &out1, vecf &out2, const vecf &in1, const vecf &in2){
-
-    svbool_t pg1 = acle<float>::pg1();
-    typename acle<float>::vt a1_v = svld1(pg1, in1.v);
-    typename acle<float>::vt a2_v = svld1(pg1, in2.v);
-    typename acle<float>::vt r1_v = svtrn1(a1_v, a2_v);
-    typename acle<float>::vt r2_v = svtrn2(a1_v, a2_v);
-    svst1(pg1, out1.v, r1_v);
-    svst1(pg1, out2.v, r2_v);
-  }
-
-  static inline void Exchange3(vecd &out1, vecd &out2, const vecd &in1, const vecd &in2){
-    assert(0);
-    return;
-  }
-  */
 };
+
+#undef VECTOR_FOR
 
 struct Permute{
   // float
@@ -754,10 +708,10 @@ struct Rotate{
   }
 
   template <int n> static inline vecf tRotate(vecf in){
-    return svext(in, in, (uint64_t)(n%16u));
+    return svext(in, in, (uint64_t)n);
   }
   template <int n> static inline vecd tRotate(vecd in){
-    return svext(in, in, (uint64_t)(n%8u));
+    return svext(in, in, (uint64_t)n);
   }
 };
 
