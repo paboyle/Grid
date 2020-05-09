@@ -30,6 +30,11 @@
 // Using SVE ACLE
 /////////////////////////////////////////////////////
 
+/* TODO
+ * Exchange
+ * prefetching
+*/
+
 //#ifndef GEN_SIMD_WIDTH
 //#define GEN_SIMD_WIDTH 64u
 //#endif
@@ -436,12 +441,12 @@ struct PrecisionChange {
     vecf sb_v = svcvt_f32_x(pg1d, b);
     return svuzp1(sa_v, sb_v);
   }
-  static inline void StoD (vecf s,vecd *a,vecd *b) {
+  static inline void StoD (vecf s,vecd &a,vecd &b) {
     pred pg1d = acle<double>::pg1();
     vecf sa_v = svzip1(s, s);
     vecf sb_v = svzip2(s, s);
-    *a = svcvt_f64_x(pg1d, sa_v);
-    *b = svcvt_f64_x(pg1d, sb_v);
+    a = svcvt_f64_x(pg1d, sa_v);
+    b = svcvt_f64_x(pg1d, sb_v);
   }
   static inline vech DtoH (vecd a,vecd b,vecd c,vecd d) {
 /*
