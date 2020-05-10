@@ -47,7 +47,7 @@ int main (int argc, char ** argv)
 
   const int Ls=12;
   std::vector< std::vector<int> > latts;
-#if 0
+#if 1
   latts.push_back(std::vector<int> ({24,24,24,24}) );
   latts.push_back(std::vector<int> ({48,24,24,24}) );
   latts.push_back(std::vector<int> ({96,24,24,24}) );
@@ -157,7 +157,7 @@ void benchDw(std::vector<int> & latt4, int Ls)
     std::cout <<"\t"<<flops/(t1-t0)<<"\t"<<(t1-t0)/1000./1000.<<" s\t";
 
     // Cheby uses MpcDagMpc so 2x flops
-    for(int i=0;i<100;i++){
+    for(int i=0;i<1;i++){
     Cheby(Mpc,src_o,r_o);
     t0=usecond();
     Cheby(Mpc,src_o,r_o);

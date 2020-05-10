@@ -7,7 +7,11 @@ MemoryStats *MemoryProfiler::stats = nullptr;
 bool         MemoryProfiler::debug = false;
 
 int PointerCache::NcacheSmall = PointerCache::NcacheSmallMax;
-int PointerCache::Ncache      = PointerCache::NcacheMax;
+#ifdef GRID_CUDA
+int PointerCache::Ncache      = 32;
+#else 
+int PointerCache::Ncache      = 8;
+#endif
 int PointerCache::Victim;
 int PointerCache::VictimSmall;
 PointerCache::PointerCacheEntry PointerCache::Entries[PointerCache::NcacheMax];
@@ -16,12 +20,16 @@ PointerCache::PointerCacheEntry PointerCache::EntriesSmall[PointerCache::NcacheS
 void PointerCache::Init(void)
 {
   char * str;
+
   str= getenv("GRID_ALLOC_NCACHE_LARGE");
   if ( str ) Ncache = atoi(str);
   if ( (Ncache<0) || (Ncache > NcacheMax)) Ncache = NcacheMax;
+
   str= getenv("GRID_ALLOC_NCACHE_SMALL");
   if ( str ) NcacheSmall = atoi(str);
   if ( (NcacheSmall<0) || (NcacheSmall > NcacheSmallMax)) NcacheSmall = NcacheSmallMax;
+
+  //  printf("Aligned alloocator cache: large %d/%d small %d/%d\n",Ncache,NcacheMax,NcacheSmall,NcacheSmallMax);
 }
 void *PointerCache::Insert(void *ptr,size_t bytes) 
 {

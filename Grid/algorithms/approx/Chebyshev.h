@@ -236,7 +236,6 @@ public:
 
     int vol=grid->gSites();
     typedef typename Field::vector_type vector_type;
-    constexpr int Nsimd = vector_type::Nsimd();
 
     Field T0(grid); T0 = in;  
     Field T1(grid); 
@@ -264,6 +263,7 @@ public:
       auto Tn_v = Tn->View();
       auto Tnp_v = Tnp->View();
       auto Tnm_v = Tnm->View();
+      constexpr int Nsimd = vector_type::Nsimd();
       accelerator_forNB(ss, in.Grid()->oSites(), Nsimd, {
 	  coalescedWrite(y_v[ss],xscale*y_v(ss)+mscale*Tn_v(ss));
 	  coalescedWrite(Tnp_v[ss],2.0*y_v(ss)-Tnm_v(ss));
