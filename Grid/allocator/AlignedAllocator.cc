@@ -6,11 +6,23 @@ NAMESPACE_BEGIN(Grid);
 MemoryStats *MemoryProfiler::stats = nullptr;
 bool         MemoryProfiler::debug = false;
 
+int PointerCache::NcacheSmall = PointerCache::NcacheSmallMax;
+int PointerCache::Ncache      = PointerCache::NcacheMax;
 int PointerCache::Victim;
 int PointerCache::VictimSmall;
-PointerCache::PointerCacheEntry PointerCache::Entries[PointerCache::Ncache];
-PointerCache::PointerCacheEntry PointerCache::EntriesSmall[PointerCache::NcacheSmall];
+PointerCache::PointerCacheEntry PointerCache::Entries[PointerCache::NcacheMax];
+PointerCache::PointerCacheEntry PointerCache::EntriesSmall[PointerCache::NcacheSmallMax];
 
+void PointerCache::Init(void)
+{
+  char * str;
+  str= getenv("GRID_ALLOC_NCACHE_LARGE");
+  if ( str ) Ncache = atoi(str);
+  if ( (Ncache<0) || (Ncache > NcacheMax)) Ncache = NcacheMax;
+  str= getenv("GRID_ALLOC_NCACHE_SMALL");
+  if ( str ) NcacheSmall = atoi(str);
+  if ( (NcacheSmall<0) || (NcacheSmall > NcacheSmallMax)) NcacheSmall = NcacheSmallMax;
+}
 void *PointerCache::Insert(void *ptr,size_t bytes) 
 {
   if (bytes < GRID_ALLOC_SMALL_LIMIT ) 

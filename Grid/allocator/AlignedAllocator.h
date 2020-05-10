@@ -53,8 +53,10 @@ private:
 /*Pinning pages is costly*/
 /*Could maintain separate large and small allocation caches*/
 /* Could make these configurable, perhaps up to a max size*/
-  static const int NcacheSmall=128; 
-  static const int Ncache=8;
+  static const int NcacheSmallMax=128; 
+  static const int NcacheMax=16;
+  static int NcacheSmall;
+  static int Ncache;
 
   typedef struct { 
     void *address;
@@ -62,13 +64,13 @@ private:
     int valid;
   } PointerCacheEntry;
     
-  static PointerCacheEntry Entries[Ncache];
+  static PointerCacheEntry Entries[NcacheMax];
   static int Victim;
-  static PointerCacheEntry EntriesSmall[NcacheSmall];
+  static PointerCacheEntry EntriesSmall[NcacheSmallMax];
   static int VictimSmall;
 
 public:
-
+  static void Init(void);
   static void *Insert(void *ptr,size_t bytes) ;
   static void *Insert(void *ptr,size_t bytes,PointerCacheEntry *entries,int ncache,int &victim) ;
   static void *Lookup(size_t bytes) ;
