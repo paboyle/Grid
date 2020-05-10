@@ -6,21 +6,19 @@ NAMESPACE_BEGIN(Grid);
 MemoryStats *MemoryProfiler::stats = nullptr;
 bool         MemoryProfiler::debug = false;
 
-#ifdef GRID_NVCC
-#define SMALL_LIMIT (0)
-#else
-#define SMALL_LIMIT (4096)
-#endif
-
-#ifdef POINTER_CACHE
-int PointerCache::victim;
-
+int PointerCache::Victim;
+int PointerCache::VictimSmall;
 PointerCache::PointerCacheEntry PointerCache::Entries[PointerCache::Ncache];
+PointerCache::PointerCacheEntry PointerCache::EntriesSmall[PointerCache::NcacheSmall];
 
-void *PointerCache::Insert(void *ptr,size_t bytes) {
-
-  if (bytes < SMALL_LIMIT ) return ptr;
-
+void *PointerCache::Insert(void *ptr,size_t bytes) 
+{
+  if (bytes < GRID_ALLOC_SMALL_LIMIT ) 
+    return Insert(ptr,bytes,EntriesSmall,NcacheSmall,VictimSmall);
+  return Insert(ptr,bytes,Entries,Ncache,Victim);  
+}
+void *PointerCache::Insert(void *ptr,size_t bytes,PointerCacheEntry *entries,int ncache,int &victim) 
+{
 #ifdef GRID_OMP
   assert(omp_in_parallel()==0);
 #endif 
@@ -28,8 +26,8 @@ void *PointerCache::Insert(void *ptr,size_t bytes) {
   void * ret = NULL;
   int v = -1;
 
-  for(int e=0;e<Ncache;e++) {
-    if ( Entries[e].valid==0 ) {
+  for(int e=0;e<ncache;e++) {
+    if ( entries[e].valid==0 ) {
       v=e; 
       break;
     }
@@ -37,40 +35,43 @@ void *PointerCache::Insert(void *ptr,size_t bytes) {
 
   if ( v==-1 ) {
     v=victim;
-    victim = (victim+1)%Ncache;
+    victim = (victim+1)%ncache;
   }
 
-  if ( Entries[v].valid ) {
-    ret = Entries[v].address;
-    Entries[v].valid = 0;
-    Entries[v].address = NULL;
-    Entries[v].bytes = 0;
+  if ( entries[v].valid ) {
+    ret = entries[v].address;
+    entries[v].valid = 0;
+    entries[v].address = NULL;
+    entries[v].bytes = 0;
   }
 
-  Entries[v].address=ptr;
-  Entries[v].bytes  =bytes;
-  Entries[v].valid  =1;
+  entries[v].address=ptr;
+  entries[v].bytes  =bytes;
+  entries[v].valid  =1;
 
   return ret;
 }
 
-void *PointerCache::Lookup(size_t bytes) {
-
-  if (bytes < SMALL_LIMIT ) return NULL;
-
+void *PointerCache::Lookup(size_t bytes)
+{
+  if (bytes < GRID_ALLOC_SMALL_LIMIT ) 
+    return Lookup(bytes,EntriesSmall,NcacheSmall);
+  return Lookup(bytes,Entries,Ncache);
+}
+void *PointerCache::Lookup(size_t bytes,PointerCacheEntry *entries,int ncache) 
+{
 #ifdef GRID_OMP
   assert(omp_in_parallel()==0);
 #endif 
-
-  for(int e=0;e<Ncache;e++){
-    if ( Entries[e].valid && ( Entries[e].bytes == bytes ) ) {
-      Entries[e].valid = 0;
-      return Entries[e].address;
+  for(int e=0;e<ncache;e++){
+    if ( entries[e].valid && ( entries[e].bytes == bytes ) ) {
+      entries[e].valid = 0;
+      return entries[e].address;
     }
   }
   return NULL;
 }
-#endif
+
 
 void check_huge_pages(void *Buf,uint64_t BYTES)
 {
