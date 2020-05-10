@@ -138,7 +138,7 @@ esac
 ############### SUMMIT JSRUN
 AC_ARG_ENABLE([summit],
     [AC_HELP_STRING([--enable-summit=yes|no], [enable IBMs jsrun resource manager for SUMMIT])],
-    [ac_JSRUN=${enable_summit}], [ac_SUMMIT=no])
+    [ac_SUMMIT=${enable_summit}], [ac_SUMMIT=no])
 case ${ac_SUMMIT} in
     no);;
     yes)
@@ -148,17 +148,25 @@ case ${ac_SUMMIT} in
 esac
 
 ############### SYCL
-AC_ARG_ENABLE([sycl],
-    [AC_HELP_STRING([--enable-sycl=yes|no], [enable SYCL])],
-    [ac_JSRUN=${enable_sycl}], [ac_SYCL=no])
-case ${ac_SYCL} in
-    no);;
-    yes)
+AC_ARG_ENABLE([accelerator],
+    [AC_HELP_STRING([--enable-accelerator=cuda|sycl|hip|none], [enable none,cuda,sycl,hip acceleration])],
+    [ac_ACCELERATOR=${enable_accelerator}], [ac_ACCELERATOR=none])
+case ${ac_ACCELERATOR} in
+    cuda)
+      echo CUDA acceleration
+      AC_DEFINE([GRID_CUDA],[1],[Use CUDA offload]);;
+    sycl)
+      echo SYCL acceleration
       AC_DEFINE([GRID_SYCL],[1],[Use SYCL offload]);;
+    hip)
+      echo HIP acceleration
+      AC_DEFINE([GRID_HIP],[1],[Use HIP offload]);;
+    none)
+      echo NO acceleration
+    ;;
     *)
-      AC_DEFINE([GRID_SYCL],[1],[Use SYCL offload]);;
+      AC_MSG_ERROR(["Acceleration not suppoorted ${ac_ACCELERATOR}"]);;
 esac
-
 
 ############### Intel libraries
 AC_ARG_ENABLE([mkl],
@@ -289,12 +297,16 @@ esac
 ##################### Compiler dependent choices
 case ${CXX} in 
   nvcc) 
-#    CXX="nvcc -keep -v -x cu "
-#    CXXLD="nvcc -v -link"
     CXX="nvcc -x cu "
     CXXLD="nvcc -link"
-#    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing -Xcompiler -Wno-unusable-partial-specialization --expt-extended-lambda --expt-relaxed-constexpr"
     CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr"
+    if test $ac_openmp = yes; then
+       CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
+    fi
+    ;;
+  hipcc)
+    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr"
+    CXXLD=${CXX}
     if test $ac_openmp = yes; then
        CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
     fi
@@ -599,6 +611,7 @@ compiler version            : ${ax_cv_gxx_version}
 ----- BUILD OPTIONS -----------------------------------
 SIMD                        : ${ac_SIMD}${SIMD_GEN_WIDTH_MSG}
 Threading                   : ${ac_openmp}
+Acceleration                : ${ac_ACCELERATOR}
 Communications type         : ${comms_type}
 Shared memory allocator     : ${ac_SHM}
 Shared memory mmap path     : ${ac_SHMPATH}

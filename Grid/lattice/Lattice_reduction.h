@@ -38,7 +38,7 @@ inline typename vobj::scalar_object sum_cpu(const vobj *arg, Integer osites)
 {
   typedef typename vobj::scalar_object  sobj;
 
-  const int Nsimd = vobj::Nsimd();
+  //  const int Nsimd = vobj::Nsimd();
   const int nthread = GridThread::GetThreads();
 
   Vector<sobj> sumarray(nthread);

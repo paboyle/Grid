@@ -32,7 +32,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 */
 //----------------------------------------------------------------------
 
+#ifdef GRID_CUDA
 #include <cuda_fp16.h>
+#endif
+#ifdef GRID_HIP
+#include <hip_fp16.h>
+#endif
 
 namespace Grid {
 

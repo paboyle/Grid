@@ -155,7 +155,7 @@ public:
 
     if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) acceleratorAllocShared(bytes);
 
-    assert( ptr != (_Tp *)NULL);
+    assert( ( (_Tp*)ptr != (_Tp *)NULL ) );
 
     return ptr;
   }

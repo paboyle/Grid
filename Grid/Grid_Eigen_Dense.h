@@ -12,7 +12,7 @@
 #endif
 
 /* NVCC save and restore compile environment*/
-#ifdef GRID_CUDA
+#ifdef __NVCC__
 #pragma push
 #pragma diag_suppress code_is_unreachable
 #pragma push_macro("__CUDA_ARCH__")

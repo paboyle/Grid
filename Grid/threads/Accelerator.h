@@ -73,9 +73,6 @@ void     acceleratorThreads(uint32_t);
 //////////////////////////////////////////////
 // CUDA acceleration
 //////////////////////////////////////////////
-#ifdef __NVCC__
-#define GRID_CUDA
-#endif
 
 #ifdef GRID_CUDA
 
@@ -197,6 +194,9 @@ inline void acceleratorFreeDevice(void *ptr){free(ptr,*theGridAccelerator);};
 // HIP acceleration
 //////////////////////////////////////////////
 #ifdef GRID_HIP
+NAMESPACE_END(Grid);
+#include <hip/hip_runtime.h>
+NAMESPACE_BEGIN(Grid);
 
 #ifdef __HIP_DEVICE_COMPILE__
 #define GRID_SIMT
@@ -224,7 +224,7 @@ inline void acceleratorFreeDevice(void *ptr){free(ptr,*theGridAccelerator);};
     };									\
     dim3 hip_threads(acceleratorThreads(),nsimd);				\
     dim3 hip_blocks ((num+acceleratorThreads()-1)/acceleratorThreads());			\
-    hipLaunchKernelGGL(LambdaApply,hip_blocks,hip_threads,0,0,num,simd,lambda);\
+    hipLaunchKernelGGL(LambdaApply,hip_blocks,hip_threads,0,0,num,nsimd,lambda);\
   }
 
 #define accelerator_for( iterator, num, nsimd, ... )		\
