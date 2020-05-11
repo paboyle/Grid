@@ -257,13 +257,11 @@ public:
       virtual  RealD Mpc      (const Field &in, Field &out) {
       Field tmp(in.Grid());
       tmp.Checkerboard() = !in.Checkerboard();
-	//std::cout <<"grid pointers: in._grid="<< in._grid << " out._grid=" << out._grid << "  _Mat.Grid=" << _Mat.Grid() << " _Mat.RedBlackGrid=" << _Mat.RedBlackGrid() << std::endl;
 
 	_Mat.Meooe(in,tmp);
 	_Mat.MooeeInv(tmp,out);
 	_Mat.Meooe(out,tmp);
 
-      //std::cout << "cb in " << in.Checkerboard() << "  cb out " << out.Checkerboard() << std::endl;
 	_Mat.Mooee(in,out);
 	return axpy_norm(out,-1.0,tmp,out);
       }
@@ -366,6 +364,9 @@ public:
         void OpDir(const Field& in, Field& out, int dir, int disp) {
           assert(0);
         }
+        void OpDirAll(const Field& in, std::vector<Field>& out){
+          assert(0);
+        };
     };
 
     template<class Matrix, class Field>

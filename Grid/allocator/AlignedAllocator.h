@@ -42,21 +42,21 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 #define POINTER_CACHE
 #define GRID_ALLOC_ALIGN (2*1024*1024)
+#define GRID_ALLOC_SMALL_LIMIT (4096)
 
 NAMESPACE_BEGIN(Grid);
 
 // Move control to configure.ac and Config.h?
-#ifdef POINTER_CACHE
+
 class PointerCache {
 private:
 /*Pinning pages is costly*/
 /*Could maintain separate large and small allocation caches*/
-#ifdef GRID_NVCC 
-  static const int Ncache=128;
-#else
-  static const int Ncache=8;
-#endif
-  static int victim;
+/* Could make these configurable, perhaps up to a max size*/
+  static const int NcacheSmallMax=128; 
+  static const int NcacheMax=16;
+  static int NcacheSmall;
+  static int Ncache;
 
   typedef struct { 
     void *address;
@@ -64,15 +64,18 @@ private:
     int valid;
   } PointerCacheEntry;
     
-  static PointerCacheEntry Entries[Ncache];
+  static PointerCacheEntry Entries[NcacheMax];
+  static int Victim;
+  static PointerCacheEntry EntriesSmall[NcacheSmallMax];
+  static int VictimSmall;
 
 public:
-
+  static void Init(void);
   static void *Insert(void *ptr,size_t bytes) ;
+  static void *Insert(void *ptr,size_t bytes,PointerCacheEntry *entries,int ncache,int &victim) ;
   static void *Lookup(size_t bytes) ;
-
+  static void *Lookup(size_t bytes,PointerCacheEntry *entries,int ncache) ;
 };
-#endif  
 
 std::string sizeString(size_t bytes);
 

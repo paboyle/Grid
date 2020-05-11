@@ -355,6 +355,8 @@ void Grid_init(int *argc,char ***argv)
   //////////////////////////////////////////////////////////
   GridGpuInit(); // Must come first to set device prior to MPI init
 
+  PointerCache::Init();
+
   if( GridCmdOptionExists(*argv,*argv+*argc,"--shm") ){
     int MB;
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--shm");

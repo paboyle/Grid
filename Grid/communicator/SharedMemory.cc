@@ -74,7 +74,9 @@ void *SharedMemory::ShmBufferMalloc(size_t bytes){
   if (heap_bytes >= heap_size) {
     std::cout<< " ShmBufferMalloc exceeded shared heap size -- try increasing with --shm <MB> flag" <<std::endl;
     std::cout<< " Parameter specified in units of MB (megabytes) " <<std::endl;
-    std::cout<< " Current value is " << (heap_size/(1024*1024)) <<std::endl;
+    std::cout<< " Current alloc is " << (bytes/(1024*1024)) <<"MB"<<std::endl;
+    std::cout<< " Current bytes is " << (heap_bytes/(1024*1024)) <<"MB"<<std::endl;
+    std::cout<< " Current heap  is " << (heap_size/(1024*1024)) <<"MB"<<std::endl;
     assert(heap_bytes<heap_size);
   }
   //std::cerr << "ShmBufferMalloc "<<std::hex<< ptr<<" - "<<((uint64_t)ptr+bytes)<<std::dec<<std::endl;

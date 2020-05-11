@@ -779,9 +779,9 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   assert(mu>=0);
   assert(mu<Nd);
 
-  int tshift = (mu == Nd-1) ? 1 : 0;
 
 #if 0
+  int tshift = (mu == Nd-1) ? 1 : 0;
   ////////////////////////////////////////////////
   // SHAMIR CASE 
   ////////////////////////////////////////////////
@@ -829,6 +829,7 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 #endif
 
 #ifndef GRID_NVCC
+  int tshift = (mu == Nd-1) ? 1 : 0;
   ////////////////////////////////////////////////
   // GENERAL CAYLEY CASE
   ////////////////////////////////////////////////
