@@ -69,6 +69,7 @@ int main (int argc, char ** argv)
 
 	ShiftU  = Cshift(U,dir,shift);    // Shift everything
 
+	std::cout<<GridLogMessage<<"Shifted by "<<shift<<" in direction"<<dir<<" checking the AE35 unit" <<std::endl;
 	/*
 	std::cout << "U[0]" << U[0]<<std::endl;
 	std::cout << "U[1]" << U[1]<<std::endl;

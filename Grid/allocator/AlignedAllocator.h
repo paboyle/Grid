@@ -29,7 +29,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_ALIGNED_ALLOCATOR_H
 #define GRID_ALIGNED_ALLOCATOR_H
 
-
 NAMESPACE_BEGIN(Grid);
 
 /*Move control to configure.ac and Config.h*/
@@ -157,6 +156,15 @@ public:
 
     assert( ( (_Tp*)ptr != (_Tp *)NULL ) );
 
+#if 0    
+    size_type page_size=4096;
+    size_type pages = (bytes+page_size-1)/page_size;
+    uint8_t *bp = (uint8_t *)ptr;
+
+    accelerator_for(pg,pages,1,{
+      bp[pg*page_size]=0;
+    });
+#endif
     return ptr;
   }
 

@@ -51,6 +51,7 @@ NAMESPACE_BEGIN(Grid);
 //
 // Warp control and info:
 //
+//    acceleratorInit;
 //    void     acceleratorSynchronise(void); // synch warp etc..
 //    int      acceleratorSIMTlane(int Nsimd);
 //
@@ -69,6 +70,7 @@ NAMESPACE_BEGIN(Grid);
 
 uint32_t acceleratorThreads(void);   
 void     acceleratorThreads(uint32_t);
+void     acceleratorInit(void);
 
 //////////////////////////////////////////////
 // CUDA acceleration
@@ -83,6 +85,32 @@ void     acceleratorThreads(uint32_t);
 #define accelerator        __host__ __device__
 #define accelerator_inline __host__ __device__ inline
 
+accelerator_inline int acceleratorSIMTlane(int Nsimd) { return threadIdx.x; } // CUDA specific
+
+#define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
+  {									\
+    typedef uint64_t Iterator;						\
+    auto lambda = [=] accelerator					\
+      (Iterator lane,Iterator iter1,Iterator iter2) mutable {		\
+      __VA_ARGS__;							\
+    };									\
+    int nt=acceleratorThreads();					\
+    dim3 cu_threads(nsimd,acceleratorThreads(),1);			\
+    dim3 cu_blocks (1,(num1+nt-1)/nt,num2);				\
+    LambdaApply<<<cu_blocks,cu_threads>>>(nsimd,num1,num2,lambda);		\
+  }
+
+template<typename lambda>  __global__
+void LambdaApply(uint64_t num1, uint64_t num2, uint64_t num3, lambda Lambda)
+{
+  uint64_t x = threadIdx.x;//+ blockDim.x*blockIdx.x;
+  uint64_t y = threadIdx.y + blockDim.y*blockIdx.y;
+  uint64_t z = threadIdx.z + blockDim.z*blockIdx.z;
+  if ( (x < num1) && (y<num2) && (z<num3) ) {
+    Lambda(x,y,z);
+  }
+}
+
 #define accelerator_barrier(dummy)					\
   {									\
     cudaDeviceSynchronize();						\
@@ -91,24 +119,8 @@ void     acceleratorThreads(uint32_t);
       printf("Cuda error %s \n", cudaGetErrorString( err ));		\
       puts(__FILE__);							\
       printf("Line %d\n",__LINE__);					\
-      exit(0);								\
     }									\
   }
-
-#define accelerator_forNB( iterator, num, nsimd, ... )			\
-  {									\
-    typedef uint64_t Iterator;						\
-    auto lambda = [=] accelerator (Iterator lane,Iterator iterator) mutable { \
-      __VA_ARGS__;							\
-    };									\
-    dim3 cu_threads(acceleratorThreads(),nsimd);			\
-    dim3 cu_blocks ((num+acceleratorThreads()-1)/acceleratorThreads());			\
-    LambdaApply<<<cu_blocks,cu_threads>>>(nsimd,num,lambda);	\
-  }
-
-#define accelerator_for( iterator, num, nsimd, ... )		\
-  accelerator_forNB(iterator, num, nsimd, { __VA_ARGS__ } );	\
-  accelerator_barrier(dummy);
 
 inline void *acceleratorAllocShared(size_t bytes)
 {
@@ -133,15 +145,6 @@ inline void *acceleratorAllocDevice(size_t bytes)
 inline void acceleratorFreeShared(void *ptr){ cudaFree(ptr);};
 inline void acceleratorFreeDevice(void *ptr){ cudaFree(ptr);};
 
-template<typename lambda>  __global__
-void LambdaApply(uint64_t Isites, uint64_t Osites, lambda Lambda)
-{
-  uint64_t isite = threadIdx.y;
-  uint64_t osite = threadIdx.x+blockDim.x*blockIdx.x;
-  if ( (osite <Osites) && (isite<Isites) ) {
-    Lambda(isite,osite);
-  }
-}
 
 #endif
 
@@ -164,24 +167,28 @@ extern cl::sycl::queue *theGridAccelerator;
 #define accelerator 
 #define accelerator_inline strong_inline
 
-#define accelerator_forNB(iterator,num,nsimd, ... )			\
+accelerator_inline int acceleratorSIMTlane(int Nsimd) { return __spirv::initLocalInvocationId<3, cl::sycl::id<3>>()[0]; } // SYCL specific
+
+#define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   theGridAccelerator->submit([&](cl::sycl::handler &cgh) {		\
-      cl::sycl::range<3> local {acceleratorThreads(),1,nsimd};			\
-      cl::sycl::range<3> global{(unsigned long)num,1,(unsigned long)nsimd}; \
+      int nt=acceleratorThreads();					\
+      unsigned long unum1 = num1;					\
+      unsigned long unum2 = num2;					\
+      cl::sycl::range<3> local {nsimd,nt,1};				\
+      cl::sycl::range<3> global{nsimd,unum1,unum2};			\
       cgh.parallel_for<class dslash>(					\
       cl::sycl::nd_range<3>(global,local),            \
       [=] (cl::sycl::nd_item<3> item) mutable {       \
-      auto iterator = item.get_global_id(0);	      \
-      auto lane     = item.get_global_id(2);	      \
+      auto lane     = item.get_global_id(0);	      \
+      auto iter1    = item.get_global_id(1);	      \
+      auto iter2    = item.get_global_id(2);	      \
       { __VA_ARGS__ };				      \
      });	   			              \
     });
+dim3 cu_threads(nsimd,acceleratorThreads(),1);                      \
+dim3 cu_blocks (1,(num1+nt-1)/n,num2);                              \
 
 #define accelerator_barrier(dummy) theGridAccelerator->wait();
-
-#define accelerator_for( iterator, num, nsimd, ... )		\
-  accelerator_forNB(iterator, num, nsimd, { __VA_ARGS__ } );	\
-  accelerator_barrier(dummy);
 
 inline void *acceleratorAllocShared(size_t bytes){ return malloc_shared(bytes,*theGridAccelerator);};
 inline void *acceleratorAllocDevice(size_t bytes){ return malloc_device(bytes,*theGridAccelerator);};
@@ -204,32 +211,48 @@ NAMESPACE_BEGIN(Grid);
 
 #define accelerator        __host__ __device__
 #define accelerator_inline __host__ __device__ inline
+
+/*These routines define mapping from thread grid to loop & vector lane indexing */
+accelerator_inline int acceleratorSIMTlane(int Nsimd) { return hipThreadIdx_x; } // HIP specific
+
+#define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
+  {									\
+    typedef uint64_t Iterator;						\
+    auto lambda = [=] accelerator					\
+      (Iterator lane,Iterator iter1,Iterator iter2 ) mutable {		\
+      { __VA_ARGS__;}							\
+    };									\
+    int nt=acceleratorThreads();					\
+    dim3 hip_threads(nsimd,nt,1);					\
+    dim3 hip_blocks (1,(num1+nt-1)/nt,num2);				\
+    hipLaunchKernelGGL(LambdaApply,hip_blocks,hip_threads,		\
+		       0,0,						\
+		       nsimd,num1,num2,lambda);				\
+  }
+
+
+template<typename lambda>  __global__
+void LambdaApply(uint64_t numx, uint64_t numy, uint64_t numz, lambda Lambda)
+{
+  uint64_t x = hipThreadIdx_x;//+ hipBlockDim_x*hipBlockIdx_x;
+  uint64_t y = hipThreadIdx_y + hipBlockDim_y*hipBlockIdx_y;
+  uint64_t z = hipThreadIdx_z + hipBlockDim_z*hipBlockIdx_z;
+  if ( (x < numx) && (y<numy) && (z<numz) ) {
+    Lambda(x,y,z);
+  }
+}
+
 #define accelerator_barrier(dummy)				\
   {								\
     hipDeviceSynchronize();					\
     auto err = hipGetLastError();				\
     if ( err != hipSuccess ) {					\
-      printf("HIP error %s \n", hipGetErrorString( err )); \
-      puts(__FILE__); \
-      printf("Line %d\n",__LINE__);					\
+      printf("After hipDeviceSynchronize() : HIP error %s \n", hipGetErrorString( err )); \
+      puts(__FILE__);							\
+      printf("Line %d\n",__LINE__);				\
       exit(0);							\
     }								\
   }
-
-#define accelerator_forNB( iterator, num, nsimd, ... )			\
-  {									\
-    typedef uint64_t Iterator;						\
-    auto lambda = [=] accelerator (Iterator lane,Iterator iterator) mutable { \
-      __VA_ARGS__;							\
-    };									\
-    dim3 hip_threads(acceleratorThreads(),nsimd);				\
-    dim3 hip_blocks ((num+acceleratorThreads()-1)/acceleratorThreads());			\
-    hipLaunchKernelGGL(LambdaApply,hip_blocks,hip_threads,0,0,num,nsimd,lambda);\
-  }
-
-#define accelerator_for( iterator, num, nsimd, ... )		\
-  accelerator_forNB(iterator, num, nsimd, { __VA_ARGS__ } );	\
-  accelerator_barrier(dummy);
 
 inline void *acceleratorAllocShared(size_t bytes)
 {
@@ -241,6 +264,7 @@ inline void *acceleratorAllocShared(size_t bytes)
   }
   return ptr;
 };
+
 inline void *acceleratorAllocDevice(size_t bytes)
 {
   void *ptr=NULL;
@@ -251,18 +275,25 @@ inline void *acceleratorAllocDevice(size_t bytes)
   }
   return ptr;
 };
+
 inline void acceleratorFreeShared(void *ptr){ hipFree(ptr);};
 inline void acceleratorFreeDevice(void *ptr){ hipFree(ptr);};
 
-template<typename lambda>  __global__
-void LambdaApply(uint64_t Isites, uint64_t Osites, lambda Lambda)
-{
-  uint64_t isite = hipThreadIdx_y;
-  uint64_t osite = hipThreadIdx_x + hipBlockDim_x*hipBlockIdx_x;
-  if ( (osite <Osites) && (isite<Isites) ) {
-    Lambda(isite,osite);
-  }
-}
+#endif
+
+//////////////////////////////////////////////
+// Common on all GPU targets
+//////////////////////////////////////////////
+#if defined(GRID_SYCL) || defined(GRID_CUDA) || defined(GRID_HIP)
+#define accelerator_forNB( iter1, num1, nsimd, ... ) accelerator_for2dNB( iter1, num1, iter2, 1, nsimd, {__VA_ARGS__} );
+
+#define accelerator_for( iter, num, nsimd, ... )		\
+  accelerator_forNB(iter, num, nsimd, { __VA_ARGS__ } );	\
+  accelerator_barrier(dummy);
+
+#define accelerator_for2d(iter1, num1, iter2, num2, nsimd, ... )	\
+  accelerator_for2dNB(iter1, num1, iter2, num2, nsimd, { __VA_ARGS__ } ); \
+  accelerator_barrier(dummy);
 
 #endif
 
@@ -280,6 +311,9 @@ void LambdaApply(uint64_t Isites, uint64_t Osites, lambda Lambda)
 #define accelerator_for(iterator,num,nsimd, ... )   thread_for(iterator, num, { __VA_ARGS__ });
 #define accelerator_forNB(iterator,num,nsimd, ... ) thread_for(iterator, num, { __VA_ARGS__ });
 #define accelerator_barrier(dummy) 
+#define accelerator_for2d(iter1, num1, iter2, num2, nsimd, ... ) thread_for2d(iter1,num1,iter2,num2,{ __VA_ARGS__ });
+
+accelerator_inline int acceleratorSIMTlane(int Nsimd) { return 0; } // CUDA specific
 
 #ifdef HAVE_MALLOC_MALLOC_H
 #include <malloc/malloc.h>
@@ -303,7 +337,6 @@ inline void acceleratorFreeShared(void *ptr){free(ptr);};
 inline void acceleratorFreeDevice(void *ptr){free(ptr);};
 #endif
 
-
 #endif // CPU target
 
 ///////////////////////////////////////////////////
@@ -324,26 +357,5 @@ accelerator_inline void acceleratorSynchronise(void)
 #endif
   return;
 }
-
-////////////////////////////////////////////////////
-// Address subvectors on accelerators
-////////////////////////////////////////////////////
-#ifdef GRID_SIMT
-
-#ifdef GRID_CUDA
-accelerator_inline int acceleratorSIMTlane(int Nsimd) { return threadIdx.y; } // CUDA specific
-#endif
-#ifdef GRID_SYCL
-accelerator_inline int acceleratorSIMTlane(int Nsimd) { return __spirv::initLocalInvocationId<3, cl::sycl::id<3>>()[2]; } // SYCL specific
-#endif
-#ifdef GRID_HIP
-accelerator_inline int acceleratorSIMTlane(int Nsimd) { return hipThreadIdx_y; } // HIP specific
-#endif
-
-#else
-
-accelerator_inline int acceleratorSIMTlane(int Nsimd) { return 0; } // CUDA specific
-
-#endif
 
 NAMESPACE_END(Grid);
