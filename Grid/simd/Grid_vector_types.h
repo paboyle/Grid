@@ -959,7 +959,7 @@ accelerator_inline void precisionChange(vRealD    *out,vRealF    *in,int nvec)
   for(int m=0;m*2<nvec;m++){
     int n=m*2;
     Optimization::PrecisionChange::StoD(in[m].v,out[n].v,out[n+1].v);
-    // A64FXFIXEDSIZE FIXME
+    // Bug in gcc 10.0.1 and gcc 10.1 using fixed-size SVE ACLE data types  CAS-159553-Y1K4C6
     // function call results in compile-time error:
     // In function ‘void Grid::precisionChange(Grid::vRealD*, Grid::vRealF*, int)’:
     // .../Grid_vector_types.h:961:56: error:

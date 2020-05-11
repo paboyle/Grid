@@ -7,7 +7,9 @@
     Copyright (C) 2020
 
     Author: Nils Meyer         <nils.meyer@ur.de>           Regensburg University
-    Author: Richard Sandiford  <richard.sandiford@arm.com>  Arm
+
+    with support from Arm
+            Richard Sandiford  <richard.sandiford@arm.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,26 +35,13 @@
 
 /* TODO
  * Exchange1
- * prefetches
 */
-
-//#ifndef GEN_SIMD_WIDTH
-//#define GEN_SIMD_WIDTH 64u
-//#endif
-
-//static_assert(GEN_SIMD_WIDTH % 64u == 0, "A64FX SIMD vector size is 64 bytes");
-
-//#ifdef __ARM_FEATURE_SVE
-//  #pragma message("Yes, we have SVE feature")
-//  #include <arm_sve.h>
-//#else
-//  #pragma error "Missing SVE feature"
-//#endif /* __ARM_FEATURE_SVE */
-
 
 // gcc 10 features
 #if __ARM_FEATURE_SVE_BITS==512
 #pragma message("Fixed-size SVE ACLE")
+/* gcc 10.0.1 and gcc 10.1 bug using ACLE data types  CAS-159553-Y1K4C6
+   workaround: use gcc's internal data types, bugfix expected for gcc 10.2
 typedef svbool_t    pred __attribute__((arm_sve_vector_bits(512)));
 typedef svfloat16_t vech __attribute__((arm_sve_vector_bits(512)));
 typedef svfloat32_t vecf __attribute__((arm_sve_vector_bits(512)));
@@ -60,6 +49,14 @@ typedef svfloat64_t vecd __attribute__((arm_sve_vector_bits(512)));
 typedef svuint32_t  veci __attribute__((arm_sve_vector_bits(512)));
 typedef svuint32_t  lutf __attribute__((arm_sve_vector_bits(512))); // LUTs for float
 typedef svuint64_t  lutd __attribute__((arm_sve_vector_bits(512))); // LUTs for double
+*/
+typedef __SVBool_t    pred __attribute__((arm_sve_vector_bits(512)));
+typedef __SVFloat16_t vech __attribute__((arm_sve_vector_bits(512)));
+typedef __SVFloat32_t vecf __attribute__((arm_sve_vector_bits(512)));
+typedef __SVFloat64_t vecd __attribute__((arm_sve_vector_bits(512)));
+typedef __SVUint32_t  veci __attribute__((arm_sve_vector_bits(512)));
+typedef __SVUint32_t  lutf __attribute__((arm_sve_vector_bits(512))); // LUTs for float
+typedef __SVUint64_t  lutd __attribute__((arm_sve_vector_bits(512))); // LUTs for double
 #else
 #pragma error("Oops. Illegal SVE vector size!?")
 #endif /* __ARM_FEATURE_SVE_BITS */
