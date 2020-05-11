@@ -43,6 +43,12 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
 
   MPI_Initialized(&flag); // needed to coexist with other libs apparently
   if ( !flag ) {
+
+// temporarily enable Fugaku/Tofu support by default
+#if defined (A64FX) || defined (A64FXFIXEDSIZE)
+#define TOFU
+#endif
+
 #if defined (TOFU) // hack for FUGAKU, credits go to Issaku Kanamori
     nCommThreads=1;
     MPI_Init(argc,argv);
