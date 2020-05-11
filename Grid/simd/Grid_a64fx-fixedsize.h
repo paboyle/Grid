@@ -691,7 +691,7 @@ struct Reduce{
   //General form must generate error if compiled
   inline Out_type operator()(In_type in){
     printf("Error, using wrong Reduce function\n");
-    exit(1);
+    //exit(1);
     return 0;
   }
 };
