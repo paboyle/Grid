@@ -216,11 +216,11 @@ int main (int argc, char ** argv)
 
 
   SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOpEO(Ddwf);
-  HermOpEO.MpcDagMpc(chi_e,dchi_e,t1,t2);
-  HermOpEO.MpcDagMpc(chi_o,dchi_o,t1,t2);
+  HermOpEO.MpcDagMpc(chi_e,dchi_e);
+  HermOpEO.MpcDagMpc(chi_o,dchi_o);
 
-  HermOpEO.MpcDagMpc(phi_e,dphi_e,t1,t2);
-  HermOpEO.MpcDagMpc(phi_o,dphi_o,t1,t2);
+  HermOpEO.MpcDagMpc(phi_e,dphi_e);
+  HermOpEO.MpcDagMpc(phi_o,dphi_o);
 
   pDce = innerProduct(phi_e,dchi_e);
   pDco = innerProduct(phi_o,dchi_o);

@@ -28,13 +28,12 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 #include <Grid/Grid.h>
 
-#if defined(GRID_COMMS_NONE)
-#error This test requires Grid compiled with MPI
-#endif
+
 
 using namespace Grid;
 
 int main(int argc, char** argv) {
+#if !defined(GRID_COMMS_NONE)
   Grid_init(&argc, &argv);
 
   auto simd_layout = GridDefaultSimd(Nd, vComplex::Nsimd());
@@ -81,4 +80,5 @@ int main(int argc, char** argv) {
   // clang-format on
 
   Grid_finalize();
+#endif
 }
