@@ -6,10 +6,9 @@
 
     Source file: ./lib/qcd/action/fermion/WilsonKernelsAsmA64FX.h
 
-    Copyright (C) 2015
+    Copyright (C) 2020
 
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Nils Meyer  <nils.meyer@ur.de>  Regensburg University
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,27 +31,24 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #if defined(A64FXASM)
 
-// include here if A64FX was not defined
-#ifndef A64FX
+// safety include
 #include <arm_sve.h>
-#endif
 
-#pragma message("specialize A64FX Dslash")
-
-// undefine everything
+// undefine everything related to kernels
 #include <simd/Fujitsu_A64FX_undef.h>
 
+// enable A64FX body
 #define WILSONKERNELSASMBODYA64FX
-#pragma message("invoking A64FX Dslash: WilsonKernelsAsmBodyA64FX.h")
+#pragma message("Including A64FX Dslash: WilsonKernelsAsmBodyA64FX.h")
 
     ///////////////////////////////////////////////////////////
     // If we are A64FX specialise the single precision routine
     ///////////////////////////////////////////////////////////
 #if defined(DSLASHINTRIN)
-#pragma message ("invoking A64FX Dslash: intrin")
+#pragma message ("including A64FX Dslash: intrin")
 #include <simd/Fujitsu_A64FX_intrin_single.h>
 #else
-#pragma message ("invoking A64FX Dslash: asm")
+#pragma message ("including A64FX Dslash: asm")
 #include <simd/Fujitsu_A64FX_asm_single.h>
 #endif
 
@@ -574,4 +570,4 @@ WilsonKernels<ZWilsonImplDF>::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFie
 #undef WILSONKERNELSASMBODYA64FX
 #include <simd/Fujitsu_A64FX_undef.h>
 
-#endif //A64FX
+#endif //A64FXASM

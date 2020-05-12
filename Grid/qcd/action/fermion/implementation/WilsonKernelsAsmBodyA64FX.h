@@ -6,7 +6,7 @@
 
     Copyright (C) 2020
 
-Author: Nils Meyer <nils.meyer@ur.de>
+Author:  Nils Meyer  <nils.meyer@ur.de>  Regensburg University
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
