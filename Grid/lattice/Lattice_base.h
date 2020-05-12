@@ -267,14 +267,14 @@ public:
   LatticeView<vobj> AcceleratorView(int mode = ViewReadWrite) const 
   {
     LatticeView<vobj> accessor(*( (LatticeAccelerator<vobj> *) this));
-    accessor.AcceleratorPrefetch(mode);
+    //accessor.AcceleratorPrefetch(mode);
     return accessor;
   }
 
   LatticeView<vobj> HostView(int mode = ViewReadWrite) const 
   {
     LatticeView<vobj> accessor(*( (LatticeAccelerator<vobj> *) this));
-    accessor.HostPrefetch(mode);
+    //accessor.HostPrefetch(mode);
     return accessor;
   }
   
