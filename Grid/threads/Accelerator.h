@@ -85,27 +85,27 @@ void     acceleratorInit(void);
 #define accelerator        __host__ __device__
 #define accelerator_inline __host__ __device__ inline
 
-accelerator_inline int acceleratorSIMTlane(int Nsimd) { return threadIdx.x; } // CUDA specific
+accelerator_inline int acceleratorSIMTlane(int Nsimd) { return threadIdx.z; } // CUDA specific
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   {									\
     typedef uint64_t Iterator;						\
     auto lambda = [=] accelerator					\
-      (Iterator lane,Iterator iter1,Iterator iter2) mutable {		\
+      (Iterator iter1,Iterator iter2,Iterator lane) mutable {		\
       __VA_ARGS__;							\
     };									\
     int nt=acceleratorThreads();					\
-    dim3 cu_threads(nsimd,acceleratorThreads(),1);			\
-    dim3 cu_blocks (1,(num1+nt-1)/nt,num2);				\
-    LambdaApply<<<cu_blocks,cu_threads>>>(nsimd,num1,num2,lambda);		\
+    dim3 cu_threads(acceleratorThreads(),1,nsimd);			\
+    dim3 cu_blocks ((num1+nt-1)/nt,num2,1);				\
+    LambdaApply<<<cu_blocks,cu_threads>>>(num1,num2,nsimd,lambda);	\
   }
 
 template<typename lambda>  __global__
 void LambdaApply(uint64_t num1, uint64_t num2, uint64_t num3, lambda Lambda)
 {
-  uint64_t x = threadIdx.x;//+ blockDim.x*blockIdx.x;
+  uint64_t x = threadIdx.x + blockDim.x*blockIdx.x;
   uint64_t y = threadIdx.y + blockDim.y*blockIdx.y;
-  uint64_t z = threadIdx.z + blockDim.z*blockIdx.z;
+  uint64_t z = threadIdx.z;
   if ( (x < num1) && (y<num2) && (z<num3) ) {
     Lambda(x,y,z);
   }
@@ -167,26 +167,24 @@ extern cl::sycl::queue *theGridAccelerator;
 #define accelerator 
 #define accelerator_inline strong_inline
 
-accelerator_inline int acceleratorSIMTlane(int Nsimd) { return __spirv::initLocalInvocationId<3, cl::sycl::id<3>>()[0]; } // SYCL specific
+accelerator_inline int acceleratorSIMTlane(int Nsimd) { return __spirv::initLocalInvocationId<3, cl::sycl::id<3>>()[2]; } // SYCL specific
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   theGridAccelerator->submit([&](cl::sycl::handler &cgh) {		\
       int nt=acceleratorThreads();					\
       unsigned long unum1 = num1;					\
       unsigned long unum2 = num2;					\
-      cl::sycl::range<3> local {nsimd,nt,1};				\
-      cl::sycl::range<3> global{nsimd,unum1,unum2};			\
+      cl::sycl::range<3> local {nt,1,nsimd};				\
+      cl::sycl::range<3> global{unum1,unum2,nsimd};				\
       cgh.parallel_for<class dslash>(					\
       cl::sycl::nd_range<3>(global,local),            \
       [=] (cl::sycl::nd_item<3> item) mutable {       \
-      auto lane     = item.get_global_id(0);	      \
-      auto iter1    = item.get_global_id(1);	      \
-      auto iter2    = item.get_global_id(2);	      \
+      auto iter1    = item.get_global_id(0);	      \
+      auto iter2    = item.get_global_id(1);	      \
+      auto lane     = item.get_global_id(2);	      \
       { __VA_ARGS__ };				      \
      });	   			              \
     });
-dim3 cu_threads(nsimd,acceleratorThreads(),1);                      \
-dim3 cu_blocks (1,(num1+nt-1)/n,num2);                              \
 
 #define accelerator_barrier(dummy) theGridAccelerator->wait();
 
@@ -213,30 +211,29 @@ NAMESPACE_BEGIN(Grid);
 #define accelerator_inline __host__ __device__ inline
 
 /*These routines define mapping from thread grid to loop & vector lane indexing */
-accelerator_inline int acceleratorSIMTlane(int Nsimd) { return hipThreadIdx_x; } // HIP specific
+accelerator_inline int acceleratorSIMTlane(int Nsimd) { return hipThreadIdx_z; } // HIP specific
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   {									\
     typedef uint64_t Iterator;						\
     auto lambda = [=] accelerator					\
-      (Iterator lane,Iterator iter1,Iterator iter2 ) mutable {		\
+      (Iterator iter1,Iterator iter2,Iterator lane ) mutable {		\
       { __VA_ARGS__;}							\
     };									\
     int nt=acceleratorThreads();					\
-    dim3 hip_threads(nsimd,nt,1);					\
-    dim3 hip_blocks (1,(num1+nt-1)/nt,num2);				\
+    dim3 hip_threads(nt,1,nsimd);					\
+    dim3 hip_blocks ((num1+nt-1)/nt,num2,1);				\
     hipLaunchKernelGGL(LambdaApply,hip_blocks,hip_threads,		\
 		       0,0,						\
-		       nsimd,num1,num2,lambda);				\
+		       num1,num2,nsimd,lambda);				\
   }
-
 
 template<typename lambda>  __global__
 void LambdaApply(uint64_t numx, uint64_t numy, uint64_t numz, lambda Lambda)
 {
-  uint64_t x = hipThreadIdx_x;//+ hipBlockDim_x*hipBlockIdx_x;
+  uint64_t x = hipThreadIdx_x + hipBlockDim_x*hipBlockIdx_x;
   uint64_t y = hipThreadIdx_y + hipBlockDim_y*hipBlockIdx_y;
-  uint64_t z = hipThreadIdx_z + hipBlockDim_z*hipBlockIdx_z;
+  uint64_t z = hipThreadIdx_z ;//+ hipBlockDim_z*hipBlockIdx_z;
   if ( (x < numx) && (y<numy) && (z<numz) ) {
     Lambda(x,y,z);
   }
