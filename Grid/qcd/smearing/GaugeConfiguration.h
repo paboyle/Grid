@@ -49,7 +49,7 @@ public:
 
 private:
   const unsigned int smearingLevels;
-  Smear_Stout<Gimpl> StoutSmearing;
+  Smear_Stout<Gimpl> &StoutSmearing;
   std::vector<GaugeField> SmearedSet;
 
   // Member functions

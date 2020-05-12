@@ -102,21 +102,24 @@ void WilsonFermion<Impl>::ImportGauge(const GaugeField &_Umu)
 /////////////////////////////
 
 template <class Impl>
-RealD WilsonFermion<Impl>::M(const FermionField &in, FermionField &out) {
+void WilsonFermion<Impl>::M(const FermionField &in, FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   Dhop(in, out, DaggerNo);
-  return axpy_norm(out, diag_mass, in, out);
+  axpy(out, diag_mass, in, out);
 }
 
 template <class Impl>
-RealD WilsonFermion<Impl>::Mdag(const FermionField &in, FermionField &out) {
+void WilsonFermion<Impl>::Mdag(const FermionField &in, FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   Dhop(in, out, DaggerYes);
-  return axpy_norm(out, diag_mass, in, out);
+  axpy(out, diag_mass, in, out);
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::Meooe(const FermionField &in, FermionField &out) {
+void WilsonFermion<Impl>::Meooe(const FermionField &in, FermionField &out) 
+{
   if (in.Checkerboard() == Odd) {
     DhopEO(in, out, DaggerNo);
   } else {
@@ -125,7 +128,8 @@ void WilsonFermion<Impl>::Meooe(const FermionField &in, FermionField &out) {
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::MeooeDag(const FermionField &in, FermionField &out) {
+void WilsonFermion<Impl>::MeooeDag(const FermionField &in, FermionField &out) 
+{
   if (in.Checkerboard() == Odd) {
     DhopEO(in, out, DaggerYes);
   } else {
@@ -134,26 +138,30 @@ void WilsonFermion<Impl>::MeooeDag(const FermionField &in, FermionField &out) {
 }
   
 template <class Impl>
-void WilsonFermion<Impl>::Mooee(const FermionField &in, FermionField &out) {
+void WilsonFermion<Impl>::Mooee(const FermionField &in, FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   typename FermionField::scalar_type scal(diag_mass);
   out = scal * in;
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out) {
+void WilsonFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   Mooee(in, out);
 }
 
 template<class Impl>
-void WilsonFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out) {
+void WilsonFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   out = (1.0/(diag_mass))*in;
 }
   
 template<class Impl>
-void WilsonFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out) {
+void WilsonFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   MooeeInv(in,out);
 }
@@ -249,7 +257,8 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
+void WilsonFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) 
+{
   conformable(U.Grid(), _grid);
   conformable(U.Grid(), V.Grid());
   conformable(U.Grid(), mat.Grid());
@@ -260,7 +269,8 @@ void WilsonFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U, cons
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
+void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) 
+{
   conformable(U.Grid(), _cbgrid);
   conformable(U.Grid(), V.Grid());
   //conformable(U.Grid(), mat.Grid()); not general, leaving as a comment (Guido)
@@ -274,7 +284,8 @@ void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U, co
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
+void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) 
+{
   conformable(U.Grid(), _cbgrid);
   conformable(U.Grid(), V.Grid());
   //conformable(U.Grid(), mat.Grid());
@@ -287,7 +298,8 @@ void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, co
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int dag) {
+void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int dag) 
+{
   conformable(in.Grid(), _grid);  // verifies full grid
   conformable(in.Grid(), out.Grid());
 
@@ -297,7 +309,8 @@ void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int da
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int dag) {
+void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int dag) 
+{
   conformable(in.Grid(), _cbgrid);    // verifies half grid
   conformable(in.Grid(), out.Grid());  // drops the cb check
 
@@ -308,7 +321,8 @@ void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int 
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag) {
+void WilsonFermion<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag) 
+{
   conformable(in.Grid(), _cbgrid);    // verifies half grid
   conformable(in.Grid(), out.Grid());  // drops the cb check
 
@@ -386,7 +400,8 @@ template <class Impl>
 void WilsonFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, LebesgueOrder &lo,
 						      DoubledGaugeField &U,
 						      const FermionField &in,
-						      FermionField &out, int dag) {
+						      FermionField &out, int dag) 
+{
   assert((dag == DaggerNo) || (dag == DaggerYes));
 
   Compressor compressor(dag);
@@ -436,7 +451,8 @@ template <class Impl>
 void WilsonFermion<Impl>::DhopInternalSerial(StencilImpl &st, LebesgueOrder &lo,
                                        DoubledGaugeField &U,
                                        const FermionField &in,
-                                       FermionField &out, int dag) {
+                                       FermionField &out, int dag) 
+{
   assert((dag == DaggerNo) || (dag == DaggerYes));
   Compressor compressor(dag);
   st.HaloExchange(in, compressor);

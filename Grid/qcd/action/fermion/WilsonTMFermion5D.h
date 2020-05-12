@@ -120,7 +120,8 @@ class WilsonTMFermion5D : public WilsonFermion5D<Impl>
     }
   }
   
-  virtual RealD M(const FermionField &in, FermionField &out) {
+  virtual void M(const FermionField &in, FermionField &out) 
+  {
     out.Checkerboard() = in.Checkerboard();
     this->Dhop(in, out, DaggerNo);
     FermionField tmp(out.Grid());
@@ -129,11 +130,12 @@ class WilsonTMFermion5D : public WilsonFermion5D<Impl>
       ComplexD b(0.0,this->mu[s]);
       axpbg5y_ssp(tmp,a,in,b,in,s,s);
     }
-    return axpy_norm(out, 1.0, tmp, out);
+    axpy(out, 1.0, tmp, out);
   }
   
   // needed for fast PV
-  void update(const std::vector<RealD>& _mass, const std::vector<RealD>& _mu) {
+  void update(const std::vector<RealD>& _mass, const std::vector<RealD>& _mu) 
+  {
     assert(_mass.size() == _mu.size());
     assert(_mass.size() == this->FermionGrid()->_fdimensions[0]);
     this->mass = _mass;

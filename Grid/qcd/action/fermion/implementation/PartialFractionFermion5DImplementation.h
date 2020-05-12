@@ -269,16 +269,14 @@ void   PartialFractionFermion5D<Impl>::M_internal(const FermionField &psi, Fermi
 }
 
 template<class Impl>
-RealD  PartialFractionFermion5D<Impl>::M    (const FermionField &in, FermionField &out)
+void PartialFractionFermion5D<Impl>::M    (const FermionField &in, FermionField &out)
 {
   M_internal(in,out,DaggerNo);
-  return norm2(out);
 }
 template<class Impl>
-RealD  PartialFractionFermion5D<Impl>::Mdag (const FermionField &in, FermionField &out)
+void PartialFractionFermion5D<Impl>::Mdag (const FermionField &in, FermionField &out)
 {
   M_internal(in,out,DaggerYes);
-  return norm2(out);
 }
 
 template<class Impl>

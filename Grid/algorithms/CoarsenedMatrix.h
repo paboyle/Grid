@@ -541,17 +541,14 @@ public:
   ///////////////////////
   GridBase * Grid(void)         { return _grid; };   // this is all the linalg routines need to know
 
-  RealD M (const CoarseVector &in, CoarseVector &out){
-
+  void M (const CoarseVector &in, CoarseVector &out)
+  {
     conformable(_grid,in.Grid());
     conformable(in.Grid(),out.Grid());
 
-    //    RealD Nin = norm2(in);
     SimpleCompressor<siteVector> compressor;
 
-    double comms_usec = -usecond();
     Stencil.HaloExchange(in,compressor);
-    comms_usec += usecond();
 
     auto in_v = in.View();
     auto out_v = out.View();
@@ -565,12 +562,7 @@ public:
     typedef decltype(coalescedRead(in_v[0])) calcVector;
     typedef decltype(coalescedRead(in_v[0](0))) calcComplex;
 
-    GridStopWatch ArithmeticTimer;
     int osites=Grid()->oSites();
-    //    double flops = osites*Nsimd*nbasis*nbasis*8.0*geom.npoint;
-    //    double bytes = osites*nbasis*nbasis*geom.npoint*sizeof(CComplex);
-    double usecs =-usecond();
-    // assert(geom.npoint==9);
 
     accelerator_for(sss, Grid()->oSites()*nbasis, Nsimd, {
       int ss = sss/nbasis;
@@ -598,23 +590,9 @@ public:
       }
       coalescedWrite(out_v[ss](b),res,lane);
     });
-    usecs +=usecond();
-
-    double nrm_usec=-usecond();
-    RealD Nout= norm2(out);
-    nrm_usec+=usecond();
-
-    /*
-        std::cout << GridLogMessage << "\tNorm        " << nrm_usec << " us" <<std::endl;
-        std::cout << GridLogMessage << "\tHalo        " << comms_usec << " us" <<std::endl;
-        std::cout << GridLogMessage << "\tMatrix      " << usecs << " us" <<std::endl;
-        std::cout << GridLogMessage << "\t  mflop/s   " << flops/usecs<<std::endl;
-        std::cout << GridLogMessage << "\t  MB/s      " << bytes/usecs<<std::endl;
-    */
-    return Nout;
   };
 
-  RealD Mdag (const CoarseVector &in, CoarseVector &out)
+  void Mdag (const CoarseVector &in, CoarseVector &out)
   {
     if(hermitian) {
       // corresponds to Petrov-Galerkin coarsening
@@ -625,7 +603,6 @@ public:
       G5C(tmp, in); 
       M(tmp, out);
       G5C(out, out);
-      return norm2(out);
     }
   };
   void MdirComms(const CoarseVector &in)
@@ -870,8 +847,6 @@ public:
 	    auto A_self  = A[self_stencil].View();
 
 	    accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{ coalescedWrite(A_p[ss](j,i),oZProj_v(ss)); });
-	    //      if( disp!= 0 ) { accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{ coalescedWrite(A_p[ss](j,i),oZProj_v(ss)); });}
-	    //	    accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{ coalescedWrite(A_self[ss](j,i),A_self(ss)(j,i)+iZProj_v(ss)); });
 
 	  }
 	}

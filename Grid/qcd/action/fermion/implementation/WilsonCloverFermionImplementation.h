@@ -35,7 +35,7 @@ NAMESPACE_BEGIN(Grid);
 
 // *NOT* EO
 template <class Impl>
-RealD WilsonCloverFermion<Impl>::M(const FermionField &in, FermionField &out)
+void WilsonCloverFermion<Impl>::M(const FermionField &in, FermionField &out)
 {
   FermionField temp(out.Grid());
 
@@ -47,11 +47,10 @@ RealD WilsonCloverFermion<Impl>::M(const FermionField &in, FermionField &out)
   Mooee(in, temp);
 
   out += temp;
-  return norm2(out);
 }
 
 template <class Impl>
-RealD WilsonCloverFermion<Impl>::Mdag(const FermionField &in, FermionField &out)
+void WilsonCloverFermion<Impl>::Mdag(const FermionField &in, FermionField &out)
 {
   FermionField temp(out.Grid());
 
@@ -63,7 +62,6 @@ RealD WilsonCloverFermion<Impl>::Mdag(const FermionField &in, FermionField &out)
   MooeeDag(in, temp);
 
   out += temp;
-  return norm2(out);
 }
 
 template <class Impl>
