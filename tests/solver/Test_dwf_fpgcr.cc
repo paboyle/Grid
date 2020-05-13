@@ -70,9 +70,6 @@ int main (int argc, char ** argv)
 
   SU3::HotConfiguration(RNG4,Umu);
 
-  TrivialPrecon<LatticeFermion> simple;
-
-  PrecGeneralisedConjugateResidual<LatticeFermion> PGCR(1.0e-6,10000,simple,4,160);
 
   ConjugateResidual<LatticeFermion> CR(1.0e-6,10000);
 
@@ -86,15 +83,19 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"* Solving with MdagM VPGCR "<<std::endl;
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
   MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
+  TrivialPrecon<LatticeFermion> simple;
+  PrecGeneralisedConjugateResidual<LatticeFermion> PGCR(1.0e-6,10000,HermOp,simple,4,160);
+
   result=Zero();
-  PGCR(HermOp,src,result);
+  PGCR(src,result);
 
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
   std::cout<<GridLogMessage<<"* Solving with g5-VPGCR "<<std::endl;
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
   Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> g5HermOp(Ddwf);
+  PrecGeneralisedConjugateResidual<LatticeFermion> PGCR5(1.0e-6,10000,g5HermOp,simple,4,160);
   result=Zero();
-  PGCR(g5HermOp,src,result);
+  PGCR5(src,result);
 
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
   std::cout<<GridLogMessage<<"* Solving with MdagM-CR "<<std::endl;

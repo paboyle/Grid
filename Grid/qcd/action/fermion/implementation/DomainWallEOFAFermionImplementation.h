@@ -89,7 +89,7 @@ void DomainWallEOFAFermion<Impl>::DtildeInv(const FermionField& psi, FermionFiel
 /*****************************************************************************************************/
 
 template<class Impl>
-RealD DomainWallEOFAFermion<Impl>::M(const FermionField& psi, FermionField& chi)
+void DomainWallEOFAFermion<Impl>::M(const FermionField& psi, FermionField& chi)
 {
   FermionField Din(psi.Grid());
 
@@ -97,11 +97,10 @@ RealD DomainWallEOFAFermion<Impl>::M(const FermionField& psi, FermionField& chi)
   this->DW(Din, chi, DaggerNo);
   axpby(chi, 1.0, 1.0, chi, psi);
   this->M5D(psi, chi);
-  return(norm2(chi));
 }
 
 template<class Impl>
-RealD DomainWallEOFAFermion<Impl>::Mdag(const FermionField& psi, FermionField& chi)
+void DomainWallEOFAFermion<Impl>::Mdag(const FermionField& psi, FermionField& chi)
 {
   FermionField Din(psi.Grid());
 
@@ -109,7 +108,6 @@ RealD DomainWallEOFAFermion<Impl>::Mdag(const FermionField& psi, FermionField& c
   this->MeooeDag5D(Din, chi);
   this->M5Ddag(psi, chi);
   axpby(chi, 1.0, 1.0, chi, psi);
-  return(norm2(chi));
 }
 
 /********************************************************************

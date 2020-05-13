@@ -171,21 +171,24 @@ void ImprovedStaggeredFermion<Impl>::ImportGauge(const GaugeField &_Uthin,const 
 /////////////////////////////
 
 template <class Impl>
-RealD ImprovedStaggeredFermion<Impl>::M(const FermionField &in, FermionField &out) {
+void ImprovedStaggeredFermion<Impl>::M(const FermionField &in, FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   Dhop(in, out, DaggerNo);
-  return axpy_norm(out, mass, in, out);
+  axpy(out, mass, in, out);
 }
 
 template <class Impl>
-RealD ImprovedStaggeredFermion<Impl>::Mdag(const FermionField &in, FermionField &out) {
+void ImprovedStaggeredFermion<Impl>::Mdag(const FermionField &in, FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   Dhop(in, out, DaggerYes);
-  return axpy_norm(out, mass, in, out);
+  axpy(out, mass, in, out);
 }
 
 template <class Impl>
-void ImprovedStaggeredFermion<Impl>::Meooe(const FermionField &in, FermionField &out) {
+void ImprovedStaggeredFermion<Impl>::Meooe(const FermionField &in, FermionField &out) 
+{
   if (in.Checkerboard() == Odd) {
     DhopEO(in, out, DaggerNo);
   } else {
@@ -193,7 +196,8 @@ void ImprovedStaggeredFermion<Impl>::Meooe(const FermionField &in, FermionField 
   }
 }
 template <class Impl>
-void ImprovedStaggeredFermion<Impl>::MeooeDag(const FermionField &in, FermionField &out) {
+void ImprovedStaggeredFermion<Impl>::MeooeDag(const FermionField &in, FermionField &out) 
+{
   if (in.Checkerboard() == Odd) {
     DhopEO(in, out, DaggerYes);
   } else {
@@ -202,27 +206,30 @@ void ImprovedStaggeredFermion<Impl>::MeooeDag(const FermionField &in, FermionFie
 }
 
 template <class Impl>
-void ImprovedStaggeredFermion<Impl>::Mooee(const FermionField &in, FermionField &out) {
+void ImprovedStaggeredFermion<Impl>::Mooee(const FermionField &in, FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   typename FermionField::scalar_type scal(mass);
   out = scal * in;
 }
 
 template <class Impl>
-void ImprovedStaggeredFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out) {
+void ImprovedStaggeredFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   Mooee(in, out);
 }
 
 template <class Impl>
-void ImprovedStaggeredFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out) {
+void ImprovedStaggeredFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   out = (1.0 / (mass)) * in;
 }
 
 template <class Impl>
-void ImprovedStaggeredFermion<Impl>::MooeeInvDag(const FermionField &in,
-						 FermionField &out) {
+void ImprovedStaggeredFermion<Impl>::MooeeInvDag(const FermionField &in,FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   MooeeInv(in, out);
 }
@@ -234,7 +241,8 @@ void ImprovedStaggeredFermion<Impl>::MooeeInvDag(const FermionField &in,
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U, DoubledGaugeField &UUU, 
 						   GaugeField & mat,
-						   const FermionField &A, const FermionField &B, int dag) {
+						   const FermionField &A, const FermionField &B, int dag) 
+{
   assert((dag == DaggerNo) || (dag == DaggerYes));
 
   Compressor compressor;
@@ -284,8 +292,8 @@ void ImprovedStaggeredFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGauge
 }
 
 template <class Impl>
-void ImprovedStaggeredFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
-
+void ImprovedStaggeredFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) 
+{
   conformable(U.Grid(), _grid);
   conformable(U.Grid(), V.Grid());
   conformable(U.Grid(), mat.Grid());
@@ -296,8 +304,8 @@ void ImprovedStaggeredFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionFie
 }
 
 template <class Impl>
-void ImprovedStaggeredFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
-
+void ImprovedStaggeredFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) 
+{
   conformable(U.Grid(), _cbgrid);
   conformable(U.Grid(), V.Grid());
   conformable(U.Grid(), mat.Grid());
@@ -310,8 +318,8 @@ void ImprovedStaggeredFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionF
 }
 
 template <class Impl>
-void ImprovedStaggeredFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
-
+void ImprovedStaggeredFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) 
+{
   conformable(U.Grid(), _cbgrid);
   conformable(U.Grid(), V.Grid());
   conformable(U.Grid(), mat.Grid());

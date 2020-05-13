@@ -57,6 +57,7 @@ public:
   // Support for coarsening to a multigrid
   void OpDiag (const Field &in, Field &out) {};
   void OpDir  (const Field &in, Field &out,int dir,int disp){};
+  void OpDirAll  (const Field &in, std::vector<Field> &out) {}; // Abstract base
 
   void Op     (const Field &in, Field &out){
     out = scale * in;

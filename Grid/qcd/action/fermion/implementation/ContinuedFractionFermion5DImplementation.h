@@ -94,7 +94,7 @@ void ContinuedFractionFermion5D<Impl>::SetCoefficientsZolotarev(RealD zolo_hi,Ap
 
 
 template<class Impl>
-RealD  ContinuedFractionFermion5D<Impl>::M           (const FermionField &psi, FermionField &chi)
+void ContinuedFractionFermion5D<Impl>::M           (const FermionField &psi, FermionField &chi)
 {
   int Ls = this->Ls;
 
@@ -116,15 +116,14 @@ RealD  ContinuedFractionFermion5D<Impl>::M           (const FermionField &psi, F
     }
     sign=-sign; 
   }
-  return norm2(chi);
 }
 template<class Impl>
-RealD  ContinuedFractionFermion5D<Impl>::Mdag        (const FermionField &psi, FermionField &chi)
+void ContinuedFractionFermion5D<Impl>::Mdag        (const FermionField &psi, FermionField &chi)
 {
   // This matrix is already hermitian. (g5 Dw) = Dw dag g5 = (g5 Dw)dag
   // The rest of matrix is symmetric.
   // Can ignore "dag"
-  return M(psi,chi);
+  M(psi,chi);
 }
 template<class Impl>
 void  ContinuedFractionFermion5D<Impl>::Mdir (const FermionField &psi, FermionField &chi,int dir,int disp){

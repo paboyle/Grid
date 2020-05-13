@@ -38,16 +38,12 @@ template<class Field> class SparseMatrixBase {
 public:
   virtual GridBase *Grid(void) =0;
   // Full checkerboar operations
-  virtual RealD M    (const Field &in, Field &out)=0;
-  virtual RealD Mdag (const Field &in, Field &out)=0;
-  virtual void  MdagM(const Field &in, Field &out,RealD &ni,RealD &no) {
-    Field tmp (in.Grid());
-    ni=M(in,tmp);
-    no=Mdag(tmp,out);
-  }
+  virtual void  M    (const Field &in, Field &out)=0;
+  virtual void  Mdag (const Field &in, Field &out)=0;
   virtual void  MdagM(const Field &in, Field &out) {
-    RealD ni, no;
-    MdagM(in,out,ni,no);
+    Field tmp (in.Grid());
+    M(in,tmp);
+    Mdag(tmp,out);
   }
   virtual  void Mdiag    (const Field &in, Field &out)=0;
   virtual  void Mdir     (const Field &in, Field &out,int dir, int disp)=0;
