@@ -96,7 +96,6 @@ struct acle{};
 
 template <>
 struct acle<double>{
-  static inline pred pg1(){return svptrue_b64();}
   static inline lutd tbl_swap(){
     const ulutd t = { .s = {1, 0, 3, 2, 5, 4, 7, 6} };
     return t.v;
@@ -109,6 +108,7 @@ struct acle<double>{
     const ulutd t = { .s = {2, 3, 0, 1, 6, 7, 4, 5} };
     return t.v;
   }
+  static inline pred pg1(){return svptrue_b64();}
   static inline pred pg_even(){return svzip1_b64(svptrue_b64(), svpfalse_b());}
   static inline pred pg_odd() {return svzip1_b64(svpfalse_b(), svptrue_b64());}
   static inline vecd zero(){return svdup_f64(0.);}
@@ -116,7 +116,6 @@ struct acle<double>{
 
 template <>
 struct acle<float>{
-  static inline pred pg1(){return svptrue_b32();}
   // exchange neighboring elements
   static inline lutf tbl_swap(){
     const ulutf t = { .s = {1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14} };
@@ -134,6 +133,7 @@ struct acle<float>{
     const ulutf t = { .s = {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13} };
     return t.v;
   }
+  static inline pred pg1(){return svptrue_b32();}
   static inline pred pg_even(){return svzip1_b32(svptrue_b32(), svpfalse_b());}
   static inline pred pg_odd() {return svzip1_b32(svpfalse_b(), svptrue_b32());}
   static inline vecf zero(){return svdup_f32(0.);}
