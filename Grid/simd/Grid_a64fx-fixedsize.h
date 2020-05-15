@@ -385,13 +385,13 @@ struct Conj{
   inline vecf operator()(vecf a){
     pred pg_odd = acle<float>::pg_odd();
     //return svneg_x(pg_odd, a);
-    return svneg_m(pg_odd, a);
+    return svneg_m(a, pg_odd, a);
   }
   // Complex double
   inline vecd operator()(vecd a){
     pred pg_odd = acle<double>::pg_odd();
     //return svneg_x(pg_odd, a);
-    return svneg_m(pg_odd, a);
+    return svneg_m(a, pg_odd, a);
   }
 };
 
@@ -404,7 +404,7 @@ struct TimesMinusI{
 
     vecf a_v = svtbl(a, tbl_swap);
     //return svneg_x(pg_odd, a_v);
-    return svneg_m(pg_odd, a_v);
+    return svneg_m(a_v, pg_odd, a_v);
   }
   // Complex double
   inline vecd operator()(vecd a, vecd b){
@@ -414,7 +414,7 @@ struct TimesMinusI{
 
     vecd a_v = svtbl(a, tbl_swap);
     //return svneg_x(pg_odd, a_v);
-    return svneg_m(pg_odd, a_v);
+    return svneg_m(a_v, pg_odd, a_v);
   }
 };
 
@@ -427,7 +427,7 @@ struct TimesI{
 
     vecf a_v = svtbl(a, tbl_swap);
     //return svneg_x(pg_even, a_v);
-    return svneg_m(pg_even, a_v);
+    return svneg_m(a_v, pg_even, a_v);
   }
   // Complex double
   inline vecd operator()(vecd a, vecd b){
@@ -437,7 +437,7 @@ struct TimesI{
 
     vecd a_v = svtbl(a, tbl_swap);
     //return svneg_x(pg_even, a_v);
-    return svneg_m(pg_even, a_v);
+    return svneg_m(a_v, pg_even, a_v);
   }
 };
 

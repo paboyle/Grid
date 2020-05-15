@@ -423,7 +423,7 @@ struct Conj{
     svbool_t pg_odd = acle<T>::pg_odd();
     typename acle<T>::vt a_v = svld1(pg1, a.v);
     //typename acle<T>::vt r_v = svneg_x(pg_odd, a_v);
-    typename acle<T>::vt r_v = svneg_m(pg_odd, a_v);
+    typename acle<T>::vt r_v = svneg_m(a_v, pg_odd, a_v);
     svst1(pg1, out.v, r_v);
 
     return out;
@@ -443,7 +443,7 @@ struct TimesMinusI{
     typename acle<T>::svuint tbl_swap_v = svld1(pg1, tbl_swap.v);
     typename acle<T>::vt a_v = svld1(pg1, a.v);
     a_v = svtbl(a_v, tbl_swap_v);
-    typename acle<T>::vt r_v = svneg_m(pg_odd, a_v);
+    typename acle<T>::vt r_v = svneg_m(a_v, pg_odd, a_v);
     svst1(pg1, out.v, r_v);
 
     return out;
@@ -464,7 +464,7 @@ struct TimesI{
     typename acle<T>::vt a_v = svld1(pg1, a.v);
     a_v = svtbl(a_v, tbl_swap_v);
     //typename acle<T>::vt r_v = svneg_x(pg_even, a_v);
-    typename acle<T>::vt r_v = svneg_m(pg_even, a_v);
+    typename acle<T>::vt r_v = svneg_m(a_v, pg_even, a_v);
     svst1(pg1, out.v, r_v);
 
     return out;
