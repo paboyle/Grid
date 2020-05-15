@@ -1,6 +1,6 @@
     /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./benchmarks/Benchmark_wilson.cc
 
@@ -98,7 +98,7 @@ int main (int argc, char ** argv)
   double volume=1;
   for(int mu=0;mu<Nd;mu++){
     volume=volume*latt_size[mu];
-  }  
+  }
 
   // Only one non-zero (y)
 #if 0
@@ -118,7 +118,7 @@ int main (int argc, char ** argv)
   for(int mu=0;mu<Nd;mu++){
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
   }
-  
+
   { // Naive wilson implementation
     ref = Zero();
     for(int mu=0;mu<Nd;mu++){
@@ -146,10 +146,10 @@ int main (int argc, char ** argv)
   ref = -0.5*ref;
   RealD mass=0.1;
 
-  typename WilsonFermionR::ImplParams params; 
+  typename WilsonFermionR::ImplParams params;
 
   WilsonFermionR Dw(Umu,Grid,RBGrid,mass,params);
-  
+
   std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
   int ncall=1000;
   //int ncall=1;
@@ -159,10 +159,10 @@ int main (int argc, char ** argv)
   }
   double t1=usecond();
   double flops=single_site_flops*volume*ncall;
-  
+
   if (perfProfiling){
   std::cout<<GridLogMessage << "Profiling Dw with perf"<<std::endl;
-    
+
   System::profile("kernel", [&]() {
     for(int i=0;i<ncall;i++){
       Dw.Dhop(src,result,0);
@@ -175,16 +175,18 @@ int main (int argc, char ** argv)
   }
 
   double data = (volume * 180 * 64 / 4 * ncall) / (1024.*1024.*1024.);
-  
+
   std::cout<<GridLogMessage << "Called Dw"<<std::endl;
   std::cout<<GridLogMessage << "flops per site " << single_site_flops << std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
   std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
   std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
   std::cout<<GridLogMessage << "GiB/s (base 2) =   "<< 1000000. * data/((t1-t0))<<std::endl;
-  err = ref-result; 
+  err = ref-result;
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
 
+  // guard
+  double err0 = norm2(err);
 
   //  for(int ss=0;ss<10;ss++ ){
   for(int ss=0;ss<0;ss++ ){
@@ -230,8 +232,13 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Called DwDag"<<std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
   std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
-  err = ref-result; 
+  err = ref-result;
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
+
+  // guard
+  double err1 = norm2(err);
+  assert(fabs(err0) < 1.0e-3);
+  assert(fabs(err1) < 1.0e-3);
 
   Grid_finalize();
 }
