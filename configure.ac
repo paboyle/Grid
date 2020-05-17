@@ -147,7 +147,7 @@ case ${ac_SUMMIT} in
       AC_DEFINE([GRID_IBM_SUMMIT],[1],[Let JSRUN manage the GPU device allocation]);;
 esac
 
-############### SYCL
+############### SYCL/CUDA/HIP/none
 AC_ARG_ENABLE([accelerator],
     [AC_HELP_STRING([--enable-accelerator=cuda|sycl|hip|none], [enable none,cuda,sycl,hip acceleration])],
     [ac_ACCELERATOR=${enable_accelerator}], [ac_ACCELERATOR=none])
@@ -166,6 +166,20 @@ case ${ac_ACCELERATOR} in
     ;;
     *)
       AC_MSG_ERROR(["Acceleration not suppoorted ${ac_ACCELERATOR}"]);;
+esac
+
+############### UNIFIED MEMORY
+AC_ARG_ENABLE([unified],
+    [AC_HELP_STRING([--enable-unified=yes|no], [enable unified address space for accelerator loops])],
+    [ac_UNIFIED=${enable_unified}], [ac_UNIFIED=yes])
+case ${ac_UNIFIED} in
+    yes)
+      echo Unified memory for accelerator loops
+      AC_DEFINE([GRID_UVM],[1],[Use unified address space]);;
+    no)
+      echo Manual memory copy for accelerator loops;;
+    *)
+      AC_MSG_ERROR(["Unified virtual memory option not suppoorted ${ac_UNIFIED}"]);;
 esac
 
 ############### Intel libraries
@@ -612,6 +626,7 @@ compiler version            : ${ax_cv_gxx_version}
 SIMD                        : ${ac_SIMD}${SIMD_GEN_WIDTH_MSG}
 Threading                   : ${ac_openmp}
 Acceleration                : ${ac_ACCELERATOR}
+Unified virtual memory      : ${ac_UNIFIED}
 Communications type         : ${comms_type}
 Shared memory allocator     : ${ac_SHM}
 Shared memory mmap path     : ${ac_SHMPATH}

@@ -286,6 +286,8 @@ void Grid_init(int *argc,char ***argv)
   //////////////////////////////////////////////////////////
   acceleratorInit(); // Must come first to set device prior to MPI init due to Omnipath Driver
 
+  AllocationCache::Init();
+
   if( GridCmdOptionExists(*argv,*argv+*argc,"--shm") ){
     int MB;
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--shm");

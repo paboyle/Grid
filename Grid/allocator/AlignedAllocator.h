@@ -26,101 +26,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef GRID_ALIGNED_ALLOCATOR_H
-#define GRID_ALIGNED_ALLOCATOR_H
+#pragma once
 
 NAMESPACE_BEGIN(Grid);
-
-/*Move control to configure.ac and Config.h*/
-#define POINTER_CACHE
-/*Pinning pages is costly*/
-/*Could maintain separate large and small allocation caches*/
-#ifdef POINTER_CACHE
-class PointerCache {
-private:
-
-  static const int Ncache=128;
-  static int victim;
-
-  typedef struct { 
-    void *address;
-    size_t bytes;
-    int valid;
-  } PointerCacheEntry;
-    
-  static PointerCacheEntry Entries[Ncache];
-
-public:
-
-  static void *Insert(void *ptr,size_t bytes) ;
-  static void *Lookup(size_t bytes) ;
-
-};
-#endif  
-
-std::string sizeString(size_t bytes);
-
-struct MemoryStats
-{
-  size_t totalAllocated{0}, maxAllocated{0}, 
-    currentlyAllocated{0}, totalFreed{0};
-};
-    
-class MemoryProfiler
-{
-public:
-  static MemoryStats *stats;
-  static bool        debug;
-};
-
-#define memString(bytes) std::to_string(bytes) + " (" + sizeString(bytes) + ")"
-#define profilerDebugPrint						\
-  if (MemoryProfiler::stats)						\
-    {									\
-      auto s = MemoryProfiler::stats;					\
-      std::cout << GridLogDebug << "[Memory debug] Stats " << MemoryProfiler::stats << std::endl; \
-      std::cout << GridLogDebug << "[Memory debug] total  : " << memString(s->totalAllocated) \
-		<< std::endl;						\
-      std::cout << GridLogDebug << "[Memory debug] max    : " << memString(s->maxAllocated) \
-		<< std::endl;						\
-      std::cout << GridLogDebug << "[Memory debug] current: " << memString(s->currentlyAllocated) \
-		<< std::endl;						\
-      std::cout << GridLogDebug << "[Memory debug] freed  : " << memString(s->totalFreed) \
-		<< std::endl;						\
-    }
-
-#define profilerAllocate(bytes)						\
-  if (MemoryProfiler::stats)						\
-    {									\
-      auto s = MemoryProfiler::stats;					\
-      s->totalAllocated     += (bytes);					\
-      s->currentlyAllocated += (bytes);					\
-      s->maxAllocated        = std::max(s->maxAllocated, s->currentlyAllocated); \
-    }									\
-  if (MemoryProfiler::debug)						\
-    {									\
-      std::cout << GridLogDebug << "[Memory debug] allocating " << memString(bytes) << std::endl; \
-      profilerDebugPrint;						\
-    }
-
-#define profilerFree(bytes)						\
-  if (MemoryProfiler::stats)						\
-    {									\
-      auto s = MemoryProfiler::stats;					\
-      s->totalFreed         += (bytes);					\
-      s->currentlyAllocated -= (bytes);					\
-    }									\
-  if (MemoryProfiler::debug)						\
-    {									\
-      std::cout << GridLogDebug << "[Memory debug] freeing " << memString(bytes) << std::endl; \
-      profilerDebugPrint;						\
-    }
-
-void check_huge_pages(void *Buf,uint64_t BYTES);
-
-////////////////////////////////////////////////////////////////////
-// A lattice of something, but assume the something is SIMDized.
-////////////////////////////////////////////////////////////////////
 
 template<typename _Tp>
 class alignedAllocator {
@@ -144,42 +52,23 @@ public:
   pointer allocate(size_type __n, const void* _p= 0)
   { 
     size_type bytes = __n*sizeof(_Tp);
+
     profilerAllocate(bytes);
 
-#ifdef POINTER_CACHE
-    _Tp *ptr = (_Tp *) PointerCache::Lookup(bytes);
-#else
-    pointer ptr = nullptr;
-#endif
-
-    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) acceleratorAllocShared(bytes);
-
+    _Tp *ptr = (_Tp*) AllocationCache::CpuAllocate(bytes);
+    
     assert( ( (_Tp*)ptr != (_Tp *)NULL ) );
 
-#if 0    
-    size_type page_size=4096;
-    size_type pages = (bytes+page_size-1)/page_size;
-    uint8_t *bp = (uint8_t *)ptr;
-
-    accelerator_for(pg,pages,1,{
-      bp[pg*page_size]=0;
-    });
-#endif
     return ptr;
   }
 
-  void deallocate(pointer __p, size_type __n) { 
+  void deallocate(pointer __p, size_type __n) 
+  { 
     size_type bytes = __n * sizeof(_Tp);
 
     profilerFree(bytes);
 
-#ifdef POINTER_CACHE
-    pointer __freeme = (pointer)PointerCache::Insert((void *)__p,bytes);
-#else 
-    pointer __freeme = __p;
-#endif
-
-    if ( __freeme ) acceleratorFreeShared((void *)__freeme);
+    AllocationCache::CpuFree((void *)__p,bytes);
   }
 
   // FIXME: hack for the copy constructor, eventually it must be avoided
@@ -201,4 +90,4 @@ template<class T> using Matrix     = std::vector<std::vector<T,alignedAllocator<
 
 NAMESPACE_END(Grid);
 
-#endif
+

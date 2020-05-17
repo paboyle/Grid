@@ -83,11 +83,9 @@ public:
 // The copy constructor for this will need to be used by device lambda functions
 /////////////////////////////////////////////////////////////////////////////////////////
 template<class vobj> 
-class LatticeView : public LatticeAccelerator<vobj>
+class LatticeExprView : public LatticeAccelerator<vobj>
 {
 public:
-
-
   // Rvalue
 #ifdef GRID_SIMT
   accelerator_inline const typename vobj::scalar_object operator()(size_t i) const { return coalescedRead(this->_odata[i]); }
@@ -102,10 +100,64 @@ public:
   accelerator_inline uint64_t end(void)   const { return this->_odata_size; };
   accelerator_inline uint64_t size(void)  const { return this->_odata_size; };
 
-  LatticeView(const LatticeAccelerator<vobj> &refer_to_me) : LatticeAccelerator<vobj> (refer_to_me)
+  // Non accelerator functions
+  LatticeExprView(const LatticeAccelerator<vobj> &refer_to_me) : LatticeAccelerator<vobj> (refer_to_me){}
+  ~LatticeExprView(){}
+
+  void AcceleratorViewOpen(void) 
+  { // Translate the pointer, could save a copy. Could use a "Handle" and not save _odata originally in base
+    void *cpu_ptr=this->_odata;
+    //    std::cout << "AccViewOpen "<<std::hex<<this->_odata <<std::dec<<std::endl;
+    this->_odata=(vobj *)AllocationCache::AccViewOpen(this->_odata,this->_odata_size*sizeof(vobj),1,0);    
+  }
+  void AcceleratorViewClose(void)
+  { // Inform the manager
+    //    std::cout << "View Close"<<std::hex<<this->_odata<<std::dec <<std::endl;
+    AllocationCache::AccViewClose((void *)this->_odata);    
+  }
+  void CpuViewOpen(void)
+  { // Translate the pointer
+    void *cpu_ptr=this->_odata;
+    //    std::cout << "CpuViewOpen "<<std::hex<<this->_odata <<std::dec<<std::endl;
+    this->_odata=(vobj *)AllocationCache::CpuViewOpen(cpu_ptr,this->_odata_size*sizeof(vobj),1,0);    
+  }
+  void CpuViewClose(void) 
+  { // Inform the manager
+    //    std::cout << "CpuViewClose"<<std::hex<<this->_odata<<std::dec <<std::endl;
+    AllocationCache::CpuViewClose((void *)this->_odata);    
+  }
+
+};
+// UserView constructor,destructor updates view manager
+// Non-copyable object??? Second base with copy/= deleted?
+template<class vobj> 
+class LatticeView : public LatticeExprView<vobj>
+{
+public:
+  // Rvalue
+  /*
+#ifdef GRID_SIMT
+  accelerator_inline const typename vobj::scalar_object operator()(size_t i) const { return coalescedRead(this->_odata[i]); }
+#else 
+  accelerator_inline const vobj & operator()(size_t i) const { return this->_odata[i]; }
+#endif
+
+  accelerator_inline const vobj & operator[](size_t i) const { return this->_odata[i]; };
+  accelerator_inline vobj       & operator[](size_t i)       { return this->_odata[i]; };
+
+  accelerator_inline uint64_t begin(void) const { return 0;};
+  accelerator_inline uint64_t end(void)   const { return this->_odata_size; };
+  accelerator_inline uint64_t size(void)  const { return this->_odata_size; };
+  */
+  LatticeView(const LatticeAccelerator<vobj> &refer_to_me) : LatticeExprView<vobj> (refer_to_me)
   {
+    this->AcceleratorViewOpen();
+  }
+  ~LatticeView(){
+    this->AcceleratorViewClose();
   }
 };
+
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // Lattice expression types used by ET to assemble the AST
@@ -120,7 +172,7 @@ template <typename T> using is_lattice = std::is_base_of<LatticeBase, T>;
 template <typename T> using is_lattice_expr = std::is_base_of<LatticeExpressionBase,T >;
 
 template<class T, bool isLattice> struct ViewMapBase { typedef T Type; };
-template<class T>                 struct ViewMapBase<T,true> { typedef LatticeView<typename T::vector_object> Type; };
+template<class T>                 struct ViewMapBase<T,true> { typedef LatticeExprView<typename T::vector_object> Type; };
 template<class T> using ViewMap = ViewMapBase<T,std::is_base_of<LatticeBase, T>::value >;
 
 template <typename Op, typename _T1>                           
@@ -231,12 +283,15 @@ public:
     CBFromExpression(cb,expr);
     assert( (cb==Odd) || (cb==Even));
     this->checkerboard=cb;
-
+    
+    auto exprCopy = expr;
+    ExpressionViewOpen(exprCopy);
     auto me  = View();
     accelerator_for(ss,me.size(),1,{
-      auto tmp = eval(ss,expr);
+      auto tmp = eval(ss,exprCopy);
       vstream(me[ss],tmp);
     });
+    ExpressionViewClose(exprCopy);
     return *this;
   }
   template <typename Op, typename T1,typename T2> inline Lattice<vobj> & operator=(const LatticeBinaryExpression<Op,T1,T2> &expr)
@@ -251,11 +306,14 @@ public:
     assert( (cb==Odd) || (cb==Even));
     this->checkerboard=cb;
 
+    auto exprCopy = expr;
+    ExpressionViewOpen(exprCopy);
     auto me  = View();
     accelerator_for(ss,me.size(),1,{
-      auto tmp = eval(ss,expr);
+      auto tmp = eval(ss,exprCopy);
       vstream(me[ss],tmp);
     });
+    ExpressionViewClose(exprCopy);
     return *this;
   }
   template <typename Op, typename T1,typename T2,typename T3> inline Lattice<vobj> & operator=(const LatticeTrinaryExpression<Op,T1,T2,T3> &expr)
@@ -269,11 +327,14 @@ public:
     CBFromExpression(cb,expr);
     assert( (cb==Odd) || (cb==Even));
     this->checkerboard=cb;
+    auto exprCopy = expr;
+    ExpressionViewOpen(exprCopy);
     auto me  = View();
     accelerator_for(ss,me.size(),1,{
-      auto tmp = eval(ss,expr);
+      auto tmp = eval(ss,exprCopy);
       vstream(me[ss],tmp);
     });
+    ExpressionViewClose(exprCopy);
     return *this;
   }
   //GridFromExpression is tricky to do

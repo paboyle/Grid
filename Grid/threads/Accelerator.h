@@ -27,6 +27,17 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 *************************************************************************************/
 /*  END LEGAL */
 #pragma once
+
+#ifdef HAVE_MALLOC_MALLOC_H
+#include <malloc/malloc.h>
+#endif
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+#ifdef HAVE_MM_MALLOC_H
+#include <mm_malloc.h>
+#endif
+
 NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -144,8 +155,8 @@ inline void *acceleratorAllocDevice(size_t bytes)
 };
 inline void acceleratorFreeShared(void *ptr){ cudaFree(ptr);};
 inline void acceleratorFreeDevice(void *ptr){ cudaFree(ptr);};
-
-
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { cudaMemcpy(to,from,bytes, cudaMemcpyHostToDevice);}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToHost);}
 #endif
 
 //////////////////////////////////////////////
@@ -192,6 +203,8 @@ inline void *acceleratorAllocShared(size_t bytes){ return malloc_shared(bytes,*t
 inline void *acceleratorAllocDevice(size_t bytes){ return malloc_device(bytes,*theGridAccelerator);};
 inline void acceleratorFreeShared(void *ptr){free(ptr,*theGridAccelerator);};
 inline void acceleratorFreeDevice(void *ptr){free(ptr,*theGridAccelerator);};
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
 
 #endif
 
@@ -275,6 +288,8 @@ inline void *acceleratorAllocDevice(size_t bytes)
 
 inline void acceleratorFreeShared(void *ptr){ hipFree(ptr);};
 inline void acceleratorFreeDevice(void *ptr){ hipFree(ptr);};
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { cudaMemcpy(to,from,bytes, cudaMemcpyHostToDevice);}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToHost);}
 
 #endif
 
@@ -311,16 +326,8 @@ inline void acceleratorFreeDevice(void *ptr){ hipFree(ptr);};
 #define accelerator_for2d(iter1, num1, iter2, num2, nsimd, ... ) thread_for2d(iter1,num1,iter2,num2,{ __VA_ARGS__ });
 
 accelerator_inline int acceleratorSIMTlane(int Nsimd) { return 0; } // CUDA specific
-
-#ifdef HAVE_MALLOC_MALLOC_H
-#include <malloc/malloc.h>
-#endif
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
-#ifdef HAVE_MM_MALLOC_H
-#include <mm_malloc.h>
-#endif
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { memcpy(to,from,bytes);}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ memcpy(to,from,bytes);}
 
 #ifdef HAVE_MM_MALLOC_H
 inline void *acceleratorAllocShared(size_t bytes){return _mm_malloc(bytes,GRID_ALLOC_ALIGN);};
