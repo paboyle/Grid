@@ -367,6 +367,24 @@ struct MultComplex{
   }
 };
 
+struct MultAddComplex{
+  // Complex a*b+c
+  // Complex float
+  inline vecf mac(vecf a, vecf b, vecf c){
+    pred pg1 = acle<float>::pg1();
+    // using FCMLA
+    vecf r_v = svcmla_x(pg1, c, a, b, 0);
+    return svcmla_x(pg1, r_v, a, b, 90);
+  }
+  // Complex double
+  inline vecd mac(vecd a, vecd b, vecd c){
+    pred pg1 = acle<double>::pg1();
+    // using FCMLA
+    vecf r_v = svcmla_x(pg1, c, a, b, 0);
+    return svcmla_x(pg1, r_v, a, b, 90);
+  }
+};
+
 struct Div{
   // Real float
   inline vecf operator()(vecf a, vecf b){
@@ -772,15 +790,16 @@ typedef Optimization::Vstream  VstreamSIMD;
 template <typename S, typename T> using ReduceSIMD = Optimization::Reduce<S,T>;
 
 // Arithmetic operations
-typedef Optimization::Sum         SumSIMD;
-typedef Optimization::Sub         SubSIMD;
-typedef Optimization::Div         DivSIMD;
-typedef Optimization::Mult        MultSIMD;
-typedef Optimization::MultComplex MultComplexSIMD;
-typedef Optimization::MultRealPart MultRealPartSIMD;
-typedef Optimization::MaddRealPart MaddRealPartSIMD;
-typedef Optimization::Conj        ConjSIMD;
-typedef Optimization::TimesMinusI TimesMinusISIMD;
-typedef Optimization::TimesI      TimesISIMD;
+typedef Optimization::Sum            SumSIMD;
+typedef Optimization::Sub            SubSIMD;
+typedef Optimization::Div            DivSIMD;
+typedef Optimization::Mult           MultSIMD;
+typedef Optimization::MultComplex    MultComplexSIMD;
+typedef Optimization::MultAddComplex MultAddComplexSIMD;
+typedef Optimization::MultRealPart   MultRealPartSIMD;
+typedef Optimization::MaddRealPart   MaddRealPartSIMD;
+typedef Optimization::Conj           ConjSIMD;
+typedef Optimization::TimesMinusI    TimesMinusISIMD;
+typedef Optimization::TimesI         TimesISIMD;
 
 NAMESPACE_END(Grid);

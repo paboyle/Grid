@@ -388,8 +388,29 @@ struct MultComplex{
     typename acle<T>::vt z_v = acle<T>::zero();
 
     // using FCMLA
-    typename acle<T>::vt r_v = svcmla_x(pg1, z_v, a_v, b_v, 90);
-    r_v = svcmla_x(pg1, r_v, a_v, b_v, 0);
+    typename acle<T>::vt r_v = svcmla_x(pg1, z_v, a_v, b_v, 0);
+    r_v = svcmla_x(pg1, r_v, a_v, b_v, 90);
+
+    svst1(pg1, out.v, r_v);
+
+    return out;
+  }
+};
+
+struct MultAddComplex{
+  // Complex a*b+c
+  template <typename T>
+  inline vec<T> mac(const vec<T> &a, const vec<T> &b, const vec<T> &c){
+
+    vec<T> out;
+    svbool_t pg1 = acle<T>::pg1();
+    typename acle<T>::vt a_v = svld1(pg1, a.v);
+    typename acle<T>::vt b_v = svld1(pg1, b.v);
+    typename acle<T>::vt c_v = svld1(pg1, c.v);;
+
+    // using FCMLA
+    typename acle<T>::vt r_v = svcmla_x(pg1, c_v, a_v, b_v, 0);
+    r_v = svcmla_x(pg1, r_v, a_v, b_v, 90);
 
     svst1(pg1, out.v, r_v);
 
@@ -897,15 +918,16 @@ typedef Optimization::Vstream  VstreamSIMD;
 template <typename S, typename T> using ReduceSIMD = Optimization::Reduce<S,T>;
 
 // Arithmetic operations
-typedef Optimization::Sum         SumSIMD;
-typedef Optimization::Sub         SubSIMD;
-typedef Optimization::Div         DivSIMD;
-typedef Optimization::Mult        MultSIMD;
-typedef Optimization::MultComplex MultComplexSIMD;
-typedef Optimization::MultRealPart MultRealPartSIMD;
-typedef Optimization::MaddRealPart MaddRealPartSIMD;
-typedef Optimization::Conj        ConjSIMD;
-typedef Optimization::TimesMinusI TimesMinusISIMD;
-typedef Optimization::TimesI      TimesISIMD;
+typedef Optimization::Sum            SumSIMD;
+typedef Optimization::Sub            SubSIMD;
+typedef Optimization::Div            DivSIMD;
+typedef Optimization::Mult           MultSIMD;
+typedef Optimization::MultComplex    MultComplexSIMD;
+typedef Optimization::MultAddComplex MultAddComplexSIMD;
+typedef Optimization::MultRealPart   MultRealPartSIMD;
+typedef Optimization::MaddRealPart   MaddRealPartSIMD;
+typedef Optimization::Conj           ConjSIMD;
+typedef Optimization::TimesMinusI    TimesMinusISIMD;
+typedef Optimization::TimesI         TimesISIMD;
 
 NAMESPACE_END(Grid)

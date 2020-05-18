@@ -298,11 +298,19 @@ public:
   ///////////////////////////////////////////////
 
   // FIXME -- alias this to an accelerator_inline MAC struct.
+  #if defined(A64FX) || defined(A64FXFIXEDSIZE) // on A64FX use FCMLA
+  friend accelerator_inline void mac(Grid_simd *__restrict__ y,
+				     const Grid_simd *__restrict__ a,
+				     const Grid_simd *__restrict__ x) {
+    y->v = Optimization::MultAddComplex::mac(a->v, x->v, y->v);
+  };
+  #else
   friend accelerator_inline void mac(Grid_simd *__restrict__ y,
 				     const Grid_simd *__restrict__ a,
 				     const Grid_simd *__restrict__ x) {
     *y = (*a) * (*x) + (*y);
   };
+  #endif
 
   friend accelerator_inline void mult(Grid_simd *__restrict__ y,
 				      const Grid_simd *__restrict__ l,
