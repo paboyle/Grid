@@ -47,6 +47,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/perfmon/PerfCount.h>
 #include <Grid/util/Util.h>
 #include <Grid/log/Log.h>
+#include <Grid/allocator/GridMemoryManager.h>
 #include <Grid/allocator/AlignedAllocator.h>
 #include <Grid/simd/Simd.h>
 #include <Grid/threads/Threads.h>

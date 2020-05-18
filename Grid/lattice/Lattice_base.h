@@ -97,33 +97,14 @@ public:
     else      grid = _grid;
   };
 
-  accelerator_inline void Advise(int advise) {
-#ifdef GRID_NVCC
-#ifndef __CUDA_ARCH__ // only on host
-    if (advise & AdviseInfrequentUse) {
-      cudaMemAdvise(_odata,_odata_size*sizeof(vobj),cudaMemAdviseSetPreferredLocation,cudaCpuDeviceId);
-    }
-    if (advise & AdviseReadMostly) {
-      cudaMemAdvise(_odata,_odata_size*sizeof(vobj),cudaMemAdviseSetReadMostly,-1);
-    }
-#endif
-#endif
-  };
-
   accelerator_inline void AcceleratorPrefetch(int accessMode = ViewReadWrite) { // will use accessMode in future
-#ifdef GRID_NVCC
-#ifndef __CUDA_ARCH__ // only on host
-    int target;
-    cudaGetDevice(&target);
-    cudaMemPrefetchAsync(_odata,_odata_size*sizeof(vobj),target);
-#endif
-#endif
+    gridAcceleratorPrefetch(_odata,_odata_size*sizeof(vobj));
   };
 
   accelerator_inline void HostPrefetch(int accessMode = ViewReadWrite) { // will use accessMode in future
 #ifdef GRID_NVCC
 #ifndef __CUDA_ARCH__ // only on host
-    cudaMemPrefetchAsync(_odata,_odata_size*sizeof(vobj),cudaCpuDeviceId);
+    //cudaMemPrefetchAsync(_odata,_odata_size*sizeof(vobj),cudaCpuDeviceId);
 #endif
 #endif
   };
@@ -246,13 +227,27 @@ private:
       dealloc();
       
       this->_odata_size = size;
-      if ( size ) 
+      if ( size )
 	this->_odata      = alloc.allocate(this->_odata_size);
       else 
 	this->_odata      = nullptr;
     }
   }
 public:
+
+  void Advise(int advise) {
+#ifdef GRID_NVCC
+#ifndef __CUDA_ARCH__ // only on host
+    if (advise & AdviseInfrequentUse) {
+      gridMoveToHost((void**)&this->_odata);
+    }
+    if (advise & AdviseReadMostly) {
+      //cudaMemAdvise(_odata,_odata_size*sizeof(vobj),cudaMemAdviseSetReadMostly,-1);
+    }
+#endif
+#endif
+  };
+
   /////////////////////////////////////////////////////////////////////////////////
   // Return a view object that may be dereferenced in site loops.
   // The view is trivially copy constructible and may be copied to an accelerator device

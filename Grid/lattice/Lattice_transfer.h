@@ -96,7 +96,7 @@ accelerator_inline void convertType(ComplexF & out, const std::complex<float> & 
   out = in;
 }
 
-#ifdef __CUDA_ARCH__
+#ifdef GRID_NVCC
 accelerator_inline void convertType(vComplexF & out, const ComplexF & in) {
   ((ComplexF*)&out)[SIMTlane(vComplexF::Nsimd())] = in;
 }

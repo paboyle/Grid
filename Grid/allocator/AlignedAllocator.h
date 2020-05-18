@@ -178,12 +178,13 @@ public:
     ////////////////////////////////////
     if ( ptr == (_Tp *) NULL ) {
       //      printf(" alignedAllocater cache miss %ld bytes ",bytes);      BACKTRACEFP(stdout);
-      auto err = cudaMallocManaged((void **)&ptr,bytes);
-      if( err != cudaSuccess ) {
+      //      auto err = 
+gridMallocManaged((void **)&ptr,bytes);
+/*if( err != cudaSuccess ) {
 	ptr = (_Tp *) NULL;
 	std::cerr << " cudaMallocManaged failed for " << bytes<<" bytes " <<cudaGetErrorString(err)<< std::endl;
 	assert(0);
-      }
+	}*/
     } 
     assert( ptr != (_Tp *)NULL);
 #else 
@@ -220,7 +221,7 @@ public:
 #endif
 
 #ifdef GRID_NVCC
-    if ( __freeme ) cudaFree((void *)__freeme);
+    if ( __freeme ) gridFree((void *)__freeme);
 #else 
   #ifdef HAVE_MM_MALLOC_H
     if ( __freeme ) _mm_free((void *)__freeme); 
