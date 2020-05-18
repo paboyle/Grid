@@ -116,7 +116,7 @@ STORE_BASE_PTR_COLOR_OFFSET = 2
 
 OPT = """
 * interleave prefetching and compute in MULT_2SPIN
-* could test storing U's in MULT_2SPIN to L1d, might be beneficial for life time cache lines
+* could test storing U's in MULT_2SPIN to L1d for cache line update
 * structure reordering: MAYBEPERM after MULT_2SPIN ?
 """
 
@@ -375,7 +375,12 @@ class Register:
     def zero(self, zeroreg=False):
         d['zero'] += d['factor']
         d['C'] += F'    {self.name} = 0; \\\n'
-        d['I'] += F'    {self.name} = __svzero({self.name}); \\\n'
+        #d['I'] += F'    {self.name} = __svzero({self.name}); \\\n'   only armclang
+
+        if PRECISION == 'double':
+            d['I'] += F'    {self.name} = svdup_f64(0.); \\\n'
+        else:
+            d['I'] += F'    {self.name} = svdup_f32(0.); \\\n'
 
         if zeroreg == True:
             d['A'] += F'    "fmov {self.asmregwithsuffix} , 0 \\n\\t" \\\n'
@@ -906,8 +911,6 @@ else:
 define(F'LOCK_GAUGE(A)')
 define(F'UNLOCK_GAUGE(A)')
 define(F'MASK_REGS                      DECLARATIONS_{PRECSUFFIX}')
-define(F'COMPLEX_SIGNS(A)')
-define(F'LOAD64(A,B)')
 define(F'SAVE_RESULT(A,B)               RESULT_{PRECSUFFIX}(A); PREFETCH_RESULT_L2_STORE(B)')
 define(F'MULT_2SPIN_1(Dir)              MULT_2SPIN_1_{PRECSUFFIX}(Dir)')
 define(F'MULT_2SPIN_2                   MULT_2SPIN_2_{PRECSUFFIX}')

@@ -1,32 +1,39 @@
-* gcc 10.0.1 VLA
+* gcc 10.0.1 VLA (merlin)
 
 ../configure --with-lime=/home/men04359/lime/c-lime --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=none --enable-openmp CXX=g++-10.0.1 CC=gcc-10.0.1 CXXFLAGS="-std=c++11 -march=armv8-a+sve -msve-vector-bits=512 -fno-gcse -DA64FX -DA64FXASM -DDSLASHINTRIN" LDFLAGS=-static GRID_LDFLAGS=-static MPI_CXXLDFLAGS=-static
 
 
-* gcc 10.0.1 fixed-size ACLE
+* gcc 10.0.1 fixed-size ACLE (merlin)
 
-../configure --with-lime=/home/men04359/lime/c-lime --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=none --enable-op    enmp CXX=g++-10.0.1 CC=gcc-10.0.1 CXXFLAGS="-std=c++11 -march=armv8-a+sve -msve-vector-bits=512 -fno-gcse -DA64FXFIXEDSIZE -DA64FXASM -DDSLASHINTRIN"
+../configure --with-lime=/home/men04359/lime/c-lime --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=none --enable-openmp CXX=g++-10.0.1 CC=gcc-10.0.1 CXXFLAGS="-std=c++11 -march=armv8-a+sve -msve-vector-bits=512 -fno-gcse -DA64FXFIXEDSIZE -DA64FXASM -DDSLASHINTRIN"
 
 
-* armclang 20.0 VLA
+* armclang 20.0 VLA (merlin)
 
 ../configure --with-lime=/home/men04359/lime/c-lime --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=none --enable-openmp CXX=armclang++ CC=armclang CXXFLAGS="-std=c++11 -fno-unroll-loops -mllvm -vectorizer-min-trip-count=2 -march=armv8-a+sve -DARMCLANGCOMPAT -DA64FX -DA64FXASM -DDSLASHINTRIN" LDFLAGS=-static GRID_LDFLAGS=-static MPI_CXXLDFLAGS=-static
 
-must use armclang 20.0 with ARMCLANGCOMPAT, otherwise Benchmark_wilson gives wrong result
+TODO check ARMCLANGCOMPAT
 
 
-* armclang 20.1 VLA
+* armclang 20.1 VLA (merlin)
 
 ../configure --with-lime=/home/men04359/lime/c-lime --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=none --enable-openmp CXX=armclang++ CC=armclang CXXFLAGS="-std=c++11 -mcpu=a64fx -DARMCLANGCOMPAT -DA64FX -DA64FXASM -DDSLASHINTRIN" LDFLAGS=-static GRID_LDFLAGS=-static MPI_CXXLDFLAGS=-static
 
-must use armclang 20.1 with ARMCLANGCOMPAT, otherwise Benchmark_wilson gives wrong result
+TODO check ARMCLANGCOMPAT
 
 
-* Fujitsu FCC
+* armclang 20.1 VLA (fjt cluster)
+
+../configure --with-lime=$HOME/local --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=none --enable-openmp CXX=armclang++ CC=armclang CXXFLAGS="-std=c++11 -mcpu=a64fx -DARMCLANGCOMPAT -DA64FX -DA64FXASM -DDSLASHINTRIN"
+
+TODO check ARMCLANGCOMPAT
+
+
+* Fujitsu fcc
 
 ../configure --with-lime=$HOME/grid-a64fx/lime/c-lime --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=none --enable-openmp --with-mpfr=/home/users/gre/gre-1/grid-a64fx/mpfr-build/install CXX=FCC CC=fcc CXXFLAGS="-Nclang -Kfast -DA64FX -DA64FXASM -DDSLASHINTRIN"
 
 
-* Fujitsu FCC w/ MPI
+* Fujitsu fcc w/ MPI
 
 ../configure --with-lime=$HOME/grid-a64fx/lime/c-lime --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=mpi --enable-openmp --with-mpfr=/home/users/gre/gre-1/grid-a64fx/mpfr-build/install CXX=mpiFCC CC=mpifcc CXXFLAGS="-Nclang -Kfast -DA64FX -DA64FXASM -DDSLASHINTRIN -DTOFU"
