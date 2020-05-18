@@ -380,7 +380,7 @@ struct MultAddComplex{
   inline vecd mac(vecd a, vecd b, vecd c){
     pred pg1 = acle<double>::pg1();
     // using FCMLA
-    vecf r_v = svcmla_x(pg1, c, a, b, 0);
+    vecd r_v = svcmla_x(pg1, c, a, b, 0);
     return svcmla_x(pg1, r_v, a, b, 90);
   }
 };
