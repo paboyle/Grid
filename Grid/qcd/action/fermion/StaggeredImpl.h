@@ -205,7 +205,7 @@ public:
             //    PokeIndex<LorentzIndex>(Uds, Udag, mu + 4);
             
             //
-#if 1 // MILC (stores -w^dgr(x+2)W^dgr(x+1)W^dgr(x). must use c2=-1)
+#if 0 // MILC (does not ! store -w^dgr(x+2)W^dgr(x+1)W^dgr(x). must use c2=-1)
             U  = PeekIndex<LorentzIndex>(Ulong, mu);
             UUU = adj( U );
             UUUdag = Cshift(U, mu, -3);

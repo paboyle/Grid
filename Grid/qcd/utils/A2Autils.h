@@ -43,7 +43,7 @@ public:
                              int orthogdim, double *t_kernel = nullptr, double *t_gsum = nullptr);
   template <typename TensorType> // output: rank 5 tensor, e.g. Eigen::Tensor<ComplexD, 5>
   static void StagMesonFieldCC(TensorType &mat,
-                               const LatticeGaugeField &U,
+                               //const LatticeGaugeField &U,
                                const FermionField *lhs_wi,
                                const FermionField *rhs_vj,
                                std::vector<Gamma::Algebra> gammas,
@@ -1640,7 +1640,7 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
 template <class FImpl>
 template <typename TensorType>
 void A2Autils<FImpl>::StagMesonFieldCC(TensorType &mat,
-                                       const LatticeGaugeField &Umu,
+                                       //const LatticeGaugeField &Umu,
                                        const FermionField *lhs_wi,
                                        const FermionField *rhs_vj,
                                        std::vector<Gamma::Algebra> gammas,
@@ -1700,7 +1700,7 @@ void A2Autils<FImpl>::StagMesonFieldCC(TensorType &mat,
 
     //std::vector<FermionField> temp(Rblock, grid);
     //int mu;
-    int n=0; //doing one gamma mu (point split dir) at a time
+    int ng=0; //doing one gamma mu (point split dir) at a time
     //for (int n = 0; n < Ngamma; n++) {
 
         //if ( gammas[n] == Gamma::Algebra::GammaX ) mu=0;
@@ -1814,7 +1814,7 @@ void A2Autils<FImpl>::StagMesonFieldCC(TensorType &mat,
                         for(int j=0;j<Rblock;j++){
                             for(int m=0;m<Nmom;m++){
                                 int ij_dx = m+Nmom*i + Nmom*Lblock * j + Nmom*Lblock * Rblock * lt;
-                                mat(m,n,t,i,j) = lsSum[ij_dx];
+                                mat(m,ng,t,i,j) = lsSum[ij_dx];
                             }
                         }
                     }
@@ -1823,7 +1823,7 @@ void A2Autils<FImpl>::StagMesonFieldCC(TensorType &mat,
                     for(int i=0;i<Lblock;i++){
                         for(int j=0;j<Rblock;j++){
                             for(int m=0;m<Nmom;m++){
-                                mat(m,n,t,i,j) =zz;
+                                mat(m,ng,t,i,j) =zz;
                             }
                         }
                     }
