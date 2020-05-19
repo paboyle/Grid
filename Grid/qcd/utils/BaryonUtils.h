@@ -305,7 +305,7 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
     //bytes += 3. * (grid->oSites() * 12. * 12. * sizeof(Complex)) * wick_contraction[ie]; // size of the 3 propagatorFields
     bytes += grid->oSites() * 36. * 4. * 4. * sizeof(Complex) * wick_contraction[ie];  //number of operations
   }
-  double t=0.;
+  Real t=0.;
   t =-usecond();
 
   accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
