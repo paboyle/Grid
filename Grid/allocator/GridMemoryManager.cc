@@ -12,6 +12,7 @@ std::vector<_grid_mem_range> _grid_mem_avail;
 std::map<void*,_grid_mem_range> _grid_mem_alloc;
 
 void gridMemoryInit() {
+#ifdef GRID_NVCC
   size_t free,total;
   cudaMemGetInfo(&free,&total);
   
@@ -35,10 +36,11 @@ void gridMemoryInit() {
   std::cout << GridLogMessage << "gridMemoryInit: " << sz << " bytes" << std::endl;
 
   _grid_mem_avail.push_back( { 0, _grid_mem_pages } );
+#endif
 }
 
 void gridMallocManaged(void** pp, size_t sz) {
-
+#ifdef GRID_NVCC
   if (_grid_mem_avail.empty())
     gridMemoryInit();
 
@@ -57,10 +59,13 @@ void gridMallocManaged(void** pp, size_t sz) {
   *pp = (char*)_grid_mem_base + _GRID_MEM_PAGE_SIZE*_grid_mem_avail[m].page_start;
   _grid_mem_alloc[*pp] = { _grid_mem_avail[m].page_start, _grid_mem_avail[m].page_start + pages };
   _grid_mem_avail[m].page_start += pages;
+#else
+  *pp = malloc(sz);
+#endif
 }
 
 void gridFree(void* p) {
-
+#ifdef GRID_NVCC
   if (_grid_mem_avail.empty())
     gridMemoryInit();
 
@@ -85,10 +90,13 @@ void gridFree(void* p) {
     _grid_mem_avail.push_back( alloc );  
   }
   _grid_mem_alloc.erase(p);
+#else
+  free(p);
+#endif
 }
 
 void gridAcceleratorPrefetch(void* p, size_t sz) {
-
+#ifdef GRID_NVCC
   auto & alloc = _grid_mem_alloc[p];
   if (alloc.page_start == alloc.page_end) // pinned to host
     return;
@@ -96,10 +104,11 @@ void gridAcceleratorPrefetch(void* p, size_t sz) {
   int target;
   cudaGetDevice(&target);
   cudaMemPrefetchAsync(p,sz,target);
+#endif
 }
 
 void gridMemGetInfo(size_t* pfree, size_t* ptotal) {
-
+#ifdef GRID_NVCC
   if (_grid_mem_avail.empty())
     gridMemoryInit();
 
@@ -107,10 +116,14 @@ void gridMemGetInfo(size_t* pfree, size_t* ptotal) {
   *pfree = 0;
   for (auto & a : _grid_mem_avail)
     *pfree += (a.page_end - a.page_start) * _GRID_MEM_PAGE_SIZE;
+#else
+  *pfree = 0;
+  *ptotal = 0;
+#endif
 }
 
 void gridMoveToHost(void** pp) {
-
+#ifdef GRID_NVCC
   if (_grid_mem_avail.empty())
     gridMemoryInit();
 
@@ -126,6 +139,7 @@ void gridMoveToHost(void** pp) {
   gridFree(*pp);
   *pp = pn;
   _grid_mem_alloc[pn] = { 0,0 };
+#endif
 }
 
 NAMESPACE_END(Grid);
