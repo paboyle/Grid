@@ -300,9 +300,15 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
   auto v2 = q2_left.View();
   auto v3 = q3_left.View();
 
- // accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
-  thread_for(ss,grid->oSites(),{
-  //for(int ss=0; ss < grid->oSites(); ss++){
+  Real bytes =0.;
+  for (int ie=0; ie < 6 ; ie++){
+    //bytes += 3. * (grid->oSites() * 12. * 12. * sizeof(Complex)) * wick_contraction[ie]; // size of the 3 propagatorFields
+    bytes += grid->oSites() * 36. * 4. * 4. * sizeof(Complex) * wick_contraction[ie];  //number of operations
+  }
+  double t=0.;
+  t =-usecond();
+
+  accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
 
     auto D1 = v1[ss];
     auto D2 = v2[ss];
@@ -312,6 +318,11 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
     baryon_site(D1,D2,D3,GammaA_left,GammaB_left,GammaA_right,GammaB_right,parity,wick_contraction,result);
     vbaryon_corr[ss] = result; 
   }  );//end loop over lattice sites
+
+  t += usecond();
+
+  std::cout << std::setw(10) << bytes/t*1.0e6/1024/1024/1024 << " GB/s " << std::endl;
+
 }
 template <class FImpl>
 template <class mobj, class robj>
@@ -595,8 +606,7 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Eye(const PropagatorField &qq_loop,
   auto vd_tf = qd_tf.View();
   auto vs_ti = qs_ti.View();
 
- // accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
-  thread_for(ss,grid->oSites(),{
+  accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
     auto Dq_loop = vq_loop[ss];
     auto Dd_tf = vd_tf[ss];
     auto Ds_ti = vs_ti[ss];
@@ -637,8 +647,7 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_NonEye(const PropagatorField &qq_ti,
   auto vd_tf = qd_tf.View();
   auto vs_ti = qs_ti.View();
 
- // accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
-  thread_for(ss,grid->oSites(),{
+  accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
     auto Dq_ti = vq_ti[ss];
     auto Dq_tf = vq_tf[ss];
     auto Dd_tf = vd_tf[ss];
