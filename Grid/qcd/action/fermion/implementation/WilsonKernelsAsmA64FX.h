@@ -39,16 +39,16 @@ Author: Nils Meyer  <nils.meyer@ur.de>  Regensburg University
 
 // enable A64FX body
 #define WILSONKERNELSASMBODYA64FX
-#pragma message("Including A64FX Dslash: WilsonKernelsAsmBodyA64FX.h")
+#pragma message("A64FX Dslash: WilsonKernelsAsmBodyA64FX.h")
 
     ///////////////////////////////////////////////////////////
     // If we are A64FX specialise the single precision routine
     ///////////////////////////////////////////////////////////
 #if defined(DSLASHINTRIN)
-#pragma message ("including A64FX Dslash: intrin")
+#pragma message ("A64FX Dslash: intrin")
 #include <simd/Fujitsu_A64FX_intrin_single.h>
 #else
-#pragma message ("including A64FX Dslash: asm")
+#pragma message ("A64FX Dslash: asm")
 #include <simd/Fujitsu_A64FX_asm_single.h>
 #endif
 
