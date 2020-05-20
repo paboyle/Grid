@@ -159,8 +159,9 @@ public:
     for(int i=0;i<nbasis;i++){
       blockProject(iProj,subspace[i],subspace);
       eProj=Zero(); 
+      auto eProj_v = eProj.View();
       accelerator_for(ss, CoarseGrid->oSites(),1,{
-	eProj[ss](i)=CComplex(1.0);
+	eProj_v[ss](i)=CComplex(1.0);
       });
       eProj=eProj - iProj;
       std::cout<<GridLogMessage<<"Orthog check error "<<i<<" " << norm2(eProj)<<std::endl;
