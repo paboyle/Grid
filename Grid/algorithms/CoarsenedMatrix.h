@@ -145,15 +145,14 @@ public:
   {
   };
   
-  void Orthogonalise(void){
+  void Orthogonalise(int checkOrthogonality = 0, int passes = 1){
     CoarseScalar InnerProd(CoarseGrid); 
-    std::cout << GridLogMessage <<" Block Gramm-Schmidt pass 1"<<std::endl;
-    blockOrthogonalise(InnerProd,subspace);
-    //    std::cout << GridLogMessage <<" Block Gramm-Schmidt pass 2"<<std::endl; // Really have to do twice? Yuck
-    //    blockOrthogonalise(InnerProd,subspace);
-    //      std::cout << GridLogMessage <<" Gramm-Schmidt checking orthogonality"<<std::endl;
-    //      CheckOrthogonal();
-  } 
+    for(int n = 0; n < passes; ++n) {
+      std::cout << GridLogMessage <<" Block Gramm-Schmidt pass "<<n+1<<std::endl;
+      blockOrthogonalise(InnerProd,subspace);
+    }
+    if(checkOrthogonality) CheckOrthogonal();
+  }
   void CheckOrthogonal(void){
     CoarseVector iProj(CoarseGrid); 
     CoarseVector eProj(CoarseGrid); 
