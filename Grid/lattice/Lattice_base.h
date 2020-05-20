@@ -530,5 +530,18 @@ template<class vobj> std::ostream& operator<< (std::ostream& stream, const Latti
   return stream;
 }
   
+template<typename vobj>
+Vector<LatticeView<vobj>> getViewContainer(std::vector<Lattice<vobj>>& in) {
+  Vector<LatticeView<vobj>> acceleratorViewContainer;
+  for(int i = 0; i < in.size(); ++i) acceleratorViewContainer.push_back(in[i].View());
+  return acceleratorViewContainer;
+}
+template<typename vobj>
+Vector<LatticeView<vobj>> getViewContainer(std::vector<Lattice<vobj>> const& in) {
+  Vector<LatticeView<vobj>> acceleratorViewContainer;
+  for(int i = 0; i < in.size(); ++i) acceleratorViewContainer.push_back(in[i].View());
+  return acceleratorViewContainer;
+}
+
 NAMESPACE_END(Grid);
 

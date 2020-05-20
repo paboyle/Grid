@@ -66,6 +66,58 @@ inline void blockMaskedInnerProduct(Lattice<CComplex> &CoarseInner,
   blockSum(CoarseInner,fine_inner_msk);
 }
 
+template<class vobj, class CComplex, int nbasis>
+inline void blockLutedInnerProduct(Lattice<iVector<CComplex, nbasis>> &coarseData,
+                                   const Lattice<vobj>                &fineData,
+                                   const std::vector<Lattice<vobj>>   &Basis,
+                                   const CoarseningLookupTable        &lut)
+{
+  GridBase *fine   = fineData.Grid();
+  GridBase *coarse = coarseData.Grid();
+
+  int ndimU = Basis[0].Grid()->_ndimension;
+  int ndimF = coarse->_ndimension;
+  int LLs   = 1;
+
+  // checks
+  assert(fine->_ndimension == ndimF);
+  assert(ndimF == ndimU || ndimF == ndimU+1);
+  assert(nbasis == Basis.size());
+  if(ndimF == ndimU) { // strictly 4d or strictly 5d
+    assert(lut.gridPointersMatch(coarse, fine));
+    for(auto const& elem : Basis) conformable(elem, fineData);
+    LLs = 1;
+  } else if(ndimF == ndimU+1) { // 4d with mrhs via 5th dimension
+    assert(coarse->_rdimensions[0] == fine->_rdimensions[0]);   // same extent in 5th dimension
+    assert(coarse->_fdimensions[0] == coarse->_rdimensions[0]); // 5th dimension strictly local and not cb'ed
+    assert(fine->_fdimensions[0]   == fine->_rdimensions[0]);   // 5th dimension strictly local and not cb'ed
+    LLs = coarse->_rdimensions[0];
+  }
+
+  auto lut_v        = lut.View();
+  auto sizes_v      = lut.Sizes();
+  auto fineData_v   = fineData.View();
+  auto coarseData_v = coarseData.View();
+
+  auto  Basis_vc = getViewContainer(Basis);
+  auto* Basis_vp = &Basis_vc[0];
+
+  accelerator_for(scFi, nbasis*coarse->oSites(), vobj::Nsimd(), {
+    auto i   = scFi%nbasis;
+    auto scF = scFi/nbasis;
+    auto s5  = scF%LLs;
+    auto scU = scF/LLs;
+
+    decltype(innerProduct(Basis_vp[0](0), fineData_v(0))) reduce = Zero();
+
+    for(int j=0; j<sizes_v[scU]; ++j) {
+      int sfU = lut_v[scU][j];
+      int sfF = sfU*LLs + s5;
+      reduce = reduce + innerProduct(Basis_vp[i](sfU), fineData_v(sfF));
+    }
+    coalescedWrite(coarseData_v[scF](i), reduce);
+  });
+}
 
 class Geometry {
 public:
@@ -748,9 +800,7 @@ public:
     FineComplexField one(FineGrid); one=scalar_type(1.0,0.0);
     FineComplexField zero(FineGrid); zero=scalar_type(0.0,0.0);
 
-    std::vector<FineComplexField> masks(geom.npoint,FineGrid);
-    FineComplexField imask(FineGrid); // contributions from within this block
-    FineComplexField omask(FineGrid); // contributions from outwith this block
+    FineComplexField omask(FineGrid);
 
     FineComplexField evenmask(FineGrid);
     FineComplexField oddmask(FineGrid); 
@@ -774,6 +824,9 @@ public:
     CoarseComplexField oZProj(Grid()); 
 
     CoarseScalar InnerProd(Grid()); 
+
+    CoarseningLookupTable ilut(Grid(), one);
+    std::vector<CoarseningLookupTable> olut(geom.npoint);
 
     // Orthogonalise the subblocks over the basis
     blockOrthogonalise(InnerProd,Subspace.subspace);
@@ -802,12 +855,14 @@ public:
       }
 	
       if ( disp==0 ) {
-	  masks[p]= Zero();
+	  omask= Zero();
       } else if ( disp==1 ) {
-	masks[p] = where(mod(coor,block)==(block-1),one,zero);
+	omask = where(mod(coor,block)==(block-1),one,zero);
       } else if ( disp==-1 ) {
-	masks[p] = where(mod(coor,block)==(Integer)0,one,zero);
+	omask = where(mod(coor,block)==(Integer)0,one,zero);
       }
+
+      olut[p].populate(Grid(), omask);
     }
     evenmask = where(mod(bcb,2)==(Integer)0,one,zero);
     oddmask  = one-evenmask;
@@ -831,24 +886,15 @@ public:
 
 	if (disp==-1) {
 
-	  ////////////////////////////////////////////////////////////////////////
-	  // Pick out contributions coming from this cell and neighbour cell
-	  ////////////////////////////////////////////////////////////////////////
-	  omask = masks[p];
-	  imask = one-omask;
-	
-	  for(int j=0;j<nbasis;j++){
-	    
-	    blockMaskedInnerProduct(oZProj,omask,Subspace.subspace[j],Mphi);
-	    
-	    auto iZProj_v = iZProj.View() ;
-	    auto oZProj_v = oZProj.View() ;
-	    auto A_p     =  A[p].View();
-	    auto A_self  = A[self_stencil].View();
+	  blockLutedInnerProduct(oProj,Mphi,Subspace.subspace,olut[p]);
 
-	    accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{ coalescedWrite(A_p[ss](j,i),oZProj_v(ss)); });
-
-	  }
+	  auto oProj_v = oProj.View() ;
+	  auto A_p     = A[p].View();
+	  accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{
+	    for(int j=0;j<nbasis;j++){
+	      coalescedWrite(A_p[ss](j,i),oProj_v(ss)(j));
+	    }
+	  });
 	}
       }
 
@@ -870,7 +916,7 @@ public:
 	    });
 	}
 
-	blockProject(SelfProj,tmp,Subspace.subspace);
+	blockLutedInnerProduct(SelfProj,tmp,Subspace.subspace,ilut);
 
 	auto SelfProj_ = SelfProj.View();
 	auto A_self  = A[self_stencil].View();
@@ -989,6 +1035,57 @@ public:
   }
 
 };
+
+inline Coordinate calcCoarseSize(const Coordinate &fineSize, const Coordinate &blockSize) {
+  assert(fineSize.size() == blockSize.size());
+  Coordinate ret(fineSize);
+  for(int d=0; d<ret.size(); ++d) ret[d] /= blockSize[d];
+  return ret;
+}
+
+template<typename Field>
+void performChiralDoublingG5R5(std::vector<Field> &basisVectors) {
+  assert(basisVectors.size()%2 == 0);
+  auto nb = basisVectors.size()/2;
+  for(int n=0; n<nb; n++) {
+    auto tmp1 = basisVectors[n];
+    auto tmp2 = tmp1;
+    G5R5(tmp2, basisVectors[n]);
+    axpby(basisVectors[n], 1.0, 1.0, tmp1, tmp2);
+    axpby(basisVectors[n+nb], 1.0, -1.0, tmp1, tmp2);
+  }
+}
+
+template<typename Field>
+void undoChiralDoublingG5R5(std::vector<Field> &basisVectors) {
+  assert(basisVectors.size()%2 == 0);
+  auto nb = basisVectors.size()/2;
+  for(int n=0; n<nb; n++) {
+    std::cout << GridLogWarning << "undoChiralDoubling5d not implemented yet" << std::endl;
+  }
+}
+
+template<typename Field>
+void performChiralDoublingG5C(std::vector<Field> &basisVectors) {
+  assert(basisVectors.size()%2 == 0);
+  auto nb = basisVectors.size()/2;
+  for(int n=0; n<nb; n++) {
+    auto tmp1 = basisVectors[n];
+    auto tmp2 = tmp1;
+    G5C(tmp2, basisVectors[n]);
+    axpby(basisVectors[n], 0.5, 0.5, tmp1, tmp2);
+    axpby(basisVectors[n+nb], 0.5, -0.5, tmp1, tmp2);
+  }
+}
+
+template<typename Field>
+void undoChiralDoublingG5C(std::vector<Field> &basisVectors) {
+  assert(basisVectors.size()%2 == 0);
+  auto nb = basisVectors.size()/2;
+  for(int n=0; n<nb; n++) {
+    basisVectors[n] = basisVectors[n] + basisVectors[n+nb];
+  }
+}
 
 NAMESPACE_END(Grid);
 #endif
