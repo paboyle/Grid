@@ -401,13 +401,13 @@ struct Conj{
   // Complex float
   inline vecf operator()(vecf a){
     pred pg_odd = acle<float>::pg_odd();
-    //return svneg_x(pg_odd, a);
+    //return svneg_x(pg_odd, a);  this is unsafe!
     return svneg_m(a, pg_odd, a);
   }
   // Complex double
   inline vecd operator()(vecd a){
     pred pg_odd = acle<double>::pg_odd();
-    //return svneg_x(pg_odd, a);
+    //return svneg_x(pg_odd, a);  this is unsafe!
     return svneg_m(a, pg_odd, a);
   }
 };
@@ -420,7 +420,7 @@ struct TimesMinusI{
     pred pg_odd = acle<float>::pg_odd();
 
     vecf a_v = svtbl(a, tbl_swap);
-    //return svneg_x(pg_odd, a_v);
+    //return svneg_x(pg_odd, a_v);  this is unsafe
     return svneg_m(a_v, pg_odd, a_v);
   }
   // Complex double
@@ -430,7 +430,7 @@ struct TimesMinusI{
     pred pg_odd = acle<double>::pg_odd();
 
     vecd a_v = svtbl(a, tbl_swap);
-    //return svneg_x(pg_odd, a_v);
+    //return svneg_x(pg_odd, a_v);  this is unsafe
     return svneg_m(a_v, pg_odd, a_v);
   }
 };
@@ -443,7 +443,7 @@ struct TimesI{
     pred pg_even = acle<float>::pg_even();
 
     vecf a_v = svtbl(a, tbl_swap);
-    //return svneg_x(pg_even, a_v);
+    //return svneg_x(pg_even, a_v);  this is unsafe
     return svneg_m(a_v, pg_even, a_v);
   }
   // Complex double
@@ -453,7 +453,7 @@ struct TimesI{
     pred pg_even = acle<double>::pg_even();
 
     vecd a_v = svtbl(a, tbl_swap);
-    //return svneg_x(pg_even, a_v);
+    //return svneg_x(pg_even, a_v);  this is unsafe
     return svneg_m(a_v, pg_even, a_v);
   }
 };
@@ -486,54 +486,47 @@ struct PrecisionChange {
     b = svcvt_f64_x(pg1d, sb_v);
   }
   static inline vech DtoH (vecd a,vecd b,vecd c,vecd d) {
-/*
-    vech ret;
-    svbool_t pg1d = acle<double>::pg1();
-    svbool_t pg1h = acle<uint16_t>::pg1();
-    typename acle<double>::vt a_v = svld1(pg1d, a.v);
-    typename acle<double>::vt b_v = svld1(pg1d, b.v);
-    typename acle<double>::vt c_v = svld1(pg1d, c.v);
-    typename acle<double>::vt d_v = svld1(pg1d, d.v);
-    typename acle<uint16_t>::vt ha_v = svcvt_f16_x(pg1d, a_v);
-    typename acle<uint16_t>::vt hb_v = svcvt_f16_x(pg1d, b_v);
-    typename acle<uint16_t>::vt hc_v = svcvt_f16_x(pg1d, c_v);
-    typename acle<uint16_t>::vt hd_v = svcvt_f16_x(pg1d, d_v);
-    typename acle<uint16_t>::vt hab_v = svuzp1(ha_v, hb_v);
-    typename acle<uint16_t>::vt hcd_v = svuzp1(hc_v, hd_v);
-    typename acle<uint16_t>::vt r_v = svuzp1(hab_v, hcd_v);
-    svst1(pg1h, (typename acle<uint16_t>::pt*)&ret.v, r_v);
+    pred pg1d = acle<double>::pg1();
+    pred pg1h = acle<uint16_t>::pg1();
+    vecd a_v  = svld1(pg1d, a.v);
+    vecd b_v  = svld1(pg1d, b.v);
+    vecd c_v  = svld1(pg1d, c.v);
+    vecd d_v  = svld1(pg1d, d.v);
+    vech ha_v = svcvt_f16_x(pg1d, a_v);
+    vech hb_v = svcvt_f16_x(pg1d, b_v);
+    vech hc_v = svcvt_f16_x(pg1d, c_v);
+    vech hd_v = svcvt_f16_x(pg1d, d_v);
+    vech hab_v = svuzp1(ha_v, hb_v);
+    vech hcd_v = svuzp1(hc_v, hd_v);
+    return r_v = svuzp1(hab_v, hcd_v);
 
-    return ret;
-*/
+/*
     vecf sa,sb;
     sa = DtoS(a,b);
     sb = DtoS(c,d);
     return StoH(sa,sb);
+*/
   }
   static inline void HtoD(vech h,vecd &a,vecd &b,vecd &c,vecd &d) {
+    pred pg1h = acle<uint16_t>::pg1();
+    pred pg1d = acle<double>::pg1();
+    vech sa_v = svzip1(h_v, h_v);
+    vech sb_v = svzip2(h_v, h_v);
+    vech da_v = svzip1(sa_v, sa_v);
+    vech db_v = svzip2(sa_v, sa_v);
+    vech dc_v = svzip1(sb_v, sb_v);
+    vech dd_v = svzip2(sb_v, sb_v);
+    vecd a    = svcvt_f64_x(pg1d, da_v);
+    vecd b    = svcvt_f64_x(pg1d, db_v);
+    vecd c    = svcvt_f64_x(pg1d, dc_v);
+    vecd d    = svcvt_f64_x(pg1d, dd_v);
+
 /*
-    svbool_t pg1h = acle<uint16_t>::pg1();
-    svbool_t pg1d = acle<double>::pg1();
-    typename acle<uint16_t>::vt h_v = svld1(pg1h, (typename acle<uint16_t>::pt*)&h.v);
-    typename acle<uint16_t>::vt sa_v = svzip1(h_v, h_v);
-    typename acle<uint16_t>::vt sb_v = svzip2(h_v, h_v);
-    typename acle<uint16_t>::vt da_v = svzip1(sa_v, sa_v);
-    typename acle<uint16_t>::vt db_v = svzip2(sa_v, sa_v);
-    typename acle<uint16_t>::vt dc_v = svzip1(sb_v, sb_v);
-    typename acle<uint16_t>::vt dd_v = svzip2(sb_v, sb_v);
-    typename acle<double>::vt a_v = svcvt_f64_x(pg1d, da_v);
-    typename acle<double>::vt b_v = svcvt_f64_x(pg1d, db_v);
-    typename acle<double>::vt c_v = svcvt_f64_x(pg1d, dc_v);
-    typename acle<double>::vt d_v = svcvt_f64_x(pg1d, dd_v);
-    svst1(pg1d, a.v, a_v);
-    svst1(pg1d, b.v, b_v);
-    svst1(pg1d, c.v, c_v);
-    svst1(pg1d, d.v, d_v);
-*/
     vecf sa,sb;
     HtoS(h,sa,sb);
     StoD(sa,a,b);
     StoD(sb,c,d);
+*/
   }
 };
 
