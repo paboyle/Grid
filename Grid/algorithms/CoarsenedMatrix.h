@@ -829,7 +829,7 @@ public:
 	int dir   = geom.directions[p];
 	int disp  = geom.displacements[p];
 
-	if ( (disp==-1) || (!hermitian ) ) {
+	if (disp==-1) {
 
 	  ////////////////////////////////////////////////////////////////////////
 	  // Pick out contributions coming from this cell and neighbour cell
@@ -886,6 +886,8 @@ public:
     if(hermitian) {
       std::cout << GridLogMessage << " ForceHermitian, new code "<<std::endl;
       ForceHermitian();
+    } else {
+      ConstructRemainingLinks();
     }
       // AssertHermitian();
       // ForceDiagonal();
@@ -954,6 +956,38 @@ public:
     std::cout<<GridLogMessage<<"Norm local "<< norm2(A[8])<<std::endl;
   }
     
+  void ConstructRemainingLinks(void) {
+    for(int p=0;p<geom.npoint;p++){
+      int dir   = geom.directions[p];
+      int disp  = geom.displacements[p];
+      if(disp==-1) {
+        auto tmp   = closure(adj(A[p]));
+        auto tmp_v = tmp.View();
+        accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(), {
+          Real factor;
+          auto tmp_t = tmp_v(ss);
+          for(int n1 = 0; n1 < nbasis; ++n1) {
+            int k = n1/(nbasis/2);
+            for(int n2 = 0; n2 < nbasis; ++n2) {
+              int l = n2/(nbasis/2);
+              factor        = ((k + l) % 2 == 1) ? -1. : 1.;
+              tmp_t(n1, n2) = factor * tmp_t(n1, n2);
+            }
+          }
+          coalescedWrite(tmp_v[ss], tmp_t);
+        });
+        // Find the opposite link
+        for(int pp=0;pp<geom.npoint;pp++){
+          int dirp   = geom.directions[pp];
+          int dispp  = geom.displacements[pp];
+          if ( (dirp==dir) && (dispp==1) ){
+            A[pp] = Cshift(tmp,dir,1);
+          }
+        }
+      }
+    }
+  }
+
 };
 
 NAMESPACE_END(Grid);
