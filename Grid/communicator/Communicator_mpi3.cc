@@ -48,7 +48,7 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
 #if defined (A64FX) || defined (A64FXFIXEDSIZE)
 #ifndef TOFU
 #define TOFU
-#pragma message ("MPI_THREAD_SINGLE")
+#pragma message ("TOFU network / MPI_THREAD_SINGLE")
 #endif
 #endif
 

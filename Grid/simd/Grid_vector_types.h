@@ -120,26 +120,18 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
   #if defined(A64FX) || defined(A64FXFIXEDSIZE) // breakout A64FX SVE ACLE here
     #include <arm_sve.h>
     #if defined(A64FX) // VLA
-      #ifndef MSGVLA
       #pragma message("building for A64FX / SVE ACLE VLA")
-      #define MSGVLA
-      #endif
       #if defined(ARMCLANGCOMPAT)
-        #ifndef MSGCOMPAT
         #pragma message("applying armclang fix")
-        #define MSGCOMPAT
-        #endif
       #endif
       #include "Grid_a64fx-2.h"
     #endif
     #if defined(A64FXFIXEDSIZE) // fixed size data types
+      #pragma message("building for A64FX / SVE ACLE fixed size")
       #include "Grid_a64fx-fixedsize.h"
     #endif
   #else
-    #ifndef MSGGEN
     #pragma message("building for GEN") // generic
-    #define MSGGEN
-    #endif
     #include "Grid_generic.h"
   #endif
 #endif

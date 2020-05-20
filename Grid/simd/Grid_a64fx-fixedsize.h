@@ -39,7 +39,6 @@
 
 // gcc 10 features
 #if __ARM_FEATURE_SVE_BITS==512
-#pragma message("building for A64FX / fixed SVE data type size")
 /* gcc 10.0.1 and gcc 10.1 bug using ACLE data types  CAS-159553-Y1K4C6
    workaround: use gcc's internal data types, bugfix expected for gcc 10.2
 typedef svbool_t    pred __attribute__((arm_sve_vector_bits(512)));
