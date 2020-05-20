@@ -369,18 +369,18 @@ struct MultComplex{
 struct MultAddComplex{
   // Complex a*b+c
   // Complex float
-  inline vecf mac(vecf a, vecf b, vecf c){
+  inline vecf mac(vecf &a, vecf b, vecf c){
     pred pg1 = acle<float>::pg1();
     // using FCMLA
     vecf r_v = svcmla_x(pg1, c, a, b, 0);
-    return svcmla_x(pg1, r_v, a, b, 90);
+    a = svcmla_x(pg1, r_v, a, b, 90);
   }
   // Complex double
-  inline vecd mac(vecd a, vecd b, vecd c){
+  inline vecd mac(vecd &a, vecd b, vecd c){
     pred pg1 = acle<double>::pg1();
     // using FCMLA
     vecd r_v = svcmla_x(pg1, c, a, b, 0);
-    return svcmla_x(pg1, r_v, a, b, 90);
+    a = svcmla_x(pg1, r_v, a, b, 90);
   }
 };
 
