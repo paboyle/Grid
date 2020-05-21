@@ -570,8 +570,8 @@ void  TestConserved1(Action & Ddwf, Action & Ddwfrev,
       LatticeGaugeField Umu5d(FGrid); 
       std::vector<LatticeColourMatrix> U(4,FGrid);
       {
-	auto Umu5d_v = Umu5d.View();
-	auto Umu_v = Umu.View();
+	auto Umu5d_v = Umu5d.View(CpuWrite);
+	auto Umu_v = Umu.View(CpuRead);
 	for(int ss=0;ss<Umu.Grid()->oSites();ss++){
 	  for(int s=0;s<Ls;s++){
 	    Umu5d_v[Ls*ss+s] = Umu_v[ss];
@@ -597,8 +597,8 @@ void  TestConserved1(Action & Ddwf, Action & Ddwfrev,
       {
 	RealD diag = 5.0 - Ddwf.M5;
 	mass = Ddwf.mass;
-	auto psi=result5.View();
-	auto chi=tmp.View();
+	auto psi=result5.View(CpuRead);
+	auto chi=tmp.View(CpuWrite);
 	thread_for(sss,UGrid->oSites(),{
 	  uint64_t ss= sss*Ls;
 	  typedef vSpinColourVector spinor;

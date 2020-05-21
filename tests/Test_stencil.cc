@@ -109,8 +109,8 @@ int main(int argc, char ** argv) {
 	  StencilEntry *SE;
 	  SE = myStencil.GetEntry(permute_type,0,i);
 	  
-	  auto check = Check.View();
-	  auto foo   = Foo.View();
+	  auto check = Check.View(CpuWrite);
+	  auto foo   = Foo.View(CpuRead);
 	  if ( SE->_is_local && SE->_permute )
 	    permute(check[i],foo[SE->_offset],permute_type);
 	  else if (SE->_is_local)
@@ -151,8 +151,8 @@ int main(int argc, char ** argv) {
 	}}}}
 
 	if (nrm > 1.0e-4) {
-	  auto check = Check.View();
-	  auto bar   = Bar.View();
+	  auto check = Check.View(CpuRead);
+	  auto bar   = Bar.View(CpuRead);
 	  for(int i=0;i<check.size();i++){
 	    std::cout << i<<" Check "<<check[i]<< "\n"<<i<<" Bar "<<bar[i]<<std::endl;
 	  }
@@ -210,8 +210,8 @@ int main(int argc, char ** argv) {
 	  SE = EStencil.GetEntry(permute_type,0,i);
 	  //	  std::cout << "Even source "<< i<<" -> " <<SE->_offset << " "<< SE->_is_local<<std::endl;
 
-	  auto ocheck = OCheck.View();
-	  auto efoo   = EFoo.View();
+	  auto ocheck = OCheck.View(CpuWrite);
+	  auto efoo   = EFoo.View(CpuRead);
 	  if ( SE->_is_local && SE->_permute )
 	    permute(ocheck[i],efoo[SE->_offset],permute_type);
 	  else if (SE->_is_local)
@@ -226,8 +226,8 @@ int main(int argc, char ** argv) {
 	  SE = OStencil.GetEntry(permute_type,0,i);
 	  //	  std::cout << "ODD source "<< i<<" -> " <<SE->_offset << " "<< SE->_is_local<<std::endl;
 
-	  auto echeck = ECheck.View();
-	  auto ofoo   = OFoo.View();
+	  auto echeck = ECheck.View(CpuWrite);
+	  auto ofoo   = OFoo.View(CpuRead);
 	  if ( SE->_is_local && SE->_permute )
 	    permute(echeck[i],ofoo[SE->_offset],permute_type);
 	  else if (SE->_is_local)

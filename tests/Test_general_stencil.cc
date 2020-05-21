@@ -107,8 +107,8 @@ int main(int argc, char ** argv)
 	// Implement a stencil code that should agree with cshift!
 	for(int i=0;i<Check.Grid()->oSites();i++){
 	  auto SE = gStencil.GetEntry(0,i);
-	  auto check = Check.View();
-	  auto foo   = Foo.View();
+	  auto check = Check.View(CpuWrite);
+	  auto foo   = Foo.View(CpuRead);
 
 	  // Encapsulate in a general wrapper
 	  check[i] = foo[SE->_offset];                   auto tmp=check[i];
@@ -147,8 +147,8 @@ int main(int argc, char ** argv)
 	}}}}
 
 	if (nrm > 1.0e-4) {
-	  auto check = Check.View();
-	  auto bar   = Bar.View();
+	  auto check = Check.View(CpuRead);
+	  auto bar   = Bar.View(CpuRead);
 	  for(int i=0;i<check.size();i++){
 	    std::cout << i<<" Check "<<check[i]<< "\n"<<i<<" Bar "<<bar[i]<<std::endl;
 	  }
