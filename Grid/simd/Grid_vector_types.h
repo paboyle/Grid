@@ -299,8 +299,7 @@ public:
   // FIXME -- alias this to an accelerator_inline MAC struct.
 
   // FIXME VLA build error
-  //#if defined(A64FX) || defined(A64FXFIXEDSIZE)  // VLA only: build error
-  #if defined(A64FXFIXEDSIZE)
+  #if defined(A64FX) || defined(A64FXFIXEDSIZE)
   friend accelerator_inline void mac(Grid_simd *__restrict__ y,
 				     const Grid_simd *__restrict__ a,
 				     const Grid_simd *__restrict__ x) {
@@ -791,10 +790,9 @@ accelerator_inline Grid_simd<S, V> operator*(Grid_simd<S, V> a, Grid_simd<S, V> 
   return ret;
 };
 
-// ----------------A64FX MAC ---------------------
+// ---------------- A64FX MAC -------------------
 // Distinguish between complex types and others
-//#if defined(A64FX) || defined(A64FXFIXEDSIZE)  // VLA only: build error
-#if defined(A64FXFIXEDSIZE)
+#if defined(A64FX) || defined(A64FXFIXEDSIZE)
 template <class S, class V, IfComplex<S> = 0>
 accelerator_inline Grid_simd<S, V> fxmac(Grid_simd<S, V> a, Grid_simd<S, V> b, Grid_simd<S, V> c) {
   Grid_simd<S, V> ret;
@@ -810,7 +808,7 @@ accelerator_inline Grid_simd<S, V> fxmac(Grid_simd<S, V> a, Grid_simd<S, V> b, G
   return ret;
 };
 #endif
-// -------------------------------------
+// ----------------------------------------------
 
 
 // Distinguish between complex types and others
