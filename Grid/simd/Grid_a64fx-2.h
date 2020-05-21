@@ -325,6 +325,18 @@ struct Sub{
 
 struct Mult{
   template <typename T>
+  inline vec<T> operator()(vec<T> a, vec<T> b, vec<T> c){
+    vec<T> out;
+    svbool_t pg1 = acle<T>::pg1();
+    typename acle<T>::vt a_v = svld1(pg1, a.v);
+    typename acle<T>::vt b_v = svld1(pg1, b.v);
+    typename acle<T>::vt c_v = svld1(pg1, c.v);
+    typename acle<T>::vt r_v = svmad_x(pg1, b_v, c_v, a_v);
+    svst1(pg1, out.v, r_v);
+
+    return out;
+  }
+  template <typename T>
   inline vec<T> operator()(vec<T> a, vec<T> b){
     vec<T> out;
     svbool_t pg1 = acle<T>::pg1();
@@ -396,7 +408,7 @@ struct MultComplex{
 struct MultAddComplex{
   // Complex a*b+c
   template <typename T>
-  inline void mac(const vec<T> &a, const vec<T> b, const vec<T> c){
+  inline vec<T> operator()(vec<T> a, vec<T> b, vec<T> c){
     vec<T> out;
     svbool_t pg1 = acle<T>::pg1();
     typename acle<T>::vt a_v = svld1(pg1, a.v);
@@ -407,7 +419,9 @@ struct MultAddComplex{
     typename acle<T>::vt r_v = svcmla_x(pg1, c_v, a_v, b_v, 0);
     r_v = svcmla_x(pg1, r_v, a_v, b_v, 90);
 
-    svst1(pg1, a.v, r_v);
+    svst1(pg1, out.v, r_v);
+
+    return out;
   }
 };
 

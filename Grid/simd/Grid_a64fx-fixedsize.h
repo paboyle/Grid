@@ -295,14 +295,14 @@ struct Sub{
 
 struct Mult{
   // Real float fma
-  inline void mac(vecf &a, vecf b, vecf c){
+  inline void operator()(vecf a, vecf b, vecf c){
     pred pg1 = acle<float>::pg1();
-    a = svmad_x(pg1, b, c, a);
+    return svmad_x(pg1, b, c, a);
   }
   // Real double fma
-  inline void mac(vecd &a, vecd b, vecd c){
+  inline void operator()(vecd a, vecd b, vecd c){
     pred pg1 = acle<double>::pg1();
-    a = svmad_x(pg1, b, c, a);
+    return svmad_x(pg1, b, c, a);
   }
   // Real float
   inline vecf operator()(vecf a, vecf b){
@@ -376,18 +376,18 @@ struct MultComplex{
 struct MultAddComplex{
   // Complex a*b+c
   // Complex float
-  inline void mac(vecf &a, vecf b, vecf c){
+  inline vecf operator()(vecf a, vecf b, vecf c){
     pred pg1 = acle<float>::pg1();
     // using FCMLA
     vecf r_v = svcmla_x(pg1, c, a, b, 0);
-    a = svcmla_x(pg1, r_v, a, b, 90);
+    return svcmla_x(pg1, r_v, a, b, 90);
   }
   // Complex double
-  inline void mac(vecd &a, vecd b, vecd c){
+  inline vecd operator()(vecd a, vecd b, vecd c){
     pred pg1 = acle<double>::pg1();
     // using FCMLA
     vecd r_v = svcmla_x(pg1, c, a, b, 0);
-    a = svcmla_x(pg1, r_v, a, b, 90);
+    return svcmla_x(pg1, r_v, a, b, 90);
   }
 };
 
