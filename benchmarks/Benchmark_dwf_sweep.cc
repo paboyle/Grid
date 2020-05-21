@@ -130,8 +130,8 @@ void benchDw(std::vector<int> & latt4, int Ls, int threads,int report )
   LatticeGaugeField Umu5d(FGrid); 
 
   // replicate across fifth dimension
-  auto Umu5d_v = Umu5d.View();
-  auto Umu_v   = Umu.View();
+  auto Umu5d_v = Umu5d.View(CpuWrite);
+  auto Umu_v   = Umu.View(CpuRead);
   for(int ss=0;ss<Umu.Grid()->oSites();ss++){
     for(int s=0;s<Ls;s++){
       Umu5d_v[Ls*ss+s] = Umu_v[ss];
