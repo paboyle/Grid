@@ -299,12 +299,6 @@ protected:
             return stem + t + ".bin";
         }
     }
-    std::string evalFilename(const std::string stem, const int traj)
-    {
-        std::string t = (traj < 0) ? "" : ("." + std::to_string(traj));
-        
-        return stem + t + ".bin";
-    }
 protected:
     GridBase *gridIo_;
 };

@@ -31,6 +31,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Environment.hpp>
+#include <Hadrons/Module.hpp>
 #include <Hadrons/Solver.hpp>
 
 BEGIN_HADRONS_NAMESPACE
@@ -192,6 +193,12 @@ private:
         {
             return stem + t + ".bin";
         }
+    }
+    static inline std::string evalFilename(const std::string stem, const int traj)
+    {
+        std::string t = (traj < 0) ? "" : ("." + std::to_string(traj));
+        
+        return stem + t + ".bin";
     }
 };
 
@@ -754,25 +761,23 @@ void A2AVectorsIo::write(const std::string fileStem, std::vector<Field> &vec,
     }
 }
 
+#include <iostream>
 template <typename Field>
 void A2AVectorsIo::writeEvals(const std::string fileStem,
                               std::vector<Field> &eval,
                               const int trajectory)
 {
-    Record       record;
-    GridBase     *grid = env().getGrid();
-    ScidacWriter binWriter(grid->IsBoss());
+
     std::string  filename = evalFilename(fileStem, trajectory);
     
-    makeFileDir(filename, grid);
-    binWriter.open(filename);
+    std::ofstream file;
+    file.open (filename);
     for (unsigned int i = 0; i < eval.size(); ++i)
     {
         LOG(Message) << "Writing eval " << i << std::endl;
-        record.index = i;
-        binWriter.writeScidacFieldRecord(eval[i], record);
+        file << eval[i];
     }
-    binWriter.close();
+    file.close();
 }
 
 template <typename Field>
