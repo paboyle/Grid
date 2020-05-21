@@ -173,6 +173,9 @@ public:
     static void write(const std::string fileStem, std::vector<Field> &vec, 
                       const bool multiFile, const int trajectory = -1);
     template <typename Field>
+    static void writeEvals(const std::string fileStem, std::vector<Field> &eval,
+                           const int trajectory = -1);
+    template <typename Field>
     static void read(std::vector<Field> &vec, const std::string fileStem,
                      const bool multiFile, const int trajectory = -1);
 private:
@@ -749,6 +752,27 @@ void A2AVectorsIo::write(const std::string fileStem, std::vector<Field> &vec,
         }
         binWriter.close();
     }
+}
+
+template <typename Field>
+void A2AVectorsIo::writeEvals(const std::string fileStem,
+                              std::vector<Field> &eval,
+                              const int trajectory)
+{
+    Record       record;
+    GridBase     *grid = env().getGrid();
+    ScidacWriter binWriter(grid->IsBoss());
+    std::string  filename = evalFilename(fileStem, trajectory);
+    
+    makeFileDir(filename, grid);
+    binWriter.open(filename);
+    for (unsigned int i = 0; i < eval.size(); ++i)
+    {
+        LOG(Message) << "Writing eval " << i << std::endl;
+        record.index = i;
+        binWriter.writeScidacFieldRecord(eval[i], record);
+    }
+    binWriter.close();
 }
 
 template <typename Field>

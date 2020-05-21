@@ -723,6 +723,9 @@ void TStagNoEvalA2AVectors<FImpl, Pack>::execute(void)
     << " using eigenpack '" << par().eigenPack << "' ("
     << 2*Nl_ << " low modes) '" << std::endl;
     
+    //save for later
+    std::vector<complex<double>> evalM(2*Nl_);
+    
     // Low modes
     for (unsigned int il = 0; il < Nl_; il++)
     {
@@ -735,8 +738,10 @@ void TStagNoEvalA2AVectors<FImpl, Pack>::execute(void)
         if (Ls == 1)
         {
             a2a.makeLowModeV(v[2*il], epack.evec[il], eval);
+            evalM[2*il] = eval;
             // construct -lambda evec
             a2a.makeLowModeV(v[2*il+1], epack.evec[il], eval, 1);
+            evalM[2*il+1] = conjugate(eval);
         }
         else
         {
@@ -769,12 +774,13 @@ void TStagNoEvalA2AVectors<FImpl, Pack>::execute(void)
     // I/O if necessary
     if (!par().output.empty())
     {
-        startTimer("V I/O");
-        A2AVectorsIo::write(par().output + "_v", v, par().multiFile, vm().getTrajectory());
-        stopTimer("V I/O");
-        startTimer("W I/O");
-        A2AVectorsIo::write(par().output + "_w", w, par().multiFile, vm().getTrajectory());
-        stopTimer("W I/O");
+        //startTimer("V I/O");
+        //A2AVectorsIo::write(par().output + "_v", v, par().multiFile, vm().getTrajectory());
+        //stopTimer("V I/O");
+        //startTimer("W I/O");
+        //A2AVectorsIo::write(par().output + "_w", w, par().multiFile, vm().getTrajectory());
+        //stopTimer("W I/O");
+        A2AVectorsIo::writeEvals(par().output + "_eval", evalM, vm().getTrajectory());
     }
     //printMem("End StagNoEvalA2AVectors execute() ", env().getGrid()->ThisRank());
 }
