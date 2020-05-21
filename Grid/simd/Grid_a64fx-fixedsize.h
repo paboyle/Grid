@@ -295,12 +295,12 @@ struct Sub{
 
 struct Mult{
   // Real float fma
-  inline void operator()(vecf a, vecf b, vecf c){
+  inline vecf operator()(vecf a, vecf b, vecf c){
     pred pg1 = acle<float>::pg1();
     return svmad_x(pg1, b, c, a);
   }
   // Real double fma
-  inline void operator()(vecd a, vecd b, vecd c){
+  inline vecd operator()(vecd a, vecd b, vecd c){
     pred pg1 = acle<double>::pg1();
     return svmad_x(pg1, b, c, a);
   }
