@@ -107,6 +107,18 @@ struct acle<double>{
     const ulutd t = { .s = {2, 3, 0, 1, 6, 7, 4, 5} };
     return t.v;
   }
+  static inline lutd tbl_exch1a(){ // Exchange1
+    const ulutd t = { .s = {0, 1, 4, 5, 2, 3, 6, 7} };
+    return t.v;
+  }
+  static inline lutd tbl_exch1b(){ // Exchange1
+    const ulutd t = { .s = {2, 3, 6, 7, 0, 1, 4, 5} };
+    return t.v;
+  }
+  static inline lutd tbl_exch1c(){ // Exchange1
+    const ulutd t = { .s = {4, 5, 0, 1, 6, 7, 2, 3} };
+    return t.v;
+  }
   static inline pred pg1(){return svptrue_b64();}
   static inline pred pg_even(){return svzip1_b64(svptrue_b64(), svpfalse_b());}
   static inline pred pg_odd() {return svzip1_b64(svpfalse_b(), svptrue_b64());}
@@ -369,14 +381,14 @@ struct MultComplex{
 struct MultAddComplex{
   // Complex a*b+c
   // Complex float
-  inline vecf mac(vecf &a, vecf b, vecf c){
+  inline void mac(vecf &a, vecf b, vecf c){
     pred pg1 = acle<float>::pg1();
     // using FCMLA
     vecf r_v = svcmla_x(pg1, c, a, b, 0);
     a = svcmla_x(pg1, r_v, a, b, 90);
   }
   // Complex double
-  inline vecd mac(vecd &a, vecd b, vecd c){
+  inline void mac(vecd &a, vecd b, vecd c){
     pred pg1 = acle<double>::pg1();
     // using FCMLA
     vecd r_v = svcmla_x(pg1, c, a, b, 0);
@@ -401,13 +413,13 @@ struct Conj{
   // Complex float
   inline vecf operator()(vecf a){
     pred pg_odd = acle<float>::pg_odd();
-    //return svneg_x(pg_odd, a);  this is unsafe!
+    //return svneg_x(pg_odd, a);  this is unsafe
     return svneg_m(a, pg_odd, a);
   }
   // Complex double
   inline vecd operator()(vecd a){
     pred pg_odd = acle<double>::pg_odd();
-    //return svneg_x(pg_odd, a);  this is unsafe!
+    //return svneg_x(pg_odd, a);  this is unsafe
     return svneg_m(a, pg_odd, a);
   }
 };
@@ -488,17 +500,13 @@ struct PrecisionChange {
   static inline vech DtoH (vecd a,vecd b,vecd c,vecd d) {
     pred pg1d = acle<double>::pg1();
     pred pg1h = acle<uint16_t>::pg1();
-    vecd a_v  = svld1(pg1d, a.v);
-    vecd b_v  = svld1(pg1d, b.v);
-    vecd c_v  = svld1(pg1d, c.v);
-    vecd d_v  = svld1(pg1d, d.v);
-    vech ha_v = svcvt_f16_x(pg1d, a_v);
-    vech hb_v = svcvt_f16_x(pg1d, b_v);
-    vech hc_v = svcvt_f16_x(pg1d, c_v);
-    vech hd_v = svcvt_f16_x(pg1d, d_v);
+    vech ha_v = svcvt_f16_x(pg1d, a);
+    vech hb_v = svcvt_f16_x(pg1d, b);
+    vech hc_v = svcvt_f16_x(pg1d, c);
+    vech hd_v = svcvt_f16_x(pg1d, d);
     vech hab_v = svuzp1(ha_v, hb_v);
     vech hcd_v = svuzp1(hc_v, hd_v);
-    return r_v = svuzp1(hab_v, hcd_v);
+    return svuzp1(hab_v, hcd_v);
 
 /*
     vecf sa,sb;
@@ -510,16 +518,16 @@ struct PrecisionChange {
   static inline void HtoD(vech h,vecd &a,vecd &b,vecd &c,vecd &d) {
     pred pg1h = acle<uint16_t>::pg1();
     pred pg1d = acle<double>::pg1();
-    vech sa_v = svzip1(h_v, h_v);
-    vech sb_v = svzip2(h_v, h_v);
+    vech sa_v = svzip1(h, h);
+    vech sb_v = svzip2(h, h);
     vech da_v = svzip1(sa_v, sa_v);
     vech db_v = svzip2(sa_v, sa_v);
     vech dc_v = svzip1(sb_v, sb_v);
     vech dd_v = svzip2(sb_v, sb_v);
-    vecd a    = svcvt_f64_x(pg1d, da_v);
-    vecd b    = svcvt_f64_x(pg1d, db_v);
-    vecd c    = svcvt_f64_x(pg1d, dc_v);
-    vecd d    = svcvt_f64_x(pg1d, dd_v);
+    a = svcvt_f64_x(pg1d, da_v);
+    b = svcvt_f64_x(pg1d, db_v);
+    c = svcvt_f64_x(pg1d, dc_v);
+    d = svcvt_f64_x(pg1d, dd_v);
 
 /*
     vecf sa,sb;
@@ -579,26 +587,17 @@ struct Exchange{
     out2 = svext(in1, r2_v, (uint64_t)4u);
   }
   static inline void Exchange1(vecd &out1, vecd &out2, vecd in1, vecd in2){
-    // FIXME
-    uvecd v1 = { .v = in1 };
-    uvecd v2 = { .v = in2 };
-    uvecd o1, o2;
+    // this one is tricky; svtrn2q* from SVE2 fits best, but it is not available in SVE1
+    lutd tbl_exch1a = acle<double>::tbl_exch1a();
+    lutd tbl_exch1b = acle<double>::tbl_exch1b();
+    lutd tbl_exch1c = acle<double>::tbl_exch1c();
 
-    const int n = 1;
-    const int w = 8; // w = W<T>::r
-    unsigned int mask = w >> (n + 1);
-    //      std::cout << " Exchange "<<n<<" nsimd "<<w<<" mask 0x" <<std::hex<<mask<<std::dec<<std::endl;
-    VECTOR_FOR(i, w, 1) {
-      int j1 = i&(~mask);
-      if  ( (i&mask) == 0 ) { o1.s[i]=v1.s[j1];}
-      else                  { o1.s[i]=v2.s[j1];}
-      int j2 = i|mask;
-      if  ( (i&mask) == 0 ) { o2.s[i]=v1.s[j2];}
-      else                  { o2.s[i]=v2.s[j2];}
-    }
-
-    out1 = o1.v;
-    out2 = o2.v;
+    vecd a1_v = svtbl(in1, tbl_exch1a);
+    vecd a2_v = svtbl(in2, tbl_exch1b);
+    vecd b1_v  = svext(a2_v, a1_v, (uint64_t)4u);
+    vecd b2_v  = svext(a1_v, a2_v, (uint64_t)4u);
+    out1 = svtbl(b1_v, tbl_exch1c);
+    out2 = svtbl(b2_v, tbl_exch1a);
   }
   static inline void Exchange2(vecd &out1, vecd &out2, vecd in1, vecd in2){
     out1 = svtrn1(in1, in2);
@@ -615,7 +614,7 @@ struct Exchange{
 struct Permute{
   // float
   static inline vecf Permute0(vecf in) {
-    return svext(in, in, (uint64_t)(16u / 2u));
+    return svext(in, in, (uint64_t)8u);
   }
   static inline vecf Permute1(vecf in) {
     lutf tbl_swap = acle<float>::tbl1();
@@ -713,8 +712,6 @@ struct Reduce{
 };
 //Complex float Reduce
 template <>
-// inline Grid::ComplexF Reduce<Grid::ComplexF, svfloat32_t>::operator()(svfloat32_t in){
-//inline Grid::ComplexF Reduce<Grid::ComplexF, __SVFloat32_t>::operator()(__SVFloat32_t in){
 inline Grid::ComplexF Reduce<Grid::ComplexF, vecf>::operator()(vecf in){
   pred pg_even = acle<float>::pg_even();
   pred pg_odd  = acle<float>::pg_odd();
@@ -724,16 +721,12 @@ inline Grid::ComplexF Reduce<Grid::ComplexF, vecf>::operator()(vecf in){
 }
 //Real float Reduce
 template <>
-//inline Grid::RealF Reduce<Grid::RealF, svfloat32_t>::operator()(svfloat32_t in){
-//inline Grid::RealF Reduce<Grid::RealF, __SVFloat32_t>::operator()(__SVFloat32_t in){
 inline Grid::RealF Reduce<Grid::RealF, vecf>::operator()(vecf in){
   pred pg1 = acle<float>::pg1();
   return svred(pg1, in);
 }
 //Complex double Reduce
 template <>
-//inline Grid::ComplexD Reduce<Grid::ComplexD, svfloat64_t>::operator()(svfloat64_t in){
-//inline Grid::ComplexD Reduce<Grid::ComplexD, __SVFloat64_t>::operator()(__SVFloat64_t in){
 inline Grid::ComplexD Reduce<Grid::ComplexD, vecd>::operator()(vecd in){
   pred pg_even = acle<double>::pg_even();
   pred pg_odd  = acle<double>::pg_odd();
@@ -743,16 +736,12 @@ inline Grid::ComplexD Reduce<Grid::ComplexD, vecd>::operator()(vecd in){
 }
 //Real double Reduce
 template <>
-//inline Grid::RealD Reduce<Grid::RealD, svfloat64_t>::operator()(svfloat64_t in){
-//inline Grid::RealD Reduce<Grid::RealD, __SVFloat64_t>::operator()(__SVFloat64_t in){
 inline Grid::RealD Reduce<Grid::RealD, vecd>::operator()(vecd in){
   pred pg1 = acle<double>::pg1();
   return svred(pg1, in);
 }
 //Integer Reduce
 template <>
-//inline Integer Reduce<Integer, svuint32_t>::operator()(svuint32_t in){
-//inline Integer Reduce<Integer, __SVUint32_t>::operator()(__SVUint32_t in){
 inline Integer Reduce<Integer, veci>::operator()(veci in){
   pred pg1 = acle<Integer>::pg1();
   return svred(pg1, in);

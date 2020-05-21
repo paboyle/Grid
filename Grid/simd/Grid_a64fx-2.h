@@ -400,7 +400,7 @@ struct MultComplex{
 struct MultAddComplex{
   // Complex a*b+c
   template <typename T>
-  inline vec<T> mac(const vec<T> &a, const vec<T> b, const vec<T> c){
+  inline mac(const vec<T> &a, const vec<T> b, const vec<T> c){
 
     vec<T> out;
     svbool_t pg1 = acle<T>::pg1();
