@@ -60,35 +60,19 @@ typedef __SVUint64_t  lutd __attribute__((arm_sve_vector_bits(512))); // LUTs fo
 #pragma error("Oops. Illegal SVE vector size!?")
 #endif /* __ARM_FEATURE_SVE_BITS */
 
-// safety definition, not sure if it's necessary
-//#define GEN_SIMD_WIDTH 64u
-
 // low-level API
 NAMESPACE_BEGIN(Grid);
 NAMESPACE_BEGIN(Optimization);
 
-// convenience union types for tables eliminate loads
+// convenience union types for tables eliminating loads
 union ulutf {
   lutf v;
   uint32_t s[16];
 };
-
 union ulutd {
   lutd v;
   uint64_t s[8];
 };
-
-// FIXME convenience union types for Exchange1
-union uvecf {
-  vecf v;
-  float32_t s[16];
-};
-
-union uvecd {
-  vecd v;
-  float64_t s[8];
-};
-
 
 template <typename T>
 struct acle{};
@@ -144,6 +128,18 @@ struct acle<float>{
     const ulutf t = { .s = {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13} };
     return t.v;
   }
+  static inline lutf tbl_exch1a(){ // Exchange1
+    const ulutf t = { .s = {0, 1, 2, 3, 8, 9, 10, 11, 4, 5, 6, 7, 12, 13, 14, 15 } };
+    return t.v;
+  }
+  static inline lutf tbl_exch1b(){ // Exchange1
+    const ulutf t = { .s = {4, 5, 6, 7, 12, 13, 14, 15, 0, 1, 2, 3, 8, 9, 10, 11 } };
+    return t.v;
+  }
+  static inline lutf tbl_exch1c(){ // Exchange1
+    const ulutf t = { .s = {8, 9, 10, 11, 0, 1, 2, 3, 12, 13, 14, 15, 4, 5, 6, 7} };
+    return t.v;
+  }
   static inline pred pg1(){return svptrue_b32();}
   static inline pred pg_even(){return svzip1_b32(svptrue_b32(), svpfalse_b());}
   static inline pred pg_odd() {return svzip1_b32(svpfalse_b(), svptrue_b32());}
@@ -191,7 +187,6 @@ struct Vsplat{
   }
   // Integer
   inline veci operator()(Integer a){
-    // Add check whether Integer is really a uint32_t???
     return svdup_u32(a);
   }
 };
@@ -538,9 +533,6 @@ struct PrecisionChange {
   }
 };
 
-#define VECTOR_FOR(i, w, inc)                   \
-for (unsigned int i = 0; i < w; i += inc)
-
 struct Exchange{
   // float
   static inline void Exchange0(vecf &out1, vecf &out2, vecf in1, vecf in2){
@@ -550,25 +542,18 @@ struct Exchange{
     out2 = svext(in1, r2_v, (uint64_t)8u);
   }
   static inline void Exchange1(vecf &out1, vecf &out2, vecf in1, vecf in2){
-    // FIXME
-    uvecf v1 = { .v = in1 };
-    uvecf v2 = { .v = in2 };
-    uvecf o1, o2;
+    // this one is tricky; svtrn2q* from SVE2 fits best, but it is not available in SVE1
+    // alternative: use 4-el structure; expect translation into 4x ldp + 4x stp -> SFI
+    lutf tbl_exch1a = acle<float>::tbl_exch1a();
+    lutf tbl_exch1b = acle<float>::tbl_exch1b();
+    lutf tbl_exch1c = acle<float>::tbl_exch1c();
 
-    const int n = 1;
-    const int w = 16; // w = W<T>::r
-    unsigned int mask = w >> (n + 1);
-    //      std::cout << " Exchange "<<n<<" nsimd "<<w<<" mask 0x" <<std::hex<<mask<<std::dec<<std::endl;
-    VECTOR_FOR(i, w, 1) {
-      int j1 = i&(~mask);
-      if  ( (i&mask) == 0 ) { o1.s[i]=v1.s[j1];}
-      else                  { o1.s[i]=v2.s[j1];}
-      int j2 = i|mask;
-      if  ( (i&mask) == 0 ) { o2.s[i]=v1.s[j2];}
-      else                  { o2.s[i]=v2.s[j2];}
-    }
-    out1 = o1.v;
-    out2 = o2.v;
+    vecf a1_v = svtbl(in1, tbl_exch1a);
+    vecf a2_v = svtbl(in2, tbl_exch1b);
+    vecf b1_v  = svext(a2_v, a1_v, (uint64_t)8u);
+    vecf b2_v  = svext(a1_v, a2_v, (uint64_t)8u);
+    out1 = svtbl(b1_v, tbl_exch1c);
+    out2 = svtbl(b2_v, tbl_exch1a);
   }
   static inline void Exchange2(vecf &out1, vecf &out2, vecf in1, vecf in2){
     out1 = (vecf)svtrn1((vecd)in1, (vecd)in2);
@@ -588,14 +573,15 @@ struct Exchange{
   }
   static inline void Exchange1(vecd &out1, vecd &out2, vecd in1, vecd in2){
     // this one is tricky; svtrn2q* from SVE2 fits best, but it is not available in SVE1
+    // alternative: use 4-el structure; expect translation into 4x ldp + 4x stp -> SFI
     lutd tbl_exch1a = acle<double>::tbl_exch1a();
     lutd tbl_exch1b = acle<double>::tbl_exch1b();
     lutd tbl_exch1c = acle<double>::tbl_exch1c();
 
     vecd a1_v = svtbl(in1, tbl_exch1a);
     vecd a2_v = svtbl(in2, tbl_exch1b);
-    vecd b1_v  = svext(a2_v, a1_v, (uint64_t)4u);
-    vecd b2_v  = svext(a1_v, a2_v, (uint64_t)4u);
+    vecd b1_v = svext(a2_v, a1_v, (uint64_t)4u);
+    vecd b2_v = svext(a1_v, a2_v, (uint64_t)4u);
     out1 = svtbl(b1_v, tbl_exch1c);
     out2 = svtbl(b2_v, tbl_exch1a);
   }
