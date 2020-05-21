@@ -622,6 +622,162 @@ void TStagLowA2AVectors<FImpl, Pack>::execute(void)
     //printMem("End StagLowA2AVectors execute() ", env().getGrid()->ThisRank());
 }
 
+// Don't divide v vecs by eval. for use with cons. current meson fields.
+
+template <typename FImpl, typename Pack>
+class TStagNoEvalA2AVectors : public Module<A2AVectorsPar>
+{
+public:
+    FERM_TYPE_ALIASES(FImpl,);
+    SOLVER_TYPE_ALIASES(FImpl,);
+    typedef A2AVectorsSchurStaggeredNoEval<FImpl> A2A;
+public:
+    // constructor
+    TStagNoEvalA2AVectors(const std::string name);
+    // destructor
+    virtual ~TStagNoEvalA2AVectors(void) {};
+    // dependency relation
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+    // setup
+    virtual void setup(void);
+    // execution
+    virtual void execute(void);
+private:
+    std::string  solverName_;
+    unsigned int Nl_{0};
+};
+
+MODULE_REGISTER_TMP(StagNoEvalA2AVectors,
+                    ARG(TStagNoEvalA2AVectors<STAGIMPL, BaseFermionEigenPack<STAGIMPL>>),
+                    MSolver);
+
+/******************************************************************************
+ *                       TStagNoEvalA2AVectors implementation                           *
+ ******************************************************************************/
+// constructor /////////////////////////////////////////////////////////////////
+template <typename FImpl, typename Pack>
+TStagNoEvalA2AVectors<FImpl, Pack>::TStagNoEvalA2AVectors(const std::string name)
+: Module<A2AVectorsPar>(name)
+{}
+
+// dependencies/products ///////////////////////////////////////////////////////
+template <typename FImpl, typename Pack>
+std::vector<std::string> TStagNoEvalA2AVectors<FImpl, Pack>::getInput(void)
+{
+    std::string              sub_string;
+    std::vector<std::string> in;
+    
+    in.push_back(par().eigenPack);
+    sub_string = (!par().eigenPack.empty()) ? "_subtract" : "";
+    in.push_back(par().action);
+    
+    return in;
+}
+
+template <typename FImpl, typename Pack>
+std::vector<std::string> TStagNoEvalA2AVectors<FImpl, Pack>::getOutput(void)
+{
+    std::vector<std::string> out = {getName() + "_v", getName() + "_w"};
+    
+    return out;
+}
+
+// setup ///////////////////////////////////////////////////////////////////////
+template <typename FImpl, typename Pack>
+void TStagNoEvalA2AVectors<FImpl, Pack>::setup(void)
+{
+    bool        hasLowModes = (!par().eigenPack.empty());
+    std::string sub_string  = (hasLowModes) ? "_subtract" : "";
+    auto        &action     = envGet(FMat, par().action);
+    int         Ls          = env().getObjectLs(par().action);
+    
+    auto &epack = envGet(Pack, par().eigenPack);
+    Nl_ = epack.evec.size();
+    
+    envCreate(std::vector<FermionField>, getName() + "_v", 1,
+              2*Nl_, envGetGrid(FermionField));
+    envCreate(std::vector<FermionField>, getName() + "_w", 1,
+              2*Nl_, envGetGrid(FermionField));
+    if (Ls > 1)
+    {
+        envTmpLat(FermionField, "f5", Ls);
+    }
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename FImpl, typename Pack>
+void TStagNoEvalA2AVectors<FImpl, Pack>::execute(void)
+{
+    //printMem("Begin StagNoEvalA2AVectors execute() ", env().getGrid()->ThisRank());
+    std::string sub_string = (Nl_ > 0) ? "_subtract" : "";
+    auto        &action    = envGet(FMat, par().action);
+    auto        &v         = envGet(std::vector<FermionField>, getName() + "_v");
+    auto        &w         = envGet(std::vector<FermionField>, getName() + "_w");
+    int         Ls         = env().getObjectLs(par().action);
+    double      mass       = par().mass;
+    
+    envGetTmp(A2A, a2a);
+    
+    LOG(Message) << "Computing all-to-all vectors "
+    << " using eigenpack '" << par().eigenPack << "' ("
+    << 2*Nl_ << " low modes) '" << std::endl;
+    
+    // Low modes
+    for (unsigned int il = 0; il < Nl_; il++)
+    {
+        auto &epack  = envGet(Pack, par().eigenPack);
+        
+        // eval of unpreconditioned Dirac op
+        std::complex<double> eval(mass,sqrt(epack.eval[il]-mass*mass));
+        
+        startTimer("V low mode");
+        if (Ls == 1)
+        {
+            a2a.makeLowModeVNoEval(v[2*il], epack.evec[il], eval);
+            // construct -lambda evec
+            a2a.makeLowModeVNoEval(v[2*il+1], epack.evec[il], eval, 1);
+        }
+        else
+        {
+            assert(0);
+            //envGetTmp(FermionField, f5);
+            //a2a.makeLowModeV5D(v[2*il], f5, epack.evec[il], eval);
+            // construct -lambda evec
+            //a2a.makeLowModeV5D(v[2*il+1], f5, epack.evec[il], eval, 1);
+        }
+        stopTimer("V low mode");
+        startTimer("W low mode");
+        LOG(Message) << "W vector i = " << il << " (low mode)" << std::endl;
+        if (Ls == 1)
+        {
+            a2a.makeLowModeW(w[2*il], epack.evec[il], eval);
+            // construct -lambda evec
+            a2a.makeLowModeW(w[2*il+1], epack.evec[il], eval, 1);
+        }
+        else
+        {
+            assert(0);
+            //envGetTmp(FermionField, f5);
+            //a2a.makeLowModeW5D(w[2*il], f5, epack.evec[il], eval);
+            // construct -lambda evec
+            //a2a.makeLowModeW5D(w[2*il+1], f5, epack.evec[il], eval, 1);
+        }
+        stopTimer("W low mode");
+    }
+    
+    // I/O if necessary
+    if (!par().output.empty())
+    {
+        startTimer("V I/O");
+        A2AVectorsIo::write(par().output + "_v", v, par().multiFile, vm().getTrajectory());
+        stopTimer("V I/O");
+        startTimer("W I/O");
+        A2AVectorsIo::write(par().output + "_w", w, par().multiFile, vm().getTrajectory());
+        stopTimer("W I/O");
+    }
+    //printMem("End StagNoEvalA2AVectors execute() ", env().getGrid()->ThisRank());
+}
 
 END_MODULE_NAMESPACE
 

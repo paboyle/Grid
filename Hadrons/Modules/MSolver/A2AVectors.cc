@@ -36,3 +36,4 @@ template class Grid::Hadrons::MSolver::TA2AVectors<FIMPL, BaseFermionEigenPack<F
 template class Grid::Hadrons::MSolver::TA2AVectors<ZFIMPL, BaseFermionEigenPack<ZFIMPL>>;
 template class Grid::Hadrons::MSolver::TStagA2AVectors<STAGIMPL, BaseFermionEigenPack<STAGIMPL>>;
 template class Grid::Hadrons::MSolver::TStagLowA2AVectors<STAGIMPL, BaseFermionEigenPack<STAGIMPL>>;
+template class Grid::Hadrons::MSolver::TStagNoEvalA2AVectors<STAGIMPL, BaseFermionEigenPack<STAGIMPL>>;
