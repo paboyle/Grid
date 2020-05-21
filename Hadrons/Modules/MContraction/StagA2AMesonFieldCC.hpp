@@ -94,7 +94,6 @@ public:
                             const unsigned int orthogDim,
                             double &t)
     {
-        //A2Autils<FImpl>::StagMesonFieldCC(m, U_, left, right, gamma_, mom_, orthogDim, &t);
         A2Autils<FImpl>::StagMesonFieldCC(m, left, right, gamma_, mom_, orthogDim, &t);
     }
     

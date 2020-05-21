@@ -734,9 +734,9 @@ void TStagNoEvalA2AVectors<FImpl, Pack>::execute(void)
         startTimer("V low mode");
         if (Ls == 1)
         {
-            a2a.makeLowModeVNoEval(v[2*il], epack.evec[il], eval);
+            a2a.makeLowModeV(v[2*il], epack.evec[il], eval);
             // construct -lambda evec
-            a2a.makeLowModeVNoEval(v[2*il+1], epack.evec[il], eval, 1);
+            a2a.makeLowModeV(v[2*il+1], epack.evec[il], eval, 1);
         }
         else
         {
