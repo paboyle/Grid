@@ -1,4 +1,3 @@
-
 /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -191,7 +190,7 @@ public:
     typedef typename sobj::scalar_type   scalar;
       
     Lattice<sobj> pgbuf(&pencil_g);
-    auto pgbuf_v = pgbuf.View();
+    auto pgbuf_v = pgbuf.View(CpuWrite);
 
     typedef typename FFTW<scalar>::FFTW_scalar FFTW_scalar;
     typedef typename FFTW<scalar>::FFTW_plan   FFTW_plan;

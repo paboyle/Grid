@@ -28,6 +28,7 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 			   /*  END LEGAL */
+
 #pragma once 
 
 #define STREAMING_STORES
@@ -35,181 +36,6 @@ directory
 NAMESPACE_BEGIN(Grid);
 
 extern int GridCshiftPermuteMap[4][16];
-
-///////////////////////////////////////////////////////////////////
-// Base class which can be used by traits to pick up behaviour
-///////////////////////////////////////////////////////////////////
-class LatticeBase {};
-
-/////////////////////////////////////////////////////////////////////////////////////////
-// Conformable checks; same instance of Grid required
-/////////////////////////////////////////////////////////////////////////////////////////
-void accelerator_inline conformable(GridBase *lhs,GridBase *rhs)
-{
-  assert(lhs == rhs);
-}
-
-////////////////////////////////////////////////////////////////////////////
-// Minimal base class containing only data valid to access from accelerator
-// _odata will be a managed pointer in CUDA
-////////////////////////////////////////////////////////////////////////////
-// Force access to lattice through a view object.
-// prevents writing of code that will not offload to GPU, but perhaps annoyingly
-// strict since host could could in principle direct access through the lattice object
-// Need to decide programming model.
-#define LATTICE_VIEW_STRICT
-template<class vobj> class LatticeAccelerator : public LatticeBase
-{
-protected:
-  GridBase *_grid;
-  int checkerboard;
-  vobj     *_odata;    // A managed pointer
-  uint64_t _odata_size;    
-public:
-  accelerator_inline LatticeAccelerator() : checkerboard(0), _odata(nullptr), _odata_size(0), _grid(nullptr) { }; 
-  accelerator_inline uint64_t oSites(void) const { return _odata_size; };
-  accelerator_inline int  Checkerboard(void) const { return checkerboard; };
-  accelerator_inline int &Checkerboard(void) { return this->checkerboard; }; // can assign checkerboard on a container, not a view
-  accelerator_inline void Conformable(GridBase * &grid) const
-  { 
-    if (grid) conformable(grid, _grid);
-    else      grid = _grid;
-  };
-};
-
-/////////////////////////////////////////////////////////////////////////////////////////
-// A View class which provides accessor to the data.
-// This will be safe to call from accelerator_for and is trivially copy constructible
-// The copy constructor for this will need to be used by device lambda functions
-/////////////////////////////////////////////////////////////////////////////////////////
-template<class vobj> 
-class LatticeExprView : public LatticeAccelerator<vobj>
-{
-public:
-  // Rvalue
-#ifdef GRID_SIMT
-  accelerator_inline const typename vobj::scalar_object operator()(size_t i) const { return coalescedRead(this->_odata[i]); }
-#else 
-  accelerator_inline const vobj & operator()(size_t i) const { return this->_odata[i]; }
-#endif
-
-  accelerator_inline const vobj & operator[](size_t i) const { return this->_odata[i]; };
-  accelerator_inline vobj       & operator[](size_t i)       { return this->_odata[i]; };
-
-  accelerator_inline uint64_t begin(void) const { return 0;};
-  accelerator_inline uint64_t end(void)   const { return this->_odata_size; };
-  accelerator_inline uint64_t size(void)  const { return this->_odata_size; };
-
-  // Non accelerator functions
-  LatticeExprView(const LatticeAccelerator<vobj> &refer_to_me) : LatticeAccelerator<vobj> (refer_to_me){}
-  ~LatticeExprView(){}
-
-  void AcceleratorViewOpen(void) 
-  { // Translate the pointer, could save a copy. Could use a "Handle" and not save _odata originally in base
-    void *cpu_ptr=this->_odata;
-    //    std::cout << "AccViewOpen "<<std::hex<<this->_odata <<std::dec<<std::endl;
-    this->_odata=(vobj *)AllocationCache::AccViewOpen(this->_odata,this->_odata_size*sizeof(vobj),1,0);    
-  }
-  void AcceleratorViewClose(void)
-  { // Inform the manager
-    //    std::cout << "View Close"<<std::hex<<this->_odata<<std::dec <<std::endl;
-    AllocationCache::AccViewClose((void *)this->_odata);    
-  }
-  void CpuViewOpen(void)
-  { // Translate the pointer
-    void *cpu_ptr=this->_odata;
-    //    std::cout << "CpuViewOpen "<<std::hex<<this->_odata <<std::dec<<std::endl;
-    this->_odata=(vobj *)AllocationCache::CpuViewOpen(cpu_ptr,this->_odata_size*sizeof(vobj),1,0);    
-  }
-  void CpuViewClose(void) 
-  { // Inform the manager
-    //    std::cout << "CpuViewClose"<<std::hex<<this->_odata<<std::dec <<std::endl;
-    AllocationCache::CpuViewClose((void *)this->_odata);    
-  }
-
-};
-// UserView constructor,destructor updates view manager
-// Non-copyable object??? Second base with copy/= deleted?
-template<class vobj> 
-class LatticeView : public LatticeExprView<vobj>
-{
-public:
-  // Rvalue
-  /*
-#ifdef GRID_SIMT
-  accelerator_inline const typename vobj::scalar_object operator()(size_t i) const { return coalescedRead(this->_odata[i]); }
-#else 
-  accelerator_inline const vobj & operator()(size_t i) const { return this->_odata[i]; }
-#endif
-
-  accelerator_inline const vobj & operator[](size_t i) const { return this->_odata[i]; };
-  accelerator_inline vobj       & operator[](size_t i)       { return this->_odata[i]; };
-
-  accelerator_inline uint64_t begin(void) const { return 0;};
-  accelerator_inline uint64_t end(void)   const { return this->_odata_size; };
-  accelerator_inline uint64_t size(void)  const { return this->_odata_size; };
-  */
-  LatticeView(const LatticeAccelerator<vobj> &refer_to_me) : LatticeExprView<vobj> (refer_to_me)
-  {
-    this->AcceleratorViewOpen();
-  }
-  ~LatticeView(){
-    this->AcceleratorViewClose();
-  }
-};
-
-
-/////////////////////////////////////////////////////////////////////////////////////////
-// Lattice expression types used by ET to assemble the AST
-// 
-// Need to be able to detect code paths according to the whether a lattice object or not
-// so introduce some trait type things
-/////////////////////////////////////////////////////////////////////////////////////////
-
-class LatticeExpressionBase {};
-
-template <typename T> using is_lattice = std::is_base_of<LatticeBase, T>;
-template <typename T> using is_lattice_expr = std::is_base_of<LatticeExpressionBase,T >;
-
-template<class T, bool isLattice> struct ViewMapBase { typedef T Type; };
-template<class T>                 struct ViewMapBase<T,true> { typedef LatticeExprView<typename T::vector_object> Type; };
-template<class T> using ViewMap = ViewMapBase<T,std::is_base_of<LatticeBase, T>::value >;
-
-template <typename Op, typename _T1>                           
-class LatticeUnaryExpression : public  LatticeExpressionBase 
-{
-public:
-  typedef typename ViewMap<_T1>::Type T1;
-  Op op;
-  T1 arg1;
-  LatticeUnaryExpression(Op _op,const _T1 &_arg1) : op(_op), arg1(_arg1) {};
-};
-
-template <typename Op, typename _T1, typename _T2>              
-class LatticeBinaryExpression : public LatticeExpressionBase 
-{
-public:
-  typedef typename ViewMap<_T1>::Type T1;
-  typedef typename ViewMap<_T2>::Type T2;
-  Op op;
-  T1 arg1;
-  T2 arg2;
-  LatticeBinaryExpression(Op _op,const _T1 &_arg1,const _T2 &_arg2) : op(_op), arg1(_arg1), arg2(_arg2) {};
-};
-
-template <typename Op, typename _T1, typename _T2, typename _T3> 
-class LatticeTrinaryExpression : public LatticeExpressionBase 
-{
-public:
-  typedef typename ViewMap<_T1>::Type T1;
-  typedef typename ViewMap<_T2>::Type T2;
-  typedef typename ViewMap<_T3>::Type T3;
-  Op op;
-  T1 arg1;
-  T2 arg2;
-  T3 arg3;
-  LatticeTrinaryExpression(Op _op,const _T1 &_arg1,const _T2 &_arg2,const _T3 &_arg3) : op(_op), arg1(_arg1), arg2(_arg2), arg3(_arg3) {};
-};
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // The real lattice class, with normal copy and assignment semantics.
@@ -254,13 +80,19 @@ private:
   }
 public:
   /////////////////////////////////////////////////////////////////////////////////
+  // Can use to make accelerator dirty without copy from host ; useful for temporaries "dont care" prev contents
+  /////////////////////////////////////////////////////////////////////////////////
+  void SetViewMode(ViewMode mode) {
+    LatticeView<vobj> accessor(*( (LatticeAccelerator<vobj> *) this),mode);
+  }
+  /////////////////////////////////////////////////////////////////////////////////
   // Return a view object that may be dereferenced in site loops.
   // The view is trivially copy constructible and may be copied to an accelerator device
   // in device lambdas
   /////////////////////////////////////////////////////////////////////////////////
-  LatticeView<vobj> View (void) const 
+  LatticeView<vobj> View (ViewMode mode) const 
   {
-    LatticeView<vobj> accessor(*( (LatticeAccelerator<vobj> *) this));
+    LatticeView<vobj> accessor(*( (LatticeAccelerator<vobj> *) this),mode);
     return accessor;
   }
 
@@ -286,7 +118,7 @@ public:
     
     auto exprCopy = expr;
     ExpressionViewOpen(exprCopy);
-    auto me  = View();
+    auto me  = View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),1,{
       auto tmp = eval(ss,exprCopy);
       vstream(me[ss],tmp);
@@ -308,7 +140,7 @@ public:
 
     auto exprCopy = expr;
     ExpressionViewOpen(exprCopy);
-    auto me  = View();
+    auto me  = View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),1,{
       auto tmp = eval(ss,exprCopy);
       vstream(me[ss],tmp);
@@ -329,7 +161,7 @@ public:
     this->checkerboard=cb;
     auto exprCopy = expr;
     ExpressionViewOpen(exprCopy);
-    auto me  = View();
+    auto me  = View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),1,{
       auto tmp = eval(ss,exprCopy);
       vstream(me[ss],tmp);
@@ -385,9 +217,9 @@ public:
   }
 
   template<class sobj> inline Lattice<vobj> & operator = (const sobj & r){
-    auto me  = View();
-    thread_for(ss,me.size(),{
-      me[ss] = r;
+    auto me  = View(AcceleratorWriteDiscard);
+    accelerator_for(ss,me.size(),1,{
+	me[ss]= r;
     });
     return *this;
   }
@@ -398,11 +230,12 @@ public:
   ///////////////////////////////////////////
   // user defined constructor
   ///////////////////////////////////////////
-  Lattice(GridBase *grid) { 
+  Lattice(GridBase *grid,ViewMode mode=AcceleratorWriteDiscard) { 
     this->_grid = grid;
     resize(this->_grid->oSites());
     assert((((uint64_t)&this->_odata[0])&0xF) ==0);
     this->checkerboard=0;
+    SetViewMode(mode);
   }
   
   //  virtual ~Lattice(void) = default;
@@ -418,7 +251,6 @@ public:
   // copy constructor
   ///////////////////////////////////////////
   Lattice(const Lattice& r){ 
-    //    std::cout << "Lattice constructor(const Lattice &) "<<this<<std::endl; 
     this->_grid = r.Grid();
     resize(this->_grid->oSites());
     *this = r;
@@ -441,8 +273,8 @@ public:
     typename std::enable_if<!std::is_same<robj,vobj>::value,int>::type i=0;
     conformable(*this,r);
     this->checkerboard = r.Checkerboard();
-    auto me =   View();
-    auto him= r.View();
+    auto me =   View(AcceleratorWriteDiscard);
+    auto him= r.View(AcceleratorRead);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       coalescedWrite(me[ss],him(ss));
     });
@@ -455,8 +287,8 @@ public:
   inline Lattice<vobj> & operator = (const Lattice<vobj> & r){
     this->checkerboard = r.Checkerboard();
     conformable(*this,r);
-    auto me =   View();
-    auto him= r.View();
+    auto me =   View(AcceleratorWriteDiscard);
+    auto him= r.View(AcceleratorRead);
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       coalescedWrite(me[ss],him(ss));
     });

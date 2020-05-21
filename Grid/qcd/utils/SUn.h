@@ -222,9 +222,9 @@ public:
     conformable(subgroup, Determinant);
     int i0, i1;
     su2SubGroupIndex(i0, i1, su2_index);
-    auto subgroup_v = subgroup.View();
-    auto source_v   = source.View();
-    auto Determinant_v = Determinant.View();
+    auto subgroup_v = subgroup.View(CpuWrite);
+    auto source_v   = source.View(CpuRead);
+    auto Determinant_v = Determinant.View(CpuWrite);
 
     thread_for(ss, grid->oSites(), {
 
@@ -257,8 +257,8 @@ public:
     su2SubGroupIndex(i0, i1, su2_index);
 
     dest = 1.0;  // start out with identity
-    auto dest_v = dest.View();
-    auto subgroup_v = subgroup.View();
+    auto dest_v = dest.View(CpuWrite);
+    auto subgroup_v = subgroup.View(CpuRead);
     thread_for(ss, grid->oSites(),
     {
       dest_v[ss]()()(i0, i0) = subgroup_v[ss]()()(0, 0);

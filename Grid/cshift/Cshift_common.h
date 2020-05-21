@@ -52,7 +52,6 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimen
 
   int stride=rhs.Grid()->_slice_stride[dimension];
 
-  auto rhs_v = rhs.View();
   if ( cbmask == 0x3 ) { 
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
@@ -73,6 +72,7 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimen
        }
      }
   }
+  auto rhs_v = rhs.View(AcceleratorRead);
   auto buffer_p = & buffer[0];
   auto table = &Cshift_table[0];
   accelerator_for(i,ent,1,{
@@ -100,7 +100,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,
   int e2=rhs.Grid()->_slice_block[dimension];
   int n1=rhs.Grid()->_slice_stride[dimension];
 
-  auto rhs_v = rhs.View();
+  auto rhs_v = rhs.View(AcceleratorRead);
   if ( cbmask ==0x3){
     accelerator_for2d(n,e1,b,e2,1,{
 	int o      =   n*n1;
@@ -179,7 +179,7 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
     }
   }
   
-  auto rhs_v = rhs.View();
+  auto rhs_v = rhs.View(AcceleratorWrite);
   auto buffer_p = & buffer[0];
   auto table = &Cshift_table[0];
   accelerator_for(i,ent,1,{
@@ -204,7 +204,7 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
   int e2=rhs.Grid()->_slice_block[dimension];
 
   if(cbmask ==0x3 ) {
-    auto rhs_v = rhs.View();
+    auto rhs_v = rhs.View(AcceleratorWrite);
     accelerator_for2d(n,e1,b,e2,1,{
 	int o      = n*rhs.Grid()->_slice_stride[dimension];
 	int offset = b+n*rhs.Grid()->_slice_block[dimension];
@@ -216,7 +216,7 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
     // Test_cshift_red_black code.
     //    std::cout << "Scatter_plane merge assert(0); think this is buggy FIXME "<< std::endl;// think this is buggy FIXME
     std::cout<<" Unthreaded warning -- buffer is not densely packed ??"<<std::endl;
-    auto rhs_v = rhs.View();
+    auto rhs_v = rhs.View(CpuWrite);
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int o      = n*rhs.Grid()->_slice_stride[dimension];
@@ -272,8 +272,8 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
     }
   }
 
-  auto rhs_v = rhs.View();
-  auto lhs_v = lhs.View();
+  auto rhs_v = rhs.View(AcceleratorRead);
+  auto lhs_v = lhs.View(AcceleratorWrite);
   auto table = &Cshift_table[0];
   accelerator_for(i,ent,1,{
     lhs_v[table[i].first]=rhs_v[table[i].second];
@@ -315,8 +315,8 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
     }}
   }
 
-  auto rhs_v = rhs.View();
-  auto lhs_v = lhs.View();
+  auto rhs_v = rhs.View(AcceleratorRead);
+  auto lhs_v = lhs.View(AcceleratorWrite);
   auto table = &Cshift_table[0];
   accelerator_for(i,ent,1,{
     permute(lhs_v[table[i].first],rhs_v[table[i].second],permute_type);

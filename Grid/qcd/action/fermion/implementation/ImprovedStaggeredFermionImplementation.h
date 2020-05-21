@@ -250,10 +250,10 @@ void ImprovedStaggeredFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGauge
     ////////////////////////
     // Call the single hop
     ////////////////////////
-    auto U_v   = U.View();
-    auto UUU_v = UUU.View();
-    auto B_v   = B.View();
-    auto Btilde_v   = Btilde.View();
+    auto U_v   = U.View(CpuRead);
+    auto UUU_v = UUU.View(CpuRead);
+    auto B_v      = B.View(CpuWrite);
+    auto Btilde_v = Btilde.View(CpuWrite);
     thread_for(sss,B.Grid()->oSites(),{
       Kernels::DhopDirKernel(st, U_v, UUU_v, st.CommBuf(), sss, sss, B_v, Btilde_v, mu,1);
     });
@@ -378,10 +378,10 @@ void ImprovedStaggeredFermion<Impl>::DhopDir(const FermionField &in, FermionFiel
 
   Compressor compressor;
   Stencil.HaloExchange(in, compressor);
-  auto Umu_v   =   Umu.View();
-  auto UUUmu_v = UUUmu.View();
-  auto in_v    =  in.View();
-  auto out_v   = out.View();
+  auto Umu_v   =   Umu.View(CpuRead);
+  auto UUUmu_v = UUUmu.View(CpuRead);
+  auto in_v    =  in.View(CpuRead);
+  auto out_v   = out.View(CpuWrite);
   thread_for( sss, in.Grid()->oSites(),{
     Kernels::DhopDirKernel(Stencil, Umu_v, UUUmu_v, Stencil.CommBuf(), sss, sss, in_v, out_v, dir, disp);
   });
@@ -449,10 +449,10 @@ void ImprovedStaggeredFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st
       }
 
       // do the compute
-      auto U_v   = U.View();
-      auto UUU_v = UUU.View();
-      auto in_v  = in.View();
-      auto out_v = out.View();
+      auto U_v   = U.View(CpuRead);
+      auto UUU_v = UUU.View(CpuRead);
+      auto in_v  = in.View(CpuRead);
+      auto out_v = out.View(CpuWrite);
       if (dag == DaggerYes) {
         for (int ss = myblock; ss < myblock+myn; ++ss) {
           int sU = ss;
@@ -479,10 +479,10 @@ void ImprovedStaggeredFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st
 
   DhopComputeTime2    -= usecond();
   {
-    auto U_v   = U.View();
-    auto UUU_v = UUU.View();
-    auto in_v  = in.View();
-    auto out_v = out.View();
+    auto U_v   = U.View(CpuRead);
+    auto UUU_v = UUU.View(CpuRead);
+    auto in_v  = in.View(CpuRead);
+    auto out_v = out.View(CpuWrite);
     if (dag == DaggerYes) {
       int sz=st.surface_list.size();
       thread_for(ss,sz,{
@@ -520,10 +520,10 @@ void ImprovedStaggeredFermion<Impl>::DhopInternalSerialComms(StencilImpl &st, Le
   st.HaloExchange(in, compressor);
   DhopCommTime    += usecond();
 
-  auto U_v   =   U.View();
-  auto UUU_v = UUU.View();
-  auto in_v  =  in.View();
-  auto out_v = out.View();
+  auto U_v   =   U.View(CpuRead);
+  auto UUU_v = UUU.View(CpuRead);
+  auto in_v  =  in.View(CpuRead);
+  auto out_v = out.View(CpuWrite);
   DhopComputeTime -= usecond();
   if (dag == DaggerYes) {
     thread_for(sss, in.Grid()->oSites(),{

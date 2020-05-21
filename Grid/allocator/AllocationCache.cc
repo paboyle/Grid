@@ -22,8 +22,10 @@ void *AllocationCache::AcceleratorAllocate(size_t bytes)
 {
   void *ptr = (void *) Lookup(bytes,Acc);
 
-  if ( ptr == (void *) NULL ) 
+  if ( ptr == (void *) NULL ) {
     ptr = (void *) acceleratorAllocDevice(bytes);
+    //    std::cout <<"AcceleratorAllocate: allocated Accelerator pointer "<<std::hex<<ptr<<std::endl;
+  }
 
   return ptr;
 }
@@ -31,7 +33,7 @@ void  AllocationCache::AcceleratorFree    (void *ptr,size_t bytes)
 {
   void *__freeme = Insert(ptr,bytes,Acc);
 
-  if ( __freeme ) acceleratorFreeShared(__freeme);
+  if ( __freeme ) acceleratorFreeDevice(__freeme);
 }
 void *AllocationCache::CpuAllocate(size_t bytes)
 {
@@ -39,9 +41,7 @@ void *AllocationCache::CpuAllocate(size_t bytes)
 
   if ( ptr == (void *) NULL ) {
     ptr = (void *) acceleratorAllocShared(bytes);
-    //    std::cout <<"CpuAllocate: allocated pointer "<<std::hex<<ptr<<std::endl;
-  } else {
-    //    std::cout <<"CpuAllocate: cached pointer "<<std::hex<<ptr<<std::endl;
+    //    std::cout <<"CpuAllocate: allocated Cpu pointer "<<std::hex<<ptr<<std::endl;
   }
 
   return ptr;
@@ -50,7 +50,7 @@ void  AllocationCache::CpuFree    (void *ptr,size_t bytes)
 {
   // Look up in ViewCache
   int e=CpuViewLookup(ptr);
-  if(e>=0){ Evict(e); }
+  if(e>=0){ Discard(e); }
 
   // If present remove entry and free accelerator too.
   // Can we ever hit a free event with a view still in scope?
@@ -90,13 +90,18 @@ void AllocationCache::Init(void)
       Ncache[AccSmall]=Nc;
     }
   }
+  std::cout << "MemoryManager::Init() SMALL "<<Ncache[CpuSmall]<<" LARGE "<<Ncache[Cpu]<<std::endl;
 }
 
 void *AllocationCache::Insert(void *ptr,size_t bytes,int type) 
 {
+#ifdef ALLOCATION_CACHE
   bool small = (bytes < GRID_ALLOC_SMALL_LIMIT);
   int cache = type + small;
   return Insert(ptr,bytes,Entries[cache],Ncache[cache],Victim[cache]);  
+#else
+  return ptr;
+#endif
 }
 void *AllocationCache::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim) 
 {
@@ -136,9 +141,13 @@ void *AllocationCache::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entri
 
 void *AllocationCache::Lookup(size_t bytes,int type)
 {
+#ifdef ALLOCATION_CACHE
   bool small = (bytes < GRID_ALLOC_SMALL_LIMIT);
   int cache = type+small;
   return Lookup(bytes,Entries[cache],Ncache[cache]);
+#else
+  return NULL;
+#endif
 }
 void *AllocationCache::Lookup(size_t bytes,AllocationCacheEntry *entries,int ncache) 
 {

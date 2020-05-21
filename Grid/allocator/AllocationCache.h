@@ -32,11 +32,38 @@ NAMESPACE_BEGIN(Grid);
 
 // Move control to configure.ac and Config.h?
 
-#define ALLOCATION_CACHE
+#undef  ALLOCATION_CACHE
 #define GRID_ALLOC_ALIGN (2*1024*1024)
 #define GRID_ALLOC_SMALL_LIMIT (4096)
 
 /*Pinning pages is costly*/
+////////////////////////////////////////////////////////////////////////////
+// Advise the LatticeAccelerator class
+////////////////////////////////////////////////////////////////////////////
+enum ViewAdvise {
+ AdviseDefault       = 0x0,    // Reegular data
+ AdviseInfrequentUse = 0x1,    // Advise that the data is used infrequently.  This can
+                               // significantly influence performance of bulk storage.
+ 
+ AdviseTransient      = 0x2,   // Data will mostly be read.  On some architectures
+                               // enables read-only copies of memory to be kept on
+                               // host and device.
+
+ AdviseAcceleratorWriteDiscard = 0x4  // Field will be written in entirety on device
+
+};
+
+////////////////////////////////////////////////////////////////////////////
+// View Access Mode
+////////////////////////////////////////////////////////////////////////////
+enum ViewMode {
+  AcceleratorRead  = 0x01,
+  AcceleratorWrite = 0x02,
+  AcceleratorWriteDiscard = 0x04,
+  CpuRead  = 0x08,
+  CpuWrite = 0x10,
+  CpuWriteDiscard = 0x10 // same for now
+};
 
 class AllocationCache {
 private:
@@ -70,19 +97,23 @@ private:
   static void *AcceleratorAllocate(size_t bytes);
   static void  AcceleratorFree    (void *ptr,size_t bytes);
   static int   ViewVictim(void);
+  static void  CpuDiscard(int e);
+  static void  Discard(int e);
   static void  Evict(int e);
   static void  Flush(int e);
   static void  Clone(int e);
   static int   CpuViewLookup(void *CpuPtr);
-  static int   AccViewLookup(void *AccPtr);
+  //  static int   AccViewLookup(void *AccPtr);
+  static void  AcceleratorViewClose(void* AccPtr);
+  static void *AcceleratorViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint);
+  static void  CpuViewClose(void* Ptr);
+  static void *CpuViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint);
 
 public:
   static void Init(void);
 
-  static void  AccViewClose(void* AccPtr);
-  static void  CpuViewClose(void* CpuPtr);
-  static void *AccViewOpen(void* CpuPtr,size_t bytes,int mode,int transient);
-  static void *CpuViewOpen(void* CpuPtr,size_t bytes,int mode,int transient);
+  static void  ViewClose(void* AccPtr,ViewMode mode);
+  static void *ViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint);
 
   static void *CpuAllocate(size_t bytes);
   static void  CpuFree    (void *ptr,size_t bytes);

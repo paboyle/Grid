@@ -91,12 +91,16 @@ const lobj & eval(const uint64_t ss, const LatticeExprView<lobj> &arg)
 {
   return arg[ss];
 }
+
+// What needs this?
+#if 1
 template <class lobj> accelerator_inline 
 const lobj & eval(const uint64_t ss, const Lattice<lobj> &arg) 
 {
   auto view = arg.View();
   return view[ss];
 }
+#endif
 
 ///////////////////////////////////////////////////
 // handle nodes in syntax tree- eval one operand
@@ -206,7 +210,7 @@ inline void CBFromExpression(int &cb, const LatticeTrinaryExpression<Op, T1, T2,
 template <class T1,typename std::enable_if<is_lattice<T1>::value, T1>::type * = nullptr>
 inline void ExpressionViewOpen(T1 &lat)  // Lattice leaf
 {
-  lat.AcceleratorViewOpen();
+  lat.ViewOpen(AcceleratorRead);
 }
 template <class T1,typename std::enable_if<!is_lattice<T1>::value, T1>::type * = nullptr>
   inline void ExpressionViewOpen(T1 &notlat) {}
@@ -237,7 +241,7 @@ inline void ExpressionViewOpen(LatticeTrinaryExpression<Op, T1, T2, T3> &expr)
 template <class T1,typename std::enable_if<is_lattice<T1>::value, T1>::type * = nullptr>
 inline void ExpressionViewClose( T1 &lat)  // Lattice leaf
 {
-  lat.AcceleratorViewClose();
+  lat.ViewClose();
 }
 template <class T1,typename std::enable_if<!is_lattice<T1>::value, T1>::type * = nullptr>
 inline void ExpressionViewClose(T1 &notlat) {}

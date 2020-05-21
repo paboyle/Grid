@@ -76,7 +76,7 @@ inline typename vobj::scalar_object sum(const vobj *arg, Integer osites)
 template<class vobj>
 inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
 {
-  auto arg_v = arg.View();
+  auto arg_v = arg.View(AcceleratorRead);
   Integer osites = arg.Grid()->oSites();
   auto ssum= sum(&arg_v[0],osites);
   arg.Grid()->GlobalSum(ssum);
@@ -102,8 +102,8 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
   GridBase *grid = left.Grid();
   
   // Might make all code paths go this way.
-  auto left_v = left.View();
-  auto right_v=right.View();
+  auto left_v = left.View(AcceleratorRead);
+  auto right_v=right.View(AcceleratorRead);
 
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
@@ -167,9 +167,9 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   
   GridBase *grid = x.Grid();
 
-  auto x_v=x.View();
-  auto y_v=y.View();
-  auto z_v=z.View();
+  auto x_v=x.View(AcceleratorRead);
+  auto y_v=y.View(AcceleratorRead);
+  auto z_v=z.View(AcceleratorWrite);
 
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
@@ -271,7 +271,7 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
 
   // sum over reduced dimension planes, breaking out orthog dir
   // Parallel over orthog direction
-  auto Data_v=Data.View();
+  auto Data_v=Data.View(CpuRead);
   thread_for( r,rd, {
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
     for(int n=0;n<e1;n++){
@@ -349,8 +349,8 @@ static void sliceInnerProductVector( std::vector<ComplexD> & result, const Latti
   int e2=    grid->_slice_block [orthogdim];
   int stride=grid->_slice_stride[orthogdim];
 
-  auto lhv=lhs.View();
-  auto rhv=rhs.View();
+  auto lhv=lhs.View(CpuRead);
+  auto rhv=rhs.View(CpuRead);
   thread_for( r,rd,{
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
@@ -457,14 +457,12 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
 
     tensor_reduced at; at=av;
 
-    auto Rv=R.View();
-    auto Xv=X.View();
-    auto Yv=Y.View();
-    thread_for_collapse(2, n, e1, {
-      for(int b=0;b<e2;b++){
+    auto Rv=R.View(CpuWrite);
+    auto Xv=X.View(CpuRead);
+    auto Yv=Y.View(CpuRead);
+    thread_for2d( n, e1, b,e2, {
 	int ss= so+n*stride+b;
 	Rv[ss] = at*Xv[ss]+Yv[ss];
-      }
     });
   }
 };
@@ -517,9 +515,9 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
   int nblock=FullGrid->_slice_nblock[Orthog];
   int ostride=FullGrid->_ostride[Orthog];
 
-  auto X_v=X.View();
-  auto Y_v=Y.View();
-  auto R_v=R.View();
+  auto X_v=X.View(CpuRead);
+  auto Y_v=Y.View(CpuRead);
+  auto R_v=R.View(CpuWrite);
   thread_region
   {
     Vector<vobj> s_x(Nblock);
@@ -564,13 +562,14 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
   //  int nl=1;
 
   //FIXME package in a convenient iterator
+  // thread_for2d_in_region
   //Should loop over a plane orthogonal to direction "Orthog"
   int stride=FullGrid->_slice_stride[Orthog];
   int block =FullGrid->_slice_block [Orthog];
   int nblock=FullGrid->_slice_nblock[Orthog];
   int ostride=FullGrid->_ostride[Orthog];
-  auto R_v = R.View();
-  auto X_v = X.View();
+  auto R_v = R.View(CpuWrite);
+  auto X_v = X.View(CpuRead);
   thread_region
   {
     std::vector<vobj> s_x(Nblock);
@@ -628,8 +627,8 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
 
   typedef typename vobj::vector_typeD vector_typeD;
 
-  auto lhs_v=lhs.View();
-  auto rhs_v=rhs.View();
+  auto lhs_v=lhs.View(CpuRead);
+  auto rhs_v=rhs.View(CpuRead);
   thread_region
   {
     std::vector<vobj> Left(Nblock);

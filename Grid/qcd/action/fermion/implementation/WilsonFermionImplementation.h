@@ -475,12 +475,12 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
   // Inefficient comms method but not performance critical.
   tmp1 = Cshift(q_in_1, mu, 1);
   tmp2 = Cshift(q_in_2, mu, 1);
-  auto tmp1_v  =  tmp1.View();
-  auto tmp2_v  =  tmp2.View();
-  auto q_in_1_v=q_in_1.View();
-  auto q_in_2_v=q_in_2.View();
-  auto q_out_v = q_out.View();
-  auto Umu_v   =   Umu.View();
+  auto tmp1_v  =  tmp1.View(CpuWrite);
+  auto tmp2_v  =  tmp2.View(CpuWrite);
+  auto q_in_1_v=q_in_1.View(CpuRead);
+  auto q_in_2_v=q_in_2.View(CpuRead);
+  auto q_out_v = q_out.View(CpuRead);
+  auto Umu_v   =   Umu.View(CpuRead);
   thread_for(sU, Umu.Grid()->oSites(),{
       Kernels::ContractConservedCurrentSiteFwd(tmp1_v[sU],
 					       q_in_2_v[sU],
@@ -526,11 +526,11 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   tmp    = lattice_cmplx*q_in;
   tmpBwd = Cshift(tmp, mu, -1);
 
-  auto coords_v = coords.View();
-  auto tmpFwd_v = tmpFwd.View();
-  auto tmpBwd_v = tmpBwd.View();
-  auto Umu_v    = Umu.View();
-  auto q_out_v  = q_out.View();
+  auto coords_v = coords.View(CpuRead);
+  auto tmpFwd_v = tmpFwd.View(CpuRead);
+  auto tmpBwd_v = tmpBwd.View(CpuRead);
+  auto Umu_v    = Umu.View(CpuRead);
+  auto q_out_v  = q_out.View(CpuWrite);
 
   thread_for(sU, Umu.Grid()->oSites(), {
 

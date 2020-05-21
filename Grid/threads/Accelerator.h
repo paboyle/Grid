@@ -96,7 +96,13 @@ void     acceleratorInit(void);
 #define accelerator        __host__ __device__
 #define accelerator_inline __host__ __device__ inline
 
-accelerator_inline int acceleratorSIMTlane(int Nsimd) { return threadIdx.z; } // CUDA specific
+accelerator_inline int acceleratorSIMTlane(int Nsimd) {
+#ifdef GRID_SIMT
+  return threadIdx.z; 
+#else
+  return 0;
+#endif
+} // CUDA specific
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   {									\
@@ -178,7 +184,13 @@ extern cl::sycl::queue *theGridAccelerator;
 #define accelerator 
 #define accelerator_inline strong_inline
 
-accelerator_inline int acceleratorSIMTlane(int Nsimd) { return __spirv::initLocalInvocationId<3, cl::sycl::id<3>>()[2]; } // SYCL specific
+accelerator_inline int acceleratorSIMTlane(int Nsimd) {
+#ifdef GRID_SIMT
+ return __spirv::initLocalInvocationId<3, cl::sycl::id<3>>()[2]; 
+#else
+ return 0;
+#endif
+} // SYCL specific
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   theGridAccelerator->submit([&](cl::sycl::handler &cgh) {		\
@@ -224,7 +236,13 @@ NAMESPACE_BEGIN(Grid);
 #define accelerator_inline __host__ __device__ inline
 
 /*These routines define mapping from thread grid to loop & vector lane indexing */
-accelerator_inline int acceleratorSIMTlane(int Nsimd) { return hipThreadIdx_z; } // HIP specific
+accelerator_inline int acceleratorSIMTlane(int Nsimd) {
+#ifdef GRID_SIMT
+  return hipThreadIdx_z; 
+#else
+  return 0;
+#endif
+} // HIP specific
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   {									\

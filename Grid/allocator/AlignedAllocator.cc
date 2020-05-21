@@ -12,7 +12,7 @@ bool         MemoryProfiler::debug = false;
 #define SMALL_LIMIT (4096)
 #endif
 
-#ifdef POINTER_CACHE
+#ifdef ALLOCATION_CACHE
 int PointerCache::victim;
 
 PointerCache::PointerCacheEntry PointerCache::Entries[PointerCache::Ncache];

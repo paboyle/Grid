@@ -67,7 +67,7 @@ void Gather_plane_simple_table (Vector<std::pair<int,int> >& table,const Lattice
 {
   int num=table.size();
   std::pair<int,int> *table_v = & table[0];
-  auto rhs_v = rhs.View();
+  auto rhs_v = rhs.View(AcceleratorRead);
   accelerator_forNB( i,num, vobj::Nsimd(), {
     typedef decltype(coalescedRead(buffer[0])) compressed_t;
     compressed_t   tmp_c;
@@ -94,7 +94,7 @@ void Gather_plane_exchange_table(Vector<std::pair<int,int> >& table,const Lattic
   int num=table.size()/2;
   int so  = plane*rhs.Grid()->_ostride[dimension]; // base offset for start of plane 
 
-  auto rhs_v = rhs.View();
+  auto rhs_v = rhs.View(AcceleratorRead);
   auto p0=&pointers[0][0];
   auto p1=&pointers[1][0];
   auto tp=&table[0];
@@ -122,7 +122,7 @@ struct StencilEntry {
 // Could pack to 8 + 4 + 4 = 128 bit and use 
 
 template<class vobj,class cobj,class Parameters>
-class CartesianStencilView {
+class CartesianStencilAccelerator {
  public:
   typedef AcceleratorVector<int,STENCIL_MAX> StencilVector;
 
@@ -130,14 +130,15 @@ class CartesianStencilView {
   ////////////////////////////////////////
   // Basic Grid and stencil info
   ////////////////////////////////////////
-  int                               _checkerboard;
-  int                               _npoints; // Move to template param?
+  int           _checkerboard;
+  int           _npoints; // Move to template param?
+  int           _osites;
   StencilVector _directions;
   StencilVector _distances;
   StencilVector _comm_buf_size;
   StencilVector _permute_type;
   StencilVector same_node;
-  Coordinate                         _simd_layout;
+  Coordinate    _simd_layout;
   Parameters    parameters;
   StencilEntry*  _entries_p;
   cobj* u_recv_buf_p;
@@ -175,13 +176,37 @@ class CartesianStencilView {
   {
     Lexicographic::CoorFromIndex(coor,lane,this->_simd_layout);
   }
+};
+
+template<class vobj,class cobj,class Parameters>
+class CartesianStencilView : public CartesianStencilAccelerator<vobj,cobj,Parameters> 
+{
+  std::shared_ptr<MemViewDeleter> Deleter;
+ public:
+  // 
+  CartesianStencilView (const CartesianStencilView &refer_to_me) 
+    : CartesianStencilAccelerator<vobj,cobj,Parameters>(refer_to_me), Deleter(refer_to_me.Deleter)
+  { }
+  CartesianStencilView (const CartesianStencilAccelerator<vobj,cobj,Parameters> &refer_to_me,ViewMode mode) 
+    : CartesianStencilAccelerator<vobj,cobj,Parameters>(refer_to_me), Deleter(new MemViewDeleter)
+    {
+      Deleter->cpu_ptr =(void *)this->_entries_p;
+      Deleter->mode    = mode;
+      this->_entries_p =(StencilEntry *)
+
+      AllocationCache::ViewOpen(this->_entries_p,
+				this->_npoints*this->_osites*sizeof(StencilEntry),
+				mode,
+				AdviseDefault);    
+    }
 
 };
+
 ////////////////////////////////////////
 // The Stencil Class itself
 ////////////////////////////////////////
 template<class vobj,class cobj,class Parameters>
-class CartesianStencil : public CartesianStencilView<vobj,cobj,Parameters> { // Stencil runs along coordinate axes only; NO diagonal fill in.
+class CartesianStencil : public CartesianStencilAccelerator<vobj,cobj,Parameters> { // Stencil runs along coordinate axes only; NO diagonal fill in.
 public:
 
   typedef typename cobj::vector_type vector_type;
@@ -226,8 +251,8 @@ public:
   // Generalise as required later if needed
   ////////////////////////////////////////////////////////////////////////
 
-  View_type View(void) const {
-    View_type accessor(*( (View_type *) this));
+  View_type View(ViewMode mode) const {
+    View_type accessor(*( (View_type *) this),mode);
     return accessor;
   }
   
@@ -662,9 +687,9 @@ public:
     _unified_buffer_size=0;
     surface_list.resize(0);
 
-    int osites  = _grid->oSites();
+    this->_osites  = _grid->oSites();
     
-    _entries.resize(this->_npoints* osites);
+    _entries.resize(this->_npoints* this->_osites);
     this->_entries_p = &_entries[0];
     for(int ii=0;ii<npoints;ii++){
       

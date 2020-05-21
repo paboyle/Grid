@@ -122,9 +122,9 @@ class BiCGSTAB : public OperatorFunction<Field>
 
         LinearCombTimer.Start();
         bo = beta * omega;
-        auto p_v = p.View();
-        auto r_v = r.View();
-        auto v_v = v.View();
+        auto p_v = p.View(AcceleratorWrite);
+        auto r_v = r.View(AcceleratorWrite);
+        auto v_v = v.View(AcceleratorWrite);
         accelerator_for(ss, p_v.size(), Field::vector_object::Nsimd(),{
           coalescedWrite(p_v[ss], beta*p_v(ss) - bo*v_v(ss) + r_v(ss));
         });
@@ -142,13 +142,13 @@ class BiCGSTAB : public OperatorFunction<Field>
         alpha = rho / Calpha.real();
 
         LinearCombTimer.Start();
-        auto h_v = h.View();
-        auto psi_v = psi.View();
+        auto h_v = h.View(AcceleratorWrite);
+        auto psi_v = psi.View(AcceleratorWrite);
         accelerator_for(ss, h_v.size(), Field::vector_object::Nsimd(),{
           coalescedWrite(h_v[ss], alpha*p_v(ss) + psi_v(ss));
         });
         
-        auto s_v = s.View();
+        auto s_v = s.View(AcceleratorWrite);
         accelerator_for(ss, s_v.size(), Field::vector_object::Nsimd(),{
           coalescedWrite(s_v[ss], -alpha*v_v(ss) + r_v(ss));
         });
@@ -166,7 +166,7 @@ class BiCGSTAB : public OperatorFunction<Field>
         omega = Comega.real() / norm2(t);
 
         LinearCombTimer.Start();
-        auto t_v = t.View();
+        auto t_v = t.View(AcceleratorWrite);
         accelerator_for(ss, psi_v.size(), Field::vector_object::Nsimd(),{
           coalescedWrite(psi_v[ss], h_v(ss) + omega * s_v(ss));
           coalescedWrite(r_v[ss], -omega * t_v(ss) + s_v(ss));

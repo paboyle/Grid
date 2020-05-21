@@ -41,8 +41,8 @@ template<class vobj>
 inline auto trace(const Lattice<vobj> &lhs)  -> Lattice<decltype(trace(vobj()))>
 {
   Lattice<decltype(trace(vobj()))> ret(lhs.Grid());
-  auto ret_v = ret.View();
-  auto lhs_v = lhs.View();
+  auto ret_v = ret.View(AcceleratorWrite);
+  auto lhs_v = lhs.View(AcceleratorRead);
   accelerator_for( ss, lhs_v.size(), vobj::Nsimd(), {
     coalescedWrite(ret_v[ss], trace(lhs_v(ss)));
   });
@@ -56,8 +56,8 @@ template<int Index,class vobj>
 inline auto TraceIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<Index>(vobj()))>
 {
   Lattice<decltype(traceIndex<Index>(vobj()))> ret(lhs.Grid());
-  auto ret_v = ret.View();
-  auto lhs_v = lhs.View();
+  auto ret_v = ret.View(AcceleratorWrite);
+  auto lhs_v = lhs.View(AcceleratorRead);
   accelerator_for( ss, lhs_v.size(), vobj::Nsimd(), {
     coalescedWrite(ret_v[ss], traceIndex<Index>(lhs_v(ss)));
   });

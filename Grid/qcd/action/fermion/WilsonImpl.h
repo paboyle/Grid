@@ -106,9 +106,9 @@ public:
 			    const _SpinorField & phi,
 			    int mu)
   {
-    auto out_v= out.View();
-    auto phi_v= phi.View();
-    auto Umu_v= Umu.View();
+    auto out_v= out.View(CpuWrite);
+    auto phi_v= phi.View(CpuRead);
+    auto Umu_v= Umu.View(CpuRead);
     thread_for(sss,out.Grid()->oSites(),{
 	multLink(out_v[sss],Umu_v[sss],phi_v[sss],mu);
     });
@@ -191,9 +191,9 @@ public:
     int Ls=Btilde.Grid()->_fdimensions[0];
     GaugeLinkField tmp(mat.Grid());
     tmp = Zero();
-    auto tmp_v = tmp.View();
-    auto Btilde_v = Btilde.View();
-    auto Atilde_v = Atilde.View();
+    auto tmp_v = tmp.View(CpuWrite);
+    auto Btilde_v = Btilde.View(CpuRead);
+    auto Atilde_v = Atilde.View(CpuRead);
     thread_for(sss,tmp.Grid()->oSites(),{
       int sU=sss;
       for(int s=0;s<Ls;s++){

@@ -375,7 +375,7 @@ public:
     int osites = _grid->oSites();  // guaranteed to be <= l.Grid()->oSites() by a factor multiplicity
     int words  = sizeof(scalar_object) / sizeof(scalar_type);
 
-    auto l_v = l.View();
+    auto l_v = l.View(CpuWrite);
     thread_for( ss, osites, {
       ExtractBuffer<scalar_object> buf(Nsimd);
       for (int m = 0; m < multiplicity; m++) {  // Draw from same generator multiplicity times

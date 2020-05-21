@@ -40,8 +40,8 @@ NAMESPACE_BEGIN(Grid);
 
 template<class vobj> inline Lattice<vobj> adj(const Lattice<vobj> &lhs){
   Lattice<vobj> ret(lhs.Grid());
-  auto lhs_v = lhs.View();
-  auto ret_v = ret.View();
+  auto lhs_v = lhs.View(AcceleratorRead);
+  auto ret_v = ret.View(AcceleratorWrite);
   accelerator_for( ss, lhs_v.size(), vobj::Nsimd(), {
     coalescedWrite(ret_v[ss], adj(lhs_v(ss)));
   });
@@ -50,8 +50,8 @@ template<class vobj> inline Lattice<vobj> adj(const Lattice<vobj> &lhs){
 
 template<class vobj> inline Lattice<vobj> conjugate(const Lattice<vobj> &lhs){
   Lattice<vobj> ret(lhs.Grid());
-  auto lhs_v = lhs.View();
-  auto ret_v = ret.View();
+  auto lhs_v = lhs.View(AcceleratorRead);
+  auto ret_v = ret.View(AcceleratorWrite);
   accelerator_for( ss, lhs_v.size(), vobj::Nsimd(), {
     coalescedWrite( ret_v[ss] , conjugate(lhs_v(ss)));
   });

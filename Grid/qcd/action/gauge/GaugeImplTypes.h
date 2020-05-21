@@ -86,8 +86,8 @@ public:
 
   // Move this elsewhere? FIXME
   static inline void AddLink(Field &U, LinkField &W, int mu) { // U[mu] += W
-    auto U_v = U.View();
-    auto W_v = W.View();
+    auto U_v = U.View(CpuWrite);
+    auto W_v = W.View(CpuRead);
     thread_for( ss, U.Grid()->oSites(), {
       U_v[ss](mu) = U_v[ss](mu) + W_v[ss]();
     });
@@ -131,8 +131,8 @@ public:
     //static std::chrono::duration<double> diff;
 
     //auto start = std::chrono::high_resolution_clock::now();
-    auto U_v = U.View();
-    auto P_v = P.View();
+    auto U_v = U.View(CpuWrite);
+    auto P_v = P.View(CpuRead);
     thread_for(ss, P.Grid()->oSites(),{
       for (int mu = 0; mu < Nd; mu++) {
         U_v[ss](mu) = ProjectOnGroup(Exponentiate(P_v[ss](mu), ep, Nexp) * U_v[ss](mu));

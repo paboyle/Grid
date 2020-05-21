@@ -140,9 +140,9 @@ public:
       b = cp / c;
 
       LinearCombTimer.Start();
-      auto psi_v = psi.View();
-      auto p_v   = p.View();
-      auto r_v   = r.View();
+      auto psi_v = psi.View(AcceleratorWrite);
+      auto p_v   = p.View(AcceleratorWrite);
+      auto r_v   = r.View(AcceleratorWrite);
       accelerator_for(ss,p_v.size(), Field::vector_object::Nsimd(),{
 	  coalescedWrite(psi_v[ss], a      *  p_v(ss) + psi_v(ss));
 	  coalescedWrite(p_v[ss]  , b      *  p_v(ss) + r_v  (ss));

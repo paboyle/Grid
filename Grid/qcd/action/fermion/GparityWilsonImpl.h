@@ -233,10 +233,10 @@ public:
 	Uconj = where(coor==neglink,-Uconj,Uconj);
       }
 	  
-      auto U_v = U.View();
-      auto Uds_v = Uds.View();
-      auto Uconj_v = Uconj.View();
-      auto Utmp_v= Utmp.View();
+      auto U_v = U.View(CpuRead);
+      auto Uds_v = Uds.View(CpuWrite);
+      auto Uconj_v = Uconj.View(CpuRead);
+      auto Utmp_v= Utmp.View(CpuWrite);
       thread_foreach(ss,U_v,{
 	Uds_v[ss](0)(mu) = U_v[ss]();
 	Uds_v[ss](1)(mu) = Uconj_v[ss]();
@@ -272,8 +272,8 @@ public:
     GaugeLinkField link(mat.Grid());
     // use lorentz for flavour as hack.
     auto tmp = TraceIndex<SpinIndex>(outerProduct(Btilde, A));
-    auto link_v = link.View();
-    auto tmp_v = tmp.View();
+    auto link_v = link.View(CpuWrite);
+    auto tmp_v = tmp.View(CpuRead);
     thread_foreach(ss,tmp_v,{
       link_v[ss]() = tmp_v[ss](0, 0) + conjugate(tmp_v[ss](1, 1));
     });
@@ -306,9 +306,9 @@ public:
         
     GaugeLinkField tmp(mat.Grid());
     tmp = Zero();
-    auto tmp_v = tmp.View();
-    auto Atilde_v = Atilde.View();
-    auto Btilde_v = Btilde.View();
+    auto tmp_v = tmp.View(CpuWrite);
+    auto Atilde_v = Atilde.View(CpuRead);
+    auto Btilde_v = Btilde.View(CpuRead);
     thread_for(ss,tmp.Grid()->oSites(),{
       for (int s = 0; s < Ls; s++) {
 	int sF = s + Ls * ss;

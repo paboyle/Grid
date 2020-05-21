@@ -348,18 +348,18 @@ template <class Impl>
 void WilsonKernels<Impl>::DhopDirAll( StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor *buf, int Ls,
 				      int Nsite, const FermionField &in, std::vector<FermionField> &out) 
 {
-   auto U_v   = U.View();
-   auto in_v  = in.View();
-   auto st_v  = st.View();
+   auto U_v   = U.View(AcceleratorRead);
+   auto in_v  = in.View(AcceleratorRead);
+   auto st_v  = st.View(AcceleratorRead);
 
-   auto out_Xm = out[0].View();
-   auto out_Ym = out[1].View();
-   auto out_Zm = out[2].View();
-   auto out_Tm = out[3].View();
-   auto out_Xp = out[4].View();
-   auto out_Yp = out[5].View();
-   auto out_Zp = out[6].View();
-   auto out_Tp = out[7].View();
+   auto out_Xm = out[0].View(AcceleratorWrite);
+   auto out_Ym = out[1].View(AcceleratorWrite);
+   auto out_Zm = out[2].View(AcceleratorWrite);
+   auto out_Tm = out[3].View(AcceleratorWrite);
+   auto out_Xp = out[4].View(AcceleratorWrite);
+   auto out_Yp = out[5].View(AcceleratorWrite);
+   auto out_Zp = out[6].View(AcceleratorWrite);
+   auto out_Tp = out[7].View(AcceleratorWrite);
    auto CBp=st.CommBuf();
    accelerator_forNB(sss,Nsite*Ls,Simd::Nsimd(),{
       int sU=sss/Ls;				
@@ -383,10 +383,10 @@ void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,S
   assert(dirdisp<=7);
   assert(dirdisp>=0);
 
-   auto U_v   = U.View();
-   auto in_v  = in.View();
-   auto out_v = out.View();
-   auto st_v  = st.View();
+   auto U_v   = U.View(AcceleratorRead);
+   auto in_v  = in.View(AcceleratorRead);
+   auto out_v = out.View(AcceleratorWrite);
+   auto st_v  = st.View(AcceleratorRead);
    auto CBp=st.CommBuf();			
 #define LoopBody(Dir)				\
    case Dir :					\
@@ -438,10 +438,10 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
 				     int Ls, int Nsite, const FermionField &in, FermionField &out,
 				     int interior,int exterior) 
 {
-    auto U_v   =   U.View();
-    auto in_v  =  in.View();
-    auto out_v = out.View();
-    auto st_v  =  st.View();
+    auto U_v   =   U.View(AcceleratorRead);
+    auto in_v  =  in.View(AcceleratorRead);
+    auto out_v = out.View(AcceleratorWrite);
+    auto st_v  =  st.View(AcceleratorRead);
 
    if( interior && exterior ) { 
      if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSite); return;}
@@ -469,10 +469,10 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
 					  int Ls, int Nsite, const FermionField &in, FermionField &out,
 					  int interior,int exterior) 
   {
-    auto U_v   = U.View();
-    auto in_v  = in.View();
-    auto out_v = out.View();
-    auto st_v  = st.View();
+    auto U_v   = U.View(AcceleratorRead);
+    auto in_v  = in.View(AcceleratorRead);
+    auto out_v = out.View(AcceleratorWrite);
+    auto st_v  = st.View(AcceleratorRead);
 
    if( interior && exterior ) { 
      if (Opt == WilsonKernelsStatic::OptGeneric    ) { KERNEL_CALL(GenericDhopSiteDag); return;}

@@ -186,10 +186,10 @@ public:
 	
 	hermop.HermOp(*Tn,y);
 
-	auto y_v = y.View();
-	auto Tn_v = Tn->View();
-	auto Tnp_v = Tnp->View();
-	auto Tnm_v = Tnm->View();
+	auto y_v = y.View(AcceleratorWrite);
+	auto Tn_v = Tn->View(AcceleratorWrite);
+	auto Tnp_v = Tnp->View(AcceleratorWrite);
+	auto Tnm_v = Tnm->View(AcceleratorWrite);
 	const int Nsimd = CComplex::Nsimd();
 	accelerator_forNB(ss, FineGrid->oSites(), Nsimd, {
 	  coalescedWrite(y_v[ss],xscale*y_v(ss)+mscale*Tn_v(ss));
@@ -264,12 +264,12 @@ public:
     Stencil.HaloExchange(in,compressor);
     comms_usec += usecond();
 
-    auto in_v = in.View();
-    auto out_v = out.View();
+    auto in_v = in.View(AcceleratorRead);
+    auto out_v = out.View(AcceleratorWrite);
     typedef LatticeView<Cobj> Aview;
 
     Vector<Aview> AcceleratorViewContainer;
-    for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer.push_back(A[p].View());
+    for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer.push_back(A[p].View(AcceleratorRead));
     Aview *Aview_p = & AcceleratorViewContainer[0];
 
     const int Nsimd = CComplex::Nsimd();
@@ -343,11 +343,11 @@ public:
 
     typedef LatticeView<Cobj> Aview;
     Vector<Aview> AcceleratorViewContainer;
-    for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer.push_back(A[p].View());
+    for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer.push_back(A[p].View(AcceleratorRead));
     Aview *Aview_p = & AcceleratorViewContainer[0];
 
-    auto out_v = out.View();
-    auto in_v  = in.View();
+    auto out_v = out.View(AcceleratorWrite);
+    auto in_v  = in.View(AcceleratorRead);
 
     const int Nsimd = CComplex::Nsimd();
     typedef decltype(coalescedRead(in_v[0])) calcVector;
@@ -542,10 +542,10 @@ public:
 	    
 	    blockMaskedInnerProduct(oZProj,omask,Subspace.subspace[j],Mphi);
 	    
-	    auto iZProj_v = iZProj.View() ;
-	    auto oZProj_v = oZProj.View() ;
-	    auto A_p     =  A[p].View();
-	    auto A_self  = A[self_stencil].View();
+	    auto iZProj_v = iZProj.View(AcceleratorRead) ;
+	    auto oZProj_v = oZProj.View(AcceleratorRead) ;
+	    auto A_p     =  A[p].View(AcceleratorWrite);
+	    auto A_self  = A[self_stencil].View(AcceleratorWrite);
 
 	    accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{ coalescedWrite(A_p[ss](j,i),oZProj_v(ss)); });
 	    //      if( disp!= 0 ) { accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{ coalescedWrite(A_p[ss](j,i),oZProj_v(ss)); });}
@@ -563,11 +563,11 @@ public:
 	mult(tmp,phi,oddmask );  linop.Op(tmp,Mphio);
 
 	{
-	  auto tmp_      = tmp.View();
-	  auto evenmask_ = evenmask.View();
-	  auto oddmask_  =  oddmask.View();
-	  auto Mphie_    =  Mphie.View();
-	  auto Mphio_    =  Mphio.View();
+	  auto tmp_      = tmp.View(AcceleratorWrite);
+	  auto evenmask_ = evenmask.View(AcceleratorRead);
+	  auto oddmask_  =  oddmask.View(AcceleratorRead);
+	  auto Mphie_    =  Mphie.View(AcceleratorRead);
+	  auto Mphio_    =  Mphio.View(AcceleratorRead);
 	  accelerator_for(ss, FineGrid->oSites(), Fobj::Nsimd(),{ 
 	      coalescedWrite(tmp_[ss],evenmask_(ss)*Mphie_(ss) + oddmask_(ss)*Mphio_(ss));
 	    });
@@ -575,8 +575,8 @@ public:
 
 	blockProject(SelfProj,tmp,Subspace.subspace);
 
-	auto SelfProj_ = SelfProj.View();
-	auto A_self  = A[self_stencil].View();
+	auto SelfProj_ = SelfProj.View(AcceleratorRead);
+	auto A_self  = A[self_stencil].View(AcceleratorWrite);
 
 	accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{
 	  for(int j=0;j<nbasis;j++){

@@ -221,10 +221,10 @@ void ImprovedStaggeredFermion5D<Impl>::DhopDir(const FermionField &in, FermionFi
 
   Compressor compressor;
   Stencil.HaloExchange(in,compressor);
-  auto Umu_v   = Umu.View();
-  auto UUUmu_v = UUUmu.View();
-  auto in_v    = in.View();
-  auto out_v   = out.View();
+  auto Umu_v   =   Umu.View(CpuRead);
+  auto UUUmu_v = UUUmu.View(CpuRead);
+  auto in_v    =  in.View(CpuRead);
+  auto out_v   = out.View(CpuWrite);
   thread_for( ss,Umu.Grid()->oSites(),{
     for(int s=0;s<Ls;s++){
       int sU=ss;
@@ -339,10 +339,10 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl &
       }
 
       // do the compute
-      auto   U_v  =   U.View();
-      auto UUU_v  = UUU.View();
-      auto  in_v  =  in.View();
-      auto out_v  = out.View();
+      auto   U_v  =   U.View(CpuRead);
+      auto UUU_v  = UUU.View(CpuRead);
+      auto  in_v  =  in.View(CpuRead);
+      auto out_v  = out.View(CpuWrite);
 
       if (dag == DaggerYes) {
         for (int ss = myblock; ss < myblock+myn; ++ss) {
@@ -376,10 +376,10 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl &
 
   DhopComputeTime2-=usecond();
 
-  auto   U_v  =   U.View();
-  auto UUU_v  = UUU.View();
-  auto  in_v  =  in.View();
-  auto out_v  = out.View();
+  auto   U_v  =   U.View(CpuRead);
+  auto UUU_v  = UUU.View(CpuRead);
+  auto  in_v  =  in.View(CpuRead);
+  auto out_v  = out.View(CpuWrite);
   if (dag == DaggerYes) {
     int sz=st.surface_list.size();
     thread_for( ss,sz,{
@@ -418,10 +418,10 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st,
   
   DhopComputeTime -= usecond();
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
-  auto   U_v  =   U.View();
-  auto UUU_v  = UUU.View();
-  auto  in_v  =  in.View();
-  auto out_v  = out.View();
+  auto   U_v  =   U.View(CpuRead);
+  auto UUU_v  = UUU.View(CpuRead);
+  auto  in_v  =  in.View(CpuRead);
+  auto out_v  = out.View(CpuWrite);
   if (dag == DaggerYes) {
     thread_for( ss,U.Grid()->oSites(),{
       int sU=ss;
