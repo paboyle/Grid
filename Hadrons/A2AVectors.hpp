@@ -198,7 +198,7 @@ private:
     {
         std::string t = (traj < 0) ? "" : ("." + std::to_string(traj));
         
-        return stem + t + ".bin";
+        return stem + t + ".txt";
     }
 };
 
@@ -768,14 +768,23 @@ void A2AVectorsIo::writeEvals(const std::string fileStem,
                               const int trajectory)
 {
 
+    std::string dir    = dirname(fileStem);
+    int         status = mkdir(dir);
+    if (status)
+    {
+        HADRONS_ERROR(Io, "cannot create directory '" + dir
+                      + "' ( " + std::strerror(errno) + ")");
+    }
+    
     std::string  filename = evalFilename(fileStem, trajectory);
     
     std::ofstream file;
     file.open (filename);
+    file << std::setprecision(12) << std::scientific;
     for (unsigned int i = 0; i < eval.size(); ++i)
     {
         LOG(Message) << "Writing eval " << i << std::endl;
-        file << eval[i];
+        file << eval[i] << std::setprecision(12) << std::scientific << std::endl;
     }
     file.close();
 }

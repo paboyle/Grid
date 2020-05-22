@@ -546,7 +546,7 @@ void TStagLowA2AVectors<FImpl, Pack>::setup(void)
     {
         envTmpLat(FermionField, "f5", Ls);
     }
-    //envTmp(A2A, "a2a", 1, action);
+    envTmp(A2A, "a2a", 1, action);
     //printMem("StagLowA2AVectors setup() ", env().getGrid()->ThisRank());
 }
 
@@ -703,6 +703,7 @@ void TStagNoEvalA2AVectors<FImpl, Pack>::setup(void)
     {
         envTmpLat(FermionField, "f5", Ls);
     }
+    envTmp(A2A, "a2a", 1, action);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -780,7 +781,7 @@ void TStagNoEvalA2AVectors<FImpl, Pack>::execute(void)
         //startTimer("W I/O");
         //A2AVectorsIo::write(par().output + "_w", w, par().multiFile, vm().getTrajectory());
         //stopTimer("W I/O");
-        A2AVectorsIo::writeEvals(par().output + "_eval", evalM, vm().getTrajectory());
+        A2AVectorsIo::writeEvals(par().output, evalM, vm().getTrajectory());
     }
     //printMem("End StagNoEvalA2AVectors execute() ", env().getGrid()->ThisRank());
 }
