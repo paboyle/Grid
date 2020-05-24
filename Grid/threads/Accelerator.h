@@ -284,6 +284,7 @@ void LambdaApply(uint64_t numx, uint64_t numy, uint64_t numz, lambda Lambda)
 
 inline void *acceleratorAllocShared(size_t bytes)
 {
+#if 0
   void *ptr=NULL;
   auto err = hipMallocManaged((void **)&ptr,bytes);
   if( err != hipSuccess ) {
@@ -291,6 +292,9 @@ inline void *acceleratorAllocShared(size_t bytes)
     printf(" hipMallocManaged failed for %d %s \n",bytes,hipGetErrorString(err));
   }
   return ptr;
+#else
+  return malloc(bytes);
+#endif
 };
 
 inline void *acceleratorAllocDevice(size_t bytes)
@@ -304,10 +308,10 @@ inline void *acceleratorAllocDevice(size_t bytes)
   return ptr;
 };
 
-inline void acceleratorFreeShared(void *ptr){ hipFree(ptr);};
+inline void acceleratorFreeShared(void *ptr){ free(ptr);};
 inline void acceleratorFreeDevice(void *ptr){ hipFree(ptr);};
-inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { cudaMemcpy(to,from,bytes, cudaMemcpyHostToDevice);}
-inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToHost);}
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
 
 #endif
 
@@ -375,6 +379,36 @@ accelerator_inline void acceleratorSynchronise(void)
 #endif
 #ifdef GRID_HIP
   __syncthreads();
+#endif
+#endif
+  return;
+}
+accelerator_inline void acceleratorSynchroniseAll(void) 
+{
+#ifdef GRID_SIMT
+#ifdef GRID_CUDA
+  __syncthreads();
+#endif
+#ifdef GRID_SYCL
+  // No barrier call on SYCL??  // Option get __spir:: stuff to do warp barrier
+#endif
+#ifdef GRID_HIP
+  __syncthreads();
+#endif
+#endif
+  return;
+}
+accelerator_inline void acceleratorFence(void) 
+{
+#ifdef GRID_SIMT
+#ifdef GRID_CUDA
+  __threadfence();
+#endif
+#ifdef GRID_SYCL
+  // FIXMEE
+#endif
+#ifdef GRID_HIP
+  __threadfence();
 #endif
 #endif
   return;

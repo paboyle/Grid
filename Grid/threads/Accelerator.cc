@@ -33,17 +33,17 @@ void acceleratorInit(void)
 
   for (int i = 0; i < nDevices; i++) {
 
-#define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("GpuInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
+#define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("AcceleratorCudaInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
 #define GPU_PROP(canMapHostMemory)             GPU_PROP_FMT(canMapHostMemory,"%d");
     
     cudaGetDeviceProperties(&gpu_props[i], i);
     if ( world_rank == 0) {
       cudaDeviceProp prop; 
       prop = gpu_props[i];
-      printf("GpuInit: ========================\n");
-      printf("GpuInit: Device Number    : %d\n", i);
-      printf("GpuInit: ========================\n");
-      printf("GpuInit: Device identifier: %s\n", prop.name);
+      printf("AcceleratorCudaInit: ========================\n");
+      printf("AcceleratorCudaInit: Device Number    : %d\n", i);
+      printf("AcceleratorCudaInit: ========================\n");
+      printf("AcceleratorCudaInit: Device identifier: %s\n", prop.name);
 
       GPU_PROP(managedMemory);
       GPU_PROP(isMultiGpuBoard);
@@ -55,12 +55,12 @@ void acceleratorInit(void)
   }
 #ifdef GRID_IBM_SUMMIT
   // IBM Jsrun makes cuda Device numbering screwy and not match rank
-  if ( world_rank == 0 )  printf("GpuInit: IBM Summit or similar - NOT setting device to node rank\n");
+  if ( world_rank == 0 )  printf("AcceleratorCudaInit: IBM Summit or similar - NOT setting device to node rank\n");
 #else
-  if ( world_rank == 0 )  printf("GpuInit: setting device to node rank\n");
+  if ( world_rank == 0 )  printf("AcceleratorCudaInit: setting device to node rank\n");
   cudaSetDevice(rank);
 #endif
-  if ( world_rank == 0 )  printf("GpuInit: ================================================\n");
+  if ( world_rank == 0 )  printf("AcceleratorCudaInit: ================================================\n");
 }
 #endif
 
@@ -92,17 +92,17 @@ void acceleratorInit(void)
 
   for (int i = 0; i < nDevices; i++) {
 
-#define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("GpuInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
+#define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("AcceleratorHipInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
 #define GPU_PROP(canMapHostMemory)             GPU_PROP_FMT(canMapHostMemory,"%d");
     
     hipGetDeviceProperties(&gpu_props[i], i);
     if ( world_rank == 0) {
       hipDeviceProp_t prop; 
       prop = gpu_props[i];
-      printf("GpuInit: ========================\n");
-      printf("GpuInit: Device Number    : %d\n", i);
-      printf("GpuInit: ========================\n");
-      printf("GpuInit: Device identifier: %s\n", prop.name);
+      printf("AcceleratorHipInit: ========================\n");
+      printf("AcceleratorHipInit: Device Number    : %d\n", i);
+      printf("AcceleratorHipInit: ========================\n");
+      printf("AcceleratorHipInit: Device identifier: %s\n", prop.name);
 
       //      GPU_PROP(managedMemory);
       GPU_PROP(isMultiGpuBoard);
@@ -114,12 +114,12 @@ void acceleratorInit(void)
   }
 #ifdef GRID_IBM_SUMMIT
   // IBM Jsrun makes cuda Device numbering screwy and not match rank
-  if ( world_rank == 0 )  printf("GpuInit: IBM Summit or similar - NOT setting device to node rank\n");
+  if ( world_rank == 0 )  printf("AcceleratorHipInit: IBM Summit or similar - NOT setting device to node rank\n");
 #else
-  if ( world_rank == 0 )  printf("GpuInit: setting device to node rank\n");
-  cudaSetDevice(rank);
+  if ( world_rank == 0 )  printf("AcceleratorHipInit: setting device to node rank\n");
+  hipSetDevice(rank);
 #endif
-  if ( world_rank == 0 )  printf("GpuInit: ================================================\n");
+  if ( world_rank == 0 )  printf("AcceleratorHipInit: ================================================\n");
 }
 #endif
 
@@ -159,22 +159,22 @@ void acceleratorInit(void)
   /*
   for (int i = 0; i < nDevices; i++) {
 
-#define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("GpuInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
+#define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("AcceleratorSyclInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
 #define GPU_PROP(canMapHostMemory)             GPU_PROP_FMT(canMapHostMemory,"%d");
     
     cudaGetDeviceProperties(&gpu_props[i], i);
     if ( world_rank == 0) {
       cudaDeviceProp prop; 
       prop = gpu_props[i];
-      printf("GpuInit: ========================\n");
-      printf("GpuInit: Device Number    : %d\n", i);
-      printf("GpuInit: ========================\n");
-      printf("GpuInit: Device identifier: %s\n", prop.name);
+      printf("AcceleratorSyclInit: ========================\n");
+      printf("AcceleratorSyclInit: Device Number    : %d\n", i);
+      printf("AcceleratorSyclInit: ========================\n");
+      printf("AcceleratorSyclInit: Device identifier: %s\n", prop.name);
     }
   }
   */
   if ( world_rank == 0 ) {
-    printf("GpuInit: ================================================\n");
+    printf("AcceleratorSyclInit: ================================================\n");
   }
 }
 #endif
