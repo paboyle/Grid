@@ -36,7 +36,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <cuda_fp16.h>
 #endif
 #ifdef GRID_HIP
-#include <hip_fp16.h>
+#include <hip/hip_fp16.h>
 #endif
 
 namespace Grid {
