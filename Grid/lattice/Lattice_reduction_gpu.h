@@ -1,7 +1,13 @@
 NAMESPACE_BEGIN(Grid);
 
-#define WARP_SIZE 32
+#ifdef GRID_HIP
+extern hipDeviceProp_t *gpu_props;
+#endif
+#ifdef GRID_CUDA
 extern cudaDeviceProp *gpu_props;
+#endif
+
+#define WARP_SIZE 32
 __device__ unsigned int retirementCount = 0;
 
 template <class Iterator>
@@ -19,7 +25,12 @@ template <class Iterator>
 void getNumBlocksAndThreads(const Iterator n, const size_t sizeofsobj, Iterator &threads, Iterator &blocks) {
   
   int device;
+#ifdef GRID_CUDA
   cudaGetDevice(&device);
+#endif
+#ifdef GRID_HIP
+  hipGetDevice(&device);
+#endif
   
   Iterator warpSize            = gpu_props[device].warpSize;
   Iterator sharedMemPerBlock   = gpu_props[device].sharedMemPerBlock;
@@ -147,7 +158,7 @@ __global__ void reduceKernel(const vobj *lat, sobj *buffer, Iterator n) {
     sobj *smem = (sobj *)shmem_pointer;
     
     // wait until all outstanding memory instructions in this thread are finished
-    __threadfence();
+    acceleratorFence();
     
     if (tid==0) {
       unsigned int ticket = atomicInc(&retirementCount, gridDim.x);
@@ -156,8 +167,8 @@ __global__ void reduceKernel(const vobj *lat, sobj *buffer, Iterator n) {
     }
     
     // each thread must read the correct value of amLast
-    __syncthreads();
-    
+    acceleratorSynchroniseAll();
+
     if (amLast) {
       // reduce buffer[0], ..., buffer[gridDim.x-1]
       Iterator i = tid;
@@ -199,13 +210,7 @@ inline typename vobj::scalar_objectD sumD_gpu(const vobj *lat, Integer osites)
   sobj *buffer_v = &buffer[0];
   
   reduceKernel<<< numBlocks, numThreads, smemSize >>>(lat, buffer_v, size);
-  cudaDeviceSynchronize();
-  
-  cudaError err = cudaGetLastError();
-  if ( cudaSuccess != err ) {
-    printf("Cuda error %s\n",cudaGetErrorString( err ));
-    exit(0);
-  }
+  accelerator_barrier();
   auto result = buffer_v[0];
   return result;
 }
