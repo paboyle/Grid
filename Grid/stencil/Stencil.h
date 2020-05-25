@@ -181,9 +181,15 @@ class CartesianStencilAccelerator {
 template<class vobj,class cobj,class Parameters>
 class CartesianStencilView : public CartesianStencilAccelerator<vobj,cobj,Parameters> 
 {
+#ifndef GRID_UVM
   std::shared_ptr<MemViewDeleter> Deleter;
+#endif
  public:
   // 
+#ifdef GRID_UVM
+  CartesianStencilView (const CartesianStencilAccelerator<vobj,cobj,Parameters> &refer_to_me,ViewMode mode) 
+    : CartesianStencilAccelerator<vobj,cobj,Parameters>(refer_to_me){};
+#else
   CartesianStencilView (const CartesianStencilView &refer_to_me) 
     : CartesianStencilAccelerator<vobj,cobj,Parameters>(refer_to_me), Deleter(refer_to_me.Deleter)
   { }
@@ -199,7 +205,8 @@ class CartesianStencilView : public CartesianStencilAccelerator<vobj,cobj,Parame
 				mode,
 				AdviseDefault);    
     }
-
+#endif
+  
 };
 
 ////////////////////////////////////////
