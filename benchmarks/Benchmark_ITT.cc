@@ -242,9 +242,9 @@ public:
 
       Vec rn ; random(sRNG,rn);
 
-      LatticeVec z(&Grid); z=rn;
-      LatticeVec x(&Grid); x=rn;
-      LatticeVec y(&Grid); y=rn;
+      LatticeVec z(&Grid); z=Zero();
+      LatticeVec x(&Grid); x=Zero();
+      LatticeVec y(&Grid); y=Zero();
       double a=2.0;
 
       uint64_t Nloop=NLOOP;
