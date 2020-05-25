@@ -64,7 +64,7 @@ inline typename vobj::scalar_object sum_cpu(const vobj *arg, Integer osites)
   
   return ssum;
 }
-/*
+
 template<class vobj>
 inline typename vobj::scalar_object sum(const vobj *arg, Integer osites)
 {
@@ -74,7 +74,7 @@ inline typename vobj::scalar_object sum(const vobj *arg, Integer osites)
   return sum_cpu(arg,osites);
 #endif  
 }
-*/
+
 template<class vobj>
 inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
 {
