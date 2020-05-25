@@ -194,13 +194,13 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   theGridAccelerator->submit([&](cl::sycl::handler &cgh) {		\
-      int nt=acceleratorThreads();					\
+      unsigned long nt=acceleratorThreads();				\
       unsigned long unum1 = num1;					\
       unsigned long unum2 = num2;					\
       cl::sycl::range<3> local {nt,1,nsimd};				\
-      cl::sycl::range<3> global{unum1,unum2,nsimd};				\
+      cl::sycl::range<3> global{unum1,unum2,nsimd};			\
       cgh.parallel_for<class dslash>(					\
-      cl::sycl::nd_range<3>(global,local),            \
+      cl::sycl::nd_range<3>(global,local), \
       [=] (cl::sycl::nd_item<3> item) mutable {       \
       auto iter1    = item.get_global_id(0);	      \
       auto iter2    = item.get_global_id(1);	      \
