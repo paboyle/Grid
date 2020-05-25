@@ -107,10 +107,18 @@ class MemViewDeleter {
 template<class vobj> 
 class LatticeView : public LatticeExprView<vobj>
 {
+#ifndef GRID_UVM
   std::shared_ptr<MemViewDeleter> Deleter;
+#endif
 public:
-  LatticeView(const LatticeView<vobj> &orig) : LatticeExprView<vobj>(orig) {  }
-  LatticeView(const LatticeAccelerator<vobj> &refer_to_me,ViewMode mode) : 
+#ifdef GRID_UVM
+ LatticeView(const LatticeAccelerator<vobj> &refer_to_me,ViewMode mode) : 
+    LatticeExprView<vobj> (refer_to_me)
+  {
+  }
+#else
+ LatticeView(const LatticeView<vobj> &orig) : LatticeExprView<vobj>(orig) {  }
+ LatticeView(const LatticeAccelerator<vobj> &refer_to_me,ViewMode mode) : 
     LatticeExprView<vobj> (refer_to_me), Deleter(new MemViewDeleter)
   {
     //    std::cout << "FIXME - copy shared pointer? View Open in LatticeView"<<std::hex<<this->_odata<<std::dec<<" mode "<<mode <<std::endl;
@@ -118,6 +126,7 @@ public:
     Deleter->cpu_ptr = this->cpu_ptr;
     Deleter->mode    = mode;
   }
+#endif
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////

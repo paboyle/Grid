@@ -217,8 +217,8 @@ public:
   }
 
   template<class sobj> inline Lattice<vobj> & operator = (const sobj & r){
-    auto me  = View(AcceleratorWriteDiscard);
-    accelerator_for(ss,me.size(),1,{
+    auto me  = View(CpuWrite);
+    thread_for(ss,me.size(),{
 	me[ss]= r;
     });
     return *this;
