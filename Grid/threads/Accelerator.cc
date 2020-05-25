@@ -153,9 +153,6 @@ void acceleratorInit(void)
   if ((localRankStr = getenv(ENV_RANK_OMPI   )) != NULL) { world_rank = atoi(localRankStr);}
   if ((localRankStr = getenv(ENV_RANK_MVAPICH)) != NULL) { world_rank = atoi(localRankStr);}
 
-  if ( world_rank == 0 ) {
-    GridBanner();
-  }
   /*
   for (int i = 0; i < nDevices; i++) {
 
