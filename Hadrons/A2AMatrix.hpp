@@ -203,6 +203,57 @@ public:
             });
         }
     }
+    
+    
+    // accTrMul(acc, a, b, eval): acc += tr(a*b) / eval / eval
+    template <typename C, typename MatLeft, typename MatRight, typename Eval>
+    static inline void accTrMul(C &acc, const MatLeft &a, const MatRight &b, const Eval &eval)
+    {
+        
+        const int RowMajor = Eigen::RowMajor;
+        const int ColMajor = Eigen::ColMajor;
+        if ((MatLeft::Options  == RowMajor) and
+            (MatRight::Options == ColMajor))
+        {
+            Eigen::Matrix<ComplexD,-1,1> avec(a.rows());
+            Eigen::Matrix<ComplexD,-1,1> bvec(b.cols());
+            thread_for(r,a.rows(),
+                       {
+                           C tmp;
+                           avec = a.row(r).cwiseProduct(eval);
+                           bvec = b.col(r).cwiseProduct(eval);
+#ifdef USE_MKL
+                           dotuRow(tmp, r, a, b);
+#else
+                           tmp = avec.dot(bvec);
+#endif
+                           thread_critical
+                           {
+                               acc += tmp;
+                           }
+                       });
+        }
+        else
+        {
+            Eigen::Matrix<ComplexD,-1,1> avec(a.cols());
+            Eigen::Matrix<ComplexD,-1,1> bvec(b.rows());
+            thread_for(c,a.cols(),
+                       {
+                           C tmp;
+                           avec = a.col(c).cwiseProduct(eval);
+                           bvec = b.row(c).cwiseProduct(eval);
+#ifdef USE_MKL
+                           dotuCol(tmp, c, a, b);
+#else
+                           tmp = a.col(c).conjugate().dot(b.row(c));
+#endif
+                           thread_critical
+                           {
+                               acc += tmp;
+                           }
+                       });
+        }
+    }
 
     template <typename MatLeft, typename MatRight>
     static inline double accTrMulFlops(const MatLeft &a, const MatRight &b)
@@ -560,7 +611,7 @@ void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead)
         unsigned int         t      = tp1 - 1;
         std::vector<hsize_t> offset = {static_cast<hsize_t>(t), 0, 0};
         
-        if (t % 10 == 0)
+        if (t % 1 == 0)
         {
             std::cout << " " << t;
             std::cout.flush();

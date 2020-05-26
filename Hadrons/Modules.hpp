@@ -33,6 +33,7 @@
 #include <Hadrons/Modules/MAction/WilsonClover.hpp>
 #include <Hadrons/Modules/MAction/ZMobiusDWF.hpp>
 #include <Hadrons/Modules/MAction/ImprovedStaggered.hpp>
+#include <Hadrons/Modules/MAction/Staggered.hpp>
 #include <Hadrons/Modules/MAction/DWF.hpp>
 #include <Hadrons/Modules/MGauge/UnitEm.hpp>
 #include <Hadrons/Modules/MGauge/Electrify.hpp>

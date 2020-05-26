@@ -173,6 +173,9 @@ public:
     template <typename Field>
     static void write(const std::string fileStem, std::vector<Field> &vec, 
                       const bool multiFile, const int trajectory = -1);
+    template <typename Eval>
+    static void readEvals(const std::string fileName, int size, Eval &eval);
+    
     template <typename Field>
     static void writeEvals(const std::string fileStem, std::vector<Field> &eval,
                            const int trajectory = -1);
@@ -762,6 +765,33 @@ void A2AVectorsIo::write(const std::string fileStem, std::vector<Field> &vec,
 }
 
 #include <iostream>
+#include <iterator>
+
+template <typename Eval>
+void A2AVectorsIo::readEvals(const std::string fileName,
+                             int size,
+                             Eval &eval)
+{
+    
+    std::ifstream file;
+    file.open (fileName);
+    std::istream_iterator<std::complex<double>> eos;
+    std::istream_iterator<std::complex<double>> iit (file);
+    
+    for(int i=0;i<size;i++)
+    {
+        LOG(Message) << "Reading eval " << i << std::endl;
+        
+        if (iit!=eos) eval[i] = *iit;
+        ++iit;
+        
+        LOG(Debug) << "eval " << i << eval[i] << std::endl;
+    }
+    file.close();
+}
+
+
+#include <iostream>
 template <typename Field>
 void A2AVectorsIo::writeEvals(const std::string fileStem,
                               std::vector<Field> &eval,
@@ -780,11 +810,13 @@ void A2AVectorsIo::writeEvals(const std::string fileStem,
     
     std::ofstream file;
     file.open (filename);
-    file << std::setprecision(12) << std::scientific;
+    typedef std::numeric_limits< double > dbl;
+    file.precision(dbl::max_digits10 - 1);
+    file << std::scientific;
     for (unsigned int i = 0; i < eval.size(); ++i)
     {
         LOG(Message) << "Writing eval " << i << std::endl;
-        file << eval[i] << std::setprecision(12) << std::scientific << std::endl;
+        file << eval[i] << std::endl;
     }
     file.close();
 }

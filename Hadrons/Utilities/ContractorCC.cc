@@ -28,6 +28,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 /*  END LEGAL */
 #include <Hadrons/Global.hpp>
 #include <Hadrons/A2AMatrix.hpp>
+#include <Hadrons/A2AVectors.hpp>
 #include <Hadrons/DiskVector.hpp>
 #include <Hadrons/TimerArray.hpp>
 
@@ -67,6 +68,14 @@ namespace Contractor
                                         std::string, name);
     };
 
+    class EvalPar: Serializable
+    {
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(EvalPar,
+                                        std::string, file,
+                                        unsigned int, size);
+    };
+    
     class ProductPar: Serializable
     {
     public:
@@ -93,6 +102,7 @@ struct ContractorPar
     Contractor::GlobalPar                  global;
     std::vector<Contractor::A2AMatrixPar>  a2aMatrix;
     std::vector<Contractor::ProductPar>    product;
+    std::vector<Contractor::EvalPar>       eval;
 };
 
 void makeTimeSeq(std::vector<std::vector<unsigned int>> &timeSeq, 
@@ -258,8 +268,7 @@ int main(int argc, char* argv[])
     read(reader, "global",    par.global);
     read(reader, "a2aMatrix", par.a2aMatrix);
     read(reader, "product",   par.product);
-    //    nMat  = par.a2aMatrix.size();
-    //    nCont = par.product.size();
+    read(reader, "eval",      par.eval);
 
     // create diskvectors
     std::map<std::string, EigenDiskVector<ComplexD>> a2aMat;
@@ -278,21 +287,33 @@ int main(int argc, char* argv[])
     {
         std::cout << ":::::::: Trajectory " << traj << std::endl;
 
+        // load evals
+        for (auto &p: par.eval)
+        {
+            std::string filename = p.file;
+            int size = p.size;
+            
+            std::cout << "======== Loading '" << filename << "'" << std::endl;
+            
+            Eigen::Matrix<ComplexD,-1,1> eval(size);
+            A2AVectorsIo::readEvals(filename, size, eval);
+        }
+        
         // load data
         for (auto &p: par.a2aMatrix)
         {
             std::string filename = p.file;
             double      t;
-	    //	    double  size;
-
+            //        double  size;
+            
             tokenReplace(filename, "traj", traj);
             std::cout << "======== Loading '" << filename << "'" << std::endl;
-
+            
             A2AMatrixIo<HADRONS_A2AM_IO_TYPE> a2aIo(filename, p.dataset, par.global.nt);
-
+            
             a2aIo.load(a2aMat.at(p.name), &t);
-            std::cout << "Read " << a2aIo.getSize() << " bytes in " << t/1.0e6 
-                    << " sec, " << a2aIo.getSize()/t*1.0e6/1024/1024 << " MB/s" << std::endl;
+            std::cout << "Read " << a2aIo.getSize() << " bytes in " << t/1.0e6
+            << " sec, " << a2aIo.getSize()/t*1.0e6/1024/1024 << " MB/s" << std::endl;
         }
 
         // contract
@@ -418,22 +439,24 @@ int main(int argc, char* argv[])
                     bytes  = 0.;
                     fusec  = tAr.getDTimer("tr(A*B)");
                     busec  = tAr.getDTimer("tr(A*B)");
+                    A2AMatrix<ComplexD>  prod_conj = prod.conjugate();
                     for (unsigned int tLast = 0; tLast < par.global.nt; ++tLast)
                     {
                         tAr.startTimer("tr(A*B)");
                         // do this four times, m m, mdag m, m mdag, mdag mdag;
+                        A2AMatrixTr<ComplexD>  lastTerm_conj = lastTerm[tLast].conjugate();
                         A2AContraction::accTrMul(result.correlator[TIME_MOD(tLast - dt)],
                                                  prod,
                                                  lastTerm[tLast]);
                         A2AContraction::accTrMul(result.correlator[TIME_MOD(tLast - dt)],
-                                                 prod.conjugate(),
+                                                 prod_conj,
                                                  lastTerm[tLast]);
                         A2AContraction::accTrMul(result.correlator[TIME_MOD(tLast - dt)],
                                                  prod,
-                                                 lastTerm[tLast].conjugate());
+                                                 lastTerm_conj);
                         A2AContraction::accTrMul(result.correlator[TIME_MOD(tLast - dt)],
-                                                 prod.conjugate(),
-                                                 lastTerm[tLast].conjugate());
+                                                 prod_conj,
+                                                 lastTerm_conj);
                         tAr.stopTimer("tr(A*B)");
                         flops += A2AContraction::accTrMulFlops(prod, lastTerm[tLast]);
                         bytes += 2.*prod.rows()*prod.cols()*sizeof(ComplexD);

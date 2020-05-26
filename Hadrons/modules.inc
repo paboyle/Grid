@@ -27,6 +27,7 @@ modules_cc =\
   Modules/MScalar/ChargedProp.cc \
   Modules/MAction/Wilson.cc \
   Modules/MAction/ImprovedStaggered.cc \
+  Modules/MAction/Staggered.cc \
   Modules/MAction/DWF.cc \
   Modules/MAction/MobiusDWF.cc \
   Modules/MAction/ScaledDWF.cc \
@@ -110,6 +111,7 @@ modules_hpp =\
   Modules/MAction/WilsonClover.hpp \
   Modules/MAction/ZMobiusDWF.hpp \
   Modules/MAction/ImprovedStaggered.hpp \
+  Modules/MAction/Staggered.hpp \
   Modules/MAction/DWF.hpp \
   Modules/MGauge/UnitEm.hpp \
   Modules/MGauge/Electrify.hpp \

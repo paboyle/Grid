@@ -34,7 +34,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 #include <Hadrons/A2AMatrix.hpp>
-#include <Hadrons/utils_memory.h>
+//#include <Hadrons/utils_memory.h>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -72,11 +72,9 @@ class StagMesonFieldCCKernel: public A2AKernel<T, typename FImpl::FermionField>
 public:
     typedef typename FImpl::FermionField FermionField;
 public:
-    StagMesonFieldCCKernel(//const LatticeGaugeField &U,
-                           const std::vector<Gamma::Algebra> &gamma,
+    StagMesonFieldCCKernel(const std::vector<Gamma::Algebra> &gamma,
                            const std::vector<LatticeComplex> &mom,
                            GridBase *grid)
-    //: U_(U), gamma_(gamma), mom_(mom), grid_(grid)
     : gamma_(gamma), mom_(mom), grid_(grid)
     {
         vol_ = 1.;
@@ -181,7 +179,7 @@ std::vector<std::string> TStagA2AMesonFieldCC<FImpl>::getOutput(void)
 template <typename FImpl>
 void TStagA2AMesonFieldCC<FImpl>::setup(void)
 {
-    printMem("Begin StagMesonFieldCC setup() ", env().getGrid()->ThisRank());
+    //printMem("Begin StagMesonFieldCC setup() ", env().getGrid()->ThisRank());
     gamma_.clear();
     mom_.clear();
     if (par().gammas == "all")
@@ -223,15 +221,15 @@ void TStagA2AMesonFieldCC<FImpl>::setup(void)
     }
     envCache(std::vector<ComplexField>, momphName_, 1, 
              par().mom.size(), envGetGrid(ComplexField));
-    printMem("StagMesonFieldCC setup(): after envCache ", env().getGrid()->ThisRank());
+    //printMem("StagMesonFieldCC setup(): after envCache ", env().getGrid()->ThisRank());
     envTmpLat(ComplexField, "coor");
-    printMem("StagMesonFieldCC setup(): after envTmpLat ", env().getGrid()->ThisRank());
+    //printMem("StagMesonFieldCC setup(): after envTmpLat ", env().getGrid()->ThisRank());
     envTmp(Computation, "computation", 1, envGetGrid(FermionField), 
            env().getNd() - 1, mom_.size(), gamma_.size(), par().block, 
            par().cacheBlock, this);
-    printMem("StagMesonFieldCC setup(): after envTmp ", env().getGrid()->ThisRank());
+    //printMem("StagMesonFieldCC setup(): after envTmp ", env().getGrid()->ThisRank());
     //envCreate(std::vector<FermionField>, "v_shift", 1, par().size, envGetGrid(FermionField));
-    printMem("End StagMesonFieldCC setup() ", env().getGrid()->ThisRank());
+    //printMem("End StagMesonFieldCC setup() ", env().getGrid()->ThisRank());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -349,18 +347,17 @@ void TStagA2AMesonFieldCC<FImpl>::execute(void)
     LatticeColourMatrix Umu(U.Grid());
     Umu = PeekIndex<LorentzIndex>(U,mu);
     Umu *= phases;
+   
+    FermionField temp(right[0].Grid()); 
+    for(int j=0;j<N_j;j++){
+        temp = Umu*Cshift(right[j], mu, 1);
+        right[j]=temp;
+    }
     
-    for(int j=0;j<N_j;j++)
-        right[j] = Umu*Cshift(right[j], mu, 1);
-        //shift[j] = Umu[mu]*Cshift(right[j], mu, 1);
-    
-    //Kernel      kernel(U, gamma_, ph, envGetGrid(FermionField));
     Kernel      kernel(gamma_, ph, envGetGrid(FermionField));
 
     envGetTmp(Computation, computation);
     computation.execute(left, right, kernel, ionameFn, filenameFn, metadataFn);
-    //computation.execute(left, shift, kernel, ionameFn, filenameFn, metadataFn);
-
 }
 
 END_MODULE_NAMESPACE

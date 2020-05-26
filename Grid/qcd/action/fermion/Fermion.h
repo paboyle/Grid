@@ -57,6 +57,7 @@ NAMESPACE_CHECK(WilsonClover);
 #include <Grid/qcd/action/fermion/WilsonFermion5D.h>     // 5d base used by all 5d overlap types
 NAMESPACE_CHECK(Wilson5D);
 
+#include <Grid/qcd/action/fermion/StaggeredFermion.h>
 #include <Grid/qcd/action/fermion/ImprovedStaggeredFermion.h>
 #include <Grid/qcd/action/fermion/ImprovedStaggeredFermion5D.h>
 NAMESPACE_CHECK(Staggered);
@@ -277,6 +278,10 @@ typedef MobiusEOFAFermion<GparityWilsonImplD> GparityMobiusEOFAFermionD;
 typedef MobiusEOFAFermion<GparityWilsonImplRL> GparityMobiusEOFAFermionRL;
 typedef MobiusEOFAFermion<GparityWilsonImplFH> GparityMobiusEOFAFermionFH;
 typedef MobiusEOFAFermion<GparityWilsonImplDF> GparityMobiusEOFAFermionDF;
+
+typedef StaggeredFermion<StaggeredImplR> StaggeredFermionR;
+typedef StaggeredFermion<StaggeredImplF> StaggeredFermionF;
+typedef StaggeredFermion<StaggeredImplD> StaggeredFermionD;
 
 typedef ImprovedStaggeredFermion<StaggeredImplR> ImprovedStaggeredFermionR;
 typedef ImprovedStaggeredFermion<StaggeredImplF> ImprovedStaggeredFermionF;
