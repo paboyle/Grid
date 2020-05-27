@@ -54,10 +54,11 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
 
 #if defined (TOFU) // FUGAKU, credits go to Issaku Kanamori
     nCommThreads=1;
-    MPI_Init(argc,argv);
+    //MPI_Init(argc,argv);
+    MPI_Init_thread(argc,argv,MPI_THREAD_SERIALIZED,&provided);
 #else
     MPI_Init_thread(argc,argv,MPI_THREAD_MULTIPLE,&provided);
-
+#endif
     //If only 1 comms thread we require any threading mode other than SINGLE, but for multiple comms threads we need MULTIPLE
     if( (nCommThreads == 1) && (provided == MPI_THREAD_SINGLE) ) {
       assert(0);
@@ -66,7 +67,6 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
     if( (nCommThreads > 1) && (provided != MPI_THREAD_MULTIPLE) ) {
       assert(0);
     }
-#endif
   }
 
   // Never clean up as done once.
