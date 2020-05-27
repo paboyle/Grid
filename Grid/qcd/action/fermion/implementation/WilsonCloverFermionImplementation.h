@@ -130,14 +130,8 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
   pickCheckerboard(Even, CloverTermEven, CloverTerm);
   pickCheckerboard(Odd, CloverTermOdd, CloverTerm);
 
-  pickCheckerboard(Even, CloverTermDagEven, closure(adj(CloverTerm)));
-  pickCheckerboard(Odd, CloverTermDagOdd, closure(adj(CloverTerm)));
-
   pickCheckerboard(Even, CloverTermInvEven, CloverTermInv);
   pickCheckerboard(Odd, CloverTermInvOdd, CloverTermInv);
-
-  pickCheckerboard(Even, CloverTermInvDagEven, closure(adj(CloverTermInv)));
-  pickCheckerboard(Odd, CloverTermInvDagOdd, closure(adj(CloverTermInv)));
 }
 
 template <class Impl>
@@ -168,56 +162,83 @@ template <class Impl>
 void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionField &out, int dag, int inv)
 {
   out.Checkerboard() = in.Checkerboard();
-  CloverFieldType *Clover;
   assert(in.Checkerboard() == Odd || in.Checkerboard() == Even);
 
-  if (dag)
-  {
-    if (in.Grid()->_isCheckerBoarded)
-    {
-      if (in.Checkerboard() == Odd)
-      {
-        Clover = (inv) ? &CloverTermInvDagOdd : &CloverTermDagOdd;
-      }
-      else
-      {
-        Clover = (inv) ? &CloverTermInvDagEven : &CloverTermDagEven;
-      }
-      out = *Clover * in;
-    }
-    else
-    {
-      Clover = (inv) ? &CloverTermInv : &CloverTerm;
-      out = adj(*Clover) * in;
-    }
-  }
+  const CloverFieldType *Clover = GetCompatibleCloverField(in, inv);
+  assert(Clover != nullptr);
+
+  if(dag == DaggerYes)
+    this->MultClovDagInternal(*Clover,1,Clover->oSites(),in,out);
   else
-  {
-    if (in.Grid()->_isCheckerBoarded)
-    {
+    this->MultClovInternal(*Clover,1,Clover->oSites(),in,out);
+}
 
-      if (in.Checkerboard() == Odd)
-      {
-        //  std::cout << "Calling clover term Odd" << std::endl;
-        Clover = (inv) ? &CloverTermInvOdd : &CloverTermOdd;
-      }
-      else
-      {
-        //  std::cout << "Calling clover term Even" << std::endl;
-        Clover = (inv) ? &CloverTermInvEven : &CloverTermEven;
-      }
-      out = *Clover * in;
-      //  std::cout << GridLogMessage << "*Clover.Checkerboard() "  << (*Clover).Checkerboard() << std::endl;
+template <class Impl>
+const typename WilsonCloverFermion<Impl>::CloverFieldType* WilsonCloverFermion<Impl>::GetCompatibleCloverField(const FermionField &in, int inv)
+{
+  if (in.Grid()->_isCheckerBoarded) {
+    if (in.Checkerboard() == Odd) {
+      return (inv == InverseYes) ? &CloverTermInvOdd : &CloverTermOdd;
     }
-    else
-    {
-      Clover = (inv) ? &CloverTermInv : &CloverTerm;
-      out = *Clover * in;
+    else {
+      return (inv == InverseYes) ? &CloverTermInvEven : &CloverTermEven;
     }
   }
+  else {
+    return (inv == InverseYes) ? &CloverTermInv : &CloverTerm;
+  }
+}
 
-} // MooeeInternal
+// the following 2 functions should move to a clover kernels class
+template <class Impl>
+void WilsonCloverFermion<Impl>::MultClovInternal(const CloverFieldType &clov, int Ls, int Nsite, const FermionField &in, FermionField &out)
+{
+  auto clov_v = clov.View();
+  auto in_v   = in.View();
+  auto out_v  = out.View();
 
+#ifdef GRID_NVCC
+  const uint64_t NN = Nsite*Ls;
+  accelerator_forNB( ss, NN, Simd::Nsimd(), {
+    int sF = ss;
+    int sU = ss/Ls;
+    coalescedWrite(out_v[sF], clov_v(sU) * in_v(sF));
+  });
+#else
+  thread_for( ss, Nsite, {
+    int sU = ss;
+    for(int s=0;s<Ls;s++) {
+      int sF = ss*Ls+s;
+      vstream(out_v[sF], clov_v(sU) * in_v(sF));
+    }
+  });
+#endif
+}
+
+template <class Impl>
+void WilsonCloverFermion<Impl>::MultClovDagInternal(const CloverFieldType &clov, int Ls, int Nsite, const FermionField &in, FermionField &out)
+{
+  auto clov_v = clov.View();
+  auto in_v   = in.View();
+  auto out_v  = out.View();
+
+#ifdef GRID_NVCC
+  const uint64_t NN = Nsite*Ls;
+  accelerator_forNB( ss, NN, Simd::Nsimd(), {
+    int sF = ss;
+    int sU = ss/Ls;
+    coalescedWrite(out_v[sF], adj(clov_v(sU)) * in_v(sF));
+  });
+#else
+  thread_for( ss, Nsite, {
+    int sU = ss;
+    for(int s=0;s<Ls;s++) {
+      int sF = ss*Ls+s;
+      vstream(out_v[sF], adj(clov_v(sU)) * in_v(sF));
+    }
+  });
+#endif
+}
 
 // Derivative parts
 template <class Impl>

@@ -81,11 +81,7 @@ public:
                                                                  CloverTermEven(&Hgrid),
                                                                  CloverTermOdd(&Hgrid),
                                                                  CloverTermInvEven(&Hgrid),
-                                                                 CloverTermInvOdd(&Hgrid),
-                                                                 CloverTermDagEven(&Hgrid),
-                                                                 CloverTermDagOdd(&Hgrid),
-                                                                 CloverTermInvDagEven(&Hgrid),
-                                                                 CloverTermInvDagOdd(&Hgrid)
+                                                                 CloverTermInvOdd(&Hgrid)
   {
     assert(Nd == 4); // require 4 dimensions
 
@@ -122,6 +118,10 @@ public:
   virtual void MeeDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag);
 
   void ImportGauge(const GaugeField &_Umu);
+
+  CloverFieldType const* GetCompatibleCloverField(const FermionField &in, int inv);
+  void MultClovInternal(const CloverFieldType &clov, int Ls, int Nsite, const FermionField &in, FermionField &out);
+  void MultClovDagInternal(const CloverFieldType &clov, int Ls, int Nsite, const FermionField &in, FermionField &out);
 
   // Derivative parts unpreconditioned pseudofermions
   void MDeriv(GaugeField &force, const FermionField &X, const FermionField &Y, int dag)
@@ -254,8 +254,7 @@ private:
   CloverFieldType CloverTerm, CloverTermInv;                 // Clover term
   CloverFieldType CloverTermEven, CloverTermOdd;             // Clover term EO
   CloverFieldType CloverTermInvEven, CloverTermInvOdd;       // Clover term Inv EO
-  CloverFieldType CloverTermDagEven, CloverTermDagOdd;       // Clover term Dag EO
-  CloverFieldType CloverTermInvDagEven, CloverTermInvDagOdd; // Clover term Inv Dag EO
+
 
   // eventually these can be compressed into 6x6 blocks instead of the 12x12
   // using the DeGrand-Rossi basis for the gamma matrices
