@@ -92,6 +92,13 @@ NAMESPACE_CHECK(Overlap);
 #include <Grid/qcd/action/fermion/WilsonTMFermion5D.h>   
 NAMESPACE_CHECK(WilsonTM5);
 
+///////////////////////////////////////////////////////////////////////////////
+// Multiple right hand sides via 5d support
+///////////////////////////////////////////////////////////////////////////////
+#include <Grid/qcd/action/fermion/WilsonMRHSFermion.h>
+#include <Grid/qcd/action/fermion/WilsonCloverMRHSFermion.h>
+NAMESPACE_CHECK(MRHS);
+
 ////////////////////////////////////////////////////////////////////////////////
 // Move this group to a DWF specific tools/algorithms subdir? 
 ////////////////////////////////////////////////////////////////////////////////
@@ -151,6 +158,44 @@ typedef WilsonCloverFermion<WilsonTwoIndexSymmetricImplD> WilsonCloverTwoIndexSy
 typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplR> WilsonCloverTwoIndexAntiSymmetricFermionR;
 typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplF> WilsonCloverTwoIndexAntiSymmetricFermionF;
 typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplD> WilsonCloverTwoIndexAntiSymmetricFermionD;
+
+// Wilson MRHS fermions
+typedef WilsonMRHSFermion<WilsonImplR> WilsonMRHSFermionR;
+typedef WilsonMRHSFermion<WilsonImplF> WilsonMRHSFermionF;
+typedef WilsonMRHSFermion<WilsonImplD> WilsonMRHSFermionD;
+
+typedef WilsonMRHSFermion<WilsonImplRL> WilsonMRHSFermionRL;
+typedef WilsonMRHSFermion<WilsonImplFH> WilsonMRHSFermionFH;
+typedef WilsonMRHSFermion<WilsonImplDF> WilsonMRHSFermionDF;
+
+typedef WilsonMRHSFermion<WilsonAdjImplR> WilsonAdjMRHSFermionR;
+typedef WilsonMRHSFermion<WilsonAdjImplF> WilsonAdjMRHSFermionF;
+typedef WilsonMRHSFermion<WilsonAdjImplD> WilsonAdjMRHSFermionD;
+
+typedef WilsonMRHSFermion<WilsonTwoIndexSymmetricImplR> WilsonTwoIndexSymmetricMRHSFermionR;
+typedef WilsonMRHSFermion<WilsonTwoIndexSymmetricImplF> WilsonTwoIndexSymmetricMRHSFermionF;
+typedef WilsonMRHSFermion<WilsonTwoIndexSymmetricImplD> WilsonTwoIndexSymmetricMRHSFermionD;
+
+typedef WilsonMRHSFermion<WilsonTwoIndexAntiSymmetricImplR> WilsonTwoIndexAntiSymmetricMRHSFermionR;
+typedef WilsonMRHSFermion<WilsonTwoIndexAntiSymmetricImplF> WilsonTwoIndexAntiSymmetricMRHSFermionF;
+typedef WilsonMRHSFermion<WilsonTwoIndexAntiSymmetricImplD> WilsonTwoIndexAntiSymmetricMRHSFermionD;
+
+// Clover MRHS fermions
+typedef WilsonCloverMRHSFermion<WilsonImplR> WilsonCloverMRHSFermionR;
+typedef WilsonCloverMRHSFermion<WilsonImplF> WilsonCloverMRHSFermionF;
+typedef WilsonCloverMRHSFermion<WilsonImplD> WilsonCloverMRHSFermionD;
+
+typedef WilsonCloverMRHSFermion<WilsonAdjImplR> WilsonCloverAdjMRHSFermionR;
+typedef WilsonCloverMRHSFermion<WilsonAdjImplF> WilsonCloverAdjMRHSFermionF;
+typedef WilsonCloverMRHSFermion<WilsonAdjImplD> WilsonCloverAdjMRHSFermionD;
+
+typedef WilsonCloverMRHSFermion<WilsonTwoIndexSymmetricImplR> WilsonCloverTwoIndexSymmetricMRHSFermionR;
+typedef WilsonCloverMRHSFermion<WilsonTwoIndexSymmetricImplF> WilsonCloverTwoIndexSymmetricMRHSFermionF;
+typedef WilsonCloverMRHSFermion<WilsonTwoIndexSymmetricImplD> WilsonCloverTwoIndexSymmetricMRHSFermionD;
+
+typedef WilsonCloverMRHSFermion<WilsonTwoIndexAntiSymmetricImplR> WilsonCloverTwoIndexAntiSymmetricMRHSFermionR;
+typedef WilsonCloverMRHSFermion<WilsonTwoIndexAntiSymmetricImplF> WilsonCloverTwoIndexAntiSymmetricMRHSFermionF;
+typedef WilsonCloverMRHSFermion<WilsonTwoIndexAntiSymmetricImplD> WilsonCloverTwoIndexAntiSymmetricMRHSFermionD;
 
 // Domain Wall fermions
 typedef DomainWallFermion<WilsonImplR> DomainWallFermionR;
