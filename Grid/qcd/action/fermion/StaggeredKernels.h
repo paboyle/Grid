@@ -63,17 +63,17 @@ template<class Impl> class StaggeredKernels : public FermionOperator<Impl> , pub
    ///////////////////////////////////////////////////////////////////////////////////////
    // Generic Nc kernels
    ///////////////////////////////////////////////////////////////////////////////////////
-   template<int Naik>
+   template<int Naik> accelerator_inline
    void DhopSiteGeneric(StencilView &st, 
 			DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, 
 			SiteSpinor * buf, int LLs, int sU, 
 			const FermionFieldView &in, FermionFieldView &out,int dag);
-   template<int Naik>
+   template<int Naik> accelerator_inline
    void DhopSiteGenericInt(StencilView &st, 
 			   DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, 
 			   SiteSpinor * buf, int LLs, int sU, 
 			   const FermionFieldView &in, FermionFieldView &out,int dag);
-   template<int Naik>
+   template<int Naik> accelerator_inline
    void DhopSiteGenericExt(StencilView &st, 
 			   DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
 			   SiteSpinor * buf, int LLs, int sU, 
@@ -82,17 +82,17 @@ template<class Impl> class StaggeredKernels : public FermionOperator<Impl> , pub
    ///////////////////////////////////////////////////////////////////////////////////////
    // Nc=3 specific kernels
    ///////////////////////////////////////////////////////////////////////////////////////
-   template<int Naik>
+   template<int Naik> accelerator_inline
    void DhopSiteHand(StencilView &st, 
 		     DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, 
 		     SiteSpinor * buf, int LLs, int sU, 
 		     const FermionFieldView &in, FermionFieldView &out,int dag);
-   template<int Naik>
+   template<int Naik> accelerator_inline
    void DhopSiteHandInt(StencilView &st, 
 			DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, 
 			SiteSpinor * buf, int LLs, int sU, 
 			const FermionFieldView &in, FermionFieldView &out,int dag);
-   template<int Naik>
+   template<int Naik> accelerator_inline
    void DhopSiteHandExt(StencilView &st, 
 			DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, 
 			SiteSpinor * buf, int LLs, int sU, 
