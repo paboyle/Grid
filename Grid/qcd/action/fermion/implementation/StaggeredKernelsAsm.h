@@ -618,10 +618,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 template <class Impl>
-void StaggeredKernels<Impl>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
+void StaggeredKernels<Impl>::DhopSiteAsm(StencilView &st,
 					 DoubledGaugeFieldView &U,
 					 DoubledGaugeFieldView &UUU,
-					 SiteSpinor *buf, int LLs,
+					 SiteSpinor *buf, int sF,
 					 int sU, const FermionFieldView &in, FermionFieldView &out,int dag) 
 {
   assert(0);
@@ -680,12 +680,13 @@ void StaggeredKernels<Impl>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo,
   gauge2 =(uint64_t)&UU[sU]( Z );				\
   gauge3 =(uint64_t)&UU[sU]( T ); 
   
+
   // This is the single precision 5th direction vectorised kernel
 #include <Grid/simd/Intel512single.h>
-template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
+template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilView &st,
 								    DoubledGaugeFieldView &U,
 								    DoubledGaugeFieldView &UUU,
-								    SiteSpinor *buf, int LLs,
+								    SiteSpinor *buf, int sF,
 								    int sU, const FermionFieldView &in, FermionFieldView &out,int dag) 
 {
 #ifdef AVX512
@@ -702,9 +703,10 @@ template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilImpl 
   StencilEntry *SE2;
   StencilEntry *SE3;
 
-   for(int s=0;s<LLs;s++){
+  //   for(int s=0;s<LLs;s++){
 
-    int sF=s+LLs*sU;
+  //    int sF=s+LLs*sU;
+  {
     // Xp, Yp, Zp, Tp
     PREPARE(Xp,Yp,Zp,Tp,0,U);
     LOAD_CHI(addr0,addr1,addr2,addr3);
@@ -736,10 +738,10 @@ template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilImpl 
 }
 
 #include <Grid/simd/Intel512double.h>
-template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
+template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilView &st, 
 								    DoubledGaugeFieldView &U,
 								    DoubledGaugeFieldView &UUU,
-								    SiteSpinor *buf, int LLs,
+								    SiteSpinor *buf, int sF,
 								    int sU, const FermionFieldView &in, FermionFieldView &out, int dag) 
 {
 #ifdef AVX512
@@ -756,8 +758,9 @@ template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilImpl 
   StencilEntry *SE2;
   StencilEntry *SE3;
 
-  for(int s=0;s<LLs;s++){
-    int sF=s+LLs*sU;
+  //  for(int s=0;s<LLs;s++){
+  //    int sF=s+LLs*sU;
+  {
     // Xp, Yp, Zp, Tp
     PREPARE(Xp,Yp,Zp,Tp,0,U);
     LOAD_CHI(addr0,addr1,addr2,addr3);
@@ -821,10 +824,10 @@ template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilImpl 
   // This is the single precision 5th direction vectorised kernel
 
 #include <Grid/simd/Intel512single.h>
-template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
+template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilView &st, 
 							       DoubledGaugeFieldView &U,
 							       DoubledGaugeFieldView &UUU,
-							       SiteSpinor *buf, int LLs,
+							       SiteSpinor *buf, int sF,
 							       int sU, const FermionFieldView &in, FermionFieldView &out,int dag) 
 {
 #ifdef AVX512
@@ -841,9 +844,9 @@ template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilImpl &st, 
   StencilEntry *SE2;
   StencilEntry *SE3;
 
-  for(int s=0;s<LLs;s++){
-    
-    int sF=s+LLs*sU;
+  //  for(int s=0;s<LLs;s++){
+  //    int sF=s+LLs*sU;
+  {
     // Xp, Yp, Zp, Tp
     PREPARE(Xp,Yp,Zp,Tp,0,U);
     LOAD_CHIa(addr0,addr1);
@@ -890,10 +893,10 @@ template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilImpl &st, 
 }
 
 #include <Grid/simd/Intel512double.h>
-template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
+template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilView &st, 
 							       DoubledGaugeFieldView &U,
 							       DoubledGaugeFieldView &UUU,
-							       SiteSpinor *buf, int LLs,
+							       SiteSpinor *buf, int sF,
 							       int sU, const FermionFieldView &in, FermionFieldView &out,int dag) 
 {
 #ifdef AVX512
@@ -910,9 +913,9 @@ template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilImpl &st, 
   StencilEntry *SE2;
   StencilEntry *SE3;
 
-  for(int s=0;s<LLs;s++){
-    
-    int sF=s+LLs*sU;
+  //  for(int s=0;s<LLs;s++){
+  //    int sF=s+LLs*sU;
+  {
     // Xp, Yp, Zp, Tp
     PREPARE(Xp,Yp,Zp,Tp,0,U);
     LOAD_CHIa(addr0,addr1);

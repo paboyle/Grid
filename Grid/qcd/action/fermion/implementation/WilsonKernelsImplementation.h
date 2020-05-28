@@ -496,5 +496,9 @@ void WilsonKernels<Impl>::DhopKernel(int Opt,StencilImpl &st,  DoubledGaugeField
    assert(0 && " Kernel optimisation case not covered ");
   }
 
+#undef KERNEL_CALLNB
+#undef KERNEL_CALL
+#undef ASM_CALL
+
 NAMESPACE_END(Grid);
 

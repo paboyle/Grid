@@ -62,8 +62,8 @@ public:
   double DhopCalls;
   double DhopCommTime;
   double DhopComputeTime;
-      double DhopComputeTime2;
-      double DhopFaceTime;
+  double DhopComputeTime2;
+  double DhopFaceTime;
 
   ///////////////////////////////////////////////////////////////
   // Implement the abstract base
