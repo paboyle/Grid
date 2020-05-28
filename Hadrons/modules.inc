@@ -59,6 +59,7 @@ modules_cc =\
   Modules/MContraction/A2AAslashField.cc \
   Modules/MContraction/DiscLoop.cc \
   Modules/MContraction/Meson.cc \
+  Modules/MContraction/MesonCC.cc \
   Modules/MContraction/WeakEye3pt.cc \
   Modules/MNPR/Bilinear.cc \
   Modules/MNPR/FourQuark.cc \
@@ -140,6 +141,7 @@ modules_hpp =\
   Modules/MContraction/A2AAslashField.hpp \
   Modules/MContraction/Baryon.hpp \
   Modules/MContraction/Meson.hpp \
+  Modules/MContraction/MesonCC.hpp \
   Modules/MNPR/FourQuark.hpp \
   Modules/MNPR/Bilinear.hpp \
   Modules/MNPR/Amputate.hpp \

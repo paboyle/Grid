@@ -780,12 +780,13 @@ void A2AVectorsIo::readEvals(const std::string fileName,
     
     for(int i=0;i<size;i++)
     {
-        LOG(Message) << "Reading eval " << i << std::endl;
+        //LOG(Message) << "Reading eval " << i << std::endl;
         
-        if (iit!=eos) eval[i] = *iit;
+        // need to divide meson field by evals
+        if (iit!=eos) eval[i] = 1.0 / *iit;
         ++iit;
         
-        LOG(Debug) << "eval " << i << eval[i] << std::endl;
+        //LOG(Debug) << "eval " << i << eval[i] << std::endl;
     }
     file.close();
 }

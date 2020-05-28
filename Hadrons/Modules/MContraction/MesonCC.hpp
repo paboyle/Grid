@@ -56,19 +56,20 @@ BEGIN_HADRONS_NAMESPACE
 BEGIN_MODULE_NAMESPACE(MContraction)
 
 
-class MesonPar: Serializable
+class MesonCCPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(MesonPar,
+    GRID_SERIALIZABLE_CLASS_MEMBERS(MesonCCPar,
                                     std::string, gauge,
                                     std::string, q1,
                                     std::string, q2,
                                     std::string, source,
+                                    std::string, gammas,
                                     std::string, output);
 };
 
 template <typename FImpl1, typename FImpl2>
-class TStagMesonCC: public Module<MesonPar>
+class TStagMesonCC: public Module<MesonCCPar>
 {
 public:
     FERM_TYPE_ALIASES(FImpl1, 1);
@@ -95,7 +96,6 @@ public:
     // execution
     virtual void execute(void);
 private:
-    std::vector<RealD>               stag_phase_source;
 };
 
 MODULE_REGISTER_TMP(StagMesonCC, ARG(TStagMesonCC<STAGIMPL, STAGIMPL>), MContraction);
@@ -106,7 +106,7 @@ MODULE_REGISTER_TMP(StagMesonCC, ARG(TStagMesonCC<STAGIMPL, STAGIMPL>), MContrac
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl1, typename FImpl2>
 TStagMesonCC<FImpl1, FImpl2>::TStagMesonCC(const std::string name)
-: Module<MesonPar>(name)
+: Module<MesonCCPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
@@ -130,61 +130,32 @@ std::vector<std::string> TStagMesonCC<FImpl1, FImpl2>::getOutput(void)
 template <typename FImpl1, typename FImpl2>
 void TStagMesonCC<FImpl1, FImpl2>::setup(void)
 {
-    envTmpLat(LatticeComplex, "c");
-    parseGammaString();
-    int Ngam=gammaList.size();
+    envTmpLat(LatticeComplex, "corr");
+    envTmpLat(LatticePropagator, "qshift");
 
     // grid can't handle real * prop, so use complex
-    envTmp(std::vector<LatticeComplex>,  "stag_phase_sink", 1, Ngam,
-           LatticeComplex(env().getGrid()));
-    envGetTmp(std::vector<LatticeComplex>,stag_phase_sink);
-    stag_phase_source.resize(Ngam);
+    envTmpLat(LatticeComplex,  "herm_phase");
+    envGetTmp(LatticeComplex, herm_phase);
     
+    // sink
     Lattice<iScalar<vInteger> > x(env().getGrid()); LatticeCoordinate(x,0);
     Lattice<iScalar<vInteger> > y(env().getGrid()); LatticeCoordinate(y,1);
     Lattice<iScalar<vInteger> > z(env().getGrid()); LatticeCoordinate(z,2);
+    Lattice<iScalar<vInteger> > t(env().getGrid()); LatticeCoordinate(t,3);
+    Lattice<iScalar<vInteger> > s(env().getGrid());
     
     // coordinate of source
     std::vector<int> src_coor = strToVec<int>(static_cast<MSource::StagPoint *>(vm().getModule(par().source))->par().position);
-    // local taste non-singlet ops, including ``Hermiticity" phase,
-    // see Tab. 11.2 in Degrand and Detar
-    for(int i=0; i < gammaList.size(); i++){
-
-        stag_phase_sink[i] = 1.0;
-        stag_phase_source[i] = 1.0;
-        
-        LOG(Message) << "Using gamma: " << gammaList[i] << std::endl;
-        switch(gammaList[i]) {
-                
-            case Gamma::Algebra::GammaX  :
-                stag_phase_sink[i] = where( mod(x,2)==(Integer)0, stag_phase_sink[i], -stag_phase_sink[i]);
-                if((src_coor[0])%2) stag_phase_source[i]= -stag_phase_source[i];
-                break;
-                
-            case Gamma::Algebra::GammaY  :
-                stag_phase_sink[i] = where( mod(y,2)==(Integer)0, stag_phase_sink[i], -stag_phase_sink[i]);
-                if((src_coor[1])%2) stag_phase_source[i]= -stag_phase_source[i];
-                break;
-                
-            case Gamma::Algebra::GammaZ  :
-                stag_phase_sink[i] = where( mod(z,2)==(Integer)0, stag_phase_sink[i], -stag_phase_sink[i]);
-                if((src_coor[2])%2) stag_phase_source[i] = -stag_phase_source[i];
-                break;
-
-            case Gamma::Algebra::Gamma5  :
-                break;
-
-            default :
-                std::cout << "your gamma is not supported for stag meson" << std::endl;
-                assert(0);
-        }
-    }
+    
+    //``Hermiticity" phase, (-1)^(x+y)
+    herm_phase = 1.0;
+    s=x+y+z+t;
+    herm_phase = where( mod(s,2)==(Integer)0, herm_phase, -herm_phase);
+    if((src_coor[0]+src_coor[1]+src_coor[2]+src_coor[3])%2)
+        herm_phase = -herm_phase;
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-#define StagMesonCCConnected(q1, q2, gSnk, gSrc) \
-(gSnk)*(q1)*adj(q2)*(gSrc)
-
 template <typename FImpl1, typename FImpl2>
 void TStagMesonCC<FImpl1, FImpl2>::execute(void)
 {
@@ -192,12 +163,9 @@ void TStagMesonCC<FImpl1, FImpl2>::execute(void)
     << " quarks '" << par().q1 << "' and '" << par().q2 << "'"
     << std::endl;
     
-    
     std::vector<TComplex>  buf;
     Result    result;
     int                    nt = env().getDim(Tp);
-    // staggered gammas
-    envGetTmp(std::vector<LatticeComplex>,stag_phase_sink);
     
     result.corr.resize(nt);
     
@@ -205,17 +173,22 @@ void TStagMesonCC<FImpl1, FImpl2>::execute(void)
     auto &q1 = envGet(PropagatorField1, par().q1);
     auto &q2 = envGet(PropagatorField2, par().q2);
         
-    envGetTmp(LatticeComplex, c);
+    envGetTmp(LatticeComplex, corr);
+    envGetTmp(LatticeComplex, herm_phase);
+    PropagatorField1 qshift(U.Grid());
+    FermionField1 tmp(U.Grid());
     
     // Do spatial gamma's only
-    // Staggered Phases.
+    // Staggered Phases, put into links
     //Lattice<iScalar<vInteger> > coor(U.Grid());
     Lattice<iScalar<vInteger> > x(U.Grid()); LatticeCoordinate(x,0);
     Lattice<iScalar<vInteger> > y(U.Grid()); LatticeCoordinate(y,1);
     Lattice<iScalar<vInteger> > lin_z(U.Grid()); lin_z=x+y;
-    ComplexField phases(U.Grid());
+    LatticeComplex phases(U.Grid());
     phases=1.0;
     int mu;
+    std::vector<Gamma::Algebra>        gamma_;
+    gamma_ = strToVec<Gamma::Algebra>(par().gammas);
     if(gamma_[0]==Gamma::Algebra::GammaX)mu=0;
     else if(gamma_[0]==Gamma::Algebra::GammaY){
         mu=1;
@@ -224,23 +197,31 @@ void TStagMesonCC<FImpl1, FImpl2>::execute(void)
         mu=2;
         phases = where( mod(lin_z,2)==(Integer)0, phases,-phases);
     } else assert(0);
-    //if ( mu == 3 ) phases = where( mod(lin_t,2)==(Integer)0, phases,-phases);
-    // U_mu(x) right(x+mu)
+
     LatticeColourMatrix Umu(U.Grid());
     Umu = PeekIndex<LorentzIndex>(U,mu);
     Umu *= phases;
     
-    for(int j=0;j<N_j;j++)
-        right[j] = Umu*Cshift(right[j], mu, 1);
+    ColourMatrix UmuSrc;
+    Coordinate srcSite = strToVec<int>(static_cast<MSource::StagPoint *>(vm().getModule(par().source))->par().position);
+    peekSite(UmuSrc, Umu, srcSite);
     
-    PropagatorField1 &sink = envGet(PropagatorField1, par().sink);
-    c = trace(StagMesonCCConnected(q1, q2, stag_phase_sink[i], stag_phase_source[i]));
-    sliceSum(c, buf, Tp);
-
+    LOG(Message) << "StagMesonCC src_xyzt " << srcSite << " mu " << mu << std::endl;
+    
+    qshift = Cshift(q2, mu, 1);
+    corr = trace(qshift * adj(Umu) * q1 * UmuSrc);
+    corr += trace(adj(q1) * Umu * qshift * adj(UmuSrc));
+ 
+    qshift = Cshift(q1, mu, 1);
+    corr -= trace(adj(q2) * Umu * qshift * UmuSrc); // -1^muhat
+    corr -= trace(adj(qshift) * adj(Umu) * q2 * adj(UmuSrc)); //-1^muhat
+    
+    corr *= herm_phase;
+    
+    sliceSum(corr, buf, Tp);
     for (unsigned int t = 0; t < buf.size(); ++t){
         result.corr[t] = TensorRemove(buf[t]);
     }
-
     saveResult(par().output, "mesonCC", result);
 }
 

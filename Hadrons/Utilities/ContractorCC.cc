@@ -288,6 +288,7 @@ int main(int argc, char* argv[])
         std::cout << ":::::::: Trajectory " << traj << std::endl;
 
         // load evals
+        Eigen::Matrix<ComplexD,-1,1> eval;
         for (auto &p: par.eval)
         {
             std::string filename = p.file;
@@ -295,7 +296,7 @@ int main(int argc, char* argv[])
             
             std::cout << "======== Loading '" << filename << "'" << std::endl;
             
-            Eigen::Matrix<ComplexD,-1,1> eval(size);
+            eval.resize(size);
             A2AVectorsIo::readEvals(filename, size, eval);
         }
         
@@ -439,24 +440,13 @@ int main(int argc, char* argv[])
                     bytes  = 0.;
                     fusec  = tAr.getDTimer("tr(A*B)");
                     busec  = tAr.getDTimer("tr(A*B)");
-                    A2AMatrix<ComplexD>  prod_conj = prod.conjugate();
                     for (unsigned int tLast = 0; tLast < par.global.nt; ++tLast)
                     {
                         tAr.startTimer("tr(A*B)");
-                        // do this four times, m m, mdag m, m mdag, mdag mdag;
-                        A2AMatrixTr<ComplexD>  lastTerm_conj = lastTerm[tLast].conjugate();
                         A2AContraction::accTrMul(result.correlator[TIME_MOD(tLast - dt)],
                                                  prod,
-                                                 lastTerm[tLast]);
-                        A2AContraction::accTrMul(result.correlator[TIME_MOD(tLast - dt)],
-                                                 prod_conj,
-                                                 lastTerm[tLast]);
-                        A2AContraction::accTrMul(result.correlator[TIME_MOD(tLast - dt)],
-                                                 prod,
-                                                 lastTerm_conj);
-                        A2AContraction::accTrMul(result.correlator[TIME_MOD(tLast - dt)],
-                                                 prod_conj,
-                                                 lastTerm_conj);
+                                                 lastTerm[tLast],
+                                                 eval);
                         tAr.stopTimer("tr(A*B)");
                         flops += A2AContraction::accTrMulFlops(prod, lastTerm[tLast]);
                         bytes += 2.*prod.rows()*prod.cols()*sizeof(ComplexD);

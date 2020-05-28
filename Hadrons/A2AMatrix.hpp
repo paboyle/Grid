@@ -210,48 +210,40 @@ public:
     static inline void accTrMul(C &acc, const MatLeft &a, const MatRight &b, const Eval &eval)
     {
         
-        const int RowMajor = Eigen::RowMajor;
-        const int ColMajor = Eigen::ColMajor;
-        if ((MatLeft::Options  == RowMajor) and
-            (MatRight::Options == ColMajor))
-        {
-            Eigen::Matrix<ComplexD,-1,1> avec(a.rows());
-            Eigen::Matrix<ComplexD,-1,1> bvec(b.cols());
-            thread_for(r,a.rows(),
+        Eigen::Matrix<ComplexD,-1,1> avec(a.rows());
+        Eigen::Matrix<ComplexD,-1,1> bvec(b.cols());
+        thread_for(r,a.rows(),
+                   {
+                       C tmp;
+                       avec = a.row(r).conjugate().cwiseProduct(eval);//conj to cancel Eigen conjugate in dot
+                       bvec = b.col(r).cwiseProduct(eval);
+                       tmp = avec.dot(bvec);
+                       thread_critical
                        {
-                           C tmp;
-                           avec = a.row(r).cwiseProduct(eval);
-                           bvec = b.col(r).cwiseProduct(eval);
-#ifdef USE_MKL
-                           dotuRow(tmp, r, a, b);
-#else
-                           tmp = avec.dot(bvec);
-#endif
-                           thread_critical
-                           {
-                               acc += tmp;
-                           }
-                       });
-        }
-        else
-        {
-            Eigen::Matrix<ComplexD,-1,1> avec(a.cols());
-            Eigen::Matrix<ComplexD,-1,1> bvec(b.rows());
-            thread_for(c,a.cols(),
+                           acc += tmp;
+                       }
+                       //avec = a.row(r).conjugate().cwiseProduct(eval);//conj to cancel Eigen conjugate in dot
+                       bvec = b.row(r).conjugate().cwiseProduct(eval);
+                       tmp = avec.dot(bvec);
+                       thread_critical
                        {
-                           C tmp;
-                           avec = a.col(c).cwiseProduct(eval);
-                           bvec = b.row(c).cwiseProduct(eval);
-#ifdef USE_MKL
-                           dotuCol(tmp, c, a, b);
-#else
-                           tmp = a.col(c).conjugate().dot(b.row(c));
-#endif
-                           thread_critical
-                           {
-                               acc += tmp;
-                           }
-                       });
+                           acc += tmp;
+                       }
+                       avec = a.col(r).cwiseProduct(eval);//Eigen conjugates row in dot
+                       //bvec = b.row(r).conjugate().cwiseProduct(eval);
+                       tmp = avec.dot(bvec);
+                       thread_critical
+                       {
+                           acc += tmp;
+                       }
+                       //avec = a.col(r).cwiseProduct(eval);//Eigen conjugates row in dot
+                       bvec = b.col(r).cwiseProduct(eval);
+                       tmp = avec.dot(bvec);
+                       thread_critical
+                       {
+                           acc += tmp;
+                       }
+                   });
         }
     }
 
