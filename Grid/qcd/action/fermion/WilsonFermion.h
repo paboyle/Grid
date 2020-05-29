@@ -50,14 +50,14 @@ public:
   double, nu);
 
   WilsonAnisotropyCoefficients():
-    isAnisotropic(false), 
-    t_direction(Nd-1), 
-    xi_0(1.0), 
+    isAnisotropic(false),
+    t_direction(Nd-1),
+    xi_0(1.0),
     nu(1.0){}
 };
 
 template <class Impl>
-class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic 
+class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic
 {
 public:
   INHERIT_IMPL_TYPES(Impl);
@@ -73,6 +73,20 @@ public:
 
   FermionField _tmp;
   FermionField &tmp(void) { return _tmp; }
+
+  void Report(void);
+  void ZeroCounters(void);
+  double DhopCalls;
+  double DhopCommTime;
+  double DhopComputeTime;
+  double DhopComputeTime2;
+  double DhopFaceTime;
+  double DhopTotalTime;
+
+  double DerivCalls;
+  double DerivCommTime;
+  double DerivComputeTime;
+  double DerivDhopComputeTime;
 
   //////////////////////////////////////////////////////////////////
   // override multiply; cut number routines if pass dagger argument
@@ -138,7 +152,7 @@ public:
   // Constructor
   WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
                 GridRedBlackCartesian &Hgrid, RealD _mass,
-                const ImplParams &p = ImplParams(), 
+                const ImplParams &p = ImplParams(),
                 const WilsonAnisotropyCoefficients &anis = WilsonAnisotropyCoefficients() );
 
   // DoubleStore impl dependent
@@ -170,9 +184,9 @@ public:
 
   LebesgueOrder Lebesgue;
   LebesgueOrder LebesgueEvenOdd;
-  
+
   WilsonAnisotropyCoefficients anisotropyCoeff;
-  
+
   ///////////////////////////////////////////////////////////////
   // Conserved current utilities
   ///////////////////////////////////////////////////////////////
@@ -184,7 +198,7 @@ public:
   void SeqConservedCurrent(PropagatorField &q_in,
                            PropagatorField &q_out,
                            Current curr_type,
-                           unsigned int mu, 
+                           unsigned int mu,
                            unsigned int tmin,
                              unsigned int tmax,
 			     ComplexField &lattice_cmplx);
@@ -194,5 +208,3 @@ typedef WilsonFermion<WilsonImplF> WilsonFermionF;
 typedef WilsonFermion<WilsonImplD> WilsonFermionD;
 
 NAMESPACE_END(Grid);
-
-
