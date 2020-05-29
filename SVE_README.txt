@@ -15,7 +15,7 @@ export OMPI_CXX=g++-10.0.1
 export MPICH_CC=gcc-10.0.1
 export MPICH_CXX=g++-10.0.1
 
-$ ../configure --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=mpi3 --enable-openmp CXX=mpiFCC CC=mpifcc CXXFLAGS="-std=c++11 -march=armv8-a+sve -msve-vector-bits=512 -fno-gcse -DA64FXFIXEDSIZE -DA64FXASM -DDSLASHINTRIN -DTOFU -I/opt/FJSVxtclanga/tcsds-1.2.24/include/mpi/fujitsu -lrt" LDFLAGS="-L/opt/FJSVxtclanga/tcsds-1.2.24/lib64 -lrt"
+$ ../configure --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=mpi3 --enable-openmp CXX=mpiFCC CC=mpifcc CXXFLAGS="-std=c++11 -march=armv8-a+sve -msve-vector-bits=512 -fno-gcse -DA64FXFIXEDSIZE -DA64FXASM -DDSLASHINTRIN -DTOFU -I/opt/FJSVxtclanga/tcsds-1.2.25/include/mpi/fujitsu -lrt" LDFLAGS="-L/opt/FJSVxtclanga/tcsds-1.2.25/lib64 -lrt"
 
 works! but binaries do not finish when running via job scheduler. problem with MPI_finalize ?
 
@@ -45,9 +45,9 @@ TODO check ARMCLANGCOMPAT
 TODO check ARMCLANGCOMPAT
 
 
-* armclang 20.1 VLA (fjt cluster)
+* armclang 20.1 VLA w/MPI (fjt cluster)
 
-../configure --with-lime=$HOME/local --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=mpi3 --enable-openmp CXX=mpiFCC CC=mpifcc CXXFLAGS="-std=c++11 -mcpu=a64fx -DA64FX -DA64FXASM -DDSLASHINTRIN -DTOFU -I/opt/FJSVxtclanga/tcsds-1.2.24/include/mpi/fujitsu -lrt" LDFLAGS="-L/opt/FJSVxtclanga/tcsds-1.2.24/lib64"
+../configure --with-lime=$HOME/local --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=mpi3 --enable-openmp CXX=mpiFCC CC=mpifcc CXXFLAGS="-std=c++11 -mcpu=a64fx -DA64FX -DA64FXASM -DDSLASHINTRIN -DTOFU -I/opt/FJSVxtclanga/tcsds-1.2.25/include/mpi/fujitsu -lrt" LDFLAGS="-L/opt/FJSVxtclanga/tcsds-1.2.25/lib64"
 
 No ARMCLANGCOMPAT -> still correct ?
 
