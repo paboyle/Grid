@@ -156,7 +156,7 @@ int main (int argc, char ** argv)
 
   // Counters
   Dw.ZeroCounters();
-  FGrid->Barrier();
+  Grid.Barrier();
 
   double t0=usecond();
   for(int i=0;i<ncall;i++){
@@ -191,8 +191,8 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
 
   // Counters
-  FGrid->Barrier();
-  Dw.report();
+  Grid.Barrier();
+  Dw.Report();
 
 
   // guard
