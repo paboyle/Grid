@@ -179,14 +179,18 @@ int main (int argc, char ** argv)
 
   }
 
-  double data = (volume * 180 * 64 / 4 * ncall) / (1024.*1024.*1024.);
+  auto nsimd = vComplex::Nsimd();
+  auto simdwidth = sizeof(vComplex);
+
+  // RF: Nd Wilson, Nc colors
+  double data = (volume * ((2*Nd+1)*Nd*Nc + (2*Nd)*Nc*Nc) * simdwidth / nsimd * ncall) / (1024.*1024.*1024.);
 
   std::cout<<GridLogMessage << "Called Dw"<<std::endl;
   std::cout<<GridLogMessage << "flops per site " << single_site_flops << std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
   std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
   std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
-  //std::cout<<GridLogMessage << "GiB/s (base 2) =   "<< 1000000. * data/((t1-t0))<<std::endl;
+  std::cout<<GridLogMessage << "RF  GiB/s (base 2) =   "<< 1000000. * data/(t1-t0)<<std::endl;
   err = ref-result;
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
 

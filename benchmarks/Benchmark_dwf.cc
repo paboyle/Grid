@@ -201,11 +201,14 @@ int main (int argc, char ** argv)
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=single_site_flops*volume*ncall;
 
-    // RF/L1: 4d Wilson
-    double data_L1 = (volume * 180 * 64 / 4 * ncall) / (1024.*1024.*1024.);
+    auto nsimd = vComplex::Nsimd();
+    auto simdwidth = sizeof(vComplex);
 
-   // L2 throughput
-    double data_L2 = (volume * 9 * 12 * 64 / 4 * ncall + (volume/Ls) * 8*9 * 64/4) / (1024.*1024.*1024.);
+    // RF: Nd Wilson * Ls, Nc colors
+    double data_L1 = (volume * ((2*Nd+1)*Nd*Nc + (2*Nd)*Nc*Nc) * simdwidth / nsimd * ncall) / (1024.*1024.*1024.);
+
+    // mem: Nd+1 fermion, Nd gauge, Nc colors
+    double data_L2 = (volume * (2*(Nd+1)+1)*Nd*Nc * simdwidth / nsimd * ncall + (volume/Ls) *(2*Nd)*Nc*Nc * simdwidth / nsimd) / (1024.*1024.*1024.);
 
     std::cout<<GridLogMessage << "Called Dw "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
     //    std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
@@ -213,8 +216,8 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per rank =  "<< flops/(t1-t0)/NP<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NN<<std::endl;
-    std::cout<<GridLogMessage << "RF/L1  GiB/s (base 2) =   "<< 1000000. * data_L1/((t1-t0))<<std::endl;
-    std::cout<<GridLogMessage << "L2 GiB/s (base 2)     =   "<< 1000000. * data_L2/((t1-t0))<<std::endl;
+    std::cout<<GridLogMessage << "RF  GiB/s (base 2) =   "<< 1000000. * data_L1/((t1-t0))<<std::endl;
+    std::cout<<GridLogMessage << "mem GiB/s (base 2) =   "<< 1000000. * data_L2/((t1-t0))<<std::endl;
     err = ref-result;
     std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
     //exit(0);
