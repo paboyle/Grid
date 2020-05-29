@@ -288,7 +288,7 @@ int main(int argc, char* argv[])
         std::cout << ":::::::: Trajectory " << traj << std::endl;
 
         // load evals
-        Eigen::Matrix<ComplexD,-1,1> eval;
+        Eigen::VectorXcd eval;
         for (auto &p: par.eval)
         {
             std::string filename = p.file;

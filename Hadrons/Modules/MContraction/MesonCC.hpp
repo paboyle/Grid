@@ -186,16 +186,23 @@ void TStagMesonCC<FImpl1, FImpl2>::execute(void)
     Lattice<iScalar<vInteger> > lin_z(U.Grid()); lin_z=x+y;
     LatticeComplex phases(U.Grid());
     phases=1.0;
+    ComplexD src_phase=1.0;
+    
+    Coordinate srcSite = strToVec<int>(static_cast<MSource::StagPoint *>(vm().getModule(par().source))->par().position);
+    
     int mu;
     std::vector<Gamma::Algebra>        gamma_;
     gamma_ = strToVec<Gamma::Algebra>(par().gammas);
-    if(gamma_[0]==Gamma::Algebra::GammaX)mu=0;
-    else if(gamma_[0]==Gamma::Algebra::GammaY){
+    if(gamma_[0]==Gamma::Algebra::GammaX){
+        mu=0;
+    }else if(gamma_[0]==Gamma::Algebra::GammaY){
         mu=1;
         phases = where( mod(x    ,2)==(Integer)0, phases,-phases);
+        if(srcSite[0]%2) src_phase = -src_phase;
     } else if(gamma_[0]==Gamma::Algebra::GammaZ){
         mu=2;
         phases = where( mod(lin_z,2)==(Integer)0, phases,-phases);
+        if((srcSite[0]+srcSite[1])%2) src_phase = -src_phase;
     } else assert(0);
 
     LatticeColourMatrix Umu(U.Grid());
@@ -203,13 +210,13 @@ void TStagMesonCC<FImpl1, FImpl2>::execute(void)
     Umu *= phases;
     
     ColourMatrix UmuSrc;
-    Coordinate srcSite = strToVec<int>(static_cast<MSource::StagPoint *>(vm().getModule(par().source))->par().position);
     peekSite(UmuSrc, Umu, srcSite);
+    UmuSrc *= src_phase;
     
     LOG(Message) << "StagMesonCC src_xyzt " << srcSite << " mu " << mu << std::endl;
     
     qshift = Cshift(q2, mu, 1);
-    corr = trace(qshift * adj(Umu) * q1 * UmuSrc);
+    corr = trace(adj(qshift) * adj(Umu) * q1 * UmuSrc);
     corr += trace(adj(q1) * Umu * qshift * adj(UmuSrc));
  
     qshift = Cshift(q1, mu, 1);

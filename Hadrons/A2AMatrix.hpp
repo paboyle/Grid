@@ -210,41 +210,43 @@ public:
     static inline void accTrMul(C &acc, const MatLeft &a, const MatRight &b, const Eval &eval)
     {
         
-        Eigen::Matrix<ComplexD,-1,1> avec(a.rows());
-        Eigen::Matrix<ComplexD,-1,1> bvec(b.cols());
+        Eigen::VectorXcd tmpv(a.rows());
+        Eigen::VectorXcd avec(a.rows());
+        Eigen::VectorXcd bvec(b.cols());
         thread_for(r,a.rows(),
                    {
                        C tmp;
-                       avec = a.row(r).conjugate().cwiseProduct(eval);//conj to cancel Eigen conjugate in dot
-                       bvec = b.col(r).cwiseProduct(eval);
-                       tmp = avec.dot(bvec);
+                       avec = a.row(r);
+                       bvec = b.col(r);
+                       tmpv = avec.cwiseProduct(bvec.cwiseProduct(eval.cwiseProduct(eval)));
+                       tmp = tmpv.sum();
                        thread_critical
                        {
                            acc += tmp;
                        }
-                       //avec = a.row(r).conjugate().cwiseProduct(eval);//conj to cancel Eigen conjugate in dot
-                       bvec = b.row(r).conjugate().cwiseProduct(eval);
-                       tmp = avec.dot(bvec);
+                       tmpv = b.row(r).conjugate();
+                       bvec = tmpv.cwiseProduct(eval.cwiseProduct(eval));
+                       tmpv = avec.cwiseProduct(bvec);
+                       tmp = tmpv.sum();
                        thread_critical
                        {
                            acc += tmp;
                        }
-                       avec = a.col(r).cwiseProduct(eval);//Eigen conjugates row in dot
-                       //bvec = b.row(r).conjugate().cwiseProduct(eval);
-                       tmp = avec.dot(bvec);
+                       avec = a.col(r).conjugate();
+                       tmpv = avec.cwiseProduct(bvec);
+                       tmp = tmpv.sum();
                        thread_critical
                        {
                            acc += tmp;
                        }
-                       //avec = a.col(r).cwiseProduct(eval);//Eigen conjugates row in dot
-                       bvec = b.col(r).cwiseProduct(eval);
-                       tmp = avec.dot(bvec);
+                       bvec = b.col(r);
+                       tmpv = avec.cwiseProduct(bvec.cwiseProduct(eval.cwiseProduct(eval)));
+                       tmp = tmpv.sum();
                        thread_critical
                        {
                            acc += tmp;
                        }
                    });
-        }
     }
 
     template <typename MatLeft, typename MatRight>
