@@ -73,10 +73,10 @@ WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
 template<class Impl>
 void WilsonFermion<Impl>::Report(void)
 {
-  RealD NP     = _FourDimGrid->_Nprocessors;
-  RealD NN     = _FourDimGrid->NodeCount();
-  RealD volume = Ls;
-  Coordinate latt = _FourDimGrid->GlobalDimensions();
+  RealD NP = _grid->_Nprocessors;
+  RealD NN = _grid->NodeCount();
+  RealD volume = 1;
+  Coordinate latt = _grid->GlobalDimensions();
   for(int mu=0;mu<Nd;mu++) volume=volume*latt[mu];
 
   if ( DhopCalls > 0 ) {
@@ -89,14 +89,14 @@ void WilsonFermion<Impl>::Report(void)
     std::cout << GridLogMessage << "WilsonFermion ComputeTime2/Calls        : " << DhopComputeTime2/ DhopCalls << " us" << std::endl;
 
     // Average the compute time
-    _FourDimGrid->GlobalSum(DhopComputeTime);
+    _grid->GlobalSum(DhopComputeTime);
     DhopComputeTime/=NP;
-    RealD mflops = 1344*volume*DhopCalls/DhopComputeTime/2; // 2 for red black counting
+    RealD mflops = 1320*volume*DhopCalls/DhopComputeTime/2; // 2 for red black counting
     std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
     std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
     std::cout << GridLogMessage << "Average mflops/s per call per node       : " << mflops/NN << std::endl;
 
-    RealD Fullmflops = 1344*volume*DhopCalls/(DhopTotalTime)/2; // 2 for red black counting
+    RealD Fullmflops = 1320*volume*DhopCalls/(DhopTotalTime)/2; // 2 for red black counting
     std::cout << GridLogMessage << "Average mflops/s per call (full)         : " << Fullmflops << std::endl;
     std::cout << GridLogMessage << "Average mflops/s per call per rank (full): " << Fullmflops/NP << std::endl;
     std::cout << GridLogMessage << "Average mflops/s per call per node (full): " << Fullmflops/NN << std::endl;
@@ -110,13 +110,15 @@ void WilsonFermion<Impl>::Report(void)
     std::cout << GridLogMessage << "WilsonFermion ComputeTime/Calls        : " <<DerivComputeTime/DerivCalls<<" us" <<std::endl;
     std::cout << GridLogMessage << "WilsonFermion Dhop ComputeTime/Calls   : " <<DerivDhopComputeTime/DerivCalls<<" us" <<std::endl;
 
+    // how to count flops here?
     RealD mflops = 144*volume*DerivCalls/DerivDhopComputeTime;
-    std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per node       : " << mflops/NP << std::endl;
+    std::cout << GridLogMessage << "Average mflops/s per call               ? : " << mflops << std::endl;
+    std::cout << GridLogMessage << "Average mflops/s per call per node      ? : " << mflops/NP << std::endl;
 
+    // how to count flops here?
     RealD Fullmflops = 144*volume*DerivCalls/(DerivDhopComputeTime+DerivCommTime)/2; // 2 for red black counting
-    std::cout << GridLogMessage << "Average mflops/s per call (full)         : " << Fullmflops << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per node (full): " << Fullmflops/NP << std::endl;  }
+    std::cout << GridLogMessage << "Average mflops/s per call (full)        ? : " << Fullmflops << std::endl;
+    std::cout << GridLogMessage << "Average mflops/s per call per node (full) ? : " << Fullmflops/NP << std::endl;  }
 
   if (DerivCalls > 0 || DhopCalls > 0){
     std::cout << GridLogMessage << "WilsonFermion Stencil"    <<std::endl;  Stencil.Report();
