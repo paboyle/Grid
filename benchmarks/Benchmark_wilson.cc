@@ -182,8 +182,8 @@ int main (int argc, char ** argv)
   auto nsimd = vComplex::Nsimd();
   auto simdwidth = sizeof(vComplex);
 
-  // RF: Nd Wilson, Nc colors
-  double data = (volume * ((2*Nd+1)*Nd*Nc + (2*Nd)*Nc*Nc) * simdwidth / nsimd * ncall) / (1024.*1024.*1024.);
+  // RF: Nd Wilson, Nd gauge, Nc colors
+  double data = volume * ((2*Nd+1)*Nd*Nc + 2*Nd*Nc*Nc) * simdwidth / nsimd * ncall / (1024.*1024.*1024.);
 
   std::cout<<GridLogMessage << "Called Dw"<<std::endl;
   std::cout<<GridLogMessage << "flops per site " << single_site_flops << std::endl;
