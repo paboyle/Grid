@@ -453,14 +453,14 @@ struct TimesMinusI{
     pred pg1 = acle<float>::pg1();
     vecf z_v = acle<float>::zero();
 
-    return svcadd_x(pred, z_v, a, 270);
+    return svcadd_x(pg1, z_v, a, 270);
   }
   // Complex double
   inline vecd operator()(vecd a, vecd b){
     pred pg1 = acle<double>::pg1();
     vecd z_v = acle<double>::zero();
 
-    return svcadd_x(pred, z_v, a, 270);
+    return svcadd_x(pg1, z_v, a, 270);
   }
 };
 
@@ -498,14 +498,14 @@ struct TimesI{
     pred pg1 = acle<float>::pg1();
     vecf z_v = acle<float>::zero();
 
-    return svcadd_x(pred, z_v, a, 90);
+    return svcadd_x(pg1, z_v, a, 90);
   }
   // Complex double
   inline vecd operator()(vecd a, vecd b){
     pred pg1 = acle<double>::pg1();
     vecd z_v = acle<double>::zero();
 
-    return svcadd_x(pred, z_v, a, 90);
+    return svcadd_x(pg1, z_v, a, 90);
   }
 };
 
