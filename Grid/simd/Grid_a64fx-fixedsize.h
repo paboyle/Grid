@@ -419,7 +419,6 @@ struct Conj{
   }
 };
 
-/*
 struct TimesMinusI{
   // Complex float
   inline vecf operator()(vecf a, vecf b){
@@ -442,11 +441,14 @@ struct TimesMinusI{
     return svneg_m(a_v, pg_odd, a_v);
   }
 };
-*/
 
 // alternative implementation using fcadd
 // this is not optimal because we have  op1 = op2 + TimesMinusI(op3)  etc
 // ideally we have                      AddTimesMinusI(op1,op2,op3)
+//
+// makes performance worse in Benchmark_wilson using MPI
+// increases halogtime and gathertime
+/*
 struct TimesMinusI{
   // Complex float
   inline vecf operator()(vecf a, vecf b){
@@ -463,8 +465,8 @@ struct TimesMinusI{
     return svcadd_x(pg1, z_v, a, 270);
   }
 };
+*/
 
-/*
 struct TimesI{
   // Complex float
   inline vecf operator()(vecf a, vecf b){
@@ -487,11 +489,15 @@ struct TimesI{
     return svneg_m(a_v, pg_even, a_v);
   }
 };
-*/
+
 
 // alternative implementation using fcadd
 // this is not optimal because we have  op1 = op2 + TimesI(op3)  etc
 // ideally we have                      AddTimesI(op1,op2,op3)
+//
+// makes performance worse in Benchmark_wilson using MPI
+// increases halogtime and gathertime
+/*
 struct TimesI{
   // Complex float
   inline vecf operator()(vecf a, vecf b){
@@ -508,7 +514,7 @@ struct TimesI{
     return svcadd_x(pg1, z_v, a, 90);
   }
 };
-
+*/
 
 
 struct PrecisionChange {
