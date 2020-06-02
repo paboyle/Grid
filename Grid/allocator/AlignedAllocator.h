@@ -92,6 +92,13 @@ public:
   static bool        debug;
 };
 
+#ifdef GRID_NVCC
+#define profilerCudaMeminfo \
+  { size_t f, t ; cudaMemGetInfo ( &f,&t); std::cout << GridLogDebug << "[Memory debug] Cuda free "<<f<<"/"<<t << std::endl;}
+#else
+#define profilerCudaMeminfo
+#endif
+
 #define memString(bytes) std::to_string(bytes) + " (" + sizeString(bytes) + ")"
 #define profilerDebugPrint						\
   if (MemoryProfiler::stats)						\
@@ -106,7 +113,8 @@ public:
 		<< std::endl;						\
       std::cout << GridLogDebug << "[Memory debug] freed  : " << memString(s->totalFreed) \
 		<< std::endl;						\
-    }
+    }									\
+  profilerCudaMeminfo;
 
 #define profilerAllocate(bytes)						\
   if (MemoryProfiler::stats)						\
