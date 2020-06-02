@@ -419,6 +419,7 @@ struct Conj{
   }
 };
 
+/*
 struct TimesMinusI{
   // Complex float
   inline vecf operator()(vecf a, vecf b){
@@ -441,7 +442,29 @@ struct TimesMinusI{
     return svneg_m(a_v, pg_odd, a_v);
   }
 };
+*/
 
+// alternative implementation using fcadd
+// this is not optimal because we have  op1 = op2 + TimesMinusI(op3)  etc
+// ideally we have                      AddTimesMinusI(op1,op2,op3)
+struct TimesMinusI{
+  // Complex float
+  inline vecf operator()(vecf a, vecf b){
+    pred pg1 = acle<float>::pg1();
+    vecf z_v = acle<float>::zero();
+
+    return svcadd_x(pred, zero, a, 270);
+  }
+  // Complex double
+  inline vecd operator()(vecd a, vecd b){
+    pred pg1 = acle<float>::pg1();
+    vecd z_v = acle<float>::zero();
+
+    return svcadd_x(pred, zero, a, 270);
+  }
+};
+
+/*
 struct TimesI{
   // Complex float
   inline vecf operator()(vecf a, vecf b){
@@ -464,6 +487,29 @@ struct TimesI{
     return svneg_m(a_v, pg_even, a_v);
   }
 };
+*/
+
+// alternative implementation using fcadd
+// this is not optimal because we have  op1 = op2 + TimesI(op3)  etc
+// ideally we have                      AddTimesI(op1,op2,op3)
+struct TimesI{
+  // Complex float
+  inline vecf operator()(vecf a, vecf b){
+    pred pg1 = acle<float>::pg1();
+    vecf z_v = acle<float>::zero();
+
+    return svcadd_x(pred, zero, a, 90);
+  }
+  // Complex double
+  inline vecd operator()(vecd a, vecd b){
+    pred pg1 = acle<float>::pg1();
+    vecd z_v = acle<float>::zero();
+
+    return svcadd_x(pred, zero, a, 90);
+  }
+};
+
+
 
 struct PrecisionChange {
   static inline vech StoH (vecf sa, vecf sb) {
