@@ -77,7 +77,7 @@ public:
     this->cpu_ptr = (void *)this->_odata;
     this->mode    = mode;
     this->_odata  =(vobj *)
-      AllocationCache::ViewOpen(this->cpu_ptr,
+      MemoryManager::ViewOpen(this->cpu_ptr,
 				this->_odata_size*sizeof(vobj),
 				mode,
 				AdviseDefault);    
@@ -85,7 +85,7 @@ public:
   void ViewClose(void)
   { // Inform the manager
     //    std::cout << "View Close"<<std::hex<<this->cpu_ptr<<std::dec <<std::endl;
-    AllocationCache::ViewClose(this->cpu_ptr,this->mode);    
+    MemoryManager::ViewClose(this->cpu_ptr,this->mode);    
   }
 
 };
@@ -101,7 +101,7 @@ class MemViewDeleter {
   void *cpu_ptr;
   ViewMode mode;
   ~MemViewDeleter(){
-    AllocationCache::ViewClose(cpu_ptr,mode);    
+    MemoryManager::ViewClose(cpu_ptr,mode);    
   }
 };
 template<class vobj> 
