@@ -1,3 +1,4 @@
+#if 0
 #include <Grid/GridCore.h>
 #ifndef GRID_UVM
 
@@ -40,7 +41,7 @@ static int NaccCache = 32;
 #define AccDirty      (0x4)  /*ACC copy is golden */
 #define EvictNext     (0x8)  /*Priority for eviction*/
 
-int   AllocationCache::ViewVictim(void)
+int   MemoryManager::ViewVictim(void)
 {
   int prioEmpty            =-1;
   int prioCpuDirty         =-1;
@@ -55,7 +56,7 @@ int   AllocationCache::ViewVictim(void)
   // round robin priority search of unlocked entries offset from current victim
   for(int ep=0;ep<NaccCache;ep++){
     int e = (ep+AccCacheVictim)%NaccCache;
-    dprintf("AllocationCacheDeviceMem: Inspecting cache entry %d :",e);
+    dprintf("MemoryManagerDeviceMem: Inspecting cache entry %d :",e);
 
     uint32_t locks = AccCache[e].cpuLock+AccCache[e].accLock;
     uint32_t s = AccCache[e].state;
@@ -94,11 +95,11 @@ int   AllocationCache::ViewVictim(void)
   if ( prioEmpty        >= 0 ) victim = prioEmpty;       /*Highest prio is winner*/
 
   assert(victim >= 0); // Must succeed/
-  dprintf("AllocationCacheDeviceMem: Selected victim cache entry %d\n",victim); 
+  dprintf("MemoryManagerDeviceMem: Selected victim cache entry %d\n",victim); 
 
   // advance victim pointer
   AccCacheVictim=(AccCacheVictim+1)%NaccCache;
-  dprintf("AllocationCacheDeviceMem: victim pointer now %d / %d\n",AccCacheVictim,NaccCache); 
+  dprintf("MemoryManagerDeviceMem: victim pointer now %d / %d\n",AccCacheVictim,NaccCache); 
 
   return victim;
 }
@@ -106,15 +107,15 @@ int   AllocationCache::ViewVictim(void)
 // Accelerator cache motion
 /////////////////////////////////////////////////
 
-void AllocationCache::Discard(int e) // remove from Accelerator, remove entry, without flush
+void MemoryManager::Discard(int e) // remove from Accelerator, remove entry, without flush
 {
   if(AccCache[e].state!=Empty){
-    dprintf("AllocationCache: Discard(%d) %llx,%llx\n",e,(uint64_t)AccCache[e].AccPtr,(uint64_t)AccCache[e].CpuPtr); 
+    dprintf("MemoryManager: Discard(%d) %llx,%llx\n",e,(uint64_t)AccCache[e].AccPtr,(uint64_t)AccCache[e].CpuPtr); 
     assert(AccCache[e].accLock==0);
     assert(AccCache[e].cpuLock==0);
     assert(AccCache[e].CpuPtr!=NULL);
     if(AccCache[e].AccPtr) {
-      dprintf("AllocationCache: Free(%d) %llx\n",e,(uint64_t)AccCache[e].AccPtr);  
+      dprintf("MemoryManager: Free(%d) %llx\n",e,(uint64_t)AccCache[e].AccPtr);  
       AcceleratorFree(AccCache[e].AccPtr,AccCache[e].bytes);
     }
   }
@@ -126,10 +127,10 @@ void AllocationCache::Discard(int e) // remove from Accelerator, remove entry, w
   AccCache[e].cpuLock=0;
 }
 
-void AllocationCache::Evict(int e) // Make CPU consistent, remove from Accelerator, remove entry
+void MemoryManager::Evict(int e) // Make CPU consistent, remove from Accelerator, remove entry
 {
   if(AccCache[e].state!=Empty){
-    dprintf("AllocationCache: Evict(%d) %llx,%llx\n",e,(uint64_t)AccCache[e].AccPtr,(uint64_t)AccCache[e].CpuPtr); 
+    dprintf("MemoryManager: Evict(%d) %llx,%llx\n",e,(uint64_t)AccCache[e].AccPtr,(uint64_t)AccCache[e].CpuPtr); 
     assert(AccCache[e].accLock==0);
     assert(AccCache[e].cpuLock==0);
     if(AccCache[e].state==AccDirty) {
@@ -137,7 +138,7 @@ void AllocationCache::Evict(int e) // Make CPU consistent, remove from Accelerat
     }
     assert(AccCache[e].CpuPtr!=NULL);
     if(AccCache[e].AccPtr) {
-      dprintf("AllocationCache: Free(%d) %llx\n",e,(uint64_t)AccCache[e].AccPtr);  
+      dprintf("MemoryManager: Free(%d) %llx\n",e,(uint64_t)AccCache[e].AccPtr);  
       AcceleratorFree(AccCache[e].AccPtr,AccCache[e].bytes);
     }
   }
@@ -148,9 +149,9 @@ void AllocationCache::Evict(int e) // Make CPU consistent, remove from Accelerat
   AccCache[e].accLock=0;
   AccCache[e].cpuLock=0;
 }
-void AllocationCache::Flush(int e)// Copy back from a dirty device state and mark consistent. Do not remove
+void MemoryManager::Flush(int e)// Copy back from a dirty device state and mark consistent. Do not remove
 {
-  //  printf("AllocationCache: Flush(%d) %llx -> %llx\n",e,(uint64_t)AccCache[e].AccPtr,(uint64_t)AccCache[e].CpuPtr); fflush(stdout);
+  //  printf("MemoryManager: Flush(%d) %llx -> %llx\n",e,(uint64_t)AccCache[e].AccPtr,(uint64_t)AccCache[e].CpuPtr); fflush(stdout);
   assert(AccCache[e].state==AccDirty);
   assert(AccCache[e].cpuLock==0);
   assert(AccCache[e].accLock==0);
@@ -159,7 +160,7 @@ void AllocationCache::Flush(int e)// Copy back from a dirty device state and mar
   acceleratorCopyFromDevice(AccCache[e].AccPtr,AccCache[e].CpuPtr,AccCache[e].bytes);
   AccCache[e].state=Consistent;
 }
-void AllocationCache::Clone(int e)// Copy from CPU, mark consistent. Allocate if necessary
+void MemoryManager::Clone(int e)// Copy from CPU, mark consistent. Allocate if necessary
 {
   assert(AccCache[e].state==CpuDirty);
   assert(AccCache[e].cpuLock==0);
@@ -168,12 +169,12 @@ void AllocationCache::Clone(int e)// Copy from CPU, mark consistent. Allocate if
   if(AccCache[e].AccPtr==NULL){
     AccCache[e].AccPtr=AcceleratorAllocate(AccCache[e].bytes);
   }
-  //  printf("AllocationCache: Clone(%d) %llx <- %llx\n",e,(uint64_t)AccCache[e].AccPtr,(uint64_t)AccCache[e].CpuPtr); fflush(stdout);
+  //  printf("MemoryManager: Clone(%d) %llx <- %llx\n",e,(uint64_t)AccCache[e].AccPtr,(uint64_t)AccCache[e].CpuPtr); fflush(stdout);
   acceleratorCopyToDevice(AccCache[e].CpuPtr,AccCache[e].AccPtr,AccCache[e].bytes);
   AccCache[e].state=Consistent;
 }
 
-void AllocationCache::CpuDiscard(int e)// Mark accelerator dirty without copy. Allocate if necessary
+void MemoryManager::CpuDiscard(int e)// Mark accelerator dirty without copy. Allocate if necessary
 {
   assert(AccCache[e].state!=Empty);
   assert(AccCache[e].cpuLock==0);
@@ -182,7 +183,7 @@ void AllocationCache::CpuDiscard(int e)// Mark accelerator dirty without copy. A
   if(AccCache[e].AccPtr==NULL){
     AccCache[e].AccPtr=AcceleratorAllocate(AccCache[e].bytes);
   }
-  //  printf("AllocationCache: CpuDiscard(%d) %llx <- %llx\n",e,(uint64_t)AccCache[e].AccPtr,(uint64_t)AccCache[e].CpuPtr); fflush(stdout);
+  //  printf("MemoryManager: CpuDiscard(%d) %llx <- %llx\n",e,(uint64_t)AccCache[e].AccPtr,(uint64_t)AccCache[e].CpuPtr); fflush(stdout);
   //  acceleratorCopyToDevice(AccCache[e].CpuPtr,AccCache[e].AccPtr,AccCache[e].bytes);
   AccCache[e].state=AccDirty;
 }
@@ -190,7 +191,7 @@ void AllocationCache::CpuDiscard(int e)// Mark accelerator dirty without copy. A
 /////////////////////////////////////////////////////////////////////////////////
 // View management
 /////////////////////////////////////////////////////////////////////////////////
-void AllocationCache::ViewClose(void* Ptr,ViewMode mode)
+void MemoryManager::ViewClose(void* Ptr,ViewMode mode)
 {
   if( (mode==AcceleratorRead)||(mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard) ){
     AcceleratorViewClose(Ptr);
@@ -200,7 +201,7 @@ void AllocationCache::ViewClose(void* Ptr,ViewMode mode)
     assert(0);
   }
 }
-void *AllocationCache::ViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint)
+void *MemoryManager::ViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint)
 {
   if( (mode==AcceleratorRead)||(mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard) ){
     return AcceleratorViewOpen(CpuPtr,bytes,mode,hint);
@@ -211,7 +212,7 @@ void *AllocationCache::ViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvi
     return nullptr;
   }
 }
-void *AllocationCache::AcceleratorViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint)
+void *MemoryManager::AcceleratorViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint)
 {
   ////////////////////////////////////////////////////////////////////////////
   // Find if present, otherwise get or force an empty
@@ -312,7 +313,7 @@ void *AllocationCache::AcceleratorViewOpen(void* CpuPtr,size_t bytes,ViewMode mo
 ////////////////////////////////////
 // look up & decrement lock count
 ////////////////////////////////////
-void AllocationCache::AcceleratorViewClose(void* AccPtr)
+void MemoryManager::AcceleratorViewClose(void* AccPtr)
 {
   int e=CpuViewLookup(AccPtr);
   //  printf("AccView close %d lock %d \n",e,AccCache[e].accLock);
@@ -326,7 +327,7 @@ void AllocationCache::AcceleratorViewClose(void* AccPtr)
   */
   AccCache[e].accLock--;
 }
-void AllocationCache::CpuViewClose(void* CpuPtr)
+void MemoryManager::CpuViewClose(void* CpuPtr)
 {
   int e=CpuViewLookup(CpuPtr);
   assert(e!=-1);
@@ -334,7 +335,7 @@ void AllocationCache::CpuViewClose(void* CpuPtr)
   assert(AccCache[e].accLock==0);
   AccCache[e].cpuLock--;
 }
-void *AllocationCache::CpuViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise transient)
+void *MemoryManager::CpuViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise transient)
 {
   ////////////////////////////////////////////////////////////////////////////
   // Find if present, otherwise get or force an empty
@@ -390,7 +391,7 @@ void *AllocationCache::CpuViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewA
 //////////////////////////////////////////////////////////////////////////////
 //loop round robin over entries checking acc pointer
 //////////////////////////////////////////////////////////////////////////////
-int   AllocationCache::CpuViewLookup(void *CpuPtr)
+int   MemoryManager::CpuViewLookup(void *CpuPtr)
 {
   assert(CpuPtr!=NULL);
   for(int e=0;e<NaccCache;e++){
@@ -404,4 +405,5 @@ int   AllocationCache::CpuViewLookup(void *CpuPtr)
 
 NAMESPACE_END(Grid);
 
+#endif
 #endif

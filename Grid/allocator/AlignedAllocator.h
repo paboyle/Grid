@@ -55,7 +55,7 @@ public:
 
     profilerAllocate(bytes);
 
-    _Tp *ptr = (_Tp*) AllocationCache::CpuAllocate(bytes);
+    _Tp *ptr = (_Tp*) MemoryManager::CpuAllocate(bytes);
     
     assert( ( (_Tp*)ptr != (_Tp *)NULL ) );
 
@@ -68,7 +68,7 @@ public:
 
     profilerFree(bytes);
 
-    AllocationCache::CpuFree((void *)__p,bytes);
+    MemoryManager::CpuFree((void *)__p,bytes);
   }
 
   // FIXME: hack for the copy constructor, eventually it must be avoided

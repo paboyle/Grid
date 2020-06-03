@@ -2,7 +2,7 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./lib/AllocationCache.h
+    Source file: ./lib/MemoryManager.h
 
     Copyright (C) 2015
 
@@ -27,6 +27,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 *************************************************************************************/
 /*  END LEGAL */
 #pragma once
+#include <list> 
+#include <unordered_map>  
 
 NAMESPACE_BEGIN(Grid);
 
@@ -65,7 +67,7 @@ enum ViewMode {
   CpuWriteDiscard = 0x10 // same for now
 };
 
-class AllocationCache {
+class MemoryManager {
 private:
 
   ////////////////////////////////////////////////////////////
@@ -87,36 +89,89 @@ private:
   // Free pool
   /////////////////////////////////////////////////
   static void *Insert(void *ptr,size_t bytes,int type) ;
-  static void *Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim) ;
   static void *Lookup(size_t bytes,int type) ;
+  static void *Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim) ;
   static void *Lookup(size_t bytes,AllocationCacheEntry *entries,int ncache) ;
 
-  /////////////////////////////////////////////////
-  // Internal device view
-  /////////////////////////////////////////////////
   static void *AcceleratorAllocate(size_t bytes);
   static void  AcceleratorFree    (void *ptr,size_t bytes);
-  static int   ViewVictim(void);
-  static void  CpuDiscard(int e);
-  static void  Discard(int e);
-  static void  Evict(int e);
-  static void  Flush(int e);
-  static void  Clone(int e);
-  static int   CpuViewLookup(void *CpuPtr);
-  //  static int   AccViewLookup(void *AccPtr);
-  static void  AcceleratorViewClose(void* AccPtr);
-  static void *AcceleratorViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint);
-  static void  CpuViewClose(void* Ptr);
-  static void *CpuViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint);
 
-public:
+ public:
   static void Init(void);
+  static void *CpuAllocate(size_t bytes);
+  static void  CpuFree    (void *ptr,size_t bytes);
 
+
+ private:
+
+  ////////////////////////////////////////////////////////
+  // Footprint tracking
+  ////////////////////////////////////////////////////////
+  static uint64_t     DeviceBytes;
+  static uint64_t     DeviceLRUBytes;
+  static uint64_t     DeviceMaxBytes;
+  static uint64_t     HostToDeviceBytes;
+  static uint64_t     DeviceToHostBytes;
+ 
+#ifndef GRID_UVM
+  //////////////////////////////////////////////////////////////////////
+  // Data tables for ViewCache
+  //////////////////////////////////////////////////////////////////////
+  typedef std::list<uint64_t> LRU_t;
+  typedef typename LRU_t::iterator LRUiterator;
+  typedef struct { 
+    int        LRU_valid;
+    LRUiterator LRU_entry;
+    uint64_t CpuPtr;
+    uint64_t AccPtr;
+    size_t   bytes;
+    uint32_t transient;
+    uint32_t state;
+    uint32_t accLock;
+    uint32_t cpuLock;
+  } AcceleratorViewEntry;
+  
+  typedef std::unordered_map<uint64_t,AcceleratorViewEntry> AccViewTable_t;
+  typedef typename AccViewTable_t::iterator AccViewTableIterator ;
+
+  static AccViewTable_t AccViewTable;
+  static LRU_t LRU;
+  static LRU_t LRU_transient;
+
+  /////////////////////////////////////////////////
+  // Device motion
+  /////////////////////////////////////////////////
+  static void  Create(uint64_t CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint);
+  static void  EvictVictims(uint64_t bytes); // Frees up <bytes>
+  static void  Evict(AcceleratorViewEntry &AccCache);
+  static void  Flush(AcceleratorViewEntry &AccCache);
+  static void  Clone(AcceleratorViewEntry &AccCache);
+  static void  AccDiscard(AcceleratorViewEntry &AccCache);
+  static void  CpuDiscard(AcceleratorViewEntry &AccCache);
+
+  //  static void  LRUupdate(AcceleratorViewEntry &AccCache);
+  static void  LRUinsert(AcceleratorViewEntry &AccCache);
+  static void  LRUremove(AcceleratorViewEntry &AccCache);
+  
+  // manage entries in the table
+  static int                  EntryPresent(uint64_t CpuPtr);
+  static void                 EntryCreate(uint64_t CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint);
+  static void                 EntryErase (uint64_t CpuPtr);
+  static AccViewTableIterator EntryLookup(uint64_t CpuPtr);
+  static void                 EntrySet   (uint64_t CpuPtr,AcceleratorViewEntry &entry);
+
+  static void     AcceleratorViewClose(uint64_t AccPtr);
+  static uint64_t AcceleratorViewOpen(uint64_t  CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint);
+  static void     CpuViewClose(uint64_t Ptr);
+  static uint64_t CpuViewOpen(uint64_t  CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint);
+#endif
+  static void NotifyDeletion(void * CpuPtr);
+
+ public:
+  static void Print(void);
   static void  ViewClose(void* AccPtr,ViewMode mode);
   static void *ViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint);
 
-  static void *CpuAllocate(size_t bytes);
-  static void  CpuFree    (void *ptr,size_t bytes);
 };
 
 NAMESPACE_END(Grid);

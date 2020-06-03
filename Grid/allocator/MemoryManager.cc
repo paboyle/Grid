@@ -11,14 +11,14 @@ NAMESPACE_BEGIN(Grid);
 //////////////////////////////////////////////////////////////////////
 // Data tables for recently freed pooiniter caches
 //////////////////////////////////////////////////////////////////////
-AllocationCache::AllocationCacheEntry AllocationCache::Entries[AllocationCache::NallocType][AllocationCache::NallocCacheMax];
-int AllocationCache::Victim[AllocationCache::NallocType];
-int AllocationCache::Ncache[AllocationCache::NallocType];
+MemoryManager::AllocationCacheEntry MemoryManager::Entries[MemoryManager::NallocType][MemoryManager::NallocCacheMax];
+int MemoryManager::Victim[MemoryManager::NallocType];
+int MemoryManager::Ncache[MemoryManager::NallocType];
 
 //////////////////////////////////////////////////////////////////////
 // Actual allocation and deallocation utils
 //////////////////////////////////////////////////////////////////////
-void *AllocationCache::AcceleratorAllocate(size_t bytes)
+void *MemoryManager::AcceleratorAllocate(size_t bytes)
 {
   void *ptr = (void *) Lookup(bytes,Acc);
 
@@ -29,13 +29,13 @@ void *AllocationCache::AcceleratorAllocate(size_t bytes)
 
   return ptr;
 }
-void  AllocationCache::AcceleratorFree    (void *ptr,size_t bytes)
+void  MemoryManager::AcceleratorFree    (void *ptr,size_t bytes)
 {
   void *__freeme = Insert(ptr,bytes,Acc);
 
   if ( __freeme ) acceleratorFreeDevice(__freeme);
 }
-void *AllocationCache::CpuAllocate(size_t bytes)
+void *MemoryManager::CpuAllocate(size_t bytes)
 {
   void *ptr = (void *) Lookup(bytes,Cpu);
 
@@ -46,23 +46,19 @@ void *AllocationCache::CpuAllocate(size_t bytes)
 
   return ptr;
 }
-void  AllocationCache::CpuFree    (void *ptr,size_t bytes)
+void  MemoryManager::CpuFree    (void *_ptr,size_t bytes)
 {
-  // Look up in ViewCache
-  int e=CpuViewLookup(ptr);
-  if(e>=0){ Discard(e); }
+  NotifyDeletion(_ptr);
 
   // If present remove entry and free accelerator too.
   // Can we ever hit a free event with a view still in scope?
-  void *__freeme = Insert(ptr,bytes,Cpu);
-  //  std::cout <<"CpuFree cached pointer "<<std::hex<<ptr<<std::endl;
-  //  std::cout <<"CpuFree deallocating pointer "<<std::hex<<__freeme<<std::endl;
+  void *__freeme = Insert(_ptr,bytes,Cpu);
   if ( __freeme ) acceleratorFreeShared(__freeme);
 }
 //////////////////////////////////////////
 // call only once
 //////////////////////////////////////////
-void AllocationCache::Init(void)
+void MemoryManager::Init(void)
 {
   Ncache[Cpu] = 8;
   Ncache[Acc] = 8;
@@ -93,7 +89,7 @@ void AllocationCache::Init(void)
   std::cout << "MemoryManager::Init() SMALL "<<Ncache[CpuSmall]<<" LARGE "<<Ncache[Cpu]<<std::endl;
 }
 
-void *AllocationCache::Insert(void *ptr,size_t bytes,int type) 
+void *MemoryManager::Insert(void *ptr,size_t bytes,int type) 
 {
 #ifdef ALLOCATION_CACHE
   bool small = (bytes < GRID_ALLOC_SMALL_LIMIT);
@@ -103,7 +99,8 @@ void *AllocationCache::Insert(void *ptr,size_t bytes,int type)
   return ptr;
 #endif
 }
-void *AllocationCache::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim) 
+
+void *MemoryManager::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim) 
 {
   assert(ncache>0);
 #ifdef GRID_OMP
@@ -139,7 +136,7 @@ void *AllocationCache::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entri
   return ret;
 }
 
-void *AllocationCache::Lookup(size_t bytes,int type)
+void *MemoryManager::Lookup(size_t bytes,int type)
 {
 #ifdef ALLOCATION_CACHE
   bool small = (bytes < GRID_ALLOC_SMALL_LIMIT);
@@ -149,7 +146,8 @@ void *AllocationCache::Lookup(size_t bytes,int type)
   return NULL;
 #endif
 }
-void *AllocationCache::Lookup(size_t bytes,AllocationCacheEntry *entries,int ncache) 
+
+void *MemoryManager::Lookup(size_t bytes,AllocationCacheEntry *entries,int ncache) 
 {
   assert(ncache>0);
 #ifdef GRID_OMP
@@ -163,6 +161,7 @@ void *AllocationCache::Lookup(size_t bytes,AllocationCacheEntry *entries,int nca
   }
   return NULL;
 }
+
 
 NAMESPACE_END(Grid);
 
