@@ -799,6 +799,25 @@ typedef veci SIMD_Itype; // Integer type
 
 // prefetch utilities
 inline void v_prefetch0(int size, const char *ptr){};
+
+/* PF 256 worse than PF 64
+inline void prefetch_HINT_T0(const char *ptr){
+  static int64_t last_ptr;
+  int64_t vptr = reinterpret_cast<std::intptr_t>(ptr) & 0x7fffffffffffff00ll;
+  if (last_ptr != vptr) {
+    last_ptr = vptr;
+    pred pg1 = Optimization::acle<double>::pg1();
+    svprfd(pg1, reinterpret_cast<int64_t*>(ptr), SV_PLDL1STRM);
+    svprfd(pg1, ptr, SV_PLDL1STRM);
+  }
+};
+*/
+/* beneficial for operators?
+inline void prefetch_HINT_T0(const char *ptr){
+  pred pg1 = Optimization::acle<double>::pg1();
+  svprfd(pg1, ptr, SV_PLDL1STRM);
+};
+*/
 inline void prefetch_HINT_T0(const char *ptr){};
 
 // Function name aliases

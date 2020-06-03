@@ -68,8 +68,27 @@ void Gather_plane_simple_table (Vector<std::pair<int,int> >& table,const Lattice
   int num=table.size();
   std::pair<int,int> *table_v = & table[0];
   auto rhs_v = rhs.View();
+
+  // main loop
   accelerator_forNB( i,num, vobj::Nsimd(), {
     typedef decltype(coalescedRead(buffer[0])) compressed_t;
+    // prefetching:
+    // +1% performance for Wilson on 32**4
+    // -2% performance for DW on 24**4 x 12
+     /*
+    const int dist = 2;
+    if (i+dist < num){
+      svbool_t pg1 = svptrue_b64();
+
+      // prefetch input
+      auto in = rhs_v(so+table_v[i+dist].second);
+      svprfd(pg1, (char*)&in, SV_PLDL1STRM);
+
+      // prefetch store buffer
+      uint64_t o = table_v[i+dist].first;
+      svprfd(pg1, (char*)&buffer[off+o], SV_PSTL1STRM);
+    }
+*/
     compressed_t   tmp_c;
     uint64_t o = table_v[i].first;
     compress.Compress(&tmp_c,0,rhs_v(so+table_v[i].second));
