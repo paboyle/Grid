@@ -153,24 +153,38 @@ void acceleratorInit(void)
   if ((localRankStr = getenv(ENV_RANK_OMPI   )) != NULL) { world_rank = atoi(localRankStr);}
   if ((localRankStr = getenv(ENV_RANK_MVAPICH)) != NULL) { world_rank = atoi(localRankStr);}
 
-  /*
-  for (int i = 0; i < nDevices; i++) {
+  auto devices = cl::sycl::device::get_devices();
+  for(int d = 0;d<devices.size();d++){
 
-#define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("AcceleratorSyclInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
-#define GPU_PROP(canMapHostMemory)             GPU_PROP_FMT(canMapHostMemory,"%d");
-    
-    cudaGetDeviceProperties(&gpu_props[i], i);
-    if ( world_rank == 0) {
-      cudaDeviceProp prop; 
-      prop = gpu_props[i];
-      printf("AcceleratorSyclInit: ========================\n");
-      printf("AcceleratorSyclInit: Device Number    : %d\n", i);
-      printf("AcceleratorSyclInit: ========================\n");
-      printf("AcceleratorSyclInit: Device identifier: %s\n", prop.name);
-    }
+#define GPU_PROP_STR(prop) \
+    printf("AcceleratorSyclInit:   " #prop ": %s \n",prop,devices[d].get_info<cl::sycl::info::device::prop>().c_str());
+
+#define GPU_PROP_FMT(prop,FMT) \
+    printf("AcceleratorSyclInit:   " #prop ": " FMT" \n",prop,devices[d].get_info<cl::sycl::info::device::prop>());
+
+#define GPU_PROP(prop)             GPU_PROP_FMT(prop,"%d");
+
+    GPU_PROP_STR(vendor);
+    GPU_PROP_STR(version);
+    GPU_PROP_STR(device_type);
+    GPU_PROP_STR(max_compute_units);
+    GPU_PROP(native_vector_width_char);
+    GPU_PROP(native_vector_width_short);
+    GPU_PROP(native_vector_width_int);
+    GPU_PROP(native_vector_width_long);
+    GPU_PROP(native_vector_width_float);
+    GPU_PROP(native_vector_width_double);
+    GPU_PROP(native_vector_width_half);
+    GPU_PROP(address_bits);
+    GPU_PROP(half_fp_config);
+    GPU_PROP(single_fp_config);
+    GPU_PROP(double_fp_config);
+    GPU_PROP(global_mem_size);
+
   }
-  */
   if ( world_rank == 0 ) {
+    auto name = theGridAccelerator->get_device().get_info<sycl::info::device::name>();
+    printf("AcceleratorSyclInit: Selected device is %s\n",name.c_str());
     printf("AcceleratorSyclInit: ================================================\n");
   }
 }
