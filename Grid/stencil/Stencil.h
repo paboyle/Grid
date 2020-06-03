@@ -200,7 +200,7 @@ class CartesianStencilView : public CartesianStencilAccelerator<vobj,cobj,Parame
       Deleter->mode    = mode;
       this->_entries_p =(StencilEntry *)
 
-      AllocationCache::ViewOpen(this->_entries_p,
+      MemoryManager::ViewOpen(this->_entries_p,
 				this->_npoints*this->_osites*sizeof(StencilEntry),
 				mode,
 				AdviseDefault);    
