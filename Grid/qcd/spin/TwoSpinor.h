@@ -1,6 +1,6 @@
 /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./lib/qcd/spin/TwoSpinor.h
 
@@ -33,7 +33,7 @@ NAMESPACE_BEGIN(Grid);
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-// Normalisation alert; the g5   project is 1/2(1+-G5) 
+// Normalisation alert; the g5   project is 1/2(1+-G5)
 //                      the xyzt projects are (1+-Gxyzt)
 //
 // * xyzt project
@@ -59,7 +59,7 @@ NAMESPACE_BEGIN(Grid);
 //
 // Both four spinor and two spinor result variants are provided.
 //
-// The four spinor project will be recursively provided to Lattice wide routines, and likely used in 
+// The four spinor project will be recursively provided to Lattice wide routines, and likely used in
 // the domain wall and mobius implementations.
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -74,13 +74,17 @@ NAMESPACE_BEGIN(Grid);
 // To fail is not to err (Cryptic clue: suggest to Google SFINAE ;) )
 template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> accelerator_inline void spProjXp (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
 {
-  hspin(0)=fspin(0)+timesI(fspin(3));
-  hspin(1)=fspin(1)+timesI(fspin(2));
+  //hspin(0)=fspin(0)+timesI(fspin(3));
+  //hspin(1)=fspin(1)+timesI(fspin(2));
+  hspin(0)=addTimesI(fspin(0), fspin(3));
+  hspin(1)=addTimesI(fspin(1), fspin(2));
 }
 template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> accelerator_inline void spProjXm (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
 {
-  hspin(0)=fspin(0)-timesI(fspin(3));
-  hspin(1)=fspin(1)-timesI(fspin(2));
+  //hspin(0)=fspin(0)-timesI(fspin(3));
+  //hspin(1)=fspin(1)-timesI(fspin(2));
+  hspin(0)=subTimesI(fspin(0), fspin(3));
+  hspin(1)=subTimesI(fspin(1), fspin(2));
 }
 
 //  0 0  0  -1  [0] -+ [3]
@@ -105,14 +109,18 @@ template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> accelerator_inline void s
  */
 template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> accelerator_inline void spProjZp (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
 {
-  hspin(0)=fspin(0)+timesI(fspin(2));
-  hspin(1)=fspin(1)-timesI(fspin(3));
+  //hspin(0)=fspin(0)+timesI(fspin(2));
+  //hspin(1)=fspin(1)-timesI(fspin(3));
+  hspin(0)=addTimesI(fspin(0), fspin(2));
+  hspin(1)=subTimesI(fspin(1), fspin(3));
 }
 template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> accelerator_inline void spProjZm (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
-  hspin(0)=fspin(0)-timesI(fspin(2));
-  hspin(1)=fspin(1)+timesI(fspin(3));
+  //hspin(0)=fspin(0)-timesI(fspin(2));
+  //hspin(1)=fspin(1)+timesI(fspin(3));
+  hspin(0)=subTimesI(fspin(0), fspin(2));
+  hspin(1)=addTimesI(fspin(1), fspin(3));
 }
 /*Gt
  *  0 0  1  0 [0]+-[2]
@@ -133,8 +141,8 @@ template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> accelerator_inline void s
   hspin(1)=fspin(1)-fspin(3);
 }
 /*G5
- *  1 0  0  0 
- *  0 1  0  0 
+ *  1 0  0  0
+ *  0 1  0  0
  *  0 0 -1  0
  *  0 0  0 -1
  */
@@ -152,7 +160,7 @@ template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> accelerator_inline void s
   hspin(0)=fspin(2);
   hspin(1)=fspin(3);
 }
-  
+
 //  template<class vtype> accelerator_inline void fspProj5p (iVector<vtype,Ns> &rfspin,const iVector<vtype,Ns> &fspin)
 template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> accelerator_inline void spProj5p (iVector<vtype,Ns> &rfspin,const iVector<vtype,Ns> &fspin)
 {
@@ -202,16 +210,20 @@ template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> accelerator_inline void a
   //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
   fspin(0)+=hspin(0);
   fspin(1)+=hspin(1);
-  fspin(2)-=timesI(hspin(1));
-  fspin(3)-=timesI(hspin(0));
+  //fspin(2)-=timesI(hspin(1));
+  //fspin(3)-=timesI(hspin(0));
+  fspin(2)=subTimesI(fspin(2), hspin(1));
+  fspin(3)=subTimesI(fspin(3), hspin(0));
 }
 template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> accelerator_inline void accumReconXm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
   fspin(0)+=hspin(0);
   fspin(1)+=hspin(1);
-  fspin(2)+=timesI(hspin(1));
-  fspin(3)+=timesI(hspin(0));
+  //fspin(2)+=timesI(hspin(1));
+  //fspin(3)+=timesI(hspin(0));
+  fspin(2)=addTimesI(fspin(2), hspin(1));
+  fspin(3)=addTimesI(fspin(3), hspin(0));
 }
 
 //  0 0  0  -1  [0] -+ [3]
@@ -279,16 +291,20 @@ template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> accelerator_inline void a
   //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
   fspin(0)+=hspin(0);
   fspin(1)+=hspin(1);
-  fspin(2)-=timesI(hspin(0));
-  fspin(3)+=timesI(hspin(1));
+  //fspin(2)-=timesI(hspin(0));
+  //fspin(3)+=timesI(hspin(1));
+  fspin(2)=subTimesI(fspin(2), hspin(0));
+  fspin(3)=addTimesI(fspin(3), hspin(1));
 }
 template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> accelerator_inline void accumReconZm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
   fspin(0)+=hspin(0);
   fspin(1)+=hspin(1);
-  fspin(2)+=timesI(hspin(0));
-  fspin(3)-=timesI(hspin(1));
+  //fspin(2)+=timesI(hspin(0));
+  //fspin(3)-=timesI(hspin(1));
+  fspin(2)=addTimesI(fspin(2), hspin(0));
+  fspin(3)=subTimesI(fspin(3), hspin(1));
 }
 /*Gt
  *  0 0  1  0 [0]+-[2]
@@ -329,8 +345,8 @@ template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> accelerator_inline void a
   fspin(3)-=hspin(1);
 }
 /*G5
- *  1 0  0  0 
- *  0 1  0  0 
+ *  1 0  0  0
+ *  0 1  0  0
  *  0 0 -1  0
  *  0 0  0 -1
  */
@@ -383,7 +399,7 @@ template<class rtype,class vtype> accelerator_inline void spProjXp (iScalar<rtyp
 }
 template<class rtype,class vtype,int N> accelerator_inline void spProjXp (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spProjXp(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -402,7 +418,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 }
 template<class rtype,class vtype,int N> accelerator_inline void spReconXp (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spReconXp(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -420,7 +436,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 }
 template<class rtype,class vtype,int N> accelerator_inline void accumReconXp (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       accumReconXp(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -446,7 +462,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void spProjXm (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spProjXm(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -468,7 +484,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void spReconXm (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spReconXm(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -489,7 +505,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void accumReconXm (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       accumReconXm(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -515,7 +531,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void spProjYp (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spProjYp(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -537,7 +553,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void spReconYp (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spReconYp(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -558,7 +574,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void accumReconYp (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       accumReconYp(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -583,7 +599,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void spProjYm (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spProjYm(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -605,7 +621,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void spReconYm (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spReconYm(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -626,7 +642,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void accumReconYm (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       accumReconYm(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -651,7 +667,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void spProjZp (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spProjZp(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -673,7 +689,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void spReconZp (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spReconZp(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -694,7 +710,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void accumReconZp (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       accumReconZp(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -719,7 +735,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void spProjZm (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spProjZm(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -741,7 +757,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void spReconZm (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spReconZm(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -762,7 +778,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void accumReconZm (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       accumReconZm(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -787,7 +803,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void spProjTp (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spProjTp(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -809,7 +825,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void spReconTp (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spReconTp(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -830,7 +846,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void accumReconTp (iMatrix<rtype,N> &hspin, const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       accumReconTp(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -855,7 +871,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void spProjTm (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spProjTm(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -877,7 +893,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void spReconTm (iMatrix<rtype,N> &hspin, const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spReconTm(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -898,7 +914,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void accumReconTm (iMatrix<rtype,N> &hspin, const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       accumReconTm(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -923,7 +939,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void spProj5p (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spProj5p(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -944,7 +960,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void spRecon5p (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spRecon5p(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -965,7 +981,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void accumRecon5p (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       accumRecon5p(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -990,7 +1006,7 @@ template<class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accelerator_inlin
 template<class vtype,int N> accelerator_inline void spProj5p (iMatrix<vtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spProj5p(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -1013,7 +1029,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<rtype,N> > = 0> accel
 }
 template<class rtype,class vtype,int N> accelerator_inline void spProj5m (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spProj5m(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -1034,7 +1050,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void spRecon5m (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spRecon5m(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -1055,7 +1071,7 @@ template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accel
 template<class rtype,class vtype,int N> accelerator_inline void accumRecon5m (iMatrix<rtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       accumRecon5m(hspin._internal[i][j],fspin._internal[i][j]);
     }}
@@ -1081,7 +1097,7 @@ template<class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> accelerator_inlin
 template<class vtype,int N> accelerator_inline void spProj5m (iMatrix<vtype,N> &hspin,const iMatrix<vtype,N> &fspin)
 {
   //typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type *temp;
-  for(int i=0;i<N;i++){ 
+  for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       spProj5m(hspin._internal[i][j],fspin._internal[i][j]);
     }}

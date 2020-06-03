@@ -443,8 +443,8 @@ struct TimesMinusI{
 };
 
 // alternative implementation using fcadd
-// this is not optimal because we have  op1 = op2 + TimesMinusI(op3)  etc
-// ideally we have                      AddTimesMinusI(op1,op2,op3)
+// this is not optimal because we have  op1 = op2 + TimesMinusI(op3) = op2 - TimesI(op3)  etc
+// but ideally we have                  op1 = SubTimesI(op2,op3)
 //
 // makes performance worse in Benchmark_wilson using MPI
 // increases halogtime and gathertime
@@ -466,6 +466,34 @@ struct TimesMinusI{
   }
 };
 */
+
+// SVE only, fcadd returns  a +- i*b
+// a + i * b
+struct AddTimesI{
+  // Complex float
+  inline vecf operator()(vecf a, vecf b){
+    pred pg1 = acle<float>::pg1();
+    return svcadd_x(pg1, a, b, 90);
+  }
+  // Complex double
+  inline vecd operator()(vecd a, vecd b){
+    pred pg1 = acle<double>::pg1();
+    return svcadd_x(pg1, a, b, 90);
+  }
+};
+// a - i * b
+struct SubTimesI{
+  // Complex float
+  inline vecf operator()(vecf a, vecf b){
+    pred pg1 = acle<float>::pg1();
+    return svcadd_x(pg1, a, b, 270);
+  }
+  // Complex double
+  inline vecd operator()(vecd a, vecd b){
+    pred pg1 = acle<double>::pg1();
+    return svcadd_x(pg1, a, b, 270);
+  }
+};
 
 struct TimesI{
   // Complex float
@@ -493,7 +521,7 @@ struct TimesI{
 
 // alternative implementation using fcadd
 // this is not optimal because we have  op1 = op2 + TimesI(op3)  etc
-// ideally we have                      AddTimesI(op1,op2,op3)
+// ideally we have                      op1 = AddTimesI(op2,op3)
 //
 // makes performance worse in Benchmark_wilson using MPI
 // increases halogtime and gathertime
@@ -800,7 +828,7 @@ typedef veci SIMD_Itype; // Integer type
 // prefetch utilities
 inline void v_prefetch0(int size, const char *ptr){};
 
-/* PF 256 worse than PF 64
+/* PF 256
 inline void prefetch_HINT_T0(const char *ptr){
   static int64_t last_ptr;
   int64_t vptr = reinterpret_cast<std::intptr_t>(ptr) & 0x7fffffffffffff00ll;
@@ -812,7 +840,7 @@ inline void prefetch_HINT_T0(const char *ptr){
   }
 };
 */
-/* beneficial for operators?
+/* PF 64
 inline void prefetch_HINT_T0(const char *ptr){
   pred pg1 = Optimization::acle<double>::pg1();
   svprfd(pg1, ptr, SV_PLDL1STRM);
@@ -839,5 +867,8 @@ typedef Optimization::MaddRealPart   MaddRealPartSIMD;
 typedef Optimization::Conj           ConjSIMD;
 typedef Optimization::TimesMinusI    TimesMinusISIMD;
 typedef Optimization::TimesI         TimesISIMD;
+typedef Optimization::AddTimesI      AddTimesISIMD;
+typedef Optimization::SubTimesI      SubTimesISIMD;
+
 
 NAMESPACE_END(Grid);
