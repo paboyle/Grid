@@ -21,6 +21,8 @@ uint64_t  MemoryManager::DeviceLRUBytes;
 uint64_t  MemoryManager::DeviceMaxBytes = 1024*1024*128;
 uint64_t  MemoryManager::HostToDeviceBytes;
 uint64_t  MemoryManager::DeviceToHostBytes;
+uint64_t  MemoryManager::HostToDeviceXfer;
+uint64_t  MemoryManager::DeviceToHostXfer;
 
 ////////////////////////////////////
 // Priority ordering for unlocked entries
@@ -159,6 +161,7 @@ void MemoryManager::Flush(AcceleratorViewEntry &AccCache)
   acceleratorCopyFromDevice((void *)AccCache.AccPtr,(void *)AccCache.CpuPtr,AccCache.bytes);
   dprintf("MemoryManager: Flush  %llx -> %llx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
   DeviceToHostBytes+=AccCache.bytes;
+  DeviceToHostXfer++;
   AccCache.state=Consistent;
 }
 void MemoryManager::Clone(AcceleratorViewEntry &AccCache)
@@ -174,6 +177,7 @@ void MemoryManager::Clone(AcceleratorViewEntry &AccCache)
   dprintf("MemoryManager: Clone %llx <- %llx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
   acceleratorCopyToDevice((void *)AccCache.CpuPtr,(void *)AccCache.AccPtr,AccCache.bytes);
   HostToDeviceBytes+=AccCache.bytes;
+  HostToDeviceXfer++;
   AccCache.state=Consistent;
 }
 
@@ -431,6 +435,8 @@ void  MemoryManager::Print(void)
   std::cout << GridLogDebug << DeviceBytes   << " bytes allocated on device " << std::endl;
   std::cout << GridLogDebug << DeviceLRUBytes<< " bytes evictable on device " << std::endl;
   std::cout << GridLogDebug << DeviceMaxBytes<< " bytes max on device       " << std::endl;
+  std::cout << GridLogDebug << HostToDeviceXfer << " transfers        to   device " << std::endl;
+  std::cout << GridLogDebug << DeviceToHostXfer << " transfers        from device " << std::endl;
   std::cout << GridLogDebug << HostToDeviceBytes<< " bytes transfered to   device " << std::endl;
   std::cout << GridLogDebug << DeviceToHostBytes<< " bytes transfered from device " << std::endl;
   std::cout << GridLogDebug << AccViewTable.size()<< " vectors " << std::endl;

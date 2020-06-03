@@ -112,6 +112,8 @@ private:
   static uint64_t     DeviceMaxBytes;
   static uint64_t     HostToDeviceBytes;
   static uint64_t     DeviceToHostBytes;
+  static uint64_t     HostToDeviceXfer;
+  static uint64_t     DeviceToHostXfer;
  
 #ifndef GRID_UVM
   //////////////////////////////////////////////////////////////////////
