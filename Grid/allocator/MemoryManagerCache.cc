@@ -430,7 +430,7 @@ void  MemoryManager::NotifyDeletion(void *_ptr)
 void  MemoryManager::Print(void)
 {
   std::cout << GridLogDebug << "--------------------------------------------" << std::endl;
-  std::cout << GridLogDebug << " Memory Manager                             " << std::endl;
+  std::cout << GridLogDebug << "Memory Manager                             " << std::endl;
   std::cout << GridLogDebug << "--------------------------------------------" << std::endl;
   std::cout << GridLogDebug << DeviceBytes   << " bytes allocated on device " << std::endl;
   std::cout << GridLogDebug << DeviceLRUBytes<< " bytes evictable on device " << std::endl;
@@ -441,6 +441,8 @@ void  MemoryManager::Print(void)
   std::cout << GridLogDebug << DeviceToHostBytes<< " bytes transfered from device " << std::endl;
   std::cout << GridLogDebug << AccViewTable.size()<< " vectors " << std::endl;
   std::cout << GridLogDebug << "--------------------------------------------" << std::endl;
+  std::cout << GridLogDebug << "CpuAddr\t\tAccAddr\t\tState\t\tcpuLock\taccLock\tLRU_valid "<<std::endl;
+  std::cout << GridLogDebug << "--------------------------------------------" << std::endl;
   for(auto it=AccViewTable.begin();it!=AccViewTable.end();it++){
     auto &AccCache = it->second;
     
@@ -450,11 +452,11 @@ void  MemoryManager::Print(void)
     if ( AccCache.state==AccDirty ) str = std::string("AccDirty");
     if ( AccCache.state==Consistent)str = std::string("Consistent");
 
-    std::cout << GridLogDebug << " Cpu 0x"<<std::hex<<AccCache.CpuPtr<<std::dec
-	      << " Acc 0x"<<std::hex<<AccCache.AccPtr<<std::dec<<" " <<str
-	      << " cpuLock   " << AccCache.cpuLock
-	      << " accLock   " << AccCache.accLock
-	      << " LRU_valid " << AccCache.LRU_valid<<std::endl;
+    std::cout << GridLogDebug << "0x"<<std::hex<<AccCache.CpuPtr<<std::dec
+	      << "\t0x"<<std::hex<<AccCache.AccPtr<<std::dec<<"\t" <<str
+	      << "\t" << AccCache.cpuLock
+	      << "\t" << AccCache.accLock
+	      << "\t" << AccCache.LRU_valid<<std::endl;
   }
   std::cout << GridLogDebug << "--------------------------------------------" << std::endl;
 
