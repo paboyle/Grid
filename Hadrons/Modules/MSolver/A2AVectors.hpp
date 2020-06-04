@@ -736,6 +736,7 @@ void TStagNoEvalA2AVectors<FImpl, Pack>::execute(void)
         std::complex<double> eval(mass,sqrt(epack.eval[il]-mass*mass));
         
         startTimer("V low mode");
+        LOG(Message) << "V vector i = " << il << " (low mode)" << std::endl;
         if (Ls == 1)
         {
             a2a.makeLowModeV(v[2*il], epack.evec[il], eval);
@@ -752,7 +753,9 @@ void TStagNoEvalA2AVectors<FImpl, Pack>::execute(void)
             // construct -lambda evec
             //a2a.makeLowModeV5D(v[2*il+1], f5, epack.evec[il], eval, 1);
         }
+        //LOG(Message) << v[2*il] << std::endl;
         stopTimer("V low mode");
+        
         startTimer("W low mode");
         LOG(Message) << "W vector i = " << il << " (low mode)" << std::endl;
         if (Ls == 1)
@@ -769,6 +772,7 @@ void TStagNoEvalA2AVectors<FImpl, Pack>::execute(void)
             // construct -lambda evec
             //a2a.makeLowModeW5D(w[2*il+1], f5, epack.evec[il], eval, 1);
         }
+        //LOG(Message) << w[2*il] << std::endl;
         stopTimer("W low mode");
     }
     

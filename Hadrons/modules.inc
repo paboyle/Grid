@@ -1,5 +1,6 @@
 modules_cc =\
   Modules/MContraction/StagA2AMesonField.cc \
+  Modules/MContraction/StagA2AMesonFieldCC.cc \
   Modules/MSource/SeqConserved.cc \
   Modules/MSource/Convolution.cc \
   Modules/MSource/SeqAslash.cc \

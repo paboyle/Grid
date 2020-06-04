@@ -658,6 +658,7 @@ void A2AVectorsSchurStaggeredNoEval<FImpl>::makeLowModeV(FermionField &vout,
     /////////////////////////////////////////////////////
     /// v_o = evec_o
     /////////////////////////////////////////////////////
+    sol_o_ = src_o_;
     if(sign){sol_o_ = -sol_o_;}
     setCheckerboard(vout, sol_e_);
     assert(sol_e_.Checkerboard() == Even);

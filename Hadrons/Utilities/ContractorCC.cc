@@ -327,6 +327,7 @@ int main(int argc, char* argv[])
             std::vector<std::vector<unsigned int>> timeSeq;
             std::set<unsigned int>                 translations;
             std::vector<A2AMatrixTr<ComplexD>>     lastTerm(par.global.nt);
+            //std::vector<A2AMatrix<ComplexD>>     lastTerm(par.global.nt);
             A2AMatrix<ComplexD>                    prod, buf, tmp;
             TimerArray                             tAr;
             double                                 fusec, busec, flops, bytes;

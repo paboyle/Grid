@@ -207,41 +207,40 @@ public:
     
     // accTrMul(acc, a, b, eval): acc += tr(a*b) / eval / eval
     template <typename C, typename MatLeft, typename MatRight, typename Eval>
-    static inline void accTrMul(C &acc, const MatLeft &a, const MatRight &b, const Eval &eval)
+    static inline void accTrMul(C &acc,
+                                const MatLeft &a,
+                                const MatRight &b,
+                                const Eval &eval)
     {
+        int vsize = a.rows();
+        Eigen::VectorXcd evsq(vsize);
+        evsq = eval.cwiseProduct(eval);
         
-        Eigen::VectorXcd tmpv(a.rows());
-        Eigen::VectorXcd avec(a.rows());
-        Eigen::VectorXcd bvec(b.cols());
-        thread_for(r,a.rows(),
+        thread_for(r,vsize,
                    {
+                       Eigen::VectorXcd tmpv(vsize);
+                       Eigen::VectorXcd avec(vsize);
+                       Eigen::VectorXcd bvec(vsize);
                        C tmp;
+                       
                        avec = a.row(r);
                        bvec = b.col(r);
-                       tmpv = avec.cwiseProduct(bvec.cwiseProduct(eval.cwiseProduct(eval)));
+                       tmpv = avec.cwiseProduct(bvec.cwiseProduct(evsq));
                        tmp = tmpv.sum();
-                       thread_critical
-                       {
-                           acc += tmp;
-                       }
-                       tmpv = b.row(r).conjugate();
-                       bvec = tmpv.cwiseProduct(eval.cwiseProduct(eval));
-                       tmpv = avec.cwiseProduct(bvec);
-                       tmp = tmpv.sum();
-                       thread_critical
-                       {
-                           acc += tmp;
-                       }
-                       avec = a.col(r).conjugate();
-                       tmpv = avec.cwiseProduct(bvec);
-                       tmp = tmpv.sum();
-                       thread_critical
-                       {
-                           acc += tmp;
-                       }
-                       bvec = b.col(r);
-                       tmpv = avec.cwiseProduct(bvec.cwiseProduct(eval.cwiseProduct(eval)));
-                       tmp = tmpv.sum();
+                       
+//                       tmpv = b.row(r).conjugate();
+//                       bvec = tmpv.cwiseProduct(evsq);
+//                       tmpv = avec.cwiseProduct(bvec);
+//                       tmp += tmpv.sum();
+//
+//                       avec = a.col(r).conjugate();
+//                       tmpv = avec.cwiseProduct(bvec);
+//                       tmp += tmpv.sum();
+//
+//                       bvec = b.col(r);
+//                       tmpv = avec.cwiseProduct(bvec.cwiseProduct(evsq));
+//                       tmp += tmpv.sum();
+                       
                        thread_critical
                        {
                            acc += tmp;
@@ -612,7 +611,8 @@ void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead)
         }
         dataspace.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data(),
                                   stride.data(), block.data());
-        if (tRead) *tRead -= usecond();    
+        if (tRead) *tRead -= usecond();
+        std::cout<<"Before dataset.read " << ", reading data with size "<< sizeof(T) << std::endl;
         dataset.read(buf.data(), datatype, memspace, dataspace);
         if (tRead) *tRead += usecond();
         v[t] = buf.template cast<VecT>();

@@ -352,8 +352,11 @@ void TStagA2AMesonFieldCC<FImpl>::execute(void)
     for(int j=0;j<N_j;j++){
         temp = Umu*Cshift(right[j], mu, 1);
         right[j]=temp;
+        //LOG(Message) << "V " << j << std::endl;
+        //LOG(Message) << right[j] << std::endl;
+        //LOG(Message) << "W " << j << std::endl;
+        //LOG(Message) << left[j] << std::endl;
     }
-    
     Kernel      kernel(gamma_, ph, envGetGrid(FermionField));
 
     envGetTmp(Computation, computation);
