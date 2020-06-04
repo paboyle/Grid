@@ -78,7 +78,7 @@ inline typename vobj::scalar_object sum(const vobj *arg, Integer osites)
 template<class vobj>
 inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
 {
-#if defined(GRID_CUDA)
+#if defined(GRID_CUDA)||defined(GRID_HIP)
   auto arg_v = arg.View(AcceleratorRead);
   Integer osites = arg.Grid()->oSites();
   auto ssum= sum_gpu(&arg_v[0],osites);
@@ -112,7 +112,6 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
   
-#if defined(GRID_CUDA) 
   // Might make all code paths go this way.
   auto left_v = left.View(AcceleratorRead);
   auto right_v=right.View(AcceleratorRead);
@@ -121,7 +120,6 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
   typedef decltype(innerProduct(left_v[0],right_v[0])) inner_t;
   Vector<inner_t> inner_tmp(sites);
   auto inner_tmp_v = &inner_tmp[0];
-  
 
   accelerator_for( ss, sites, nsimd,{
       auto x_l = left_v(ss);
@@ -131,22 +129,9 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
 
   // This is in single precision and fails some tests
   // Need a sumD that sums in double
+#if defined(GRID_CUDA)||defined(GRID_HIP)
   nrm = TensorRemove(sumD_gpu(inner_tmp_v,sites));  
 #else
-  // Might make all code paths go this way.
-  auto left_v = left.View(CpuRead);
-  auto right_v=right.View(CpuRead);
-
-  // CPU 
-  typedef decltype(innerProductD(left_v[0],right_v[0])) inner_t;
-  Vector<inner_t> inner_tmp(sites);
-  auto inner_tmp_v = &inner_tmp[0];
-  
-  thread_for( ss, sites,{
-      auto x_l = left_v[ss];
-      auto y_l = right_v[ss];
-      inner_tmp_v[ss]=innerProductD(x_l,y_l);
-  })
   nrm = TensorRemove(sum_cpu(inner_tmp_v,sites));
 #endif
   grid->GlobalSum(nrm);
@@ -182,7 +167,6 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
   
-#if defined(GRID_CUDA)||defined(GRID_HIP)
   // GPU
   auto x_v=x.View(AcceleratorRead);
   auto y_v=y.View(AcceleratorRead);
@@ -197,23 +181,9 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
       coalescedWrite(inner_tmp_v[ss],innerProduct(tmp,tmp));
       coalescedWrite(z_v[ss],tmp);
   });
-
+#if defined(GRID_CUDA)||defined(GRID_HIP)
   nrm = real(TensorRemove(sumD_gpu(inner_tmp_v,sites)));
 #else
-  auto x_v=x.View(AcceleratorRead);
-  auto y_v=y.View(AcceleratorRead);
-  auto z_v=z.View(AcceleratorWrite);
-
-  // CPU 
-  typedef decltype(innerProductD(x_v[0],y_v[0])) inner_t;
-  Vector<inner_t> inner_tmp(sites);
-  auto inner_tmp_v = &inner_tmp[0];
-  
-  accelerator_for( ss, sites, nsimd,{
-      auto tmp = a*x_v(ss)+b*y_v(ss);
-      inner_tmp_v[ss]=innerProductD(tmp,tmp);
-      z_v[ss]=tmp;
-  });
   // Already promoted to double
   nrm = real(TensorRemove(sum(inner_tmp_v,sites)));
 #endif
