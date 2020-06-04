@@ -22,8 +22,8 @@ ARCDIR=`tar -tf ${ARC} | head -n1 | sed -e 's@/.*@@'`
 ###############################
 
 mv ${ARCDIR} Eigen
-ln -s ${INITDIR}/Eigen/Eigen ${INITDIR}/Grid/Eigen
-ln -s ${INITDIR}/Eigen/unsupported/Eigen ${INITDIR}/Grid/Eigen/unsupported
+cd Grid; ln -s ../Eigen/Eigen Eigen
+cd Eigen; ln -s ../../Eigen/unsupported/Eigen unsupported
 
 # Eigen source headers
 cd ${INITDIR}/Grid
