@@ -31,6 +31,7 @@ void acceleratorInit(void)
   if ((localRankStr = getenv(ENV_RANK_OMPI   )) != NULL) { world_rank = atoi(localRankStr);}
   if ((localRankStr = getenv(ENV_RANK_MVAPICH)) != NULL) { world_rank = atoi(localRankStr);}
 
+  size_t totalDeviceMem=0;
   for (int i = 0; i < nDevices; i++) {
 
 #define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("AcceleratorCudaInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
@@ -45,14 +46,18 @@ void acceleratorInit(void)
       printf("AcceleratorCudaInit: ========================\n");
       printf("AcceleratorCudaInit: Device identifier: %s\n", prop.name);
 
+      GPU_PROP_FMT(totalGlobalMem,"%lld");
       GPU_PROP(managedMemory);
       GPU_PROP(isMultiGpuBoard);
       GPU_PROP(warpSize);
+      totalDeviceMem = prop.totalGlobalMem;
       //      GPU_PROP(unifiedAddressing);
       //      GPU_PROP(l2CacheSize);
       //      GPU_PROP(singleToDoublePrecisionPerfRatio);
     }
   }
+  MemoryManager::DeviceMaxBytes = (8*totalDeviceMem)/10; // Assume 80% ours
+
 #ifdef GRID_IBM_SUMMIT
   // IBM Jsrun makes cuda Device numbering screwy and not match rank
   if ( world_rank == 0 )  printf("AcceleratorCudaInit: IBM Summit or similar - NOT setting device to node rank\n");

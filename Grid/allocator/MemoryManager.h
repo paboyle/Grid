@@ -101,9 +101,6 @@ private:
   static void *CpuAllocate(size_t bytes);
   static void  CpuFree    (void *ptr,size_t bytes);
 
-
- private:
-
   ////////////////////////////////////////////////////////
   // Footprint tracking
   ////////////////////////////////////////////////////////
@@ -115,6 +112,7 @@ private:
   static uint64_t     HostToDeviceXfer;
   static uint64_t     DeviceToHostXfer;
  
+ private:
 #ifndef GRID_UVM
   //////////////////////////////////////////////////////////////////////
   // Data tables for ViewCache

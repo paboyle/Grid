@@ -296,6 +296,14 @@ void Grid_init(int *argc,char ***argv)
     GlobalSharedMemory::MAX_MPI_SHM_BYTES = MB64*1024LL*1024LL;
   }
 
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--device-mem") ){
+    int GB;
+    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--device-mem");
+    GridCmdOptionInt(arg,GB);
+    uint64_t GB64 = GB;
+    MemoryManager::DeviceMaxBytes = GB64*1024LL*1024LL*1024LL;
+  }
+
   if( GridCmdOptionExists(*argv,*argv+*argc,"--hypercube") ){
     int enable;
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--hypercube");
@@ -354,6 +362,10 @@ void Grid_init(int *argc,char ***argv)
   if ( GlobalSharedMemory::Hugepages) {
     std::cout << GridLogMessage << "Mapped stencil comms buffers as MAP_HUGETLB "<<std::endl;
   }
+
+#ifndef GRID_UVM
+  std::cout << GridLogMessage << "MemoryManager Cache "<< MemoryManager::DeviceMaxBytes <<" bytes "<<std::endl;
+#endif
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-mem") ){
     MemoryProfiler::debug = true;

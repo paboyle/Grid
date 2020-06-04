@@ -439,7 +439,7 @@ void  MemoryManager::Print(void)
   std::cout << GridLogDebug << DeviceToHostXfer << " transfers        from device " << std::endl;
   std::cout << GridLogDebug << HostToDeviceBytes<< " bytes transfered to   device " << std::endl;
   std::cout << GridLogDebug << DeviceToHostBytes<< " bytes transfered from device " << std::endl;
-  std::cout << GridLogDebug << AccViewTable.size()<< " vectors " << std::endl;
+  std::cout << GridLogDebug << AccViewTable.size()<< " vectors " << LRU.size()<<" evictable"<< std::endl;
   std::cout << GridLogDebug << "--------------------------------------------" << std::endl;
   std::cout << GridLogDebug << "CpuAddr\t\tAccAddr\t\tState\t\tcpuLock\taccLock\tLRU_valid "<<std::endl;
   std::cout << GridLogDebug << "--------------------------------------------" << std::endl;
