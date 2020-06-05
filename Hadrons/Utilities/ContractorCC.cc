@@ -449,7 +449,7 @@ int main(int argc, char* argv[])
                                                  lastTerm[tLast],
                                                  eval);
                         tAr.stopTimer("tr(A*B)");
-                        flops += A2AContraction::accTrMulFlops(prod, lastTerm[tLast]);
+                        flops += A2AContraction::accTrMulCCFlops(prod, lastTerm[tLast]);
                         bytes += 2.*prod.rows()*prod.cols()*sizeof(ComplexD);
                     }
                     tAr.stopTimer("Linear algebra");

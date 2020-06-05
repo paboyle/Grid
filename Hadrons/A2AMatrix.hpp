@@ -254,6 +254,14 @@ public:
 
         return 8.*n;
     }
+    
+    template <typename MatLeft, typename MatRight>
+    static inline double accTrMulCCFlops(const MatLeft &a, const MatRight &b)
+    {
+        double n = a.rows()*a.cols();
+        
+        return 36.*n;
+    }
 
     // mul(res, a, b): res = a*b
 #ifdef USE_MKL
