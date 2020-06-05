@@ -36,7 +36,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #endif
 #endif
 
-
 NAMESPACE_BEGIN(Grid);
 
 template<class scalar> struct FFTW { };
@@ -190,7 +189,7 @@ public:
     typedef typename sobj::scalar_type   scalar;
       
     Lattice<sobj> pgbuf(&pencil_g);
-    auto pgbuf_v = pgbuf.View(CpuWrite);
+    autoView(pgbuf_v , pgbuf, CpuWrite);
 
     typedef typename FFTW<scalar>::FFTW_scalar FFTW_scalar;
     typedef typename FFTW<scalar>::FFTW_plan   FFTW_plan;

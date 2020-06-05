@@ -208,9 +208,9 @@ void NaiveStaggeredFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeFie
     ////////////////////////
     // Call the single hop
     ////////////////////////
-    auto U_v   = U.View(CpuRead);
-    auto B_v      = B.View(CpuWrite);
-    auto Btilde_v = Btilde.View(CpuWrite);
+    autoView( U_v      , U, CpuRead);
+    autoView( B_v      , B, CpuWrite);
+    autoView( Btilde_v , Btilde, CpuWrite);
     thread_for(sss,B.Grid()->oSites(),{
       Kernels::DhopDirKernel(st, U_v, U_v, st.CommBuf(), sss, sss, B_v, Btilde_v, mu,1);
     });
@@ -315,9 +315,9 @@ void NaiveStaggeredFermion<Impl>::DhopDir(const FermionField &in, FermionField &
 
   Compressor compressor;
   Stencil.HaloExchange(in, compressor);
-  auto Umu_v   =   Umu.View(CpuRead);
-  auto in_v    =  in.View(CpuRead);
-  auto out_v   = out.View(CpuWrite);
+  autoView( Umu_v   ,  Umu, CpuRead);
+  autoView( in_v    ,  in, CpuRead);
+  autoView( out_v   , out, CpuWrite);
   //  thread_for( sss, in.Grid()->oSites(),{
   //    Kernels::DhopDirKernel(Stencil, Umu_v, Stencil.CommBuf(), sss, sss, in_v, out_v, dir, disp);
   //  });

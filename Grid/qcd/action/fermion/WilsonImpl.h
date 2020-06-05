@@ -106,9 +106,9 @@ public:
 			    const _SpinorField & phi,
 			    int mu)
   {
-    auto out_v= out.View(CpuWrite);
-    auto phi_v= phi.View(CpuRead);
-    auto Umu_v= Umu.View(CpuRead);
+    autoView( out_v, out, CpuWrite);
+    autoView( phi_v, phi, CpuRead);
+    autoView( Umu_v, Umu, CpuRead);
     thread_for(sss,out.Grid()->oSites(),{
 	multLink(out_v[sss],Umu_v[sss],phi_v[sss],mu);
     });
@@ -191,18 +191,19 @@ public:
     int Ls=Btilde.Grid()->_fdimensions[0];
     GaugeLinkField tmp(mat.Grid());
     tmp = Zero();
-    auto tmp_v = tmp.View(CpuWrite);
-    auto Btilde_v = Btilde.View(CpuRead);
-    auto Atilde_v = Atilde.View(CpuRead);
-    thread_for(sss,tmp.Grid()->oSites(),{
-      int sU=sss;
-      for(int s=0;s<Ls;s++){
-	int sF = s+Ls*sU;
-	tmp_v[sU] = tmp_v[sU]+ traceIndex<SpinIndex>(outerProduct(Btilde_v[sF],Atilde_v[sF])); // ordering here
-      }
-    });
+    {
+      autoView( tmp_v , tmp, CpuWrite);
+      autoView( Btilde_v , Btilde, CpuRead);
+      autoView( Atilde_v , Atilde, CpuRead);
+      thread_for(sss,tmp.Grid()->oSites(),{
+	  int sU=sss;
+	  for(int s=0;s<Ls;s++){
+	    int sF = s+Ls*sU;
+	    tmp_v[sU] = tmp_v[sU]+ traceIndex<SpinIndex>(outerProduct(Btilde_v[sF],Atilde_v[sF])); // ordering here
+	  }
+	});
+    }
     PokeIndex<LorentzIndex>(mat,tmp,mu);
-      
   }
 };
 

@@ -273,10 +273,10 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
   for (int ie=0; ie < 6 ; ie++)
     wick_contraction[ie] = (quarks_left[0] == quarks_right[epsilon[ie][0]] && quarks_left[1] == quarks_right[epsilon[ie][1]] && quarks_left[2] == quarks_right[epsilon[ie][2]]) ? 1 : 0;
 
-  auto vbaryon_corr= baryon_corr.View(CpuWrite);
-  auto v1 = q1_left.View(CpuRead);
-  auto v2 = q2_left.View(CpuRead);
-  auto v3 = q3_left.View(CpuRead);
+  autoView(vbaryon_corr, baryon_corr,CpuWrite);
+  autoView( v1 , q1_left, CpuRead);
+  autoView( v2 , q2_left, CpuRead);
+  autoView( v3 , q3_left, CpuRead);
 
  // accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
   thread_for(ss,grid->oSites(),{
@@ -560,10 +560,10 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Eye(const PropagatorField &qq_loop,
 {
   GridBase *grid = qs_ti.Grid();
 
-  auto vcorr= stn_corr.View(CpuWrite);
-  auto vq_loop = qq_loop.View(CpuRead);
-  auto vd_tf = qd_tf.View(CpuRead);
-  auto vs_ti = qs_ti.View(CpuRead);
+  autoView( vcorr, stn_corr, CpuWrite);
+  autoView( vq_loop , qq_loop, CpuRead);
+  autoView( vd_tf , qd_tf, CpuRead);
+  autoView( vs_ti , qs_ti, CpuRead);
 
  // accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
   thread_for(ss,grid->oSites(),{
@@ -597,12 +597,11 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_NonEye(const PropagatorField &qq_ti,
 {
   GridBase *grid = qs_ti.Grid();
 
-  auto vcorr= stn_corr.View(CpuWrite);
-  auto vq_ti = qq_ti.View(CpuRead);
-  auto vq_tf = qq_tf.View(CpuRead);
-  auto vd_tf = qd_tf.View(CpuRead);
-  auto vs_ti = qs_ti.View(CpuRead);
-
+  autoView( vcorr , stn_corr, CpuWrite);
+  autoView( vq_ti , qq_ti, CpuRead);
+  autoView( vq_tf , qq_tf, CpuRead);
+  autoView( vd_tf , qd_tf, CpuRead);
+  autoView( vs_ti , qs_ti, CpuRead);
  // accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
   thread_for(ss,grid->oSites(),{
     auto Dq_ti = vq_ti[ss];

@@ -252,9 +252,9 @@ public:
       double start=usecond();
       for(int i=0;i<Nloop;i++){
 	z=a*x-y;
-	auto x_v = x.View(CpuWrite);
-	auto y_v = y.View(CpuWrite);
-	auto z_v = z.View(CpuRead);
+	autoView( x_v , x, CpuWrite);
+	autoView( y_v , y, CpuWrite);
+	autoView( z_v , z, CpuRead);
         x_v[0]=z_v[0]; // force serial dependency to prevent optimise away
         y_v[4]=z_v[4];
       }
@@ -534,11 +534,13 @@ public:
     {
       LatticeGaugeField Umu5d(FGrid); 
       std::vector<LatticeColourMatrix> U(4,FGrid);
-      auto Umu_v = Umu.View(CpuRead);
-      auto Umu5d_v = Umu5d.View(CpuWrite);
-      for(int ss=0;ss<Umu.Grid()->oSites();ss++){
-	for(int s=0;s<Ls;s++){
-	  Umu5d_v[Ls*ss+s] = Umu_v[ss];
+      {
+	autoView( Umu_v  , Umu  , CpuRead);
+	autoView( Umu5d_v, Umu5d, CpuWrite);
+	for(int ss=0;ss<Umu.Grid()->oSites();ss++){
+	  for(int s=0;s<Ls;s++){
+	    Umu5d_v[Ls*ss+s] = Umu_v[ss];
+	  }
 	}
       }
       ref = Zero();

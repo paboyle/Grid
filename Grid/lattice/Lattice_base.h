@@ -84,6 +84,7 @@ public:
   /////////////////////////////////////////////////////////////////////////////////
   void SetViewMode(ViewMode mode) {
     LatticeView<vobj> accessor(*( (LatticeAccelerator<vobj> *) this),mode);
+    accessor.ViewClose();
   }
   /////////////////////////////////////////////////////////////////////////////////
   // Return a view object that may be dereferenced in site loops.
@@ -123,6 +124,7 @@ public:
       auto tmp = eval(ss,exprCopy);
       vstream(me[ss],tmp);
     });
+    me.ViewClose();
     ExpressionViewClose(exprCopy);
     return *this;
   }
@@ -145,6 +147,7 @@ public:
       auto tmp = eval(ss,exprCopy);
       vstream(me[ss],tmp);
     });
+    me.ViewClose();
     ExpressionViewClose(exprCopy);
     return *this;
   }
@@ -166,6 +169,7 @@ public:
       auto tmp = eval(ss,exprCopy);
       vstream(me[ss],tmp);
     });
+    me.ViewClose();
     ExpressionViewClose(exprCopy);
     return *this;
   }
@@ -221,6 +225,7 @@ public:
     thread_for(ss,me.size(),{
 	me[ss]= r;
     });
+    me.ViewClose();
     return *this;
   }
 
@@ -278,6 +283,7 @@ public:
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       coalescedWrite(me[ss],him(ss));
     });
+    me.ViewClose();    him.ViewClose();
     return *this;
   }
 
@@ -292,6 +298,7 @@ public:
     accelerator_for(ss,me.size(),vobj::Nsimd(),{
       coalescedWrite(me[ss],him(ss));
     });
+    me.ViewClose();    him.ViewClose();
     return *this;
   }
   ///////////////////////////////////////////

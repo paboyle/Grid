@@ -221,10 +221,10 @@ void ImprovedStaggeredFermion5D<Impl>::DhopDir(const FermionField &in, FermionFi
 
   Compressor compressor;
   Stencil.HaloExchange(in,compressor);
-  auto Umu_v   =   Umu.View(CpuRead);
-  auto UUUmu_v = UUUmu.View(CpuRead);
-  auto in_v    =  in.View(CpuRead);
-  auto out_v   = out.View(CpuWrite);
+  autoView( Umu_v   ,   Umu, CpuRead);
+  autoView( UUUmu_v , UUUmu, CpuRead);
+  autoView( in_v    ,  in, CpuRead);
+  autoView( out_v   , out, CpuWrite);
   thread_for( ss,Umu.Grid()->oSites(),{
     for(int s=0;s<Ls;s++){
       int sU=ss;

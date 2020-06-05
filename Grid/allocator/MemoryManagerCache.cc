@@ -461,6 +461,17 @@ void  MemoryManager::Print(void)
   std::cout << GridLogDebug << "--------------------------------------------" << std::endl;
 
 };
+int   MemoryManager::isOpen   (void* _CpuPtr) 
+{ 
+  uint64_t CpuPtr = (uint64_t)_CpuPtr;
+  if ( EntryPresent(CpuPtr) ){
+    auto AccCacheIterator = EntryLookup(CpuPtr);
+    auto & AccCache = AccCacheIterator->second;
+    return AccCache.cpuLock+AccCache.accLock;
+  } else { 
+    return 0;
+  }
+}
 
 NAMESPACE_END(Grid);
 
