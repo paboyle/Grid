@@ -212,9 +212,7 @@ public:
                                 const MatRight &b,
                                 const Eval &eval)
     {
-        int vsize = a.rows();
-        Eigen::VectorXcd evsq(vsize);
-        evsq = eval.cwiseProduct(eval);
+        int vsize = a.cols();
         
         thread_for(r,vsize,
                    {
@@ -222,24 +220,25 @@ public:
                        Eigen::VectorXcd avec(vsize);
                        Eigen::VectorXcd bvec(vsize);
                        C tmp;
-                       
+                       ComplexD reval = eval(r);
+
                        avec = a.row(r);
                        bvec = b.col(r);
-                       tmpv = avec.cwiseProduct(bvec.cwiseProduct(evsq));
-                       tmp = tmpv.sum();
+                       tmpv = avec.cwiseProduct(bvec.cwiseProduct(eval));
+                       tmp  = tmpv.sum()*reval;
                        
-//                       tmpv = b.row(r).conjugate();
-//                       bvec = tmpv.cwiseProduct(evsq);
-//                       tmpv = avec.cwiseProduct(bvec);
-//                       tmp += tmpv.sum();
-//
-//                       avec = a.col(r).conjugate();
-//                       tmpv = avec.cwiseProduct(bvec);
-//                       tmp += tmpv.sum();
-//
-//                       bvec = b.col(r);
-//                       tmpv = avec.cwiseProduct(bvec.cwiseProduct(evsq));
-//                       tmp += tmpv.sum();
+                       tmpv = b.row(r).conjugate();
+                       bvec = tmpv.cwiseProduct(eval);
+                       tmpv = avec.cwiseProduct(bvec);
+                       tmp += tmpv.sum()*reval;
+
+                       avec = a.col(r).conjugate();
+                       tmpv = avec.cwiseProduct(bvec);
+                       tmp += tmpv.sum()*reval;
+
+                       bvec = b.col(r);
+                       tmpv = avec.cwiseProduct(bvec.cwiseProduct(eval));
+                       tmp += tmpv.sum()*reval;
                        
                        thread_critical
                        {
@@ -611,8 +610,7 @@ void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead)
         }
         dataspace.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data(),
                                   stride.data(), block.data());
-        if (tRead) *tRead -= usecond();
-        std::cout<<"Before dataset.read " << ", reading data with size "<< sizeof(T) << std::endl;
+        if (tRead) *tRead -= usecond();    
         dataset.read(buf.data(), datatype, memspace, dataspace);
         if (tRead) *tRead += usecond();
         v[t] = buf.template cast<VecT>();
