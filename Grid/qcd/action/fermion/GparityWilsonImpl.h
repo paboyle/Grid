@@ -232,15 +232,17 @@ public:
       if ( Params.twists[mu] ) { 
 	Uconj = where(coor==neglink,-Uconj,Uconj);
       }
-	  
-      auto U_v = U.View(CpuRead);
-      auto Uds_v = Uds.View(CpuWrite);
-      auto Uconj_v = Uconj.View(CpuRead);
-      auto Utmp_v= Utmp.View(CpuWrite);
-      thread_foreach(ss,U_v,{
-	Uds_v[ss](0)(mu) = U_v[ss]();
-	Uds_v[ss](1)(mu) = Uconj_v[ss]();
-      });
+
+      {
+	autoView( U_v , U, CpuRead);
+	autoView( Uconj_v , Uconj, CpuRead);
+	autoView( Uds_v , Uds, CpuWrite);
+	autoView( Utmp_v, Utmp, CpuWrite);
+	thread_foreach(ss,U_v,{
+	    Uds_v[ss](0)(mu) = U_v[ss]();
+	    Uds_v[ss](1)(mu) = Uconj_v[ss]();
+	  });
+      }
           
       U     = adj(Cshift(U    ,mu,-1));      // correct except for spanning the boundary
       Uconj = adj(Cshift(Uconj,mu,-1));
@@ -250,19 +252,25 @@ public:
 	Utmp = where(coor==0,Uconj,Utmp);
       }
 
-      thread_foreach(ss,Utmp_v,{
-	Uds_v[ss](0)(mu+4) = Utmp_v[ss]();
-      });
-          
+      {
+	autoView( Uds_v , Uds, CpuWrite);
+	autoView( Utmp_v, Utmp, CpuWrite);
+	thread_foreach(ss,Utmp_v,{
+	    Uds_v[ss](0)(mu+4) = Utmp_v[ss]();
+	  });
+      }
       Utmp = Uconj;
       if ( Params.twists[mu] ) { 
 	Utmp = where(coor==0,U,Utmp);
       }
-	  
-      thread_foreach(ss,Utmp_v,{
-        Uds_v[ss](1)(mu+4) = Utmp_v[ss]();
-      });
-          
+
+      {	  
+	autoView( Uds_v , Uds, CpuWrite);
+	autoView( Utmp_v, Utmp, CpuWrite);
+	thread_foreach(ss,Utmp_v,{
+	    Uds_v[ss](1)(mu+4) = Utmp_v[ss]();
+        });
+      }
     }
   }
       
@@ -272,11 +280,14 @@ public:
     GaugeLinkField link(mat.Grid());
     // use lorentz for flavour as hack.
     auto tmp = TraceIndex<SpinIndex>(outerProduct(Btilde, A));
-    auto link_v = link.View(CpuWrite);
-    auto tmp_v = tmp.View(CpuRead);
-    thread_foreach(ss,tmp_v,{
-      link_v[ss]() = tmp_v[ss](0, 0) + conjugate(tmp_v[ss](1, 1));
-    });
+
+    {
+      autoView( link_v , link, CpuWrite);
+      autoView( tmp_v , tmp, CpuRead);
+      thread_foreach(ss,tmp_v,{
+	  link_v[ss]() = tmp_v[ss](0, 0) + conjugate(tmp_v[ss](1, 1));
+	});
+    }
     PokeIndex<LorentzIndex>(mat, link, mu);
     return;
   }
@@ -306,16 +317,18 @@ public:
         
     GaugeLinkField tmp(mat.Grid());
     tmp = Zero();
-    auto tmp_v = tmp.View(CpuWrite);
-    auto Atilde_v = Atilde.View(CpuRead);
-    auto Btilde_v = Btilde.View(CpuRead);
-    thread_for(ss,tmp.Grid()->oSites(),{
-      for (int s = 0; s < Ls; s++) {
-	int sF = s + Ls * ss;
-	auto ttmp = traceIndex<SpinIndex>(outerProduct(Btilde_v[sF], Atilde_v[sF]));
-	tmp_v[ss]() = tmp_v[ss]() + ttmp(0, 0) + conjugate(ttmp(1, 1));
-      }
-    });
+    {
+      autoView( tmp_v , tmp, CpuWrite);
+      autoView( Atilde_v , Atilde, CpuRead);
+      autoView( Btilde_v , Btilde, CpuRead);
+      thread_for(ss,tmp.Grid()->oSites(),{
+	  for (int s = 0; s < Ls; s++) {
+	    int sF = s + Ls * ss;
+	    auto ttmp = traceIndex<SpinIndex>(outerProduct(Btilde_v[sF], Atilde_v[sF]));
+	    tmp_v[ss]() = tmp_v[ss]() + ttmp(0, 0) + conjugate(ttmp(1, 1));
+	  }
+	});
+    }
     PokeIndex<LorentzIndex>(mat, tmp, mu);
     return;
   }

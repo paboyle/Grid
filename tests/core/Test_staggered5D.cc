@@ -89,8 +89,8 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   LatticeGaugeField Umu5d(FGrid); 
   {
-    auto umu5d = Umu5d.View(CpuWrite);
-    auto umu   = Umu.View(CpuRead);
+    autoView(umu5d, Umu5d, CpuWrite);
+    autoView(  umu, Umu  , CpuRead);
     for(int ss=0;ss<Umu.Grid()->oSites();ss++){
       for(int s=0;s<Ls;s++){
 	umu5d[Ls*ss+s] = umu[ss];

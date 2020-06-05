@@ -9,6 +9,7 @@ NAMESPACE_BEGIN(Grid);
 
 void  MemoryManager::ViewClose(void* AccPtr,ViewMode mode){};
 void *MemoryManager::ViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint){ return CpuPtr; };
+int   MemoryManager::isOpen   (void* CpuPtr) { return 0;}
 void  MemoryManager::Print(void){};
 void  MemoryManager::NotifyDeletion(void *ptr){};
 

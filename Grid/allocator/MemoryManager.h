@@ -169,8 +169,9 @@ private:
 
  public:
   static void Print(void);
-  static void  ViewClose(void* AccPtr,ViewMode mode);
-  static void *ViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint);
+  static int   isOpen   (void* CpuPtr);
+  static void  ViewClose(void* CpuPtr,ViewMode mode);
+  static void *ViewOpen (void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint);
 
 };
 

@@ -37,7 +37,7 @@ template<class iobj> inline void LatticeCoordinate(Lattice<iobj> &l,int mu)
   GridBase *grid = l.Grid();
   int Nsimd = grid->iSites();
 
-  auto l_v = l.View(CpuWrite);
+  autoView(l_v, l, CpuWrite);
   thread_for( o, grid->oSites(), {
     vector_type vI;
     Coordinate gcoor;

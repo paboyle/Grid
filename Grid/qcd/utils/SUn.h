@@ -222,10 +222,10 @@ public:
     conformable(subgroup, Determinant);
     int i0, i1;
     su2SubGroupIndex(i0, i1, su2_index);
-    auto subgroup_v = subgroup.View(CpuWrite);
-    auto source_v   = source.View(CpuRead);
-    auto Determinant_v = Determinant.View(CpuWrite);
 
+    autoView( subgroup_v , subgroup,CpuWrite);
+    autoView( source_v   , source,CpuRead);
+    autoView( Determinant_v , Determinant,CpuWrite);
     thread_for(ss, grid->oSites(), {
 
       subgroup_v[ss]()()(0, 0) = source_v[ss]()()(i0, i0);
@@ -257,8 +257,8 @@ public:
     su2SubGroupIndex(i0, i1, su2_index);
 
     dest = 1.0;  // start out with identity
-    auto dest_v = dest.View(CpuWrite);
-    auto subgroup_v = subgroup.View(CpuRead);
+    autoView( dest_v , dest, CpuWrite);
+    autoView( subgroup_v, subgroup, CpuRead);
     thread_for(ss, grid->oSites(),
     {
       dest_v[ss]()()(i0, i0) = subgroup_v[ss]()()(0, 0);
@@ -266,6 +266,7 @@ public:
       dest_v[ss]()()(i1, i0) = subgroup_v[ss]()()(1, 0);
       dest_v[ss]()()(i1, i1) = subgroup_v[ss]()()(1, 1);
     });
+
   }
 
   ///////////////////////////////////////////////
@@ -608,8 +609,8 @@ public:
 
   // reunitarise??
   template <typename LatticeMatrixType>
-  static void LieRandomize(GridParallelRNG &pRNG, LatticeMatrixType &out,
-                           double scale = 1.0) {
+  static void LieRandomize(GridParallelRNG &pRNG, LatticeMatrixType &out, double scale = 1.0) 
+  {
     GridBase *grid = out.Grid();
 
     typedef typename LatticeMatrixType::vector_type vector_type;
@@ -618,8 +619,7 @@ public:
     typedef iSinglet<vector_type> vTComplexType;
 
     typedef Lattice<vTComplexType> LatticeComplexType;
-    typedef typename GridTypeMapper<
-      typename LatticeMatrixType::vector_object>::scalar_object MatrixType;
+    typedef typename GridTypeMapper<typename LatticeMatrixType::vector_object>::scalar_object MatrixType;
 
     LatticeComplexType ca(grid);
     LatticeMatrixType lie(grid);
@@ -629,6 +629,7 @@ public:
     MatrixType ta;
 
     lie = Zero();
+
     for (int a = 0; a < AdjointDimension; a++) {
       random(pRNG, ca);
 
@@ -640,6 +641,7 @@ public:
       la = ci * ca * ta;
 
       lie = lie + la;  // e^{i la ta}
+
     }
     taExp(lie, out);
   }

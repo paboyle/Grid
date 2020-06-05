@@ -261,11 +261,11 @@ void StaggeredKernels<Impl>::DhopImproved(StencilImpl &st, LebesgueOrder &lo,
   GridBase *FGrid=in.Grid();  
   GridBase *UGrid=U.Grid();  
   typedef StaggeredKernels<Impl> ThisKernel;
-  auto UUU_v = UUU.View(AcceleratorRead);
-  auto U_v   =   U.View(AcceleratorRead);
-  auto in_v  =  in.View(AcceleratorRead);
-  auto out_v = out.View(AcceleratorWrite);
-  auto st_v  =  st.View(AcceleratorRead);
+  autoView( UUU_v , UUU, AcceleratorRead);
+  autoView( U_v   ,   U, AcceleratorRead);
+  autoView( in_v  ,  in, AcceleratorRead);
+  autoView( out_v , out, AcceleratorWrite);
+  autoView( st_v  ,  st, AcceleratorRead);
   SiteSpinor * buf = st.CommBuf();
     
   int Ls=1;
@@ -301,11 +301,11 @@ void StaggeredKernels<Impl>::DhopNaive(StencilImpl &st, LebesgueOrder &lo,
   GridBase *FGrid=in.Grid();  
   GridBase *UGrid=U.Grid();  
   typedef StaggeredKernels<Impl> ThisKernel;
-  auto UUU_v=   U.View(AcceleratorRead);
-  auto U_v   =   U.View(AcceleratorRead);
-  auto in_v  =  in.View(AcceleratorRead);
-  auto out_v = out.View(AcceleratorWrite);
-  auto st_v  =  st.View(AcceleratorRead);
+  autoView( UUU_v ,   U, AcceleratorRead);
+  autoView( U_v   ,   U, AcceleratorRead);
+  autoView( in_v  ,  in, AcceleratorRead);
+  autoView( out_v , out, AcceleratorWrite);
+  autoView( st_v  ,  st, AcceleratorRead);
   SiteSpinor * buf = st.CommBuf();
 
   int Ls=1;

@@ -129,8 +129,8 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu5d(FGrid); 
   std::vector<LatticeColourMatrix> U(4,FGrid);
   {
-    auto Umu5d_v = Umu5d.View(CpuWrite);
-    auto Umu_v = Umu.View(CpuRead);
+    autoView( Umu5d_v, Umu5d, CpuWrite);
+    autoView( Umu_v  , Umu  , CpuRead);
     for(int ss=0;ss<Umu.Grid()->oSites();ss++){
       for(int s=0;s<Ls;s++){
 	Umu5d_v[Ls*ss+s] = Umu_v[ss];
@@ -258,8 +258,8 @@ int main (int argc, char ** argv)
       //    ref =  src - Gamma(Gamma::Algebra::GammaX)* src ; // 1+gamma_x
       tmp = U[mu]*Cshift(src,mu+1,1);
       {
-	auto ref_v = ref.View(CpuWrite);
-	auto tmp_v = tmp.View(CpuRead);
+	autoView( ref_v, ref, CpuWrite);
+	autoView( tmp_v, tmp, CpuRead);
 	for(int i=0;i<ref_v.size();i++){
 	  ref_v[i]+= tmp_v[i] + Gamma(Gmu[mu])*tmp_v[i]; ;
 	}
@@ -268,8 +268,8 @@ int main (int argc, char ** argv)
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu+1,-1);
       {
-	auto ref_v = ref.View(CpuWrite);
-	auto tmp_v = tmp.View(CpuRead);
+	autoView( ref_v, ref, CpuWrite);
+	autoView( tmp_v, tmp, CpuRead);
 	for(int i=0;i<ref_v.size();i++){
 	  ref_v[i]+= tmp_v[i] - Gamma(Gmu[mu])*tmp_v[i]; ;
 	}
