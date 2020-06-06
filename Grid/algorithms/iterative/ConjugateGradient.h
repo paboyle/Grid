@@ -141,16 +141,16 @@ public:
 
       LinearCombTimer.Start();
       {
-	auto psi_v = psi.View(AcceleratorWrite);
-	auto p_v   = p.View(AcceleratorWrite);
-	auto r_v   = r.View(AcceleratorWrite);
+	autoView( psi_v , psi, AcceleratorWrite);
+	autoView( p_v   , p,   AcceleratorWrite);
+	autoView( r_v   , r,   AcceleratorWrite);
 	accelerator_for(ss,p_v.size(), Field::vector_object::Nsimd(),{
 	    coalescedWrite(psi_v[ss], a      *  p_v(ss) + psi_v(ss));
 	    coalescedWrite(p_v[ss]  , b      *  p_v(ss) + r_v  (ss));
-	  });
-	LinearCombTimer.Stop();
-	LinalgTimer.Stop();
+	});
       }
+      LinearCombTimer.Stop();
+      LinalgTimer.Stop();
 
       std::cout << GridLogIterative << "ConjugateGradient: Iteration " << k
                 << " residual " << sqrt(cp/ssq) << " target " << Tolerance << std::endl;

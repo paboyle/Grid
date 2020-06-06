@@ -67,6 +67,7 @@ void Gather_plane_simple_table (Vector<std::pair<int,int> >& table,const Lattice
 {
   int num=table.size();
   std::pair<int,int> *table_v = & table[0];
+
   auto rhs_v = rhs.View(AcceleratorRead);
   accelerator_forNB( i,num, vobj::Nsimd(), {
     typedef decltype(coalescedRead(buffer[0])) compressed_t;
@@ -75,6 +76,7 @@ void Gather_plane_simple_table (Vector<std::pair<int,int> >& table,const Lattice
     compress.Compress(&tmp_c,0,rhs_v(so+table_v[i].second));
     coalescedWrite(buffer[off+o],tmp_c);
   });
+  rhs_v.ViewClose();
 // Further optimisatoin: i) software prefetch the first element of the next table entry, prefetch the table
 }
 
@@ -104,6 +106,7 @@ void Gather_plane_exchange_table(Vector<std::pair<int,int> >& table,const Lattic
 			      so+tp[2*j+1].second,
 			      type);
   });
+  rhs_v.ViewClose();
 }
 
 struct StencilEntry { 
@@ -181,31 +184,30 @@ class CartesianStencilAccelerator {
 template<class vobj,class cobj,class Parameters>
 class CartesianStencilView : public CartesianStencilAccelerator<vobj,cobj,Parameters> 
 {
-#ifndef GRID_UVM
-  std::shared_ptr<MemViewDeleter> Deleter;
-#endif
+ private:
+  int *closed;
+  StencilEntry *cpu_ptr;
+  ViewMode      mode;
  public:
-  // 
-#ifdef GRID_UVM
-  CartesianStencilView (const CartesianStencilAccelerator<vobj,cobj,Parameters> &refer_to_me,ViewMode mode) 
-    : CartesianStencilAccelerator<vobj,cobj,Parameters>(refer_to_me){};
-#else
-  CartesianStencilView (const CartesianStencilView &refer_to_me) 
-    : CartesianStencilAccelerator<vobj,cobj,Parameters>(refer_to_me), Deleter(refer_to_me.Deleter)
-  { }
-  CartesianStencilView (const CartesianStencilAccelerator<vobj,cobj,Parameters> &refer_to_me,ViewMode mode) 
-    : CartesianStencilAccelerator<vobj,cobj,Parameters>(refer_to_me), Deleter(new MemViewDeleter)
-    {
-      Deleter->cpu_ptr =(void *)this->_entries_p;
-      Deleter->mode    = mode;
-      this->_entries_p =(StencilEntry *)
+  // default copy constructor
+  CartesianStencilView (const CartesianStencilView &refer_to_me) = default;
 
+  CartesianStencilView (const CartesianStencilAccelerator<vobj,cobj,Parameters> &refer_to_me,ViewMode _mode) 
+    : CartesianStencilAccelerator<vobj,cobj,Parameters>(refer_to_me),
+    cpu_ptr(this->_entries_p),
+    mode(_mode)
+  {
+    this->_entries_p =(StencilEntry *)
       MemoryManager::ViewOpen(this->_entries_p,
-				this->_npoints*this->_osites*sizeof(StencilEntry),
-				mode,
-				AdviseDefault);    
-    }
-#endif
+			      this->_npoints*this->_osites*sizeof(StencilEntry),
+			      mode,
+			      AdviseDefault);    
+  }
+  
+  void ViewClose(void)
+  {
+    MemoryManager::ViewClose(this->cpu_ptr,this->mode);    
+  }
   
 };
 

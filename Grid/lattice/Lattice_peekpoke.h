@@ -46,8 +46,8 @@ auto PeekIndex(const Lattice<vobj> &lhs,int i) -> Lattice<decltype(peekIndex<Ind
 {
   Lattice<decltype(peekIndex<Index>(vobj(),i))> ret(lhs.Grid());
   ret.Checkerboard()=lhs.Checkerboard();
-  auto ret_v = ret.View(CpuWrite);
-  auto lhs_v = lhs.View(CpuRead);
+  autoView( ret_v, ret, CpuWrite);
+  autoView( lhs_v, lhs, CpuRead);
   thread_for( ss, lhs_v.size(), {
     ret_v[ss] = peekIndex<Index>(lhs_v[ss],i);
   });
@@ -58,8 +58,8 @@ auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekInd
 {
   Lattice<decltype(peekIndex<Index>(vobj(),i,j))> ret(lhs.Grid());
   ret.Checkerboard()=lhs.Checkerboard();
-  auto ret_v = ret.View(CpuWrite);
-  auto lhs_v = lhs.View(CpuRead);
+  autoView( ret_v, ret, CpuWrite);
+  autoView( lhs_v, lhs, CpuRead);
   thread_for( ss, lhs_v.size(), {
     ret_v[ss] = peekIndex<Index>(lhs_v[ss],i,j);
   });
@@ -72,8 +72,8 @@ auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekInd
 template<int Index,class vobj>  
 void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(vobj(),0))> & rhs,int i)
 {
-  auto rhs_v = rhs.View(CpuRead);
-  auto lhs_v = lhs.View(CpuWrite);
+  autoView( rhs_v, rhs, CpuRead);
+  autoView( lhs_v, lhs, CpuWrite);
   thread_for( ss, lhs_v.size(), {
     pokeIndex<Index>(lhs_v[ss],rhs_v[ss],i);
   });
@@ -81,8 +81,8 @@ void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(vobj()
 template<int Index,class vobj> 
 void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(vobj(),0,0))> & rhs,int i,int j)
 {
-  auto rhs_v = rhs.View(CpuRead);
-  auto lhs_v = lhs.View(CpuWrite);
+  autoView( rhs_v, rhs, CpuRead);
+  autoView( lhs_v, lhs, CpuWrite);
   thread_for( ss, lhs_v.size(), {
     pokeIndex<Index>(lhs_v[ss],rhs_v[ss],i,j);
   });
@@ -111,7 +111,7 @@ void pokeSite(const sobj &s,Lattice<vobj> &l,const Coordinate &site){
 
   // extract-modify-merge cycle is easiest way and this is not perf critical
   ExtractBuffer<sobj> buf(Nsimd);
-  auto l_v = l.View(CpuWrite);
+  autoView( l_v , l, CpuWrite);
   if ( rank == grid->ThisRank() ) {
     extract(l_v[odx],buf);
     buf[idx] = s;
@@ -141,7 +141,7 @@ void peekSite(sobj &s,const Lattice<vobj> &l,const Coordinate &site){
   grid->GlobalCoorToRankIndex(rank,odx,idx,site);
 
   ExtractBuffer<sobj> buf(Nsimd);
-  auto l_v = l.View(CpuWrite);
+  autoView( l_v , l, CpuWrite);
   extract(l_v[odx],buf);
 
   s = buf[idx];
@@ -173,7 +173,7 @@ inline void peekLocalSite(sobj &s,const Lattice<vobj> &l,Coordinate &site){
   idx= grid->iIndex(site);
   odx= grid->oIndex(site);
   
-  auto l_v = l.View(CpuRead);
+  autoView( l_v , l, CpuRead);
   scalar_type * vp = (scalar_type *)&l_v[odx];
   scalar_type * pt = (scalar_type *)&s;
       
@@ -202,7 +202,7 @@ inline void pokeLocalSite(const sobj &s,Lattice<vobj> &l,Coordinate &site){
   idx= grid->iIndex(site);
   odx= grid->oIndex(site);
 
-  auto l_v = l.View(CpuWrite);
+  autoView( l_v , l, CpuWrite);
   scalar_type * vp = (scalar_type *)&l_v[odx];
   scalar_type * pt = (scalar_type *)&s;
   for(int w=0;w<words;w++){

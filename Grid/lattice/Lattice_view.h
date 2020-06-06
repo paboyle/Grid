@@ -25,6 +25,7 @@ void accelerator_inline conformable(GridBase *lhs,GridBase *rhs)
 template<class vobj> class LatticeAccelerator : public LatticeBase
 {
 protected:
+  //public:
   GridBase *_grid;
   int checkerboard;
   vobj     *_odata;    // A managed pointer
@@ -47,7 +48,7 @@ public:
 // The copy constructor for this will need to be used by device lambda functions
 /////////////////////////////////////////////////////////////////////////////////////////
 template<class vobj> 
-class LatticeExprView : public LatticeAccelerator<vobj>
+class LatticeView : public LatticeAccelerator<vobj>
 {
 public:
   // Rvalue
@@ -68,7 +69,12 @@ public:
   accelerator_inline uint64_t end(void)   const { return this->_odata_size; };
   accelerator_inline uint64_t size(void)  const { return this->_odata_size; };
 
-  LatticeExprView(const LatticeAccelerator<vobj> &refer_to_me) : LatticeAccelerator<vobj> (refer_to_me){}
+  LatticeView(const LatticeAccelerator<vobj> &refer_to_me) : LatticeAccelerator<vobj> (refer_to_me){}
+  LatticeView(const LatticeView<vobj> &refer_to_me) = default; // Trivially copyable
+  LatticeView(const LatticeAccelerator<vobj> &refer_to_me,ViewMode mode) : LatticeAccelerator<vobj> (refer_to_me)
+  {
+    this->ViewOpen(mode);
+  }
 
   // Host functions
   void ViewOpen(ViewMode mode)
@@ -89,45 +95,19 @@ public:
   }
 
 };
-
-
-///////////////////////////////////////////////////////////////////////
-// An object to be stored in a shared_ptr to clean up after last view.
-// UserView constructor,destructor updates view manager
-// Non-copyable object??? Second base with copy/= deleted?
-///////////////////////////////////////////////////////////////////////
-class MemViewDeleter {
- public:
-  void *cpu_ptr;
-  ViewMode mode;
-  ~MemViewDeleter(){
-    MemoryManager::ViewClose(cpu_ptr,mode);    
-  }
-};
-template<class vobj> 
-class LatticeView : public LatticeExprView<vobj>
+// Little autoscope assister
+template<class View> 
+class ViewCloser
 {
-#ifndef GRID_UVM
-  std::shared_ptr<MemViewDeleter> Deleter;
-#endif
-public:
-#ifdef GRID_UVM
- LatticeView(const LatticeAccelerator<vobj> &refer_to_me,ViewMode mode) : 
-    LatticeExprView<vobj> (refer_to_me)
-  {
-  }
-#else
- LatticeView(const LatticeView<vobj> &orig) : LatticeExprView<vobj>(orig) {  }
- LatticeView(const LatticeAccelerator<vobj> &refer_to_me,ViewMode mode) : 
-    LatticeExprView<vobj> (refer_to_me), Deleter(new MemViewDeleter)
-  {
-    //    std::cout << "FIXME - copy shared pointer? View Open in LatticeView"<<std::hex<<this->_odata<<std::dec<<" mode "<<mode <<std::endl;
-    this->ViewOpen(mode);
-    Deleter->cpu_ptr = this->cpu_ptr;
-    Deleter->mode    = mode;
-  }
-#endif
+  View v;  // Take a copy of view and call view close when I go out of scope automatically
+ public:
+  ViewCloser(View &_v) : v(_v) {};
+  ~ViewCloser() { v.ViewClose(); }
 };
+
+#define autoView(l_v,l,mode)				\
+	  auto l_v = l.View(mode);			\
+	  ViewCloser<decltype(l_v)> _autoView##l_v(l_v);
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // Lattice expression types used by ET to assemble the AST
@@ -142,7 +122,7 @@ template <typename T> using is_lattice = std::is_base_of<LatticeBase, T>;
 template <typename T> using is_lattice_expr = std::is_base_of<LatticeExpressionBase,T >;
 
 template<class T, bool isLattice> struct ViewMapBase { typedef T Type; };
-template<class T>                 struct ViewMapBase<T,true> { typedef LatticeExprView<typename T::vector_object> Type; };
+template<class T>                 struct ViewMapBase<T,true> { typedef LatticeView<typename T::vector_object> Type; };
 template<class T> using ViewMap = ViewMapBase<T,std::is_base_of<LatticeBase, T>::value >;
 
 template <typename Op, typename _T1>                           

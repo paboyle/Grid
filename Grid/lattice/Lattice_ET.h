@@ -87,12 +87,14 @@ sobj eval(const uint64_t ss, const sobj &arg)
 }
 
 template <class lobj> accelerator_inline 
-const lobj & eval(const uint64_t ss, const LatticeExprView<lobj> &arg) 
+const lobj & eval(const uint64_t ss, const LatticeView<lobj> &arg) 
 {
   return arg[ss];
 }
 
 // What needs this?
+// Cannot be legal on accelerator
+// Comparison must convert
 #if 1
 template <class lobj> accelerator_inline 
 const lobj & eval(const uint64_t ss, const Lattice<lobj> &arg) 
