@@ -31,7 +31,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
 template<class Field> class DumbOperator  : public LinearOperatorBase<Field> {
 public:
@@ -57,6 +56,7 @@ public:
   // Support for coarsening to a multigrid
   void OpDiag (const Field &in, Field &out) {};
   void OpDir  (const Field &in, Field &out,int dir,int disp){};
+  void OpDirAll  (const Field &in, std::vector<Field> &out) {};
 
   void Op     (const Field &in, Field &out){
     out = scale * in;
