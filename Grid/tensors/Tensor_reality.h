@@ -1,6 +1,6 @@
 /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid
+    Grid physics library, www.github.com/paboyle/Grid 
 
     Source file: ./lib/tensors/Tensor_reality.h
 
@@ -31,16 +31,16 @@ Author: neo <cossu@post.kek.jp>
 
 NAMESPACE_BEGIN(Grid);
 
-///////////////////////////////////////////////
+/////////////////////////////////////////////// 
 // multiply by I; make recursive.
-///////////////////////////////////////////////
-template<class vtype> accelerator_inline iScalar<vtype> timesI(const iScalar<vtype>&r)
+/////////////////////////////////////////////// 
+template<class vtype> accelerator_inline iScalar<vtype> timesI(const iScalar<vtype>&r) 
 {
   iScalar<vtype> ret;
   timesI(ret._internal,r._internal);
   return ret;
 }
-template<class vtype,int N> accelerator_inline iVector<vtype,N> timesI(const iVector<vtype,N>&r)
+template<class vtype,int N> accelerator_inline iVector<vtype,N> timesI(const iVector<vtype,N>&r) 
 {
   iVector<vtype,N> ret;
   for(int i=0;i<N;i++){
@@ -58,11 +58,11 @@ template<class vtype,int N> accelerator_inline iMatrix<vtype,N> timesI(const iMa
   return ret;
 }
 
-template<class vtype> accelerator_inline void timesI(iScalar<vtype> &ret,const iScalar<vtype>&r)
+template<class vtype> accelerator_inline void timesI(iScalar<vtype> &ret,const iScalar<vtype>&r) 
 {
   timesI(ret._internal,r._internal);
 }
-template<class vtype,int N> accelerator_inline void timesI(iVector<vtype,N> &ret,const iVector<vtype,N>&r)
+template<class vtype,int N> accelerator_inline void timesI(iVector<vtype,N> &ret,const iVector<vtype,N>&r) 
 {
   for(int i=0;i<N;i++){
     timesI(ret._internal[i],r._internal[i]);
@@ -77,13 +77,13 @@ template<class vtype,int N> accelerator_inline void  timesI(iMatrix<vtype,N> &re
 }
 
 
-template<class vtype> accelerator_inline iScalar<vtype> timesMinusI(const iScalar<vtype>&r)
+template<class vtype> accelerator_inline iScalar<vtype> timesMinusI(const iScalar<vtype>&r) 
 {
   iScalar<vtype> ret;
   timesMinusI(ret._internal,r._internal);
   return ret;
 }
-template<class vtype,int N> accelerator_inline iVector<vtype,N> timesMinusI(const iVector<vtype,N>&r)
+template<class vtype,int N> accelerator_inline iVector<vtype,N> timesMinusI(const iVector<vtype,N>&r) 
 {
   iVector<vtype,N> ret;
   for(int i=0;i<N;i++){
@@ -101,11 +101,11 @@ template<class vtype,int N> accelerator_inline iMatrix<vtype,N> timesMinusI(cons
   return ret;
 }
 
-template<class vtype>  accelerator_inline void timesMinusI(iScalar<vtype> &ret,const iScalar<vtype>&r)
+template<class vtype>  accelerator_inline void timesMinusI(iScalar<vtype> &ret,const iScalar<vtype>&r) 
 {
   timesMinusI(ret._internal,r._internal);
 }
-template<class vtype,int N> accelerator_inline void timesMinusI(iVector<vtype,N> &ret,const iVector<vtype,N>&r)
+template<class vtype,int N> accelerator_inline void timesMinusI(iVector<vtype,N> &ret,const iVector<vtype,N>&r) 
 {
   for(int i=0;i<N;i++){
     timesMinusI(ret._internal[i],r._internal[i]);
@@ -120,99 +120,9 @@ template<class vtype,int N> accelerator_inline void  timesMinusI(iMatrix<vtype,N
 }
 
 
-// -----------------------------------------------------------------------------
-// SVE
-
-template<class vtype> accelerator_inline iScalar<vtype> addTimesI(const iScalar<vtype>&r1, const iScalar<vtype>&r2)
-{
-  iScalar<vtype> ret;
-  addTimesI(ret._internal,r1._internal,r2._internal);
-  return ret;
-}
-template<class vtype,int N> accelerator_inline iVector<vtype,N> addTimesI(const iVector<vtype,N>&r1, const iVector<vtype,N>&r2)
-{
-  iVector<vtype,N> ret;
-  for(int i=0;i<N;i++){
-    addTimesI(ret._internal[i],r1._internal[i],r2._internal[i]);
-  }
-  return ret;
-}
-template<class vtype,int N> accelerator_inline iMatrix<vtype,N> addTimesI(const iMatrix<vtype,N>&r1, const iMatrix<vtype,N>&r2)
-{
-  iMatrix<vtype,N> ret;
-  for(int i=0;i<N;i++){
-    for(int j=0;j<N;j++){
-      addTimesI(ret._internal[i][j],r1._internal[i][j],r2._internal[i][j]);
-    }}
-  return ret;
-}
-
-template<class vtype> accelerator_inline void addTimesI(iScalar<vtype> &ret,const iScalar<vtype>&r1,const iScalar<vtype>&r2)
-{
-  addTimesI(ret._internal,r1._internal,r2._internal);
-}
-template<class vtype,int N> accelerator_inline void addTimesI(iVector<vtype,N> &ret,const iVector<vtype,N>&r1,const iVector<vtype,N>&r2)
-{
-  for(int i=0;i<N;i++){
-    addTimesI(ret._internal[i],r1._internal[i],r2._internal[i]);
-  }
-}
-template<class vtype,int N> accelerator_inline void addTimesI(iMatrix<vtype,N> &ret,const iMatrix<vtype,N>&r1,const iMatrix<vtype,N>&r2)
-{
-  for(int i=0;i<N;i++){
-    for(int j=0;j<N;j++){
-      addTimesI(ret._internal[i][j],r1._internal[i][j],r2._internal[i][j]);
-    }}
-}
-
-template<class vtype> accelerator_inline iScalar<vtype> subTimesI(const iScalar<vtype>&r1, const iScalar<vtype>&r2)
-{
-  iScalar<vtype> ret;
-  subTimesI(ret._internal,r1._internal,r2._internal);
-  return ret;
-}
-template<class vtype,int N> accelerator_inline iVector<vtype,N> subTimesI(const iVector<vtype,N>&r1, const iVector<vtype,N>&r2)
-{
-  iVector<vtype,N> ret;
-  for(int i=0;i<N;i++){
-    subTimesI(ret._internal[i],r1._internal[i],r2._internal[i]);
-  }
-  return ret;
-}
-template<class vtype,int N> accelerator_inline iMatrix<vtype,N> subTimesI(const iMatrix<vtype,N>&r1, const iMatrix<vtype,N>&r2)
-{
-  iMatrix<vtype,N> ret;
-  for(int i=0;i<N;i++){
-    for(int j=0;j<N;j++){
-      subTimesI(ret._internal[i][j],r1._internal[i][j],r2._internal[i][j]);
-    }}
-  return ret;
-}
-
-template<class vtype> accelerator_inline void subTimesI(iScalar<vtype> &ret,const iScalar<vtype>&r1,const iScalar<vtype>&r2)
-{
-  subTimesI(ret._internal,r1._internal,r2._internal);
-}
-template<class vtype,int N> accelerator_inline void subTimesI(iVector<vtype,N> &ret,const iVector<vtype,N>&r1,const iVector<vtype,N>&r2)
-{
-  for(int i=0;i<N;i++){
-    subTimesI(ret._internal[i],r1._internal[i],r2._internal[i]);
-  }
-}
-template<class vtype,int N> accelerator_inline void subTimesI(iMatrix<vtype,N> &ret,const iMatrix<vtype,N>&r1,const iMatrix<vtype,N>&r2)
-{
-  for(int i=0;i<N;i++){
-    for(int j=0;j<N;j++){
-      subTimesI(ret._internal[i][j],r1._internal[i][j],r2._internal[i][j]);
-    }}
-}
-// -----------------------------------------------------------------------------
-// end SVE
-
-
-///////////////////////////////////////////////
+/////////////////////////////////////////////// 
 // Conj function for scalar, vector, matrix
-///////////////////////////////////////////////
+/////////////////////////////////////////////// 
 template<class vtype> accelerator_inline iScalar<vtype> conjugate(const iScalar<vtype>&r)
 {
   iScalar<vtype> ret;
@@ -237,9 +147,9 @@ template<class vtype,int N> accelerator_inline iMatrix<vtype,N> conjugate(const 
   return ret;
 }
 
-///////////////////////////////////////////////
+/////////////////////////////////////////////// 
 // Adj function for scalar, vector, matrix
-///////////////////////////////////////////////
+/////////////////////////////////////////////// 
 template<class vtype> accelerator_inline iScalar<vtype> adj(const iScalar<vtype>&r)
 {
   iScalar<vtype> ret;
@@ -296,7 +206,7 @@ template<class itype,int N> accelerator_inline auto real(const iVector<itype,N> 
   }
   return ret;
 }
-
+    
 template<class itype> accelerator_inline auto imag(const iScalar<itype> &z) -> iScalar<decltype(imag(z._internal))>
 {
   iScalar<decltype(imag(z._internal))> ret;

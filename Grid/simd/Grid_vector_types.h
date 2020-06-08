@@ -298,7 +298,7 @@ public:
 
   // FIXME -- alias this to an accelerator_inline MAC struct.
 
-// specialize mac for A64FX
+  // FIXME VLA build error
   #if defined(A64FX) || defined(A64FXFIXEDSIZE)
   friend accelerator_inline void mac(Grid_simd *__restrict__ y,
 				     const Grid_simd *__restrict__ a,
@@ -893,47 +893,6 @@ template <class S, class V, IfNotComplex<S> = 0>
 accelerator_inline Grid_simd<S, V> timesI(const Grid_simd<S, V> &in) {
   return in;
 }
-
-// -----------------------------------------------------------------------------
-
-// SVE only
-///////////////////////
-// AddTimesI
-///////////////////////
-template <class S, class V, IfComplex<S> = 0>
-accelerator_inline void addTimesI(Grid_simd<S, V> &ret, const Grid_simd<S, V> &in1, const Grid_simd<S, V> &in2) {
-  ret.v = binary<V>(in1.v, in2.v, AddTimesISIMD());
-}
-template <class S, class V, IfComplex<S> = 0>
-accelerator_inline Grid_simd<S, V> addTimesI(const Grid_simd<S, V> &in1, const Grid_simd<S, V> &in2) {
-  Grid_simd<S, V> ret;
-  ret = addTimesI(in1, in2);
-  return ret;
-}
-template <class S, class V, IfNotComplex<S> = 0>
-accelerator_inline Grid_simd<S, V> addTimesI(const Grid_simd<S, V> &in1, const Grid_simd<S, V> &in2) {
-  return in1;
-}
-///////////////////////
-// SubTimesI
-///////////////////////
-template <class S, class V, IfComplex<S> = 0>
-accelerator_inline void subTimesI(Grid_simd<S, V> &ret, const Grid_simd<S, V> &in1, const Grid_simd<S, V> &in2) {
-  ret.v = binary<V>(in1.v, in2.v, SubTimesISIMD());
-}
-template <class S, class V, IfComplex<S> = 0>
-accelerator_inline Grid_simd<S, V> subTimesI(const Grid_simd<S, V> &in1, const Grid_simd<S, V> &in2) {
-  Grid_simd<S, V> ret;
-  ret = subTimesI(in1, in2);
-  return ret;
-}
-template <class S, class V, IfNotComplex<S> = 0>
-accelerator_inline Grid_simd<S, V> subTimesI(const Grid_simd<S, V> &in1, const Grid_simd<S, V> &in2) {
-  return in1;
-}
-
-// end SVE
-// -----------------------------------------------------------------------------
 
 /////////////////////
 // Inner, outer

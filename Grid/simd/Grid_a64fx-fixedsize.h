@@ -442,59 +442,6 @@ struct TimesMinusI{
   }
 };
 
-// alternative implementation using fcadd
-// this is not optimal because we have  op1 = op2 + TimesMinusI(op3) = op2 - TimesI(op3)  etc
-// but ideally we have                  op1 = SubTimesI(op2,op3)
-//
-// makes performance worse in Benchmark_wilson using MPI
-// increases halogtime and gathertime
-/*
-struct TimesMinusI{
-  // Complex float
-  inline vecf operator()(vecf a, vecf b){
-    pred pg1 = acle<float>::pg1();
-    vecf z_v = acle<float>::zero();
-
-    return svcadd_x(pg1, z_v, a, 270);
-  }
-  // Complex double
-  inline vecd operator()(vecd a, vecd b){
-    pred pg1 = acle<double>::pg1();
-    vecd z_v = acle<double>::zero();
-
-    return svcadd_x(pg1, z_v, a, 270);
-  }
-};
-*/
-
-// SVE only, fcadd returns  a +- i*b
-// a + i * b
-struct AddTimesI{
-  // Complex float
-  inline vecf operator()(vecf a, vecf b){
-    pred pg1 = acle<float>::pg1();
-    return svcadd_x(pg1, a, b, 90);
-  }
-  // Complex double
-  inline vecd operator()(vecd a, vecd b){
-    pred pg1 = acle<double>::pg1();
-    return svcadd_x(pg1, a, b, 90);
-  }
-};
-// a - i * b
-struct SubTimesI{
-  // Complex float
-  inline vecf operator()(vecf a, vecf b){
-    pred pg1 = acle<float>::pg1();
-    return svcadd_x(pg1, a, b, 270);
-  }
-  // Complex double
-  inline vecd operator()(vecd a, vecd b){
-    pred pg1 = acle<double>::pg1();
-    return svcadd_x(pg1, a, b, 270);
-  }
-};
-
 struct TimesI{
   // Complex float
   inline vecf operator()(vecf a, vecf b){
@@ -517,33 +464,6 @@ struct TimesI{
     return svneg_m(a_v, pg_even, a_v);
   }
 };
-
-
-// alternative implementation using fcadd
-// this is not optimal because we have  op1 = op2 + TimesI(op3)  etc
-// ideally we have                      op1 = AddTimesI(op2,op3)
-//
-// makes performance worse in Benchmark_wilson using MPI
-// increases halogtime and gathertime
-/*
-struct TimesI{
-  // Complex float
-  inline vecf operator()(vecf a, vecf b){
-    pred pg1 = acle<float>::pg1();
-    vecf z_v = acle<float>::zero();
-
-    return svcadd_x(pg1, z_v, a, 90);
-  }
-  // Complex double
-  inline vecd operator()(vecd a, vecd b){
-    pred pg1 = acle<double>::pg1();
-    vecd z_v = acle<double>::zero();
-
-    return svcadd_x(pg1, z_v, a, 90);
-  }
-};
-*/
-
 
 struct PrecisionChange {
   static inline vech StoH (vecf sa, vecf sb) {
@@ -827,25 +747,6 @@ typedef veci SIMD_Itype; // Integer type
 
 // prefetch utilities
 inline void v_prefetch0(int size, const char *ptr){};
-
-/* PF 256
-inline void prefetch_HINT_T0(const char *ptr){
-  static int64_t last_ptr;
-  int64_t vptr = reinterpret_cast<std::intptr_t>(ptr) & 0x7fffffffffffff00ll;
-  if (last_ptr != vptr) {
-    last_ptr = vptr;
-    pred pg1 = Optimization::acle<double>::pg1();
-    svprfd(pg1, reinterpret_cast<int64_t*>(ptr), SV_PLDL1STRM);
-    svprfd(pg1, ptr, SV_PLDL1STRM);
-  }
-};
-*/
-/* PF 64
-inline void prefetch_HINT_T0(const char *ptr){
-  pred pg1 = Optimization::acle<double>::pg1();
-  svprfd(pg1, ptr, SV_PLDL1STRM);
-};
-*/
 inline void prefetch_HINT_T0(const char *ptr){};
 
 // Function name aliases
@@ -867,8 +768,5 @@ typedef Optimization::MaddRealPart   MaddRealPartSIMD;
 typedef Optimization::Conj           ConjSIMD;
 typedef Optimization::TimesMinusI    TimesMinusISIMD;
 typedef Optimization::TimesI         TimesISIMD;
-typedef Optimization::AddTimesI      AddTimesISIMD;
-typedef Optimization::SubTimesI      SubTimesISIMD;
-
 
 NAMESPACE_END(Grid);

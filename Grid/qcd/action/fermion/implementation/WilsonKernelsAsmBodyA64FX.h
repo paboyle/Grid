@@ -164,7 +164,12 @@ Author:  Nils Meyer  <nils.meyer@ur.de>  Regensburg University
   if((!local)&&(!st.same_node[Dir]) ) {					    \
     LOAD_CHI(base);							                \
     MULT_2SPIN_1(Dir);					                    \
+    PREFETCH_CHIMU(base);                                   \
+    /* PREFETCH_GAUGE_L1(NxtDir); */                        \
     MULT_2SPIN_2;					                        \
+    if (s == 0) {                                           \
+      if ((Dir == 0) || (Dir == 4)) { PREFETCH_GAUGE_L2(Dir); } \
+    }                                                       \
     RECON;								                    \
     nmu++;								                    \
   }
@@ -175,7 +180,12 @@ Author:  Nils Meyer  <nils.meyer@ur.de>  Regensburg University
   if((!local)&&(!st.same_node[Dir]) ) {					    \
     LOAD_CHI(base);							                \
     MULT_2SPIN_1(Dir);					                    \
+    PREFETCH_CHIMU(base);                                   \
+    /* PREFETCH_GAUGE_L1(NxtDir); */                        \
     MULT_2SPIN_2;					                        \
+    if (s == 0) {                                           \
+      if ((Dir == 0) || (Dir == 4)) { PREFETCH_GAUGE_L2(Dir); } \
+    }                                                       \
     RECON;								                    \
     nmu++;								                    \
   }
