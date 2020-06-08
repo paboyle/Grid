@@ -75,20 +75,20 @@ void Gather_plane_simple_table (Vector<std::pair<int,int> >& table,const Lattice
     // prefetching:
     // +1% performance for Wilson on 32**4
     // -2% performance for DW on 24**4 x 12
-     /*
-    const int dist = 2;
+     
+    const int dist = 7;
     if (i+dist < num){
       svbool_t pg1 = svptrue_b64();
 
       // prefetch input
       auto in = rhs_v(so+table_v[i+dist].second);
-      svprfd(pg1, (char*)&in, SV_PLDL1STRM);
+      svprfd(pg1, (char*)&in, SV_PLDL2STRM);
 
       // prefetch store buffer
       uint64_t o = table_v[i+dist].first;
-      svprfd(pg1, (char*)&buffer[off+o], SV_PSTL1STRM);
+      svprfd(pg1, (char*)&buffer[off+o], SV_PSTL2STRM);
     }
-*/
+
     compressed_t   tmp_c;
     uint64_t o = table_v[i].first;
     compress.Compress(&tmp_c,0,rhs_v(so+table_v[i].second));
