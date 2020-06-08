@@ -361,7 +361,7 @@ void WilsonKernels<Impl>::DhopDirAll( StencilImpl &st, DoubledGaugeField &U,Site
    autoView(out_Zp,out[6],AcceleratorWrite);
    autoView(out_Tp,out[7],AcceleratorWrite);
    auto CBp=st.CommBuf();
-   accelerator_forNB(sss,Nsite*Ls,Simd::Nsimd(),{
+   accelerator_for(sss,Nsite*Ls,Simd::Nsimd(),{
       int sU=sss/Ls;				
       int sF =sss;				
       DhopDirXm(st_v,U_v,CBp,sF,sU,in_v,out_Xm,0);
@@ -390,7 +390,7 @@ void WilsonKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeField &U,S
    auto CBp=st.CommBuf();			
 #define LoopBody(Dir)				\
    case Dir :					\
-     accelerator_forNB(ss,Nsite,Simd::Nsimd(),{	\
+     accelerator_for(ss,Nsite,Simd::Nsimd(),{	\
        for(int s=0;s<Ls;s++){			\
 	 int sU=ss;				\
 	 int sF = s+Ls*sU;						\
