@@ -136,7 +136,6 @@ private:
 
   static AccViewTable_t AccViewTable;
   static LRU_t LRU;
-  static LRU_t LRU_transient;
 
   /////////////////////////////////////////////////
   // Device motion
