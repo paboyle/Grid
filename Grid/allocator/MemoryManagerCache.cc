@@ -75,7 +75,7 @@ void MemoryManager::EntryErase(uint64_t CpuPtr)
 void  MemoryManager::LRUinsert(AcceleratorViewEntry &AccCache)
 {
   assert(AccCache.LRU_valid==0);
-  if (AccCache.Transient) { 
+  if (AccCache.transient) { 
     LRU.push_back(AccCache.CpuPtr);
     AccCache.LRU_entry = LRU.end();
   } else {
