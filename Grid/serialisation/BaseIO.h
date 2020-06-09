@@ -87,11 +87,7 @@ namespace Grid {
     template<typename Scalar_, typename Dimensions_, int Options_, typename IndexType>
     struct is_tensor_fixed<Eigen::TensorFixedSize<Scalar_, Dimensions_, Options_, IndexType>>
         : public std::true_type {};
-    template<typename Scalar_, typename Dimensions_, int Options_, typename IndexType,
-              int MapOptions_, template <class> class MapPointer_>
-    struct is_tensor_fixed<Eigen::TensorMap<Eigen::TensorFixedSize<Scalar_, Dimensions_,
-                                            Options_, IndexType>, MapOptions_, MapPointer_>>
-        : public std::true_type {};
+    template<typename T> struct is_tensor_fixed<Eigen::TensorMap<T>> : public std::true_type {};
 
     // Is this a variable-size Eigen tensor
     template<typename T, typename V = void> struct is_tensor_variable : public std::false_type {};

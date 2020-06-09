@@ -5,6 +5,7 @@
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Christoph Lehner <christoph@lhnr.de>
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -64,6 +65,37 @@ inline typename vobj::scalar_object sum_cpu(const vobj *arg, Integer osites)
   
   return ssum;
 }
+template<class vobj>
+inline typename vobj::scalar_objectD sumD_cpu(const vobj *arg, Integer osites)
+{
+  typedef typename vobj::scalar_objectD  sobj;
+
+  const int nthread = GridThread::GetThreads();
+
+  Vector<sobj> sumarray(nthread);
+  for(int i=0;i<nthread;i++){
+    sumarray[i]=Zero();
+  }
+  
+  thread_for(thr,nthread, {
+    int nwork, mywork, myoff;
+    nwork = osites;
+    GridThread::GetWork(nwork,thr,mywork,myoff);
+    vobj vvsum=Zero();
+    for(int ss=myoff;ss<mywork+myoff; ss++){
+      vvsum = vvsum + arg[ss];
+    }
+    sumarray[thr]=Reduce(vvsum);
+  });
+  
+  sobj ssum=Zero();  // sum across threads
+  for(int i=0;i<nthread;i++){
+    ssum = ssum+sumarray[i];
+  } 
+  
+  return ssum;
+}
+
 
 template<class vobj>
 inline typename vobj::scalar_object sum(const vobj *arg, Integer osites)
@@ -72,6 +104,15 @@ inline typename vobj::scalar_object sum(const vobj *arg, Integer osites)
   return sum_gpu(arg,osites);
 #else
   return sum_cpu(arg,osites);
+#endif  
+}
+template<class vobj>
+inline typename vobj::scalar_objectD sumD(const vobj *arg, Integer osites)
+{
+#if defined(GRID_CUDA)||defined(GRID_HIP)
+  return sumD_gpu(arg,osites);
+#else
+  return sumD_cpu(arg,osites);
 #endif  
 }
 
@@ -101,43 +142,48 @@ template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
 
 // Double inner product
 template<class vobj>
-inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right)
+inline ComplexD rankInnerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right)
 {
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_typeD vector_type;
   ComplexD  nrm;
   
   GridBase *grid = left.Grid();
-  
+
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
   
   // Might make all code paths go this way.
-  autoView( left_v , left, AcceleratorRead);
-  autoView( right_v,right, AcceleratorRead);
-
-  // GPU - SIMT lane compliance...
-  typedef decltype(innerProduct(left_v[0],right_v[0])) inner_t;
+  typedef decltype(innerProduct(vobj(),vobj())) inner_t;
   Vector<inner_t> inner_tmp(sites);
   auto inner_tmp_v = &inner_tmp[0];
+    
+  {
+    autoView( left_v , left, AcceleratorRead);
+    autoView( right_v,right, AcceleratorRead);
 
-  accelerator_for( ss, sites, nsimd,{
-      auto x_l = left_v(ss);
-      auto y_l = right_v(ss);
-      coalescedWrite(inner_tmp_v[ss],innerProduct(x_l,y_l));
-  })
+    // GPU - SIMT lane compliance...
+    accelerator_for( ss, sites, nsimd,{
+	auto x_l = left_v(ss);
+	auto y_l = right_v(ss);
+	coalescedWrite(inner_tmp_v[ss],innerProduct(x_l,y_l));
+      })
+  }
 
   // This is in single precision and fails some tests
   // Need a sumD that sums in double
-#if defined(GRID_CUDA)||defined(GRID_HIP)
-  nrm = TensorRemove(sumD_gpu(inner_tmp_v,sites));  
-#else
-  nrm = TensorRemove(sum_cpu(inner_tmp_v,sites));
-#endif
-  grid->GlobalSum(nrm);
-
+  nrm = TensorRemove(sumD(inner_tmp_v,sites));  
   return nrm;
 }
+
+template<class vobj>
+inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right) {
+  GridBase *grid = left.Grid();
+  ComplexD nrm = rankInnerProduct(left,right);
+  grid->GlobalSum(nrm);
+  return nrm;
+}
+
 
 /////////////////////////
 // Fast axpby_norm
@@ -181,17 +227,51 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
       coalescedWrite(inner_tmp_v[ss],innerProduct(tmp,tmp));
       coalescedWrite(z_v[ss],tmp);
   });
-#if defined(GRID_CUDA)||defined(GRID_HIP)
-  nrm = real(TensorRemove(sumD_gpu(inner_tmp_v,sites)));
-#else
-  // Already promoted to double
-  nrm = real(TensorRemove(sum(inner_tmp_v,sites)));
-#endif
+  nrm = real(TensorRemove(sumD(inner_tmp_v,sites)));
   grid->GlobalSum(nrm);
   return nrm; 
 }
-
  
+template<class vobj> strong_inline void
+innerProductNorm(ComplexD& ip, RealD &nrm, const Lattice<vobj> &left,const Lattice<vobj> &right)
+{
+  conformable(left,right);
+
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_typeD vector_type;
+  Vector<ComplexD> tmp(2);
+
+  GridBase *grid = left.Grid();
+
+
+  const uint64_t nsimd = grid->Nsimd();
+  const uint64_t sites = grid->oSites();
+
+  // GPU
+  typedef decltype(innerProduct(vobj(),vobj())) inner_t;
+  typedef decltype(innerProduct(vobj(),vobj())) norm_t;
+  Vector<inner_t> inner_tmp(sites);
+  Vector<norm_t> norm_tmp(sites);
+  auto inner_tmp_v = &inner_tmp[0];
+  auto norm_tmp_v = &norm_tmp[0];
+  {
+    autoView(left_v,left, AcceleratorRead);
+    autoView(right_v,right,AcceleratorRead);
+    accelerator_for( ss, sites, nsimd,{
+	auto left_tmp = left_v(ss);
+	coalescedWrite(inner_tmp_v[ss],innerProduct(left_tmp,right_v(ss)));
+	coalescedWrite(norm_tmp_v[ss],innerProduct(left_tmp,left_tmp));
+      });
+  }
+
+  tmp[0] = TensorRemove(sumD(inner_tmp_v,sites));
+  tmp[1] = TensorRemove(sumD(norm_tmp_v,sites));
+
+  grid->GlobalSumVector(&tmp[0],2); // keep norm Complex -> can use GlobalSumVector
+  ip = tmp[0];
+  nrm = real(tmp[1]);
+}
+
 template<class Op,class T1>
 inline auto sum(const LatticeUnaryExpression<Op,T1> & expr)
   ->typename decltype(expr.op.func(eval(0,expr.arg1)))::scalar_object

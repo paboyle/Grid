@@ -87,6 +87,7 @@ int main (int argc, char ** argv)
   for(int mu=0;mu<Nd;mu++){
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
   }
+  ref = Zero();
 
   RealD mass=0.1;
   RealD c1=9.0/8.0;

@@ -6,6 +6,7 @@
     Copyright (C) 2015
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Christoph Lehner <christoph@lhnr.de>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -83,32 +84,138 @@ template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Latti
     }
   });
 }
-  
-template<class vobj,class CComplex,int nbasis>
+
+////////////////////////////////////////////////////////////////////////////////////////////
+// Flexible Type Conversion for internal promotion to double as well as graceful
+// treatment of scalar-compatible types
+////////////////////////////////////////////////////////////////////////////////////////////
+accelerator_inline void convertType(ComplexD & out, const std::complex<double> & in) {
+  out = in;
+}
+
+accelerator_inline void convertType(ComplexF & out, const std::complex<float> & in) {
+  out = in;
+}
+
+#ifdef GRID_SIMT
+accelerator_inline void convertType(vComplexF & out, const ComplexF & in) {
+  ((ComplexF*)&out)[SIMTlane(vComplexF::Nsimd())] = in;
+}
+accelerator_inline void convertType(vComplexD & out, const ComplexD & in) {
+  ((ComplexD*)&out)[SIMTlane(vComplexD::Nsimd())] = in;
+}
+accelerator_inline void convertType(vComplexD2 & out, const ComplexD & in) {
+  ((ComplexD*)&out)[SIMTlane(vComplexD::Nsimd()*2)] = in;
+}
+#endif
+
+accelerator_inline void convertType(vComplexF & out, const vComplexD2 & in) {
+  out.v = Optimization::PrecisionChange::DtoS(in._internal[0].v,in._internal[1].v);
+}
+
+accelerator_inline void convertType(vComplexD2 & out, const vComplexF & in) {
+  Optimization::PrecisionChange::StoD(in.v,out._internal[0].v,out._internal[1].v);
+}
+
+template<typename T1,typename T2,int N>
+  accelerator_inline void convertType(iMatrix<T1,N> & out, const iMatrix<T2,N> & in);
+template<typename T1,typename T2,int N>
+  accelerator_inline void convertType(iVector<T1,N> & out, const iVector<T2,N> & in);
+
+template<typename T1,typename T2, typename std::enable_if<!isGridScalar<T1>::value, T1>::type* = nullptr>
+accelerator_inline void convertType(T1 & out, const iScalar<T2> & in) {
+  convertType(out,in._internal);
+}
+
+template<typename T1,typename T2>
+accelerator_inline void convertType(iScalar<T1> & out, const T2 & in) {
+  convertType(out._internal,in);
+}
+
+template<typename T1,typename T2,int N>
+accelerator_inline void convertType(iMatrix<T1,N> & out, const iMatrix<T2,N> & in) {
+  for (int i=0;i<N;i++)
+    for (int j=0;j<N;j++)
+      convertType(out._internal[i][j],in._internal[i][j]);
+}
+
+template<typename T1,typename T2,int N>
+accelerator_inline void convertType(iVector<T1,N> & out, const iVector<T2,N> & in) {
+  for (int i=0;i<N;i++)
+    convertType(out._internal[i],in._internal[i]);
+}
+
+template<typename T, typename std::enable_if<isGridFundamental<T>::value, T>::type* = nullptr>
+accelerator_inline void convertType(T & out, const T & in) {
+  out = in;
+}
+
+template<typename T1,typename T2>
+accelerator_inline void convertType(Lattice<T1> & out, const Lattice<T2> & in) {
+  autoView( out_v , out,AcceleratorWrite);
+  autoView( in_v  , in ,AcceleratorRead);
+  accelerator_for(ss,out_v.size(),T1::Nsimd(),{
+      convertType(out_v[ss],in_v(ss));
+  });
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+// precision-promoted local inner product
+////////////////////////////////////////////////////////////////////////////////////////////
+template<class vobj>
+inline auto localInnerProductD(const Lattice<vobj> &lhs,const Lattice<vobj> &rhs)
+-> Lattice<iScalar<decltype(TensorRemove(innerProductD2(lhs.View()[0],rhs.View()[0])))>>
+{
+  autoView( lhs_v , lhs, AcceleratorRead);
+  autoView( rhs_v , rhs, AcceleratorRead);
+
+  typedef decltype(TensorRemove(innerProductD2(lhs_v[0],rhs_v[0]))) t_inner;
+  Lattice<iScalar<t_inner>> ret(lhs.Grid());
+
+  {
+    autoView(ret_v, ret,AcceleratorWrite);
+    accelerator_for(ss,rhs_v.size(),vobj::Nsimd(),{
+      convertType(ret_v[ss],innerProductD2(lhs_v(ss),rhs_v(ss)));
+    });
+  }
+  return ret;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+// block routines
+////////////////////////////////////////////////////////////////////////////////////////////
+template<class vobj,class CComplex,int nbasis,class VLattice>
 inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
-			  const             Lattice<vobj>   &fineData,
-			  const std::vector<Lattice<vobj> > &Basis)
+			   const             Lattice<vobj>   &fineData,
+			   const VLattice &Basis)
 {
   GridBase * fine  = fineData.Grid();
   GridBase * coarse= coarseData.Grid();
 
-  Lattice<CComplex> ip(coarse); 
+  Lattice<iScalar<CComplex>> ip(coarse);
+  Lattice<vobj>     fineDataRed = fineData;
 
   autoView( coarseData_ , coarseData, AcceleratorWrite);
   autoView( ip_         , ip,         AcceleratorWrite);
   for(int v=0;v<nbasis;v++) {
-    blockInnerProduct(ip,Basis[v],fineData);
+    blockInnerProductD(ip,Basis[v],fineDataRed); // ip = <basis|fine>
     accelerator_for( sc, coarse->oSites(), vobj::Nsimd(), {
-	coalescedWrite(coarseData_[sc](v),ip_(sc));
+	convertType(coarseData_[sc](v),ip_[sc]);
     });
+
+    // improve numerical stability of projection
+    // |fine> = |fine> - <basis|fine> |basis>
+    ip=-ip;
+    blockZAXPY(fineDataRed,ip,Basis[v],fineDataRed); 
   }
 }
 
-template<class vobj,class CComplex>
-inline void blockZAXPY(Lattice<vobj> &fineZ,
-		       const Lattice<CComplex> &coarseA,
-		       const Lattice<vobj> &fineX,
-		       const Lattice<vobj> &fineY)
+
+template<class vobj,class vobj2,class CComplex>
+  inline void blockZAXPY(Lattice<vobj> &fineZ,
+			 const Lattice<CComplex> &coarseA,
+			 const Lattice<vobj2> &fineX,
+			 const Lattice<vobj> &fineY)
 {
   GridBase * fine  = fineZ.Grid();
   GridBase * coarse= coarseA.Grid();
@@ -120,7 +227,7 @@ inline void blockZAXPY(Lattice<vobj> &fineZ,
   conformable(fineX,fineZ);
 
   int _ndimension = coarse->_ndimension;
-  
+
   Coordinate  block_r      (_ndimension);
 
   // FIXME merge with subdivide checking routine as this is redundant
@@ -135,23 +242,60 @@ inline void blockZAXPY(Lattice<vobj> &fineZ,
   autoView( coarseA_, coarseA, AcceleratorRead);
 
   accelerator_for(sf, fine->oSites(), CComplex::Nsimd(), {
-    
-    int sc;
-    Coordinate coor_c(_ndimension);
-    Coordinate coor_f(_ndimension);
 
-    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
-    for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+      int sc;
+      Coordinate coor_c(_ndimension);
+      Coordinate coor_f(_ndimension);
 
-    // z = A x + y
-    coalescedWrite(fineZ_[sf],coarseA_(sc)*fineX_(sf)+fineY_(sf));
+      Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+      for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
+      Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
-  });
+      // z = A x + y
+#ifdef GRID_SIMT
+      typename vobj2::tensor_reduced::scalar_object cA;
+      typename vobj::scalar_object cAx;
+#else
+      typename vobj2::tensor_reduced cA;
+      vobj cAx;
+#endif
+      convertType(cA,TensorRemove(coarseA_(sc)));
+      auto prod = cA*fineX_(sf);
+      convertType(cAx,prod);
+      coalescedWrite(fineZ_[sf],cAx+fineY_(sf));
+
+    });
 
   return;
 }
+
 template<class vobj,class CComplex>
+  inline void blockInnerProductD(Lattice<CComplex> &CoarseInner,
+				 const Lattice<vobj> &fineX,
+				 const Lattice<vobj> &fineY)
+{
+  typedef iScalar<decltype(TensorRemove(innerProductD2(vobj(),vobj())))> dotp;
+
+  GridBase *coarse(CoarseInner.Grid());
+  GridBase *fine  (fineX.Grid());
+
+  Lattice<dotp> fine_inner(fine); fine_inner.Checkerboard() = fineX.Checkerboard();
+  Lattice<dotp> coarse_inner(coarse);
+
+  // Precision promotion
+  fine_inner = localInnerProductD(fineX,fineY);
+  blockSum(coarse_inner,fine_inner);
+  {
+    autoView( CoarseInner_  , CoarseInner,AcceleratorWrite);
+    autoView( coarse_inner_ , coarse_inner,AcceleratorRead);
+    accelerator_for(ss, coarse->oSites(), 1, {
+      convertType(CoarseInner_[ss], TensorRemove(coarse_inner_[ss]));
+    });
+  }
+ 
+}
+
+template<class vobj,class CComplex> // deprecate
 inline void blockInnerProduct(Lattice<CComplex> &CoarseInner,
 			      const Lattice<vobj> &fineX,
 			      const Lattice<vobj> &fineY)
@@ -167,12 +311,15 @@ inline void blockInnerProduct(Lattice<CComplex> &CoarseInner,
   // Precision promotion?
   fine_inner = localInnerProduct(fineX,fineY);
   blockSum(coarse_inner,fine_inner);
-  autoView( CoarseInner_  , CoarseInner, AcceleratorWrite);
-  autoView( coarse_inner_ , coarse_inner, AcceleratorRead);
-  accelerator_for(ss, coarse->oSites(), 1, {
-    CoarseInner_[ss] = coarse_inner_[ss];
-  });
+  {
+    autoView( CoarseInner_  , CoarseInner, AcceleratorWrite);
+    autoView( coarse_inner_ , coarse_inner, AcceleratorRead);
+    accelerator_for(ss, coarse->oSites(), 1, {
+	CoarseInner_[ss] = coarse_inner_[ss];
+    });
+  }
 }
+
 template<class vobj,class CComplex>
 inline void blockNormalise(Lattice<CComplex> &ip,Lattice<vobj> &fineX)
 {
@@ -185,7 +332,7 @@ inline void blockNormalise(Lattice<CComplex> &ip,Lattice<vobj> &fineX)
 // useful in multigrid project;
 // Generic name : Coarsen?
 template<class vobj>
-inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
+inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData) 
 {
   GridBase * fine  = fineData.Grid();
   GridBase * coarse= coarseData.Grid();
@@ -193,9 +340,9 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
   subdivides(coarse,fine); // require they map
 
   int _ndimension = coarse->_ndimension;
-  
+
   Coordinate  block_r      (_ndimension);
-  
+
   for(int d=0 ; d<_ndimension;d++){
     block_r[d] = fine->_rdimensions[d] / coarse->_rdimensions[d];
   }
@@ -208,26 +355,27 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
 
   accelerator_for(sc,coarse->oSites(),1,{
 
-    // One thread per sub block
-    Coordinate coor_c(_ndimension);
-    Lexicographic::CoorFromIndex(coor_c,sc,coarse->_rdimensions);  // Block coordinate
-    coarseData_[sc]=Zero();
+      // One thread per sub block
+      Coordinate coor_c(_ndimension);
+      Lexicographic::CoorFromIndex(coor_c,sc,coarse->_rdimensions);  // Block coordinate
+      coarseData_[sc]=Zero();
 
-    for(int sb=0;sb<blockVol;sb++){
-      
-      int sf;
-      Coordinate coor_b(_ndimension);
-      Coordinate coor_f(_ndimension);
-      Lexicographic::CoorFromIndex(coor_b,sb,block_r);               // Block sub coordinate
-      for(int d=0;d<_ndimension;d++) coor_f[d]=coor_c[d]*block_r[d] + coor_b[d];
-      Lexicographic::IndexFromCoor(coor_f,sf,fine->_rdimensions);
+      for(int sb=0;sb<blockVol;sb++){
 
-      coarseData_[sc]=coarseData_[sc]+fineData_[sf];
-    }
+	int sf;
+	Coordinate coor_b(_ndimension);
+	Coordinate coor_f(_ndimension);
+	Lexicographic::CoorFromIndex(coor_b,sb,block_r);               // Block sub coordinate
+	for(int d=0;d<_ndimension;d++) coor_f[d]=coor_c[d]*block_r[d] + coor_b[d];
+	Lexicographic::IndexFromCoor(coor_f,sf,fine->_rdimensions);
 
-  });
+	coarseData_[sc]=coarseData_[sc]+fineData_[sf];
+      }
+
+    });
   return;
 }
+
 
 template<class vobj>
 inline void blockPick(GridBase *coarse,const Lattice<vobj> &unpicked,Lattice<vobj> &picked,Coordinate coor)
@@ -250,8 +398,8 @@ inline void blockPick(GridBase *coarse,const Lattice<vobj> &unpicked,Lattice<vob
   }
 }
 
-template<class vobj,class CComplex>
-inline void blockOrthogonalise(Lattice<CComplex> &ip,std::vector<Lattice<vobj> > &Basis)
+template<class CComplex,class VLattice>
+inline void blockOrthonormalize(Lattice<CComplex> &ip,VLattice &Basis)
 {
   GridBase *coarse = ip.Grid();
   GridBase *fine   = Basis[0].Grid();
@@ -259,23 +407,30 @@ inline void blockOrthogonalise(Lattice<CComplex> &ip,std::vector<Lattice<vobj> >
   int       nbasis = Basis.size() ;
 
   // checks
-  subdivides(coarse,fine); 
+  subdivides(coarse,fine);
   for(int i=0;i<nbasis;i++){
     conformable(Basis[i].Grid(),fine);
   }
 
   for(int v=0;v<nbasis;v++) {
     for(int u=0;u<v;u++) {
-      //Inner product & remove component 
-      blockInnerProduct(ip,Basis[u],Basis[v]);
+      //Inner product & remove component
+      blockInnerProductD(ip,Basis[u],Basis[v]);
       ip = -ip;
-      blockZAXPY<vobj,CComplex> (Basis[v],ip,Basis[u],Basis[v]);
+      blockZAXPY(Basis[v],ip,Basis[u],Basis[v]);
     }
     blockNormalise(ip,Basis[v]);
   }
 }
 
+template<class vobj,class CComplex>
+inline void blockOrthogonalise(Lattice<CComplex> &ip,std::vector<Lattice<vobj> > &Basis) // deprecated inaccurate naming
+{
+  blockOrthonormalize(ip,Basis);
+}
+
 #if 0
+// TODO: CPU optimized version here
 template<class vobj,class CComplex,int nbasis>
 inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
 			 Lattice<vobj>   &fineData,
@@ -320,17 +475,17 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
   
 }
 #else
-template<class vobj,class CComplex,int nbasis>
+template<class vobj,class CComplex,int nbasis,class VLattice>
 inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
 			 Lattice<vobj>   &fineData,
-			 const std::vector<Lattice<vobj> > &Basis)
+			 const VLattice &Basis)
 {
   GridBase * fine  = fineData.Grid();
   GridBase * coarse= coarseData.Grid();
-
   fineData=Zero();
   for(int i=0;i<nbasis;i++) {
     Lattice<iScalar<CComplex> > ip = PeekIndex<0>(coarseData,i);
+
     Lattice<CComplex> cip(coarse);
     autoView( cip_ , cip, AcceleratorWrite);
     autoView(  ip_ ,  ip, AcceleratorRead);
@@ -407,6 +562,7 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
   Coordinate rdt = Tg->_rdimensions;
   Coordinate ist = Tg->_istride;
   Coordinate ost = Tg->_ostride;
+
   autoView( t_v , To, AcceleratorWrite);
   autoView( f_v , From, AcceleratorRead);
   accelerator_for(idx,Fg->lSites(),1,{

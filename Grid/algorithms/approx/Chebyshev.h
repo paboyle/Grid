@@ -234,10 +234,8 @@ public:
 
     GridBase *grid=in.Grid();
 
-    // std::cout << "Chevyshef(): in.Grid()="<<in.Grid()<<std::endl;
-    //std::cout <<" Linop.Grid()="<<Linop.Grid()<<"Linop.RedBlackGrid()="<<Linop.RedBlackGrid()<<std::endl;
-
     int vol=grid->gSites();
+    typedef typename Field::vector_type vector_type;
 
     Field T0(grid); T0 = in;  
     Field T1(grid); 
@@ -258,14 +256,28 @@ public:
     //    out = ()*T0 + Coeffs[1]*T1;
     axpby(out,0.5*Coeffs[0],Coeffs[1],T0,T1);
     for(int n=2;n<order;n++){
-	
+
       Linop.HermOp(*Tn,y);
-      //     y=xscale*y+mscale*(*Tn);
-      //      *Tnp=2.0*y-(*Tnm);
-      //      out=out+Coeffs[n]* (*Tnp);
+#if 0
+      auto y_v = y.View();
+      auto Tn_v = Tn->View();
+      auto Tnp_v = Tnp->View();
+      auto Tnm_v = Tnm->View();
+      constexpr int Nsimd = vector_type::Nsimd();
+      accelerator_forNB(ss, in.Grid()->oSites(), Nsimd, {
+	  coalescedWrite(y_v[ss],xscale*y_v(ss)+mscale*Tn_v(ss));
+	  coalescedWrite(Tnp_v[ss],2.0*y_v(ss)-Tnm_v(ss));
+      });
+      if ( Coeffs[n] != 0.0) {
+	axpy(out,Coeffs[n],*Tnp,out);
+      }
+#else
       axpby(y,xscale,mscale,y,(*Tn));
       axpby(*Tnp,2.0,-1.0,y,(*Tnm));
-      axpy(out,Coeffs[n],*Tnp,out);
+      if ( Coeffs[n] != 0.0) {
+	axpy(out,Coeffs[n],*Tnp,out);
+      }
+#endif
       // Cycle pointers to avoid copies
       Field *swizzle = Tnm;
       Tnm    =Tn;

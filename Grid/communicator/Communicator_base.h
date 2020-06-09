@@ -114,6 +114,7 @@ public:
   void GlobalSumVector(RealD *,int N);
   void GlobalSum(uint32_t &);
   void GlobalSum(uint64_t &);
+  void GlobalSumVector(uint64_t*,int N);
   void GlobalSum(ComplexF &c);
   void GlobalSumVector(ComplexF *c,int N);
   void GlobalSum(ComplexD &c);

@@ -9,6 +9,7 @@ Copyright (C) 2015
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Christoph Lehner <christoph@lhnr.de>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -91,6 +92,7 @@ public:
   // The view is trivially copy constructible and may be copied to an accelerator device
   // in device lambdas
   /////////////////////////////////////////////////////////////////////////////////
+
   LatticeView<vobj> View (ViewMode mode) const 
   {
     LatticeView<vobj> accessor(*( (LatticeAccelerator<vobj> *) this),mode);

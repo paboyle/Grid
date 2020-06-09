@@ -52,6 +52,26 @@ namespace PeriodicBC {
     tmp = adj(Link)*field;
     return Cshift(tmp,mu,-1);// moves towards positive mu
   }
+
+  template<class gauge,typename Op, typename T1> auto
+    CovShiftForward(const Lattice<gauge> &Link, 
+		    int mu,
+		    const LatticeUnaryExpression<Op,T1> &expr)
+    -> Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> 
+  {
+    Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> arg(expr);
+    return CovShiftForward(Link,mu,arg);
+  }
+  template<class gauge,typename Op, typename T1> auto
+    CovShiftBackward(const Lattice<gauge> &Link, 
+		     int mu,
+		     const LatticeUnaryExpression<Op,T1> &expr)
+    -> Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> 
+  {
+    Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> arg(expr);
+    return CovShiftForward(Link,mu,arg);
+  }
+
 }
 
 
@@ -121,6 +141,26 @@ namespace ConjugateBC {
     //    std::cout<<"Gparity::CovCshiftBackward mu="<<mu<<std::endl;
     return Cshift(tmp,mu,-1);// moves towards positive mu
   }
+
+  template<class gauge,typename Op, typename T1> auto
+    CovShiftForward(const Lattice<gauge> &Link, 
+		    int mu,
+		    const LatticeUnaryExpression<Op,T1> &expr)
+    -> Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> 
+  {
+    Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> arg(expr);
+    return CovShiftForward(Link,mu,arg);
+  }
+  template<class gauge,typename Op, typename T1> auto
+    CovShiftBackward(const Lattice<gauge> &Link, 
+		     int mu,
+		     const LatticeUnaryExpression<Op,T1> &expr)
+    -> Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> 
+  {
+    Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> arg(expr);
+    return CovShiftForward(Link,mu,arg);
+  }
+
 
 }
 

@@ -128,17 +128,17 @@ void NaiveStaggeredFermion<Impl>::ImportGauge(const GaugeField &_U)
 /////////////////////////////
 
 template <class Impl>
-RealD NaiveStaggeredFermion<Impl>::M(const FermionField &in, FermionField &out) {
+void NaiveStaggeredFermion<Impl>::M(const FermionField &in, FermionField &out) {
   out.Checkerboard() = in.Checkerboard();
   Dhop(in, out, DaggerNo);
-  return axpy_norm(out, mass, in, out);
+  axpy(out, mass, in, out);
 }
 
 template <class Impl>
-RealD NaiveStaggeredFermion<Impl>::Mdag(const FermionField &in, FermionField &out) {
+void NaiveStaggeredFermion<Impl>::Mdag(const FermionField &in, FermionField &out) {
   out.Checkerboard() = in.Checkerboard();
   Dhop(in, out, DaggerYes);
-  return axpy_norm(out, mass, in, out);
+  axpy(out, mass, in, out);
 }
 
 template <class Impl>

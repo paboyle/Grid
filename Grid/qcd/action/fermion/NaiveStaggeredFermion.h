@@ -71,8 +71,8 @@ public:
   // override multiply; cut number routines if pass dagger argument
   // and also make interface more uniformly consistent
   //////////////////////////////////////////////////////////////////
-  RealD M(const FermionField &in, FermionField &out);
-  RealD Mdag(const FermionField &in, FermionField &out);
+  void M(const FermionField &in, FermionField &out);
+  void Mdag(const FermionField &in, FermionField &out);
 
   /////////////////////////////////////////////////////////
   // half checkerboard operations
