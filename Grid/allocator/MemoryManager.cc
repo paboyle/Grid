@@ -86,7 +86,24 @@ void MemoryManager::Init(void)
       Ncache[AccSmall]=Nc;
     }
   }
-  std::cout << "MemoryManager::Init() SMALL "<<Ncache[CpuSmall]<<" LARGE "<<Ncache[Cpu]<<std::endl;
+  std::cout << "MemoryManager::Init() setting up"<<std::endl;
+#ifdef ALLOCATION_CACHE
+  std::cout << "MemoryManager::Init() cache pool for recent allocations: SMALL "<<Ncache[CpuSmall]<<" LARGE "<<Ncache[Cpu]<<std::endl;
+#endif
+#ifdef GRID_UVM
+  std::cout << "MemoryManager::Init() Unified memory space"<<std::endl;
+#ifdef GRID_CUDA
+  std::cout << "MemoryManager::Init() Using cudaMallocManaged"<<std::endl;
+#endif
+#ifdef GRID_HIP
+  std::cout << "MemoryManager::Init() Using hipMallocManaged"<<std::endl;
+#endif
+#ifdef GRID_SYCL
+  std::cout << "MemoryManager::Init() Using SYCL malloc_shared"<<std::endl;
+#endif
+#else
+  std::cout << "MemoryManager::Init() Non unified: Caching accelerator data in dedicated memory"<<std::endl;
+#endif
 }
 
 void *MemoryManager::Insert(void *ptr,size_t bytes,int type) 

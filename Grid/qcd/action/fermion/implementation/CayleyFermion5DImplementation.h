@@ -323,7 +323,7 @@ void CayleyFermion5D<Impl>::MeooeDag5D    (const FermionField &psi, FermionField
 }
 
 template<class Impl>
-RealD CayleyFermion5D<Impl>::M    (const FermionField &psi, FermionField &chi)
+void CayleyFermion5D<Impl>::M    (const FermionField &psi, FermionField &chi)
 {
   FermionField Din(psi.Grid());
   
@@ -335,11 +335,10 @@ RealD CayleyFermion5D<Impl>::M    (const FermionField &psi, FermionField &chi)
   axpby(chi,1.0,1.0,chi,psi); 
   
   M5D(psi,chi);
-  return(norm2(chi));
 }
 
 template<class Impl>
-RealD CayleyFermion5D<Impl>::Mdag (const FermionField &psi, FermionField &chi)
+void CayleyFermion5D<Impl>::Mdag (const FermionField &psi, FermionField &chi)
 {
   // Under adjoint
   //D1+        D1- P-    ->   D1+^dag   P+ D2-^dag
@@ -354,7 +353,6 @@ RealD CayleyFermion5D<Impl>::Mdag (const FermionField &psi, FermionField &chi)
   M5Ddag(psi,chi);
   // ((b D_W + D_w hop terms +1) on s-diag
   axpby (chi,1.0,1.0,chi,psi); 
-  return norm2(chi);
 }
 
 // half checkerboard operations

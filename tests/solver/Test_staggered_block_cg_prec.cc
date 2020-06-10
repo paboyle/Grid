@@ -128,9 +128,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
     std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
-    HermOp4d.Report();
   }
-  Ds4d.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
 
@@ -148,9 +146,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
     std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
-    HermOp.Report();
   }
-  Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
@@ -167,10 +163,8 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
     std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
-    HermOp.Report();
   }
 
-  Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
@@ -187,9 +181,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
     std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
-    HermOp.Report();
   }
-  Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
@@ -206,9 +198,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
     std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
-    HermOp.Report();
   }
-  Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
@@ -232,7 +222,6 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
     std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
-    //    HermOp4d.Report();
   }
 
 

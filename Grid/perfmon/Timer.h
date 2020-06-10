@@ -110,15 +110,15 @@ public:
 #endif
     accumulator = std::chrono::duration_cast<GridUsecs>(start-start); 
   }
-  GridTime Elapsed(void) {
+  GridTime Elapsed(void) const {
     assert(running == false);
     return std::chrono::duration_cast<GridTime>( accumulator );
   }
-  uint64_t useconds(void){
+  uint64_t useconds(void) const {
     assert(running == false);
     return (uint64_t) accumulator.count();
   }
-  bool isRunning(void){
+  bool isRunning(void) const {
     return running;
   }
 };

@@ -1,4 +1,3 @@
-
 /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -99,8 +98,8 @@ public:
   GridBase *FermionRedBlackGrid(void)    { return _FiveDimRedBlackGrid;}
 
   // full checkerboard operations; leave unimplemented as abstract for now
-  virtual RealD  M    (const FermionField &in, FermionField &out){assert(0); return 0.0;};
-  virtual RealD  Mdag (const FermionField &in, FermionField &out){assert(0); return 0.0;};
+  virtual void   M    (const FermionField &in, FermionField &out){assert(0);};
+  virtual void   Mdag (const FermionField &in, FermionField &out){assert(0);};
 
   // half checkerboard operations; leave unimplemented as abstract for now
   virtual void   Meooe       (const FermionField &in, FermionField &out){assert(0);};

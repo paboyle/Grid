@@ -11,7 +11,6 @@ NAMESPACE_BEGIN(Grid);
 ////////////////////////////////////////////////////////////
 MemoryManager::AccViewTable_t MemoryManager::AccViewTable;
 MemoryManager::LRU_t MemoryManager::LRU;
-MemoryManager::LRU_t MemoryManager::LRU_transient;
   
 ////////////////////////////////////////////////////////
 // Footprint tracking
@@ -73,25 +72,16 @@ void MemoryManager::EntryErase(uint64_t CpuPtr)
   auto AccCache = EntryLookup(CpuPtr);
   AccViewTable.erase(CpuPtr);
 }
-/*
-void  LRUupdate(AcceleratorViewEntry &AccCache)
-{
-  assert(0); // No such thing. Acc view removes
-  assert(AccCache.LRU_valid==1);
-  assert(AccCache.accLock==0);
-  assert(AccCache.cpuLock==0);
-  assert(AccCache.CpuPtr==(*AccCache.LRU_entry));
-  LRU.erase(AccCache.LRU_entry);
-  LRU.push_front(AccCache.CpuPtr);
-  AccCache.LRU_entry = LRU.begin();
-  AccCache.LRU_valid = 1;
-}
-*/
 void  MemoryManager::LRUinsert(AcceleratorViewEntry &AccCache)
 {
   assert(AccCache.LRU_valid==0);
-  LRU.push_front(AccCache.CpuPtr);
-  AccCache.LRU_entry = LRU.begin();
+  if (AccCache.transient) { 
+    LRU.push_back(AccCache.CpuPtr);
+    AccCache.LRU_entry = LRU.end();
+  } else {
+    LRU.push_front(AccCache.CpuPtr);
+    AccCache.LRU_entry = LRU.begin();
+  }
   AccCache.LRU_valid = 1;
   DeviceLRUBytes+=AccCache.bytes;
 }
@@ -113,7 +103,7 @@ void MemoryManager::AccDiscard(AcceleratorViewEntry &AccCache)
   ///////////////////////////////////////////////////////////
   assert(AccCache.state!=Empty);
   
-  dprintf("MemoryManager: Discard(%llx) %llx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
+  //  dprintf("MemoryManager: Discard(%llx) %llx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
   assert(AccCache.accLock==0);
   assert(AccCache.cpuLock==0);
   assert(AccCache.CpuPtr!=(uint64_t)NULL);
@@ -121,7 +111,7 @@ void MemoryManager::AccDiscard(AcceleratorViewEntry &AccCache)
     AcceleratorFree((void *)AccCache.AccPtr,AccCache.bytes);
     DeviceBytes   -=AccCache.bytes;
     LRUremove(AccCache);
-    dprintf("MemoryManager: Free(%llx) LRU %lld Total %lld\n",(uint64_t)AccCache.AccPtr,DeviceLRUBytes,DeviceBytes);  
+    //    dprintf("MemoryManager: Free(%llx) LRU %lld Total %lld\n",(uint64_t)AccCache.AccPtr,DeviceLRUBytes,DeviceBytes);  
   }
   uint64_t CpuPtr = AccCache.CpuPtr;
   EntryErase(CpuPtr);
@@ -135,7 +125,7 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
   ///////////////////////////////////////////////////////////////////////////
   assert(AccCache.state!=Empty);
   
-  dprintf("MemoryManager: Evict(%llx) %llx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
+  //  dprintf("MemoryManager: Evict(%llx) %llx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
   assert(AccCache.accLock==0);
   assert(AccCache.cpuLock==0);
   if(AccCache.state==AccDirty) {
@@ -146,7 +136,7 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
     AcceleratorFree((void *)AccCache.AccPtr,AccCache.bytes);
     DeviceBytes   -=AccCache.bytes;
     LRUremove(AccCache);
-    dprintf("MemoryManager: Free(%llx) footprint now %lld \n",(uint64_t)AccCache.AccPtr,DeviceBytes);  
+    //    dprintf("MemoryManager: Free(%llx) footprint now %lld \n",(uint64_t)AccCache.AccPtr,DeviceBytes);  
   }
   uint64_t CpuPtr = AccCache.CpuPtr;
   EntryErase(CpuPtr);
@@ -159,7 +149,7 @@ void MemoryManager::Flush(AcceleratorViewEntry &AccCache)
   assert(AccCache.AccPtr!=(uint64_t)NULL);
   assert(AccCache.CpuPtr!=(uint64_t)NULL);
   acceleratorCopyFromDevice((void *)AccCache.AccPtr,(void *)AccCache.CpuPtr,AccCache.bytes);
-  dprintf("MemoryManager: Flush  %llx -> %llx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
+  //  dprintf("MemoryManager: Flush  %llx -> %llx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
   DeviceToHostBytes+=AccCache.bytes;
   DeviceToHostXfer++;
   AccCache.state=Consistent;
@@ -174,7 +164,7 @@ void MemoryManager::Clone(AcceleratorViewEntry &AccCache)
     AccCache.AccPtr=(uint64_t)AcceleratorAllocate(AccCache.bytes);
     DeviceBytes+=AccCache.bytes;
   }
-  dprintf("MemoryManager: Clone %llx <- %llx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
+  //  dprintf("MemoryManager: Clone %llx <- %llx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
   acceleratorCopyToDevice((void *)AccCache.CpuPtr,(void *)AccCache.AccPtr,AccCache.bytes);
   HostToDeviceBytes+=AccCache.bytes;
   HostToDeviceXfer++;

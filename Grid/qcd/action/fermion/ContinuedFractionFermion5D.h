@@ -41,8 +41,8 @@ public:
 public:
 
   // override multiply
-  virtual RealD  M    (const FermionField &in, FermionField &out);
-  virtual RealD  Mdag (const FermionField &in, FermionField &out);
+  virtual void   M    (const FermionField &in, FermionField &out);
+  virtual void   Mdag (const FermionField &in, FermionField &out);
 
   // half checkerboard operaions
   virtual void   Meooe       (const FermionField &in, FermionField &out);

@@ -114,7 +114,8 @@ THE SOFTWARE.
 #define GRID_MACRO_WRITE_MEMBER(A,B) ::Grid::write(WR,#B,obj. B);
 
 #define GRID_SERIALIZABLE_CLASS_MEMBERS(cname,...)\
-  std::string SerialisableClassName(void) const {return std::string(#cname);}	\
+static inline std::string SerialisableClassName(void) {return std::string(#cname);}	\
+static constexpr bool isEnum = false; \
 GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_MEMBER,__VA_ARGS__))\
 template <typename T>\
 static inline void write(Writer<T> &WR,const std::string &s, const cname &obj){ \
@@ -162,6 +163,8 @@ public:\
 public:\
   accelerator name(void)     : value_(undefname) {};		\
   accelerator name(int value): value_(value) {};			\
+  static inline std::string SerialisableClassName(void) {return std::string(#name);}\
+  static constexpr bool isEnum = true; \
   template <typename T>\
   static inline void write(::Grid::Writer<T> &WR,const std::string &s, const name &obj) \
   {\

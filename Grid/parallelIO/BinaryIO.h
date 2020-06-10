@@ -341,7 +341,7 @@ class BinaryIO {
     int ieee32big = (format == std::string("IEEE32BIG"));
     int ieee32    = (format == std::string("IEEE32"));
     int ieee64big = (format == std::string("IEEE64BIG"));
-    int ieee64    = (format == std::string("IEEE64"));
+    int ieee64    = (format == std::string("IEEE64") || format == std::string("IEEE64LITTLE"));
     assert(ieee64||ieee32|ieee64big||ieee32big);
     assert((ieee64+ieee32+ieee64big+ieee32big)==1);
     //////////////////////////////////////////////////////////////////////////////

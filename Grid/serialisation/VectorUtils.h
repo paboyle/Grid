@@ -432,12 +432,10 @@ namespace Grid {
   std::vector<T> strToVec(const std::string s)
   {
     std::istringstream sstr(s);
-    T                  buf;
     std::vector<T>     v;
     
-    while(!sstr.eof())
+    for(T buf; sstr >> buf;)
     {
-      sstr >> buf;
       v.push_back(buf);
     }
     

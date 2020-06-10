@@ -109,9 +109,8 @@ public:
     ImportGauge(_Umu);
   }
 
-  virtual RealD M(const FermionField &in, FermionField &out);
-  virtual RealD Mdag(const FermionField &in, FermionField &out);
-
+  virtual void M(const FermionField &in, FermionField &out);
+  virtual void Mdag(const FermionField &in, FermionField &out);
   virtual void Mooee(const FermionField &in, FermionField &out);
   virtual void MooeeDag(const FermionField &in, FermionField &out);
   virtual void MooeeInv(const FermionField &in, FermionField &out);

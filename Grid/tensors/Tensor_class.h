@@ -6,6 +6,7 @@ Copyright (C) 2015
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: Michael Marshall <michael.marshall@ed.ac.au>
+Author: Christoph Lehner <christoph@lhnr.de>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -55,6 +56,7 @@ class GridTensorBase {};
   using Complexified    = typename Traits::Complexified; \
   using Realified       = typename Traits::Realified; \
   using DoublePrecision = typename Traits::DoublePrecision; \
+  using DoublePrecision2= typename Traits::DoublePrecision2; \
   static constexpr int TensorLevel = Traits::TensorLevel
 
 template <class vtype>

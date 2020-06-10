@@ -220,7 +220,7 @@ void run(const TestParams &params){
 
   GridStopWatch CGTimer;
   
-  typename RunParamsOuter::HermOpType<MobiusFermionD> HermOpEO_outer(D_outer);
+  typename RunParamsOuter::template HermOpType<MobiusFermionD> HermOpEO_outer(D_outer);
 
   CGTimer.Start();
   CG_outer(HermOpEO_outer, src_o_outer, result_o_outer);

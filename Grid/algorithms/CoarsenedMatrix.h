@@ -252,19 +252,14 @@ public:
   ///////////////////////
   GridBase * Grid(void)         { return _grid; };   // this is all the linalg routines need to know
 
-  RealD M (const CoarseVector &in, CoarseVector &out)
+  void M (const CoarseVector &in, CoarseVector &out)
   {
-
     conformable(_grid,in.Grid());
     conformable(in.Grid(),out.Grid());
 
-    //    RealD Nin = norm2(in);
     SimpleCompressor<siteVector> compressor;
 
-    double comms_usec = -usecond();
     Stencil.HaloExchange(in,compressor);
-    comms_usec += usecond();
-  
     autoView( in_v , in, AcceleratorRead);
     autoView( out_v , out, AcceleratorWrite);
     typedef LatticeView<Cobj> Aview;
@@ -278,12 +273,7 @@ public:
     typedef decltype(coalescedRead(in_v[0])) calcVector;
     typedef decltype(coalescedRead(in_v[0](0))) calcComplex;
 
-    GridStopWatch ArithmeticTimer;
     int osites=Grid()->oSites();
-    //    double flops = osites*Nsimd*nbasis*nbasis*8.0*geom.npoint;
-    //    double bytes = osites*nbasis*nbasis*geom.npoint*sizeof(CComplex);
-    double usecs =-usecond();
-    // assert(geom.npoint==9);
 
     accelerator_for(sss, Grid()->oSites()*nbasis, Nsimd, {
       int ss = sss/nbasis;
@@ -310,18 +300,11 @@ public:
       }
       coalescedWrite(out_v[ss](b),res);
       });
-    usecs +=usecond();
-
-    double nrm_usec=-usecond();
-    RealD Nout= norm2(out);
-    nrm_usec+=usecond();
 
     for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer[p].ViewClose();
-
-    return Nout;
   };
 
-  RealD Mdag (const CoarseVector &in, CoarseVector &out)
+  void Mdag (const CoarseVector &in, CoarseVector &out)
   {
     if(hermitian) {
       // corresponds to Petrov-Galerkin coarsening
@@ -332,7 +315,6 @@ public:
       G5C(tmp, in); 
       M(tmp, out);
       G5C(out, out);
-      return norm2(out);
     }
   };
   void MdirComms(const CoarseVector &in)
@@ -553,8 +535,6 @@ public:
 	    autoView( A_self  , A[self_stencil], AcceleratorWrite);
 
 	    accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{ coalescedWrite(A_p[ss](j,i),oZProj_v(ss)); });
-	    //      if( disp!= 0 ) { accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{ coalescedWrite(A_p[ss](j,i),oZProj_v(ss)); });}
-	    //	    accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{ coalescedWrite(A_self[ss](j,i),A_self(ss)(j,i)+iZProj_v(ss)); });
 
 	  }
 	}

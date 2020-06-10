@@ -309,10 +309,21 @@ case ${ac_gen_scalar} in
 esac
 
 ##################### Compiler dependent choices
-case ${CXX} in 
+
+#Strip any optional compiler arguments from nvcc call (eg -ccbin) for compiler comparison
+CXXBASE=${CXX}
+CXXTEST=${CXX}
+if echo "${CXX}" | grep -q "nvcc"; then
+  CXXTEST="nvcc"
+fi   
+
+case ${CXXTEST} in 
   nvcc) 
-    CXX="nvcc -x cu "
-    CXXLD="nvcc -link"
+#    CXX="nvcc -keep -v -x cu "
+#    CXXLD="nvcc -v -link"
+    CXX="${CXXBASE} -x cu "
+    CXXLD="${CXXBASE} -link"
+#    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing -Xcompiler -Wno-unusable-partial-specialization --expt-extended-lambda --expt-relaxed-constexpr"
     CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr"
     if test $ac_openmp = yes; then
        CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
