@@ -46,9 +46,9 @@ auto PeekIndex(const Lattice<vobj> &lhs,int i) -> Lattice<decltype(peekIndex<Ind
 {
   Lattice<decltype(peekIndex<Index>(vobj(),i))> ret(lhs.Grid());
   ret.Checkerboard()=lhs.Checkerboard();
-  autoView( ret_v, ret, CpuWrite);
-  autoView( lhs_v, lhs, CpuRead);
-  thread_for( ss, lhs_v.size(), {
+  autoView( ret_v, ret, AcceleratorWrite);
+  autoView( lhs_v, lhs, AcceleratorRead);
+  accelerator_for( ss, lhs_v.size(), 1, {
     ret_v[ss] = peekIndex<Index>(lhs_v[ss],i);
   });
   return ret;
@@ -58,9 +58,9 @@ auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekInd
 {
   Lattice<decltype(peekIndex<Index>(vobj(),i,j))> ret(lhs.Grid());
   ret.Checkerboard()=lhs.Checkerboard();
-  autoView( ret_v, ret, CpuWrite);
-  autoView( lhs_v, lhs, CpuRead);
-  thread_for( ss, lhs_v.size(), {
+  autoView( ret_v, ret, AcceleratorWrite);
+  autoView( lhs_v, lhs, AcceleratorRead);
+  accelerator_for( ss, lhs_v.size(), 1, {
     ret_v[ss] = peekIndex<Index>(lhs_v[ss],i,j);
   });
   return ret;
@@ -72,18 +72,18 @@ auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekInd
 template<int Index,class vobj>  
 void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(vobj(),0))> & rhs,int i)
 {
-  autoView( rhs_v, rhs, CpuRead);
-  autoView( lhs_v, lhs, CpuWrite);
-  thread_for( ss, lhs_v.size(), {
+  autoView( rhs_v, rhs, AcceleratorRead);
+  autoView( lhs_v, lhs, AcceleratorWrite);
+  accelerator_for( ss, lhs_v.size(), 1, {
     pokeIndex<Index>(lhs_v[ss],rhs_v[ss],i);
   });
 }
 template<int Index,class vobj> 
 void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(vobj(),0,0))> & rhs,int i,int j)
 {
-  autoView( rhs_v, rhs, CpuRead);
-  autoView( lhs_v, lhs, CpuWrite);
-  thread_for( ss, lhs_v.size(), {
+  autoView( rhs_v, rhs, AcceleratorRead);
+  autoView( lhs_v, lhs, AcceleratorWrite);
+  accelerator_for( ss, lhs_v.size(), 1, {
     pokeIndex<Index>(lhs_v[ss],rhs_v[ss],i,j);
   });
 }
@@ -151,13 +151,12 @@ void peekSite(sobj &s,const Lattice<vobj> &l,const Coordinate &site){
   return;
 };
 
-
 //////////////////////////////////////////////////////////
 // Peek a scalar object from the SIMD array
 //////////////////////////////////////////////////////////
 template<class vobj,class sobj>
-inline void peekLocalSite(sobj &s,const Lattice<vobj> &l,Coordinate &site){
-        
+inline void peekLocalSite(sobj &s,const Lattice<vobj> &l,Coordinate &site)
+{
   GridBase *grid = l.Grid();
 
   typedef typename vobj::scalar_type scalar_type;
@@ -185,8 +184,8 @@ inline void peekLocalSite(sobj &s,const Lattice<vobj> &l,Coordinate &site){
 };
 
 template<class vobj,class sobj>
-inline void pokeLocalSite(const sobj &s,Lattice<vobj> &l,Coordinate &site){
-
+inline void pokeLocalSite(const sobj &s,Lattice<vobj> &l,Coordinate &site)
+{
   GridBase *grid=l.Grid();
 
   typedef typename vobj::scalar_type scalar_type;
@@ -208,7 +207,6 @@ inline void pokeLocalSite(const sobj &s,Lattice<vobj> &l,Coordinate &site){
   for(int w=0;w<words;w++){
     vp[idx+w*Nsimd] = pt[w];
   }
-
   return;
 };
 
