@@ -99,13 +99,13 @@ accelerator_inline void convertType(ComplexF & out, const std::complex<float> & 
 
 #ifdef GRID_SIMT
 accelerator_inline void convertType(vComplexF & out, const ComplexF & in) {
-  ((ComplexF*)&out)[SIMTlane(vComplexF::Nsimd())] = in;
+  ((ComplexF*)&out)[acceleratorSIMTlane(vComplexF::Nsimd())] = in;
 }
 accelerator_inline void convertType(vComplexD & out, const ComplexD & in) {
-  ((ComplexD*)&out)[SIMTlane(vComplexD::Nsimd())] = in;
+  ((ComplexD*)&out)[acceleratorSIMTlane(vComplexD::Nsimd())] = in;
 }
 accelerator_inline void convertType(vComplexD2 & out, const ComplexD & in) {
-  ((ComplexD*)&out)[SIMTlane(vComplexD::Nsimd()*2)] = in;
+  ((ComplexD*)&out)[acceleratorSIMTlane(vComplexD::Nsimd()*2)] = in;
 }
 #endif
 
