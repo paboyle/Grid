@@ -258,15 +258,16 @@ private:
   CloverFieldType CloverTermDagEven, CloverTermDagOdd;       // Clover term Dag EO
   CloverFieldType CloverTermInvDagEven, CloverTermInvDagOdd; // Clover term Inv Dag EO
 
+ public:
   // eventually these can be compressed into 6x6 blocks instead of the 12x12
   // using the DeGrand-Rossi basis for the gamma matrices
   CloverFieldType fillCloverYZ(const GaugeLinkField &F)
   {
     CloverFieldType T(F.Grid());
     T = Zero();
-    autoView(T_v,T,CpuWrite);
-    autoView(F_v,F,CpuRead);
-    thread_for(i, CloverTerm.Grid()->oSites(),
+    autoView(T_v,T,AcceleratorWrite);
+    autoView(F_v,F,AcceleratorRead);
+    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
     {
       T_v[i]()(0, 1) = timesMinusI(F_v[i]()());
       T_v[i]()(1, 0) = timesMinusI(F_v[i]()());
@@ -282,9 +283,9 @@ private:
     CloverFieldType T(F.Grid());
     T = Zero();
     
-    autoView(T_v, T,CpuWrite);
-    autoView(F_v, F,CpuRead);
-    thread_for(i, CloverTerm.Grid()->oSites(),
+    autoView(T_v, T,AcceleratorWrite);
+    autoView(F_v, F,AcceleratorRead);
+    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
     {
       T_v[i]()(0, 1) = -F_v[i]()();
       T_v[i]()(1, 0) = F_v[i]()();
@@ -300,9 +301,9 @@ private:
     CloverFieldType T(F.Grid());
     T = Zero();
 
-    autoView(T_v,T,CpuWrite);
-    autoView(F_v,F,CpuRead);
-    thread_for(i, CloverTerm.Grid()->oSites(),
+    autoView(T_v,T,AcceleratorWrite);
+    autoView(F_v,F,AcceleratorRead);
+    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
     {
       T_v[i]()(0, 0) = timesMinusI(F_v[i]()());
       T_v[i]()(1, 1) = timesI(F_v[i]()());
@@ -318,9 +319,9 @@ private:
     CloverFieldType T(F.Grid());
     T = Zero();
 
-    autoView( T_v , T, CpuWrite);
-    autoView( F_v , F, CpuRead);
-    thread_for(i, CloverTerm.Grid()->oSites(),
+    autoView( T_v , T, AcceleratorWrite);
+    autoView( F_v , F, AcceleratorRead);
+    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
     {
       T_v[i]()(0, 1) = timesI(F_v[i]()());
       T_v[i]()(1, 0) = timesI(F_v[i]()());
@@ -336,9 +337,9 @@ private:
     CloverFieldType T(F.Grid());
     T = Zero();
     
-    autoView( T_v ,T,CpuWrite);
-    autoView( F_v ,F,CpuRead);
-    thread_for(i, CloverTerm.Grid()->oSites(),
+    autoView( T_v ,T,AcceleratorWrite);
+    autoView( F_v ,F,AcceleratorRead);
+    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
     {
       T_v[i]()(0, 1) = -(F_v[i]()());
       T_v[i]()(1, 0) = (F_v[i]()());
@@ -355,9 +356,9 @@ private:
 
     T = Zero();
 
-    autoView( T_v , T,CpuWrite);
-    autoView( F_v , F,CpuRead);
-    thread_for(i, CloverTerm.Grid()->oSites(),
+    autoView( T_v , T,AcceleratorWrite);
+    autoView( F_v , F,AcceleratorRead);
+    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
     {
       T_v[i]()(0, 0) = timesI(F_v[i]()());
       T_v[i]()(1, 1) = timesMinusI(F_v[i]()());

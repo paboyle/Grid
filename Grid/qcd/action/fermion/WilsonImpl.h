@@ -106,10 +106,10 @@ public:
 			    const _SpinorField & phi,
 			    int mu)
   {
-    autoView( out_v, out, CpuWrite);
-    autoView( phi_v, phi, CpuRead);
-    autoView( Umu_v, Umu, CpuRead);
-    thread_for(sss,out.Grid()->oSites(),{
+    autoView( out_v, out, AcceleratorWrite);
+    autoView( phi_v, phi, AcceleratorRead);
+    autoView( Umu_v, Umu, AcceleratorRead);
+    accelerator_for(sss,out.Grid()->oSites(),1,{
 	multLink(out_v[sss],Umu_v[sss],phi_v[sss],mu);
     });
   }
@@ -192,10 +192,10 @@ public:
     GaugeLinkField tmp(mat.Grid());
     tmp = Zero();
     {
-      autoView( tmp_v , tmp, CpuWrite);
-      autoView( Btilde_v , Btilde, CpuRead);
-      autoView( Atilde_v , Atilde, CpuRead);
-      thread_for(sss,tmp.Grid()->oSites(),{
+      autoView( tmp_v , tmp, AcceleratorWrite);
+      autoView( Btilde_v , Btilde, AcceleratorRead);
+      autoView( Atilde_v , Atilde, AcceleratorRead);
+      accelerator_for(sss,tmp.Grid()->oSites(),1,{
 	  int sU=sss;
 	  for(int s=0;s<Ls;s++){
 	    int sF = s+Ls*sU;
