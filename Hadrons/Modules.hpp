@@ -63,6 +63,7 @@
 #include <Hadrons/Modules/MContraction/Baryon.hpp>
 #include <Hadrons/Modules/MContraction/Meson.hpp>
 #include <Hadrons/Modules/MContraction/MesonCC.hpp>
+#include <Hadrons/Modules/MContraction/MesonCCLoop.hpp>
 #include <Hadrons/Modules/MNPR/FourQuark.hpp>
 #include <Hadrons/Modules/MNPR/Bilinear.hpp>
 #include <Hadrons/Modules/MNPR/Amputate.hpp>

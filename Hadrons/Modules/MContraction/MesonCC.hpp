@@ -36,6 +36,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 #include <Hadrons/Modules/MSource/Point.hpp>
+//#include <Hadrons/utils_memory.h>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -163,6 +164,8 @@ void TStagMesonCC<FImpl1, FImpl2>::execute(void)
     << " quarks '" << par().q1 << "' and '" << par().q2 << "'"
     << std::endl;
     
+    //printMem("MesonCC execute() ", env().getGrid()->ThisRank());
+    
     std::vector<TComplex>  buf;
     Result    result;
     int                    nt = env().getDim(Tp);
@@ -215,22 +218,14 @@ void TStagMesonCC<FImpl1, FImpl2>::execute(void)
     
     LOG(Message) << "StagMesonCC src_xyzt " << srcSite << " mu " << mu << std::endl;
     
-//    qshift = Cshift(q2, mu, 1);
-//    corr = trace(adj(qshift) * adj(Umu) * q1 * UmuSrc);
-//    corr += trace(adj(q1) * Umu * qshift * adj(UmuSrc));
-//
-//    qshift = Cshift(q1, mu, 1);
-//    corr -= trace(adj(q2) * Umu * qshift * UmuSrc); // -1^muhat
-//    corr -= trace(adj(qshift) * adj(Umu) * q2 * adj(UmuSrc)); //-1^muhat
-    
-    //qshift = Cshift(q2, mu, 1);
-    //corr = trace(adj(qshift) * adj(Umu) * q1 * UmuSrc);
-    //corr = trace(adj(q1) * Umu * qshift * adj(UmuSrc));
-//
+    qshift = Cshift(q2, mu, 1);
+    corr = trace(adj(qshift) * adj(Umu) * q1 * UmuSrc);
+    corr += trace(adj(q1) * Umu * qshift * adj(UmuSrc));
+ 
     qshift = Cshift(q1, mu, 1);
-    //corr = -trace(adj(q2) * Umu * qshift * UmuSrc); // -1^muhat
-    corr = -trace(adj(qshift) * adj(Umu) * q2 * adj(UmuSrc)); //-1^muhat
-
+    corr -= trace(adj(q2) * Umu * qshift * UmuSrc); // -1^muhat
+    corr -= trace(adj(qshift) * adj(Umu) * q2 * adj(UmuSrc)); //-1^muhat
+    
     corr *= herm_phase;
     
     sliceSum(corr, buf, Tp);
