@@ -214,7 +214,6 @@ void TStagMesonCC<FImpl1, FImpl2>::execute(void)
     
     ColourMatrix UmuSrc;
     peekSite(UmuSrc, Umu, srcSite);
-    UmuSrc *= src_phase;
     
     LOG(Message) << "StagMesonCC src_xyzt " << srcSite << " mu " << mu << std::endl;
     
