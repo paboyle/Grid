@@ -268,6 +268,21 @@ public:
   typedef iMatrix<CComplex,nbasis >  Cobj;
   typedef Lattice< CComplex >   CoarseScalar; // used for inner products on fine field
   typedef Lattice<Fobj >        FineField;
+  typedef CoarseVector FermionField;
+
+  // enrich interface
+  void Meooe(CoarseVector const& in, CoarseVector& out) { assert(0); }
+  void MeooeDag(CoarseVector const& in, CoarseVector& out) { assert(0); }
+  void Mooee(CoarseVector const& in, CoarseVector& out) { assert(0); }
+  void MooeeDag(CoarseVector const& in, CoarseVector& out) { assert(0); }
+  void MooeeInv(CoarseVector const& in, CoarseVector& out) { assert(0); }
+  void MooeeInvDag(CoarseVector const& in, CoarseVector& out) { assert(0); }
+  void Dminus(CoarseVector const& in, CoarseVector& out) { out = in; }
+  void DminusDag(CoarseVector const& in, CoarseVector& out) { out = in; }
+  void ImportPhysicalFermionSource(CoarseVector const& input, CoarseVector& imported) { imported = input; }
+  void ImportUnphysicalFermion(CoarseVector const& input, CoarseVector& imported) { imported = input; }
+  void ExportPhysicalFermionSolution(CoarseVector const& solution, CoarseVector& exported) { exported = solution; };
+  void ExportPhysicalFermionSource(CoarseVector const& solution, CoarseVector& exported) { exported = solution; };
 
   ////////////////////
   // Data members
