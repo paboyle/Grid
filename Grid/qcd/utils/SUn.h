@@ -259,7 +259,7 @@ public:
     dest = 1.0;  // start out with identity
     autoView( dest_v , dest, AcceleratorWrite);
     autoView( subgroup_v, subgroup, AcceleratorRead);
-    acccelerator_for(ss, grid->oSites(),1,
+    accelerator_for(ss, grid->oSites(),1,
     {
       dest_v[ss]()()(i0, i0) = subgroup_v[ss]()()(0, 0);
       dest_v[ss]()()(i0, i1) = subgroup_v[ss]()()(0, 1);
