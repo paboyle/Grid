@@ -223,10 +223,10 @@ public:
     int i0, i1;
     su2SubGroupIndex(i0, i1, su2_index);
 
-    autoView( subgroup_v , subgroup,CpuWrite);
-    autoView( source_v   , source,CpuRead);
-    autoView( Determinant_v , Determinant,CpuWrite);
-    thread_for(ss, grid->oSites(), {
+    autoView( subgroup_v , subgroup,AcceleratorWrite);
+    autoView( source_v   , source,AcceleratorRead);
+    autoView( Determinant_v , Determinant,AcceleratorWrite);
+    accelerator_for(ss, grid->oSites(), 1, {
 
       subgroup_v[ss]()()(0, 0) = source_v[ss]()()(i0, i0);
       subgroup_v[ss]()()(0, 1) = source_v[ss]()()(i0, i1);
@@ -257,9 +257,9 @@ public:
     su2SubGroupIndex(i0, i1, su2_index);
 
     dest = 1.0;  // start out with identity
-    autoView( dest_v , dest, CpuWrite);
-    autoView( subgroup_v, subgroup, CpuRead);
-    thread_for(ss, grid->oSites(),
+    autoView( dest_v , dest, AcceleratorWrite);
+    autoView( subgroup_v, subgroup, AcceleratorRead);
+    acccelerator_for(ss, grid->oSites(),1,
     {
       dest_v[ss]()()(i0, i0) = subgroup_v[ss]()()(0, 0);
       dest_v[ss]()()(i0, i1) = subgroup_v[ss]()()(0, 1);
