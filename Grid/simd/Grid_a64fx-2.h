@@ -82,7 +82,7 @@ NAMESPACE_BEGIN(Optimization);
     };
   };
 
-  #else // not defines ARMCLANGCOMPAT
+  #else //  no ARMCLANGCOMPAT
   #define vec_imm vec
   // SIMD vector types
   template <typename T>
@@ -181,7 +181,7 @@ struct acle<float>{
   }
   static inline vec<uint32_t> tbl2(){
     //const vec<uint32_t> t = {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13};
-    const vec_imm<uint32_t> t = {4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11};
+    const vec_imm<uint32_t> t = {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13};
     return t;
   }
   static inline vec<uint32_t> tbl_exch1a(){ // Exchange1
@@ -889,6 +889,7 @@ inline Integer Reduce<Integer, veci>::operator()(veci in){
 }
 
 #undef svred
+#undef vec_imm
 
 NAMESPACE_END(Optimization)
 

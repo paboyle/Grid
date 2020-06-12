@@ -122,7 +122,7 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
     #if defined(A64FX) // VLA
       #pragma message("building for A64FX / SVE ACLE VLA")
       #if defined(ARMCLANGCOMPAT)
-        #pragma message("applying armclang patch")
+        #pragma message("applying data types patch")
       #endif
       #include "Grid_a64fx-2.h"
     #endif
@@ -327,8 +327,9 @@ public:
 
   // FIXME -- alias this to an accelerator_inline MAC struct.
 
-  // FIXME VLA build error
-  #if defined(A64FX) || defined(A64FXFIXEDSIZE)
+  // safety exclude fxmac from VLA (causing wrong results?)
+  //#if defined(A64FX) || defined(A64FXFIXEDSIZE)
+  #if defined(A64FXFIXEDSIZE)
   friend accelerator_inline void mac(Grid_simd *__restrict__ y,
 				     const Grid_simd *__restrict__ a,
 				     const Grid_simd *__restrict__ x) {
