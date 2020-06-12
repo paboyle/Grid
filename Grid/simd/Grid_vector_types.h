@@ -122,7 +122,7 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
     #if defined(A64FX) // VLA
       #pragma message("building for A64FX / SVE ACLE VLA")
       #if defined(ARMCLANGCOMPAT)
-        #pragma message("applying armclang fix")
+        #pragma message("applying armclang patch")
       #endif
       #include "Grid_a64fx-2.h"
     #endif
@@ -247,21 +247,37 @@ public:
     return sizeof(Vector_type) / sizeof(Scalar_type);
   }
 
-#ifdef ARMCLANGCOMPAT
-  accelerator_inline Grid_simd &operator=(const Grid_simd &&rhs) {
-    svint8_t tmp = svld1(svptrue_b8(), (int8_t*)&(rhs.v));
-    svst1(svptrue_b8(), (int8_t*)this, tmp);
-    //v = rhs.v;
-    return *this;
-  };
+  #ifdef ARMCLANGCOMPAT
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd &operator=(const Grid_simd<typename std::enable_if<!is_complex<S>::value, S>::type, Vector_type> &&rhs) {
+      //v = rhs.v;
+      svst1(svptrue_b8(), (Scalar_type*)this, svld1(svptrue_b8(), (Scalar_type*)&(rhs.v)));
+      return *this;
+    };
 
-  accelerator_inline Grid_simd &operator=(const Grid_simd &rhs) {
-    svint8_t tmp = svld1(svptrue_b8(), (int8_t*)&(rhs.v));
-    svst1(svptrue_b8(), (int8_t*)this, tmp);
-    //v = rhs.v;
-    return *this;
-  };
-#else
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd &operator=(const Grid_simd<typename std::enable_if<!is_complex<S>::value, S>::type, Vector_type> &rhs) {
+      //v = rhs.v;
+      svst1(svptrue_b8(), (Scalar_type*)this, svld1(svptrue_b8(), (Scalar_type*)&(rhs.v)));
+      return *this;
+    };
+
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd &operator=(const Grid_simd<typename std::enable_if<is_complex<S>::value, S>::type, Vector_type> &&rhs) {
+      //v = rhs.v;
+      svst1(svptrue_b8(), (int8_t*)this, svld1(svptrue_b8(), (int8_t*)&(rhs.v)));
+      return *this;
+    };
+
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd &operator=(const Grid_simd<typename std::enable_if<is_complex<S>::value, S>::type, Vector_type> &rhs) {
+      //v = rhs.v;
+      svst1(svptrue_b8(), (int8_t*)this, svld1(svptrue_b8(), (int8_t*)&(rhs.v)));
+      return *this;
+    };
+
+  #else
+
   accelerator_inline Grid_simd &operator=(const Grid_simd &&rhs) {
     v = rhs.v;
     return *this;
@@ -270,11 +286,24 @@ public:
     v = rhs.v;
     return *this;
   };  // faster than not declaring it and leaving to the compiler
-#endif
+
+  #endif
 
   accelerator Grid_simd() = default;
-  accelerator_inline Grid_simd(const Grid_simd &rhs) : v(rhs.v){};  // compiles in movaps
-  accelerator_inline Grid_simd(const Grid_simd &&rhs) : v(rhs.v){};
+
+  #ifdef ARMCLANGCOMPAT
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd(const Grid_simd<typename std::enable_if<!is_complex<S>::value, S>::type, Vector_type> &rhs) { this->operator=(rhs); }
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd(const Grid_simd<typename std::enable_if<!is_complex<S>::value, S>::type, Vector_type> &&rhs) { this->operator=(rhs); }
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd(const Grid_simd<typename std::enable_if<is_complex<S>::value, S>::type, Vector_type> &rhs) { this->operator=(rhs); }
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd(const Grid_simd<typename std::enable_if<is_complex<S>::value, S>::type, Vector_type> &&rhs) { this->operator=(rhs); }
+  #else
+    accelerator_inline Grid_simd(const Grid_simd &rhs) : v(rhs.v){};  // compiles in movaps
+    accelerator_inline Grid_simd(const Grid_simd &&rhs) : v(rhs.v){};
+  #endif
   accelerator_inline Grid_simd(const Real a) { vsplat(*this, Scalar_type(a)); };
   // Enable if complex type
   template <typename S = Scalar_type> accelerator_inline

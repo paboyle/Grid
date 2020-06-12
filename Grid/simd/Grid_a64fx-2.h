@@ -57,11 +57,39 @@ NAMESPACE_BEGIN(Optimization);
     constexpr static unsigned int r = GEN_SIMD_WIDTH/8u;
   };
 
+  #ifdef ARMCLANGCOMPAT
+  // SIMD vector immediate types
+  template <typename T>
+  struct vec_imm {
+    alignas(GEN_SIMD_WIDTH) T v[W<T>::r];
+  };
+
+  // SIMD vector types
+  template <typename T>
+  struct vec {
+    alignas(GEN_SIMD_WIDTH) T v[W<T>::r];
+    vec() = default;
+    vec(const vec &rhs) { this->operator=(rhs); }
+    vec(const vec_imm<T> &rhs) {
+      // v = rhs.v
+      svst1(svptrue_b8(), (T*)this, svld1(svptrue_b8(), (T*)rhs.v));
+    }
+
+    inline vec &operator=(const vec &rhs) {
+      // v = rhs.v
+      svst1(svptrue_b8(), (T*)this, svld1(svptrue_b8(), (T*)rhs.v));
+      return *this;
+    };
+  };
+
+  #else // not defines ARMCLANGCOMPAT
+  #define vec_imm vec
   // SIMD vector types
   template <typename T>
   struct vec {
     alignas(GEN_SIMD_WIDTH) T v[W<T>::r];
   };
+  #endif
 
   typedef vec<float>     vecf;
   typedef vec<double>    vecd;
@@ -91,27 +119,33 @@ struct acle<double>{
   static inline svbool_t pg2(){return svptrue_pat_b64(SV_VL4);}
   static inline svbool_t pg4(){return svptrue_pat_b64(SV_VL2);}
   static inline vec<uint64_t> tbl_swap(){
-    const vec<uint64_t> t = {1, 0, 3, 2, 5, 4, 7, 6};
+    //const vec<uint64_t> t = {1, 0, 3, 2, 5, 4, 7, 6};
+    const vec_imm<uint64_t> t = {1, 0, 3, 2, 5, 4, 7, 6};
     return t;
   }
   static inline vec<uint64_t> tbl0(){
-    const vec<uint64_t> t = {4, 5, 6, 7, 0, 1, 2, 3};
+    //const vec<uint64_t> t = {4, 5, 6, 7, 0, 1, 2, 3};
+    const vec_imm<uint64_t> t = {4, 5, 6, 7, 0, 1, 2, 3};
     return t;
   }
   static inline vec<uint64_t> tbl1(){
-    const vec<uint64_t> t = {2, 3, 0, 1, 6, 7, 4, 5};
+    //const vec<uint64_t> t = {2, 3, 0, 1, 6, 7, 4, 5};
+    const vec_imm<uint64_t> t = {2, 3, 0, 1, 6, 7, 4, 5};
     return t;
   }
   static inline vec<uint64_t> tbl_exch1a(){ // Exchange1
-    const vec<uint64_t> t = {0, 1, 4, 5, 2, 3, 6, 7};
+    //const vec<uint64_t> t = {0, 1, 4, 5, 2, 3, 6, 7};
+    const vec_imm<uint64_t> t = {0, 1, 4, 5, 2, 3, 6, 7};
     return t;
   }
   static inline vec<uint64_t> tbl_exch1b(){ // Exchange1
-    const vec<uint64_t> t = {2, 3, 6, 7, 0, 1, 4, 5};
+    //const vec<uint64_t> t = {2, 3, 6, 7, 0, 1, 4, 5};
+    const vec_imm<uint64_t> t = {2, 3, 6, 7, 0, 1, 4, 5};
     return t;
   }
   static inline vec<uint64_t> tbl_exch1c(){ // Exchange1
-    const vec<uint64_t> t = {4, 5, 0, 1, 6, 7, 2, 3};
+    //const vec<uint64_t> t = {4, 5, 0, 1, 6, 7, 2, 3};
+    const vec_imm<uint64_t> t = {4, 5, 0, 1, 6, 7, 2, 3};
     return t;
   }
   static inline svbool_t pg_even(){return svzip1_b64(svptrue_b64(), svpfalse_b());}
