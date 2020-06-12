@@ -105,9 +105,9 @@ int main(int argc, char **argv)
     Hmom -= real(sum(trace(mommu * mommu)));
     PokeIndex<LorentzIndex>(mom, mommu, mu);
 
-    auto Uprime_v = Uprime.View();
-    auto U_v      = U.View();
-    auto mom_v    = mom.View();
+    autoView(Uprime_v, Uprime, CpuWrite);
+    autoView( U_v , U, CpuRead);
+    autoView( mom_v, mom, CpuRead);
     thread_foreach(ss,mom_v,
     {
       Uprime_v[ss]._internal[mu] = ProjectOnGroup(Exponentiate(mom_v[ss]._internal[mu], dt, 12) * U_v[ss]._internal[mu]);

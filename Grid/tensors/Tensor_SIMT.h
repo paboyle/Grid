@@ -31,22 +31,11 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
-//accelerator_inline void SIMTsynchronise(void) 
-accelerator_inline void synchronise(void) 
-{
-#ifdef __CUDA_ARCH__
-//  __syncthreads();
-  __syncwarp();
-#endif
-  return;
-}
 
-#ifndef __CUDA_ARCH__
+#ifndef GRID_SIMT
 //////////////////////////////////////////
 // Trivial mapping of vectors on host
 //////////////////////////////////////////
-accelerator_inline int SIMTlane(int Nsimd) { return 0; } // CUDA specific
-
 template<class vobj> accelerator_inline
 vobj coalescedRead(const vobj & __restrict__ vec,int lane=0)
 {
@@ -66,7 +55,6 @@ vobj coalescedReadPermute(const vobj & __restrict__ vec,int ptype,int doperm,int
 template<class vobj> accelerator_inline
 void coalescedWrite(vobj & __restrict__ vec,const vobj & __restrict__ extracted,int lane=0)
 {
-  //  vstream(vec, extracted);
   vec = extracted;
 }
 template<class vobj> accelerator_inline
@@ -75,25 +63,24 @@ void coalescedWriteNonTemporal(vobj & __restrict__ vec,const vobj & __restrict__
   vstream(vec, extracted);
 }
 #else
-accelerator_inline int SIMTlane(int Nsimd) { return threadIdx.y; } // CUDA specific
 
 //////////////////////////////////////////
 // Extract and insert slices on the GPU
 //////////////////////////////////////////
 template<class vobj> accelerator_inline
-typename vobj::scalar_object coalescedRead(const vobj & __restrict__ vec,int lane=SIMTlane(vobj::Nsimd()))
+typename vobj::scalar_object coalescedRead(const vobj & __restrict__ vec,int lane=acceleratorSIMTlane(vobj::Nsimd()))
 {
   return extractLane(lane,vec);
 }
 template<class vobj> accelerator_inline
-typename vobj::scalar_object coalescedReadPermute(const vobj & __restrict__ vec,int ptype,int doperm,int lane=SIMTlane(vobj::Nsimd()))
+typename vobj::scalar_object coalescedReadPermute(const vobj & __restrict__ vec,int ptype,int doperm,int lane=acceleratorSIMTlane(vobj::Nsimd()))
 {
   int mask = vobj::Nsimd() >> (ptype + 1);		
   int plane= doperm ? lane ^ mask : lane;
   return extractLane(plane,vec);
 }
 template<class vobj> accelerator_inline
-void coalescedWrite(vobj & __restrict__ vec,const typename vobj::scalar_object & __restrict__ extracted,int lane=SIMTlane(vobj::Nsimd()))
+void coalescedWrite(vobj & __restrict__ vec,const typename vobj::scalar_object & __restrict__ extracted,int lane=acceleratorSIMTlane(vobj::Nsimd()))
 {
   insertLane(lane,vec,extracted);
 }

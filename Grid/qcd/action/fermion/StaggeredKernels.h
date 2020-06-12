@@ -47,23 +47,34 @@ template<class Impl> class StaggeredKernels : public FermionOperator<Impl> , pub
   INHERIT_IMPL_TYPES(Impl);
   typedef FermionOperator<Impl> Base;
    
-public:
-    
-   void DhopDirKernel(StencilImpl &st, DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, SiteSpinor * buf,
-		      int sF, int sU, const FermionFieldView &in, FermionFieldView &out, int dir,int disp);
+ public:
+
+  void DhopImproved(StencilImpl &st, LebesgueOrder &lo, 
+		    DoubledGaugeField &U, DoubledGaugeField &UUU, 
+		    const FermionField &in, FermionField &out, int dag, int interior,int exterior);
+  void DhopNaive(StencilImpl &st, LebesgueOrder &lo, 
+		 DoubledGaugeField &U,
+		 const FermionField &in, FermionField &out, int dag, int interior,int exterior);
+  
+  void DhopDirKernel(StencilImpl &st, DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, SiteSpinor * buf,
+		     int sF, int sU, const FermionFieldView &in, FermionFieldView &out, int dir,int disp);
+ protected:    
 
    ///////////////////////////////////////////////////////////////////////////////////////
    // Generic Nc kernels
    ///////////////////////////////////////////////////////////////////////////////////////
-   void DhopSiteGeneric(StencilImpl &st, LebesgueOrder &lo, 
+   template<int Naik> accelerator_inline
+   void DhopSiteGeneric(StencilView &st, 
 			DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, 
 			SiteSpinor * buf, int LLs, int sU, 
 			const FermionFieldView &in, FermionFieldView &out,int dag);
-   void DhopSiteGenericInt(StencilImpl &st, LebesgueOrder &lo, 
+   template<int Naik> accelerator_inline
+   void DhopSiteGenericInt(StencilView &st, 
 			   DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, 
 			   SiteSpinor * buf, int LLs, int sU, 
 			   const FermionFieldView &in, FermionFieldView &out,int dag);
-   void DhopSiteGenericExt(StencilImpl &st, LebesgueOrder &lo, 
+   template<int Naik> accelerator_inline
+   void DhopSiteGenericExt(StencilView &st, 
 			   DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
 			   SiteSpinor * buf, int LLs, int sU, 
 			   const FermionFieldView &in, FermionFieldView &out,int dag);
@@ -71,15 +82,18 @@ public:
    ///////////////////////////////////////////////////////////////////////////////////////
    // Nc=3 specific kernels
    ///////////////////////////////////////////////////////////////////////////////////////
-   void DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, 
+   template<int Naik> accelerator_inline
+   void DhopSiteHand(StencilView &st, 
 		     DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, 
 		     SiteSpinor * buf, int LLs, int sU, 
 		     const FermionFieldView &in, FermionFieldView &out,int dag);
-   void DhopSiteHandInt(StencilImpl &st, LebesgueOrder &lo, 
+   template<int Naik> accelerator_inline
+   void DhopSiteHandInt(StencilView &st, 
 			DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, 
 			SiteSpinor * buf, int LLs, int sU, 
 			const FermionFieldView &in, FermionFieldView &out,int dag);
-   void DhopSiteHandExt(StencilImpl &st, LebesgueOrder &lo, 
+   template<int Naik> accelerator_inline
+   void DhopSiteHandExt(StencilView &st, 
 			DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, 
 			SiteSpinor * buf, int LLs, int sU, 
 			const FermionFieldView &in, FermionFieldView &out,int dag);
@@ -87,27 +101,10 @@ public:
    ///////////////////////////////////////////////////////////////////////////////////////
    // Asm Nc=3 specific kernels
    ///////////////////////////////////////////////////////////////////////////////////////
-   void DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
+   void DhopSiteAsm(StencilView &st, 
 		    DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, 
 		    SiteSpinor * buf, int LLs, int sU, 
 		    const FermionFieldView &in, FermionFieldView &out,int dag);
-   ///////////////////////////////////////////////////////////////////////////////////////////////////
-   // Generic interface; fan out to right routine
-   ///////////////////////////////////////////////////////////////////////////////////////////////////
-   void DhopSite(StencilImpl &st, LebesgueOrder &lo, 
-		 DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, 
-		 SiteSpinor * buf, int LLs, int sU,
-		 const FermionFieldView &in, FermionFieldView &out, int interior=1,int exterior=1);
-
-   void DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, 
-		    DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, 
-		    SiteSpinor * buf, int LLs, int sU,
-		    const FermionFieldView &in, FermionFieldView &out, int interior=1,int exterior=1);
-
-   void DhopSite(StencilImpl &st, LebesgueOrder &lo, 
-		 DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, 
-		 SiteSpinor * buf, int LLs, int sU,
-		 const FermionFieldView &in, FermionFieldView &out, int dag, int interior,int exterior);
   
 public:
 

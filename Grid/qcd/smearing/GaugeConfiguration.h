@@ -49,7 +49,7 @@ public:
 
 private:
   const unsigned int smearingLevels;
-  Smear_Stout<Gimpl> StoutSmearing;
+  Smear_Stout<Gimpl> *StoutSmearing;
   std::vector<GaugeField> SmearedSet;
 
   // Member functions
@@ -72,7 +72,7 @@ private:
       previous_u = *ThinLinks;
       for (int smearLvl = 0; smearLvl < smearingLevels; ++smearLvl)
       {
-        StoutSmearing.smear(SmearedSet[smearLvl], previous_u);
+        StoutSmearing->smear(SmearedSet[smearLvl], previous_u);
         previous_u = SmearedSet[smearLvl];
 
         // For debug purposes
@@ -93,7 +93,7 @@ private:
     GaugeLinkField SigmaKPrime_mu(grid);
     GaugeLinkField GaugeKmu(grid), Cmu(grid);
 
-    StoutSmearing.BaseSmear(C, GaugeK);
+    StoutSmearing->BaseSmear(C, GaugeK);
     SigmaK = Zero();
     iLambda = Zero();
 
@@ -107,7 +107,7 @@ private:
       pokeLorentz(SigmaK, SigmaKPrime_mu * e_iQ + adj(Cmu) * iLambda_mu, mu);
       pokeLorentz(iLambda, iLambda_mu, mu);
     }
-    StoutSmearing.derivative(SigmaK, iLambda,
+    StoutSmearing->derivative(SigmaK, iLambda,
                              GaugeK);  // derivative of SmearBase
     return SigmaK;
   }
@@ -144,14 +144,14 @@ private:
     // Exponential
     iQ2 = iQ * iQ;
     iQ3 = iQ * iQ2;
-    StoutSmearing.set_uw(u, w, iQ2, iQ3);
-    StoutSmearing.set_fj(f0, f1, f2, u, w);
+    StoutSmearing->set_uw(u, w, iQ2, iQ3);
+    StoutSmearing->set_fj(f0, f1, f2, u, w);
     e_iQ = f0 * unity + timesMinusI(f1) * iQ - f2 * iQ2;
 
     // Getting B1, B2, Gamma and Lambda
     // simplify this part, reduntant calculations in set_fj
-    xi0 = StoutSmearing.func_xi0(w);
-    xi1 = StoutSmearing.func_xi1(w);
+    xi0 = StoutSmearing->func_xi0(w);
+    xi1 = StoutSmearing->func_xi1(w);
     u2 = u * u;
     w2 = w * w;
     cosw = cos(w);
@@ -219,7 +219,7 @@ public:
   /* Standard constructor */
   SmearedConfiguration(GridCartesian* UGrid, unsigned int Nsmear,
                        Smear_Stout<Gimpl>& Stout)
-      : smearingLevels(Nsmear), StoutSmearing(Stout), ThinLinks(NULL)
+      : smearingLevels(Nsmear), StoutSmearing(&Stout), ThinLinks(NULL)
   {
     for (unsigned int i = 0; i < smearingLevels; ++i)
       SmearedSet.push_back(*(new GaugeField(UGrid)));
@@ -227,7 +227,7 @@ public:
 
   /*! For just thin links */
   SmearedConfiguration()
-    : smearingLevels(0), StoutSmearing(), SmearedSet(), ThinLinks(NULL) {}
+    : smearingLevels(0), StoutSmearing(nullptr), SmearedSet(), ThinLinks(NULL) {}
 
   // attach the smeared routines to the thin links U and fill the smeared set
   void set_Field(GaugeField &U)

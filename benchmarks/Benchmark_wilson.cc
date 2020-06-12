@@ -125,8 +125,8 @@ int main (int argc, char ** argv)
       //    ref =  src + Gamma(Gamma::Algebra::GammaX)* src ; // 1-gamma_x
       tmp = U[mu]*Cshift(src,mu,1);
       {
-	auto ref_v = ref.View();
-	auto tmp_v = tmp.View();
+	autoView( ref_v, ref, CpuWrite);
+	autoView( tmp_v, tmp, CpuWrite);
 	for(int i=0;i<ref_v.size();i++){
 	  ref_v[i]+= tmp_v[i] - Gamma(Gmu[mu])*tmp_v[i]; ;
 	}
@@ -135,8 +135,8 @@ int main (int argc, char ** argv)
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu,-1);
       {
-	auto ref_v = ref.View();
-	auto tmp_v = tmp.View();
+	autoView( ref_v, ref, CpuWrite);
+	autoView( tmp_v, tmp, CpuWrite);
 	for(int i=0;i<ref_v.size();i++){
 	  ref_v[i]+= tmp_v[i] + Gamma(Gmu[mu])*tmp_v[i]; ;
 	}
@@ -187,8 +187,8 @@ int main (int argc, char ** argv)
   for(int ss=0;ss<0;ss++ ){
     for(int i=0;i<Ns;i++){
       for(int j=0;j<Nc;j++){
-	auto ref_v = ref.View();
-	auto result_v = result.View();
+	autoView( ref_v, ref, CpuWrite);
+	autoView( result_v, result, CpuWrite);
 	ComplexF * ref_p = (ComplexF *)&ref_v[ss]()(i)(j);
 	ComplexF * res_p = (ComplexF *)&result_v[ss]()(i)(j);
 	std::cout<<GridLogMessage << ss<< " "<<i<<" "<<j<<" "<< (*ref_p)<<" " <<(*res_p)<<std::endl;
@@ -204,8 +204,8 @@ int main (int argc, char ** argv)
       //    ref =  src - Gamma(Gamma::Algebra::GammaX)* src ; // 1+gamma_x
       tmp = U[mu]*Cshift(src,mu,1);
       {
-	auto ref_v = ref.View();
-	auto tmp_v = tmp.View();
+	autoView( ref_v, ref, CpuWrite);
+	autoView( tmp_v, tmp, CpuWrite);
 	for(int i=0;i<ref_v.size();i++){
 	  ref_v[i]+= tmp_v[i] + Gamma(Gmu[mu])*tmp_v[i]; ;
 	}
@@ -214,8 +214,8 @@ int main (int argc, char ** argv)
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu,-1);
       {
-	auto ref_v = ref.View();
-	auto tmp_v = tmp.View();
+	autoView( ref_v, ref, CpuWrite);
+	autoView( tmp_v, tmp, CpuWrite);
 	for(int i=0;i<ref_v.size();i++){
 	  ref_v[i]+= tmp_v[i] - Gamma(Gmu[mu])*tmp_v[i]; ;
 	}

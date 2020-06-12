@@ -177,9 +177,7 @@ int main (int argc, char ** argv)
       Real nn;      
       double start=usecond();
       for(int i=0;i<Nloop;i++){
-	auto x_v = x.View();
 	nn=norm2(x);
-	vsplat(x_v[0]._internal[0],nn);
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;

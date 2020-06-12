@@ -180,7 +180,7 @@ template<class Impl> void CayleyFermion5D<Impl>::CayleyReport(void)
     std::cout << GridLogMessage << "#### MooeeInv calls report " << std::endl;
     std::cout << GridLogMessage << "CayleyFermion5D Number of MooeeInv Calls     : " << MooeeInvCalls   << std::endl;
     std::cout << GridLogMessage << "CayleyFermion5D ComputeTime/Calls            : " << MooeeInvTime / MooeeInvCalls << " us" << std::endl;
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
     RealD mflops = ( -16.*Nc*Ns+this->Ls*(1.+18.*Nc*Ns) )*volume*MooeeInvCalls/MooeeInvTime/2; // 2 for red black counting
     std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
     std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
@@ -642,7 +642,7 @@ void CayleyFermion5D<Impl>::ContractConservedCurrent( PropagatorField &q_in_1,
 						      Current curr_type,
 						      unsigned int mu)
 {
-#ifndef GRID_NVCC
+#if (!defined(GRID_CUDA)) && (!defined(GRID_HIP))
   Gamma::Algebra Gmu [] = {
     Gamma::Algebra::GammaX,
     Gamma::Algebra::GammaY,
@@ -826,7 +826,7 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   }
 #endif
 
-#ifndef GRID_NVCC
+#if (!defined(GRID_CUDA)) && (!defined(GRID_HIP))
   int tshift = (mu == Nd-1) ? 1 : 0;
   ////////////////////////////////////////////////
   // GENERAL CAYLEY CASE

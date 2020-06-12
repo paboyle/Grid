@@ -18,19 +18,20 @@
 #pragma push_macro("__CUDA_ARCH__")
 #pragma push_macro("__NVCC__")
 #pragma push_macro("__CUDACC__")
+#undef __CUDA_ARCH__
 #undef __NVCC__
 #undef __CUDACC__
-#undef __CUDA_ARCH__
 #define __NVCC__REDEFINE__
 #endif 
 
 /* SYCL save and restore compile environment*/
-#ifdef __SYCL_DEVICE_ONLY__  
+#ifdef GRID_SYCL
 #pragma push
 #pragma push_macro("__SYCL_DEVICE_ONLY__")
 #undef __SYCL_DEVICE_ONLY__
-#undef EIGEN_USE_SYCL
 #define EIGEN_DONT_VECTORIZE
+//#undef EIGEN_USE_SYCL
+#define __SYCL__REDEFINE__
 #endif
 
 
@@ -41,7 +42,7 @@
 #ifdef __NVCC__REDEFINE__
 #pragma pop_macro("__CUDACC__")
 #pragma pop_macro("__NVCC__")
-#pragma pop_macro("__CUDA_ARCH__")
+#pragma pop_macro("GRID_SIMT")
 #pragma pop
 #endif
 

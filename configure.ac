@@ -138,13 +138,48 @@ esac
 ############### SUMMIT JSRUN
 AC_ARG_ENABLE([summit],
     [AC_HELP_STRING([--enable-summit=yes|no], [enable IBMs jsrun resource manager for SUMMIT])],
-    [ac_JSRUN=${enable_summit}], [ac_SUMMIT=no])
+    [ac_SUMMIT=${enable_summit}], [ac_SUMMIT=no])
 case ${ac_SUMMIT} in
     no);;
     yes)
       AC_DEFINE([GRID_IBM_SUMMIT],[1],[Let JSRUN manage the GPU device allocation]);;
     *)
       AC_DEFINE([GRID_IBM_SUMMIT],[1],[Let JSRUN manage the GPU device allocation]);;
+esac
+
+############### SYCL/CUDA/HIP/none
+AC_ARG_ENABLE([accelerator],
+    [AC_HELP_STRING([--enable-accelerator=cuda|sycl|hip|none], [enable none,cuda,sycl,hip acceleration])],
+    [ac_ACCELERATOR=${enable_accelerator}], [ac_ACCELERATOR=none])
+case ${ac_ACCELERATOR} in
+    cuda)
+      echo CUDA acceleration
+      AC_DEFINE([GRID_CUDA],[1],[Use CUDA offload]);;
+    sycl)
+      echo SYCL acceleration
+      AC_DEFINE([GRID_SYCL],[1],[Use SYCL offload]);;
+    hip)
+      echo HIP acceleration
+      AC_DEFINE([GRID_HIP],[1],[Use HIP offload]);;
+    none)
+      echo NO acceleration
+    ;;
+    *)
+      AC_MSG_ERROR(["Acceleration not suppoorted ${ac_ACCELERATOR}"]);;
+esac
+
+############### UNIFIED MEMORY
+AC_ARG_ENABLE([unified],
+    [AC_HELP_STRING([--enable-unified=yes|no], [enable unified address space for accelerator loops])],
+    [ac_UNIFIED=${enable_unified}], [ac_UNIFIED=yes])
+case ${ac_UNIFIED} in
+    yes)
+      echo Unified memory for accelerator loops
+      AC_DEFINE([GRID_UVM],[1],[Use unified address space]);;
+    no)
+      echo Manual memory copy for accelerator loops;;
+    *)
+      AC_MSG_ERROR(["Unified virtual memory option not suppoorted ${ac_UNIFIED}"]);;
 esac
 
 ############### Intel libraries
@@ -290,6 +325,13 @@ case ${CXXTEST} in
     CXXLD="${CXXBASE} -link"
 #    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing -Xcompiler -Wno-unusable-partial-specialization --expt-extended-lambda --expt-relaxed-constexpr"
     CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr"
+    if test $ac_openmp = yes; then
+       CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
+    fi
+    ;;
+  hipcc)
+    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr"
+    CXXLD=${CXX}
     if test $ac_openmp = yes; then
        CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
     fi
@@ -594,6 +636,8 @@ compiler version            : ${ax_cv_gxx_version}
 ----- BUILD OPTIONS -----------------------------------
 SIMD                        : ${ac_SIMD}${SIMD_GEN_WIDTH_MSG}
 Threading                   : ${ac_openmp}
+Acceleration                : ${ac_ACCELERATOR}
+Unified virtual memory      : ${ac_UNIFIED}
 Communications type         : ${comms_type}
 Shared memory allocator     : ${ac_SHM}
 Shared memory mmap path     : ${ac_SHMPATH}

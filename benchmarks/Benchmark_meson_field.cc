@@ -85,11 +85,11 @@ void sliceInnerProductMesonField(std::vector< std::vector<ComplexD> > &mat,
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
 	for(int i=0;i<Lblock;i++){
-	  auto lhs_v = lhs[i].View();
+	  autoView(lhs_v, lhs[i], CpuRead);
 	  auto left = conjugate(lhs_v[ss]);
 	  for(int j=0;j<Rblock;j++){
 	    int idx = i+Lblock*j+Lblock*Rblock*r;
-	    auto rhs_v = rhs[j].View();
+	    autoView(rhs_v, rhs[j], CpuRead);
 	    auto right = rhs_v[ss];
 	    vector_type vv = left()(0)(0) * right()(0)(0)
 	      +              left()(0)(1) * right()(0)(1)
@@ -221,12 +221,12 @@ void sliceInnerProductMesonFieldGamma(std::vector< std::vector<ComplexD> > &mat,
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
 	for(int i=0;i<Lblock;i++){
- 	  auto lhs_v=lhs[i].View();
+ 	  autoView(lhs_v,lhs[i],CpuRead);
 	  auto left = conjugate(lhs_v[ss]);
 	  for(int j=0;j<Rblock;j++){
 	  for(int mu=0;mu<Ngamma;mu++){
 	    
-	    auto rhs_v = rhs[j].View();
+	    autoView(rhs_v,rhs[j],CpuRead);
 	    auto right = Gamma(gammas[mu])*rhs_v[ss];
 
 	      vector_type vv = left()(0)(0) * right()(0)(0)
@@ -370,12 +370,12 @@ void sliceInnerProductMesonFieldGamma1(std::vector< std::vector<ComplexD> > &mat
 	int ss= so+n*stride+b;
 	for(int i=0;i<Lblock;i++){
 	  
-	  auto lhs_v=lhs[i].View();
+	  autoView(lhs_v,lhs[i],CpuRead);
 	  auto left = conjugate(lhs_v[ss]);
 	  for(int j=0;j<Rblock;j++){
 
 	    SpinMatrix_v vv;
-	    auto rhs_v = rhs[j].View();
+	    autoView(rhs_v,rhs[j],CpuRead);
 	    auto right = rhs_v[ss];
 	    for(int s1=0;s1<Ns;s1++){
 	    for(int s2=0;s2<Ns;s2++){
@@ -518,12 +518,12 @@ void sliceInnerProductMesonFieldGammaMom(std::vector< std::vector<ComplexD> > &m
 
 	for(int i=0;i<Lblock;i++){
 
-	  auto lhs_v = lhs[i].View();
+	  autoView(lhs_v,lhs[i],CpuRead);
 	  auto left = conjugate(lhs_v[ss]);
 	  for(int j=0;j<Rblock;j++){
 
 	    SpinMatrix_v vv;
-	    auto rhs_v = rhs[j].View();
+	    autoView(rhs_v,rhs[j],CpuRead);
 	    auto right = rhs_v[ss];
 	    for(int s1=0;s1<Ns;s1++){
 	    for(int s2=0;s2<Ns;s2++){
@@ -537,7 +537,7 @@ void sliceInnerProductMesonFieldGammaMom(std::vector< std::vector<ComplexD> > &m
 	    // Trigger unroll
 	    for ( int m=0;m<Nmom;m++){
 	      int idx = m+base;
-	      auto mom_v = mom[m].View();
+	      autoView(mom_v,mom[m],CpuRead);
 	      auto phase = mom_v[ss];
 	      mac(&lvSum[idx],&vv,&phase);
 	    }

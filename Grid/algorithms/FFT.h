@@ -1,4 +1,3 @@
-
 /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -36,7 +35,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <fftw3.h>
 #endif
 #endif
-
 
 NAMESPACE_BEGIN(Grid);
 
@@ -191,7 +189,7 @@ public:
     typedef typename sobj::scalar_type   scalar;
       
     Lattice<sobj> pgbuf(&pencil_g);
-    auto pgbuf_v = pgbuf.View();
+    autoView(pgbuf_v , pgbuf, CpuWrite);
 
     typedef typename FFTW<scalar>::FFTW_scalar FFTW_scalar;
     typedef typename FFTW<scalar>::FFTW_plan   FFTW_plan;
