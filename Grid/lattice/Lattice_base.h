@@ -81,19 +81,6 @@ private:
   }
 public:
 
-  void Advise(int advise) {
-#ifdef GRID_NVCC
-#ifndef __CUDA_ARCH__ // only on host
-    if (advise & AdviseInfrequentUse) {
-      gridMoveToHost((void**)&this->_odata);
-    }
-    if (advise & AdviseReadMostly) {
-      //cudaMemAdvise(_odata,_odata_size*sizeof(vobj),cudaMemAdviseSetReadMostly,-1);
-    }
-#endif
-#endif
-  };
-
   /////////////////////////////////////////////////////////////////////////////////
   // Can use to make accelerator dirty without copy from host ; useful for temporaries "dont care" prev contents
   /////////////////////////////////////////////////////////////////////////////////
