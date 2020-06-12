@@ -165,31 +165,38 @@ struct acle<float>{
   static inline svbool_t pg2(){return svptrue_pat_b32(SV_VL8);}
   // exchange neighboring elements
   static inline vec<uint32_t> tbl_swap(){
-    const vec<uint32_t> t = {1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14};
+    //const vec<uint32_t> t = {1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14};
+    const vec_imm<uint32_t> t = {1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14};
     return t;
   }
   static inline vec<uint32_t> tbl0(){
-    const vec<uint32_t> t = {8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7};
+    //const vec<uint32_t> t = {8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7};
+    const vec_imm<uint32_t> t = {8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7};
     return t;
   }
   static inline vec<uint32_t> tbl1(){
-    const vec<uint32_t> t = {4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11};
+    //const vec<uint32_t> t = {4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11};
+    const vec_imm<uint32_t> t = {4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11};
     return t;
   }
   static inline vec<uint32_t> tbl2(){
-    const vec<uint32_t> t = {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13};
+    //const vec<uint32_t> t = {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13};
+    const vec_imm<uint32_t> t = {4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11};
     return t;
   }
   static inline vec<uint32_t> tbl_exch1a(){ // Exchange1
-    const vec<uint32_t> t = {0, 1, 2, 3, 8, 9, 10, 11, 4, 5, 6, 7, 12, 13, 14, 15 };
+    //const vec<uint32_t> t = {0, 1, 2, 3, 8, 9, 10, 11, 4, 5, 6, 7, 12, 13, 14, 15 };
+    const vec_imm<uint32_t> t = {0, 1, 2, 3, 8, 9, 10, 11, 4, 5, 6, 7, 12, 13, 14, 15 };
     return t;
   }
   static inline vec<uint32_t> tbl_exch1b(){ // Exchange1
-    const vec<uint32_t> t = {4, 5, 6, 7, 12, 13, 14, 15, 0, 1, 2, 3, 8, 9, 10, 11 };
+    //const vec<uint32_t> t = {4, 5, 6, 7, 12, 13, 14, 15, 0, 1, 2, 3, 8, 9, 10, 11 };
+    const vec_imm<uint32_t> t = {4, 5, 6, 7, 12, 13, 14, 15, 0, 1, 2, 3, 8, 9, 10, 11 };
     return t;
   }
   static inline vec<uint32_t> tbl_exch1c(){ // Exchange1
-    const vec<uint32_t> t = {8, 9, 10, 11, 0, 1, 2, 3, 12, 13, 14, 15, 4, 5, 6, 7};
+    //const vec<uint32_t> t = {8, 9, 10, 11, 0, 1, 2, 3, 12, 13, 14, 15, 4, 5, 6, 7};
+    const vec_imm<uint32_t> t = {8, 9, 10, 11, 0, 1, 2, 3, 12, 13, 14, 15, 4, 5, 6, 7};
     return t;
   }
   static inline svbool_t pg_even(){return svzip1_b32(svptrue_b32(), svpfalse_b());}
