@@ -7,6 +7,7 @@
  Copyright (C) 2019
  
  Author: Felix Erben <felix.erben@ed.ac.uk>
+ Author: Raoul Hodgson <raoul.hodgson@ed.ac.uk>
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -58,7 +59,7 @@ public:
 				 const Gamma GammaA_right,
 				 const Gamma GammaB_right,
 				 const int parity,
-				 const int * wick_contractions,
+				 const bool * wick_contractions,
   				 robj &result);
   public:
   static void ContractBaryons(const PropagatorField &q1_left,
@@ -68,8 +69,7 @@ public:
 				 const Gamma GammaB_left,
 				 const Gamma GammaA_right,
 				 const Gamma GammaB_right,
-				 const char * quarks_left,
-				 const char * quarks_right,
+				 const bool* wick_contractions,
 				 const int parity,
 				 ComplexField &baryon_corr);
   template <class mobj, class robj>
@@ -80,9 +80,9 @@ public:
 				 const Gamma GammaB_left,
 				 const Gamma GammaA_right,
 				 const Gamma GammaB_right,
-				 const char * quarks_left,
-				 const char * quarks_right,
+				 const int wick_contraction,
 				 const int parity,
+				 const int nt,
 				 robj &result);
   private: 
   template <class mobj, class mobj2, class robj>
@@ -173,7 +173,7 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 				                 const Gamma GammaA_right,
 		                 		 const Gamma GammaB_right,
 						 const int parity,
-						 const int * wick_contraction,
+						 const bool * wick_contraction,
 						 robj &result)
 {
 
@@ -279,8 +279,7 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
 				                 const Gamma GammaB_left,
 				                 const Gamma GammaA_right,
 		                 		 const Gamma GammaB_right,
-						 const char * quarks_left,
-						 const char * quarks_right,
+						 const bool* wick_contractions,
 						 const int parity,
 						 ComplexField &baryon_corr)
 {
@@ -288,7 +287,6 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
   assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
   assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
 
-  std::cout << "Contraction <" << quarks_right[0] << quarks_right[1] << quarks_right[2] << "|" << quarks_left[0] << quarks_left[1] << quarks_left[2] << ">" << std::endl;
   std::cout << "GammaA (left) " << (GammaA_left.g) <<  std::endl;
   std::cout << "GammaB (left) " << (GammaB_left.g) <<  std::endl;
   std::cout << "GammaA (right) " << (GammaA_right.g) <<  std::endl;
@@ -297,10 +295,6 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
   assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
 
   GridBase *grid = q1_left.Grid();
-
-  int wick_contraction[6];
-  for (int ie=0; ie < 6 ; ie++)
-    wick_contraction[ie] = (quarks_left[0] == quarks_right[epsilon[ie][0]] && quarks_left[1] == quarks_right[epsilon[ie][1]] && quarks_left[2] == quarks_right[epsilon[ie][2]]) ? 1 : 0;
 
   auto vbaryon_corr= baryon_corr.View();
   auto v1 = q1_left.View();
@@ -311,10 +305,10 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
   bytes += grid->oSites() * (432.*sizeof(vComplex) + 126.*sizeof(int) + 36.*sizeof(Real));
   for (int ie=0; ie < 6 ; ie++){
     if(ie==0 or ie==3){
-       bytes += grid->oSites() * (4.*sizeof(int) + 4752.*sizeof(vComplex)) * wick_contraction[ie];
+       bytes += grid->oSites() * (4.*sizeof(int) + 4752.*sizeof(vComplex)) * wick_contractions[ie];
     }
     else{
-       bytes += grid->oSites() * (64.*sizeof(int) + 5184.*sizeof(vComplex)) * wick_contraction[ie];
+       bytes += grid->oSites() * (64.*sizeof(int) + 5184.*sizeof(vComplex)) * wick_contractions[ie];
     }
   }
   Real t=0.;
@@ -325,7 +319,7 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
     auto D2 = v2[ss];
     auto D3 = v3[ss];
     vobj result=Zero();
-    baryon_site(D1,D2,D3,GammaA_left,GammaB_left,GammaA_right,GammaB_right,parity,wick_contraction,result);
+    baryon_site(D1,D2,D3,GammaA_left,GammaB_left,GammaA_right,GammaB_right,parity,wick_contractions,result);
     vbaryon_corr[ss] = result; 
   }  );//end loop over lattice sites
 
@@ -343,16 +337,15 @@ void BaryonUtils<FImpl>::ContractBaryons_Sliced(const mobj &D1,
 				                 const Gamma GammaB_left,
 				                 const Gamma GammaA_right,
 		                 		 const Gamma GammaB_right,
-						 const char * quarks_left,
-						 const char * quarks_right,
+						 const int wick_contraction,
 						 const int parity,
+						 const int nt,
 						 robj &result)
 {
 
   assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
   assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
 
-  std::cout << "Contraction <" << quarks_right[0] << quarks_right[1] << quarks_right[2] << "|" << quarks_left[0] << quarks_left[1] << quarks_left[2] << ">" << std::endl;
   std::cout << "GammaA (left) " << (GammaA_left.g) <<  std::endl;
   std::cout << "GammaB (left) " << (GammaB_left.g) <<  std::endl;
   std::cout << "GammaA (right) " << (GammaA_right.g) <<  std::endl;
@@ -360,12 +353,13 @@ void BaryonUtils<FImpl>::ContractBaryons_Sliced(const mobj &D1,
  
   assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
 
-  int wick_contraction[6];
+  bool wick_contractions[6];
   for (int ie=0; ie < 6 ; ie++)
-    wick_contraction[ie] = (quarks_left[0] == quarks_right[epsilon[ie][0]] && quarks_left[1] == quarks_right[epsilon[ie][1]] && quarks_left[2] == quarks_right[epsilon[ie][2]]) ? 1 : 0;
+    wick_contractions[ie] = (ie == wick_contraction);
 
-  result=Zero();
-  baryon_site<decltype(D1),decltype(result)>(D1,D2,D3,GammaA_left,GammaB_left,GammaA_right,GammaB_right,parity,wick_contraction,result);
+  for (int t=0; t<nt; t++) {
+    baryon_site(D1[t],D2[t],D3[t],GammaA_left,GammaB_left,GammaA_right,GammaB_right,parity,wick_contractions,result[t]);
+  }
 }
 
 /***********************************************************************
