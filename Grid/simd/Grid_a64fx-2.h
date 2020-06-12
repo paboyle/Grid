@@ -8,6 +8,8 @@
 
     Author: Nils Meyer          <nils.meyer@ur.de>
 
+    with support from Arm
+
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -365,6 +367,18 @@ struct Sub{
 };
 
 struct Mult{
+  template <typename T>
+  inline vec<T> operator()(vec<T> a, vec<T> b, vec<T> c){
+    vec<T> out;
+    svbool_t pg1 = acle<T>::pg1();
+    typename acle<T>::vt a_v = svld1(pg1, a.v);
+    typename acle<T>::vt b_v = svld1(pg1, b.v);
+    typename acle<T>::vt c_v = svld1(pg1, c.v);
+    typename acle<T>::vt r_v = svmla_x(pg1, c_v, a_v, b_v);
+    svst1(pg1, out.v, r_v);
+
+    return out;
+  }
   template <typename T>
   inline vec<T> operator()(vec<T> a, vec<T> b){
     vec<T> out;
