@@ -327,9 +327,7 @@ public:
 
   // FIXME -- alias this to an accelerator_inline MAC struct.
 
-  // safety exclude fxmac from VLA (causing wrong results?)
-  //#if defined(A64FX) || defined(A64FXFIXEDSIZE)
-  #if defined(A64FXFIXEDSIZE)
+  #if defined(A64FX) || defined(A64FXFIXEDSIZE)
   friend accelerator_inline void mac(Grid_simd *__restrict__ y,
 				     const Grid_simd *__restrict__ a,
 				     const Grid_simd *__restrict__ x) {
