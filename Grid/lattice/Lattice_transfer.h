@@ -164,7 +164,7 @@ accelerator_inline void convertType(Lattice<T1> & out, const Lattice<T2> & in) {
 ////////////////////////////////////////////////////////////////////////////////////////////
 template<class vobj>
 inline auto localInnerProductD(const Lattice<vobj> &lhs,const Lattice<vobj> &rhs)
--> Lattice<iScalar<decltype(TensorRemove(innerProductD2(lhs.View()[0],rhs.View()[0])))>>
+-> Lattice<iScalar<decltype(TensorRemove(innerProductD2(lhs.View(CpuRead)[0],rhs.View(CpuRead)[0])))>>
 {
   autoView( lhs_v , lhs, AcceleratorRead);
   autoView( rhs_v , rhs, AcceleratorRead);
@@ -283,7 +283,7 @@ template<class vobj,class CComplex>
   Lattice<dotp> coarse_inner(coarse);
 
   // Precision promotion
-  fine_inner = localInnerProductD(fineX,fineY);
+  fine_inner = localInnerProductD<vobj>(fineX,fineY);
   blockSum(coarse_inner,fine_inner);
   {
     autoView( CoarseInner_  , CoarseInner,AcceleratorWrite);
@@ -486,13 +486,14 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
   for(int i=0;i<nbasis;i++) {
     Lattice<iScalar<CComplex> > ip = PeekIndex<0>(coarseData,i);
 
-    Lattice<CComplex> cip(coarse);
-    autoView( cip_ , cip, AcceleratorWrite);
-    autoView(  ip_ ,  ip, AcceleratorRead);
-    accelerator_forNB(sc,coarse->oSites(),CComplex::Nsimd(),{
-	coalescedWrite(cip_[sc], ip_(sc)());
-    });
-    blockZAXPY<vobj,CComplex >(fineData,cip,Basis[i],fineData);
+    //Lattice<CComplex> cip(coarse);
+    //autoView( cip_ , cip, AcceleratorWrite);
+    //autoView(  ip_ ,  ip, AcceleratorRead);
+    //accelerator_forNB(sc,coarse->oSites(),CComplex::Nsimd(),{
+    //	coalescedWrite(cip_[sc], ip_(sc)());
+    //  });
+    //blockZAXPY<vobj,CComplex >(fineData,cip,Basis[i],fineData);
+    blockZAXPY(fineData,ip,Basis[i],fineData);
   }
 }
 #endif
