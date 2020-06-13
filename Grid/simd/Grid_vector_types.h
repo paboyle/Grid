@@ -288,14 +288,14 @@ public:
     template <class S = Scalar_type>
     accelerator_inline Grid_simd &operator=(const Grid_simd<typename std::enable_if<is_ComplexF<S>::value, S>::type, Vector_type> &&rhs) {
       //v = rhs.v;
-      svst1(svptrue_b8(), (float*)this, svld1(svptrue_b8(), (float*)&(rhs.v)));
+      svst1(svptrue_b32(), (float*)this, svld1(svptrue_b32(), (float*)&(rhs.v)));
       return *this;
     };
 
     template <class S = Scalar_type>
     accelerator_inline Grid_simd &operator=(const Grid_simd<typename std::enable_if<is_ComplexF<S>::value, S>::type, Vector_type> &rhs) {
       //v = rhs.v;
-      svst1(svptrue_b8(), (float*)this, svld1(svptrue_b8(), (float*)&(rhs.v)));
+      svst1(svptrue_b32(), (float*)this, svld1(svptrue_b32(), (float*)&(rhs.v)));
       return *this;
     };
 
@@ -303,14 +303,14 @@ public:
     template <class S = Scalar_type>
     accelerator_inline Grid_simd &operator=(const Grid_simd<typename std::enable_if<is_ComplexD<S>::value, S>::type, Vector_type> &&rhs) {
       //v = rhs.v;
-      svst1(svptrue_b8(), (double*)this, svld1(svptrue_b8(), (double*)&(rhs.v)));
+      svst1(svptrue_b64(), (double*)this, svld1(svptrue_b64(), (double*)&(rhs.v)));
       return *this;
     };
 
     template <class S = Scalar_type>
     accelerator_inline Grid_simd &operator=(const Grid_simd<typename std::enable_if<is_ComplexD<S>::value, S>::type, Vector_type> &rhs) {
       //v = rhs.v;
-      svst1(svptrue_b8(), (double*)this, svld1(svptrue_b8(), (double*)&(rhs.v)));
+      svst1(svptrue_b64(), (double*)this, svld1(svptrue_b64(), (double*)&(rhs.v)));
       return *this;
     };
 
