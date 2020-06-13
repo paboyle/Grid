@@ -73,13 +73,14 @@ private:
       dealloc();
       
       this->_odata_size = size;
-      if ( size ) 
+      if ( size )
 	this->_odata      = alloc.allocate(this->_odata_size);
       else 
 	this->_odata      = nullptr;
     }
   }
 public:
+
   /////////////////////////////////////////////////////////////////////////////////
   // Can use to make accelerator dirty without copy from host ; useful for temporaries "dont care" prev contents
   /////////////////////////////////////////////////////////////////////////////////

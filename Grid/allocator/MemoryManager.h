@@ -43,7 +43,7 @@ NAMESPACE_BEGIN(Grid);
 // Advise the LatticeAccelerator class
 ////////////////////////////////////////////////////////////////////////////
 enum ViewAdvise {
- AdviseDefault       = 0x0,    // Reegular data
+ AdviseDefault       = 0x0,    // Regular data
  AdviseInfrequentUse = 0x1,    // Advise that the data is used infrequently.  This can
                                // significantly influence performance of bulk storage.
  

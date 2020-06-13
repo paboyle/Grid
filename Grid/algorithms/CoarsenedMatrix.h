@@ -120,6 +120,39 @@ public:
     blockPromote(CoarseVec,FineVec,subspace);
   }
 
+  virtual void CreateSubspace(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,int nn=nbasis) {
+
+    RealD scale;
+
+    ConjugateGradient<FineField> CG(1.0e-2,100,false);
+    FineField noise(FineGrid);
+    FineField Mn(FineGrid);
+
+    for(int b=0;b<nn;b++){
+      
+      subspace[b] = Zero();
+      gaussian(RNG,noise);
+      scale = std::pow(norm2(noise),-0.5); 
+      noise=noise*scale;
+      
+      hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<b<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
+
+      for(int i=0;i<1;i++){
+
+	CG(hermop,noise,subspace[b]);
+
+	noise = subspace[b];
+	scale = std::pow(norm2(noise),-0.5); 
+	noise=noise*scale;
+
+      }
+
+      hermop.Op(noise,Mn); std::cout<<GridLogMessage << "filtered["<<b<<"] <f|MdagM|f> "<<norm2(Mn)<<std::endl;
+      subspace[b]   = noise;
+
+    }
+  }
+
   ////////////////////////////////////////////////////////////////////////////////////////////////
   // World of possibilities here. But have tried quite a lot of experiments (250+ jobs run on Summit)
   // and this is the best I found
