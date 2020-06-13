@@ -33,9 +33,6 @@
 // Using SVE ACLE with fixed-size data types
 /////////////////////////////////////////////////////
 
-/* TODO
- * Exchange1
-*/
 
 // gcc 10 features
 #if __ARM_FEATURE_SVE_BITS==512
