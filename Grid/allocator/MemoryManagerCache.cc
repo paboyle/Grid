@@ -77,7 +77,7 @@ void  MemoryManager::LRUinsert(AcceleratorViewEntry &AccCache)
   assert(AccCache.LRU_valid==0);
   if (AccCache.transient) { 
     LRU.push_back(AccCache.CpuPtr);
-    AccCache.LRU_entry = LRU.end();
+    AccCache.LRU_entry = --LRU.end();
   } else {
     LRU.push_front(AccCache.CpuPtr);
     AccCache.LRU_entry = LRU.begin();

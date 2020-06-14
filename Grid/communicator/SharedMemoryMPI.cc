@@ -180,7 +180,7 @@ void GlobalSharedMemory::GetShmDims(const Coordinate &WorldDims,Coordinate &ShmD
         && divides(prime,WorldShmSize/AutoShmSize)  ) {
 	AutoShmSize*=prime;
 	ShmDims[dim]*=prime;
-	last_dim = (dim + ndimension - 1) % ndimension;
+	last_dim = dim;
 	break;
       }
     }
