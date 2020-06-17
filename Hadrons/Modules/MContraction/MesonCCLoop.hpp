@@ -187,9 +187,11 @@ void TStagMesonCCLoop<FImpl1, FImpl2>::execute(void)
     // Do spatial gamma's only
     Lattice<iScalar<vInteger> > x(U.Grid()); LatticeCoordinate(x,0);
     Lattice<iScalar<vInteger> > y(U.Grid()); LatticeCoordinate(y,1);
+    Lattice<iScalar<vInteger> > z(U.Grid()); LatticeCoordinate(z,2);
     Lattice<iScalar<vInteger> > lin_z(U.Grid()); lin_z=x+y;
     LatticeComplex phases(U.Grid());
-    
+    LatticeComplex localphases(U.Grid());
+
     LatticeColourMatrix Umu(U.Grid());
     envGetTmp(FermionField, source);
     envGetTmp(FermionField, sol);
@@ -203,11 +205,15 @@ void TStagMesonCCLoop<FImpl1, FImpl2>::execute(void)
         
         //staggered phases go into links
         Umu = PeekIndex<LorentzIndex>(U,mu);
+        localphases=1.0;
         phases=1.0;
         if(mu==0){
+            localphases = where( mod(x    ,2)==(Integer)0, localphases,-localphases);
         }else if(mu==1){
+            localphases = where( mod(y    ,2)==(Integer)0, localphases,-localphases);
             phases = where( mod(x    ,2)==(Integer)0, phases,-phases);
         }else if(mu==2){
+            localphases = where( mod(z    ,2)==(Integer)0, localphases,-localphases);
             phases = where( mod(lin_z,2)==(Integer)0, phases,-phases);
         }else assert(0);
         Umu *= phases;
@@ -265,13 +271,33 @@ void TStagMesonCCLoop<FImpl1, FImpl2>::execute(void)
                         for (unsigned int tsnk = 0; tsnk < buf.size(); ++tsnk){
                             result.corr[tsnk] = TensorRemove(buf[tsnk]);
                         }
-                        outFileName = par().output+"_"+
+                        outFileName = par().output+"/cc_2pt_"+
                             std::to_string(x)+"_"+
                             std::to_string(y)+"_"+
                             std::to_string(z)+"_"+
                             std::to_string(t)+"_mu_"+
                             std::to_string(mu);
-                        saveResult(outFileName, "mesonCCLoop", result);
+                        saveResult(outFileName, "mesonCC", result);
+                        
+                        // do the local current
+                        corr = trace(adj(q1) * q1);
+                        // ks phases (includes hermiticity phase)
+                        corr *= localphases; // gamma at sink
+                        if(      mu==0 && x % 2 )corr *= -1.0; // gamma phase at source
+                        else if( mu==1 && y % 2 )corr *= -1.0; // gamma phase at source
+                        else if( mu==2 && z % 2 )corr *= -1.0; // gamma phase at source
+                        
+                        sliceSum(corr, buf, Tp);
+                        for (unsigned int tsnk = 0; tsnk < buf.size(); ++tsnk){
+                            result.corr[tsnk] = TensorRemove(buf[tsnk]);
+                        }
+                        outFileName = par().output+"local_2pt_"+
+                            std::to_string(x)+"_"+
+                            std::to_string(y)+"_"+
+                            std::to_string(z)+"_"+
+                            std::to_string(t)+"_mu_"+
+                            std::to_string(mu);
+                        saveResult(outFileName, "mesonLL", result);
                     }
                 }
             }
