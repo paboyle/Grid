@@ -376,8 +376,8 @@ inline void blockInnerProduct(Lattice<CComplex> &CoarseInner,
   fine_inner = localInnerProduct(fineX,fineY);
   blockSum(coarse_inner,fine_inner);
   accelerator_for(ss, coarse->oSites(), 1, {
-    CoarseInner_[ss] = coarse_inner_[ss];
-  });
+      convertType(CoarseInner_[ss],coarse_inner_[ss]);
+    });
 }
 
 template<class vobj,class CComplex>
