@@ -17,11 +17,6 @@ export MPICH_CXX=g++-10.0.1
 
 $ ../configure --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=mpi3 --enable-openmp CXX=mpiFCC CC=mpifcc CXXFLAGS="-std=c++11 -march=armv8-a+sve -msve-vector-bits=512 -fno-gcse -DA64FXFIXEDSIZE -DA64FXASM -DDSLASHINTRIN -DTOFU -I/opt/FJSVxtclanga/tcsds-1.2.25/include/mpi/fujitsu -lrt" LDFLAGS="-L/opt/FJSVxtclanga/tcsds-1.2.25/lib64 -lrt"
 
-works! but binaries do not finish when running via job scheduler. problem with MPI_finalize ?
-
-interactive login:  mpirun -np 1 ./Benchmark_wilson_sweep --dslash-asm
-                    [WARN] PLE 0610 plexec The process terminated with the signal.(rank=0)(nid=0xff010008)(sig=9) ?
-
 --------------------------------------------------------
 
 * armclang 20.0 VLA (merlin)

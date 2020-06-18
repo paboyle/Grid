@@ -182,6 +182,9 @@ int main (int argc, char ** argv)
   auto nsimd = vComplex::Nsimd();
   auto simdwidth = sizeof(vComplex);
 
+  std::cout<<GridLogMessage << "Nsimd "<< nsimd << std::endl;
+  std::cout<<GridLogMessage << "Simd width "<< simdwidth << std::endl;
+
   // RF: Nd Wilson, Nd gauge, Nc colors
   double data = volume * ((2*Nd+1)*Nd*Nc + 2*Nd*Nc*Nc) * simdwidth / nsimd * ncall / (1024.*1024.*1024.);
 
