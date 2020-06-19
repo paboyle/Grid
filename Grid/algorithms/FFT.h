@@ -237,7 +237,7 @@ public:
           sobj s;
 	  sgrid->LocalIndexToLocalCoor(idx,cbuf);
 	  peekLocalSite(s,r_v,cbuf);
-	  acbuf[dim]+=((pc+p) % processors[dim])*L;
+	  cbuf[dim]+=((pc+p) % processors[dim])*L;
 	  pokeLocalSite(s,p_v,cbuf);
       });
       if (p != processors[dim] - 1) {
