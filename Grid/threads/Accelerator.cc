@@ -1,7 +1,7 @@
 #include <Grid/GridCore.h>
 
 NAMESPACE_BEGIN(Grid);
-uint32_t accelerator_threads=8;
+uint32_t accelerator_threads=2;
 uint32_t acceleratorThreads(void)       {return accelerator_threads;};
 void     acceleratorThreads(uint32_t t) {accelerator_threads = t;};
 
