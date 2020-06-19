@@ -30,11 +30,14 @@ protected:
   int checkerboard;
   vobj     *_odata;    // A managed pointer
   uint64_t _odata_size;    
+  ViewAdvise advise;
 public:
-  accelerator_inline LatticeAccelerator() : checkerboard(0), _odata(nullptr), _odata_size(0), _grid(nullptr) { }; 
+  accelerator_inline LatticeAccelerator() : checkerboard(0), _odata(nullptr), _odata_size(0), _grid(nullptr), advise(AdviseDefault) { }; 
   accelerator_inline uint64_t oSites(void) const { return _odata_size; };
   accelerator_inline int  Checkerboard(void) const { return checkerboard; };
   accelerator_inline int &Checkerboard(void) { return this->checkerboard; }; // can assign checkerboard on a container, not a view
+  accelerator_inline ViewAdvise Advise(void) const { return advise; };
+  accelerator_inline ViewAdvise &Advise(void) { return this->advise; }; // can assign advise on a container, not a view
   accelerator_inline void Conformable(GridBase * &grid) const
   { 
     if (grid) conformable(grid, _grid);
@@ -86,7 +89,7 @@ public:
       MemoryManager::ViewOpen(this->cpu_ptr,
 				this->_odata_size*sizeof(vobj),
 				mode,
-				AdviseDefault);    
+				this->advise);    
   }
   void ViewClose(void)
   { // Inform the manager

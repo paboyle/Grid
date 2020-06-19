@@ -297,11 +297,11 @@ void Grid_init(int *argc,char ***argv)
   }
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--device-mem") ){
-    int GB;
+    int MB;
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--device-mem");
-    GridCmdOptionInt(arg,GB);
-    uint64_t GB64 = GB;
-    MemoryManager::DeviceMaxBytes = GB64*1024LL*1024LL*1024LL;
+    GridCmdOptionInt(arg,MB);
+    uint64_t MB64 = MB;
+    MemoryManager::DeviceMaxBytes = MB64*1024LL*1024LL;
   }
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--hypercube") ){

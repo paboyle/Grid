@@ -170,16 +170,23 @@ void GlobalSharedMemory::GetShmDims(const Coordinate &WorldDims,Coordinate &ShmD
   std::vector<int> primes({2,3,5});
 
   int dim = 0;
+  int last_dim = ndimension - 1;
   int AutoShmSize = 1;
   while(AutoShmSize != WorldShmSize) {
-    for(int p=0;p<primes.size();p++) {
+    int p;
+    for(p=0;p<primes.size();p++) {
       int prime=primes[p];
       if ( divides(prime,WorldDims[dim]/ShmDims[dim])
         && divides(prime,WorldShmSize/AutoShmSize)  ) {
 	AutoShmSize*=prime;
 	ShmDims[dim]*=prime;
+	last_dim = dim;
 	break;
       }
+    }
+    if (p == primes.size() && last_dim == dim) {
+      std::cerr << "GlobalSharedMemory::GetShmDims failed" << std::endl;
+      exit(EXIT_FAILURE);
     }
     dim=(dim+1) %ndimension;
   }
