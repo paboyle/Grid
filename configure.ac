@@ -470,6 +470,14 @@ case ${ac_SHM} in
 
      shmopen)
      AC_DEFINE([GRID_MPI3_SHMOPEN],[1],[GRID_MPI3_SHMOPEN] )
+     CXXFLAGS_CPY=$CXXFLAGS
+     LDFLAGS_CPY=$LDFLAGS
+     CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
+     LDFLAGS="$AM_LDFLAGS $LDFLAGS"
+     AC_SEARCH_LIBS([shm_unlink], [rt], [],
+                    [AC_MSG_ERROR("no library found for shm_unlink")])
+     CXXFLAGS=$CXXFLAGS_CPY
+     LDFLAGS=$LDFLAGS_CPY
      ;;
 
      shmget)
