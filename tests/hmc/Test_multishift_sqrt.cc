@@ -104,7 +104,7 @@ int main (int argc, char ** argv)
 						       GridDefaultMpi());
 
   double     lo=0.001;
-  double     hi=1.0;
+  double     hi=20.0;
   int precision=64;
   int    degree=10;
   AlgRemez remez(lo,hi,precision);
