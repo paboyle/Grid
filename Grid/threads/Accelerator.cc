@@ -37,9 +37,10 @@ void acceleratorInit(void)
 #define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("AcceleratorCudaInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
 #define GPU_PROP(canMapHostMemory)             GPU_PROP_FMT(canMapHostMemory,"%d");
     cudaGetDeviceProperties(&gpu_props[i], i);
+    cudaDeviceProp prop; 
+    prop = gpu_props[i];
+    totalDeviceMem = prop.totalGlobalMem;
     if ( world_rank == 0) {
-      cudaDeviceProp prop; 
-      prop = gpu_props[i];
       printf("AcceleratorCudaInit: ========================\n");
       printf("AcceleratorCudaInit: Device Number    : %d\n", i);
       printf("AcceleratorCudaInit: ========================\n");
@@ -49,7 +50,6 @@ void acceleratorInit(void)
       GPU_PROP(managedMemory);
       GPU_PROP(isMultiGpuBoard);
       GPU_PROP(warpSize);
-      totalDeviceMem = prop.totalGlobalMem;
       //      GPU_PROP(unifiedAddressing);
       //      GPU_PROP(l2CacheSize);
       //      GPU_PROP(singleToDoublePrecisionPerfRatio);
