@@ -34,7 +34,7 @@ NAMESPACE_BEGIN(Grid);
 
 // Move control to configure.ac and Config.h?
 
-#undef  ALLOCATION_CACHE
+#define ALLOCATION_CACHE
 #define GRID_ALLOC_ALIGN (2*1024*1024)
 #define GRID_ALLOC_SMALL_LIMIT (4096)
 

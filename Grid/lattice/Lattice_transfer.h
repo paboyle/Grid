@@ -520,15 +520,17 @@ void localConvert(const Lattice<vobj> &in,Lattice<vvobj> &out)
     assert(ig->lSites() == og->lSites());
   }
 
+  autoView(in_v,in,CpuRead);
+  autoView(out_v,out,CpuWrite);
   thread_for(idx, ig->lSites(),{
     sobj s;
     ssobj ss;
 
     Coordinate lcoor(ni);
     ig->LocalIndexToLocalCoor(idx,lcoor);
-    peekLocalSite(s,in,lcoor);
+    peekLocalSite(s,in_v,lcoor);
     ss=s;
-    pokeLocalSite(ss,out,lcoor);
+    pokeLocalSite(ss,out_v,lcoor);
   });
 }
 
@@ -588,8 +590,6 @@ void localCopyRegion(const Lattice<vobj> &From,Lattice<vobj> & To,Coordinate Fro
       for(int w=0;w<words;w++){
 	tp[idx_t+w*Nsimd] = fp[idx_f+w*Nsimd];  // FIXME IF RRII layout, type pun no worke
       }
-      //      peekLocalSite(s,From,Fcoor);
-      //      pokeLocalSite(s,To  ,Tcoor);
     }
   });
 }
@@ -620,6 +620,8 @@ void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice
   }
 
   // the above should guarantee that the operations are local
+  autoView(lowDimv,lowDim,CpuRead);
+  autoView(higherDimv,higherDim,CpuWrite);
   thread_for(idx,lg->lSites(),{
     sobj s;
     Coordinate lcoor(nl);
@@ -632,8 +634,8 @@ void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice
 	hcoor[d]=lcoor[ddl++];
       }
     }
-    peekLocalSite(s,lowDim,lcoor);
-    pokeLocalSite(s,higherDim,hcoor);
+    peekLocalSite(s,lowDimv,lcoor);
+    pokeLocalSite(s,higherDimv,hcoor);
   });
 }
 
@@ -661,6 +663,8 @@ void ExtractSlice(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slic
     }
   }
   // the above should guarantee that the operations are local
+  autoView(lowDimv,lowDim,CpuWrite);
+  autoView(higherDimv,higherDim,CpuRead);
   thread_for(idx,lg->lSites(),{
     sobj s;
     Coordinate lcoor(nl);
@@ -673,8 +677,8 @@ void ExtractSlice(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slic
 	hcoor[d]=lcoor[ddl++];
       }
     }
-    peekLocalSite(s,higherDim,hcoor);
-    pokeLocalSite(s,lowDim,lcoor);
+    peekLocalSite(s,higherDimv,hcoor);
+    pokeLocalSite(s,lowDimv,lcoor);
   });
 
 }
@@ -702,6 +706,8 @@ void InsertSliceLocal(const Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int
   }
 
   // the above should guarantee that the operations are local
+  autoView(lowDimv,lowDim,CpuRead);
+  autoView(higherDimv,higherDim,CpuWrite);
   thread_for(idx,lg->lSites(),{
     sobj s;
     Coordinate lcoor(nl);
@@ -710,8 +716,8 @@ void InsertSliceLocal(const Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int
     if( lcoor[orthog] == slice_lo ) { 
       hcoor=lcoor;
       hcoor[orthog] = slice_hi;
-      peekLocalSite(s,lowDim,lcoor);
-      pokeLocalSite(s,higherDim,hcoor);
+      peekLocalSite(s,lowDimv,lcoor);
+      pokeLocalSite(s,higherDimv,hcoor);
     }
   });
 }
@@ -739,6 +745,8 @@ void ExtractSliceLocal(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int
   }
 
   // the above should guarantee that the operations are local
+  autoView(lowDimv,lowDim,CpuWrite);
+  autoView(higherDimv,higherDim,CpuRead);
   thread_for(idx,lg->lSites(),{
     sobj s;
     Coordinate lcoor(nl);
@@ -747,8 +755,8 @@ void ExtractSliceLocal(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int
     if( lcoor[orthog] == slice_lo ) { 
       hcoor=lcoor;
       hcoor[orthog] = slice_hi;
-      peekLocalSite(s,higherDim,hcoor);
-      pokeLocalSite(s,lowDim,lcoor);
+      peekLocalSite(s,higherDimv,hcoor);
+      pokeLocalSite(s,lowDimv,lcoor);
     }
   });
 }

@@ -580,16 +580,21 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt_5d(FermionField &out,const
   cosha = (one + W*W + sk) / (abs(W)*2.0);
 
   // FIXME Need a Lattice acosh
-  for(int idx=0;idx<_grid->lSites();idx++){
-    Coordinate lcoor(Nd);
-    Tcomplex cc;
-    //    RealD sgn;
-    _grid->LocalIndexToLocalCoor(idx,lcoor);
-    peekLocalSite(cc,cosha,lcoor);
-    assert((double)real(cc)>=1.0);
-    assert(fabs((double)imag(cc))<=1.0e-15);
-    cc = ScalComplex(::acosh(real(cc)),0.0);
-    pokeLocalSite(cc,a,lcoor);
+
+  {
+    autoView(cosha_v,cosha,CpuRead);
+    autoView(a_v,a,CpuWrite);
+    for(int idx=0;idx<_grid->lSites();idx++){
+      Coordinate lcoor(Nd);
+      Tcomplex cc;
+      //    RealD sgn;
+      _grid->LocalIndexToLocalCoor(idx,lcoor);
+      peekLocalSite(cc,cosha_v,lcoor);
+      assert((double)real(cc)>=1.0);
+      assert(fabs((double)imag(cc))<=1.0e-15);
+      cc = ScalComplex(::acosh(real(cc)),0.0);
+      pokeLocalSite(cc,a_v,lcoor);
+    }
   }
 
   Wea = ( exp( a) * abs(W)  );
@@ -775,17 +780,20 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const Fe
   cosha =  (one + W*W + sk) / (abs(W)*2.0);
 
   // FIXME Need a Lattice acosh
+  {
+  autoView(cosha_v,cosha,CpuRead);
+  autoView(a_v,a,CpuWrite);
   for(int idx=0;idx<_grid->lSites();idx++){
     Coordinate lcoor(Nd);
     Tcomplex cc;
     //    RealD sgn;
     _grid->LocalIndexToLocalCoor(idx,lcoor);
-    peekLocalSite(cc,cosha,lcoor);
+    peekLocalSite(cc,cosha_v,lcoor);
     assert((double)real(cc)>=1.0);
     assert(fabs((double)imag(cc))<=1.0e-15);
     cc = ScalComplex(::acosh(real(cc)),0.0);
-    pokeLocalSite(cc,a,lcoor);
-  }
+    pokeLocalSite(cc,a_v,lcoor);
+  }}
   
   Wea = ( exp( a) * abs(W)  );
   Wema= ( exp(-a) * abs(W)  );

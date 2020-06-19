@@ -43,6 +43,8 @@ public:
     if (grid) conformable(grid, _grid);
     else      grid = _grid;
   };
+  // Host only
+  GridBase * getGrid(void) const { return _grid; };
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////

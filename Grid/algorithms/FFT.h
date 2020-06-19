@@ -230,14 +230,15 @@ public:
     result = source;
     int pc = processor_coor[dim];
     for(int p=0;p<processors[dim];p++) {
+      autoView(r_v,result,CpuRead);
+      autoView(p_v,pgbuf,CpuWrite);
       thread_for(idx, sgrid->lSites(),{
           Coordinate cbuf(Nd);
           sobj s;
 	  sgrid->LocalIndexToLocalCoor(idx,cbuf);
-	  peekLocalSite(s,result,cbuf);
-	  cbuf[dim]+=((pc+p) % processors[dim])*L;
-	  //            cbuf[dim]+=p*L;
-	  pokeLocalSite(s,pgbuf,cbuf);
+	  peekLocalSite(s,r_v,cbuf);
+	  acbuf[dim]+=((pc+p) % processors[dim])*L;
+	  pokeLocalSite(s,p_v,cbuf);
       });
       if (p != processors[dim] - 1) {
 	result = Cshift(result,dim,L);
