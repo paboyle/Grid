@@ -286,8 +286,6 @@ void Grid_init(int *argc,char ***argv)
   //////////////////////////////////////////////////////////
   acceleratorInit(); // Must come first to set device prior to MPI init due to Omnipath Driver
 
-  MemoryManager::Init();
-
   if( GridCmdOptionExists(*argv,*argv+*argc,"--shm") ){
     int MB;
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--shm");
@@ -358,6 +356,15 @@ void Grid_init(int *argc,char ***argv)
   std::cout << GridLogMessage << "MPI is initialised and logging filters activated "<<std::endl;
   std::cout << GridLogMessage << "================================================ "<<std::endl;
 
+
+  //////////////////////////////////////////////////////////
+  // Memory manager
+  //////////////////////////////////////////////////////////
+  MemoryManager::Init();
+
+  /////////////////////////////////////////////////////////
+  // Reporting
+  /////////////////////////////////////////////////////////
   std::cout << GridLogMessage << "Requested "<< GlobalSharedMemory::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
   if ( GlobalSharedMemory::Hugepages) {
     std::cout << GridLogMessage << "Mapped stencil comms buffers as MAP_HUGETLB "<<std::endl;

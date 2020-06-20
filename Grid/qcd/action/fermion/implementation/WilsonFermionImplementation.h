@@ -67,7 +67,12 @@ WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
     diag_mass = 4.0 + mass;
   }
 
-
+  int vol4;
+  vol4=Fgrid.oSites();
+  Stencil.BuildSurfaceList(1,vol4);
+  vol4=Hgrid.oSites();
+  StencilEven.BuildSurfaceList(1,vol4);
+  StencilOdd.BuildSurfaceList(1,vol4);
 }
 
 template <class Impl>

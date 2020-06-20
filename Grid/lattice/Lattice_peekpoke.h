@@ -154,17 +154,18 @@ void peekSite(sobj &s,const Lattice<vobj> &l,const Coordinate &site){
 //////////////////////////////////////////////////////////
 // Peek a scalar object from the SIMD array
 //////////////////////////////////////////////////////////
+// Must be CPU read view
 template<class vobj,class sobj>
-inline void peekLocalSite(sobj &s,const Lattice<vobj> &l,Coordinate &site)
+inline void peekLocalSite(sobj &s,const LatticeView<vobj> &l,Coordinate &site)
 {
-  GridBase *grid = l.Grid();
-
+  GridBase *grid = l.getGrid();
+  assert(l.mode==CpuRead);
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
   int Nsimd = grid->Nsimd();
 
-  assert( l.Checkerboard()== l.Grid()->CheckerBoard(site));
+  assert( l.Checkerboard()== grid->CheckerBoard(site));
   assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
   static const int words=sizeof(vobj)/sizeof(vector_type);
@@ -172,8 +173,7 @@ inline void peekLocalSite(sobj &s,const Lattice<vobj> &l,Coordinate &site)
   idx= grid->iIndex(site);
   odx= grid->oIndex(site);
   
-  autoView( l_v , l, CpuRead);
-  scalar_type * vp = (scalar_type *)&l_v[odx];
+  scalar_type * vp = (scalar_type *)&l[odx];
   scalar_type * pt = (scalar_type *)&s;
       
   for(int w=0;w<words;w++){
@@ -182,18 +182,19 @@ inline void peekLocalSite(sobj &s,const Lattice<vobj> &l,Coordinate &site)
       
   return;
 };
-
+// Must be CPU write view
 template<class vobj,class sobj>
-inline void pokeLocalSite(const sobj &s,Lattice<vobj> &l,Coordinate &site)
+inline void pokeLocalSite(const sobj &s,LatticeView<vobj> &l,Coordinate &site)
 {
-  GridBase *grid=l.Grid();
+  GridBase *grid=l.getGrid();
+  assert(l.mode==CpuWrite);
 
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
   int Nsimd = grid->Nsimd();
 
-  assert( l.Checkerboard()== l.Grid()->CheckerBoard(site));
+  assert( l.Checkerboard()== grid->CheckerBoard(site));
   assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
   static const int words=sizeof(vobj)/sizeof(vector_type);
@@ -201,8 +202,7 @@ inline void pokeLocalSite(const sobj &s,Lattice<vobj> &l,Coordinate &site)
   idx= grid->iIndex(site);
   odx= grid->oIndex(site);
 
-  autoView( l_v , l, CpuWrite);
-  scalar_type * vp = (scalar_type *)&l_v[odx];
+  scalar_type * vp = (scalar_type *)&l[odx];
   scalar_type * pt = (scalar_type *)&s;
   for(int w=0;w<words;w++){
     vp[idx+w*Nsimd] = pt[w];

@@ -113,20 +113,7 @@ public:
       
   inline void InsertGaugeField(DoubledGaugeField &U_ds,const GaugeLinkField &U,int mu)
   {
-    GridBase *GaugeGrid = U_ds.Grid();
-    thread_for(lidx, GaugeGrid->lSites(),{
-
-	SiteScalarGaugeLink   ScalarU;
-	SiteDoubledGaugeField ScalarUds;
-	
-	Coordinate lcoor;
-	GaugeGrid->LocalIndexToLocalCoor(lidx, lcoor);
-	peekLocalSite(ScalarUds, U_ds, lcoor);
-	
-	peekLocalSite(ScalarU, U, lcoor);
-	ScalarUds(mu) = ScalarU();
-	
-    });
+    assert(0);
   }
   inline void DoubleStore(GridBase *GaugeGrid,
 			  DoubledGaugeField &UUUds, // for Naik term
