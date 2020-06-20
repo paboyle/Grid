@@ -336,11 +336,10 @@ inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ hipMemc
 //////////////////////////////////////////////
 // CPU Target - No accelerator just thread instead
 //////////////////////////////////////////////
+#define GRID_ALLOC_ALIGN (2*1024*1024) // 2MB aligned 
 #if ( (!defined(GRID_SYCL)) && (!defined(GRID_CUDA)) && (!defined(GRID_HIP)) )
 
 #undef GRID_SIMT
-
-#define GRID_ALLOC_ALIGN (2*1024*1024) // 2MB aligned 
 
 #define accelerator 
 #define accelerator_inline strong_inline
@@ -366,6 +365,14 @@ inline void acceleratorFreeDevice(void *ptr){free(ptr);};
 #endif
 
 #endif // CPU target
+
+#ifdef HAVE_MM_MALLOC_H
+inline void *acceleratorAllocCpu(size_t bytes){return _mm_malloc(bytes,GRID_ALLOC_ALIGN);};
+inline void acceleratorFreeCpu  (void *ptr){_mm_free(ptr);};
+#else
+inline void *acceleratorAllocCpu(size_t bytes){return memalign(GRID_ALLOC_ALIGN,bytes);};
+inline void acceleratorFreeCpu  (void *ptr){free(ptr);};
+#endif
 
 ///////////////////////////////////////////////////
 // Synchronise across local threads for divergence resynch
