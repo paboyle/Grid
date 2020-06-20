@@ -28,6 +28,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 /*  END LEGAL */
 #pragma once
 
+#include <string.h>
+
 #ifdef HAVE_MALLOC_MALLOC_H
 #include <malloc/malloc.h>
 #endif
