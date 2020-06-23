@@ -451,17 +451,7 @@ void BaryonUtils<FImpl>::Baryon_Gamma_3pt_Group1_Site(
 	int a_f, b_f, c_f;
 	int a_i, b_i, c_i;
 
-	Complex ee;
-
-	auto D2_Gi_ab_aa 			= D2_Gi 			()(0,0)(0,0);
-	auto Gf_D3_ab_bb 			= Gf_D3 			()(0,0)(0,0);
-	auto Gf_D2_Gi_ab_ba 		= Gf_D2_Gi 			()(0,0)(0,0);
-	auto ee_adjD4_g_D1_ag_ac 	= ee * adjD4_g_D1 	()(0,0)(0,0);
-	auto ee_Gf_adjD4_g_D1_ag_bc = ee * Gf_adjD4_g_D1()(0,0)(0,0);
-	auto Dq3_spec_ab_ab 		= Dq3_spec 			()(0,0)(0,0);
-	auto ee_adjD4_g_D1_gg_cc 	= ee * adjD4_g_D1 	()(0,0)(0,0);
-	auto Dq3_spec_gb_cb 		= Dq3_spec 			()(0,0)(0,0);
-	auto D2_Gi_gb_ca 			= D2_Gi 			()(0,0)(0,0);
+	Real ee;
 
 	for (int ie_f=0; ie_f < 6 ; ie_f++){
 		a_f = epsilon[ie_f][0]; //a
@@ -476,18 +466,18 @@ void BaryonUtils<FImpl>::Baryon_Gamma_3pt_Group1_Site(
 
 		for (int alpha_f=0; alpha_f<Ns; alpha_f++){
 		for (int beta_i=0; beta_i<Ns; beta_i++){
-			D2_Gi_ab_aa  	= D2_Gi 	()(alpha_f,beta_i)(a_f,a_i);
-			Gf_D3_ab_bb 	= Gf_D3 	()(alpha_f,beta_i)(b_f,b_i);
-			Gf_D2_Gi_ab_ba 	= Gf_D2_Gi 	()(alpha_f,beta_i)(b_f,a_i);
-			Dq3_spec_ab_ab 	= Dq3_spec 	()(alpha_f,beta_i)(a_f,b_i);
+			auto D2_Gi_ab_aa  	= D2_Gi 	()(alpha_f,beta_i)(a_f,a_i);
+			auto Gf_D3_ab_bb 	= Gf_D3 	()(alpha_f,beta_i)(b_f,b_i);
+			auto Gf_D2_Gi_ab_ba 	= Gf_D2_Gi 	()(alpha_f,beta_i)(b_f,a_i);
+			auto Dq3_spec_ab_ab 	= Dq3_spec 	()(alpha_f,beta_i)(a_f,b_i);
 
 			for (int gamma_i=0; gamma_i<Ns; gamma_i++){
-				ee_adjD4_g_D1_ag_ac 	= ee * adjD4_g_D1 	()(alpha_f,gamma_i)(a_f,c_i);
-				ee_Gf_adjD4_g_D1_ag_bc 	= ee * Gf_adjD4_g_D1()(alpha_f,gamma_i)(b_f,c_i);
+				auto ee_adjD4_g_D1_ag_ac 	= ee * adjD4_g_D1 	()(alpha_f,gamma_i)(a_f,c_i);
+				auto ee_Gf_adjD4_g_D1_ag_bc 	= ee * Gf_adjD4_g_D1()(alpha_f,gamma_i)(b_f,c_i);
 			for (int gamma_f=0; gamma_f<Ns; gamma_f++){
-				ee_adjD4_g_D1_gg_cc 	= ee * adjD4_g_D1 	()(gamma_f,gamma_i)(c_f,c_i);
-				Dq3_spec_gb_cb 			= Dq3_spec 			()(gamma_f,beta_i)(c_f,b_i);
-				D2_Gi_gb_ca 			= D2_Gi 			()(gamma_f,beta_i)(c_f,a_i);
+				auto ee_adjD4_g_D1_gg_cc 	= ee * adjD4_g_D1 	()(gamma_f,gamma_i)(c_f,c_i);
+				auto Dq3_spec_gb_cb 			= Dq3_spec 			()(gamma_f,beta_i)(c_f,b_i);
+				auto D2_Gi_gb_ca 			= D2_Gi 			()(gamma_f,beta_i)(c_f,a_i);
 
 
 				if(wick_contraction == 0) { // Do contraction I1
@@ -552,17 +542,7 @@ void BaryonUtils<FImpl>::Baryon_Gamma_3pt_Group2_Site(
 	int a_f, b_f, c_f;
 	int a_i, b_i, c_i;
 
-	Complex ee;
-
-	auto adjD4_g_D2_Gi_ab_aa 	= adjD4_g_D2_Gi 	()(0,0)(0,0);
-	auto Gf_D3_ab_bb 			= Gf_D3 			()(0,0)(0,0);
-	auto Gf_adjD4_g_D2_Gi_ab_ba = Gf_adjD4_g_D2_Gi 	()(0,0)(0,0);
-	auto Dq3_spec_ab_ab 		= Dq3_spec 			()(0,0)(0,0);
-	auto ee_Dq1_spec_ag_ac 		= ee* Dq1_spec 		()(0,0)(0,0);
-	auto ee_Gf_D1_ag_bc 		= ee*Gf_D1 			()(0,0)(0,0);
-	auto ee_Dq1_spec_gg_cc 		= ee*Dq1_spec 		()(0,0)(0,0);
-	auto Dq3_spec_gb_cb 		= Dq3_spec 			()(0,0)(0,0);
-	auto adjD4_g_D2_Gi_gb_ca 	= adjD4_g_D2_Gi 	()(0,0)(0,0);
+	Real ee;
 
 	for (int ie_f=0; ie_f < 6 ; ie_f++){
 		a_f = epsilon[ie_f][0]; //a
@@ -577,18 +557,18 @@ void BaryonUtils<FImpl>::Baryon_Gamma_3pt_Group2_Site(
 
 		for (int alpha_f=0; alpha_f<Ns; alpha_f++){
 		for (int beta_i=0; beta_i<Ns; beta_i++){
-			adjD4_g_D2_Gi_ab_aa 	= adjD4_g_D2_Gi 	()(alpha_f,beta_i)(a_f,a_i);
-			Gf_D3_ab_bb 			= Gf_D3 			()(alpha_f,beta_i)(b_f,b_i);
-			Gf_adjD4_g_D2_Gi_ab_ba	= Gf_adjD4_g_D2_Gi 	()(alpha_f,beta_i)(b_f,a_i);
-			Dq3_spec_ab_ab 			= Dq3_spec 			()(alpha_f,beta_i)(a_f,b_i);
+			auto adjD4_g_D2_Gi_ab_aa 	= adjD4_g_D2_Gi 	()(alpha_f,beta_i)(a_f,a_i);
+			auto Gf_D3_ab_bb 			= Gf_D3 			()(alpha_f,beta_i)(b_f,b_i);
+			auto Gf_adjD4_g_D2_Gi_ab_ba	= Gf_adjD4_g_D2_Gi 	()(alpha_f,beta_i)(b_f,a_i);
+			auto Dq3_spec_ab_ab 			= Dq3_spec 			()(alpha_f,beta_i)(a_f,b_i);
 
 			for (int gamma_i=0; gamma_i<Ns; gamma_i++){ 
-				ee_Dq1_spec_ag_ac 	= ee * Dq1_spec ()(alpha_f,gamma_i)(a_f,c_i);
-				ee_Gf_D1_ag_bc 		= ee * Gf_D1 	()(alpha_f,gamma_i)(b_f,c_i);
+				auto ee_Dq1_spec_ag_ac 	= ee * Dq1_spec ()(alpha_f,gamma_i)(a_f,c_i);
+				auto ee_Gf_D1_ag_bc 		= ee * Gf_D1 	()(alpha_f,gamma_i)(b_f,c_i);
 			for (int gamma_f=0; gamma_f<Ns; gamma_f++){
-				ee_Dq1_spec_gg_cc  	= ee * Dq1_spec 	()(gamma_f,gamma_i)(c_f,c_i);
-				Dq3_spec_gb_cb  	= Dq3_spec 			()(gamma_f,beta_i)(c_f,b_i);
-				adjD4_g_D2_Gi_gb_ca = adjD4_g_D2_Gi 	()(gamma_f,beta_i)(c_f,a_i);
+				auto ee_Dq1_spec_gg_cc  	= ee * Dq1_spec 	()(gamma_f,gamma_i)(c_f,c_i);
+				auto Dq3_spec_gb_cb  	= Dq3_spec 			()(gamma_f,beta_i)(c_f,b_i);
+				auto adjD4_g_D2_Gi_gb_ca = adjD4_g_D2_Gi 	()(gamma_f,beta_i)(c_f,a_i);
 
 				if(wick_contraction == 0) { // Do contraction II1
 					result()(gamma_f,gamma_i)() -= ee_Dq1_spec_gg_cc
@@ -653,17 +633,7 @@ void BaryonUtils<FImpl>::Baryon_Gamma_3pt_Group3_Site(
 	int a_f, b_f, c_f;
 	int a_i, b_i, c_i;
 
-	Complex ee;
-
-	auto D2_Gi_ab_aa 			= D2_Gi 		()(0,0)(0,0);
-	auto Gf_adjD4_g_D3_ab_bb 	= Gf_adjD4_g_D3 ()(0,0)(0,0);
-	auto Gf_D2_Gi_ab_ba 		= Gf_D2_Gi 		()(0,0)(0,0);
-	auto adjD4_g_D3_ab_ab 		= adjD4_g_D3 	()(0,0)(0,0);
-	auto ee_Dq1_spec_ag_ac 		= ee * Dq1_spec	()(0,0)(0,0);
-	auto ee_Gf_D1_ag_bc 		= ee * Gf_D1	()(0,0)(0,0);
-	auto ee_Dq1_spec_gg_cc 		= ee * Dq1_spec	()(0,0)(0,0);
-	auto adjD4_g_D3_gb_cb 		= adjD4_g_D3 	()(0,0)(0,0);
-	auto D2_Gi_gb_ca 			= D2_Gi 		()(0,0)(0,0);
+	Real ee;
 
 	for (int ie_f=0; ie_f < 6 ; ie_f++){
 		a_f = epsilon[ie_f][0]; //a
@@ -678,18 +648,18 @@ void BaryonUtils<FImpl>::Baryon_Gamma_3pt_Group3_Site(
 
 		for (int alpha_f=0; alpha_f<Ns; alpha_f++){
 		for (int beta_i=0; beta_i<Ns; beta_i++){
-			D2_Gi_ab_aa 		= D2_Gi 		()(alpha_f,beta_i)(a_f,a_i);
-			Gf_adjD4_g_D3_ab_bb = Gf_adjD4_g_D3 ()(alpha_f,beta_i)(b_f,b_i);
-			Gf_D2_Gi_ab_ba 		= Gf_D2_Gi 		()(alpha_f,beta_i)(b_f,a_i);
-			adjD4_g_D3_ab_ab 	= adjD4_g_D3 	()(alpha_f,beta_i)(a_f,b_i);
+			auto D2_Gi_ab_aa 		= D2_Gi 		()(alpha_f,beta_i)(a_f,a_i);
+			auto Gf_adjD4_g_D3_ab_bb = Gf_adjD4_g_D3 ()(alpha_f,beta_i)(b_f,b_i);
+			auto Gf_D2_Gi_ab_ba 		= Gf_D2_Gi 		()(alpha_f,beta_i)(b_f,a_i);
+			auto adjD4_g_D3_ab_ab 	= adjD4_g_D3 	()(alpha_f,beta_i)(a_f,b_i);
 
 			for (int gamma_i=0; gamma_i<Ns; gamma_i++) {
-				ee_Dq1_spec_ag_ac 	= ee * Dq1_spec	()(alpha_f,gamma_i)(a_f,c_i);
-				ee_Gf_D1_ag_bc 		= ee * Gf_D1	()(alpha_f,gamma_i)(b_f,c_i);
+				auto ee_Dq1_spec_ag_ac 	= ee * Dq1_spec	()(alpha_f,gamma_i)(a_f,c_i);
+				auto ee_Gf_D1_ag_bc 		= ee * Gf_D1	()(alpha_f,gamma_i)(b_f,c_i);
 			for (int gamma_f=0; gamma_f<Ns; gamma_f++) {
-				ee_Dq1_spec_gg_cc 	= ee * Dq1_spec	()(gamma_f,gamma_i)(c_f,c_i);
-				adjD4_g_D3_gb_cb 	= adjD4_g_D3 	()(gamma_f,beta_i)(c_f,b_i);
-				D2_Gi_gb_ca 		= D2_Gi 		()(gamma_f,beta_i)(c_f,a_i);
+				auto ee_Dq1_spec_gg_cc 	= ee * Dq1_spec	()(gamma_f,gamma_i)(c_f,c_i);
+				auto adjD4_g_D3_gb_cb 	= adjD4_g_D3 	()(gamma_f,beta_i)(c_f,b_i);
+				auto D2_Gi_gb_ca 		= D2_Gi 		()(gamma_f,beta_i)(c_f,a_i);
 
 				if(wick_contraction == 0) { // Do contraction III1
 					result()(gamma_f,gamma_i)() -= ee_Dq1_spec_gg_cc
@@ -747,7 +717,7 @@ void BaryonUtils<FImpl>::Baryon_Gamma_3pt(
 	auto vq_tf = q_tf.View();
 
 	if (group ==1) {
-		thread_for(ss,grid->oSites(),{
+		accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
 			auto Dq_ti = vq_ti[ss];
 			auto Dq_tf = vq_tf[ss];
 			sobj result=Zero();
@@ -755,7 +725,7 @@ void BaryonUtils<FImpl>::Baryon_Gamma_3pt(
 			vcorr[ss] += result; 
 		});//end loop over lattice sites
 	} else if (group == 2) {
-			thread_for(ss,grid->oSites(),{
+		accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
 			auto Dq_ti = vq_ti[ss];
 			auto Dq_tf = vq_tf[ss];
 			sobj result=Zero();
@@ -763,7 +733,7 @@ void BaryonUtils<FImpl>::Baryon_Gamma_3pt(
 			vcorr[ss] += result; 
 		});//end loop over lattice sites
 	} else if (group == 3) {
-		thread_for(ss,grid->oSites(),{
+		accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
 			auto Dq_ti = vq_ti[ss];
 			auto Dq_tf = vq_tf[ss];
 			sobj result=Zero();
