@@ -205,11 +205,12 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
         //This is the \delta_{456}^{123} part
 		if (wick_contraction[0]){
 			for (int rho=0; rho<Ns; rho++){
+				auto GAf_D1_GAi_P_rr_cc = GAf_D1_GAi_P()(rho,rho)(c_f,c_i);
 		    	for (int alpha_f=0; alpha_f<Ns; alpha_f++){
 		    	for (int beta_i=0; beta_i<Ns; beta_i++){
-		      		result()()() -= ee 	* GAf_D1_GAi_P 	()(rho,rho)			(c_f,c_i)
-		      							* D2_GBi		()(alpha_f,beta_i)	(a_f,a_i)
-		      							* GBf_D3 		()(alpha_f,beta_i)	(b_f,b_i);
+		      		result()()() -= ee 	* GAf_D1_GAi_P_rr_cc
+		      							* D2_GBi()(alpha_f,beta_i)(a_f,a_i)
+		      							* GBf_D3 ()(alpha_f,beta_i)(b_f,b_i);
 	            }}
 			}
 	  	}	  
@@ -217,8 +218,9 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 		if (wick_contraction[1]){
 			for (int rho=0; rho<Ns; rho++){
 		    	for (int alpha_f=0; alpha_f<Ns; alpha_f++){
+		    		auto D1_GAi_P_ar_ac = D1_GAi_P()(alpha_f,rho)(a_f,c_i);
 		    	for (int beta_i=0; beta_i<Ns; beta_i++){
-		      		result()()() -= ee 	* D1_GAi_P 		()(alpha_f,rho)		(a_f,c_i)
+		      		result()()() -= ee 	* D1_GAi_P_ar_ac
 			      						* GBf_D2_GBi	()(alpha_f,beta_i)	(b_f,a_i)
 			      						* GAf_D3 		()(rho,beta_i)		(c_f,b_i);
 	            }
@@ -228,8 +230,9 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 		if (wick_contraction[2]){
 	  		for (int rho=0; rho<Ns; rho++){
 		    	for (int alpha_f=0; alpha_f<Ns; alpha_f++){
+		    		auto GBf_D1_GAi_P_ar_bc = GBf_D1_GAi_P()(alpha_f,rho)(b_f,c_i);
 		    	for (int beta_i=0; beta_i<Ns; beta_i++){
-		      		result()()() -= ee 	* GBf_D1_GAi_P 	()(alpha_f,rho)		(b_f,c_i)
+		      		result()()() -= ee 	* GBf_D1_GAi_P_ar_bc
 			      						* GAf_D2_GBi	()(rho,beta_i)		(c_f,a_i)
 			      						* D3 			()(alpha_f,beta_i)	(a_f,b_i);
 	            }
@@ -238,9 +241,10 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
         //This is the \delta_{456}^{132} part
 		if (wick_contraction[3]){
 	  		for (int rho=0; rho<Ns; rho++){
+	  			auto GAf_D1_GAi_P_rr_cc = GAf_D1_GAi_P()(rho,rho)(c_f,c_i);
 		    	for (int alpha_f=0; alpha_f<Ns; alpha_f++){
 		    	for (int beta_i=0; beta_i<Ns; beta_i++){
-		      		result()()() += ee 	* GAf_D1_GAi_P 	()(rho,rho)			(c_f,c_i)
+		      		result()()() += ee 	* GAf_D1_GAi_P_rr_cc
 			      						* GBf_D2_GBi	()(alpha_f,beta_i)	(b_f,a_i)
 			      						* D3 			()(alpha_f,beta_i)	(a_f,b_i);
 	            }
@@ -250,8 +254,9 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 		if (wick_contraction[4]){
 	  		for (int rho=0; rho<Ns; rho++){
 		    	for (int alpha_f=0; alpha_f<Ns; alpha_f++){
+		    		auto GBf_D1_GAi_P_ar_bc = GBf_D1_GAi_P()(alpha_f,rho)(b_f,c_i);
 		    	for (int beta_i=0; beta_i<Ns; beta_i++){
-		      		result()()() += ee 	* GBf_D1_GAi_P 	()(alpha_f,rho)		(b_f,c_i)
+		      		result()()() += ee 	* GBf_D1_GAi_P_ar_bc
 			      						* D2_GBi		()(alpha_f,beta_i)	(a_f,a_i)
 			      						* GAf_D3		()(rho,beta_i)		(c_f,b_i);
 	            }
@@ -261,8 +266,9 @@ void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 		if (wick_contraction[5]){
 	  		for (int rho=0; rho<Ns; rho++){
 		    	for (int alpha_f=0; alpha_f<Ns; alpha_f++){
+		    		auto D1_GAi_P_ar_ac = D1_GAi_P()(alpha_f,rho)(a_f,c_i);
 		    	for (int beta_i=0; beta_i<Ns; beta_i++){
-		      		result()()() += ee 	* D1_GAi_P 		()(alpha_f,rho)		(a_f,c_i)
+		      		result()()() += ee 	* D1_GAi_P_ar_ac
 			      						* GAf_D2_GBi	()(rho,beta_i)		(c_f,a_i)
 			      						* GBf_D3		()(alpha_f,beta_i)	(b_f,b_i);
 	            }
