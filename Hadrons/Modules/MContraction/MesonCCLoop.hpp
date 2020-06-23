@@ -190,9 +190,9 @@ void TStagMesonCCLoop<FImpl1, FImpl2>::execute(void)
     Lattice<iScalar<vInteger> > z(U.Grid()); LatticeCoordinate(z,2);
     Lattice<iScalar<vInteger> > lin_z(U.Grid()); lin_z=x+y;
     LatticeComplex phases(U.Grid());
-    LatticeComplex localphases(U.Grid());
+    std::vector<LatticeComplex> localphases(3,U.Grid());
 
-    LatticeColourMatrix Umu(U.Grid());
+    std::vector<LatticeColourMatrix> Umu(3,U.Grid());
     envGetTmp(FermionField, source);
     envGetTmp(FermionField, sol);
     Coordinate srcSite;
@@ -200,48 +200,54 @@ void TStagMesonCCLoop<FImpl1, FImpl2>::execute(void)
     ColourVector Csrc;
     std::string outFileName;
     
-    // loop over source position
     for(int mu=0;mu<3;mu++){
         
         //staggered phases go into links
-        Umu = PeekIndex<LorentzIndex>(U,mu);
-        localphases=1.0;
+        Umu[mu] = PeekIndex<LorentzIndex>(U,mu);
+        localphases[mu]=1.0;
         phases=1.0;
         if(mu==0){
-            localphases = where( mod(x    ,2)==(Integer)0, localphases,-localphases);
+            localphases[0] = where( mod(x    ,2)==(Integer)0, localphases[0],-localphases[0]);
         }else if(mu==1){
-            localphases = where( mod(y    ,2)==(Integer)0, localphases,-localphases);
+            localphases[1] = where( mod(y    ,2)==(Integer)0, localphases[1],-localphases[1]);
             phases = where( mod(x    ,2)==(Integer)0, phases,-phases);
         }else if(mu==2){
-            localphases = where( mod(z    ,2)==(Integer)0, localphases,-localphases);
+            localphases[2] = where( mod(z    ,2)==(Integer)0, localphases[2],-localphases[2]);
             phases = where( mod(lin_z,2)==(Integer)0, phases,-phases);
         }else assert(0);
-        Umu *= phases;
-        ComplexD src_phase;
+        Umu[mu] *= phases;
+    }
         
-        for(int t=0; t<nt;t+=par().tinc){
-            for(int z=0; z<ns;z+=par().inc){
-                for(int y=0; y<ns;y+=par().inc){
-                    for(int x=0; x<ns;x+=par().inc){
+    // loop over source position
+    for(int t=0; t<nt;t+=par().tinc){
+        for(int z=0; z<ns;z+=par().inc){
+            for(int y=0; y<ns;y+=par().inc){
+                for(int x=0; x<ns;x+=par().inc){
+                    
+                    srcSite[0]=x;
+                    srcSite[1]=y;
+                    srcSite[2]=z;
+                    srcSite[3]=t;
+    
+                    for (unsigned int c = 0; c < FImpl1::Dimension; ++c){
+                        source = Zero();
+                        Csrc=Zero();
+                        Csrc()()(c)=Complex(1.0,0.0);
+                        pokeSite(Csrc,source,srcSite);
+                        sol = Zero();
+                        solver(sol, source);
+                        FermToProp<FImpl1>(q1, sol, c);
+                    }
+                    
+                    for(int mu=0;mu<3;mu++){
                         
                         srcSite[0]=x;
                         srcSite[1]=y;
                         srcSite[2]=z;
-                        srcSite[3]=t;
                         
                         LOG(Message) << "StagMesonCCLoop src_xyzt " << srcSite[0] <<" "<< srcSite[1]<<" "<<srcSite[2] <<" "<< srcSite[3] <<" mu "<< mu << std::endl;
                         
-                        peekSite(UmuSrc, Umu, srcSite);
-    
-                        for (unsigned int c = 0; c < FImpl1::Dimension; ++c){
-                            source = Zero();
-                            Csrc=Zero();
-                            Csrc()()(c)=Complex(1.0,0.0);
-                            pokeSite(Csrc,source,srcSite);
-                            sol = Zero();
-                            solver(sol, source);
-                            FermToProp<FImpl1>(q1, sol, c);
-                        }
+                        peekSite(UmuSrc, Umu[mu], srcSite);
                         
                         srcSite[mu]=(srcSite[mu]+1)%ns;
                         
@@ -256,13 +262,13 @@ void TStagMesonCCLoop<FImpl1, FImpl2>::execute(void)
                         }
                         
                         qshift = Cshift(q2, mu, 1);
-                        corr = trace(adj(qshift) * adj(Umu) * q1 * UmuSrc);
-                        corr += trace(adj(q1) * Umu * qshift * adj(UmuSrc));
+                        corr = trace(adj(qshift) * adj(Umu[mu]) * q1 * UmuSrc);
+                        corr += trace(adj(q1) * Umu[mu] * qshift * adj(UmuSrc));
 
                         qshift = Cshift(q1, mu, 1);
                         // minus signs from herm transform of prop
-                        corr -= trace(adj(q2) * Umu * qshift * UmuSrc); // -1^muhat
-                        corr -= trace(adj(qshift) * adj(Umu) * q2 * adj(UmuSrc)); //-1^muhat
+                        corr -= trace(adj(q2) * Umu[mu] * qshift * UmuSrc); // -1^muhat
+                        corr -= trace(adj(qshift) * adj(Umu[mu]) * q2 * adj(UmuSrc)); //-1^muhat
 
                         corr *= herm_phase; // sink
                         if((x+y+z+t)%2)corr *= -1.0; // source
@@ -282,7 +288,7 @@ void TStagMesonCCLoop<FImpl1, FImpl2>::execute(void)
                         // do the local current
                         corr = trace(adj(q1) * q1);
                         // ks phases (includes hermiticity phase)
-                        corr *= localphases; // gamma at sink
+                        corr *= localphases[mu]; // gamma at sink
                         if(      mu==0 && x % 2 )corr *= -1.0; // gamma phase at source
                         else if( mu==1 && y % 2 )corr *= -1.0; // gamma phase at source
                         else if( mu==2 && z % 2 )corr *= -1.0; // gamma phase at source
