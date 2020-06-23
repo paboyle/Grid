@@ -168,107 +168,107 @@ template <class mobj, class robj>
 void BaryonUtils<FImpl>::baryon_site(const mobj &D1,
 						 const mobj &D2,
 						 const mobj &D3,
-				                 const Gamma GammaA_left,
-				                 const Gamma GammaB_left,
-				                 const Gamma GammaA_right,
-		                 		 const Gamma GammaB_right,
+				                 const Gamma GammaA_i,
+				                 const Gamma GammaB_i,
+				                 const Gamma GammaA_f,
+		                 		 const Gamma GammaB_f,
 						 const int parity,
 						 const bool * wick_contraction,
 						 robj &result)
 {
 
     Gamma g4(Gamma::Algebra::GammaT); //needed for parity P_\pm = 0.5*(1 \pm \gamma_4)
-    auto gD1a = GammaA_left * GammaA_right * D1;
-    auto gD1b = GammaA_left * g4 * GammaA_right * D1;
-    auto pD1 = 0.5* (gD1a + (Real)parity * gD1b);
-    auto gD3 = GammaB_right * D3;
-    auto D2g = D2 * GammaB_left;
-    auto pD1g = pD1 * GammaB_left;
-    auto gD3g = gD3 * GammaB_left;
+    
+    auto D1_GAi =  D1 * GammaA_i;
+    auto D1_GAi_g4 = D1_GAi * g4;
+    auto D1_GAi_P = 0.5*(D1_GAi + (Real)parity * D1_GAi_g4);
+	auto GAf_D1_GAi_P = GammaA_f * D1_GAi_P;
+	auto GBf_D1_GAi_P = GammaB_f * D1_GAi_P;
 
-    for (int ie_left=0; ie_left < 6 ; ie_left++){
-      int a_left = epsilon[ie_left][0]; //a
-      int b_left = epsilon[ie_left][1]; //b
-      int c_left = epsilon[ie_left][2]; //c
-      for (int ie_right=0; ie_right < 6 ; ie_right++){
-        int a_right = epsilon[ie_right][0]; //a'
-        int b_right = epsilon[ie_right][1]; //b'
-        int c_right = epsilon[ie_right][2]; //c'
-	Real ee = epsilon_sgn[ie_left] * epsilon_sgn[ie_right];
+	auto D2_GBi = D2 * GammaB_i;
+	auto GBf_D2_GBi = GammaB_f * D2_GBi;
+	auto GAf_D2_GBi = GammaA_f * D2_GBi;
+
+	auto GBf_D3 = GammaB_f * D3;
+	auto GAf_D3 = GammaA_f * D3;
+
+    for (int ie_f=0; ie_f < 6 ; ie_f++){
+	    int a_f = epsilon[ie_f][0]; //a
+	    int b_f = epsilon[ie_f][1]; //b
+	    int c_f = epsilon[ie_f][2]; //c
+    for (int ie_i=0; ie_i < 6 ; ie_i++){
+	    int a_i = epsilon[ie_i][0]; //a'
+	    int b_i = epsilon[ie_i][1]; //b'
+	    int c_i = epsilon[ie_i][2]; //c'
+
+		Real ee = epsilon_sgn[ie_f] * epsilon_sgn[ie_i];
         //This is the \delta_{456}^{123} part
-	if (wick_contraction[0]){
-	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-            auto eepD1 = ee * pD1()(gamma_left,gamma_left)(c_right,c_left);
-	    for (int alpha_right=0; alpha_right<Ns; alpha_right++){
-	    for (int beta_left=0; beta_left<Ns; beta_left++){
-	      auto D2g_ab = D2g()(alpha_right,beta_left)(a_right,a_left);
-	      auto gD3_ab = gD3()(alpha_right,beta_left)(b_right,b_left);
-	      result()()() += eepD1*D2g_ab*gD3_ab;
-            }}
-	  }
-  	}	  
+		if (wick_contraction[0]){
+			for (int rho=0; rho<Ns; rho++){
+		    	for (int alpha_f=0; alpha_f<Ns; alpha_f++){
+		    	for (int beta_i=0; beta_i<Ns; beta_i++){
+		      		result()()() -= ee 	* GAf_D1_GAi_P 	()(rho,rho)			(c_f,c_i)
+		      							* D2_GBi		()(alpha_f,beta_i)	(a_f,a_i)
+		      							* GBf_D3 		()(alpha_f,beta_i)	(b_f,b_i);
+	            }}
+			}
+	  	}	  
         //This is the \delta_{456}^{231} part
-	if (wick_contraction[1]){
-	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
-            auto gD3_ag = gD3()(alpha_right,gamma_left)(b_right,c_left);
-	    for (int beta_left=0; beta_left<Ns; beta_left++){
-              auto eepD1g_gb = ee * pD1g()(gamma_left,beta_left)(c_right,a_left);
-	      auto D2_ab = D2()(alpha_right,beta_left)(a_right,b_left);
-	      result()()() += eepD1g_gb*D2_ab*gD3_ag;
-            }
-	  }}
+		if (wick_contraction[1]){
+			for (int rho=0; rho<Ns; rho++){
+		    	for (int alpha_f=0; alpha_f<Ns; alpha_f++){
+		    	for (int beta_i=0; beta_i<Ns; beta_i++){
+		      		result()()() -= ee 	* D1_GAi_P 		()(alpha_f,rho)		(a_f,c_i)
+			      						* GBf_D2_GBi	()(alpha_f,beta_i)	(b_f,a_i)
+			      						* GAf_D3 		()(rho,beta_i)		(c_f,b_i);
+	            }
+		  	}}
         }	  
         //This is the \delta_{456}^{312} part
-	if (wick_contraction[2]){
-	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
-	    auto D2_ag = D2()(alpha_right,gamma_left)(a_right,c_left);
-	    for (int beta_left=0; beta_left<Ns; beta_left++){
-              auto eepD1_gb = ee * pD1()(gamma_left,beta_left)(c_right,b_left);
-	      auto gD3g_ab = gD3g()(alpha_right,beta_left)(b_right,a_left);
-                result()()() += eepD1_gb*D2_ag*gD3g_ab;
-            }
-	  }}
+		if (wick_contraction[2]){
+	  		for (int rho=0; rho<Ns; rho++){
+		    	for (int alpha_f=0; alpha_f<Ns; alpha_f++){
+		    	for (int beta_i=0; beta_i<Ns; beta_i++){
+		      		result()()() -= ee 	* GBf_D1_GAi_P 	()(alpha_f,rho)		(b_f,c_i)
+			      						* GAf_D2_GBi	()(rho,beta_i)		(c_f,a_i)
+			      						* D3 			()(alpha_f,beta_i)	(a_f,b_i);
+	            }
+		  	}}
         }	  
         //This is the \delta_{456}^{132} part
-	if (wick_contraction[3]){
-	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-            auto eepD1 = ee * pD1()(gamma_left,gamma_left)(c_right,c_left);
-	    for (int alpha_right=0; alpha_right<Ns; alpha_right++){
-	    for (int beta_left=0; beta_left<Ns; beta_left++){
-	      auto D2_ab = D2()(alpha_right,beta_left)(a_right,b_left);
-	      auto gD3g_ab = gD3g()(alpha_right,beta_left)(b_right,a_left);
-    	      result()()() -= eepD1*D2_ab*gD3g_ab;
-            }}
-	  }
+		if (wick_contraction[3]){
+	  		for (int rho=0; rho<Ns; rho++){
+		    	for (int alpha_f=0; alpha_f<Ns; alpha_f++){
+		    	for (int beta_i=0; beta_i<Ns; beta_i++){
+		      		result()()() += ee 	* GAf_D1_GAi_P 	()(rho,rho)			(c_f,c_i)
+			      						* GBf_D2_GBi	()(alpha_f,beta_i)	(b_f,a_i)
+			      						* D3 			()(alpha_f,beta_i)	(a_f,b_i);
+	            }
+		  	}}
         }	  
         //This is the \delta_{456}^{321} part
-	if (wick_contraction[4]){
-	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
-            auto gD3_ag = gD3()(alpha_right,gamma_left)(b_right,c_left);
-	    for (int beta_left=0; beta_left<Ns; beta_left++){
-              auto eepD1_gb = ee * pD1()(gamma_left,beta_left)(c_right,b_left);
-	      auto D2g_ab = D2g()(alpha_right,beta_left)(a_right,a_left);
-	      result()()() -= eepD1_gb*D2g_ab*gD3_ag;
-            }
-	  }}
+		if (wick_contraction[4]){
+	  		for (int rho=0; rho<Ns; rho++){
+		    	for (int alpha_f=0; alpha_f<Ns; alpha_f++){
+		    	for (int beta_i=0; beta_i<Ns; beta_i++){
+		      		result()()() += ee 	* GBf_D1_GAi_P 	()(alpha_f,rho)		(b_f,c_i)
+			      						* D2_GBi		()(alpha_f,beta_i)	(a_f,a_i)
+			      						* GAf_D3		()(rho,beta_i)		(c_f,b_i);
+	            }
+		  	}}
         }	  
         //This is the \delta_{456}^{213} part
-	if (wick_contraction[5]){
-	  for (int gamma_left=0; gamma_left<Ns; gamma_left++){
-	  for (int alpha_right=0; alpha_right<Ns; alpha_right++){
-	    auto D2_ag = D2()(alpha_right,gamma_left)(a_right,c_left);
-	    for (int beta_left=0; beta_left<Ns; beta_left++){
-              auto eepD1g_gb = ee * pD1g()(gamma_left,beta_left)(c_right,a_left);
-	      auto gD3_ab = gD3()(alpha_right,beta_left)(b_right,b_left);
-    	      result()()() -= eepD1g_gb*D2_ag*gD3_ab;
-            }
-	  }}
-        }	  
-      }
-    }
+		if (wick_contraction[5]){
+	  		for (int rho=0; rho<Ns; rho++){
+		    	for (int alpha_f=0; alpha_f<Ns; alpha_f++){
+		    	for (int beta_i=0; beta_i<Ns; beta_i++){
+		      		result()()() += ee 	* D1_GAi_P 		()(alpha_f,rho)		(a_f,c_i)
+			      						* GAf_D2_GBi	()(rho,beta_i)		(c_f,a_i)
+			      						* GBf_D3		()(alpha_f,beta_i)	(b_f,b_i);
+	            }
+		  	}}
+        }
+    }}
 }
 
 template<class FImpl>
