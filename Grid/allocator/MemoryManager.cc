@@ -35,8 +35,6 @@ void *MemoryManager::AcceleratorAllocate(size_t bytes)
   if ( ptr == (void *) NULL ) {
     ptr = (void *) acceleratorAllocDevice(bytes);
     total_device+=bytes;
-    //    std::cout <<"AcceleratorAllocate: allocated Accelerator pointer "<<std::hex<<ptr<<std::dec<<std::endl;
-    //    PrintBytes();
   }
   return ptr;
 }
@@ -69,14 +67,32 @@ void  MemoryManager::SharedFree    (void *ptr,size_t bytes)
     //    PrintBytes();
   }
 }
+#ifdef GRID_UVM
+void *MemoryManager::CpuAllocate(size_t bytes)
+{
+  void *ptr = (void *) Lookup(bytes,Cpu);
+  if ( ptr == (void *) NULL ) {
+    ptr = (void *) acceleratorAllocShared(bytes);
+    total_host+=bytes;
+  }
+  return ptr;
+}
+void  MemoryManager::CpuFree    (void *_ptr,size_t bytes)
+{
+  NotifyDeletion(_ptr);
+  void *__freeme = Insert(_ptr,bytes,Cpu);
+  if ( __freeme ) { 
+    acceleratorFreeShared(__freeme);
+    total_host-=bytes;
+  }
+}
+#else
 void *MemoryManager::CpuAllocate(size_t bytes)
 {
   void *ptr = (void *) Lookup(bytes,Cpu);
   if ( ptr == (void *) NULL ) {
     ptr = (void *) acceleratorAllocCpu(bytes);
     total_host+=bytes;
-    //    std::cout <<"CpuAllocate: allocated Cpu pointer "<<std::hex<<ptr<<std::dec<<std::endl;
-    //    PrintBytes();
   }
   return ptr;
 }
@@ -87,9 +103,10 @@ void  MemoryManager::CpuFree    (void *_ptr,size_t bytes)
   if ( __freeme ) { 
     acceleratorFreeCpu(__freeme);
     total_host-=bytes;
-    //    PrintBytes();
   }
 }
+#endif
+
 //////////////////////////////////////////
 // call only once
 //////////////////////////////////////////
