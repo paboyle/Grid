@@ -24,7 +24,7 @@ void MemoryManager::PrintBytes(void)
 //////////////////////////////////////////////////////////////////////
 MemoryManager::AllocationCacheEntry MemoryManager::Entries[MemoryManager::NallocType][MemoryManager::NallocCacheMax];
 int MemoryManager::Victim[MemoryManager::NallocType];
-int MemoryManager::Ncache[MemoryManager::NallocType];
+int MemoryManager::Ncache[MemoryManager::NallocType] = { 8, 32, 8, 32, 8, 32 };
 
 //////////////////////////////////////////////////////////////////////
 // Actual allocation and deallocation utils
@@ -112,12 +112,6 @@ void  MemoryManager::CpuFree    (void *_ptr,size_t bytes)
 //////////////////////////////////////////
 void MemoryManager::Init(void)
 {
-  Ncache[Cpu] = 8;
-  Ncache[Acc] = 8;
-  Ncache[Shared] = 8;
-  Ncache[CpuSmall] = 32;
-  Ncache[AccSmall] = 32;
-  Ncache[SharedSmall] = 32;
 
   char * str;
   int Nc;
