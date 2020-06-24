@@ -62,7 +62,6 @@ inline typename vobj::scalar_object sum_cpu(const vobj *arg, Integer osites)
   for(int i=0;i<nthread;i++){
     ssum = ssum+sumarray[i];
   } 
-  
   return ssum;
 }
 template<class vobj>
@@ -156,7 +155,7 @@ inline ComplexD rankInnerProduct(const Lattice<vobj> &left,const Lattice<vobj> &
   const uint64_t sites = grid->oSites();
   
   // Might make all code paths go this way.
-  typedef decltype(Reduce(innerProductD(vobj(),vobj()))) inner_t;
+  typedef decltype(innerProductD(vobj(),vobj())) inner_t;
   Vector<inner_t> inner_tmp(sites);
   auto inner_tmp_v = &inner_tmp[0];
     
@@ -168,12 +167,13 @@ inline ComplexD rankInnerProduct(const Lattice<vobj> &left,const Lattice<vobj> &
     accelerator_for( ss, sites, 1,{
 	auto x_l = left_v[ss];
 	auto y_l = right_v[ss];
-	inner_tmp_v[ss]=Reduce(innerProductD(x_l,y_l));
+	inner_tmp_v[ss]=innerProductD(x_l,y_l);
     });
   }
 
   // This is in single precision and fails some tests
-  nrm = TensorRemove(sum(inner_tmp_v,sites));  
+  auto anrm = sum(inner_tmp_v,sites);  
+  nrm = anrm;
   return nrm;
 }
 
@@ -219,13 +219,13 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   autoView( y_v, y, AcceleratorRead);
   autoView( z_v, z, AcceleratorWrite);
 
-  typedef decltype(Reduce(innerProductD(x_v[0],y_v[0]))) inner_t;
+  typedef decltype(innerProductD(x_v[0],y_v[0])) inner_t;
   Vector<inner_t> inner_tmp(sites);
   auto inner_tmp_v = &inner_tmp[0];
 
   accelerator_for( ss, sites, 1,{
       auto tmp = a*x_v[ss]+b*y_v[ss];
-      inner_tmp_v[ss]=Reduce(innerProductD(tmp,tmp));
+      inner_tmp_v[ss]=innerProductD(tmp,tmp);
       z_v[ss]=tmp;
   });
   nrm = real(TensorRemove(sum(inner_tmp_v,sites)));
@@ -248,8 +248,8 @@ innerProductNorm(ComplexD& ip, RealD &nrm, const Lattice<vobj> &left,const Latti
   const uint64_t sites = grid->oSites();
 
   // GPU
-  typedef decltype(Reduce(innerProductD(vobj(),vobj()))) inner_t;
-  typedef decltype(Reduce(innerProductD(vobj(),vobj()))) norm_t;
+  typedef decltype(innerProductD(vobj(),vobj())) inner_t;
+  typedef decltype(innerProductD(vobj(),vobj())) norm_t;
   Vector<inner_t> inner_tmp(sites);
   Vector<norm_t>  norm_tmp(sites);
   auto inner_tmp_v = &inner_tmp[0];
@@ -259,8 +259,8 @@ innerProductNorm(ComplexD& ip, RealD &nrm, const Lattice<vobj> &left,const Latti
     autoView(right_v,right,AcceleratorRead);
     accelerator_for( ss, sites, 1,{
 	auto left_tmp = left_v[ss];
-	inner_tmp_v[ss]=Reduce(innerProductD(left_tmp,right_v[ss]));
-        norm_tmp_v [ss]=Reduce(innerProductD(left_tmp,left_tmp));
+	inner_tmp_v[ss]=innerProductD(left_tmp,right_v[ss]);
+        norm_tmp_v [ss]=innerProductD(left_tmp,left_tmp);
       });
   }
 
