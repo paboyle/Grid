@@ -712,9 +712,9 @@ void BaryonUtils<FImpl>::Baryon_Gamma_3pt(
 {
 	GridBase *grid = q_tf.Grid();
 
-	auto vcorr= stn_corr.View();
-	auto vq_ti = q_ti.View();
-	auto vq_tf = q_tf.View();
+	autoView( vcorr, stn_corr, CpuWrite);
+	autoView( vq_ti , q_ti, CpuRead);
+	autoView( vq_tf , q_tf, CpuRead);
 
 	if (group ==1) {
 		accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
