@@ -84,6 +84,55 @@ public:
 				 const int parity,
 				 const int nt,
 				 robj &result);
+  	private:
+  	template <class mobj, class mobj2, class robj>
+  	static void Baryon_Gamma_3pt_Group1_Site(
+				 const mobj &Dq1_ti,
+				 const mobj2 &Dq2_spec,
+				 const mobj2 &Dq3_spec,
+				 const mobj &Dq4_tf,
+				         const Gamma GammaJ,
+				         const Gamma GammaBi,
+		                 const Gamma GammaBf,
+		         int wick_contraction,
+				 robj &result);
+
+	template <class mobj, class mobj2, class robj>
+	static void Baryon_Gamma_3pt_Group2_Site(
+				 const mobj2 &Dq1_spec,
+				 const mobj &Dq2_ti,
+				 const mobj2 &Dq3_spec,
+				 const mobj &Dq4_tf,
+				         const Gamma GammaJ,
+				         const Gamma GammaBi,
+		                 const Gamma GammaBf,
+		         int wick_contraction,
+				 robj &result);
+
+	template <class mobj, class mobj2, class robj>
+	static void Baryon_Gamma_3pt_Group3_Site(
+				 const mobj2 &Dq1_spec,
+				 const mobj2 &Dq2_spec,
+				 const mobj &Dq3_ti,
+				 const mobj &Dq4_tf,
+				         const Gamma GammaJ,
+				         const Gamma GammaBi,
+		                 const Gamma GammaBf,
+		         int wick_contraction,
+				 robj &result);
+    public:
+	template <class mobj>
+	static void Baryon_Gamma_3pt(
+				 const PropagatorField &q_ti,
+				 const mobj &Dq_spec1,
+				 const mobj &Dq_spec2,
+				 const PropagatorField &q_tf,
+				 int group,
+				 int wick_contraction,
+				         const Gamma GammaJ,
+				         const Gamma GammaBi,
+		                 const Gamma GammaBf,
+				 SpinMatrixField &stn_corr);
   private: 
   template <class mobj, class mobj2, class robj>
   static void Sigma_to_Nucleon_Q1_Eye_site(const mobj &Dq_loop,
@@ -371,6 +420,335 @@ void BaryonUtils<FImpl>::ContractBaryons_Sliced(const mobj &D1,
 /***********************************************************************
  * End of Baryon 2pt-function code.                                    *
  *                                                                     *
+ * The following code is for baryonGamma3pt function                   *
+ **********************************************************************/
+
+/* Dq1_ti is a quark line from t_i to t_J
+ * Dq2_spec is a quark line from t_i to t_f
+ * Dq3_spec is a quark line from t_i to t_f
+ * Dq4_tf is a quark line from t_f to t_J */
+template<class FImpl>
+template <class mobj, class mobj2, class robj>
+void BaryonUtils<FImpl>::Baryon_Gamma_3pt_Group1_Site(
+						const mobj &Dq1_ti,
+						const mobj2 &Dq2_spec,
+						const mobj2 &Dq3_spec,
+						const mobj &Dq4_tf,
+								const Gamma GammaJ,
+								const Gamma GammaBi,
+								const Gamma GammaBf,
+						int wick_contraction,
+						robj &result)
+{
+	Gamma g5(Gamma::Algebra::Gamma5); 
+
+	auto adjD4_g_D1 	= g5 * adj(Dq4_tf) * g5 * GammaJ * Dq1_ti;
+	auto Gf_adjD4_g_D1 	= GammaBf * adjD4_g_D1;
+	auto D2_Gi 			= Dq2_spec * GammaBi;
+	auto Gf_D2_Gi 		= GammaBf * D2_Gi;
+	auto Gf_D3 			= GammaBf * Dq3_spec;
+
+	int a_f, b_f, c_f;
+	int a_i, b_i, c_i;
+
+	Real ee;
+
+	for (int ie_f=0; ie_f < 6 ; ie_f++){
+		a_f = epsilon[ie_f][0]; //a
+		b_f = epsilon[ie_f][1]; //b
+		c_f = epsilon[ie_f][2]; //c
+	for (int ie_i=0; ie_i < 6 ; ie_i++){
+		a_i = epsilon[ie_i][0]; //a'
+		b_i = epsilon[ie_i][1]; //b'
+		c_i = epsilon[ie_i][2]; //c'
+
+		ee = epsilon_sgn[ie_f] * epsilon_sgn[ie_i];
+
+		for (int alpha_f=0; alpha_f<Ns; alpha_f++){
+		for (int beta_i=0; beta_i<Ns; beta_i++){
+			auto D2_Gi_ab_aa  	= D2_Gi 	()(alpha_f,beta_i)(a_f,a_i);
+			auto Gf_D3_ab_bb 	= Gf_D3 	()(alpha_f,beta_i)(b_f,b_i);
+			auto Gf_D2_Gi_ab_ba 	= Gf_D2_Gi 	()(alpha_f,beta_i)(b_f,a_i);
+			auto Dq3_spec_ab_ab 	= Dq3_spec 	()(alpha_f,beta_i)(a_f,b_i);
+
+			for (int gamma_i=0; gamma_i<Ns; gamma_i++){
+				auto ee_adjD4_g_D1_ag_ac 	= ee * adjD4_g_D1 	()(alpha_f,gamma_i)(a_f,c_i);
+				auto ee_Gf_adjD4_g_D1_ag_bc 	= ee * Gf_adjD4_g_D1()(alpha_f,gamma_i)(b_f,c_i);
+			for (int gamma_f=0; gamma_f<Ns; gamma_f++){
+				auto ee_adjD4_g_D1_gg_cc 	= ee * adjD4_g_D1 	()(gamma_f,gamma_i)(c_f,c_i);
+				auto Dq3_spec_gb_cb 			= Dq3_spec 			()(gamma_f,beta_i)(c_f,b_i);
+				auto D2_Gi_gb_ca 			= D2_Gi 			()(gamma_f,beta_i)(c_f,a_i);
+
+
+				if(wick_contraction == 0) { // Do contraction I1
+				result()(gamma_f,gamma_i)() -= ee_adjD4_g_D1_gg_cc
+													* D2_Gi_ab_aa
+													* Gf_D3_ab_bb;
+				}
+				if(wick_contraction == 1) { // Do contraction I2
+				result()(gamma_f,gamma_i)() -= ee_adjD4_g_D1_ag_ac
+													* Gf_D2_Gi_ab_ba
+													* Dq3_spec_gb_cb;
+				}
+				if(wick_contraction == 2) { // Do contraction I3
+				result()(gamma_f,gamma_i)() -= ee_Gf_adjD4_g_D1_ag_bc
+													* D2_Gi_gb_ca
+													* Dq3_spec_ab_ab;
+				}
+				if(wick_contraction == 3) { // Do contraction I4
+				result()(gamma_f,gamma_i)() += ee_adjD4_g_D1_gg_cc
+													* Gf_D2_Gi_ab_ba
+													* Dq3_spec_ab_ab;
+				}
+				if(wick_contraction == 4) { // Do contraction I5
+				result()(gamma_f,gamma_i)() += ee_Gf_adjD4_g_D1_ag_bc
+													* D2_Gi_ab_aa
+													* Dq3_spec_gb_cb;
+				}
+				if(wick_contraction == 5) { // Do contraction I6
+				result()(gamma_f,gamma_i)() += ee_adjD4_g_D1_ag_ac
+													* D2_Gi_gb_ca
+													* Gf_D3_ab_bb;
+				}
+			}}
+		}}
+	}}
+}
+
+/* Dq1_spec is a quark line from t_i to t_f
+ * Dq2_ti is a quark line from t_i to t_J
+ * Dq3_spec is a quark line from t_i to t_f
+ * Dq4_tf is a quark line from t_f to t_J */
+template<class FImpl>
+template <class mobj, class mobj2, class robj>
+void BaryonUtils<FImpl>::Baryon_Gamma_3pt_Group2_Site(
+						const mobj2 &Dq1_spec,
+						const mobj &Dq2_ti,
+						const mobj2 &Dq3_spec,
+						const mobj &Dq4_tf,
+								const Gamma GammaJ,
+								const Gamma GammaBi,
+								const Gamma GammaBf,
+						int wick_contraction,
+						robj &result)
+{
+	Gamma g5(Gamma::Algebra::Gamma5); 
+
+	auto adjD4_g_D2_Gi 		= g5 * adj(Dq4_tf) * g5 * GammaJ * Dq2_ti * GammaBi;
+	auto Gf_adjD4_g_D2_Gi 	= GammaBf * adjD4_g_D2_Gi;
+	auto Gf_D1 				= GammaBf * Dq1_spec;
+	auto Gf_D3 				= GammaBf * Dq3_spec;
+
+	int a_f, b_f, c_f;
+	int a_i, b_i, c_i;
+
+	Real ee;
+
+	for (int ie_f=0; ie_f < 6 ; ie_f++){
+		a_f = epsilon[ie_f][0]; //a
+		b_f = epsilon[ie_f][1]; //b
+		c_f = epsilon[ie_f][2]; //c
+	for (int ie_i=0; ie_i < 6 ; ie_i++){
+		a_i = epsilon[ie_i][0]; //a'
+		b_i = epsilon[ie_i][1]; //b'
+		c_i = epsilon[ie_i][2]; //c'
+
+		ee = epsilon_sgn[ie_f] * epsilon_sgn[ie_i];
+
+		for (int alpha_f=0; alpha_f<Ns; alpha_f++){
+		for (int beta_i=0; beta_i<Ns; beta_i++){
+			auto adjD4_g_D2_Gi_ab_aa 	= adjD4_g_D2_Gi 	()(alpha_f,beta_i)(a_f,a_i);
+			auto Gf_D3_ab_bb 			= Gf_D3 			()(alpha_f,beta_i)(b_f,b_i);
+			auto Gf_adjD4_g_D2_Gi_ab_ba	= Gf_adjD4_g_D2_Gi 	()(alpha_f,beta_i)(b_f,a_i);
+			auto Dq3_spec_ab_ab 			= Dq3_spec 			()(alpha_f,beta_i)(a_f,b_i);
+
+			for (int gamma_i=0; gamma_i<Ns; gamma_i++){ 
+				auto ee_Dq1_spec_ag_ac 	= ee * Dq1_spec ()(alpha_f,gamma_i)(a_f,c_i);
+				auto ee_Gf_D1_ag_bc 		= ee * Gf_D1 	()(alpha_f,gamma_i)(b_f,c_i);
+			for (int gamma_f=0; gamma_f<Ns; gamma_f++){
+				auto ee_Dq1_spec_gg_cc  	= ee * Dq1_spec 	()(gamma_f,gamma_i)(c_f,c_i);
+				auto Dq3_spec_gb_cb  	= Dq3_spec 			()(gamma_f,beta_i)(c_f,b_i);
+				auto adjD4_g_D2_Gi_gb_ca = adjD4_g_D2_Gi 	()(gamma_f,beta_i)(c_f,a_i);
+
+				if(wick_contraction == 0) { // Do contraction II1
+					result()(gamma_f,gamma_i)() -= ee_Dq1_spec_gg_cc
+														* adjD4_g_D2_Gi_ab_aa
+														* Gf_D3_ab_bb;
+				}
+				if(wick_contraction == 1) { // Do contraction II2
+					result()(gamma_f,gamma_i)() -= ee_Dq1_spec_ag_ac
+														* Gf_adjD4_g_D2_Gi_ab_ba
+														* Dq3_spec_gb_cb;
+				}
+				if(wick_contraction == 2) { // Do contraction II3
+					result()(gamma_f,gamma_i)() -= ee_Gf_D1_ag_bc
+														* adjD4_g_D2_Gi_gb_ca
+														* Dq3_spec_ab_ab;
+				}
+				if(wick_contraction == 3) { // Do contraction II4
+					result()(gamma_f,gamma_i)() += ee_Dq1_spec_gg_cc
+														* Gf_adjD4_g_D2_Gi_ab_ba
+														* Dq3_spec_ab_ab;
+				}
+				if(wick_contraction == 4) { // Do contraction II5
+					result()(gamma_f,gamma_i)() += ee_Gf_D1_ag_bc
+														* adjD4_g_D2_Gi_ab_aa
+														* Dq3_spec_gb_cb;
+				}
+				if(wick_contraction == 5) { // Do contraction II6
+					result()(gamma_f,gamma_i)() += ee_Dq1_spec_ag_ac
+														* adjD4_g_D2_Gi_gb_ca
+														* Gf_D3_ab_bb;
+				}
+			}}
+		}}
+	}}
+}
+
+/* Dq1_spec is a quark line from t_i to t_f
+ * Dq2_spec is a quark line from t_i to t_f
+ * Dq3_ti is a quark line from t_i to t_J
+ * Dq4_tf is a quark line from t_f to t_J */
+template<class FImpl>
+template <class mobj, class mobj2, class robj>
+void BaryonUtils<FImpl>::Baryon_Gamma_3pt_Group3_Site(
+						const mobj2 &Dq1_spec,
+						const mobj2 &Dq2_spec,
+						const mobj &Dq3_ti,
+						const mobj &Dq4_tf,
+								const Gamma GammaJ,
+								const Gamma GammaBi,
+								const Gamma GammaBf,
+						int wick_contraction,
+						robj &result)
+{
+	Gamma g5(Gamma::Algebra::Gamma5); 
+
+	auto adjD4_g_D3 	= g5 * adj(Dq4_tf) * g5 * GammaJ * Dq3_ti;
+	auto Gf_adjD4_g_D3 	= GammaBf * adjD4_g_D3;
+	auto Gf_D1 			= GammaBf * Dq1_spec;
+	auto D2_Gi 			= Dq2_spec * GammaBi;
+	auto Gf_D2_Gi 		= GammaBf * D2_Gi;
+
+	int a_f, b_f, c_f;
+	int a_i, b_i, c_i;
+
+	Real ee;
+
+	for (int ie_f=0; ie_f < 6 ; ie_f++){
+		a_f = epsilon[ie_f][0]; //a
+		b_f = epsilon[ie_f][1]; //b
+		c_f = epsilon[ie_f][2]; //c
+	for (int ie_i=0; ie_i < 6 ; ie_i++){
+		a_i = epsilon[ie_i][0]; //a'
+		b_i = epsilon[ie_i][1]; //b'
+		c_i = epsilon[ie_i][2]; //c'
+
+		ee = epsilon_sgn[ie_f] * epsilon_sgn[ie_i];
+
+		for (int alpha_f=0; alpha_f<Ns; alpha_f++){
+		for (int beta_i=0; beta_i<Ns; beta_i++){
+			auto D2_Gi_ab_aa 		= D2_Gi 		()(alpha_f,beta_i)(a_f,a_i);
+			auto Gf_adjD4_g_D3_ab_bb = Gf_adjD4_g_D3 ()(alpha_f,beta_i)(b_f,b_i);
+			auto Gf_D2_Gi_ab_ba 		= Gf_D2_Gi 		()(alpha_f,beta_i)(b_f,a_i);
+			auto adjD4_g_D3_ab_ab 	= adjD4_g_D3 	()(alpha_f,beta_i)(a_f,b_i);
+
+			for (int gamma_i=0; gamma_i<Ns; gamma_i++) {
+				auto ee_Dq1_spec_ag_ac 	= ee * Dq1_spec	()(alpha_f,gamma_i)(a_f,c_i);
+				auto ee_Gf_D1_ag_bc 		= ee * Gf_D1	()(alpha_f,gamma_i)(b_f,c_i);
+			for (int gamma_f=0; gamma_f<Ns; gamma_f++) {
+				auto ee_Dq1_spec_gg_cc 	= ee * Dq1_spec	()(gamma_f,gamma_i)(c_f,c_i);
+				auto adjD4_g_D3_gb_cb 	= adjD4_g_D3 	()(gamma_f,beta_i)(c_f,b_i);
+				auto D2_Gi_gb_ca 		= D2_Gi 		()(gamma_f,beta_i)(c_f,a_i);
+
+				if(wick_contraction == 0) { // Do contraction III1
+					result()(gamma_f,gamma_i)() -= ee_Dq1_spec_gg_cc
+														* D2_Gi_ab_aa
+														* Gf_adjD4_g_D3_ab_bb;
+				}
+				if(wick_contraction == 1) { // Do contraction III2
+					result()(gamma_f,gamma_i)() -= ee_Dq1_spec_ag_ac
+														* Gf_D2_Gi_ab_ba
+														* adjD4_g_D3_gb_cb;
+				}
+				if(wick_contraction == 2) { // Do contraction III3
+					result()(gamma_f,gamma_i)() -= ee_Gf_D1_ag_bc
+														* D2_Gi_gb_ca
+														* adjD4_g_D3_ab_ab;
+				}
+				if(wick_contraction == 3) { // Do contraction III4
+					result()(gamma_f,gamma_i)() += ee_Dq1_spec_gg_cc
+														* Gf_D2_Gi_ab_ba
+														* adjD4_g_D3_ab_ab;
+				}
+				if(wick_contraction == 4) { // Do contraction III5
+					result()(gamma_f,gamma_i)() += ee_Gf_D1_ag_bc
+														* D2_Gi_ab_aa
+														* adjD4_g_D3_gb_cb;
+				}
+				if(wick_contraction == 5) { // Do contraction III6
+					result()(gamma_f,gamma_i)() += ee_Dq1_spec_ag_ac
+														* D2_Gi_gb_ca
+														* Gf_adjD4_g_D3_ab_bb;
+				}
+			}}
+		}}
+	}}
+}
+
+template<class FImpl>
+template <class mobj>
+void BaryonUtils<FImpl>::Baryon_Gamma_3pt(
+						const PropagatorField &q_ti,
+						const mobj &Dq_spec1,
+						const mobj &Dq_spec2,
+						const PropagatorField &q_tf,
+						int group,
+						int wick_contraction,
+								const Gamma GammaJ,
+								const Gamma GammaBi,
+								const Gamma GammaBf,
+						SpinMatrixField &stn_corr)
+{
+	GridBase *grid = q_tf.Grid();
+
+	auto vcorr= stn_corr.View();
+	auto vq_ti = q_ti.View();
+	auto vq_tf = q_tf.View();
+
+	if (group ==1) {
+		accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+			auto Dq_ti = vq_ti[ss];
+			auto Dq_tf = vq_tf[ss];
+			sobj result=Zero();
+			Baryon_Gamma_3pt_Group1_Site(Dq_ti,Dq_spec1,Dq_spec2,Dq_tf,GammaJ,GammaBi,GammaBf,wick_contraction,result);
+			vcorr[ss] += result; 
+		});//end loop over lattice sites
+	} else if (group == 2) {
+		accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+			auto Dq_ti = vq_ti[ss];
+			auto Dq_tf = vq_tf[ss];
+			sobj result=Zero();
+			Baryon_Gamma_3pt_Group2_Site(Dq_spec1,Dq_ti,Dq_spec2,Dq_tf,GammaJ,GammaBi,GammaBf,wick_contraction,result);
+			vcorr[ss] += result; 
+		});//end loop over lattice sites
+	} else if (group == 3) {
+		accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+			auto Dq_ti = vq_ti[ss];
+			auto Dq_tf = vq_tf[ss];
+			sobj result=Zero();
+			Baryon_Gamma_3pt_Group3_Site(Dq_spec1,Dq_spec2,Dq_ti,Dq_tf,GammaJ,GammaBi,GammaBf,wick_contraction,result);
+
+			vcorr[ss] += result; 
+		});//end loop over lattice sites
+	}
+
+}
+
+
+/***********************************************************************
+ * End of BaryonGamma3pt-function code.                                *
+ *																	   *
  * The following code is for Sigma -> N rare hypeon decays             *
  **********************************************************************/
 
