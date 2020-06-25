@@ -65,9 +65,9 @@ CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
   EnableIf<Impl::LsVectorised&&EnableBool,int> sfinae=0;
   chi_i.Checkerboard()=psi_i.Checkerboard();
   GridBase *grid=psi_i.Grid();
-  auto psi = psi_i.View();
-  auto phi = phi_i.View();
-  auto chi = chi_i.View();
+  autoView(psi, psi_i,CpuRead);
+  autoView(phi, phi_i,CpuRead);
+  autoView(chi, chi_i,CpuWrite);
   int Ls   = this->Ls;
   int LLs  = grid->_rdimensions[0];
   const int nsimd= Simd::Nsimd();
@@ -213,9 +213,9 @@ CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
   EnableIf<Impl::LsVectorised&&EnableBool,int> sfinae=0;
   chi_i.Checkerboard()=psi_i.Checkerboard();
   GridBase *grid=psi_i.Grid();
-  auto psi=psi_i.View();
-  auto phi=phi_i.View();
-  auto chi=chi_i.View();
+  autoView(psi,psi_i,CpuRead);
+  autoView(phi,phi_i,CpuRead);
+  autoView(chi,chi_i,CpuWrite);
   int Ls   = this->Ls;
   int LLs  = grid->_rdimensions[0];
   int nsimd= Simd::Nsimd();
@@ -357,8 +357,8 @@ CayleyFermion5D<Impl>::MooeeInternalAsm(const FermionField &psi_i, FermionField 
 					Vector<iSinglet<Simd> > &Matm)
 {
   EnableIf<Impl::LsVectorised&&EnableBool,int> sfinae=0;
-  auto psi = psi_i.View();
-  auto chi = chi_i.View();
+  autoView(psi , psi_i,CpuRead);
+  autoView(chi , chi_i,CpuWrite);
 #ifndef AVX512
   {
     SiteHalfSpinor BcastP;
@@ -535,8 +535,8 @@ CayleyFermion5D<Impl>::MooeeInternalZAsm(const FermionField &psi_i, FermionField
   EnableIf<Impl::LsVectorised,int> sfinae=0;
 #ifndef AVX512
   {
-    auto psi = psi_i.View();
-    auto chi = chi_i.View();
+    autoView(psi , psi_i,CpuRead);
+    autoView(chi , chi_i,CpuWrite);
 
     SiteHalfSpinor BcastP;
     SiteHalfSpinor BcastM;
@@ -586,8 +586,8 @@ CayleyFermion5D<Impl>::MooeeInternalZAsm(const FermionField &psi_i, FermionField
   }
 #else
   {
-    auto psi = psi_i.View();
-    auto chi = chi_i.View();
+    autoView(psi , psi_i,CpuRead);
+    autoView(chi , chi_i,CpuWrite);
     // pointers
     //  MASK_REGS;
 #define Chi_00 %zmm0

@@ -29,7 +29,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
 template<class d>
 struct scal {
@@ -51,6 +50,7 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "::::: NB: to enable a quick bit reproducibility check use the --checksums flag. " << std::endl;
 
+  { 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexD::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
@@ -100,6 +100,8 @@ int main (int argc, char ** argv)
   ConjugateGradient<LatticeFermionD> CG(1.0e-8,10000);
   CG(HermOpEO,src_o,result_o_2);
 
+  MemoryManager::Print();
+
   LatticeFermionD diff_o(FrbGrid);
   RealD diff = axpy_norm(diff_o, -1.0, result_o, result_o_2);
 
@@ -130,7 +132,9 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " CG checksums "<<std::hex << scidac_csuma << " "<<scidac_csumb<<std::endl;
   }
   #endif
-
+  }
   
+  MemoryManager::Print();
+
   Grid_finalize();
 }

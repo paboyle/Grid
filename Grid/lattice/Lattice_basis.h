@@ -51,40 +51,26 @@ template<class VField, class Matrix>
 void basisRotate(VField &basis,Matrix& Qt,int j0, int j1, int k0,int k1,int Nm) 
 {
   typedef decltype(basis[0]) Field;
-  typedef decltype(basis[0].View()) View;
-  auto tmp_v = basis[0].AcceleratorView(ViewReadWrite);
-  Vector<View> basis_v(basis.size(),tmp_v);
-  typedef typename std::remove_reference<decltype(tmp_v[0])>::type vobj;
+  typedef decltype(basis[0].View(AcceleratorRead)) View;
+
+  Vector<View> basis_v; basis_v.reserve(basis.size());
   GridBase* grid = basis[0].Grid();
       
   for(int k=0;k<basis.size();k++){
-    basis_v[k] = basis[k].AcceleratorView(ViewReadWrite);
+    basis_v.push_back(basis[k].View(AcceleratorWrite));
   }
 
-#ifndef GRID_NVCC
-  thread_region
-  {
-    std::vector < vobj > B(Nm); // Thread private
-    thread_for_in_region(ss, grid->oSites(),{
-	for(int j=j0; j<j1; ++j) B[j]=0.;
-      
-	for(int j=j0; j<j1; ++j){
-	  for(int k=k0; k<k1; ++k){
-	    B[j] +=Qt(j,k) * basis_v[k][ss];
-	  }
-	}
-	for(int j=j0; j<j1; ++j){
-	  basis_v[j][ss] = B[j];
-	}
-      });
-  }
-#else
+
+  View *basis_vp = &basis_v[0];
+
   int nrot = j1-j0;
   if (!nrot) // edge case not handled gracefully by Cuda
     return;
 
   uint64_t oSites   =grid->oSites();
   uint64_t siteBlock=(grid->oSites()+nrot-1)/nrot; // Maximum 1 additional vector overhead
+
+  typedef typename std::remove_reference<decltype(basis_v[0][0])>::type vobj;
 
   Vector <vobj> Bt(siteBlock * nrot); 
   auto Bp=&Bt[0];
@@ -96,7 +82,7 @@ void basisRotate(VField &basis,Matrix& Qt,int j0, int j1, int k0,int k1,int Nm)
       int j = i/Nm;
       int k = i%Nm;
       Qt_p[i]=Qt(j,k);
-    });
+  });
 
   // Block the loop to keep storage footprint down
   for(uint64_t s=0;s<oSites;s+=siteBlock){
@@ -132,27 +118,30 @@ void basisRotate(VField &basis,Matrix& Qt,int j0, int j1, int k0,int k1,int Nm)
 	coalescedWrite(basis_v[jj][sss],coalescedRead(Bp[ss*nrot+j]));
       });
   }
-#endif
+
+  for(int k=0;k<basis.size();k++) basis_v[k].ViewClose();
 }
 
 // Extract a single rotated vector
 template<class Field>
 void basisRotateJ(Field &result,std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j, int k0,int k1,int Nm) 
 {
-  typedef decltype(basis[0].AcceleratorView()) View;
+  typedef decltype(basis[0].View(AcceleratorRead)) View;
   typedef typename Field::vector_object vobj;
   GridBase* grid = basis[0].Grid();
 
   result.Checkerboard() = basis[0].Checkerboard();
-  auto result_v=result.AcceleratorView(ViewWrite);
-  Vector<View> basis_v(basis.size(),result_v);
+
+  Vector<View> basis_v; basis_v.reserve(basis.size());
   for(int k=0;k<basis.size();k++){
-    basis_v[k] = basis[k].AcceleratorView(ViewRead);
+    basis_v.push_back(basis[k].View(AcceleratorRead));
   }
   vobj zz=Zero();
   Vector<double> Qt_jv(Nm);
   double * Qt_j = & Qt_jv[0];
   for(int k=0;k<Nm;++k) Qt_j[k]=Qt(j,k);
+
+  autoView(result_v,result,AcceleratorWrite);
   accelerator_for(ss, grid->oSites(),vobj::Nsimd(),{
     auto B=coalescedRead(zz);
     for(int k=k0; k<k1; ++k){
@@ -160,6 +149,7 @@ void basisRotateJ(Field &result,std::vector<Field> &basis,Eigen::MatrixXd& Qt,in
     }
     coalescedWrite(result_v[ss], B);
   });
+  for(int k=0;k<basis.size();k++) basis_v[k].ViewClose();
 }
 
 template<class Field>

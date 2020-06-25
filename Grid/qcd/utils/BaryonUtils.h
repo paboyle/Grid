@@ -350,11 +350,11 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
   assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
 
   GridBase *grid = q1_left.Grid();
-
-  auto vbaryon_corr= baryon_corr.View();
-  auto v1 = q1_left.View();
-  auto v2 = q2_left.View();
-  auto v3 = q3_left.View();
+  
+  autoView(vbaryon_corr, baryon_corr,CpuWrite);
+  autoView( v1 , q1_left, CpuRead);
+  autoView( v2 , q2_left, CpuRead);
+  autoView( v3 , q3_left, CpuRead);
 
   Real bytes =0.;
   bytes += grid->oSites() * (432.*sizeof(vComplex) + 126.*sizeof(int) + 36.*sizeof(Real));
@@ -989,10 +989,10 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Eye(const PropagatorField &qq_loop,
 
   GridBase *grid = qs_ti.Grid();
 
-  auto vcorr= stn_corr.View();
-  auto vq_loop = qq_loop.View();
-  auto vd_tf = qd_tf.View();
-  auto vs_ti = qs_ti.View();
+  autoView( vcorr, stn_corr, CpuWrite);
+  autoView( vq_loop , qq_loop, CpuRead);
+  autoView( vd_tf , qd_tf, CpuRead);
+  autoView( vs_ti , qs_ti, CpuRead);
 
   accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
     auto Dq_loop = vq_loop[ss];
@@ -1029,13 +1029,13 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_NonEye(const PropagatorField &qq_ti,
 
   GridBase *grid = qs_ti.Grid();
 
-  auto vcorr= stn_corr.View();
-  auto vq_ti = qq_ti.View();
-  auto vq_tf = qq_tf.View();
-  auto vd_tf = qd_tf.View();
-  auto vs_ti = qs_ti.View();
-
-  accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+  autoView( vcorr , stn_corr, CpuWrite);
+  autoView( vq_ti , qq_ti, CpuRead);
+  autoView( vq_tf , qq_tf, CpuRead);
+  autoView( vd_tf , qd_tf, CpuRead);
+  autoView( vs_ti , qs_ti, CpuRead);
+ // accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+  thread_for(ss,grid->oSites(),{
     auto Dq_ti = vq_ti[ss];
     auto Dq_tf = vq_tf[ss];
     auto Dd_tf = vd_tf[ss];

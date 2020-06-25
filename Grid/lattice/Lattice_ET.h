@@ -92,12 +92,18 @@ const lobj & eval(const uint64_t ss, const LatticeView<lobj> &arg)
 {
   return arg[ss];
 }
+
+// What needs this?
+// Cannot be legal on accelerator
+// Comparison must convert
+#if 1
 template <class lobj> accelerator_inline 
 const lobj & eval(const uint64_t ss, const Lattice<lobj> &arg) 
 {
-  auto view = arg.AcceleratorView(ViewRead);
+  auto view = arg.View(AcceleratorRead);
   return view[ss];
 }
+#endif
 
 ///////////////////////////////////////////////////
 // handle nodes in syntax tree- eval one operand
@@ -180,16 +186,12 @@ inline void CBFromExpression(int &cb, const T1 &lat)  // Lattice leaf
   cb = lat.Checkerboard();
 }
 template <class T1,typename std::enable_if<!is_lattice<T1>::value, T1>::type * = nullptr>
-inline void CBFromExpression(int &cb, const T1 &notlat)  // non-lattice leaf
-{
-}
-
+inline void CBFromExpression(int &cb, const T1 &notlat) {} // non-lattice leaf
 template <typename Op, typename T1> inline 
 void CBFromExpression(int &cb,const LatticeUnaryExpression<Op, T1> &expr) 
 {
   CBFromExpression(cb, expr.arg1);  // recurse AST
 }
-
 template <typename Op, typename T1, typename T2> inline 
 void CBFromExpression(int &cb,const LatticeBinaryExpression<Op, T1, T2> &expr) 
 {
@@ -202,6 +204,68 @@ inline void CBFromExpression(int &cb, const LatticeTrinaryExpression<Op, T1, T2,
   CBFromExpression(cb, expr.arg1);  // recurse AST
   CBFromExpression(cb, expr.arg2);  // recurse AST
   CBFromExpression(cb, expr.arg3);  // recurse AST
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// ViewOpen
+//////////////////////////////////////////////////////////////////////////
+template <class T1,typename std::enable_if<is_lattice<T1>::value, T1>::type * = nullptr>
+inline void ExpressionViewOpen(T1 &lat)  // Lattice leaf
+{
+  lat.ViewOpen(AcceleratorRead);
+}
+template <class T1,typename std::enable_if<!is_lattice<T1>::value, T1>::type * = nullptr>
+  inline void ExpressionViewOpen(T1 &notlat) {}
+
+template <typename Op, typename T1> inline 
+void ExpressionViewOpen(LatticeUnaryExpression<Op, T1> &expr) 
+{  
+  ExpressionViewOpen(expr.arg1); // recurse AST
+}
+
+template <typename Op, typename T1, typename T2> inline 
+void ExpressionViewOpen(LatticeBinaryExpression<Op, T1, T2> &expr) 
+{
+  ExpressionViewOpen(expr.arg1);  // recurse AST
+  ExpressionViewOpen(expr.arg2);  // recurse AST
+}
+template <typename Op, typename T1, typename T2, typename T3>
+inline void ExpressionViewOpen(LatticeTrinaryExpression<Op, T1, T2, T3> &expr) 
+{
+  ExpressionViewOpen(expr.arg1);  // recurse AST
+  ExpressionViewOpen(expr.arg2);  // recurse AST
+  ExpressionViewOpen(expr.arg3);  // recurse AST
+}
+
+//////////////////////////////////////////////////////////////////////////
+// ViewClose
+//////////////////////////////////////////////////////////////////////////
+template <class T1,typename std::enable_if<is_lattice<T1>::value, T1>::type * = nullptr>
+inline void ExpressionViewClose( T1 &lat)  // Lattice leaf
+{
+  lat.ViewClose();
+}
+template <class T1,typename std::enable_if<!is_lattice<T1>::value, T1>::type * = nullptr>
+inline void ExpressionViewClose(T1 &notlat) {}
+
+template <typename Op, typename T1> inline 
+void ExpressionViewClose(LatticeUnaryExpression<Op, T1> &expr) 
+{  
+  ExpressionViewClose(expr.arg1); // recurse AST
+}
+template <typename Op, typename T1, typename T2> inline 
+void ExpressionViewClose(LatticeBinaryExpression<Op, T1, T2> &expr) 
+{
+  ExpressionViewClose(expr.arg1);  // recurse AST
+  ExpressionViewClose(expr.arg2);  // recurse AST
+}
+template <typename Op, typename T1, typename T2, typename T3>
+inline void ExpressionViewClose(LatticeTrinaryExpression<Op, T1, T2, T3> &expr) 
+{
+  ExpressionViewClose(expr.arg1);  // recurse AST
+  ExpressionViewClose(expr.arg2);  // recurse AST
+  ExpressionViewClose(expr.arg3);  // recurse AST
 }
 
 ////////////////////////////////////////////

@@ -1,5 +1,3 @@
-
-
 /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -302,8 +300,8 @@ int main (int argc, char ** argv)
     int nb=nbasisc/2;
     CoarseAggregates.CreateSubspaceChebyshev(CRNG,PosdefLdop,nb,12.0,0.02,500,100,100,0.0);
     for(int n=0;n<nb;n++){
-      auto subspace    = CoarseAggregates.subspace[n].View();
-      auto subspace_g5 = CoarseAggregates.subspace[n+nb].View();
+      autoView( subspace,   CoarseAggregates.subspace[n]   ,CpuRead);
+      autoView( subspace_g5,CoarseAggregates.subspace[n+nb],CpuWrite);
       for(int nn=0;nn<nb;nn++){
 	for(int site=0;site<Coarse5d->oSites();site++){
 	  subspace_g5[site](nn)   = subspace[site](nn);

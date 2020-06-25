@@ -86,9 +86,9 @@ public:
 
   // Move this elsewhere? FIXME
   static inline void AddLink(Field &U, LinkField &W, int mu) { // U[mu] += W
-    auto U_v = U.View();
-    auto W_v = W.View();
-    thread_for( ss, U.Grid()->oSites(), {
+    autoView(U_v,U,AcceleratorWrite);
+    autoView(W_v,W,AcceleratorRead);
+    accelerator_for( ss, U.Grid()->oSites(), 1, {
       U_v[ss](mu) = U_v[ss](mu) + W_v[ss]();
     });
   }
@@ -131,15 +131,14 @@ public:
     //static std::chrono::duration<double> diff;
 
     //auto start = std::chrono::high_resolution_clock::now();
-    auto U_v = U.View();
-    auto P_v = P.View();
-    thread_for(ss, P.Grid()->oSites(),{
+    autoView(U_v,U,AcceleratorWrite);
+    autoView(P_v,P,AcceleratorRead);
+    accelerator_for(ss, P.Grid()->oSites(),1,{
       for (int mu = 0; mu < Nd; mu++) {
         U_v[ss](mu) = ProjectOnGroup(Exponentiate(P_v[ss](mu), ep, Nexp) * U_v[ss](mu));
       }
     });
-    
-    //auto end = std::chrono::high_resolution_clock::now();
+   //auto end = std::chrono::high_resolution_clock::now();
    // diff += end - start;
    // std::cout << "Time to exponentiate matrix " << diff.count() << " s\n";
   }

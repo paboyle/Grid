@@ -37,9 +37,9 @@ NAMESPACE_BEGIN(Grid);
 template<class obj1,class obj2,class obj3> inline
 void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   ret.Checkerboard() = lhs.Checkerboard();
-  auto ret_v = ret.AcceleratorView(ViewWrite);
-  auto lhs_v = lhs.AcceleratorView(ViewRead);
-  auto rhs_v = rhs.AcceleratorView(ViewRead);
+  autoView( ret_v , ret, AcceleratorWrite);
+  autoView( lhs_v , lhs, AcceleratorRead);
+  autoView( rhs_v , rhs, AcceleratorRead);
   conformable(ret,rhs);
   conformable(lhs,rhs);
   accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
@@ -56,9 +56,9 @@ void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,rhs);
   conformable(lhs,rhs);
-  auto ret_v = ret.AcceleratorView(ViewWrite);
-  auto lhs_v = lhs.AcceleratorView(ViewRead);
-  auto rhs_v = rhs.AcceleratorView(ViewRead);
+  autoView( ret_v , ret, AcceleratorWrite);
+  autoView( lhs_v , lhs, AcceleratorRead);
+  autoView( rhs_v , rhs, AcceleratorRead);
   accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
     decltype(coalescedRead(obj1())) tmp;
     auto lhs_t=lhs_v(ss);
@@ -73,9 +73,9 @@ void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,rhs);
   conformable(lhs,rhs);
-  auto ret_v = ret.AcceleratorView(ViewWrite);
-  auto lhs_v = lhs.AcceleratorView(ViewRead);
-  auto rhs_v = rhs.AcceleratorView(ViewRead);
+  autoView( ret_v , ret, AcceleratorWrite);
+  autoView( lhs_v , lhs, AcceleratorRead);
+  autoView( rhs_v , rhs, AcceleratorRead);
   accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
     decltype(coalescedRead(obj1())) tmp;
     auto lhs_t=lhs_v(ss);
@@ -89,9 +89,9 @@ void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,rhs);
   conformable(lhs,rhs);
-  auto ret_v = ret.AcceleratorView(ViewWrite);
-  auto lhs_v = lhs.AcceleratorView(ViewRead);
-  auto rhs_v = rhs.AcceleratorView(ViewRead);
+  autoView( ret_v , ret, AcceleratorWrite);
+  autoView( lhs_v , lhs, AcceleratorRead);
+  autoView( rhs_v , rhs, AcceleratorRead);
   accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
     decltype(coalescedRead(obj1())) tmp;
     auto lhs_t=lhs_v(ss);
@@ -108,8 +108,8 @@ template<class obj1,class obj2,class obj3> inline
 void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(lhs,ret);
-  auto ret_v = ret.AcceleratorView(ViewWrite);
-  auto lhs_v = lhs.AcceleratorView(ViewRead);
+  autoView( ret_v , ret, AcceleratorWrite);
+  autoView( lhs_v , lhs, AcceleratorRead);
   accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
     decltype(coalescedRead(obj1())) tmp;
     mult(&tmp,&lhs_v(ss),&rhs);
@@ -121,8 +121,8 @@ template<class obj1,class obj2,class obj3> inline
 void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,lhs);
-  auto ret_v = ret.AcceleratorView(ViewWrite);
-  auto lhs_v = lhs.AcceleratorView(ViewRead);
+  autoView( ret_v , ret, AcceleratorWrite);
+  autoView( lhs_v , lhs, AcceleratorRead);
   accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
     decltype(coalescedRead(obj1())) tmp;
     auto lhs_t=lhs_v(ss);
@@ -135,8 +135,8 @@ template<class obj1,class obj2,class obj3> inline
 void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,lhs);
-  auto ret_v = ret.AcceleratorView(ViewWrite);
-  auto lhs_v = lhs.AcceleratorView(ViewRead);
+  autoView( ret_v , ret, AcceleratorWrite);
+  autoView( lhs_v , lhs, AcceleratorRead);
   accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
     decltype(coalescedRead(obj1())) tmp;
     auto lhs_t=lhs_v(ss);
@@ -148,8 +148,8 @@ template<class obj1,class obj2,class obj3> inline
 void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   ret.Checkerboard() = lhs.Checkerboard();
   conformable(lhs,ret);
-  auto ret_v = ret.AcceleratorView(ViewWrite);
-  auto lhs_v = lhs.AcceleratorView(ViewRead);
+  autoView( ret_v , ret, AcceleratorWrite);
+  autoView( lhs_v , lhs, AcceleratorRead);
   accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
     decltype(coalescedRead(obj1())) tmp;
     auto lhs_t=lhs_v(ss);
@@ -165,8 +165,8 @@ template<class obj1,class obj2,class obj3> inline
 void mult(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
-  auto ret_v = ret.AcceleratorView(ViewWrite);
-  auto rhs_v = lhs.AcceleratorView(ViewRead);
+  autoView( ret_v , ret, AcceleratorWrite);
+  autoView( rhs_v , lhs, AcceleratorRead);
   accelerator_for(ss,rhs_v.size(),obj1::Nsimd(),{
     decltype(coalescedRead(obj1())) tmp;
     auto rhs_t=rhs_v(ss);
@@ -179,8 +179,8 @@ template<class obj1,class obj2,class obj3> inline
 void mac(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
-  auto ret_v = ret.AcceleratorView(ViewWrite);
-  auto rhs_v = lhs.AcceleratorView(ViewRead);
+  autoView( ret_v , ret, AcceleratorWrite);
+  autoView( rhs_v , lhs, AcceleratorRead);
   accelerator_for(ss,rhs_v.size(),obj1::Nsimd(),{
     decltype(coalescedRead(obj1())) tmp;
     auto rhs_t=rhs_v(ss);
@@ -193,8 +193,8 @@ template<class obj1,class obj2,class obj3> inline
 void sub(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
-  auto ret_v = ret.AcceleratorView(ViewWrite);
-  auto rhs_v = lhs.AcceleratorView(ViewRead);
+  autoView( ret_v , ret, AcceleratorWrite);
+  autoView( rhs_v , lhs, AcceleratorRead);
   accelerator_for(ss,rhs_v.size(),obj1::Nsimd(),{
     decltype(coalescedRead(obj1())) tmp;
     auto rhs_t=rhs_v(ss);
@@ -206,8 +206,8 @@ template<class obj1,class obj2,class obj3> inline
 void add(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
-  auto ret_v = ret.AcceleratorView(ViewWrite);
-  auto rhs_v = lhs.AcceleratorView(ViewRead);
+  autoView( ret_v , ret, AcceleratorWrite);
+  autoView( rhs_v , lhs, AcceleratorRead);
   accelerator_for(ss,rhs_v.size(),obj1::Nsimd(),{
     decltype(coalescedRead(obj1())) tmp;
     auto rhs_t=rhs_v(ss);
@@ -221,9 +221,9 @@ void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &
   ret.Checkerboard() = x.Checkerboard();
   conformable(ret,x);
   conformable(x,y);
-  auto ret_v = ret.AcceleratorView(ViewWrite);
-  auto x_v = x.AcceleratorView(ViewRead);
-  auto y_v = y.AcceleratorView(ViewRead);
+  autoView( ret_v , ret, AcceleratorWrite);
+  autoView( x_v , x, AcceleratorRead);
+  autoView( y_v , y, AcceleratorRead);
   accelerator_for(ss,x_v.size(),vobj::Nsimd(),{
     auto tmp = a*x_v(ss)+y_v(ss);
     coalescedWrite(ret_v[ss],tmp);
@@ -234,9 +234,9 @@ void axpby(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice
   ret.Checkerboard() = x.Checkerboard();
   conformable(ret,x);
   conformable(x,y);
-  auto ret_v = ret.AcceleratorView(ViewWrite);
-  auto x_v = x.AcceleratorView(ViewRead);
-  auto y_v = y.AcceleratorView(ViewRead);
+  autoView( ret_v , ret, AcceleratorWrite);
+  autoView( x_v , x, AcceleratorRead);
+  autoView( y_v , y, AcceleratorRead);
   accelerator_for(ss,x_v.size(),vobj::Nsimd(),{
     auto tmp = a*x_v(ss)+b*y_v(ss);
     coalescedWrite(ret_v[ss],tmp);

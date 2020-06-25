@@ -237,9 +237,9 @@ public:
 
       Vec rn ; random(sRNG,rn);
 
-      LatticeVec z(&Grid); z=rn;
-      LatticeVec x(&Grid); x=rn;
-      LatticeVec y(&Grid); y=rn;
+      LatticeVec z(&Grid); z=Zero();
+      LatticeVec x(&Grid); x=Zero();
+      LatticeVec y(&Grid); y=Zero();
       double a=2.0;
 
       uint64_t Nloop=NLOOP;
@@ -247,9 +247,9 @@ public:
       double start=usecond();
       for(int i=0;i<Nloop;i++){
 	z=a*x-y;
-	auto x_v = x.View();
-	auto y_v = y.View();
-	auto z_v = z.View();
+	autoView( x_v , x, CpuWrite);
+	autoView( y_v , y, CpuWrite);
+	autoView( z_v , z, CpuRead);
         x_v[0]=z_v[0]; // force serial dependency to prevent optimise away
         y_v[4]=z_v[4];
       }

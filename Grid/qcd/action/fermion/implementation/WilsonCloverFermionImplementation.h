@@ -98,32 +98,35 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
   Coordinate lcoor;
   typename SiteCloverType::scalar_object Qx = Zero(), Qxinv = Zero();
 
-  for (int site = 0; site < lvol; site++)
   {
-    grid->LocalIndexToLocalCoor(site, lcoor);
-    EigenCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
-    peekLocalSite(Qx, CloverTerm, lcoor);
-    Qxinv = Zero();
-    //if (csw!=0){
-    for (int j = 0; j < Ns; j++)
-      for (int k = 0; k < Ns; k++)
-        for (int a = 0; a < DimRep; a++)
-          for (int b = 0; b < DimRep; b++){
-	    auto zz =  Qx()(j, k)(a, b);
-            EigenCloverOp(a + j * DimRep, b + k * DimRep) = std::complex<double>(zz);
-	  }
-    //   if (site==0) std::cout << "site =" << site << "\n" << EigenCloverOp << std::endl;
-
-    EigenInvCloverOp = EigenCloverOp.inverse();
-    //std::cout << EigenInvCloverOp << std::endl;
-    for (int j = 0; j < Ns; j++)
-      for (int k = 0; k < Ns; k++)
-        for (int a = 0; a < DimRep; a++)
-          for (int b = 0; b < DimRep; b++)
-            Qxinv()(j, k)(a, b) = EigenInvCloverOp(a + j * DimRep, b + k * DimRep);
-    //    if (site==0) std::cout << "site =" << site << "\n" << EigenInvCloverOp << std::endl;
-    //  }
-    pokeLocalSite(Qxinv, CloverTermInv, lcoor);
+    autoView(CTv,CloverTerm,CpuRead);
+    autoView(CTIv,CloverTermInv,CpuWrite);
+    for (int site = 0; site < lvol; site++) {
+      grid->LocalIndexToLocalCoor(site, lcoor);
+      EigenCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
+      peekLocalSite(Qx, CTv, lcoor);
+      Qxinv = Zero();
+      //if (csw!=0){
+      for (int j = 0; j < Ns; j++)
+	for (int k = 0; k < Ns; k++)
+	  for (int a = 0; a < DimRep; a++)
+	    for (int b = 0; b < DimRep; b++){
+	      auto zz =  Qx()(j, k)(a, b);
+	      EigenCloverOp(a + j * DimRep, b + k * DimRep) = std::complex<double>(zz);
+	    }
+      //   if (site==0) std::cout << "site =" << site << "\n" << EigenCloverOp << std::endl;
+      
+      EigenInvCloverOp = EigenCloverOp.inverse();
+      //std::cout << EigenInvCloverOp << std::endl;
+      for (int j = 0; j < Ns; j++)
+	for (int k = 0; k < Ns; k++)
+	  for (int a = 0; a < DimRep; a++)
+	    for (int b = 0; b < DimRep; b++)
+	      Qxinv()(j, k)(a, b) = EigenInvCloverOp(a + j * DimRep, b + k * DimRep);
+      //    if (site==0) std::cout << "site =" << site << "\n" << EigenInvCloverOp << std::endl;
+      //  }
+      pokeLocalSite(Qxinv, CTIv, lcoor);
+    }
   }
 
   // Separate the even and odd parts

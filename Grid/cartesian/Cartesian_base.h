@@ -81,6 +81,7 @@ public:
 
   bool _isCheckerBoarded; 
   int        LocallyPeriodic;
+  Coordinate _checker_dim_mask;
 
 public:
 

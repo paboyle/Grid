@@ -258,10 +258,10 @@ void ImprovedStaggeredFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGauge
     ////////////////////////
     // Call the single hop
     ////////////////////////
-    auto U_v   = U.View();
-    auto UUU_v = UUU.View();
-    auto B_v   = B.View();
-    auto Btilde_v   = Btilde.View();
+    autoView( U_v   , U, CpuRead);
+    autoView( UUU_v , UUU, CpuRead);
+    autoView( B_v      , B, CpuWrite);
+    autoView( Btilde_v , Btilde, CpuWrite);
     thread_for(sss,B.Grid()->oSites(),{
       Kernels::DhopDirKernel(st, U_v, UUU_v, st.CommBuf(), sss, sss, B_v, Btilde_v, mu,1);
     });
@@ -386,10 +386,10 @@ void ImprovedStaggeredFermion<Impl>::DhopDir(const FermionField &in, FermionFiel
 
   Compressor compressor;
   Stencil.HaloExchange(in, compressor);
-  auto Umu_v   =   Umu.View();
-  auto UUUmu_v = UUUmu.View();
-  auto in_v    =  in.View();
-  auto out_v   = out.View();
+  autoView( Umu_v   ,   Umu, CpuRead);
+  autoView( UUUmu_v , UUUmu, CpuRead);
+  autoView( in_v    ,  in, CpuRead);
+  autoView( out_v   , out, CpuWrite);
   thread_for( sss, in.Grid()->oSites(),{
     Kernels::DhopDirKernel(Stencil, Umu_v, UUUmu_v, Stencil.CommBuf(), sss, sss, in_v, out_v, dir, disp);
   });
@@ -403,11 +403,9 @@ void ImprovedStaggeredFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder
 						  const FermionField &in,
 						  FermionField &out, int dag) 
 {
-#ifdef GRID_OMP
   if ( StaggeredKernelsStatic::Comms == StaggeredKernelsStatic::CommsAndCompute )
     DhopInternalOverlappedComms(st,lo,U,UUU,in,out,dag);
   else
-#endif
     DhopInternalSerialComms(st,lo,U,UUU,in,out,dag);
 }
 template <class Impl>
@@ -417,7 +415,6 @@ void ImprovedStaggeredFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st
 								 const FermionField &in,
 								 FermionField &out, int dag) 
 {
-#ifdef GRID_OMP
   Compressor compressor; 
   int len =  U.Grid()->oSites();
 
@@ -426,59 +423,29 @@ void ImprovedStaggeredFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st
   DhopFaceTime    -= usecond();
   st.Prepare();
   st.HaloGather(in,compressor);
-  st.CommsMergeSHM(compressor);
   DhopFaceTime    += usecond();
 
+  DhopCommTime -=usecond();
+  std::vector<std::vector<CommsRequest_t> > requests;
+  st.CommunicateBegin(requests);
+
+  DhopFaceTime-=usecond();
+  st.CommsMergeSHM(compressor);
+  DhopFaceTime+= usecond();
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Ugly explicit thread mapping introduced for OPA reasons.
+  // Removed explicit thread comms
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   DhopComputeTime    -= usecond();
-#pragma omp parallel 
   {
-    int tid = omp_get_thread_num();
-    int nthreads = omp_get_num_threads();
-    int ncomms = CartesianCommunicator::nCommThreads;
-    if (ncomms == -1) ncomms = 1;
-    assert(nthreads > ncomms);
-
-    if (tid >= ncomms) {
-      nthreads -= ncomms;
-      int ttid  = tid - ncomms;
-      int n     = len;
-      int chunk = n / nthreads;
-      int rem   = n % nthreads;
-      int myblock, myn;
-      if (ttid < rem) {
-        myblock = ttid * chunk + ttid;
-        myn = chunk+1;
-      } else {
-        myblock = ttid*chunk + rem;
-        myn = chunk;
-      }
-
-      // do the compute
-      auto U_v   = U.View();
-      auto UUU_v = UUU.View();
-      auto in_v  = in.View();
-      auto out_v = out.View();
-      if (dag == DaggerYes) {
-        for (int ss = myblock; ss < myblock+myn; ++ss) {
-          int sU = ss;
-	  // Interior = 1; Exterior = 0; must implement for staggered
-          Kernels::DhopSiteDag(st,lo,U_v,UUU_v,st.CommBuf(),1,sU,in_v,out_v,1,0); 
-        }
-      } else {
-        for (int ss = myblock; ss < myblock+myn; ++ss) {
-	  // Interior = 1; Exterior = 0;
-          int sU = ss;
-          Kernels::DhopSite(st,lo,U_v,UUU_v,st.CommBuf(),1,sU,in_v,out_v,1,0);
-        }
-      }
-    } else {
-      st.CommunicateThreaded();
-    }
+    int interior=1;
+    int exterior=0;
+    Kernels::DhopImproved(st,lo,U,UUU,in,out,dag,interior,exterior);
   }
   DhopComputeTime    += usecond();
+
+  st.CommunicateComplete(requests);
+  DhopCommTime +=usecond();
 
   // First to enter, last to leave timing
   DhopFaceTime    -= usecond();
@@ -487,28 +454,11 @@ void ImprovedStaggeredFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st
 
   DhopComputeTime2    -= usecond();
   {
-    auto U_v   = U.View();
-    auto UUU_v = UUU.View();
-    auto in_v  = in.View();
-    auto out_v = out.View();
-    if (dag == DaggerYes) {
-      int sz=st.surface_list.size();
-      thread_for(ss,sz,{
-	int sU = st.surface_list[ss];
-	Kernels::DhopSiteDag(st,lo,U_v,UUU_v,st.CommBuf(),1,sU,in_v,out_v,0,1);
-      });
-    } else {
-      int sz=st.surface_list.size();
-      thread_for(ss,sz,{
-	int sU = st.surface_list[ss];
-	Kernels::DhopSite(st,lo,U_v,UUU_v,st.CommBuf(),1,sU,in_v,out_v,0,1);
-      });
-    }
+    int interior=0;
+    int exterior=1;
+    Kernels::DhopImproved(st,lo,U,UUU,in,out,dag,interior,exterior);
   }
   DhopComputeTime2    += usecond();
-#else
-  assert(0);
-#endif
 }
 
 
@@ -528,19 +478,11 @@ void ImprovedStaggeredFermion<Impl>::DhopInternalSerialComms(StencilImpl &st, Le
   st.HaloExchange(in, compressor);
   DhopCommTime    += usecond();
 
-  auto U_v   =   U.View();
-  auto UUU_v = UUU.View();
-  auto in_v  =  in.View();
-  auto out_v = out.View();
   DhopComputeTime -= usecond();
-  if (dag == DaggerYes) {
-    thread_for(sss, in.Grid()->oSites(),{
-      Kernels::DhopSiteDag(st, lo, U_v, UUU_v, st.CommBuf(), 1, sss, in_v, out_v);
-    });
-  } else {
-    thread_for(sss, in.Grid()->oSites(),{
-      Kernels::DhopSite(st, lo, U_v, UUU_v, st.CommBuf(), 1, sss, in_v, out_v);
-    });
+  {
+    int interior=1;
+    int exterior=1;
+    Kernels::DhopImproved(st,lo,U,UUU,in,out,dag,interior,exterior);
   }
   DhopComputeTime += usecond();
   DhopTotalTime   += usecond();

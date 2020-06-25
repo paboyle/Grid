@@ -79,7 +79,7 @@ int main (int argc, char ** argv)
 
     double start=usecond();
     thread_for(t,threads,{
-      auto x_t = x[t].View();
+      autoView( x_t , x[t],CpuRead);
       sum[t] = x_t[0];
       for(int i=0;i<Nloop;i++){
 	for(auto ss=x_t.begin();ss<x_t.end();ss++){

@@ -1,4 +1,3 @@
-
 /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -36,7 +35,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <fftw3.h>
 #endif
 #endif
-
 
 NAMESPACE_BEGIN(Grid);
 
@@ -191,7 +189,7 @@ public:
     typedef typename sobj::scalar_type   scalar;
       
     Lattice<sobj> pgbuf(&pencil_g);
-    auto pgbuf_v = pgbuf.View();
+    autoView(pgbuf_v , pgbuf, CpuWrite);
 
     typedef typename FFTW<scalar>::FFTW_scalar FFTW_scalar;
     typedef typename FFTW<scalar>::FFTW_plan   FFTW_plan;
@@ -232,15 +230,18 @@ public:
     result = source;
     int pc = processor_coor[dim];
     for(int p=0;p<processors[dim];p++) {
-      thread_for(idx, sgrid->lSites(),{
+      {
+	autoView(r_v,result,CpuRead);
+	autoView(p_v,pgbuf,CpuWrite);
+	thread_for(idx, sgrid->lSites(),{
           Coordinate cbuf(Nd);
           sobj s;
 	  sgrid->LocalIndexToLocalCoor(idx,cbuf);
-	  peekLocalSite(s,result,cbuf);
+	  peekLocalSite(s,r_v,cbuf);
 	  cbuf[dim]+=((pc+p) % processors[dim])*L;
-	  //            cbuf[dim]+=p*L;
-	  pokeLocalSite(s,pgbuf,cbuf);
-      });
+	  pokeLocalSite(s,p_v,cbuf);
+        });
+      }
       if (p != processors[dim] - 1) {
 	result = Cshift(result,dim,L);
       }
@@ -269,15 +270,19 @@ public:
     flops+= flops_call*NN;
       
     // writing out result
-    thread_for(idx,sgrid->lSites(),{
+    {
+      autoView(pgbuf_v,pgbuf,CpuRead);
+      autoView(result_v,result,CpuWrite);
+      thread_for(idx,sgrid->lSites(),{
 	Coordinate clbuf(Nd), cgbuf(Nd);
 	sobj s;
 	sgrid->LocalIndexToLocalCoor(idx,clbuf);
 	cgbuf = clbuf;
 	cgbuf[dim] = clbuf[dim]+L*pc;
-	peekLocalSite(s,pgbuf,cgbuf);
-	pokeLocalSite(s,result,clbuf);
-    });
+	peekLocalSite(s,pgbuf_v,cgbuf);
+	pokeLocalSite(s,result_v,clbuf);
+      });
+    }
     result = result*div;
       
     // destroying plan
