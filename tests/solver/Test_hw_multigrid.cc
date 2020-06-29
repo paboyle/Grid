@@ -6,9 +6,7 @@
 
     Copyright (C) 2015
 
-Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: paboyle <paboyle@ph.ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -267,7 +265,7 @@ int main (int argc, char ** argv)
   // Construct a coarsened grid; utility for this?
   ///////////////////////////////////////////////////
   std::vector<int> block ({2,2,2,2});
-  const int nbasis= 32;
+  const int nbasis= 8;
 
   auto clatt = GridDefaultLatt();
   for(int d=0;d<clatt.size();d++){
@@ -315,7 +313,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   int nb=nbasis/2;
   Gamma g5(Gamma::Algebra::Gamma5);
-  Aggregates4D.CreateSubspaceChebyshev(RNG5,SubspaceOp,nb,60.0,0.02,500,100,100,0.0);
+  Aggregates4D.CreateSubspaceChebyshev(RNG4,SubspaceOp,nb,60.0,0.02,500,100,100,0.0);
   for(int n=0;n<nb;n++){
     Aggregates4D.subspace[n+nb]= Aggregates4D.subspace[n] - g5 * Aggregates4D.subspace[n];
     Aggregates4D.subspace[n]   = Aggregates4D.subspace[n] + g5 * Aggregates4D.subspace[n];
@@ -335,11 +333,32 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>    Level1Op;
 
-
   NonHermitianLinearOperator<DomainWallFermionR,LatticeFermion>  LinOpDwf(Ddwf);
 
-  Level1Op LDOp  (*Coarse5d,1);   
+  Level1Op LDOp  (*Coarse5d,0);   
+  
+  std::cout<<GridLogMessage << " Callinig Coarsen the operator                          " <<std::endl;
   LDOp.CoarsenOperator(FGrid,LinOpDwf,Aggregates5D);
+
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Coarse CG unprec "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+
+  CoarseVector c_src(Coarse5d); c_src=1.0;
+  CoarseVector c_res(Coarse5d);
+
+  LatticeFermion f_src(FGrid); f_src=1.0;
+  LatticeFermion f_res(FGrid);
+
+  RealD tol=1.0e-8;
+  int MaxIt = 10000;
+
+  MdagMLinearOperator<Level1Op,CoarseVector> CoarseMdagM(LDOp);
+  BiCGSTAB<CoarseVector>                     CoarseBiCGSTAB(tol,MaxIt);
+  ConjugateGradient<CoarseVector>            CoarseCG(tol,MaxIt);
+
+  c_res=Zero();
+  CoarseCG(CoarseMdagM,c_src,c_res);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << " Solve                                            " <<std::endl;
