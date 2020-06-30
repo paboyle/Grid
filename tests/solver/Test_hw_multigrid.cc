@@ -38,7 +38,7 @@ using namespace Grid;
 // Coarse Grid axpby_ssp_pminus // Inherit from spProj5pm
 // Coarse Grid axpby_ssp_pplus
 
-template<class Field>
+template<class Field,class Coeff_t>
 class CayleyBase
 {
 public:
@@ -284,26 +284,84 @@ public:
     }
     M5Ddag(psi,psi,Din,lower,diag,upper);
   }
-  
-  virtual void M5D(const Field &psi_i,
-		   const Field &phi_i, 
-		   Field &chi_i,
-		   Vector<Coeff_t> &lower,
-		   Vector<Coeff_t> &diag,
-		   Vector<Coeff_t> &upper);
-  virtual void M5Ddag(const Field &psi_i,
-		      const Field &phi_i, 
-		      Field &chi_i,
-		      Vector<Coeff_t> &lower,
-		      Vector<Coeff_t> &diag,
-		      Vector<Coeff_t> &upper);
 
+  void M5D(const Field &psi_i,
+	   const Field &phi_i, 
+	   Field &chi_i,
+	   Vector<Coeff_t> &lower,
+	   Vector<Coeff_t> &diag,
+	   Vector<Coeff_t> &upper)
+  {
+    
+    chi_i.Checkerboard()=psi_i.Checkerboard();
+    GridBase *grid=psi_i.Grid();
+    autoView(psi , psi_i,AcceleratorRead);
+    autoView(phi , phi_i,AcceleratorRead);
+    autoView(chi , chi_i,AcceleratorWrite);
+    assert(phi.Checkerboard() == psi.Checkerboard());
+
+    auto pdiag = &diag[0];
+    auto pupper = &upper[0];
+    auto plower = &lower[0];
+
+    int Ls =this->Ls;
+    
+    // 10 = 3 complex mult + 2 complex add
+    // Flops = 10.0*(Nc*Ns) *Ls*vol (/2 for red black counting)
+    uint64_t nloop = grid->oSites()/Ls;
+    accelerator_for(sss,nloop,Simd::Nsimd(),{
+	uint64_t ss= sss*Ls;
+	typedef decltype(coalescedRead(psi[0])) spinor;
+	spinor tmp1, tmp2;
+	for(int s=0;s<Ls;s++){
+	  uint64_t idx_u = ss+((s+1)%Ls);
+	  uint64_t idx_l = ss+((s+Ls-1)%Ls);
+	  spProj5m(tmp1,psi(idx_u)); // Need routines for this
+	  spProj5p(tmp2,psi(idx_l));
+	  coalescedWrite(chi[ss+s],pdiag[s]*phi(ss+s)+pupper[s]*tmp1+plower[s]*tmp2);
+	}
+      });
+  }
+  void M5Ddag(const Field &psi_i,
+	      const Field &phi_i, 
+	      Field &chi_i,
+	      Vector<Coeff_t> &lower,
+	      Vector<Coeff_t> &diag,
+	      Vector<Coeff_t> &upper)
+  {
+    chi_i.Checkerboard()=psi_i.Checkerboard();
+    GridBase *grid=psi_i.Grid();
+    autoView(psi , psi_i,AcceleratorRead);
+    autoView(phi , phi_i,AcceleratorRead);
+    autoView(chi , chi_i,AcceleratorWrite);
+    assert(phi.Checkerboard() == psi.Checkerboard());
+    
+    auto pdiag = &diag[0];
+    auto pupper = &upper[0];
+    auto plower = &lower[0];
+    
+    int Ls=this->Ls;
+    
+    uint64_t nloop = grid->oSites()/Ls;
+    accelerator_for(sss,nloop,Simd::Nsimd(),{
+	uint64_t ss=sss*Ls;
+	typedef decltype(coalescedRead(psi[0])) spinor;
+	spinor tmp1,tmp2;
+	for(int s=0;s<Ls;s++){
+	  uint64_t idx_u = ss+((s+1)%Ls);
+	  uint64_t idx_l = ss+((s+Ls-1)%Ls);
+	  spProj5p(tmp1,psi(idx_u));
+	  spProj5m(tmp2,psi(idx_l));
+	  coalescedWrite(chi[ss+s],pdiag[s]*phi(ss+s)+pupper[s]*tmp1+plower[s]*tmp2);
+	}
+      });
+  }
 };
 
 template<class Fobj,class CComplex,int nbasis>
-class CoarseCayleyFermion 
-  : public CayleyBase< Lattice<siteVector> >,
-    public SparseMatrixBase<Lattice<iVector<CComplex,nbasis > > > 
+class CoarseCayleyFermion  : public
+     CayleyBase< Lattice<iVector<CComplex,nbasis > > , ComplexD >,
+     SparseMatrixBase<Lattice<iVector<CComplex,nbasis > > > 
 {
 public:
   typedef iVector<CComplex,nbasis >           siteVector;
@@ -324,19 +382,18 @@ public:
   GridBase * Grid(void)         { return Coarse5D; };   // this is all the linalg routines need to know
 
   CoarseCayleyFermion(GridCartesian &CoarseGrid4,
-		      GridCartesian &CoarseGrid5
+		      GridCartesian &CoarseGrid5,
 		      CoarsenedMatrix<Fobj,CComplex,nbasis> &_Dw ):
     Coarse4D(&CoarseGrid4),
     Coarse5D(&CoarseGrid5),
     Dw(_Dw),
     geom(CoarseGrid4._ndimension),
-    Stencil( &CoarseGrid4,geom.npoint,Even,geom.directions,geom.displacements,0),
-    A(2*Nd+1,&CoarseGrid4)
+    Stencil( &CoarseGrid4,geom.npoint,Even,geom.directions,geom.displacements,0)
   { 
-    Ls=Coarse5D->_fdimensions[0];
+    this->Ls=Coarse5D->_fdimensions[0];
     RealD eps = 1.0;
-    Approx::zolotarev_data *zdata = Approx::higham(eps,Ls);// eps is ignored for higham
-    SetCoefficientsTanh(zdata,1.0,0.0);
+    Approx::zolotarev_data *zdata = Approx::higham(eps,this->Ls);// eps is ignored for higham
+    this->SetCoefficientsTanh(zdata,1.0,0.0);
     Approx::zolotarev_free(zdata);
   };
 
@@ -370,7 +427,7 @@ public:
     
     // Ls loop for2D
     int Ls=this->Ls;
-    accelerator_for2d(sF, oSites*Ls, b, nbasis, Nsimd, {
+    accelerator_for2d(sF, osites*Ls, b, nbasis, Nsimd, {
 
       int sU = sF/Ls;
       int  s = sF%Ls;
@@ -408,79 +465,6 @@ public:
     M(tmp, out);
     G5C(out, out);
   };
-
-  void M5D(const FermionField &psi_i,
-	   const FermionField &phi_i, 
-	   FermionField &chi_i,
-	   Vector<Coeff_t> &lower,
-	   Vector<Coeff_t> &diag,
-	   Vector<Coeff_t> &upper)
-  {
-    
-    chi_i.Checkerboard()=psi_i.Checkerboard();
-    GridBase *grid=psi_i.Grid();
-    autoView(psi , psi_i,AcceleratorRead);
-    autoView(phi , phi_i,AcceleratorRead);
-    autoView(chi , chi_i,AcceleratorWrite);
-    assert(phi.Checkerboard() == psi.Checkerboard());
-
-    auto pdiag = &diag[0];
-    auto pupper = &upper[0];
-    auto plower = &lower[0];
-
-    int Ls =this->Ls;
-    
-    // 10 = 3 complex mult + 2 complex add
-    // Flops = 10.0*(Nc*Ns) *Ls*vol (/2 for red black counting)
-    uint64_t nloop = grid->oSites()/Ls;
-    accelerator_for(sss,nloop,Simd::Nsimd(),{
-	uint64_t ss= sss*Ls;
-	typedef decltype(coalescedRead(psi[0])) spinor;
-	spinor tmp1, tmp2;
-	for(int s=0;s<Ls;s++){
-	  uint64_t idx_u = ss+((s+1)%Ls);
-	  uint64_t idx_l = ss+((s+Ls-1)%Ls);
-	  spProj5m(tmp1,psi(idx_u)); // Need routines for this
-	  spProj5p(tmp2,psi(idx_l));
-	  coalescedWrite(chi[ss+s],pdiag[s]*phi(ss+s)+pupper[s]*tmp1+plower[s]*tmp2);
-	}
-      });
-  }
-  void M5Ddag(const FermionField &psi_i,
-	      const FermionField &phi_i, 
-	      FermionField &chi_i,
-	      Vector<Coeff_t> &lower,
-	      Vector<Coeff_t> &diag,
-	      Vector<Coeff_t> &upper)
-  {
-    chi_i.Checkerboard()=psi_i.Checkerboard();
-    GridBase *grid=psi_i.Grid();
-    autoView(psi , psi_i,AcceleratorRead);
-    autoView(phi , phi_i,AcceleratorRead);
-    autoView(chi , chi_i,AcceleratorWrite);
-    assert(phi.Checkerboard() == psi.Checkerboard());
-    
-    auto pdiag = &diag[0];
-    auto pupper = &upper[0];
-    auto plower = &lower[0];
-    
-    int Ls=this->Ls;
-    
-    uint64_t nloop = grid->oSites()/Ls;
-    accelerator_for(sss,nloop,Simd::Nsimd(),{
-	uint64_t ss=sss*Ls;
-	typedef decltype(coalescedRead(psi[0])) spinor;
-	spinor tmp1,tmp2;
-	for(int s=0;s<Ls;s++){
-	  uint64_t idx_u = ss+((s+1)%Ls);
-	  uint64_t idx_l = ss+((s+Ls-1)%Ls);
-	  spProj5p(tmp1,psi(idx_u));
-	  spProj5m(tmp2,psi(idx_l));
-	  coalescedWrite(chi[ss+s],pdiag[s]*phi(ss+s)+pupper[s]*tmp1+plower[s]*tmp2);
-	}
-      });
-  }
-
 
 };
 
@@ -759,12 +743,14 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>    Level1Op;
 
-  NonHermitianLinearOperator<DomainWallFermionR,LatticeFermion>  LinOpDwf(Ddwf);
+  //  NonHermitianLinearOperator<DomainWallFermionR,LatticeFermion>  LinOpDwf(Ddwf);
 
   Level1Op c_Dw  (*Coarse4d,0);   
+
   
-  std::cout<<GridLogMessage << " Callinig Coarsen the operator                          " <<std::endl;
-  LDOp.CoarsenOperator(FGrid,LinOpDwf,Aggregates4D);
+  std::cout<<GridLogMessage << " Coarsening Hw / Dw operator " <<std::endl;
+  NonHermitianLinearOperator<WilsonFermionR,LatticeFermion>  LinOpDw(Dw);
+  c_Dw.CoarsenOperator(UGrid,LinOpDw,Aggregates4D);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << " Solve                                            " <<std::endl;
