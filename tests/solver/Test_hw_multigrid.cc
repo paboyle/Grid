@@ -39,12 +39,13 @@ using namespace Grid;
 // Coarse Grid axpby_ssp_pplus
 
 template<class Field,class Coeff_t>
-class CayleyBase
+class CayleyBase : public SparseMatrixBase<Field> 
 {
 public:
   int Ls;
   //    protected:
   RealD mass;
+  RealD M5;
   // Save arguments to SetCoefficientsInternal
   Vector<Coeff_t> _gamma;
   RealD                _zolo_hi;
@@ -70,6 +71,18 @@ public:
   Vector<Coeff_t> ueem;
   Vector<Coeff_t> dee;
 public:
+  CayleyBase(RealD _M5, RealD _mass, int _Ls, RealD b_, RealD c_) :
+    M5(_M5),
+    mass(_mass),
+    Ls(_Ls),
+    _b(b_),
+    _c(c_)
+  {
+    RealD eps = 1.0;
+    Approx::zolotarev_data *zdata = Approx::higham(eps,this->Ls);// eps is ignored for higham
+    this->SetCoefficientsTanh(zdata,1.0,0.0);
+    Approx::zolotarev_free(zdata);
+  }
   /////////////////////////////////////////////////////////
   // Replicates functionality
   // Use a common base class approach
@@ -192,6 +205,12 @@ public:
   //////////////////////////////
   // M and Mdag
   //////////////////////////////
+  virtual  void Mdiag    (const Field &in, Field &out) {}
+  virtual  void Mdir     (const Field &in, Field &out,int dir, int disp){};
+  virtual  void MdirAll  (const Field &in, std::vector<Field> &out){};
+  virtual  void DW       (const Field &psi, Field &chi)=0;
+  virtual  void DWDag    (const Field &psi, Field &chi)=0;
+
   void M    (const Field &psi, Field &chi)
   {
     Field Din(psi.Grid());
@@ -359,9 +378,7 @@ public:
 };
 
 template<class Fobj,class CComplex,int nbasis>
-class CoarseCayleyFermion  : public
-     CayleyBase< Lattice<iVector<CComplex,nbasis > > , ComplexD >,
-     SparseMatrixBase<Lattice<iVector<CComplex,nbasis > > > 
+class CoarseCayleyFermion  : public CayleyBase< Lattice<iVector<CComplex,nbasis > > , ComplexD >
 {
 public:
   typedef iVector<CComplex,nbasis >           siteVector;
@@ -383,18 +400,15 @@ public:
 
   CoarseCayleyFermion(GridCartesian &CoarseGrid4,
 		      GridCartesian &CoarseGrid5,
-		      CoarsenedMatrix<Fobj,CComplex,nbasis> &_Dw ):
+		      CoarsenedMatrix<Fobj,CComplex,nbasis> &_Dw,
+		      RealD M5, RealD mass, int Ls, RealD b, RealD c) :
+    CayleyBase<CoarseVector,ComplexD>(M5,mass,Ls,b,c),
     Coarse4D(&CoarseGrid4),
     Coarse5D(&CoarseGrid5),
     Dw(_Dw),
     geom(CoarseGrid4._ndimension),
     Stencil( &CoarseGrid4,geom.npoint,Even,geom.directions,geom.displacements,0)
   { 
-    this->Ls=Coarse5D->_fdimensions[0];
-    RealD eps = 1.0;
-    Approx::zolotarev_data *zdata = Approx::higham(eps,this->Ls);// eps is ignored for higham
-    this->SetCoefficientsTanh(zdata,1.0,0.0);
-    Approx::zolotarev_free(zdata);
   };
 
 public:
@@ -462,7 +476,7 @@ public:
     // Inefficient G5 hermitian use
     CoarseVector tmp(Grid());
     G5C(tmp, in); //There has to be a better way
-    M(tmp, out);
+    DW(tmp, out);
     G5C(out, out);
   };
 
@@ -741,13 +755,11 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << " Coarsen the operator                          " <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>    Level1Op;
+  typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>    Level1Op4;
+  typedef CoarseCayleyFermion<vSpinColourVector,vTComplex,nbasis> Level1Op5;
 
-  //  NonHermitianLinearOperator<DomainWallFermionR,LatticeFermion>  LinOpDwf(Ddwf);
-
-  Level1Op c_Dw  (*Coarse4d,0);   
-
-  
+  Level1Op4 c_Dw  (*Coarse4d,0);   
+  Level1Op5 c_Dwf  (*Coarse4d,*Coarse5d,c_Dw,M5, mass, Ls, 1.0,0.0);
   std::cout<<GridLogMessage << " Coarsening Hw / Dw operator " <<std::endl;
   NonHermitianLinearOperator<WilsonFermionR,LatticeFermion>  LinOpDw(Dw);
   c_Dw.CoarsenOperator(UGrid,LinOpDw,Aggregates4D);
