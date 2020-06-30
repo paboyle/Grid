@@ -45,12 +45,14 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
   if ( !flag ) {
 
 // Fugaku Tofu: enable by default
+/*
 #if defined (A64FX) || defined (A64FXFIXEDSIZE)
 #ifndef TOFU
 #define TOFU
 #pragma message ("TOFU network / MPI_THREAD_SERIALIZED")
 #endif
 #endif
+*/
 
 #if defined (TOFU) // FUGAKU, credits go to Issaku Kanamori
     nCommThreads=1;

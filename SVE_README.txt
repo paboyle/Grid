@@ -1,3 +1,12 @@
+* QPACE4 interactive login
+
+scl enable gcc-toolset-10 bash
+module load mpi/openmpi-aarch64
+
+../configure --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=mpi-auto --enable-openmp CXX=mpicxx CC=mpicc CXXFLAGS="-std=c++11 -march=armv8-a+sve -msve-vector-bits=512 -DA64FXFIXEDSIZE -DA64FXASM -DDSLASHINTRIN"
+
+------------------------------------------------------------------------------
+
 * gcc 10.0.1 VLA (merlin)
 
 ../configure --with-lime=/home/men04359/lime/c-lime --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=none --enable-openmp CXX=g++-10.0.1 CC=gcc-10.0.1 CXXFLAGS="-std=c++11 -march=armv8-a+sve -msve-vector-bits=512 -fno-gcse -DA64FX -DA64FXASM -DDSLASHINTRIN" LDFLAGS=-static GRID_LDFLAGS=-static MPI_CXXLDFLAGS=-static
@@ -35,7 +44,7 @@ TODO check ARMCLANGCOMPAT
 
 * armclang 20.1 VLA (fjt cluster)
 
-../configure --with-lime=$HOME/local --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=none --enable-openmp CXX=armclang++ CC=armclang CXXFLAGS="-std=c++11 -mcpu=a64fx -DARMCLANGCOMPAT -DA64FX -DA64FXASM -DDSLASHINTRIN"
+../configure --with-lime=$HOME/local --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=none --enable-openmp CXX=armclang++ CC=armclang CXXFLAGS="-std=c++11 -mcpu=a64fx -DARMCLANGCOMPAT -DA64FX -DA64FXASM -DDSLASHINTRIN -DTOFU"
 
 TODO check ARMCLANGCOMPAT
 
