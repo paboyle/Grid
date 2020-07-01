@@ -1,9 +1,15 @@
-* QPACE4 interactive login
+* gcc 10.1 prebuild, QPACE4 interactive login
+
+scl enable gcc-toolset-10 bash
+
+../configure --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=none --enable-openmp CXX=g++ CC=gcc CXXFLAGS="-std=c++11 -march=armv8-a+sve -msve-vector-bits=512 -fno-gcse -DA64FXFIXEDSIZE -DA64FXASM -DDSLASHINTRIN"
+
+* gcc 10.1 prebuild w/ MPI, QPACE4 interactive login
 
 scl enable gcc-toolset-10 bash
 module load mpi/openmpi-aarch64
 
-../configure --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=mpi-auto --enable-openmp CXX=mpicxx CC=mpicc CXXFLAGS="-std=c++11 -march=armv8-a+sve -msve-vector-bits=512 -DA64FXFIXEDSIZE -DA64FXASM -DDSLASHINTRIN"
+../configure --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=mpi-auto --enable-shm=shmget --enable-openmp CXX=mpicxx CC=mpicc CXXFLAGS="-std=c++11 -march=armv8-a+sve -msve-vector-bits=512 -fno-gcse -DA64FXFIXEDSIZE -DA64FXASM -DDSLASHINTRIN"
 
 ------------------------------------------------------------------------------
 
