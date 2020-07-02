@@ -311,7 +311,6 @@ public:
 	   Vector<Coeff_t> &diag,
 	   Vector<Coeff_t> &upper)
   {
-    
     chi_i.Checkerboard()=psi_i.Checkerboard();
     GridBase *grid=psi_i.Grid();
     autoView(psi , psi_i,AcceleratorRead);
@@ -328,7 +327,9 @@ public:
     // 10 = 3 complex mult + 2 complex add
     // Flops = 10.0*(Nc*Ns) *Ls*vol (/2 for red black counting)
     uint64_t nloop = grid->oSites()/Ls;
-    accelerator_for(sss,nloop,Simd::Nsimd(),{
+
+    const int Nsimd = Field::vector_type::Nsimd();
+    accelerator_for(sss,nloop,Nsimd,{
 	uint64_t ss= sss*Ls;
 	typedef decltype(coalescedRead(psi[0])) spinor;
 	spinor tmp1, tmp2;
@@ -362,7 +363,8 @@ public:
     int Ls=this->Ls;
     
     uint64_t nloop = grid->oSites()/Ls;
-    accelerator_for(sss,nloop,Simd::Nsimd(),{
+    const int Nsimd = Field::vector_type::Nsimd();
+    accelerator_for(sss,nloop,Nsimd,{
 	uint64_t ss=sss*Ls;
 	typedef decltype(coalescedRead(psi[0])) spinor;
 	spinor tmp1,tmp2;
@@ -406,8 +408,8 @@ public:
     Coarse4D(&CoarseGrid4),
     Coarse5D(&CoarseGrid5),
     Dw(_Dw),
-    geom(CoarseGrid4._ndimension),
-    Stencil( &CoarseGrid4,geom.npoint,Even,geom.directions,geom.displacements,0)
+    geom(CoarseGrid5._ndimension),
+    Stencil( &CoarseGrid5,geom.npoint,Even,geom.directions,geom.displacements,0)
   { 
   };
 
@@ -428,8 +430,8 @@ public:
     autoView( out_v , out, AcceleratorWrite);
     typedef LatticeView<Cobj> Aview;
       
+    std::cout << "Dw"<<std::endl; 
     Vector<Aview> AcceleratorViewContainer;
-  
     for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer.push_back(Dw.A[p].View(AcceleratorRead));
     Aview *Aview_p = & AcceleratorViewContainer[0];
 
@@ -441,6 +443,7 @@ public:
     
     // Ls loop for2D
     int Ls=this->Ls;
+    std::cout << "Dw for2d"<<std::endl; 
     accelerator_for2d(sF, osites*Ls, b, nbasis, Nsimd, {
 
       int sU = sF/Ls;
@@ -467,7 +470,8 @@ public:
       }
       coalescedWrite(out_v[sF](b),res);
       });
-
+    exit(0);
+    std::cout << "Dw closing"<<std::endl; 
     for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer[p].ViewClose();
   };
 
@@ -759,18 +763,43 @@ int main (int argc, char ** argv)
   typedef CoarseCayleyFermion<vSpinColourVector,vTComplex,nbasis> Level1Op5;
 
   Level1Op4 c_Dw  (*Coarse4d,0);   
-  Level1Op5 c_Dwf  (*Coarse4d,*Coarse5d,c_Dw,M5, mass, Ls, 1.0,0.0);
+
   std::cout<<GridLogMessage << " Coarsening Hw / Dw operator " <<std::endl;
   NonHermitianLinearOperator<WilsonFermionR,LatticeFermion>  LinOpDw(Dw);
+  std::cout<<GridLogMessage << " Coarsening Hw linop " <<std::endl;
   c_Dw.CoarsenOperator(UGrid,LinOpDw,Aggregates4D);
+  std::cout<<GridLogMessage << " Coarsened Hw / Dw operator " <<std::endl;
+  Level1Op5 c_Dwf  (*Coarse4d,*Coarse5d,c_Dw,M5, mass, Ls, 1.0,0.0);
+
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Coarse CG unprec "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+
+  CoarseVector c_src(Coarse5d); c_src=1.0;
+  CoarseVector c_res(Coarse5d);
+
+  RealD tol=1.0e-8;
+  int MaxIt = 10000;
+
+  MdagMLinearOperator<Level1Op5,CoarseVector> CoarseMdagM(c_Dwf);
+  ConjugateGradient<CoarseVector>            CoarseCG(tol,MaxIt);
+  //  BiCGSTAB<CoarseVector>                     CoarseBiCGSTAB(tol,MaxIt);
+
+  c_res=Zero();
+  CoarseCG(CoarseMdagM,c_src,c_res);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << " Solve                                            " <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+
+  LatticeFermion f_src(FGrid); f_src=1.0;
+  LatticeFermion f_res(FGrid);
   
   LatticeFermion    src(FGrid); gaussian(RNG5,src);
   LatticeFermion result(FGrid); 
+  
 
+  
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Done "<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
