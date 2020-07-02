@@ -444,7 +444,7 @@ public:
     // Ls loop for2D
     int Ls=this->Ls;
     std::cout << "Dw for2d"<<std::endl; 
-    accelerator_for2d(sF, osites*Ls, b, nbasis, Nsimd, {
+    accelerator_for2d(sF, osites, b, nbasis, Nsimd, {
 
       int sU = sF/Ls;
       int  s = sF%Ls;
@@ -470,7 +470,6 @@ public:
       }
       coalescedWrite(out_v[sF](b),res);
       });
-    exit(0);
     std::cout << "Dw closing"<<std::endl; 
     for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer[p].ViewClose();
   };
@@ -718,9 +717,11 @@ int main (int argc, char ** argv)
   GridParallelRNG          CRNG(Coarse5d);CRNG.SeedFixedIntegers(seeds);
 
   LatticeGaugeField Umu(UGrid); 
-  FieldMetaData header;
-  std::string file("./ckpoint_lat.4000");
-  NerscIO::readConfiguration(Umu,header,file);
+  SU3::TepidConfiguration(RNG4,Umu);
+
+  //  FieldMetaData header;
+  //  std::string file("./ckpoint_lat.4000");
+  //  NerscIO::readConfiguration(Umu,header,file);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Building g5R5 hermitian DWF operator" <<std::endl;
