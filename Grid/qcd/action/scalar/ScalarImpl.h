@@ -28,10 +28,9 @@ public:
   typedef Field              PropagatorField;
     
   static inline void generate_momenta(Field& P, GridParallelRNG& pRNG){
-    RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR); 
-    // CPS and UKQCD conventions not yet implemented for U(1) scalars.
+    RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR); // CPS/UKQCD momentum rescaling
     gaussian(pRNG, P);
-    P *= scale;
+    P *= scale; 
   }
 
   static inline Field projectForce(Field& P){return P;}
@@ -150,7 +149,7 @@ public:
 
     static inline void generate_momenta(Field &P, GridParallelRNG &pRNG)
     {
-      RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR); // Being consistent with CPS and UKQCD conventions
+      RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR); // CPS/UKQCD momentum rescaling
 #ifndef USE_FFT_ACCELERATION
     Group::GaussianFundamentalLieAlgebraMatrix(pRNG, P);
     
