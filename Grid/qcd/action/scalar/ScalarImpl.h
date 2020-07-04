@@ -38,7 +38,6 @@ public:
 
   static inline void update_field(Field& P, Field& U, double ep) {
     U += P*ep;
-    std::cout << "Field updated. Epsilon = " << std::setprecision(10) << ep << std::endl;
   }
 
   static inline RealD FieldSquareNorm(Field& U) {
@@ -175,14 +174,13 @@ public:
       P *= scale; 
   }
 
-  static inline Field projectForce(Field& P) {return P;}
+  static inline Field projectForce(Field& P) {return Ta(P);}
 
     static inline void update_field(Field &P, Field &U, double ep)
     {
 #ifndef USE_FFT_ACCELERATION
       double t0=usecond(); 
       U += P*ep;
-      std::cout << "Field updated. Epsilon = " << std::setprecision(10) << ep << std::endl;
       double t1=usecond();
       double total_time = (t1-t0)/1e6;
       std::cout << GridLogIntegrator << "Total time for updating field (s)       : " << total_time << std::endl; 
