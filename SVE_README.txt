@@ -13,6 +13,12 @@ module load mpi/openmpi-aarch64
 
 ------------------------------------------------------------------------------
 
+* armclang 20.2 (qp4)
+
+../configure --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=none --enable-openmp CXX=armclang++ CC=armclang CXXFLAGS="-std=c++11 -mcpu=a64fx -DA64FX -DARMCLANGCOMPAT -DA64FXASM -DDSLASHINTRIN"
+
+------------------------------------------------------------------------------
+
 * gcc 10.0.1 VLA (merlin)
 
 ../configure --with-lime=/home/men04359/lime/c-lime --without-hdf5 --enable-gen-simd-width=64 --enable-simd=GEN --enable-precision=double --enable-comms=none --enable-openmp CXX=g++-10.0.1 CC=gcc-10.0.1 CXXFLAGS="-std=c++11 -march=armv8-a+sve -msve-vector-bits=512 -fno-gcse -DA64FX -DA64FXASM -DDSLASHINTRIN" LDFLAGS=-static GRID_LDFLAGS=-static MPI_CXXLDFLAGS=-static
