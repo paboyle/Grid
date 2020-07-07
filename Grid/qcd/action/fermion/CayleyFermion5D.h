@@ -40,8 +40,8 @@ public:
 public:
 
   // override multiply
-  virtual RealD  M    (const FermionField &in, FermionField &out);
-  virtual RealD  Mdag (const FermionField &in, FermionField &out);
+  virtual void   M    (const FermionField &in, FermionField &out);
+  virtual void   Mdag (const FermionField &in, FermionField &out);
 
   // half checkerboard operations
   virtual void   Meooe       (const FermionField &in, FermionField &out);
@@ -141,7 +141,33 @@ public:
   Vector<iSinglet<Simd> >  MatpInvDag;
   Vector<iSinglet<Simd> >  MatmInvDag;
 
+  ///////////////////////////////////////////////////////////////
+  // Conserved current utilities
+  ///////////////////////////////////////////////////////////////
+
+  // Virtual can't template
+  void ContractConservedCurrent(PropagatorField &q_in_1,
+				PropagatorField &q_in_2,
+				PropagatorField &q_out,
+				PropagatorField &phys_src,
+				Current curr_type, 
+				unsigned int mu);
+
+   void SeqConservedCurrent(PropagatorField &q_in,
+			   PropagatorField &q_out,
+			   PropagatorField &phys_src,
+			   Current curr_type,
+			   unsigned int mu,
+			   unsigned int tmin,
+			   unsigned int tmax,
+			   ComplexField &lattice_cmplx);
+
+  void ContractJ5q(PropagatorField &q_in,ComplexField &J5q);
+  void ContractJ5q(FermionField &q_in,ComplexField &J5q);
+
+  ///////////////////////////////////////////////////////////////
   // Constructors
+  ///////////////////////////////////////////////////////////////
   CayleyFermion5D(GaugeField &_Umu,
 		  GridCartesian         &FiveDimGrid,
 		  GridRedBlackCartesian &FiveDimRedBlackGrid,

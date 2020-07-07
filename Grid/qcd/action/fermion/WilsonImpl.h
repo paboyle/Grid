@@ -41,6 +41,7 @@ public:
   static const int Dimension = Representation::Dimension;
   static const bool isFundamental = Representation::isFundamental;
   static const bool LsVectorised=false;
+  static const bool isGparity=false;
   static const int Nhcs = Options::Nhcs;
 
   typedef PeriodicGaugeImpl<GaugeImplTypes<S, Dimension > > Gimpl;
@@ -98,8 +99,21 @@ public:
   {
     multLink(phi,U,chi,mu);
   }
-    
-      
+
+  template<class _SpinorField> 
+  inline void multLinkField(_SpinorField & out,
+			    const DoubledGaugeField &Umu,
+			    const _SpinorField & phi,
+			    int mu)
+  {
+    autoView( out_v, out, AcceleratorWrite);
+    autoView( phi_v, phi, AcceleratorRead);
+    autoView( Umu_v, Umu, AcceleratorRead);
+    accelerator_for(sss,out.Grid()->oSites(),1,{
+	multLink(out_v[sss],Umu_v[sss],phi_v[sss],mu);
+    });
+  }
+					   
   template <class ref>
   static accelerator_inline void loadLinkElement(Simd &reg, ref &memory) 
   {
@@ -177,18 +191,19 @@ public:
     int Ls=Btilde.Grid()->_fdimensions[0];
     GaugeLinkField tmp(mat.Grid());
     tmp = Zero();
-    auto tmp_v = tmp.View();
-    auto Btilde_v = Btilde.View();
-    auto Atilde_v = Atilde.View();
-    thread_for(sss,tmp.Grid()->oSites(),{
-      int sU=sss;
-      for(int s=0;s<Ls;s++){
-	int sF = s+Ls*sU;
-	tmp_v[sU] = tmp_v[sU]+ traceIndex<SpinIndex>(outerProduct(Btilde_v[sF],Atilde_v[sF])); // ordering here
-      }
-    });
+    {
+      autoView( tmp_v , tmp, AcceleratorWrite);
+      autoView( Btilde_v , Btilde, AcceleratorRead);
+      autoView( Atilde_v , Atilde, AcceleratorRead);
+      accelerator_for(sss,tmp.Grid()->oSites(),1,{
+	  int sU=sss;
+	  for(int s=0;s<Ls;s++){
+	    int sF = s+Ls*sU;
+	    tmp_v[sU] = tmp_v[sU]+ traceIndex<SpinIndex>(outerProduct(Btilde_v[sF],Atilde_v[sF])); // ordering here
+	  }
+	});
+    }
     PokeIndex<LorentzIndex>(mat,tmp,mu);
-      
   }
 };
 

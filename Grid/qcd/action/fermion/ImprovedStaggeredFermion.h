@@ -71,8 +71,8 @@ public:
   // override multiply; cut number routines if pass dagger argument
   // and also make interface more uniformly consistent
   //////////////////////////////////////////////////////////////////
-  RealD M(const FermionField &in, FermionField &out);
-  RealD Mdag(const FermionField &in, FermionField &out);
+  void M(const FermionField &in, FermionField &out);
+  void Mdag(const FermionField &in, FermionField &out);
 
   /////////////////////////////////////////////////////////
   // half checkerboard operations
@@ -185,10 +185,12 @@ public:
   void ContractConservedCurrent(PropagatorField &q_in_1,
                                 PropagatorField &q_in_2,
                                 PropagatorField &q_out,
+                                PropagatorField &src,
                                 Current curr_type,
                                 unsigned int mu);
   void SeqConservedCurrent(PropagatorField &q_in,
                            PropagatorField &q_out,
+                           PropagatorField &srct,
                            Current curr_type,
                            unsigned int mu, 
                            unsigned int tmin,

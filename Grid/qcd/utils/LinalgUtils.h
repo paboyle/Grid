@@ -47,8 +47,8 @@ void axpibg5x(Lattice<vobj> &z,const Lattice<vobj> &x,Coeff a,Coeff b)
   GridBase *grid=x.Grid();
 
   Gamma G5(Gamma::Algebra::Gamma5);
-  auto x_v = x.View();
-  auto z_v = z.View();
+  autoView(x_v, x, AcceleratorRead);
+  autoView(z_v, z, AcceleratorWrite);
   accelerator_for( ss, x_v.size(),vobj::Nsimd(), {
     auto tmp = a*x_v(ss) + G5*(b*timesI(x_v(ss)));
     coalescedWrite(z_v[ss],tmp);
@@ -63,9 +63,9 @@ void axpby_ssp(Lattice<vobj> &z, Coeff a,const Lattice<vobj> &x,Coeff b,const La
   conformable(x,z);
   GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
-  auto x_v = x.View();
-  auto y_v = y.View();
-  auto z_v = z.View();
+  autoView( x_v, x, AcceleratorRead);
+  autoView( y_v, y, AcceleratorRead);
+  autoView( z_v, z, AcceleratorWrite);
   // FIXME -- need a new class of accelerator_loop to implement this
   //
   uint64_t nloop = grid->oSites()/Ls;
@@ -85,9 +85,9 @@ void ag5xpby_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const L
   GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
   Gamma G5(Gamma::Algebra::Gamma5);
-  auto x_v = x.View();
-  auto y_v = y.View();
-  auto z_v = z.View();
+  autoView( x_v, x, AcceleratorRead);
+  autoView( y_v, y, AcceleratorRead);
+  autoView( z_v, z, AcceleratorWrite);
   uint64_t nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,vobj::Nsimd(),{
     uint64_t ss = sss*Ls;
@@ -104,9 +104,9 @@ void axpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const L
   conformable(x,z);
   GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
-  auto x_v = x.View();
-  auto y_v = y.View();
-  auto z_v = z.View();
+  autoView( x_v, x, AcceleratorRead);
+  autoView( y_v, y, AcceleratorRead);
+  autoView( z_v, z, AcceleratorWrite);
   Gamma G5(Gamma::Algebra::Gamma5);
   uint64_t nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,vobj::Nsimd(),{
@@ -125,9 +125,9 @@ void ag5xpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const
   GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
 
-  auto x_v = x.View();
-  auto y_v = y.View();
-  auto z_v = z.View();
+  autoView( x_v, x, AcceleratorRead);
+  autoView( y_v, y, AcceleratorRead);
+  autoView( z_v, z, AcceleratorWrite);
   Gamma G5(Gamma::Algebra::Gamma5);
   uint64_t nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,vobj::Nsimd(),{
@@ -147,9 +147,9 @@ void axpby_ssp_pminus(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,co
   GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
 
-  auto x_v = x.View();
-  auto y_v = y.View();
-  auto z_v = z.View();
+  autoView( x_v, x, AcceleratorRead);
+  autoView( y_v, y, AcceleratorRead);
+  autoView( z_v, z, AcceleratorWrite);
   uint64_t nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,vobj::Nsimd(),{
     uint64_t ss = sss*Ls;
@@ -168,9 +168,9 @@ void axpby_ssp_pplus(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,con
   conformable(x,z);
   GridBase *grid=x.Grid();
   int Ls = grid->_rdimensions[0];
-  auto x_v = x.View();
-  auto y_v = y.View();
-  auto z_v = z.View();
+  autoView( x_v, x, AcceleratorRead);
+  autoView( y_v, y, AcceleratorRead);
+  autoView( z_v, z, AcceleratorWrite);
   uint64_t nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,vobj::Nsimd(),{
     uint64_t ss = sss*Ls;
@@ -189,8 +189,8 @@ void G5R5(Lattice<vobj> &z,const Lattice<vobj> &x)
   conformable(x,z);
   int Ls = grid->_rdimensions[0];
   Gamma G5(Gamma::Algebra::Gamma5);
-  auto x_v = x.View();
-  auto z_v = z.View();
+  autoView( x_v, x, AcceleratorRead);
+  autoView( z_v, z, AcceleratorWrite);
   uint64_t nloop = grid->oSites()/Ls;
   accelerator_for(sss,nloop,vobj::Nsimd(),{
     uint64_t ss = sss*Ls;
@@ -222,8 +222,8 @@ void G5C(Lattice<iVector<CComplex, nbasis>> &z, const Lattice<iVector<CComplex, 
   static_assert(nbasis % 2 == 0, "");
   int nb = nbasis / 2;
 
-  auto z_v = z.View();
-  auto x_v = x.View();
+  autoView( z_v, z, AcceleratorWrite);
+  autoView( x_v, x, AcceleratorRead);
   accelerator_for(ss,grid->oSites(),CComplex::Nsimd(),
   {
     for(int n = 0; n < nb; ++n) {

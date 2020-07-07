@@ -89,8 +89,8 @@ public:
     action = (2.0 * Ndim + mass_square) * phisquared - lambda * phisquared * phisquared;
     
     
-    auto p_v = p.View();
-    auto action_v = action.View();
+    autoView( p_v      , p, CpuRead);
+    autoView( action_v , action, CpuWrite);
     for (int mu = 0; mu < Ndim; mu++)
     {
       //  pshift = Cshift(p, mu, +1);  // not efficient, implement with stencils
@@ -146,8 +146,8 @@ public:
     for (int point = 0; point < npoint; point++)
     {
 
-      auto p_v = p.View();
-      auto force_v = force.View();
+      autoView( p_v , p, CpuRead);
+      autoView( force_v , force, CpuWrite);
             
       int permute_type;
       StencilEntry *SE;

@@ -88,14 +88,15 @@ int main (int argc, char ** argv)
   // replicate across fifth dimension
   ////////////////////////////////////
   LatticeGaugeField Umu5d(FGrid); 
-  auto umu5d = Umu5d.View();
-  auto umu   = Umu.View();
-  for(int ss=0;ss<Umu.Grid()->oSites();ss++){
-    for(int s=0;s<Ls;s++){
-      umu5d[Ls*ss+s] = umu[ss];
+  {
+    autoView(umu5d, Umu5d, CpuWrite);
+    autoView(  umu, Umu  , CpuRead);
+    for(int ss=0;ss<Umu.Grid()->oSites();ss++){
+      for(int s=0;s<Ls;s++){
+	umu5d[Ls*ss+s] = umu[ss];
+      }
     }
   }
-
   std::vector<LatticeColourMatrix> U(4,FGrid);
 
   for(int mu=0;mu<Nd;mu++){
@@ -289,11 +290,11 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd ,phi_o,phi);
 
   SchurDiagMooeeOperator<ImprovedStaggeredFermion5DR,FermionField> HermOpEO(Ds);
-  HermOpEO.MpcDagMpc(chi_e,dchi_e,t1,t2);
-  HermOpEO.MpcDagMpc(chi_o,dchi_o,t1,t2);
+  HermOpEO.MpcDagMpc(chi_e,dchi_e);
+  HermOpEO.MpcDagMpc(chi_o,dchi_o);
 
-  HermOpEO.MpcDagMpc(phi_e,dphi_e,t1,t2);
-  HermOpEO.MpcDagMpc(phi_o,dphi_o,t1,t2);
+  HermOpEO.MpcDagMpc(phi_e,dphi_e);
+  HermOpEO.MpcDagMpc(phi_o,dphi_o);
 
   pDce = innerProduct(phi_e,dchi_e);
   pDco = innerProduct(phi_o,dchi_o);

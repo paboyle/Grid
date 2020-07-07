@@ -44,7 +44,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <sys/syscall.h>
 #endif
 #ifdef __x86_64__
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
 accelerator_inline uint64_t __rdtsc(void) {  return 0; }
 accelerator_inline uint64_t __rdpmc(int ) {  return 0; }
 #else
@@ -95,7 +95,8 @@ inline uint64_t cyclecount(void){
 }
 #elif defined __x86_64__
 inline uint64_t cyclecount(void){ 
-  return __rdtsc();
+  uint64_t ret = __rdtsc();
+  return (uint64_t)ret;
 }
 #else
 
@@ -111,7 +112,6 @@ class PerformanceCounter {
 private:
 
   typedef struct { 
-  public:
     uint32_t type;
     uint64_t config;
     const char *name;

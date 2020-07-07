@@ -180,7 +180,7 @@ template<class Impl> void CayleyFermion5D<Impl>::CayleyReport(void)
     std::cout << GridLogMessage << "#### MooeeInv calls report " << std::endl;
     std::cout << GridLogMessage << "CayleyFermion5D Number of MooeeInv Calls     : " << MooeeInvCalls   << std::endl;
     std::cout << GridLogMessage << "CayleyFermion5D ComputeTime/Calls            : " << MooeeInvTime / MooeeInvCalls << " us" << std::endl;
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
     RealD mflops = ( -16.*Nc*Ns+this->Ls*(1.+18.*Nc*Ns) )*volume*MooeeInvCalls/MooeeInvTime/2; // 2 for red black counting
     std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
     std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
@@ -323,7 +323,7 @@ void CayleyFermion5D<Impl>::MeooeDag5D    (const FermionField &psi, FermionField
 }
 
 template<class Impl>
-RealD CayleyFermion5D<Impl>::M    (const FermionField &psi, FermionField &chi)
+void CayleyFermion5D<Impl>::M    (const FermionField &psi, FermionField &chi)
 {
   FermionField Din(psi.Grid());
   
@@ -335,11 +335,10 @@ RealD CayleyFermion5D<Impl>::M    (const FermionField &psi, FermionField &chi)
   axpby(chi,1.0,1.0,chi,psi); 
   
   M5D(psi,chi);
-  return(norm2(chi));
 }
 
 template<class Impl>
-RealD CayleyFermion5D<Impl>::Mdag (const FermionField &psi, FermionField &chi)
+void CayleyFermion5D<Impl>::Mdag (const FermionField &psi, FermionField &chi)
 {
   // Under adjoint
   //D1+        D1- P-    ->   D1+^dag   P+ D2-^dag
@@ -354,7 +353,6 @@ RealD CayleyFermion5D<Impl>::Mdag (const FermionField &psi, FermionField &chi)
   M5Ddag(psi,chi);
   // ((b D_W + D_w hop terms +1) on s-diag
   axpby (chi,1.0,1.0,chi,psi); 
-  return norm2(chi);
 }
 
 // half checkerboard operations
@@ -587,6 +585,356 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,Vector<Coeff_t
   //  this->MooeeInternalCompute(0,inv,MatpInv,MatmInv);
   //  this->MooeeInternalCompute(1,inv,MatpInvDag,MatmInvDag);
 }
+
+
+template <class Impl>
+void CayleyFermion5D<Impl>::ContractJ5q(FermionField &q_in,ComplexField &J5q)
+{
+  conformable(this->GaugeGrid(), J5q.Grid());
+  conformable(q_in.Grid(), this->FermionGrid());
+  Gamma G5(Gamma::Algebra::Gamma5);
+  // 4d field
+  int Ls = this->Ls;
+  FermionField psi(this->GaugeGrid());
+  FermionField p_plus (this->GaugeGrid());
+  FermionField p_minus(this->GaugeGrid());
+  FermionField p(this->GaugeGrid());
+
+  ExtractSlice(p_plus , q_in, Ls/2-1 , 0);
+  ExtractSlice(p_minus, q_in, Ls/2   , 0);
+  p_plus = p_plus + G5*p_plus;
+  p_minus= p_minus - G5*p_minus;
+  p=0.5*(p_plus+p_minus);
+  J5q = localInnerProduct(p,p);
+}
+
+template <class Impl>
+void CayleyFermion5D<Impl>::ContractJ5q(PropagatorField &q_in,ComplexField &J5q)
+{
+  conformable(this->GaugeGrid(), J5q.Grid());
+  conformable(q_in.Grid(), this->FermionGrid());
+  Gamma G5(Gamma::Algebra::Gamma5);
+  // 4d field
+  int Ls = this->Ls;
+  PropagatorField psi(this->GaugeGrid());
+  PropagatorField p_plus (this->GaugeGrid());
+  PropagatorField p_minus(this->GaugeGrid());
+  PropagatorField p(this->GaugeGrid());
+
+  ExtractSlice(p_plus , q_in, Ls/2-1 , 0);
+  ExtractSlice(p_minus, q_in, Ls/2   , 0);
+  p_plus = p_plus + G5*p_plus;
+  p_minus= p_minus - G5*p_minus;
+  p=0.5*(p_plus+p_minus);
+  J5q = localInnerProduct(p,p);
+}
+
+#define Pp(Q) (0.5*(Q+g5*Q))
+#define Pm(Q) (0.5*(Q-g5*Q))
+#define Q_4d(Q) (Pm((Q)[0]) + Pp((Q)[Ls-1]))
+#define TopRowWithSource(Q) (phys_src + (1.0-mass)*Q_4d(Q))
+
+template <class Impl> 
+void CayleyFermion5D<Impl>::ContractConservedCurrent( PropagatorField &q_in_1,
+						      PropagatorField &q_in_2,
+						      PropagatorField &q_out,
+						      PropagatorField &phys_src,
+						      Current curr_type,
+						      unsigned int mu)
+{
+#if (!defined(GRID_CUDA)) && (!defined(GRID_HIP))
+  Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT,
+    Gamma::Algebra::Gamma5
+  };
+
+  auto UGrid= this->GaugeGrid();
+  auto FGrid= this->FermionGrid();
+  RealD sgn=1.0;
+  if ( curr_type == Current::Axial ) sgn = -1.0;
+
+  int Ls = this->Ls;
+
+  std::vector<PropagatorField> L_Q(Ls,UGrid); 
+  std::vector<PropagatorField> R_Q(Ls,UGrid); 
+  for(int s=0;s<Ls;s++){
+    ExtractSlice(L_Q[s], q_in_1, s , 0);
+    ExtractSlice(R_Q[s], q_in_2, s , 0);
+  }
+
+  Gamma g5(Gamma::Algebra::Gamma5);
+  PropagatorField C(UGrid); 
+  PropagatorField p5d(UGrid); 
+  PropagatorField us_p5d(UGrid); 
+  PropagatorField gp5d(UGrid); 
+  PropagatorField gus_p5d(UGrid); 
+
+  PropagatorField L_TmLsGq0(UGrid); 
+  PropagatorField L_TmLsTmp(UGrid);
+  PropagatorField R_TmLsGq0(UGrid); 
+  PropagatorField R_TmLsTmp(UGrid);
+  {
+    PropagatorField TermA(UGrid);
+    PropagatorField TermB(UGrid);
+    PropagatorField TermC(UGrid);
+    PropagatorField TermD(UGrid);
+    TermA = (Pp(Q_4d(L_Q)));
+    TermB = (Pm(Q_4d(L_Q)));
+    TermC = (Pm(TopRowWithSource(L_Q)));
+    TermD = (Pp(TopRowWithSource(L_Q)));
+
+    L_TmLsGq0 = (TermD - TermA + TermB);
+    L_TmLsTmp = (TermC - TermB + TermA);
+
+    TermA = (Pp(Q_4d(R_Q)));
+    TermB = (Pm(Q_4d(R_Q)));
+    TermC = (Pm(TopRowWithSource(R_Q)));
+    TermD = (Pp(TopRowWithSource(R_Q)));
+
+    R_TmLsGq0 = (TermD - TermA + TermB);
+    R_TmLsTmp = (TermC - TermB + TermA);
+  }
+
+  std::vector<PropagatorField> R_TmLsGq(Ls,UGrid);
+  std::vector<PropagatorField> L_TmLsGq(Ls,UGrid);
+  for(int s=0;s<Ls;s++){
+    R_TmLsGq[s] = (Pm((R_Q)[(s)]) + Pp((R_Q)[((s)-1+Ls)%Ls]));
+    L_TmLsGq[s] = (Pm((L_Q)[(s)]) + Pp((L_Q)[((s)-1+Ls)%Ls]));
+  }
+
+  Gamma gmu=Gamma(Gmu[mu]);
+
+  q_out = Zero();
+  PropagatorField tmp(UGrid); 
+  for(int s=0;s<Ls;s++){
+
+    int sp = (s+1)%Ls;
+    int sr = Ls-1-s;
+    int srp= (sr+1)%Ls;
+
+    // Mobius parameters
+    auto b=this->bs[s];
+    auto c=this->cs[s];
+    auto bpc = 1.0/(b+c);  // -0.5 factor in gauge links
+    if (s == 0) {
+      p5d    =(b*Pm(L_TmLsGq[Ls-1])+ c*Pp(L_TmLsGq[Ls-1]) + b*Pp(L_TmLsTmp)   + c*Pm(L_TmLsTmp     ));
+      tmp    =(b*Pm(R_TmLsGq0)     + c*Pp(R_TmLsGq0     ) + b*Pp(R_TmLsGq[1]) + c*Pm(R_TmLsGq[1]));
+    } else if (s == Ls-1) {
+      p5d    =(b*Pm(L_TmLsGq0)     + c*Pp(L_TmLsGq0     ) + b*Pp(L_TmLsGq[1]) + c*Pm(L_TmLsGq[1]));
+      tmp    =(b*Pm(R_TmLsGq[Ls-1])+ c*Pp(R_TmLsGq[Ls-1]) + b*Pp(R_TmLsTmp)   + c*Pm(R_TmLsTmp   ));
+    } else {
+      p5d    =(b*Pm(L_TmLsGq[sr]) + c*Pp(L_TmLsGq[sr])+ b*Pp(L_TmLsGq[srp])+ c*Pm(L_TmLsGq[srp]));
+      tmp    =(b*Pm(R_TmLsGq[s])  + c*Pp(R_TmLsGq[s]) + b*Pp(R_TmLsGq[sp ])+ c*Pm(R_TmLsGq[sp]));
+    }
+    tmp    = Cshift(tmp,mu,1);
+    Impl::multLinkField(us_p5d,this->Umu,tmp,mu);
+    
+    gp5d=g5*p5d*g5;
+    gus_p5d=gmu*us_p5d;
+
+    C = bpc*(adj(gp5d)*us_p5d);
+    C-= bpc*(adj(gp5d)*gus_p5d);
+
+    if (s == 0) {
+      p5d    =(b*Pm(R_TmLsGq0)     + c*Pp(R_TmLsGq0  )    + b*Pp(R_TmLsGq[1]) + c*Pm(R_TmLsGq[1]));
+      tmp    =(b*Pm(L_TmLsGq[Ls-1])+ c*Pp(L_TmLsGq[Ls-1]) + b*Pp(L_TmLsTmp)   + c*Pm(L_TmLsTmp  ));
+    } else if (s == Ls-1) {
+      p5d    =(b*Pm(R_TmLsGq[Ls-1])+ c*Pp(R_TmLsGq[Ls-1]) + b*Pp(R_TmLsTmp)   + c*Pm(R_TmLsTmp  ));
+      tmp    =(b*Pm(L_TmLsGq0)     + c*Pp(L_TmLsGq0  )    + b*Pp(L_TmLsGq[1]) + c*Pm(L_TmLsGq[1]));
+    } else {
+      p5d    =(b*Pm(R_TmLsGq[s])  + c*Pp(R_TmLsGq[s])  + b*Pp(R_TmLsGq[sp ])+ c*Pm(R_TmLsGq[sp]));
+      tmp    =(b*Pm(L_TmLsGq[sr]) + c*Pp(L_TmLsGq[sr]) + b*Pp(L_TmLsGq[srp])+ c*Pm(L_TmLsGq[srp]));
+    }
+    tmp    = Cshift(tmp,mu,1);
+    Impl::multLinkField(us_p5d,this->Umu,tmp,mu);
+
+    gp5d=gmu*p5d;
+    gus_p5d=g5*us_p5d*g5;
+
+    C-= bpc*(adj(gus_p5d)*gp5d);
+    C-= bpc*(adj(gus_p5d)*p5d);
+
+    if (s < Ls/2) q_out += sgn*C;
+    else          q_out +=     C;
+    
+  }
+#endif
+}
+
+template <class Impl>
+void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in, 
+                                                PropagatorField &q_out,
+                                                PropagatorField &phys_src,
+                                                Current curr_type, 
+                                                unsigned int mu,
+                                                unsigned int tmin, 
+                                                unsigned int tmax,
+						ComplexField &ph)// Complex phase factor
+{
+  assert(mu>=0);
+  assert(mu<Nd);
+
+
+#if 0
+  int tshift = (mu == Nd-1) ? 1 : 0;
+  ////////////////////////////////////////////////
+  // SHAMIR CASE 
+  ////////////////////////////////////////////////
+  int Ls = this->Ls;
+  auto UGrid= this->GaugeGrid();
+  auto FGrid= this->FermionGrid();
+  Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT
+  };
+  Gamma gmu=Gamma(Gmu[mu]);
+
+  PropagatorField L_Q(UGrid); 
+  PropagatorField R_Q(UGrid); 
+
+  PropagatorField tmp(UGrid);
+  PropagatorField Utmp(UGrid);
+  LatticeInteger zz (UGrid);   zz=0.0;
+  LatticeInteger lcoor(UGrid); LatticeCoordinate(lcoor,Nd-1);
+  for (int s=0;s<Ls;s++) {
+
+    RealD G_s = (curr_type == Current::Axial  ) ? ((s < Ls/2) ? -1 : 1) : 1;
+
+    ExtractSlice(R_Q, q_in, s , 0);
+
+    tmp    = Cshift(R_Q,mu,1);
+    Impl::multLinkField(Utmp,this->Umu,tmp,mu);
+    tmp    = G_s*( Utmp*ph - gmu*Utmp*ph ); // Forward hop
+    tmp    = where((lcoor>=tmin),tmp,zz); // Mask the time
+    tmp    = where((lcoor<=tmax),tmp,zz);
+    L_Q = tmp;
+
+    tmp    = R_Q*ph;
+    tmp    = Cshift(tmp,mu,-1);
+    Impl::multLinkField(Utmp,this->Umu,tmp,mu+Nd);// Adjoint link
+    tmp    = -G_s*( Utmp + gmu*Utmp ); 
+    tmp    = where((lcoor>=tmin+tshift),tmp,zz); // Mask the time 
+    tmp    = where((lcoor<=tmax+tshift),tmp,zz); // Position of current complicated
+    L_Q= L_Q+tmp;
+
+    InsertSlice(L_Q, q_out, s , 0);
+  }
+#endif
+
+#if (!defined(GRID_CUDA)) && (!defined(GRID_HIP))
+  int tshift = (mu == Nd-1) ? 1 : 0;
+  ////////////////////////////////////////////////
+  // GENERAL CAYLEY CASE
+  ////////////////////////////////////////////////
+  Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT,
+    Gamma::Algebra::Gamma5
+  };
+  Gamma gmu=Gamma(Gmu[mu]);
+  Gamma g5(Gamma::Algebra::Gamma5);
+
+  int Ls = this->Ls;
+  auto UGrid= this->GaugeGrid();
+  auto FGrid= this->FermionGrid();
+
+  std::vector<PropagatorField> R_Q(Ls,UGrid); 
+  PropagatorField L_Q(UGrid); 
+  PropagatorField tmp(UGrid);
+  PropagatorField Utmp(UGrid);
+
+  LatticeInteger zz (UGrid);   zz=0.0;
+  LatticeInteger lcoor(UGrid); LatticeCoordinate(lcoor,Nd-1);
+
+  for(int s=0;s<Ls;s++){
+    ExtractSlice(R_Q[s], q_in, s , 0);
+  }
+
+  PropagatorField R_TmLsGq0(UGrid); 
+  PropagatorField R_TmLsTmp(UGrid);
+  {
+    PropagatorField TermA(UGrid);
+    PropagatorField TermB(UGrid);
+    PropagatorField TermC(UGrid);
+    PropagatorField TermD(UGrid);
+
+    TermA = (Pp(Q_4d(R_Q)));
+    TermB = (Pm(Q_4d(R_Q)));
+    TermC = (Pm(TopRowWithSource(R_Q)));
+    TermD = (Pp(TopRowWithSource(R_Q)));
+
+    R_TmLsGq0 = (TermD - TermA + TermB);
+    R_TmLsTmp = (TermC - TermB + TermA);
+  }
+
+  std::vector<PropagatorField> R_TmLsGq(Ls,UGrid);
+  for(int s=0;s<Ls;s++){
+    R_TmLsGq[s] = (Pm((R_Q)[(s)]) + Pp((R_Q)[((s)-1+Ls)%Ls]));
+  }
+
+  std::vector<RealD> G_s(Ls,1.0);
+  if ( curr_type == Current::Axial ) {
+    for(int s=0;s<Ls/2;s++){
+      G_s[s] = -1.0;
+    }
+  }
+
+  for(int s=0;s<Ls;s++){
+
+    int sp = (s+1)%Ls;
+    int sr = Ls-1-s;
+    int srp= (sr+1)%Ls;
+
+    // Mobius parameters
+    auto b=this->bs[s];
+    auto c=this->cs[s];
+    //    auto bpc = G_s[s]*1.0/(b+c);  // -0.5 factor in gauge links
+
+    if (s == 0) {
+      tmp    =(b*Pm(R_TmLsGq0)     + c*Pp(R_TmLsGq0     ) + b*Pp(R_TmLsGq[1]) + c*Pm(R_TmLsGq[1]));
+    } else if (s == Ls-1) {
+      tmp    =(b*Pm(R_TmLsGq[Ls-1])+ c*Pp(R_TmLsGq[Ls-1]) + b*Pp(R_TmLsTmp)   + c*Pm(R_TmLsTmp   ));
+    } else {
+      tmp    =(b*Pm(R_TmLsGq[s])  + c*Pp(R_TmLsGq[s]) + b*Pp(R_TmLsGq[sp ])+ c*Pm(R_TmLsGq[sp]));
+    }
+
+    tmp    = Cshift(tmp,mu,1);
+    Impl::multLinkField(Utmp,this->Umu,tmp,mu);
+    tmp    = G_s[s]*( Utmp*ph - gmu*Utmp*ph ); // Forward hop
+    tmp    = where((lcoor>=tmin),tmp,zz); // Mask the time 
+    L_Q    = where((lcoor<=tmax),tmp,zz); // Position of current complicated
+
+    if (s == 0) {
+      tmp    =(b*Pm(R_TmLsGq0)     + c*Pp(R_TmLsGq0  )    + b*Pp(R_TmLsGq[1]) + c*Pm(R_TmLsGq[1]));
+    } else if (s == Ls-1) {
+      tmp    =(b*Pm(R_TmLsGq[Ls-1])+ c*Pp(R_TmLsGq[Ls-1]) + b*Pp(R_TmLsTmp)   + c*Pm(R_TmLsTmp  ));
+    } else {
+      tmp    =(b*Pm(R_TmLsGq[s])   + c*Pp(R_TmLsGq[s])    + b*Pp(R_TmLsGq[sp])+ c*Pm(R_TmLsGq[sp]));
+    }
+    tmp    = tmp *ph;
+    tmp    = Cshift(tmp,mu,-1);
+    Impl::multLinkField(Utmp,this->Umu,tmp,mu+Nd); // Adjoint link
+    tmp = -G_s[s]*( Utmp + gmu*Utmp );
+    tmp    = where((lcoor>=tmin+tshift),tmp,zz); // Mask the time 
+    L_Q   += where((lcoor<=tmax+tshift),tmp,zz); // Position of current complicated
+
+    InsertSlice(L_Q, q_out, s , 0);
+  }
+#endif
+}
+#undef Pp
+#undef Pm
+#undef Q_4d
+#undef TopRowWithSource
+
+
 
 #if 0
 template<class Impl>

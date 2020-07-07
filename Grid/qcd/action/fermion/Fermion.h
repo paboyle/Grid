@@ -57,6 +57,7 @@ NAMESPACE_CHECK(WilsonClover);
 #include <Grid/qcd/action/fermion/WilsonFermion5D.h>     // 5d base used by all 5d overlap types
 NAMESPACE_CHECK(Wilson5D);
 
+#include <Grid/qcd/action/fermion/NaiveStaggeredFermion.h>
 #include <Grid/qcd/action/fermion/ImprovedStaggeredFermion.h>
 #include <Grid/qcd/action/fermion/ImprovedStaggeredFermion5D.h>
 NAMESPACE_CHECK(Staggered);
@@ -282,11 +283,15 @@ typedef ImprovedStaggeredFermion<StaggeredImplR> ImprovedStaggeredFermionR;
 typedef ImprovedStaggeredFermion<StaggeredImplF> ImprovedStaggeredFermionF;
 typedef ImprovedStaggeredFermion<StaggeredImplD> ImprovedStaggeredFermionD;
 
+typedef NaiveStaggeredFermion<StaggeredImplR> NaiveStaggeredFermionR;
+typedef NaiveStaggeredFermion<StaggeredImplF> NaiveStaggeredFermionF;
+typedef NaiveStaggeredFermion<StaggeredImplD> NaiveStaggeredFermionD;
+
 typedef ImprovedStaggeredFermion5D<StaggeredImplR> ImprovedStaggeredFermion5DR;
 typedef ImprovedStaggeredFermion5D<StaggeredImplF> ImprovedStaggeredFermion5DF;
 typedef ImprovedStaggeredFermion5D<StaggeredImplD> ImprovedStaggeredFermion5DD;
 
-#ifndef GRID_NVCC
+#ifndef GRID_CUDA
 typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplR> ImprovedStaggeredFermionVec5dR;
 typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplF> ImprovedStaggeredFermionVec5dF;
 typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplD> ImprovedStaggeredFermionVec5dD;

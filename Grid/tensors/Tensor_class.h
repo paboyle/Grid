@@ -6,6 +6,7 @@ Copyright (C) 2015
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: Michael Marshall <michael.marshall@ed.ac.au>
+Author: Christoph Lehner <christoph@lhnr.de>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -55,7 +56,22 @@ class GridTensorBase {};
   using Complexified    = typename Traits::Complexified; \
   using Realified       = typename Traits::Realified; \
   using DoublePrecision = typename Traits::DoublePrecision; \
+  using DoublePrecision2= typename Traits::DoublePrecision2; \
   static constexpr int TensorLevel = Traits::TensorLevel
+
+///////////////////////////////////////////////////////////
+// Allows to turn scalar<scalar<scalar<double>>>> back to double.
+///////////////////////////////////////////////////////////
+template <class T>
+accelerator_inline typename std::enable_if<!isGridTensor<T>::value, T>::type
+TensorRemove(T arg) {
+  return arg;
+}
+template <class vtype>
+accelerator_inline auto TensorRemove(iScalar<vtype> arg)
+  -> decltype(TensorRemove(arg._internal)) {
+  return TensorRemove(arg._internal);
+}
 
 template <class vtype>
 class iScalar {
@@ -133,9 +149,10 @@ public:
   operator ComplexD() const {
     return (TensorRemove(_internal));
   }
+  //             instantiation of "Grid::iScalar<vtype>::operator Grid::RealD() const [with vtype=Grid::Real, U=Grid::Real, V=Grid::RealD, <unnamed>=0, <unnamed>=0U]" 
   template <class U = vtype, class V = scalar_type, IfReal<V> = 0,IfNotSimd<U> = 0> accelerator_inline
   operator RealD() const {
-    return TensorRemove(_internal);
+    return (RealD) TensorRemove(_internal);
   }
   template <class U = vtype, class V = scalar_type, IfInteger<V> = 0, IfNotSimd<U> = 0> accelerator_inline
   operator Integer() const {
@@ -166,20 +183,6 @@ public:
   strong_inline const scalar_type * end()   const { return begin() + Traits::count; }
   strong_inline       scalar_type * end()         { return begin() + Traits::count; }
 };
-
-///////////////////////////////////////////////////////////
-// Allows to turn scalar<scalar<scalar<double>>>> back to double.
-///////////////////////////////////////////////////////////
-template <class T>
-accelerator_inline typename std::enable_if<!isGridTensor<T>::value, T>::type
-TensorRemove(T arg) {
-  return arg;
-}
-template <class vtype>
-accelerator_inline auto TensorRemove(iScalar<vtype> arg)
-  -> decltype(TensorRemove(arg._internal)) {
-  return TensorRemove(arg._internal);
-}
 
 template <class vtype, int N>
 class iVector {

@@ -138,13 +138,48 @@ esac
 ############### SUMMIT JSRUN
 AC_ARG_ENABLE([summit],
     [AC_HELP_STRING([--enable-summit=yes|no], [enable IBMs jsrun resource manager for SUMMIT])],
-    [ac_JSRUN=${enable_summit}], [ac_SUMMIT=no])
+    [ac_SUMMIT=${enable_summit}], [ac_SUMMIT=no])
 case ${ac_SUMMIT} in
     no);;
     yes)
       AC_DEFINE([GRID_IBM_SUMMIT],[1],[Let JSRUN manage the GPU device allocation]);;
     *)
       AC_DEFINE([GRID_IBM_SUMMIT],[1],[Let JSRUN manage the GPU device allocation]);;
+esac
+
+############### SYCL/CUDA/HIP/none
+AC_ARG_ENABLE([accelerator],
+    [AC_HELP_STRING([--enable-accelerator=cuda|sycl|hip|none], [enable none,cuda,sycl,hip acceleration])],
+    [ac_ACCELERATOR=${enable_accelerator}], [ac_ACCELERATOR=none])
+case ${ac_ACCELERATOR} in
+    cuda)
+      echo CUDA acceleration
+      AC_DEFINE([GRID_CUDA],[1],[Use CUDA offload]);;
+    sycl)
+      echo SYCL acceleration
+      AC_DEFINE([GRID_SYCL],[1],[Use SYCL offload]);;
+    hip)
+      echo HIP acceleration
+      AC_DEFINE([GRID_HIP],[1],[Use HIP offload]);;
+    none)
+      echo NO acceleration
+    ;;
+    *)
+      AC_MSG_ERROR(["Acceleration not suppoorted ${ac_ACCELERATOR}"]);;
+esac
+
+############### UNIFIED MEMORY
+AC_ARG_ENABLE([unified],
+    [AC_HELP_STRING([--enable-unified=yes|no], [enable unified address space for accelerator loops])],
+    [ac_UNIFIED=${enable_unified}], [ac_UNIFIED=yes])
+case ${ac_UNIFIED} in
+    yes)
+      echo Unified memory for accelerator loops
+      AC_DEFINE([GRID_UVM],[1],[Use unified address space]);;
+    no)
+      echo Manual memory copy for accelerator loops;;
+    *)
+      AC_MSG_ERROR(["Unified virtual memory option not suppoorted ${ac_UNIFIED}"]);;
 esac
 
 ############### Intel libraries
@@ -226,7 +261,7 @@ AC_SEARCH_LIBS([fftw_execute], [fftw3],
 AC_SEARCH_LIBS([limeCreateReader], [lime],
                [AC_DEFINE([HAVE_LIME], [1], [Define to 1 if you have the `LIME' library])]
                [have_lime=true],
-	             [AC_MSG_ERROR(LIME library was not found in your system.)])
+	             [AC_MSG_WARN(LIME library was not found in your system.)])
 
 AC_SEARCH_LIBS([SHA256_Init], [crypto],
                [AC_DEFINE([HAVE_CRYPTO], [1], [Define to 1 if you have the `OpenSSL' library])]
@@ -274,14 +309,29 @@ case ${ac_gen_scalar} in
 esac
 
 ##################### Compiler dependent choices
-case ${CXX} in
+
+#Strip any optional compiler arguments from nvcc call (eg -ccbin) for compiler comparison
+CXXBASE=${CXX}
+CXXTEST=${CXX}
+if echo "${CXX}" | grep -q "nvcc"; then
+  CXXTEST="nvcc"
+fi
+
+case ${CXXTEST} in
   nvcc)
 #    CXX="nvcc -keep -v -x cu "
 #    CXXLD="nvcc -v -link"
-    CXX="nvcc -x cu "
-    CXXLD="nvcc -link"
+    CXX="${CXXBASE} -x cu "
+    CXXLD="${CXXBASE} -link"
 #    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing -Xcompiler -Wno-unusable-partial-specialization --expt-extended-lambda --expt-relaxed-constexpr"
     CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr"
+    if test $ac_openmp = yes; then
+       CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
+    fi
+    ;;
+  hipcc)
+    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr"
+    CXXLD=${CXX}
     if test $ac_openmp = yes; then
        CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
     fi
@@ -420,6 +470,14 @@ case ${ac_SHM} in
 
      shmopen)
      AC_DEFINE([GRID_MPI3_SHMOPEN],[1],[GRID_MPI3_SHMOPEN] )
+     CXXFLAGS_CPY=$CXXFLAGS
+     LDFLAGS_CPY=$LDFLAGS
+     CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
+     LDFLAGS="$AM_LDFLAGS $LDFLAGS"
+     AC_SEARCH_LIBS([shm_unlink], [rt], [],
+                    [AC_MSG_ERROR("no library found for shm_unlink")])
+     CXXFLAGS=$CXXFLAGS_CPY
+     LDFLAGS=$LDFLAGS_CPY
      ;;
 
      shmget)
@@ -547,6 +605,7 @@ DX_INIT_DOXYGEN([$PACKAGE_NAME], [doxygen.cfg])
 ############### Ouput
 cwd=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${cwd}
 GRID_CXX="$CXX"
+GRID_CXXLD="$CXXLD"
 GRID_CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
 GRID_LDFLAGS="$AM_LDFLAGS $LDFLAGS"
 GRID_LIBS=$LIBS
@@ -561,6 +620,7 @@ AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CXXFLAGS])
 AC_SUBST([AM_LDFLAGS])
 AC_SUBST([GRID_CXX])
+AC_SUBST([GRID_CXXLD])
 AC_SUBST([GRID_CXXFLAGS])
 AC_SUBST([GRID_LDFLAGS])
 AC_SUBST([GRID_LIBS])
@@ -584,6 +644,8 @@ compiler version            : ${ax_cv_gxx_version}
 ----- BUILD OPTIONS -----------------------------------
 SIMD                        : ${ac_SIMD}${SIMD_GEN_WIDTH_MSG}
 Threading                   : ${ac_openmp}
+Acceleration                : ${ac_ACCELERATOR}
+Unified virtual memory      : ${ac_UNIFIED}
 Communications type         : ${comms_type}
 Shared memory allocator     : ${ac_SHM}
 Shared memory mmap path     : ${ac_SHMPATH}

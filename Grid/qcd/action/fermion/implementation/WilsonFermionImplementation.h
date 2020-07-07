@@ -67,7 +67,12 @@ WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
     diag_mass = 4.0 + mass;
   }
 
-
+  int vol4;
+  vol4=Fgrid.oSites();
+  Stencil.BuildSurfaceList(1,vol4);
+  vol4=Hgrid.oSites();
+  StencilEven.BuildSurfaceList(1,vol4);
+  StencilOdd.BuildSurfaceList(1,vol4);
 }
 
 template<class Impl>
@@ -187,21 +192,24 @@ void WilsonFermion<Impl>::ImportGauge(const GaugeField &_Umu)
 /////////////////////////////
 
 template <class Impl>
-RealD WilsonFermion<Impl>::M(const FermionField &in, FermionField &out) {
+void WilsonFermion<Impl>::M(const FermionField &in, FermionField &out)
+{
   out.Checkerboard() = in.Checkerboard();
   Dhop(in, out, DaggerNo);
-  return axpy_norm(out, diag_mass, in, out);
+  axpy(out, diag_mass, in, out);
 }
 
 template <class Impl>
-RealD WilsonFermion<Impl>::Mdag(const FermionField &in, FermionField &out) {
+void WilsonFermion<Impl>::Mdag(const FermionField &in, FermionField &out)
+{
   out.Checkerboard() = in.Checkerboard();
   Dhop(in, out, DaggerYes);
-  return axpy_norm(out, diag_mass, in, out);
+  axpy(out, diag_mass, in, out);
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::Meooe(const FermionField &in, FermionField &out) {
+void WilsonFermion<Impl>::Meooe(const FermionField &in, FermionField &out)
+{
   if (in.Checkerboard() == Odd) {
     DhopEO(in, out, DaggerNo);
   } else {
@@ -210,7 +218,8 @@ void WilsonFermion<Impl>::Meooe(const FermionField &in, FermionField &out) {
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::MeooeDag(const FermionField &in, FermionField &out) {
+void WilsonFermion<Impl>::MeooeDag(const FermionField &in, FermionField &out)
+{
   if (in.Checkerboard() == Odd) {
     DhopEO(in, out, DaggerYes);
   } else {
@@ -219,26 +228,30 @@ void WilsonFermion<Impl>::MeooeDag(const FermionField &in, FermionField &out) {
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::Mooee(const FermionField &in, FermionField &out) {
+void WilsonFermion<Impl>::Mooee(const FermionField &in, FermionField &out)
+{
   out.Checkerboard() = in.Checkerboard();
   typename FermionField::scalar_type scal(diag_mass);
   out = scal * in;
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out) {
+void WilsonFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out)
+{
   out.Checkerboard() = in.Checkerboard();
   Mooee(in, out);
 }
 
 template<class Impl>
-void WilsonFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out) {
+void WilsonFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out)
+{
   out.Checkerboard() = in.Checkerboard();
   out = (1.0/(diag_mass))*in;
 }
 
 template<class Impl>
-void WilsonFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out) {
+void WilsonFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out)
+{
   out.Checkerboard() = in.Checkerboard();
   MooeeInv(in,out);
 }
@@ -341,7 +354,8 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
+void WilsonFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag)
+{
   conformable(U.Grid(), _grid);
   conformable(U.Grid(), V.Grid());
   conformable(U.Grid(), mat.Grid());
@@ -352,7 +366,8 @@ void WilsonFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U, cons
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
+void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U, const FermionField &V, int dag)
+{
   conformable(U.Grid(), _cbgrid);
   conformable(U.Grid(), V.Grid());
   //conformable(U.Grid(), mat.Grid()); not general, leaving as a comment (Guido)
@@ -366,7 +381,8 @@ void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U, co
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
+void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, const FermionField &V, int dag)
+{
   conformable(U.Grid(), _cbgrid);
   conformable(U.Grid(), V.Grid());
   //conformable(U.Grid(), mat.Grid());
@@ -379,8 +395,8 @@ void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, co
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int dag) {
-  DhopCalls+=2;
+void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int dag)
+{
   conformable(in.Grid(), _grid);  // verifies full grid
   conformable(in.Grid(), out.Grid());
 
@@ -390,8 +406,8 @@ void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int da
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int dag) {
-  DhopCalls+=1;
+void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int dag)
+{
   conformable(in.Grid(), _cbgrid);    // verifies half grid
   conformable(in.Grid(), out.Grid());  // drops the cb check
 
@@ -402,8 +418,8 @@ void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int 
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag) {
-  DhopCalls+=1;
+void WilsonFermion<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag)
+{
   conformable(in.Grid(), _cbgrid);    // verifies half grid
   conformable(in.Grid(), out.Grid());  // drops the cb check
 
@@ -482,7 +498,8 @@ template <class Impl>
 void WilsonFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, LebesgueOrder &lo,
 						      DoubledGaugeField &U,
 						      const FermionField &in,
-						      FermionField &out, int dag) {
+						      FermionField &out, int dag)
+{
   assert((dag == DaggerNo) || (dag == DaggerYes));
 
   Compressor compressor(dag);
@@ -547,7 +564,8 @@ template <class Impl>
 void WilsonFermion<Impl>::DhopInternalSerial(StencilImpl &st, LebesgueOrder &lo,
                                        DoubledGaugeField &U,
                                        const FermionField &in,
-                                       FermionField &out, int dag) {
+                                       FermionField &out, int dag)
+{
   assert((dag == DaggerNo) || (dag == DaggerYes));
   Compressor compressor(dag);
   DhopCommTime-=usecond();
@@ -574,6 +592,7 @@ template <class Impl>
 void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
                                                    PropagatorField &q_in_2,
                                                    PropagatorField &q_out,
+                                                   PropagatorField &src,
                                                    Current curr_type,
                                                    unsigned int mu)
 {
@@ -581,35 +600,14 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
   conformable(_grid, q_in_1.Grid());
   conformable(_grid, q_in_2.Grid());
   conformable(_grid, q_out.Grid());
-  PropagatorField tmp1(_grid), tmp2(_grid);
-  q_out = Zero();
-
-  // Forward, need q1(x + mu), q2(x). Backward, need q1(x), q2(x + mu).
-  // Inefficient comms method but not performance critical.
-  tmp1 = Cshift(q_in_1, mu, 1);
-  tmp2 = Cshift(q_in_2, mu, 1);
-  auto tmp1_v  =  tmp1.View();
-  auto tmp2_v  =  tmp2.View();
-  auto q_in_1_v=q_in_1.View();
-  auto q_in_2_v=q_in_2.View();
-  auto q_out_v = q_out.View();
-  auto Umu_v   =   Umu.View();
-  thread_for(sU, Umu.Grid()->oSites(),{
-      Kernels::ContractConservedCurrentSiteFwd(tmp1_v[sU],
-					       q_in_2_v[sU],
-					       q_out_v[sU],
-					       Umu_v, sU, mu);
-      Kernels::ContractConservedCurrentSiteBwd(q_in_1_v[sU],
-					       tmp2_v[sU],
-					       q_out_v[sU],
-					       Umu_v, sU, mu);
-  });
+  assert(0);
 }
 
 
 template <class Impl>
 void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                                               PropagatorField &q_out,
+                                              PropagatorField &src,
                                               Current curr_type,
                                               unsigned int mu,
                                               unsigned int tmin,
@@ -618,59 +616,7 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 {
   conformable(_grid, q_in.Grid());
   conformable(_grid, q_out.Grid());
-
-  //  Lattice<iSinglet<Simd>> ph(_grid), coor(_grid);
-  Complex i(0.0,1.0);
-  PropagatorField tmpFwd(_grid), tmpBwd(_grid), tmp(_grid);
-  unsigned int tshift = (mu == Tp) ? 1 : 0;
-  unsigned int LLt    = GridDefaultLatt()[Tp];
-
-  q_out = Zero();
-  LatticeInteger coords(_grid);
-  LatticeCoordinate(coords, Tp);
-
-  // Need q(x + mu) and q(x - mu).
-  tmp    = Cshift(q_in, mu, 1);
-  tmpFwd = tmp*lattice_cmplx;
-  tmp    = lattice_cmplx*q_in;
-  tmpBwd = Cshift(tmp, mu, -1);
-
-  auto coords_v = coords.View();
-  auto tmpFwd_v = tmpFwd.View();
-  auto tmpBwd_v = tmpBwd.View();
-  auto Umu_v    = Umu.View();
-  auto q_out_v  = q_out.View();
-
-  thread_for(sU, Umu.Grid()->oSites(), {
-
-    // Compute the sequential conserved current insertion only if our simd
-    // object contains a timeslice we need.
-    vPredicate t_mask;
-    t_mask() = ((coords_v[sU] >= tmin) && (coords_v[sU] <= tmax));
-    Integer timeSlices = Reduce(t_mask());
-
-    if (timeSlices > 0) {
-      Kernels::SeqConservedCurrentSiteFwd(tmpFwd_v[sU],
-					  q_out_v[sU],
-					  Umu_v, sU, mu, t_mask);
-    }
-
-    // Repeat for backward direction.
-    t_mask()     = ((coords_v[sU] >= (tmin + tshift)) &&
-		    (coords_v[sU] <= (tmax + tshift)));
-
-    //if tmax = LLt-1 (last timeslice) include timeslice 0 if the time is shifted (mu=3)
-    unsigned int t0 = 0;
-    if((tmax==LLt-1) && (tshift==1)) t_mask() = (t_mask() || (coords_v[sU] == t0 ));
-
-    timeSlices = Reduce(t_mask());
-
-    if (timeSlices > 0) {
-      Kernels::SeqConservedCurrentSiteBwd(tmpBwd_v[sU],
-					  q_out_v[sU],
-					  Umu_v, sU, mu, t_mask);
-    }
-  });
+  assert(0);
 }
 
 NAMESPACE_END(Grid);

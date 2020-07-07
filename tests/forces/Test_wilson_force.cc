@@ -105,9 +105,9 @@ int main (int argc, char ** argv)
     PokeIndex<LorentzIndex>(mom,mommu,mu);
 
     // fourth order exponential approx
-    auto U_v = U.View();
-    auto mom_v = mom.View();
-    auto Uprime_v = Uprime.View();
+    autoView( U_v , U, CpuRead);
+    autoView( mom_v, mom, CpuRead);
+    autoView(Uprime_v, Uprime, CpuWrite);
     thread_foreach( i,mom_v,{
       Uprime_v[i](mu)  =	  U_v[i](mu);
       Uprime_v[i](mu) += mom_v[i](mu)*U_v[i](mu)*dt ;

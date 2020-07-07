@@ -6,6 +6,7 @@
 ///////////////////
 #include <cassert>
 #include <complex>
+#include <memory>
 #include <vector>
 #include <array>
 #include <string>

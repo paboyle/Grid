@@ -55,7 +55,7 @@ template<class vtype, int N> accelerator_inline iVector<vtype, N> Exponentiate(c
 
 
 // Specialisation: Cayley-Hamilton exponential for SU(3)
-#ifndef GRID_NVCC
+#ifndef GRID_CUDA
 template<class vtype, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0>::type * =nullptr> 
 accelerator_inline iMatrix<vtype,3> Exponentiate(const iMatrix<vtype,3> &arg, RealD alpha  , Integer Nexp = DEFAULT_MAT_EXP )
 {

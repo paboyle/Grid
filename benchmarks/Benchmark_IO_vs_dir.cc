@@ -8,6 +8,7 @@ using namespace Grid;
 
 int main (int argc, char ** argv)
 {
+#ifdef HAVE_LIME
   std::vector<std::string> dir;
   unsigned int             Ls;
   bool                     rb;
@@ -73,6 +74,6 @@ int main (int argc, char ** argv)
   }
 
   Grid_finalize();
-
+#endif
   return EXIT_SUCCESS;
 }

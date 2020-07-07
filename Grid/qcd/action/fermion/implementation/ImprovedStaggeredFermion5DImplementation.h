@@ -221,10 +221,10 @@ void ImprovedStaggeredFermion5D<Impl>::DhopDir(const FermionField &in, FermionFi
 
   Compressor compressor;
   Stencil.HaloExchange(in,compressor);
-  auto Umu_v   = Umu.View();
-  auto UUUmu_v = UUUmu.View();
-  auto in_v    = in.View();
-  auto out_v   = out.View();
+  autoView( Umu_v   ,   Umu, CpuRead);
+  autoView( UUUmu_v , UUUmu, CpuRead);
+  autoView( in_v    ,  in, CpuRead);
+  autoView( out_v   , out, CpuWrite);
   thread_for( ss,Umu.Grid()->oSites(),{
     for(int s=0;s<Ls;s++){
       int sU=ss;
@@ -281,11 +281,9 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOr
 						    DoubledGaugeField & U,DoubledGaugeField & UUU,
 						    const FermionField &in, FermionField &out,int dag)
 {
-#ifdef GRID_OMP
   if ( StaggeredKernelsStatic::Comms == StaggeredKernelsStatic::CommsAndCompute )
     DhopInternalOverlappedComms(st,lo,U,UUU,in,out,dag);
   else
-#endif
     DhopInternalSerialComms(st,lo,U,UUU,in,out,dag);
 }
 
@@ -294,9 +292,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl &
 								   DoubledGaugeField & U,DoubledGaugeField & UUU,
 								   const FermionField &in, FermionField &out,int dag)
 {
-#ifdef GRID_OMP
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
-
   Compressor compressor; 
 
   int LLs = in.Grid()->_rdimensions[0];
@@ -305,99 +301,42 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl &
   DhopFaceTime-=usecond();
   st.Prepare();
   st.HaloGather(in,compressor);
+  DhopFaceTime+=usecond();
+
+  DhopCommTime -=usecond();
+  std::vector<std::vector<CommsRequest_t> > requests;
+  st.CommunicateBegin(requests);
+
   //  st.HaloExchangeOptGather(in,compressor); // Wilson compressor
+  DhopFaceTime-=usecond();
   st.CommsMergeSHM(compressor);// Could do this inside parallel region overlapped with comms
   DhopFaceTime+=usecond();
 
-  double ctime=0;
-  double ptime=0;
-
   //////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Ugly explicit thread mapping introduced for OPA reasons.
+  // Remove explicit thread mapping introduced for OPA reasons.
   //////////////////////////////////////////////////////////////////////////////////////////////////////
-#pragma omp parallel reduction(max:ctime) reduction(max:ptime)
+  DhopComputeTime-=usecond();
   {
-    int tid = omp_get_thread_num();
-    int nthreads = omp_get_num_threads();
-    int ncomms = CartesianCommunicator::nCommThreads;
-    if (ncomms == -1) ncomms = 1;
-    assert(nthreads > ncomms);
-    if (tid >= ncomms) {
-      double start = usecond();
-      nthreads -= ncomms;
-      int ttid  = tid - ncomms;
-      int n     = U.Grid()->oSites(); // 4d vol
-      int chunk = n / nthreads;
-      int rem   = n % nthreads;
-      int myblock, myn;
-      if (ttid < rem) {
-        myblock = ttid * chunk + ttid;
-        myn = chunk+1;
-      } else {
-        myblock = ttid*chunk + rem;
-        myn = chunk;
-      }
-
-      // do the compute
-      auto   U_v  =   U.View();
-      auto UUU_v  = UUU.View();
-      auto  in_v  =  in.View();
-      auto out_v  = out.View();
-
-      if (dag == DaggerYes) {
-        for (int ss = myblock; ss < myblock+myn; ++ss) {
-          int sU = ss;
-	  // Interior = 1; Exterior = 0; must implement for staggered
-          Kernels::DhopSiteDag(st,lo,U_v,UUU_v,st.CommBuf(),LLs,sU,in_v,out_v,1,0); //<---------
-        }
-      } else {
-        for (int ss = myblock; ss < myblock+myn; ++ss) {
-	  // Interior = 1; Exterior = 0;
-          int sU = ss;
-          Kernels::DhopSite(st,lo,U_v,UUU_v,st.CommBuf(),LLs,sU,in_v,out_v,1,0); //<------------
-        }
-      }
-        ptime = usecond() - start;
-    } else {
-      double start = usecond();
-      st.CommunicateThreaded();
-      ctime = usecond() - start;
-    }
+    int interior=1;
+    int exterior=0;
+    Kernels::DhopImproved(st,lo,U,UUU,in,out,dag,interior,exterior);
   }
-  DhopCommTime += ctime;
-  DhopComputeTime+=ptime;
-
-  // First to enter, last to leave timing
-  st.CollateThreads();
+  DhopComputeTime+=usecond();
 
   DhopFaceTime-=usecond();
   st.CommsMerge(compressor);
   DhopFaceTime+=usecond();
 
-  DhopComputeTime2-=usecond();
+  st.CommunicateComplete(requests);
+  DhopCommTime +=usecond();
 
-  auto   U_v  =   U.View();
-  auto UUU_v  = UUU.View();
-  auto  in_v  =  in.View();
-  auto out_v  = out.View();
-  if (dag == DaggerYes) {
-    int sz=st.surface_list.size();
-    thread_for( ss,sz,{
-      int sU = st.surface_list[ss];
-      Kernels::DhopSiteDag(st,lo,U_v,UUU_v,st.CommBuf(),LLs,sU,in_v,out_v,0,1); //<----------
-    });
-  } else {
-    int sz=st.surface_list.size();
-    thread_for( ss,sz,{
-      int sU = st.surface_list[ss];
-      Kernels::DhopSite(st,lo,U_v,UUU_v,st.CommBuf(),LLs,sU,in_v,out_v,0,1);//<----------
-    });
+  DhopComputeTime2-=usecond();
+  {
+    int interior=0;
+    int exterior=1;
+    Kernels::DhopImproved(st,lo,U,UUU,in,out,dag,interior,exterior);
   }
   DhopComputeTime2+=usecond();
-#else
-  assert(0);
-#endif
-
 }
 
 template<class Impl>
@@ -408,8 +347,6 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st,
   Compressor compressor;
   int LLs = in.Grid()->_rdimensions[0];
 
-
-
  //double t1=usecond();
   DhopTotalTime -= usecond();
   DhopCommTime -= usecond();
@@ -418,28 +355,13 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st,
   
   DhopComputeTime -= usecond();
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
-  auto   U_v  =   U.View();
-  auto UUU_v  = UUU.View();
-  auto  in_v  =  in.View();
-  auto out_v  = out.View();
-  if (dag == DaggerYes) {
-    thread_for( ss,U.Grid()->oSites(),{
-      int sU=ss;
-      Kernels::DhopSiteDag(st, lo, U_v, UUU_v, st.CommBuf(), LLs, sU,in_v, out_v);
-    });
-  } else {
-    thread_for( ss,U.Grid()->oSites(),{
-      int sU=ss;
-      Kernels::DhopSite(st,lo,U_v,UUU_v,st.CommBuf(),LLs,sU,in_v,out_v);
-    });
+  {
+    int interior=1;
+    int exterior=1;
+    Kernels::DhopImproved(st,lo,U,UUU,in,out,dag,interior,exterior);
   }
   DhopComputeTime += usecond();
   DhopTotalTime   += usecond();
- //double t2=usecond();
- //std::cout << __FILE__ << " " << __func__  << " Total Time " << DhopTotalTime << std::endl;
- //std::cout << __FILE__ << " " << __func__  << " Total Time Org " << t2-t1 << std::endl;
- //std::cout << __FILE__ << " " << __func__  << " Comml Time " << DhopCommTime << std::endl;
- //std::cout << __FILE__ << " " << __func__  << " Compute Time " << DhopComputeTime << std::endl;
 
 }
 /*CHANGE END*/
@@ -548,21 +470,24 @@ void ImprovedStaggeredFermion5D<Impl>::MdirAll(const FermionField &in, std::vect
   assert(0);
 }
 template <class Impl>
-RealD ImprovedStaggeredFermion5D<Impl>::M(const FermionField &in, FermionField &out) {
+void ImprovedStaggeredFermion5D<Impl>::M(const FermionField &in, FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   Dhop(in, out, DaggerNo);
-  return axpy_norm(out, mass, in, out);
+  axpy(out, mass, in, out);
 }
 
 template <class Impl>
-RealD ImprovedStaggeredFermion5D<Impl>::Mdag(const FermionField &in, FermionField &out) {
+void ImprovedStaggeredFermion5D<Impl>::Mdag(const FermionField &in, FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   Dhop(in, out, DaggerYes);
-  return axpy_norm(out, mass, in, out);
+  axpy(out, mass, in, out);
 }
 
 template <class Impl>
-void ImprovedStaggeredFermion5D<Impl>::Meooe(const FermionField &in, FermionField &out) {
+void ImprovedStaggeredFermion5D<Impl>::Meooe(const FermionField &in, FermionField &out) 
+{
   if (in.Checkerboard() == Odd) {
     DhopEO(in, out, DaggerNo);
   } else {
@@ -570,7 +495,8 @@ void ImprovedStaggeredFermion5D<Impl>::Meooe(const FermionField &in, FermionFiel
   }
 }
 template <class Impl>
-void ImprovedStaggeredFermion5D<Impl>::MeooeDag(const FermionField &in, FermionField &out) {
+void ImprovedStaggeredFermion5D<Impl>::MeooeDag(const FermionField &in, FermionField &out) 
+{
   if (in.Checkerboard() == Odd) {
     DhopEO(in, out, DaggerYes);
   } else {
@@ -579,27 +505,30 @@ void ImprovedStaggeredFermion5D<Impl>::MeooeDag(const FermionField &in, FermionF
 }
 
 template <class Impl>
-void ImprovedStaggeredFermion5D<Impl>::Mooee(const FermionField &in, FermionField &out) {
+void ImprovedStaggeredFermion5D<Impl>::Mooee(const FermionField &in, FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   typename FermionField::scalar_type scal(mass);
   out = scal * in;
 }
 
 template <class Impl>
-void ImprovedStaggeredFermion5D<Impl>::MooeeDag(const FermionField &in, FermionField &out) {
+void ImprovedStaggeredFermion5D<Impl>::MooeeDag(const FermionField &in, FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   Mooee(in, out);
 }
 
 template <class Impl>
-void ImprovedStaggeredFermion5D<Impl>::MooeeInv(const FermionField &in, FermionField &out) {
+void ImprovedStaggeredFermion5D<Impl>::MooeeInv(const FermionField &in, FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   out = (1.0 / (mass)) * in;
 }
 
 template <class Impl>
-void ImprovedStaggeredFermion5D<Impl>::MooeeInvDag(const FermionField &in,
-						   FermionField &out) {
+void ImprovedStaggeredFermion5D<Impl>::MooeeInvDag(const FermionField &in,FermionField &out) 
+{
   out.Checkerboard() = in.Checkerboard();
   MooeeInv(in, out);
 }
@@ -611,6 +540,7 @@ template <class Impl>
 void ImprovedStaggeredFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
 								PropagatorField &q_in_2,
 								PropagatorField &q_out,
+								PropagatorField &src,
 								Current curr_type,
 								unsigned int mu)
 {
@@ -620,11 +550,12 @@ void ImprovedStaggeredFermion5D<Impl>::ContractConservedCurrent(PropagatorField 
 template <class Impl>
 void ImprovedStaggeredFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 							   PropagatorField &q_out,
+							   PropagatorField &src,
 							   Current curr_type,
 							   unsigned int mu, 
 							   unsigned int tmin,
-                                              unsigned int tmax,
-					      ComplexField &lattice_cmplx)
+							   unsigned int tmax,
+							   ComplexField &lattice_cmplx)
 {
   assert(0);
 

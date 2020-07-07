@@ -28,101 +28,47 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 /*  END LEGAL */
 #pragma once 
 
+#ifndef MAX
+#define MAX(x,y) ((x)>(y)?(x):(y))
+#define MIN(x,y) ((x)>(y)?(y):(x))
+#endif
 
-// Introduce a class to gain deterministic bit reproducible reduction.
-// make static; perhaps just a namespace is required.
-NAMESPACE_BEGIN(Grid);
+#define strong_inline     __attribute__((always_inline)) inline
+#define UNROLL  _Pragma("unroll")
 
-class GridThread {
-public:
-  static int _threads;
-  static int _hyperthreads;
-  static int _cores;
+//////////////////////////////////////////////////////////////////////////////////
+// New primitives; explicit host thread calls, and accelerator data parallel calls
+//////////////////////////////////////////////////////////////////////////////////
 
-  static void SetCores(int cr) { 
+#ifdef _OPENMP
+#define GRID_OMP
+#include <omp.h>
+#endif
+
 #ifdef GRID_OMP
-    _cores = cr;
+#define DO_PRAGMA_(x) _Pragma (#x)
+#define DO_PRAGMA(x) DO_PRAGMA_(x)
+#define thread_num(a) omp_get_thread_num()
+#define thread_max(a) omp_get_max_threads()
 #else 
-    _cores = 1;
+#define DO_PRAGMA_(x) 
+#define DO_PRAGMA(x) 
+#define thread_num(a) (0)
+#define thread_max(a) (1)
 #endif
-  }
-  static void SetThreads(int thr) { 
-#ifdef GRID_OMP
-    _threads = MIN(thr,omp_get_max_threads()) ;
-    omp_set_num_threads(_threads);
-#else 
-    _threads = 1;
-#endif
-  };
-  static void SetMaxThreads(void) { 
-#ifdef GRID_OMP
-    _threads = omp_get_max_threads();
-    omp_set_num_threads(_threads);
-#else 
-    _threads = 1;
-#endif
-  };
-  static int GetHyperThreads(void) { assert(_threads%_cores ==0); return _threads/_cores; };
-  static int GetCores(void)   { return _cores; };
-  static int GetThreads(void) { return _threads; };
-  static int SumArraySize(void) {return _threads;};
 
-  static void GetWork(int nwork, int me, int & mywork, int & myoff){
-    GetWork(nwork,me,mywork,myoff,_threads);
-  }
-  static void GetWork(int nwork, int me, int & mywork, int & myoff,int units){
-    int basework = nwork/units;
-    int backfill = units-(nwork%units);
-    if ( me >= units ) { 
-      mywork = myoff = 0;
-    } else { 
-      mywork = (nwork+me)/units;
-      myoff  = basework * me;
-      if ( me > backfill ) 
-	myoff+= (me-backfill);
-    }
-    return;
-  };
-
-  static void GetWorkBarrier(int nwork, int &me, int & mywork, int & myoff){
-    me     = ThreadBarrier();
-    GetWork(nwork,me,mywork,myoff);
-  };
-
-  static int  ThreadBarrier(void) {
-#ifdef GRID_OMP
-#pragma omp barrier
-    return omp_get_thread_num();
-#else
-    return 0;
-#endif
-  };
-  
-  template<class obj> static void ThreadSum( std::vector<obj> &sum_array,obj &val,int me){
-    sum_array[me] = val;
-    val=Zero();
-    ThreadBarrier();
-    for(int i=0;i<_threads;i++) val+= sum_array[i];
-    ThreadBarrier();
-  }
-
-  static void bcopy(const void *src, void *dst, size_t len) {
-#ifdef GRID_OMP
-#pragma omp parallel 
-    {
-      const char *c_src =(char *) src;
-      char *c_dest=(char *) dst;
-      int me,mywork,myoff;
-      GridThread::GetWorkBarrier(len,me, mywork,myoff);
-      bcopy(&c_src[myoff],&c_dest[myoff],mywork);
-    }
-#else 
-    bcopy(src,dst,len);
-#endif
-  }
-
-
-};
-
-NAMESPACE_END(Grid);
+#define thread_for( i, num, ... )                           DO_PRAGMA(omp parallel for schedule(static)) for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define thread_for2d( i1, n1,i2,n2, ... )  \
+  DO_PRAGMA(omp parallel for collapse(2))  \
+  for ( uint64_t i1=0;i1<n1;i1++) {	   \
+  for ( uint64_t i2=0;i2<n2;i2++) {	   \
+  { __VA_ARGS__ } ;			   \
+  }}
+#define thread_foreach( i, container, ... )                 DO_PRAGMA(omp parallel for schedule(static)) for ( uint64_t i=container.begin();i<container.end();i++) { __VA_ARGS__ } ;
+#define thread_for_in_region( i, num, ... )                 DO_PRAGMA(omp for schedule(static))          for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define thread_for_collapse2( i, num, ... )                 DO_PRAGMA(omp parallel for collapse(2))      for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define thread_for_collapse( N , i, num, ... )              DO_PRAGMA(omp parallel for collapse ( N ) )  for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define thread_for_collapse_in_region( N , i, num, ... )    DO_PRAGMA(omp for collapse ( N ))            for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define thread_region                                       DO_PRAGMA(omp parallel)
+#define thread_critical                                     DO_PRAGMA(omp critical)
 

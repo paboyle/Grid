@@ -1,4 +1,3 @@
-
 /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -99,8 +98,8 @@ public:
   GridBase *FermionRedBlackGrid(void)    { return _FiveDimRedBlackGrid;}
 
   // full checkerboard operations; leave unimplemented as abstract for now
-  virtual RealD  M    (const FermionField &in, FermionField &out){assert(0); return 0.0;};
-  virtual RealD  Mdag (const FermionField &in, FermionField &out){assert(0); return 0.0;};
+  virtual void   M    (const FermionField &in, FermionField &out){assert(0);};
+  virtual void   Mdag (const FermionField &in, FermionField &out){assert(0);};
 
   // half checkerboard operations; leave unimplemented as abstract for now
   virtual void   Meooe       (const FermionField &in, FermionField &out){assert(0);};
@@ -217,25 +216,7 @@ public:
     
   // Comms buffer
   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;
-    
-  ///////////////////////////////////////////////////////////////
-  // Conserved current utilities
-  ///////////////////////////////////////////////////////////////
-  void ContractConservedCurrent(PropagatorField &q_in_1,
-				PropagatorField &q_in_2,
-				PropagatorField &q_out,
-				Current curr_type, 
-				unsigned int mu);
-  void SeqConservedCurrent(PropagatorField &q_in,
-			   PropagatorField &q_out,
-			   Current curr_type,
-			   unsigned int mu,
-			   unsigned int tmin,
-			   unsigned int tmax,
-			   ComplexField &lattice_cmplx);
 
-  void ContractJ5q(PropagatorField &q_in,ComplexField &J5q);
-  void ContractJ5q(FermionField &q_in,ComplexField &J5q);
 
 };
 
