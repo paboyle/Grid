@@ -162,6 +162,10 @@ int main (int argc, char ** argv)
   for(int i=0;i<ncall;i++){
     Dw.Dhop(src,result,0);
   }
+
+  // Counters
+  Grid.Barrier();
+
   double t1=usecond();
   double flops=single_site_flops*volume*ncall;
 
@@ -197,11 +201,8 @@ int main (int argc, char ** argv)
   err = ref-result;
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
 
-  // Counters
-  Grid.Barrier();
   Dw.Report();
-
-
+  
   // guard
   double err0 = norm2(err);
 
