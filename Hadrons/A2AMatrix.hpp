@@ -203,6 +203,49 @@ public:
             });
         }
     }
+    
+    
+    // accTrMul(acc, a, b, eval): acc += tr(a*b) / eval / eval
+    template <typename C, typename MatLeft, typename MatRight, typename Eval>
+    static inline void accTrMul(C &acc,
+                                const MatLeft &a,
+                                const MatRight &b,
+                                const Eval &eval)
+    {
+        int vsize = a.cols();
+        
+        thread_for(r,vsize,
+                   {
+                       Eigen::VectorXcd tmpv(vsize);
+                       Eigen::VectorXcd avec(vsize);
+                       Eigen::VectorXcd bvec(vsize);
+                       C tmp;
+                       ComplexD reval = eval(r);
+
+                       avec = a.row(r);
+                       bvec = b.col(r);
+                       tmpv = avec.cwiseProduct(bvec.cwiseProduct(eval));
+                       tmp  = tmpv.sum()*reval;
+                       
+                       tmpv = b.row(r).conjugate();
+                       bvec = tmpv.cwiseProduct(eval);
+                       tmpv = avec.cwiseProduct(bvec);
+                       tmp += tmpv.sum()*reval;
+
+                       avec = a.col(r).conjugate();
+                       tmpv = avec.cwiseProduct(bvec);
+                       tmp += tmpv.sum()*reval;
+
+                       bvec = b.col(r);
+                       tmpv = avec.cwiseProduct(bvec.cwiseProduct(eval));
+                       tmp += tmpv.sum()*reval;
+                       
+                       thread_critical
+                       {
+                           acc += tmp;
+                       }
+                   });
+    }
 
     template <typename MatLeft, typename MatRight>
     static inline double accTrMulFlops(const MatLeft &a, const MatRight &b)
@@ -210,6 +253,14 @@ public:
         double n = a.rows()*a.cols();
 
         return 8.*n;
+    }
+    
+    template <typename MatLeft, typename MatRight>
+    static inline double accTrMulCCFlops(const MatLeft &a, const MatRight &b)
+    {
+        double n = a.rows()*a.cols();
+        
+        return 36.*n;
     }
 
     // mul(res, a, b): res = a*b
@@ -560,7 +611,7 @@ void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead)
         unsigned int         t      = tp1 - 1;
         std::vector<hsize_t> offset = {static_cast<hsize_t>(t), 0, 0};
         
-        if (t % 10 == 0)
+        if (t % 1 == 0)
         {
             std::cout << " " << t;
             std::cout.flush();

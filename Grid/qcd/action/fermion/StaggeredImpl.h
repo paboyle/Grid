@@ -205,7 +205,7 @@ public:
             //    PokeIndex<LorentzIndex>(Uds, Udag, mu + 4);
             
             //
-#if False // MILC (stores -w^dgr(x+2)W^dgr(x+1)W^dgr(x). must use c2=-1)
+#if 0 // MILC (does not ! store -w^dgr(x+2)W^dgr(x+1)W^dgr(x). must use c2=-1)
             U  = PeekIndex<LorentzIndex>(Ulong, mu);
             UUU = adj( U );
             UUUdag = Cshift(U, mu, -3);
@@ -222,6 +222,47 @@ public:
         }
     }
 
+    
+    
+    
+    inline void DoubleStore(GridBase *GaugeGrid,
+                            DoubledGaugeField &Uds,
+                            const GaugeField &Uthin) {
+        conformable(Uds.Grid(), GaugeGrid);
+        conformable(Uthin.Grid(), GaugeGrid);
+        GaugeLinkField U(GaugeGrid);
+        GaugeLinkField Udag(GaugeGrid);
+        for (int mu = 0; mu < Nd; mu++) {
+            
+            // Staggered Phase.
+            Lattice<iScalar<vInteger> > coor(GaugeGrid);
+            Lattice<iScalar<vInteger> > x(GaugeGrid); LatticeCoordinate(x,0);
+            Lattice<iScalar<vInteger> > y(GaugeGrid); LatticeCoordinate(y,1);
+            Lattice<iScalar<vInteger> > z(GaugeGrid); LatticeCoordinate(z,2);
+            Lattice<iScalar<vInteger> > t(GaugeGrid); LatticeCoordinate(t,3);
+            
+            Lattice<iScalar<vInteger> > lin_z(GaugeGrid); lin_z=x+y;
+            Lattice<iScalar<vInteger> > lin_t(GaugeGrid); lin_t=x+y+z;
+            
+            ComplexField phases(GaugeGrid);    phases=1.0;
+            
+            if ( mu == 1 ) phases = where( mod(x    ,2)==(Integer)0, phases,-phases);
+            if ( mu == 2 ) phases = where( mod(lin_z,2)==(Integer)0, phases,-phases);
+            if ( mu == 3 ) phases = where( mod(lin_t,2)==(Integer)0, phases,-phases);
+            
+            // 1 hop based on fat links
+            U      = PeekIndex<LorentzIndex>(Uthin, mu);
+            Udag   = adj( Cshift(U, mu, -1));
+            
+            U    = U    *phases;
+            Udag = Udag *phases;
+            
+            InsertGaugeField(Uds,U,mu);
+            InsertGaugeField(Uds,Udag,mu+4);
+            
+        }
+    }
+    
   inline void InsertForce4D(GaugeField &mat, FermionField &Btilde, FermionField &A,int mu){
     GaugeLinkField link(mat.Grid());
     link = TraceIndex<SpinIndex>(outerProduct(Btilde,A)); 

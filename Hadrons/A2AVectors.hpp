@@ -31,6 +31,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Environment.hpp>
+#include <Hadrons/Module.hpp>
 #include <Hadrons/Solver.hpp>
 
 BEGIN_HADRONS_NAMESPACE
@@ -127,6 +128,35 @@ private:
     FermionField                             src_o_, sol_e_, sol_o_, tmp_, tmp5_;
 };
 
+
+template <typename FImpl>
+class A2AVectorsSchurStaggeredNoEval
+{
+public:
+    FERM_TYPE_ALIASES(FImpl,);
+    SOLVER_TYPE_ALIASES(FImpl,);
+public:
+    A2AVectorsSchurStaggeredNoEval(FMat &action);
+    virtual ~A2AVectorsSchurStaggeredNoEval(void) = default;
+    void makeLowModeV(FermionField &vout,
+                      const FermionField &evec, const std::complex<double> eval, const int sign=0);
+    void makeLowModeV5D(FermionField &vout_4d, FermionField &vout_5d,
+                        const FermionField &evec, const std::complex<double> eval, const int sign=0);
+    void makeLowModeW(FermionField &wout,
+                      const FermionField &evec, const std::complex<double> eval, const int sign=0);
+    void makeLowModeW5D(FermionField &wout_4d, FermionField &wout_5d,
+                        const FermionField &evec, const std::complex<double> eval, const int sign=0);
+    
+private:
+    FMat                                     &action_;
+    GridBase                                 *fGrid_, *frbGrid_, *gGrid_;
+    bool                                     is5d_;
+    FermionField                             src_o_, sol_e_, sol_o_, tmp_, tmp5_;
+};
+
+
+
+
 /******************************************************************************
  *                  Methods for V & W all-to-all vectors I/O                  *
  ******************************************************************************/
@@ -143,6 +173,12 @@ public:
     template <typename Field>
     static void write(const std::string fileStem, std::vector<Field> &vec, 
                       const bool multiFile, const int trajectory = -1);
+    template <typename Eval>
+    static void readEvals(const std::string fileName, int size, Eval &eval);
+    
+    template <typename Field>
+    static void writeEvals(const std::string fileStem, std::vector<Field> &eval,
+                           const int trajectory = -1);
     template <typename Field>
     static void read(std::vector<Field> &vec, const std::string fileStem,
                      const bool multiFile, const int trajectory = -1);
@@ -160,6 +196,12 @@ private:
         {
             return stem + t + ".bin";
         }
+    }
+    static inline std::string evalFilename(const std::string stem, const int traj)
+    {
+        std::string t = (traj < 0) ? "" : ("." + std::to_string(traj));
+        
+        return stem + t + ".txt";
     }
 };
 
@@ -577,6 +619,111 @@ void A2AVectorsSchurStaggeredLow<FImpl>::makeLowModeW5D(FermionField &wout_4d,
 
 
 /******************************************************************************
+ *               A2AVectorsSchurStaggeredNoEval template implementation             *
+ ******************************************************************************/
+template <typename FImpl>
+A2AVectorsSchurStaggeredNoEval<FImpl>::A2AVectorsSchurStaggeredNoEval(FMat &action)
+: action_(action)
+, fGrid_(action_.FermionGrid())
+, frbGrid_(action_.FermionRedBlackGrid())
+, gGrid_(action_.GaugeGrid())
+, src_o_(frbGrid_)
+, sol_e_(frbGrid_)
+, sol_o_(frbGrid_)
+, tmp_(frbGrid_)
+, tmp5_(fGrid_)
+//, op_(action_)
+{}
+
+
+template <typename FImpl>
+void A2AVectorsSchurStaggeredNoEval<FImpl>::makeLowModeV(FermionField &vout,
+                                                      const FermionField &evec,
+                                                      const std::complex<double> eval,
+                                                      const int sign)
+{
+    src_o_ = evec;
+    src_o_.Checkerboard() = Odd;
+    pickCheckerboard(Even, sol_e_, vout);
+    pickCheckerboard(Odd, sol_o_, vout);
+    
+    /////////////////////////////////////////////////////
+    /// v_e = -i/Im(eval) * Meo evec_o
+    /////////////////////////////////////////////////////
+    action_.Meooe(src_o_, tmp_);
+    ComplexD minusI(0, -1.0);
+    ComplexD cc = minusI/eval.imag();
+    sol_e_ = cc * tmp_;
+    
+    /////////////////////////////////////////////////////
+    /// v_o = evec_o
+    /////////////////////////////////////////////////////
+    sol_o_ = src_o_;
+    if(sign){sol_o_ = -sol_o_;}
+    setCheckerboard(vout, sol_e_);
+    assert(sol_e_.Checkerboard() == Even);
+    setCheckerboard(vout, sol_o_);
+    assert(sol_o_.Checkerboard() == Odd);
+}
+
+template <typename FImpl>
+void A2AVectorsSchurStaggeredNoEval<FImpl>::makeLowModeV5D(FermionField &vout_4d,
+                                                        FermionField &vout_5d,
+                                                        const FermionField &evec,
+                                                        const std::complex<double> eval,
+                                                        const int sign)
+{
+    makeLowModeV(vout_5d, evec, eval, sign);
+    action_.ExportPhysicalFermionSolution(vout_5d, vout_4d);
+}
+
+template <typename FImpl>
+void A2AVectorsSchurStaggeredNoEval<FImpl>::makeLowModeW(FermionField &wout,
+                                                      const FermionField &evec,
+                                                      const std::complex<double> eval,
+                                                      const int sign)
+{
+    src_o_ = evec;
+    src_o_.Checkerboard() = Odd;
+    pickCheckerboard(Even, sol_e_, wout);
+    pickCheckerboard(Odd, sol_o_, wout);
+    
+    /////////////////////////////////////////////////////
+    /// v_e = (-i/eval * Meo evec_o)
+    /////////////////////////////////////////////////////
+    action_.Meooe(src_o_, tmp_);
+    ComplexD minusI(0, -1.0);
+    ComplexD cc = minusI/eval.imag();
+    sol_e_ = cc * tmp_;
+    
+    /////////////////////////////////////////////////////
+    /// v_o = evec_o
+    /////////////////////////////////////////////////////
+    sol_o_ = src_o_;
+    if(sign){sol_o_ = -sol_o_;}
+    setCheckerboard(wout, sol_e_);
+    assert(sol_e_.Checkerboard() == Even);
+    setCheckerboard(wout, sol_o_);
+    assert(sol_o_.Checkerboard() == Odd);
+}
+
+template <typename FImpl>
+void A2AVectorsSchurStaggeredNoEval<FImpl>::makeLowModeW5D(FermionField &wout_4d,
+                                                        FermionField &wout_5d,
+                                                        const FermionField &evec,
+                                                        const std::complex<double> eval,
+                                                        const int sign)
+{
+    makeLowModeW(tmp5_, evec, eval, sign);
+    action_.DminusDag(tmp5_, wout_5d);
+    action_.ExportPhysicalFermionSource(wout_5d, wout_4d);
+}
+
+
+
+
+
+/******************************************************************************
  *               all-to-all vectors I/O template implementation               *
  ******************************************************************************/
 template <typename Field>
@@ -616,6 +763,64 @@ void A2AVectorsIo::write(const std::string fileStem, std::vector<Field> &vec,
         }
         binWriter.close();
     }
+}
+
+#include <iostream>
+#include <iterator>
+
+template <typename Eval>
+void A2AVectorsIo::readEvals(const std::string fileName,
+                             int size,
+                             Eval &eval)
+{
+    
+    std::ifstream file;
+    file.open (fileName);
+    std::istream_iterator<std::complex<double>> eos;
+    std::istream_iterator<std::complex<double>> iit (file);
+    
+    for(int i=0;i<size;i++)
+    {
+        //LOG(Message) << "Reading eval " << i << std::endl;
+        
+        // need to divide meson field by evals
+        if (iit!=eos) eval[i] = 1.0 / *iit;
+        ++iit;
+        
+        //LOG(Debug) << "eval " << i << eval[i] << std::endl;
+    }
+    file.close();
+}
+
+
+#include <iostream>
+template <typename Field>
+void A2AVectorsIo::writeEvals(const std::string fileStem,
+                              std::vector<Field> &eval,
+                              const int trajectory)
+{
+
+    std::string dir    = dirname(fileStem);
+    int         status = mkdir(dir);
+    if (status)
+    {
+        HADRONS_ERROR(Io, "cannot create directory '" + dir
+                      + "' ( " + std::strerror(errno) + ")");
+    }
+    
+    std::string  filename = evalFilename(fileStem, trajectory);
+    
+    std::ofstream file;
+    file.open (filename);
+    typedef std::numeric_limits< double > dbl;
+    file.precision(dbl::max_digits10 - 1);
+    file << std::scientific;
+    for (unsigned int i = 0; i < eval.size(); ++i)
+    {
+        LOG(Message) << "Writing eval " << i << std::endl;
+        file << eval[i] << std::endl;
+    }
+    file.close();
 }
 
 template <typename Field>

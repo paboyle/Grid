@@ -72,11 +72,10 @@ class StagMesonFieldCCKernel: public A2AKernel<T, typename FImpl::FermionField>
 public:
     typedef typename FImpl::FermionField FermionField;
 public:
-    StagMesonFieldCCKernel(const LatticeGaugeField &U,
-                           const std::vector<Gamma::Algebra> &gamma,
+    StagMesonFieldCCKernel(const std::vector<Gamma::Algebra> &gamma,
                            const std::vector<LatticeComplex> &mom,
                            GridBase *grid)
-    : U_(U), gamma_(gamma), mom_(mom), grid_(grid)
+    : gamma_(gamma), mom_(mom), grid_(grid)
     {
         vol_ = 1.;
         for (auto &d: grid_->GlobalDimensions())
@@ -93,7 +92,7 @@ public:
                             const unsigned int orthogDim,
                             double &t)
     {
-        A2Autils<FImpl>::StagMesonFieldCC(m, U_, left, right, gamma_, mom_, orthogDim, &t);
+        A2Autils<FImpl>::StagMesonFieldCC(m, left, right, gamma_, mom_, orthogDim, &t);
     }
     
     virtual double flops(const unsigned int blockSizei, const unsigned int blockSizej)
@@ -109,7 +108,7 @@ public:
                +  vol_*(2.0*sizeof(T)*mom_.size())*blockSizei*blockSizej*gamma_.size();
     }
 private:
-    const LatticeGaugeField &U_;
+    //const LatticeGaugeField &U_;
     const std::vector<Gamma::Algebra> &gamma_;
     const std::vector<LatticeComplex> &mom_;
     GridBase                          *grid_;
@@ -323,28 +322,45 @@ void TStagA2AMesonFieldCC<FImpl>::execute(void)
         return md;
     };
 
-    // U_mu(x) right(x+mu)
-    std::vector<LatticeColourMatrix> Umu(4,U.Grid());
-    for(int mu=0;mu<Nd;mu++){
-        Umu[mu] = PeekIndex<LorentzIndex>(U,mu);
-    }
-
-    // spatial gamma's only
+    // Do spatial gamma's only
+    // Staggered Phases.
+    //Lattice<iScalar<vInteger> > coor(U.Grid());
+    Lattice<iScalar<vInteger> > x(U.Grid()); LatticeCoordinate(x,0);
+    Lattice<iScalar<vInteger> > y(U.Grid()); LatticeCoordinate(y,1);
+    //Lattice<iScalar<vInteger> > z(U.Grid()); LatticeCoordinate(z,2);
+    //Lattice<iScalar<vInteger> > t(U.Grid()); LatticeCoordinate(t,3);
+    Lattice<iScalar<vInteger> > lin_z(U.Grid()); lin_z=x+y;
+    //Lattice<iScalar<vInteger> > lin_t(U.Grid()); lin_t=x+y+z;
+    ComplexField phases(U.Grid());
+    phases=1.0;
     int mu;
     if(gamma_[0]==Gamma::Algebra::GammaX)mu=0;
-    else if(gamma_[0]==Gamma::Algebra::GammaY)mu=1;
-    else if(gamma_[0]==Gamma::Algebra::GammaZ)mu=2;
-    else assert(0);
-    for(int j=0;j<N_j;j++)
-        right[j] = Umu[mu]*Cshift(right[j], mu, 1);
-        //shift[j] = Umu[mu]*Cshift(right[j], mu, 1);
-    
-    Kernel      kernel(U, gamma_, ph, envGetGrid(FermionField));
+    else if(gamma_[0]==Gamma::Algebra::GammaY){
+        mu=1;
+        phases = where( mod(x    ,2)==(Integer)0, phases,-phases);
+    } else if(gamma_[0]==Gamma::Algebra::GammaZ){
+        mu=2;
+        phases = where( mod(lin_z,2)==(Integer)0, phases,-phases);
+    } else assert(0);
+    //if ( mu == 3 ) phases = where( mod(lin_t,2)==(Integer)0, phases,-phases);
+    // U_mu(x) right(x+mu)
+    LatticeColourMatrix Umu(U.Grid());
+    Umu = PeekIndex<LorentzIndex>(U,mu);
+    Umu *= phases;
+   
+    FermionField temp(right[0].Grid()); 
+    for(int j=0;j<N_j;j++){
+        temp = Umu*Cshift(right[j], mu, 1);
+        right[j]=temp;
+        //LOG(Message) << "V " << j << std::endl;
+        //LOG(Message) << right[j] << std::endl;
+        //LOG(Message) << "W " << j << std::endl;
+        //LOG(Message) << left[j] << std::endl;
+    }
+    Kernel      kernel(gamma_, ph, envGetGrid(FermionField));
 
     envGetTmp(Computation, computation);
     computation.execute(left, right, kernel, ionameFn, filenameFn, metadataFn);
-    //computation.execute(left, shift, kernel, ionameFn, filenameFn, metadataFn);
-
 }
 
 END_MODULE_NAMESPACE

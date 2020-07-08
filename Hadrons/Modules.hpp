@@ -33,6 +33,7 @@
 #include <Hadrons/Modules/MAction/WilsonClover.hpp>
 #include <Hadrons/Modules/MAction/ZMobiusDWF.hpp>
 #include <Hadrons/Modules/MAction/ImprovedStaggered.hpp>
+#include <Hadrons/Modules/MAction/Staggered.hpp>
 #include <Hadrons/Modules/MAction/DWF.hpp>
 #include <Hadrons/Modules/MGauge/UnitEm.hpp>
 #include <Hadrons/Modules/MGauge/Electrify.hpp>
@@ -61,6 +62,8 @@
 #include <Hadrons/Modules/MContraction/A2AAslashField.hpp>
 #include <Hadrons/Modules/MContraction/Baryon.hpp>
 #include <Hadrons/Modules/MContraction/Meson.hpp>
+#include <Hadrons/Modules/MContraction/MesonCC.hpp>
+#include <Hadrons/Modules/MContraction/MesonCCLoop.hpp>
 #include <Hadrons/Modules/MNPR/FourQuark.hpp>
 #include <Hadrons/Modules/MNPR/Bilinear.hpp>
 #include <Hadrons/Modules/MNPR/Amputate.hpp>

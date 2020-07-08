@@ -223,6 +223,21 @@ void StaggeredKernels<Impl>::DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, Dou
 };
 
 template <class Impl>
+void StaggeredKernels<Impl>::DhopSiteDag(StencilImpl &st,
+                                         LebesgueOrder &lo,
+                                         DoubledGaugeFieldView &U,
+                                         SiteSpinor *buf, int LLs, int sU,
+                                         const FermionFieldView &in,
+                                         FermionFieldView &out,
+                                         int interior,
+                                         int exterior)
+{
+    int dag=1;
+    DhopSite(st,lo,U,buf,LLs,sU,in,out,dag,interior,exterior);
+};
+
+
+template <class Impl>
 void StaggeredKernels<Impl>::DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
 				      SiteSpinor *buf, int LLs, int sU,
 				      const FermionFieldView &in, FermionFieldView &out,
@@ -274,6 +289,64 @@ void StaggeredKernels<Impl>::DhopSite(StencilImpl &st, LebesgueOrder &lo, Double
   }
 };
 
+
+
+template <class Impl>
+void StaggeredKernels<Impl>::DhopSite(StencilImpl &st,
+                                      LebesgueOrder &lo,
+                                      DoubledGaugeFieldView &U,
+                                      SiteSpinor *buf,
+                                      int LLs,
+                                      int sU,
+                                      const FermionFieldView &in,
+                                      FermionFieldView &out,
+                                      int interior,
+                                      int exterior)
+{
+    int dag=0;
+    DhopSite(st,lo,U,buf,LLs,sU,in,out,dag,interior,exterior);
+};
+
+template <class Impl>
+void StaggeredKernels<Impl>::DhopSite(StencilImpl &st,
+                                      LebesgueOrder &lo,
+                                      DoubledGaugeFieldView &U,
+                                      SiteSpinor *buf,
+                                      int LLs,
+                                      int sU,
+                                      const FermionFieldView &in,
+                                      FermionFieldView &out,
+                                      int dag,
+                                      int interior,
+                                      int exterior)
+{
+    switch(Opt) {
+#ifdef AVX512
+        case OptInlineAsm:
+            if ( interior && exterior ) {
+                DhopSiteAsm(st,lo,U,buf,LLs,sU,in,out,dag);
+            } else {
+                std::cout << GridLogError << "Cannot overlap comms and compute with Staggered assembly"<<std::endl;
+                assert(0);
+            }
+            break;
+#endif
+        default:
+            std::cout<<"Oops Opt = "<<Opt<<std::endl;
+            assert(0);
+            break;
+    }
+};
+
+
+
+
+
+
+
+
+
+
 template <class Impl>
 void StaggeredKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeFieldView &U,  DoubledGaugeFieldView &UUU, SiteSpinor *buf, int sF,
 					    int sU, const FermionFieldView &in, FermionFieldView &out, int dir, int disp) 
@@ -283,6 +356,22 @@ void StaggeredKernels<Impl>::DhopDirKernel( StencilImpl &st, DoubledGaugeFieldVi
   // Because we work out pU . dS/dU 
   // U
   assert(0);
+}
+
+template <class Impl>
+void StaggeredKernels<Impl>::DhopDirKernel(StencilImpl &st,
+                                           DoubledGaugeFieldView &U,
+                                           SiteSpinor *buf, int sF,
+                                           int sU, const FermionFieldView &in,
+                                           FermionFieldView &out,
+                                           int dir,
+                                           int disp)
+{
+    // Disp should be either +1,-1,+3,-3
+    // What about "dag" ?
+    // Because we work out pU . dS/dU
+    // U
+    assert(0);
 }
 
 NAMESPACE_END(Grid);

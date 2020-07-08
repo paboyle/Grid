@@ -1,5 +1,6 @@
 modules_cc =\
   Modules/MContraction/StagA2AMesonField.cc \
+  Modules/MContraction/StagA2AMesonFieldCC.cc \
   Modules/MSource/SeqConserved.cc \
   Modules/MSource/Convolution.cc \
   Modules/MSource/SeqAslash.cc \
@@ -27,6 +28,7 @@ modules_cc =\
   Modules/MScalar/ChargedProp.cc \
   Modules/MAction/Wilson.cc \
   Modules/MAction/ImprovedStaggered.cc \
+  Modules/MAction/Staggered.cc \
   Modules/MAction/DWF.cc \
   Modules/MAction/MobiusDWF.cc \
   Modules/MAction/ScaledDWF.cc \
@@ -58,6 +60,8 @@ modules_cc =\
   Modules/MContraction/A2AAslashField.cc \
   Modules/MContraction/DiscLoop.cc \
   Modules/MContraction/Meson.cc \
+  Modules/MContraction/MesonCC.cc \
+  Modules/MContraction/MesonCCLoop.cc \
   Modules/MContraction/WeakEye3pt.cc \
   Modules/MNPR/Bilinear.cc \
   Modules/MNPR/FourQuark.cc \
@@ -110,6 +114,7 @@ modules_hpp =\
   Modules/MAction/WilsonClover.hpp \
   Modules/MAction/ZMobiusDWF.hpp \
   Modules/MAction/ImprovedStaggered.hpp \
+  Modules/MAction/Staggered.hpp \
   Modules/MAction/DWF.hpp \
   Modules/MGauge/UnitEm.hpp \
   Modules/MGauge/Electrify.hpp \
@@ -138,6 +143,8 @@ modules_hpp =\
   Modules/MContraction/A2AAslashField.hpp \
   Modules/MContraction/Baryon.hpp \
   Modules/MContraction/Meson.hpp \
+  Modules/MContraction/MesonCC.hpp \
+  Modules/MContraction/MesonCCLoop.hpp \
   Modules/MNPR/FourQuark.hpp \
   Modules/MNPR/Bilinear.hpp \
   Modules/MNPR/Amputate.hpp \
