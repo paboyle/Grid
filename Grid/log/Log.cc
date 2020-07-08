@@ -74,7 +74,7 @@ void GridLogConfigure(std::vector<std::string> &logstreams) {
   GridLogError.Active(0);
   GridLogWarning.Active(0);
   GridLogMessage.Active(1); // at least the messages should be always on
-  GridLogIterative.Active(0);
+  GridLogIterative.Active(1);
   GridLogDebug.Active(0);
   GridLogPerformance.Active(0);
   GridLogIntegrator.Active(1);
