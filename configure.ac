@@ -392,6 +392,15 @@ case ${ax_cv_cxx_compiler_vendor} in
                            [generic SIMD vector width (in bytes)])
         SIMD_GEN_WIDTH_MSG=" (width= $ac_gen_simd_width)"
         SIMD_FLAGS='';;
+      A64FX)
+        case ${ax_cv_cxx_compiler_vendor} in
+          gnu)
+            AC_DEFINE([A64FX],[1],[A64FX / 512-bit SVE VLS])
+            SIMD_FLAGS='-march=armv8.2-a+sve -msve-vector-bits=512 -fno-gcse -DDSLASHINTRIN';;
+          clang)
+            AC_DEFINE([A64FX],[1],[A64FX / 512-bit SVE VLA])
+            SIMD_FLAGS='-mcpu=a64fx -DARMCLANGCOMPAT -DDSLASHINTRIN';;
+        esac;;
       NEONv8)
         AC_DEFINE([NEONV8],[1],[ARMv8 NEON])
         SIMD_FLAGS='-march=armv8-a';;

@@ -120,7 +120,7 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
   #if defined(A64FX) || defined(A64FXFIXEDSIZE) // breakout A64FX SVE ACLE here
     #include <arm_sve.h>
     #if defined(A64FX) // VLA
-      #pragma message("building for A64FX / SVE ACLE VLA")
+      #pragma message("building A64FX / SVE ACLE VLA")
       #if defined(ARMCLANGCOMPAT)
         #pragma message("applying data types patch")
       #endif
@@ -131,11 +131,41 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
       #include "Grid_a64fx-fixedsize.h"
     #endif
   #else
-    #pragma message("building for GEN") // generic
+    #pragma message("building GEN") // generic
     #include "Grid_generic.h"
   #endif
 #endif
 
+#ifdef A64FX
+  #include <arm_sve.h>
+  #ifdef __ARM_FEATURE_SVE_BITS
+    //#pragma message("building A64FX SVE VLS")
+    #include "Grid_a64fx-fixedsize.h"
+  #else
+    #pragma message("building A64FX SVE VLA")
+    #if defined(ARMCLANGCOMPAT)
+      #pragma message("applying data types patch")
+    #endif
+    #include "Grid_a64fx-2.h"
+  #endif
+#endif
+
+/*
+#ifdef A64FXVLA
+#pragma message("building A64FX VLA")
+#if defined(ARMCLANGCOMPAT)
+  #pragma message("applying data types patch")
+#endif
+#include <arm_sve.h>
+#include "Grid_a64fx-2.h"
+#endif
+
+#ifdef A64FXVLS
+#pragma message("building A64FX VLS")
+#include <arm_sve.h>
+#include "Grid_a64fx-fixedsize.h"
+#endif
+*/
 
 #ifdef SSE4
 #include "Grid_sse4.h"
