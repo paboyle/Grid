@@ -131,7 +131,7 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
       #include "Grid_a64fx-fixedsize.h"
     #endif
   #else
-    #pragma message("building GEN") // generic
+    //#pragma message("building GEN") // generic
     #include "Grid_generic.h"
   #endif
 #endif

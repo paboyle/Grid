@@ -1,3 +1,13 @@
+* gcc 10.1 prebuild, QPACE4 interactive login w/ MPI
+
+scl enable gcc-toolset-10 bash
+module load mpi/openmpi-aarch64
+
+../configure --enable-simd=A64FX --enable-comms=mpi3 --enable-shm=shmget CXX=mpicxx CC=mpicc
+
+
+================================== deprecated ================================================
+
 * gcc 10.1 prebuild, QPACE4 interactive login
 
 scl enable gcc-toolset-10 bash
