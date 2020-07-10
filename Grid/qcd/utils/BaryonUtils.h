@@ -777,7 +777,7 @@ void BaryonUtils<FImpl>::Baryon_Gamma_3pt(
 
 /***********************************************************************
  * End of BaryonGamma3pt-function code.                                *
- *																	   *
+ *																	                                   *
  * The following code is for Sigma -> N rare hypeon decays             *
  **********************************************************************/
 
@@ -788,47 +788,62 @@ void BaryonUtils<FImpl>::Baryon_Gamma_3pt(
 template <class FImpl>
 template <class mobj, class mobj2, class robj>
 void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_Eye_site(const mobj &Dq_loop,
-						 const mobj2 &Du_spec,
-						 const mobj &Dd_tf,
-						 const mobj &Ds_ti,
-				                 const Gamma Gamma_H,
-				                 const Gamma GammaB_sigma,
-		                 		 const Gamma GammaB_nucl,
-						 robj &result)
+             const mobj2 &Du_spec,
+             const mobj &Dd_tf,
+             const mobj &Ds_ti,
+                         const Gamma Gamma_H,
+                         const Gamma GammaB_sigma,
+                         const Gamma GammaB_nucl,
+             robj &result)
 {
-
   Gamma g5(Gamma::Algebra::Gamma5); 
 
-  auto DuG = Du_spec * GammaB_nucl;
-  // Gamma^B * Ds * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
-  auto GDsGDd = GammaB_sigma * Ds_ti * Gamma_H * g5 * adj(Dd_tf) * g5;
-  // Dq_loop * \gamma_\mu^L
-  auto DqG = Dq_loop * Gamma_H;
+  auto Gn_adjDd_GH_Ds   = GammaB_nucl * g5 * adj(Dd_tf) * g5 * Gamma_H * Ds_ti;
+  auto Du_Gs            = Du_spec * GammaB_sigma;
+  auto Dq_GH            = Dq_loop * Gamma_H;
+  auto Tr_Dq_GH         = trace(Dq_GH)()()();
+  
+  // Alternative trace method
+  // auto Tr_Dq_GH = Dq_GH()(0,0)(0,0);
+  // Tr_Dq_GH = Zero();
+
+  // for (int tau=0; tau<Ns; tau++){
+  // for (int j=0; j<Nc; j++){
+    // Tr_Dq_GH += Dq_GH()(tau,tau)(j,j);
+  // }}
+
+  Real ee;
 
   for (int ie_n=0; ie_n < 6 ; ie_n++){
     int a_n = epsilon[ie_n][0]; //a
     int b_n = epsilon[ie_n][1]; //b
     int c_n = epsilon[ie_n][2]; //c
-    for (int ie_s=0; ie_s < 6 ; ie_s++){
-      int a_s = epsilon[ie_s][0]; //a'
-      int b_s = epsilon[ie_s][1]; //b'
-      int c_s = epsilon[ie_s][2]; //c'
-      for (int alpha_s=0; alpha_s<Ns; alpha_s++){
-      for (int beta_n=0; beta_n<Ns; beta_n++){
-        auto GDsGDd_ab_bb = GDsGDd()(alpha_s,beta_n)(b_s,b_n);
-        for (int tau2=0; tau2<Ns; tau2++){
-        for (int j=0; j<Nc; j++){
-          auto DqG_tt_jj = DqG()(tau2,tau2)(j,j);
-          auto ee_GDGDDG = epsilon_sgn[ie_n] * epsilon_sgn[ie_s] * GDsGDd_ab_bb * DqG_tt_jj;
-          for (int gamma_s=0; gamma_s<Ns; gamma_s++){
-          for (int gamma_n=0; gamma_n<Ns; gamma_n++){
-            result()(gamma_s,gamma_n)() += ee_GDGDDG * DuG()(alpha_s, beta_n)(a_s,a_n) * Du_spec()(gamma_s,gamma_n)(c_s,c_n);
-            result()(gamma_s,gamma_n)() -= ee_GDGDDG * DuG()(gamma_s, beta_n)(c_s,a_n) * Du_spec()(alpha_s,gamma_n)(a_s,c_n);
-          }}
-	}}
+  for (int ie_s=0; ie_s < 6 ; ie_s++){
+    int a_s = epsilon[ie_s][0]; //a'
+    int b_s = epsilon[ie_s][1]; //b'
+    int c_s = epsilon[ie_s][2]; //c'
+
+    ee = epsilon_sgn[ie_n] * epsilon_sgn[ie_s];
+
+    for (int alpha_n=0; alpha_n<Ns; alpha_n++){
+    for (int beta_s=0;  beta_s<Ns;  beta_s++){
+
+      auto Gn_adjDd_GH_Ds_ab_bb = Gn_adjDd_GH_Ds ()(alpha_n, beta_s)(b_n,b_s);
+
+      for (int gamma_s=0; gamma_s<Ns; gamma_s++){
+      for (int gamma_n=0; gamma_n<Ns; gamma_n++){
+        result()(gamma_n,gamma_s)() += ee   * Gn_adjDd_GH_Ds_ab_bb
+                                            * Du_spec         ()(gamma_n,gamma_s)(c_n,c_s)
+                                            * Du_Gs           ()(alpha_n, beta_s)(a_n,a_s) 
+                                            * Tr_Dq_GH;
+                                            
+        result()(gamma_n,gamma_s)() -= ee   * Gn_adjDd_GH_Ds_ab_bb
+                                            * Du_spec         ()(alpha_n,gamma_s)(a_n,c_s)
+                                            * Du_Gs           ()(gamma_n, beta_s)(c_n,a_s) 
+                                            * Tr_Dq_GH;
       }}
-    }
-  }
+    }}
+  }}
 }
 
 /* Du_ti is a quark line from t_i to t_H
@@ -839,55 +854,61 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_Eye_site(const mobj &Dq_loop,
 template <class FImpl>
 template <class mobj, class mobj2, class robj>
 void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_NonEye_site(const mobj &Du_ti,
-						 const mobj &Du_tf,
-						 const mobj2 &Du_spec,
-						 const mobj &Dd_tf,
-						 const mobj &Ds_ti,
-				                 const Gamma Gamma_H,
-				                 const Gamma GammaB_sigma,
-		                 		 const Gamma GammaB_nucl,
-						 robj &result)
+             const mobj &Du_tf,
+             const mobj2 &Du_spec,
+             const mobj &Dd_tf,
+             const mobj &Ds_ti,
+                         const Gamma Gamma_H,
+                         const Gamma GammaB_sigma,
+                         const Gamma GammaB_nucl,
+             robj &result)
 {
-
   Gamma g5(Gamma::Algebra::Gamma5); 
 
-  auto DuG = Du_spec * GammaB_nucl;
-  auto adjDu = g5 * adj(Du_tf) * g5;
-  auto adjDuG = adjDu * GammaB_nucl;
-  // Gamma^B * Ds * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
-  auto GDsGDd = GammaB_sigma * Ds_ti * Gamma_H * g5 * adj(Dd_tf) * g5;
-  // Dq_loop * \gamma_\mu^L
-  auto DuGH = Du_ti * Gamma_H;
+  auto Du_Gs          = Du_spec * GammaB_sigma;
+  auto Gn_adjDd_GH_Ds = GammaB_nucl * g5 * adj(Dd_tf) * g5 * Gamma_H * Ds_ti;
+  auto adjDu_GH_Du    = g5 * adj(Du_tf) * g5 * Gamma_H * Du_ti;
+  auto adjDu_GH_Du_Gs = adjDu_GH_Du * GammaB_sigma;
+
+  Real ee;
 
   for (int ie_n=0; ie_n < 6 ; ie_n++){
     int a_n = epsilon[ie_n][0]; //a
     int b_n = epsilon[ie_n][1]; //b
     int c_n = epsilon[ie_n][2]; //c
-    for (int ie_s=0; ie_s < 6 ; ie_s++){
-      int a_s = epsilon[ie_s][0]; //a'
-      int b_s = epsilon[ie_s][1]; //b'
-      int c_s = epsilon[ie_s][2]; //c'
-      for (int alpha_s=0; alpha_s<Ns; alpha_s++){
-      for (int beta_n=0; beta_n<Ns; beta_n++){
-        auto GDsGDd_ab_bb = GDsGDd()(alpha_s,beta_n)(b_s,b_n);
-        for (int tau2=0; tau2<Ns; tau2++){
-        for (int j=0; j<Nc; j++){
-          auto DuGH_at_aj = DuGH()(alpha_s,tau2)(a_s,j);
-          auto ee_GDGDDG_a = epsilon_sgn[ie_n] * epsilon_sgn[ie_s] * GDsGDd_ab_bb * DuGH_at_aj;
-          for (int gamma_s=0; gamma_s<Ns; gamma_s++){
-            auto DuGH_gt_cj = DuGH()(gamma_s,tau2)(c_s,j);
-            auto ee_GDGDDG_c = epsilon_sgn[ie_n] * epsilon_sgn[ie_s] * GDsGDd_ab_bb * DuGH_gt_cj;
-            for (int gamma_n=0; gamma_n<Ns; gamma_n++){
-              result()(gamma_s,gamma_n)() += ee_GDGDDG_a * DuG()(gamma_s, beta_n)(c_s,a_n) * adjDu()(tau2,gamma_n)(j,c_n);
-              result()(gamma_s,gamma_n)() += ee_GDGDDG_c * adjDuG()(tau2, beta_n)(j,a_n) * Du_spec()(alpha_s,gamma_n)(a_s,c_n);
-              result()(gamma_s,gamma_n)() -= ee_GDGDDG_a * adjDuG()(tau2, beta_n)(j,a_n) * Du_spec()(gamma_s,gamma_n)(c_s,c_n);
-              result()(gamma_s,gamma_n)() -= ee_GDGDDG_c * DuG()(alpha_s, beta_n)(a_s,a_n) * adjDu()(tau2,gamma_n)(j,c_n);
-            }
-	  }
-	}}
+  for (int ie_s=0; ie_s < 6 ; ie_s++){
+    int a_s = epsilon[ie_s][0]; //a'
+    int b_s = epsilon[ie_s][1]; //b'
+    int c_s = epsilon[ie_s][2]; //c'
+
+    ee = epsilon_sgn[ie_n] * epsilon_sgn[ie_s];
+
+    for (int alpha_n=0; alpha_n<Ns; alpha_n++){
+    for (int beta_s=0;  beta_s<Ns;  beta_s++){
+
+      auto Gn_adjDd_GH_Ds_ab_bb = Gn_adjDd_GH_Ds  ()(alpha_n, beta_s)(b_n,b_s);
+
+      for (int gamma_s=0; gamma_s<Ns; gamma_s++){
+      for (int gamma_n=0; gamma_n<Ns; gamma_n++){
+
+        result()(gamma_n,gamma_s)() += ee * Gn_adjDd_GH_Ds_ab_bb
+                                          * adjDu_GH_Du     ()(alpha_n,gamma_s)(a_n,c_s)
+                                          * Du_Gs           ()(gamma_n, beta_s)(c_n,a_s);
+
+        result()(gamma_n,gamma_s)() += ee * Gn_adjDd_GH_Ds_ab_bb
+                                          * adjDu_GH_Du_Gs  ()(gamma_n, beta_s)(c_n,a_s)
+                                          * Du_spec         ()(alpha_n,gamma_s)(a_n,c_s);
+
+        result()(gamma_n,gamma_s)() -= ee * Gn_adjDd_GH_Ds_ab_bb
+                                          * adjDu_GH_Du_Gs  ()(alpha_n, beta_s)(a_n,a_s)
+                                          * Du_spec         ()(gamma_n,gamma_s)(c_n,c_s);
+
+        result()(gamma_n,gamma_s)() -= ee * Gn_adjDd_GH_Ds_ab_bb
+                                          * adjDu_GH_Du     ()(gamma_n,gamma_s)(c_n,c_s)
+                                          * Du_Gs           ()(alpha_n, beta_s)(a_n,a_s);
       }}
-    }
-  }
+    }}
+  }}
 }
 
 //Equivalent to "One-trace"
@@ -898,47 +919,50 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q1_NonEye_site(const mobj &Du_ti,
 template <class FImpl>
 template <class mobj, class mobj2, class robj>
 void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q2_Eye_site(const mobj &Dq_loop,
-						 const mobj2 &Du_spec,
-						 const mobj &Dd_tf,
-						 const mobj &Ds_ti,
-				                 const Gamma Gamma_H,
-				                 const Gamma GammaB_sigma,
-		                 		 const Gamma GammaB_nucl,
-						 robj &result)
+             const mobj2 &Du_spec,
+             const mobj &Dd_tf,
+             const mobj &Ds_ti,
+                         const Gamma Gamma_H,
+                         const Gamma GammaB_sigma,
+                         const Gamma GammaB_nucl,
+             robj &result)
 {
-
   Gamma g5(Gamma::Algebra::Gamma5); 
 
-  auto DuG = Du_spec * GammaB_nucl;
-  // Gamma^B * Ds * \gamma_\mu^L
-  auto GDsG = GammaB_sigma * Ds_ti * Gamma_H;
-  // Dq_loop * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
-  auto DqGDd = Dq_loop * Gamma_H * g5 * adj(Dd_tf) * g5;
+  auto Gn_adjDd_GH_Duloop_GH_Ds = GammaB_nucl * g5 * adj(Dd_tf) * g5 * Gamma_H * Dq_loop * Gamma_H * Ds_ti;
+  auto Du_Gs = Du_spec * GammaB_sigma;
+
+  Real ee;
 
   for (int ie_n=0; ie_n < 6 ; ie_n++){
     int a_n = epsilon[ie_n][0]; //a
     int b_n = epsilon[ie_n][1]; //b
     int c_n = epsilon[ie_n][2]; //c
-    for (int ie_s=0; ie_s < 6 ; ie_s++){
-      int a_s = epsilon[ie_s][0]; //a'
-      int b_s = epsilon[ie_s][1]; //b'
-      int c_s = epsilon[ie_s][2]; //c'
-      for (int alpha_s=0; alpha_s<Ns; alpha_s++){
-      for (int tau=0; tau<Ns; tau++){
-      for (int i=0; i<Nc; i++){
-	auto GDsG_at_bi = GDsG()(alpha_s,tau)(b_s,i);
-        for (int beta_n=0; beta_n<Ns; beta_n++){
-          auto DqGDd_tb_ib = DqGDd()(tau,beta_n)(i,b_n);
-	  auto ee_GDGDGD = epsilon_sgn[ie_n] * epsilon_sgn[ie_s] * GDsG_at_bi * DqGDd_tb_ib;
-          for (int gamma_s=0; gamma_s<Ns; gamma_s++){
-          for (int gamma_n=0; gamma_n<Ns; gamma_n++){
-            result()(gamma_s,gamma_n)() -= ee_GDGDGD * DuG()(alpha_s, beta_n)(a_s,a_n) * Du_spec()(gamma_s,gamma_n)(c_s,c_n);
-            result()(gamma_s,gamma_n)() += ee_GDGDGD * DuG()(gamma_s, beta_n)(c_s,a_n) * Du_spec()(alpha_s,gamma_n)(a_s,c_n);
-          }}
-	}
-      }}}
-    }
-  }
+  for (int ie_s=0; ie_s < 6 ; ie_s++){
+    int a_s = epsilon[ie_s][0]; //a'
+    int b_s = epsilon[ie_s][1]; //b'
+    int c_s = epsilon[ie_s][2]; //c'
+
+    ee = epsilon_sgn[ie_n] * epsilon_sgn[ie_s];
+
+    for (int alpha_n=0; alpha_n<Ns; alpha_n++){
+    for (int beta_s=0; beta_s<Ns; beta_s++){
+
+      auto Gn_adjDd_GH_Duloop_GH_Ds_ab_bb = Gn_adjDd_GH_Duloop_GH_Ds ()(alpha_n,beta_s)(b_n,b_s);
+
+      for (int gamma_s=0; gamma_s<Ns; gamma_s++){
+      for (int gamma_n=0; gamma_n<Ns; gamma_n++){
+
+        result()(gamma_n,gamma_s)() -= ee   * Du_spec         ()(gamma_n,gamma_s)(c_n,c_s)
+                                            * Du_Gs           ()(alpha_n,beta_s)(a_n,a_s) 
+                                            * Gn_adjDd_GH_Duloop_GH_Ds_ab_bb;
+
+        result()(gamma_n,gamma_s)() += ee   * Du_Gs         ()(alpha_n,gamma_s)(a_n,c_s)
+                                            * Du_spec       ()(gamma_n,beta_s)(c_n,a_s) 
+                                            * Gn_adjDd_GH_Duloop_GH_Ds_ab_bb;
+      }}
+    }}
+  }}
 }
 
 /* Du_ti is a quark line from t_i to t_H
@@ -949,70 +973,78 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q2_Eye_site(const mobj &Dq_loop,
 template <class FImpl>
 template <class mobj, class mobj2, class robj>
 void BaryonUtils<FImpl>::Sigma_to_Nucleon_Q2_NonEye_site(const mobj &Du_ti,
-						 const mobj &Du_tf,
-						 const mobj2 &Du_spec,
-						 const mobj &Dd_tf,
-						 const mobj &Ds_ti,
-				                 const Gamma Gamma_H,
-				                 const Gamma GammaB_sigma,
-		                 		 const Gamma GammaB_nucl,
-						 robj &result)
+             const mobj &Du_tf,
+             const mobj2 &Du_spec,
+             const mobj &Dd_tf,
+             const mobj &Ds_ti,
+                         const Gamma Gamma_H,
+                         const Gamma GammaB_sigma,
+                         const Gamma GammaB_nucl,
+             robj &result)
 {
-
   Gamma g5(Gamma::Algebra::Gamma5); 
 
-  auto DuG = Du_spec * GammaB_nucl;
-  auto adjDu = g5 * adj(Du_tf) * g5;
-  auto adjDuG = adjDu * GammaB_nucl;
-  // Gamma^B * Ds * \gamma_\mu^L
-  auto GDsG = GammaB_sigma * Ds_ti * Gamma_H;
-  // Du * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
-  auto DuGDd = Du_ti * Gamma_H * g5 * adj(Dd_tf) * g5;
+  auto Du_Gs              = Du_spec * GammaB_sigma;
+  auto adjDu_GH_Ds        = g5 * adj(Du_tf) * g5 * Gamma_H * Ds_ti;
+  auto Gn_adjDd_GH_Du     = GammaB_nucl * g5 * adj(Dd_tf) * g5 * Gamma_H * Du_ti;
+  auto Gn_adjDd_GH_Du_Gs  = Gn_adjDd_GH_Du * GammaB_sigma;
+
+  Real ee;
 
   for (int ie_n=0; ie_n < 6 ; ie_n++){
     int a_n = epsilon[ie_n][0]; //a
     int b_n = epsilon[ie_n][1]; //b
     int c_n = epsilon[ie_n][2]; //c
-    for (int ie_s=0; ie_s < 6 ; ie_s++){
-      int a_s = epsilon[ie_s][0]; //a'
-      int b_s = epsilon[ie_s][1]; //b'
-      int c_s = epsilon[ie_s][2]; //c'
-      for (int alpha_s=0; alpha_s<Ns; alpha_s++){
-      for (int tau=0; tau<Ns; tau++){
-      for (int i=0; i<Nc; i++){
-	auto GDsG_at_bi = GDsG()(alpha_s,tau)(b_s,i);
-        for (int beta_n=0; beta_n<Ns; beta_n++){
-          auto DuGDd_ab_ab = DuGDd()(alpha_s,beta_n)(a_s,b_n);
-	  auto ee_GDGDGD_a = epsilon_sgn[ie_n] * epsilon_sgn[ie_s] * GDsG_at_bi * DuGDd_ab_ab;
-          for (int gamma_s=0; gamma_s<Ns; gamma_s++){
-            auto DuGDd_gb_cb = DuGDd()(gamma_s,beta_n)(c_s,b_n);
-	    auto ee_GDGDGD_c = epsilon_sgn[ie_n] * epsilon_sgn[ie_s] * GDsG_at_bi * DuGDd_gb_cb;
-            for (int gamma_n=0; gamma_n<Ns; gamma_n++){
-              result()(gamma_s,gamma_n)() -= ee_GDGDGD_a * DuG()(gamma_s, beta_n)(c_s,a_n) * adjDu()(tau,gamma_n)(i,c_n);
-              result()(gamma_s,gamma_n)() -= ee_GDGDGD_c * adjDuG()(tau, beta_n)(i,a_n) * Du_spec()(alpha_s,gamma_n)(a_s,c_n);
-              result()(gamma_s,gamma_n)() += ee_GDGDGD_a * adjDuG()(tau, beta_n)(i,a_n) * Du_spec()(gamma_s,gamma_n)(c_s,c_n);
-              result()(gamma_s,gamma_n)() += ee_GDGDGD_c * DuG()(alpha_s, beta_n)(a_s,a_n) * adjDu()(tau,gamma_n)(i,c_n);
-            }
-	  }
-	}
-      }}}
-    }
-  }
+  for (int ie_s=0; ie_s < 6 ; ie_s++){
+    int a_s = epsilon[ie_s][0]; //a'
+    int b_s = epsilon[ie_s][1]; //b'
+    int c_s = epsilon[ie_s][2]; //c'
+
+    ee = epsilon_sgn[ie_n] * epsilon_sgn[ie_s];
+
+    for (int alpha_n=0; alpha_n<Ns; alpha_n++){
+    for (int beta_s=0;  beta_s<Ns;   beta_s++){
+
+      auto adjDu_GH_Ds_ab_ab = adjDu_GH_Ds()(alpha_n, beta_s)(a_n,b_s);
+      auto Gn_adjDd_GH_Du_Gs_ab_ba = Gn_adjDd_GH_Du_Gs()(alpha_n, beta_s)(b_n,a_s);
+
+      for (int gamma_s=0; gamma_s<Ns; gamma_s++){
+        auto Gn_adjDd_GH_Du_ag_bc = Gn_adjDd_GH_Du()(alpha_n,gamma_s)(b_n,c_s);
+      for (int gamma_n=0; gamma_n<Ns; gamma_n++){
+        auto adjDu_GH_Ds_gb_cb = adjDu_GH_Ds()(gamma_n, beta_s)(c_n,b_s);
+
+        result()(gamma_n,gamma_s)() += ee * adjDu_GH_Ds_ab_ab
+                                          * Gn_adjDd_GH_Du_Gs_ab_ba
+                                          * Du_spec()(gamma_n,gamma_s)(c_n,c_s);
+
+        result()(gamma_n,gamma_s)() -= ee * adjDu_GH_Ds_gb_cb
+                                          * Gn_adjDd_GH_Du_Gs_ab_ba
+                                          * Du_spec()(alpha_n,gamma_s)(a_n,c_s);
+
+        result()(gamma_n,gamma_s)() += ee * adjDu_GH_Ds_gb_cb
+                                          * Gn_adjDd_GH_Du_ag_bc
+                                          * Du_Gs()(alpha_n, beta_s)(a_n,a_s);
+
+        result()(gamma_n,gamma_s)() -= ee * adjDu_GH_Ds_ab_ab
+                                          * Gn_adjDd_GH_Du_ag_bc
+                                          * Du_Gs()(gamma_n, beta_s)(c_n,a_s);
+      }}
+    }}
+  }}
 }
 
 template<class FImpl>
 template <class mobj>
 void BaryonUtils<FImpl>::Sigma_to_Nucleon_Eye(const PropagatorField &qq_loop,
-						 const mobj &Du_spec,
-						 const PropagatorField &qd_tf,
-						 const PropagatorField &qs_ti,
-				                 const Gamma Gamma_H,
-				                 const Gamma GammaB_sigma,
-		                 		 const Gamma GammaB_nucl,
-						 const std::string op,
-						 SpinMatrixField &stn_corr)
+             const mobj &Du_spec,
+             const PropagatorField &qd_tf,
+             const PropagatorField &qs_ti,
+                         const Gamma Gamma_H,
+                         const Gamma GammaB_sigma,
+                         const Gamma GammaB_nucl,
+             const std::string op,
+             SpinMatrixField &stn_corr)
 {
-
   assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
   assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
 
@@ -1042,17 +1074,16 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_Eye(const PropagatorField &qq_loop,
 template<class FImpl>
 template <class mobj>
 void BaryonUtils<FImpl>::Sigma_to_Nucleon_NonEye(const PropagatorField &qq_ti,
-						 const PropagatorField &qq_tf,
-						 const mobj &Du_spec,
-						 const PropagatorField &qd_tf,
-						 const PropagatorField &qs_ti,
-				                 const Gamma Gamma_H,
-				                 const Gamma GammaB_sigma,
-		                 		 const Gamma GammaB_nucl,
-						 const std::string op,
-						 SpinMatrixField &stn_corr)
+             const PropagatorField &qq_tf,
+             const mobj &Du_spec,
+             const PropagatorField &qd_tf,
+             const PropagatorField &qs_ti,
+                         const Gamma Gamma_H,
+                         const Gamma GammaB_sigma,
+                         const Gamma GammaB_nucl,
+             const std::string op,
+             SpinMatrixField &stn_corr)
 {
-
   assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
   assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
 
@@ -1063,8 +1094,8 @@ void BaryonUtils<FImpl>::Sigma_to_Nucleon_NonEye(const PropagatorField &qq_ti,
   autoView( vq_tf , qq_tf, CpuRead);
   autoView( vd_tf , qd_tf, CpuRead);
   autoView( vs_ti , qs_ti, CpuRead);
- // accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
-  thread_for(ss,grid->oSites(),{
+  accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+  // thread_for(ss,grid->oSites(),{
     auto Dq_ti = vq_ti[ss];
     auto Dq_tf = vq_tf[ss];
     auto Dd_tf = vd_tf[ss];
