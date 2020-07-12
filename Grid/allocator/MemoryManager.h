@@ -44,14 +44,14 @@ NAMESPACE_BEGIN(Grid);
 ////////////////////////////////////////////////////////////////////////////
 enum ViewAdvise {
  AdviseDefault       = 0x0,    // Regular data
- AdviseInfrequentUse = 0x1,    // Advise that the data is used infrequently.  This can
+ AdviseInfrequentUse = 0x1     // Advise that the data is used infrequently.  This can
                                // significantly influence performance of bulk storage.
  
- AdviseTransient      = 0x2,   // Data will mostly be read.  On some architectures
+ // AdviseTransient      = 0x2,   // Data will mostly be read.  On some architectures
                                // enables read-only copies of memory to be kept on
                                // host and device.
 
- AdviseAcceleratorWriteDiscard = 0x4  // Field will be written in entirety on device
+ // AdviseAcceleratorWriteDiscard = 0x4  // Field will be written in entirety on device
 
 };
 
@@ -80,7 +80,7 @@ private:
   } AllocationCacheEntry;
 
   static const int NallocCacheMax=128; 
-  static const int NallocType=4;
+  static const int NallocType=6;
   static AllocationCacheEntry Entries[NallocType][NallocCacheMax];
   static int Victim[NallocType];
   static int Ncache[NallocType];
@@ -95,9 +95,11 @@ private:
 
   static void *AcceleratorAllocate(size_t bytes);
   static void  AcceleratorFree    (void *ptr,size_t bytes);
-
+  static void PrintBytes(void);
  public:
   static void Init(void);
+  static void *SharedAllocate(size_t bytes);
+  static void  SharedFree    (void *ptr,size_t bytes);
   static void *CpuAllocate(size_t bytes);
   static void  CpuFree    (void *ptr,size_t bytes);
 

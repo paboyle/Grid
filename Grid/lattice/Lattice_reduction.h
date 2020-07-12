@@ -62,7 +62,6 @@ inline typename vobj::scalar_object sum_cpu(const vobj *arg, Integer osites)
   for(int i=0;i<nthread;i++){
     ssum = ssum+sumarray[i];
   } 
-  
   return ssum;
 }
 template<class vobj>
@@ -93,7 +92,9 @@ inline typename vobj::scalar_objectD sumD_cpu(const vobj *arg, Integer osites)
     ssum = ssum+sumarray[i];
   } 
   
-  return ssum;
+  typedef typename vobj::scalar_object ssobj;
+  ssobj ret = ssum;
+  return ret;
 }
 
 
@@ -154,7 +155,7 @@ inline ComplexD rankInnerProduct(const Lattice<vobj> &left,const Lattice<vobj> &
   const uint64_t sites = grid->oSites();
   
   // Might make all code paths go this way.
-  typedef decltype(innerProduct(vobj(),vobj())) inner_t;
+  typedef decltype(innerProductD(vobj(),vobj())) inner_t;
   Vector<inner_t> inner_tmp(sites);
   auto inner_tmp_v = &inner_tmp[0];
     
@@ -163,16 +164,16 @@ inline ComplexD rankInnerProduct(const Lattice<vobj> &left,const Lattice<vobj> &
     autoView( right_v,right, AcceleratorRead);
 
     // GPU - SIMT lane compliance...
-    accelerator_for( ss, sites, nsimd,{
-	auto x_l = left_v(ss);
-	auto y_l = right_v(ss);
-	coalescedWrite(inner_tmp_v[ss],innerProduct(x_l,y_l));
-      })
+    accelerator_for( ss, sites, 1,{
+	auto x_l = left_v[ss];
+	auto y_l = right_v[ss];
+	inner_tmp_v[ss]=innerProductD(x_l,y_l);
+    });
   }
 
   // This is in single precision and fails some tests
-  // Need a sumD that sums in double
-  nrm = TensorRemove(sumD(inner_tmp_v,sites));  
+  auto anrm = sum(inner_tmp_v,sites);  
+  nrm = anrm;
   return nrm;
 }
 
@@ -218,16 +219,16 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   autoView( y_v, y, AcceleratorRead);
   autoView( z_v, z, AcceleratorWrite);
 
-  typedef decltype(innerProduct(x_v[0],y_v[0])) inner_t;
+  typedef decltype(innerProductD(x_v[0],y_v[0])) inner_t;
   Vector<inner_t> inner_tmp(sites);
   auto inner_tmp_v = &inner_tmp[0];
 
-  accelerator_for( ss, sites, nsimd,{
-      auto tmp = a*x_v(ss)+b*y_v(ss);
-      coalescedWrite(inner_tmp_v[ss],innerProduct(tmp,tmp));
-      coalescedWrite(z_v[ss],tmp);
+  accelerator_for( ss, sites, 1,{
+      auto tmp = a*x_v[ss]+b*y_v[ss];
+      inner_tmp_v[ss]=innerProductD(tmp,tmp);
+      z_v[ss]=tmp;
   });
-  nrm = real(TensorRemove(sumD(inner_tmp_v,sites)));
+  nrm = real(TensorRemove(sum(inner_tmp_v,sites)));
   grid->GlobalSum(nrm);
   return nrm; 
 }
@@ -243,29 +244,28 @@ innerProductNorm(ComplexD& ip, RealD &nrm, const Lattice<vobj> &left,const Latti
 
   GridBase *grid = left.Grid();
 
-
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
 
   // GPU
-  typedef decltype(innerProduct(vobj(),vobj())) inner_t;
-  typedef decltype(innerProduct(vobj(),vobj())) norm_t;
+  typedef decltype(innerProductD(vobj(),vobj())) inner_t;
+  typedef decltype(innerProductD(vobj(),vobj())) norm_t;
   Vector<inner_t> inner_tmp(sites);
-  Vector<norm_t> norm_tmp(sites);
+  Vector<norm_t>  norm_tmp(sites);
   auto inner_tmp_v = &inner_tmp[0];
   auto norm_tmp_v = &norm_tmp[0];
   {
     autoView(left_v,left, AcceleratorRead);
     autoView(right_v,right,AcceleratorRead);
-    accelerator_for( ss, sites, nsimd,{
-	auto left_tmp = left_v(ss);
-	coalescedWrite(inner_tmp_v[ss],innerProduct(left_tmp,right_v(ss)));
-	coalescedWrite(norm_tmp_v[ss],innerProduct(left_tmp,left_tmp));
+    accelerator_for( ss, sites, 1,{
+	auto left_tmp = left_v[ss];
+	inner_tmp_v[ss]=innerProductD(left_tmp,right_v[ss]);
+        norm_tmp_v [ss]=innerProductD(left_tmp,left_tmp);
       });
   }
 
-  tmp[0] = TensorRemove(sumD(inner_tmp_v,sites));
-  tmp[1] = TensorRemove(sumD(norm_tmp_v,sites));
+  tmp[0] = TensorRemove(sum(inner_tmp_v,sites));
+  tmp[1] = TensorRemove(sum(norm_tmp_v,sites));
 
   grid->GlobalSumVector(&tmp[0],2); // keep norm Complex -> can use GlobalSumVector
   ip = tmp[0];
