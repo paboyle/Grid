@@ -120,7 +120,7 @@ void MemoryManager::Init(void)
   str= getenv("GRID_ALLOC_NCACHE_LARGE");
   if ( str ) {
     Nc = atoi(str);
-    if ( (Nc>=0) && (Nc < NallocCacheMax)) {
+    if ( (Nc>=0) && (Nc <= NallocCacheMax)) {
       Ncache[Cpu]=Nc;
       Ncache[Acc]=Nc;
       Ncache[Shared]=Nc;
@@ -130,7 +130,7 @@ void MemoryManager::Init(void)
   str= getenv("GRID_ALLOC_NCACHE_SMALL");
   if ( str ) {
     Nc = atoi(str);
-    if ( (Nc>=0) && (Nc < NallocCacheMax)) {
+    if ( (Nc>=0) && (Nc <= NallocCacheMax)) {
       Ncache[CpuSmall]=Nc;
       Ncache[AccSmall]=Nc;
       Ncache[SharedSmall]=Nc;
