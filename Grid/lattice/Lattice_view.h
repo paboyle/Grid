@@ -52,6 +52,7 @@ public:
 // This will be safe to call from accelerator_for and is trivially copy constructible
 // The copy constructor for this will need to be used by device lambda functions
 /////////////////////////////////////////////////////////////////////////////////////////
+#undef LATTICE_BOUNDS_CHECK
 template<class vobj> 
 class LatticeView : public LatticeAccelerator<vobj>
 {
@@ -61,14 +62,36 @@ public:
   void * cpu_ptr;
 #ifdef GRID_SIMT
   accelerator_inline const typename vobj::scalar_object operator()(size_t i) const { 
+#ifdef LATTICE_BOUNDS_CHECK
+    assert(i<this->_odata_size);
+    assert(i>=0);
+#endif
     return coalescedRead(this->_odata[i]); 
   }
 #else 
-  accelerator_inline const vobj & operator()(size_t i) const { return this->_odata[i]; }
+  accelerator_inline const vobj & operator()(size_t i) const {
+#ifdef LATTICE_BOUNDS_CHECK
+    assert(i<this->_odata_size);
+    assert(i>=0);
+#endif
+    return this->_odata[i];
+  }
 #endif
 
-  accelerator_inline const vobj & operator[](size_t i) const { return this->_odata[i]; };
-  accelerator_inline vobj       & operator[](size_t i)       { return this->_odata[i]; };
+  accelerator_inline const vobj & operator[](size_t i) const { 
+#ifdef LATTICE_BOUNDS_CHECK
+    assert(i<this->_odata_size);
+    assert(i>=0);
+#endif
+    return this->_odata[i]; 
+  };
+  accelerator_inline vobj       & operator[](size_t i)       { 
+#ifdef LATTICE_BOUNDS_CHECK
+    assert(i<this->_odata_size);
+    assert(i>=0);
+#endif
+    return this->_odata[i]; 
+  };
 
   accelerator_inline uint64_t begin(void) const { return 0;};
   accelerator_inline uint64_t end(void)   const { return this->_odata_size; };
