@@ -308,6 +308,9 @@ public:
 
     int osites=Grid()->oSites();
 
+    autoView(st,Stencil,AcceleratorRead);
+    siteVector *CBp=Stencil.CommBuf();
+
     accelerator_for(sss, Grid()->oSites()*nbasis, Nsimd, {
       int ss = sss/nbasis;
       int b  = sss%nbasis;
@@ -318,12 +321,12 @@ public:
 
       for(int point=0;point<geom.npoint;point++){
 
-	SE=Stencil.GetEntry(ptype,point,ss);
+	SE=st.GetEntry(ptype,point,ss);
 	  
 	if(SE->_is_local) { 
 	  nbr = coalescedReadPermute(in_v[SE->_offset],ptype,SE->_permute);
 	} else {
-	  nbr = coalescedRead(Stencil.CommBuf()[SE->_offset]);
+	  nbr = coalescedRead(CBp[SE->_offset]);
 	}
 	acceleratorSynchronise();
 
@@ -496,8 +499,10 @@ public:
 
     CoarseScalar InnerProd(Grid()); 
 
+    std::cout << GridLogMessage<< "CoarsenMatrix Orthog " << std::endl;
     // Orthogonalise the subblocks over the basis
     blockOrthogonalise(InnerProd,Subspace.subspace);
+    std::cout << GridLogMessage<< "CoarsenMatrix Orthog done " << std::endl;
 
     // Compute the matrix elements of linop between this orthonormal
     // set of vectors.
@@ -532,6 +537,7 @@ public:
     }
     evenmask = where(mod(bcb,2)==(Integer)0,one,zero);
     oddmask  = one-evenmask;
+    std::cout << GridLogMessage<< "CoarsenMatrix Mask " << std::endl;
 
     assert(self_stencil!=-1);
 
@@ -545,6 +551,7 @@ public:
 
       for(int p=0;p<geom.npoint;p++){ 
 
+	//	std::cout << GridLogMessage<< "CoarsenMatrix point "<<p << std::endl;
 	Mphi = Mphi_p[p];
 
 	int dir   = geom.directions[p];
@@ -573,6 +580,7 @@ public:
 	}
       }
 
+      //      std::cout << GridLogMessage<< "CoarsenMatrix Diag "<<std::endl;
       ///////////////////////////////////////////
       // Faster alternate self coupling.. use hermiticity to save 2x
       ///////////////////////////////////////////
@@ -607,11 +615,11 @@ public:
     if(hermitian) {
       std::cout << GridLogMessage << " ForceHermitian, new code "<<std::endl;
       ForceHermitian();
+      std::cout << GridLogMessage << " ForceHermitian, done "<<std::endl;
     }
   }
 
   void ForceHermitian(void) {
-    CoarseMatrix Diff  (Grid());
     for(int p=0;p<geom.npoint;p++){
       int dir   = geom.directions[p];
       int disp  = geom.displacements[p];
@@ -621,8 +629,7 @@ public:
 	  int dirp   = geom.directions[pp];
 	  int dispp  = geom.displacements[pp];
 	  if ( (dirp==dir) && (dispp==1) ){
-	    //	    Diff = adj(Cshift(A[p],dir,1)) - A[pp]; 
-	    //	    std::cout << GridLogMessage<<" Replacing stencil leg "<<pp<<" with leg "<<p<< " diff "<<norm2(Diff) <<std::endl;
+	    std::cout << GridLogMessage<<" Replacing stencil leg "<<pp<<" with leg "<<p<<std::endl;
 	    A[pp] = adj(Cshift(A[p],dir,1));
 	  }
 	}
