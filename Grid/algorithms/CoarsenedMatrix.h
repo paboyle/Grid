@@ -432,25 +432,25 @@ public:
 
     //////////////
     // 4D action like wilson
-    // 0+ => 0 
-    // 0- => 1
-    // 1+ => 2 
-    // 1- => 3
+    // 0+ => 0
+    // 0- => 4
+    // 1+ => 1
+    // 1- => 5
     // etc..
     //////////////
     // 5D action like DWF
-    // 1+ => 0 
-    // 1- => 1
-    // 2+ => 2 
-    // 2- => 3
+    // 1+ => 0
+    // 1- => 4
+    // 2+ => 1
+    // 2- => 5
     // etc..
     auto point = [dir, disp, ndim](){
       if(dir == 0 and disp == 0)
 	return 8;
       else if ( ndim==4 ) { 
-	return (4 * dir + 1 - disp) / 2;
+	return (1 - disp) / 2 * 4 + dir;
       } else { 
-	return (4 * (dir-1) + 1 - disp) / 2;
+	return (1 - disp) / 2 * 4 + dir - 1;
       }
     }();
 
