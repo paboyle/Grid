@@ -10,6 +10,8 @@
 *~
 *#
 *.sublime-*
+.ctags
+tags
 
 # Precompiled Headers #
 #######################
