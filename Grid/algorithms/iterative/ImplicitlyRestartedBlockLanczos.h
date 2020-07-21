@@ -39,7 +39,7 @@ Author: Guido Cossu
 #undef USE_LAPACK
 #define Glog std::cout << GridLogMessage 
 
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
 #include "cublas_v2.h"
 #endif
 
@@ -132,7 +132,7 @@ private:
   /////////////////////////
   // BLAS objects
   /////////////////////////
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
   cudaError_t cudaStat;
   cuDoubleComplex *w_acc, *evec_acc, *c_acc;
 #endif
@@ -236,7 +236,7 @@ public:
 
   void orthogonalize_blas(std::vector<Field>& w, std::vector<Field>& evec, int R, int do_print=0) 
   { 
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
     Glog << "cuBLAS orthogonalize" << std::endl;
     
     typedef typename Field::vector_object vobj;
@@ -262,8 +262,10 @@ public:
     }
 #else 
     for (int col=0; col<Nu; ++col) {
-      auto w_v = w[col].View();
+//      auto w_v = w[col].View();
+      autoView( w_v,w[col], AcceleratorWrite);
       cuDoubleComplex *z = reinterpret_cast<cuDoubleComplex*>(&w_v[0]);
+//      Glog << "col= "<<col <<" z= "<<z <<std::endl;
       for (size_t row=0; row<sites*12; ++row) {
         w_acc[col*sites*12+row] = z[row];
       }
@@ -286,8 +288,10 @@ public:
       }
 #else 
       for (int col=0; col<Nevec_acc; ++col) {
-        auto evec_v = evec[b*Nevec_acc+col].View();
+//        auto evec_v = evec[b*Nevec_acc+col].View();
+        autoView( evec_v,evec[b*Nevec_acc+col], AcceleratorWrite);
         cuDoubleComplex *z = reinterpret_cast<cuDoubleComplex*>(&evec_v[0]);
+//        Glog << "col= "<<col <<" z= "<<z <<std::endl;
         for (size_t row=0; row<sites*12; ++row) {
           evec_acc[col*sites*12+row] = z[row];
         }
@@ -328,7 +332,8 @@ public:
     }
 #if 1    
     for (int col=0; col<Nu; ++col) {
-      auto w_v = w[col].View();
+//      auto w_v = w[col].View();
+      autoView( w_v,w[col], AcceleratorWrite);
       cuDoubleComplex *z = reinterpret_cast<cuDoubleComplex*>(&w_v[0]);
       for (size_t row=0; row<sites*12; ++row) {
         z[row] = w_acc[col*sites*12+row];
@@ -418,20 +423,23 @@ for( int i =0;i<total;i++){
             std::vector<Field>& evec, 
             const std::vector<Field>& src, int& Nconv, LanczosType Impl)
   {
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
     GridBase *grid = src[0].Grid();
     grid->show_decomposition();
+
+    printf("GRID_CUDA\n");
     
     // set eigenvector buffers for the cuBLAS calls
     //const uint64_t nsimd = grid->Nsimd();
     const uint64_t sites = grid->lSites();
     
     cudaStat = cudaMallocManaged((void **)&w_acc, Nu*sites*12*sizeof(cuDoubleComplex));
-    //Glog << cudaStat << std::endl;
+    Glog << "w_acc= "<<w_acc << " "<< cudaStat << std::endl;
     cudaStat = cudaMallocManaged((void **)&evec_acc, Nevec_acc*sites*12*sizeof(cuDoubleComplex));
-    //Glog << cudaStat << std::endl;
+    Glog << "evec_acc= "<<evec_acc << " "<< cudaStat << std::endl;
     cudaStat = cudaMallocManaged((void **)&c_acc, Nu*Nevec_acc*sizeof(cuDoubleComplex));
-    //Glog << cudaStat << std::endl;
+    Glog << "c_acc= "<<c_acc << " "<< cudaStat << std::endl;
+//    exit(-42);
 #endif
     switch (Impl) {
       case LanczosType::irbl: 
@@ -442,7 +450,7 @@ for( int i =0;i<total;i++){
         calc_rbl(eval,evec,src,Nconv);
         break;
     }
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
     // free eigenvector buffers for the cuBLAS calls
     cudaFree(w_acc);
     cudaFree(evec_acc);
@@ -943,11 +951,8 @@ if(!split_test){
     Glog << "Gram Schmidt"<< std::endl;
     // re-orthogonalization for numerical stability
 #if 0
-    for (int u=0; u<Nu; ++u) {
-      orthogonalize(w[u],evec,R);
-    }
+    orthogonalize(w,Nu,evec,R);
 #else
-    //orthogonalize(w,Nu,evec,R);
     orthogonalize_blas(w,evec,R);
 #endif
     // QR part
