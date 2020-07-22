@@ -43,6 +43,18 @@ Author: Guido Cossu
 #include "cublas_v2.h"
 #endif
 
+#if 0
+#define  CUDA_COMPLEX cuDoubleComplex
+#define  CUDA_FLOAT double
+#define  MAKE_CUDA_COMPLEX make_cuDoubleComplex
+#define  CUDA_GEMM cublasZgemm
+#else
+#define  CUDA_COMPLEX cuComplex
+#define  CUDA_FLOAT float
+#define  MAKE_CUDA_COMPLEX make_cuComplex
+#define  CUDA_GEMM cublasCgemm
+#endif
+
 namespace Grid {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -134,7 +146,7 @@ private:
   /////////////////////////
 #ifdef GRID_CUDA
   cudaError_t cudaStat;
-  cuDoubleComplex *w_acc, *evec_acc, *c_acc;
+  CUDA_COMPLEX *w_acc, *evec_acc, *c_acc;
 #endif
   int Nevec_acc; // Number of eigenvectors stored in the buffer evec_acc
   
@@ -264,7 +276,7 @@ public:
     for (int col=0; col<Nu; ++col) {
 //      auto w_v = w[col].View();
       autoView( w_v,w[col], AcceleratorWrite);
-      cuDoubleComplex *z = reinterpret_cast<cuDoubleComplex*>(&w_v[0]);
+      CUDA_COMPLEX *z = reinterpret_cast<CUDA_COMPLEX*>(&w_v[0]);
 //      Glog << "col= "<<col <<" z= "<<z <<std::endl;
       for (size_t row=0; row<sites*12; ++row) {
         w_acc[col*sites*12+row] = z[row];
@@ -290,27 +302,27 @@ public:
       for (int col=0; col<Nevec_acc; ++col) {
 //        auto evec_v = evec[b*Nevec_acc+col].View();
         autoView( evec_v,evec[b*Nevec_acc+col], AcceleratorWrite);
-        cuDoubleComplex *z = reinterpret_cast<cuDoubleComplex*>(&evec_v[0]);
+        CUDA_COMPLEX *z = reinterpret_cast<CUDA_COMPLEX*>(&evec_v[0]);
 //        Glog << "col= "<<col <<" z= "<<z <<std::endl;
         for (size_t row=0; row<sites*12; ++row) {
           evec_acc[col*sites*12+row] = z[row];
         }
       }
 #endif 
-      cuDoubleComplex alpha = make_cuDoubleComplex(1.0,0.0);
-      cuDoubleComplex beta = make_cuDoubleComplex(0.0,0.0);
-      stat = cublasZgemm(handle, CUBLAS_OP_C, CUBLAS_OP_N, Nevec_acc, Nu, 12*sites,
+      CUDA_COMPLEX alpha = MAKE_CUDA_COMPLEX(1.0,0.0);
+      CUDA_COMPLEX beta = MAKE_CUDA_COMPLEX(0.0,0.0);
+      stat = CUDA_GEMM(handle, CUBLAS_OP_C, CUBLAS_OP_N, Nevec_acc, Nu, 12*sites,
                          &alpha, 
                          evec_acc, 12*sites, w_acc, 12*sites,  
                          &beta, 
                          c_acc, Nevec_acc);
       //Glog << stat << std::endl;
       
-      grid->GlobalSumVector((double*)c_acc,2*Nu*Nevec_acc);
+      grid->GlobalSumVector((CUDA_FLOAT*)c_acc,2*Nu*Nevec_acc);
 #if 0      
       for (int i=0; i<Nu; ++i) {
         for (size_t j=0; j<Nevec_acc; ++j) {
-          cuDoubleComplex z = c_acc[i*Nevec_acc+j];
+          CUDA_COMPLEX z = c_acc[i*Nevec_acc+j];
           MyComplex ip(z.x,z.y);
           if (do_print) {
             Glog << "<evec,w>[" << j << "," << i << "] = " 
@@ -320,9 +332,9 @@ public:
         }
       }
 #else
-      alpha = make_cuDoubleComplex(-1.0,0.0);
-      beta = make_cuDoubleComplex(1.0,0.0);
-      stat = cublasZgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, 12*sites, Nu, Nevec_acc,
+      alpha = MAKE_CUDA_COMPLEX(-1.0,0.0);
+      beta = MAKE_CUDA_COMPLEX(1.0,0.0);
+      stat = CUDA_GEMM(handle, CUBLAS_OP_N, CUBLAS_OP_N, 12*sites, Nu, Nevec_acc,
                          &alpha, 
                          evec_acc, 12*sites, c_acc, Nevec_acc,  
                          &beta, 
@@ -334,7 +346,7 @@ public:
     for (int col=0; col<Nu; ++col) {
 //      auto w_v = w[col].View();
       autoView( w_v,w[col], AcceleratorWrite);
-      cuDoubleComplex *z = reinterpret_cast<cuDoubleComplex*>(&w_v[0]);
+      CUDA_COMPLEX *z = reinterpret_cast<CUDA_COMPLEX*>(&w_v[0]);
       for (size_t row=0; row<sites*12; ++row) {
         z[row] = w_acc[col*sites*12+row];
       }
@@ -433,11 +445,11 @@ for( int i =0;i<total;i++){
     //const uint64_t nsimd = grid->Nsimd();
     const uint64_t sites = grid->lSites();
     
-    cudaStat = cudaMallocManaged((void **)&w_acc, Nu*sites*12*sizeof(cuDoubleComplex));
+    cudaStat = cudaMallocManaged((void **)&w_acc, Nu*sites*12*sizeof(CUDA_COMPLEX));
     Glog << "w_acc= "<<w_acc << " "<< cudaStat << std::endl;
-    cudaStat = cudaMallocManaged((void **)&evec_acc, Nevec_acc*sites*12*sizeof(cuDoubleComplex));
+    cudaStat = cudaMallocManaged((void **)&evec_acc, Nevec_acc*sites*12*sizeof(CUDA_COMPLEX));
     Glog << "evec_acc= "<<evec_acc << " "<< cudaStat << std::endl;
-    cudaStat = cudaMallocManaged((void **)&c_acc, Nu*Nevec_acc*sizeof(cuDoubleComplex));
+    cudaStat = cudaMallocManaged((void **)&c_acc, Nu*Nevec_acc*sizeof(CUDA_COMPLEX));
     Glog << "c_acc= "<<c_acc << " "<< cudaStat << std::endl;
 //    exit(-42);
 #endif
@@ -1508,4 +1520,8 @@ if (1){
 }
 #undef Glog
 #undef USE_LAPACK
+#undef  CUDA_COMPLEX 
+#undef  CUDA_FLOAT
+#undef  MAKE_CUDA_COMPLEX
+#undef  CUDA_GEMM 
 #endif
