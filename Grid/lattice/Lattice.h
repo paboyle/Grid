@@ -26,6 +26,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #pragma once
+#include <Grid/lattice/Lattice_view.h>
 #include <Grid/lattice/Lattice_base.h>
 #include <Grid/lattice/Lattice_conformable.h>
 #include <Grid/lattice/Lattice_ET.h>

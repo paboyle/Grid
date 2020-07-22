@@ -46,9 +46,9 @@ void DomainWallEOFAFermion<Impl>::M5D(const FermionField& psi_i, const FermionFi
   chi_i.Checkerboard() = psi_i.Checkerboard();
   int Ls = this->Ls;
   GridBase* grid = psi_i.Grid();
-  auto phi = phi_i.View();
-  auto psi = psi_i.View();
-  auto chi = chi_i.View();
+  autoView( phi , phi_i, AcceleratorRead);
+  autoView( psi , psi_i, AcceleratorRead);
+  autoView( chi , chi_i, AcceleratorWrite);
   assert(phi.Checkerboard() == psi.Checkerboard());
   auto pdiag = &diag[0];
   auto pupper = &upper[0];
@@ -82,9 +82,9 @@ void DomainWallEOFAFermion<Impl>::M5Ddag(const FermionField& psi_i, const Fermio
   GridBase* grid = psi_i.Grid();
   int Ls = this->Ls;
 
-  auto psi = psi_i.View();
-  auto phi = phi_i.View();
-  auto chi = chi_i.View();
+  autoView( psi , psi_i, AcceleratorRead);
+  autoView( phi , phi_i, AcceleratorRead);
+  autoView( chi , chi_i, AcceleratorWrite);
   assert(phi.Checkerboard() == psi.Checkerboard());
   auto pdiag = &diag[0];
   auto pupper = &upper[0];
@@ -116,8 +116,8 @@ void DomainWallEOFAFermion<Impl>::MooeeInv(const FermionField& psi_i, FermionFie
 {
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase* grid = psi_i.Grid();
-  auto psi=psi_i.View();
-  auto chi=chi_i.View();
+  autoView( psi, psi_i, AcceleratorRead);
+  autoView( chi, chi_i, AcceleratorWrite);
   int Ls = this->Ls;
 
   auto plee  = & this->lee[0];
@@ -172,8 +172,8 @@ void DomainWallEOFAFermion<Impl>::MooeeInvDag(const FermionField& psi_i, Fermion
 {
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase* grid = psi_i.Grid();
-  auto psi = psi_i.View();
-  auto chi = chi_i.View();
+  autoView( psi, psi_i, AcceleratorRead);
+  autoView( chi, chi_i, AcceleratorWrite);
   int Ls = this->Ls;
 
   auto plee  = & this->lee[0];

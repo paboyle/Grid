@@ -29,9 +29,11 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_ALGORITHMS_H
 #define GRID_ALGORITHMS_H
 
+NAMESPACE_CHECK(algorithms);
 #include <Grid/algorithms/SparseMatrix.h>
 #include <Grid/algorithms/LinearOperator.h>
 #include <Grid/algorithms/Preconditioner.h>
+NAMESPACE_CHECK(SparseMatrix);
 
 #include <Grid/algorithms/approx/Zolotarev.h>
 #include <Grid/algorithms/approx/Chebyshev.h>
@@ -41,10 +43,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/approx/Forecast.h>
 #include <Grid/algorithms/approx/RemezGeneral.h>
 #include <Grid/algorithms/approx/ZMobius.h>
-
+NAMESPACE_CHECK(approx);
 #include <Grid/algorithms/iterative/Deflation.h>
 #include <Grid/algorithms/iterative/ConjugateGradient.h>
+NAMESPACE_CHECK(ConjGrad);
 #include <Grid/algorithms/iterative/BiCGSTAB.h>
+NAMESPACE_CHECK(BiCGSTAB);
 #include <Grid/algorithms/iterative/ConjugateResidual.h>
 #include <Grid/algorithms/iterative/NormalEquations.h>
 #include <Grid/algorithms/iterative/SchurRedBlack.h>
@@ -62,7 +66,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/iterative/ImplicitlyRestartedLanczos.h>
 #include <Grid/algorithms/iterative/PowerMethod.h>
 
+NAMESPACE_CHECK(PowerMethod);
 #include <Grid/algorithms/CoarsenedMatrix.h>
+NAMESPACE_CHECK(CoarsendMatrix);
 #include <Grid/algorithms/FFT.h>
 
 #endif

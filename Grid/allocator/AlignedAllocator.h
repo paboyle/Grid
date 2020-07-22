@@ -26,128 +26,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef GRID_ALIGNED_ALLOCATOR_H
-#define GRID_ALIGNED_ALLOCATOR_H
-
-#ifdef HAVE_MALLOC_MALLOC_H
-#include <malloc/malloc.h>
-#endif
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
-
-#ifdef HAVE_MM_MALLOC_H
-#include <mm_malloc.h>
-#endif
-
-#define POINTER_CACHE
-#define GRID_ALLOC_ALIGN (2*1024*1024)
-#define GRID_ALLOC_SMALL_LIMIT (4096)
+#pragma once
 
 NAMESPACE_BEGIN(Grid);
-
-// Move control to configure.ac and Config.h?
-
-class PointerCache {
-private:
-/*Pinning pages is costly*/
-/*Could maintain separate large and small allocation caches*/
-/* Could make these configurable, perhaps up to a max size*/
-  static const int NcacheSmallMax=128; 
-  static const int NcacheMax=16;
-  static int NcacheSmall;
-  static int Ncache;
-
-  typedef struct { 
-    void *address;
-    size_t bytes;
-    int valid;
-  } PointerCacheEntry;
-    
-  static PointerCacheEntry Entries[NcacheMax];
-  static int Victim;
-  static PointerCacheEntry EntriesSmall[NcacheSmallMax];
-  static int VictimSmall;
-
-public:
-  static void Init(void);
-  static void *Insert(void *ptr,size_t bytes) ;
-  static void *Insert(void *ptr,size_t bytes,PointerCacheEntry *entries,int ncache,int &victim) ;
-  static void *Lookup(size_t bytes) ;
-  static void *Lookup(size_t bytes,PointerCacheEntry *entries,int ncache) ;
-};
-
-std::string sizeString(size_t bytes);
-
-struct MemoryStats
-{
-  size_t totalAllocated{0}, maxAllocated{0}, 
-    currentlyAllocated{0}, totalFreed{0};
-};
-    
-class MemoryProfiler
-{
-public:
-  static MemoryStats *stats;
-  static bool        debug;
-};
-
-#ifdef GRID_NVCC
-#define profilerCudaMeminfo \
-  { size_t f, t ; cudaMemGetInfo ( &f,&t); std::cout << GridLogDebug << "[Memory debug] Cuda free "<<f<<"/"<<t << std::endl;}
-#else
-#define profilerCudaMeminfo
-#endif
-
-#define memString(bytes) std::to_string(bytes) + " (" + sizeString(bytes) + ")"
-#define profilerDebugPrint						\
-  if (MemoryProfiler::stats)						\
-    {									\
-      auto s = MemoryProfiler::stats;					\
-      std::cout << GridLogDebug << "[Memory debug] Stats " << MemoryProfiler::stats << std::endl; \
-      std::cout << GridLogDebug << "[Memory debug] total  : " << memString(s->totalAllocated) \
-		<< std::endl;						\
-      std::cout << GridLogDebug << "[Memory debug] max    : " << memString(s->maxAllocated) \
-		<< std::endl;						\
-      std::cout << GridLogDebug << "[Memory debug] current: " << memString(s->currentlyAllocated) \
-		<< std::endl;						\
-      std::cout << GridLogDebug << "[Memory debug] freed  : " << memString(s->totalFreed) \
-		<< std::endl;						\
-    }									\
-  profilerCudaMeminfo;
-
-#define profilerAllocate(bytes)						\
-  if (MemoryProfiler::stats)						\
-    {									\
-      auto s = MemoryProfiler::stats;					\
-      s->totalAllocated     += (bytes);					\
-      s->currentlyAllocated += (bytes);					\
-      s->maxAllocated        = std::max(s->maxAllocated, s->currentlyAllocated); \
-    }									\
-  if (MemoryProfiler::debug)						\
-    {									\
-      std::cout << GridLogDebug << "[Memory debug] allocating " << memString(bytes) << std::endl; \
-      profilerDebugPrint;						\
-    }
-
-#define profilerFree(bytes)						\
-  if (MemoryProfiler::stats)						\
-    {									\
-      auto s = MemoryProfiler::stats;					\
-      s->totalFreed         += (bytes);					\
-      s->currentlyAllocated -= (bytes);					\
-    }									\
-  if (MemoryProfiler::debug)						\
-    {									\
-      std::cout << GridLogDebug << "[Memory debug] freeing " << memString(bytes) << std::endl; \
-      profilerDebugPrint;						\
-    }
-
-void check_huge_pages(void *Buf,uint64_t BYTES);
-
-////////////////////////////////////////////////////////////////////
-// A lattice of something, but assume the something is SIMDized.
-////////////////////////////////////////////////////////////////////
 
 template<typename _Tp>
 class alignedAllocator {
@@ -172,70 +53,60 @@ public:
   { 
     size_type bytes = __n*sizeof(_Tp);
     profilerAllocate(bytes);
-
-
-#ifdef POINTER_CACHE
-    _Tp *ptr = (_Tp *) PointerCache::Lookup(bytes);
-#else
-    pointer ptr = nullptr;
-#endif
-
-#ifdef GRID_NVCC
-    ////////////////////////////////////
-    // Unified (managed) memory
-    ////////////////////////////////////
-    if ( ptr == (_Tp *) NULL ) {
-      //      printf(" alignedAllocater cache miss %ld bytes ",bytes);      BACKTRACEFP(stdout);
-      auto err = cudaMallocManaged((void **)&ptr,bytes);
-      if( err != cudaSuccess ) {
-	ptr = (_Tp *) NULL;
-	std::cerr << " cudaMallocManaged failed for " << bytes<<" bytes " <<cudaGetErrorString(err)<< std::endl;
-	assert(0);
-      }
-    } 
-    assert( ptr != (_Tp *)NULL);
-#else 
-    //////////////////////////////////////////////////////////////////////////////////////////
-    // 2MB align; could make option probably doesn't need configurability
-    //////////////////////////////////////////////////////////////////////////////////////////
-  #ifdef HAVE_MM_MALLOC_H
-    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) _mm_malloc(bytes,GRID_ALLOC_ALIGN);
-  #else
-    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) memalign(GRID_ALLOC_ALIGN,bytes);
-  #endif
-    assert( ptr != (_Tp *)NULL);
-
-    //////////////////////////////////////////////////
-    // First touch optimise in threaded loop 
-    //////////////////////////////////////////////////
-    uint64_t *cp = (uint64_t *)ptr;
-    thread_for(n,bytes/sizeof(uint64_t), { // need only one touch per page
-      cp[n]=0;
-    });
-#endif
+    _Tp *ptr = (_Tp*) MemoryManager::CpuAllocate(bytes);
+    assert( ( (_Tp*)ptr != (_Tp *)NULL ) );
     return ptr;
   }
 
-  void deallocate(pointer __p, size_type __n) { 
+  void deallocate(pointer __p, size_type __n) 
+  { 
     size_type bytes = __n * sizeof(_Tp);
-
     profilerFree(bytes);
+    MemoryManager::CpuFree((void *)__p,bytes);
+  }
 
-#ifdef POINTER_CACHE
-    pointer __freeme = (pointer)PointerCache::Insert((void *)__p,bytes);
-#else 
-    pointer __freeme = __p;
-#endif
+  // FIXME: hack for the copy constructor, eventually it must be avoided
+  //void construct(pointer __p, const _Tp& __val) { new((void *)__p) _Tp(__val); };
+  void construct(pointer __p, const _Tp& __val) { assert(0);};
+  void construct(pointer __p) { };
+  void destroy(pointer __p) { };
+};
+template<typename _Tp>  inline bool operator==(const alignedAllocator<_Tp>&, const alignedAllocator<_Tp>&){ return true; }
+template<typename _Tp>  inline bool operator!=(const alignedAllocator<_Tp>&, const alignedAllocator<_Tp>&){ return false; }
 
-#ifdef GRID_NVCC
-    if ( __freeme ) cudaFree((void *)__freeme);
-#else 
-  #ifdef HAVE_MM_MALLOC_H
-    if ( __freeme ) _mm_free((void *)__freeme); 
-  #else
-    if ( __freeme ) free((void *)__freeme);
-  #endif
-#endif
+template<typename _Tp>
+class uvmAllocator {
+public: 
+  typedef std::size_t     size_type;
+  typedef std::ptrdiff_t  difference_type;
+  typedef _Tp*       pointer;
+  typedef const _Tp* const_pointer;
+  typedef _Tp&       reference;
+  typedef const _Tp& const_reference;
+  typedef _Tp        value_type;
+
+  template<typename _Tp1>  struct rebind { typedef uvmAllocator<_Tp1> other; };
+  uvmAllocator() throw() { }
+  uvmAllocator(const uvmAllocator&) throw() { }
+  template<typename _Tp1> uvmAllocator(const uvmAllocator<_Tp1>&) throw() { }
+  ~uvmAllocator() throw() { }
+  pointer       address(reference __x)       const { return &__x; }
+  size_type  max_size() const throw() { return size_t(-1) / sizeof(_Tp); }
+
+  pointer allocate(size_type __n, const void* _p= 0)
+  { 
+    size_type bytes = __n*sizeof(_Tp);
+    profilerAllocate(bytes);
+    _Tp *ptr = (_Tp*) MemoryManager::SharedAllocate(bytes);
+    assert( ( (_Tp*)ptr != (_Tp *)NULL ) );
+    return ptr;
+  }
+
+  void deallocate(pointer __p, size_type __n) 
+  { 
+    size_type bytes = __n * sizeof(_Tp);
+    profilerFree(bytes);
+    MemoryManager::SharedFree((void *)__p,bytes);
   }
 
   // FIXME: hack for the copy constructor, eventually it must be avoided
@@ -244,17 +115,17 @@ public:
   void construct(pointer __p) { };
   void destroy(pointer __p) { };
 };
-template<typename _Tp>  inline bool operator==(const alignedAllocator<_Tp>&, const alignedAllocator<_Tp>&){ return true; }
-template<typename _Tp>  inline bool operator!=(const alignedAllocator<_Tp>&, const alignedAllocator<_Tp>&){ return false; }
+template<typename _Tp>  inline bool operator==(const uvmAllocator<_Tp>&, const uvmAllocator<_Tp>&){ return true; }
+template<typename _Tp>  inline bool operator!=(const uvmAllocator<_Tp>&, const uvmAllocator<_Tp>&){ return false; }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Template typedefs
 ////////////////////////////////////////////////////////////////////////////////
-template<class T> using commAllocator = alignedAllocator<T>;
-template<class T> using Vector     = std::vector<T,alignedAllocator<T> >;           
-template<class T> using commVector = std::vector<T,alignedAllocator<T> >;
-template<class T> using Matrix     = std::vector<std::vector<T,alignedAllocator<T> > >;
+template<class T> using commAllocator = uvmAllocator<T>;
+template<class T> using Vector     = std::vector<T,uvmAllocator<T> >;           
+template<class T> using commVector = std::vector<T,uvmAllocator<T> >;
+//template<class T> using Matrix     = std::vector<std::vector<T,alignedAllocator<T> > >;
 
 NAMESPACE_END(Grid);
 
-#endif
+

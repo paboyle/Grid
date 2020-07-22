@@ -12773,7 +12773,7 @@ namespace pugi
 #undef PUGI__THROW_ERROR
 #undef PUGI__CHECK_ERROR
 
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
 #pragma pop
 #endif
 

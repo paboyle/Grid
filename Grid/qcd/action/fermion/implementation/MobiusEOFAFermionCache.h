@@ -44,9 +44,9 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi_i, const FermionField 
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase *grid = psi_i.Grid();
   int Ls = this->Ls;
-  auto psi = psi_i.View();
-  auto phi = phi_i.View();
-  auto chi = chi_i.View();
+  autoView(psi , psi_i, AcceleratorRead);
+  autoView(phi , phi_i, AcceleratorRead);
+  autoView(chi , chi_i, AcceleratorWrite);
 
   assert(phi.Checkerboard() == psi.Checkerboard());
 
@@ -84,9 +84,9 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField &psi_i, const Fermion
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase *grid = psi_i.Grid();
   int Ls = this->Ls;
-  auto psi = psi_i.View();
-  auto phi = phi_i.View();
-  auto chi = chi_i.View();
+  autoView(psi , psi_i, AcceleratorRead);
+  autoView(phi , phi_i, AcceleratorRead);
+  autoView(chi , chi_i, AcceleratorWrite);
 
   auto pm  = this->pm;
   int shift_s = (pm == 1) ? (Ls-1) : 0; // s-component modified by shift operator
@@ -132,9 +132,9 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField &psi_i, const FermionFie
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase *grid = psi_i.Grid();
   int Ls = this->Ls;
-  auto psi = psi_i.View();
-  auto phi = phi_i.View();
-  auto chi = chi_i.View();
+  autoView(psi , psi_i, AcceleratorRead);
+  autoView(phi , phi_i, AcceleratorRead);
+  autoView(chi , chi_i, AcceleratorWrite);
 
   assert(phi.Checkerboard() == psi.Checkerboard());
 
@@ -174,9 +174,9 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField &psi_i, const Ferm
   GridBase *grid = psi_i.Grid();
   int Ls = this->Ls;
   int shift_s = (this->pm == 1) ? (Ls-1) : 0; // s-component modified by shift operator
-  auto psi = psi_i.View();
-  auto phi = phi_i.View();
-  auto chi = chi_i.View();
+  autoView(psi , psi_i, AcceleratorRead);
+  autoView(phi , phi_i, AcceleratorRead);
+  autoView(chi , chi_i, AcceleratorWrite);
 
   assert(phi.Checkerboard() == psi.Checkerboard());
 
@@ -226,8 +226,8 @@ void MobiusEOFAFermion<Impl>::MooeeInv(const FermionField &psi_i, FermionField &
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase *grid = psi_i.Grid();
   int Ls = this->Ls;
-  auto psi = psi_i.View();
-  auto chi = chi_i.View();
+  autoView(psi , psi_i, AcceleratorRead);
+  autoView(chi , chi_i, AcceleratorWrite);
 
   auto plee = & this->lee [0];
   auto pdee = & this->dee [0];
@@ -286,8 +286,8 @@ void MobiusEOFAFermion<Impl>::MooeeInv_shift(const FermionField &psi_i, FermionF
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase *grid = psi_i.Grid();
   int Ls = this->Ls;
-  auto psi = psi_i.View();
-  auto chi = chi_i.View();
+  autoView(psi , psi_i, AcceleratorRead);
+  autoView(chi , chi_i, AcceleratorWrite);
 
   auto pm = this->pm;
   auto plee = & this->lee [0];
@@ -354,8 +354,8 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag(const FermionField &psi_i, FermionFiel
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase *grid = psi_i.Grid();
   int Ls = this->Ls;
-  auto psi = psi_i.View();
-  auto chi = chi_i.View();
+  autoView(psi , psi_i, AcceleratorRead);
+  autoView(chi , chi_i, AcceleratorWrite);
 
   auto plee = & this->lee [0];
   auto pdee = & this->dee [0];
@@ -410,8 +410,8 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag_shift(const FermionField &psi_i, Fermi
 {
   chi_i.Checkerboard() = psi_i.Checkerboard();
   GridBase *grid = psi_i.Grid();
-  auto psi = psi_i.View();
-  auto chi = chi_i.View();
+  autoView(psi , psi_i, AcceleratorRead);
+  autoView(chi , chi_i, AcceleratorWrite);
   int Ls = this->Ls;
 
   auto pm = this->pm;

@@ -52,14 +52,14 @@ public:
   accelerator_inline size_type size(void) const { return _size; };
   accelerator_inline void  clear(void) { resize(0);}
   accelerator_inline void  resize(size_type sz) {
+#ifndef GRID_HIP
     assert(sz>=0);
     assert(sz<=MaxEntries);
+#endif
     _size = sz;
   }
   accelerator_inline void  resize(size_type sz,const value &val) {
-    assert(sz>=0);
-    assert(sz<=MaxEntries);
-    _size = sz;
+    resize(sz);
     for(int s=0;s<sz;s++) _data[s]=val;
   }
   accelerator_inline pointer begin(void)                   { return &_data[0]; } 
@@ -67,7 +67,7 @@ public:
   accelerator_inline pointer end  (void)                   { return &_data[_size]; } 
   accelerator_inline const_pointer end  (void) const       { return &_data[_size]; } 
   accelerator_inline void push_back(const value &val)      { resize(_size+1); _data[_size-1] = val;}
-  accelerator_inline AcceleratorVector()                   { _size = 0; }
+  accelerator_inline AcceleratorVector()                   { resize(0); }
   accelerator_inline AcceleratorVector(size_type sz)           { resize(sz); }
   accelerator_inline AcceleratorVector(size_type sz,const value &val) { resize(sz,val); }
   AcceleratorVector(const std::vector<value> &copyme) { 

@@ -41,7 +41,7 @@ int main (int argc, char ** argv)
 #define LADD (8)
 
   int64_t Nwarm=20;
-  int64_t Nloop=500;
+  int64_t Nloop=50;
 
   Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   Coordinate mpi_layout  = GridDefaultMpi();
@@ -66,9 +66,9 @@ int main (int argc, char ** argv)
       LatticeColourMatrix x(&Grid);// random(pRNG,x);
       LatticeColourMatrix y(&Grid);// random(pRNG,y);
 
-      auto x_v = x.View();
-      auto y_v = y.View();
-      auto z_v = z.View();
+      autoView( x_v , x, AcceleratorRead);
+      autoView( y_v , y, AcceleratorRead);
+      autoView( z_v , z, AcceleratorWrite);
       const uint64_t Nsite = x_v.size();
       const uint64_t nsimd = vComplex::Nsimd();
       for(int64_t i=0;i<Nwarm;i++){
@@ -116,9 +116,9 @@ int main (int argc, char ** argv)
       LatticeColourMatrix x(&Grid);// random(pRNG,x);
       LatticeColourMatrix y(&Grid);// random(pRNG,y);
 
-      auto x_v = x.View();
-      auto y_v = y.View();
-      auto z_v = z.View();
+      autoView( x_v , x, AcceleratorWrite);
+      autoView( y_v , y, AcceleratorRead);
+      autoView( z_v , z, AcceleratorRead);
       const uint64_t Nsite = x_v.size();
       const uint64_t nsimd = vComplex::Nsimd();
       for(int64_t i=0;i<Nwarm;i++){
@@ -167,9 +167,9 @@ int main (int argc, char ** argv)
       LatticeColourMatrix x(&Grid);// random(pRNG,x);
       LatticeColourMatrix y(&Grid);// random(pRNG,y);
 
-      auto x_v = x.View();
-      auto y_v = y.View();
-      auto z_v = z.View();
+      autoView( x_v , x, AcceleratorRead);
+      autoView( y_v , y, AcceleratorRead);
+      autoView( z_v , z, AcceleratorWrite);
       const uint64_t Nsite = x_v.size();
       const uint64_t nsimd = vComplex::Nsimd();
       for(int64_t i=0;i<Nwarm;i++){
@@ -220,10 +220,10 @@ int main (int argc, char ** argv)
       LatticeColourMatrix y(&Grid);// random(pRNG,y);
       LatticeColourMatrix w(&Grid);// random(pRNG,y);
 
-      auto x_v = x.View();
-      auto y_v = y.View();
-      auto z_v = z.View();
-      auto w_v = z.View();
+      autoView( x_v , x, AcceleratorRead);
+      autoView( y_v , y, AcceleratorRead);
+      autoView( z_v , z, AcceleratorRead);
+      autoView( w_v , w, AcceleratorWrite);
       const uint64_t Nsite = x_v.size();
       const uint64_t nsimd = vComplex::Nsimd();
       for(int64_t i=0;i<Nwarm;i++){

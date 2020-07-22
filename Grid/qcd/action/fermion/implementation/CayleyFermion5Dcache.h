@@ -50,9 +50,9 @@ CayleyFermion5D<Impl>::M5D(const FermionField &psi_i,
   
   chi_i.Checkerboard()=psi_i.Checkerboard();
   GridBase *grid=psi_i.Grid();
-  auto psi = psi_i.View();
-  auto phi = phi_i.View();
-  auto chi = chi_i.View();
+  autoView(psi , psi_i,AcceleratorRead);
+  autoView(phi , phi_i,AcceleratorRead);
+  autoView(chi , chi_i,AcceleratorWrite);
   assert(phi.Checkerboard() == psi.Checkerboard());
 
   auto pdiag = &diag[0];
@@ -93,9 +93,9 @@ CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi_i,
 {
   chi_i.Checkerboard()=psi_i.Checkerboard();
   GridBase *grid=psi_i.Grid();
-  auto psi = psi_i.View();
-  auto phi = phi_i.View();
-  auto chi = chi_i.View();
+  autoView(psi , psi_i,AcceleratorRead);
+  autoView(phi , phi_i,AcceleratorRead);
+  autoView(chi , chi_i,AcceleratorWrite);
   assert(phi.Checkerboard() == psi.Checkerboard());
 
   auto pdiag = &diag[0];
@@ -131,8 +131,8 @@ CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi_i, FermionField &chi
   chi_i.Checkerboard()=psi_i.Checkerboard();
   GridBase *grid=psi_i.Grid();
 
-  auto psi = psi_i.View();
-  auto chi = chi_i.View();
+  autoView(psi , psi_i,AcceleratorRead);
+  autoView(chi , chi_i,AcceleratorWrite);
 
   int Ls=this->Ls;
 
@@ -193,8 +193,8 @@ CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi_i, FermionField &chi
   GridBase *grid=psi_i.Grid();
   int Ls=this->Ls;
 
-  auto psi = psi_i.View();
-  auto chi = chi_i.View();
+  autoView(psi , psi_i,AcceleratorRead);
+  autoView(chi , chi_i,AcceleratorWrite);
 
   auto plee  = & lee [0];
   auto pdee  = & dee [0];

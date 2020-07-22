@@ -146,9 +146,10 @@ NAMESPACE_BEGIN(Grid);
 
 
 template <class Impl>
-void StaggeredKernels<Impl>::DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, 
+template <int Naik>
+void StaggeredKernels<Impl>::DhopSiteHand(StencilView &st,
 					  DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU,
-					  SiteSpinor *buf, int LLs, int sU, 
+					  SiteSpinor *buf, int sF, int sU, 
 					  const FermionFieldView &in, FermionFieldView &out,int dag) 
 {
   typedef typename Simd::scalar_type S;
@@ -181,8 +182,9 @@ void StaggeredKernels<Impl>::DhopSiteHand(StencilImpl &st, LebesgueOrder &lo,
   StencilEntry *SE;
   int skew;
 
-  for(int s=0;s<LLs;s++){
-    int sF=s+LLs*sU;
+  //  for(int s=0;s<LLs;s++){
+  //    int sF=s+LLs*sU;
+  {
 
     skew = 0;
     HAND_STENCIL_LEG_BEGIN(Xp,3,skew,even);  
@@ -193,6 +195,7 @@ void StaggeredKernels<Impl>::DhopSiteHand(StencilImpl &st, LebesgueOrder &lo,
     HAND_STENCIL_LEG      (U,Ym,2,skew,odd);   
     HAND_STENCIL_LEG      (U,Zm,1,skew,even);  
     HAND_STENCIL_LEG      (U,Tm,0,skew,odd);  
+    if (Naik) {
     skew = 8;
     HAND_STENCIL_LEG(UUU,Xp,3,skew,even);  
     HAND_STENCIL_LEG(UUU,Yp,2,skew,odd);   
@@ -202,7 +205,7 @@ void StaggeredKernels<Impl>::DhopSiteHand(StencilImpl &st, LebesgueOrder &lo,
     HAND_STENCIL_LEG(UUU,Ym,2,skew,odd);   
     HAND_STENCIL_LEG(UUU,Zm,1,skew,even);  
     HAND_STENCIL_LEG(UUU,Tm,0,skew,odd);  
-    
+    }    
     if ( dag ) {
       result()()(0) = - even_0 - odd_0;
       result()()(1) = - even_1 - odd_1;
@@ -218,9 +221,10 @@ void StaggeredKernels<Impl>::DhopSiteHand(StencilImpl &st, LebesgueOrder &lo,
 
 
 template <class Impl>
-void StaggeredKernels<Impl>::DhopSiteHandInt(StencilImpl &st, LebesgueOrder &lo, 
+template <int Naik>
+void StaggeredKernels<Impl>::DhopSiteHandInt(StencilView &st, 
 					     DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
-					     SiteSpinor *buf, int LLs, int sU, 
+					     SiteSpinor *buf, int sF, int sU, 
 					     const FermionFieldView &in, FermionFieldView &out,int dag) 
 {
   typedef typename Simd::scalar_type S;
@@ -253,8 +257,9 @@ void StaggeredKernels<Impl>::DhopSiteHandInt(StencilImpl &st, LebesgueOrder &lo,
   StencilEntry *SE;
   int skew;
 
-  for(int s=0;s<LLs;s++){
-    int sF=s+LLs*sU;
+  //  for(int s=0;s<LLs;s++){
+  //    int sF=s+LLs*sU;
+  {
 
     even_0 = Zero();    even_1 = Zero();    even_2 = Zero();
      odd_0 = Zero();     odd_1 = Zero();     odd_2 = Zero();
@@ -268,6 +273,7 @@ void StaggeredKernels<Impl>::DhopSiteHandInt(StencilImpl &st, LebesgueOrder &lo,
     HAND_STENCIL_LEG_INT(U,Ym,2,skew,odd);   
     HAND_STENCIL_LEG_INT(U,Zm,1,skew,even);  
     HAND_STENCIL_LEG_INT(U,Tm,0,skew,odd);  
+    if (Naik) {
     skew = 8;
     HAND_STENCIL_LEG_INT(UUU,Xp,3,skew,even);  
     HAND_STENCIL_LEG_INT(UUU,Yp,2,skew,odd);   
@@ -277,7 +283,7 @@ void StaggeredKernels<Impl>::DhopSiteHandInt(StencilImpl &st, LebesgueOrder &lo,
     HAND_STENCIL_LEG_INT(UUU,Ym,2,skew,odd);   
     HAND_STENCIL_LEG_INT(UUU,Zm,1,skew,even);  
     HAND_STENCIL_LEG_INT(UUU,Tm,0,skew,odd);  
-
+    }
     // Assume every site must be connected to at least one interior point. No 1^4 subvols.
     if ( dag ) {
       result()()(0) = - even_0 - odd_0;
@@ -294,9 +300,10 @@ void StaggeredKernels<Impl>::DhopSiteHandInt(StencilImpl &st, LebesgueOrder &lo,
 
 
 template <class Impl>
-void StaggeredKernels<Impl>::DhopSiteHandExt(StencilImpl &st, LebesgueOrder &lo, 
+template <int Naik>
+void StaggeredKernels<Impl>::DhopSiteHandExt(StencilView &st,
 					     DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
-					     SiteSpinor *buf, int LLs, int sU, 
+					     SiteSpinor *buf, int sF, int sU, 
 					     const FermionFieldView &in, FermionFieldView &out,int dag) 
 {
   typedef typename Simd::scalar_type S;
@@ -329,8 +336,9 @@ void StaggeredKernels<Impl>::DhopSiteHandExt(StencilImpl &st, LebesgueOrder &lo,
   StencilEntry *SE;
   int skew;
 
-  for(int s=0;s<LLs;s++){
-    int sF=s+LLs*sU;
+  //  for(int s=0;s<LLs;s++){
+  //    int sF=s+LLs*sU;
+  {
 
     even_0 = Zero();    even_1 = Zero();    even_2 = Zero();
      odd_0 = Zero();     odd_1 = Zero();     odd_2 = Zero();
@@ -344,6 +352,7 @@ void StaggeredKernels<Impl>::DhopSiteHandExt(StencilImpl &st, LebesgueOrder &lo,
     HAND_STENCIL_LEG_EXT(U,Ym,2,skew,odd);   
     HAND_STENCIL_LEG_EXT(U,Zm,1,skew,even);  
     HAND_STENCIL_LEG_EXT(U,Tm,0,skew,odd);  
+    if (Naik) {
     skew = 8;
     HAND_STENCIL_LEG_EXT(UUU,Xp,3,skew,even);  
     HAND_STENCIL_LEG_EXT(UUU,Yp,2,skew,odd);   
@@ -353,7 +362,7 @@ void StaggeredKernels<Impl>::DhopSiteHandExt(StencilImpl &st, LebesgueOrder &lo,
     HAND_STENCIL_LEG_EXT(UUU,Ym,2,skew,odd);   
     HAND_STENCIL_LEG_EXT(UUU,Zm,1,skew,even);  
     HAND_STENCIL_LEG_EXT(UUU,Tm,0,skew,odd);  
-
+    }
     // Add sum of all exterior connected stencil legs
     if ( nmu ) { 
       if ( dag ) {
@@ -370,6 +379,7 @@ void StaggeredKernels<Impl>::DhopSiteHandExt(StencilImpl &st, LebesgueOrder &lo,
   }
 }
 
+/*
 #define DHOP_SITE_HAND_INSTANTIATE(IMPL)				\
   template void StaggeredKernels<IMPL>::DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, \
 						     DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, \
@@ -385,7 +395,7 @@ void StaggeredKernels<Impl>::DhopSiteHandExt(StencilImpl &st, LebesgueOrder &lo,
 						     DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, \
 						     SiteSpinor *buf, int LLs, int sU, \
 						     const FermionFieldView &in, FermionFieldView &out, int dag); \
-
+*/
 #undef LOAD_CHI
 
 NAMESPACE_END(Grid);

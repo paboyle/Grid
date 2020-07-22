@@ -115,9 +115,9 @@ int main (int argc, char** argv)
     SU3::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu); // Traceless antihermitian momentum; gaussian in lie alg
 
     PokeIndex<LorentzIndex>(mom, mommu, mu);
-    auto U_v      = U.View();
-    auto mom_v    = mom.View();
-    auto Uprime_v = Uprime.View();
+    autoView( U_v , U, CpuRead);
+    autoView( mom_v, mom, CpuRead);
+    autoView(Uprime_v, Uprime, CpuWrite);
     // fourth order exponential approx
     thread_foreach( i, mom_v,{
       Uprime_v[i](mu) = U_v[i](mu) + mom_v[i](mu)*U_v[i](mu)*dt + mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt/2.0)

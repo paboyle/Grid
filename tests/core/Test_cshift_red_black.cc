@@ -82,7 +82,7 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd,Uo,U);
 
   //  std::cout<<GridLogMessage << U<<std::endl;
-  std::cout<<GridLogMessage<< U <<std::endl;
+  //  std::cout<<GridLogMessage<< U <<std::endl;
   std::cout<<GridLogMessage << "U " <<norm2(U)<<std::endl;
   std::cout<<GridLogMessage << "Ue " <<norm2(Ue)<<std::endl;
   std::cout<<GridLogMessage << "Uo " <<norm2(Uo)<<std::endl;

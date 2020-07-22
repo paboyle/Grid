@@ -46,9 +46,9 @@ auto PeekIndex(const Lattice<vobj> &lhs,int i) -> Lattice<decltype(peekIndex<Ind
 {
   Lattice<decltype(peekIndex<Index>(vobj(),i))> ret(lhs.Grid());
   ret.Checkerboard()=lhs.Checkerboard();
-  auto ret_v = ret.View();
-  auto lhs_v = lhs.View();
-  thread_for( ss, lhs_v.size(), {
+  autoView( ret_v, ret, AcceleratorWrite);
+  autoView( lhs_v, lhs, AcceleratorRead);
+  accelerator_for( ss, lhs_v.size(), 1, {
     ret_v[ss] = peekIndex<Index>(lhs_v[ss],i);
   });
   return ret;
@@ -58,9 +58,9 @@ auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekInd
 {
   Lattice<decltype(peekIndex<Index>(vobj(),i,j))> ret(lhs.Grid());
   ret.Checkerboard()=lhs.Checkerboard();
-  auto ret_v = ret.View();
-  auto lhs_v = lhs.View();
-  thread_for( ss, lhs_v.size(), {
+  autoView( ret_v, ret, AcceleratorWrite);
+  autoView( lhs_v, lhs, AcceleratorRead);
+  accelerator_for( ss, lhs_v.size(), 1, {
     ret_v[ss] = peekIndex<Index>(lhs_v[ss],i,j);
   });
   return ret;
@@ -72,18 +72,18 @@ auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekInd
 template<int Index,class vobj>  
 void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(vobj(),0))> & rhs,int i)
 {
-  auto rhs_v = rhs.View();
-  auto lhs_v = lhs.View();
-  thread_for( ss, lhs_v.size(), {
+  autoView( rhs_v, rhs, AcceleratorRead);
+  autoView( lhs_v, lhs, AcceleratorWrite);
+  accelerator_for( ss, lhs_v.size(), 1, {
     pokeIndex<Index>(lhs_v[ss],rhs_v[ss],i);
   });
 }
 template<int Index,class vobj> 
 void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(vobj(),0,0))> & rhs,int i,int j)
 {
-  auto rhs_v = rhs.View();
-  auto lhs_v = lhs.View();
-  thread_for( ss, lhs_v.size(), {
+  autoView( rhs_v, rhs, AcceleratorRead);
+  autoView( lhs_v, lhs, AcceleratorWrite);
+  accelerator_for( ss, lhs_v.size(), 1, {
     pokeIndex<Index>(lhs_v[ss],rhs_v[ss],i,j);
   });
 }
@@ -111,7 +111,7 @@ void pokeSite(const sobj &s,Lattice<vobj> &l,const Coordinate &site){
 
   // extract-modify-merge cycle is easiest way and this is not perf critical
   ExtractBuffer<sobj> buf(Nsimd);
-  auto l_v = l.View();
+  autoView( l_v , l, CpuWrite);
   if ( rank == grid->ThisRank() ) {
     extract(l_v[odx],buf);
     buf[idx] = s;
@@ -141,7 +141,7 @@ void peekSite(sobj &s,const Lattice<vobj> &l,const Coordinate &site){
   grid->GlobalCoorToRankIndex(rank,odx,idx,site);
 
   ExtractBuffer<sobj> buf(Nsimd);
-  auto l_v = l.View();
+  autoView( l_v , l, CpuWrite);
   extract(l_v[odx],buf);
 
   s = buf[idx];
@@ -151,21 +151,21 @@ void peekSite(sobj &s,const Lattice<vobj> &l,const Coordinate &site){
   return;
 };
 
-
 //////////////////////////////////////////////////////////
 // Peek a scalar object from the SIMD array
 //////////////////////////////////////////////////////////
+// Must be CPU read view
 template<class vobj,class sobj>
-inline void peekLocalSite(sobj &s,const Lattice<vobj> &l,Coordinate &site){
-        
-  GridBase *grid = l.Grid();
-
+inline void peekLocalSite(sobj &s,const LatticeView<vobj> &l,Coordinate &site)
+{
+  GridBase *grid = l.getGrid();
+  assert(l.mode==CpuRead);
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
   int Nsimd = grid->Nsimd();
 
-  assert( l.Checkerboard()== l.Grid()->CheckerBoard(site));
+  assert( l.Checkerboard()== grid->CheckerBoard(site));
   assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
   static const int words=sizeof(vobj)/sizeof(vector_type);
@@ -173,8 +173,7 @@ inline void peekLocalSite(sobj &s,const Lattice<vobj> &l,Coordinate &site){
   idx= grid->iIndex(site);
   odx= grid->oIndex(site);
   
-  auto l_v = l.View();
-  scalar_type * vp = (scalar_type *)&l_v[odx];
+  scalar_type * vp = (scalar_type *)&l[odx];
   scalar_type * pt = (scalar_type *)&s;
       
   for(int w=0;w<words;w++){
@@ -183,18 +182,19 @@ inline void peekLocalSite(sobj &s,const Lattice<vobj> &l,Coordinate &site){
       
   return;
 };
-
+// Must be CPU write view
 template<class vobj,class sobj>
-inline void pokeLocalSite(const sobj &s,Lattice<vobj> &l,Coordinate &site){
-
-  GridBase *grid=l.Grid();
+inline void pokeLocalSite(const sobj &s,LatticeView<vobj> &l,Coordinate &site)
+{
+  GridBase *grid=l.getGrid();
+  assert(l.mode==CpuWrite);
 
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
 
   int Nsimd = grid->Nsimd();
 
-  assert( l.Checkerboard()== l.Grid()->CheckerBoard(site));
+  assert( l.Checkerboard()== grid->CheckerBoard(site));
   assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
   static const int words=sizeof(vobj)/sizeof(vector_type);
@@ -202,13 +202,11 @@ inline void pokeLocalSite(const sobj &s,Lattice<vobj> &l,Coordinate &site){
   idx= grid->iIndex(site);
   odx= grid->oIndex(site);
 
-  auto l_v = l.View();
-  scalar_type * vp = (scalar_type *)&l_v[odx];
+  scalar_type * vp = (scalar_type *)&l[odx];
   scalar_type * pt = (scalar_type *)&s;
   for(int w=0;w<words;w++){
     vp[idx+w*Nsimd] = pt[w];
   }
-
   return;
 };
 

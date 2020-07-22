@@ -122,12 +122,14 @@ class BiCGSTAB : public OperatorFunction<Field>
 
         LinearCombTimer.Start();
         bo = beta * omega;
-        auto p_v = p.View();
-        auto r_v = r.View();
-        auto v_v = v.View();
-        accelerator_for(ss, p_v.size(), Field::vector_object::Nsimd(),{
-          coalescedWrite(p_v[ss], beta*p_v(ss) - bo*v_v(ss) + r_v(ss));
-        });
+	{
+	  autoView( p_v , p, AcceleratorWrite);
+	  autoView( r_v , r, AcceleratorRead);
+	  autoView( v_v , v, AcceleratorRead);
+	  accelerator_for(ss, p_v.size(), Field::vector_object::Nsimd(),{
+	      coalescedWrite(p_v[ss], beta*p_v(ss) - bo*v_v(ss) + r_v(ss));
+	    });
+	}
         LinearCombTimer.Stop();
         LinalgTimer.Stop();
 
@@ -142,16 +144,20 @@ class BiCGSTAB : public OperatorFunction<Field>
         alpha = rho / Calpha.real();
 
         LinearCombTimer.Start();
-        auto h_v = h.View();
-        auto psi_v = psi.View();
-        accelerator_for(ss, h_v.size(), Field::vector_object::Nsimd(),{
-          coalescedWrite(h_v[ss], alpha*p_v(ss) + psi_v(ss));
-        });
-        
-        auto s_v = s.View();
-        accelerator_for(ss, s_v.size(), Field::vector_object::Nsimd(),{
-          coalescedWrite(s_v[ss], -alpha*v_v(ss) + r_v(ss));
-        });
+	{
+	  autoView( p_v , p, AcceleratorRead);
+	  autoView( r_v , r, AcceleratorRead);
+	  autoView( v_v , v, AcceleratorRead);
+	  autoView( psi_v,psi, AcceleratorRead);
+	  autoView( h_v  ,  h, AcceleratorWrite);
+	  autoView( s_v  ,  s, AcceleratorWrite);
+	  accelerator_for(ss, h_v.size(), Field::vector_object::Nsimd(),{
+	      coalescedWrite(h_v[ss], alpha*p_v(ss) + psi_v(ss));
+	    });
+	  accelerator_for(ss, s_v.size(), Field::vector_object::Nsimd(),{
+	      coalescedWrite(s_v[ss], -alpha*v_v(ss) + r_v(ss));
+ 	  });
+        }
         LinearCombTimer.Stop();
         LinalgTimer.Stop();
 
@@ -166,13 +172,19 @@ class BiCGSTAB : public OperatorFunction<Field>
         omega = Comega.real() / norm2(t);
 
         LinearCombTimer.Start();
-        auto t_v = t.View();
-        accelerator_for(ss, psi_v.size(), Field::vector_object::Nsimd(),{
-          coalescedWrite(psi_v[ss], h_v(ss) + omega * s_v(ss));
-          coalescedWrite(r_v[ss], -omega * t_v(ss) + s_v(ss));
-        });
+	{
+	  autoView( psi_v,psi, AcceleratorWrite);
+	  autoView( r_v , r, AcceleratorWrite);
+	  autoView( h_v , h, AcceleratorRead);
+	  autoView( s_v , s, AcceleratorRead);
+	  autoView( t_v , t, AcceleratorRead);
+	  accelerator_for(ss, psi_v.size(), Field::vector_object::Nsimd(),{
+	      coalescedWrite(psi_v[ss], h_v(ss) + omega * s_v(ss));
+	      coalescedWrite(r_v[ss], -omega * t_v(ss) + s_v(ss));
+	    });
+	}
         LinearCombTimer.Stop();
-
+	
         cp = norm2(r);
         LinalgTimer.Stop();
 

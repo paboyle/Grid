@@ -36,7 +36,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include "BinaryIO.h"
 #include "TextIO.h"
 #include "XmlIO.h"
-#ifndef GRID_NVCC
+#if (!defined(GRID_CUDA)) && (!defined(GRID_HIP))
 #include "JSON_IO.h"
 #endif
 

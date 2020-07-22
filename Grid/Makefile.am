@@ -21,7 +21,7 @@ if BUILD_HDF5
   extra_headers+=serialisation/Hdf5Type.h
 endif
 
-all: version-cache
+all: version-cache Version.h
 
 version-cache:
 	@if [ `git status --porcelain | grep -v '??' | wc -l` -gt 0 ]; then\
@@ -42,7 +42,7 @@ version-cache:
 	fi;\
 	rm -f vertmp
 
-Version.h:
+Version.h: version-cache
 	cp version-cache Version.h
 
 .PHONY: version-cache

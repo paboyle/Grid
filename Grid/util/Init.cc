@@ -73,8 +73,6 @@ feenableexcept (unsigned int excepts)
 }
 #endif
 
-uint32_t gpu_threads=8;
-
 NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////////////
@@ -192,16 +190,12 @@ void GridParseLayout(char **argv,int argc,
     assert(ompthreads.size()==1);
     GridThread::SetThreads(ompthreads[0]);
   }
-  if( GridCmdOptionExists(argv,argv+argc,"--gpu-threads") ){
+  if( GridCmdOptionExists(argv,argv+argc,"--accelerator-threads") ){
     std::vector<int> gputhreads(0);
-#ifndef GRID_NVCC
-    std::cout << GridLogWarning << "'--gpu-threads' option used but Grid was"
-              << " not compiled with GPU support" << std::endl;
-#endif
-    arg= GridCmdOptionPayload(argv,argv+argc,"--gpu-threads");
+    arg= GridCmdOptionPayload(argv,argv+argc,"--accelerator-threads");
     GridCmdOptionIntVector(arg,gputhreads);
     assert(gputhreads.size()==1);
-    gpu_threads=gputhreads[0];
+    acceleratorThreads(gputhreads[0]);
   }
 
   if( GridCmdOptionExists(argv,argv+argc,"--cores") ){
@@ -241,8 +235,6 @@ static int Grid_is_initialised;
 /////////////////////////////////////////////////////////
 void GridBanner(void)
 {
-  static int printed =0;
-  if( !printed ) {
     std::cout <<std::endl;
     std::cout  << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
     std::cout  << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
@@ -278,67 +270,6 @@ void GridBanner(void)
     std::cout << "Build " << GRID_BUILD_STR(GRID_BUILD_REF) << std::endl;
 #endif
     std::cout << std::endl;
-    printed=1;
-  }
-}
-#ifdef GRID_NVCC
-cudaDeviceProp *gpu_props;
-#endif
-void GridGpuInit(void)
-{
-#ifdef GRID_NVCC
-  int nDevices = 1;
-  cudaGetDeviceCount(&nDevices);
-  gpu_props = new cudaDeviceProp[nDevices];
-
-  char * localRankStr = NULL;
-  int rank = 0, world_rank=0; 
-#define ENV_LOCAL_RANK_OMPI    "OMPI_COMM_WORLD_LOCAL_RANK"
-#define ENV_LOCAL_RANK_MVAPICH "MV2_COMM_WORLD_LOCAL_RANK"
-#define ENV_RANK_OMPI          "OMPI_COMM_WORLD_RANK"
-#define ENV_RANK_MVAPICH       "MV2_COMM_WORLD_RANK"
-  // We extract the local rank initialization using an environment variable
-  if ((localRankStr = getenv(ENV_LOCAL_RANK_OMPI)) != NULL)
-  {
-    rank = atoi(localRankStr);		
-  }
-  if ((localRankStr = getenv(ENV_LOCAL_RANK_MVAPICH)) != NULL)
-  {
-    rank = atoi(localRankStr);		
-  }
-  if ((localRankStr = getenv(ENV_RANK_OMPI   )) != NULL) { world_rank = atoi(localRankStr);}
-  if ((localRankStr = getenv(ENV_RANK_MVAPICH)) != NULL) { world_rank = atoi(localRankStr);}
-
-  if ( world_rank == 0 ) {
-    GridBanner();
-  }
-
-  for (int i = 0; i < nDevices; i++) {
-
-#define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("GpuInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
-#define GPU_PROP(canMapHostMemory)             GPU_PROP_FMT(canMapHostMemory,"%d");
-    
-    cudaGetDeviceProperties(&gpu_props[i], i);
-    if ( world_rank == 0) {
-      cudaDeviceProp prop; 
-      prop = gpu_props[i];
-      printf("GpuInit: ========================\n");
-      printf("GpuInit: Device Number    : %d\n", i);
-      printf("GpuInit: ========================\n");
-      printf("GpuInit: Device identifier: %s\n", prop.name);
-
-      GPU_PROP(managedMemory);
-      GPU_PROP(isMultiGpuBoard);
-      GPU_PROP(warpSize);
-      //      GPU_PROP(unifiedAddressing);
-      //      GPU_PROP(l2CacheSize);
-      //      GPU_PROP(singleToDoublePrecisionPerfRatio);
-    }
-  }
-  if ( world_rank == 0 ) {
-    printf("GpuInit: ================================================\n");
-  }
-#endif
 }
 
 void Grid_init(int *argc,char ***argv)
@@ -353,9 +284,7 @@ void Grid_init(int *argc,char ***argv)
   //////////////////////////////////////////////////////////
   // Early intialisation necessities without rank knowledge
   //////////////////////////////////////////////////////////
-  GridGpuInit(); // Must come first to set device prior to MPI init
-
-  PointerCache::Init();
+  acceleratorInit(); // Must come first to set device prior to MPI init due to Omnipath Driver
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--shm") ){
     int MB;
@@ -363,6 +292,14 @@ void Grid_init(int *argc,char ***argv)
     GridCmdOptionInt(arg,MB);
     uint64_t MB64 = MB;
     GlobalSharedMemory::MAX_MPI_SHM_BYTES = MB64*1024LL*1024LL;
+  }
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--device-mem") ){
+    int MB;
+    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--device-mem");
+    GridCmdOptionInt(arg,MB);
+    uint64_t MB64 = MB;
+    MemoryManager::DeviceMaxBytes = MB64*1024LL*1024LL;
   }
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--hypercube") ){
@@ -380,6 +317,11 @@ void Grid_init(int *argc,char ***argv)
   if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-signals") ){
     Grid_debug_handler_init();
   }
+
+  //////////////////////////////////////////////////////////
+  // Memory manager
+  //////////////////////////////////////////////////////////
+  MemoryManager::Init();
 
   //////////////////////////////////////////////////////////
   // MPI initialisation
@@ -419,11 +361,18 @@ void Grid_init(int *argc,char ***argv)
   std::cout << GridLogMessage << "MPI is initialised and logging filters activated "<<std::endl;
   std::cout << GridLogMessage << "================================================ "<<std::endl;
 
+
+  /////////////////////////////////////////////////////////
+  // Reporting
+  /////////////////////////////////////////////////////////
   std::cout << GridLogMessage << "Requested "<< GlobalSharedMemory::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
   if ( GlobalSharedMemory::Hugepages) {
     std::cout << GridLogMessage << "Mapped stencil comms buffers as MAP_HUGETLB "<<std::endl;
   }
 
+#ifndef GRID_UVM
+  std::cout << GridLogMessage << "MemoryManager Cache "<< MemoryManager::DeviceMaxBytes <<" bytes "<<std::endl;
+#endif
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-mem") ){
     MemoryProfiler::debug = true;
