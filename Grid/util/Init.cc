@@ -318,6 +318,13 @@ void Grid_init(int *argc,char ***argv)
     Grid_debug_handler_init();
   }
 
+#if defined(A64FX)
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-overlap") ){
+    std::cout << "Option --comms-overlap currently not supported on QPACE4. Exiting."
+    exit(EXIT_FAILURE);
+  }
+#endif
+
   //////////////////////////////////////////////////////////
   // Memory manager
   //////////////////////////////////////////////////////////
