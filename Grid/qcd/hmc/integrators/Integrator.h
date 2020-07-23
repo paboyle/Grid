@@ -73,7 +73,8 @@ protected:
   double t_U;  // Track time passing on each level and for U and for P
   std::vector<double> t_P;  
 
-  MomentaField P;
+//  MomentaField P;
+  GeneralisedMomenta<FieldImplementation > P;
   SmearingPolicy& Smearer;
   RepresentationPolicy Representations;
   IntegratorParameters Params;
@@ -83,7 +84,7 @@ protected:
   void update_P(Field& U, int level, double ep) 
   {
     t_P[level] += ep;
-    update_P(P, U, level, ep);
+    update_P(P.Mom, U, level, ep);
 
     std::cout << GridLogIntegrator << "[" << level << "] P " << " dt " << ep << " : t_P " << t_P[level] << std::endl;
   }
@@ -110,6 +111,21 @@ protected:
   void update_P(MomentaField& Mom, Field& U, int level, double ep) {
     // input U actually not used in the fundamental case
     // Fundamental updates, include smearing
+
+    // Generalised momenta  
+    // Derivative of the kinetic term must be computed before
+    // Mom is the momenta and gets updated by the 
+    // actions derivatives
+    MomentaField MomDer(P.Mom.Grid());
+    P.M.ImportGauge(U);
+    P.DerivativeU(P.Mom, MomDer);
+    Mom -= MomDer * ep;
+
+    // Auxiliary fields
+    P.update_auxiliary_momenta(ep*0.5);
+    P.AuxiliaryFieldsDerivative(MomDer);
+    Mom -= MomDer * ep;
+    P.update_auxiliary_momenta(ep*0.5);
 
     for (int a = 0; a < as[level].actions.size(); ++a) {
       double start_full = usecond();
@@ -143,21 +159,21 @@ protected:
     std::cout << GridLogIntegrator << "[" << level << "] P "
               << " dt " << ep << " : t_P " << t_P[level] << std::endl;
     // Fundamental updates, include smearing
-    MomentaField Msum(P.Mom._grid);
+    MomentaField Msum(P.Mom.Grid());
     Msum = Zero();
     for (int a = 0; a < as[level].actions.size(); ++a) {
       // Compute the force terms for the lagrangian part
       // We need to compute the derivative of the actions
       // only once
-      Field force(U._grid);
-      conformable(U._grid, P.Mom._grid);
+      Field force(U.Grid());
+      conformable(U.Grid(), P.Mom.Grid());
       Field& Us = Smearer.get_U(as[level].actions.at(a)->is_smeared);
       as[level].actions.at(a)->deriv(Us, force);  // deriv should NOT include Ta
 
       std::cout << GridLogIntegrator << "Smearing (on/off): " << as[level].actions.at(a)->is_smeared << std::endl;
       if (as[level].actions.at(a)->is_smeared) Smearer.smeared_force(force);
       force = FieldImplementation::projectForce(force);  // Ta for gauge fields
-      Real force_abs = std::sqrt(norm2(force) / U._grid->gSites());
+      Real force_abs = std::sqrt(norm2(force) / U.Grid()->gSites());
       std::cout << GridLogIntegrator << "|Force| site average: " << force_abs
                 << std::endl;
       Msum += force;
@@ -167,11 +183,11 @@ protected:
     MomentaField OldMom = P.Mom;
     double threshold = 1e-8;
     P.M.ImportGauge(U);
-    MomentaField MomDer(P.Mom._grid);
-    MomentaField MomDer1(P.Mom._grid);
-    MomentaField AuxDer(P.Mom._grid);
+    MomentaField MomDer(P.Mom.Grid());
+    MomentaField MomDer1(P.Mom.Grid());
+    MomentaField AuxDer(P.Mom.Grid());
     MomDer1 = Zero();
-    MomentaField diff(P.Mom._grid);
+    MomentaField diff(P.Mom.Grid());
     double factor = 2.0;
     if (intermediate){
       P.DerivativeU(P.Mom, MomDer1);
@@ -193,7 +209,7 @@ protected:
       // Compute the derivative of the kinetic term
       // with respect to the gauge field
       P.DerivativeU(NewMom, MomDer);
-      Real force_abs = std::sqrt(norm2(MomDer) / U._grid->gSites());
+      Real force_abs = std::sqrt(norm2(MomDer) / U.Grid()->gSites());
       std::cout << GridLogIntegrator << "|Force| laplacian site average: " << force_abs
                 << std::endl;
 
@@ -213,7 +229,7 @@ protected:
 
   void update_U(Field& U, double ep) 
   {
-    update_U(P, U, ep);
+    update_U(P.Mom, U, ep);
 
     t_U += ep;
     int fl = levels - 1;
@@ -237,10 +253,10 @@ protected:
     int fl = levels - 1;
     std::cout << GridLogIntegrator << "   " << "[" << fl << "] U " << " dt " << ep << " : t_U " << t_U << std::endl;
 
-    MomentaField Mom1(P.Mom._grid);
-    MomentaField Mom2(P.Mom._grid);
+    MomentaField Mom1(P.Mom.Grid());
+    MomentaField Mom2(P.Mom.Grid());
     RealD RelativeError;
-    Field diff(U._grid);
+    Field diff(U.Grid());
     Real threshold = 1e-8;
     int counter = 1;
     int MaxCounter = 100;
@@ -286,10 +302,10 @@ protected:
 public:
   Integrator(GridBase* grid, IntegratorParameters Par,
              ActionSet<Field, RepresentationPolicy>& Aset,
-             SmearingPolicy& Sm)
+             SmearingPolicy& Sm, Metric<MomentaField>& M)
     : Params(Par),
       as(Aset),
-      P(grid),
+      P(grid, M),
       levels(Aset.size()),
       Smearer(Sm),
       Representations(grid) 
@@ -326,7 +342,9 @@ public:
 
   void reverse_momenta()
   {
-    P *= -1.0;
+//    P *= -1.0;
+    P.Mom *= -1.0;
+    P.AuxMom *= -1.0;
   }
 
   // to be used by the actionlevel class to iterate
@@ -346,10 +364,13 @@ public:
   // Initialization of momenta and actions
   void refresh(Field& U, GridParallelRNG& pRNG) 
   {
-    assert(P.Grid() == U.Grid());
+    assert(P.Mom.Grid() == U.Grid());
     std::cout << GridLogIntegrator << "Integrator refresh\n";
 
-    FieldImplementation::generate_momenta(P, pRNG);
+//    FieldImplementation::generate_momenta(P.Mom, pRNG);
+    P.M.ImportGauge(U);
+    P.MomentaDistribution(pRNG);
+
 
     // Update the smeared fields, can be implemented as observer
     // necessary to keep the fields updated even after a reject
@@ -395,9 +416,11 @@ public:
 
     std::cout << GridLogIntegrator << "Integrator action\n";
 
-    RealD H = - FieldImplementation::FieldSquareNorm(P)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom
-
+//    RealD H = - FieldImplementation::FieldSquareNorm(P)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom
+    P.M.ImportGauge(U);
+    RealD H = - P.MomentaAction();
     RealD Hterm;
+    std::cout << GridLogMessage << "Momentum action H_p = " << H << "\n";
 
     // Actions
     for (int level = 0; level < as.size(); ++level) {

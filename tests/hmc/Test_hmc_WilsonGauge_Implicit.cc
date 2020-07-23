@@ -55,7 +55,8 @@ int main(int argc, char **argv) {
    // Typedefs to simplify notation
   typedef GenericHMCRunner<ImplicitMinimumNorm2> HMCWrapper;  // Uses the default minimum norm
    // Serialiser
-  typedef Grid::JSONReader       Serialiser;
+//  typedef Grid::JSONReader       Serialiser;
+  typedef Grid::XmlReader       Serialiser;
 
 
   HMCWrapper TheHMC;

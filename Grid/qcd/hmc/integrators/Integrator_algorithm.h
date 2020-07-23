@@ -102,7 +102,7 @@ public:
   std::string integrator_name(){return "LeapFrog";}
 
   LeapFrog(GridBase* grid, IntegratorParameters Par, ActionSet<Field, RepresentationPolicy>& Aset, SmearingPolicy& Sm, Metric<Field>& M)
-    : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(grid, Par, Aset, Sm){};
+    : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(grid, Par, Aset, Sm,M){};
 
   void step(Field& U, int level, int _first, int _last) {
     int fl = this->as.size() - 1;
@@ -145,7 +145,7 @@ public:
   INHERIT_FIELD_TYPES(FieldImplementation);
 
   MinimumNorm2(GridBase* grid, IntegratorParameters Par, ActionSet<Field, RepresentationPolicy>& Aset, SmearingPolicy& Sm, Metric<Field>& M)
-    : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(grid, Par, Aset, Sm){};
+    : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(grid, Par, Aset, Sm,M){};
 
   std::string integrator_name(){return "MininumNorm2";}
 
@@ -209,7 +209,7 @@ public:
                 ActionSet<Field, RepresentationPolicy>& Aset,
                 SmearingPolicy& Sm, Metric<Field>& M)
     : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(
-									    grid, Par, Aset, Sm){};
+									    grid, Par, Aset, Sm,M){};
 
   std::string integrator_name(){return "ForceGradient";}
   
