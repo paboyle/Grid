@@ -44,7 +44,7 @@ struct RMHMCActionParameters: Serializable {
 
 int main(int argc, char **argv) {
   using namespace Grid;
-  using namespace Grid::QCD;
+//  using namespace Grid::QCD;
 
   Grid_init(&argc, &argv);
   GridLogIntegrator.Active(1);
