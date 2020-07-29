@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Grid'
-copyright = '2018, Peter Boyle, Guido Cossu, Antonin Portelli, Azusa Yamaguchi'
+copyright = '2019, Peter Boyle, Guido Cossu, Antonin Portelli, Azusa Yamaguchi'
 author = 'Peter Boyle, Guido Cossu, Antonin Portelli, Azusa Yamaguchi'
 
 # The short X.Y version
