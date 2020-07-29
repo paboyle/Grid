@@ -175,7 +175,7 @@ void Tester(const functor &func)
   } else {
     std::cout<<GridLogMessage << " wrong!" <<std::endl;
   }
-  //assert(ok==0);
+  assert(ok==0);
 }
 
 template<class functor>
@@ -234,7 +234,7 @@ void IntTester(const functor &func)
   } else {
     std::cout<<GridLogMessage << " wrong!" <<std::endl;
   }
-  //assert(ok==0);
+  assert(ok==0);
 }
 
 
@@ -285,7 +285,7 @@ void ReductionTester(const functor &func)
   } else {
     std::cout<<GridLogMessage << " wrong!" <<std::endl;
   }
-  //assert(ok==0);
+  assert(ok==0);
 }
 
 
@@ -332,7 +332,7 @@ void IntReductionTester(const functor &func)
   } else {
     std::cout<<GridLogMessage << " wrong!" <<std::endl;
   }
-  //assert(ok==0);
+  assert(ok==0);
 }
 
 
@@ -456,7 +456,7 @@ void PermTester(const functor &func)
   } else {
     std::cout<<GridLogMessage << " wrong!" <<std::endl;
   }
-  //assert(ok==0);
+  assert(ok==0);
 }
 
 
