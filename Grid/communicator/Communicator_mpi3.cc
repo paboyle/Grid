@@ -44,22 +44,10 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
   MPI_Initialized(&flag); // needed to coexist with other libs apparently
   if ( !flag ) {
 
-// Fugaku Tofu: enable by default
-/*
-#if defined (A64FX) || defined (A64FXFIXEDSIZE)
-#ifndef TOFU
-#define TOFU
-#pragma message ("TOFU network / MPI_THREAD_SERIALIZED")
-#endif
-#endif
-*/
-
 #if defined (TOFU) // FUGAKU, credits go to Issaku Kanamori
     nCommThreads=1;
     // wrong results here too
-    //MPI_Init(argc,argv);
-
-    // comms-overlap leads to wrong results in Benchmark_wilson even on single node MPI runs
+    // For now: comms-overlap leads to wrong results in Benchmark_wilson even on single node MPI runs
     // other comms schemes are ok
     MPI_Init_thread(argc,argv,MPI_THREAD_SERIALIZED,&provided);
 #else
