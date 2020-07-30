@@ -137,38 +137,42 @@ void MemoryManager::Init(void)
     }
   }
 
-  // only root node delivers messages, this is called before communicator is initialized,
-  // so need a manual restriction
-  if ( CartesianCommunicator::RankWorld() == 0 ) {
-    std::cout << GridLogMessage<< "MemoryManager::Init() setting up"<<std::endl;
-#ifdef ALLOCATION_CACHE
-    std::cout << GridLogMessage<< "MemoryManager::Init() cache pool for recent allocations: SMALL "<<Ncache[CpuSmall]<<" LARGE "<<Ncache[Cpu]<<std::endl;
+}
+
+void MemoryManager::InitMessage(void) {
+#ifndef GRID_UVM
+  std::cout << GridLogMessage << "MemoryManager Cache "<< MemoryManager::DeviceMaxBytes <<" bytes "<<std::endl;
 #endif
-    
+  
+  std::cout << GridLogMessage<< "MemoryManager::Init() setting up"<<std::endl;
+#ifdef ALLOCATION_CACHE
+  std::cout << GridLogMessage<< "MemoryManager::Init() cache pool for recent allocations: SMALL "<<Ncache[CpuSmall]<<" LARGE "<<Ncache[Cpu]<<std::endl;
+#endif
+  
 #ifdef GRID_UVM
-    std::cout << GridLogMessage<< "MemoryManager::Init() Unified memory space"<<std::endl;
+  std::cout << GridLogMessage<< "MemoryManager::Init() Unified memory space"<<std::endl;
 #ifdef GRID_CUDA
-    std::cout << GridLogMessage<< "MemoryManager::Init() Using cudaMallocManaged"<<std::endl;
+  std::cout << GridLogMessage<< "MemoryManager::Init() Using cudaMallocManaged"<<std::endl;
 #endif
 #ifdef GRID_HIP
-    std::cout << GridLogMessage<< "MemoryManager::Init() Using hipMallocManaged"<<std::endl;
+  std::cout << GridLogMessage<< "MemoryManager::Init() Using hipMallocManaged"<<std::endl;
 #endif
 #ifdef GRID_SYCL
-    std::cout << GridLogMessage<< "MemoryManager::Init() Using SYCL malloc_shared"<<std::endl;
+  std::cout << GridLogMessage<< "MemoryManager::Init() Using SYCL malloc_shared"<<std::endl;
 #endif
 #else
-    std::cout << GridLogMessage<< "MemoryManager::Init() Non unified: Caching accelerator data in dedicated memory"<<std::endl;
+  std::cout << GridLogMessage<< "MemoryManager::Init() Non unified: Caching accelerator data in dedicated memory"<<std::endl;
 #ifdef GRID_CUDA
-    std::cout << GridLogMessage<< "MemoryManager::Init() Using cudaMalloc"<<std::endl;
+  std::cout << GridLogMessage<< "MemoryManager::Init() Using cudaMalloc"<<std::endl;
 #endif
 #ifdef GRID_HIP
-    std::cout << GridLogMessage<< "MemoryManager::Init() Using hipMalloc"<<std::endl;
+  std::cout << GridLogMessage<< "MemoryManager::Init() Using hipMalloc"<<std::endl;
 #endif
 #ifdef GRID_SYCL
-    std::cout << GridLogMessage<< "MemoryManager::Init() Using SYCL malloc_device"<<std::endl;
+  std::cout << GridLogMessage<< "MemoryManager::Init() Using SYCL malloc_device"<<std::endl;
 #endif
 #endif
-  }
+
 }
 
 void *MemoryManager::Insert(void *ptr,size_t bytes,int type) 

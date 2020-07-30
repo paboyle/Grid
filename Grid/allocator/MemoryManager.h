@@ -98,6 +98,7 @@ private:
   static void PrintBytes(void);
  public:
   static void Init(void);
+  static void InitMessage(void);
   static void *SharedAllocate(size_t bytes);
   static void  SharedFree    (void *ptr,size_t bytes);
   static void *CpuAllocate(size_t bytes);
