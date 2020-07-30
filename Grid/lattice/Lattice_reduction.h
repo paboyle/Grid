@@ -25,7 +25,7 @@ Author: Christoph Lehner <christoph@lhnr.de>
 #include <Grid/Grid_Eigen_Dense.h>
 
 
-#ifdef GRID_NVCC
+#if defined(GRID_CUDA)||defined(GRID_HIP)
 #include <Grid/lattice/Lattice_reduction_gpu.h>
 #endif
 
@@ -39,7 +39,36 @@ inline typename vobj::scalar_object sum_cpu(const vobj *arg, Integer osites)
 {
   typedef typename vobj::scalar_object  sobj;
 
-  const int Nsimd = vobj::Nsimd();
+  //  const int Nsimd = vobj::Nsimd();
+  const int nthread = GridThread::GetThreads();
+
+  Vector<sobj> sumarray(nthread);
+  for(int i=0;i<nthread;i++){
+    sumarray[i]=Zero();
+  }
+  
+  thread_for(thr,nthread, {
+    int nwork, mywork, myoff;
+    nwork = osites;
+    GridThread::GetWork(nwork,thr,mywork,myoff);
+    vobj vvsum=Zero();
+    for(int ss=myoff;ss<mywork+myoff; ss++){
+      vvsum = vvsum + arg[ss];
+    }
+    sumarray[thr]=Reduce(vvsum);
+  });
+  
+  sobj ssum=Zero();  // sum across threads
+  for(int i=0;i<nthread;i++){
+    ssum = ssum+sumarray[i];
+  } 
+  return ssum;
+}
+template<class vobj>
+inline typename vobj::scalar_objectD sumD_cpu(const vobj *arg, Integer osites)
+{
+  typedef typename vobj::scalar_objectD  sobj;
+
   const int nthread = GridThread::GetThreads();
 
   Vector<sobj> sumarray(nthread);
@@ -63,23 +92,43 @@ inline typename vobj::scalar_object sum_cpu(const vobj *arg, Integer osites)
     ssum = ssum+sumarray[i];
   } 
   
-  return ssum;
+  typedef typename vobj::scalar_object ssobj;
+  ssobj ret = ssum;
+  return ret;
 }
+
+
 template<class vobj>
 inline typename vobj::scalar_object sum(const vobj *arg, Integer osites)
 {
-#ifdef GRID_NVCC
+#if defined(GRID_CUDA)||defined(GRID_HIP)
   return sum_gpu(arg,osites);
 #else
   return sum_cpu(arg,osites);
 #endif  
 }
 template<class vobj>
+inline typename vobj::scalar_objectD sumD(const vobj *arg, Integer osites)
+{
+#if defined(GRID_CUDA)||defined(GRID_HIP)
+  return sumD_gpu(arg,osites);
+#else
+  return sumD_cpu(arg,osites);
+#endif  
+}
+
+template<class vobj>
 inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
 {
-  auto arg_v = arg.View();
+#if defined(GRID_CUDA)||defined(GRID_HIP)
+  autoView( arg_v, arg, AcceleratorRead);
   Integer osites = arg.Grid()->oSites();
-  auto ssum= sum(&arg_v[0],osites);
+  auto ssum= sum_gpu(&arg_v[0],osites);
+#else
+  autoView(arg_v, arg, CpuRead);
+  Integer osites = arg.Grid()->oSites();
+  auto ssum= sum_cpu(&arg_v[0],osites);
+#endif  
   arg.Grid()->GlobalSum(ssum);
   return ssum;
 }
@@ -101,43 +150,30 @@ inline ComplexD rankInnerProduct(const Lattice<vobj> &left,const Lattice<vobj> &
   ComplexD  nrm;
   
   GridBase *grid = left.Grid();
-  
-  // Might make all code paths go this way.
-  auto left_v = left.AcceleratorView(ViewRead);
-  auto right_v=right.AcceleratorView(ViewRead);
 
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
   
-#ifdef GRID_NVCC
-  // GPU - SIMT lane compliance...
-  typedef decltype(innerProduct(left_v[0],right_v[0])) inner_t;
+  // Might make all code paths go this way.
+  typedef decltype(innerProductD(vobj(),vobj())) inner_t;
   Vector<inner_t> inner_tmp(sites);
   auto inner_tmp_v = &inner_tmp[0];
-  
+    
+  {
+    autoView( left_v , left, AcceleratorRead);
+    autoView( right_v,right, AcceleratorRead);
 
-  accelerator_for( ss, sites, nsimd,{
-      auto x_l = left_v(ss);
-      auto y_l = right_v(ss);
-      coalescedWrite(inner_tmp_v[ss],innerProduct(x_l,y_l));
-  })
+    // GPU - SIMT lane compliance...
+    accelerator_for( ss, sites, 1,{
+	auto x_l = left_v[ss];
+	auto y_l = right_v[ss];
+	inner_tmp_v[ss]=innerProductD(x_l,y_l);
+    });
+  }
 
   // This is in single precision and fails some tests
-  // Need a sumD that sums in double
-  nrm = TensorRemove(sumD_gpu(inner_tmp_v,sites));  
-#else
-  // CPU 
-  typedef decltype(innerProductD(left_v[0],right_v[0])) inner_t;
-  Vector<inner_t> inner_tmp(sites);
-  auto inner_tmp_v = &inner_tmp[0];
-  
-  accelerator_for( ss, sites, nsimd,{
-      auto x_l = left_v[ss];
-      auto y_l = right_v[ss];
-      inner_tmp_v[ss]=innerProductD(x_l,y_l);
-  })
-  nrm = TensorRemove(sum(inner_tmp_v,sites));
-#endif
+  auto anrm = sum(inner_tmp_v,sites);  
+  nrm = anrm;
   return nrm;
 }
 
@@ -175,40 +211,24 @@ axpby_norm_fast(Lattice<vobj> &z,sobj a,sobj b,const Lattice<vobj> &x,const Latt
   
   GridBase *grid = x.Grid();
 
-  auto x_v=x.AcceleratorView(ViewRead);
-  auto y_v=y.AcceleratorView(ViewRead);
-  auto z_v=z.AcceleratorView(ViewWrite);
-
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
   
-#ifdef GRID_NVCC
   // GPU
-  typedef decltype(innerProduct(x_v[0],y_v[0])) inner_t;
-  Vector<inner_t> inner_tmp(sites);
-  auto inner_tmp_v = &inner_tmp[0];
+  autoView( x_v, x, AcceleratorRead);
+  autoView( y_v, y, AcceleratorRead);
+  autoView( z_v, z, AcceleratorWrite);
 
-  accelerator_for( ss, sites, nsimd,{
-      auto tmp = a*x_v(ss)+b*y_v(ss);
-      coalescedWrite(inner_tmp_v[ss],innerProduct(tmp,tmp));
-      coalescedWrite(z_v[ss],tmp);
-  });
-
-  nrm = real(TensorRemove(sumD_gpu(inner_tmp_v,sites)));
-#else
-  // CPU 
   typedef decltype(innerProductD(x_v[0],y_v[0])) inner_t;
   Vector<inner_t> inner_tmp(sites);
   auto inner_tmp_v = &inner_tmp[0];
-  
-  accelerator_for( ss, sites, nsimd,{
-      auto tmp = a*x_v(ss)+b*y_v(ss);
+
+  accelerator_for( ss, sites, 1,{
+      auto tmp = a*x_v[ss]+b*y_v[ss];
       inner_tmp_v[ss]=innerProductD(tmp,tmp);
       z_v[ss]=tmp;
   });
-  // Already promoted to double
   nrm = real(TensorRemove(sum(inner_tmp_v,sites)));
-#endif
   grid->GlobalSum(nrm);
   return nrm; 
 }
@@ -224,47 +244,29 @@ innerProductNorm(ComplexD& ip, RealD &nrm, const Lattice<vobj> &left,const Latti
 
   GridBase *grid = left.Grid();
 
-  auto left_v=left.AcceleratorView(ViewRead);
-  auto right_v=right.AcceleratorView(ViewRead);
-
   const uint64_t nsimd = grid->Nsimd();
   const uint64_t sites = grid->oSites();
 
-#ifdef GRID_NVCC
   // GPU
-  typedef decltype(innerProduct(left_v[0],right_v[0])) inner_t;
-  typedef decltype(innerProduct(left_v[0],left_v[0])) norm_t;
+  typedef decltype(innerProductD(vobj(),vobj())) inner_t;
+  typedef decltype(innerProductD(vobj(),vobj())) norm_t;
   Vector<inner_t> inner_tmp(sites);
-  Vector<norm_t> norm_tmp(sites);
+  Vector<norm_t>  norm_tmp(sites);
   auto inner_tmp_v = &inner_tmp[0];
   auto norm_tmp_v = &norm_tmp[0];
+  {
+    autoView(left_v,left, AcceleratorRead);
+    autoView(right_v,right,AcceleratorRead);
+    accelerator_for( ss, sites, 1,{
+	auto left_tmp = left_v[ss];
+	inner_tmp_v[ss]=innerProductD(left_tmp,right_v[ss]);
+        norm_tmp_v [ss]=innerProductD(left_tmp,left_tmp);
+      });
+  }
 
-  accelerator_for( ss, sites, nsimd,{
-      auto left_tmp = left_v(ss);
-      coalescedWrite(inner_tmp_v[ss],innerProduct(left_tmp,right_v(ss)));
-      coalescedWrite(norm_tmp_v[ss],innerProduct(left_tmp,left_tmp));
-  });
-
-  tmp[0] = TensorRemove(sumD_gpu(inner_tmp_v,sites));
-  tmp[1] = TensorRemove(sumD_gpu(norm_tmp_v,sites));
-#else
-  // CPU
-  typedef decltype(innerProductD(left_v[0],right_v[0])) inner_t;
-  typedef decltype(innerProductD(left_v[0],left_v[0])) norm_t;
-  Vector<inner_t> inner_tmp(sites);
-  Vector<norm_t> norm_tmp(sites);
-  auto inner_tmp_v = &inner_tmp[0];
-  auto norm_tmp_v = &norm_tmp[0];
-
-  accelerator_for( ss, sites, nsimd,{
-      auto left_tmp = left_v(ss);
-      inner_tmp_v[ss] = innerProductD(left_tmp,right_v(ss));
-      norm_tmp_v[ss] = innerProductD(left_tmp,left_tmp);
-  });
-  // Already promoted to double
   tmp[0] = TensorRemove(sum(inner_tmp_v,sites));
   tmp[1] = TensorRemove(sum(norm_tmp_v,sites));
-#endif
+
   grid->GlobalSumVector(&tmp[0],2); // keep norm Complex -> can use GlobalSumVector
   ip = tmp[0];
   nrm = real(tmp[1]);
@@ -335,7 +337,7 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
 
   // sum over reduced dimension planes, breaking out orthog dir
   // Parallel over orthog direction
-  auto Data_v=Data.View();
+  autoView( Data_v, Data, CpuRead);
   thread_for( r,rd, {
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
     for(int n=0;n<e1;n++){
@@ -413,8 +415,8 @@ static void sliceInnerProductVector( std::vector<ComplexD> & result, const Latti
   int e2=    grid->_slice_block [orthogdim];
   int stride=grid->_slice_stride[orthogdim];
 
-  auto lhv=lhs.View();
-  auto rhv=rhs.View();
+  autoView( lhv, lhs, CpuRead);
+  autoView( rhv, rhs, CpuRead);
   thread_for( r,rd,{
 
     int so=r*grid->_ostride[orthogdim]; // base offset for start of plane 
@@ -521,14 +523,12 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
 
     tensor_reduced at; at=av;
 
-    auto Rv=R.View();
-    auto Xv=X.View();
-    auto Yv=Y.View();
-    thread_for_collapse(2, n, e1, {
-      for(int b=0;b<e2;b++){
+    autoView( Rv, R, CpuWrite);
+    autoView( Xv, X, CpuRead);
+    autoView( Yv, Y, CpuRead);
+    thread_for2d( n, e1, b,e2, {
 	int ss= so+n*stride+b;
 	Rv[ss] = at*Xv[ss]+Yv[ss];
-      }
     });
   }
 };
@@ -581,9 +581,9 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
   int nblock=FullGrid->_slice_nblock[Orthog];
   int ostride=FullGrid->_ostride[Orthog];
 
-  auto X_v=X.View();
-  auto Y_v=Y.View();
-  auto R_v=R.View();
+  autoView( X_v, X, CpuRead);
+  autoView( Y_v, Y, CpuRead);
+  autoView( R_v, R, CpuWrite);
   thread_region
   {
     Vector<vobj> s_x(Nblock);
@@ -628,13 +628,14 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
   //  int nl=1;
 
   //FIXME package in a convenient iterator
+  // thread_for2d_in_region
   //Should loop over a plane orthogonal to direction "Orthog"
   int stride=FullGrid->_slice_stride[Orthog];
   int block =FullGrid->_slice_block [Orthog];
   int nblock=FullGrid->_slice_nblock[Orthog];
   int ostride=FullGrid->_ostride[Orthog];
-  auto R_v = R.View();
-  auto X_v = X.View();
+  autoView( R_v, R, CpuWrite);
+  autoView( X_v, X, CpuRead);
   thread_region
   {
     std::vector<vobj> s_x(Nblock);
@@ -692,8 +693,8 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
 
   typedef typename vobj::vector_typeD vector_typeD;
 
-  auto lhs_v=lhs.View();
-  auto rhs_v=rhs.View();
+  autoView( lhs_v, lhs, CpuRead);
+  autoView( rhs_v, rhs, CpuRead);
   thread_region
   {
     std::vector<vobj> Left(Nblock);

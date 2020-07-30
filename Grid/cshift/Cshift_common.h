@@ -29,6 +29,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
+extern Vector<std::pair<int,int> > Cshift_table; 
+
 ///////////////////////////////////////////////////////////////////
 // Gather for when there is no need to SIMD split 
 ///////////////////////////////////////////////////////////////////
@@ -46,16 +48,16 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimen
   int e2=rhs.Grid()->_slice_block[dimension];
   int ent = 0;
 
-  static Vector<std::pair<int,int> > table; table.resize(e1*e2);
+  if(Cshift_table.size()<e1*e2) Cshift_table.resize(e1*e2); // Let it grow to biggest
+
   int stride=rhs.Grid()->_slice_stride[dimension];
 
-  auto rhs_v = rhs.View();
   if ( cbmask == 0x3 ) { 
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int o  = n*stride;
 	int bo = n*e2;
-	table[ent++] = std::pair<int,int>(off+bo+b,so+o+b);
+	Cshift_table[ent++] = std::pair<int,int>(off+bo+b,so+o+b);
       }
     }
   } else { 
@@ -65,14 +67,19 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimen
 	 int o  = n*stride;
 	 int ocb=1<<rhs.Grid()->CheckerBoardFromOindex(o+b);
 	 if ( ocb &cbmask ) {
-	   table[ent++]=std::pair<int,int> (off+bo++,so+o+b);
+	   Cshift_table[ent++]=std::pair<int,int> (off+bo++,so+o+b);
 	 }
        }
      }
   }
-  thread_for(i,ent,{
-    buffer[table[i].first]=rhs_v[table[i].second];
-  });
+  {
+    autoView(rhs_v , rhs, AcceleratorRead);
+    auto buffer_p = & buffer[0];
+    auto table = &Cshift_table[0];
+    accelerator_for(i,ent,1,{
+      buffer_p[table[i].first]=rhs_v[table[i].second];
+    });
+  }
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -95,36 +102,38 @@ Gather_plane_extract(const Lattice<vobj> &rhs,
   int e2=rhs.Grid()->_slice_block[dimension];
   int n1=rhs.Grid()->_slice_stride[dimension];
 
-  auto rhs_v = rhs.View();
   if ( cbmask ==0x3){
-    thread_for_collapse(2,n,e1,{
-      for(int b=0;b<e2;b++){
-
+    autoView(rhs_v , rhs, AcceleratorRead);
+    accelerator_for2d(n,e1,b,e2,1,{
 	int o      =   n*n1;
 	int offset = b+n*e2;
 	
 	vobj temp =rhs_v[so+o+b];
 	extract<vobj>(temp,pointers,offset);
-      }
-    });
+      });
   } else { 
+    autoView(rhs_v , rhs, AcceleratorRead);
 
-    // Case of SIMD split AND checker dim cannot currently be hit, except in 
-    // Test_cshift_red_black code.
-    std::cout << " Dense packed buffer WARNING " <<std::endl;
-    thread_for_collapse(2,n,e1,{
-      for(int b=0;b<e2;b++){
+    Coordinate rdim=rhs.Grid()->_rdimensions;
+    Coordinate cdm =rhs.Grid()->_checker_dim_mask;
+    std::cout << " Dense packed buffer WARNING " <<std::endl; // Does this get called twice once for each cb?
+    accelerator_for2d(n,e1,b,e2,1,{
+
+	Coordinate coor;
 
 	int o=n*n1;
-	int ocb=1<<rhs.Grid()->CheckerBoardFromOindex(o+b);
+	int oindex = o+b;
+
+       	int cb = RedBlackCheckerBoardFromOindex(oindex, rdim, cdm);
+
+	int ocb=1<<cb;
 	int offset = b+n*e2;
 
 	if ( ocb & cbmask ) {
 	  vobj temp =rhs_v[so+o+b];
 	  extract<vobj>(temp,pointers,offset);
 	}
-      }
-    });
+      });
   }
 }
 
@@ -145,7 +154,8 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
   int e2=rhs.Grid()->_slice_block[dimension];
   int stride=rhs.Grid()->_slice_stride[dimension];
 
-  static std::vector<std::pair<int,int> > table; table.resize(e1*e2);
+  if(Cshift_table.size()<e1*e2) Cshift_table.resize(e1*e2); // Let it grow to biggest
+
   int ent    =0;
 
   if ( cbmask ==0x3 ) {
@@ -154,7 +164,7 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
       for(int b=0;b<e2;b++){
 	int o   =n*rhs.Grid()->_slice_stride[dimension];
 	int bo  =n*rhs.Grid()->_slice_block[dimension];
-	table[ent++] = std::pair<int,int>(so+o+b,bo+b);
+	Cshift_table[ent++] = std::pair<int,int>(so+o+b,bo+b);
       }
     }
 
@@ -165,16 +175,20 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
 	int o   =n*rhs.Grid()->_slice_stride[dimension];
 	int ocb=1<<rhs.Grid()->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
 	if ( ocb & cbmask ) {
-	  table[ent++]=std::pair<int,int> (so+o+b,bo++);
+	  Cshift_table[ent++]=std::pair<int,int> (so+o+b,bo++);
 	}
       }
     }
   }
   
-  auto rhs_v = rhs.View();
-  thread_for(i,ent,{
-    rhs_v[table[i].first]=buffer[table[i].second];
-  });
+  {
+    autoView( rhs_v, rhs, AcceleratorWrite);
+    auto buffer_p = & buffer[0];
+    auto table = &Cshift_table[0];
+    accelerator_for(i,ent,1,{
+	rhs_v[table[i].first]=buffer_p[table[i].second];
+    });
+  }
 }
 
 //////////////////////////////////////////////////////
@@ -194,21 +208,19 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
   int e2=rhs.Grid()->_slice_block[dimension];
 
   if(cbmask ==0x3 ) {
-    auto rhs_v = rhs.View();
-    thread_for_collapse(2,n,e1,{
-      for(int b=0;b<e2;b++){
+    autoView( rhs_v , rhs, AcceleratorWrite);
+    accelerator_for2d(n,e1,b,e2,1,{
 	int o      = n*rhs.Grid()->_slice_stride[dimension];
 	int offset = b+n*rhs.Grid()->_slice_block[dimension];
 	merge(rhs_v[so+o+b],pointers,offset);
-      }
-    });
+      });
   } else { 
 
     // Case of SIMD split AND checker dim cannot currently be hit, except in 
     // Test_cshift_red_black code.
     //    std::cout << "Scatter_plane merge assert(0); think this is buggy FIXME "<< std::endl;// think this is buggy FIXME
     std::cout<<" Unthreaded warning -- buffer is not densely packed ??"<<std::endl;
-    auto rhs_v = rhs.View();
+    autoView( rhs_v, rhs, CpuWrite);
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int o      = n*rhs.Grid()->_slice_stride[dimension];
@@ -225,6 +237,7 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
 //////////////////////////////////////////////////////
 // local to node block strided copies
 //////////////////////////////////////////////////////
+
 template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask)
 {
   int rd = rhs.Grid()->_rdimensions[dimension];
@@ -239,14 +252,16 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
   int e1=rhs.Grid()->_slice_nblock[dimension]; // clearly loop invariant for icpc
   int e2=rhs.Grid()->_slice_block[dimension];
   int stride = rhs.Grid()->_slice_stride[dimension];
-  static std::vector<std::pair<int,int> > table; table.resize(e1*e2);
+
+  if(Cshift_table.size()<e1*e2) Cshift_table.resize(e1*e2); // Let it grow to biggest
+
   int ent=0;
 
   if(cbmask == 0x3 ){
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
         int o =n*stride+b;
-	table[ent++] = std::pair<int,int>(lo+o,ro+o);
+	Cshift_table[ent++] = std::pair<int,int>(lo+o,ro+o);
       }
     }
   } else { 
@@ -255,23 +270,24 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
         int o =n*stride+b;
         int ocb=1<<lhs.Grid()->CheckerBoardFromOindex(o);
         if ( ocb&cbmask ) {
-	  table[ent++] = std::pair<int,int>(lo+o,ro+o);
+	  Cshift_table[ent++] = std::pair<int,int>(lo+o,ro+o);
 	}
       }
     }
   }
 
-  auto rhs_v = rhs.View();
-  auto lhs_v = lhs.View();
-  thread_for(i,ent,{
-    lhs_v[table[i].first]=rhs_v[table[i].second];
-  });
-
+  {
+    autoView(rhs_v , rhs, AcceleratorRead);
+    autoView(lhs_v , lhs, AcceleratorWrite);
+    auto table = &Cshift_table[0];
+    accelerator_for(i,ent,1,{
+      lhs_v[table[i].first]=rhs_v[table[i].second];
+    });
+  }
 }
 
 template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask,int permute_type)
 {
- 
   int rd = rhs.Grid()->_rdimensions[dimension];
 
   if ( !rhs.Grid()->CheckerBoarded(dimension) ) {
@@ -285,29 +301,33 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
   int e2=rhs.Grid()->_slice_block [dimension];
   int stride = rhs.Grid()->_slice_stride[dimension];
 
-  static std::vector<std::pair<int,int> > table;  table.resize(e1*e2);
+  if(Cshift_table.size()<e1*e2) Cshift_table.resize(e1*e2); // Let it grow to biggest
+
   int ent=0;
 
   if ( cbmask == 0x3 ) {
     for(int n=0;n<e1;n++){
     for(int b=0;b<e2;b++){
       int o  =n*stride;
-      table[ent++] = std::pair<int,int>(lo+o+b,ro+o+b);
+      Cshift_table[ent++] = std::pair<int,int>(lo+o+b,ro+o+b);
     }}
   } else {
     for(int n=0;n<e1;n++){
     for(int b=0;b<e2;b++){
       int o  =n*stride;
       int ocb=1<<lhs.Grid()->CheckerBoardFromOindex(o+b);
-      if ( ocb&cbmask ) table[ent++] = std::pair<int,int>(lo+o+b,ro+o+b);
+      if ( ocb&cbmask ) Cshift_table[ent++] = std::pair<int,int>(lo+o+b,ro+o+b);
     }}
   }
 
-  auto rhs_v = rhs.View();
-  auto lhs_v = lhs.View();
-  thread_for(i,ent,{
-    permute(lhs_v[table[i].first],rhs_v[table[i].second],permute_type);
-  });
+  {
+    autoView( rhs_v, rhs, AcceleratorRead);
+    autoView( lhs_v, lhs, AcceleratorWrite);
+    auto table = &Cshift_table[0];
+    accelerator_for(i,ent,1,{
+      permute(lhs_v[table[i].first],rhs_v[table[i].second],permute_type);
+    });
+  }
 }
 
 //////////////////////////////////////////////////////

@@ -38,6 +38,7 @@ class GridCartesian: public GridBase {
 
 public:
   int dummy;
+  Coordinate _checker_dim_mask;
   virtual int  CheckerBoardFromOindexTable (int Oindex) {
     return 0;
   }
@@ -104,6 +105,7 @@ public:
     _ldimensions.resize(_ndimension);
     _rdimensions.resize(_ndimension);
     _simd_layout.resize(_ndimension);
+    _checker_dim_mask.resize(_ndimension);;
     _lstart.resize(_ndimension);
     _lend.resize(_ndimension);
 
@@ -114,6 +116,8 @@ public:
 
     for (int d = 0; d < _ndimension; d++)
       {
+	_checker_dim_mask[d]=0;
+
         _fdimensions[d] = dimensions[d];   // Global dimensions
         _gdimensions[d] = _fdimensions[d]; // Global dimensions
         _simd_layout[d] = simd_layout[d];

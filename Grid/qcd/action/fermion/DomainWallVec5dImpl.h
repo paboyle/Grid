@@ -114,19 +114,22 @@ public:
       U = adj(Cshift(U, mu, -1));
       PokeIndex<LorentzIndex>(Uadj, U, mu);
     }
-    
-    for (int lidx = 0; lidx < GaugeGrid->lSites(); lidx++) {
+
+    autoView(Umu_v,Umu,CpuRead);
+    autoView(Uadj_v,Uadj,CpuRead);
+    autoView(Uds_v,Uds,CpuWrite);
+    thread_for( lidx, GaugeGrid->lSites(), {
       Coordinate lcoor;
       GaugeGrid->LocalIndexToLocalCoor(lidx, lcoor);
       
-      peekLocalSite(ScalarUmu, Umu, lcoor);
+      peekLocalSite(ScalarUmu, Umu_v, lcoor);
       for (int mu = 0; mu < 4; mu++) ScalarUds(mu) = ScalarUmu(mu);
       
-      peekLocalSite(ScalarUmu, Uadj, lcoor);
+      peekLocalSite(ScalarUmu, Uadj_v, lcoor);
       for (int mu = 0; mu < 4; mu++) ScalarUds(mu + 4) = ScalarUmu(mu);
       
-      pokeLocalSite(ScalarUds, Uds, lcoor);
-    }
+      pokeLocalSite(ScalarUds, Uds_v, lcoor);
+    });
   }
       
   inline void InsertForce4D(GaugeField &mat, FermionField &Btilde,FermionField &A, int mu) 

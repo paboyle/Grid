@@ -140,13 +140,15 @@ public:
       b = cp / c;
 
       LinearCombTimer.Start();
-      auto psi_v = psi.View();
-      auto p_v   = p.View();
-      auto r_v   = r.View();
-      accelerator_for(ss,p_v.size(), Field::vector_object::Nsimd(),{
-	  coalescedWrite(psi_v[ss], a      *  p_v(ss) + psi_v(ss));
-	  coalescedWrite(p_v[ss]  , b      *  p_v(ss) + r_v  (ss));
-      });
+      {
+	autoView( psi_v , psi, AcceleratorWrite);
+	autoView( p_v   , p,   AcceleratorWrite);
+	autoView( r_v   , r,   AcceleratorWrite);
+	accelerator_for(ss,p_v.size(), Field::vector_object::Nsimd(),{
+	    coalescedWrite(psi_v[ss], a      *  p_v(ss) + psi_v(ss));
+	    coalescedWrite(p_v[ss]  , b      *  p_v(ss) + r_v  (ss));
+	});
+      }
       LinearCombTimer.Stop();
       LinalgTimer.Stop();
 

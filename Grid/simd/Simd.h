@@ -31,7 +31,7 @@ directory
 #ifndef GRID_SIMD_H
 #define GRID_SIMD_H
 
-#ifdef GRID_NVCC
+#if defined(GRID_CUDA) || defined(GRID_HIP)
 #include <thrust/complex.h>
 #endif
 
@@ -65,7 +65,7 @@ typedef RealD   Real;
 typedef RealF  Real;
 #endif
 
-#ifdef GRID_NVCC
+#if defined(GRID_CUDA) || defined(GRID_HIP)
 typedef thrust::complex<RealF> ComplexF;
 typedef thrust::complex<RealD> ComplexD;
 typedef thrust::complex<Real>  Complex;

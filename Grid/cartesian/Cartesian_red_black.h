@@ -35,12 +35,28 @@ static const int CbRed  =0;
 static const int CbBlack=1;
 static const int Even   =CbRed;
 static const int Odd    =CbBlack;
+
+accelerator_inline int RedBlackCheckerBoardFromOindex (int oindex, Coordinate &rdim, Coordinate &chk_dim_msk)
+{
+  int nd=rdim.size();
+  Coordinate coor(nd);
+
+  Lexicographic::CoorFromIndex(coor,oindex,rdim);
+
+  int linear=0;
+  for(int d=0;d<nd;d++){
+    if(chk_dim_msk[d])
+      linear=linear+coor[d];
+  }
+  return (linear&0x1);
+}
+
     
 // Specialise this for red black grids storing half the data like a chess board.
 class GridRedBlackCartesian : public GridBase
 {
 public:
-  Coordinate _checker_dim_mask;
+  //  Coordinate _checker_dim_mask;
   int              _checker_dim;
   std::vector<int> _checker_board;
 

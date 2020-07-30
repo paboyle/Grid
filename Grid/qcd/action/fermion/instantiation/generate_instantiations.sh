@@ -88,6 +88,7 @@ done
 CC_LIST=" \
   ImprovedStaggeredFermion5DInstantiation \
   ImprovedStaggeredFermionInstantiation \
+  NaiveStaggeredFermionInstantiation \
   StaggeredKernelsInstantiation "
 
 for impl in $STAG_IMPL_LIST

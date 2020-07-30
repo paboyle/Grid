@@ -51,9 +51,9 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
   int block =FullGrid->_slice_block [Orthog];
   int nblock=FullGrid->_slice_nblock[Orthog];
   int ostride=FullGrid->_ostride[Orthog];
-  auto X_v = X.View();
-  auto Y_v = Y.View();
-  auto R_v = R.View();
+  autoView( X_v , X, CpuRead);
+  autoView( Y_v , Y, CpuRead);
+  autoView( R_v , R, CpuWrite);
   thread_region
   {
     std::vector<vobj> s_x(Nblock);
@@ -97,8 +97,8 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
   int nblock=FullGrid->_slice_nblock[Orthog];
   int ostride=FullGrid->_ostride[Orthog];
 
-  auto X_v = X.View();
-  auto R_v = R.View();
+  autoView( X_v , X, CpuRead);
+  autoView( R_v , R, CpuWrite);
 
   thread_region
   {
@@ -156,8 +156,8 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
   int ostride=FullGrid->_ostride[Orthog];
 
   typedef typename vobj::vector_typeD vector_typeD;
-  auto lhs_v = lhs.View();
-  auto rhs_v = rhs.View();
+  autoView( lhs_v , lhs, CpuRead);
+  autoView( rhs_v , rhs, CpuRead);
   thread_region {
     std::vector<vobj> Left(Nblock);
     std::vector<vobj> Right(Nblock);

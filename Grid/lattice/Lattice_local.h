@@ -43,8 +43,8 @@ template<class vobj>
 inline auto localNorm2 (const Lattice<vobj> &rhs)-> Lattice<typename vobj::tensor_reduced>
 {
   Lattice<typename vobj::tensor_reduced> ret(rhs.Grid());
-  auto rhs_v = rhs.View();
-  auto ret_v = ret.View();
+  autoView( rhs_v , rhs, AcceleratorRead);
+  autoView( ret_v , ret, AcceleratorWrite);
   accelerator_for(ss,rhs_v.size(),vobj::Nsimd(),{
     coalescedWrite(ret_v[ss],innerProduct(rhs_v(ss),rhs_v(ss)));
   });
@@ -56,9 +56,9 @@ template<class vobj>
 inline auto localInnerProduct (const Lattice<vobj> &lhs,const Lattice<vobj> &rhs) -> Lattice<typename vobj::tensor_reduced>
 {
   Lattice<typename vobj::tensor_reduced> ret(rhs.Grid());
-  auto lhs_v = lhs.View();
-  auto rhs_v = rhs.View();
-  auto ret_v = ret.View();
+  autoView( lhs_v , lhs, AcceleratorRead);
+  autoView( rhs_v , rhs, AcceleratorRead);
+  autoView( ret_v , ret, AcceleratorWrite);
   accelerator_for(ss,rhs_v.size(),vobj::Nsimd(),{
     coalescedWrite(ret_v[ss],innerProduct(lhs_v(ss),rhs_v(ss)));
   });
@@ -73,9 +73,9 @@ inline auto outerProduct (const Lattice<ll> &lhs,const Lattice<rr> &rhs) -> Latt
   typedef decltype(coalescedRead(ll())) sll;
   typedef decltype(coalescedRead(rr())) srr;
   Lattice<decltype(outerProduct(ll(),rr()))> ret(rhs.Grid());
-  auto lhs_v = lhs.View();
-  auto rhs_v = rhs.View();
-  auto ret_v = ret.View();
+  autoView( lhs_v , lhs, AcceleratorRead);
+  autoView( rhs_v , rhs, AcceleratorRead);
+  autoView( ret_v , ret, AcceleratorWrite);
   accelerator_for(ss,rhs_v.size(),1,{
     // FIXME had issues with scalar version of outer 
     // Use vector [] operator and don't read coalesce this loop

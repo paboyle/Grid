@@ -35,7 +35,7 @@ directory
 
 
 int main(int argc, char **argv) {
-#ifndef GRID_NVCC
+#ifndef GRID_CUDA
   using namespace Grid;
 
 

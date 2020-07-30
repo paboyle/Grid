@@ -1,5 +1,5 @@
  /*************************************************************************************
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
     Source file: ./benchmarks/Benchmark_dwf.cc
     Copyright (C) 2015
 
@@ -21,7 +21,7 @@
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
-#ifdef GRID_NVCC
+#ifdef GRID_CUDA
 #define CUDA_PROFILE
 #endif
 
@@ -77,7 +77,7 @@ int main (int argc, char ** argv)
 
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
-  
+
   std::cout << GridLogMessage << "Initialising 4d RNG" << std::endl;
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedUniqueString(std::string("The 4D RNG"));
   std::cout << GridLogMessage << "Initialising 5d RNG" << std::endl;
@@ -107,8 +107,8 @@ int main (int argc, char ** argv)
   LatticeFermion    err(FGrid);
 
   std::cout << GridLogMessage << "Drawing gauge field" << std::endl;
-  LatticeGaugeField Umu(UGrid); 
-  SU3::HotConfiguration(RNG4,Umu); 
+  LatticeGaugeField Umu(UGrid);
+  SU3::HotConfiguration(RNG4,Umu);
   std::cout << GridLogMessage << "Random gauge initialised " << std::endl;
 #if 0
   Umu=1.0;
@@ -126,11 +126,11 @@ int main (int argc, char ** argv)
   // Naive wilson implementation
   ////////////////////////////////////
   // replicate across fifth dimension
-  LatticeGaugeField Umu5d(FGrid); 
+  LatticeGaugeField Umu5d(FGrid);
   std::vector<LatticeColourMatrix> U(4,FGrid);
   {
-    auto Umu5d_v = Umu5d.View();
-    auto Umu_v = Umu.View();
+    autoView( Umu5d_v, Umu5d, CpuWrite);
+    autoView( Umu_v  , Umu  , CpuRead);
     for(int ss=0;ss<Umu.Grid()->oSites();ss++){
       for(int s=0;s<Ls;s++){
 	Umu5d_v[Ls*ss+s] = Umu_v[ss];
@@ -197,9 +197,18 @@ int main (int argc, char ** argv)
     }
     double t1=usecond();
     FGrid->Barrier();
-    
+
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=single_site_flops*volume*ncall;
+
+    auto nsimd = vComplex::Nsimd();
+    auto simdwidth = sizeof(vComplex);
+
+    // RF: Nd Wilson * Ls, Nd gauge * Ls, Nc colors
+    double data_rf = volume * ((2*Nd+1)*Nd*Nc + 2*Nd*Nc*Nc) * simdwidth / nsimd * ncall / (1024.*1024.*1024.);
+
+    // mem: Nd Wilson * Ls, Nd gauge, Nc colors
+    double data_mem = (volume * (2*Nd+1)*Nd*Nc + (volume/Ls) *2*Nd*Nc*Nc) * simdwidth / nsimd * ncall / (1024.*1024.*1024.);
 
     std::cout<<GridLogMessage << "Called Dw "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
     //    std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
@@ -207,14 +216,19 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per rank =  "<< flops/(t1-t0)/NP<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NN<<std::endl;
-    err = ref-result; 
+    std::cout<<GridLogMessage << "RF  GiB/s (base 2) =   "<< 1000000. * data_rf/((t1-t0))<<std::endl;
+    std::cout<<GridLogMessage << "mem GiB/s (base 2) =   "<< 1000000. * data_mem/((t1-t0))<<std::endl;
+    err = ref-result;
     std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
     //exit(0);
 
-    if(( norm2(err)>1.0e-4) ) { 
+    if(( norm2(err)>1.0e-4) ) {
+      /*
       std::cout << "RESULT\n " << result<<std::endl;
       std::cout << "REF   \n " << ref   <<std::endl;
       std::cout << "ERR   \n " << err   <<std::endl;
+      */
+      std::cout<<GridLogMessage << "WRONG RESULT" << std::endl;
       FGrid->Barrier();
       exit(-1);
     }
@@ -235,7 +249,7 @@ int main (int argc, char ** argv)
     }
     double t1=usecond();
     FGrid->Barrier();
-    
+
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=single_site_flops*volume*ncall;
 
@@ -243,7 +257,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per rank =  "<< flops/(t1-t0)/NP<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NN<<std::endl;
-    err = ref-result; 
+    err = ref-result;
     std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
 
     assert (norm2(err)< 1.0e-3 );
@@ -258,8 +272,8 @@ int main (int argc, char ** argv)
       //    ref =  src - Gamma(Gamma::Algebra::GammaX)* src ; // 1+gamma_x
       tmp = U[mu]*Cshift(src,mu+1,1);
       {
-	auto ref_v = ref.View();
-	auto tmp_v = tmp.View();
+	autoView( ref_v, ref, CpuWrite);
+	autoView( tmp_v, tmp, CpuRead);
 	for(int i=0;i<ref_v.size();i++){
 	  ref_v[i]+= tmp_v[i] + Gamma(Gmu[mu])*tmp_v[i]; ;
 	}
@@ -268,8 +282,8 @@ int main (int argc, char ** argv)
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu+1,-1);
       {
-	auto ref_v = ref.View();
-	auto tmp_v = tmp.View();
+	autoView( ref_v, ref, CpuWrite);
+	autoView( tmp_v, tmp, CpuRead);
 	for(int i=0;i<ref_v.size();i++){
 	  ref_v[i]+= tmp_v[i] - Gamma(Gmu[mu])*tmp_v[i]; ;
 	}
@@ -283,12 +297,14 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Called DwDag"<<std::endl;
   std::cout<<GridLogMessage << "norm dag result "<< norm2(result)<<std::endl;
   std::cout<<GridLogMessage << "norm dag ref    "<< norm2(ref)<<std::endl;
-  err = ref-result; 
+  err = ref-result;
   std::cout<<GridLogMessage << "norm dag diff   "<< norm2(err)<<std::endl;
   if((norm2(err)>1.0e-4)){
+/*
 	std::cout<< "DAG RESULT\n "  <<ref     << std::endl;
 	std::cout<< "DAG sRESULT\n " <<result  << std::endl;
 	std::cout<< "DAG ERR   \n "  << err    <<std::endl;
+*/
   }
   LatticeFermion src_e (FrbGrid);
   LatticeFermion src_o (FrbGrid);
@@ -335,7 +351,7 @@ int main (int argc, char ** argv)
     }
     double t1=usecond();
     FGrid->Barrier();
-    
+
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=(single_site_flops*volume*ncall)/2.0;
 
@@ -355,12 +371,14 @@ int main (int argc, char ** argv)
   setCheckerboard(r_eo,r_o);
   setCheckerboard(r_eo,r_e);
 
-  err = r_eo-result; 
+  err = r_eo-result;
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
   if((norm2(err)>1.0e-4)){
+    /*
 	std::cout<< "Deo RESULT\n " <<r_eo << std::endl;
 	std::cout<< "Deo REF\n " <<result  << std::endl;
 	std::cout<< "Deo ERR   \n " << err <<std::endl;
+    */
   }
 
   pickCheckerboard(Even,src_e,err);
@@ -373,4 +391,3 @@ int main (int argc, char ** argv)
   Grid_finalize();
   exit(0);
 }
-

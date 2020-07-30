@@ -185,13 +185,14 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
 
 	for(int i=0;i<Lblock;i++){
 
-	  auto lhs_v = lhs_wi[i].View();
+	  // Recreate view potentially expensive outside fo UVM mode
+	  autoView(lhs_v,lhs_wi[i],CpuRead);
 	  auto left = conjugate(lhs_v[ss]);
-
 	  for(int j=0;j<Rblock;j++){
 
 	    SpinMatrix_v vv;
-	    auto rhs_v = rhs_vj[j].View();
+	    // Recreate view potentially expensive outside fo UVM mode
+	    autoView(rhs_v,rhs_vj[j],CpuRead);
 	    auto right = rhs_v[ss];
 	    for(int s1=0;s1<Ns;s1++){
 	    for(int s2=0;s2<Ns;s2++){
@@ -204,11 +205,10 @@ void A2Autils<FImpl>::MesonField(TensorType &mat,
 	    int base = Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*r;
 	    for ( int m=0;m<Nmom;m++){
 	      int idx = m+base;
-	      auto mom_v = mom[m].View();
+	      autoView(mom_v,mom[m],CpuRead);
 	      auto phase = mom_v[ss];
 	      mac(&lvSum[idx],&vv,&phase);
 	    }
-	  
 	  }
 	}
       }
@@ -371,7 +371,7 @@ void A2Autils<FImpl>::PionFieldXX(Eigen::Tensor<ComplexD,3> &mat,
 
 	for(int i=0;i<Lblock;i++){
 
-	  auto wi_v = wi[i].View();
+	  autoView(wi_v,wi[i],CpuRead);
 	  auto w = conjugate(wi_v[ss]);
 	  if (g5) {
 	    w()(2)(0) = - w()(2)(0);
@@ -383,7 +383,7 @@ void A2Autils<FImpl>::PionFieldXX(Eigen::Tensor<ComplexD,3> &mat,
 	  }
 	  for(int j=0;j<Rblock;j++){
 	    
-	    auto vj_v=vj[j].View();
+	    autoView(vj_v,vj[j],CpuRead);
 	    auto v  = vj_v[ss];
 	    auto vv = v()(0)(0);
 
@@ -518,12 +518,12 @@ void A2Autils<FImpl>::PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat,
 
 	for(int i=0;i<Lblock;i++){
 
-	  auto wi_v = wi[i].View();
+	  autoView(wi_v,wi[i],CpuRead);
 	  auto w = conjugate(wi_v[ss]);
 
 	  for(int j=0;j<Rblock;j++){
-	    
-	    auto vj_v = vj[j].View();
+
+	    autoView(vj_v,vj[j],CpuRead);
 	    auto v = vj_v[ss];
 
 	    auto vv = w()(0)(0) * v()(0)(0)// Gamma5 Dirac basis explicitly written out
@@ -544,7 +544,7 @@ void A2Autils<FImpl>::PionFieldWVmom(Eigen::Tensor<ComplexD,4> &mat,
 	    int base = Nmom*i+Nmom*Lblock*j+Nmom*Lblock*Rblock*r;
 	    for ( int m=0;m<Nmom;m++){
 	      int idx = m+base;
-	      auto mom_v = mom[m].View();
+	      autoView(mom_v,mom[m],CpuRead);
 	      auto phase = mom_v[ss];
 	      mac(&lvSum[idx],&vv,&phase()()());
 	    }
@@ -730,13 +730,13 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
 
             for(int i=0;i<Lblock;i++)
             {
-  	        auto wi_v = lhs_wi[i].View();
+  	        autoView(wi_v,lhs_wi[i],CpuRead);
                 auto left = conjugate(wi_v[ss]);
 
                 for(int j=0;j<Rblock;j++)
                 {
                     SpinMatrix_v vv;
-		    auto vj_v  = rhs_vj[j].View();
+		    autoView(vj_v,rhs_vj[j],CpuRead);
                     auto right = vj_v[ss];
 
                     for(int s1=0;s1<Ns;s1++)
@@ -752,8 +752,8 @@ void A2Autils<FImpl>::AslashField(TensorType &mat,
 
                     for ( int m=0;m<Nem;m++)
                     {
-  		        auto emB0_v = emB0[m].View();
-  		        auto emB1_v = emB1[m].View();
+  		        autoView(emB0_v,emB0[m],CpuRead);
+		        autoView(emB1_v,emB1[m],CpuRead);
                         int idx  = m+base;
                         auto b0  = emB0_v[ss];
                         auto b1  = emB1_v[ss];
@@ -1014,21 +1014,21 @@ A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
     for(int d_o=0;d_o<N_d;d_o+=d_unroll){
       for(int t=0;t<N_t;t++){
       for(int s=0;s<N_s;s++){
-  auto vs_v = vs[s].View();
-  auto tmp1 = vs_v[ss];
-  vobj tmp2 = Zero();
-  vobj tmp3 = Zero();
-  for(int d=d_o;d<MIN(d_o+d_unroll,N_d);d++){
-    auto vd_v = vd[d].View();
-    Scalar_v coeff = WW_sd(t,s,d);
-    tmp3 = conjugate(vd_v[ss]);
-    mac(&tmp2, &coeff, &tmp3);
-  }
+	autoView(vs_v,vs[s],CpuRead);
+	auto tmp1 = vs_v[ss];
+	vobj tmp2 = Zero();
+	vobj tmp3 = Zero();
+	for(int d=d_o;d<MIN(d_o+d_unroll,N_d);d++){
+	  autoView(vd_v,vd[d],CpuRead);
+	  Scalar_v coeff = WW_sd(t,s,d);
+	  tmp3 = conjugate(vd_v[ss]);
+	  mac(&tmp2, &coeff, &tmp3);
+	}
 
-  //////////////////////////
-  // Fast outer product of tmp1 with a sum of terms suppressed by d_unroll
-  //////////////////////////
-  OuterProductWWVV(WWVV[t], tmp1, tmp2, Ns, ss);
+	//////////////////////////
+	// Fast outer product of tmp1 with a sum of terms suppressed by d_unroll
+	//////////////////////////
+	OuterProductWWVV(WWVV[t], tmp1, tmp2, Ns, ss);
 
       }}
     }
@@ -1067,21 +1067,20 @@ A2Autils<FImpl>::ContractWWVV(std::vector<PropagatorField> &WWVV,
     thread_for(ss,grid->oSites(),{
       for(int d_o=0;d_o<N_d;d_o+=d_unroll){
         for(int s=0;s<N_s;s++){
-    auto vs_v = vs[s].View();
-    auto tmp1 = vs_v[ss];
-    vobj tmp2 = Zero();
-    vobj tmp3 = Zero();
-    for(int d=d_o;d<MIN(d_o+d_unroll,N_d);d++){
-      auto vd_v = vd[d].View();
-      Scalar_v coeff = buf(s,d);
-      tmp3 = conjugate(vd_v[ss]);
-      mac(&tmp2, &coeff, &tmp3);
-    }
-
-    //////////////////////////
-    // Fast outer product of tmp1 with a sum of terms suppressed by d_unroll
-    //////////////////////////
-    OuterProductWWVV(WWVV[t], tmp1, tmp2, Ns, ss);
+	  autoView(vs_v,vs[s],CpuRead);
+	  auto tmp1 = vs_v[ss];
+	  vobj tmp2 = Zero();
+	  vobj tmp3 = Zero();
+	  for(int d=d_o;d<MIN(d_o+d_unroll,N_d);d++){
+	    autoView(vd_v,vd[d],CpuRead);
+	    Scalar_v coeff = buf(s,d);
+	    tmp3 = conjugate(vd_v[ss]);
+	    mac(&tmp2, &coeff, &tmp3);
+	  }
+	  //////////////////////////
+	  // Fast outer product of tmp1 with a sum of terms suppressed by d_unroll
+	  //////////////////////////
+	  OuterProductWWVV(WWVV[t], tmp1, tmp2, Ns, ss);
       }}
     });
   }
@@ -1093,7 +1092,7 @@ inline void A2Autils<FImpl>::OuterProductWWVV(PropagatorField &WWVV,
                                              const vobj &rhs,
                                              const int Ns, const int ss)
 {
-  auto WWVV_v = WWVV.View();
+  autoView(WWVV_v,WWVV,CpuWrite);
   for (int s1 = 0; s1 < Ns; s1++){
     for (int s2 = 0; s2 < Ns; s2++){
       WWVV_v[ss]()(s1,s2)(0, 0) += lhs()(s1)(0) * rhs()(s2)(0);
@@ -1122,10 +1121,10 @@ void A2Autils<FImpl>::ContractFourQuarkColourDiagonal(const PropagatorField &WWV
 
   GridBase *grid = WWVV0.Grid();
 
-  auto WWVV0_v = WWVV0.View();
-  auto WWVV1_v = WWVV1.View();
-  auto O_trtr_v= O_trtr.View();
-  auto O_fig8_v= O_fig8.View();
+  autoView(WWVV0_v , WWVV0,CpuRead);
+  autoView(WWVV1_v , WWVV1,CpuRead);
+  autoView(O_trtr_v, O_trtr,CpuWrite);
+  autoView(O_fig8_v, O_fig8,CpuWrite);
   thread_for(ss,grid->oSites(),{
 
     typedef typename ComplexField::vector_object vobj;
@@ -1166,10 +1165,10 @@ void A2Autils<FImpl>::ContractFourQuarkColourMix(const PropagatorField &WWVV0,
 
   GridBase *grid = WWVV0.Grid();
 
-  auto WWVV0_v = WWVV0.View();
-  auto WWVV1_v = WWVV1.View();
-  auto O_trtr_v= O_trtr.View();
-  auto O_fig8_v= O_fig8.View();
+  autoView( WWVV0_v , WWVV0,CpuRead);
+  autoView( WWVV1_v , WWVV1,CpuRead);
+  autoView( O_trtr_v, O_trtr,CpuWrite);
+  autoView( O_fig8_v, O_fig8,CpuWrite);
 
   thread_for(ss,grid->oSites(),{
 
