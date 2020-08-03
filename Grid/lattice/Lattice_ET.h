@@ -100,6 +100,7 @@ const lobj & eval(const uint64_t ss, const LatticeView<lobj> &arg)
 template <class lobj> accelerator_inline 
 const lobj & eval(const uint64_t ss, const Lattice<lobj> &arg) 
 {
+  assert(0);
   auto view = arg.View(AcceleratorRead);
   return view[ss];
 }
