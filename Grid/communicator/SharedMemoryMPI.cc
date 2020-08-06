@@ -47,7 +47,12 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
   /////////////////////////////////////////////////////////////////////
   // Split into groups that can share memory
   /////////////////////////////////////////////////////////////////////
+#ifndef GRID_MPI3_SHM_NONE
   MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,&WorldShmComm);
+#else
+  MPI_Comm_split(comm, WorldRank, 0, &WorldShmComm);
+#endif
+
   MPI_Comm_rank(WorldShmComm     ,&WorldShmRank);
   MPI_Comm_size(WorldShmComm     ,&WorldShmSize);
 
@@ -705,7 +710,11 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
   /////////////////////////////////////////////////////////////////////
   // Split into groups that can share memory
   /////////////////////////////////////////////////////////////////////
+#ifndef GRID_MPI3_SHM_NONE
   MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,&ShmComm);
+#else
+  MPI_Comm_split(comm, rank, 0, &ShmComm);
+#endif
   MPI_Comm_rank(ShmComm     ,&ShmRank);
   MPI_Comm_size(ShmComm     ,&ShmSize);
   ShmCommBufs.resize(ShmSize);
