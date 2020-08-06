@@ -209,9 +209,11 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
 
   if(cbmask ==0x3 ) {
     autoView( rhs_v , rhs, AcceleratorWrite);
+    int _slice_stride = rhs.Grid()->_slice_stride[dimension];
+    int _slice_block = rhs.Grid()->_slice_block[dimension];
     accelerator_for2d(n,e1,b,e2,1,{
-	int o      = n*rhs.Grid()->_slice_stride[dimension];
-	int offset = b+n*rhs.Grid()->_slice_block[dimension];
+	int o      = n*_slice_stride;
+	int offset = b+n*_slice_block;
 	merge(rhs_v[so+o+b],pointers,offset);
       });
   } else { 
