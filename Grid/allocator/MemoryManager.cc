@@ -140,6 +140,7 @@ void MemoryManager::Init(void)
 }
 
 void MemoryManager::InitMessage(void) {
+
 #ifndef GRID_UVM
   std::cout << GridLogMessage << "MemoryManager Cache "<< MemoryManager::DeviceMaxBytes <<" bytes "<<std::endl;
 #endif
