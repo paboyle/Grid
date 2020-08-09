@@ -130,7 +130,6 @@ private:
   int Nconv_test_interval; // Number of skipped vectors when checking a convergence
   RealD eresid;
   IRBLdiagonalisation diagonalisation;
-  int split_test; //test split in the first iteration
   ////////////////////////////////////
   // Embedded objects
   ////////////////////////////////////
@@ -154,6 +153,7 @@ private:
   // Constructor
   /////////////////////////
 public:       
+ int split_test; //test split in the first iteration
  ImplicitlyRestartedBlockLanczos(LinearOperatorBase<Field> &Linop, // op
  				LinearOperatorBase<Field> &SLinop, // op
 				GridRedBlackCartesian * FrbGrid,
@@ -262,8 +262,8 @@ public:
 
     int Nbatch = R/Nevec_acc;
     assert( R%Nevec_acc == 0 );
-    Glog << "nBatch, Nevec_acc, R, Nu = " 
-         << Nbatch << "," << Nevec_acc << "," << R << "," << Nu << std::endl;
+//    Glog << "nBatch, Nevec_acc, R, Nu = " 
+//         << Nbatch << "," << Nevec_acc << "," << R << "," << Nu << std::endl;
     
 #if 0 // a trivial test
     for (int col=0; col<Nu; ++col) {
@@ -439,19 +439,18 @@ for( int i =0;i<total;i++){
     GridBase *grid = src[0].Grid();
     grid->show_decomposition();
 
-    printf("GRID_CUDA\n");
+//    printf("GRID_CUDA\n");
     
     // set eigenvector buffers for the cuBLAS calls
     //const uint64_t nsimd = grid->Nsimd();
     const uint64_t sites = grid->lSites();
     
     cudaStat = cudaMallocManaged((void **)&w_acc, Nu*sites*12*sizeof(CUDA_COMPLEX));
-    Glog << "w_acc= "<<w_acc << " "<< cudaStat << std::endl;
+//    Glog << "w_acc= "<<w_acc << " "<< cudaStat << std::endl;
     cudaStat = cudaMallocManaged((void **)&evec_acc, Nevec_acc*sites*12*sizeof(CUDA_COMPLEX));
-    Glog << "evec_acc= "<<evec_acc << " "<< cudaStat << std::endl;
+//    Glog << "evec_acc= "<<evec_acc << " "<< cudaStat << std::endl;
     cudaStat = cudaMallocManaged((void **)&c_acc, Nu*Nevec_acc*sizeof(CUDA_COMPLEX));
-    Glog << "c_acc= "<<c_acc << " "<< cudaStat << std::endl;
-//    exit(-42);
+//    Glog << "c_acc= "<<c_acc << " "<< cudaStat << std::endl;
 #endif
     switch (Impl) {
       case LanczosType::irbl: 
@@ -687,6 +686,7 @@ for( int i =0;i<total;i++){
     int Np = (Nm-Nk);
     if (Np > 0 && MaxIter > 1) Np /= MaxIter;
     int Nblock_p = Np/Nu;
+    for(int i=0;i< evec.size();i++) evec[0].Advise()=AdviseInfrequentUse;
     
     Glog << std::string(74,'*') << std::endl;
     Glog << fname + " starting iteration 0 /  "<< MaxIter<< std::endl;
@@ -879,10 +879,10 @@ private:
    assert((Nu%mrhs)==0);
    std::vector<Field>   in(mrhs,f_grid);
      
-   Field s_in(sf_grid);
-   Field s_out(sf_grid);
+    Field s_in(sf_grid);
+    Field s_out(sf_grid);
    // unnecessary copy. Can or should it be avoided?
-int k_start = 0;
+    int k_start = 0;
 while ( k_start < Nu) {
    Glog << "k_start= "<<k_start<< std::endl;
    for (int u=0; u<mrhs; ++u) in[u] = evec[L+k_start+u];
@@ -899,18 +899,18 @@ Glog << "Unsplit done "<< std::endl;
     Glog << "Using split grid done "<< std::endl;
     
 // test split in the first iteration
-if(!split_test){
-    Glog << "Not using split grid"<< std::endl;
+if(split_test){
+    Glog << "Split grid testing "<< std::endl;
     // 3. wk:=Avkβkv_{k1}
     for (int k=L, u=0; k<R; ++k, ++u) {
       _poly(_Linop,evec[k],w_copy[u]);      
     }
-    Glog << "Not using split grid done"<< std::endl;
    for (int u=0; u<Nu; ++u) {
 	 w_copy[u] -= w[u];
     Glog << "diff(split - non_split) "<<u<<" " << norm2(w_copy[u]) << std::endl;
+    Glog << "Split grid testing done"<< std::endl;
    }
-   split_test=1;
+   split_test=0;
 }
     Glog << "Poly done"<< std::endl;
     Glog << "LinAlg "<< std::endl;
@@ -960,11 +960,12 @@ if(!split_test){
       }
     }
 
-    Glog << "Gram Schmidt"<< std::endl;
     // re-orthogonalization for numerical stability
 #if 0
+    Glog << "Gram Schmidt"<< std::endl;
     orthogonalize(w,Nu,evec,R);
 #else
+    Glog << "Gram Schmidt using cublas"<< std::endl;
     orthogonalize_blas(w,evec,R);
 #endif
     // QR part
@@ -984,12 +985,10 @@ if(!split_test){
     //lme[0][L] = beta;
     
     for (int u=0; u<Nu; ++u) {
-      Glog << "norm2(w[" << u << "])= "<< norm2(w[u]) << std::endl;
+//      Glog << "norm2(w[" << u << "])= "<< norm2(w[u]) << std::endl;
       assert (!isnan(norm2(w[u])));
       for (int k=L+u; k<R; ++k) {
-        Glog <<" In block "<< b << ","; 
-        std::cout <<" beta[" << u << "," << k-L << "] = ";
-        std::cout << lme[u][k] << std::endl;
+        Glog <<" In block "<< b << "," <<" beta[" << u << "," << k-L << "] = " << lme[u][k] << std::endl;
       }
     }
     Glog << "LinAlg done "<< std::endl;

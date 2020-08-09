@@ -240,12 +240,14 @@ public:
     Field T0(grid); T0 = in;  
     Field T1(grid); 
     Field T2(grid);
+    Field Tout(grid);
     Field y(grid);
       
     Field *Tnm = &T0;
     Field *Tn  = &T1;
     Field *Tnp = &T2;
 
+    std::cout << GridLogMessage << "Chebyshev() starts"<<std::endl;
     // Tn=T1 = (xscale M + mscale)in
     RealD xscale = 2.0/(hi-lo);
     RealD mscale = -(hi+lo)/(hi-lo);
@@ -254,7 +256,7 @@ public:
 
     // sum = .5 c[0] T0 + c[1] T1
     //    out = ()*T0 + Coeffs[1]*T1;
-    axpby(out,0.5*Coeffs[0],Coeffs[1],T0,T1);
+    axpby(Tout,0.5*Coeffs[0],Coeffs[1],T0,T1);
     for(int n=2;n<order;n++){
 
       Linop.HermOp(*Tn,y);
@@ -275,7 +277,7 @@ public:
       axpby(y,xscale,mscale,y,(*Tn));
       axpby(*Tnp,2.0,-1.0,y,(*Tnm));
       if ( Coeffs[n] != 0.0) {
-	axpy(out,Coeffs[n],*Tnp,out);
+	axpy(Tout,Coeffs[n],*Tnp,Tout);
       }
 #endif
       // Cycle pointers to avoid copies
@@ -285,6 +287,8 @@ public:
       Tnp    =swizzle;
 	  
     }
+    out = Tout;
+    std::cout << GridLogMessage << "Chebyshev() ends"<<std::endl;
   }
 };
 
@@ -377,24 +381,26 @@ public:
     Field T0(grid); T0 = in;  
     Field T1(grid); 
     Field T2(grid);
+    Field Tout(grid);
     Field  y(grid);
       
     Field *Tnm = &T0;
     Field *Tn  = &T1;
     Field *Tnp = &T2;
 
+    std::cout << GridLogMessage << "ChebyshevLanczos() starts"<<std::endl;
     // Tn=T1 = (xscale M )*in
     AminusMuSq(Linop,T0,T1);
 
     // sum = .5 c[0] T0 + c[1] T1
-    out = (0.5*Coeffs[0])*T0 + Coeffs[1]*T1;
+    Tout = (0.5*Coeffs[0])*T0 + Coeffs[1]*T1;
     for(int n=2;n<order;n++){
 	
       AminusMuSq(Linop,*Tn,y);
 
       *Tnp=2.0*y-(*Tnm);
 
-      out=out+Coeffs[n]* (*Tnp);
+      Tout=Tout+Coeffs[n]* (*Tnp);
 
       // Cycle pointers to avoid copies
       Field *swizzle = Tnm;
@@ -403,6 +409,8 @@ public:
       Tnp    =swizzle;
 	  
     }
+    out=Tout;
+    std::cout << GridLogMessage << "ChebyshevLanczos() ends"<<std::endl;
   }
 };
 NAMESPACE_END(Grid);

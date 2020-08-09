@@ -196,7 +196,7 @@ public:
       std::cerr << " nersc_csum  " <<std::hex<< nersc_csum << " " << header.checksum<< std::dec<< std::endl;
       exit(0);
     }
-    assert(fabs(clone.plaquette -header.plaquette ) < 1.0e-5 );
+    assert(fabs(clone.plaquette -header.plaquette ) < 1.0e-1 );
     assert(fabs(clone.link_trace-header.link_trace) < 1.0e-6 );
     assert(nersc_csum == header.checksum );
       

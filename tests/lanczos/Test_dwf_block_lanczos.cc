@@ -359,12 +359,14 @@ int main (int argc, char ** argv)
                                                      JP.MaxIter,
 						     IRBLdiagonaliseWithEigen);
 //						     IRBLdiagonaliseWithLAPACK);
+  IRBL.split_test=1;
   
   std::vector<RealD> eval(JP.Nm);
   
   std::vector<FermionField> src(JP.Nu,FrbGrid);
 if (0)
 {
+// in case RNG is too slow
   std::cout << GridLogMessage << "Using RNG5"<<std::endl;
   FermionField src_tmp(FGrid);
   for ( int i=0; i<JP.Nu; ++i ){
@@ -372,7 +374,8 @@ if (0)
      ComplexD rnd;
      RealD re;
      fillScalar(re,RNG5._gaussian[0],RNG5._generators[0]);
-    std::cout << GridLogMessage << i <<" / "<< JP.Nm <<" rnd "<< rnd  << std::endl;
+    std::cout << i <<" / "<< JP.Nm  <<" re "<< re  << std::endl;
+// printf("%d / %d re %e\n",i,FGrid->_processor,re);
     src_tmp=re;
     pickCheckerboard(Odd,src[i],src_tmp);
   }
