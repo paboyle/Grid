@@ -1192,7 +1192,7 @@ void A2Autils<FImpl>::ContractFourQuarkColourMix(const PropagatorField &WWVV0,
     auto VV0 = WWVV0_v(ss);
     auto VV1 = WWVV1_v(ss);
 
-    typdef decltype(trace(VV0)) scalar;
+    typedef decltype(trace(VV0)) scalar;
 
     for(int g=0;g<Ng;g++){
 
