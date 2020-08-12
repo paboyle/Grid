@@ -1255,7 +1255,7 @@ Bag [8,4]  fig8 (-227.58,3.58808e-17) trtr (-32.5776,1.83286e-17)     //  - 1602
 	coalescedWrite(O_fig8_v[ss] , v_fig8);
       } else { 
 	coalescedWrite(O_trtr_v[ss],O_trtr_v(ss) + v_trtr); 
-	coalescedWrite(O_fig8_v[ss],O_fig8_v(ss) + v_fig8;
+	coalescedWrite(O_fig8_v[ss],O_fig8_v(ss) + v_fig8);
       }
       
     }
