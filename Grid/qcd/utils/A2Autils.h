@@ -1119,33 +1119,39 @@ void A2Autils<FImpl>::ContractFourQuarkColourDiagonal(const PropagatorField &WWV
   assert(gamma0.size()==gamma1.size());
   int Ng = gamma0.size();
 
+  // Make device accessible copy
+  Vector<Gamma> Gamma0v (Ng);
+  Vector<Gamma> Gamma1v (Ng);
+  Gamma *Gamma0 = & Gamma0v[0];
+  Gamma *Gamma1 = & Gamma1v[0];
+  for(int g=0;g<Ng;g++) {
+    Gamma0[g]=gamma0[g];
+    Gamma1[g]=gamma1[g];
+  }
+  
   GridBase *grid = WWVV0.Grid();
 
-  autoView(WWVV0_v , WWVV0,CpuRead);
-  autoView(WWVV1_v , WWVV1,CpuRead);
-  autoView(O_trtr_v, O_trtr,CpuWrite);
-  autoView(O_fig8_v, O_fig8,CpuWrite);
-  thread_for(ss,grid->oSites(),{
+  typedef typename ComplexField::vector_object vobj;
+  autoView(WWVV0_v , WWVV0,AcceleratorRead);
+  autoView(WWVV1_v , WWVV1,AcceleratorRead);
+  autoView(O_trtr_v, O_trtr,AcceleratorWrite);
+  autoView(O_fig8_v, O_fig8,AcceleratorWrite);
+  accelerator_for(ss,grid->oSites(),vobj::Nsimd(),{
 
-    typedef typename ComplexField::vector_object vobj;
-
-    vobj v_trtr;
-    vobj v_fig8;
-
-    auto VV0 = WWVV0_v[ss];
-    auto VV1 = WWVV1_v[ss];
+    auto VV0 = WWVV0_v(ss);
+    auto VV1 = WWVV1_v(ss);
     
     for(int g=0;g<Ng;g++){
 
-      v_trtr = trace(VV0 * gamma0[g])* trace(VV1*gamma1[g]);
-      v_fig8 = trace(VV0 * gamma0[g] * VV1 * gamma1[g]);
+      auto v_trtr = trace(VV0 * gamma0[g])* trace(VV1*gamma1[g]);
+      auto v_fig8 = trace(VV0 * gamma0[g] * VV1 * gamma1[g]);
 
       if ( g==0 ) {
-	O_trtr_v[ss] = v_trtr; 
-	O_fig8_v[ss] = v_fig8;
+	coalescedWrite(O_trtr_v[ss], v_trtr); 
+	coalescedWrite(O_fig8_v[ss], v_fig8);
       } else { 
-	O_trtr_v[ss]+= v_trtr; 
-	O_fig8_v[ss]+= v_fig8;
+	coalescedWrite(O_trtr_v[ss], O_trtr_v(ss)+v_trtr); 
+	coalescedWrite(O_fig8_v[ss], O_fig8_v(ss)+v_fig8);
       }
       
     }
@@ -1165,25 +1171,36 @@ void A2Autils<FImpl>::ContractFourQuarkColourMix(const PropagatorField &WWVV0,
 
   GridBase *grid = WWVV0.Grid();
 
-  autoView( WWVV0_v , WWVV0,CpuRead);
-  autoView( WWVV1_v , WWVV1,CpuRead);
-  autoView( O_trtr_v, O_trtr,CpuWrite);
-  autoView( O_fig8_v, O_fig8,CpuWrite);
+  // Make device accessible copy
+  Vector<Gamma> Gamma0v (Ng);
+  Vector<Gamma> Gamma1v (Ng);
+  Gamma *Gamma0 = & Gamma0v[0];
+  Gamma *Gamma1 = & Gamma1v[0];
+  for(int g=0;g<Ng;g++) {
+    Gamma0[g]=gamma0[g];
+    Gamma1[g]=gamma1[g];
+  }
 
-  thread_for(ss,grid->oSites(),{
+  autoView( WWVV0_v , WWVV0,AcceleratorRead);
+  autoView( WWVV1_v , WWVV1,AcceleratorRead);
+  autoView( O_trtr_v, O_trtr,AcceleratorWrite);
+  autoView( O_fig8_v, O_fig8,AcceleratorWrite);
 
-    typedef typename ComplexField::vector_object vobj;
+  typedef typename ComplexField::vector_object vobj;
+  accelerator_for(ss,grid->oSites(),vobj::Nsimd(),{
 
-    auto VV0 = WWVV0_v[ss];
-    auto VV1 = WWVV1_v[ss];
-    
+    auto VV0 = WWVV0_v(ss);
+    auto VV1 = WWVV1_v(ss);
+
+    typdef decltype(trace(VV0)) scalar;
+
     for(int g=0;g<Ng;g++){
 
       auto VV0G = VV0 * gamma0[g];  // Spin multiply
       auto VV1G = VV1 * gamma1[g];
 
-      vobj v_trtr=Zero();
-      vobj v_fig8=Zero();
+      scalar v_trtr=Zero();
+      scalar v_fig8=Zero();
 
       /////////////////////////////////////////
       // Colour mixed
@@ -1197,7 +1214,7 @@ void A2Autils<FImpl>::ContractFourQuarkColourMix(const PropagatorField &WWVV0,
       // Wick1 [ spin TR TR ]
       //
       //    (VV0*G0)_ss,ba .  (VV1*G1)_tt,ab
-       //
+      //
       // Wick2 [ spin fig8 ]
       //
       //    (VV0*G0)_st,aa (VV1*G1)_ts,bb
@@ -1234,11 +1251,11 @@ Bag [8,4]  fig8 (-227.58,3.58808e-17) trtr (-32.5776,1.83286e-17)     //  - 1602
       }}}}
 
       if ( g==0 ) {
-	O_trtr_v[ss] = v_trtr; 
-	O_fig8_v[ss] = v_fig8;
+	coalescedWrite(O_trtr_v[ss] , v_trtr); 
+	coalescedWrite(O_fig8_v[ss] , v_fig8);
       } else { 
-	O_trtr_v[ss]+= v_trtr; 
-	O_fig8_v[ss]+= v_fig8;
+	coalescedWrite(O_trtr_v[ss],O_trtr_v(ss) + v_trtr); 
+	coalescedWrite(O_fig8_v[ss],O_fig8_v(ss) + v_fig8;
       }
       
     }
