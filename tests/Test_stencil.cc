@@ -97,10 +97,14 @@ int main(int argc, char ** argv) {
 	  ocoor[dir]=(ocoor[dir]+disp)%Fine._rdimensions[dir];
 	}
 
+	std::cout << GridLogMessage << "A" << std::endl;
+
 	SimpleCompressor<vobj> compress;
 	myStencil.HaloExchange(Foo,compress);
 
 	Bar = Cshift(Foo,dir,disp);
+
+	std::cout << GridLogMessage << "B" << std::endl;
 
 	// Implement a stencil code that should agree with cshift!
 	for(int i=0;i<Check.Grid()->oSites();i++){
@@ -117,8 +121,8 @@ int main(int argc, char ** argv) {
 	    check[i] = foo[SE->_offset];
 	  else { 
 	    check[i] = myStencil.CommBuf()[SE->_offset];
-	    //	    std::cout << " receive "<<i<<" " << Check[i]<<std::endl;
-	    //	    std::cout << " Foo     "<<i<<" " <<   Foo[i]<<std::endl;
+	    	    std::cout << " receive "<<i<<" " << check[i]<<std::endl;
+	    	    std::cout << " Foo     "<<i<<" " <<   foo[i]<<std::endl;
 	  }
 	}
 

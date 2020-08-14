@@ -448,7 +448,11 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Each MPI rank should allocate our own buffer
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+#ifndef GRID_MPI3_SHM_NONE
   auto err =  cudaMalloc(&ShmCommBuf, bytes);
+#else
+  auto err =  cudaMallocManaged(&ShmCommBuf, bytes);
+#endif
   if ( err !=  cudaSuccess) {
     std::cerr << " SharedMemoryMPI.cc cudaMallocManaged failed for " << bytes<<" bytes " <<cudaGetErrorString(err)<< std::endl;
     exit(EXIT_FAILURE);  
@@ -466,7 +470,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   // Loop over ranks/gpu's on our node
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   for(int r=0;r<WorldShmSize;r++){
-    
+
+#ifndef GRID_MPI3_SHM_NONE
     //////////////////////////////////////////////////
     // If it is me, pass around the IPC access key
     //////////////////////////////////////////////////
@@ -506,6 +511,9 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     // Save a copy of the device buffers
     ///////////////////////////////////////////////////////////////
     WorldShmCommBufs[r] = thisBuf;
+#else
+    WorldShmCommBufs[r] = ShmCommBuf;
+#endif
   }
 
   _ShmAllocBytes=bytes;
