@@ -1,6 +1,6 @@
 /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./lib/communicator/Communicator_mpi.cc
 
@@ -35,7 +35,7 @@ Grid_MPI_Comm       CartesianCommunicator::communicator_world;
 ////////////////////////////////////////////
 // First initialise of comms system
 ////////////////////////////////////////////
-void CartesianCommunicator::Init(int *argc, char ***argv) 
+void CartesianCommunicator::Init(int *argc, char ***argv)
 {
 
   int flag;
@@ -43,8 +43,16 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
 
   MPI_Initialized(&flag); // needed to coexist with other libs apparently
   if ( !flag ) {
-    MPI_Init_thread(argc,argv,MPI_THREAD_MULTIPLE,&provided);
 
+#if defined (TOFU) // FUGAKU, credits go to Issaku Kanamori
+    nCommThreads=1;
+    // wrong results here too
+    // For now: comms-overlap leads to wrong results in Benchmark_wilson even on single node MPI runs
+    // other comms schemes are ok
+    MPI_Init_thread(argc,argv,MPI_THREAD_SERIALIZED,&provided);
+#else
+    MPI_Init_thread(argc,argv,MPI_THREAD_MULTIPLE,&provided);
+#endif
     //If only 1 comms thread we require any threading mode other than SINGLE, but for multiple comms threads we need MULTIPLE
     if( (nCommThreads == 1) && (provided == MPI_THREAD_SINGLE) ) {
       assert(0);
@@ -91,7 +99,7 @@ void  CartesianCommunicator::ProcessorCoorFromRank(int rank, Coordinate &coor)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Initialises from communicator_world
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-CartesianCommunicator::CartesianCommunicator(const Coordinate &processors) 
+CartesianCommunicator::CartesianCommunicator(const Coordinate &processors)
 {
   MPI_Comm optimal_comm;
   ////////////////////////////////////////////////////
@@ -110,7 +118,7 @@ CartesianCommunicator::CartesianCommunicator(const Coordinate &processors)
 //////////////////////////////////
 // Try to subdivide communicator
 //////////////////////////////////
-CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const CartesianCommunicator &parent,int &srank)    
+CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const CartesianCommunicator &parent,int &srank)
 {
   _ndimension = processors.size();  assert(_ndimension>=1);
   int parent_ndimension = parent._ndimension; assert(_ndimension >= parent._ndimension);
@@ -127,7 +135,7 @@ CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const 
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   // split the communicator
   //////////////////////////////////////////////////////////////////////////////////////////////////////
-  //  int Nparent = parent._processors ; 
+  //  int Nparent = parent._processors ;
   int Nparent;
   MPI_Comm_size(parent.communicator,&Nparent);
 
@@ -149,13 +157,13 @@ CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const 
   }
 
   // rank within subcomm ; srank is rank of subcomm within blocks of subcomms
-  int crank;  
+  int crank;
   // Mpi uses the reverse Lexico convention to us; so reversed routines called
   Lexicographic::IndexFromCoorReversed(ccoor,crank,processors); // processors is the split grid dimensions
   Lexicographic::IndexFromCoorReversed(scoor,srank,ssize);      // ssize is the number of split grids
 
   MPI_Comm comm_split;
-  if ( Nchild > 1 ) { 
+  if ( Nchild > 1 ) {
 
     ////////////////////////////////////////////////////////////////
     // Split the communicator
@@ -180,11 +188,11 @@ CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const 
   SetCommunicator(comm_split);
 
   ///////////////////////////////////////////////
-  // Free the temp communicator 
+  // Free the temp communicator
   ///////////////////////////////////////////////
   MPI_Comm_free(&comm_split);
 
-  if(0){ 
+  if(0){
     std::cout << " ndim " <<_ndimension<<" " << parent._ndimension << std::endl;
     for(int d=0;d<processors.size();d++){
       std::cout << d<< " " << _processor_coor[d] <<" " <<  ccoor[d]<<std::endl;
@@ -245,7 +253,7 @@ CartesianCommunicator::~CartesianCommunicator()
     for(int i=0;i<communicator_halo.size();i++){
       MPI_Comm_free(&communicator_halo[i]);
     }
-  }  
+  }
 }
 void CartesianCommunicator::GlobalSum(uint32_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_SUM,communicator);
@@ -314,7 +322,7 @@ void CartesianCommunicator::SendRecvPacket(void *xmit,
   if ( _processor == sender ) {
     MPI_Send(xmit, bytes, MPI_CHAR,receiver,tag,communicator);
   }
-  if ( _processor == receiver ) { 
+  if ( _processor == receiver ) {
     MPI_Recv(recv, bytes, MPI_CHAR,sender,tag,communicator,&stat);
   }
 }
@@ -329,17 +337,17 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
   int myrank = _processor;
   int ierr;
 
-  if ( CommunicatorPolicy == CommunicatorPolicyConcurrent ) { 
+  if ( CommunicatorPolicy == CommunicatorPolicyConcurrent ) {
     MPI_Request xrq;
     MPI_Request rrq;
 
     ierr =MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator,&rrq);
     ierr|=MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator,&xrq);
-    
+
     assert(ierr==0);
     list.push_back(xrq);
     list.push_back(rrq);
-  } else { 
+  } else {
     // Give the CPU to MPI immediately; can use threads to overlap optionally
     ierr=MPI_Sendrecv(xmit,bytes,MPI_CHAR,dest,myrank,
 		      recv,bytes,MPI_CHAR,from, from,
@@ -367,7 +375,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 							 int from,
 							 int bytes,int dir)
 {
-  int ncomm  =communicator_halo.size(); 
+  int ncomm  =communicator_halo.size();
   int commdir=dir%ncomm;
 
   MPI_Request xrq;
@@ -397,7 +405,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
     off_node_bytes+=bytes;
   }
 
-  if ( CommunicatorPolicy == CommunicatorPolicySequential ) { 
+  if ( CommunicatorPolicy == CommunicatorPolicySequential ) {
     this->StencilSendToRecvFromComplete(list,dir);
   }
 
@@ -436,8 +444,8 @@ void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
 		     communicator);
   assert(ierr==0);
 }
-int CartesianCommunicator::RankWorld(void){ 
-  int r; 
+int CartesianCommunicator::RankWorld(void){
+  int r;
   MPI_Comm_rank(communicator_world,&r);
   return r;
 }
@@ -470,7 +478,7 @@ void CartesianCommunicator::AllToAll(void  *in,void *out,uint64_t words,uint64_t
   // When 24*4 bytes multiples get 50x 10^9 >>> 2x10^9 Y2K bug.
   // (Turns up on 32^3 x 64 Gparity too)
   MPI_Datatype object;
-  int iwords; 
+  int iwords;
   int ibytes;
   iwords = words;
   ibytes = bytes;
@@ -483,5 +491,3 @@ void CartesianCommunicator::AllToAll(void  *in,void *out,uint64_t words,uint64_t
 }
 
 NAMESPACE_END(Grid);
-
-

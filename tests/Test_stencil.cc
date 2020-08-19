@@ -116,7 +116,7 @@ int main(int argc, char ** argv) {
 	  else if (SE->_is_local)
 	    check[i] = foo[SE->_offset];
 	  else { 
-	    check[i] = myStencil.CommBuf()[SE->_offset];
+	    check[i] = myStencil.CommBuf()[SE->_offset]; // <-- this is illegal on most GPU setups, host accesses cudaMalloc memory
 	    //	    std::cout << " receive "<<i<<" " << Check[i]<<std::endl;
 	    //	    std::cout << " Foo     "<<i<<" " <<   Foo[i]<<std::endl;
 	  }

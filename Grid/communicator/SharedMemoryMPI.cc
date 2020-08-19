@@ -47,7 +47,12 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
   /////////////////////////////////////////////////////////////////////
   // Split into groups that can share memory
   /////////////////////////////////////////////////////////////////////
+#ifndef GRID_MPI3_SHM_NONE
   MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,&WorldShmComm);
+#else
+  MPI_Comm_split(comm, WorldRank, 0, &WorldShmComm);
+#endif
+
   MPI_Comm_rank(WorldShmComm     ,&WorldShmRank);
   MPI_Comm_size(WorldShmComm     ,&WorldShmSize);
 
@@ -443,7 +448,11 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Each MPI rank should allocate our own buffer
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+#ifndef GRID_MPI3_SHM_NONE
   auto err =  cudaMalloc(&ShmCommBuf, bytes);
+#else
+  auto err =  cudaMallocManaged(&ShmCommBuf, bytes);
+#endif
   if ( err !=  cudaSuccess) {
     std::cerr << " SharedMemoryMPI.cc cudaMallocManaged failed for " << bytes<<" bytes " <<cudaGetErrorString(err)<< std::endl;
     exit(EXIT_FAILURE);  
@@ -461,7 +470,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   // Loop over ranks/gpu's on our node
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   for(int r=0;r<WorldShmSize;r++){
-    
+
+#ifndef GRID_MPI3_SHM_NONE
     //////////////////////////////////////////////////
     // If it is me, pass around the IPC access key
     //////////////////////////////////////////////////
@@ -501,6 +511,9 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     // Save a copy of the device buffers
     ///////////////////////////////////////////////////////////////
     WorldShmCommBufs[r] = thisBuf;
+#else
+    WorldShmCommBufs[r] = ShmCommBuf;
+#endif
   }
 
   _ShmAllocBytes=bytes;
@@ -705,7 +718,11 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
   /////////////////////////////////////////////////////////////////////
   // Split into groups that can share memory
   /////////////////////////////////////////////////////////////////////
+#ifndef GRID_MPI3_SHM_NONE
   MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,&ShmComm);
+#else
+  MPI_Comm_split(comm, rank, 0, &ShmComm);
+#endif
   MPI_Comm_rank(ShmComm     ,&ShmRank);
   MPI_Comm_size(ShmComm     ,&ShmSize);
   ShmCommBufs.resize(ShmSize);

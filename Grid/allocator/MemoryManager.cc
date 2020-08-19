@@ -136,11 +136,20 @@ void MemoryManager::Init(void)
       Ncache[SharedSmall]=Nc;
     }
   }
+
+}
+
+void MemoryManager::InitMessage(void) {
+
+#ifndef GRID_UVM
+  std::cout << GridLogMessage << "MemoryManager Cache "<< MemoryManager::DeviceMaxBytes <<" bytes "<<std::endl;
+#endif
+  
   std::cout << GridLogMessage<< "MemoryManager::Init() setting up"<<std::endl;
 #ifdef ALLOCATION_CACHE
   std::cout << GridLogMessage<< "MemoryManager::Init() cache pool for recent allocations: SMALL "<<Ncache[CpuSmall]<<" LARGE "<<Ncache[Cpu]<<std::endl;
 #endif
-
+  
 #ifdef GRID_UVM
   std::cout << GridLogMessage<< "MemoryManager::Init() Unified memory space"<<std::endl;
 #ifdef GRID_CUDA
@@ -164,6 +173,7 @@ void MemoryManager::Init(void)
   std::cout << GridLogMessage<< "MemoryManager::Init() Using SYCL malloc_device"<<std::endl;
 #endif
 #endif
+
 }
 
 void *MemoryManager::Insert(void *ptr,size_t bytes,int type) 
