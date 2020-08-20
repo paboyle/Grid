@@ -472,7 +472,7 @@ void Grid_init(int *argc,char ***argv)
   if( GridCmdOptionExists(*argv,*argv+*argc,"--lebesgue") ){
     LebesgueOrder::UseLebesgueOrder=1;
   }
-  CartesianCommunicator::nCommThreads = -1;
+  CartesianCommunicator::nCommThreads = 1;
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-threads") ){
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--comms-threads");
     GridCmdOptionInt(arg,CartesianCommunicator::nCommThreads);
