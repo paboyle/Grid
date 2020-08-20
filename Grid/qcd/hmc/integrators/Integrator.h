@@ -301,9 +301,9 @@ public:
       t_P[level] = 0;
     }
 
-    for (int step = 0; step < Params.MDsteps; ++step) {  // MD step
-      int first_step = (step == 0);
-      int last_step = (step == Params.MDsteps - 1);
+    for (int stp = 0; stp < Params.MDsteps; ++stp) {  // MD step
+      int first_step = (stp == 0);
+      int last_step = (stp == Params.MDsteps - 1);
       this->step(U, 0, first_step, last_step);
     }
 
