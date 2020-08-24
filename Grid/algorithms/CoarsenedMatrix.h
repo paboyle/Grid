@@ -310,6 +310,8 @@ public:
     Stencil.HaloExchange(in,compressor);
     autoView( in_v , in, AcceleratorRead);
     autoView( out_v , out, AcceleratorWrite);
+    autoView( Stencil_v  , Stencil, AcceleratorRead);
+    auto& geom_v = geom;
     typedef LatticeView<Cobj> Aview;
       
     Vector<Aview> AcceleratorViewContainer;
@@ -331,14 +333,14 @@ public:
       int ptype;
       StencilEntry *SE;
 
-      for(int point=0;point<geom.npoint;point++){
+      for(int point=0;point<geom_v.npoint;point++){
 
-	SE=Stencil.GetEntry(ptype,point,ss);
+	SE=Stencil_v.GetEntry(ptype,point,ss);
 	  
 	if(SE->_is_local) { 
 	  nbr = coalescedReadPermute(in_v[SE->_offset],ptype,SE->_permute);
 	} else {
-	  nbr = coalescedRead(Stencil.CommBuf()[SE->_offset]);
+	  nbr = coalescedRead(Stencil_v.CommBuf()[SE->_offset]);
 	}
 	acceleratorSynchronise();
 
@@ -382,6 +384,7 @@ public:
 
     autoView( out_v , out, AcceleratorWrite);
     autoView( in_v  , in, AcceleratorRead);
+    autoView( Stencil_v  , Stencil, AcceleratorRead);
 
     const int Nsimd = CComplex::Nsimd();
     typedef decltype(coalescedRead(in_v[0])) calcVector;
@@ -395,12 +398,12 @@ public:
       int ptype;
       StencilEntry *SE;
 
-      SE=Stencil.GetEntry(ptype,point,ss);
+      SE=Stencil_v.GetEntry(ptype,point,ss);
 	  
       if(SE->_is_local) { 
 	nbr = coalescedReadPermute(in_v[SE->_offset],ptype,SE->_permute);
       } else {
-	nbr = coalescedRead(Stencil.CommBuf()[SE->_offset]);
+	nbr = coalescedRead(Stencil_v.CommBuf()[SE->_offset]);
       }
       acceleratorSynchronise();
 
