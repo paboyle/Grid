@@ -124,8 +124,9 @@ public:
     ExpressionViewOpen(exprCopy);
     auto me  = View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),1,{
-      auto tmp = eval(ss,exprCopy);
-      vstream(me[ss],tmp);
+      auto tmp = coalescedEval(ss,exprCopy);
+      coalescedWrite(me[ss],tmp);
+      //      me[ss]=tmp;
     });
     me.ViewClose();
     ExpressionViewClose(exprCopy);
@@ -147,8 +148,9 @@ public:
     ExpressionViewOpen(exprCopy);
     auto me  = View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),1,{
-      auto tmp = eval(ss,exprCopy);
-      vstream(me[ss],tmp);
+      auto tmp = coalescedEval(ss,exprCopy);
+      coalescedWrite(me[ss],tmp);
+      //me[ss]=tmp;
     });
     me.ViewClose();
     ExpressionViewClose(exprCopy);
@@ -169,8 +171,9 @@ public:
     ExpressionViewOpen(exprCopy);
     auto me  = View(AcceleratorWriteDiscard);
     accelerator_for(ss,me.size(),1,{
-      auto tmp = eval(ss,exprCopy);
-      vstream(me[ss],tmp);
+      auto tmp = coalescedEval(ss,exprCopy);
+      coalescedWrite(me[ss],tmp);
+      //      me[ss]=tmp;
     });
     me.ViewClose();
     ExpressionViewClose(exprCopy);
