@@ -271,6 +271,9 @@ public:
   typedef CoarseVector FermionField;
 
   // enrich interface
+  void Dhop(CoarseVector const& in, CoarseVector& out, int dag) { assert(0); }
+  void DhopEO(CoarseVector const& in, CoarseVector& out, int dag) { assert(0); }
+  void DhopOE(CoarseVector const& in, CoarseVector& out, int dag) { assert(0); }
   void Meooe(CoarseVector const& in, CoarseVector& out) { assert(0); }
   void MeooeDag(CoarseVector const& in, CoarseVector& out) { assert(0); }
   void Mooee(CoarseVector const& in, CoarseVector& out) { assert(0); }
