@@ -268,6 +268,21 @@ public:
   typedef iMatrix<CComplex,nbasis >  Cobj;
   typedef Lattice< CComplex >   CoarseScalar; // used for inner products on fine field
   typedef Lattice<Fobj >        FineField;
+  typedef CoarseVector FermionField;
+
+  // enrich interface
+  void Meooe(CoarseVector const& in, CoarseVector& out) { assert(0); }
+  void MeooeDag(CoarseVector const& in, CoarseVector& out) { assert(0); }
+  void Mooee(CoarseVector const& in, CoarseVector& out) { assert(0); }
+  void MooeeDag(CoarseVector const& in, CoarseVector& out) { assert(0); }
+  void MooeeInv(CoarseVector const& in, CoarseVector& out) { assert(0); }
+  void MooeeInvDag(CoarseVector const& in, CoarseVector& out) { assert(0); }
+  void Dminus(CoarseVector const& in, CoarseVector& out) { out = in; }
+  void DminusDag(CoarseVector const& in, CoarseVector& out) { out = in; }
+  void ImportPhysicalFermionSource(CoarseVector const& input, CoarseVector& imported) { imported = input; }
+  void ImportUnphysicalFermion(CoarseVector const& input, CoarseVector& imported) { imported = input; }
+  void ExportPhysicalFermionSolution(CoarseVector const& solution, CoarseVector& exported) { exported = solution; };
+  void ExportPhysicalFermionSource(CoarseVector const& solution, CoarseVector& exported) { exported = solution; };
 
   ////////////////////
   // Data members
@@ -295,6 +310,8 @@ public:
     Stencil.HaloExchange(in,compressor);
     autoView( in_v , in, AcceleratorRead);
     autoView( out_v , out, AcceleratorWrite);
+    autoView( Stencil_v  , Stencil, AcceleratorRead);
+    auto& geom_v = geom;
     typedef LatticeView<Cobj> Aview;
       
     Vector<Aview> AcceleratorViewContainer;
@@ -316,14 +333,14 @@ public:
       int ptype;
       StencilEntry *SE;
 
-      for(int point=0;point<geom.npoint;point++){
+      for(int point=0;point<geom_v.npoint;point++){
 
-	SE=Stencil.GetEntry(ptype,point,ss);
+	SE=Stencil_v.GetEntry(ptype,point,ss);
 	  
 	if(SE->_is_local) { 
 	  nbr = coalescedReadPermute(in_v[SE->_offset],ptype,SE->_permute);
 	} else {
-	  nbr = coalescedRead(Stencil.CommBuf()[SE->_offset]);
+	  nbr = coalescedRead(Stencil_v.CommBuf()[SE->_offset]);
 	}
 	acceleratorSynchronise();
 
@@ -367,6 +384,7 @@ public:
 
     autoView( out_v , out, AcceleratorWrite);
     autoView( in_v  , in, AcceleratorRead);
+    autoView( Stencil_v  , Stencil, AcceleratorRead);
 
     const int Nsimd = CComplex::Nsimd();
     typedef decltype(coalescedRead(in_v[0])) calcVector;
@@ -380,12 +398,12 @@ public:
       int ptype;
       StencilEntry *SE;
 
-      SE=Stencil.GetEntry(ptype,point,ss);
+      SE=Stencil_v.GetEntry(ptype,point,ss);
 	  
       if(SE->_is_local) { 
 	nbr = coalescedReadPermute(in_v[SE->_offset],ptype,SE->_permute);
       } else {
-	nbr = coalescedRead(Stencil.CommBuf()[SE->_offset]);
+	nbr = coalescedRead(Stencil_v.CommBuf()[SE->_offset]);
       }
       acceleratorSynchronise();
 
@@ -417,25 +435,25 @@ public:
 
     //////////////
     // 4D action like wilson
-    // 0+ => 0 
-    // 0- => 1
-    // 1+ => 2 
-    // 1- => 3
+    // 0+ => 0
+    // 0- => 4
+    // 1+ => 1
+    // 1- => 5
     // etc..
     //////////////
     // 5D action like DWF
-    // 1+ => 0 
-    // 1- => 1
-    // 2+ => 2 
-    // 2- => 3
+    // 1+ => 0
+    // 1- => 4
+    // 2+ => 1
+    // 2- => 5
     // etc..
     auto point = [dir, disp, ndim](){
       if(dir == 0 and disp == 0)
 	return 8;
       else if ( ndim==4 ) { 
-	return (4 * dir + 1 - disp) / 2;
+	return (1 - disp) / 2 * 4 + dir;
       } else { 
-	return (4 * (dir-1) + 1 - disp) / 2;
+	return (1 - disp) / 2 * 4 + dir - 1;
       }
     }();
 
