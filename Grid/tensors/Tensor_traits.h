@@ -190,6 +190,36 @@ NAMESPACE_BEGIN(Grid);
     typedef ComplexD DoublePrecision;
     typedef ComplexD DoublePrecision2;
   };
+
+#ifdef GRID_CUDA
+  template<> struct GridTypeMapper<std::complex<float> > : public GridTypeMapper_Base {
+    typedef std::complex<float> scalar_type;
+    typedef std::complex<double> scalar_typeD;
+    typedef scalar_type vector_type;
+    typedef scalar_typeD vector_typeD;
+    typedef scalar_type tensor_reduced;
+    typedef scalar_type scalar_object;
+    typedef scalar_typeD scalar_objectD;
+    typedef scalar_type Complexified;
+    typedef RealF Realified;
+    typedef scalar_typeD DoublePrecision;
+    typedef scalar_typeD DoublePrecision2;
+  };
+  template<> struct GridTypeMapper<std::complex<double> > : public GridTypeMapper_Base {
+    typedef std::complex<double> scalar_type;
+    typedef std::complex<double> scalar_typeD;
+    typedef scalar_type vector_type;
+    typedef scalar_typeD vector_typeD;
+    typedef scalar_type tensor_reduced;
+    typedef scalar_type scalar_object;
+    typedef scalar_typeD scalar_objectD;
+    typedef scalar_type Complexified;
+    typedef RealD Realified;
+    typedef scalar_typeD DoublePrecision;
+    typedef scalar_typeD DoublePrecision2;
+  };
+#endif
+
   template<> struct GridTypeMapper<ComplexD2> : public GridTypeMapper_Base {
     typedef ComplexD2 scalar_type;
     typedef ComplexD2 scalar_typeD;
