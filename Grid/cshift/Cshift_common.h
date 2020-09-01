@@ -76,8 +76,8 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimen
     autoView(rhs_v , rhs, AcceleratorRead);
     auto buffer_p = & buffer[0];
     auto table = &Cshift_table[0];
-    accelerator_for(i,ent,1,{
-      buffer_p[table[i].first]=rhs_v[table[i].second];
+    accelerator_for(i,ent,vobj::Nsimd(),{
+	coalescedWrite(buffer_p[table[i].first],coalescedRead(rhs_v[table[i].second]));
     });
   }
 }
@@ -185,8 +185,8 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
     autoView( rhs_v, rhs, AcceleratorWrite);
     auto buffer_p = & buffer[0];
     auto table = &Cshift_table[0];
-    accelerator_for(i,ent,1,{
-	rhs_v[table[i].first]=buffer_p[table[i].second];
+    accelerator_for(i,ent,vobj::Nsimd(),{
+	coalescedWrite(rhs_v[table[i].first],coalescedRead(buffer_p[table[i].second]));
     });
   }
 }
@@ -282,8 +282,8 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
     autoView(rhs_v , rhs, AcceleratorRead);
     autoView(lhs_v , lhs, AcceleratorWrite);
     auto table = &Cshift_table[0];
-    accelerator_for(i,ent,1,{
-      lhs_v[table[i].first]=rhs_v[table[i].second];
+    accelerator_for(i,ent,vobj::Nsimd(),{
+      coalescedWrite(lhs_v[table[i].first],coalescedRead(rhs_v[table[i].second]));
     });
   }
 }
