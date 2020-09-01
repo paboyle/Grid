@@ -123,10 +123,9 @@ public:
     auto exprCopy = expr;
     ExpressionViewOpen(exprCopy);
     auto me  = View(AcceleratorWriteDiscard);
-    accelerator_for(ss,me.size(),1,{
-      auto tmp = coalescedEval(ss,exprCopy);
+    accelerator_for(ss,me.size(),vobj::Nsimd(),{
+      auto tmp = eval(ss,exprCopy);
       coalescedWrite(me[ss],tmp);
-      //      me[ss]=tmp;
     });
     me.ViewClose();
     ExpressionViewClose(exprCopy);
@@ -147,10 +146,9 @@ public:
     auto exprCopy = expr;
     ExpressionViewOpen(exprCopy);
     auto me  = View(AcceleratorWriteDiscard);
-    accelerator_for(ss,me.size(),1,{
-      auto tmp = coalescedEval(ss,exprCopy);
+    accelerator_for(ss,me.size(),vobj::Nsimd(),{
+      auto tmp = eval(ss,exprCopy);
       coalescedWrite(me[ss],tmp);
-      //me[ss]=tmp;
     });
     me.ViewClose();
     ExpressionViewClose(exprCopy);
@@ -170,10 +168,9 @@ public:
     auto exprCopy = expr;
     ExpressionViewOpen(exprCopy);
     auto me  = View(AcceleratorWriteDiscard);
-    accelerator_for(ss,me.size(),1,{
-      auto tmp = coalescedEval(ss,exprCopy);
+    accelerator_for(ss,me.size(),vobj::Nsimd(),{
+      auto tmp = eval(ss,exprCopy);
       coalescedWrite(me[ss],tmp);
-      //      me[ss]=tmp;
     });
     me.ViewClose();
     ExpressionViewClose(exprCopy);
