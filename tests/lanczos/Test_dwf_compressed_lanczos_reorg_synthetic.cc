@@ -311,7 +311,7 @@ int main (int argc, char ** argv) {
   std::cout << GridLogMessage << "Keep " << coarse.Nk << " total vectors" << std::endl;
   assert(Nm2 >= Nm1);
 
-  const int nbasis= 70;
+  const int nbasis= 32;
   CoarseFineIRL<vSpinColourVector,vTComplex,nbasis> IRL(FrbGrid,CoarseGrid5rb,HermOp,Odd);
 
   std::cout << GridLogMessage << "Constructed CoarseFine IRL" << std::endl;
