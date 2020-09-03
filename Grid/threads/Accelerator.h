@@ -90,6 +90,7 @@ void     acceleratorInit(void);
 //////////////////////////////////////////////
 
 #ifdef GRID_CUDA
+#include <cuda.h>
 
 #ifdef __CUDA_ARCH__
 #define GRID_SIMT
