@@ -60,6 +60,8 @@ public:
   DeflatedGuesser(const std::vector<Field> & _evec,const std::vector<RealD> & _eval) : evec(_evec), eval(_eval) {};
 
   virtual void operator()(const Field &src,Field &guess) {
+    RealD t=-usecond();
+    
     guess = Zero();
     assert(evec.size()==eval.size());
     auto N = evec.size();
@@ -68,6 +70,8 @@ public:
       axpy(guess,TensorRemove(innerProduct(tmp,src)) / eval[i],tmp,guess);
     }
     guess.Checkerboard() = src.Checkerboard();
+    t+=usecond();
+    std::cout<<GridLogMessage<<"\t\t\t" << "Deflated guess took "<< t/1000.0<< "ms" <<std::endl;
   }
 };
 
