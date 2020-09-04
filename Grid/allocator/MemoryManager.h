@@ -95,8 +95,8 @@ private:
 
   static void *AcceleratorAllocate(size_t bytes);
   static void  AcceleratorFree    (void *ptr,size_t bytes);
-  static void PrintBytes(void);
  public:
+  static void PrintBytes(void);
   static void Init(void);
   static void *SharedAllocate(size_t bytes);
   static void  SharedFree    (void *ptr,size_t bytes);
