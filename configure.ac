@@ -154,6 +154,7 @@ AC_ARG_ENABLE([accelerator],
 case ${ac_ACCELERATOR} in
     cuda)
       echo CUDA acceleration
+      LIBS="${LIBS} -lcuda"
       AC_DEFINE([GRID_CUDA],[1],[Use CUDA offload]);;
     sycl)
       echo SYCL acceleration
@@ -323,7 +324,6 @@ case ${CXXTEST} in
 #    CXXLD="nvcc -v -link"
     CXX="${CXXBASE} -x cu "
     CXXLD="${CXXBASE} -link"
-#    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing -Xcompiler -Wno-unusable-partial-specialization --expt-extended-lambda --expt-relaxed-constexpr"
     CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr"
     if test $ac_openmp = yes; then
        CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
@@ -483,8 +483,7 @@ case ${ac_SHM} in
      LDFLAGS_CPY=$LDFLAGS
      CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
      LDFLAGS="$AM_LDFLAGS $LDFLAGS"
-     AC_SEARCH_LIBS([shm_unlink], [rt], [],
-                    [AC_MSG_ERROR("no library found for shm_unlink")])
+     AC_SEARCH_LIBS([shm_unlink], [rt], [],[AC_MSG_ERROR("no library found for shm_unlink")])
      CXXFLAGS=$CXXFLAGS_CPY
      LDFLAGS=$LDFLAGS_CPY
      ;;

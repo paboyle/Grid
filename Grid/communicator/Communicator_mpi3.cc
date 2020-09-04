@@ -309,15 +309,8 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
   int ierr;
 
   // Enforce no UVM in comms, device or host OK
-  int uvm;
-  auto 
-  cuerr = cuPointerGetAttribute( &uvm, CU_POINTER_ATTRIBUTE_IS_MANAGED, (CUdeviceptr) xmit);
-  assert(cuerr == cudaSuccess );
-  assert(uvm==0);
-
-  cuerr = cuPointerGetAttribute( &uvm, CU_POINTER_ATTRIBUTE_IS_MANAGED, (CUdeviceptr) recv);
-  assert(cuerr == cudaSuccess );
-  assert(uvm==0);
+  assert(acceleratorIsCommunicable(xmit));
+  assert(acceleratorIsCommunicable(recv));
 
   // Give the CPU to MPI immediately; can use threads to overlap optionally
   //  printf("proc %d SendToRecvFrom %d bytes Sendrecv \n",_processor,bytes);
