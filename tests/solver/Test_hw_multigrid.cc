@@ -27,7 +27,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 #include <Grid/algorithms/iterative/PrecGeneralisedConjugateResidual.h>
-//#include <Grid/algorithms/iterative/PrecGeneralisedConjugateResidualNonHermitian.h>
+#include <Grid/algorithms/iterative/PrecGeneralisedConjugateResidualNonHermitian.h>
 #include <Grid/algorithms/iterative/BiCGSTAB.h>
 
 using namespace std;
@@ -397,6 +397,8 @@ public:
   GridBase *Coarse4D;
   CartesianStencil<siteVector,siteVector,int> Stencil; 
   CoarsenedMatrix<Fobj,CComplex,nbasis> &Dw;
+  Vector<int> NNsv;
+  int *NNs;
 
   GridBase * Grid(void)         { return Coarse5D; };   // this is all the linalg routines need to know
 
@@ -409,12 +411,40 @@ public:
     Coarse5D(&CoarseGrid5),
     Dw(_Dw),
     geom(CoarseGrid5._ndimension),
-    Stencil( &CoarseGrid5,geom.npoint,Even,geom.directions,geom.displacements,0)
+    Stencil( &CoarseGrid5,geom.npoint,Even,geom.directions,geom.displacements,0),
+    NNsv(Ls)
   { 
+    int surface=4;
+    NNs =&NNsv[0];
+    for(int s=0;s<Ls;s++){
+      NNs[s] = nbasis/2;
+    }
+    for(int s=surface;s<Ls-surface;s++){
+      //      NNs[s] = 8;
+    }
+#define IS_INCLUDED(s,b) ( (b<NNs[s]) || ( (b>=(nbasis/2)) && (b< ((nbasis/2)+NNs[s]) ) ) )
   };
 
 public:
-  
+  void Project( CoarseVector &C )
+  {
+    const int Nsimd = CComplex::Nsimd();
+    autoView(Cv,C, AcceleratorWrite);
+    int nb2=nbasis/2;
+    int Ls = this->Ls;
+    for(int s=0;s<Ls;s++){
+      int NN = NNs[s];
+      accelerator_for(sU, Coarse4D->oSites(), Nsimd, {
+	  int sF= sU*Ls+s;
+	  auto tmp = coalescedRead(Cv[sF]);
+	  for(int b=NN;b<nb2;b++){
+	    tmp(b)=Zero();
+	    tmp(nb2+b)=Zero();
+	  }
+	  coalescedWrite(Cv[sF],tmp);
+      });
+    }
+  }
   ////////////////////////////////////////////////
   // This is specific to Coarse Grid Cayley
   ////////////////////////////////////////////////
@@ -426,51 +456,57 @@ public:
     SimpleCompressor<siteVector> compressor;
 
     Stencil.HaloExchange(in,compressor);
-    autoView( in_v , in, AcceleratorRead);
-    autoView( out_v , out, AcceleratorWrite);
     typedef LatticeView<Cobj> Aview;
       
-    std::cout << "Dw"<<std::endl; 
-    Vector<Aview> AcceleratorViewContainer;
-    for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer.push_back(Dw.A[p].View(AcceleratorRead));
-    Aview *Aview_p = & AcceleratorViewContainer[0];
-
     const int Nsimd = CComplex::Nsimd();
-    typedef decltype(coalescedRead(in_v[0])) calcVector;
-    typedef decltype(coalescedRead(in_v[0](0))) calcComplex;
-
-    int osites=Grid()->oSites();
     
     // Ls loop for2D
     int Ls=this->Ls;
-    std::cout << "Dw for2d"<<std::endl; 
-    accelerator_for2d(sF, osites, b, nbasis, Nsimd, {
 
+    Vector<Aview> AcceleratorViewContainer;
+    for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer.push_back(Dw.A[p].View(AcceleratorRead));
+    Aview *Aview_p = & AcceleratorViewContainer[0];
+    autoView(in_v ,   in, AcceleratorRead);
+    autoView(out_v,  out, AcceleratorWrite);
+    autoView(st, Stencil, AcceleratorRead);
+    siteVector *CBp=Stencil.CommBuf();			
+
+    int ptype;
+    int nb2=nbasis/2;
+    accelerator_for2d(sF, Coarse5D->oSites(), b, nbasis, Nsimd, {
+
+      typedef decltype(coalescedRead(in_v[0])) calcVector;
+      typedef decltype(coalescedRead(in_v[0](0))) calcComplex;
       int sU = sF/Ls;
       int  s = sF%Ls;
+
       calcComplex res = Zero();
-      calcVector nbr;
-      int ptype;
-      StencilEntry *SE;
 
-      for(int point=0;point<geom.npoint;point++){
+      if ( IS_INCLUDED(s,b) )
+      {
+      	calcVector  nbr;
+	int ptype;
 
-	SE=Stencil.GetEntry(ptype,point,sF);
+	for(int point=0;point<geom.npoint;point++){
+
+	  StencilEntry *SE=st.GetEntry(ptype,point,sF);
 	  
-	if(SE->_is_local) { 
-	  nbr = coalescedReadPermute(in_v[SE->_offset],ptype,SE->_permute);
-	} else {
-	  nbr = coalescedRead(Stencil.CommBuf()[SE->_offset]);
-	}
-	acceleratorSynchronise();
+	  if(SE->_is_local) { 
+	    nbr = coalescedReadPermute(in_v[SE->_offset],ptype,SE->_permute);
+	  } else {
+	    nbr = coalescedRead(CBp[SE->_offset]);
+	  }
+	  acceleratorSynchronise();
 
-	for(int bb=0;bb<nbasis;bb++) {
-	  res = res + coalescedRead(Aview_p[point][sU](b,bb))*nbr(bb);
+	  for(int bb=0;bb<NNs[s];bb++) {
+	    res = res + coalescedRead(Aview_p[point][sU](b,bb))*nbr(bb);
+	    res = res + coalescedRead(Aview_p[point][sU](b,bb+nb2))*nbr(bb+nb2);
+	  }	  
 	}
       }
       coalescedWrite(out_v[sF](b),res);
       });
-    std::cout << "Dw closing"<<std::endl; 
+      
     for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer[p].ViewClose();
   };
 
@@ -483,7 +519,86 @@ public:
     G5C(out, out);
   };
 
+  typedef Aggregation<Fobj,CComplex,nbasis> Aggregates;
+
+  void PromoteFromSubspace(Aggregates &_Aggregates,CoarseVector &C,FineField &F) 
+  {
+    auto FineGrid4 = _Aggregates.FineGrid;
+    FineField F4(FineGrid4);
+    CoarseVector C4(Coarse4D);
+    for(int s=0;s<this->Ls;s++){
+      ExtractSlice(C4,C,s,0);
+      _Aggregates.PromoteFromSubspace(C4,F4); 
+      InsertSlice(F4,F,s,0);
+    }      
+  }
+  void ProjectToSubspace(Aggregates &_Aggregates,CoarseVector &C,FineField &F) 
+  {
+    auto FineGrid4 = _Aggregates.FineGrid;
+    FineField F4(FineGrid4);
+    CoarseVector C4(Coarse4D);
+    for(int s=0;s<this->Ls;s++){
+      ExtractSlice(F4,F,s,0);
+      _Aggregates.ProjectToSubspace  (C4,F4);
+      InsertSlice(C4,C,s,0);
+    }
+    Project(C);
+  }
+  template<class Ddwf>
+  void Test(Aggregates &_Aggregates,GridBase *FineGrid, Ddwf &_Ddwf)
+  {
+    typedef Lattice<Fobj> FineField;
+    CoarseVector Cin(Coarse5D);
+    CoarseVector Cout(Coarse5D);
+    CoarseVector CFout(Coarse5D);
+
+    FineField Fin(FineGrid);
+    FineField Fout(FineGrid);
+
+
+    std::vector<int> seeds({1,2,3,4,5});
+    GridParallelRNG RNG(Coarse5D);  RNG.SeedFixedIntegers(seeds);
+
+    gaussian(RNG,Cin);
+    PromoteFromSubspace(_Aggregates,Cin,Fin);
+    ProjectToSubspace(_Aggregates,Cin,Fin);
+
+    std::cout << "************  "<<std::endl;
+    std::cout << " Testing M  "<<std::endl;
+    std::cout << "************  "<<std::endl;
+    // Coarse operator
+    this->M(Cin,Cout);
+    this->Project(Cout);
+    std::cout << " Cout  "<<norm2(Cout)<<std::endl;
+
+    // Fine projected operator
+    PromoteFromSubspace(_Aggregates,Cin,Fin);
+    _Ddwf.M(Fin,Fout);
+    ProjectToSubspace(_Aggregates,CFout,Fout);
+    std::cout << " CFout "<<norm2(CFout)<<std::endl;
+    CFout = CFout-Cout;
+    std::cout << " diff  "<<norm2(CFout)<<std::endl;
+
+    std::cout << "************  "<<std::endl;
+    std::cout << " Testing Mdag  "<<std::endl;
+    std::cout << "************  "<<std::endl;
+    // Coarse operator
+    this->Mdag(Cin,Cout);
+    this->Project(Cout);
+    std::cout << " Cout  "<<norm2(Cout)<<std::endl;
+
+    // Fine operator
+    _Ddwf.Mdag(Fin,Fout);
+    ProjectToSubspace(_Aggregates,CFout,Fout);
+    std::cout << " CFout "<<norm2(CFout)<<std::endl;
+    CFout = CFout-Cout;
+    std::cout << " diff  "<<norm2(CFout)<<std::endl;
+ 
+  }
 };
+
+
+
 
 template<class Field> class SolverWrapper : public LinearFunction<Field> {
 private:
@@ -507,7 +622,6 @@ public:
 
   }     
 };
-
 
 // Must use a non-hermitian solver
 template<class Matrix,class Field>
@@ -544,7 +658,6 @@ public:
   }
 };
 
-
 RealD InverseApproximation(RealD x){
   return 1.0/x;
 }
@@ -572,45 +685,12 @@ public:
     Cheby(MdagMOp,tmp,out);         
   }
 };
-
-template<class Field,class Matrix> class MirsSmoother : public LinearFunction<Field>
-{
-public:
-  typedef LinearOperatorBase<Field>                            FineOperator;
-  Matrix         & SmootherMatrix;
-  FineOperator   & SmootherOperator;
-  RealD tol;
-  RealD shift;
-  int   maxit;
-
-  MirsSmoother(RealD _shift,RealD _tol,int _maxit,FineOperator &_SmootherOperator,Matrix &_SmootherMatrix) :
-    shift(_shift),tol(_tol),maxit(_maxit),
-    SmootherOperator(_SmootherOperator),
-    SmootherMatrix(_SmootherMatrix)
-  {};
-
-  void operator() (const Field &in, Field &out) 
-  {
-    ZeroGuesser<Field> Guess;
-    ConjugateGradient<Field>  CG(tol,maxit,false);
- 
-    Field src(in.Grid());
-
-    ShiftedMdagMLinearOperator<SparseMatrixBase<Field>,Field> MdagMOp(SmootherMatrix,shift);
-    SmootherOperator.AdjOp(in,src);
-    Guess(src,out);
-    CG(MdagMOp,src,out); 
-  }
-};
-
-#define GridLogLevel std::cout << GridLogMessage <<std::string(level,'\t')<< " Level "<<level <<" "
-
 template<class Fobj,class CComplex,int nbasis, class CoarseSolver>
-class HDCRPreconditioner : public LinearFunction< Lattice<Fobj> > {
+class MGPreconditioner : public LinearFunction< Lattice<Fobj> > {
 public:
 
   typedef Aggregation<Fobj,CComplex,nbasis> Aggregates;
-  typedef CoarsenedMatrix<Fobj,CComplex,nbasis> CoarseOperator;
+  typedef CoarseCayleyFermion<Fobj,CComplex,nbasis> CoarseOperator;
   typedef typename Aggregation<Fobj,CComplex,nbasis>::CoarseVector CoarseVector;
   typedef typename Aggregation<Fobj,CComplex,nbasis>::CoarseMatrix CoarseMatrix;
   typedef typename Aggregation<Fobj,CComplex,nbasis>::FineField    FineField;
@@ -619,25 +699,30 @@ public:
 
   Aggregates     & _Aggregates;
   FineOperator   & _FineOperator;
-  FineSmoother   & _Smoother;
+  FineSmoother   & _PreSmoother;
+  FineSmoother   & _PostSmoother;
+  CoarseOperator & _CoarseOperator;
   CoarseSolver   & _CoarseSolve;
 
   int    level;  void Level(int lv) {level = lv; };
 
-
-  HDCRPreconditioner(Aggregates &Agg,
-		     FineOperator &Fine,
-		     FineSmoother &Smoother,
-		     CoarseSolver &CoarseSolve_)
+  MGPreconditioner(Aggregates &Agg,
+		   FineOperator &Fine,
+		   FineSmoother &PreSmoother,
+		   FineSmoother &PostSmoother,
+		   CoarseOperator &CoarseOperator_,
+		   CoarseSolver &CoarseSolve_)
     : _Aggregates(Agg),
       _FineOperator(Fine),
-      _Smoother(Smoother),
+      _PreSmoother(PreSmoother),
+      _PostSmoother(PostSmoother),
+      _CoarseOperator(CoarseOperator_),
       _CoarseSolve(CoarseSolve_),
       level(1)  {  }
 
   virtual void operator()(const FineField &in, FineField & out) 
   {
-    auto CoarseGrid = _Aggregates.CoarseGrid;
+    auto CoarseGrid = _CoarseOperator.Grid();
     CoarseVector Csrc(CoarseGrid);
     CoarseVector Csol(CoarseGrid);
     FineField vec1(in.Grid());
@@ -646,44 +731,48 @@ public:
     double t;
     // Fine Smoother
     t=-usecond();
-    _Smoother(in,out);
+    _PreSmoother(in,out);
     t+=usecond();
-    GridLogLevel << "Smoother took "<< t/1000.0<< "ms" <<std::endl;
+
+    std::cout<<GridLogMessage << "PreSmoother took "<< t/1000.0<< "ms" <<std::endl;
 
     // Update the residual
     _FineOperator.Op(out,vec1);  sub(vec1, in ,vec1);   
 
     // Fine to Coarse 
     t=-usecond();
-    _Aggregates.ProjectToSubspace  (Csrc,vec1);
+    _CoarseOperator.ProjectToSubspace(_Aggregates,Csrc,vec1);
+    //    _Aggregates.ProjectToSubspace  (Csrc,vec1);
     t+=usecond();
-    GridLogLevel << "Project to coarse took "<< t/1000.0<< "ms" <<std::endl;
+    std::cout<<GridLogMessage << "Project to coarse took "<< t/1000.0<< "ms" <<std::endl;
 
     // Coarse correction
     t=-usecond();
     _CoarseSolve(Csrc,Csol);
     t+=usecond();
-    GridLogLevel << "Coarse solve took "<< t/1000.0<< "ms" <<std::endl;
+    std::cout<<GridLogMessage << "Coarse solve took "<< t/1000.0<< "ms" <<std::endl;
 
     // Coarse to Fine
-    t=-usecond();
-    _Aggregates.PromoteFromSubspace(Csol,vec1); 
+    t=-usecond();  
+    _CoarseOperator.PromoteFromSubspace(_Aggregates,Csol,vec1);
+    //    _Aggregates.PromoteFromSubspace(Csol,vec1); 
     add(out,out,vec1);
     t+=usecond();
-    GridLogLevel << "Promote to this level took "<< t/1000.0<< "ms" <<std::endl;
+    std::cout<<GridLogMessage << "Promote to this level took "<< t/1000.0<< "ms" <<std::endl;
 
     // Residual
     _FineOperator.Op(out,vec1);  sub(vec1 ,in , vec1);  
 
     // Fine Smoother
     t=-usecond();
-    _Smoother(vec1,vec2);
+    _PostSmoother(vec1,vec2);
     t+=usecond();
-    GridLogLevel << "Smoother took "<< t/1000.0<< "ms" <<std::endl;
+    std::cout<<GridLogMessage << "PostSmoother took "<< t/1000.0<< "ms" <<std::endl;
 
     add( out,out,vec2);
   }
 };
+
 
 int main (int argc, char ** argv)
 {
@@ -701,7 +790,7 @@ int main (int argc, char ** argv)
   // Construct a coarsened grid; utility for this?
   ///////////////////////////////////////////////////
   std::vector<int> block ({2,2,2,2});
-  const int nbasis= 8;
+  const int nbasis= 24;
 
   auto clatt = GridDefaultLatt();
   for(int d=0;d<clatt.size();d++){
@@ -717,18 +806,23 @@ int main (int argc, char ** argv)
   GridParallelRNG          CRNG(Coarse5d);CRNG.SeedFixedIntegers(seeds);
 
   LatticeGaugeField Umu(UGrid); 
-  SU3::TepidConfiguration(RNG4,Umu);
 
-  //  FieldMetaData header;
-  //  std::string file("./ckpoint_lat.4000");
-  //  NerscIO::readConfiguration(Umu,header,file);
+#if 0
+  SU3::TepidConfiguration(RNG4,Umu);
+#else
+  FieldMetaData header;
+  std::string file("./ckpoint_lat.4000");
+  NerscIO::readConfiguration(Umu,header,file);
+#endif
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Building g5R5 hermitian DWF operator" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+
   RealD mass=0.001;
   RealD M5=1.8;
-  WilsonFermionR    Dw(Umu,*UGrid,*UrbGrid,-M5);
+
+  WilsonFermionR     Dw(Umu,*UGrid,*UrbGrid,-M5);
   DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   DomainWallFermionR Dpv (Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0,M5);
 
@@ -740,21 +834,59 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Calling Aggregation class to build subspace" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  MdagMLinearOperator<WilsonFermionR,LatticeFermion> SubspaceOp(Dw);
+  // How to find criticall mass?
+  // WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.75); //   600 iters
+  // WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.80); //   800 iters
+  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.82); // 1023 iters
+  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.85); // 1428 iters
+  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.87); //  1900 iters
+  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.90); // 3900   iters
+  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.92); // 6200   iters
+  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.94);  // 8882 iters
+  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.95);  // 9170  iters
+  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.96);  // 8882   iters
+  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.97);  // 8406  iters
+  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-0.99); // 6900   iters
+  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-1.01); // 6397   iters
+  //  WilsonFermionR     Dw_null(Umu,*UGrid,*UrbGrid,-1.00); // 5900   iters
+  MdagMLinearOperator<WilsonFermionR,LatticeFermion> MdagM_Dw(Dw_null);
 
-  Subspace Aggregates4D(Coarse4d,UGrid,0);
-  Subspace Aggregates5D(Coarse5d,FGrid,0);
-
-  assert ( (nbasis & 0x1)==0);
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Testing Wilson criticality " <<std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  /*
+  ConjugateGradient<LatticeFermion>          WilsonCG(1.0e-10,40000);
+  LatticeFermion w_src(UGrid); w_src=1.0;
+  LatticeFermion w_res(UGrid);
+  WilsonCG(MdagM_Dw,w_src,w_res);
+  exit(0);
+  */
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << " 4D subspace build                                " <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  Subspace Aggregates4D(Coarse4d,UGrid,0);
+  assert ( (nbasis & 0x1)==0);
   int nb=nbasis/2;
   Gamma g5(Gamma::Algebra::Gamma5);
-  Aggregates4D.CreateSubspaceChebyshev(RNG4,SubspaceOp,nb,60.0,0.02,500,100,100,0.0);
+
+  Aggregates4D.CreateSubspaceChebyshev(RNG4,MdagM_Dw,nb,60.0,4.0,600,250,250,0.0); //35
+  //  Aggregates4D.CreateSubspaceChebyshev(RNG4,MdagM_Dw,nb,60.0,4.0,600,100,250,0.0); //39
+  //  Aggregates4D.CreateSubspaceChebyshev(RNG4,MdagM_Dw,nb,60.0,4.0,600,250,100,0.0); //39
+  //  Aggregates4D.CreateSubspaceChebyshev(RNG4,MdagM_Dw,nb,60.0,4.0,600,100,100,0.0); //36
+  //  Aggregates4D.CreateSubspaceChebyshev(RNG4,MdagM_Dw,nb,60.0,4.0,600,250,100,0.0); //39
+  //   Aggregates4D.CreateSubspaceChebyshev(RNG4,MdagM_Dw,nb,60.0,4.0,600,250,50,0.0);// 39
+  //  Aggregates4D.CreateSubspaceChebyshev(RNG4,MdagM_Dw,nb,60.0,4.0,600,250,250,0.0);// 35
+  //  Aggregates4D.CreateSubspaceChebyshev(RNG4,MdagM_Dw,nb,60.0,4.0,250,250,250,0.0);//  38 iter
+  //  Aggregates4D.CreateSubspaceChebyshev(RNG4,MdagM_Dw,nb,50.0,4.0,250,250,100,0.0);//  40 iter
+  //  Aggregates4D.CreateSubspaceChebyshev(RNG4,MdagM_Dw,nb,50.0,4.0,500,100,100,0.0);// 38 iter
+  //  Aggregates4D.CreateSubspaceChebyshev(RNG4,MdagM_Dw,nb,60.0,4.0,500,100,100,0.0);// 36 iter
+  //  Aggregates4D.CreateSubspaceChebyshev(RNG4,MdagM_Dw,nb,60.0,3.0,500,100,100,0.0);// 37 iter
+  //  Aggregates4D.CreateSubspaceChebyshev(RNG4,MdagM_Dw,nb,60.0,1.0,1000,400,400,0.0);// 38 iter
+  //  Aggregates4D.CreateSubspaceChebyshev(RNG4,MdagM_Dw,nb,60.0,0.5,1000,400,400,0.0);// 39 iter HDCR smooth 14
+  //  Aggregates4D.CreateSubspaceChebyshev(RNG4,MdagM_Dw,nb,60.0,0.1,1000,400,400,0.0);// 41
   for(int n=0;n<nb;n++){
-    Aggregates4D.subspace[n+nb]= Aggregates4D.subspace[n] - g5 * Aggregates4D.subspace[n];
-    Aggregates4D.subspace[n]   = Aggregates4D.subspace[n] + g5 * Aggregates4D.subspace[n];
+    Aggregates4D.subspace[nbasis-1-n]= Aggregates4D.subspace[n] - g5 * Aggregates4D.subspace[n];
+    Aggregates4D.subspace[n]         = Aggregates4D.subspace[n] + g5 * Aggregates4D.subspace[n];
   }
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
@@ -768,38 +900,160 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << " Coarsening Hw / Dw operator " <<std::endl;
   NonHermitianLinearOperator<WilsonFermionR,LatticeFermion>  LinOpDw(Dw);
   std::cout<<GridLogMessage << " Coarsening Hw linop " <<std::endl;
+
   c_Dw.CoarsenOperator(UGrid,LinOpDw,Aggregates4D);
   std::cout<<GridLogMessage << " Coarsened Hw / Dw operator " <<std::endl;
   Level1Op5 c_Dwf  (*Coarse4d,*Coarse5d,c_Dw,M5, mass, Ls, 1.0,0.0);
+  Level1Op5 c_Dpv  (*Coarse4d,*Coarse5d,c_Dw,M5, 1.0, Ls, 1.0,0.0);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  std::cout<<GridLogMessage << "Coarse CG unprec "<< std::endl;
+  std::cout<<GridLogMessage << "Test Operator "<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
 
-  CoarseVector c_src(Coarse5d); c_src=1.0;
-  CoarseVector c_res(Coarse5d);
+  c_Dwf.Test(Aggregates4D,FGrid,Ddwf);
+  c_Dpv.Test(Aggregates4D,FGrid,Dpv);
+
+
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << " Testing fine and coarse solvers " <<std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
 
   RealD tol=1.0e-8;
   int MaxIt = 10000;
 
-  MdagMLinearOperator<Level1Op5,CoarseVector> CoarseMdagM(c_Dwf);
-  ConjugateGradient<CoarseVector>            CoarseCG(tol,MaxIt);
-  //  BiCGSTAB<CoarseVector>                     CoarseBiCGSTAB(tol,MaxIt);
-
-  c_res=Zero();
-  CoarseCG(CoarseMdagM,c_src,c_res);
-
-  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  std::cout<<GridLogMessage << " Solve                                            " <<std::endl;
-  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  CoarseVector c_src(Coarse5d); c_src=1.0;
+  CoarseVector c_res(Coarse5d);
 
   LatticeFermion f_src(FGrid); f_src=1.0;
   LatticeFermion f_res(FGrid);
-  
-  LatticeFermion    src(FGrid); gaussian(RNG5,src);
-  LatticeFermion result(FGrid); 
-  
 
+  LatticeFermion f_src_e(FrbGrid); f_src_e=1.0;
+  LatticeFermion f_res_e(FrbGrid);
+
+  BiCGSTAB<CoarseVector>                     CoarseBiCGSTAB(tol,MaxIt);
+  ConjugateGradient<CoarseVector>            CoarseCG(tol,MaxIt);
+
+  BiCGSTAB<LatticeFermion>                   FineBiCGSTAB(tol,MaxIt);
+  ConjugateGradient<LatticeFermion>          FineCG(tol,MaxIt);
+  
+  NonHermitianLinearOperator<DomainWallFermionR,LatticeFermion> FineM(Ddwf);
+  MdagMLinearOperator<DomainWallFermionR,LatticeFermion>    FineMdagM(Ddwf);     //  M^\dag M
+  PVdagMLinearOperator<DomainWallFermionR,LatticeFermion>   FinePVdagM(Ddwf,Dpv);//  M_{pv}^\dag M
+  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> FineDiagMooee(Ddwf); //  M_ee - Meo Moo^-1 Moe 
+  SchurDiagOneOperator<DomainWallFermionR,LatticeFermion>   FineDiagOne(Ddwf);   //  1 - M_ee^{-1} Meo Moo^{-1} Moe e
+
+   MdagMLinearOperator<Level1Op5,CoarseVector> CoarseMdagM(c_Dwf);
+  PVdagMLinearOperator<Level1Op5,CoarseVector> CoarsePVdagM(c_Dwf,c_Dpv);
+
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Fine CG unprec "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  /*
+  f_res=Zero();
+  FineCG(FineMdagM,f_src,f_res);
+  */
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Fine CG prec DiagMooee "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  /*  
+  //  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> FineDiagMooee(Ddwf); //  M_ee - Meo Moo^-1 Moe 
+  f_res_e=Zero();
+  FineCG(FineDiagMooee,f_src_e,f_res_e);
+  */
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Fine CG prec DiagOne "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  /*
+  f_res_e=Zero();
+  FineCG(FineDiagOne,f_src_e,f_res_e);
+  */
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Fine BiCGSTAB unprec "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  /*
+  f_res=Zero();
+  FineBiCGSTAB(FinePVdagM,f_src,f_res);
+  */
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Coarse BiCGSTAB "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  /*
+  c_res=Zero();
+  CoarseBiCGSTAB(CoarsePVdagM,c_src,c_res);
+  */
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Coarse CG unprec "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  /*
+  c_res=Zero();
+  CoarseCG(CoarseMdagM,c_src,c_res);
+  */
+
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << " Fine    Hw PowerMethod           "<< std::endl;
+  LatticeFermion w_src(UGrid); 
+  w_src=1.0;
+  PowerMethod<LatticeFermion>       PM;   PM(MdagM_Dw,w_src);
+  std::cout<<GridLogMessage << " Coarse       PowerMethod           "<< std::endl;
+  c_src=1.0;
+  PowerMethod<CoarseVector>        cPM;  cPM(CoarseMdagM,c_src);
+
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << " Running HDCR                                     "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  ZeroGuesser<CoarseVector> CoarseZeroGuesser;
+
+  NormalEquations<CoarseVector> CoarseCGNE   (c_Dwf,CoarseCG,CoarseZeroGuesser);
+  ConjugateGradient<CoarseVector>  CoarseMgridCG(0.001,1000);     
+  ChebyshevSmoother<LatticeFermion,DomainWallFermionR> FineSmoother(0.5,60.0,14,FineM,Ddwf);
+
+  typedef MGPreconditioner<vSpinColourVector,  vTComplex,nbasis, NormalEquations<CoarseVector> > TwoLevelHDCR;
+  TwoLevelHDCR TwoLevelPrecon(Aggregates4D,
+			      FineM,
+			      FineSmoother,
+			      FineSmoother,
+			      c_Dwf,
+			      CoarseCGNE);
+
+  TwoLevelPrecon.Level(1);
+  PrecGeneralisedConjugateResidualNonHermitian<LatticeFermion> l1PGCR(1.0e-8,100,FineM,TwoLevelPrecon,16,16);
+  l1PGCR.Level(1);
+
+  f_res=Zero();
+
+  CoarseCG.Tolerance=0.02;
+  l1PGCR(f_src,f_res);
+
+  Grid_finalize();
+  exit(0);
+
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << " Running Multigrid                                "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+
+  BiCGSTAB<CoarseVector>    CoarseMgridBiCGSTAB(0.01,1000,false);     
+  BiCGSTAB<LatticeFermion>  FineMgridPreBiCGSTAB(0.0,24,false);
+  BiCGSTAB<LatticeFermion>  FineMgridPostBiCGSTAB(0.0,24,false);
+  ZeroGuesser<LatticeFermion> FineZeroGuesser;
+
+  SolverWrapper<LatticeFermion> FineBiCGPreSmoother(  FinePVdagM,  FineMgridPreBiCGSTAB,  FineZeroGuesser);
+  SolverWrapper<LatticeFermion> FineBiCGPostSmoother(  FinePVdagM,  FineMgridPostBiCGSTAB,  FineZeroGuesser);
+  SolverWrapper<CoarseVector> CoarsePVdagMSolver(CoarsePVdagM,CoarseMgridBiCGSTAB,CoarseZeroGuesser);
+  typedef MGPreconditioner<vSpinColourVector, vTComplex,nbasis, SolverWrapper<CoarseVector> >  TwoLevelMG;
+
+  TwoLevelMG _TwoLevelMG(Aggregates4D,
+			 FinePVdagM,
+			 FineBiCGPreSmoother,
+			 FineBiCGPostSmoother,
+			 c_Dwf,
+			 CoarsePVdagMSolver);
+  _TwoLevelMG.Level(1);
+
+  PrecGeneralisedConjugateResidualNonHermitian<LatticeFermion> pvPGCR(1.0e-8,100,FinePVdagM,_TwoLevelMG,16,16);
+  pvPGCR.Level(1);
+
+  f_res=Zero();
+  pvPGCR(f_src,f_res);
   
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Done "<< std::endl;
