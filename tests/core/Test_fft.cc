@@ -29,7 +29,91 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Grid.h>
 
 using namespace Grid;
- ;
+
+void MomentumSpacePropagatorTest(RealD mass,RealD M5, LatticePropagator &prop)
+{
+  // what type LatticeComplex 
+  GridBase *_grid = prop.Grid();
+  
+  typedef LatticeFermion FermionField;
+  typedef LatticePropagator PropagatorField;
+  typedef typename FermionField::vector_type vector_type;
+  typedef typename FermionField::scalar_type ScalComplex;
+  typedef iSinglet<ScalComplex> Tcomplex;
+  typedef Lattice<iSinglet<vector_type> > LatComplex;
+  
+  Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT
+  };
+
+  Coordinate latt_size   = _grid->_fdimensions;
+  
+  PropagatorField   num  (_grid); num  = Zero();
+
+  LatComplex    sk(_grid);  sk = Zero();
+  LatComplex    sk2(_grid); sk2= Zero();
+  LatComplex    W(_grid); W= Zero();
+  LatComplex    a(_grid); a= Zero();
+  LatComplex    one  (_grid); one = ScalComplex(1.0,0.0);
+  LatComplex denom(_grid); denom= Zero();
+  LatComplex cosha(_grid); 
+  LatComplex kmu(_grid); 
+  LatComplex Wea(_grid); 
+  LatComplex Wema(_grid); 
+
+  ScalComplex ci(0.0,1.0);
+  SpinColourMatrixD identity = ComplexD(1.0);
+
+  for(int mu=0;mu<Nd;mu++) {
+    
+    LatticeCoordinate(kmu,mu);
+    
+    RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
+    
+    kmu = TwoPiL * kmu;
+    //    kmu = kmu + TwoPiL * one * twist[mu];//momentum for twisted boundary conditions
+    
+    sk2 = sk2 + 2.0*sin(kmu*0.5)*sin(kmu*0.5);
+    sk  = sk  +     sin(kmu)    *sin(kmu); 
+    
+    num = num - sin(kmu)*ci*(Gamma(Gmu[mu])*identity);
+    
+  }
+  
+  W = one - M5 + sk2;
+
+  ////////////////////////////////////////////
+  // Cosh alpha -> alpha
+  ////////////////////////////////////////////
+  cosha =  (one + W*W + sk) / (abs(W)*2.0);
+
+  // FIXME Need a Lattice acosh
+  {
+  autoView(cosha_v,cosha,CpuRead);
+  autoView(a_v,a,CpuWrite);
+  for(int idx=0;idx<_grid->lSites();idx++){
+    Coordinate lcoor(Nd);
+    Tcomplex cc;
+    //    RealD sgn;
+    _grid->LocalIndexToLocalCoor(idx,lcoor);
+    peekLocalSite(cc,cosha_v,lcoor);
+    assert((double)real(cc)>=1.0);
+    assert(fabs((double)imag(cc))<=1.0e-15);
+    cc = ScalComplex(::acosh(real(cc)),0.0);
+    pokeLocalSite(cc,a_v,lcoor);
+  }}
+  
+  Wea = ( exp( a) * abs(W)  );
+  Wema= ( exp(-a) * abs(W)  );
+  
+  num   = num + ( one - Wema ) * mass * identity;
+  denom= ( Wea - one ) + mass*mass * (one - Wema); 
+  prop = num/denom;
+}
+
 
 int main (int argc, char ** argv)
 {
@@ -306,6 +390,17 @@ int main (int argc, char ** argv)
     RealD mass=0.01;
     RealD M5  =0.8;
     DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,GRID,RBGRID,mass,M5);
+
+    /////////////////// Test code for (1-m)^2 ///////////////
+    LatticePropagatorD prop1(&GRID);
+    LatticePropagatorD prop2(&GRID);
+    LatticeComplexD ratio(&GRID);
+    MomentumSpacePropagatorTest(0.0,M5,prop1);
+    MomentumSpacePropagatorTest(0.3,M5,prop2);
+    ratio=localNorm2(prop2);
+    ratio=ratio/localNorm2(prop1);
+    std::cout << ratio;
+    /////////////////// Test code for (1-m)^2 factor ///////////////
 
     // Momentum space prop
     std::cout << " Solving by FFT and Feynman rules" <<std::endl;
