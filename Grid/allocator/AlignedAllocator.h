@@ -53,7 +53,11 @@ public:
   { 
     size_type bytes = __n*sizeof(_Tp);
     profilerAllocate(bytes);
+#ifdef GRID_UVM
+    _Tp *ptr = (_Tp*) MemoryManager::SharedAllocate(bytes);
+#else 
     _Tp *ptr = (_Tp*) MemoryManager::CpuAllocate(bytes);
+#endif
     assert( ( (_Tp*)ptr != (_Tp *)NULL ) );
     return ptr;
   }
@@ -62,7 +66,11 @@ public:
   { 
     size_type bytes = __n * sizeof(_Tp);
     profilerFree(bytes);
+#ifdef GRID_UVM
+    MemoryManager::SharedFree((void *)__p,bytes);
+#else
     MemoryManager::CpuFree((void *)__p,bytes);
+#endif
   }
 
   // FIXME: hack for the copy constructor, eventually it must be avoided
