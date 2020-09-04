@@ -485,7 +485,7 @@ public:
 
         // Up staple    ___ ___
         //             |       |
-        tmp = Cshift(closure(adj(U[nu])), nu, -1);
+        tmp = Cshift(adj(U[nu]), nu, -1);
         tmp = adj(U2[mu]) * tmp;
         tmp = Cshift(tmp, mu, -2);
 
@@ -519,7 +519,7 @@ public:
         //
         //      |  |
 
-        tmp = Cshift(closure(adj(U2[nu])), nu, -2);
+        tmp = Cshift(adj(U2[nu]), nu, -2);
         tmp = Gimpl::CovShiftBackward(U[mu], mu, tmp);
         tmp = U2[nu] * Cshift(tmp, nu, 2);
         Stap += Cshift(tmp, mu, 1);

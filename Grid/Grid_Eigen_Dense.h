@@ -42,7 +42,7 @@
 #ifdef __NVCC__REDEFINE__
 #pragma pop_macro("__CUDACC__")
 #pragma pop_macro("__NVCC__")
-#pragma pop_macro("GRID_SIMT")
+#pragma pop_macro("__CUDA_ARCH__")
 #pragma pop
 #endif
 

@@ -103,24 +103,26 @@ int main(int argc, char ** argv) {
 	Bar = Cshift(Foo,dir,disp);
 
 	// Implement a stencil code that should agree with cshift!
-	for(int i=0;i<Check.Grid()->oSites();i++){
+	{
+	  autoView( check , Check, AcceleratorWrite);
+	  autoView( foo   , Foo, AcceleratorRead);
+	  autoView(st_v ,myStencil,AcceleratorRead);
+	  auto CBp=myStencil.CommBuf();
+	  accelerator_for(i,Check.Grid()->oSites(), 1, {
 	  
-	  int permute_type;
-	  StencilEntry *SE;
-	  SE = myStencil.GetEntry(permute_type,0,i);
-	  
-	  autoView( check , Check, CpuWrite);
-	  autoView( foo   , Foo, CpuRead);
-	  if ( SE->_is_local && SE->_permute )
-	    permute(check[i],foo[SE->_offset],permute_type);
-	  else if (SE->_is_local)
-	    check[i] = foo[SE->_offset];
-	  else { 
-	    check[i] = myStencil.CommBuf()[SE->_offset];
-	    //	    std::cout << " receive "<<i<<" " << Check[i]<<std::endl;
-	    //	    std::cout << " Foo     "<<i<<" " <<   Foo[i]<<std::endl;
-	  }
-	}
+	      int permute_type;
+	      StencilEntry *SE;
+	      SE = st_v.GetEntry(permute_type,0,i);
+	      
+	      if ( SE->_is_local && SE->_permute )
+		permute(check[i],foo[SE->_offset],permute_type);
+	      else if (SE->_is_local)
+		check[i] = foo[SE->_offset];
+	      else { 
+		check[i] = CBp[SE->_offset]; 
+	      }
+          });
+        }
 
 	Real nrmC = norm2(Check);
 	Real nrmB = norm2(Bar);
@@ -204,36 +206,42 @@ int main(int argc, char ** argv) {
 
 	// Implement a stencil code that should agree with that darn cshift!
 	EStencil.HaloExchange(EFoo,compress);
-	for(int i=0;i<OCheck.Grid()->oSites();i++){
-	  int permute_type;
-	  StencilEntry *SE;
-	  SE = EStencil.GetEntry(permute_type,0,i);
-	  //	  std::cout << "Even source "<< i<<" -> " <<SE->_offset << " "<< SE->_is_local<<std::endl;
+	{
+	  autoView( ocheck , OCheck, AcceleratorWrite);
+	  autoView( efoo   , EFoo, AcceleratorRead);
+	  autoView( Est    , EStencil,AcceleratorRead);
+	  auto ECBp = EStencil.CommBuf();
+	  accelerator_for(i,OCheck.Grid()->oSites(),1,{
+	      int permute_type;
+	      StencilEntry *SE;
+	      SE = Est.GetEntry(permute_type,0,i);
 
-	  autoView( ocheck , OCheck, CpuWrite);
-	  autoView( efoo   , EFoo, CpuRead);
-	  if ( SE->_is_local && SE->_permute )
-	    permute(ocheck[i],efoo[SE->_offset],permute_type);
-	  else if (SE->_is_local)
-	    ocheck[i] = efoo[SE->_offset];
-	  else
-	    ocheck[i] = EStencil.CommBuf()[SE->_offset];
+	      if ( SE->_is_local && SE->_permute )
+		permute(ocheck[i],efoo[SE->_offset],permute_type);
+	      else if (SE->_is_local)
+		ocheck[i] = efoo[SE->_offset];
+	      else
+		ocheck[i] = ECBp[SE->_offset];
+	  });
 	}
 	OStencil.HaloExchange(OFoo,compress);
-	for(int i=0;i<ECheck.Grid()->oSites();i++){
-	  int permute_type;
-	  StencilEntry *SE;
-	  SE = OStencil.GetEntry(permute_type,0,i);
-	  //	  std::cout << "ODD source "<< i<<" -> " <<SE->_offset << " "<< SE->_is_local<<std::endl;
+	{
+	  autoView( echeck , ECheck, AcceleratorWrite);
+          autoView( ofoo   , OFoo, AcceleratorRead);
+	  autoView( Ost    , OStencil,AcceleratorRead);
+	  auto OCBp = OStencil.CommBuf();
+	  accelerator_for(i,ECheck.Grid()->oSites(),1,{
+	      int permute_type;
+	      StencilEntry *SE;
+	      SE = Ost.GetEntry(permute_type,0,i);
 
-	  autoView( echeck , ECheck, CpuWrite);
-	  autoView( ofoo   , OFoo, CpuRead);
-	  if ( SE->_is_local && SE->_permute )
-	    permute(echeck[i],ofoo[SE->_offset],permute_type);
-	  else if (SE->_is_local)
-	    echeck[i] = ofoo[SE->_offset];
-	  else
-	    echeck[i] = OStencil.CommBuf()[SE->_offset];
+	      if ( SE->_is_local && SE->_permute )
+		permute(echeck[i],ofoo[SE->_offset],permute_type);
+	      else if (SE->_is_local)
+		echeck[i] = ofoo[SE->_offset];
+	      else
+		echeck[i] = OCBp[SE->_offset];
+	    });
 	}
 
 	setCheckerboard(Check,ECheck);

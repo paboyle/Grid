@@ -53,23 +53,21 @@ namespace PeriodicBC {
     return Cshift(tmp,mu,-1);// moves towards positive mu
   }
 
-  template<class gauge,typename Op, typename T1> auto
-    CovShiftForward(const Lattice<gauge> &Link, 
-		    int mu,
-		    const LatticeUnaryExpression<Op,T1> &expr)
-    -> Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> 
+  template<class gauge,class Expr,typename std::enable_if<is_lattice_expr<Expr>::value,void>::type * = nullptr>
+    auto  CovShiftForward(const Lattice<gauge> &Link, 
+			  int mu,
+			  const Expr &expr) -> decltype(closure(expr))
   {
-    Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> arg(expr);
+    auto arg = closure(expr);
     return CovShiftForward(Link,mu,arg);
   }
-  template<class gauge,typename Op, typename T1> auto
-    CovShiftBackward(const Lattice<gauge> &Link, 
-		     int mu,
-		     const LatticeUnaryExpression<Op,T1> &expr)
-    -> Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> 
+  template<class gauge,class Expr,typename std::enable_if<is_lattice_expr<Expr>::value,void>::type * = nullptr>
+    auto  CovShiftBackward(const Lattice<gauge> &Link, 
+			   int mu,
+			   const Expr &expr) -> decltype(closure(expr))
   {
-    Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> arg(expr);
-    return CovShiftForward(Link,mu,arg);
+    auto arg = closure(expr);
+    return CovShiftBackward(Link,mu,arg);
   }
 
 }
@@ -142,25 +140,22 @@ namespace ConjugateBC {
     return Cshift(tmp,mu,-1);// moves towards positive mu
   }
 
-  template<class gauge,typename Op, typename T1> auto
-    CovShiftForward(const Lattice<gauge> &Link, 
-		    int mu,
-		    const LatticeUnaryExpression<Op,T1> &expr)
-    -> Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> 
+  template<class gauge,class Expr,typename std::enable_if<is_lattice_expr<Expr>::value,void>::type * = nullptr>
+    auto  CovShiftForward(const Lattice<gauge> &Link, 
+			  int mu,
+			  const Expr &expr) -> decltype(closure(expr))
   {
-    Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> arg(expr);
+    auto arg = closure(expr);
     return CovShiftForward(Link,mu,arg);
   }
-  template<class gauge,typename Op, typename T1> auto
-    CovShiftBackward(const Lattice<gauge> &Link, 
-		     int mu,
-		     const LatticeUnaryExpression<Op,T1> &expr)
-    -> Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> 
+  template<class gauge,class Expr,typename std::enable_if<is_lattice_expr<Expr>::value,void>::type * = nullptr>
+    auto  CovShiftBackward(const Lattice<gauge> &Link, 
+			   int mu,
+			   const Expr &expr)  -> decltype(closure(expr))
   {
-    Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> arg(expr);
-    return CovShiftForward(Link,mu,arg);
+    auto arg = closure(expr);
+    return CovShiftBackward(Link,mu,arg);
   }
-
 
 }
 

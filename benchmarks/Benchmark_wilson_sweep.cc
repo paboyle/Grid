@@ -89,6 +89,7 @@ int main (int argc, char ** argv)
 
 	  std::cout << GridLogMessage;
 	  std::cout << latt_size;
+	  std::cout << "\t\t";
 
 	  GridCartesian           Grid(latt_size,simd_layout,mpi_layout);
 	  GridRedBlackCartesian RBGrid(&Grid);
@@ -132,7 +133,10 @@ void bench_wilson (
   for(int i=0; i<ncall; i++) { Dw.Dhop(src,result,dag); }
   double t1    = usecond();
   double flops = single_site_flops * volume * ncall;
+  double data_tp = (volume * 180 * 64 * ncall) / 1000.; // / (1024.*1024.*1024.);
+  //std::cout << flops/(t1-t0) << " (" << data_tp/(t1-t0) << " MB/s)  \t";
   std::cout << flops/(t1-t0) << "\t\t";
+
 }
 
 void bench_wilson_eo (

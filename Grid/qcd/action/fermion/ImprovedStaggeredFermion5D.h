@@ -208,7 +208,7 @@ public:
   LebesgueOrder LebesgueEvenOdd;
     
   // Comms buffer
-  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;
+  //  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;
     
   ///////////////////////////////////////////////////////////////
   // Conserved current utilities

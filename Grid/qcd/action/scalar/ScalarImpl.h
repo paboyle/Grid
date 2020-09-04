@@ -1,5 +1,13 @@
 #pragma once
 
+#define CPS_MD_TIME 
+
+#ifdef CPS_MD_TIME
+#define HMC_MOMENTUM_DENOMINATOR (2.0)
+#else
+#define HMC_MOMENTUM_DENOMINATOR (1.0)
+#endif
+
 NAMESPACE_BEGIN(Grid);
 
 template <class S>
@@ -20,7 +28,9 @@ public:
   typedef Field              PropagatorField;
     
   static inline void generate_momenta(Field& P, GridParallelRNG& pRNG){
+    RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR); // CPS/UKQCD momentum rescaling
     gaussian(pRNG, P);
+    P *= scale; 
   }
 
   static inline Field projectForce(Field& P){return P;}
@@ -66,7 +76,7 @@ public:
   }
     
   static void FreePropagator(const Field &in, Field &out,
-			     const Field &momKernel)
+           const Field &momKernel)
   {
     FFT   fft((GridCartesian *)in.Grid());
     Field inFT(in.Grid());
@@ -139,14 +149,17 @@ public:
 
     static inline void generate_momenta(Field &P, GridParallelRNG &pRNG)
     {
+      RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR); // CPS/UKQCD momentum rescaling
 #ifndef USE_FFT_ACCELERATION
     Group::GaussianFundamentalLieAlgebraMatrix(pRNG, P);
+    
 #else
 
       Field Pgaussian(P.Grid()), Pp(P.Grid());
       ComplexField p2(P.Grid()); p2 = zero;
       RealD M = FFT_MASS;
-      
+
+
       Group::GaussianFundamentalLieAlgebraMatrix(pRNG, Pgaussian);
 
       FFT theFFT((GridCartesian*)P.Grid());
@@ -156,17 +169,17 @@ public:
       p2 = sqrt(p2);
       Pp *= p2;
       theFFT.FFT_all_dim(P, Pp, FFT::backward);
-
 #endif //USE_FFT_ACCELERATION
+      P *= scale; 
   }
 
-  static inline Field projectForce(Field& P) {return P;}
+  static inline Field projectForce(Field& P) {return Ta(P);}
 
     static inline void update_field(Field &P, Field &U, double ep)
     {
 #ifndef USE_FFT_ACCELERATION
       double t0=usecond(); 
-    U += P*ep;
+      U += P*ep;
       double t1=usecond();
       double total_time = (t1-t0)/1e6;
       std::cout << GridLogIntegrator << "Total time for updating field (s)       : " << total_time << std::endl; 

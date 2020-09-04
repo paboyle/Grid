@@ -74,90 +74,6 @@ int main (int argc, char ** argv)
   std::vector<double> t_time(Nloop);
   time_statistics timestat;
 
-  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "= Benchmarking concurrent halo exchange in "<<nmu<<" dimensions"<<std::endl;
-  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
-  header();
-  for(int lat=8;lat<=maxlat;lat+=4){
-    for(int Ls=8;Ls<=8;Ls*=2){
-
-      Coordinate latt_size  ({lat*mpi_layout[0],
-	                      lat*mpi_layout[1],
-      			      lat*mpi_layout[2],
-      			      lat*mpi_layout[3]});
-
-      GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
-      RealD Nrank = Grid._Nprocessors;
-      RealD Nnode = Grid.NodeCount();
-      RealD ppn = Nrank/Nnode;
-
-      std::vector<Vector<HalfSpinColourVectorD> > xbuf(8);	
-      std::vector<Vector<HalfSpinColourVectorD> > rbuf(8);
-
-      int ncomm;
-      int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
-      for(int mu=0;mu<8;mu++){
-	xbuf[mu].resize(lat*lat*lat*Ls);
-	rbuf[mu].resize(lat*lat*lat*Ls);
-	//	std::cout << " buffers " << std::hex << (uint64_t)&xbuf[mu][0] <<" " << (uint64_t)&rbuf[mu][0] <<std::endl;
-      }
-
-      for(int i=0;i<Nloop;i++){
-      double start=usecond();
-
-	std::vector<CommsRequest_t> requests;
-
-	ncomm=0;
-	for(int mu=0;mu<4;mu++){
-	
-	  if (mpi_layout[mu]>1 ) {
-	  
-	    ncomm++;
-	    int comm_proc=1;
-	    int xmit_to_rank;
-	    int recv_from_rank;
-	    Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
-	    Grid.SendToRecvFromBegin(requests,
-				   (void *)&xbuf[mu][0],
-				   xmit_to_rank,
-				   (void *)&rbuf[mu][0],
-				   recv_from_rank,
-				   bytes);
-	
-	    comm_proc = mpi_layout[mu]-1;
-	  
-	    Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
-	    Grid.SendToRecvFromBegin(requests,
-				     (void *)&xbuf[mu+4][0],
-				     xmit_to_rank,
-				     (void *)&rbuf[mu+4][0],
-				     recv_from_rank,
-				     bytes);
-	  
-	  }
-	}
-	Grid.SendToRecvFromComplete(requests);
-	Grid.Barrier();
-	double stop=usecond();
-	t_time[i] = stop-start; // microseconds
-      }
-
-      timestat.statistics(t_time);
-
-      double dbytes    = bytes*ppn;
-      double xbytes    = dbytes*2.0*ncomm;
-      double rbytes    = xbytes;
-      double bidibytes = xbytes+rbytes;
-
-      std::cout<<GridLogMessage << std::setw(4) << lat<<"\t"<<Ls<<"\t"
-               <<std::setw(11) << bytes<< std::fixed << std::setprecision(1) << std::setw(7)
-               <<std::right<< xbytes/timestat.mean<<"  "<< xbytes*timestat.err/(timestat.mean*timestat.mean)<< " "
-               <<xbytes/timestat.max <<" "<< xbytes/timestat.min  
-               << "\t\t"<<std::setw(7)<< bidibytes/timestat.mean<< "  " << bidibytes*timestat.err/(timestat.mean*timestat.mean) << " "
-               << bidibytes/timestat.max << " " << bidibytes/timestat.min << std::endl;
-
-    }
-  }    
 
 
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
@@ -206,26 +122,22 @@ int main (int argc, char ** argv)
 	    {
 	      std::vector<CommsRequest_t> requests;
 	      Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
-	      Grid.SendToRecvFromBegin(requests,
-				       (void *)&xbuf[mu][0],
-				       xmit_to_rank,
-				       (void *)&rbuf[mu][0],
-				       recv_from_rank,
-				       bytes);
-	      Grid.SendToRecvFromComplete(requests);
+	      Grid.SendToRecvFrom((void *)&xbuf[mu][0],
+				  xmit_to_rank,
+				  (void *)&rbuf[mu][0],
+				  recv_from_rank,
+				  bytes);
 	    }
 
 	    comm_proc = mpi_layout[mu]-1;
 	    {
 	      std::vector<CommsRequest_t> requests;
 	      Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
-	      Grid.SendToRecvFromBegin(requests,
-				       (void *)&xbuf[mu+4][0],
-				       xmit_to_rank,
-				       (void *)&rbuf[mu+4][0],
-				       recv_from_rank,
-				       bytes);
-	      Grid.SendToRecvFromComplete(requests);
+	      Grid.SendToRecvFrom((void *)&xbuf[mu+4][0],
+				  xmit_to_rank,
+				  (void *)&rbuf[mu+4][0],
+				  recv_from_rank,
+				  bytes);
 	    }
 	  }
 	}

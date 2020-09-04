@@ -154,6 +154,7 @@ AC_ARG_ENABLE([accelerator],
 case ${ac_ACCELERATOR} in
     cuda)
       echo CUDA acceleration
+      LIBS="${LIBS} -lcuda"
       AC_DEFINE([GRID_CUDA],[1],[Use CUDA offload]);;
     sycl)
       echo SYCL acceleration
@@ -234,7 +235,7 @@ if test "${ac_MKL}x" != "nox"; then
 fi
 
 if test "${ac_IPP}x" != "nox"; then
-     AC_SEARCH_LIBS([ippsCRC32C_8u], [ippdc], 
+     AC_SEARCH_LIBS([ippsCRC32C_8u], [ippdc],
                    [LIBS="${LIBS} -lippdc -lippvm -lipps -lippcore"],
                    [AC_MSG_ERROR("Intel IPP enabled but library not found")])
 fi
@@ -315,15 +316,14 @@ CXXBASE=${CXX}
 CXXTEST=${CXX}
 if echo "${CXX}" | grep -q "nvcc"; then
   CXXTEST="nvcc"
-fi   
+fi
 
-case ${CXXTEST} in 
-  nvcc) 
+case ${CXXTEST} in
+  nvcc)
 #    CXX="nvcc -keep -v -x cu "
 #    CXXLD="nvcc -v -link"
     CXX="${CXXBASE} -x cu "
     CXXLD="${CXXBASE} -link"
-#    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing -Xcompiler -Wno-unusable-partial-specialization --expt-extended-lambda --expt-relaxed-constexpr"
     CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr"
     if test $ac_openmp = yes; then
        CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
@@ -392,6 +392,15 @@ case ${ax_cv_cxx_compiler_vendor} in
                            [generic SIMD vector width (in bytes)])
         SIMD_GEN_WIDTH_MSG=" (width= $ac_gen_simd_width)"
         SIMD_FLAGS='';;
+      A64FX)
+        case ${ax_cv_cxx_compiler_vendor} in
+          gnu)
+            AC_DEFINE([A64FX],[1],[A64FX / 512-bit SVE VLS])
+            SIMD_FLAGS='-march=armv8.2-a+sve -msve-vector-bits=512 -fno-gcse -DDSLASHINTRIN';;
+          clang)
+            AC_DEFINE([A64FX],[1],[A64FX / 512-bit SVE VLA])
+            SIMD_FLAGS='-mcpu=a64fx -DARMCLANGCOMPAT -DDSLASHINTRIN';;
+        esac;;
       NEONv8)
         AC_DEFINE([NEONV8],[1],[ARMv8 NEON])
         SIMD_FLAGS='-march=armv8-a';;
@@ -474,8 +483,7 @@ case ${ac_SHM} in
      LDFLAGS_CPY=$LDFLAGS
      CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
      LDFLAGS="$AM_LDFLAGS $LDFLAGS"
-     AC_SEARCH_LIBS([shm_unlink], [rt], [],
-                    [AC_MSG_ERROR("no library found for shm_unlink")])
+     AC_SEARCH_LIBS([shm_unlink], [rt], [],[AC_MSG_ERROR("no library found for shm_unlink")])
      CXXFLAGS=$CXXFLAGS_CPY
      LDFLAGS=$LDFLAGS_CPY
      ;;
@@ -692,4 +700,3 @@ AC_OUTPUT
 echo ""
 cat grid.configure.summary
 echo ""
-

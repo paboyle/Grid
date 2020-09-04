@@ -318,6 +318,13 @@ void Grid_init(int *argc,char ***argv)
     Grid_debug_handler_init();
   }
 
+#if defined(A64FX)
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-overlap") ){
+    std::cout << "Option --comms-overlap currently not supported on QPACE4. Exiting." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+#endif
+
   //////////////////////////////////////////////////////////
   // Memory manager
   //////////////////////////////////////////////////////////
@@ -370,9 +377,7 @@ void Grid_init(int *argc,char ***argv)
     std::cout << GridLogMessage << "Mapped stencil comms buffers as MAP_HUGETLB "<<std::endl;
   }
 
-#ifndef GRID_UVM
-  std::cout << GridLogMessage << "MemoryManager Cache "<< MemoryManager::DeviceMaxBytes <<" bytes "<<std::endl;
-#endif
+  MemoryManager::InitMessage();
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-mem") ){
     MemoryProfiler::debug = true;
@@ -467,7 +472,7 @@ void Grid_init(int *argc,char ***argv)
   if( GridCmdOptionExists(*argv,*argv+*argc,"--lebesgue") ){
     LebesgueOrder::UseLebesgueOrder=1;
   }
-  CartesianCommunicator::nCommThreads = -1;
+  CartesianCommunicator::nCommThreads = 1;
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-threads") ){
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--comms-threads");
     GridCmdOptionInt(arg,CartesianCommunicator::nCommThreads);

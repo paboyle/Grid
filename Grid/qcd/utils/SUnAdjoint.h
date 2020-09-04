@@ -39,7 +39,7 @@ public:
   typedef iSUnAdjointMatrix<ComplexF> AMatrixF;
   typedef iSUnAdjointMatrix<ComplexD> AMatrixD;
 
-  typedef iSUnAdjointMatrix<vComplex> vAMatrix;
+  typedef iSUnAdjointMatrix<vComplex>  vAMatrix;
   typedef iSUnAdjointMatrix<vComplexF> vAMatrixF;
   typedef iSUnAdjointMatrix<vComplexD> vAMatrixD;
 
@@ -47,14 +47,9 @@ public:
   typedef Lattice<vAMatrixF> LatticeAdjMatrixF;
   typedef Lattice<vAMatrixD> LatticeAdjMatrixD;
 
-  typedef Lattice<iVector<iScalar<iMatrix<vComplex, Dimension> >, Nd> >
-  LatticeAdjField;
-  typedef Lattice<iVector<iScalar<iMatrix<vComplexF, Dimension> >, Nd> >
-  LatticeAdjFieldF;
-  typedef Lattice<iVector<iScalar<iMatrix<vComplexD, Dimension> >, Nd> >
-  LatticeAdjFieldD;
-
-
+  typedef Lattice<iVector<iScalar<iMatrix<vComplex, Dimension> >, Nd> >  LatticeAdjField;
+  typedef Lattice<iVector<iScalar<iMatrix<vComplexF, Dimension> >, Nd> > LatticeAdjFieldF;
+  typedef Lattice<iVector<iScalar<iMatrix<vComplexD, Dimension> >, Nd> > LatticeAdjFieldD;
 
 
   template <class cplx>
@@ -128,7 +123,9 @@ public:
   }
 
   // Projects the algebra components a lattice matrix (of dimension ncol*ncol -1 )
-  static void projectOnAlgebra(typename SU<ncolour>::LatticeAlgebraVector &h_out, const LatticeAdjMatrix &in, Real scale = 1.0) {
+  static void projectOnAlgebra(typename SU<ncolour>::LatticeAlgebraVector &h_out, const LatticeAdjMatrix &in, Real scale = 1.0) 
+  {
+    
     conformable(h_out, in);
     h_out = Zero();
     AMatrix iTa;
@@ -136,7 +133,7 @@ public:
 
     for (int a = 0; a < Dimension; a++) {
       generator(a, iTa);
-      auto tmp = real(trace(iTa * in)) * coefficient;
+      LatticeComplex tmp = real(trace(iTa * in)) * coefficient;
       pokeColour(h_out, tmp, a);
     }
   }

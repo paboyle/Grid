@@ -240,6 +240,8 @@ template<class vobj,class vobj2,class CComplex>
   autoView( fineX_  , fineX, AcceleratorRead);
   autoView( fineY_  , fineY, AcceleratorRead);
   autoView( coarseA_, coarseA, AcceleratorRead);
+  Coordinate fine_rdimensions = fine->_rdimensions;
+  Coordinate coarse_rdimensions = coarse->_rdimensions;
 
   accelerator_for(sf, fine->oSites(), CComplex::Nsimd(), {
 
@@ -247,9 +249,9 @@ template<class vobj,class vobj2,class CComplex>
       Coordinate coor_c(_ndimension);
       Coordinate coor_f(_ndimension);
 
-      Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+      Lexicographic::CoorFromIndex(coor_f,sf,fine_rdimensions);
       for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-      Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+      Lexicographic::IndexFromCoor(coor_c,sc,coarse_rdimensions);
 
       // z = A x + y
 #ifdef GRID_SIMT
@@ -353,11 +355,14 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
   autoView( coarseData_ , coarseData, AcceleratorWrite);
   autoView( fineData_   , fineData, AcceleratorRead);
 
+  Coordinate fine_rdimensions = fine->_rdimensions;
+  Coordinate coarse_rdimensions = coarse->_rdimensions;
+  
   accelerator_for(sc,coarse->oSites(),1,{
 
       // One thread per sub block
       Coordinate coor_c(_ndimension);
-      Lexicographic::CoorFromIndex(coor_c,sc,coarse->_rdimensions);  // Block coordinate
+      Lexicographic::CoorFromIndex(coor_c,sc,coarse_rdimensions);  // Block coordinate
       coarseData_[sc]=Zero();
 
       for(int sb=0;sb<blockVol;sb++){
@@ -367,7 +372,7 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
 	Coordinate coor_f(_ndimension);
 	Lexicographic::CoorFromIndex(coor_b,sb,block_r);               // Block sub coordinate
 	for(int d=0;d<_ndimension;d++) coor_f[d]=coor_c[d]*block_r[d] + coor_b[d];
-	Lexicographic::IndexFromCoor(coor_f,sf,fine->_rdimensions);
+	Lexicographic::IndexFromCoor(coor_f,sf,fine_rdimensions);
 
 	coarseData_[sc]=coarseData_[sc]+fineData_[sf];
       }
