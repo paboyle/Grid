@@ -565,8 +565,8 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << " Running Multigrid                                "<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
 
-  BiCGSTAB<CoarseVector>    CoarseMgridBiCGSTAB(0.01,1000);     
-  BiCGSTAB<LatticeFermion>  FineMgridBiCGSTAB(0.0,24);
+  BiCGSTAB<CoarseVector>    CoarseMgridBiCGSTAB(0.01,1000,false);     
+  BiCGSTAB<LatticeFermion>  FineMgridBiCGSTAB(0.0,24,false);
   ZeroGuesser<CoarseVector> CoarseZeroGuesser;
   ZeroGuesser<LatticeFermion> FineZeroGuesser;
 
@@ -590,5 +590,5 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Done "<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   Grid_finalize();
-  
+
 }
