@@ -9,11 +9,13 @@ NAMESPACE_BEGIN(Grid);
 #define AccSmall (3)
 #define Shared   (4)
 #define SharedSmall (5)
+uint64_t total_cache;
 uint64_t total_shared;
 uint64_t total_device;
 uint64_t total_host;;
 void MemoryManager::PrintBytes(void)
 {
+  std::cout << " MemoryManager : "<<total_cache <<" cache       bytes "<<std::endl;
   std::cout << " MemoryManager : "<<total_shared<<" shared      bytes "<<std::endl;
   std::cout << " MemoryManager : "<<total_device<<" accelerator bytes "<<std::endl;
   std::cout << " MemoryManager : "<<total_host  <<" cpu         bytes "<<std::endl;
@@ -35,6 +37,8 @@ void *MemoryManager::AcceleratorAllocate(size_t bytes)
   if ( ptr == (void *) NULL ) {
     ptr = (void *) acceleratorAllocDevice(bytes);
     total_device+=bytes;
+  } else {
+    //    std::cout <<"AcceleratorAllocate: cache hit Device pointer "<<std::hex<<ptr<<std::dec<<" "<<bytes<<std::endl;
   }
   return ptr;
 }
@@ -53,8 +57,10 @@ void *MemoryManager::SharedAllocate(size_t bytes)
   if ( ptr == (void *) NULL ) {
     ptr = (void *) acceleratorAllocShared(bytes);
     total_shared+=bytes;
-    //    std::cout <<"AcceleratorAllocate: allocated Shared pointer "<<std::hex<<ptr<<std::dec<<std::endl;
+    //    std::cout <<"SharedAllocate: allocated Shared pointer "<<std::hex<<ptr<<std::dec<<std::endl;
     //    PrintBytes();
+  } else {
+    //    std::cout <<"SharedAllocate: cache hit Shared pointer "<<std::hex<<ptr<<std::dec<<" "<<bytes<<std::endl;
   }
   return ptr;
 }
@@ -74,6 +80,9 @@ void *MemoryManager::CpuAllocate(size_t bytes)
   if ( ptr == (void *) NULL ) {
     ptr = (void *) acceleratorAllocShared(bytes);
     total_host+=bytes;
+    //    std::cout <<"CpuAllocate: allocated Cpu pointer "<<std::hex<<ptr<<std::dec<<std::endl;
+  } else {
+    //    std::cout <<"CpufAllocate: cache hit Cpu pointer "<<std::hex<<ptr<<std::dec<<" "<<bytes<<std::endl;
   }
   return ptr;
 }
@@ -201,6 +210,7 @@ void *MemoryManager::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries
 
   if ( entries[v].valid ) {
     ret = entries[v].address;
+    total_cache-=entries[v].bytes;
     entries[v].valid = 0;
     entries[v].address = NULL;
     entries[v].bytes = 0;
@@ -209,6 +219,7 @@ void *MemoryManager::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries
   entries[v].address=ptr;
   entries[v].bytes  =bytes;
   entries[v].valid  =1;
+  total_cache+=entries[v].bytes;
 
   return ret;
 }
@@ -233,6 +244,7 @@ void *MemoryManager::Lookup(size_t bytes,AllocationCacheEntry *entries,int ncach
   for(int e=0;e<ncache;e++){
     if ( entries[e].valid && ( entries[e].bytes == bytes ) ) {
       entries[e].valid = 0;
+      total_cache-=bytes;
       return entries[e].address;
     }
   }
