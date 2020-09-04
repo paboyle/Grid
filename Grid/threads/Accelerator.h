@@ -149,6 +149,9 @@ inline void *acceleratorAllocShared(size_t bytes)
     ptr = (void *) NULL;
     printf(" cudaMallocManaged failed for %d %s \n",bytes,cudaGetErrorString(err));
   }
+  //  size_t free,total;
+  //  cudaMemGetInfo(&free,&total);
+  //  std::cout << "Malloc managed "<<bytes<<" "<<free<<"/"<<total<<std::endl;
   return ptr;
 };
 inline void *acceleratorAllocDevice(size_t bytes)
@@ -159,6 +162,9 @@ inline void *acceleratorAllocDevice(size_t bytes)
     ptr = (void *) NULL;
     printf(" cudaMalloc failed for %d %s \n",bytes,cudaGetErrorString(err));
   }
+  //  size_t free,total;
+  //  cudaMemGetInfo(&free,&total);
+  //  std::cout << "Malloc device "<<bytes<<" "<<free<<"/"<<total<<std::endl;
   return ptr;
 };
 inline void acceleratorFreeShared(void *ptr){ cudaFree(ptr);};
