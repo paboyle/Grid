@@ -102,8 +102,8 @@ public:
   Aggregation(GridBase *_CoarseGrid,GridBase *_FineGrid,int _checkerboard) : 
     CoarseGrid(_CoarseGrid),
     FineGrid(_FineGrid),
-    subspace(nbasis,_FineGrid),
-    checkerboard(_checkerboard)
+    checkerboard(_checkerboard),
+    subspace(nbasis,_FineGrid)
   {
   };
   
@@ -335,7 +335,7 @@ public:
 	}
       }
       coalescedWrite(out_v[ss](b),res);
-      });
+    });
 
     for(int p=0;p<geom.npoint;p++) AcceleratorViewContainer[p].ViewClose();
   };
@@ -412,8 +412,8 @@ public:
       MdirCalc(in,out[p],p);
     }
   };
-  void Mdir(const CoarseVector &in, CoarseVector &out, int dir, int disp){
-
+  void Mdir(const CoarseVector &in, CoarseVector &out, int dir, int disp)
+  {
     this->MdirComms(in);
 
     int ndim = in.Grid()->Nd();
@@ -459,9 +459,57 @@ public:
     geom(CoarseGrid._ndimension),
     hermitian(hermitian_),
     Stencil(&CoarseGrid,geom.npoint,Even,geom.directions,geom.displacements,0),
-      A(geom.npoint,&CoarseGrid)
+    A(geom.npoint,&CoarseGrid)
   {
   };
+
+  void Test(Aggregation<Fobj,CComplex,nbasis> &_Aggregates,GridBase *FineGrid,LinearOperatorBase<Lattice<Fobj> > &linop)
+  {
+    typedef Lattice<Fobj> FineField;
+    CoarseVector Cin(_grid);
+    CoarseVector Cout(_grid);
+    CoarseVector CFout(_grid);
+
+    FineField Fin(FineGrid);
+    FineField Fout(FineGrid);
+
+
+    std::vector<int> seeds({1,2,3,4,5});
+    GridParallelRNG RNG(_grid);  RNG.SeedFixedIntegers(seeds);
+    gaussian(RNG,Cin);
+
+    _Aggregates.PromoteFromSubspace(Cin,Fin);
+    _Aggregates.ProjectToSubspace(Cin,Fin);
+
+    std::cout << GridLogMessage<< "************  "<<std::endl;
+    std::cout << GridLogMessage<< " Testing M  "<<std::endl;
+    std::cout << GridLogMessage<< "************  "<<std::endl;
+    // Coarse operator
+    this->M(Cin,Cout);
+    std::cout << GridLogMessage<< " Cout  "<<norm2(Cout)<<std::endl;
+
+    // Fine projected operator
+    _Aggregates.PromoteFromSubspace(Cin,Fin);
+    linop.Op(Fin,Fout);
+    _Aggregates.ProjectToSubspace(CFout,Fout);
+    std::cout << GridLogMessage<< " CFout "<<norm2(CFout)<<std::endl;
+    CFout = CFout-Cout;
+    std::cout << GridLogMessage<< " diff  "<<norm2(CFout)<<std::endl;
+
+    std::cout << GridLogMessage<< "************  "<<std::endl;
+    std::cout << GridLogMessage<< " Testing Mdag  "<<std::endl;
+    std::cout << GridLogMessage<< "************  "<<std::endl;
+    // Coarse operator
+    Mdag(Cin,Cout);
+    std::cout << GridLogMessage<< " Cout  "<<norm2(Cout)<<std::endl;
+
+    // Fine operator
+    linop.AdjOp(Fin,Fout);
+    _Aggregates.ProjectToSubspace(CFout,Fout);
+    std::cout << GridLogMessage<< " CFout "<<norm2(CFout)<<std::endl;
+    CFout = CFout-Cout;
+    std::cout << GridLogMessage<< " diff  "<<norm2(CFout)<<std::endl; 
+  }
 
   void CoarsenOperator(GridBase *FineGrid,LinearOperatorBase<Lattice<Fobj> > &linop,
 		       Aggregation<Fobj,CComplex,nbasis> & Subspace)
@@ -499,6 +547,8 @@ public:
 
     CoarseScalar InnerProd(Grid()); 
 
+    size_t free,total;
+    cudaMemGetInfo(&free,&total);   std::cout << "ForceHermitian "<<free<<"/"<<total<<std::endl;
     std::cout << GridLogMessage<< "CoarsenMatrix Orthog " << std::endl;
     // Orthogonalise the subblocks over the basis
     blockOrthogonalise(InnerProd,Subspace.subspace);
@@ -538,26 +588,28 @@ public:
     evenmask = where(mod(bcb,2)==(Integer)0,one,zero);
     oddmask  = one-evenmask;
     std::cout << GridLogMessage<< "CoarsenMatrix Mask " << std::endl;
+    cudaMemGetInfo(&free,&total);   std::cout << "ForceHermitian "<<free<<"/"<<total<<std::endl;
 
     assert(self_stencil!=-1);
+    int lhermitian=hermitian;
 
     for(int i=0;i<nbasis;i++){
 
       phi=Subspace.subspace[i];
 
-      //      std::cout << GridLogMessage<< "CoarsenMatrix vector "<<i << std::endl;
+      std::cout << GridLogMessage<< "CoarsenMatrix vector "<<i << std::endl;
       linop.OpDirAll(phi,Mphi_p);
       linop.OpDiag  (phi,Mphi_p[geom.npoint-1]);
 
       for(int p=0;p<geom.npoint;p++){ 
 
-	//	std::cout << GridLogMessage<< "CoarsenMatrix point "<<p << std::endl;
+	std::cout << GridLogMessage<< "CoarsenMatrix point "<<p << std::endl;
 	Mphi = Mphi_p[p];
 
 	int dir   = geom.directions[p];
 	int disp  = geom.displacements[p];
 
-	if ( (disp==-1) || (!hermitian ) ) {
+	if ( (disp==-1) || (!lhermitian ) ) {
 
 	  ////////////////////////////////////////////////////////////////////////
 	  // Pick out contributions coming from this cell and neighbour cell
@@ -580,7 +632,7 @@ public:
 	}
       }
 
-      //      std::cout << GridLogMessage<< "CoarsenMatrix Diag "<<std::endl;
+      std::cout << GridLogMessage<< "CoarsenMatrix Diag "<<std::endl;
       ///////////////////////////////////////////
       // Faster alternate self coupling.. use hermiticity to save 2x
       ///////////////////////////////////////////
@@ -612,11 +664,39 @@ public:
 
       }
     }
-    if(hermitian) {
+    if(lhermitian) {
       std::cout << GridLogMessage << " ForceHermitian, new code "<<std::endl;
+      cudaMemGetInfo(&free,&total);
+      std::cout << "ForceHermitian "<<free<<"/"<<total<<std::endl;
+      MemoryManager::PrintBytes();
       ForceHermitian();
       std::cout << GridLogMessage << " ForceHermitian, done "<<std::endl;
+      cudaMemGetInfo(&free,&total);
+      std::cout << "ForceHermitian "<<free<<"/"<<total<<std::endl;
+      MemoryManager::PrintBytes();
     }
+
+#if 0
+    ///////////////////////////
+    // test code worth preserving in if block
+    ///////////////////////////
+    std::cout<<GridLogMessage<< " Computed matrix elements "<< self_stencil <<std::endl;
+    for(int p=0;p<geom.npoint;p++){
+      std::cout<<GridLogMessage<< "A["<<p<<"]" << std::endl;
+      std::cout<<GridLogMessage<< "\n"<<A[p] << std::endl;
+    }
+    std::cout<<GridLogMessage<< " picking by block0 "<< self_stencil <<std::endl;
+
+    phi=Subspace.subspace[0];
+    std::vector<int> bc(FineGrid->_ndimension,0);
+    blockPick(Grid(),phi,tmp,bc);      // Pick out a block
+    linop.Op(tmp,Mphi);                // Apply big dop
+    blockProject(iProj,Mphi,Subspace.subspace); // project it and print it
+    std::cout<<GridLogMessage<< " Computed matrix elements from block zero only "<<std::endl;
+    std::cout<<GridLogMessage<< iProj <<std::endl;
+    std::cout<<GridLogMessage<<"Computed Coarse Operator"<<std::endl;
+#endif
+
   }
 
   void ForceHermitian(void) {
@@ -630,7 +710,18 @@ public:
 	  int dispp  = geom.displacements[pp];
 	  if ( (dirp==dir) && (dispp==1) ){
 	    std::cout << GridLogMessage<<" Replacing stencil leg "<<pp<<" with leg "<<p<<std::endl;
-	    A[pp] = adj(Cshift(A[p],dir,1));
+	    size_t free,total;
+	    cudaMemGetInfo(&free,&total);
+	    std::cout << "ForceHermitian before expr "<<free<<"/"<<total<<std::endl;
+	    MemoryManager::PrintBytes();
+	    A[pp] = Cshift(A[p],dir,1);
+	    cudaMemGetInfo(&free,&total);
+	    std::cout << "ForceHermitian during expr "<<free<<"/"<<total<<std::endl;
+	    MemoryManager::PrintBytes();
+	    A[pp] = adj(A[pp]);
+	    cudaMemGetInfo(&free,&total);
+	    std::cout << "ForceHermitian after expr "<<free<<"/"<<total<<std::endl;
+	    MemoryManager::PrintBytes();
 	  }
 	}
       }
