@@ -99,10 +99,10 @@ inline std::ostream & operator<<(std::ostream &os, const AcceleratorVector<T,_nd
 {
   os << "[";
   for(int s=0;s<v.size();s++) {
-    os << v[s] << " ";
-  }
-  if (v.size() > 0) {
-    os << "\b";
+    os << v[s];
+    if( s < (v.size()-1) ){
+      os << " ";
+    }
   }
   os << "]";
   return os;

@@ -89,6 +89,7 @@ int main (int argc, char ** argv)
 
 	  std::cout << GridLogMessage;
 	  std::cout << latt_size;
+	  std::cout << "\t\t";
 
 	  GridCartesian           Grid(latt_size,simd_layout,mpi_layout);
 	  GridRedBlackCartesian RBGrid(&Grid);

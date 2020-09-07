@@ -70,6 +70,7 @@ NAMESPACE_BEGIN(Grid);
 //
 // Memory management:
 //
+//    int   acceleratorIsCommunicable(void *pointer);
 //    void *acceleratorAllocShared(size_t bytes);
 //    void acceleratorFreeShared(void *ptr);
 //
@@ -90,6 +91,7 @@ void     acceleratorInit(void);
 //////////////////////////////////////////////
 
 #ifdef GRID_CUDA
+#include <cuda.h>
 
 #ifdef __CUDA_ARCH__
 #define GRID_SIMT
@@ -165,6 +167,16 @@ inline void acceleratorFreeShared(void *ptr){ cudaFree(ptr);};
 inline void acceleratorFreeDevice(void *ptr){ cudaFree(ptr);};
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { cudaMemcpy(to,from,bytes, cudaMemcpyHostToDevice);}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToHost);}
+inline int  acceleratorIsCommunicable(void *ptr)
+{
+  int uvm;
+  auto 
+  cuerr = cuPointerGetAttribute( &uvm, CU_POINTER_ATTRIBUTE_IS_MANAGED, (CUdeviceptr) ptr);
+  assert(cuerr == cudaSuccess );
+  if(uvm) return 0;
+  else    return 1;
+}
+
 #endif
 
 //////////////////////////////////////////////
@@ -219,6 +231,15 @@ inline void acceleratorFreeShared(void *ptr){free(ptr,*theGridAccelerator);};
 inline void acceleratorFreeDevice(void *ptr){free(ptr,*theGridAccelerator);};
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
+inline int  acceleratorIsCommunicable(void *ptr)
+{
+#if 0
+  auto uvm = cl::sycl::usm::get_pointer_type(ptr, theGridAccelerator->get_context());
+  if ( uvm = cl::sycl::usm::alloc::shared ) return 1;
+  else return 0;
+#endif
+  return 1;
+}
 
 #endif
 
@@ -298,6 +319,7 @@ inline void *acceleratorAllocShared(size_t bytes)
   return malloc(bytes);
 #endif
 };
+inline int  acceleratorIsCommunicable(void *ptr){ return 1; }
 
 inline void *acceleratorAllocDevice(size_t bytes)
 {
@@ -352,6 +374,7 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) { return 0; } // CUDA spec
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { memcpy(to,from,bytes);}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ memcpy(to,from,bytes);}
 
+inline int  acceleratorIsCommunicable(void *ptr){ return 1; }
 #ifdef HAVE_MM_MALLOC_H
 inline void *acceleratorAllocShared(size_t bytes){return _mm_malloc(bytes,GRID_ALLOC_ALIGN);};
 inline void *acceleratorAllocDevice(size_t bytes){return _mm_malloc(bytes,GRID_ALLOC_ALIGN);};

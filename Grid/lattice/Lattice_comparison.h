@@ -42,34 +42,6 @@ NAMESPACE_BEGIN(Grid);
 
 typedef iScalar<vInteger> vPredicate ;
 
-/*
-template <class iobj, class vobj, class robj> accelerator_inline 
-vobj predicatedWhere(const iobj &predicate, const vobj &iftrue, const robj &iffalse) 
-{
-  typename std::remove_const<vobj>::type ret;
-
-  typedef typename vobj::scalar_object scalar_object;
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-
-  const int Nsimd = vobj::vector_type::Nsimd();
-
-  ExtractBuffer<Integer> mask(Nsimd);
-  ExtractBuffer<scalar_object> truevals(Nsimd);
-  ExtractBuffer<scalar_object> falsevals(Nsimd);
-
-  extract(iftrue, truevals);
-  extract(iffalse, falsevals);
-  extract<vInteger, Integer>(TensorRemove(predicate), mask);
-
-  for (int s = 0; s < Nsimd; s++) {
-    if (mask[s]) falsevals[s] = truevals[s];
-  }
-
-  merge(ret, falsevals);
-  return ret;
-}
-*/
 //////////////////////////////////////////////////////////////////////////
 // compare lattice to lattice
 //////////////////////////////////////////////////////////////////////////
