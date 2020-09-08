@@ -63,6 +63,9 @@ public:
   INHERIT_IMPL_TYPES(Impl);
   typedef WilsonKernels<Impl> Kernels;
 
+  virtual std::vector<int> Directions(void)   { return this->directions; };
+  virtual std::vector<int> Displacements(void){ return this->displacements;};
+
   ///////////////////////////////////////////////////////////////
   // Implement the abstract base
   ///////////////////////////////////////////////////////////////

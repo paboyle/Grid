@@ -44,6 +44,9 @@ public:
   INHERIT_IMPL_TYPES(Impl);
   typedef StaggeredKernels<Impl> Kernels;
 
+  virtual std::vector<int> Directions(void)   { return this->directions; };
+  virtual std::vector<int> Displacements(void){ return this->displacements;};
+
   FermionField _tmp;
   FermionField &tmp(void) { return _tmp; }
 

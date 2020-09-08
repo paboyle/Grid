@@ -79,6 +79,8 @@ public:
     _Mat.M(in,tmp);
     G5R5(out,tmp);
   }
+  virtual std::vector<int> Directions(void)   { return _Mat.Directions();};
+  virtual std::vector<int> Displacements(void){ return _Mat.Displacements();};
 };
 
 
@@ -127,6 +129,8 @@ public:
     _Mat.M(in,tmp);
     out=g5*tmp;
   }
+  virtual std::vector<int> Directions(void)   { return _Mat.Directions();};
+  virtual std::vector<int> Displacements(void){ return _Mat.Displacements();};
 };
 
 NAMESPACE_END(Grid);

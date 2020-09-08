@@ -47,6 +47,9 @@ public:
   FermionField _tmp;
   FermionField &tmp(void) { return _tmp; }
 
+  virtual std::vector<int> Directions(void)   { return this->directions; };
+  virtual std::vector<int> Displacements(void){ return this->displacements;};
+
   ////////////////////////////////////////
   // Performance monitoring
   ////////////////////////////////////////

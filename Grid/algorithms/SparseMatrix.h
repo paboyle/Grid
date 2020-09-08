@@ -48,6 +48,8 @@ public:
   virtual  void Mdiag    (const Field &in, Field &out)=0;
   virtual  void Mdir     (const Field &in, Field &out,int dir, int disp)=0;
   virtual  void MdirAll  (const Field &in, std::vector<Field> &out)=0;
+  virtual std::vector<int> Directions(void)   =0;
+  virtual std::vector<int> Displacements(void)=0;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -73,6 +75,8 @@ public:
   virtual  void MooeeDag    (const Field &in, Field &out)=0;
   virtual  void MooeeInvDag (const Field &in, Field &out)=0;
 
+  virtual std::vector<int> Directions(void)   =0;
+  virtual std::vector<int> Displacements(void)=0;
 };
 
 NAMESPACE_END(Grid);

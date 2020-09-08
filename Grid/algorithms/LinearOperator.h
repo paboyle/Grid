@@ -52,6 +52,9 @@ public:
   virtual void AdjOp  (const Field &in, Field &out) = 0; // Abstract base
   virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2)=0;
   virtual void HermOp(const Field &in, Field &out)=0;
+
+  virtual std::vector<int> Directions(void)   =0;
+  virtual std::vector<int> Displacements(void)=0;
 };
 
 
@@ -75,6 +78,9 @@ class MdagMLinearOperator : public LinearOperatorBase<Field> {
   Matrix &_Mat;
 public:
   MdagMLinearOperator(Matrix &Mat): _Mat(Mat){};
+
+  virtual std::vector<int> Directions(void)   { return _Mat.Directions();};
+  virtual std::vector<int> Displacements(void){ return _Mat.Displacements();};
 
   // Support for coarsening to a multigrid
   void OpDiag (const Field &in, Field &out) {
@@ -111,6 +117,8 @@ class ShiftedMdagMLinearOperator : public LinearOperatorBase<Field> {
   Matrix &_Mat;
   RealD _shift;
 public:
+  virtual std::vector<int> Directions(void)   { return _Mat.Directions();};
+  virtual std::vector<int> Displacements(void){ return _Mat.Displacements();};
   ShiftedMdagMLinearOperator(Matrix &Mat,RealD shift): _Mat(Mat), _shift(shift){};
   // Support for coarsening to a multigrid
   void OpDiag (const Field &in, Field &out) {
@@ -151,6 +159,8 @@ template<class Matrix,class Field>
 class HermitianLinearOperator : public LinearOperatorBase<Field> {
   Matrix &_Mat;
 public:
+  virtual std::vector<int> Directions(void)   { return _Mat.Directions();};
+  virtual std::vector<int> Displacements(void){ return _Mat.Displacements();};
   HermitianLinearOperator(Matrix &Mat): _Mat(Mat){};
   // Support for coarsening to a multigrid
   void OpDiag (const Field &in, Field &out) {
@@ -182,6 +192,8 @@ template<class Matrix,class Field>
 class NonHermitianLinearOperator : public LinearOperatorBase<Field> {
   Matrix &_Mat;
 public:
+  virtual std::vector<int> Directions(void)   { return _Mat.Directions();};
+  virtual std::vector<int> Displacements(void){ return _Mat.Displacements();};
   NonHermitianLinearOperator(Matrix &Mat): _Mat(Mat){};
   // Support for coarsening to a multigrid
   void OpDiag (const Field &in, Field &out) {
@@ -255,6 +267,8 @@ template<class Matrix,class Field>
   class SchurDiagMooeeOperator :  public SchurOperatorBase<Field> {
  public:
     Matrix &_Mat;
+    virtual std::vector<int> Directions(void)   { return _Mat.Directions();};
+    virtual std::vector<int> Displacements(void){ return _Mat.Displacements();};
     SchurDiagMooeeOperator (Matrix &Mat): _Mat(Mat){};
     virtual  void Mpc      (const Field &in, Field &out) {
       Field tmp(in.Grid());
@@ -281,6 +295,8 @@ template<class Matrix,class Field>
  protected:
     Matrix &_Mat;
  public:
+    virtual std::vector<int> Directions(void)   { return _Mat.Directions();};
+    virtual std::vector<int> Displacements(void){ return _Mat.Displacements();};
     SchurDiagOneOperator (Matrix &Mat): _Mat(Mat){};
     
     virtual void Mpc      (const Field &in, Field &out) {
@@ -307,6 +323,8 @@ template<class Matrix,class Field>
  protected:
     Matrix &_Mat;
  public:
+    virtual std::vector<int> Directions(void)   { return _Mat.Directions();};
+    virtual std::vector<int> Displacements(void){ return _Mat.Displacements();};
     SchurDiagTwoOperator (Matrix &Mat): _Mat(Mat){};
     
     virtual void Mpc      (const Field &in, Field &out) {
@@ -372,6 +390,8 @@ class NonHermitianSchurDiagMooeeOperator :  public NonHermitianSchurOperatorBase
 {
  public:
   Matrix& _Mat;
+  virtual std::vector<int> Directions(void)   { return _Mat.Directions();};
+  virtual std::vector<int> Displacements(void){ return _Mat.Displacements();};
  NonHermitianSchurDiagMooeeOperator(Matrix& Mat): _Mat(Mat){};
   virtual void Mpc(const Field& in, Field& out) {
     Field tmp(in.Grid());
@@ -405,6 +425,8 @@ class NonHermitianSchurDiagOneOperator : public NonHermitianSchurOperatorBase<Fi
   Matrix &_Mat;
   
  public:
+  virtual std::vector<int> Directions(void)   { return _Mat.Directions();};
+  virtual std::vector<int> Displacements(void){ return _Mat.Displacements();};
   NonHermitianSchurDiagOneOperator (Matrix& Mat): _Mat(Mat){};
   virtual void Mpc(const Field& in, Field& out) {
     Field tmp(in.Grid());
@@ -435,6 +457,8 @@ class NonHermitianSchurDiagTwoOperator : public NonHermitianSchurOperatorBase<Fi
   Matrix& _Mat;
   
  public:
+  virtual std::vector<int> Directions(void)   { return _Mat.Directions();};
+  virtual std::vector<int> Displacements(void){ return _Mat.Displacements();};
  NonHermitianSchurDiagTwoOperator(Matrix& Mat): _Mat(Mat){};
 
   virtual void Mpc(const Field& in, Field& out) {
@@ -475,6 +499,8 @@ class SchurStaggeredOperator :  public SchurOperatorBase<Field> {
   Field tmp;
   RealD mass;
  public:
+  virtual std::vector<int> Directions(void)   { return _Mat.Directions();};
+  virtual std::vector<int> Displacements(void){ return _Mat.Displacements();};
   SchurStaggeredOperator (Matrix &Mat): _Mat(Mat), tmp(_Mat.RedBlackGrid()) 
   { 
     assert( _Mat.isTrivialEE() );

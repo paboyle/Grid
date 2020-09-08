@@ -89,7 +89,8 @@ public:
   virtual void  Mdiag  (const FermionField &in, FermionField &out) { Mooee(in,out);};   // Same as Mooee applied to both CB's
   virtual void  Mdir   (const FermionField &in, FermionField &out,int dir,int disp)=0;   // case by case Wilson, Clover, Cayley, ContFrac, PartFrac
   virtual void  MdirAll(const FermionField &in, std::vector<FermionField> &out)=0;   // case by case Wilson, Clover, Cayley, ContFrac, PartFrac
-
+  virtual std::vector<int> Directions(void)   =0;
+  virtual std::vector<int> Displacements(void)=0;
 
   virtual void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m,std::vector<double> twist) { assert(0);};
 

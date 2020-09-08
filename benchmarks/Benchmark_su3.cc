@@ -191,7 +191,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking SU3xSU3  CovShiftForward(z,x,y)"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GFlop/s"<<std::endl;
+  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GB/s (incl Cshift)\t\t GFlop/s"<<std::endl;
   std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
   for(int lat=LMIN;lat<=LMAX;lat+=LADD){
@@ -216,15 +216,16 @@ int main (int argc, char ** argv)
 	
 	
 	    double bytes=3*vol*Nc*Nc*sizeof(Complex);
+	    double ncbytes=5*vol*Nc*Nc*sizeof(Complex);
 	    double flops=Nc*Nc*(6+8+8)*vol;
-	    std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
+	    std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<ncbytes/time<<"\t\t" << flops/time<<std::endl;
       }
   }
 #if 1
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking SU3xSU3  z= x * Cshift(y)"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GFlop/s"<<std::endl;
+  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GB/s (incl Cshift)\t\t GFlop/s"<<std::endl;
   std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
   for(int lat=LMIN;lat<=LMAX;lat+=LADD){
@@ -258,10 +259,11 @@ int main (int argc, char ** argv)
 	tmult  = tmult /Nloop;
 	
 	double bytes=3*vol*Nc*Nc*sizeof(Complex);
+	double ncbytes=5*vol*Nc*Nc*sizeof(Complex);
 	double flops=Nc*Nc*(6+8+8)*vol;
 	std::cout<<GridLogMessage<<std::setprecision(3) << "total us "<<time<<" shift "<<tshift <<" mult "<<tmult<<std::endl;
 	time = time * 1000; // convert to NS for GB/s
-	std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
+	std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t" <<ncbytes/time<<"\t\t" << flops/time<<std::endl;
       }
     }
 #endif
