@@ -49,12 +49,10 @@ inline void blockMaskedInnerProduct(Lattice<CComplex> &CoarseInner,
   Lattice<dotp> fine_inner_msk(fine);
 
   // Multiply could be fused with innerProduct
-  // Single block sum kernel could do both masks.
   fine_inner = localInnerProduct(fineX,fineY);
   mult(fine_inner_msk, fine_inner,FineMask);
   blockSum(CoarseInner,fine_inner_msk);
 }
-
 
 class Geometry {
 public:
@@ -80,8 +78,12 @@ public:
     }
     directions   [2*_d]=0;
     displacements[2*_d]=0;
-  }
 
+    std::cout <<GridLogMessage << "Geometry "<<std::endl;
+    for(int p=0;p<npoint;p++){
+      std::cout <<GridLogMessage << "point " <<p<<" dir "<<directions[p]<<" delta " <<displacements[p]<<std::endl;
+    }
+  }
 };
   
 template<class Fobj,class CComplex,int nbasis>
@@ -285,6 +287,8 @@ public:
   ///////////////////////
   GridBase * Grid(void)         { return _grid; };   // this is all the linalg routines need to know
 
+  virtual std::vector<int> Directions(void)   { return geom.directions; };
+  virtual std::vector<int> Displacements(void){ return geom.displacements; };
   void M (const CoarseVector &in, CoarseVector &out)
   {
     conformable(_grid,in.Grid());
@@ -418,32 +422,17 @@ public:
 
     int ndim = in.Grid()->Nd();
 
-    //////////////
-    // 4D action like wilson
-    // 0+ => 0 
-    // 0- => 1
-    // 1+ => 2 
-    // 1- => 3
-    // etc..
-    //////////////
-    // 5D action like DWF
-    // 1+ => 0 
-    // 1- => 1
-    // 2+ => 2 
-    // 2- => 3
-    // etc..
-    auto point = [dir, disp, ndim](){
-      if(dir == 0 and disp == 0)
-	return 8;
-      else if ( ndim==4 ) { 
-	return (4 * dir + 1 - disp) / 2;
-      } else { 
-	return (4 * (dir-1) + 1 - disp) / 2;
-      }
-    }();
+    int point=-1;
+    for(int p=0;p<geom.npoint;p++){
+      if( (dir==geom.directions[p])&&(disp==geom.displacements[p])) point=p;
+    }
+    assert(point!=-1);// Must find
 
+    std::cout <<GridLogMessage << "Mdir point "<<point<<" dir "<<dir<<" disp "<<disp  <<std::endl;
+    for(int p=0;p<geom.npoint;p++){
+      std::cout <<GridLogMessage << "point " <<p<<" dir "<<geom.directions[p]<<" delta " <<geom.displacements[p]<<std::endl;
+    }
     MdirCalc(in,out,point);
-
   };
 
   void Mdiag(const CoarseVector &in, CoarseVector &out)
@@ -486,29 +475,29 @@ public:
     std::cout << GridLogMessage<< "************  "<<std::endl;
     // Coarse operator
     this->M(Cin,Cout);
-    std::cout << GridLogMessage<< " Cout  "<<norm2(Cout)<<std::endl;
-
     // Fine projected operator
     _Aggregates.PromoteFromSubspace(Cin,Fin);
     linop.Op(Fin,Fout);
     _Aggregates.ProjectToSubspace(CFout,Fout);
-    std::cout << GridLogMessage<< " CFout "<<norm2(CFout)<<std::endl;
+
     CFout = CFout-Cout;
-    std::cout << GridLogMessage<< " diff  "<<norm2(CFout)<<std::endl;
+    RealD diff = norm2(CFout);
+    std::cout << GridLogMessage<< " diff  "<<diff<<std::endl;
+    assert(diff<1.0e-5);
 
     std::cout << GridLogMessage<< "************  "<<std::endl;
     std::cout << GridLogMessage<< " Testing Mdag  "<<std::endl;
     std::cout << GridLogMessage<< "************  "<<std::endl;
     // Coarse operator
     Mdag(Cin,Cout);
-    std::cout << GridLogMessage<< " Cout  "<<norm2(Cout)<<std::endl;
-
     // Fine operator
     linop.AdjOp(Fin,Fout);
     _Aggregates.ProjectToSubspace(CFout,Fout);
-    std::cout << GridLogMessage<< " CFout "<<norm2(CFout)<<std::endl;
+
     CFout = CFout-Cout;
-    std::cout << GridLogMessage<< " diff  "<<norm2(CFout)<<std::endl; 
+    diff = norm2(CFout);
+    std::cout << GridLogMessage<< " diff  "<<diff<<std::endl; 
+    assert(diff<1.0e-5);
   }
 
   void CoarsenOperator(GridBase *FineGrid,LinearOperatorBase<Lattice<Fobj> > &linop,
@@ -547,12 +536,19 @@ public:
 
     CoarseScalar InnerProd(Grid()); 
 
-    size_t free,total;
-    cudaMemGetInfo(&free,&total);   std::cout << "ForceHermitian "<<free<<"/"<<total<<std::endl;
     std::cout << GridLogMessage<< "CoarsenMatrix Orthog " << std::endl;
     // Orthogonalise the subblocks over the basis
     blockOrthogonalise(InnerProd,Subspace.subspace);
     std::cout << GridLogMessage<< "CoarsenMatrix Orthog done " << std::endl;
+
+    auto OpDirections    = linop.Directions();
+    auto OpDisplacements = linop.Displacements();
+
+    std::cout<<" Coarsening an operator with "<< OpDirections.size()<<" terms "<<std::endl;
+    for(int p=0;p<OpDirections.size();p++) {
+      assert(OpDirections[p]==geom.directions[p]);
+      assert(OpDisplacements[p]==geom.displacements[p]);
+    }
 
     // Compute the matrix elements of linop between this orthonormal
     // set of vectors.
@@ -587,9 +583,20 @@ public:
     }
     evenmask = where(mod(bcb,2)==(Integer)0,one,zero);
     oddmask  = one-evenmask;
-    std::cout << GridLogMessage<< "CoarsenMatrix Mask " << std::endl;
-    cudaMemGetInfo(&free,&total);   std::cout << "ForceHermitian "<<free<<"/"<<total<<std::endl;
 
+    /*
+    {
+      phi=Subspace.subspace[0];
+      linop.OpDirAll(phi,Mphi_p);
+      for(int p=0;p<geom.npoint-1;p++){
+	int dir=geom.directions[p];
+	int disp=geom.displacements[p];
+	linop.OpDir(phi,Mphi,dir,disp);
+	Mphi=Mphi-Mphi_p[p];
+	std::cout << GridLogMessage <<" Direction mapping check " <<norm2(Mphi)<<std::endl;
+      }
+    }
+*/
     assert(self_stencil!=-1);
     int lhermitian=hermitian;
 
@@ -603,7 +610,6 @@ public:
 
       for(int p=0;p<geom.npoint;p++){ 
 
-	std::cout << GridLogMessage<< "CoarsenMatrix point "<<p << std::endl;
 	Mphi = Mphi_p[p];
 
 	int dir   = geom.directions[p];
@@ -627,7 +633,18 @@ public:
 	    autoView( A_self  , A[self_stencil], AcceleratorWrite);
 
 	    accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{ coalescedWrite(A_p[ss](j,i),oZProj_v(ss)); });
-
+	    if ( lhermitian && (disp==-1) ) {
+	      for(int pp=0;pp<geom.npoint;pp++){// Find the opposite link and set <j|A|i> = <i|A|j>*
+		int dirp   = geom.directions[pp];
+		int dispp  = geom.displacements[pp];
+		if ( (dirp==dir) && (dispp==1) ){
+		  auto sft = conjugate(Cshift(oZProj,dir,1));
+		  autoView( sft_v    ,  sft  , AcceleratorWrite);
+		  autoView( A_pp     ,  A[pp], AcceleratorWrite);
+		  accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{ coalescedWrite(A_pp[ss](i,j),sft_v(ss)); });
+		}
+	      }
+	    }
 	  }
 	}
       }
@@ -664,17 +681,11 @@ public:
 
       }
     }
-    if(lhermitian) {
-      std::cout << GridLogMessage << " ForceHermitian, new code "<<std::endl;
-      cudaMemGetInfo(&free,&total);
-      std::cout << "ForceHermitian "<<free<<"/"<<total<<std::endl;
-      MemoryManager::PrintBytes();
-      ForceHermitian();
-      std::cout << GridLogMessage << " ForceHermitian, done "<<std::endl;
-      cudaMemGetInfo(&free,&total);
-      std::cout << "ForceHermitian "<<free<<"/"<<total<<std::endl;
-      MemoryManager::PrintBytes();
-    }
+
+    MemoryManager::PrintBytes();
+
+    // Auto self test
+    Test( Subspace,FineGrid,linop);
 
 #if 0
     ///////////////////////////
@@ -699,34 +710,6 @@ public:
 
   }
 
-  void ForceHermitian(void) {
-    for(int p=0;p<geom.npoint;p++){
-      int dir   = geom.directions[p];
-      int disp  = geom.displacements[p];
-      if(disp==-1) {
-	// Find the opposite link
-	for(int pp=0;pp<geom.npoint;pp++){
-	  int dirp   = geom.directions[pp];
-	  int dispp  = geom.displacements[pp];
-	  if ( (dirp==dir) && (dispp==1) ){
-	    std::cout << GridLogMessage<<" Replacing stencil leg "<<pp<<" with leg "<<p<<std::endl;
-	    size_t free,total;
-	    cudaMemGetInfo(&free,&total);
-	    std::cout << "ForceHermitian before expr "<<free<<"/"<<total<<std::endl;
-	    MemoryManager::PrintBytes();
-	    A[pp] = Cshift(A[p],dir,1);
-	    cudaMemGetInfo(&free,&total);
-	    std::cout << "ForceHermitian during expr "<<free<<"/"<<total<<std::endl;
-	    MemoryManager::PrintBytes();
-	    A[pp] = adj(A[pp]);
-	    cudaMemGetInfo(&free,&total);
-	    std::cout << "ForceHermitian after expr "<<free<<"/"<<total<<std::endl;
-	    MemoryManager::PrintBytes();
-	  }
-	}
-      }
-    }
-  }
 };
 
 NAMESPACE_END(Grid);
