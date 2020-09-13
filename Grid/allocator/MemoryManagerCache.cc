@@ -227,12 +227,13 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
   // Find if present, otherwise get or force an empty
   ////////////////////////////////////////////////////////////////////////////
   if ( EntryPresent(CpuPtr)==0 ){
-    EvictVictims(bytes);
     EntryCreate(CpuPtr,bytes,mode,hint);
   }
 
   auto AccCacheIterator = EntryLookup(CpuPtr);
   auto & AccCache = AccCacheIterator->second;
+  if (!AccCache.AccPtr)
+    EvictVictims(bytes);
   
   assert((mode==AcceleratorRead)||(mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard));
 
@@ -361,12 +362,13 @@ uint64_t MemoryManager::CpuViewOpen(uint64_t CpuPtr,size_t bytes,ViewMode mode,V
   // Find if present, otherwise get or force an empty
   ////////////////////////////////////////////////////////////////////////////
   if ( EntryPresent(CpuPtr)==0 ){
-    EvictVictims(bytes);
     EntryCreate(CpuPtr,bytes,mode,transient);
   }
 
   auto AccCacheIterator = EntryLookup(CpuPtr);
   auto & AccCache = AccCacheIterator->second;
+  if (!AccCache.AccPtr)
+    EvictVictims(bytes);
   
   assert((mode==CpuRead)||(mode==CpuWrite));
   assert(AccCache.accLock==0);  // Programming error

@@ -36,6 +36,9 @@ NAMESPACE_BEGIN(Grid);
 #define GRID_DEVICE_HEAP_SLAB_THRESHOLD (1024*1024)
 #define GRID_DEVICE_HEAP_SLAB_SIZE (2*1024*1024)
 
+size_t currentDeviceAlloc = 0;
+std::unordered_map<void*,size_t> ptr_size;
+
 void *acceleratorAllocDeviceCUDA(size_t bytes) {
   void *ptr=NULL;
   auto err = cudaMalloc((void **)&ptr,bytes);
@@ -43,11 +46,16 @@ void *acceleratorAllocDeviceCUDA(size_t bytes) {
     ptr = (void *) NULL;
     printf(" cudaMalloc failed for %d %s \n",bytes,cudaGetErrorString(err));
   }
+  currentDeviceAlloc += bytes;
+  ptr_size[ptr] = bytes;
+  std::cout << "Current device alloc: " << currentDeviceAlloc << std::endl;
   return ptr;
 }
 
 void acceleratorFreeDeviceCUDA(void *ptr) {
   cudaFree(ptr);
+  currentDeviceAlloc -= ptr_size[ptr];
+  std::cout << "Current device alloc: " << currentDeviceAlloc << std::endl;
 }
 
 struct grid_device_heap_slab_t {
