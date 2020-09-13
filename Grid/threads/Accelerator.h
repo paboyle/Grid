@@ -153,7 +153,18 @@ inline void *acceleratorAllocShared(size_t bytes)
   }
   return ptr;
 };
+inline void *acceleratorAllocDevice(size_t bytes)
+{
+  void *ptr=NULL;
+  auto err = cudaMalloc((void **)&ptr,bytes);
+  if( err != cudaSuccess ) {
+    ptr = (void *) NULL;
+    printf(" cudaMalloc failed for %d %s \n",bytes,cudaGetErrorString(err));
+  }
+  return ptr;
+};
 inline void acceleratorFreeShared(void *ptr){ cudaFree(ptr);};
+inline void acceleratorFreeDevice(void *ptr){ cudaFree(ptr);};
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { cudaMemcpy(to,from,bytes, cudaMemcpyHostToDevice);}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToHost);}
 inline int  acceleratorIsCommunicable(void *ptr)
@@ -165,8 +176,6 @@ inline int  acceleratorIsCommunicable(void *ptr)
   if(uvm) return 0;
   else    return 1;
 }
-void *acceleratorAllocDevice(size_t bytes);
-void acceleratorFreeDevice(void* ptr);
 
 #endif
 
