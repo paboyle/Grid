@@ -78,7 +78,7 @@ StaggeredKernels<Impl>::StaggeredKernels(const ImplParams &p) : Base(p){};
 // Int, Ext, Int+Ext cases for comms overlap
 ////////////////////////////////////////////////////////////////////////////////////
 template <class Impl>
-template <int Naik>
+template <int Naik> accelerator_inline
 void StaggeredKernels<Impl>::DhopSiteGeneric(StencilView &st, 
 					     DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
 					     SiteSpinor *buf, int sF, int sU, 
@@ -126,7 +126,7 @@ void StaggeredKernels<Impl>::DhopSiteGeneric(StencilView &st,
   // Only contributions from interior of our node
   ///////////////////////////////////////////////////
 template <class Impl>
-template <int Naik>
+template <int Naik> accelerator_inline
 void StaggeredKernels<Impl>::DhopSiteGenericInt(StencilView &st, 
 						DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
 						SiteSpinor *buf, int sF, int sU, 
@@ -174,7 +174,7 @@ void StaggeredKernels<Impl>::DhopSiteGenericInt(StencilView &st,
   // Only contributions from exterior of our node
   ///////////////////////////////////////////////////
 template <class Impl>
-template <int Naik>
+template <int Naik> accelerator_inline
 void StaggeredKernels<Impl>::DhopSiteGenericExt(StencilView &st, 
 						DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
 						SiteSpinor *buf, int sF, int sU,
@@ -224,7 +224,7 @@ void StaggeredKernels<Impl>::DhopSiteGenericExt(StencilView &st,
 ////////////////////////////////////////////////////////////////////////////////////
 // Driving / wrapping routine to select right kernel
 ////////////////////////////////////////////////////////////////////////////////////
-template <class Impl>
+template <class Impl> 
 void StaggeredKernels<Impl>::DhopDirKernel(StencilImpl &st, DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, SiteSpinor * buf,
 					   int sF, int sU, const FermionFieldView &in, FermionFieldView &out, int dir,int disp)
 {
@@ -253,7 +253,7 @@ void StaggeredKernels<Impl>::DhopDirKernel(StencilImpl &st, DoubledGaugeFieldVie
       ThisKernel::A(st_v,U_v,UUU_v,buf,sF,sU,in_v,out_v,dag);		\
   });
 
-template <class Impl>
+template <class Impl> 
 void StaggeredKernels<Impl>::DhopImproved(StencilImpl &st, LebesgueOrder &lo, 
 					  DoubledGaugeField &U, DoubledGaugeField &UUU, 
 					  const FermionField &in, FermionField &out, int dag, int interior,int exterior)
@@ -293,7 +293,7 @@ void StaggeredKernels<Impl>::DhopImproved(StencilImpl &st, LebesgueOrder &lo,
   }
   assert(0 && " Kernel optimisation case not covered ");
 }
-template <class Impl>
+template <class Impl> 
 void StaggeredKernels<Impl>::DhopNaive(StencilImpl &st, LebesgueOrder &lo, 
 				       DoubledGaugeField &U,
 				       const FermionField &in, FermionField &out, int dag, int interior,int exterior)
