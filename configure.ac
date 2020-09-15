@@ -53,11 +53,11 @@ AC_TYPE_UINT64_T
 ############### OpenMP
 AC_OPENMP
 ac_openmp=no
-if test "${ac_cv_prog_cxx_openmp}X" != "noX"; then
-  ac_openmp=yes
-  AM_CXXFLAGS="$OPENMP_CXXFLAGS $AM_CXXFLAGS"
-  AM_LDFLAGS="$OPENMP_CXXFLAGS $AM_LDFLAGS"
-fi
+#if test "${ac_cv_prog_cxx_openmp}X" != "noX"; then
+#  ac_openmp=yes
+##  AM_CXXFLAGS="$OPENMP_CXXFLAGS $AM_CXXFLAGS"
+#  AM_LDFLAGS="$OPENMP_CXXFLAGS $AM_LDFLAGS"
+#fi
 
 
 ############### Checks for header files
@@ -330,7 +330,8 @@ case ${CXXTEST} in
     fi
     ;;
   hipcc)
-    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr"
+#    CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr"
+    CXXFLAGS="$CXXFLAGS -fno-strict-aliasing"
     CXXLD=${CXX}
     if test $ac_openmp = yes; then
        CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
