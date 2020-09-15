@@ -55,6 +55,7 @@ void acceleratorInit(void)
 	printf("AcceleratorCudaInit[%d]: ========================\n",rank);
 	printf("AcceleratorCudaInit[%d]: Device identifier: %s\n",rank, prop.name);
 
+
 	GPU_PROP_FMT(totalGlobalMem,"%lld");
 	GPU_PROP(managedMemory);
 	GPU_PROP(isMultiGpuBoard);
@@ -109,20 +110,24 @@ void acceleratorInit(void)
   if ((localRankStr = getenv(ENV_RANK_OMPI   )) != NULL) { world_rank = atoi(localRankStr);}
   if ((localRankStr = getenv(ENV_RANK_MVAPICH)) != NULL) { world_rank = atoi(localRankStr);}
 
+  printf("world_rank %d has %d devices\n",world_rank,nDevices);
+  size_t totalDeviceMem=0;
   for (int i = 0; i < nDevices; i++) {
 
 #define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("AcceleratorHipInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
 #define GPU_PROP(canMapHostMemory)             GPU_PROP_FMT(canMapHostMemory,"%d");
     
     hipGetDeviceProperties(&gpu_props[i], i);
+    hipDeviceProp_t prop; 
+    prop = gpu_props[i];
+    totalDeviceMem = prop.totalGlobalMem;
     if ( world_rank == 0) {
-      hipDeviceProp_t prop; 
-      prop = gpu_props[i];
       printf("AcceleratorHipInit: ========================\n");
       printf("AcceleratorHipInit: Device Number    : %d\n", i);
       printf("AcceleratorHipInit: ========================\n");
       printf("AcceleratorHipInit: Device identifier: %s\n", prop.name);
 
+      GPU_PROP_FMT(totalGlobalMem,"%lld");
       //      GPU_PROP(managedMemory);
       GPU_PROP(isMultiGpuBoard);
       GPU_PROP(warpSize);
@@ -131,6 +136,7 @@ void acceleratorInit(void)
       //      GPU_PROP(singleToDoublePrecisionPerfRatio);
     }
   }
+  MemoryManager::DeviceMaxBytes = (8*totalDeviceMem)/10; // Assume 80% ours
 #undef GPU_PROP_FMT    
 #undef GPU_PROP
 #ifdef GRID_IBM_SUMMIT
