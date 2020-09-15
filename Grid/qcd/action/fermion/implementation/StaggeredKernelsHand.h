@@ -146,7 +146,7 @@ NAMESPACE_BEGIN(Grid);
 
 
 template <class Impl>
-template <int Naik>
+template <int Naik> accelerator_inline
 void StaggeredKernels<Impl>::DhopSiteHand(StencilView &st,
 					  DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU,
 					  SiteSpinor *buf, int sF, int sU, 
@@ -221,7 +221,7 @@ void StaggeredKernels<Impl>::DhopSiteHand(StencilView &st,
 
 
 template <class Impl>
-template <int Naik>
+template <int Naik> accelerator_inline
 void StaggeredKernels<Impl>::DhopSiteHandInt(StencilView &st, 
 					     DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
 					     SiteSpinor *buf, int sF, int sU, 
@@ -300,7 +300,7 @@ void StaggeredKernels<Impl>::DhopSiteHandInt(StencilView &st,
 
 
 template <class Impl>
-template <int Naik>
+template <int Naik> accelerator_inline
 void StaggeredKernels<Impl>::DhopSiteHandExt(StencilView &st,
 					     DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
 					     SiteSpinor *buf, int sF, int sU, 
