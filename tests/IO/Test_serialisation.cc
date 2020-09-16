@@ -47,14 +47,14 @@ public:
                           bool , b,
                           std::vector<double>, array,
                           std::vector<std::vector<double> >, twodimarray,
-			  std::vector<std::vector<std::vector<Complex> > >, cmplx3darray,
+			  std::vector<std::vector<std::vector<std::complex<double>> > >, cmplx3darray,
 			  SpinColourMatrix, scm
                           );
   myclass() {}
   myclass(int i)
   : array(4,5.1)
   , twodimarray(3,std::vector<double>(5, 1.23456))
-  , cmplx3darray(3,std::vector<std::vector<Complex>>(5, std::vector<Complex>(7, Complex(1.2, 3.4))))
+  , cmplx3darray(3,std::vector<std::vector<std::complex<double>>>(5, std::vector<std::complex<double>>(7, std::complex<double>(1.2, 3.4))))
   , ve(2, myenum::blue)
   {
     e=myenum::red;
@@ -121,11 +121,11 @@ namespace Eigen {
 // Perform I/O tests on a range of tensor types
 // Test coverage: scalars, complex and GridVectors in single, double and default precision
 class TensorIO : public Serializable {
-  using TestScalar = ComplexD;
+  using TestScalar = std::complex<double>;
   using SR3 = Eigen::Sizes<9,4,2>;
   using SR5 = Eigen::Sizes<5,4,3,2,1>;
   using ESO = Eigen::StorageOptions;
-  using TensorRank3  = Eigen::Tensor<ComplexF, 3, ESO::RowMajor>;
+  using TensorRank3  = Eigen::Tensor<std::complex<float>, 3, ESO::RowMajor>;
   using TensorR5     = Eigen::TensorFixedSize<Real, SR5>;
   using TensorR5Alt  = Eigen::TensorFixedSize<Real, SR5, ESO::RowMajor>;
   using Tensor942    = Eigen::TensorFixedSize<TestScalar, SR3, ESO::RowMajor>;
@@ -134,8 +134,8 @@ class TensorIO : public Serializable {
   using LSCTensor    = Eigen::TensorFixedSize<SpinColourMatrix, Eigen::Sizes<6,5>>;
   
   static const Real       FlagR;
-  static const Complex    Flag;
-  static const ComplexF   FlagF;
+  static const std::complex<double>   Flag;
+  static const std::complex<float>    FlagF;
   static const TestScalar FlagTS;
   static const char * const pszFilePrefix;
 
@@ -230,8 +230,8 @@ public:
 };
 
 const Real                 TensorIO::FlagR {1};
-const Complex              TensorIO::Flag  {1,-1};
-const ComplexF             TensorIO::FlagF {1,-1};
+const std::complex<double> TensorIO::Flag  {1,-1};
+const std::complex<float>  TensorIO::FlagF {1,-1};
 const TensorIO::TestScalar TensorIO::FlagTS{1,-1};
 const char * const         TensorIO::pszFilePrefix = "tensor_";
 

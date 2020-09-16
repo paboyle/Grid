@@ -182,6 +182,14 @@ inline void peekLocalSite(sobj &s,const LatticeView<vobj> &l,Coordinate &site)
       
   return;
 };
+template<class vobj,class sobj>
+inline void peekLocalSite(sobj &s,const Lattice<vobj> &l,Coordinate &site)
+{
+  autoView(lv,l,CpuRead);
+  peekLocalSite(s,lv,site);
+  return;
+};
+
 // Must be CPU write view
 template<class vobj,class sobj>
 inline void pokeLocalSite(const sobj &s,LatticeView<vobj> &l,Coordinate &site)
@@ -207,6 +215,14 @@ inline void pokeLocalSite(const sobj &s,LatticeView<vobj> &l,Coordinate &site)
   for(int w=0;w<words;w++){
     vp[idx+w*Nsimd] = pt[w];
   }
+  return;
+};
+
+template<class vobj,class sobj>
+inline void pokeLocalSite(const sobj &s, Lattice<vobj> &l,Coordinate &site)
+{
+  autoView(lv,l,CpuWrite);
+  pokeLocalSite(s,lv,site);
   return;
 };
 

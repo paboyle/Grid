@@ -302,60 +302,28 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
 					   int bytes)
 {
   std::vector<CommsRequest_t> reqs(0);
-  //    unsigned long  xcrc = crc32(0L, Z_NULL, 0);
-  //    unsigned long  rcrc = crc32(0L, Z_NULL, 0);
-  //    xcrc = crc32(xcrc,(unsigned char *)xmit,bytes);
-  SendToRecvFromBegin(reqs,xmit,dest,recv,from,bytes);
-  SendToRecvFromComplete(reqs);
-  //    rcrc = crc32(rcrc,(unsigned char *)recv,bytes);
-  //    printf("proc %d SendToRecvFrom %d bytes %lx %lx\n",_processor,bytes,xcrc,rcrc);
-}
-void CartesianCommunicator::SendRecvPacket(void *xmit,
-					   void *recv,
-					   int sender,
-					   int receiver,
-					   int bytes)
-{
-  MPI_Status stat;
-  assert(sender != receiver);
-  int tag = sender;
-  if ( _processor == sender ) {
-    MPI_Send(xmit, bytes, MPI_CHAR,receiver,tag,communicator);
-  }
-  if ( _processor == receiver ) {
-    MPI_Recv(recv, bytes, MPI_CHAR,sender,tag,communicator,&stat);
-  }
-}
-// Basic Halo comms primitive
-void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
-						void *xmit,
-						int dest,
-						void *recv,
-						int from,
-						int bytes)
-{
+  unsigned long  xcrc = crc32(0L, Z_NULL, 0);
+  unsigned long  rcrc = crc32(0L, Z_NULL, 0);
+
   int myrank = _processor;
   int ierr;
 
-  if ( CommunicatorPolicy == CommunicatorPolicyConcurrent ) {
-    MPI_Request xrq;
-    MPI_Request rrq;
+  // Enforce no UVM in comms, device or host OK
+  assert(acceleratorIsCommunicable(xmit));
+  assert(acceleratorIsCommunicable(recv));
 
-    ierr =MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator,&rrq);
-    ierr|=MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator,&xrq);
+  // Give the CPU to MPI immediately; can use threads to overlap optionally
+  //  printf("proc %d SendToRecvFrom %d bytes Sendrecv \n",_processor,bytes);
+  ierr=MPI_Sendrecv(xmit,bytes,MPI_CHAR,dest,myrank,
+		    recv,bytes,MPI_CHAR,from, from,
+		    communicator,MPI_STATUS_IGNORE);
+  assert(ierr==0);
 
-    assert(ierr==0);
-    list.push_back(xrq);
-    list.push_back(rrq);
-  } else {
-    // Give the CPU to MPI immediately; can use threads to overlap optionally
-    ierr=MPI_Sendrecv(xmit,bytes,MPI_CHAR,dest,myrank,
-		      recv,bytes,MPI_CHAR,from, from,
-		      communicator,MPI_STATUS_IGNORE);
-    assert(ierr==0);
-  }
+  //  xcrc = crc32(xcrc,(unsigned char *)xmit,bytes);
+  //  rcrc = crc32(rcrc,(unsigned char *)recv,bytes);
+  //  printf("proc %d SendToRecvFrom %d bytes xcrc %lx rcrc %lx\n",_processor,bytes,xcrc,rcrc); fflush
 }
-
+// Basic Halo comms primitive
 double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
 						     int dest,
 						     void *recv,
@@ -411,15 +379,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 
   return off_node_bytes;
 }
-void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int dir)
-{
-  SendToRecvFromComplete(waitall);
-}
-void CartesianCommunicator::StencilBarrier(void)
-{
-  MPI_Barrier  (ShmComm);
-}
-void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
+void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &list,int dir)
 {
   int nreq=list.size();
 
@@ -430,6 +390,13 @@ void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &
   assert(ierr==0);
   list.resize(0);
 }
+void CartesianCommunicator::StencilBarrier(void)
+{
+  MPI_Barrier  (ShmComm);
+}
+//void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
+//{
+//}
 void CartesianCommunicator::Barrier(void)
 {
   int ierr = MPI_Barrier(communicator);

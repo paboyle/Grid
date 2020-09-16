@@ -59,7 +59,7 @@ public:
   }
   static inline GaugeLinkField
   CovShiftIdentityBackward(const GaugeLinkField &Link, int mu) {
-    return Cshift(closure(adj(Link)), mu, -1);
+    return Cshift(adj(Link), mu, -1);
   }
   static inline GaugeLinkField
   CovShiftIdentityForward(const GaugeLinkField &Link, int mu) {

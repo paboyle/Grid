@@ -52,23 +52,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
-template<typename Op, typename T1> 
-auto Cshift(const LatticeUnaryExpression<Op,T1> &expr,int dim,int shift)
-    -> Lattice<decltype(expr.op.func(eval(0, expr.arg1)))> 
-{
-  return Cshift(closure(expr),dim,shift);
-}
-template <class Op, class T1, class T2>
-auto Cshift(const LatticeBinaryExpression<Op,T1,T2> &expr,int dim,int shift)
-  -> Lattice<decltype(expr.op.func(eval(0, expr.arg1),eval(0, expr.arg2)))> 
-{
-  return Cshift(closure(expr),dim,shift);
-}
-template <class Op, class T1, class T2, class T3>
-auto Cshift(const LatticeTrinaryExpression<Op,T1,T2,T3> &expr,int dim,int shift)
-  -> Lattice<decltype(expr.op.func(eval(0, expr.arg1),
-				   eval(0, expr.arg2),
-				   eval(0, expr.arg3)))> 
+template<class Expression,typename std::enable_if<is_lattice_expr<Expression>::value,void>::type * = nullptr> 
+auto Cshift(const Expression &expr,int dim,int shift)  -> decltype(closure(expr)) 
 {
   return Cshift(closure(expr),dim,shift);
 }

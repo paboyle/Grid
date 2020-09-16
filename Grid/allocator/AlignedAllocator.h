@@ -65,8 +65,7 @@ public:
     MemoryManager::CpuFree((void *)__p,bytes);
   }
 
-  // FIXME: hack for the copy constructor, eventually it must be avoided
-  //void construct(pointer __p, const _Tp& __val) { new((void *)__p) _Tp(__val); };
+  // FIXME: hack for the copy constructor: it must be avoided to avoid single thread loop
   void construct(pointer __p, const _Tp& __val) { assert(0);};
   void construct(pointer __p) { };
   void destroy(pointer __p) { };
@@ -74,6 +73,9 @@ public:
 template<typename _Tp>  inline bool operator==(const alignedAllocator<_Tp>&, const alignedAllocator<_Tp>&){ return true; }
 template<typename _Tp>  inline bool operator!=(const alignedAllocator<_Tp>&, const alignedAllocator<_Tp>&){ return false; }
 
+//////////////////////////////////////////////////////////////////////////////////////
+// Unified virtual memory
+//////////////////////////////////////////////////////////////////////////////////////
 template<typename _Tp>
 class uvmAllocator {
 public: 
@@ -109,9 +111,7 @@ public:
     MemoryManager::SharedFree((void *)__p,bytes);
   }
 
-  // FIXME: hack for the copy constructor, eventually it must be avoided
   void construct(pointer __p, const _Tp& __val) { new((void *)__p) _Tp(__val); };
-  //void construct(pointer __p, const _Tp& __val) { };
   void construct(pointer __p) { };
   void destroy(pointer __p) { };
 };
@@ -119,12 +119,55 @@ template<typename _Tp>  inline bool operator==(const uvmAllocator<_Tp>&, const u
 template<typename _Tp>  inline bool operator!=(const uvmAllocator<_Tp>&, const uvmAllocator<_Tp>&){ return false; }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Device memory
+////////////////////////////////////////////////////////////////////////////////
+template<typename _Tp>
+class devAllocator {
+public: 
+  typedef std::size_t     size_type;
+  typedef std::ptrdiff_t  difference_type;
+  typedef _Tp*       pointer;
+  typedef const _Tp* const_pointer;
+  typedef _Tp&       reference;
+  typedef const _Tp& const_reference;
+  typedef _Tp        value_type;
+
+  template<typename _Tp1>  struct rebind { typedef devAllocator<_Tp1> other; };
+  devAllocator() throw() { }
+  devAllocator(const devAllocator&) throw() { }
+  template<typename _Tp1> devAllocator(const devAllocator<_Tp1>&) throw() { }
+  ~devAllocator() throw() { }
+  pointer       address(reference __x)       const { return &__x; }
+  size_type  max_size() const throw() { return size_t(-1) / sizeof(_Tp); }
+
+  pointer allocate(size_type __n, const void* _p= 0)
+  { 
+    size_type bytes = __n*sizeof(_Tp);
+    profilerAllocate(bytes);
+    _Tp *ptr = (_Tp*) MemoryManager::AcceleratorAllocate(bytes);
+    assert( ( (_Tp*)ptr != (_Tp *)NULL ) );
+    return ptr;
+  }
+
+  void deallocate(pointer __p, size_type __n) 
+  { 
+    size_type bytes = __n * sizeof(_Tp);
+    profilerFree(bytes);
+    MemoryManager::AcceleratorFree((void *)__p,bytes);
+  }
+  void construct(pointer __p, const _Tp& __val) { };
+  void construct(pointer __p) { };
+  void destroy(pointer __p) { };
+};
+template<typename _Tp>  inline bool operator==(const devAllocator<_Tp>&, const devAllocator<_Tp>&){ return true; }
+template<typename _Tp>  inline bool operator!=(const devAllocator<_Tp>&, const devAllocator<_Tp>&){ return false; }
+
+////////////////////////////////////////////////////////////////////////////////
 // Template typedefs
 ////////////////////////////////////////////////////////////////////////////////
-template<class T> using commAllocator = uvmAllocator<T>;
+//template<class T> using commAllocator = devAllocator<T>;
 template<class T> using Vector     = std::vector<T,uvmAllocator<T> >;           
-template<class T> using commVector = std::vector<T,uvmAllocator<T> >;
-//template<class T> using Matrix     = std::vector<std::vector<T,alignedAllocator<T> > >;
+template<class T> using commVector = std::vector<T,devAllocator<T> >;
 
 NAMESPACE_END(Grid);
 

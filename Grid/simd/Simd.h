@@ -93,6 +93,11 @@ accelerator_inline ComplexF pow(const ComplexF& r,RealF y){ return(std::pow(r,y)
 using std::abs;
 using std::pow;
 using std::sqrt;
+using std::log;
+using std::exp;
+using std::sin;
+using std::cos;
+
 
 accelerator_inline RealF    conjugate(const RealF  & r){ return r; }
 accelerator_inline RealD    conjugate(const RealD  & r){ return r; }
