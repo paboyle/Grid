@@ -127,7 +127,7 @@ void acceleratorInit(void)
       printf("AcceleratorHipInit: ========================\n");
       printf("AcceleratorHipInit: Device identifier: %s\n", prop.name);
 
-      GPU_PROP_FMT(totalGlobalMem,"%lld");
+      GPU_PROP_FMT(totalGlobalMem,"%lu");
       //      GPU_PROP(managedMemory);
       GPU_PROP(isMultiGpuBoard);
       GPU_PROP(warpSize);
