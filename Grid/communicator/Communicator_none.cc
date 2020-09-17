@@ -77,15 +77,6 @@ void CartesianCommunicator::GlobalSumVector(uint64_t *,int N){}
 void CartesianCommunicator::GlobalXOR(uint32_t &){}
 void CartesianCommunicator::GlobalXOR(uint64_t &){}
 
-void CartesianCommunicator::SendRecvPacket(void *xmit,
-					   void *recv,
-					   int xmit_to_rank,
-					   int recv_from_rank,
-					   int bytes)
-{
-  assert(0);
-}
-
 
 // Basic Halo comms primitive -- should never call in single node
 void CartesianCommunicator::SendToRecvFrom(void *xmit,
@@ -93,20 +84,6 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
 					   void *recv,
 					   int from,
 					   int bytes)
-{
-  assert(0);
-}
-void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
-						void *xmit,
-						int dest,
-						void *recv,
-						int from,
-						int bytes)
-{
-  assert(0);
-}
-
-void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
 {
   assert(0);
 }
