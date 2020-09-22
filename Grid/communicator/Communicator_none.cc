@@ -114,10 +114,6 @@ double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
 						     int recv_from_rank,
 						     int bytes, int dir)
 {
-  std::vector<CommsRequest_t> list;
-  // Discard the "dir"
-  SendToRecvFromBegin   (list,xmit,xmit_to_rank,recv,recv_from_rank,bytes);
-  SendToRecvFromComplete(list);
   return 2.0*bytes;
 }
 double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
@@ -127,13 +123,10 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 							 int recv_from_rank,
 							 int bytes, int dir)
 {
-  // Discard the "dir"
-  SendToRecvFromBegin(list,xmit,xmit_to_rank,recv,recv_from_rank,bytes);
   return 2.0*bytes;
 }
 void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int dir)
 {
-  SendToRecvFromComplete(waitall);
 }
 
 void CartesianCommunicator::StencilBarrier(void){};
