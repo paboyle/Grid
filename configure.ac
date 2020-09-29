@@ -337,6 +337,11 @@ case ${CXXTEST} in
        CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
     fi
     ;;
+  dpcpp)
+    LDFLAGS="$LDFLAGS"
+    CXXFLAGS="$CXXFLAGS"
+    CXXLD=${CXX}
+    ;;
   *)
     CXXLD=${CXX}
     CXXFLAGS="$CXXFLAGS -fno-strict-aliasing"
