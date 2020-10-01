@@ -447,7 +447,7 @@ for( int i =0;i<total;i++){
     
     cudaStat = cudaMallocManaged((void **)&w_acc, Nu*sites*12*sizeof(CUDA_COMPLEX));
 //    Glog << "w_acc= "<<w_acc << " "<< cudaStat << std::endl;
-    cudaStat = cudaMallocManaged((void **)&evec_acc, Nevec_acc*sites*12*sizeof(CUDA_COMPLEX));
+cudaStat = cudaMallocManaged((void **)&evec_acc, Nevec_acc*sites*12*sizeof(CUDA_COMPLEX));
 //    Glog << "evec_acc= "<<evec_acc << " "<< cudaStat << std::endl;
     cudaStat = cudaMallocManaged((void **)&c_acc, Nu*Nevec_acc*sizeof(CUDA_COMPLEX));
 //    Glog << "c_acc= "<<c_acc << " "<< cudaStat << std::endl;
@@ -721,7 +721,9 @@ for( int i =0;i<total;i++){
     Eigen::MatrixXcd    Q = Eigen::MatrixXcd::Zero(Nm,Nm);
 
     std::vector<int>   Iconv(Nm);
-    std::vector<Field>  B(Nm,grid); // waste of space replicating
+    int Ntest=Nu;
+//    std::vector<Field>  B(Nm,grid); // waste of space replicating
+    std::vector<Field>  B(1,grid); // waste of space replicating
     
     std::vector<Field> f(Nu,grid);
     std::vector<Field> f_copy(Nu,grid);
@@ -782,22 +784,22 @@ for( int i =0;i<total;i++){
       // Convergence test
       Glog <<" #Convergence test: "<<std::endl;
       Nconv = 0;
-      for(int k = 0; k<Nr; ++k) B[k]=0.0;
       for(int j = 0; j<Nr; j+=Nconv_test_interval){
+	B[0]=0.0;
         if ( j/Nconv_test_interval == Nconv ) {
           Glog <<" #rotation for next check point evec" 
                << std::setw(4)<< std::setiosflags(std::ios_base::right) 
                << "["<< j <<"]" <<std::endl;
           for(int k = 0; k<Nr; ++k){
-            B[j].Checkerboard() = evec[k].Checkerboard();
-            B[j] += evec[k]*Qt(k,j);
+            B[0].Checkerboard() = evec[k].Checkerboard();
+            B[0] += evec[k]*Qt(k,j);
           }
           
-          _Linop.HermOp(B[j],v);
-          RealD vnum = real(innerProduct(B[j],v)); // HermOp.
-          RealD vden = norm2(B[j]);
+          _Linop.HermOp(B[0],v);
+          RealD vnum = real(innerProduct(B[0],v)); // HermOp.
+          RealD vden = norm2(B[0]);
           eval2[j] = vnum/vden;
-          v -= eval2[j]*B[j];
+          v -= eval2[j]*B[0];
           RealD vv = norm2(v);
           resid[j] = vv;
           
@@ -836,11 +838,20 @@ for( int i =0;i<total;i++){
     } else {
       Glog << fname + " CONVERGED ; Summary :\n";
       // Sort convered eigenpairs.
+      std::vector<Field>  Btmp(Nconv,grid); // waste of space replicating
+      for(int i=0; i<Nconv; ++i) Btmp[i]=0;
+      for(int i=0; i<Nconv; ++i)
+      for(int k = 0; k<Nr; ++k){
+         Btmp[i].Checkerboard() = evec[k].Checkerboard();
+         Btmp[i] += evec[k]*Qt(k,Iconv[i]);
+      }
+
       eval.resize(Nconv);
       evec.resize(Nconv,grid);
+
       for(int i=0; i<Nconv; ++i){
         eval[i] = eval2[Iconv[i]];
-        evec[i] = B[Iconv[i]];
+        evec[i] = Btmp[i];
       }
       _sort.push(eval,evec,Nconv);
     }

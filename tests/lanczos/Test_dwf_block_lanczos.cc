@@ -359,7 +359,7 @@ int main (int argc, char ** argv)
                                                      JP.MaxIter,
 						     IRBLdiagonaliseWithEigen);
 //						     IRBLdiagonaliseWithLAPACK);
-  IRBL.split_test=1;
+  IRBL.split_test=0;
   
   std::vector<RealD> eval(JP.Nm);
   
