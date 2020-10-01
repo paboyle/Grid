@@ -184,19 +184,19 @@ Below are shown the `configure` script invocations for three recommended configu
 
 This is the build for every day developing and debugging with Xcode. It uses the Xcode clang c++ compiler, without MPI, and defaults to double-precision. Xcode builds the `Debug` configuration with debug symbols for full debugging:
 
-    ../configure CXX=clang++ --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre --enable-simd=GEN --enable-precision=double --prefix=$GridPre/GridDebug --enable-comms=none
+    ../configure CXX=clang++ CXXFLAGS="-I$GridPkg/include/libomp -Xpreprocessor -fopenmp -std=c++11" LDFLAGS="-L$GridPkg/lib/libomp" LIBS="-lomp" --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre --enable-simd=GEN --enable-comms=none --enable-precision=double --prefix=$GridPre/Debug
 
 #### 2. `Release`
 
 Since Grid itself doesn't really have debug configurations, the release build is recommended to be the same as `Debug`, except using single-precision (handy for validation):
 
-    ../configure CXX=clang++ --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre --enable-simd=GEN --enable-precision=single --prefix=$GridPre/GridRelease --enable-comms=none
+    ../configure CXX=clang++ CXXFLAGS="-I$GridPkg/include/libomp -Xpreprocessor -fopenmp -std=c++11" LDFLAGS="-L$GridPkg/lib/libomp" LIBS="-lomp" --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre --enable-simd=GEN --enable-comms=none --enable-precision=single --prefix=$GridPre/Release
 
 #### 3. `MPIDebug`
 
 Debug configuration with MPI:
 
-    ../configure CXX=clang++ --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre --enable-simd=GEN --enable-precision=double --prefix=$GridPre/GridMPIDebug --enable-comms=mpi-auto MPICXX=$GridPre/bin/mpicxx
+    ../configure CXX=clang++ CXXFLAGS="-I$GridPkg/include/libomp -Xpreprocessor -fopenmp -std=c++11" LDFLAGS="-L$GridPkg/lib/libomp" LIBS="-lomp" --with-hdf5=$GridPkg --with-gmp=$GridPkg --with-mpfr=$GridPkg --with-fftw=$GridPkg --with-lime=$GridPre --enable-simd=GEN --enable-comms=mpi-auto MPICXX=$GridPre/bin/mpicxx --enable-precision=double --prefix=$GridPre/MPIDebug
 
 ### 5.3 Build Grid
 

@@ -187,7 +187,8 @@ int main (int argc, char ** argv)
 	  auto xx = coalescedRead(x_v[ss]);
 	  auto yy = coalescedRead(y_v[ss]);
 	  auto zz = coalescedRead(z_v[ss]);
-	  zz = zz+xx*yy;
+	  //zz = zz+xx*yy;
+	  mac(&zz,&xx,&yy);
 	  coalescedWrite(z_v[ss],zz);
         });
       }

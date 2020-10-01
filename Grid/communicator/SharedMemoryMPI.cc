@@ -32,6 +32,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifdef GRID_CUDA
 #include <cuda_runtime_api.h>
 #endif
+#ifdef GRID_HIP
+#include <hip/hip_runtime_api.h>
+#endif
 
 NAMESPACE_BEGIN(Grid); 
 #define header "SharedMemoryMpi: "
@@ -47,7 +50,12 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
   /////////////////////////////////////////////////////////////////////
   // Split into groups that can share memory
   /////////////////////////////////////////////////////////////////////
+#ifndef GRID_MPI3_SHM_NONE
   MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,&WorldShmComm);
+#else
+  MPI_Comm_split(comm, WorldRank, 0, &WorldShmComm);
+#endif
+
   MPI_Comm_rank(WorldShmComm     ,&WorldShmRank);
   MPI_Comm_size(WorldShmComm     ,&WorldShmSize);
 
@@ -420,7 +428,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Hugetlbfs mapping intended
 ////////////////////////////////////////////////////////////////////////////////////////////
-#ifdef GRID_CUDA
+#if defined(GRID_CUDA) ||defined(GRID_HIP)
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
   void * ShmCommBuf ; 
@@ -443,17 +451,15 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Each MPI rank should allocate our own buffer
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-  auto err =  cudaMalloc(&ShmCommBuf, bytes);
-  if ( err !=  cudaSuccess) {
-    std::cerr << " SharedMemoryMPI.cc cudaMallocManaged failed for " << bytes<<" bytes " <<cudaGetErrorString(err)<< std::endl;
-    exit(EXIT_FAILURE);  
-  }
+  ShmCommBuf = acceleratorAllocDevice(bytes);
+
   if (ShmCommBuf == (void *)NULL ) {
-    std::cerr << " SharedMemoryMPI.cc cudaMallocManaged failed NULL pointer for " << bytes<<" bytes " << std::endl;
+    std::cerr << " SharedMemoryMPI.cc acceleratorAllocDevice failed NULL pointer for " << bytes<<" bytes " << std::endl;
     exit(EXIT_FAILURE);  
   }
   if ( WorldRank == 0 ){
-    std::cout << header " SharedMemoryMPI.cc cudaMalloc "<< bytes << "bytes at "<< std::hex<< ShmCommBuf <<std::dec<<" for comms buffers " <<std::endl;
+    std::cout << header " SharedMemoryMPI.cc cudaMalloc "<< bytes 
+	      << "bytes at "<< std::hex<< ShmCommBuf <<std::dec<<" for comms buffers " <<std::endl;
   }
   SharedMemoryZero(ShmCommBuf,bytes);
 
@@ -461,19 +467,31 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   // Loop over ranks/gpu's on our node
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   for(int r=0;r<WorldShmSize;r++){
-    
+
+#ifndef GRID_MPI3_SHM_NONE
     //////////////////////////////////////////////////
     // If it is me, pass around the IPC access key
     //////////////////////////////////////////////////
+#ifdef GRID_CUDA
     cudaIpcMemHandle_t handle;
-    
     if ( r==WorldShmRank ) { 
-      err = cudaIpcGetMemHandle(&handle,ShmCommBuf);
+      auto err = cudaIpcGetMemHandle(&handle,ShmCommBuf);
       if ( err !=  cudaSuccess) {
 	std::cerr << " SharedMemoryMPI.cc cudaIpcGetMemHandle failed for rank" << r <<" "<<cudaGetErrorString(err)<< std::endl;
 	exit(EXIT_FAILURE);
       }
     }
+#endif
+#ifdef GRID_HIP
+    hipIpcMemHandle_t handle;    
+    if ( r==WorldShmRank ) { 
+      auto err = hipIpcGetMemHandle(&handle,ShmCommBuf);
+      if ( err !=  hipSuccess) {
+	std::cerr << " SharedMemoryMPI.cc hipIpcGetMemHandle failed for rank" << r <<" "<<hipGetErrorString(err)<< std::endl;
+	exit(EXIT_FAILURE);
+      }
+    }
+#endif
     //////////////////////////////////////////////////
     // Share this IPC handle across the Shm Comm
     //////////////////////////////////////////////////
@@ -490,17 +508,31 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     // If I am not the source, overwrite thisBuf with remote buffer
     ///////////////////////////////////////////////////////////////
     void * thisBuf = ShmCommBuf;
+#ifdef GRID_CUDA
     if ( r!=WorldShmRank ) { 
-      err = cudaIpcOpenMemHandle(&thisBuf,handle,cudaIpcMemLazyEnablePeerAccess);
+      auto err = cudaIpcOpenMemHandle(&thisBuf,handle,cudaIpcMemLazyEnablePeerAccess);
       if ( err !=  cudaSuccess) {
 	std::cerr << " SharedMemoryMPI.cc cudaIpcOpenMemHandle failed for rank" << r <<" "<<cudaGetErrorString(err)<< std::endl;
 	exit(EXIT_FAILURE);
       }
     }
+#endif
+#ifdef GRID_HIP
+    if ( r!=WorldShmRank ) { 
+      auto err = hipIpcOpenMemHandle(&thisBuf,handle,hipIpcMemLazyEnablePeerAccess);
+      if ( err !=  hipSuccess) {
+	std::cerr << " SharedMemoryMPI.cc hipIpcOpenMemHandle failed for rank" << r <<" "<<hipGetErrorString(err)<< std::endl;
+	exit(EXIT_FAILURE);
+      }
+    }
+#endif
     ///////////////////////////////////////////////////////////////
     // Save a copy of the device buffers
     ///////////////////////////////////////////////////////////////
     WorldShmCommBufs[r] = thisBuf;
+#else
+    WorldShmCommBufs[r] = ShmCommBuf;
+#endif
   }
 
   _ShmAllocBytes=bytes;
@@ -705,7 +737,11 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
   /////////////////////////////////////////////////////////////////////
   // Split into groups that can share memory
   /////////////////////////////////////////////////////////////////////
+#ifndef GRID_MPI3_SHM_NONE
   MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,&ShmComm);
+#else
+  MPI_Comm_split(comm, rank, 0, &ShmComm);
+#endif
   MPI_Comm_rank(ShmComm     ,&ShmRank);
   MPI_Comm_size(ShmComm     ,&ShmSize);
   ShmCommBufs.resize(ShmSize);

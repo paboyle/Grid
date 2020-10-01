@@ -272,7 +272,7 @@ public:
   static auto traceIndex(const iVector<vtype,N> arg) ->  iScalar<RemoveCRV(arg._internal[0])>
   {
     iScalar<RemoveCRV(arg._internal[0])> ret;
-    ret._internal=Zero();
+    zeroit(ret);
     for(int i=0;i<N;i++){
       ret._internal = ret._internal+ arg._internal[i];
     }

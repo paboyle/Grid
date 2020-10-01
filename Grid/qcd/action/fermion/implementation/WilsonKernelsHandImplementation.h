@@ -495,7 +495,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
-template<class Impl> void 
+template<class Impl> accelerator_inline void 
 WilsonKernels<Impl>::HandDhopSite(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
 				  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
@@ -519,7 +519,7 @@ WilsonKernels<Impl>::HandDhopSite(StencilView &st, DoubledGaugeFieldView &U,Site
   HAND_RESULT(ss);
 }
 
-template<class Impl>
+template<class Impl>  accelerator_inline
 void WilsonKernels<Impl>::HandDhopSiteDag(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
@@ -542,7 +542,7 @@ void WilsonKernels<Impl>::HandDhopSiteDag(StencilView &st,DoubledGaugeFieldView 
   HAND_RESULT(ss);
 }
 
-template<class Impl> void 
+template<class Impl>  accelerator_inline void 
 WilsonKernels<Impl>::HandDhopSiteInt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
 					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
@@ -566,7 +566,7 @@ WilsonKernels<Impl>::HandDhopSiteInt(StencilView &st,DoubledGaugeFieldView &U,Si
   HAND_RESULT(ss);
 }
 
-template<class Impl>
+template<class Impl> accelerator_inline
 void WilsonKernels<Impl>::HandDhopSiteDagInt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 						  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
@@ -589,7 +589,7 @@ void WilsonKernels<Impl>::HandDhopSiteDagInt(StencilView &st,DoubledGaugeFieldVi
   HAND_RESULT(ss);
 }
 
-template<class Impl> void 
+template<class Impl>  accelerator_inline void 
 WilsonKernels<Impl>::HandDhopSiteExt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
 					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
@@ -614,7 +614,7 @@ WilsonKernels<Impl>::HandDhopSiteExt(StencilView &st,DoubledGaugeFieldView &U,Si
   HAND_RESULT_EXT(ss);
 }
 
-template<class Impl>
+template<class Impl>  accelerator_inline
 void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 						  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {

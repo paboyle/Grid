@@ -1,6 +1,6 @@
 /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./lib/simd/Grid_vector_types.h
 
@@ -73,7 +73,7 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
   const FP32 denorm_magic = { ((127 - 15) + (23 - 10) + 1) << 23 };
   unsigned int sign_mask = 0x80000000u;
   Grid_half o;
-    
+
   o.x = static_cast<unsigned short>(0x0u);
   unsigned int sign = f.u & sign_mask;
   f.u ^= sign;
@@ -93,7 +93,7 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
       o.x = static_cast<unsigned short>(f.u - denorm_magic.u);
     } else {
       unsigned int mant_odd = (f.u >> 13) & 1; // resulting mantissa is odd
-	
+
       // update exponent, rounding bias part 1
       f.u += ((unsigned int)(15 - 127) << 23) + 0xfff;
       // rounding bias part 2
@@ -101,7 +101,7 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
       // take the bits!
       o.x = static_cast<unsigned short>(f.u >> 13);
     }
-  } 
+  }
   o.x |= static_cast<unsigned short>(sign >> 16);
   return o;
 }
@@ -110,9 +110,63 @@ accelerator_inline Grid_half sfw_float_to_half(float ff) {
 #ifdef GPU_VEC
 #include "Grid_gpu_vec.h"
 #endif
+/*
 #ifdef GEN
 #include "Grid_generic.h"
 #endif
+*/
+
+#ifdef GEN
+  #if defined(A64FX) || defined(A64FXFIXEDSIZE) // breakout A64FX SVE ACLE here
+    #include <arm_sve.h>
+    #if defined(A64FX) // VLA
+      #pragma message("building A64FX / SVE ACLE VLA")
+      #if defined(ARMCLANGCOMPAT)
+        #pragma message("applying data types patch")
+      #endif
+      #include "Grid_a64fx-2.h"
+    #endif
+    #if defined(A64FXFIXEDSIZE) // fixed size data types
+      #pragma message("building for A64FX / SVE ACLE fixed size")
+      #include "Grid_a64fx-fixedsize.h"
+    #endif
+  #else
+    //#pragma message("building GEN") // generic
+    #include "Grid_generic.h"
+  #endif
+#endif
+
+#ifdef A64FX
+  #include <arm_sve.h>
+  #ifdef __ARM_FEATURE_SVE_BITS
+    //#pragma message("building A64FX SVE VLS")
+    #include "Grid_a64fx-fixedsize.h"
+  #else
+    #pragma message("building A64FX SVE VLA")
+    #if defined(ARMCLANGCOMPAT)
+      #pragma message("applying data types patch")
+    #endif
+    #include "Grid_a64fx-2.h"
+  #endif
+#endif
+
+/*
+#ifdef A64FXVLA
+#pragma message("building A64FX VLA")
+#if defined(ARMCLANGCOMPAT)
+  #pragma message("applying data types patch")
+#endif
+#include <arm_sve.h>
+#include "Grid_a64fx-2.h"
+#endif
+
+#ifdef A64FXVLS
+#pragma message("building A64FX VLS")
+#include <arm_sve.h>
+#include "Grid_a64fx-fixedsize.h"
+#endif
+*/
+
 #ifdef SSE4
 #include "Grid_sse4.h"
 #endif
@@ -163,6 +217,12 @@ template <typename T> struct is_complex : public std::false_type {};
 template <> struct is_complex<ComplexD> : public std::true_type {};
 template <> struct is_complex<ComplexF> : public std::true_type {};
 
+template <typename T> struct is_ComplexD : public std::false_type {};
+template <> struct is_ComplexD<ComplexD> : public std::true_type {};
+
+template <typename T> struct is_ComplexF : public std::false_type {};
+template <> struct is_ComplexF<ComplexF> : public std::true_type {};
+
 template<typename T, typename V=void> struct is_real : public std::false_type {};
 template<typename T> struct is_real<T, typename std::enable_if<std::is_floating_point<T>::value,
   void>::type> : public std::true_type {};
@@ -170,7 +230,7 @@ template<typename T> struct is_real<T, typename std::enable_if<std::is_floating_
 template<typename T, typename V=void> struct is_integer : public std::false_type {};
 template<typename T> struct is_integer<T, typename std::enable_if<std::is_integral<T>::value,
   void>::type> : public std::true_type {};
-  
+
 template <typename T>              using IfReal    = Invoke<std::enable_if<is_real<T>::value, int> >;
 template <typename T>              using IfComplex = Invoke<std::enable_if<is_complex<T>::value, int> >;
 template <typename T>              using IfInteger = Invoke<std::enable_if<is_integer<T>::value, int> >;
@@ -223,6 +283,69 @@ public:
     return sizeof(Vector_type) / sizeof(Scalar_type);
   }
 
+  #ifdef ARMCLANGCOMPAT
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd &operator=(const Grid_simd<typename std::enable_if<!is_complex<S>::value, S>::type, Vector_type> &&rhs) {
+      //v = rhs.v;
+      svst1(svptrue_b8(), (Scalar_type*)this, svld1(svptrue_b8(), (Scalar_type*)&(rhs.v)));
+      return *this;
+    };
+
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd &operator=(const Grid_simd<typename std::enable_if<!is_complex<S>::value, S>::type, Vector_type> &rhs) {
+      //v = rhs.v;
+      svst1(svptrue_b8(), (Scalar_type*)this, svld1(svptrue_b8(), (Scalar_type*)&(rhs.v)));
+      return *this;
+    };
+
+    /*
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd &operator=(const Grid_simd<typename std::enable_if<is_complex<S>::value, S>::type, Vector_type> &&rhs) {
+      //v = rhs.v;
+      svst1(svptrue_b8(), (int8_t*)this, svld1(svptrue_b8(), (int8_t*)&(rhs.v)));
+      return *this;
+    };
+
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd &operator=(const Grid_simd<typename std::enable_if<is_complex<S>::value, S>::type, Vector_type> &rhs) {
+      //v = rhs.v;
+      svst1(svptrue_b8(), (int8_t*)this, svld1(svptrue_b8(), (int8_t*)&(rhs.v)));
+      return *this;
+    };
+    */
+
+    // ComplexF
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd &operator=(const Grid_simd<typename std::enable_if<is_ComplexF<S>::value, S>::type, Vector_type> &&rhs) {
+      //v = rhs.v;
+      svst1(svptrue_b32(), (float*)this, svld1(svptrue_b32(), (float*)&(rhs.v)));
+      return *this;
+    };
+
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd &operator=(const Grid_simd<typename std::enable_if<is_ComplexF<S>::value, S>::type, Vector_type> &rhs) {
+      //v = rhs.v;
+      svst1(svptrue_b32(), (float*)this, svld1(svptrue_b32(), (float*)&(rhs.v)));
+      return *this;
+    };
+
+    // ComplexD
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd &operator=(const Grid_simd<typename std::enable_if<is_ComplexD<S>::value, S>::type, Vector_type> &&rhs) {
+      //v = rhs.v;
+      svst1(svptrue_b64(), (double*)this, svld1(svptrue_b64(), (double*)&(rhs.v)));
+      return *this;
+    };
+
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd &operator=(const Grid_simd<typename std::enable_if<is_ComplexD<S>::value, S>::type, Vector_type> &rhs) {
+      //v = rhs.v;
+      svst1(svptrue_b64(), (double*)this, svld1(svptrue_b64(), (double*)&(rhs.v)));
+      return *this;
+    };
+
+  #else
+
   accelerator_inline Grid_simd &operator=(const Grid_simd &&rhs) {
     v = rhs.v;
     return *this;
@@ -232,10 +355,23 @@ public:
     return *this;
   };  // faster than not declaring it and leaving to the compiler
 
+  #endif
 
   accelerator Grid_simd() = default;
-  accelerator_inline Grid_simd(const Grid_simd &rhs) : v(rhs.v){};  // compiles in movaps
-  accelerator_inline Grid_simd(const Grid_simd &&rhs) : v(rhs.v){};
+
+  #ifdef ARMCLANGCOMPAT
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd(const Grid_simd<typename std::enable_if<!is_complex<S>::value, S>::type, Vector_type> &rhs) { this->operator=(rhs); }
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd(const Grid_simd<typename std::enable_if<!is_complex<S>::value, S>::type, Vector_type> &&rhs) { this->operator=(rhs); }
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd(const Grid_simd<typename std::enable_if<is_complex<S>::value, S>::type, Vector_type> &rhs) { this->operator=(rhs); }
+    template <class S = Scalar_type>
+    accelerator_inline Grid_simd(const Grid_simd<typename std::enable_if<is_complex<S>::value, S>::type, Vector_type> &&rhs) { this->operator=(rhs); }
+  #else
+    accelerator_inline Grid_simd(const Grid_simd &rhs) : v(rhs.v){};  // compiles in movaps
+    accelerator_inline Grid_simd(const Grid_simd &&rhs) : v(rhs.v){};
+  #endif
   accelerator_inline Grid_simd(const Real a) { vsplat(*this, Scalar_type(a)); };
   // Enable if complex type
   template <typename S = Scalar_type> accelerator_inline
@@ -258,12 +394,21 @@ public:
   ///////////////////////////////////////////////
 
   // FIXME -- alias this to an accelerator_inline MAC struct.
+
+  #if defined(A64FX) || defined(A64FXFIXEDSIZE)
+  friend accelerator_inline void mac(Grid_simd *__restrict__ y,
+				     const Grid_simd *__restrict__ a,
+				     const Grid_simd *__restrict__ x) {
+    *y = fxmac((*a), (*x), (*y));
+  };
+  #else
   friend accelerator_inline void mac(Grid_simd *__restrict__ y,
 				     const Grid_simd *__restrict__ a,
 				     const Grid_simd *__restrict__ x) {
     *y = (*a) * (*x) + (*y);
   };
-  
+  #endif
+
   friend accelerator_inline void mult(Grid_simd *__restrict__ y,
 				      const Grid_simd *__restrict__ l,
 				      const Grid_simd *__restrict__ r) {
@@ -412,7 +557,7 @@ public:
     Grid_simd ret;
     Grid_simd::conv_t conv;
     Grid_simd::scalar_type s;
-    
+
     conv.v = v.v;
     for (int i = 0; i < Nsimd(); i++) {
       s = conv.s[i];
@@ -441,7 +586,7 @@ public:
     return ret;
   }
   ///////////////////////
-  // Exchange 
+  // Exchange
   // Al Ah , Bl Bh -> Al Bl Ah,Bh
   ///////////////////////
   friend accelerator_inline void exchange(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2,int n)
@@ -452,20 +597,20 @@ public:
       Optimization::Exchange::Exchange2(out1.v,out2.v,in1.v,in2.v);
     } else if(n==1) {
       Optimization::Exchange::Exchange1(out1.v,out2.v,in1.v,in2.v);
-    } else if(n==0) { 
+    } else if(n==0) {
       Optimization::Exchange::Exchange0(out1.v,out2.v,in1.v,in2.v);
     }
   }
-  friend accelerator_inline void exchange0(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){    
+  friend accelerator_inline void exchange0(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){
     Optimization::Exchange::Exchange0(out1.v,out2.v,in1.v,in2.v);
   }
-  friend accelerator_inline void exchange1(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){    
+  friend accelerator_inline void exchange1(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){
     Optimization::Exchange::Exchange1(out1.v,out2.v,in1.v,in2.v);
   }
-  friend accelerator_inline void exchange2(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){    
+  friend accelerator_inline void exchange2(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){
     Optimization::Exchange::Exchange2(out1.v,out2.v,in1.v,in2.v);
   }
-  friend accelerator_inline void exchange3(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){    
+  friend accelerator_inline void exchange3(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){
     Optimization::Exchange::Exchange3(out1.v,out2.v,in1.v,in2.v);
   }
   ////////////////////////////////////////////////////////////////////
@@ -490,7 +635,7 @@ public:
       int dist = perm & 0xF;
       y = rotate(b, dist);
       return;
-    } 
+    }
     else if(perm==3) permute3(y, b);
     else if(perm==2) permute2(y, b);
     else if(perm==1) permute1(y, b);
@@ -564,29 +709,29 @@ accelerator_inline Grid_simd<S, V> rotate(Grid_simd<S, V> b, int nrot) {
   ret.v = Optimization::Rotate::rotate(b.v, 2 * nrot);
   return ret;
 }
-template <class S, class V, IfNotComplex<S> =0> 
+template <class S, class V, IfNotComplex<S> =0>
 accelerator_inline void rotate( Grid_simd<S,V> &ret,Grid_simd<S,V> b,int nrot)
 {
   nrot = nrot % Grid_simd<S,V>::Nsimd();
   ret.v = Optimization::Rotate::rotate(b.v,nrot);
 }
-template <class S, class V, IfComplex<S> =0> 
+template <class S, class V, IfComplex<S> =0>
 accelerator_inline void rotate(Grid_simd<S,V> &ret,Grid_simd<S,V> b,int nrot)
 {
   nrot = nrot % Grid_simd<S,V>::Nsimd();
   ret.v = Optimization::Rotate::rotate(b.v,2*nrot);
 }
 
-template <class S, class V> 
+template <class S, class V>
 accelerator_inline void vbroadcast(Grid_simd<S,V> &ret,const Grid_simd<S,V> &src,int lane){
   S* typepun =(S*) &src;
   vsplat(ret,typepun[lane]);
-}    
-template <class S, class V, IfComplex<S> =0> 
+}
+template <class S, class V, IfComplex<S> =0>
 accelerator_inline void rbroadcast(Grid_simd<S,V> &ret,const Grid_simd<S,V> &src,int lane){
   S* typepun =(S*) &src;
   ret.v = unary<V>(real(typepun[lane]), VsplatSIMD());
-}    
+}
 
 
 
@@ -741,6 +886,27 @@ accelerator_inline Grid_simd<S, V> operator*(Grid_simd<S, V> a, Grid_simd<S, V> 
   return ret;
 };
 
+// ---------------- A64FX MAC -------------------
+// Distinguish between complex types and others
+#if defined(A64FX) || defined(A64FXFIXEDSIZE)
+template <class S, class V, IfComplex<S> = 0>
+accelerator_inline Grid_simd<S, V> fxmac(Grid_simd<S, V> a, Grid_simd<S, V> b, Grid_simd<S, V> c) {
+  Grid_simd<S, V> ret;
+  ret.v = trinary<V>(a.v, b.v, c.v, MultAddComplexSIMD());
+  return ret;
+};
+
+// Real/Integer types
+template <class S, class V, IfNotComplex<S> = 0>
+accelerator_inline Grid_simd<S, V> fxmac(Grid_simd<S, V> a, Grid_simd<S, V> b, Grid_simd<S, V> c) {
+  Grid_simd<S, V> ret;
+  ret.v = trinary<V>(a.v, b.v, c.v, MultSIMD());
+  return ret;
+};
+#endif
+// ----------------------------------------------
+
+
 // Distinguish between complex types and others
 template <class S, class V, IfComplex<S> = 0>
 accelerator_inline Grid_simd<S, V> operator/(Grid_simd<S, V> a, Grid_simd<S, V> b) {
@@ -877,7 +1043,7 @@ accelerator_inline typename toComplexMapper<Rsimd>::Complexified toComplex(const
 
   conv.v = in.v;
   for (int i = 0; i < Rsimd::Nsimd(); i += 2) {
-    assert(conv.s[i + 1] == conv.s[i]);  
+    assert(conv.s[i + 1] == conv.s[i]);
     // trap any cases where real was not duplicated
     // indicating the SIMD grids of real and imag assignment did not correctly
     // match
@@ -919,6 +1085,14 @@ accelerator_inline void precisionChange(vRealD    *out,vRealF    *in,int nvec)
   for(int m=0;m*2<nvec;m++){
     int n=m*2;
     Optimization::PrecisionChange::StoD(in[m].v,out[n].v,out[n+1].v);
+    // Bug in gcc 10.0.1 and gcc 10.1 using fixed-size SVE ACLE data types  CAS-159553-Y1K4C6
+    // function call results in compile-time error:
+    // In function ‘void Grid::precisionChange(Grid::vRealD*, Grid::vRealF*, int)’:
+    // .../Grid_vector_types.h:961:56: error:
+    // cannot bind non-const lvalue reference of type ‘vecd&’ {aka ‘svfloat64_t&’}
+    // to an rvalue of type ‘vecd’ {aka ‘svfloat64_t’}
+    // 961 |     Optimization::PrecisionChange::StoD(in[m].v,out[n].v,out[n+1].v);
+    //  |                                                 ~~~~~~~^
   }
 }
 accelerator_inline void precisionChange(vRealD    *out,vRealH    *in,int nvec)

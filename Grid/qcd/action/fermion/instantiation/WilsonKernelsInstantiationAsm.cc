@@ -37,6 +37,7 @@ directory
 ////////////////////////////////////////////////////////////////////////
 NAMESPACE_BEGIN(Grid);
 #include <Grid/qcd/action/fermion/implementation/WilsonKernelsAsmAvx512.h>
+#include <Grid/qcd/action/fermion/implementation/WilsonKernelsAsmA64FX.h>
 #include <Grid/qcd/action/fermion/implementation/WilsonKernelsAsmQPX.h>
 NAMESPACE_END(Grid);
 

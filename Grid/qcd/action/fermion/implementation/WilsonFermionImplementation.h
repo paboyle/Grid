@@ -43,7 +43,7 @@ WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
                                    GridRedBlackCartesian &Hgrid, RealD _mass,
                                    const ImplParams &p,
                                    const WilsonAnisotropyCoefficients &anis)
-  : 
+  :
     Kernels(p),
     _grid(&Fgrid),
     _cbgrid(&Hgrid),
@@ -75,8 +75,93 @@ WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
   StencilOdd.BuildSurfaceList(1,vol4);
 }
 
+template<class Impl>
+void WilsonFermion<Impl>::Report(void)
+{
+  RealD NP = _grid->_Nprocessors;
+  RealD NN = _grid->NodeCount();
+  RealD volume = 1;
+  Coordinate latt = _grid->GlobalDimensions();
+  for(int mu=0;mu<Nd;mu++) volume=volume*latt[mu];
+
+  if ( DhopCalls > 0 ) {
+    std::cout << GridLogMessage << "#### Dhop calls report " << std::endl;
+    std::cout << GridLogMessage << "WilsonFermion Number of DhopEO Calls   : " << DhopCalls   << std::endl;
+    std::cout << GridLogMessage << "WilsonFermion TotalTime   /Calls        : " << DhopTotalTime   / DhopCalls << " us" << std::endl;
+    std::cout << GridLogMessage << "WilsonFermion CommTime    /Calls        : " << DhopCommTime    / DhopCalls << " us" << std::endl;
+    std::cout << GridLogMessage << "WilsonFermion FaceTime    /Calls        : " << DhopFaceTime    / DhopCalls << " us" << std::endl;
+    std::cout << GridLogMessage << "WilsonFermion ComputeTime1/Calls        : " << DhopComputeTime / DhopCalls << " us" << std::endl;
+    std::cout << GridLogMessage << "WilsonFermion ComputeTime2/Calls        : " << DhopComputeTime2/ DhopCalls << " us" << std::endl;
+
+    // Average the compute time
+    _grid->GlobalSum(DhopComputeTime);
+    DhopComputeTime/=NP;
+    RealD mflops = 1320*volume*DhopCalls/DhopComputeTime/2; // 2 for red black counting
+    std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
+    std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
+    std::cout << GridLogMessage << "Average mflops/s per call per node       : " << mflops/NN << std::endl;
+
+    RealD Fullmflops = 1320*volume*DhopCalls/(DhopTotalTime)/2; // 2 for red black counting
+    std::cout << GridLogMessage << "Average mflops/s per call (full)         : " << Fullmflops << std::endl;
+    std::cout << GridLogMessage << "Average mflops/s per call per rank (full): " << Fullmflops/NP << std::endl;
+    std::cout << GridLogMessage << "Average mflops/s per call per node (full): " << Fullmflops/NN << std::endl;
+
+   }
+
+  if ( DerivCalls > 0 ) {
+    std::cout << GridLogMessage << "#### Deriv calls report "<< std::endl;
+    std::cout << GridLogMessage << "WilsonFermion Number of Deriv Calls    : " <<DerivCalls <<std::endl;
+    std::cout << GridLogMessage << "WilsonFermion CommTime/Calls           : " <<DerivCommTime/DerivCalls<<" us" <<std::endl;
+    std::cout << GridLogMessage << "WilsonFermion ComputeTime/Calls        : " <<DerivComputeTime/DerivCalls<<" us" <<std::endl;
+    std::cout << GridLogMessage << "WilsonFermion Dhop ComputeTime/Calls   : " <<DerivDhopComputeTime/DerivCalls<<" us" <<std::endl;
+
+    // how to count flops here?
+    RealD mflops = 144*volume*DerivCalls/DerivDhopComputeTime;
+    std::cout << GridLogMessage << "Average mflops/s per call               ? : " << mflops << std::endl;
+    std::cout << GridLogMessage << "Average mflops/s per call per node      ? : " << mflops/NP << std::endl;
+
+    // how to count flops here?
+    RealD Fullmflops = 144*volume*DerivCalls/(DerivDhopComputeTime+DerivCommTime)/2; // 2 for red black counting
+    std::cout << GridLogMessage << "Average mflops/s per call (full)        ? : " << Fullmflops << std::endl;
+    std::cout << GridLogMessage << "Average mflops/s per call per node (full) ? : " << Fullmflops/NP << std::endl;  }
+
+  if (DerivCalls > 0 || DhopCalls > 0){
+    std::cout << GridLogMessage << "WilsonFermion Stencil"    <<std::endl;  Stencil.Report();
+    std::cout << GridLogMessage << "WilsonFermion StencilEven"<<std::endl;  StencilEven.Report();
+    std::cout << GridLogMessage << "WilsonFermion StencilOdd" <<std::endl;  StencilOdd.Report();
+  }
+  if ( DhopCalls > 0){
+    std::cout << GridLogMessage << "WilsonFermion Stencil     Reporti()"    <<std::endl;  Stencil.Reporti(DhopCalls);
+    std::cout << GridLogMessage << "WilsonFermion StencilEven Reporti()"<<std::endl;  StencilEven.Reporti(DhopCalls);
+    std::cout << GridLogMessage << "WilsonFermion StencilOdd  Reporti()" <<std::endl;  StencilOdd.Reporti(DhopCalls);
+  }
+}
+
+template<class Impl>
+void WilsonFermion<Impl>::ZeroCounters(void) {
+  DhopCalls       = 0; // ok
+  DhopCommTime    = 0;
+  DhopComputeTime = 0;
+  DhopComputeTime2= 0;
+  DhopFaceTime    = 0;
+  DhopTotalTime   = 0;
+
+  DerivCalls       = 0; // ok
+  DerivCommTime    = 0;
+  DerivComputeTime = 0;
+  DerivDhopComputeTime = 0;
+
+  Stencil.ZeroCounters();
+  StencilEven.ZeroCounters();
+  StencilOdd.ZeroCounters();
+  Stencil.ZeroCountersi();
+  StencilEven.ZeroCountersi();
+  StencilOdd.ZeroCountersi();
+}
+
+
 template <class Impl>
-void WilsonFermion<Impl>::ImportGauge(const GaugeField &_Umu) 
+void WilsonFermion<Impl>::ImportGauge(const GaugeField &_Umu)
 {
   GaugeField HUmu(_Umu.Grid());
 
@@ -107,7 +192,7 @@ void WilsonFermion<Impl>::ImportGauge(const GaugeField &_Umu)
 /////////////////////////////
 
 template <class Impl>
-void WilsonFermion<Impl>::M(const FermionField &in, FermionField &out) 
+void WilsonFermion<Impl>::M(const FermionField &in, FermionField &out)
 {
   out.Checkerboard() = in.Checkerboard();
   Dhop(in, out, DaggerNo);
@@ -115,7 +200,7 @@ void WilsonFermion<Impl>::M(const FermionField &in, FermionField &out)
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::Mdag(const FermionField &in, FermionField &out) 
+void WilsonFermion<Impl>::Mdag(const FermionField &in, FermionField &out)
 {
   out.Checkerboard() = in.Checkerboard();
   Dhop(in, out, DaggerYes);
@@ -123,7 +208,7 @@ void WilsonFermion<Impl>::Mdag(const FermionField &in, FermionField &out)
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::Meooe(const FermionField &in, FermionField &out) 
+void WilsonFermion<Impl>::Meooe(const FermionField &in, FermionField &out)
 {
   if (in.Checkerboard() == Odd) {
     DhopEO(in, out, DaggerNo);
@@ -133,7 +218,7 @@ void WilsonFermion<Impl>::Meooe(const FermionField &in, FermionField &out)
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::MeooeDag(const FermionField &in, FermionField &out) 
+void WilsonFermion<Impl>::MeooeDag(const FermionField &in, FermionField &out)
 {
   if (in.Checkerboard() == Odd) {
     DhopEO(in, out, DaggerYes);
@@ -141,9 +226,9 @@ void WilsonFermion<Impl>::MeooeDag(const FermionField &in, FermionField &out)
     DhopOE(in, out, DaggerYes);
   }
 }
-  
+
 template <class Impl>
-void WilsonFermion<Impl>::Mooee(const FermionField &in, FermionField &out) 
+void WilsonFermion<Impl>::Mooee(const FermionField &in, FermionField &out)
 {
   out.Checkerboard() = in.Checkerboard();
   typename FermionField::scalar_type scal(diag_mass);
@@ -151,80 +236,80 @@ void WilsonFermion<Impl>::Mooee(const FermionField &in, FermionField &out)
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out) 
+void WilsonFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out)
 {
   out.Checkerboard() = in.Checkerboard();
   Mooee(in, out);
 }
 
 template<class Impl>
-void WilsonFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out) 
+void WilsonFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out)
 {
   out.Checkerboard() = in.Checkerboard();
   out = (1.0/(diag_mass))*in;
 }
-  
+
 template<class Impl>
-void WilsonFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out) 
+void WilsonFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out)
 {
   out.Checkerboard() = in.Checkerboard();
   MooeeInv(in,out);
 }
 template<class Impl>
 void WilsonFermion<Impl>::MomentumSpacePropagator(FermionField &out, const FermionField &in,RealD _m,std::vector<double> twist)
-{  
+{
   typedef typename FermionField::vector_type vector_type;
   typedef typename FermionField::scalar_type ScalComplex;
   typedef Lattice<iSinglet<vector_type> > LatComplex;
-  
-  // what type LatticeComplex 
+
+  // what type LatticeComplex
   conformable(_grid,out.Grid());
-  
+
   Gamma::Algebra Gmu [] = {
     Gamma::Algebra::GammaX,
     Gamma::Algebra::GammaY,
     Gamma::Algebra::GammaZ,
     Gamma::Algebra::GammaT
   };
-  
+
   Coordinate latt_size   = _grid->_fdimensions;
-  
+
   FermionField   num  (_grid); num  = Zero();
   LatComplex    wilson(_grid); wilson= Zero();
   LatComplex     one  (_grid); one = ScalComplex(1.0,0.0);
-  
+
   LatComplex denom(_grid); denom= Zero();
-  LatComplex kmu(_grid); 
+  LatComplex kmu(_grid);
   ScalComplex ci(0.0,1.0);
   // momphase = n * 2pi / L
   for(int mu=0;mu<Nd;mu++) {
-    
+
     LatticeCoordinate(kmu,mu);
-    
+
     RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
-    
+
     kmu = TwoPiL * kmu;
     kmu = kmu + TwoPiL * one * twist[mu];//momentum for twisted boundary conditions
-    
+
     wilson = wilson + 2.0*sin(kmu*0.5)*sin(kmu*0.5); // Wilson term
-    
+
     num = num - sin(kmu)*ci*(Gamma(Gmu[mu])*in);    // derivative term
-    
+
     denom=denom + sin(kmu)*sin(kmu);
   }
-  
+
   wilson = wilson + _m;     // 2 sin^2 k/2 + m
-  
+
   num   = num + wilson*in;     // -i gmu sin k + 2 sin^2 k/2 + m
-  
+
   denom= denom+wilson*wilson; // sin^2 k + (2 sin^2 k/2 + m)^2
-  
+
   denom= one/denom;
-  
+
   out = num*denom; // [ -i gmu sin k + 2 sin^2 k/2 + m] / [ sin^2 k + (2 sin^2 k/2 + m)^2 ]
-  
+
 }
-  
+
 
 ///////////////////////////////////
 // Internal
@@ -234,6 +319,7 @@ template <class Impl>
 void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
                                         GaugeField &mat, const FermionField &A,
                                         const FermionField &B, int dag) {
+  DerivCalls++;
   assert((dag == DaggerNo) || (dag == DaggerYes));
 
   Compressor compressor(dag);
@@ -242,8 +328,11 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
   FermionField Atilde(B.Grid());
   Atilde = A;
 
+  DerivCommTime-=usecond();
   st.HaloExchange(B, compressor);
+  DerivCommTime+=usecond();
 
+  DerivComputeTime-=usecond();
   for (int mu = 0; mu < Nd; mu++) {
     ////////////////////////////////////////////////////////////////////////
     // Flip gamma (1+g)<->(1-g) if dag
@@ -251,6 +340,7 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
     int gamma = mu;
     if (!dag) gamma += Nd;
 
+    DerivDhopComputeTime -= usecond();
     int Ls=1;
     Kernels::DhopDirKernel(st, U, st.CommBuf(), Ls, B.Grid()->oSites(), B, Btilde, mu, gamma);
 
@@ -258,11 +348,13 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
     // spin trace outer product
     //////////////////////////////////////////////////
     Impl::InsertForce4D(mat, Btilde, Atilde, mu);
+    DerivDhopComputeTime += usecond();
   }
+  DerivComputeTime += usecond();
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) 
+void WilsonFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag)
 {
   conformable(U.Grid(), _grid);
   conformable(U.Grid(), V.Grid());
@@ -274,13 +366,13 @@ void WilsonFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U, cons
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) 
+void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U, const FermionField &V, int dag)
 {
   conformable(U.Grid(), _cbgrid);
   conformable(U.Grid(), V.Grid());
   //conformable(U.Grid(), mat.Grid()); not general, leaving as a comment (Guido)
   // Motivation: look at the SchurDiff operator
-  
+
   assert(V.Checkerboard() == Even);
   assert(U.Checkerboard() == Odd);
   mat.Checkerboard() = Odd;
@@ -289,7 +381,7 @@ void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U, co
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) 
+void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, const FermionField &V, int dag)
 {
   conformable(U.Grid(), _cbgrid);
   conformable(U.Grid(), V.Grid());
@@ -303,7 +395,7 @@ void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, co
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int dag) 
+void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int dag)
 {
   conformable(in.Grid(), _grid);  // verifies full grid
   conformable(in.Grid(), out.Grid());
@@ -314,7 +406,7 @@ void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int da
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int dag) 
+void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int dag)
 {
   conformable(in.Grid(), _cbgrid);    // verifies half grid
   conformable(in.Grid(), out.Grid());  // drops the cb check
@@ -326,7 +418,7 @@ void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int 
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag) 
+void WilsonFermion<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag)
 {
   conformable(in.Grid(), _cbgrid);    // verifies half grid
   conformable(in.Grid(), out.Grid());  // drops the cb check
@@ -338,18 +430,18 @@ void WilsonFermion<Impl>::DhopEO(const FermionField &in, FermionField &out,int d
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::Mdir(const FermionField &in, FermionField &out, int dir, int disp) 
+void WilsonFermion<Impl>::Mdir(const FermionField &in, FermionField &out, int dir, int disp)
 {
   DhopDir(in, out, dir, disp);
 }
 template <class Impl>
-void WilsonFermion<Impl>::MdirAll(const FermionField &in, std::vector<FermionField> &out) 
+void WilsonFermion<Impl>::MdirAll(const FermionField &in, std::vector<FermionField> &out)
 {
   DhopDirAll(in, out);
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDir(const FermionField &in, FermionField &out, int dir, int disp) 
+void WilsonFermion<Impl>::DhopDir(const FermionField &in, FermionField &out, int dir, int disp)
 {
   Compressor compressor(DaggerNo);
   Stencil.HaloExchange(in, compressor);
@@ -361,12 +453,12 @@ void WilsonFermion<Impl>::DhopDir(const FermionField &in, FermionField &out, int
   DhopDirCalc(in, out, dirdisp, gamma, DaggerNo);
 };
 template <class Impl>
-void WilsonFermion<Impl>::DhopDirAll(const FermionField &in, std::vector<FermionField> &out) 
+void WilsonFermion<Impl>::DhopDirAll(const FermionField &in, std::vector<FermionField> &out)
 {
   Compressor compressor(DaggerNo);
   Stencil.HaloExchange(in, compressor);
 
-  assert((out.size()==8)||(out.size()==9)); 
+  assert((out.size()==8)||(out.size()==9));
   for(int dir=0;dir<Nd;dir++){
     for(int disp=-1;disp<=1;disp+=2){
 
@@ -379,7 +471,7 @@ void WilsonFermion<Impl>::DhopDirAll(const FermionField &in, std::vector<Fermion
   }
 }
 template <class Impl>
-void WilsonFermion<Impl>::DhopDirCalc(const FermionField &in, FermionField &out,int dirdisp, int gamma, int dag) 
+void WilsonFermion<Impl>::DhopDirCalc(const FermionField &in, FermionField &out,int dirdisp, int gamma, int dag)
 {
   int Ls=1;
   uint64_t Nsite=in.oSites();
@@ -390,22 +482,23 @@ template <class Impl>
 void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
                                        DoubledGaugeField &U,
                                        const FermionField &in,
-                                       FermionField &out, int dag) 
+                                       FermionField &out, int dag)
 {
+  DhopTotalTime-=usecond();
 #ifdef GRID_OMP
   if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute )
     DhopInternalOverlappedComms(st,lo,U,in,out,dag);
   else
-#endif 
+#endif
     DhopInternalSerial(st,lo,U,in,out,dag);
-
+  DhopTotalTime+=usecond();
 }
 
 template <class Impl>
 void WilsonFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, LebesgueOrder &lo,
 						      DoubledGaugeField &U,
 						      const FermionField &in,
-						      FermionField &out, int dag) 
+						      FermionField &out, int dag)
 {
   assert((dag == DaggerNo) || (dag == DaggerYes));
 
@@ -417,38 +510,53 @@ void WilsonFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, LebesgueO
   /////////////////////////////
   std::vector<std::vector<CommsRequest_t> > requests;
   st.Prepare();
+  DhopFaceTime-=usecond();
   st.HaloGather(in,compressor);
+  DhopFaceTime+=usecond();
+
+  DhopCommTime -=usecond();
   st.CommunicateBegin(requests);
 
   /////////////////////////////
   // Overlap with comms
   /////////////////////////////
+  DhopFaceTime-=usecond();
   st.CommsMergeSHM(compressor);
+  DhopFaceTime+=usecond();
 
   /////////////////////////////
   // do the compute interior
   /////////////////////////////
   int Opt = WilsonKernelsStatic::Opt;
+  DhopComputeTime-=usecond();
   if (dag == DaggerYes) {
     Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out,1,0);
   } else {
     Kernels::DhopKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out,1,0);
-  } 
+  }
+  DhopComputeTime+=usecond();
 
   /////////////////////////////
   // Complete comms
   /////////////////////////////
   st.CommunicateComplete(requests);
+  DhopCommTime   +=usecond();
+
+  DhopFaceTime-=usecond();
   st.CommsMerge(compressor);
+  DhopFaceTime+=usecond();
 
   /////////////////////////////
   // do the compute exterior
   /////////////////////////////
+
+  DhopComputeTime2-=usecond();
   if (dag == DaggerYes) {
     Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out,0,1);
   } else {
     Kernels::DhopKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out,0,1);
   }
+  DhopComputeTime2+=usecond();
 };
 
 
@@ -456,24 +564,28 @@ template <class Impl>
 void WilsonFermion<Impl>::DhopInternalSerial(StencilImpl &st, LebesgueOrder &lo,
                                        DoubledGaugeField &U,
                                        const FermionField &in,
-                                       FermionField &out, int dag) 
+                                       FermionField &out, int dag)
 {
   assert((dag == DaggerNo) || (dag == DaggerYes));
   Compressor compressor(dag);
+  DhopCommTime-=usecond();
   st.HaloExchange(in, compressor);
+  DhopCommTime+=usecond();
 
+  DhopComputeTime-=usecond();
   int Opt = WilsonKernelsStatic::Opt;
   if (dag == DaggerYes) {
     Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out);
   } else {
     Kernels::DhopKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out);
   }
+  DhopComputeTime+=usecond();
 };
 /*Change ends */
 
 /*******************************************************************************
  * Conserved current utilities for Wilson fermions, for contracting propagators
- * to make a conserved current sink or inserting the conserved current 
+ * to make a conserved current sink or inserting the conserved current
  * sequentially.
  ******************************************************************************/
 template <class Impl>
@@ -493,12 +605,12 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
 
 
 template <class Impl>
-void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in, 
+void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                                               PropagatorField &q_out,
                                               PropagatorField &src,
                                               Current curr_type,
                                               unsigned int mu,
-                                              unsigned int tmin, 
+                                              unsigned int tmin,
                                               unsigned int tmax,
 					      ComplexField &lattice_cmplx)
 {

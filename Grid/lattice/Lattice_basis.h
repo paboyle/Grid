@@ -54,13 +54,34 @@ void basisRotate(VField &basis,Matrix& Qt,int j0, int j1, int k0,int k1,int Nm)
   typedef decltype(basis[0].View(AcceleratorRead)) View;
 
   Vector<View> basis_v; basis_v.reserve(basis.size());
+  typedef typename std::remove_reference<decltype(basis_v[0][0])>::type vobj;
+  typedef typename std::remove_reference<decltype(Qt(0,0))>::type Coeff_t;
   GridBase* grid = basis[0].Grid();
       
   for(int k=0;k<basis.size();k++){
     basis_v.push_back(basis[k].View(AcceleratorWrite));
   }
 
-
+#if ( (!defined(GRID_SYCL)) && (!defined(GRID_CUDA)) && (!defined(GRID_HIP)) )
+  int max_threads = thread_max();
+  Vector < vobj > Bt(Nm * max_threads);
+  thread_region
+    {
+      vobj* B = &Bt[Nm * thread_num()];
+      thread_for_in_region(ss, grid->oSites(),{
+	  for(int j=j0; j<j1; ++j) B[j]=0.;
+      
+	  for(int j=j0; j<j1; ++j){
+	    for(int k=k0; k<k1; ++k){
+	      B[j] +=Qt(j,k) * basis_v[k][ss];
+	    }
+	  }
+	  for(int j=j0; j<j1; ++j){
+	    basis_v[j][ss] = B[j];
+	  }
+	});
+    }
+#else
   View *basis_vp = &basis_v[0];
 
   int nrot = j1-j0;
@@ -70,14 +91,12 @@ void basisRotate(VField &basis,Matrix& Qt,int j0, int j1, int k0,int k1,int Nm)
   uint64_t oSites   =grid->oSites();
   uint64_t siteBlock=(grid->oSites()+nrot-1)/nrot; // Maximum 1 additional vector overhead
 
-  typedef typename std::remove_reference<decltype(basis_v[0][0])>::type vobj;
-
   Vector <vobj> Bt(siteBlock * nrot); 
   auto Bp=&Bt[0];
 
   // GPU readable copy of matrix
-  Vector<double> Qt_jv(Nm*Nm);
-  double *Qt_p = & Qt_jv[0];
+  Vector<Coeff_t> Qt_jv(Nm*Nm);
+  Coeff_t *Qt_p = & Qt_jv[0];
   thread_for(i,Nm*Nm,{
       int j = i/Nm;
       int k = i%Nm;
@@ -118,6 +137,7 @@ void basisRotate(VField &basis,Matrix& Qt,int j0, int j1, int k0,int k1,int Nm)
 	coalescedWrite(basis_v[jj][sss],coalescedRead(Bp[ss*nrot+j]));
       });
   }
+#endif
 
   for(int k=0;k<basis.size();k++) basis_v[k].ViewClose();
 }

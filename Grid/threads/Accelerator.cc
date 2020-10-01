@@ -16,40 +16,54 @@ void acceleratorInit(void)
   char * localRankStr = NULL;
   int rank = 0, world_rank=0; 
 #define ENV_LOCAL_RANK_OMPI    "OMPI_COMM_WORLD_LOCAL_RANK"
-#define ENV_LOCAL_RANK_MVAPICH "MV2_COMM_WORLD_LOCAL_RANK"
 #define ENV_RANK_OMPI          "OMPI_COMM_WORLD_RANK"
+#define ENV_LOCAL_RANK_SLURM   "SLURM_LOCALID"
+#define ENV_RANK_SLURM         "SLURM_PROCID"
+#define ENV_LOCAL_RANK_MVAPICH "MV2_COMM_WORLD_LOCAL_RANK"
 #define ENV_RANK_MVAPICH       "MV2_COMM_WORLD_RANK"
   // We extract the local rank initialization using an environment variable
-  if ((localRankStr = getenv(ENV_LOCAL_RANK_OMPI)) != NULL)
-  {
+  if ((localRankStr = getenv(ENV_LOCAL_RANK_OMPI)) != NULL) {
+    printf("OPENMPI detected\n");
     rank = atoi(localRankStr);		
-  }
-  if ((localRankStr = getenv(ENV_LOCAL_RANK_MVAPICH)) != NULL)
-  {
+  } else if ((localRankStr = getenv(ENV_LOCAL_RANK_MVAPICH)) != NULL) {
+    printf("MVAPICH detected\n");
     rank = atoi(localRankStr);		
+  } else if ((localRankStr = getenv(ENV_LOCAL_RANK_SLURM)) != NULL) {
+    printf("SLURM detected\n");
+    rank = atoi(localRankStr);		
+  } else { 
+    printf("MPI version is unknown - bad things may happen\n");
   }
   if ((localRankStr = getenv(ENV_RANK_OMPI   )) != NULL) { world_rank = atoi(localRankStr);}
   if ((localRankStr = getenv(ENV_RANK_MVAPICH)) != NULL) { world_rank = atoi(localRankStr);}
+  if ((localRankStr = getenv(ENV_RANK_SLURM  )) != NULL) { world_rank = atoi(localRankStr);}
 
   size_t totalDeviceMem=0;
   for (int i = 0; i < nDevices; i++) {
 
-#define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("AcceleratorCudaInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
+#define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("AcceleratorCudaInit[%d]:   " #canMapHostMemory ": " FMT" \n",rank,prop.canMapHostMemory);
 #define GPU_PROP(canMapHostMemory)             GPU_PROP_FMT(canMapHostMemory,"%d");
     cudaGetDeviceProperties(&gpu_props[i], i);
     cudaDeviceProp prop; 
     prop = gpu_props[i];
     totalDeviceMem = prop.totalGlobalMem;
     if ( world_rank == 0) {
-      printf("AcceleratorCudaInit: ========================\n");
-      printf("AcceleratorCudaInit: Device Number    : %d\n", i);
-      printf("AcceleratorCudaInit: ========================\n");
-      printf("AcceleratorCudaInit: Device identifier: %s\n", prop.name);
+#ifndef GRID_IBM_SUMMIT
+      if ( i==rank ) {
+	printf("AcceleratorCudaInit[%d]: ========================\n",rank);
+	printf("AcceleratorCudaInit[%d]: Device Number    : %d\n", rank,i);
+	printf("AcceleratorCudaInit[%d]: ========================\n",rank);
+	printf("AcceleratorCudaInit[%d]: Device identifier: %s\n",rank, prop.name);
 
-      GPU_PROP_FMT(totalGlobalMem,"%lld");
-      GPU_PROP(managedMemory);
-      GPU_PROP(isMultiGpuBoard);
-      GPU_PROP(warpSize);
+
+	GPU_PROP_FMT(totalGlobalMem,"%lld");
+	GPU_PROP(managedMemory);
+	GPU_PROP(isMultiGpuBoard);
+	GPU_PROP(warpSize);
+	GPU_PROP(pciBusID);
+	GPU_PROP(pciDeviceID);
+      }
+#endif
       //      GPU_PROP(unifiedAddressing);
       //      GPU_PROP(l2CacheSize);
       //      GPU_PROP(singleToDoublePrecisionPerfRatio);
@@ -61,9 +75,9 @@ void acceleratorInit(void)
 
 #ifdef GRID_IBM_SUMMIT
   // IBM Jsrun makes cuda Device numbering screwy and not match rank
-  if ( world_rank == 0 )  printf("AcceleratorCudaInit: IBM Summit or similar - NOT setting device to node rank\n");
+  if ( world_rank == 0 )  printf("AcceleratorCudaInit: IBM Summit or similar - use default device\n");
 #else
-  if ( world_rank == 0 )  printf("AcceleratorCudaInit: setting device to node rank\n");
+  printf("AcceleratorCudaInit: rank %d setting device to node rank %d\n",world_rank,rank);
   cudaSetDevice(rank);
 #endif
   if ( world_rank == 0 )  printf("AcceleratorCudaInit: ================================================\n");
@@ -96,20 +110,24 @@ void acceleratorInit(void)
   if ((localRankStr = getenv(ENV_RANK_OMPI   )) != NULL) { world_rank = atoi(localRankStr);}
   if ((localRankStr = getenv(ENV_RANK_MVAPICH)) != NULL) { world_rank = atoi(localRankStr);}
 
+  printf("world_rank %d has %d devices\n",world_rank,nDevices);
+  size_t totalDeviceMem=0;
   for (int i = 0; i < nDevices; i++) {
 
 #define GPU_PROP_FMT(canMapHostMemory,FMT)     printf("AcceleratorHipInit:   " #canMapHostMemory ": " FMT" \n",prop.canMapHostMemory);
 #define GPU_PROP(canMapHostMemory)             GPU_PROP_FMT(canMapHostMemory,"%d");
     
     hipGetDeviceProperties(&gpu_props[i], i);
+    hipDeviceProp_t prop; 
+    prop = gpu_props[i];
+    totalDeviceMem = prop.totalGlobalMem;
     if ( world_rank == 0) {
-      hipDeviceProp_t prop; 
-      prop = gpu_props[i];
       printf("AcceleratorHipInit: ========================\n");
       printf("AcceleratorHipInit: Device Number    : %d\n", i);
       printf("AcceleratorHipInit: ========================\n");
       printf("AcceleratorHipInit: Device identifier: %s\n", prop.name);
 
+      GPU_PROP_FMT(totalGlobalMem,"%lu");
       //      GPU_PROP(managedMemory);
       GPU_PROP(isMultiGpuBoard);
       GPU_PROP(warpSize);
@@ -118,6 +136,7 @@ void acceleratorInit(void)
       //      GPU_PROP(singleToDoublePrecisionPerfRatio);
     }
   }
+  MemoryManager::DeviceMaxBytes = (8*totalDeviceMem)/10; // Assume 80% ours
 #undef GPU_PROP_FMT    
 #undef GPU_PROP
 #ifdef GRID_IBM_SUMMIT

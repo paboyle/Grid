@@ -34,6 +34,12 @@
 #define __SYCL__REDEFINE__
 #endif
 
+/* HIP save and restore compile environment*/
+#ifdef GRID_HIP
+#pragma push
+#pragma push_macro("__HIP_DEVICE_COMPILE__")
+#endif
+#define EIGEN_NO_HIP
 
 #include <Grid/Eigen/Dense>
 #include <Grid/Eigen/unsupported/CXX11/Tensor>
@@ -42,13 +48,19 @@
 #ifdef __NVCC__REDEFINE__
 #pragma pop_macro("__CUDACC__")
 #pragma pop_macro("__NVCC__")
-#pragma pop_macro("GRID_SIMT")
+#pragma pop_macro("__CUDA_ARCH__")
 #pragma pop
 #endif
 
 /*SYCL restore*/
 #ifdef __SYCL__REDEFINE__
 #pragma pop_macro("__SYCL_DEVICE_ONLY__")
+#pragma pop
+#endif
+
+/*HIP restore*/
+#ifdef __HIP__REDEFINE__
+#pragma pop_macro("__HIP_DEVICE_COMPILE__")
 #pragma pop
 #endif
 
