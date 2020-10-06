@@ -663,10 +663,15 @@ class BinaryIO {
 	     nersc_csum,scidac_csuma,scidac_csumb);
 
     timer.Start();
-    thread_for(lidx,lsites,{
+    thread_for(lidx,lsites,{  // FIX ME, suboptimal implementation
       std::vector<RngStateType> tmp(RngStateCount);
       std::copy(iodata[lidx].begin(),iodata[lidx].end(),tmp.begin());
-      parallel_rng.SetState(tmp,lidx);
+      Coordinate lcoor;
+      grid->LocalIndexToLocalCoor(lidx, lcoor);
+      int o_idx=grid->oIndex(lcoor);
+      int i_idx=grid->iIndex(lcoor);
+      int gidx=parallel_rng.generator_idx(o_idx,i_idx);
+      parallel_rng.SetState(tmp,gidx);
       });
     timer.Stop();
 
@@ -723,7 +728,12 @@ class BinaryIO {
     std::vector<RNGstate> iodata(lsites);
     thread_for(lidx,lsites,{
       std::vector<RngStateType> tmp(RngStateCount);
-      parallel_rng.GetState(tmp,lidx);
+      Coordinate lcoor;
+      grid->LocalIndexToLocalCoor(lidx, lcoor);
+      int o_idx=grid->oIndex(lcoor);
+      int i_idx=grid->iIndex(lcoor);
+      int gidx=parallel_rng.generator_idx(o_idx,i_idx);
+      parallel_rng.GetState(tmp,gidx);
       std::copy(tmp.begin(),tmp.end(),iodata[lidx].begin());
     });
     timer.Stop();
