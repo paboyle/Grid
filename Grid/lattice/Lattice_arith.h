@@ -60,9 +60,9 @@ void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   autoView( lhs_v , lhs, AcceleratorRead);
   autoView( rhs_v , rhs, AcceleratorRead);
   accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
-    decltype(coalescedRead(obj1())) tmp;
     auto lhs_t=lhs_v(ss);
     auto rhs_t=rhs_v(ss);
+    auto tmp  =ret_v(ss);
     mac(&tmp,&lhs_t,&rhs_t);
     coalescedWrite(ret_v[ss],tmp);
   });
@@ -124,7 +124,7 @@ void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   autoView( ret_v , ret, AcceleratorWrite);
   autoView( lhs_v , lhs, AcceleratorRead);
   accelerator_for(ss,lhs_v.size(),obj1::Nsimd(),{
-    decltype(coalescedRead(obj1())) tmp;
+    auto tmp  =ret_v(ss);
     auto lhs_t=lhs_v(ss);
     mac(&tmp,&lhs_t,&rhs);
     coalescedWrite(ret_v[ss],tmp);
@@ -182,7 +182,7 @@ void mac(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   autoView( ret_v , ret, AcceleratorWrite);
   autoView( rhs_v , lhs, AcceleratorRead);
   accelerator_for(ss,rhs_v.size(),obj1::Nsimd(),{
-    decltype(coalescedRead(obj1())) tmp;
+    auto tmp  =ret_v(ss);
     auto rhs_t=rhs_v(ss);
     mac(&tmp,&lhs,&rhs_t);
     coalescedWrite(ret_v[ss],tmp);

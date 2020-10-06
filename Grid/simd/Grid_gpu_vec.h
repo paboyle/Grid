@@ -41,6 +41,11 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid {
 
+#if (!defined(GRID_CUDA)) && (!defined(GRID_HIP))
+typedef struct { uint16_t x;} half;
+#endif
+typedef struct Half2_t { half x; half y; } Half2;
+
 #define COALESCE_GRANULARITY ( GEN_SIMD_WIDTH )
 
 template<class pair>
@@ -125,14 +130,14 @@ inline accelerator GpuVector<N,datum> operator/(const GpuVector<N,datum> l,const
 }
 
 constexpr int NSIMD_RealH    = COALESCE_GRANULARITY / sizeof(half);
-constexpr int NSIMD_ComplexH = COALESCE_GRANULARITY / sizeof(half2);
+constexpr int NSIMD_ComplexH = COALESCE_GRANULARITY / sizeof(Half2);
 constexpr int NSIMD_RealF    = COALESCE_GRANULARITY / sizeof(float);
 constexpr int NSIMD_ComplexF = COALESCE_GRANULARITY / sizeof(float2);
 constexpr int NSIMD_RealD    = COALESCE_GRANULARITY / sizeof(double);
 constexpr int NSIMD_ComplexD = COALESCE_GRANULARITY / sizeof(double2);
 constexpr int NSIMD_Integer  = COALESCE_GRANULARITY / sizeof(Integer);
 
-typedef GpuComplex<half2  > GpuComplexH;
+typedef GpuComplex<Half2  > GpuComplexH;
 typedef GpuComplex<float2 > GpuComplexF;
 typedef GpuComplex<double2> GpuComplexD;
 
@@ -147,11 +152,9 @@ typedef GpuVector<NSIMD_Integer,  Integer     > GpuVectorI;
 accelerator_inline float half2float(half h)
 {
   float f;
-#ifdef GRID_SIMT
+#if defined(GRID_CUDA) || defined(GRID_HIP)
   f = __half2float(h);
 #else 
-  //f = __half2float(h);
-  __half_raw hr(h);
   Grid_half hh; 
   hh.x = hr.x;
   f=  sfw_half_to_float(hh);
@@ -161,13 +164,11 @@ accelerator_inline float half2float(half h)
 accelerator_inline half float2half(float f)
 {
   half h;
-#ifdef GRID_SIMT
+#if defined(GRID_CUDA) || defined(GRID_HIP)
   h = __float2half(f);
 #else
   Grid_half hh = sfw_float_to_half(f);
-  __half_raw hr;  
-  hr.x = hh.x;
-  h = __half(hr);
+  h.x = hh.x;
 #endif
   return h;
 }
@@ -523,7 +524,7 @@ namespace Optimization {
     ////////////////////////////////////////////////////////////////////////////////////
     // Single / Half
     ////////////////////////////////////////////////////////////////////////////////////
-    static accelerator_inline GpuVectorCH StoH (GpuVectorCF a,GpuVectorCF b) {
+     static accelerator_inline GpuVectorCH StoH (GpuVectorCF a,GpuVectorCF b) {
       int N = GpuVectorCF::N;
       GpuVectorCH h;
       for(int i=0;i<N;i++) {

@@ -36,12 +36,12 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-#define LMAX (48)
+#define LMAX (40)
 #define LMIN (8)
 #define LADD (8)
 
-  int64_t Nwarm=50;
-  int64_t Nloop=500;
+  int64_t Nwarm=10;
+  int64_t Nloop=100;
 
   Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   Coordinate mpi_layout  = GridDefaultMpi();
@@ -118,6 +118,41 @@ int main (int argc, char ** argv)
 
     }
 
+
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "= Benchmarking SU3xSU3  z=z+ x*y"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GFlop/s"<<std::endl;
+  std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
+
+  for(int lat=LMIN;lat<=LMAX;lat+=LADD){
+
+      Coordinate latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
+      int64_t vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
+
+      GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
+      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
+
+      LatticeColourMatrix z(&Grid); random(pRNG,z);
+      LatticeColourMatrix x(&Grid); random(pRNG,x);
+      LatticeColourMatrix y(&Grid); random(pRNG,y);
+
+      for(int64_t i=0;i<Nwarm;i++){
+	z=z+x*y;
+      }
+      double start=usecond();
+      for(int64_t i=0;i<Nloop;i++){
+	z=z+x*y;
+      }
+      double stop=usecond();
+      double time = (stop-start)/Nloop*1000.0;
+      
+      double bytes=4*vol*Nc*Nc*sizeof(Complex);
+      double flops=Nc*Nc*(6+8+8)*vol;
+      std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"    \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
+
+    }
+
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking SU3xSU3  mult(z,x,y)"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
@@ -143,7 +178,6 @@ int main (int argc, char ** argv)
       double start=usecond();
       for(int64_t i=0;i<Nloop;i++){
 	mult(z,x,y);
-	//	mac(z,x,y);
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000.0;

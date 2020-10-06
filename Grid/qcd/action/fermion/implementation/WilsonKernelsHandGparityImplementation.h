@@ -646,7 +646,7 @@ NAMESPACE_BEGIN(Grid);
   HAND_RESULT_EXT(ss,F)
 
 #define HAND_SPECIALISE_GPARITY(IMPL)					\
-  template<> void						\
+  template<> accelerator_inline void						\
   WilsonKernels<IMPL>::HandDhopSite(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor  *buf, \
 				    int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
   {									\
@@ -662,7 +662,7 @@ NAMESPACE_BEGIN(Grid);
     HAND_DOP_SITE(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
   }									\
 									\
-  template<> void						\
+  template<> accelerator_inline void						\
   WilsonKernels<IMPL>::HandDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
 				       int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
   {									\
@@ -678,7 +678,7 @@ NAMESPACE_BEGIN(Grid);
     HAND_DOP_SITE_DAG(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
   }									\
 									\
-  template<> void						\
+  template<> accelerator_inline void						\
   WilsonKernels<IMPL>::HandDhopSiteInt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor  *buf, \
 				       int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
   {									\
@@ -694,7 +694,7 @@ NAMESPACE_BEGIN(Grid);
     HAND_DOP_SITE_INT(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
   }									\
 									\
-  template<> void						\
+  template<> accelerator_inline void						\
   WilsonKernels<IMPL>::HandDhopSiteDagInt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
 					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
   {									\
@@ -710,7 +710,7 @@ NAMESPACE_BEGIN(Grid);
     HAND_DOP_SITE_DAG_INT(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
   }									\
 									\
-  template<> void							\
+  template<> accelerator_inline void							\
   WilsonKernels<IMPL>::HandDhopSiteExt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor  *buf, \
 				       int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
   {									\
@@ -727,7 +727,7 @@ NAMESPACE_BEGIN(Grid);
     nmu = 0;								\
     HAND_DOP_SITE_EXT(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
   }									\
-  template<> void						\
+  template<> accelerator_inline void						\
   WilsonKernels<IMPL>::HandDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
 					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
   {									\

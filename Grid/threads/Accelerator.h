@@ -307,17 +307,13 @@ void LambdaApply(uint64_t numx, uint64_t numy, uint64_t numz, lambda Lambda)
 
 inline void *acceleratorAllocShared(size_t bytes)
 {
-#if 0
   void *ptr=NULL;
   auto err = hipMallocManaged((void **)&ptr,bytes);
   if( err != hipSuccess ) {
     ptr = (void *) NULL;
-    printf(" hipMallocManaged failed for %d %s \n",bytes,hipGetErrorString(err));
+    printf(" hipMallocManaged failed for %ld %s \n",bytes,hipGetErrorString(err));
   }
   return ptr;
-#else
-  return malloc(bytes);
-#endif
 };
 inline int  acceleratorIsCommunicable(void *ptr){ return 1; }
 
@@ -327,7 +323,7 @@ inline void *acceleratorAllocDevice(size_t bytes)
   auto err = hipMalloc((void **)&ptr,bytes);
   if( err != hipSuccess ) {
     ptr = (void *) NULL;
-    printf(" hipMalloc failed for %d %s \n",bytes,hipGetErrorString(err));
+    printf(" hipMalloc failed for %ld %s \n",bytes,hipGetErrorString(err));
   }
   return ptr;
 };

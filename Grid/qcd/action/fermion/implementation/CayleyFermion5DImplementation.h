@@ -799,7 +799,7 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 
   PropagatorField tmp(UGrid);
   PropagatorField Utmp(UGrid);
-  LatticeInteger zz (UGrid);   zz=0.0;
+  PropagatorField zz (UGrid);   zz=0.0;
   LatticeInteger lcoor(UGrid); LatticeCoordinate(lcoor,Nd-1);
   for (int s=0;s<Ls;s++) {
 
@@ -850,7 +850,7 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   PropagatorField tmp(UGrid);
   PropagatorField Utmp(UGrid);
 
-  LatticeInteger zz (UGrid);   zz=0.0;
+  PropagatorField  zz (UGrid);   zz=0.0;
   LatticeInteger lcoor(UGrid); LatticeCoordinate(lcoor,Nd-1);
 
   for(int s=0;s<Ls;s++){

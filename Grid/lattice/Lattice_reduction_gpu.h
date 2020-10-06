@@ -2,12 +2,13 @@ NAMESPACE_BEGIN(Grid);
 
 #ifdef GRID_HIP
 extern hipDeviceProp_t *gpu_props;
+#define WARP_SIZE 64
 #endif
 #ifdef GRID_CUDA
 extern cudaDeviceProp *gpu_props;
+#define WARP_SIZE 32
 #endif
 
-#define WARP_SIZE 32
 __device__ unsigned int retirementCount = 0;
 
 template <class Iterator>
@@ -64,7 +65,7 @@ __device__ void reduceBlock(volatile sobj *sdata, sobj mySum, const Iterator tid
   
   // cannot use overloaded operators for sobj as they are not volatile-qualified
   memcpy((void *)&sdata[tid], (void *)&mySum, sizeof(sobj));
-  __syncwarp();
+  acceleratorSynchronise();
   
   const Iterator VEC = WARP_SIZE;
   const Iterator vid = tid & (VEC-1);
@@ -78,9 +79,9 @@ __device__ void reduceBlock(volatile sobj *sdata, sobj mySum, const Iterator tid
       beta += temp;
       memcpy((void *)&sdata[tid], (void *)&beta, sizeof(sobj));
     }
-    __syncwarp();
+    acceleratorSynchronise();
   }
-  __syncthreads();
+  acceleratorSynchroniseAll();
   
   if (threadIdx.x == 0) {
     beta  = Zero();
@@ -90,7 +91,7 @@ __device__ void reduceBlock(volatile sobj *sdata, sobj mySum, const Iterator tid
     }
     memcpy((void *)&sdata[0], (void *)&beta, sizeof(sobj));
   }
-  __syncthreads();
+  acceleratorSynchroniseAll();
 }
 
 
