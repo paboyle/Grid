@@ -202,6 +202,8 @@ public:
     return;
   }
 
+
+  
   static void Memory(void)
   {
     const int Nvec=8;
@@ -258,6 +260,66 @@ public:
      
       double flops=vol*Nvec*2;// mul,add
       double bytes=3.0*vol*Nvec*sizeof(Real);
+      std::cout<<GridLogMessage<<std::setprecision(3) 
+	       << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<"\t\t"<<(stop-start)/1000./1000.
+	       << "\t\t"<< bytes/time/NN <<std::endl;
+
+    }
+  };
+
+
+  static void SU4(void)
+  {
+    const int Nc4=4;
+    typedef Lattice< iMatrix< vComplexF,Nc4> > LatticeSU4;
+
+    Coordinate simd_layout = GridDefaultSimd(Nd,vComplexF::Nsimd());
+    Coordinate mpi_layout  = GridDefaultMpi();
+    
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    std::cout<<GridLogMessage << "= Benchmarking z = y*x SU(4) bandwidth"<<std::endl;
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<"\t\t seconds"<< "\t\tGB/s / node"<<std::endl;
+    std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
+  
+    uint64_t NN;
+
+
+    uint64_t lmax=32;
+#define NLOOP (100*lmax*lmax*lmax*lmax/lat/lat/lat/lat)
+
+    GridSerialRNG          sRNG;      sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
+    for(int lat=8;lat<=lmax;lat+=8){
+
+      Coordinate latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
+      int64_t vol= latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
+
+      GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
+
+      NN =Grid.NodeCount();
+
+
+      LatticeSU4 z(&Grid); z=Zero();
+      LatticeSU4 x(&Grid); x=Zero();
+      LatticeSU4 y(&Grid); y=Zero();
+      double a=2.0;
+
+      uint64_t Nloop=NLOOP;
+
+      double start=usecond();
+      for(int i=0;i<Nloop;i++){
+	z=x*y;
+	autoView( x_v , x, CpuWrite);
+	autoView( y_v , y, CpuWrite);
+	autoView( z_v , z, CpuRead);
+        x_v[0]=z_v[0]; // force serial dependency to prevent optimise away
+        y_v[4]=z_v[4];
+      }
+      double stop=usecond();
+      double time = (stop-start)/Nloop*1000;
+     
+      double flops=vol*Nc4*Nc4*(6+(Nc4-1)*8);// mul,add
+      double bytes=3.0*vol*Nc4*Nc4*2*sizeof(RealF);
       std::cout<<GridLogMessage<<std::setprecision(3) 
 	       << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<"\t\t"<<(stop-start)/1000./1000.
 	       << "\t\t"<< bytes/time/NN <<std::endl;
@@ -596,11 +658,12 @@ int main (int argc, char ** argv)
 #endif
   Benchmark::Decomposition();
 
+  int do_su4=1;
   int do_memory=1;
   int do_comms =1;
 
-  int sel=2;
-  std::vector<int> L_list({16,24,32});
+  int sel=4;
+  std::vector<int> L_list({8,12,16,24,32});
   int selm1=sel-1;
 
   std::vector<double> wilson;
@@ -624,7 +687,6 @@ int main (int argc, char ** argv)
     dwf4.push_back(result);
   }
 
-  /*
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Improved Staggered dslash 4D vectorised" <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
@@ -632,14 +694,13 @@ int main (int argc, char ** argv)
     double result = Benchmark::Staggered(L_list[l]) ;
     staggered.push_back(result);
   }
-  */
 
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Summary table Ls="<<Ls <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "L \t\t Wilson \t\t DWF4 \t\tt Staggered" <<std::endl;
   for(int l=0;l<L_list.size();l++){
-    std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]<<" \t\t "<<dwf4[l] <<std::endl;
+    std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]<<" \t\t "<<dwf4[l] << " \t\t "<< staggered[l]<<std::endl;
   }
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 
@@ -651,6 +712,13 @@ int main (int argc, char ** argv)
     Benchmark::Memory();
   }
 
+  if ( do_su4 ) {
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    std::cout<<GridLogMessage << " Memory benchmark " <<std::endl;
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    Benchmark::SU4();
+  }
+  
   if ( do_comms && (NN>1) ) {
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << " Communications benchmark " <<std::endl;
