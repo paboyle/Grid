@@ -8,7 +8,6 @@ using namespace Grid;
 
 int main (int argc, char ** argv)
 {
-#ifdef HAVE_LIME
   std::vector<std::string> dir;
   unsigned int             Ls;
   bool                     rb;
@@ -41,6 +40,26 @@ int main (int argc, char ** argv)
   MSG << "MPI partition " << mpi << std::endl;
 
   MSG << SEP << std::endl;
+  MSG << "Benchmark Grid std write" << std::endl;
+  MSG << SEP << std::endl;
+  for (auto &d: dir)
+  {
+    MSG << "-- Directory " << d << std::endl;
+    writeBenchmark<LatticeFermion>(GridDefaultLatt(), d + "/ioBench", 
+                                   stdWrite<LatticeFermion>, Ls, rb);
+  }
+  MSG << SEP << std::endl;
+  MSG << "Benchmark Grid std read" << std::endl;
+  MSG << SEP << std::endl;
+  for (auto &d: dir)
+  {
+    MSG << "-- Directory " << d << std::endl;
+    readBenchmark<LatticeFermion>(GridDefaultLatt(), d + "/ioBench", 
+                                  stdRead<LatticeFermion>, Ls, rb);
+  }
+
+#ifdef HAVE_LIME
+  MSG << SEP << std::endl;
   MSG << "Benchmark Grid C-Lime write" << std::endl;
   MSG << SEP << std::endl;
   for (auto &d: dir)
@@ -58,6 +77,7 @@ int main (int argc, char ** argv)
     readBenchmark<LatticeFermion>(GridDefaultLatt(), d + "/ioBench", 
                                   limeRead<LatticeFermion>, Ls, rb);
   }
+#endif
 
   // MSG << SEP << std::endl;
   // MSG << "Benchmark single precision Lime write" << std::endl;
@@ -78,7 +98,6 @@ int main (int argc, char ** argv)
   // }
 
   Grid_finalize();
-  
-#endif
+
   return EXIT_SUCCESS;
 }
