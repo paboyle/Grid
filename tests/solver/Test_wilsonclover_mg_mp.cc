@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
   LatticeFermionD       src_d(FGrid_d); gaussian(fPRNG, src_d);
   LatticeFermionD resultMGD_d(FGrid_d); resultMGD_d = zero;
   LatticeFermionD resultMGF_d(FGrid_d); resultMGF_d = zero;
-  LatticeGaugeFieldD    Umu_d(FGrid_d); SU3::HotConfiguration(fPRNG, Umu_d);
+  LatticeGaugeFieldD    Umu_d(FGrid_d); SU<Nc>::HotConfiguration(fPRNG, Umu_d);
   LatticeGaugeFieldF    Umu_f(FGrid_f); precisionChange(Umu_f, Umu_d);
   // clang-format on
 

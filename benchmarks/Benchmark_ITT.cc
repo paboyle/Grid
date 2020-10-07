@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -358,6 +358,7 @@ public:
     ///////// Welcome message ////////////
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << "Benchmark DWF on "<<L<<"^4 local volume "<<std::endl;
+    std::cout<<GridLogMessage << "* Nc             : "<<Nc<<std::endl;
     std::cout<<GridLogMessage << "* Global volume  : "<<GridCmdVectorIntToString(latt4)<<std::endl;
     std::cout<<GridLogMessage << "* Ls             : "<<Ls<<std::endl;
     std::cout<<GridLogMessage << "* ranks          : "<<NP  <<std::endl;
@@ -386,7 +387,7 @@ public:
     typedef LatticeGaugeFieldF Gauge;
     
     ///////// Source preparation ////////////
-    Gauge Umu(UGrid);  SU3::HotConfiguration(RNG4,Umu); 
+    Gauge Umu(UGrid);  SU<Nc>::HotConfiguration(RNG4,Umu); 
     Fermion src   (FGrid); random(RNG5,src);
     Fermion src_e (FrbGrid);
     Fermion src_o (FrbGrid);
@@ -449,7 +450,13 @@ public:
 	FGrid->Barrier();
 	
 	double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-	double flops=(1344.0*volume)/2;
+
+	// Nc=3 gives
+	// 1344= 3*(2*8+6)*2*8 + 8*3*2*2 + 3*4*2*8
+	// 1344 = Nc* (6+(Nc-1)*8)*2*Nd + Nd*Nc*2*2  + Nd*Nc*Ns*2
+	//	double flops=(1344.0*volume)/2;
+	double fps = Nc* (6+(Nc-1)*8)*Ns*Nd + Nd*Nc*Ns  + Nd*Nc*Ns*2;
+	double flops=(fps*volume)/2;
 	double mf_hi, mf_lo, mf_err;
 
 	timestat.statistics(t_time);
@@ -464,6 +471,7 @@ public:
 	if ( mflops>mflops_best ) mflops_best = mflops;
 	if ( mflops<mflops_worst) mflops_worst= mflops;
 
+	std::cout<<GridLogMessage<< "Deo FlopsPerSite is "<<fps<<std::endl;
 	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s =   "<< mflops << " ("<<mf_err<<") " << mf_lo<<"-"<<mf_hi <<std::endl;
 	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s per rank   "<< mflops/NP<<std::endl;
 	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s per node   "<< mflops/NN<<std::endl;
@@ -540,7 +548,7 @@ public:
     typedef typename Action::FermionField Fermion; 
     typedef LatticeGaugeFieldF Gauge;
     
-    Gauge Umu(FGrid);  SU3::HotConfiguration(RNG4,Umu); 
+    Gauge Umu(FGrid);  SU<Nc>::HotConfiguration(RNG4,Umu); 
 
     typename Action::ImplParams params;
     Action Ds(Umu,Umu,*FGrid,*FrbGrid,mass,c1,c2,u0,params);

@@ -83,7 +83,7 @@ int main (int argc, char ** argv)
   FermionField chi   (FGrid); random(pRNG5,chi);
 
   LatticeGaugeFieldF Umu(UGrid);
-  SU3::HotConfiguration(pRNG4,Umu);
+  SU<Nc>::HotConfiguration(pRNG4,Umu);
 
   /*
   for(int mu=1;mu<4;mu++){

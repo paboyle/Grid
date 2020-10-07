@@ -280,7 +280,7 @@ void make_gauge(GaugeField &Umu, Grid::LatticePropagator &q1,Grid::LatticePropag
   Grid::GridCartesian *UGrid = (Grid::GridCartesian *)Umu.Grid();
   Grid::GridParallelRNG RNG4(UGrid);
   RNG4.SeedFixedIntegers(seeds4);
-  Grid::SU3::HotConfiguration(RNG4, Umu);
+  Grid::SU<Nc>::HotConfiguration(RNG4, Umu);
 
   // Propagator
   Grid::gaussian(RNG4, q1);

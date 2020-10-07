@@ -61,7 +61,7 @@ int main (int argc, char ** argv)
   FermionField    ref(&Grid);    ref=Zero();
   FermionField    tmp(&Grid);    tmp=Zero();
   FermionField    err(&Grid);    tmp=Zero();
-  LatticeGaugeField Umu(&Grid); SU3::HotConfiguration(pRNG,Umu);
+  LatticeGaugeField Umu(&Grid); SU<Nc>::HotConfiguration(pRNG,Umu);
   std::vector<LatticeColourMatrix> U(4,&Grid);
 
   double volume=1;

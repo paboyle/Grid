@@ -68,7 +68,7 @@ int main (int argc, char ** argv)
   LatticeFermion result(FGrid); result=Zero();
   LatticeGaugeField Umu(UGrid); 
 
-  SU3::HotConfiguration(RNG4,Umu);
+  SU<Nc>::HotConfiguration(RNG4,Umu);
 
 
   ConjugateResidual<LatticeFermion> CR(1.0e-6,10000);

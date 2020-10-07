@@ -71,9 +71,9 @@ int main (int argc, char ** argv)
   std::string file("./ckpoint_lat.400");
   NerscIO::readConfiguration(Umu,header,file);
 
-  //  SU3::ColdConfiguration(RNG4,Umu);
-  //  SU3::TepidConfiguration(RNG4,Umu);
-  //  SU3::HotConfiguration(RNG4,Umu);
+  //  SU<Nc>::ColdConfiguration(RNG4,Umu);
+  //  SU<Nc>::TepidConfiguration(RNG4,Umu);
+  //  SU<Nc>::HotConfiguration(RNG4,Umu);
   //  Umu=Zero();
 
   RealD mass=0.1;

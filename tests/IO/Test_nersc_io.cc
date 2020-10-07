@@ -84,7 +84,7 @@ int main (int argc, char ** argv)
 
   std::vector<LatticeColourMatrix> U(4,&Fine);
   
-  SU3::HotConfiguration(pRNGa,Umu);
+  SU<Nc>::HotConfiguration(pRNGa,Umu);
 
   FieldMetaData header;
   std::string file("./ckpoint_lat.4000");

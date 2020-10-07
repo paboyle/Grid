@@ -71,7 +71,7 @@ int main (int argc, char ** argv)
   LatticeGaugeFieldD Umu(UGrid);
   LatticeGaugeFieldF Umu_f(UGrid_f); 
   
-  SU3::HotConfiguration(RNG4,Umu);
+  SU<Nc>::HotConfiguration(RNG4,Umu);
 
   precisionChange(Umu_f,Umu);
   

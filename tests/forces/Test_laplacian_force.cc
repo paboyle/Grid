@@ -58,7 +58,7 @@ int main (int argc, char ** argv)
     PokeIndex<LorentzIndex>(P, P_mu, mu);
   }
 
-  SU3::HotConfiguration(pRNG,U);
+  SU<Nc>::HotConfiguration(pRNG,U);
   
 
   ConjugateGradient<LatticeGaugeField> CG(1.0e-8, 10000);
@@ -95,7 +95,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "Update the U " << std::endl;
   for(int mu=0;mu<Nd;mu++){
   // Traceless antihermitian momentum; gaussian in lie algebra
-    SU3::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); 
+    SU<Nc>::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); 
     auto Umu = PeekIndex<LorentzIndex>(U, mu);
     PokeIndex<LorentzIndex>(mom,mommu,mu);
     Umu = expMat(mommu, dt, 12) * Umu;

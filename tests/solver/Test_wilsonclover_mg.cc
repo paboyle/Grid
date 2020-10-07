@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
   // clang-format off
   LatticeFermion    src(FGrid); gaussian(fPRNG, src);
   LatticeFermion result(FGrid); result = zero;
-  LatticeGaugeField Umu(FGrid); SU3::HotConfiguration(fPRNG, Umu);
+  LatticeGaugeField Umu(FGrid); SU<Nc>::HotConfiguration(fPRNG, Umu);
   // clang-format on
 
   RealD mass  = -0.25;

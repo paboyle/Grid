@@ -47,8 +47,8 @@ int main (int argc, char ** argv)
   RealD nrm = norm2(src);
   LatticeFermion result(&Grid); result=Zero();
   LatticeGaugeField Umu(&Grid);
-  //  SU3::HotConfiguration(pRNG,Umu);
-  SU3::ColdConfiguration(Umu);
+  //  SU<Nc>::HotConfiguration(pRNG,Umu);
+  SU<Nc>::ColdConfiguration(Umu);
   std::vector<LatticeColourMatrix> U(4,&Grid);
 
   for(int mu=0;mu<Nd;mu++){

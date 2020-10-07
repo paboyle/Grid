@@ -47,7 +47,7 @@ static constexpr int Ym = 5;
 static constexpr int Zm = 6;
 static constexpr int Tm = 7;
 
-static constexpr int Nc=3;
+static constexpr int Nc=Config_Nc;
 static constexpr int Ns=4;
 static constexpr int Nd=4;
 static constexpr int Nhs=2; // half spinor

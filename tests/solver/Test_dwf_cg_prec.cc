@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
   result = Zero();
   LatticeGaugeField Umu(UGrid);
 
-  SU3::HotConfiguration(RNG4, Umu);
+  SU<Nc>::HotConfiguration(RNG4, Umu);
 
   std::cout << GridLogMessage << "Lattice dimensions: " << GridDefaultLatt()
             << "   Ls: " << Ls << std::endl;

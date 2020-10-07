@@ -66,14 +66,14 @@ int main(int argc, char** argv) {
 
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
-  std::cout << GridLogMessage << "* Generators for SU(3)" << std::endl;
+  std::cout << GridLogMessage << "* Generators for SU(Nc" << std::endl;
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
-  SU3::printGenerators();
-  std::cout << "Dimension of adjoint representation: "<< SU3Adjoint::Dimension << std::endl;
-  SU3Adjoint::printGenerators();
-  SU3::testGenerators();
-  SU3Adjoint::testGenerators();
+  SU<Nc>::printGenerators();
+  std::cout << "Dimension of adjoint representation: "<< SU<Nc>Adjoint::Dimension << std::endl;
+  SU<Nc>Adjoint::printGenerators();
+  SU<Nc>::testGenerators();
+  SU<Nc>Adjoint::testGenerators();
 
   std::cout<<GridLogMessage<<"*********************************************"<<std::endl;
   std::cout<<GridLogMessage<<"* Generators for SU(4)"<<std::endl;
@@ -87,22 +87,22 @@ int main(int argc, char** argv) {
   // Projectors 
   GridParallelRNG gridRNG(grid);
   gridRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
-  SU3Adjoint::LatticeAdjMatrix Gauss(grid);
-  SU3::LatticeAlgebraVector ha(grid);
-  SU3::LatticeAlgebraVector hb(grid);
+  SU<Nc>Adjoint::LatticeAdjMatrix Gauss(grid);
+  SU<Nc>::LatticeAlgebraVector ha(grid);
+  SU<Nc>::LatticeAlgebraVector hb(grid);
   random(gridRNG,Gauss);
 
   std::cout << GridLogMessage << "Start projectOnAlgebra" << std::endl;
-  SU3Adjoint::projectOnAlgebra(ha, Gauss);
+  SU<Nc>Adjoint::projectOnAlgebra(ha, Gauss);
   std::cout << GridLogMessage << "end projectOnAlgebra" << std::endl;
   std::cout << GridLogMessage << "Start projector" << std::endl;
-  SU3Adjoint::projector(hb, Gauss);
+  SU<Nc>Adjoint::projector(hb, Gauss);
   std::cout << GridLogMessage << "end projector" << std::endl;
 
   std::cout << GridLogMessage << "ReStart projector" << std::endl;
-  SU3Adjoint::projector(hb, Gauss);
+  SU<Nc>Adjoint::projector(hb, Gauss);
   std::cout << GridLogMessage << "end projector" << std::endl;
-  SU3::LatticeAlgebraVector diff = ha -hb;
+  SU<Nc>::LatticeAlgebraVector diff = ha -hb;
   std::cout << GridLogMessage << "Difference: " << norm2(diff) << std::endl;
 
 
@@ -260,20 +260,20 @@ int main(int argc, char** argv) {
   std::cout << GridLogMessage << "Test for the Two Index Symmetric projectors"
       << std::endl;
   // Projectors 
-  SU3TwoIndexSymm::LatticeTwoIndexMatrix Gauss2(grid);
+  SU<Nc>TwoIndexSymm::LatticeTwoIndexMatrix Gauss2(grid);
   random(gridRNG,Gauss2);
   
   std::cout << GridLogMessage << "Start projectOnAlgebra" << std::endl;
-  SU3TwoIndexSymm::projectOnAlgebra(ha, Gauss2);
+  SU<Nc>TwoIndexSymm::projectOnAlgebra(ha, Gauss2);
   std::cout << GridLogMessage << "end projectOnAlgebra" << std::endl;
   std::cout << GridLogMessage << "Start projector" << std::endl;
-  SU3TwoIndexSymm::projector(hb, Gauss2);
+  SU<Nc>TwoIndexSymm::projector(hb, Gauss2);
   std::cout << GridLogMessage << "end projector" << std::endl;
   
   std::cout << GridLogMessage << "ReStart projector" << std::endl;
-  SU3TwoIndexSymm::projector(hb, Gauss2);
+  SU<Nc>TwoIndexSymm::projector(hb, Gauss2);
   std::cout << GridLogMessage << "end projector" << std::endl;
-  SU3::LatticeAlgebraVector diff2 = ha - hb;
+  SU<Nc>::LatticeAlgebraVector diff2 = ha - hb;
   std::cout << GridLogMessage << "Difference: " << norm2(diff) << std::endl;
   std::cout << GridLogMessage << "*********************************************"
       << std::endl;
@@ -284,20 +284,20 @@ int main(int argc, char** argv) {
   std::cout << GridLogMessage << "Test for the Two index anti-Symmetric projectors"
       << std::endl;
   // Projectors
-  SU3TwoIndexAntiSymm::LatticeTwoIndexMatrix Gauss2a(grid);
+  SU<Nc>TwoIndexAntiSymm::LatticeTwoIndexMatrix Gauss2a(grid);
   random(gridRNG,Gauss2a);
   
   std::cout << GridLogMessage << "Start projectOnAlgebra" << std::endl;
-  SU3TwoIndexAntiSymm::projectOnAlgebra(ha, Gauss2a);
+  SU<Nc>TwoIndexAntiSymm::projectOnAlgebra(ha, Gauss2a);
   std::cout << GridLogMessage << "end projectOnAlgebra" << std::endl;
   std::cout << GridLogMessage << "Start projector" << std::endl;
-  SU3TwoIndexAntiSymm::projector(hb, Gauss2a);
+  SU<Nc>TwoIndexAntiSymm::projector(hb, Gauss2a);
   std::cout << GridLogMessage << "end projector" << std::endl;
   
   std::cout << GridLogMessage << "ReStart projector" << std::endl;
-  SU3TwoIndexAntiSymm::projector(hb, Gauss2a);
+  SU<Nc>TwoIndexAntiSymm::projector(hb, Gauss2a);
   std::cout << GridLogMessage << "end projector" << std::endl;
-  SU3::LatticeAlgebraVector diff2a = ha - hb;
+  SU<Nc>::LatticeAlgebraVector diff2a = ha - hb;
   std::cout << GridLogMessage << "Difference: " << norm2(diff2a) << std::endl;
   std::cout << GridLogMessage << "*********************************************"
       << std::endl;

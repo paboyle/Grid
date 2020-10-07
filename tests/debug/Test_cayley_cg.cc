@@ -116,7 +116,7 @@ int main (int argc, char ** argv)
 
   LatticeGaugeField Umu(UGrid);
   LatticeGaugeFieldF UmuF(UGridF);
-  SU3::HotConfiguration(RNG4,Umu);
+  SU<Nc>::HotConfiguration(RNG4,Umu);
   precisionChange(UmuF,Umu);
   std::vector<LatticeColourMatrix> U(4,UGrid);
 
