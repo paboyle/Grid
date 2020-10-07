@@ -101,7 +101,7 @@ void stdWrite(const std::string filestem, Field &vec)
   ioWatch.Stop();
   size *= vec.Grid()->ProcessorCount();
   MSG << "Std I/O write: Wrote " << size << " bytes in " << ioWatch.Elapsed() 
-      << ", performance " << size/1024./1024./(ioWatch.useconds()/1.e6) 
+      << ", " << size/1024./1024./(ioWatch.useconds()/1.e6) 
       << " MB/s" << std::endl;
   MSG << "Std I/O write: checksum overhead " << crcWatch.Elapsed() << std::endl;
 }
@@ -136,7 +136,7 @@ void stdRead(Field &vec, const std::string filestem)
   assert(crcData == crcRead);
   size *= vec.Grid()->ProcessorCount();
   MSG << "Std I/O read: Read " << size << " bytes in " << ioWatch.Elapsed() 
-      << ", performance " << size/1024./1024./(ioWatch.useconds()/1.e6) 
+      << ", " << size/1024./1024./(ioWatch.useconds()/1.e6) 
       << " MB/s" << std::endl;
   MSG << "Std I/O read: checksum overhead " << crcWatch.Elapsed() << std::endl;
 }

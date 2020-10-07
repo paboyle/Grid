@@ -34,46 +34,51 @@ int main (int argc, char ** argv)
   }
   Grid_init(&argc,&argv);
 
-
   int64_t threads = GridThread::GetThreads();
+  auto    mpi     = GridDefaultMpi();
+
   MSG << "Grid is setup to use " << threads << " threads" << std::endl;
-  MSG << SEP << std::endl;
-  MSG << "Benchmark double precision Lime write" << std::endl;
-  MSG << SEP << std::endl;
-  for (auto &d: dir)
-  {
-    MSG << "-- Directory " << d << std::endl;
-    writeBenchmark<LatticeFermion>(GridDefaultLatt(), d + "/ioBench", limeWrite<LatticeFermion>, Ls, rb);
-  }
+  MSG << "MPI partition " << mpi << std::endl;
 
   MSG << SEP << std::endl;
-  MSG << "Benchmark double precision Lime read" << std::endl;
+  MSG << "Benchmark Grid C-Lime write" << std::endl;
   MSG << SEP << std::endl;
   for (auto &d: dir)
   {
     MSG << "-- Directory " << d << std::endl;
-    readBenchmark<LatticeFermion>(GridDefaultLatt(), d + "/ioBench", limeRead<LatticeFermion>, Ls, rb);
+    writeBenchmark<LatticeFermion>(GridDefaultLatt(), d + "/ioBench", 
+                                   limeWrite<LatticeFermion>, Ls, rb);
+  }
+  MSG << SEP << std::endl;
+  MSG << "Benchmark Grid C-Lime read" << std::endl;
+  MSG << SEP << std::endl;
+  for (auto &d: dir)
+  {
+    MSG << "-- Directory " << d << std::endl;
+    readBenchmark<LatticeFermion>(GridDefaultLatt(), d + "/ioBench", 
+                                  limeRead<LatticeFermion>, Ls, rb);
   }
 
-  MSG << SEP << std::endl;
-  MSG << "Benchmark single precision Lime write" << std::endl;
-  MSG << SEP << std::endl;
-  for (auto &d: dir)
-  {
-    MSG << "-- Directory " << d << std::endl;
-    writeBenchmark<LatticeFermionF>(GridDefaultLatt(), d + "/ioBench", limeWrite<LatticeFermionF>, Ls, rb);
-  }
+  // MSG << SEP << std::endl;
+  // MSG << "Benchmark single precision Lime write" << std::endl;
+  // MSG << SEP << std::endl;
+  // for (auto &d: dir)
+  // {
+  //   MSG << "-- Directory " << d << std::endl;
+  //   writeBenchmark<LatticeFermionF>(GridDefaultLatt(), d + "/ioBench", limeWrite<LatticeFermionF>, Ls, rb);
+  // }
 
-  MSG << SEP << std::endl;
-  MSG << "Benchmark single precision Lime read" << std::endl;
-  MSG << SEP << std::endl;
-  for (auto &d: dir)
-  {
-    MSG << "-- Directory " << d << std::endl;
-    readBenchmark<LatticeFermionF>(GridDefaultLatt(), d + "/ioBench", limeRead<LatticeFermionF>, Ls, rb);
-  }
+  // MSG << SEP << std::endl;
+  // MSG << "Benchmark single precision Lime read" << std::endl;
+  // MSG << SEP << std::endl;
+  // for (auto &d: dir)
+  // {
+  //   MSG << "-- Directory " << d << std::endl;
+  //   readBenchmark<LatticeFermionF>(GridDefaultLatt(), d + "/ioBench", limeRead<LatticeFermionF>, Ls, rb);
+  // }
 
   Grid_finalize();
+  
 #endif
   return EXIT_SUCCESS;
 }
