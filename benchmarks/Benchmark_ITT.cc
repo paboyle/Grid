@@ -125,7 +125,7 @@ public:
 	      lat*mpi_layout[1],
 	      lat*mpi_layout[2],
 	      lat*mpi_layout[3]});
-	std::cout << GridLogMessage<< latt_size <<std::endl;
+
 	GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 	RealD Nrank = Grid._Nprocessors;
 	RealD Nnode = Grid.NodeCount();
@@ -137,8 +137,8 @@ public:
 	for(int d=0;d<8;d++){
 	  xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
 	  rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	  bzero((void *)xbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	  bzero((void *)rbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+	  //	  bzero((void *)xbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+	  //	  bzero((void *)rbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
 	}
 
 	int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
@@ -224,7 +224,7 @@ public:
 
 
   uint64_t lmax=32;
-#define NLOOP (100*lmax*lmax*lmax*lmax/lat/lat/lat/lat)
+#define NLOOP (1000*lmax*lmax*lmax*lmax/lat/lat/lat/lat)
 
     GridSerialRNG          sRNG;      sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
     for(int lat=8;lat<=lmax;lat+=8){
@@ -249,11 +249,6 @@ public:
       double start=usecond();
       for(int i=0;i<Nloop;i++){
 	z=a*x-y;
-	autoView( x_v , x, CpuWrite);
-	autoView( y_v , y, CpuWrite);
-	autoView( z_v , z, CpuRead);
-        x_v[0]=z_v[0]; // force serial dependency to prevent optimise away
-        y_v[4]=z_v[4];
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
@@ -286,7 +281,7 @@ public:
 
 
     uint64_t lmax=32;
-#define NLOOP (100*lmax*lmax*lmax*lmax/lat/lat/lat/lat)
+#define NLOOP (1000*lmax*lmax*lmax*lmax/lat/lat/lat/lat)
 
     GridSerialRNG          sRNG;      sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
     for(int lat=8;lat<=lmax;lat+=8){
@@ -309,11 +304,6 @@ public:
       double start=usecond();
       for(int i=0;i<Nloop;i++){
 	z=x*y;
-	autoView( x_v , x, CpuWrite);
-	autoView( y_v , y, CpuWrite);
-	autoView( z_v , z, CpuRead);
-        x_v[0]=z_v[0]; // force serial dependency to prevent optimise away
-        y_v[4]=z_v[4];
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
