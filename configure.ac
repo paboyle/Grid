@@ -130,9 +130,9 @@ AC_ARG_ENABLE([Nc],
 
 case ${ac_Nc} in
     2)
-        AC_DEFINE([Config_Nc],[4],[Gauge group Nc]);;
+        AC_DEFINE([Config_Nc],[2],[Gauge group Nc]);;
     3)
-        AC_DEFINE([Config_Nc],[4],[Gauge group Nc]);;
+        AC_DEFINE([Config_Nc],[3],[Gauge group Nc]);;
     4)
         AC_DEFINE([Config_Nc],[4],[Gauge group Nc]);;
     5)
