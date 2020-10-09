@@ -422,7 +422,7 @@ public:
 	}
 	FGrid->Barrier();
 	double t1=usecond();
-	uint64_t ncall = 50;
+	uint64_t ncall = 500;
 
 	FGrid->Broadcast(0,&ncall,sizeof(ncall));
 
