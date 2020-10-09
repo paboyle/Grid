@@ -5,6 +5,8 @@
 #ifdef HAVE_LIME
 #define MSG std::cout << GridLogMessage
 #define SEP \
+"-----------------------------------------------------------------------------"
+#define BIGSEP \
 "============================================================================="
 
 namespace Grid {
@@ -37,9 +39,12 @@ using ReaderFn = std::function<void(Field &, const std::string)>;
 //   ioWatch.Stop();
 //   std::fclose(file);
 //   size *= vec.Grid()->ProcessorCount();
-//   MSG << "Std I/O write: Wrote " << size << " bytes in " << ioWatch.Elapsed() 
-//       << ", performance " << size/1024./1024./(ioWatch.useconds()/1.e6) 
-//       << " MB/s" << std::endl;
+//   auto &p = BinaryIO::lastPerf;
+//   p.size            = size;
+//   p.time            = ioWatch.useconds();
+//   p.mbytesPerSecond = size/1024./1024./(ioWatch.useconds()/1.e6);
+//   MSG << "Std I/O write: Wrote " << p.size << " bytes in " << ioWatch.Elapsed() 
+//       << ", " << p.mbytesPerSecond << " MB/s" << std::endl;
 //   MSG << "Std I/O write: checksum overhead " << crcWatch.Elapsed() << std::endl;
 // }
 //
@@ -72,9 +77,12 @@ using ReaderFn = std::function<void(Field &, const std::string)>;
 //   MSG << "Std I/O read: Data CRC32 " << std::hex << crcData << std::dec << std::endl;
 //   assert(crcData == crcRead);
 //   size *= vec.Grid()->ProcessorCount();
-//   MSG << "Std I/O read: Read " << size << " bytes in " << ioWatch.Elapsed() 
-//       << ", performance " << size/1024./1024./(ioWatch.useconds()/1.e6) 
-//       << " MB/s" << std::endl;
+//   auto &p = BinaryIO::lastPerf;
+//   p.size            = size;
+//   p.time            = ioWatch.useconds();
+//   p.mbytesPerSecond = size/1024./1024./(ioWatch.useconds()/1.e6);
+//   MSG << "Std I/O read: Read " <<  p.size << " bytes in " << ioWatch.Elapsed() 
+//       << ", " << p.mbytesPerSecond << " MB/s" << std::endl;
 //   MSG << "Std I/O read: checksum overhead " << crcWatch.Elapsed() << std::endl;
 // }
 
@@ -100,9 +108,12 @@ void stdWrite(const std::string filestem, Field &vec)
   file.flush();
   ioWatch.Stop();
   size *= vec.Grid()->ProcessorCount();
-  MSG << "Std I/O write: Wrote " << size << " bytes in " << ioWatch.Elapsed() 
-      << ", " << size/1024./1024./(ioWatch.useconds()/1.e6) 
-      << " MB/s" << std::endl;
+  auto &p = BinaryIO::lastPerf;
+  p.size            = size;
+  p.time            = ioWatch.useconds();
+  p.mbytesPerSecond = size/1024./1024./(ioWatch.useconds()/1.e6);
+  MSG << "Std I/O write: Wrote " << p.size << " bytes in " << ioWatch.Elapsed() 
+      << ", " << p.mbytesPerSecond << " MB/s" << std::endl;
   MSG << "Std I/O write: checksum overhead " << crcWatch.Elapsed() << std::endl;
 }
 
@@ -135,9 +146,12 @@ void stdRead(Field &vec, const std::string filestem)
   MSG << "Std I/O read: Data CRC32 " << std::hex << crcData << std::dec << std::endl;
   assert(crcData == crcRead);
   size *= vec.Grid()->ProcessorCount();
-  MSG << "Std I/O read: Read " << size << " bytes in " << ioWatch.Elapsed() 
-      << ", " << size/1024./1024./(ioWatch.useconds()/1.e6) 
-      << " MB/s" << std::endl;
+  auto &p = BinaryIO::lastPerf;
+  p.size            = size;
+  p.time            = ioWatch.useconds();
+  p.mbytesPerSecond = size/1024./1024./(ioWatch.useconds()/1.e6);
+  MSG << "Std I/O read: Read " <<  p.size << " bytes in " << ioWatch.Elapsed() 
+      << ", " << p.mbytesPerSecond << " MB/s" << std::endl;
   MSG << "Std I/O read: checksum overhead " << crcWatch.Elapsed() << std::endl;
 }
 
@@ -200,12 +214,18 @@ void writeBenchmark(const Coordinate &latt, const std::string filename,
   auto                           simd = GridDefaultSimd(latt.size(), Field::vector_type::Nsimd());
   std::shared_ptr<GridCartesian> gBasePt(SpaceTimeGrid::makeFourDimGrid(latt, simd, mpi));
   std::shared_ptr<GridBase>      gPt;
+  std::random_device             rd;
 
   makeGrid(gPt, gBasePt, Ls, rb);
 
-  GridBase                       *g = gPt.get();
-  GridParallelRNG                rng(g);
-  Field                          vec(g);
+  GridBase         *g = gPt.get();
+  GridParallelRNG  rng(g);
+  Field            vec(g);
+
+  rng.SeedFixedIntegers({static_cast<int>(rd()), static_cast<int>(rd()),
+                         static_cast<int>(rd()), static_cast<int>(rd()),
+                         static_cast<int>(rd()), static_cast<int>(rd()),
+                         static_cast<int>(rd()), static_cast<int>(rd())});
 
   random(rng, vec);
   write(filename, vec);
@@ -223,8 +243,8 @@ void readBenchmark(const Coordinate &latt, const std::string filename,
 
   makeGrid(gPt, gBasePt, Ls, rb);
 
-  GridBase                       *g = gPt.get();
-  Field                          vec(g);
+  GridBase *g = gPt.get();
+  Field    vec(g);
 
   read(vec, filename);
 }
