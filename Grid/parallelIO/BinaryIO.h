@@ -79,6 +79,13 @@ inline void removeWhitespace(std::string &key)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 class BinaryIO {
  public:
+  struct IoPerf
+  {
+    uint64_t size{0},time{0};
+    double   mbytesPerSecond{0.};
+  };
+
+  static IoPerf lastPerf;
   static int latticeWriteMaxRetry;
 
   /////////////////////////////////////////////////////////////////////////////
@@ -502,12 +509,15 @@ class BinaryIO {
       timer.Stop();
     }
     
+    lastPerf.size            = sizeof(fobj)*iodata.size()*nrank;
+    lastPerf.time            = timer.useconds();
+    lastPerf.mbytesPerSecond = lastPerf.size/1024./1024./(lastPerf.time/1.0e6);
     std::cout<<GridLogMessage<<"IOobject: ";
     if ( control & BINARYIO_READ) std::cout << " read  ";
     else                          std::cout << " write ";
     uint64_t bytes = sizeof(fobj)*iodata.size()*nrank;
-    std::cout<< bytes <<" bytes in "<<timer.Elapsed() <<" "
-	     << (double)bytes/ (double)timer.useconds() <<" MB/s "<<std::endl;
+    std::cout<< lastPerf.size <<" bytes in "<< timer.Elapsed() <<" "
+	     << lastPerf.mbytesPerSecond <<" MB/s "<<std::endl;
 
     std::cout<<GridLogMessage<<"IOobject: endian and checksum overhead "<<bstimer.Elapsed()  <<std::endl;
 
