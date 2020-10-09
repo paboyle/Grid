@@ -1,9 +1,5 @@
 #include "Benchmark_IO.hpp"
 
-#define MSG std::cout << GridLogMessage
-#define SEP \
-"============================================================================="
-
 using namespace Grid;
 
 int main (int argc, char ** argv)
