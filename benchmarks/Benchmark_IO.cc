@@ -50,8 +50,11 @@ void stats(Mat &mean, Mat &stdDev, const std::vector<Mat> &data)
 }
 
 #define grid_printf(...) \
-MSG << "";\
-printf(__VA_ARGS__);
+{\
+  char _buf[1024];\
+  sprintf(_buf, __VA_ARGS__);\
+  MSG << _buf;\
+}
 
 enum {sRead = 0, sWrite = 1, gRead = 2, gWrite = 3};
 
