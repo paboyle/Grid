@@ -2,11 +2,11 @@
 #include "Benchmark_IO.hpp"
 
 #ifndef BENCH_IO_LMIN
-#define BENCH_IO_LMIN 20
+#define BENCH_IO_LMIN 8
 #endif
 
 #ifndef BENCH_IO_LMAX
-#define BENCH_IO_LMAX 30
+#define BENCH_IO_LMAX 48
 #endif
 
 #ifndef BENCH_IO_NPASS
