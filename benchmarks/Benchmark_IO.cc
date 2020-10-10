@@ -6,7 +6,7 @@
 #endif
 
 #ifndef BENCH_IO_LMAX
-#define BENCH_IO_LMAX 48
+#define BENCH_IO_LMAX 32
 #endif
 
 #ifndef BENCH_IO_NPASS
