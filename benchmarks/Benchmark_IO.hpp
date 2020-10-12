@@ -2,7 +2,6 @@
 #define Benchmark_IO_hpp_
 
 #include <Grid/Grid.h>
-#ifdef HAVE_LIME
 #define MSG std::cout << GridLogMessage
 #define SEP \
 "-----------------------------------------------------------------------------"
@@ -11,13 +10,13 @@
 
 namespace Grid {
 
-template <typename Field>
-using WriterFn = std::function<void(const std::string, Field &)> ;
-template <typename Field>
-using ReaderFn = std::function<void(Field &, const std::string)>;
+  template <typename Field>
+  using WriterFn = std::function<void(const std::string, Field &)> ;
+  template <typename Field>
+  using ReaderFn = std::function<void(Field &, const std::string)>;
 
 // AP 06/10/2020: Standard C version in case one is suspicious of the C++ API
-// 
+//
 // template <typename Field>
 // void stdWrite(const std::string filestem, Field &vec)
 // {
@@ -43,7 +42,7 @@ using ReaderFn = std::function<void(Field &, const std::string)>;
 //   p.size            = size;
 //   p.time            = ioWatch.useconds();
 //   p.mbytesPerSecond = size/1024./1024./(ioWatch.useconds()/1.e6);
-//   MSG << "Std I/O write: Wrote " << p.size << " bytes in " << ioWatch.Elapsed() 
+//   MSG << "Std I/O write: Wrote " << p.size << " bytes in " << ioWatch.Elapsed()
 //       << ", " << p.mbytesPerSecond << " MB/s" << std::endl;
 //   MSG << "Std I/O write: checksum overhead " << crcWatch.Elapsed() << std::endl;
 // }
@@ -81,81 +80,154 @@ using ReaderFn = std::function<void(Field &, const std::string)>;
 //   p.size            = size;
 //   p.time            = ioWatch.useconds();
 //   p.mbytesPerSecond = size/1024./1024./(ioWatch.useconds()/1.e6);
-//   MSG << "Std I/O read: Read " <<  p.size << " bytes in " << ioWatch.Elapsed() 
+//   MSG << "Std I/O read: Read " <<  p.size << " bytes in " << ioWatch.Elapsed()
 //       << ", " << p.mbytesPerSecond << " MB/s" << std::endl;
 //   MSG << "Std I/O read: checksum overhead " << crcWatch.Elapsed() << std::endl;
 // }
 
-template <typename Field>
-void stdWrite(const std::string filestem, Field &vec)
-{
-  std::string   rankStr = std::to_string(vec.Grid()->ThisRank());
-  std::ofstream file(filestem + "." + rankStr + ".bin", std::ios::out | std::ios::binary);
-  size_t        size, sizec;
-  uint32_t      crc;
-  GridStopWatch ioWatch, crcWatch;
-
-  size  = vec.Grid()->lSites()*sizeof(typename Field::scalar_object);
-  sizec = size/sizeof(char); // just in case of...
-  autoView(vec_v, vec, CpuRead);
-  crcWatch.Start();
-  crc = GridChecksum::crc32(vec_v.cpu_ptr, size);
-  file.write(reinterpret_cast<char *>(&crc), sizeof(uint32_t)/sizeof(char));
-  crcWatch.Stop();
-  MSG << "Std I/O write: Data CRC32 " << std::hex << crc << std::dec << std::endl;
-  ioWatch.Start();
-  file.write(reinterpret_cast<char *>(vec_v.cpu_ptr), sizec);
-  file.flush();
-  ioWatch.Stop();
-  size *= vec.Grid()->ProcessorCount();
-  auto &p = BinaryIO::lastPerf;
-  p.size            = size;
-  p.time            = ioWatch.useconds();
-  p.mbytesPerSecond = size/1024./1024./(ioWatch.useconds()/1.e6);
-  MSG << "Std I/O write: Wrote " << p.size << " bytes in " << ioWatch.Elapsed() 
-      << ", " << p.mbytesPerSecond << " MB/s" << std::endl;
-  MSG << "Std I/O write: checksum overhead " << crcWatch.Elapsed() << std::endl;
-}
-
-template <typename Field>
-void stdRead(Field &vec, const std::string filestem)
-{
-  std::string   rankStr = std::to_string(vec.Grid()->ThisRank());
-  std::ifstream file(filestem + "." + rankStr + ".bin", std::ios::in | std::ios::binary);
-  size_t        size, sizec;
-  uint32_t      crcRead, crcData;
-  GridStopWatch ioWatch, crcWatch;
-
-  size  = vec.Grid()->lSites()*sizeof(typename Field::scalar_object);
-  sizec = size/sizeof(char); // just in case of...
-  crcWatch.Start();
-  file.read(reinterpret_cast<char *>(&crcRead), sizeof(uint32_t)/sizeof(char));
-  crcWatch.Stop();
+  template <typename Field>
+  void stdWrite(const std::string filestem, Field &vec)
   {
-    autoView(vec_v, vec, CpuWrite);
-    ioWatch.Start();
-    file.read(reinterpret_cast<char *>(vec_v.cpu_ptr), sizec);
-    ioWatch.Stop();
-  }
-  {
+    std::string   rankStr = std::to_string(vec.Grid()->ThisRank());
+    std::ofstream file(filestem + "." + rankStr + ".bin", std::ios::out | std::ios::binary);
+    size_t        size, sizec;
+    uint32_t      crc;
+    GridStopWatch ioWatch, crcWatch;
+
+    size  = vec.Grid()->lSites()*sizeof(typename Field::scalar_object);
+    sizec = size/sizeof(char); // just in case of...
     autoView(vec_v, vec, CpuRead);
     crcWatch.Start();
-    crcData = GridChecksum::crc32(vec_v.cpu_ptr, size);
+    crc = GridChecksum::crc32(vec_v.cpu_ptr, size);
+    file.write(reinterpret_cast<char *>(&crc), sizeof(uint32_t)/sizeof(char));
     crcWatch.Stop();
+    MSG << "Std I/O write: Data CRC32 " << std::hex << crc << std::dec << std::endl;
+    ioWatch.Start();
+    file.write(reinterpret_cast<char *>(vec_v.cpu_ptr), sizec);
+    file.flush();
+    ioWatch.Stop();
+    size *= vec.Grid()->ProcessorCount();
+    auto &p = BinaryIO::lastPerf;
+    p.size            = size;
+    p.time            = ioWatch.useconds();
+    p.mbytesPerSecond = size/1024./1024./(ioWatch.useconds()/1.e6);
+    MSG << "Std I/O write: Wrote " << p.size << " bytes in " << ioWatch.Elapsed()
+        << ", " << p.mbytesPerSecond << " MB/s" << std::endl;
+    MSG << "Std I/O write: checksum overhead " << crcWatch.Elapsed() << std::endl;
   }
-  MSG << "Std I/O read: Data CRC32 " << std::hex << crcData << std::dec << std::endl;
-  assert(crcData == crcRead);
-  size *= vec.Grid()->ProcessorCount();
-  auto &p = BinaryIO::lastPerf;
-  p.size            = size;
-  p.time            = ioWatch.useconds();
-  p.mbytesPerSecond = size/1024./1024./(ioWatch.useconds()/1.e6);
-  MSG << "Std I/O read: Read " <<  p.size << " bytes in " << ioWatch.Elapsed() 
-      << ", " << p.mbytesPerSecond << " MB/s" << std::endl;
-  MSG << "Std I/O read: checksum overhead " << crcWatch.Elapsed() << std::endl;
-}
 
-template <typename Field>
+  template <typename Field>
+  void stdRead(Field &vec, const std::string filestem)
+  {
+    std::string   rankStr = std::to_string(vec.Grid()->ThisRank());
+    std::ifstream file(filestem + "." + rankStr + ".bin", std::ios::in | std::ios::binary);
+    size_t        size, sizec;
+    uint32_t      crcRead, crcData;
+    GridStopWatch ioWatch, crcWatch;
+
+    size  = vec.Grid()->lSites()*sizeof(typename Field::scalar_object);
+    sizec = size/sizeof(char); // just in case of...
+    crcWatch.Start();
+    file.read(reinterpret_cast<char *>(&crcRead), sizeof(uint32_t)/sizeof(char));
+    crcWatch.Stop();
+    {
+      autoView(vec_v, vec, CpuWrite);
+      ioWatch.Start();
+      file.read(reinterpret_cast<char *>(vec_v.cpu_ptr), sizec);
+      ioWatch.Stop();
+    }
+    {
+      autoView(vec_v, vec, CpuRead);
+      crcWatch.Start();
+      crcData = GridChecksum::crc32(vec_v.cpu_ptr, size);
+      crcWatch.Stop();
+    }
+    MSG << "Std I/O read: Data CRC32 " << std::hex << crcData << std::dec << std::endl;
+    assert(crcData == crcRead);
+    size *= vec.Grid()->ProcessorCount();
+    auto &p = BinaryIO::lastPerf;
+    p.size            = size;
+    p.time            = ioWatch.useconds();
+    p.mbytesPerSecond = size/1024./1024./(ioWatch.useconds()/1.e6);
+    MSG << "Std I/O read: Read " <<  p.size << " bytes in " << ioWatch.Elapsed()
+        << ", " << p.mbytesPerSecond << " MB/s" << std::endl;
+    MSG << "Std I/O read: checksum overhead " << crcWatch.Elapsed() << std::endl;
+  }
+
+  inline void makeGrid(std::shared_ptr<GridBase> &gPt,
+                       const std::shared_ptr<GridCartesian> &gBasePt,
+                       const unsigned int Ls = 1, const bool rb = false)
+  {
+    if (rb)
+    {
+      if (Ls > 1)
+      {
+        gPt.reset(SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls, gBasePt.get()));
+      }
+      else
+      {
+        gPt.reset(SpaceTimeGrid::makeFourDimRedBlackGrid(gBasePt.get()));
+      }
+    }
+    else
+    {
+      if (Ls > 1)
+      {
+        gPt.reset(SpaceTimeGrid::makeFiveDimGrid(Ls, gBasePt.get()));
+      }
+      else
+      {
+        gPt = gBasePt;
+      }
+    }
+  }
+
+  template <typename Field>
+  void writeBenchmark(const Coordinate &latt, const std::string filename,
+                      const WriterFn<Field> &write,
+                      const unsigned int Ls = 1, const bool rb = false)
+  {
+    auto                           mpi  = GridDefaultMpi();
+    auto                           simd = GridDefaultSimd(latt.size(), Field::vector_type::Nsimd());
+    std::shared_ptr<GridCartesian> gBasePt(SpaceTimeGrid::makeFourDimGrid(latt, simd, mpi));
+    std::shared_ptr<GridBase>      gPt;
+    std::random_device             rd;
+
+    makeGrid(gPt, gBasePt, Ls, rb);
+
+    GridBase         *g = gPt.get();
+    GridParallelRNG  rng(g);
+    Field            vec(g);
+
+    rng.SeedFixedIntegers({static_cast<int>(rd()), static_cast<int>(rd()),
+                           static_cast<int>(rd()), static_cast<int>(rd()),
+                           static_cast<int>(rd()), static_cast<int>(rd()),
+                           static_cast<int>(rd()), static_cast<int>(rd())});
+
+    random(rng, vec);
+    write(filename, vec);
+  }
+
+  template <typename Field>
+  void readBenchmark(const Coordinate &latt, const std::string filename,
+                     const ReaderFn<Field> &read,
+                     const unsigned int Ls = 1, const bool rb = false)
+  {
+    auto                           mpi  = GridDefaultMpi();
+    auto                           simd = GridDefaultSimd(latt.size(), Field::vector_type::Nsimd());
+    std::shared_ptr<GridCartesian> gBasePt(SpaceTimeGrid::makeFourDimGrid(latt, simd, mpi));
+    std::shared_ptr<GridBase>      gPt;
+
+    makeGrid(gPt, gBasePt, Ls, rb);
+
+    GridBase *g = gPt.get();
+    Field    vec(g);
+
+    read(vec, filename);
+  }
+
+#ifdef HAVE_LIME
+  template <typename Field>
 void limeWrite(const std::string filestem, Field &vec)
 {
   emptyUserRecord   record;
@@ -177,79 +249,7 @@ void limeRead(Field &vec, const std::string filestem)
   binReader.close();
 }
 
-inline void makeGrid(std::shared_ptr<GridBase> &gPt, 
-                     const std::shared_ptr<GridCartesian> &gBasePt,
-                     const unsigned int Ls = 1, const bool rb = false)
-{
-  if (rb)
-  {
-    if (Ls > 1)
-    {
-      gPt.reset(SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls, gBasePt.get()));
-    }
-    else
-    {
-      gPt.reset(SpaceTimeGrid::makeFourDimRedBlackGrid(gBasePt.get()));
-    }
-  }
-  else
-  {
-    if (Ls > 1)
-    {
-        gPt.reset(SpaceTimeGrid::makeFiveDimGrid(Ls, gBasePt.get()));
-    }
-    else
-    {
-        gPt = gBasePt;
-    }
-  }
-}
-
-template <typename Field>
-void writeBenchmark(const Coordinate &latt, const std::string filename,
-                    const WriterFn<Field> &write, 
-                    const unsigned int Ls = 1, const bool rb = false)
-{
-  auto                           mpi  = GridDefaultMpi();
-  auto                           simd = GridDefaultSimd(latt.size(), Field::vector_type::Nsimd());
-  std::shared_ptr<GridCartesian> gBasePt(SpaceTimeGrid::makeFourDimGrid(latt, simd, mpi));
-  std::shared_ptr<GridBase>      gPt;
-  std::random_device             rd;
-
-  makeGrid(gPt, gBasePt, Ls, rb);
-
-  GridBase         *g = gPt.get();
-  GridParallelRNG  rng(g);
-  Field            vec(g);
-
-  rng.SeedFixedIntegers({static_cast<int>(rd()), static_cast<int>(rd()),
-                         static_cast<int>(rd()), static_cast<int>(rd()),
-                         static_cast<int>(rd()), static_cast<int>(rd()),
-                         static_cast<int>(rd()), static_cast<int>(rd())});
-
-  random(rng, vec);
-  write(filename, vec);
-}
-
-template <typename Field>
-void readBenchmark(const Coordinate &latt, const std::string filename,
-                   const ReaderFn<Field> &read, 
-                   const unsigned int Ls = 1, const bool rb = false)
-{
-  auto                           mpi  = GridDefaultMpi();
-  auto                           simd = GridDefaultSimd(latt.size(), Field::vector_type::Nsimd());
-  std::shared_ptr<GridCartesian> gBasePt(SpaceTimeGrid::makeFourDimGrid(latt, simd, mpi));
-  std::shared_ptr<GridBase>      gPt;
-
-  makeGrid(gPt, gBasePt, Ls, rb);
-
-  GridBase *g = gPt.get();
-  Field    vec(g);
-
-  read(vec, filename);
-}
-
-}
-
 #endif //LIME
+}
+
 #endif // Benchmark_IO_hpp_
