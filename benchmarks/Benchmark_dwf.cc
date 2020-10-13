@@ -1,5 +1,5 @@
  /*************************************************************************************
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
     Source file: ./benchmarks/Benchmark_dwf.cc
     Copyright (C) 2015
 
@@ -21,10 +21,16 @@
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
+#ifdef GRID_CUDA
+#define CUDA_PROFILE
+#endif
+
+#ifdef CUDA_PROFILE
+#include <cuda_profiler_api.h>
+#endif
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
 template<class d>
 struct scal {
@@ -38,9 +44,6 @@ struct scal {
     Gamma::Algebra::GammaT
   };
 
-typedef WilsonFermion5D<DomainWallVec5dImplR> WilsonFermion5DR;
-typedef WilsonFermion5D<DomainWallVec5dImplF> WilsonFermion5DF;
-typedef WilsonFermion5D<DomainWallVec5dImplD> WilsonFermion5DD;
 
 int main (int argc, char ** argv)
 {
@@ -49,8 +52,8 @@ int main (int argc, char ** argv)
 
   int threads = GridThread::GetThreads();
 
-  std::vector<int> latt4 = GridDefaultLatt();
-  int Ls=16;
+  Coordinate latt4 = GridDefaultLatt();
+  int Ls=8;
   for(int i=0;i<argc;i++)
     if(std::string(argv[i]) == "-Ls"){
       std::stringstream ss(argv[i+1]); ss >> Ls;
@@ -58,7 +61,7 @@ int main (int argc, char ** argv)
 
   GridLogLayout();
 
-  long unsigned int single_site_flops = 8*QCD::Nc*(7+16*QCD::Nc);
+  long unsigned int single_site_flops = 8*Nc*(7+16*Nc);
 
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
@@ -74,20 +77,20 @@ int main (int argc, char ** argv)
 
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
-  
+
   std::cout << GridLogMessage << "Initialising 4d RNG" << std::endl;
-  GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
+  GridParallelRNG          RNG4(UGrid);  RNG4.SeedUniqueString(std::string("The 4D RNG"));
   std::cout << GridLogMessage << "Initialising 5d RNG" << std::endl;
-  GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
+  GridParallelRNG          RNG5(FGrid);  RNG5.SeedUniqueString(std::string("The 5D RNG"));
   std::cout << GridLogMessage << "Initialised RNGs" << std::endl;
 
   LatticeFermion src   (FGrid); random(RNG5,src);
 #if 0
-  src = zero;
+  src = Zero();
   {
-    std::vector<int> origin({0,0,0,latt4[2]-1,0});
+    Coordinate origin({0,0,0,latt4[2]-1,0});
     SpinColourVectorF tmp;
-    tmp=zero;
+    tmp=Zero();
     tmp()(0)(0)=Complex(-2.0,0.0);
     std::cout << " source site 0 " << tmp<<std::endl;
     pokeSite(tmp,src,origin);
@@ -98,14 +101,14 @@ int main (int argc, char ** argv)
 #endif
 
 
-  LatticeFermion result(FGrid); result=zero;
-  LatticeFermion    ref(FGrid);    ref=zero;
+  LatticeFermion result(FGrid); result=Zero();
+  LatticeFermion    ref(FGrid);    ref=Zero();
   LatticeFermion    tmp(FGrid);
   LatticeFermion    err(FGrid);
 
   std::cout << GridLogMessage << "Drawing gauge field" << std::endl;
-  LatticeGaugeField Umu(UGrid); 
-  SU3::HotConfiguration(RNG4,Umu); 
+  LatticeGaugeField Umu(UGrid);
+  SU<Nc>::HotConfiguration(RNG4,Umu);
   std::cout << GridLogMessage << "Random gauge initialised " << std::endl;
 #if 0
   Umu=1.0;
@@ -123,11 +126,15 @@ int main (int argc, char ** argv)
   // Naive wilson implementation
   ////////////////////////////////////
   // replicate across fifth dimension
-  LatticeGaugeField Umu5d(FGrid); 
+  LatticeGaugeField Umu5d(FGrid);
   std::vector<LatticeColourMatrix> U(4,FGrid);
-  for(int ss=0;ss<Umu._grid->oSites();ss++){
-    for(int s=0;s<Ls;s++){
-      Umu5d._odata[Ls*ss+s] = Umu._odata[ss];
+  {
+    autoView( Umu5d_v, Umu5d, CpuWrite);
+    autoView( Umu_v  , Umu  , CpuRead);
+    for(int ss=0;ss<Umu.Grid()->oSites();ss++){
+      for(int s=0;s<Ls;s++){
+	Umu5d_v[Ls*ss+s] = Umu_v[ss];
+      }
     }
   }
   for(int mu=0;mu<Nd;mu++){
@@ -137,7 +144,7 @@ int main (int argc, char ** argv)
 
   if (1)
   {
-    ref = zero;
+    ref = Zero();
     for(int mu=0;mu<Nd;mu++){
 
       tmp = U[mu]*Cshift(src,mu+1,1);
@@ -162,6 +169,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
   std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionR::Dhop                  "<<std::endl;
   std::cout << GridLogMessage<< "* Vectorising space-time by "<<vComplex::Nsimd()<<std::endl;
+  std::cout << GridLogMessage<< "* VComplex size is "<<sizeof(vComplex)<< " B"<<std::endl;
   if ( sizeof(Real)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
   if ( sizeof(Real)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
 #ifdef GRID_OMP
@@ -174,7 +182,8 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
 
   DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  int ncall =500;
+  int ncall =1000;
+
   if (1) {
     FGrid->Barrier();
     Dw.ZeroCounters();
@@ -188,9 +197,18 @@ int main (int argc, char ** argv)
     }
     double t1=usecond();
     FGrid->Barrier();
-    
+
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=single_site_flops*volume*ncall;
+
+    auto nsimd = vComplex::Nsimd();
+    auto simdwidth = sizeof(vComplex);
+
+    // RF: Nd Wilson * Ls, Nd gauge * Ls, Nc colors
+    double data_rf = volume * ((2*Nd+1)*Nd*Nc + 2*Nd*Nc*Nc) * simdwidth / nsimd * ncall / (1024.*1024.*1024.);
+
+    // mem: Nd Wilson * Ls, Nd gauge, Nc colors
+    double data_mem = (volume * (2*Nd+1)*Nd*Nc + (volume/Ls) *2*Nd*Nc*Nc) * simdwidth / nsimd * ncall / (1024.*1024.*1024.);
 
     std::cout<<GridLogMessage << "Called Dw "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
     //    std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
@@ -198,24 +216,28 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per rank =  "<< flops/(t1-t0)/NP<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NN<<std::endl;
-    err = ref-result; 
+    std::cout<<GridLogMessage << "RF  GiB/s (base 2) =   "<< 1000000. * data_rf/((t1-t0))<<std::endl;
+    std::cout<<GridLogMessage << "mem GiB/s (base 2) =   "<< 1000000. * data_mem/((t1-t0))<<std::endl;
+    err = ref-result;
     std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
+    //exit(0);
 
-    /*
-    if(( norm2(err)>1.0e-4) ) { 
+    if(( norm2(err)>1.0e-4) ) {
+      /*
       std::cout << "RESULT\n " << result<<std::endl;
       std::cout << "REF   \n " << ref   <<std::endl;
       std::cout << "ERR   \n " << err   <<std::endl;
+      */
+      std::cout<<GridLogMessage << "WRONG RESULT" << std::endl;
       FGrid->Barrier();
       exit(-1);
     }
-    */
     assert (norm2(err)< 1.0e-4 );
     Dw.Report();
   }
 
   DomainWallFermionRL DwH(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  if (1) {
+  if (0) {
     FGrid->Barrier();
     DwH.ZeroCounters();
     DwH.Dhop(src,result,0);
@@ -227,7 +249,7 @@ int main (int argc, char ** argv)
     }
     double t1=usecond();
     FGrid->Barrier();
-    
+
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=single_site_flops*volume*ncall;
 
@@ -235,7 +257,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per rank =  "<< flops/(t1-t0)/NP<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NN<<std::endl;
-    err = ref-result; 
+    err = ref-result;
     std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
 
     assert (norm2(err)< 1.0e-3 );
@@ -243,186 +265,28 @@ int main (int argc, char ** argv)
   }
 
   if (1)
-  {
-
-    std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
-    std::cout << GridLogMessage<< "* Benchmarking WilsonFermion5D<DomainWallVec5dImplR>::Dhop "<<std::endl;
-    std::cout << GridLogMessage<< "* Vectorising fifth dimension by "<<vComplex::Nsimd()<<std::endl;
-    if ( sizeof(Real)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
-    if ( sizeof(Real)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
-#ifdef GRID_OMP
-  if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute ) std::cout << GridLogMessage<< "* Using Overlapped Comms/Compute" <<std::endl;
-  if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsThenCompute) std::cout << GridLogMessage<< "* Using sequential comms compute" <<std::endl;
-#endif
-    if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
-    if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
-    if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
-    std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
-
-    typedef WilsonFermion5D<DomainWallVec5dImplR> WilsonFermion5DR;
-    LatticeFermion ssrc(sFGrid);
-    LatticeFermion sref(sFGrid);
-    LatticeFermion sresult(sFGrid);
-
-    WilsonFermion5DR sDw(Umu,*sFGrid,*sFrbGrid,*sUGrid,*sUrbGrid,M5);
-
-    localConvert(src,ssrc);
-    std::cout<<GridLogMessage<< "src norms "<< norm2(src)<<" " <<norm2(ssrc)<<std::endl;
-    FGrid->Barrier();
-    sDw.Dhop(ssrc,sresult,0);
-    sDw.ZeroCounters();
-    double t0=usecond();
-    for(int i=0;i<ncall;i++){
-      __SSC_START;
-      sDw.Dhop(ssrc,sresult,0);
-      __SSC_STOP;
-    }
-    double t1=usecond();
-    FGrid->Barrier();
-    double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-    double flops=single_site_flops*volume*ncall;
-
-    std::cout<<GridLogMessage << "Called Dw s_inner "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
-    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
-    std::cout<<GridLogMessage << "mflop/s per rank =  "<< flops/(t1-t0)/NP<<std::endl;
-    std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NN<<std::endl;
-    //    std::cout<<GridLogMessage<< "res norms "<< norm2(result)<<" " <<norm2(sresult)<<std::endl;
-    sDw.Report();
-    RealD sum=0;
-
-    err=zero;
-    localConvert(sresult,err);
-    err = err - ref;
-    sum = norm2(err);
-    std::cout<<GridLogMessage<<" difference between normal ref and simd is "<<sum<<std::endl;
-    if(sum > 1.0e-4 ){
-      std::cout<< "sD REF\n " <<ref << std::endl;
-      std::cout<< "sD ERR   \n " <<err  <<std::endl;
-    }
-    //    assert(sum < 1.0e-4);
-
-    err=zero;
-    localConvert(sresult,err);
-    err = err - result;
-    sum = norm2(err);
-    std::cout<<GridLogMessage<<" difference between normal result and simd is "<<sum<<std::endl;
-    if(sum > 1.0e-4 ){
-      std::cout<< "sD REF\n " <<result << std::endl;
-      std::cout<< "sD ERR   \n " << err  <<std::endl;
-    }
-    assert(sum < 1.0e-4);
-
-    
-    if(1){
-      std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
-      std::cout << GridLogMessage<< "* Benchmarking WilsonFermion5D<DomainWallVec5dImplR>::DhopEO "<<std::endl;
-      std::cout << GridLogMessage<< "* Vectorising fifth dimension by "<<vComplex::Nsimd()<<std::endl;
-      if ( sizeof(Real)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
-      if ( sizeof(Real)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
-#ifdef GRID_OMP
-  if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute ) std::cout << GridLogMessage<< "* Using Overlapped Comms/Compute" <<std::endl;
-  if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsThenCompute) std::cout << GridLogMessage<< "* Using sequential comms compute" <<std::endl;
-#endif
-      if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) 
-	std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
-      if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) 
-	std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
-      if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) 
-	std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
-      std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
-
-      LatticeFermion sr_eo(sFGrid);
-      LatticeFermion ssrc_e (sFrbGrid);
-      LatticeFermion ssrc_o (sFrbGrid);
-      LatticeFermion sr_e   (sFrbGrid);
-      LatticeFermion sr_o   (sFrbGrid);
-
-      pickCheckerboard(Even,ssrc_e,ssrc);
-      pickCheckerboard(Odd,ssrc_o,ssrc);
-      //      setCheckerboard(sr_eo,ssrc_o);
-      //      setCheckerboard(sr_eo,ssrc_e);
-
-      sr_e = zero;
-      sr_o = zero;
-
-      FGrid->Barrier();
-      sDw.DhopEO(ssrc_o, sr_e, DaggerNo);
-      sDw.ZeroCounters();
-      //      sDw.stat.init("DhopEO");
-      double t0=usecond();
-      for (int i = 0; i < ncall; i++) {
-        sDw.DhopEO(ssrc_o, sr_e, DaggerNo);
-      }
-      double t1=usecond();
-      FGrid->Barrier();
-      //      sDw.stat.print();
-
-      double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-      double flops=(single_site_flops*volume*ncall)/2.0;
-
-      std::cout<<GridLogMessage << "sDeo mflop/s =   "<< flops/(t1-t0)<<std::endl;
-      std::cout<<GridLogMessage << "sDeo mflop/s per rank   "<< flops/(t1-t0)/NP<<std::endl;
-      std::cout<<GridLogMessage << "sDeo mflop/s per node   "<< flops/(t1-t0)/NN<<std::endl;
-      sDw.Report();
-
-      sDw.DhopEO(ssrc_o,sr_e,DaggerNo);
-      sDw.DhopOE(ssrc_e,sr_o,DaggerNo);
-      sDw.Dhop  (ssrc  ,sresult,DaggerNo);
-
-      pickCheckerboard(Even,ssrc_e,sresult);
-      pickCheckerboard(Odd ,ssrc_o,sresult);
-
-      ssrc_e = ssrc_e - sr_e;
-      RealD error = norm2(ssrc_e);
-      std::cout<<GridLogMessage << "sE norm diff   "<< norm2(ssrc_e)<< "  vec nrm"<<norm2(sr_e) <<std::endl;
-
-      ssrc_o = ssrc_o - sr_o;
-      error+= norm2(ssrc_o);
-      std::cout<<GridLogMessage << "sO norm diff   "<< norm2(ssrc_o)<< "  vec nrm"<<norm2(sr_o) <<std::endl;
-
-      if(( error>1.0e-4) ) { 
-	setCheckerboard(ssrc,ssrc_o);
-	setCheckerboard(ssrc,ssrc_e);
-	std::cout<< "DIFF\n " <<ssrc << std::endl;
-	setCheckerboard(ssrc,sr_o);
-	setCheckerboard(ssrc,sr_e);
-	std::cout<< "CBRESULT\n " <<ssrc << std::endl;
-	std::cout<< "RESULT\n " <<sresult<< std::endl;
-      }
-      assert(error<1.0e-4);
-    }
-
-  if(0){
-    std::cout << "Single cache warm call to sDw.Dhop " <<std::endl;
-    for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
-      sDw.Dhop(ssrc,sresult,0);
-      PerformanceCounter Counter(i);
-      Counter.Start();
-      sDw.Dhop(ssrc,sresult,0);
-      Counter.Stop();
-      Counter.Report();
-    }
-  }
-
-  }
-
-
-
-  if (1)
   { // Naive wilson dag implementation
-    ref = zero;
+    ref = Zero();
     for(int mu=0;mu<Nd;mu++){
 
       //    ref =  src - Gamma(Gamma::Algebra::GammaX)* src ; // 1+gamma_x
       tmp = U[mu]*Cshift(src,mu+1,1);
-      for(int i=0;i<ref._odata.size();i++){
-	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
+      {
+	autoView( ref_v, ref, CpuWrite);
+	autoView( tmp_v, tmp, CpuRead);
+	for(int i=0;i<ref_v.size();i++){
+	  ref_v[i]+= tmp_v[i] + Gamma(Gmu[mu])*tmp_v[i]; ;
+	}
       }
 
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu+1,-1);
-      for(int i=0;i<ref._odata.size();i++){
-	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
+      {
+	autoView( ref_v, ref, CpuWrite);
+	autoView( tmp_v, tmp, CpuRead);
+	for(int i=0;i<ref_v.size();i++){
+	  ref_v[i]+= tmp_v[i] - Gamma(Gmu[mu])*tmp_v[i]; ;
+	}
       }
     }
     ref = -0.5*ref;
@@ -433,12 +297,14 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Called DwDag"<<std::endl;
   std::cout<<GridLogMessage << "norm dag result "<< norm2(result)<<std::endl;
   std::cout<<GridLogMessage << "norm dag ref    "<< norm2(ref)<<std::endl;
-  err = ref-result; 
+  err = ref-result;
   std::cout<<GridLogMessage << "norm dag diff   "<< norm2(err)<<std::endl;
   if((norm2(err)>1.0e-4)){
+/*
 	std::cout<< "DAG RESULT\n "  <<ref     << std::endl;
 	std::cout<< "DAG sRESULT\n " <<result  << std::endl;
 	std::cout<< "DAG ERR   \n "  << err    <<std::endl;
+*/
   }
   LatticeFermion src_e (FrbGrid);
   LatticeFermion src_o (FrbGrid);
@@ -475,11 +341,17 @@ int main (int argc, char ** argv)
     Dw.DhopEO(src_o,r_e,DaggerNo);
     double t0=usecond();
     for(int i=0;i<ncall;i++){
+#ifdef CUDA_PROFILE
+      if(i==10) cudaProfilerStart();
+#endif
       Dw.DhopEO(src_o,r_e,DaggerNo);
+#ifdef CUDA_PROFILE
+      if(i==20) cudaProfilerStop();
+#endif
     }
     double t1=usecond();
     FGrid->Barrier();
-    
+
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=(single_site_flops*volume*ncall)/2.0;
 
@@ -499,12 +371,14 @@ int main (int argc, char ** argv)
   setCheckerboard(r_eo,r_o);
   setCheckerboard(r_eo,r_e);
 
-  err = r_eo-result; 
+  err = r_eo-result;
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
   if((norm2(err)>1.0e-4)){
+    /*
 	std::cout<< "Deo RESULT\n " <<r_eo << std::endl;
 	std::cout<< "Deo REF\n " <<result  << std::endl;
 	std::cout<< "Deo ERR   \n " << err <<std::endl;
+    */
   }
 
   pickCheckerboard(Even,src_e,err);
@@ -517,4 +391,3 @@ int main (int argc, char ** argv)
   Grid_finalize();
   exit(0);
 }
-

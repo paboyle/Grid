@@ -29,17 +29,14 @@ Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
-
-#define parallel_for PARALLEL_FOR_LOOP for
 
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian     RBGrid(&Grid);
@@ -61,7 +58,7 @@ int main (int argc, char ** argv)
     PokeIndex<LorentzIndex>(P, P_mu, mu);
   }
 
-  SU3::HotConfiguration(pRNG,U);
+  SU<Nc>::HotConfiguration(pRNG,U);
   
 
   ConjugateGradient<LatticeGaugeField> CG(1.0e-8, 10000);
@@ -98,7 +95,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "Update the U " << std::endl;
   for(int mu=0;mu<Nd;mu++){
   // Traceless antihermitian momentum; gaussian in lie algebra
-    SU3::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); 
+    SU<Nc>::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); 
     auto Umu = PeekIndex<LorentzIndex>(U, mu);
     PokeIndex<LorentzIndex>(mom,mommu,mu);
     Umu = expMat(mommu, dt, 12) * Umu;
@@ -114,7 +111,7 @@ int main (int argc, char ** argv)
   // Use derivative to estimate dS
   //////////////////////////////////////////////
 
-  LatticeComplex dS(&Grid); dS = zero;
+  LatticeComplex dS(&Grid); dS = Zero();
 
   for(int mu=0;mu<Nd;mu++){
     auto UdSdUmu = PeekIndex<LorentzIndex>(UdSdU,mu);
@@ -150,7 +147,7 @@ int main (int argc, char ** argv)
 
   // Prediciton
 
-  dS = zero;
+  dS = Zero();
    for(int mu=0;mu<Nd;mu++){
     auto dSdPmu = PeekIndex<LorentzIndex>(UdSdP,mu);
     auto Pmu = PeekIndex<LorentzIndex>(P,mu);

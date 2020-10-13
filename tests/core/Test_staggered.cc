@@ -30,15 +30,15 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian     RBGrid(&Grid);
 
@@ -58,13 +58,13 @@ int main (int argc, char ** argv)
   typename ImprovedStaggeredFermionR::ImplParams params; 
 
   FermionField src   (&Grid); random(pRNG,src);
-  FermionField result(&Grid); result=zero;
-  FermionField    ref(&Grid);    ref=zero;
-  FermionField    tmp(&Grid);    tmp=zero;
-  FermionField    err(&Grid);    tmp=zero;
+  FermionField result(&Grid); result=Zero();
+  FermionField    ref(&Grid);    ref=Zero();
+  FermionField    tmp(&Grid);    tmp=Zero();
+  FermionField    err(&Grid);    tmp=Zero();
   FermionField phi   (&Grid); random(pRNG,phi);
   FermionField chi   (&Grid); random(pRNG,chi);
-  LatticeGaugeField Umu(&Grid); SU3::HotConfiguration(pRNG,Umu);
+  LatticeGaugeField Umu(&Grid); SU<Nc>::HotConfiguration(pRNG,Umu);
   std::vector<LatticeColourMatrix> U(4,&Grid);
 
 
@@ -82,7 +82,7 @@ int main (int argc, char ** argv)
   */
   }
 
-  ref = zero;
+  ref = Zero();
 
   RealD mass=0.1;
   RealD c1=9.0/8.0;
@@ -90,7 +90,7 @@ int main (int argc, char ** argv)
   RealD u0=1.0;
 
   { // Simple improved staggered implementation
-    ref = zero;
+    ref = Zero();
     RealD c1tad = 0.5*c1/u0;
     RealD c2tad = 0.5*c2/u0/u0/u0;
 
@@ -270,11 +270,11 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd ,phi_o,phi);
 
   SchurDiagMooeeOperator<ImprovedStaggeredFermionR,FermionField> HermOpEO(Ds);
-  HermOpEO.MpcDagMpc(chi_e,dchi_e,t1,t2);
-  HermOpEO.MpcDagMpc(chi_o,dchi_o,t1,t2);
+  HermOpEO.MpcDagMpc(chi_e,dchi_e);
+  HermOpEO.MpcDagMpc(chi_o,dchi_o);
 
-  HermOpEO.MpcDagMpc(phi_e,dphi_e,t1,t2);
-  HermOpEO.MpcDagMpc(phi_o,dphi_o,t1,t2);
+  HermOpEO.MpcDagMpc(phi_e,dphi_e);
+  HermOpEO.MpcDagMpc(phi_o,dphi_o);
 
   pDce = innerProduct(phi_e,dchi_e);
   pDco = innerProduct(phi_o,dchi_o);

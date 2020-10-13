@@ -31,8 +31,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
+/*
 static int
 FEenableexcept (unsigned int excepts)
 {
@@ -53,6 +53,7 @@ FEenableexcept (unsigned int excepts)
   return 0;
 #endif
 }
+*/
 
 
 template<class Field> class DumbOperator  : public LinearOperatorBase<Field> {
@@ -72,6 +73,7 @@ public:
   }
 
   // Support for coarsening to a multigrid
+  void OpDirAll  (const Field &in, std::vector<Field> &out){};
   void OpDiag (const Field &in, Field &out) {};
   void OpDir  (const Field &in, Field &out,int dir,int disp){};
 
@@ -102,7 +104,6 @@ public:
 int main (int argc, char ** argv)
 {
 
-  //  FEenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT); 
 
   Grid_init(&argc,&argv);
 
@@ -117,7 +118,6 @@ int main (int argc, char ** argv)
 
   RealD alpha = 1.2;
   RealD beta  = 0.1;
-  RealD mu    = 0.0;
   int order = 11;
   Chebyshev<LatticeComplex> Cheby(alpha,beta,order);
   std::ofstream file("cheby.dat");

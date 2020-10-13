@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Grid.h>
 
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 int main (int argc, char ** argv)
 {
@@ -38,9 +38,9 @@ int main (int argc, char ** argv)
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout( { vComplexF::Nsimd(),1,1,1});
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout( { vComplexF::Nsimd(),1,1,1});
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   int vol = 1;
   for(int d=0;d<latt_size.size();d++){
@@ -57,14 +57,14 @@ int main (int argc, char ** argv)
   LatticeSpinMatrixF    S(&Fine);
   LatticeSpinMatrixF    Stilde(&Fine);
   
-  std::vector<int> p({1,2,3,2});
+  Coordinate p({1,2,3,2});
 
   one = ComplexF(1.0,0.0);
   zz  = ComplexF(0.0,0.0);
 
   ComplexF ci(0.0,1.0);
 
-  C=zero;
+  C=Zero();
   for(int mu=0;mu<4;mu++){
     RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
     LatticeCoordinate(coor,mu);
@@ -73,7 +73,7 @@ int main (int argc, char ** argv)
 
   C = exp(C*ci);
 
-  S=zero;
+  S=Zero();
   S = S+C;
 
   FFT theFFT(&Fine);
@@ -84,12 +84,12 @@ int main (int argc, char ** argv)
   theFFT.FFT_dim(Ctilde,Ctilde,2,FFT::forward); std::cout << theFFT.MFlops()<<std::endl;
   theFFT.FFT_dim(Ctilde,Ctilde,3,FFT::forward); std::cout << theFFT.MFlops()<<std::endl;
 
-  //  C=zero;
+  //  C=Zero();
   //  Ctilde = where(abs(Ctilde)<1.0e-10,C,Ctilde);
   TComplexF cVol;
   cVol()()() = vol;
 
-  C=zero;
+  C=Zero();
   pokeSite(cVol,C,p);
   C=C-Ctilde;
   std::cout << "diff scalar "<<norm2(C) << std::endl;
@@ -101,9 +101,9 @@ int main (int argc, char ** argv)
   theFFT.FFT_dim(Stilde,Stilde,3,FFT::forward); std::cout << theFFT.MFlops()<<" "<<theFFT.USec() <<std::endl;
 
   SpinMatrixF Sp; 
-  Sp = zero; Sp = Sp+cVol;
+  Sp = Zero(); Sp = Sp+cVol;
 
-  S=zero;
+  S=Zero();
   pokeSite(Sp,S,p);
 
   S= S-Stilde;

@@ -29,15 +29,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  auto latt_size   = GridDefaultLatt();
+  auto simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  auto mpi_layout  = GridDefaultMpi();
 
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian     RBGrid(&Grid);
@@ -52,13 +51,14 @@ int main (int argc, char ** argv)
 
   LatticeGaugeField U(&Grid);
 
-  SU3::HotConfiguration(pRNG,U);
+  SU<Nc>::HotConfiguration(pRNG,U);
   
   double beta = 1.0;
-  double c1   = 0.331;
-
-  //ConjugatePlaqPlusRectangleActionR Action(beta,c1);
   ConjugateWilsonGaugeActionR Action(beta);
+
+  //  double c1   = 0.331;
+  //ConjugatePlaqPlusRectangleActionR Action(beta,c1);
+
   //WilsonGaugeActionR Action(beta);
 
   ComplexD S    = Action.S(U);
@@ -80,14 +80,17 @@ int main (int argc, char ** argv)
 
   for(int mu=0;mu<Nd;mu++){
 
-    SU3::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); // Traceless antihermitian momentum; gaussian in lie alg
+    SU<Nc>::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); // Traceless antihermitian momentum; gaussian in lie alg
 
     PokeIndex<LorentzIndex>(mom,mommu,mu);
 
     // fourth order exponential approx
-    parallel_for(auto i=mom.begin();i<mom.end();i++){ // exp(pmu dt) * Umu
-      Uprime[i](mu) = U[i](mu) + mom[i](mu)*U[i](mu)*dt ;
-    }
+    autoView(Uprime_v, Uprime, CpuWrite);
+    autoView( U_v , U, CpuRead);
+    autoView( mom_v, mom, CpuRead);
+    thread_foreach(i,mom_v,{ // exp(pmu dt) * Umu
+      Uprime_v[i](mu) = U_v[i](mu) + mom_v[i](mu)*U_v[i](mu)*dt ;
+    });
   }
 
   ComplexD Sprime    = Action.S(Uprime);
@@ -96,7 +99,7 @@ int main (int argc, char ** argv)
   // Use derivative to estimate dS
   //////////////////////////////////////////////
 
-  LatticeComplex dS(&Grid); dS = zero;
+  LatticeComplex dS(&Grid); dS = Zero();
 
   for(int mu=0;mu<Nd;mu++){
 

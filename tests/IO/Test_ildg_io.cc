@@ -31,7 +31,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 
 int main (int argc, char ** argv)
@@ -41,18 +41,17 @@ int main (int argc, char ** argv)
 
   std::cout <<GridLogMessage<< " main "<<std::endl;
 
-  std::vector<int> simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  auto simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
+  auto mpi_layout  = GridDefaultMpi();
   //std::vector<int> latt_size  ({48,48,48,96});
   //std::vector<int> latt_size  ({32,32,32,32});
-  std::vector<int> latt_size  ({16,16,16,32});
-  std::vector<int> clatt_size  ({4,4,4,8});
+  Coordinate latt_size  ({16,16,16,32});
+  Coordinate clatt_size  ({4,4,4,8});
   int orthodir=3;
   int orthosz =latt_size[orthodir];
     
   GridCartesian     Fine(latt_size,simd_layout,mpi_layout);
   GridCartesian     Coarse(clatt_size,simd_layout,mpi_layout);
-
 
   GridParallelRNG   pRNGa(&Fine);
   GridParallelRNG   pRNGb(&Fine);
@@ -70,7 +69,7 @@ int main (int argc, char ** argv)
 
   std::vector<LatticeColourMatrix> U(4,&Fine);
   
-  SU3::HotConfiguration(pRNGa,Umu);
+  SU<Nc>::HotConfiguration(pRNGa,Umu);
 
 
   FieldMetaData header;
@@ -93,6 +92,27 @@ int main (int argc, char ** argv)
   _IldgReader.readConfiguration(Umu,header);
   _IldgReader.close();
   Umu_diff = Umu - Umu_saved;
+
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  std::cout <<GridLogMessage<<"** Writing out  ILDG conf    *********"<<std::endl;
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  file = std::string("./ckpoint_scidac.4000");
+  emptyUserRecord record;
+  ScidacWriter _ScidacWriter(Fine.IsBoss());
+  _ScidacWriter.open(file);
+  _ScidacWriter.writeScidacFieldRecord(Umu,record);
+  _ScidacWriter.close();
+
+  Umu_saved = Umu;
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  std::cout <<GridLogMessage<<"** Reading back ILDG conf    *********"<<std::endl;
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  ScidacReader _ScidacReader;
+  _ScidacReader.open(file);
+  _ScidacReader.readScidacFieldRecord(Umu,record);
+  _ScidacReader.close();
+  Umu_diff = Umu - Umu_saved;
+
 
   std::cout <<GridLogMessage<< "norm2 Gauge Diff = "<<norm2(Umu_diff)<<std::endl;
 

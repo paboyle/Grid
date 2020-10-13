@@ -1,4 +1,4 @@
-# Grid [![Teamcity status](http://ci.cliath.ph.ed.ac.uk/app/rest/builds/aggregated/strob:(buildType:(affectedProject(id:Grid)),branch:name:develop)/statusIcon.svg)](http://ci.cliath.ph.ed.ac.uk/project.html?projectId=Grid&tab=projectOverview) [![Travis status](https://travis-ci.org/paboyle/Grid.svg?branch=develop)](https://travis-ci.org/paboyle/Grid)
+# Grid [![Teamcity status](http://ci.cliath.ph.ed.ac.uk/app/rest/builds/aggregated/strob:(buildType:(affectedProject(id:GridBasedSoftware_Grid)),branch:name:develop)/statusIcon.svg)](http://ci.cliath.ph.ed.ac.uk/project.html?projectId=GridBasedSoftware_Grid&tab=projectOverview) [![Travis status](https://travis-ci.org/paboyle/Grid.svg?branch=develop)](https://travis-ci.org/paboyle/Grid)
 
 **Data parallel C++ mathematical object library.**
 
@@ -48,6 +48,10 @@ Clang v3.5 and later (need 3.8 and later for OpenMP)
 GCC   v4.9.x (recommended)
 
 GCC   v6.3 and later
+
+### Specific machine compilation instructions - Summit, Tesseract
+
+[The Wiki contains specific instructions for some Summit, Tesseract and GPU compilation](https://github.com/paboyle/Grid/wiki)
 
 ### Important: 
 
@@ -111,11 +115,10 @@ Now you can execute the `configure` script to generate makefiles (here from a bu
 
 ``` bash
 mkdir build; cd build
-../configure --enable-precision=double --enable-simd=AVX --enable-comms=mpi-auto --prefix=<path>
+../configure --enable-simd=AVX --enable-comms=mpi-auto --prefix=<path>
 ```
 
-where `--enable-precision=` set the default precision,
-`--enable-simd=` set the SIMD type, `--enable-
+where `--enable-simd=` set the SIMD type, `--enable-
 comms=`, and `<path>` should be replaced by the prefix path where you want to
 install Grid. Other options are detailed in the next section, you can also use `configure
 --help` to display them. Like with any other program using GNU autotool, the
@@ -146,8 +149,8 @@ If you want to build all the tests at once just use `make tests`.
 - `--enable-numa`: enable NUMA first touch optimisation
 - `--enable-simd=<code>`: setup Grid for the SIMD target `<code>` (default: `GEN`). A list of possible SIMD targets is detailed in a section below.
 - `--enable-gen-simd-width=<size>`: select the size (in bytes) of the generic SIMD vector type (default: 32 bytes).
-- `--enable-precision={single|double}`: set the default precision (default: `double`).
-- `--enable-precision=<comm>`: Use `<comm>` for message passing (default: `none`). A list of possible SIMD targets is detailed in a section below.
+- `--enable-precision={single|double}`: set the default precision (default: `double`). **Deprecated option**
+- `--enable-comms=<comm>`: Use `<comm>` for message passing (default: `none`). A list of possible SIMD targets is detailed in a section below.
 - `--enable-rng={sitmo|ranlux48|mt19937}`: choose the RNG (default: `sitmo `).
 - `--disable-timers`: disable system dependent high-resolution timers.
 - `--enable-chroma`: enable Chroma regression tests.
@@ -201,8 +204,7 @@ Alternatively, some CPU codenames can be directly used:
 The following configuration is recommended for the Intel Knights Landing platform:
 
 ``` bash
-../configure --enable-precision=double\
-             --enable-simd=KNL        \
+../configure --enable-simd=KNL        \
              --enable-comms=mpi-auto  \
              --enable-mkl             \
              CXX=icpc MPICXX=mpiicpc
@@ -212,8 +214,7 @@ The MKL flag enables use of BLAS and FFTW from the Intel Math Kernels Library.
 If you are working on a Cray machine that does not use the `mpiicpc` wrapper, please use:
 
 ``` bash
-../configure --enable-precision=double\
-             --enable-simd=KNL        \
+../configure --enable-simd=KNL        \
              --enable-comms=mpi       \
              --enable-mkl             \
              CXX=CC CC=cc
@@ -232,8 +233,7 @@ for interior communication. This is the mpi3 communications implementation.
 We recommend four ranks per node for best performance, but optimum is local volume dependent.
 
 ``` bash
-../configure --enable-precision=double\
-             --enable-simd=KNL        \
+../configure --enable-simd=KNL        \
              --enable-comms=mpi3-auto \
              --enable-mkl             \
              CC=icpc MPICXX=mpiicpc 
@@ -244,8 +244,7 @@ We recommend four ranks per node for best performance, but optimum is local volu
 The following configuration is recommended for the Intel Haswell platform:
 
 ``` bash
-../configure --enable-precision=double\
-             --enable-simd=AVX2       \
+../configure --enable-simd=AVX2       \
              --enable-comms=mpi3-auto \
              --enable-mkl             \
              CXX=icpc MPICXX=mpiicpc
@@ -262,8 +261,7 @@ where `<path>` is the UNIX prefix where GMP and MPFR are installed.
 If you are working on a Cray machine that does not use the `mpiicpc` wrapper, please use:
 
 ``` bash
-../configure --enable-precision=double\
-             --enable-simd=AVX2       \
+../configure --enable-simd=AVX2       \
              --enable-comms=mpi3      \
              --enable-mkl             \
              CXX=CC CC=cc
@@ -280,8 +278,7 @@ This is the default.
 The following configuration is recommended for the Intel Skylake platform:
 
 ``` bash
-../configure --enable-precision=double\
-             --enable-simd=AVX512     \
+../configure --enable-simd=AVX512     \
              --enable-comms=mpi3      \
              --enable-mkl             \
              CXX=mpiicpc
@@ -298,8 +295,7 @@ where `<path>` is the UNIX prefix where GMP and MPFR are installed.
 If you are working on a Cray machine that does not use the `mpiicpc` wrapper, please use:
 
 ``` bash
-../configure --enable-precision=double\
-             --enable-simd=AVX512     \
+../configure --enable-simd=AVX512     \
              --enable-comms=mpi3      \
              --enable-mkl             \
              CXX=CC CC=cc
@@ -330,8 +326,7 @@ and 8 threads per rank.
 The following configuration is recommended for the AMD EPYC platform.
 
 ``` bash
-../configure --enable-precision=double\
-             --enable-simd=AVX2       \
+../configure --enable-simd=AVX2       \
              --enable-comms=mpi3 \
              CXX=mpicxx 
 ```

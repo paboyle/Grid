@@ -30,8 +30,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 double mq=0.1;
 
-typedef Grid::QCD::StaggeredImplR::FermionField FermionField;
-typedef Grid::QCD::LatticeGaugeField GaugeField;
+typedef Grid::StaggeredImplR::FermionField FermionField;
+typedef Grid::LatticeGaugeField GaugeField;
 
 void make_gauge     (GaugeField & lat, FermionField &src);
 void calc_grid      (GaugeField & lat, GaugeField & uthin,GaugeField & ufat, FermionField &src, FermionField &res,int dag);
@@ -53,14 +53,14 @@ public:
   static void ImportGauge(GaugeField & gr,
 			  QDP::multi1d<QDP::LatticeColorMatrix> & ch) 
   {
-    Grid::QCD::LorentzColourMatrix LCM;
+    Grid::LorentzColourMatrix LCM;
     Grid::Complex cc;
     QDP::ColorMatrix cm;
     QDP::Complex c;
 
     std::vector<int> x(4);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr._grid->GlobalDimensions();
+    std::vector<int> gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -88,14 +88,14 @@ public:
   static void ExportGauge(GaugeField & gr,
 			  QDP::multi1d<QDP::LatticeColorMatrix> & ch) 
   {
-    Grid::QCD::LorentzColourMatrix LCM;
+    Grid::LorentzColourMatrix LCM;
     Grid::Complex cc;
     QDP::ColorMatrix cm;
     QDP::Complex c;
 
     std::vector<int> x(4);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr._grid->GlobalDimensions();
+    std::vector<int> gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -124,13 +124,13 @@ public:
   static void ImportFermion(FermionField & gr,
 			    QDP::LatticeStaggeredFermion & ch  ) 
   {
-    Grid::QCD::ColourVector F;
+    Grid::ColourVector F;
     Grid::Complex c;
 
 
     std::vector<int> x(5);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr._grid->GlobalDimensions();
+    std::vector<int> gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -157,12 +157,12 @@ public:
   static void ExportFermion(FermionField & gr,
 			    QDP::LatticeStaggeredFermion & ch  ) 
   {
-    Grid::QCD::ColourVector F;
+    Grid::ColourVector F;
     Grid::Complex c;
 
     std::vector<int> x(5);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr._grid->GlobalDimensions();
+    std::vector<int> gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -222,9 +222,9 @@ int main (int argc,char **argv )
    * Setup Grid
    *********************************************************/
   Grid::Grid_init(&argc,&argv);
-  Grid::GridCartesian * UGrid   = Grid::QCD::SpaceTimeGrid::makeFourDimGrid(Grid::GridDefaultLatt(), 
-									    Grid::GridDefaultSimd(Grid::QCD::Nd,Grid::vComplex::Nsimd()),
-									    Grid::GridDefaultMpi());
+  Grid::GridCartesian * UGrid   = Grid::SpaceTimeGrid::makeFourDimGrid(Grid::GridDefaultLatt(), 
+                                                                       Grid::GridDefaultSimd(Grid::Nd,Grid::vComplex::Nsimd()),
+                                                                       Grid::GridDefaultMpi());
   
   std::vector<int> gd = UGrid->GlobalDimensions();
   QDP::multi1d<int> nrow(QDP::Nd);
@@ -265,12 +265,12 @@ int main (int argc,char **argv )
       std::cout << "Norm of Grid Asqtad multiply "<<Grid::norm2(res_grid)<<std::endl;
       
       /*
-      std::cout << " site 0 of Uthin  "<<uthin._odata[0] <<std::endl;
-      std::cout << " site 0 of Utriple"<<utriple._odata[0] <<std::endl;
-      std::cout << " site 0 of Ufat   "<<ufat._odata[0] <<std::endl;
+      std::cout << " site 0 of Uthin  "<<uthin[0] <<std::endl;
+      std::cout << " site 0 of Utriple"<<utriple[0] <<std::endl;
+      std::cout << " site 0 of Ufat   "<<ufat[0] <<std::endl;
 
-      std::cout << " site 0 of Grid   "<<res_grid._odata[0] <<std::endl;
-      std::cout << " site 0 of Chroma "<<res_chroma._odata[0] <<std::endl;
+      std::cout << " site 0 of Grid   "<<res_grid[0] <<std::endl;
+      std::cout << " site 0 of Chroma "<<res_chroma[0] <<std::endl;
       */
 
       res_chroma=res_chroma - res_grid;
@@ -327,25 +327,25 @@ void calc_chroma(GaugeField & lat, GaugeField &uthin, GaugeField &ufat, FermionF
 void make_gauge(GaugeField & Umu,FermionField &src)
 {
   using namespace Grid;
-  using namespace Grid::QCD;
+   ;
 
   std::vector<int> seeds4({1,2,3,4});
 
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu._grid;
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu.Grid();
   Grid::GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
-  Grid::QCD::SU3::HotConfiguration(RNG4,Umu);
+  Grid::SU<Nc>::HotConfiguration(RNG4,Umu);
   Grid::gaussian(RNG4,src);
 }
 
 void calc_grid(GaugeField & Uthin, GaugeField & Utriple, GaugeField & Ufat, FermionField &src, FermionField &res,int dag)
 {
   using namespace Grid;
-  using namespace Grid::QCD;
+   ;
 
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Uthin._grid;
-  Grid::GridRedBlackCartesian * UrbGrid = Grid::QCD::SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Uthin.Grid();
+  Grid::GridRedBlackCartesian * UrbGrid = Grid::SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
 
-  Grid::QCD::ImprovedStaggeredFermionR Dstag(Uthin,Utriple,Ufat,*UGrid,*UrbGrid,mq*2.0);
+  Grid::ImprovedStaggeredFermionR Dstag(Uthin,Utriple,Ufat,*UGrid,*UrbGrid,mq*2.0);
 
   std::cout << Grid::GridLogMessage <<" Calling Grid staggered multiply "<<std::endl;
 

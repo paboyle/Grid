@@ -38,7 +38,7 @@ Author: David Murphy <dmurphy@phys.columbia.edu>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 // Parameters for test
 const std::vector<int> grid_dim = { 8, 8, 8, 8 };
@@ -73,7 +73,7 @@ int main(int argc, char** argv)
 
   // Random gauge field
   LatticeGaugeField Umu(UGrid);
-  SU3::HotConfiguration(RNG4, Umu);
+  SU<Nc>::HotConfiguration(RNG4, Umu);
 
   DomainWallEOFAFermionR Lop(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf,  mf, mpv,  0.0, -1, M5);
   DomainWallEOFAFermionR Rop(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mpv, mf, mpv, -1.0,  1, M5);

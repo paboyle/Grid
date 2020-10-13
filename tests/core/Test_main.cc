@@ -32,7 +32,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
 /*
  Grid_main.cc(232): error: no suitable user-defined conversion from
@@ -58,9 +57,9 @@ auto peekDumKopf(const vobj &rhs, int i) -> decltype(peekIndex<3>(rhs, 0)) {
 int main(int argc, char **argv) {
   Grid_init(&argc, &argv);
 
-  std::vector<int> latt_size = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(4, vComplex::Nsimd());
-  std::vector<int> mpi_layout = GridDefaultMpi();
+  Coordinate latt_size = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(4, vComplex::Nsimd());
+  Coordinate mpi_layout = GridDefaultMpi();
 
   latt_size.resize(4);
 
@@ -74,7 +73,7 @@ int main(int argc, char **argv) {
     omp_set_num_threads(omp);
 #endif
 
-    for (int lat = 8; lat <= 16; lat += 40) {
+    for (int lat = 16; lat <= 16; lat += 40) {
       std::cout << "Lat " << lat << std::endl;
 
       latt_size[0] = lat;
@@ -138,7 +137,6 @@ int main(int argc, char **argv) {
       LatticeReal iscalar(&Fine);
 
       SpinMatrix GammaFive;
-      iSpinMatrix<vComplex> iGammaFive;
       ColourMatrix cmat;
 
       random(FineRNG, Foo);
@@ -160,15 +158,17 @@ int main(int argc, char **argv) {
       LatticeColourMatrix newFoo = Foo; 
       // confirm correctness of copy constructor
       Bar = Foo - newFoo;
-      std::cout << "Copy constructor diff check: "; 
+      std::cout << "Copy constructor diff check: \n"; 
       double test_cc = norm2(Bar);
       if (test_cc < 1e-5){
         std::cout << "OK\n";
-    }
-      else{
+      } else{
+	std::cout << "Foo\n"<<Foo<<std::endl;
+	std::cout << "newFoo\n"<<newFoo<<std::endl;
+	std::cout << "Bar\n"<<Bar<<std::endl;
         std::cout << "fail\n";
         abort();
-    }
+      }
 
       // Norm2 check
       LatticeReal BarReal(&Fine);
@@ -180,7 +180,7 @@ int main(int argc, char **argv) {
       std::cout << "Norm2 LatticeReal : "<< norm2(BarReal) << std::endl;
       std::cout << "Norm2 LatticeComplex : "<< norm2(BarComplex) << std::endl;
 
-      exit(0);
+      //      exit(0);
 
       TComplex tr = trace(cmat);
 
@@ -282,7 +282,6 @@ int main(int argc, char **argv) {
       cMat = mydouble * cMat;
 
       sMat = adj(sMat);          // LatticeSpinMatrix adjoint
-      sMat = iGammaFive * sMat;  // SpinMatrix * LatticeSpinMatrix
       sMat = GammaFive * sMat;   // SpinMatrix * LatticeSpinMatrix
       scMat = adj(scMat);
       cMat = adj(cMat);
@@ -388,7 +387,7 @@ int main(int argc, char **argv) {
         std::vector<int> coor(4);
         for(int d=0;d<4;d++) coor[d] = 0;
         peekSite(cmat,Foo,coor);
-        Foo = zero;
+        Foo = Zero();
         pokeSite(cmat,Foo,coor);
       }
       random(Foo);
@@ -402,14 +401,14 @@ int main(int argc, char **argv) {
           Fine._ldimensions[0] * Fine._ldimensions[1] * Fine._ldimensions[2];
 
       LatticeInteger lex(&Fine);
-      lex = zero;
+      lex = Zero();
       for (int d = 0; d < 4; d++) {
         LatticeInteger coor(&Fine);
         LatticeCoordinate(coor, d);
         lex = lex + coor * mm[d];
       }
 
-      //    Bar = zero;
+      //    Bar = Zero();
       //    Bar = where(lex<Integer(10),Foo,Bar);
 
       cout << "peeking sites..\n";
@@ -445,11 +444,11 @@ int main(int argc, char **argv) {
       // Lattice 12x12 GEMM
       scFooBar = scFoo * scBar;
 
-      // Benchmark some simple operations LatticeSU3 * Lattice SU3.
+      // Benchmark some simple operations LatticeSU<Nc> * Lattice SU<Nc>.
       double t0, t1, flops;
       double bytes;
       int ncall = 5000;
-      int Nc = Grid::QCD::Nc;
+      int Nc = Grid::Nc;
 
       LatticeGaugeField U(&Fine);
       //    LatticeColourMatrix Uy = peekLorentz(U,1);
@@ -515,7 +514,6 @@ int main(int argc, char **argv) {
       double nrm = 0;
 
       LatticeColourMatrix deriv(&Fine);
-      double half = 0.5;
       deriv = 0.5 * Cshift(Foo, 0, 1) - 0.5 * Cshift(Foo, 0, -1);
 
       for (int dir = 0; dir < 4; dir++) {
@@ -533,7 +531,7 @@ int main(int argc, char **argv) {
           bShifted = Cshift(rFoo, dir, shift);  // Shift red->black
           rShifted = Cshift(bFoo, dir, shift);  // Shift black->red
 
-          ShiftedCheck = zero;
+          ShiftedCheck = Zero();
           setCheckerboard(ShiftedCheck, bShifted);  // Put them all together
           setCheckerboard(ShiftedCheck,
                           rShifted);  // and check the results (later)
@@ -547,7 +545,7 @@ int main(int argc, char **argv) {
                    coor[1]++) {
                 for (coor[0] = 0; coor[0] < latt_size[0] / mpi_layout[0];
                      coor[0]++) {
-                  std::complex<Grid::Real> diff;
+                  Complex diff;
 
                   std::vector<int> shiftcoor = coor;
                   shiftcoor[dir] = (shiftcoor[dir] + shift + latt_size[dir]) %

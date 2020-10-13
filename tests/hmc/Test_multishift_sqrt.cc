@@ -31,7 +31,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
 template<class Field> class DumbOperator  : public LinearOperatorBase<Field> {
 public:
@@ -57,6 +56,7 @@ public:
   // Support for coarsening to a multigrid
   void OpDiag (const Field &in, Field &out) {};
   void OpDir  (const Field &in, Field &out,int dir,int disp){};
+  void OpDirAll  (const Field &in, std::vector<Field> &out) {};
 
   void Op     (const Field &in, Field &out){
     out = scale * in;
@@ -104,7 +104,7 @@ int main (int argc, char ** argv)
 						       GridDefaultMpi());
 
   double     lo=0.001;
-  double     hi=1.0;
+  double     hi=20.0;
   int precision=64;
   int    degree=10;
   AlgRemez remez(lo,hi,precision);

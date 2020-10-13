@@ -30,7 +30,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 template<class d>
 struct scal {
@@ -54,9 +54,9 @@ int main (int argc, char ** argv)
 
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
@@ -67,12 +67,27 @@ int main (int argc, char ** argv)
   GridParallelRNG pRNG(UGrid );  pRNG.SeedFixedIntegers(seeds);
   GridParallelRNG pRNG5(FGrid);  pRNG5.SeedFixedIntegers(seeds);
 
-  FermionField src(FGrid); random(pRNG5,src);
+  FermionField src(FGrid);
+  FermionField tt(FGrid);
+#if 1
+  random(pRNG5,src);
+#else
+  src=Zero();
+  ComplexField coor(FGrid);
+  LatticeCoordinate(coor,0);
+  for(int ss=0;ss<FGrid->oSites();ss++){
+    src._odata[ss]()()(0)=coor._odata[ss]()()();
+  }
+  LatticeCoordinate(coor,1);
+  for(int ss=0;ss<FGrid->oSites();ss++){
+    src._odata[ss]()()(0)+=coor._odata[ss]()()();
+  }
+#endif
   FermionField src_o(FrbGrid);   pickCheckerboard(Odd,src_o,src);
-  FermionField result_o(FrbGrid); result_o=zero; 
+  FermionField result_o(FrbGrid); result_o=Zero(); 
   RealD nrm = norm2(src);
 
-  LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
+  LatticeGaugeField Umu(UGrid); SU<Nc>::HotConfiguration(pRNG,Umu);
 
   double volume=1;
   for(int mu=0;mu<Nd;mu++){
@@ -89,7 +104,8 @@ int main (int argc, char ** argv)
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
   int blockDim = 0;
   BlockConjugateGradient<FermionField>    BCGrQ(BlockCGrQ,blockDim,1.0e-8,10000);
-  BlockConjugateGradient<FermionField>    BCG  (BlockCG,blockDim,1.0e-8,10000);
+  BlockConjugateGradient<FermionField>    BCG  (BlockCGrQ,blockDim,1.0e-8,10000);
+  BlockConjugateGradient<FermionField>    BCGv (BlockCGrQVec,blockDim,1.0e-8,10000);
   BlockConjugateGradient<FermionField>    mCG  (CGmultiRHS,blockDim,1.0e-8,10000);
 
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
@@ -101,8 +117,8 @@ int main (int argc, char ** argv)
   FermionField src4d_o(UrbGrid);   pickCheckerboard(Odd,src4d_o,src4d);
   FermionField result4d_o(UrbGrid); 
 
+  result4d_o=Zero();
   double deodoe_flops=(16*(3*(6+8+8)) + 15*3*2)*volume; // == 66*16 +  == 1146
-  result4d_o=zero;
   {
     double t1=usecond();
     CG(HermOp4d,src4d_o,result4d_o);
@@ -112,9 +128,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
     std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
-    HermOp4d.Report();
   }
-  Ds4d.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
 
@@ -122,7 +136,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Calling 5d CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   Ds.ZeroCounters();
-  result_o=zero;
+  result_o=Zero();
   {
     double t1=usecond();
     CG(HermOp,src_o,result_o);
@@ -132,16 +146,14 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
     std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
-    HermOp.Report();
   }
-  Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   std::cout << GridLogMessage << " Calling multiRHS CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   Ds.ZeroCounters();
-  result_o=zero;
+  result_o=Zero();
   {
     double t1=usecond();
     mCG(HermOp,src_o,result_o);
@@ -151,17 +163,15 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
     std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
-    HermOp.Report();
   }
 
-  Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
-  std::cout << GridLogMessage << " Calling Block CG for "<<Ls <<" right hand sides" <<std::endl;
+  std::cout << GridLogMessage << " Calling Block CGrQ for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   Ds.ZeroCounters();
-  result_o=zero;
+  result_o=Zero();
   {
     double t1=usecond();
     BCGrQ(HermOp,src_o,result_o);
@@ -171,10 +181,48 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
     std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
-    HermOp.Report();
   }
-  Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
+
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
+  std::cout << GridLogMessage << " Calling Block CG for "<<Ls <<" right hand sides" <<std::endl;
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
+  Ds.ZeroCounters();
+  result_o=Zero();
+  {
+    double t1=usecond();
+    BCG(HermOp,src_o,result_o);
+    double t2=usecond();
+    double ncall=BCGrQ.IterationsToComplete*Ls;
+    double flops = deodoe_flops * ncall;
+    std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+    std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
+  }
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
+
+  std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
+  std::cout << GridLogMessage << " Calling BCGvec "<<std::endl;
+  std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
+  std::vector<FermionField> src_v   (Ls,UrbGrid);
+  std::vector<FermionField> result_v(Ls,UrbGrid);
+  for(int s=0;s<Ls;s++) result_v[s] = Zero();
+  for(int s=0;s<Ls;s++) {
+    FermionField src4(UGrid);
+    ExtractSlice(src4,src,s,0);
+    pickCheckerboard(Odd,src_v[s],src4);  
+  }
+
+  {
+    double t1=usecond();
+    BCGv(HermOp4d,src_v,result_v);
+    double t2=usecond();
+    double ncall=BCGv.IterationsToComplete*Ls;
+    double flops = deodoe_flops * ncall;
+    std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+    std::cout<<GridLogMessage << "flops   =   "<< flops<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
+  }
 
 
   Grid_finalize();

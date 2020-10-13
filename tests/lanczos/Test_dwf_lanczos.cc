@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 typedef typename GparityDomainWallFermionR::FermionField FermionField;
 
@@ -54,7 +54,7 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG5rb(FrbGrid);  RNG5.SeedFixedIntegers(seeds5);
 
   LatticeGaugeField Umu(UGrid); 
-  SU3::HotConfiguration(RNG4, Umu);
+  SU<Nc>::HotConfiguration(RNG4, Umu);
 
   std::vector<LatticeColourMatrix> U(4,UGrid);
   for(int mu=0;mu<Nd;mu++){
@@ -97,7 +97,7 @@ int main (int argc, char ** argv)
   gaussian(RNG5rb,src);
   std::vector<FermionField> evec(Nm,FrbGrid);
   for(int i=0;i<1;i++){
-    std::cout << GridLogMessage <<i<<" / "<< Nm<< " grid pointer "<<evec[i]._grid<<std::endl;
+    std::cout << GridLogMessage <<i<<" / "<< Nm<< " grid pointer "<<evec[i].Grid()<<std::endl;
   };
 
   int Nconv;

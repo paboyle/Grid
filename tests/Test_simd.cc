@@ -28,9 +28,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
-using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
 class funcPlus {
 public:
@@ -103,14 +101,14 @@ public:
 // FIXME still to test:
 //
 //  innerProduct,
-//  norm2, 
+//  norm2,
 //  Reduce,
 //
-//  mac,mult,sub,add, vone,vzero,vcomplex_i, =zero,
+//  mac,mult,sub,add, vone,vzero,vcomplex_i, =Zero(),
 //  vset,vsplat,vstore,vstream,vload, scalar*vec, vec*scalar
 //  unary -,
 //  *= , -=, +=
-//  outerproduct, 
+//  outerproduct,
 //  zeroit
 //  permute
 class funcReduce {
@@ -121,18 +119,18 @@ template<class reduce,class scal>   void sfunc(reduce &rr,scal &i1,scal &i2) con
   std::string name(void) const { return std::string("Reduce"); }
 };
 
-template<class scal, class vec,class functor > 
+template<class scal, class vec,class functor >
 void Tester(const functor &func)
 {
   GridSerialRNG          sRNG;
   sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
-  
+
   int Nsimd = vec::Nsimd();
 
-  std::vector<scal> input1(Nsimd);
-  std::vector<scal> input2(Nsimd);
-  std::vector<scal> result(Nsimd);
-  std::vector<scal> reference(Nsimd);
+  ExtractBuffer<scal> input1(Nsimd);
+  ExtractBuffer<scal> input2(Nsimd);
+  ExtractBuffer<scal> result(Nsimd);
+  ExtractBuffer<scal> reference(Nsimd);
 
   std::vector<vec,alignedAllocator<vec> > buf(3);
   vec & v_input1 = buf[0];
@@ -174,6 +172,8 @@ void Tester(const functor &func)
   }
   if ( ok==0 ) {
     std::cout<<GridLogMessage << " OK!" <<std::endl;
+  } else {
+    std::cout<<GridLogMessage << " wrong!" <<std::endl;
   }
   assert(ok==0);
 }
@@ -186,10 +186,10 @@ void IntTester(const functor &func)
 
   int Nsimd = vec::Nsimd();
 
-  std::vector<scal> input1(Nsimd);
-  std::vector<scal> input2(Nsimd);
-  std::vector<scal> result(Nsimd);
-  std::vector<scal> reference(Nsimd);
+  ExtractBuffer<scal> input1(Nsimd);
+  ExtractBuffer<scal> input2(Nsimd);
+  ExtractBuffer<scal> result(Nsimd);
+  ExtractBuffer<scal> reference(Nsimd);
 
   std::vector<vec,alignedAllocator<vec> > buf(3);
   vec & v_input1 = buf[0];
@@ -231,21 +231,23 @@ void IntTester(const functor &func)
   }
   if ( ok==0 ) {
     std::cout<<GridLogMessage << " OK!" <<std::endl;
+  } else {
+    std::cout<<GridLogMessage << " wrong!" <<std::endl;
   }
   assert(ok==0);
 }
 
 
-template<class reduced,class scal, class vec,class functor > 
+template<class reduced,class scal, class vec,class functor >
 void ReductionTester(const functor &func)
 {
   GridSerialRNG          sRNG;
   sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
-  
+
   int Nsimd = vec::Nsimd();
 
-  std::vector<scal> input1(Nsimd);
-  std::vector<scal> input2(Nsimd);
+  ExtractBuffer<scal> input1(Nsimd);
+  ExtractBuffer<scal> input2(Nsimd);
   reduced result(0);
   reduced reference(0);
   reduced tmp;
@@ -280,18 +282,20 @@ void ReductionTester(const functor &func)
   }
   if ( ok==0 ) {
     std::cout<<GridLogMessage << " OK!" <<std::endl;
+  } else {
+    std::cout<<GridLogMessage << " wrong!" <<std::endl;
   }
   assert(ok==0);
 }
 
 
-template<class reduced,class scal, class vec,class functor > 
+template<class reduced,class scal, class vec,class functor >
 void IntReductionTester(const functor &func)
 {
   int Nsimd = vec::Nsimd();
 
-  std::vector<scal> input1(Nsimd);
-  std::vector<scal> input2(Nsimd);
+  ExtractBuffer<scal> input1(Nsimd);
+  ExtractBuffer<scal> input2(Nsimd);
   reduced result(0);
   reduced reference(0);
   reduced tmp;
@@ -325,6 +329,8 @@ void IntReductionTester(const functor &func)
   }
   if ( ok==0 ) {
     std::cout<<GridLogMessage << " OK!" <<std::endl;
+  } else {
+    std::cout<<GridLogMessage << " wrong!" <<std::endl;
   }
   assert(ok==0);
 }
@@ -335,7 +341,7 @@ public:
   int n;
   funcPermute(int _n) { n=_n;};
   template<class vec>    void operator()(vec &rr,vec &i1,vec &i2) const { permute(rr,i1,n);}
-  template<class scal>   void apply(std::vector<scal> &rr,std::vector<scal> &in)  const { 
+  template<class scal>   void apply(ExtractBuffer<scal> &rr,ExtractBuffer<scal> &in)  const {
     int sz=in.size();
     int msk = sz>>(n+1);
     for(int i=0;i<sz;i++){
@@ -350,11 +356,11 @@ public:
   int n;
   funcExchange(int _n) { n=_n;};
   template<class vec>    void operator()(vec &r1,vec &r2,vec &i1,vec &i2) const { exchange(r1,r2,i1,i2,n);}
-  template<class scal>   void apply(std::vector<scal> &r1,
-				    std::vector<scal> &r2,
-				    std::vector<scal> &in1,
-				    std::vector<scal> &in2)  const 
-  { 
+  template<class scal>   void apply(ExtractBuffer<scal> &r1,
+				    ExtractBuffer<scal> &r2,
+				    ExtractBuffer<scal> &in1,
+				    ExtractBuffer<scal> &in2)  const
+  {
     int sz=in1.size();
     int msk = sz>>(n+1);
 
@@ -366,7 +372,7 @@ public:
 
       if  ( (i&msk) == 0 ) { r2[i]=in1[j2];}
       else                 { r2[i]=in2[j2];}
-    }      
+    }
   }
   std::string name(void) const { return std::string("Exchange"); }
 };
@@ -376,7 +382,7 @@ public:
   int n;
   funcRotate(int _n) { n=_n;};
   template<class vec>    void operator()(vec &rr,vec &i1,vec &i2) const { rr=rotate(i1,n);}
-  template<class scal>   void apply(std::vector<scal> &rr,std::vector<scal> &in)  const { 
+  template<class scal>   void apply(ExtractBuffer<scal> &rr,ExtractBuffer<scal> &in)  const {
     int sz = in.size();
     for(int i=0;i<sz;i++){
       rr[i] = in[(i+n)%sz];
@@ -386,18 +392,18 @@ public:
 };
 
 
-template<class scal, class vec,class functor > 
+template<class scal, class vec,class functor >
 void PermTester(const functor &func)
 {
   GridSerialRNG          sRNG;
   sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
-  
+
   int Nsimd = vec::Nsimd();
 
-  std::vector<scal> input1(Nsimd);
-  std::vector<scal> input2(Nsimd);
-  std::vector<scal> result(Nsimd);
-  std::vector<scal> reference(Nsimd);
+  ExtractBuffer<scal> input1(Nsimd);
+  ExtractBuffer<scal> input2(Nsimd);
+  ExtractBuffer<scal> result(Nsimd);
+  ExtractBuffer<scal> reference(Nsimd);
 
   std::vector<vec,alignedAllocator<vec> > buf(3);
   vec & v_input1 = buf[0];
@@ -427,47 +433,49 @@ void PermTester(const functor &func)
     for(int i=0;i<Nsimd;i++){
       std::cout<< input1[i]<<" ";
     }
-    std::cout <<std::endl; 
+    std::cout <<std::endl;
     for(int i=0;i<Nsimd;i++){
       std::cout<< result[i]<<" ";
     }
-    std::cout <<std::endl; 
+    std::cout <<std::endl;
     for(int i=0;i<Nsimd;i++){
       std::cout<< reference[i]<<" ";
     }
-    std::cout <<std::endl; 
+    std::cout <<std::endl;
     std::cout<<GridLogMessage<< "*****" << std::endl;
   }
   for(int i=0;i<Nsimd;i++){
     if ( abs(reference[i]-result[i])>1.0e-7){
-      std::cout<<GridLogMessage<< "*****" << std::endl;      
+      std::cout<<GridLogMessage<< "*****" << std::endl;
       std::cout<<GridLogMessage<< "["<<i<<"] "<< abs(reference[i]-result[i]) << " " <<reference[i]<< " " << result[i]<<std::endl;
       ok++;
     }
   }
   if ( ok==0 ) {
     std::cout<<GridLogMessage << " OK!" <<std::endl;
+  } else {
+    std::cout<<GridLogMessage << " wrong!" <<std::endl;
   }
   assert(ok==0);
 }
 
 
-template<class scal, class vec,class functor > 
+template<class scal, class vec,class functor >
 void ExchangeTester(const functor &func)
 {
   GridSerialRNG          sRNG;
   sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
-  
+
   int Nsimd = vec::Nsimd();
 
-  std::vector<scal> input1(Nsimd);
-  std::vector<scal> input2(Nsimd);
-  std::vector<scal> result1(Nsimd);
-  std::vector<scal> result2(Nsimd);
-  std::vector<scal> reference1(Nsimd);
-  std::vector<scal> reference2(Nsimd);
-  std::vector<scal> test1(Nsimd);
-  std::vector<scal> test2(Nsimd);
+  ExtractBuffer<scal> input1(Nsimd);
+  ExtractBuffer<scal> input2(Nsimd);
+  ExtractBuffer<scal> result1(Nsimd);
+  ExtractBuffer<scal> result2(Nsimd);
+  ExtractBuffer<scal> reference1(Nsimd);
+  ExtractBuffer<scal> reference2(Nsimd);
+  ExtractBuffer<scal> test1(Nsimd);
+  ExtractBuffer<scal> test2(Nsimd);
 
   std::vector<vec,alignedAllocator<vec> > buf(6);
   vec & v_input1 = buf[0];
@@ -513,6 +521,7 @@ void ExchangeTester(const functor &func)
       }
     }
     //    assert(found==1);
+    assert(found==1||found==0);
   }
   for(int i=0;i<Nsimd;i++){
     int found=0;
@@ -523,6 +532,7 @@ void ExchangeTester(const functor &func)
       }
     }
     //    assert(found==1);
+    assert(found==1||found==0);
   }
 
   /*
@@ -547,10 +557,26 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
-    
+  auto latt_size   = GridDefaultLatt();
+  auto simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
+  auto mpi_layout  = GridDefaultMpi();
+
+  {
+    std::cout << " Constructing Test({1,2,3,4,5,6}) " << std::endl;
+    Coordinate Test({1,2,3,4,5,6});
+    std::cout << " Test({1,2,3,4,5,6}) = " << Test <<std::endl;
+  }
+  /*
+  {
+    Coordinate Test =  {1,2,3,4} ;
+    std::cout << " Test = {1,2,3,4} " << Test <<std::endl;
+  }
+  {
+    Coordinate Test {1,2,3,4};
+    std::cout << " Test {1,2,3,4} " << Test <<std::endl;
+  }
+  */
+
   GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
   std::vector<int> seeds({1,2,3,4});
 
@@ -726,7 +752,7 @@ int main (int argc, char ** argv)
   for(int r=0;r<vComplexD::Nsimd();r++){
     PermTester<ComplexD,vComplexD>(funcRotate(r));
   }
-  
+
   std::cout<<GridLogMessage << "==================================="<<  std::endl;
   std::cout<<GridLogMessage << "Testing vInteger                   "<<  std::endl;
   std::cout<<GridLogMessage << "==================================="<<  std::endl;
@@ -757,29 +783,28 @@ int main (int argc, char ** argv)
     precisionChange(&DD[0],&F[0],Ndp);
     std::cout << GridLogMessage<<"Double to single";
     for(int i=0;i<Ndp;i++){
-      //      std::cout << "DD["<<i<<"] = "<< DD[i]<<" "<<D[i]<<" "<<DD[i]-D[i] <<std::endl; 
+      //      std::cout << "DD["<<i<<"] = "<< DD[i]<<" "<<D[i]<<" "<<DD[i]-D[i] <<std::endl;
       DD[i] = DD[i] - D[i];
       decltype(innerProduct(DD[0],DD[0])) nrm;
       nrm = innerProduct(DD[i],DD[i]);
       auto tmp = Reduce(nrm);
       //      std::cout << tmp << std::endl;
-      assert( tmp < 1.0e-14 ); 
+      assert( tmp < 1.0e-14 );
     }
     std::cout <<" OK ! "<<std::endl;
 
     // Double to Half
-#ifdef USE_FP16
     std::cout << GridLogMessage<< "Double to half" ;
     precisionChange(&H[0],&D[0],Ndp);
     precisionChange(&DD[0],&H[0],Ndp);
     for(int i=0;i<Ndp;i++){
-      //      std::cout << "DD["<<i<<"] = "<< DD[i]<<" "<<D[i]<<" "<<DD[i]-D[i]<<std::endl; 
+      //      std::cout << "DD["<<i<<"] = "<< DD[i]<<" "<<D[i]<<" "<<DD[i]-D[i]<<std::endl;
       DD[i] = DD[i] - D[i];
       decltype(innerProduct(DD[0],DD[0])) nrm;
       nrm = innerProduct(DD[i],DD[i]);
       auto tmp = Reduce(nrm);
       //      std::cout << tmp << std::endl;
-      assert( tmp < 1.0e-3 ); 
+      assert( tmp < 1.0e-3 );
     }
     std::cout <<" OK ! "<<std::endl;
 
@@ -788,16 +813,16 @@ int main (int argc, char ** argv)
     precisionChange(&H[0] ,&F[0],Nsp);
     precisionChange(&FF[0],&H[0],Nsp);
     for(int i=0;i<Nsp;i++){
-      //      std::cout << "FF["<<i<<"] = "<< FF[i]<<" "<<F[i]<<" "<<FF[i]-F[i]<<std::endl; 
+      //      std::cout << "FF["<<i<<"] = "<< FF[i]<<" "<<F[i]<<" "<<FF[i]-F[i]<<std::endl;
       FF[i] = FF[i] - F[i];
       decltype(innerProduct(FF[0],FF[0])) nrm;
       nrm = innerProduct(FF[i],FF[i]);
       auto tmp = Reduce(nrm);
       //      std::cout << tmp << std::endl;
-      assert( tmp < 1.0e-3 ); 
+      assert( tmp < 1.0e-3 );
     }
     std::cout <<" OK ! "<<std::endl;
-#endif
+
   }
   Grid_finalize();
 }

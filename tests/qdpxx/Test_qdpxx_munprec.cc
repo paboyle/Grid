@@ -52,8 +52,8 @@ enum ChromaAction {
 		 HtContFracZolo
 };
 
-void calc_grid      (ChromaAction action,Grid::QCD::LatticeGaugeField & lat, Grid::QCD::LatticeFermion &src, Grid::QCD::LatticeFermion &res,int dag);
-void calc_chroma    (ChromaAction action,Grid::QCD::LatticeGaugeField & lat, Grid::QCD::LatticeFermion &src, Grid::QCD::LatticeFermion &res,int dag);
+void calc_grid      (ChromaAction action,Grid::LatticeGaugeField & lat, Grid::LatticeFermion &src, Grid::LatticeFermion &res,int dag);
+void calc_chroma    (ChromaAction action,Grid::LatticeGaugeField & lat, Grid::LatticeFermion &src, Grid::LatticeFermion &res,int dag);
 
 #include <chroma.h>
 #include <actions/ferm/invert/syssolver_linop_cg_array.h>
@@ -71,17 +71,17 @@ public:
   typedef LatticeFermion T4;
   typedef multi1d<LatticeFermion> T5;
   
-  static void ImportGauge(Grid::QCD::LatticeGaugeField & gr,
+  static void ImportGauge(Grid::LatticeGaugeField & gr,
 			  QDP::multi1d<QDP::LatticeColorMatrix> & ch) 
   {
-    Grid::QCD::LorentzColourMatrix LCM;
+    Grid::LorentzColourMatrix LCM;
     Grid::Complex cc;
     QDP::ColorMatrix cm;
     QDP::Complex c;
 
     std::vector<int> x(4);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr._grid->GlobalDimensions();
+    std::vector<int> gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -112,10 +112,10 @@ public:
     }}}}
   }
   
-  static void ImportFermion(Grid::QCD::LatticeFermion & gr,
+  static void ImportFermion(Grid::LatticeFermion & gr,
 			    QDP::multi1d<QDP::LatticeFermion> & ch  ) 
   {
-    Grid::QCD::SpinColourVector F;
+    Grid::SpinColourVector F;
     Grid::Complex c;
 
     QDP::Fermion cF;
@@ -124,7 +124,7 @@ public:
 
     std::vector<int> x(5);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr._grid->GlobalDimensions();
+    std::vector<int> gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -154,10 +154,10 @@ public:
       QDP::pokeSite(ch[s],cF,cx);
     }}}}}
   }
-  static void ExportFermion(Grid::QCD::LatticeFermion & gr,
+  static void ExportFermion(Grid::LatticeFermion & gr,
 			    QDP::multi1d<QDP::LatticeFermion> & ch  ) 
   {
-    Grid::QCD::SpinColourVector F;
+    Grid::SpinColourVector F;
     Grid::Complex c;
 
     QDP::Fermion cF;
@@ -166,7 +166,7 @@ public:
 
     std::vector<int> x(5);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr._grid->GlobalDimensions();
+    std::vector<int> gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -384,9 +384,9 @@ int main (int argc,char **argv )
    * Setup Grid
    *********************************************************/
   Grid::Grid_init(&argc,&argv);
-  Grid::GridCartesian * UGrid   = Grid::QCD::SpaceTimeGrid::makeFourDimGrid(Grid::GridDefaultLatt(), 
-									    Grid::GridDefaultSimd(Grid::QCD::Nd,Grid::vComplex::Nsimd()),
-									    Grid::GridDefaultMpi());
+  Grid::GridCartesian * UGrid   = Grid::SpaceTimeGrid::makeFourDimGrid(Grid::GridDefaultLatt(), 
+                                                                       Grid::GridDefaultSimd(Grid::Nd,Grid::vComplex::Nsimd()),
+                                                                       Grid::GridDefaultMpi());
   
   std::vector<int> gd = UGrid->GlobalDimensions();
   QDP::multi1d<int> nrow(QDP::Nd);
@@ -395,11 +395,11 @@ int main (int argc,char **argv )
   QDP::Layout::setLattSize(nrow);
   QDP::Layout::create();
 
-  Grid::GridCartesian         * FGrid   = Grid::QCD::SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
-  Grid::QCD::LatticeGaugeField lat(UGrid);
-  Grid::QCD::LatticeFermion    src(FGrid);
-  Grid::QCD::LatticeFermion    res_chroma(FGrid);
-  Grid::QCD::LatticeFermion    res_grid  (FGrid);
+  Grid::GridCartesian         * FGrid   = Grid::SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
+  Grid::LatticeGaugeField lat(UGrid);
+  Grid::LatticeFermion    src(FGrid);
+  Grid::LatticeFermion    res_chroma(FGrid);
+  Grid::LatticeFermion    res_grid  (FGrid);
   
   std::vector<ChromaAction> ActionList({
 		 HtCayleyTanh, // Plain old DWF.
@@ -446,7 +446,7 @@ int main (int argc,char **argv )
   Chroma::finalize();
 }
 
-void calc_chroma(ChromaAction action,Grid::QCD::LatticeGaugeField & lat, Grid::QCD::LatticeFermion &src, Grid::QCD::LatticeFermion &res,int dag)
+void calc_chroma(ChromaAction action,Grid::LatticeGaugeField & lat, Grid::LatticeFermion &src, Grid::LatticeFermion &res,int dag)
 {
   QDP::multi1d<QDP::LatticeColorMatrix> u(4);
 
@@ -483,18 +483,18 @@ void calc_chroma(ChromaAction action,Grid::QCD::LatticeGaugeField & lat, Grid::Q
 
 
 
-void calc_grid(ChromaAction action,Grid::QCD::LatticeGaugeField & Umu, Grid::QCD::LatticeFermion &src, Grid::QCD::LatticeFermion &res,int dag)
+void calc_grid(ChromaAction action,Grid::LatticeGaugeField & Umu, Grid::LatticeFermion &src, Grid::LatticeFermion &res,int dag)
 {
   using namespace Grid;
-  using namespace Grid::QCD;
+   ;
 
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
 
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu._grid;
-  Grid::GridCartesian         * FGrid   = (Grid::GridCartesian *) src._grid;
-  Grid::GridRedBlackCartesian * UrbGrid = Grid::QCD::SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
-  Grid::GridRedBlackCartesian * FrbGrid = Grid::QCD::SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu.Grid();
+  Grid::GridCartesian         * FGrid   = (Grid::GridCartesian *) src.Grid();
+  Grid::GridRedBlackCartesian * UrbGrid = Grid::SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
+  Grid::GridRedBlackCartesian * FrbGrid = Grid::SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
   Grid::GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
   Grid::GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
@@ -502,12 +502,12 @@ void calc_grid(ChromaAction action,Grid::QCD::LatticeGaugeField & Umu, Grid::QCD
   Grid::gaussian(RNG5,src);
   Grid::gaussian(RNG5,res);
 
-  Grid::QCD::SU3::HotConfiguration(RNG4,Umu);
+  Grid::SU<Nc>::HotConfiguration(RNG4,Umu);
 
   /*
-  Grid::QCD::LatticeColourMatrix U(UGrid);
+  Grid::LatticeColourMatrix U(UGrid);
   U=Grid::zero;
-  for(int nn=0;nn<Grid::QCD::Nd;nn++){
+  for(int nn=0;nn<Grid::Nd;nn++){
     if ( nn>=4 ) {
       Grid::PokeIndex<LorentzIndex>(Umu,U,nn);
     }
@@ -519,7 +519,7 @@ void calc_grid(ChromaAction action,Grid::QCD::LatticeGaugeField & Umu, Grid::QCD
 
   if ( action == HtCayleyTanh ) { 
 
-    Grid::QCD::DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5);
+    Grid::DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5);
 
     std::cout << Grid::GridLogMessage <<" Calling domain wall multiply "<<std::endl;
 
@@ -535,7 +535,7 @@ void calc_grid(ChromaAction action,Grid::QCD::LatticeGaugeField & Umu, Grid::QCD
 
     Grid::Real _b = 0.5*(mobius_scale +1.0);
     Grid::Real _c = 0.5*(mobius_scale -1.0);
-    Grid::QCD::MobiusZolotarevFermionR D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,_b,_c,zolo_lo,zolo_hi);
+    Grid::MobiusZolotarevFermionR D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,_b,_c,zolo_lo,zolo_hi);
 
     std::cout << Grid::GridLogMessage <<" Calling mobius zolo multiply "<<std::endl;
 
@@ -549,7 +549,7 @@ void calc_grid(ChromaAction action,Grid::QCD::LatticeGaugeField & Umu, Grid::QCD
 
   if ( action == HtCayleyZolo ) {
 
-    Grid::QCD::ShamirZolotarevFermionR D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,zolo_lo,zolo_hi);
+    Grid::ShamirZolotarevFermionR D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,zolo_lo,zolo_hi);
 
     std::cout << Grid::GridLogMessage <<" Calling shamir zolo multiply "<<std::endl;
 
@@ -565,7 +565,7 @@ void calc_grid(ChromaAction action,Grid::QCD::LatticeGaugeField & Umu, Grid::QCD
   if ( action == HmCayleyTanh ) {
     Grid::Real _b = 0.5*(mobius_scale +1.0);
     Grid::Real _c = 0.5*(mobius_scale -1.0);
-    Grid::QCD::MobiusFermionR D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,_b,_c);
+    Grid::MobiusFermionR D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,_b,_c);
 
     std::cout << Grid::GridLogMessage <<" Calling mobius tanh multiply "<<std::endl;
 
@@ -581,7 +581,7 @@ void calc_grid(ChromaAction action,Grid::QCD::LatticeGaugeField & Umu, Grid::QCD
 
   if ( action == HmCayleyTanh ) {
 
-    Grid::QCD::ScaledShamirFermionR D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,mobius_scale);
+    Grid::ScaledShamirFermionR D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,mobius_scale);
 
     std::cout << Grid::GridLogMessage <<" Calling scaled shamir multiply "<<std::endl;
 
@@ -595,7 +595,7 @@ void calc_grid(ChromaAction action,Grid::QCD::LatticeGaugeField & Umu, Grid::QCD
 
   if ( action == HwCayleyTanh ) {
 
-    Grid::QCD::OverlapWilsonCayleyTanhFermionR D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,1.0);
+    Grid::OverlapWilsonCayleyTanhFermionR D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,1.0);
 
     if ( dag ) 
       D.Mdag(src,res);  
@@ -607,7 +607,7 @@ void calc_grid(ChromaAction action,Grid::QCD::LatticeGaugeField & Umu, Grid::QCD
 
   if ( action == HwCayleyZolo ) {
 
-    Grid::QCD::OverlapWilsonCayleyZolotarevFermionR D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,zolo_lo,zolo_hi);
+    Grid::OverlapWilsonCayleyZolotarevFermionR D(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,_mass,_M5,zolo_lo,zolo_hi);
 
     if ( dag ) 
       D.Mdag(src,res);  

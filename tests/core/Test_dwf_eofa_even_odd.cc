@@ -32,7 +32,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 template<class d>
 struct scal {
@@ -69,18 +69,18 @@ int main (int argc, char ** argv)
     LatticeFermion    src   (FGrid); random(RNG5, src);
     LatticeFermion    phi   (FGrid); random(RNG5, phi);
     LatticeFermion    chi   (FGrid); random(RNG5, chi);
-    LatticeFermion    result(FGrid); result = zero;
-    LatticeFermion    ref   (FGrid); ref = zero;
-    LatticeFermion    tmp   (FGrid); tmp = zero;
-    LatticeFermion    err   (FGrid); err = zero;
-    LatticeGaugeField Umu   (UGrid); SU3::HotConfiguration(RNG4, Umu);
+    LatticeFermion    result(FGrid); result = Zero();
+    LatticeFermion    ref   (FGrid); ref = Zero();
+    LatticeFermion    tmp   (FGrid); tmp = Zero();
+    LatticeFermion    err   (FGrid); err = Zero();
+    LatticeGaugeField Umu   (UGrid); SU<Nc>::HotConfiguration(RNG4, Umu);
     std::vector<LatticeColourMatrix> U(4,UGrid);
 
     // Only one non-zero (y)
-    Umu = zero;
+    Umu = Zero();
     for(int nn=0; nn<Nd; nn++){
         random(RNG4, U[nn]);
-        if(nn>0){ U[nn] = zero; }
+        if(nn>0){ U[nn] = Zero(); }
         PokeIndex<LorentzIndex>(Umu, U[nn], nn);
     }
 
@@ -218,11 +218,11 @@ int main (int argc, char ** argv)
     RealD t1,t2;
 
     SchurDiagMooeeOperator<DomainWallEOFAFermionR,LatticeFermion> HermOpEO(Ddwf);
-    HermOpEO.MpcDagMpc(chi_e, dchi_e, t1, t2);
-    HermOpEO.MpcDagMpc(chi_o, dchi_o, t1, t2);
+    HermOpEO.MpcDagMpc(chi_e, dchi_e);
+    HermOpEO.MpcDagMpc(chi_o, dchi_o);
 
-    HermOpEO.MpcDagMpc(phi_e, dphi_e, t1, t2);
-    HermOpEO.MpcDagMpc(phi_o, dphi_o, t1, t2);
+    HermOpEO.MpcDagMpc(phi_e, dphi_e);
+    HermOpEO.MpcDagMpc(phi_o, dphi_o);
 
     pDce = innerProduct(phi_e, dchi_e);
     pDco = innerProduct(phi_o, dchi_o);

@@ -38,7 +38,7 @@ Author: David Murphy <dmurphy@phys.columbia.edu>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 typedef GparityWilsonImplR FermionImplPolicy;
 typedef GparityDomainWallEOFAFermionR FermionAction;
@@ -77,7 +77,7 @@ int main(int argc, char** argv)
 
   // Random gauge field
   LatticeGaugeField Umu(UGrid);
-  SU3::HotConfiguration(RNG4, Umu);
+  SU<Nc>::HotConfiguration(RNG4, Umu);
 
   // GparityDomainWallFermionR::ImplParams params;
   FermionAction::ImplParams params;

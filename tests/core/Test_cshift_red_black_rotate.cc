@@ -30,7 +30,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Grid.h>
 
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 #define POWER10
 
@@ -38,12 +38,12 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
+  Coordinate latt_size   = GridDefaultLatt();
   int Nd = latt_size.size();
-  std::vector<int> simd_layout( { vComplex::Nsimd(),1,1,1});
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate simd_layout( { vComplex::Nsimd(),1,1,1});
+  Coordinate mpi_layout  = GridDefaultMpi();
 
-  std::vector<int> mask(Nd,1);
+  Coordinate mask(Nd,1);
   mask[0]=0;
 
   GridCartesian         Fine  (latt_size,simd_layout,mpi_layout);
@@ -60,10 +60,9 @@ int main (int argc, char ** argv)
   LatticeComplex ShiftUe(&RBFine);
   LatticeComplex ShiftUo(&RBFine);
   LatticeComplex lex(&Fine);
-  lex=zero;
+  lex=Zero();
   Integer stride =1;
   {
-    double nrm;
     LatticeComplex coor(&Fine);
 
     for(int d=0;d<Nd;d++){
@@ -117,7 +116,7 @@ int main (int argc, char ** argv)
 	err = ShiftU - rbShiftU;
 	std::cout<< "\terror " <<norm2(err)<<std::endl;
 
-	std::vector<int> coor(4);
+	Coordinate coor(4);
 
 	std::cout<<GridLogMessage << "  Checking the non-checkerboard shift "<< shift << " dir "<<dir  <<"... ";
 	for(coor[3]=0;coor[3]<latt_size[3];coor[3]++){
@@ -129,17 +128,17 @@ int main (int argc, char ** argv)
 
 	  /////////	  double nrm=norm2(U);
 
-	  std::vector<int> scoor(coor);
+	  Coordinate scoor(coor);
 	  scoor[dir] = (scoor[dir]+shift)%latt_size[dir];
 
 #ifdef POWER10
-	  std::vector<int> powers({1,10,100,1000});
+	  Coordinate powers({1,10,100,1000});
 	  Integer slex = scoor[3]
 	    + 10        *scoor[2]
 	    + 100       *scoor[1]
 	    + 1000      *scoor[0];
 #else
-	  std::vector<int> powers=latt_size;
+	  Coordinate powers=latt_size;
 	  Integer slex = scoor[0]
 	    + latt_size[0]*scoor[1]
 	    + latt_size[0]*latt_size[1]*scoor[2]
@@ -149,7 +148,7 @@ int main (int argc, char ** argv)
 	  Complex scm(slex);
 	  
 	  double nrm = abs(scm-cm()()());
-	  std::vector<int> peer(4);
+	  Coordinate peer(4);
 	  Complex ctmp = cm;
 	  Integer index=real(ctmp);
 	  Lexicographic::CoorFromIndex(peer,index,powers);
@@ -181,25 +180,25 @@ int main (int argc, char ** argv)
 
 	  //	  std::cout << " coor "<<" ["<<coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3]<<"] \n ";
 	  //	  std::cout << "shift "<< shift <<" dir "<<dir<< " checker board "<< checkerboard << " ";
-	  //	  std::cout << "Uo "   << ShiftUo.checkerboard << " Ue "<<ShiftUe.checkerboard<<std::endl;
-	  if ( checkerboard == ShiftUo.checkerboard ) {
+	  //	  std::cout << "Uo "   << ShiftUo.Checkerboard() << " Ue "<<ShiftUe.Checkerboard()<<std::endl;
+	  if ( checkerboard == ShiftUo.Checkerboard() ) {
 	    peekSite(cmeo,ShiftUo,coor);
 	  } else { 
 	    peekSite(cmeo,ShiftUe,coor);
 	  }
 
 
-	  std::vector<int> scoor(coor);
+	  Coordinate scoor(coor);
 	  scoor[dir] = (scoor[dir]+shift)%latt_size[dir];
 
 #ifdef POWER10	  
-	  std::vector<int> powers({1,10,100,1000});
+	  Coordinate powers({1,10,100,1000});
 	  Integer slex = scoor[3]
 	    + 10        *scoor[2]
 	    + 100       *scoor[1]
 	    + 1000      *scoor[0];
 #else
-	  std::vector<int> powers = latt_size;
+	  Coordinate powers = latt_size;
 	  Integer slex = scoor[0]
 	    + latt_size[0]*scoor[1]
 	    + latt_size[0]*latt_size[1]*scoor[2]
@@ -207,7 +206,7 @@ int main (int argc, char ** argv)
 #endif
 	  Complex scm(slex);
 
-	  std::vector<int> peer(4);
+	  Coordinate peer(4);
 	  Complex ctmp=cmeo;
 	  Integer index=real(ctmp);
 	  Lexicographic::CoorFromIndex(peer,index,powers);

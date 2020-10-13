@@ -29,7 +29,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
 
 template<class d>
 struct scal {
@@ -70,7 +69,7 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
 
-  LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(RNG4,Umu);
+  LatticeGaugeField Umu(UGrid); SU<Nc>::HotConfiguration(RNG4,Umu);
   std::vector<LatticeColourMatrix> U(4,UGrid);
 
   RealD mass=0.1;
@@ -107,10 +106,10 @@ void  TestWhat(What & Ddwf,
   LatticeFermion src   (FGrid); random(*RNG5,src);
   LatticeFermion phi   (FGrid); random(*RNG5,phi);
   LatticeFermion chi   (FGrid); random(*RNG5,chi);
-  LatticeFermion result(FGrid); result=zero;
-  LatticeFermion    ref(FGrid);    ref=zero;
-  LatticeFermion    tmp(FGrid);    tmp=zero;
-  LatticeFermion    err(FGrid);    tmp=zero;
+  LatticeFermion result(FGrid); result=Zero();
+  LatticeFermion    ref(FGrid);    ref=Zero();
+  LatticeFermion    tmp(FGrid);    tmp=Zero();
+  LatticeFermion    err(FGrid);    tmp=Zero();
 
   LatticeFermion src_e (FrbGrid);
   LatticeFermion src_o (FrbGrid);
@@ -239,11 +238,11 @@ void  TestWhat(What & Ddwf,
   RealD t1,t2;
 
   SchurDiagMooeeOperator<What,LatticeFermion> HermOpEO(Ddwf);
-  HermOpEO.MpcDagMpc(chi_e,dchi_e,t1,t2);
-  HermOpEO.MpcDagMpc(chi_o,dchi_o,t1,t2);
+  HermOpEO.MpcDagMpc(chi_e,dchi_e);
+  HermOpEO.MpcDagMpc(chi_o,dchi_o);
   
-  HermOpEO.MpcDagMpc(phi_e,dphi_e,t1,t2);
-  HermOpEO.MpcDagMpc(phi_o,dphi_o,t1,t2);
+  HermOpEO.MpcDagMpc(phi_e,dphi_e);
+  HermOpEO.MpcDagMpc(phi_o,dphi_o);
 
   pDce = innerProduct(phi_e,dchi_e);
   pDco = innerProduct(phi_o,dchi_o);

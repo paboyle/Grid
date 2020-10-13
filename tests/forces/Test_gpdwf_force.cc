@@ -29,7 +29,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
  
 
@@ -37,9 +37,9 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  Coordinate latt_size   = GridDefaultLatt();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  Coordinate mpi_layout  = GridDefaultMpi();
 
   const int Ls=8;
 
@@ -63,7 +63,7 @@ int main (int argc, char ** argv)
 
   LatticeGaugeField U(UGrid);
 
-  SU3::HotConfiguration(RNG4,U);
+  SU<Nc>::HotConfiguration(RNG4,U);
   
   ////////////////////////////////////
   // Unmodified matrix element
@@ -100,23 +100,24 @@ int main (int argc, char ** argv)
 
   for(int mu=0;mu<Nd;mu++){
 
-    SU3::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu); // Traceless antihermitian momentum; gaussian in lie alg
+    SU<Nc>::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu); // Traceless antihermitian momentum; gaussian in lie alg
 
     PokeIndex<LorentzIndex>(mom,mommu,mu);
 
     // fourth order exponential approx
-    parallel_for(auto i=mom.begin();i<mom.end();i++){
-      Uprime[i](mu) =
-	  U[i](mu)
-	+ mom[i](mu)*U[i](mu)*dt 
-	+ mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt/2.0)
-	+ mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt/6.0)
-	+ mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt/24.0)
-	+ mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt/120.0)
-	+ mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt*dt/720.0)
+    autoView( U_v , U, CpuRead);
+    autoView( mom_v, mom, CpuRead);
+    autoView(Uprime_v, Uprime, CpuWrite);
+    thread_foreach(i,mom_v,{
+      Uprime_v[i](mu) = U_v[i](mu)
+	+ mom_v[i](mu)*U_v[i](mu)*dt 
+	+ mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt/2.0)
+	+ mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt/6.0)
+	+ mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt/24.0)
+	+ mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt*dt/120.0)
+	+ mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *mom_v[i](mu) *U_v[i](mu)*(dt*dt*dt*dt*dt*dt/720.0)
 	;
-    }
-
+    });
   }
   
   Ddwf.ImportGauge(Uprime);
@@ -128,7 +129,7 @@ int main (int argc, char ** argv)
   // Use derivative to estimate dS
   //////////////////////////////////////////////
 
-  LatticeComplex dS(UGrid); dS = zero;
+  LatticeComplex dS(UGrid); dS = Zero();
   for(int mu=0;mu<Nd;mu++){
     mommu   = PeekIndex<LorentzIndex>(UdSdU,mu);
     mommu=Ta(mommu)*2.0;
@@ -165,19 +166,19 @@ int main (int argc, char ** argv)
   //
   // Gparity --- deriv is pc Uc dSdUc + p U dSdU 
   //
-  //	Pmu = zero;
+  //	Pmu = Zero();
   //	for(int mu=0;mu<Nd;mu++){
   //	  SU<Ncol>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
   //	  PokeIndex<LorentzIndex>(P, Pmu, mu);
   //	}
   //
   //
-  //    GridBase *grid = out._grid;
+  //    GridBase *grid = out.Grid();
   //    LatticeReal ca (grid);
   //    LatticeMatrix  la (grid);
   //    Complex ci(0.0,scale);
   //    Matrix ta;
-  //    out=zero;
+  //    out=Zero();
   //    for(int a=0;a<generators();a++){
   //      gaussian(pRNG,ca); 
   //      generator(a,ta);

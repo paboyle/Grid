@@ -27,15 +27,15 @@ Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
-double calc_grid_p      (Grid::QCD::LatticeGaugeField & lat);
-double calc_chroma_p    (Grid::QCD::LatticeGaugeField & lat);
-double calc_grid_r      (Grid::QCD::LatticeGaugeField & lat);
-double calc_grid_IW     (Grid::QCD::LatticeGaugeField & lat);
-double calc_grid_r_dir  (Grid::QCD::LatticeGaugeField & lat);
-double calc_chroma_r    (Grid::QCD::LatticeGaugeField & lat);
-double calc_chroma_IW   (Grid::QCD::LatticeGaugeField & lat);
-void check_grid_r_staple(Grid::QCD::LatticeGaugeField & Umu);
-void check_grid_p_staple(Grid::QCD::LatticeGaugeField & Umu);
+double calc_grid_p      (Grid::LatticeGaugeField & lat);
+double calc_chroma_p    (Grid::LatticeGaugeField & lat);
+double calc_grid_r      (Grid::LatticeGaugeField & lat);
+double calc_grid_IW     (Grid::LatticeGaugeField & lat);
+double calc_grid_r_dir  (Grid::LatticeGaugeField & lat);
+double calc_chroma_r    (Grid::LatticeGaugeField & lat);
+double calc_chroma_IW   (Grid::LatticeGaugeField & lat);
+void check_grid_r_staple(Grid::LatticeGaugeField & Umu);
+void check_grid_p_staple(Grid::LatticeGaugeField & Umu);
 
 const double beta=2.6;
 const double c1=-0.331;
@@ -53,17 +53,17 @@ public:
   
   typedef multi1d<LatticeColorMatrix> U;
   
-  static void ImportGauge(Grid::QCD::LatticeGaugeField & gr,
+  static void ImportGauge(Grid::LatticeGaugeField & gr,
 			  QDP::multi1d<QDP::LatticeColorMatrix> & ch) 
   {
-    Grid::QCD::LorentzColourMatrix LCM;
+    Grid::LorentzColourMatrix LCM;
     Grid::Complex cc;
     QDP::ColorMatrix cm;
     QDP::Complex c;
 
     std::vector<int> x(4);
     QDP::multi1d<int> cx(4);
-    std::vector<int> gd= gr._grid->GlobalDimensions();
+    std::vector<int> gd= gr.Grid()->GlobalDimensions();
 
     for (x[0]=0;x[0]<gd[0];x[0]++){
     for (x[1]=0;x[1]<gd[1];x[1]++){
@@ -127,9 +127,9 @@ int main (int argc,char **argv )
    * Setup Grid
    *********************************************************/
   Grid::Grid_init(&argc,&argv);
-  Grid::GridCartesian * UGrid   = Grid::QCD::SpaceTimeGrid::makeFourDimGrid(Grid::GridDefaultLatt(), 
-									    Grid::GridDefaultSimd(Grid::QCD::Nd,Grid::vComplex::Nsimd()),
-									    Grid::GridDefaultMpi());
+  Grid::GridCartesian * UGrid   = Grid::SpaceTimeGrid::makeFourDimGrid(Grid::GridDefaultLatt(), 
+                                                                       Grid::GridDefaultSimd(Grid::Nd,Grid::vComplex::Nsimd()),
+                                                                       Grid::GridDefaultMpi());
   
   std::vector<int> gd = UGrid->GlobalDimensions();
   QDP::multi1d<int> nrow(QDP::Nd);
@@ -138,7 +138,7 @@ int main (int argc,char **argv )
   QDP::Layout::setLattSize(nrow);
   QDP::Layout::create();
 
-  Grid::QCD::LatticeGaugeField lat(UGrid);
+  Grid::LatticeGaugeField lat(UGrid);
 
   double s_grid   = calc_grid_p  (lat);
 
@@ -181,7 +181,7 @@ int main (int argc,char **argv )
   Chroma::finalize();
 }
 
-double calc_chroma_IW(Grid::QCD::LatticeGaugeField & lat)
+double calc_chroma_IW(Grid::LatticeGaugeField & lat)
 {
   typedef QDP::multi1d<QDP::LatticeColorMatrix> U;
 
@@ -203,7 +203,7 @@ double calc_chroma_IW(Grid::QCD::LatticeGaugeField & lat)
 
   return s;
 }
-double calc_chroma_r(Grid::QCD::LatticeGaugeField & lat)
+double calc_chroma_r(Grid::LatticeGaugeField & lat)
 {
   typedef QDP::multi1d<QDP::LatticeColorMatrix> U;
 
@@ -245,7 +245,7 @@ double calc_chroma_r(Grid::QCD::LatticeGaugeField & lat)
 // action = beta * Nd*Nd-1*vol*0.5 - beta * Nd*Nd-1*vol*0.5*plaq
 //
 // plaq == sumplaq * 2/(V*Nd*(Nd-1)*Nc)
-double calc_chroma_p(Grid::QCD::LatticeGaugeField & lat)
+double calc_chroma_p(Grid::LatticeGaugeField & lat)
 {
   typedef QDP::multi1d<QDP::LatticeColorMatrix> U;
 
@@ -270,60 +270,60 @@ double calc_chroma_p(Grid::QCD::LatticeGaugeField & lat)
 
 
 
-double calc_grid_p(Grid::QCD::LatticeGaugeField & Umu)
+double calc_grid_p(Grid::LatticeGaugeField & Umu)
 {
   std::vector<int> seeds4({1,2,3,4});
 
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu._grid;
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu.Grid();
   Grid::GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
 
-  Grid::QCD::SU3::HotConfiguration(RNG4,Umu);
+  Grid::SU<Nc>::HotConfiguration(RNG4,Umu);
 
-  Grid::QCD::LatticeColourMatrix tmp(UGrid); 
+  Grid::LatticeColourMatrix tmp(UGrid); 
   tmp = Grid::zero;
 
-  Grid::QCD::PokeIndex<LorentzIndex>(Umu,tmp,2);
-  Grid::QCD::PokeIndex<LorentzIndex>(Umu,tmp,3);
+  Grid::PokeIndex<LorentzIndex>(Umu,tmp,2);
+  Grid::PokeIndex<LorentzIndex>(Umu,tmp,3);
 
-  Grid::QCD::WilsonGaugeActionR Wilson(beta); // Just take beta = 1.0
+  Grid::WilsonGaugeActionR Wilson(beta); // Just take beta = 1.0
   
   return Wilson.S(Umu);
 } 
-double calc_grid_r(Grid::QCD::LatticeGaugeField & Umu)
+double calc_grid_r(Grid::LatticeGaugeField & Umu)
 {
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu._grid;
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu.Grid();
 
-  Grid::QCD::PlaqPlusRectangleActionR Wilson(0.0,c1); // Just take beta = 0.0
+  Grid::PlaqPlusRectangleActionR Wilson(0.0,c1); // Just take beta = 0.0
   
   return Wilson.S(Umu);
 } 
-double calc_grid_IW(Grid::QCD::LatticeGaugeField & Umu)
+double calc_grid_IW(Grid::LatticeGaugeField & Umu)
 {
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu._grid;
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu.Grid();
 
-  Grid::QCD::IwasakiGaugeActionR Iwasaki(beta);
+  Grid::IwasakiGaugeActionR Iwasaki(beta);
   
   return Iwasaki.S(Umu);
 } 
-double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
+double calc_grid_r_dir(Grid::LatticeGaugeField & Umu)
 {
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu._grid;
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu.Grid();
 
-  std::vector<Grid::QCD::LatticeColourMatrix> U(4,UGrid);
+  std::vector<Grid::LatticeColourMatrix> U(4,UGrid);
   for(int mu=0;mu<Nd;mu++){
     U[mu] = Grid::PeekIndex<LorentzIndex>(Umu,mu);
   }
 
-  Grid::QCD::LatticeComplex rect(UGrid);
-  Grid::QCD::TComplex trect;
-  Grid::QCD::Complex  crect;
+  Grid::LatticeComplex rect(UGrid);
+  Grid::TComplex trect;
+  Grid::Complex  crect;
   Grid::RealD rrect;
   Grid::RealD vol = UGrid->gSites();
-  for(int mu=0;mu<Grid::QCD::Nd;mu++){
-  for(int nu=0;nu<Grid::QCD::Nd;nu++){
+  for(int mu=0;mu<Grid::Nd;mu++){
+  for(int nu=0;nu<Grid::Nd;nu++){
     if ( mu!=nu ) {
 
-      Grid::QCD::ColourWilsonLoops::traceDirRectangle(rect,U,mu,nu);
+      Grid::ColourWilsonLoops::traceDirRectangle(rect,U,mu,nu);
       trect = Grid::sum(rect);
       crect = Grid::TensorRemove(trect);
       rrect = real(crect);
@@ -335,9 +335,9 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
       // Staple test
       Peter.Start();
       {                                                  
-	Grid::QCD::LatticeColourMatrix Stap(UGrid);
-	Grid::QCD::LatticeComplex      SumTrStap(UGrid);
-	Grid::QCD::LatticeComplex      TrStap(UGrid);
+	Grid::LatticeColourMatrix Stap(UGrid);
+	Grid::LatticeComplex      SumTrStap(UGrid);
+	Grid::LatticeComplex      TrStap(UGrid);
 
 	/*
 	 * Make staple for loops centered at coor of link ; this one is ok.     //     |
@@ -346,10 +346,10 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 	//           __ ___ 
 	//          |    __ |
 	Stap = 
-	  Grid::Cshift(Grid::QCD::PeriodicBC::CovShiftForward (U[mu],mu,
-		       Grid::QCD::PeriodicBC::CovShiftForward (U[nu],nu,
-		       Grid::QCD::PeriodicBC::CovShiftBackward(U[mu],mu,
-                       Grid::QCD::PeriodicBC::CovShiftBackward(U[mu],mu,
+	  Grid::Cshift(Grid::PeriodicBC::CovShiftForward (U[mu],mu,
+		       Grid::PeriodicBC::CovShiftForward (U[nu],nu,
+		       Grid::PeriodicBC::CovShiftBackward(U[mu],mu,
+                       Grid::PeriodicBC::CovShiftBackward(U[mu],mu,
 		       Grid::Cshift(adj(U[nu]),nu,-1))))) , mu, 1);
 
 	TrStap = Grid::trace (U[mu]*Stap);
@@ -364,10 +364,10 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 	//              __ 
 	//          |__ __ |
 
-	Stap = Grid::Cshift(Grid::QCD::PeriodicBC::CovShiftForward (U[mu],mu,
-		            Grid::QCD::PeriodicBC::CovShiftBackward(U[nu],nu,
-   		            Grid::QCD::PeriodicBC::CovShiftBackward(U[mu],mu,
-                            Grid::QCD::PeriodicBC::CovShiftBackward(U[mu],mu, U[nu])))) , mu, 1);
+	Stap = Grid::Cshift(Grid::PeriodicBC::CovShiftForward (U[mu],mu,
+		            Grid::PeriodicBC::CovShiftBackward(U[nu],nu,
+   		            Grid::PeriodicBC::CovShiftBackward(U[mu],mu,
+                            Grid::PeriodicBC::CovShiftBackward(U[mu],mu, U[nu])))) , mu, 1);
 
 	TrStap = Grid::trace (U[mu]*Stap);
 
@@ -379,10 +379,10 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 	//           __ 
 	//          |__ __ |
 
-	Stap = Grid::Cshift(Grid::QCD::PeriodicBC::CovShiftBackward(U[nu],nu,
-		            Grid::QCD::PeriodicBC::CovShiftBackward(U[mu],mu,
-                            Grid::QCD::PeriodicBC::CovShiftBackward(U[mu],mu,
-   		            Grid::QCD::PeriodicBC::CovShiftForward(U[nu],nu,U[mu])))) , mu, 1);
+	Stap = Grid::Cshift(Grid::PeriodicBC::CovShiftBackward(U[nu],nu,
+		            Grid::PeriodicBC::CovShiftBackward(U[mu],mu,
+                            Grid::PeriodicBC::CovShiftBackward(U[mu],mu,
+   		            Grid::PeriodicBC::CovShiftForward(U[nu],nu,U[mu])))) , mu, 1);
 
 	TrStap = Grid::trace (U[mu]*Stap);
 
@@ -395,10 +395,10 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 	//           __ ___ 
 	//          |__    |
 
-	Stap = Grid::Cshift(Grid::QCD::PeriodicBC::CovShiftForward (U[nu],nu,
-		            Grid::QCD::PeriodicBC::CovShiftBackward(U[mu],mu,
-                            Grid::QCD::PeriodicBC::CovShiftBackward(U[mu],mu,
-                            Grid::QCD::PeriodicBC::CovShiftBackward(U[nu],nu,U[mu])))) , mu, 1);
+	Stap = Grid::Cshift(Grid::PeriodicBC::CovShiftForward (U[nu],nu,
+		            Grid::PeriodicBC::CovShiftBackward(U[mu],mu,
+                            Grid::PeriodicBC::CovShiftBackward(U[mu],mu,
+                            Grid::PeriodicBC::CovShiftBackward(U[nu],nu,U[mu])))) , mu, 1);
 
 
 	TrStap = Grid::trace (U[mu]*Stap);
@@ -418,12 +418,12 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 	 * Make staple for loops centered at coor of link ; this one is ok.     //     |
 	 */
 	//	Stap = 
-	//	  Grid::Cshift(Grid::QCD::PeriodicBC::CovShiftForward(U[nu],nu,U[nu]),mu,1)* // ->||
-	//	  Grid::adj(Grid::QCD::PeriodicBC::CovShiftForward(U[nu],nu,Grid::QCD::PeriodicBC::CovShiftForward(U[nu],nu,U[mu]))) ;
-	Stap = Grid::Cshift(Grid::QCD::PeriodicBC::CovShiftForward(U[nu],nu,
-		            Grid::QCD::PeriodicBC::CovShiftForward(U[nu],nu,
-                            Grid::QCD::PeriodicBC::CovShiftBackward(U[mu],mu,
-                            Grid::QCD::PeriodicBC::CovShiftBackward(U[nu],nu,  Grid::Cshift(adj(U[nu]),nu,-1))))) , mu, 1);
+	//	  Grid::Cshift(Grid::PeriodicBC::CovShiftForward(U[nu],nu,U[nu]),mu,1)* // ->||
+	//	  Grid::adj(Grid::PeriodicBC::CovShiftForward(U[nu],nu,Grid::PeriodicBC::CovShiftForward(U[nu],nu,U[mu]))) ;
+	Stap = Grid::Cshift(Grid::PeriodicBC::CovShiftForward(U[nu],nu,
+		            Grid::PeriodicBC::CovShiftForward(U[nu],nu,
+                            Grid::PeriodicBC::CovShiftBackward(U[mu],mu,
+                            Grid::PeriodicBC::CovShiftBackward(U[nu],nu,  Grid::Cshift(adj(U[nu]),nu,-1))))) , mu, 1);
 	  
 	TrStap = Grid::trace (U[mu]*Stap);
 	SumTrStap += TrStap;
@@ -440,10 +440,10 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 	//      |  | 
 	//       -- 
 
-	Stap = Grid::Cshift(Grid::QCD::PeriodicBC::CovShiftBackward(U[nu],nu,
-		            Grid::QCD::PeriodicBC::CovShiftBackward(U[nu],nu,
-                            Grid::QCD::PeriodicBC::CovShiftBackward(U[mu],mu,
-                            Grid::QCD::PeriodicBC::CovShiftForward (U[nu],nu,U[nu])))) , mu, 1);
+	Stap = Grid::Cshift(Grid::PeriodicBC::CovShiftBackward(U[nu],nu,
+		            Grid::PeriodicBC::CovShiftBackward(U[nu],nu,
+                            Grid::PeriodicBC::CovShiftBackward(U[mu],mu,
+                            Grid::PeriodicBC::CovShiftForward (U[nu],nu,U[nu])))) , mu, 1);
 
 	TrStap = Grid::trace (U[mu]*Stap);
 	trect = Grid::sum(TrStap);
@@ -459,20 +459,20 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
       Peter.Stop();
       Azusa.Start();
       {
-	Grid::QCD::LatticeComplex RectPlaq_d(UGrid);
-	Grid::QCD::LatticeColourMatrix ds_U(UGrid);
-	Grid::QCD::LatticeColourMatrix left_2(UGrid);
-	Grid::QCD::LatticeColourMatrix upper_l(UGrid);
-	Grid::QCD::LatticeColourMatrix upper_staple(UGrid);
-	Grid::QCD::LatticeColourMatrix down_l(UGrid);
-	Grid::QCD::LatticeColourMatrix down_staple(UGrid);
-	Grid::QCD::LatticeColourMatrix tmp(UGrid);
+	Grid::LatticeComplex RectPlaq_d(UGrid);
+	Grid::LatticeColourMatrix ds_U(UGrid);
+	Grid::LatticeColourMatrix left_2(UGrid);
+	Grid::LatticeColourMatrix upper_l(UGrid);
+	Grid::LatticeColourMatrix upper_staple(UGrid);
+	Grid::LatticeColourMatrix down_l(UGrid);
+	Grid::LatticeColourMatrix down_staple(UGrid);
+	Grid::LatticeColourMatrix tmp(UGrid);
 	
 	// 2 (mu)x1(nu)
-	left_2=  Grid::QCD::PeriodicBC::CovShiftForward(U[mu],mu,U[mu]);   // Umu(x) Umu(x+mu)
+	left_2=  Grid::PeriodicBC::CovShiftForward(U[mu],mu,U[mu]);   // Umu(x) Umu(x+mu)
 	tmp=Grid::Cshift(U[nu],mu,2);                          // Unu(x+2mu)
 
-	upper_l=  Grid::QCD::PeriodicBC::CovShiftForward(tmp,nu,Grid::adj(left_2)); //  Unu(x+2mu) Umu^dag(x+mu+nu) Umu^dag(x+nu) 
+	upper_l=  Grid::PeriodicBC::CovShiftForward(tmp,nu,Grid::adj(left_2)); //  Unu(x+2mu) Umu^dag(x+mu+nu) Umu^dag(x+nu) 
 	//                 __ __ 
 	//              =       |
 	
@@ -546,9 +546,9 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 	//   _
 	//  | |
 	//  | |
-	Grid::QCD::LatticeColourMatrix up2= Grid::QCD::PeriodicBC::CovShiftForward(U[nu],nu,U[nu]);
+	Grid::LatticeColourMatrix up2= Grid::PeriodicBC::CovShiftForward(U[nu],nu,U[nu]);
 
-	upper_l= Grid::QCD::PeriodicBC::CovShiftForward(Grid::Cshift(up2,mu,1),nu,Grid::Cshift(adj(U[mu]),nu,1));
+	upper_l= Grid::PeriodicBC::CovShiftForward(Grid::Cshift(up2,mu,1),nu,Grid::Cshift(adj(U[mu]),nu,1));
 	ds_U= upper_l*Grid::adj(up2);
 
 	RectPlaq_d = Grid::trace(U[mu]*ds_U);
@@ -569,7 +569,7 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
    downer_l=           |  
                (x)<----V                 
 */    
-	down_l= Grid::adj(Grid::QCD::PeriodicBC::CovShiftForward(U[mu],mu,up2)); //downer_l
+	down_l= Grid::adj(Grid::PeriodicBC::CovShiftForward(U[mu],mu,up2)); //downer_l
 /*
                      ^     |
    down_staple  =    |     V 
@@ -601,23 +601,23 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 
     }
   }}
-  Grid::QCD::PlaqPlusRectangleActionR Wilson(0.0,c1); // Just take beta = 0.0
+  Grid::PlaqPlusRectangleActionR Wilson(0.0,c1); // Just take beta = 0.0
   
   return Wilson.S(Umu);
 };
 
-void check_grid_r_staple(Grid::QCD::LatticeGaugeField & Umu)
+void check_grid_r_staple(Grid::LatticeGaugeField & Umu)
 {
 
   std::vector<int> seeds4({1,2,3,4});
 
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu._grid;
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu.Grid();
 
-  Grid::QCD::PlaqPlusRectangleActionR Wilson(0.0,c1); // Just take beta = 0.0
+  Grid::PlaqPlusRectangleActionR Wilson(0.0,c1); // Just take beta = 0.0
 
-  Grid::QCD::LatticeColourMatrix staple(UGrid);
-  Grid::QCD::LatticeColourMatrix link(UGrid);
-  Grid::QCD::LatticeComplex Traced(UGrid);
+  Grid::LatticeColourMatrix staple(UGrid);
+  Grid::LatticeColourMatrix link(UGrid);
+  Grid::LatticeComplex Traced(UGrid);
   Grid::Complex Rplaq(0.0);
 
   for(int mu=0;mu<Nd;mu++){
@@ -630,12 +630,12 @@ void check_grid_r_staple(Grid::QCD::LatticeGaugeField & Umu)
     // Vol as for each site
     Grid::RealD RectScale(1.0/vol/12.0/6.0/3.0); 
 
-    Grid::QCD::ColourWilsonLoops::RectStaple(staple,Umu,mu);
+    Grid::ColourWilsonLoops::RectStaple(staple,Umu,mu);
     
-    link = Grid::QCD::PeekIndex<LorentzIndex>(Umu,mu);
+    link = Grid::PeekIndex<LorentzIndex>(Umu,mu);
 
     Traced = Grid::trace( link*staple) * RectScale;
-    Grid::QCD::TComplex Tp = Grid::sum(Traced);
+    Grid::TComplex Tp = Grid::sum(Traced);
     Grid::Complex p   = Grid::TensorRemove(Tp);
 
     std::cout<< "Rect from RectStaple "<<p<<std::endl;
@@ -645,18 +645,18 @@ void check_grid_r_staple(Grid::QCD::LatticeGaugeField & Umu)
   std::cout<< "Rect from RectStaple "<<Rplaq<<std::endl;
 } 
 
-void check_grid_p_staple(Grid::QCD::LatticeGaugeField & Umu)
+void check_grid_p_staple(Grid::LatticeGaugeField & Umu)
 {
 
   std::vector<int> seeds4({1,2,3,4});
 
-  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu._grid;
+  Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu.Grid();
 
-  Grid::QCD::PlaqPlusRectangleActionR Wilson(1.0,0.0); // Just take c1 = 0.0
+  Grid::PlaqPlusRectangleActionR Wilson(1.0,0.0); // Just take c1 = 0.0
 
-  Grid::QCD::LatticeColourMatrix staple(UGrid);
-  Grid::QCD::LatticeColourMatrix link(UGrid);
-  Grid::QCD::LatticeComplex Traced(UGrid);
+  Grid::LatticeColourMatrix staple(UGrid);
+  Grid::LatticeColourMatrix link(UGrid);
+  Grid::LatticeComplex Traced(UGrid);
   Grid::Complex plaq(0.0);
 
   for(int mu=0;mu<Nd;mu++){
@@ -669,12 +669,12 @@ void check_grid_p_staple(Grid::QCD::LatticeGaugeField & Umu)
     // Vol as for each site
     Grid::RealD Scale(1.0/vol/12.0/2.0/3.0); 
 
-    Grid::QCD::ColourWilsonLoops::Staple(staple,Umu,mu);
+    Grid::ColourWilsonLoops::Staple(staple,Umu,mu);
     
-    link = Grid::QCD::PeekIndex<LorentzIndex>(Umu,mu);
+    link = Grid::PeekIndex<LorentzIndex>(Umu,mu);
 
     Traced = Grid::trace( link*staple) * Scale;
-    Grid::QCD::TComplex Tp = Grid::sum(Traced);
+    Grid::TComplex Tp = Grid::sum(Traced);
     Grid::Complex p   = Grid::TensorRemove(Tp);
 
     std::cout<< "Plaq from PlaqStaple "<<p<<std::endl;

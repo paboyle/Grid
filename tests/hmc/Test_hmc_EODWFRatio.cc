@@ -33,7 +33,7 @@ directory
 
 int main(int argc, char **argv) {
   using namespace Grid;
-  using namespace Grid::QCD;
+   ;
 
   Grid_init(&argc, &argv);
   int threads = GridThread::GetThreads();
@@ -146,13 +146,7 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Denominator report, Dw(m) term (includes CG) : " << std::endl;
   DenOp.Report();
 
-
-
-
   Grid_finalize();
-
-
-
 
 } // main
 

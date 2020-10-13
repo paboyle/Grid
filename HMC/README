@@ -1,0 +1,109 @@
+********************************************************************
+TODO: 
+********************************************************************
+
+i) Got mixed precision in 2f and EOFA force and action solves.
+   But need mixed precision in the heatbath solve. Best for Fermop to have a "clone" method, to
+   reduce the number of solver and action objects. Needed ideally for the EOFA heatbath.
+   15% perhaps
+   Combine with 2x trajectory length?
+
+ii) Rational on EOFA HB  -- relax order
+                         -- Test the approx as per David email
+
+Resume / roll.sh 
+
+----------------------------------------------------------------
+
+- 16^3 Currently 10 traj per hour
+
+- EOFA use a different derivative solver from action solver
+- EOFA fix Davids hack to the SchurRedBlack guessing
+
+*** Reduce precision/tolerance  in EOFA with second CG param.                          (10% speed up)
+*** Force gradient - reduced precision solve for the gradient                          (4/3x speedup)
+
+
+*** Need a plan for gauge field update for mixed precision in HMC                      (2x speed up)
+    -- Store the single prec action operator.
+    -- Clone the gauge field from the operator function argument.
+    -- Build the mixed precision operator dynamically from the passed operator and single prec clone.
+
+*** Mixed precision CG into EOFA portion         
+*** Further reduce precision in forces to 10^-6 ?
+
+*** Overall: a 3x or so is still possible => 500s -> 160s and 20 traj per hour on 16^3.
+
+- Use mixed precision CG in HMC                           
+- SchurRedBlack.h: stop use of operator function; use LinearOperator or similar instead.
+- Or make an OperatorFunction for mixed precision as a wrapper
+
+********************************************************************
+* Signed off 2+1f HMC with Hasenbush and strange RHMC 16^3 x 32 DWF Ls=16 Plaquette 0.5883 ish
+* Signed off 2+1f HMC with Hasenbush and strange EOFA 16^3 x 32 DWF Ls=16 Plaquette 0.5883 ish
+* Wilson plaquette cross checked against CPS and literature GwilsonFnone
+********************************************************************
+
+********************************************************************
+* RHMC: Timesteps & eigenranges matched from previous CPS 16^3 x 32 runs:
+********************************************************************
+
+****
+Strange (m=0.04)  has eigenspan 
+**** 
+16^3 done as 1+1+1 with separate PV's. 
+/dirac1/archive/QCDOC/host/QCDDWF/DWF/2+1f/16nt32/IWASAKI/b2.13/ls16/M1_8/ms0.04/mu0.01/rhmc_multitimescale/evol5/work
+****
+2+1f 16^3  - [ 4e^-4, 2.42 ]    for strange
+
+****
+24^3 done as 1+1+1 at strange, and single quotient https://arxiv.org/pdf/0804.0473.pdf Eq 83,
+****
+double lambda_low =   4.0000000000000002e-04 <- strange
+double lambda_low =   1.0000000000000000e-02 <- pauli villars
+And high = 2.5
+
+Array bsn_mass[3] = { 
+double bsn_mass[0] =   1.0000000000000000e+00
+double bsn_mass[1] =   1.0000000000000000e+00
+double bsn_mass[2] =   1.0000000000000000e+00
+}
+Array frm_mass[3] = { 
+double frm_mass[0] =   4.0000000000000001e-02
+double frm_mass[1] =   4.0000000000000001e-02
+double frm_mass[2] =   4.0000000000000001e-02
+}
+
+***
+32^3 
+/dirac1/archive/QCDOC/host/QCDDWF/DWF/2+1f/32nt64/IWASAKI/b2.25/ls16/M1_8/ms0.03/mu0.004/evol6/work
+***
+Similar det scheme
+double lambda_low =   4.0000000000000002e-04
+double lambda_low =   1.0000000000000000e-02
+
+Array bsn_mass[3] = { 
+double bsn_mass[0] =   1.0000000000000000e+00
+double bsn_mass[1] =   1.0000000000000000e+00
+double bsn_mass[2] =   1.0000000000000000e+00
+}
+Array frm_mass[3] = { 
+double frm_mass[0] =   3.0000000000000002e-02
+double frm_mass[1] =   3.0000000000000002e-02
+double frm_mass[2] =   3.0000000000000002e-02
+}
+
+********************************************************************
+* Grid: Power method bounds check
+********************************************************************
+- Finding largest eigenvalue approx 25 not 2.5
+- Conventions:
+
+Grid MpcDagMpc based on:
+
+   (Moo-Moe Mee^-1 Meo)^dag(Moo-Moe Mee^-1 Meo)
+
+- with  Moo = 5-M5 = 3.2
+- CPS use(d) Moo = 1
+- Eigenrange in Grid is 3.2^2 rescaled so factor of 10 accounted for
+

@@ -38,7 +38,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 typedef GparityWilsonImplR FermionImplPolicy;
 typedef GparityMobiusEOFAFermionR FermionAction;
@@ -79,7 +79,7 @@ int main(int argc, char** argv)
 
   // Random gauge field
   LatticeGaugeField Umu(UGrid);
-  SU3::HotConfiguration(RNG4, Umu);
+  SU<Nc>::HotConfiguration(RNG4, Umu);
 
   FermionAction::ImplParams params;
   FermionAction Lop(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf,  mf, mpv,  0.0, -1, M5, b, c, params);
