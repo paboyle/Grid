@@ -62,7 +62,7 @@ struct time_statistics{
 
 void comms_header(){
   std::cout <<GridLogMessage << " L  "<<"\t"<<" Ls  "<<"\t"
-            <<std::setw(11)<<"bytes"<<"MB/s uni (err/min/max)"<<"\t\t"<<"MB/s bidi (err/min/max)"<<std::endl;
+            <<"bytes\t MB/s uni (err/min/max) \t\t MB/s bidi (err/min/max)"<<std::endl;
 };
 
 Gamma::Algebra Gmu [] = {
@@ -189,11 +189,11 @@ public:
 	//	double rbytes    = dbytes*0.5;
 	double bidibytes = dbytes;
 
-	std::cout<<GridLogMessage << std::setw(4) << lat<<"\t"<<Ls<<"\t"
-		 <<std::setw(11) << bytes<< std::fixed << std::setprecision(1) << std::setw(7)
-		 <<std::right<< xbytes/timestat.mean<<"  "<< xbytes*timestat.err/(timestat.mean*timestat.mean)<< " "
+	std::cout<<GridLogMessage << lat<<"\t"<<Ls<<"\t "
+		 << bytes << " \t "
+		 <<xbytes/timestat.mean<<" \t "<< xbytes*timestat.err/(timestat.mean*timestat.mean)<< " \t "
 		 <<xbytes/timestat.max <<" "<< xbytes/timestat.min  
-		 << "\t\t"<<std::setw(7)<< bidibytes/timestat.mean<< "  " << bidibytes*timestat.err/(timestat.mean*timestat.mean) << " "
+		 << "\t\t"<< bidibytes/timestat.mean<< "  " << bidibytes*timestat.err/(timestat.mean*timestat.mean) << " "
 		 << bidibytes/timestat.max << " " << bidibytes/timestat.min << std::endl;
 	
 	    }
@@ -696,7 +696,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Summary table Ls="<<Ls <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "L \t\t Wilson \t\t DWF4 \t\tt Staggered" <<std::endl;
+  std::cout<<GridLogMessage << "L \t\t Wilson \t\t DWF4 \t\t Staggered" <<std::endl;
   for(int l=0;l<L_list.size();l++){
     std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]<<" \t\t "<<dwf4[l] << " \t\t "<< staggered[l]<<std::endl;
   }
@@ -727,9 +727,9 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << " Per Node Summary table Ls="<<Ls <<std::endl;
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    std::cout<<GridLogMessage << " L \t\t Wilson\t\t DWF4  " <<std::endl;
+    std::cout<<GridLogMessage << " L \t\t Wilson\t\t DWF4\t\t Staggered " <<std::endl;
     for(int l=0;l<L_list.size();l++){
-      std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]/NN<<" \t "<<dwf4[l]/NN<<std::endl;
+      std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]/NN<<" \t "<<dwf4[l]/NN<< " \t "<<staggered[l]/NN<<std::endl;
     }
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 
