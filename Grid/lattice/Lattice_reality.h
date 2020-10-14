@@ -64,6 +64,43 @@ template<class vobj> inline Lattice<vobj> conjugate(const Lattice<vobj> &lhs){
   return ret;
 };
 
+template<class vobj> inline Lattice<typename vobj::Complexified> toComplex(const Lattice<vobj> &lhs){
+  Lattice<typename vobj::Complexified> ret(lhs.Grid());
+
+  autoView( lhs_v, lhs, AcceleratorRead);
+  autoView( ret_v, ret, AcceleratorWrite);
+
+  ret.Checkerboard() = lhs.Checkerboard();
+  accelerator_for( ss, lhs_v.size(), 1, {
+    ret_v[ss] = toComplex(lhs_v[ss]);
+  });
+  return ret;
+};
+template<class vobj> inline Lattice<typename vobj::Realified> toReal(const Lattice<vobj> &lhs){
+  Lattice<typename vobj::Realified> ret(lhs.Grid());
+
+  autoView( lhs_v, lhs, AcceleratorRead);
+  autoView( ret_v, ret, AcceleratorWrite);
+
+  ret.Checkerboard() = lhs.Checkerboard();
+  accelerator_for( ss, lhs_v.size(), 1, {
+    ret_v[ss] = toReal(lhs_v[ss]);
+  });
+  return ret;
+};
+
+
+template<class Expression,typename std::enable_if<is_lattice_expr<Expression>::value,void>::type * = nullptr> 
+auto toComplex(const Expression &expr)  -> decltype(closure(expr)) 
+{
+  return toComplex(closure(expr));
+}
+template<class Expression,typename std::enable_if<is_lattice_expr<Expression>::value,void>::type * = nullptr> 
+auto toReal(const Expression &expr)  -> decltype(closure(expr)) 
+{
+  return toReal(closure(expr));
+}
+
 NAMESPACE_END(Grid);
 
 #endif
