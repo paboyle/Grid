@@ -100,6 +100,16 @@ auto toReal(const Expression &expr)  -> decltype(closure(expr))
 {
   return toReal(closure(expr));
 }
+template<class Expression,typename std::enable_if<is_lattice_expr<Expression>::value,void>::type * = nullptr> 
+auto adj(const Expression &expr)  -> decltype(closure(expr)) 
+{
+  return adj(closure(expr));
+}
+template<class Expression,typename std::enable_if<is_lattice_expr<Expression>::value,void>::type * = nullptr> 
+auto conjugate(const Expression &expr)  -> decltype(closure(expr)) 
+{
+  return conjugate(closure(expr));
+}
 
 NAMESPACE_END(Grid);
 
