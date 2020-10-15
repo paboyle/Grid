@@ -488,27 +488,27 @@ GRID_DEF_TRINOP(where, TrinaryWhere);
 /////////////////////////////////////////////////////////////
 template <class Op, class T1>
 auto closure(const LatticeUnaryExpression<Op, T1> &expr)
-  -> Lattice<decltype(expr.op.func(vecEval(0, expr.arg1)))> 
+  -> Lattice<typename std::remove_const<decltype(expr.op.func(vecEval(0, expr.arg1)))>::type > 
 {
-  Lattice<decltype(expr.op.func(vecEval(0, expr.arg1)))> ret(expr);
+  Lattice<typename std::remove_const<decltype(expr.op.func(vecEval(0, expr.arg1)))>::type > ret(expr);
   return ret;
 }
 template <class Op, class T1, class T2>
 auto closure(const LatticeBinaryExpression<Op, T1, T2> &expr)
-  -> Lattice<decltype(expr.op.func(vecEval(0, expr.arg1),vecEval(0, expr.arg2)))> 
+  -> Lattice<typename std::remove_const<decltype(expr.op.func(vecEval(0, expr.arg1),vecEval(0, expr.arg2)))>::type >
 {
-  Lattice<decltype(expr.op.func(vecEval(0, expr.arg1),vecEval(0, expr.arg2)))> ret(expr);
+  Lattice<typename std::remove_const<decltype(expr.op.func(vecEval(0, expr.arg1),vecEval(0, expr.arg2)))>::type > ret(expr);
   return ret;
 }
 template <class Op, class T1, class T2, class T3>
 auto closure(const LatticeTrinaryExpression<Op, T1, T2, T3> &expr)
-  -> Lattice<decltype(expr.op.func(vecEval(0, expr.arg1),
+  -> Lattice<typename std::remove_const<decltype(expr.op.func(vecEval(0, expr.arg1),
 				   vecEval(0, expr.arg2),
-				   vecEval(0, expr.arg3)))> 
+				   vecEval(0, expr.arg3)))>::type >
 {
-  Lattice<decltype(expr.op.func(vecEval(0, expr.arg1),
+  Lattice<typename std::remove_const<decltype(expr.op.func(vecEval(0, expr.arg1),
 				vecEval(0, expr.arg2),
-			        vecEval(0, expr.arg3)))>  ret(expr);
+			        vecEval(0, expr.arg3)))>::type >  ret(expr);
   return ret;
 }
 #define EXPRESSION_CLOSURE(function)					\

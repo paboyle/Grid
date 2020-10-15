@@ -45,8 +45,8 @@ template<class vobj> inline Lattice<vobj> adj(const Lattice<vobj> &lhs){
   autoView( ret_v, ret, AcceleratorWrite);
 
   ret.Checkerboard()=lhs.Checkerboard();
-  accelerator_for( ss, lhs_v.size(), vobj::Nsimd(), {
-    coalescedWrite(ret_v[ss], adj(lhs_v(ss)));
+  accelerator_for( ss, lhs_v.size(), 1, {
+     ret_v[ss] = adj(lhs_v[ss]);
   });
   return ret;
 };
