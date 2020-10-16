@@ -51,7 +51,7 @@ int main (int argc, char ** argv)
 
   LatticeGaugeField U(&Grid);
 
-  SU3::HotConfiguration(pRNG,U);
+  SU<Nc>::HotConfiguration(pRNG,U);
   
   double beta = 1.0;
   ConjugateWilsonGaugeActionR Action(beta);
@@ -80,7 +80,7 @@ int main (int argc, char ** argv)
 
   for(int mu=0;mu<Nd;mu++){
 
-    SU3::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); // Traceless antihermitian momentum; gaussian in lie alg
+    SU<Nc>::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); // Traceless antihermitian momentum; gaussian in lie alg
 
     PokeIndex<LorentzIndex>(mom,mommu,mu);
 

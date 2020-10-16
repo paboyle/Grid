@@ -449,7 +449,8 @@ public:
     LatticeReal alpha(grid);
 
     //    std::cout<<GridLogMessage<<"xi "<<xi <<std::endl;
-    alpha = toReal(2.0 * xi);
+    xi = 2.0 *xi;
+    alpha = toReal(xi);
 
     do {
       // A. Generate two uniformly distributed pseudo-random numbers R and R',

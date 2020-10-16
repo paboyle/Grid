@@ -293,7 +293,7 @@ int main (int argc, char ** argv) {
   {
     std::vector<int> seeds4({1,2,3,4});
     GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
-    SU3::HotConfiguration(RNG4, Umu);
+    SU<Nc>::HotConfiguration(RNG4, Umu);
   }
   std::cout << GridLogMessage << "Lattice dimensions: " << GridDefaultLatt() << "   Ls: " << Ls << std::endl;
 

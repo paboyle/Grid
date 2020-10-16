@@ -114,7 +114,7 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG4_2f(UGrid_2f);  RNG4_2f.SeedFixedIntegers(seeds4);
 
   GparityGaugeField Umu_2f(UGrid_2f);
-  SU3::HotConfiguration(RNG4_2f,Umu_2f);
+  SU<Nc>::HotConfiguration(RNG4_2f,Umu_2f);
 
   StandardFermionField    src   (FGrid_2f); 
   StandardFermionField    tmpsrc(FGrid_2f); 

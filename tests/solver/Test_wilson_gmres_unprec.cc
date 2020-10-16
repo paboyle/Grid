@@ -47,7 +47,7 @@ int main (int argc, char ** argv)
   LatticeFermion src(&Grid); random(pRNG,src);
   RealD nrm = norm2(src);
   LatticeFermion result(&Grid); result=Zero();
-  LatticeGaugeField Umu(&Grid); SU3::HotConfiguration(pRNG,Umu);
+  LatticeGaugeField Umu(&Grid); SU<Nc>::HotConfiguration(pRNG,Umu);
 
   double volume=1;
   for(int mu=0;mu<Nd;mu++){

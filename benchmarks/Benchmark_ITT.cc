@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -62,7 +62,7 @@ struct time_statistics{
 
 void comms_header(){
   std::cout <<GridLogMessage << " L  "<<"\t"<<" Ls  "<<"\t"
-            <<std::setw(11)<<"bytes"<<"MB/s uni (err/min/max)"<<"\t\t"<<"MB/s bidi (err/min/max)"<<std::endl;
+            <<"bytes\t MB/s uni (err/min/max) \t\t MB/s bidi (err/min/max)"<<std::endl;
 };
 
 Gamma::Algebra Gmu [] = {
@@ -125,7 +125,7 @@ public:
 	      lat*mpi_layout[1],
 	      lat*mpi_layout[2],
 	      lat*mpi_layout[3]});
-	std::cout << GridLogMessage<< latt_size <<std::endl;
+
 	GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 	RealD Nrank = Grid._Nprocessors;
 	RealD Nnode = Grid.NodeCount();
@@ -137,8 +137,8 @@ public:
 	for(int d=0;d<8;d++){
 	  xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
 	  rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	  bzero((void *)xbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	  bzero((void *)rbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+	  //	  bzero((void *)xbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+	  //	  bzero((void *)rbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
 	}
 
 	int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
@@ -189,11 +189,11 @@ public:
 	//	double rbytes    = dbytes*0.5;
 	double bidibytes = dbytes;
 
-	std::cout<<GridLogMessage << std::setw(4) << lat<<"\t"<<Ls<<"\t"
-		 <<std::setw(11) << bytes<< std::fixed << std::setprecision(1) << std::setw(7)
-		 <<std::right<< xbytes/timestat.mean<<"  "<< xbytes*timestat.err/(timestat.mean*timestat.mean)<< " "
+	std::cout<<GridLogMessage << lat<<"\t"<<Ls<<"\t "
+		 << bytes << " \t "
+		 <<xbytes/timestat.mean<<" \t "<< xbytes*timestat.err/(timestat.mean*timestat.mean)<< " \t "
 		 <<xbytes/timestat.max <<" "<< xbytes/timestat.min  
-		 << "\t\t"<<std::setw(7)<< bidibytes/timestat.mean<< "  " << bidibytes*timestat.err/(timestat.mean*timestat.mean) << " "
+		 << "\t\t"<< bidibytes/timestat.mean<< "  " << bidibytes*timestat.err/(timestat.mean*timestat.mean) << " "
 		 << bidibytes/timestat.max << " " << bidibytes/timestat.min << std::endl;
 	
 	    }
@@ -224,7 +224,7 @@ public:
 
 
   uint64_t lmax=32;
-#define NLOOP (100*lmax*lmax*lmax*lmax/lat/lat/lat/lat)
+#define NLOOP (1000*lmax*lmax*lmax*lmax/lat/lat/lat/lat)
 
     GridSerialRNG          sRNG;      sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
     for(int lat=8;lat<=lmax;lat+=8){
@@ -249,11 +249,6 @@ public:
       double start=usecond();
       for(int i=0;i<Nloop;i++){
 	z=a*x-y;
-	autoView( x_v , x, CpuWrite);
-	autoView( y_v , y, CpuWrite);
-	autoView( z_v , z, CpuRead);
-        x_v[0]=z_v[0]; // force serial dependency to prevent optimise away
-        y_v[4]=z_v[4];
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
@@ -286,7 +281,7 @@ public:
 
 
     uint64_t lmax=32;
-#define NLOOP (100*lmax*lmax*lmax*lmax/lat/lat/lat/lat)
+#define NLOOP (1000*lmax*lmax*lmax*lmax/lat/lat/lat/lat)
 
     GridSerialRNG          sRNG;      sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
     for(int lat=8;lat<=lmax;lat+=8){
@@ -309,11 +304,6 @@ public:
       double start=usecond();
       for(int i=0;i<Nloop;i++){
 	z=x*y;
-	autoView( x_v , x, CpuWrite);
-	autoView( y_v , y, CpuWrite);
-	autoView( z_v , z, CpuRead);
-        x_v[0]=z_v[0]; // force serial dependency to prevent optimise away
-        y_v[4]=z_v[4];
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
@@ -358,6 +348,7 @@ public:
     ///////// Welcome message ////////////
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << "Benchmark DWF on "<<L<<"^4 local volume "<<std::endl;
+    std::cout<<GridLogMessage << "* Nc             : "<<Nc<<std::endl;
     std::cout<<GridLogMessage << "* Global volume  : "<<GridCmdVectorIntToString(latt4)<<std::endl;
     std::cout<<GridLogMessage << "* Ls             : "<<Ls<<std::endl;
     std::cout<<GridLogMessage << "* ranks          : "<<NP  <<std::endl;
@@ -386,7 +377,7 @@ public:
     typedef LatticeGaugeFieldF Gauge;
     
     ///////// Source preparation ////////////
-    Gauge Umu(UGrid);  SU3::HotConfiguration(RNG4,Umu); 
+    Gauge Umu(UGrid);  SU<Nc>::HotConfiguration(RNG4,Umu); 
     Fermion src   (FGrid); random(RNG5,src);
     Fermion src_e (FrbGrid);
     Fermion src_o (FrbGrid);
@@ -431,7 +422,7 @@ public:
 	}
 	FGrid->Barrier();
 	double t1=usecond();
-	uint64_t ncall = 50;
+	uint64_t ncall = 500;
 
 	FGrid->Broadcast(0,&ncall,sizeof(ncall));
 
@@ -449,7 +440,13 @@ public:
 	FGrid->Barrier();
 	
 	double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-	double flops=(1344.0*volume)/2;
+
+	// Nc=3 gives
+	// 1344= 3*(2*8+6)*2*8 + 8*3*2*2 + 3*4*2*8
+	// 1344 = Nc* (6+(Nc-1)*8)*2*Nd + Nd*Nc*2*2  + Nd*Nc*Ns*2
+	//	double flops=(1344.0*volume)/2;
+	double fps = Nc* (6+(Nc-1)*8)*Ns*Nd + Nd*Nc*Ns  + Nd*Nc*Ns*2;
+	double flops=(fps*volume)/2;
 	double mf_hi, mf_lo, mf_err;
 
 	timestat.statistics(t_time);
@@ -464,6 +461,7 @@ public:
 	if ( mflops>mflops_best ) mflops_best = mflops;
 	if ( mflops<mflops_worst) mflops_worst= mflops;
 
+	std::cout<<GridLogMessage<< "Deo FlopsPerSite is "<<fps<<std::endl;
 	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s =   "<< mflops << " ("<<mf_err<<") " << mf_lo<<"-"<<mf_hi <<std::endl;
 	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s per rank   "<< mflops/NP<<std::endl;
 	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s per node   "<< mflops/NN<<std::endl;
@@ -540,7 +538,7 @@ public:
     typedef typename Action::FermionField Fermion; 
     typedef LatticeGaugeFieldF Gauge;
     
-    Gauge Umu(FGrid);  SU3::HotConfiguration(RNG4,Umu); 
+    Gauge Umu(FGrid);  SU<Nc>::HotConfiguration(RNG4,Umu); 
 
     typename Action::ImplParams params;
     Action Ds(Umu,Umu,*FGrid,*FrbGrid,mass,c1,c2,u0,params);
@@ -698,7 +696,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Summary table Ls="<<Ls <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "L \t\t Wilson \t\t DWF4 \t\tt Staggered" <<std::endl;
+  std::cout<<GridLogMessage << "L \t\t Wilson \t\t DWF4 \t\t Staggered" <<std::endl;
   for(int l=0;l<L_list.size();l++){
     std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]<<" \t\t "<<dwf4[l] << " \t\t "<< staggered[l]<<std::endl;
   }
@@ -729,9 +727,9 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << " Per Node Summary table Ls="<<Ls <<std::endl;
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    std::cout<<GridLogMessage << " L \t\t Wilson\t\t DWF4  " <<std::endl;
+    std::cout<<GridLogMessage << " L \t\t Wilson\t\t DWF4\t\t Staggered " <<std::endl;
     for(int l=0;l<L_list.size();l++){
-      std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]/NN<<" \t "<<dwf4[l]/NN<<std::endl;
+      std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]/NN<<" \t "<<dwf4[l]/NN<< " \t "<<staggered[l]/NN<<std::endl;
     }
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 

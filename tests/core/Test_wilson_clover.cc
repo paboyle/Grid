@@ -74,7 +74,7 @@ int main(int argc, char **argv)
   FermionField chi(&Grid);
   random(pRNG, chi);
   LatticeGaugeField Umu(&Grid);
-  SU3::HotConfiguration(pRNG, Umu);
+  SU<Nc>::HotConfiguration(pRNG, Umu);
   std::vector<LatticeColourMatrix> U(4, &Grid);
 
   double volume = 1;

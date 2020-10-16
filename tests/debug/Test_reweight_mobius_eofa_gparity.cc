@@ -106,7 +106,7 @@ int main(int argc, char **argv)
 
   // Random gauge field
   LatticeGaugeField Umu(UGrid);
-  SU3::HotConfiguration(RNG4, Umu);
+  SU<Nc>::HotConfiguration(RNG4, Umu);
 
   // Initialize RHMC fermion operators
   GparityDomainWallFermionR::ImplParams params;

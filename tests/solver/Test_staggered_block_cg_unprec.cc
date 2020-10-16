@@ -71,7 +71,7 @@ int main (int argc, char ** argv)
   FermionField result(FGrid); result=Zero();
   RealD nrm = norm2(src);
 
-  LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
+  LatticeGaugeField Umu(UGrid); SU<Nc>::HotConfiguration(pRNG,Umu);
 
   RealD mass=0.003;
   RealD c1=9.0/8.0;

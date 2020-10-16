@@ -202,7 +202,7 @@ int main (int argc, char ** argv) {
   std::vector<int> seeds4({1,2,3,4});
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
   LatticeGaugeField Umu(UGrid);
-  SU3::HotConfiguration(RNG4,Umu);
+  SU<Nc>::HotConfiguration(RNG4,Umu);
   //  FieldMetaData header;
   //  NerscIO::readConfiguration(Umu,header,Params.config);
 
