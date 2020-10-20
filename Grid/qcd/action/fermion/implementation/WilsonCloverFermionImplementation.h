@@ -92,20 +92,16 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
   int lvol = _Umu.Grid()->lSites();
   int DimRep = Impl::Dimension;
 
-  Eigen::MatrixXcd EigenCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
-  Eigen::MatrixXcd EigenInvCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
-
-  Coordinate lcoor;
-  typename SiteCloverType::scalar_object Qx = Zero(), Qxinv = Zero();
-
   {
     autoView(CTv,CloverTerm,CpuRead);
     autoView(CTIv,CloverTermInv,CpuWrite);
-    for (int site = 0; site < lvol; site++) {
+    thread_for(site, lvol, {
+      Coordinate lcoor;
       grid->LocalIndexToLocalCoor(site, lcoor);
-      EigenCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
+      Eigen::MatrixXcd EigenCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
+      Eigen::MatrixXcd EigenInvCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
+      typename SiteCloverType::scalar_object Qx = Zero(), Qxinv = Zero();
       peekLocalSite(Qx, CTv, lcoor);
-      Qxinv = Zero();
       //if (csw!=0){
       for (int j = 0; j < Ns; j++)
 	for (int k = 0; k < Ns; k++)
@@ -126,7 +122,7 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
       //    if (site==0) std::cout << "site =" << site << "\n" << EigenInvCloverOp << std::endl;
       //  }
       pokeLocalSite(Qxinv, CTIv, lcoor);
-    }
+    });
   }
 
   // Separate the even and odd parts
