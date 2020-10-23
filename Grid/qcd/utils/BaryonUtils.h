@@ -514,11 +514,6 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
 
   assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
   assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
-
-  std::cout << "GammaA (left) " << (GammaA_left.g) <<  std::endl;
-  std::cout << "GammaB (left) " << (GammaB_left.g) <<  std::endl;
-  std::cout << "GammaA (right) " << (GammaA_right.g) <<  std::endl;
-  std::cout << "GammaB (right) " << (GammaB_right.g) <<  std::endl;
  
   assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
 
@@ -553,7 +548,7 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
 
   t += usecond();
 
-  std::cout << std::setw(10) << bytes/t*1.0e6/1024/1024/1024 << " GB/s " << std::endl;
+  std::cout << GridLogDebug << std::setw(10) << bytes/t*1.0e6/1024/1024/1024 << " GB/s " << std::endl;
 }
 
 template<class FImpl>
@@ -570,11 +565,6 @@ void BaryonUtils<FImpl>::ContractBaryonsMatrix(const PropagatorField &q1_left,
 
   assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
   assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
-
-  std::cout << "GammaA (left) " << (GammaA_left.g) <<  std::endl;
-  std::cout << "GammaB (left) " << (GammaB_left.g) <<  std::endl;
-  std::cout << "GammaA (right) " << (GammaA_right.g) <<  std::endl;
-  std::cout << "GammaB (right) " << (GammaB_right.g) <<  std::endl;
  
   GridBase *grid = q1_left.Grid();
   
@@ -607,7 +597,7 @@ void BaryonUtils<FImpl>::ContractBaryonsMatrix(const PropagatorField &q1_left,
 
   // t += usecond();
 
-  // std::cout << std::setw(10) << bytes/t*1.0e6/1024/1024/1024 << " GB/s " << std::endl;
+  // std::cout << GridLogDebug << std::setw(10) << bytes/t*1.0e6/1024/1024/1024 << " GB/s " << std::endl;
 
 }
 
@@ -633,11 +623,6 @@ void BaryonUtils<FImpl>::ContractBaryonsSliced(const mobj &D1,
 
   assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
   assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
-
-  std::cout << "GammaA (left) " << (GammaA_left.g) <<  std::endl;
-  std::cout << "GammaB (left) " << (GammaB_left.g) <<  std::endl;
-  std::cout << "GammaA (right) " << (GammaA_right.g) <<  std::endl;
-  std::cout << "GammaB (right) " << (GammaB_right.g) <<  std::endl;
  
   assert(parity==1 || parity == -1 && "Parity must be +1 or -1");
 
@@ -662,11 +647,6 @@ void BaryonUtils<FImpl>::ContractBaryonsSlicedMatrix(const mobj &D1,
 
   assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
   assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
-
-  std::cout << "GammaA (left) " << (GammaA_left.g) <<  std::endl;
-  std::cout << "GammaB (left) " << (GammaB_left.g) <<  std::endl;
-  std::cout << "GammaA (right) " << (GammaA_right.g) <<  std::endl;
-  std::cout << "GammaB (right) " << (GammaB_right.g) <<  std::endl;
 
   for (int t=0; t<nt; t++) {
     BaryonSiteMatrix(D1[t],D2[t],D3[t],GammaA_left,GammaB_left,GammaA_right,GammaB_right,wick_contractions,result[t]);
