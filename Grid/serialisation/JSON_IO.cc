@@ -26,7 +26,7 @@
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
-#ifndef __NVCC__
+#if (!defined(GRID_CUDA)) && (!defined(GRID_HIP))
 
 NAMESPACE_BEGIN(Grid);
 
