@@ -84,7 +84,6 @@ NAMESPACE_BEGIN(Grid);
   }
 
 UNARY(sqrt);
-UNARY(rsqrt);
 UNARY(sin);
 UNARY(cos);
 UNARY(asin);

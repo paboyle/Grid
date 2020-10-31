@@ -350,7 +350,6 @@ GridUnopClass(UnaryTimesI, timesI(a));
 GridUnopClass(UnaryTimesMinusI, timesMinusI(a));
 GridUnopClass(UnaryAbs, abs(a));
 GridUnopClass(UnarySqrt, sqrt(a));
-GridUnopClass(UnaryRsqrt, rsqrt(a));
 GridUnopClass(UnarySin, sin(a));
 GridUnopClass(UnaryCos, cos(a));
 GridUnopClass(UnaryAsin, asin(a));
@@ -463,7 +462,6 @@ GRID_DEF_UNOP(timesMinusI, UnaryTimesMinusI);
 GRID_DEF_UNOP(abs, UnaryAbs);  // abs overloaded in cmath C++98; DON'T do the
                                // abs-fabs-dabs-labs thing
 GRID_DEF_UNOP(sqrt, UnarySqrt);
-GRID_DEF_UNOP(rsqrt, UnaryRsqrt);
 GRID_DEF_UNOP(sin, UnarySin);
 GRID_DEF_UNOP(cos, UnaryCos);
 GRID_DEF_UNOP(asin, UnaryAsin);
