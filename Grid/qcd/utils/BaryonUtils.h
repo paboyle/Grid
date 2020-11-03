@@ -1292,4 +1292,173 @@ void BaryonUtils<FImpl>::SigmaToNucleonNonEye(const PropagatorField &qq_ti,
   }  );//end loop over lattice sites
 }
 
+
+/***********************************************************************
+ * The following code is for Xi -> Sigma rare hypeon decays            *
+ **********************************************************************/
+
+/* Dq_loop is a quark line from t_H to t_H
+ * Dd_spec is a quark line from t_i to t_f
+ * Ds_spec is a quark line from t_i to t_f
+ * Dd_tf is a quark line from t_f to t_H
+ * Ds_ti is a quark line from t_i to t_H */
+template <class FImpl>
+template <class mobj, class mobj2, class robj>
+void BaryonUtils<FImpl>::XiToSigmaQ1EyeSite(const mobj &Dq_loop,
+						 const mobj2 &Dd_spec,
+						 const mobj2 &Ds_spec,
+						 const mobj &Dd_tf,
+						 const mobj &Ds_ti,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_xi,
+		                 		 const Gamma GammaB_sigma,
+						 robj &result)
+{
+
+  Gamma g5(Gamma::Algebra::Gamma5); 
+
+  auto DdG = Dd_spec * GammaB_sigma;
+  auto GDs = GammaB_xi * Ds_spec;
+  // Ds * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
+  auto DsGDd = Ds_ti * Gamma_H * g5 * adj(Dd_tf) * g5;
+  // DsGDd * GammaB
+  auto DsGDdG = DsGDd * GammaB_sigma;
+  // GammaB * DsGDd
+  auto GDsGDd = GammaB_xi * DsGDd;
+  // GammaB * DsGDd * GammaB
+  auto GDsGDdG = GDsGDd * GammaB_sigma;
+  // \gamma_\mu^L * Dq_loop 
+  auto trGDq = trace(GammaH * Dq_loop);
+
+  for (int ie_s=0; ie_s < 6 ; ie_s++){
+    int a_s = epsilon[ie_s][0]; //a
+    int b_s = epsilon[ie_s][1]; //b
+    int c_s = epsilon[ie_s][2]; //c
+    for (int ie_x=0; ie_x < 6 ; ie_x++){
+      int a_x = epsilon[ie_x][0]; //a'
+      int b_x = epsilon[ie_x][1]; //b'
+      int c_x = epsilon[ie_x][2]; //c'
+      auto ee_GD = epsilon_sgn[ie_s] * epsilon_sgn[ie_x] * trGDq;
+      for (int alpha_x=0; alpha_x<Ns; alpha_x++){
+      for (int beta_s=0; beta_s<Ns; beta_s++){
+        auto GDsGDdG_ab_ba = GDsGDd()(alpha_x,beta_s)(b_x,a_s);
+        auto Ds_ab_ab = Ds_spec()(alpha_x,beta_s)(a_x,b_s);
+        auto DsGDdG_ab_aa = DsGDd()(alpha_x,beta_s)(a_x,a_s);
+        auto GDs_ab_bb = GDs()(alpha_x,beta_s)(b_x,b_s);
+        for (int gamma_x=0; gamma_x<Ns; gamma_x++){
+          auto DdG_cb_ca = DdG()(gamma_x,beta_s)(c_x,a_s);
+          for (int gamma_s=0; gamma_s<Ns; gamma_s++){
+            result()(gamma_x,gamma_s)() -= ee_GD * Dd_spec()(gamma_x,gamma_s)(c_x,c_s) * GDsGDdG_ab_ba * Ds_ab_ab;
+            result()(gamma_x,gamma_s)() += ee_GD * DdG_cb_ca * GDsGDd()(alpha_x,gamma_s)(b_x,c_s) * Ds_ab_ab;
+            result()(gamma_x,gamma_s)() += ee_GD * Dd_spec()(gamma_x,gamma_s)(c_x,c_s) * DsGDdG_ab_aa * GDs_ab_bb;
+            result()(gamma_x,gamma_s)() -= ee_GD * DdG_cb_ca * DsGDd()(alpha_x,gamma_s)(a_x,c_s) * GDs_ab_bb;
+          }
+	}
+      }}
+    }
+  }
+}
+
+
+//Equivalent to "One-trace"
+/* Dq_loop is a quark line from t_H to t_H
+ * Dd_spec is a quark line from t_i to t_f
+ * Ds_spec is a quark line from t_i to t_f
+ * Dd_tf is a quark line from t_f to t_H
+ * Ds_ti is a quark line from t_i to t_H */
+template <class FImpl>
+template <class mobj, class mobj2, class robj>
+void BaryonUtils<FImpl>::XiToSigmaQ2EyeSite(const mobj &Dq_loop,
+						 const mobj2 &Dd_spec,
+						 const mobj2 &Ds_spec,
+						 const mobj &Dd_tf,
+						 const mobj &Ds_ti,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_xi,
+		                 		 const Gamma GammaB_sigma,
+						 robj &result)
+{
+
+  Gamma g5(Gamma::Algebra::Gamma5); 
+
+  auto DdG = Dd_spec * GammaB_sigma;
+  auto GDs = GammaB_xi * Ds_spec;
+  // Ds * \gamma_\mu^L * Dq_loop * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
+  auto DsGDqGDd = Ds_ti * Gamma_H * Dq_loop * Gamma_H * g5 * adj(Dd_tf) * g5;
+  // DsGDd * GammaB
+  auto DsGDqGDdG = DsGDqGDd * GammaB_sigma;
+  // GammaB * DsGDd
+  auto GDsGDqGDd = GammaB_xi * DsGDqGDd;
+  // GammaB * DsGDd * GammaB
+  auto GDsGDqGDdG = GDsGDqGDd * GammaB_sigma;
+
+  for (int ie_s=0; ie_s < 6 ; ie_s++){
+    int a_s = epsilon[ie_s][0]; //a
+    int b_s = epsilon[ie_s][1]; //b
+    int c_s = epsilon[ie_s][2]; //c
+    for (int ie_x=0; ie_x < 6 ; ie_x++){
+      int a_x = epsilon[ie_x][0]; //a'
+      int b_x = epsilon[ie_x][1]; //b'
+      int c_x = epsilon[ie_x][2]; //c'
+      auto ee = epsilon_sgn[ie_s] * epsilon_sgn[ie_x];
+      for (int alpha_x=0; alpha_x<Ns; alpha_x++){
+      for (int beta_s=0; beta_s<Ns; beta_s++){
+        auto GDsGDqGDdG_ab_ba = GDsGDqGDdG()(alpha_x,beta_s)(b_x,a_s);
+        auto Ds_ab_ab = Ds_spec()(alpha_x,beta_s)(a_x,b_s);
+        auto DsGDqGDdG_ab_aa = GDsGDqGDdG()(alpha_x,beta_s)(a_x,a_s);
+        auto GDs_ab_bb = GDs()(alpha_x,beta_s)(b_x,b_s);
+          for (int gamma_x=0; gamma_x<Ns; gamma_x++){
+            auto DdG_cb_ca = DdG()(gamma_x, beta_s)(c_x,a_s);
+          for (int gamma_s=0; gamma_s<Ns; gamma_s++){
+            result()(gamma_x,gamma_s)() -= ee * Dd_spec()(gamma_x,gamma_s)(c_x,c_s) * GDsGDqGDdG_ab_ba * Ds_ab_ab;
+            result()(gamma_x,gamma_s)() += ee * DdG_cb_ca * GDsGDqGDd()(alpha_x,gamma_s)(b_x,c_s) * Ds_ab_ab;
+            result()(gamma_x,gamma_s)() += ee * Dd_spec()(gamma_x,gamma_s)(c_x,c_s) * DsGDqGDdG_ab_aa * GDs_ab_bb;
+            result()(gamma_x,gamma_s)() -= ee * DdG_cb_ca * DsGDqGDd()(alpha_x,gamma_s)(a_x,c_s) * GDs_ab_bb;
+          }}
+      }}
+    }
+  }
+}
+
+template<class FImpl>
+template <class mobj>
+void BaryonUtils<FImpl>::XiToSigmaEye(const PropagatorField &qq_loop,
+						 const mobj &Dd_spec,
+						 const mobj &Ds_spec,
+						 const PropagatorField &qd_tf,
+						 const PropagatorField &qs_ti,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_xi,
+		                 		 const Gamma GammaB_sigma,
+						 const std::string op,
+						 SpinMatrixField &stn_corr)
+{
+
+  assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
+  assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
+
+  GridBase *grid = qs_ti.Grid();
+
+  autoView( vcorr, stn_corr, CpuWrite);
+  autoView( vq_loop , qq_loop, CpuRead);
+  autoView( vd_tf , qd_tf, CpuRead);
+  autoView( vs_ti , qs_ti, CpuRead);
+
+  accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+    auto Dq_loop = vq_loop[ss];
+    auto Dd_tf = vd_tf[ss];
+    auto Ds_ti = vs_ti[ss];
+    sobj result=Zero();
+    if(op == "Q1"){
+      XiToSigmaQ1EyeSite(Dq_loop,Dd_spec,Ds_spec,Dd_tf,Ds_ti,Gamma_H,GammaB_xi,GammaB_sigma,result);
+    } else if(op == "Q2"){
+      XiToSigmaQ2EyeSite(Dq_loop,Dd_spec,Ds_spec,Dd_tf,Ds_ti,Gamma_H,GammaB_xi,GammaB_sigma,result);
+    } else {
+      assert(0 && "Weak Operator not correctly specified");
+    }
+      vcorr[ss] = result; 
+  }  );//end loop over lattice sites
+}
+
+
 NAMESPACE_END(Grid);
