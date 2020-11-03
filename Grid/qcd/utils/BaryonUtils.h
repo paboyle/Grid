@@ -1359,7 +1359,7 @@ void BaryonUtils<FImpl>::XiToSigmaQ1EyeSite(const mobj &Dq_loop,
   // GammaB * DsGDd * GammaB
   auto GDsGDdG = GDsGDd * GammaB_sigma;
   // \gamma_\mu^L * Dq_loop 
-  auto trGDq = trace(Gamma_H * Dq_loop);
+  auto trGDq = TensorRemove(trace(Gamma_H * Dq_loop)); 
 
   for (int ie_s=0; ie_s < 6 ; ie_s++){
     int a_s = epsilon[ie_s][0]; //a
@@ -1369,7 +1369,7 @@ void BaryonUtils<FImpl>::XiToSigmaQ1EyeSite(const mobj &Dq_loop,
       int a_x = epsilon[ie_x][0]; //a'
       int b_x = epsilon[ie_x][1]; //b'
       int c_x = epsilon[ie_x][2]; //c'
-      auto ee_GD = epsilon_sgn[ie_s] * epsilon_sgn[ie_x] * trGDq;
+      auto ee_GD = epsilon_sgn[ie_s] * epsilon_sgn[ie_x] * trGDq; 
       for (int alpha_x=0; alpha_x<Ns; alpha_x++){
       for (int beta_s=0; beta_s<Ns; beta_s++){
         auto GDsGDdG_ab_ba = GDsGDd()(alpha_x,beta_s)(b_x,a_s);
