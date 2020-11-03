@@ -207,6 +207,26 @@ public:
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
 						 robj &result);
+  template <class mobj, class mobj2, class robj>
+  static void XiToSigmaQ1EyeSite(const mobj &Dq_loop,
+						 const mobj2 &Dd_spec,
+						 const mobj2 &Ds_spec,
+						 const mobj &Dd_tf,
+						 const mobj &Ds_ti,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_sigma,
+		                 		 const Gamma GammaB_nucl,
+						 robj &result);
+  template <class mobj, class mobj2, class robj>
+  static void XiToSigmaQ2EyeSite(const mobj &Dq_loop,
+						 const mobj2 &Dd_spec,
+						 const mobj2 &Ds_spec,
+						 const mobj &Dd_tf,
+						 const mobj &Ds_ti,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_sigma,
+		                 		 const Gamma GammaB_nucl,
+						 robj &result);
   public:
   template <class mobj>
   static void SigmaToNucleonEye(const PropagatorField &qq_loop,
@@ -222,6 +242,17 @@ public:
   static void SigmaToNucleonNonEye(const PropagatorField &qq_ti,
 				 const PropagatorField &qq_tf,
 				 const mobj &Du_spec,
+				 const PropagatorField &qd_tf,
+				 const PropagatorField &qs_ti,
+				 const Gamma Gamma_H,
+				 const Gamma GammaB_sigma,
+				 const Gamma GammaB_nucl,
+		                 const std::string op,
+				 SpinMatrixField &stn_corr);
+  template <class mobj>
+  static void XiToSigmaEye(const PropagatorField &qq_loop,
+				 const mobj &Dd_spec,
+				 const mobj &Ds_spec,
 				 const PropagatorField &qd_tf,
 				 const PropagatorField &qs_ti,
 				 const Gamma Gamma_H,
