@@ -1027,7 +1027,7 @@ void BaryonUtils<FImpl>::BaryonGamma3pt(
  * Du_spec is a quark line from t_i to t_f
  * Dd_tf is a quark line from t_f to t_H
  * Ds_ti is a quark line from t_i to t_H */
-template <class FImpl>
+/*template <class FImpl>
 template <class mobj, class mobj2, class robj>
 void BaryonUtils<FImpl>::SigmaToNucleonQ1EyeSite(const mobj &Dq_loop,
 						 const mobj2 &Du_spec,
@@ -1071,6 +1071,50 @@ void BaryonUtils<FImpl>::SigmaToNucleonQ1EyeSite(const mobj &Dq_loop,
       }}
     }
   }
+}*/
+template <class FImpl>
+template <class mobj, class mobj2, class robj>
+void BaryonUtils<FImpl>::SigmaToNucleonQ1EyeSite(const mobj &Dq_loop,
+						 const mobj2 &Du_spec,
+						 const mobj &Dd_tf,
+						 const mobj &Ds_ti,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_sigma,
+		                 		 const Gamma GammaB_nucl,
+						 robj &result)
+{
+
+  Gamma g5(Gamma::Algebra::Gamma5); 
+
+  auto DuG = Du_spec * GammaB_nucl;
+  // Gamma^B * Ds * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
+  auto GDsGDd = GammaB_sigma * Ds_ti * Gamma_H * g5 * adj(Dd_tf) * g5;
+  // Dq_loop * \gamma_\mu^L
+  auto trDqG = TensorRemove(trace(Dq_loop * Gamma_H));
+
+  for (int ie_n=0; ie_n < 6 ; ie_n++){
+    int a_n = epsilon[ie_n][0]; //a
+    int b_n = epsilon[ie_n][1]; //b
+    int c_n = epsilon[ie_n][2]; //c
+    for (int ie_s=0; ie_s < 6 ; ie_s++){
+      int a_s = epsilon[ie_s][0]; //a'
+      int b_s = epsilon[ie_s][1]; //b'
+      int c_s = epsilon[ie_s][2]; //c'
+      for (int alpha_s=0; alpha_s<Ns; alpha_s++){
+      for (int beta_n=0; beta_n<Ns; beta_n++){
+        auto GDsGDd_ab_bb = GDsGDd()(alpha_s,beta_n)(b_s,b_n);
+        auto ee_GDGDDG = epsilon_sgn[ie_n] * epsilon_sgn[ie_s] * GDsGDd_ab_bb * trDqG;
+	auto DuG_ab_aa = DuG()(alpha_s, beta_n)(a_s,a_n);
+        for (int gamma_s=0; gamma_s<Ns; gamma_s++){
+	  auto DuG_cb_ca = DuG()(gamma_s, beta_n)(c_s,a_n);
+          for (int gamma_n=0; gamma_n<Ns; gamma_n++){
+            result()(gamma_s,gamma_n)() += ee_GDGDDG * DuG_ab_aa * Du_spec()(gamma_s,gamma_n)(c_s,c_n);
+            result()(gamma_s,gamma_n)() -= ee_GDGDDG * DuG_cb_ca * Du_spec()(alpha_s,gamma_n)(a_s,c_n);
+	  }
+	}
+      }}
+    }
+  }
 }
 
 /* Du_ti is a quark line from t_i to t_H
@@ -1078,7 +1122,7 @@ void BaryonUtils<FImpl>::SigmaToNucleonQ1EyeSite(const mobj &Dq_loop,
  * Du_spec is a quark line from t_i to t_f
  * Dd_tf is a quark line from t_f to t_H
  * Ds_ti is a quark line from t_i to t_H */
-template <class FImpl>
+/*template <class FImpl>
 template <class mobj, class mobj2, class robj>
 void BaryonUtils<FImpl>::SigmaToNucleonQ1NonEyeSite(const mobj &Du_ti,
 						 const mobj &Du_tf,
@@ -1130,6 +1174,55 @@ void BaryonUtils<FImpl>::SigmaToNucleonQ1NonEyeSite(const mobj &Du_ti,
       }}
     }
   }
+}*/
+template <class FImpl>
+template <class mobj, class mobj2, class robj>
+void BaryonUtils<FImpl>::SigmaToNucleonQ1NonEyeSite(const mobj &Du_ti,
+						 const mobj &Du_tf,
+						 const mobj2 &Du_spec,
+						 const mobj &Dd_tf,
+						 const mobj &Ds_ti,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_sigma,
+		                 		 const Gamma GammaB_nucl,
+						 robj &result)
+{
+
+  Gamma g5(Gamma::Algebra::Gamma5); 
+
+  auto DuG = Du_spec * GammaB_nucl;
+  // Gamma^B * Ds * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
+  auto GDsGDd = GammaB_sigma * Ds_ti * Gamma_H * g5 * adj(Dd_tf) * g5;
+  // Du_ti * \gamma_\mu^L * adj(Du_tf)
+  auto DuGHDu = Du_ti * Gamma_H * g5 * adj(Du_tf) * g5;
+  auto DuGHDuG = DuGHDu * GammaB_nucl;
+
+  for (int ie_n=0; ie_n < 6 ; ie_n++){
+    int a_n = epsilon[ie_n][0]; //a
+    int b_n = epsilon[ie_n][1]; //b
+    int c_n = epsilon[ie_n][2]; //c
+    for (int ie_s=0; ie_s < 6 ; ie_s++){
+      int a_s = epsilon[ie_s][0]; //a'
+      int b_s = epsilon[ie_s][1]; //b'
+      int c_s = epsilon[ie_s][2]; //c'
+      for (int alpha_s=0; alpha_s<Ns; alpha_s++){
+      for (int beta_n=0; beta_n<Ns; beta_n++){
+        auto ee_GDGDDG = epsilon_sgn[ie_n] * epsilon_sgn[ie_s] * GDsGDd()(alpha_s,beta_n)(b_s,b_n);
+	auto DuGHDuG_ab_aa = DuGHDuG()(alpha_s, beta_n)(a_s,a_n);
+	auto DuG_ab_aa = DuG()(alpha_s,beta_n)(a_s,a_n);
+        for (int gamma_s=0; gamma_s<Ns; gamma_s++){
+	  auto DuGHDuG_cb_ca = DuGHDuG()(gamma_s, beta_n)(c_s,a_n);
+          auto DuG_cb_ca = DuG()(gamma_s,beta_n)(c_s,a_n);
+          for (int gamma_n=0; gamma_n<Ns; gamma_n++){
+            result()(gamma_s,gamma_n)() += ee_GDGDDG * DuG_cb_ca * DuGHDu()(alpha_s,gamma_n)(a_s,c_n);
+            result()(gamma_s,gamma_n)() += ee_GDGDDG * DuGHDuG_cb_ca * Du_spec()(alpha_s,gamma_n)(a_s,c_n);
+            result()(gamma_s,gamma_n)() -= ee_GDGDDG * DuGHDuG_ab_aa * Du_spec()(gamma_s,gamma_n)(c_s,c_n);
+            result()(gamma_s,gamma_n)() -= ee_GDGDDG * DuG_ab_aa * DuGHDu()(gamma_s,gamma_n)(c_s,c_n);
+          }
+        }
+      }}
+    }
+  }
 }
 
 //Equivalent to "One-trace"
@@ -1137,7 +1230,7 @@ void BaryonUtils<FImpl>::SigmaToNucleonQ1NonEyeSite(const mobj &Du_ti,
  * Du_spec is a quark line from t_i to t_f
  * Dd_tf is a quark line from t_f to t_H
  * Ds_ti is a quark line from t_i to t_H */
-template <class FImpl>
+/*template <class FImpl>
 template <class mobj, class mobj2, class robj>
 void BaryonUtils<FImpl>::SigmaToNucleonQ2EyeSite(const mobj &Dq_loop,
 						 const mobj2 &Du_spec,
@@ -1181,6 +1274,47 @@ void BaryonUtils<FImpl>::SigmaToNucleonQ2EyeSite(const mobj &Dq_loop,
       }}}
     }
   }
+}*/
+template <class FImpl>
+template <class mobj, class mobj2, class robj>
+void BaryonUtils<FImpl>::SigmaToNucleonQ2EyeSite(const mobj &Dq_loop,
+						 const mobj2 &Du_spec,
+						 const mobj &Dd_tf,
+						 const mobj &Ds_ti,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_sigma,
+		                 		 const Gamma GammaB_nucl,
+						 robj &result)
+{
+
+  Gamma g5(Gamma::Algebra::Gamma5); 
+
+  auto DuG = Du_spec * GammaB_nucl;
+  // Gamma^B * Ds * \gamma_\mu^L * Dq_loop * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
+  auto GDsGDqGDd = GammaB_sigma * Ds_ti * Gamma_H * Dq_loop * Gamma_H * g5 * adj(Dd_tf) * g5;
+
+  for (int ie_n=0; ie_n < 6 ; ie_n++){
+    int a_n = epsilon[ie_n][0]; //a
+    int b_n = epsilon[ie_n][1]; //b
+    int c_n = epsilon[ie_n][2]; //c
+    for (int ie_s=0; ie_s < 6 ; ie_s++){
+      int a_s = epsilon[ie_s][0]; //a'
+      int b_s = epsilon[ie_s][1]; //b'
+      int c_s = epsilon[ie_s][2]; //c'
+      for (int alpha_s=0; alpha_s<Ns; alpha_s++){
+      for (int beta_n=0; beta_n<Ns; beta_n++){
+        auto ee_GDGDGD = epsilon_sgn[ie_n] * epsilon_sgn[ie_s] * GDsGDqGDd()(alpha_s,beta_n)(b_s,b_n);
+	auto DuG_ab_aa = DuG()(alpha_s, beta_n)(a_s,a_n);
+        for (int gamma_s=0; gamma_s<Ns; gamma_s++){
+          auto DuG_cb_ca = DuG()(gamma_s, beta_n)(c_s,a_n);
+          for (int gamma_n=0; gamma_n<Ns; gamma_n++){
+            result()(gamma_s,gamma_n)() -= ee_GDGDGD * DuG_ab_aa * Du_spec()(gamma_s,gamma_n)(c_s,c_n);
+            result()(gamma_s,gamma_n)() += ee_GDGDGD * DuG_cb_ca * Du_spec()(alpha_s,gamma_n)(a_s,c_n);
+          }
+	}
+      }}
+    }
+  }
 }
 
 /* Du_ti is a quark line from t_i to t_H
@@ -1188,7 +1322,7 @@ void BaryonUtils<FImpl>::SigmaToNucleonQ2EyeSite(const mobj &Dq_loop,
  * Du_spec is a quark line from t_i to t_f
  * Dd_tf is a quark line from t_f to t_H
  * Ds_ti is a quark line from t_i to t_H */
-template <class FImpl>
+/*template <class FImpl>
 template <class mobj, class mobj2, class robj>
 void BaryonUtils<FImpl>::SigmaToNucleonQ2NonEyeSite(const mobj &Du_ti,
 						 const mobj &Du_tf,
@@ -1238,6 +1372,57 @@ void BaryonUtils<FImpl>::SigmaToNucleonQ2NonEyeSite(const mobj &Du_ti,
 	  }
 	}
       }}}
+    }
+  }
+}*/
+template <class FImpl>
+template <class mobj, class mobj2, class robj>
+void BaryonUtils<FImpl>::SigmaToNucleonQ2NonEyeSite(const mobj &Du_ti,
+						 const mobj &Du_tf,
+						 const mobj2 &Du_spec,
+						 const mobj &Dd_tf,
+						 const mobj &Ds_ti,
+				                 const Gamma Gamma_H,
+				                 const Gamma GammaB_sigma,
+		                 		 const Gamma GammaB_nucl,
+						 robj &result)
+{
+
+  Gamma g5(Gamma::Algebra::Gamma5); 
+
+  auto DuG = Du_spec * GammaB_nucl;
+  // Gamma^B * Ds * \gamma_\mu^L * adj(Du)
+  auto GDsGDu = GammaB_sigma * Ds_ti * Gamma_H * g5 * adj(Du_tf) * g5;
+  // GDsGDu * GammaB
+  auto GDsGDuG = GDsGDu * GammaB_nucl;
+  // Du * \gamma_\mu^L * (\gamma_5 * Dd^\dagger * \gamma_5)
+  auto DuGDd = Du_ti * Gamma_H * g5 * adj(Dd_tf) * g5;
+
+  for (int ie_n=0; ie_n < 6 ; ie_n++){
+    int a_n = epsilon[ie_n][0]; //a
+    int b_n = epsilon[ie_n][1]; //b
+    int c_n = epsilon[ie_n][2]; //c
+    for (int ie_s=0; ie_s < 6 ; ie_s++){
+      int a_s = epsilon[ie_s][0]; //a'
+      int b_s = epsilon[ie_s][1]; //b'
+      int c_s = epsilon[ie_s][2]; //c'
+      auto ee = epsilon_sgn[ie_n] * epsilon_sgn[ie_s];
+      for (int alpha_s=0; alpha_s<Ns; alpha_s++){
+      for (int beta_n=0; beta_n<Ns; beta_n++){
+        auto DuGDd_ab_ab = DuGDd()(alpha_s,beta_n)(a_s,b_n);
+	auto GDsGDuG_ab_ba = GDsGDuG()(alpha_s, beta_n)(b_s,a_n);
+        auto DuG_ab_aa = DuG()(alpha_s,beta_n)(a_s,a_n);
+        for (int gamma_s=0; gamma_s<Ns; gamma_s++){
+          auto DuGDd_cb_cb = DuGDd()(gamma_s,beta_n)(c_s,b_n);
+	  auto DuG_cb_ca = DuG()(gamma_s,beta_n)(c_s,a_n);
+          for (int gamma_n=0; gamma_n<Ns; gamma_n++){
+            result()(gamma_s,gamma_n)() -= ee * DuGDd_ab_ab * DuG_cb_ca * GDsGDu()(alpha_s,gamma_n)(b_s,c_n);
+            result()(gamma_s,gamma_n)() -= ee * DuGDd_cb_cb * GDsGDuG_ab_ba * Du_spec()(alpha_s,gamma_n)(a_s,c_n);
+            result()(gamma_s,gamma_n)() += ee * DuGDd_ab_ab * GDsGDuG_ab_ba * Du_spec()(gamma_s,gamma_n)(c_s,c_n);
+            result()(gamma_s,gamma_n)() += ee * DuGDd_cb_cb * DuG_ab_aa * GDsGDu()(alpha_s,gamma_n)(b_s,c_n);
+          }
+        }
+      }}
     }
   }
 }
