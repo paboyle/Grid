@@ -1359,7 +1359,7 @@ void BaryonUtils<FImpl>::XiToSigmaQ1EyeSite(const mobj &Dq_loop,
   // GammaB * DsGDd * GammaB
   auto GDsGDdG = GDsGDd * GammaB_sigma;
   // \gamma_\mu^L * Dq_loop 
-  auto trGDq = trace(GammaH * Dq_loop);
+  auto trGDq = trace(Gamma_H * Dq_loop);
 
   for (int ie_s=0; ie_s < 6 ; ie_s++){
     int a_s = epsilon[ie_s][0]; //a
