@@ -334,8 +334,9 @@ public:
     int threads = GridThread::GetThreads();
     Coordinate mpi = GridDefaultMpi(); assert(mpi.size()==4);
     Coordinate local({L,L,L,L});
+    Coordinate latt4({local[0]*mpi[0],local[1]*mpi[1],local[2]*mpi[2],local[3]*mpi[3]});
 
-    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(Coordinate({72,72,72,72}), 
+    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(latt4, 
 								       GridDefaultSimd(Nd,vComplex::Nsimd()),
 								       GridDefaultMpi());
     uint64_t NP = TmpGrid->RankCount();
@@ -343,7 +344,6 @@ public:
     NN_global=NN;
     uint64_t SHM=NP/NN;
 
-    Coordinate latt4({local[0]*mpi[0],local[1]*mpi[1],local[2]*mpi[2],local[3]*mpi[3]});
 
     ///////// Welcome message ////////////
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
