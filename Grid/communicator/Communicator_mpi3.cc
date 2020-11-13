@@ -44,7 +44,7 @@ void CartesianCommunicator::Init(int *argc, char ***argv)
   MPI_Initialized(&flag); // needed to coexist with other libs apparently
   if ( !flag ) {
 
-#if defined (TOFU) // FUGAKU, credits go to Issaku Kanamori
+#ifndef GRID_COMMS_THREADS
     nCommThreads=1;
     // wrong results here too
     // For now: comms-overlap leads to wrong results in Benchmark_wilson even on single node MPI runs
@@ -358,16 +358,19 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
   assert(from != _processor);
   assert(gme  == ShmRank);
   double off_node_bytes=0.0;
+  int tag;
 
   if ( gfrom ==MPI_UNDEFINED) {
-    ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator_halo[commdir],&rrq);
+    tag= dir+from*32;
+    ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,tag,communicator_halo[commdir],&rrq);
     assert(ierr==0);
     list.push_back(rrq);
     off_node_bytes+=bytes;
   }
 
   if ( gdest == MPI_UNDEFINED ) {
-    ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator_halo[commdir],&xrq);
+    tag= dir+_processor*32;
+    ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,tag,communicator_halo[commdir],&xrq);
     assert(ierr==0);
     list.push_back(xrq);
     off_node_bytes+=bytes;
