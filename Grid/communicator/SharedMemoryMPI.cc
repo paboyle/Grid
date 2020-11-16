@@ -457,8 +457,9 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     std::cerr << " SharedMemoryMPI.cc acceleratorAllocDevice failed NULL pointer for " << bytes<<" bytes " << std::endl;
     exit(EXIT_FAILURE);  
   }
-  if ( WorldRank == 0 ){
-    std::cout << header " SharedMemoryMPI.cc cudaMalloc "<< bytes 
+  //  if ( WorldRank == 0 ){
+  if ( 1 ){
+    std::cout << WorldRank << header " SharedMemoryMPI.cc acceleratorAllocDevice "<< bytes 
 	      << "bytes at "<< std::hex<< ShmCommBuf <<std::dec<<" for comms buffers " <<std::endl;
   }
   SharedMemoryZero(ShmCommBuf,bytes);
@@ -771,20 +772,11 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
   std::vector<int> ranks(size);   for(int r=0;r<size;r++) ranks[r]=r;
   MPI_Group_translate_ranks (FullGroup,size,&ranks[0],ShmGroup, &ShmRanks[0]); 
 
-#ifdef GRID_IBM_SUMMIT
-  // Hide the shared memory path between sockets 
-  // if even number of nodes
-  if ( (ShmSize & 0x1)==0 ) {
-    int SocketSize = ShmSize/2;
-    int mySocket = ShmRank/SocketSize; 
+#ifdef GRID_SHM_DISABLE
+  // Hide the shared memory path between ranks
+  {
     for(int r=0;r<size;r++){
-      int hisRank=ShmRanks[r];
-      if ( hisRank!= MPI_UNDEFINED ) {
-	int hisSocket=hisRank/SocketSize;
-	if ( hisSocket != mySocket ) {
-	  ShmRanks[r] = MPI_UNDEFINED;
-	}
-      }
+      ShmRanks[r] = MPI_UNDEFINED;
     }
   }
 #endif

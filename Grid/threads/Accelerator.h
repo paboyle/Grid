@@ -166,15 +166,18 @@ inline void *acceleratorAllocDevice(size_t bytes)
 inline void acceleratorFreeShared(void *ptr){ cudaFree(ptr);};
 inline void acceleratorFreeDevice(void *ptr){ cudaFree(ptr);};
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { cudaMemcpy(to,from,bytes, cudaMemcpyHostToDevice);}
+inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)  { cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToDevice);}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToHost);}
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { cudaMemset(base,value,bytes);}
 inline int  acceleratorIsCommunicable(void *ptr)
 {
-  int uvm;
-  auto 
-  cuerr = cuPointerGetAttribute( &uvm, CU_POINTER_ATTRIBUTE_IS_MANAGED, (CUdeviceptr) ptr);
-  assert(cuerr == cudaSuccess );
-  if(uvm) return 0;
-  else    return 1;
+  //  int uvm=0;
+  //  auto 
+  //  cuerr = cuPointerGetAttribute( &uvm, CU_POINTER_ATTRIBUTE_IS_MANAGED, (CUdeviceptr) ptr);
+  //  assert(cuerr == cudaSuccess );
+  //  if(uvm) return 0;
+  //  else    return 1;
+    return 1;
 }
 
 #endif
@@ -229,8 +232,10 @@ inline void *acceleratorAllocShared(size_t bytes){ return malloc_shared(bytes,*t
 inline void *acceleratorAllocDevice(size_t bytes){ return malloc_device(bytes,*theGridAccelerator);};
 inline void acceleratorFreeShared(void *ptr){free(ptr,*theGridAccelerator);};
 inline void acceleratorFreeDevice(void *ptr){free(ptr,*theGridAccelerator);};
+inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)  { theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { theGridAccelerator->memset(base,value,bytes); theGridAccelerator->wait();}
 inline int  acceleratorIsCommunicable(void *ptr)
 {
 #if 0
@@ -332,6 +337,8 @@ inline void acceleratorFreeShared(void *ptr){ hipFree(ptr);};
 inline void acceleratorFreeDevice(void *ptr){ hipFree(ptr);};
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
+inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)  { hipMemcpy(to,from,bytes, hipMemcpyDeviceToDevice);}
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { hipMemset(base,value,bytes);}
 
 #endif
 
@@ -369,8 +376,10 @@ inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ hipMemc
 accelerator_inline int acceleratorSIMTlane(int Nsimd) { return 0; } // CUDA specific
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { memcpy(to,from,bytes);}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ memcpy(to,from,bytes);}
+inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)  { memcpy(to,from,bytes);}
 
 inline int  acceleratorIsCommunicable(void *ptr){ return 1; }
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { memset(base,value,bytes);}
 #ifdef HAVE_MM_MALLOC_H
 inline void *acceleratorAllocShared(size_t bytes){return _mm_malloc(bytes,GRID_ALLOC_ALIGN);};
 inline void *acceleratorAllocDevice(size_t bytes){return _mm_malloc(bytes,GRID_ALLOC_ALIGN);};
@@ -392,6 +401,8 @@ inline void acceleratorFreeCpu  (void *ptr){_mm_free(ptr);};
 inline void *acceleratorAllocCpu(size_t bytes){return memalign(GRID_ALLOC_ALIGN,bytes);};
 inline void acceleratorFreeCpu  (void *ptr){free(ptr);};
 #endif
+
+
 
 ///////////////////////////////////////////////////
 // Synchronise across local threads for divergence resynch
