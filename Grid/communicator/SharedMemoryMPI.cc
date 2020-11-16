@@ -772,7 +772,7 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
   std::vector<int> ranks(size);   for(int r=0;r<size;r++) ranks[r]=r;
   MPI_Group_translate_ranks (FullGroup,size,&ranks[0],ShmGroup, &ShmRanks[0]); 
 
-#ifdef GRID_SHM_DISABLE
+#if 0
   // Hide the shared memory path between ranks
   {
     for(int r=0;r<size;r++){

@@ -528,7 +528,7 @@ case ${ac_SHM} in
 
      shmnone | no)
      AC_DEFINE([GRID_MPI3_SHM_NONE],[1],[GRID_MPI3_SHM_NONE] )
-     AC_DEFINE([GRID_SHM_DISABLE],[1],[USE MPI for intranode comms]);;
+     ;;
 
      nvlink)
      AC_DEFINE([GRID_MPI3_SHM_NVLINK],[1],[GRID_MPI3_SHM_NVLINK] )
