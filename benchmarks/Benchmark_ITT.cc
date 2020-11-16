@@ -445,7 +445,7 @@ public:
 	// 1344= 3*(2*8+6)*2*8 + 8*3*2*2 + 3*4*2*8
 	// 1344 = Nc* (6+(Nc-1)*8)*2*Nd + Nd*Nc*2*2  + Nd*Nc*Ns*2
 	//	double flops=(1344.0*volume)/2;
-#if 1
+#if 0
 	double fps = Nc* (6+(Nc-1)*8)*Ns*Nd + Nd*Nc*Ns  + Nd*Nc*Ns*2;
 #else
 	double fps = Nc* (6+(Nc-1)*8)*Ns*Nd + 2*Nd*Nc*Ns  + 2*Nd*Nc*Ns*2;
