@@ -666,7 +666,6 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 #endif
       void * ptr =  mmap(NULL,size, PROT_READ | PROT_WRITE, mmap_flag, fd, 0);
       
-      //      std::cout << "Set WorldShmCommBufs["<<r<<"]="<<ptr<< "("<< size<< "bytes)"<<std::endl;
       if ( ptr == (void * )MAP_FAILED ) {       
 	perror("failed mmap");     
 	assert(0);    
@@ -772,11 +771,13 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
   std::vector<int> ranks(size);   for(int r=0;r<size;r++) ranks[r]=r;
   MPI_Group_translate_ranks (FullGroup,size,&ranks[0],ShmGroup, &ShmRanks[0]); 
 
-#if 0
+#ifdef GRID_SHM_FORCE_MPI
   // Hide the shared memory path between ranks
   {
     for(int r=0;r<size;r++){
-      ShmRanks[r] = MPI_UNDEFINED;
+      if ( r!=rank ) {
+	ShmRanks[r] = MPI_UNDEFINED;
+      }
     }
   }
 #endif

@@ -550,6 +550,15 @@ AC_ARG_ENABLE([shmpath],[AC_HELP_STRING([--enable-shmpath=path],
 	      [ac_SHMPATH=/var/lib/hugetlbfs/global/pagesize-2MB/])
 AC_DEFINE_UNQUOTED([GRID_SHM_PATH],["$ac_SHMPATH"],[Path to a hugetlbfs filesystem for MMAPing])
 
+############### force MPI in SMP
+AC_ARG_ENABLE([shm-force-mpi],[AC_HELP_STRING([--enable-shm-force-mpi],
+              [Force MPI within shared memory])],[ac_SHM_FORCE_MPI=${enable_shm_force_mpi}],[ac_SHM_FORCE_MPI=no])
+case ${ac_SHM_FORCE_MPI} in
+     yes)
+        AC_DEFINE([GRID_SHM_FORCE_MPI],[1],[GRID_SHM_FORCE_MPI] )
+      ;;
+     *) ;;
+esac
 
 ############### communication type selection
 AC_ARG_ENABLE([comms-threads],[AC_HELP_STRING([--enable-comms-threads | --disable-comms-threads],
