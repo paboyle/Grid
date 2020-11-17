@@ -94,8 +94,8 @@ int main (int argc, char ** argv)
       RealD Nnode = Grid.NodeCount();
       RealD ppn = Nrank/Nnode;
 
-      std::vector<Vector<HalfSpinColourVectorD> > xbuf(8);
-      std::vector<Vector<HalfSpinColourVectorD> > rbuf(8);
+      std::vector<std::vector<HalfSpinColourVectorD> > xbuf(8);
+      std::vector<std::vector<HalfSpinColourVectorD> > rbuf(8);
 
       for(int mu=0;mu<8;mu++){
 	xbuf[mu].resize(lat*lat*lat*Ls);

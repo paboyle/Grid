@@ -178,15 +178,10 @@ Then enter the cloned directory and set up the build system::
 Now you can execute the `configure` script to generate makefiles (here from a build directory)::
 
   mkdir build; cd build
-  ../configure --enable-precision=double --enable-simd=AVX --enable-comms=mpi-auto \
+  ../configure --enable-simd=AVX --enable-comms=mpi-auto \
       --prefix=<path>
 
-where::
-
-  --enable-precision=single|double
-
-sets the **default precision**. Since this is largely a benchmarking convenience, it is anticipated that the default precision may be removed in future implementations,
-and that explicit type selection be made at all points. Naturally, most code will be type templated in any case.::
+::
 
    --enable-simd=GEN|SSE4|AVX|AVXFMA|AVXFMA4|AVX2|AVX512|NEONv8|QPX
 
@@ -236,7 +231,7 @@ Detailed build configuration options
   --enable-mkl[=path]                     use Intel MKL for FFT (and LAPACK if enabled) routines. A UNIX prefix containing the library can be specified (optional).
   --enable-simd=code                      setup Grid for the SIMD target `<code>`(default: `GEN`). A list of possible SIMD targets is detailed in a section below.
   --enable-gen-simd-width=size            select the size (in bytes) of the generic SIMD vector type (default: 32 bytes). E.g. SSE 128 bit corresponds to 16 bytes.
-  --enable-precision=single|double        set the default precision (default: `double`).
+  --enable-precision=single|double        set the default precision (default: `double`). **Deprecated option**
   --enable-comms=mpi|none                 use `<comm>` for message passing (default: `none`).
   --enable-rng=sitmo|ranlux48|mt19937     choose the RNG (default: `sitmo`).
   --disable-timers                        disable system dependent high-resolution timers.
@@ -304,8 +299,7 @@ Build setup for Intel Knights Landing platform
 
 The following configuration is recommended for the Intel Knights Landing platform::
 
-  ../configure --enable-precision=double\
-             --enable-simd=KNL        \
+  ../configure --enable-simd=KNL        \
              --enable-comms=mpi-auto  \
              --enable-mkl             \
              CXX=icpc MPICXX=mpiicpc
@@ -314,8 +308,7 @@ The MKL flag enables use of BLAS and FFTW from the Intel Math Kernels Library.
 
 If you are working on a Cray machine that does not use the `mpiicpc` wrapper, please use::
 
-  ../configure --enable-precision=double\
-             --enable-simd=KNL        \
+  ../configure --enable-simd=KNL        \
              --enable-comms=mpi       \
              --enable-mkl             \
              CXX=CC CC=cc
@@ -332,8 +325,7 @@ presently performs better with use of more than one rank per node, using shared 
 for interior communication.
 We recommend four ranks per node for best performance, but optimum is local volume dependent. ::
 
-   ../configure --enable-precision=double\
-             --enable-simd=KNL        \
+   ../configure --enable-simd=KNL        \
              --enable-comms=mpi-auto \
              --enable-mkl             \
              CC=icpc MPICXX=mpiicpc 
@@ -343,8 +335,7 @@ Build setup for Intel Haswell Xeon platform
 
 The following configuration is recommended for the Intel Haswell platform::
 
-  ../configure --enable-precision=double\
-             --enable-simd=AVX2       \
+  ../configure --enable-simd=AVX2       \
              --enable-comms=mpi-auto \
              --enable-mkl             \
              CXX=icpc MPICXX=mpiicpc
@@ -360,8 +351,7 @@ where `<path>` is the UNIX prefix where GMP and MPFR are installed.
 
 If you are working on a Cray machine that does not use the `mpiicpc` wrapper, please use::
 
-  ../configure --enable-precision=double\
-             --enable-simd=AVX2       \
+  ../configure --enable-simd=AVX2       \
              --enable-comms=mpi      \
              --enable-mkl             \
              CXX=CC CC=cc
@@ -379,8 +369,7 @@ Build setup for Intel Skylake Xeon platform
 
 The following configuration is recommended for the Intel Skylake platform::
 
-  ../configure --enable-precision=double\
-             --enable-simd=AVX512     \
+  ../configure --enable-simd=AVX512     \
              --enable-comms=mpi      \
              --enable-mkl             \
              CXX=mpiicpc
@@ -396,8 +385,7 @@ where `<path>` is the UNIX prefix where GMP and MPFR are installed.
 
 If you are working on a Cray machine that does not use the `mpiicpc` wrapper, please use::
 
-  ../configure --enable-precision=double\
-             --enable-simd=AVX512     \
+  ../configure --enable-simd=AVX512     \
              --enable-comms=mpi      \
              --enable-mkl             \
              CXX=CC CC=cc
@@ -422,8 +410,7 @@ and 8 threads per rank.
 The following configuration is recommended for the AMD EPYC platform::
 
 
-  ../configure --enable-precision=double\
-             --enable-simd=AVX2       \
+  ../configure --enable-simd=AVX2       \
              --enable-comms=mpi \
              CXX=mpicxx 
 
