@@ -1,4 +1,3 @@
-
 #include "Benchmark_IO.hpp"
 
 #ifndef BENCH_IO_LMIN
@@ -13,6 +12,7 @@
 #define BENCH_IO_NPASS 10
 #endif
 
+#ifdef HAVE_LIME
 using namespace Grid;
 
 std::string filestem(const int l)
@@ -196,3 +196,6 @@ int main (int argc, char ** argv)
 
   return EXIT_SUCCESS;
 }
+#else
+int main(int argc,char ** argv){}
+#endif

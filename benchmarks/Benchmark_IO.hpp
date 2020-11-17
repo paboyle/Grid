@@ -2,12 +2,12 @@
 #define Benchmark_IO_hpp_
 
 #include <Grid/Grid.h>
-#ifdef HAVE_LIME
 #define MSG std::cout << GridLogMessage
 #define SEP \
 "-----------------------------------------------------------------------------"
 #define BIGSEP \
 "============================================================================="
+#ifdef HAVE_LIME
 
 namespace Grid {
 
