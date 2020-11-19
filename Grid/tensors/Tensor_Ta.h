@@ -92,7 +92,6 @@ accelerator_inline iMatrix<vtype,N> ProjectOnGroup(const iMatrix<vtype,N> &arg)
 {
   // need a check for the group type?
   iMatrix<vtype,N> ret(arg);
-  vtype rnrm;
   vtype nrm;
   vtype inner;
   for(int c1=0;c1<N;c1++){
