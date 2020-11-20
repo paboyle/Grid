@@ -361,7 +361,7 @@ inline void acceleratorMemSet(void *base,int value,size_t bytes) { hipMemset(bas
 //////////////////////////////////////////////
 // CPU Target - No accelerator just thread instead
 //////////////////////////////////////////////
-#define GRID_ALLOC_ALIGN (2*1024*1024) // 2MB aligned 
+
 #if ( (!defined(GRID_SYCL)) && (!defined(GRID_CUDA)) && (!defined(GRID_HIP)) )
 
 #undef GRID_SIMT
