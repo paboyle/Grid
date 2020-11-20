@@ -473,11 +473,13 @@ void Grid_init(int *argc,char ***argv)
     LebesgueOrder::UseLebesgueOrder=1;
   }
   CartesianCommunicator::nCommThreads = 1;
+#ifdef GRID_COMMS_THREADS  
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-threads") ){
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--comms-threads");
     GridCmdOptionInt(arg,CartesianCommunicator::nCommThreads);
     assert(CartesianCommunicator::nCommThreads > 0);
   }
+#endif  
   if( GridCmdOptionExists(*argv,*argv+*argc,"--cacheblocking") ){
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--cacheblocking");
     GridCmdOptionIntVector(arg,LebesgueOrder::Block);

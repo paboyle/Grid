@@ -75,7 +75,7 @@ int main (int argc, char ** argv)
   FermionField phi   (FGrid); random(pRNG5,phi);
   FermionField chi   (FGrid); random(pRNG5,chi);
 
-  LatticeGaugeField Umu(UGrid); SU3::ColdConfiguration(pRNG4,Umu);
+  LatticeGaugeField Umu(UGrid); SU<Nc>::ColdConfiguration(pRNG4,Umu);
   LatticeGaugeField Umua(UGrid); Umua=Umu;
 
   double volume=Ls;

@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
   RNG5.SeedFixedIntegers(seeds5);
 
   LatticeGaugeField Umu(UGrid);
-  SU3::HotConfiguration(RNG4, Umu);
+  SU<Nc>::HotConfiguration(RNG4, Umu);
 
 /*
   std::vector<LatticeColourMatrix> U(4, UGrid);

@@ -87,7 +87,7 @@ int main (int argc, char ** argv)
   FermionField result_o(FrbGrid); result_o=Zero(); 
   RealD nrm = norm2(src);
 
-  LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
+  LatticeGaugeField Umu(UGrid); SU<Nc>::HotConfiguration(pRNG,Umu);
 
   double volume=1;
   for(int mu=0;mu<Nd;mu++){

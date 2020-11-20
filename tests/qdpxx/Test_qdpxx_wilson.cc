@@ -348,7 +348,7 @@ void make_gauge(GaugeField &Umu, FermionField &src)
   Grid::GridCartesian *UGrid = (Grid::GridCartesian *)Umu._grid;
   Grid::GridParallelRNG RNG4(UGrid);
   RNG4.SeedFixedIntegers(seeds4);
-  Grid::SU3::HotConfiguration(RNG4, Umu);
+  Grid::SU<Nc>::HotConfiguration(RNG4, Umu);
 
   // Fermion field
   Grid::gaussian(RNG4, src);

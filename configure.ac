@@ -123,6 +123,24 @@ case ${ac_LAPACK} in
         AC_DEFINE([USE_LAPACK],[1],[use LAPACK]);;
 esac
 
+############### Nc
+AC_ARG_ENABLE([Nc],
+    [AC_HELP_STRING([--enable-Nc=2|3|4], [enable number of colours])],
+    [ac_Nc=${enable_Nc}], [ac_Nc=3])
+
+case ${ac_Nc} in
+    2)
+        AC_DEFINE([Config_Nc],[2],[Gauge group Nc]);;
+    3)
+        AC_DEFINE([Config_Nc],[3],[Gauge group Nc]);;
+    4)
+        AC_DEFINE([Config_Nc],[4],[Gauge group Nc]);;
+    5)
+        AC_DEFINE([Config_Nc],[5],[Gauge group Nc]);;
+    *)
+      AC_MSG_ERROR(["Unsupport gauge group choice Nc = ${ac_Nc}"]);;
+esac
+
 ############### FP16 conversions
 AC_ARG_ENABLE([sfw-fp16],
     [AC_HELP_STRING([--enable-sfw-fp16=yes|no], [enable software fp16 comms])],
@@ -135,17 +153,27 @@ case ${ac_SFW_FP16} in
       AC_MSG_ERROR(["SFW FP16 option not supported ${ac_SFW_FP16}"]);;
 esac
 
-############### SUMMIT JSRUN
-AC_ARG_ENABLE([summit],
-    [AC_HELP_STRING([--enable-summit=yes|no], [enable IBMs jsrun resource manager for SUMMIT])],
-    [ac_SUMMIT=${enable_summit}], [ac_SUMMIT=no])
-case ${ac_SUMMIT} in
-    no);;
+############### Default to accelerator cshift, but revert to host if UCX is buggy or other reasons
+AC_ARG_ENABLE([accelerator-cshift],
+    [AC_HELP_STRING([--enable-accelerator-cshift=yes|no], [run cshift on the device])],
+    [ac_ACC_CSHIFT=${enable_accelerator_cshift}], [ac_ACC_CSHIFT=yes])
+
+AC_ARG_ENABLE([ucx-buggy],
+    [AC_HELP_STRING([--enable-ucx-buggy=yes|no], [enable workaround for UCX device buffer bugs])],
+    [ac_UCXBUGGY=${enable_ucx_buggy}], [ac_UCXBUGGY=no])
+
+case ${ac_UCXBUGGY} in
     yes)
-      AC_DEFINE([GRID_IBM_SUMMIT],[1],[Let JSRUN manage the GPU device allocation]);;
-    *)
-      AC_DEFINE([GRID_IBM_SUMMIT],[1],[Let JSRUN manage the GPU device allocation]);;
+    ac_ACC_CSHIFT=no;;
+    *);;
 esac
+
+case ${ac_ACC_CSHIFT} in
+    yes)
+      AC_DEFINE([ACCELERATOR_CSHIFT],[1],[ UCX device buffer bugs are not present]);;
+    *);;
+esac
+
 
 ############### SYCL/CUDA/HIP/none
 AC_ARG_ENABLE([accelerator],
@@ -163,8 +191,9 @@ case ${ac_ACCELERATOR} in
       echo HIP acceleration
       AC_DEFINE([GRID_HIP],[1],[Use HIP offload]);;
     none)
-      echo NO acceleration
-    ;;
+      echo NO acceleration    ;;
+    no)
+      echo NO acceleration    ;;
     *)
       AC_MSG_ERROR(["Acceleration not suppoorted ${ac_ACCELERATOR}"]);;
 esac
@@ -459,27 +488,26 @@ esac
 AM_CXXFLAGS="$SIMD_FLAGS $AM_CXXFLAGS"
 AM_CFLAGS="$SIMD_FLAGS $AM_CFLAGS"
 
-############### Precision selection
-AC_ARG_ENABLE([precision],
-              [AC_HELP_STRING([--enable-precision=single|double],
-                              [Select default word size of Real])],
-              [ac_PRECISION=${enable_precision}],[ac_PRECISION=double])
+###### PRECISION ALWAYS DOUBLE
+AC_DEFINE([GRID_DEFAULT_PRECISION_DOUBLE],[1],[GRID_DEFAULT_PRECISION is DOUBLE] )
 
-case ${ac_PRECISION} in
-     single)
-       AC_DEFINE([GRID_DEFAULT_PRECISION_SINGLE],[1],[GRID_DEFAULT_PRECISION is SINGLE] )
-     ;;
-     double)
-       AC_DEFINE([GRID_DEFAULT_PRECISION_DOUBLE],[1],[GRID_DEFAULT_PRECISION is DOUBLE] )
-     ;;
-     *)
-     AC_MSG_ERROR([${ac_PRECISION} unsupported --enable-precision option]);
-     ;;
+#########################################################
+######################  set GPU device to rank in node ##
+#########################################################
+AC_ARG_ENABLE([setdevice],[AC_HELP_STRING([--enable-setdevice | --disable-setdevice],
+              [Set GPU to rank in node with cudaSetDevice or similar])],[ac_SETDEVICE=${enable_SETDEVICE}],[ac_SETDEVICE=no])
+case ${ac_SETDEVICE} in
+    yes);;
+    no)
+     AC_DEFINE([GRID_DEFAULT_GPU],[1],[GRID_DEFAULT_GPU] )
+    ;;
 esac
 
-######################  Shared memory allocation technique under MPI3
-AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmopen|shmget|hugetlbfs|shmnone],
-              [Select SHM allocation technique])],[ac_SHM=${enable_shm}],[ac_SHM=shmopen])
+#########################################################
+######################  Shared memory intranode #########
+#########################################################
+AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmopen|shmget|hugetlbfs|shmnone|nvlink|no],
+              [Select SHM allocation technique])],[ac_SHM=${enable_shm}],[ac_SHM=no])
 
 case ${ac_SHM} in
 
@@ -498,8 +526,12 @@ case ${ac_SHM} in
      AC_DEFINE([GRID_MPI3_SHMGET],[1],[GRID_MPI3_SHMGET] )
      ;;
 
-     shmnone)
+     shmnone | no)
      AC_DEFINE([GRID_MPI3_SHM_NONE],[1],[GRID_MPI3_SHM_NONE] )
+     ;;
+
+     nvlink)
+     AC_DEFINE([GRID_MPI3_SHM_NVLINK],[1],[GRID_MPI3_SHM_NVLINK] )
      ;;
 
      hugetlbfs)
@@ -518,9 +550,31 @@ AC_ARG_ENABLE([shmpath],[AC_HELP_STRING([--enable-shmpath=path],
 	      [ac_SHMPATH=/var/lib/hugetlbfs/global/pagesize-2MB/])
 AC_DEFINE_UNQUOTED([GRID_SHM_PATH],["$ac_SHMPATH"],[Path to a hugetlbfs filesystem for MMAPing])
 
+############### force MPI in SMP
+AC_ARG_ENABLE([shm-force-mpi],[AC_HELP_STRING([--enable-shm-force-mpi],
+              [Force MPI within shared memory])],[ac_SHM_FORCE_MPI=${enable_shm_force_mpi}],[ac_SHM_FORCE_MPI=no])
+case ${ac_SHM_FORCE_MPI} in
+     yes)
+        AC_DEFINE([GRID_SHM_FORCE_MPI],[1],[GRID_SHM_FORCE_MPI] )
+      ;;
+     *) ;;
+esac
+
+############### communication type selection
+AC_ARG_ENABLE([comms-threads],[AC_HELP_STRING([--enable-comms-threads | --disable-comms-threads],
+              [Use multiple threads in MPI calls])],[ac_COMMS_THREADS=${enable_comms_threads}],[ac_COMMS_THREADS=yes])
+
+case ${ac_COMMS_THREADS} in
+     yes)
+        AC_DEFINE([GRID_COMMS_THREADING],[1],[GRID_COMMS_NONE] )
+      ;;
+     *) ;;
+esac
+
 ############### communication type selection
 AC_ARG_ENABLE([comms],[AC_HELP_STRING([--enable-comms=none|mpi|mpi-auto],
               [Select communications])],[ac_COMMS=${enable_comms}],[ac_COMMS=none])
+
 
 case ${ac_COMMS} in
      none)
@@ -656,6 +710,7 @@ os (target)                 : $target_os
 compiler vendor             : ${ax_cv_cxx_compiler_vendor}
 compiler version            : ${ax_cv_gxx_version}
 ----- BUILD OPTIONS -----------------------------------
+Nc                          : ${ac_Nc}
 SIMD                        : ${ac_SIMD}${SIMD_GEN_WIDTH_MSG}
 Threading                   : ${ac_openmp}
 Acceleration                : ${ac_ACCELERATOR}

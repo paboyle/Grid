@@ -165,9 +165,17 @@ template<typename _Tp>  inline bool operator!=(const devAllocator<_Tp>&, const d
 ////////////////////////////////////////////////////////////////////////////////
 // Template typedefs
 ////////////////////////////////////////////////////////////////////////////////
-//template<class T> using commAllocator = devAllocator<T>;
+#ifdef ACCELERATOR_CSHIFT
+// Cshift on device
+template<class T> using cshiftAllocator = devAllocator<T>;
+#else
+// Cshift on host
+template<class T> using cshiftAllocator = std::allocator<T>;
+#endif
+
 template<class T> using Vector     = std::vector<T,uvmAllocator<T> >;           
 template<class T> using commVector = std::vector<T,devAllocator<T> >;
+template<class T> using cshiftVector = std::vector<T,cshiftAllocator<T> >;
 
 NAMESPACE_END(Grid);
 

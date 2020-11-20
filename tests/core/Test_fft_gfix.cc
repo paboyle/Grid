@@ -73,11 +73,11 @@ int main (int argc, char ** argv)
   LatticeColourMatrix   xform2(&GRID); // Gauge xform
   LatticeColourMatrix   xform3(&GRID); // Gauge xform
   
-  SU3::ColdConfiguration(pRNG,Umu); // Unit gauge
+  SU<Nc>::ColdConfiguration(pRNG,Umu); // Unit gauge
   Uorg=Umu;
   Urnd=Umu;
 
-  SU3::RandomGaugeTransform(pRNG,Urnd,g); // Unit gauge
+  SU<Nc>::RandomGaugeTransform(pRNG,Urnd,g); // Unit gauge
 
   Real plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
   std::cout << " Initial plaquette "<<plaq << std::endl;
@@ -121,7 +121,7 @@ int main (int argc, char ** argv)
   std::cout<< "* Testing non-unit configuration                                *" <<std::endl;
   std::cout<< "*****************************************************************" <<std::endl;
 
-  SU3::HotConfiguration(pRNG,Umu); // Unit gauge
+  SU<Nc>::HotConfiguration(pRNG,Umu); // Unit gauge
 
   plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
   std::cout << " Initial plaquette "<<plaq << std::endl;
@@ -136,7 +136,7 @@ int main (int argc, char ** argv)
   std::cout<< "*****************************************************************" <<std::endl;
 
   Umu=Urnd;
-  SU3::HotConfiguration(pRNG,Umu); // Unit gauge
+  SU<Nc>::HotConfiguration(pRNG,Umu); // Unit gauge
 
   plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
   std::cout << " Initial plaquette "<<plaq << std::endl;

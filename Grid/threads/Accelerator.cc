@@ -52,7 +52,7 @@ void acceleratorInit(void)
     prop = gpu_props[i];
     totalDeviceMem = prop.totalGlobalMem;
     if ( world_rank == 0) {
-#ifndef GRID_IBM_SUMMIT
+#ifndef GRID_DEFAULT_GPU
       if ( i==rank ) {
 	printf("AcceleratorCudaInit[%d]: ========================\n",rank);
 	printf("AcceleratorCudaInit[%d]: Device Number    : %d\n", rank,i);
@@ -77,11 +77,17 @@ void acceleratorInit(void)
 #undef GPU_PROP_FMT    
 #undef GPU_PROP
 
-#ifdef GRID_IBM_SUMMIT
+#ifdef GRID_DEFAULT_GPU
   // IBM Jsrun makes cuda Device numbering screwy and not match rank
-  if ( world_rank == 0 )  printf("AcceleratorCudaInit: IBM Summit or similar - use default device\n");
+  if ( world_rank == 0 ) {
+    printf("AcceleratorCudaInit: using default device \n");
+    printf("AcceleratorCudaInit: assume user either uses a) IBM jsrun, or \n");
+    printf("AcceleratorCudaInit: b) invokes through a wrapping script to set CUDA_VISIBLE_DEVICES, UCX_NET_DEVICES, and numa binding \n");
+    printf("AcceleratorCudaInit: Configure options --enable-summit, --enable-select-gpu=no \n");
+  }
 #else
   printf("AcceleratorCudaInit: rank %d setting device to node rank %d\n",world_rank,rank);
+  printf("AcceleratorCudaInit: Configure options --enable-select-gpu=yes \n");
   cudaSetDevice(rank);
 #endif
   if ( world_rank == 0 )  printf("AcceleratorCudaInit: ================================================\n");
@@ -143,11 +149,18 @@ void acceleratorInit(void)
   MemoryManager::DeviceMaxBytes = (8*totalDeviceMem)/10; // Assume 80% ours
 #undef GPU_PROP_FMT    
 #undef GPU_PROP
-#ifdef GRID_IBM_SUMMIT
-  // IBM Jsrun makes cuda Device numbering screwy and not match rank
-  if ( world_rank == 0 )  printf("AcceleratorHipInit: IBM Summit or similar - NOT setting device to node rank\n");
+
+#ifdef GRID_DEFAULT_GPU
+  if ( world_rank == 0 ) {
+    printf("AcceleratorHipInit: using default device \n");
+    printf("AcceleratorHipInit: assume user either uses a wrapping script to set CUDA_VISIBLE_DEVICES, UCX_NET_DEVICES, and numa binding \n");
+    printf("AcceleratorHipInit: Configure options --enable-summit, --enable-select-gpu=no \n");
+  }
 #else
-  if ( world_rank == 0 )  printf("AcceleratorHipInit: setting device to node rank\n");
+  if ( world_rank == 0 ) {
+    printf("AcceleratorHipInit: rank %d setting device to node rank %d\n",world_rank,rank);
+    printf("AcceleratorHipInit: Configure options --enable-select-gpu=yes \n");
+  }
   hipSetDevice(rank);
 #endif
   if ( world_rank == 0 )  printf("AcceleratorHipInit: ================================================\n");

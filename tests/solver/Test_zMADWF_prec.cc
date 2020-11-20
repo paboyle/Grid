@@ -179,7 +179,7 @@ void run(const TestParams &params){
       assert(header.dimension[i] == GridDefaultLatt()[i]);
     }
   }else{    
-    SU3::HotConfiguration(RNG4, Umu);
+    SU<Nc>::HotConfiguration(RNG4, Umu);
   }
     
   std::cout << GridLogMessage << "Lattice dimensions: " << GridDefaultLatt()

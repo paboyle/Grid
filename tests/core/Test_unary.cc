@@ -38,16 +38,26 @@ int main (int argc, char ** argv)
 
   std::vector<int> latt({8,8,8,8});
   GridCartesian * grid = SpaceTimeGrid::makeFourDimGrid(latt, 
-							GridDefaultSimd(Nd,vComplex::Nsimd()),
+							GridDefaultSimd(Nd,vComplexD::Nsimd()),
+							GridDefaultMpi());
+
+  GridCartesian * gridF = SpaceTimeGrid::makeFourDimGrid(latt, 
+							GridDefaultSimd(Nd,vComplexF::Nsimd()),
 							GridDefaultMpi());
   
-  GridRedBlackCartesian * rbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(grid);
 
   ///////////////////////////////
   // Configuration of known size
   ///////////////////////////////
+  LatticeColourMatrixD ident(grid);
+  LatticeColourMatrixD U(grid);
+  LatticeColourMatrixD tmp(grid);
+  LatticeColourMatrixD org(grid);
+  LatticeColourMatrixF UF(gridF);
+
   LatticeGaugeField Umu(grid);
-  Umu=1.0; // Cold start
+
+  ident =1.0;
 
   // RNG set up for test
   std::vector<int> pseeds({1,2,3,4,5}); // once I caught a fish alive
@@ -55,55 +65,38 @@ int main (int argc, char ** argv)
   GridParallelRNG  pRNG(grid); pRNG.SeedFixedIntegers(pseeds);
   GridSerialRNG    sRNG;       sRNG.SeedFixedIntegers(sseeds);
 
-  // SU<Nc> colour operatoions
-  LatticeColourMatrix link(grid);
-  LatticeColourMatrix staple(grid);
+  SU<Nc>::HotConfiguration(pRNG,Umu);
 
-  // Apply heatbath to the link
-  RealD beta=6.0;
+  U = PeekIndex<LorentzIndex>(Umu,0);
+  org=U;
 
-  int subsets[2] = { Even, Odd};
-  LatticeInteger one(rbGrid);  one = 1; // fill with ones
-  LatticeInteger mask(grid); 
 
-  for(int sweep=0;sweep<1000;sweep++){
+  tmp=  U*adj(U) - ident ;
+  RealD Def1 = norm2( tmp );
+  std::cout << " Defect1 "<<Def1<<std::endl;
 
-    RealD plaq = ColourWilsonLoops::avgPlaquette(Umu);
+  tmp = U - org;
+  std::cout << "Diff1 "<<norm2(tmp)<<std::endl;
+  precisionChange(UF,U);
+  precisionChange(U,UF);
 
-    std::cout<<GridLogMessage<<"sweep "<<sweep<<" PLAQUETTE "<<plaq<<std::endl;
+  tmp=  U*adj(U) - ident ;
+  RealD Def2 = norm2(  tmp );
+  std::cout << " Defect2 "<<Def2<<std::endl;
 
-    for( int cb=0;cb<2;cb++ ) {
+  tmp = U - org;
+  std::cout << "Diff2 "<<norm2(tmp)<<std::endl;
 
-      one.Checkerboard()=subsets[cb];
-      mask= Zero();
-      setCheckerboard(mask,one);
+  U = ProjectOnGroup(U);
 
-      //      std::cout<<GridLogMessage<<mask<<std::endl;
-      for(int mu=0;mu<Nd;mu++){
-	
-	// Get Link and Staple term in action; must contain Beta and 
-	// any other coeffs
-	ColourWilsonLoops::Staple(staple,Umu,mu);
+  tmp=  U*adj(U) - ident ;
+  RealD Def3 = norm2(  tmp);
+  std::cout << " Defect3 "<<Def3<<std::endl;
 
-	link = PeekIndex<LorentzIndex>(Umu,mu);
 
-	for( int subgroup=0;subgroup<SU<Nc>::su2subgroups();subgroup++ ) {
+  tmp = U - org;
+  std::cout << "Diff3 "<<norm2(tmp)<<std::endl;
 
-	  // update Even checkerboard
-	  SU<Nc>::SubGroupHeatBath(sRNG,pRNG,beta,link,staple,subgroup,20,mask);
-
-	}
-
-	PokeIndex<LorentzIndex>(Umu,link,mu);
-	
-	//reunitarise link;
-	ProjectOnGroup(Umu);
-
-      }
-
-    }
-    
-  }
 
   Grid_finalize();
 }

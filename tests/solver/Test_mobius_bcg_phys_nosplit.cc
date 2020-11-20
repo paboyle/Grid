@@ -94,10 +94,10 @@ int main (int argc, char ** argv)
     GridParallelRNG pRNG(UGrid );  
 
     pRNG.SeedFixedIntegers(seeds);
-    SU3::HotConfiguration(pRNG,Umu);
+    SU<Nc>::HotConfiguration(pRNG,Umu);
     std::cout << GridLogMessage << "Intialised the HOT Gauge Field"<<std::endl;
   } else {
-    SU3::ColdConfiguration(Umu);
+    SU<Nc>::ColdConfiguration(Umu);
     std::cout << GridLogMessage << "Intialised the COLD Gauge Field"<<std::endl;
   }
 

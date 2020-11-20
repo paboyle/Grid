@@ -130,6 +130,8 @@ public:
   friend std::ostream& operator<< (std::ostream& stream, Logger& log){
 
     if ( log.active ) {
+      std::ios_base::fmtflags f(stream.flags());
+
       stream << log.background()<<  std::left;
       if (log.topWidth > 0)
       {
@@ -152,6 +154,8 @@ public:
 	       << now	       << log.background() << " : " ;
       }
       stream << log.colour();
+      stream.flags(f);
+
       return stream;
     } else { 
       return devnull;

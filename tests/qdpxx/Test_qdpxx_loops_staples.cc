@@ -277,7 +277,7 @@ double calc_grid_p(Grid::LatticeGaugeField & Umu)
   Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Umu.Grid();
   Grid::GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
 
-  Grid::SU3::HotConfiguration(RNG4,Umu);
+  Grid::SU<Nc>::HotConfiguration(RNG4,Umu);
 
   Grid::LatticeColourMatrix tmp(UGrid); 
   tmp = Grid::zero;

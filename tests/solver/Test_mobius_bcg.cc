@@ -128,7 +128,7 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage << "Intialising 4D RNG "<<std::endl;
     pRNG.SeedFixedIntegers(seeds);
     std::cout << GridLogMessage << "Intialised 4D RNG "<<std::endl;
-    SU3::HotConfiguration(pRNG,Umu);
+    SU<Nc>::HotConfiguration(pRNG,Umu);
     std::cout << GridLogMessage << "Intialised the HOT Gauge Field"<<std::endl;
   } 
 

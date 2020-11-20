@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
   NerscIO::readConfiguration(Umu_d,header,file);
 }
 #endif
-  // SU3::HotConfiguration(fPRNG, Umu_d);
+  // SU<Nc>::HotConfiguration(fPRNG, Umu_d);
 
   LatticeGaugeFieldF    Umu_f(FGrid_f); precisionChange(Umu_f, Umu_d);
   // clang-format on

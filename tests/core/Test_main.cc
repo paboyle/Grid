@@ -444,7 +444,7 @@ int main(int argc, char **argv) {
       // Lattice 12x12 GEMM
       scFooBar = scFoo * scBar;
 
-      // Benchmark some simple operations LatticeSU3 * Lattice SU3.
+      // Benchmark some simple operations LatticeSU<Nc> * Lattice SU<Nc>.
       double t0, t1, flops;
       double bytes;
       int ncall = 5000;
