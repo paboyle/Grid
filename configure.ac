@@ -492,6 +492,28 @@ AM_CFLAGS="$SIMD_FLAGS $AM_CFLAGS"
 AC_DEFINE([GRID_DEFAULT_PRECISION_DOUBLE],[1],[GRID_DEFAULT_PRECISION is DOUBLE] )
 
 #########################################################
+######################  GRID ALLOCATOR ALIGNMENT ##
+#########################################################
+AC_ARG_ENABLE([alloc-align],[AC_HELP_STRING([--enable-alloc-align=2MB|4k],
+              [Alignment in bytes of GRID Allocator ])],[ac_ALLOC_ALIGN=${enable_alloc_align}],[ac_ALLOC_ALIGN=2MB])
+case ${ac_ALLOC_ALIGN} in
+    4k)
+     AC_DEFINE([GRID_ALLOC_ALIGN],[(4096)],[GRID_ALLOC_ALIGN]);;
+    2MB)
+     AC_DEFINE([GRID_ALLOC_ALIGN],[(2*1024*1024)],[GRID_ALLOC_ALIGN]);;
+    *);;
+esac
+
+AC_ARG_ENABLE([alloc-cache],[AC_HELP_STRING([--enable-alloc-cache ],
+              [Cache a pool of recent "frees" to reuse])],[ac_ALLOC_CACHE=${enable_alloc_cache}],[ac_ALLOC_CACHE=yes])
+case ${ac_ALLOC_CACHE} in
+    yes)
+     AC_DEFINE([ALLOCATION_CACHE],[1],[ALLOCATION_CACHE]);;
+    *);;
+esac
+
+
+#########################################################
 ######################  set GPU device to rank in node ##
 #########################################################
 AC_ARG_ENABLE([setdevice],[AC_HELP_STRING([--enable-setdevice | --disable-setdevice],
