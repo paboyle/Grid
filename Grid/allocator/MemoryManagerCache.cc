@@ -1,10 +1,11 @@
 #include <Grid/GridCore.h>
-
 #ifndef GRID_UVM
 
 #warning "Using explicit device memory copies"
 NAMESPACE_BEGIN(Grid);
+//define dprintf(...) printf ( __VA_ARGS__ ); fflush(stdout);
 #define dprintf(...)
+
 
 ////////////////////////////////////////////////////////////
 // For caching copies of data on device
@@ -103,7 +104,7 @@ void MemoryManager::AccDiscard(AcceleratorViewEntry &AccCache)
   ///////////////////////////////////////////////////////////
   assert(AccCache.state!=Empty);
   
-  //  dprintf("MemoryManager: Discard(%llx) %llx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
+   dprintf("MemoryManager: Discard(%llx) %llx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
   assert(AccCache.accLock==0);
   assert(AccCache.cpuLock==0);
   assert(AccCache.CpuPtr!=(uint64_t)NULL);
@@ -111,7 +112,7 @@ void MemoryManager::AccDiscard(AcceleratorViewEntry &AccCache)
     AcceleratorFree((void *)AccCache.AccPtr,AccCache.bytes);
     DeviceBytes   -=AccCache.bytes;
     LRUremove(AccCache);
-    //    dprintf("MemoryManager: Free(%llx) LRU %lld Total %lld\n",(uint64_t)AccCache.AccPtr,DeviceLRUBytes,DeviceBytes);  
+    dprintf("MemoryManager: Free(%llx) LRU %lld Total %lld\n",(uint64_t)AccCache.AccPtr,DeviceLRUBytes,DeviceBytes);  
   }
   uint64_t CpuPtr = AccCache.CpuPtr;
   EntryErase(CpuPtr);
@@ -125,7 +126,7 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
   ///////////////////////////////////////////////////////////////////////////
   assert(AccCache.state!=Empty);
   
-  //  dprintf("MemoryManager: Evict(%llx) %llx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
+  dprintf("MemoryManager: Evict(%llx) %llx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
   assert(AccCache.accLock==0);
   assert(AccCache.cpuLock==0);
   if(AccCache.state==AccDirty) {
@@ -136,7 +137,7 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
     AcceleratorFree((void *)AccCache.AccPtr,AccCache.bytes);
     DeviceBytes   -=AccCache.bytes;
     LRUremove(AccCache);
-    //    dprintf("MemoryManager: Free(%llx) footprint now %lld \n",(uint64_t)AccCache.AccPtr,DeviceBytes);  
+    dprintf("MemoryManager: Free(%llx) footprint now %lld \n",(uint64_t)AccCache.AccPtr,DeviceBytes);  
   }
   uint64_t CpuPtr = AccCache.CpuPtr;
   EntryErase(CpuPtr);
@@ -149,7 +150,7 @@ void MemoryManager::Flush(AcceleratorViewEntry &AccCache)
   assert(AccCache.AccPtr!=(uint64_t)NULL);
   assert(AccCache.CpuPtr!=(uint64_t)NULL);
   acceleratorCopyFromDevice((void *)AccCache.AccPtr,(void *)AccCache.CpuPtr,AccCache.bytes);
-  //  dprintf("MemoryManager: Flush  %llx -> %llx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
+  dprintf("MemoryManager: Flush  %llx -> %llx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
   DeviceToHostBytes+=AccCache.bytes;
   DeviceToHostXfer++;
   AccCache.state=Consistent;
@@ -164,7 +165,7 @@ void MemoryManager::Clone(AcceleratorViewEntry &AccCache)
     AccCache.AccPtr=(uint64_t)AcceleratorAllocate(AccCache.bytes);
     DeviceBytes+=AccCache.bytes;
   }
-  //  dprintf("MemoryManager: Clone %llx <- %llx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
+  dprintf("MemoryManager: Clone %llx <- %llx\n",(uint64_t)AccCache.AccPtr,(uint64_t)AccCache.CpuPtr); fflush(stdout);
   acceleratorCopyToDevice((void *)AccCache.CpuPtr,(void *)AccCache.AccPtr,AccCache.bytes);
   HostToDeviceBytes+=AccCache.bytes;
   HostToDeviceXfer++;
@@ -227,18 +228,24 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
   // Find if present, otherwise get or force an empty
   ////////////////////////////////////////////////////////////////////////////
   if ( EntryPresent(CpuPtr)==0 ){
-    EvictVictims(bytes);
     EntryCreate(CpuPtr,bytes,mode,hint);
   }
 
   auto AccCacheIterator = EntryLookup(CpuPtr);
   auto & AccCache = AccCacheIterator->second;
-  
+  if (!AccCache.AccPtr)
+    EvictVictims(bytes); 
+
   assert((mode==AcceleratorRead)||(mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard));
 
   assert(AccCache.cpuLock==0);  // Programming error
 
   if(AccCache.state!=Empty) {
+    dprintf("ViewOpen found entry %llx %llx : %lld %lld\n",
+		    (uint64_t)AccCache.CpuPtr,
+		    (uint64_t)CpuPtr,
+		    (uint64_t)AccCache.bytes,
+		    (uint64_t)bytes);
     assert(AccCache.CpuPtr == CpuPtr);
     assert(AccCache.bytes  ==bytes);
   }
@@ -285,21 +292,21 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
       AccCache.state  = Consistent; // CpuDirty + AccRead => Consistent
     }
     AccCache.accLock++;
-    //    printf("Copied CpuDirty entry into device accLock %d\n",AccCache.accLock);
+    dprintf("Copied CpuDirty entry into device accLock %d\n",AccCache.accLock);
   } else if(AccCache.state==Consistent) {
     if((mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard))
       AccCache.state  = AccDirty;   // Consistent + AcceleratorWrite=> AccDirty
     else
       AccCache.state  = Consistent; // Consistent + AccRead => Consistent
     AccCache.accLock++;
-    //    printf("Consistent entry into device accLock %d\n",AccCache.accLock);
+    dprintf("Consistent entry into device accLock %d\n",AccCache.accLock);
   } else if(AccCache.state==AccDirty) {
     if((mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard))
       AccCache.state  = AccDirty; // AccDirty + AcceleratorWrite=> AccDirty
     else
       AccCache.state  = AccDirty; // AccDirty + AccRead => AccDirty
     AccCache.accLock++;
-    //    printf("AccDirty entry into device accLock %d\n",AccCache.accLock);
+    dprintf("AccDirty entry into device accLock %d\n",AccCache.accLock);
   } else {
     assert(0);
   }
@@ -361,13 +368,14 @@ uint64_t MemoryManager::CpuViewOpen(uint64_t CpuPtr,size_t bytes,ViewMode mode,V
   // Find if present, otherwise get or force an empty
   ////////////////////////////////////////////////////////////////////////////
   if ( EntryPresent(CpuPtr)==0 ){
-    EvictVictims(bytes);
     EntryCreate(CpuPtr,bytes,mode,transient);
   }
 
   auto AccCacheIterator = EntryLookup(CpuPtr);
   auto & AccCache = AccCacheIterator->second;
-  
+  if (!AccCache.AccPtr)
+     EvictVictims(bytes);
+
   assert((mode==CpuRead)||(mode==CpuWrite));
   assert(AccCache.accLock==0);  // Programming error
 
