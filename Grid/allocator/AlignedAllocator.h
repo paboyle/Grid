@@ -173,7 +173,8 @@ template<class T> using cshiftAllocator = devAllocator<T>;
 template<class T> using cshiftAllocator = std::allocator<T>;
 #endif
 
-template<class T> using Vector     = std::vector<T,uvmAllocator<T> >;           
+template<class T> using Vector        = std::vector<T,uvmAllocator<T> >;           
+template<class T> using stencilVector = std::vector<T,alignedAllocator<T> >;           
 template<class T> using commVector = std::vector<T,devAllocator<T> >;
 template<class T> using cshiftVector = std::vector<T,cshiftAllocator<T> >;
 
