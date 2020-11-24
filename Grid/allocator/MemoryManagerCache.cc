@@ -233,9 +233,9 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
 
   auto AccCacheIterator = EntryLookup(CpuPtr);
   auto & AccCache = AccCacheIterator->second;
-  if (!AccCache.AccPtr)
+  if (!AccCache.AccPtr) {
     EvictVictims(bytes); 
-
+  } 
   assert((mode==AcceleratorRead)||(mode==AcceleratorWrite)||(mode==AcceleratorWriteDiscard));
 
   assert(AccCache.cpuLock==0);  // Programming error
@@ -373,8 +373,10 @@ uint64_t MemoryManager::CpuViewOpen(uint64_t CpuPtr,size_t bytes,ViewMode mode,V
 
   auto AccCacheIterator = EntryLookup(CpuPtr);
   auto & AccCache = AccCacheIterator->second;
-  if (!AccCache.AccPtr)
+
+  if (!AccCache.AccPtr) {
      EvictVictims(bytes);
+  }
 
   assert((mode==CpuRead)||(mode==CpuWrite));
   assert(AccCache.accLock==0);  // Programming error
