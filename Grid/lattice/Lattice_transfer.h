@@ -127,6 +127,11 @@ accelerator_inline void convertType(T1 & out, const iScalar<T2> & in) {
   convertType(out,in._internal);
 }
 
+template<typename T1, typename std::enable_if<!isGridScalar<T1>::value, T1>::type* = nullptr>
+accelerator_inline void convertType(T1 & out, const iScalar<T1> & in) {
+  convertType(out,in._internal);
+}
+
 template<typename T1,typename T2>
 accelerator_inline void convertType(iScalar<T1> & out, const T2 & in) {
   convertType(out._internal,in);
