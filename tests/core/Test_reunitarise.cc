@@ -102,7 +102,8 @@ int main (int argc, char ** argv)
   LatticeComplexD detUU(grid);
 
   detU= Determinant(U) ;
-  std::cout << "Determinant before screw up " <<detU<<std::endl;
+  detU=detU-1.0;
+  std::cout << "Determinant before screw up " << norm2(detU)<<std::endl;
 
   std::cout << " Screwing up determinant " << std::endl;
 
@@ -116,18 +117,24 @@ int main (int argc, char ** argv)
   UU=U;
 
   detU= Determinant(U) ;
-  std::cout << "Determinant after screw up " <<detU<<std::endl;
-
+  detU=detU-1.0;
+  std::cout << "Determinant defect before projection " <<norm2(detU)<<std::endl;
+  tmp = U*adj(U) - ident;
+  std::cout << "Unitarity check before projection    " << norm2(tmp)<<std::endl; 
+  
   ProjectSU3(U);
   detU= Determinant(U) ;
-  std::cout << "Determinant ProjectSU3  " <<detU<<std::endl;
   detU= detU -1.0;
   std::cout << "Determinant ProjectSU3 defect " <<norm2(detU)<<std::endl;
+  tmp = U*adj(U) - ident;
+  std::cout << "Unitarity check after projection    " << norm2(tmp)<<std::endl; 
 
-  ProjectSUn<3>(UU);
+  ProjectSUn(UU);
   detUU= Determinant(UU);
-  std::cout << "Determinant ProjectSUn " <<detUU<<std::endl;
+  detUU= detUU -1.0;
   std::cout << "Determinant ProjectSUn defect " <<norm2(detUU)<<std::endl;
+  tmp = UU*adj(UU) - ident;
+  std::cout << "Unitarity check after projection    " << norm2(tmp)<<std::endl; 
   
   Grid_finalize();
 }
