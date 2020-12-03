@@ -123,6 +123,24 @@ case ${ac_LAPACK} in
         AC_DEFINE([USE_LAPACK],[1],[use LAPACK]);;
 esac
 
+############### fermions
+AC_ARG_ENABLE([fermion-reps],
+     [AC_HELP_STRING([--fermion-reps=yes|no], [enable extra fermion representation support])],
+     [ac_FERMION_REPS=${enable_fermion_reps}], [ac_FERMION_REPS=yes])
+
+AM_CONDITIONAL(BUILD_FERMION_REPS, [ test "${ac_FERMION_REPS}X" == "yesX" ])
+
+AC_ARG_ENABLE([gparity],
+     [AC_HELP_STRING([--enable-gparity=yes|no], [enable G-parity support])],
+     [ac_GPARITY=${enable_gparity}], [ac_GPARITY=yes])
+
+AM_CONDITIONAL(BUILD_GPARITY, [ test "${ac_GPARITY}X" == "yesX" ])
+case ${ac_FERMION_REPS} in
+   yes) AC_DEFINE([ENABLE_FERMION_REPS],[1],[non QCD fermion reps]);;
+esac
+case ${ac_GPARITY} in
+   yes) AC_DEFINE([ENABLE_GPARITY],[1],[fermion actions with GPARITY BCs]);;
+esac
 ############### Nc
 AC_ARG_ENABLE([Nc],
     [AC_HELP_STRING([--enable-Nc=2|3|4], [enable number of colours])],
