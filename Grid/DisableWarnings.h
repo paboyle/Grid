@@ -37,7 +37,9 @@ directory
 #endif
 
  //disables and intel compiler specific warning (in json.hpp)
+#ifdef __ICC
 #pragma warning disable 488  
+#endif
 
 #ifdef __NVCC__
  //disables nvcc specific warning in json.hpp

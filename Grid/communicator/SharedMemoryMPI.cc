@@ -715,7 +715,7 @@ void GlobalSharedMemory::SharedMemoryZero(void *dest,size_t bytes)
   bzero(dest,bytes);
 #endif
 }
-void GlobalSharedMemory::SharedMemoryCopy(void *dest,const void *src,size_t bytes)
+void GlobalSharedMemory::SharedMemoryCopy(void *dest,void *src,size_t bytes)
 {
 #ifdef GRID_CUDA
   cudaMemcpy(dest,src,bytes,cudaMemcpyDefault);
