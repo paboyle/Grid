@@ -38,12 +38,20 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifdef GRID_HIP
 #include <hip/hip_fp16.h>
 #endif
+#ifdef GRID_SYCL
+namespace Grid {
+  typedef struct { uint16_t x;} half;
+  typedef struct { half   x; half   y;} half2;
+  typedef struct { float  x; float  y;} float2;
+  typedef struct { double x; double y;} double2;
+}
+#endif
+
 
 namespace Grid {
 
-#if (!defined(GRID_CUDA)) && (!defined(GRID_HIP))
-typedef struct { uint16_t x;} half;
-#endif
+
+
 typedef struct Half2_t { half x; half y; } Half2;
 
 #define COALESCE_GRANULARITY ( GEN_SIMD_WIDTH )
@@ -156,7 +164,7 @@ accelerator_inline float half2float(half h)
   f = __half2float(h);
 #else 
   Grid_half hh; 
-  hh.x = hr.x;
+  hh.x = h.x;
   f=  sfw_half_to_float(hh);
 #endif
   return f;
