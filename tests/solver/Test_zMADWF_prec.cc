@@ -52,7 +52,7 @@ struct TestParams{
   bool zmobius_inner;
   double lambda_max; //upper bound of H_T eigenvalue range required to generate zMobius approximation
   
-  TestParams(): load_config(true), config_file("ckpoint_lat.1000"), mass(0.01),
+  TestParams(): load_config(false), config_file("ckpoint_lat.1000"), mass(0.01),
 		Ls_outer(24), b_plus_c_outer(2.0), resid_outer(1e-8),
 		Ls_inner(12), b_plus_c_inner(1.0), resid_inner(1e-8), zmobius_inner(true), lambda_max(1.42), outer_precon("Standard"), inner_precon("Standard")
   {}
@@ -246,7 +246,7 @@ void run(const TestParams &params){
   typename RunParamsInner::SchurSolverType SchurSolver_inner(CG_inner);
 
   ZeroGuesser<LatticeFermion> Guess;
-  MADWF<MobiusFermionD, ZMobiusFermionD, PVtype, typename RunParamsInner::SchurSolverType, ZeroGuesser<LatticeFermion> > madwf(D_outer, D_inner, PV_outer, SchurSolver_inner, Guess, params.resid_outer, 100, &update);
+  MADWF<MobiusFermionD, ZMobiusFermionD, PVtype, typename RunParamsInner::SchurSolverType, ZeroGuesser<LatticeFermion> > madwf(D_outer, D_inner, PV_outer, SchurSolver_inner, Guess, params.resid_outer, 10000, &update);
   
   LatticeFermionD result_MADWF(FGrid_outer);
   result_MADWF = Zero();
