@@ -55,13 +55,17 @@ static_assert(same_vComplex == 1, "Dirac Operators must have same underlying SIM
 int main (int argc, char ** argv)
 {
   int nu = 0;
-
+  int tbc_aprd = 0; //use antiperiodic BCs in the time direction?
+  
   Grid_init(&argc,&argv);
 
   for(int i=1;i<argc;i++){
     if(std::string(argv[i]) == "--Gparity-dir"){
       std::stringstream ss; ss << argv[i+1]; ss >> nu;
       std::cout << GridLogMessage << "Set Gparity direction to " << nu << std::endl;
+    }else if(std::string(argv[i]) == "--Tbc-APRD"){
+      tbc_aprd = 1;
+      std::cout << GridLogMessage << "Using antiperiodic BCs in the time direction" << std::endl;
     }
   }
 
@@ -161,7 +165,12 @@ int main (int argc, char ** argv)
 
   RealD mass=0.0;
   RealD M5=1.8;
-  StandardDiracOp Ddwf(Umu_1f,*FGrid_1f,*FrbGrid_1f,*UGrid_1f,*UrbGrid_1f,mass,M5 DOP_PARAMS);
+
+  //Standard Dirac op
+  AcceleratorVector<Complex,4> bc_std(Nd, 1.0);
+  if(tbc_aprd) bc_std[Nd-1] = -1.; //antiperiodic time BC
+  StandardDiracOp::ImplParams std_params(bc_std);
+  StandardDiracOp Ddwf(Umu_1f,*FGrid_1f,*FrbGrid_1f,*UGrid_1f,*UrbGrid_1f,mass,M5 DOP_PARAMS, std_params);
 
   StandardFermionField    src_o_1f(FrbGrid_1f);
   StandardFermionField result_o_1f(FrbGrid_1f);
@@ -172,9 +181,11 @@ int main (int argc, char ** argv)
   ConjugateGradient<StandardFermionField> CG(1.0e-8,10000);
   CG(HermOpEO,src_o_1f,result_o_1f);
   
-  //  const int nu = 3;
+  //Gparity Dirac op
   std::vector<int> twists(Nd,0);
   twists[nu] = 1;
+  if(tbc_aprd) twists[Nd-1] = 1;
+
   GparityDiracOp::ImplParams params;
   params.twists = twists;
   GparityDiracOp GPDdwf(Umu_2f,*FGrid_2f,*FrbGrid_2f,*UGrid_2f,*UrbGrid_2f,mass,M5 DOP_PARAMS,params);
@@ -271,8 +282,11 @@ int main (int argc, char ** argv)
   std::cout << "2f cb "<<result_o_2f.Checkerboard()<<std::endl;
   std::cout << "1f cb "<<result_o_1f.Checkerboard()<<std::endl;
 
-  std::cout << " result norms " <<norm2(result_o_2f)<<" " <<norm2(result_o_1f)<<std::endl;
+  //Compare norms
+  std::cout << " result norms 2f: " <<norm2(result_o_2f)<<" 1f: " <<norm2(result_o_1f)<<std::endl;
 
+
+  //Take the 2f solution and convert into the corresponding 1f solution (odd cb only)
   StandardFermionField    res0o  (FrbGrid_2f); 
   StandardFermionField    res1o  (FrbGrid_2f); 
   StandardFermionField    res0  (FGrid_2f); 
@@ -281,14 +295,15 @@ int main (int argc, char ** argv)
   res0=Zero();
   res1=Zero();
 
-  res0o = PeekIndex<0>(result_o_2f,0);
-  res1o = PeekIndex<0>(result_o_2f,1);
+  res0o = PeekIndex<0>(result_o_2f,0); //flavor 0, odd cb
+  res1o = PeekIndex<0>(result_o_2f,1); //flavor 1, odd cb
 
   std::cout << "res cb "<<res0o.Checkerboard()<<std::endl;
   std::cout << "res cb "<<res1o.Checkerboard()<<std::endl;
 
-  setCheckerboard(res0,res0o);
-  setCheckerboard(res1,res1o);
+  //poke odd onto non-cb field
+  setCheckerboard(res0,res0o); 
+  setCheckerboard(res1,res1o); 
 
   StandardFermionField replica (FGrid_1f);
   StandardFermionField replica0(FGrid_1f);
@@ -296,12 +311,13 @@ int main (int argc, char ** argv)
   Replicate(res0,replica0);
   Replicate(res1,replica1);
 
+  //2nd half of doubled lattice has f=1
   replica = where( xcoor_1f5 >= Integer(L), replica1,replica0 );
 
   replica0 = Zero();
   setCheckerboard(replica0,result_o_1f);
 
-  std::cout << "Norm2 solutions is " <<norm2(replica)<<" "<< norm2(replica0)<<std::endl;
+  std::cout << "Norm2 solutions 1f reconstructed from 2f: " <<norm2(replica)<<" Actual 1f: "<< norm2(replica0)<<std::endl;
 
   replica = replica - replica0;
   

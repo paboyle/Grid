@@ -30,6 +30,19 @@ directory
 
 NAMESPACE_BEGIN(Grid);
 
+
+/*
+  Policy implementation for G-parity boundary conditions
+
+  Rather than treating the gauge field as a flavored field, the Grid implementation of G-parity treats the gauge field as a regular
+  field with complex conjugate boundary conditions. In order to ensure the second flavor interacts with the conjugate links and the first
+  with the regular links we overload the functionality of doubleStore, whose purpose is to store the gauge field and the barrel-shifted gauge field
+  to avoid communicating links when applying the Dirac operator, such that the double-stored field contains also a flavor index which maps to
+  either the link or the conjugate link. This flavored field is then used by multLink to apply the correct link to a spinor.
+
+  Here the first Nd-1 directions are treated as "spatial", and a twist value of 1 indicates G-parity BCs in that direction. 
+  mu=Nd-1 is assumed to be the time direction and a twist value of 1 indicates antiperiodic BCs
+ */
 template <class S, class Representation = FundamentalRepresentation, class Options=CoeffReal>
 class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Representation::Dimension> > {
 public:
@@ -113,7 +126,7 @@ public:
     || ((distance== 1)&&(icoor[direction]==1))
     || ((distance==-1)&&(icoor[direction]==0));
 
-    permute_lane = permute_lane && SE->_around_the_world && St.parameters.twists[mmu]; //only if we are going around the world
+    permute_lane = permute_lane && SE->_around_the_world && St.parameters.twists[mmu] && mmu < Nd-1; //only if we are going around the world in a spatial direction
 
     //Apply the links
     int f_upper = permute_lane ? 1 : 0;
@@ -139,10 +152,10 @@ public:
     assert((distance == 1) || (distance == -1));  // nearest neighbour stencil hard code
     assert((sl == 1) || (sl == 2));
 
-    if ( SE->_around_the_world && St.parameters.twists[mmu] ) {
-
+    //If this site is an global boundary site, perform the G-parity flavor twist
+    if ( mmu < Nd-1 && SE->_around_the_world && St.parameters.twists[mmu] ) {
       if ( sl == 2 ) {
-       
+	//Only do the twist for lanes on the edge of the physical node
 	ExtractBuffer<sobj> vals(Nsimd);
 
 	extract(chi,vals);
@@ -197,6 +210,19 @@ public:
     reg = memory;
   }
 
+
+  //Poke 'poke_f0' onto flavor 0 and 'poke_f1' onto flavor 1 in direction mu of the doubled gauge field Uds
+  inline void pokeGparityDoubledGaugeField(DoubledGaugeField &Uds, const GaugeLinkField &poke_f0, const GaugeLinkField &poke_f1, const int mu){
+    autoView(poke_f0_v, poke_f0, CpuRead);
+    autoView(poke_f1_v, poke_f1, CpuRead);
+    autoView(Uds_v, Uds, CpuWrite);
+    thread_foreach(ss,poke_f0_v,{
+	Uds_v[ss](0)(mu) = poke_f0_v[ss]();
+	Uds_v[ss](1)(mu) = poke_f1_v[ss]();
+      });
+  }
+    
+
   inline void DoubleStore(GridBase *GaugeGrid,DoubledGaugeField &Uds,const GaugeField &Umu)
   {
     conformable(Uds.Grid(),GaugeGrid);
@@ -207,14 +233,16 @@ public:
     GaugeLinkField Uconj(GaugeGrid);
    
     Lattice<iScalar<vInteger> > coor(GaugeGrid);
-        
-    for(int mu=0;mu<Nd;mu++){
-          
+
+    //Here the first Nd-1 directions are treated as "spatial", and a twist value of 1 indicates G-parity BCs in that direction. 
+    //mu=Nd-1 is assumed to be the time direction and a twist value of 1 indicates antiperiodic BCs        
+    for(int mu=0;mu<Nd-1;mu++){
       LatticeCoordinate(coor,mu);
           
       U     = PeekIndex<LorentzIndex>(Umu,mu);
       Uconj = conjugate(U);
      
+      // Implement the isospin rotation sign on the boundary between f=1 and f=0
       // This phase could come from a simple bc 1,1,-1,1 ..
       int neglink = GaugeGrid->GlobalDimensions()[mu]-1;
       if ( Params.twists[mu] ) { 
@@ -259,6 +287,38 @@ public:
 	    Uds_v[ss](1)(mu+4) = Utmp_v[ss]();
         });
       }
+    }
+
+    { //periodic / antiperiodic temporal BCs
+      int mu = Nd-1;
+      int L   = GaugeGrid->GlobalDimensions()[mu];
+      int Lmu = L - 1;
+
+      LatticeCoordinate(coor, mu);
+
+      U = PeekIndex<LorentzIndex>(Umu, mu); //Get t-directed links
+      
+      GaugeLinkField *Upoke = &U;
+
+      if(Params.twists[mu]){ //antiperiodic
+	Utmp =  where(coor == Lmu, -U, U);
+	Upoke = &Utmp;
+      }
+    
+      Uconj = conjugate(*Upoke); //second flavor interacts with conjugate links      
+      pokeGparityDoubledGaugeField(Uds, *Upoke, Uconj, mu);
+
+      //Get the barrel-shifted field
+      Utmp = adj(Cshift(U, mu, -1)); //is a forward shift!
+      Upoke = &Utmp;
+
+      if(Params.twists[mu]){
+	U = where(coor == 0, -Utmp, Utmp);  //boundary phase
+	Upoke = &U;
+      }
+      
+      Uconj = conjugate(*Upoke);
+      pokeGparityDoubledGaugeField(Uds, *Upoke, Uconj, mu + 4);
     }
   }
       
