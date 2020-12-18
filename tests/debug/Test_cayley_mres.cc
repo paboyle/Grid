@@ -56,7 +56,7 @@ int main (int argc, char ** argv)
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
-  const int Ls=10;
+  const int Ls=12;
   std::vector < ComplexD  > omegas;
   std::vector < ComplexD  > omegasrev(Ls);
 
@@ -171,6 +171,12 @@ void  TestConserved(Action & Ddwf,
 		    GridParallelRNG *RNG5)
 {
   int Ls=Ddwf.Ls;
+  std::cout<<GridLogMessage << "Umu.Grid()->show_decomposition()" << std::endl;
+  Umu.Grid()->show_decomposition();
+  std::cout<<GridLogMessage << "FGrid->show_decomposition()" << std::endl;
+  FGrid->show_decomposition();
+  std::cout<<GridLogMessage << "FrbGrid->show_decomposition()" << std::endl;
+  FrbGrid->show_decomposition();
 
   LatticePropagator phys_src(UGrid); 
 
@@ -198,7 +204,7 @@ void  TestConserved(Action & Ddwf,
   //MdagMLinearOperator<Action,LatticeFermion> HermOprev(Ddwfrev);
   ConjugateGradient<LatticeFermion> CG(1.0e-16,100000);
   SchurRedBlackDiagTwoSolve<LatticeFermion> schur(CG);
-  schur.subtractGuess(true);
+  schur.subtractGuess(false);
   ZeroGuesser<LatticeFermion> zpg;
   for(int s=0;s<Nd;s++){
     for(int c=0;c<Nc;c++){
