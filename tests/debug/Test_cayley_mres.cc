@@ -220,6 +220,7 @@ void  TestConserved(Action & Ddwf,
       LatticeFermion Mdagsrc5  (FGrid); 
       Ddwf.Mdag(src5,Mdagsrc5);
       //CG(HermOp,Mdagsrc5,result5);
+      result5 = Zero();
       schur(Ddwf,Mdagsrc5,result5, zpg);
       FermToProp<Action>(prop5,result5,s,c);
 
@@ -231,6 +232,7 @@ void  TestConserved(Action & Ddwf,
         Ddwfrev.ImportPhysicalFermionSource(src4,src5);
         Ddwfrev.Mdag(src5,Mdagsrc5);
         //CG(HermOprev,Mdagsrc5,result5);
+        result5 = Zero();
         schur(Ddwfrev,Mdagsrc5,result5, zpg);
       }
       FermToProp<Action>(prop5rev,result5,s,c);
@@ -269,6 +271,7 @@ void  TestConserved(Action & Ddwf,
       LatticeFermion Mdagsrc5  (FGrid); 
       Ddwf.Mdag(src5,Mdagsrc5);
       //CG(HermOp,Mdagsrc5,result5);
+      result5 = Zero();
       schur(Ddwf,Mdagsrc5,result5, zpg);
 
       LatticeFermion result4(UGrid);
