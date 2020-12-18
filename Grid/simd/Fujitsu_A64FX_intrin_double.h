@@ -38,10 +38,11 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define LOCK_GAUGE(A)  
 #define UNLOCK_GAUGE(A)  
 #define MASK_REGS                      DECLARATIONS_A64FXd  
-#define SAVE_RESULT(A,B)               RESULT_A64FXd(A); PREFETCH_RESULT_L2_STORE(B)  
+#define SAVE_RESULT(A,B)               RESULT_A64FXd(A);  
 #define MULT_2SPIN_1(Dir)              MULT_2SPIN_1_A64FXd(Dir)  
 #define MULT_2SPIN_2                   MULT_2SPIN_2_A64FXd  
 #define LOAD_CHI(base)                 LOAD_CHI_A64FXd(base)  
+#define ZERO_PSI                       ZERO_PSI_A64FXd  
 #define ADD_RESULT(base,basep)         LOAD_CHIMU(base); ADD_RESULT_INTERNAL_A64FXd; RESULT_A64FXd(base)  
 #define XP_PROJ                        XP_PROJ_A64FXd  
 #define YP_PROJ                        YP_PROJ_A64FXd  
@@ -70,6 +71,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #define MAYBEPERM(Dir,perm)            if (Dir != 3) { if (perm) { PERMUTE; } }  
 // DECLARATIONS
 #define DECLARATIONS_A64FXd  \
+    uint64_t baseU; \
     const uint64_t lut[4][8] = { \
         {4, 5, 6, 7, 0, 1, 2, 3}, \
         {2, 3, 0, 1, 6, 7, 4, 5}, \
@@ -126,18 +128,18 @@ Author: Nils Meyer <nils.meyer@ur.de>
 // RESULT
 #define RESULT_A64FXd(base)  \
 { \
-    svst1(pg1, (float64_t*)(base + 2 * 3 * 64 + -6 * 64), result_00);  \
-    svst1(pg1, (float64_t*)(base + 2 * 3 * 64 + -5 * 64), result_01);  \
-    svst1(pg1, (float64_t*)(base + 2 * 3 * 64 + -4 * 64), result_02);  \
-    svst1(pg1, (float64_t*)(base + 2 * 3 * 64 + -3 * 64), result_10);  \
-    svst1(pg1, (float64_t*)(base + 2 * 3 * 64 + -2 * 64), result_11);  \
-    svst1(pg1, (float64_t*)(base + 2 * 3 * 64 + -1 * 64), result_12);  \
-    svst1(pg1, (float64_t*)(base + 2 * 3 * 64 + 0 * 64), result_20);  \
-    svst1(pg1, (float64_t*)(base + 2 * 3 * 64 + 1 * 64), result_21);  \
-    svst1(pg1, (float64_t*)(base + 2 * 3 * 64 + 2 * 64), result_22);  \
-    svst1(pg1, (float64_t*)(base + 2 * 3 * 64 + 3 * 64), result_30);  \
-    svst1(pg1, (float64_t*)(base + 2 * 3 * 64 + 4 * 64), result_31);  \
-    svst1(pg1, (float64_t*)(base + 2 * 3 * 64 + 5 * 64), result_32);  \
+    svst1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64),(int64_t)(-6), result_00);  \
+    svst1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64),(int64_t)(-5), result_01);  \
+    svst1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64),(int64_t)(-4), result_02);  \
+    svst1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64),(int64_t)(-3), result_10);  \
+    svst1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64),(int64_t)(-2), result_11);  \
+    svst1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64),(int64_t)(-1), result_12);  \
+    svst1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64),(int64_t)(0), result_20);  \
+    svst1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64),(int64_t)(1), result_21);  \
+    svst1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64),(int64_t)(2), result_22);  \
+    svst1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64),(int64_t)(3), result_30);  \
+    svst1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64),(int64_t)(4), result_31);  \
+    svst1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64),(int64_t)(5), result_32);  \
 }
 // PREFETCH_CHIMU_L2 (prefetch to L2)
 #define PREFETCH_CHIMU_L2_INTERNAL_A64FXd(base)  \
@@ -156,7 +158,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 // PREFETCH_GAUGE_L2 (prefetch to L2)
 #define PREFETCH_GAUGE_L2_INTERNAL_A64FXd(A)  \
 { \
-    const auto & ref(U[sUn](A)); uint64_t baseU = (uint64_t)&ref + 3 * 3 * 64; \
+    const auto & ref(U[sUn](A)); baseU = (uint64_t)&ref + 3 * 3 * 64; \
     svprfd(pg1, (int64_t*)(baseU + -256), SV_PLDL2STRM); \
     svprfd(pg1, (int64_t*)(baseU + 0), SV_PLDL2STRM); \
     svprfd(pg1, (int64_t*)(baseU + 256), SV_PLDL2STRM); \
@@ -170,7 +172,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 // PREFETCH_GAUGE_L1 (prefetch to L1)
 #define PREFETCH_GAUGE_L1_INTERNAL_A64FXd(A)  \
 { \
-    const auto & ref(U[sU](A)); uint64_t baseU = (uint64_t)&ref; \
+    const auto & ref(U[sU](A)); baseU = (uint64_t)&ref; \
     svprfd(pg1, (int64_t*)(baseU + 0), SV_PLDL1STRM); \
     svprfd(pg1, (int64_t*)(baseU + 256), SV_PLDL1STRM); \
     svprfd(pg1, (int64_t*)(baseU + 512), SV_PLDL1STRM); \
@@ -178,62 +180,62 @@ Author: Nils Meyer <nils.meyer@ur.de>
 // LOAD_CHI
 #define LOAD_CHI_A64FXd(base)  \
 { \
-    Chi_00 = svld1(pg1, (float64_t*)(base + 0 * 64));  \
-    Chi_01 = svld1(pg1, (float64_t*)(base + 1 * 64));  \
-    Chi_02 = svld1(pg1, (float64_t*)(base + 2 * 64));  \
-    Chi_10 = svld1(pg1, (float64_t*)(base + 3 * 64));  \
-    Chi_11 = svld1(pg1, (float64_t*)(base + 4 * 64));  \
-    Chi_12 = svld1(pg1, (float64_t*)(base + 5 * 64));  \
+    Chi_00 = svld1_vnum(pg1, (float64_t*)(base), (int64_t)(0));  \
+    Chi_01 = svld1_vnum(pg1, (float64_t*)(base), (int64_t)(1));  \
+    Chi_02 = svld1_vnum(pg1, (float64_t*)(base), (int64_t)(2));  \
+    Chi_10 = svld1_vnum(pg1, (float64_t*)(base), (int64_t)(3));  \
+    Chi_11 = svld1_vnum(pg1, (float64_t*)(base), (int64_t)(4));  \
+    Chi_12 = svld1_vnum(pg1, (float64_t*)(base), (int64_t)(5));  \
 }
 // LOAD_CHIMU
 #define LOAD_CHIMU_INTERLEAVED_A64FXd(base)  \
 { \
-    Chimu_00 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -6 * 64));  \
-    Chimu_30 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 3 * 64));  \
-    Chimu_10 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -3 * 64));  \
-    Chimu_20 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 0 * 64));  \
-    Chimu_01 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -5 * 64));  \
-    Chimu_31 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 4 * 64));  \
-    Chimu_11 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -2 * 64));  \
-    Chimu_21 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 1 * 64));  \
-    Chimu_02 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -4 * 64));  \
-    Chimu_32 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 5 * 64));  \
-    Chimu_12 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -1 * 64));  \
-    Chimu_22 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 2 * 64));  \
+    Chimu_00 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-6));  \
+    Chimu_30 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(3));  \
+    Chimu_10 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-3));  \
+    Chimu_20 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(0));  \
+    Chimu_01 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-5));  \
+    Chimu_31 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(4));  \
+    Chimu_11 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-2));  \
+    Chimu_21 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(1));  \
+    Chimu_02 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-4));  \
+    Chimu_32 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(5));  \
+    Chimu_12 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-1));  \
+    Chimu_22 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(2));  \
 }
 // LOAD_CHIMU_0213
 #define LOAD_CHIMU_0213_A64FXd  \
 { \
     const SiteSpinor & ref(in[offset]); \
-    Chimu_00 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -6 * 64));  \
-    Chimu_20 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 0 * 64));  \
-    Chimu_01 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -5 * 64));  \
-    Chimu_21 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 1 * 64));  \
-    Chimu_02 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -4 * 64));  \
-    Chimu_22 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 2 * 64));  \
-    Chimu_10 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -3 * 64));  \
-    Chimu_30 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 3 * 64));  \
-    Chimu_11 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -2 * 64));  \
-    Chimu_31 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 4 * 64));  \
-    Chimu_12 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -1 * 64));  \
-    Chimu_32 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 5 * 64));  \
+    Chimu_00 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-6));  \
+    Chimu_20 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(0));  \
+    Chimu_01 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-5));  \
+    Chimu_21 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(1));  \
+    Chimu_02 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-4));  \
+    Chimu_22 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(2));  \
+    Chimu_10 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-3));  \
+    Chimu_30 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(3));  \
+    Chimu_11 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-2));  \
+    Chimu_31 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(4));  \
+    Chimu_12 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-1));  \
+    Chimu_32 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(5));  \
 }
 // LOAD_CHIMU_0312
 #define LOAD_CHIMU_0312_A64FXd  \
 { \
     const SiteSpinor & ref(in[offset]); \
-    Chimu_00 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -6 * 64));  \
-    Chimu_30 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 3 * 64));  \
-    Chimu_01 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -5 * 64));  \
-    Chimu_31 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 4 * 64));  \
-    Chimu_02 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -4 * 64));  \
-    Chimu_32 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 5 * 64));  \
-    Chimu_10 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -3 * 64));  \
-    Chimu_20 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 0 * 64));  \
-    Chimu_11 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -2 * 64));  \
-    Chimu_21 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 1 * 64));  \
-    Chimu_12 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + -1 * 64));  \
-    Chimu_22 = svld1(pg1, (float64_t*)(base + 2 * 3 * 64 + 2 * 64));  \
+    Chimu_00 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-6));  \
+    Chimu_30 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(3));  \
+    Chimu_01 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-5));  \
+    Chimu_31 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(4));  \
+    Chimu_02 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-4));  \
+    Chimu_32 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(5));  \
+    Chimu_10 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-3));  \
+    Chimu_20 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(0));  \
+    Chimu_11 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-2));  \
+    Chimu_21 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(1));  \
+    Chimu_12 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(-1));  \
+    Chimu_22 = svld1_vnum(pg1, (float64_t*)(base + 2 * 3 * 64), (int64_t)(2));  \
 }
 // LOAD_TABLE0
 #define LOAD_TABLE0  \
@@ -261,26 +263,26 @@ Author: Nils Meyer <nils.meyer@ur.de>
     Chi_12 = svtbl(Chi_12, table0);    
 
 // LOAD_GAUGE
-#define LOAD_GAUGE  \
-    const auto & ref(U[sU](A)); uint64_t baseU = (uint64_t)&ref; \
+#define LOAD_GAUGE(A)  \
 { \
-    U_00 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -6 * 64));  \
-    U_10 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -3 * 64));  \
-    U_20 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + 0 * 64));  \
-    U_01 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -5 * 64));  \
-    U_11 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -2 * 64));  \
-    U_21 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + 1 * 64));  \
+    const auto & ref(U[sU](A)); baseU = (uint64_t)&ref; \
+    U_00 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-6));  \
+    U_10 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-3));  \
+    U_20 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(0));  \
+    U_01 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-5));  \
+    U_11 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-2));  \
+    U_21 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(1));  \
 }
 // MULT_2SPIN
 #define MULT_2SPIN_1_A64FXd(A)  \
 { \
-    const auto & ref(U[sU](A)); uint64_t baseU = (uint64_t)&ref; \
-    U_00 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -6 * 64));  \
-    U_10 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -3 * 64));  \
-    U_20 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + 0 * 64));  \
-    U_01 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -5 * 64));  \
-    U_11 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -2 * 64));  \
-    U_21 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + 1 * 64));  \
+    const auto & ref(U[sU](A)); baseU = (uint64_t)&ref; \
+    U_00 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-6));  \
+    U_10 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-3));  \
+    U_20 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(0));  \
+    U_01 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-5));  \
+    U_11 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-2));  \
+    U_21 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(1));  \
     UChi_00 = svcmla_x(pg1, zero0, U_00, Chi_00, 0); \
     UChi_10 = svcmla_x(pg1, zero0, U_00, Chi_10, 0); \
     UChi_01 = svcmla_x(pg1, zero0, U_10, Chi_00, 0); \
@@ -293,9 +295,9 @@ Author: Nils Meyer <nils.meyer@ur.de>
     UChi_11 = svcmla_x(pg1, UChi_11, U_10, Chi_10, 90); \
     UChi_02 = svcmla_x(pg1, UChi_02, U_20, Chi_00, 90); \
     UChi_12 = svcmla_x(pg1, UChi_12, U_20, Chi_10, 90); \
-    U_00 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -4 * 64));  \
-    U_10 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + -1 * 64));  \
-    U_20 = svld1(pg1, (float64_t*)(baseU + 2 * 3 * 64 + 2 * 64));  \
+    U_00 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-4));  \
+    U_10 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(-1));  \
+    U_20 = svld1_vnum(pg1, (float64_t*)(baseU + 2 * 3 * 64), (int64_t)(2));  \
 }
 // MULT_2SPIN_BACKEND
 #define MULT_2SPIN_2_A64FXd  \
@@ -570,12 +572,12 @@ Author: Nils Meyer <nils.meyer@ur.de>
     result_31 = svdup_f64(0.); \
     result_32 = svdup_f64(0.); 
 
-// PREFETCH_RESULT_L2_STORE (prefetch store to L2)
+// PREFETCH_RESULT_L2_STORE (uses DC ZVA for cache line zeroing)
 #define PREFETCH_RESULT_L2_STORE_INTERNAL_A64FXd(base)  \
 { \
-    svprfd(pg1, (int64_t*)(base + 0), SV_PSTL2STRM); \
-    svprfd(pg1, (int64_t*)(base + 256), SV_PSTL2STRM); \
-    svprfd(pg1, (int64_t*)(base + 512), SV_PSTL2STRM); \
+    asm( "dc zva, %[fetchptr] \n\t" : : [fetchptr] "r" (base + 256 * 0) : "memory" ); \
+    asm( "dc zva, %[fetchptr] \n\t" : : [fetchptr] "r" (base + 256 * 1) : "memory" ); \
+    asm( "dc zva, %[fetchptr] \n\t" : : [fetchptr] "r" (base + 256 * 2) : "memory" ); \
 }
 // PREFETCH_RESULT_L1_STORE (prefetch store to L1)
 #define PREFETCH_RESULT_L1_STORE_INTERNAL_A64FXd(base)  \

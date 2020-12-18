@@ -25,6 +25,11 @@ Author:  Nils Meyer  <nils.meyer@ur.de>  Regensburg University
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
+
+// GCC 10 messes up SVE instruction scheduling using -O3 only,
+// using -O3 -fno-schedule-insns -fno-schedule-insns2 does wonders
+// performance is better than armclang 20.2
+
 #ifdef KERNEL_DAG
 #define DIR0_PROJ    XP_PROJ
 #define DIR1_PROJ    YP_PROJ
@@ -97,7 +102,7 @@ Author:  Nils Meyer  <nils.meyer@ur.de>  Regensburg University
     PROJ;							                        \
     MAYBEPERM(PERMUTE_DIR,perm);					        \
       } else {								                \
-	LOAD_CHI(base);							                \
+	  LOAD_CHI(base);							                \
       }									                    \
       base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
     MULT_2SPIN_1(Dir);					                    \
@@ -109,6 +114,15 @@ Author:  Nils Meyer  <nils.meyer@ur.de>  Regensburg University
       if ((Dir == 0) || (Dir == 4)) { PREFETCH_GAUGE_L2(Dir); } \
     }                                                       \
     RECON;								                    \
+
+/*
+NB: picking PREFETCH_GAUGE_L2(Dir+4); here results in performance penalty
+    though I expected that it would improve on performance
+
+    if (s == 0) {                                           \
+      if ((Dir == 0) || (Dir == 4)) { PREFETCH_GAUGE_L2(Dir); } \
+    }        \
+*/
 
 #define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)	    \
   base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++; \
@@ -126,73 +140,63 @@ Author:  Nils Meyer  <nils.meyer@ur.de>  Regensburg University
 
 #define ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
       basep = st.GetPFInfo(nent,plocal); nent++;			\
-      if ( local ) {							            \
-    LOAD_CHIMU(base);                                       \
-    LOAD_TABLE(PERMUTE_DIR);                                \
-    PROJ;							                        \
-    MAYBEPERM(PERMUTE_DIR,perm);					        \
-      }else if ( st.same_node[Dir] ) {LOAD_CHI(base);}	    \
-      base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
-      if ( local || st.same_node[Dir] ) {				    \
-    MULT_2SPIN_1(Dir);					                    \
-    PREFETCH_CHIMU(base);                                   \
-    /* PREFETCH_GAUGE_L1(NxtDir); */                        \
-    MULT_2SPIN_2;					                        \
-    if (s == 0) {                                           \
-       if ((Dir == 0) || (Dir == 4)) { PREFETCH_GAUGE_L2(Dir); } \
-    }                                                       \
-    RECON;								                    \
-    PREFETCH_CHIMU_L2(basep);                               \
-      } else { PREFETCH_CHIMU(base); }								                    \
+      if ( local ) {							\
+  LOAD_CHIMU(base);                                       \
+  LOAD_TABLE(PERMUTE_DIR);                                \
+  PROJ;							                        \
+  MAYBEPERM(PERMUTE_DIR,perm);					        \
+      }else if ( st.same_node[Dir] ) {LOAD_CHI(base);}			\
+      if ( local || st.same_node[Dir] ) {				\
+  MULT_2SPIN_1(Dir);					                    \
+  MULT_2SPIN_2;					                        \
+	RECON;								\
+      }									\
+  base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
+  PREFETCH_CHIMU(base);						\
+  PREFETCH_CHIMU_L2(basep);                               \
 
 #define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
   base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
   PREFETCH1_CHIMU(base);						\
+  { ZERO_PSI; }								\
   ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)
 
 #define RESULT(base,basep) SAVE_RESULT(base,basep);
 
 #endif
+
 ////////////////////////////////////////////////////////////////////////////////
 // Post comms kernel
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef EXTERIOR
 
-
 #define ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
-  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++; \
-  if((!local)&&(!st.same_node[Dir]) ) {					    \
-    LOAD_CHI(base);							                \
+  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
+  if((!local)&&(!st.same_node[Dir]) ) {					\
+    LOAD_CHI(base);							\
     MULT_2SPIN_1(Dir);					                    \
-    PREFETCH_CHIMU(base);                                   \
-    /* PREFETCH_GAUGE_L1(NxtDir); */                        \
     MULT_2SPIN_2;					                        \
-    if (s == 0) {                                           \
-      if ((Dir == 0) || (Dir == 4)) { PREFETCH_GAUGE_L2(Dir); } \
-    }                                                       \
-    RECON;								                    \
-    nmu++;								                    \
+    RECON;								\
+    nmu++;								\
   }
 
-#define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)	    \
-  nmu=0;								                    \
-  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;\
-  if((!local)&&(!st.same_node[Dir]) ) {					    \
-    LOAD_CHI(base);							                \
+#define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
+  nmu=0;								\
+  { ZERO_PSI;}								\
+  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
+  if((!local)&&(!st.same_node[Dir]) ) {					\
+    LOAD_CHI(base);							\
     MULT_2SPIN_1(Dir);					                    \
-    PREFETCH_CHIMU(base);                                   \
-    /* PREFETCH_GAUGE_L1(NxtDir); */                        \
     MULT_2SPIN_2;					                        \
-    if (s == 0) {                                           \
-      if ((Dir == 0) || (Dir == 4)) { PREFETCH_GAUGE_L2(Dir); } \
-    }                                                       \
-    RECON;								                    \
-    nmu++;								                    \
+    RECON;								\
+    nmu++;								\
   }
 
 #define RESULT(base,basep) if (nmu){ ADD_RESULT(base,base);}
 
 #endif
+
+
 {
   int nmu;
   int local,perm, ptype;
@@ -209,7 +213,6 @@ Author:  Nils Meyer  <nils.meyer@ur.de>  Regensburg University
     int ssn=ssU+1;     if(ssn>=nmax) ssn=0;
     //    int sUn=lo.Reorder(ssn);
     int sUn=ssn;
-    LOCK_GAUGE(0);
 #else
     int sU =ssU;
     int ssn=ssU+1;     if(ssn>=nmax) ssn=0;
@@ -295,6 +298,11 @@ Author:  Nils Meyer  <nils.meyer@ur.de>  Regensburg University
       std::cout << "----------------------------------------------------" << std::endl;
 #endif
 
+      // DC ZVA test
+      // { uint64_t basestore = (uint64_t)&out[ss];
+      //  PREFETCH_RESULT_L2_STORE(basestore); }
+
+
       ASM_LEG(Ym,Zm,PERMUTE_DIR2,DIR5_PROJ,DIR5_RECON);
 
 #ifdef SHOW
@@ -308,6 +316,11 @@ Author:  Nils Meyer  <nils.meyer@ur.de>  Regensburg University
       std::cout << "----------------------------------------------------" << std::endl;
 #endif
 
+      // DC ZVA test
+      //{ uint64_t basestore = (uint64_t)&out[ss];
+      //  PREFETCH_RESULT_L2_STORE(basestore); }
+
+
       ASM_LEG(Zm,Tm,PERMUTE_DIR1,DIR6_PROJ,DIR6_RECON);
 
 #ifdef SHOW
@@ -320,6 +333,11 @@ Author:  Nils Meyer  <nils.meyer@ur.de>  Regensburg University
       //printf("U                 = %llu\n", (uint64_t)&[sU](Dir));
       std::cout << "----------------------------------------------------" << std::endl;
 #endif
+
+      // DC ZVA test
+      //{ uint64_t basestore = (uint64_t)&out[ss];
+      //  PREFETCH_RESULT_L2_STORE(basestore);
+      //}
 
       ASM_LEG(Tm,Xp,PERMUTE_DIR0,DIR7_PROJ,DIR7_RECON);
 
@@ -341,6 +359,7 @@ Author:  Nils Meyer  <nils.meyer@ur.de>  Regensburg University
       base = (uint64_t) &out[ss];
       basep= st.GetPFInfo(nent,plocal); ent++;
       basep = (uint64_t) &out[ssn];
+      //PREFETCH_RESULT_L1_STORE(base);
       RESULT(base,basep);
 
 #ifdef SHOW
