@@ -198,7 +198,7 @@ void  TestConserved(Action & Ddwf,
   //MdagMLinearOperator<Action,LatticeFermion> HermOprev(Ddwfrev);
   ConjugateGradient<LatticeFermion> CG(1.0e-16,100000);
   SchurRedBlackDiagTwoSolve<LatticeFermion> schur(CG);
-  schur.subtractGuess(false);
+  schur.subtractGuess(true);
   ZeroGuesser<LatticeFermion> zpg;
   for(int s=0;s<Nd;s++){
     for(int c=0;c<Nc;c++){
