@@ -121,9 +121,9 @@ int main (int argc, char ** argv)
     //  SU<Nc>::HotConfiguration(RNG4,Umu);
   }
 
-  RealD mass=0.3;
+  RealD mass=0.5;
   RealD M5  =1.0;
-  std::cout<<GridLogMessage <<"======================"<<std::endl;
+  /*std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"DomainWallFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
@@ -137,7 +137,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage <<"MobiusFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   MobiusFermionR Dmob(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c);
-  TestConserved<MobiusFermionR>(Dmob,Dmob,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  TestConserved<MobiusFermionR>(Dmob,Dmob,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);*/
 
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"ScaledShamirFermion test"<<std::endl;
@@ -145,7 +145,7 @@ int main (int argc, char ** argv)
   ScaledShamirFermionR Dsham(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,2.0);
   TestConserved<ScaledShamirFermionR>(Dsham,Dsham,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
-  std::cout<<GridLogMessage <<"======================"<<std::endl;
+  /*std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"ZMobiusFermion test"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   for(int s=0;s<Ls;s++) omegasrev[s]=conjugate(omegas[Ls-1-s]);
@@ -153,7 +153,7 @@ int main (int argc, char ** argv)
   ZMobiusFermionR ZDmob(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,omegas,b,c);
   ZMobiusFermionR ZDmobrev(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,omegasrev,b,c);
 
-  TestConserved<ZMobiusFermionR>(ZDmob,ZDmobrev,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  TestConserved<ZMobiusFermionR>(ZDmob,ZDmobrev,Umu,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);*/
 
   Grid_finalize();
 }
@@ -194,9 +194,12 @@ void  TestConserved(Action & Ddwf,
   phys_src=Zero();
   pokeSite(kronecker,phys_src,coor);
   
-  MdagMLinearOperator<Action,LatticeFermion> HermOp(Ddwf);
-  MdagMLinearOperator<Action,LatticeFermion> HermOprev(Ddwfrev);
+  //MdagMLinearOperator<Action,LatticeFermion> HermOp(Ddwf);
+  //MdagMLinearOperator<Action,LatticeFermion> HermOprev(Ddwfrev);
   ConjugateGradient<LatticeFermion> CG(1.0e-16,100000);
+  SchurRedBlackDiagTwoSolve<LatticeFermion> schur(CG);
+  schur.subtractGuess(false);
+  ZeroGuesser<LatticeFermion> zpg;
   for(int s=0;s<Nd;s++){
     for(int c=0;c<Nc;c++){
       LatticeFermion src4  (UGrid); 
@@ -210,16 +213,20 @@ void  TestConserved(Action & Ddwf,
       // CGNE
       LatticeFermion Mdagsrc5  (FGrid); 
       Ddwf.Mdag(src5,Mdagsrc5);
-      CG(HermOp,Mdagsrc5,result5);
+      //CG(HermOp,Mdagsrc5,result5);
+      schur(Ddwf,Mdagsrc5,result5, zpg);
       FermToProp<Action>(prop5,result5,s,c);
 
       LatticeFermion result4(UGrid);
       Ddwf.ExportPhysicalFermionSolution(result5,result4);
       FermToProp<Action>(prop4,result4,s,c);
 
-      Ddwfrev.ImportPhysicalFermionSource(src4,src5);
-      Ddwfrev.Mdag(src5,Mdagsrc5);
-      CG(HermOprev,Mdagsrc5,result5);
+      if( &Ddwf != &Ddwfrev ) {
+        Ddwfrev.ImportPhysicalFermionSource(src4,src5);
+        Ddwfrev.Mdag(src5,Mdagsrc5);
+        //CG(HermOprev,Mdagsrc5,result5);
+        schur(Ddwfrev,Mdagsrc5,result5, zpg);
+      }
       FermToProp<Action>(prop5rev,result5,s,c);
     }
   }
@@ -255,7 +262,8 @@ void  TestConserved(Action & Ddwf,
       // CGNE
       LatticeFermion Mdagsrc5  (FGrid); 
       Ddwf.Mdag(src5,Mdagsrc5);
-      CG(HermOp,Mdagsrc5,result5);
+      //CG(HermOp,Mdagsrc5,result5);
+      schur(Ddwf,Mdagsrc5,result5, zpg);
 
       LatticeFermion result4(UGrid);
       Ddwf.ExportPhysicalFermionSolution(result5,result4);
