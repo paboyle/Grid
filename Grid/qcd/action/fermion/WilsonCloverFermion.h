@@ -245,7 +245,7 @@ public:
     return out;
   }
 
-private:
+protected:
   // here fixing the 4 dimensions, make it more general?
 
   RealD csw_r;                                               // Clover coefficient - spatial
