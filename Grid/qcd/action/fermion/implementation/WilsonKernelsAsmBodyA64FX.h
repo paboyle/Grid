@@ -26,9 +26,9 @@ Author:  Nils Meyer  <nils.meyer@ur.de>  Regensburg University
 *************************************************************************************/
 /*  END LEGAL */
 
-// GCC 10 messes up SVE instruction scheduling using -O3 only,
-// using -O3 -fno-schedule-insns -fno-schedule-insns2 does wonders
-// performance is better than armclang 20.2
+// GCC 10 messes up SVE instruction scheduling using -O3, but
+// -O3 -fno-schedule-insns -fno-schedule-insns2 does wonders
+// performance now is better than armclang 20.2
 
 #ifdef KERNEL_DAG
 #define DIR0_PROJ    XP_PROJ
@@ -118,10 +118,6 @@ Author:  Nils Meyer  <nils.meyer@ur.de>  Regensburg University
 /*
 NB: picking PREFETCH_GAUGE_L2(Dir+4); here results in performance penalty
     though I expected that it would improve on performance
-
-    if (s == 0) {                                           \
-      if ((Dir == 0) || (Dir == 4)) { PREFETCH_GAUGE_L2(Dir); } \
-    }        \
 */
 
 #define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)	    \
@@ -149,7 +145,7 @@ NB: picking PREFETCH_GAUGE_L2(Dir+4); here results in performance penalty
       if ( local || st.same_node[Dir] ) {				\
   MULT_2SPIN_1(Dir);					                    \
   MULT_2SPIN_2;					                        \
-	RECON;								\
+  RECON;								\
       }									\
   base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
   PREFETCH_CHIMU(base);						\
@@ -300,7 +296,7 @@ NB: picking PREFETCH_GAUGE_L2(Dir+4); here results in performance penalty
 
       // DC ZVA test
       // { uint64_t basestore = (uint64_t)&out[ss];
-      //  PREFETCH_RESULT_L2_STORE(basestore); }
+      //   PREFETCH_RESULT_L2_STORE(basestore); }
 
 
       ASM_LEG(Ym,Zm,PERMUTE_DIR2,DIR5_PROJ,DIR5_RECON);
@@ -336,8 +332,8 @@ NB: picking PREFETCH_GAUGE_L2(Dir+4); here results in performance penalty
 
       // DC ZVA test
       //{ uint64_t basestore = (uint64_t)&out[ss];
-      //  PREFETCH_RESULT_L2_STORE(basestore);
-      //}
+      //  PREFETCH_RESULT_L2_STORE(basestore); }
+
 
       ASM_LEG(Tm,Xp,PERMUTE_DIR0,DIR7_PROJ,DIR7_RECON);
 
