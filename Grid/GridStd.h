@@ -28,4 +28,7 @@
 ///////////////////
 #include "Config.h"
 
+#ifdef TOFU
+#undef GRID_COMMS_THREADS
+#endif
 #endif /* GRID_STD_H */

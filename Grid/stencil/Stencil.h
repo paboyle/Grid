@@ -269,7 +269,7 @@ public:
   std::vector<Vector<std::pair<int,int> > > face_table ;
   Vector<int> surface_list;
 
-  Vector<StencilEntry>  _entries; // Resident in managed memory
+  stencilVector<StencilEntry>  _entries; // Resident in managed memory
   std::vector<Packet> Packets;
   std::vector<Merge> Mergers;
   std::vector<Merge> MergersSHM;

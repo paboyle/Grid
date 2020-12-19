@@ -334,8 +334,9 @@ public:
     int threads = GridThread::GetThreads();
     Coordinate mpi = GridDefaultMpi(); assert(mpi.size()==4);
     Coordinate local({L,L,L,L});
+    Coordinate latt4({local[0]*mpi[0],local[1]*mpi[1],local[2]*mpi[2],local[3]*mpi[3]});
 
-    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(Coordinate({72,72,72,72}), 
+    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(latt4, 
 								       GridDefaultSimd(Nd,vComplex::Nsimd()),
 								       GridDefaultMpi());
     uint64_t NP = TmpGrid->RankCount();
@@ -343,7 +344,6 @@ public:
     NN_global=NN;
     uint64_t SHM=NP/NN;
 
-    Coordinate latt4({local[0]*mpi[0],local[1]*mpi[1],local[2]*mpi[2],local[3]*mpi[3]});
 
     ///////// Welcome message ////////////
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
@@ -445,7 +445,11 @@ public:
 	// 1344= 3*(2*8+6)*2*8 + 8*3*2*2 + 3*4*2*8
 	// 1344 = Nc* (6+(Nc-1)*8)*2*Nd + Nd*Nc*2*2  + Nd*Nc*Ns*2
 	//	double flops=(1344.0*volume)/2;
+#if 1
 	double fps = Nc* (6+(Nc-1)*8)*Ns*Nd + Nd*Nc*Ns  + Nd*Nc*Ns*2;
+#else
+	double fps = Nc* (6+(Nc-1)*8)*Ns*Nd + 2*Nd*Nc*Ns  + 2*Nd*Nc*Ns*2;
+#endif
 	double flops=(fps*volume)/2;
 	double mf_hi, mf_lo, mf_err;
 
@@ -498,8 +502,9 @@ public:
     int threads = GridThread::GetThreads();
     Coordinate mpi = GridDefaultMpi(); assert(mpi.size()==4);
     Coordinate local({L,L,L,L});
+    Coordinate latt4({local[0]*mpi[0],local[1]*mpi[1],local[2]*mpi[2],local[3]*mpi[3]});
     
-    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(Coordinate({72,72,72,72}), 
+    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(latt4,
 								       GridDefaultSimd(Nd,vComplex::Nsimd()),
 								       GridDefaultMpi());
     uint64_t NP = TmpGrid->RankCount();
@@ -507,7 +512,6 @@ public:
     NN_global=NN;
     uint64_t SHM=NP/NN;
 
-    Coordinate latt4({local[0]*mpi[0],local[1]*mpi[1],local[2]*mpi[2],local[3]*mpi[3]});
 
     ///////// Welcome message ////////////
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;

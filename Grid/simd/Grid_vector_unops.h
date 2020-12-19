@@ -125,14 +125,6 @@ accelerator_inline Grid_simd<S, V> sqrt(const Grid_simd<S, V> &r) {
   return SimdApply(SqrtRealFunctor<S>(), r);
 }
 template <class S, class V>
-accelerator_inline Grid_simd<S, V> rsqrt(const Grid_simd<S, V> &r) {
-  return SimdApply(RSqrtRealFunctor<S>(), r);
-}
-template <class Scalar>
-accelerator_inline Scalar rsqrt(const Scalar &r) {
-  return (RSqrtRealFunctor<Scalar>(), r);
-}
-template <class S, class V>
 accelerator_inline Grid_simd<S, V> cos(const Grid_simd<S, V> &r) {
   return SimdApply(CosRealFunctor<S>(), r);
 }
