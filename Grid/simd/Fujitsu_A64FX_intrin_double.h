@@ -144,38 +144,38 @@ Author: Nils Meyer <nils.meyer@ur.de>
 // PREFETCH_CHIMU_L2 (prefetch to L2)
 #define PREFETCH_CHIMU_L2_INTERNAL_A64FXd(base)  \
 { \
-    svprfd_vnum(pg1, (void*)(base), (int64_t)0), SV_PLDL2STRM); \
-    svprfd_vnum(pg1, (void*)(base), (int64_t)4), SV_PLDL2STRM); \
-    svprfd_vnum(pg1, (void*)(base), (int64_t)8), SV_PLDL2STRM); \
+    svprfd_vnum(pg1, (void*)(base), (int64_t)(0), SV_PLDL2STRM); \
+    svprfd_vnum(pg1, (void*)(base), (int64_t)(4), SV_PLDL2STRM); \
+    svprfd_vnum(pg1, (void*)(base), (int64_t)(8), SV_PLDL2STRM); \
 }
 // PREFETCH_CHIMU_L1 (prefetch to L1)
 #define PREFETCH_CHIMU_L1_INTERNAL_A64FXd(base)  \
 { \
-    svprfd_vnum(pg1, (void*)(base), (int64_t)0), SV_PLDL1STRM); \
-    svprfd_vnum(pg1, (void*)(base), (int64_t)4), SV_PLDL1STRM); \
-    svprfd_vnum(pg1, (void*)(base), (int64_t)8), SV_PLDL1STRM); \
+    svprfd_vnum(pg1, (void*)(base), (int64_t)(0), SV_PLDL1STRM); \
+    svprfd_vnum(pg1, (void*)(base), (int64_t)(4), SV_PLDL1STRM); \
+    svprfd_vnum(pg1, (void*)(base), (int64_t)(8), SV_PLDL1STRM); \
 }
 // PREFETCH_GAUGE_L2 (prefetch to L2)
 #define PREFETCH_GAUGE_L2_INTERNAL_A64FXd(A)  \
 { \
     const auto & ref(U[sUn](A)); baseU = (uint64_t)&ref + 3 * 3 * 64; \
-    svprfd_vnum(pg1, (void*)(baseU), (int64_t)-4), SV_PLDL2STRM); \
-    svprfd_vnum(pg1, (void*)(baseU), (int64_t)0), SV_PLDL2STRM); \
-    svprfd_vnum(pg1, (void*)(baseU), (int64_t)4), SV_PLDL2STRM); \
-    svprfd_vnum(pg1, (void*)(baseU), (int64_t)8), SV_PLDL2STRM); \
-    svprfd_vnum(pg1, (void*)(baseU), (int64_t)12), SV_PLDL2STRM); \
-    svprfd_vnum(pg1, (void*)(baseU), (int64_t)16), SV_PLDL2STRM); \
-    svprfd_vnum(pg1, (void*)(baseU), (int64_t)20), SV_PLDL2STRM); \
-    svprfd_vnum(pg1, (void*)(baseU), (int64_t)24), SV_PLDL2STRM); \
-    svprfd_vnum(pg1, (void*)(baseU), (int64_t)28), SV_PLDL2STRM); \
+    svprfd_vnum(pg1, (void*)(baseU), (int64_t)(-4), SV_PLDL2STRM); \
+    svprfd_vnum(pg1, (void*)(baseU), (int64_t)(0), SV_PLDL2STRM); \
+    svprfd_vnum(pg1, (void*)(baseU), (int64_t)(4), SV_PLDL2STRM); \
+    svprfd_vnum(pg1, (void*)(baseU), (int64_t)(8), SV_PLDL2STRM); \
+    svprfd_vnum(pg1, (void*)(baseU), (int64_t)(12), SV_PLDL2STRM); \
+    svprfd_vnum(pg1, (void*)(baseU), (int64_t)(16), SV_PLDL2STRM); \
+    svprfd_vnum(pg1, (void*)(baseU), (int64_t)(20), SV_PLDL2STRM); \
+    svprfd_vnum(pg1, (void*)(baseU), (int64_t)(24), SV_PLDL2STRM); \
+    svprfd_vnum(pg1, (void*)(baseU), (int64_t)(28), SV_PLDL2STRM); \
 }
 // PREFETCH_GAUGE_L1 (prefetch to L1)
 #define PREFETCH_GAUGE_L1_INTERNAL_A64FXd(A)  \
 { \
     const auto & ref(U[sU](A)); baseU = (uint64_t)&ref; \
-    svprfd_vnum(pg1, (void*)(baseU), (int64_t)0), SV_PLDL1STRM); \
-    svprfd_vnum(pg1, (void*)(baseU), (int64_t)4), SV_PLDL1STRM); \
-    svprfd_vnum(pg1, (void*)(baseU), (int64_t)8), SV_PLDL1STRM); \
+    svprfd_vnum(pg1, (void*)(baseU), (int64_t)(0), SV_PLDL1STRM); \
+    svprfd_vnum(pg1, (void*)(baseU), (int64_t)(4), SV_PLDL1STRM); \
+    svprfd_vnum(pg1, (void*)(baseU), (int64_t)(8), SV_PLDL1STRM); \
 }
 // LOAD_CHI
 #define LOAD_CHI_A64FXd(base)  \
