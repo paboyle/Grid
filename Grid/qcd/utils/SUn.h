@@ -820,7 +820,6 @@ LatticeComplexD Determinant(const Lattice<iScalar<iScalar<iMatrix<vComplexD, N> 
       }}
     ComplexD det = EigenU.determinant();
     pokeLocalSite(det,ret_v,lcoor);
-    std::cout << " site " <<site<<" det " <<det <<std::endl;
   });
   return ret;
 }
@@ -830,8 +829,8 @@ static void ProjectSUn(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu)
   Umu      = ProjectOnGroup(Umu);
   auto det = Determinant(Umu);
 
-  det = pow(det,-1);
-  
+  det = conjugate(det);
+
   for(int i=0;i<N;i++){
     auto element = PeekIndex<ColourIndex>(Umu,N-1,i);
     element = element * det;

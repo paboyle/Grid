@@ -108,8 +108,18 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
 
   LatticeGaugeField Umu(UGrid);
-  SU<Nc>::ColdConfiguration(Umu);
-  //  SU<Nc>::HotConfiguration(RNG4,Umu);
+  if( argc > 1 && argv[1][0] != '-' )
+  {
+    std::cout<<GridLogMessage <<"Loading configuration from "<<argv[1]<<std::endl;
+    FieldMetaData header;
+    NerscIO::readConfiguration(Umu, header, argv[1]);
+  }
+  else
+  {
+    std::cout<<GridLogMessage <<"Using cold configuration"<<std::endl;
+    SU<Nc>::ColdConfiguration(Umu);
+    //  SU<Nc>::HotConfiguration(RNG4,Umu);
+  }
 
   RealD mass=0.3;
   RealD M5  =1.0;

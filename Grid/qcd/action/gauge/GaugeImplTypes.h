@@ -154,6 +154,10 @@ public:
     return Hsum.real();
   }
 
+  static inline void Project(Field &U) {
+    ProjectSUn(U);
+  }
+
   static inline void HotConfiguration(GridParallelRNG &pRNG, Field &U) {
     SU<Nc>::HotConfiguration(pRNG, U);
   }
