@@ -84,6 +84,7 @@ NAMESPACE_BEGIN(Grid);
 	PhiEven(_NumOp.FermionRedBlackGrid()),
 	param(p) 
       {
+	std::cout<<GridLogMessage << action_name() << " initialize: starting" << std::endl;
 	AlgRemez remez(param.lo,param.hi,param.precision);
 
 	int inv_pow = param.inv_pow;
@@ -100,6 +101,7 @@ NAMESPACE_BEGIN(Grid);
 	remez.generateApprox(param.degree,1,_2_inv_pow);
    	ApproxHalfPower.Init(remez,param.tolerance,false);
 	ApproxNegHalfPower.Init(remez,param.tolerance,true);
+	std::cout<<GridLogMessage << action_name() << " initialize: complete" << std::endl;
       };
 
       virtual std::string action_name(){return "GeneralEvenOddRatioRationalPseudoFermionAction";}
@@ -132,6 +134,7 @@ NAMESPACE_BEGIN(Grid);
 	// 
 	// So eta should be of width sig = 1/sqrt(2).
 
+	std::cout<<GridLogMessage << action_name() << " refresh: starting" << std::endl;
 	RealD scale = std::sqrt(0.5);
 
 	FermionField eta(NumOp.FermionGrid());
@@ -149,11 +152,13 @@ NAMESPACE_BEGIN(Grid);
 
 
 	// MdagM^1/(2*inv_pow) eta
+	std::cout<<GridLogMessage << action_name() << " refresh: doing (M^dag M)^{1/" << 2*param.inv_pow << "} eta" << std::endl;
 	SchurDifferentiableOperator<Impl> MdagM(DenOp);
 	ConjugateGradientMultiShift<FermionField> msCG_M(param.MaxIter,ApproxHalfPower);
 	msCG_M(MdagM,etaOdd,tmp);
 
 	// VdagV^-1/(2*inv_pow) MdagM^1/(2*inv_pow) eta
+	std::cout<<GridLogMessage << action_name() << " refresh: doing (V^dag V)^{-1/" << 2*param.inv_pow << "} ( (M^dag M)^{1/" << 2*param.inv_pow << "} eta)" << std::endl;
 	SchurDifferentiableOperator<Impl> VdagV(NumOp);
 	ConjugateGradientMultiShift<FermionField> msCG_V(param.MaxIter,ApproxNegHalfPower);
 	msCG_V(VdagV,tmp,PhiOdd);
@@ -161,14 +166,14 @@ NAMESPACE_BEGIN(Grid);
 	assert(NumOp.ConstEE() == 1);
 	assert(DenOp.ConstEE() == 1);
 	PhiEven = Zero();
-	
+	std::cout<<GridLogMessage << action_name() << " refresh: starting" << std::endl;
       };
 
       //////////////////////////////////////////////////////
       // S_f = chi^dag* P(V^dag*V)/Q(V^dag*V)* N(M^dag*M)/D(M^dag*M)* P(V^dag*V)/Q(V^dag*V)* chi       
       //////////////////////////////////////////////////////
       virtual RealD S(const GaugeField &U) {
-
+	std::cout<<GridLogMessage << action_name() << " compute action: starting" << std::endl;
 	NumOp.ImportGauge(U);
 	DenOp.ImportGauge(U);
 
@@ -176,26 +181,29 @@ NAMESPACE_BEGIN(Grid);
 	FermionField Y(NumOp.FermionRedBlackGrid());
 
 	// VdagV^1/(2*inv_pow) Phi
+	std::cout<<GridLogMessage << action_name() << " compute action: doing (V^dag V)^{1/" << 2*param.inv_pow << "} Phi" << std::endl;
 	SchurDifferentiableOperator<Impl> VdagV(NumOp);
 	ConjugateGradientMultiShift<FermionField> msCG_V(param.MaxIter,ApproxHalfPower);
 	msCG_V(VdagV,PhiOdd,X);
 
 	// MdagM^-1/(2*inv_pow) VdagV^1/(2*inv_pow) Phi
+	std::cout<<GridLogMessage << action_name() << " compute action: doing (M^dag M)^{-1/" << 2*param.inv_pow << "} ( (V^dag V)^{1/" << 2*param.inv_pow << "} Phi)" << std::endl;
 	SchurDifferentiableOperator<Impl> MdagM(DenOp);
 	ConjugateGradientMultiShift<FermionField> msCG_M(param.MaxIter,ApproxNegHalfPower);
 	msCG_M(MdagM,X,Y);
 
 	// Randomly apply rational bounds checks.
-	if ( (rand()%param.BoundsCheckFreq)==0 ) { 
+	if ( param.BoundsCheckFreq != 0 && (rand()%param.BoundsCheckFreq)==0 ) { 
+	  std::cout<<GridLogMessage << action_name() << " compute action: doing bounds check" << std::endl;
 	  FermionField gauss(NumOp.FermionRedBlackGrid());
 	  gauss = PhiOdd;
 	  HighBoundCheck(MdagM,gauss,param.hi);
-
 	  InversePowerBoundsCheck(param.inv_pow,param.MaxIter,param.tolerance*100,MdagM,gauss,ApproxNegPower);
 	}
 
 	//  Phidag VdagV^1/(2*inv_pow) MdagM^-1/(2*inv_pow)  MdagM^-1/(2*inv_pow) VdagV^1/(2*inv_pow) Phi
 	RealD action = norm2(Y);
+	std::cout<<GridLogMessage << action_name() << " compute action: complete" << std::endl;
 
 	return action;
       };
@@ -231,7 +239,7 @@ NAMESPACE_BEGIN(Grid);
       //  
 
       virtual void deriv(const GaugeField &U,GaugeField & dSdU) {
-
+	std::cout<<GridLogMessage << action_name() << " deriv: starting" << std::endl;
 	const int n_f  = ApproxNegPower.poles.size();
 	const int n_pv = ApproxHalfPower.poles.size();
 
@@ -255,8 +263,11 @@ NAMESPACE_BEGIN(Grid);
 	ConjugateGradientMultiShift<FermionField> msCG_V(param.MaxIter,ApproxHalfPower);
 	ConjugateGradientMultiShift<FermionField> msCG_M(param.MaxIter,ApproxNegPower);
 
+	std::cout<<GridLogMessage << action_name() << " deriv: doing (V^dag V)^{1/" << 2*param.inv_pow << "} Phi" << std::endl;
 	msCG_V(VdagV,PhiOdd,MpvPhi_k,MpvPhi);
+	std::cout<<GridLogMessage << action_name() << " deriv: doing (M^dag M)^{-1/" << param.inv_pow << "} ( (V^dag V)^{1/" << 2*param.inv_pow << "} Phi)" << std::endl;
 	msCG_M(MdagM,MpvPhi,MfMpvPhi_k,MfMpvPhi);
+	std::cout<<GridLogMessage << action_name() << " deriv: doing (V^dag V)^{1/" << 2*param.inv_pow << "} ( (M^dag M)^{-1/" << param.inv_pow << "} (V^dag V)^{1/" << 2*param.inv_pow << "} Phi)" << std::endl;
 	msCG_V(VdagV,MfMpvPhi,MpvMfMpvPhi_k,MpvMfMpvPhi);
 
 	RealD ak;
@@ -270,7 +281,8 @@ NAMESPACE_BEGIN(Grid);
 	//             +   \sum_k -ak MpvMfMpvPhi_k^\dag  [ dV^dag V + V^dag dV ] MpvPhi_k           (2)
 	//                        -ak MpvPhi_k^dag        [ dV^dag V + V^dag dV ] MpvMfMpvPhi_k      (3)
 
-	//(1)
+	//(1)	
+	std::cout<<GridLogMessage << action_name() << " deriv: doing dS/dU part (1)" << std::endl;
 	for(int k=0;k<n_f;k++){
 	  ak = ApproxNegPower.residues[k];
 	  MdagM.Mpc(MfMpvPhi_k[k],Y);
@@ -280,6 +292,7 @@ NAMESPACE_BEGIN(Grid);
 	
 	//(2)
 	//(3)
+	std::cout<<GridLogMessage << action_name() << " deriv: doing dS/dU part (2)+(3)" << std::endl;
 	for(int k=0;k<n_pv;k++){
 
           ak = ApproxHalfPower.residues[k];
@@ -295,7 +308,7 @@ NAMESPACE_BEGIN(Grid);
 	}
 
 	//dSdU = Ta(dSdU);
-
+	std::cout<<GridLogMessage << action_name() << " deriv: complete" << std::endl;
       };
     };
 
