@@ -30,7 +30,6 @@ directory
 
 NAMESPACE_BEGIN(Grid);
 
-
 /*
   Policy implementation for G-parity boundary conditions
 
@@ -358,28 +357,41 @@ public:
   inline void extractLinkField(std::vector<GaugeLinkField> &mat, DoubledGaugeField &Uds){
     assert(0);
   }
-  
+ 
   inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde, int mu) {
-
-    int Ls = Btilde.Grid()->_fdimensions[0];
-        
-    GaugeLinkField tmp(mat.Grid());
-    tmp = Zero();
+    int Ls=Btilde.Grid()->_fdimensions[0];
+    
     {
-      autoView( tmp_v , tmp, CpuWrite);
-      autoView( Atilde_v , Atilde, CpuRead);
-      autoView( Btilde_v , Btilde, CpuRead);
-      thread_for(ss,tmp.Grid()->oSites(),{
-	  for (int s = 0; s < Ls; s++) {
-	    int sF = s + Ls * ss;
-	    auto ttmp = traceIndex<SpinIndex>(outerProduct(Btilde_v[sF], Atilde_v[sF]));
-	    tmp_v[ss]() = tmp_v[ss]() + ttmp(0, 0) + conjugate(ttmp(1, 1));
-	  }
-	});
+      autoView( mat_v , mat, AcceleratorWrite);
+      autoView( Btilde_v , Btilde, AcceleratorRead);
+      autoView( Atilde_v , Atilde, AcceleratorRead);
+      accelerator_for(sss,mat.Grid()->oSites(), FermionField::vector_type::Nsimd(),{	  
+  	  int sU=sss;
+  	  typedef decltype(coalescedRead(mat_v[sU](mu)() )) ColorMatrixType;
+  	  ColorMatrixType sum;
+  	  zeroit(sum);
+  	  for(int s=0;s<Ls;s++){
+  	    int sF = s+Ls*sU;
+  	    for(int spn=0;spn<Ns;spn++){ //sum over spin
+  	      //Flavor 0
+  	      auto bb = coalescedRead(Btilde_v[sF](0)(spn) ); //color vector
+  	      auto aa = coalescedRead(Atilde_v[sF](0)(spn) );
+  	      sum = sum + outerProduct(bb,aa);
+
+  	      //Flavor 1
+  	      bb = coalescedRead(Btilde_v[sF](1)(spn) );
+  	      aa = coalescedRead(Atilde_v[sF](1)(spn) );
+  	      sum = sum + conjugate(outerProduct(bb,aa));
+  	    }
+  	  }	    
+  	  coalescedWrite(mat_v[sU](mu)(), sum);
+  	});
     }
-    PokeIndex<LorentzIndex>(mat, tmp, mu);
-    return;
   }
+
+
+  
+
   
 };
 
