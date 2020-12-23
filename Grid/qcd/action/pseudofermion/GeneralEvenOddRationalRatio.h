@@ -83,7 +83,7 @@ NAMESPACE_BEGIN(Grid);
 
       GeneralEvenOddRatioRationalPseudoFermionAction(FermionOperator<Impl>  &_NumOp, 
 						     FermionOperator<Impl>  &_DenOp, 
-						     Params & p
+						     const Params & p
 						     ) : 
 	NumOp(_NumOp), 
 	DenOp(_DenOp), 
