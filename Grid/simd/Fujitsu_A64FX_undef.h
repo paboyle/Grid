@@ -46,6 +46,7 @@ Author: Nils Meyer <nils.meyer@ur.de>
 #undef MULT_2SPIN_2
 #undef MAYBEPERM
 #undef LOAD_CHI
+#undef ZERO_PSI
 #undef XP_PROJ
 #undef YP_PROJ
 #undef ZP_PROJ
