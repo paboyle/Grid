@@ -60,10 +60,17 @@ NAMESPACE_BEGIN(Grid);
       typedef RationalActionParams Params;
       Params param;
 
-      MultiShiftFunction ApproxPower   ;  //rational approx for X^{1/inv_pow}
-      MultiShiftFunction ApproxNegPower;  //rational approx for X^{-1/inv_pow}
-      MultiShiftFunction ApproxHalfPower;   //rational approx for X^{1/(2*inv_pow)}
-      MultiShiftFunction ApproxNegHalfPower; //rational approx for X^{-1/(2*inv_pow)}
+      //For action evaluation
+      MultiShiftFunction ApproxPowerAction   ;  //rational approx for X^{1/inv_pow}
+      MultiShiftFunction ApproxNegPowerAction;  //rational approx for X^{-1/inv_pow}
+      MultiShiftFunction ApproxHalfPowerAction;   //rational approx for X^{1/(2*inv_pow)}
+      MultiShiftFunction ApproxNegHalfPowerAction; //rational approx for X^{-1/(2*inv_pow)}
+
+      //For the MD integration
+      MultiShiftFunction ApproxPowerMD   ;  //rational approx for X^{1/inv_pow}
+      MultiShiftFunction ApproxNegPowerMD;  //rational approx for X^{-1/inv_pow}
+      MultiShiftFunction ApproxHalfPowerMD;   //rational approx for X^{1/(2*inv_pow)}
+      MultiShiftFunction ApproxNegHalfPowerMD; //rational approx for X^{-1/(2*inv_pow)}
 
     private:
      
@@ -90,17 +97,49 @@ NAMESPACE_BEGIN(Grid);
 	int inv_pow = param.inv_pow;
 	int _2_inv_pow = 2*inv_pow;
 
+	//Generate approximations for action eval
+
 	// MdagM^(+- 1/inv_pow)
-	std::cout<<GridLogMessage << "Generating degree "<<param.degree<<" for x^(1/" << inv_pow << ")"<<std::endl;
-	remez.generateApprox(param.degree,1,inv_pow);
-	ApproxPower.Init(remez,param.tolerance,false);
-	ApproxNegPower.Init(remez,param.tolerance,true);
+	std::cout<<GridLogMessage << "Generating degree "<<param.action_degree<<" and tolerance " << param.action_tolerance << " for x^(1/" << inv_pow << ")"<<std::endl;
+	remez.generateApprox(param.action_degree,1,inv_pow);
+	ApproxPowerAction.Init(remez,param.action_tolerance,false);
+	ApproxNegPowerAction.Init(remez,param.action_tolerance,true);
 
 	// VdagV^(+- 1/(2*inv_pow))
-	std::cout<<GridLogMessage << "Generating degree "<<param.degree<<" for x^(1/" << _2_inv_pow << ")"<<std::endl;
-	remez.generateApprox(param.degree,1,_2_inv_pow);
-   	ApproxHalfPower.Init(remez,param.tolerance,false);
-	ApproxNegHalfPower.Init(remez,param.tolerance,true);
+	std::cout<<GridLogMessage << "Generating degree "<<param.action_degree<<" and tolerance " << param.action_tolerance <<" for x^(1/" << _2_inv_pow << ")"<<std::endl;
+	remez.generateApprox(param.action_degree,1,_2_inv_pow);
+   	ApproxHalfPowerAction.Init(remez,param.action_tolerance,false);
+	ApproxNegHalfPowerAction.Init(remez,param.action_tolerance,true);
+
+	//Generate approximations for MD
+	if(param.md_degree != param.action_degree || 
+	   param.md_tolerance < param.action_tolerance  //no point in finding less precise polynomial if the degree is the same
+	   ){
+	  // MdagM^(+- 1/inv_pow)
+	  std::cout<<GridLogMessage << "Generating degree "<<param.md_degree<<" and tolerance " << param.md_tolerance <<" for x^(1/" << inv_pow << ")"<<std::endl;
+	  remez.generateApprox(param.md_degree,1,inv_pow);
+	  ApproxPowerMD.Init(remez,param.md_tolerance,false);
+	  ApproxNegPowerMD.Init(remez,param.md_tolerance,true);
+
+	  // VdagV^(+- 1/(2*inv_pow))
+	  std::cout<<GridLogMessage << "Generating degree "<<param.md_degree<<" and tolerance " << param.md_tolerance <<" for x^(1/" << _2_inv_pow << ")"<<std::endl;
+	  remez.generateApprox(param.md_degree,1,_2_inv_pow);
+	  ApproxHalfPowerMD.Init(remez,param.md_tolerance,false);
+	  ApproxNegHalfPowerMD.Init(remez,param.md_tolerance,true);
+	}else{
+	  std::cout<<GridLogMessage << "Using same rational approximations for MD as for action evaluation" << std::endl;
+	  ApproxPowerMD = ApproxPowerAction; 
+	  ApproxNegPowerMD = ApproxNegPowerAction;
+	  for(int i=0;i<ApproxPowerMD.tolerances.size();i++)
+	    ApproxNegPowerMD.tolerances[i] = ApproxPowerMD.tolerances[i] = param.md_tolerance; //used for multishift
+
+	  ApproxHalfPowerMD = ApproxHalfPowerAction;
+	  ApproxNegHalfPowerMD = ApproxNegHalfPowerAction;
+
+	  for(int i=0;i<ApproxPowerMD.tolerances.size();i++)
+	    ApproxNegHalfPowerMD.tolerances[i] = ApproxHalfPowerMD.tolerances[i] = param.md_tolerance;
+	}
+
 	std::cout<<GridLogMessage << action_name() << " initialize: complete" << std::endl;
       };
 
@@ -108,13 +147,15 @@ NAMESPACE_BEGIN(Grid);
 
       virtual std::string LogParameters(){
 	std::stringstream sstream;
-	sstream << GridLogMessage << "["<<action_name()<<"] Power          : 1/" << param.inv_pow <<  std::endl;
-	sstream << GridLogMessage << "["<<action_name()<<"] Low            :" << param.lo <<  std::endl;
-	sstream << GridLogMessage << "["<<action_name()<<"] High           :" << param.hi <<  std::endl;
-	sstream << GridLogMessage << "["<<action_name()<<"] Max iterations :" << param.MaxIter <<  std::endl;
-	sstream << GridLogMessage << "["<<action_name()<<"] Tolerance      :" << param.tolerance <<  std::endl;
-	sstream << GridLogMessage << "["<<action_name()<<"] Degree         :" << param.degree <<  std::endl;
-	sstream << GridLogMessage << "["<<action_name()<<"] Precision      :" << param.precision <<  std::endl;
+	sstream << GridLogMessage << "["<<action_name()<<"] Power              : 1/" << param.inv_pow <<  std::endl;
+	sstream << GridLogMessage << "["<<action_name()<<"] Low                :" << param.lo <<  std::endl;
+	sstream << GridLogMessage << "["<<action_name()<<"] High               :" << param.hi <<  std::endl;
+	sstream << GridLogMessage << "["<<action_name()<<"] Max iterations     :" << param.MaxIter <<  std::endl;
+	sstream << GridLogMessage << "["<<action_name()<<"] Tolerance (Action) :" << param.action_tolerance <<  std::endl;
+	sstream << GridLogMessage << "["<<action_name()<<"] Degree (Action)    :" << param.action_degree <<  std::endl;
+	sstream << GridLogMessage << "["<<action_name()<<"] Tolerance (MD)     :" << param.md_tolerance <<  std::endl;
+	sstream << GridLogMessage << "["<<action_name()<<"] Degree (MD)        :" << param.md_degree <<  std::endl;
+	sstream << GridLogMessage << "["<<action_name()<<"] Precision          :" << param.precision <<  std::endl;
 	return sstream.str();
       }
       
@@ -154,13 +195,13 @@ NAMESPACE_BEGIN(Grid);
 	// MdagM^1/(2*inv_pow) eta
 	std::cout<<GridLogMessage << action_name() << " refresh: doing (M^dag M)^{1/" << 2*param.inv_pow << "} eta" << std::endl;
 	SchurDifferentiableOperator<Impl> MdagM(DenOp);
-	ConjugateGradientMultiShift<FermionField> msCG_M(param.MaxIter,ApproxHalfPower);
+	ConjugateGradientMultiShift<FermionField> msCG_M(param.MaxIter,ApproxHalfPowerAction);
 	msCG_M(MdagM,etaOdd,tmp);
 
 	// VdagV^-1/(2*inv_pow) MdagM^1/(2*inv_pow) eta
 	std::cout<<GridLogMessage << action_name() << " refresh: doing (V^dag V)^{-1/" << 2*param.inv_pow << "} ( (M^dag M)^{1/" << 2*param.inv_pow << "} eta)" << std::endl;
 	SchurDifferentiableOperator<Impl> VdagV(NumOp);
-	ConjugateGradientMultiShift<FermionField> msCG_V(param.MaxIter,ApproxNegHalfPower);
+	ConjugateGradientMultiShift<FermionField> msCG_V(param.MaxIter,ApproxNegHalfPowerAction);
 	msCG_V(VdagV,tmp,PhiOdd);
 
 	assert(NumOp.ConstEE() == 1);
@@ -183,13 +224,13 @@ NAMESPACE_BEGIN(Grid);
 	// VdagV^1/(2*inv_pow) Phi
 	std::cout<<GridLogMessage << action_name() << " compute action: doing (V^dag V)^{1/" << 2*param.inv_pow << "} Phi" << std::endl;
 	SchurDifferentiableOperator<Impl> VdagV(NumOp);
-	ConjugateGradientMultiShift<FermionField> msCG_V(param.MaxIter,ApproxHalfPower);
+	ConjugateGradientMultiShift<FermionField> msCG_V(param.MaxIter,ApproxHalfPowerAction);
 	msCG_V(VdagV,PhiOdd,X);
 
 	// MdagM^-1/(2*inv_pow) VdagV^1/(2*inv_pow) Phi
 	std::cout<<GridLogMessage << action_name() << " compute action: doing (M^dag M)^{-1/" << 2*param.inv_pow << "} ( (V^dag V)^{1/" << 2*param.inv_pow << "} Phi)" << std::endl;
 	SchurDifferentiableOperator<Impl> MdagM(DenOp);
-	ConjugateGradientMultiShift<FermionField> msCG_M(param.MaxIter,ApproxNegHalfPower);
+	ConjugateGradientMultiShift<FermionField> msCG_M(param.MaxIter,ApproxNegHalfPowerAction);
 	msCG_M(MdagM,X,Y);
 
 	// Randomly apply rational bounds checks.
@@ -198,7 +239,7 @@ NAMESPACE_BEGIN(Grid);
 	  FermionField gauss(NumOp.FermionRedBlackGrid());
 	  gauss = PhiOdd;
 	  HighBoundCheck(MdagM,gauss,param.hi);
-	  InversePowerBoundsCheck(param.inv_pow,param.MaxIter,param.tolerance*100,MdagM,gauss,ApproxNegPower);
+	  InversePowerBoundsCheck(param.inv_pow,param.MaxIter,param.action_tolerance*100,MdagM,gauss,ApproxNegPowerAction);
 	}
 
 	//  Phidag VdagV^1/(2*inv_pow) MdagM^-1/(2*inv_pow)  MdagM^-1/(2*inv_pow) VdagV^1/(2*inv_pow) Phi
@@ -240,8 +281,8 @@ NAMESPACE_BEGIN(Grid);
 
       virtual void deriv(const GaugeField &U,GaugeField & dSdU) {
 	std::cout<<GridLogMessage << action_name() << " deriv: starting" << std::endl;
-	const int n_f  = ApproxNegPower.poles.size();
-	const int n_pv = ApproxHalfPower.poles.size();
+	const int n_f  = ApproxNegPowerMD.poles.size();
+	const int n_pv = ApproxHalfPowerMD.poles.size();
 
 	std::vector<FermionField> MpvPhi_k     (n_pv,NumOp.FermionRedBlackGrid());
 	std::vector<FermionField> MpvMfMpvPhi_k(n_pv,NumOp.FermionRedBlackGrid());
@@ -260,8 +301,8 @@ NAMESPACE_BEGIN(Grid);
 	SchurDifferentiableOperator<Impl> VdagV(NumOp);
 	SchurDifferentiableOperator<Impl> MdagM(DenOp);
 
-	ConjugateGradientMultiShift<FermionField> msCG_V(param.MaxIter,ApproxHalfPower);
-	ConjugateGradientMultiShift<FermionField> msCG_M(param.MaxIter,ApproxNegPower);
+	ConjugateGradientMultiShift<FermionField> msCG_V(param.MaxIter,ApproxHalfPowerMD);
+	ConjugateGradientMultiShift<FermionField> msCG_M(param.MaxIter,ApproxNegPowerMD);
 
 	std::cout<<GridLogMessage << action_name() << " deriv: doing (V^dag V)^{1/" << 2*param.inv_pow << "} Phi" << std::endl;
 	msCG_V(VdagV,PhiOdd,MpvPhi_k,MpvPhi);
@@ -284,7 +325,7 @@ NAMESPACE_BEGIN(Grid);
 	//(1)	
 	std::cout<<GridLogMessage << action_name() << " deriv: doing dS/dU part (1)" << std::endl;
 	for(int k=0;k<n_f;k++){
-	  ak = ApproxNegPower.residues[k];
+	  ak = ApproxNegPowerMD.residues[k];
 	  MdagM.Mpc(MfMpvPhi_k[k],Y);
 	  MdagM.MpcDagDeriv(tmp , MfMpvPhi_k[k], Y );  dSdU=dSdU+ak*tmp;
 	  MdagM.MpcDeriv(tmp , Y, MfMpvPhi_k[k] );  dSdU=dSdU+ak*tmp;
@@ -295,7 +336,7 @@ NAMESPACE_BEGIN(Grid);
 	std::cout<<GridLogMessage << action_name() << " deriv: doing dS/dU part (2)+(3)" << std::endl;
 	for(int k=0;k<n_pv;k++){
 
-          ak = ApproxHalfPower.residues[k];
+          ak = ApproxHalfPowerMD.residues[k];
 	  
 	  VdagV.Mpc(MpvPhi_k[k],Y);
 	  VdagV.MpcDagDeriv(tmp,MpvMfMpvPhi_k[k],Y); dSdU=dSdU+ak*tmp;
