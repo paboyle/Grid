@@ -443,6 +443,8 @@ template<class vobj> void pokeLorentz(vobj &lhs,const decltype(peekIndex<Lorentz
 //////////////////////////////////////////////
 // Fermion <-> propagator assignements
 //////////////////////////////////////////////
+
+// For color and spin
 //template <class Prop, class Ferm>
 template <class Fimpl>
 void FermToProp(typename Fimpl::PropagatorField &p, const typename Fimpl::FermionField &f, const int s, const int c)
@@ -460,6 +462,19 @@ void FermToProp(typename Fimpl::PropagatorField &p, const typename Fimpl::Fermio
     }
 }
     
+// For color only
+template <class Fimpl>
+void FermToProp(typename Fimpl::PropagatorField &p,
+                const typename Fimpl::FermionField &f,
+                const int c)
+{
+    for(int i = 0; i < Fimpl::Dimension; ++i)
+    {
+        pokeColour(p, peekColour(f, i), i, c);
+    }
+}
+
+// For color and spin
 //template <class Prop, class Ferm>
 template <class Fimpl>
 void PropToFerm(typename Fimpl::FermionField &f, const typename Fimpl::PropagatorField &p, const int s, const int c)
@@ -477,6 +492,19 @@ void PropToFerm(typename Fimpl::FermionField &f, const typename Fimpl::Propagato
     }
 }
     
+// For color only
+//template <class Prop, class Ferm>
+template <class Fimpl>
+void PropToFerm(typename Fimpl::FermionField &f,
+                const typename Fimpl::PropagatorField &p,
+                const int c)
+{
+    for(int i = 0; i < Fimpl::Dimension; ++i)
+    {
+        pokeColour(f, peekColour(p, i, c), i);
+    }
+}
+
 //////////////////////////////////////////////
 // transpose array and scalar
 //////////////////////////////////////////////

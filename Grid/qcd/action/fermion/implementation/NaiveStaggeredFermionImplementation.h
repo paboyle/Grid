@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./lib/qcd/action/fermion/ImprovedStaggeredFermion.cc
+Source file: ./lib/qcd/action/fermion/NaiveStaggeredFermion.cc
 
 Copyright (C) 2015
 
@@ -94,6 +94,35 @@ void NaiveStaggeredFermion<Impl>::CopyGaugeCheckerboards(void)
   pickCheckerboard(Even, UmuEven,  Umu);
   pickCheckerboard(Odd,  UmuOdd ,  Umu);
 }
+
+template <class Impl>
+void NaiveStaggeredFermion<Impl>::ImportGaugeSimple(const GaugeField &_Ufat)
+{
+  /////////////////////////////////////////////////////////////////
+  // Trivial import; phases and fattening and such like preapplied
+  /////////////////////////////////////////////////////////////////
+  GaugeLinkField U(GaugeGrid());
+
+  for (int mu = 0; mu < Nd; mu++) {
+
+    U = PeekIndex<LorentzIndex>(_Ufat, mu);
+    PokeIndex<LorentzIndex>(Umu, U, mu);
+
+    U = adj( Cshift(U, mu, -1));
+    PokeIndex<LorentzIndex>(Umu, -U, mu+4);
+
+  }
+  CopyGaugeCheckerboards();
+}
+
+template <class Impl>
+void NaiveStaggeredFermion<Impl>::ImportGaugeSimple(const DoubledGaugeField &_U)
+{
+
+  Umu   = _U;
+  CopyGaugeCheckerboards();
+}
+
 template <class Impl>
 void NaiveStaggeredFermion<Impl>::ImportGauge(const GaugeField &_U) 
 {
@@ -101,7 +130,7 @@ void NaiveStaggeredFermion<Impl>::ImportGauge(const GaugeField &_U)
   DoubledGaugeField _UUU(GaugeGrid());
   ////////////////////////////////////////////////////////
   // Double Store should take two fields for Naik and one hop separately.
-  // Discard teh Naik as Naive
+  // Discard the Naik as Naive
   ////////////////////////////////////////////////////////
   Impl::DoubleStore(GaugeGrid(), _UUU, Umu, _U, _U );
 

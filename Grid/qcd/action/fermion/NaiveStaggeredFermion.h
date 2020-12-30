@@ -130,11 +130,13 @@ public:
 			const ImplParams &p = ImplParams());
   NaiveStaggeredFermion(GridCartesian &Fgrid,
 			GridRedBlackCartesian &Hgrid, RealD _mass,
-			RealD _c1, RealD _u0,
+			RealD _c1=1.0, RealD _u0=1.0,
 			const ImplParams &p = ImplParams());
 
   // DoubleStore impl dependent
   void ImportGauge      (const GaugeField &_U );
+  void ImportGaugeSimple(const GaugeField &_U);
+  void ImportGaugeSimple(const DoubledGaugeField &_U);
   DoubledGaugeField &GetU(void)   { return Umu ; } ;
   void CopyGaugeCheckerboards(void);
 

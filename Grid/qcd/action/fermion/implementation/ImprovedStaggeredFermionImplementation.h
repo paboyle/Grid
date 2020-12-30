@@ -80,6 +80,20 @@ ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Uthin, Gau
   ImportGauge(_Uthin,_Ufat);
 }
 
+template <class Impl>
+ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion
+    (
+     GaugeField &_Uthin, GaugeField &_Ufat, GaugeField &_Ulong,
+     GridCartesian &Fgrid,
+     GridRedBlackCartesian &Hgrid, RealD _mass,
+     RealD _c1, RealD _c2, RealD _u0,
+     const ImplParams &p
+    )
+: ImprovedStaggeredFermion(Fgrid,Hgrid,_mass,_c1,_c2,_u0,p)
+{
+    ImportGauge(_Uthin, _Ufat, _Ulong);
+}
+
 ////////////////////////////////////////////////////////////
 // Momentum space propagator should be 
 // https://arxiv.org/pdf/hep-lat/9712010.pdf
@@ -164,6 +178,44 @@ void ImprovedStaggeredFermion<Impl>::ImportGauge(const GaugeField &_Uthin,const 
   }
 
   CopyGaugeCheckerboards();
+}
+
+template <class Impl>
+void ImprovedStaggeredFermion<Impl>::ImportGauge
+    (
+     const GaugeField &_Uthin,
+     const GaugeField &_Ufat,
+     const GaugeField &_Ulong
+    )
+{
+    GaugeLinkField U(GaugeGrid());
+    
+    ////////////////////////////////////////////////////////
+    // Double Store should take two fields for Naik and one hop separately.
+    ////////////////////////////////////////////////////////
+    Impl::DoubleStore(GaugeGrid(), UUUmu, Umu, _Uthin, _Ufat, _Ulong );
+    
+    ////////////////////////////////////////////////////////
+    // Apply scale factors to get the right fermion Kinetic term
+    // Could pass coeffs into the double store to save work.
+    // 0.5 ( U p(x+mu) - Udag(x-mu) p(x-mu) )
+    ////////////////////////////////////////////////////////
+    for (int mu = 0; mu < Nd; mu++) {
+        
+        U = PeekIndex<LorentzIndex>(Umu, mu);
+        PokeIndex<LorentzIndex>(Umu, U*( 0.5*c1/u0), mu );
+        
+        U = PeekIndex<LorentzIndex>(Umu, mu+4);
+        PokeIndex<LorentzIndex>(Umu, U*(-0.5*c1/u0), mu+4);
+        
+        U = PeekIndex<LorentzIndex>(UUUmu, mu);
+        PokeIndex<LorentzIndex>(UUUmu, U*( 0.5*c2/u0/u0/u0), mu );
+        
+        U = PeekIndex<LorentzIndex>(UUUmu, mu+4);
+        PokeIndex<LorentzIndex>(UUUmu, U*(-0.5*c2/u0/u0/u0), mu+4);
+    }
+    
+    CopyGaugeCheckerboards();
 }
 
 /////////////////////////////
