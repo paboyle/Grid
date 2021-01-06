@@ -48,6 +48,7 @@ NAMESPACE_BEGIN(Grid);
     Integer TotalInnerIterations; //Number of inner CG iterations
     Integer TotalOuterIterations; //Number of restarts
     Integer TotalFinalStepIterations; //Number of CG iterations in final patch-up step
+    RealD TrueResidual;
 
     //Option to speed up *inner single precision* solves using a LinearFunction that produces a guess
     LinearFunction<FieldF> *guesser;
@@ -79,6 +80,11 @@ NAMESPACE_BEGIN(Grid);
     RealD stop = src_norm * Tolerance*Tolerance;
 
     GridBase* DoublePrecGrid = src_d_in.Grid();
+
+    //Generate precision change workspaces
+    precisionChangeWorkspace wk_dp_from_sp(DoublePrecGrid, SinglePrecGrid);
+    precisionChangeWorkspace wk_sp_from_dp(SinglePrecGrid, DoublePrecGrid);
+
     FieldD tmp_d(DoublePrecGrid);
     tmp_d.Checkerboard() = cb;
     
@@ -119,7 +125,7 @@ NAMESPACE_BEGIN(Grid);
       while(norm * inner_tol * inner_tol < stop) inner_tol *= 2;  // inner_tol = sqrt(stop/norm) ??
 
       PrecChangeTimer.Start();
-      precisionChange(src_f, src_d);
+      precisionChange(src_f, src_d, wk_sp_from_dp);
       PrecChangeTimer.Stop();
       
       sol_f = Zero();
@@ -137,7 +143,7 @@ NAMESPACE_BEGIN(Grid);
       
       //Convert sol back to double and add to double prec solution
       PrecChangeTimer.Start();
-      precisionChange(tmp_d, sol_f);
+      precisionChange(tmp_d, sol_f, wk_dp_from_sp);
       PrecChangeTimer.Stop();
       
       axpy(sol_d, 1.0, tmp_d, sol_d);
@@ -149,6 +155,7 @@ NAMESPACE_BEGIN(Grid);
     ConjugateGradient<FieldD> CG_d(Tolerance, MaxInnerIterations);
     CG_d(Linop_d, src_d_in, sol_d);
     TotalFinalStepIterations = CG_d.IterationsToComplete;
+    TrueResidual = CG_d.TrueResidual;
 
     TotalTimer.Stop();
     std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradient: Inner CG iterations " << TotalInnerIterations << " Restarts " << TotalOuterIterations << " Final CG iterations " << TotalFinalStepIterations << std::endl;
