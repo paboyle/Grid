@@ -1058,19 +1058,10 @@ public:
 //Convert a lattice of one precision to another. The input workspace contains the mapping data.
 template<class VobjOut, class VobjIn>
 void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in, const precisionChangeWorkspace &workspace){
+  static_assert( std::is_same<typename VobjOut::DoublePrecision, typename VobjIn::DoublePrecision>::value == 1, "copyLane: tensor types must be the same" ); //if tensor types are same the DoublePrecision type must be the same
+
   out.Checkerboard() = in.Checkerboard();
-
-  typedef typename VobjOut::scalar_object SobjOut;
-  typedef typename VobjIn::scalar_object SobjIn;
-
-  typedef typename SobjIn::scalar_type SfundIn; //"fundamental" complex/real data types
-  typedef typename SobjOut::scalar_type SfundOut;
-
   constexpr int Nsimd_out = VobjOut::Nsimd();
-  constexpr int Nfund_in = sizeof(SobjIn)/sizeof(SfundIn);
-  constexpr int Nfund_out = sizeof(SobjOut)/sizeof(SfundOut); //these should be the same!
-
-  static_assert(Nfund_in == Nfund_out, "Expect input and output object types to contain the same number of fundamental data but with different precision!");
 
   std::pair<Integer,Integer> const* fmap_device = workspace.getMap();
 
@@ -1083,18 +1074,7 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in, const pre
       for(int out_lane=0; out_lane < Nsimd_out; out_lane++){      
 	int in_oidx = fmap_osite[out_lane].first;
 	int in_lane = fmap_osite[out_lane].second;
-	
-	//Room for optimization here by combining the precision change with the read/write to avoid the intermediate scalar objects
-	SobjIn sobj_in = extractLane(in_lane, in_v[in_oidx]);
-	SobjOut sobj_out;
-	SfundIn tmp_in;
-	SfundOut tmp_out;
-	for(int i=0;i<Nfund_out;i++){ //the blessed way to do type punning!
-	  memcpy( (char*)(&tmp_in), (char*)(&sobj_in) + i*sizeof(SfundIn),  sizeof(SfundIn) );
-	  tmp_out = tmp_in; //the precision change
-	  memcpy( (char*)(&sobj_out) + i*sizeof(SfundOut), (char*)(&tmp_out), sizeof(SfundOut) );
-	}
-	insertLane(out_lane, out_v[out_oidx], sobj_out);
+	copyLane(out_v[out_oidx], out_lane, in_v[in_oidx], in_lane);
       }
     });
 }
