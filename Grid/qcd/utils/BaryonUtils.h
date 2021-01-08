@@ -53,7 +53,7 @@ public:
          const Gamma GammaB_right,
          const int parity,
          const bool * wick_contractions,
-           robj &result);
+         robj &result);
   template <class mobj, class robj> accelerator_inline
   static void BaryonSiteMatrix(const mobj &D1,
          const mobj &D2,
@@ -63,7 +63,7 @@ public:
          const Gamma GammaA_right,
          const Gamma GammaB_right,
          const bool * wick_contractions,
-           robj &result);
+         robj &result);
   public:
   static void WickContractions(std::string qi, 
                  std::string qf, 
@@ -117,9 +117,9 @@ public:
            const mobj2 &Dq2_spec,
            const mobj2 &Dq3_spec,
            const mobj &Dq4_tf,
-                   const Gamma GammaJ,
-                   const Gamma GammaBi,
-                   const Gamma GammaBf,
+           const Gamma GammaJ,
+           const Gamma GammaBi,
+           const Gamma GammaBf,
            int wick_contraction,
            robj &result);
 
@@ -129,9 +129,9 @@ public:
            const mobj &Dq2_ti,
            const mobj2 &Dq3_spec,
            const mobj &Dq4_tf,
-                   const Gamma GammaJ,
-                   const Gamma GammaBi,
-                   const Gamma GammaBf,
+           const Gamma GammaJ,
+           const Gamma GammaBi,
+           const Gamma GammaBf,
            int wick_contraction,
            robj &result);
 
@@ -141,9 +141,9 @@ public:
            const mobj2 &Dq2_spec,
            const mobj &Dq3_ti,
            const mobj &Dq4_tf,
-                   const Gamma GammaJ,
-                   const Gamma GammaBi,
-                   const Gamma GammaBf,
+           const Gamma GammaJ,
+           const Gamma GammaBi,
+           const Gamma GammaBf,
            int wick_contraction,
            robj &result);
   public:
@@ -155,9 +155,9 @@ public:
            const PropagatorField &q_tf,
            int group,
            int wick_contraction,
-                   const Gamma GammaJ,
-                   const Gamma GammaBi,
-                   const Gamma GammaBf,
+           const Gamma GammaJ,
+           const Gamma GammaBi,
+           const Gamma GammaBf,
            SpinMatrixField &stn_corr);
   private: 
   template <class mobj, class mobj2, class robj> accelerator_inline
@@ -165,9 +165,9 @@ public:
              const mobj2 &Du_spec,
              const mobj &Dd_tf,
              const mobj &Ds_ti,
-                         const Gamma Gamma_H,
-                         const Gamma GammaB_sigma,
-                         const Gamma GammaB_nucl,
+             const Gamma Gamma_H,
+             const Gamma GammaB_sigma,
+             const Gamma GammaB_nucl,
              robj &result);
   template <class mobj, class mobj2, class robj> accelerator_inline
   static void SigmaToNucleonQ1NonEyeSite(const mobj &Du_ti,
@@ -175,9 +175,9 @@ public:
              const mobj2 &Du_spec,
              const mobj &Dd_tf,
              const mobj &Ds_ti,
-                         const Gamma Gamma_H,
-                         const Gamma GammaB_sigma,
-                         const Gamma GammaB_nucl,
+             const Gamma Gamma_H,
+             const Gamma GammaB_sigma,
+             const Gamma GammaB_nucl,
              robj &result);
 
 
@@ -186,9 +186,9 @@ public:
              const mobj2 &Du_spec,
              const mobj &Dd_tf,
              const mobj &Ds_ti,
-                         const Gamma Gamma_H,
-                         const Gamma GammaB_sigma,
-                         const Gamma GammaB_nucl,
+             const Gamma Gamma_H,
+             const Gamma GammaB_sigma,
+             const Gamma GammaB_nucl,
              robj &result);
   template <class mobj, class mobj2, class robj> accelerator_inline
   static void SigmaToNucleonQ2NonEyeSite(const mobj &Du_ti,
@@ -196,9 +196,9 @@ public:
              const mobj2 &Du_spec,
              const mobj &Dd_tf,
              const mobj &Ds_ti,
-                         const Gamma Gamma_H,
-                         const Gamma GammaB_sigma,
-                         const Gamma GammaB_nucl,
+             const Gamma Gamma_H,
+             const Gamma GammaB_sigma,
+             const Gamma GammaB_nucl,
              robj &result);
   public:
   template <class mobj>
@@ -209,7 +209,7 @@ public:
          const Gamma Gamma_H,
          const Gamma GammaB_sigma,
          const Gamma GammaB_nucl,
-                     const std::string op,
+         const std::string op,
          SpinMatrixField &stn_corr);
   template <class mobj>
   static void SigmaToNucleonNonEye(const PropagatorField &qq_ti,
@@ -220,7 +220,7 @@ public:
          const Gamma Gamma_H,
          const Gamma GammaB_sigma,
          const Gamma GammaB_nucl,
-                     const std::string op,
+         const std::string op,
          SpinMatrixField &stn_corr);
 };
 //This computes a baryon contraction on a lattice site, including the spin-trace of the correlation matrix
@@ -229,10 +229,10 @@ template <class mobj, class robj> accelerator_inline
 void BaryonUtils<FImpl>::BaryonSite(const mobj &D1,
                 const mobj &D2,
                 const mobj &D3,
-                         const Gamma GammaA_i,
-                         const Gamma GammaB_i,
-                         const Gamma GammaA_f,
-                         const Gamma GammaB_f,
+                const Gamma GammaA_i,
+                const Gamma GammaB_i,
+                const Gamma GammaA_f,
+                const Gamma GammaB_f,
                 const int parity,
                 const bool * wick_contraction,
                 robj &result)
@@ -349,10 +349,10 @@ template <class mobj, class robj> accelerator_inline
 void BaryonUtils<FImpl>::BaryonSiteMatrix(const mobj &D1,
                 const mobj &D2,
                 const mobj &D3,
-                         const Gamma GammaA_i,
-                         const Gamma GammaB_i,
-                         const Gamma GammaA_f,
-                         const Gamma GammaB_f,
+                const Gamma GammaA_i,
+                const Gamma GammaB_i,
+                const Gamma GammaA_f,
+                const Gamma GammaB_f,
                 const bool * wick_contraction,
                 robj &result)
 {
@@ -496,10 +496,10 @@ template<class FImpl>
 void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
              const PropagatorField &q2_left,
              const PropagatorField &q3_left,
-                         const Gamma GammaA_left,
-                         const Gamma GammaB_left,
-                         const Gamma GammaA_right,
-                         const Gamma GammaB_right,
+             const Gamma GammaA_left,
+             const Gamma GammaB_left,
+             const Gamma GammaA_right,
+             const Gamma GammaB_right,
              const bool* wick_contractions,
              const int parity,
              ComplexField &baryon_corr)
@@ -548,10 +548,10 @@ template<class FImpl>
 void BaryonUtils<FImpl>::ContractBaryonsMatrix(const PropagatorField &q1_left,
              const PropagatorField &q2_left,
              const PropagatorField &q3_left,
-                         const Gamma GammaA_left,
-                         const Gamma GammaB_left,
-                         const Gamma GammaA_right,
-                         const Gamma GammaB_right,
+             const Gamma GammaA_left,
+             const Gamma GammaB_left,
+             const Gamma GammaA_right,
+             const Gamma GammaB_right,
              const bool* wick_contractions,
              SpinMatrixField &baryon_corr)
 {
@@ -612,10 +612,10 @@ template <class mobj, class robj>
 void BaryonUtils<FImpl>::ContractBaryonsSlicedMatrix(const mobj &D1,
              const mobj &D2,
              const mobj &D3,
-                         const Gamma GammaA_left,
-                         const Gamma GammaB_left,
-                         const Gamma GammaA_right,
-                         const Gamma GammaB_right,
+             const Gamma GammaA_left,
+             const Gamma GammaB_left,
+             const Gamma GammaA_right,
+             const Gamma GammaB_right,
              const bool* wick_contractions,
              const int nt,
              robj &result)
@@ -646,9 +646,9 @@ void BaryonUtils<FImpl>::BaryonGamma3ptGroup1Site(
                         const mobj2 &Dq2_spec,
                         const mobj2 &Dq3_spec,
                         const mobj &Dq4_tf,
-                                const Gamma GammaJ,
-                                const Gamma GammaBi,
-                                const Gamma GammaBf,
+                        const Gamma GammaJ,
+                        const Gamma GammaBi,
+                        const Gamma GammaBf,
                         int wick_contraction,
                         robj &result)
 {
@@ -740,9 +740,9 @@ void BaryonUtils<FImpl>::BaryonGamma3ptGroup2Site(
                         const mobj &Dq2_ti,
                         const mobj2 &Dq3_spec,
                         const mobj &Dq4_tf,
-                                const Gamma GammaJ,
-                                const Gamma GammaBi,
-                                const Gamma GammaBf,
+                        const Gamma GammaJ,
+                        const Gamma GammaBi,
+                        const Gamma GammaBf,
                         int wick_contraction,
                         robj &result)
 {
@@ -831,9 +831,9 @@ void BaryonUtils<FImpl>::BaryonGamma3ptGroup3Site(
                         const mobj2 &Dq2_spec,
                         const mobj &Dq3_ti,
                         const mobj &Dq4_tf,
-                                const Gamma GammaJ,
-                                const Gamma GammaBi,
-                                const Gamma GammaBf,
+                        const Gamma GammaJ,
+                        const Gamma GammaBi,
+                        const Gamma GammaBf,
                         int wick_contraction,
                         robj &result)
 {
@@ -926,9 +926,9 @@ void BaryonUtils<FImpl>::BaryonGamma3pt(
                         const PropagatorField &q_tf,
                         int group,
                         int wick_contraction,
-                                const Gamma GammaJ,
-                                const Gamma GammaBi,
-                                const Gamma GammaBf,
+                        const Gamma GammaJ,
+                        const Gamma GammaBi,
+                        const Gamma GammaBf,
                         SpinMatrixField &stn_corr)
 {
   assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
@@ -992,9 +992,9 @@ void BaryonUtils<FImpl>::SigmaToNucleonQ1EyeSite(const mobj &Dq_loop,
              const mobj2 &Du_spec,
              const mobj &Dd_tf,
              const mobj &Ds_ti,
-                         const Gamma Gamma_H,
-                         const Gamma GammaB_sigma,
-                         const Gamma GammaB_nucl,
+             const Gamma Gamma_H,
+             const Gamma GammaB_sigma,
+             const Gamma GammaB_nucl,
              robj &result)
 {
 
@@ -1054,9 +1054,9 @@ void BaryonUtils<FImpl>::SigmaToNucleonQ1NonEyeSite(const mobj &Du_ti,
              const mobj2 &Du_spec,
              const mobj &Dd_tf,
              const mobj &Ds_ti,
-                         const Gamma Gamma_H,
-                         const Gamma GammaB_sigma,
-                         const Gamma GammaB_nucl,
+             const Gamma Gamma_H,
+             const Gamma GammaB_sigma,
+             const Gamma GammaB_nucl,
              robj &result)
 {
 
@@ -1123,9 +1123,9 @@ void BaryonUtils<FImpl>::SigmaToNucleonQ2EyeSite(const mobj &Dq_loop,
              const mobj2 &Du_spec,
              const mobj &Dd_tf,
              const mobj &Ds_ti,
-                         const Gamma Gamma_H,
-                         const Gamma GammaB_sigma,
-                         const Gamma GammaB_nucl,
+             const Gamma Gamma_H,
+             const Gamma GammaB_sigma,
+             const Gamma GammaB_nucl,
              robj &result)
 {
 
@@ -1183,9 +1183,9 @@ void BaryonUtils<FImpl>::SigmaToNucleonQ2NonEyeSite(const mobj &Du_ti,
              const mobj2 &Du_spec,
              const mobj &Dd_tf,
              const mobj &Ds_ti,
-                         const Gamma Gamma_H,
-                         const Gamma GammaB_sigma,
-                         const Gamma GammaB_nucl,
+             const Gamma Gamma_H,
+             const Gamma GammaB_sigma,
+             const Gamma GammaB_nucl,
              robj &result)
 {
 
@@ -1252,9 +1252,9 @@ void BaryonUtils<FImpl>::SigmaToNucleonEye(const PropagatorField &qq_loop,
              const mobj &Du_spec,
              const PropagatorField &qd_tf,
              const PropagatorField &qs_ti,
-                         const Gamma Gamma_H,
-                         const Gamma GammaB_sigma,
-                         const Gamma GammaB_nucl,
+             const Gamma Gamma_H,
+             const Gamma GammaB_sigma,
+             const Gamma GammaB_nucl,
              const std::string op,
              SpinMatrixField &stn_corr)
 {
@@ -1296,9 +1296,9 @@ void BaryonUtils<FImpl>::SigmaToNucleonNonEye(const PropagatorField &qq_ti,
              const mobj &Du_spec,
              const PropagatorField &qd_tf,
              const PropagatorField &qs_ti,
-                         const Gamma Gamma_H,
-                         const Gamma GammaB_sigma,
-                         const Gamma GammaB_nucl,
+             const Gamma Gamma_H,
+             const Gamma GammaB_sigma,
+             const Gamma GammaB_nucl,
              const std::string op,
              SpinMatrixField &stn_corr)
 {
