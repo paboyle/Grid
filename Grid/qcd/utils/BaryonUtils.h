@@ -950,7 +950,8 @@ void BaryonUtils<FImpl>::BaryonGamma3pt(
       typedef decltype(coalescedRead(vcorr[0])) spinor;
       spinor result=Zero();
       BaryonGamma3ptGroup1Site(Dq_ti,Dq_spec_p[0],Dq_spec_p[1],Dq_tf,GammaJ,GammaBi,GammaBf,wick_contraction,result);
-      coalescedWrite(vcorr[ss],result);
+      //coalescedWrite(vcorr[ss],vcorr[ss]+result); //diff by factor 10???
+      coalescedWrite(vcorr[ss],vcorr[ss]+result);
     });//end loop over lattice sites
 
   } else if (group == 2) {
@@ -1271,6 +1272,9 @@ void BaryonUtils<FImpl>::SigmaToNucleonEye(const PropagatorField &qq_loop,
 
   bool doQ1 = (op == "Q1");
   bool doQ2 = (op == "Q2");
+  
+  Vector<mobj> my_Dq_spec{Du_spec};
+  mobj * Dq_spec_p = &my_Dq_spec[0];
 
   accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
     auto Dq_loop = vq_loop(ss);
@@ -1279,9 +1283,9 @@ void BaryonUtils<FImpl>::SigmaToNucleonEye(const PropagatorField &qq_loop,
     typedef decltype(coalescedRead(vcorr[0])) spinor;
     spinor result=Zero();
     if(doQ1){
-      SigmaToNucleonQ1EyeSite(Dq_loop,Du_spec,Dd_tf,Ds_ti,Gamma_H,GammaB_sigma,GammaB_nucl,result);
+      SigmaToNucleonQ1EyeSite(Dq_loop,Dq_spec_p[0],Dd_tf,Ds_ti,Gamma_H,GammaB_sigma,GammaB_nucl,result);
     } else if(doQ2){
-      SigmaToNucleonQ2EyeSite(Dq_loop,Du_spec,Dd_tf,Ds_ti,Gamma_H,GammaB_sigma,GammaB_nucl,result);
+      SigmaToNucleonQ2EyeSite(Dq_loop,Dq_spec_p[0],Dd_tf,Ds_ti,Gamma_H,GammaB_sigma,GammaB_nucl,result);
     } else {
       assert(0 && "Weak Operator not correctly specified");
     }
@@ -1316,6 +1320,9 @@ void BaryonUtils<FImpl>::SigmaToNucleonNonEye(const PropagatorField &qq_ti,
 
   bool doQ1 = (op == "Q1");
   bool doQ2 = (op == "Q2");
+  
+  Vector<mobj> my_Dq_spec{Du_spec};
+  mobj * Dq_spec_p = &my_Dq_spec[0];
 
   accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
     auto Dq_ti = vq_ti(ss);
@@ -1325,9 +1332,9 @@ void BaryonUtils<FImpl>::SigmaToNucleonNonEye(const PropagatorField &qq_ti,
     typedef decltype(coalescedRead(vcorr[0])) spinor;
     spinor result=Zero();
     if(doQ1){
-      SigmaToNucleonQ1NonEyeSite(Dq_ti,Dq_tf,Du_spec,Dd_tf,Ds_ti,Gamma_H,GammaB_sigma,GammaB_nucl,result);
+      SigmaToNucleonQ1NonEyeSite(Dq_ti,Dq_tf,Dq_spec_p[0],Dd_tf,Ds_ti,Gamma_H,GammaB_sigma,GammaB_nucl,result);
     } else if(doQ2){
-      SigmaToNucleonQ2NonEyeSite(Dq_ti,Dq_tf,Du_spec,Dd_tf,Ds_ti,Gamma_H,GammaB_sigma,GammaB_nucl,result);
+      SigmaToNucleonQ2NonEyeSite(Dq_ti,Dq_tf,Dq_spec_p[0],Dd_tf,Ds_ti,Gamma_H,GammaB_sigma,GammaB_nucl,result);
     } else {
       assert(0 && "Weak Operator not correctly specified");
     }
