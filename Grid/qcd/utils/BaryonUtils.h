@@ -961,7 +961,7 @@ void BaryonUtils<FImpl>::BaryonGamma3pt(
       typedef decltype(coalescedRead(vcorr[0])) spinor;
       spinor result=Zero();
       BaryonGamma3ptGroup2Site(Dq_spec_p[0],Dq_ti,Dq_spec_p[1],Dq_tf,GammaJ,GammaBi,GammaBf,wick_contraction,result); 
-      coalescedWrite(vcorr[ss],result);
+      coalescedWrite(vcorr[ss],vcorr[ss]+result);
     });//end loop over lattice sites
   } else if (group == 3) {
     accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
@@ -970,7 +970,7 @@ void BaryonUtils<FImpl>::BaryonGamma3pt(
       typedef decltype(coalescedRead(vcorr[0])) spinor;
       spinor result=Zero();
       BaryonGamma3ptGroup3Site(Dq_spec_p[0],Dq_spec_p[1],Dq_ti,Dq_tf,GammaJ,GammaBi,GammaBf,wick_contraction,result); 
-      coalescedWrite(vcorr[ss],result);
+      coalescedWrite(vcorr[ss],vcorr[ss]+result);
     });//end loop over lattice sites
   }
 
