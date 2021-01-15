@@ -775,7 +775,26 @@ public:
     for(int p=0;p<npoint;p++) AcceleratorViewContainer[p].ViewClose();
   }
   
- CoarsenedMatrix(GridCartesian &CoarseGrid, GridRedBlackCartesian &CoarseRBGrid, int hermitian_=0) 	:
+  CoarsenedMatrix(GridCartesian &CoarseGrid, int hermitian_=0) 	:
+    _grid(&CoarseGrid),
+    _cbgrid(new GridRedBlackCartesian(&CoarseGrid)),
+    geom(CoarseGrid._ndimension),
+    hermitian(hermitian_),
+    Stencil(&CoarseGrid,geom.npoint,Even,geom.directions,geom.displacements,0),
+    StencilEven(_cbgrid,geom.npoint,Even,geom.directions,geom.displacements,0),
+    StencilOdd(_cbgrid,geom.npoint,Odd,geom.directions,geom.displacements,0),
+    A(geom.npoint,&CoarseGrid),
+    Aeven(geom.npoint,_cbgrid),
+    Aodd(geom.npoint,_cbgrid),
+    AselfInv(&CoarseGrid),
+    AselfInvEven(_cbgrid),
+    AselfInvOdd(_cbgrid),
+    dag_factor(nbasis*nbasis)
+  {
+    fillFactor();
+  };
+
+  CoarsenedMatrix(GridCartesian &CoarseGrid, GridRedBlackCartesian &CoarseRBGrid, int hermitian_=0) 	:
 
     _grid(&CoarseGrid),
     _cbgrid(&CoarseRBGrid),
@@ -817,6 +836,8 @@ public:
     typedef Lattice<typename Fobj::tensor_reduced> FineComplexField;
     typedef typename Fobj::scalar_type scalar_type;
 
+    std::cout << GridLogMessage<< "CoarsenMatrix "<< std::endl;
+
     FineComplexField one(FineGrid); one=scalar_type(1.0,0.0);
     FineComplexField zero(FineGrid); zero=scalar_type(0.0,0.0);
 
@@ -847,11 +868,13 @@ public:
 
     CoarseScalar InnerProd(Grid()); 
 
+    std::cout << GridLogMessage<< "CoarsenMatrix Orthog "<< std::endl;
     // Orthogonalise the subblocks over the basis
     blockOrthogonalise(InnerProd,Subspace.subspace);
 
     // Compute the matrix elements of linop between this orthonormal
     // set of vectors.
+    std::cout << GridLogMessage<< "CoarsenMatrix masks "<< std::endl;
     int self_stencil=-1;
     for(int p=0;p<geom.npoint;p++)
     { 
@@ -890,7 +913,7 @@ public:
 
       phi=Subspace.subspace[i];
 
-      //      std::cout << GridLogMessage<< "CoarsenMatrix vector "<<i << std::endl;
+      std::cout << GridLogMessage<< "CoarsenMatrix vector "<<i << std::endl;
       linop.OpDirAll(phi,Mphi_p);
       linop.OpDiag  (phi,Mphi_p[geom.npoint-1]);
 
@@ -919,6 +942,18 @@ public:
 	    autoView( A_self  , A[self_stencil], AcceleratorWrite);
 
 	    accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{ coalescedWrite(A_p[ss](j,i),oZProj_v(ss)); });
+	    if ( hermitian && (disp==-1) ) {
+	      for(int pp=0;pp<geom.npoint;pp++){// Find the opposite link and set <j|A|i> = <i|A|j>*
+		int dirp   = geom.directions[pp];
+		int dispp  = geom.displacements[pp];
+		if ( (dirp==dir) && (dispp==1) ){
+		  auto sft = conjugate(Cshift(oZProj,dir,1));
+		  autoView( sft_v    ,  sft  , AcceleratorWrite);
+		  autoView( A_pp     ,  A[pp], AcceleratorWrite);
+		  accelerator_for(ss, Grid()->oSites(), Fobj::Nsimd(),{ coalescedWrite(A_pp[ss](i,j),sft_v(ss)); });
+		}
+	      }
+	    }
 
 	  }
 	}
@@ -957,31 +992,10 @@ public:
     }
     if(hermitian) {
       std::cout << GridLogMessage << " ForceHermitian, new code "<<std::endl;
-      ForceHermitian();
     }
 
     InvertSelfStencilLink(); std::cout << GridLogMessage << "Coarse self link inverted" << std::endl;
     FillHalfCbs(); std::cout << GridLogMessage << "Coarse half checkerboards filled" << std::endl;
-  }
-
-  void ForceHermitian(void) {
-    CoarseMatrix Diff  (Grid());
-    for(int p=0;p<geom.npoint;p++){
-      int dir   = geom.directions[p];
-      int disp  = geom.displacements[p];
-      if(disp==-1) {
-	// Find the opposite link
-	for(int pp=0;pp<geom.npoint;pp++){
-	  int dirp   = geom.directions[pp];
-	  int dispp  = geom.displacements[pp];
-	  if ( (dirp==dir) && (dispp==1) ){
-	    //	    Diff = adj(Cshift(A[p],dir,1)) - A[pp]; 
-	    //	    std::cout << GridLogMessage<<" Replacing stencil leg "<<pp<<" with leg "<<p<< " diff "<<norm2(Diff) <<std::endl;
-	    A[pp] = adj(Cshift(A[p],dir,1));
-	  }
-	}
-      }
-    }
   }
 
   void InvertSelfStencilLink() {
