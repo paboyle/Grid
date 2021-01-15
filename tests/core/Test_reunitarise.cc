@@ -113,7 +113,8 @@ int main (int argc, char ** argv)
     auto element = PeekIndex<ColourIndex>(U,Nc-1,i);
     element = element * phase;
     PokeIndex<ColourIndex>(U,element,Nc-1,i);
-  }  
+  }
+  U=U*0.1;
   UU=U;
 
   detU= Determinant(U) ;

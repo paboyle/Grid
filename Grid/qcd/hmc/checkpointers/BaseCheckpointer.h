@@ -74,7 +74,7 @@ public:
       conf_file = os.str();
     }
   } 
-
+  virtual ~BaseHmcCheckpointer(){};
   void check_filename(const std::string &filename){
     std::ifstream f(filename.c_str());
     if(!f.good()){
@@ -82,7 +82,6 @@ public:
       abort();
     };
   }
-
   virtual void initialize(const CheckpointerParameters &Params) = 0;
 
   virtual void CheckpointRestore(int traj, typename Impl::Field &U,

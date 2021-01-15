@@ -45,6 +45,7 @@ private:
 
 public:
   INHERIT_GIMPL_TYPES(Implementation);
+  typedef GaugeStatistics<Implementation> GaugeStats;
 
   ILDGHmcCheckpointer(const CheckpointerParameters &Params_) { initialize(Params_); }
 
@@ -78,7 +79,7 @@ public:
       BinaryIO::writeRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
       IldgWriter _IldgWriter(grid->IsBoss());
       _IldgWriter.open(config);
-      _IldgWriter.writeConfiguration(U, traj, config, config);
+      _IldgWriter.writeConfiguration<GaugeStats>(U, traj, config, config);
       _IldgWriter.close();
 
       std::cout << GridLogMessage << "Written ILDG Configuration on " << config
@@ -105,7 +106,7 @@ public:
     FieldMetaData header;
     IldgReader _IldgReader;
     _IldgReader.open(config);
-    _IldgReader.readConfiguration(U,header);  // format from the header
+    _IldgReader.readConfiguration<GaugeStats>(U,header);  // format from the header
     _IldgReader.close();
 
     std::cout << GridLogMessage << "Read ILDG Configuration from " << config
