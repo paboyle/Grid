@@ -103,7 +103,7 @@ int main (int argc, char ** argv)
 
   detU= Determinant(U) ;
   detU=detU-1.0;
-  std::cout << "Determinant before screw up " << norm2(detU)<<std::endl;
+  std::cout << "Determinant defect before screw up " << norm2(detU)<<std::endl;
 
   std::cout << " Screwing up determinant " << std::endl;
 
