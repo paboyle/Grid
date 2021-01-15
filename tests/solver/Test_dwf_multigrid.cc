@@ -370,6 +370,11 @@ int main (int argc, char ** argv)
   GridCartesian *CoarseCoarse4d =  SpaceTimeGrid::makeFourDimGrid(cclatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());;
   GridCartesian *CoarseCoarse5d =  SpaceTimeGrid::makeFiveDimGrid(1,CoarseCoarse4d);
 
+  GridRedBlackCartesian * Coarse4dRB = SpaceTimeGrid::makeFourDimRedBlackGrid(Coarse4d);
+  GridRedBlackCartesian * Coarse5dRB = SpaceTimeGrid::makeFiveDimRedBlackGrid(1,Coarse4d);
+  GridRedBlackCartesian *CoarseCoarse4dRB = SpaceTimeGrid::makeFourDimRedBlackGrid(CoarseCoarse4d);
+  GridRedBlackCartesian *CoarseCoarse5dRB = SpaceTimeGrid::makeFiveDimRedBlackGrid(1,CoarseCoarse4d);
+
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
   std::vector<int> cseeds({5,6,7,8});
@@ -434,8 +439,8 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Building coarse representation of Indef operator" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
 
-  Level1Op LDOp(*Coarse5d,1);   LDOp.CoarsenOperator(FGrid,HermIndefOp,Aggregates);
-  Level1Op LDOpPV(*Coarse5d,1); LDOpPV.CoarsenOperator(FGrid,HermIndefOpPV,Aggregates);
+  Level1Op LDOp(*Coarse5d,*Coarse5dRB,1);   LDOp.CoarsenOperator(FGrid,HermIndefOp,Aggregates);
+  Level1Op LDOpPV(*Coarse5d,*Coarse5dRB,1); LDOpPV.CoarsenOperator(FGrid,HermIndefOpPV,Aggregates);
 
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;

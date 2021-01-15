@@ -262,6 +262,8 @@ int main (int argc, char ** argv)
 
   GridCartesian *Coarse4d =  SpaceTimeGrid::makeFourDimGrid(clatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());;
   GridCartesian *Coarse5d =  SpaceTimeGrid::makeFiveDimGrid(1,Coarse4d);
+  GridRedBlackCartesian * Coarse4dRB = SpaceTimeGrid::makeFourDimRedBlackGrid(Coarse4d);
+  GridRedBlackCartesian * Coarse5dRB = SpaceTimeGrid::makeFiveDimRedBlackGrid(1,Coarse4d);
 
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
@@ -328,7 +330,7 @@ int main (int argc, char ** argv)
 
   Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> HermIndefOp(Ddwf);
 
-  Level1Op LDOp(*Coarse5d,1); LDOp.CoarsenOperator(FGrid,HermIndefOp,Aggregates);
+  Level1Op LDOp(*Coarse5d,*Coarse5dRB,1); LDOp.CoarsenOperator(FGrid,HermIndefOp,Aggregates);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << " Running Coarse grid Lanczos "<< std::endl;
@@ -352,7 +354,9 @@ int main (int argc, char ** argv)
 
   //  ConjugateGradient<CoarseVector>  CoarseCG(0.01,1000);
   
-  ConjugateGradient<CoarseVector>  CoarseCG(0.02,1000);// 14.7s
+  ConjugateGradient<CoarseVector>  CoarseCG(0.01,2000);// 14.7s
+  eval.resize(0);
+  evec.resize(0,Coarse5d);
   DeflatedGuesser<CoarseVector> DeflCoarseGuesser(evec,eval);
   NormalEquations<CoarseVector> DeflCoarseCGNE(LDOp,CoarseCG,DeflCoarseGuesser);
 
