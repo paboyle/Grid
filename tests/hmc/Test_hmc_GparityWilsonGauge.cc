@@ -80,6 +80,9 @@ int main(int argc, char **argv) {
   // that have a complex construction
   // standard
   RealD beta = 5.6 ;
+  std::vector<int> twists(Nd,0);
+  twists[3] = 1;
+  ConjugateGimplD::setDirections(twists);
   ConjugateWilsonGaugeActionR Waction(beta);
    
 

@@ -99,7 +99,7 @@ public:
   virtual Prod* getPtr() = 0;
 
   // add a getReference? 
-  
+  virtual ~HMCModuleBase(){};
   virtual void print_parameters(){};  // default to nothing
 };
 
