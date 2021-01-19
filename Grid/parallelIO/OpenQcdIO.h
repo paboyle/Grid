@@ -154,7 +154,7 @@ public:
     grid->Barrier(); timer.Stop();
     std::cout << Grid::GridLogMessage << "OpenQcdIO::readConfiguration: redistribute overhead " << timer.Elapsed() << std::endl;
 
-    GaugeStatistics(Umu, clone);
+    PeriodicGaugeStatistics Stats; Stats(Umu, clone);
 
     RealD plaq_diff = fabs(clone.plaquette - header.plaquette);
 
