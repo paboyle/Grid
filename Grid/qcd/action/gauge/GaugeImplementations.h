@@ -59,14 +59,14 @@ public:
   }
   static inline GaugeLinkField
   CovShiftIdentityBackward(const GaugeLinkField &Link, int mu) {
-    return Cshift(adj(Link), mu, -1);
+    return PeriodicBC::CovShiftIdentityBackward(Link, mu);
   }
   static inline GaugeLinkField
   CovShiftIdentityForward(const GaugeLinkField &Link, int mu) {
-    return Link;
+    return PeriodicBC::CovShiftIdentityForward(Link,mu);
   }
   static inline GaugeLinkField ShiftStaple(const GaugeLinkField &Link, int mu) {
-    return Cshift(Link, mu, 1);
+    return PeriodicBC::ShiftStaple(Link,mu);
   }
 
   static inline bool isPeriodicGaugeField(void) { return true; }
@@ -74,7 +74,13 @@ public:
 
 // Composition with smeared link, bc's etc.. probably need multiple inheritance
 // Variable precision "S" and variable Nc
-template <class GimplTypes> class ConjugateGaugeImpl : public GimplTypes {
+class ConjugateGaugeImplBase {
+protected:
+  static std::vector<int> _conjDirs;
+};
+
+  template <class GimplTypes> class ConjugateGaugeImpl : public GimplTypes, ConjugateGaugeImplBase {
+private:
 public:
   INHERIT_GIMPL_TYPES(GimplTypes);
 
@@ -84,47 +90,56 @@ public:
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
   template <class covariant>
   static Lattice<covariant> CovShiftForward(const GaugeLinkField &Link, int mu,
-                                            const Lattice<covariant> &field) {
-    return ConjugateBC::CovShiftForward(Link, mu, field);
+                                            const Lattice<covariant> &field)
+  {
+    assert(_conjDirs.size() == Nd);
+    if(_conjDirs[mu]) 
+      return ConjugateBC::CovShiftForward(Link, mu, field);
+    else
+      return PeriodicBC::CovShiftForward(Link, mu, field);
   }
 
   template <class covariant>
   static Lattice<covariant> CovShiftBackward(const GaugeLinkField &Link, int mu,
-                                             const Lattice<covariant> &field) {
-    return ConjugateBC::CovShiftBackward(Link, mu, field);
+                                             const Lattice<covariant> &field)
+  {
+    assert(_conjDirs.size() == Nd);
+    if(_conjDirs[mu]) 
+      return ConjugateBC::CovShiftBackward(Link, mu, field);
+    else 
+      return PeriodicBC::CovShiftBackward(Link, mu, field);
   }
 
   static inline GaugeLinkField
-  CovShiftIdentityBackward(const GaugeLinkField &Link, int mu) {
-    GridBase *grid = Link.Grid();
-    int Lmu = grid->GlobalDimensions()[mu] - 1;
-
-    Lattice<iScalar<vInteger>> coor(grid);
-    LatticeCoordinate(coor, mu);
-
-    GaugeLinkField tmp(grid);
-    tmp = adj(Link);
-    tmp = where(coor == Lmu, conjugate(tmp), tmp);
-    return Cshift(tmp, mu, -1); // moves towards positive mu
+  CovShiftIdentityBackward(const GaugeLinkField &Link, int mu)
+  {
+    assert(_conjDirs.size() == Nd);
+    if(_conjDirs[mu]) 
+      return ConjugateBC::CovShiftIdentityBackward(Link, mu);
+    else 
+      return PeriodicBC::CovShiftIdentityBackward(Link, mu);
   }
   static inline GaugeLinkField
-  CovShiftIdentityForward(const GaugeLinkField &Link, int mu) {
-    return Link;
+  CovShiftIdentityForward(const GaugeLinkField &Link, int mu)
+  {
+    assert(_conjDirs.size() == Nd);
+    if(_conjDirs[mu]) 
+      return ConjugateBC::CovShiftIdentityForward(Link,mu);
+    else
+      return PeriodicBC::CovShiftIdentityForward(Link,mu);
   }
 
-  static inline GaugeLinkField ShiftStaple(const GaugeLinkField &Link, int mu) {
-    GridBase *grid = Link.Grid();
-    int Lmu = grid->GlobalDimensions()[mu] - 1;
-
-    Lattice<iScalar<vInteger>> coor(grid);
-    LatticeCoordinate(coor, mu);
-
-    GaugeLinkField tmp(grid);
-    tmp = Cshift(Link, mu, 1);
-    tmp = where(coor == Lmu, conjugate(tmp), tmp);
-    return tmp;
+  static inline GaugeLinkField ShiftStaple(const GaugeLinkField &Link, int mu)
+  {
+    assert(_conjDirs.size() == Nd);
+    if(_conjDirs[mu]) 
+      return ConjugateBC::ShiftStaple(Link,mu);
+    else     
+      return PeriodicBC::ShiftStaple(Link,mu);
   }
 
+  static inline void       setDirections(std::vector<int> &conjDirs) { _conjDirs=conjDirs; }
+  static inline std::vector<int> getDirections(void) { return _conjDirs; }
   static inline bool isPeriodicGaugeField(void) { return false; }
 };
 

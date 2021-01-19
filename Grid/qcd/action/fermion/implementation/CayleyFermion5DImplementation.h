@@ -642,7 +642,7 @@ void CayleyFermion5D<Impl>::ContractConservedCurrent( PropagatorField &q_in_1,
 						      Current curr_type,
 						      unsigned int mu)
 {
-#if (!defined(GRID_CUDA)) && (!defined(GRID_HIP))
+#if (!defined(GRID_HIP))
   Gamma::Algebra Gmu [] = {
     Gamma::Algebra::GammaX,
     Gamma::Algebra::GammaY,
@@ -826,7 +826,7 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   }
 #endif
 
-#if (!defined(GRID_CUDA)) && (!defined(GRID_HIP))
+#if (!defined(GRID_HIP))
   int tshift = (mu == Nd-1) ? 1 : 0;
   ////////////////////////////////////////////////
   // GENERAL CAYLEY CASE
