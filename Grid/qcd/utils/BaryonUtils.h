@@ -950,7 +950,6 @@ void BaryonUtils<FImpl>::BaryonGamma3pt(
       typedef decltype(coalescedRead(vcorr[0])) spinor;
       spinor result=Zero();
       BaryonGamma3ptGroup1Site(Dq_ti,Dq_spec_p[0],Dq_spec_p[1],Dq_tf,GammaJ,GammaBi,GammaBf,wick_contraction,result);
-      //coalescedWrite(vcorr[ss],vcorr[ss]+result); //diff by factor 10???
       coalescedWrite(vcorr[ss],coalescedRead(vcorr[ss])+result);
     });//end loop over lattice sites
 
