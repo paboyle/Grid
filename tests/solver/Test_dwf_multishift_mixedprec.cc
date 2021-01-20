@@ -127,7 +127,21 @@ void run_test(int argc, char ** argv, const typename SpeciesD::ImplParams &param
   mcg(HermOpEO_d, src_o_d, results_o_d);
   double t2=usecond();
 
-  std::cout<<GridLogMessage << "Test: Total usec    =   "<< (t2-t1)<<std::endl;
+  //Crosscheck double and mixed prec results
+  ConjugateGradientMultiShift<FermionFieldD> dmcg(10000, shifts);
+  std::vector<FermionFieldD> results_o_d_2(order, FrbGrid_d);
+  dmcg(HermOpEO_d, src_o_d, results_o_d_2);
+  double t3=usecond();
+
+  std::cout << GridLogMessage << "Comparison of mixed prec results to double prec results |mixed - double|^2 :" << std::endl;
+  FermionFieldD tmp(FrbGrid_d);
+  for(int i=0;i<order;i++){
+    RealD ndiff = axpy_norm(tmp, -1., results_o_d[i], results_o_d_2[i]);
+    std::cout << i << " " << ndiff << std::endl;
+  }
+
+  std::cout<<GridLogMessage << "Mixed precision algorithm: Total usec    =   "<< (t2-t1)<<std::endl;
+  std::cout<<GridLogMessage << "Double precision algorithm: Total usec    =   "<< (t3-t2)<<std::endl;
 }
 
 

@@ -386,12 +386,13 @@ public:
 	}
 
 	std::cout << GridLogMessage << "ConjugateGradientMultiShiftMixedPrec: Time Breakdown for body"<<std::endl;
-	std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed()     <<std::endl;
-	std::cout << GridLogMessage << "\tAXPY    " << AXPYTimer.Elapsed()     <<std::endl;
-	std::cout << GridLogMessage << "\tMatrix    " << MatrixTimer.Elapsed()     <<std::endl;
-	std::cout << GridLogMessage << "\tShift    " << ShiftTimer.Elapsed()     <<std::endl;
-	std::cout << GridLogMessage << "\tPrecision Change " << PrecChangeTimer.Elapsed()     <<std::endl;
+	std::cout << GridLogMessage << "\tSolver    " << SolverTimer.Elapsed()     <<std::endl;
+	std::cout << GridLogMessage << "\t\tAXPY    " << AXPYTimer.Elapsed()     <<std::endl;
+	std::cout << GridLogMessage << "\t\tMatrix    " << MatrixTimer.Elapsed()     <<std::endl;
+	std::cout << GridLogMessage << "\t\tShift    " << ShiftTimer.Elapsed()     <<std::endl;
+	std::cout << GridLogMessage << "\t\tPrecision Change " << PrecChangeTimer.Elapsed()     <<std::endl;
 	std::cout << GridLogMessage << "\tFinal Cleanup " << CleanupTimer.Elapsed()     <<std::endl;
+	std::cout << GridLogMessage << "\tSolver+Cleanup " << SolverTimer.Elapsed() + CleanupTimer.Elapsed() << std::endl;
 
 	IterationsToComplete = k;	
 
