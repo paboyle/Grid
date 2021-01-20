@@ -29,10 +29,8 @@ Author: Christopher Kelly <ckelly@bnl.gov>
 
 using namespace Grid;
 
-int main (int argc, char ** argv)
-{
-  Grid_init(&argc, &argv);
-
+template<typename SpeciesD, typename SpeciesF>
+void run_test(int argc, char ** argv, const typename SpeciesD::ImplParams &params){
   const int Ls = 16;
   GridCartesian* UGrid_d = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd, vComplexD::Nsimd()), GridDefaultMpi());
   GridRedBlackCartesian* UrbGrid_d = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid_d);
@@ -44,6 +42,9 @@ int main (int argc, char ** argv)
   GridCartesian* FGrid_f = SpaceTimeGrid::makeFiveDimGrid(Ls, UGrid_f);
   GridRedBlackCartesian* FrbGrid_f = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls, UGrid_f);
 
+  typedef typename SpeciesD::FermionField FermionFieldD;
+  typedef typename SpeciesF::FermionField FermionFieldF;
+  
   std::vector<int> seeds4({1, 2, 3, 4});
   std::vector<int> seeds5({5, 6, 7, 8});
   GridParallelRNG RNG5(FGrid_d);
@@ -51,11 +52,26 @@ int main (int argc, char ** argv)
   GridParallelRNG RNG4(UGrid_d);
   RNG4.SeedFixedIntegers(seeds4);
 
-  LatticeFermionD src_d(FGrid_d);
+  FermionFieldD src_d(FGrid_d);
   random(RNG5, src_d);
 
   LatticeGaugeFieldD Umu_d(UGrid_d);
-  SU<Nc>::HotConfiguration(RNG4, Umu_d);
+
+  bool cfg_loaded=false;
+  for(int i=1;i<argc;i++){
+    if(std::string(argv[i]) == "--load_config"){
+      assert(i != argc-1);
+      std::string file = argv[i+1];
+      NerscIO io;
+      FieldMetaData metadata;
+      io.readConfiguration(Umu_d, metadata, file);
+      cfg_loaded=true;
+      break;
+    }
+  }
+
+  if(!cfg_loaded)
+    SU<Nc>::HotConfiguration(RNG4, Umu_d);
 
   LatticeGaugeFieldF Umu_f(UGrid_f);
   precisionChange(Umu_f, Umu_d);
@@ -64,14 +80,14 @@ int main (int argc, char ** argv)
 
   RealD mass = 0.01;
   RealD M5 = 1.8;
-  DomainWallFermionD Ddwf_d(Umu_d, *FGrid_d, *FrbGrid_d, *UGrid_d, *UrbGrid_d, mass, M5);
-  DomainWallFermionF Ddwf_f(Umu_f, *FGrid_f, *FrbGrid_f, *UGrid_f, *UrbGrid_f, mass, M5);
+  SpeciesD Ddwf_d(Umu_d, *FGrid_d, *FrbGrid_d, *UGrid_d, *UrbGrid_d, mass, M5, params);
+  SpeciesF Ddwf_f(Umu_f, *FGrid_f, *FrbGrid_f, *UGrid_f, *UrbGrid_f, mass, M5, params);
 
-  LatticeFermionD src_o_d(FrbGrid_d);
+  FermionFieldD src_o_d(FrbGrid_d);
   pickCheckerboard(Odd, src_o_d, src_d);
 
-  SchurDiagMooeeOperator<DomainWallFermionD, LatticeFermionD> HermOpEO_d(Ddwf_d);
-  SchurDiagMooeeOperator<DomainWallFermionF, LatticeFermionF> HermOpEO_f(Ddwf_f);
+  SchurDiagMooeeOperator<SpeciesD, FermionFieldD> HermOpEO_d(Ddwf_d);
+  SchurDiagMooeeOperator<SpeciesF, FermionFieldF> HermOpEO_f(Ddwf_f);
 
   AlgRemez remez(1e-4, 64, 50);
   int order = 15;
@@ -81,13 +97,45 @@ int main (int argc, char ** argv)
 
   int relup_freq = 50;
   double t1=usecond();
-  ConjugateGradientMultiShiftMixedPrec<LatticeFermionD,LatticeFermionF> mcg(10000, shifts, FrbGrid_f, HermOpEO_f, relup_freq);
+  ConjugateGradientMultiShiftMixedPrec<FermionFieldD,FermionFieldF> mcg(10000, shifts, FrbGrid_f, HermOpEO_f, relup_freq);
 
-  std::vector<LatticeFermionD> results_o_d(order, FrbGrid_d);
+  std::vector<FermionFieldD> results_o_d(order, FrbGrid_d);
   mcg(HermOpEO_d, src_o_d, results_o_d);
   double t2=usecond();
 
   std::cout<<GridLogMessage << "Test: Total usec    =   "<< (t2-t1)<<std::endl;
+}
+
+
+
+
+
+int main (int argc, char ** argv)
+{
+  Grid_init(&argc, &argv);
+
+  bool gparity = false;
+  int gpdir;
+
+  for(int i=1;i<argc;i++){
+    std::string arg(argv[i]);
+    if(arg == "--Gparity"){
+      assert(i!=argc-1);
+      gpdir = std::stoi(argv[i+1]);
+      assert(gpdir >= 0 && gpdir <= 2); //spatial!
+      gparity = true;
+    }
+  }
+  if(gparity){
+    std::cout << "Running test with G-parity BCs in " << gpdir << " direction" << std::endl;
+    GparityWilsonImplParams params;
+    params.twists[gpdir] = 1;
+    run_test<GparityDomainWallFermionD, GparityDomainWallFermionF>(argc,argv,params);
+  }else{
+    std::cout << "Running test with periodic BCs" << std::endl;
+    WilsonImplParams params;
+    run_test<DomainWallFermionD, DomainWallFermionF>(argc,argv,params);
+  }
 
   Grid_finalize();
 }
