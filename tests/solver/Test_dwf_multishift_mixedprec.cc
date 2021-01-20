@@ -29,7 +29,7 @@ Author: Christopher Kelly <ckelly@bnl.gov>
 
 using namespace Grid;
 
-template<typename SpeciesD, typename SpeciesF>
+template<typename SpeciesD, typename SpeciesF, typename GaugeStatisticsType>
 void run_test(int argc, char ** argv, const typename SpeciesD::ImplParams &params){
   const int Ls = 16;
   GridCartesian* UGrid_d = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd, vComplexD::Nsimd()), GridDefaultMpi());
@@ -57,6 +57,15 @@ void run_test(int argc, char ** argv, const typename SpeciesD::ImplParams &param
 
   LatticeGaugeFieldD Umu_d(UGrid_d);
 
+  //CPS-created G-parity ensembles have a factor of 2 error in the plaquette that causes the read to fail unless we workaround it
+  bool gparity_plaquette_fix = false;
+  for(int i=1;i<argc;i++){
+    if(std::string(argv[i]) == "--gparity_plaquette_fix"){
+      gparity_plaquette_fix=true;
+      break;
+    }
+  }
+
   bool cfg_loaded=false;
   for(int i=1;i<argc;i++){
     if(std::string(argv[i]) == "--load_config"){
@@ -64,7 +73,22 @@ void run_test(int argc, char ** argv, const typename SpeciesD::ImplParams &param
       std::string file = argv[i+1];
       NerscIO io;
       FieldMetaData metadata;
-      io.readConfiguration(Umu_d, metadata, file);
+
+      if(gparity_plaquette_fix) NerscIO::exitOnReadPlaquetteMismatch() = false;
+
+      io.readConfiguration<GaugeStatisticsType>(Umu_d, metadata, file);
+
+      if(gparity_plaquette_fix){
+	metadata.plaquette *= 2.; //correct header value
+
+	//Get the true plaquette
+	FieldMetaData tmp;
+	GaugeStatisticsType gs; gs(Umu_d, tmp);
+	
+	std::cout << "After correction: plaqs " << tmp.plaquette << " " << metadata.plaquette << std::endl;
+	assert(fabs(tmp.plaquette -metadata.plaquette ) < 1.0e-5 );
+      }
+
       cfg_loaded=true;
       break;
     }
@@ -130,11 +154,16 @@ int main (int argc, char ** argv)
     std::cout << "Running test with G-parity BCs in " << gpdir << " direction" << std::endl;
     GparityWilsonImplParams params;
     params.twists[gpdir] = 1;
-    run_test<GparityDomainWallFermionD, GparityDomainWallFermionF>(argc,argv,params);
+    
+    std::vector<int> conj_dirs(Nd,0);
+    conj_dirs[gpdir] = 1;
+    ConjugateGimplD::setDirections(conj_dirs);
+
+    run_test<GparityDomainWallFermionD, GparityDomainWallFermionF, ConjugateGaugeStatistics>(argc,argv,params);
   }else{
     std::cout << "Running test with periodic BCs" << std::endl;
     WilsonImplParams params;
-    run_test<DomainWallFermionD, DomainWallFermionF>(argc,argv,params);
+    run_test<DomainWallFermionD, DomainWallFermionF, PeriodicGaugeStatistics>(argc,argv,params);
   }
 
   Grid_finalize();
