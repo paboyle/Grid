@@ -154,8 +154,8 @@ void axpby_ssp_pminus(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,co
   accelerator_for(sss,nloop,vobj::Nsimd(),{
     uint64_t ss = sss*Ls;
     decltype(coalescedRead(y_v[ss+sp])) tmp;
-    spProj5m(tmp,y_v(ss+sp));
-    tmp = a*x_v(ss+s)+b*tmp;
+    spProj5m(tmp,y_v(ss+sp)); 
+   tmp = a*x_v(ss+s)+b*tmp;
     coalescedWrite(z_v[ss+s],tmp);
   });
 }
@@ -188,7 +188,6 @@ void G5R5(Lattice<vobj> &z,const Lattice<vobj> &x)
   z.Checkerboard() = x.Checkerboard();
   conformable(x,z);
   int Ls = grid->_rdimensions[0];
-  Gamma G5(Gamma::Algebra::Gamma5);
   autoView( x_v, x, AcceleratorRead);
   autoView( z_v, z, AcceleratorWrite);
   uint64_t nloop = grid->oSites()/Ls;
@@ -196,7 +195,13 @@ void G5R5(Lattice<vobj> &z,const Lattice<vobj> &x)
     uint64_t ss = sss*Ls;
     for(int s=0;s<Ls;s++){
       int sp = Ls-1-s;
-      coalescedWrite(z_v[ss+sp],G5*x_v(ss+s));
+      auto tmp = x_v(ss+s);
+      decltype(tmp) tmp_p;
+      decltype(tmp) tmp_m;
+      spProj5p(tmp_p,tmp);
+      spProj5m(tmp_m,tmp);
+      // Use of spProj5m, 5p captures the coarse space too
+      coalescedWrite(z_v[ss+sp],tmp_p - tmp_m);
     }
   });
 }
@@ -208,10 +213,20 @@ void G5C(Lattice<vobj> &z, const Lattice<vobj> &x)
   z.Checkerboard() = x.Checkerboard();
   conformable(x, z);
 
-  Gamma G5(Gamma::Algebra::Gamma5);
-  z = G5 * x;
+  autoView( x_v, x, AcceleratorRead);
+  autoView( z_v, z, AcceleratorWrite);
+  uint64_t nloop = grid->oSites();
+  accelerator_for(ss,nloop,vobj::Nsimd(),{
+    auto tmp = x_v(ss);
+    decltype(tmp) tmp_p;
+    decltype(tmp) tmp_m;
+    spProj5p(tmp_p,tmp);
+    spProj5m(tmp_m,tmp);
+    coalescedWrite(z_v[ss],tmp_p - tmp_m);
+  });
 }
 
+/*
 template<class CComplex, int nbasis>
 void G5C(Lattice<iVector<CComplex, nbasis>> &z, const Lattice<iVector<CComplex, nbasis>> &x)
 {
@@ -234,6 +249,7 @@ void G5C(Lattice<iVector<CComplex, nbasis>> &z, const Lattice<iVector<CComplex, 
     }
   });
 }
+*/
 
 NAMESPACE_END(Grid);
 

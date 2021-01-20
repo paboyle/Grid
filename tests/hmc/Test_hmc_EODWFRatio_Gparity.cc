@@ -81,6 +81,10 @@ int main(int argc, char **argv) {
   // that have a complex construction
   // standard
   RealD beta = 5.6 ;
+  const int nu = 3;
+  std::vector<int> twists(Nd,0);
+  twists[nu] = 1;
+  ConjugateGimplD::setDirections(twists);
   ConjugateWilsonGaugeActionR Waction(beta);
 
   const int Ls = 8;
@@ -93,9 +97,6 @@ int main(int argc, char **argv) {
   // temporarily need a gauge field
   LatticeGaugeField U(GridPtr);
 
-  const int nu = 3;
-  std::vector<int> twists(Nd,0);
-  twists[nu] = 1;
   FermionAction::ImplParams params;
   params.twists = twists;
   Real mass=0.04;
