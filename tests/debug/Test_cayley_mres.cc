@@ -103,10 +103,11 @@ int main (int argc, char ** argv)
   GridRedBlackCartesian * FrbGridF = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGridF);
 
 
-  std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
-  GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
+  GridParallelRNG          RNG4(UGrid);
+  std::vector<int> seeds4({1,2,3,4}); RNG4.SeedFixedIntegers(seeds4);
+  //const std::string seeds4{ "test-gauge-3000" }; RNG4.SeedUniqueString( seeds4 );
 
   LatticeGaugeField Umu(UGrid);
   if( argc > 1 && argv[1][0] != '-' )
@@ -117,9 +118,9 @@ int main (int argc, char ** argv)
   }
   else
   {
-    std::cout<<GridLogMessage <<"Using cold configuration"<<std::endl;
-    SU<Nc>::ColdConfiguration(Umu);
-    //  SU<Nc>::HotConfiguration(RNG4,Umu);
+    std::cout<<GridLogMessage <<"Using hot configuration"<<std::endl;
+    // SU<Nc>::ColdConfiguration(Umu);
+    SU<Nc>::HotConfiguration(RNG4,Umu);
   }
 
   RealD mass=0.3;
