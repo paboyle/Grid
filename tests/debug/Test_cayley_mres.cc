@@ -117,8 +117,8 @@ int main (int argc, char ** argv)
   else
   {
     std::cout<<GridLogMessage <<"Using cold configuration"<<std::endl;
-    SU<Nc>::ColdConfiguration(Umu);
-    //  SU<Nc>::HotConfiguration(RNG4,Umu);
+    //SU<Nc>::ColdConfiguration(Umu);
+    SU<Nc>::HotConfiguration(RNG4,Umu);
   }
 
   RealD mass=0.3;
