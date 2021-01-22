@@ -106,11 +106,15 @@ public:
 			    const _SpinorField & phi,
 			    int mu)
   {
+    const int Nsimd = SiteHalfSpinor::Nsimd();
     autoView( out_v, out, AcceleratorWrite);
     autoView( phi_v, phi, AcceleratorRead);
     autoView( Umu_v, Umu, AcceleratorRead);
-    accelerator_for(sss,out.Grid()->oSites(),1,{
-	multLink(out_v[sss],Umu_v[sss],phi_v[sss],mu);
+    typedef decltype(coalescedRead(out_v[0]))   calcSpinor;
+    accelerator_for(sss,out.Grid()->oSites(),Nsimd,{
+	calcSpinor tmp;
+	multLink(tmp,Umu_v[sss],phi_v(sss),mu);
+	coalescedWrite(out_v[sss],tmp);
     });
   }
 					   
