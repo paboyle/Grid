@@ -79,6 +79,27 @@ NAMESPACE_BEGIN(Grid);
       FermionField PhiEven; // the pseudo fermion field for this trajectory
       FermionField PhiOdd; // the pseudo fermion field for this trajectory
 
+    protected:
+      static constexpr bool Numerator = true;
+      static constexpr bool Denominator = false;
+
+      //Allow derived classes to override the multishift CG
+      virtual void multiShiftInverse(bool numerator, const MultiShiftFunction &approx, const Integer MaxIter, const FermionField &in, FermionField &out){
+	SchurDifferentiableOperator<Impl> schurOp(numerator ? NumOp : DenOp);
+	ConjugateGradientMultiShift<FermionField> msCG(MaxIter, approx);
+	msCG(schurOp,in, out);
+      }
+      virtual void multiShiftInverse(bool numerator, const MultiShiftFunction &approx, const Integer MaxIter, const FermionField &in, std::vector<FermionField> &out_elems, FermionField &out){
+	SchurDifferentiableOperator<Impl> schurOp(numerator ? NumOp : DenOp);
+	ConjugateGradientMultiShift<FermionField> msCG(MaxIter, approx);
+	msCG(schurOp,in, out_elems, out);
+      }
+      //Allow derived classes to override the gauge import
+      virtual void ImportGauge(const GaugeField &U){
+	NumOp.ImportGauge(U);
+	DenOp.ImportGauge(U);
+      }
+      
     public:
 
       GeneralEvenOddRatioRationalPseudoFermionAction(FermionOperator<Impl>  &_NumOp, 
@@ -188,22 +209,16 @@ NAMESPACE_BEGIN(Grid);
 	pickCheckerboard(Even,etaEven,eta);
 	pickCheckerboard(Odd,etaOdd,eta);
 
-	NumOp.ImportGauge(U);
-	DenOp.ImportGauge(U);
-
+	ImportGauge(U);
 
 	// MdagM^1/(2*inv_pow) eta
 	std::cout<<GridLogMessage << action_name() << " refresh: doing (M^dag M)^{1/" << 2*param.inv_pow << "} eta" << std::endl;
-	SchurDifferentiableOperator<Impl> MdagM(DenOp);
-	ConjugateGradientMultiShift<FermionField> msCG_M(param.MaxIter,ApproxHalfPowerAction);
-	msCG_M(MdagM,etaOdd,tmp);
+	multiShiftInverse(Denominator, ApproxHalfPowerAction, param.MaxIter, etaOdd, tmp);
 
 	// VdagV^-1/(2*inv_pow) MdagM^1/(2*inv_pow) eta
 	std::cout<<GridLogMessage << action_name() << " refresh: doing (V^dag V)^{-1/" << 2*param.inv_pow << "} ( (M^dag M)^{1/" << 2*param.inv_pow << "} eta)" << std::endl;
-	SchurDifferentiableOperator<Impl> VdagV(NumOp);
-	ConjugateGradientMultiShift<FermionField> msCG_V(param.MaxIter,ApproxNegHalfPowerAction);
-	msCG_V(VdagV,tmp,PhiOdd);
-
+	multiShiftInverse(Numerator, ApproxNegHalfPowerAction, param.MaxIter, tmp, PhiOdd);
+		
 	assert(NumOp.ConstEE() == 1);
 	assert(DenOp.ConstEE() == 1);
 	PhiEven = Zero();
@@ -215,29 +230,25 @@ NAMESPACE_BEGIN(Grid);
       //////////////////////////////////////////////////////
       virtual RealD S(const GaugeField &U) {
 	std::cout<<GridLogMessage << action_name() << " compute action: starting" << std::endl;
-	NumOp.ImportGauge(U);
-	DenOp.ImportGauge(U);
+	ImportGauge(U);
 
 	FermionField X(NumOp.FermionRedBlackGrid());
 	FermionField Y(NumOp.FermionRedBlackGrid());
 
 	// VdagV^1/(2*inv_pow) Phi
 	std::cout<<GridLogMessage << action_name() << " compute action: doing (V^dag V)^{1/" << 2*param.inv_pow << "} Phi" << std::endl;
-	SchurDifferentiableOperator<Impl> VdagV(NumOp);
-	ConjugateGradientMultiShift<FermionField> msCG_V(param.MaxIter,ApproxHalfPowerAction);
-	msCG_V(VdagV,PhiOdd,X);
+	multiShiftInverse(Numerator, ApproxHalfPowerAction, param.MaxIter, PhiOdd,X);
 
 	// MdagM^-1/(2*inv_pow) VdagV^1/(2*inv_pow) Phi
 	std::cout<<GridLogMessage << action_name() << " compute action: doing (M^dag M)^{-1/" << 2*param.inv_pow << "} ( (V^dag V)^{1/" << 2*param.inv_pow << "} Phi)" << std::endl;
-	SchurDifferentiableOperator<Impl> MdagM(DenOp);
-	ConjugateGradientMultiShift<FermionField> msCG_M(param.MaxIter,ApproxNegHalfPowerAction);
-	msCG_M(MdagM,X,Y);
+	multiShiftInverse(Denominator, ApproxNegHalfPowerAction, param.MaxIter, X,Y);
 
 	// Randomly apply rational bounds checks.
 	if ( param.BoundsCheckFreq != 0 && (rand()%param.BoundsCheckFreq)==0 ) { 
 	  std::cout<<GridLogMessage << action_name() << " compute action: doing bounds check" << std::endl;
 	  FermionField gauss(NumOp.FermionRedBlackGrid());
 	  gauss = PhiOdd;
+	  SchurDifferentiableOperator<Impl> MdagM(DenOp);
 	  HighBoundCheck(MdagM,gauss,param.hi);
 	  InversePowerBoundsCheck(param.inv_pow,param.MaxIter,param.action_tolerance*100,MdagM,gauss,ApproxNegPowerAction);
 	}
@@ -295,21 +306,21 @@ NAMESPACE_BEGIN(Grid);
 
 	GaugeField   tmp(NumOp.GaugeGrid());
 
-	NumOp.ImportGauge(U);
-	DenOp.ImportGauge(U);
-
-	SchurDifferentiableOperator<Impl> VdagV(NumOp);
-	SchurDifferentiableOperator<Impl> MdagM(DenOp);
-
-	ConjugateGradientMultiShift<FermionField> msCG_V(param.MaxIter,ApproxHalfPowerMD);
-	ConjugateGradientMultiShift<FermionField> msCG_M(param.MaxIter,ApproxNegPowerMD);
+	ImportGauge(U);
 
 	std::cout<<GridLogMessage << action_name() << " deriv: doing (V^dag V)^{1/" << 2*param.inv_pow << "} Phi" << std::endl;
-	msCG_V(VdagV,PhiOdd,MpvPhi_k,MpvPhi);
+	multiShiftInverse(Numerator, ApproxHalfPowerMD, param.MaxIter, PhiOdd,MpvPhi_k,MpvPhi);
+
 	std::cout<<GridLogMessage << action_name() << " deriv: doing (M^dag M)^{-1/" << param.inv_pow << "} ( (V^dag V)^{1/" << 2*param.inv_pow << "} Phi)" << std::endl;
-	msCG_M(MdagM,MpvPhi,MfMpvPhi_k,MfMpvPhi);
+	multiShiftInverse(Denominator, ApproxNegPowerMD, param.MaxIter, MpvPhi,MfMpvPhi_k,MfMpvPhi);
+
 	std::cout<<GridLogMessage << action_name() << " deriv: doing (V^dag V)^{1/" << 2*param.inv_pow << "} ( (M^dag M)^{-1/" << param.inv_pow << "} (V^dag V)^{1/" << 2*param.inv_pow << "} Phi)" << std::endl;
-	msCG_V(VdagV,MfMpvPhi,MpvMfMpvPhi_k,MpvMfMpvPhi);
+	multiShiftInverse(Numerator, ApproxHalfPowerMD, param.MaxIter, MfMpvPhi,MpvMfMpvPhi_k,MpvMfMpvPhi);
+		
+
+	SchurDifferentiableOperator<Impl> MdagM(DenOp);
+	SchurDifferentiableOperator<Impl> VdagV(NumOp);
+
 
 	RealD ak;
 

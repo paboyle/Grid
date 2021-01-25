@@ -52,7 +52,7 @@ public:
   MultiShiftFunction shifts;
   std::vector<RealD> TrueResidualShift;
 
-  ConjugateGradientMultiShift(Integer maxit,MultiShiftFunction &_shifts) : 
+  ConjugateGradientMultiShift(Integer maxit, const MultiShiftFunction &_shifts) : 
     MaxIterations(maxit),
     shifts(_shifts)
   { 

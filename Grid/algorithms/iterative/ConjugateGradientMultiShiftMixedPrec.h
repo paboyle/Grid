@@ -93,7 +93,7 @@ public:
   GridBase* SinglePrecGrid; //Grid for single-precision fields
   LinearOperatorBase<FieldF> &Linop_f; //single precision
 
-  ConjugateGradientMultiShiftMixedPrec(Integer maxit, MultiShiftFunction &_shifts,
+  ConjugateGradientMultiShiftMixedPrec(Integer maxit, const MultiShiftFunction &_shifts,
 				       GridBase* _SinglePrecGrid, LinearOperatorBase<FieldF> &_Linop_f,
 				       int _ReliableUpdateFreq
 				       ) : 
