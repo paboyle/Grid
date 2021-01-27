@@ -52,7 +52,7 @@ public:
          const Gamma GammaA_right,
          const Gamma GammaB_right,
          const int parity,
-         const bool * wick_contractions,
+         const int wick_contractions,
          robj &result);
   template <class mobj, class robj> accelerator_inline
   static void BaryonSiteMatrix(const mobj &D1,
@@ -62,12 +62,12 @@ public:
          const Gamma GammaB_left,
          const Gamma GammaA_right,
          const Gamma GammaB_right,
-         const bool * wick_contractions,
+         const int wick_contractions,
          robj &result);
   public:
   static void WickContractions(std::string qi, 
                  std::string qf, 
-                 bool* wick_contractions);
+                 int &wick_contractions);
   static void ContractBaryons(const PropagatorField &q1_left,
          const PropagatorField &q2_left,
          const PropagatorField &q3_left,
@@ -75,7 +75,7 @@ public:
          const Gamma GammaB_left,
          const Gamma GammaA_right,
          const Gamma GammaB_right,
-         const bool* wick_contractions,
+         const int wick_contractions,
          const int parity,
          ComplexField &baryon_corr);
   static void ContractBaryonsMatrix(const PropagatorField &q1_left,
@@ -85,7 +85,7 @@ public:
          const Gamma GammaB_left,
          const Gamma GammaA_right,
          const Gamma GammaB_right,
-         const bool* wick_contractions,
+         const int wick_contractions,
          SpinMatrixField &baryon_corr);
   template <class mobj, class robj>
   static void ContractBaryonsSliced(const mobj &D1,
@@ -95,7 +95,7 @@ public:
          const Gamma GammaB_left,
          const Gamma GammaA_right,
          const Gamma GammaB_right,
-         const bool* wick_contractions,
+         const int wick_contractions,
          const int parity,
          const int nt,
          robj &result);
@@ -107,7 +107,7 @@ public:
          const Gamma GammaB_left,
          const Gamma GammaA_right,
          const Gamma GammaB_right,
-         const bool* wick_contractions,
+         const int wick_contractions,
          const int nt,
          robj &result);
   private:
@@ -234,7 +234,7 @@ void BaryonUtils<FImpl>::BaryonSite(const mobj &D1,
                 const Gamma GammaA_f,
                 const Gamma GammaB_f,
                 const int parity,
-                const bool * wick_contraction,
+                const int wick_contraction,
                 robj &result)
 {
 
@@ -268,7 +268,7 @@ void BaryonUtils<FImpl>::BaryonSite(const mobj &D1,
 
       ee = Real(eSgn_f * eSgn_i); //epsilon_sgn[ie_n] * epsilon_sgn[ie_s];
       //This is the \delta_{456}^{123} part
-      if (wick_contraction[0]){
+      if (wick_contraction & 1){
         for (int rho=0; rho<Ns; rho++){
           auto GAf_D1_GAi_P_rr_cc = GAf_D1_GAi_P()(rho,rho)(c_f,c_i);
           for (int alpha_f=0; alpha_f<Ns; alpha_f++){
@@ -280,7 +280,7 @@ void BaryonUtils<FImpl>::BaryonSite(const mobj &D1,
         }
       }   
       //This is the \delta_{456}^{231} part
-      if (wick_contraction[1]){
+      if (wick_contraction & 2){
         for (int rho=0; rho<Ns; rho++){
         for (int alpha_f=0; alpha_f<Ns; alpha_f++){
           auto D1_GAi_P_ar_ac = D1_GAi_P()(alpha_f,rho)(a_f,c_i);
@@ -292,7 +292,7 @@ void BaryonUtils<FImpl>::BaryonSite(const mobj &D1,
         }}
       }   
       //This is the \delta_{456}^{312} part
-      if (wick_contraction[2]){
+      if (wick_contraction & 4){
         for (int rho=0; rho<Ns; rho++){
         for (int alpha_f=0; alpha_f<Ns; alpha_f++){
           auto GBf_D1_GAi_P_ar_bc = GBf_D1_GAi_P()(alpha_f,rho)(b_f,c_i);
@@ -304,7 +304,7 @@ void BaryonUtils<FImpl>::BaryonSite(const mobj &D1,
         }}
       }   
       //This is the \delta_{456}^{132} part
-      if (wick_contraction[3]){
+      if (wick_contraction & 8){
         for (int rho=0; rho<Ns; rho++){
           auto GAf_D1_GAi_P_rr_cc = GAf_D1_GAi_P()(rho,rho)(c_f,c_i);
           for (int alpha_f=0; alpha_f<Ns; alpha_f++){
@@ -316,7 +316,7 @@ void BaryonUtils<FImpl>::BaryonSite(const mobj &D1,
         }
       }   
       //This is the \delta_{456}^{321} part
-      if (wick_contraction[4]){
+      if (wick_contraction & 16){
         for (int rho=0; rho<Ns; rho++){
         for (int alpha_f=0; alpha_f<Ns; alpha_f++){
           auto GBf_D1_GAi_P_ar_bc = GBf_D1_GAi_P()(alpha_f,rho)(b_f,c_i);
@@ -328,7 +328,7 @@ void BaryonUtils<FImpl>::BaryonSite(const mobj &D1,
         }}
       }   
       //This is the \delta_{456}^{213} part
-      if (wick_contraction[5]){
+      if (wick_contraction & 32){
         for (int rho=0; rho<Ns; rho++){
         for (int alpha_f=0; alpha_f<Ns; alpha_f++){
           auto D1_GAi_P_ar_ac = D1_GAi_P()(alpha_f,rho)(a_f,c_i);
@@ -353,7 +353,7 @@ void BaryonUtils<FImpl>::BaryonSiteMatrix(const mobj &D1,
                 const Gamma GammaB_i,
                 const Gamma GammaA_f,
                 const Gamma GammaB_f,
-                const bool * wick_contraction,
+                const int wick_contraction,
                 robj &result)
 {
 
@@ -383,7 +383,7 @@ void BaryonUtils<FImpl>::BaryonSiteMatrix(const mobj &D1,
 
       ee = Real(eSgn_f * eSgn_i); //epsilon_sgn[ie_n] * epsilon_sgn[ie_s];
       //This is the \delta_{456}^{123} part
-      if (wick_contraction[0]){
+      if (wick_contraction & 1){
         for (int rho_i=0; rho_i<Ns; rho_i++){
         for (int rho_f=0; rho_f<Ns; rho_f++){
           auto GAf_D1_GAi_rr_cc = GAf_D1_GAi()(rho_f,rho_i)(c_f,c_i);
@@ -396,7 +396,7 @@ void BaryonUtils<FImpl>::BaryonSiteMatrix(const mobj &D1,
         }}
       }   
       //This is the \delta_{456}^{231} part
-      if (wick_contraction[1]){
+      if (wick_contraction & 2){
         for (int rho_i=0; rho_i<Ns; rho_i++){
         for (int alpha_f=0; alpha_f<Ns; alpha_f++){
           auto D1_GAi_ar_ac = D1_GAi()(alpha_f,rho_i)(a_f,c_i);
@@ -411,7 +411,7 @@ void BaryonUtils<FImpl>::BaryonSiteMatrix(const mobj &D1,
         }}
       }   
       //This is the \delta_{456}^{312} part
-      if (wick_contraction[2]){
+      if (wick_contraction & 4){
         for (int rho_i=0; rho_i<Ns; rho_i++){
         for (int alpha_f=0; alpha_f<Ns; alpha_f++){
           auto GBf_D1_GAi_ar_bc = GBf_D1_GAi()(alpha_f,rho_i)(b_f,c_i);
@@ -426,7 +426,7 @@ void BaryonUtils<FImpl>::BaryonSiteMatrix(const mobj &D1,
         }}
       }   
       //This is the \delta_{456}^{132} part
-      if (wick_contraction[3]){
+      if (wick_contraction & 8){
         for (int rho_i=0; rho_i<Ns; rho_i++){
         for (int rho_f=0; rho_f<Ns; rho_f++){
           auto GAf_D1_GAi_rr_cc = GAf_D1_GAi()(rho_f,rho_i)(c_f,c_i);
@@ -439,7 +439,7 @@ void BaryonUtils<FImpl>::BaryonSiteMatrix(const mobj &D1,
         }}
       }   
       //This is the \delta_{456}^{321} part
-      if (wick_contraction[4]){
+      if (wick_contraction & 16){
         for (int rho_i=0; rho_i<Ns; rho_i++){
         for (int alpha_f=0; alpha_f<Ns; alpha_f++){
           auto GBf_D1_GAi_ar_bc = GBf_D1_GAi()(alpha_f,rho_i)(b_f,c_i);
@@ -454,7 +454,7 @@ void BaryonUtils<FImpl>::BaryonSiteMatrix(const mobj &D1,
         }}
       }   
       //This is the \delta_{456}^{213} part
-      if (wick_contraction[5]){
+      if (wick_contraction & 32){
         for (int rho_i=0; rho_i<Ns; rho_i++){
         for (int alpha_f=0; alpha_f<Ns; alpha_f++){
           auto D1_GAi_ar_ac = D1_GAi()(alpha_f,rho_i)(a_f,c_i);
@@ -477,13 +477,14 @@ void BaryonUtils<FImpl>::BaryonSiteMatrix(const mobj &D1,
  * flavours.                                                     *
  * The array wick_contractions must be of length 6               */
 template<class FImpl>
-void BaryonUtils<FImpl>::WickContractions(std::string qi, std::string qf, bool* wick_contractions) {
+void BaryonUtils<FImpl>::WickContractions(std::string qi, std::string qf, int &wick_contractions) {
+    assert(qi.size() == 3 && qf.size() == 3 && "Only sets of 3 quarks accepted.");
     const int epsilon[6][3] = {{0,1,2},{1,2,0},{2,0,1},{0,2,1},{2,1,0},{1,0,2}};
+    wick_contractions=0;
     for (int ie=0; ie < 6 ; ie++) {
-        wick_contractions[ie] = (qi.size() == 3 && qf.size() == 3
-                                    && qi[0] == qf[epsilon[ie][0]] 
+        wick_contractions += ( ( qi[0] == qf[epsilon[ie][0]] 
                                     && qi[1] == qf[epsilon[ie][1]] 
-                                    && qi[2] == qf[epsilon[ie][2]]);
+                                    && qi[2] == qf[epsilon[ie][2]]) ? 1 : 0) << ie;
     }
 }
 
@@ -500,7 +501,7 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
              const Gamma GammaB_left,
              const Gamma GammaA_right,
              const Gamma GammaB_right,
-             const bool* wick_contractions,
+             const int wick_contractions,
              const int parity,
              ComplexField &baryon_corr)
 {
@@ -522,9 +523,9 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
   bytes += grid->oSites() * (432.*sizeof(vComplex) + 126.*sizeof(int) + 36.*sizeof(Real));
   for (int ie=0; ie < 6 ; ie++){
     if(ie==0 or ie==3){
-       bytes += grid->oSites() * (4.*sizeof(int) + 4752.*sizeof(vComplex)) * wick_contractions[ie];
+       //bytes += grid->oSites() * (4.*sizeof(int) + 4752.*sizeof(vComplex)) * wick_contractions[ie];
     } else{
-       bytes += grid->oSites() * (64.*sizeof(int) + 5184.*sizeof(vComplex)) * wick_contractions[ie];
+       //bytes += grid->oSites() * (64.*sizeof(int) + 5184.*sizeof(vComplex)) * wick_contractions[ie];
     }
   }
   Real t=0.;
@@ -554,7 +555,7 @@ void BaryonUtils<FImpl>::ContractBaryonsMatrix(const PropagatorField &q1_left,
              const Gamma GammaB_left,
              const Gamma GammaA_right,
              const Gamma GammaB_right,
-             const bool* wick_contractions,
+             const int wick_contractions,
              SpinMatrixField &baryon_corr)
 {
 
@@ -595,7 +596,7 @@ void BaryonUtils<FImpl>::ContractBaryonsSliced(const mobj &D1,
                          const Gamma GammaB_left,
                          const Gamma GammaA_right,
                          const Gamma GammaB_right,
-             const bool* wick_contractions,
+             const int wick_contractions,
              const int parity,
              const int nt,
              robj &result)
@@ -620,7 +621,7 @@ void BaryonUtils<FImpl>::ContractBaryonsSlicedMatrix(const mobj &D1,
              const Gamma GammaB_left,
              const Gamma GammaA_right,
              const Gamma GammaB_right,
-             const bool* wick_contractions,
+             const int wick_contractions,
              const int nt,
              robj &result)
 {
