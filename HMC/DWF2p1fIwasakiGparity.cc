@@ -100,17 +100,26 @@ int main(int argc, char **argv) {
   // here make a routine to print all the relevant information on the run
   std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
+  std::string param_file = "params.xml";
+  for(int i=1;i<argc;i++){
+    if(std::string(argv[i]) == "--param_file"){
+      assert(i!=argc-1);
+      param_file = argv[i+1];
+      break;
+    }
+  }
+
   //Read the user parameters
   EvolParameters user_params;
   
-  if(fileExists("params.xml")){
-    std::cout << GridLogMessage << " Reading params.xml" << std::endl;
-    Grid::XmlReader rd("params.xml");
+  if(fileExists(param_file)){
+    std::cout << GridLogMessage << " Reading " << param_file << std::endl;
+    Grid::XmlReader rd(param_file);
     read(rd, "Params", user_params);
   }else if(!GlobalSharedMemory::WorldRank){
-    std::cout << GridLogMessage << " File params.xml does not exist" << std::endl;
-    std::cout << GridLogMessage << " Writing xml template to params.xml.templ" << std::endl;
-    Grid::XmlWriter wr("params.xml.templ");
+    std::cout << GridLogMessage << " File " << param_file << " does not exist" << std::endl;
+    std::cout << GridLogMessage << " Writing xml template to " << param_file << ".templ" << std::endl;
+    Grid::XmlWriter wr(param_file + ".templ");
     write(wr, "Params", user_params);
 
     std::cout << GridLogMessage << " Done" << std::endl;
