@@ -513,11 +513,11 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
 
   GridBase *grid = q1_left.Grid();
   
-  autoView(vbaryon_corr , baryon_corr , AcceleratorWrite);
-  autoView( vcorr_read , baryon_corr , AcceleratorRead);
-  autoView( v1          , q1_left     , AcceleratorRead);
-  autoView( v2          , q2_left     , AcceleratorRead);
-  autoView( v3          , q3_left     , AcceleratorRead);
+  autoView( vbaryon_corr , baryon_corr , AcceleratorWrite);
+  autoView( vcorr_read   , baryon_corr , AcceleratorRead);
+  autoView( v1           , q1_left     , AcceleratorRead);
+  autoView( v2           , q2_left     , AcceleratorRead);
+  autoView( v3           , q3_left     , AcceleratorRead);
 
   Real bytes =0.;
   bytes += grid->oSites() * (432.*sizeof(vComplex) + 126.*sizeof(int) + 36.*sizeof(Real));
@@ -564,11 +564,11 @@ void BaryonUtils<FImpl>::ContractBaryonsMatrix(const PropagatorField &q1_left,
  
   GridBase *grid = q1_left.Grid();
 
-  autoView(vbaryon_corr , baryon_corr , AcceleratorWrite);
-  autoView( vcorr_read , baryon_corr , AcceleratorRead);
-  autoView( v1          , q1_left     , AcceleratorRead);
-  autoView( v2          , q2_left     , AcceleratorRead);
-  autoView( v3          , q3_left     , AcceleratorRead);
+  autoView( vbaryon_corr , baryon_corr , AcceleratorWrite);
+  autoView( vcorr_read   , baryon_corr , AcceleratorRead);
+  autoView( v1           , q1_left     , AcceleratorRead);
+  autoView( v2           , q2_left     , AcceleratorRead);
+  autoView( v3           , q3_left     , AcceleratorRead);
 
   accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
     auto D1 = v1(ss);
@@ -941,10 +941,10 @@ void BaryonUtils<FImpl>::BaryonGamma3pt(
 
   GridBase *grid = q_tf.Grid();
 
-  autoView( vcorr , stn_corr , AcceleratorWrite);
+  autoView( vcorr      , stn_corr , AcceleratorWrite);
   autoView( vcorr_read , stn_corr , AcceleratorRead);
-  autoView( vq_ti , q_ti     , AcceleratorRead);
-  autoView( vq_tf , q_tf     , AcceleratorRead);
+  autoView( vq_ti      , q_ti     , AcceleratorRead);
+  autoView( vq_tf      , q_tf     , AcceleratorRead);
 
   Vector<mobj> my_Dq_spec{Dq_spec1,Dq_spec2};
   mobj * Dq_spec_p = &my_Dq_spec[0];
