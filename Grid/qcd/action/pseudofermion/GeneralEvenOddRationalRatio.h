@@ -179,7 +179,9 @@ NAMESPACE_BEGIN(Grid);
 	sstream << GridLogMessage << "["<<action_name()<<"] Precision          :" << param.precision <<  std::endl;
 	return sstream.str();
       }
-      
+
+      //Access the fermion field
+      const FermionField &getPhiOdd() const{ return PhiOdd; }
       
       virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {
 
@@ -189,21 +191,19 @@ NAMESPACE_BEGIN(Grid);
 	//        = e^{- phi^dag  (VdagV)^1/(2*inv_pow) (MdagM)^-1/(2*inv_pow) (MdagM)^-1/(2*inv_pow)  (VdagV)^1/(2*inv_pow) phi}
 	//
 	// Phi =  (VdagV)^-1/(2*inv_pow) Mdag^{1/(2*inv_pow)} eta 
-	//
-	// P(eta) = e^{- eta^dag eta}
-	//	
-	// General gaussian random draws from   e^{x^2/(2 sig^2)} => sig^2 = 0.5.
-	// 
-	// So eta should be of width sig = 1/sqrt(2).
-
+	
 	std::cout<<GridLogMessage << action_name() << " refresh: starting" << std::endl;
-	RealD scale = std::sqrt(0.5);
 
 	FermionField eta(NumOp.FermionGrid());
 	FermionField etaOdd (NumOp.FermionRedBlackGrid());
 	FermionField etaEven(NumOp.FermionRedBlackGrid());
 	FermionField     tmp(NumOp.FermionRedBlackGrid());
 
+	// P(eta) \propto e^{- eta^dag eta}
+	//	
+	// The gaussian function draws from  P(x) \propto e^{- x^2 / 2 }    [i.e. sigma=1]
+	// Thus eta = x/sqrt{2} = x * sqrt(1/2)
+	RealD scale = std::sqrt(0.5);
 	gaussian(pRNG,eta);	eta=eta*scale;
 
 	pickCheckerboard(Even,etaEven,eta);

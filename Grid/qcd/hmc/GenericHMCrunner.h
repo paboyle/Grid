@@ -129,18 +129,10 @@ public:
     Runner(S);
   }
 
-  //////////////////////////////////////////////////////////////////
-
-private:
-  template <class SmearingPolicy>
-  void Runner(SmearingPolicy &Smearing) {
-    auto UGrid = Resources.GetCartesian();
-    Resources.AddRNGs();
-    Field U(UGrid);
-
-    // Can move this outside?
-    typedef IntegratorType<SmearingPolicy> TheIntegrator;
-    TheIntegrator MDynamics(UGrid, Parameters.MD, TheAction, Smearing);
+  //Use the checkpointer to initialize the RNGs and the gauge field, writing the resulting gauge field into U.
+  //This is called automatically by Run but may be useful elsewhere, e.g. for integrator tuning experiments
+  void initializeGaugeFieldAndRNGs(Field &U){
+    if(!Resources.haveRNGs()) Resources.AddRNGs();
 
     if (Parameters.StartingType == "HotStart") {
       // Hot start
@@ -167,6 +159,22 @@ private:
 	<< "Valid [HotStart, ColdStart, TepidStart, CheckpointStart]\n";
       exit(1);
     }
+  }
+
+
+
+  //////////////////////////////////////////////////////////////////
+
+private:
+  template <class SmearingPolicy>
+  void Runner(SmearingPolicy &Smearing) {
+    auto UGrid = Resources.GetCartesian();
+    Field U(UGrid);
+
+    initializeGaugeFieldAndRNGs(U);
+
+    typedef IntegratorType<SmearingPolicy> TheIntegrator;
+    TheIntegrator MDynamics(UGrid, Parameters.MD, TheAction, Smearing);
 
     Smearing.set_Field(U);
 
