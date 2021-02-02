@@ -1350,15 +1350,19 @@ void BaryonUtils<FImpl>::XiToSigmaQ1EyeSite(const mobj &Dq_loop,
   // \gamma_\mu^L * Dq_loop 
   auto trGDq = TensorRemove(trace(Gamma_H * Dq_loop)); 
 
+  Real ee;
+
   for (int ie_s=0; ie_s < 6 ; ie_s++){
-    int a_s = epsilon[ie_s][0]; //a
-    int b_s = epsilon[ie_s][1]; //b
-    int c_s = epsilon[ie_s][2]; //c
+      int a_s = (ie_s < 3 ? ie_s       : (6-ie_s)%3 ); //epsilon[ie_s][0]; //a'
+      int b_s = (ie_s < 3 ? (ie_s+1)%3 : (8-ie_s)%3 ); //epsilon[ie_s][1]; //b'
+      int c_s = (ie_s < 3 ? (ie_s+2)%3 : (7-ie_s)%3 ); //epsilon[ie_s][2]; //c'
+      int eSgn_s = (ie_s < 3 ? 1 : -1);
     for (int ie_x=0; ie_x < 6 ; ie_x++){
-      int a_x = epsilon[ie_x][0]; //a'
-      int b_x = epsilon[ie_x][1]; //b'
-      int c_x = epsilon[ie_x][2]; //c'
-      auto ee_GD = epsilon_sgn[ie_s] * epsilon_sgn[ie_x] * trGDq; 
+      int a_x = (ie_x < 3 ? ie_x       : (6-ie_x)%3 ); //epsilon[ie_x][0]; //a'
+      int b_x = (ie_x < 3 ? (ie_x+1)%3 : (8-ie_x)%3 ); //epsilon[ie_x][1]; //b'
+      int c_x = (ie_x < 3 ? (ie_x+2)%3 : (7-ie_x)%3 ); //epsilon[ie_x][2]; //c'
+      int eSgn_x = (ie_x < 3 ? 1 : -1);
+      ee = Real(eSgn_s * eSgn_x);
       for (int alpha_x=0; alpha_x<Ns; alpha_x++){
       for (int beta_s=0; beta_s<Ns; beta_s++){
         auto GDsGDdG_ab_ba = GDsGDd()(alpha_x,beta_s)(b_x,a_s);
@@ -1451,7 +1455,7 @@ void BaryonUtils<FImpl>::XiToSigmaEye(const PropagatorField &qq_loop,
 				                 const Gamma GammaB_xi,
 		                 		 const Gamma GammaB_sigma,
 						 const std::string op,
-						 SpinMatrixField &stn_corr)
+						 SpinMatrixField &xts_corr)
 {
 
   assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
@@ -1459,24 +1463,31 @@ void BaryonUtils<FImpl>::XiToSigmaEye(const PropagatorField &qq_loop,
 
   GridBase *grid = qs_ti.Grid();
 
-  autoView( vcorr, stn_corr, CpuWrite);
-  autoView( vq_loop , qq_loop, CpuRead);
-  autoView( vd_tf , qd_tf, CpuRead);
-  autoView( vs_ti , qs_ti, CpuRead);
+  autoView( vcorr   , xts_corr , AcceleratorWrite);
+  autoView( vq_loop , qq_loop  , AcceleratorRead);
+  autoView( vd_tf   , qd_tf    , AcceleratorRead);
+  autoView( vs_ti   , qs_ti    , AcceleratorRead);
+
+  bool doQ1 = (op == "Q1");
+  bool doQ2 = (op == "Q2");
+
+  Vector<mobj> my_Dq_spec{Dd_spec,Ds_spec};
+  mobj * Dq_spec_p = &my_Dq_spec[0];
 
   accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
-    auto Dq_loop = vq_loop[ss];
-    auto Dd_tf = vd_tf[ss];
-    auto Ds_ti = vs_ti[ss];
-    sobj result=Zero();
-    if(op == "Q1"){
-      XiToSigmaQ1EyeSite(Dq_loop,Dd_spec,Ds_spec,Dd_tf,Ds_ti,Gamma_H,GammaB_xi,GammaB_sigma,result);
-    } else if(op == "Q2"){
-      XiToSigmaQ2EyeSite(Dq_loop,Dd_spec,Ds_spec,Dd_tf,Ds_ti,Gamma_H,GammaB_xi,GammaB_sigma,result);
+    auto Dq_loop = vq_loop(ss);
+    auto Dd_tf   = vd_tf(ss);
+    auto Ds_ti   = vs_ti(ss);
+    typedef decltype(coalescedRead(vcorr[0])) spinor;
+    spinor result=Zero();
+    if(doQ1){
+      XiToSigmaQ1EyeSite(Dq_loop,Dq_spec_p[0],Dq_spec_p[1],Dd_tf,Ds_ti,Gamma_H,GammaB_xi,GammaB_sigma,result);
+    } else if(doQ2){
+      XiToSigmaQ2EyeSite(Dq_loop,Dq_spec_p[0],Dq_spec_p[0],Dd_tf,Ds_ti,Gamma_H,GammaB_xi,GammaB_sigma,result);
     } else {
       assert(0 && "Weak Operator not correctly specified");
     }
-      vcorr[ss] = result; 
+    coalescedWrite(vcorr[ss],result);
   }  );//end loop over lattice sites
 }
 
