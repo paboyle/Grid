@@ -98,8 +98,7 @@ accelerator_inline void convertType(ComplexF & out, const std::complex<float> & 
 }
 
 template<typename T>
-accelerator_inline typename std::enable_if<isGridFundamental<T>::value>::type
-convertType(T & out, const T & in) {
+accelerator_inline EnableIf<isGridFundamental<T>> convertType(T & out, const T & in) {
   out = in;
 }
 
@@ -138,14 +137,12 @@ accelerator_inline void convertType(iScalar<T1> & out, const iScalar<T2> & in) {
 }
 
 template<typename T1,typename T2>
-accelerator_inline typename std::enable_if<!isGridScalar<T1>::value>::type
-convertType(T1 & out, const iScalar<T2> & in) {
+accelerator_inline NotEnableIf<isGridScalar<T1>> convertType(T1 & out, const iScalar<T2> & in) {
   convertType(out,in._internal);
 }
 
 template<typename T1,typename T2>
-accelerator_inline typename std::enable_if<!isGridScalar<T2>::value>::type
-convertType(iScalar<T1> & out, const T2 & in) {
+accelerator_inline NotEnableIf<isGridScalar<T2>> convertType(iScalar<T1> & out, const T2 & in) {
   convertType(out._internal,in);
 }
 
