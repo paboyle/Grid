@@ -140,7 +140,7 @@ void GridCmdOptionCSL(std::string str,std::vector<std::string> & vec)
 }
 
 template<class VectorInt>
-void GridCmdOptionIntVector(std::string &str,VectorInt & vec)
+void GridCmdOptionIntVector(const std::string &str,VectorInt & vec)
 {
   vec.resize(0);
   std::stringstream ss(str);

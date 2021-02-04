@@ -7,6 +7,7 @@
     Copyright (C) 2015
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Christoph Lehner <christoph@lhnr.de>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -169,6 +170,23 @@ static inline int divides(int a,int b)
 }
 void GlobalSharedMemory::GetShmDims(const Coordinate &WorldDims,Coordinate &ShmDims)
 {
+  ////////////////////////////////////////////////////////////////
+  // Allow user to configure through environment variable
+  ////////////////////////////////////////////////////////////////
+  char* str = getenv(("GRID_SHM_DIMS_" + std::to_string(ShmDims.size())).c_str());
+  if ( str ) {
+    std::vector<int> IntShmDims;
+    GridCmdOptionIntVector(std::string(str),IntShmDims);
+    assert(IntShmDims.size() == WorldDims.size());
+    long ShmSize = 1;
+    for (int dim=0;dim<WorldDims.size();dim++) {
+      ShmSize *= (ShmDims[dim] = IntShmDims[dim]);
+      assert(divides(ShmDims[dim],WorldDims[dim]));
+    }
+    assert(ShmSize == WorldShmSize);
+    return;
+  }
+  
   ////////////////////////////////////////////////////////////////
   // Powers of 2,3,5 only in prime decomposition for now
   ////////////////////////////////////////////////////////////////
