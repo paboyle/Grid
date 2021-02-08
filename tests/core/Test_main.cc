@@ -232,18 +232,14 @@ int main(int argc, char **argv) {
       scalar = localNorm2(cVec);
 
       std::cout << "Testing maxLocalNorm2" <<std::endl;
-      for(Integer gsite=0;gsite<Fine.gSites();gsite++){
+      random(FineRNG, scalar); //uniform [0,1]      
+      Coordinate mid({ latt_size[0]/2, latt_size[1]/2, latt_size[2]/2, latt_size[3]/2 });
+      TComplex big(10.0);
+      pokeSite(big, scalar, mid);
+      
+      RealD Linfty = maxNorm2(scalar);
+      assert(Linfty == 100.0);
 
-	TComplex big(10.0);
-	Coordinate coor;
-
-	random(FineRNG, scalar);
-	Fine.GlobalIndexToGlobalCoor(gsite,coor);
-        pokeSite(big,scalar,coor);
-	
-	RealD Linfty = maxLocalNorm2(scalar);
-	assert(Linfty == 100.0);
-      }
       //     -=,+=,*=,()
       //     add,+,sub,-,mult,mac,*
       //     adj,conjugate

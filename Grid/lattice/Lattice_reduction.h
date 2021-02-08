@@ -166,11 +166,10 @@ template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
   ComplexD nrm = innerProduct(arg,arg);
   return real(nrm); 
 }
-template<class vobj> inline RealD maxLocalNorm2(const Lattice<vobj> &arg)
+template<class vobj> inline RealD maxNorm2(const Lattice<vobj> &arg)
 {
-  typedef typename vobj::tensor_reduced vscalar;
-  typedef typename vobj::scalar_object  scalar;
-  typedef typename getPrecision<vobj>::real_scalar_type rscalar;
+  typedef typename vobj::tensor_reduced vscalar;  //iScalar<iScalar<.... <vPODtype> > >
+  typedef typename vscalar::scalar_object  scalar;   //iScalar<iScalar<.... <PODtype> > >
 
   Lattice<vscalar> inner = localNorm2(arg);
 
