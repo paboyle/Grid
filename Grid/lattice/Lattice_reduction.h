@@ -96,8 +96,34 @@ inline typename vobj::scalar_objectD sumD_cpu(const vobj *arg, Integer osites)
   ssobj ret = ssum;
   return ret;
 }
+/*
+Threaded max, don't use for now
+template<class Double>
+inline Double max(const Double *arg, Integer osites)
+{
+  //  const int Nsimd = vobj::Nsimd();
+  const int nthread = GridThread::GetThreads();
 
-
+  std::vector<Double> maxarray(nthread);
+  
+  thread_for(thr,nthread, {
+    int nwork, mywork, myoff;
+    nwork = osites;
+    GridThread::GetWork(nwork,thr,mywork,myoff);
+    Double max=arg[0];
+    for(int ss=myoff;ss<mywork+myoff; ss++){
+      if( arg[ss] > max ) max = arg[ss];
+    }
+    maxarray[thr]=max;
+  });
+  
+  Double tmax=maxarray[0];
+  for(int i=0;i<nthread;i++){
+    if (maxarray[i]>tmax) tmax = maxarray[i];
+  } 
+  return tmax;
+}
+*/
 template<class vobj>
 inline typename vobj::scalar_object sum(const vobj *arg, Integer osites)
 {
@@ -139,6 +165,31 @@ inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
 template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
   ComplexD nrm = innerProduct(arg,arg);
   return real(nrm); 
+}
+template<class vobj> inline RealD maxLocalNorm2(const Lattice<vobj> &arg)
+{
+  typedef typename vobj::tensor_reduced vscalar;
+  typedef typename vobj::scalar_object  scalar;
+  typedef typename getPrecision<vobj>::real_scalar_type rscalar;
+
+  Lattice<vscalar> inner = localNorm2(arg);
+
+  auto grid = arg.Grid();
+
+  RealD max;
+  for(int l=0;l<grid->lSites();l++){
+    Coordinate coor;
+    scalar val;
+    RealD r;
+    grid->LocalIndexToLocalCoor(l,coor);
+    peekLocalSite(val,inner,coor);
+    r=real(TensorRemove(val));
+    if( (l==0) || (r>max)){
+      max=r;
+    }
+  }
+  grid->GlobalMax(max);
+  return max;
 }
 
 // Double inner product
