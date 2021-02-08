@@ -232,12 +232,13 @@ int main(int argc, char **argv) {
       scalar = localNorm2(cVec);
 
       std::cout << "Testing maxLocalNorm2" <<std::endl;
-      for(Integer gsite=0;gsite<Fine.gSites();gsite++){
-
+      
+      LatticeComplex rand_scalar(&Fine);
+      random(FineRNG, rand_scalar);  //uniform [0,1]
+      for(Integer gsite=0;gsite<Fine.gSites();gsite++){ //check on every site independently
+	scalar = rand_scalar;
 	TComplex big(10.0);
 	Coordinate coor;
-
-	random(FineRNG, scalar);
 	Fine.GlobalIndexToGlobalCoor(gsite,coor);
         pokeSite(big,scalar,coor);
 	
