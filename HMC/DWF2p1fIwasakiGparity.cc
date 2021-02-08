@@ -94,6 +94,142 @@ bool fileExists(const std::string &fn){
   return f.good();
 }
 
+
+
+
+struct LanczosParameters: Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(LanczosParameters,
+				  double, alpha,
+				  double, beta,
+				  double, mu,
+				  int, ord,
+				  int, n_stop,
+				  int, n_want,
+				  int, n_use,
+				  double, tolerance);
+
+  LanczosParameters() {
+    alpha = 35;
+    beta = 5;
+    mu = 0;
+    ord = 100;
+    n_stop = 10;
+    n_want = 10;
+    n_use = 15;
+    tolerance = 1e-6;
+  }
+};
+
+
+
+template<typename FermionActionD, typename FermionFieldD>
+void computeEigenvalues(std::string param_file,
+			GridCartesian* Grid, GridRedBlackCartesian* rbGrid, const LatticeGaugeFieldD &latt,  //expect lattice to have been initialized to something
+			FermionActionD &action, GridParallelRNG &rng){
+  
+  LanczosParameters params;
+  if(fileExists(param_file)){
+    std::cout << GridLogMessage << " Reading " << param_file << std::endl;
+    Grid::XmlReader rd(param_file);
+    read(rd, "LanczosParameters", params);
+  }else if(!GlobalSharedMemory::WorldRank){
+    std::cout << GridLogMessage << " File " << param_file << " does not exist" << std::endl;
+    std::cout << GridLogMessage << " Writing xml template to " << param_file << ".templ" << std::endl;
+    Grid::XmlWriter wr(param_file + ".templ");
+    write(wr, "LanczosParameters", params);
+  }
+
+  FermionFieldD gauss_o(rbGrid);
+  FermionFieldD gauss(Grid);
+  gaussian(rng, gauss);
+  pickCheckerboard(Odd, gauss_o, gauss);
+
+  action.ImportGauge(latt);
+
+  SchurDiagMooeeOperator<FermionActionD, FermionFieldD> hermop(action);
+  PlainHermOp<FermionFieldD> hermop_wrap(hermop);
+  //ChebyshevLanczos<FermionFieldD> Cheb(params.alpha, params.beta, params.mu, params.ord);
+  assert(params.mu == 0.0);
+
+  Chebyshev<FermionFieldD> Cheb(params.beta*params.beta, params.alpha*params.alpha, params.ord+1);
+  FunctionHermOp<FermionFieldD> Cheb_wrap(Cheb, hermop);
+
+  std::cout << "IRL: alpha=" << params.alpha << " beta=" << params.beta << " mu=" << params.mu << " ord=" << params.ord << std::endl;
+  ImplicitlyRestartedLanczos<FermionFieldD> IRL(Cheb_wrap, hermop_wrap, params.n_stop, params.n_want, params.n_use, params.tolerance, 10000);
+
+  std::vector<RealD> eval(params.n_use);
+  std::vector<FermionFieldD> evec(params.n_use, rbGrid);
+  int Nconv;
+  IRL.calc(eval, evec, gauss_o, Nconv);
+
+  std::cout << "Eigenvalues:" << std::endl;
+  for(int i=0;i<params.n_want;i++){
+    std::cout << i << " " << eval[i] << std::endl;
+  }
+}
+
+
+//Check the quality of the RHMC approx
+template<typename FermionActionD, typename FermionFieldD, typename RHMCtype>
+void checkRHMC(GridCartesian* Grid, GridRedBlackCartesian* rbGrid, const LatticeGaugeFieldD &latt,  //expect lattice to have been initialized to something
+	       FermionActionD &numOp, FermionActionD &denOp, RHMCtype &rhmc, GridParallelRNG &rng,
+	       int inv_pow, const std::string &quark_descr){
+
+  FermionFieldD gauss_o(rbGrid);
+  FermionFieldD gauss(Grid);
+  gaussian(rng, gauss);
+  pickCheckerboard(Odd, gauss_o, gauss);
+
+  numOp.ImportGauge(latt);
+  denOp.ImportGauge(latt);
+
+  typedef typename FermionActionD::Impl_t FermionImplPolicyD;
+  SchurDifferentiableOperator<FermionImplPolicyD> MdagM(numOp);
+  SchurDifferentiableOperator<FermionImplPolicyD> VdagV(denOp);
+      
+  std::cout << "Starting: Checking quality of RHMC action approx for " << quark_descr << " quark numerator and power -1/" << inv_pow << std::endl;
+  InversePowerBoundsCheck(inv_pow, 10000, 1e16, MdagM,gauss_o, rhmc.ApproxNegPowerAction); //use large tolerance to prevent exit on fail; we are trying to tune here!
+  std::cout << "Finished: Checking quality of RHMC action approx for " << quark_descr << " quark numerator and power -1/" << inv_pow << std::endl;
+
+  std::cout << "Starting: Checking quality of RHMC action approx for " << quark_descr << " quark numerator and power -1/" << 2*inv_pow << std::endl;
+  InversePowerBoundsCheck(2*inv_pow, 10000, 1e16, MdagM,gauss_o, rhmc.ApproxNegHalfPowerAction);
+  std::cout << "Finished: Checking quality of RHMC action approx for " << quark_descr << " quark numerator and power -1/" << 2*inv_pow << std::endl;
+
+  std::cout << "Starting: Checking quality of RHMC action approx for " << quark_descr << " quark denominator and power -1/" << inv_pow << std::endl;
+  InversePowerBoundsCheck(inv_pow, 10000, 1e16, VdagV,gauss_o, rhmc.ApproxNegPowerAction);
+  std::cout << "Finished: Checking quality of RHMC action approx for " << quark_descr << " quark denominator and power -1/" << inv_pow << std::endl;
+
+  std::cout << "Starting: Checking quality of RHMC action approx for " << quark_descr << " quark denominator and power -1/" << 2*inv_pow << std::endl;
+  InversePowerBoundsCheck(2*inv_pow, 10000, 1e16, VdagV,gauss_o, rhmc.ApproxNegHalfPowerAction);
+  std::cout << "Finished: Checking quality of RHMC action approx for " << quark_descr << " quark denominator and power -1/" << 2*inv_pow << std::endl;
+
+  std::cout << "-------------------------------------------------------------------------------" << std::endl;
+
+  std::cout << "Starting: Checking quality of RHMC MD approx for " << quark_descr << " quark numerator and power -1/" << inv_pow << std::endl;
+  InversePowerBoundsCheck(inv_pow, 10000, 1e16, MdagM,gauss_o, rhmc.ApproxNegPowerMD); 
+  std::cout << "Finished: Checking quality of RHMC MD approx for " << quark_descr << " quark numerator and power -1/" << inv_pow << std::endl;
+
+  std::cout << "Starting: Checking quality of RHMC MD approx for " << quark_descr << " quark numerator and power -1/" << 2*inv_pow << std::endl;
+  InversePowerBoundsCheck(2*inv_pow, 10000, 1e16, MdagM,gauss_o, rhmc.ApproxNegHalfPowerMD);
+  std::cout << "Finished: Checking quality of RHMC MD approx for " << quark_descr << " quark numerator and power -1/" << 2*inv_pow << std::endl;
+
+  std::cout << "Starting: Checking quality of RHMC MD approx for " << quark_descr << " quark denominator and power -1/" << inv_pow << std::endl;
+  InversePowerBoundsCheck(inv_pow, 10000, 1e16, VdagV,gauss_o, rhmc.ApproxNegPowerMD);
+  std::cout << "Finished: Checking quality of RHMC MD approx for " << quark_descr << " quark denominator and power -1/" << inv_pow << std::endl;
+
+  std::cout << "Starting: Checking quality of RHMC MD approx for " << quark_descr << " quark denominator and power -1/" << 2*inv_pow << std::endl;
+  InversePowerBoundsCheck(2*inv_pow, 10000, 1e16, VdagV,gauss_o, rhmc.ApproxNegHalfPowerMD);
+  std::cout << "Finished: Checking quality of RHMC MD approx for " << quark_descr << " quark denominator and power -1/" << 2*inv_pow << std::endl;
+}
+
+
+
+
+
+
+
+
+
 int main(int argc, char **argv) {
   Grid_init(&argc, &argv);
   int threads = GridThread::GetThreads();
@@ -152,6 +288,7 @@ int main(int argc, char **argv) {
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   IntegratorParameters MD;
   typedef ConjugateHMCRunnerD<MinimumNorm2> HMCWrapper; //NB: This is the "Omelyan integrator"
+  typedef HMCWrapper::ImplPolicy GaugeImplPolicy;
   MD.name    = std::string("MinimumNorm2");
   MD.MDsteps = 5; //5 steps of 0.2 for GP* ensembles
   MD.trajL   = 1.0;
@@ -181,7 +318,7 @@ int main(int argc, char **argv) {
   RNGpar.parallel_seeds = "6 7 8 9 10";
   TheHMC.Resources.SetRNGSeeds(RNGpar);
 
-  typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
+  typedef PlaquetteMod<GaugeImplPolicy> PlaqObs;
   TheHMC.Resources.AddObservable<PlaqObs>();
   //////////////////////////////////////////////
 
@@ -208,8 +345,7 @@ int main(int argc, char **argv) {
   // temporarily need a gauge field
   LatticeGaugeFieldD Ud(GridPtrD);
   LatticeGaugeFieldF Uf(GridPtrF);
-
-  
+ 
   //Setup the BCs
   FermionActionD::ImplParams Params;
   for(int i=0;i<Nd-1;i++) Params.twists = user_params.GparityDirs[i]; //G-parity directions
@@ -219,64 +355,25 @@ int main(int argc, char **argv) {
   for(int i=0;i<Nd-1;i++) dirs4[i] = user_params.GparityDirs[i];
   dirs4[Nd-1] = 0; //periodic gauge BC in time
 
-  ConjugateGimplD::setDirections(dirs4); //gauge BC
+  GaugeImplPolicy::setDirections(dirs4); //gauge BC
 
 
   ////////////////////////////////////
   // Collect actions
   ////////////////////////////////////
-  ActionLevel<HMCWrapper::Field> Level1(1); //light quark 
-  ActionLevel<HMCWrapper::Field> Level2(1); //strange quark
-  ActionLevel<HMCWrapper::Field> Level3(8); //gauge (8 increments per step)
+  ActionLevel<HMCWrapper::Field> Level1(1); //light quark + strange quark
+  ActionLevel<HMCWrapper::Field> Level2(8); //gauge (8 increments per step)
 
-  ////////////////////////////////////
-  // Strange action
-  ////////////////////////////////////
-
-  //Use same parameters as used for 16GPX ensembles
-  RationalActionParams rat_act_params_s;
-
-  rat_act_params_s.inv_pow  = 4; // (M^dag M)^{1/4}
-  rat_act_params_s.precision= 60;
-  rat_act_params_s.MaxIter  = 10000;
-  user_params.rat_quo_s.Export(rat_act_params_s);
-
-  //For the 16GPX ensembles we used Hasenbusch mass splitting:
-  //  det[ (M^dag(0.032) M(0.032)) / (M^dag(1.0) M(1.0)) ]^{1/4}    * det[ (M^dag(0.01) M(0.01)) / (M^dag(1.0) M(1.0)) ]^{1/2}
-  //=
-  // [ det[ (M^dag(0.032) M(0.032)) / (M^dag(1.0) M(1.0)) ]^{1/4}  ]^3    * det[ (M^dag(0.01) M(0.01)) / (M^dag(0.032) M(0.032)) ]^{1/2} 
-
-  //I don't know if it's actually necessary for the action objects to be independent instances...
-  int n_hasenbusch_s = 3;
-  std::vector<FermionActionD*> Numerators_sD(n_hasenbusch_s);
-  std::vector<FermionActionD*> Denominators_sD(n_hasenbusch_s);
-  std::vector<FermionActionF*> Numerators_sF(n_hasenbusch_s);
-  std::vector<FermionActionF*> Denominators_sF(n_hasenbusch_s);
-
-  std::vector<MixedPrecRHMC*> Quotients_s(n_hasenbusch_s);
-
-  for(int h=0;h<n_hasenbusch_s;h++){
-    Numerators_sD[h] = new FermionActionD(Ud,*FGridD,*FrbGridD,*GridPtrD,*GridRBPtrD,strange_mass,M5,Params);
-    Denominators_sD[h] = new FermionActionD(Ud,*FGridD,*FrbGridD,*GridPtrD,*GridRBPtrD,pv_mass,  M5,Params);   
-
-    Numerators_sF[h] = new FermionActionF(Uf,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,strange_mass,M5,Params);
-    Denominators_sF[h] = new FermionActionF(Uf,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,pv_mass,  M5,Params);   
-
-    //note I define the numerator operator wrt how they appear in the determinant    
-    Quotients_s[h] = new MixedPrecRHMC(*Denominators_sD[h], *Numerators_sD[h], *Denominators_sF[h], *Numerators_sF[h], rat_act_params_s, user_params.rat_quo_s.reliable_update_freq); 
-    Level2.push_back(Quotients_s[h]);
-  }
 
   /////////////////////////////////////////////////////////////
   // Light action
   /////////////////////////////////////////////////////////////
- 
-  //We don't Hasenbusch the light quark directly, instead the denominator mass is set equal to the strange mass; cf above
+
   FermionActionD Numerator_lD(Ud,*FGridD,*FrbGridD,*GridPtrD,*GridRBPtrD, light_mass,M5,Params);
-  FermionActionD Denominator_lD(Ud,*FGridD,*FrbGridD,*GridPtrD,*GridRBPtrD, strange_mass,M5,Params);
+  FermionActionD Denominator_lD(Ud,*FGridD,*FrbGridD,*GridPtrD,*GridRBPtrD, pv_mass,M5,Params);
 
   FermionActionF Numerator_lF(Uf,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF, light_mass,M5,Params);
-  FermionActionF Denominator_lF(Uf,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF, strange_mass,M5,Params);
+  FermionActionF Denominator_lF(Uf,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF, pv_mass,M5,Params);
 
   RationalActionParams rat_act_params_l;
   rat_act_params_l.inv_pow  = 2; // (M^dag M)^{1/2}
@@ -287,36 +384,69 @@ int main(int argc, char **argv) {
   MixedPrecRHMC Quotient_l(Denominator_lD, Numerator_lD, Denominator_lF, Numerator_lF, rat_act_params_l, user_params.rat_quo_l.reliable_update_freq);
   Level1.push_back(&Quotient_l);
 
+
+  ////////////////////////////////////
+  // Strange action
+  ////////////////////////////////////
+  FermionActionD Numerator_sD(Ud,*FGridD,*FrbGridD,*GridPtrD,*GridRBPtrD,strange_mass,M5,Params);
+  FermionActionD Denominator_sD(Ud,*FGridD,*FrbGridD,*GridPtrD,*GridRBPtrD, pv_mass,M5,Params);
+
+  FermionActionF Numerator_sF(Uf,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,strange_mass,M5,Params);
+  FermionActionF Denominator_sF(Uf,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF, pv_mass,M5,Params);
+
+  RationalActionParams rat_act_params_s;
+  rat_act_params_s.inv_pow  = 4; // (M^dag M)^{1/4}
+  rat_act_params_s.precision= 60;
+  rat_act_params_s.MaxIter  = 10000;
+  user_params.rat_quo_s.Export(rat_act_params_s);
+
+  MixedPrecRHMC Quotient_s(Denominator_sD, Numerator_sD, Denominator_sF, Numerator_sF, rat_act_params_s, user_params.rat_quo_s.reliable_update_freq); 
+  Level1.push_back(&Quotient_s);  
+
+
   /////////////////////////////////////////////////////////////
   // Gauge action
   /////////////////////////////////////////////////////////////
-  Level3.push_back(&GaugeAction);
+  Level2.push_back(&GaugeAction);
   TheHMC.TheAction.push_back(Level1);
   TheHMC.TheAction.push_back(Level2);
-  TheHMC.TheAction.push_back(Level3);
   std::cout << GridLogMessage << " Action complete "<< std::endl;
 
-  /////////////////////////////////////////////////////////////
-  // HMC parameters are serialisable
-  
-  if(0){
-    TheHMC.Resources.AddRNGs();
-    ConjugateGimplR::HotConfiguration(TheHMC.Resources.GetParallelRNG(), Ud);
-    Quotient_l.refresh(Ud, TheHMC.Resources.GetParallelRNG());    
-    LatticeGaugeFieldD out(Ud);
-    std::cout << GridLogMessage << " Running the derivative "<< std::endl;
-    Quotient_l.deriv(Ud,out);    
-    std::cout << GridLogMessage << " Finished running the derivative "<< std::endl;
-    Numerator_lD.Report();
-    Denominator_lD.Report();
+
+  //Action tuning
+  bool tune_rhmc_l=false, tune_rhmc_s=false, eigenrange_l=false, eigenrange_s=false; 
+  std::string lanc_params_l, lanc_params_s;
+  for(int i=1;i<argc;i++){
+    std::string sarg(argv[i]);
+    if(sarg == "--tune_rhmc_l") tune_rhmc_l=true;
+    else if(sarg == "--tune_rhmc_s") tune_rhmc_s=true;
+    else if(sarg == "--eigenrange_l"){
+      assert(i < argc-1);
+      eigenrange_l=true;
+      lanc_params_l = argv[i+1];
+    }
+    else if(sarg == "--eigenrange_s"){
+      assert(i < argc-1);
+      eigenrange_s=true;
+      lanc_params_s = argv[i+1];
+    }
+  }
+  if(tune_rhmc_l || tune_rhmc_s || eigenrange_l || eigenrange_s){
+    TheHMC.initializeGaugeFieldAndRNGs(Ud);
+    if(eigenrange_l) computeEigenvalues<FermionActionD, FermionFieldD>(lanc_params_l, FGridD, FrbGridD, Ud, Numerator_lD, TheHMC.Resources.GetParallelRNG());
+    if(eigenrange_s) computeEigenvalues<FermionActionD, FermionFieldD>(lanc_params_s, FGridD, FrbGridD, Ud, Numerator_sD, TheHMC.Resources.GetParallelRNG());
+    if(tune_rhmc_l) checkRHMC<FermionActionD, FermionFieldD, MixedPrecRHMC>(FGridD, FrbGridD, Ud, Numerator_lD, Denominator_lD, Quotient_l, TheHMC.Resources.GetParallelRNG(), 2, "light");
+    if(tune_rhmc_s) checkRHMC<FermionActionD, FermionFieldD, MixedPrecRHMC>(FGridD, FrbGridD, Ud, Numerator_sD, Denominator_sD, Quotient_s, TheHMC.Resources.GetParallelRNG(), 4, "strange");
+
+    std::cout << GridLogMessage << " Done" << std::endl;
+    Grid_finalize();
+    return 0;
   }
 
 
-  if(1){
-    std::cout << GridLogMessage << " Running the HMC "<< std::endl;
-    TheHMC.Run();  // no smearing
-  }
-
+  //Run the HMC
+  std::cout << GridLogMessage << " Running the HMC "<< std::endl;
+  TheHMC.Run();
 
   std::cout << GridLogMessage << " Done" << std::endl;
   Grid_finalize();

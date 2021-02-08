@@ -79,6 +79,19 @@ NAMESPACE_BEGIN(Grid);
       FermionField PhiEven; // the pseudo fermion field for this trajectory
       FermionField PhiOdd; // the pseudo fermion field for this trajectory
 
+      //Generate the approximation to x^{1/inv_pow} (->approx)   and x^{-1/inv_pow} (-> approx_inv)  by an approx_degree degree rational approximation
+      //CG_tolerance is used to issue a warning if the approximation error is larger than the tolerance of the CG and is otherwise just stored in the MultiShiftFunction for use by the multi-shift
+      static void generateApprox(MultiShiftFunction &approx, MultiShiftFunction &approx_inv, int inv_pow, int approx_degree, double CG_tolerance, AlgRemez &remez){
+	std::cout<<GridLogMessage << "Generating degree "<< approx_degree<<" approximation for x^(1/" << inv_pow << ")"<<std::endl;
+	double error = remez.generateApprox(approx_degree,1,inv_pow);	
+	if(error > CG_tolerance)
+	  std::cout<<GridLogMessage << "WARNING: Remez approximation has a larger error " << error << " than the CG tolerance " << CG_tolerance << "! Try increasing the number of poles" << std::endl;
+	
+	approx.Init(remez, CG_tolerance,false);
+	approx_inv.Init(remez, CG_tolerance,true);
+      }
+
+
     protected:
       static constexpr bool Numerator = true;
       static constexpr bool Denominator = false;
@@ -115,38 +128,14 @@ NAMESPACE_BEGIN(Grid);
 	std::cout<<GridLogMessage << action_name() << " initialize: starting" << std::endl;
 	AlgRemez remez(param.lo,param.hi,param.precision);
 
-	int inv_pow = param.inv_pow;
-	int _2_inv_pow = 2*inv_pow;
-
 	//Generate approximations for action eval
-
-	// MdagM^(+- 1/inv_pow)
-	std::cout<<GridLogMessage << "Generating degree "<<param.action_degree<<" and tolerance " << param.action_tolerance << " for x^(1/" << inv_pow << ")"<<std::endl;
-	remez.generateApprox(param.action_degree,1,inv_pow);
-	ApproxPowerAction.Init(remez,param.action_tolerance,false);
-	ApproxNegPowerAction.Init(remez,param.action_tolerance,true);
-
-	// VdagV^(+- 1/(2*inv_pow))
-	std::cout<<GridLogMessage << "Generating degree "<<param.action_degree<<" and tolerance " << param.action_tolerance <<" for x^(1/" << _2_inv_pow << ")"<<std::endl;
-	remez.generateApprox(param.action_degree,1,_2_inv_pow);
-   	ApproxHalfPowerAction.Init(remez,param.action_tolerance,false);
-	ApproxNegHalfPowerAction.Init(remez,param.action_tolerance,true);
+	generateApprox(ApproxPowerAction, ApproxNegPowerAction, param.inv_pow, param.action_degree, param.action_tolerance, remez);
+	generateApprox(ApproxHalfPowerAction, ApproxNegHalfPowerAction, 2*param.inv_pow, param.action_degree, param.action_tolerance, remez);
 
 	//Generate approximations for MD
-	if(param.md_degree != param.action_degree || 
-	   param.md_tolerance < param.action_tolerance  //no point in finding less precise polynomial if the degree is the same
-	   ){
-	  // MdagM^(+- 1/inv_pow)
-	  std::cout<<GridLogMessage << "Generating degree "<<param.md_degree<<" and tolerance " << param.md_tolerance <<" for x^(1/" << inv_pow << ")"<<std::endl;
-	  remez.generateApprox(param.md_degree,1,inv_pow);
-	  ApproxPowerMD.Init(remez,param.md_tolerance,false);
-	  ApproxNegPowerMD.Init(remez,param.md_tolerance,true);
-
-	  // VdagV^(+- 1/(2*inv_pow))
-	  std::cout<<GridLogMessage << "Generating degree "<<param.md_degree<<" and tolerance " << param.md_tolerance <<" for x^(1/" << _2_inv_pow << ")"<<std::endl;
-	  remez.generateApprox(param.md_degree,1,_2_inv_pow);
-	  ApproxHalfPowerMD.Init(remez,param.md_tolerance,false);
-	  ApproxNegHalfPowerMD.Init(remez,param.md_tolerance,true);
+	if(param.md_degree != param.action_degree){ //note the CG tolerance is unrelated to the stopping condition of the Remez algorithm
+	  generateApprox(ApproxPowerMD, ApproxNegPowerMD, param.inv_pow, param.md_degree, param.md_tolerance, remez);
+	  generateApprox(ApproxHalfPowerMD, ApproxNegHalfPowerMD, 2*param.inv_pow, param.md_degree, param.md_tolerance, remez);
 	}else{
 	  std::cout<<GridLogMessage << "Using same rational approximations for MD as for action evaluation" << std::endl;
 	  ApproxPowerMD = ApproxPowerAction; 
@@ -156,7 +145,6 @@ NAMESPACE_BEGIN(Grid);
 
 	  ApproxHalfPowerMD = ApproxHalfPowerAction;
 	  ApproxNegHalfPowerMD = ApproxNegHalfPowerAction;
-
 	  for(int i=0;i<ApproxPowerMD.tolerances.size();i++)
 	    ApproxNegHalfPowerMD.tolerances[i] = ApproxHalfPowerMD.tolerances[i] = param.md_tolerance;
 	}

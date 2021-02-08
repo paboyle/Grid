@@ -125,7 +125,7 @@ protected:
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
       double end_force = usecond();
       Real force_abs = std::sqrt(norm2(force)/U.Grid()->gSites());
-      std::cout << GridLogIntegrator << "["<<level<<"]["<<a<<"] Force average: " << force_abs << std::endl;
+      std::cout << GridLogIntegrator << "["<<level<<"]["<<a<<"] Force average: " << force_abs << " Time step: " << ep << " Impulse average: " << force_abs * ep * HMC_MOMENTUM_DENOMINATOR << std::endl;
       Mom -= force * ep* HMC_MOMENTUM_DENOMINATOR;; 
       double end_full = usecond();
       double time_full  = (end_full - start_full) / 1e3;
