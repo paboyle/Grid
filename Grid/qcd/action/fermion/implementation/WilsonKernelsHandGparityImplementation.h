@@ -646,6 +646,11 @@ NAMESPACE_BEGIN(Grid);
   HAND_RESULT_EXT(ss,F)
 
 #define HAND_SPECIALISE_GPARITY(IMPL)					\
+  template<> accelerator_inline void					\
+  WilsonKernels<IMPL>::HandDhopSiteSycl(StencilVector st_perm, StencilEntry *st_p, \
+					SiteDoubledGaugeField *U, SiteHalfSpinor * buf, \
+					int sF, int sU, const SiteSpinor *in, SiteSpinor *out) {} \
+  									\
   template<> accelerator_inline void						\
   WilsonKernels<IMPL>::HandDhopSite(const StencilView &st, const DoubledGaugeFieldView &U,SiteHalfSpinor  *buf, \
 				    int ss,int sU,const FermionFieldView &in, const FermionFieldView &out) \
