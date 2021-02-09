@@ -284,6 +284,7 @@ int main(int argc, char **argv) {
   typedef typename FermionActionF::FermionField FermionFieldF;
 
   typedef GeneralEvenOddRatioRationalMixedPrecPseudoFermionAction<FermionImplPolicyD,FermionImplPolicyF> MixedPrecRHMC;
+  typedef GeneralEvenOddRatioRationalPseudoFermionAction<FermionImplPolicyD> DoublePrecRHMC;
 
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   IntegratorParameters MD;
@@ -380,8 +381,10 @@ int main(int argc, char **argv) {
   rat_act_params_l.precision= 60;
   rat_act_params_l.MaxIter  = 10000;
   user_params.rat_quo_l.Export(rat_act_params_l);
+  std::cout << GridLogMessage << " Light quark bounds check every " << rat_act_params_l.BoundsCheckFreq << " trajectories (avg)" << std::endl;
  
   MixedPrecRHMC Quotient_l(Denominator_lD, Numerator_lD, Denominator_lF, Numerator_lF, rat_act_params_l, user_params.rat_quo_l.reliable_update_freq);
+  //DoublePrecRHMC Quotient_l(Denominator_lD, Numerator_lD, rat_act_params_l);
   Level1.push_back(&Quotient_l);
 
 
@@ -399,8 +402,10 @@ int main(int argc, char **argv) {
   rat_act_params_s.precision= 60;
   rat_act_params_s.MaxIter  = 10000;
   user_params.rat_quo_s.Export(rat_act_params_s);
+  std::cout << GridLogMessage << " Heavy quark bounds check every " << rat_act_params_l.BoundsCheckFreq << " trajectories (avg)" << std::endl;
 
   MixedPrecRHMC Quotient_s(Denominator_sD, Numerator_sD, Denominator_sF, Numerator_sF, rat_act_params_s, user_params.rat_quo_s.reliable_update_freq); 
+  //DoublePrecRHMC Quotient_s(Denominator_sD, Numerator_sD, rat_act_params_s); 
   Level1.push_back(&Quotient_s);  
 
 
@@ -435,8 +440,8 @@ int main(int argc, char **argv) {
     TheHMC.initializeGaugeFieldAndRNGs(Ud);
     if(eigenrange_l) computeEigenvalues<FermionActionD, FermionFieldD>(lanc_params_l, FGridD, FrbGridD, Ud, Numerator_lD, TheHMC.Resources.GetParallelRNG());
     if(eigenrange_s) computeEigenvalues<FermionActionD, FermionFieldD>(lanc_params_s, FGridD, FrbGridD, Ud, Numerator_sD, TheHMC.Resources.GetParallelRNG());
-    if(tune_rhmc_l) checkRHMC<FermionActionD, FermionFieldD, MixedPrecRHMC>(FGridD, FrbGridD, Ud, Numerator_lD, Denominator_lD, Quotient_l, TheHMC.Resources.GetParallelRNG(), 2, "light");
-    if(tune_rhmc_s) checkRHMC<FermionActionD, FermionFieldD, MixedPrecRHMC>(FGridD, FrbGridD, Ud, Numerator_sD, Denominator_sD, Quotient_s, TheHMC.Resources.GetParallelRNG(), 4, "strange");
+    if(tune_rhmc_l) checkRHMC<FermionActionD, FermionFieldD, decltype(Quotient_l)>(FGridD, FrbGridD, Ud, Numerator_lD, Denominator_lD, Quotient_l, TheHMC.Resources.GetParallelRNG(), 2, "light");
+    if(tune_rhmc_s) checkRHMC<FermionActionD, FermionFieldD, decltype(Quotient_s)>(FGridD, FrbGridD, Ud, Numerator_sD, Denominator_sD, Quotient_s, TheHMC.Resources.GetParallelRNG(), 4, "strange");
 
     std::cout << GridLogMessage << " Done" << std::endl;
     Grid_finalize();

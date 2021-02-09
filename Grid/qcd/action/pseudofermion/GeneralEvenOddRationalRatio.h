@@ -232,13 +232,19 @@ NAMESPACE_BEGIN(Grid);
 	multiShiftInverse(Denominator, ApproxNegHalfPowerAction, param.MaxIter, X,Y);
 
 	// Randomly apply rational bounds checks.
-	if ( param.BoundsCheckFreq != 0 && (rand()%param.BoundsCheckFreq)==0 ) { 
+	int rcheck = rand();
+	CartesianCommunicator::BroadcastWorld(0,(void *)&rcheck,sizeof(int)); //make sure all nodes have the same number or you will sporadically hang and spend days trying to find out why (trust me - CK)
+
+	if ( param.BoundsCheckFreq != 0 && (rcheck % param.BoundsCheckFreq)==0 ) { 
 	  std::cout<<GridLogMessage << action_name() << " compute action: doing bounds check" << std::endl;
 	  FermionField gauss(NumOp.FermionRedBlackGrid());
 	  gauss = PhiOdd;
 	  SchurDifferentiableOperator<Impl> MdagM(DenOp);
+	  std::cout<<GridLogMessage << action_name() << " compute action: checking high bounds" << std::endl;
 	  HighBoundCheck(MdagM,gauss,param.hi);
+	  std::cout<<GridLogMessage << action_name() << " compute action: full approximation" << std::endl;
 	  InversePowerBoundsCheck(param.inv_pow,param.MaxIter,param.action_tolerance*100,MdagM,gauss,ApproxNegPowerAction);
+	  std::cout<<GridLogMessage << action_name() << " compute action: bounds check complete" << std::endl;
 	}
 
 	//  Phidag VdagV^1/(2*inv_pow) MdagM^-1/(2*inv_pow)  MdagM^-1/(2*inv_pow) VdagV^1/(2*inv_pow) Phi
