@@ -79,10 +79,10 @@ StaggeredKernels<Impl>::StaggeredKernels(const ImplParams &p) : Base(p){};
 ////////////////////////////////////////////////////////////////////////////////////
 template <class Impl>
 template <int Naik> accelerator_inline
-void StaggeredKernels<Impl>::DhopSiteGeneric(StencilView &st, 
-					     DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
-					     SiteSpinor *buf, int sF, int sU, 
-					     const FermionFieldView &in, FermionFieldView &out, int dag) 
+void StaggeredKernels<Impl>::DhopSiteGeneric(const StencilView &st, 
+					     const DoubledGaugeFieldView &U, const DoubledGaugeFieldView &UUU,
+ 					     SiteSpinor *buf, int sF, int sU, 
+					     const FermionFieldView &in, const FermionFieldView &out, int dag) 
 {
   const SiteSpinor *chi_p;
   SiteSpinor chi;
@@ -127,10 +127,11 @@ void StaggeredKernels<Impl>::DhopSiteGeneric(StencilView &st,
   ///////////////////////////////////////////////////
 template <class Impl>
 template <int Naik> accelerator_inline
-void StaggeredKernels<Impl>::DhopSiteGenericInt(StencilView &st, 
-						DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
-						SiteSpinor *buf, int sF, int sU, 
-						const FermionFieldView &in, FermionFieldView &out,int dag) {
+void StaggeredKernels<Impl>::DhopSiteGenericInt(const StencilView &st, 
+						const DoubledGaugeFieldView &U, const DoubledGaugeFieldView &UUU,
+ 						SiteSpinor *buf, int sF, int sU, 
+						const FermionFieldView &in, const FermionFieldView &out,int dag)
+{
   const SiteSpinor *chi_p;
   SiteSpinor chi;
   SiteSpinor Uchi;
@@ -175,10 +176,13 @@ void StaggeredKernels<Impl>::DhopSiteGenericInt(StencilView &st,
   ///////////////////////////////////////////////////
 template <class Impl>
 template <int Naik> accelerator_inline
-void StaggeredKernels<Impl>::DhopSiteGenericExt(StencilView &st, 
-						DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
-						SiteSpinor *buf, int sF, int sU,
-						const FermionFieldView &in, FermionFieldView &out,int dag) {
+void StaggeredKernels<Impl>::DhopSiteGenericExt(const StencilView &st, 
+						const DoubledGaugeFieldView &U,
+						const DoubledGaugeFieldView &UUU,
+ 						SiteSpinor *buf, int sF, int sU,
+						const FermionFieldView &in,
+						const FermionFieldView &out,int dag)
+{
   const SiteSpinor *chi_p;
   //  SiteSpinor chi;
   SiteSpinor Uchi;
@@ -225,8 +229,13 @@ void StaggeredKernels<Impl>::DhopSiteGenericExt(StencilView &st,
 // Driving / wrapping routine to select right kernel
 ////////////////////////////////////////////////////////////////////////////////////
 template <class Impl> 
-void StaggeredKernels<Impl>::DhopDirKernel(StencilImpl &st, DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, SiteSpinor * buf,
-					   int sF, int sU, const FermionFieldView &in, FermionFieldView &out, int dir,int disp)
+void StaggeredKernels<Impl>::DhopDirKernel(StencilImpl &st,
+					   const DoubledGaugeFieldView &U,
+					   const DoubledGaugeFieldView &UUU,
+					   SiteSpinor * buf,
+					   int sF, int sU,
+					   const FermionFieldView &in,
+					   const FermionFieldView &out, int dir,int disp)
 {
   // Disp should be either +1,-1,+3,-3
   // What about "dag" ?
@@ -254,7 +263,8 @@ void StaggeredKernels<Impl>::DhopDirKernel(StencilImpl &st, DoubledGaugeFieldVie
   });
 
 template <class Impl> 
-void StaggeredKernels<Impl>::DhopImproved(StencilImpl &st, LebesgueOrder &lo, 
+void StaggeredKernels<Impl>::DhopImproved(StencilImpl &st,
+					  LebesgueOrder &lo, 
 					  DoubledGaugeField &U, DoubledGaugeField &UUU, 
 					  const FermionField &in, FermionField &out, int dag, int interior,int exterior)
 {

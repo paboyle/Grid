@@ -618,11 +618,13 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 template <class Impl>
-void StaggeredKernels<Impl>::DhopSiteAsm(StencilView &st,
-					 DoubledGaugeFieldView &U,
-					 DoubledGaugeFieldView &UUU,
-					 SiteSpinor *buf, int sF,
-					 int sU, const FermionFieldView &in, FermionFieldView &out,int dag) 
+void StaggeredKernels<Impl>::DhopSiteAsm(const StencilView &st,
+					 const DoubledGaugeFieldView &U,
+					 const DoubledGaugeFieldView &UUU,
+ 					 SiteSpinor *buf, int sF,
+					 int sU,
+					 const FermionFieldView &in,
+					 const FermionFieldView &out,int dag) 
 {
   assert(0);
 };
@@ -683,11 +685,13 @@ void StaggeredKernels<Impl>::DhopSiteAsm(StencilView &st,
 
   // This is the single precision 5th direction vectorised kernel
 #include <Grid/simd/Intel512single.h>
-template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilView &st,
-								    DoubledGaugeFieldView &U,
-								    DoubledGaugeFieldView &UUU,
-								    SiteSpinor *buf, int sF,
-								    int sU, const FermionFieldView &in, FermionFieldView &out,int dag) 
+template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(const StencilView &st,
+								    const DoubledGaugeFieldView &U,
+								    const DoubledGaugeFieldView &UUU,
+ 								    SiteSpinor *buf, int sF,
+								    int sU,
+								    const FermionFieldView &in,
+								    const FermionFieldView &out,int dag) 
 {
 #ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;
@@ -738,11 +742,13 @@ template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilView 
 }
 
 #include <Grid/simd/Intel512double.h>
-template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilView &st, 
-								    DoubledGaugeFieldView &U,
-								    DoubledGaugeFieldView &UUU,
-								    SiteSpinor *buf, int sF,
-								    int sU, const FermionFieldView &in, FermionFieldView &out, int dag) 
+template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(const StencilView &st, 
+								    const DoubledGaugeFieldView &U,
+								    const DoubledGaugeFieldView &UUU,
+ 								    SiteSpinor *buf, int sF,
+								    int sU,
+								    const FermionFieldView &in,
+								    const FermionFieldView &out, int dag) 
 {
 #ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;
@@ -824,11 +830,13 @@ template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilView 
   // This is the single precision 5th direction vectorised kernel
 
 #include <Grid/simd/Intel512single.h>
-template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilView &st, 
-							       DoubledGaugeFieldView &U,
-							       DoubledGaugeFieldView &UUU,
-							       SiteSpinor *buf, int sF,
-							       int sU, const FermionFieldView &in, FermionFieldView &out,int dag) 
+template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(const StencilView &st, 
+							       const DoubledGaugeFieldView &U,
+							       const DoubledGaugeFieldView &UUU,
+ 							       SiteSpinor *buf, int sF,
+							       int sU,
+							       const FermionFieldView &in,
+							       const FermionFieldView &out,int dag) 
 {
 #ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;
@@ -893,11 +901,13 @@ template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilView &st,
 }
 
 #include <Grid/simd/Intel512double.h>
-template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilView &st, 
-							       DoubledGaugeFieldView &U,
-							       DoubledGaugeFieldView &UUU,
-							       SiteSpinor *buf, int sF,
-							       int sU, const FermionFieldView &in, FermionFieldView &out,int dag) 
+template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(const StencilView &st, 
+							       const DoubledGaugeFieldView &U,
+							       const DoubledGaugeFieldView &UUU,
+ 							       SiteSpinor *buf, int sF,
+							       int sU,
+							       const FermionFieldView &in,
+							       const FermionFieldView &out,int dag) 
 {
 #ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;

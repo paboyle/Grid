@@ -32,6 +32,7 @@ directory
 #include <Grid/qcd/action/fermion/FermionCore.h>
 #include <Grid/qcd/action/fermion/implementation/WilsonKernelsImplementation.h>
 #include <Grid/qcd/action/fermion/implementation/WilsonKernelsHandImplementation.h>
+#include <Grid/qcd/action/fermion/implementation/WilsonKernelsHandImplementationSycl.h>
 
 #ifndef AVX512
 #ifndef QPX

@@ -95,7 +95,7 @@ public:
 					  const _Spinor &chi,
 					  int mu,
 					  StencilEntry *SE,
-					  StencilView &St) 
+					  const StencilView &St) 
   {
     multLink(phi,U,chi,mu);
   }

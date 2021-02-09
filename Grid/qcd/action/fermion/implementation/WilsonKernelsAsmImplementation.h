@@ -38,46 +38,46 @@ NAMESPACE_BEGIN(Grid);
 
 ///////////////////////////////////////////////////////////
 // Default to no assembler implementation
-// Will specialise to 
+// Will specialise to AVX512 if available
 ///////////////////////////////////////////////////////////
 template<class Impl> void 
-WilsonKernels<Impl >::AsmDhopSite(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
-				  int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+WilsonKernels<Impl >::AsmDhopSite(const StencilView &st, const DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+				  int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, const FermionFieldView &out)
 {
   assert(0);
 }
 
 template<class Impl> void 
-WilsonKernels<Impl >::AsmDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
-				     int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+WilsonKernels<Impl >::AsmDhopSiteDag(const StencilView &st, const DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+				     int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, const FermionFieldView &out)
 {
   assert(0);
 }
 
 template<class Impl> void 
-WilsonKernels<Impl >::AsmDhopSiteInt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
-				     int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+WilsonKernels<Impl >::AsmDhopSiteInt(const StencilView &st, const DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+				     int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, const FermionFieldView &out)
 {
   assert(0);
 }
 
 template<class Impl> void 
-WilsonKernels<Impl >::AsmDhopSiteDagInt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
-					int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+WilsonKernels<Impl >::AsmDhopSiteDagInt(const StencilView &st, const DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+					int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, const FermionFieldView &out)
 {
   assert(0);
 }
 
 template<class Impl> void 
-WilsonKernels<Impl >::AsmDhopSiteExt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
-				     int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+WilsonKernels<Impl >::AsmDhopSiteExt(const StencilView &st, const DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+				     int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, const FermionFieldView &out)
 {
   assert(0);
 }
 
 template<class Impl> void 
-WilsonKernels<Impl >::AsmDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
-					int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, FermionFieldView &out)
+WilsonKernels<Impl >::AsmDhopSiteDagExt(const StencilView &st, const DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+					int ss,int ssU,int Ls,int Ns,const FermionFieldView &in, const FermionFieldView &out)
 {
   assert(0);
 }

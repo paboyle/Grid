@@ -88,7 +88,7 @@ public:
 					  const _Spinor &chi, 
 					  int mu, 
 					  StencilEntry *SE,
-					  StencilView &St) 
+					  const StencilView &St) 
   {
     int direction = St._directions[mu];
     int distance  = St._distances[mu];

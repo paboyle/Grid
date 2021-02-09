@@ -147,10 +147,12 @@ NAMESPACE_BEGIN(Grid);
 
 template <class Impl>
 template <int Naik> accelerator_inline
-void StaggeredKernels<Impl>::DhopSiteHand(StencilView &st,
-					  DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU,
-					  SiteSpinor *buf, int sF, int sU, 
-					  const FermionFieldView &in, FermionFieldView &out,int dag) 
+void StaggeredKernels<Impl>::DhopSiteHand(const StencilView &st,
+					  const DoubledGaugeFieldView &U,
+					  const DoubledGaugeFieldView &UUU,
+ 					  SiteSpinor *buf, int sF, int sU, 
+					  const FermionFieldView &in,
+					  const FermionFieldView &out,int dag) 
 {
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -222,10 +224,12 @@ void StaggeredKernels<Impl>::DhopSiteHand(StencilView &st,
 
 template <class Impl>
 template <int Naik> accelerator_inline
-void StaggeredKernels<Impl>::DhopSiteHandInt(StencilView &st, 
-					     DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
-					     SiteSpinor *buf, int sF, int sU, 
-					     const FermionFieldView &in, FermionFieldView &out,int dag) 
+void StaggeredKernels<Impl>::DhopSiteHandInt(const StencilView &st, 
+					     const DoubledGaugeFieldView &U,
+					     const DoubledGaugeFieldView &UUU,
+ 					     SiteSpinor *buf, int sF, int sU, 
+					     const FermionFieldView &in,
+					     const FermionFieldView &out,int dag) 
 {
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -301,10 +305,12 @@ void StaggeredKernels<Impl>::DhopSiteHandInt(StencilView &st,
 
 template <class Impl>
 template <int Naik> accelerator_inline
-void StaggeredKernels<Impl>::DhopSiteHandExt(StencilView &st,
-					     DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
-					     SiteSpinor *buf, int sF, int sU, 
-					     const FermionFieldView &in, FermionFieldView &out,int dag) 
+void StaggeredKernels<Impl>::DhopSiteHandExt(const StencilView &st,
+					     const DoubledGaugeFieldView &U,
+					     const DoubledGaugeFieldView &UUU,
+ 					     SiteSpinor *buf, int sF, int sU, 
+					     const FermionFieldView &in,
+					     const FermionFieldView &out,int dag) 
 {
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;

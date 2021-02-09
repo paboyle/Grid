@@ -56,8 +56,12 @@ template<class Impl> class StaggeredKernels : public FermionOperator<Impl> , pub
 		 DoubledGaugeField &U,
 		 const FermionField &in, FermionField &out, int dag, int interior,int exterior);
   
-  void DhopDirKernel(StencilImpl &st, DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, SiteSpinor * buf,
-		     int sF, int sU, const FermionFieldView &in, FermionFieldView &out, int dir,int disp);
+  void DhopDirKernel(StencilImpl &st,
+		     const DoubledGaugeFieldView &U,
+		     const DoubledGaugeFieldView &UUU, SiteSpinor * buf,
+		     int sF, int sU,
+		     const FermionFieldView &in,
+		     const FermionFieldView &out, int dir,int disp);
  protected:    
 
    ///////////////////////////////////////////////////////////////////////////////////////
@@ -65,53 +69,67 @@ template<class Impl> class StaggeredKernels : public FermionOperator<Impl> , pub
    ///////////////////////////////////////////////////////////////////////////////////////
    template<int Naik> 
    static accelerator_inline
-   void DhopSiteGeneric(StencilView &st, 
-			DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, 
+   void DhopSiteGeneric(const StencilView &st, 
+			const DoubledGaugeFieldView &U,
+			const DoubledGaugeFieldView &UUU, 
 			SiteSpinor * buf, int LLs, int sU, 
-			const FermionFieldView &in, FermionFieldView &out,int dag);
+			const FermionFieldView &in,
+			const FermionFieldView &out,int dag);
    
    template<int Naik> static accelerator_inline
-   void DhopSiteGenericInt(StencilView &st, 
-			   DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU, 
+   void DhopSiteGenericInt(const StencilView &st, 
+			   const DoubledGaugeFieldView &U,
+			   const DoubledGaugeFieldView &UUU, 
 			   SiteSpinor * buf, int LLs, int sU, 
-			   const FermionFieldView &in, FermionFieldView &out,int dag);
+			   const FermionFieldView &in,
+			   const FermionFieldView &out,int dag);
    
    template<int Naik> static accelerator_inline
-   void DhopSiteGenericExt(StencilView &st, 
-			   DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
-			   SiteSpinor * buf, int LLs, int sU, 
-			   const FermionFieldView &in, FermionFieldView &out,int dag);
+   void DhopSiteGenericExt(const StencilView &st, 
+			   const DoubledGaugeFieldView &U,
+			   const DoubledGaugeFieldView &UUU,
+ 			   SiteSpinor * buf, int LLs, int sU, 
+			   const FermionFieldView &in,
+			   const FermionFieldView &out,int dag);
 
    ///////////////////////////////////////////////////////////////////////////////////////
    // Nc=3 specific kernels
    ///////////////////////////////////////////////////////////////////////////////////////
    
    template<int Naik> static accelerator_inline
-   void DhopSiteHand(StencilView &st, 
-		     DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, 
-		     SiteSpinor * buf, int LLs, int sU, 
-		     const FermionFieldView &in, FermionFieldView &out,int dag);
+   void DhopSiteHand(const StencilView &st, 
+		     const DoubledGaugeFieldView &U,
+		     const DoubledGaugeFieldView &UUU, 
+ 		     SiteSpinor * buf, int LLs, int sU, 
+		     const FermionFieldView &in,
+		     const FermionFieldView &out,int dag);
    
    template<int Naik> static accelerator_inline
-   void DhopSiteHandInt(StencilView &st, 
-			DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, 
-			SiteSpinor * buf, int LLs, int sU, 
-			const FermionFieldView &in, FermionFieldView &out,int dag);
+   void DhopSiteHandInt(const StencilView &st, 
+			const DoubledGaugeFieldView &U,
+			const DoubledGaugeFieldView &UUU, 
+ 			SiteSpinor * buf, int LLs, int sU, 
+			const FermionFieldView &in,
+			const FermionFieldView &out,int dag);
    
    template<int Naik> static accelerator_inline
-   void DhopSiteHandExt(StencilView &st, 
-			DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, 
-			SiteSpinor * buf, int LLs, int sU, 
-			const FermionFieldView &in, FermionFieldView &out,int dag);
+   void DhopSiteHandExt(const StencilView &st, 
+			const DoubledGaugeFieldView &U,
+			const DoubledGaugeFieldView &UUU, 
+ 			SiteSpinor * buf, int LLs, int sU, 
+			const FermionFieldView &in,
+			const FermionFieldView &out,int dag);
 
    ///////////////////////////////////////////////////////////////////////////////////////
    // Asm Nc=3 specific kernels
    ///////////////////////////////////////////////////////////////////////////////////////
    
-   void DhopSiteAsm(StencilView &st, 
-		    DoubledGaugeFieldView &U,DoubledGaugeFieldView &UUU, 
-		    SiteSpinor * buf, int LLs, int sU, 
-		    const FermionFieldView &in, FermionFieldView &out,int dag);
+   void DhopSiteAsm(const StencilView &st, 
+		    const DoubledGaugeFieldView &U,
+		    const DoubledGaugeFieldView &UUU, 
+ 		    SiteSpinor * buf, int LLs, int sU, 
+		    const FermionFieldView &in,
+		    const FermionFieldView &out,int dag);
   
 public:
 

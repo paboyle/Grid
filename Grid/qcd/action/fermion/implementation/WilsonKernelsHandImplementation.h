@@ -496,8 +496,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 template<class Impl> accelerator_inline void 
-WilsonKernels<Impl>::HandDhopSite(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
-				  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
+WilsonKernels<Impl>::HandDhopSite(const StencilView &st, const DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
+				  int ss,int sU,const FermionFieldView &in, const FermionFieldView &out)
 {
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
@@ -520,8 +520,8 @@ WilsonKernels<Impl>::HandDhopSite(StencilView &st, DoubledGaugeFieldView &U,Site
 }
 
 template<class Impl>  accelerator_inline
-void WilsonKernels<Impl>::HandDhopSiteDag(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
-					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
+void WilsonKernels<Impl>::HandDhopSiteDag(const StencilView &st,const DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+					  int ss,int sU,const FermionFieldView &in, const FermionFieldView &out)
 {
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -543,8 +543,8 @@ void WilsonKernels<Impl>::HandDhopSiteDag(StencilView &st,DoubledGaugeFieldView 
 }
 
 template<class Impl>  accelerator_inline void 
-WilsonKernels<Impl>::HandDhopSiteInt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
-					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
+WilsonKernels<Impl>::HandDhopSiteInt(const StencilView &st,const DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
+					  int ss,int sU,const FermionFieldView &in, const FermionFieldView &out)
 {
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
@@ -567,8 +567,8 @@ WilsonKernels<Impl>::HandDhopSiteInt(StencilView &st,DoubledGaugeFieldView &U,Si
 }
 
 template<class Impl> accelerator_inline
-void WilsonKernels<Impl>::HandDhopSiteDagInt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
-						  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
+void WilsonKernels<Impl>::HandDhopSiteDagInt(const StencilView &st,const DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+						  int ss,int sU,const FermionFieldView &in, const FermionFieldView &out)
 {
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -590,8 +590,8 @@ void WilsonKernels<Impl>::HandDhopSiteDagInt(StencilView &st,DoubledGaugeFieldVi
 }
 
 template<class Impl>  accelerator_inline void 
-WilsonKernels<Impl>::HandDhopSiteExt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
-					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
+WilsonKernels<Impl>::HandDhopSiteExt(const StencilView &st,const DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
+					  int ss,int sU,const FermionFieldView &in, const FermionFieldView &out)
 {
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
@@ -615,8 +615,8 @@ WilsonKernels<Impl>::HandDhopSiteExt(StencilView &st,DoubledGaugeFieldView &U,Si
 }
 
 template<class Impl>  accelerator_inline
-void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
-						  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
+void WilsonKernels<Impl>::HandDhopSiteDagExt(const StencilView &st,const DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
+						  int ss,int sU,const FermionFieldView &in, const FermionFieldView &out)
 {
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;

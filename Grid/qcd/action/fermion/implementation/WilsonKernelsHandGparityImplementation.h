@@ -647,8 +647,8 @@ NAMESPACE_BEGIN(Grid);
 
 #define HAND_SPECIALISE_GPARITY(IMPL)					\
   template<> accelerator_inline void						\
-  WilsonKernels<IMPL>::HandDhopSite(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor  *buf, \
-				    int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
+  WilsonKernels<IMPL>::HandDhopSite(const StencilView &st, const DoubledGaugeFieldView &U,SiteHalfSpinor  *buf, \
+				    int ss,int sU,const FermionFieldView &in, const FermionFieldView &out) \
   {									\
     typedef IMPL Impl;							\
     typedef typename Simd::scalar_type S;				\
@@ -663,8 +663,8 @@ NAMESPACE_BEGIN(Grid);
   }									\
 									\
   template<> accelerator_inline void						\
-  WilsonKernels<IMPL>::HandDhopSiteDag(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
-				       int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
+  WilsonKernels<IMPL>::HandDhopSiteDag(const StencilView &st, const DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
+				       int ss,int sU,const FermionFieldView &in, const FermionFieldView &out) \
   {									\
     typedef IMPL Impl;							\
     typedef typename Simd::scalar_type S;				\
@@ -679,8 +679,8 @@ NAMESPACE_BEGIN(Grid);
   }									\
 									\
   template<> accelerator_inline void						\
-  WilsonKernels<IMPL>::HandDhopSiteInt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor  *buf, \
-				       int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
+  WilsonKernels<IMPL>::HandDhopSiteInt(const StencilView &st, const DoubledGaugeFieldView &U,SiteHalfSpinor  *buf, \
+				       int ss,int sU,const FermionFieldView &in, const FermionFieldView &out) \
   {									\
     typedef IMPL Impl;							\
     typedef typename Simd::scalar_type S;				\
@@ -695,8 +695,8 @@ NAMESPACE_BEGIN(Grid);
   }									\
 									\
   template<> accelerator_inline void						\
-  WilsonKernels<IMPL>::HandDhopSiteDagInt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
-					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
+  WilsonKernels<IMPL>::HandDhopSiteDagInt(const StencilView &st, const DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
+					  int ss,int sU,const FermionFieldView &in, const FermionFieldView &out) \
   {									\
     typedef IMPL Impl;							\
     typedef typename Simd::scalar_type S;				\
@@ -711,8 +711,8 @@ NAMESPACE_BEGIN(Grid);
   }									\
 									\
   template<> accelerator_inline void							\
-  WilsonKernels<IMPL>::HandDhopSiteExt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor  *buf, \
-				       int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
+  WilsonKernels<IMPL>::HandDhopSiteExt(const StencilView &st, const DoubledGaugeFieldView &U,SiteHalfSpinor  *buf, \
+				       int ss,int sU,const FermionFieldView &in, const FermionFieldView &out) \
   {									\
     typedef IMPL Impl;							\
     typedef typename Simd::scalar_type S;				\
@@ -728,8 +728,8 @@ NAMESPACE_BEGIN(Grid);
     HAND_DOP_SITE_EXT(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
   }									\
   template<> accelerator_inline void						\
-  WilsonKernels<IMPL>::HandDhopSiteDagExt(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
-					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out) \
+  WilsonKernels<IMPL>::HandDhopSiteDagExt(const StencilView &st, const DoubledGaugeFieldView &U,SiteHalfSpinor *buf, \
+					  int ss,int sU,const FermionFieldView &in, const FermionFieldView &out) \
   {									\
     typedef IMPL Impl;							\
     typedef typename Simd::scalar_type S;				\
