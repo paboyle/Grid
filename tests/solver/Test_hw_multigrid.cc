@@ -274,6 +274,8 @@ int main (int argc, char ** argv)
 
   GridCartesian *Coarse4d =  SpaceTimeGrid::makeFourDimGrid(clatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());;
   GridCartesian *Coarse5d =  SpaceTimeGrid::makeFiveDimGrid(Ls,Coarse4d);
+  GridRedBlackCartesian * Coarse4dRB = SpaceTimeGrid::makeFourDimRedBlackGrid(Coarse4d);
+  GridRedBlackCartesian * Coarse5dRB = SpaceTimeGrid::makeFiveDimRedBlackGrid(1,Coarse4d);
 
   std::vector<int> seeds({1,2,3,4});
   GridParallelRNG          RNG5(FGrid);   RNG5.SeedFixedIntegers(seeds);
@@ -335,7 +337,7 @@ int main (int argc, char ** argv)
 
   NonHermitianLinearOperator<DomainWallFermionR,LatticeFermion>  LinOpDwf(Ddwf);
 
-  Level1Op LDOp  (*Coarse5d,0);   
+  Level1Op LDOp  (*Coarse5d,*Coarse5dRB,0);   
   
   std::cout<<GridLogMessage << " Callinig Coarsen the operator                          " <<std::endl;
   LDOp.CoarsenOperator(FGrid,LinOpDwf,Aggregates5D);

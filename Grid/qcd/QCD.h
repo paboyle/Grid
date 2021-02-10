@@ -80,6 +80,13 @@ template<typename T> struct isSpinor {
 template <typename T> using IfSpinor    = Invoke<std::enable_if< isSpinor<T>::value,int> > ;
 template <typename T> using IfNotSpinor = Invoke<std::enable_if<!isSpinor<T>::value,int> > ;
 
+const int CoarseIndex = 4;
+template<typename T> struct isCoarsened {
+   static constexpr bool value = (CoarseIndex<=T::TensorLevel);
+};
+template <typename T> using IfCoarsened    = Invoke<std::enable_if< isCoarsened<T>::value,int> > ;
+template <typename T> using IfNotCoarsened = Invoke<std::enable_if<!isCoarsened<T>::value,int> > ;
+
 // ChrisK very keen to add extra space for Gparity doubling.
 //
 // Also add domain wall index, in a way where Wilson operator 

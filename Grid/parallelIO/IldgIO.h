@@ -123,7 +123,7 @@ assert(GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) < 1.0e-5);
  ////////////////////////////////////////////////////////////
  // Helper to fill out metadata
  ////////////////////////////////////////////////////////////
- template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
+template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
 					  FieldMetaData &header,
 					  scidacRecord & _scidacRecord,
 					  scidacFile   & _scidacFile) 
@@ -619,12 +619,12 @@ class IldgWriter : public ScidacWriter {
   // Don't require scidac records EXCEPT checksum
   // Use Grid MetaData object if present.
   ////////////////////////////////////////////////////////////////
-  template <class vsimd>
-  void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,int sequence,std::string LFN,std::string description) 
+  template <class stats = PeriodicGaugeStatistics>
+  void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,int sequence,std::string LFN,std::string description) 
   {
     GridBase * grid = Umu.Grid();
-    typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
-    typedef iLorentzColourMatrix<vsimd> vobj;
+    typedef Lattice<vLorentzColourMatrixD> GaugeField;
+    typedef vLorentzColourMatrixD vobj;
     typedef typename vobj::scalar_object sobj;
 
     ////////////////////////////////////////
@@ -636,6 +636,9 @@ class IldgWriter : public ScidacWriter {
 
     ScidacMetaData(Umu,header,_scidacRecord,_scidacFile);
 
+    stats Stats;
+    Stats(Umu,header);
+    
     std::string format = header.floating_point;
     header.ensemble_id    = description;
     header.ensemble_label = description;
@@ -705,10 +708,10 @@ class IldgReader : public GridLimeReader {
   // Else use ILDG MetaData object if present.
   // Else use SciDAC MetaData object if present.
   ////////////////////////////////////////////////////////////////
-  template <class vsimd>
-  void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu, FieldMetaData &FieldMetaData_) {
+  template <class stats = PeriodicGaugeStatistics>
+  void readConfiguration(Lattice<vLorentzColourMatrixD> &Umu, FieldMetaData &FieldMetaData_) {
 
-    typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
+    typedef Lattice<vLorentzColourMatrixD > GaugeField;
     typedef typename GaugeField::vector_object  vobj;
     typedef typename vobj::scalar_object sobj;
 
@@ -921,7 +924,8 @@ class IldgReader : public GridLimeReader {
 
     if ( found_FieldMetaData || found_usqcdInfo ) {
       FieldMetaData checker;
-      GaugeStatistics(Umu,checker);
+      stats Stats;
+      Stats(Umu,checker);
       assert(fabs(checker.plaquette  - FieldMetaData_.plaquette )<1.0e-5);
       assert(fabs(checker.link_trace - FieldMetaData_.link_trace)<1.0e-5);
       std::cout << GridLogMessage<<"Plaquette and link trace match " << std::endl;

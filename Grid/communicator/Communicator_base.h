@@ -1,4 +1,3 @@
-
 /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -108,6 +107,8 @@ public:
   ////////////////////////////////////////////////////////////
   // Reduction
   ////////////////////////////////////////////////////////////
+  void GlobalMax(RealD &);
+  void GlobalMax(RealF &);
   void GlobalSum(RealF &);
   void GlobalSumVector(RealF *,int N);
   void GlobalSum(RealD &);

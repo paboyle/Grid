@@ -100,6 +100,8 @@ void     acceleratorInit(void);
 #define accelerator        __host__ __device__
 #define accelerator_inline __host__ __device__ inline
 
+extern int acceleratorAbortOnGpuError;
+
 accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 #ifdef GRID_SIMT
   return threadIdx.z; 
@@ -140,6 +142,7 @@ void LambdaApply(uint64_t num1, uint64_t num2, uint64_t num3, lambda Lambda)
       printf("Cuda error %s \n", cudaGetErrorString( err ));		\
       puts(__FILE__);							\
       printf("Line %d\n",__LINE__);					\
+      if (acceleratorAbortOnGpuError) assert(err==cudaSuccess);		\
     }									\
   }
 
