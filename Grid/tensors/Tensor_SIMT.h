@@ -65,22 +65,20 @@ void coalescedWriteNonTemporal(vobj & __restrict__ vec,const vobj & __restrict__
 #else
 
 
+#if 0
+// Use the scalar as our own complex on GPU
 template<class vsimd,IfSimd<vsimd> = 0> accelerator_inline
-//typename vsimd::vector_type::datum
 typename vsimd::scalar_type
 coalescedRead(const vsimd & __restrict__ vec,int lane=acceleratorSIMTlane(vsimd::Nsimd()))
 {
-  //  typedef typename vsimd::vector_type::datum S;
   typedef typename vsimd::scalar_type S;
   S * __restrict__ p=(S *)&vec;
   return p[lane];
 }
 template<int ptype,class vsimd,IfSimd<vsimd> = 0> accelerator_inline
-//typename vsimd::vector_type::datum
 typename vsimd::scalar_type
 coalescedReadPermute(const vsimd & __restrict__ vec,int doperm,int lane=acceleratorSIMTlane(vsimd::Nsimd()))
 {
-  //  typedef typename vsimd::vector_type::datum S;
   typedef typename vsimd::scalar_type S;
 
   S * __restrict__ p=(S *)&vec;
@@ -90,16 +88,43 @@ coalescedReadPermute(const vsimd & __restrict__ vec,int doperm,int lane=accelera
 }
 template<class vsimd,IfSimd<vsimd> = 0> accelerator_inline
 void coalescedWrite(vsimd & __restrict__ vec,
-		    //		    const typename vsimd::vector_type::datum & __restrict__ extracted,
 		    const typename vsimd::scalar_type & __restrict__ extracted,
 		    int lane=acceleratorSIMTlane(vsimd::Nsimd()))
 {
-  //  typedef typename vsimd::vector_type::datum S;
   typedef typename vsimd::scalar_type S;
   S * __restrict__ p=(S *)&vec;
   p[lane]=extracted;
 }
+#else
+template<class vsimd,IfSimd<vsimd> = 0> accelerator_inline
+typename vsimd::vector_type::datum
+coalescedRead(const vsimd & __restrict__ vec,int lane=acceleratorSIMTlane(vsimd::Nsimd()))
+{
+  typedef typename vsimd::vector_type::datum S;
+  S * __restrict__ p=(S *)&vec;
+  return p[lane];
+}
+template<int ptype,class vsimd,IfSimd<vsimd> = 0> accelerator_inline
+typename vsimd::vector_type::datum
+coalescedReadPermute(const vsimd & __restrict__ vec,int doperm,int lane=acceleratorSIMTlane(vsimd::Nsimd()))
+{
+  typedef typename vsimd::vector_type::datum S;
 
+  S * __restrict__ p=(S *)&vec;
+  int mask = vsimd::Nsimd() >> (ptype + 1);
+  int plane= doperm ? lane ^ mask : lane;
+  return p[plane];
+}
+template<class vsimd,IfSimd<vsimd> = 0> accelerator_inline
+void coalescedWrite(vsimd & __restrict__ vec,
+		    const typename vsimd::vector_type::datum & __restrict__ extracted,
+		    int lane=acceleratorSIMTlane(vsimd::Nsimd()))
+{
+  typedef typename vsimd::vector_type::datum S;
+  S * __restrict__ p=(S *)&vec;
+  p[lane]=extracted;
+}
+#endif
 
 //////////////////////////////////////////
 // Extract and insert slices on the GPU
