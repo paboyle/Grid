@@ -72,6 +72,7 @@ struct EvolParameters: Serializable {
                                   Integer, StartTrajectory,
                                   Integer, Trajectories,
 				  Integer, SaveInterval,
+				  Integer, Steps,
                                   bool, MetropolisTest,
 				  std::string, StartingType,
 				  std::vector<Integer>, GparityDirs,
@@ -86,6 +87,7 @@ struct EvolParameters: Serializable {
     SaveInterval = 5;
     StartingType      = "ColdStart";
     GparityDirs.resize(3, 1); //1 for G-parity, 0 for periodic
+    Steps = 5;
   }
 };
 
@@ -237,11 +239,14 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
   std::string param_file = "params.xml";
+  bool file_load_check = false;
   for(int i=1;i<argc;i++){
-    if(std::string(argv[i]) == "--param_file"){
+    std::string sarg(argv[i]);
+    if(sarg == "--param_file"){
       assert(i!=argc-1);
       param_file = argv[i+1];
-      break;
+    }else if(sarg == "--read_check"){ //check the fields load correctly and pass checksum/plaquette repro
+      file_load_check = true;
     }
   }
 
@@ -291,7 +296,7 @@ int main(int argc, char **argv) {
   typedef ConjugateHMCRunnerD<MinimumNorm2> HMCWrapper; //NB: This is the "Omelyan integrator"
   typedef HMCWrapper::ImplPolicy GaugeImplPolicy;
   MD.name    = std::string("MinimumNorm2");
-  MD.MDsteps = 5; //5 steps of 0.2 for GP* ensembles
+  MD.MDsteps = user_params.Steps;
   MD.trajL   = 1.0;
 
   HMCparameters HMCparams;
@@ -357,6 +362,14 @@ int main(int argc, char **argv) {
   dirs4[Nd-1] = 0; //periodic gauge BC in time
 
   GaugeImplPolicy::setDirections(dirs4); //gauge BC
+
+  //Run optional gauge field checksum checker and exit
+  if(file_load_check){
+    TheHMC.initializeGaugeFieldAndRNGs(Ud);
+    std::cout << GridLogMessage << " Done" << std::endl;
+    Grid_finalize();
+    return 0;
+  }
 
 
   ////////////////////////////////////
