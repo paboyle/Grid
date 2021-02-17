@@ -7,7 +7,12 @@ AM_INIT_AUTOMAKE([subdir-objects 1.13])
 AM_EXTRA_RECURSIVE_TARGETS([tests bench])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([Grid/Grid.h])
-AC_CONFIG_HEADERS([Grid/Config.h],[[sed -i '' -e 's|PACKAGE_|GRID_|' -e 's|[[:space:]]PACKAGE[[:space:]]| GRID_PACKAGE |' -e 's|[[:space:]]VERSION[[:space:]]| GRID_PACKAGE_VERSION |' Grid/Config.h]])
+AC_CONFIG_HEADERS([Grid/Config.h],[[$SED_INPLACE -e 's|PACKAGE_|GRID_|' -e 's|[[:space:]]PACKAGE[[:space:]]| GRID_PACKAGE |' -e 's|[[:space:]]VERSION[[:space:]]| GRID_PACKAGE_VERSION |' Grid/Config.h]],
+    [if test x"$host_os" == x"${host_os#darwin}" ; then]
+        [SED_INPLACE="sed -i"]
+    [else]
+        [SED_INPLACE="sed -i .bak"]
+    [fi])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 ################ Get git info
