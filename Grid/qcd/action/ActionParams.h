@@ -54,7 +54,12 @@ struct WilsonImplParams {
 };
 
 struct StaggeredImplParams {
-  StaggeredImplParams()  {};
+  AcceleratorVector<Real,Nd> twist_n_2pi_L;
+  AcceleratorVector<Complex,Nd> boundary_phases;
+  StaggeredImplParams()  {
+    boundary_phases.resize(Nd, 1.0);
+    twist_n_2pi_L.resize(Nd, 0.0);
+  };
 };
   
   struct OneFlavourRationalParams : Serializable {
