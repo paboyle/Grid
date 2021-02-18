@@ -513,19 +513,18 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
 
   GridBase *grid = q1_left.Grid();
   
-  autoView( vbaryon_corr , baryon_corr , AcceleratorWrite);
-  autoView( vcorr_read   , baryon_corr , AcceleratorRead);
-  autoView( v1           , q1_left     , AcceleratorRead);
-  autoView( v2           , q2_left     , AcceleratorRead);
-  autoView( v3           , q3_left     , AcceleratorRead);
+  autoView(vbaryon_corr , baryon_corr , AcceleratorWrite);
+  autoView( v1          , q1_left     , AcceleratorRead);
+  autoView( v2          , q2_left     , AcceleratorRead);
+  autoView( v3          , q3_left     , AcceleratorRead);
 
   Real bytes =0.;
   bytes += grid->oSites() * (432.*sizeof(vComplex) + 126.*sizeof(int) + 36.*sizeof(Real));
   for (int ie=0; ie < 6 ; ie++){
     if(ie==0 or ie==3){
-       //bytes += grid->oSites() * (4.*sizeof(int) + 4752.*sizeof(vComplex)) * wick_contractions[ie];
+       bytes += ( wick_contractions & (1 << ie) ) ? grid->oSites() * (4.*sizeof(int) + 4752.*sizeof(vComplex)) : 0.;
     } else{
-       //bytes += grid->oSites() * (64.*sizeof(int) + 5184.*sizeof(vComplex)) * wick_contractions[ie];
+       bytes += ( wick_contractions & (1 << ie) ) ? grid->oSites() * (64.*sizeof(int) + 5184.*sizeof(vComplex)) : 0.;
     }
   }
   Real t=0.;
@@ -535,8 +534,7 @@ void BaryonUtils<FImpl>::ContractBaryons(const PropagatorField &q1_left,
     auto D1 = v1(ss);
     auto D2 = v2(ss);
     auto D3 = v3(ss);
-    //typedef decltype(coalescedRead(vbaryon_corr[0])) cVec;
-    typedef decltype(coalescedRead(vcorr_read[0])) cVec;
+    typedef decltype(coalescedRead(vbaryon_corr[0])) cVec;
     cVec result=Zero();
     BaryonSite(D1,D2,D3,GammaA_left,GammaB_left,GammaA_right,GammaB_right,parity,wick_contractions,result);
     coalescedWrite(vbaryon_corr[ss],result);
@@ -561,21 +559,19 @@ void BaryonUtils<FImpl>::ContractBaryonsMatrix(const PropagatorField &q1_left,
 
   assert(Ns==4 && "Baryon code only implemented for N_spin = 4");
   assert(Nc==3 && "Baryon code only implemented for N_colour = 3");
- 
+
   GridBase *grid = q1_left.Grid();
 
-  autoView( vbaryon_corr , baryon_corr , AcceleratorWrite);
-  autoView( vcorr_read   , baryon_corr , AcceleratorRead);
-  autoView( v1           , q1_left     , AcceleratorRead);
-  autoView( v2           , q2_left     , AcceleratorRead);
-  autoView( v3           , q3_left     , AcceleratorRead);
+  autoView(vbaryon_corr , baryon_corr , AcceleratorWrite);
+  autoView( v1          , q1_left     , AcceleratorRead);
+  autoView( v2          , q2_left     , AcceleratorRead);
+  autoView( v3          , q3_left     , AcceleratorRead);
 
   accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
     auto D1 = v1(ss);
     auto D2 = v2(ss);
     auto D3 = v3(ss);
-    //typedef decltype(coalescedRead(vbaryon_corr[0])) spinor;
-    typedef decltype(coalescedRead(vcorr_read[0])) spinor;
+    typedef decltype(coalescedRead(vbaryon_corr[0])) spinor;
     spinor result=Zero();
     BaryonSiteMatrix(D1,D2,D3,GammaA_left,GammaB_left,GammaA_right,GammaB_right,wick_contractions,result);
     coalescedWrite(vbaryon_corr[ss],result);
@@ -941,10 +937,9 @@ void BaryonUtils<FImpl>::BaryonGamma3pt(
 
   GridBase *grid = q_tf.Grid();
 
-  autoView( vcorr      , stn_corr , AcceleratorWrite);
-  autoView( vcorr_read , stn_corr , AcceleratorRead);
-  autoView( vq_ti      , q_ti     , AcceleratorRead);
-  autoView( vq_tf      , q_tf     , AcceleratorRead);
+  autoView( vcorr , stn_corr , AcceleratorWrite);
+  autoView( vq_ti , q_ti     , AcceleratorRead);
+  autoView( vq_tf , q_tf     , AcceleratorRead);
 
   Vector<mobj> my_Dq_spec{Dq_spec1,Dq_spec2};
   mobj * Dq_spec_p = &my_Dq_spec[0];
@@ -953,29 +948,28 @@ void BaryonUtils<FImpl>::BaryonGamma3pt(
     accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
       auto Dq_ti = vq_ti(ss);
       auto Dq_tf = vq_tf(ss);
-      typedef decltype(coalescedRead(vcorr_read[0])) spinor;
+      typedef decltype(coalescedRead(vcorr[0])) spinor;
       spinor result=Zero();
       BaryonGamma3ptGroup1Site(Dq_ti,Dq_spec_p[0],Dq_spec_p[1],Dq_tf,GammaJ,GammaBi,GammaBf,wick_contraction,result);
-      coalescedWrite(vcorr[ss],coalescedRead(vcorr_read[ss])+result); 
+      coalescedWrite(vcorr[ss],coalescedRead(vcorr[ss])+result); 
     });//end loop over lattice sites
-
   } else if (group == 2) {
     accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
       auto Dq_ti = vq_ti(ss);
       auto Dq_tf = vq_tf(ss);
-      typedef decltype(coalescedRead(vcorr_read[0])) spinor;
+      typedef decltype(coalescedRead(vcorr[0])) spinor;
       spinor result=Zero();
       BaryonGamma3ptGroup2Site(Dq_spec_p[0],Dq_ti,Dq_spec_p[1],Dq_tf,GammaJ,GammaBi,GammaBf,wick_contraction,result); 
-      coalescedWrite(vcorr[ss],coalescedRead(vcorr_read[ss])+result); 
+      coalescedWrite(vcorr[ss],coalescedRead(vcorr[ss])+result); 
     });//end loop over lattice sites
   } else if (group == 3) {
     accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
       auto Dq_ti = vq_ti(ss);
       auto Dq_tf = vq_tf(ss);
-      typedef decltype(coalescedRead(vcorr_read[0])) spinor;
+      typedef decltype(coalescedRead(vcorr[0])) spinor;
       spinor result=Zero();
       BaryonGamma3ptGroup3Site(Dq_spec_p[0],Dq_spec_p[1],Dq_ti,Dq_tf,GammaJ,GammaBi,GammaBf,wick_contraction,result); 
-      coalescedWrite(vcorr[ss],coalescedRead(vcorr_read[ss])+result); 
+      coalescedWrite(vcorr[ss],coalescedRead(vcorr[ss])+result); 
     });//end loop over lattice sites
   }
 
@@ -1206,6 +1200,7 @@ void BaryonUtils<FImpl>::SigmaToNucleonQ2NonEyeSite(const mobj &Du_ti,
 
   Real ee;
 
+
   for (int ie_n=0; ie_n < 6 ; ie_n++){
     int a_n    = (ie_n < 3 ? ie_n       : (6-ie_n)%3 ); //epsilon[ie_n][0]; //a
     int b_n    = (ie_n < 3 ? (ie_n+1)%3 : (8-ie_n)%3 ); //epsilon[ie_n][1]; //b
@@ -1250,6 +1245,7 @@ void BaryonUtils<FImpl>::SigmaToNucleonQ2NonEyeSite(const mobj &Du_ti,
       }}
     }
   }
+
 }
 
 template<class FImpl>
@@ -1275,27 +1271,32 @@ void BaryonUtils<FImpl>::SigmaToNucleonEye(const PropagatorField &qq_loop,
   autoView( vd_tf   , qd_tf    , AcceleratorRead);
   autoView( vs_ti   , qs_ti    , AcceleratorRead);
 
-  bool doQ1 = (op == "Q1");
-  bool doQ2 = (op == "Q2");
-  
   Vector<mobj> my_Dq_spec{Du_spec};
   mobj * Dq_spec_p = &my_Dq_spec[0];
 
-  accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
-    auto Dq_loop = vq_loop(ss);
-    auto Dd_tf = vd_tf(ss);
-    auto Ds_ti = vs_ti(ss);
-    typedef decltype(coalescedRead(vcorr[0])) spinor;
-    spinor result=Zero();
-    if(doQ1){
+  if(op == "Q1"){
+    accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+      auto Dq_loop = vq_loop(ss);
+      auto Dd_tf = vd_tf(ss);
+      auto Ds_ti = vs_ti(ss);
+      typedef decltype(coalescedRead(vcorr[0])) spinor;
+      spinor result=Zero();
       SigmaToNucleonQ1EyeSite(Dq_loop,Dq_spec_p[0],Dd_tf,Ds_ti,Gamma_H,GammaB_sigma,GammaB_nucl,result);
-    } else if(doQ2){
+      coalescedWrite(vcorr[ss],result);
+    });//end loop over lattice sites
+  } else if(op == "Q2"){
+    accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+      auto Dq_loop = vq_loop(ss);
+      auto Dd_tf = vd_tf(ss);
+      auto Ds_ti = vs_ti(ss);
+      typedef decltype(coalescedRead(vcorr[0])) spinor;
+      spinor result=Zero();
       SigmaToNucleonQ2EyeSite(Dq_loop,Dq_spec_p[0],Dd_tf,Ds_ti,Gamma_H,GammaB_sigma,GammaB_nucl,result);
-    } else {
-      assert(0 && "Weak Operator not correctly specified");
-    }
-    coalescedWrite(vcorr[ss],result);
-  });//end loop over lattice sites
+      coalescedWrite(vcorr[ss],result);
+    });//end loop over lattice sites
+  } else {
+    assert(0 && "Weak Operator not correctly specified");
+  }
 }
 
 template<class FImpl>
@@ -1322,29 +1323,35 @@ void BaryonUtils<FImpl>::SigmaToNucleonNonEye(const PropagatorField &qq_ti,
   autoView( vq_tf , qq_tf    , AcceleratorRead  );
   autoView( vd_tf , qd_tf    , AcceleratorRead  );
   autoView( vs_ti , qs_ti    , AcceleratorRead  );
-
-  bool doQ1 = (op == "Q1");
-  bool doQ2 = (op == "Q2");
   
   Vector<mobj> my_Dq_spec{Du_spec};
   mobj * Dq_spec_p = &my_Dq_spec[0];
 
-  accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
-    auto Dq_ti = vq_ti(ss);
-    auto Dq_tf = vq_tf(ss);
-    auto Dd_tf = vd_tf(ss);
-    auto Ds_ti = vs_ti(ss);
-    typedef decltype(coalescedRead(vcorr[0])) spinor;
-    spinor result=Zero();
-    if(doQ1){
+  if(op == "Q1"){
+    accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+      auto Dq_ti = vq_ti(ss);
+      auto Dq_tf = vq_tf(ss);
+      auto Dd_tf = vd_tf(ss);
+      auto Ds_ti = vs_ti(ss);
+      typedef decltype(coalescedRead(vcorr[0])) spinor;
+      spinor result=Zero();
       SigmaToNucleonQ1NonEyeSite(Dq_ti,Dq_tf,Dq_spec_p[0],Dd_tf,Ds_ti,Gamma_H,GammaB_sigma,GammaB_nucl,result);
-    } else if(doQ2){
+      coalescedWrite(vcorr[ss],result);
+    });//end loop over lattice sites
+  } else if(op == "Q2"){
+    accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+      auto Dq_ti = vq_ti(ss);
+      auto Dq_tf = vq_tf(ss);
+      auto Dd_tf = vd_tf(ss);
+      auto Ds_ti = vs_ti(ss);
+      typedef decltype(coalescedRead(vcorr[0])) spinor;
+      spinor result=Zero();
       SigmaToNucleonQ2NonEyeSite(Dq_ti,Dq_tf,Dq_spec_p[0],Dd_tf,Ds_ti,Gamma_H,GammaB_sigma,GammaB_nucl,result);
-    } else {
-      assert(0 && "Weak Operator not correctly specified");
-    }
-    coalescedWrite(vcorr[ss],result);
-  });//end loop over lattice sites
+      coalescedWrite(vcorr[ss],result);
+    });//end loop over lattice sites
+  } else {
+    assert(0 && "Weak Operator not correctly specified");
+  }
 }
 
 NAMESPACE_END(Grid);
