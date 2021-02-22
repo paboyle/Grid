@@ -130,7 +130,7 @@ esac
 
 ############### fermions
 AC_ARG_ENABLE([fermion-reps],
-     [AC_HELP_STRING([--fermion-reps=yes|no], [enable extra fermion representation support])],
+     [AC_HELP_STRING([--enable-fermion-reps=yes|no], [enable extra fermion representation support])],
      [ac_FERMION_REPS=${enable_fermion_reps}], [ac_FERMION_REPS=yes])
 
 AM_CONDITIONAL(BUILD_FERMION_REPS, [ test "${ac_FERMION_REPS}X" == "yesX" ])
