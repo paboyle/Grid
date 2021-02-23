@@ -176,29 +176,18 @@ template<class vobj> inline void PrepareMetaData(Lattice<vobj> & field, FieldMet
   GridMetaData(grid,header); 
   MachineCharacteristics(header);
 }
-inline void GaugeStatistics(Lattice<vLorentzColourMatrixF> & data,FieldMetaData &header)
+template<class Impl>
+class GaugeStatistics
 {
-  // How to convert data precision etc...
-  header.link_trace=WilsonLoops<PeriodicGimplF>::linkTrace(data);
-  header.plaquette =WilsonLoops<PeriodicGimplF>::avgPlaquette(data);
-}
-inline void GaugeStatistics(Lattice<vLorentzColourMatrixD> & data,FieldMetaData &header)
-{
-  // How to convert data precision etc...
-  header.link_trace=WilsonLoops<PeriodicGimplD>::linkTrace(data);
-  header.plaquette =WilsonLoops<PeriodicGimplD>::avgPlaquette(data);
-}
-template<> inline void PrepareMetaData<vLorentzColourMatrixF>(Lattice<vLorentzColourMatrixF> & field, FieldMetaData &header)
-{
-   
-  GridBase *grid = field.Grid();
-  std::string format = getFormatString<vLorentzColourMatrixF>();
-  header.floating_point = format;
-  header.checksum = 0x0; // Nersc checksum unused in ILDG, Scidac
-  GridMetaData(grid,header); 
-  GaugeStatistics(field,header);
-  MachineCharacteristics(header);
-}
+public:
+  void operator()(Lattice<vLorentzColourMatrixD> & data,FieldMetaData &header)
+  {
+    header.link_trace=WilsonLoops<Impl>::linkTrace(data);
+    header.plaquette =WilsonLoops<Impl>::avgPlaquette(data);
+  }
+};
+typedef GaugeStatistics<PeriodicGimplD> PeriodicGaugeStatistics;
+typedef GaugeStatistics<ConjugateGimplD> ConjugateGaugeStatistics;
 template<> inline void PrepareMetaData<vLorentzColourMatrixD>(Lattice<vLorentzColourMatrixD> & field, FieldMetaData &header)
 {
   GridBase *grid = field.Grid();
@@ -206,7 +195,6 @@ template<> inline void PrepareMetaData<vLorentzColourMatrixD>(Lattice<vLorentzCo
   header.floating_point = format;
   header.checksum = 0x0; // Nersc checksum unused in ILDG, Scidac
   GridMetaData(grid,header); 
-  GaugeStatistics(field,header);
   MachineCharacteristics(header);
 }
 

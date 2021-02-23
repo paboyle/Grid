@@ -53,6 +53,24 @@ namespace PeriodicBC {
     return Cshift(tmp,mu,-1);// moves towards positive mu
   }
 
+  template<class gauge> Lattice<gauge>
+  CovShiftIdentityBackward(const Lattice<gauge> &Link, int mu) 
+  {
+    return Cshift(adj(Link), mu, -1);
+  }
+
+  template<class gauge> Lattice<gauge>
+  CovShiftIdentityForward(const Lattice<gauge> &Link, int mu)
+  {
+    return Link;
+  }
+
+  template<class gauge> Lattice<gauge>
+  ShiftStaple(const Lattice<gauge> &Link, int mu)
+  {
+    return Cshift(Link, mu, 1);
+  }
+  
   template<class gauge,class Expr,typename std::enable_if<is_lattice_expr<Expr>::value,void>::type * = nullptr>
     auto  CovShiftForward(const Lattice<gauge> &Link, 
 			  int mu,
@@ -69,6 +87,7 @@ namespace PeriodicBC {
     auto arg = closure(expr);
     return CovShiftBackward(Link,mu,arg);
   }
+
 
 }
 
@@ -138,6 +157,38 @@ namespace ConjugateBC {
     tmp = where(coor==Lmu,conjugate(tmp),tmp);
     //    std::cout<<"Gparity::CovCshiftBackward mu="<<mu<<std::endl;
     return Cshift(tmp,mu,-1);// moves towards positive mu
+  }
+  template<class gauge> Lattice<gauge>
+  CovShiftIdentityBackward(const Lattice<gauge> &Link, int mu) {
+    GridBase *grid = Link.Grid();
+    int Lmu = grid->GlobalDimensions()[mu] - 1;
+
+    Lattice<iScalar<vInteger>> coor(grid);
+    LatticeCoordinate(coor, mu);
+
+    Lattice<gauge> tmp(grid);
+    tmp = adj(Link);
+    tmp = where(coor == Lmu, conjugate(tmp), tmp);
+    return Cshift(tmp, mu, -1); // moves towards positive mu
+  }
+  template<class gauge> Lattice<gauge>
+  CovShiftIdentityForward(const Lattice<gauge> &Link, int mu) {
+    return Link;
+  }
+
+  template<class gauge> Lattice<gauge>
+  ShiftStaple(const Lattice<gauge> &Link, int mu)
+  {
+    GridBase *grid = Link.Grid();
+    int Lmu = grid->GlobalDimensions()[mu] - 1;
+
+    Lattice<iScalar<vInteger>> coor(grid);
+    LatticeCoordinate(coor, mu);
+
+    Lattice<gauge> tmp(grid);
+    tmp = Cshift(Link, mu, 1);
+    tmp = where(coor == Lmu, conjugate(tmp), tmp);
+    return tmp;
   }
 
   template<class gauge,class Expr,typename std::enable_if<is_lattice_expr<Expr>::value,void>::type * = nullptr>

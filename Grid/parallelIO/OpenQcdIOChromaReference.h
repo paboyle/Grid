@@ -208,7 +208,7 @@ public:
 
     FieldMetaData clone(header);
 
-    GaugeStatistics(Umu, clone);
+    PeriodicGaugeStatistics Stats; Stats(Umu, clone);
 
     RealD plaq_diff = fabs(clone.plaquette - header.plaquette);
 

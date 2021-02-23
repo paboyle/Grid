@@ -1,5 +1,5 @@
 #include "Benchmark_IO.hpp"
-
+#ifdef HAVE_LIME
 using namespace Grid;
 
 int main (int argc, char ** argv)
@@ -97,3 +97,6 @@ int main (int argc, char ** argv)
 
   return EXIT_SUCCESS;
 }
+#else
+int main(int argc,char ** argv){}
+#endif

@@ -2,11 +2,13 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./lib/DisableWarnings.h
+Source file: ./lib/qcd/action/gauge/Gauge.cc
 
-Copyright (C) 2016
+Copyright (C) 2020
 
-Author: Guido Cossu <guido.cossu@ed.ac.uk>
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
+Author: paboyle <paboyle@ph.ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,40 +28,11 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
+#include <Grid/qcd/action/fermion/FermionCore.h>
 
-#ifndef DISABLE_WARNINGS_H
-#define DISABLE_WARNINGS_H
+NAMESPACE_BEGIN(Grid);
 
+std::vector<int> ConjugateGaugeImplBase::_conjDirs;
 
+NAMESPACE_END(Grid);
 
-#if defined __GNUC__ && __GNUC__>=6
-#pragma GCC diagnostic ignored "-Wignored-attributes"
-#endif
-
- //disables and intel compiler specific warning (in json.hpp)
-#ifdef __ICC
-#pragma warning disable 488  
-#endif
-
-#ifdef __NVCC__
- //disables nvcc specific warning in json.hpp
-#pragma clang diagnostic ignored "-Wdeprecated-register"
-#pragma diag_suppress unsigned_compare_with_zero
-#pragma diag_suppress cast_to_qualified_type
-
- //disables nvcc specific warning in many files
-#pragma diag_suppress esa_on_defaulted_function_ignored
-#pragma diag_suppress extra_semicolon
-
-//Eigen only
-#endif
-
-// Disable vectorisation in Eigen on the Power8/9 and PowerPC
-#ifdef  __ALTIVEC__
-#define  EIGEN_DONT_VECTORIZE
-#endif
-#ifdef  __VSX__
-#define  EIGEN_DONT_VECTORIZE
-#endif
-
-#endif

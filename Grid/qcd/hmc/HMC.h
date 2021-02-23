@@ -95,7 +95,7 @@ private:
 
   typedef typename IntegratorType::Field Field;
   typedef std::vector< HmcObservable<Field> * > ObsListType;
-  
+
   //pass these from the resource manager
   GridSerialRNG &sRNG;   
   GridParallelRNG &pRNG; 

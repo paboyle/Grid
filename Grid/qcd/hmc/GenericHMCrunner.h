@@ -159,6 +159,13 @@ private:
       Resources.GetCheckPointer()->CheckpointRestore(Parameters.StartTrajectory, U,
 						     Resources.GetSerialRNG(),
 						     Resources.GetParallelRNG());
+    } else {
+      // others
+      std::cout << GridLogError << "Unrecognized StartingType\n";
+      std::cout
+	<< GridLogError
+	<< "Valid [HotStart, ColdStart, TepidStart, CheckpointStart]\n";
+      exit(1);
     }
 
     Smearing.set_Field(U);

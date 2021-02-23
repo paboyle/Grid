@@ -92,7 +92,6 @@ accelerator_inline iMatrix<vtype,N> ProjectOnGroup(const iMatrix<vtype,N> &arg)
 {
   // need a check for the group type?
   iMatrix<vtype,N> ret(arg);
-  vtype rnrm;
   vtype nrm;
   vtype inner;
   for(int c1=0;c1<N;c1++){
@@ -118,7 +117,19 @@ accelerator_inline iMatrix<vtype,N> ProjectOnGroup(const iMatrix<vtype,N> &arg)
 	ret._internal[b][c] -= pr * ret._internal[c1][c];
       }
     }
-	  
+  }
+
+  // Normalise last row
+  {
+    int c1 = N-1;
+    zeroit(inner);	
+    for(int c2=0;c2<N;c2++)
+      inner += innerProduct(ret._internal[c1][c2],ret._internal[c1][c2]);
+
+    nrm = sqrt(inner);
+    nrm = 1.0/nrm;
+    for(int c2=0;c2<N;c2++)
+      ret._internal[c1][c2]*= nrm;
   }
   // assuming the determinant is ok
   return ret;
