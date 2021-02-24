@@ -33,6 +33,7 @@ directory
 #define INTEGRATOR_INCLUDED
 
 #include <memory>
+#include "MomentumFilter.h"
 
 NAMESPACE_BEGIN(Grid);
 
@@ -78,7 +79,18 @@ protected:
   RepresentationPolicy Representations;
   IntegratorParameters Params;
 
+  //Filters allow the user to manipulate the conjugate momentum, for example to freeze links in DDHMC
+  //It is applied whenever the momentum is updated / refreshed
+  //The default filter does nothing
+  MomentumFilterBase<MomentaField> const* MomFilter;
+
   const ActionSet<Field, RepresentationPolicy> as;
+
+  //Get a pointer to a shared static instance of the "do-nothing" momentum filter to serve as a default
+  static MomentumFilterBase<MomentaField> const* getDefaultMomFilter(){ 
+    static MomentumFilterNone<MomentaField> filter;
+    return &filter;
+  }
 
   void update_P(Field& U, int level, double ep) 
   {
@@ -135,6 +147,8 @@ protected:
 
     // Force from the other representations
     as[level].apply(update_P_hireps, Representations, Mom, U, ep);
+
+    MomFilter->applyFilter(Mom);
   }
 
   void update_U(Field& U, double ep) 
@@ -174,11 +188,23 @@ public:
     t_P.resize(levels, 0.0);
     t_U = 0.0;
     // initialization of smearer delegated outside of Integrator
+
+    //Default the momentum filter to "do-nothing"
+    MomFilter = getDefaultMomFilter();
   };
 
   virtual ~Integrator() {}
 
   virtual std::string integrator_name() = 0;
+  
+  //Set the momentum filter allowing for manipulation of the conjugate momentum
+  void setMomentumFilter(const MomentumFilterBase<MomentaField> &filter){
+    MomFilter = &filter;
+  }
+
+  //Access the conjugate momentum
+  const MomentaField & getMomentum() const{ return P; }
+  
 
   void print_parameters()
   {
@@ -249,6 +275,8 @@ public:
       // Refresh the higher representation actions
       as[level].apply(refresh_hireps, Representations, pRNG);
     }
+
+    MomFilter->applyFilter(P);
   }
 
   // to be used by the actionlevel class to iterate
