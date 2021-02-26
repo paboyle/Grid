@@ -148,10 +148,14 @@ accelerator_inline void sub (ComplexF * __restrict__ y,const ComplexF * __restri
 accelerator_inline void add (ComplexF * __restrict__ y,const ComplexF * __restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) + (*r); }
   
 //conjugate already supported for complex
-accelerator_inline ComplexF timesI(const ComplexF &r)     { return(r*ComplexF(0.0,1.0));}
-accelerator_inline ComplexD timesI(const ComplexD &r)     { return(r*ComplexD(0.0,1.0));}
-accelerator_inline ComplexF timesMinusI(const ComplexF &r){ return(r*ComplexF(0.0,-1.0));}
-accelerator_inline ComplexD timesMinusI(const ComplexD &r){ return(r*ComplexD(0.0,-1.0));}
+accelerator_inline ComplexF timesI(const ComplexF &r)     { return(ComplexF(-r.imag(),r.real()));}
+accelerator_inline ComplexD timesI(const ComplexD &r)     { return(ComplexD(-r.imag(),r.real()));}
+accelerator_inline ComplexF timesMinusI(const ComplexF &r){ return(ComplexF(r.imag(),-r.real()));}
+accelerator_inline ComplexD timesMinusI(const ComplexD &r){ return(ComplexD(r.imag(),-r.real()));}
+//accelerator_inline ComplexF timesI(const ComplexF &r)     { return(r*ComplexF(0.0,1.0));}
+//accelerator_inline ComplexD timesI(const ComplexD &r)     { return(r*ComplexD(0.0,1.0));}
+//accelerator_inline ComplexF timesMinusI(const ComplexF &r){ return(r*ComplexF(0.0,-1.0));}
+//accelerator_inline ComplexD timesMinusI(const ComplexD &r){ return(r*ComplexD(0.0,-1.0));}
 
 // define projections to real and imaginay parts
 accelerator_inline ComplexF projReal(const ComplexF &r){return( ComplexF(r.real(), 0.0));}
