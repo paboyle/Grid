@@ -79,6 +79,10 @@ int main(int argc, char **argv) {
   // that have a complex construction
   // standard
   RealD beta = 2.6 ;
+  const int nu = 3;
+  std::vector<int> twists(Nd,0);
+  twists[nu] = 1;
+  ConjugateGimplD::setDirections(twists);
   ConjugateIwasakiGaugeActionR Waction(beta);
 
  

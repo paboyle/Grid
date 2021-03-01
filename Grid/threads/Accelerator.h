@@ -100,9 +100,11 @@ void     acceleratorInit(void);
 #define accelerator        __host__ __device__
 #define accelerator_inline __host__ __device__ inline
 
+extern int acceleratorAbortOnGpuError;
+
 accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 #ifdef GRID_SIMT
-  return threadIdx.z; 
+  return threadIdx.x; 
 #else
   return 0;
 #endif
@@ -110,25 +112,64 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   {									\
+    int nt=acceleratorThreads();					\
     typedef uint64_t Iterator;						\
     auto lambda = [=] accelerator					\
       (Iterator iter1,Iterator iter2,Iterator lane) mutable {		\
       __VA_ARGS__;							\
     };									\
-    int nt=acceleratorThreads();					\
-    dim3 cu_threads(acceleratorThreads(),1,nsimd);			\
+    dim3 cu_threads(nsimd,acceleratorThreads(),1);			\
     dim3 cu_blocks ((num1+nt-1)/nt,num2,1);				\
     LambdaApply<<<cu_blocks,cu_threads>>>(num1,num2,nsimd,lambda);	\
+  }
+
+#define accelerator_for6dNB(iter1, num1,				\
+                            iter2, num2,				\
+                            iter3, num3,				\
+                            iter4, num4,				\
+                            iter5, num5,				\
+			    iter6, num6, ... )				\
+  {									\
+    typedef uint64_t Iterator;						\
+    auto lambda = [=] accelerator					\
+      (Iterator iter1,Iterator iter2,					\
+       Iterator iter3,Iterator iter4,					\
+       Iterator iter5,Iterator iter6) mutable {				\
+      __VA_ARGS__;							\
+    };									\
+    dim3 cu_blocks (num1,num2,num3);					\
+    dim3 cu_threads(num4,num5,num6);					\
+    Lambda6Apply<<<cu_blocks,cu_threads>>>(num1,num2,num3,num4,num5,num6,lambda); \
   }
 
 template<typename lambda>  __global__
 void LambdaApply(uint64_t num1, uint64_t num2, uint64_t num3, lambda Lambda)
 {
-  uint64_t x = threadIdx.x + blockDim.x*blockIdx.x;
-  uint64_t y = threadIdx.y + blockDim.y*blockIdx.y;
-  uint64_t z = threadIdx.z;
+  // Weird permute is to make lane coalesce for large blocks
+  uint64_t x = threadIdx.y + blockDim.y*blockIdx.x;
+  uint64_t y = threadIdx.z + blockDim.z*blockIdx.y;
+  uint64_t z = threadIdx.x;
   if ( (x < num1) && (y<num2) && (z<num3) ) {
     Lambda(x,y,z);
+  }
+}
+
+template<typename lambda>  __global__
+void Lambda6Apply(uint64_t num1, uint64_t num2, uint64_t num3,
+		  uint64_t num4, uint64_t num5, uint64_t num6,
+		  lambda Lambda)
+{
+  uint64_t iter1 = blockIdx.x;
+  uint64_t iter2 = blockIdx.y;
+  uint64_t iter3 = blockIdx.z;
+  uint64_t iter4 = threadIdx.x;
+  uint64_t iter5 = threadIdx.y;
+  uint64_t iter6 = threadIdx.z;
+
+  if ( (iter1 < num1) && (iter2<num2) && (iter3<num3)
+    && (iter4 < num4) && (iter5<num5) && (iter6<num6) )
+  {
+    Lambda(iter1,iter2,iter3,iter4,iter5,iter6);
   }
 }
 
@@ -140,6 +181,7 @@ void LambdaApply(uint64_t num1, uint64_t num2, uint64_t num3, lambda Lambda)
       printf("Cuda error %s \n", cudaGetErrorString( err ));		\
       puts(__FILE__);							\
       printf("Line %d\n",__LINE__);					\
+      if (acceleratorAbortOnGpuError) assert(err==cudaSuccess);		\
     }									\
   }
 
@@ -218,7 +260,7 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
       cl::sycl::range<3> global{unum1,unum2,nsimd};			\
       cgh.parallel_for<class dslash>(					\
       cl::sycl::nd_range<3>(global,local), \
-      [=] (cl::sycl::nd_item<3> item) mutable {       \
+      [=] (cl::sycl::nd_item<3> item) /*mutable*/ {   \
       auto iter1    = item.get_global_id(0);	      \
       auto iter2    = item.get_global_id(1);	      \
       auto lane     = item.get_global_id(2);	      \

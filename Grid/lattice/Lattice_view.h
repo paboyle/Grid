@@ -67,9 +67,14 @@ public:
   accelerator_inline const vobj & operator()(size_t i) const { return this->_odata[i]; }
 #endif
 
+#if 1
+  //  accelerator_inline const vobj & operator[](size_t i) const { return this->_odata[i]; };
+  accelerator_inline vobj       & operator[](size_t i) const { return this->_odata[i]; };
+#else
   accelerator_inline const vobj & operator[](size_t i) const { return this->_odata[i]; };
   accelerator_inline vobj       & operator[](size_t i)       { return this->_odata[i]; };
-
+#endif
+  
   accelerator_inline uint64_t begin(void) const { return 0;};
   accelerator_inline uint64_t end(void)   const { return this->_odata_size; };
   accelerator_inline uint64_t size(void)  const { return this->_odata_size; };

@@ -275,6 +275,16 @@ void CartesianCommunicator::GlobalXOR(uint64_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT64_T,MPI_BXOR,communicator);
   assert(ierr==0);
 }
+void CartesianCommunicator::GlobalMax(float &f)
+{
+  int ierr=MPI_Allreduce(MPI_IN_PLACE,&f,1,MPI_FLOAT,MPI_MAX,communicator);
+  assert(ierr==0);
+}
+void CartesianCommunicator::GlobalMax(double &d)
+{
+  int ierr = MPI_Allreduce(MPI_IN_PLACE,&d,1,MPI_DOUBLE,MPI_MAX,communicator);
+  assert(ierr==0);
+}
 void CartesianCommunicator::GlobalSum(float &f){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&f,1,MPI_FLOAT,MPI_SUM,communicator);
   assert(ierr==0);
