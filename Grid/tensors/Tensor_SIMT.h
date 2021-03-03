@@ -66,7 +66,7 @@ void coalescedWriteNonTemporal(vobj & __restrict__ vec,const vobj & __restrict__
 
 
 #ifndef GRID_SYCL
-// Use the scalar as our own complex on GPU
+// Use the scalar as our own complex on GPU ... thrust::complex or std::complex
 template<class vsimd,IfSimd<vsimd> = 0> accelerator_inline
 typename vsimd::scalar_type
 coalescedRead(const vsimd & __restrict__ vec,int lane=acceleratorSIMTlane(vsimd::Nsimd()))
@@ -96,6 +96,8 @@ void coalescedWrite(vsimd & __restrict__ vec,
   p[lane]=extracted;
 }
 #else
+// For SyCL have option to use GpuComplex from inside the vector type in SIMT loops
+// Faster for some reason
 template<class vsimd,IfSimd<vsimd> = 0> accelerator_inline
 typename vsimd::vector_type::datum
 coalescedRead(const vsimd & __restrict__ vec,int lane=acceleratorSIMTlane(vsimd::Nsimd()))
