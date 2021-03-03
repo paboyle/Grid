@@ -98,7 +98,7 @@ NAMESPACE_BEGIN(Grid);
 
 
       
-      virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {
+      virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) {
 
 	
 	// P(phi) = e^{- phi^dag (MdagM)^-1/2 phi}
@@ -142,7 +142,10 @@ NAMESPACE_BEGIN(Grid);
 
 	msCG(MdagMOp,Phi,Y);
 
-	if ( (rand()%param.BoundsCheckFreq)==0 ) { 
+	auto grid = FermOp.FermionGrid();
+        auto r=rand();
+        grid->Broadcast(0,r);
+        if ( (r%param.BoundsCheckFreq)==0 ) { 
 	  FermionField gauss(FermOp.FermionGrid());
 	  gauss = Phi;
 	  HighBoundCheck(MdagMOp,gauss,param.hi);
