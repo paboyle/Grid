@@ -456,7 +456,7 @@ accelerator_inline void acceleratorSynchronise(void)
   __syncwarp();
 #endif
 #ifdef GRID_SYCL
-  // No barrier call on SYCL??  // Option get __spir:: stuff to do warp barrier
+  cl::sycl::detail::workGroupBarrier();
 #endif
 #ifdef GRID_HIP
   __syncthreads();

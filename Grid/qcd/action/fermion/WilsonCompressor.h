@@ -61,7 +61,7 @@ public:
   typedef typename SiteHalfSpinor::vector_type     vComplexHigh;
   constexpr static int Nw=sizeof(SiteHalfSpinor)/sizeof(vComplexHigh);
 
-  accelerator_inline int CommDatumSize(void) {
+  accelerator_inline int CommDatumSize(void) const {
     return sizeof(SiteHalfCommSpinor);
   }
 
@@ -69,7 +69,7 @@ public:
   /* Compress includes precision change if mpi data is not same */
   /*****************************************************/
   template<class _SiteHalfSpinor, class _SiteSpinor>
-  accelerator_inline void Compress(_SiteHalfSpinor *buf,Integer o,const _SiteSpinor &in) {
+  accelerator_inline void Compress(_SiteHalfSpinor *buf,Integer o,const _SiteSpinor &in) const {
     _SiteHalfSpinor tmp;
     projector::Proj(tmp,in,mu,dag);
     vstream(buf[o],tmp);
@@ -81,7 +81,7 @@ public:
   accelerator_inline void Exchange(SiteHalfSpinor *mp,
 				   const SiteHalfSpinor * __restrict__ vp0,
 				   const SiteHalfSpinor * __restrict__ vp1,
-				   Integer type,Integer o){
+				   Integer type,Integer o) const {
     SiteHalfSpinor tmp1;
     SiteHalfSpinor tmp2;
     exchange(tmp1,tmp2,vp0[o],vp1[o],type);
@@ -93,7 +93,7 @@ public:
   /* Have a decompression step if mpi data is not same */
   /*****************************************************/
   accelerator_inline void Decompress(SiteHalfSpinor * __restrict__ out,
-				     SiteHalfSpinor * __restrict__ in, Integer o) {    
+				     SiteHalfSpinor * __restrict__ in, Integer o) const {    
     assert(0);
   }
 
@@ -103,7 +103,7 @@ public:
   accelerator_inline void CompressExchange(SiteHalfSpinor * __restrict__ out0,
 					   SiteHalfSpinor * __restrict__ out1,
 					   const SiteSpinor * __restrict__ in,
-					   Integer j,Integer k, Integer m,Integer type)
+					   Integer j,Integer k, Integer m,Integer type) const
   {
     SiteHalfSpinor temp1, temp2;
     SiteHalfSpinor temp3, temp4;
@@ -117,7 +117,7 @@ public:
   /*****************************************************/
   /* Pass the info to the stencil */
   /*****************************************************/
-  accelerator_inline bool DecompressionStep(void) { return false; }
+  accelerator_inline bool DecompressionStep(void) const { return false; }
 
 };
 
@@ -142,7 +142,7 @@ public:
   typedef typename SiteHalfSpinor::vector_type     vComplexHigh;
   constexpr static int Nw=sizeof(SiteHalfSpinor)/sizeof(vComplexHigh);
 
-  accelerator_inline int CommDatumSize(void) {
+  accelerator_inline int CommDatumSize(void) const {
     return sizeof(SiteHalfCommSpinor);
   }
 
@@ -150,7 +150,7 @@ public:
   /* Compress includes precision change if mpi data is not same */
   /*****************************************************/
   template<class _SiteHalfSpinor, class _SiteSpinor>
-  accelerator_inline void Compress(_SiteHalfSpinor *buf,Integer o,const _SiteSpinor &in) {
+  accelerator_inline void Compress(_SiteHalfSpinor *buf,Integer o,const _SiteSpinor &in) const {
     _SiteHalfSpinor hsp;
     SiteHalfCommSpinor *hbuf = (SiteHalfCommSpinor *)buf;
     projector::Proj(hsp,in,mu,dag);
@@ -163,7 +163,7 @@ public:
   accelerator_inline void Exchange(SiteHalfSpinor *mp,
                        SiteHalfSpinor *vp0,
                        SiteHalfSpinor *vp1,
-		       Integer type,Integer o){
+		       Integer type,Integer o) const {
     SiteHalfSpinor vt0,vt1;
     SiteHalfCommSpinor *vpp0 = (SiteHalfCommSpinor *)vp0;
     SiteHalfCommSpinor *vpp1 = (SiteHalfCommSpinor *)vp1;
@@ -175,7 +175,7 @@ public:
   /*****************************************************/
   /* Have a decompression step if mpi data is not same */
   /*****************************************************/
-  accelerator_inline void Decompress(SiteHalfSpinor *out, SiteHalfSpinor *in, Integer o){
+  accelerator_inline void Decompress(SiteHalfSpinor *out, SiteHalfSpinor *in, Integer o) const {
     SiteHalfCommSpinor *hin=(SiteHalfCommSpinor *)in;
     precisionChange((vComplexHigh *)&out[o],(vComplexLow *)&hin[o],Nw);
   }
@@ -186,7 +186,7 @@ public:
   accelerator_inline void CompressExchange(SiteHalfSpinor *out0,
 			       SiteHalfSpinor *out1,
 			       const SiteSpinor *in,
-			       Integer j,Integer k, Integer m,Integer type){
+			       Integer j,Integer k, Integer m,Integer type) const {
     SiteHalfSpinor temp1, temp2,temp3,temp4;
     SiteHalfCommSpinor *hout0 = (SiteHalfCommSpinor *)out0;
     SiteHalfCommSpinor *hout1 = (SiteHalfCommSpinor *)out1;
@@ -200,7 +200,7 @@ public:
   /*****************************************************/
   /* Pass the info to the stencil */
   /*****************************************************/
-  accelerator_inline bool DecompressionStep(void) { return true; }
+  accelerator_inline bool DecompressionStep(void) const { return true; }
 
 };
 
