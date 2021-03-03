@@ -76,7 +76,24 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #define REGISTER
 
-#define LOAD_CHIMU \
+#ifdef GRID_SIMT
+#define LOAD_CHIMU(ptype)		\
+  {const SiteSpinor & ref (in[offset]);	\
+    Chimu_00=coalescedReadPermute<ptype>(ref()(0)(0),perm);	\
+    Chimu_01=coalescedReadPermute<ptype>(ref()(0)(1),perm);	\
+    Chimu_02=coalescedReadPermute<ptype>(ref()(0)(2),perm);	\
+    Chimu_10=coalescedReadPermute<ptype>(ref()(1)(0),perm);	\
+    Chimu_11=coalescedReadPermute<ptype>(ref()(1)(1),perm);	\
+    Chimu_12=coalescedReadPermute<ptype>(ref()(1)(2),perm);	\
+    Chimu_20=coalescedReadPermute<ptype>(ref()(2)(0),perm);	\
+    Chimu_21=coalescedReadPermute<ptype>(ref()(2)(1),perm);	\
+    Chimu_22=coalescedReadPermute<ptype>(ref()(2)(2),perm);	\
+    Chimu_30=coalescedReadPermute<ptype>(ref()(3)(0),perm);	\
+    Chimu_31=coalescedReadPermute<ptype>(ref()(3)(1),perm);	\
+    Chimu_32=coalescedReadPermute<ptype>(ref()(3)(2),perm);	}
+#define PERMUTE_DIR(dir) ;
+#else
+#define LOAD_CHIMU			\
   {const SiteSpinor & ref (in[offset]);	\
     Chimu_00=ref()(0)(0);\
     Chimu_01=ref()(0)(1);\
@@ -91,54 +108,54 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     Chimu_31=ref()(3)(1);\
     Chimu_32=ref()(3)(2);}
 
-#define LOAD_CHI\
-  {const SiteHalfSpinor &ref(buf[offset]);	\
-    Chi_00 = ref()(0)(0);\
-    Chi_01 = ref()(0)(1);\
-    Chi_02 = ref()(0)(2);\
-    Chi_10 = ref()(1)(0);\
-    Chi_11 = ref()(1)(1);\
-    Chi_12 = ref()(1)(2);}
-
-// To splat or not to splat depends on the implementation
-#define MULT_2SPIN(A)\
-  {auto & ref(U[sU](A));			\
-   Impl::loadLinkElement(U_00,ref()(0,0));	\
-   Impl::loadLinkElement(U_10,ref()(1,0));	\
-   Impl::loadLinkElement(U_20,ref()(2,0));	\
-   Impl::loadLinkElement(U_01,ref()(0,1));	\
-   Impl::loadLinkElement(U_11,ref()(1,1));	\
-   Impl::loadLinkElement(U_21,ref()(2,1));	\
-    UChi_00 = U_00*Chi_00;\
-    UChi_10 = U_00*Chi_10;\
-    UChi_01 = U_10*Chi_00;\
-    UChi_11 = U_10*Chi_10;\
-    UChi_02 = U_20*Chi_00;\
-    UChi_12 = U_20*Chi_10;\
-    UChi_00+= U_01*Chi_01;\
-    UChi_10+= U_01*Chi_11;\
-    UChi_01+= U_11*Chi_01;\
-    UChi_11+= U_11*Chi_11;\
-    UChi_02+= U_21*Chi_01;\
-    UChi_12+= U_21*Chi_11;\
-    Impl::loadLinkElement(U_00,ref()(0,2));	\
-    Impl::loadLinkElement(U_10,ref()(1,2));	\
-    Impl::loadLinkElement(U_20,ref()(2,2));	\
-    UChi_00+= U_00*Chi_02;\
-    UChi_10+= U_00*Chi_12;\
-    UChi_01+= U_10*Chi_02;\
-    UChi_11+= U_10*Chi_12;\
-    UChi_02+= U_20*Chi_02;\
-    UChi_12+= U_20*Chi_12;}
-
-
 #define PERMUTE_DIR(dir)			\
-      permute##dir(Chi_00,Chi_00);\
+  permute##dir(Chi_00,Chi_00);	\
       permute##dir(Chi_01,Chi_01);\
       permute##dir(Chi_02,Chi_02);\
-      permute##dir(Chi_10,Chi_10);\
+      permute##dir(Chi_10,Chi_10);	\
       permute##dir(Chi_11,Chi_11);\
       permute##dir(Chi_12,Chi_12);
+
+#endif
+
+#define LOAD_CHI				\
+  {const SiteHalfSpinor &ref(buf[offset]);	\
+    Chi_00 = coalescedRead(ref()(0)(0));	\
+    Chi_01 = coalescedRead(ref()(0)(1));	\
+    Chi_02 = coalescedRead(ref()(0)(2));	\
+    Chi_10 = coalescedRead(ref()(1)(0));	\
+    Chi_11 = coalescedRead(ref()(1)(1));	\
+    Chi_12 = coalescedRead(ref()(1)(2));}
+
+#define MULT_2SPIN(A)\
+  {auto & ref(U[sU](A));					\
+  U_00=coalescedRead(ref()(0,0));				\
+  U_10=coalescedRead(ref()(1,0));					\
+  U_20=coalescedRead(ref()(2,0));					\
+  U_01=coalescedRead(ref()(0,1));					\
+  U_11=coalescedRead(ref()(1,1));					\
+  U_21=coalescedRead(ref()(2,1));					\
+    UChi_00 = U_00*Chi_00;					\
+    UChi_10 = U_00*Chi_10;					\
+    UChi_01 = U_10*Chi_00;					\
+    UChi_11 = U_10*Chi_10;					\
+    UChi_02 = U_20*Chi_00;					\
+    UChi_12 = U_20*Chi_10;					\
+    UChi_00+= U_01*Chi_01;					\
+    UChi_10+= U_01*Chi_11;					\
+    UChi_01+= U_11*Chi_01;					\
+    UChi_11+= U_11*Chi_11;					\
+    UChi_02+= U_21*Chi_01;					\
+    UChi_12+= U_21*Chi_11;					\
+    U_00=coalescedRead(ref()(0,2));				\
+    U_10=coalescedRead(ref()(1,2));				\
+    U_20=coalescedRead(ref()(2,2));				\
+    UChi_00+= U_00*Chi_02;					\
+    UChi_10+= U_00*Chi_12;					\
+    UChi_01+= U_10*Chi_02;					\
+    UChi_11+= U_10*Chi_12;					\
+    UChi_02+= U_20*Chi_02;					\
+    UChi_12+= U_20*Chi_12;}
 
 //      hspin(0)=fspin(0)+timesI(fspin(3));
 //      hspin(1)=fspin(1)+timesI(fspin(2));
@@ -359,7 +376,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   local  = SE->_is_local;			\
   perm   = SE->_permute;			\
   if ( local ) {				\
-    LOAD_CHIMU;					\
+    LOAD_CHIMU(PERM);				\
     PROJ;					\
     if ( perm) {				\
       PERMUTE_DIR(PERM);			\
@@ -376,7 +393,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   local  = SE->_is_local;			\
   perm   = SE->_permute;			\
   if ( local ) {				\
-    LOAD_CHIMU;					\
+    LOAD_CHIMU(PERM);				\
     PROJ;					\
     if ( perm) {				\
       PERMUTE_DIR(PERM);			\
@@ -401,40 +418,39 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #define HAND_RESULT(ss)				\
   {						\
-    SiteSpinor & ref (out[ss]);		\
-    vstream(ref()(0)(0),result_00);		\
-    vstream(ref()(0)(1),result_01);		\
-    vstream(ref()(0)(2),result_02);		\
-    vstream(ref()(1)(0),result_10);		\
-    vstream(ref()(1)(1),result_11);		\
-    vstream(ref()(1)(2),result_12);		\
-    vstream(ref()(2)(0),result_20);		\
-    vstream(ref()(2)(1),result_21);		\
-    vstream(ref()(2)(2),result_22);		\
-    vstream(ref()(3)(0),result_30);		\
-    vstream(ref()(3)(1),result_31);		\
-    vstream(ref()(3)(2),result_32);		\
+    SiteSpinor & ref (out[ss]);			\
+    coalescedWrite(ref()(0)(0),result_00);		\
+    coalescedWrite(ref()(0)(1),result_01);		\
+    coalescedWrite(ref()(0)(2),result_02);		\
+    coalescedWrite(ref()(1)(0),result_10);		\
+    coalescedWrite(ref()(1)(1),result_11);		\
+    coalescedWrite(ref()(1)(2),result_12);		\
+    coalescedWrite(ref()(2)(0),result_20);		\
+    coalescedWrite(ref()(2)(1),result_21);		\
+    coalescedWrite(ref()(2)(2),result_22);		\
+    coalescedWrite(ref()(3)(0),result_30);		\
+    coalescedWrite(ref()(3)(1),result_31);		\
+    coalescedWrite(ref()(3)(2),result_32);		\
   }
 
-#define HAND_RESULT_EXT(ss)			\
-  if (nmu){					\
-    SiteSpinor & ref (out[ss]);		\
-    ref()(0)(0)+=result_00;		\
-    ref()(0)(1)+=result_01;		\
-    ref()(0)(2)+=result_02;		\
-    ref()(1)(0)+=result_10;		\
-    ref()(1)(1)+=result_11;		\
-    ref()(1)(2)+=result_12;		\
-    ref()(2)(0)+=result_20;		\
-    ref()(2)(1)+=result_21;		\
-    ref()(2)(2)+=result_22;		\
-    ref()(3)(0)+=result_30;		\
-    ref()(3)(1)+=result_31;		\
-    ref()(3)(2)+=result_32;		\
+#define HAND_RESULT_EXT(ss)				\
+  {							\
+    SiteSpinor & ref (out[ss]);				\
+    coalescedWrite(ref()(0)(0),coalescedRead(ref()(0)(0))+result_00);	\
+    coalescedWrite(ref()(0)(1),coalescedRead(ref()(0)(1))+result_01);	\
+    coalescedWrite(ref()(0)(2),coalescedRead(ref()(0)(2))+result_02);	\
+    coalescedWrite(ref()(1)(0),coalescedRead(ref()(1)(0))+result_10);	\
+    coalescedWrite(ref()(1)(1),coalescedRead(ref()(1)(1))+result_11);	\
+    coalescedWrite(ref()(1)(2),coalescedRead(ref()(1)(2))+result_12);	\
+    coalescedWrite(ref()(2)(0),coalescedRead(ref()(2)(0))+result_20);	\
+    coalescedWrite(ref()(2)(1),coalescedRead(ref()(2)(1))+result_21);	\
+    coalescedWrite(ref()(2)(2),coalescedRead(ref()(2)(2))+result_22);	\
+    coalescedWrite(ref()(3)(0),coalescedRead(ref()(3)(0))+result_30);	\
+    coalescedWrite(ref()(3)(1),coalescedRead(ref()(3)(1))+result_31);	\
+    coalescedWrite(ref()(3)(2),coalescedRead(ref()(3)(2))+result_32);	\
   }
 
-
-#define HAND_DECLARATIONS(a)			\
+#define HAND_DECLARATIONS(Simd)			\
   Simd result_00;				\
   Simd result_01;				\
   Simd result_02;				\
@@ -467,18 +483,18 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   Simd U_21;
 
 #define ZERO_RESULT				\
-  result_00=Zero();				\
-  result_01=Zero();				\
-  result_02=Zero();				\
-  result_10=Zero();				\
-  result_11=Zero();				\
-  result_12=Zero();				\
-  result_20=Zero();				\
-  result_21=Zero();				\
-  result_22=Zero();				\
-  result_30=Zero();				\
-  result_31=Zero();				\
-  result_32=Zero();			
+  result_00=S(0.0,0.0);			\
+  result_01=S(0.0,0.0);			\
+  result_02=S(0.0,0.0);			\
+  result_10=S(0.0,0.0);			\
+  result_11=S(0.0,0.0);			\
+  result_12=S(0.0,0.0);			\
+  result_20=S(0.0,0.0);			\
+  result_21=S(0.0,0.0);			\
+  result_22=S(0.0,0.0);			\
+  result_30=S(0.0,0.0);			\
+  result_31=S(0.0,0.0);			\
+  result_32=S(0.0,0.0);			
 
 #define Chimu_00 Chi_00
 #define Chimu_01 Chi_01
@@ -502,8 +518,8 @@ WilsonKernels<Impl>::HandDhopSite(StencilView &st, DoubledGaugeFieldView &U,Site
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
-
-  HAND_DECLARATIONS(ignore);
+  typedef decltype( coalescedRead( in[0]()(0)(0) )) Simt;
+  HAND_DECLARATIONS(Simt);
 
   int offset,local,perm, ptype;
   StencilEntry *SE;
@@ -525,8 +541,8 @@ void WilsonKernels<Impl>::HandDhopSiteDag(StencilView &st,DoubledGaugeFieldView 
 {
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
-
-  HAND_DECLARATIONS(ignore);
+  typedef decltype( coalescedRead( in[0]()(0)(0) )) Simt;
+  HAND_DECLARATIONS(Simt);
 
   StencilEntry *SE;
   int offset,local,perm, ptype;
@@ -549,8 +565,8 @@ WilsonKernels<Impl>::HandDhopSiteInt(StencilView &st,DoubledGaugeFieldView &U,Si
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
-
-  HAND_DECLARATIONS(ignore);
+  typedef decltype( coalescedRead( in[0]()(0)(0) )) Simt;
+  HAND_DECLARATIONS(Simt);
 
   int offset,local,perm, ptype;
   StencilEntry *SE;
@@ -572,8 +588,8 @@ void WilsonKernels<Impl>::HandDhopSiteDagInt(StencilView &st,DoubledGaugeFieldVi
 {
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
-
-  HAND_DECLARATIONS(ignore);
+  typedef decltype( coalescedRead( in[0]()(0)(0) )) Simt;
+  HAND_DECLARATIONS(Simt);
 
   StencilEntry *SE;
   int offset,local,perm, ptype;
@@ -596,8 +612,8 @@ WilsonKernels<Impl>::HandDhopSiteExt(StencilView &st,DoubledGaugeFieldView &U,Si
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
-
-  HAND_DECLARATIONS(ignore);
+  typedef decltype( coalescedRead( in[0]()(0)(0) )) Simt;
+  HAND_DECLARATIONS(Simt);
 
   int offset, ptype;
   StencilEntry *SE;
@@ -620,8 +636,8 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilView &st,DoubledGaugeFieldVi
 {
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
-
-  HAND_DECLARATIONS(ignore);
+  typedef decltype( coalescedRead( in[0]()(0)(0) )) Simt;
+  HAND_DECLARATIONS(Simt);
 
   StencilEntry *SE;
   int offset, ptype;
@@ -682,3 +698,4 @@ NAMESPACE_END(Grid);
 #undef HAND_RESULT
 #undef HAND_RESULT_INT
 #undef HAND_RESULT_EXT
+#undef HAND_DECLARATIONS
