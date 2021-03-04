@@ -72,7 +72,7 @@ public:
   typedef WilsonCompressor<SiteHalfCommSpinor,SiteHalfSpinor, SiteSpinor> Compressor;
   typedef WilsonImplParams ImplParams;
   typedef WilsonStencil<SiteSpinor, SiteHalfSpinor,ImplParams> StencilImpl;
-  typedef typename StencilImpl::View_type StencilView;
+  typedef const typename StencilImpl::View_type StencilView;
     
   ImplParams Params;
 

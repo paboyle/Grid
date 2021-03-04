@@ -96,7 +96,7 @@ public:
   ///////////////////////////////////////////////////////////
   // Move these to another class
   // HMC auxiliary functions
-  static inline void generate_momenta(Field &P, GridParallelRNG &pRNG) 
+  static inline void generate_momenta(Field &P, GridSerialRNG & sRNG, GridParallelRNG &pRNG) 
   {
     // Zbigniew Srocinsky thesis:
     //
