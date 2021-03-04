@@ -1,4 +1,3 @@
-
 /*************************************************************************************
 
 Grid physics library, www.github.com/paboyle/Grid
@@ -43,8 +42,7 @@ NAMESPACE_BEGIN(Grid);
 //
 
 template <class Impl>
-class OneFlavourEvenOddRationalPseudoFermionAction
-  : public Action<typename Impl::GaugeField> {
+class OneFlavourEvenOddRationalPseudoFermionAction : public Action<typename Impl::GaugeField> {
 public:
   INHERIT_IMPL_TYPES(Impl);
 
@@ -103,7 +101,7 @@ public:
     return sstream.str();
   }
   
-  virtual void refresh(const GaugeField &U, GridParallelRNG &pRNG) {
+  virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG &pRNG) {
     // P(phi) = e^{- phi^dag (MpcdagMpc)^-1/2 phi}
     //        = e^{- phi^dag (MpcdagMpc)^-1/4 (MpcdagMpc)^-1/4 phi}
     // Phi = MpcdagMpc^{1/4} eta
@@ -156,7 +154,10 @@ public:
 
     msCG(Mpc, PhiOdd, Y);
 
-    if ( (rand()%param.BoundsCheckFreq)==0 ) { 
+    auto grid = FermOp.FermionGrid();
+    auto r=rand();
+    grid->Broadcast(0,r);
+    if ( (r%param.BoundsCheckFreq)==0 ) { 
       FermionField gauss(FermOp.FermionRedBlackGrid());
       gauss = PhiOdd;
       HighBoundCheck(Mpc,gauss,param.hi);

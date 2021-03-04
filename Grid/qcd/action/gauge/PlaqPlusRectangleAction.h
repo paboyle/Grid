@@ -49,7 +49,7 @@ public:
 
   virtual std::string action_name(){return "PlaqPlusRectangleAction";}
       
-  virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {}; // noop as no pseudoferms
+  virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) {}; // noop as no pseudoferms
       
   virtual std::string LogParameters(){
     std::stringstream sstream;

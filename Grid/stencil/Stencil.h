@@ -147,16 +147,16 @@ class CartesianStencilAccelerator {
   cobj* u_recv_buf_p;
   cobj* u_send_buf_p;
 
-  accelerator_inline cobj *CommBuf(void) { return u_recv_buf_p; }
+  accelerator_inline cobj *CommBuf(void) const { return u_recv_buf_p; }
 
-  accelerator_inline int GetNodeLocal(int osite,int point) {
+  accelerator_inline int GetNodeLocal(int osite,int point) const {
     return this->_entries_p[point+this->_npoints*osite]._is_local;
   }
-  accelerator_inline StencilEntry * GetEntry(int &ptype,int point,int osite) {
+  accelerator_inline StencilEntry * GetEntry(int &ptype,int point,int osite) const {
     ptype = this->_permute_type[point]; return & this->_entries_p[point+this->_npoints*osite];
   }
 
-  accelerator_inline uint64_t GetInfo(int &ptype,int &local,int &perm,int point,int ent,uint64_t base) {
+  accelerator_inline uint64_t GetInfo(int &ptype,int &local,int &perm,int point,int ent,uint64_t base) const {
     uint64_t cbase = (uint64_t)&u_recv_buf_p[0];
     local = this->_entries_p[ent]._is_local;
     perm  = this->_entries_p[ent]._permute;
@@ -168,14 +168,14 @@ class CartesianStencilAccelerator {
     }
   }
 
-  accelerator_inline uint64_t GetPFInfo(int ent,uint64_t base) {
+  accelerator_inline uint64_t GetPFInfo(int ent,uint64_t base) const {
     uint64_t cbase = (uint64_t)&u_recv_buf_p[0];
     int local = this->_entries_p[ent]._is_local;
     if (local) return  base + this->_entries_p[ent]._byte_offset;
     else       return cbase + this->_entries_p[ent]._byte_offset;
   }
 
-  accelerator_inline void iCoorFromIindex(Coordinate &coor,int lane)
+  accelerator_inline void iCoorFromIindex(Coordinate &coor,int lane) const
   {
     Lexicographic::CoorFromIndex(coor,lane,this->_simd_layout);
   }
@@ -221,7 +221,7 @@ public:
   typedef typename cobj::vector_type vector_type;
   typedef typename cobj::scalar_type scalar_type;
   typedef typename cobj::scalar_object scalar_object;
-  typedef CartesianStencilView<vobj,cobj,Parameters> View_type;
+  typedef const CartesianStencilView<vobj,cobj,Parameters> View_type;
   typedef typename View_type::StencilVector StencilVector;
   ///////////////////////////////////////////
   // Helper structs

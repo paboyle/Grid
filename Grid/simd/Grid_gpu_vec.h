@@ -60,11 +60,26 @@ template<class pair>
 class GpuComplex {
 public:
   pair z;
-  typedef decltype(z.x) real;
+  typedef decltype(z.x) Real;
 public: 
   accelerator_inline GpuComplex() = default;
-  accelerator_inline GpuComplex(real re,real im) { z.x=re; z.y=im; };
+  accelerator_inline GpuComplex(Real re,Real im) { z.x=re; z.y=im; };
   accelerator_inline GpuComplex(const GpuComplex &zz) { z = zz.z;};
+  accelerator_inline Real real(void) const { return z.x; };
+  accelerator_inline Real imag(void) const { return z.y; };
+  accelerator_inline GpuComplex &operator=(const Zero &zz) { z.x = 0; z.y=0; return *this; };
+  accelerator_inline GpuComplex &operator*=(const GpuComplex &r) {
+    *this = (*this) * r;
+    return *this;
+  }
+  accelerator_inline GpuComplex &operator+=(const GpuComplex &r) {
+    *this = (*this) + r;
+    return *this;
+  }
+  accelerator_inline GpuComplex &operator-=(const GpuComplex &r) {
+    *this = (*this) - r;
+    return *this;
+  }
   friend accelerator_inline  GpuComplex operator+(const GpuComplex &lhs,const GpuComplex &rhs) { 
     GpuComplex r ; 
     r.z.x = lhs.z.x + rhs.z.x; 
@@ -156,6 +171,11 @@ typedef GpuVector<NSIMD_ComplexF, GpuComplexF > GpuVectorCF;
 typedef GpuVector<NSIMD_RealD,    double      > GpuVectorRD;
 typedef GpuVector<NSIMD_ComplexD, GpuComplexD > GpuVectorCD;
 typedef GpuVector<NSIMD_Integer,  Integer     > GpuVectorI;
+
+accelerator_inline GpuComplexF timesI(const GpuComplexF &r)     { return(GpuComplexF(-r.imag(),r.real()));}
+accelerator_inline GpuComplexD timesI(const GpuComplexD &r)     { return(GpuComplexD(-r.imag(),r.real()));}
+accelerator_inline GpuComplexF timesMinusI(const GpuComplexF &r){ return(GpuComplexF(r.imag(),-r.real()));}
+accelerator_inline GpuComplexD timesMinusI(const GpuComplexD &r){ return(GpuComplexD(r.imag(),-r.real()));}
 
 accelerator_inline float half2float(half h)
 {
