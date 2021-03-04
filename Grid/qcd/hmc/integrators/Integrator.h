@@ -236,10 +236,9 @@ public:
   // over the representations
   struct _refresh {
     template <class FieldType, class Repr>
-    void operator()(std::vector<Action<FieldType>*> repr_set, Repr& Rep,
-                    GridParallelRNG& pRNG) {
+    void operator()(std::vector<Action<FieldType>*> repr_set, Repr& Rep, GridSerialRNG & sRNG, GridParallelRNG& pRNG) {
       for (int a = 0; a < repr_set.size(); ++a){
-        repr_set.at(a)->refresh(Rep.U, pRNG);
+        repr_set.at(a)->refresh(Rep.U, sRNG, pRNG);
       
 	std::cout << GridLogDebug << "Hirep refreshing pseudofermions" << std::endl;
       }
@@ -247,12 +246,12 @@ public:
   } refresh_hireps{};
 
   // Initialization of momenta and actions
-  void refresh(Field& U, GridParallelRNG& pRNG) 
+  void refresh(Field& U,  GridSerialRNG & sRNG, GridParallelRNG& pRNG) 
   {
     assert(P.Grid() == U.Grid());
     std::cout << GridLogIntegrator << "Integrator refresh\n";
 
-    FieldImplementation::generate_momenta(P, pRNG);
+    FieldImplementation::generate_momenta(P, sRNG, pRNG);
 
     // Update the smeared fields, can be implemented as observer
     // necessary to keep the fields updated even after a reject
@@ -269,11 +268,11 @@ public:
         // get gauge field from the SmearingPolicy and
         // based on the boolean is_smeared in actionID
         Field& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
-        as[level].actions.at(actionID)->refresh(Us, pRNG);
+        as[level].actions.at(actionID)->refresh(Us, sRNG, pRNG);
       }
 
       // Refresh the higher representation actions
-      as[level].apply(refresh_hireps, Representations, pRNG);
+      as[level].apply(refresh_hireps, Representations, sRNG, pRNG);
     }
 
     MomFilter->applyFilter(P);

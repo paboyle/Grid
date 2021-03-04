@@ -140,11 +140,22 @@ AC_ARG_ENABLE([gparity],
      [ac_GPARITY=${enable_gparity}], [ac_GPARITY=yes])
 
 AM_CONDITIONAL(BUILD_GPARITY, [ test "${ac_GPARITY}X" == "yesX" ])
+
+AC_ARG_ENABLE([zmobius],
+     [AC_HELP_STRING([--enable-zmobius=yes|no], [enable Zmobius support])],
+     [ac_ZMOBIUS=${enable_zmobius}], [ac_ZMOBIUS=yes])
+
+AM_CONDITIONAL(BUILD_ZMOBIUS, [ test "${ac_ZMOBIUS}X" == "yesX" ])
+
+
 case ${ac_FERMION_REPS} in
    yes) AC_DEFINE([ENABLE_FERMION_REPS],[1],[non QCD fermion reps]);;
 esac
 case ${ac_GPARITY} in
    yes) AC_DEFINE([ENABLE_GPARITY],[1],[fermion actions with GPARITY BCs]);;
+esac
+case ${ac_ZMOBIUS} in
+   yes) AC_DEFINE([ENABLE_ZMOBIUS],[1],[Zmobius fermion actions]);;
 esac
 ############### Nc
 AC_ARG_ENABLE([Nc],

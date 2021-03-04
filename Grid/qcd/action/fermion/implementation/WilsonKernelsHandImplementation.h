@@ -93,7 +93,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     Chimu_32=coalescedReadPermute<ptype>(ref()(3)(2),perm);	}
 #define PERMUTE_DIR(dir) ;
 #else
-#define LOAD_CHIMU			\
+#define LOAD_CHIMU(ptype)		\
   {const SiteSpinor & ref (in[offset]);	\
     Chimu_00=ref()(0)(0);\
     Chimu_01=ref()(0)(1);\
@@ -482,19 +482,19 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   Simd U_11;					\
   Simd U_21;
 
-#define ZERO_RESULT				\
-  result_00=S(0.0,0.0);			\
-  result_01=S(0.0,0.0);			\
-  result_02=S(0.0,0.0);			\
-  result_10=S(0.0,0.0);			\
-  result_11=S(0.0,0.0);			\
-  result_12=S(0.0,0.0);			\
-  result_20=S(0.0,0.0);			\
-  result_21=S(0.0,0.0);			\
-  result_22=S(0.0,0.0);			\
-  result_30=S(0.0,0.0);			\
-  result_31=S(0.0,0.0);			\
-  result_32=S(0.0,0.0);			
+#define ZERO_RESULT							\
+  zeroit(result_00);							\
+  zeroit(result_01);							\
+  zeroit(result_02);							\
+  zeroit(result_10);							\
+  zeroit(result_11);							\
+  zeroit(result_12);							\
+  zeroit(result_20);							\
+  zeroit(result_21);							\
+  zeroit(result_22);							\
+  zeroit(result_30);							\
+  zeroit(result_31);							\
+  zeroit(result_32);			
 
 #define Chimu_00 Chi_00
 #define Chimu_01 Chi_01

@@ -36,7 +36,7 @@ static const int CbBlack=1;
 static const int Even   =CbRed;
 static const int Odd    =CbBlack;
 
-accelerator_inline int RedBlackCheckerBoardFromOindex (int oindex, Coordinate &rdim, Coordinate &chk_dim_msk)
+accelerator_inline int RedBlackCheckerBoardFromOindex (int oindex,const Coordinate &rdim,const Coordinate &chk_dim_msk)
 {
   int nd=rdim.size();
   Coordinate coor(nd);
