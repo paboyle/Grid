@@ -252,7 +252,7 @@ public:
 				 const Gamma GammaB_sigma,
 				 const Gamma GammaB_nucl,
 		                 const std::string op,
-				 SpinMatrixField &stn_corr);
+				 SpinMatrixField &xts_corr);
 };
 //This computes a baryon contraction on a lattice site, including the spin-trace of the correlation matrix
 template <class FImpl>
@@ -1435,6 +1435,7 @@ void BaryonUtils<FImpl>::XiToSigmaQ1EyeSite(const mobj &Dq_loop,
       int c_x = (ie_x < 3 ? (ie_x+2)%3 : (7-ie_x)%3 ); //epsilon[ie_x][2]; //c'
       int eSgn_x = (ie_x < 3 ? 1 : -1);
       ee = Real(eSgn_s * eSgn_x);
+      auto ee_GD = ee * trGDq;
       for (int alpha_x=0; alpha_x<Ns; alpha_x++){
       for (int beta_s=0; beta_s<Ns; beta_s++){
         auto GDsGDdG_ab_ba = GDsGDd()(alpha_x,beta_s)(b_x,a_s);
@@ -1488,15 +1489,19 @@ void BaryonUtils<FImpl>::XiToSigmaQ2EyeSite(const mobj &Dq_loop,
   // GammaB * DsGDd * GammaB
   auto GDsGDqGDdG = GDsGDqGDd * GammaB_sigma;
 
+  Real ee;
+
   for (int ie_s=0; ie_s < 6 ; ie_s++){
-    int a_s = epsilon[ie_s][0]; //a
-    int b_s = epsilon[ie_s][1]; //b
-    int c_s = epsilon[ie_s][2]; //c
+      int a_s = (ie_s < 3 ? ie_s       : (6-ie_s)%3 ); //epsilon[ie_s][0]; //a'
+      int b_s = (ie_s < 3 ? (ie_s+1)%3 : (8-ie_s)%3 ); //epsilon[ie_s][1]; //b'
+      int c_s = (ie_s < 3 ? (ie_s+2)%3 : (7-ie_s)%3 ); //epsilon[ie_s][2]; //c'
+      int eSgn_s = (ie_s < 3 ? 1 : -1);
     for (int ie_x=0; ie_x < 6 ; ie_x++){
-      int a_x = epsilon[ie_x][0]; //a'
-      int b_x = epsilon[ie_x][1]; //b'
-      int c_x = epsilon[ie_x][2]; //c'
-      auto ee = epsilon_sgn[ie_s] * epsilon_sgn[ie_x];
+      int a_x = (ie_x < 3 ? ie_x       : (6-ie_x)%3 ); //epsilon[ie_x][0]; //a'
+      int b_x = (ie_x < 3 ? (ie_x+1)%3 : (8-ie_x)%3 ); //epsilon[ie_x][1]; //b'
+      int c_x = (ie_x < 3 ? (ie_x+2)%3 : (7-ie_x)%3 ); //epsilon[ie_x][2]; //c'
+      int eSgn_x = (ie_x < 3 ? 1 : -1);
+      ee = Real(eSgn_s * eSgn_x);
       for (int alpha_x=0; alpha_x<Ns; alpha_x++){
       for (int beta_s=0; beta_s<Ns; beta_s++){
         auto GDsGDqGDdG_ab_ba = GDsGDqGDdG()(alpha_x,beta_s)(b_x,a_s);
@@ -1540,27 +1545,32 @@ void BaryonUtils<FImpl>::XiToSigmaEye(const PropagatorField &qq_loop,
   autoView( vd_tf   , qd_tf    , AcceleratorRead);
   autoView( vs_ti   , qs_ti    , AcceleratorRead);
 
-  bool doQ1 = (op == "Q1");
-  bool doQ2 = (op == "Q2");
-
   Vector<mobj> my_Dq_spec{Dd_spec,Ds_spec};
   mobj * Dq_spec_p = &my_Dq_spec[0];
 
-  accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
-    auto Dq_loop = vq_loop(ss);
-    auto Dd_tf   = vd_tf(ss);
-    auto Ds_ti   = vs_ti(ss);
-    typedef decltype(coalescedRead(vcorr[0])) spinor;
-    spinor result=Zero();
-    if(doQ1){
+  if(op == "Q1"){
+    accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+      auto Dq_loop = vq_loop(ss);
+      auto Dd_tf   = vd_tf(ss);
+      auto Ds_ti   = vs_ti(ss);
+      typedef decltype(coalescedRead(vcorr[0])) spinor;
+      spinor result=Zero();
       XiToSigmaQ1EyeSite(Dq_loop,Dq_spec_p[0],Dq_spec_p[1],Dd_tf,Ds_ti,Gamma_H,GammaB_xi,GammaB_sigma,result);
-    } else if(doQ2){
-      XiToSigmaQ2EyeSite(Dq_loop,Dq_spec_p[0],Dq_spec_p[0],Dd_tf,Ds_ti,Gamma_H,GammaB_xi,GammaB_sigma,result);
-    } else {
-      assert(0 && "Weak Operator not correctly specified");
-    }
-    coalescedWrite(vcorr[ss],result);
-  }  );//end loop over lattice sites
+      coalescedWrite(vcorr[ss],result);
+    }  );//end loop over lattice sites
+  } else if(op == "Q2"){
+    accelerator_for(ss, grid->oSites(), grid->Nsimd(), {
+      auto Dq_loop = vq_loop(ss);
+      auto Dd_tf   = vd_tf(ss);
+      auto Ds_ti   = vs_ti(ss);
+      typedef decltype(coalescedRead(vcorr[0])) spinor;
+      spinor result=Zero();
+      XiToSigmaQ2EyeSite(Dq_loop,Dq_spec_p[0],Dq_spec_p[1],Dd_tf,Ds_ti,Gamma_H,GammaB_xi,GammaB_sigma,result);
+      coalescedWrite(vcorr[ss],result);
+    }  );//end loop over lattice sites
+  } else {
+    assert(0 && "Weak Operator not correctly specified");
+  }
 }
 
 
