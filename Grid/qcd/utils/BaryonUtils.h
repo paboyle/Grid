@@ -27,7 +27,6 @@
  *************************************************************************************/
 /*  END LEGAL */
 #pragma once
-//#include <Grid/Hadrons/Global.hpp>
 #include <Grid/Eigen/unsupported/CXX11/Tensor>
 
 NAMESPACE_BEGIN(Grid);
@@ -200,7 +199,7 @@ public:
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
 						 robj &result);
-  template <class mobj, class mobj2, class robj>
+  template <class mobj, class mobj2, class robj> accelerator_inline
   static void XiToSigmaQ1EyeSite(const mobj &Dq_loop,
 						 const mobj2 &Dd_spec,
 						 const mobj2 &Ds_spec,
@@ -210,7 +209,7 @@ public:
 				                 const Gamma GammaB_sigma,
 		                 		 const Gamma GammaB_nucl,
 						 robj &result);
-  template <class mobj, class mobj2, class robj>
+  template <class mobj, class mobj2, class robj> accelerator_inline
   static void XiToSigmaQ2EyeSite(const mobj &Dq_loop,
 						 const mobj2 &Dd_spec,
 						 const mobj2 &Ds_spec,
@@ -1395,7 +1394,7 @@ void BaryonUtils<FImpl>::SigmaToNucleonNonEye(const PropagatorField &qq_ti,
  * Dd_tf is a quark line from t_f to t_H
  * Ds_ti is a quark line from t_i to t_H */
 template <class FImpl>
-template <class mobj, class mobj2, class robj>
+template <class mobj, class mobj2, class robj> accelerator_inline
 void BaryonUtils<FImpl>::XiToSigmaQ1EyeSite(const mobj &Dq_loop,
 						 const mobj2 &Dd_spec,
 						 const mobj2 &Ds_spec,
@@ -1464,7 +1463,7 @@ void BaryonUtils<FImpl>::XiToSigmaQ1EyeSite(const mobj &Dq_loop,
  * Dd_tf is a quark line from t_f to t_H
  * Ds_ti is a quark line from t_i to t_H */
 template <class FImpl>
-template <class mobj, class mobj2, class robj>
+template <class mobj, class mobj2, class robj> accelerator_inline
 void BaryonUtils<FImpl>::XiToSigmaQ2EyeSite(const mobj &Dq_loop,
 						 const mobj2 &Dd_spec,
 						 const mobj2 &Ds_spec,
