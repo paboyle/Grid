@@ -88,7 +88,7 @@ public:
 // Coordinate class, maxdims = 8 for now.
 ////////////////////////////////////////////////////////////////
 #define GRID_MAX_LATTICE_DIMENSION (8)
-#define GRID_MAX_SIMD              (sizeof(vInteger)/sizeof(Integer))
+#define GRID_MAX_SIMD              (16)
 
 static constexpr int MaxDims = GRID_MAX_LATTICE_DIMENSION;
 
