@@ -191,34 +191,34 @@ public:
              robj &result);
   template <class mobj, class mobj2, class robj> accelerator_inline
   static void SigmaToNucleonQ2NonEyeSite(const mobj &Du_ti,
-						 const mobj &Du_tf,
-						 const mobj2 &Du_spec,
-						 const mobj &Dd_tf,
-						 const mobj &Ds_ti,
-				                 const Gamma Gamma_H,
-				                 const Gamma GammaB_sigma,
-		                 		 const Gamma GammaB_nucl,
-						 robj &result);
+	     const mobj &Du_tf,
+	     const mobj2 &Du_spec,
+	     const mobj &Dd_tf,
+	     const mobj &Ds_ti,
+	     const Gamma Gamma_H,
+	     const Gamma GammaB_sigma,
+	     const Gamma GammaB_nucl,
+	     robj &result);
   template <class mobj, class mobj2, class robj> accelerator_inline
   static void XiToSigmaQ1EyeSite(const mobj &Dq_loop,
-						 const mobj2 &Dd_spec,
-						 const mobj2 &Ds_spec,
-						 const mobj &Dd_tf,
-						 const mobj &Ds_ti,
-				                 const Gamma Gamma_H,
-				                 const Gamma GammaB_sigma,
-		                 		 const Gamma GammaB_nucl,
-						 robj &result);
+	     const mobj2 &Dd_spec,
+	     const mobj2 &Ds_spec,
+	     const mobj &Dd_tf,
+	     const mobj &Ds_ti,
+	     const Gamma Gamma_H,
+	     const Gamma GammaB_sigma,
+	     const Gamma GammaB_nucl,
+	     robj &result);
   template <class mobj, class mobj2, class robj> accelerator_inline
   static void XiToSigmaQ2EyeSite(const mobj &Dq_loop,
-						 const mobj2 &Dd_spec,
-						 const mobj2 &Ds_spec,
-						 const mobj &Dd_tf,
-						 const mobj &Ds_ti,
-				                 const Gamma Gamma_H,
-				                 const Gamma GammaB_sigma,
-		                 		 const Gamma GammaB_nucl,
-						 robj &result);
+	     const mobj2 &Dd_spec,
+	     const mobj2 &Ds_spec,
+	     const mobj &Dd_tf,
+	     const mobj &Ds_ti,
+	     const Gamma Gamma_H,
+	     const Gamma GammaB_sigma,
+	     const Gamma GammaB_nucl,
+	     robj &result);
   public:
   template <class mobj>
   static void SigmaToNucleonEye(const PropagatorField &qq_loop,
@@ -232,26 +232,26 @@ public:
          SpinMatrixField &stn_corr);
   template <class mobj>
   static void SigmaToNucleonNonEye(const PropagatorField &qq_ti,
-				 const PropagatorField &qq_tf,
-				 const mobj &Du_spec,
-				 const PropagatorField &qd_tf,
-				 const PropagatorField &qs_ti,
-				 const Gamma Gamma_H,
-				 const Gamma GammaB_sigma,
-				 const Gamma GammaB_nucl,
-		                 const std::string op,
-				 SpinMatrixField &stn_corr);
+	 const PropagatorField &qq_tf,
+	 const mobj &Du_spec,
+	 const PropagatorField &qd_tf,
+	 const PropagatorField &qs_ti,
+	 const Gamma Gamma_H,
+	 const Gamma GammaB_sigma,
+	 const Gamma GammaB_nucl,
+         const std::string op,
+	 SpinMatrixField &stn_corr);
   template <class mobj>
   static void XiToSigmaEye(const PropagatorField &qq_loop,
-				 const mobj &Dd_spec,
-				 const mobj &Ds_spec,
-				 const PropagatorField &qd_tf,
-				 const PropagatorField &qs_ti,
-				 const Gamma Gamma_H,
-				 const Gamma GammaB_sigma,
-				 const Gamma GammaB_nucl,
-		                 const std::string op,
-				 SpinMatrixField &xts_corr);
+	 const mobj &Dd_spec,
+	 const mobj &Ds_spec,
+	 const PropagatorField &qd_tf,
+	 const PropagatorField &qs_ti,
+	 const Gamma Gamma_H,
+	 const Gamma GammaB_sigma,
+	 const Gamma GammaB_nucl,
+         const std::string op,
+	 SpinMatrixField &xts_corr);
 };
 //This computes a baryon contraction on a lattice site, including the spin-trace of the correlation matrix
 template <class FImpl>
