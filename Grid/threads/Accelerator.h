@@ -178,9 +178,10 @@ void Lambda6Apply(uint64_t num1, uint64_t num2, uint64_t num3,
     cudaDeviceSynchronize();						\
     cudaError err = cudaGetLastError();					\
     if ( cudaSuccess != err ) {						\
-      printf("Cuda error %s \n", cudaGetErrorString( err ));		\
-      puts(__FILE__);							\
-      printf("Line %d\n",__LINE__);					\
+      printf("accelerator_barrier(): Cuda error %s \n",			\
+	     cudaGetErrorString( err ));				\
+      printf("File %s Line %d\n",__FILE__,__LINE__);			\
+      fflush(stdout);							\
       if (acceleratorAbortOnGpuError) assert(err==cudaSuccess);		\
     }									\
   }

@@ -53,7 +53,6 @@ void acceleratorInit(void)
     prop = gpu_props[i];
     totalDeviceMem = prop.totalGlobalMem;
     if ( world_rank == 0) {
-#ifndef GRID_DEFAULT_GPU
       if ( i==rank ) {
 	printf("AcceleratorCudaInit[%d]: ========================\n",rank);
 	printf("AcceleratorCudaInit[%d]: Device Number    : %d\n", rank,i);
@@ -67,8 +66,8 @@ void acceleratorInit(void)
 	GPU_PROP(warpSize);
 	GPU_PROP(pciBusID);
 	GPU_PROP(pciDeviceID);
+ 	printf("AcceleratorCudaInit[%d]: maxGridSize (%d,%d,%d)\n",rank,prop.maxGridSize[0],prop.maxGridSize[1],prop.maxGridSize[2]);
       }
-#endif
       //      GPU_PROP(unifiedAddressing);
       //      GPU_PROP(l2CacheSize);
       //      GPU_PROP(singleToDoublePrecisionPerfRatio);
