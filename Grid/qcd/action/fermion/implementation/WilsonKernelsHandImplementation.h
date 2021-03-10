@@ -118,15 +118,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #endif
 
-#define LOAD_CHI				\
-  {const SiteHalfSpinor &ref(buf[offset]);	\
-    Chi_00 = coalescedRead(ref()(0)(0));	\
-    Chi_01 = coalescedRead(ref()(0)(1));	\
-    Chi_02 = coalescedRead(ref()(0)(2));	\
-    Chi_10 = coalescedRead(ref()(1)(0));	\
-    Chi_11 = coalescedRead(ref()(1)(1));	\
-    Chi_12 = coalescedRead(ref()(1)(2));}
-
 #define MULT_2SPIN(A)\
   {auto & ref(U[sU](A));					\
   U_00=coalescedRead(ref()(0,0));				\
@@ -156,6 +147,15 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     UChi_11+= U_10*Chi_12;					\
     UChi_02+= U_20*Chi_02;					\
     UChi_12+= U_20*Chi_12;}
+
+#define LOAD_CHI				\
+  {const SiteHalfSpinor &ref(buf[offset]);	\
+    Chi_00 = coalescedRead(ref()(0)(0));	\
+    Chi_01 = coalescedRead(ref()(0)(1));	\
+    Chi_02 = coalescedRead(ref()(0)(2));	\
+    Chi_10 = coalescedRead(ref()(1)(0));	\
+    Chi_11 = coalescedRead(ref()(1)(1));	\
+    Chi_12 = coalescedRead(ref()(1)(2));}
 
 //      hspin(0)=fspin(0)+timesI(fspin(3));
 //      hspin(1)=fspin(1)+timesI(fspin(2));
@@ -370,7 +370,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   result_31-= UChi_11;	\
   result_32-= UChi_12;
 
-#define HAND_STENCIL_LEG(PROJ,PERM,DIR,RECON)	\
+#define HAND_STENCIL_LEGB(PROJ,PERM,DIR,RECON)	\
   SE=st.GetEntry(ptype,DIR,ss);			\
   offset = SE->_offset;				\
   local  = SE->_is_local;			\
@@ -384,6 +384,37 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   } else {					\
     LOAD_CHI;					\
   }						\
+  acceleratorSynchronise();			\
+  MULT_2SPIN(DIR);				\
+  RECON;					
+
+#define HAND_STENCIL_LEG(PROJ,PERM,DIR,RECON)	\
+  SE=&st_p[DIR+8*ss];				\
+  ptype=st_perm[DIR];				\
+  offset = SE->_offset;				\
+  local  = SE->_is_local;			\
+  perm   = SE->_permute;			\
+  if ( local ) {				\
+    LOAD_CHIMU(PERM);				\
+    PROJ;					\
+    if ( perm) {				\
+      PERMUTE_DIR(PERM);			\
+    }						\
+  } else {					\
+    LOAD_CHI;					\
+  }						\
+  acceleratorSynchronise();			\
+  MULT_2SPIN(DIR);				\
+  RECON;					
+
+#define HAND_STENCIL_LEGA(PROJ,PERM,DIR,RECON)				\
+  SE=&st_p[DIR+8*ss];							\
+  ptype=st_perm[DIR];							\
+ /*SE=st.GetEntry(ptype,DIR,ss);*/					\
+  offset = SE->_offset;				\
+  perm   = SE->_permute;			\
+  LOAD_CHIMU(PERM);				\
+  PROJ;						\
   MULT_2SPIN(DIR);				\
   RECON;					
 
@@ -401,10 +432,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   } else if ( st.same_node[DIR] ) {		\
     LOAD_CHI;					\
   }						\
+  acceleratorSynchronise();			\
   if (local || st.same_node[DIR] ) {		\
     MULT_2SPIN(DIR);				\
     RECON;					\
-  }
+  }						\
+  acceleratorSynchronise();			
 
 #define HAND_STENCIL_LEG_EXT(PROJ,PERM,DIR,RECON)	\
   SE=st.GetEntry(ptype,DIR,ss);			\
@@ -414,7 +447,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     MULT_2SPIN(DIR);				\
     RECON;					\
     nmu++;					\
-  }
+  }						\
+  acceleratorSynchronise();			
 
 #define HAND_RESULT(ss)				\
   {						\
@@ -511,10 +545,41 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
+
+#ifdef SYCL_HACK
+template<class Impl> accelerator_inline void 
+WilsonKernels<Impl>::HandDhopSiteSycl(StencilVector st_perm,StencilEntry *st_p, SiteDoubledGaugeField *U,SiteHalfSpinor  *buf,
+				      int ss,int sU,const SiteSpinor *in, SiteSpinor *out)
+{
+// T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
+  typedef typename Simd::scalar_type S;
+  typedef typename Simd::vector_type V;
+  typedef iSinglet<Simd> vCplx;
+  //  typedef decltype( coalescedRead( vCplx()()() )) Simt;
+  typedef decltype( coalescedRead( in[0]()(0)(0) )) Simt;
+
+  HAND_DECLARATIONS(Simt);
+
+  int offset,local,perm, ptype;
+  StencilEntry *SE;
+  HAND_STENCIL_LEG(XM_PROJ,3,Xp,XM_RECON);
+  HAND_STENCIL_LEG(YM_PROJ,2,Yp,YM_RECON_ACCUM);
+  HAND_STENCIL_LEG(ZM_PROJ,1,Zp,ZM_RECON_ACCUM);
+  HAND_STENCIL_LEG(TM_PROJ,0,Tp,TM_RECON_ACCUM);
+  HAND_STENCIL_LEG(XP_PROJ,3,Xm,XP_RECON_ACCUM);
+  HAND_STENCIL_LEG(YP_PROJ,2,Ym,YP_RECON_ACCUM);
+  HAND_STENCIL_LEG(ZP_PROJ,1,Zm,ZP_RECON_ACCUM);
+  HAND_STENCIL_LEG(TP_PROJ,0,Tm,TP_RECON_ACCUM);
+  HAND_RESULT(ss);
+}
+#endif
+
 template<class Impl> accelerator_inline void 
 WilsonKernels<Impl>::HandDhopSite(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
 				  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
+  auto st_p = st._entries_p;						
+  auto st_perm = st._permute_type;					
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -539,6 +604,8 @@ template<class Impl>  accelerator_inline
 void WilsonKernels<Impl>::HandDhopSiteDag(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
+  auto st_p = st._entries_p;						
+  auto st_perm = st._permute_type;					
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
   typedef decltype( coalescedRead( in[0]()(0)(0) )) Simt;
@@ -562,6 +629,8 @@ template<class Impl>  accelerator_inline void
 WilsonKernels<Impl>::HandDhopSiteInt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
 					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
+  auto st_p = st._entries_p;						
+  auto st_perm = st._permute_type;					
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -586,6 +655,8 @@ template<class Impl> accelerator_inline
 void WilsonKernels<Impl>::HandDhopSiteDagInt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 						  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
+  auto st_p = st._entries_p;						
+  auto st_perm = st._permute_type;					
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
   typedef decltype( coalescedRead( in[0]()(0)(0) )) Simt;
@@ -609,6 +680,8 @@ template<class Impl>  accelerator_inline void
 WilsonKernels<Impl>::HandDhopSiteExt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor  *buf,
 					  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
+  auto st_p = st._entries_p;						
+  auto st_perm = st._permute_type;					
 // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -634,6 +707,8 @@ template<class Impl>  accelerator_inline
 void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,
 						  int ss,int sU,const FermionFieldView &in, FermionFieldView &out)
 {
+  auto st_p = st._entries_p;						
+  auto st_perm = st._permute_type;					
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
   typedef decltype( coalescedRead( in[0]()(0)(0) )) Simt;
