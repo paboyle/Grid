@@ -208,8 +208,8 @@ struct RealPart<complex<T> > {
 //////////////////////////////////////
 // type alias used to simplify the syntax of std::enable_if
 template <typename T> using Invoke = typename T::type;
-template <typename Condition, typename ReturnType> using EnableIf    = Invoke<std::enable_if<Condition::value, ReturnType> >;
-template <typename Condition, typename ReturnType> using NotEnableIf = Invoke<std::enable_if<!Condition::value, ReturnType> >;
+template <typename Condition, typename ReturnType = void> using EnableIf    = Invoke<std::enable_if<Condition::value, ReturnType> >;
+template <typename Condition, typename ReturnType = void> using NotEnableIf = Invoke<std::enable_if<!Condition::value, ReturnType> >;
 
 ////////////////////////////////////////////////////////
 // Check for complexity with type traits

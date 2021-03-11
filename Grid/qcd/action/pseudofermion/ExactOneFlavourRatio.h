@@ -124,7 +124,7 @@ NAMESPACE_BEGIN(Grid);
       //
       // As a check of rational require \Phi^dag M_{EOFA} \Phi == eta^dag M^-1/2^dag M M^-1/2 eta = eta^dag eta
       //
-      virtual void refresh(const GaugeField& U, GridParallelRNG& pRNG)
+      virtual void refresh(const GaugeField& U, GridSerialRNG &sRNG, GridParallelRNG& pRNG)
       {
         Lop.ImportGauge(U);
         Rop.ImportGauge(U);
