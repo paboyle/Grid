@@ -54,8 +54,7 @@ public:
     return sstream.str();
   }
 
-  virtual void refresh(const GaugeField &U,
-                       GridParallelRNG &pRNG){};  // noop as no pseudoferms
+  virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG &pRNG){};  // noop as no pseudoferms
 
   virtual RealD S(const GaugeField &U) {
     RealD plaq = WilsonLoops<Gimpl>::avgPlaquette(U);

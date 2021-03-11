@@ -397,6 +397,7 @@ void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, co
 template <class Impl>
 void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int dag)
 {
+  DhopCalls+=2;
   conformable(in.Grid(), _grid);  // verifies full grid
   conformable(in.Grid(), out.Grid());
 
@@ -408,6 +409,7 @@ void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int da
 template <class Impl>
 void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int dag)
 {
+  DhopCalls++;
   conformable(in.Grid(), _cbgrid);    // verifies half grid
   conformable(in.Grid(), out.Grid());  // drops the cb check
 
@@ -420,6 +422,7 @@ void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int 
 template <class Impl>
 void WilsonFermion<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag)
 {
+  DhopCalls++;
   conformable(in.Grid(), _cbgrid);    // verifies half grid
   conformable(in.Grid(), out.Grid());  // drops the cb check
 

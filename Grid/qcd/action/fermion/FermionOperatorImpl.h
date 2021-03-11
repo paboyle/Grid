@@ -153,8 +153,8 @@ public:
   typedef typename Impl::StencilImpl             StencilImpl;		\
   typedef typename Impl::ImplParams               ImplParams;	        \
   typedef typename Impl::StencilImpl::View_type  StencilView;		\
-  typedef typename ViewMap<FermionField>::Type      FermionFieldView;	\
-  typedef typename ViewMap<DoubledGaugeField>::Type DoubledGaugeFieldView;
+  typedef const typename ViewMap<FermionField>::Type      FermionFieldView;	\
+  typedef const typename ViewMap<DoubledGaugeField>::Type DoubledGaugeFieldView;
 
 #define INHERIT_IMPL_TYPES(Base)		\
   INHERIT_GIMPL_TYPES(Base)			\

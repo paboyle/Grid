@@ -162,10 +162,10 @@ public:
       U    = U    *phases;
       Udag = Udag *phases;
 
-    	InsertGaugeField(Uds,U,mu);
-    	InsertGaugeField(Uds,Udag,mu+4);
-    	//	PokeIndex<LorentzIndex>(Uds, U, mu);
-    	//	PokeIndex<LorentzIndex>(Uds, Udag, mu + 4);
+      InsertGaugeField(Uds,U,mu);
+      InsertGaugeField(Uds,Udag,mu+4);
+      //	PokeIndex<LorentzIndex>(Uds, U, mu);
+      //	PokeIndex<LorentzIndex>(Uds, Udag, mu + 4);
 
       // 3 hop based on thin links. Crazy huh ?
       U  = PeekIndex<LorentzIndex>(Uthin, mu);
@@ -177,8 +177,8 @@ public:
       UUU    = UUU    *phases;
       UUUdag = UUUdag *phases;
 
-    	InsertGaugeField(UUUds,UUU,mu);
-    	InsertGaugeField(UUUds,UUUdag,mu+4);
+      InsertGaugeField(UUUds,UUU,mu);
+      InsertGaugeField(UUUds,UUUdag,mu+4);
 
     }
   }
@@ -209,12 +209,12 @@ public:
 
         ComplexField phases(GaugeGrid); phases = 1.0;
 
-        Lattice<iScalar<vInteger> > coor(GaugeGrid);
-        Lattice<iScalar<vInteger> > x(GaugeGrid); LatticeCoordinate(x,0);
-        Lattice<iScalar<vInteger> > y(GaugeGrid); LatticeCoordinate(y,1);
-        Lattice<iScalar<vInteger> > z(GaugeGrid); LatticeCoordinate(z,2);
-        Lattice<iScalar<vInteger> > t(GaugeGrid); LatticeCoordinate(t,3);
-
+	Lattice<iScalar<vInteger> > coor(GaugeGrid);
+	Lattice<iScalar<vInteger> > x(GaugeGrid); LatticeCoordinate(x,0);
+	Lattice<iScalar<vInteger> > y(GaugeGrid); LatticeCoordinate(y,1);
+	Lattice<iScalar<vInteger> > z(GaugeGrid); LatticeCoordinate(z,2);
+	Lattice<iScalar<vInteger> > t(GaugeGrid); LatticeCoordinate(t,3);
+            
         ////////// boundary phase /////////////
         auto pha = Params.boundary_phases[mu];
         scalar_type bphase( real(pha),imag(pha) );
@@ -233,40 +233,40 @@ public:
 
         // Staggered Phase.
 
-        Lattice<iScalar<vInteger> > lin_z(GaugeGrid); lin_z=x+y;
-        Lattice<iScalar<vInteger> > lin_t(GaugeGrid); lin_t=x+y+z;
+	Lattice<iScalar<vInteger> > lin_z(GaugeGrid); lin_z=x+y;
+	Lattice<iScalar<vInteger> > lin_t(GaugeGrid); lin_t=x+y+z;
         
-        if ( mu == 1 ) phases = where( mod(x    ,2)==(Integer)0, phases,-phases);
-        if ( mu == 2 ) phases = where( mod(lin_z,2)==(Integer)0, phases,-phases);
-        if ( mu == 3 ) phases = where( mod(lin_t,2)==(Integer)0, phases,-phases);
+	if ( mu == 1 ) phases = where( mod(x    ,2)==(Integer)0, phases,-phases);
+	if ( mu == 2 ) phases = where( mod(lin_z,2)==(Integer)0, phases,-phases);
+	if ( mu == 3 ) phases = where( mod(lin_t,2)==(Integer)0, phases,-phases);
         
-        // 1 hop based on fat links
-        U      = PeekIndex<LorentzIndex>(Ufat, mu);
-        Udag   = adj( Cshift(U, mu, -1));
+	// 1 hop based on fat links
+	U      = PeekIndex<LorentzIndex>(Ufat, mu);
+	Udag   = adj( Cshift(U, mu, -1));
         
-        U    = U    *phases;
-        Udag = Udag *phases;
-        
-        InsertGaugeField(Uds,U,mu);
-        InsertGaugeField(Uds,Udag,mu+4);
+	U    = U    *phases;
+	Udag = Udag *phases;
+            
+	InsertGaugeField(Uds,U,mu);
+	InsertGaugeField(Uds,Udag,mu+4);
 
-        //    PokeIndex<LorentzIndex>(Uds, U, mu);
-        //    PokeIndex<LorentzIndex>(Uds, Udag, mu + 4);
-        
+	//    PokeIndex<LorentzIndex>(Uds, U, mu);
+	//    PokeIndex<LorentzIndex>(Uds, Udag, mu + 4);
+
 #if 0 // MILC (does not ! store -w^dgr(x+2)W^dgr(x+1)W^dgr(x). must use c2=-1)
-        U  = PeekIndex<LorentzIndex>(Ulong, mu);
-        UUU = adj( U );
-        UUUdag = Cshift(U, mu, -3);
+	U  = PeekIndex<LorentzIndex>(Ulong, mu);
+	UUU = adj( U );
+	UUUdag = Cshift(U, mu, -3);
 #else // USUAL
-        UUU  = PeekIndex<LorentzIndex>(Ulong, mu);
-        UUUdag = adj( Cshift(UUU, mu, -3));
+	UUU  = PeekIndex<LorentzIndex>(Ulong, mu);
+	UUUdag = adj( Cshift(UUU, mu, -3));
 #endif
-        UUU    = UUU    *phases;
-        UUUdag = UUUdag *phases;
+	UUU    = UUU    *phases;
+	UUUdag = UUUdag *phases;
         
-        InsertGaugeField(UUUds,UUU,mu);
-        InsertGaugeField(UUUds,UUUdag,mu+4);
-        
+	InsertGaugeField(UUUds,UUU,mu);
+	InsertGaugeField(UUUds,UUUdag,mu+4);
+            
       }
     }
 
@@ -285,17 +285,17 @@ public:
         GaugeLinkField Udag(GaugeGrid);
         for (int mu = 0; mu < Nd; mu++) {
             
-          int L   = GaugeGrid->GlobalDimensions()[mu];
+	  int L   = GaugeGrid->GlobalDimensions()[mu];
           int Lmu = L - 1;
 
           ComplexField phases(GaugeGrid); phases = 1.0;
 
-          Lattice<iScalar<vInteger> > coor(GaugeGrid);
-          Lattice<iScalar<vInteger> > x(GaugeGrid); LatticeCoordinate(x,0);
-          Lattice<iScalar<vInteger> > y(GaugeGrid); LatticeCoordinate(y,1);
-          Lattice<iScalar<vInteger> > z(GaugeGrid); LatticeCoordinate(z,2);
-          Lattice<iScalar<vInteger> > t(GaugeGrid); LatticeCoordinate(t,3);
-
+	  Lattice<iScalar<vInteger> > coor(GaugeGrid);
+	  Lattice<iScalar<vInteger> > x(GaugeGrid); LatticeCoordinate(x,0);
+	  Lattice<iScalar<vInteger> > y(GaugeGrid); LatticeCoordinate(y,1);
+	  Lattice<iScalar<vInteger> > z(GaugeGrid); LatticeCoordinate(z,2);
+	  Lattice<iScalar<vInteger> > t(GaugeGrid); LatticeCoordinate(t,3);
+            
           ////////// boundary phase /////////////
           auto pha = Params.boundary_phases[mu];
           scalar_type bphase( real(pha),imag(pha) );
@@ -312,26 +312,26 @@ public:
 
           phases = where(coor == Lmu, bphase * phases , phases);
           // Staggered Phase.
-          Lattice<iScalar<vInteger> > lin_z(GaugeGrid); lin_z=x+y;
-          Lattice<iScalar<vInteger> > lin_t(GaugeGrid); lin_t=x+y+z;
+	  Lattice<iScalar<vInteger> > lin_z(GaugeGrid); lin_z=x+y;
+	  Lattice<iScalar<vInteger> > lin_t(GaugeGrid); lin_t=x+y+z;
           
-          if ( mu == 1 ) phases = where( mod(x    ,2)==(Integer)0, phases,-phases);
-          if ( mu == 2 ) phases = where( mod(lin_z,2)==(Integer)0, phases,-phases);
-          if ( mu == 3 ) phases = where( mod(lin_t,2)==(Integer)0, phases,-phases);
+	  if ( mu == 1 ) phases = where( mod(x    ,2)==(Integer)0, phases,-phases);
+	  if ( mu == 2 ) phases = where( mod(lin_z,2)==(Integer)0, phases,-phases);
+	  if ( mu == 3 ) phases = where( mod(lin_t,2)==(Integer)0, phases,-phases);
           
-          // 1 hop based on fat links
-          U      = PeekIndex<LorentzIndex>(Uthin, mu);
-          Udag   = adj( Cshift(U, mu, -1));
+	  // 1 hop based on fat links
+	  U      = PeekIndex<LorentzIndex>(Uthin, mu);
+	  Udag   = adj( Cshift(U, mu, -1));
           
-          U    = U    *phases;
-          Udag = Udag *phases;
+	  U    = U    *phases;
+	  Udag = Udag *phases;
           
-          InsertGaugeField(Uds,U,mu);
-          InsertGaugeField(Uds,Udag,mu+4);
+	  InsertGaugeField(Uds,U,mu);
+	  InsertGaugeField(Uds,Udag,mu+4);
           
         }
     }
-    
+
   inline void InsertForce4D(GaugeField &mat, FermionField &Btilde, FermionField &A,int mu){
     GaugeLinkField link(mat.Grid());
     link = TraceIndex<SpinIndex>(outerProduct(Btilde,A)); 
