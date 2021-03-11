@@ -499,6 +499,9 @@ case ${ax_cv_cxx_compiler_vendor} in
       AVX512)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-xcommon-avx512';;
+      SKL)
+        AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
+        SIMD_FLAGS='-xcore-avx512';;
       KNC)
         AC_DEFINE([IMCI],[1],[IMCI Intrinsics for Knights Corner])
         SIMD_FLAGS='';;
