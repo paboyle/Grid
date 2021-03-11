@@ -444,7 +444,7 @@ case ${ax_cv_cxx_compiler_vendor} in
         SIMD_FLAGS='-mavx2 -mfma -mf16c';;
       AVX512)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
-        SIMD_FLAGS='-mavx512f -mavx512pf -mavx512er -mavx512cd';;
+        SIMD_FLAGS='-mavx512f -mavx512cd';;
       SKL)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics for SkyLake Xeon])
         SIMD_FLAGS='-march=skylake-avx512';;
@@ -497,6 +497,9 @@ case ${ax_cv_cxx_compiler_vendor} in
         AC_DEFINE([AVX2],[1],[AVX2 intrinsics])
         SIMD_FLAGS='-march=core-avx2 -xcore-avx2';;
       AVX512)
+        AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
+        SIMD_FLAGS='-xcommon-avx512';;
+      SKL)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-xcore-avx512';;
       KNC)
