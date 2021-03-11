@@ -74,19 +74,23 @@ public:
     assert(Params.boundary_phases.size() == Nd);
   };
       
-  static accelerator_inline void multLink(SiteSpinor &phi,
+  template<class _Spinor>
+  static accelerator_inline void multLink(_Spinor &phi,
 		       const SiteDoubledGaugeField &U,
-		       const SiteSpinor &chi,
+		       const _Spinor &chi,
 		       int mu)
   {
-    mult(&phi(), &U(mu), &chi());
+    auto UU = coalescedRead(U(mu));
+    mult(&phi(), &UU, &chi());
   }
-  static accelerator_inline void multLinkAdd(SiteSpinor &phi,
+  template<class _Spinor>
+  static accelerator_inline void multLinkAdd(_Spinor &phi,
 			  const SiteDoubledGaugeField &U,
-			  const SiteSpinor &chi,
+			  const _Spinor &chi,
 			  int mu)
   {
-    mac(&phi(), &U(mu), &chi());
+    auto UU = coalescedRead(U(mu));
+    mac(&phi(), &UU, &chi());
   }
       
   template <class ref>
