@@ -1,3 +1,6 @@
+-- comms threads issue??
+-- Part done: Staggered kernel performance on GPU
+
 =========================================================
 General
 =========================================================
@@ -5,27 +8,17 @@ General
 - Make representations code take Gimpl
 - Simplify the HMCand remove modules
 - Lattice_arith - are the mult, mac etc.. still needed after ET engine?
-- Lattice_rng
-- Lattice_transfer.h
-- accelerate A2Autils -- off critical path for HMC
+- Lattice_rng - faster local only loop in init
+- Audit: accelerate A2Autils -- off critical path for HMC
 
 =========================================================
-GPU branch code item work list
+GPU  work list
 =========================================================
 
-* sum_cpu promote to double during summation for increased precisoin.
+* sum_cpu promote to double during summation for increased precision.
 * Introduce sumD & ReduceD 
 * GPU sum is probably better currently.
-
 * Accelerate the cshift & benchmark
-
-* 0) Single GPU
-- 128 bit integer table load in GPU code.
-  - ImprovedStaggered accelerate & measure perf
-  - Gianluca's changes to Cayley into gpu-port
-  - Mobius kernel fusion.                     -- Gianluca?
-  - Lebesque order reintroduction. StencilView should have pointer to it
-  - Lebesgue reorder in all kernels
 
 * 3) Comms/NVlink
 - OpenMP tasks to run comms threads. Experiment with it 
@@ -34,14 +27,6 @@ GPU branch code item work list
 - Fix the halo exchange SIMT loop
 - Stencil gather ??
 - SIMD dirs in stencil
-
-* 4) ET enhancements
-- eval -> scalar ops in ET engine
-- coalescedRead, coalescedWrite in expressions.
-
-* 5) Misc
-- Conserved current clean up.
-- multLinkProp eliminate
 
 8) Merge develop and test HMC
 
@@ -52,7 +37,7 @@ GPU branch code item work list
 -     Audit NAMESPACE CHANGES
 -     Audit changes
 
------
+---------
 Gianluca's changes
 - Performance impact of construct in aligned allocator???
 ---------
@@ -62,6 +47,33 @@ Gianluca's changes
 -----------------------------
 DONE:
 -----------------------------
+=====
+-- Done: Remez X^-1/2 X^-1/2 X = 1 test.
+         Feed in MdagM^2 as a test and take its sqrt.
+         Automated test that MdagM invsqrt(MdagM)invsqrt(MdagM) = 1 in HMC for bounds satisfaction.
+
+-- Done: Sycl Kernels into develop. Compare to existing unroll and just use.
+-- Done: sRNG into refresh functions
+-- Done: Tuned decomposition on CUDA into develop
+-- Done: Sycl friend accessor. Const view attempt via typedef??
+
+
+* Done 5) Misc
+- Conserved current clean up.
+- multLinkProp eliminate
+
+* Done 0) Single GPU
+- 128 bit integer table load in GPU code.
+  - ImprovedStaggered accelerate & measure perf
+  - Gianluca's changes to Cayley into gpu-port
+  - Mobius kernel fusion.                     -- Gianluca?
+  - Lebesque order reintroduction. StencilView should have pointer to it
+  - Lebesgue reorder in all kernels
+
+* 4) ET enhancements
+- Done eval -> scalar ops in ET engine
+- Done coalescedRead, coalescedWrite in expressions.
+
 =============================================================================================
 AUDIT ContractWWVV with respect to develop    -- DONE
 - GPU accelerate EOFA                                                  -- DONE
@@ -125,23 +137,6 @@ AUDIT ContractWWVV with respect to develop    -- DONE
 - -      (4) omp parallel for collapse(n)
 - - Only (1) has a natural mirror in accelerator_loop
 - - Nested loop macros get cumbersome made a generic interface for N deep
-- - Don't like thread_region and thread_loop_in_region
-- - Could replace with 
-
-    thread_nested(1, 
-      for {
-
-      }
-    );
-    thread_nested(2,
-      for (){
-        for (){
-
-	}
-      }
-    );
-
-    and same "in_region".
 
 
 -----------------------------
