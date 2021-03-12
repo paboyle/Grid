@@ -52,16 +52,15 @@ inline void whereWolf(Lattice<vobj> &ret,const Lattice<iobj> &predicate,Lattice<
 
   const int Nsimd = grid->Nsimd();
 
-  Integer mask;
-  scalar_object trueval;
-  scalar_object falseval;
-
   autoView(iftrue_v,iftrue,CpuRead);
   autoView(iffalse_v,iffalse,CpuRead);
   autoView(predicate_v,predicate,CpuRead);
   autoView(ret_v,ret,CpuWrite);
   Integer NN= grid->oSites();
   thread_for(ss,NN,{
+    Integer mask;
+    scalar_object trueval;
+    scalar_object falseval;
     for(int l=0;l<Nsimd;l++){
       trueval =extractLane(l,iftrue_v[ss]);
       falseval=extractLane(l,iffalse_v[ss]);
