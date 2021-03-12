@@ -51,87 +51,93 @@ int main (int argc, char ** argv)
   }
 
   GridCartesian         GRID(latt_size,simd_layout,mpi_layout);
-
-  LatticeComplexD      zz(&GRID);
-  LatticeInteger     coor(&GRID);
-  LatticeComplexD  rn(&GRID);
-  LatticeComplexD  sl(&GRID);
-
-  zz  = ComplexD(0.0,0.0);
-
   GridParallelRNG RNG(&GRID);
   RNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));  
-  gaussian(RNG,rn);
 
-  RealD nn=norm2(rn);
-  for(int mu=0;mu<nd;mu++){
-    RealD ns=0.0;
-    for(int t=0;t<latt_size[mu];t++){
-      LatticeCoordinate(coor,mu);
-      sl=where(coor==Integer(t),rn,zz);
-      std::cout <<GridLogMessage<< " sl " << sl<<std::endl;
-      std::cout <<GridLogMessage<<" slice "<<t<<" " << norm2(sl)<<std::endl;
-      ns=ns+norm2(sl);
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"== LatticeComplex =="<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  {
+    LatticeComplexD      zz(&GRID);
+    LatticeInteger     coor(&GRID);
+    LatticeComplexD  rn(&GRID);
+    LatticeComplexD  sl(&GRID);
+
+    zz  = ComplexD(0.0,0.0);
+
+    gaussian(RNG,rn);
+    
+    RealD nn=norm2(rn);
+    for(int mu=0;mu<nd;mu++){
+      RealD ns=0.0;
+      for(int t=0;t<latt_size[mu];t++){
+	LatticeCoordinate(coor,mu);
+	sl=where(coor==Integer(t),rn,zz);
+	std::cout <<GridLogMessage<<" slice "<<t<<" " << norm2(sl)<<std::endl;
+	ns=ns+norm2(sl);
+      }
+      std::cout <<GridLogMessage <<" sliceNorm" <<mu<<" "<< nn <<" "<<ns<<" err " << nn-ns<<std::endl;
+      assert(abs(nn-ns) < 1.0e-10);
     }
-    std::cout <<GridLogMessage <<" sliceNorm" <<mu<<" "<< nn <<" "<<ns<<" " << nn-ns<<std::endl;
   }
-
-  unsigned int tmin = 3;
-
-  int Ls = 2;
-  GridCartesian * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
-  GridCartesian * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
-  std::vector<int> seeds4({1,2,3,4});
-  GridParallelRNG  RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
-  LatticeInteger lcoor(UGrid); LatticeCoordinate(lcoor,Nd-1);
 
 
   std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
   std::cout<<GridLogMessage<<"== LatticeFermion =="<<std::endl;
   std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  {
+    LatticeFermionD      zz(&GRID);
+    LatticeInteger     coor(&GRID);
+    LatticeFermionD  rn(&GRID);
+    LatticeFermionD  sl(&GRID);
 
-  LatticeFermion  q_outF(FGrid); q_outF=0.0;
-  LatticeFermion  tmpF(UGrid); random(RNG4,tmpF);
-  LatticeFermion  tmp2F(UGrid);
-  LatticeFermion  ZZF (UGrid);   ZZF=0.0;
+    zz  = ComplexD(0.0,0.0);
 
-  RealD nA=0.0;
-  RealD nB=0.0;
-  for(int s=0;s<Ls;s++){
-    nB = nB + norm2(tmpF); 
-    tmp2F   = where((lcoor>=tmin),tmpF,ZZF);
-    nA = nA + norm2(tmp2F); 
-    InsertSlice(tmp2F, q_outF, s , 0);
+    gaussian(RNG,rn);
+    
+    RealD nn=norm2(rn);
+    for(int mu=0;mu<nd;mu++){
+      RealD ns=0.0;
+      for(int t=0;t<latt_size[mu];t++){
+	LatticeCoordinate(coor,mu);
+	sl=where(coor==Integer(t),rn,zz);
+	std::cout <<GridLogMessage<<" slice "<<t<<" " << norm2(sl)<<std::endl;
+	ns=ns+norm2(sl);
+      }
+      std::cout <<GridLogMessage <<" sliceNorm" <<mu<<" "<< nn <<" "<<ns<<" err " << nn-ns<<std::endl;
+      assert(abs(nn-ns) < 1.0e-10);
+    }
   }
 
-  RealD nQO=norm2(q_outF);
-  std::cout <<GridLogMessage << "norm_before_where: " << nB << std::endl;
-  std::cout <<GridLogMessage << "norm_after_where: " << nA << std::endl;
-  std::cout <<GridLogMessage << "norm_q_out: " << nQO << std::endl;
 
 
   std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
   std::cout<<GridLogMessage<<"== LatticePropagator =="<<std::endl;
   std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
 
-  LatticePropagator  q_outP(FGrid); q_outP=0.0;
-  LatticePropagator  tmpP(UGrid); random(RNG4,tmpP);
-  LatticePropagator  tmp2P(UGrid);
-  LatticePropagator  ZZP (UGrid);   ZZP=0.0;
+  {
+    LatticePropagatorD      zz(&GRID);
+    LatticeInteger     coor(&GRID);
+    LatticePropagatorD  rn(&GRID);
+    LatticePropagatorD  sl(&GRID);
 
-  nA=0.0;
-  nB=0.0;
-  for(int s=0;s<Ls;s++){
-    nB = nB + norm2(tmpP); 
-    tmp2P   = where((lcoor>=tmin),tmpP,ZZP);
-    nA = nA + norm2(tmp2P); 
-    InsertSlice(tmp2P, q_outP, s , 0);
+    zz  = ComplexD(0.0,0.0);
+
+    gaussian(RNG,rn);
+    
+    RealD nn=norm2(rn);
+    for(int mu=0;mu<nd;mu++){
+      RealD ns=0.0;
+      for(int t=0;t<latt_size[mu];t++){
+	LatticeCoordinate(coor,mu);
+	sl=where(coor==Integer(t),rn,zz);
+	std::cout <<GridLogMessage<<" slice "<<t<<" " << norm2(sl)<<std::endl;
+	ns=ns+norm2(sl);
+      }
+      std::cout <<GridLogMessage <<" sliceNorm" <<mu<<" "<< nn <<" "<<ns<<" err " << nn-ns<<std::endl;
+      assert(abs(nn-ns) < 1.0e-10);
+    }
   }
-
-  nQO=norm2(q_outP);
-  std::cout <<GridLogMessage << "norm_before_where: " << nB << std::endl;
-  std::cout <<GridLogMessage << "norm_after_where: " << nA << std::endl;
-  std::cout <<GridLogMessage << "norm_q_out: " << nQO << std::endl;
 
   Grid_finalize();
 }
