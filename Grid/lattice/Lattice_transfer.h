@@ -360,16 +360,22 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
   autoView( coarseData_ , coarseData, AcceleratorWrite);
   autoView( fineData_   , fineData, AcceleratorRead);
 
+  auto coarseData_p = &coarseData_[0];
+  auto fineData_p = &fineData_[0];
+  
   Coordinate fine_rdimensions = fine->_rdimensions;
   Coordinate coarse_rdimensions = coarse->_rdimensions;
+
+  vobj zz = Zero();
   
   accelerator_for(sc,coarse->oSites(),1,{
 
       // One thread per sub block
       Coordinate coor_c(_ndimension);
       Lexicographic::CoorFromIndex(coor_c,sc,coarse_rdimensions);  // Block coordinate
-      coarseData_[sc]=Zero();
 
+      vobj cd = zz;
+      
       for(int sb=0;sb<blockVol;sb++){
 
 	int sf;
@@ -379,8 +385,10 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
 	for(int d=0;d<_ndimension;d++) coor_f[d]=coor_c[d]*block_r[d] + coor_b[d];
 	Lexicographic::IndexFromCoor(coor_f,sf,fine_rdimensions);
 
-	coarseData_[sc]=coarseData_[sc]+fineData_[sf];
+	cd=cd+fineData_p[sf];
       }
+
+      coarseData_p[sc] = cd;
 
     });
   return;
