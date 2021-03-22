@@ -7,7 +7,12 @@ AM_INIT_AUTOMAKE([subdir-objects 1.13])
 AM_EXTRA_RECURSIVE_TARGETS([tests bench])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([Grid/Grid.h])
-AC_CONFIG_HEADERS([Grid/Config.h],[sed -i 's|PACKAGE_|GRID_|' Grid/Config.h])
+AC_CONFIG_HEADERS([Grid/Config.h],[[$SED_INPLACE -e 's|PACKAGE_|GRID_|' -e 's|[[:space:]]PACKAGE[[:space:]]| GRID_PACKAGE |' -e 's|[[:space:]]VERSION[[:space:]]| GRID_PACKAGE_VERSION |' Grid/Config.h]],
+    [if test x"$host_os" == x"${host_os#darwin}" ; then]
+        [SED_INPLACE="sed -i"]
+    [else]
+        [SED_INPLACE="sed -i .bak"]
+    [fi])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 ################ Get git info
@@ -125,7 +130,7 @@ esac
 
 ############### fermions
 AC_ARG_ENABLE([fermion-reps],
-     [AC_HELP_STRING([--fermion-reps=yes|no], [enable extra fermion representation support])],
+     [AC_HELP_STRING([--enable-fermion-reps=yes|no], [enable extra fermion representation support])],
      [ac_FERMION_REPS=${enable_fermion_reps}], [ac_FERMION_REPS=yes])
 
 AM_CONDITIONAL(BUILD_FERMION_REPS, [ test "${ac_FERMION_REPS}X" == "yesX" ])
@@ -135,11 +140,22 @@ AC_ARG_ENABLE([gparity],
      [ac_GPARITY=${enable_gparity}], [ac_GPARITY=yes])
 
 AM_CONDITIONAL(BUILD_GPARITY, [ test "${ac_GPARITY}X" == "yesX" ])
+
+AC_ARG_ENABLE([zmobius],
+     [AC_HELP_STRING([--enable-zmobius=yes|no], [enable Zmobius support])],
+     [ac_ZMOBIUS=${enable_zmobius}], [ac_ZMOBIUS=yes])
+
+AM_CONDITIONAL(BUILD_ZMOBIUS, [ test "${ac_ZMOBIUS}X" == "yesX" ])
+
+
 case ${ac_FERMION_REPS} in
    yes) AC_DEFINE([ENABLE_FERMION_REPS],[1],[non QCD fermion reps]);;
 esac
 case ${ac_GPARITY} in
    yes) AC_DEFINE([ENABLE_GPARITY],[1],[fermion actions with GPARITY BCs]);;
+esac
+case ${ac_ZMOBIUS} in
+   yes) AC_DEFINE([ENABLE_ZMOBIUS],[1],[Zmobius fermion actions]);;
 esac
 ############### Nc
 AC_ARG_ENABLE([Nc],
@@ -428,7 +444,7 @@ case ${ax_cv_cxx_compiler_vendor} in
         SIMD_FLAGS='-mavx2 -mfma -mf16c';;
       AVX512)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
-        SIMD_FLAGS='-mavx512f -mavx512pf -mavx512er -mavx512cd';;
+        SIMD_FLAGS='-mavx512f -mavx512cd';;
       SKL)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics for SkyLake Xeon])
         SIMD_FLAGS='-march=skylake-avx512';;
@@ -481,6 +497,9 @@ case ${ax_cv_cxx_compiler_vendor} in
         AC_DEFINE([AVX2],[1],[AVX2 intrinsics])
         SIMD_FLAGS='-march=core-avx2 -xcore-avx2';;
       AVX512)
+        AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
+        SIMD_FLAGS='-xcommon-avx512';;
+      SKL)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-xcore-avx512';;
       KNC)

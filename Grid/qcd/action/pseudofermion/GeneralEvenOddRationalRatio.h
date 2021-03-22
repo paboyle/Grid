@@ -233,9 +233,11 @@ NAMESPACE_BEGIN(Grid);
 
 	// Randomly apply rational bounds checks.
 	int rcheck = rand();
-	CartesianCommunicator::BroadcastWorld(0,(void *)&rcheck,sizeof(int)); //make sure all nodes have the same number or you will sporadically hang and spend days trying to find out why (trust me - CK)
+	auto grid = NumOp.FermionGrid();
+        auto r=rand();
+        grid->Broadcast(0,r);
 
-	if ( param.BoundsCheckFreq != 0 && (rcheck % param.BoundsCheckFreq)==0 ) { 
+	if ( param.BoundsCheckFreq != 0 && (r % param.BoundsCheckFreq)==0 ) { 
 	  std::cout<<GridLogMessage << action_name() << " compute action: doing bounds check" << std::endl;
 	  FermionField gauss(NumOp.FermionRedBlackGrid());
 	  gauss = PhiOdd;

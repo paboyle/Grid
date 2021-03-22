@@ -84,7 +84,7 @@ NAMESPACE_BEGIN(Grid);
       } 
 
       
-      virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {
+      virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) {
 
         // P(phi) = e^{- phi^dag Vpc (MpcdagMpc)^-1 Vpcdag phi}
         //
