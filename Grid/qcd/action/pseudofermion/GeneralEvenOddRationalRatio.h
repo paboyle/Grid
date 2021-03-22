@@ -38,7 +38,7 @@ NAMESPACE_BEGIN(Grid);
     /* S_f = -log( det(  [M^dag M]/[V^dag V] )^{1/inv_pow}  )
            = chi^dag ( [M^dag M]/[V^dag V] )^{-1/inv_pow} chi\
 	   = chi^dag ( [V^dag V]^{-1/2} [M^dag M] [V^dag V]^{-1/2} )^{-1/inv_pow} chi\
-	   = chi^dag [V^dag V]^{1/(2*inv_pow)} [M^dag M]^{-1/inv_pow} [V^dag V]^{-1/(2*inv_pow)} chi\
+	   = chi^dag [V^dag V]^{1/(2*inv_pow)} [M^dag M]^{-1/inv_pow} [V^dag V]^{1/(2*inv_pow)} chi\
 
 	   S_f = chi^dag* P(V^dag*V)/Q(V^dag*V)* N(M^dag*M)/D(M^dag*M)* P(V^dag*V)/Q(V^dag*V)* chi       
     
