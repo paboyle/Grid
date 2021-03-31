@@ -140,7 +140,7 @@ void GridCmdOptionCSL(std::string str,std::vector<std::string> & vec)
 }
 
 template<class VectorInt>
-void GridCmdOptionIntVector(std::string &str,VectorInt & vec)
+void GridCmdOptionIntVector(const std::string &str,VectorInt & vec)
 {
   vec.resize(0);
   std::stringstream ss(str);
@@ -152,6 +152,9 @@ void GridCmdOptionIntVector(std::string &str,VectorInt & vec)
   }
   return;
 }
+
+template void GridCmdOptionIntVector(const std::string &str,std::vector<int> & vec);
+template void GridCmdOptionIntVector(const std::string &str,Coordinate & vec);
 
 void GridCmdOptionInt(std::string &str,int & val)
 {

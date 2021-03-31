@@ -84,6 +84,13 @@ int main (int argc, char ** argv)
   GparityDomainWallFermionR::ImplParams params;
   params.twists = twists;
 
+  /*
+  params.boundary_phases[0] = 1.0;
+  params.boundary_phases[1] = 1.0;
+  params.boundary_phases[2] = 1.0;
+  params.boundary_phases[3] =- 1.0;
+  */
+  
   GparityDomainWallFermionR Dw(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,params);
 
   Dw.M   (phi,Mphi);
@@ -96,6 +103,16 @@ int main (int argc, char ** argv)
 
   Dw.MDeriv(tmp , Mphi,  phi,DaggerNo );  UdSdU=tmp;
   Dw.MDeriv(tmp , phi,  Mphi,DaggerYes ); UdSdU=(UdSdU+tmp);
+
+  // *****************************************************************************************
+  // *** There is a funny negative sign in all derivatives. This is - UdSdU.               ***
+  // ***                                                                                   ***
+  // *** Deriv in both Wilson gauge action and the TwoFlavour.h seems to miss a minus sign ***
+  // *** UdSdU is negated relative to what I think - call what is returned mUdSdU,         ***
+  // *** and insert minus sign                                                             ***
+  // *****************************************************************************************
+
+  UdSdU = - UdSdU ; // Follow sign convention of actions in Grid. Seems crazy.
   
   FermionField Ftmp      (FGrid);
 
@@ -106,7 +123,7 @@ int main (int argc, char ** argv)
   RealD Hmom = 0.0;
   RealD Hmomprime = 0.0;
   LatticeColourMatrix mommu(UGrid); 
-  LatticeColourMatrix forcemu(UGrid); 
+  LatticeColourMatrix mUdSdUmu(UGrid); 
   LatticeGaugeField mom(UGrid); 
   LatticeGaugeField Uprime(UGrid); 
 
@@ -114,9 +131,19 @@ int main (int argc, char ** argv)
 
     SU<Nc>::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu); // Traceless antihermitian momentum; gaussian in lie alg
 
-    Hmom -= real(sum(trace(mommu*mommu)));
+  // Momentum Hamiltonian is - trace(p^2)/HMC_MOM_DENOMINATOR
+  //
+  // Integrator.h:   RealD H = - FieldImplementation::FieldSquareNorm(P)/HMC_MOMENTUM_DENOMINATOR; // - trace (P*P)/denom                                                                                       //     GaugeImplTypes.h:        Hloc += trace(Pmu * Pmu);
+  //                          Sign comes from a sneaky multiply by "i" in GaussianFundemantalLie algebra
+  //                          P is i P^a_\mu T^a, not Pa Ta
+  // 
+  // Integrator.h: H =  Hmom + sum S(action)
+    Hmom -= real(sum(trace(mommu*mommu)))/ HMC_MOMENTUM_DENOMINATOR;
 
     PokeIndex<LorentzIndex>(mom,mommu,mu);
+
+  // -- Drops factor of "i" in the U update: U' = e^{P dt} U   [ _not_ e^{iPdt}U ]. P is anti hermitian already
+  // -- Udot = p U
 
     // fourth order exponential approx
     autoView( mom_v, mom, CpuRead);
@@ -134,8 +161,8 @@ int main (int argc, char ** argv)
 	;
     });
   }
-
   std::cout << GridLogMessage <<"Initial mom hamiltonian is "<< Hmom <<std::endl;
+
   Dw.ImportGauge(Uprime);
   Dw.M          (phi,MphiPrime);
 
@@ -145,53 +172,60 @@ int main (int argc, char ** argv)
   // Use derivative to estimate dS
   //////////////////////////////////////////////
 
-
-  for(int mu=0;mu<Nd;mu++){
-    std::cout << "" <<std::endl;
-    mommu   = PeekIndex<LorentzIndex>(mom,mu);
-    std::cout << GridLogMessage<< " Mommu  " << norm2(mommu)<<std::endl;
-    mommu   = mommu+adj(mommu);
-    std::cout << GridLogMessage<< " Mommu + Mommudag " << norm2(mommu)<<std::endl;
-    mommu   = PeekIndex<LorentzIndex>(UdSdU,mu);
-    std::cout << GridLogMessage<< " dsdumu  " << norm2(mommu)<<std::endl;
-    mommu   = mommu+adj(mommu);
-    std::cout << GridLogMessage<< " dsdumu + dag  " << norm2(mommu)<<std::endl;
-  }
-
+  //
+  // Ta has 1/2([ F - adj(F) ])_traceless and want the UdSdU _and_ UdagdSdUdag terms so 2x. 
+  //
   LatticeComplex dS(UGrid); dS = Zero();
   LatticeComplex dSmom(UGrid); dSmom = Zero();
   LatticeComplex dSmom2(UGrid); dSmom2 = Zero();
   for(int mu=0;mu<Nd;mu++){
     mommu   = PeekIndex<LorentzIndex>(UdSdU,mu);
-    mommu=Ta(mommu)*2.0;
+    mommu=Ta(mommu); // projectForce , GaugeImplTypes.h
     PokeIndex<LorentzIndex>(UdSdU,mommu,mu);
   }
 
   for(int mu=0;mu<Nd;mu++){
-    mommu   = PeekIndex<LorentzIndex>(mom,mu);
-    std::cout << GridLogMessage<< " Mommu  " << norm2(mommu)<<std::endl;
-    mommu   = mommu+adj(mommu);
-    std::cout << GridLogMessage<< " Mommu + Mommudag " << norm2(mommu)<<std::endl;
-    mommu   = PeekIndex<LorentzIndex>(UdSdU,mu);
-    std::cout << GridLogMessage<< " dsdumu  " << norm2(mommu)<<std::endl;
-    mommu   = mommu+adj(mommu);
-    std::cout << GridLogMessage<< " dsdumu + dag  " << norm2(mommu)<<std::endl;
-  }
 
-  for(int mu=0;mu<Nd;mu++){
-    forcemu = PeekIndex<LorentzIndex>(UdSdU,mu);
+    mUdSdUmu= PeekIndex<LorentzIndex>(UdSdU,mu);
     mommu   = PeekIndex<LorentzIndex>(mom,mu);
 
-    // Update PF action density
-    dS = dS+trace(mommu*forcemu)*dt;
+    //
+    // Derive HMC eom:
+    //
+    // Sdot =  - 2 trace( p p^dot ) / D - trace( p [ mUdSdU - h.c. ] ) = 0 
+    //
+    //
+    // Sdot = 0 = - 2 trace( p p^dot ) / D - 2 trace( p Ta( mUdSdU ) = 0
+    //
+    // EOM: 
+    //
+    // pdot = - D Ta( mUdSdU ) -- source of sign is the "funny sign" above
+    //
+    // dSqcd_dt  = - 2.0*trace(mommu* Ta(mUdSdU) )*dt -- i.e. mUdSdU with adjoint term -> force has a 2x implicit
+    //
+    // dH_mom/dt = - 2 trace (p pdot)/Denom  
+    //
+    // dH_tot / dt = 0 <= pdot = - Denom * mUdSdU 
+    //
+    // dH_mom/dt = 2 trace (p mUdSdU ) 
+    //
+    // True Momentum delta H has a dt^2 piece
+    //
+    // dSmom = [ trace mom*mom - trace ( (mom-Denom*f*dt)(mom-Denom*f*dt) ) ] / Denom
+    //       = 2*trace(mom*f) dt  - Denom*dt*dt * trace(f*f).
+    //       = dSmom + dSmom2
+    //
 
-    dSmom  = dSmom  - trace(mommu*forcemu) * dt;
-    dSmom2 = dSmom2 - trace(forcemu*forcemu) *(0.25* dt*dt);
+    dS     = dS - 2.0*trace(mommu*mUdSdUmu)*dt;   // U and Udagger derivs hence 2x.
 
-    // Update mom action density
-    mommu = mommu + forcemu*(dt*0.5);
+    dSmom  = dSmom  + 2.0*trace(mommu*mUdSdUmu) * dt;  // this 2.0 coms from derivative of p^2 
+    
+    dSmom2 = dSmom2 - trace(mUdSdUmu*mUdSdUmu) * dt*dt* HMC_MOMENTUM_DENOMINATOR; // Remnant
 
-    Hmomprime -= real(sum(trace(mommu*mommu)));
+    // Update mom action density . Verbatim update_P in Integrator.h
+    mommu = mommu - mUdSdUmu * dt* HMC_MOMENTUM_DENOMINATOR;; 
+
+    Hmomprime -= real(sum(trace(mommu*mommu))) / HMC_MOMENTUM_DENOMINATOR;
 
   }
 
@@ -199,20 +233,25 @@ int main (int argc, char ** argv)
   ComplexD dSm       = sum(dSmom);
   ComplexD dSm2      = sum(dSmom2);
 
+  std::cout << GridLogMessage <<"dSm "<< dSm<<std::endl;
+  std::cout << GridLogMessage <<"dSm2 "<< dSm2<<std::endl;
 
   std::cout << GridLogMessage <<"Initial mom hamiltonian is "<< Hmom <<std::endl;
   std::cout << GridLogMessage <<"Final   mom hamiltonian is "<< Hmomprime <<std::endl;
-  std::cout << GridLogMessage <<"Delta   mom hamiltonian is "<< Hmomprime-Hmom <<std::endl;
 
-  std::cout << GridLogMessage << " S      "<<S<<std::endl;
-  std::cout << GridLogMessage << " Sprime "<<Sprime<<std::endl;
-  std::cout << GridLogMessage << "dS      "<<Sprime-S<<std::endl;
-  std::cout << GridLogMessage << "predict dS    "<< dSpred <<std::endl;
-  std::cout << GridLogMessage <<"dSm "<< dSm<<std::endl;
-  std::cout << GridLogMessage <<"dSm2"<< dSm2<<std::endl;
+  std::cout << GridLogMessage <<"Delta   mom hamiltonian is "<< Hmomprime-Hmom <<std::endl;
+  std::cout << GridLogMessage <<"predict Delta mom hamiltonian is "<< dSm+dSm2 <<std::endl;
+  
+  std::cout << GridLogMessage << "Initial S      "<<S<<std::endl;
+  std::cout << GridLogMessage << "Final   S      "<<Sprime<<std::endl;
+  std::cout << GridLogMessage << "Delta   S      "<<Sprime-S<<std::endl;
+  std::cout << GridLogMessage << "predict delta S"<< dSpred <<std::endl;
+  std::cout << GridLogMessage << "defect "<< Sprime-S-dSpred <<std::endl;
 
   std::cout << GridLogMessage << "Total dS    "<< Hmomprime - Hmom + Sprime - S <<std::endl;
 
+  std::cout << GridLogMessage << "dS - dt^2 term "<< Hmomprime - Hmom + Sprime - S - dSm2 <<std::endl;
+  
   assert( fabs(real(Sprime-S-dSpred)) < 5.0 ) ;
 
   std::cout<< GridLogMessage << "Done" <<std::endl;

@@ -1,5 +1,16 @@
 #pragma once 
 
+#if defined(__NVCC__)
+
+#if (__CUDACC_VER_MAJOR__ == 11) && (__CUDACC_VER_MINOR__ == 0)
+#error "NVCC version 11.0 breaks on Ampere, see Github issue 346"
+#endif
+#if (__CUDACC_VER_MAJOR__ == 11) && (__CUDACC_VER_MINOR__ == 1)
+#error "NVCC version 11.1 breaks on Ampere, see Github issue 346"
+#endif
+
+#endif
+
 #if defined(__clang__)
 
   #if __clang_major__ < 3

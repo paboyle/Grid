@@ -34,6 +34,7 @@ directory
 			    * @brief Classes for Hybrid Monte Carlo update
 			    *
 			    * @author Guido Cossu
+			    * @author Peter Boyle
 			    */
 			   //--------------------------------------------------------------------
 #pragma once
@@ -139,7 +140,7 @@ private:
   // Evolution
   /////////////////////////////////////////////////////////
   RealD evolve_hmc_step(Field &U) {
-    TheIntegrator.refresh(U, pRNG);  // set U and initialize P and phi's
+    TheIntegrator.refresh(U, sRNG, pRNG);  // set U and initialize P and phi's
 
     RealD H0 = TheIntegrator.S(U);  // initial state action
 
