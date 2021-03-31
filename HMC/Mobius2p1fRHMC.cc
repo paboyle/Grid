@@ -56,12 +56,12 @@ int main(int argc, char **argv) {
   MD.trajL   = 1.0;
 
   HMCparameters HMCparams;
-  HMCparams.StartTrajectory  = 0;
+  HMCparams.StartTrajectory  = 49;
   HMCparams.Trajectories     = 200;
   HMCparams.NoMetropolisUntil=  0;
   // "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
-  HMCparams.StartingType     =std::string("ColdStart");
-  //  HMCparams.StartingType     =std::string("CheckpointStart");
+  //  HMCparams.StartingType     =std::string("ColdStart");
+  HMCparams.StartingType     =std::string("CheckpointStart");
   HMCparams.MD = MD;
   HMCWrapper TheHMC(HMCparams);
 
@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
   CheckpointerParameters CPparams;
   CPparams.config_prefix = "ckpoint_EODWF_lat";
   CPparams.rng_prefix    = "ckpoint_EODWF_rng";
-  CPparams.saveInterval  = 10;
+  CPparams.saveInterval  = 1;
   CPparams.format        = "IEEE64BIG";
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
 
