@@ -34,6 +34,7 @@ directory
 			    * @brief Classes for Hybrid Monte Carlo update
 			    *
 			    * @author Guido Cossu
+			    * @author Peter Boyle
 			    */
 			   //--------------------------------------------------------------------
 #pragma once
