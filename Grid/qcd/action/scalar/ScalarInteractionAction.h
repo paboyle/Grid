@@ -77,7 +77,7 @@ public:
 
   virtual std::string action_name() { return "ScalarAction"; }
 
-  virtual void refresh(const Field &U, GridParallelRNG &pRNG) {}
+  virtual void refresh(const Field &U, GridSerialRNG & sRNG, GridParallelRNG &pRNG) {}
 
   virtual RealD S(const Field &p)
   {

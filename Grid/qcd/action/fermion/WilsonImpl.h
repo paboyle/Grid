@@ -72,7 +72,7 @@ public:
   typedef WilsonCompressor<SiteHalfCommSpinor,SiteHalfSpinor, SiteSpinor> Compressor;
   typedef WilsonImplParams ImplParams;
   typedef WilsonStencil<SiteSpinor, SiteHalfSpinor,ImplParams> StencilImpl;
-  typedef typename StencilImpl::View_type StencilView;
+  typedef const typename StencilImpl::View_type StencilView;
     
   ImplParams Params;
 
@@ -184,18 +184,22 @@ public:
       mat = TraceIndex<SpinIndex>(P); 
     }
       
-    inline void extractLinkField(std::vector<GaugeLinkField> &mat, DoubledGaugeField &Uds){
+    inline void extractLinkField(std::vector<GaugeLinkField> &mat, DoubledGaugeField &Uds)
+    {
       for (int mu = 0; mu < Nd; mu++)
       mat[mu] = PeekIndex<LorentzIndex>(Uds, mu);
     }
 
-
-  inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu){
-      
+  inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu)
+  {
+#undef USE_OLD_INSERT_FORCE    
     int Ls=Btilde.Grid()->_fdimensions[0];
+    autoView( mat_v , mat, AcceleratorWrite);
+#ifdef USE_OLD_INSERT_FORCE    
     GaugeLinkField tmp(mat.Grid());
     tmp = Zero();
     {
+      const int Nsimd = SiteSpinor::Nsimd();
       autoView( tmp_v , tmp, AcceleratorWrite);
       autoView( Btilde_v , Btilde, AcceleratorRead);
       autoView( Atilde_v , Atilde, AcceleratorRead);
@@ -208,6 +212,29 @@ public:
 	});
     }
     PokeIndex<LorentzIndex>(mat,tmp,mu);
+#else
+    {
+      const int Nsimd = SiteSpinor::Nsimd();
+      autoView( Btilde_v , Btilde, AcceleratorRead);
+      autoView( Atilde_v , Atilde, AcceleratorRead);
+      accelerator_for(sss,mat.Grid()->oSites(),Nsimd,{
+	  int sU=sss;
+  	  typedef decltype(coalescedRead(mat_v[sU](mu)() )) ColorMatrixType;
+  	  ColorMatrixType sum;
+	  zeroit(sum);  
+	  for(int s=0;s<Ls;s++){
+	    int sF = s+Ls*sU;
+  	    for(int spn=0;spn<Ns;spn++){ //sum over spin
+  	      auto bb = coalescedRead(Btilde_v[sF]()(spn) ); //color vector
+  	      auto aa = coalescedRead(Atilde_v[sF]()(spn) );
+	      auto op = outerProduct(bb,aa);
+  	      sum = sum + op;
+	    }
+	  }
+  	  coalescedWrite(mat_v[sU](mu)(), sum);
+      });
+    }
+#endif    
   }
 };
 
