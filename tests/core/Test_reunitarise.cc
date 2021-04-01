@@ -103,7 +103,7 @@ int main (int argc, char ** argv)
 
   detU= Determinant(U) ;
   detU=detU-1.0;
-  std::cout << "Determinant before screw up " << norm2(detU)<<std::endl;
+  std::cout << "Determinant defect before screw up " << norm2(detU)<<std::endl;
 
   std::cout << " Screwing up determinant " << std::endl;
 
@@ -113,7 +113,8 @@ int main (int argc, char ** argv)
     auto element = PeekIndex<ColourIndex>(U,Nc-1,i);
     element = element * phase;
     PokeIndex<ColourIndex>(U,element,Nc-1,i);
-  }  
+  }
+  U=U*0.1;
   UU=U;
 
   detU= Determinant(U) ;
