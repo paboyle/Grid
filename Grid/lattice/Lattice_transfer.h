@@ -51,9 +51,9 @@ template<class vobj> inline void pickCheckerboard(int cb,Lattice<vobj> &half,con
 {
   half.Checkerboard() = cb;
 
-  autoView( half_v, half, AcceleratorWrite);
-  autoView( full_v, full, AcceleratorRead);
-  accelerator_for(ss, full.Grid()->oSites(),full.Grid()->Nsimd(),{
+  autoView( half_v, half, CpuWrite);
+  autoView( full_v, full, CpuRead);
+  thread_for(ss, full.Grid()->oSites(),{
     int cbos;
     Coordinate coor;
     full.Grid()->oCoorFromOindex(coor,ss);
@@ -68,9 +68,9 @@ template<class vobj> inline void pickCheckerboard(int cb,Lattice<vobj> &half,con
 template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Lattice<vobj> &half)
 {
   int cb = half.Checkerboard();
-  autoView( half_v , half, AcceleratorRead);
-  autoView( full_v , full, AcceleratorWrite);
-  accelerator_for(ss, full.Grid()->oSites(),full.Grid()->Nsimd(),{
+  autoView( half_v , half, CpuRead);
+  autoView( full_v , full, CpuWrite);
+  thread_for(ss,full.Grid()->oSites(),{
 
     Coordinate coor;
     int cbos;
