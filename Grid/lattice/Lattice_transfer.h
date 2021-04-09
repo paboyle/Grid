@@ -49,15 +49,10 @@ inline void subdivides(GridBase *coarse,GridBase *fine)
 ////////////////////////////////////////////////////////////////////////////////////////////
 template<class vobj> inline void pickCheckerboard(int cb,Lattice<vobj> &half,const Lattice<vobj> &full)
 {
-  static double time_autoview = 0;
-  static double time_loop = 0;
   half.Checkerboard() = cb;
-  
-  double start = usecond();
+
   autoView( half_v, half, CpuWrite);
   autoView( full_v, full, CpuRead);
-  time_autoview += usecond()-start;
-  start = usecond();
   thread_for(ss, full.Grid()->oSites(),{
     int cbos;
     Coordinate coor;
@@ -69,24 +64,12 @@ template<class vobj> inline void pickCheckerboard(int cb,Lattice<vobj> &half,con
       half_v[ssh] = full_v[ss];
     }
   });
-
-  time_loop += usecond()-start;
-  std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-  std::cout << "pickCheckerboard" << std::endl;
-  std::cout << "AutoView cumulative time (s) = " << time_autoview/1000000. << "(" << 100*time_autoview/(time_autoview+time_loop) << "% of pickCheckerboard)" << std::endl;
-  std::cout << "Loop cumulative time (s) = " << time_loop/1000000. << "(" << 100*time_loop/(time_autoview+time_loop) << "% of pickCheckerboard)" << std::endl;
 }
 template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Lattice<vobj> &half)
 {
-  static double time_autoview = 0;
-  static double time_loop = 0;
   int cb = half.Checkerboard();
-
-  double start = usecond();
   autoView( half_v , half, CpuRead);
   autoView( full_v , full, CpuWrite);
-  time_autoview += usecond()-start;
-  start = usecond();
   thread_for(ss,full.Grid()->oSites(),{
 
     Coordinate coor;
@@ -100,13 +83,6 @@ template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Latti
       full_v[ss]=half_v[ssh];
     }
   });
-
-  time_loop += usecond()-start;
-  std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-  std::cout << "setCheckerboard" << std::endl;
-  std::cout << "AutoView cumulative time (s) = " << time_autoview/1000000. << "(" << 100*time_autoview/(time_autoview+time_loop) << "% of setCheckerboard)" << std::endl;
-  std::cout << "Loop cumulative time (s) = " << time_loop/1000000. << "(" << 100*time_loop/(time_autoview+time_loop) << "% of setCheckerboard)" << std::endl;
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
