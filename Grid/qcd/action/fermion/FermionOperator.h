@@ -171,6 +171,16 @@ public:
       ///////////////////////////////////////////////
       virtual void Dminus(const FermionField &psi, FermionField &chi)    { chi=psi; }
       virtual void DminusDag(const FermionField &psi, FermionField &chi) { chi=psi; }
+
+      virtual void ImportFourDimPseudoFermion(const FermionField &input,FermionField &imported)
+      {
+	imported = input;
+      };
+      virtual void ExportFourDimPseudoFermion(const FermionField &solution,FermionField &exported)
+      {
+	exported=solution;
+      };
+
       virtual void ImportPhysicalFermionSource(const FermionField &input,FermionField &imported)
       {
 	imported = input;
