@@ -81,7 +81,7 @@ public:
 	std::string key=line.substr(0,eq);
 	std::string val=line.substr(eq+1);
 	removeWhitespace(key);
-	removeWhitespace(val);
+	trimWhitespace(val);
       
 	header[key] = val;
       }

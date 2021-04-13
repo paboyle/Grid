@@ -73,6 +73,26 @@ inline void removeWhitespace(std::string &key)
   key.erase(std::remove_if(key.begin(), key.end(), ::isspace),key.end());
 }
 
+// Trim leading and trailing whitespace from string
+inline void trimWhitespace( std::string &s )
+{
+  if( !s.empty() )
+  {
+    static const std::string WhiteSpace{ " \t\n\r\f\v" }; // per std::isspace
+    std::size_t first{ s.find_first_not_of( WhiteSpace ) };
+    if( first == std::string::npos )
+      s.clear();
+    else
+    {
+      std::size_t OnePastLast{ s.find_last_not_of( WhiteSpace ) + 1 };
+      if( first )
+        s = s.substr( first, OnePastLast - first );
+      else if( OnePastLast != s.length() )
+        s.resize( OnePastLast );
+    }
+  }
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Static class holding the parallel IO code
 // Could just use a namespace

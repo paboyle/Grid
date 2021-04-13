@@ -128,9 +128,11 @@ inline void MachineCharacteristics(FieldMetaData &header)
   std::time_t t = std::time(nullptr);
   std::tm tm_ = *std::localtime(&t);
   std::ostringstream oss; 
-  //      oss << std::put_time(&tm_, "%c %Z");
-  header.creation_date = oss.str();
-  header.archive_date  = header.creation_date;
+  oss << std::put_time(&tm_, "%c %Z");
+  if( header.creation_date.empty() )
+    header.creation_date = oss.str();
+  if( header.archive_date.empty() )
+    header.archive_date  = oss.str();
 
   // What
   struct utsname name;  uname(&name);
