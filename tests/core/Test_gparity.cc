@@ -159,7 +159,7 @@ int main (int argc, char ** argv)
 
   //Coordinate grid for reference
   LatticeInteger    xcoor_1f5(FGrid_1f);
-  LatticeCoordinate(xcoor_1f5,1+nu);
+  LatticeCoordinate(xcoor_1f5,1+nu); //note '1+nu'! This is because for 5D fields the s-direction is direction 0
   Replicate(src,src_1f);
   src_1f   = where( xcoor_1f5 >= Integer(L), 2.0*src_1f,src_1f );
 

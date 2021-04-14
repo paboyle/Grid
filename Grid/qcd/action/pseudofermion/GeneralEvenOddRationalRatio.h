@@ -171,7 +171,22 @@ NAMESPACE_BEGIN(Grid);
       //Access the fermion field
       const FermionField &getPhiOdd() const{ return PhiOdd; }
       
-      virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {
+      virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) {
+	std::cout<<GridLogMessage << action_name() << " refresh: starting" << std::endl;
+	FermionField eta(NumOp.FermionGrid());	
+
+	// P(eta) \propto e^{- eta^dag eta}
+	//	
+	// The gaussian function draws from  P(x) \propto e^{- x^2 / 2 }    [i.e. sigma=1]
+	// Thus eta = x/sqrt{2} = x * sqrt(1/2)
+	RealD scale = std::sqrt(0.5);
+	gaussian(pRNG,eta);	eta=eta*scale;
+
+	refresh(U,eta);
+      }
+
+      //Allow for manual specification of random field for testing
+      void refresh(const GaugeField &U, const FermionField &eta) {
 
 	// S_f = chi^dag* P(V^dag*V)/Q(V^dag*V)* N(M^dag*M)/D(M^dag*M)* P(V^dag*V)/Q(V^dag*V)* chi       
 	//
@@ -182,17 +197,9 @@ NAMESPACE_BEGIN(Grid);
 	
 	std::cout<<GridLogMessage << action_name() << " refresh: starting" << std::endl;
 
-	FermionField eta(NumOp.FermionGrid());
 	FermionField etaOdd (NumOp.FermionRedBlackGrid());
 	FermionField etaEven(NumOp.FermionRedBlackGrid());
 	FermionField     tmp(NumOp.FermionRedBlackGrid());
-
-	// P(eta) \propto e^{- eta^dag eta}
-	//	
-	// The gaussian function draws from  P(x) \propto e^{- x^2 / 2 }    [i.e. sigma=1]
-	// Thus eta = x/sqrt{2} = x * sqrt(1/2)
-	RealD scale = std::sqrt(0.5);
-	gaussian(pRNG,eta);	eta=eta*scale;
 
 	pickCheckerboard(Even,etaEven,eta);
 	pickCheckerboard(Odd,etaOdd,eta);

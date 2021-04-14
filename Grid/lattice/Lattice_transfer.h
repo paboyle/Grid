@@ -777,7 +777,7 @@ void ExtractSliceLocal(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int
 
 
 template<class vobj>
-void Replicate(Lattice<vobj> &coarse,Lattice<vobj> & fine)
+void Replicate(const Lattice<vobj> &coarse,Lattice<vobj> & fine)
 {
   typedef typename vobj::scalar_object sobj;
 

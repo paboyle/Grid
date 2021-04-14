@@ -95,13 +95,13 @@ int main(int argc, char **argv) {
 													NumOpF, DenOpF, 
 													GenParams, 50);
   TheHMC.Resources.GetParallelRNG().SeedUniqueString(seed_string);
-  GenD.refresh(Ud, TheHMC.Resources.GetParallelRNG());    
+  GenD.refresh(Ud, TheHMC.Resources.GetSerialRNG(), TheHMC.Resources.GetParallelRNG());    
   RealD Sd = GenD.S(Ud);
   LatticeGaugeField derivD(Ud);
   GenD.deriv(Ud,derivD);   
 
   TheHMC.Resources.GetParallelRNG().SeedUniqueString(seed_string);
-  GenFD.refresh(Ud, TheHMC.Resources.GetParallelRNG());    
+  GenFD.refresh(Ud, TheHMC.Resources.GetSerialRNG(), TheHMC.Resources.GetParallelRNG());    
   RealD Sfd = GenFD.S(Ud);
   LatticeGaugeField derivFD(Ud);
   GenFD.deriv(Ud,derivFD);   
