@@ -919,7 +919,7 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 
     tmp    = Cshift(tmp,mu,1);
     Impl::multLinkField(Utmp,this->Umu,tmp,mu);
-    tmp    = G_s[s]*( Utmp*ph - gmu*Utmp*ph ); // Forward hop
+    tmp    = sign*G_s[s]*( Utmp*ph - gmu*Utmp*ph ); // Forward hop
     tmp    = where((lcoor>=tmin),tmp,zz); // Mask the time 
     L_Q    = where((lcoor<=tmax),tmp,zz); // Position of current complicated
 
@@ -933,7 +933,7 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
     tmp    = tmp *ph;
     tmp    = Cshift(tmp,mu,-1);
     Impl::multLinkField(Utmp,this->Umu,tmp,mu+Nd); // Adjoint link
-    tmp    = -1*sign*G_s[s]*( Utmp + gmu*Utmp );
+    tmp    = -1*G_s[s]*( Utmp + gmu*Utmp );
     tmp    = where((lcoor>=tmin+tshift),tmp,zz); // Mask the time 
     L_Q   += where((lcoor<=tmax+tshift),tmp,zz); // Position of current complicated
 
