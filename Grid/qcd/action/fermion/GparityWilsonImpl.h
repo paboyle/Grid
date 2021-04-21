@@ -236,7 +236,10 @@ public:
     //Here the first Nd-1 directions are treated as "spatial", and a twist value of 1 indicates G-parity BCs in that direction. 
     //mu=Nd-1 is assumed to be the time direction and a twist value of 1 indicates antiperiodic BCs        
     for(int mu=0;mu<Nd-1;mu++){
-      LatticeCoordinate(coor,mu);
+
+      if( Params.twists[mu] ){
+	LatticeCoordinate(coor,mu);
+      }
           
       U     = PeekIndex<LorentzIndex>(Umu,mu);
       Uconj = conjugate(U);
@@ -256,7 +259,7 @@ public:
 	thread_foreach(ss,U_v,{
 	    Uds_v[ss](0)(mu) = U_v[ss]();
 	    Uds_v[ss](1)(mu) = Uconj_v[ss]();
-	  });
+	});
       }
           
       U     = adj(Cshift(U    ,mu,-1));      // correct except for spanning the boundary
@@ -362,6 +365,13 @@ public:
     int Ls=Btilde.Grid()->_fdimensions[0];
     
     {
+      GridBase *GaugeGrid = mat.Grid();
+      Lattice<iScalar<vInteger> > coor(GaugeGrid);
+
+      if( Params.twists[mu] ){
+	LatticeCoordinate(coor,mu);
+      }
+
       autoView( mat_v , mat, AcceleratorWrite);
       autoView( Btilde_v , Btilde, AcceleratorRead);
       autoView( Atilde_v , Atilde, AcceleratorRead);
@@ -373,7 +383,7 @@ public:
   	  for(int s=0;s<Ls;s++){
   	    int sF = s+Ls*sU;
   	    for(int spn=0;spn<Ns;spn++){ //sum over spin
-  	      //Flavor 0
+	      //Flavor 0
   	      auto bb = coalescedRead(Btilde_v[sF](0)(spn) ); //color vector
   	      auto aa = coalescedRead(Atilde_v[sF](0)(spn) );
   	      sum = sum + outerProduct(bb,aa);

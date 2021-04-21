@@ -128,7 +128,7 @@ inline void MachineCharacteristics(FieldMetaData &header)
   std::time_t t = std::time(nullptr);
   std::tm tm_ = *std::localtime(&t);
   std::ostringstream oss; 
-  //      oss << std::put_time(&tm_, "%c %Z");
+  oss << std::put_time(&tm_, "%c %Z");
   header.creation_date = oss.str();
   header.archive_date  = header.creation_date;
 
