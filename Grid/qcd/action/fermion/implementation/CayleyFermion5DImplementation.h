@@ -828,6 +828,7 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 
 #if (!defined(GRID_HIP))
   int tshift = (mu == Nd-1) ? 1 : 0;
+  unsigned int LLt    = GridDefaultLatt()[Tp];
   ////////////////////////////////////////////////
   // GENERAL CAYLEY CASE
   ////////////////////////////////////////////////
@@ -933,8 +934,14 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
     tmp    = tmp *ph;
     tmp    = Cshift(tmp,mu,-1);
     Impl::multLinkField(Utmp,this->Umu,tmp,mu+Nd); // Adjoint link
-    tmp    = -1*G_s[s]*( Utmp + gmu*Utmp );
-    tmp    = where((lcoor>=tmin+tshift),tmp,zz); // Mask the time 
+    tmp    = -G_s[s]*( Utmp + gmu*Utmp );
+    // Mask the time
+    if (tmax == LLt - 1 && tshift == 1){ // quick fix to include timeslice 0 if tmax + tshift is over the last timeslice
+      unsigned int t0 = 0;
+      tmp    = where(((lcoor==t0) || (lcoor>=tmin+tshift)),tmp,zz);
+    } else {
+      tmp    = where((lcoor>=tmin+tshift),tmp,zz);
+    }
     L_Q   += where((lcoor<=tmax+tshift),tmp,zz); // Position of current complicated
 
     InsertSlice(L_Q, q_out, s , 0);
