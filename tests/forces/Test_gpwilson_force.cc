@@ -64,7 +64,9 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   RealD mass=0.01; 
 
-  const int nu = 3;
+  const int nu = 1;
+  const int Lnu=latt_size[nu];
+
   std::vector<int> twists(Nd,0);  twists[nu] = 1;
   GparityWilsonFermionR::ImplParams params;  params.twists = twists;
   GparityWilsonFermionR Wil(U,*UGrid,*UrbGrid,mass,params);
@@ -84,20 +86,31 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   // Modify the gauge field a little 
   ////////////////////////////////////
-  RealD dt = 0.01;
+  RealD dt = 0.1;
 
   LatticeColourMatrix mommu(UGrid); 
+  LatticeColourMatrix zz(UGrid);
   LatticeColourMatrix forcemu(UGrid); 
   LatticeGaugeField mom(UGrid); 
   LatticeGaugeField Uprime(UGrid); 
 
+  
+  Lattice<iScalar<vInteger> > coor(UGrid);
+  LatticeCoordinate(coor,nu);
+  zz=Zero();
   for(int mu=0;mu<Nd;mu++){
 
     // Traceless antihermitian momentum; gaussian in lie alg
-    SU<Nc>::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu); 
-
+    if(mu==nu){
+      SU<Nc>::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu); 
+      mommu=where(coor==Lnu-1,mommu,zz);
+      //mommu=where(coor==0,mommu,zz);
+      //      mommu=where(coor==1,mommu,zz);
+    } else {
+      mommu=Zero();
+    }
     PokeIndex<LorentzIndex>(mom,mommu,mu);
-
+    
     // fourth order exponential approx
     autoView( mom_v, mom, CpuRead);
     autoView( U_v , U, CpuRead);
@@ -139,12 +152,14 @@ int main (int argc, char ** argv)
     // Update PF action density
     dS = dS+trace(mommu*forcemu)*dt;
   }
-
+  std::cout << "mommu"<<mommu<<std::endl;
+  std::cout << "dS" << dS<<std::endl;
+  
   ComplexD dSpred    = sum(dS);
 
   std::cout << GridLogMessage << " S      "<<S<<std::endl;
   std::cout << GridLogMessage << " Sprime "<<Sprime<<std::endl;
-  std::cout << GridLogMessage << "dS      "<<Sprime-S<<std::endl;
+  std::cout << GridLogMessage << "Delta S "<<Sprime-S<<std::endl;
   std::cout << GridLogMessage << "predict dS    "<< dSpred <<std::endl;
 
   assert( fabs(real(Sprime-S-dSpred)) < 2.0 ) ;

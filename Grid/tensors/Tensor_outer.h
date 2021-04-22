@@ -34,7 +34,6 @@ NAMESPACE_BEGIN(Grid);
 // outerProduct Scalar x Scalar -> Scalar
 //              Vector x Vector -> Matrix
 ///////////////////////////////////////////////////////////////////////////////////////
-
 template<class CC,IfComplex<CC> = 0>
 accelerator_inline CC outerProduct(const CC &l, const CC& r)
 {
@@ -67,7 +66,6 @@ auto outerProduct (const iScalar<l>& lhs,const iScalar<r>& rhs) -> iScalar<declt
   ret._internal = outerProduct(lhs._internal,rhs._internal);
   return ret;
 }
-
 
 NAMESPACE_END(Grid);
 

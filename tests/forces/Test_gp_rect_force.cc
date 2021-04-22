@@ -29,7 +29,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
  
 
@@ -59,6 +58,10 @@ int main (int argc, char ** argv)
   double beta = 1.0;
   double c1   = 0.331;
 
+  const int nu = 1;
+  std::vector<int> twists(Nd,0);
+  twists[nu] = 1;
+  ConjugateGimplD::setDirections(twists);
   ConjugatePlaqPlusRectangleActionR Action(beta,c1);
   //ConjugateWilsonGaugeActionR Action(beta);
   //WilsonGaugeActionR Action(beta);
