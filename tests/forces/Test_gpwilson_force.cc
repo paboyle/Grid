@@ -67,7 +67,9 @@ int main (int argc, char ** argv)
   const int nu = 1;
   const int Lnu=latt_size[nu];
 
-  std::vector<int> twists(Nd,0);  twists[nu] = 1;
+  std::vector<int> twists(Nd,0);
+  twists[nu] = 1;
+  twists[3]=1;
   GparityWilsonFermionR::ImplParams params;  params.twists = twists;
   GparityWilsonFermionR Wil(U,*UGrid,*UrbGrid,mass,params);
   Wil.M   (phi,Mphi);
@@ -86,7 +88,7 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   // Modify the gauge field a little 
   ////////////////////////////////////
-  RealD dt = 0.1;
+  RealD dt = 0.01;
 
   LatticeColourMatrix mommu(UGrid); 
   LatticeColourMatrix zz(UGrid);
@@ -101,13 +103,13 @@ int main (int argc, char ** argv)
   for(int mu=0;mu<Nd;mu++){
 
     // Traceless antihermitian momentum; gaussian in lie alg
-    if(mu==nu){
-      SU<Nc>::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu); 
-      mommu=where(coor==Lnu-1,mommu,zz);
-      //mommu=where(coor==0,mommu,zz);
-      //      mommu=where(coor==1,mommu,zz);
-    } else {
-      mommu=Zero();
+    SU<Nc>::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu);
+    if(0){
+      if(mu==nu){
+	mommu=where(coor==Lnu-1,mommu,zz);
+      } else {
+	mommu=Zero();
+      }
     }
     PokeIndex<LorentzIndex>(mom,mommu,mu);
     
@@ -143,6 +145,10 @@ int main (int argc, char ** argv)
     mommu=Ta(mommu)*2.0;
     PokeIndex<LorentzIndex>(UdSdU,mommu,mu);
   }
+  LatticeComplex lip(UGrid); lip=localInnerProduct(Mphi,Mphi);
+  LatticeComplex lipp(UGrid); lipp=localInnerProduct(MphiPrime,MphiPrime);
+  LatticeComplex dip(UGrid); dip = lipp - lip;
+  std::cout << " dip "<<dip<<std::endl;
 
   LatticeComplex dS(UGrid); dS = Zero();
   for(int mu=0;mu<Nd;mu++){

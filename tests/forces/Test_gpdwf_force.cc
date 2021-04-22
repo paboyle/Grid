@@ -71,8 +71,10 @@ int main (int argc, char ** argv)
   RealD mass=0.01; 
   RealD M5=1.8; 
 
-  const int nu = 3;
-  std::vector<int> twists(Nd,0);  twists[nu] = 1;
+  const int nu = 1;
+  std::vector<int> twists(Nd,0);
+  twists[nu] = 1;
+  twists[3] = 1;
   GparityDomainWallFermionR::ImplParams params;  params.twists = twists;
   GparityDomainWallFermionR Ddwf(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,params);
   Ddwf.M   (phi,Mphi);
@@ -91,16 +93,28 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   // Modify the gauge field a little 
   ////////////////////////////////////
-  RealD dt = 0.0001;
+  RealD dt = 0.01;
 
+  LatticeColourMatrix zz(UGrid); zz=Zero();
   LatticeColourMatrix mommu(UGrid); 
   LatticeColourMatrix forcemu(UGrid); 
   LatticeGaugeField mom(UGrid); 
   LatticeGaugeField Uprime(UGrid); 
 
+  const int Lnu=latt_size[nu];
+  Lattice<iScalar<vInteger> > coor(UGrid);
+  LatticeCoordinate(coor,nu);
   for(int mu=0;mu<Nd;mu++){
 
-    SU<Nc>::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu); // Traceless antihermitian momentum; gaussian in lie alg
+    // Traceless antihermitian momentum; gaussian in lie alg
+    SU<Nc>::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu);
+    if(0){
+      if(mu==nu){
+	mommu=where(coor==Lnu-1,mommu,zz);
+      } else {
+	mommu=Zero();
+      }
+    }
 
     PokeIndex<LorentzIndex>(mom,mommu,mu);
 
@@ -125,6 +139,12 @@ int main (int argc, char ** argv)
 
   ComplexD Sprime    = innerProduct(MphiPrime   ,MphiPrime);
 
+
+  LatticeComplex lip(FGrid); lip=localInnerProduct(Mphi,Mphi);
+  LatticeComplex lipp(FGrid); lipp=localInnerProduct(MphiPrime,MphiPrime);
+  LatticeComplex dip(FGrid); dip = lipp - lip;
+  std::cout << " dip "<<dip<<std::endl;
+  
   //////////////////////////////////////////////
   // Use derivative to estimate dS
   //////////////////////////////////////////////
