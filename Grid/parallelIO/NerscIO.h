@@ -209,7 +209,6 @@ public:
   template<class GaugeStats=PeriodicGaugeStatistics>
   static inline void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,
 					std::string file, 
-					std::string ens_id    = std::string("UKQCD"),
 					std::string ens_label = std::string("DWF"))
   {
     writeConfiguration(Umu,file,0,1,ens_id,ens_label);
@@ -219,7 +218,6 @@ public:
 					std::string file, 
 					int two_row,
 					int bits32,
-					std::string ens_id    = std::string("UKQCD"),
 					std::string ens_label = std::string("DWF"))
   {
     typedef vLorentzColourMatrixD vobj;
@@ -230,7 +228,7 @@ public:
     // Following should become arguments
     ///////////////////////////////////////////
     header.sequence_number = 1;
-    header.ensemble_id     = ens_id;
+    header.ensemble_id     = std::string("UKQCD");
     header.ensemble_label  = ens_label;
 
     typedef LorentzColourMatrixD fobj3D;
