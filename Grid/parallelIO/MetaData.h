@@ -140,7 +140,7 @@ inline void MachineCharacteristics(FieldMetaData &header)
   header.creator_hardware+= std::string(name.release);
 }
 
-#define dump_meta_data(field, s)					\
+#define dump_meta_data_head(field, s)					\
   s << "BEGIN_HEADER"      << std::endl;				\
   s << "HDR_VERSION = "    << field.hdr_version    << std::endl;	\
   s << "DATATYPE = "       << field.data_type      << std::endl;	\
@@ -164,8 +164,24 @@ inline void MachineCharacteristics(FieldMetaData &header)
   s << "CREATOR_HARDWARE = "<< field.creator_hardware << std::endl;	\
   s << "CREATION_DATE = "   << field.creation_date    << std::endl;	\
   s << "ARCHIVE_DATE = "    << field.archive_date     << std::endl;	\
-  s << "FLOATING_POINT = "  << field.floating_point   << std::endl;	\
+  s << "FLOATING_POINT = "  << field.floating_point   << std::endl;
+
+#define dump_meta_data_tail(s)                                          \
   s << "END_HEADER"         << std::endl;
+
+#define dump_meta_data(field, s)                                        \
+  dump_meta_data_head(field, s)                                         \
+  dump_meta_data_tail(s)
+
+#define dump_meta_data_extra(field, s, extra)                           \
+  dump_meta_data_head(field, s)                                         \
+  if( extra )                                                           \
+  {                                                                     \
+    for(const auto &e : *extra){                                        \
+      s << e.first << " = " << e.second << std::endl;                   \
+    }                                                                   \
+  }                                                                     \
+  dump_meta_data_tail(s)
 
 template<class vobj> inline void PrepareMetaData(Lattice<vobj> & field, FieldMetaData &header)
 {

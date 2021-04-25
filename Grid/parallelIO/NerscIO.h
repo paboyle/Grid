@@ -46,11 +46,12 @@ public:
     std::ofstream fout(file,std::ios::out);
   }
   
-  static inline unsigned int writeHeader(FieldMetaData &field,std::string file)
+  static inline unsigned int writeHeader(FieldMetaData &field,std::string file,
+                                         std::map<std::string,std::string> *fieldExtra = nullptr)
   {
     std::ofstream fout(file,std::ios::out|std::ios::in);
     fout.seekp(0,std::ios::beg);
-    dump_meta_data(field, fout);
+    dump_meta_data_extra(field, fout, fieldExtra);
     field.data_start = fout.tellp();
     return field.data_start;
   }
@@ -209,7 +210,9 @@ public:
   static inline void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,
 					std::string file, 
 					int two_row,
-					int bits32)
+					int bits32,
+                                        GaugeStats &Stats,
+                                        std::map<std::string,std::string> *fieldExtra = nullptr)
   {
     typedef vLorentzColourMatrixD vobj;
     typedef typename vobj::scalar_object sobj;
@@ -229,7 +232,7 @@ public:
 
     GridMetaData(grid,header);
     assert(header.nd==4);
-    GaugeStats Stats; Stats(Umu,header);
+    Stats(Umu,header);
     MachineCharacteristics(header);
 
 	uint64_t offset;
@@ -240,7 +243,7 @@ public:
     GaugeSimpleUnmunger<fobj3D,sobj> munge;
     if ( grid->IsBoss() ) { 
       truncate(file);
-      offset = writeHeader(header,file);
+      offset = writeHeader(header,file,fieldExtra);
     }
     grid->Broadcast(0,(void *)&offset,sizeof(offset));
 
@@ -249,13 +252,23 @@ public:
 					      nersc_csum,scidac_csuma,scidac_csumb);
     header.checksum = nersc_csum;
     if ( grid->IsBoss() ) { 
-      writeHeader(header,file);
+      writeHeader(header,file,fieldExtra);
     }
 
     std::cout<<GridLogMessage <<"Written NERSC Configuration on "<< file << " checksum "
 	     <<std::hex<<header.checksum
 	     <<std::dec<<" plaq "<< header.plaquette <<std::endl;
 
+  }
+  template<class GaugeStats=PeriodicGaugeStatistics>
+  static inline void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,
+                                        std::string file,
+                                        int two_row,
+                                        int bits32,
+                                        std::map<std::string,std::string> *fieldExtra = nullptr)
+  {
+    GaugeStats Stats;
+    writeConfiguration(Umu, file, two_row, bits32, Stats, fieldExtra);
   }
   ///////////////////////////////
   // RNG state
