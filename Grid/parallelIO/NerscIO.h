@@ -211,7 +211,7 @@ public:
 					std::string file, 
 					std::string ens_label = std::string("DWF"))
   {
-    writeConfiguration(Umu,file,0,1,ens_id,ens_label);
+    writeConfiguration(Umu,file,0,1,ens_label);
   }
   template<class GaugeStats=PeriodicGaugeStatistics>
   static inline void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,
