@@ -45,17 +45,6 @@ accelerator_inline RR outerProduct(const RR &l, const RR& r)
   return l*r;
 }
 
-template<class CC,IfComplex<CC> = 0>
-accelerator_inline CC outerProduct(const CC &l, const CC& r)
-{
-  return l*conj(r);
-}
-template<class RR,IfReal<RR> = 0>
-accelerator_inline RR outerProduct(const RR &l, const RR& r)
-{
-  return l*r;
-}
-
 template<class l,class r,int N> accelerator_inline
 auto outerProduct (const iVector<l,N>& lhs,const iVector<r,N>& rhs) -> iMatrix<decltype(outerProduct(lhs._internal[0],rhs._internal[0])),N>
 {
