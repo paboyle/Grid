@@ -89,11 +89,12 @@ public:
     SmearBase->smear(C, U);
 
     for (int mu = 0; mu < Nd; mu++) {
-      if( mu == OrthogDim )
+      Umu = peekLorentz(U, mu);
+      if( mu == OrthogDim ){
         tmp = 1.0;  // Don't smear in the orthogonal direction
+      }
       else {
         tmp = peekLorentz(C, mu);
-        Umu = peekLorentz(U, mu);
         iq_mu = Ta(
                    tmp *
                    adj(Umu));  // iq_mu = Ta(Omega_mu) to match the signs with the paper
