@@ -46,6 +46,7 @@ int main (int argc, char ** argv)
 
   std::vector<int> seeds({1,2,3,4});
 
+  GridSerialRNG sRNG; sRNG.SeedFixedIntegers({4,5,6,7});
   GridParallelRNG          pRNG(&Grid);
   pRNG.SeedFixedIntegers(std::vector<int>({15,91,21,3}));
 
@@ -67,7 +68,7 @@ int main (int argc, char ** argv)
   LaplacianAdjointField<PeriodicGimplR> Laplacian(&Grid, CG, LapPar, Kappa);
   GeneralisedMomenta<PeriodicGimplR> LaplacianMomenta(&Grid, Laplacian);
   LaplacianMomenta.M.ImportGauge(U);
-  LaplacianMomenta.MomentaDistribution(pRNG);// fills the Momenta with the correct distr
+  LaplacianMomenta.MomentaDistribution(sRNG,pRNG);// fills the Momenta with the correct distr
   
 
   std::cout << std::setprecision(15);
