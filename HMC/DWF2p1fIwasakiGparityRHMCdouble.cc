@@ -354,7 +354,7 @@ int main(int argc, char **argv) {
  
   //Setup the BCs
   FermionActionD::ImplParams Params;
-  for(int i=0;i<Nd-1;i++) Params.twists = user_params.GparityDirs[i]; //G-parity directions
+  for(int i=0;i<Nd-1;i++) Params.twists[i] = user_params.GparityDirs[i]; //G-parity directions
   Params.twists[Nd-1] = 1; //APBC in time direction
 
   std::vector<int> dirs4(Nd);
