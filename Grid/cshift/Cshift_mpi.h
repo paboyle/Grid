@@ -122,8 +122,8 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
   assert(shift<fd);
   
   int buffer_size = rhs.Grid()->_slice_nblock[dimension]*rhs.Grid()->_slice_block[dimension];
-  cshiftVector<vobj> send_buf(buffer_size);
-  cshiftVector<vobj> recv_buf(buffer_size);
+  static cshiftVector<vobj> send_buf; send_buf.resize(buffer_size);
+  static cshiftVector<vobj> recv_buf; recv_buf.resize(buffer_size);
     
   int cb= (cbmask==0x2)? Odd : Even;
   int sshift= rhs.Grid()->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,cb);
@@ -198,8 +198,8 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
   int buffer_size = grid->_slice_nblock[dimension]*grid->_slice_block[dimension];
   //  int words = sizeof(vobj)/sizeof(vector_type);
 
-  std::vector<cshiftVector<scalar_object> >  send_buf_extract(Nsimd);
-  std::vector<cshiftVector<scalar_object> >  recv_buf_extract(Nsimd);
+  static std::vector<cshiftVector<scalar_object> >  send_buf_extract; send_buf_extract.resize(Nsimd);
+  static std::vector<cshiftVector<scalar_object> >  recv_buf_extract; recv_buf_extract.resize(Nsimd);
   scalar_object *  recv_buf_extract_mpi;
   scalar_object *  send_buf_extract_mpi;
  
@@ -294,8 +294,8 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
   assert(shift<fd);
   
   int buffer_size = rhs.Grid()->_slice_nblock[dimension]*rhs.Grid()->_slice_block[dimension];
-  cshiftVector<vobj> send_buf_v(buffer_size);
-  cshiftVector<vobj> recv_buf_v(buffer_size);
+  static cshiftVector<vobj> send_buf_v; send_buf_v.resize(buffer_size);
+  static cshiftVector<vobj> recv_buf_v; recv_buf_v.resize(buffer_size);
   vobj *send_buf;
   vobj *recv_buf;
   {
@@ -381,8 +381,8 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
   int buffer_size = grid->_slice_nblock[dimension]*grid->_slice_block[dimension];
   //  int words = sizeof(vobj)/sizeof(vector_type);
 
-  std::vector<cshiftVector<scalar_object> >  send_buf_extract(Nsimd);
-  std::vector<cshiftVector<scalar_object> >  recv_buf_extract(Nsimd);
+  static std::vector<cshiftVector<scalar_object> >  send_buf_extract; send_buf_extract.resize(Nsimd);
+  static std::vector<cshiftVector<scalar_object> >  recv_buf_extract; recv_buf_extract.resize(Nsimd);
   scalar_object *  recv_buf_extract_mpi;
   scalar_object *  send_buf_extract_mpi;
   {

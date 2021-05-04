@@ -205,11 +205,20 @@ public:
     std::cout<<GridLogMessage <<"NERSC Configuration "<<file<< " and plaquette, link trace, and checksum agree"<<std::endl;
   }
 
+  // Preferred interface
+  template<class GaugeStats=PeriodicGaugeStatistics>
+  static inline void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,
+					std::string file, 
+					std::string ens_label = std::string("DWF"))
+  {
+    writeConfiguration(Umu,file,0,1,ens_label);
+  }
   template<class GaugeStats=PeriodicGaugeStatistics>
   static inline void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,
 					std::string file, 
 					int two_row,
-					int bits32)
+					int bits32,
+					std::string ens_label = std::string("DWF"))
   {
     typedef vLorentzColourMatrixD vobj;
     typedef typename vobj::scalar_object sobj;
@@ -219,8 +228,8 @@ public:
     // Following should become arguments
     ///////////////////////////////////////////
     header.sequence_number = 1;
-    header.ensemble_id     = "UKQCD";
-    header.ensemble_label  = "DWF";
+    header.ensemble_id     = std::string("UKQCD");
+    header.ensemble_label  = ens_label;
 
     typedef LorentzColourMatrixD fobj3D;
     typedef LorentzColour2x3D    fobj2D;
@@ -232,7 +241,7 @@ public:
     GaugeStats Stats; Stats(Umu,header);
     MachineCharacteristics(header);
 
-	uint64_t offset;
+    uint64_t offset;
 
     // Sod it -- always write 3x3 double
     header.floating_point = std::string("IEEE64BIG");

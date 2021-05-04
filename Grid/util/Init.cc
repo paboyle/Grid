@@ -153,6 +153,9 @@ void GridCmdOptionIntVector(const std::string &str,VectorInt & vec)
   return;
 }
 
+template void GridCmdOptionIntVector(const std::string &str,std::vector<int> & vec);
+template void GridCmdOptionIntVector(const std::string &str,Coordinate & vec);
+
 void GridCmdOptionInt(std::string &str,int & val)
 {
   std::stringstream ss(str);
