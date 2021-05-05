@@ -146,7 +146,7 @@ gaussian_distribution<_RealType>::operator()(_URNG& __g, const param_type& __p)
             __v = _Uni(__g);
             __s = __u * __u + __v * __v;
         } while (__s > 1 || __s == 0);
-        result_type _Fp = _VSTD::sqrt(-2 * _VSTD::log(__s) / __s);
+        result_type _Fp = std::sqrt(-2 * std::log(__s) / __s);
         _V_ = __v * _Fp;
         _V_hot_ = true;
         _Up = __u * _Fp;
