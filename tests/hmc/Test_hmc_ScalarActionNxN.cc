@@ -132,8 +132,8 @@ int main(int argc, char **argv) {
 
   // Checkpointer definition
   CheckpointerParameters CPparams(Reader);
-  //TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
-  TheHMC.Resources.LoadScidacCheckpointer(CPparams, SPar);
+  TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
+  //TheHMC.Resources.LoadNerscCheckpointer(CPparams, SPar);
 
   RNGModuleParameters RNGpar(Reader);
   TheHMC.Resources.SetRNGSeeds(RNGpar);

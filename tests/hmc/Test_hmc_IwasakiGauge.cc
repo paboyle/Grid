@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
   CheckpointerParameters CPparams;  
   CPparams.config_prefix = "ckpoint_lat";
   CPparams.rng_prefix = "ckpoint_rng";
-  CPparams.saveInterval = 20;
+  CPparams.saveInterval = 1;
   CPparams.format = "IEEE64BIG";
   
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
@@ -81,8 +81,10 @@ int main(int argc, char **argv) {
   /////////////////////////////////////////////////////////////
 
   // HMC parameters are serialisable 
-  TheHMC.Parameters.MD.MDsteps = 20;
+  TheHMC.Parameters.MD.MDsteps = 80;
   TheHMC.Parameters.MD.trajL   = 1.0;
+  TheHMC.Parameters.Trajectories     = 100;
+  TheHMC.Parameters.NoMetropolisUntil=  10;
 
   TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
   TheHMC.Run();  // no smearing
