@@ -55,7 +55,7 @@ public:
   }
   virtual std::string action_name() {return "ScalarAction";}
 
-  virtual void refresh(const Field &U, GridParallelRNG &pRNG) {}  // noop as no pseudoferms
+  virtual void refresh(const Field &U, GridSerialRNG &sRNG, GridParallelRNG &pRNG) {}  // noop as no pseudoferms
 
   virtual RealD S(const Field &p) {
     return (mass_square * 0.5 + Nd) * ScalarObs<Impl>::sumphisquared(p) +

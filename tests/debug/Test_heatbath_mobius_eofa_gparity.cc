@@ -73,7 +73,9 @@ int main(int argc, char** argv)
   std::vector<int> seeds4({1, 2, 3, 4});
   std::vector<int> seeds5({5, 6, 7, 8});
   GridParallelRNG RNG5(FGrid);
+  GridSerialRNG   sRNG;
   RNG5.SeedFixedIntegers(seeds5);
+  sRNG.SeedFixedIntegers(seeds5);
   GridParallelRNG RNG4(UGrid);
   RNG4.SeedFixedIntegers(seeds4);
 
@@ -91,7 +93,7 @@ int main(int argc, char** argv)
     ConjugateGradient<FermionField> CG(1.0e-12, 5000);
     ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> Meofa(Lop, Rop, CG, Params, false);
 
-    Meofa.refresh(Umu, RNG5);
+    Meofa.refresh(Umu, sRNG, RNG5);
     printf("<Phi|Meofa|Phi> = %1.15e\n", Meofa.S(Umu));
   }
 
@@ -101,7 +103,7 @@ int main(int argc, char** argv)
     ConjugateGradient<FermionField> CG(1.0e-12, 5000);
     ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> Meofa(Lop, Rop, CG, Params, true);
 
-    Meofa.refresh(Umu, RNG5);
+    Meofa.refresh(Umu, sRNG, RNG5);
     printf("<Phi|Meofa|Phi> = %1.15e\n", Meofa.S(Umu));
   }
 
