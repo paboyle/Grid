@@ -777,7 +777,7 @@ void ExtractSliceLocal(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int
 
 
 template<class vobj>
-void Replicate(Lattice<vobj> &coarse,Lattice<vobj> & fine)
+void Replicate(const Lattice<vobj> &coarse,Lattice<vobj> & fine)
 {
   typedef typename vobj::scalar_object sobj;
 
@@ -1002,53 +1002,95 @@ vectorizeFromRevLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
   });
 }
 
-//Convert a Lattice from one precision to another
-template<class VobjOut, class VobjIn>
-void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in)
-{
-  assert(out.Grid()->Nd() == in.Grid()->Nd());
-  for(int d=0;d<out.Grid()->Nd();d++){
-    assert(out.Grid()->FullDimensions()[d] == in.Grid()->FullDimensions()[d]);
-  }
-  out.Checkerboard() = in.Checkerboard();
-  GridBase *in_grid=in.Grid();
-  GridBase *out_grid = out.Grid();
-
-  typedef typename VobjOut::scalar_object SobjOut;
-  typedef typename VobjIn::scalar_object SobjIn;
-
-  int ndim = out.Grid()->Nd();
-  int out_nsimd = out_grid->Nsimd();
-    
-  std::vector<Coordinate > out_icoor(out_nsimd);
-      
-  for(int lane=0; lane < out_nsimd; lane++){
-    out_icoor[lane].resize(ndim);
-    out_grid->iCoorFromIindex(out_icoor[lane], lane);
-  }
-        
-  std::vector<SobjOut> in_slex_conv(in_grid->lSites());
-  unvectorizeToLexOrdArray(in_slex_conv, in);
-    
-  autoView( out_v , out, CpuWrite);
-  thread_for(out_oidx,out_grid->oSites(),{
-    Coordinate out_ocoor(ndim);
-    out_grid->oCoorFromOindex(out_ocoor, out_oidx);
-
-    ExtractPointerArray<SobjOut> ptrs(out_nsimd);      
-
-    Coordinate lcoor(out_grid->Nd());
-      
-    for(int lane=0; lane < out_nsimd; lane++){
-      for(int mu=0;mu<ndim;mu++)
-	lcoor[mu] = out_ocoor[mu] + out_grid->_rdimensions[mu]*out_icoor[lane][mu];
-	
-      int llex; Lexicographic::IndexFromCoor(lcoor, llex, out_grid->_ldimensions);
-      ptrs[lane] = &in_slex_conv[llex];
+//The workspace for a precision change operation allowing for the reuse of the mapping to save time on subsequent calls
+class precisionChangeWorkspace{
+  std::pair<Integer,Integer>* fmap_device; //device pointer
+public:
+  precisionChangeWorkspace(GridBase *out_grid, GridBase *in_grid){
+    //Build a map between the sites and lanes of the output field and the input field as we cannot use the Grids on the device
+    assert(out_grid->Nd() == in_grid->Nd());
+    for(int d=0;d<out_grid->Nd();d++){
+      assert(out_grid->FullDimensions()[d] == in_grid->FullDimensions()[d]);
     }
-    merge(out_v[out_oidx], ptrs, 0);
-  });
+    int Nsimd_out = out_grid->Nsimd();
+
+    std::vector<Coordinate> out_icorrs(out_grid->Nsimd()); //reuse these
+    for(int lane=0; lane < out_grid->Nsimd(); lane++)
+      out_grid->iCoorFromIindex(out_icorrs[lane], lane);
+  
+    std::vector<std::pair<Integer,Integer> > fmap_host(out_grid->lSites()); //lsites = osites*Nsimd
+    thread_for(out_oidx,out_grid->oSites(),{
+	Coordinate out_ocorr; 
+	out_grid->oCoorFromOindex(out_ocorr, out_oidx);
+      
+	Coordinate lcorr; //the local coordinate (common to both in and out as full coordinate)
+	for(int out_lane=0; out_lane < Nsimd_out; out_lane++){
+	  out_grid->InOutCoorToLocalCoor(out_ocorr, out_icorrs[out_lane], lcorr);
+	
+	  //int in_oidx = in_grid->oIndex(lcorr), in_lane = in_grid->iIndex(lcorr);
+	  //Note oIndex and OcorrFromOindex (and same for iIndex) are not inverse for checkerboarded lattice, the former coordinates being defined on the full lattice and the latter on the reduced lattice
+	  //Until this is fixed we need to circumvent the problem locally. Here I will use the coordinates defined on the reduced lattice for simplicity
+	  int in_oidx = 0, in_lane = 0;
+	  for(int d=0;d<in_grid->_ndimension;d++){
+	    in_oidx += in_grid->_ostride[d] * ( lcorr[d] % in_grid->_rdimensions[d] );
+	    in_lane += in_grid->_istride[d] * ( lcorr[d] / in_grid->_rdimensions[d] );
+	  }
+	  fmap_host[out_lane + Nsimd_out*out_oidx] = std::pair<Integer,Integer>( in_oidx, in_lane );
+	}
+      });
+
+    //Copy the map to the device (if we had a way to tell if an accelerator is in use we could avoid this copy for CPU-only machines)
+    size_t fmap_bytes = out_grid->lSites() * sizeof(std::pair<Integer,Integer>);
+    fmap_device = (std::pair<Integer,Integer>*)acceleratorAllocDevice(fmap_bytes);
+    acceleratorCopyToDevice(fmap_host.data(), fmap_device, fmap_bytes); 
+  }
+
+  //Prevent moving or copying
+  precisionChangeWorkspace(const precisionChangeWorkspace &r) = delete;
+  precisionChangeWorkspace(precisionChangeWorkspace &&r) = delete;
+  precisionChangeWorkspace &operator=(const precisionChangeWorkspace &r) = delete;
+  precisionChangeWorkspace &operator=(precisionChangeWorkspace &&r) = delete;
+  
+  std::pair<Integer,Integer> const* getMap() const{ return fmap_device; }
+
+  ~precisionChangeWorkspace(){
+    acceleratorFreeDevice(fmap_device);
+  }
+};
+
+
+//Convert a lattice of one precision to another. The input workspace contains the mapping data.
+template<class VobjOut, class VobjIn>
+void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in, const precisionChangeWorkspace &workspace){
+  static_assert( std::is_same<typename VobjOut::DoublePrecision, typename VobjIn::DoublePrecision>::value == 1, "copyLane: tensor types must be the same" ); //if tensor types are same the DoublePrecision type must be the same
+
+  out.Checkerboard() = in.Checkerboard();
+  constexpr int Nsimd_out = VobjOut::Nsimd();
+
+  std::pair<Integer,Integer> const* fmap_device = workspace.getMap();
+
+  //Do the copy/precision change
+  autoView( out_v , out, AcceleratorWrite);
+  autoView( in_v , in, AcceleratorRead);
+
+  accelerator_for(out_oidx, out.Grid()->oSites(), 1,{
+      std::pair<Integer,Integer> const* fmap_osite = fmap_device + out_oidx*Nsimd_out;
+      for(int out_lane=0; out_lane < Nsimd_out; out_lane++){      
+	int in_oidx = fmap_osite[out_lane].first;
+	int in_lane = fmap_osite[out_lane].second;
+	copyLane(out_v[out_oidx], out_lane, in_v[in_oidx], in_lane);
+      }
+    });
 }
+
+//Convert a Lattice from one precision to another
+//Generate the workspace in place; if multiple calls with the same mapping are performed, consider pregenerating the workspace and reusing
+template<class VobjOut, class VobjIn>
+void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
+  precisionChangeWorkspace workspace(out.Grid(), in.Grid());
+  precisionChange(out, in, workspace);
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Communicate between grids

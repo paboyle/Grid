@@ -32,8 +32,9 @@
 #include <random>
 
 #ifdef RNG_SITMO
-#include <Grid/sitmo_rng/sitmo_prng_engine.hpp>
+#include <Grid/random/sitmo_prng_engine.hpp>
 #endif 
+#include <Grid/random/gaussian.h>
 
 #if defined(RNG_SITMO)
 #define RNG_FAST_DISCARD
@@ -142,8 +143,8 @@ public:
 
   std::vector<RngEngine>                             _generators;
   std::vector<std::uniform_real_distribution<RealD> > _uniform;
-  std::vector<std::normal_distribution<RealD> >       _gaussian;
-  std::vector<std::discrete_distribution<int32_t> >   _bernoulli;
+  std::vector<Grid::gaussian_distribution<RealD> >       _gaussian;
+  //  std::vector<std::discrete_distribution<int32_t> >   _bernoulli;
   std::vector<std::uniform_int_distribution<uint32_t> > _uid;
 
   ///////////////////////
@@ -243,8 +244,8 @@ public:
   GridSerialRNG() : GridRNGbase() {
     _generators.resize(1);
     _uniform.resize(1,std::uniform_real_distribution<RealD>{0,1});
-    _gaussian.resize(1,std::normal_distribution<RealD>(0.0,1.0) );
-    _bernoulli.resize(1,std::discrete_distribution<int32_t>{1,1});
+    _gaussian.resize(1,gaussian_distribution<RealD>(0.0,1.0) );
+    //    _bernoulli.resize(1,std::discrete_distribution<int32_t>{1,1});
     _uid.resize(1,std::uniform_int_distribution<uint32_t>() );
   }
 
@@ -357,8 +358,8 @@ public:
 
     _generators.resize(_vol);
     _uniform.resize(_vol,std::uniform_real_distribution<RealD>{0,1});
-    _gaussian.resize(_vol,std::normal_distribution<RealD>(0.0,1.0) );
-    _bernoulli.resize(_vol,std::discrete_distribution<int32_t>{1,1});
+    _gaussian.resize(_vol,gaussian_distribution<RealD>(0.0,1.0) );
+    //    _bernoulli.resize(_vol,std::discrete_distribution<int32_t>{1,1});
     _uid.resize(_vol,std::uniform_int_distribution<uint32_t>() );
   }
 
@@ -515,11 +516,11 @@ public:
 
 template <class vobj> inline void random(GridParallelRNG &rng,Lattice<vobj> &l)   { rng.fill(l,rng._uniform);  }
 template <class vobj> inline void gaussian(GridParallelRNG &rng,Lattice<vobj> &l) { rng.fill(l,rng._gaussian); }
-template <class vobj> inline void bernoulli(GridParallelRNG &rng,Lattice<vobj> &l){ rng.fill(l,rng._bernoulli);}
+//template <class vobj> inline void bernoulli(GridParallelRNG &rng,Lattice<vobj> &l){ rng.fill(l,rng._bernoulli);}
 
 template <class sobj> inline void random(GridSerialRNG &rng,sobj &l)   { rng.fill(l,rng._uniform  ); }
 template <class sobj> inline void gaussian(GridSerialRNG &rng,sobj &l) { rng.fill(l,rng._gaussian ); }
-template <class sobj> inline void bernoulli(GridSerialRNG &rng,sobj &l){ rng.fill(l,rng._bernoulli); }
+//template <class sobj> inline void bernoulli(GridSerialRNG &rng,sobj &l){ rng.fill(l,rng._bernoulli); }
 
 NAMESPACE_END(Grid);
 #endif

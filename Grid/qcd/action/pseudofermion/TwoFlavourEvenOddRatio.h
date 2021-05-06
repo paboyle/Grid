@@ -83,16 +83,7 @@ NAMESPACE_BEGIN(Grid);
 	return sstream.str();
       } 
 
-      
       virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) {
-
-        // P(phi) = e^{- phi^dag Vpc (MpcdagMpc)^-1 Vpcdag phi}
-        //
-        // NumOp == V
-        // DenOp == M
-        //
-        // Take phi_o = Vpcdag^{-1} Mpcdag eta_o  ; eta_o = Mpcdag^{-1} Vpcdag Phi
-        //
         // P(eta_o) = e^{- eta_o^dag eta_o}
         //
         // e^{x^2/2 sig^2} => sig^2 = 0.5.
@@ -100,11 +91,21 @@ NAMESPACE_BEGIN(Grid);
         RealD scale = std::sqrt(0.5);
 
         FermionField eta    (NumOp.FermionGrid());
+        gaussian(pRNG,eta); eta = eta * scale;
+
+	refresh(U,eta);
+      }
+	
+      void refresh(const GaugeField &U, const FermionField &eta) {
+        // P(phi) = e^{- phi^dag Vpc (MpcdagMpc)^-1 Vpcdag phi}
+        //
+        // NumOp == V
+        // DenOp == M
+        //
+        // Take phi_o = Vpcdag^{-1} Mpcdag eta_o  ; eta_o = Mpcdag^{-1} Vpcdag Phi
         FermionField etaOdd (NumOp.FermionRedBlackGrid());
         FermionField etaEven(NumOp.FermionRedBlackGrid());
         FermionField tmp    (NumOp.FermionRedBlackGrid());
-
-        gaussian(pRNG,eta);
 
         pickCheckerboard(Even,etaEven,eta);
         pickCheckerboard(Odd,etaOdd,eta);
@@ -125,8 +126,8 @@ NAMESPACE_BEGIN(Grid);
         DenOp.MooeeDag(etaEven,tmp);
         NumOp.MooeeInvDag(tmp,PhiEven);
 
-        PhiOdd =PhiOdd*scale;
-        PhiEven=PhiEven*scale;
+        //PhiOdd =PhiOdd*scale;
+        //PhiEven=PhiEven*scale;
         
       };
 

@@ -292,6 +292,7 @@ public:
 template<class Field>
 class ChebyshevLanczos : public Chebyshev<Field> {
 private:
+
   std::vector<RealD> Coeffs;
   int order;
   RealD alpha;

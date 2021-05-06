@@ -208,5 +208,46 @@ void merge(vobj &vec,ExtractPointerArray<sobj> &extracted, int offset)
 }
 
 
+
+//////////////////////////////////////////////////////////////////////////////////
+//Copy a single lane of a SIMD tensor type from one object to another
+//Output object must be of the same tensor type but may be of a different precision (i.e. it can have a different root data type)
+///////////////////////////////////////////////////////////////////////////////////
+template<class vobjOut, class vobjIn>
+accelerator_inline 
+void copyLane(vobjOut & __restrict__ vecOut, int lane_out, const vobjIn & __restrict__ vecIn, int lane_in)
+{
+  static_assert( std::is_same<typename vobjOut::DoublePrecision, typename vobjIn::DoublePrecision>::value == 1, "copyLane: tensor types must be the same" ); //if tensor types are same the DoublePrecision type must be the same
+
+  typedef typename vobjOut::vector_type ovector_type;  
+  typedef typename vobjIn::vector_type ivector_type;  
+  constexpr int owords=sizeof(vobjOut)/sizeof(ovector_type);
+  constexpr int iwords=sizeof(vobjIn)/sizeof(ivector_type);
+  static_assert( owords == iwords, "copyLane: Expected number of vector words in input and output objects to be equal" );
+
+  typedef typename vobjOut::scalar_type oscalar_type;  
+  typedef typename vobjIn::scalar_type iscalar_type;  
+  typedef typename ExtractTypeMap<oscalar_type>::extract_type oextract_type;
+  typedef typename ExtractTypeMap<iscalar_type>::extract_type iextract_type;
+
+  typedef oextract_type * opointer;
+  typedef iextract_type * ipointer;
+
+  constexpr int oNsimd=ovector_type::Nsimd();
+  constexpr int iNsimd=ivector_type::Nsimd();
+
+  iscalar_type itmp;
+  oscalar_type otmp;
+
+  opointer __restrict__  op = (opointer)&vecOut;
+  ipointer __restrict__  ip = (ipointer)&vecIn;
+  for(int w=0;w<owords;w++){
+    memcpy( (char*)&itmp, (char*)(ip + lane_in + iNsimd*w), sizeof(iscalar_type) );
+    otmp = itmp; //potential precision change
+    memcpy( (char*)(op + lane_out + oNsimd*w), (char*)&otmp, sizeof(oscalar_type) );
+  }
+}
+
+
 NAMESPACE_END(Grid);
 

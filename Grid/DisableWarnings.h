@@ -35,6 +35,9 @@ directory
 #if defined __GNUC__ && __GNUC__>=6
 #pragma GCC diagnostic ignored "-Wignored-attributes"
 #endif
+#if defined __GNUC__ 
+#pragma GCC diagnostic ignored "-Wpsabi"
+#endif
 
  //disables and intel compiler specific warning (in json.hpp)
 #ifdef __ICC

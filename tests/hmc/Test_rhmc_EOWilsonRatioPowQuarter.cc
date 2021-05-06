@@ -2,10 +2,11 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/Test_hmc_GparityIwasakiGauge.cc
+    Source file: ./tests/Test_rhmc_EOWilsonRatio.cc
 
     Copyright (C) 2015
 
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
@@ -27,6 +28,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
+//This test is for the Wilson action with the determinant det( M^dag M)^1/4
+//testing the generic RHMC 
 
 int main(int argc, char **argv) {
   using namespace Grid;
@@ -38,10 +41,9 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
    // Typedefs to simplify notation
-  typedef ConjugateHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
-
-  typedef GparityWilsonImplR FermionImplPolicy;
-  typedef GparityDomainWallFermionR FermionAction;
+  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
+  typedef WilsonImplR FermionImplPolicy;
+  typedef WilsonFermionR FermionAction;
   typedef typename FermionAction::FermionField FermionField;
 
 
@@ -50,15 +52,12 @@ int main(int argc, char **argv) {
 
   // Grid from the command line
   TheHMC.Resources.AddFourDimGrid("gauge");
-  // Possibile to create the module by hand 
-  // hardcoding parameters or using a Reader
-
 
   // Checkpointer definition
   CheckpointerParameters CPparams;  
-  CPparams.config_prefix = "ckpoint_EODWF_lat";
-  CPparams.rng_prefix = "ckpoint_EODWF_rng";
-  CPparams.saveInterval = 1;
+  CPparams.config_prefix = "ckpoint_lat";
+  CPparams.rng_prefix = "ckpoint_rng";
+  CPparams.saveInterval = 5;
   CPparams.format = "IEEE64BIG";
   
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
@@ -78,20 +77,49 @@ int main(int argc, char **argv) {
   // need wrappers of the fermionic classes 
   // that have a complex construction
   // standard
-  RealD beta = 2.6 ;
-  const int nu = 1;
-  std::vector<int> twists(Nd,0);
-  twists[nu] = 1;
-  ConjugateGimplD::setDirections(twists);
-  ConjugateIwasakiGaugeActionR Waction(beta);
+  RealD beta = 5.6 ;
+  WilsonGaugeActionR Waction(beta);
+    
+  auto GridPtr = TheHMC.Resources.GetCartesian();
+  auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
 
- 
+  // temporarily need a gauge field
+  LatticeGaugeField U(GridPtr);
 
-  // Collect actions
+  Real mass = -0.77;
+  Real pv   = 0.0;
+
+  // Can we define an overloaded operator that does not need U and initialises
+  // it with zeroes?
+  FermionAction DenOp(U, *GridPtr, *GridRBPtr, mass);
+  FermionAction NumOp(U, *GridPtr, *GridRBPtr, pv);
+
+
+  // 1/2+1/2 flavour
+  // RationalActionParams(int _inv_pow = 2,
+  // 		       RealD _lo      = 0.0, 
+  // 		       RealD _hi      = 1.0, 
+  // 		       int _maxit     = 1000,
+  // 		       RealD tol      = 1.0e-8, 
+  // 		       int _degree    = 10,
+  // 		       int _precision = 64,
+  // 		       int _BoundsCheckFreq=20)
+
+
+  int inv_pow = 4;
+  RationalActionParams Params(inv_pow,1.0e-2,64.0,1000,1.0e-6,14,64,1);
+
+  GeneralEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> RHMC(NumOp,DenOp,Params);
+
+    // Collect actions
   ActionLevel<HMCWrapper::Field> Level1(1);
-  Level1.push_back(&Waction);
+  Level1.push_back(&RHMC);
+
+  ActionLevel<HMCWrapper::Field> Level2(4);
+  Level2.push_back(&Waction);
 
   TheHMC.TheAction.push_back(Level1);
+  TheHMC.TheAction.push_back(Level2);
   /////////////////////////////////////////////////////////////
 
   // HMC parameters are serialisable 
@@ -99,10 +127,13 @@ int main(int argc, char **argv) {
   TheHMC.Parameters.MD.trajL   = 1.0;
 
   TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
-
-  TheHMC.Run();  // no smearing
+  TheHMC.Run();
 
   Grid_finalize();
+
 } // main
+
+
+
 
 

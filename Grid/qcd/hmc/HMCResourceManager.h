@@ -226,6 +226,9 @@ public:
   //////////////////////////////////////////////////////
   // Random number generators
   //////////////////////////////////////////////////////
+  
+  //Return true if the RNG objects have been instantiated
+  bool haveRNGs() const{ return have_RNG; }
 
   void AddRNGs(std::string s = "") {
     // Couple the RNGs to the GridModule tagged by s

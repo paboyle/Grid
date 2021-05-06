@@ -1,14 +1,12 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./lib/Grid.h
+    Source file: ./lib/lattice/Lattice_crc.h
 
-    Copyright (C) 2015
+    Copyright (C) 2021
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: azusayamaguchi <ayamaguc@YAMAKAZE.local>
-Author: paboyle <paboyle@ph.ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,20 +23,20 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
-#ifndef GRID_QCD_CORE_H
-#define GRID_QCD_CORE_H
+*************************************************************************************/
+/*  END LEGAL */
+#pragma once
 
-/////////////////////////
-// Core Grid QCD headers
-/////////////////////////
-#include <Grid/GridCore.h>
-#include <Grid/qcd/QCD.h>
-#include <Grid/qcd/spin/Spin.h>
-#include <Grid/qcd/gparity/Gparity.h>
-#include <Grid/qcd/utils/Utils.h>
-#include <Grid/qcd/representations/Representations.h>
-NAMESPACE_CHECK(GridQCDCore);
+NAMESPACE_BEGIN(Grid);
 
-#endif
+template<class vobj> uint32_t crc(Lattice<vobj> & buf)
+{
+  autoView( buf_v , buf, CpuRead);
+  return ::crc32(0L,(unsigned char *)&buf_v[0],(size_t)sizeof(vobj)*buf.oSites());
+}
+
+#define CRC(U) std::cout << "FingerPrint "<<__FILE__ <<" "<< __LINE__ <<" "<< #U <<" "<<crc(U)<<std::endl;
+
+NAMESPACE_END(Grid);
+
+

@@ -115,21 +115,21 @@ private:
 
     random(sRNG, rn_test);
 
-    std::cout << GridLogMessage
+    std::cout << GridLogHMC
               << "--------------------------------------------------\n";
-    std::cout << GridLogMessage << "exp(-dH) = " << prob
+    std::cout << GridLogHMC << "exp(-dH) = " << prob
               << "  Random = " << rn_test << "\n";
-    std::cout << GridLogMessage
+    std::cout << GridLogHMC
               << "Acc. Probability = " << ((prob < 1.0) ? prob : 1.0) << "\n";
 
     if ((prob > 1.0) || (rn_test <= prob)) {  // accepted
-      std::cout << GridLogMessage << "Metropolis_test -- ACCEPTED\n";
-      std::cout << GridLogMessage
+      std::cout << GridLogHMC << "Metropolis_test -- ACCEPTED\n";
+      std::cout << GridLogHMC
                 << "--------------------------------------------------\n";
       return true;
     } else {  // rejected
-      std::cout << GridLogMessage << "Metropolis_test -- REJECTED\n";
-      std::cout << GridLogMessage
+      std::cout << GridLogHMC << "Metropolis_test -- REJECTED\n";
+      std::cout << GridLogHMC
                 << "--------------------------------------------------\n";
       return false;
     }
@@ -145,7 +145,7 @@ private:
 
     std::streamsize current_precision = std::cout.precision();
     std::cout.precision(15);
-    std::cout << GridLogMessage << "Total H before trajectory = " << H0 << "\n";
+    std::cout << GridLogHMC << "Total H before trajectory = " << H0 << "\n";
     std::cout.precision(current_precision);
 
     TheIntegrator.integrate(U);
@@ -165,7 +165,7 @@ private:
 
 
     std::cout.precision(15);
-    std::cout << GridLogMessage << "Total H after trajectory  = " << H1
+    std::cout << GridLogHMC << "Total H after trajectory  = " << H1
 	      << "  dH = " << H1 - H0 << "\n";
     std::cout.precision(current_precision);
     
@@ -196,9 +196,9 @@ public:
     // Actual updates (evolve a copy Ucopy then copy back eventually)
     unsigned int FinalTrajectory = Params.Trajectories + Params.NoMetropolisUntil + Params.StartTrajectory;
     for (int traj = Params.StartTrajectory; traj < FinalTrajectory; ++traj) {
-      std::cout << GridLogMessage << "-- # Trajectory = " << traj << "\n";
+      std::cout << GridLogHMC << "-- # Trajectory = " << traj << "\n";
       if (traj < Params.StartTrajectory + Params.NoMetropolisUntil) {
-      	std::cout << GridLogMessage << "-- Thermalization" << std::endl;
+      	std::cout << GridLogHMC << "-- Thermalization" << std::endl;
       }
       
       double t0=usecond();
@@ -207,10 +207,10 @@ public:
       DeltaH = evolve_hmc_step(Ucopy);
       // Metropolis-Hastings test
       bool accept = true;
-      if (traj >= Params.StartTrajectory + Params.NoMetropolisUntil) {
+      if (Params.MetropolisTest && traj >= Params.StartTrajectory + Params.NoMetropolisUntil) {
         accept = metropolis_test(DeltaH);
       } else {
-      	std::cout << GridLogMessage << "Skipping Metropolis test" << std::endl;
+      	std::cout << GridLogHMC << "Skipping Metropolis test" << std::endl;
       }
 
       if (accept)
@@ -219,7 +219,7 @@ public:
      
       
       double t1=usecond();
-      std::cout << GridLogMessage << "Total time for trajectory (s): " << (t1-t0)/1e6 << std::endl;
+      std::cout << GridLogHMC << "Total time for trajectory (s): " << (t1-t0)/1e6 << std::endl;
 
 
       for (int obs = 0; obs < Observables.size(); obs++) {
@@ -228,7 +228,7 @@ public:
       	std::cout << GridLogDebug << "Observables pointer " << Observables[obs] << std::endl;
         Observables[obs]->TrajectoryComplete(traj + 1, Ucur, sRNG, pRNG);
       }
-      std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::::" << std::endl;
+      std::cout << GridLogHMC << ":::::::::::::::::::::::::::::::::::::::::::" << std::endl;
     }
   }
 

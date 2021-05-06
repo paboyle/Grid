@@ -299,12 +299,12 @@ int main (int argc, char ** argv)
     SpinColourVectorD ferm; gaussian(sRNG,ferm);
     pokeSite(ferm,src,point);
 
-    const int Ls=32;
+    const int Ls=64;
     GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,&GRID);
     GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,&GRID);
 
-    RealD mass=0.01;
-    RealD M5  =0.8;
+    RealD mass=1.0;
+    RealD M5  =0.99;
     DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,GRID,RBGRID,mass,M5);
 
     // Momentum space prop
@@ -353,6 +353,12 @@ int main (int argc, char ** argv)
     std::cout << " Taking difference" <<std::endl;
     std::cout << "Ddwf result4 "<<norm2(result4)<<std::endl;
     std::cout << "Ddwf ref     "<<norm2(ref)<<std::endl;
+    auto twopoint = localInnerProduct(result4,result4);
+    std::vector<TComplex> pion_prop;
+    sliceSum(twopoint,pion_prop,Nd-1);
+    for(int t=0;t<pion_prop.size();t++){
+      std::cout << "Pion_prop["<<t<<"]="<<pion_prop[t]<<std::endl;
+    }
     
     diff = ref - result4;
     std::cout << "result - ref     "<<norm2(diff)<<std::endl;
@@ -383,7 +389,7 @@ int main (int argc, char ** argv)
     GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,&GRID);
     GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,&GRID);
 
-    RealD mass=0.01;
+    RealD mass=1.0;
     RealD M5  =0.8;
 
     OverlapWilsonCayleyTanhFermionD Dov(Umu,*FGrid,*FrbGrid,GRID,RBGRID,mass,M5,1.0);

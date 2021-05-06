@@ -136,8 +136,14 @@ protected:
       if (as[level].actions.at(a)->is_smeared) Smearer.smeared_force(force);
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
       double end_force = usecond();
-      Real force_abs = std::sqrt(norm2(force)/U.Grid()->gSites());
-      std::cout << GridLogIntegrator << "["<<level<<"]["<<a<<"] Force average: " << force_abs << std::endl;
+
+      Real force_abs = std::sqrt(norm2(force)/U.Grid()->gSites()); //average per-site norm.  nb. norm2(latt) = \sum_x norm2(latt[x]) 
+      Real impulse_abs = force_abs * ep * HMC_MOMENTUM_DENOMINATOR;    
+
+      Real max_force_abs = std::sqrt(maxLocalNorm2(force));
+      Real max_impulse_abs = max_force_abs * ep * HMC_MOMENTUM_DENOMINATOR;    
+
+      std::cout << GridLogIntegrator << "["<<level<<"]["<<a<<"] Force average: " << force_abs << " Max force: " << max_force_abs << " Time step: " << ep << " Impulse average: " << impulse_abs << " Max impulse: " << max_impulse_abs << std::endl;
       Mom -= force * ep* HMC_MOMENTUM_DENOMINATOR;; 
       double end_full = usecond();
       double time_full  = (end_full - start_full) / 1e3;
