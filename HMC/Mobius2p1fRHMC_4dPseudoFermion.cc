@@ -52,11 +52,11 @@ int main(int argc, char **argv) {
   //  MD.name    = std::string("Force Gradient");
   typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;
   MD.name    = std::string("MinimumNorm2");
-  MD.MDsteps = 12;
+  MD.MDsteps = 10;
   MD.trajL   = 1.0;
 
   HMCparameters HMCparams;
-  HMCparams.StartTrajectory  = 139;
+  HMCparams.StartTrajectory  = 137;
   HMCparams.Trajectories     = 200;
   HMCparams.NoMetropolisUntil=  0;
   // "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
@@ -163,13 +163,13 @@ int main(int argc, char **argv) {
 
   std::vector<FermionAction *> Numerators;
   std::vector<FermionAction *> Denominators;
-  std::vector<TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> *> Quotients;
+  std::vector<TwoFlavourRatioPseudoFermionAction<FermionImplPolicy> *> Quotients;
 
   for(int h=0;h<n_hasenbusch+1;h++){
     std::cout << GridLogMessage << " 2f quotient Action  "<< light_num[h] << " / " << light_den[h]<< std::endl;
     Numerators.push_back  (new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[h],M5,b,c, Params));
     Denominators.push_back(new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[h],M5,b,c, Params));
-    Quotients.push_back   (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],CG,CG));
+    Quotients.push_back   (new TwoFlavourRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],CG,CG));
   }
 
   for(int h=0;h<n_hasenbusch+1;h++){

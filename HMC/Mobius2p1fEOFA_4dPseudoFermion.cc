@@ -29,6 +29,8 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/Grid.h>
+#include <Grid/qcd/action/pseudofermion/TwoFlavourRatioEO4DPseudoFermion.h>
+#include <Grid/qcd/action/pseudofermion/TwoFlavourRatio4DPseudoFermion.h>
 
 #ifdef GRID_DEFAULT_PRECISION_DOUBLE
 #define MIXED_PRECISION
@@ -209,8 +211,8 @@ int main(int argc, char **argv) {
   TheHMC.Resources.AddFourDimGrid("gauge"); // use default simd lanes decomposition
   
   CheckpointerParameters CPparams;
-  CPparams.config_prefix = "ckpoint_EOFA_lat";
-  CPparams.rng_prefix    = "ckpoint_EOFA_rng";
+  CPparams.config_prefix = "ckpoint_EOFA4D_lat";
+  CPparams.rng_prefix    = "ckpoint_EOFA4D_rng";
   CPparams.saveInterval  = 1;
   CPparams.format        = "IEEE64BIG";
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
@@ -277,10 +279,15 @@ int main(int argc, char **argv) {
   ////////////////////////////////////
   typedef SchurDiagMooeeOperator<FermionActionF,FermionFieldF> LinearOperatorF;
   typedef SchurDiagMooeeOperator<FermionAction ,FermionField > LinearOperatorD;
+
+  typedef SchurDiagMooeeDagOperator<FermionActionF,FermionFieldF> LinearOperatorDagF;
+  typedef SchurDiagMooeeDagOperator<FermionAction ,FermionField > LinearOperatorDagD;
+
   typedef SchurDiagMooeeOperator<FermionEOFAActionF,FermionFieldF> LinearOperatorEOFAF;
   typedef SchurDiagMooeeOperator<FermionEOFAAction ,FermionField > LinearOperatorEOFAD;
 
   typedef MixedPrecisionConjugateGradientOperatorFunction<MobiusFermionD,MobiusFermionF,LinearOperatorD,LinearOperatorF> MxPCG;
+  typedef MixedPrecisionConjugateGradientOperatorFunction<MobiusFermionD,MobiusFermionF,LinearOperatorDagD,LinearOperatorDagF> MxDagPCG;
   typedef MixedPrecisionConjugateGradientOperatorFunction<MobiusEOFAFermionD,MobiusEOFAFermionF,LinearOperatorEOFAD,LinearOperatorEOFAF> MxPCG_EOFA;
 
   // DJM: setup for EOFA ratio (Mobius)
@@ -378,12 +385,15 @@ int main(int argc, char **argv) {
   //////////////////////////////////////////////////////////////
   std::vector<FermionAction *> Numerators;
   std::vector<FermionAction *> Denominators;
-  std::vector<TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> *> Quotients;
+  std::vector<TwoFlavourRatioEO4DPseudoFermionAction<FermionImplPolicy> *> Quotients;
   std::vector<MxPCG *> ActionMPCG;
   std::vector<MxPCG *> MPCG;
+  std::vector<MxDagPCG *> MPCGdag;
   std::vector<FermionActionF *> DenominatorsF;
   std::vector<LinearOperatorD *> LinOpD;
   std::vector<LinearOperatorF *> LinOpF; 
+  std::vector<LinearOperatorDagD *> LinOpDagD;
+  std::vector<LinearOperatorDagF *> LinOpDagF; 
 
   for(int h=0;h<n_hasenbusch+1;h++){
 
@@ -400,7 +410,9 @@ int main(int argc, char **argv) {
     DenominatorsF.push_back(new FermionActionF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_den[h],M5,b,c, ParamsF));
     LinOpD.push_back(new LinearOperatorD(*Denominators[h]));
     LinOpF.push_back(new LinearOperatorF(*DenominatorsF[h]));
-
+    LinOpDagD.push_back(new LinearOperatorDagD(*Denominators[h]));
+    LinOpDagF.push_back(new LinearOperatorDagF(*DenominatorsF[h]));
+    
     MPCG.push_back(new MxPCG(DerivativeStoppingCondition,
 			     MX_inner,
 			     MaxCGIterations,
@@ -409,6 +421,14 @@ int main(int argc, char **argv) {
 			     *DenominatorsF[h],*Denominators[h],
 			     *LinOpF[h], *LinOpD[h]) );
 
+    MPCGdag.push_back(new MxDagPCG(DerivativeStoppingCondition,
+				   MX_inner,
+				   MaxCGIterations,
+				   GridPtrF,
+				   FrbGridF,
+				   *DenominatorsF[h],*Denominators[h],
+				   *LinOpDagF[h], *LinOpDagD[h]) );
+    
     ActionMPCG.push_back(new MxPCG(ActionStoppingCondition,
 				   MX_inner,
 				   MaxCGIterations,
@@ -418,12 +438,12 @@ int main(int argc, char **argv) {
 				   *LinOpF[h], *LinOpD[h]) );
 
     // Heatbath not mixed yet. As inverts numerators not so important as raised mass.
-    Quotients.push_back (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],*MPCG[h],*ActionMPCG[h],ActionCG));
+    Quotients.push_back (new TwoFlavourRatioEO4DPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],*MPCG[h],*MPCGdag[h],*ActionMPCG[h],ActionCG));
 #else
     ////////////////////////////////////////////////////////////////////////////
     // Standard CG for 2f force
     ////////////////////////////////////////////////////////////////////////////
-    Quotients.push_back   (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],DerivativeCG,ActionCG));
+    Quotients.push_back   (new TwoFlavourRatioEO4DPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],DerivativeCG,ActionCG));
 #endif
 
   }

@@ -52,15 +52,15 @@ int main (int argc, char ** argv)
   pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
   LatticeGaugeField U(&Grid);
-
   SU<Nc>::HotConfiguration(pRNG,U);
-  
+
   double beta = 1.0;
   double c1   = 0.331;
 
   const int nu = 1;
   std::vector<int> twists(Nd,0);
   twists[nu] = 1;
+
   ConjugateGimplD::setDirections(twists);
   ConjugatePlaqPlusRectangleActionR Action(beta,c1);
   //ConjugateWilsonGaugeActionR Action(beta);
@@ -70,13 +70,13 @@ int main (int argc, char ** argv)
 
   // get the deriv of phidag MdagM phi with respect to "U"
   LatticeGaugeField UdSdU(&Grid);
-
+  
   Action.deriv(U,UdSdU);
 
   ////////////////////////////////////
   // Modify the gauge field a little 
   ////////////////////////////////////
-  RealD dt = 0.01;
+  RealD dt = 0.001;
 
   LatticeColourMatrix mommu(&Grid); 
   LatticeColourMatrix forcemu(&Grid); 

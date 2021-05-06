@@ -95,8 +95,10 @@ int main(int argc, char **argv) {
   /////////////////////////////////////////////////////////////
 
   // HMC parameters are serialisable 
-  TheHMC.Parameters.MD.MDsteps = 20;
+  TheHMC.Parameters.MD.MDsteps = 80;
   TheHMC.Parameters.MD.trajL   = 1.0;
+  TheHMC.Parameters.Trajectories     = 100;
+  TheHMC.Parameters.NoMetropolisUntil=  10;
 
   TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
 

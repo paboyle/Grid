@@ -118,8 +118,8 @@ int main (int argc, char ** argv)
   }
   else
   {
-    std::cout<<GridLogMessage <<"Using cold configuration"<<std::endl;
-    //    SU<Nc>::ColdConfiguration(Umu);
+    std::cout<<GridLogMessage <<"Using hot configuration"<<std::endl;
+    // SU<Nc>::ColdConfiguration(Umu);
     SU<Nc>::HotConfiguration(RNG4,Umu);
   }
 

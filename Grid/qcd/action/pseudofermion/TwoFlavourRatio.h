@@ -97,7 +97,19 @@ public:
     tmp = Zero();
     ActionSolver(MdagMOp,Phi,tmp);  // (VdagV)^-1 Mdag eta = V^-1 Vdag^-1 Mdag eta
     NumOp.M(tmp,Phi);               // Vdag^-1 Mdag eta
-
+#define FILTER
+#ifdef FILTER
+    Integer OrthogDir=0;
+    Integer plane=0;
+    if ( getenv("DIR") ) OrthogDir = atoi(getenv("DIR"));
+    if ( getenv("COOR") ) plane = atoi(getenv("COOR"));
+    std::cout << " *** PseudoFermion FILTER DIR " <<OrthogDir << " plane "<<plane<<std::endl;
+    Lattice<iScalar<vInteger> >  coor(NumOp.FermionGrid());
+    LatticeCoordinate(coor,OrthogDir);
+    tmp = Zero();
+    Phi = where(coor==plane,Phi,tmp);
+#endif
+    
     Phi=Phi*scale;
 	
   };
@@ -165,6 +177,25 @@ public:
     dSdU *= -1.0;
     //dSdU = - Ta(dSdU);
 
+#ifdef FILTER
+    std::cout <<" In force  "<<std::endl;
+    force = dSdU;
+    int mu=0;
+    std::cout << " FORCE mu " <<mu<<" L2 "<< norm2(force)<< " Linf " << maxLocalNorm2(force)<<std::endl;
+    int plane=0;
+    if ( getenv("COOR") ) plane = atoi(getenv("COOR"));
+    Lattice<iScalar<vInteger> >  coor(NumOp.GaugeGrid());
+
+    LatticeCoordinate(coor,mu);
+    int L = NumOp.GaugeGrid()->FullDimensions()[mu];
+    for (Integer p=0;p<L;p++) {
+      force = Zero();
+      force = where(coor==p,dSdU,force);
+      std::cout << " FORCE mu " <<mu<<" PF plane "<<plane<<" T= " <<p<<" L2 "<< norm2(force)<< " Linf " << maxLocalNorm2(force)<<std::endl;
+    }
+    exit(0);
+#endif
+    
   };
 };
 

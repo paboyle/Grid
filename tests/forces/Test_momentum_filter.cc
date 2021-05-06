@@ -59,11 +59,13 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   std::vector<int> seeds({1,2,3,4});
+  std::vector<int> serial_seeds({5,6,7,8});
 
+  GridSerialRNG            sRNG; 
   GridParallelRNG          pRNG(&Grid);
   GridSerialRNG            sRNG;
   pRNG.SeedFixedIntegers(seeds);
-  sRNG.SeedFixedIntegers(seeds);
+  sRNG.SeedFixedIntegers(serial_seeds);
 
   typedef PeriodicGimplR Gimpl;
   typedef WilsonGaugeAction<Gimpl> GaugeAction;

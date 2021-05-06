@@ -74,10 +74,10 @@ int main(int argc, char **argv) {
 
   // Checkpointer definition
   CheckpointerParameters CPparams(Reader);
-  //TheHMC.Resources.LoadNerscCheckpointer(CPparams);
+  TheHMC.Resources.LoadNerscCheckpointer(CPparams);
 
   // Store metadata in the Scidac checkpointer
-  TheHMC.Resources.LoadScidacCheckpointer(CPparams, WilsonPar);
+  //TheHMC.Resources.LoadScidacCheckpointer(CPparams, WilsonPar);
 
   RNGModuleParameters RNGpar(Reader);
   TheHMC.Resources.SetRNGSeeds(RNGpar);

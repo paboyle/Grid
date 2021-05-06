@@ -7,7 +7,6 @@ Source file: ./tests/Test_hmc_EODWFRatio.cc
 Copyright (C) 2015-2016
 
 Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
-Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,6 +27,8 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/Grid.h>
+#include <Grid/qcd/action/pseudofermion/TwoFlavourRatioEO4DPseudoFermion.h>
+#include <Grid/qcd/action/pseudofermion/TwoFlavourRatio4DPseudoFermion.h>
 
 int main(int argc, char **argv) {
   using namespace Grid;
@@ -56,7 +57,7 @@ int main(int argc, char **argv) {
   MD.trajL   = 1.0;
 
   HMCparameters HMCparams;
-  HMCparams.StartTrajectory  = 139;
+  HMCparams.StartTrajectory  = 211;
   HMCparams.Trajectories     = 200;
   HMCparams.NoMetropolisUntil=  0;
   // "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
@@ -69,8 +70,8 @@ int main(int argc, char **argv) {
   TheHMC.Resources.AddFourDimGrid("gauge"); // use default simd lanes decomposition
 
   CheckpointerParameters CPparams;
-  CPparams.config_prefix = "ckpoint_EODWF_lat";
-  CPparams.rng_prefix    = "ckpoint_EODWF_rng";
+  CPparams.config_prefix = "ckpoint_4dDWF_lat";
+  CPparams.rng_prefix    = "ckpoint_4dDWF_rng";
   CPparams.saveInterval  = 1;
   CPparams.format        = "IEEE64BIG";
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
@@ -163,13 +164,13 @@ int main(int argc, char **argv) {
 
   std::vector<FermionAction *> Numerators;
   std::vector<FermionAction *> Denominators;
-  std::vector<TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> *> Quotients;
+  std::vector<TwoFlavourRatioEO4DPseudoFermionAction<FermionImplPolicy> *> Quotients;
 
   for(int h=0;h<n_hasenbusch+1;h++){
     std::cout << GridLogMessage << " 2f quotient Action  "<< light_num[h] << " / " << light_den[h]<< std::endl;
     Numerators.push_back  (new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[h],M5,b,c, Params));
     Denominators.push_back(new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[h],M5,b,c, Params));
-    Quotients.push_back   (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],CG,CG));
+    Quotients.push_back   (new TwoFlavourRatioEO4DPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],CG,CG));
   }
 
   for(int h=0;h<n_hasenbusch+1;h++){

@@ -209,6 +209,27 @@ void  TestWhat(What & Ddwf,
   std::cout<<GridLogMessage <<"pDco - conj(cDpe) "<< pDco-conj(cDpe) <<std::endl;
 
   std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Test MooeeDag is the dagger of Mooee by requiring           "<<std::endl;
+  std::cout<<GridLogMessage<<"=  < phi | Deo | chi > * = < chi | Deo^dag| phi>  "<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+
+  Ddwf.Mooee(chi_e,dchi_e);
+  Ddwf.Mooee(chi_o,dchi_o);
+  Ddwf.MooeeDag(phi_e,dphi_e);
+  Ddwf.MooeeDag(phi_o,dphi_o);
+
+  pDce = innerProduct(phi_e,dchi_e);
+  pDco = innerProduct(phi_o,dchi_o);
+  cDpe = innerProduct(chi_e,dphi_e);
+  cDpo = innerProduct(chi_o,dphi_o);
+
+  std::cout<<GridLogMessage <<"e "<<pDce<<" "<<cDpe <<std::endl;
+  std::cout<<GridLogMessage <<"o "<<pDco<<" "<<cDpo <<std::endl;
+
+  std::cout<<GridLogMessage <<"pDce - conj(cDpo) "<< pDce-conj(cDpe) <<std::endl;
+  std::cout<<GridLogMessage <<"pDco - conj(cDpe) "<< pDco-conj(cDpo) <<std::endl;
+  
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
   std::cout<<GridLogMessage<<"= Test MeeInv Mee = 1                                         "<<std::endl;
   std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
 
