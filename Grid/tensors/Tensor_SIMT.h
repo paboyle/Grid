@@ -65,7 +65,8 @@ void coalescedWriteNonTemporal(vobj & __restrict__ vec,const vobj & __restrict__
 #else
 
 
-#ifndef GRID_SYCL
+//#ifndef GRID_SYCL
+#if 1
 // Use the scalar as our own complex on GPU ... thrust::complex or std::complex
 template<class vsimd,IfSimd<vsimd> = 0> accelerator_inline
 typename vsimd::scalar_type

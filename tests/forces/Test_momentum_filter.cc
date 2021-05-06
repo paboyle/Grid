@@ -63,6 +63,7 @@ int main (int argc, char ** argv)
 
   GridSerialRNG            sRNG; 
   GridParallelRNG          pRNG(&Grid);
+  GridSerialRNG            sRNG;
   pRNG.SeedFixedIntegers(seeds);
   sRNG.SeedFixedIntegers(serial_seeds);
 

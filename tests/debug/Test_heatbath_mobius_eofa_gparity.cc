@@ -92,6 +92,7 @@ int main(int argc, char** argv)
     ConjugateGradient<FermionField> CG(1.0e-12, 5000);
     ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> Meofa(Lop, Rop, CG, Params, false);
 
+
     Meofa.refresh(Umu, SRNG, RNG5);
     printf("<Phi|Meofa|Phi> = %1.15e\n", Meofa.S(Umu));
   }

@@ -36,36 +36,97 @@ NAMESPACE_BEGIN(Grid);
 // Two flavour ratio
 ///////////////////////////////////////
 template<class Impl>
-class TwoFlavourRatioPseudoFermionAction : public Action<typename Impl::GaugeField> {
+class DomainBoundaryPseudoFermionAction : public Action<typename Impl::GaugeField> {
 public:
   INHERIT_IMPL_TYPES(Impl);
 
 private:
   FermionOperator<Impl> & NumOp;// the basic operator
   FermionOperator<Impl> & DenOp;// the basic operator
+  FermionOperator<Impl> & NumOpDirichlet;// the basic operator
+  FermionOperator<Impl> & DenOpDirichlet;// the basic operator
 
   OperatorFunction<FermionField> &DerivativeSolver;
   OperatorFunction<FermionField> &ActionSolver;
 
   FermionField Phi; // the pseudo fermion field for this trajectory
+  
+  Coordinate Block;
+  typedef Lattice<iLorentzVector<Simd> > LinkMask;
+
+  LinkMask ActiveLinks;
+  LinkMask PassiveLinks;
+
+  //  FermionField BoundaryMask;
+  //  FermionField BoundaryMask;
 
 public:
-  TwoFlavourRatioPseudoFermionAction(FermionOperator<Impl>  &_NumOp, 
-				     FermionOperator<Impl>  &_DenOp, 
-				     OperatorFunction<FermionField> & DS,
-				     OperatorFunction<FermionField> & AS
-				     ) : NumOp(_NumOp), DenOp(_DenOp), DerivativeSolver(DS), ActionSolver(AS), Phi(_NumOp.FermionGrid()) {};
+  DomainBoundaryPseudoFermionAction(FermionOperator<Impl>  &_NumOp, 
+				    FermionOperator<Impl>  &_DenOp,
+				    FermionOperator<Impl>  &_NumOpDirichlet, 
+				    FermionOperator<Impl>  &_DenOpDirichlet, 
+				    OperatorFunction<FermionField> & DS,
+				    OperatorFunction<FermionField> & AS,
+				    Coordinate &_Block
+				    ) : NumOp(_NumOp), DenOp(_DenOp),
+					DerivativeSolver(DS), ActionSolver(AS),
+					Phi(_NumOp.FermionGrid()), Block(_Block) {};
       
-  virtual std::string action_name(){return "TwoFlavourRatioPseudoFermionAction";}
+  virtual std::string action_name(){return "DomainBoundaryPseudoFermionRatioAction";}
 
   virtual std::string LogParameters(){
     std::stringstream sstream;
-    sstream << GridLogMessage << "["<<action_name()<<"] has no parameters" << std::endl;
+    sstream << GridLogMessage << "["<<action_name()<<"] Block "<<_Block << std::endl;
     return sstream.str();
   }  
-      
-  virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) {
 
+  void Tests(void)
+  {
+    // Possible checks
+    // Pdbar^2 = Pdbar etc..
+    // ProjectOmega + ProjectOmegabar = 1;
+    // dBoundary Pdbar = dBoundary
+    // dOmega, dOmega vs Omega project and d.
+  }
+  void ProjectBoundary   (FermionField &f)  {    assert(0);  };
+  void ProjectBoundaryBar(FermionField &f)  {    assert(0);  };
+  void ProjectOmega      (FermionField &f)  {    assert(0);  };
+  void ProjectOmegaBar   (FermionField &f)  {    assert(0);  };
+
+  void dInverse     (FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
+  void dBoundaryBar (FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
+  void dBoundary    (FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
+  void dOmega       (FermionOperator<Impl>  &Op,FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
+  void dOmegaBar    (FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
+  void SolveOmega   (FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
+  void SolveOmegaBar(FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
+
+  // R = 1 - Pdbar DomegaInv Dd DomegabarInv Ddbar
+  void R(FermionOperator<Impl>  &Op,FermionOperator<Impl>  &OpDirichlet,FermionField &in,FermionField &out)
+  {
+    FermionField tmp1(Op.FermionGrid());
+    FermionField tmp2(Op.FermionGrid());
+    dBoundaryBar(Op,in,tmp1);
+    SolveOmegaBar(OpDirichlet,tmp1,tmp2); // 1/2 cost
+    dBoundary(Op,tmp2,tmp1);
+    SolveOmega(OpDirichlet,tmp1,tmp2); // 1/2 cost
+    ProjectBoundaryBar(tmp2);
+    out = in - tmp2 ;
+  };
+  
+  // R = Pdbar - Pdbar Dinv Ddbar 
+  void Rinverse(FermionField &in,FermionField &out)
+  {
+    FermionField tmp1(NumOp.FermionGrid());
+    out = in;
+    ProjectBoundaryBar(out);
+    dInverse(out,tmp1);
+    ProjectBoundaryBar(tmp1);
+    out = out -tmp1;
+  };
+  
+  virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG)
+  {
     // P(phi) = e^{- phi^dag V (MdagM)^-1 Vdag phi}
     //
     // NumOp == V
@@ -86,6 +147,8 @@ public:
 
     gaussian(pRNG,eta);
 
+    ProjectBoundary(eta);
+    
     NumOp.ImportGauge(U);
     DenOp.ImportGauge(U);
 
@@ -97,19 +160,7 @@ public:
     tmp = Zero();
     ActionSolver(MdagMOp,Phi,tmp);  // (VdagV)^-1 Mdag eta = V^-1 Vdag^-1 Mdag eta
     NumOp.M(tmp,Phi);               // Vdag^-1 Mdag eta
-#define FILTER
-#ifdef FILTER
-    Integer OrthogDir=0;
-    Integer plane=0;
-    if ( getenv("DIR") ) OrthogDir = atoi(getenv("DIR"));
-    if ( getenv("COOR") ) plane = atoi(getenv("COOR"));
-    std::cout << " *** PseudoFermion FILTER DIR " <<OrthogDir << " plane "<<plane<<std::endl;
-    Lattice<iScalar<vInteger> >  coor(NumOp.FermionGrid());
-    LatticeCoordinate(coor,OrthogDir);
-    tmp = Zero();
-    Phi = where(coor==plane,Phi,tmp);
-#endif
-    
+
     Phi=Phi*scale;
 	
   };
@@ -177,25 +228,6 @@ public:
     dSdU *= -1.0;
     //dSdU = - Ta(dSdU);
 
-#ifdef FILTER
-    std::cout <<" In force  "<<std::endl;
-    force = dSdU;
-    int mu=0;
-    std::cout << " FORCE mu " <<mu<<" L2 "<< norm2(force)<< " Linf " << maxLocalNorm2(force)<<std::endl;
-    int plane=0;
-    if ( getenv("COOR") ) plane = atoi(getenv("COOR"));
-    Lattice<iScalar<vInteger> >  coor(NumOp.GaugeGrid());
-
-    LatticeCoordinate(coor,mu);
-    int L = NumOp.GaugeGrid()->FullDimensions()[mu];
-    for (Integer p=0;p<L;p++) {
-      force = Zero();
-      force = where(coor==p,dSdU,force);
-      std::cout << " FORCE mu " <<mu<<" PF plane "<<plane<<" T= " <<p<<" L2 "<< norm2(force)<< " Linf " << maxLocalNorm2(force)<<std::endl;
-    }
-    exit(0);
-#endif
-    
   };
 };
 

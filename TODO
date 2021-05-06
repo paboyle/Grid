@@ -1,5 +1,11 @@
--- comms threads issue??
--- Part done: Staggered kernel performance on GPU
+--
+-- Comms threads issue??
+-- Part done: Staggered kernel performance on GPU ; eliminate replicas
+-- Antonin - Nd, Nc generic hide and make Gimpl
+-- DWF 5d RB case / Shamir
+-- 4D pseudofermion options
+-- DDHMC
+--
 
 =========================================================
 General
