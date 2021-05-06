@@ -182,7 +182,7 @@ namespace ConjugateBC {
     GridBase *grid = Link.Grid();
     int Lmu = grid->GlobalDimensions()[mu] - 1;
 
-    Lattice<iScalar<vInteger>> coor(grid);
+    Lattice<iScalar<vInteger> > coor(grid);
     LatticeCoordinate(coor, mu);
 
     Lattice<gauge> tmp(grid);
