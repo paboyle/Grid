@@ -141,12 +141,12 @@ protected:
       Real impulse_abs = force_abs * ep * HMC_MOMENTUM_DENOMINATOR;    
 
       Real force_max   = std::sqrt(maxLocalNorm2(force));
-      Real impulse_max = max_force_abs * ep * HMC_MOMENTUM_DENOMINATOR;    
+      Real impulse_max = force_max * ep * HMC_MOMENTUM_DENOMINATOR;    
 
       std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] Force average: " << force_abs <<" "<<name<<std::endl;
       std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] Force max    : " << force_max <<" "<<name<<std::endl;
-      std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] Fdt average  : " << force_abs*ep <<" "<<name<<std::endl;
-      std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] Fdt max      : " << force_max*ep <<" "<<name<<std::endl;
+      std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] Fdt average  : " << impulse_abs <<" "<<name<<std::endl;
+      std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] Fdt max      : " << impulse_max <<" "<<name<<std::endl;
 
       Mom -= force * ep* HMC_MOMENTUM_DENOMINATOR;; 
       double end_full = usecond();

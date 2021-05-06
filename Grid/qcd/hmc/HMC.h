@@ -205,14 +205,11 @@ private:
     ///////////////////////////////////////////////////////////
 
     std::cout.precision(15);
-<<<<<<< HEAD
-    std::cout << GridLogHMC << "Total H after trajectory  = " << H1
-	      << "  dH = " << H1 - H0 << "\n";
-=======
-    std::cout << GridLogMessage << "--------------------------------------------------\n";
-    std::cout << GridLogMessage << "Total H after trajectory  = " << H1 << "  dH = " << H1 - H0 << "\n";
-    std::cout << GridLogMessage << "--------------------------------------------------\n";
->>>>>>> bd181b94819600174e91b331e24f71598b3e7bb9
+
+    std::cout << GridLogHMC << "--------------------------------------------------\n";
+    std::cout << GridLogHMC << "Total H after trajectory  = " << H1 << "  dH = " << H1 - H0 << "\n";
+    std::cout << GridLogHMC << "--------------------------------------------------\n";
+
     std::cout.precision(current_precision);
     
     return (H1 - H0);
@@ -240,13 +237,9 @@ public:
     unsigned int FinalTrajectory = Params.Trajectories + Params.NoMetropolisUntil + Params.StartTrajectory;
 
     for (int traj = Params.StartTrajectory; traj < FinalTrajectory; ++traj) {
-<<<<<<< HEAD
+
       std::cout << GridLogHMC << "-- # Trajectory = " << traj << "\n";
-=======
 
-      std::cout << GridLogMessage << "-- # Trajectory = " << traj << "\n";
-
->>>>>>> bd181b94819600174e91b331e24f71598b3e7bb9
       if (traj < Params.StartTrajectory + Params.NoMetropolisUntil) {
       	std::cout << GridLogHMC << "-- Thermalization" << std::endl;
       }

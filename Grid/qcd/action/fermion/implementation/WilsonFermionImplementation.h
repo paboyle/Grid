@@ -572,10 +572,10 @@ void WilsonFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, LebesgueO
 };
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDirichletComms(StencilImpl &st, LebesgueOrder &lo,
-					     DoubledGaugeField &U,
-					     const FermionField &in,
-					     FermionField &out, int dag)
+void WilsonFermion<Impl>::DhopInternalDirichletComms(StencilImpl &st, LebesgueOrder &lo,
+						     DoubledGaugeField &U,
+						     const FermionField &in,
+						     FermionField &out, int dag)
 {
   assert((dag == DaggerNo) || (dag == DaggerYes));
 

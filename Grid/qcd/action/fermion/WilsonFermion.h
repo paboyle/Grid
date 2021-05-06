@@ -146,11 +146,11 @@ public:
   void DhopInternalSerial(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
                     const FermionField &in, FermionField &out, int dag);
 
-  void DhopInternalDirichlet(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-			     const FermionField &in, FermionField &out, int dag);
+  void DhopInternalDirichletComms(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+				  const FermionField &in, FermionField &out, int dag);
   
   void DhopInternalOverlappedComms(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-                    const FermionField &in, FermionField &out, int dag);
+				   const FermionField &in, FermionField &out, int dag);
 
   // Constructor
   WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
