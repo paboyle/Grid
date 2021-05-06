@@ -188,15 +188,15 @@ int main(int argc, char **argv) {
   IntegratorParameters MD;
   //  typedef GenericHMCRunner<LeapFrog> HMCWrapper; 
   //  MD.name    = std::string("Leap Frog");
-  typedef GenericHMCRunner<ForceGradient> HMCWrapper; 
-  MD.name    = std::string("Force Gradient");
-  //  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper; 
-  //  MD.name    = std::string("MinimumNorm2");
-  MD.MDsteps = 6;
+  //  typedef GenericHMCRunner<ForceGradient> HMCWrapper; 
+  //  MD.name    = std::string("Force Gradient");
+  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper; 
+  MD.name    = std::string("MinimumNorm2");
+  MD.MDsteps = 12;
   MD.trajL   = 1.0;
   
   HMCparameters HMCparams;
-  HMCparams.StartTrajectory  = 590;
+  HMCparams.StartTrajectory  = 211;
   HMCparams.Trajectories     = 1000;
   HMCparams.NoMetropolisUntil=  0;
   //  "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
@@ -209,9 +209,9 @@ int main(int argc, char **argv) {
   TheHMC.Resources.AddFourDimGrid("gauge"); // use default simd lanes decomposition
   
   CheckpointerParameters CPparams;
-  CPparams.config_prefix = "ckpoint_EODWF_lat";
-  CPparams.rng_prefix    = "ckpoint_EODWF_rng";
-  CPparams.saveInterval  = 10;
+  CPparams.config_prefix = "ckpoint_EOFA_lat";
+  CPparams.rng_prefix    = "ckpoint_EOFA_rng";
+  CPparams.saveInterval  = 1;
   CPparams.format        = "IEEE64BIG";
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
 
@@ -263,7 +263,7 @@ int main(int argc, char **argv) {
   FermionActionF::ImplParams ParamsF(boundary);
   
   double ActionStoppingCondition     = 1e-10;
-  double DerivativeStoppingCondition = 1e-6;
+  double DerivativeStoppingCondition = 1e-8;
   double MaxCGIterations = 30000;
 
   ////////////////////////////////////
