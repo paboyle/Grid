@@ -223,9 +223,14 @@ class SchurOperatorBase :  public LinearOperatorBase<Field> {
     Mpc(in,tmp);
     MpcDag(tmp,out);
   }
+  virtual  void MpcMpcDag(const Field &in, Field &out) {
+    Field tmp(in.Grid());
+    tmp.Checkerboard() = in.Checkerboard();
+    MpcDag(in,tmp);
+    Mpc(tmp,out);
+  }
   virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
-    out.Checkerboard() = in.Checkerboard();
-    MpcDagMpc(in,out);
+    HermOp(in,out);
     ComplexD dot= innerProduct(in,out); 
     n1=real(dot);
     n2=norm2(out);
@@ -275,6 +280,16 @@ template<class Matrix,class Field>
       _Mat.MooeeDag(in,out);
       axpy(out,-1.0,tmp,out);
     }
+};
+// Mpc MpcDag system presented as the HermOp
+template<class Matrix,class Field>
+class SchurDiagMooeeDagOperator :  public SchurDiagMooeeOperator<Matrix,Field> {
+ public:
+  virtual void HermOp(const Field &in, Field &out){
+    out.Checkerboard() = in.Checkerboard();
+    this->MpcMpcDag(in,out);
+  }
+  SchurDiagMooeeDagOperator (Matrix &Mat): SchurDiagMooeeOperator<Matrix,Field>(Mat){};
 };
 template<class Matrix,class Field>
   class SchurDiagOneOperator :  public SchurOperatorBase<Field> {
