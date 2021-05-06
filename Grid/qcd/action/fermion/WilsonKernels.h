@@ -39,7 +39,7 @@ NAMESPACE_BEGIN(Grid);
 class WilsonKernelsStatic { 
 public:
   enum { OptGeneric, OptHandUnroll, OptInlineAsm };
-  enum { CommsAndCompute, CommsThenCompute };
+  enum { CommsAndCompute, CommsThenCompute, CommsDirichlet };
   static int Opt;  
   static int Comms;
 };

@@ -361,10 +361,21 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
                                          const FermionField &in, FermionField &out,int dag)
 {
   DhopTotalTime-=usecond();
-  if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute )
+
+  assert(  (WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute)
+	 ||(WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsThenCompute)
+         ||(WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsDirichlet) );
+
+  if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute ) {
     DhopInternalOverlappedComms(st,lo,U,in,out,dag);
-  else 
+  }
+  if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsThenCompute ) {
     DhopInternalSerialComms(st,lo,U,in,out,dag);
+  }
+  if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsDirichlet ) {
+    DhopInternalDirichletComms(st,lo,U,in,out,dag);
+  }
+  
   DhopTotalTime+=usecond();
 }
 
@@ -429,6 +440,30 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
     Kernels::DhopKernel   (Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,0,1);
   }
   DhopComputeTime2+=usecond();
+}
+
+template<class Impl>
+void WilsonFermion5D<Impl>::DhopInternalDirichletComms(StencilImpl & st, LebesgueOrder &lo,
+						       DoubledGaugeField & U,
+						       const FermionField &in, FermionField &out,int dag)
+{
+  Compressor compressor(dag);
+
+  int LLs = in.Grid()->_rdimensions[0];
+  int len =  U.Grid()->oSites();
+      
+  /////////////////////////////
+  // do the compute interior
+  /////////////////////////////
+  int Opt = WilsonKernelsStatic::Opt; // Why pass this. Kernels should know
+  DhopComputeTime-=usecond();
+  if (dag == DaggerYes) {
+    Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,1,0);
+  } else {
+    Kernels::DhopKernel   (Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,1,0);
+  }
+  DhopComputeTime+=usecond();
+
 }
 
 

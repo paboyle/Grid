@@ -488,12 +488,21 @@ void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
                                        FermionField &out, int dag)
 {
   DhopTotalTime-=usecond();
-#ifdef GRID_OMP
-  if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute )
+
+  assert(  (WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute)
+	 ||(WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsThenCompute)
+         ||(WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsDirichlet) );
+
+
+  if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute ) {
     DhopInternalOverlappedComms(st,lo,U,in,out,dag);
-  else
-#endif
+  }
+  if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsThenCompute ) {
     DhopInternalSerial(st,lo,U,in,out,dag);
+  }
+  if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsDirichlet ) {
+    DhopInternalDirichletComms(st,lo,U,in,out,dag);
+  }
   DhopTotalTime+=usecond();
 }
 
@@ -562,6 +571,29 @@ void WilsonFermion<Impl>::DhopInternalOverlappedComms(StencilImpl &st, LebesgueO
   DhopComputeTime2+=usecond();
 };
 
+template <class Impl>
+void WilsonFermion<Impl>::DhopDirichletComms(StencilImpl &st, LebesgueOrder &lo,
+					     DoubledGaugeField &U,
+					     const FermionField &in,
+					     FermionField &out, int dag)
+{
+  assert((dag == DaggerNo) || (dag == DaggerYes));
+
+  Compressor compressor(dag);
+  int len =  U.Grid()->oSites();
+
+  /////////////////////////////
+  // do the compute interior
+  /////////////////////////////
+  int Opt = WilsonKernelsStatic::Opt;
+  DhopComputeTime-=usecond();
+  if (dag == DaggerYes) {
+    Kernels::DhopDagKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out,1,0);
+  } else {
+    Kernels::DhopKernel(Opt,st,U,st.CommBuf(),1,U.oSites(),in,out,1,0);
+  }
+  DhopComputeTime+=usecond();
+};
 
 template <class Impl>
 void WilsonFermion<Impl>::DhopInternalSerial(StencilImpl &st, LebesgueOrder &lo,

@@ -165,7 +165,14 @@ public:
 			       const FermionField &in, 
 			       FermionField &out,
 			       int dag);
-    
+
+  void DhopInternalDirichletComms(StencilImpl & st,
+				  LebesgueOrder &lo,
+				  DoubledGaugeField &U,
+				  const FermionField &in, 
+				  FermionField &out,
+				  int dag);
+  
   // Constructors
   WilsonFermion5D(GaugeField &_Umu,
 		  GridCartesian         &FiveDimGrid,
