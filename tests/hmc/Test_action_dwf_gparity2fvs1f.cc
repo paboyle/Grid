@@ -59,7 +59,7 @@ void copy2fTo1fFermionField(FermionField1f &out, const FermionField2f &in, int g
   LatticeInteger xcoor_1f(out.Grid()); //5d lattice integer
   LatticeCoordinate(xcoor_1f,gpdir);
 
-  int L = dim_2f[gpdir];
+  Integer L = dim_2f[gpdir];
 
   out = where(xcoor_1f < L, f0_fullgrid_dbl, f1_fullgrid_dbl);
 }
@@ -76,7 +76,7 @@ void copy2fTo1fGaugeField(LatticeGaugeField &out, const LatticeGaugeField &in, i
   LatticeInteger xcoor_1f(out.Grid());
   LatticeCoordinate(xcoor_1f,gpdir);
 
-  int L = dim_2f[gpdir];
+  Integer L = dim_2f[gpdir];
   
   out = where(xcoor_1f < L, U_dbl, Uconj_dbl);
 }
