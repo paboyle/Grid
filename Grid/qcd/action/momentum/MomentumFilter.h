@@ -28,8 +28,7 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 //--------------------------------------------------------------------
-#ifndef MOMENTUM_FILTER
-#define MOMENTUM_FILTER
+#pragma once 
 
 NAMESPACE_BEGIN(Grid);
 
@@ -90,5 +89,3 @@ struct MomentumFilterApplyPhase: public MomentumFilterBase<MomentaField>{
 
 
 NAMESPACE_END(Grid);
-
-#endif
