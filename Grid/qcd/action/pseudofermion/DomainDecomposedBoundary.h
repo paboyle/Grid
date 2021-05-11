@@ -47,7 +47,6 @@ public:
   typedef Lattice<LorentzScalarType> LatticeLorentzScalarType;
   typedef Lattice<ScalarType> LatticeScalarType;
 
-  Coordinate Block;
   DDHMCFilter Filter;
   const int Omega=0;
   const int OmegaBar=1;
@@ -160,36 +159,6 @@ public:
     Op.M(tmp,out);
     ProjectOmegaBar(out);
   };
-
-  void SolveOmega   (FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
-  void SolveOmegaBar(FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
-  void SolveOmegaAndOmegaBar(FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
-  void dInverse     (FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
-
-  // R = Pdbar - Pdbar DomegaInv Dd DomegabarInv Ddbar
-  void R(FermionOperator<Impl>  &Op,FermionOperator<Impl>  &OpDirichlet,FermionField &in,FermionField &out)
-  {
-    FermionField tmp1(Op.FermionGrid());
-    FermionField tmp2(Op.FermionGrid());
-    dBoundaryBar(Op,in,tmp1);
-    SolveOmegaBar(OpDirichlet,tmp1,tmp2); // 1/2 cost
-    dBoundary(Op,tmp2,tmp1);
-    SolveOmega(OpDirichlet,tmp1,tmp2); // 1/2 cost
-    out = in - tmp2 ;
-    ProjectBoundaryBar(out);
-  };
-  
-  // R = Pdbar - Pdbar Dinv Ddbar 
-  void Rinverse(FermionField &in,FermionField &out)
-  {
-    FermionField tmp1(NumOp.FermionGrid());
-    out = in;
-    ProjectBoundaryBar(out);
-    dInverse(out,tmp1);
-    ProjectBoundaryBar(tmp1);
-    out = out -tmp1;
-  };
-  
 }
   
 template<class Impl>
