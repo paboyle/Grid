@@ -35,7 +35,7 @@ directory
 #if defined __GNUC__ && __GNUC__>=6
 #pragma GCC diagnostic ignored "-Wignored-attributes"
 #endif
-#if defined __GNUC__ 
+#if defined __GNUC__ && __GNUC__>=6
 #pragma GCC diagnostic ignored "-Wpsabi"
 #endif
 
