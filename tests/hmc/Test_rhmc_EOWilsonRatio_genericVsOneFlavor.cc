@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
 
   OneFlavourEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> OneF(NumOp,DenOp,OneFParams);
   TheHMC.Resources.GetParallelRNG().SeedUniqueString(seed_string);
-  OneF.refresh(U, TheHMC.Resources.GetParallelRNG());    
+  OneF.refresh(U, TheHMC.Resources.GetSerialRNG(),TheHMC.Resources.GetParallelRNG());    
   RealD OneFS = OneF.S(U);
   LatticeGaugeField OneFderiv(U);
   OneF.deriv(U,OneFderiv);    
@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
 
   GeneralEvenOddRatioRationalPseudoFermionAction<FermionImplPolicy> Gen(NumOp,DenOp,GenParams);
   TheHMC.Resources.GetParallelRNG().SeedUniqueString(seed_string);
-  Gen.refresh(U, TheHMC.Resources.GetParallelRNG());    
+  Gen.refresh(U, TheHMC.Resources.GetSerialRNG(),TheHMC.Resources.GetParallelRNG());    
   RealD GenS = Gen.S(U);
   LatticeGaugeField Genderiv(U);
   Gen.deriv(U,Genderiv);   
