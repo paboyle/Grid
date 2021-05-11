@@ -176,6 +176,9 @@ private:
     typedef IntegratorType<SmearingPolicy> TheIntegrator;
     TheIntegrator MDynamics(UGrid, Parameters.MD, TheAction, Smearing);
 
+    // Sets the momentum filter
+    MDynamics.setMomentumFilter(*(Resources.GetMomentumFilter()));
+
     Smearing.set_Field(U);
 
     HybridMonteCarlo<TheIntegrator> HMC(Parameters, MDynamics,
