@@ -97,6 +97,8 @@ NAMESPACE_BEGIN(Grid);
         PowerNegHalf.Init(remez, param.tolerance, true);
       };
 
+      const FermionField &getPhi() const{ return Phi; }
+
       virtual std::string action_name() { return "ExactOneFlavourRatioPseudoFermionAction"; }
 
       virtual std::string LogParameters() {
@@ -117,6 +119,19 @@ NAMESPACE_BEGIN(Grid);
         else{ for(int s=0; s<Ls; ++s){ axpby_ssp_pminus(out, 0.0, in, 1.0, in, s, s); } }
       }
 
+      virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) {
+        // P(eta_o) = e^{- eta_o^dag eta_o}
+        //
+        // e^{x^2/2 sig^2} => sig^2 = 0.5.
+        // 
+        RealD scale = std::sqrt(0.5);
+
+        FermionField eta    (Lop.FermionGrid());
+        gaussian(pRNG,eta); eta = eta * scale;
+
+	refresh(U,eta);
+      }
+
       // EOFA heatbath: see Eqn. (29) of arXiv:1706.05843
       // We generate a Gaussian noise vector \eta, and then compute
       //  \Phi = M_{\rm EOFA}^{-1/2} * \eta
@@ -124,12 +139,10 @@ NAMESPACE_BEGIN(Grid);
       //
       // As a check of rational require \Phi^dag M_{EOFA} \Phi == eta^dag M^-1/2^dag M M^-1/2 eta = eta^dag eta
       //
-      virtual void refresh(const GaugeField& U, GridSerialRNG &sRNG, GridParallelRNG& pRNG)
-      {
+     void refresh(const GaugeField &U, const FermionField &eta) {
         Lop.ImportGauge(U);
         Rop.ImportGauge(U);
 
-        FermionField eta         (Lop.FermionGrid());
         FermionField CG_src      (Lop.FermionGrid());
         FermionField CG_soln     (Lop.FermionGrid());
         FermionField Forecast_src(Lop.FermionGrid());
@@ -139,11 +152,6 @@ NAMESPACE_BEGIN(Grid);
         std::vector<FermionField> prev_solns;
         if(use_heatbath_forecasting){ prev_solns.reserve(param.degree); }
         ChronoForecast<AbstractEOFAFermion<Impl>, FermionField> Forecast;
-
-        // Seed with Gaussian noise vector (var = 0.5)
-        RealD scale = std::sqrt(0.5);
-        gaussian(pRNG,eta);
-        eta = eta * scale;
 
         // \Phi = ( \alpha_{0} + \sum_{k=1}^{N_{p}} \alpha_{l} * \gamma_{l} ) * \eta
         RealD N(PowerNegHalf.norm);

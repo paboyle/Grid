@@ -83,6 +83,9 @@ NAMESPACE_BEGIN(Grid);
 	return sstream.str();
       } 
 
+      //Access the fermion field
+      const FermionField &getPhiOdd() const{ return PhiOdd; }
+
       virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) {
         // P(eta_o) = e^{- eta_o^dag eta_o}
         //
