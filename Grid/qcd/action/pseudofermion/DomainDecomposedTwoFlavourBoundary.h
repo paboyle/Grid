@@ -2,13 +2,11 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./lib/qcd/action/pseudofermion/TwoFlavourRatio.h
+    Source file: ./lib/qcd/action/pseudofermion/DomainDecomposedTwoFlavourBoundary.h
 
-    Copyright (C) 2015
+    Copyright (C) 2021
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
-Author: paboyle <paboyle@ph.ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,8 +25,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef QCD_PSEUDOFERMION_TWO_FLAVOUR_RATIO_H
-#define QCD_PSEUDOFERMION_TWO_FLAVOUR_RATIO_H
+#pragma once
 
 NAMESPACE_BEGIN(Grid);
 
@@ -41,98 +38,39 @@ public:
   INHERIT_IMPL_TYPES(Impl);
 
 private:
-  FermionOperator<Impl> & NumOp;// the basic operator
-  FermionOperator<Impl> & DenOp;// the basic operator
-  FermionOperator<Impl> & NumOpDirichlet;// the basic operator
-  FermionOperator<Impl> & DenOpDirichlet;// the basic operator
+  SchurFactoredFermionOperator<Impl> & NumOp;// the basic operator
+  SchurFactoredFermionOperator<Impl> & DenOp;// the basic operator
 
   OperatorFunction<FermionField> &DerivativeSolver;
   OperatorFunction<FermionField> &ActionSolver;
 
   FermionField Phi; // the pseudo fermion field for this trajectory
-  
-  Coordinate Block;
-  typedef Lattice<iLorentzVector<Simd> > LinkMask;
-
-  LinkMask ActiveLinks;
-  LinkMask PassiveLinks;
-
-  //  FermionField BoundaryMask;
-  //  FermionField BoundaryMask;
 
 public:
-  DomainBoundaryPseudoFermionAction(FermionOperator<Impl>  &_NumOp, 
-				    FermionOperator<Impl>  &_DenOp,
-				    FermionOperator<Impl>  &_NumOpDirichlet, 
-				    FermionOperator<Impl>  &_DenOpDirichlet, 
+  DomainBoundaryPseudoFermionAction(SchurFactoredFermionOperator<Impl>  &_NumOp, 
+				    SchurFactoredFermionOperator<Impl>  &_DenOp,
 				    OperatorFunction<FermionField> & DS,
-				    OperatorFunction<FermionField> & AS,
-				    Coordinate &_Block
+				    OperatorFunction<FermionField> & AS
 				    ) : NumOp(_NumOp), DenOp(_DenOp),
 					DerivativeSolver(DS), ActionSolver(AS),
-					Phi(_NumOp.FermionGrid()), Block(_Block) {};
+					Phi(_NumOp.FermionGrid()) {};
       
   virtual std::string action_name(){return "DomainBoundaryPseudoFermionRatioAction";}
 
+ 
   virtual std::string LogParameters(){
     std::stringstream sstream;
-    sstream << GridLogMessage << "["<<action_name()<<"] Block "<<_Block << std::endl;
     return sstream.str();
   }  
-
-  void Tests(void)
-  {
-    // Possible checks
-    // Pdbar^2 = Pdbar etc..
-    // ProjectOmega + ProjectOmegabar = 1;
-    // dBoundary Pdbar = dBoundary
-    // dOmega, dOmega vs Omega project and d.
-  }
-  void ProjectBoundary   (FermionField &f)  {    assert(0);  };
-  void ProjectBoundaryBar(FermionField &f)  {    assert(0);  };
-  void ProjectOmega      (FermionField &f)  {    assert(0);  };
-  void ProjectOmegaBar   (FermionField &f)  {    assert(0);  };
-
-  void dInverse     (FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
-  void dBoundaryBar (FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
-  void dBoundary    (FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
-  void dOmega       (FermionOperator<Impl>  &Op,FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
-  void dOmegaBar    (FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
-  void SolveOmega   (FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
-  void SolveOmegaBar(FermionOperator<Impl>  &Op,FermionField &in,FermionField &out){    assert(0);  };
-
-  // R = 1 - Pdbar DomegaInv Dd DomegabarInv Ddbar
-  void R(FermionOperator<Impl>  &Op,FermionOperator<Impl>  &OpDirichlet,FermionField &in,FermionField &out)
-  {
-    FermionField tmp1(Op.FermionGrid());
-    FermionField tmp2(Op.FermionGrid());
-    dBoundaryBar(Op,in,tmp1);
-    SolveOmegaBar(OpDirichlet,tmp1,tmp2); // 1/2 cost
-    dBoundary(Op,tmp2,tmp1);
-    SolveOmega(OpDirichlet,tmp1,tmp2); // 1/2 cost
-    ProjectBoundaryBar(tmp2);
-    out = in - tmp2 ;
-  };
-  
-  // R = Pdbar - Pdbar Dinv Ddbar 
-  void Rinverse(FermionField &in,FermionField &out)
-  {
-    FermionField tmp1(NumOp.FermionGrid());
-    out = in;
-    ProjectBoundaryBar(out);
-    dInverse(out,tmp1);
-    ProjectBoundaryBar(tmp1);
-    out = out -tmp1;
-  };
   
   virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG)
   {
-    // P(phi) = e^{- phi^dag V (MdagM)^-1 Vdag phi}
+    // P(phi) = e^{- phi^dag P^dag Rdag^-1 R^-1 P phi}
     //
-    // NumOp == V
-    // DenOp == M
+    // NumOp == P
+    // DenOp == R
     //
-    // Take phi = Vdag^{-1} Mdag eta  ; eta = Mdag^{-1} Vdag Phi
+    // Take phi = P^{-1} R eta  ; eta = R^-1 P Phi
     //
     // P(eta) = e^{- eta^dag eta}
     //
@@ -142,27 +80,22 @@ public:
     //
     RealD scale = std::sqrt(0.5);
 
-    FermionField eta(NumOp.FermionGrid());
-    FermionField tmp(NumOp.FermionGrid());
-
-    gaussian(pRNG,eta);
-
-    ProjectBoundary(eta);
-    
     NumOp.ImportGauge(U);
     DenOp.ImportGauge(U);
 
-    // Note: this hard codes normal equations type solvers; alternate implementation needed for 
-    // non-herm style solvers.
-    MdagMLinearOperator<FermionOperator<Impl> ,FermionField> MdagMOp(NumOp);
+    FermionField eta(NumOp.FermOp.FermionGrid());
+    FermionField tmp(NumOp.FermOp.FermionGrid());
 
-    DenOp.Mdag(eta,Phi);            // Mdag eta
-    tmp = Zero();
-    ActionSolver(MdagMOp,Phi,tmp);  // (VdagV)^-1 Mdag eta = V^-1 Vdag^-1 Mdag eta
-    NumOp.M(tmp,Phi);               // Vdag^-1 Mdag eta
+    gaussian(pRNG,eta);
+
+    NumOp.ProjectBoundaryBar(eta);
+
+    NumOp.R(eta,tmp);
+    DenOp.RInv(tmp,Phi);
 
     Phi=Phi*scale;
 	
+    NumOp.ProjectBoundaryBar(Phi);
   };
 
   //////////////////////////////////////////////////////
@@ -173,17 +106,13 @@ public:
     NumOp.ImportGauge(U);
     DenOp.ImportGauge(U);
 
-    FermionField X(NumOp.FermionGrid());
-    FermionField Y(NumOp.FermionGrid());
-	
-    MdagMLinearOperator<FermionOperator<Impl> ,FermionField> MdagMOp(DenOp);
+    FermionField X(NumOp.FermOp.FermionGrid());
+    FermionField Y(NumOp.FermOp.FermionGrid());
 
-    NumOp.Mdag(Phi,Y);              // Y= Vdag phi
-    X=Zero();
-    ActionSolver(MdagMOp,Y,X);      // X= (MdagM)^-1 Vdag phi
-    DenOp.M(X,Y);                  // Y=  Mdag^-1 Vdag phi
+    NumOp.R(Phi,Y);
+    DenOp.RInv(Y,X);
 
-    RealD action = norm2(Y);
+    RealD action = norm2(X);
 
     return action;
   };
@@ -198,32 +127,68 @@ public:
     NumOp.ImportGauge(U);
     DenOp.ImportGauge(U);
 
-    MdagMLinearOperator<FermionOperator<Impl> ,FermionField> MdagMOp(DenOp);
+    GridBase *fgrid = NumOp.FermOp.FermionGrid();
+    GridBase *ugrid = NumOp.FermOp.GaugeGrid();
 
-    FermionField  X(NumOp.FermionGrid());
-    FermionField  Y(NumOp.FermionGrid());
+    FermionField  X(fgrid);
+    FermionField  Y(fgrid);
+    FermionField  tmp(fgrid);
 
-    GaugeField   force(NumOp.GaugeGrid());	
+    GaugeField   force(ugrid);	
+
+    FermionField DobiDdbPhi(fgrid);      // Vector A in my notes
+    FermionField DoiDdDobiDdbPhi(fgrid); // Vector B in my notes
+    FermionField DiDdbP_Phi(fgrid);      // Vector C in my notes
+    FermionField DidRinvP_Phi(fgrid);    // Vector D in my notes
+    FermionField DoidRinvDagRinvP_Phi(fgrid);    // Vector E in my notes
+    FermionField DobidDddDoidRinvDagRinvP_Phi(fgrid);    // Vector F in my notes
+    
+    FermionField P_Phi(fgrid);
+    FermionField RinvP_Phi(fgrid);
+    FermionField RinvDagRinvP_Phi(fgrid);
+
+    // P term
+    NumOp.dBoundaryBar(Phi,tmp);
+    NumOp.dOmegaBarInv(tmp,DobiDdbPhi);        // Vector A
+    NumOp.dBoundary(DobiDdbPhi,tmp);
+    NumOp.dOmegaInv(tmp,DoiDdDobiDdbPhi);      // Vector B
+    P_Phi  = Phi - DoiDdDobiDdbPhi;
+    NumOp.ProjectBoundaryBar(P_Phi);
+
+    // R^-1 P term
+    DenOp.dBoundaryBar(P_Phi,tmp);
+    DenOp.Dinverse(tmp,DiDdbP_Phi);            // Vector C
+    RinvP_Phi = P_Phi - DiDdbP_Phi;
+    DenOp.ProjectBoundaryBar(RinvP_Phi);
+
+    // R^-dagger R^-1 P term
+    DenOp.DinverseDag(RinvP_Phi,DidRinvP_Phi); // Vector D
+    RinvDagRinvP_Phi = RinvP_Phi - DidRinvP_Phi;
+    DenOp.ProjectBoundaryBar(RinvDagRinvP_Phi);
+
+    // P^dag R^-dagger R^-1 P term
+    NumOp.dOmegaDagInv(RinvDagRinvP_Phi,DoidRinvDagRinvP_Phi); // Vector E
+    NumOp.dBoundaryDag(DoidRinvDagRinvP_Phi,tmp);
+    NumOp.dOmegaBarDagInv(tmp,DobidDddDoidRinvDagRinvP_Phi);   // Vector F
 
 
-    //Y=Vdag phi
-    //X = (Mdag M)^-1 V^dag phi
-    //Y = (Mdag)^-1 V^dag  phi
-    NumOp.Mdag(Phi,Y);              // Y= Vdag phi
-    X=Zero();
-    DerivativeSolver(MdagMOp,Y,X);      // X= (MdagM)^-1 Vdag phi
-    DenOp.M(X,Y);                  // Y=  Mdag^-1 Vdag phi
+    dSdU=Zero();
 
     // phi^dag V (Mdag M)^-1 dV^dag  phi
-    NumOp.MDeriv(force , X, Phi, DaggerYes );  dSdU=force;
-  
-    // phi^dag dV (Mdag M)^-1 V^dag  phi
-    NumOp.MDeriv(force , Phi, X ,DaggerNo  );  dSdU=dSdU+force;
+    X = DobiDdbPhi;
+    Y = DobidDddDoidRinvDagRinvP_Phi;
+    NumOp.DirichletFermOp.MDeriv(force,X,Y,DaggerYes); dSdU=dsdU+force;
+    NumOp.DirichletFermOp.MDeriv(force,Y,X,DaggerNo);  dSdU=dSdU+force;
 
-    //    -    phi^dag V (Mdag M)^-1 Mdag dM   (Mdag M)^-1 V^dag  phi
-    //    -    phi^dag V (Mdag M)^-1 dMdag M   (Mdag M)^-1 V^dag  phi
-    DenOp.MDeriv(force,Y,X,DaggerNo);   dSdU=dSdU-force;
-    DenOp.MDeriv(force,X,Y,DaggerYes);  dSdU=dSdU-force;
+    X = DoiDdDobiDdbPhi;
+    Y = DoidRinvDagRinvP_Phi;
+    NumOp.DirichletFermOp.MDeriv(force,X,Y,DaggerYes); dSdU=dsdU+force;
+    NumOp.DirichletFermOp.MDeriv(force,Y,X,DaggerNo);  dSdU=dSdU+force;
+
+    X = DiDdbP_Phi;
+    Y = DidRinvP_Phi;
+    NumOp.DirichletFermOp.MDeriv(force,X,Y,DaggerYes); dSdU=dsdU+force;
+    NumOp.DirichletFermOp.MDeriv(force,Y,X,DaggerNo);  dSdU=dSdU+force;
 
     dSdU *= -1.0;
     //dSdU = - Ta(dSdU);
