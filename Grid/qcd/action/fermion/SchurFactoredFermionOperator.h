@@ -66,12 +66,14 @@ template<class Impl>
 class SchurFactoredFermionOperator : public Impl
 {
   INHERIT_IMPL_TYPES(Impl);
+
+public:
   
   FermionOperator<Impl> & DirichletFermOp;
   FermionOperator<Impl> & FermOp; 
   OperatorFunction<FermionField> &Solver;
   Coordinate Block;
-public:
+
   SchurFactoredFermionOperator(FermionOperator<Impl> & _FermOp,
 			       FermionOperator<Impl> & _DirichletFermOp,
 			       OperatorFunction<FermionField> &_Solver,
@@ -84,6 +86,8 @@ public:
     // FIXME -- could check that the DirichletFermOp block matches this.
     // Pass in Dirichlet FermOp because we really need two dirac operators
     // as double stored gauge fields differ.
+
+    assert(_FermOp.FermionGrid() = _DirichletFermOp.FermionGrid()); // May not be true in future if change communicator scheme
   };
 
   enum Domain { Omega=0, OmegaBar=1 };
