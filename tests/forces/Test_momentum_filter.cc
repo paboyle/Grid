@@ -61,7 +61,6 @@ int main (int argc, char ** argv)
   std::vector<int> seeds({1,2,3,4});
   std::vector<int> serial_seeds({5,6,7,8});
 
-  GridSerialRNG            sRNG; 
   GridParallelRNG          pRNG(&Grid);
   GridSerialRNG            sRNG;
   pRNG.SeedFixedIntegers(seeds);
