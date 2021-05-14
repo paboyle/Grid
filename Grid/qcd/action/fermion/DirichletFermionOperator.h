@@ -47,7 +47,7 @@ public:
   FermionOperator<Impl> & FermOp;
   
   // Constructor / bespoke
-  DirichletFermionOperator(FermionOperator<Impl> & _FermOp, Coordinate _Block) : FermOp(_FermOp), Block(_Block), Filter(_Block)
+  DirichletFermionOperator(FermionOperator<Impl> & _FermOp, Coordinate &_Block) : FermOp(_FermOp), Block(_Block), Filter(_Block)
   {
     // Save what the comms mode should be under normal BCs
     CommsMode = WilsonKernelsStatic::Comms;
@@ -59,11 +59,15 @@ public:
 
     int blocks_per_rank = 1;
     Coordinate LocalDims = grid->LocalDimensions();
+    Coordinate GlobalDims= grid->GlobalDimensions();
     assert(Block.size()==LocalDims.size());
+
     for(int d=0;d<LocalDims.size();d++){
-      int r = LocalDims[d] / Block[d];
-      assert(r != 0);
-      blocks_per_rank *= r;
+      if (Block[d]<=GlobalDims[d]){
+	int r = LocalDims[d] % Block[d];
+	assert(r == 0);
+	blocks_per_rank *= (LocalDims[d] / Block[d]);
+      }
     }
     // Even blocks per node required
     assert( (blocks_per_rank % 2) == 0);
