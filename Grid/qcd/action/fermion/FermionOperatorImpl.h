@@ -183,7 +183,8 @@ NAMESPACE_CHECK(ImplStaggered);
 /////////////////////////////////////////////////////////////////////////////
 // Single flavour one component spinors with colour index. 5d vec
 /////////////////////////////////////////////////////////////////////////////
-#include <Grid/qcd/action/fermion/StaggeredVec5dImpl.h> 
-NAMESPACE_CHECK(ImplStaggered5dVec);  
+// Deprecate Vec5d
+//#include <Grid/qcd/action/fermion/StaggeredVec5dImpl.h> 
+//NAMESPACE_CHECK(ImplStaggered5dVec);  
 
 
