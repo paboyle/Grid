@@ -29,6 +29,19 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
+template<class vobj> void DumpSliceNorm(std::string s,Lattice<vobj> &f,int mu=-1)
+{
+  auto ff = localNorm2(f);
+  if ( mu==-1 ) mu = f.Grid()->Nd()-1;
+  typedef typename vobj::tensor_reduced normtype;
+  typedef typename normtype::scalar_object scalar;
+  std::vector<scalar> sff;
+  sliceSum(ff,sff,mu);
+  for(int t=0;t<sff.size();t++){
+    std::cout << s<<" "<<t<<" "<<sff[t]<<std::endl;
+  }
+}
+
 template<class vobj> uint32_t crc(Lattice<vobj> & buf)
 {
   autoView( buf_v , buf, CpuRead);
