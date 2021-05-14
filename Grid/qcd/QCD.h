@@ -104,6 +104,7 @@ template<typename vtype> using iSpinMatrix                = iScalar<iMatrix<iSca
 template<typename vtype> using iColourMatrix              = iScalar<iScalar<iMatrix<vtype, Nc> > > ;
 template<typename vtype> using iSpinColourMatrix          = iScalar<iMatrix<iMatrix<vtype, Nc>, Ns> >;
 template<typename vtype> using iLorentzColourMatrix       = iVector<iScalar<iMatrix<vtype, Nc> >, Nd > ;
+template<typename vtype> using iLorentzVector             = iVector<iScalar<iScalar<vtype> >, Nd > ;
 template<typename vtype> using iDoubleStoredColourMatrix  = iVector<iScalar<iMatrix<vtype, Nc> >, Nds > ;
 template<typename vtype> using iSpinVector                = iScalar<iVector<iScalar<vtype>, Ns> >;
 template<typename vtype> using iColourVector              = iScalar<iScalar<iVector<vtype, Nc> > >;
@@ -163,7 +164,16 @@ typedef iSpinColourSpinColourMatrix<vComplex >    vSpinColourSpinColourMatrix;
 typedef iSpinColourSpinColourMatrix<vComplexF>    vSpinColourSpinColourMatrixF;
 typedef iSpinColourSpinColourMatrix<vComplexD>    vSpinColourSpinColourMatrixD;
 
-// LorentzColour
+// LorentzVector
+typedef iLorentzVector<Complex  > LorentzVector;
+typedef iLorentzVector<ComplexF > LorentzVectorF;
+typedef iLorentzVector<ComplexD > LorentzVectorD;
+
+typedef iLorentzVector<vComplex > vLorentzVector;
+typedef iLorentzVector<vComplexF> vLorentzVectorF;
+typedef iLorentzVector<vComplexD> vLorentzVectorD;
+
+// LorentzColourMatrix
 typedef iLorentzColourMatrix<Complex  > LorentzColourMatrix;
 typedef iLorentzColourMatrix<ComplexF > LorentzColourMatrixF;
 typedef iLorentzColourMatrix<ComplexD > LorentzColourMatrixD;
@@ -287,6 +297,10 @@ typedef Lattice<vSpinColourSpinColourMatrixD>     LatticeSpinColourSpinColourMat
 typedef Lattice<vLorentzColourMatrix>  LatticeLorentzColourMatrix;
 typedef Lattice<vLorentzColourMatrixF> LatticeLorentzColourMatrixF;
 typedef Lattice<vLorentzColourMatrixD> LatticeLorentzColourMatrixD;
+
+typedef Lattice<vLorentzVector>  LatticeLorentzVector;
+typedef Lattice<vLorentzVectorF> LatticeLorentzVectorF;
+typedef Lattice<vLorentzVectorD> LatticeLorentzVectorD;
 
 // DoubleStored gauge field
 typedef Lattice<vDoubleStoredColourMatrix>  LatticeDoubleStoredColourMatrix;
