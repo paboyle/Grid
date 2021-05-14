@@ -128,6 +128,7 @@ NAMESPACE_BEGIN(Grid);
 
         //PhiOdd =PhiOdd*scale;
         //PhiEven=PhiEven*scale;
+	std::cout << GridLogMessage<<" TwoFlavourEvenOddRatio Expect action to be "<<norm2(etaOdd) + norm2(etaEven)<<std::endl;
         
       };
 
@@ -161,6 +162,8 @@ NAMESPACE_BEGIN(Grid);
         NumOp.MooeeDag(PhiEven,X);
         DenOp.MooeeInvDag(X,Y);
         action = action + norm2(Y);
+
+	std::cout << GridLogMessage<<" TwoFlavourEvenOddRatio action is "<<action<<std::endl;
 
         return action;
       };
