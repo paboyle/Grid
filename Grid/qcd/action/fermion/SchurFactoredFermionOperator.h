@@ -77,17 +77,15 @@ public:
   SchurFactoredFermionOperator(FermionOperator<Impl> & _FermOp,
 			       FermionOperator<Impl> & _DirichletFermOp,
 			       OperatorFunction<FermionField> &_Solver,
-			       Coordinate & _Block)
+			       Coordinate &_Block)
     : Block(_Block),
       FermOp(_FermOp),
       DirichletFermOp(_DirichletFermOp),
       Solver(_Solver)
   {
-    // FIXME -- could check that the DirichletFermOp block matches this.
     // Pass in Dirichlet FermOp because we really need two dirac operators
-    // as double stored gauge fields differ.
-
-    assert(_FermOp.FermionGrid() = _DirichletFermOp.FermionGrid()); // May not be true in future if change communicator scheme
+    // as double stored gauge fields differ and they will otherwise overwrite
+    assert(_FermOp.FermionGrid() == _DirichletFermOp.FermionGrid()); // May not be true in future if change communicator scheme
   };
 
   enum Domain { Omega=0, OmegaBar=1 };
@@ -117,39 +115,44 @@ public:
     LatticeInteger nface(grid); nface=Zero();
     
     ComplexField zz(grid); zz=Zero();
-
     FermionField projected(grid); projected=Zero();
     FermionField sp_proj  (grid);
 
     int dims = grid->Nd();
     int isDWF= (dims==Nd+1);
     assert((dims==Nd)||(dims==Nd+1));
+    Coordinate Global=grid->GlobalDimensions();
 
     for(int mu=0;mu<Nd;mu++){
 
-      // need to worry about DWF 5th dim first
-      LatticeCoordinate(coor,mu+isDWF); 
+      if ( Block[mu] <= Global[mu+isDWF] ) {
+	// need to worry about DWF 5th dim first
+	LatticeCoordinate(coor,mu+isDWF); 
       
-      face = where(mod(coor,Block[mu]) == Integer(0),one,zero );
-      nface = nface + face;
+	face = where(mod(coor,Block[mu]) == Integer(0),one,zero );
+	nface = nface + face;
 
-      Gamma G(Gmu[mu]);
-      // Lower face receives (1-gamma)/2 in normal forward hopping term
-      sp_proj  = 0.5*(f-G*f*rsgn);
-      projected= where(face,sp_proj,projected);
-       
-      face = where(mod(coor,Block[mu]) == Integer(Block[mu]-1) ,one,zero );
-      nface = nface + face;
+	Gamma G(Gmu[mu]);
+	// Lower face receives (1-gamma)/2 in normal forward hopping term
+	sp_proj  = 0.5*(f-G*f*rsgn);
+	projected= where(face,sp_proj,projected);
+	//projected= where(face,f,projected);
+      
+	face = where(mod(coor,Block[mu]) == Integer(Block[mu]-1) ,one,zero );
+	nface = nface + face;
 
-      // Upper face receives (1+gamma)/2 in normal backward hopping term
-      sp_proj = 0.5*(f+G*f*rsgn);
-      projected= where(face,sp_proj,projected);
-
+	// Upper face receives (1+gamma)/2 in normal backward hopping term
+	sp_proj = 0.5*(f+G*f*rsgn);
+	projected= where(face,sp_proj,projected);
+	//projected= where(face,f,projected);
+      }
+      
     }
     // Initial Zero() where nface==0.
     // Keep the spin projected faces where nface==1
     // Full spinor where nface>=2
     projected = where(nface>Integer(1),f,projected);
+    f=projected;
   }
   void ProjectDomain(FermionField &f,int domain)
   {    
@@ -182,6 +185,7 @@ public:
   {
     ProjectBoundaryBothDomains(f,1);
     ProjectOmegaBar(f);
+    //    DumpSliceNorm("ProjectBoundary",f,f.Grid()->Nd()-1);
   };
 
   void dBoundary    (FermionField &in,FermionField &out)
@@ -240,7 +244,6 @@ public:
     DirichletFermOp.Mdag(tmp,out);
     ProjectOmegaBar(out);
   };
-
   void dOmegaInv   (FermionField &in,FermionField &out)
   {
     FermionField tmp(in);
@@ -285,7 +288,8 @@ public:
   {
     FermionField tmp1(FermOp.FermionGrid());
     FermionField tmp2(FermOp.FermionGrid());
-    out = in; ProjectBoundaryBar(out);
+    out = in;
+    ProjectBoundaryBar(out);
     dOmegaDagInv(out,tmp1);   
     dBoundaryDag(tmp1,tmp2);   
     dOmegaBarDagInv(tmp2,tmp1);
@@ -306,6 +310,7 @@ public:
     dOmegaInv(tmp1,tmp2);   
     out = in - tmp2 ;       
     ProjectBoundaryBar(out);
+    //    DumpSliceNorm("R",out,out.Grid()->Nd()-1);
   };
   
   // R = Pdbar - Pdbar Dinv Ddbar 
@@ -327,7 +332,7 @@ public:
     dBoundaryBarDag(out,tmp);
     out =Pin -tmp; 
   };
-
+  // Non-dirichlet inverter using red-black preconditioning
   void Dinverse(FermionField &in,FermionField &out)
   {
     SchurRedBlackDiagMooeeSolve<FermionField> Solve(Solver);
