@@ -69,7 +69,7 @@ public:
 	blocks_per_rank *= (LocalDims[d] / Block[d]);
       }
     }
-    // Even blocks per node required
+    // Even blocks per node required // could be relaxed but inefficient use of hardware as idle nodes in boundary operator R
     assert( (blocks_per_rank % 2) == 0);
 
     // Possible checks that SIMD lanes are used with full occupancy???
