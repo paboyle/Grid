@@ -98,6 +98,7 @@ public:
 
     FermOp.ImportGauge(U);
     FermOp.Mdag(eta, Phi);
+    std::cout << GridLogMessage << "Pseudofermion action refresh " << norm2(eta) << std::endl;
   };
 
   //////////////////////////////////////////////////////
