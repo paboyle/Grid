@@ -52,12 +52,17 @@ template<class vtype, int N> accelerator_inline iVector<vtype, N> Exponentiate(c
   return ret;
 }
 
-
-
 // Specialisation: Cayley-Hamilton exponential for SU(3)
-#ifndef GRID_CUDA
+#if 0
 template<class vtype, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0>::type * =nullptr> 
-accelerator_inline iMatrix<vtype,3> Exponentiate(const iMatrix<vtype,3> &arg, RealD alpha  , Integer Nexp = DEFAULT_MAT_EXP )
+accelerator_inline iMatrix<vtype,3> Exponentiated(const iMatrix<vtype,3> &arg, RealD alpha  , Integer Nexp = DEFAULT_MAT_EXP )
+{
+  return ExponentiateCayleyHamilton(arg,alpha);
+}
+#endif
+
+template<class vtype, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0>::type * =nullptr> 
+accelerator_inline iMatrix<vtype,3> ExponentiateCayleyHamilton(const iMatrix<vtype,3> &arg, RealD alpha )
 {
   // for SU(3) 2x faster than the std implementation using Nexp=12
   // notice that it actually computes
@@ -115,8 +120,6 @@ accelerator_inline iMatrix<vtype,3> Exponentiate(const iMatrix<vtype,3> &arg, Re
 
   return (f0 * unit + timesMinusI(f1) * arg*alpha - f2 * iQ2);
 }
-#endif
-
 
 // General exponential
 template<class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr> 
@@ -129,8 +132,8 @@ accelerator_inline iMatrix<vtype,N> Exponentiate(const iMatrix<vtype,N> &arg, Re
   typedef iMatrix<vtype,N> mat;
   mat unit(1.0);
   mat temp(unit);
-  for(int i=Nexp; i>=1;--i){
-    temp *= alpha/RealD(i);
+  for(int n=Nexp; n>=1;--n){
+    temp *= alpha/RealD(n);
     temp = unit + temp*arg;
   }
   return temp;
