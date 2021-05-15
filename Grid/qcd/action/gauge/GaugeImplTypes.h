@@ -61,7 +61,7 @@ NAMESPACE_BEGIN(Grid);
   typedef typename Impl::Field Field;
 
 // hardcodes the exponential approximation in the template
-template <class S, int Nrepresentation = Nc, int Nexp = 12 > class GaugeImplTypes {
+template <class S, int Nrepresentation = Nc, int Nexp = 20 > class GaugeImplTypes {
 public:
   typedef S Simd;
   typedef typename Simd::scalar_type scalar_type;
