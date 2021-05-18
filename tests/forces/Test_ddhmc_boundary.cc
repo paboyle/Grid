@@ -27,7 +27,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 #include <Grid/qcd/action/momentum/DirichletFilter.h>
-#include <Grid/qcd/action/momentum/DDHMCFilter.h>
+#include <Grid/qcd/action/momentum/DDHMCfilter.h>
 #include <Grid/qcd/action/fermion/DirichletFermionOperator.h>
 #include <Grid/qcd/action/fermion/SchurFactoredFermionOperator.h>
 #include <Grid/qcd/action/pseudofermion/DomainDecomposedBoundaryTwoFlavourPseudoFermion.h>
