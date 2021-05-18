@@ -51,8 +51,8 @@ public:
   {
     // Save what the comms mode should be under normal BCs
     CommsMode = WilsonKernelsStatic::Comms;
-    assert((WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsAndCompute)
-         ||(WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsThenCompute));
+    assert((WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute)
+         ||(WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsThenCompute));
 
     // Check the block size divides local lattice
     GridBase *grid = FermOp.GaugeGrid();
