@@ -70,32 +70,25 @@ struct DDHMCFilter: public MomentumFilterBase<MomentaField>
     Coordinate Global=grid->GlobalDimensions();
     LatticeInteger coor(grid); 
     for(int mu=0;mu<Nd;mu++) {
-      if ( Block[mu] <= Global[mu] ) {
+
+      if ( (Block[mu] <= Global[mu])&&(Block[mu]>0) ) {
 
 	LatticeCoordinate(coor,mu);
 	auto P_mu = PeekIndex<LorentzIndex>(P, mu);
 	P_mu = where(mod(coor,Block[mu])==Integer(Block[mu]-1),zz,P_mu);
-	/*	if(Width>=2) {
-	  P_mu = where(mod(coor,Block[mu])==Integer(0),zz,P_mu);
-	  P_mu = where(mod(coor,Block[mu])==Integer(Block[mu]-2),zz,P_mu);
-	  }*/
 	PokeIndex<LorentzIndex>(P, P_mu, mu);
 
 	for(int nu=0;nu<Nd;nu++){
-	  if ( (mu!=nu) && Block[mu] <= Global[mu]){
+	  if ( mu!=nu ){
 	    auto P_nu = PeekIndex<LorentzIndex>(P, nu);
-	    if ( Width>=1 ){
-	      P_nu = where(mod(coor,Block[mu])==Integer(Block[mu]-1),zz,P_nu);
-	      P_nu = where(mod(coor,Block[mu])==Integer(0)          ,zz,P_nu);
-	    }
-	    /*	    if ( Width>=2 ){
-	      P_nu = where(mod(coor,Block[mu])==Integer(Block[mu]-2),zz,P_nu);
-	      P_nu = where(mod(coor,Block[mu])==Integer(1)          ,zz,P_nu);
-	      }*/
+	    P_nu = where(mod(coor,Block[mu])==Integer(Block[mu]-1),zz,P_nu);
+	    P_nu = where(mod(coor,Block[mu])==Integer(0)          ,zz,P_nu);
 	    PokeIndex<LorentzIndex>(P, P_nu, nu);
 	  }
 	}
+
       }
+      
     }
   }
 };
