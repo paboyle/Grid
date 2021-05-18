@@ -55,15 +55,16 @@ struct DirichletFilter: public MomentumFilterBase<MomentaField>
     ////////////////////////////////////////////////////
     LatticeInteger coor(grid); 
     LatticeColourMatrix zz(grid); zz = Zero();
+    Coordinate Global=grid->GlobalDimensions();
     for(int mu=0;mu<Nd;mu++) {
-
-      // If costly could provide Grid earlier and precompute masks
-      LatticeCoordinate(coor,mu);
+      if ( (Block[mu] <= Global[mu]) && (Block[mu]>1) ) {
+	// If costly could provide Grid earlier and precompute masks
+	LatticeCoordinate(coor,mu);
       
-      auto P_mu = PeekIndex<LorentzIndex>(P, mu);
-      P_mu = where(mod(coor,Block[mu])==Integer(Block[mu]-1),zz,P_mu);
-      PokeIndex<LorentzIndex>(P, P_mu, mu);
-
+	auto P_mu = PeekIndex<LorentzIndex>(P, mu);
+	P_mu = where(mod(coor,Block[mu])==Integer(Block[mu]-1),zz,P_mu);
+	PokeIndex<LorentzIndex>(P, P_mu, mu);
+      }
     }
   }
 };
