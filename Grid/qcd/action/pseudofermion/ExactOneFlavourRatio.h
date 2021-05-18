@@ -64,6 +64,8 @@ NAMESPACE_BEGIN(Grid);
       SchurRedBlackDiagMooeeSolve<FermionField> DerivativeSolverR;
       FermionField Phi; // the pseudofermion field for this trajectory
 
+      RealD norm2_eta; //|eta|^2 where eta is the random gaussian field used to generate the pseudofermion field
+      bool initial_action; //true for the first call to S after refresh, for which the identity S = |eta|^2 holds provided the rational approx is good
     public:
 
       ExactOneFlavourRatioPseudoFermionAction(AbstractEOFAFermion<Impl>& _Lop, 
@@ -87,7 +89,8 @@ NAMESPACE_BEGIN(Grid);
 	DerivativeSolverL(DerivCGL, false, true), DerivativeSolverR(DerivCGR, false, true), 
 	Phi(_Lop.FermionGrid()), 
 	param(p), 
-        use_heatbath_forecasting(use_fc)
+	use_heatbath_forecasting(use_fc),
+	initial_action(false)
       {
         AlgRemez remez(param.lo, param.hi, param.precision);
 
@@ -216,8 +219,14 @@ NAMESPACE_BEGIN(Grid);
         Lop.RefreshShiftCoefficients(0.0);
         Rop.RefreshShiftCoefficients(-1.0);
 
+	//Mark that the next call to S is the first after refresh
+	initial_action = true;
+
+
 	// Bounds check
 	RealD EtaDagEta = norm2(eta);
+	norm2_eta = EtaDagEta;
+
 	//	RealD PhiDagMPhi= norm2(eta);
 
       };
@@ -289,6 +298,21 @@ NAMESPACE_BEGIN(Grid);
         Rop.Dtilde(tmp[0], tmp[1]);
         Rop.Omega(tmp[1], tmp[0], 1, 1);
         action += Rop.k * innerProduct(spProj_Phi, tmp[0]).real();
+
+	if(initial_action){
+	  //For the first call to S after refresh,  S = |eta|^2. We can use this to ensure the rational approx is good
+	  RealD diff = action - norm2_eta;
+
+	  //S_init = eta^dag M^{-1/2} M M^{-1/2} eta
+	  //S_init - eta^dag eta =  eta^dag ( M^{-1/2} M M^{-1/2} - 1 ) eta
+	  RealD test = sqrt(fabs(diff)/norm2_eta); //test the quality of the rational approx
+
+	  std::cout << GridLogMessage << action_name() << " initial action " << action << " expect " << norm2_eta << "; diff " << diff << std::endl;
+	  std::cout << GridLogMessage << action_name() << " sqrt( eta^dag ( M^{-1/2} M M^{-1/2} - 1 ) eta )/sqrt( eta^dag eta ) = " << test << "  expect 0 (tol " << param.BoundsCheckTol << ")" << std::endl;
+
+	  assert( ( test < param.BoundsCheckTol ) && " Initial action check failed" );
+	  initial_action = false;
+	}
 
         return action;
       };

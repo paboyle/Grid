@@ -66,7 +66,8 @@ struct StaggeredImplParams {
 				    RealD, tolerance, 
 				    int,   degree, 
 				    int,   precision,
-				    int,   BoundsCheckFreq);
+				    int,   BoundsCheckFreq,
+				    RealD, BoundsCheckTol);
     
   // MaxIter and tolerance, vectors??
     
@@ -77,14 +78,16 @@ struct StaggeredImplParams {
 				RealD tol      = 1.0e-8, 
                            	int _degree    = 10,
 				int _precision = 64,
-				int _BoundsCheckFreq=20)
+				int _BoundsCheckFreq=20,
+				double _BoundsCheckTol=1e-6)
       : lo(_lo),
 	hi(_hi),
 	MaxIter(_maxit),
 	tolerance(tol),
 	degree(_degree),
         precision(_precision),
-        BoundsCheckFreq(_BoundsCheckFreq){};
+        BoundsCheckFreq(_BoundsCheckFreq),
+        BoundsCheckTol(_BoundsCheckTol){};
   };
 
 

@@ -132,21 +132,6 @@ int main (int argc, char** argv)
 
   Meofa.refresh(U, sRNG, RNG5 );
 
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
   RealD S = Meofa.S(U); // pdag M p
 
   // get the deriv of phidag M phi with respect to "U"
