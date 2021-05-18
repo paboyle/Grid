@@ -28,7 +28,7 @@ directory
 /*  END LEGAL */
 #include <Grid/Grid.h>
 #include <Grid/qcd/action/momentum/DirichletFilter.h>
-#include <Grid/qcd/action/momentum/DDHMCFilter.h>
+#include <Grid/qcd/action/momentum/DDHMCfilter.h>
 #include <Grid/qcd/action/fermion/DirichletFermionOperator.h>
 #include <Grid/qcd/action/fermion/SchurFactoredFermionOperator.h>
 
@@ -81,12 +81,12 @@ int main(int argc, char **argv) {
   MD.trajL   = 1.0;
   
   HMCparameters HMCparams;
-  HMCparams.StartTrajectory  = 0;
+  HMCparams.StartTrajectory  = 114;
   HMCparams.Trajectories     = 1000;
-  HMCparams.NoMetropolisUntil=  10;
+  HMCparams.NoMetropolisUntil=  0;
   //  "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
-  HMCparams.StartingType     =std::string("ColdStart");
- //  HMCparams.StartingType     =std::string("CheckpointStart");
+  //  HMCparams.StartingType     =std::string("ColdStart");
+  HMCparams.StartingType     =std::string("CheckpointStart");
   HMCparams.MD = MD;
   HMCWrapper TheHMC(HMCparams);
 
@@ -106,9 +106,10 @@ int main(int argc, char **argv) {
   TheHMC.Resources.SetRNGSeeds(RNGpar);
 
   // Momentum Dirichlet
-  Coordinate Block({8,8,8,4});
+  Coordinate Block({16,16,16,4});
 
-  TheHMC.Resources.SetMomentumFilter(new DDHMCFilter<WilsonImplR::Field>(Block,0));
+  //  TheHMC.Resources.SetMomentumFilter(new DirichletFilter<WilsonImplR::Field>(Block));
+  TheHMC.Resources.SetMomentumFilter(new DDHMCFilter<WilsonImplR::Field>(Block,1));
   // Construct observables
   // here there is too much indirection 
   typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
@@ -182,11 +183,11 @@ int main(int argc, char **argv) {
   // into single op for any operator pair.
   // Same issue prevents using MxPCG in the Heatbath step
   //////////////////////////////////////////////////////////////
-  std::vector<FermionAction *> Numerators;
-  std::vector<FermionAction *> Denominators;
   std::vector<FermionAction *> PeriNumerators;
   std::vector<FermionAction *> PeriDenominators;
 
+  std::vector<FermionAction *> DNumerators;
+  std::vector<FermionAction *> DDenominators;
   std::vector<DirichletFermion *> DirichletNumerators;
   std::vector<DirichletFermion *> DirichletDenominators;
   
@@ -201,11 +202,11 @@ int main(int argc, char **argv) {
     PeriNumerators.push_back  (new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[h],M5,b,c, Params));
     PeriDenominators.push_back(new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[h],M5,b,c, Params));
 
-    Numerators.push_back  (new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[h],M5,b,c, Params));
-    Denominators.push_back(new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[h],M5,b,c, Params));
+    DNumerators.push_back  (new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[h],M5,b,c, Params));
+    DDenominators.push_back(new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[h],M5,b,c, Params));
 
-    DirichletNumerators.push_back  (new DirichletFermion(*Numerators[h],Block));
-    DirichletDenominators.push_back(new DirichletFermion(*Denominators[h],Block));
+    DirichletNumerators.push_back  (new DirichletFermion(*DNumerators[h],Block));
+    DirichletDenominators.push_back(new DirichletFermion(*DDenominators[h],Block));
 
     BoundaryNumerators.push_back (new SchurFactoredFermionOperator<DomainWallFermionR::Impl_t>
 				  (*PeriNumerators[h],
