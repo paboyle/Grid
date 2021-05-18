@@ -89,7 +89,64 @@ int main (int argc, char** argv)
   ExactOneFlavourRatioPseudoFermionAction<WilsonImplR> Meofa(Lop, Rop, CG, CG, CG, CG, CG, Params, false);
 
   GridSerialRNG  sRNG; sRNG.SeedFixedIntegers(seeds4);
+
+  //Check the rational approximation
+  {    
+    RealD scale = std::sqrt(0.5);
+    LatticeFermion eta    (Lop.FermionGrid());
+    gaussian(RNG5,eta); eta = eta * scale;
+
+    Meofa.refresh(U, eta);
+    
+    //Phi = M^{-1/2} eta
+    //M is Hermitian    
+    //(Phi, M Phi) = eta^\dagger  M^{-1/2} M M^{-1/2} eta = eta^\dagger eta
+    LatticeFermion phi = Meofa.getPhi();
+    LatticeFermion Mphi(FGrid);
+    
+    Meofa.Meofa(U, phi, Mphi);
+    std::cout << "Computing inner product" << std::endl;
+    ComplexD inner = innerProduct(phi, Mphi);
+    ComplexD test = inner - norm2(eta);
+    
+    std::cout << "(phi, Mphi) - (eta,eta): " << test << "  expect 0" << std::endl;
+
+    assert(test.real() < 1e-8);
+    assert(test.imag() < 1e-8);
+
+    //Another test is to use heatbath twice to apply M^{-1/2} to Phi then apply M
+    // M  Phi' 
+    //= M M^{-1/2} Phi 
+    //= M M^{-1/2} M^{-1/2} eta 
+    //= eta
+    Meofa.refresh(U, phi);
+    LatticeFermion phi2 = Meofa.getPhi();
+    LatticeFermion test2(FGrid);
+    Meofa.Meofa(U, phi2, test2);
+    test2  = test2 - eta;
+    RealD test2_norm = norm2(test2);
+    std::cout << "|M M^{-1/2} M^{-1/2} eta - eta|^2 = " << test2_norm << " expect 0" << std::endl;
+    assert( test2_norm < 1e-8 );
+  }
+
+
   Meofa.refresh(U, sRNG, RNG5 );
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
   RealD S = Meofa.S(U); // pdag M p
 
   // get the deriv of phidag M phi with respect to "U"

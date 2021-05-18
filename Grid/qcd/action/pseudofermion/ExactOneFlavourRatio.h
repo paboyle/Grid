@@ -224,14 +224,12 @@ NAMESPACE_BEGIN(Grid);
 
       void Meofa(const GaugeField& U,const FermionField &phi, FermionField & Mphi) 
       {
-#if 0
         Lop.ImportGauge(U);
         Rop.ImportGauge(U);
 
         FermionField spProj_Phi(Lop.FermionGrid());
-	FermionField mPhi(Lop.FermionGrid());
         std::vector<FermionField> tmp(2, Lop.FermionGrid());
-	mPhi = phi;
+	Mphi = phi;
 	
         // LH term: S = S - k <\Phi| P_{-} \Omega_{-}^{\dagger} H(mf)^{-1} \Omega_{-} P_{-} |\Phi>
         spProj(Phi, spProj_Phi, -1, Lop.Ls);
@@ -241,10 +239,12 @@ NAMESPACE_BEGIN(Grid);
         SolverL(Lop, tmp[1], tmp[0]);
         Lop.Dtilde(tmp[0], tmp[1]); // We actually solved Cayley preconditioned system: transform back
         Lop.Omega(tmp[1], tmp[0], -1, 1);
-	mPhi = mPhi -  Lop.k * innerProduct(spProj_Phi, tmp[0]).real();
+	spProj(tmp[0], tmp[1], -1, Lop.Ls);
+
+	Mphi = Mphi -  Lop.k * tmp[1];
 
         // RH term: S = S + k <\Phi| P_{+} \Omega_{+}^{\dagger} ( H(mb)
-        //               - \Delta_{+}(mf,mb) P_{+} )^{-1} \Omega_{-} P_{-} |\Phi>
+        //               - \Delta_{+}(mf,mb) P_{+} )^{-1} \Omega_{+} P_{+} |\Phi>
         spProj(Phi, spProj_Phi, 1, Rop.Ls);
         Rop.Omega(spProj_Phi, tmp[0], 1, 0);
         G5R5(tmp[1], tmp[0]);
@@ -252,8 +252,9 @@ NAMESPACE_BEGIN(Grid);
         SolverR(Rop, tmp[1], tmp[0]);
         Rop.Dtilde(tmp[0], tmp[1]);
         Rop.Omega(tmp[1], tmp[0], 1, 1);
-        action += Rop.k * innerProduct(spProj_Phi, tmp[0]).real();
-#endif
+	spProj(tmp[0], tmp[1], 1, Rop.Ls);
+
+        Mphi = Mphi + Rop.k * tmp[1];
       }
 
       // EOFA action: see Eqn. (10) of arXiv:1706.05843
@@ -279,7 +280,7 @@ NAMESPACE_BEGIN(Grid);
         action -= Lop.k * innerProduct(spProj_Phi, tmp[0]).real();
 
         // RH term: S = S + k <\Phi| P_{+} \Omega_{+}^{\dagger} ( H(mb)
-        //               - \Delta_{+}(mf,mb) P_{+} )^{-1} \Omega_{-} P_{-} |\Phi>
+        //               - \Delta_{+}(mf,mb) P_{+} )^{-1} \Omega_{+} P_{+} |\Phi>
         spProj(Phi, spProj_Phi, 1, Rop.Ls);
         Rop.Omega(spProj_Phi, tmp[0], 1, 0);
         G5R5(tmp[1], tmp[0]);
