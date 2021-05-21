@@ -459,6 +459,25 @@ namespace Grid {
     
     return os;
   }
+
+  // In general, scalar types are considered "flat" (regularly shaped)
+  template <typename T>
+  bool isFlat(const T &t) { return true; }
+
+  // Return non-zero if all dimensions of this std::vector<std::vector<T>> are regularly shaped
+  template <typename T>
+  bool isFlat(const std::vector<std::vector<T>> &v)
+  {
+    // Make sure all of my rows are the same size
+    for (std::size_t i = 1; i < v.size(); ++i)
+    {
+      if (v[i].size() != v[0].size() || !isFlat(v[i]))
+      {
+        return false;
+      }
+    }
+    return true;
+  }
 }
 
 // helper function to read space-separated values

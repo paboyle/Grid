@@ -34,11 +34,13 @@ namespace Grid
     template <typename U>
     void writeDefault(const std::string &s, const U &x);
     template <typename U>
+    void writeRagged(const std::string &s, const std::vector<U> &x);
+    template <typename U>
     typename std::enable_if<element<std::vector<U>>::is_number, void>::type
     writeDefault(const std::string &s, const std::vector<U> &x);
     template <typename U>
     typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
-    writeDefault(const std::string &s, const std::vector<U> &x);
+    writeDefault(const std::string &s, const std::vector<U> &x) { writeRagged(s, x); }
     template <typename U>
     void writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const U * pDataRowMajor, size_t NumElements);
     H5NS::Group & getGroup(void);
@@ -64,11 +66,13 @@ namespace Grid
     template <typename U>
     void readDefault(const std::string &s, U &output);
     template <typename U>
+    void readRagged(const std::string &s, std::vector<U> &x);
+    template <typename U>
     typename std::enable_if<element<std::vector<U>>::is_number, void>::type
     readDefault(const std::string &s, std::vector<U> &x);
     template <typename U>
     typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
-    readDefault(const std::string &s, std::vector<U> &x);
+    readDefault(const std::string &s, std::vector<U> &x) { readRagged(s, x); }
     template <typename U>
     void readMultiDim(const std::string &s, std::vector<U> &buf, std::vector<size_t> &dim);
     H5NS::Group & getGroup(void);
@@ -179,21 +183,27 @@ namespace Grid
   typename std::enable_if<element<std::vector<U>>::is_number, void>::type
   Hdf5Writer::writeDefault(const std::string &s, const std::vector<U> &x)
   {
-    // alias to element type
-    typedef typename element<std::vector<U>>::type Element;
-    
-    // flatten the vector and getting dimensions
-    Flatten<std::vector<U>> flat(x);
-    std::vector<size_t> dim;
-    const auto           &flatx = flat.getFlatVector();
-    for (auto &d: flat.getDim())
-      dim.push_back(d);
-    writeMultiDim<Element>(s, dim, &flatx[0], flatx.size());
+    if (isFlat(x))
+    {
+      // alias to element type
+      typedef typename element<std::vector<U>>::type Element;
+      
+      // flatten the vector and getting dimensions
+      Flatten<std::vector<U>> flat(x);
+      std::vector<size_t> dim;
+      const auto           &flatx = flat.getFlatVector();
+      for (auto &d: flat.getDim())
+        dim.push_back(d);
+      writeMultiDim<Element>(s, dim, &flatx[0], flatx.size());
+    }
+    else
+    {
+      writeRagged(s, x);
+    }
   }
   
   template <typename U>
-  typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
-  Hdf5Writer::writeDefault(const std::string &s, const std::vector<U> &x)
+  void Hdf5Writer::writeRagged(const std::string &s, const std::vector<U> &x)
   {
     push(s);
     writeSingleAttribute(x.size(), HDF5_GRID_GUARD "vector_size",
@@ -275,22 +285,39 @@ namespace Grid
   typename std::enable_if<element<std::vector<U>>::is_number, void>::type
   Hdf5Reader::readDefault(const std::string &s, std::vector<U> &x)
   {
-    // alias to element type
-    typedef typename element<std::vector<U>>::type Element;
+    bool bRagged{ false };
+    H5E_auto2_t h5at;
+    void      * f5at_p;
+    ::H5::Exception::getAutoPrint(h5at, &f5at_p);
+    ::H5::Exception::dontPrint();
+    try {
+      push(s);
+      bRagged = group_.attrExists(HDF5_GRID_GUARD "vector_size");
+      pop();
+    } catch(...) {}
+    ::H5::Exception::setAutoPrint(h5at, f5at_p);
+    if (bRagged)
+    {
+      readRagged(s, x);
+    }
+    else
+    {
+      // alias to element type
+      typedef typename element<std::vector<U>>::type Element;
 
-    std::vector<size_t>   dim;
-    std::vector<Element>  buf;
-    readMultiDim( s, buf, dim );
+      std::vector<size_t>   dim;
+      std::vector<Element>  buf;
+      readMultiDim( s, buf, dim );
 
-    // reconstruct the multidimensional vector
-    Reconstruct<std::vector<U>> r(buf, dim);
-    
-    x = r.getVector();
+      // reconstruct the multidimensional vector
+      Reconstruct<std::vector<U>> r(buf, dim);
+
+      x = r.getVector();
+    }
   }
   
   template <typename U>
-  typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
-  Hdf5Reader::readDefault(const std::string &s, std::vector<U> &x)
+  void Hdf5Reader::readRagged(const std::string &s, std::vector<U> &x)
   {
     uint64_t size;
     
