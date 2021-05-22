@@ -291,8 +291,10 @@ namespace Grid
     ::H5::Exception::getAutoPrint(h5at, &f5at_p);
     ::H5::Exception::dontPrint();
     try {
-      push(s);
-      bRagged = group_.attrExists(HDF5_GRID_GUARD "vector_size");
+      push(s); // This is what might throw
+      try {
+        bRagged = group_.attrExists(HDF5_GRID_GUARD "vector_size");
+      } catch(...) {}
       pop();
     } catch(...) {}
     ::H5::Exception::setAutoPrint(h5at, f5at_p);

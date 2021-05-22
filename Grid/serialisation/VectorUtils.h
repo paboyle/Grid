@@ -469,7 +469,7 @@ namespace Grid {
   bool isFlat(const std::vector<std::vector<T>> &v)
   {
     // Make sure all of my rows are the same size
-    for (std::size_t i = 1; i < v.size(); ++i)
+    for (std::size_t i = 0; i < v.size(); ++i)
     {
       if (v[i].size() != v[0].size() || !isFlat(v[i]))
       {
