@@ -285,20 +285,8 @@ namespace Grid
   typename std::enable_if<element<std::vector<U>>::is_number, void>::type
   Hdf5Reader::readDefault(const std::string &s, std::vector<U> &x)
   {
-    bool bRagged{ false };
-    H5E_auto2_t h5at;
-    void      * f5at_p;
-    ::H5::Exception::getAutoPrint(h5at, &f5at_p);
-    ::H5::Exception::dontPrint();
-    try {
-      push(s); // This is what might throw
-      try {
-        bRagged = group_.attrExists(HDF5_GRID_GUARD "vector_size");
-      } catch(...) {}
-      pop();
-    } catch(...) {}
-    ::H5::Exception::setAutoPrint(h5at, f5at_p);
-    if (bRagged)
+    if (H5Lexists        (group_.getId(), s.c_str(), H5P_DEFAULT) > 0
+     && H5Aexists_by_name(group_.getId(), s.c_str(), HDF5_GRID_GUARD "vector_size", H5P_DEFAULT ) > 0)
     {
       readRagged(s, x);
     }
