@@ -268,7 +268,8 @@ public:
   int face_table_computed;
   std::vector<Vector<std::pair<int,int> > > face_table ;
   Vector<int> surface_list;
-
+  bool locally_periodic;
+  
   stencilVector<StencilEntry>  _entries; // Resident in managed memory
   std::vector<Packet> Packets;
   std::vector<Merge> Mergers;
@@ -324,7 +325,7 @@ public:
     int ld              = _grid->_ldimensions[dimension];
     int rd              = _grid->_rdimensions[dimension];
     int simd_layout     = _grid->_simd_layout[dimension];
-    int comm_dim        = _grid->_processors[dimension] >1 ;
+    int comm_dim        = _grid->_processors[dimension] >1 && (!locally_periodic);
 
     int recv_from_rank;
     int xmit_to_rank;
@@ -333,7 +334,7 @@ public:
 
     int nbr_proc;
     if (displacement>0) nbr_proc = 1;
-    else                 nbr_proc = pd-1;
+    else                nbr_proc = pd-1;
 
     // FIXME  this logic needs to be sorted for three link term
     //    assert( (displacement==1) || (displacement==-1));
@@ -490,7 +491,7 @@ public:
 
     // the permute type
     int simd_layout     = _grid->_simd_layout[dimension];
-    int comm_dim        = _grid->_processors[dimension] >1 ;
+    int comm_dim        = _grid->_processors[dimension] >1 && (!locally_periodic);
     int splice_dim      = _grid->_simd_layout[dimension]>1 && (comm_dim);
 
     int is_same_node = 1;
@@ -673,6 +674,20 @@ public:
 		   const std::vector<int> &directions,
 		   const std::vector<int> &distances,
 		   Parameters p)
+    : CartesianStencil(grid,
+		       npoints,
+		       checkerboard,
+		       directions,
+		       distances,
+		       false,
+		       p){};
+  CartesianStencil(GridBase *grid,
+		   int npoints,
+		   int checkerboard,
+		   const std::vector<int> &directions,
+		   const std::vector<int> &distances,
+		   bool _locally_periodic,
+		   Parameters p)
     : shm_bytes_thr(npoints),
       comm_bytes_thr(npoints),
       comm_enter_thr(npoints),
@@ -681,6 +696,7 @@ public:
   {
     face_table_computed=0;
     _grid    = grid;
+    this->locally_periodic=_locally_periodic;
     this->parameters=p;
     /////////////////////////////////////
     // Initialise the base
@@ -706,6 +722,8 @@ public:
       int point = i;
 
       int dimension    = directions[i];
+      assert(dimension>=0 && dimension<_grid->Nd());
+
       int displacement = distances[i];
       int shift = displacement;
 
@@ -719,7 +737,7 @@ public:
       // the permute type
       //////////////////////////
       int simd_layout     = _grid->_simd_layout[dimension];
-      int comm_dim        = _grid->_processors[dimension] >1 ;
+      int comm_dim        = _grid->_processors[dimension] >1 && (!locally_periodic);
       int splice_dim      = _grid->_simd_layout[dimension]>1 && (comm_dim);
       int rotate_dim      = _grid->_simd_layout[dimension]>2;
 
@@ -833,7 +851,7 @@ public:
     int pd              = _grid->_processors[dimension];
     int simd_layout     = _grid->_simd_layout[dimension];
     int comm_dim        = _grid->_processors[dimension] >1 ;
-
+    assert(locally_periodic==false);
     assert(comm_dim==1);
     int shift = (shiftpm + fd) %fd;
     assert(shift>=0);
@@ -1013,6 +1031,7 @@ public:
     int pd              = _grid->_processors[dimension];
     int simd_layout     = _grid->_simd_layout[dimension];
     int comm_dim        = _grid->_processors[dimension] >1 ;
+    assert(locally_periodic==false);
     assert(simd_layout==1);
     assert(comm_dim==1);
     assert(shift>=0);
@@ -1121,6 +1140,7 @@ public:
     int pd              = _grid->_processors[dimension];
     int simd_layout     = _grid->_simd_layout[dimension];
     int comm_dim        = _grid->_processors[dimension] >1 ;
+    assert(locally_periodic==false);
     assert(comm_dim==1);
     // This will not work with a rotate dim
     assert(simd_layout==maxl);
