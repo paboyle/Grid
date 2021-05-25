@@ -160,7 +160,10 @@ public:
 
   // DoubleStore impl dependent
   void ImportGauge(const GaugeField &_Umu);
-
+  DoubledGaugeField &GetDoubledGaugeField(void){ return Umu; };
+  DoubledGaugeField &GetDoubledGaugeFieldE(void){ return UmuEven; };
+  DoubledGaugeField &GetDoubledGaugeFieldO(void){ return UmuOdd; };
+  
   ///////////////////////////////////////////////////////////////
   // Data members require to support the functionality
   ///////////////////////////////////////////////////////////////
