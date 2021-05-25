@@ -287,9 +287,11 @@ public:
 		int npoints,
 		int checkerboard,
 		const std::vector<int> &directions,
-		const std::vector<int> &distances,Parameters p)  
-    : CartesianStencil<vobj,cobj,Parameters> (grid,npoints,checkerboard,directions,distances,p) 
-  { 
+		const std::vector<int> &distances,
+		bool locally_periodic,
+		Parameters p)  
+    : CartesianStencil<vobj,cobj,Parameters> (grid,npoints,checkerboard,directions,distances,locally_periodic,p)
+  {
     ZeroCountersi();
     surface_list.resize(0);
     this->same_node.resize(npoints);
