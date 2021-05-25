@@ -37,11 +37,6 @@ NAMESPACE_BEGIN(Grid);
 template<typename MomentaField>
 struct DirichletFilter: public MomentumFilterBase<MomentaField>
 {
-  typedef typename MomentaField::vector_type vector_type; //SIMD-vectorized complex type
-  typedef typename MomentaField::scalar_type scalar_type; //scalar complex type
-
-  typedef iScalar<iScalar<iScalar<vector_type> > >            ScalarType; //complex phase for each site
-  
   Coordinate Block;
   
   DirichletFilter(const Coordinate &_Block): Block(_Block){}
@@ -53,8 +48,9 @@ struct DirichletFilter: public MomentumFilterBase<MomentaField>
     ////////////////////////////////////////////////////
     // Zero strictly links crossing between domains
     ////////////////////////////////////////////////////
-    LatticeInteger coor(grid); 
-    LatticeColourMatrix zz(grid); zz = Zero();
+    LatticeInteger coor(grid);
+    typedef decltype(PeekIndex<LorentzIndex>(P,0)) MatrixType;
+    MatrixType zz(grid); zz = Zero();
     Coordinate Global=grid->GlobalDimensions();
     for(int mu=0;mu<Nd;mu++) {
       if ( (Block[mu] <= Global[mu]) && (Block[mu]>1) ) {
