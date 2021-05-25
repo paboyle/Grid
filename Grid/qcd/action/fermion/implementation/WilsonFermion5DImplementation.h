@@ -51,9 +51,9 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   _FiveDimRedBlackGrid(&FiveDimRedBlackGrid),
   _FourDimGrid        (&FourDimGrid),
   _FourDimRedBlackGrid(&FourDimRedBlackGrid),
-  Stencil    (_FiveDimGrid,npoint,Even,directions,displacements,p),
-  StencilEven(_FiveDimRedBlackGrid,npoint,Even,directions,displacements,p), // source is Even
-  StencilOdd (_FiveDimRedBlackGrid,npoint,Odd ,directions,displacements,p), // source is Odd
+  Stencil    (_FiveDimGrid,npoint,Even,directions,displacements,p.locally_periodic,p),
+  StencilEven(_FiveDimRedBlackGrid,npoint,Even,directions,displacements,p.locally_periodic,p), // source is Even
+  StencilOdd (_FiveDimRedBlackGrid,npoint,Odd ,directions,displacements,p.locally_periodic,p), // source is Odd
   M5(_M5),
   Umu(_FourDimGrid),
   UmuEven(_FourDimRedBlackGrid),
