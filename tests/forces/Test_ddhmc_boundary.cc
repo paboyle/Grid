@@ -1,4 +1,4 @@
-   /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -170,6 +170,12 @@ int main (int argc, char ** argv)
   TwoFlavourRatioPseudoFermionAction<FermionImplPolicy> Nf2(PVPeriodic, DdwfPeriodic,CG,CG);
   ForceTest<GimplTypesR>(Nf2,U,FilterNone);
 
+  //////////////////// Two Flavour Determinant Ratio ///////////////////////////////
+  typedef WilsonImplR FermionImplPolicy;
+  TwoFlavourRatioPseudoFermionAction<FermionImplPolicy> Nf2deg(DdwfPeriodic, DdwfPeriodic,CG,CG);
+  std::cout << "*** DEGENERATE ***\n";
+  ForceTest<GimplTypesR>(Nf2deg,U,FilterNone);
+
   //////////////////// Two Flavour Determinant force test Even Odd ///////////////////////////////
   TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> Nf2eo(PVPeriodic, DdwfPeriodic,CG,CG);
   ForceTest<GimplTypesR>(Nf2eo,U,FilterNone);
@@ -187,12 +193,17 @@ int main (int argc, char ** argv)
 	    CG,Block);
 
 
-  
+  std::cout << "*** NUMERATOR ***\n";
   DomainDecomposedBoundaryTwoFlavourPseudoFermion<DomainWallFermionR::Impl_t> DBPFA(SchurDwf,CG,CG);
   ForceTest<GimplTypesR>(DBPFA,U,FilterDDHMC);
 
+  std::cout << "*** RATIO ***\n";
   DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion<DomainWallFermionR::Impl_t> DBPFRA(SchurPV,SchurDwf,CG,CG);
   ForceTest<GimplTypesR>(DBPFRA,U,FilterDDHMC);
+
+  std::cout << "*** DEGENERATE ***\n";
+  DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion<DomainWallFermionR::Impl_t> DBPFRAdeg(SchurDwf,SchurDwf,CG,CG);
+  ForceTest<GimplTypesR>(DBPFRAdeg,U,FilterDDHMC);
 
   DomainDecomposedBoundaryTwoFlavourBosonPseudoFermion<DomainWallFermionR::Impl_t> DBPFBA(SchurPV,CG,CG);
   ForceTest<GimplTypesR>(DBPFBA,U,FilterDDHMC);
