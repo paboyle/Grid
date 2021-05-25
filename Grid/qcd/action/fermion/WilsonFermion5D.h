@@ -181,19 +181,11 @@ public:
 		  GridRedBlackCartesian &FourDimRedBlackGrid,
 		  double _M5,const ImplParams &p= ImplParams());
     
-  // Constructors
-  /*
-    WilsonFermion5D(int simd, 
-    GaugeField &_Umu,
-    GridCartesian         &FiveDimGrid,
-    GridRedBlackCartesian &FiveDimRedBlackGrid,
-    GridCartesian         &FourDimGrid,
-    double _M5,const ImplParams &p= ImplParams());
-  */
-    
   // DoubleStore
   void ImportGauge(const GaugeField &_Umu);
-    
+  DoubledGaugeField &GetDoubledGaugeField(void){ return Umu; };
+  DoubledGaugeField &GetDoubledGaugeFieldE(void){ return UmuEven; };
+  DoubledGaugeField &GetDoubledGaugeFieldO(void){ return UmuOdd; };
   ///////////////////////////////////////////////////////////////
   // Data members require to support the functionality
   ///////////////////////////////////////////////////////////////
