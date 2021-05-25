@@ -58,6 +58,7 @@ struct DDHMCFilter: public MomentumFilterBase<MomentaField>
     GridBase *grid = P.Grid();
 
     LatticeColourMatrix zz(grid); zz = Zero();
+    MomentaField zzz(grid); zzz = Zero();
 
     ////////////////////////////////////////////////////
     // Zero strictly links crossing between domains
@@ -72,7 +73,7 @@ struct DDHMCFilter: public MomentumFilterBase<MomentaField>
     for(int mu=0;mu<Nd;mu++) {
 
       if ( (Block[mu] <= Global[mu])&&(Block[mu]>0) ) {
-
+#if 0
 	LatticeCoordinate(coor,mu);
 	auto P_mu = PeekIndex<LorentzIndex>(P, mu);
 	P_mu = where(mod(coor,Block[mu])==Integer(Block[mu]-1),zz,P_mu);
@@ -86,6 +87,16 @@ struct DDHMCFilter: public MomentumFilterBase<MomentaField>
 	    PokeIndex<LorentzIndex>(P, P_nu, nu);
 	  }
 	}
+#else
+	LatticeCoordinate(coor,mu);
+	P = where(mod(coor,Block[mu])==Integer(Block[mu]-2),zzz,P); //width 4
+	P = where(mod(coor,Block[mu])==Integer(Block[mu]-1),zzz,P); //width 2
+	P = where(mod(coor,Block[mu])==Integer(0),zzz,P);           //width 2
+	auto P_mu = PeekIndex<LorentzIndex>(P,mu);                  
+	P = where(mod(coor,Block[mu])==Integer(1),zzz,P);           //width 4
+	PokeIndex<LorentzIndex>(P, P_mu, mu);
+#endif
+	
 
       }
       
