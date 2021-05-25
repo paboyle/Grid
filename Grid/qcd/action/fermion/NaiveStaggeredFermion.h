@@ -135,6 +135,9 @@ public:
 
   // DoubleStore impl dependent
   void ImportGauge      (const GaugeField &_U );
+  DoubledGaugeField &GetDoubledGaugeField(void){ return Umu; };
+  DoubledGaugeField &GetDoubledGaugeFieldE(void){ return UmuEven; };
+  DoubledGaugeField &GetDoubledGaugeFieldO(void){ return UmuOdd; };
   DoubledGaugeField &GetU(void)   { return Umu ; } ;
   void CopyGaugeCheckerboards(void);
 
