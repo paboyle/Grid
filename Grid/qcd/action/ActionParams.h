@@ -38,27 +38,32 @@ NAMESPACE_BEGIN(Grid);
 struct GparityWilsonImplParams {
   Coordinate twists; //Here the first Nd-1 directions are treated as "spatial", and a twist value of 1 indicates G-parity BCs in that direction. 
                      //mu=Nd-1 is assumed to be the time direction and a twist value of 1 indicates antiperiodic BCs
-  GparityWilsonImplParams() : twists(Nd, 0) {};
+  bool locally_periodic;
+  GparityWilsonImplParams() : twists(Nd, 0), locally_periodic(false) {};
 };
   
 struct WilsonImplParams {
   bool overlapCommsCompute;
+  bool locally_periodic;
   AcceleratorVector<Real,Nd> twist_n_2pi_L;
   AcceleratorVector<Complex,Nd> boundary_phases;
   WilsonImplParams()  {
     boundary_phases.resize(Nd, 1.0);
       twist_n_2pi_L.resize(Nd, 0.0);
+      locally_periodic = false;
   };
   WilsonImplParams(const AcceleratorVector<Complex,Nd> phi) : boundary_phases(phi), overlapCommsCompute(false) {
     twist_n_2pi_L.resize(Nd, 0.0);
+    locally_periodic = false;
   }
 };
 
 struct StaggeredImplParams {
-  StaggeredImplParams()  {};
+  bool locally_periodic;
+  StaggeredImplParams() : locally_periodic(false) {};
 };
   
-  struct OneFlavourRationalParams : Serializable {
+struct OneFlavourRationalParams : Serializable {
     GRID_SERIALIZABLE_CLASS_MEMBERS(OneFlavourRationalParams, 
 				    RealD, lo, 
 				    RealD, hi, 
