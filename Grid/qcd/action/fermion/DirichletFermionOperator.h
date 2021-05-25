@@ -51,8 +51,8 @@ public:
   {
     // Save what the comms mode should be under normal BCs
     CommsMode = WilsonKernelsStatic::Comms;
-    assert((WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute)
-         ||(WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsThenCompute));
+    assert((CommsMode == WilsonKernelsStatic::CommsAndCompute)
+         ||(CommsMode == WilsonKernelsStatic::CommsThenCompute));
 
     // Check the block size divides local lattice
     GridBase *grid = FermOp.GaugeGrid();
@@ -70,14 +70,20 @@ public:
       }
     }
     // Even blocks per node required // could be relaxed but inefficient use of hardware as idle nodes in boundary operator R
-    assert( (blocks_per_rank % 2) == 0);
+    assert( blocks_per_rank != 0);
 
     // Possible checks that SIMD lanes are used with full occupancy???
   };
   virtual ~DirichletFermionOperator(void) = default;
 
-  void DirichletOn(void)   {  WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsDirichlet; }
-  void DirichletOff(void)  {  WilsonKernelsStatic::Comms = CommsMode;}
+  void DirichletOn(void)   {
+    assert(WilsonKernelsStatic::Comms!= WilsonKernelsStatic::CommsDirichlet);
+    WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsDirichlet;
+  }
+  void DirichletOff(void)  {
+    assert(WilsonKernelsStatic::Comms== WilsonKernelsStatic::CommsDirichlet);
+    WilsonKernelsStatic::Comms = CommsMode;
+  }
 
   // Implement the full interface
   virtual FermionField &tmp(void) { return FermOp.tmp(); };
@@ -88,13 +94,13 @@ public:
   virtual GridBase *GaugeRedBlackGrid(void)   { return FermOp.GaugeRedBlackGrid(); }
   
   // override multiply
-  virtual void  M    (const FermionField &in, FermionField &out) { DirichletOn(); FermOp.M(in,out);    DirichletOff(); };
-  virtual void  Mdag (const FermionField &in, FermionField &out) { DirichletOn(); FermOp.Mdag(in,out); DirichletOff(); };
+  virtual void  M    (const FermionField &in, FermionField &out) { DirichletOn(); FermOp.M(in,out);    DirichletOff();  };
+  virtual void  Mdag (const FermionField &in, FermionField &out) { DirichletOn(); FermOp.Mdag(in,out); DirichletOff();  };
 
   // half checkerboard operaions
-  virtual void   Meooe       (const FermionField &in, FermionField &out) { DirichletOn(); FermOp.Meooe(in,out); DirichletOff(); };  
+  virtual void   Meooe       (const FermionField &in, FermionField &out) { DirichletOn(); FermOp.Meooe(in,out);    DirichletOff(); };  
   virtual void   MeooeDag    (const FermionField &in, FermionField &out) { DirichletOn(); FermOp.MeooeDag(in,out); DirichletOff(); };
-  virtual void   Mooee       (const FermionField &in, FermionField &out) { DirichletOn(); FermOp.Mooee(in,out); DirichletOff(); };
+  virtual void   Mooee       (const FermionField &in, FermionField &out) { DirichletOn(); FermOp.Mooee(in,out);    DirichletOff(); };
   virtual void   MooeeDag    (const FermionField &in, FermionField &out) { DirichletOn(); FermOp.MooeeDag(in,out); DirichletOff(); };
   virtual void   MooeeInv    (const FermionField &in, FermionField &out) { DirichletOn(); FermOp.MooeeInv(in,out); DirichletOff(); };
   virtual void   MooeeInvDag (const FermionField &in, FermionField &out) { DirichletOn(); FermOp.MooeeInvDag(in,out); DirichletOff(); };
@@ -123,6 +129,9 @@ public:
   ///////////////////////////////////////////////
   // Updates gauge field during HMC
   ///////////////////////////////////////////////
+  DoubledGaugeField &GetDoubledGaugeField(void){ return FermOp.GetDoubledGaugeField(); };
+  DoubledGaugeField &GetDoubledGaugeFieldE(void){ return FermOp.GetDoubledGaugeFieldE(); };
+  DoubledGaugeField &GetDoubledGaugeFieldO(void){ return FermOp.GetDoubledGaugeFieldO(); };
   virtual void ImportGauge(const GaugeField & _U)
   {
     GaugeField U = _U;
