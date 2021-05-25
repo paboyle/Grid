@@ -140,6 +140,9 @@ public:
   // Updates gauge field during HMC
   ///////////////////////////////////////////////
   virtual void ImportGauge(const GaugeField & _U)=0;
+  virtual DoubledGaugeField &GetDoubledGaugeField(void)  =0;
+  virtual DoubledGaugeField &GetDoubledGaugeFieldE(void)  =0;
+  virtual DoubledGaugeField &GetDoubledGaugeFieldO(void)  =0;
 
   //////////////////////////////////////////////////////////////////////
   // Conserved currents, either contract at sink or insert sequentially.
