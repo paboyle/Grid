@@ -137,6 +137,8 @@ protected:
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
       double end_force = usecond();
 
+      MomFilter->applyFilter(force);
+      
       Real force_abs   = std::sqrt(norm2(force)/U.Grid()->gSites()); //average per-site norm.  nb. norm2(latt) = \sum_x norm2(latt[x]) 
       Real impulse_abs = force_abs * ep * HMC_MOMENTUM_DENOMINATOR;    
 
@@ -153,6 +155,14 @@ protected:
       double time_full  = (end_full - start_full) / 1e3;
       double time_force = (end_force - start_force) / 1e3;
       std::cout << GridLogMessage << "["<<level<<"]["<<a<<"] P update elapsed time: " << time_full << " ms (force: " << time_force << " ms)"  << std::endl;
+
+      DumpSliceNorm("force",force,Nd-1);
+      auto pol = PeekIndex<LorentzIndex>(force,Nd-1);
+      DumpSliceNorm("force_t",pol);
+      pol=Zero();
+      PokeIndex<LorentzIndex>(force,pol,Nd-1);
+      DumpSliceNorm("force_xyz",force);
+      
     }
 
     // Force from the other representations
