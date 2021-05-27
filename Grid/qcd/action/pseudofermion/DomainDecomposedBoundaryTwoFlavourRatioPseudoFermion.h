@@ -41,22 +41,21 @@ private:
   SchurFactoredFermionOperator<Impl> & NumOp;// the basic operator
   SchurFactoredFermionOperator<Impl> & DenOp;// the basic operator
 
-  OperatorFunction<FermionField> &DerivativeSolver;
-  OperatorFunction<FermionField> &ActionSolver;
+  //  OperatorFunction<FermionField> &DerivativeSolver;
+  //  OperatorFunction<FermionField> &ActionSolver;
 
   FermionField Phi; // the pseudo fermion field for this trajectory
 
 public:
   DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion(SchurFactoredFermionOperator<Impl>  &_NumOp, 
-					 SchurFactoredFermionOperator<Impl>  &_DenOp,
-					 OperatorFunction<FermionField> & DS,
-					 OperatorFunction<FermionField> & AS
-					 ) : NumOp(_NumOp), DenOp(_DenOp),
-					DerivativeSolver(DS), ActionSolver(AS),
+						       SchurFactoredFermionOperator<Impl>  &_DenOp
+						       //						       OperatorFunction<FermionField> & AS,
+						       //						       OperatorFunction<FermionField> & DS
+						       ) : NumOp(_NumOp), DenOp(_DenOp),
+							   //					DerivativeSolver(DS), ActionSolver(AS),
 					Phi(_NumOp.FermOp.FermionGrid()) {};
       
   virtual std::string action_name(){return "DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion";}
-
  
   virtual std::string LogParameters(){
     std::stringstream sstream;

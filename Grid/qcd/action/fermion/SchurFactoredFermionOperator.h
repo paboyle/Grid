@@ -62,6 +62,7 @@ NAMESPACE_BEGIN(Grid);
   // - The Dirichlet ops can be passed to dOmega(Bar) solvers etc...
   //
   ////////////////////////////////////////////////////////
+
 template<class Impl>
 class SchurFactoredFermionOperator : public Impl
 {
@@ -71,17 +72,26 @@ public:
   
   FermionOperator<Impl> & DirichletFermOp;
   FermionOperator<Impl> & FermOp; 
-  OperatorFunction<FermionField> &Solver;
+  OperatorFunction<FermionField> &OmegaSolver;
+  OperatorFunction<FermionField> &OmegaDagSolver;
+  OperatorFunction<FermionField> &DSolver;
+  OperatorFunction<FermionField> &DdagSolver;
   Coordinate Block;
 
   SchurFactoredFermionOperator(FermionOperator<Impl> & _FermOp,
 			       FermionOperator<Impl> & _DirichletFermOp,
-			       OperatorFunction<FermionField> &_Solver,
+			       OperatorFunction<FermionField> &_OmegaSolver,
+			       OperatorFunction<FermionField> &_OmegaDagSolver,
+			       OperatorFunction<FermionField> &_DSolver,
+			       OperatorFunction<FermionField> &_DdagSolver,
 			       Coordinate &_Block)
     : Block(_Block),
       FermOp(_FermOp),
       DirichletFermOp(_DirichletFermOp),
-      Solver(_Solver)
+      OmegaSolver(_OmegaSolver),
+      OmegaDagSolver(_OmegaDagSolver),
+      DSolver(_DSolver),
+      DdagSolver(_DdagSolver)
   {
     // Pass in Dirichlet FermOp because we really need two dirac operators
     // as double stored gauge fields differ and they will otherwise overwrite
@@ -274,12 +284,12 @@ public:
   };
   void dOmegaInvAndOmegaBarInv(FermionField &in,FermionField &out)
   {
-    SchurRedBlackDiagMooeeSolve<FermionField> PrecSolve(Solver);
+    SchurRedBlackDiagMooeeSolve<FermionField> PrecSolve(OmegaSolver);
     PrecSolve(DirichletFermOp,in,out);
   };
   void dOmegaDagInvAndOmegaBarDagInv(FermionField &in,FermionField &out)
   {
-    SchurRedBlackDiagMooeeDagSolve<FermionField> PrecSolve(Solver);
+    SchurRedBlackDiagMooeeDagSolve<FermionField> PrecSolve(OmegaDagSolver);
     PrecSolve(DirichletFermOp,in,out);
   };
 
@@ -335,12 +345,12 @@ public:
   // Non-dirichlet inverter using red-black preconditioning
   void Dinverse(FermionField &in,FermionField &out)
   {
-    SchurRedBlackDiagMooeeSolve<FermionField> Solve(Solver);
+    SchurRedBlackDiagMooeeSolve<FermionField> Solve(DSolver);
     Solve(FermOp,in,out);
   }
   void DinverseDag(FermionField &in,FermionField &out)
   {
-    SchurRedBlackDiagMooeeDagSolve<FermionField> Solve(Solver);
+    SchurRedBlackDiagMooeeDagSolve<FermionField> Solve(DdagSolver);
     Solve(FermOp,in,out);
   }
 };

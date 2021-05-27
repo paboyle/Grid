@@ -36,7 +36,7 @@ NAMESPACE_BEGIN(Grid);
 
 template<typename MomentaField>
 struct MomentumFilterBase{
-  virtual void applyFilter(MomentaField &P) const;
+  virtual void applyFilter(MomentaField &P) const = 0;
 };
 
 //Do nothing

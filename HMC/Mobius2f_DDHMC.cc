@@ -213,12 +213,16 @@ int main(int argc, char **argv) {
     BoundaryNumerators.push_back (new SchurFactoredFermionOperator<Fimpl>
 				  (*PeriNumerators[h],
 				   *DirichletNumerators[h],
-				   ActionCG,Block));
+				   ActionCG,ActionCG,
+				   ActionCG,ActionCG,
+				   Block));
 
     BoundaryDenominators.push_back (new SchurFactoredFermionOperator<Fimpl>
 				  (*PeriDenominators[h],
 				   *DirichletDenominators[h],
-				   ActionCG,Block));
+				   ActionCG,ActionCG,
+				   ActionCG,ActionCG,
+				   Block));
     
     ////////////////////////////////////////////////////////////////////////////
     // Standard CG for 2f force
@@ -237,8 +241,7 @@ int main(int argc, char **argv) {
     BoundaryQuotients.push_back(new
 				DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion<Fimpl>
 				(*BoundaryNumerators[h],
-				 *BoundaryDenominators[h],
-				 ActionCG,ActionCG));
+				 *BoundaryDenominators[h]));
 
   }
 
