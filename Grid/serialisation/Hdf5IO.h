@@ -36,10 +36,10 @@ namespace Grid
     template <typename U>
     void writeRagged(const std::string &s, const std::vector<U> &x);
     template <typename U>
-    typename std::enable_if<element<std::vector<U>>::is_number, void>::type
+    typename std::enable_if<is_flattenable<std::vector<U>>::value>::type
     writeDefault(const std::string &s, const std::vector<U> &x);
     template <typename U>
-    typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
+    typename std::enable_if<!is_flattenable<std::vector<U>>::value>::type
     writeDefault(const std::string &s, const std::vector<U> &x) { writeRagged(s, x); }
     template <typename U>
     void writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const U * pDataRowMajor, size_t NumElements);
@@ -68,10 +68,10 @@ namespace Grid
     template <typename U>
     void readRagged(const std::string &s, std::vector<U> &x);
     template <typename U>
-    typename std::enable_if<element<std::vector<U>>::is_number, void>::type
+    typename std::enable_if<is_flattenable<std::vector<U>>::value>::type
     readDefault(const std::string &s, std::vector<U> &x);
     template <typename U>
-    typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
+    typename std::enable_if<!is_flattenable<std::vector<U>>::value>::type
     readDefault(const std::string &s, std::vector<U> &x) { readRagged(s, x); }
     template <typename U>
     void readMultiDim(const std::string &s, std::vector<U> &buf, std::vector<size_t> &dim);
@@ -180,13 +180,13 @@ namespace Grid
   }
 
   template <typename U>
-  typename std::enable_if<element<std::vector<U>>::is_number, void>::type
+  typename std::enable_if<is_flattenable<std::vector<U>>::value>::type
   Hdf5Writer::writeDefault(const std::string &s, const std::vector<U> &x)
   {
-    if (isFlat(x))
+    if (isRegularShape(x))
     {
       // alias to element type
-      typedef typename element<std::vector<U>>::type Element;
+      using Scalar = typename is_flattenable<std::vector<U>>::type;
       
       // flatten the vector and getting dimensions
       Flatten<std::vector<U>> flat(x);
@@ -194,7 +194,7 @@ namespace Grid
       const auto           &flatx = flat.getFlatVector();
       for (auto &d: flat.getDim())
         dim.push_back(d);
-      writeMultiDim<Element>(s, dim, &flatx[0], flatx.size());
+      writeMultiDim<Scalar>(s, dim, &flatx[0], flatx.size());
     }
     else
     {
@@ -239,7 +239,7 @@ namespace Grid
   void Hdf5Reader::readMultiDim(const std::string &s, std::vector<U> &buf, std::vector<size_t> &dim)
   {
     // alias to element type
-    typedef typename element<std::vector<U>>::type Element;
+    using Scalar = typename is_flattenable<std::vector<U>>::type;
     
     // read the dimensions
     H5NS::DataSpace       dataSpace;
@@ -270,19 +270,19 @@ namespace Grid
       H5NS::DataSet dataSet;
       
       dataSet = group_.openDataSet(s);
-      dataSet.read(buf.data(), Hdf5Type<Element>::type());
+      dataSet.read(buf.data(), Hdf5Type<Scalar>::type());
     }
     else
     {
       H5NS::Attribute attribute;
       
       attribute = group_.openAttribute(s);
-      attribute.read(Hdf5Type<Element>::type(), buf.data());
+      attribute.read(Hdf5Type<Scalar>::type(), buf.data());
     }
   }
 
   template <typename U>
-  typename std::enable_if<element<std::vector<U>>::is_number, void>::type
+  typename std::enable_if<is_flattenable<std::vector<U>>::value>::type
   Hdf5Reader::readDefault(const std::string &s, std::vector<U> &x)
   {
     if (H5Lexists        (group_.getId(), s.c_str(), H5P_DEFAULT) > 0
@@ -293,10 +293,10 @@ namespace Grid
     else
     {
       // alias to element type
-      typedef typename element<std::vector<U>>::type Element;
+      using Scalar = typename is_flattenable<std::vector<U>>::type;
 
       std::vector<size_t>   dim;
-      std::vector<Element>  buf;
+      std::vector<Scalar>   buf;
       readMultiDim( s, buf, dim );
 
       // reconstruct the multidimensional vector

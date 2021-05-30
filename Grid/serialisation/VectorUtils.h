@@ -236,21 +236,36 @@ namespace Grid {
     }
   }
 
-  // Vector element trait //////////////////////////////////////////////////////  
-  template <typename T>
-  struct element
+  // is_flattenable<T>::value is true if T is a std::vector<> which can be flattened //////////////////////
+  template <typename T, typename V = void>
+  struct is_flattenable : std::false_type
   {
-    typedef T type;
-    static constexpr bool is_number = false;
+    using type      = T;
+    using grid_type = T;
+    static constexpr int vecRank = 0;
+    static constexpr bool isGridTensor = false;
+    static constexpr bool children_flattenable = std::is_arithmetic<T>::value or is_complex<T>::value;
   };
-  
+
   template <typename T>
-  struct element<std::vector<T>>
+  struct is_flattenable<T, typename std::enable_if<isGridTensor<T>::value>::type> : std::false_type
   {
-    typedef typename element<T>::type type;
-    static constexpr bool is_number = std::is_arithmetic<T>::value
-                                      or is_complex<T>::value
-                                      or element<T>::is_number;
+    using type      = typename GridTypeMapper<T>::scalar_type;
+    using grid_type = T;
+    static constexpr int vecRank = 0;
+    static constexpr bool isGridTensor = true;
+    static constexpr bool children_flattenable = true;
+  };
+
+  template <typename T>
+  struct is_flattenable<std::vector<T>, typename std::enable_if<is_flattenable<T>::children_flattenable>::type>
+  : std::true_type
+  {
+    using type      = typename is_flattenable<T>::type;
+    using grid_type = typename is_flattenable<T>::grid_type;
+    static constexpr bool isGridTensor = is_flattenable<T>::isGridTensor;
+    static constexpr int vecRank = is_flattenable<T>::vecRank + 1;
+    static constexpr bool children_flattenable = true;
   };
   
   // Vector flattening utility class ////////////////////////////////////////////
@@ -259,23 +274,30 @@ namespace Grid {
   class Flatten
   {
   public:
-    typedef typename element<V>::type Element;
+    using Scalar  = typename is_flattenable<V>::type;
+    static constexpr bool isGridTensor = is_flattenable<V>::isGridTensor;
   public:
-    explicit                     Flatten(const V &vector);
-    const V &                    getVector(void);
-    const std::vector<Element> & getFlatVector(void);
-    const std::vector<size_t>  & getDim(void);
+    explicit                    Flatten(const V &vector);
+    const V &                   getVector(void)     const { return vector_; }
+    const std::vector<Scalar> & getFlatVector(void) const { return flatVector_; }
+    const std::vector<size_t> & getDim(void)        const { return dim_; }
   private:
-    void accumulate(const Element &e);
-    template <typename W>
-    void accumulate(const W &v);
-    void accumulateDim(const Element &e);
-    template <typename W>
-    void accumulateDim(const W &v);
+    template <typename W> typename std::enable_if<!is_flattenable<W>::value && !is_flattenable<W>::isGridTensor>::type
+    accumulate(const W &e);
+    template <typename W> typename std::enable_if<!is_flattenable<W>::value &&  is_flattenable<W>::isGridTensor>::type
+    accumulate(const W &e);
+    template <typename W> typename std::enable_if< is_flattenable<W>::value>::type
+    accumulate(const W &v);
+    template <typename W> typename std::enable_if<!is_flattenable<W>::value && !is_flattenable<W>::isGridTensor>::type
+    accumulateDim(const W &e) {} // Innermost is a scalar - do nothing
+    template <typename W> typename std::enable_if<!is_flattenable<W>::value &&  is_flattenable<W>::isGridTensor>::type
+    accumulateDim(const W &e);
+    template <typename W> typename std::enable_if< is_flattenable<W>::value>::type
+    accumulateDim(const W &v);
   private:
-    const V              &vector_;
-    std::vector<Element> flatVector_;
-    std::vector<size_t>  dim_;
+    const V             &vector_;
+    std::vector<Scalar> flatVector_;
+    std::vector<size_t> dim_;
   };
   
   // Class to reconstruct a multidimensional std::vector
@@ -283,38 +305,57 @@ namespace Grid {
   class Reconstruct
   {
   public:
-    typedef typename element<V>::type Element;
+    using Scalar  = typename is_flattenable<V>::type;
+    static constexpr bool isGridTensor = is_flattenable<V>::isGridTensor;
   public:
-    Reconstruct(const std::vector<Element> &flatVector,
+    Reconstruct(const std::vector<Scalar> &flatVector,
                 const std::vector<size_t> &dim);
-    const V &                    getVector(void);
-    const std::vector<Element> & getFlatVector(void);
-    const std::vector<size_t>  & getDim(void);
+    const V &                   getVector(void)     const { return vector_; }
+    const std::vector<Scalar> & getFlatVector(void) const { return flatVector_; }
+    const std::vector<size_t> & getDim(void)        const { return dim_; }
   private:
-    void fill(std::vector<Element> &v);
-    template <typename W>
-    void fill(W &v);
-    void resize(std::vector<Element> &v, const unsigned int dim);
-    template <typename W>
-    void resize(W &v, const unsigned int dim);
+    template <typename W> typename std::enable_if<!is_flattenable<W>::value && !is_flattenable<W>::isGridTensor>::type
+    fill(W &v);
+    template <typename W> typename std::enable_if<!is_flattenable<W>::value &&  is_flattenable<W>::isGridTensor>::type
+    fill(W &v);
+    template <typename W> typename std::enable_if< is_flattenable<W>::value>::type
+    fill(W &v);
+    template <typename W> typename std::enable_if< is_flattenable<W>::value &&  is_flattenable<W>::vecRank==1>::type
+    resize(W &v, const unsigned int dim);
+    template <typename W> typename std::enable_if< is_flattenable<W>::value && (is_flattenable<W>::vecRank>1)>::type
+    resize(W &v, const unsigned int dim);
+    template <typename W> typename std::enable_if<!is_flattenable<W>::isGridTensor>::type
+    checkInnermost(const W &e) {} // Innermost is a scalar - do nothing
+    template <typename W> typename std::enable_if< is_flattenable<W>::isGridTensor>::type
+    checkInnermost(const W &e);
   private:
-    V                          vector_;
-    const std::vector<Element> &flatVector_;
-    std::vector<size_t>        dim_;
-    size_t                     ind_{0};
-    unsigned int               dimInd_{0};
+    V                         vector_;
+    const std::vector<Scalar> &flatVector_;
+    std::vector<size_t>       dim_;
+    size_t                    ind_{0};
+    unsigned int              dimInd_{0};
   };
 
   // Flatten class template implementation
   template <typename V>
-  void Flatten<V>::accumulate(const Element &e)
+  template <typename W> typename std::enable_if<!is_flattenable<W>::value && !is_flattenable<W>::isGridTensor>::type
+  Flatten<V>::accumulate(const W &e)
   {
     flatVector_.push_back(e);
   }
   
   template <typename V>
-  template <typename W>
-  void Flatten<V>::accumulate(const W &v)
+  template <typename W> typename std::enable_if<!is_flattenable<W>::value && is_flattenable<W>::isGridTensor>::type
+  Flatten<V>::accumulate(const W &e)
+  {
+    for (const Scalar &x: e) {
+      flatVector_.push_back(x);
+    }
+  }
+
+  template <typename V>
+  template <typename W> typename std::enable_if<is_flattenable<W>::value>::type
+  Flatten<V>::accumulate(const W &v)
   {
     for (auto &e: v)
     {
@@ -323,11 +364,17 @@ namespace Grid {
   }
   
   template <typename V>
-  void Flatten<V>::accumulateDim(const Element &e) {};
+  template <typename W> typename std::enable_if<!is_flattenable<W>::value && is_flattenable<W>::isGridTensor>::type
+  Flatten<V>::accumulateDim(const W &e)
+  {
+    using Traits = GridTypeMapper<typename is_flattenable<W>::grid_type>;
+    for (int rank=0; rank < Traits::Rank; ++rank)
+      dim_.push_back(Traits::Dimension(rank));
+  }
   
   template <typename V>
-  template <typename W>
-  void Flatten<V>::accumulateDim(const W &v)
+  template <typename W> typename std::enable_if<is_flattenable<W>::value>::type
+  Flatten<V>::accumulateDim(const W &v)
   {
     dim_.push_back(v.size());
     accumulateDim(v[0]);
@@ -337,42 +384,36 @@ namespace Grid {
   Flatten<V>::Flatten(const V &vector)
   : vector_(vector)
   {
-    accumulate(vector_);
     accumulateDim(vector_);
-  }
-  
-  template <typename V>
-  const V & Flatten<V>::getVector(void)
-  {
-    return vector_;
-  }
-  
-  template <typename V>
-  const std::vector<typename Flatten<V>::Element> &
-  Flatten<V>::getFlatVector(void)
-  {
-    return flatVector_;
-  }
-  
-  template <typename V>
-  const std::vector<size_t> & Flatten<V>::getDim(void)
-  {
-    return dim_;
+    std::size_t TotalSize{ dim_[0] };
+    for (int i = 1; i < dim_.size(); ++i) {
+      TotalSize *= dim_[i];
+    }
+    flatVector_.reserve(TotalSize);
+    accumulate(vector_);
   }
   
   // Reconstruct class template implementation
   template <typename V>
-  void Reconstruct<V>::fill(std::vector<Element> &v)
+  template <typename W> typename std::enable_if<!is_flattenable<W>::value && !is_flattenable<W>::isGridTensor>::type
+  Reconstruct<V>::fill(W &v)
+  {
+    v = flatVector_[ind_++];
+  }
+  
+  template <typename V>
+  template <typename W> typename std::enable_if<!is_flattenable<W>::value &&  is_flattenable<W>::isGridTensor>::type
+  Reconstruct<V>::fill(W &v)
   {
     for (auto &e: v)
     {
       e = flatVector_[ind_++];
     }
   }
-  
+
   template <typename V>
-  template <typename W>
-  void Reconstruct<V>::fill(W &v)
+  template <typename W> typename std::enable_if<is_flattenable<W>::value>::type
+  Reconstruct<V>::fill(W &v)
   {
     for (auto &e: v)
     {
@@ -381,14 +422,15 @@ namespace Grid {
   }
   
   template <typename V>
-  void Reconstruct<V>::resize(std::vector<Element> &v, const unsigned int dim)
+  template <typename W> typename std::enable_if<is_flattenable<W>::value && is_flattenable<W>::vecRank==1>::type
+  Reconstruct<V>::resize(W &v, const unsigned int dim)
   {
     v.resize(dim_[dim]);
   }
   
   template <typename V>
-  template <typename W>
-  void Reconstruct<V>::resize(W &v, const unsigned int dim)
+  template <typename W> typename std::enable_if<is_flattenable<W>::value && (is_flattenable<W>::vecRank>1)>::type
+  Reconstruct<V>::resize(W &v, const unsigned int dim)
   {
     v.resize(dim_[dim]);
     for (auto &e: v)
@@ -398,34 +440,31 @@ namespace Grid {
   }
   
   template <typename V>
-  Reconstruct<V>::Reconstruct(const std::vector<Element> &flatVector,
+  template <typename W> typename std::enable_if<is_flattenable<W>::isGridTensor>::type
+  Reconstruct<V>::checkInnermost(const W &)
+  {
+    using Traits = GridTypeMapper<typename is_flattenable<W>::grid_type>;
+    const int gridRank{Traits::Rank};
+    const int dimRank{static_cast<int>(dim_.size())};
+    assert(dimRank >= gridRank && "Tensor rank too low for Grid tensor");
+    for (int i=0; i<gridRank; ++i) {
+      assert(dim_[dimRank - gridRank + i] == Traits::Dimension(i) && "Tensor dimension doesn't match Grid tensor");
+    }
+    dim_.resize(dimRank - gridRank);
+  }
+
+  template <typename V>
+  Reconstruct<V>::Reconstruct(const std::vector<Scalar> &flatVector,
                               const std::vector<size_t> &dim)
   : flatVector_(flatVector)
   , dim_(dim)
   {
+    checkInnermost(vector_);
+    assert(dim_.size() == is_flattenable<V>::vecRank && "Tensor rank doesn't match nested std::vector rank");
     resize(vector_, 0);
     fill(vector_);
   }
   
-  template <typename V>
-  const V & Reconstruct<V>::getVector(void)
-  {
-    return vector_;
-  }
-  
-  template <typename V>
-  const std::vector<typename Reconstruct<V>::Element> &
-  Reconstruct<V>::getFlatVector(void)
-  {
-    return flatVector_;
-  }
-  
-  template <typename V>
-  const std::vector<size_t> & Reconstruct<V>::getDim(void)
-  {
-    return dim_;
-  }
-
   // Vector IO utilities ///////////////////////////////////////////////////////
   // helper function to read space-separated values
   template <typename T>
@@ -460,18 +499,18 @@ namespace Grid {
     return os;
   }
 
-  // In general, scalar types are considered "flat" (regularly shaped)
+  // In general, scalar types are considered "flattenable" (regularly shaped)
   template <typename T>
-  bool isFlat(const T &t) { return true; }
+  bool isRegularShape(const T &t) { return true; }
 
   // Return non-zero if all dimensions of this std::vector<std::vector<T>> are regularly shaped
   template <typename T>
-  bool isFlat(const std::vector<std::vector<T>> &v)
+  bool isRegularShape(const std::vector<std::vector<T>> &v)
   {
     // Make sure all of my rows are the same size
     for (std::size_t i = 0; i < v.size(); ++i)
     {
-      if (v[i].size() != v[0].size() || !isFlat(v[i]))
+      if (v[i].size() != v[0].size() || !isRegularShape(v[i]))
       {
         return false;
       }
