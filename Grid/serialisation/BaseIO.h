@@ -30,6 +30,7 @@ Author: Guido Cossu <guido.cossu@ed.ac.uk>
 #ifndef GRID_SERIALISATION_ABSTRACT_READER_H
 #define GRID_SERIALISATION_ABSTRACT_READER_H
 
+#include <atomic>
 #include <type_traits>
 #include <Grid/tensors/Tensors.h>
 #include <Grid/serialisation/VectorUtils.h>
@@ -110,6 +111,10 @@ namespace Grid {
     template <typename ET>
     inline typename std::enable_if<is_tensor_of_container<ET>::value, typename Traits<ET>::scalar_type *>::type
     getFirstScalar(ET &eigenTensor) { return eigenTensor.data()->begin(); }
+
+    // Counter for resized EigenTensors (poor man's substitute for allocator)
+    // Defined in BinaryIO.cc
+    extern std::atomic_uint64_t EigenResizeCounter;
   }
 
   // Abstract writer/reader classes ////////////////////////////////////////////
@@ -497,8 +502,11 @@ namespace Grid {
   typename std::enable_if<EigenIO::is_tensor_variable<ETensor>::value, void>::type
   Reader<T>::Reshape(ETensor &t, const std::array<typename ETensor::Index, ETensor::NumDimensions> &dims )
   {
+    typename ETensor::Index before = t.size();
     //t.reshape( dims );
     t.resize( dims );
+    uint64_t diff = static_cast<uint64_t>(( t.size() - before ) * sizeof(typename ETensor::Scalar));
+    EigenIO::EigenResizeCounter.fetch_add(diff, std::memory_order_relaxed);
   }
 
   template <typename T>
