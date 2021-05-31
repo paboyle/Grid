@@ -9,7 +9,8 @@
  Author: Antonin Portelli <antonin.portelli@me.com>
  Author: Peter Boyle <paboyle@ph.ed.ac.uk>
  Author: paboyle <paboyle@ph.ed.ac.uk>
- 
+ Author: Michael Marshall <michael.marshall@ed.ac.uk>
+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
@@ -501,16 +502,55 @@ namespace Grid {
 
   // In general, scalar types are considered "flattenable" (regularly shaped)
   template <typename T>
+  bool isRegularShapeHelper(const std::vector<T> &, std::vector<std::size_t> &, int, bool)
+  {
+    return true;
+  }
+
+  template <typename T>
+  bool isRegularShapeHelper(const std::vector<std::vector<T>> &v, std::vector<std::size_t> &Dims, int Depth, bool bFirst)
+  {
+    if( bFirst)
+    {
+      assert( Dims.size() == Depth     && "Bug: Delete this message after testing" );
+      Dims.push_back(v[0].size());
+      if (!Dims[Depth])
+        return false;
+    }
+    else
+    {
+      assert( Dims.size() >= Depth + 1 && "Bug: Delete this message after testing" );
+    }
+    for (std::size_t i = 0; i < v.size(); ++i)
+    {
+      if (v[i].size() != Dims[Depth] || !isRegularShapeHelper(v[i], Dims, Depth + 1, bFirst && i==0))
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  template <typename T>
   bool isRegularShape(const T &t) { return true; }
+
+  template <typename T>
+  bool isRegularShape(const std::vector<T> &v) { return !v.empty(); }
 
   // Return non-zero if all dimensions of this std::vector<std::vector<T>> are regularly shaped
   template <typename T>
   bool isRegularShape(const std::vector<std::vector<T>> &v)
   {
+    if (v.empty() || v[0].empty())
+      return false;
     // Make sure all of my rows are the same size
-    for (std::size_t i = 0; i < v.size(); ++i)
+    std::vector<std::size_t> Dims;
+    Dims.reserve(is_flattenable<T>::vecRank);
+    Dims.push_back(v.size());
+    Dims.push_back(v[0].size());
+    for (std::size_t i = 0; i < Dims[0]; ++i)
     {
-      if (v[i].size() != v[0].size() || !isRegularShape(v[i]))
+      if (v[i].size() != Dims[1] || !isRegularShapeHelper(v[i], Dims, 2, i==0))
       {
         return false;
       }

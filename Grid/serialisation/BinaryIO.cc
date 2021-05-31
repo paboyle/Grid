@@ -30,9 +30,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
-// Declared in BaseIO.h
-std::atomic_uint64_t EigenIO::EigenResizeCounter(0);
-
 // Writer implementation ///////////////////////////////////////////////////////
 BinaryWriter::BinaryWriter(const std::string &fileName)
 : file_(fileName, std::ios::binary|std::ios::out)

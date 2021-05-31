@@ -9,6 +9,7 @@
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: Guido Cossu <guido.cossu@ed.ac.uk>
+Author: Michael Marshall <michael.marshall@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -114,7 +115,7 @@ namespace Grid {
 
     // Counter for resized EigenTensors (poor man's substitute for allocator)
     // Defined in BinaryIO.cc
-    extern std::atomic_uint64_t EigenResizeCounter;
+    extern std::uint64_t EigenResizeCounter;
   }
 
   // Abstract writer/reader classes ////////////////////////////////////////////
@@ -502,11 +503,14 @@ namespace Grid {
   typename std::enable_if<EigenIO::is_tensor_variable<ETensor>::value, void>::type
   Reader<T>::Reshape(ETensor &t, const std::array<typename ETensor::Index, ETensor::NumDimensions> &dims )
   {
-    typename ETensor::Index before = t.size();
+#ifdef GRID_OMP
+    // The memory counter is the reason this must be done from the primary thread
+    assert(omp_in_parallel()==0 && "Deserialisation which resizes Eigen tensor must happen from primary thread");
+#endif
+    EigenIO::EigenResizeCounter -= static_cast<uint64_t>(t.size()) * sizeof(typename ETensor::Scalar);
     //t.reshape( dims );
     t.resize( dims );
-    uint64_t diff = static_cast<uint64_t>(( t.size() - before ) * sizeof(typename ETensor::Scalar));
-    EigenIO::EigenResizeCounter.fetch_add(diff, std::memory_order_relaxed);
+    EigenIO::EigenResizeCounter += static_cast<uint64_t>(t.size()) * sizeof(typename ETensor::Scalar);
   }
 
   template <typename T>
