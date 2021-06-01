@@ -36,12 +36,12 @@ NAMESPACE_BEGIN(Grid);
 template<typename MomentaField>
 struct DDHMCFilter: public MomentumFilterBase<MomentaField>
 {
-  typedef typename MomentaField::vector_type vector_type; //SIMD-vectorized complex type
-  typedef typename MomentaField::scalar_type scalar_type; //scalar complex type
-  typedef iVector<iScalar<iScalar<vector_type> >, Nd > LorentzScalarType; //complex phase for each site/direction
-  typedef iScalar<iScalar<iScalar<vector_type> > >            ScalarType; //complex phase for each site
-  typedef Lattice<LorentzScalarType> LatticeLorentzScalarType;
-  typedef Lattice<ScalarType> LatticeScalarType;
+  //  typedef typename MomentaField::vector_type vector_type; //SIMD-vectorized complex type
+  //  typedef typename MomentaField::scalar_type scalar_type; //scalar complex type
+  //  typedef iVector<iScalar<iScalar<vector_type> >, Nd > LorentzScalarType; //complex phase for each site/direction
+  //  typedef iScalar<iScalar<iScalar<vector_type> > >            ScalarType; //complex phase for each site
+  //  typedef Lattice<LorentzScalarType> LatticeLorentzScalarType;
+  //  typedef Lattice<ScalarType> LatticeScalarType;
   
   Coordinate Block;
   int Width;
@@ -72,35 +72,34 @@ struct DDHMCFilter: public MomentumFilterBase<MomentaField>
     LatticeInteger coor(grid); 
     for(int mu=0;mu<Nd;mu++) {
 
+#define PROJECT_DOMAIN      
       if ( (Block[mu] <= Global[mu])&&(Block[mu]>0) ) {
-#if 0
 	LatticeCoordinate(coor,mu);
-	auto P_mu = PeekIndex<LorentzIndex>(P, mu);
-	P_mu = where(mod(coor,Block[mu])==Integer(Block[mu]-1),zz,P_mu);
-	PokeIndex<LorentzIndex>(P, P_mu, mu);
-
-	for(int nu=0;nu<Nd;nu++){
-	  if ( mu!=nu ){
-	    auto P_nu = PeekIndex<LorentzIndex>(P, nu);
-	    P_nu = where(mod(coor,Block[mu])==Integer(Block[mu]-1),zz,P_nu);
-	    P_nu = where(mod(coor,Block[mu])==Integer(0)          ,zz,P_nu);
-	    PokeIndex<LorentzIndex>(P, P_nu, nu);
-	  }
-	}
-#else
-	LatticeCoordinate(coor,mu);
+#if 1
+	P = where(mod(coor,Block[mu])==Integer(Block[mu]-3),zzz,P); //width 4
 	P = where(mod(coor,Block[mu])==Integer(Block[mu]-2),zzz,P); //width 4
 	P = where(mod(coor,Block[mu])==Integer(Block[mu]-1),zzz,P); //width 2
 	P = where(mod(coor,Block[mu])==Integer(0),zzz,P);           //width 2
-	auto P_mu = PeekIndex<LorentzIndex>(P,mu);                  
 	P = where(mod(coor,Block[mu])==Integer(1),zzz,P);           //width 4
+	auto P_mu = PeekIndex<LorentzIndex>(P,mu);                  
+	P = where(mod(coor,Block[mu])==Integer(2),zzz,P);           //width 6
 	PokeIndex<LorentzIndex>(P, P_mu, mu);
-#endif
-	
-
-      }
-      
+#else
+	P = where(mod(coor,Block[mu])==Integer(Block[mu]-1),zzz,P); //width 2
+	auto P_mu = PeekIndex<LorentzIndex>(P,mu);                  
+	P = where(mod(coor,Block[mu])==Integer(0),zzz,P);           //width 6
+	PokeIndex<LorentzIndex>(P, P_mu, mu);
+#endif	
+      }      
     }
+#ifdef PROJECT_DOMAIN    
+    LatticeInteger domaincb(grid); domaincb=Zero();
+    for(int d=0;d<Nd;d++){
+      LatticeCoordinate(coor,d);
+      domaincb = domaincb + div(coor,Block[d]);
+    }
+    P = where(mod(domaincb,2)==Integer(1),P,zzz);
+#endif    
   }
 };
 NAMESPACE_END(Grid);
