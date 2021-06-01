@@ -32,28 +32,29 @@ NAMESPACE_BEGIN(Grid);
 ///////////////////////////////////////
 // Two flavour ratio
 ///////////////////////////////////////
-template<class Impl>
-class DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion : public Action<typename Impl::GaugeField> {
+template<class ImplD,class ImplF>
+class DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion : public Action<typename ImplD::GaugeField> {
 public:
-  INHERIT_IMPL_TYPES(Impl);
+  INHERIT_IMPL_TYPES(ImplD);
 
 private:
-  SchurFactoredFermionOperator<Impl> & NumOp;// the basic operator
-  SchurFactoredFermionOperator<Impl> & DenOp;// the basic operator
+  SchurFactoredFermionOperator<ImplD,ImplF> & NumOp;// the basic operator
+  SchurFactoredFermionOperator<ImplD,ImplF> & DenOp;// the basic operator
 
-  //  OperatorFunction<FermionField> &DerivativeSolver;
-  //  OperatorFunction<FermionField> &ActionSolver;
-
+  RealD ActionStoppingCondition;
+  RealD DerivativeStoppingCondition;
+  
   FermionField Phi; // the pseudo fermion field for this trajectory
 
 public:
-  DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion(SchurFactoredFermionOperator<Impl>  &_NumOp, 
-						       SchurFactoredFermionOperator<Impl>  &_DenOp
-						       //						       OperatorFunction<FermionField> & AS,
-						       //						       OperatorFunction<FermionField> & DS
-						       ) : NumOp(_NumOp), DenOp(_DenOp),
-							   //					DerivativeSolver(DS), ActionSolver(AS),
-					Phi(_NumOp.FermOp.FermionGrid()) {};
+  DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion(SchurFactoredFermionOperator<ImplD,ImplF>  &_NumOp, 
+						       SchurFactoredFermionOperator<ImplD,ImplF>  &_DenOp,
+						       RealD _DerivativeTol, RealD _ActionTol)
+    : NumOp(_NumOp), DenOp(_DenOp),
+      Phi(_NumOp.PeriodicFermOpD.FermionGrid()),
+      DerivativeStoppingCondition(_DerivativeTol),
+      ActionStoppingCondition(_ActionTol)
+  {};
       
   virtual std::string action_name(){return "DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion";}
  
@@ -67,8 +68,8 @@ public:
     NumOp.ImportGauge(U);
     DenOp.ImportGauge(U);
 
-    FermionField eta(NumOp.FermOp.FermionGrid());
-    FermionField tmp(NumOp.FermOp.FermionGrid());
+    FermionField eta(NumOp.PeriodicFermOpD.FermionGrid());
+    FermionField tmp(NumOp.PeriodicFermOpD.FermionGrid());
 
     // P(phi) = e^{- phi^dag P^dag Rdag^-1 R^-1 P phi}
     //
@@ -88,6 +89,8 @@ public:
     gaussian(pRNG,eta);    eta=eta*scale;
     
     NumOp.ProjectBoundaryBar(eta);
+    DenOp.tol = ActionStoppingCondition;
+    NumOp.tol = ActionStoppingCondition;
     DenOp.R(eta,tmp);
     NumOp.RInv(tmp,Phi);
 
@@ -101,9 +104,11 @@ public:
     NumOp.ImportGauge(U);
     DenOp.ImportGauge(U);
 
-    FermionField X(NumOp.FermOp.FermionGrid());
-    FermionField Y(NumOp.FermOp.FermionGrid());
+    FermionField X(NumOp.PeriodicFermOpD.FermionGrid());
+    FermionField Y(NumOp.PeriodicFermOpD.FermionGrid());
 
+    DenOp.tol = ActionStoppingCondition;
+    NumOp.tol = ActionStoppingCondition;
     NumOp.R(Phi,Y);
     DenOp.RInv(Y,X);
 
@@ -118,8 +123,8 @@ public:
     NumOp.ImportGauge(U);
     DenOp.ImportGauge(U);
 
-    GridBase *fgrid = NumOp.FermOp.FermionGrid();
-    GridBase *ugrid = NumOp.FermOp.GaugeGrid();
+    GridBase *fgrid = NumOp.PeriodicFermOpD.FermionGrid();
+    GridBase *ugrid = NumOp.PeriodicFermOpD.GaugeGrid();
 
     FermionField  X(fgrid);
     FermionField  Y(fgrid);
@@ -141,6 +146,8 @@ public:
     FermionField PdagRinvDagRinvP_Phi(fgrid);
 
     //    RealD action = S(U);
+    DenOp.tol = DerivativeStoppingCondition;
+    NumOp.tol = DerivativeStoppingCondition;
     
     // P term
     NumOp.dBoundaryBar(Phi,tmp);
@@ -199,18 +206,18 @@ public:
 
     X = DobiDdbPhi;
     Y = DobidDddDoidRinvDagRinvP_Phi;
-    NumOp.DirichletFermOp.MDeriv(force,Y,X,DaggerNo);    dSdU=dSdU+force;
-    NumOp.DirichletFermOp.MDeriv(force,X,Y,DaggerYes);   dSdU=dSdU+force;
+    NumOp.DirichletFermOpD.MDeriv(force,Y,X,DaggerNo);    dSdU=dSdU+force;
+    NumOp.DirichletFermOpD.MDeriv(force,X,Y,DaggerYes);   dSdU=dSdU+force;
 
     X = DoiDdDobiDdbPhi;
     Y = DoidRinvDagRinvP_Phi;
-    NumOp.DirichletFermOp.MDeriv(force,Y,X,DaggerNo);    dSdU=dSdU+force;
-    NumOp.DirichletFermOp.MDeriv(force,X,Y,DaggerYes);   dSdU=dSdU+force;
+    NumOp.DirichletFermOpD.MDeriv(force,Y,X,DaggerNo);    dSdU=dSdU+force;
+    NumOp.DirichletFermOpD.MDeriv(force,X,Y,DaggerYes);   dSdU=dSdU+force;
 
     X = DiDdbP_Phi;
     Y = DidRinvP_Phi;
-    DenOp.FermOp.MDeriv(force,Y,X,DaggerNo);    dSdU=dSdU+force;
-    DenOp.FermOp.MDeriv(force,X,Y,DaggerYes);   dSdU=dSdU+force;
+    DenOp.PeriodicFermOpD.MDeriv(force,Y,X,DaggerNo);    dSdU=dSdU+force;
+    DenOp.PeriodicFermOpD.MDeriv(force,X,Y,DaggerYes);   dSdU=dSdU+force;
 
     dSdU *= -1.0;
 
