@@ -160,17 +160,20 @@ public:
 			       RealD _c1=1.0, RealD _c2=1.0,RealD _u0=1.0,
 			     const ImplParams &p= ImplParams());
     
-    // DoubleStore gauge field in operator
-    void ImportGauge      (const GaugeField &_Uthin ) { assert(0); }
+  // DoubleStore gauge field in operator
+  void ImportGauge      (const GaugeField &_Uthin ) { assert(0); }
   void ImportGauge(const GaugeField &_Uthin,const GaugeField &_Ufat);
-    void ImportGaugeSimple(const GaugeField &_UUU,const GaugeField &_U);
-    void ImportGaugeSimple(const DoubledGaugeField &_UUU,const DoubledGaugeField &_U);
-    // Give a reference; can be used to do an assignment or copy back out after import
-    // if Carleton wants to cache them and not use the ImportSimple
-    DoubledGaugeField &GetU(void)   { return Umu ; } ;
-    DoubledGaugeField &GetUUU(void) { return UUUmu; };
-    void CopyGaugeCheckerboards(void);
-    
+  void ImportGaugeSimple(const GaugeField &_UUU,const GaugeField &_U);
+  void ImportGaugeSimple(const DoubledGaugeField &_UUU,const DoubledGaugeField &_U);
+  // Give a reference; can be used to do an assignment or copy back out after import
+  // if Carleton wants to cache them and not use the ImportSimple
+  virtual DoubledGaugeField &GetDoubledGaugeField(void)  override { return Umu; };
+  virtual DoubledGaugeField &GetDoubledGaugeFieldE(void) override { return UmuEven; };
+  virtual DoubledGaugeField &GetDoubledGaugeFieldO(void) override { return UmuOdd; };
+  DoubledGaugeField &GetU(void)   { return Umu ; } ;
+  DoubledGaugeField &GetUUU(void) { return UUUmu; };
+  void CopyGaugeCheckerboards(void);
+  
   ///////////////////////////////////////////////////////////////
   // Data members require to support the functionality
   ///////////////////////////////////////////////////////////////
