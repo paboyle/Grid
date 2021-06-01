@@ -141,11 +141,11 @@ public:
   void ImportGauge(const GaugeField &_Uthin, const GaugeField &_Ufat);
   void ImportGaugeSimple(const GaugeField &_UUU    ,const GaugeField &_U);
   void ImportGaugeSimple(const DoubledGaugeField &_UUU,const DoubledGaugeField &_U);
-  DoubledGaugeField &GetDoubledGaugeField(void){ return Umu; };
-  DoubledGaugeField &GetDoubledGaugeFieldE(void){ return UmuEven; };
-  DoubledGaugeField &GetDoubledGaugeFieldO(void){ return UmuOdd; };
-  DoubledGaugeField &GetU(void)   { return Umu ; } ;
-  DoubledGaugeField &GetUUU(void) { return UUUmu; };
+  virtual DoubledGaugeField &GetDoubledGaugeField(void)  override { return Umu; };
+  virtual DoubledGaugeField &GetDoubledGaugeFieldE(void) override { return UmuEven; };
+  virtual DoubledGaugeField &GetDoubledGaugeFieldO(void) override { return UmuOdd; };
+  virtual DoubledGaugeField &GetU(void)   { return Umu ; } ;
+  virtual DoubledGaugeField &GetUUU(void) { return UUUmu; };
   void CopyGaugeCheckerboards(void);
 
   ///////////////////////////////////////////////////////////////
