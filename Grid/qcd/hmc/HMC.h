@@ -159,6 +159,8 @@ private:
     }
     std::cout << GridLogMessage << "--------------------------------------------------\n";
 
+    TheIntegrator.reset_timer();
+    
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // set U and initialize P and phi's
     //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -193,6 +195,8 @@ private:
     RealD H1 = TheIntegrator.S(U);  
     std::cout << GridLogMessage << "--------------------------------------------------\n";
 
+
+    
     ///////////////////////////////////////////////////////////
     if(0){
       std::cout << "------------------------- Reversibility test" << std::endl;
@@ -262,6 +266,7 @@ public:
       double t1=usecond();
       std::cout << GridLogHMC << "Total time for trajectory (s): " << (t1-t0)/1e6 << std::endl;
 
+      TheIntegrator.print_timer();
 
       for (int obs = 0; obs < Observables.size(); obs++) {
       	std::cout << GridLogDebug << "Observables # " << obs << std::endl;
