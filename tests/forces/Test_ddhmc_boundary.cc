@@ -63,7 +63,7 @@ void ForceTest(Action<LatticeGaugeField> &action,LatticeGaugeField & U,MomentumF
   Filter.applyFilter(P);
 
   SU<Nc>::HotConfiguration(RNG4,U);
-
+  
   action.refresh(U,sRNG,RNG4);
 
   std::cout << GridLogMessage << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
@@ -117,8 +117,8 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   Coordinate latt_size   = GridDefaultLatt();
-  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   Coordinate mpi_layout  = GridDefaultMpi();
+  Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
 
   const int Ls=8;
 
@@ -127,10 +127,16 @@ int main (int argc, char ** argv)
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
+  GridCartesian         * UGridF   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
+  GridRedBlackCartesian * UrbGridF = SpaceTimeGrid::makeFourDimRedBlackGrid(UGridF);
+  GridCartesian         * FGridF   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGridF);
+  GridRedBlackCartesian * FrbGridF = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGridF);
+  
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   LatticeGaugeField U(UGrid);
+  LatticeGaugeFieldF UF(UGridF);
 
   RealD beta=6.0;
   WilsonGaugeActionR PlaqAction(beta);
@@ -146,10 +152,12 @@ int main (int argc, char ** argv)
   RealD mass=0.01; 
   RealD M5=1.8; 
 
-  typedef DirichletFermionOperator<WilsonImplR> DirichletFermion;
 
   Coordinate Block({16,16,16,8});
 
+  // Double versions
+  typedef WilsonImplD FimplD;
+  typedef DirichletFermionOperator<WilsonImplR> DirichletFermion;
   DomainWallFermionR DdwfPeriodic(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   DomainWallFermionR Ddwf(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   DirichletFermion   DdwfDirichlet(Ddwf,Block);
@@ -158,6 +166,17 @@ int main (int argc, char ** argv)
   DomainWallFermionR PV(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,1.0,M5);
   DirichletFermion   PVDirichlet(PV,Block);
 
+  // Single versions
+  typedef WilsonImplF FimplF;
+  typedef DirichletFermionOperator<WilsonImplF> DirichletFermionF;
+  DomainWallFermionF DdwfPeriodicF(UF,*FGridF,*FrbGridF,*UGridF,*UrbGridF,mass,M5);
+  DomainWallFermionF DdwfF(UF,*FGridF,*FrbGridF,*UGridF,*UrbGridF,mass,M5);
+  DirichletFermionF  DdwfDirichletF(DdwfF,Block);
+
+  DomainWallFermionF PVPeriodicF(UF,*FGridF,*FrbGridF,*UGridF,*UrbGridF,1.0,M5);
+  DomainWallFermionF PVF(UF,*FGridF,*FrbGridF,*UGridF,*UrbGridF,1.0,M5);
+  DirichletFermionF  PVDirichletF(PVF,Block);
+  
   double StoppingCondition = 1.0e-12;
   double MaxCGIterations = 10000;
   ConjugateGradient<LatticeFermion>  CG(StoppingCondition,MaxCGIterations);
@@ -166,46 +185,44 @@ int main (int argc, char ** argv)
   DirichletFilter<LatticeGaugeField> FilterDDHMC(Block);
 
   //////////////////// Two Flavour Determinant Ratio ///////////////////////////////
-  typedef WilsonImplR FermionImplPolicy;
-  TwoFlavourRatioPseudoFermionAction<FermionImplPolicy> Nf2(PVPeriodic, DdwfPeriodic,CG,CG);
+  TwoFlavourRatioPseudoFermionAction<FimplD> Nf2(PVPeriodic, DdwfPeriodic,CG,CG);
   ForceTest<GimplTypesR>(Nf2,U,FilterNone);
 
   //////////////////// Two Flavour Determinant Ratio ///////////////////////////////
-  typedef WilsonImplR FermionImplPolicy;
-  TwoFlavourRatioPseudoFermionAction<FermionImplPolicy> Nf2deg(DdwfPeriodic, DdwfPeriodic,CG,CG);
+  TwoFlavourRatioPseudoFermionAction<FimplD> Nf2deg(DdwfPeriodic, DdwfPeriodic,CG,CG);
   std::cout << "*** DEGENERATE ***\n";
   ForceTest<GimplTypesR>(Nf2deg,U,FilterNone);
 
   //////////////////// Two Flavour Determinant force test Even Odd ///////////////////////////////
-  TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> Nf2eo(PVPeriodic, DdwfPeriodic,CG,CG);
+  TwoFlavourEvenOddRatioPseudoFermionAction<FimplD> Nf2eo(PVPeriodic, DdwfPeriodic,CG,CG);
   ForceTest<GimplTypesR>(Nf2eo,U,FilterNone);
   
   //////////////////// DDHMC Boundary force ///////////////////////////////
   
-  SchurFactoredFermionOperator<DomainWallFermionR::Impl_t>
-    SchurDwf(DdwfPeriodic,
-	     DdwfDirichlet,
-	     CG,Block);
+  SchurFactoredFermionOperator<FimplD,FimplF>
+    SchurDwf(DdwfPeriodic,DdwfPeriodicF,
+	     DdwfDirichlet,DdwfDirichletF,
+	     Block);
 
-  SchurFactoredFermionOperator<DomainWallFermionR::Impl_t>
-    SchurPV(PVPeriodic,
-	    PVDirichlet,
-	    CG,Block);
+  SchurFactoredFermionOperator<FimplD,FimplF>
+    SchurPV(PVPeriodic,PVPeriodicF,
+	    PVDirichlet,PVDirichletF,
+	    Block);
 
 
   std::cout << "*** NUMERATOR ***\n";
-  DomainDecomposedBoundaryTwoFlavourPseudoFermion<DomainWallFermionR::Impl_t> DBPFA(SchurDwf,CG,CG);
+  DomainDecomposedBoundaryTwoFlavourPseudoFermion<FimplD,FimplF> DBPFA(SchurDwf);
   ForceTest<GimplTypesR>(DBPFA,U,FilterDDHMC);
 
   std::cout << "*** RATIO ***\n";
-  DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion<DomainWallFermionR::Impl_t> DBPFRA(SchurPV,SchurDwf,CG,CG);
+  DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion<FimplD,FimplF> DBPFRA(SchurPV,SchurDwf);
   ForceTest<GimplTypesR>(DBPFRA,U,FilterDDHMC);
 
   std::cout << "*** DEGENERATE ***\n";
-  DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion<DomainWallFermionR::Impl_t> DBPFRAdeg(SchurDwf,SchurDwf,CG,CG);
+  DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion<FimplD,FimplF> DBPFRAdeg(SchurDwf,SchurDwf);
   ForceTest<GimplTypesR>(DBPFRAdeg,U,FilterDDHMC);
 
-  DomainDecomposedBoundaryTwoFlavourBosonPseudoFermion<DomainWallFermionR::Impl_t> DBPFBA(SchurPV,CG,CG);
+  DomainDecomposedBoundaryTwoFlavourBosonPseudoFermion<FimplD,FimplF> DBPFBA(SchurPV);
   ForceTest<GimplTypesR>(DBPFBA,U,FilterDDHMC);
 
   Grid_finalize();
