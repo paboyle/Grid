@@ -44,6 +44,10 @@ NAMESPACE_BEGIN(Grid);
   // Exact one flavour implementation of DWF determinant ratio //
   ///////////////////////////////////////////////////////////////
 
+  //Note: using mixed prec CG for the heatbath solver in this action class will not work
+  //      because the L, R operators must have their shift coefficients updated throughout the heatbath step
+  //      You will find that the heatbath solver simply won't converge.
+  //      To use mixed precision here use the ExactOneFlavourRatioMixedPrecHeatbathPseudoFermionAction variant below
   template<class Impl>
   class ExactOneFlavourRatioPseudoFermionAction : public Action<typename Impl::GaugeField>
   {
@@ -57,7 +61,8 @@ NAMESPACE_BEGIN(Grid);
       bool use_heatbath_forecasting;
       AbstractEOFAFermion<Impl>& Lop; // the basic LH operator
       AbstractEOFAFermion<Impl>& Rop; // the basic RH operator
-      SchurRedBlackDiagMooeeSolve<FermionField> SolverHB;
+      SchurRedBlackDiagMooeeSolve<FermionField> SolverHBL;
+      SchurRedBlackDiagMooeeSolve<FermionField> SolverHBR;
       SchurRedBlackDiagMooeeSolve<FermionField> SolverL;
       SchurRedBlackDiagMooeeSolve<FermionField> SolverR;
       SchurRedBlackDiagMooeeSolve<FermionField> DerivativeSolverL;
@@ -68,23 +73,42 @@ NAMESPACE_BEGIN(Grid);
       bool initial_action; //true for the first call to S after refresh, for which the identity S = |eta|^2 holds provided the rational approx is good
     public:
 
+      //Used in the heatbath, refresh the shift coefficients of the L (LorR=0) or R (LorR=1) operator
+      virtual void heatbathRefreshShiftCoefficients(int LorR, RealD to){
+	AbstractEOFAFermion<Impl>&op = LorR == 0 ? Lop : Rop;
+	op.RefreshShiftCoefficients(to);
+      }
+
+
+      //Use the same solver for L,R in all cases
       ExactOneFlavourRatioPseudoFermionAction(AbstractEOFAFermion<Impl>& _Lop, 
 					      AbstractEOFAFermion<Impl>& _Rop,
 					      OperatorFunction<FermionField>& CG, 
 					      Params& p, 
 					      bool use_fc=false) 
-	: ExactOneFlavourRatioPseudoFermionAction(_Lop,_Rop,CG,CG,CG,CG,CG,p,use_fc) {};
-	
+	: ExactOneFlavourRatioPseudoFermionAction(_Lop,_Rop,CG,CG,CG,CG,CG,CG,p,use_fc) {};
+
+      //Use the same solver for L,R in the heatbath but different solvers elsewhere
       ExactOneFlavourRatioPseudoFermionAction(AbstractEOFAFermion<Impl>& _Lop, 
 					      AbstractEOFAFermion<Impl>& _Rop,
-					      OperatorFunction<FermionField>& HeatbathCG, 
+					      OperatorFunction<FermionField>& HeatbathCG,
+					      OperatorFunction<FermionField>& ActionCGL, OperatorFunction<FermionField>& ActionCGR, 
+					      OperatorFunction<FermionField>& DerivCGL , OperatorFunction<FermionField>& DerivCGR, 
+					      Params& p, 
+					      bool use_fc=false)
+	: ExactOneFlavourRatioPseudoFermionAction(_Lop,_Rop,HeatbathCG,HeatbathCG, ActionCGL, ActionCGR, DerivCGL,DerivCGR,p,use_fc) {};
+
+      //Use different solvers for L,R in all cases
+      ExactOneFlavourRatioPseudoFermionAction(AbstractEOFAFermion<Impl>& _Lop, 
+					      AbstractEOFAFermion<Impl>& _Rop,
+					      OperatorFunction<FermionField>& HeatbathCGL, OperatorFunction<FermionField>& HeatbathCGR,
 					      OperatorFunction<FermionField>& ActionCGL, OperatorFunction<FermionField>& ActionCGR, 
 					      OperatorFunction<FermionField>& DerivCGL , OperatorFunction<FermionField>& DerivCGR, 
 					      Params& p, 
 					      bool use_fc=false) : 
         Lop(_Lop), 
 	Rop(_Rop), 
-	SolverHB(HeatbathCG,false,true),
+	SolverHBL(HeatbathCGL,false,true), SolverHBR(HeatbathCGR,false,true),
 	SolverL(ActionCGL, false, true), SolverR(ActionCGR, false, true), 
 	DerivativeSolverL(DerivCGL, false, true), DerivativeSolverR(DerivCGR, false, true), 
 	Phi(_Lop.FermionGrid()), 
@@ -171,15 +195,16 @@ NAMESPACE_BEGIN(Grid);
         tmp[1] = Zero();
         for(int k=0; k<param.degree; ++k){
           gamma_l = 1.0 / ( 1.0 + PowerNegHalf.poles[k] );
-          Lop.RefreshShiftCoefficients(-gamma_l);
+          heatbathRefreshShiftCoefficients(0, -gamma_l);
+	  //Lop.RefreshShiftCoefficients(-gamma_l);
           if(use_heatbath_forecasting){ // Forecast CG guess using solutions from previous poles
             Lop.Mdag(CG_src, Forecast_src);
             CG_soln = Forecast(Lop, Forecast_src, prev_solns);
-            SolverHB(Lop, CG_src, CG_soln);
+            SolverHBL(Lop, CG_src, CG_soln);
             prev_solns.push_back(CG_soln);
           } else {
             CG_soln = Zero(); // Just use zero as the initial guess
-            SolverHB(Lop, CG_src, CG_soln);
+	    SolverHBL(Lop, CG_src, CG_soln);
           }
           Lop.Dtilde(CG_soln, tmp[0]); // We actually solved Cayley preconditioned system: transform back
           tmp[1] = tmp[1] + ( PowerNegHalf.residues[k]*gamma_l*gamma_l*Lop.k ) * tmp[0];
@@ -198,15 +223,16 @@ NAMESPACE_BEGIN(Grid);
         if(use_heatbath_forecasting){ prev_solns.clear(); } // empirically, LH solns don't help for RH solves
         for(int k=0; k<param.degree; ++k){
           gamma_l = 1.0 / ( 1.0 + PowerNegHalf.poles[k] );
-          Rop.RefreshShiftCoefficients(-gamma_l*PowerNegHalf.poles[k]);
+	  heatbathRefreshShiftCoefficients(1, -gamma_l*PowerNegHalf.poles[k]);
+          //Rop.RefreshShiftCoefficients(-gamma_l*PowerNegHalf.poles[k]);
           if(use_heatbath_forecasting){
             Rop.Mdag(CG_src, Forecast_src);
             CG_soln = Forecast(Rop, Forecast_src, prev_solns);
-            SolverHB(Rop, CG_src, CG_soln);
+            SolverHBR(Rop, CG_src, CG_soln);
             prev_solns.push_back(CG_soln);
           } else {
             CG_soln = Zero();
-            SolverHB(Rop, CG_src, CG_soln);
+            SolverHBR(Rop, CG_src, CG_soln);
           }
           Rop.Dtilde(CG_soln, tmp[0]); // We actually solved Cayley preconditioned system: transform back
           tmp[1] = tmp[1] - ( PowerNegHalf.residues[k]*gamma_l*gamma_l*Rop.k ) * tmp[0];
@@ -216,8 +242,10 @@ NAMESPACE_BEGIN(Grid);
         Phi = Phi + tmp[1];
 
         // Reset shift coefficients for energy and force evals
-        Lop.RefreshShiftCoefficients(0.0);
-        Rop.RefreshShiftCoefficients(-1.0);
+        //Lop.RefreshShiftCoefficients(0.0);
+        //Rop.RefreshShiftCoefficients(-1.0);
+	heatbathRefreshShiftCoefficients(0, 0.0);
+	heatbathRefreshShiftCoefficients(1, -1.0);
 
 	//Mark that the next call to S is the first after refresh
 	initial_action = true;
@@ -231,18 +259,18 @@ NAMESPACE_BEGIN(Grid);
 
       };
 
-      void Meofa(const GaugeField& U,const FermionField &phi, FermionField & Mphi) 
+      void Meofa(const GaugeField& U,const FermionField &in, FermionField & out) 
       {
         Lop.ImportGauge(U);
         Rop.ImportGauge(U);
 
-        FermionField spProj_Phi(Lop.FermionGrid());
+        FermionField spProj_in(Lop.FermionGrid());
         std::vector<FermionField> tmp(2, Lop.FermionGrid());
-	Mphi = phi;
+	out = in;
 	
         // LH term: S = S - k <\Phi| P_{-} \Omega_{-}^{\dagger} H(mf)^{-1} \Omega_{-} P_{-} |\Phi>
-        spProj(Phi, spProj_Phi, -1, Lop.Ls);
-        Lop.Omega(spProj_Phi, tmp[0], -1, 0);
+        spProj(in, spProj_in, -1, Lop.Ls);
+        Lop.Omega(spProj_in, tmp[0], -1, 0);
         G5R5(tmp[1], tmp[0]);
         tmp[0] = Zero();
         SolverL(Lop, tmp[1], tmp[0]);
@@ -250,12 +278,12 @@ NAMESPACE_BEGIN(Grid);
         Lop.Omega(tmp[1], tmp[0], -1, 1);
 	spProj(tmp[0], tmp[1], -1, Lop.Ls);
 
-	Mphi = Mphi -  Lop.k * tmp[1];
+	out = out -  Lop.k * tmp[1];
 
         // RH term: S = S + k <\Phi| P_{+} \Omega_{+}^{\dagger} ( H(mb)
         //               - \Delta_{+}(mf,mb) P_{+} )^{-1} \Omega_{+} P_{+} |\Phi>
-        spProj(Phi, spProj_Phi, 1, Rop.Ls);
-        Rop.Omega(spProj_Phi, tmp[0], 1, 0);
+        spProj(in, spProj_in, 1, Rop.Ls);
+        Rop.Omega(spProj_in, tmp[0], 1, 0);
         G5R5(tmp[1], tmp[0]);
         tmp[0] = Zero();
         SolverR(Rop, tmp[1], tmp[0]);
@@ -263,7 +291,7 @@ NAMESPACE_BEGIN(Grid);
         Rop.Omega(tmp[1], tmp[0], 1, 1);
 	spProj(tmp[0], tmp[1], 1, Rop.Ls);
 
-        Mphi = Mphi + Rop.k * tmp[1];
+        out = out + Rop.k * tmp[1];
       }
 
       // EOFA action: see Eqn. (10) of arXiv:1706.05843
@@ -361,6 +389,40 @@ NAMESPACE_BEGIN(Grid);
         dSdU = dSdU + Rop.k * force;
       };
   };
+
+  template<class ImplD, class ImplF>
+  class ExactOneFlavourRatioMixedPrecHeatbathPseudoFermionAction : public ExactOneFlavourRatioPseudoFermionAction<ImplD>{
+  public:
+    INHERIT_IMPL_TYPES(ImplD);
+    typedef OneFlavourRationalParams Params;
+
+  private:
+    AbstractEOFAFermion<ImplF>& LopF; // the basic LH operator
+    AbstractEOFAFermion<ImplF>& RopF; // the basic RH operator
+
+  public:
+    
+    virtual std::string action_name() { return "ExactOneFlavourRatioMixedPrecHeatbathPseudoFermionAction"; }
+    
+    //Used in the heatbath, refresh the shift coefficients of the L (LorR=0) or R (LorR=1) operator
+    virtual void heatbathRefreshShiftCoefficients(int LorR, RealD to){
+      AbstractEOFAFermion<ImplF> &op = LorR == 0 ? LopF : RopF;
+      op.RefreshShiftCoefficients(to);
+      this->ExactOneFlavourRatioPseudoFermionAction<ImplD>::heatbathRefreshShiftCoefficients(LorR,to);
+    }
+    
+    ExactOneFlavourRatioMixedPrecHeatbathPseudoFermionAction(AbstractEOFAFermion<ImplF>& _LopF, 
+							     AbstractEOFAFermion<ImplF>& _RopF,
+							     AbstractEOFAFermion<ImplD>& _LopD, 
+							     AbstractEOFAFermion<ImplD>& _RopD,
+							     OperatorFunction<FermionField>& HeatbathCGL, OperatorFunction<FermionField>& HeatbathCGR,
+							     OperatorFunction<FermionField>& ActionCGL, OperatorFunction<FermionField>& ActionCGR, 
+							     OperatorFunction<FermionField>& DerivCGL , OperatorFunction<FermionField>& DerivCGR, 
+							     Params& p, 
+							     bool use_fc=false) : 
+    LopF(_LopF), RopF(_RopF), ExactOneFlavourRatioPseudoFermionAction<ImplD>(_LopD, _RopD, HeatbathCGL, HeatbathCGR, ActionCGL, ActionCGR, DerivCGL, DerivCGR, p, use_fc){}
+  };
+
 
 NAMESPACE_END(Grid);
 

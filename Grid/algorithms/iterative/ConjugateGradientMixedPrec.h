@@ -68,6 +68,7 @@ NAMESPACE_BEGIN(Grid);
     }
   
   void operator() (const FieldD &src_d_in, FieldD &sol_d){
+    std::cout << GridLogMessage << "MixedPrecisionConjugateGradient: Starting mixed precision CG with outer tolerance " << Tolerance << " and inner tolerance " << InnerTolerance << std::endl;
     TotalInnerIterations = 0;
 	
     GridStopWatch TotalTimer;
@@ -102,6 +103,7 @@ NAMESPACE_BEGIN(Grid);
     FieldF sol_f(SinglePrecGrid);
     sol_f.Checkerboard() = cb;
     
+    std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradient: Starting initial inner CG with tolerance " << inner_tol << std::endl;
     ConjugateGradient<FieldF> CG_f(inner_tol, MaxInnerIterations);
     CG_f.ErrorOnNoConverge = false;
 
@@ -135,6 +137,7 @@ NAMESPACE_BEGIN(Grid);
 	(*guesser)(src_f, sol_f);
 
       //Inner CG
+      std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradient: Outer iteration " << outer_iter << " starting inner CG with tolerance " << inner_tol << std::endl;
       CG_f.Tolerance = inner_tol;
       InnerCGtimer.Start();
       CG_f(Linop_f, src_f, sol_f);
