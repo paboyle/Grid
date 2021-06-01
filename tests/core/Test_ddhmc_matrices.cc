@@ -48,6 +48,11 @@ int main (int argc, char ** argv)
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
+  GridCartesian         * UGridF   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
+  GridCartesian         * FGridF   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGridF);
+  GridRedBlackCartesian * UrbGridF = SpaceTimeGrid::makeFourDimRedBlackGrid(UGridF);
+  GridRedBlackCartesian * FrbGridF = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGridF);
+
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
 
@@ -63,17 +68,27 @@ int main (int argc, char ** argv)
   LatticeFermion    tmp1(FGrid);
   LatticeFermion    err(FGrid);    tmp=Zero();
   LatticeGaugeField Umu(UGrid); SU<Nc>::HotConfiguration(RNG4,Umu);
+  LatticeGaugeFieldF UmuF(UGridF);
+  precisionChange(UmuF,Umu);
 
   RealD mass=0.1;
   RealD M5  =1.8;
 
   DomainWallFermionR DdwfPeri(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionF DdwfPeriF(UmuF,*FGridF,*FrbGridF,*UGridF,*UrbGridF,mass,M5);
 
-  typedef DirichletFermionOperator<DomainWallFermionR::Impl_t> FermOp;
+  typedef DomainWallFermionR::Impl_t FimplD;
+  typedef DomainWallFermionF::Impl_t FimplF;
+  typedef DirichletFermionOperator<FimplD> FermOp;
+  typedef DirichletFermionOperator<FimplF> FermOpF;
   Coordinate Block({16,16,16,4});
+
   DomainWallFermionR DdwfPeriTmp(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  FermOp Ddwf(DdwfPeriTmp,Block); 
+  DomainWallFermionF DdwfPeriTmpF(UmuF,*FGridF,*FrbGridF,*UGridF,*UrbGridF,mass,M5);
+  FermOp  Ddwf(DdwfPeriTmp,Block); 
+  FermOpF DdwfF(DdwfPeriTmpF,Block); 
   Ddwf.ImportGauge(Umu);
+  DdwfF.ImportGauge(UmuF);
   
   LatticeFermion src_e (FrbGrid);
   LatticeFermion src_o (FrbGrid);
@@ -279,10 +294,9 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"= Testing that POmega+POmegaBar = 1 "<<std::endl;
   std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
 
-  double StoppingCondition = 1e-10;
-  double MaxCGIterations = 30000;
-  ConjugateGradient<LatticeFermion>  CG(StoppingCondition,MaxCGIterations);
-  SchurFactoredFermionOperator<DomainWallFermionR::Impl_t> Schur(DdwfPeri,Ddwf,CG,Block);
+  SchurFactoredFermionOperator<FimplD,FimplF> Schur(DdwfPeri,DdwfPeriF,
+						    Ddwf,DdwfF,
+						    Block);
   
   result = src;
   Schur.ProjectOmega(result);
@@ -422,7 +436,7 @@ int main (int argc, char ** argv)
 
   tmp = phi;
   Schur.ProjectBoundaryBar(tmp);
-  std::cout << "Project Boundary Bar" << tmp<< std::endl;
+  //  std::cout << "Project Boundary Bar" << tmp<< std::endl;
   
   tmp=tmp-result;
 
