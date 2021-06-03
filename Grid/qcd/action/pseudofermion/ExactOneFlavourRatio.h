@@ -294,6 +294,67 @@ NAMESPACE_BEGIN(Grid);
         out = out + Rop.k * tmp[1];
       }
 
+      //Due to the structure of EOFA, it is no more expensive to compute the inverse of Meofa
+      //To ensure correctness we can simply reuse the heatbath code but use the rational approx
+      //f(x) = 1/x   which corresponds to alpha_0=0,  alpha_1=1,  beta_1=0 => gamma_1=1
+      void MeofaInv(const GaugeField &U, const FermionField &in, FermionField &out) {
+        Lop.ImportGauge(U);
+        Rop.ImportGauge(U);
+
+        FermionField CG_src      (Lop.FermionGrid());
+        FermionField CG_soln     (Lop.FermionGrid());
+        std::vector<FermionField> tmp(2, Lop.FermionGrid());
+
+        // \Phi = ( \alpha_{0} + \sum_{k=1}^{N_{p}} \alpha_{l} * \gamma_{l} ) * \eta
+	// = 1 * \eta
+        out = in;
+
+        // LH terms:
+        // \Phi = \Phi + k \sum_{k=1}^{N_{p}} P_{-} \Omega_{-}^{\dagger} ( H(mf)
+        //          - \gamma_{l} \Delta_{-}(mf,mb) P_{-} )^{-1} \Omega_{-} P_{-} \eta
+        spProj(in, tmp[0], -1, Lop.Ls);
+        Lop.Omega(tmp[0], tmp[1], -1, 0);
+        G5R5(CG_src, tmp[1]);
+        {
+          heatbathRefreshShiftCoefficients(0, -1.); //-gamma_1 = -1.
+
+	  CG_soln = Zero(); // Just use zero as the initial guess
+	  SolverHBL(Lop, CG_src, CG_soln);
+
+          Lop.Dtilde(CG_soln, tmp[0]); // We actually solved Cayley preconditioned system: transform back
+          tmp[1] = Lop.k * tmp[0];
+        }
+        Lop.Omega(tmp[1], tmp[0], -1, 1);
+        spProj(tmp[0], tmp[1], -1, Lop.Ls);
+        out = out + tmp[1];
+
+        // RH terms:
+        // \Phi = \Phi - k \sum_{k=1}^{N_{p}} P_{+} \Omega_{+}^{\dagger} ( H(mb)
+        //          - \beta_l\gamma_{l} \Delta_{+}(mf,mb) P_{+} )^{-1} \Omega_{+} P_{+} \eta
+        spProj(in, tmp[0], 1, Rop.Ls);
+        Rop.Omega(tmp[0], tmp[1], 1, 0);
+        G5R5(CG_src, tmp[1]);
+        {
+	  heatbathRefreshShiftCoefficients(1, 0.); //-gamma_1 * beta_1 = 0
+
+	  CG_soln = Zero();
+	  SolverHBR(Rop, CG_src, CG_soln);
+
+          Rop.Dtilde(CG_soln, tmp[0]); // We actually solved Cayley preconditioned system: transform back
+          tmp[1] = - Rop.k * tmp[0];
+        }
+        Rop.Omega(tmp[1], tmp[0], 1, 1);
+        spProj(tmp[0], tmp[1], 1, Rop.Ls);
+        out = out + tmp[1];
+
+        // Reset shift coefficients for energy and force evals
+	heatbathRefreshShiftCoefficients(0, 0.0);
+	heatbathRefreshShiftCoefficients(1, -1.0);
+      };
+
+
+
+
       // EOFA action: see Eqn. (10) of arXiv:1706.05843
       virtual RealD S(const GaugeField& U)
       {

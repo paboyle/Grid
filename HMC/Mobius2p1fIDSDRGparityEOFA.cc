@@ -197,11 +197,13 @@ void computeEigenvalues(std::string param_file,
 
 
 //Check the quality of the RHMC approx
+//action_or_md toggles checking the action (0), MD (1) or both (2) setups
 template<typename FermionActionD, typename FermionFieldD, typename RHMCtype>
 void checkRHMC(GridCartesian* Grid, GridRedBlackCartesian* rbGrid, const LatticeGaugeFieldD &latt,  //expect lattice to have been initialized to something
 	       FermionActionD &numOp, FermionActionD &denOp, RHMCtype &rhmc, GridParallelRNG &rng,
-	       int inv_pow, const std::string &quark_descr){
-
+	       int inv_pow, const std::string &quark_descr, int action_or_md){
+  assert(action_or_md == 0 || action_or_md == 1 || action_or_md == 2);
+  
   FermionFieldD gauss_o(rbGrid);
   FermionFieldD gauss(Grid);
   gaussian(rng, gauss);
@@ -213,40 +215,56 @@ void checkRHMC(GridCartesian* Grid, GridRedBlackCartesian* rbGrid, const Lattice
   typedef typename FermionActionD::Impl_t FermionImplPolicyD;
   SchurDifferentiableOperator<FermionImplPolicyD> MdagM(numOp);
   SchurDifferentiableOperator<FermionImplPolicyD> VdagV(denOp);
-      
-  std::cout << "Starting: Checking quality of RHMC action approx for " << quark_descr << " quark numerator and power -1/" << inv_pow << std::endl;
-  InversePowerBoundsCheck(inv_pow, 10000, 1e16, MdagM,gauss_o, rhmc.ApproxNegPowerAction); //use large tolerance to prevent exit on fail; we are trying to tune here!
-  std::cout << "Finished: Checking quality of RHMC action approx for " << quark_descr << " quark numerator and power -1/" << inv_pow << std::endl;
 
-  std::cout << "Starting: Checking quality of RHMC action approx for " << quark_descr << " quark numerator and power -1/" << 2*inv_pow << std::endl;
-  InversePowerBoundsCheck(2*inv_pow, 10000, 1e16, MdagM,gauss_o, rhmc.ApproxNegHalfPowerAction);
-  std::cout << "Finished: Checking quality of RHMC action approx for " << quark_descr << " quark numerator and power -1/" << 2*inv_pow << std::endl;
+  PowerMethod<FermionFieldD> power_method;
+  RealD lambda_max;
 
-  std::cout << "Starting: Checking quality of RHMC action approx for " << quark_descr << " quark denominator and power -1/" << inv_pow << std::endl;
-  InversePowerBoundsCheck(inv_pow, 10000, 1e16, VdagV,gauss_o, rhmc.ApproxNegPowerAction);
-  std::cout << "Finished: Checking quality of RHMC action approx for " << quark_descr << " quark denominator and power -1/" << inv_pow << std::endl;
+  std::cout << "Starting: Get RHMC high bound approx for " << quark_descr << " numerator" << std::endl;
 
-  std::cout << "Starting: Checking quality of RHMC action approx for " << quark_descr << " quark denominator and power -1/" << 2*inv_pow << std::endl;
-  InversePowerBoundsCheck(2*inv_pow, 10000, 1e16, VdagV,gauss_o, rhmc.ApproxNegHalfPowerAction);
-  std::cout << "Finished: Checking quality of RHMC action approx for " << quark_descr << " quark denominator and power -1/" << 2*inv_pow << std::endl;
+  lambda_max = power_method(MdagM,gauss_o);
+  std::cout << GridLogMessage << "Got lambda_max "<<lambda_max<<std::endl;
+
+  std::cout << "Starting: Get RHMC high bound approx for " << quark_descr << " denominator" << std::endl;
+  lambda_max = power_method(VdagV,gauss_o);
+  std::cout << GridLogMessage << "Got lambda_max "<<lambda_max<<std::endl;
+
+  if(action_or_md == 0 || action_or_md == 2){
+    std::cout << "Starting: Checking quality of RHMC action approx for " << quark_descr << " quark numerator and power -1/" << inv_pow << std::endl;
+    InversePowerBoundsCheck(inv_pow, 10000, 1e16, MdagM,gauss_o, rhmc.ApproxNegPowerAction); //use large tolerance to prevent exit on fail; we are trying to tune here!
+    std::cout << "Finished: Checking quality of RHMC action approx for " << quark_descr << " quark numerator and power -1/" << inv_pow << std::endl;
+
+    std::cout << "Starting: Checking quality of RHMC action approx for " << quark_descr << " quark numerator and power -1/" << 2*inv_pow << std::endl;
+    InversePowerBoundsCheck(2*inv_pow, 10000, 1e16, MdagM,gauss_o, rhmc.ApproxNegHalfPowerAction);
+    std::cout << "Finished: Checking quality of RHMC action approx for " << quark_descr << " quark numerator and power -1/" << 2*inv_pow << std::endl;
+
+    std::cout << "Starting: Checking quality of RHMC action approx for " << quark_descr << " quark denominator and power -1/" << inv_pow << std::endl;
+    InversePowerBoundsCheck(inv_pow, 10000, 1e16, VdagV,gauss_o, rhmc.ApproxNegPowerAction);
+    std::cout << "Finished: Checking quality of RHMC action approx for " << quark_descr << " quark denominator and power -1/" << inv_pow << std::endl;
+
+    std::cout << "Starting: Checking quality of RHMC action approx for " << quark_descr << " quark denominator and power -1/" << 2*inv_pow << std::endl;
+    InversePowerBoundsCheck(2*inv_pow, 10000, 1e16, VdagV,gauss_o, rhmc.ApproxNegHalfPowerAction);
+    std::cout << "Finished: Checking quality of RHMC action approx for " << quark_descr << " quark denominator and power -1/" << 2*inv_pow << std::endl;
+  }
 
   std::cout << "-------------------------------------------------------------------------------" << std::endl;
 
-  std::cout << "Starting: Checking quality of RHMC MD approx for " << quark_descr << " quark numerator and power -1/" << inv_pow << std::endl;
-  InversePowerBoundsCheck(inv_pow, 10000, 1e16, MdagM,gauss_o, rhmc.ApproxNegPowerMD); 
-  std::cout << "Finished: Checking quality of RHMC MD approx for " << quark_descr << " quark numerator and power -1/" << inv_pow << std::endl;
+  if(action_or_md == 1 || action_or_md == 2){
+    std::cout << "Starting: Checking quality of RHMC MD approx for " << quark_descr << " quark numerator and power -1/" << inv_pow << std::endl;
+    InversePowerBoundsCheck(inv_pow, 10000, 1e16, MdagM,gauss_o, rhmc.ApproxNegPowerMD); 
+    std::cout << "Finished: Checking quality of RHMC MD approx for " << quark_descr << " quark numerator and power -1/" << inv_pow << std::endl;
 
-  std::cout << "Starting: Checking quality of RHMC MD approx for " << quark_descr << " quark numerator and power -1/" << 2*inv_pow << std::endl;
-  InversePowerBoundsCheck(2*inv_pow, 10000, 1e16, MdagM,gauss_o, rhmc.ApproxNegHalfPowerMD);
-  std::cout << "Finished: Checking quality of RHMC MD approx for " << quark_descr << " quark numerator and power -1/" << 2*inv_pow << std::endl;
+    std::cout << "Starting: Checking quality of RHMC MD approx for " << quark_descr << " quark numerator and power -1/" << 2*inv_pow << std::endl;
+    InversePowerBoundsCheck(2*inv_pow, 10000, 1e16, MdagM,gauss_o, rhmc.ApproxNegHalfPowerMD);
+    std::cout << "Finished: Checking quality of RHMC MD approx for " << quark_descr << " quark numerator and power -1/" << 2*inv_pow << std::endl;
 
-  std::cout << "Starting: Checking quality of RHMC MD approx for " << quark_descr << " quark denominator and power -1/" << inv_pow << std::endl;
-  InversePowerBoundsCheck(inv_pow, 10000, 1e16, VdagV,gauss_o, rhmc.ApproxNegPowerMD);
-  std::cout << "Finished: Checking quality of RHMC MD approx for " << quark_descr << " quark denominator and power -1/" << inv_pow << std::endl;
+    std::cout << "Starting: Checking quality of RHMC MD approx for " << quark_descr << " quark denominator and power -1/" << inv_pow << std::endl;
+    InversePowerBoundsCheck(inv_pow, 10000, 1e16, VdagV,gauss_o, rhmc.ApproxNegPowerMD);
+    std::cout << "Finished: Checking quality of RHMC MD approx for " << quark_descr << " quark denominator and power -1/" << inv_pow << std::endl;
 
-  std::cout << "Starting: Checking quality of RHMC MD approx for " << quark_descr << " quark denominator and power -1/" << 2*inv_pow << std::endl;
-  InversePowerBoundsCheck(2*inv_pow, 10000, 1e16, VdagV,gauss_o, rhmc.ApproxNegHalfPowerMD);
-  std::cout << "Finished: Checking quality of RHMC MD approx for " << quark_descr << " quark denominator and power -1/" << 2*inv_pow << std::endl;
+    std::cout << "Starting: Checking quality of RHMC MD approx for " << quark_descr << " quark denominator and power -1/" << 2*inv_pow << std::endl;
+    InversePowerBoundsCheck(2*inv_pow, 10000, 1e16, VdagV,gauss_o, rhmc.ApproxNegHalfPowerMD);
+    std::cout << "Finished: Checking quality of RHMC MD approx for " << quark_descr << " quark denominator and power -1/" << 2*inv_pow << std::endl;
+  }
 }
 
 
@@ -654,15 +672,26 @@ int main(int argc, char **argv) {
     check_eofa=false, upper_bound_eofa=false; 
   std::string lanc_params_s;
   std::string lanc_params_DSDR;
+  int tune_rhmc_s_action_or_md;
+  int tune_rhmc_DSDR_action_or_md;
+
   for(int i=1;i<argc;i++){
     std::string sarg(argv[i]);
-    if(sarg == "--tune_rhmc_s") tune_rhmc_s=true;
+    if(sarg == "--tune_rhmc_s"){
+      assert(i < argc-1);
+      tune_rhmc_s=true;
+      tune_rhmc_s_action_or_md = std::stoi(argv[i+1]);
+    }
     else if(sarg == "--eigenrange_s"){
       assert(i < argc-1);
       eigenrange_s=true;
       lanc_params_s = argv[i+1];
     }
-    else if(sarg == "--tune_rhmc_DSDR") tune_rhmc_DSDR=true;
+    else if(sarg == "--tune_rhmc_DSDR"){
+      assert(i < argc-1);
+      tune_rhmc_DSDR=true;
+      tune_rhmc_DSDR_action_or_md = std::stoi(argv[i+1]);
+    }
     else if(sarg == "--eigenrange_DSDR"){
       assert(i < argc-1);
       eigenrange_DSDR=true;
@@ -682,9 +711,9 @@ int main(int argc, char **argv) {
     if(check_eofa) checkEOFA(EOFA, FGridD, TheHMC.Resources.GetParallelRNG(), Ud);
     if(upper_bound_eofa) upperBoundEOFA(EOFA, FGridD, TheHMC.Resources.GetParallelRNG(), Ud);
     if(eigenrange_s) computeEigenvalues<FermionActionD, FermionFieldD>(lanc_params_s, FGridD, FrbGridD, Ud, Numerator_sD, TheHMC.Resources.GetParallelRNG());
-    if(tune_rhmc_s) checkRHMC<FermionActionD, FermionFieldD, decltype(Quotient_s)>(FGridD, FrbGridD, Ud, Numerator_sD, Denominator_sD, Quotient_s, TheHMC.Resources.GetParallelRNG(), 4, "strange");
+    if(tune_rhmc_s) checkRHMC<FermionActionD, FermionFieldD, decltype(Quotient_s)>(FGridD, FrbGridD, Ud, Numerator_sD, Denominator_sD, Quotient_s, TheHMC.Resources.GetParallelRNG(), 4, "strange",  tune_rhmc_s_action_or_md);
     if(eigenrange_DSDR) computeEigenvalues<GparityWilsonTMFermionD, GparityWilsonTMFermionD::FermionField>(lanc_params_DSDR, UGridD, UrbGridD, Ud, Numerator_DSDR_D, TheHMC.Resources.GetParallelRNG());
-    if(tune_rhmc_DSDR) checkRHMC<GparityWilsonTMFermionD, GparityWilsonTMFermionD::FermionField, decltype(Quotient_DSDR)>(UGridD, UrbGridD, Ud, Numerator_DSDR_D, Denominator_DSDR_D, Quotient_DSDR, TheHMC.Resources.GetParallelRNG(), 2, "DSDR");
+    if(tune_rhmc_DSDR) checkRHMC<GparityWilsonTMFermionD, GparityWilsonTMFermionD::FermionField, decltype(Quotient_DSDR)>(UGridD, UrbGridD, Ud, Numerator_DSDR_D, Denominator_DSDR_D, Quotient_DSDR, TheHMC.Resources.GetParallelRNG(), 2, "DSDR", tune_rhmc_DSDR_action_or_md);
 
 
     std::cout << GridLogMessage << " Done" << std::endl;
