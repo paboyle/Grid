@@ -74,22 +74,22 @@ int main (int argc, char ** argv)
   MultiShiftFunction Root32(remez,1.0,false);
   MultiShiftFunction InvRoot32(remez,1.0,true);
   
-  ofstream gnuplot(std::string("Root2.gnu"),std::ios::out|std::ios::trunc);
+  ofstream gnuplot(std::string("Root2.gnu"),std::ios::out|std::ios::trunc); gnuplot.precision(12);
   Root2.gnuplot(gnuplot);
 
-  ofstream gnuplot_i2(std::string("InvRoot2.gnu"),std::ios::out|std::ios::trunc);
+  ofstream gnuplot_i2(std::string("InvRoot2.gnu"),std::ios::out|std::ios::trunc); gnuplot_i2.precision(12);
   InvRoot2.gnuplot(gnuplot_i2);
 
-  ofstream gnuplot_i4(std::string("InvRoot4.gnu"),std::ios::out|std::ios::trunc);
+  ofstream gnuplot_i4(std::string("InvRoot4.gnu"),std::ios::out|std::ios::trunc); gnuplot_i4.precision(12);
   InvRoot4.gnuplot(gnuplot_i4);
 
-  ofstream gnuplot_i8(std::string("InvRoot8.gnu"),std::ios::out|std::ios::trunc);
+  ofstream gnuplot_i8(std::string("InvRoot8.gnu"),std::ios::out|std::ios::trunc); gnuplot_i8.precision(12);
   InvRoot8.gnuplot(gnuplot_i8);
 
-  ofstream gnuplot_i16(std::string("InvRoot16.gnu"),std::ios::out|std::ios::trunc);
+  ofstream gnuplot_i16(std::string("InvRoot16.gnu"),std::ios::out|std::ios::trunc); gnuplot_i16.precision(12);
   InvRoot16.gnuplot(gnuplot_i16);
 
-  ofstream gnuplot_i32(std::string("InvRoot32.gnu"),std::ios::out|std::ios::trunc);
+  ofstream gnuplot_i32(std::string("InvRoot32.gnu"),std::ios::out|std::ios::trunc); gnuplot_i32.precision(12);
   InvRoot32.gnuplot(gnuplot_i32);
 
 
