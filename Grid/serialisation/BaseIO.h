@@ -9,6 +9,7 @@
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: Guido Cossu <guido.cossu@ed.ac.uk>
+Author: Michael Marshall <michael.marshall@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,6 +31,7 @@ Author: Guido Cossu <guido.cossu@ed.ac.uk>
 #ifndef GRID_SERIALISATION_ABSTRACT_READER_H
 #define GRID_SERIALISATION_ABSTRACT_READER_H
 
+#include <atomic>
 #include <type_traits>
 #include <Grid/tensors/Tensors.h>
 #include <Grid/serialisation/VectorUtils.h>
@@ -110,6 +112,10 @@ namespace Grid {
     template <typename ET>
     inline typename std::enable_if<is_tensor_of_container<ET>::value, typename Traits<ET>::scalar_type *>::type
     getFirstScalar(ET &eigenTensor) { return eigenTensor.data()->begin(); }
+
+    // Counter for resized EigenTensors (poor man's substitute for allocator)
+    // Defined in BinaryIO.cc
+    extern std::uint64_t EigenResizeCounter;
   }
 
   // Abstract writer/reader classes ////////////////////////////////////////////
@@ -497,8 +503,14 @@ namespace Grid {
   typename std::enable_if<EigenIO::is_tensor_variable<ETensor>::value, void>::type
   Reader<T>::Reshape(ETensor &t, const std::array<typename ETensor::Index, ETensor::NumDimensions> &dims )
   {
+#ifdef GRID_OMP
+    // The memory counter is the reason this must be done from the primary thread
+    assert(omp_in_parallel()==0 && "Deserialisation which resizes Eigen tensor must happen from primary thread");
+#endif
+    EigenIO::EigenResizeCounter -= static_cast<uint64_t>(t.size()) * sizeof(typename ETensor::Scalar);
     //t.reshape( dims );
     t.resize( dims );
+    EigenIO::EigenResizeCounter += static_cast<uint64_t>(t.size()) * sizeof(typename ETensor::Scalar);
   }
 
   template <typename T>
