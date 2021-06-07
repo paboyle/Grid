@@ -48,6 +48,7 @@ public:
                           std::vector<double>, array,
                           std::vector<std::vector<double> >, twodimarray,
 			  std::vector<std::vector<std::vector<std::complex<double>> > >, cmplx3darray,
+                          std::vector<std::vector<std::vector<int> > >, ragged,
 			  SpinColourMatrix, scm
                           );
   myclass() {}
@@ -56,6 +57,9 @@ public:
   , twodimarray(3,std::vector<double>(5, 1.23456))
   , cmplx3darray(3,std::vector<std::vector<std::complex<double>>>(5, std::vector<std::complex<double>>(7, std::complex<double>(1.2, 3.4))))
   , ve(2, myenum::blue)
+  , ragged( {{{i+1},{i+2,i+3}}, // ragged
+            {{i+4,i+5,i+6,i+7},{i+8,i+9,i+10,i+11},{i+12,i+13,i+14,i+15}}, // block
+            {{i+16,i+17},{i+18,i+19,i+20}}} ) //ragged
   {
     e=myenum::red;
     x=i;
