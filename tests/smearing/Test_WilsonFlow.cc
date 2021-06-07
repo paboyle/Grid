@@ -33,6 +33,7 @@ namespace Grid{
     GRID_SERIALIZABLE_CLASS_MEMBERS(WFParameters,
             int, steps,
             double, step_size,
+            double, tol,
             int, meas_interval,
             double, maxTau); // for the adaptive algorithm
        
@@ -82,13 +83,27 @@ int main(int argc, char **argv) {
   SU<Nc>::HotConfiguration(pRNG, Umu);
   
   typedef Grid::XmlReader       Serialiser;
-  Serialiser Reader("input.xml");
-  WFParameters WFPar(Reader);
-  ConfParameters CPar(Reader);
-  CheckpointerParameters CPPar(CPar.conf_prefix, CPar.rng_prefix);
+//  Serialiser Reader("input.xml");
+//  WFParameters WFPar(Reader);
+//  ConfParameters CPar(Reader);
+//  WFParameters WFPar;
+  int steps = 800;
+  double step_size=0.02;
+  double tol=1e-4;
+  int meas_interval=50;
+  double maxTau = 16;
+//  ConfParameters CPar;
+//  CPar. conf_prefix="configurations/ckpoint_lat";
+//  CPar. rng_prefix="rngs/ckpoint_rng";
+//  CPar. StartConfiguration=100,
+//  CPar. EndConfiguration=110,
+//  CPar. Skip=1;
+//  CheckpointerParameters CPPar(CPar.conf_prefix, CPar.rng_prefix);
+  CheckpointerParameters CPPar("configurations/ckpoint_lat","rngs/ckpoint_rng");
   BinaryHmcCheckpointer<PeriodicGimplR> CPBin(CPPar);
 
-  for (int conf = CPar.StartConfiguration; conf <= CPar.EndConfiguration; conf+= CPar.Skip){
+//  for (int conf = CPar.StartConfiguration; conf <= CPar.EndConfiguration; conf+= CPar.Skip){
+  for (int conf = 100; conf <= 110; conf+= 1){
 
   CPBin.CheckpointRestore(conf, Umu, sRNG, pRNG);
 
@@ -96,9 +111,10 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Initial plaquette: "
     << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu) << std::endl;
 
-  WilsonFlow<PeriodicGimplR> WF(WFPar.steps, WFPar.step_size, WFPar.meas_interval);
+  WilsonFlow<PeriodicGimplR> WF(steps, step_size, meas_interval);
 
-  WF.smear_adaptive(Uflow, Umu, WFPar.maxTau);
+//  WF.smear_adaptive(Uflow, Umu, maxTau);
+  WF.smear(Uflow, Umu);
 
   RealD WFlow_plaq = WilsonLoops<PeriodicGimplR>::avgPlaquette(Uflow);
   RealD WFlow_TC   = WilsonLoops<PeriodicGimplR>::TopologicalCharge(Uflow);

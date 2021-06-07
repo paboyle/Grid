@@ -6,7 +6,8 @@ Source file: ./lib/qcd/modules/plaquette.h
 
 Copyright (C) 2017
 
-Author: Guido Cossu <guido.cossu@ed.ac.uk>
+Author: Guido Cossu  <guido.cossu@ed.ac.uk>
+Author: Chulwoo Jung <chulwoo@bnl.gov>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -35,7 +36,7 @@ template <class Gimpl>
 class WilsonFlow: public Smear<Gimpl>{
   unsigned int Nstep;
   unsigned int measure_interval;
-  mutable RealD epsilon, taus;
+  mutable RealD epsilon, taus,tolerance;
 
 
   mutable WilsonGaugeAction<Gimpl> SG;
@@ -47,13 +48,15 @@ class WilsonFlow: public Smear<Gimpl>{
 public:
   INHERIT_GIMPL_TYPES(Gimpl)
 
-  explicit WilsonFlow(unsigned int Nstep, RealD epsilon, unsigned int interval = 1):
+  explicit WilsonFlow(unsigned int Nstep, RealD epsilon, unsigned int interval = 1, RealD tol = 1e-3):
   Nstep(Nstep),
     epsilon(epsilon),
+    tolerance(tol),
     measure_interval(interval),
     SG(WilsonGaugeAction<Gimpl>(3.0)) {
     // WilsonGaugeAction with beta 3.0
     assert(epsilon > 0.0);
+    assert(tolerance > 0.0);
     LogMessage();
   }
 
@@ -64,6 +67,8 @@ public:
 	      << "[WilsonFlow] epsilon : " << epsilon << std::endl;
     std::cout << GridLogMessage
 	      << "[WilsonFlow] full trajectory : " << Nstep * epsilon << std::endl;
+    std::cout << GridLogMessage
+	      << "[WilsonFlow] tolerance : " << tolerance << std::endl;
   }
 
   virtual void smear(GaugeField&, const GaugeField&) const;
@@ -106,11 +111,14 @@ void WilsonFlow<Gimpl>::evolve_step_adaptive(typename Gimpl::GaugeField &U, Real
   if (maxTau - taus < epsilon){
     epsilon = maxTau-taus;
   }
-  //std::cout << GridLogMessage << "Integration epsilon : " << epsilon << std::endl;
+  std::cout << GridLogMessage << "Integration epsilon : " << epsilon << std::endl;
   GaugeField Z(U.Grid());
   GaugeField Zprime(U.Grid());
-  GaugeField tmp(U.Grid()), Uprime(U.Grid());
+  GaugeField tmp(U.Grid()), Uprime(U.Grid()),Usave(U.Grid());
+
   Uprime = U;
+  Usave = U;
+
   SG.deriv(U, Z);
   Zprime = -Z;
   Z *= 0.25;                                  // Z0 = 1/4 * F(U)
@@ -128,18 +136,33 @@ void WilsonFlow<Gimpl>::evolve_step_adaptive(typename Gimpl::GaugeField &U, Real
   Z *= 3.0/4.0;                               // Z = 17/36*Z0 -8/9*Z1 +3/4*Z2
   Gimpl::update_field(Z, U, -2.0*epsilon);    // V(t+e) = exp(ep*Z)*W2
 
-  // Ramos 
+  // Ramos arXiv:1301.4388
   Gimpl::update_field(Zprime, Uprime, -2.0*epsilon); // V'(t+e) = exp(ep*Z')*W0
   // Compute distance as norm^2 of the difference
   GaugeField diffU = U - Uprime;
-  RealD diff = norm2(diffU);
-  // adjust integration step
+// Wrong
+//  RealD diff = norm2(diffU);
+//  std::cout << GridLogMessage << "norm2: " << diff << std::endl;
+  
+//  RealD tol=1e-3;
+  
+  RealD diff = real(rankInnerMax(diffU,diffU));
+  diff = sqrt(diff)/18.; // distance defined in Ramos 
+
+  GridBase *grid = diffU.Grid();
+  std::cout << GridLogMessage << "max: " << diff << std::endl;
+  grid->GlobalMax(diff);
+  std::cout << GridLogMessage << "max: " << diff << std::endl;
     
+  if(diff < tolerance) {
   taus += epsilon;
-  //std::cout << GridLogMessage << "Adjusting integration step with distance: " << diff << std::endl;
+//  std::cout << GridLogMessage << "Adjusting integration step with distance: " << diff << std::endl;
+  } else {
+    U = Usave;
+  }
     
-  epsilon = epsilon*0.95*std::pow(1e-4/diff,1./3.);
-  //std::cout << GridLogMessage << "New epsilon : " << epsilon << std::endl;
+  epsilon = epsilon*0.95*std::pow(tolerance/diff,1./3.);
+  std::cout << GridLogMessage << "Distance : "<<diff<<"New epsilon : " << epsilon << std::endl;
 
 }
 
@@ -184,8 +207,11 @@ void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const {
 template <class Gimpl>
 void WilsonFlow<Gimpl>::smear_adaptive(GaugeField& out, const GaugeField& in, RealD maxTau){
   out = in;
-  taus = epsilon;
+//  taus = epsilon;
+  taus = 0.;
   unsigned int step = 0;
+  double measTau = epsilon*measure_interval;
+  std::cout << GridLogMessage << "measTau :"<< measTau << std::endl;
   do{
     step++;
     //std::cout << GridLogMessage << "Evolution time :"<< taus << std::endl;
@@ -193,10 +219,12 @@ void WilsonFlow<Gimpl>::smear_adaptive(GaugeField& out, const GaugeField& in, Re
     std::cout << GridLogMessage << "[WilsonFlow] Energy density (plaq) : "
 		  << step << "  " << taus << "  "
 	      << energyDensityPlaquette(out) << std::endl;
-    if( step % measure_interval == 0){
+//    if( step % measure_interval == 0){
+    if( taus >  measTau ) {
       std::cout << GridLogMessage << "[WilsonFlow] Top. charge           : "
 		<< step << "  " 
 		<< WilsonLoops<PeriodicGimplR>::TopologicalCharge(out) << std::endl;
+      measTau += epsilon*measure_interval;
     }
   } while (taus < maxTau);
 
