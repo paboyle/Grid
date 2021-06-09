@@ -28,22 +28,21 @@
 #ifdef CUDA_PROFILE
 #include <cuda_profiler_api.h>
 #endif
+#include <Grid/qcd/action/momentum/DirichletFilter.h>
+#include <Grid/qcd/action/momentum/DDHMCfilter.h>
+#include <Grid/qcd/action/fermion/DirichletFermionOperator.h>
 
 using namespace std;
 using namespace Grid;
 
-template<class d>
-struct scal {
-  d internal;
-};
+typedef DirichletFermionOperator<WilsonImplF> DirichletFermionF;
 
-  Gamma::Algebra Gmu [] = {
+Gamma::Algebra Gmu [] = {
     Gamma::Algebra::GammaX,
     Gamma::Algebra::GammaY,
     Gamma::Algebra::GammaZ,
     Gamma::Algebra::GammaT
-  };
-
+};
 
 int main (int argc, char ** argv)
 {
@@ -61,19 +60,16 @@ int main (int argc, char ** argv)
 
   GridLogLayout();
 
+  Coordinate latt = GridDefaultLatt();
+  Coordinate mpi  = GridDefaultMpi();
+  Coordinate simd = GridDefaultSimd(Nd,vComplexF::Nsimd());
+
   long unsigned int single_site_flops = 8*Nc*(7+16*Nc);
 
-
-  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
+  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(latt,simd,mpi);
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
-
-  std::cout << GridLogMessage << "Making s innermost grids"<<std::endl;
-  GridCartesian         * sUGrid   = SpaceTimeGrid::makeFourDimDWFGrid(GridDefaultLatt(),GridDefaultMpi());
-  GridRedBlackCartesian * sUrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(sUGrid);
-  GridCartesian         * sFGrid   = SpaceTimeGrid::makeFiveDimDWFGrid(Ls,UGrid);
-  GridRedBlackCartesian * sFrbGrid = SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(Ls,UGrid);
 
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
@@ -292,7 +288,6 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "src_o"<<norm2(src_o)<<std::endl;
 
 
-  // S-direction is INNERMOST and takes no part in the parity.
   std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
   std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionF::DhopEO                "<<std::endl;
   std::cout << GridLogMessage<< "* Vectorising space-time by "<<vComplexF::Nsimd()<<std::endl;
@@ -359,6 +354,57 @@ int main (int argc, char ** argv)
 
   assert(norm2(src_e)<1.0e-4);
   assert(norm2(src_o)<1.0e-4);
+
+
+  std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
+  std::cout << GridLogMessage<< "* Benchmarking DirichletFermionF::DhopEO                "<<std::endl;
+  std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
+
+#ifdef GRID_OMP
+  if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsAndCompute ) std::cout << GridLogMessage<< "* Using Overlapped Comms/Compute" <<std::endl;
+  if ( WilsonKernelsStatic::Comms == WilsonKernelsStatic::CommsThenCompute) std::cout << GridLogMessage<< "* Using sequential comms compute" <<std::endl;
+#endif
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
+  std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
+
+
+  // Dirichlet benchmark
+ 
+  Coordinate local(Nd);
+  Coordinate nil(Nd,0);
+  for(int d=0;d<Nd;d++){
+    local[d] = latt[d]/mpi[d];
+  }
+  std::vector<Complex> boundary = {1,1,1,-1};
+  DomainWallFermionF::ImplParams DirichletParams(boundary);
+  DirichletParams.locally_periodic=true;
+  DomainWallFermionF DwDirichlet(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,DirichletParams);
+  DirichletFermionF Dirichlet(DwDirichlet,local,nil);
+
+  {
+    FGrid->Barrier();
+    Dirichlet.DhopEO(src_o,r_e,DaggerNo);
+    DwDirichlet.ZeroCounters();
+    double t0=usecond();
+    for(int i=0;i<ncall;i++){
+      Dirichlet.DhopEO(src_o,r_e,DaggerNo);
+    }
+    double t1=usecond();
+    FGrid->Barrier();
+
+    double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
+    double flops=(single_site_flops*volume*ncall)/2.0;
+
+    std::cout<<GridLogMessage << "DirichletDeo flop "<< flops<<" usec " <<(t1-t0)<<std::endl;
+    std::cout<<GridLogMessage << "DirichletDeo mflop/s =   "<< flops/(t1-t0)<<std::endl;
+    std::cout<<GridLogMessage << "DirichletDeo mflop/s per rank   "<< flops/(t1-t0)/NP<<std::endl;
+    std::cout<<GridLogMessage << "DirichletDeo mflop/s per node   "<< flops/(t1-t0)/NN<<std::endl;
+    DwDirichlet.Report();
+  }
+
   Grid_finalize();
+
   exit(0);
 }
