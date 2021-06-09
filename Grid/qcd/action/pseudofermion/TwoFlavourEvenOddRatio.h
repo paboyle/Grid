@@ -50,6 +50,8 @@ NAMESPACE_BEGIN(Grid);
       FermionField PhiOdd;   // the pseudo fermion field for this trajectory
       FermionField PhiEven;  // the pseudo fermion field for this trajectory
 
+      virtual void refreshRestrict(FermionField &eta) {};
+      
     public:
       TwoFlavourEvenOddRatioPseudoFermionAction(FermionOperator<Impl>  &_NumOp, 
                                                 FermionOperator<Impl>  &_DenOp, 
@@ -60,7 +62,8 @@ NAMESPACE_BEGIN(Grid);
       TwoFlavourEvenOddRatioPseudoFermionAction(FermionOperator<Impl>  &_NumOp, 
                                                 FermionOperator<Impl>  &_DenOp, 
                                                 OperatorFunction<FermionField> & DS,
-                                                OperatorFunction<FermionField> & AS, OperatorFunction<FermionField> & HS) :
+                                                OperatorFunction<FermionField> & AS,
+						OperatorFunction<FermionField> & HS) :
       NumOp(_NumOp), 
       DenOp(_DenOp), 
       DerivativeSolver(DS), 
@@ -93,6 +96,7 @@ NAMESPACE_BEGIN(Grid);
         FermionField eta    (NumOp.FermionGrid());
         gaussian(pRNG,eta); eta = eta * scale;
 
+	refreshRestrict(eta); // Used by DDHMC
 	refresh(U,eta);
       }
 	
@@ -177,7 +181,7 @@ NAMESPACE_BEGIN(Grid);
 
         NumOp.ImportGauge(U);
         DenOp.ImportGauge(U);
-
+	
         SchurDifferentiableOperator<Impl> Mpc(DenOp);
         SchurDifferentiableOperator<Impl> Vpc(NumOp);
 
@@ -212,7 +216,7 @@ NAMESPACE_BEGIN(Grid);
         assert(DenOp.ConstEE() == 1);
 
         dSdU = -dSdU;
-        
+
       };
     };
 NAMESPACE_END(Grid);
