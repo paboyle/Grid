@@ -30,7 +30,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
 int main (int argc, char ** argv)
 {
@@ -38,10 +37,10 @@ int main (int argc, char ** argv)
 
   std::cout<<GridLogMessage << "Testing Remez"<<std::endl;
 
-  double     lo=1.0e-3;
-  double     hi=5.0;
+  double     lo=0.8;
+  double     hi=210;
   int precision=64;
-  int    degree=16;
+  int    degree=8;
   AlgRemez remez(lo,hi,precision);
 
   ////////////////////////////////////////
@@ -74,22 +73,22 @@ int main (int argc, char ** argv)
   MultiShiftFunction Root32(remez,1.0,false);
   MultiShiftFunction InvRoot32(remez,1.0,true);
   
-  ofstream gnuplot(std::string("Root2.gnu"),std::ios::out|std::ios::trunc); gnuplot.precision(12);
+  ofstream gnuplot(std::string("Root2.gnu"),std::ios::out|std::ios::trunc); gnuplot.precision(17);
   Root2.gnuplot(gnuplot);
 
-  ofstream gnuplot_i2(std::string("InvRoot2.gnu"),std::ios::out|std::ios::trunc); gnuplot_i2.precision(12);
+  ofstream gnuplot_i2(std::string("InvRoot2.gnu"),std::ios::out|std::ios::trunc); gnuplot_i2.precision(17);
   InvRoot2.gnuplot(gnuplot_i2);
 
-  ofstream gnuplot_i4(std::string("InvRoot4.gnu"),std::ios::out|std::ios::trunc); gnuplot_i4.precision(12);
+  ofstream gnuplot_i4(std::string("InvRoot4.gnu"),std::ios::out|std::ios::trunc); gnuplot_i4.precision(17);
   InvRoot4.gnuplot(gnuplot_i4);
 
-  ofstream gnuplot_i8(std::string("InvRoot8.gnu"),std::ios::out|std::ios::trunc); gnuplot_i8.precision(12);
+  ofstream gnuplot_i8(std::string("InvRoot8.gnu"),std::ios::out|std::ios::trunc); gnuplot_i8.precision(17);
   InvRoot8.gnuplot(gnuplot_i8);
 
-  ofstream gnuplot_i16(std::string("InvRoot16.gnu"),std::ios::out|std::ios::trunc); gnuplot_i16.precision(12);
+  ofstream gnuplot_i16(std::string("InvRoot16.gnu"),std::ios::out|std::ios::trunc); gnuplot_i16.precision(17);
   InvRoot16.gnuplot(gnuplot_i16);
 
-  ofstream gnuplot_i32(std::string("InvRoot32.gnu"),std::ios::out|std::ios::trunc); gnuplot_i32.precision(12);
+  ofstream gnuplot_i32(std::string("InvRoot32.gnu"),std::ios::out|std::ios::trunc); gnuplot_i32.precision(17);
   InvRoot32.gnuplot(gnuplot_i32);
 
 
