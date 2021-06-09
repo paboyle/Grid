@@ -52,16 +52,25 @@ NAMESPACE_BEGIN(Grid);
 
     //Option to speed up *inner single precision* solves using a LinearFunction that produces a guess
     LinearFunction<FieldF> *guesser;
-    
-    MixedPrecisionConjugateGradient(RealD tol, 
+
+    MixedPrecisionConjugateGradient(RealD Tol,
+				    Integer maxinnerit, 
+				    Integer maxouterit, 
+				    GridBase* _sp_grid, 
+				    LinearOperatorBase<FieldF> &_Linop_f, 
+				    LinearOperatorBase<FieldD> &_Linop_d) :
+      MixedPrecisionConjugateGradient(Tol, Tol, maxinnerit, maxouterit, _sp_grid, _Linop_f, _Linop_d) {};
+
+    MixedPrecisionConjugateGradient(RealD Tol,
+				    RealD InnerTol,
 				    Integer maxinnerit, 
 				    Integer maxouterit, 
 				    GridBase* _sp_grid, 
 				    LinearOperatorBase<FieldF> &_Linop_f, 
 				    LinearOperatorBase<FieldD> &_Linop_d) :
       Linop_f(_Linop_f), Linop_d(_Linop_d),
-      Tolerance(tol), InnerTolerance(tol), MaxInnerIterations(maxinnerit), MaxOuterIterations(maxouterit), SinglePrecGrid(_sp_grid),
-      OuterLoopNormMult(100.), guesser(NULL){ };
+      Tolerance(Tol), InnerTolerance(InnerTol), MaxInnerIterations(maxinnerit), MaxOuterIterations(maxouterit), SinglePrecGrid(_sp_grid),
+      OuterLoopNormMult(100.), guesser(NULL){ assert(InnerTol < 1.0e-1);};
 
     void useGuesser(LinearFunction<FieldF> &g){
       guesser = &g;
