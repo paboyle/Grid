@@ -42,13 +42,15 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   const int Ls=8;
+  const int Nt=32;
   auto latt = GridDefaultLatt();
-  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
+  latt[3] = Nt;
+  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(latt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
-  GridCartesian         * UGridF   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
+  GridCartesian         * UGridF   = SpaceTimeGrid::makeFourDimGrid(latt, GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
   GridCartesian         * FGridF   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGridF);
   GridRedBlackCartesian * UrbGridF = SpaceTimeGrid::makeFourDimRedBlackGrid(UGridF);
   GridRedBlackCartesian * FrbGridF = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGridF);
@@ -67,6 +69,7 @@ int main (int argc, char ** argv)
   LatticeFermion    tmp(FGrid);    tmp=Zero();
   LatticeFermion    tmp1(FGrid);
   LatticeFermion    err(FGrid);    tmp=Zero();
+  LatticeFermion    zz(FGrid);     zz =Zero();
   LatticeGaugeField Umu(UGrid); SU<Nc>::HotConfiguration(RNG4,Umu);
   LatticeGaugeFieldF UmuF(UGridF);
   precisionChange(UmuF,Umu);
@@ -81,12 +84,13 @@ int main (int argc, char ** argv)
   typedef DomainWallFermionF::Impl_t FimplF;
   typedef DirichletFermionOperator<FimplD> FermOp;
   typedef DirichletFermionOperator<FimplF> FermOpF;
-  Coordinate Block({16,16,16,4});
+  Coordinate Block1({0,0,0,Nt/2});
+  Coordinate Block2({0,0,0,Nt/4});
 
   DomainWallFermionR DdwfPeriTmp(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   DomainWallFermionF DdwfPeriTmpF(UmuF,*FGridF,*FrbGridF,*UGridF,*UrbGridF,mass,M5);
-  FermOp  Ddwf(DdwfPeriTmp,Block); 
-  FermOpF DdwfF(DdwfPeriTmpF,Block); 
+  FermOp  Ddwf(DdwfPeriTmp,Block1,Block2); 
+  FermOpF DdwfF(DdwfPeriTmpF,Block1,Block2); 
   Ddwf.ImportGauge(Umu);
   DdwfF.ImportGauge(UmuF);
   
@@ -278,7 +282,7 @@ int main (int argc, char ** argv)
       //if( (t%Block[mu]) != Block[mu]-1) assert(norm2(slice_ref[t]) < 1.0e-10);
       //else assert(norm2(slice_result[t]) == 0.0);
     }
-    
+
   }
   pickCheckerboard(Even,src_e,src);
   pickCheckerboard(Odd,src_o,src);
@@ -296,12 +300,14 @@ int main (int argc, char ** argv)
 
   SchurFactoredFermionOperator<FimplD,FimplF> Schur(DdwfPeri,DdwfPeriF,
 						    Ddwf,DdwfF,
-						    Block);
+						    Block1,Block2);
   
   result = src;
   Schur.ProjectOmega(result);
+  DumpSliceNorm("Omega",result,Nd);
   tmp = src;
   Schur.ProjectOmegaBar(tmp);
+  DumpSliceNorm("OmegaBar",tmp,Nd);
   std::cout << " norm2(src) "<<norm2(src)<< " "<< norm2(result)<<" "<<norm2(tmp)<<std::endl;
   result = result + tmp - src;
   std::cout << " diff = "<<norm2(result)<<std::endl;
@@ -311,9 +317,13 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"= Testing that dBoundary+dBoundaryBar+dOmega+dOmegaBar = Munprec "<<std::endl;
   std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
   Schur.dBoundary    (src,tmp); result=tmp;        std::cout << "dBoundary    "<<norm2(tmp)<<std::endl;
+  DumpSliceNorm("dBoundary",tmp,Nd);
   Schur.dBoundaryBar (src,tmp); result=result+tmp; std::cout << "dBoundaryBar "<<norm2(tmp)<<std::endl;
+  DumpSliceNorm("dBoundaryBar",tmp,Nd);
   Schur.dOmega       (src,tmp); result=result+tmp; std::cout << "dOmega       "<<norm2(tmp)<<std::endl;
+  DumpSliceNorm("dOmega",tmp,Nd);
   Schur.dOmegaBar    (src,tmp); result=result+tmp; std::cout << "dOmegaBar    "<<norm2(tmp)<<std::endl;
+  DumpSliceNorm("dOmegaBar",tmp,Nd);
 
   DdwfPeri.M(src,ref);  
   err= ref - result;
@@ -464,6 +474,42 @@ int main (int argc, char ** argv)
 
   std::cout << "<chi|R|phi>"<<innerProduct(chi,Rphi)<<std::endl;
   std::cout << "<phi|Rdag|chi>"<<innerProduct(phi,Rdagchi)<<std::endl;
+
+
+  std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Testing the sliced evolution of spin structured noise   "<<std::endl;
+  std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
+
+  Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT
+  };
+  int hits=2;
+  int isDWF=1;
+  std::cout << " latt " << latt <<" Nd "<<FGrid->Nd()<<" dims "<<FGrid->GlobalDimensions()<<std::endl;
+  LatticeInteger coor(FGrid);
+  for(int mu=0;mu<Nd;mu++){
+    Gamma G(Gmu[mu]);
+    int plane = latt[mu]/2;
+    for(int hit=0;hit<hits;hit++){
+
+      std::cout<<GridLogMessage<<"mu="<<mu<<" hit "<<hit<<std::endl;
+      LatticeCoordinate(coor,mu+isDWF);
+
+      gaussian(RNG5,src);
+      tmp = src - G*src;
+      src = src + G*src;
+      src= where(coor==Integer(plane),src,zz);
+      src= where(coor==Integer(0),tmp,src);
+
+      Schur.Dinverse(src,tmp);  
+      DumpSliceNorm("1+/-gamma_mu",tmp,mu+isDWF);
+
+    }
+  }
+
   
   Grid_finalize();
 }
