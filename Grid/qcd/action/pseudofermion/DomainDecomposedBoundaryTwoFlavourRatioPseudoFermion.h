@@ -41,6 +41,7 @@ private:
   SchurFactoredFermionOperator<ImplD,ImplF> & NumOp;// the basic operator
   SchurFactoredFermionOperator<ImplD,ImplF> & DenOp;// the basic operator
 
+  RealD InnerStoppingCondition;
   RealD ActionStoppingCondition;
   RealD DerivativeStoppingCondition;
   
@@ -49,9 +50,10 @@ private:
 public:
   DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion(SchurFactoredFermionOperator<ImplD,ImplF>  &_NumOp, 
 						       SchurFactoredFermionOperator<ImplD,ImplF>  &_DenOp,
-						       RealD _DerivativeTol, RealD _ActionTol)
+						       RealD _DerivativeTol, RealD _ActionTol, RealD _InnerTol=1.0e-6)
     : NumOp(_NumOp), DenOp(_DenOp),
       Phi(_NumOp.PeriodicFermOpD.FermionGrid()),
+      InnerStoppingCondition(_InnerTol),
       DerivativeStoppingCondition(_DerivativeTol),
       ActionStoppingCondition(_ActionTol)
   {};
@@ -89,10 +91,13 @@ public:
     gaussian(pRNG,eta);    eta=eta*scale;
     
     NumOp.ProjectBoundaryBar(eta);
+    NumOp.tolinner=InnerStoppingCondition;
+    DenOp.tolinner=InnerStoppingCondition;
     DenOp.tol = ActionStoppingCondition;
     NumOp.tol = ActionStoppingCondition;
     DenOp.R(eta,tmp);
     NumOp.RInv(tmp,Phi);
+    DumpSliceNorm("Phi",Phi);
 
   };
 
@@ -107,6 +112,8 @@ public:
     FermionField X(NumOp.PeriodicFermOpD.FermionGrid());
     FermionField Y(NumOp.PeriodicFermOpD.FermionGrid());
 
+    NumOp.tolinner=InnerStoppingCondition;
+    DenOp.tolinner=InnerStoppingCondition;
     DenOp.tol = ActionStoppingCondition;
     NumOp.tol = ActionStoppingCondition;
     NumOp.R(Phi,Y);
@@ -146,6 +153,8 @@ public:
     FermionField PdagRinvDagRinvP_Phi(fgrid);
 
     //    RealD action = S(U);
+    NumOp.tolinner=InnerStoppingCondition;
+    DenOp.tolinner=InnerStoppingCondition;
     DenOp.tol = DerivativeStoppingCondition;
     NumOp.tol = DerivativeStoppingCondition;
     
