@@ -56,7 +56,7 @@ class MixedPrecisionConjugateGradientOperatorFunction : public OperatorFunction<
     Integer TotalOuterIterations; //Number of restarts
     Integer TotalFinalStepIterations; //Number of CG iterations in final patch-up step
 
-    MixedPrecisionConjugateGradientOperatorFunction(RealD tol, 
+     MixedPrecisionConjugateGradientOperatorFunction(RealD tol, RealD tolInner,
 						    Integer maxinnerit, 
 						    Integer maxouterit,
 						    GridBase *_SinglePrecGrid,
@@ -69,12 +69,12 @@ class MixedPrecisionConjugateGradientOperatorFunction : public OperatorFunction<
       FermOpF(_FermOpF),
       FermOpD(_FermOpD),
       Tolerance(tol), 
-      InnerTolerance(tol), 
+      InnerTolerance(tolInner), 
       MaxInnerIterations(maxinnerit), 
       MaxOuterIterations(maxouterit), 
       SinglePrecGrid(_SinglePrecGrid),
       OuterLoopNormMult(100.) 
-    {     };
+  { assert(tolInner<0.01);    };
 
     void operator()(LinearOperatorBase<FieldD> &LinOpU, const FieldD &src, FieldD &psi)
     {
@@ -101,8 +101,9 @@ class MixedPrecisionConjugateGradientOperatorFunction : public OperatorFunction<
       // Make a mixed precision conjugate gradient
       //////////////////////////////////////////////////////////////////////////////////////////
       // Could assume red black solver here and remove the SinglePrecGrid parameter???
-      MixedPrecisionConjugateGradient<FieldD,FieldF> MPCG(Tolerance,MaxInnerIterations,MaxOuterIterations,SinglePrecGrid,LinOpF,LinOpD);
-      std::cout << GridLogMessage << "Calling mixed precision Conjugate Gradient src "<<norm2(src)<< " U "<<norm2(Umu_d) <<std::endl;
+      MixedPrecisionConjugateGradient<FieldD,FieldF> MPCG(Tolerance, InnerTolerance,MaxInnerIterations,MaxOuterIterations,SinglePrecGrid,LinOpF,LinOpD);
+
+      std::cout << GridLogMessage << "Calling mixed precision Conjugate Gradient src "<<norm2(src) <<std::endl;
       psi=Zero();
       MPCG(src,psi);
     }
