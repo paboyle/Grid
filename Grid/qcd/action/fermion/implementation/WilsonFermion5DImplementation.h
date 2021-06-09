@@ -462,8 +462,8 @@ void WilsonFermion5D<Impl>::DhopInternalDirichletComms(StencilImpl & st, Lebesgu
   } else {
     Kernels::DhopKernel   (Opt,st,U,st.CommBuf(),LLs,U.oSites(),in,out,1,0);
   }
+  accelerator_barrier();
   DhopComputeTime+=usecond();
-
 }
 
 
