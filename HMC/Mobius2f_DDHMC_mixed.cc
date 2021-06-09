@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: 
+nnSource file: 
 
 Copyright (C) 2015-2016
 
@@ -40,116 +40,32 @@ directory
 
 NAMESPACE_BEGIN(Grid);
 
-#define MIXED_PRECISION
-  /*
-   * Need a plan for gauge field update for mixed precision in HMC                      (2x speed up)
-   *    -- Store the single prec action operator.
-   *    -- Clone the gauge field from the operator function argument.
-   *    -- Build the mixed precision operator dynamically from the passed operator and single prec clone.
-   */
-  template<class FermionOperatorD, class FermionOperatorF, class SchurOperatorD, class  SchurOperatorF> 
-  class MixedPrecisionConjugateGradientOperatorFunction : public OperatorFunction<typename FermionOperatorD::FermionField> {
-  public:
-    typedef typename FermionOperatorD::FermionField FieldD;
-    typedef typename FermionOperatorF::FermionField FieldF;
-
-    using OperatorFunction<FieldD>::operator();
-
-    RealD   Tolerance;
-    RealD   InnerTolerance; //Initial tolerance for inner CG. Defaults to Tolerance but can be changed
-    Integer MaxInnerIterations;
-    Integer MaxOuterIterations;
-    GridBase* SinglePrecGrid4; //Grid for single-precision fields
-    GridBase* SinglePrecGrid5; //Grid for single-precision fields
-    RealD OuterLoopNormMult; //Stop the outer loop and move to a final double prec solve when the residual is OuterLoopNormMult * Tolerance
-
-    FermionOperatorF &FermOpF;
-    FermionOperatorD &FermOpD;;
-    SchurOperatorF &LinOpF;
-    SchurOperatorD &LinOpD;
-
-    Integer TotalInnerIterations; //Number of inner CG iterations
-    Integer TotalOuterIterations; //Number of restarts
-    Integer TotalFinalStepIterations; //Number of CG iterations in final patch-up step
-
-    MixedPrecisionConjugateGradientOperatorFunction(RealD tol, 
-						    Integer maxinnerit, 
-						    Integer maxouterit, 
-						    GridBase* _sp_grid4, 
-						    GridBase* _sp_grid5, 
-						    FermionOperatorF &_FermOpF,
-						    FermionOperatorD &_FermOpD,
-						    SchurOperatorF   &_LinOpF,
-						    SchurOperatorD   &_LinOpD): 
-      LinOpF(_LinOpF),
-      LinOpD(_LinOpD),
-      FermOpF(_FermOpF),
-      FermOpD(_FermOpD),
-      Tolerance(tol), 
-      InnerTolerance(tol), 
-      MaxInnerIterations(maxinnerit), 
-      MaxOuterIterations(maxouterit), 
-      SinglePrecGrid4(_sp_grid4),
-      SinglePrecGrid5(_sp_grid5),
-      OuterLoopNormMult(100.) 
-    {     };
-
-    void operator()(LinearOperatorBase<FieldD> &LinOpU, const FieldD &src, FieldD &psi)
-    {
-
-      SchurOperatorD * SchurOpU = static_cast<SchurOperatorD *>(&LinOpU);
-      
-      // Assumption made in code to extract gauge field
-      // We could avoid storing LinopD reference alltogether ?
-      assert(&(SchurOpU->_Mat)==&(LinOpD._Mat));
-
-      ////////////////////////////////////////////////////////////////////////////////////
-      // Must snarf a single precision copy of the gauge field in Linop_d argument
-      ////////////////////////////////////////////////////////////////////////////////////
-      typedef typename FermionOperatorF::GaugeField GaugeFieldF;
-      typedef typename FermionOperatorD::GaugeField GaugeFieldD;
-      typedef typename FermionOperatorF::GaugeLinkField GaugeLinkFieldF;
-      typedef typename FermionOperatorD::GaugeLinkField GaugeLinkFieldD;
-
-      GridBase * GridPtrF = SinglePrecGrid4;
-      GridBase * GridPtrD = FermOpD.GaugeGrid();
-
-      ////////////////////////////////////////////////////////////////////////////////////
-      // Moving this to a Clone method of fermion operator would allow to duplicate the 
-      // physics parameters and decrease gauge field copies
-      ////////////////////////////////////////////////////////////////////////////////////
-      auto &Umu_d = FermOpD.GetDoubledGaugeField();
-      auto &Umu_f = FermOpF.GetDoubledGaugeField();
-      auto &Umu_fe= FermOpF.GetDoubledGaugeFieldE();
-      auto &Umu_fo= FermOpF.GetDoubledGaugeFieldO();
-      precisionChange(Umu_f,Umu_d);
-      pickCheckerboard(Even,Umu_fe,Umu_f);
-      pickCheckerboard(Odd ,Umu_fo,Umu_f);
-
-      ////////////////////////////////////////////////////////////////////////////////////
-      // Could test to make sure that LinOpF and LinOpD agree to single prec?
-      ////////////////////////////////////////////////////////////////////////////////////
-      /*
-      FieldD srcD(FermOpD.FermionRedBlackGrid());
-      FieldD tmpD(FermOpD.FermionRedBlackGrid());
-      FieldF tmpF(FermOpF.FermionRedBlackGrid());
-      FieldF srcF(FermOpF.FermionRedBlackGrid());
-      srcD = 1.0;
-      precisionChange(srcF,srcD);
-      std::cout << GridLogMessage << " Prec Src "<<norm2(srcF)<<" "<<norm2(srcD) <<std::endl;
-      std::cout << GridLogMessage << " LinopF " <<std::endl;
-      LinOpF.Op(srcF,tmpF);      std::cout << " Test of operators "<<norm2(tmpF)<<std::endl;
-      LinOpD.Op(srcD,tmpD);      std::cout << " Test of operators "<<norm2(tmpD)<<std::endl;
-      */
-      ////////////////////////////////////////////////////////////////////////////////////
-      // Make a mixed precision conjugate gradient
-      ////////////////////////////////////////////////////////////////////////////////////
-      MixedPrecisionConjugateGradient<FieldD,FieldF> MPCG(Tolerance,MaxInnerIterations,MaxOuterIterations,SinglePrecGrid5,LinOpF,LinOpD);
-      std::cout << GridLogMessage << "Calling mixed precision Conjugate Gradient" <<std::endl;
-      MPCG(src,psi);
-    }
+template<class Impl>
+class DomainLocalTwoFlavourEvenOddRatioPseudoFermionAction
+  : public TwoFlavourEvenOddRatioPseudoFermionAction<Impl>
+{
+public:
+  INHERIT_IMPL_TYPES(Impl);
+  Coordinate Block;
+  DomainDecomposition Domains;
+  DomainLocalTwoFlavourEvenOddRatioPseudoFermionAction(FermionOperator<Impl>  &_NumOp, 
+						       FermionOperator<Impl>  &_DenOp, 
+						       OperatorFunction<FermionField> & DS,
+						       OperatorFunction<FermionField> & AS,
+						       OperatorFunction<FermionField> & HS,
+						       Coordinate &_Block ) :
+    Block(_Block),
+    Domains(_Block),
+    TwoFlavourEvenOddRatioPseudoFermionAction<Impl>(_NumOp,_DenOp,DS,AS,HS)
+    {};
+  virtual void refreshRestrict(FermionField &eta)
+  {
+    Domains.ProjectDomain(eta,1);
+    DumpSliceNorm("refresh Restrict eta",eta);
   };
+};
 
+#define MIXED_PRECISION
 
 NAMESPACE_END(Grid);
 
@@ -163,16 +79,24 @@ int main(int argc, char **argv)
   std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
    // Typedefs to simplify notation
-  typedef WilsonImplR FermionImplPolicy;
-  typedef MobiusFermionR FermionAction;
+  typedef WilsonImplR FimplD;
+  typedef WilsonImplF FimplF;
+  typedef FermionOperator<FimplF> FermionOperatorF;
+  typedef FermionOperator<FimplD> FermionOperatorD;
+  typedef MobiusFermionR FermionActionD;
   typedef MobiusFermionF FermionActionF;
-  typedef DirichletFermionOperator<WilsonImplR> DirichletFermion;
+  typedef DirichletFermionOperator<WilsonImplR> DirichletFermionD;
   typedef DirichletFermionOperator<WilsonImplF> DirichletFermionF;
 
   typedef MobiusEOFAFermionR FermionEOFAAction;
-  typedef typename FermionAction::FermionField FermionField;
+  typedef typename FermionActionD::FermionField FermionFieldD;
   typedef typename FermionActionF::FermionField FermionFieldF;
-
+  
+  typedef SchurDiagMooeeOperator<FermionOperator<FimplF>,FermionFieldF> LinearOperatorF;
+  typedef SchurDiagMooeeOperator<FermionOperator<FimplD>,FermionFieldD> LinearOperatorD;
+  typedef SchurDiagMooeeDagOperator<FermionOperator<FimplF>,FermionFieldF> LinearOperatorDagF;
+  typedef SchurDiagMooeeDagOperator<FermionOperator<FimplD>,FermionFieldD> LinearOperatorDagD;
+  
   typedef Grid::XmlReader       Serialiser;
   
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -183,15 +107,16 @@ int main(int argc, char **argv)
   //  MD.name    = std::string("Force Gradient");
   typedef GenericHMCRunner<MinimumNorm2> HMCWrapper; 
   MD.name    = std::string("MinimumNorm2");
-  MD.MDsteps = 12;
+  MD.MDsteps = 4; // dH = 0.08
+  //  MD.MDsteps = 3; // dH = 0.8
   MD.trajL   = 1.0;
   
   HMCparameters HMCparams;
-  HMCparams.StartTrajectory  = 26;
-  HMCparams.Trajectories     = 1000;
+  HMCparams.StartTrajectory  = 48;
+  HMCparams.Trajectories     = 20;
   HMCparams.NoMetropolisUntil=  0;
   //  "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
-  //HMCparams.StartingType     =std::string("ColdStart");
+  //  HMCparams.StartingType     =std::string("ColdStart");
   HMCparams.StartingType     =std::string("CheckpointStart");
   HMCparams.MD = MD;
   HMCWrapper TheHMC(HMCparams);
@@ -200,8 +125,8 @@ int main(int argc, char **argv)
   TheHMC.Resources.AddFourDimGrid("gauge"); // use default simd lanes decomposition
   
   CheckpointerParameters CPparams;
-  CPparams.config_prefix = "ckpoint_EOFA4D_lat";
-  CPparams.rng_prefix    = "ckpoint_EOFA4D_rng";
+  CPparams.config_prefix = "ckpoint_DDHMC_lat";
+  CPparams.rng_prefix    = "ckpoint_DDHMC_rng";
   CPparams.saveInterval  = 1;
   CPparams.format        = "IEEE64BIG";
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
@@ -212,10 +137,9 @@ int main(int argc, char **argv)
   TheHMC.Resources.SetRNGSeeds(RNGpar);
 
   // Momentum Dirichlet
-  Coordinate Block({16,16,16,16});
-
-  //  TheHMC.Resources.SetMomentumFilter(new DirichletFilter<WilsonImplR::Field>(Block));
-  TheHMC.Resources.SetMomentumFilter(new DDHMCFilter<WilsonImplR::Field>(Block,1));
+  Coordinate Block({0,0,0,24});
+  
+  TheHMC.Resources.SetMomentumFilter(new DDHMCFilter<WilsonImplR::Field>(Block));
   // Construct observables
   // here there is too much indirection 
   typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
@@ -224,15 +148,15 @@ int main(int argc, char **argv)
 
   const int Ls      = 16;
   Real beta         = 2.13;
+  //  Real light_mass   = 0.04;
   Real light_mass   = 0.01;
-  Real strange_mass = 0.04;
   Real pv_mass      = 1.0;
   RealD M5  = 1.8;
   RealD b   = 1.0; 
   RealD c   = 0.0;
 
-  std::vector<Real> hasenbusch({ 0.04, 0.3 });
-
+  std::vector<Real> hasenbusch({ 0.1, 0.4, 0.7 });
+  
   auto GridPtr   = TheHMC.Resources.GetCartesian();
   auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
   auto FGrid     = SpaceTimeGrid::makeFiveDimGrid(Ls,GridPtr);
@@ -242,6 +166,7 @@ int main(int argc, char **argv)
   Coordinate mpi   = GridDefaultMpi();
   Coordinate simdF = GridDefaultSimd(Nd,vComplexF::Nsimd());
   Coordinate simdD = GridDefaultSimd(Nd,vComplexD::Nsimd());
+
   auto GridPtrF   = SpaceTimeGrid::makeFourDimGrid(latt,simdF,mpi);
   auto GridRBPtrF = SpaceTimeGrid::makeFourDimRedBlackGrid(GridPtrF);
   auto FGridF     = SpaceTimeGrid::makeFiveDimGrid(Ls,GridPtrF);
@@ -255,22 +180,25 @@ int main(int argc, char **argv)
 
   // These lines are unecessary if BC are all periodic
   std::vector<Complex> boundary = {1,1,1,-1};
-  FermionAction::ImplParams Params(boundary);
-  FermionAction::ImplParams DirichletParams(boundary);
+  FermionActionD::ImplParams Params(boundary);
+  FermionActionD::ImplParams DirichletParams(boundary);
   DirichletParams.locally_periodic=true;
-
+  
   double ActionStoppingCondition     = 1e-10;
-  double DerivativeStoppingCondition = 1e-8;
+  double DerivativeStoppingCondition = 1e-10;
+  //  double BoundaryDerivativeStoppingCondition = 1e-6;
+  double BoundaryDerivativeStoppingCondition = 1e-10;
   double MaxCGIterations = 30000;
 
   ////////////////////////////////////
   // Collect actions
   ////////////////////////////////////
   ActionLevel<HMCWrapper::Field> Level1(1);
-  ActionLevel<HMCWrapper::Field> Level2(8);
+  ActionLevel<HMCWrapper::Field> Level2(3);
+  ActionLevel<HMCWrapper::Field> Level3(8);
 
-  ConjugateGradient<FermionField>      ActionCG(ActionStoppingCondition,MaxCGIterations);
-  ConjugateGradient<FermionField>  DerivativeCG(DerivativeStoppingCondition,MaxCGIterations);
+  ConjugateGradient<FermionFieldD>      ActionCG(ActionStoppingCondition,MaxCGIterations);
+  ConjugateGradient<FermionFieldD>  DerivativeCG(DerivativeStoppingCondition,MaxCGIterations);
 
   ////////////////////////////////////
   // up down action
@@ -293,117 +221,153 @@ int main(int argc, char **argv)
   // Same issue prevents using MxPCG in the Heatbath step
   //////////////////////////////////////////////////////////////
 
-  typedef SchurDiagMooeeOperator<DirichletFermionF,FermionFieldF> LinearOperatorF;
-  typedef SchurDiagMooeeOperator<DirichletFermion ,FermionField > LinearOperatorD;
-  //  typedef SchurDiagMooeeDagOperator<FermionActionF,FermionFieldF> LinearOperatorDagF;
-  //  typedef SchurDiagMooeeDagOperator<FermionAction ,FermionField > LinearOperatorDagD;
-  typedef MixedPrecisionConjugateGradientOperatorFunction<DirichletFermion,
-							  DirichletFermionF,
-							  LinearOperatorD,
-							  LinearOperatorF> MxPCG;
-  //  typedef MixedPrecisionConjugateGradientOperatorFunction<MobiusFermionD,MobiusFermionF,LinearOperatorDagD,LinearOperatorDagF> MxDagPCG;
-
-  std::vector<FermionAction *> PeriNumerators;
-  std::vector<FermionAction *> PeriDenominators;
-
-  std::vector<FermionAction *> DNumerators;
-  std::vector<FermionAction *> DDenominators;
+  /////////////////////////////////////////////////
+  // These are consumed/owned by the Dirichlet wrappers
+  /////////////////////////////////////////////////
+  std::vector<FermionActionD *> DNumeratorsD;
+  std::vector<FermionActionF *> DNumeratorsF;
+  std::vector<FermionActionD *> DDenominatorsD;
   std::vector<FermionActionF *> DDenominatorsF;
-  std::vector<DirichletFermion *> DirichletNumerators;
-  std::vector<DirichletFermion *> DirichletDenominators;
+
+  /////////////////////////////////////////////////
+  // Dirichlet wrappers
+  /////////////////////////////////////////////////
+  std::vector<DirichletFermionD *> DirichletNumeratorsD;
+  std::vector<DirichletFermionF *> DirichletNumeratorsF;
+  std::vector<DirichletFermionD *> DirichletDenominatorsD;
   std::vector<DirichletFermionF *> DirichletDenominatorsF;
   
-  std::vector<TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> *> Quotients;
-  std::vector<SchurFactoredFermionOperator<DomainWallFermionR::Impl_t> *> BoundaryNumerators;
-  std::vector<SchurFactoredFermionOperator<DomainWallFermionR::Impl_t> *> BoundaryDenominators;
-  std::vector<DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion<DomainWallFermionR::Impl_t> *> BoundaryQuotients;
+  std::vector<DomainLocalTwoFlavourEvenOddRatioPseudoFermionAction<FimplD> *> Quotients;
 
+  typedef MixedPrecisionConjugateGradientOperatorFunction<FermionOperatorD,
+							  FermionOperatorF,
+							  LinearOperatorD,
+							  LinearOperatorF> MxPCG;
   std::vector<MxPCG *> ActionMPCG;
   std::vector<MxPCG *> MPCG;
-  std::vector<FermionActionF *> DenominatorsF;
   std::vector<LinearOperatorD *> LinOpD;
   std::vector<LinearOperatorF *> LinOpF; 
+
+  const int MX_inner = 1000;
+  const RealD MX_tol = 1.0e-8;
 
   for(int h=0;h<n_hasenbusch+1;h++){
 
     std::cout << GridLogMessage << " 2f quotient Action  "<< light_num[h] << " / " << light_den[h]<< std::endl;
 
-    PeriNumerators.push_back  (new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[h],M5,b,c, Params));
-    PeriDenominators.push_back(new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[h],M5,b,c, Params));
-
-    DNumerators.push_back  (new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[h],M5,b,c, DirichletParams));
-    DDenominators.push_back(new FermionAction(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[h],M5,b,c, DirichletParams));
+    DNumeratorsD.push_back (new FermionActionD(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[h],M5,b,c, DirichletParams));
+    DNumeratorsF.push_back (new FermionActionF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_num[h],M5,b,c, DirichletParams));
+    DDenominatorsD.push_back(new FermionActionD(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[h],M5,b,c, DirichletParams));
     DDenominatorsF.push_back(new FermionActionF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_den[h],M5,b,c, DirichletParams));
 
-    DirichletNumerators.push_back  (new DirichletFermion(*DNumerators[h],Block));
-    DirichletDenominators.push_back(new DirichletFermion(*DDenominators[h],Block));
-    DirichletDenominatorsF.push_back(new DirichletFermionF(*DDenominatorsF[h],Block));
-
-    BoundaryNumerators.push_back (new SchurFactoredFermionOperator<DomainWallFermionR::Impl_t>
-				  (*PeriNumerators[h],
-				   *DirichletNumerators[h],
-				   ActionCG,ActionCG,
-				   ActionCG,ActionCG,
-				   Block));
-    BoundaryDenominators.push_back (new SchurFactoredFermionOperator<DomainWallFermionR::Impl_t>
-				  (*PeriDenominators[h],
-				   *DirichletDenominators[h],
-				   ActionCG,ActionCG,
-				   ActionCG,ActionCG,
-				   Block));
+    DirichletNumeratorsD.push_back  (new  DirichletFermionD(*DNumeratorsD[h],Block));
+    DirichletNumeratorsF.push_back  (new  DirichletFermionF(*DNumeratorsF[h],Block));
+    DirichletDenominatorsD.push_back(new  DirichletFermionD(*DDenominatorsD[h],Block));
+    DirichletDenominatorsF.push_back(new  DirichletFermionF(*DDenominatorsF[h],Block));
 
     // Dirichlet Schur even odd MpsDagMpc operators on local domains
-    LinOpD.push_back(new LinearOperatorD(*DirichletDenominators[h]));
+    LinOpD.push_back(new LinearOperatorD(*DirichletDenominatorsD[h]));
     LinOpF.push_back(new LinearOperatorF(*DirichletDenominatorsF[h]));
 
-    const int MX_inner = 1000;
-
-    MPCG.push_back(new MxPCG(DerivativeStoppingCondition,
+    // Derivative
+    MPCG.push_back(new MxPCG(DerivativeStoppingCondition,MX_tol,
 			     MX_inner,
 			     MaxCGIterations,
-			     GridPtrF,
 			     FrbGridF,
-			     *DirichletDenominatorsF[h],*DirichletDenominators[h],
+			     *DirichletDenominatorsF[h],*DirichletDenominatorsD[h],
 			     *LinOpF[h], *LinOpD[h]) );
 
-    ActionMPCG.push_back(new MxPCG(ActionStoppingCondition,
+    // Action
+    ActionMPCG.push_back(new MxPCG(ActionStoppingCondition,MX_tol,
 				   MX_inner,
 				   MaxCGIterations,
-				   GridPtrF,
 				   FrbGridF,
-				   *DirichletDenominatorsF[h],*DirichletDenominators[h],
+				   *DirichletDenominatorsF[h],*DirichletDenominatorsD[h],
 				   *LinOpF[h], *LinOpD[h]) );
     
     ////////////////////////////////////////////////////////////////////////////
     // Standard CG for 2f force
     ////////////////////////////////////////////////////////////////////////////
-    //    Quotients.push_back (new TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>(*Numerators[h],*Denominators[h],*MPCG[h],*ActionMPCG[h],ActionCG));
     Quotients.push_back   (new
-			   TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy>
-			   (*DirichletNumerators[h],
-			    *DirichletDenominators[h],
+			   DomainLocalTwoFlavourEvenOddRatioPseudoFermionAction<FimplD>
+			   (*DirichletNumeratorsD[h],
+			    *DirichletDenominatorsD[h],
+			    *MPCG[h],
 			    *ActionMPCG[h],
-			    *ActionMPCG[h],
-			    ActionCG));
+			    ActionCG,Block));
 
-    BoundaryQuotients.push_back(new
-				DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion<DomainWallFermionR::Impl_t>
-				(*BoundaryNumerators[h],
-				 *BoundaryDenominators[h]));
-    
+    Level2.push_back(Quotients[h]);
   }
 
-  for(int h=0;h<n_hasenbusch+1;h++){
-    Level1.push_back(Quotients[h]);
-    Level1.push_back(BoundaryQuotients[h]);
-  }
+  /////////////////////////////////////////////////////////////
+  // Boundary action
+  /////////////////////////////////////////////////////////////
+
+  int l_idx = 0;
+  int pv_idx = n_hasenbusch;
+  RealD h_mass = 0.012;
+  std::cout << GridLogMessage<<" Boundary action masses " <<light_num[l_idx]<<" / "<<light_den[pv_idx]<<std::endl;
+
+
+  // OmegaBar cross domain boundary and is used in Boundary operator, so no locally_periodic hack in the boundary det
+  // Dirichlet is applied in gauge link only. OmegaBar solve is too expensive. Monitor cost.
+  FermionActionD    PeriNumeratorD  (U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[pv_idx],M5,b,c, Params);
+  FermionActionF    PeriNumeratorF  (UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_num[pv_idx],M5,b,c, Params);
+  FermionActionD    DirichletNumeratorDD(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_num[pv_idx],M5,b,c, Params);
+  FermionActionF    DirichletNumeratorFF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_num[pv_idx],M5,b,c, Params);
+  DirichletFermionD DirichletNumeratorD  (DirichletNumeratorDD,Block);
+  DirichletFermionF DirichletNumeratorF  (DirichletNumeratorFF,Block);
+
+  FermionActionD    PeriDenominatorD(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[l_idx] ,M5,b,c, Params);
+  FermionActionF    PeriDenominatorF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_den[l_idx] ,M5,b,c, Params);
+  FermionActionD    DirichletDenominatorDD(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,light_den[l_idx] ,M5,b,c, Params);
+  FermionActionF    DirichletDenominatorFF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,light_den[l_idx] ,M5,b,c, Params);
+  DirichletFermionD DirichletDenominatorD(DirichletDenominatorDD,Block);
+  DirichletFermionF DirichletDenominatorF(DirichletDenominatorFF,Block);
+
+  FermionActionD    PeriHasenD  (U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,h_mass ,M5,b,c, Params);
+  FermionActionF    PeriHasenF  (UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,h_mass,M5,b,c, Params);
+  FermionActionD    DHasenD(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,h_mass,M5,b,c, Params);
+  FermionActionF    DHasenF(UF,*FGridF,*FrbGridF,*GridPtrF,*GridRBPtrF,h_mass,M5,b,c, Params);
+  DirichletFermionD DirichletHasenD(DHasenD,Block);
+  DirichletFermionF DirichletHasenF(DHasenF,Block);
+  
+  SchurFactoredFermionOperator<FimplD,FimplF> BoundaryNumerator(PeriNumeratorD,PeriNumeratorF,
+								DirichletNumeratorD,DirichletNumeratorF,
+								Block);
+
+  SchurFactoredFermionOperator<FimplD,FimplF> BoundaryDenominator(PeriDenominatorD,PeriDenominatorF,
+								  DirichletDenominatorD,DirichletDenominatorF,
+								  Block);
+
+  SchurFactoredFermionOperator<FimplD,FimplF> BoundaryHasen(PeriHasenD,PeriHasenF,
+							    DirichletHasenD,DirichletHasenF,
+							    Block);
+
+  std::cout << GridLogMessage << " Boundary NO ratio "<< std::endl;
+  Level1.push_back(new
+		   DomainDecomposedBoundaryTwoFlavourPseudoFermion<FimplD,FimplF>
+		   (BoundaryDenominator,
+		    BoundaryDerivativeStoppingCondition,ActionStoppingCondition,MX_tol));
+  Level1.push_back(new
+		   DomainDecomposedBoundaryTwoFlavourBosonPseudoFermion<FimplD,FimplF>
+		   (BoundaryNumerator,
+		    BoundaryDerivativeStoppingCondition,ActionStoppingCondition,MX_tol));
+  /*
+  Level1.push_back(new
+		   DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion<FimplD,FimplF>
+		   (BoundaryNumerator,
+		    BoundaryDenominator,
+		    BoundaryDerivativeStoppingCondition,ActionStoppingCondition));
+  */
 
   /////////////////////////////////////////////////////////////
   // Gauge action
   /////////////////////////////////////////////////////////////
-  Level2.push_back(&GaugeAction);
+  Level3.push_back(&GaugeAction);
   TheHMC.TheAction.push_back(Level1);
   TheHMC.TheAction.push_back(Level2);
+  TheHMC.TheAction.push_back(Level3);
   std::cout << GridLogMessage << " Action complete "<< std::endl;
 
   /////////////////////////////////////////////////////////////
