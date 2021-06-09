@@ -32,37 +32,67 @@ directory
 ////////////////////////////////////////////////////
 #pragma once 
 
+#include <Grid/qcd/action/momentum/Domains.h>
+
 NAMESPACE_BEGIN(Grid);
+
 
 template<typename MomentaField>
 struct DirichletFilter: public MomentumFilterBase<MomentaField>
 {
   Coordinate Block;
   
-  DirichletFilter(const Coordinate &_Block): Block(_Block){}
+  DirichletFilter(const Coordinate &_Block): Block(_Block) {}
 
-  void applyFilter(MomentaField &P) const override
+  // Edge detect using domain projectors
+  void applyFilter (MomentaField &U) const override
   {
-    GridBase *grid = P.Grid();
+    DomainDecomposition Domains(Block);
+    GridBase *grid = U.Grid();
+    LatticeInteger  coor(grid);
+    LatticeInteger  face(grid);
+    LatticeInteger  one(grid);   one = 1;
+    LatticeInteger  zero(grid); zero = 0;
+    LatticeInteger  omega(grid);
+    LatticeInteger  omegabar(grid);
+    LatticeInteger  tmp(grid);
 
-    ////////////////////////////////////////////////////
-    // Zero strictly links crossing between domains
-    ////////////////////////////////////////////////////
-    LatticeInteger coor(grid);
-    typedef decltype(PeekIndex<LorentzIndex>(P,0)) MatrixType;
-    MatrixType zz(grid); zz = Zero();
+    omega=one;    Domains.ProjectDomain(omega,0);
+    omegabar=one; Domains.ProjectDomain(omegabar,1);
+    
+    LatticeInteger nface(grid); nface=Zero();
+    
+    MomentaField projected(grid); projected=Zero();
+    typedef decltype(PeekIndex<LorentzIndex>(U,0)) MomentaLinkField;
+    MomentaLinkField  Umu(grid);
+    MomentaLinkField   zz(grid); zz=Zero();
+
+    int dims = grid->Nd();
     Coordinate Global=grid->GlobalDimensions();
-    for(int mu=0;mu<Nd;mu++) {
-      if ( (Block[mu] <= Global[mu]) && (Block[mu]>1) ) {
-	// If costly could provide Grid earlier and precompute masks
-	LatticeCoordinate(coor,mu);
-      
-	auto P_mu = PeekIndex<LorentzIndex>(P, mu);
-	P_mu = where(mod(coor,Block[mu])==Integer(Block[mu]-1),zz,P_mu);
-	PokeIndex<LorentzIndex>(P, P_mu, mu);
+    assert(dims==Nd);
+
+    for(int mu=0;mu<Nd;mu++){
+
+      if ( Block[mu]!=0 ) {
+
+	Umu = PeekIndex<LorentzIndex>(U,mu);
+
+	// Upper face 
+ 	tmp = Cshift(omegabar,mu,1);
+	tmp = tmp + omega;
+	face = where(tmp == Integer(2),one,zero );
+
+ 	tmp = Cshift(omega,mu,1);
+	tmp = tmp + omegabar;
+	face = where(tmp == Integer(2),one,face );
+
+	Umu = where(face,zz,Umu);
+
+	PokeIndex<LorentzIndex>(U, Umu, mu);
       }
     }
   }
+  
 };
 
 NAMESPACE_END(Grid);
