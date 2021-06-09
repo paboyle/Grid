@@ -39,19 +39,20 @@ public:
 
 private:
   SchurFactoredFermionOperator<ImplD,ImplF> & NumOp;// the basic operator
+  RealD InnerStoppingCondition;
   RealD ActionStoppingCondition;
   RealD DerivativeStoppingCondition;
   FermionField Phi; // the pseudo fermion field for this trajectory
 public:
-  DomainDecomposedBoundaryTwoFlavourBosonPseudoFermion(SchurFactoredFermionOperator<ImplD,ImplF>  &_NumOp,RealD _DerivativeTol, RealD _ActionTol)
+  DomainDecomposedBoundaryTwoFlavourBosonPseudoFermion(SchurFactoredFermionOperator<ImplD,ImplF>  &_NumOp,RealD _DerivativeTol, RealD _ActionTol, RealD _InnerTol=1.0e-6)
     : NumOp(_NumOp), 
       DerivativeStoppingCondition(_DerivativeTol),
       ActionStoppingCondition(_ActionTol),
+      InnerStoppingCondition(_InnerTol),
       Phi(_NumOp.FermionGrid()) {};
 
   virtual std::string action_name(){return "DomainDecomposedBoundaryTwoFlavourBosonPseudoFermion";}
 
- 
   virtual std::string LogParameters(){
     std::stringstream sstream;
     return sstream.str();
@@ -73,6 +74,7 @@ public:
     //
     RealD scale = std::sqrt(0.5);
 
+    NumOp.tolinner=InnerStoppingCondition;
     NumOp.tol=ActionStoppingCondition;
     NumOp.ImportGauge(U);
 
@@ -81,9 +83,10 @@ public:
     gaussian(pRNG,eta);    eta=eta*scale;
     
     NumOp.ProjectBoundaryBar(eta);
+    //DumpSliceNorm("eta",eta);
     NumOp.RInv(eta,Phi);
 
-    //DumpSliceNorm("Phi",Phi,-1);
+    //DumpSliceNorm("Phi",Phi);
 
   };
 
@@ -92,6 +95,7 @@ public:
   //////////////////////////////////////////////////////
   virtual RealD S(const GaugeField &U) {
 
+    NumOp.tolinner=InnerStoppingCondition;
     NumOp.tol=ActionStoppingCondition;
     NumOp.ImportGauge(U);
 
@@ -106,6 +110,7 @@ public:
 
   virtual void deriv(const GaugeField &U,GaugeField & dSdU)
   {
+    NumOp.tolinner=InnerStoppingCondition;
     NumOp.tol=DerivativeStoppingCondition;
     NumOp.ImportGauge(U);
 
