@@ -41,15 +41,17 @@ private:
   SchurFactoredFermionOperator<ImplD,ImplF> & DenOp;// the basic operator
   RealD ActionStoppingCondition;
   RealD DerivativeStoppingCondition;
+  RealD InnerStoppingCondition;
 
   FermionField Phi; // the pseudo fermion field for this trajectory
 
   RealD refresh_action;
 public:
-  DomainDecomposedBoundaryTwoFlavourPseudoFermion(SchurFactoredFermionOperator<ImplD,ImplF>  &_DenOp,RealD _DerivativeTol, RealD _ActionTol )
+  DomainDecomposedBoundaryTwoFlavourPseudoFermion(SchurFactoredFermionOperator<ImplD,ImplF>  &_DenOp,RealD _DerivativeTol, RealD _ActionTol, RealD _InnerTol = 1.0e-6 )
     : DenOp(_DenOp),
       DerivativeStoppingCondition(_DerivativeTol),
       ActionStoppingCondition(_ActionTol),
+      InnerStoppingCondition(_InnerTol),
       Phi(_DenOp.FermionGrid()) {};
       
   virtual std::string action_name(){return "DomainDecomposedBoundaryTwoFlavourPseudoFermion";}
@@ -76,7 +78,8 @@ public:
     //
     RealD scale = std::sqrt(0.5);
 
-    DenOp.tol=ActionStoppingCondition;
+    DenOp.tolinner=InnerStoppingCondition;
+    DenOp.tol     =ActionStoppingCondition;
     DenOp.ImportGauge(U);
 
     FermionField eta(DenOp.FermionGrid());
@@ -85,7 +88,7 @@ public:
     
     DenOp.ProjectBoundaryBar(eta);
     DenOp.R(eta,Phi);
-
+    //DumpSliceNorm("Phi",Phi);
     refresh_action = norm2(eta);
   };
 
@@ -94,6 +97,7 @@ public:
   //////////////////////////////////////////////////////
   virtual RealD S(const GaugeField &U) {
 
+    DenOp.tolinner=InnerStoppingCondition;
     DenOp.tol=ActionStoppingCondition;
     DenOp.ImportGauge(U);
 
@@ -108,6 +112,7 @@ public:
 
   virtual void deriv(const GaugeField &U,GaugeField & dSdU)
   {
+    DenOp.tolinner=InnerStoppingCondition;
     DenOp.tol=DerivativeStoppingCondition;
     DenOp.ImportGauge(U);
 
@@ -122,34 +127,29 @@ public:
 
     FermionField DiDdb_Phi(fgrid);      // Vector C in my notes
     FermionField DidRinv_Phi(fgrid);    // Vector D in my notes
-    FermionField DdbdDidRinv_Phi(fgrid);
-    
     FermionField Rinv_Phi(fgrid);
-    FermionField RinvDagRinv_Phi(fgrid);
+
+//   FermionField RinvDagRinv_Phi(fgrid);
+//   FermionField DdbdDidRinv_Phi(fgrid);
 
     // R^-1 term
-    DumpSliceNorm("Phi",Phi);
     DenOp.dBoundaryBar(Phi,tmp);
-    DumpSliceNorm("Ddb Phi",tmp);
     DenOp.Dinverse(tmp,DiDdb_Phi);            // Vector C
-    DumpSliceNorm("DiDdb Phi",DiDdb_Phi);
     Rinv_Phi = Phi - DiDdb_Phi;
     DenOp.ProjectBoundaryBar(Rinv_Phi); 
-    DumpSliceNorm("Rinv Phi",Rinv_Phi);
  
     // R^-dagger R^-1 term
     DenOp.DinverseDag(Rinv_Phi,DidRinv_Phi); // Vector D
-    DumpSliceNorm("DidRinv Phi",DidRinv_Phi);
-
+/*
     DenOp.dBoundaryBarDag(DidRinv_Phi,DdbdDidRinv_Phi);
     RinvDagRinv_Phi = Rinv_Phi - DdbdDidRinv_Phi;
     DenOp.ProjectBoundaryBar(RinvDagRinv_Phi);
-
+*/
     X = DiDdb_Phi;
     Y = DidRinv_Phi;
     DenOp.PeriodicFermOpD.MDeriv(force,Y,X,DaggerNo);    dSdU=force;
     DenOp.PeriodicFermOpD.MDeriv(force,X,Y,DaggerYes);   dSdU=dSdU+force;
-
+    DumpSliceNorm("force",dSdU);
     dSdU *= -1.0;
   };
 };
