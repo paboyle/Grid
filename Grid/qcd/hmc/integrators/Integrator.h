@@ -353,6 +353,9 @@ public:
       for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
         // get gauge field from the SmearingPolicy and
         // based on the boolean is_smeared in actionID
+	auto name = as[level].actions.at(actionID)->action_name();
+        std::cout << GridLogMessage << "refresh [" << level << "][" << actionID << "] "<<name << std::endl;
+
         Field& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
 	as[level].actions.at(actionID)->refresh_timer_start();
         as[level].actions.at(actionID)->refresh(Us, sRNG, pRNG);
