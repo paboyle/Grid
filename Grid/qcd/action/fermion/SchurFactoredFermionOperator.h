@@ -28,6 +28,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #pragma once
 
 #include <Grid/qcd/utils/MixedPrecisionOperatorFunction.h>
+#include <Grid/qcd/action/momentum/Domains.h>
 
 NAMESPACE_BEGIN(Grid);
 
@@ -70,7 +71,7 @@ template<class ImplD,class ImplF>
 class SchurFactoredFermionOperator : public ImplD
 {
   INHERIT_IMPL_TYPES(ImplD);
-
+  
   typedef typename ImplF::FermionField FermionFieldF;
   typedef typename ImplD::FermionField FermionFieldD;
 
@@ -112,16 +113,19 @@ public:
   Integer maxinnerit;
   Integer maxouterit;
   RealD tol;
+  RealD tolinner;
   
   Coordinate Block;
-  Coordinate InnerBlock;
+
+  DomainDecomposition Domains;
 
   SchurFactoredFermionOperator(FermionOperator<ImplD>  & _PeriodicFermOpD,
 			       FermionOperator<ImplF>  & _PeriodicFermOpF,
 			       FermionOperator<ImplD>  & _DirichletFermOpD,
 			       FermionOperator<ImplF>  & _DirichletFermOpF,
 			       Coordinate &_Block)
-    : Block(_Block),
+   : Domains(Block),
+
       PeriodicFermOpD(_PeriodicFermOpD),
       PeriodicFermOpF(_PeriodicFermOpF),
       DirichletFermOpD(_DirichletFermOpD),
@@ -135,8 +139,8 @@ public:
       PeriodicLinOpDagD(PeriodicFermOpD),
       PeriodicLinOpDagF(PeriodicFermOpF)
   {
-    InnerBlock = Coordinate({16,16,16,20});
     tol=1.0e-10;
+    tolinner=1.0e-6;
     maxinnerit=1000;
     maxouterit=10;
     assert(PeriodicFermOpD.FermionGrid() == DirichletFermOpD.FermionGrid());
@@ -147,10 +151,17 @@ public:
 
   void ImportGauge(const GaugeField &Umu)
   {
-    PeriodicFermOpD.ImportGauge(Umu);
-    DirichletFermOpD.ImportGauge(Umu);
     // Single precision will update in the mixed prec CG
+    PeriodicFermOpD.ImportGauge(Umu);
+    GaugeField dUmu(Umu.Grid());
+    dUmu=Umu;
+    //    DirchletBCs(dUmu);
+    DirichletFilter<GaugeField> Filter(Block);
+    Filter.applyFilter(dUmu);
+    DirichletFermOpD.ImportGauge(dUmu);
   }
+
+/*
   void ProjectBoundaryBothDomains (FermionField &f,int sgn)
   {
     assert((sgn==1)||(sgn==-1));
@@ -170,7 +181,6 @@ public:
     LatticeInteger  zero(grid); zero = 0;
     LatticeInteger nface(grid); nface=Zero();
     
-    ComplexField zz(grid); zz=Zero();
     FermionField projected(grid); projected=Zero();
     FermionField sp_proj  (grid);
 
@@ -210,8 +220,88 @@ public:
     projected = where(nface>Integer(1),f,projected);
     f=projected;
   }
+*/
+  void ProjectBoundaryBothDomains (FermionField &f,int sgn)
+  {
+    assert((sgn==1)||(sgn==-1));
+    Real rsgn = sgn;
+
+    Gamma::Algebra Gmu [] = {
+      Gamma::Algebra::GammaX,
+      Gamma::Algebra::GammaY,
+      Gamma::Algebra::GammaZ,
+      Gamma::Algebra::GammaT
+    };
+
+    GridBase *grid = f.Grid();
+    LatticeInteger  coor(grid);
+    LatticeInteger  face(grid);
+    LatticeInteger  one(grid);   one = 1;
+    LatticeInteger  zero(grid); zero = 0;
+    LatticeInteger  omega(grid);
+    LatticeInteger  omegabar(grid);
+    LatticeInteger  tmp(grid);
+
+    omega=one;    Domains.ProjectDomain(omega,0);
+    omegabar=one; Domains.ProjectDomain(omegabar,1);
+    
+    LatticeInteger nface(grid); nface=Zero();
+    
+    FermionField projected(grid); projected=Zero();
+    FermionField sp_proj  (grid);
+
+    int dims = grid->Nd();
+    int isDWF= (dims==Nd+1);
+    assert((dims==Nd)||(dims==Nd+1));
+    Coordinate Global=grid->GlobalDimensions();
+
+    for(int mmu=0;mmu<Nd;mmu++){
+      Gamma G(Gmu[mmu]);
+
+      // need to worry about DWF 5th dim first
+      int mu = mmu+isDWF;
+      if ( Block[mmu] && (Block[mmu] <= Global[mu]) ) {
+
+	// Lower face receives (1-gamma)/2 in normal forward hopping term
+ 	tmp = Cshift(omegabar,mu,-1);
+	tmp = tmp + omega;
+	face = where(tmp == Integer(2),one,zero );
+
+ 	tmp = Cshift(omega,mu,-1);
+	tmp = tmp + omegabar;
+	face = where(tmp == Integer(2),one,face );
+
+	nface = nface + face;
+
+	sp_proj  = 0.5*(f-G*f*rsgn);
+	projected= where(face,sp_proj,projected);
+
+	// Upper face receives (1+gamma)/2 in normal backward hopping term
+ 	tmp = Cshift(omegabar,mu,1);
+	tmp = tmp + omega;
+	face = where(tmp == Integer(2),one,zero );
+
+ 	tmp = Cshift(omega,mu,1);
+	tmp = tmp + omegabar;
+	face = where(tmp == Integer(2),one,face );
+
+	nface = nface + face;
+
+	sp_proj = 0.5*(f+G*f*rsgn);
+	projected= where(face,sp_proj,projected);
+      }
+      
+    }
+    // Initial Zero() where nface==0.
+    // Keep the spin projected faces where nface==1
+    // Full spinor where nface>=2
+    projected = where(nface>Integer(1),f,projected);
+    f=projected;
+  }
+
   void ProjectDomain(FermionField &f,int domain)
-  {    
+  {
+/*
     GridBase *grid = f.Grid();
     int dims = grid->Nd();
     int isDWF= (dims==Nd+1);
@@ -225,6 +315,9 @@ public:
       domaincb = domaincb + div(coor,Block[d]);
     }
     f = where(mod(domaincb,2)==Integer(domain),f,zz);
+*/
+    Domains.ProjectDomain(f,domain);
+
   };
   void ProjectOmegaBar   (FermionField &f) {ProjectDomain(f,OmegaBar);}
   void ProjectOmega      (FermionField &f) {ProjectDomain(f,Omega);}
@@ -331,6 +424,7 @@ public:
   void dOmegaInvAndOmegaBarInv(FermionField &in,FermionField &out)
   {
     MxPCG OmegaSolver(tol,
+		      tolinner,
 		      maxinnerit,
 		      maxouterit,
 		      DirichletFermOpF.FermionRedBlackGrid(),
@@ -344,6 +438,7 @@ public:
   void dOmegaDagInvAndOmegaBarDagInv(FermionField &in,FermionField &out)
   {
     MxDagPCG OmegaDagSolver(tol,
+			    tolinner,
 			    maxinnerit,
 			    maxouterit,
 			    DirichletFermOpF.FermionRedBlackGrid(),
@@ -408,6 +503,7 @@ public:
   void Dinverse(FermionField &in,FermionField &out)
   {
     MxPCG DSolver(tol,
+		  tolinner,
 		  maxinnerit,
 		  maxouterit,
 		  PeriodicFermOpF.FermionRedBlackGrid(),
@@ -421,6 +517,7 @@ public:
   void DinverseDag(FermionField &in,FermionField &out)
   {
     MxDagPCG DdagSolver(tol,
+			tolinner,
 			maxinnerit,
 			maxouterit,
 			PeriodicFermOpF.FermionRedBlackGrid(),
