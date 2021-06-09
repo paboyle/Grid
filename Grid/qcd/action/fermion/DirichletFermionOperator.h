@@ -47,7 +47,8 @@ public:
   FermionOperator<Impl> & FermOp;
   
   // Constructor / bespoke
-  DirichletFermionOperator(FermionOperator<Impl> & _FermOp, Coordinate &_Block) : FermOp(_FermOp), Block(_Block), Filter(_Block)
+  DirichletFermionOperator(FermionOperator<Impl> & _FermOp, Coordinate &_Block)
+    : FermOp(_FermOp), Block(_Block), Filter(Block)
   {
     // Save what the comms mode should be under normal BCs
     CommsMode = WilsonKernelsStatic::Comms;
@@ -63,7 +64,7 @@ public:
     assert(Block.size()==LocalDims.size());
 
     for(int d=0;d<LocalDims.size();d++){
-      if (Block[d]<=GlobalDims[d]){
+      if (Block[d]&&(Block[d]<=GlobalDims[d])){
 	int r = LocalDims[d] % Block[d];
 	assert(r == 0);
 	blocks_per_rank *= (LocalDims[d] / Block[d]);
@@ -78,11 +79,11 @@ public:
 
   void DirichletOn(void)   {
     assert(WilsonKernelsStatic::Comms!= WilsonKernelsStatic::CommsDirichlet);
-    WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsDirichlet;
+    //    WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsDirichlet;
   }
   void DirichletOff(void)  {
-    assert(WilsonKernelsStatic::Comms== WilsonKernelsStatic::CommsDirichlet);
-    WilsonKernelsStatic::Comms = CommsMode;
+    //    assert(WilsonKernelsStatic::Comms== WilsonKernelsStatic::CommsDirichlet);
+    //    WilsonKernelsStatic::Comms = CommsMode;
   }
 
   // Implement the full interface
