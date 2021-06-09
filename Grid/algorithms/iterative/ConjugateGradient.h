@@ -102,7 +102,7 @@ public:
     // Check if guess is really REALLY good :)
     if (cp <= rsq) {
       TrueResidual = std::sqrt(a/ssq);
-      std::cout << GridLogMessage << "ConjugateGradient guess is converged already " << std::endl;
+      std::cout << GridLogMessage << "ConjugateGradient guess is converged already "<<TrueResidual<< " tol "<< Tolerance<< std::endl;
       IterationsToComplete = 0;	
       return;
     }
