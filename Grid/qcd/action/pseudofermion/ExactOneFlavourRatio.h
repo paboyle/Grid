@@ -394,10 +394,15 @@ NAMESPACE_BEGIN(Grid);
 
 	  //S_init = eta^dag M^{-1/2} M M^{-1/2} eta
 	  //S_init - eta^dag eta =  eta^dag ( M^{-1/2} M M^{-1/2} - 1 ) eta
-	  RealD test = sqrt(fabs(diff)/norm2_eta); //test the quality of the rational approx
+
+	  //If approximate solution
+	  //S_init - eta^dag eta =  eta^dag ( [M^{-1/2}+\delta M^{-1/2}] M [M^{-1/2}+\delta M^{-1/2}] - 1 ) eta
+	  //               \approx  eta^dag ( \delta M^{-1/2} M^{1/2} + M^{1/2}\delta M^{-1/2} ) eta
+	  // We divide out |eta|^2 to remove source scaling but the tolerance on this check should still be somewhat higher than the actual approx tolerance
+	  RealD test = fabs(diff)/norm2_eta; //test the quality of the rational approx
 
 	  std::cout << GridLogMessage << action_name() << " initial action " << action << " expect " << norm2_eta << "; diff " << diff << std::endl;
-	  std::cout << GridLogMessage << action_name() << " sqrt( eta^dag ( M^{-1/2} M M^{-1/2} - 1 ) eta )/sqrt( eta^dag eta ) = " << test << "  expect 0 (tol " << param.BoundsCheckTol << ")" << std::endl;
+	  std::cout << GridLogMessage << action_name() << "[ eta^dag ( M^{-1/2} M M^{-1/2} - 1 ) eta ]/|eta^2| = " << test << "  expect 0 (tol " << param.BoundsCheckTol << ")" << std::endl;
 
 	  assert( ( test < param.BoundsCheckTol ) && " Initial action check failed" );
 	  initial_action = false;

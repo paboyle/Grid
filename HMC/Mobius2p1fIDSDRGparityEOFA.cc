@@ -312,9 +312,37 @@ void upperBoundEOFA(ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> &
   auto lambda_max = power_method(linop,eta);
   std::cout << GridLogMessage << "Upper bound of EOFA operator " << lambda_max << std::endl;
 }
-  
 
+//Applications of M^{-1} cost the same as M for EOFA!
+template<typename FermionImplPolicy>
+class EOFAinvLinop: public LinearOperatorBase<typename FermionImplPolicy::FermionField>{
+  ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> &EOFA;
+  LatticeGaugeFieldD &U;
+public:
+  EOFAinvLinop(ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> &EOFA, LatticeGaugeFieldD &U): EOFA(EOFA), U(U){}
 
+  typedef typename FermionImplPolicy::FermionField Field;
+  void OpDiag (const Field &in, Field &out){ assert(0); }
+  void OpDir  (const Field &in, Field &out,int dir,int disp){ assert(0); }
+  void OpDirAll  (const Field &in, std::vector<Field> &out){ assert(0); } 
+
+  void Op     (const Field &in, Field &out){ assert(0); }
+  void AdjOp  (const Field &in, Field &out){ assert(0); }
+  void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){ assert(0); }
+  void HermOp(const Field &in, Field &out){ EOFA.MeofaInv(U, in, out); }
+};
+
+template<typename FermionImplPolicy>
+void lowerBoundEOFA(ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> &EOFA,
+		    GridCartesian* FGrid, GridParallelRNG &rng, LatticeGaugeFieldD &latt){
+  std::cout << GridLogMessage << "Starting EOFA lower bound compute using power method on M^{-1}. Inverse of highest eigenvalue is the lowest eigenvalue of M" << std::endl;
+  EOFAinvLinop<FermionImplPolicy> linop(EOFA, latt);
+  typename FermionImplPolicy::FermionField eta(FGrid);
+  gaussian(rng,eta);
+  PowerMethod<typename FermionImplPolicy::FermionField> power_method;
+  auto lambda_max = power_method(linop,eta);
+  std::cout << GridLogMessage << "Lower bound of EOFA operator " << 1./lambda_max << std::endl;
+}
 
 
 NAMESPACE_BEGIN(Grid);
@@ -667,9 +695,12 @@ int main(int argc, char **argv) {
 
 
   //Action tuning
-  bool tune_rhmc_s=false, eigenrange_s=false, 
+  bool 
+    tune_rhmc_s=false, eigenrange_s=false, 
     tune_rhmc_DSDR=false, eigenrange_DSDR=false, 
-    check_eofa=false, upper_bound_eofa=false; 
+    check_eofa=false, 
+    upper_bound_eofa=false, lower_bound_eofa(false);
+
   std::string lanc_params_s;
   std::string lanc_params_DSDR;
   int tune_rhmc_s_action_or_md;
@@ -699,8 +730,9 @@ int main(int argc, char **argv) {
     }
     else if(sarg == "--check_eofa") check_eofa = true;
     else if(sarg == "--upper_bound_eofa") upper_bound_eofa = true;
+    else if(sarg == "--lower_bound_eofa") lower_bound_eofa = true;
   }
-  if(tune_rhmc_s || eigenrange_s || tune_rhmc_DSDR || eigenrange_DSDR ||check_eofa || upper_bound_eofa) {
+  if(tune_rhmc_s || eigenrange_s || tune_rhmc_DSDR || eigenrange_DSDR ||check_eofa || upper_bound_eofa || lower_bound_eofa) {
     std::cout << GridLogMessage << "Running checks" << std::endl;
     TheHMC.initializeGaugeFieldAndRNGs(Ud);
 
@@ -710,6 +742,7 @@ int main(int argc, char **argv) {
 
     if(check_eofa) checkEOFA(EOFA, FGridD, TheHMC.Resources.GetParallelRNG(), Ud);
     if(upper_bound_eofa) upperBoundEOFA(EOFA, FGridD, TheHMC.Resources.GetParallelRNG(), Ud);
+    if(lower_bound_eofa) lowerBoundEOFA(EOFA, FGridD, TheHMC.Resources.GetParallelRNG(), Ud);
     if(eigenrange_s) computeEigenvalues<FermionActionD, FermionFieldD>(lanc_params_s, FGridD, FrbGridD, Ud, Numerator_sD, TheHMC.Resources.GetParallelRNG());
     if(tune_rhmc_s) checkRHMC<FermionActionD, FermionFieldD, decltype(Quotient_s)>(FGridD, FrbGridD, Ud, Numerator_sD, Denominator_sD, Quotient_s, TheHMC.Resources.GetParallelRNG(), 4, "strange",  tune_rhmc_s_action_or_md);
     if(eigenrange_DSDR) computeEigenvalues<GparityWilsonTMFermionD, GparityWilsonTMFermionD::FermionField>(lanc_params_DSDR, UGridD, UrbGridD, Ud, Numerator_DSDR_D, TheHMC.Resources.GetParallelRNG());
