@@ -60,8 +60,8 @@ int main(int argc, char **argv) {
   HMCparams.Trajectories     = 200;
   HMCparams.NoMetropolisUntil=  20;
   // "[HotStart, ColdStart, TepidStart, CheckpointStart]\n";
-  //  HMCparams.StartingType     =std::string("ColdStart");
-  HMCparams.StartingType     =std::string("CheckpointStart");
+  HMCparams.StartingType     =std::string("ColdStart");
+  // HMCparams.StartingType     =std::string("CheckpointStart");
   HMCparams.MD = MD;
   HMCWrapper TheHMC(HMCparams);
 
