@@ -28,9 +28,6 @@
 #ifdef CUDA_PROFILE
 #include <cuda_profiler_api.h>
 #endif
-#include <Grid/qcd/action/momentum/DirichletFilter.h>
-#include <Grid/qcd/action/momentum/DDHMCfilter.h>
-#include <Grid/qcd/action/fermion/DirichletFermionOperator.h>
 
 using namespace std;
 using namespace Grid;
@@ -373,7 +370,6 @@ int main (int argc, char ** argv)
   // Dirichlet benchmark
  
   Coordinate local(Nd);
-  Coordinate nil(Nd,0);
   for(int d=0;d<Nd;d++){
     local[d] = latt[d]/mpi[d];
   }
@@ -381,8 +377,8 @@ int main (int argc, char ** argv)
   DomainWallFermionF::ImplParams DirichletParams(boundary);
   DirichletParams.locally_periodic=true;
   DomainWallFermionF DwDirichlet(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,DirichletParams);
-  DirichletFermionF Dirichlet(DwDirichlet,local,nil);
-
+  DirichletFermionF Dirichlet(DwDirichlet,local);
+  Dirichlet.ImportGauge(Umu);
   {
     FGrid->Barrier();
     Dirichlet.DhopEO(src_o,r_e,DaggerNo);

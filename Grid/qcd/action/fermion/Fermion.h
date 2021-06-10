@@ -101,6 +101,12 @@ NAMESPACE_CHECK(WilsonTM5);
 #include <Grid/qcd/action/fermion/PauliVillarsInverters.h>
 #include <Grid/qcd/action/fermion/Reconstruct5Dprop.h>
 #include <Grid/qcd/action/fermion/MADWF.h>
+////////////////////////////////////////////////////////////////////
+// DDHMC related 
+////////////////////////////////////////////////////////////////////
+#include <Grid/qcd/action/fermion/DirichletFermionOperator.h>
+#include <Grid/qcd/action/fermion/SchurFactoredFermionOperator.h>
+
 NAMESPACE_CHECK(DWFutils);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

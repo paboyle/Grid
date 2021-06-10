@@ -58,8 +58,8 @@ NAMESPACE_CHECK(Scalar);
 ////////////////////////////////////////////
 // Utility functions
 ////////////////////////////////////////////
-#include <Grid/qcd/action/momentum/MomentumFilter.h>
-//#include <Grid/qcd/action/momentum/DDHMCfilter.h>
+#include <Grid/qcd/action/domains/Domains.h>
+
 #include <Grid/qcd/utils/Metric.h>
 NAMESPACE_CHECK(Metric);
 #include <Grid/qcd/utils/CovariantLaplacian.h>

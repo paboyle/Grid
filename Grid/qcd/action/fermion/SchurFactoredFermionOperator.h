@@ -28,7 +28,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #pragma once
 
 #include <Grid/qcd/utils/MixedPrecisionOperatorFunction.h>
-#include <Grid/qcd/action/momentum/Domains.h>
+#include <Grid/qcd/action/domains/Domains.h>
 
 NAMESPACE_BEGIN(Grid);
 

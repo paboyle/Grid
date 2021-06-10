@@ -30,8 +30,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#ifndef GRID_QCD_ACTION_H
-#define GRID_QCD_ACTION_H
+#pragma once
 
 ////////////////////////////////////////////
 // Abstract base interface
@@ -51,4 +50,4 @@ NAMESPACE_CHECK(Fermion);
 #include <Grid/qcd/action/pseudofermion/PseudoFermion.h>
 NAMESPACE_CHECK(PseudoFermion);
 
-#endif
+

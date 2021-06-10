@@ -25,8 +25,7 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#ifndef  GRID_QCD_FERMION_CORE_H
-#define  GRID_QCD_FERMION_CORE_H
+#pragma once
 
 #include <Grid/GridCore.h>
 #include <Grid/GridQCDcore.h>
@@ -45,4 +44,3 @@ NAMESPACE_CHECK(FermionOperator);
 #include <Grid/qcd/action/fermion/StaggeredKernels.h>        //used by all wilson type fermions
 NAMESPACE_CHECK(Kernels);
 
-#endif

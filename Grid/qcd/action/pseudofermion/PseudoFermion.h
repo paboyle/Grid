@@ -26,8 +26,7 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef QCD_PSEUDOFERMION_AGGREGATE_H
-#define QCD_PSEUDOFERMION_AGGREGATE_H
+#pragma once
 
 // Rational functions
 #include <Grid/qcd/action/pseudofermion/Bounds.h>
@@ -44,5 +43,10 @@ directory
 #include <Grid/qcd/action/pseudofermion/GeneralEvenOddRationalRatioMixedPrec.h>
 #include <Grid/qcd/action/pseudofermion/OneFlavourEvenOddRationalRatio.h>
 #include <Grid/qcd/action/pseudofermion/ExactOneFlavourRatio.h>
+#include <Grid/qcd/action/pseudofermion/DomainDecomposedBoundaryTwoFlavourPseudoFermion.h>
+#include <Grid/qcd/action/pseudofermion/DomainDecomposedBoundaryTwoFlavourBosonPseudoFermion.h>
+#include <Grid/qcd/action/pseudofermion/DomainDecomposedBoundaryTwoFlavourRatioPseudoFermion.h>
 
-#endif
+
+
+

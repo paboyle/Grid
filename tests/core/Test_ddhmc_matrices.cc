@@ -27,9 +27,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
-#include <Grid/qcd/action/momentum/DirichletFilter.h>
-#include <Grid/qcd/action/fermion/DirichletFermionOperator.h>
-#include <Grid/qcd/action/fermion/SchurFactoredFermionOperator.h>
 
 using namespace std;
 using namespace Grid;
@@ -84,13 +81,12 @@ int main (int argc, char ** argv)
   typedef DomainWallFermionF::Impl_t FimplF;
   typedef DirichletFermionOperator<FimplD> FermOp;
   typedef DirichletFermionOperator<FimplF> FermOpF;
-  Coordinate Block1({0,0,0,Nt/2});
-  Coordinate Block2({0,0,0,Nt/4});
+  Coordinate Block({0,0,0,Nt/2});
 
   DomainWallFermionR DdwfPeriTmp(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   DomainWallFermionF DdwfPeriTmpF(UmuF,*FGridF,*FrbGridF,*UGridF,*UrbGridF,mass,M5);
-  FermOp  Ddwf(DdwfPeriTmp,Block1,Block2); 
-  FermOpF DdwfF(DdwfPeriTmpF,Block1,Block2); 
+  FermOp  Ddwf(DdwfPeriTmp,Block); 
+  FermOpF DdwfF(DdwfPeriTmpF,Block); 
   Ddwf.ImportGauge(Umu);
   DdwfF.ImportGauge(UmuF);
   
@@ -300,7 +296,7 @@ int main (int argc, char ** argv)
 
   SchurFactoredFermionOperator<FimplD,FimplF> Schur(DdwfPeri,DdwfPeriF,
 						    Ddwf,DdwfF,
-						    Block1,Block2);
+						    Block);
   
   result = src;
   Schur.ProjectOmega(result);

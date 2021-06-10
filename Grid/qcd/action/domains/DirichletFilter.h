@@ -32,7 +32,7 @@ directory
 ////////////////////////////////////////////////////
 #pragma once 
 
-#include <Grid/qcd/action/momentum/Domains.h>
+#include <Grid/qcd/action/domains/DomainDecomposition.h>
 
 NAMESPACE_BEGIN(Grid);
 
