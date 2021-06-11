@@ -51,9 +51,11 @@ NAMESPACE_BEGIN(Grid);
   } else if ( st.same_node[Dir] ) {				\
     chi = coalescedRead(buf[SE->_offset],lane);                 \
   }								\
+  acceleratorSynchronise();           \
   if (SE->_is_local || st.same_node[Dir] ) {			\
     multLink(Uchi, U[sU], chi, Dir);				\
-  }
+  } \
+  acceleratorSynchronise();
 
 #define GENERIC_STENCIL_LEG_EXT(U,Dir,skew,multLink)		\
   SE = st.GetEntry(ptype, Dir+skew, sF);			\
@@ -61,7 +63,8 @@ NAMESPACE_BEGIN(Grid);
     nmu++;							\
     chi = coalescedRead(buf[SE->_offset],lane);			\
     multLink(Uchi, U[sU], chi, Dir);				\
-  }
+  } \
+  acceleratorSynchronise();
 
 template <class Impl>
 StaggeredKernels<Impl>::StaggeredKernels(const ImplParams &p) : Base(p){};
