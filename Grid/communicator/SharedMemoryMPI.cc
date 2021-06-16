@@ -36,6 +36,9 @@ Author: Christoph Lehner <christoph@lhnr.de>
 #ifdef GRID_HIP
 #include <hip/hip_runtime_api.h>
 #endif
+#ifdef GRID_SYCl
+
+#endif
 
 NAMESPACE_BEGIN(Grid); 
 #define header "SharedMemoryMpi: "
@@ -446,7 +449,46 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Hugetlbfs mapping intended
 ////////////////////////////////////////////////////////////////////////////////////////////
-#if defined(GRID_CUDA) ||defined(GRID_HIP)
+#if defined(GRID_CUDA) ||defined(GRID_HIP)  || defined(GRID_SYCL)
+
+#if defined(GRID_SYCL) 
+void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
+{
+  void * ShmCommBuf ; 
+  assert(_ShmSetup==1);
+  assert(_ShmAlloc==0);
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // allocate the pointer array for shared windows for our group
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////
+  MPI_Barrier(WorldShmComm);
+  WorldShmCommBufs.resize(WorldShmSize);
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Each MPI rank should allocate our own buffer
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ShmCommBuf = acceleratorAllocDevice(bytes);
+
+  if (ShmCommBuf == (void *)NULL ) {
+    std::cerr << " SharedMemoryMPI.cc acceleratorAllocDevice failed NULL pointer for " << bytes<<" bytes " << std::endl;
+    exit(EXIT_FAILURE);  
+  }
+  //  if ( WorldRank == 0 ){
+  if ( 1 ){
+    std::cout << WorldRank << header " SharedMemoryMPI.cc acceleratorAllocDevice "<< bytes 
+	      << "bytes at "<< std::hex<< ShmCommBuf <<std::dec<<" for comms buffers " <<std::endl;
+  }
+  SharedMemoryZero(ShmCommBuf,bytes);
+
+  for(int r=0;r<WorldShmSize;r++){
+    WorldShmCommBufs[r] = ShmCommBuf;
+  }
+  _ShmAllocBytes=bytes;
+  _ShmAlloc=1;
+}
+#endif
+
+#if defined(GRID_CUDA) ||defined(GRID_HIP) 
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
   void * ShmCommBuf ; 
@@ -557,6 +599,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   _ShmAllocBytes=bytes;
   _ShmAlloc=1;
 }
+#endif
+
 #else 
 #ifdef GRID_MPI3_SHMMMAP
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
@@ -727,16 +771,16 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 /////////////////////////////////////////////////////////////////////////
 void GlobalSharedMemory::SharedMemoryZero(void *dest,size_t bytes)
 {
-#ifdef GRID_CUDA
-  cudaMemset(dest,0,bytes);
+#if defined(GRID_CUDA) || defined(GRID_HIP) || defined(GRID_SYCL)
+  acceleratorMemSet(dest,0,bytes);
 #else
   bzero(dest,bytes);
 #endif
 }
 void GlobalSharedMemory::SharedMemoryCopy(void *dest,void *src,size_t bytes)
 {
-#ifdef GRID_CUDA
-  cudaMemcpy(dest,src,bytes,cudaMemcpyDefault);
+#if defined(GRID_CUDA) || defined(GRID_HIP) || defined(GRID_SYCL)
+  acceleratorCopyToDevice(src,dest,bytes);
 #else   
   bcopy(src,dest,bytes);
 #endif
