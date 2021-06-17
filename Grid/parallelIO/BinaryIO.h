@@ -271,7 +271,7 @@ class BinaryIO {
 			      uint32_t &scidac_csumb)
   {
     grid->Barrier();
-    GridStopWatch timer; 
+    GridStopWatch timer, insideTimer; 
     GridStopWatch bstimer;
     
     nersc_csum=0;
@@ -363,7 +363,10 @@ class BinaryIO {
 	std::cout<< GridLogMessage<<"IOobject: MPI read I/O "<< file<< std::endl;
 	ierr=MPI_File_open(grid->communicator,(char *) file.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);    assert(ierr==0);
 	ierr=MPI_File_set_view(fh, disp, mpiObject, fileArray, "native", MPI_INFO_NULL);    assert(ierr==0);
-	ierr=MPI_File_read_all(fh, &iodata[0], 1, localArray, &status);    assert(ierr==0);
+  insideTimer.Start();
+	ierr=MPI_File_read_all(fh, &iodata[0], 1, localArray, &status);
+  insideTimer.Stop();
+  assert(ierr==0);
 	MPI_File_close(&fh);
 	MPI_Type_free(&fileArray);
 	MPI_Type_free(&localArray);
@@ -438,7 +441,9 @@ class BinaryIO {
         assert(ierr == 0);
 
         std::cout << GridLogDebug << "MPI write I/O write all " << file << std::endl;
+        insideTimer.Start();
         ierr = MPI_File_write_all(fh, &iodata[0], 1, localArray, &status);
+        insideTimer.Stop();
         assert(ierr == 0);
 
         MPI_Offset os;
@@ -516,8 +521,13 @@ class BinaryIO {
     if ( control & BINARYIO_READ) std::cout << " read  ";
     else                          std::cout << " write ";
     uint64_t bytes = sizeof(fobj)*iodata.size()*nrank;
-    std::cout<< lastPerf.size <<" bytes in "<< timer.Elapsed() <<" "
+    std::cout<< lastPerf.size <<"bytes in "<< timer.Elapsed() <<" "
 	     << lastPerf.mbytesPerSecond <<" MB/s "<<std::endl;
+    std::cout << GridLogMessage << "IOobject: pure MPI IO call " 
+              << lastPerf.size <<" bytes in " 
+              << insideTimer.Elapsed() << " "
+              << lastPerf.size/1024./1024./(insideTimer.useconds()/1.0e6)
+              <<" MB/s "<<std::endl;
 
     std::cout<<GridLogMessage<<"IOobject: endian and checksum overhead "<<bstimer.Elapsed()  <<std::endl;
 
