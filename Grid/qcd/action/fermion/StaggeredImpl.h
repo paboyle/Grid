@@ -159,30 +159,30 @@ public:
       if ( mu == 3 ) KSphases = where( mod(lin_t,2)==(Integer)0, KSphases,-KSphases);
 
       // 1 hop based on fat links
-      U      = PeekIndex<LorentzIndex>(Ufat, mu);
-      Udag   = adj( Cshift(U, mu, -1));
+      U    = PeekIndex<LorentzIndex>(Ufat, mu);
+      Udag = adj( Cshift(U, mu, -1));
 
-      U = U * KSphases;
       U = where(coor == Lmu, bphase * U , U);
+      U = U * KSphases;
 
-      Udag = Udag * KSphases;
       Udag = where(coor == 0, conjugate(bphase) * Udag , Udag);
+      Udag = Udag * KSphases;
 
       InsertGaugeField(Uds,U,mu);
       InsertGaugeField(Uds,Udag,mu+4);
 
+
       // 3 hop based on thin links. Crazy huh ?
-      U  = PeekIndex<LorentzIndex>(Uthin, mu);
-      UU = Gimpl::CovShiftForward(U,mu,U);
-      UUU= Gimpl::CovShiftForward(U,mu,UU);
-	
+      U      = PeekIndex<LorentzIndex>(Uthin, mu);
+      UU     = Gimpl::CovShiftForward(U,mu,U);
+      UUU    = Gimpl::CovShiftForward(U,mu,UU);
       UUUdag = adj( Cshift(UUU, mu, -3));
 
+      UUU = where(coor >= (Lmu-2), bphase * UUU , UUU);
       UUU = UUU * KSphases;
-      UUU = where(coor == Lmu, bphase * UUU , UUU);
 
+      UUUdag = where(coor <= 2, conjugate(bphase) * UUUdag , UUUdag);
       UUUdag = UUUdag * KSphases;
-      UUUdag = where(coor == 0, conjugate(bphase) * UUUdag , UUUdag);
 
       InsertGaugeField(UUUds,UUU,mu);
       InsertGaugeField(UUUds,UUUdag,mu+4);
@@ -246,34 +246,29 @@ public:
       	if ( mu == 3 ) KSphases = where( mod(lin_t,2)==(Integer)0, KSphases,-KSphases);
         
       	// 1 hop based on fat links
-      	U      = PeekIndex<LorentzIndex>(Ufat, mu);
-      	Udag   = adj( Cshift(U, mu, -1));
-              
-      	U = U * KSphases;
-        U = where(coor == Lmu, bphase * U , U);
+      	U    = PeekIndex<LorentzIndex>(Ufat, mu);
+      	Udag = adj( Cshift(U, mu, -1));
 
+        U = where(coor == Lmu, bphase * U , U);
+      	U = U * KSphases;
+
+	Udag = where(coor == 0, conjugate(bphase) * Udag , Udag);
       	Udag = Udag * KSphases;
-        Udag = where(coor == 0, conjugate(bphase) * Udag , Udag);
                   
       	InsertGaugeField(Uds,U,mu);
       	InsertGaugeField(Uds,Udag,mu+4);
 
-        #if 0 // MILC (does not ! store -w^dgr(x+2)W^dgr(x+1)W^dgr(x). must use c2=-1)
-        	U  = PeekIndex<LorentzIndex>(Ulong, mu);
-        	UUU = adj( U );
-        	UUUdag = Cshift(U, mu, -3);
-        #else // USUAL
-        	UUU  = PeekIndex<LorentzIndex>(Ulong, mu);
-        	UUUdag = adj( Cshift(UUU, mu, -3));
-        #endif
-        	UUU    = UUU    *KSphases;
-          UUU = where(coor == Lmu, bphase * UUU , UUU);
+	UUU    = PeekIndex<LorentzIndex>(Ulong, mu);
+	UUUdag = adj( Cshift(UUU, mu, -3));
 
-        	UUUdag = UUUdag *KSphases;
-          UUUdag = where(coor == 0, conjugate(bphase) * UUUdag , UUUdag);
+        UUU = where(coor >= (Lmu-2), bphase * UUU , UUU);
+	UUU = UUU * KSphases;
+
+	UUUdag = where(coor <= 2, conjugate(bphase) * UUUdag , UUUdag);
+	UUUdag = UUUdag * KSphases;
                 
-        	InsertGaugeField(UUUds,UUU,mu);
-        	InsertGaugeField(UUUds,UUUdag,mu+4);
+        InsertGaugeField(UUUds,UUU,mu);
+        InsertGaugeField(UUUds,UUUdag,mu+4);
             
       }
     }
@@ -329,14 +324,14 @@ public:
       	  if ( mu == 3 ) KSphases = where( mod(lin_t,2)==(Integer)0, KSphases,-KSphases);
           
       	  // 1 hop based on fat links
-      	  U      = PeekIndex<LorentzIndex>(Uthin, mu);
-      	  Udag   = adj( Cshift(U, mu, -1));
+      	  U    = PeekIndex<LorentzIndex>(Uthin, mu);
+      	  Udag = adj( Cshift(U, mu, -1));
                 
-      	  U = U * KSphases;
           U = where(coor == Lmu, bphase * U , U);
+      	  U = U * KSphases;
 
-      	  Udag = Udag * KSphases;
           Udag = where(coor == 0, conjugate(bphase) * Udag , Udag);
+      	  Udag = Udag * KSphases;
                 
       	  InsertGaugeField(Uds,U,mu);
       	  InsertGaugeField(Uds,Udag,mu+4);
