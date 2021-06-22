@@ -473,13 +473,13 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     std::cerr << " SharedMemoryMPI.cc acceleratorAllocDevice failed NULL pointer for " << bytes<<" bytes " << std::endl;
     exit(EXIT_FAILURE);  
   }
-  //  if ( WorldRank == 0 ){
-  if ( 1 ){
-    std::cout << WorldRank << header " SharedMemoryMPI.cc acceleratorAllocDevice "<< bytes 
-	      << "bytes at "<< std::hex<< ShmCommBuf <<std::dec<<" for comms buffers " <<std::endl;
-  }
+
+  std::cout << WorldRank << header " SharedMemoryMPI.cc acceleratorAllocDevice "<< bytes 
+	    << "bytes at "<< std::hex<< ShmCommBuf <<std::dec<<" for comms buffers " <<std::endl;
+
   SharedMemoryZero(ShmCommBuf,bytes);
 
+  assert(WorldShmSize == 1);
   for(int r=0;r<WorldShmSize;r++){
     WorldShmCommBufs[r] = ShmCommBuf;
   }
