@@ -390,6 +390,7 @@ case ${CXXTEST} in
     CXXFLAGS="$CXXFLAGS -Xcompiler -fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr"
     if test $ac_openmp = yes; then
        CXXFLAGS="$CXXFLAGS -Xcompiler -fopenmp"
+       LDFLAGS="$LDFLAGS -Xcompiler -fopenmp"
     fi
     ;;
   hipcc)
