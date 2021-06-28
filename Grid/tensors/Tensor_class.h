@@ -417,7 +417,7 @@ public:
       stream << "{";
       for (int j = 0; j < N; j++) {
 	stream << o._internal[i][j];
-	if (i < N - 1) stream << ",";
+	if (j < N - 1) stream << ",";
       }
       stream << "}";
       if (i != N - 1) stream << "\n\t\t";

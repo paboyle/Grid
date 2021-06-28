@@ -48,7 +48,9 @@ public:
                           std::vector<double>, array,
                           std::vector<std::vector<double> >, twodimarray,
 			  std::vector<std::vector<std::vector<std::complex<double>> > >, cmplx3darray,
-			  SpinColourMatrix, scm
+			  SpinColourMatrix, scm,
+                          std::vector<std::vector<std::vector<int> > >, ragged,
+                          std::vector<std::vector<SpinColourMatrix> >, vscm
                           );
   myclass() {}
   myclass(int i)
@@ -56,6 +58,10 @@ public:
   , twodimarray(3,std::vector<double>(5, 1.23456))
   , cmplx3darray(3,std::vector<std::vector<std::complex<double>>>(5, std::vector<std::complex<double>>(7, std::complex<double>(1.2, 3.4))))
   , ve(2, myenum::blue)
+  , ragged( {{{i+1},{i+2,i+3}}, // ragged
+            {{i+4,i+5,i+6,i+7},{i+8,i+9,i+10,i+11},{i+12,i+13,i+14,i+15}}, // block
+            {{i+16,i+17},{i+18,i+19,i+20}}} ) //ragged
+  , vscm(3, std::vector<SpinColourMatrix>(5))
   {
     e=myenum::red;
     x=i;
@@ -68,6 +74,13 @@ public:
     scm()(0, 2)(1, 1) = 6.336;
     scm()(2, 1)(2, 2) = 7.344;
     scm()(1, 1)(2, 0) = 8.3534;
+    int Counter = i;
+    for( auto & v : vscm ) {
+      for( auto & j : v ) {
+        j = std::complex<double>(Counter, -Counter);
+        Counter++;
+      }
+    }
   }
 };
 

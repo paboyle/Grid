@@ -118,13 +118,13 @@ static inline std::string SerialisableClassName(void) {return std::string(#cname
 static constexpr bool isEnum = false; \
 GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_MEMBER,__VA_ARGS__))\
 template <typename T>\
-static inline void write(Writer<T> &WR,const std::string &s, const cname &obj){ \
+static inline void write(::Grid::Writer<T> &WR,const std::string &s, const cname &obj){ \
   push(WR,s);\
   GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_WRITE_MEMBER,__VA_ARGS__))	\
   pop(WR);\
 }\
 template <typename T>\
-static inline void read(Reader<T> &RD,const std::string &s, cname &obj){	\
+static inline void read(::Grid::Reader<T> &RD,const std::string &s, cname &obj){	\
   if (!push(RD,s))\
   {\
     std::cout << ::Grid::GridLogWarning << "IO: Cannot open node '" << s << "'" << std::endl; \
