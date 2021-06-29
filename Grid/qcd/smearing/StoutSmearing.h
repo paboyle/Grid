@@ -85,21 +85,18 @@ public:
 
     std::cout << GridLogDebug << "Stout smearing started\n";
 
-    // Smear the configurations
+    // C contains the staples multiplied by some rho
+    u_smr = U ; // set the smeared field to the current gauge field
     SmearBase->smear(C, U);
 
     for (int mu = 0; mu < Nd; mu++) {
-      if( mu == OrthogDim )
-        tmp = 1.0;  // Don't smear in the orthogonal direction
-      else {
-        tmp = peekLorentz(C, mu);
-        Umu = peekLorentz(U, mu);
-        iq_mu = Ta(
-                   tmp *
-                   adj(Umu));  // iq_mu = Ta(Omega_mu) to match the signs with the paper
-        exponentiate_iQ(tmp, iq_mu);
-      }
-      pokeLorentz(u_smr, tmp * Umu, mu);  // u_smr = exp(iQ_mu)*U_mu
+      if( mu == OrthogDim ) continue ;
+      // u_smr = exp(iQ_mu)*U_mu apart from Orthogdim
+      Umu = peekLorentz(U, mu);
+      tmp = peekLorentz(C, mu);
+      iq_mu = Ta( tmp * adj(Umu));  
+      exponentiate_iQ(tmp, iq_mu);
+      pokeLorentz(u_smr, tmp * Umu, mu);
     }
     std::cout << GridLogDebug << "Stout smearing completed\n";
   };
