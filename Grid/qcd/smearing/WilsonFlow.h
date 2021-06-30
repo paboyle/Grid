@@ -74,8 +74,15 @@ public:
   }
 
   void smear_adaptive(GaugeField&, const GaugeField&, RealD maxTau);
+
+  //Compute t^2 <E(t)> for timestep 'step' from the plaquette
   RealD energyDensityPlaquette(unsigned int step, const GaugeField& U) const;
+
+  //Compute t^2 <E(t)> for time taus, set by smear_adaptive, from the plaquette
   RealD energyDensityPlaquette(const GaugeField& U) const;
+
+  //Evolve the gauge field by Nstep steps of epsilon and return the energy density computed every interval steps
+  std::vector<RealD> flowMeasureEnergyDensityPlaquette(const GaugeField& U) const;
 };
 
 
@@ -154,11 +161,20 @@ RealD WilsonFlow<Gimpl>::energyDensityPlaquette(const GaugeField& U) const {
   return 2.0 * taus * taus * SG.S(U)/U.Grid()->gSites();
 }
 
-
+template <class Gimpl>
+std::vector<RealD> WilsonFlow<Gimpl>::flowMeasureEnergyDensityPlaquette(const GaugeField& U) const{
+  std::vector<RealD> out;
+  GaugeField V(U);
+  for (unsigned int step = 0; step < Nstep; step++) { //bn  tau = epsilon*(step+1) so tau after performing step=0 is epsilon
+    evolve_step(V);
+    if( step % measure_interval == 0){
+      out.push_back( energyDensityPlaquette(step,V) );
+    }
+  }
+  return out;
+}
+  
 //#define WF_TIMING 
-
-
-
 template <class Gimpl>
 void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const {
   out = in;
