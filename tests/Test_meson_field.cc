@@ -45,11 +45,18 @@ int main(int argc, char *argv[])
   GridCartesian    grid(latt_size,simd_layout,mpi_layout);
 
   // MesonField lhs and rhs vectors
-  int mfDim = 10;
+  int mfDim = 3;
   std::vector<FermionField> phi(mfDim,&grid);
   std::vector<FermionField> rho(mfDim,&grid);
+  std::vector<int> seeds({1,2,3,4});
+  GridParallelRNG          pRNG(&grid);
+  pRNG.SeedFixedIntegers(seeds);
+  for (unsigned int i = 0; i < mfDim; ++i){
+    random(pRNG,phi[i]);
+    random(pRNG,rho[i]); //ideally only nonzero on t=0
+  }
   // Gamma matrices used in the contraction
-  Gamma::Algebra Gmu [] = {
+  std::vector<Gamma::Algebra> Gmu = {
     Gamma::Algebra::GammaX,
     Gamma::Algebra::GammaY,
     Gamma::Algebra::GammaZ,
@@ -78,10 +85,12 @@ int main(int argc, char *argv[])
     phases[j] = exp((Real)(2*M_PI)*Ci*phases[j]);
   }
 
-  Eigen::Tensor<ComplexD,5, Eigen::RowMajor> mf;//(momenta.size(),12,GridDefaultLatt()[3],10,10);
+  Eigen::Tensor<ComplexD,5, Eigen::RowMajor> mf(momenta.size(),Gmu.size(),GridDefaultLatt()[3],mfDim,mfDim);
 
   //execute meson field routine
-  //A2Autils<WilsonImplR>::MesonField(mf,phi,phi,Gmu,phases,3);
+  A2Autils<WilsonImplR>::MesonField(mf,&phi[0],&phi[0],Gmu,phases,3);
+
+  std::cout << mf << std::endl;
 
   // epilogue
   std::cout << GridLogMessage << "Grid is finalizing now" << std::endl;
