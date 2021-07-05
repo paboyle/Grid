@@ -92,6 +92,21 @@ int main(int argc, char *argv[])
 
   std::cout << mf << std::endl;
 
+  std::string FileName = "Meson_Fields";
+#ifdef HAVE_HDF5
+    using Default_Reader = Grid::Hdf5Reader;
+    using Default_Writer = Grid::Hdf5Writer;
+    FileName.append(".h5");
+#else
+    using Default_Reader = Grid::BinaryReader;
+    using Default_Writer = Grid::BinaryWriter;
+    FileName.append(".bin");
+#endif
+
+
+  Default_Writer w(FileName);
+  write(w,"phi_phi",mf);
+
   // epilogue
   std::cout << GridLogMessage << "Grid is finalizing now" << std::endl;
   Grid_finalize();
