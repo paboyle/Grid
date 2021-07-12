@@ -29,14 +29,10 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Grid.h>
 
 using namespace Grid;
- ;
 
-int main (int argc, char ** argv)
-{
+template<typename Gimpl>
+void run(double alpha, bool do_fft_gfix){
   std::vector<int> seeds({1,2,3,4});
-
-  Grid_init(&argc,&argv);
-
   int threads = GridThread::GetThreads();
 
   Coordinate latt_size   = GridDefaultLatt();
@@ -55,10 +51,7 @@ int main (int argc, char ** argv)
   FFT theFFT(&GRID);
 
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
-
-  std::cout<< "*****************************************************************" <<std::endl;
-  std::cout<< "* Testing we can gauge fix steep descent a RGT of Unit gauge    *" <<std::endl;
-  std::cout<< "*****************************************************************" <<std::endl;
+  std::cout<<GridLogMessage << "Using alpha=" << alpha << std::endl;
 
   //  int coulomb_dir = -1;
   int coulomb_dir = Nd-1;
@@ -72,81 +65,165 @@ int main (int argc, char ** argv)
   LatticeColourMatrix   xform1(&GRID); // Gauge xform
   LatticeColourMatrix   xform2(&GRID); // Gauge xform
   LatticeColourMatrix   xform3(&GRID); // Gauge xform
+
+  //#########################################################################################
+
+  std::cout<< "*********************************************************************************************************" <<std::endl;
+  std::cout<< "* Testing steepest descent fixing to Landau gauge with randomly transformed unit gauge configuration    *" <<std::endl;
+  std::cout<< "*********************************************************************************************************" <<std::endl;
   
   SU<Nc>::ColdConfiguration(pRNG,Umu); // Unit gauge
   Uorg=Umu;
+
+  Real init_plaq=WilsonLoops<Gimpl>::avgPlaquette(Umu);
+  std::cout << " Initial plaquette "<< init_plaq << std::endl;
+
+  //Apply a random gauge transformation to the unit gauge config
   Urnd=Umu;
+  SU<Nc>::RandomGaugeTransform<Gimpl>(pRNG,Urnd,g);
 
-  SU<Nc>::RandomGaugeTransform(pRNG,Urnd,g); // Unit gauge
-
-  Real plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
-  std::cout << " Initial plaquette "<<plaq << std::endl;
-
-  Real alpha=0.1;
-
+  //Gauge fix the randomly transformed field 
   Umu = Urnd;
-  FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(Umu,xform1,alpha,10000,1.0e-12, 1.0e-12,false);
+  FourierAcceleratedGaugeFixer<Gimpl>::SteepestDescentGaugeFix(Umu,xform1,alpha,10000,1.0e-12, 1.0e-12,false);
 
   // Check the gauge xform matrices
   Utmp=Urnd;
-  SU<Nc>::GaugeTransform(Utmp,xform1);
+  SU<Nc>::GaugeTransform<Gimpl>(Utmp,xform1);
   Utmp = Utmp - Umu;
-  std::cout << " Norm Difference of xformed gauge "<< norm2(Utmp) << std::endl;
+  std::cout << " Check the output gauge transformation matrices applied to the original field produce the xformed field "<< norm2(Utmp) << " (expect 0)" << std::endl;
   
 
-  plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
-  std::cout << " Final plaquette "<<plaq << std::endl;
+  Real plaq=WilsonLoops<Gimpl>::avgPlaquette(Umu);
+  std::cout << " Final plaquette "<<plaq << " diff " << plaq - init_plaq << " (expect 0)" << std::endl;
 
   Uorg = Uorg - Umu;
-  std::cout << " Norm Difference "<< norm2(Uorg) << std::endl;
-  std::cout << " Norm "<< norm2(Umu) << std::endl;
+  std::cout << " Norm difference between a unit gauge configuration and the gauge fixed configuration "<< norm2(Uorg) << " (expect 0)" << std::endl;
+  std::cout << " Norm of gauge fixed configuration "<< norm2(Umu) << std::endl;
+
+  //#########################################################################################
+  if(do_fft_gfix){
+    std::cout<< "*************************************************************************************" <<std::endl;
+    std::cout<< "* Testing Fourier accelerated fixing to Landau gauge with unit gauge configuration  *" <<std::endl;
+    std::cout<< "*************************************************************************************" <<std::endl;
+    Umu=Urnd;
+    FourierAcceleratedGaugeFixer<Gimpl>::SteepestDescentGaugeFix(Umu,xform2,alpha,10000,1.0e-12, 1.0e-12,true);
+
+    Utmp=Urnd;
+    SU<Nc>::GaugeTransform<Gimpl>(Utmp,xform2);
+    Utmp = Utmp - Umu;
+    std::cout << " Check the output gauge transformation matrices applied to the original field produce the xformed field "<< norm2(Utmp) << " (expect 0)" << std::endl;
 
 
-  std::cout<< "*****************************************************************" <<std::endl;
-  std::cout<< "* Testing Fourier accelerated fixing                            *" <<std::endl;
-  std::cout<< "*****************************************************************" <<std::endl;
+    plaq=WilsonLoops<Gimpl>::avgPlaquette(Umu);
+    std::cout << " Final plaquette "<<plaq << " diff " << plaq - init_plaq << " (expect 0)" << std::endl;
+  }
+  //#########################################################################################
+
+  std::cout<< "******************************************************************************************" <<std::endl;
+  std::cout<< "* Testing steepest descent fixing to Landau gauge with random configuration             **" <<std::endl;
+  std::cout<< "******************************************************************************************" <<std::endl;
+
+  SU<Nc>::HotConfiguration(pRNG,Umu);
+
+  init_plaq=WilsonLoops<Gimpl>::avgPlaquette(Umu);
+  std::cout << " Initial plaquette "<< init_plaq << std::endl;
+
+  FourierAcceleratedGaugeFixer<Gimpl>::SteepestDescentGaugeFix(Umu,alpha,10000,1.0e-12, 1.0e-12,false);
+
+  plaq=WilsonLoops<Gimpl>::avgPlaquette(Umu);
+  std::cout << " Final plaquette "<<plaq << " diff " << plaq - init_plaq << " (expect 0)" << std::endl;
+
+  //#########################################################################################
+  if(do_fft_gfix){
+    std::cout<< "******************************************************************************************" <<std::endl;
+    std::cout<< "* Testing Fourier accelerated fixing to Landau gauge with random configuration          **" <<std::endl;
+    std::cout<< "******************************************************************************************" <<std::endl;
+
+    SU<Nc>::HotConfiguration(pRNG,Umu);
+
+    init_plaq=WilsonLoops<Gimpl>::avgPlaquette(Umu);
+    std::cout << " Initial plaquette "<< init_plaq << std::endl;
+
+    FourierAcceleratedGaugeFixer<Gimpl>::SteepestDescentGaugeFix(Umu,alpha,10000,1.0e-12, 1.0e-12,true);
+
+    plaq=WilsonLoops<Gimpl>::avgPlaquette(Umu);
+    std::cout << " Final plaquette "<<plaq << " diff " << plaq - init_plaq << " (expect 0)" << std::endl;
+  }
+  //#########################################################################################
+  
+  std::cout<< "*******************************************************************************************" <<std::endl;
+  std::cout<< "* Testing steepest descent fixing to coulomb gauge with random configuration           *" <<std::endl;
+  std::cout<< "*******************************************************************************************" <<std::endl;
+
   Umu=Urnd;
-  FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(Umu,xform2,alpha,10000,1.0e-12, 1.0e-12,true);
+  SU<Nc>::HotConfiguration(pRNG,Umu);
 
-  Utmp=Urnd;
-  SU<Nc>::GaugeTransform(Utmp,xform2);
-  Utmp = Utmp - Umu;
-  std::cout << " Norm Difference of xformed gauge "<< norm2(Utmp) << std::endl;
+  init_plaq=WilsonLoops<Gimpl>::avgPlaquette(Umu);
+  std::cout << " Initial plaquette "<< init_plaq << std::endl;
+
+  FourierAcceleratedGaugeFixer<Gimpl>::SteepestDescentGaugeFix(Umu,xform3,alpha,10000,1.0e-12, 1.0e-12,false,coulomb_dir);
+
+  plaq=WilsonLoops<Gimpl>::avgPlaquette(Umu);
+  std::cout << " Final plaquette "<<plaq << " diff " << plaq - init_plaq << " (expect 0)" << std::endl;
 
 
-  plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
-  std::cout << " Final plaquette "<<plaq << std::endl;
+  //#########################################################################################
+  if(do_fft_gfix){
+    std::cout<< "*******************************************************************************************" <<std::endl;
+    std::cout<< "* Testing Fourier accelerated fixing to coulomb gauge with random configuration           *" <<std::endl;
+    std::cout<< "*******************************************************************************************" <<std::endl;
 
-  std::cout<< "*****************************************************************" <<std::endl;
-  std::cout<< "* Testing non-unit configuration                                *" <<std::endl;
-  std::cout<< "*****************************************************************" <<std::endl;
+    Umu=Urnd;
+    SU<Nc>::HotConfiguration(pRNG,Umu);
 
-  SU<Nc>::HotConfiguration(pRNG,Umu); // Unit gauge
+    init_plaq=WilsonLoops<Gimpl>::avgPlaquette(Umu);
+    std::cout << " Initial plaquette "<< init_plaq << std::endl;
 
-  plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
-  std::cout << " Initial plaquette "<<plaq << std::endl;
+    FourierAcceleratedGaugeFixer<Gimpl>::SteepestDescentGaugeFix(Umu,xform3,alpha,10000,1.0e-12, 1.0e-12,true,coulomb_dir);
 
-  FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(Umu,alpha,10000,1.0e-12, 1.0e-12,true);
+    plaq=WilsonLoops<Gimpl>::avgPlaquette(Umu);
+    std::cout << " Final plaquette "<<plaq << " diff " << plaq - init_plaq << " (expect 0)" << std::endl;
+  }
+}
 
-  plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
-  std::cout << " Final plaquette "<<plaq << std::endl;
+int main (int argc, char ** argv)
+{
+  Grid_init(&argc,&argv);
 
-  std::cout<< "*****************************************************************" <<std::endl;
-  std::cout<< "* Testing Fourier accelerated fixing to coulomb gauge           *" <<std::endl;
-  std::cout<< "*****************************************************************" <<std::endl;
+  double alpha=0.1; //step size
+  std::string gimpl = "periodic";
+  bool do_fft_gfix = true; //test fourier transformed gfix as well as steepest descent
+  for(int i=1;i<argc;i++){
+    std::string sarg(argv[i]);
+    if(sarg == "--gimpl"){
+      assert(i<argc-1 && "--gimpl option requires an argument");
+      gimpl = argv[i+1];
+      if(gimpl != "periodic" && gimpl != "conjugate")
+	assert(0 && "Invalid gimpl");
+    }else if(sarg == "--no-fft-gfix"){
+      std::cout << "Not doing the Fourier accelerated gauge fixing tests" << std::endl;
+      do_fft_gfix = false;
+    }else if(sarg == "--alpha"){
+      assert(i<argc-1 && "--alpha option requires an argument");
+      std::istringstream ss(argv[i+1]); ss >> alpha;
+    }
+  }
 
-  Umu=Urnd;
-  SU<Nc>::HotConfiguration(pRNG,Umu); // Unit gauge
 
-  plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
-  std::cout << " Initial plaquette "<<plaq << std::endl;
+  if(gimpl == "periodic"){
+    std::cout << GridLogMessage << "Using periodic boundary condition" << std::endl;
+    run<PeriodicGimplR>(alpha, do_fft_gfix);
+  }else{
+    std::vector<int> conjdirs = {1,1,0,0}; //test with 2 conjugate dirs and 2 not
+    std::cout << GridLogMessage << "Using complex conjugate boundary conditions in dimensions ";
+    for(int i=0;i<Nd;i++)
+      if(conjdirs[i])
+	std::cout << i << " ";   
+    std::cout << std::endl;
 
-  FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(Umu,xform3,alpha,10000,1.0e-12, 1.0e-12,true,coulomb_dir);
-
-  std::cout << Umu<<std::endl;
-
-  plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
-  std::cout << " Final plaquette "<<plaq << std::endl;
-
+    ConjugateGimplR::setDirections(conjdirs);
+    run<ConjugateGimplR>(alpha, do_fft_gfix);
+  }
+  
   Grid_finalize();
 }
