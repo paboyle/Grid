@@ -934,7 +934,7 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
     tmp    = tmp *ph;
     tmp    = Cshift(tmp,mu,-1);
     Impl::multLinkField(Utmp,this->Umu,tmp,mu+Nd); // Adjoint link
-    tmp    = -G_s[s]*( Utmp + gmu*Utmp );
+    tmp = -G_s[s]*( Utmp + gmu*Utmp );
     // Mask the time
     if (tmax == LLt - 1 && tshift == 1){ // quick fix to include timeslice 0 if tmax + tshift is over the last timeslice
       unsigned int t0 = 0;
