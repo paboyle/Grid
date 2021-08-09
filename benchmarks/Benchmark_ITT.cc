@@ -133,15 +133,15 @@ public:
 
 	std::vector<HalfSpinColourVectorD *> xbuf(8);
 	std::vector<HalfSpinColourVectorD *> rbuf(8);
-	Grid.ShmBufferFreeAll();
+	//Grid.ShmBufferFreeAll();
+	uint64_t bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
 	for(int d=0;d<8;d++){
-	  xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	  rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+	  xbuf[d] = (HalfSpinColourVectorD *)acceleratorAllocDevice(bytes);
+	  rbuf[d] = (HalfSpinColourVectorD *)acceleratorAllocDevice(bytes);
 	  //	  bzero((void *)xbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
 	  //	  bzero((void *)rbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
 	}
 
-	int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
 	int ncomm;
 	double dbytes;
 	std::vector<double> times(Nloop);
@@ -152,7 +152,7 @@ public:
 	  dbytes=0;
 	  ncomm=0;
 
-	  thread_for(dir,8,{
+	  for(int dir=0;dir<8;dir++) {
 		     
 	    double tbytes;
 	    int mu =dir % 4;
@@ -168,15 +168,16 @@ public:
 		int comm_proc = mpi_layout[mu]-1;
 		Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
 	      }
-	      tbytes= Grid.StencilSendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,
-						 (void *)&rbuf[dir][0], recv_from_rank,
-						 bytes,dir);
+	      Grid.SendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,
+				  (void *)&rbuf[dir][0], recv_from_rank,
+				  bytes);
+	      tbytes = bytes;
 	      thread_critical {
 		ncomm++;
 		dbytes+=tbytes;
 	      }
 	    }
-          });
+          };
 	  Grid.Barrier();
 	  double stop=usecond();
 	  t_time[i] = stop-start; // microseconds
@@ -196,8 +197,12 @@ public:
 		 << "\t\t"<< bidibytes/timestat.mean<< "  " << bidibytes*timestat.err/(timestat.mean*timestat.mean) << " "
 		 << bidibytes/timestat.max << " " << bidibytes/timestat.min << std::endl;
 	
-	    }
-    }    
+	for(int d=0;d<8;d++){
+	  acceleratorFreeDevice(xbuf[d]);
+	  acceleratorFreeDevice(rbuf[d]);
+	}
+      }
+    }
 
     return;
   }
@@ -281,7 +286,6 @@ public:
 
 
     uint64_t lmax=32;
-#define NLOOP (1000*lmax*lmax*lmax*lmax/lat/lat/lat/lat)
 
     GridSerialRNG          sRNG;      sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
     for(int lat=8;lat<=lmax;lat+=8){
