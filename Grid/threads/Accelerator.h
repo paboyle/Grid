@@ -233,6 +233,13 @@ inline int  acceleratorIsCommunicable(void *ptr)
 NAMESPACE_END(Grid);
 #include <CL/sycl.hpp>
 #include <CL/sycl/usm.hpp>
+
+#define GRID_SYCL_LEVEL_ZERO_IPC
+
+#ifdef GRID_SYCL_LEVEL_ZERO_IPC
+#include <level_zero/ze_api.h>
+#include <CL/sycl/backend/level_zero.hpp>
+#endif
 NAMESPACE_BEGIN(Grid);
 
 extern cl::sycl::queue *theGridAccelerator;
