@@ -890,7 +890,7 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
   }
 #endif
 
-  SharedMemoryTest();
+  //SharedMemoryTest();
 }
 //////////////////////////////////////////////////////////////////
 // On node barrier
