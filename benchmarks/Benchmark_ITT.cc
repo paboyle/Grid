@@ -144,23 +144,19 @@ public:
 
 	int ncomm;
 	double dbytes;
-	std::vector<double> times(Nloop);
-	for(int i=0;i<Nloop;i++){
 
-	  double start=usecond();
+        for(int dir=0;dir<8;dir++) {
+	  int mu =dir % 4;
+	  if (mpi_layout[mu]>1 ) {
 
-	  dbytes=0;
-	  ncomm=0;
+	    std::vector<double> times(Nloop);
+	    for(int i=0;i<Nloop;i++){
 
-	  for(int dir=0;dir<8;dir++) {
-		     
-	    double tbytes;
-	    int mu =dir % 4;
-
-	    if (mpi_layout[mu]>1 ) {
-	        
+	      dbytes=0;	        
+	      double start=usecond();
 	      int xmit_to_rank;
 	      int recv_from_rank;
+
 	      if ( dir == mu ) { 
 		int comm_proc=1;
 		Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
@@ -171,42 +167,35 @@ public:
 	      Grid.SendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,
 				  (void *)&rbuf[dir][0], recv_from_rank,
 				  bytes);
-	      tbytes = bytes;
-	      thread_critical {
-		ncomm++;
-		dbytes+=tbytes;
-	      }
+	      dbytes+=bytes;
+	     
+	      double stop=usecond();
+	      t_time[i] = stop-start; // microseconds
+
 	    }
-          };
-	  Grid.Barrier();
-	  double stop=usecond();
-	  t_time[i] = stop-start; // microseconds
+	    timestat.statistics(t_time);
+	  
+	    dbytes=dbytes*ppn;
+	    double xbytes    = dbytes*0.5;
+	    double bidibytes = dbytes;
+	  
+	    std::cout<<GridLogMessage << lat<<"\t"<<Ls<<"\t "
+		     << bytes << " \t "
+		     <<xbytes/timestat.mean<<" \t "<< xbytes*timestat.err/(timestat.mean*timestat.mean)<< " \t "
+		     <<xbytes/timestat.max <<" "<< xbytes/timestat.min  
+		     << "\t\t"<< bidibytes/timestat.mean<< "  " << bidibytes*timestat.err/(timestat.mean*timestat.mean) << " "
+		     << bidibytes/timestat.max << " " << bidibytes/timestat.min << std::endl;
+	  }
 	}
-
-	timestat.statistics(t_time);
-
-	dbytes=dbytes*ppn;
-	double xbytes    = dbytes*0.5;
-	//	double rbytes    = dbytes*0.5;
-	double bidibytes = dbytes;
-
-	std::cout<<GridLogMessage << lat<<"\t"<<Ls<<"\t "
-		 << bytes << " \t "
-		 <<xbytes/timestat.mean<<" \t "<< xbytes*timestat.err/(timestat.mean*timestat.mean)<< " \t "
-		 <<xbytes/timestat.max <<" "<< xbytes/timestat.min  
-		 << "\t\t"<< bidibytes/timestat.mean<< "  " << bidibytes*timestat.err/(timestat.mean*timestat.mean) << " "
-		 << bidibytes/timestat.max << " " << bidibytes/timestat.min << std::endl;
-	
 	for(int d=0;d<8;d++){
 	  acceleratorFreeDevice(xbuf[d]);
 	  acceleratorFreeDevice(rbuf[d]);
 	}
       }
-    }
-
+    } 
     return;
   }
-
+  
 
   
   static void Memory(void)
@@ -449,7 +438,7 @@ public:
 	// 1344= 3*(2*8+6)*2*8 + 8*3*2*2 + 3*4*2*8
 	// 1344 = Nc* (6+(Nc-1)*8)*2*Nd + Nd*Nc*2*2  + Nd*Nc*Ns*2
 	//	double flops=(1344.0*volume)/2;
-#if 1
+#if 0
 	double fps = Nc* (6+(Nc-1)*8)*Ns*Nd + Nd*Nc*Ns  + Nd*Nc*Ns*2;
 #else
 	double fps = Nc* (6+(Nc-1)*8)*Ns*Nd + 2*Nd*Nc*Ns  + 2*Nd*Nc*Ns*2;
@@ -720,12 +709,12 @@ int main (int argc, char ** argv)
 
   if ( do_su4 ) {
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    std::cout<<GridLogMessage << " Memory benchmark " <<std::endl;
+    std::cout<<GridLogMessage << " SU(4) benchmark " <<std::endl;
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     Benchmark::SU4();
   }
   
-  if ( do_comms && (NN>1) ) {
+  if ( do_comms ) {
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << " Communications benchmark " <<std::endl;
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
