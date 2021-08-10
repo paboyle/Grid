@@ -513,9 +513,9 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Each MPI rank should allocate our own buffer
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef GRID_SYCL_LEVEL_ZERO_IPC
   auto zeDevice = cl::sycl::get_native<cl::sycl::backend::level_zero>(theGridAccelerator->get_device());
   auto zeContext= cl::sycl::get_native<cl::sycl::backend::level_zero>(theGridAccelerator->get_context());
-#ifdef GRID_SYCL_LEVEL_ZERO_IPC
   ze_device_mem_alloc_desc_t zeDesc = {};
   zeMemAllocDevice(zeContext,&zeDesc,bytes,2*1024*1024,zeDevice,&ShmCommBuf);
   std::cout << WorldRank << header " SharedMemoryMPI.cc zeMemAllocDevice "<< bytes 
