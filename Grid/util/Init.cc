@@ -52,10 +52,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 
 #include <fenv.h>
-#ifdef __APPLE__
 static int
+#ifdef __APPLE__
 feenableexcept (unsigned int excepts)
 {
+#if 0
+  // Fails on Apple M1
   static fenv_t fenv;
   unsigned int new_excepts = excepts & FE_ALL_EXCEPT;
   unsigned int old_excepts;  // previous masks
@@ -70,6 +72,7 @@ feenableexcept (unsigned int excepts)
 
   iold_excepts  = (int) old_excepts;
   return ( fesetenv (&fenv) ? -1 : iold_excepts );
+#endif
 }
 #endif
 
