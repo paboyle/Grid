@@ -52,8 +52,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 
 #include <fenv.h>
-static int
 #ifdef __APPLE__
+static int
 feenableexcept (unsigned int excepts)
 {
 #if 0
