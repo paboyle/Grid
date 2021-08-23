@@ -73,6 +73,7 @@ feenableexcept (unsigned int excepts)
   iold_excepts  = (int) old_excepts;
   return ( fesetenv (&fenv) ? -1 : iold_excepts );
 #endif
+  return 0;
 }
 #endif
 
