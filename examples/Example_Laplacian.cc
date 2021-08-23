@@ -116,7 +116,6 @@ public:
     ///////////////////////////////////
     // Arithmetic expressions
     ///////////////////////////////////
-    StencilEntry *SE;
 
     // Views; device friendly/accessible pointers
     auto st = Stencil.View(AcceleratorRead);
@@ -129,10 +128,11 @@ public:
 
     const int      Nsimd = vobj::Nsimd();
     const uint64_t NN = grid->oSites();
-    const int      lane=acceleratorSIMTlane(Nsimd);
 
     accelerator_for( ss, NN, Nsimd, {
 
+	StencilEntry *SE;
+	
 	const int lane=acceleratorSIMTlane(Nsimd);
 
 	calcObj chi;
@@ -202,7 +202,6 @@ public:
     ///////////////////////////////////
     auto st = Stencil.View(AcceleratorRead);
     auto buf = st.CommBuf();
-    StencilEntry *SE;
 
     autoView( in     , _in    , AcceleratorRead);
     autoView( out    , _out   , AcceleratorWrite);
@@ -214,9 +213,11 @@ public:
 
     const int      Nsimd = vobj::Nsimd();
     const uint64_t NN = grid->oSites();
-    const int      lane=acceleratorSIMTlane(Nsimd);
+
     accelerator_for( ss, NN, Nsimd, {
 
+	StencilEntry *SE;
+	
 	const int lane=acceleratorSIMTlane(Nsimd);
 
 	calcObj chi;
