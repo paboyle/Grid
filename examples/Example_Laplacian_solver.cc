@@ -15,8 +15,7 @@ void SimpleConjugateGradient(LinearOperatorBase<Field> &HPDop,const Field &b, Fi
     r = b - mmp;
     p = r;
 
-    alpha = norm2(p);
-    cp = alpha;
+    cp = alpha = norm2(p);
     ssq = norm2(b);
 
     RealD rsq = Tolerance * Tolerance * ssq;
@@ -26,11 +25,12 @@ void SimpleConjugateGradient(LinearOperatorBase<Field> &HPDop,const Field &b, Fi
 
       HPDop.HermOp(p, mmp);
 
-      ComplexD dc  = innerProduct(p,mmp);
-      d = dc.real();
+      d = real(innerProduct(p,mmp));
+
       alpha = c / d;
 
-      cp = axpy_norm(r, -alpha, mmp, r);
+      r = r - alpha *mmp;
+      cp = norm2(r);
       beta = cp / c;
 
       x   = x   + alpha* p ;
@@ -121,7 +121,9 @@ int main(int argc, char ** argv)
   r=kronecker-r;
   
   std::cout << "True residual "<< norm2(r) <<std::endl;
-  std::cout << psi<<std::endl;
+
+  // Optionally print the result vector
+  // std::cout << psi<<std::endl;
 
   Grid_finalize();
 }

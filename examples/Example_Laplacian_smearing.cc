@@ -112,8 +112,8 @@ int main(int argc, char ** argv)
   PowerMethod<Field> PM;
   PM(HermOp,kronecker);
   
-  Chebyshev<Field> ChebySmear(lo,hi,20,DistillationSmearing);
-  //  Chebyshev<Field> ChebySmear(lo,hi,20,MomentumSmearing);
+  //  Chebyshev<Field> ChebySmear(lo,hi,20,DistillationSmearing);
+  Chebyshev<Field> ChebySmear(lo,hi,20,MomentumSmearing);
   {
     std::ofstream of("chebysmear");
     ChebySmear.csv(of);
