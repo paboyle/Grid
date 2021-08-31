@@ -39,6 +39,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifdef HAVE_MM_MALLOC_H
 #include <mm_malloc.h>
 #endif
+#ifdef __APPLE__
+// no memalign
+inline void *memalign(size_t align, size_t bytes) { return malloc(bytes); }
+#endif
 
 NAMESPACE_BEGIN(Grid);
 
@@ -233,6 +237,13 @@ inline int  acceleratorIsCommunicable(void *ptr)
 NAMESPACE_END(Grid);
 #include <CL/sycl.hpp>
 #include <CL/sycl/usm.hpp>
+
+#define GRID_SYCL_LEVEL_ZERO_IPC
+
+#ifdef GRID_SYCL_LEVEL_ZERO_IPC
+#include <level_zero/ze_api.h>
+#include <CL/sycl/backend/level_zero.hpp>
+#endif
 NAMESPACE_BEGIN(Grid);
 
 extern cl::sycl::queue *theGridAccelerator;
@@ -257,11 +268,14 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
       unsigned long nt=acceleratorThreads();				\
       unsigned long unum1 = num1;					\
       unsigned long unum2 = num2;					\
+      if(nt < 8)nt=8;							\
       cl::sycl::range<3> local {nt,1,nsimd};				\
       cl::sycl::range<3> global{unum1,unum2,nsimd};			\
       cgh.parallel_for<class dslash>(					\
       cl::sycl::nd_range<3>(global,local), \
-      [=] (cl::sycl::nd_item<3> item) /*mutable*/ {   \
+      [=] (cl::sycl::nd_item<3> item) /*mutable*/     \
+      [[intel::reqd_sub_group_size(8)]]	      \
+      {						      \
       auto iter1    = item.get_global_id(0);	      \
       auto iter2    = item.get_global_id(1);	      \
       auto lane     = item.get_global_id(2);	      \
@@ -409,6 +423,8 @@ inline void acceleratorMemSet(void *base,int value,size_t bytes) { hipMemset(bas
 
 #undef GRID_SIMT
 
+
+
 #define accelerator 
 #define accelerator_inline strong_inline
 #define accelerator_for(iterator,num,nsimd, ... )   thread_for(iterator, num, { __VA_ARGS__ });
@@ -457,7 +473,7 @@ accelerator_inline void acceleratorSynchronise(void)
   __syncwarp();
 #endif
 #ifdef GRID_SYCL
-  cl::sycl::detail::workGroupBarrier();
+  //cl::sycl::detail::workGroupBarrier();
 #endif
 #ifdef GRID_HIP
   __syncthreads();
