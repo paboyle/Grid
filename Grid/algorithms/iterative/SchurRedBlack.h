@@ -97,17 +97,18 @@ namespace Grid {
   protected:
     typedef CheckerBoardedSparseMatrixBase<Field> Matrix;
     OperatorFunction<Field> & _HermitianRBSolver;
-    int CBfactorise;
+    int cbParity, cbParityNeg;
     bool subGuess;
     bool useSolnAsInitGuess; // if true user-supplied solution vector is used as initial guess for solver
   public:
 
     SchurRedBlackBase(OperatorFunction<Field> &HermitianRBSolver, const bool initSubGuess = false,
-        const bool _solnAsInitGuess = false)  :
+        const bool _solnAsInitGuess = false, const int cb = Odd)  :
     _HermitianRBSolver(HermitianRBSolver),
-    useSolnAsInitGuess(_solnAsInitGuess)
+    useSolnAsInitGuess(_solnAsInitGuess),
+    cbParity(cb)
     { 
-      CBfactorise = 0;
+      cbParityNeg = cbParity == Odd ? Even : Odd;
       subtractGuess(initSubGuess);
     };
     void subtractGuess(const bool initSubGuess)
@@ -183,7 +184,7 @@ namespace Grid {
 	if (subGuess)   sol_o[b] = sol_o[b] - guess_save[b];
 
 	///////// Needs even source //////////////
-	pickCheckerboard(Even,tmp,in[b]);
+	pickCheckerboard(this->cbParityNeg,tmp,in[b]);
 	RedBlackSolution(_Matrix,sol_o[b],tmp,out[b]);
 
 	/////////////////////////////////////////////////
@@ -224,7 +225,7 @@ namespace Grid {
       // Construct the guess
       ////////////////////////////////
       if(useSolnAsInitGuess) {
-        pickCheckerboard(Odd, sol_o, out);
+        pickCheckerboard(this->cbParity, sol_o, out);
       } else {
         guess(src_o,sol_o);
       }
@@ -275,8 +276,8 @@ namespace Grid {
     typedef CheckerBoardedSparseMatrixBase<Field> Matrix;
 
     SchurRedBlackStaggeredSolve(OperatorFunction<Field> &HermitianRBSolver, const bool initSubGuess = false,
-        const bool _solnAsInitGuess = false) 
-      :    SchurRedBlackBase<Field> (HermitianRBSolver,initSubGuess,_solnAsInitGuess) 
+        const bool _solnAsInitGuess = false, const int cb = Odd) 
+      :    SchurRedBlackBase<Field> (HermitianRBSolver,initSubGuess,_solnAsInitGuess,cb) 
     {
     }
 
@@ -291,15 +292,15 @@ namespace Grid {
       Field   tmp(grid);
       Field  Mtmp(grid);
 
-      pickCheckerboard(Even,src_e,src);
-      pickCheckerboard(Odd ,src_o,src);
+      pickCheckerboard(this->cbParityNeg,src_e,src);
+      pickCheckerboard(this->cbParity ,src_o,src);
 
       /////////////////////////////////////////////////////
       // src_o = (source_o - Moe MeeInv source_e)
       /////////////////////////////////////////////////////
-      _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.Checkerboard() ==Even);
-      _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.Checkerboard() ==Odd);     
-      tmp=src_o-Mtmp;                  assert(  tmp.Checkerboard() ==Odd);     
+      _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.Checkerboard() ==this->cbParityNeg);
+      _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.Checkerboard() ==this->cbParity);     
+      tmp=src_o-Mtmp;                  assert(  tmp.Checkerboard() ==this->cbParity);     
 
       _Matrix.Mooee(tmp,src_o); // Extra factor of "m" in source from dumb choice of matrix norm.
     }
@@ -317,17 +318,17 @@ namespace Grid {
       ///////////////////////////////////////////////////
       // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
       ///////////////////////////////////////////////////
-      _Matrix.Meooe(sol_o,tmp);        assert(  tmp.Checkerboard()   ==Even);
-      src_e = src_e-tmp;               assert(  src_e.Checkerboard() ==Even);
-      _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.Checkerboard() ==Even);
+      _Matrix.Meooe(sol_o,tmp);        assert(  tmp.Checkerboard()   ==this->cbParityNeg);
+      src_e = src_e-tmp;               assert(  src_e.Checkerboard() ==this->cbParityNeg);
+      _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.Checkerboard() ==this->cbParityNeg);
      
-      setCheckerboard(sol,sol_e); assert(  sol_e.Checkerboard() ==Even);
-      setCheckerboard(sol,sol_o); assert(  sol_o.Checkerboard() ==Odd );
+      setCheckerboard(sol,sol_e); assert(  sol_e.Checkerboard() ==this->cbParityNeg);
+      setCheckerboard(sol,sol_o); assert(  sol_o.Checkerboard() ==this->cbParity );
     }
     virtual void RedBlackSolve   (Matrix & _Matrix,const Field &src_o, Field &sol_o)
     {
       SchurStaggeredOperator<Matrix,Field> _HermOpEO(_Matrix);
-      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.Checkerboard()==Odd);
+      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.Checkerboard()==this->cbParity);
     };
     virtual void RedBlackSolve   (Matrix & _Matrix,const std::vector<Field> &src_o,  std::vector<Field> &sol_o)
     {
@@ -345,8 +346,8 @@ namespace Grid {
     typedef CheckerBoardedSparseMatrixBase<Field> Matrix;
 
     SchurRedBlackDiagMooeeSolve(OperatorFunction<Field> &HermitianRBSolver, const bool initSubGuess = false,
-        const bool _solnAsInitGuess = false)  
-      : SchurRedBlackBase<Field> (HermitianRBSolver,initSubGuess,_solnAsInitGuess) {};
+        const bool _solnAsInitGuess = false, const int cb = Odd)  
+      : SchurRedBlackBase<Field> (HermitianRBSolver,initSubGuess,_solnAsInitGuess,cb) {};
 
 
     //////////////////////////////////////////////////////
@@ -360,19 +361,19 @@ namespace Grid {
       Field   tmp(grid);
       Field  Mtmp(grid);
 
-      pickCheckerboard(Even,src_e,src);
-      pickCheckerboard(Odd ,src_o,src);
+      pickCheckerboard(this->cbParityNeg,src_e,src);
+      pickCheckerboard(this->cbParity ,src_o,src);
 
       /////////////////////////////////////////////////////
       // src_o = Mdag * (source_o - Moe MeeInv source_e)
       /////////////////////////////////////////////////////
-      _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.Checkerboard() ==Even);
-      _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.Checkerboard() ==Odd);     
-      tmp=src_o-Mtmp;                  assert(  tmp.Checkerboard() ==Odd);     
+      _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.Checkerboard() ==this->cbParityNeg);
+      _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.Checkerboard() ==this->cbParity);     
+      tmp=src_o-Mtmp;                  assert(  tmp.Checkerboard() ==this->cbParity);     
 
       // get the right MpcDag
       SchurDiagMooeeOperator<Matrix,Field> _HermOpEO(_Matrix);
-      _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.Checkerboard() ==Odd);       
+      _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.Checkerboard() ==this->cbParity);       
 
     }
     virtual void RedBlackSolution(Matrix & _Matrix,const Field &sol_o, const Field &src_e,Field &sol)
@@ -386,17 +387,17 @@ namespace Grid {
       ///////////////////////////////////////////////////
       // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
       ///////////////////////////////////////////////////
-      _Matrix.Meooe(sol_o,tmp);          assert(  tmp.Checkerboard()   ==Even);
-      src_e_i = src_e-tmp;               assert(  src_e_i.Checkerboard() ==Even);
-      _Matrix.MooeeInv(src_e_i,sol_e);   assert(  sol_e.Checkerboard() ==Even);
+      _Matrix.Meooe(sol_o,tmp);          assert(  tmp.Checkerboard()   ==this->cbParityNeg);
+      src_e_i = src_e-tmp;               assert(  src_e_i.Checkerboard() ==this->cbParityNeg);
+      _Matrix.MooeeInv(src_e_i,sol_e);   assert(  sol_e.Checkerboard() ==this->cbParityNeg);
      
-      setCheckerboard(sol,sol_e); assert(  sol_e.Checkerboard() ==Even);
-      setCheckerboard(sol,sol_o); assert(  sol_o.Checkerboard() ==Odd );
+      setCheckerboard(sol,sol_e); assert(  sol_e.Checkerboard() ==this->cbParityNeg);
+      setCheckerboard(sol,sol_o); assert(  sol_o.Checkerboard() ==this->cbParity );
     }
     virtual void RedBlackSolve   (Matrix & _Matrix,const Field &src_o, Field &sol_o)
     {
       SchurDiagMooeeOperator<Matrix,Field> _HermOpEO(_Matrix);
-      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.Checkerboard()==Odd);
+      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.Checkerboard()==this->cbParity);
     };
     virtual void RedBlackSolve   (Matrix & _Matrix,const std::vector<Field> &src_o,  std::vector<Field> &sol_o)
     {
@@ -411,8 +412,8 @@ namespace Grid {
       typedef CheckerBoardedSparseMatrixBase<Field> Matrix;
 
       NonHermitianSchurRedBlackDiagMooeeSolve(OperatorFunction<Field>& RBSolver, const bool initSubGuess = false,
-          const bool _solnAsInitGuess = false)  
-      : SchurRedBlackBase<Field>(RBSolver, initSubGuess, _solnAsInitGuess) {};
+          const bool _solnAsInitGuess = false, const int cb = Odd)  
+      : SchurRedBlackBase<Field>(RBSolver, initSubGuess, _solnAsInitGuess,cb) {};
 
       //////////////////////////////////////////////////////
       // Override RedBlack specialisation
@@ -425,15 +426,15 @@ namespace Grid {
         Field  tmp(grid);
         Field Mtmp(grid);
 
-        pickCheckerboard(Even, src_e, src);
-        pickCheckerboard(Odd , src_o, src);
+        pickCheckerboard(this->cbParityNeg, src_e, src);
+        pickCheckerboard(this->cbParity , src_o, src);
 
         /////////////////////////////////////////////////////
         // src_o = Mdag * (source_o - Moe MeeInv source_e)
         /////////////////////////////////////////////////////
-        _Matrix.MooeeInv(src_e, tmp);   assert(   tmp.Checkerboard() == Even );
-        _Matrix.Meooe   (tmp, Mtmp);    assert(  Mtmp.Checkerboard() == Odd  );     
-        src_o -= Mtmp;                  assert( src_o.Checkerboard() == Odd  );     
+        _Matrix.MooeeInv(src_e, tmp);   assert(   tmp.Checkerboard() == this->cbParityNeg );
+        _Matrix.Meooe   (tmp, Mtmp);    assert(  Mtmp.Checkerboard() == this->cbParity  );     
+        src_o -= Mtmp;                  assert( src_o.Checkerboard() == this->cbParity  );     
       }
       
       virtual void RedBlackSolution(Matrix& _Matrix, const Field& sol_o, const Field& src_e, Field& sol)
@@ -448,18 +449,18 @@ namespace Grid {
         ///////////////////////////////////////////////////
         // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
         ///////////////////////////////////////////////////
-        _Matrix.Meooe(sol_o, tmp);         assert(     tmp.Checkerboard() == Even );
-        src_e_i = src_e - tmp;             assert( src_e_i.Checkerboard() == Even );
-        _Matrix.MooeeInv(src_e_i, sol_e);  assert(   sol_e.Checkerboard() == Even );
+        _Matrix.Meooe(sol_o, tmp);         assert(     tmp.Checkerboard() == this->cbParityNeg );
+        src_e_i = src_e - tmp;             assert( src_e_i.Checkerboard() == this->cbParityNeg );
+        _Matrix.MooeeInv(src_e_i, sol_e);  assert(   sol_e.Checkerboard() == this->cbParityNeg );
        
-        setCheckerboard(sol, sol_e); assert( sol_e.Checkerboard() == Even );
-        setCheckerboard(sol, sol_o); assert( sol_o.Checkerboard() == Odd  );
+        setCheckerboard(sol, sol_e); assert( sol_e.Checkerboard() == this->cbParityNeg );
+        setCheckerboard(sol, sol_o); assert( sol_o.Checkerboard() == this->cbParity  );
       }
 
       virtual void RedBlackSolve(Matrix& _Matrix, const Field& src_o, Field& sol_o)
       {
         NonHermitianSchurDiagMooeeOperator<Matrix,Field> _OpEO(_Matrix);
-        this->_HermitianRBSolver(_OpEO, src_o, sol_o);  assert(sol_o.Checkerboard() == Odd);
+        this->_HermitianRBSolver(_OpEO, src_o, sol_o);  assert(sol_o.Checkerboard() == this->cbParity);
       }
 
       virtual void RedBlackSolve(Matrix& _Matrix, const std::vector<Field>& src_o, std::vector<Field>& sol_o)
@@ -482,8 +483,8 @@ namespace Grid {
     // Wrap the usual normal equations Schur trick
     /////////////////////////////////////////////////////
   SchurRedBlackDiagTwoSolve(OperatorFunction<Field> &HermitianRBSolver, const bool initSubGuess = false,
-      const bool _solnAsInitGuess = false)  
-    : SchurRedBlackBase<Field>(HermitianRBSolver,initSubGuess,_solnAsInitGuess) {};
+      const bool _solnAsInitGuess = false, const int cb = Odd)  
+    : SchurRedBlackBase<Field>(HermitianRBSolver,initSubGuess,_solnAsInitGuess,cb) {};
 
     virtual void RedBlackSource(Matrix & _Matrix,const Field &src, Field &src_e,Field &src_o)
     {
@@ -495,18 +496,18 @@ namespace Grid {
       Field   tmp(grid);
       Field  Mtmp(grid);
 
-      pickCheckerboard(Even,src_e,src);
-      pickCheckerboard(Odd ,src_o,src);
+      pickCheckerboard(this->cbParityNeg,src_e,src);
+      pickCheckerboard(this->cbParity ,src_o,src);
     
       /////////////////////////////////////////////////////
       // src_o = Mdag * (source_o - Moe MeeInv source_e)
       /////////////////////////////////////////////////////
-      _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.Checkerboard() ==Even);
-      _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.Checkerboard() ==Odd);     
-      tmp=src_o-Mtmp;                  assert(  tmp.Checkerboard() ==Odd);     
+      _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.Checkerboard() ==this->cbParityNeg);
+      _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.Checkerboard() ==this->cbParity);     
+      tmp=src_o-Mtmp;                  assert(  tmp.Checkerboard() ==this->cbParity);     
 
       // get the right MpcDag
-      _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.Checkerboard() ==Odd);       
+      _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.Checkerboard() ==this->cbParity);       
     }
 
     virtual void RedBlackSolution(Matrix & _Matrix,const Field &sol_o, const Field &src_e,Field &sol)
@@ -527,12 +528,12 @@ namespace Grid {
       ///////////////////////////////////////////////////
       // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
       ///////////////////////////////////////////////////
-      _Matrix.Meooe(sol_o_i,tmp);    assert(  tmp.Checkerboard()   ==Even);
-      tmp = src_e-tmp;               assert(  src_e.Checkerboard() ==Even);
-      _Matrix.MooeeInv(tmp,sol_e);   assert(  sol_e.Checkerboard() ==Even);
+      _Matrix.Meooe(sol_o_i,tmp);    assert(  tmp.Checkerboard()   ==this->cbParityNeg);
+      tmp = src_e-tmp;               assert(  src_e.Checkerboard() ==this->cbParityNeg);
+      _Matrix.MooeeInv(tmp,sol_e);   assert(  sol_e.Checkerboard() ==this->cbParityNeg);
      
-      setCheckerboard(sol,sol_e);    assert(  sol_e.Checkerboard() ==Even);
-      setCheckerboard(sol,sol_o_i);  assert(  sol_o_i.Checkerboard() ==Odd );
+      setCheckerboard(sol,sol_e);    assert(  sol_e.Checkerboard() ==this->cbParityNeg);
+      setCheckerboard(sol,sol_o_i);  assert(  sol_o_i.Checkerboard() ==this->cbParity );
     };
 
     virtual void RedBlackSolve   (Matrix & _Matrix,const Field &src_o, Field &sol_o)
@@ -556,8 +557,8 @@ namespace Grid {
       // Wrap the usual normal equations Schur trick
       /////////////////////////////////////////////////////
       NonHermitianSchurRedBlackDiagTwoSolve(OperatorFunction<Field>& RBSolver, const bool initSubGuess = false,
-          const bool _solnAsInitGuess = false)  
-      : SchurRedBlackBase<Field>(RBSolver, initSubGuess, _solnAsInitGuess) {};
+          const bool _solnAsInitGuess = false, const int cb = Odd)  
+      : SchurRedBlackBase<Field>(RBSolver, initSubGuess, _solnAsInitGuess,cb) {};
 
       virtual void RedBlackSource(Matrix& _Matrix, const Field& src, Field& src_e, Field& src_o)
       {
@@ -567,15 +568,15 @@ namespace Grid {
         Field  tmp(grid);
         Field Mtmp(grid);
 
-        pickCheckerboard(Even, src_e, src);
-        pickCheckerboard(Odd , src_o, src);
+        pickCheckerboard(this->cbParityNeg, src_e, src);
+        pickCheckerboard(this->cbParity , src_o, src);
       
         /////////////////////////////////////////////////////
         // src_o = Mdag * (source_o - Moe MeeInv source_e)
         /////////////////////////////////////////////////////
-        _Matrix.MooeeInv(src_e, tmp);   assert(   tmp.Checkerboard() == Even );
-        _Matrix.Meooe   (tmp, Mtmp);    assert(  Mtmp.Checkerboard() == Odd  );     
-        src_o -= Mtmp;                  assert( src_o.Checkerboard() == Odd  );     
+        _Matrix.MooeeInv(src_e, tmp);   assert(   tmp.Checkerboard() == this->cbParityNeg );
+        _Matrix.Meooe   (tmp, Mtmp);    assert(  Mtmp.Checkerboard() == this->cbParity  );     
+        src_o -= Mtmp;                  assert( src_o.Checkerboard() == this->cbParity  );     
       }
 
       virtual void RedBlackSolution(Matrix& _Matrix, const Field& sol_o, const Field& src_e, Field& sol)
@@ -596,12 +597,12 @@ namespace Grid {
         ///////////////////////////////////////////////////
         // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
         ///////////////////////////////////////////////////
-        _Matrix.Meooe(sol_o_i, tmp);    assert(   tmp.Checkerboard() == Even );
-        tmp = src_e - tmp;              assert( src_e.Checkerboard() == Even );
-        _Matrix.MooeeInv(tmp, sol_e);   assert( sol_e.Checkerboard() == Even );
+        _Matrix.Meooe(sol_o_i, tmp);    assert(   tmp.Checkerboard() == this->cbParityNeg );
+        tmp = src_e - tmp;              assert( src_e.Checkerboard() == this->cbParityNeg );
+        _Matrix.MooeeInv(tmp, sol_e);   assert( sol_e.Checkerboard() == this->cbParityNeg );
        
-        setCheckerboard(sol, sol_e);    assert(   sol_e.Checkerboard() == Even );
-        setCheckerboard(sol, sol_o_i);  assert( sol_o_i.Checkerboard() == Odd  );
+        setCheckerboard(sol, sol_e);    assert(   sol_e.Checkerboard() == this->cbParityNeg );
+        setCheckerboard(sol, sol_o_i);  assert( sol_o_i.Checkerboard() == this->cbParity  );
       };
 
       virtual void RedBlackSolve(Matrix& _Matrix, const Field& src_o, Field& sol_o)
