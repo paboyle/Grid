@@ -502,7 +502,7 @@ void calc_grid(ChromaAction action,Grid::LatticeGaugeField & Umu, Grid::LatticeF
   Grid::gaussian(RNG5,src);
   Grid::gaussian(RNG5,res);
 
-  Grid::SU3::HotConfiguration(RNG4,Umu);
+  Grid::SU<Nc>::HotConfiguration(RNG4,Umu);
 
   /*
   Grid::LatticeColourMatrix U(UGrid);

@@ -95,14 +95,18 @@ accelerator_inline iMatrix<vtype,N> ProjectOnGroup(const iMatrix<vtype,N> &arg)
   vtype nrm;
   vtype inner;
   for(int c1=0;c1<N;c1++){
+
+    // Normalises row c1
     zeroit(inner);	
     for(int c2=0;c2<N;c2++)
       inner += innerProduct(ret._internal[c1][c2],ret._internal[c1][c2]);
 
-    nrm = rsqrt(inner);
+    nrm = sqrt(inner);
+    nrm = 1.0/nrm;
     for(int c2=0;c2<N;c2++)
       ret._internal[c1][c2]*= nrm;
       
+    // Remove c1 from rows c1+1...N-1
     for (int b=c1+1; b<N; ++b){
       decltype(ret._internal[b][b]*ret._internal[b][b]) pr;
       zeroit(pr);
@@ -113,7 +117,19 @@ accelerator_inline iMatrix<vtype,N> ProjectOnGroup(const iMatrix<vtype,N> &arg)
 	ret._internal[b][c] -= pr * ret._internal[c1][c];
       }
     }
-	  
+  }
+
+  // Normalise last row
+  {
+    int c1 = N-1;
+    zeroit(inner);	
+    for(int c2=0;c2<N;c2++)
+      inner += innerProduct(ret._internal[c1][c2],ret._internal[c1][c2]);
+
+    nrm = sqrt(inner);
+    nrm = 1.0/nrm;
+    for(int c2=0;c2<N;c2++)
+      ret._internal[c1][c2]*= nrm;
   }
   // assuming the determinant is ok
   return ret;

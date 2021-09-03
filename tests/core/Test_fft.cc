@@ -138,7 +138,7 @@ int main (int argc, char ** argv)
 
   LatticeGaugeFieldD Umu(&GRID);
 
-  SU3::ColdConfiguration(pRNG,Umu); // Unit gauge
+  SU<Nc>::ColdConfiguration(pRNG,Umu); // Unit gauge
   //  Umu=Zero();
   ////////////////////////////////////////////////////
   // Wilson test

@@ -24,7 +24,7 @@ typedef typename GparityDomainWallFermionD::FermionField GparityLatticeFermionD;
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
-
+#ifdef ENABLE_GPARITY
   int Ls=16;
   for(int i=0;i<argc;i++)
     if(std::string(argv[i]) == "-Ls"){
@@ -63,7 +63,7 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "Drawing gauge field" << std::endl;
   LatticeGaugeFieldF Umu(UGrid); 
-  SU3::HotConfiguration(RNG4,Umu); 
+  SU<Nc>::HotConfiguration(RNG4,Umu); 
   std::cout << GridLogMessage << "Random gauge initialised " << std::endl;
 
   RealD mass=0.1;
@@ -184,7 +184,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NN<<std::endl;
     DwD.Report();
   }
-
+#endif
   Grid_finalize();
 }
 

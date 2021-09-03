@@ -62,8 +62,8 @@ int main(int argc, char **argv)
 
   LatticeGaugeField U(&Grid);
 
-  SU3::HotConfiguration(pRNG, U);
-  //SU3::ColdConfiguration(pRNG, U);// Clover term Zero()
+  SU<Nc>::HotConfiguration(pRNG, U);
+  //SU<Nc>::ColdConfiguration(pRNG, U);// Clover term Zero()
 
   ////////////////////////////////////
   // Unmodified matrix element
@@ -101,7 +101,7 @@ int main(int argc, char **argv)
   for (int mu = 0; mu < Nd; mu++)
   {
     // Traceless antihermitian momentum; gaussian in lie alg
-    SU3::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu);
+    SU<Nc>::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu);
     Hmom -= real(sum(trace(mommu * mommu)));
     PokeIndex<LorentzIndex>(mom, mommu, mu);
 

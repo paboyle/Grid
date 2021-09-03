@@ -40,9 +40,9 @@ int main (int argc, char ** argv)
 
   int N=16;
   
-  std::vector<int> latt_size  ({N,4,4});
-  std::vector<int> simd_layout({vComplexD::Nsimd(),1,1});
-  std::vector<int> mpi_layout ({1,1,1});
+  std::vector<int> latt_size  ({N,N,N,N});
+  std::vector<int> simd_layout({vComplexD::Nsimd(),1,1,1});
+  std::vector<int> mpi_layout ({1,1,1,1});
 
   int vol = 1;
   int nd  = latt_size.size();
@@ -69,7 +69,7 @@ int main (int argc, char ** argv)
     for(int t=0;t<latt_size[mu];t++){
       LatticeCoordinate(coor,mu);
       sl=where(coor==Integer(t),rn,zz);
-      std::cout <<GridLogMessage<< " sl " << sl<<std::endl;
+      //      std::cout <<GridLogMessage<< " sl " << sl<<std::endl;
       std::cout <<GridLogMessage<<" slice "<<t<<" " << norm2(sl)<<std::endl;
       ns=ns+norm2(sl);
     }

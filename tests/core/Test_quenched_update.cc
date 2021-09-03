@@ -55,7 +55,7 @@ int main (int argc, char ** argv)
   GridParallelRNG  pRNG(grid); pRNG.SeedFixedIntegers(pseeds);
   GridSerialRNG    sRNG;       sRNG.SeedFixedIntegers(sseeds);
 
-  // SU3 colour operatoions
+  // SU<Nc> colour operatoions
   LatticeColourMatrix link(grid);
   LatticeColourMatrix staple(grid);
 
@@ -87,10 +87,10 @@ int main (int argc, char ** argv)
 
 	link = PeekIndex<LorentzIndex>(Umu,mu);
 
-	for( int subgroup=0;subgroup<SU3::su2subgroups();subgroup++ ) {
+	for( int subgroup=0;subgroup<SU<Nc>::su2subgroups();subgroup++ ) {
 
 	  // update Even checkerboard
-	  SU3::SubGroupHeatBath(sRNG,pRNG,beta,link,staple,subgroup,20,mask);
+	  SU<Nc>::SubGroupHeatBath(sRNG,pRNG,beta,link,staple,subgroup,20,mask);
 
 	}
 

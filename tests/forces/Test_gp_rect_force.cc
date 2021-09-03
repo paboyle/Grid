@@ -29,7 +29,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
  
 
@@ -54,11 +53,15 @@ int main (int argc, char ** argv)
 
   LatticeGaugeField U(&Grid);
 
-  SU3::HotConfiguration(pRNG,U);
+  SU<Nc>::HotConfiguration(pRNG,U);
   
   double beta = 1.0;
   double c1   = 0.331;
 
+  const int nu = 1;
+  std::vector<int> twists(Nd,0);
+  twists[nu] = 1;
+  ConjugateGimplD::setDirections(twists);
   ConjugatePlaqPlusRectangleActionR Action(beta,c1);
   //ConjugateWilsonGaugeActionR Action(beta);
   //WilsonGaugeActionR Action(beta);
@@ -82,7 +85,7 @@ int main (int argc, char ** argv)
 
   for(int mu=0;mu<Nd;mu++){
 
-    SU3::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); // Traceless antihermitian momentum; gaussian in lie alg
+    SU<Nc>::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); // Traceless antihermitian momentum; gaussian in lie alg
 
     PokeIndex<LorentzIndex>(mom,mommu,mu);
 

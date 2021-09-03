@@ -6,13 +6,27 @@ home=`pwd`
 cd $home/Grid
 HFILES=`find . -type f -name '*.h' -not -name '*Hdf5*' -not -path '*/gamma-gen/*' -not -path '*/Old/*' -not -path '*/Eigen/*'`
 HFILES="$HFILES"
-CCFILES=`find . -name '*.cc' -not -path '*/gamma-gen/*' -not -name '*Communicator*.cc' -not -name '*SharedMemory*.cc' -not -name '*Hdf5*'`
+CCFILES=`find . -name '*.cc' -not -path '*/instantiation/*/*' -not -path '*/gamma-gen/*' -not -name '*Communicator*.cc' -not -name '*SharedMemory*.cc' -not -name '*Hdf5*'`
+
+
+ZWILS_FERMION_FILES=` find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/ZWilsonImpl*' `
+WILS_FERMION_FILES=`  find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/WilsonImpl*' `
+STAG_FERMION_FILES=`  find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/Staggered*' `
+GP_FERMION_FILES=`    find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/Gparity*' `
+ADJ_FERMION_FILES=`   find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/WilsonAdj*' `
+TWOIND_FERMION_FILES=`find . -name '*.cc' -path '*/instantiation/*' -path '*/instantiation/WilsonTwoIndex*'`
+
 HPPFILES=`find . -type f -name '*.hpp'`
 echo HFILES=$HFILES $HPPFILES > Make.inc
 echo >> Make.inc
 echo CCFILES=$CCFILES >> Make.inc
 
-
+echo ZWILS_FERMION_FILES=$ZWILS_FERMION_FILES >> Make.inc
+echo WILS_FERMION_FILES=$WILS_FERMION_FILES   >> Make.inc
+echo STAG_FERMION_FILES=$STAG_FERMION_FILES   >> Make.inc
+echo GP_FERMION_FILES=$GP_FERMION_FILES   >> Make.inc
+echo ADJ_FERMION_FILES=$ADJ_FERMION_FILES   >> Make.inc
+echo TWOIND_FERMION_FILES=$TWOIND_FERMION_FILES   >> Make.inc
 
 # tests Make.inc
 cd $home/tests
@@ -26,11 +40,10 @@ for subdir in $dirs; do
     echo "tests-local: ${TESTLIST} " > Make.inc
     echo ${PREF}_PROGRAMS = ${TESTLIST} >> Make.inc
     echo >> Make.inc
-    HADLINK=`[ $subdir = './hadrons' ] && echo '-lHadrons '`
     for f in $TESTS; do
 	   BNAME=`basename $f .cc`
 	   echo ${BNAME}_SOURCES=$f >> Make.inc
-	   echo ${BNAME}_LDADD=${HADLINK}-lGrid  >> Make.inc
+	   echo ${BNAME}_LDADD='$(top_builddir)/Grid/libGrid.a' >> Make.inc
 	   echo >> Make.inc
     done
     if [ $subdir != '.' ]; then
@@ -49,7 +62,7 @@ echo >> Make.inc
 for f in $TESTS; do
     BNAME=`basename $f .cc`
     echo ${BNAME}_SOURCES=$f  >> Make.inc
-    echo ${BNAME}_LDADD=-lGrid>> Make.inc
+    echo ${BNAME}_LDADD='$(top_builddir)/Grid/libGrid.a' >> Make.inc
     echo >> Make.inc
 done
 cd ..
@@ -65,7 +78,22 @@ echo >> Make.inc
 for f in $TESTS; do
     BNAME=`basename $f .cc`
     echo ${BNAME}_SOURCES=$f  >> Make.inc
-    echo ${BNAME}_LDADD=-lGrid>> Make.inc
+    echo ${BNAME}_LDADD='$(top_builddir)/Grid/libGrid.a'>> Make.inc
+    echo >> Make.inc
+done
+cd ..
+
+# examples Make.inc
+cd $home/examples/
+echo> Make.inc
+TESTS=`ls *.cc`
+TESTLIST=`echo ${TESTS} | sed s/.cc//g `
+echo bin_PROGRAMS = ${TESTLIST} > Make.inc
+echo >> Make.inc
+for f in $TESTS; do
+    BNAME=`basename $f .cc`
+    echo ${BNAME}_SOURCES=$f  >> Make.inc
+    echo ${BNAME}_LDADD='$(top_builddir)/Grid/libGrid.a'>> Make.inc
     echo >> Make.inc
 done
 cd ..

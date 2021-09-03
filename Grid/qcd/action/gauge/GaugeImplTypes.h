@@ -96,7 +96,7 @@ public:
   ///////////////////////////////////////////////////////////
   // Move these to another class
   // HMC auxiliary functions
-  static inline void generate_momenta(Field &P, GridParallelRNG &pRNG) 
+  static inline void generate_momenta(Field &P, GridSerialRNG & sRNG, GridParallelRNG &pRNG) 
   {
     // Zbigniew Srocinsky thesis:
     //
@@ -152,6 +152,10 @@ public:
     }
     auto Hsum = TensorRemove(sum(Hloc));
     return Hsum.real();
+  }
+
+  static inline void Project(Field &U) {
+    ProjectSUn(U);
   }
 
   static inline void HotConfiguration(GridParallelRNG &pRNG, Field &U) {

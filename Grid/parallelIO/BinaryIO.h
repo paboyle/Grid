@@ -79,6 +79,13 @@ inline void removeWhitespace(std::string &key)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 class BinaryIO {
  public:
+  struct IoPerf
+  {
+    uint64_t size{0},time{0};
+    double   mbytesPerSecond{0.};
+  };
+
+  static IoPerf lastPerf;
   static int latticeWriteMaxRetry;
 
   /////////////////////////////////////////////////////////////////////////////
@@ -502,12 +509,15 @@ class BinaryIO {
       timer.Stop();
     }
     
+    lastPerf.size            = sizeof(fobj)*iodata.size()*nrank;
+    lastPerf.time            = timer.useconds();
+    lastPerf.mbytesPerSecond = lastPerf.size/1024./1024./(lastPerf.time/1.0e6);
     std::cout<<GridLogMessage<<"IOobject: ";
     if ( control & BINARYIO_READ) std::cout << " read  ";
     else                          std::cout << " write ";
     uint64_t bytes = sizeof(fobj)*iodata.size()*nrank;
-    std::cout<< bytes <<" bytes in "<<timer.Elapsed() <<" "
-	     << (double)bytes/ (double)timer.useconds() <<" MB/s "<<std::endl;
+    std::cout<< lastPerf.size <<" bytes in "<< timer.Elapsed() <<" "
+	     << lastPerf.mbytesPerSecond <<" MB/s "<<std::endl;
 
     std::cout<<GridLogMessage<<"IOobject: endian and checksum overhead "<<bstimer.Elapsed()  <<std::endl;
 
@@ -663,10 +673,15 @@ class BinaryIO {
 	     nersc_csum,scidac_csuma,scidac_csumb);
 
     timer.Start();
-    thread_for(lidx,lsites,{
+    thread_for(lidx,lsites,{  // FIX ME, suboptimal implementation
       std::vector<RngStateType> tmp(RngStateCount);
       std::copy(iodata[lidx].begin(),iodata[lidx].end(),tmp.begin());
-      parallel_rng.SetState(tmp,lidx);
+      Coordinate lcoor;
+      grid->LocalIndexToLocalCoor(lidx, lcoor);
+      int o_idx=grid->oIndex(lcoor);
+      int i_idx=grid->iIndex(lcoor);
+      int gidx=parallel_rng.generator_idx(o_idx,i_idx);
+      parallel_rng.SetState(tmp,gidx);
       });
     timer.Stop();
 
@@ -723,7 +738,12 @@ class BinaryIO {
     std::vector<RNGstate> iodata(lsites);
     thread_for(lidx,lsites,{
       std::vector<RngStateType> tmp(RngStateCount);
-      parallel_rng.GetState(tmp,lidx);
+      Coordinate lcoor;
+      grid->LocalIndexToLocalCoor(lidx, lcoor);
+      int o_idx=grid->oIndex(lcoor);
+      int i_idx=grid->iIndex(lcoor);
+      int gidx=parallel_rng.generator_idx(o_idx,i_idx);
+      parallel_rng.GetState(tmp,gidx);
       std::copy(tmp.begin(),tmp.end(),iodata[lidx].begin());
     });
     timer.Stop();

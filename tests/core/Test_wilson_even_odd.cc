@@ -70,7 +70,7 @@ int main (int argc, char ** argv)
   LatticeFermion    tmp(&Grid);    tmp=Zero();
   LatticeFermion    err(&Grid);    tmp=Zero();
   LatticeGaugeField Umu(&Grid); 
-  SU3::HotConfiguration(pRNG,Umu);
+  SU<Nc>::HotConfiguration(pRNG,Umu);
   std::vector<LatticeColourMatrix> U(4,&Grid);
 
   double volume=1;

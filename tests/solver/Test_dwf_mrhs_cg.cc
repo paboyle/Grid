@@ -93,7 +93,7 @@ int main (int argc, char ** argv)
   for(int s=0;s<nrhs;s++) random(pRNG5,src[s]);
   for(int s=0;s<nrhs;s++) result[s]=Zero();
 
-  LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
+  LatticeGaugeField Umu(UGrid); SU<Nc>::HotConfiguration(pRNG,Umu);
 
   ///////////////////////////////////////////////////////////////
   // Bounce these fields to disk

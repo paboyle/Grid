@@ -62,7 +62,7 @@ void basisRotate(VField &basis,Matrix& Qt,int j0, int j1, int k0,int k1,int Nm)
     basis_v.push_back(basis[k].View(AcceleratorWrite));
   }
 
-#if ( (!defined(GRID_SYCL)) && (!defined(GRID_CUDA)) && (!defined(GRID_HIP)) )
+#if ( (!defined(GRID_CUDA)) )
   int max_threads = thread_max();
   Vector < vobj > Bt(Nm * max_threads);
   thread_region
@@ -161,11 +161,13 @@ void basisRotateJ(Field &result,std::vector<Field> &basis,Eigen::MatrixXd& Qt,in
   double * Qt_j = & Qt_jv[0];
   for(int k=0;k<Nm;++k) Qt_j[k]=Qt(j,k);
 
+  auto basis_vp=& basis_v[0];
   autoView(result_v,result,AcceleratorWrite);
   accelerator_for(ss, grid->oSites(),vobj::Nsimd(),{
-    auto B=coalescedRead(zz);
+    vobj zzz=Zero();
+    auto B=coalescedRead(zzz);
     for(int k=k0; k<k1; ++k){
-      B +=Qt_j[k] * coalescedRead(basis_v[k][ss]);
+      B +=Qt_j[k] * coalescedRead(basis_vp[k][ss]);
     }
     coalescedWrite(result_v[ss], B);
   });

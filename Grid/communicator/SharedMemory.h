@@ -102,7 +102,7 @@ public:
   ///////////////////////////////////////////////////
   static void SharedMemoryAllocate(uint64_t bytes, int flags);
   static void SharedMemoryFree(void);
-  static void SharedMemoryCopy(void *dest,const void *src,size_t bytes);
+  static void SharedMemoryCopy(void *dest,void *src,size_t bytes);
   static void SharedMemoryZero(void *dest,size_t bytes);
 
 };

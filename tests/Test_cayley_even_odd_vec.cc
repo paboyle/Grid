@@ -80,7 +80,7 @@ int main (int argc, char ** argv)
   GridParallelRNG          sRNG5(sFGrid);  sRNG5.SeedFixedIntegers(seeds5);
 
   LatticeGaugeField Umu(UGrid);
-  SU3::HotConfiguration(RNG4,Umu);
+  SU<Nc>::HotConfiguration(RNG4,Umu);
 
   RealD mass=0.1;
   RealD M5  =1.8;

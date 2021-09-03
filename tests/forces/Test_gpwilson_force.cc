@@ -57,7 +57,7 @@ int main (int argc, char ** argv)
 
   LatticeGaugeField U(UGrid);
 
-  SU3::HotConfiguration(RNG4,U);
+  SU<Nc>::HotConfiguration(RNG4,U);
   
   ////////////////////////////////////
   // Unmodified matrix element
@@ -94,7 +94,7 @@ int main (int argc, char ** argv)
   for(int mu=0;mu<Nd;mu++){
 
     // Traceless antihermitian momentum; gaussian in lie alg
-    SU3::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu); 
+    SU<Nc>::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu); 
 
     PokeIndex<LorentzIndex>(mom,mommu,mu);
 

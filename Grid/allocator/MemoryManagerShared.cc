@@ -1,7 +1,6 @@
 #include <Grid/GridCore.h>
 #ifdef GRID_UVM
 
-#warning "Grid is assuming unified virtual memory address space"
 NAMESPACE_BEGIN(Grid);
 /////////////////////////////////////////////////////////////////////////////////
 // View management is 1:1 address space mapping

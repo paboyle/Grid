@@ -56,6 +56,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 static int
 feenableexcept (unsigned int excepts)
 {
+#if 0
+  // Fails on Apple M1
   static fenv_t fenv;
   unsigned int new_excepts = excepts & FE_ALL_EXCEPT;
   unsigned int old_excepts;  // previous masks
@@ -70,6 +72,8 @@ feenableexcept (unsigned int excepts)
 
   iold_excepts  = (int) old_excepts;
   return ( fesetenv (&fenv) ? -1 : iold_excepts );
+#endif
+  return 0;
 }
 #endif
 
@@ -140,7 +144,7 @@ void GridCmdOptionCSL(std::string str,std::vector<std::string> & vec)
 }
 
 template<class VectorInt>
-void GridCmdOptionIntVector(std::string &str,VectorInt & vec)
+void GridCmdOptionIntVector(const std::string &str,VectorInt & vec)
 {
   vec.resize(0);
   std::stringstream ss(str);
@@ -152,6 +156,9 @@ void GridCmdOptionIntVector(std::string &str,VectorInt & vec)
   }
   return;
 }
+
+template void GridCmdOptionIntVector(const std::string &str,std::vector<int> & vec);
+template void GridCmdOptionIntVector(const std::string &str,Coordinate & vec);
 
 void GridCmdOptionInt(std::string &str,int & val)
 {
@@ -480,11 +487,13 @@ void Grid_init(int *argc,char ***argv)
     LebesgueOrder::UseLebesgueOrder=1;
   }
   CartesianCommunicator::nCommThreads = 1;
+#ifdef GRID_COMMS_THREADS  
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-threads") ){
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--comms-threads");
     GridCmdOptionInt(arg,CartesianCommunicator::nCommThreads);
     assert(CartesianCommunicator::nCommThreads > 0);
   }
+#endif  
   if( GridCmdOptionExists(*argv,*argv+*argc,"--cacheblocking") ){
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--cacheblocking");
     GridCmdOptionIntVector(arg,LebesgueOrder::Block);

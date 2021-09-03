@@ -74,10 +74,13 @@ int main(int argc, char** argv)
   RNG5.SeedFixedIntegers(seeds5);
   GridParallelRNG RNG4(UGrid);
   RNG4.SeedFixedIntegers(seeds4);
+  GridSerialRNG sRNG;
+  RNG4.SeedFixedIntegers(seeds4);
+  sRNG.SeedFixedIntegers(seeds5);
 
   // Random gauge field
   LatticeGaugeField Umu(UGrid);
-  SU3::HotConfiguration(RNG4, Umu);
+  SU<Nc>::HotConfiguration(RNG4, Umu);
 
   // GparityDomainWallFermionR::ImplParams params;
   FermionAction::ImplParams params;
@@ -90,7 +93,7 @@ int main(int argc, char** argv)
     ConjugateGradient<FermionField> CG(1.0e-12, 5000);
     ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> Meofa(Lop, Rop, CG, Params, false);
 
-    Meofa.refresh(Umu, RNG5);
+    Meofa.refresh(Umu,sRNG, RNG5);
     printf("<Phi|Meofa|Phi> = %1.15e\n", Meofa.S(Umu));
   }
 
@@ -100,7 +103,7 @@ int main(int argc, char** argv)
     ConjugateGradient<FermionField> CG(1.0e-12, 5000);
     ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> Meofa(Lop, Rop, CG, Params, true);
 
-    Meofa.refresh(Umu, RNG5);
+    Meofa.refresh(Umu,sRNG, RNG5);
     printf("<Phi|Meofa|Phi> = %1.15e\n", Meofa.S(Umu));
   }
 

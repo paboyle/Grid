@@ -29,6 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/GridCore.h>
 
 NAMESPACE_BEGIN(Grid); 
+#define header "SharedMemoryNone: "
 
 /*Construct from an MPI communicator*/
 void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
@@ -55,6 +56,38 @@ void GlobalSharedMemory::OptimalCommunicator(const Coordinate &processors,Grid_M
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Hugetlbfs mapping intended, use anonymous mmap
 ////////////////////////////////////////////////////////////////////////////////////////////
+#if 1
+void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
+{
+  std::cout << header "SharedMemoryAllocate "<< bytes<< " GPU implementation "<<std::endl;
+  void * ShmCommBuf ; 
+  assert(_ShmSetup==1);
+  assert(_ShmAlloc==0);
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Each MPI rank should allocate our own buffer
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ShmCommBuf = acceleratorAllocDevice(bytes);
+
+  if (ShmCommBuf == (void *)NULL ) {
+    std::cerr << " SharedMemoryNone.cc acceleratorAllocDevice failed NULL pointer for " << bytes<<" bytes " << std::endl;
+    exit(EXIT_FAILURE);  
+  }
+  if ( WorldRank == 0 ){
+    std::cout << WorldRank << header " SharedMemoryNone.cc acceleratorAllocDevice "<< bytes 
+	      << "bytes at "<< std::hex<< ShmCommBuf <<std::dec<<" for comms buffers " <<std::endl;
+  }
+  SharedMemoryZero(ShmCommBuf,bytes);
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Loop over ranks/gpu's on our node
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+  WorldShmCommBufs[0] = ShmCommBuf;
+
+  _ShmAllocBytes=bytes;
+  _ShmAlloc=1;
+}
+#else
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
   void * ShmCommBuf ; 
@@ -83,7 +116,15 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   _ShmAllocBytes=bytes;
   _ShmAlloc=1;
 };
-
+#endif
+void GlobalSharedMemory::SharedMemoryZero(void *dest,size_t bytes)
+{
+  acceleratorMemSet(dest,0,bytes);
+}
+void GlobalSharedMemory::SharedMemoryCopy(void *dest,void *src,size_t bytes)
+{
+  acceleratorCopyToDevice(src,dest,bytes);
+}
 ////////////////////////////////////////////////////////
 // Global shared functionality finished
 // Now move to per communicator functionality

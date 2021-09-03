@@ -108,7 +108,7 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "Drawing gauge field" << std::endl;
   LatticeGaugeField Umu(UGrid);
-  SU3::HotConfiguration(RNG4,Umu);
+  SU<Nc>::HotConfiguration(RNG4,Umu);
   std::cout << GridLogMessage << "Random gauge initialised " << std::endl;
 #if 0
   Umu=1.0;

@@ -32,25 +32,50 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
-#define LOAD_CHI(b)		\
+#ifdef GRID_SIMT
+
+#define LOAD_CHI(ptype,b)			\
+  const SiteSpinor & ref (b[offset]);				\
+  Chi_0=coalescedReadPermute<ptype>(ref()()(0),perm,lane);	\
+  Chi_1=coalescedReadPermute<ptype>(ref()()(1),perm,lane);	\
+  Chi_2=coalescedReadPermute<ptype>(ref()()(2),perm,lane);
+
+#define LOAD_CHI_COMMS(b)		\
   const SiteSpinor & ref (b[offset]);	\
-    Chi_0=ref()()(0);\
-    Chi_1=ref()()(1);\
-    Chi_2=ref()()(2);
+  Chi_0=coalescedRead(ref()()(0),lane);	\
+  Chi_1=coalescedRead(ref()()(1),lane);	\
+  Chi_2=coalescedRead(ref()()(2),lane);
+
+#define PERMUTE_DIR(dir)	;
+#else
+#define LOAD_CHI(ptype,b)      LOAD_CHI_COMMS(b)
+
+#define LOAD_CHI_COMMS(b)		\
+  const SiteSpinor & ref (b[offset]);	\
+  Chi_0=ref()()(0);			\
+  Chi_1=ref()()(1);			\
+  Chi_2=ref()()(2);
+
+#define PERMUTE_DIR(dir)			\
+  permute##dir(Chi_0,Chi_0);			\
+  permute##dir(Chi_1,Chi_1);			\
+  permute##dir(Chi_2,Chi_2);
+
+#endif
 
 
 // To splat or not to splat depends on the implementation
 #define MULT(A,UChi)				\
   auto & ref(U[sU](A));			\
-   Impl::loadLinkElement(U_00,ref()(0,0));      \
-   Impl::loadLinkElement(U_10,ref()(1,0));      \
-   Impl::loadLinkElement(U_20,ref()(2,0));      \
-   Impl::loadLinkElement(U_01,ref()(0,1));      \
-   Impl::loadLinkElement(U_11,ref()(1,1));      \
-   Impl::loadLinkElement(U_21,ref()(2,1));      \
-   Impl::loadLinkElement(U_02,ref()(0,2));     \
-   Impl::loadLinkElement(U_12,ref()(1,2));     \
-   Impl::loadLinkElement(U_22,ref()(2,2));     \
+    U_00=coalescedRead(ref()(0,0),lane);				\
+    U_10=coalescedRead(ref()(1,0),lane);				\
+    U_20=coalescedRead(ref()(2,0),lane);				\
+    U_01=coalescedRead(ref()(0,1),lane);				\
+    U_11=coalescedRead(ref()(1,1),lane);				\
+    U_21=coalescedRead(ref()(2,1),lane);				\
+    U_02=coalescedRead(ref()(0,2),lane);				\
+    U_12=coalescedRead(ref()(1,2),lane);				\
+    U_22=coalescedRead(ref()(2,2),lane);				\
     UChi ## _0  = U_00*Chi_0;	       \
     UChi ## _1  = U_10*Chi_0;\
     UChi ## _2  = U_20*Chi_0;\
@@ -63,15 +88,15 @@ NAMESPACE_BEGIN(Grid);
 
 #define MULT_ADD(U,A,UChi)			\
   auto & ref(U[sU](A));			\
-   Impl::loadLinkElement(U_00,ref()(0,0));      \
-   Impl::loadLinkElement(U_10,ref()(1,0));      \
-   Impl::loadLinkElement(U_20,ref()(2,0));      \
-   Impl::loadLinkElement(U_01,ref()(0,1));      \
-   Impl::loadLinkElement(U_11,ref()(1,1));      \
-   Impl::loadLinkElement(U_21,ref()(2,1));      \
-   Impl::loadLinkElement(U_02,ref()(0,2));     \
-   Impl::loadLinkElement(U_12,ref()(1,2));     \
-   Impl::loadLinkElement(U_22,ref()(2,2));     \
+    U_00=coalescedRead(ref()(0,0),lane);				\
+    U_10=coalescedRead(ref()(1,0),lane);				\
+    U_20=coalescedRead(ref()(2,0),lane);				\
+    U_01=coalescedRead(ref()(0,1),lane);				\
+    U_11=coalescedRead(ref()(1,1),lane);				\
+    U_21=coalescedRead(ref()(2,1),lane);				\
+    U_02=coalescedRead(ref()(0,2),lane);				\
+    U_12=coalescedRead(ref()(1,2),lane);				\
+    U_22=coalescedRead(ref()(2,2),lane);				\
     UChi ## _0 += U_00*Chi_0;	       \
     UChi ## _1 += U_10*Chi_0;\
     UChi ## _2 += U_20*Chi_0;\
@@ -83,24 +108,18 @@ NAMESPACE_BEGIN(Grid);
     UChi ## _2 += U_22*Chi_2;
 
 
-#define PERMUTE_DIR(dir)			\
-  permute##dir(Chi_0,Chi_0);			\
-  permute##dir(Chi_1,Chi_1);			\
-  permute##dir(Chi_2,Chi_2);
-
-
 #define HAND_STENCIL_LEG_BASE(Dir,Perm,skew)	\
   SE=st.GetEntry(ptype,Dir+skew,sF);	\
   offset = SE->_offset;			\
   local  = SE->_is_local;		\
   perm   = SE->_permute;		\
   if ( local ) {						\
-    LOAD_CHI(in);					\
+    LOAD_CHI(Perm,in);						\
     if ( perm) {						\
       PERMUTE_DIR(Perm);					\
     }								\
   } else {							\
-    LOAD_CHI(buf);						\
+    LOAD_CHI_COMMS(buf);					\
   }								
 
 #define HAND_STENCIL_LEG_BEGIN(Dir,Perm,skew,even)		\
@@ -116,19 +135,18 @@ NAMESPACE_BEGIN(Grid);
   }
 
 
-
 #define HAND_STENCIL_LEG_INT(U,Dir,Perm,skew,even)	\
   SE=st.GetEntry(ptype,Dir+skew,sF);			\
   offset = SE->_offset;					\
   local  = SE->_is_local;				\
   perm   = SE->_permute;				\
   if ( local ) {					\
-    LOAD_CHI(in);				\
+    LOAD_CHI(Perm,in);					\
     if ( perm) {					\
       PERMUTE_DIR(Perm);				\
     }							\
   } else if ( st.same_node[Dir] ) {			\
-    LOAD_CHI(buf);					\
+    LOAD_CHI_COMMS(buf);				\
   }							\
   if (local || st.same_node[Dir] ) {		\
     MULT_ADD(U,Dir,even);				\
@@ -140,10 +158,32 @@ NAMESPACE_BEGIN(Grid);
   local  = SE->_is_local;				\
   if ((!local) && (!st.same_node[Dir]) ) {		\
     nmu++;							\
-    { LOAD_CHI(buf);	  }					\
+    { LOAD_CHI_COMMS(buf);	  }				\
     { MULT_ADD(U,Dir,even); }					\
   }								
 
+#define HAND_DECLARATIONS(Simd) \
+  Simd even_0;			\
+  Simd even_1;			\
+  Simd even_2;			\
+  Simd odd_0;			\
+  Simd odd_1;			\
+  Simd odd_2;		        \
+		      		\
+  Simd Chi_0;			\
+  Simd Chi_1;			\
+  Simd Chi_2;			\
+				\
+  Simd U_00;			\
+  Simd U_10;			\
+  Simd U_20;			\
+  Simd U_01;			\
+  Simd U_11;			\
+  Simd U_21;			\
+  Simd U_02;			\
+  Simd U_12;			\
+  Simd U_22;			
+  
 
 template <class Impl>
 template <int Naik> accelerator_inline
@@ -155,28 +195,14 @@ void StaggeredKernels<Impl>::DhopSiteHand(StencilView &st,
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
 
-  Simd even_0; // 12 regs on knc
-  Simd even_1;
-  Simd even_2;
-  Simd odd_0; // 12 regs on knc
-  Simd odd_1;
-  Simd odd_2;
 
-  Simd Chi_0;    // two spinor; 6 regs
-  Simd Chi_1;
-  Simd Chi_2;
-  
-  Simd U_00;  // two rows of U matrix
-  Simd U_10;
-  Simd U_20;  
-  Simd U_01;
-  Simd U_11;
-  Simd U_21;  // 2 reg left.
-  Simd U_02;
-  Simd U_12;
-  Simd U_22; 
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=acceleratorSIMTlane(Nsimd);
+  typedef decltype( coalescedRead( in[0]()()(0) )) Simt;
+  HAND_DECLARATIONS(Simt);
 
-  SiteSpinor result;
+  typedef decltype( coalescedRead( in[0] )) calcSiteSpinor;
+  calcSiteSpinor result;
   int offset,local,perm, ptype;
 
   StencilEntry *SE;
@@ -215,7 +241,7 @@ void StaggeredKernels<Impl>::DhopSiteHand(StencilView &st,
       result()()(1) = even_1 + odd_1;
       result()()(2) = even_2 + odd_2;
     }
-    vstream(out[sF],result);
+    coalescedWrite(out[sF],result);
   }
 }
 
@@ -230,28 +256,13 @@ void StaggeredKernels<Impl>::DhopSiteHandInt(StencilView &st,
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
 
-  Simd even_0; // 12 regs on knc
-  Simd even_1;
-  Simd even_2;
-  Simd odd_0; // 12 regs on knc
-  Simd odd_1;
-  Simd odd_2;
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=acceleratorSIMTlane(Nsimd);
+  typedef decltype( coalescedRead( in[0]()()(0) )) Simt;
+  HAND_DECLARATIONS(Simt);
 
-  Simd Chi_0;    // two spinor; 6 regs
-  Simd Chi_1;
-  Simd Chi_2;
-  
-  Simd U_00;  // two rows of U matrix
-  Simd U_10;
-  Simd U_20;  
-  Simd U_01;
-  Simd U_11;
-  Simd U_21;  // 2 reg left.
-  Simd U_02;
-  Simd U_12;
-  Simd U_22; 
-
-  SiteSpinor result;
+  typedef decltype( coalescedRead( in[0] )) calcSiteSpinor;
+  calcSiteSpinor result;
   int offset, ptype, local, perm;
 
   StencilEntry *SE;
@@ -261,8 +272,8 @@ void StaggeredKernels<Impl>::DhopSiteHandInt(StencilView &st,
   //    int sF=s+LLs*sU;
   {
 
-    even_0 = Zero();    even_1 = Zero();    even_2 = Zero();
-     odd_0 = Zero();     odd_1 = Zero();     odd_2 = Zero();
+    zeroit(even_0);    zeroit(even_1);    zeroit(even_2);
+    zeroit(odd_0);    zeroit(odd_1);    zeroit(odd_2);
 
     skew = 0;
     HAND_STENCIL_LEG_INT(U,Xp,3,skew,even);  
@@ -294,7 +305,7 @@ void StaggeredKernels<Impl>::DhopSiteHandInt(StencilView &st,
       result()()(1) = even_1 + odd_1;
       result()()(2) = even_2 + odd_2;
     }
-    vstream(out[sF],result);
+    coalescedWrite(out[sF],result);
   }
 }
 
@@ -309,28 +320,13 @@ void StaggeredKernels<Impl>::DhopSiteHandExt(StencilView &st,
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
 
-  Simd even_0; // 12 regs on knc
-  Simd even_1;
-  Simd even_2;
-  Simd odd_0; // 12 regs on knc
-  Simd odd_1;
-  Simd odd_2;
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=acceleratorSIMTlane(Nsimd);
+  typedef decltype( coalescedRead( in[0]()()(0) )) Simt;
+  HAND_DECLARATIONS(Simt);
 
-  Simd Chi_0;    // two spinor; 6 regs
-  Simd Chi_1;
-  Simd Chi_2;
-  
-  Simd U_00;  // two rows of U matrix
-  Simd U_10;
-  Simd U_20;  
-  Simd U_01;
-  Simd U_11;
-  Simd U_21;  // 2 reg left.
-  Simd U_02;
-  Simd U_12;
-  Simd U_22; 
-
-  SiteSpinor result;
+  typedef decltype( coalescedRead( in[0] )) calcSiteSpinor;
+  calcSiteSpinor result;
   int offset, ptype, local;
 
   StencilEntry *SE;
@@ -340,8 +336,8 @@ void StaggeredKernels<Impl>::DhopSiteHandExt(StencilView &st,
   //    int sF=s+LLs*sU;
   {
 
-    even_0 = Zero();    even_1 = Zero();    even_2 = Zero();
-     odd_0 = Zero();     odd_1 = Zero();     odd_2 = Zero();
+    zeroit(even_0);    zeroit(even_1);    zeroit(even_2);
+    zeroit(odd_0);    zeroit(odd_1);    zeroit(odd_2);
     int nmu=0;
     skew = 0;
     HAND_STENCIL_LEG_EXT(U,Xp,3,skew,even);  
@@ -374,7 +370,7 @@ void StaggeredKernels<Impl>::DhopSiteHandExt(StencilView &st,
 	result()()(1) = even_1 + odd_1;
 	result()()(2) = even_2 + odd_2;
       }
-      out[sF] = out[sF] + result;
+      coalescedWrite(out[sF] , out(sF)+ result);
     }
   }
 }
@@ -397,6 +393,7 @@ void StaggeredKernels<Impl>::DhopSiteHandExt(StencilView &st,
 						     const FermionFieldView &in, FermionFieldView &out, int dag); \
 */
 #undef LOAD_CHI
+#undef HAND_DECLARATIONS
 
 NAMESPACE_END(Grid);
 

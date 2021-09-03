@@ -64,7 +64,7 @@ public:
     return sstream.str();
   }  
       
-  virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {
+  virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) {
 
     // P(phi) = e^{- phi^dag V (MdagM)^-1 Vdag phi}
     //

@@ -67,6 +67,8 @@ CartesianCommunicator::CartesianCommunicator(const Coordinate &processors)
 
 CartesianCommunicator::~CartesianCommunicator(){}
 
+void CartesianCommunicator::GlobalMax(float &){}
+void CartesianCommunicator::GlobalMax(double &){}
 void CartesianCommunicator::GlobalSum(float &){}
 void CartesianCommunicator::GlobalSumVector(float *,int N){}
 void CartesianCommunicator::GlobalSum(double &){}

@@ -35,39 +35,32 @@ NAMESPACE_BEGIN(Grid);
 #define GENERIC_STENCIL_LEG(U,Dir,skew,multLink)		\
   SE = st.GetEntry(ptype, Dir+skew, sF);			\
   if (SE->_is_local ) {						\
-    if (SE->_permute) {						\
-      chi_p = &chi;						\
-      permute(chi,  in[SE->_offset], ptype);			\
-    } else {							\
-      chi_p = &in[SE->_offset];					\
-    }								\
+    int perm= SE->_permute;						\
+    chi = coalescedReadPermute(in[SE->_offset],ptype,perm,lane);\
   } else {							\
-    chi_p = &buf[SE->_offset];					\
+    chi = coalescedRead(buf[SE->_offset],lane);			\
   }								\
-  multLink(Uchi, U[sU], *chi_p, Dir);			
+  acceleratorSynchronise();					\
+  multLink(Uchi, U[sU], chi, Dir);			
 
 #define GENERIC_STENCIL_LEG_INT(U,Dir,skew,multLink)		\
   SE = st.GetEntry(ptype, Dir+skew, sF);			\
   if (SE->_is_local ) {						\
-    if (SE->_permute) {						\
-      chi_p = &chi;						\
-      permute(chi,  in[SE->_offset], ptype);			\
-    } else {							\
-      chi_p = &in[SE->_offset];					\
-    }								\
+    int perm= SE->_permute;						\
+    chi = coalescedReadPermute(in[SE->_offset],ptype,perm,lane);\
   } else if ( st.same_node[Dir] ) {				\
-    chi_p = &buf[SE->_offset];					\
+    chi = coalescedRead(buf[SE->_offset],lane);                 \
   }								\
   if (SE->_is_local || st.same_node[Dir] ) {			\
-    multLink(Uchi, U[sU], *chi_p, Dir);				\
+    multLink(Uchi, U[sU], chi, Dir);				\
   }
 
 #define GENERIC_STENCIL_LEG_EXT(U,Dir,skew,multLink)		\
   SE = st.GetEntry(ptype, Dir+skew, sF);			\
   if ((!SE->_is_local) && (!st.same_node[Dir]) ) {		\
     nmu++;							\
-    chi_p = &buf[SE->_offset];					\
-    multLink(Uchi, U[sU], *chi_p, Dir);				\
+    chi = coalescedRead(buf[SE->_offset],lane);			\
+    multLink(Uchi, U[sU], chi, Dir);				\
   }
 
 template <class Impl>
@@ -84,12 +77,14 @@ void StaggeredKernels<Impl>::DhopSiteGeneric(StencilView &st,
 					     SiteSpinor *buf, int sF, int sU, 
 					     const FermionFieldView &in, FermionFieldView &out, int dag) 
 {
-  const SiteSpinor *chi_p;
-  SiteSpinor chi;
-  SiteSpinor Uchi;
+  typedef decltype(coalescedRead(in[0])) calcSpinor;
+  calcSpinor chi;
+  calcSpinor Uchi;
   StencilEntry *SE;
   int ptype;
   int skew;
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=acceleratorSIMTlane(Nsimd);
 
   //  for(int s=0;s<LLs;s++){
   //
@@ -118,7 +113,7 @@ void StaggeredKernels<Impl>::DhopSiteGeneric(StencilView &st,
     if ( dag ) { 
       Uchi = - Uchi;
     } 
-    vstream(out[sF], Uchi);
+    coalescedWrite(out[sF], Uchi,lane);
   }
 };
 
@@ -130,13 +125,16 @@ template <int Naik> accelerator_inline
 void StaggeredKernels<Impl>::DhopSiteGenericInt(StencilView &st, 
 						DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
 						SiteSpinor *buf, int sF, int sU, 
-						const FermionFieldView &in, FermionFieldView &out,int dag) {
-  const SiteSpinor *chi_p;
-  SiteSpinor chi;
-  SiteSpinor Uchi;
+						const FermionFieldView &in, FermionFieldView &out,int dag)
+{
+  typedef decltype(coalescedRead(in[0])) calcSpinor;
+  calcSpinor chi;
+  calcSpinor Uchi;
   StencilEntry *SE;
   int ptype;
   int skew ;
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=acceleratorSIMTlane(Nsimd);
 
   //  for(int s=0;s<LLs;s++){
   //    int sF=LLs*sU+s;
@@ -165,7 +163,7 @@ void StaggeredKernels<Impl>::DhopSiteGenericInt(StencilView &st,
     if ( dag ) {
       Uchi = - Uchi;
     }
-    vstream(out[sF], Uchi);
+    coalescedWrite(out[sF], Uchi,lane);
   }
 };
 
@@ -178,14 +176,17 @@ template <int Naik> accelerator_inline
 void StaggeredKernels<Impl>::DhopSiteGenericExt(StencilView &st, 
 						DoubledGaugeFieldView &U, DoubledGaugeFieldView &UUU,
 						SiteSpinor *buf, int sF, int sU,
-						const FermionFieldView &in, FermionFieldView &out,int dag) {
-  const SiteSpinor *chi_p;
-  //  SiteSpinor chi;
-  SiteSpinor Uchi;
+						const FermionFieldView &in, FermionFieldView &out,int dag)
+{
+  typedef decltype(coalescedRead(in[0])) calcSpinor;
+  calcSpinor chi;
+  calcSpinor Uchi;
   StencilEntry *SE;
   int ptype;
   int nmu=0;
   int skew ;
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=acceleratorSIMTlane(Nsimd);
 
   //  for(int s=0;s<LLs;s++){
   //    int sF=LLs*sU+s;
@@ -211,11 +212,12 @@ void StaggeredKernels<Impl>::DhopSiteGenericExt(StencilView &st,
     GENERIC_STENCIL_LEG_EXT(UUU,Zm,skew,Impl::multLinkAdd);
     GENERIC_STENCIL_LEG_EXT(UUU,Tm,skew,Impl::multLinkAdd);
     }
-    if ( nmu ) { 
-      if ( dag ) { 
-	out[sF] = out[sF] - Uchi;
+    if ( nmu ) {
+      auto _out = coalescedRead(out[sF],lane);
+      if ( dag ) {
+	coalescedWrite(out[sF], _out-Uchi,lane);
       } else { 
-	out[sF] = out[sF] + Uchi;
+	coalescedWrite(out[sF], _out+Uchi,lane);
       }
     }
   }
@@ -261,6 +263,8 @@ void StaggeredKernels<Impl>::DhopImproved(StencilImpl &st, LebesgueOrder &lo,
   GridBase *FGrid=in.Grid();  
   GridBase *UGrid=U.Grid();  
   typedef StaggeredKernels<Impl> ThisKernel;
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=acceleratorSIMTlane(Nsimd);
   autoView( UUU_v , UUU, AcceleratorRead);
   autoView( U_v   ,   U, AcceleratorRead);
   autoView( in_v  ,  in, AcceleratorRead);
@@ -301,6 +305,8 @@ void StaggeredKernels<Impl>::DhopNaive(StencilImpl &st, LebesgueOrder &lo,
   GridBase *FGrid=in.Grid();  
   GridBase *UGrid=U.Grid();  
   typedef StaggeredKernels<Impl> ThisKernel;
+  const int Nsimd = SiteHalfSpinor::Nsimd();
+  const int lane=acceleratorSIMTlane(Nsimd);
   autoView( UUU_v ,   U, AcceleratorRead);
   autoView( U_v   ,   U, AcceleratorRead);
   autoView( in_v  ,  in, AcceleratorRead);

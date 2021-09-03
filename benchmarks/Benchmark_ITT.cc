@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -62,7 +62,7 @@ struct time_statistics{
 
 void comms_header(){
   std::cout <<GridLogMessage << " L  "<<"\t"<<" Ls  "<<"\t"
-            <<std::setw(11)<<"bytes"<<"MB/s uni (err/min/max)"<<"\t\t"<<"MB/s bidi (err/min/max)"<<std::endl;
+            <<"bytes\t MB/s uni (err/min/max) \t\t MB/s bidi (err/min/max)"<<std::endl;
 };
 
 Gamma::Algebra Gmu [] = {
@@ -125,7 +125,7 @@ public:
 	      lat*mpi_layout[1],
 	      lat*mpi_layout[2],
 	      lat*mpi_layout[3]});
-	std::cout << GridLogMessage<< latt_size <<std::endl;
+
 	GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 	RealD Nrank = Grid._Nprocessors;
 	RealD Nnode = Grid.NodeCount();
@@ -133,34 +133,30 @@ public:
 
 	std::vector<HalfSpinColourVectorD *> xbuf(8);
 	std::vector<HalfSpinColourVectorD *> rbuf(8);
-	Grid.ShmBufferFreeAll();
+	//Grid.ShmBufferFreeAll();
+	uint64_t bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
 	for(int d=0;d<8;d++){
-	  xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	  rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	  bzero((void *)xbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
-	  bzero((void *)rbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+	  xbuf[d] = (HalfSpinColourVectorD *)acceleratorAllocDevice(bytes);
+	  rbuf[d] = (HalfSpinColourVectorD *)acceleratorAllocDevice(bytes);
+	  //	  bzero((void *)xbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+	  //	  bzero((void *)rbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
 	}
 
-	int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
 	int ncomm;
 	double dbytes;
-	std::vector<double> times(Nloop);
-	for(int i=0;i<Nloop;i++){
 
-	  double start=usecond();
+        for(int dir=0;dir<8;dir++) {
+	  int mu =dir % 4;
+	  if (mpi_layout[mu]>1 ) {
 
-	  dbytes=0;
-	  ncomm=0;
+	    std::vector<double> times(Nloop);
+	    for(int i=0;i<Nloop;i++){
 
-	  thread_for(dir,8,{
-		     
-	    double tbytes;
-	    int mu =dir % 4;
-
-	    if (mpi_layout[mu]>1 ) {
-	        
+	      dbytes=0;	        
+	      double start=usecond();
 	      int xmit_to_rank;
 	      int recv_from_rank;
+
 	      if ( dir == mu ) { 
 		int comm_proc=1;
 		Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
@@ -168,40 +164,40 @@ public:
 		int comm_proc = mpi_layout[mu]-1;
 		Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
 	      }
-	      tbytes= Grid.StencilSendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,
-						 (void *)&rbuf[dir][0], recv_from_rank,
-						 bytes,dir);
-	      thread_critical {
-		ncomm++;
-		dbytes+=tbytes;
-	      }
+	      Grid.SendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,
+				  (void *)&rbuf[dir][0], recv_from_rank,
+				  bytes);
+	      dbytes+=bytes;
+	     
+	      double stop=usecond();
+	      t_time[i] = stop-start; // microseconds
+
 	    }
-          });
-	  Grid.Barrier();
-	  double stop=usecond();
-	  t_time[i] = stop-start; // microseconds
+	    timestat.statistics(t_time);
+	  
+	    dbytes=dbytes*ppn;
+	    double xbytes    = dbytes*0.5;
+	    double bidibytes = dbytes;
+	  
+	    std::cout<<GridLogMessage << lat<<"\t"<<Ls<<"\t "
+		     << bytes << " \t "
+		     <<xbytes/timestat.mean<<" \t "<< xbytes*timestat.err/(timestat.mean*timestat.mean)<< " \t "
+		     <<xbytes/timestat.max <<" "<< xbytes/timestat.min  
+		     << "\t\t"<< bidibytes/timestat.mean<< "  " << bidibytes*timestat.err/(timestat.mean*timestat.mean) << " "
+		     << bidibytes/timestat.max << " " << bidibytes/timestat.min << std::endl;
+	  }
 	}
-
-	timestat.statistics(t_time);
-
-	dbytes=dbytes*ppn;
-	double xbytes    = dbytes*0.5;
-	//	double rbytes    = dbytes*0.5;
-	double bidibytes = dbytes;
-
-	std::cout<<GridLogMessage << std::setw(4) << lat<<"\t"<<Ls<<"\t"
-		 <<std::setw(11) << bytes<< std::fixed << std::setprecision(1) << std::setw(7)
-		 <<std::right<< xbytes/timestat.mean<<"  "<< xbytes*timestat.err/(timestat.mean*timestat.mean)<< " "
-		 <<xbytes/timestat.max <<" "<< xbytes/timestat.min  
-		 << "\t\t"<<std::setw(7)<< bidibytes/timestat.mean<< "  " << bidibytes*timestat.err/(timestat.mean*timestat.mean) << " "
-		 << bidibytes/timestat.max << " " << bidibytes/timestat.min << std::endl;
-	
-	    }
-    }    
-
+	for(int d=0;d<8;d++){
+	  acceleratorFreeDevice(xbuf[d]);
+	  acceleratorFreeDevice(rbuf[d]);
+	}
+      }
+    } 
     return;
   }
+  
 
+  
   static void Memory(void)
   {
     const int Nvec=8;
@@ -222,7 +218,7 @@ public:
 
 
   uint64_t lmax=32;
-#define NLOOP (100*lmax*lmax*lmax*lmax/lat/lat/lat/lat)
+#define NLOOP (1000*lmax*lmax*lmax*lmax/lat/lat/lat/lat)
 
     GridSerialRNG          sRNG;      sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
     for(int lat=8;lat<=lmax;lat+=8){
@@ -247,17 +243,66 @@ public:
       double start=usecond();
       for(int i=0;i<Nloop;i++){
 	z=a*x-y;
-	autoView( x_v , x, CpuWrite);
-	autoView( y_v , y, CpuWrite);
-	autoView( z_v , z, CpuRead);
-        x_v[0]=z_v[0]; // force serial dependency to prevent optimise away
-        y_v[4]=z_v[4];
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
      
       double flops=vol*Nvec*2;// mul,add
       double bytes=3.0*vol*Nvec*sizeof(Real);
+      std::cout<<GridLogMessage<<std::setprecision(3) 
+	       << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<"\t\t"<<(stop-start)/1000./1000.
+	       << "\t\t"<< bytes/time/NN <<std::endl;
+
+    }
+  };
+
+
+  static void SU4(void)
+  {
+    const int Nc4=4;
+    typedef Lattice< iMatrix< vComplexF,Nc4> > LatticeSU4;
+
+    Coordinate simd_layout = GridDefaultSimd(Nd,vComplexF::Nsimd());
+    Coordinate mpi_layout  = GridDefaultMpi();
+    
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    std::cout<<GridLogMessage << "= Benchmarking z = y*x SU(4) bandwidth"<<std::endl;
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<"\t\t seconds"<< "\t\tGB/s / node"<<std::endl;
+    std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
+  
+    uint64_t NN;
+
+
+    uint64_t lmax=32;
+
+    GridSerialRNG          sRNG;      sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
+    for(int lat=8;lat<=lmax;lat+=8){
+
+      Coordinate latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
+      int64_t vol= latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
+
+      GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
+
+      NN =Grid.NodeCount();
+
+
+      LatticeSU4 z(&Grid); z=Zero();
+      LatticeSU4 x(&Grid); x=Zero();
+      LatticeSU4 y(&Grid); y=Zero();
+      double a=2.0;
+
+      uint64_t Nloop=NLOOP;
+
+      double start=usecond();
+      for(int i=0;i<Nloop;i++){
+	z=x*y;
+      }
+      double stop=usecond();
+      double time = (stop-start)/Nloop*1000;
+     
+      double flops=vol*Nc4*Nc4*(6+(Nc4-1)*8);// mul,add
+      double bytes=3.0*vol*Nc4*Nc4*2*sizeof(RealF);
       std::cout<<GridLogMessage<<std::setprecision(3) 
 	       << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<"\t\t"<<(stop-start)/1000./1000.
 	       << "\t\t"<< bytes/time/NN <<std::endl;
@@ -282,8 +327,9 @@ public:
     int threads = GridThread::GetThreads();
     Coordinate mpi = GridDefaultMpi(); assert(mpi.size()==4);
     Coordinate local({L,L,L,L});
+    Coordinate latt4({local[0]*mpi[0],local[1]*mpi[1],local[2]*mpi[2],local[3]*mpi[3]});
 
-    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(Coordinate({72,72,72,72}), 
+    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(latt4, 
 								       GridDefaultSimd(Nd,vComplex::Nsimd()),
 								       GridDefaultMpi());
     uint64_t NP = TmpGrid->RankCount();
@@ -291,11 +337,11 @@ public:
     NN_global=NN;
     uint64_t SHM=NP/NN;
 
-    Coordinate latt4({local[0]*mpi[0],local[1]*mpi[1],local[2]*mpi[2],local[3]*mpi[3]});
 
     ///////// Welcome message ////////////
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << "Benchmark DWF on "<<L<<"^4 local volume "<<std::endl;
+    std::cout<<GridLogMessage << "* Nc             : "<<Nc<<std::endl;
     std::cout<<GridLogMessage << "* Global volume  : "<<GridCmdVectorIntToString(latt4)<<std::endl;
     std::cout<<GridLogMessage << "* Ls             : "<<Ls<<std::endl;
     std::cout<<GridLogMessage << "* ranks          : "<<NP  <<std::endl;
@@ -324,7 +370,7 @@ public:
     typedef LatticeGaugeFieldF Gauge;
     
     ///////// Source preparation ////////////
-    Gauge Umu(UGrid);  SU3::HotConfiguration(RNG4,Umu); 
+    Gauge Umu(UGrid);  SU<Nc>::HotConfiguration(RNG4,Umu); 
     Fermion src   (FGrid); random(RNG5,src);
     Fermion src_e (FrbGrid);
     Fermion src_o (FrbGrid);
@@ -369,7 +415,7 @@ public:
 	}
 	FGrid->Barrier();
 	double t1=usecond();
-	uint64_t ncall = 50;
+	uint64_t ncall = 500;
 
 	FGrid->Broadcast(0,&ncall,sizeof(ncall));
 
@@ -387,7 +433,17 @@ public:
 	FGrid->Barrier();
 	
 	double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-	double flops=(1344.0*volume)/2;
+
+	// Nc=3 gives
+	// 1344= 3*(2*8+6)*2*8 + 8*3*2*2 + 3*4*2*8
+	// 1344 = Nc* (6+(Nc-1)*8)*2*Nd + Nd*Nc*2*2  + Nd*Nc*Ns*2
+	//	double flops=(1344.0*volume)/2;
+#if 0
+	double fps = Nc* (6+(Nc-1)*8)*Ns*Nd + Nd*Nc*Ns  + Nd*Nc*Ns*2;
+#else
+	double fps = Nc* (6+(Nc-1)*8)*Ns*Nd + 2*Nd*Nc*Ns  + 2*Nd*Nc*Ns*2;
+#endif
+	double flops=(fps*volume)/2;
 	double mf_hi, mf_lo, mf_err;
 
 	timestat.statistics(t_time);
@@ -402,6 +458,7 @@ public:
 	if ( mflops>mflops_best ) mflops_best = mflops;
 	if ( mflops<mflops_worst) mflops_worst= mflops;
 
+	std::cout<<GridLogMessage<< "Deo FlopsPerSite is "<<fps<<std::endl;
 	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s =   "<< mflops << " ("<<mf_err<<") " << mf_lo<<"-"<<mf_hi <<std::endl;
 	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s per rank   "<< mflops/NP<<std::endl;
 	std::cout<<GridLogMessage << std::fixed << std::setprecision(1)<<"Deo mflop/s per node   "<< mflops/NN<<std::endl;
@@ -438,8 +495,9 @@ public:
     int threads = GridThread::GetThreads();
     Coordinate mpi = GridDefaultMpi(); assert(mpi.size()==4);
     Coordinate local({L,L,L,L});
+    Coordinate latt4({local[0]*mpi[0],local[1]*mpi[1],local[2]*mpi[2],local[3]*mpi[3]});
     
-    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(Coordinate({72,72,72,72}), 
+    GridCartesian         * TmpGrid   = SpaceTimeGrid::makeFourDimGrid(latt4,
 								       GridDefaultSimd(Nd,vComplex::Nsimd()),
 								       GridDefaultMpi());
     uint64_t NP = TmpGrid->RankCount();
@@ -447,7 +505,6 @@ public:
     NN_global=NN;
     uint64_t SHM=NP/NN;
 
-    Coordinate latt4({local[0]*mpi[0],local[1]*mpi[1],local[2]*mpi[2],local[3]*mpi[3]});
 
     ///////// Welcome message ////////////
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
@@ -478,7 +535,7 @@ public:
     typedef typename Action::FermionField Fermion; 
     typedef LatticeGaugeFieldF Gauge;
     
-    Gauge Umu(FGrid);  SU3::HotConfiguration(RNG4,Umu); 
+    Gauge Umu(FGrid);  SU<Nc>::HotConfiguration(RNG4,Umu); 
 
     typename Action::ImplParams params;
     Action Ds(Umu,Umu,*FGrid,*FrbGrid,mass,c1,c2,u0,params);
@@ -596,11 +653,12 @@ int main (int argc, char ** argv)
 #endif
   Benchmark::Decomposition();
 
+  int do_su4=1;
   int do_memory=1;
   int do_comms =1;
 
-  int sel=2;
-  std::vector<int> L_list({16,24,32});
+  int sel=4;
+  std::vector<int> L_list({8,12,16,24,32});
   int selm1=sel-1;
 
   std::vector<double> wilson;
@@ -624,7 +682,6 @@ int main (int argc, char ** argv)
     dwf4.push_back(result);
   }
 
-  /*
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Improved Staggered dslash 4D vectorised" <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
@@ -632,14 +689,13 @@ int main (int argc, char ** argv)
     double result = Benchmark::Staggered(L_list[l]) ;
     staggered.push_back(result);
   }
-  */
 
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Summary table Ls="<<Ls <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "L \t\t Wilson \t\t DWF4 \t\tt Staggered" <<std::endl;
+  std::cout<<GridLogMessage << "L \t\t Wilson \t\t DWF4 \t\t Staggered" <<std::endl;
   for(int l=0;l<L_list.size();l++){
-    std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]<<" \t\t "<<dwf4[l] <<std::endl;
+    std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]<<" \t\t "<<dwf4[l] << " \t\t "<< staggered[l]<<std::endl;
   }
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 
@@ -651,7 +707,14 @@ int main (int argc, char ** argv)
     Benchmark::Memory();
   }
 
-  if ( do_comms && (NN>1) ) {
+  if ( do_su4 ) {
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    std::cout<<GridLogMessage << " SU(4) benchmark " <<std::endl;
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    Benchmark::SU4();
+  }
+  
+  if ( do_comms ) {
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << " Communications benchmark " <<std::endl;
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
@@ -661,9 +724,9 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << " Per Node Summary table Ls="<<Ls <<std::endl;
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    std::cout<<GridLogMessage << " L \t\t Wilson\t\t DWF4  " <<std::endl;
+    std::cout<<GridLogMessage << " L \t\t Wilson\t\t DWF4\t\t Staggered " <<std::endl;
     for(int l=0;l<L_list.size();l++){
-      std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]/NN<<" \t "<<dwf4[l]/NN<<std::endl;
+      std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]/NN<<" \t "<<dwf4[l]/NN<< " \t "<<staggered[l]/NN<<std::endl;
     }
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 

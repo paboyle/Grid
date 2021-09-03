@@ -47,7 +47,7 @@ static constexpr int Ym = 5;
 static constexpr int Zm = 6;
 static constexpr int Tm = 7;
 
-static constexpr int Nc=3;
+static constexpr int Nc=Config_Nc;
 static constexpr int Ns=4;
 static constexpr int Nd=4;
 static constexpr int Nhs=2; // half spinor
@@ -79,6 +79,13 @@ template<typename T> struct isSpinor {
 };
 template <typename T> using IfSpinor    = Invoke<std::enable_if< isSpinor<T>::value,int> > ;
 template <typename T> using IfNotSpinor = Invoke<std::enable_if<!isSpinor<T>::value,int> > ;
+
+const int CoarseIndex = 4;
+template<typename T> struct isCoarsened {
+   static constexpr bool value = (CoarseIndex<=T::TensorLevel);
+};
+template <typename T> using IfCoarsened    = Invoke<std::enable_if< isCoarsened<T>::value,int> > ;
+template <typename T> using IfNotCoarsened = Invoke<std::enable_if<!isCoarsened<T>::value,int> > ;
 
 // ChrisK very keen to add extra space for Gparity doubling.
 //

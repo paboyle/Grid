@@ -72,7 +72,7 @@ int main (int argc, char** argv)
   LatticeFermion MphiPrime  (FGrid);
 
   LatticeGaugeField U(UGrid);
-  SU3::HotConfiguration(RNG4,U);
+  SU<Nc>::HotConfiguration(RNG4,U);
 
   ////////////////////////////////////
   // Unmodified matrix element
@@ -86,7 +86,9 @@ int main (int argc, char** argv)
   ConjugateGradient<LatticeFermion> CG(1.0e-12, 5000);
   ExactOneFlavourRatioPseudoFermionAction<WilsonImplR> Meofa(Lop, Rop, CG, CG, CG, CG, CG, Params, true);
 
-  Meofa.refresh(U, RNG5);
+  GridSerialRNG  sRNG; sRNG.SeedFixedIntegers(seeds4);
+  Meofa.refresh(U, sRNG, RNG5 );
+
   RealD S = Meofa.S(U); // pdag M p
 
   // get the deriv of phidag M phi with respect to "U"
@@ -105,7 +107,7 @@ int main (int argc, char** argv)
 
   for(int mu=0; mu<Nd; mu++){
 
-    SU3::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu); // Traceless antihermitian momentum; gaussian in lie alg
+    SU<Nc>::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu); // Traceless antihermitian momentum; gaussian in lie alg
 
     PokeIndex<LorentzIndex>(mom, mommu, mu);
 
