@@ -44,7 +44,7 @@ void  MemoryManager::AcceleratorFree    (void *ptr,size_t bytes)
   if ( __freeme ) {
     acceleratorFreeDevice(__freeme);
     total_device-=bytes;
-       PrintBytes();
+//       PrintBytes();
   }
 }
 void *MemoryManager::SharedAllocate(size_t bytes)
@@ -53,8 +53,8 @@ void *MemoryManager::SharedAllocate(size_t bytes)
   if ( ptr == (void *) NULL ) {
     ptr = (void *) acceleratorAllocShared(bytes);
     total_shared+=bytes;
-        std::cout <<"AcceleratorAllocate: allocated Shared pointer "<<std::hex<<ptr<<std::dec<<std::endl;
-        PrintBytes();
+        std::cout <<GridLogMessage<<"AcceleratorAllocate: allocated Shared pointer "<<std::hex<<ptr<<std::dec<<std::endl;
+//        PrintBytes();
   }
   return ptr;
 }
@@ -74,7 +74,7 @@ void *MemoryManager::CpuAllocate(size_t bytes)
   if ( ptr == (void *) NULL ) {
     ptr = (void *) acceleratorAllocShared(bytes);
     total_host+=bytes;
-    std::cout << GridLogMessage<< "MemoryManager:: CpuAllocate  total_host= "<<total_host<<" "<< ptr << std::endl;
+//    std::cout << GridLogMessage<< "MemoryManager:: CpuAllocate  total_host= "<<total_host<<" "<< ptr << std::endl;
   }
   return ptr;
 }
@@ -84,7 +84,7 @@ void  MemoryManager::CpuFree    (void *_ptr,size_t bytes)
   void *__freeme = Insert(_ptr,bytes,Cpu);
   if ( __freeme ) { 
     acceleratorFreeShared(__freeme);
-    std::cout << GridLogMessage<< "MemoryManager:: CpuFree  total_host= "<<total_host<<" "<< __freeme << std::endl;
+//    std::cout << GridLogMessage<< "MemoryManager:: CpuFree  total_host= "<<total_host<<" "<< __freeme << std::endl;
     total_host-=bytes;
   }
 }

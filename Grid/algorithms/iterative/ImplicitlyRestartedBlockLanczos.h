@@ -721,7 +721,7 @@ cudaStat = cudaMallocManaged((void **)&evec_acc, Nevec_acc*sites*12*sizeof(CUDA_
     Eigen::MatrixXcd    Q = Eigen::MatrixXcd::Zero(Nm,Nm);
 
     std::vector<int>   Iconv(Nm);
-    int Ntest=Nu;
+//    int Ntest=Nu;
 //    std::vector<Field>  B(Nm,grid); // waste of space replicating
     std::vector<Field>  B(1,grid); // waste of space replicating
     
@@ -731,7 +731,7 @@ cudaStat = cudaMallocManaged((void **)&evec_acc, Nevec_acc*sites*12*sizeof(CUDA_
     
     Nconv = 0;
     
-    RealD beta_k;
+//    RealD beta_k;
   
     // set initial vector
     for (int i=0; i<Nu; ++i) {
@@ -838,22 +838,40 @@ cudaStat = cudaMallocManaged((void **)&evec_acc, Nevec_acc*sites*12*sizeof(CUDA_
     } else {
       Glog << fname + " CONVERGED ; Summary :\n";
       // Sort convered eigenpairs.
-      std::vector<Field>  Btmp(Nconv,grid); // waste of space replicating
+      std::vector<Field>  Btmp(Nstop,grid); // waste of space replicating
+#if 0
       for(int i=0; i<Nconv; ++i) Btmp[i]=0;
       for(int i=0; i<Nconv; ++i)
       for(int k = 0; k<Nr; ++k){
          Btmp[i].Checkerboard() = evec[k].Checkerboard();
-         Btmp[i] += evec[k]*Qt(k,Iconv[i]);
+         Btmp[i] += evec[k]*Qt(k,i);
       }
+#endif
 
-      eval.resize(Nconv);
-      evec.resize(Nconv,grid);
-
-      for(int i=0; i<Nconv; ++i){
-        eval[i] = eval2[Iconv[i]];
-        evec[i] = Btmp[i];
+      for(int i=0; i<Nstop; ++i){
+	  Btmp[i]=0.;
+          for(int k = 0; k<Nr; ++k){
+             Btmp[i].Checkerboard() = evec[k].Checkerboard();
+             Btmp[i] += evec[k]*Qt(k,i);
+          }
+          _Linop.HermOp(Btmp[i],v);
+          RealD vnum = real(innerProduct(Btmp[i],v)); // HermOp.
+          RealD vden = norm2(Btmp[i]);
+//          eval2[j] = vnum/vden;
+          v -= vnum/vden*Btmp[i];
+          RealD vv = norm2(v);
+//          resid[j] = vv;
+          
+          std::cout.precision(13);
+          std::cout << "[" << std::setw(4)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
+          std::cout << "eval = "<<std::setw(20)<< std::setiosflags(std::ios_base::left)<< vnum/vden<<" "<<eval2[i];;
+          std::cout << "   resid^2 = "<< std::setw(20)<< std::setiosflags(std::ios_base::right)<< vv<< std::endl;
+        eval[i] = vnum/vden;
       }
-      _sort.push(eval,evec,Nconv);
+      for(int i=0; i<Nstop; ++i) evec[i] = Btmp[i];
+      eval.resize(Nstop);
+      evec.resize(Nstop,grid);
+      _sort.push(eval,evec,Nstop);
     }
     Glog << std::string(74,'*') << std::endl;
     Glog << " -- Iterations    = "<< iter   << "\n";
@@ -972,7 +990,7 @@ if(split_test){
     }
 
     // re-orthogonalization for numerical stability
-#if 0
+#if 1
     Glog << "Gram Schmidt"<< std::endl;
     orthogonalize(w,Nu,evec,R);
 #else
