@@ -39,6 +39,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifdef HAVE_MM_MALLOC_H
 #include <mm_malloc.h>
 #endif
+#ifdef __APPLE__
+// no memalign
+inline void *memalign(size_t align, size_t bytes) { return malloc(bytes); }
+#endif
 
 NAMESPACE_BEGIN(Grid);
 
@@ -233,6 +237,13 @@ inline int  acceleratorIsCommunicable(void *ptr)
 NAMESPACE_END(Grid);
 #include <CL/sycl.hpp>
 #include <CL/sycl/usm.hpp>
+
+#define GRID_SYCL_LEVEL_ZERO_IPC
+
+#ifdef GRID_SYCL_LEVEL_ZERO_IPC
+#include <level_zero/ze_api.h>
+#include <CL/sycl/backend/level_zero.hpp>
+#endif
 NAMESPACE_BEGIN(Grid);
 
 extern cl::sycl::queue *theGridAccelerator;
@@ -411,6 +422,8 @@ inline void acceleratorMemSet(void *base,int value,size_t bytes) { hipMemset(bas
 #if ( (!defined(GRID_SYCL)) && (!defined(GRID_CUDA)) && (!defined(GRID_HIP)) )
 
 #undef GRID_SIMT
+
+
 
 #define accelerator 
 #define accelerator_inline strong_inline
