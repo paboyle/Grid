@@ -1,0 +1,245 @@
+tu-c0r0n00 - 0 device=0 binding=--interleave=0,1
+tu-c0r0n09 - 0 device=0 binding=--interleave=0,1
+tu-c0r0n00 - 1 device=1 binding=--interleave=2,3
+tu-c0r0n09 - 1 device=1 binding=--interleave=2,3
+tu-c0r0n09 - 2 device=2 binding=--interleave=4,5
+tu-c0r0n03 - 1 device=1 binding=--interleave=2,3
+tu-c0r0n03 - 0 device=0 binding=--interleave=0,1
+tu-c0r0n03 - 3 device=3 binding=--interleave=6,7
+tu-c0r0n03 - 2 device=2 binding=--interleave=4,5
+tu-c0r0n06 - 0 device=0 binding=--interleave=0,1
+tu-c0r0n06 - 1 device=1 binding=--interleave=2,3
+tu-c0r0n00 - 3 device=3 binding=--interleave=6,7
+tu-c0r0n00 - 2 device=2 binding=--interleave=4,5
+tu-c0r0n09 - 3 device=3 binding=--interleave=6,7
+tu-c0r0n06 - 2 device=2 binding=--interleave=4,5
+tu-c0r0n06 - 3 device=3 binding=--interleave=6,7
+OPENMPI detected
+AcceleratorCudaInit[0]: ========================
+AcceleratorCudaInit[0]: Device Number    : 0
+AcceleratorCudaInit[0]: ========================
+AcceleratorCudaInit[0]: Device identifier: NVIDIA A100-SXM4-40GB
+AcceleratorCudaInit[0]:   totalGlobalMem: 42505273344 
+AcceleratorCudaInit[0]:   managedMemory: 1 
+AcceleratorCudaInit[0]:   isMultiGpuBoard: 0 
+AcceleratorCudaInit[0]:   warpSize: 32 
+AcceleratorCudaInit[0]:   pciBusID: 3 
+AcceleratorCudaInit[0]:   pciDeviceID: 0 
+AcceleratorCudaInit[0]: maxGridSize (2147483647,65535,65535)
+AcceleratorCudaInit: using default device 
+AcceleratorCudaInit: assume user either uses a) IBM jsrun, or 
+AcceleratorCudaInit: b) invokes through a wrapping script to set CUDA_VISIBLE_DEVICES, UCX_NET_DEVICES, and numa binding 
+AcceleratorCudaInit: Configure options --enable-summit, --enable-select-gpu=no 
+AcceleratorCudaInit: ================================================
+OPENMPI detected
+AcceleratorCudaInit: using default device 
+AcceleratorCudaInit: assume user either uses a) IBM jsrun, or 
+AcceleratorCudaInit: b) invokes through a wrapping script to set CUDA_VISIBLE_DEVICES, UCX_NET_DEVICES, and numa binding 
+AcceleratorCudaInit: Configure options --enable-summit, --enable-select-gpu=no 
+AcceleratorCudaInit: ================================================
+OPENMPI detected
+AcceleratorCudaInit: using default device 
+AcceleratorCudaInit: assume user either uses a) IBM jsrun, or 
+AcceleratorCudaInit: b) invokes through a wrapping script to set CUDA_VISIBLE_DEVICES, UCX_NET_DEVICES, and numa binding 
+AcceleratorCudaInit: Configure options --enable-summit, --enable-select-gpu=no 
+AcceleratorCudaInit: ================================================
+OPENMPI detected
+AcceleratorCudaInit[0]: ========================
+AcceleratorCudaInit[0]: Device Number    : 0
+AcceleratorCudaInit[0]: ========================
+AcceleratorCudaInit[0]: Device identifier: NVIDIA A100-SXM4-40GB
+AcceleratorCudaInit[0]:   totalGlobalMem: 42505273344 
+AcceleratorCudaInit[0]:   managedMemory: 1 
+AcceleratorCudaInit[0]:   isMultiGpuBoard: 0 
+AcceleratorCudaInit[0]:   warpSize: 32 
+AcceleratorCudaInit[0]:   pciBusID: 3 
+AcceleratorCudaInit[0]:   pciDeviceID: 0 
+AcceleratorCudaInit[0]: maxGridSize (2147483647,65535,65535)
+AcceleratorCudaInit: using default device 
+AcceleratorCudaInit: assume user either uses a) IBM jsrun, or 
+AcceleratorCudaInit: b) invokes through a wrapping script to set CUDA_VISIBLE_DEVICES, UCX_NET_DEVICES, and numa binding 
+AcceleratorCudaInit: Configure options --enable-summit, --enable-select-gpu=no 
+AcceleratorCudaInit: ================================================
+OPENMPI detected
+AcceleratorCudaInit: using default device 
+AcceleratorCudaInit: assume user either uses a) IBM jsrun, or 
+AcceleratorCudaInit: b) invokes through a wrapping script to set CUDA_VISIBLE_DEVICES, UCX_NET_DEVICES, and numa binding 
+AcceleratorCudaInit: Configure options --enable-summit, --enable-select-gpu=no 
+AcceleratorCudaInit: ================================================
+OPENMPI detected
+AcceleratorCudaInit: using default device 
+AcceleratorCudaInit: assume user either uses a) IBM jsrun, or 
+AcceleratorCudaInit: b) invokes through a wrapping script to set CUDA_VISIBLE_DEVICES, UCX_NET_DEVICES, and numa binding 
+AcceleratorCudaInit: Configure options --enable-summit, --enable-select-gpu=no 
+AcceleratorCudaInit: ================================================
+OPENMPI detected
+OPENMPI detected
+AcceleratorCudaInit: using default device 
+AcceleratorCudaInit: assume user either uses a) IBM jsrun, or 
+AcceleratorCudaInit: b) invokes through a wrapping script to set CUDA_VISIBLE_DEVICES, UCX_NET_DEVICES, and numa binding 
+AcceleratorCudaInit: Configure options --enable-summit, --enable-select-gpu=no 
+AcceleratorCudaInit: ================================================
+AcceleratorCudaInit: using default device 
+AcceleratorCudaInit: assume user either uses a) IBM jsrun, or 
+AcceleratorCudaInit: b) invokes through a wrapping script to set CUDA_VISIBLE_DEVICES, UCX_NET_DEVICES, and numa binding 
+AcceleratorCudaInit: Configure options --enable-summit, --enable-select-gpu=no 
+AcceleratorCudaInit: ================================================
+SharedMemoryMpi:  World communicator of size 16
+SharedMemoryMpi:  Node  communicator of size 4
+0SharedMemoryMpi:  SharedMemoryMPI.cc acceleratorAllocDevice 2147483648bytes at 0x7f84e0000000 for comms buffers 
+Setting up IPC
+
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+__|_ |  |  |  |  |  |  |  |  |  |  |  | _|__
+__|_                                    _|__
+__|_   GGGG    RRRR    III    DDDD      _|__
+__|_  G        R   R    I     D   D     _|__
+__|_  G        R   R    I     D    D    _|__
+__|_  G  GG    RRRR     I     D    D    _|__
+__|_  G   G    R  R     I     D   D     _|__
+__|_   GGGG    R   R   III    DDDD      _|__
+__|_                                    _|__
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+  |  |  |  |  |  |  |  |  |  |  |  |  |  |  
+
+
+Copyright (C) 2015 Peter Boyle, Azusa Yamaguchi, Guido Cossu, Antonin Portelli and other authors
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+Current Grid git commit hash=9d2238148c56e3fbadfa95dcabf2b83d4bde14cd: (HEAD -> develop) uncommited changes
+
+Grid : Message : ================================================ 
+Grid : Message : MPI is initialised and logging filters activated 
+Grid : Message : ================================================ 
+Grid : Message : Requested 2147483648 byte stencil comms buffers 
+Grid : Message : MemoryManager Cache 34004218675 bytes 
+Grid : Message : MemoryManager::Init() setting up
+Grid : Message : MemoryManager::Init() cache pool for recent allocations: SMALL 32 LARGE 8
+Grid : Message : MemoryManager::Init() Non unified: Caching accelerator data in dedicated memory
+Grid : Message : MemoryManager::Init() Using cudaMalloc
+Grid : Message : 1.234535 s : Grid Layout
+Grid : Message : 1.234543 s : 	Global lattice size  : 64 64 64 64 
+Grid : Message : 1.234547 s : 	OpenMP threads       : 4
+Grid : Message : 1.234548 s : 	MPI tasks            : 2 2 2 2 
+Grid : Message : 1.272006 s : Making s innermost grids
+Grid : Message : 1.316898 s : Initialising 4d RNG
+Grid : Message : 1.423692 s : Intialising parallel RNG with unique string 'The 4D RNG'
+Grid : Message : 1.423718 s : Seed SHA256: 49db4542db694e3b1a74bf2592a8c1b83bfebbe18401693c2609a4c3af1
+Grid : Message : 1.851400 s : Initialising 5d RNG
+Grid : Message : 3.495243 s : Intialising parallel RNG with unique string 'The 5D RNG'
+Grid : Message : 3.495282 s : Seed SHA256: b6316f2fac44ce14111f93e0296389330b077bfd0a7b359f781c58589f8a
+Grid : Message : 11.929748 s : Initialised RNGs
+Grid : Message : 15.135728 s : Drawing gauge field
+Grid : Message : 16.109867 s : Random gauge initialised 
+Grid : Message : 17.570374 s : Setting up Cshift based reference 
+Grid : Message : 26.641932 s : *****************************************************************
+Grid : Message : 26.641961 s : * Kernel options --dslash-generic, --dslash-unroll, --dslash-asm
+Grid : Message : 26.641963 s : *****************************************************************
+Grid : Message : 26.641965 s : *****************************************************************
+Grid : Message : 26.641967 s : * Benchmarking DomainWallFermionR::Dhop                  
+Grid : Message : 26.641968 s : * Vectorising space-time by 8
+Grid : Message : 26.641970 s : * VComplexF size is 64 B
+Grid : Message : 26.641974 s : * SINGLE precision 
+Grid : Message : 26.641976 s : * Using Overlapped Comms/Compute
+Grid : Message : 26.641977 s : * Using GENERIC Nc WilsonKernels
+Grid : Message : 26.641978 s : *****************************************************************
+Grid : Message : 28.676542 s : Called warmup
+Grid : Message : 56.574545 s : Called Dw 3000 times in 2.78974e+07 us
+Grid : Message : 56.574570 s : mflop/s =   3.8104e+07
+Grid : Message : 56.574573 s : mflop/s per rank =  2.3815e+06
+Grid : Message : 56.574575 s : mflop/s per node =  9.526e+06
+Grid : Message : 56.574577 s : RF  GiB/s (base 2) =   77426.5
+Grid : Message : 56.574579 s : mem GiB/s (base 2) =   48391.5
+Grid : Message : 56.578174 s : norm diff   1.03481e-13
+Grid : Message : 56.613049 s : #### Dhop calls report 
+Grid : Message : 56.613053 s : WilsonFermion5D Number of DhopEO Calls   : 6002
+Grid : Message : 56.613057 s : WilsonFermion5D TotalTime   /Calls        : 4692.42 us
+Grid : Message : 56.613059 s : WilsonFermion5D CommTime    /Calls        : 3204.73 us
+Grid : Message : 56.613061 s : WilsonFermion5D FaceTime    /Calls        : 489.82 us
+Grid : Message : 56.613063 s : WilsonFermion5D ComputeTime1/Calls        : 41.1853 us
+Grid : Message : 56.613065 s : WilsonFermion5D ComputeTime2/Calls        : 1014.2 us
+Grid : Message : 56.613073 s : Average mflops/s per call                : 3.56434e+09
+Grid : Message : 56.613079 s : Average mflops/s per call per rank       : 2.22771e+08
+Grid : Message : 56.613083 s : Average mflops/s per call per node       : 8.91085e+08
+Grid : Message : 56.613087 s : Average mflops/s per call (full)         : 3.84425e+07
+Grid : Message : 56.613091 s : Average mflops/s per call per rank (full): 2.40266e+06
+Grid : Message : 56.613104 s : Average mflops/s per call per node (full): 9.61063e+06
+Grid : Message : 56.613106 s : WilsonFermion5D Stencil
+Grid : Message : 56.613164 s :  Stencil calls 3001
+Grid : Message : 56.613168 s :  Stencil halogtime 0
+Grid : Message : 56.613170 s :  Stencil gathertime 45.0563
+Grid : Message : 56.613172 s :  Stencil gathermtime 19.5342
+Grid : Message : 56.613174 s :  Stencil mergetime 18.4625
+Grid : Message : 56.613176 s :  Stencil decompresstime 0.0616461
+Grid : Message : 56.613178 s :  Stencil comms_bytes 4.02653e+08
+Grid : Message : 56.613180 s :  Stencil commtime 6345.15
+Grid : Message : 56.613182 s :  Stencil 63.4584 GB/s per rank
+Grid : Message : 56.613184 s :  Stencil 253.834 GB/s per node
+Grid : Message : 56.613186 s : WilsonFermion5D StencilEven
+Grid : Message : 56.613193 s : WilsonFermion5D StencilOdd
+Grid : Message : 56.613205 s : WilsonFermion5D Stencil     Reporti()
+Grid : Message : 56.613211 s : WilsonFermion5D StencilEven Reporti()
+Grid : Message : 56.613214 s : WilsonFermion5D StencilOdd  Reporti()
+Grid : Message : 79.610634 s : Compare to naive wilson implementation Dag to verify correctness
+Grid : Message : 79.610656 s : Called DwDag
+Grid : Message : 79.610657 s : norm dag result 12.0421
+Grid : Message : 79.623325 s : norm dag ref    12.0421
+Grid : Message : 79.639282 s : norm dag diff   7.63236e-14
+Grid : Message : 79.679130 s : Calling Deo and Doe and //assert Deo+Doe == Dunprec
+Grid : Message : 80.544440 s : src_e0.499997
+Grid : Message : 80.384797 s : src_o0.500003
+Grid : Message : 80.485472 s : *********************************************************
+Grid : Message : 80.485477 s : * Benchmarking DomainWallFermionF::DhopEO                
+Grid : Message : 80.485478 s : * Vectorising space-time by 8
+Grid : Message : 80.485480 s : * SINGLE precision 
+Grid : Message : 80.485481 s : * Using Overlapped Comms/Compute
+Grid : Message : 80.485482 s : * Using GENERIC Nc WilsonKernels
+Grid : Message : 80.485483 s : *********************************************************
+Grid : Message : 94.142389 s : Deo mflop/s =   3.91983e+07
+Grid : Message : 94.142423 s : Deo mflop/s per rank   2.4499e+06
+Grid : Message : 94.142425 s : Deo mflop/s per node   9.79959e+06
+Grid : Message : 94.142427 s : #### Dhop calls report 
+Grid : Message : 94.142428 s : WilsonFermion5D Number of DhopEO Calls   : 3001
+Grid : Message : 94.142430 s : WilsonFermion5D TotalTime   /Calls        : 4550.65 us
+Grid : Message : 94.142432 s : WilsonFermion5D CommTime    /Calls        : 2986.58 us
+Grid : Message : 94.142434 s : WilsonFermion5D FaceTime    /Calls        : 607.616 us
+Grid : Message : 94.142436 s : WilsonFermion5D ComputeTime1/Calls        : 58.1666 us
+Grid : Message : 94.142438 s : WilsonFermion5D ComputeTime2/Calls        : 998.146 us
+Grid : Message : 94.142460 s : Average mflops/s per call                : 3.01763e+09
+Grid : Message : 94.142464 s : Average mflops/s per call per rank       : 1.88602e+08
+Grid : Message : 94.142466 s : Average mflops/s per call per node       : 7.54407e+08
+Grid : Message : 94.142468 s : Average mflops/s per call (full)         : 3.96402e+07
+Grid : Message : 94.142473 s : Average mflops/s per call per rank (full): 2.47751e+06
+Grid : Message : 94.142478 s : Average mflops/s per call per node (full): 9.91005e+06
+Grid : Message : 94.142481 s : WilsonFermion5D Stencil
+Grid : Message : 94.142492 s : WilsonFermion5D StencilEven
+Grid : Message : 94.142504 s : WilsonFermion5D StencilOdd
+Grid : Message : 94.142515 s :  Stencil calls 3001
+Grid : Message : 94.142519 s :  Stencil halogtime 0
+Grid : Message : 94.142522 s :  Stencil gathertime 54.0447
+Grid : Message : 94.142525 s :  Stencil gathermtime 19.4485
+Grid : Message : 94.142530 s :  Stencil mergetime 18.3146
+Grid : Message : 94.142532 s :  Stencil decompresstime 0.0593136
+Grid : Message : 94.142535 s :  Stencil comms_bytes 2.01327e+08
+Grid : Message : 94.142539 s :  Stencil commtime 2989.1
+Grid : Message : 94.142542 s :  Stencil 67.3536 GB/s per rank
+Grid : Message : 94.142546 s :  Stencil 269.414 GB/s per node
+Grid : Message : 94.142548 s : WilsonFermion5D Stencil     Reporti()
+Grid : Message : 94.142551 s : WilsonFermion5D StencilEven Reporti()
+Grid : Message : 94.142553 s : WilsonFermion5D StencilOdd  Reporti()
+Grid : Message : 94.216038 s : r_e6.02111
+Grid : Message : 94.223150 s : r_o6.02102
+Grid : Message : 94.229148 s : res12.0421
+Grid : Message : 94.830824 s : norm diff   0
+Grid : Message : 95.633245 s : norm diff even  0
+Grid : Message : 95.999452 s : norm diff odd   0
