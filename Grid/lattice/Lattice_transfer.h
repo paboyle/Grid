@@ -97,6 +97,20 @@ accelerator_inline void convertType(ComplexF & out, const std::complex<float> & 
   out = in;
 }
 
+template<typename T>
+accelerator_inline EnableIf<isGridFundamental<T>> convertType(T & out, const T & in) {
+  out = in;
+}
+
+// This would allow for conversions between GridFundamental types, but is not strictly needed as yet
+/*template<typename T1, typename T2>
+accelerator_inline typename std::enable_if<isGridFundamental<T1>::value && isGridFundamental<T2>::value>::type
+// Or to make this very broad, conversions between anything that's not a GridTensor could be allowed
+//accelerator_inline typename std::enable_if<!isGridTensor<T1>::value && !isGridTensor<T2>::value>::type
+convertType(T1 & out, const T2 & in) {
+  out = in;
+}*/
+
 #ifdef GRID_SIMT
 accelerator_inline void convertType(vComplexF & out, const ComplexF & in) {
   ((ComplexF*)&out)[acceleratorSIMTlane(vComplexF::Nsimd())] = in;
@@ -117,23 +131,18 @@ accelerator_inline void convertType(vComplexD2 & out, const vComplexF & in) {
   Optimization::PrecisionChange::StoD(in.v,out._internal[0].v,out._internal[1].v);
 }
 
-template<typename T1,typename T2,int N>
-  accelerator_inline void convertType(iMatrix<T1,N> & out, const iMatrix<T2,N> & in);
-template<typename T1,typename T2,int N>
-  accelerator_inline void convertType(iVector<T1,N> & out, const iVector<T2,N> & in);
-
-template<typename T1,typename T2, typename std::enable_if<!isGridScalar<T1>::value, T1>::type* = nullptr>
-accelerator_inline void convertType(T1 & out, const iScalar<T2> & in) {
-  convertType(out,in._internal);
+template<typename T1,typename T2>
+accelerator_inline void convertType(iScalar<T1> & out, const iScalar<T2> & in) {
+  convertType(out._internal,in._internal);
 }
 
-template<typename T1, typename std::enable_if<!isGridScalar<T1>::value, T1>::type* = nullptr>
-accelerator_inline void convertType(T1 & out, const iScalar<T1> & in) {
+template<typename T1,typename T2>
+accelerator_inline NotEnableIf<isGridScalar<T1>> convertType(T1 & out, const iScalar<T2> & in) {
   convertType(out,in._internal);
 }
 
 template<typename T1,typename T2>
-accelerator_inline void convertType(iScalar<T1> & out, const T2 & in) {
+accelerator_inline NotEnableIf<isGridScalar<T2>> convertType(iScalar<T1> & out, const T2 & in) {
   convertType(out._internal,in);
 }
 
@@ -148,11 +157,6 @@ template<typename T1,typename T2,int N>
 accelerator_inline void convertType(iVector<T1,N> & out, const iVector<T2,N> & in) {
   for (int i=0;i<N;i++)
     convertType(out._internal[i],in._internal[i]);
-}
-
-template<typename T, typename std::enable_if<isGridFundamental<T>::value, T>::type* = nullptr>
-accelerator_inline void convertType(T & out, const T & in) {
-  out = in;
 }
 
 template<typename T1,typename T2>

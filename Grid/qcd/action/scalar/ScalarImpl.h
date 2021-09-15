@@ -27,7 +27,7 @@ public:
   typedef Field              FermionField;
   typedef Field              PropagatorField;
     
-  static inline void generate_momenta(Field& P, GridParallelRNG& pRNG){
+  static inline void generate_momenta(Field& P, GridSerialRNG &sRNG, GridParallelRNG& pRNG){
     RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR); // CPS/UKQCD momentum rescaling
     gaussian(pRNG, P);
     P *= scale; 
@@ -151,7 +151,7 @@ public:
       out = one / out;
     }
 
-    static inline void generate_momenta(Field &P, GridParallelRNG &pRNG)
+    static inline void generate_momenta(Field &P, GridSerialRNG & sRNG, GridParallelRNG &pRNG)
     {
       RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR); // CPS/UKQCD momentum rescaling
 #ifndef USE_FFT_ACCELERATION

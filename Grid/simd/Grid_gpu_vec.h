@@ -67,6 +67,7 @@ public:
   accelerator_inline GpuComplex(const GpuComplex &zz) { z = zz.z;};
   accelerator_inline Real real(void) const { return z.x; };
   accelerator_inline Real imag(void) const { return z.y; };
+  accelerator_inline GpuComplex &operator=(const Zero &zz) { z.x = 0; z.y=0; return *this; };
   accelerator_inline GpuComplex &operator*=(const GpuComplex &r) {
     *this = (*this) * r;
     return *this;

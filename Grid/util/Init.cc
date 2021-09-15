@@ -56,6 +56,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 static int
 feenableexcept (unsigned int excepts)
 {
+#if 0
+  // Fails on Apple M1
   static fenv_t fenv;
   unsigned int new_excepts = excepts & FE_ALL_EXCEPT;
   unsigned int old_excepts;  // previous masks
@@ -70,6 +72,8 @@ feenableexcept (unsigned int excepts)
 
   iold_excepts  = (int) old_excepts;
   return ( fesetenv (&fenv) ? -1 : iold_excepts );
+#endif
+  return 0;
 }
 #endif
 
@@ -152,6 +156,9 @@ void GridCmdOptionIntVector(const std::string &str,VectorInt & vec)
   }
   return;
 }
+
+template void GridCmdOptionIntVector(const std::string &str,std::vector<int> & vec);
+template void GridCmdOptionIntVector(const std::string &str,Coordinate & vec);
 
 void GridCmdOptionInt(std::string &str,int & val)
 {

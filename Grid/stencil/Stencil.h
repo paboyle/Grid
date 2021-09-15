@@ -57,27 +57,22 @@ NAMESPACE_BEGIN(Grid);
 ///////////////////////////////////////////////////////////////////
 
 void Gather_plane_table_compute (GridBase *grid,int dimension,int plane,int cbmask,
-				 int off,Vector<std::pair<int,int> > & table);
+				 int off,std::vector<std::pair<int,int> > & table);
 
 template<class vobj,class cobj,class compressor>
-void Gather_plane_simple_table (Vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)   __attribute__((noinline));
+void Gather_plane_simple_table (commVector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)   __attribute__((noinline));
 
 template<class vobj,class cobj,class compressor>
-void Gather_plane_simple_table (Vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)
+void Gather_plane_simple_table (commVector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)
 {
   int num=table.size();
   std::pair<int,int> *table_v = & table[0];
 
   auto rhs_v = rhs.View(AcceleratorRead);
   accelerator_forNB( i,num, vobj::Nsimd(), {
-    typedef decltype(coalescedRead(buffer[0])) compressed_t;
-    compressed_t   tmp_c;
-    uint64_t o = table_v[i].first;
-    compress.Compress(&tmp_c,0,rhs_v(so+table_v[i].second));
-    coalescedWrite(buffer[off+o],tmp_c);
+    compress.Compress(buffer[off+table_v[i].first],rhs_v[so+table_v[i].second]);
   });
   rhs_v.ViewClose();
-// Further optimisatoin: i) software prefetch the first element of the next table entry, prefetch the table
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -85,10 +80,10 @@ void Gather_plane_simple_table (Vector<std::pair<int,int> >& table,const Lattice
 ///////////////////////////////////////////////////////////////////
 template<class cobj,class vobj,class compressor>
 void Gather_plane_exchange_table(const Lattice<vobj> &rhs,
-				 Vector<cobj *> pointers,int dimension,int plane,int cbmask,compressor &compress,int type) __attribute__((noinline));
+				 commVector<cobj *> pointers,int dimension,int plane,int cbmask,compressor &compress,int type) __attribute__((noinline));
 
 template<class cobj,class vobj,class compressor>
-void Gather_plane_exchange_table(Vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
+void Gather_plane_exchange_table(commVector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
 				 Vector<cobj *> pointers,int dimension,int plane,int cbmask,
 				 compressor &compress,int type)
 {
@@ -100,7 +95,7 @@ void Gather_plane_exchange_table(Vector<std::pair<int,int> >& table,const Lattic
   auto p0=&pointers[0][0];
   auto p1=&pointers[1][0];
   auto tp=&table[0];
-  accelerator_forNB(j, num, 1, {
+  accelerator_forNB(j, num, vobj::Nsimd(), {
       compress.CompressExchange(p0,p1, &rhs_v[0], j,
 			      so+tp[2*j  ].second,
 			      so+tp[2*j+1].second,
@@ -147,16 +142,16 @@ class CartesianStencilAccelerator {
   cobj* u_recv_buf_p;
   cobj* u_send_buf_p;
 
-  accelerator_inline cobj *CommBuf(void) { return u_recv_buf_p; }
+  accelerator_inline cobj *CommBuf(void) const { return u_recv_buf_p; }
 
-  accelerator_inline int GetNodeLocal(int osite,int point) {
+  accelerator_inline int GetNodeLocal(int osite,int point) const {
     return this->_entries_p[point+this->_npoints*osite]._is_local;
   }
-  accelerator_inline StencilEntry * GetEntry(int &ptype,int point,int osite) {
+  accelerator_inline StencilEntry * GetEntry(int &ptype,int point,int osite) const {
     ptype = this->_permute_type[point]; return & this->_entries_p[point+this->_npoints*osite];
   }
 
-  accelerator_inline uint64_t GetInfo(int &ptype,int &local,int &perm,int point,int ent,uint64_t base) {
+  accelerator_inline uint64_t GetInfo(int &ptype,int &local,int &perm,int point,int ent,uint64_t base) const {
     uint64_t cbase = (uint64_t)&u_recv_buf_p[0];
     local = this->_entries_p[ent]._is_local;
     perm  = this->_entries_p[ent]._permute;
@@ -168,14 +163,14 @@ class CartesianStencilAccelerator {
     }
   }
 
-  accelerator_inline uint64_t GetPFInfo(int ent,uint64_t base) {
+  accelerator_inline uint64_t GetPFInfo(int ent,uint64_t base) const {
     uint64_t cbase = (uint64_t)&u_recv_buf_p[0];
     int local = this->_entries_p[ent]._is_local;
     if (local) return  base + this->_entries_p[ent]._byte_offset;
     else       return cbase + this->_entries_p[ent]._byte_offset;
   }
 
-  accelerator_inline void iCoorFromIindex(Coordinate &coor,int lane)
+  accelerator_inline void iCoorFromIindex(Coordinate &coor,int lane) const
   {
     Lexicographic::CoorFromIndex(coor,lane,this->_simd_layout);
   }
@@ -221,7 +216,7 @@ public:
   typedef typename cobj::vector_type vector_type;
   typedef typename cobj::scalar_type scalar_type;
   typedef typename cobj::scalar_object scalar_object;
-  typedef CartesianStencilView<vobj,cobj,Parameters> View_type;
+  typedef const CartesianStencilView<vobj,cobj,Parameters> View_type;
   typedef typename View_type::StencilVector StencilVector;
   ///////////////////////////////////////////
   // Helper structs
@@ -266,10 +261,11 @@ public:
   }
 
   int face_table_computed;
-  std::vector<Vector<std::pair<int,int> > > face_table ;
+  std::vector<commVector<std::pair<int,int> > > face_table ;
   Vector<int> surface_list;
 
   stencilVector<StencilEntry>  _entries; // Resident in managed memory
+  commVector<StencilEntry>     _entries_device; // Resident in managed memory
   std::vector<Packet> Packets;
   std::vector<Merge> Mergers;
   std::vector<Merge> MergersSHM;
@@ -342,7 +338,7 @@ public:
 
     void *shm = (void *) _grid->ShmBufferTranslate(recv_from_rank,this->u_recv_buf_p);
 
-    if ( shm==NULL ) return 0;
+    if ( (shm==NULL) || Stencil_force_mpi ) return 0;
 
     return 1;
   }
@@ -609,13 +605,14 @@ public:
   template<class decompressor>
   void CommsMerge(decompressor decompress,std::vector<Merge> &mm,std::vector<Decompress> &dd) {
 
+    
     mergetime-=usecond();
     for(int i=0;i<mm.size();i++){
       auto mp = &mm[i].mpointer[0];
       auto vp0= &mm[i].vpointers[0][0];
       auto vp1= &mm[i].vpointers[1][0];
       auto type= mm[i].type;
-      accelerator_forNB(o,mm[i].buffer_size/2,1,{
+      accelerator_forNB(o,mm[i].buffer_size/2,vobj::Nsimd(),{
 	  decompress.Exchange(mp,vp0,vp1,type,o);
       });
     }
@@ -1039,7 +1036,12 @@ public:
 	int so  = sx*rhs.Grid()->_ostride[dimension]; // base offset for start of plane
 	if ( !face_table_computed ) {
 	  face_table.resize(face_idx+1);
-	  Gather_plane_table_compute ((GridBase *)_grid,dimension,sx,cbmask,u_comm_offset,face_table[face_idx]);
+	  std::vector<std::pair<int,int> >  face_table_host ;
+	  Gather_plane_table_compute ((GridBase *)_grid,dimension,sx,cbmask,u_comm_offset,face_table_host);
+	  face_table[face_idx].resize(face_table_host.size());
+	  acceleratorCopyToDevice(&face_table_host[0],
+				  &face_table[face_idx][0],
+				  face_table[face_idx].size()*sizeof(face_table_host[0]));
 	}
 
 	//      	int rank           = _grid->_processor;
@@ -1062,20 +1064,20 @@ public:
 	}
 
 	send_buf = (cobj *)_grid->ShmBufferTranslate(xmit_to_rank,recv_buf);
-	if ( send_buf==NULL ) {
+	if ( (send_buf==NULL) || Stencil_force_mpi ) {
 	  send_buf = this->u_send_buf_p;
 	}
 
 	// Find out if we get the direct copy.
 	void *success = (void *) _grid->ShmBufferTranslate(recv_from_rank,this->u_send_buf_p);
-	if (success==NULL) {
+	if ((success==NULL)||Stencil_force_mpi) {
 	  // we found a packet that comes from MPI and contributes to this leg of stencil
 	  shm_receive_only = 0;
 	}
 
 	gathertime-=usecond();
 	assert(send_buf!=NULL);
-	Gather_plane_simple_table(face_table[face_idx],rhs,send_buf,compress,u_comm_offset,so);  face_idx++;
+	Gather_plane_simple_table(face_table[face_idx],rhs,send_buf,compress,u_comm_offset,so); face_idx++;
 	gathertime+=usecond();
 
 	if ( compress.DecompressionStep() ) {
@@ -1172,11 +1174,18 @@ public:
 
 	if ( !face_table_computed ) {
 	  face_table.resize(face_idx+1);
-	  Gather_plane_table_compute ((GridBase *)_grid,dimension,sx,cbmask,u_comm_offset,face_table[face_idx]);
+	  std::vector<std::pair<int,int> >  face_table_host ;
+				
+	  Gather_plane_table_compute ((GridBase *)_grid,dimension,sx,cbmask,u_comm_offset,face_table_host);
+	  face_table[face_idx].resize(face_table_host.size());
+	  acceleratorCopyToDevice(&face_table_host[0],
+				  &face_table[face_idx][0],
+				  face_table[face_idx].size()*sizeof(face_table_host[0]));
 	}
 	gathermtime-=usecond();
 
-	Gather_plane_exchange_table(face_table[face_idx],rhs,spointers,dimension,sx,cbmask,compress,permute_type);  face_idx++;
+	Gather_plane_exchange_table(face_table[face_idx],rhs,spointers,dimension,sx,cbmask,compress,permute_type);
+	face_idx++;
 
 	gathermtime+=usecond();
 	//spointers[0] -- low
@@ -1208,7 +1217,7 @@ public:
 	    // shm == receive pointer         if offnode
 	    // shm == Translate[send pointer] if on node -- my view of his send pointer
 	    cobj *shm = (cobj *) _grid->ShmBufferTranslate(recv_from_rank,sp);
-	    if (shm==NULL) {
+	    if ((shm==NULL)||Stencil_force_mpi) {
 	      shm = rp;
 	      // we found a packet that comes from MPI and contributes to this shift.
 	      // is_same_node is only used in the WilsonStencil, and gets set for this point in the stencil.

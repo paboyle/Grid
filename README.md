@@ -1,4 +1,4 @@
-# Grid [![Teamcity status](http://ci.cliath.ph.ed.ac.uk/app/rest/builds/aggregated/strob:(buildType:(affectedProject(id:GridBasedSoftware_Grid)),branch:name:develop)/statusIcon.svg)](http://ci.cliath.ph.ed.ac.uk/project.html?projectId=GridBasedSoftware_Grid&tab=projectOverview) [![Travis status](https://travis-ci.org/paboyle/Grid.svg?branch=develop)](https://travis-ci.org/paboyle/Grid)
+# Grid [![Teamcity status](http://ci.cliath.ph.ed.ac.uk/app/rest/builds/aggregated/strob:(buildType:(affectedProject(id:GridBasedSoftware_Grid)),branch:name:develop)/statusIcon.svg)](http://ci.cliath.ph.ed.ac.uk/project.html?projectId=GridBasedSoftware_Grid&tab=projectOverview) 
 
 **Data parallel C++ mathematical object library.**
 
@@ -149,7 +149,6 @@ If you want to build all the tests at once just use `make tests`.
 - `--enable-numa`: enable NUMA first touch optimisation
 - `--enable-simd=<code>`: setup Grid for the SIMD target `<code>` (default: `GEN`). A list of possible SIMD targets is detailed in a section below.
 - `--enable-gen-simd-width=<size>`: select the size (in bytes) of the generic SIMD vector type (default: 32 bytes).
-- `--enable-precision={single|double}`: set the default precision (default: `double`). **Deprecated option**
 - `--enable-comms=<comm>`: Use `<comm>` for message passing (default: `none`). A list of possible SIMD targets is detailed in a section below.
 - `--enable-rng={sitmo|ranlux48|mt19937}`: choose the RNG (default: `sitmo `).
 - `--disable-timers`: disable system dependent high-resolution timers.

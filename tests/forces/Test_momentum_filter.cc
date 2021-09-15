@@ -61,7 +61,9 @@ int main (int argc, char ** argv)
   std::vector<int> seeds({1,2,3,4});
 
   GridParallelRNG          pRNG(&Grid);
+  GridSerialRNG            sRNG;
   pRNG.SeedFixedIntegers(seeds);
+  sRNG.SeedFixedIntegers(seeds);
 
   typedef PeriodicGimplR Gimpl;
   typedef WilsonGaugeAction<Gimpl> GaugeAction;
@@ -115,7 +117,7 @@ int main (int argc, char ** argv)
   
   integrator.setMomentumFilter(filter);
 
-  integrator.refresh(U, pRNG); //doesn't actually change the gauge field
+  integrator.refresh(U, sRNG, pRNG); //doesn't actually change the gauge field
 
   //Check the momentum is zero on the boundary
   const auto &P = integrator.getMomentum();

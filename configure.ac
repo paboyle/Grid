@@ -140,11 +140,22 @@ AC_ARG_ENABLE([gparity],
      [ac_GPARITY=${enable_gparity}], [ac_GPARITY=yes])
 
 AM_CONDITIONAL(BUILD_GPARITY, [ test "${ac_GPARITY}X" == "yesX" ])
+
+AC_ARG_ENABLE([zmobius],
+     [AC_HELP_STRING([--enable-zmobius=yes|no], [enable Zmobius support])],
+     [ac_ZMOBIUS=${enable_zmobius}], [ac_ZMOBIUS=yes])
+
+AM_CONDITIONAL(BUILD_ZMOBIUS, [ test "${ac_ZMOBIUS}X" == "yesX" ])
+
+
 case ${ac_FERMION_REPS} in
    yes) AC_DEFINE([ENABLE_FERMION_REPS],[1],[non QCD fermion reps]);;
 esac
 case ${ac_GPARITY} in
    yes) AC_DEFINE([ENABLE_GPARITY],[1],[fermion actions with GPARITY BCs]);;
+esac
+case ${ac_ZMOBIUS} in
+   yes) AC_DEFINE([ENABLE_ZMOBIUS],[1],[Zmobius fermion actions]);;
 esac
 ############### Nc
 AC_ARG_ENABLE([Nc],
@@ -433,7 +444,7 @@ case ${ax_cv_cxx_compiler_vendor} in
         SIMD_FLAGS='-mavx2 -mfma -mf16c';;
       AVX512)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
-        SIMD_FLAGS='-mavx512f -mavx512pf -mavx512er -mavx512cd';;
+        SIMD_FLAGS='-mavx512f -mavx512cd';;
       SKL)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics for SkyLake Xeon])
         SIMD_FLAGS='-march=skylake-avx512';;
@@ -486,6 +497,9 @@ case ${ax_cv_cxx_compiler_vendor} in
         AC_DEFINE([AVX2],[1],[AVX2 intrinsics])
         SIMD_FLAGS='-march=core-avx2 -xcore-avx2';;
       AVX512)
+        AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
+        SIMD_FLAGS='-xcommon-avx512';;
+      SKL)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-xcore-avx512';;
       KNC)
@@ -801,6 +815,7 @@ AC_CONFIG_FILES(tests/smearing/Makefile)
 AC_CONFIG_FILES(tests/qdpxx/Makefile)
 AC_CONFIG_FILES(tests/testu01/Makefile)
 AC_CONFIG_FILES(benchmarks/Makefile)
+AC_CONFIG_FILES(examples/Makefile)
 AC_OUTPUT
 
 echo ""

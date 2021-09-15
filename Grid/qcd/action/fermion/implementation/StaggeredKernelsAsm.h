@@ -680,7 +680,8 @@ void StaggeredKernels<Impl>::DhopSiteAsm(StencilView &st,
   gauge2 =(uint64_t)&UU[sU]( Z );				\
   gauge3 =(uint64_t)&UU[sU]( T ); 
   
-
+#undef STAG_VEC5D
+#ifdef STAG_VEC5D
   // This is the single precision 5th direction vectorised kernel
 #include <Grid/simd/Intel512single.h>
 template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilView &st,
@@ -790,7 +791,7 @@ template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilView 
 #endif
 }
    
-   
+#endif   
 
 
 #define PERMUTE_DIR3 __asm__ (	\

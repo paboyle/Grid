@@ -28,7 +28,7 @@ Author: neo <cossu@post.kek.jp>
 #ifndef GRID_MATH_EXP_H
 #define GRID_MATH_EXP_H
 
-#define DEFAULT_MAT_EXP 12
+#define DEFAULT_MAT_EXP 20
 
 NAMESPACE_BEGIN(Grid);
 

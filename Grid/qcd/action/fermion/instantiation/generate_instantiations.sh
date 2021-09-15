@@ -9,8 +9,6 @@ STAG5_IMPL_LIST=""
 WILSON_IMPL_LIST=" \
 	   WilsonImplF \
 	   WilsonImplD \
-	   WilsonImplFH \
-	   WilsonImplDF \
 	   WilsonAdjImplF \
 	   WilsonAdjImplD \
 	   WilsonTwoIndexSymmetricImplF \
@@ -18,26 +16,17 @@ WILSON_IMPL_LIST=" \
 	   WilsonTwoIndexAntiSymmetricImplF \
 	   WilsonTwoIndexAntiSymmetricImplD \
 	   GparityWilsonImplF \
-	   GparityWilsonImplD \
-	   GparityWilsonImplFH \
-	   GparityWilsonImplDF"
+	   GparityWilsonImplD "
 
 DWF_IMPL_LIST=" \
 	   WilsonImplF \
 	   WilsonImplD \
-	   WilsonImplFH \
-	   WilsonImplDF \
 	   ZWilsonImplF \
-	   ZWilsonImplD \
-	   ZWilsonImplFH \
-	   ZWilsonImplDF "
+	   ZWilsonImplD "
 
 GDWF_IMPL_LIST=" \
 	   GparityWilsonImplF \
-	   GparityWilsonImplD \
-	   GparityWilsonImplFH \
-	   GparityWilsonImplDF"
-
+	   GparityWilsonImplD "
 
 IMPL_LIST="$STAG_IMPL_LIST  $WILSON_IMPL_LIST $DWF_IMPL_LIST $GDWF_IMPL_LIST"
 

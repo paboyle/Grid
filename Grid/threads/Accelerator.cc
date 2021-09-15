@@ -53,7 +53,6 @@ void acceleratorInit(void)
     prop = gpu_props[i];
     totalDeviceMem = prop.totalGlobalMem;
     if ( world_rank == 0) {
-#ifndef GRID_DEFAULT_GPU
       if ( i==rank ) {
 	printf("AcceleratorCudaInit[%d]: ========================\n",rank);
 	printf("AcceleratorCudaInit[%d]: Device Number    : %d\n", rank,i);
@@ -67,8 +66,8 @@ void acceleratorInit(void)
 	GPU_PROP(warpSize);
 	GPU_PROP(pciBusID);
 	GPU_PROP(pciDeviceID);
+ 	printf("AcceleratorCudaInit[%d]: maxGridSize (%d,%d,%d)\n",rank,prop.maxGridSize[0],prop.maxGridSize[1],prop.maxGridSize[2]);
       }
-#endif
       //      GPU_PROP(unifiedAddressing);
       //      GPU_PROP(l2CacheSize);
       //      GPU_PROP(singleToDoublePrecisionPerfRatio);
@@ -172,7 +171,6 @@ void acceleratorInit(void)
 #ifdef GRID_SYCL
 
 cl::sycl::queue *theGridAccelerator;
-
 void acceleratorInit(void)
 {
   int nDevices = 1;
@@ -180,6 +178,10 @@ void acceleratorInit(void)
   cl::sycl::device selectedDevice { selector };
   theGridAccelerator = new sycl::queue (selectedDevice);
 
+#ifdef GRID_SYCL_LEVEL_ZERO_IPC
+  zeInit(0);
+#endif
+  
   char * localRankStr = NULL;
   int rank = 0, world_rank=0; 
 #define ENV_LOCAL_RANK_OMPI    "OMPI_COMM_WORLD_LOCAL_RANK"

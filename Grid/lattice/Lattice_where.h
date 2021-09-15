@@ -43,7 +43,7 @@ inline void whereWolf(Lattice<vobj> &ret,const Lattice<iobj> &predicate,Lattice<
   conformable(iftrue,predicate);
   conformable(iftrue,ret);
 
-  GridBase *grid=iftrue._grid;
+  GridBase *grid=iftrue.Grid();
 
   typedef typename vobj::scalar_object scalar_object;
   typedef typename vobj::scalar_type scalar_type;
@@ -52,22 +52,23 @@ inline void whereWolf(Lattice<vobj> &ret,const Lattice<iobj> &predicate,Lattice<
 
   const int Nsimd = grid->Nsimd();
 
-  std::vector<Integer> mask(Nsimd);
-  std::vector<scalar_object> truevals (Nsimd);
-  std::vector<scalar_object> falsevals(Nsimd);
-
-  parallel_for(int ss=0;ss<iftrue._grid->oSites(); ss++){
-
-    extract(iftrue._odata[ss]   ,truevals);
-    extract(iffalse._odata[ss]  ,falsevals);
-    extract<vInteger,Integer>(TensorRemove(predicate._odata[ss]),mask);
-
-    for(int s=0;s<Nsimd;s++){
-      if (mask[s]) falsevals[s]=truevals[s];
+  autoView(iftrue_v,iftrue,CpuRead);
+  autoView(iffalse_v,iffalse,CpuRead);
+  autoView(predicate_v,predicate,CpuRead);
+  autoView(ret_v,ret,CpuWrite);
+  Integer NN= grid->oSites();
+  thread_for(ss,NN,{
+    Integer mask;
+    scalar_object trueval;
+    scalar_object falseval;
+    for(int l=0;l<Nsimd;l++){
+      trueval =extractLane(l,iftrue_v[ss]);
+      falseval=extractLane(l,iffalse_v[ss]);
+      mask    =extractLane(l,predicate_v[ss]);
+      if (mask) falseval=trueval;
+      insertLane(l,ret_v[ss],falseval);
     }
-
-    merge(ret._odata[ss],falsevals);
-  }
+  });
 }
 
 template<class vobj,class iobj>
@@ -76,9 +77,9 @@ inline Lattice<vobj> whereWolf(const Lattice<iobj> &predicate,Lattice<vobj> &ift
   conformable(iftrue,iffalse);
   conformable(iftrue,predicate);
 
-  Lattice<vobj> ret(iftrue._grid);
+  Lattice<vobj> ret(iftrue.Grid());
 
-  where(ret,predicate,iftrue,iffalse);
+  whereWolf(ret,predicate,iftrue,iffalse);
 
   return ret;
 }

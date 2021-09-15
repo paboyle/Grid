@@ -880,17 +880,29 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   }
 
   std::vector<RealD> G_s(Ls,1.0);
+  RealD sign = 1; // sign flip for vector/tadpole
   if ( curr_type == Current::Axial ) {
     for(int s=0;s<Ls/2;s++){
       G_s[s] = -1.0;
+    }
+  }
+  else if ( curr_type == Current::Tadpole ) {
+    auto b=this->_b;
+    auto c=this->_c;
+    if ( b == 1 && c == 0 ) {
+      sign = -1;    
+    }
+    else {
+      std::cerr << "Error: Tadpole implementation currently unavailable for non-Shamir actions." << std::endl;
+      assert(b==1 && c==0);
     }
   }
 
   for(int s=0;s<Ls;s++){
 
     int sp = (s+1)%Ls;
-    int sr = Ls-1-s;
-    int srp= (sr+1)%Ls;
+    //    int sr = Ls-1-s;
+    //    int srp= (sr+1)%Ls;
 
     // Mobius parameters
     auto b=this->bs[s];
@@ -907,7 +919,7 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 
     tmp    = Cshift(tmp,mu,1);
     Impl::multLinkField(Utmp,this->Umu,tmp,mu);
-    tmp    = G_s[s]*( Utmp*ph - gmu*Utmp*ph ); // Forward hop
+    tmp    = sign*G_s[s]*( Utmp*ph - gmu*Utmp*ph ); // Forward hop
     tmp    = where((lcoor>=tmin),tmp,zz); // Mask the time 
     L_Q    = where((lcoor<=tmax),tmp,zz); // Position of current complicated
 

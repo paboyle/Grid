@@ -110,9 +110,11 @@ Gather_plane_extract(const Lattice<vobj> &rhs,
   int n1=rhs.Grid()->_slice_stride[dimension];
 
   if ( cbmask ==0x3){
-#ifdef ACCELERATOR_CSHIFT    
+#ifdef ACCELERATOR_CSHIFT
     autoView(rhs_v , rhs, AcceleratorRead);
-    accelerator_for2d(n,e1,b,e2,1,{
+    accelerator_for(nn,e1*e2,1,{
+	int n = nn%e1;
+	int b = nn/e1;
 	int o      =   n*n1;
 	int offset = b+n*e2;
 	
@@ -135,7 +137,9 @@ Gather_plane_extract(const Lattice<vobj> &rhs,
     std::cout << " Dense packed buffer WARNING " <<std::endl; // Does this get called twice once for each cb?
 #ifdef ACCELERATOR_CSHIFT    
     autoView(rhs_v , rhs, AcceleratorRead);
-    accelerator_for2d(n,e1,b,e2,1,{
+    accelerator_for(nn,e1*e2,1,{
+	int n = nn%e1;
+	int b = nn/e1;
 
 	Coordinate coor;
 
@@ -257,7 +261,9 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
     int _slice_block = rhs.Grid()->_slice_block[dimension];
 #ifdef ACCELERATOR_CSHIFT    
     autoView( rhs_v , rhs, AcceleratorWrite);
-    accelerator_for2d(n,e1,b,e2,1,{
+    accelerator_for(nn,e1*e2,1,{
+	int n = nn%e1;
+	int b = nn/e1;
 	int o      = n*_slice_stride;
 	int offset = b+n*_slice_block;
 	merge(rhs_v[so+o+b],pointers,offset);
@@ -274,7 +280,7 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,ExtractPointerA
 
     // Case of SIMD split AND checker dim cannot currently be hit, except in 
     // Test_cshift_red_black code.
-    //    std::cout << "Scatter_plane merge assert(0); think this is buggy FIXME "<< std::endl;// think this is buggy FIXME
+    std::cout << "Scatter_plane merge assert(0); think this is buggy FIXME "<< std::endl;// think this is buggy FIXME
     std::cout<<" Unthreaded warning -- buffer is not densely packed ??"<<std::endl;
     assert(0); // This will fail if hit on GPU
     autoView( rhs_v, rhs, CpuWrite);
