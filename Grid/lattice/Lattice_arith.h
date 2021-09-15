@@ -225,7 +225,7 @@ void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &
   autoView( x_v , x, AcceleratorRead);
   autoView( y_v , y, AcceleratorRead);
   accelerator_for(ss,x_v.size(),vobj::Nsimd(),{
-    auto tmp = a*x_v(ss)+y_v(ss);
+    auto tmp = a*coalescedRead(x_v[ss])+coalescedRead(y_v[ss]);
     coalescedWrite(ret_v[ss],tmp);
   });
 }
