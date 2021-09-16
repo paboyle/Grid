@@ -31,7 +31,7 @@ mpirun -np $SLURM_NTASKS -x LD_LIBRARY_PATH  --bind-to none \
 	--mpi 2.2.2.2 \
 	--accelerator-threads 8 \
 	--grid 64.64.64.64 \
-	--shm 2048 > dwf.perf
+	--shm 2048 > dwf.4node.perf
 
 
 
