@@ -40,10 +40,6 @@
 #include <Grid/tensors/Tensors.h>
 #include "Hdf5Type.h"
 
-#ifndef H5_NO_NAMESPACE
-#define H5NS H5
-#endif
-
 // default thresold above which datasets are used instead of attributes
 #ifndef HDF5_DEF_DATASET_THRES
 #define HDF5_DEF_DATASET_THRES 6u
