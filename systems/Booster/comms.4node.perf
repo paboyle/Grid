@@ -1,0 +1,129 @@
+OPENMPI detected
+AcceleratorCudaInit[0]: ========================
+AcceleratorCudaInit[0]: Device Number    : 0
+AcceleratorCudaInit[0]: ========================
+AcceleratorCudaInit[0]: Device identifier: NVIDIA A100-SXM4-40GB
+AcceleratorCudaInit[0]:   totalGlobalMem: 42505273344 
+AcceleratorCudaInit[0]:   managedMemory: 1 
+AcceleratorCudaInit[0]:   isMultiGpuBoard: 0 
+AcceleratorCudaInit[0]:   warpSize: 32 
+AcceleratorCudaInit[0]:   pciBusID: 3 
+AcceleratorCudaInit[0]:   pciDeviceID: 0 
+AcceleratorCudaInit[0]: maxGridSize (2147483647,65535,65535)
+AcceleratorCudaInit: using default device 
+AcceleratorCudaInit: assume user either uses a) IBM jsrun, or 
+AcceleratorCudaInit: b) invokes through a wrapping script to set CUDA_VISIBLE_DEVICES, UCX_NET_DEVICES, and numa binding 
+AcceleratorCudaInit: Configure options --enable-summit, --enable-select-gpu=no 
+AcceleratorCudaInit: ================================================
+SharedMemoryMpi:  World communicator of size 16
+SharedMemoryMpi:  Node  communicator of size 4
+0SharedMemoryMpi:  SharedMemoryMPI.cc acceleratorAllocDevice 2147483648bytes at 0x14e740000000 for comms buffers 
+Setting up IPC
+
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+__|_ |  |  |  |  |  |  |  |  |  |  |  | _|__
+__|_                                    _|__
+__|_   GGGG    RRRR    III    DDDD      _|__
+__|_  G        R   R    I     D   D     _|__
+__|_  G        R   R    I     D    D    _|__
+__|_  G  GG    RRRR     I     D    D    _|__
+__|_  G   G    R  R     I     D   D     _|__
+__|_   GGGG    R   R   III    DDDD      _|__
+__|_                                    _|__
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+  |  |  |  |  |  |  |  |  |  |  |  |  |  |  
+
+
+Copyright (C) 2015 Peter Boyle, Azusa Yamaguchi, Guido Cossu, Antonin Portelli and other authors
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+Current Grid git commit hash=f660dc67e4b193afc4015bc5e5fe47cfdbb0356e: (HEAD -> develop, origin/develop, origin/HEAD) uncommited changes
+
+Grid : Message : ================================================ 
+Grid : Message : MPI is initialised and logging filters activated 
+Grid : Message : ================================================ 
+Grid : Message : Requested 2147483648 byte stencil comms buffers 
+Grid : Message : MemoryManager Cache 34004218675 bytes 
+Grid : Message : MemoryManager::Init() setting up
+Grid : Message : MemoryManager::Init() cache pool for recent allocations: SMALL 32 LARGE 8
+Grid : Message : MemoryManager::Init() Non unified: Caching accelerator data in dedicated memory
+Grid : Message : MemoryManager::Init() Using cudaMalloc
+Grid : Message : 0.706584 s : Grid is setup to use 4 threads
+Grid : Message : 0.706591 s : Number of iterations to average: 250
+Grid : Message : 0.706592 s : ====================================================================================================
+Grid : Message : 0.706593 s : = Benchmarking sequential halo exchange from host memory 
+Grid : Message : 0.706594 s : ====================================================================================================
+Grid : Message : 0.706595 s :  L  	 Ls  	    bytes		MB/s uni (err/min/max)		MB/s bidi (err/min/max)
+Grid : Message : 0.744123 s :    8	8	     393216       45765.4  		91530.7
+Grid : Message : 0.760079 s :    8	8	     393216       49399.0  		98798.0
+Grid : Message : 0.776168 s :    8	8	     393216       48904.4  		97808.8
+Grid : Message : 0.793391 s :    8	8	     393216       45680.3  		91360.6
+Grid : Message : 0.841483 s :   12	8	    1327104       61988.1  		123976.3
+Grid : Message : 0.881324 s :   12	8	    1327104       66673.6  		133347.1
+Grid : Message : 0.923429 s :   12	8	    1327104       63049.8  		126099.6
+Grid : Message : 0.965199 s :   12	8	    1327104       63558.6  		127117.2
+Grid : Message : 1.759350 s :   16	8	    3145728       63505.2  		127010.3
+Grid : Message : 1.162325 s :   16	8	    3145728       72851.5  		145703.0
+Grid : Message : 1.252374 s :   16	8	    3145728       69873.2  		139746.5
+Grid : Message : 1.343308 s :   16	8	    3145728       69193.9  		138387.8
+Grid : Message : 1.537929 s :   20	8	    6144000       69283.6  		138567.2
+Grid : Message : 1.689674 s :   20	8	    6144000       80997.7  		161995.4
+Grid : Message : 1.844366 s :   20	8	    6144000       79440.4  		158880.8
+Grid : Message : 2.585000 s :   20	8	    6144000       78662.8  		157325.7
+Grid : Message : 2.296310 s :   24	8	   10616832       78318.9  		156637.8
+Grid : Message : 2.552185 s :   24	8	   10616832       82996.5  		165993.0
+Grid : Message : 2.810117 s :   24	8	   10616832       82325.6  		164651.2
+Grid : Message : 3.708760 s :   24	8	   10616832       81433.0  		162866.1
+Grid : Message : 3.519278 s :   28	8	   16859136       81498.1  		162996.1
+Grid : Message : 3.919983 s :   28	8	   16859136       84154.5  		168309.0
+Grid : Message : 4.324104 s :   28	8	   16859136       83438.8  		166877.5
+Grid : Message : 4.726446 s :   28	8	   16859136       83807.5  		167615.0
+Grid : Message : 5.379742 s :   32	8	   25165824       83183.5  		166366.9
+Grid : Message : 5.973767 s :   32	8	   25165824       84735.1  		169470.3
+Grid : Message : 6.566572 s :   32	8	   25165824       84905.7  		169811.3
+Grid : Message : 7.161794 s :   32	8	   25165824       84561.2  		169122.3
+Grid : Message : 7.162522 s : ====================================================================================================
+Grid : Message : 7.162527 s : = Benchmarking sequential halo exchange from GPU memory 
+Grid : Message : 7.162528 s : ====================================================================================================
+Grid : Message : 7.162529 s :  L  	 Ls  	    bytes		MB/s uni (err/min/max)		MB/s bidi (err/min/max)
+Grid : Message : 7.222442 s :    8	8	     393216       14172.2  		28344.5
+Grid : Message : 7.253802 s :    8	8	     393216       25092.0  		50183.9
+Grid : Message : 7.278690 s :    8	8	     393216       31614.1  		63228.2
+Grid : Message : 7.304138 s :    8	8	     393216       30915.6  		61831.3
+Grid : Message : 7.347792 s :   12	8	    1327104       109873.2  		219746.5
+Grid : Message : 7.370904 s :   12	8	    1327104       114900.8  		229801.6
+Grid : Message : 7.418730 s :   12	8	    1327104       55509.9  		111019.9
+Grid : Message : 7.466445 s :   12	8	    1327104       55639.1  		111278.2
+Grid : Message : 7.531724 s :   16	8	    3145728       168680.8  		337361.6
+Grid : Message : 7.567205 s :   16	8	    3145728       177379.0  		354758.0
+Grid : Message : 7.669544 s :   16	8	    3145728       61483.2  		122966.5
+Grid : Message : 7.771543 s :   16	8	    3145728       61687.6  		123375.2
+Grid : Message : 7.852470 s :   20	8	    6144000       232313.7  		464627.4
+Grid : Message : 7.905813 s :   20	8	    6144000       230410.1  		460820.2
+Grid : Message : 8.979520 s :   20	8	    6144000       63957.7  		127915.4
+Grid : Message : 8.287586 s :   20	8	    6144000       64802.3  		129604.5
+Grid : Message : 8.393759 s :   24	8	   10616832       272264.9  		544529.7
+Grid : Message : 8.471189 s :   24	8	   10616832       274276.5  		548553.0
+Grid : Message : 8.794453 s :   24	8	   10616832       65688.1  		131376.1
+Grid : Message : 9.122233 s :   24	8	   10616832       64782.8  		129565.6
+Grid : Message : 9.263925 s :   28	8	   16859136       300457.8  		600915.5
+Grid : Message : 9.375294 s :   28	8	   16859136       302794.4  		605588.7
+Grid : Message : 9.757443 s :   28	8	   16859136       88236.5  		176473.1
+Grid : Message : 10.134856 s :   28	8	   16859136       89343.4  		178686.7
+Grid : Message : 10.318775 s :   32	8	   25165824       327347.5  		654695.1
+Grid : Message : 10.470617 s :   32	8	   25165824       331500.0  		663000.0
+Grid : Message : 11.235800 s :   32	8	   25165824       91024.0  		182048.1
+Grid : Message : 11.576311 s :   32	8	   25165824       91062.1  		182124.2
+Grid : Message : 11.592542 s : ====================================================================================================
+Grid : Message : 11.592548 s : = All done; Bye Bye
+Grid : Message : 11.592549 s : ====================================================================================================
