@@ -22,7 +22,6 @@ srun -N 4  -n $SLURM_NTASKS \
 	./benchmarks/Benchmark_dwf_fp32 \
 	$OPT \
 	--mpi 2.2.2.2 \
-	--shm-mpi 0 \
 	--accelerator-threads 8 \
 	--grid 64.64.64.64 \
 	--shm 2048 > dwf.4node.perf
