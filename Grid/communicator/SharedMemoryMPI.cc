@@ -546,6 +546,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     //////////////////////////////////////////////////
     // If it is me, pass around the IPC access key
     //////////////////////////////////////////////////
+    void * thisBuf = ShmCommBuf;
+    if(!Stencil_force_mpi) {
 #ifdef GRID_SYCL_LEVEL_ZERO_IPC
     ze_ipc_mem_handle_t handle;
     if ( r==WorldShmRank ) { 
@@ -583,6 +585,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
       }
     }
 #endif
+
     //////////////////////////////////////////////////
     // Share this IPC handle across the Shm Comm
     //////////////////////////////////////////////////
@@ -598,7 +601,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     ///////////////////////////////////////////////////////////////
     // If I am not the source, overwrite thisBuf with remote buffer
     ///////////////////////////////////////////////////////////////
-    void * thisBuf = ShmCommBuf;
+
 #ifdef GRID_SYCL_LEVEL_ZERO_IPC
     if ( r!=WorldShmRank ) {
       thisBuf = nullptr;
@@ -639,7 +642,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     ///////////////////////////////////////////////////////////////
     // Save a copy of the device buffers
     ///////////////////////////////////////////////////////////////
-    WorldShmCommBufs[r] = thisBuf;
+    }
+  WorldShmCommBufs[r] = thisBuf;
 #else
     WorldShmCommBufs[r] = ShmCommBuf;
 #endif

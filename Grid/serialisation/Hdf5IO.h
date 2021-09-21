@@ -1,3 +1,34 @@
+/*************************************************************************************
+ 
+ Grid physics library, www.github.com/paboyle/Grid
+ 
+ Source file: ./Grid/serialisation/VectorUtils.h
+ 
+ Copyright (C) 2015
+ 
+ Author: Peter Boyle <paboyle@ed.ac.uk>
+ Author: Antonin Portelli <antonin.portelli@me.com>
+ Author: Guido Cossu <guido.cossu@ed.ac.uk>
+ Author: Michael Marshall <michael.marshall@ed.ac.uk>
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ 
+ See the full license in the file "LICENSE" in the top level distribution directory
+ *************************************************************************************/
+/*  END LEGAL */
+
 #ifndef GRID_SERIALISATION_HDF5_H
 #define GRID_SERIALISATION_HDF5_H
 
@@ -34,11 +65,13 @@ namespace Grid
     template <typename U>
     void writeDefault(const std::string &s, const U &x);
     template <typename U>
-    typename std::enable_if<element<std::vector<U>>::is_number, void>::type
+    void writeRagged(const std::string &s, const std::vector<U> &x);
+    template <typename U>
+    typename std::enable_if<is_flattenable<std::vector<U>>::value>::type
     writeDefault(const std::string &s, const std::vector<U> &x);
     template <typename U>
-    typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
-    writeDefault(const std::string &s, const std::vector<U> &x);
+    typename std::enable_if<!is_flattenable<std::vector<U>>::value>::type
+    writeDefault(const std::string &s, const std::vector<U> &x) { writeRagged(s, x); }
     template <typename U>
     void writeMultiDim(const std::string &s, const std::vector<size_t> & Dimensions, const U * pDataRowMajor, size_t NumElements);
     H5NS::Group & getGroup(void);
@@ -64,11 +97,13 @@ namespace Grid
     template <typename U>
     void readDefault(const std::string &s, U &output);
     template <typename U>
-    typename std::enable_if<element<std::vector<U>>::is_number, void>::type
+    void readRagged(const std::string &s, std::vector<U> &x);
+    template <typename U>
+    typename std::enable_if<is_flattenable<std::vector<U>>::value>::type
     readDefault(const std::string &s, std::vector<U> &x);
     template <typename U>
-    typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
-    readDefault(const std::string &s, std::vector<U> &x);
+    typename std::enable_if<!is_flattenable<std::vector<U>>::value>::type
+    readDefault(const std::string &s, std::vector<U> &x) { readRagged(s, x); }
     template <typename U>
     void readMultiDim(const std::string &s, std::vector<U> &buf, std::vector<size_t> &dim);
     H5NS::Group & getGroup(void);
@@ -176,24 +211,30 @@ namespace Grid
   }
 
   template <typename U>
-  typename std::enable_if<element<std::vector<U>>::is_number, void>::type
+  typename std::enable_if<is_flattenable<std::vector<U>>::value>::type
   Hdf5Writer::writeDefault(const std::string &s, const std::vector<U> &x)
   {
-    // alias to element type
-    typedef typename element<std::vector<U>>::type Element;
-    
-    // flatten the vector and getting dimensions
-    Flatten<std::vector<U>> flat(x);
-    std::vector<size_t> dim;
-    const auto           &flatx = flat.getFlatVector();
-    for (auto &d: flat.getDim())
-      dim.push_back(d);
-    writeMultiDim<Element>(s, dim, &flatx[0], flatx.size());
+    if (isRegularShape(x))
+    {
+      // alias to element type
+      using Scalar = typename is_flattenable<std::vector<U>>::type;
+      
+      // flatten the vector and getting dimensions
+      Flatten<std::vector<U>> flat(x);
+      std::vector<size_t> dim;
+      const auto           &flatx = flat.getFlatVector();
+      for (auto &d: flat.getDim())
+        dim.push_back(d);
+      writeMultiDim<Scalar>(s, dim, &flatx[0], flatx.size());
+    }
+    else
+    {
+      writeRagged(s, x);
+    }
   }
   
   template <typename U>
-  typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
-  Hdf5Writer::writeDefault(const std::string &s, const std::vector<U> &x)
+  void Hdf5Writer::writeRagged(const std::string &s, const std::vector<U> &x)
   {
     push(s);
     writeSingleAttribute(x.size(), HDF5_GRID_GUARD "vector_size",
@@ -229,7 +270,7 @@ namespace Grid
   void Hdf5Reader::readMultiDim(const std::string &s, std::vector<U> &buf, std::vector<size_t> &dim)
   {
     // alias to element type
-    typedef typename element<std::vector<U>>::type Element;
+    using Scalar = typename is_flattenable<std::vector<U>>::type;
     
     // read the dimensions
     H5NS::DataSpace       dataSpace;
@@ -260,37 +301,44 @@ namespace Grid
       H5NS::DataSet dataSet;
       
       dataSet = group_.openDataSet(s);
-      dataSet.read(buf.data(), Hdf5Type<Element>::type());
+      dataSet.read(buf.data(), Hdf5Type<Scalar>::type());
     }
     else
     {
       H5NS::Attribute attribute;
       
       attribute = group_.openAttribute(s);
-      attribute.read(Hdf5Type<Element>::type(), buf.data());
+      attribute.read(Hdf5Type<Scalar>::type(), buf.data());
     }
   }
 
   template <typename U>
-  typename std::enable_if<element<std::vector<U>>::is_number, void>::type
+  typename std::enable_if<is_flattenable<std::vector<U>>::value>::type
   Hdf5Reader::readDefault(const std::string &s, std::vector<U> &x)
   {
-    // alias to element type
-    typedef typename element<std::vector<U>>::type Element;
+    if (H5Lexists        (group_.getId(), s.c_str(), H5P_DEFAULT) > 0
+     && H5Aexists_by_name(group_.getId(), s.c_str(), HDF5_GRID_GUARD "vector_size", H5P_DEFAULT ) > 0)
+    {
+      readRagged(s, x);
+    }
+    else
+    {
+      // alias to element type
+      using Scalar = typename is_flattenable<std::vector<U>>::type;
 
-    std::vector<size_t>   dim;
-    std::vector<Element>  buf;
-    readMultiDim( s, buf, dim );
+      std::vector<size_t>   dim;
+      std::vector<Scalar>   buf;
+      readMultiDim( s, buf, dim );
 
-    // reconstruct the multidimensional vector
-    Reconstruct<std::vector<U>> r(buf, dim);
-    
-    x = r.getVector();
+      // reconstruct the multidimensional vector
+      Reconstruct<std::vector<U>> r(buf, dim);
+
+      x = r.getVector();
+    }
   }
   
   template <typename U>
-  typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
-  Hdf5Reader::readDefault(const std::string &s, std::vector<U> &x)
+  void Hdf5Reader::readRagged(const std::string &s, std::vector<U> &x)
   {
     uint64_t size;
     
