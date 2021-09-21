@@ -35,11 +35,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
-#ifdef GRID_MPI3_SHM_NVLINK
-const bool Stencil_force_mpi = true;
-#else
-const bool Stencil_force_mpi = false;
-#endif
+extern bool Stencil_force_mpi ;
 
 class CartesianCommunicator : public SharedMemory {
 

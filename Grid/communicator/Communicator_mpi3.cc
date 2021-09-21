@@ -384,6 +384,12 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
     assert(ierr==0);
     list.push_back(xrq);
     off_node_bytes+=bytes;
+  } else {
+    // TODO : make a OMP loop on CPU, call threaded bcopy
+    void *shm = (void *) this->ShmBufferTranslate(dest,recv);
+    assert(shm!=NULL);
+    acceleratorCopyDeviceToDeviceAsynch(xmit,shm,bytes);
+    acceleratorCopySynchronize(); // MPI prob slower
   }
 
   if ( CommunicatorPolicy == CommunicatorPolicySequential ) {
