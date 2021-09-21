@@ -389,7 +389,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
     void *shm = (void *) this->ShmBufferTranslate(dest,recv);
     assert(shm!=NULL);
     acceleratorCopyDeviceToDeviceAsynch(xmit,shm,bytes);
-    acceleratorCopySynchronise(); // MPI prob slower
+    acceleratorCopySynchronize(); // MPI prob slower
   }
 
   if ( CommunicatorPolicy == CommunicatorPolicySequential ) {
