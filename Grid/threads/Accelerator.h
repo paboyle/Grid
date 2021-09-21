@@ -267,7 +267,7 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
       if(nt < 8)nt=8;							\
       cl::sycl::range<3> local {nt,1,nsimd};				\
       cl::sycl::range<3> global{unum1,unum2,nsimd};			\
-      cgh.parallel_for<class dslash>(					\
+      cgh.parallel_for(					\
       cl::sycl::nd_range<3>(global,local), \
       [=] (cl::sycl::nd_item<3> item) /*mutable*/     \
       [[intel::reqd_sub_group_size(8)]]	      \
