@@ -516,6 +516,9 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 #ifdef GRID_SYCL_LEVEL_ZERO_IPC
   auto zeDevice = cl::sycl::get_native<cl::sycl::backend::level_zero>(theGridAccelerator->get_device());
   auto zeContext= cl::sycl::get_native<cl::sycl::backend::level_zero>(theGridAccelerator->get_context());
+  ze_device_properties_t device_properties;
+  assert(ZE_RESULT_SUCCESS == zeDeviceGetProperties(zeDevice, & device_properties));
+  std::cout << " Device " << device_properties.name << std::endl;
   ze_device_mem_alloc_desc_t zeDesc = {};
   zeMemAllocDevice(zeContext,&zeDesc,bytes,2*1024*1024,zeDevice,&ShmCommBuf);
   std::cout << WorldRank << header " SharedMemoryMPI.cc zeMemAllocDevice "<< bytes 
