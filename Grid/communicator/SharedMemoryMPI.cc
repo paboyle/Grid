@@ -513,29 +513,16 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Each MPI rank should allocate our own buffer
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-#ifdef GRID_SYCL_LEVEL_ZERO_IPC
-  auto zeDevice = cl::sycl::get_native<cl::sycl::backend::level_zero>(theGridAccelerator->get_device());
-  auto zeContext= cl::sycl::get_native<cl::sycl::backend::level_zero>(theGridAccelerator->get_context());
-  ze_device_properties_t device_properties;
-  assert(ZE_RESULT_SUCCESS == zeDeviceGetProperties(zeDevice, & device_properties));
-  std::cout << " Device " << device_properties.name << std::endl;
-  ze_device_mem_alloc_desc_t zeDesc = {};
-  zeMemAllocDevice(zeContext,&zeDesc,bytes,2*1024*1024,zeDevice,&ShmCommBuf);
-  std::cout << WorldRank << header " SharedMemoryMPI.cc zeMemAllocDevice "<< bytes 
-	      << "bytes at "<< std::hex<< ShmCommBuf <<std::dec<<" for comms buffers " <<std::endl;
-#else  
   ShmCommBuf = acceleratorAllocDevice(bytes);
-#endif  
   if (ShmCommBuf == (void *)NULL ) {
     std::cerr << " SharedMemoryMPI.cc acceleratorAllocDevice failed NULL pointer for " << bytes<<" bytes " << std::endl;
     exit(EXIT_FAILURE);  
   }
-  //  if ( WorldRank == 0 ){
-  if ( 1 ){
+  if ( WorldRank == 0 ){
     std::cout << WorldRank << header " SharedMemoryMPI.cc acceleratorAllocDevice "<< bytes 
 	      << "bytes at "<< std::hex<< ShmCommBuf <<std::dec<<" for comms buffers " <<std::endl;
   }
-  //  SharedMemoryZero(ShmCommBuf,bytes);
+  SharedMemoryZero(ShmCommBuf,bytes);
   std::cout<< "Setting up IPC"<<std::endl;
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Loop over ranks/gpu's on our node
@@ -549,20 +536,24 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     void * thisBuf = ShmCommBuf;
     if(!Stencil_force_mpi) {
 #ifdef GRID_SYCL_LEVEL_ZERO_IPC
-    ze_ipc_mem_handle_t handle;
+    typedef struct { int fd; pid_t pid ; } clone_mem_t;
+
+    auto zeDevice    = cl::sycl::get_native<cl::sycl::backend::level_zero>(theGridAccelerator->get_device());
+    auto zeContext   = cl::sycl::get_native<cl::sycl::backend::level_zero>(theGridAccelerator->get_context());
+      
+    ze_ipc_mem_handle_t ihandle;
+    clone_mem_t handle;
+
     if ( r==WorldShmRank ) { 
-      auto err = zeMemGetIpcHandle(zeContext,ShmCommBuf,&handle);
+      auto err = zeMemGetIpcHandle(zeContext,ShmCommBuf,&ihandle);
       if ( err != ZE_RESULT_SUCCESS ) {
-	std::cerr << "SharedMemoryMPI.cc zeMemGetIpcHandle failed for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl;
+	std::cout << "SharedMemoryMPI.cc zeMemGetIpcHandle failed for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl;
 	exit(EXIT_FAILURE);
       } else {
-	std::cerr << "SharedMemoryMPI.cc zeMemGetIpcHandle succeeded for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl;
+	std::cout << "SharedMemoryMPI.cc zeMemGetIpcHandle succeeded for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl;
       }
-      std::cerr<<"Allocated IpcHandle rank "<<r<<" (hex) ";
-      for(int c=0;c<ZE_MAX_IPC_HANDLE_SIZE;c++){
-	std::cerr<<std::hex<<(uint32_t)((uint8_t)handle.data[c])<<std::dec;
-      }
-      std::cerr<<std::endl;
+      memcpy((void *)&handle.fd,(void *)&ihandle,sizeof(int));
+      handle.pid = getpid();
     }
 #endif
 #ifdef GRID_CUDA
@@ -605,18 +596,27 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 #ifdef GRID_SYCL_LEVEL_ZERO_IPC
     if ( r!=WorldShmRank ) {
       thisBuf = nullptr;
-      std::cerr<<"Using IpcHandle rank "<<r<<" ";
-      for(int c=0;c<ZE_MAX_IPC_HANDLE_SIZE;c++){
-	std::cerr<<std::hex<<(uint32_t)((uint8_t)handle.data[c])<<std::dec;
-      }
-      std::cerr<<std::endl;
-      auto err = zeMemOpenIpcHandle(zeContext,zeDevice,handle,0,&thisBuf);
+      std::cout<<"mapping seeking remote pid/fd "
+	       <<handle.pid<<"/"
+	       <<handle.fd<<std::endl;
+
+      int pidfd = syscall(SYS_pidfd_open,handle.pid,0);
+      std::cout<<"Using IpcHandle pidfd "<<pidfd<<"\n";
+      //      int myfd  = syscall(SYS_pidfd_getfd,pidfd,handle.fd,0);
+      int myfd  = syscall(438,pidfd,handle.fd,0);
+
+      std::cout<<"Using IpcHandle myfd "<<myfd<<"\n";
+      
+      memcpy((void *)&ihandle,(void *)&myfd,sizeof(int));
+
+      auto err = zeMemOpenIpcHandle(zeContext,zeDevice,ihandle,0,&thisBuf);
       if ( err != ZE_RESULT_SUCCESS ) {
-	std::cerr << "SharedMemoryMPI.cc "<<zeContext<<" "<<zeDevice<<std::endl;
-	std::cerr << "SharedMemoryMPI.cc zeMemOpenIpcHandle failed for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl; 
+	std::cout << "SharedMemoryMPI.cc "<<zeContext<<" "<<zeDevice<<std::endl;
+	std::cout << "SharedMemoryMPI.cc zeMemOpenIpcHandle failed for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl; 
 	exit(EXIT_FAILURE);
       } else {
-	std::cerr << "SharedMemoryMPI.cc zeMemOpenIpcHandle succeeded for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl;
+	std::cout << "SharedMemoryMPI.cc zeMemOpenIpcHandle succeeded for rank "<<r<<std::endl;
+	std::cout << "SharedMemoryMPI.cc zeMemOpenIpcHandle pointer is "<<std::hex<<thisBuf<<std::dec<<std::endl;
       }
       assert(thisBuf!=nullptr);
     }
@@ -643,7 +643,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     // Save a copy of the device buffers
     ///////////////////////////////////////////////////////////////
     }
-  WorldShmCommBufs[r] = thisBuf;
+    WorldShmCommBufs[r] = thisBuf;
 #else
     WorldShmCommBufs[r] = ShmCommBuf;
 #endif
