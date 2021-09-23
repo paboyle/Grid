@@ -5,7 +5,9 @@
 #include <complex>
 #include <memory>
 
-#ifndef H5_NO_NAMESPACE
+#ifdef H5_NO_NAMESPACE
+#define H5NS
+#else
 #define H5NS H5
 #endif
 
