@@ -73,6 +73,7 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
   WorldNodes = WorldSize/WorldShmSize;
   assert( (WorldNodes * WorldShmSize) == WorldSize );
 
+
   // FIXME: Check all WorldShmSize are the same ?
 
   /////////////////////////////////////////////////////////////////////
@@ -451,7 +452,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 ////////////////////////////////////////////////////////////////////////////////////////////
 #if defined(GRID_CUDA) ||defined(GRID_HIP)  || defined(GRID_SYCL)
 
-#if defined(GRID_SYCL) 
+//if defined(GRID_SYCL)
+#if 0
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
   void * ShmCommBuf ; 
@@ -488,7 +490,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 }
 #endif
 
-#if defined(GRID_CUDA) ||defined(GRID_HIP) 
+#if defined(GRID_CUDA) ||defined(GRID_HIP) ||defined(GRID_SYCL)  
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
   void * ShmCommBuf ; 
@@ -512,18 +514,16 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   // Each MPI rank should allocate our own buffer
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   ShmCommBuf = acceleratorAllocDevice(bytes);
-
   if (ShmCommBuf == (void *)NULL ) {
     std::cerr << " SharedMemoryMPI.cc acceleratorAllocDevice failed NULL pointer for " << bytes<<" bytes " << std::endl;
     exit(EXIT_FAILURE);  
   }
-  //  if ( WorldRank == 0 ){
-  if ( 1 ){
+  if ( WorldRank == 0 ){
     std::cout << WorldRank << header " SharedMemoryMPI.cc acceleratorAllocDevice "<< bytes 
 	      << "bytes at "<< std::hex<< ShmCommBuf <<std::dec<<" for comms buffers " <<std::endl;
   }
   SharedMemoryZero(ShmCommBuf,bytes);
-
+  std::cout<< "Setting up IPC"<<std::endl;
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Loop over ranks/gpu's on our node
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -533,6 +533,29 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     //////////////////////////////////////////////////
     // If it is me, pass around the IPC access key
     //////////////////////////////////////////////////
+    void * thisBuf = ShmCommBuf;
+    if(!Stencil_force_mpi) {
+#ifdef GRID_SYCL_LEVEL_ZERO_IPC
+    typedef struct { int fd; pid_t pid ; } clone_mem_t;
+
+    auto zeDevice    = cl::sycl::get_native<cl::sycl::backend::level_zero>(theGridAccelerator->get_device());
+    auto zeContext   = cl::sycl::get_native<cl::sycl::backend::level_zero>(theGridAccelerator->get_context());
+      
+    ze_ipc_mem_handle_t ihandle;
+    clone_mem_t handle;
+
+    if ( r==WorldShmRank ) { 
+      auto err = zeMemGetIpcHandle(zeContext,ShmCommBuf,&ihandle);
+      if ( err != ZE_RESULT_SUCCESS ) {
+	std::cout << "SharedMemoryMPI.cc zeMemGetIpcHandle failed for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl;
+	exit(EXIT_FAILURE);
+      } else {
+	std::cout << "SharedMemoryMPI.cc zeMemGetIpcHandle succeeded for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl;
+      }
+      memcpy((void *)&handle.fd,(void *)&ihandle,sizeof(int));
+      handle.pid = getpid();
+    }
+#endif
 #ifdef GRID_CUDA
     cudaIpcMemHandle_t handle;
     if ( r==WorldShmRank ) { 
@@ -553,6 +576,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
       }
     }
 #endif
+
     //////////////////////////////////////////////////
     // Share this IPC handle across the Shm Comm
     //////////////////////////////////////////////////
@@ -568,7 +592,35 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     ///////////////////////////////////////////////////////////////
     // If I am not the source, overwrite thisBuf with remote buffer
     ///////////////////////////////////////////////////////////////
-    void * thisBuf = ShmCommBuf;
+
+#ifdef GRID_SYCL_LEVEL_ZERO_IPC
+    if ( r!=WorldShmRank ) {
+      thisBuf = nullptr;
+      std::cout<<"mapping seeking remote pid/fd "
+	       <<handle.pid<<"/"
+	       <<handle.fd<<std::endl;
+
+      int pidfd = syscall(SYS_pidfd_open,handle.pid,0);
+      std::cout<<"Using IpcHandle pidfd "<<pidfd<<"\n";
+      //      int myfd  = syscall(SYS_pidfd_getfd,pidfd,handle.fd,0);
+      int myfd  = syscall(438,pidfd,handle.fd,0);
+
+      std::cout<<"Using IpcHandle myfd "<<myfd<<"\n";
+      
+      memcpy((void *)&ihandle,(void *)&myfd,sizeof(int));
+
+      auto err = zeMemOpenIpcHandle(zeContext,zeDevice,ihandle,0,&thisBuf);
+      if ( err != ZE_RESULT_SUCCESS ) {
+	std::cout << "SharedMemoryMPI.cc "<<zeContext<<" "<<zeDevice<<std::endl;
+	std::cout << "SharedMemoryMPI.cc zeMemOpenIpcHandle failed for rank "<<r<<" "<<std::hex<<err<<std::dec<<std::endl; 
+	exit(EXIT_FAILURE);
+      } else {
+	std::cout << "SharedMemoryMPI.cc zeMemOpenIpcHandle succeeded for rank "<<r<<std::endl;
+	std::cout << "SharedMemoryMPI.cc zeMemOpenIpcHandle pointer is "<<std::hex<<thisBuf<<std::dec<<std::endl;
+      }
+      assert(thisBuf!=nullptr);
+    }
+#endif
 #ifdef GRID_CUDA
     if ( r!=WorldShmRank ) { 
       auto err = cudaIpcOpenMemHandle(&thisBuf,handle,cudaIpcMemLazyEnablePeerAccess);
@@ -590,6 +642,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     ///////////////////////////////////////////////////////////////
     // Save a copy of the device buffers
     ///////////////////////////////////////////////////////////////
+    }
     WorldShmCommBufs[r] = thisBuf;
 #else
     WorldShmCommBufs[r] = ShmCommBuf;
@@ -844,7 +897,7 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
   }
 #endif
 
-  SharedMemoryTest();
+  //SharedMemoryTest();
 }
 //////////////////////////////////////////////////////////////////
 // On node barrier

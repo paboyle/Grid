@@ -39,6 +39,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifdef HAVE_MM_MALLOC_H
 #include <mm_malloc.h>
 #endif
+#ifdef __APPLE__
+// no memalign
+inline void *memalign(size_t align, size_t bytes) { return malloc(bytes); }
+#endif
 
 NAMESPACE_BEGIN(Grid);
 
@@ -101,6 +105,7 @@ void     acceleratorInit(void);
 #define accelerator_inline __host__ __device__ inline
 
 extern int acceleratorAbortOnGpuError;
+extern cudaStream_t copyStream;
 
 accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 #ifdef GRID_SIMT
@@ -209,9 +214,13 @@ inline void *acceleratorAllocDevice(size_t bytes)
 inline void acceleratorFreeShared(void *ptr){ cudaFree(ptr);};
 inline void acceleratorFreeDevice(void *ptr){ cudaFree(ptr);};
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { cudaMemcpy(to,from,bytes, cudaMemcpyHostToDevice);}
-inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)  { cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToDevice);}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToHost);}
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { cudaMemset(base,value,bytes);}
+inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes) // Asynch
+{
+  cudaMemcpyAsync(to,from,bytes, cudaMemcpyDeviceToDevice,copyStream);
+}
+inline void acceleratorCopySynchronise(void) { cudaStreamSynchronize(copyStream); };
 inline int  acceleratorIsCommunicable(void *ptr)
 {
   //  int uvm=0;
@@ -233,6 +242,13 @@ inline int  acceleratorIsCommunicable(void *ptr)
 NAMESPACE_END(Grid);
 #include <CL/sycl.hpp>
 #include <CL/sycl/usm.hpp>
+
+#define GRID_SYCL_LEVEL_ZERO_IPC
+
+#ifdef GRID_SYCL_LEVEL_ZERO_IPC
+#include <level_zero/ze_api.h>
+#include <CL/sycl/backend/level_zero.hpp>
+#endif
 NAMESPACE_BEGIN(Grid);
 
 extern cl::sycl::queue *theGridAccelerator;
@@ -260,7 +276,7 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
       if(nt < 8)nt=8;							\
       cl::sycl::range<3> local {nt,1,nsimd};				\
       cl::sycl::range<3> global{unum1,unum2,nsimd};			\
-      cgh.parallel_for<class dslash>(					\
+      cgh.parallel_for(					\
       cl::sycl::nd_range<3>(global,local), \
       [=] (cl::sycl::nd_item<3> item) /*mutable*/     \
       [[intel::reqd_sub_group_size(8)]]	      \
@@ -278,7 +294,10 @@ inline void *acceleratorAllocShared(size_t bytes){ return malloc_shared(bytes,*t
 inline void *acceleratorAllocDevice(size_t bytes){ return malloc_device(bytes,*theGridAccelerator);};
 inline void acceleratorFreeShared(void *ptr){free(ptr,*theGridAccelerator);};
 inline void acceleratorFreeDevice(void *ptr){free(ptr,*theGridAccelerator);};
-inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)  { theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
+inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  {
+  theGridAccelerator->memcpy(to,from,bytes);
+}
+inline void acceleratorCopySynchronise(void) {  theGridAccelerator->wait(); }
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { theGridAccelerator->memset(base,value,bytes); theGridAccelerator->wait();}
@@ -383,7 +402,8 @@ inline void acceleratorFreeShared(void *ptr){ hipFree(ptr);};
 inline void acceleratorFreeDevice(void *ptr){ hipFree(ptr);};
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { hipMemcpy(to,from,bytes, hipMemcpyHostToDevice);}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ hipMemcpy(to,from,bytes, hipMemcpyDeviceToHost);}
-inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)  { hipMemcpy(to,from,bytes, hipMemcpyDeviceToDevice);}
+inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  { hipMemcpy(to,from,bytes, hipMemcpyDeviceToDevice);}
+inline void acceleratorCopySynchronise(void) {  }
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { hipMemset(base,value,bytes);}
 
 #endif
@@ -412,6 +432,8 @@ inline void acceleratorMemSet(void *base,int value,size_t bytes) { hipMemset(bas
 
 #undef GRID_SIMT
 
+
+
 #define accelerator 
 #define accelerator_inline strong_inline
 #define accelerator_for(iterator,num,nsimd, ... )   thread_for(iterator, num, { __VA_ARGS__ });
@@ -422,7 +444,8 @@ inline void acceleratorMemSet(void *base,int value,size_t bytes) { hipMemset(bas
 accelerator_inline int acceleratorSIMTlane(int Nsimd) { return 0; } // CUDA specific
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { memcpy(to,from,bytes);}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ memcpy(to,from,bytes);}
-inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)  { memcpy(to,from,bytes);}
+inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  { memcpy(to,from,bytes);}
+inline void acceleratorCopySynchronise(void) {};
 
 inline int  acceleratorIsCommunicable(void *ptr){ return 1; }
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { memset(base,value,bytes);}

@@ -125,7 +125,7 @@ void basisRotate(VField &basis,Matrix& Qt,int j0, int j1, int k0,int k1,int Nm)
 
 	for(int k=k0; k<k1; ++k){
 	  auto tmp = coalescedRead(Bp[ss*nrot+j]);
-	  coalescedWrite(Bp[ss*nrot+j],tmp+ Qt_p[jj*Nm+k] * coalescedRead(basis_v[k][sss]));
+	  coalescedWrite(Bp[ss*nrot+j],tmp+ Qt_p[jj*Nm+k] * coalescedRead(basis_vp[k][sss]));
 	}
       });
 
@@ -134,7 +134,7 @@ void basisRotate(VField &basis,Matrix& Qt,int j0, int j1, int k0,int k1,int Nm)
 	int jj  =j0+j;
 	int ss =sj/nrot;
 	int sss=ss+s;
-	coalescedWrite(basis_v[jj][sss],coalescedRead(Bp[ss*nrot+j]));
+	coalescedWrite(basis_vp[jj][sss],coalescedRead(Bp[ss*nrot+j]));
       });
   }
 #endif

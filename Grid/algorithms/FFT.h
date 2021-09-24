@@ -136,7 +136,7 @@ public:
     flops=0;
     usec =0;
     Coordinate layout(Nd,1);
-    sgrid = new GridCartesian(dimensions,layout,processors);
+    sgrid = new GridCartesian(dimensions,layout,processors,*grid);
   };
     
   ~FFT ( void)  {
@@ -182,7 +182,7 @@ public:
     pencil_gd[dim] = G*processors[dim];
       
     // Pencil global vol LxLxGxLxL per node
-    GridCartesian pencil_g(pencil_gd,layout,processors);
+    GridCartesian pencil_g(pencil_gd,layout,processors,*vgrid);
       
     // Construct pencils
     typedef typename vobj::scalar_object sobj;

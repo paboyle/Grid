@@ -40,7 +40,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 NAMESPACE_BEGIN(Grid);
 
 // Dirac algebra adjoint operator (not in  to overload other adj)
-accelerator_inline Gamma adj(const Gamma &g)
+inline Gamma adj(const Gamma &g)
 {
   return Gamma (Gamma::adj[g.g]);
 }
@@ -48,7 +48,7 @@ accelerator_inline Gamma adj(const Gamma &g)
 
 
 // Dirac algebra mutliplication operator
-accelerator_inline Gamma operator*(const Gamma &g1, const Gamma &g2)
+inline Gamma operator*(const Gamma &g1, const Gamma &g2)
 {
   return Gamma (Gamma::mul[g1.g][g2.g]);
 }

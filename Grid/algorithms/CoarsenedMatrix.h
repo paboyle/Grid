@@ -442,6 +442,8 @@ public:
     for(int p=0; p<geom.npoint; p++)
       points[p] = geom.points_dagger[p];
 
+    auto points_p = &points[0];
+
     RealD* dag_factor_p = &dag_factor[0];
 
     accelerator_for(sss, Grid()->oSites()*nbasis, Nsimd, {
@@ -453,7 +455,7 @@ public:
       StencilEntry *SE;
 
       for(int p=0;p<geom_v.npoint;p++){
-        int point = points[p];
+        int point = points_p[p];
 
 	SE=Stencil_v.GetEntry(ptype,point,ss);
 
@@ -708,6 +710,8 @@ public:
     for(int p=0; p<npoint; p++)
       points[p] = (dag && !hermitian) ? geom.points_dagger[p] : p;
 
+    auto points_p = &points[0];
+
     Vector<Aview> AcceleratorViewContainer;
     for(int p=0;p<npoint;p++) AcceleratorViewContainer.push_back(a[p].View(AcceleratorRead));
     Aview *Aview_p = & AcceleratorViewContainer[0];
@@ -728,7 +732,7 @@ public:
         StencilEntry *SE;
 
         for(int p=0;p<npoint;p++){
-          int point = points[p];
+          int point = points_p[p];
           SE=st_v.GetEntry(ptype,point,ss);
 
           if(SE->_is_local) {
@@ -754,7 +758,7 @@ public:
         StencilEntry *SE;
 
         for(int p=0;p<npoint;p++){
-          int point = points[p];
+          int point = points_p[p];
           SE=st_v.GetEntry(ptype,point,ss);
 
           if(SE->_is_local) {
