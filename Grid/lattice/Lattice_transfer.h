@@ -124,7 +124,6 @@ template<class vobj> inline void acceleratorSetCheckerboard(Lattice<vobj> &full,
   int cb = half.Checkerboard();
   autoView(half_v , half, AcceleratorRead);
   autoView(full_v , full, AcceleratorWrite);
-  nvtxRangePop();
   Coordinate rdim_full             = full.Grid()->_rdimensions;
   Coordinate rdim_half             = half.Grid()->_rdimensions;
   unsigned long ndim_half          = half.Grid()->_ndimension;
