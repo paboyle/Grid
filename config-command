@@ -1,0 +1,8 @@
+../configure \
+    --enable-comms=none \
+    --enable-simd=GEN \
+    --enable-gen-simd-width=16 \
+    CXX=clang++ \
+    LDFLAGS="-lcudart " \
+    CXXFLAGS="-fopenmp -std=c++14 -fopenmp-cuda-mode  -O3 -target x86_64-pc-linux-gnu -fopenmp-targets=nvptx64-nvidia-cuda -lcudart -Xopenmp-target=nvptx64-nvidia-cuda -march=sm_70 -DOMPTARGET -DOMPTARGET_MANAGED"
+
