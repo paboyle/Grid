@@ -432,7 +432,51 @@ inline void acceleratorMemSet(void *base,int value,size_t bytes) { hipMemset(bas
 
 #undef GRID_SIMT
 
+//OpenMP Target Offloading
+#ifdef OMPTARGET
+uint32_t nt=acceleratorThreads();
 
+#define accelerator
+#define accelerator_inline strong_inline
+#define accelerator_for(iterator,num,nsimd, ... )  \
+	DO_PRAGMA(omp target teams distribute parallel for thread_limit(nt)) \ 
+	for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ; 
+#define accelerator_forNB(iterator,num,nsimd, ... ) \
+	DO_PRAGMA(omp target teams distribute parallel for thread_limit(nt) nowait) \
+        for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+#define accelerator_barrier(dummy) DO_PRAGMA(omp barrier) 
+#define accelerator_for2d(iter1, num1, iter2, num2, nsimd, ... ) \
+	DO_PRAGMA(omp target teams distribute parallel for thread_limit(nt) collapse(2)) \
+        for ( uint64_t i=0;i<num;i++) { __VA_ARGS__ } ;
+
+accelerator_inline int acceleratorSIMTlane(int Nsimd) { return 0; } // CUDA specific
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { DO_PRAGMA(omp target enter data map(to:from[0:bytes])}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ DO_PRAGMA(omp target exit data map(from:from[0:bytes])}
+inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  { memcpy(to,from,bytes);}
+inline void acceleratorCopySynchronize(void) {};
+
+inline int  acceleratorIsCommunicable(void *ptr){ return 1; }
+inline void acceleratorMemSet(void *base,int value,size_t bytes) { memset(base,value,bytes);}
+#ifdef OMPTARGET_MANAGED 
+inline void *acceleratorAllocShared(size_t bytes)
+{
+  void *ptr=NULL;
+  auto err = cudaMallocManaged((void **)&ptr,bytes);
+  if( err != cudaSuccess ) {
+    ptr = (void *) NULL;
+    printf(" cudaMallocManaged failed for %d %s \n",bytes,cudaGetErrorString(err));
+  }
+  return ptr;
+};
+inline void acceleratorFreeShared(void *ptr){cudaFree(ptr);};
+#else
+inline void *acceleratorAllocShared(size_t bytes){return memalign(GRID_ALLOC_ALIGN,bytes);};
+inline void *acceleratorAllocDevice(size_t bytes){return memalign(GRID_ALLOC_ALIGN,bytes);};
+inline void acceleratorFreeShared(void *ptr){free(ptr);};
+inline void acceleratorFreeDevice(void *ptr){free(ptr);};
+
+//OpenMP CPU threads
+#else
 
 #define accelerator 
 #define accelerator_inline strong_inline
