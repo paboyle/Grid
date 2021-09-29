@@ -46,7 +46,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #endif
 
 #ifdef GRID_OMP
-#define DO_PRAGMA_(x) _Pragma (#x)
+#define DO_PRAGMA_(x) _Pragma ("x")
 #define DO_PRAGMA(x) DO_PRAGMA_(x)
 #define thread_num(a) omp_get_thread_num()
 #define thread_max(a) omp_get_max_threads()

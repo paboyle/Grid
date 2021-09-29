@@ -266,7 +266,8 @@ protected:
     T = Zero();
     autoView(T_v,T,AcceleratorWrite);
     autoView(F_v,F,AcceleratorRead);
-    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
+    int size=CloverTerm.Grid()->oSites();
+    accelerator_for(i, size,1,
     {
       T_v[i]()(0, 1) = timesMinusI(F_v[i]()());
       T_v[i]()(1, 0) = timesMinusI(F_v[i]()());
@@ -284,7 +285,8 @@ protected:
     
     autoView(T_v, T,AcceleratorWrite);
     autoView(F_v, F,AcceleratorRead);
-    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
+    int size=CloverTerm.Grid()->oSites();
+    accelerator_for(i, size,1,
     {
       T_v[i]()(0, 1) = -F_v[i]()();
       T_v[i]()(1, 0) = F_v[i]()();
@@ -302,7 +304,8 @@ protected:
 
     autoView(T_v,T,AcceleratorWrite);
     autoView(F_v,F,AcceleratorRead);
-    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
+    int size=CloverTerm.Grid()->oSites();
+    accelerator_for(i, size,1,
     {
       T_v[i]()(0, 0) = timesMinusI(F_v[i]()());
       T_v[i]()(1, 1) = timesI(F_v[i]()());
@@ -320,7 +323,8 @@ protected:
 
     autoView( T_v , T, AcceleratorWrite);
     autoView( F_v , F, AcceleratorRead);
-    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
+    int size=CloverTerm.Grid()->oSites();
+    accelerator_for(i, size,1,
     {
       T_v[i]()(0, 1) = timesI(F_v[i]()());
       T_v[i]()(1, 0) = timesI(F_v[i]()());
@@ -338,7 +342,8 @@ protected:
     
     autoView( T_v ,T,AcceleratorWrite);
     autoView( F_v ,F,AcceleratorRead);
-    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
+    int size=CloverTerm.Grid()->oSites();
+    accelerator_for(i, size,1,
     {
       T_v[i]()(0, 1) = -(F_v[i]()());
       T_v[i]()(1, 0) = (F_v[i]()());
@@ -357,7 +362,8 @@ protected:
 
     autoView( T_v , T,AcceleratorWrite);
     autoView( F_v , F,AcceleratorRead);
-    accelerator_for(i, CloverTerm.Grid()->oSites(),1,
+    int size=CloverTerm.Grid()->oSites();
+    accelerator_for(i, size,1,
     {
       T_v[i]()(0, 0) = timesI(F_v[i]()());
       T_v[i]()(1, 1) = timesMinusI(F_v[i]()());
