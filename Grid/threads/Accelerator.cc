@@ -8,6 +8,7 @@ void     acceleratorThreads(uint32_t t) {accelerator_threads = t;};
 
 #ifdef GRID_CUDA
 cudaDeviceProp *gpu_props;
+cudaStream_t copyStream;
 void acceleratorInit(void)
 {
   int nDevices = 1;

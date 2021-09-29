@@ -186,16 +186,19 @@ namespace Grid {
       ////////////////////////////////////////////////
       if ( subGuess ) guess_save.resize(nblock,grid);
 
-      for(int b=0;b<nblock;b++){
-        if(useSolnAsInitGuess) {
+      
+      if(useSolnAsInitGuess) {
+        for(int b=0;b<nblock;b++){
           pickCheckerboard(Odd, sol_o[b], out[b]);
-        } else {
-          guess(src_o[b],sol_o[b]); 
         }
+      } else {
+        guess(src_o, sol_o); 
+      }
 
-	if ( subGuess ) { 
-	  guess_save[b] = sol_o[b];
-	}
+	    if ( subGuess ) { 
+        for(int b=0;b<nblock;b++){
+          guess_save[b] = sol_o[b];
+        }
       }
       //////////////////////////////////////////////////////////////
       // Call the block solver
