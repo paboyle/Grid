@@ -196,7 +196,8 @@ inline void *acceleratorAllocShared(size_t bytes)
   auto err = cudaMallocManaged((void **)&ptr,bytes);
   if( err != cudaSuccess ) {
     ptr = (void *) NULL;
-    printf(" cudaMallocManaged failed for %lu %s \n",bytes,cudaGetErrorString(err));
+    printf(" cudaMallocManaged failed for %lu %s \n",bytes,cudaGetErrorString(err)); fflush(stdout);
+    if (acceleratorAbortOnGpuError) assert(err==cudaSuccess);
   }
   return ptr;
 };
@@ -206,16 +207,53 @@ inline void *acceleratorAllocDevice(size_t bytes)
   auto err = cudaMalloc((void **)&ptr,bytes);
   if( err != cudaSuccess ) {
     ptr = (void *) NULL;
-    printf(" cudaMalloc failed for %lu %s \n",bytes,cudaGetErrorString(err));
+    printf(" cudaMalloc failed for %lu %s \n",bytes,cudaGetErrorString(err)); fflush(stdout);
+    if (acceleratorAbortOnGpuError) assert(err==cudaSuccess);
   }
   return ptr;
 };
-inline void acceleratorFreeShared(void *ptr){ cudaFree(ptr);};
-inline void acceleratorFreeDevice(void *ptr){ cudaFree(ptr);};
-inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { cudaMemcpy(to,from,bytes, cudaMemcpyHostToDevice);}
-inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)  { cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToDevice);}
-inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToHost);}
-inline void acceleratorMemSet(void *base,int value,size_t bytes) { cudaMemset(base,value,bytes);}
+inline void acceleratorFreeShared(void *ptr){
+  auto err = cudaFree(ptr);
+  if( err != cudaSuccess ) {
+    printf(" cudaFree(Shared) failed %s \n",cudaGetErrorString(err)); fflush(stdout);
+    if (acceleratorAbortOnGpuError) assert(err==cudaSuccess);
+  }
+};
+inline void acceleratorFreeDevice(void *ptr){
+  auto err = cudaFree(ptr);
+  if( err != cudaSuccess ) {
+    printf(" cudaFree(Device) failed %s \n",cudaGetErrorString(err)); fflush(stdout);
+    if (acceleratorAbortOnGpuError) assert(err==cudaSuccess);
+  }
+};
+inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  {
+  auto err = cudaMemcpy(to,from,bytes, cudaMemcpyHostToDevice);
+  if( err != cudaSuccess ) {
+    printf(" cudaMemcpy(host->device) failed for %lu %s \n",bytes,cudaGetErrorString(err)); fflush(stdout);
+    if (acceleratorAbortOnGpuError) assert(err==cudaSuccess);
+  }
+}
+inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)  {
+  auto err = cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToDevice);
+  if( err != cudaSuccess ) {
+    printf(" cudaMemcpy(device->device) failed for %lu %s \n",bytes,cudaGetErrorString(err)); fflush(stdout);
+    if (acceleratorAbortOnGpuError) assert(err==cudaSuccess);
+  }
+}
+inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){
+  auto err = cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToHost);
+  if( err != cudaSuccess ) {
+    printf(" cudaMemcpy(device->host) failed for %lu %s \n",bytes,cudaGetErrorString(err)); fflush(stdout);
+    if (acceleratorAbortOnGpuError) assert(err==cudaSuccess);
+  }
+}
+inline void acceleratorMemSet(void *base,int value,size_t bytes) {
+  auto err = cudaMemset(base,value,bytes);
+  if( err != cudaSuccess ) {
+    printf(" cudaMemSet failed for %lu %s \n",bytes,cudaGetErrorString(err)); fflush(stdout);
+    if (acceleratorAbortOnGpuError) assert(err==cudaSuccess);
+  }
+}
 inline int  acceleratorIsCommunicable(void *ptr)
 {
   //  int uvm=0;
