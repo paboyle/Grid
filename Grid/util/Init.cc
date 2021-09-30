@@ -301,6 +301,13 @@ void Grid_init(int *argc,char ***argv)
     GlobalSharedMemory::MAX_MPI_SHM_BYTES = MB64*1024LL*1024LL;
   }
 
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--shm-mpi") ){
+    int forcempi;
+    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--shm-mpi");
+    GridCmdOptionInt(arg,forcempi);
+    Stencil_force_mpi = (bool)forcempi;
+  }
+  
   if( GridCmdOptionExists(*argv,*argv+*argc,"--device-mem") ){
     int MB;
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--device-mem");
@@ -419,7 +426,9 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"  --threads n     : default number of OMP threads"<<std::endl;
     std::cout<<GridLogMessage<<"  --grid n.n.n.n  : default Grid size"<<std::endl;
     std::cout<<GridLogMessage<<"  --shm  M        : allocate M megabytes of shared memory for comms"<<std::endl;
-    std::cout<<GridLogMessage<<"  --shm-hugepages : use explicit huge pages in mmap call "<<std::endl;    
+    std::cout<<GridLogMessage<<"  --shm-mpi 0|1   : Force MPI usage under multi-rank per node "<<std::endl;
+    std::cout<<GridLogMessage<<"  --shm-hugepages : use explicit huge pages in mmap call "<<std::endl;
+    std::cout<<GridLogMessage<<"  --device-mem M  : Size of device software cache for lattice fields (MB) "<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Verbose and debug:"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
