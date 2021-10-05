@@ -1,0 +1,14 @@
+../../configure --enable-comms=mpi \
+	      --enable-simd=GPU \
+	      --enable-gen-simd-width=32 \
+	      --enable-unified=no \
+	       --enable-shm=nvlink \
+	       --disable-gparity \
+	       --enable-setdevice \
+	       --disable-fermion-reps \
+	       --enable-accelerator=cuda \
+	       --prefix /ccs/home/paboyle/prefix \
+	       CXX=nvcc \
+	       LDFLAGS=-L/ccs/home/paboyle/prefix/lib/ \
+	       CXXFLAGS="-ccbin mpicxx -gencode arch=compute_70,code=sm_70 -I/ccs/home/paboyle/prefix/include/ -std=c++14"
+

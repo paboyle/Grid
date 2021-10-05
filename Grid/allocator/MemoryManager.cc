@@ -9,14 +9,30 @@ NAMESPACE_BEGIN(Grid);
 #define AccSmall (3)
 #define Shared   (4)
 #define SharedSmall (5)
+#undef GRID_MM_VERBOSE 
 uint64_t total_shared;
 uint64_t total_device;
 uint64_t total_host;;
 void MemoryManager::PrintBytes(void)
 {
-  std::cout << " MemoryManager : "<<total_shared<<" shared      bytes "<<std::endl;
-  std::cout << " MemoryManager : "<<total_device<<" accelerator bytes "<<std::endl;
-  std::cout << " MemoryManager : "<<total_host  <<" cpu         bytes "<<std::endl;
+  std::cout << " MemoryManager : ------------------------------------ "<<std::endl;
+  std::cout << " MemoryManager : PrintBytes "<<std::endl;
+  std::cout << " MemoryManager : ------------------------------------ "<<std::endl;
+  std::cout << " MemoryManager : "<<(total_shared>>20)<<" shared      Mbytes "<<std::endl;
+  std::cout << " MemoryManager : "<<(total_device>>20)<<" accelerator Mbytes "<<std::endl;
+  std::cout << " MemoryManager : "<<(total_host>>20)  <<" cpu         Mbytes "<<std::endl;
+  uint64_t cacheBytes;
+  cacheBytes = CacheBytes[Cpu];
+  std::cout << " MemoryManager : "<<(cacheBytes>>20) <<" cpu cache Mbytes "<<std::endl;
+  cacheBytes = CacheBytes[Acc];
+  std::cout << " MemoryManager : "<<(cacheBytes>>20) <<" acc cache Mbytes "<<std::endl;
+  cacheBytes = CacheBytes[Shared];
+  std::cout << " MemoryManager : "<<(cacheBytes>>20) <<" shared cache Mbytes "<<std::endl;
+  
+#ifdef GRID_CUDA
+  cuda_mem();
+#endif
+  
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -24,86 +40,114 @@ void MemoryManager::PrintBytes(void)
 //////////////////////////////////////////////////////////////////////
 MemoryManager::AllocationCacheEntry MemoryManager::Entries[MemoryManager::NallocType][MemoryManager::NallocCacheMax];
 int MemoryManager::Victim[MemoryManager::NallocType];
-int MemoryManager::Ncache[MemoryManager::NallocType] = { 8, 32, 8, 32, 8, 32 };
-
+int MemoryManager::Ncache[MemoryManager::NallocType] = { 2, 8, 2, 8, 2, 8 };
+uint64_t MemoryManager::CacheBytes[MemoryManager::NallocType];
 //////////////////////////////////////////////////////////////////////
 // Actual allocation and deallocation utils
 //////////////////////////////////////////////////////////////////////
 void *MemoryManager::AcceleratorAllocate(size_t bytes)
 {
+  total_device+=bytes;
   void *ptr = (void *) Lookup(bytes,Acc);
   if ( ptr == (void *) NULL ) {
     ptr = (void *) acceleratorAllocDevice(bytes);
-    total_device+=bytes;
   }
+#ifdef GRID_MM_VERBOSE
+  std::cout <<"AcceleratorAllocate "<<std::endl;
+  PrintBytes();
+#endif
   return ptr;
 }
 void  MemoryManager::AcceleratorFree    (void *ptr,size_t bytes)
 {
+  total_device-=bytes;
   void *__freeme = Insert(ptr,bytes,Acc);
   if ( __freeme ) {
     acceleratorFreeDevice(__freeme);
-    total_device-=bytes;
-    //    PrintBytes();
   }
+#ifdef GRID_MM_VERBOSE
+  std::cout <<"AcceleratorFree "<<std::endl;
+  PrintBytes();
+#endif
 }
 void *MemoryManager::SharedAllocate(size_t bytes)
 {
+  total_shared+=bytes;
   void *ptr = (void *) Lookup(bytes,Shared);
   if ( ptr == (void *) NULL ) {
     ptr = (void *) acceleratorAllocShared(bytes);
-    total_shared+=bytes;
-    //    std::cout <<"AcceleratorAllocate: allocated Shared pointer "<<std::hex<<ptr<<std::dec<<std::endl;
-    //    PrintBytes();
   }
+#ifdef GRID_MM_VERBOSE
+  std::cout <<"SharedAllocate "<<std::endl;
+  PrintBytes();
+#endif
   return ptr;
 }
 void  MemoryManager::SharedFree    (void *ptr,size_t bytes)
 {
+  total_shared-=bytes;
   void *__freeme = Insert(ptr,bytes,Shared);
   if ( __freeme ) {
     acceleratorFreeShared(__freeme);
-    total_shared-=bytes;
-    //    PrintBytes();
   }
+#ifdef GRID_MM_VERBOSE
+  std::cout <<"SharedFree "<<std::endl;
+  PrintBytes();
+#endif
 }
 #ifdef GRID_UVM
 void *MemoryManager::CpuAllocate(size_t bytes)
 {
+  total_host+=bytes;
   void *ptr = (void *) Lookup(bytes,Cpu);
   if ( ptr == (void *) NULL ) {
     ptr = (void *) acceleratorAllocShared(bytes);
-    total_host+=bytes;
   }
+#ifdef GRID_MM_VERBOSE
+  std::cout <<"CpuAllocate "<<std::endl;
+  PrintBytes();
+#endif
   return ptr;
 }
 void  MemoryManager::CpuFree    (void *_ptr,size_t bytes)
 {
+  total_host-=bytes;
   NotifyDeletion(_ptr);
   void *__freeme = Insert(_ptr,bytes,Cpu);
   if ( __freeme ) { 
     acceleratorFreeShared(__freeme);
-    total_host-=bytes;
   }
+#ifdef GRID_MM_VERBOSE
+  std::cout <<"CpuFree "<<std::endl;
+  PrintBytes();
+#endif
 }
 #else
 void *MemoryManager::CpuAllocate(size_t bytes)
 {
+  total_host+=bytes;
   void *ptr = (void *) Lookup(bytes,Cpu);
   if ( ptr == (void *) NULL ) {
     ptr = (void *) acceleratorAllocCpu(bytes);
-    total_host+=bytes;
   }
+#ifdef GRID_MM_VERBOSE
+  std::cout <<"CpuAllocate "<<std::endl;
+  PrintBytes();
+#endif
   return ptr;
 }
 void  MemoryManager::CpuFree    (void *_ptr,size_t bytes)
 {
+  total_host-=bytes;
   NotifyDeletion(_ptr);
   void *__freeme = Insert(_ptr,bytes,Cpu);
   if ( __freeme ) { 
     acceleratorFreeCpu(__freeme);
-    total_host-=bytes;
   }
+#ifdef GRID_MM_VERBOSE
+  std::cout <<"CpuFree "<<std::endl;
+  PrintBytes();
+#endif
 }
 #endif
 
@@ -181,13 +225,13 @@ void *MemoryManager::Insert(void *ptr,size_t bytes,int type)
 #ifdef ALLOCATION_CACHE
   bool small = (bytes < GRID_ALLOC_SMALL_LIMIT);
   int cache = type + small;
-  return Insert(ptr,bytes,Entries[cache],Ncache[cache],Victim[cache]);  
+  return Insert(ptr,bytes,Entries[cache],Ncache[cache],Victim[cache],CacheBytes[cache]);  
 #else
   return ptr;
 #endif
 }
 
-void *MemoryManager::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim) 
+void *MemoryManager::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim, uint64_t &cacheBytes) 
 {
   assert(ncache>0);
 #ifdef GRID_OMP
@@ -211,6 +255,7 @@ void *MemoryManager::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries
 
   if ( entries[v].valid ) {
     ret = entries[v].address;
+    cacheBytes -= entries[v].bytes;
     entries[v].valid = 0;
     entries[v].address = NULL;
     entries[v].bytes = 0;
@@ -219,6 +264,7 @@ void *MemoryManager::Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries
   entries[v].address=ptr;
   entries[v].bytes  =bytes;
   entries[v].valid  =1;
+  cacheBytes += bytes;
 
   return ret;
 }
@@ -228,13 +274,13 @@ void *MemoryManager::Lookup(size_t bytes,int type)
 #ifdef ALLOCATION_CACHE
   bool small = (bytes < GRID_ALLOC_SMALL_LIMIT);
   int cache = type+small;
-  return Lookup(bytes,Entries[cache],Ncache[cache]);
+  return Lookup(bytes,Entries[cache],Ncache[cache],CacheBytes[cache]);
 #else
   return NULL;
 #endif
 }
 
-void *MemoryManager::Lookup(size_t bytes,AllocationCacheEntry *entries,int ncache) 
+void *MemoryManager::Lookup(size_t bytes,AllocationCacheEntry *entries,int ncache,uint64_t & cacheBytes) 
 {
   assert(ncache>0);
 #ifdef GRID_OMP
@@ -243,6 +289,7 @@ void *MemoryManager::Lookup(size_t bytes,AllocationCacheEntry *entries,int ncach
   for(int e=0;e<ncache;e++){
     if ( entries[e].valid && ( entries[e].bytes == bytes ) ) {
       entries[e].valid = 0;
+      cacheBytes -= entries[e].bytes;
       return entries[e].address;
     }
   }
