@@ -54,15 +54,23 @@ class DeflatedGuesser: public LinearFunction<Field> {
 private:
   const std::vector<Field> &evec;
   const std::vector<RealD> &eval;
+  const unsigned int       N;
 
 public:
 
-  DeflatedGuesser(const std::vector<Field> & _evec,const std::vector<RealD> & _eval) : evec(_evec), eval(_eval) {};
+  DeflatedGuesser(const std::vector<Field> & _evec,const std::vector<RealD> & _eval)
+  : DeflatedGuesser(_evec, _eval, _evec.size())
+  {}
+
+  DeflatedGuesser(const std::vector<Field> & _evec, const std::vector<RealD> & _eval, const unsigned int _N)
+  : evec(_evec), eval(_eval), N(_N)
+  {
+    assert(evec.size()==eval.size());
+    assert(N <= evec.size());
+  } 
 
   virtual void operator()(const Field &src,Field &guess) {
     guess = Zero();
-    assert(evec.size()==eval.size());
-    auto N = evec.size();
     for (int i=0;i<N;i++) {
       const Field& tmp = evec[i];
       axpy(guess,TensorRemove(innerProduct(tmp,src)) / eval[i],tmp,guess);
