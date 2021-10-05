@@ -29,5 +29,14 @@ mpirun -np $SLURM_NTASKS -x LD_LIBRARY_PATH  --bind-to none ./mpiwrapper.sh \
 	--mpi 2.2.2.8 \
        	--accelerator-threads 8 \
 	--grid 64.64.64.256 \
-	--shm 2048 > dwf.16node.perf
+	--shm 2048 
+
+
+mpirun -np $SLURM_NTASKS -x LD_LIBRARY_PATH  --bind-to none ./mpiwrapper.sh \
+       	./benchmarks/Benchmark_dwf_fp32 \
+	$OPT \
+	--mpi 2.2.2.8 \
+       	--accelerator-threads 8 \
+	--grid 48.48.48.192 \
+	--shm 2048
 
