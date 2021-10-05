@@ -115,6 +115,14 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
 #endif
 } // CUDA specific
 
+inline void cuda_mem(void)
+{
+  size_t free_t,total_t,used_t;
+  cudaMemGetInfo(&free_t,&total_t);
+  used_t=total_t-free_t;
+  std::cout << " MemoryManager : GPU used "<<used_t<<" free "<<free_t<< " total "<<total_t<<std::endl;
+}
+
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   {									\
     int nt=acceleratorThreads();					\
@@ -125,7 +133,11 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
     };									\
     dim3 cu_threads(nsimd,acceleratorThreads(),1);			\
     dim3 cu_blocks ((num1+nt-1)/nt,num2,1);				\
+    std::cout << "========================== CUDA KERNEL CALL\n";	\
+    cuda_mem();								\
     LambdaApply<<<cu_blocks,cu_threads>>>(num1,num2,nsimd,lambda);	\
+    cuda_mem();								\
+    std::cout << "========================== CUDA KERNEL DONE\n";	\
   }
 
 #define accelerator_for6dNB(iter1, num1,				\

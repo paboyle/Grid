@@ -74,11 +74,13 @@ void acceleratorInit(void)
       //      GPU_PROP(singleToDoublePrecisionPerfRatio);
     }
   }
+
   MemoryManager::DeviceMaxBytes = (8*totalDeviceMem)/10; // Assume 80% ours
 #undef GPU_PROP_FMT    
 #undef GPU_PROP
 
 #ifdef GRID_DEFAULT_GPU
+  int device = 0;
   // IBM Jsrun makes cuda Device numbering screwy and not match rank
   if ( world_rank == 0 ) {
     printf("AcceleratorCudaInit: using default device \n");
@@ -87,10 +89,20 @@ void acceleratorInit(void)
     printf("AcceleratorCudaInit: Configure options --enable-setdevice=no \n");
   }
 #else
+  int device = rank;
   printf("AcceleratorCudaInit: rank %d setting device to node rank %d\n",world_rank,rank);
   printf("AcceleratorCudaInit: Configure options --enable-setdevice=yes \n");
-  cudaSetDevice(rank);
 #endif
+
+  cudaSetDevice(device);
+
+  const int len=64;
+  char busid[len];
+  if( rank == world_rank ) { 
+    cudaDeviceGetPCIBusId(busid, len, device);
+    printf("local rank %d device %d bus id: %s\n", rank, device, busid);
+  }
+
   if ( world_rank == 0 )  printf("AcceleratorCudaInit: ================================================\n");
 }
 #endif
