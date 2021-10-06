@@ -39,9 +39,9 @@ NAMESPACE_BEGIN(Grid);
 struct DomainDecomposition
 {
   Coordinate Block;
-  static constexpr RealD factor = 0.0;
+  static constexpr RealD factor = 0.6;
 
-  DomainDecomposition(const Coordinate &_Block): Block(_Block){};
+  DomainDecomposition(const Coordinate &_Block): Block(_Block){ assert(Block.size()==Nd);};
   
   template<class Field>
   void ProjectDomain(Field &f,Integer domain)
@@ -65,7 +65,7 @@ struct DomainDecomposition
 	mask = where(domaincoor==Integer(B-1),zi,mask);
       }
     }
-    if ( domain )
+    if ( !domain )
       f = where(mask==Integer(1),f,zz);
     else 
       f = where(mask==Integer(0),f,zz);
@@ -74,48 +74,110 @@ struct DomainDecomposition
   void ProjectDDHMC(GaugeField &U)
   {
     GridBase *grid = U.Grid();
-    GaugeField Uslow(grid);
     Coordinate Global=grid->GlobalDimensions();
     GaugeField zzz(grid); zzz = Zero();
     LatticeInteger coor(grid); 
 
+    GaugeField Uorg(grid); Uorg = U;
+    
+    auto zzz_mu = PeekIndex<LorentzIndex>(zzz,0);
     ////////////////////////////////////////////////////
-    // All links except BDY layers
+    // Zero BDY layers
     ////////////////////////////////////////////////////
     for(int mu=0;mu<Nd;mu++) {
       Integer B1 = Block[mu];
       if ( B1 && (B1 <= Global[mu]) ) {
 	LatticeCoordinate(coor,mu);
 
-	////////////////////////////////
-	// OmegaBar - zero all links contained
-	////////////////////////////////
-	U = where(mod(coor,B1)==Integer(B1-1),zzz,U); 
 
-	auto zzz_mu = PeekIndex<LorentzIndex>(zzz,mu);
-	auto U_mu = PeekIndex<LorentzIndex>(U,mu);
-	U_mu = where(mod(coor,B1)==Integer(0),zzz_mu,U_mu); 
-	U = where(mod(coor,B1)==Integer(0),zzz,U); 
+	////////////////////////////////
+	// OmegaBar - zero all links contained in slice B-1,0 and
+	// mu links connecting to Omega
+	////////////////////////////////
+
+	U    = where(mod(coor,B1)==Integer(B1-1),zzz,U);
+	U    = where(mod(coor,B1)==Integer(0)   ,zzz,U); 
+
+	auto U_mu   = PeekIndex<LorentzIndex>(U,mu);
+	U_mu = where(mod(coor,B1)==Integer(B1-2),zzz_mu,U_mu); 
 	PokeIndex<LorentzIndex>(U, U_mu, mu);
 
-	Uslow = U * factor;
-	////////////////////////////////////////////
-	// Omega interior slow the evolution
-	////////////////////////////////////////////
-	U = where(mod(coor,B1)==Integer(B1-4),Uslow,U); // Could scale down???
-	U = where(mod(coor,B1)==Integer(B1-3),Uslow,U); // Could scale down???
-	U = where(mod(coor,B1)==Integer(B1-2),Uslow,U); 
+      }
+    }
+   
+    ////////////////////////////////////////////
+    // Omega interior slow the evolution
+    // Tricky as we need to take the smallest of values imposed by each cut
+    // Do them in order or largest to smallest and smallest writes last
+    ////////////////////////////////////////////
+    RealD f= factor;
+#if 0    
+    for(int mu=0;mu<Nd;mu++) {
+      Integer B1 = Block[mu];
+      if ( B1 && (B1 <= Global[mu]) ) {
 
-	U_mu = PeekIndex<LorentzIndex>(U,mu);
-	U_mu = where(mod(coor,B1)==Integer(1),U_mu*factor,U_mu);
-	U = where(mod(coor,B1)==Integer(1),zzz,U); 
+	auto U_mu   = PeekIndex<LorentzIndex>(U,mu);
+	auto Uorg_mu= PeekIndex<LorentzIndex>(Uorg,mu);
+	// In the plane
+	U = where(mod(coor,B1)==Integer(B1-5),Uorg*f,U); 
+	U = where(mod(coor,B1)==Integer(4)   ,Uorg*f,U); 
+
+	// Perp links
+       	U_mu = where(mod(coor,B1)==Integer(B1-6),Uorg_mu*f,U_mu);
+	U_mu = where(mod(coor,B1)==Integer(4)   ,Uorg_mu*f,U_mu);
+
 	PokeIndex<LorentzIndex>(U, U_mu, mu);
+      }
+    }
+#endif
+    for(int mu=0;mu<Nd;mu++) {
+      Integer B1 = Block[mu];
+      if ( B1 && (B1 <= Global[mu]) ) {
 
+	auto U_mu   = PeekIndex<LorentzIndex>(U,mu);
+	auto Uorg_mu= PeekIndex<LorentzIndex>(Uorg,mu);
+	// In the plane
+	U = where(mod(coor,B1)==Integer(B1-4),Uorg*f*f,U); 
+	U = where(mod(coor,B1)==Integer(3)   ,Uorg*f*f,U); 
 
-	U = where(mod(coor,B1)==Integer(2),Uslow,U); 
+	// Perp links
+       	U_mu = where(mod(coor,B1)==Integer(B1-5),Uorg_mu*f*f,U_mu);
+	U_mu = where(mod(coor,B1)==Integer(3)   ,Uorg_mu*f*f,U_mu);
 
-	U_mu = PeekIndex<LorentzIndex>(U,mu);                  
-	U = where(mod(coor,B1)==Integer(3),Uslow,U);           
+	PokeIndex<LorentzIndex>(U, U_mu, mu);
+      }
+    }
+    for(int mu=0;mu<Nd;mu++) {
+      Integer B1 = Block[mu];
+      if ( B1 && (B1 <= Global[mu]) ) {
+
+	auto U_mu   = PeekIndex<LorentzIndex>(U,mu);
+	auto Uorg_mu= PeekIndex<LorentzIndex>(Uorg,mu);
+	// In the plane
+	U = where(mod(coor,B1)==Integer(B1-3),Uorg*f*f*f,U); 
+	U = where(mod(coor,B1)==Integer(2)   ,Uorg*f*f*f,U); 
+
+	// Perp links
+       	U_mu = where(mod(coor,B1)==Integer(B1-4),Uorg_mu*f*f*f,U_mu);
+	U_mu = where(mod(coor,B1)==Integer(2)   ,Uorg_mu*f*f*f,U_mu);
+
+	PokeIndex<LorentzIndex>(U, U_mu, mu);
+      }
+    }
+    for(int mu=0;mu<Nd;mu++) {
+      Integer B1 = Block[mu];
+      if ( B1 && (B1 <= Global[mu]) ) {
+
+	auto U_mu   = PeekIndex<LorentzIndex>(U,mu);
+	auto Uorg_mu= PeekIndex<LorentzIndex>(Uorg,mu);
+	// In the plane
+	U = where(mod(coor,B1)==Integer(B1-2),zzz,U); 
+	U = where(mod(coor,B1)==Integer(1)   ,zzz,U); 
+
+	// Perp links
+	U_mu = where(mod(coor,B1)==Integer(B1-3),Uorg_mu*f*f*f*f,U_mu);
+	U_mu = where(mod(coor,B1)==Integer(1)   ,Uorg_mu*f*f*f*f,U_mu);
+
 	PokeIndex<LorentzIndex>(U, U_mu, mu);
       }
     }
