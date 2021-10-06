@@ -133,11 +133,7 @@ inline void cuda_mem(void)
     };									\
     dim3 cu_threads(nsimd,acceleratorThreads(),1);			\
     dim3 cu_blocks ((num1+nt-1)/nt,num2,1);				\
-    std::cout << "========================== CUDA KERNEL CALL\n";	\
-    cuda_mem();								\
     LambdaApply<<<cu_blocks,cu_threads>>>(num1,num2,nsimd,lambda);	\
-    cuda_mem();								\
-    std::cout << "========================== CUDA KERNEL DONE\n";	\
   }
 
 #define accelerator_for6dNB(iter1, num1,				\
