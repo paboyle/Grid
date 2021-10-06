@@ -1,0 +1,179 @@
+OPENMPI detected
+AcceleratorCudaInit[0]: ========================
+AcceleratorCudaInit[0]: Device Number    : 0
+AcceleratorCudaInit[0]: ========================
+AcceleratorCudaInit[0]: Device identifier: Tesla V100-SXM2-16GB
+AcceleratorCudaInit[0]:   totalGlobalMem: 16911433728 
+AcceleratorCudaInit[0]:   managedMemory: 1 
+AcceleratorCudaInit[0]:   isMultiGpuBoard: 0 
+AcceleratorCudaInit[0]:   warpSize: 32 
+AcceleratorCudaInit[0]:   pciBusID: 4 
+AcceleratorCudaInit[0]:   pciDeviceID: 0 
+AcceleratorCudaInit[0]: maxGridSize (2147483647,65535,65535)
+AcceleratorCudaInit: rank 0 setting device to node rank 0
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+local rank 0 device 0 bus id: 0004:04:00.0
+AcceleratorCudaInit: ================================================
+SharedMemoryMpi:  World communicator of size 24
+SharedMemoryMpi:  Node  communicator of size 6
+0SharedMemoryMpi:  SharedMemoryMPI.cc acceleratorAllocDevice 1073741824bytes at 0x200060000000 for comms buffers 
+Setting up IPC
+
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+__|_ |  |  |  |  |  |  |  |  |  |  |  | _|__
+__|_                                    _|__
+__|_   GGGG    RRRR    III    DDDD      _|__
+__|_  G        R   R    I     D   D     _|__
+__|_  G        R   R    I     D    D    _|__
+__|_  G  GG    RRRR     I     D    D    _|__
+__|_  G   G    R  R     I     D   D     _|__
+__|_   GGGG    R   R   III    DDDD      _|__
+__|_                                    _|__
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+__|__|__|__|__|__|__|__|__|__|__|__|__|__|__
+  |  |  |  |  |  |  |  |  |  |  |  |  |  |  
+
+
+Copyright (C) 2015 Peter Boyle, Azusa Yamaguchi, Guido Cossu, Antonin Portelli and other authors
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+Current Grid git commit hash=7cb1ff7395a5833ded6526c43891bd07a0436290: (HEAD -> develop, origin/develop, origin/HEAD) clean
+
+Grid : Message : ================================================ 
+Grid : Message : MPI is initialised and logging filters activated 
+Grid : Message : ================================================ 
+Grid : Message : Requested 1073741824 byte stencil comms buffers 
+AcceleratorCudaInit: rank 1 setting device to node rank 1
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+local rank 1 device 1 bus id: 0004:05:00.0
+AcceleratorCudaInit: rank 2 setting device to node rank 2
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+local rank 2 device 2 bus id: 0004:06:00.0
+AcceleratorCudaInit: rank 5 setting device to node rank 5
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+local rank 5 device 5 bus id: 0035:05:00.0
+AcceleratorCudaInit: rank 4 setting device to node rank 4
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+local rank 4 device 4 bus id: 0035:04:00.0
+AcceleratorCudaInit: rank 3 setting device to node rank 3
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+local rank 3 device 3 bus id: 0035:03:00.0
+Grid : Message : MemoryManager Cache 13529146982 bytes 
+Grid : Message : MemoryManager::Init() setting up
+Grid : Message : MemoryManager::Init() cache pool for recent allocations: SMALL 8 LARGE 2
+Grid : Message : MemoryManager::Init() Non unified: Caching accelerator data in dedicated memory
+Grid : Message : MemoryManager::Init() Using cudaMalloc
+Grid : Message : 2.137929 s : Grid is setup to use 6 threads
+Grid : Message : 2.137941 s : Number of iterations to average: 250
+Grid : Message : 2.137950 s : ====================================================================================================
+Grid : Message : 2.137958 s : = Benchmarking sequential halo exchange from host memory 
+Grid : Message : 2.137966 s : ====================================================================================================
+Grid : Message : 2.137974 s :  L  	 Ls  	    bytes		MB/s uni	MB/s bidi
+AcceleratorCudaInit: rank 22 setting device to node rank 4
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 10 setting device to node rank 4
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 15 setting device to node rank 3
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 21 setting device to node rank 3
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 20 setting device to node rank 2
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 7 setting device to node rank 1
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 9 setting device to node rank 3
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 11 setting device to node rank 5
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 8 setting device to node rank 2
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 6 setting device to node rank 0
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 19 setting device to node rank 1
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 23 setting device to node rank 5
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 18 setting device to node rank 0
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 12 setting device to node rank 0
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 16 setting device to node rank 4
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 13 setting device to node rank 1
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 14 setting device to node rank 2
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+AcceleratorCudaInit: rank 17 setting device to node rank 5
+AcceleratorCudaInit: Configure options --enable-setdevice=yes 
+Grid : Message : 2.604949 s :    8	8	     393216       89973.9  		179947.8
+Grid : Message : 2.668249 s :    8	8	     393216       18650.3  		37300.5
+Grid : Message : 2.732288 s :    8	8	     393216       18428.5  		36857.1
+Grid : Message : 2.753565 s :    8	8	     393216       55497.2  		110994.4
+Grid : Message : 2.808960 s :   12	8	    1327104       100181.5  		200363.0
+Grid : Message : 3.226900 s :   12	8	    1327104       20600.5  		41201.0
+Grid : Message : 3.167459 s :   12	8	    1327104       24104.6  		48209.2
+Grid : Message : 3.227660 s :   12	8	    1327104       66156.7  		132313.5
+Grid : Message : 3.413570 s :   16	8	    3145728       56174.4  		112348.8
+Grid : Message : 3.802697 s :   16	8	    3145728       24255.9  		48511.7
+Grid : Message : 4.190498 s :   16	8	    3145728       24336.7  		48673.4
+Grid : Message : 4.385171 s :   16	8	    3145728       48484.1  		96968.2
+Grid : Message : 4.805284 s :   20	8	    6144000       46380.5  		92761.1
+Grid : Message : 5.562975 s :   20	8	    6144000       24328.5  		48656.9
+Grid : Message : 6.322562 s :   20	8	    6144000       24266.7  		48533.4
+Grid : Message : 6.773598 s :   20	8	    6144000       40868.5  		81736.9
+Grid : Message : 7.600999 s :   24	8	   10616832       40198.3  		80396.6
+Grid : Message : 8.912917 s :   24	8	   10616832       24279.5  		48559.1
+Grid : Message : 10.220961 s :   24	8	   10616832       24350.2  		48700.4
+Grid : Message : 11.728250 s :   24	8	   10616832       37390.9  		74781.8
+Grid : Message : 12.497258 s :   28	8	   16859136       36792.2  		73584.5
+Grid : Message : 14.585387 s :   28	8	   16859136       24222.2  		48444.3
+Grid : Message : 16.664783 s :   28	8	   16859136       24323.4  		48646.8
+Grid : Message : 17.955238 s :   28	8	   16859136       39194.7  		78389.4
+Grid : Message : 20.136479 s :   32	8	   25165824       35718.3  		71436.5
+Grid : Message : 23.241958 s :   32	8	   25165824       24311.4  		48622.9
+Grid : Message : 26.344810 s :   32	8	   25165824       24331.9  		48663.7
+Grid : Message : 28.384420 s :   32	8	   25165824       37016.3  		74032.7
+Grid : Message : 28.388879 s : ====================================================================================================
+Grid : Message : 28.388894 s : = Benchmarking sequential halo exchange from GPU memory 
+Grid : Message : 28.388909 s : ====================================================================================================
+Grid : Message : 28.388924 s :  L  	 Ls  	    bytes		MB/s uni	MB/s bidi
+Grid : Message : 28.553993 s :    8	8	     393216       8272.4  		16544.7
+Grid : Message : 28.679592 s :    8	8	     393216       9395.4  		18790.8
+Grid : Message : 28.811112 s :    8	8	     393216       8971.0  		17942.0
+Grid : Message : 28.843770 s :    8	8	     393216       36145.6  		72291.2
+Grid : Message : 28.981754 s :   12	8	    1327104       49591.6  		99183.2
+Grid : Message : 29.299764 s :   12	8	    1327104       12520.8  		25041.7
+Grid : Message : 29.620288 s :   12	8	    1327104       12422.2  		24844.4
+Grid : Message : 29.657645 s :   12	8	    1327104       106637.5  		213275.1
+Grid : Message : 29.952933 s :   16	8	    3145728       43939.2  		87878.5
+Grid : Message : 30.585411 s :   16	8	    3145728       14922.1  		29844.2
+Grid : Message : 31.219781 s :   16	8	    3145728       14877.2  		29754.4
+Grid : Message : 31.285017 s :   16	8	    3145728       144724.3  		289448.7
+Grid : Message : 31.706443 s :   20	8	    6144000       54676.2  		109352.4
+Grid : Message : 32.739205 s :   20	8	    6144000       17848.0  		35696.1
+Grid : Message : 33.771852 s :   20	8	    6144000       17849.9  		35699.7
+Grid : Message : 33.871981 s :   20	8	    6144000       184141.4  		368282.8
+Grid : Message : 34.536808 s :   24	8	   10616832       55784.3  		111568.6
+Grid : Message : 36.275648 s :   24	8	   10616832       18317.6  		36635.3
+Grid : Message : 37.997181 s :   24	8	   10616832       18501.7  		37003.4
+Grid : Message : 38.140442 s :   24	8	   10616832       222383.9  		444767.9
+Grid : Message : 39.177222 s :   28	8	   16859136       56609.7  		113219.4
+Grid : Message : 41.874755 s :   28	8	   16859136       18749.9  		37499.8
+Grid : Message : 44.529381 s :   28	8	   16859136       19052.9  		38105.8
+Grid : Message : 44.742192 s :   28	8	   16859136       237717.1  		475434.2
+Grid : Message : 46.184000 s :   32	8	   25165824       57091.2  		114182.4
+Grid : Message : 50.734740 s :   32	8	   25165824       19411.0  		38821.9
+Grid : Message : 53.931228 s :   32	8	   25165824       19570.6  		39141.2
+Grid : Message : 54.238467 s :   32	8	   25165824       245765.6  		491531.2
+Grid : Message : 54.268664 s : ====================================================================================================
+Grid : Message : 54.268680 s : = All done; Bye Bye
+Grid : Message : 54.268691 s : ====================================================================================================
