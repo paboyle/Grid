@@ -124,7 +124,7 @@ public:
 			       FermionOperator<ImplD>  & _DirichletFermOpD,
 			       FermionOperator<ImplF>  & _DirichletFermOpF,
 			       Coordinate &_Block)
-   : Domains(Block),
+    : Block(_Block), Domains(Block),
 
       PeriodicFermOpD(_PeriodicFermOpD),
       PeriodicFermOpF(_PeriodicFermOpF),
