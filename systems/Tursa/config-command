@@ -8,7 +8,7 @@ PREFIX=/home/tc002/tc002/shared/env/prefix/
     --with-hdf5=$PREFIX \
     --with-lime=$PREFIX \
     --with-fftw=$PREFIX \
-    --disable-accelerator-cshift \
+    --enable-accelerator-cshift \
     --disable-unified \
     CXX=nvcc \
     LDFLAGS="-cudart shared " \
