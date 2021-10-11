@@ -61,7 +61,8 @@ NAMESPACE_BEGIN(Grid);
   typedef typename Impl::Field Field;
 
 // hardcodes the exponential approximation in the template
-template <class S, int Nrepresentation = Nc, int Nexp = 12 > class GaugeImplTypes {
+//template <class S, int Nrepresentation = Nc, int Nexp = 12 > class GaugeImplTypes {
+template <class S, int Nrepresentation = Nc, int Nexp = 12, bool isSp2n = false > class GaugeImplTypes {
 public:
   typedef S Simd;
   typedef typename Simd::scalar_type scalar_type;
@@ -69,6 +70,7 @@ public:
   template <typename vtype> using iImplScalar     = iScalar<iScalar<iScalar<vtype> > >;
   template <typename vtype> using iImplGaugeLink  = iScalar<iScalar<iMatrix<vtype, Nrepresentation> > >;
   template <typename vtype> using iImplGaugeField = iVector<iScalar<iMatrix<vtype, Nrepresentation> >, Nd>;
+
 
   typedef iImplScalar<Simd>     SiteComplex;
   typedef iImplGaugeLink<Simd>  SiteLink;
@@ -117,8 +119,17 @@ public:
     //
     LinkField Pmu(P.Grid());
     Pmu = Zero();
-    for (int mu = 0; mu < Nd; mu++) {
-      SU<Nrepresentation>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
+    for (int mu = 0; mu < Nd; mu++)
+    {
+        if (isSp2n == true)
+        {
+            const int nSp = Nrepresentation/2;
+            Sp<nSp>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
+        } else
+        {
+        
+            SU<Nrepresentation>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
+        }
       RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR) ;
       Pmu = Pmu*scale;
       PokeIndex<LorentzIndex>(P, Pmu, mu);
@@ -135,14 +146,21 @@ public:
     autoView(P_v,P,AcceleratorRead);
     accelerator_for(ss, P.Grid()->oSites(),1,{
       for (int mu = 0; mu < Nd; mu++) {
-        U_v[ss](mu) = ProjectOnGroup(Exponentiate(P_v[ss](mu), ep, Nexp) * U_v[ss](mu));
+          if (isSp2n == true)
+          {
+              U_v[ss](mu) = ProjectOnSpGroup(Exponentiate(P_v[ss](mu), ep, Nexp) * U_v[ss](mu));
+          } else
+          {
+              U_v[ss](mu) = ProjectOnGroup(Exponentiate(P_v[ss](mu), ep, Nexp) * U_v[ss](mu));
+          }
+        
       }
     });
    //auto end = std::chrono::high_resolution_clock::now();
    // diff += end - start;
    // std::cout << "Time to exponentiate matrix " << diff.count() << " s\n";
   }
-
+    
   static inline RealD FieldSquareNorm(Field& U){
     LatticeComplex Hloc(U.Grid());
     Hloc = Zero();
@@ -154,21 +172,77 @@ public:
     return Hsum.real();
   }
 
-  static inline void Project(Field &U) {
-    ProjectSUn(U);
+  static inline void Project(Field &U)
+  {
+      if (isSp2n == true)
+      {
+          ProjectSp2n(U);
+      } else
+      {
+          ProjectSUn(U);
+      }
   }
 
-  static inline void HotConfiguration(GridParallelRNG &pRNG, Field &U) {
-    SU<Nc>::HotConfiguration(pRNG, U);
+  static inline void HotConfiguration(GridParallelRNG &pRNG, Field &U)
+  {
+      SU<Nc>::HotConfiguration(pRNG, U);
   }
 
   static inline void TepidConfiguration(GridParallelRNG &pRNG, Field &U) {
     SU<Nc>::TepidConfiguration(pRNG, U);
   }
 
-  static inline void ColdConfiguration(GridParallelRNG &pRNG, Field &U) {
-    SU<Nc>::ColdConfiguration(pRNG, U);
+  static inline void ColdConfiguration(GridParallelRNG &pRNG, Field &U)
+  {
+      if (isSp2n == true)
+      {
+          const int nSp = Nrepresentation/2;
+          Sp<nSp>::ColdConfiguration(pRNG, U);
+      } else
+      {
+          SU<Nc>::ColdConfiguration(pRNG, U);
+      }
   }
+    
+  //sp2n... see sp2n.h
+/*
+    static inline void generate_sp2n_momenta(Field &P, GridSerialRNG & sRNG, GridParallelRNG &pRNG)
+    {
+      
+      const int nSp = Nrepresentation/2;
+      LinkField Pmu(P.Grid());
+      Pmu = Zero();
+      for (int mu = 0; mu < Nd; mu++) {
+        
+        Sp<nSp>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
+        RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR) ;
+        Pmu = Pmu*scale;
+        PokeIndex<LorentzIndex>(P, Pmu, mu);
+      }
+    }
+    
+    static inline void update_sp2n_field(Field& P, Field& U, double ep){
+ 
+      autoView(U_v,U,AcceleratorWrite);
+      autoView(P_v,P,AcceleratorRead);
+      accelerator_for(ss, P.Grid()->oSites(),1,{
+        for (int mu = 0; mu < Nd; mu++) {
+          U_v[ss](mu) = ProjectOnSpGroup(Exponentiate(P_v[ss](mu), ep, Nexp) * U_v[ss](mu));
+        }
+      });
+    }
+    
+    static inline void SpProject(Field &U) {
+      ProjectSp2n(U);
+    }
+
+
+    static inline void ColdSpConfiguration(GridParallelRNG &pRNG, Field &U) {
+      const int nSp = Nrepresentation/2;
+      Sp<nSp>::ColdConfiguration(pRNG, U);
+    }
+*/
+
 };
 
 
@@ -176,9 +250,15 @@ typedef GaugeImplTypes<vComplex, Nc> GimplTypesR;
 typedef GaugeImplTypes<vComplexF, Nc> GimplTypesF;
 typedef GaugeImplTypes<vComplexD, Nc> GimplTypesD;
 
+typedef GaugeImplTypes<vComplex, Nc, 12, true> SymplGimplTypesR;
+typedef GaugeImplTypes<vComplexF, Nc, 12, true> SymplGimplTypesF;
+typedef GaugeImplTypes<vComplexD, Nc, 12, true> SymplGimplTypesD;
+
 typedef GaugeImplTypes<vComplex, SU<Nc>::AdjointDimension> GimplAdjointTypesR;
 typedef GaugeImplTypes<vComplexF, SU<Nc>::AdjointDimension> GimplAdjointTypesF;
 typedef GaugeImplTypes<vComplexD, SU<Nc>::AdjointDimension> GimplAdjointTypesD;
+
+
 
 NAMESPACE_END(Grid);
 

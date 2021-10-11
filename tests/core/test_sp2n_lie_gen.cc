@@ -2,7 +2,7 @@
 
 
 #include <Grid/Grid.h>
-#include <Grid/qcd/utils/SUn.h>
+#include <Grid/qcd/utils/Sp2n.h>
 
 using namespace Grid;
 
@@ -13,6 +13,15 @@ int main(int argc, char** argv) {
   //GridCartesian* grid = SpaceTimeGrid::makeFourDimGrid(
   //latt, GridDefaultSimd(Nd, vComplex::Nsimd()), GridDefaultMpi());
   //GridRedBlackCartesian* rbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(grid);
+    
+    std::cout << GridLogMessage << "*********************************************"
+              << std::endl;
+    std::cout << GridLogMessage << "* Generators for Sp(2)" << std::endl;
+    std::cout << GridLogMessage << "*********************************************"
+              << std::endl;
+      
+    Sp2::printGenerators();
+    Sp2::testGenerators();
   
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;

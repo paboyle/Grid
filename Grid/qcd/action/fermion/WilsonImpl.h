@@ -267,6 +267,16 @@ typedef WilsonImpl<vComplex,  TwoIndexAntiSymmetricRepresentation, CoeffReal > W
 typedef WilsonImpl<vComplexF, TwoIndexAntiSymmetricRepresentation, CoeffReal > WilsonTwoIndexAntiSymmetricImplF;  // Float
 typedef WilsonImpl<vComplexD, TwoIndexAntiSymmetricRepresentation, CoeffReal > WilsonTwoIndexAntiSymmetricImplD;  // Double
 
+//sp 2n
+
+typedef WilsonImpl<vComplex,  SpFundamentalRepresentation, CoeffReal > SpWilsonImplR;  // Real.. whichever prec
+typedef WilsonImpl<vComplexF, SpFundamentalRepresentation, CoeffReal > SpWilsonImplF;  // Float
+typedef WilsonImpl<vComplexD, SpFundamentalRepresentation, CoeffReal > SpWilsonImplD;  // Double
+
+//typedef WilsonImpl<vComplex,  SpFundamentalRepresentation, CoeffComplex > SpZWilsonImplR; // Real.. whichever prec
+//typedef WilsonImpl<vComplexF, SpFundamentalRepresentation, CoeffComplex > SpZWilsonImplF; // Float
+//typedef WilsonImpl<vComplexD, SpFundamentalRepresentation, CoeffComplex > SpZWilsonImplD; // Double
+
 
 NAMESPACE_END(Grid);
 
