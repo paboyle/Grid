@@ -346,6 +346,7 @@ GridUnopClass(UnaryTrace, trace(a));
 GridUnopClass(UnaryTranspose, transpose(a));
 GridUnopClass(UnaryTa, Ta(a));
 GridUnopClass(UnaryProjectOnGroup, ProjectOnGroup(a));
+GridUnopClass(UnaryProjectOnSpGroup, ProjectOnSpGroup(a));
 GridUnopClass(UnaryTimesI, timesI(a));
 GridUnopClass(UnaryTimesMinusI, timesMinusI(a));
 GridUnopClass(UnaryAbs, abs(a));
@@ -457,6 +458,7 @@ GRID_DEF_UNOP(trace, UnaryTrace);
 GRID_DEF_UNOP(transpose, UnaryTranspose);
 GRID_DEF_UNOP(Ta, UnaryTa);
 GRID_DEF_UNOP(ProjectOnGroup, UnaryProjectOnGroup);
+GRID_DEF_UNOP(ProjectOnSpGroup, UnaryProjectOnSpGroup);
 GRID_DEF_UNOP(timesI, UnaryTimesI);
 GRID_DEF_UNOP(timesMinusI, UnaryTimesMinusI);
 GRID_DEF_UNOP(abs, UnaryAbs);  // abs overloaded in cmath C++98; DON'T do the
