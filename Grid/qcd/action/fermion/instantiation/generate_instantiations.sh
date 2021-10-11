@@ -9,6 +9,8 @@ STAG5_IMPL_LIST=""
 WILSON_IMPL_LIST=" \
 	   WilsonImplF \
 	   WilsonImplD \
+       SpWilsonImplF \
+       SpWilsonImplD \
 	   WilsonAdjImplF \
 	   WilsonAdjImplD \
 	   WilsonTwoIndexSymmetricImplF \
