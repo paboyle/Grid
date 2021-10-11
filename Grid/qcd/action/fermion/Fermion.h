@@ -115,6 +115,11 @@ typedef WilsonFermion<WilsonImplR> WilsonFermionR;
 typedef WilsonFermion<WilsonImplF> WilsonFermionF;
 typedef WilsonFermion<WilsonImplD> WilsonFermionD;
 
+
+typedef WilsonFermion<SpWilsonImplR> SpWilsonFermionR;
+typedef WilsonFermion<SpWilsonImplF> SpWilsonFermionF;
+typedef WilsonFermion<SpWilsonImplD> SpWilsonFermionD;
+
 //typedef WilsonFermion<WilsonImplRL> WilsonFermionRL;
 //typedef WilsonFermion<WilsonImplFH> WilsonFermionFH;
 //typedef WilsonFermion<WilsonImplDF> WilsonFermionDF;

@@ -6,6 +6,13 @@ NAMESPACE_BEGIN(Grid);
 
 // Sp(2N)
 // ncolour = N
+
+// need to be careful with n and 2n
+// I am defining the Sp class for Sp(2n) to be such that the template variable ncolour
+// is n inside 2n and the typedef at the end of the file should eliminate possible confusion.
+
+// the other routines, like projectOnSp2n, N will be the dimension of the actual number of colors for consistency with the sun routines
+
 template <int ncolour>
 class Sp {
 public:
@@ -22,11 +29,31 @@ public:
     using iSp2nAlgebraVector = iScalar<iScalar<iVector<vtype, AlgebraDimension> > >;
     
     typedef iSp2nMatrix<Complex> Matrix;
+    typedef iSp2nMatrix<ComplexF> MatrixF;
+    typedef iSp2nMatrix<ComplexD> MatrixD;
     
     typedef iSp2nMatrix<vComplex> vMatrix;
+    typedef iSp2nMatrix<vComplexF> vMatrixF;
+    typedef iSp2nMatrix<vComplexD> vMatrixD;
     
+    typedef iSp2nAlgebraVector<Complex> AlgebraVector;
+    typedef iSp2nAlgebraVector<ComplexF> AlgebraVectorF;
+    typedef iSp2nAlgebraVector<ComplexD> AlgebraVectorD;
+    
+    typedef iSp2nAlgebraVector<vComplex> vAlgebraVector;
+    typedef iSp2nAlgebraVector<vComplexF> vAlgebraVectorF;
+    typedef iSp2nAlgebraVector<vComplexD> vAlgebraVectorD;
     
     typedef Lattice<vMatrix> LatticeMatrix;
+    typedef Lattice<vMatrixF> LatticeMatrixF;
+    typedef Lattice<vMatrixD> LatticeMatrixD;
+    
+    typedef Lattice<vAlgebraVector> LatticeAlgebraVector;
+    typedef Lattice<vAlgebraVectorF> LatticeAlgebraVectorF;
+    typedef Lattice<vAlgebraVectorD> LatticeAlgebraVectorD;
+    
+    
+    
     // Sp(2N) has N(2N+1) = 2N^2+N generators
     //
     // normalise the generators such that
@@ -322,7 +349,50 @@ public:
       }
     }
     
+ 
     
+    
+/*    template <typename GaugeField>
+    static void HotSpConfiguration(GridParallelRNG &pRNG, GaugeField &out) {
+      typedef typename GaugeField::vector_type vector_type;
+      typedef iSp2nMatrix<vector_type> vMatrixType;
+      typedef Lattice<vMatrixType> LatticeMatrixType;
+
+      LatticeMatrixType Umu(out.Grid());
+      for (int mu = 0; mu < Nd; mu++) {
+        LieRandomize(pRNG, Umu, 1.0);   //def
+        PokeIndex<LorentzIndex>(out, Umu, mu);
+      }
+    }
+    template<typename GaugeField>
+    static void TepidSpConfiguration(GridParallelRNG &pRNG,GaugeField &out){
+      typedef typename GaugeField::vector_type vector_type;
+      typedef iSp2nMatrix<vector_type> vMatrixType;
+      typedef Lattice<vMatrixType> LatticeMatrixType;
+
+      LatticeMatrixType Umu(out.Grid());
+      for(int mu=0;mu<Nd;mu++){
+        LieRandomize(pRNG,Umu,0.01);    //def
+        PokeIndex<LorentzIndex>(out,Umu,mu);
+      }
+    } */
+    
+    template<typename GaugeField>
+    static void ColdConfiguration(GaugeField &out){
+      typedef typename GaugeField::vector_type vector_type;
+      typedef iSp2nMatrix<vector_type> vMatrixType;
+      typedef Lattice<vMatrixType> LatticeMatrixType;
+
+      LatticeMatrixType Umu(out.Grid());
+      Umu=1.0;
+      for(int mu=0;mu<Nd;mu++){
+        PokeIndex<LorentzIndex>(out,Umu,mu);
+      }
+    }
+    template<typename GaugeField>
+    static void ColdConfiguration(GridParallelRNG &pRNG,GaugeField &out){
+      ColdConfiguration(out);
+    }
     
     
     
@@ -330,67 +400,62 @@ public:
     
     
 
+
+template<int N> //same of su
+ LatticeComplexD SpDeterminant(const Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu)
+ {
+   GridBase *grid=Umu.Grid();
+   auto lvol = grid->lSites();
+   LatticeComplexD ret(grid);
+
+   autoView(Umu_v,Umu,CpuRead);
+   autoView(ret_v,ret,CpuWrite);
+   thread_for(site,lvol,{
+     Eigen::MatrixXcd EigenU = Eigen::MatrixXcd::Zero(N,N);
+     Coordinate lcoor;
+     grid->LocalIndexToLocalCoor(site, lcoor);
+     iScalar<iScalar<iMatrix<ComplexD, N> > > Us;
+     peekLocalSite(Us, Umu_v, lcoor);
+     for(int i=0;i<N;i++){
+       for(int j=0;j<N;j++){
+     EigenU(i,j) = Us()()(i,j);
+       }}
+     ComplexD det = EigenU.determinant();
+     pokeLocalSite(det,ret_v,lcoor);
+   });
+   return ret;
+ }
+ 
+ template<int N>
+ static void ProjectSp2n(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu)
+ {
+   Umu      = ProjectOnSpGroup(Umu);
+   auto det = SpDeterminant(Umu); // ok ?
+
+   det = conjugate(det);
+
+   for(int i=0;i<N;i++){
+     auto element = PeekIndex<ColourIndex>(Umu,N-1,i);
+     element = element * det;
+     PokeIndex<ColourIndex>(Umu,element,Nc-1,i);
+   }
+ }
+ template<int N>
+ static void ProjectSp2n(Lattice<iVector<iScalar<iMatrix<vComplexD, N> >,Nd> > &U)
+ {
+   GridBase *grid=U.Grid();
+   for(int mu=0;mu<Nd;mu++){
+     auto Umu = PeekIndex<LorentzIndex>(U,mu);
+     Umu      = ProjectOnSpGroup(Umu);
+     ProjectSp2n(Umu);
+     PokeIndex<LorentzIndex>(U,Umu,mu);
+   }
+ }
+
+typedef Sp<1> Sp2;
 typedef Sp<2> Sp4;
 typedef Sp<3> Sp6;
 typedef Sp<4> Sp8;
 
 NAMESPACE_END(Grid);
 #endif
-
-
-    
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    
-    
-/*     }
-     sigxy = lieIndex & 0x1;     // 1 if odd, 0 if even
-     su2Index = lieIndex >> 1 ;  // where to put the sigma_x(y)
-                                 //for the even(odd) lieindex, sigmax(y)
-     if (sigxy)
-         //put sigmay at su2index
-     else
-         //put sigmax    */

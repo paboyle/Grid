@@ -208,5 +208,7 @@ public:
 
 typedef WilsonFermion<WilsonImplF> WilsonFermionF;
 typedef WilsonFermion<WilsonImplD> WilsonFermionD;
+//typedef WilsonFermion<SpWilsonImplF> SpWilsonFermionF;
+//typedef WilsonFermion<SpWilsonImplD> SpWilsonFermionD;
 
 NAMESPACE_END(Grid);
