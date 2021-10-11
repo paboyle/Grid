@@ -204,6 +204,18 @@ template <class RepresentationsPolicy,
 using GenericHMCRunnerHirep =
 				     HMCWrapperTemplate<PeriodicGimplR, Integrator, RepresentationsPolicy>;
 
+// sp2n
+
+template <template <typename, typename, typename> class Integrator>
+using GenericSp2nHMCRunner = HMCWrapperTemplate<SymplPeriodicGimplR, Integrator>;
+
+template <class RepresentationsPolicy,
+          template <typename, typename, typename> class Integrator>
+using GenericSp2nHMCRunnerHirep =
+                     HMCWrapperTemplate<SymplPeriodicGimplR, Integrator, RepresentationsPolicy>;
+
+
+
 template <class Implementation, class RepresentationsPolicy, 
           template <typename, typename, typename> class Integrator>
 using GenericHMCRunnerTemplate = HMCWrapperTemplate<Implementation, Integrator, RepresentationsPolicy>;
