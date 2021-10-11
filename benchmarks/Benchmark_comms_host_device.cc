@@ -53,7 +53,7 @@ struct time_statistics{
 
 void header(){
   std::cout <<GridLogMessage << " L  "<<"\t"<<" Ls  "<<"\t"
-            <<std::setw(11)<<"bytes\t\t"<<"MB/s uni (err/min/max)"<<"\t\t"<<"MB/s bidi (err/min/max)"<<std::endl;
+            <<std::setw(11)<<"bytes\t\t"<<"MB/s uni"<<"\t"<<"MB/s bidi"<<std::endl;
 };
 
 int main (int argc, char ** argv)

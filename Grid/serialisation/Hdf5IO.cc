@@ -33,7 +33,7 @@
 
 using namespace Grid;
 #ifndef H5_NO_NAMESPACE
-using namespace H5NS;
+using namespace H5NS; // Compile error here? Try adding --enable-cxx to hdf5 configure
 #endif
 
 // Writer implementation ///////////////////////////////////////////////////////
