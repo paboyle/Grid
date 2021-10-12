@@ -121,7 +121,10 @@ public:
     //
     LinkField Pmu(P.Grid());
     Pmu = Zero();
+<<<<<<< HEAD
 
+=======
+>>>>>>> 470d4dcc6db9fa41faceac54908bcd60a08bfd8a
     for (int mu = 0; mu < Nd; mu++)
     {
         if (isSp2n == true)
@@ -131,9 +134,14 @@ public:
         } else
         {
         
+<<<<<<< HEAD
             Group::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
         }
 
+=======
+            SU<Nrepresentation>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
+        }
+>>>>>>> 470d4dcc6db9fa41faceac54908bcd60a08bfd8a
       RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR) ;
       Pmu = Pmu*scale;
       PokeIndex<LorentzIndex>(P, Pmu, mu);
@@ -187,18 +195,27 @@ public:
       }
   }
 
+<<<<<<< HEAD
 
 
   static inline void HotConfiguration(GridParallelRNG &pRNG, Field &U)
   {
       Group::HotConfiguration(pRNG, U);
+=======
+  static inline void HotConfiguration(GridParallelRNG &pRNG, Field &U)
+  {
+      SU<Nc>::HotConfiguration(pRNG, U);
+>>>>>>> 470d4dcc6db9fa41faceac54908bcd60a08bfd8a
   }
 
   static inline void TepidConfiguration(GridParallelRNG &pRNG, Field &U) {
     Group::TepidConfiguration(pRNG, U);
   }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 470d4dcc6db9fa41faceac54908bcd60a08bfd8a
   static inline void ColdConfiguration(GridParallelRNG &pRNG, Field &U)
   {
       if (isSp2n == true)
@@ -207,10 +224,55 @@ public:
           Sp<nSp>::ColdConfiguration(pRNG, U);
       } else
       {
+<<<<<<< HEAD
           Group::ColdConfiguration(pRNG, U);
       }
 
   }
+=======
+          SU<Nc>::ColdConfiguration(pRNG, U);
+      }
+  }
+    
+  //sp2n... see sp2n.h
+/*
+    static inline void generate_sp2n_momenta(Field &P, GridSerialRNG & sRNG, GridParallelRNG &pRNG)
+    {
+      
+      const int nSp = Nrepresentation/2;
+      LinkField Pmu(P.Grid());
+      Pmu = Zero();
+      for (int mu = 0; mu < Nd; mu++) {
+        
+        Sp<nSp>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
+        RealD scale = ::sqrt(HMC_MOMENTUM_DENOMINATOR) ;
+        Pmu = Pmu*scale;
+        PokeIndex<LorentzIndex>(P, Pmu, mu);
+      }
+    }
+    
+    static inline void update_sp2n_field(Field& P, Field& U, double ep){
+ 
+      autoView(U_v,U,AcceleratorWrite);
+      autoView(P_v,P,AcceleratorRead);
+      accelerator_for(ss, P.Grid()->oSites(),1,{
+        for (int mu = 0; mu < Nd; mu++) {
+          U_v[ss](mu) = ProjectOnSpGroup(Exponentiate(P_v[ss](mu), ep, Nexp) * U_v[ss](mu));
+        }
+      });
+    }
+    
+    static inline void SpProject(Field &U) {
+      ProjectSp2n(U);
+    }
+
+
+    static inline void ColdSpConfiguration(GridParallelRNG &pRNG, Field &U) {
+      const int nSp = Nrepresentation/2;
+      Sp<nSp>::ColdConfiguration(pRNG, U);
+    }
+*/
+>>>>>>> 470d4dcc6db9fa41faceac54908bcd60a08bfd8a
 
 };
 
@@ -223,9 +285,17 @@ typedef GaugeImplTypes<vComplex, Nc, 12, true> SymplGimplTypesR;
 typedef GaugeImplTypes<vComplexF, Nc, 12, true> SymplGimplTypesF;
 typedef GaugeImplTypes<vComplexD, Nc, 12, true> SymplGimplTypesD;
 
+<<<<<<< HEAD
 typedef GaugeImplTypes<vComplex, Group::AdjointDimension> GimplAdjointTypesR;
 typedef GaugeImplTypes<vComplexF, Group::AdjointDimension> GimplAdjointTypesF;
 typedef GaugeImplTypes<vComplexD, Group::AdjointDimension> GimplAdjointTypesD;
+
+
+=======
+typedef GaugeImplTypes<vComplex, SU<Nc>::AdjointDimension> GimplAdjointTypesR;
+typedef GaugeImplTypes<vComplexF, SU<Nc>::AdjointDimension> GimplAdjointTypesF;
+typedef GaugeImplTypes<vComplexD, SU<Nc>::AdjointDimension> GimplAdjointTypesD;
+>>>>>>> 470d4dcc6db9fa41faceac54908bcd60a08bfd8a
 
 
 
