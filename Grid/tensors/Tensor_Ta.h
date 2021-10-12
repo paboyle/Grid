@@ -161,87 +161,74 @@ accelerator_inline iMatrix<vtype,N> ProjectOnSpGroup(const iMatrix<vtype,N> &arg
   iMatrix<vtype,N> ret(arg);
   vtype nrm;
   vtype inner;
-  for(int c1=0;c1<N;c1++){
+  for(int c1=0;c1<N/2;c1++){
 
-       // Normalises row c1
-        zeroit(inner);
-        for(int c2=0;c2<N;c2++)
-          inner += innerProduct(ret._internal[c1][c2],ret._internal[c1][c2]);
+    // Normalises row c1
+    zeroit(inner);
+    for(int c2=0;c2<N;c2++)
+      inner += innerProduct(ret._internal[c1][c2],ret._internal[c1][c2]);
 
-        nrm = sqrt(inner);
-        nrm = 1.0/nrm;
-        for(int c2=0;c2<N;c2++)
-          ret._internal[c1][c2]*= nrm;
+    nrm = sqrt(inner);
+    nrm = 1.0/nrm;
+    for(int c2=0;c2<N;c2++)
+      ret._internal[c1][c2]*= nrm;
 
-        // Compute row c1+N2/2: c1+N/2 = - \Omega c1*
-        for(int c2=0;c2<N/2;c2++)
-          //tmp = conjugate(ret._internal[c1][c2]);
-          //ret._internal[c1+N/2][c2+N/2] = tmp;
-            ret._internal[c1+N/2][c2+N/2] = conjugate(ret._internal[c1][c2]);
+    // Compute row c1+N2/2: c1+N/2 = - \Omega c1*
+    for(int c2=0;c2<N/2;c2++)
+      ret._internal[c1+N/2][c2+N/2] = conjugate(ret._internal[c1][c2]);
 
-        for(int c2=N/2;c2<N;c2++)
-          //tmp = conjugate(ret._internal[c1][c2]);
-         // ret._internal[c1+N/2][c2-N/2] = -tmp;
-            ret._internal[c1+N/2][c2-N/2] = -conjugate(ret._internal[c1][c2]);
+    for(int c2=N/2;c2<N;c2++)
+      ret._internal[c1+N/2][c2-N/2] = -conjugate(ret._internal[c1][c2]);
 
-        // Remove c1 from rows c1+1...N/2-1
-        for (int b=c1+1; b<N/2; ++b){
-          decltype(ret._internal[b][b]*ret._internal[b][b]) pr;
-          zeroit(pr);
-          for(int c=0; c<N; ++c)
-            pr += conjugate(ret._internal[c1][c])*ret._internal[b][c];
+    // Remove c1 from rows c1+1...N/2-1
+    for (int b=c1+1; b<N/2; ++b){
+      decltype(ret._internal[b][b]*ret._internal[b][b]) pr;
+      zeroit(pr);
+      for(int c=0; c<N; ++c)
+        pr += conjugate(ret._internal[c1][c])*ret._internal[b][c];
 
-          for(int c=0; c<N; ++c){
-            ret._internal[b][c] -= pr * ret._internal[c1][c];
-          }
-        }
-
-        // Remove c1+N/2 from rows c1+1...N/2-1
-        for (int b=c1+1; b<N; ++b){
-          decltype(ret._internal[b][b]*ret._internal[b][b]) pr;
-          zeroit(pr);
-          for(int c=0; c<N; ++c)
-            pr += conjugate(ret._internal[c1+N/2][c])*ret._internal[b][c];
-
-          for(int c=0; c<N; ++c){
-            ret._internal[b][c] -= pr * ret._internal[c1+N/2][c];
-          }
-        }
-      } //end for loop over c1
-
-      // Compute the last row
-      {
-      // Normalise last row
-        int c1 = N/2-1;
-        zeroit(inner);
-        for(int c2=0;c2<N;c2++)
-        {
-          inner += innerProduct(ret._internal[c1][c2],ret._internal[c1][c2]);
-        }
-          
-        nrm = sqrt(inner);
-        nrm = 1.0/nrm;
-        for(int c2=0;c2<N;c2++)
-        {
-          ret._internal[c1][c2]*= nrm;
-        }
-      // Compute row cN-1+N2/2: cN-1+N/2 = - \Omega cN-1*
-        for(int c2=0;c2<N/2;c2++)
-        {
-          //tmp = conjugate(ret._internal[c1][c2]);
-          // ret._internal[c1+N/2][c2+N/2] = tmp;
-             ret._internal[c1+N/2][c2+N/2] = conjugate(ret._internal[c1][c2]);
-        }
-        for(int c2=N/2;c2<N;c2++)
-        {
-          //tmp = conjugate(ret._internal[c1][c2]);
-          //ret._internal[c1+N/2][c2-N/2] = -tmp;
-            ret._internal[c1+N/2][c2-N/2] = -conjugate(ret._internal[c1][c2]);
-        }
+      for(int c=0; c<N; ++c){
+        ret._internal[b][c] -= pr * ret._internal[c1][c];
       }
-      // assuming the determinant is ok
-      return ret;
+    }
+
+    // Remove c1+N/2 from rows c1+1...N/2-1
+    for (int b=c1+1; b<N; ++b){
+      decltype(ret._internal[b][b]*ret._internal[b][b]) pr;
+      zeroit(pr);
+      for(int c=0; c<N; ++c)
+        pr += conjugate(ret._internal[c1+N/2][c])*ret._internal[b][c];
+
+      for(int c=0; c<N; ++c){
+        ret._internal[b][c] -= pr * ret._internal[c1+N/2][c];
+      }
+    }
   }
+
+  // Compute the last row
+  {
+  // Normalise last row
+    int c1 = N/2-1;
+    zeroit(inner);
+    for(int c2=0;c2<N;c2++)
+      inner += innerProduct(ret._internal[c1][c2],ret._internal[c1][c2]);
+
+    nrm = sqrt(inner);
+    nrm = 1.0/nrm;
+    for(int c2=0;c2<N;c2++)
+      ret._internal[c1][c2]*= nrm;
+
+  // Compute row cN-1+N2/2: cN-1+N/2 = - \Omega cN-1*
+    for(int c2=0;c2<N/2;c2++)
+      ret._internal[c1+N/2][c2+N/2] = conjugate(ret._internal[c1][c2]);
+
+    for(int c2=N/2;c2<N;c2++)
+      ret._internal[c1+N/2][c2-N/2] = -conjugate(ret._internal[c1][c2]);
+  }
+  // assuming the determinant is ok
+  return ret;
+}
+
 
 NAMESPACE_END(Grid);
 
