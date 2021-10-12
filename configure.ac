@@ -787,7 +787,7 @@ os (target)                 : $target_os
 compiler vendor             : ${ax_cv_cxx_compiler_vendor}
 compiler version            : ${ax_cv_gxx_version}
 ----- BUILD OPTIONS -----------------------------------
-gauge group                 : `if test "${ac_ENABLE_SP}x" == "yesx"; then echo Sp2n; else echo SUn; fi`
+#gauge group                 : `if test "${ac_ENABLE_SP}x" == "yesx"; then echo Sp2n; else echo SUn; fi`
 Nc                          : ${ac_Nc}
 SIMD                        : ${ac_SIMD}${SIMD_GEN_WIDTH_MSG}
 Threading                   : ${ac_openmp}

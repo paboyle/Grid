@@ -310,6 +310,45 @@ public:
     }
     
     
+    template <typename LatticeMatrixType>
+    static void LieRandomize(GridParallelRNG &pRNG, LatticeMatrixType &out, double scale = 1.0)
+    {
+      GridBase *grid = out.Grid();
+
+      typedef typename LatticeMatrixType::vector_type vector_type;
+      typedef typename LatticeMatrixType::scalar_type scalar_type;
+
+      typedef iSinglet<vector_type> vTComplexType;
+
+      typedef Lattice<vTComplexType> LatticeComplexType;
+      typedef typename GridTypeMapper<typename LatticeMatrixType::vector_object>::scalar_object MatrixType;
+
+      LatticeComplexType ca(grid);
+      LatticeMatrixType lie(grid);
+      LatticeMatrixType la(grid);
+      ComplexD ci(0.0, scale);
+      //    ComplexD cone(1.0, 0.0);
+      MatrixType ta;
+
+      lie = Zero();
+
+      for (int a = 0; a < AlgebraDimension; a++) {
+        random(pRNG, ca);
+
+        ca = (ca + conjugate(ca)) * 0.5;
+        ca = ca - 0.5;
+
+        generator(a, ta);
+
+        la = ci * ca * ta;
+
+        lie = lie + la;  // e^{i la ta}
+
+      }
+      taExp(lie, out);
+    }
+    
+    
     static void GaussianFundamentalLieAlgebraMatrix(GridParallelRNG &pRNG, //same as sun
                                                     LatticeMatrix &out,
                                                     Real scale = 1.0) {
@@ -352,8 +391,8 @@ public:
  
     
     
-/*    template <typename GaugeField>
-    static void HotSpConfiguration(GridParallelRNG &pRNG, GaugeField &out) {
+    template <typename GaugeField>
+    static void HotConfiguration(GridParallelRNG &pRNG, GaugeField &out) {
       typedef typename GaugeField::vector_type vector_type;
       typedef iSp2nMatrix<vector_type> vMatrixType;
       typedef Lattice<vMatrixType> LatticeMatrixType;
@@ -365,7 +404,7 @@ public:
       }
     }
     template<typename GaugeField>
-    static void TepidSpConfiguration(GridParallelRNG &pRNG,GaugeField &out){
+    static void TepidConfiguration(GridParallelRNG &pRNG,GaugeField &out){
       typedef typename GaugeField::vector_type vector_type;
       typedef iSp2nMatrix<vector_type> vMatrixType;
       typedef Lattice<vMatrixType> LatticeMatrixType;
@@ -375,7 +414,7 @@ public:
         LieRandomize(pRNG,Umu,0.01);    //def
         PokeIndex<LorentzIndex>(out,Umu,mu);
       }
-    } */
+    }
     
     template<typename GaugeField>
     static void ColdConfiguration(GaugeField &out){
@@ -398,39 +437,12 @@ public:
     
 }; // end of class Sp
     
-    
-
-
-template<int N> //same of su
- LatticeComplexD SpDeterminant(const Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu)
- {
-   GridBase *grid=Umu.Grid();
-   auto lvol = grid->lSites();
-   LatticeComplexD ret(grid);
-
-   autoView(Umu_v,Umu,CpuRead);
-   autoView(ret_v,ret,CpuWrite);
-   thread_for(site,lvol,{
-     Eigen::MatrixXcd EigenU = Eigen::MatrixXcd::Zero(N,N);
-     Coordinate lcoor;
-     grid->LocalIndexToLocalCoor(site, lcoor);
-     iScalar<iScalar<iMatrix<ComplexD, N> > > Us;
-     peekLocalSite(Us, Umu_v, lcoor);
-     for(int i=0;i<N;i++){
-       for(int j=0;j<N;j++){
-     EigenU(i,j) = Us()()(i,j);
-       }}
-     ComplexD det = EigenU.determinant();
-     pokeLocalSite(det,ret_v,lcoor);
-   });
-   return ret;
- }
  
  template<int N>
  static void ProjectSp2n(Lattice<iScalar<iScalar<iMatrix<vComplexD, N> > > > &Umu)
  {
    Umu      = ProjectOnSpGroup(Umu);
-   auto det = SpDeterminant(Umu); // ok ?
+   auto det = Determinant(Umu); // ok ?
 
    det = conjugate(det);
 
