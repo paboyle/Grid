@@ -91,6 +91,8 @@ void acceleratorInit(void)
   printf("AcceleratorCudaInit: Configure options --enable-setdevice=yes \n");
   cudaSetDevice(rank);
 #endif
+
+  cudaStreamCreate(&copyStream);
   if ( world_rank == 0 )  printf("AcceleratorCudaInit: ================================================\n");
 }
 #endif
