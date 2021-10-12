@@ -128,6 +128,23 @@ case ${ac_LAPACK} in
         AC_DEFINE([USE_LAPACK],[1],[use LAPACK]);;
 esac
 
+
+############### Symplectic group
+AC_ARG_ENABLE([symplectic],
+    [AC_HELP_STRING([--enable-symplectic=yes|no], [enable gauge group Sp2n])],
+    [ac_ENABLE_SP=${enable_symplectic}], [ac_ENABLE_SP=no])
+
+AM_CONDITIONAL(BUILD_SP, [ test "${ac_ENABLE_SP}X" == "yesX" ])
+
+case ${ac_ENABLE_SP} in
+   yes)
+        AC_DEFINE([Sp2n_config],[1],[gauge group Sp2n], [have_sp2n=true]);;
+   no)
+        AC_DEFINE([Sp2n_config],[0],[gauge group SUn], [have_sp2n=false]);;
+    *)
+        AC_MSG_ERROR(["--enable-symplectic is either yes or no"]);;
+esac
+
 ############### fermions
 AC_ARG_ENABLE([fermion-reps],
      [AC_HELP_STRING([--enable-fermion-reps=yes|no], [enable extra fermion representation support])],
@@ -770,6 +787,7 @@ os (target)                 : $target_os
 compiler vendor             : ${ax_cv_cxx_compiler_vendor}
 compiler version            : ${ax_cv_gxx_version}
 ----- BUILD OPTIONS -----------------------------------
+gauge group                 : `if test "${ac_ENABLE_SP}x" == "yesx"; then echo Sp2n; else echo SUn; fi`
 Nc                          : ${ac_Nc}
 SIMD                        : ${ac_SIMD}${SIMD_GEN_WIDTH_MSG}
 Threading                   : ${ac_openmp}
@@ -787,6 +805,7 @@ FFTW                        : `if test "x$have_fftw" = xtrue; then echo yes; els
 LIME (ILDG support)         : `if test "x$have_lime" = xtrue; then echo yes; else echo no; fi`
 HDF5                        : `if test "x$have_hdf5" = xtrue; then echo yes; else echo no; fi`
 build DOXYGEN documentation : `if test "$DX_FLAG_doc" = '1'; then echo yes; else echo no; fi`
+Sp2n                        : ${ac_ENABLE_SP}
 ----- BUILD FLAGS -------------------------------------
 CXXFLAGS:
 `echo ${AM_CXXFLAGS} ${CXXFLAGS} | tr ' ' '\n' | sed 's/^-/    -/g'`
