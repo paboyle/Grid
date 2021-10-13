@@ -4,7 +4,7 @@ using namespace Grid;
 
 int main (int argc, char **argv)
 {
-     Grid_init(&argc,&argv);
+    Grid_init(&argc,&argv);
     
     
     Coordinate latt_size   = GridDefaultLatt();
@@ -20,6 +20,8 @@ int main (int argc, char **argv)
     LatticeColourMatrixD aux(&Grid);
     LatticeColourMatrixD identity(&Grid);
     
+    const int nsp = Nc / 2;
+    
     identity = 1.0;
     RealD epsilon = 0.01;
     Complex i(0., 1.);
@@ -34,20 +36,28 @@ int main (int argc, char **argv)
     SU<Nc>::HotConfiguration(pRNG,Umu);
     U = PeekIndex<LorentzIndex>(Umu,2);
     
-    // it is unitary
     aux = U*adj(U) - identity;
     std::cout <<GridLogMessage << std::endl;
-    std::cout << GridLogMessage << "Unitary check of starting random SUn matrix " << std::endl;
+    std::cout << GridLogMessage << "Starting with random SUn matrix " << std::endl;
+    std::cout << GridLogMessage << "Unitary check " << std::endl;
     std::cout <<GridLogMessage << "U adjU - 1 = " << norm2(aux) << std::endl;
+    assert ( norm2(aux) < 1e-8 );
     std::cout <<GridLogMessage << std::endl;
+    if (Nc != 2)
+    {
+        std::cout << "This matrix should not leave Omega invariant, expect a warning" << std::endl;
+    }
+    Sp<nsp>::OmegaInvariance(U);
     std::cout <<GridLogMessage << std::endl;
     
     U = U + epsilon*identity;
     aux = U*adj(U) - identity;
     
-    std::cout << GridLogMessage << "Unitary matrix modified " << std::endl;
+    std::cout << GridLogMessage << "Unitary matrix deformed " << std::endl;
     std::cout << GridLogMessage << "now U adjU - 1 = " << norm2(aux) << std::endl;
     std::cout <<GridLogMessage << std::endl;
+    std::cout << "This matrix should not leave Omega invariant, expect a warning" << std::endl;
+    Sp<nsp>::OmegaInvariance(U);
     std::cout <<GridLogMessage << std::endl;
     std::cout << GridLogMessage << "Projecting on Sp2n " << std::endl;
 
@@ -65,18 +75,17 @@ int main (int argc, char **argv)
     std::cout << GridLogMessage << "Det after Projection on Sp2n = " << norm2( Determinant(U) ) / vol << std::endl;
     std::cout <<GridLogMessage << std::endl;
     std::cout <<GridLogMessage << std::endl;
+    
+    // actual sp2n check
+    std::cout << GridLogMessage << "Checking invariance after projection "<< std::endl;
+    Sp<nsp>::OmegaInvariance(U);
+    
     // checks on elements
-    // an Sp2n matrix is a block matrix of the type
-    //
-    //
-    //     U = (    W       X   )
-    //         (    -X^*    W^* )
-    //
-    // will check this
-    //
-    std::cout << GridLogMessage << "Checking that U[ i , j ] - conj U[ i+N/2, j+N/2 ] = 0 for i = 0, ... , N/2 " << std::endl;
+
+    std::cout << GridLogMessage << "Checking the structure is " << std::endl;
+    std::cout << GridLogMessage << "U  =  (   W    X   )  " << std::endl;
+    std::cout << GridLogMessage << "      (  -X^*  W^* )  " << std::endl;
     std::cout <<GridLogMessage << std::endl;
-    const int nsp = Nc / 2;
     for (int c1 = 0; c1 < nsp; c1++) //check on W
     {
         for (int c2 = 0; c2 < nsp; c2++)
@@ -86,17 +95,13 @@ int main (int argc, char **argv)
             auto Ww = conjugate( Wstar );
             auto amizero = sum(W - Ww);
             auto amizeroo = TensorRemove(amizero);
-            std::cout << GridLogMessage << "diff(real,im) = " << amizeroo << std::endl;
             assert(  amizeroo.real() < 10e-6 );
             amizeroo *= i;
             assert(  amizeroo.real() < 10e-6 );
-            std::cout << GridLogMessage << "ok " << std::endl;
         }
         
     }
-    std::cout <<GridLogMessage << std::endl;
-    std::cout << GridLogMessage << "Checking that U [ i , j+N/2 ] + conj U [ i+N/2, j+N/2 ] = 0 for i = 0, ... , N/2 " << std::endl;
-    std::cout <<GridLogMessage << std::endl;
+
     for (int c1 = 0; c1 < nsp ; c1++)
     {
         for (int c2 = 0; c2 < nsp; c2++)
@@ -106,16 +111,16 @@ int main (int argc, char **argv)
             auto minusXx = conjugate(minusXstar);
             auto amizero = sum (X + minusXx);
             auto amizeroo = TensorRemove(amizero);
-            std::cout << GridLogMessage << "diff(real,im) = " << amizeroo << std::endl;
             assert(  amizeroo.real() < 10e-6 );
             amizeroo *= i;
             assert(  amizeroo.real() < 10e-6 );
-            std::cout << GridLogMessage << "ok " << std::endl;
         }
     }
     
+    std::cout << GridLogMessage << "ok" << std::endl;
     
     // an explicit check for sp2
+    /*
     if (Nc == 2)
     {
         assert(Nc==2);
@@ -141,13 +146,7 @@ int main (int argc, char **argv)
         std::cout << GridLogMessage << "now A = " << A << std::endl;
         std::cout << GridLogMessage << "A(0,0) - conjA(1,1) = " << A()()(0,0) - adj ( A()()(1,1) )<< std::endl;
         std::cout << GridLogMessage << "A(0,1) + conjA(1,0) = " << A()()(0,1) + adj ( A()()(1,0) )<< std::endl;
-    }
-    
-    
-    
-    
-    
-    
+    }*/
     
     Grid_finalize();
 
