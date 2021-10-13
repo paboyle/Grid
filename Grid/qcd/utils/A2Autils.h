@@ -1551,8 +1551,8 @@ void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
   int MFrvol = rd*Lblock*Rblock*Nmom*Ngamma;
   int MFlvol = ld*Lblock*Rblock*Nmom*Ngamma;
   
-  Vector<calcVector> lvSum(MFrvol);
-  Vector<calcScalar> lsSum(MFlvol);
+  Vector<Singlet_v> lvSum(MFrvol);
+  Vector<Singlet_s> lsSum(MFlvol);
 
   thread_for(r, MFrvol,{
     lvSum[r] = Zero();
@@ -1604,6 +1604,7 @@ void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
 
   Vector<FermView> AcceleratorViewContainerV, AcceleratorViewContainerW;
   Vector<CView> AcceleratorViewContainerStag, AcceleratorViewContainerMom;
+  Vector<Coordinate> icoorContainer(Nsimd,Coordinate(Nd));
   for(int p=0;p<Lblock;p++) {
     AcceleratorViewContainerW.push_back(lhs_wi[p].View(AcceleratorRead));
   }
@@ -1617,53 +1618,54 @@ void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
     AcceleratorViewContainerMom.push_back(mom[p].View(AcceleratorRead));
   }
 
+  for(int p=0;p<Nsimd;p++) {
+    grid->iCoorFromIindex(icoorContainer[p],p);
+  }
+
+  // These are hacks to pass data to the device without using std::vector
   FermView *view_pV = & AcceleratorViewContainerV[0];
   FermView *view_pW = & AcceleratorViewContainerW[0];
   CView    *view_pS = & AcceleratorViewContainerStag[0];
   CView    *view_pM = & AcceleratorViewContainerMom[0];
 
-  // Spawn threads for each time slice on the local processor
-  thread_for(rt, rd,{
+  Singlet_v *lvSum_p = &lvSum[0];
+  Singlet_s *lsSum_p = &lsSum[0];
 
-    int pd = grid->_processors[orthogdim];
-    int pc = grid->_processor_coor[orthogdim];
+  Coordinate *icoor_p = &icoorContainer[0];
+
+  // Spawn threads for each time slice on the local processor
+  for (int rt=0;rt<rd;rt++) {
+
 
     int so=rt*grid->_ostride[orthogdim]; // base offset for start of the local plane
 
     accelerator_for(l_index,Lblock,Nsimd,{
+
       for(int r_index=0;r_index<Rblock;r_index++){
 
-        auto sum = std::vector<calcVector>(Ngamma*Nmom,Zero());
+        int base = Ngamma*Nmom*l_index+Ngamma*Nmom*Lblock*r_index+Ngamma*Nmom*Lblock*Rblock*rt;
+
         for(int n=0;n<nVecBlocks;n++){
           for(int b=0;b<vecsPerBlock;b++){
-            int ss= so+n*blockStride+b;
+            int ss = so+n*blockStride+b;
 
-            calcVector temp_site, temp_phase;
+            calcVector temp_site, temp_phase, sum;
             auto left = coalescedRead(view_pW[l_index][ss]);
             auto right = coalescedRead(view_pV[r_index][ss]);
    
-            temp_site()()() = left()()(0) * right()()(0)
-                            + left()()(1) * right()()(1)
-                            + left()()(2) * right()()(2);
+            temp_site = innerProduct(left,right);
 
             for (int mu = 0; mu < Ngamma; mu++) {
               auto gamma_phase = coalescedRead(view_pS[mu][ss]);
               for ( int m=0;m<Nmom;m++){
-                int mom_gamma_index = mu*Nmom+m;
+                int idx = base+mu*Nmom+m;
                 auto momentum_phase = coalescedRead(view_pM[m][ss]);
+                auto sum = coalescedRead(lvSum_p[idx]);
                 temp_phase = gamma_phase*momentum_phase;
-                mac(&sum[mom_gamma_index],&temp_site,&temp_phase);
+                mac(&sum,&temp_site,&temp_phase);
+                coalescedWrite(lvSum_p[idx],sum);
               }
             }
-          }
-        }
-
-        int base = Ngamma*Nmom*l_index+Ngamma*Nmom*Lblock*r_index+Ngamma*Nmom*Lblock*Rblock*rt;
-        for (int mu = 0; mu < Ngamma; mu++) {
-          for ( int m=0;m<Nmom;m++){
-            int mom_gamma_index = mu*Nmom+m;
-            int idx = base+mom_gamma_index;
-            coalescedWrite(lvSum[idx],sum[mom_gamma_index]);
           }
         }
       }
@@ -1672,9 +1674,8 @@ void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
 
     accelerator_for(l_index,Lblock,32,{
       // Sum across simd lanes in the plane, breaking out orthog dir.
-      Coordinate icoor(Nd);
-      ExtractBuffer<calcScalar> extracted(Nsimd);
-      
+      ExtractBuffer<Singlet_s> extracted(Nsimd);
+
       for(int r_index=0;r_index<Rblock;r_index++){
         int base = Ngamma*Nmom*l_index+Ngamma*Nmom*Lblock*r_index+Ngamma*Nmom*Lblock*Rblock*rt;
         for (int mu = 0; mu < Ngamma; mu++) {
@@ -1684,57 +1685,57 @@ void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
             // Thus, ignoring gamma and time we get the index of lvSum
             int ij_rdx = base+mu*Nmom+m;
             
-            extract(lvSum[ij_rdx],extracted);
+            extract(lvSum_p[ij_rdx],extracted);
             
             for(int idx=0;idx<Nsimd;idx++){
                 
                 // Get the *internal* coord that the SIMD lane idx represents
-                grid->iCoorFromIindex(icoor,idx);
                 
                 // We are looking to add each element of a SIMD lane to the appropriate time slice in lsSum.
                 // ldx is the actual time slice on the lattice
-                int ldx    = rt+icoor[orthogdim]*rd;
+                int ldx    = rt+icoor_p[idx][orthogdim]*rd;
                 
                 // The offset for lsSum is thus lsSum[timeSlice,Lblock,Rblock,gamma,momentum] in row major
                 int ij_ldx = m+mu*Nmom+Ngamma*Nmom*l_index+Ngamma*Nmom*Lblock*r_index+Ngamma*Nmom*Lblock*Rblock*ldx;
                 
-                lsSum[ij_ldx]=lsSum[ij_ldx]+extracted[idx];
+                lsSum_p[ij_ldx]=lsSum_p[ij_ldx]+extracted[idx];
             }
           }
         }
       }
     });
+  }
 
-    assert(mat.dimension(0) == Nmom);
-    assert(mat.dimension(1) == Ngamma);
-    assert(mat.dimension(2) == Nt);
-    
-    for(int idx=0;idx<Nsimd;idx++){
-      int lt = rt*Nsimd+idx;
-        
-      for(int pt=0;pt<pd;pt++){
-        int t = lt + pt*ld;
-        // Fill mat only with the data you have locally
-        if (pt == pc){
-          for(int i=0;i<Lblock;i++){
-            for(int j=0;j<Rblock;j++){
-              for (int mu = 0; mu < Ngamma; mu++) {
-                for(int m=0;m<Nmom;m++){
-                  int ij_dx = m+Nmom*mu+Ngamma*Nmom*i + Ngamma*Nmom*Lblock * j + Ngamma*Nmom*Lblock * Rblock * lt;
-                  mat(m,mu,t,i,j) = lsSum[ij_dx];
-                }
+  assert(mat.dimension(0) == Nmom);
+  assert(mat.dimension(1) == Ngamma);
+  assert(mat.dimension(2) == Nt);
+
+  int pd = grid->_processors[orthogdim];
+  int pc = grid->_processor_coor[orthogdim];
+
+  thread_for_collapse(2,lt,ld,{
+    for(int pt=0;pt<pd;pt++){
+      int t = lt + pt*ld;
+      // Fill mat only with the data you have locally
+      if (pt == pc){
+        for(int i=0;i<Lblock;i++){
+          for(int j=0;j<Rblock;j++){
+            for (int mu = 0; mu < Ngamma; mu++) {
+              for(int m=0;m<Nmom;m++){
+                int ij_dx = m+Nmom*mu+Ngamma*Nmom*i + Ngamma*Nmom*Lblock * j + Ngamma*Nmom*Lblock * Rblock * lt;
+                mat(m,mu,t,i,j) = lsSum[ij_dx];
               }
             }
           }
-        // Otherwise fill with zeros
-        } else {
-          const scalar_type zz(0.0);
-          for(int i=0;i<Lblock;i++){
-            for(int j=0;j<Rblock;j++){
-              for (int mu = 0; mu < Ngamma; mu++) {
-                for(int m=0;m<Nmom;m++){
-                  mat(m,mu,t,i,j) = zz;
-                }
+        }
+      // Otherwise fill with zeros
+      } else {
+        const scalar_type zz(0.0);
+        for(int i=0;i<Lblock;i++){
+          for(int j=0;j<Rblock;j++){
+            for (int mu = 0; mu < Ngamma; mu++) {
+              for(int m=0;m<Nmom;m++){
+                mat(m,mu,t,i,j) = zz;
               }
             }
           }
@@ -1742,6 +1743,7 @@ void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
       }
     }
   });
+
   if (t_kernel) *t_kernel += usecond();
 
   // Combine local mat objects from all processors so that it's completely filled in.
@@ -1867,14 +1869,14 @@ void A2Autils<FImpl>::StagMesonField(TensorType &mat,
                         
                         //auto left = conjugate(lhs_wi[i]._odata[ss]);
                         //auto wi_v  = lhs_wi[i].View();
-		        autoView(wi_v, lhs_wi[i], CpuRead);
+    		        autoView(wi_v, lhs_wi[i], CpuRead);
                         auto left = conjugate(wi_v[ss]);
 
                         for(int j=0;j<Rblock;j++){
                             
                             Singlet_v vv;
                             //auto right = rhs_vj[j]._odata[ss];
-			    autoView(vj_v,rhs_vj[j],CpuRead);
+                  			    autoView(vj_v,rhs_vj[j],CpuRead);
                             //auto vj_v = rhs_vj[j].View();
                             auto right = vj_v[ss];
  
