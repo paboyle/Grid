@@ -82,7 +82,7 @@ struct EOFAparameters: Serializable {
 
     rat_params.lo = 0.1;
     rat_params.hi = 25.0;
-    rat_params.MaxIter  = 10000;
+    rat_params.MaxIter  = 50000;
     rat_params.tolerance= 1.0e-9;
     rat_params.degree   = 14;
     rat_params.precision= 50;
@@ -180,7 +180,7 @@ void computeEigenvalues(std::string param_file,
   FunctionHermOp<FermionFieldD> Cheb_wrap(Cheb, hermop);
 
   std::cout << "IRL: alpha=" << params.alpha << " beta=" << params.beta << " mu=" << params.mu << " ord=" << params.ord << std::endl;
-  ImplicitlyRestartedLanczos<FermionFieldD> IRL(Cheb_wrap, hermop_wrap, params.n_stop, params.n_want, params.n_use, params.tolerance, 10000);
+  ImplicitlyRestartedLanczos<FermionFieldD> IRL(Cheb_wrap, hermop_wrap, params.n_stop, params.n_want, params.n_use, params.tolerance, 50000);
 
   std::vector<RealD> eval(params.n_use);
   std::vector<FermionFieldD> evec(params.n_use, rbGrid);
@@ -228,19 +228,19 @@ void checkRHMC(GridCartesian* Grid, GridRedBlackCartesian* rbGrid, const Lattice
 
   if(action_or_md == 0 || action_or_md == 2){
     std::cout << "Starting: Checking quality of RHMC action approx for " << quark_descr << " quark numerator and power -1/" << inv_pow << std::endl;
-    InversePowerBoundsCheck(inv_pow, 10000, 1e16, MdagM,gauss_o, rhmc.ApproxNegPowerAction); //use large tolerance to prevent exit on fail; we are trying to tune here!
+    InversePowerBoundsCheck(inv_pow, 50000, 1e16, MdagM,gauss_o, rhmc.ApproxNegPowerAction); //use large tolerance to prevent exit on fail; we are trying to tune here!
     std::cout << "Finished: Checking quality of RHMC action approx for " << quark_descr << " quark numerator and power -1/" << inv_pow << std::endl;
 
     std::cout << "Starting: Checking quality of RHMC action approx for " << quark_descr << " quark numerator and power -1/" << 2*inv_pow << std::endl;
-    InversePowerBoundsCheck(2*inv_pow, 10000, 1e16, MdagM,gauss_o, rhmc.ApproxNegHalfPowerAction);
+    InversePowerBoundsCheck(2*inv_pow, 50000, 1e16, MdagM,gauss_o, rhmc.ApproxNegHalfPowerAction);
     std::cout << "Finished: Checking quality of RHMC action approx for " << quark_descr << " quark numerator and power -1/" << 2*inv_pow << std::endl;
 
     std::cout << "Starting: Checking quality of RHMC action approx for " << quark_descr << " quark denominator and power -1/" << inv_pow << std::endl;
-    InversePowerBoundsCheck(inv_pow, 10000, 1e16, VdagV,gauss_o, rhmc.ApproxNegPowerAction);
+    InversePowerBoundsCheck(inv_pow, 50000, 1e16, VdagV,gauss_o, rhmc.ApproxNegPowerAction);
     std::cout << "Finished: Checking quality of RHMC action approx for " << quark_descr << " quark denominator and power -1/" << inv_pow << std::endl;
 
     std::cout << "Starting: Checking quality of RHMC action approx for " << quark_descr << " quark denominator and power -1/" << 2*inv_pow << std::endl;
-    InversePowerBoundsCheck(2*inv_pow, 10000, 1e16, VdagV,gauss_o, rhmc.ApproxNegHalfPowerAction);
+    InversePowerBoundsCheck(2*inv_pow, 50000, 1e16, VdagV,gauss_o, rhmc.ApproxNegHalfPowerAction);
     std::cout << "Finished: Checking quality of RHMC action approx for " << quark_descr << " quark denominator and power -1/" << 2*inv_pow << std::endl;
   }
 
@@ -248,19 +248,19 @@ void checkRHMC(GridCartesian* Grid, GridRedBlackCartesian* rbGrid, const Lattice
 
   if(action_or_md == 1 || action_or_md == 2){
     std::cout << "Starting: Checking quality of RHMC MD approx for " << quark_descr << " quark numerator and power -1/" << inv_pow << std::endl;
-    InversePowerBoundsCheck(inv_pow, 10000, 1e16, MdagM,gauss_o, rhmc.ApproxNegPowerMD); 
+    InversePowerBoundsCheck(inv_pow, 50000, 1e16, MdagM,gauss_o, rhmc.ApproxNegPowerMD); 
     std::cout << "Finished: Checking quality of RHMC MD approx for " << quark_descr << " quark numerator and power -1/" << inv_pow << std::endl;
 
     std::cout << "Starting: Checking quality of RHMC MD approx for " << quark_descr << " quark numerator and power -1/" << 2*inv_pow << std::endl;
-    InversePowerBoundsCheck(2*inv_pow, 10000, 1e16, MdagM,gauss_o, rhmc.ApproxNegHalfPowerMD);
+    InversePowerBoundsCheck(2*inv_pow, 50000, 1e16, MdagM,gauss_o, rhmc.ApproxNegHalfPowerMD);
     std::cout << "Finished: Checking quality of RHMC MD approx for " << quark_descr << " quark numerator and power -1/" << 2*inv_pow << std::endl;
 
     std::cout << "Starting: Checking quality of RHMC MD approx for " << quark_descr << " quark denominator and power -1/" << inv_pow << std::endl;
-    InversePowerBoundsCheck(inv_pow, 10000, 1e16, VdagV,gauss_o, rhmc.ApproxNegPowerMD);
+    InversePowerBoundsCheck(inv_pow, 50000, 1e16, VdagV,gauss_o, rhmc.ApproxNegPowerMD);
     std::cout << "Finished: Checking quality of RHMC MD approx for " << quark_descr << " quark denominator and power -1/" << inv_pow << std::endl;
 
     std::cout << "Starting: Checking quality of RHMC MD approx for " << quark_descr << " quark denominator and power -1/" << 2*inv_pow << std::endl;
-    InversePowerBoundsCheck(2*inv_pow, 10000, 1e16, VdagV,gauss_o, rhmc.ApproxNegHalfPowerMD);
+    InversePowerBoundsCheck(2*inv_pow, 50000, 1e16, VdagV,gauss_o, rhmc.ApproxNegHalfPowerMD);
     std::cout << "Finished: Checking quality of RHMC MD approx for " << quark_descr << " quark denominator and power -1/" << 2*inv_pow << std::endl;
   }
 }
@@ -554,11 +554,16 @@ int main(int argc, char **argv) {
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   IntegratorParameters MD;
   typedef ConjugateHMCRunnerD<MinimumNorm2> HMCWrapper; //NB: This is the "Omelyan integrator"
-  typedef HMCWrapper::ImplPolicy GaugeImplPolicy;
   MD.name    = std::string("MinimumNorm2");
+
+  // typedef ConjugateHMCRunnerD<ForceGradient> HMCWrapper;
+  // MD.name    = std::string("ForceGradient");
+  
   MD.MDsteps = user_params.Steps;
   MD.trajL   = 1.0;
 
+  typedef HMCWrapper::ImplPolicy GaugeImplPolicy;
+  
   HMCparameters HMCparams;
   HMCparams.StartTrajectory  = user_params.StartTrajectory;
   HMCparams.Trajectories     = user_params.Trajectories;
@@ -660,11 +665,11 @@ int main(int argc, char **argv) {
   typedef MixedPrecisionConjugateGradientOperatorFunction<EOFAactionD, EOFAactionF, EOFAschuropD, EOFAschuropF> EOFA_mxCG;
   typedef MixedPrecisionReliableUpdateConjugateGradientOperatorFunction<EOFAactionD, EOFAactionF, EOFAschuropD, EOFAschuropF> EOFA_relupCG;
 
-  std::vector<RealD> eofa_light_masses = { light_mass , 0.01 };
-  std::vector<RealD> eofa_pv_masses =    { 0.01        , 1.0 };
-  int n_light_hsb = 2;
+  std::vector<RealD> eofa_light_masses = { light_mass , 0.01,  0.1 };
+  std::vector<RealD> eofa_pv_masses =    { 0.01       ,  0.1,  1.0 };
+  int n_light_hsb = 3;
 
-  EOFAmixPrecPFaction* EOFA_pfactions[2];
+  EOFAmixPrecPFaction* EOFA_pfactions[n_light_hsb];
 
   for(int i=0;i<n_light_hsb;i++){
     RealD iml = eofa_light_masses[i];
@@ -683,23 +688,23 @@ int main(int argc, char **argv) {
 
 #if 1
     //Note reusing user_params.eofa_l.action(|md)_mixcg_inner_tolerance  as Delta for now
-    EOFA_relupCG* ActionMCG_L = new EOFA_relupCG(user_params.eofa_l.action_tolerance, user_params.eofa_l.action_mixcg_inner_tolerance, 10000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
-    EOFA_relupCG* ActionMCG_R = new EOFA_relupCG(user_params.eofa_l.action_tolerance, user_params.eofa_l.action_mixcg_inner_tolerance, 10000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
+    EOFA_relupCG* ActionMCG_L = new EOFA_relupCG(user_params.eofa_l.action_tolerance, user_params.eofa_l.action_mixcg_inner_tolerance, 50000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
+    EOFA_relupCG* ActionMCG_R = new EOFA_relupCG(user_params.eofa_l.action_tolerance, user_params.eofa_l.action_mixcg_inner_tolerance, 50000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
 
-    EOFA_relupCG* DerivMCG_L = new EOFA_relupCG(user_params.eofa_l.md_tolerance, user_params.eofa_l.md_mixcg_inner_tolerance, 10000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
-    EOFA_relupCG* DerivMCG_R = new EOFA_relupCG(user_params.eofa_l.md_tolerance, user_params.eofa_l.md_mixcg_inner_tolerance, 10000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
+    EOFA_relupCG* DerivMCG_L = new EOFA_relupCG(user_params.eofa_l.md_tolerance, user_params.eofa_l.md_mixcg_inner_tolerance, 50000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
+    EOFA_relupCG* DerivMCG_R = new EOFA_relupCG(user_params.eofa_l.md_tolerance, user_params.eofa_l.md_mixcg_inner_tolerance, 50000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
 
 #else
-    EOFA_mxCG* ActionMCG_L = new EOFA_mxCG(user_params.eofa_l.action_tolerance, 10000, 1000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
+    EOFA_mxCG* ActionMCG_L = new EOFA_mxCG(user_params.eofa_l.action_tolerance, 50000, 1000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
     ActionMCG_L->InnerTolerance = user_params.eofa_l.action_mixcg_inner_tolerance;
     
-    EOFA_mxCG* ActionMCG_R = new EOFA_mxCG(user_params.eofa_l.action_tolerance, 10000, 1000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
+    EOFA_mxCG* ActionMCG_R = new EOFA_mxCG(user_params.eofa_l.action_tolerance, 50000, 1000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
     ActionMCG_R->InnerTolerance = user_params.eofa_l.action_mixcg_inner_tolerance;
     
-    EOFA_mxCG* DerivMCG_L = new EOFA_mxCG(user_params.eofa_l.md_tolerance, 10000, 1000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
+    EOFA_mxCG* DerivMCG_L = new EOFA_mxCG(user_params.eofa_l.md_tolerance, 50000, 1000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
     DerivMCG_L->InnerTolerance = user_params.eofa_l.md_mixcg_inner_tolerance;
     
-    EOFA_mxCG* DerivMCG_R = new EOFA_mxCG(user_params.eofa_l.md_tolerance, 10000, 1000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
+    EOFA_mxCG* DerivMCG_R = new EOFA_mxCG(user_params.eofa_l.md_tolerance, 50000, 1000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
     DerivMCG_R->InnerTolerance = user_params.eofa_l.md_mixcg_inner_tolerance;
     
     std::cout << GridLogMessage << "Set EOFA action solver action tolerance outer=" << ActionMCG_L->Tolerance << " inner=" << ActionMCG_L->InnerTolerance << std::endl;
@@ -728,7 +733,7 @@ int main(int argc, char **argv) {
   RationalActionParams rat_act_params_s;
   rat_act_params_s.inv_pow  = 4; // (M^dag M)^{1/4}
   rat_act_params_s.precision= 60;
-  rat_act_params_s.MaxIter  = 10000;
+  rat_act_params_s.MaxIter  = 50000;
   user_params.rat_quo_s.Export(rat_act_params_s);
   std::cout << GridLogMessage << " Heavy quark bounds check every " << rat_act_params_s.BoundsCheckFreq << " trajectories (avg)" << std::endl;
 
@@ -752,7 +757,7 @@ int main(int argc, char **argv) {
   RationalActionParams rat_act_params_DSDR;
   rat_act_params_DSDR.inv_pow  = 2; // (M^dag M)^{1/2}
   rat_act_params_DSDR.precision= 60;
-  rat_act_params_DSDR.MaxIter  = 10000;
+  rat_act_params_DSDR.MaxIter  = 50000;
   user_params.rat_quo_DSDR.Export(rat_act_params_DSDR);
   std::cout << GridLogMessage << "DSDR quark bounds check every " << rat_act_params_DSDR.BoundsCheckFreq << " trajectories (avg)" << std::endl;
 
