@@ -52,6 +52,7 @@ public:
   virtual void AdjOp  (const Field &in, Field &out) = 0; // Abstract base
   virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2)=0;
   virtual void HermOp(const Field &in, Field &out)=0;
+  virtual ~LinearOperatorBase(){};
 };
 
 
