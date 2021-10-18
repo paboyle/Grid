@@ -80,7 +80,7 @@ struct EOFAparameters: Serializable {
     md_tolerance = 1e-8;
     md_mixcg_inner_tolerance = 1e-8;
 
-    rat_params.lo = 0.1;
+    rat_params.lo = 1.0;
     rat_params.hi = 25.0;
     rat_params.MaxIter  = 50000;
     rat_params.tolerance= 1.0e-9;
@@ -98,7 +98,7 @@ struct EvolParameters: Serializable {
                                   bool, MetropolisTest,
 				  std::string, StartingType,
 				  std::vector<Integer>, GparityDirs,
-				  EOFAparameters, eofa_l,
+				  std::vector<EOFAparameters>, eofa_l,
 				  RatQuoParameters, rat_quo_s,
 				  RatQuoParameters, rat_quo_DSDR);
 
@@ -665,10 +665,12 @@ int main(int argc, char **argv) {
   typedef MixedPrecisionConjugateGradientOperatorFunction<EOFAactionD, EOFAactionF, EOFAschuropD, EOFAschuropF> EOFA_mxCG;
   typedef MixedPrecisionReliableUpdateConjugateGradientOperatorFunction<EOFAactionD, EOFAactionF, EOFAschuropD, EOFAschuropF> EOFA_relupCG;
 
-  std::vector<RealD> eofa_light_masses = { light_mass , 0.01,  0.1 };
-  std::vector<RealD> eofa_pv_masses =    { 0.01       ,  0.1,  1.0 };
-  int n_light_hsb = 3;
 
+  std::vector<RealD> eofa_light_masses = { light_mass ,  0.004,   0.016,   0.064,   0.256    };
+  std::vector<RealD> eofa_pv_masses =    { 0.004       , 0.016,   0.064,   0.256,   1.0      };
+  int n_light_hsb = 5;
+  assert(user_params.eofa_l.size() == n_light_hsb);
+  
   EOFAmixPrecPFaction* EOFA_pfactions[n_light_hsb];
 
   for(int i=0;i<n_light_hsb;i++){
@@ -688,24 +690,24 @@ int main(int argc, char **argv) {
 
 #if 1
     //Note reusing user_params.eofa_l.action(|md)_mixcg_inner_tolerance  as Delta for now
-    EOFA_relupCG* ActionMCG_L = new EOFA_relupCG(user_params.eofa_l.action_tolerance, user_params.eofa_l.action_mixcg_inner_tolerance, 50000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
-    EOFA_relupCG* ActionMCG_R = new EOFA_relupCG(user_params.eofa_l.action_tolerance, user_params.eofa_l.action_mixcg_inner_tolerance, 50000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
+    EOFA_relupCG* ActionMCG_L = new EOFA_relupCG(user_params.eofa_l[i].action_tolerance, user_params.eofa_l[i].action_mixcg_inner_tolerance, 50000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
+    EOFA_relupCG* ActionMCG_R = new EOFA_relupCG(user_params.eofa_l[i].action_tolerance, user_params.eofa_l[i].action_mixcg_inner_tolerance, 50000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
 
-    EOFA_relupCG* DerivMCG_L = new EOFA_relupCG(user_params.eofa_l.md_tolerance, user_params.eofa_l.md_mixcg_inner_tolerance, 50000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
-    EOFA_relupCG* DerivMCG_R = new EOFA_relupCG(user_params.eofa_l.md_tolerance, user_params.eofa_l.md_mixcg_inner_tolerance, 50000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
+    EOFA_relupCG* DerivMCG_L = new EOFA_relupCG(user_params.eofa_l[i].md_tolerance, user_params.eofa_l[i].md_mixcg_inner_tolerance, 50000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
+    EOFA_relupCG* DerivMCG_R = new EOFA_relupCG(user_params.eofa_l[i].md_tolerance, user_params.eofa_l[i].md_mixcg_inner_tolerance, 50000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
 
 #else
-    EOFA_mxCG* ActionMCG_L = new EOFA_mxCG(user_params.eofa_l.action_tolerance, 50000, 1000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
-    ActionMCG_L->InnerTolerance = user_params.eofa_l.action_mixcg_inner_tolerance;
+    EOFA_mxCG* ActionMCG_L = new EOFA_mxCG(user_params.eofa_l[i].action_tolerance, 50000, 1000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
+    ActionMCG_L->InnerTolerance = user_params.eofa_l[i].action_mixcg_inner_tolerance;
     
-    EOFA_mxCG* ActionMCG_R = new EOFA_mxCG(user_params.eofa_l.action_tolerance, 50000, 1000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
-    ActionMCG_R->InnerTolerance = user_params.eofa_l.action_mixcg_inner_tolerance;
+    EOFA_mxCG* ActionMCG_R = new EOFA_mxCG(user_params.eofa_l[i].action_tolerance, 50000, 1000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
+    ActionMCG_R->InnerTolerance = user_params.eofa_l[i].action_mixcg_inner_tolerance;
     
-    EOFA_mxCG* DerivMCG_L = new EOFA_mxCG(user_params.eofa_l.md_tolerance, 50000, 1000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
-    DerivMCG_L->InnerTolerance = user_params.eofa_l.md_mixcg_inner_tolerance;
+    EOFA_mxCG* DerivMCG_L = new EOFA_mxCG(user_params.eofa_l[i].md_tolerance, 50000, 1000, UGridF, FrbGridF, *LopF, *LopD, *linopL_F, *linopL_D);
+    DerivMCG_L->InnerTolerance = user_params.eofa_l[i].md_mixcg_inner_tolerance;
     
-    EOFA_mxCG* DerivMCG_R = new EOFA_mxCG(user_params.eofa_l.md_tolerance, 50000, 1000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
-    DerivMCG_R->InnerTolerance = user_params.eofa_l.md_mixcg_inner_tolerance;
+    EOFA_mxCG* DerivMCG_R = new EOFA_mxCG(user_params.eofa_l[i].md_tolerance, 50000, 1000, UGridF, FrbGridF, *RopF, *RopD, *linopR_F, *linopR_D);
+    DerivMCG_R->InnerTolerance = user_params.eofa_l[i].md_mixcg_inner_tolerance;
     
     std::cout << GridLogMessage << "Set EOFA action solver action tolerance outer=" << ActionMCG_L->Tolerance << " inner=" << ActionMCG_L->InnerTolerance << std::endl;
     std::cout << GridLogMessage << "Set EOFA MD solver tolerance outer=" << DerivMCG_L->Tolerance << " inner=" << DerivMCG_L->InnerTolerance << std::endl;
@@ -716,7 +718,7 @@ int main(int argc, char **argv) {
 							*ActionMCG_L, *ActionMCG_R, 
 							*ActionMCG_L, *ActionMCG_R, 
 							*DerivMCG_L, *DerivMCG_R, 
-							user_params.eofa_l.rat_params, true);
+							user_params.eofa_l[i].rat_params, true);
     EOFA_pfactions[i] = EOFA;
     Level1.push_back(EOFA);
   }
@@ -813,8 +815,8 @@ int main(int argc, char **argv) {
     else if(sarg == "--check_eofa"){
       assert(i < argc-1);
       check_eofa = true;
-      eofa_which_hsb = std::stoi(argv[i+1]);
-      assert(eofa_which_hsb >= 0 && eofa_which_hsb < n_light_hsb);
+      eofa_which_hsb = std::stoi(argv[i+1]); //-1 indicates all hasenbusch
+      assert(eofa_which_hsb == -1 || (eofa_which_hsb >= 0 && eofa_which_hsb < n_light_hsb) );
     }
     else if(sarg == "--upper_bound_eofa"){
       assert(i < argc-1);
@@ -836,8 +838,19 @@ int main(int argc, char **argv) {
     //std::cout << GridLogMessage << "EOFA action solver action tolerance outer=" << ActionMCG_L.Tolerance << " inner=" << ActionMCG_L.InnerTolerance << std::endl;
     //std::cout << GridLogMessage << "EOFA MD solver tolerance outer=" << DerivMCG_L.Tolerance << " inner=" << DerivMCG_L.InnerTolerance << std::endl;
 
-
-    if(check_eofa) checkEOFA(*EOFA_pfactions[eofa_which_hsb], FGridD, TheHMC.Resources.GetParallelRNG(), Ud);
+    if(check_eofa){
+      if(eofa_which_hsb >= 0){
+	std::cout << GridLogMessage << "Starting checking EOFA Hasenbusch " << eofa_which_hsb << std::endl;
+	checkEOFA(*EOFA_pfactions[eofa_which_hsb], FGridD, TheHMC.Resources.GetParallelRNG(), Ud);
+	std::cout << GridLogMessage << "Finished checking EOFA Hasenbusch " << eofa_which_hsb << std::endl;
+      }else{
+	for(int i=0;i<n_light_hsb;i++){
+	  std::cout << GridLogMessage << "Starting checking EOFA Hasenbusch " << i << std::endl;
+	  checkEOFA(*EOFA_pfactions[i], FGridD, TheHMC.Resources.GetParallelRNG(), Ud);
+	  std::cout << GridLogMessage << "Finished checking EOFA Hasenbusch " << i << std::endl;
+	}
+      }
+    }	  
     if(upper_bound_eofa) upperBoundEOFA(*EOFA_pfactions[eofa_which_hsb], FGridD, TheHMC.Resources.GetParallelRNG(), Ud);
     if(lower_bound_eofa) lowerBoundEOFA(*EOFA_pfactions[eofa_which_hsb], FGridD, TheHMC.Resources.GetParallelRNG(), Ud);
     if(eigenrange_s) computeEigenvalues<FermionActionD, FermionFieldD>(lanc_params_s, FGridD, FrbGridD, Ud, Numerator_sD, TheHMC.Resources.GetParallelRNG());
