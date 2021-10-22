@@ -45,7 +45,7 @@ int main (int argc, char **argv)
     std::cout <<GridLogMessage << std::endl;
     if (Nc != 2)
     {
-        std::cout << "This matrix should not leave Omega invariant, expect a warning" << std::endl;
+        std::cout << GridLogMessage << "This matrix should not leave Omega invariant, expect a warning" << std::endl;
     }
     Sp<nsp>::OmegaInvariance(U);
     std::cout <<GridLogMessage << std::endl;
@@ -56,18 +56,18 @@ int main (int argc, char **argv)
     std::cout << GridLogMessage << "Unitary matrix deformed " << std::endl;
     std::cout << GridLogMessage << "now U adjU - 1 = " << norm2(aux) << std::endl;
     std::cout <<GridLogMessage << std::endl;
-    std::cout << "This matrix should not leave Omega invariant, expect a warning" << std::endl;
-    Sp<nsp>::OmegaInvariance(U);
+
     std::cout <<GridLogMessage << std::endl;
     std::cout << GridLogMessage << "Projecting on Sp2n " << std::endl;
 
     U = ProjectOnSpGroup(U);
+    //U = ProjectOnGroup(U);
     aux = U*adj(U) - identity;
     std::cout <<GridLogMessage << std::endl;
     std::cout <<GridLogMessage << std::endl;
     std::cout << GridLogMessage << "Unitary check after Sp(2n) projection " << std::endl;
     std::cout << GridLogMessage << "U adjU - 1 = " << norm2(aux) << std::endl;
-    assert( norm2(aux) < 1e-6);
+    assert( norm2(aux) < 1e-8);
     std::cout <<GridLogMessage << std::endl;
     std::cout <<GridLogMessage << std::endl;
     
@@ -81,7 +81,9 @@ int main (int argc, char **argv)
     Sp<nsp>::OmegaInvariance(U);
     
     // checks on elements
-
+    
+    std::cout <<GridLogMessage << std::endl;
+    std::cout <<GridLogMessage << std::endl;
     std::cout << GridLogMessage << "Checking the structure is " << std::endl;
     std::cout << GridLogMessage << "U  =  (   W    X   )  " << std::endl;
     std::cout << GridLogMessage << "      (  -X^*  W^* )  " << std::endl;

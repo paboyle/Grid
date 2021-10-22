@@ -161,6 +161,75 @@ accelerator_inline iMatrix<vtype,N> ProjectOnSpGroup(const iMatrix<vtype,N> &arg
   iMatrix<vtype,N> ret(arg);
   vtype nrm;
   vtype inner;
+  vtype tmp;
+  
+  for(int c1=0;c1<N/2;c1++)
+  {
+      
+      for (int b=0; b<c1; b++)                  // remove the b-rows from U_c1
+      {
+          decltype(ret._internal[b][b]*ret._internal[b][b]) pr;
+          decltype(ret._internal[b][b]*ret._internal[b][b]) prn;
+          zeroit(pr);
+          zeroit(prn);
+          
+          for(int c=0; c<N; c++)
+          {
+              pr += conjugate(ret._internal[c1][c])*ret._internal[b][c];        // <U_c1 | U_b >
+              prn += conjugate(ret._internal[c1][c])*ret._internal[b+N/2][c];   // <U_c1 | U_{b+N} >
+          }
+       
+
+          for(int c=0; c<N; c++)
+          {
+              ret._internal[c1][c] -= (conjugate(pr) * ret._internal[b][c] + conjugate(prn) * ret._internal[b+N/2][c] );    //  U_c1 -= (  <U_c1 | U_b > U_b + <U_c1 | U_{b+N} > U_{b+N}  )
+          }
+      }
+    
+      zeroit(inner);
+      for(int c2=0;c2<N;c2++)
+      {
+          inner += innerProduct(ret._internal[c1][c2],ret._internal[c1][c2]);
+      }
+      
+      nrm = sqrt(inner);
+      nrm = 1.0/nrm;
+      for(int c2=0;c2<N;c2++)
+      {
+          ret._internal[c1][c2]*= nrm;
+      }
+      
+
+      for(int c2=0;c2<N/2;c2++)
+      {
+          tmp = conjugate(ret._internal[c1][c2]);       // (up-left)* of the old matrix
+          ret._internal[c1+N/2][c2+N/2] = tmp;          // down right in the new matrix = (up-left)* of the old matrix
+      }
+         
+      for(int c2=N/2;c2<N;c2++)
+      {
+          tmp = conjugate(ret._internal[c1][c2]);   // (up-right)* of the old
+          ret._internal[c1+N/2][c2-N/2] = -tmp;     // down left in the new matrix = -(up-right)* of the old
+      }
+    
+      
+  }
+  return ret;
+}
+
+
+
+
+
+
+/*
+template<class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr>
+accelerator_inline iMatrix<vtype,N> ProjectOnSpGroup(const iMatrix<vtype,N> &arg)
+{
+  // need a check for the group type?
+  iMatrix<vtype,N> ret(arg);
+  vtype nrm;
+  vtype inner;
   for(int c1=0;c1<N/2;c1++){
 
     // Normalises row c1
@@ -175,7 +244,7 @@ accelerator_inline iMatrix<vtype,N> ProjectOnSpGroup(const iMatrix<vtype,N> &arg
 
     // Compute row c1+N2/2: c1+N/2 = - \Omega c1*
     for(int c2=0;c2<N/2;c2++)
-      ret._internal[c1+N/2][c2+N/2] = conjugate(ret._internal[c1][c2]);
+      ret._internal[c1+N/2][c2+N/2] = conjugate(ret._internal[c1][c2]); // lupo: c1,c2? dont we want c1 c2+N/2
 
     for(int c2=N/2;c2<N;c2++)
       ret._internal[c1+N/2][c2-N/2] = -conjugate(ret._internal[c1][c2]);
@@ -203,7 +272,7 @@ accelerator_inline iMatrix<vtype,N> ProjectOnSpGroup(const iMatrix<vtype,N> &arg
         ret._internal[b][c] -= pr * ret._internal[c1+N/2][c];
       }
     }
-  }
+  } //end c1 0, ... N/2-1 loop
 
   // Compute the last row
   {
@@ -227,7 +296,7 @@ accelerator_inline iMatrix<vtype,N> ProjectOnSpGroup(const iMatrix<vtype,N> &arg
   }
   // assuming the determinant is ok
   return ret;
-}
+}*/
 
 
 NAMESPACE_END(Grid);

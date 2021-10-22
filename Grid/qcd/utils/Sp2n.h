@@ -493,13 +493,14 @@ public:
            
            for (int i = 0; i < ncolour; i++)
            {
-               Omega()()(i, 2*ncolour-1-i) = 1.;
-               Omega()()(2*ncolour-1-i, i) = -1;
+               Omega()()(i, ncolour+i) = 1.;
+               Omega()()(ncolour+i, i) = -1;
            }
-    
+           
+           std::cout << GridLogMessage << "Omega = " << Omega()() << std::endl;
            OmegaLatt = OmegaLatt + (identity*Omega);
            
-           auto diff = OmegaLatt - (in*Omega*transpose(in));
+           auto diff = OmegaLatt - (in*OmegaLatt*transpose(in));
            auto sdiff = sum(diff);
            //assert( norm2(sdiff) < 1e-8 );
            if (norm2(sdiff) < 1e-8)
