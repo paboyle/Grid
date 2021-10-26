@@ -140,8 +140,38 @@ public:
       PokeIndex<LorentzIndex>(P, Pmu, mu);
     }
   }
+    
+    
 
-  static inline Field projectForce(Field &P) { return Ta(P); }
+  static inline Field projectForce(Field &P)
+    {
+        if (isSp2n == true)
+        {
+            P = Ta(P);
+            const int nsp = Nc / 2;
+
+            Sp<nsp>::iSp2nMatrix<Complex> gen;
+            
+
+            auto Psum = P;
+
+            Psum = Zero();
+            
+            for (int a = 0; a < Sp<nsp>::AlgebraDimension; a++)
+            {
+                Sp<nsp>::generator(a, gen);
+
+                auto coeff = 2. * trace(P * gen);
+                Psum += coeff * gen;
+            }
+            
+            return Psum;
+            
+        } else
+        {
+            return Ta(P);
+        }
+    }
 
   static inline void update_field(Field& P, Field& U, double ep){
     //static std::chrono::duration<double> diff;
