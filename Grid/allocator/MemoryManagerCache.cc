@@ -3,7 +3,7 @@
 
 #warning "Using explicit device memory copies"
 NAMESPACE_BEGIN(Grid);
-//define dprintf(...) printf ( __VA_ARGS__ ); fflush(stdout);
+//#define dprintf(...) printf ( __VA_ARGS__ ); fflush(stdout);
 #define dprintf(...)
 
 
@@ -429,6 +429,7 @@ void  MemoryManager::NotifyDeletion(void *_ptr)
 }
 void  MemoryManager::Print(void)
 {
+  PrintBytes();
   std::cout << GridLogDebug << "--------------------------------------------" << std::endl;
   std::cout << GridLogDebug << "Memory Manager                             " << std::endl;
   std::cout << GridLogDebug << "--------------------------------------------" << std::endl;

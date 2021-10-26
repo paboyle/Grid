@@ -95,6 +95,7 @@ void     acceleratorInit(void);
 //////////////////////////////////////////////
 
 #ifdef GRID_CUDA
+
 #include <cuda.h>
 
 #ifdef __CUDA_ARCH__
@@ -114,6 +115,14 @@ accelerator_inline int acceleratorSIMTlane(int Nsimd) {
   return 0;
 #endif
 } // CUDA specific
+
+inline void cuda_mem(void)
+{
+  size_t free_t,total_t,used_t;
+  cudaMemGetInfo(&free_t,&total_t);
+  used_t=total_t-free_t;
+  std::cout << " MemoryManager : GPU used "<<used_t<<" free "<<free_t<< " total "<<total_t<<std::endl;
+}
 
 #define accelerator_for2dNB( iter1, num1, iter2, num2, nsimd, ... )	\
   {									\

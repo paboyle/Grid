@@ -389,7 +389,6 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
     void *shm = (void *) this->ShmBufferTranslate(dest,recv);
     assert(shm!=NULL);
     acceleratorCopyDeviceToDeviceAsynch(xmit,shm,bytes);
-    acceleratorCopySynchronise(); // MPI prob slower
   }
 
   if ( CommunicatorPolicy == CommunicatorPolicySequential ) {
@@ -405,6 +404,7 @@ void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsReque
   if (nreq==0) return;
 
   std::vector<MPI_Status> status(nreq);
+  acceleratorCopySynchronise(); 
   int ierr = MPI_Waitall(nreq,&list[0],&status[0]);
   assert(ierr==0);
   list.resize(0);

@@ -72,7 +72,7 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "Number of iterations to average: "<< Nloop << std::endl;
   std::vector<double> t_time(Nloop);
-  time_statistics timestat;
+  //  time_statistics timestat;
 
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking sequential halo exchange from host memory "<<std::endl;

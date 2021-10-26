@@ -82,14 +82,15 @@ private:
   static AllocationCacheEntry Entries[NallocType][NallocCacheMax];
   static int Victim[NallocType];
   static int Ncache[NallocType];
+  static uint64_t CacheBytes[NallocType];
 
   /////////////////////////////////////////////////
   // Free pool
   /////////////////////////////////////////////////
   static void *Insert(void *ptr,size_t bytes,int type) ;
   static void *Lookup(size_t bytes,int type) ;
-  static void *Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim) ;
-  static void *Lookup(size_t bytes,AllocationCacheEntry *entries,int ncache) ;
+  static void *Insert(void *ptr,size_t bytes,AllocationCacheEntry *entries,int ncache,int &victim,uint64_t &cbytes) ;
+  static void *Lookup(size_t bytes,AllocationCacheEntry *entries,int ncache,uint64_t &cbytes) ;
 
   static void PrintBytes(void);
  public:

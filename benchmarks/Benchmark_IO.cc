@@ -137,7 +137,7 @@ int main (int argc, char ** argv)
 
   Eigen::MatrixXd mean(nVol, 4), stdDev(nVol, 4), rob(nVol, 4);
   Eigen::VectorXd avMean(4), avStdDev(4), avRob(4);
-  double          n = BENCH_IO_NPASS;
+  //  double          n = BENCH_IO_NPASS;
 
   stats(mean, stdDev, perf);
   stats(avMean, avStdDev, avPerf);
@@ -164,7 +164,7 @@ int main (int argc, char ** argv)
                 mean(volInd(l), gWrite), stdDev(volInd(l), gWrite));
   }
   MSG << std::endl;
-  MSG << "Robustness of individual results, in \%. (rob = 100\% - std dev / mean)" << std::endl;
+  MSG << "Robustness of individual results, in %. (rob = 100% - std dev / mean)" << std::endl;
   MSG << std::endl;
   grid_printf("%4s %12s %12s %12s %12s\n",
               "L", "std read", "std write", "Grid read", "Grid write");
@@ -185,7 +185,7 @@ int main (int argc, char ** argv)
               avMean(sRead), avStdDev(sRead), avMean(sWrite), avStdDev(sWrite),
               avMean(gRead), avStdDev(gRead), avMean(gWrite), avStdDev(gWrite));
   MSG << std::endl;
-  MSG << "Robustness of volume-averaged results, in \%. (rob = 100\% - std dev / mean)" << std::endl;
+  MSG << "Robustness of volume-averaged results, in %. (rob = 100% - std dev / mean)" << std::endl;
   MSG << std::endl;
   grid_printf("%12s %12s %12s %12s\n",
               "std read", "std write", "Grid read", "Grid write");
