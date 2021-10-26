@@ -508,7 +508,7 @@ class SchurStaggeredOperator :  public SchurOperatorBase<Field> {
   virtual  void MpcDag   (const Field &in, Field &out){
     Mpc(in,out);
   }
-  virtual void MpcDagMpc(const Field &in, Field &out,RealD &ni,RealD &no) {
+  virtual void MpcDagMpc(const Field &in, Field &out) {
     assert(0);// Never need with staggered
   }
 };
@@ -586,6 +586,7 @@ class HermOpOperatorFunction : public OperatorFunction<Field> {
 template<typename Field>
 class PlainHermOp : public LinearFunction<Field> {
 public:
+  using LinearFunction<Field>::operator();
   LinearOperatorBase<Field> &_Linop;
       
   PlainHermOp(LinearOperatorBase<Field>& linop) : _Linop(linop) 
@@ -599,6 +600,7 @@ public:
 template<typename Field>
 class FunctionHermOp : public LinearFunction<Field> {
 public:
+  using LinearFunction<Field>::operator(); 
   OperatorFunction<Field>   & _poly;
   LinearOperatorBase<Field> &_Linop;
       
