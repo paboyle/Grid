@@ -902,8 +902,8 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   for(int s=0;s<Ls;s++){
 
     int sp = (s+1)%Ls;
-    int sr = Ls-1-s;
-    int srp= (sr+1)%Ls;
+    //    int sr = Ls-1-s;
+    //    int srp= (sr+1)%Ls;
 
     // Mobius parameters
     auto b=this->bs[s];

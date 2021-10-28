@@ -184,8 +184,10 @@ int main (int argc, char ** argv)
       
       double bytes=1.0*vol*Nvec*sizeof(Real);
       double flops=vol*Nvec*2;// mul,add
-      std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"  \t\t"<<bytes/time<<"\t\t"<<flops/time<< "\t\t"<<(stop-start)/1000./1000.<< "\t\t " <<std::endl;
-
+      std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"
+	       <<bytes<<"  \t\t"<<bytes/time<<"\t\t"<<flops/time<< "\t\t"
+	       <<(stop-start)/1000./1000.<< "\t\t " <<std::endl;
+      assert(nn==nn);
   }    
 
   Grid_finalize();

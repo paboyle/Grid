@@ -85,6 +85,76 @@ template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Latti
   });
 }
 
+template<class vobj> inline void acceleratorPickCheckerboard(int cb,Lattice<vobj> &half,const Lattice<vobj> &full, int checker_dim_half=0)
+{
+  half.Checkerboard() = cb;
+  autoView(half_v, half, AcceleratorWrite);
+  autoView(full_v, full, AcceleratorRead);
+  Coordinate rdim_full             = full.Grid()->_rdimensions;
+  Coordinate rdim_half             = half.Grid()->_rdimensions;
+  unsigned long ndim_half          = half.Grid()->_ndimension;
+  Coordinate checker_dim_mask_half = half.Grid()->_checker_dim_mask;
+  Coordinate ostride_half          = half.Grid()->_ostride;
+  accelerator_for(ss, full.Grid()->oSites(),full.Grid()->Nsimd(),{
+    
+    Coordinate coor;
+    int cbos;
+    int linear=0;
+
+    Lexicographic::CoorFromIndex(coor,ss,rdim_full);
+    assert(coor.size()==ndim_half);
+
+    for(int d=0;d<ndim_half;d++){ 
+      if(checker_dim_mask_half[d]) linear += coor[d];
+    }
+    cbos = (linear&0x1);
+
+    if (cbos==cb) {
+      int ssh=0;
+      for(int d=0;d<ndim_half;d++) {
+        if (d == checker_dim_half) ssh += ostride_half[d] * ((coor[d] / 2) % rdim_half[d]);
+        else ssh += ostride_half[d] * (coor[d] % rdim_half[d]);
+      }
+      coalescedWrite(half_v[ssh],full_v(ss));
+    }
+  });
+}
+template<class vobj> inline void acceleratorSetCheckerboard(Lattice<vobj> &full,const Lattice<vobj> &half, int checker_dim_half=0)
+{
+  int cb = half.Checkerboard();
+  autoView(half_v , half, AcceleratorRead);
+  autoView(full_v , full, AcceleratorWrite);
+  Coordinate rdim_full             = full.Grid()->_rdimensions;
+  Coordinate rdim_half             = half.Grid()->_rdimensions;
+  unsigned long ndim_half          = half.Grid()->_ndimension;
+  Coordinate checker_dim_mask_half = half.Grid()->_checker_dim_mask;
+  Coordinate ostride_half          = half.Grid()->_ostride;
+  accelerator_for(ss,full.Grid()->oSites(),full.Grid()->Nsimd(),{
+
+    Coordinate coor;
+    int cbos;
+    int linear=0;
+  
+    Lexicographic::CoorFromIndex(coor,ss,rdim_full);
+    assert(coor.size()==ndim_half);
+
+    for(int d=0;d<ndim_half;d++){ 
+      if(checker_dim_mask_half[d]) linear += coor[d];
+    }
+    cbos = (linear&0x1);
+
+    if (cbos==cb) {
+      int ssh=0;
+      for(int d=0;d<ndim_half;d++){
+        if (d == checker_dim_half) ssh += ostride_half[d] * ((coor[d] / 2) % rdim_half[d]);
+        else ssh += ostride_half[d] * (coor[d] % rdim_half[d]);
+      }
+      coalescedWrite(full_v[ss],half_v(ssh));
+    }
+
+  });
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Flexible Type Conversion for internal promotion to double as well as graceful
 // treatment of scalar-compatible types
@@ -364,16 +434,22 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
   autoView( coarseData_ , coarseData, AcceleratorWrite);
   autoView( fineData_   , fineData, AcceleratorRead);
 
+  auto coarseData_p = &coarseData_[0];
+  auto fineData_p = &fineData_[0];
+  
   Coordinate fine_rdimensions = fine->_rdimensions;
   Coordinate coarse_rdimensions = coarse->_rdimensions;
+
+  vobj zz = Zero();
   
   accelerator_for(sc,coarse->oSites(),1,{
 
       // One thread per sub block
       Coordinate coor_c(_ndimension);
       Lexicographic::CoorFromIndex(coor_c,sc,coarse_rdimensions);  // Block coordinate
-      coarseData_[sc]=Zero();
 
+      vobj cd = zz;
+      
       for(int sb=0;sb<blockVol;sb++){
 
 	int sf;
@@ -383,8 +459,10 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
 	for(int d=0;d<_ndimension;d++) coor_f[d]=coor_c[d]*block_r[d] + coor_b[d];
 	Lexicographic::IndexFromCoor(coor_f,sf,fine_rdimensions);
 
-	coarseData_[sc]=coarseData_[sc]+fineData_[sf];
+	cd=cd+fineData_p[sf];
       }
+
+      coarseData_p[sc] = cd;
 
     });
   return;

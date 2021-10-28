@@ -364,14 +364,12 @@ int main(int argc, char **argv) {
 
       {  // Peek-ology and Poke-ology, with a little app-ology
         Complex c;
-        ColourMatrix c_m;
-        SpinMatrix s_m;
-        SpinColourMatrix sc_m;
+        ColourMatrix c_m = Zero();
+        SpinMatrix s_m = Zero();
+        SpinColourMatrix sc_m = Zero();
 
-        s_m = TensorIndexRecursion<ColourIndex>::traceIndex(
-            sc_m);  // Map to traceColour
-        c_m = TensorIndexRecursion<SpinIndex>::traceIndex(
-            sc_m);  // map to traceSpin
+        s_m = TensorIndexRecursion<ColourIndex>::traceIndex(sc_m);  // Map to traceColour
+        c_m = TensorIndexRecursion<SpinIndex>::traceIndex(sc_m);  // map to traceSpin
 
         c = TensorIndexRecursion<SpinIndex>::traceIndex(s_m);
         c = TensorIndexRecursion<ColourIndex>::traceIndex(c_m);

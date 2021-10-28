@@ -358,7 +358,7 @@ public:
     autoView( in_v , in, AcceleratorRead);
     autoView( out_v , out, AcceleratorWrite);
     autoView( Stencil_v  , Stencil, AcceleratorRead);
-    auto& geom_v = geom;
+    int npoint = geom.npoint;
     typedef LatticeView<Cobj> Aview;
       
     Vector<Aview> AcceleratorViewContainer;
@@ -380,7 +380,7 @@ public:
       int ptype;
       StencilEntry *SE;
 
-      for(int point=0;point<geom_v.npoint;point++){
+      for(int point=0;point<npoint;point++){
 
 	SE=Stencil_v.GetEntry(ptype,point,ss);
 	  
@@ -424,7 +424,7 @@ public:
     autoView( in_v , in, AcceleratorRead);
     autoView( out_v , out, AcceleratorWrite);
     autoView( Stencil_v  , Stencil, AcceleratorRead);
-    auto& geom_v = geom;
+    int npoint = geom.npoint;
     typedef LatticeView<Cobj> Aview;
 
     Vector<Aview> AcceleratorViewContainer;
@@ -442,6 +442,8 @@ public:
     for(int p=0; p<geom.npoint; p++)
       points[p] = geom.points_dagger[p];
 
+    auto points_p = &points[0];
+
     RealD* dag_factor_p = &dag_factor[0];
 
     accelerator_for(sss, Grid()->oSites()*nbasis, Nsimd, {
@@ -452,8 +454,8 @@ public:
       int ptype;
       StencilEntry *SE;
 
-      for(int p=0;p<geom_v.npoint;p++){
-        int point = points[p];
+      for(int p=0;p<npoint;p++){
+        int point = points_p[p];
 
 	SE=Stencil_v.GetEntry(ptype,point,ss);
 
@@ -708,6 +710,8 @@ public:
     for(int p=0; p<npoint; p++)
       points[p] = (dag && !hermitian) ? geom.points_dagger[p] : p;
 
+    auto points_p = &points[0];
+
     Vector<Aview> AcceleratorViewContainer;
     for(int p=0;p<npoint;p++) AcceleratorViewContainer.push_back(a[p].View(AcceleratorRead));
     Aview *Aview_p = & AcceleratorViewContainer[0];
@@ -728,7 +732,7 @@ public:
         StencilEntry *SE;
 
         for(int p=0;p<npoint;p++){
-          int point = points[p];
+          int point = points_p[p];
           SE=st_v.GetEntry(ptype,point,ss);
 
           if(SE->_is_local) {
@@ -754,7 +758,7 @@ public:
         StencilEntry *SE;
 
         for(int p=0;p<npoint;p++){
-          int point = points[p];
+          int point = points_p[p];
           SE=st_v.GetEntry(ptype,point,ss);
 
           if(SE->_is_local) {

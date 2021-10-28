@@ -8,6 +8,7 @@ void     acceleratorThreads(uint32_t t) {accelerator_threads = t;};
 
 #ifdef GRID_CUDA
 cudaDeviceProp *gpu_props;
+cudaStream_t copyStream;
 void acceleratorInit(void)
 {
   int nDevices = 1;
@@ -73,23 +74,35 @@ void acceleratorInit(void)
       //      GPU_PROP(singleToDoublePrecisionPerfRatio);
     }
   }
+
   MemoryManager::DeviceMaxBytes = (8*totalDeviceMem)/10; // Assume 80% ours
 #undef GPU_PROP_FMT    
 #undef GPU_PROP
 
 #ifdef GRID_DEFAULT_GPU
+  int device = 0;
   // IBM Jsrun makes cuda Device numbering screwy and not match rank
   if ( world_rank == 0 ) {
     printf("AcceleratorCudaInit: using default device \n");
     printf("AcceleratorCudaInit: assume user either uses a) IBM jsrun, or \n");
     printf("AcceleratorCudaInit: b) invokes through a wrapping script to set CUDA_VISIBLE_DEVICES, UCX_NET_DEVICES, and numa binding \n");
-    printf("AcceleratorCudaInit: Configure options --enable-summit, --enable-select-gpu=no \n");
+    printf("AcceleratorCudaInit: Configure options --enable-setdevice=no \n");
   }
 #else
+  int device = rank;
   printf("AcceleratorCudaInit: rank %d setting device to node rank %d\n",world_rank,rank);
-  printf("AcceleratorCudaInit: Configure options --enable-select-gpu=yes \n");
-  cudaSetDevice(rank);
+  printf("AcceleratorCudaInit: Configure options --enable-setdevice=yes \n");
 #endif
+
+  cudaSetDevice(device);
+  cudaStreamCreate(&copyStream);
+  const int len=64;
+  char busid[len];
+  if( rank == world_rank ) { 
+    cudaDeviceGetPCIBusId(busid, len, device);
+    printf("local rank %d device %d bus id: %s\n", rank, device, busid);
+  }
+
   if ( world_rank == 0 )  printf("AcceleratorCudaInit: ================================================\n");
 }
 #endif
@@ -171,7 +184,6 @@ void acceleratorInit(void)
 #ifdef GRID_SYCL
 
 cl::sycl::queue *theGridAccelerator;
-
 void acceleratorInit(void)
 {
   int nDevices = 1;
@@ -179,6 +191,10 @@ void acceleratorInit(void)
   cl::sycl::device selectedDevice { selector };
   theGridAccelerator = new sycl::queue (selectedDevice);
 
+#ifdef GRID_SYCL_LEVEL_ZERO_IPC
+  zeInit(0);
+#endif
+  
   char * localRankStr = NULL;
   int rank = 0, world_rank=0; 
 #define ENV_LOCAL_RANK_OMPI    "OMPI_COMM_WORLD_LOCAL_RANK"

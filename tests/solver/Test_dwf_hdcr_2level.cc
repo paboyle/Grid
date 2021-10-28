@@ -56,6 +56,7 @@ RealD InverseApproximation(RealD x){
 template<class Field,class Matrix> class ChebyshevSmoother : public LinearFunction<Field>
 {
 public:
+  using LinearFunction<Field>::operator();
   typedef LinearOperatorBase<Field>                            FineOperator;
   Matrix         & _SmootherMatrix;
   FineOperator   & _SmootherOperator;
@@ -79,6 +80,7 @@ public:
 template<class Field,class Matrix> class MirsSmoother : public LinearFunction<Field>
 {
 public:
+  using LinearFunction<Field>::operator();
   typedef LinearOperatorBase<Field>                            FineOperator;
   Matrix         & SmootherMatrix;
   FineOperator   & SmootherOperator;
@@ -108,6 +110,7 @@ public:
 template<class Field,class Matrix> class RedBlackSmoother : public LinearFunction<Field>
 {
 public:
+  using LinearFunction<Field>::operator();
   typedef LinearOperatorBase<Field>                            FineOperator;
   Matrix         & SmootherMatrix;
   RealD tol;
@@ -134,6 +137,7 @@ public:
 template<class Fobj,class CComplex,int nbasis, class Matrix, class Guesser, class CoarseSolver>
 class MultiGridPreconditioner : public LinearFunction< Lattice<Fobj> > {
 public:
+  using LinearFunction<Lattice<Fobj> >::operator();
 
   typedef Aggregation<Fobj,CComplex,nbasis> Aggregates;
   typedef CoarsenedMatrix<Fobj,CComplex,nbasis> CoarseOperator;
@@ -241,7 +245,7 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   const int Ls=16;
-  const int rLs=8;
+  //  const int rLs=8;
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
@@ -388,7 +392,7 @@ int main (int argc, char ** argv)
   //  RedBlackSmoother<LatticeFermion,DomainWallFermionR> FineRBSmoother(0.00,0.001,100,Ddwf);
 
   // Wrap the 2nd level solver in a MultiGrid preconditioner acting on the fine space
-  ZeroGuesser<CoarseVector> CoarseZeroGuesser;
+  //  ZeroGuesser<CoarseVector> CoarseZeroGuesser;
   TwoLevelMG TwoLevelPrecon(Aggregates, LDOp,
 			    HermIndefOp,Ddwf,
 			    FineSmoother,

@@ -29,19 +29,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
-template<class d>
-struct scal {
-  d internal;
-};
+#if 1
+int main (int argc, char ** argv) {}
 
-  Gamma::Algebra Gmu [] = {
-    Gamma::Algebra::GammaX,
-    Gamma::Algebra::GammaY,
-    Gamma::Algebra::GammaZ,
-    Gamma::Algebra::GammaT
-  };
+#else
+
 
 int main (int argc, char ** argv)
 {
@@ -124,3 +117,4 @@ int main (int argc, char ** argv)
   
   Grid_finalize();
 }
+#endif
