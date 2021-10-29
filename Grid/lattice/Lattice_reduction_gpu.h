@@ -238,7 +238,6 @@ inline typename vobj::scalar_objectD sumD_gpu(const vobj *lat, Integer osites)
   if ( ok ) {
     ret = sumD_gpu_internal(lat,osites);
   } else {
-    std::cout << GridLogWarning << " dropping to summing word by word for large object size "<<sizeof(vobj)<<std::endl;
     Vector<vector> buffer(osites);
     vector *dat = (vector *)lat;
     vector *buf = &buffer[0];
