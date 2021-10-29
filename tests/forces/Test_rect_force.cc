@@ -57,7 +57,6 @@ int main (int argc, char ** argv)
   SU<Nc>::HotConfiguration(pRNG,U);
   
   double beta = 1.0;
-  double c1   = -0.331;
 
   IwasakiGaugeActionR Action(beta);
   //  PlaqPlusRectangleActionR Action(beta,c1);

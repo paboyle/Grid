@@ -95,7 +95,7 @@ void acceleratorInit(void)
 #endif
 
   cudaSetDevice(device);
-
+  cudaStreamCreate(&copyStream);
   const int len=64;
   char busid[len];
   if( rank == world_rank ) { 

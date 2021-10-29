@@ -159,7 +159,6 @@ void MemoryManager::Init(void)
 
   char * str;
   int Nc;
-  int NcS;
   
   str= getenv("GRID_ALLOC_NCACHE_LARGE");
   if ( str ) {

@@ -178,7 +178,7 @@ void Solve(Action &D,LatticePropagator &source,LatticePropagator &propagator)
   GridBase *UGrid = D.GaugeGrid();
   GridBase *FGrid = D.FermionGrid();
 
-  LatticeFermion src4  (UGrid); src4 = Zero();
+  LatticeFermion src4  (UGrid); 
   LatticeFermion src5  (FGrid); 
   LatticeFermion result5(FGrid);
   LatticeFermion result4(UGrid);
@@ -186,13 +186,11 @@ void Solve(Action &D,LatticePropagator &source,LatticePropagator &propagator)
   ConjugateGradient<LatticeFermion> CG(1.0e-12,100000);
   SchurRedBlackDiagTwoSolve<LatticeFermion> schur(CG);
   ZeroGuesser<LatticeFermion> ZG; // Could be a DeflatedGuesser if have eigenvectors
-  std::cout<<GridLogMessage<< " source4 "<<norm2(source)<<std::endl;
   for(int s=0;s<Nd;s++){
     for(int c=0;c<Nc;c++){
       PropToFerm<Action>(src4,source,s,c);
-      std::cout<<GridLogMessage<< s<<c<<" src4 "<<norm2(src4)<<std::endl;
+
       D.ImportPhysicalFermionSource(src4,src5);
-      std::cout<<GridLogMessage<< s<<c<<" src5 "<<norm2(src5)<<std::endl;
 
       result5=Zero();
       schur(D,src5,result5,ZG);
@@ -221,6 +219,47 @@ void MesonTrace(std::string file,LatticePropagator &q1,LatticePropagator &q2,Lat
     {Gamma::Algebra::GammaTGamma5,Gamma::Algebra::GammaTGamma5},
     {Gamma::Algebra::GammaTGamma5,Gamma::Algebra::Gamma5},
     {Gamma::Algebra::Gamma5      ,Gamma::Algebra::GammaTGamma5}
+  };
+
+  Gamma G5(Gamma::Algebra::Gamma5);
+
+  LatticeComplex meson_CF(q1.Grid());
+  MesonFile MF;
+
+  for(int ch=0;ch<nchannel;ch++){
+
+    Gamma Gsrc(Gammas[ch][0]);
+    Gamma Gsnk(Gammas[ch][1]);
+
+    meson_CF = trace(G5*adj(q1)*G5*Gsnk*q2*adj(Gsrc));
+
+    std::vector<TComplex> meson_T;
+    sliceSum(meson_CF,meson_T, Tdir);
+
+    int nt=meson_T.size();
+
+    std::vector<Complex> corr(nt);
+    for(int t=0;t<nt;t++){
+      corr[t] = TensorRemove(meson_T[t]); // Yes this is ugly, not figured a work around
+      std::cout << " channel "<<ch<<" t "<<t<<" " <<corr[t]<<std::endl;
+    }
+    MF.data.push_back(corr);
+  }
+
+  {
+    XmlWriter WR(file);
+    write(WR,"MesonFile",MF);
+  }
+}
+
+void Meson3pt(std::string file,LatticePropagator &q1,LatticePropagator &q2,LatticeComplex &phase)
+{
+  const int nchannel=4;
+  Gamma::Algebra Gammas[nchannel][2] = {
+    {Gamma::Algebra::Gamma5      ,Gamma::Algebra::GammaX},
+    {Gamma::Algebra::Gamma5      ,Gamma::Algebra::GammaY},
+    {Gamma::Algebra::Gamma5      ,Gamma::Algebra::GammaZ},
+    {Gamma::Algebra::Gamma5      ,Gamma::Algebra::GammaT}
   };
 
   Gamma G5(Gamma::Algebra::Gamma5);
@@ -289,12 +328,19 @@ void WallSinkMesonTrace(std::string file,std::vector<Propagator> &q1,std::vector
     write(WR,"MesonFile",MF);
   }
 }
+int make_idx(int p, int m,int nmom)
+{
+  if (m==0) return p;
+  assert(p==0);
+  return nmom + m - 1;
+}
 
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
   // Double precision grids
+  auto latt = GridDefaultLatt();
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), 
 								   GridDefaultSimd(Nd,vComplex::Nsimd()),
 								   GridDefaultMpi());
@@ -323,11 +369,8 @@ int main (int argc, char ** argv)
 
   int nsmr=3;
   RealD rho=0.1;
-  RealD plaq_gf =WilsonLoops<GimplR>::avgPlaquette(Umu);
   LinkSmear(nsmr,rho,Umu,Usmr);
-  RealD plaq_smr=WilsonLoops<GimplR>::avgPlaquette(Usmr);
-  std::cout << GridLogMessage << " GF Plaquette " <<plaq_gf<<std::endl;
-  std::cout << GridLogMessage << " SM Plaquette " <<plaq_smr<<std::endl;
+
 
   std::vector<int>   smeared_link({ 0,0,1} ); 
   std::vector<RealD> masses({ 0.004,0.02477,0.447} ); // u/d, s, c ??
@@ -338,13 +381,20 @@ int main (int argc, char ** argv)
   std::vector<GridCartesian *> FGrids;
   std::vector<GridRedBlackCartesian *> FrbGrids;
 
+  std::vector<Coordinate> momenta;
+  momenta.push_back(Coordinate({0,0,0,0}));
+  momenta.push_back(Coordinate({1,0,0,0}));
+  momenta.push_back(Coordinate({2,0,0,0}));
+
   int nmass = masses.size();
+  int nmom  = momenta.size();
 
   std::vector<MobiusFermionR *> FermActs;
   
   std::cout<<GridLogMessage <<"======================"<<std::endl;
   std::cout<<GridLogMessage <<"MobiusFermion action as Scaled Shamir kernel"<<std::endl;
   std::cout<<GridLogMessage <<"======================"<<std::endl;
+
   std::vector<Complex> boundary = {1,1,1,-1};
   typedef MobiusFermionR FermionAction;
   FermionAction::ImplParams Params(boundary);
@@ -368,8 +418,10 @@ int main (int argc, char ** argv)
 
   LatticePropagator z2wall_source(UGrid);
   LatticePropagator gfwall_source(UGrid);
+  LatticePropagator phased_prop(UGrid);
 
   int tslice = 0;
+  int tseq=(tslice+16)%latt[Nd-1];
   //////////////////////////////////////////////////////////////////////
   // RNG seeded for Z2 wall
   //////////////////////////////////////////////////////////////////////
@@ -380,52 +432,106 @@ int main (int argc, char ** argv)
   Z2WallSource  (RNG4,tslice,z2wall_source);
   GFWallSource  (tslice,gfwall_source);
 
-  std::vector<LatticePropagator> Z2Props   (nmass,UGrid);
-  std::vector<LatticePropagator> GFProps   (nmass,UGrid);
-
-  for(int m=0;m<nmass;m++) {
-
-    std::cout << GridLogMessage << " Mass " <<m << " z2wall source "<<norm2(z2wall_source)<<std::endl;
-    Solve(*FermActs[m],z2wall_source    ,Z2Props[m]);
-    std::cout << GridLogMessage << " Mass " <<m << " gfwall source "<<norm2(gfwall_source)<<std::endl;
-    Solve(*FermActs[m],gfwall_source    ,GFProps[m]);
-
-    std::cout << GridLogMessage << " Mass " <<m << " z2wall source "<<norm2(z2wall_source)<< " " << norm2(gfwall_source)<<std::endl;
-  
+  std::vector<LatticeComplex> phase(nmom,UGrid);
+  for(int m=0;m<nmom;m++){
+    MakePhase(momenta[m],phase[m]);
   }
 
-  LatticeComplex phase(UGrid);
-  Coordinate mom({0,0,0,0});
-  MakePhase(mom,phase);
+  std::vector<LatticePropagator> Z2Props   (nmom+nmass-1,UGrid);
+  std::vector<LatticePropagator> GFProps   (nmom+nmass-1,UGrid);
+  for(int p=0;p<nmom;p++) {
+    int m=0;
+    int idx = make_idx(p,m,nmom);
+    phased_prop = z2wall_source * phase[p];
+    Solve(*FermActs[m],phased_prop  ,Z2Props[idx]);
 
-  std::vector<std::vector<Propagator> > wsnk_z2Props(nmass);
-  std::vector<std::vector<Propagator> > wsnk_gfProps(nmass);
-  for(int m=0;m<nmass;m++){
-    sliceSum(Z2Props[m],wsnk_z2Props[m],Tdir);
-    sliceSum(GFProps[m],wsnk_gfProps[m],Tdir);
+    phased_prop = gfwall_source * phase[p];
+    Solve(*FermActs[m],phased_prop  ,GFProps[idx]);
   }
-  
-  for(int m1=0 ;m1<nmass;m1++) {
+  for(int m=1;m<nmass;m++) {
+    int p=0;
+    int idx = make_idx(p,m,nmom);
+    phased_prop = z2wall_source;
+    Solve(*FermActs[m],phased_prop  ,Z2Props[idx]);
+
+    phased_prop = gfwall_source;
+    Solve(*FermActs[m],phased_prop  ,GFProps[idx]);
+  }
+
+  std::vector<std::vector<Propagator> > wsnk_z2Props(nmom+nmass-1);
+  std::vector<std::vector<Propagator> > wsnk_gfProps(nmom+nmass-1);
+
+  // Non-zero kaon and point and D two point
+  // WW stick momentum on m1 (lighter)
+  //     zero momentum on m2
+  for(int m1=0;m1<nmass;m1++) {
   for(int m2=m1;m2<nmass;m2++) {
-    std::stringstream ssg,ssz;
-    std::stringstream wssg,wssz;
+    int pmax = (m1==0)? nmom:1;
+    for(int p=0;p<pmax;p++){
 
-    /// Point sinks
-    ssg<<config<< "_m" << m1 << "_m"<< m2 << "_p_gf_meson.xml";
-    ssz<<config<< "_m" << m1 << "_m"<< m2 << "_p_z2_meson.xml";
+      std::stringstream ssg,ssz;
+      std::stringstream wssg,wssz;
 
-    MesonTrace(ssz.str(),Z2Props[m1],Z2Props[m2],phase);
-    MesonTrace(ssg.str(),GFProps[m1],GFProps[m2],phase);
+      int idx1 = make_idx(p,m1,nmom);
+      int idx2 = make_idx(0,m2,nmom);
 
-    /// Wall sinks
-    wssg<<config<< "_m" << m1 << "_m"<< m2 << "_w_gf_meson.xml";
-    wssz<<config<< "_m" << m1 << "_m"<< m2 << "_w_z2_meson.xml";
+      /// Point sinks
+      ssg<<config<<"_p"<<p<< "_m" << m1 << "_m"<< m2 << "_p_gf_meson.xml";
+      ssz<<config<<"_p"<<p<< "_m" << m1 << "_m"<< m2 << "_p_z2_meson.xml";
+      MesonTrace(ssz.str(),Z2Props[idx1],Z2Props[idx2],phase[p]); // Q1 is conjugated
+      MesonTrace(ssg.str(),GFProps[idx1],GFProps[idx2],phase[p]); 
+      
+      /// Wall sinks
+      wssg<<config<<"_p"<<p<< "_m" << m1 << "_m"<< m2 << "_w_gf_meson.xml";
+      wssz<<config<<"_p"<<p<< "_m" << m1 << "_m"<< m2 << "_w_z2_meson.xml";
+      
+      phased_prop = GFProps[m2] * phase[p];
+      sliceSum(phased_prop,wsnk_gfProps[m1],Tdir);
+      sliceSum(GFProps[m1],wsnk_gfProps[m2],Tdir);
+      WallSinkMesonTrace(wssg.str(),wsnk_gfProps[m1],wsnk_gfProps[m2]);
 
-    WallSinkMesonTrace(wssg.str(),wsnk_gfProps[m1],wsnk_gfProps[m2]);
-    WallSinkMesonTrace(wssz.str(),wsnk_z2Props[m1],wsnk_z2Props[m2]);
-    
+      phased_prop = Z2Props[m2] * phase[p];
+      sliceSum(phased_prop,wsnk_gfProps[m1],Tdir);
+      sliceSum(Z2Props[m1],wsnk_gfProps[m2],Tdir);
+      WallSinkMesonTrace(wssz.str(),wsnk_z2Props[m1],wsnk_z2Props[m2]);
+    }
   }}
 
+
+  /////////////////////////////////////
+  // Sequential solves
+  /////////////////////////////////////
+  LatticePropagator  seq_wsnk_z2src(UGrid);
+  LatticePropagator  seq_wsnk_gfsrc(UGrid);
+  LatticePropagator  seq_psnk_z2src(UGrid);
+  LatticePropagator  seq_psnk_gfsrc(UGrid);
+  LatticePropagator source(UGrid);
+  for(int m=0;m<nmass-1;m++){
+    int spect_idx = make_idx(0,m,nmom);
+    int charm=nmass-1;
+
+    SequentialSource(tseq,momenta[0],GFProps[spect_idx],source);
+    Solve(*FermActs[charm],source,seq_psnk_gfsrc);
+    
+    SequentialSource(tseq,momenta[0],Z2Props[spect_idx],source);
+    Solve(*FermActs[charm],source,seq_psnk_z2src);
+
+    // Todo need wall sequential solve
+    for(int p=0;p<nmom;p++){
+      int active_idx = make_idx(p,0,nmom);
+      std::stringstream seq_3pt_p_z2;
+      std::stringstream seq_3pt_p_gf;
+      std::stringstream seq_3pt_w_z2;
+      std::stringstream seq_3pt_w_gf;
+      seq_3pt_p_z2  <<config<<"_3pt_p"<<p<< "_m" << m << "_p_z2_meson.xml";
+      seq_3pt_p_gf  <<config<<"_3pt_p"<<p<< "_m" << m << "_p_gf_meson.xml";
+      seq_3pt_w_z2  <<config<<"_3pt_p"<<p<< "_m" << m << "_w_z2_meson.xml";
+      seq_3pt_w_gf  <<config<<"_3pt_p"<<p<< "_m" << m << "_w_gf_meson.xml";
+      Meson3pt(seq_3pt_p_gf.str(),GFProps[active_idx],seq_psnk_gfsrc,phase[p]);
+      Meson3pt(seq_3pt_p_z2.str(),Z2Props[active_idx],seq_psnk_z2src,phase[p]);
+    }    
+  }
+  
   Grid_finalize();
 }
 
