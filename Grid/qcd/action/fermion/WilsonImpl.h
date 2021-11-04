@@ -273,9 +273,13 @@ typedef WilsonImpl<vComplex,  SpFundamentalRepresentation, CoeffReal > SpWilsonI
 typedef WilsonImpl<vComplexF, SpFundamentalRepresentation, CoeffReal > SpWilsonImplF;  // Float
 typedef WilsonImpl<vComplexD, SpFundamentalRepresentation, CoeffReal > SpWilsonImplD;  // Double
 
-//typedef WilsonImpl<vComplex,  SpFundamentalRepresentation, CoeffComplex > SpZWilsonImplR; // Real.. whichever prec
-//typedef WilsonImpl<vComplexF, SpFundamentalRepresentation, CoeffComplex > SpZWilsonImplF; // Float
-//typedef WilsonImpl<vComplexD, SpFundamentalRepresentation, CoeffComplex > SpZWilsonImplD; // Double
+typedef WilsonImpl<vComplex,  SpTwoIndexAntiSymmetricRepresentation, CoeffReal > SpWilsonTwoIndexAntiSymmetricImplR;  // Real.. whichever prec
+typedef WilsonImpl<vComplexF, SpTwoIndexAntiSymmetricRepresentation, CoeffReal > SpWilsonTwoIndexAntiSymmetricImplF;  // Float
+typedef WilsonImpl<vComplexD, SpTwoIndexAntiSymmetricRepresentation, CoeffReal > SpWilsonTwoIndexAntiSymmetricImplD;  // Double
+
+typedef WilsonImpl<vComplex,  SpTwoIndexSymmetricRepresentation, CoeffReal > SpWilsonTwoIndexSymmetricImplR;  // Real.. whichever prec
+typedef WilsonImpl<vComplexF, SpTwoIndexSymmetricRepresentation, CoeffReal > SpWilsonTwoIndexSymmetricImplF;  // Float
+typedef WilsonImpl<vComplexD, SpTwoIndexSymmetricRepresentation, CoeffReal > SpWilsonTwoIndexSymmetricImplD;  // Double
 
 
 NAMESPACE_END(Grid);

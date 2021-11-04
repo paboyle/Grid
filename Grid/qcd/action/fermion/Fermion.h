@@ -115,10 +115,21 @@ typedef WilsonFermion<WilsonImplR> WilsonFermionR;
 typedef WilsonFermion<WilsonImplF> WilsonFermionF;
 typedef WilsonFermion<WilsonImplD> WilsonFermionD;
 
-
+// sp
 typedef WilsonFermion<SpWilsonImplR> SpWilsonFermionR;
 typedef WilsonFermion<SpWilsonImplF> SpWilsonFermionF;
 typedef WilsonFermion<SpWilsonImplD> SpWilsonFermionD;
+
+typedef WilsonFermion<SpWilsonTwoIndexAntiSymmetricImplR> SpWilsonTwoIndexAntiSymmetricFermionR;
+typedef WilsonFermion<SpWilsonTwoIndexAntiSymmetricImplF> SpWilsonTwoIndexAntiSymmetricFermionF;
+typedef WilsonFermion<SpWilsonTwoIndexAntiSymmetricImplD> SpWilsonTwoIndexAntiSymmetricFermionD;
+
+typedef WilsonFermion<SpWilsonTwoIndexSymmetricImplR> SpWilsonTwoIndexSymmetricFermionR;
+typedef WilsonFermion<SpWilsonTwoIndexSymmetricImplF> SpWilsonTwoIndexSymmetricFermionF;
+typedef WilsonFermion<SpWilsonTwoIndexSymmetricImplD> SpWilsonTwoIndexSymmetricFermionD;
+
+// end sp
+
 
 //typedef WilsonFermion<WilsonImplRL> WilsonFermionRL;
 //typedef WilsonFermion<WilsonImplFH> WilsonFermionFH;

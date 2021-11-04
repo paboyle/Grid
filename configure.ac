@@ -181,13 +181,18 @@ AC_ARG_ENABLE([Nc],
 
 case ${ac_Nc} in
     2)
-        AC_DEFINE([Config_Nc],[2],[Gauge group Nc]);;
+        AC_DEFINE([Config_Nc],[2],[Gauge group Nc])
+        AC_DEFINE([Config_nsp],[1],[n of Sp2n]);;
     3)
         AC_DEFINE([Config_Nc],[3],[Gauge group Nc]);;
     4)
-        AC_DEFINE([Config_Nc],[4],[Gauge group Nc]);;
+        AC_DEFINE([Config_Nc],[4],[Gauge group Nc])
+        AC_DEFINE([Config_nsp],[2],[n of Sp2n]);;
     5)
         AC_DEFINE([Config_Nc],[5],[Gauge group Nc]);;
+    8)
+        AC_DEFINE([Config_Nc],[8],[Gauge group Nc])
+        AC_DEFINE([Config_nsp],[4],[n of Sp2n]);;
     *)
       AC_MSG_ERROR(["Unsupport gauge group choice Nc = ${ac_Nc}"]);;
 esac

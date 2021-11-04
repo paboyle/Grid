@@ -19,6 +19,7 @@ public:
     static const int Dimension = ncolour*2;
     static const int AlgebraDimension = ncolour*(2*ncolour +1);
     static int su2subgroups(void) { return (ncolour * (ncolour - 1)) / 2; }
+    static const int nnsp = ncolour;
     
     
     template <typename vtype>
@@ -368,6 +369,21 @@ public:
       out *= ci;
     }
     
+    static void FundamentalLieAlgebraMatrix(const LatticeAlgebraVector &h,
+                                            LatticeMatrix &out,
+                                            Real scale = 1.0) {
+      conformable(h, out);
+      GridBase *grid = out.Grid();
+      LatticeMatrix la(grid);
+      Matrix ta;
+
+      out = Zero();
+      for (int a = 0; a < AlgebraDimension; a++) {
+        generator(a, ta);
+        la = peekColour(h, a) * timesI(ta) * scale;
+        out += la;
+      }
+    }
     
     
     template <typename LatticeMatrixType>
@@ -388,7 +404,16 @@ public:
       }
     }
     
- 
+ static void projectOnAlgebra(LatticeAlgebraVector &h_out, const LatticeMatrix &in, Real scale = 1.0) {
+   conformable(h_out, in);
+   h_out = Zero();
+   Matrix Ta;
+
+   for (int a = 0; a < AlgebraDimension; a++) {
+     generator(a, Ta);
+     pokeColour(h_out, - 2.0 * (trace(timesI(Ta) * in)) * scale, a);
+   }
+ }
     
     
     template <typename GaugeField>
