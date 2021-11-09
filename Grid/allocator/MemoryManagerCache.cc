@@ -488,15 +488,12 @@ void MemoryManager::PrintState(void* _CpuPtr)
     if ( AccCache.state==Consistent)str = std::string("Consistent");
     if ( AccCache.state==EvictNext) str = std::string("EvictNext");
 
-    std::cout << GridLogMessage << "--------------------------------------------" << std::endl;
     std::cout << GridLogMessage << "CpuAddr\t\tAccAddr\t\tState\t\tcpuLock\taccLock\tLRU_valid "<<std::endl;
-    std::cout << GridLogMessage << "--------------------------------------------" << std::endl;
     std::cout << GridLogMessage << "0x"<<std::hex<<AccCache.CpuPtr<<std::dec
     << "\t0x"<<std::hex<<AccCache.AccPtr<<std::dec<<"\t" <<str
     << "\t" << AccCache.cpuLock
     << "\t" << AccCache.accLock
     << "\t" << AccCache.LRU_valid<<std::endl;
-    std::cout << GridLogMessage << "--------------------------------------------" << std::endl;
 
   } else {
     std::cout << GridLogMessage << "No Entry in AccCache table." << std::endl; 
