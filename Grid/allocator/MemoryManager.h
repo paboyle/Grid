@@ -170,6 +170,7 @@ private:
 
  public:
   static void Print(void);
+  static void PrintState( void* CpuPtr);
   static int   isOpen   (void* CpuPtr);
   static void  ViewClose(void* CpuPtr,ViewMode mode);
   static void *ViewOpen (void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint);

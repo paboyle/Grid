@@ -88,6 +88,13 @@ public:
     LatticeView<vobj> accessor(*( (LatticeAccelerator<vobj> *) this),mode);
     accessor.ViewClose();
   }
+
+  // Helper function to print the state of this object in the AccCache
+  void PrintCacheState(void)
+  {
+    MemoryManager::PrintState(this->_odata);
+  }
+
   /////////////////////////////////////////////////////////////////////////////////
   // Return a view object that may be dereferenced in site loops.
   // The view is trivially copy constructible and may be copied to an accelerator device
