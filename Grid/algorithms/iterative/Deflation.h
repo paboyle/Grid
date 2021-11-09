@@ -74,21 +74,11 @@ public:
   } 
 
   virtual void operator()(const Field &src,Field &guess) {
-    GridStopWatch w1;
-    
     guess = Zero();
-
-    w1.Start();
     for (int i=0;i<N;i++) {
       const Field& tmp = evec[i];
       axpy(guess,TensorRemove(innerProduct(tmp,src)) / eval[i],tmp,guess);
-    }
-    w1.Stop();
-
     guess.Checkerboard() = src.Checkerboard();
-
-    std::cout << GridLogDebug << "This projection took: " << w1.Elapsed() << std::endl;
-
   }
 };
 
