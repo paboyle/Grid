@@ -474,6 +474,32 @@ int   MemoryManager::isOpen   (void* _CpuPtr)
   }
 }
 
+void MemoryManager::PrintState(void* _CpuPtr)
+{
+  uint64_t CpuPtr = (uint64_t)_CpuPtr;
+
+  if ( EntryPresent(CpuPtr) ){
+    auto AccCacheIterator = EntryLookup(CpuPtr);
+    auto & AccCache = AccCacheIterator->second;
+    std::string str;
+    if ( AccCache.state==Empty    ) str = std::string("Empty");
+    if ( AccCache.state==CpuDirty ) str = std::string("CpuDirty");
+    if ( AccCache.state==AccDirty ) str = std::string("AccDirty");
+    if ( AccCache.state==Consistent)str = std::string("Consistent");
+    if ( AccCache.state==EvictNext) str = std::string("EvictNext");
+
+    std::cout << GridLogMessage << "CpuAddr\t\tAccAddr\t\tState\t\tcpuLock\taccLock\tLRU_valid "<<std::endl;
+    std::cout << GridLogMessage << "0x"<<std::hex<<AccCache.CpuPtr<<std::dec
+    << "\t0x"<<std::hex<<AccCache.AccPtr<<std::dec<<"\t" <<str
+    << "\t" << AccCache.cpuLock
+    << "\t" << AccCache.accLock
+    << "\t" << AccCache.LRU_valid<<std::endl;
+
+  } else {
+    std::cout << GridLogMessage << "No Entry in AccCache table." << std::endl; 
+  }
+}
+
 NAMESPACE_END(Grid);
 
 #endif
