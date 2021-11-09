@@ -78,6 +78,7 @@ public:
     for (int i=0;i<N;i++) {
       const Field& tmp = evec[i];
       axpy(guess,TensorRemove(innerProduct(tmp,src)) / eval[i],tmp,guess);
+    }
     guess.Checkerboard() = src.Checkerboard();
   }
 };
