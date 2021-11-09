@@ -57,7 +57,7 @@ private:
   CheckerBoardedSparseMatrixBase<Field> & _Matrix;
   SchurRedBlackBase<Field> & _Solver;
 public:
-
+  using LinearFunction<Field>::operator();
   /////////////////////////////////////////////////////
   // Wrap the usual normal equations trick
   /////////////////////////////////////////////////////
@@ -75,6 +75,7 @@ public:
 template<class Field,class Matrix> class ChebyshevSmoother : public LinearFunction<Field>
 {
 public:
+  using LinearFunction<Field>::operator();
   typedef LinearOperatorBase<Field>                            FineOperator;
   Matrix         & _SmootherMatrix;
   FineOperator   & _SmootherOperator;
@@ -98,6 +99,7 @@ public:
 template<class Field,class Matrix> class MirsSmoother : public LinearFunction<Field>
 {
 public:
+  using LinearFunction<Field>::operator();
   typedef LinearOperatorBase<Field>                            FineOperator;
   Matrix         & SmootherMatrix;
   FineOperator   & SmootherOperator;
@@ -128,6 +130,7 @@ public:
 template<class Fobj,class CComplex,int nbasis, class Matrix, class Guesser, class CoarseSolver>
 class MultiGridPreconditioner : public LinearFunction< Lattice<Fobj> > {
 public:
+  using LinearFunction<Lattice<Fobj> >::operator();
 
   typedef Aggregation<Fobj,CComplex,nbasis> Aggregates;
   typedef CoarsenedMatrix<Fobj,CComplex,nbasis> CoarseOperator;
