@@ -166,8 +166,10 @@ std::vector<RealD> WilsonFlow<Gimpl>::flowMeasureEnergyDensityPlaquette(const Ga
   std::vector<RealD> out;
   GaugeField V(U);
   for (unsigned int step = 0; step < Nstep; step++) { //bn  tau = epsilon*(step+1) so tau after performing step=0 is epsilon
+    std::cout << GridLogMessage << "[WilsonFlow] Evolving step " << step << std::endl;
     evolve_step(V);
     if( step % measure_interval == 0){
+      std::cout << GridLogMessage << "[WilsonFlow] Computing energy density for step " << step << std::endl;
       out.push_back( energyDensityPlaquette(step,V) );
     }
   }
