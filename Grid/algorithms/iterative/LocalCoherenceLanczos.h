@@ -44,6 +44,7 @@ public:
 				  int, MinRes);    // Must restart
 };
 
+//This class is the input parameter class for some testing programs
 struct LocalCoherenceLanczosParams : Serializable {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(LocalCoherenceLanczosParams,
@@ -153,6 +154,7 @@ public:
       _coarse_relax_tol(coarse_relax_tol)  
   {    };
 
+  //evalMaxApprox: approximation of largest eval of the fine Chebyshev operator (suitably wrapped by block projection)
   int TestConvergence(int j,RealD eresid,CoarseField &B, RealD &eval,RealD evalMaxApprox)
   {
     CoarseField v(B);
@@ -179,8 +181,16 @@ public:
     if( (vv<eresid*eresid) ) conv = 1;
     return conv;
   }
-  int ReconstructEval(int j,RealD eresid,CoarseField &B, RealD &eval,RealD evalMaxApprox)
+
+  //This function is called at the end of the coarse grid Lanczos. It promotes the coarse eigenvector 'B' to the fine grid,
+  //applies a smoother to the result then computes the computes the *fine grid* eigenvalue (output as 'eval').
+
+  //evalMaxApprox should be the approximation of the largest eval of the fine Hermop. However when this function is called by IRL it actually passes the largest eval of the *Chebyshev* operator (as this is the max approx used for the TestConvergence above)
+  //As the largest eval of the Chebyshev is typically several orders of magnitude larger this makes the convergence test pass even when it should not.
+  //We therefore ignore evalMaxApprox here and use a value of 1.0 (note this value is already used by TestCoarse)
+  int ReconstructEval(int j,RealD eresid,CoarseField &B, RealD &eval,RealD evalMaxApprox)  
   {
+    evalMaxApprox = 1.0; //cf above
     GridBase *FineGrid = _subspace[0].Grid();    
     int checkerboard   = _subspace[0].Checkerboard();
     FineField fB(FineGrid);fB.Checkerboard() =checkerboard;
@@ -199,13 +209,13 @@ public:
     eval   = vnum/vden;
     fv -= eval*fB;
     RealD vv = norm2(fv) / ::pow(evalMaxApprox,2.0);
-
+    if ( j > nbasis ) eresid = eresid*_coarse_relax_tol;
+    
     std::cout.precision(13);
     std::cout<<GridLogIRL  << "[" << std::setw(3)<<j<<"] "
 	     <<"eval = "<<std::setw(25)<< eval << " (" << eval_poly << ")"
-	     <<" |H B[i] - eval[i]B[i]|^2 / evalMaxApprox^2 " << std::setw(25) << vv
+	     <<" |H B[i] - eval[i]B[i]|^2 / evalMaxApprox^2 " << std::setw(25) << vv << " target " << eresid*eresid
 	     <<std::endl;
-    if ( j > nbasis ) eresid = eresid*_coarse_relax_tol;
     if( (vv<eresid*eresid) ) return 1;
     return 0;
   }
@@ -283,6 +293,10 @@ public:
     evals_coarse.resize(0);
   };
 
+  //The block inner product is the inner product on the fine grid locally summed over the blocks
+  //to give a Lattice<Scalar> on the coarse grid. This function orthnormalizes the fine-grid subspace
+  //vectors under the block inner product. This step must be performed after computing the fine grid
+  //eigenvectors and before computing the coarse grid eigenvectors.    
   void Orthogonalise(void ) {
     CoarseScalar InnerProd(_CoarseGrid);
     std::cout << GridLogMessage <<" Gramm-Schmidt pass 1"<<std::endl;
@@ -326,6 +340,8 @@ public:
     }
   }
 
+  //While this method serves to check the coarse eigenvectors, it also recomputes the eigenvalues from the smoothed reconstructed eigenvectors
+  //hence the smoother can be tuned after running the coarse Lanczos by using a different smoother here
   void testCoarse(RealD resid,ChebyParams cheby_smooth,RealD relax) 
   {
     assert(evals_fine.size() == nbasis);
@@ -374,25 +390,31 @@ public:
     evals_fine.resize(nbasis);
     subspace.resize(nbasis,_FineGrid);
   }
+
+
+  //cheby_op: Parameters of the fine grid Chebyshev polynomial used for the Lanczos acceleration
+  //cheby_smooth: Parameters of a separate Chebyshev polynomial used after the Lanczos has completed to smooth out high frequency noise in the reconstructed fine grid eigenvectors prior to computing the eigenvalue
+  //relax: Reconstructed eigenvectors (post smoothing) are naturally not as precise as true eigenvectors. This factor acts as a multiplier on the stopping condition when determining whether the results satisfy the user provided stopping condition
   void calcCoarse(ChebyParams cheby_op,ChebyParams cheby_smooth,RealD relax,
 		  int Nstop, int Nk, int Nm,RealD resid, 
 		  RealD MaxIt, RealD betastp, int MinRes)
   {
-    Chebyshev<FineField>                          Cheby(cheby_op);
-    ProjectedHermOp<Fobj,CComplex,nbasis>         Op(_FineOp,subspace);
-    ProjectedFunctionHermOp<Fobj,CComplex,nbasis> ChebyOp (Cheby,_FineOp,subspace);
+    Chebyshev<FineField>                          Cheby(cheby_op); //Chebyshev of fine operator on fine grid
+    ProjectedHermOp<Fobj,CComplex,nbasis>         Op(_FineOp,subspace); //Fine operator on coarse grid with intermediate fine grid conversion
+    ProjectedFunctionHermOp<Fobj,CComplex,nbasis> ChebyOp (Cheby,_FineOp,subspace); //Chebyshev of fine operator on coarse grid with intermediate fine grid conversion
     //////////////////////////////////////////////////////////////////////////////////////////////////
     // create a smoother and see if we can get a cheap convergence test and smooth inside the IRL
     //////////////////////////////////////////////////////////////////////////////////////////////////
 
-    Chebyshev<FineField>                                           ChebySmooth(cheby_smooth);
-    ImplicitlyRestartedLanczosSmoothedTester<Fobj,CComplex,nbasis> ChebySmoothTester(ChebyOp,ChebySmooth,_FineOp,subspace,relax);
+    Chebyshev<FineField>                                           ChebySmooth(cheby_smooth); //lower order Chebyshev of fine operator on fine grid used to smooth regenerated eigenvectors
+    ImplicitlyRestartedLanczosSmoothedTester<Fobj,CComplex,nbasis> ChebySmoothTester(ChebyOp,ChebySmooth,_FineOp,subspace,relax); 
 
     evals_coarse.resize(Nm);
     evec_coarse.resize(Nm,_CoarseGrid);
 
     CoarseField src(_CoarseGrid);     src=1.0; 
 
+    //Note the "tester" here is also responsible for generating the fine grid eigenvalues which are output into the "evals_coarse" array
     ImplicitlyRestartedLanczos<CoarseField> IRL(ChebyOp,ChebyOp,ChebySmoothTester,Nstop,Nk,Nm,resid,MaxIt,betastp,MinRes);
     int Nconv=0;
     IRL.calc(evals_coarse,evec_coarse,src,Nconv,false);
@@ -403,6 +425,14 @@ public:
       std::cout << i << " Coarse eval = " << evals_coarse[i]  << std::endl;
     }
   }
+
+  //Get the fine eigenvector 'i' by reconstruction
+  void getFineEvecEval(FineField &evec, RealD &eval, const int i) const{
+    blockPromote(evec_coarse[i],evec,subspace);  
+    eval = evals_coarse[i];
+  }
+    
+    
 };
 
 NAMESPACE_END(Grid);
