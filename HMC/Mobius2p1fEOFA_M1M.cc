@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
 
   const int Ls      = 12;
   Real beta         = 2.25;
-  Real light_mass   = 0.002;
+  Real light_mass   = 0.004;
   Real strange_mass = 0.02661;
   Real pv_mass      = 1.0;
   RealD M5  = 1.8;
