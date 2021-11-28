@@ -70,7 +70,7 @@ endif
 lib_LIBRARIES = libGrid.a
 
 CCFILES += $(extra_sources)
-HFILES  += $(extra_headers) Config.h Version.h
+HFILES  += $(extra_headers)
 
 libGrid_a_SOURCES              = $(CCFILES)
 libGrid_adir                   = $(includedir)/Grid
