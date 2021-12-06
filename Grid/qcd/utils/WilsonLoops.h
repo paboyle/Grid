@@ -363,7 +363,7 @@ public:
     GaugeMat u = PeekIndex<LorentzIndex>(Umu, mu);  // some redundant copies
     GaugeMat vu = v*u;
       //FS = 0.25*Ta(u*v + Cshift(vu, mu, -1));
-      FS = (u*v + Cshift(vu, mu, -1));
+      FS = (u*v + Gimpl::CshiftLink(vu, mu, -1));
       FS = 0.125*(FS - adj(FS));
   }
 
