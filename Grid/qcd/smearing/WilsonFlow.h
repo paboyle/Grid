@@ -82,6 +82,9 @@ public:
   RealD energyDensityPlaquette(const GaugeField& U) const;
 
   //Evolve the gauge field by Nstep steps of epsilon and return the energy density computed every interval steps
+  //The smeared field is output as V
+  std::vector<RealD> flowMeasureEnergyDensityPlaquette(GaugeField &V, const GaugeField& U) const;
+
   std::vector<RealD> flowMeasureEnergyDensityPlaquette(const GaugeField& U) const;
 };
 
@@ -162,9 +165,9 @@ RealD WilsonFlow<Gimpl>::energyDensityPlaquette(const GaugeField& U) const {
 }
 
 template <class Gimpl>
-std::vector<RealD> WilsonFlow<Gimpl>::flowMeasureEnergyDensityPlaquette(const GaugeField& U) const{
+std::vector<RealD> WilsonFlow<Gimpl>::flowMeasureEnergyDensityPlaquette(GaugeField &V, const GaugeField& U) const{
   std::vector<RealD> out;
-  GaugeField V(U);
+  V = U;
   for (unsigned int step = 0; step < Nstep; step++) { //bn  tau = epsilon*(step+1) so tau after performing step=0 is epsilon
     std::cout << GridLogMessage << "[WilsonFlow] Evolving step " << step << std::endl;
     evolve_step(V);
@@ -175,7 +178,14 @@ std::vector<RealD> WilsonFlow<Gimpl>::flowMeasureEnergyDensityPlaquette(const Ga
   }
   return out;
 }
-  
+
+template <class Gimpl>
+std::vector<RealD> WilsonFlow<Gimpl>::flowMeasureEnergyDensityPlaquette(const GaugeField& U) const{
+  GaugeField V(U);
+  return flowMeasureEnergyDensityPlaquette(V,U);
+}
+
+
 //#define WF_TIMING 
 template <class Gimpl>
 void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const {
@@ -194,7 +204,7 @@ void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const {
     if( step % measure_interval == 0){
       std::cout << GridLogMessage << "[WilsonFlow] Top. charge           : "
 		<< step << "  " 
-		<< WilsonLoops<PeriodicGimplR>::TopologicalCharge(out) << std::endl;
+		<< WilsonLoops<Gimpl>::TopologicalCharge(out) << std::endl;
     }
   }
 }
@@ -214,7 +224,7 @@ void WilsonFlow<Gimpl>::smear_adaptive(GaugeField& out, const GaugeField& in, Re
     if( step % measure_interval == 0){
       std::cout << GridLogMessage << "[WilsonFlow] Top. charge           : "
 		<< step << "  " 
-		<< WilsonLoops<PeriodicGimplR>::TopologicalCharge(out) << std::endl;
+		<< WilsonLoops<Gimpl>::TopologicalCharge(out) << std::endl;
     }
   } while (taus < maxTau);
 
