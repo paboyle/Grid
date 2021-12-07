@@ -191,7 +191,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
 
   DomainWallFermionF Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  int ncall =3000;
+  int ncall =300;
 
   if (1) {
     FGrid->Barrier();

@@ -388,7 +388,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
     // TODO : make a OMP loop on CPU, call threaded bcopy
     void *shm = (void *) this->ShmBufferTranslate(dest,recv);
     assert(shm!=NULL);
-    std::cout <<"acceleratorCopyDeviceToDeviceAsynch"<< std::endl;
+    //    std::cout <<"acceleratorCopyDeviceToDeviceAsynch"<< std::endl;
     acceleratorCopyDeviceToDeviceAsynch(xmit,shm,bytes);
   }
 
@@ -400,7 +400,8 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 }
 void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &list,int dir)
 {
-  acceleratorCopySynchronise(); std::cout << "Copy Synchronised\n"<<std::endl;
+  //   std::cout << "Copy Synchronised\n"<<std::endl;
+  acceleratorCopySynchronise();
 
   int nreq=list.size();
 
