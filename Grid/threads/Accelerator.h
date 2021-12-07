@@ -306,7 +306,7 @@ inline void acceleratorFreeDevice(void *ptr){free(ptr,*theGridAccelerator);};
 inline void acceleratorCopyDeviceToDeviceAsynch(void *from,void *to,size_t bytes)  {
   theGridAccelerator->memcpy(to,from,bytes);
 }
-inline void acceleratorCopySynchronise(void) {  theGridAccelerator->wait(); }
+inline void acceleratorCopySynchronise(void) {  theGridAccelerator->wait(); std::cout<<"acceleratorCopySynchronise() wait "<<std::endl; }
 inline void acceleratorCopyToDevice(void *from,void *to,size_t bytes)  { theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
 inline void acceleratorCopyFromDevice(void *from,void *to,size_t bytes){ theGridAccelerator->memcpy(to,from,bytes); theGridAccelerator->wait();}
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { theGridAccelerator->memset(base,value,bytes); theGridAccelerator->wait();}
