@@ -12,6 +12,10 @@ uint64_t  MemoryManager::HostToDeviceBytes;
 uint64_t  MemoryManager::DeviceToHostBytes;
 uint64_t  MemoryManager::HostToDeviceXfer;
 uint64_t  MemoryManager::DeviceToHostXfer;
+uint64_t  MemoryManager::DeviceAccesses;
+uint64_t  MemoryManager::HostAccesses;
+uint64_t  MemoryManager::DeviceAccessBytes;
+uint64_t  MemoryManager::HostAccessBytes;
 
 void  MemoryManager::ViewClose(void* AccPtr,ViewMode mode){};
 void *MemoryManager::ViewOpen(void* CpuPtr,size_t bytes,ViewMode mode,ViewAdvise hint){ return CpuPtr; };

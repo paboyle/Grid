@@ -23,6 +23,11 @@ uint64_t  MemoryManager::HostToDeviceBytes;
 uint64_t  MemoryManager::DeviceToHostBytes;
 uint64_t  MemoryManager::HostToDeviceXfer;
 uint64_t  MemoryManager::DeviceToHostXfer;
+uint64_t  MemoryManager::DeviceAccesses;
+uint64_t  MemoryManager::HostAccesses;
+uint64_t  MemoryManager::DeviceAccessBytes;
+uint64_t  MemoryManager::HostAccessBytes;
+ 
 
 ////////////////////////////////////
 // Priority ordering for unlocked entries
