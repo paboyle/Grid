@@ -30,7 +30,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
 int main (int argc, char ** argv)
 {
@@ -135,7 +134,6 @@ int main (int argc, char ** argv)
     Ds.Dhop(src,result,0);
   }
   double t1=usecond();
-  double t2;
   double flops=(16*(3*(6+8+8)) + 15*3*2)*volume*ncall; // == 66*16 +  == 1146
   
   std::cout<<GridLogMessage << "Called Ds"<<std::endl;

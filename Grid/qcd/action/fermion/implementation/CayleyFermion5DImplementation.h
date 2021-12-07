@@ -828,6 +828,7 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 
 #if (!defined(GRID_HIP))
   int tshift = (mu == Nd-1) ? 1 : 0;
+  unsigned int LLt    = GridDefaultLatt()[Tp];
   ////////////////////////////////////////////////
   // GENERAL CAYLEY CASE
   ////////////////////////////////////////////////
@@ -880,7 +881,7 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
   }
 
   std::vector<RealD> G_s(Ls,1.0);
-  RealD sign = 1; // sign flip for vector/tadpole
+  RealD sign = 1.0; // sign flip for vector/tadpole
   if ( curr_type == Current::Axial ) {
     for(int s=0;s<Ls/2;s++){
       G_s[s] = -1.0;
@@ -890,7 +891,7 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
     auto b=this->_b;
     auto c=this->_c;
     if ( b == 1 && c == 0 ) {
-      sign = -1;    
+      sign = -1.0;    
     }
     else {
       std::cerr << "Error: Tadpole implementation currently unavailable for non-Shamir actions." << std::endl;
@@ -934,7 +935,13 @@ void CayleyFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
     tmp    = Cshift(tmp,mu,-1);
     Impl::multLinkField(Utmp,this->Umu,tmp,mu+Nd); // Adjoint link
     tmp = -G_s[s]*( Utmp + gmu*Utmp );
-    tmp    = where((lcoor>=tmin+tshift),tmp,zz); // Mask the time 
+    // Mask the time
+    if (tmax == LLt - 1 && tshift == 1){ // quick fix to include timeslice 0 if tmax + tshift is over the last timeslice
+      unsigned int t0 = 0;
+      tmp    = where(((lcoor==t0) || (lcoor>=tmin+tshift)),tmp,zz);
+    } else {
+      tmp    = where((lcoor>=tmin+tshift),tmp,zz);
+    }
     L_Q   += where((lcoor<=tmax+tshift),tmp,zz); // Position of current complicated
 
     InsertSlice(L_Q, q_out, s , 0);

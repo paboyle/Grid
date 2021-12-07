@@ -358,7 +358,7 @@ public:
     autoView( in_v , in, AcceleratorRead);
     autoView( out_v , out, AcceleratorWrite);
     autoView( Stencil_v  , Stencil, AcceleratorRead);
-    auto& geom_v = geom;
+    int npoint = geom.npoint;
     typedef LatticeView<Cobj> Aview;
       
     Vector<Aview> AcceleratorViewContainer;
@@ -380,7 +380,7 @@ public:
       int ptype;
       StencilEntry *SE;
 
-      for(int point=0;point<geom_v.npoint;point++){
+      for(int point=0;point<npoint;point++){
 
 	SE=Stencil_v.GetEntry(ptype,point,ss);
 	  
@@ -424,7 +424,7 @@ public:
     autoView( in_v , in, AcceleratorRead);
     autoView( out_v , out, AcceleratorWrite);
     autoView( Stencil_v  , Stencil, AcceleratorRead);
-    auto& geom_v = geom;
+    int npoint = geom.npoint;
     typedef LatticeView<Cobj> Aview;
 
     Vector<Aview> AcceleratorViewContainer;
@@ -454,7 +454,7 @@ public:
       int ptype;
       StencilEntry *SE;
 
-      for(int p=0;p<geom_v.npoint;p++){
+      for(int p=0;p<npoint;p++){
         int point = points_p[p];
 
 	SE=Stencil_v.GetEntry(ptype,point,ss);

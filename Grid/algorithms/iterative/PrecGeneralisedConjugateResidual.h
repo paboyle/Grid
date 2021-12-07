@@ -43,7 +43,7 @@ NAMESPACE_BEGIN(Grid);
 template<class Field>
 class PrecGeneralisedConjugateResidual : public LinearFunction<Field> {
 public:                                                
-
+  using LinearFunction<Field>::operator();
   RealD   Tolerance;
   Integer MaxIterations;
   int verbose;

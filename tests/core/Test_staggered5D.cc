@@ -162,7 +162,6 @@ int main (int argc, char ** argv)
   }
   double t1=usecond();
 
-  double t2;
   double flops=(16*(3*(6+8+8)) + 15*3*2)*volume*ncall; // == 66*16 +  == 1146
   
   std::cout<<GridLogMessage << "Called Ds"<<std::endl;
