@@ -113,6 +113,11 @@ private:
   static uint64_t     DeviceToHostBytes;
   static uint64_t     HostToDeviceXfer;
   static uint64_t     DeviceToHostXfer;
+  
+  static uint64_t     DeviceAccesses;
+  static uint64_t     HostAccesses;
+  static uint64_t     DeviceAccessBytes;
+  static uint64_t     HostAccessBytes;
  
  private:
 #ifndef GRID_UVM
@@ -152,6 +157,7 @@ private:
 
   //  static void  LRUupdate(AcceleratorViewEntry &AccCache);
   static void  LRUinsert(AcceleratorViewEntry &AccCache);
+  static void  LRUinsertback(AcceleratorViewEntry &AccCache);
   static void  LRUremove(AcceleratorViewEntry &AccCache);
   
   // manage entries in the table

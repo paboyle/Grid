@@ -86,6 +86,14 @@ void  MemoryManager::LRUinsert(AcceleratorViewEntry &AccCache)
   AccCache.LRU_valid = 1;
   DeviceLRUBytes+=AccCache.bytes;
 }
+void  MemoryManager::LRUinsertback(AcceleratorViewEntry &AccCache)
+{
+  assert(AccCache.LRU_valid==0);
+  LRU.push_back(AccCache.CpuPtr);
+  AccCache.LRU_entry = --LRU.end();
+  AccCache.LRU_valid = 1;
+  DeviceLRUBytes+=AccCache.bytes;
+}
 void  MemoryManager::LRUremove(AcceleratorViewEntry &AccCache)
 {
   assert(AccCache.LRU_valid==1);
@@ -129,6 +137,7 @@ void MemoryManager::Evict(AcceleratorViewEntry &AccCache)
   dprintf("MemoryManager: Evict(%llx) %llx\n",(uint64_t)AccCache.CpuPtr,(uint64_t)AccCache.AccPtr); 
   assert(AccCache.accLock==0);
   assert(AccCache.cpuLock==0);
+  
   if(AccCache.state==AccDirty) {
     Flush(AccCache);
   }
@@ -230,6 +239,9 @@ uint64_t MemoryManager::AcceleratorViewOpen(uint64_t CpuPtr,size_t bytes,ViewMod
   if ( EntryPresent(CpuPtr)==0 ){
     EntryCreate(CpuPtr,bytes,mode,hint);
   }
+
+  DeviceAccesses++;
+  DeviceAccessBytes+=bytes;
 
   auto AccCacheIterator = EntryLookup(CpuPtr);
   auto & AccCache = AccCacheIterator->second;
@@ -349,6 +361,10 @@ void MemoryManager::CpuViewClose(uint64_t CpuPtr)
   assert(AccCache.accLock==0);
 
   AccCache.cpuLock--;
+
+  if(AccCache.cpuLock==0) {
+    LRUinsertback(AccCache);
+  }
 }
 /*
  *  Action  State   StateNext         Flush    Clone
@@ -371,6 +387,9 @@ uint64_t MemoryManager::CpuViewOpen(uint64_t CpuPtr,size_t bytes,ViewMode mode,V
     EntryCreate(CpuPtr,bytes,mode,transient);
   }
 
+  HostAccesses++;
+  HostAccessBytes+=bytes;
+  
   auto AccCacheIterator = EntryLookup(CpuPtr);
   auto & AccCache = AccCacheIterator->second;
 
@@ -416,6 +435,12 @@ uint64_t MemoryManager::CpuViewOpen(uint64_t CpuPtr,size_t bytes,ViewMode mode,V
 
   AccCache.transient= transient? EvictNext : 0;
 
+  // If view is opened on host remove from LRU
+  // Host close says evict next from device
+  if(AccCache.LRU_valid==1){
+    LRUremove(AccCache);
+  }
+  
   return AccCache.CpuPtr;
 }
 void  MemoryManager::NotifyDeletion(void *_ptr)
