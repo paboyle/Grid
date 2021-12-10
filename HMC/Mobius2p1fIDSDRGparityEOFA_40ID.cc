@@ -95,6 +95,7 @@ struct EvolParameters: Serializable {
                                   Integer, Trajectories,
 				  Integer, SaveInterval,
 				  Integer, Steps,
+				  RealD, TrajectoryLength,
                                   bool, MetropolisTest,
 				  std::string, StartingType,
 				  std::vector<Integer>, GparityDirs,
@@ -111,6 +112,7 @@ struct EvolParameters: Serializable {
     StartingType      = "ColdStart";
     GparityDirs.resize(3, 1); //1 for G-parity, 0 for periodic
     Steps = 5;
+    TrajectoryLength = 1.0;
   }
 };
 
@@ -560,7 +562,7 @@ int main(int argc, char **argv) {
   // MD.name    = std::string("ForceGradient");
   
   MD.MDsteps = user_params.Steps;
-  MD.trajL   = 1.0;
+  MD.trajL   = user_params.TrajectoryLength;
 
   typedef HMCWrapper::ImplPolicy GaugeImplPolicy;
   
@@ -651,8 +653,8 @@ int main(int argc, char **argv) {
   // Collect actions
   ////////////////////////////////////
   ActionLevel<HMCWrapper::Field> Level1(1); //light quark + strange quark
-  ActionLevel<HMCWrapper::Field> Level2(2); //DSDR
-  ActionLevel<HMCWrapper::Field> Level3(4); //gauge
+  ActionLevel<HMCWrapper::Field> Level2(4); //DSDR
+  ActionLevel<HMCWrapper::Field> Level3(2); //gauge
 
 
   /////////////////////////////////////////////////////////////
