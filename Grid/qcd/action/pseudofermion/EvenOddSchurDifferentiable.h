@@ -86,8 +86,13 @@ public:
     assert(ForceE.Checkerboard()==Even);
     assert(ForceO.Checkerboard()==Odd);
 
+#if defined(GRID_CUDA) || defined(GRID_HIP)  || defined(GRID_SYCL)
+    acceleratorSetCheckerboard(Force,ForceE);
+    acceleratorSetCheckerboard(Force,ForceO);
+#else
     setCheckerboard(Force,ForceE); 
     setCheckerboard(Force,ForceO);
+#endif
     Force=-Force;
 
     delete forcecb;
@@ -130,8 +135,13 @@ public:
     assert(ForceE.Checkerboard()==Even);
     assert(ForceO.Checkerboard()==Odd);
 
+#if defined(GRID_CUDA) || defined(GRID_HIP)  || defined(GRID_SYCL)
+    acceleratorSetCheckerboard(Force,ForceE);
+    acceleratorSetCheckerboard(Force,ForceO);
+#else
     setCheckerboard(Force,ForceE); 
     setCheckerboard(Force,ForceO);
+#endif
     Force=-Force;
 
     delete forcecb;
