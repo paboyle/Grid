@@ -7,6 +7,7 @@ Source file: ./lib/qcd/modules/plaquette.h
 Copyright (C) 2017
 
 Author: Guido Cossu <guido.cossu@ed.ac.uk>
+Author: Christopher Kelly <ckelly@bnl.gov>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -80,12 +81,22 @@ public:
 
   //Compute t^2 <E(t)> for time taus, set by smear_adaptive, from the plaquette
   RealD energyDensityPlaquette(const GaugeField& U) const;
-
+  
   //Evolve the gauge field by Nstep steps of epsilon and return the energy density computed every interval steps
   //The smeared field is output as V
   std::vector<RealD> flowMeasureEnergyDensityPlaquette(GaugeField &V, const GaugeField& U) const;
 
   std::vector<RealD> flowMeasureEnergyDensityPlaquette(const GaugeField& U) const;
+
+  //Compute t^2 <E(t)> for time from the 1x1 cloverleaf form
+  //t is the Wilson flow time
+  RealD energyDensityCloverleaf(RealD t, const GaugeField& U) const;
+
+  //Evolve the gauge field by Nstep steps of epsilon and return the Cloverleaf energy density computed every interval steps
+  //The smeared field is output as V
+  std::vector<RealD> flowMeasureEnergyDensityCloverleaf(GaugeField &V, const GaugeField& U) const;
+
+  std::vector<RealD> flowMeasureEnergyDensityCloverleaf(const GaugeField& U) const;
 };
 
 
@@ -184,6 +195,53 @@ std::vector<RealD> WilsonFlow<Gimpl>::flowMeasureEnergyDensityPlaquette(const Ga
   GaugeField V(U);
   return flowMeasureEnergyDensityPlaquette(V,U);
 }
+
+//Compute t^2 <E(t)> for time from the 1x1 cloverleaf form
+template <class Gimpl>
+RealD WilsonFlow<Gimpl>::energyDensityCloverleaf(RealD t, const GaugeField& U) const{
+  typedef typename Gimpl::GaugeLinkField GaugeMat;
+  typedef typename Gimpl::GaugeField GaugeLorentz;
+
+  assert(Nd == 4);
+  //E = 1/2 tr( F_munu F_munu )
+  //However as  F_numu = -F_munu, only need to sum the trace of the squares of the following 6 field strengths:
+  //F_01 F_02 F_03   F_12 F_13  F_23
+  GaugeMat F(U.Grid());
+  LatticeComplexD R(U.Grid());
+  R = Zero();
+  
+  for(int mu=0;mu<3;mu++){
+    for(int nu=mu+1;nu<4;nu++){
+      WilsonLoops<Gimpl>::FieldStrength(F, U, mu, nu);
+      R = R + trace(F*F);
+    }
+  }
+  ComplexD out = sum(R);
+  out = t*t*out / RealD(U.Grid()->gSites());
+  return -real(out); //minus sign necessary for +ve energy
+}
+
+template <class Gimpl>
+std::vector<RealD> WilsonFlow<Gimpl>::flowMeasureEnergyDensityCloverleaf(GaugeField &V, const GaugeField& U) const{
+  std::vector<RealD> out;
+  V = U;
+  for (unsigned int step = 0; step < Nstep; step++) { //bn  tau = epsilon*(step+1) so tau after performing step=0 is epsilon
+    std::cout << GridLogMessage << "[WilsonFlow] Evolving step " << step << std::endl;
+    evolve_step(V);
+    if( step % measure_interval == 0){
+      std::cout << GridLogMessage << "[WilsonFlow] Computing Cloverleaf energy density for step " << step << std::endl;
+      out.push_back( energyDensityCloverleaf(tau(step),V) );
+    }
+  }
+  return out;
+}
+
+template <class Gimpl>
+std::vector<RealD> WilsonFlow<Gimpl>::flowMeasureEnergyDensityCloverleaf(const GaugeField& U) const{
+  GaugeField V(U);
+  return flowMeasureEnergyDensityCloverleaf(V,U);
+}
+
 
 
 //#define WF_TIMING 
