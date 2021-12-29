@@ -1738,6 +1738,12 @@ void A2Autils<FImpl>::StagMesonFieldMILC(TensorType &mat,
   });
 
 
+  // Free all Lattice Views
+  for(int p=0;p<Lblock;p++) AcceleratorViewContainerW[p].ViewClose();
+  for(int p=0;p<Rblock;p++) AcceleratorViewContainerV[p].ViewClose();
+  for(int p=0;p<Ngamma;p++) AcceleratorViewContainerStag[p].ViewClose();
+  for(int p=0;p<Nmom;p++) AcceleratorViewContainerMom[p].ViewClose();
+
   assert(mat.dimension(0) == Nmom);
   assert(mat.dimension(1) == Ngamma);
   assert(mat.dimension(2) == Nt);
