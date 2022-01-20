@@ -485,7 +485,8 @@ public:
 
   //Topological charge contribution from MxN Wilson loops
   //cf  https://arxiv.org/pdf/hep-lat/9701012.pdf  Eq 6
-  static Real TopologicalChargeMxN(const GaugeLorentz &U, int M, int N){
+  //output is the charge by timeslice: sum over timeslices to obtain the total
+  static std::vector<Real> TimesliceTopologicalChargeMxN(const GaugeLorentz &U, int M, int N){
     assert(Nd == 4);
     std::vector<std::vector<GaugeMat*> > F(Nd,std::vector<GaugeMat*>(Nd,nullptr));
     //Note F_numu = - F_munu
@@ -513,9 +514,20 @@ public:
     for(int mu=0;mu<Nd-1;mu++)
       for(int nu=mu+1; nu<Nd; nu++)
 	delete F[mu][nu];
+    
+    typedef typename ComplexField::scalar_object sobj;
+    std::vector<sobj> Tq;
+    sliceSum(fsum, Tq, Nd-1);
 
-    auto Tq = sum(fsum);
-    return TensorRemove(Tq).real();
+    std::vector<Real> out(Tq.size());
+    for(int t=0;t<Tq.size();t++) out[t] = TensorRemove(Tq[t]).real();
+    return out;
+  }
+  static Real TopologicalChargeMxN(const GaugeLorentz &U, int M, int N){
+    std::vector<Real> Tq = TimesliceTopologicalChargeMxN(U,M,N);
+    Real out(0);
+    for(int t=0;t<Tq.size();t++) out += Tq[t];
+    return out;
   }
 
   //Generate the contributions to the 5Li topological charge from Wilson loops of the following sizes
@@ -525,12 +537,22 @@ public:
   //1x2 : c3=(-64.+640.*c5)/45.
   //1x3 : c4=1./5.-2.*c5
   //3x3 : c5=1./20.
-  //Output array contains the loops in the above order
-  static std::vector<Real> TopologicalCharge5LiContributions(const GaugeLorentz &U){
+  //Output array outer index contains the loops in the above order
+  //Inner index is the time coordinate
+  static std::vector<std::vector<Real> > TimesliceTopologicalCharge5LiContributions(const GaugeLorentz &U){
     static const int exts[5][2] = { {1,1}, {2,2}, {1,2}, {1,3}, {3,3} };       
+    std::vector<std::vector<Real> > out(5);
+    for(int i=0;i<5;i++){	
+      out[i] = TimesliceTopologicalChargeMxN(U,exts[i][0],exts[i][1]);
+    }
+    return out;
+  }   
+
+  static std::vector<Real> TopologicalCharge5LiContributions(const GaugeLorentz &U){   
+    static const int exts[5][2] = { {1,1}, {2,2}, {1,2}, {1,3}, {3,3} };
     std::vector<Real> out(5);
     std::cout << GridLogMessage << "Computing topological charge" << std::endl;
-    for(int i=0;i<5;i++){	
+    for(int i=0;i<5;i++){
       out[i] = TopologicalChargeMxN(U,exts[i][0],exts[i][1]);
       std::cout << GridLogMessage << exts[i][0] << "x" << exts[i][1] << " Wilson loop contribution " << out[i] << std::endl;
     }
@@ -538,8 +560,8 @@ public:
   }
 
   //Compute the 5Li topological charge
-  static Real TopologicalCharge5Li(const GaugeLorentz &U){
-    std::vector<Real> loops = TopologicalCharge5LiContributions(U);
+  static std::vector<Real> TimesliceTopologicalCharge5Li(const GaugeLorentz &U){
+    std::vector<std::vector<Real> > loops = TimesliceTopologicalCharge5LiContributions(U);
 
     double c5=1./20.;
     double c4=1./5.-2.*c5;
@@ -547,11 +569,21 @@ public:
     double c2=(1-64.*c5)/9.;
     double c1=(19.-55.*c5)/9.;
 
-    double Q = c1*loops[0] + c2*loops[1] + c3*loops[2] + c4*loops[3] + c5*loops[4];
+    int Lt = loops[0].size();
+    std::vector<Real> out(Lt,0.);
+    for(int t=0;t<Lt;t++)
+      out[t] += c1*loops[0][t] + c2*loops[1][t] + c3*loops[2][t] + c4*loops[3][t] + c5*loops[4][t];
+    return out;
+  }
 
+  static Real TopologicalCharge5Li(const GaugeLorentz &U){
+    std::vector<Real> Qt = TimesliceTopologicalCharge5Li(U);
+    Real Q = 0.;
+    for(int t=0;t<Qt.size();t++) Q += Qt[t];
     std::cout << GridLogMessage << "5Li Topological charge: " << Q << std::endl;
     return Q;
   }
+
 
 
 
