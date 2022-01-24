@@ -600,9 +600,11 @@ int main(int argc, char **argv) {
   //           a(mh+mres) [40ID] = 0.035910    0.03529
   //Estimate Ls=12, b+c=2  mres~0.0011
 
+  //1/24/2022 initial mres measurement gives mres=0.001,  adjusted light quark mass to 0.0003 from 0.0001
+  
   const int Ls      = 12;
   Real beta         = 1.848;
-  Real light_mass   = 0.0001;
+  Real light_mass   = 0.0003;
   Real strange_mass = 0.0342;
   Real pv_mass      = 1.0;
   RealD M5  = 1.8;
